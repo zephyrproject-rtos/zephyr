@@ -300,17 +300,17 @@ needed.
 Run the Application in QEMU
 ===========================
 
-On Linux and macOS, you can run Zephyr applications via emulation on your host
-system using `QEMU <https://www.qemu.org/>`_ when targeting either
-the x86 or ARM Cortex-M3 architectures. (QEMU is included with the Zephyr
-SDK installation.)
+You can run Zephyr applications via emulation on your host system using
+`QEMU <https://www.qemu.org/>`_ when targeting either the x86 or ARM
+Cortex-M3 architectures. QEMU is included with the Zephyr SDK.
 
-On Windows, you need to install QEMU manually from
-`Download QEMU <https://www.qemu.org/download/#windows>`_. After installation,
-add path to QEMU installation folder to PATH environment variable.
-To enable QEMU in Test Runner (Twister) on Windows,
-:ref:`set the environment variable <env_vars>`
-``QEMU_BIN_PATH`` to the path of QEMU installation folder.
+If using a manual QEMU installation, ensure it is available in the system
+``PATH`` environment variable.
+
+``QEMU_BIN_PATH`` can be used as an optional override to specify the
+location of QEMU binaries used by Twister. When provided, Twister
+validates that the specified path exists. Otherwise, Twister relies on
+SDK or other QEMU discovery mechanisms.
 
 For example, you can build and run the :zephyr:code-sample:`hello_world` sample using
 the x86 emulation board configuration (``qemu_x86``), with:
