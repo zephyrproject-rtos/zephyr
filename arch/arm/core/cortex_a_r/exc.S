@@ -257,7 +257,16 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	 * and return to the current thread.
 	 */
 	pop {r0-r3, r12, lr}
+
+#ifdef CONFIG_ARMV5
+	ldr r0, [sp, #4]
+	msr cpsr_cxsf, r0
+	ldr r0, [sp, #-24]
+	add sp, sp, #8
+	ldr pc, [sp, #-8]
+#else
 	rfeia sp!
+#endif
 
 /**
  * @brief Undefined instruction exception handler
