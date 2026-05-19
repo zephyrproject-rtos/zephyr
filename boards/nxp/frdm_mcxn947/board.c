@@ -316,12 +316,12 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Smartdma);
 	RESET_PeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(video_sdma))
-	/* Drive CLKOUT from main clock, divided by 25 to yield 6MHz clock
+	/* Drive CLKOUT from main clock, divided by 6 to yield 25MHz clock
 	 * The camera will use this clock signal to generate
 	 * PCLK, HSYNC, and VSYNC
 	 */
 	CLOCK_AttachClk(kMAIN_CLK_to_CLKOUT);
-	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 25U);
+	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 6U);
 #endif
 #endif
 
