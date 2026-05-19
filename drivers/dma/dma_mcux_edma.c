@@ -621,8 +621,15 @@ static inline void dma_mcux_edma_set_xfer_settings(const struct device *dev, uin
 	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
 	struct dma_block_config *block_config = config->head_block;
 
+	/* Only collapse the minor loop into the whole block for genuine
+	 * software-triggered mem2mem transfers. When a peripheral request is
+	 * routed via the channel mux (dma_slot != 0), each minor loop is
+	 * paced by that request and the caller-chosen burst length must be
+	 * preserved (e.g. FlexIO LCDIF expects one minor loop per shifter
+	 * round).
+	 */
 	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory &&
-	    !config->source_chaining_en) {
+	    !config->source_chaining_en && config->dma_slot == 0) {
 		xfer_settings->source_burst_length = block_config->block_size;
 	}
 #endif
