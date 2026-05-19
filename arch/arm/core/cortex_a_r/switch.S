@@ -55,7 +55,13 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 	 * Note that this step must be done after all relevant state is
 	 * saved.
 	 */
+#ifdef CONFIG_ARMV5
+	/* Drain write buffer */
+	mov r2, #0
+	mcr p15, 0, r2, c7, c10, 4
+#else
 	dsb
+#endif
 	str r1, [r1, #___thread_t_switch_handle_OFFSET]
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)
