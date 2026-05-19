@@ -169,9 +169,25 @@ static int mcux_ctimer_pwm_set_cycles(const struct device *dev, uint32_t pulse_c
 		return ret;
 	}
 
+	/*
+	 * CTIMER PWM-mode output: after each TC reset the pin starts LOW; it
+	 * transitions HIGH when TC matches MR[pulse_channel] and stays HIGH until
+	 * the next TC reset (MR[period_channel] match). So in hardware:
+	 *     LOW  duration = MR[pulse_channel]
+	 *     HIGH duration = period - MR[pulse_channel]
+	 * Boundary handling (symmetric across polarity):
+	 *   - MR > period  → match never fires → pin stays LOW the whole period
+	 *   - MR == 0      → match fires at TC=0 → pin stays HIGH (approx) the whole period
+	 */
 	if (flags & PWM_POLARITY_INVERTED) {
+		if (pulse_cycles == period_cycles) {
+			/* always active(LOW): keep pin LOW the entire period */
+			pulse_cycles = period_cycles + 1;
+		}
+		/* else: pulse_cycles passes through unchanged as MR[pulse] */
+	} else {
 		if (pulse_cycles == 0) {
-			/* make pulse cycles greater than period so event never occurs */
+			/* always inactive(LOW): keep pin LOW the entire period */
 			pulse_cycles = period_cycles + 1;
 		} else {
 			pulse_cycles = period_cycles - pulse_cycles;
