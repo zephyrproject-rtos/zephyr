@@ -49,7 +49,7 @@ core with:
 If you prefer to only build the application core image, you can do so by doing instead:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/bluetooth/bap_unicast_server/
+   :zephyr-app: samples/bluetooth/bap_unicast_client/
    :board: nrf5340dk/nrf5340/cpuapp
    :goals: build
 
