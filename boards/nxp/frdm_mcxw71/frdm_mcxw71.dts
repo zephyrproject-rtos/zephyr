@@ -191,12 +191,7 @@ arduino_i2c: &lpi2c1 {};
 		};
 
 		storage_partition: partition@e4000 {
-			reg = <0xe4000 DT_SIZE_K(104)>;
-		};
-
-		hw_params_partition: partition@fe000 {
-			label = "hw-parameters";
-			reg = <0xfe000 DT_SIZE_K(8)>;
+			reg = <0xe4000 DT_SIZE_K(112)>;
 		};
 	};
 };

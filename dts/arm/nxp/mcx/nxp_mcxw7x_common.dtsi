@@ -85,6 +85,15 @@
 				write-block-size = <16>;
 				erase-block-size = <DT_SIZE_K(8)>;
 				reg = <0x2000000 DT_SIZE_K(32)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* nvmem-layout: hw_params uses sector 1 (User Sector) */
+				ieee802154_eui64_ifr0: ieee802154-eui64@2002000 {
+					reg = <0x2002000 0x8>;
+					#nvmem-cell-cells = <0>;
+					status = "disabled";
+				};
 			};
 		};
 
@@ -133,6 +142,12 @@
 
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
+	};
+
+	hw_params: hw-params {
+		compatible = "nxp,mcxw-hw-params";
+		nvmem-cells = <&ieee802154_eui64_ifr0>;
+		nvmem-cell-names = "ieee802154_eui64";
 	};
 };
 
