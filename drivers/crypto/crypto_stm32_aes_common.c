@@ -10,6 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/crypto/crypto.h>
+#include <zephyr/crypto/crypto_xaes_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
@@ -27,6 +28,16 @@ LOG_MODULE_REGISTER(crypto_stm32_aes_common);
 
 #if defined(CRYP_KEYSIZE_192B)
 #define STM32_CRYPTO_KEYSIZE_192B_SUPPORT
+#endif
+
+#if defined(CONFIG_SOC_SERIES_STM32H5X) || defined(CONFIG_SOC_SERIES_STM32H7RSX)         \
+	|| defined(CONFIG_SOC_SERIES_STM32MP13X) || defined(CONFIG_SOC_SERIES_STM32MP2X) \
+	|| defined(CONFIG_SOC_SERIES_STM32N6X) || defined(CONFIG_SOC_SERIES_STM32U3X)	 \
+	|| defined(CONFIG_SOC_SERIES_STM32U5X) || defined(CONFIG_SOC_SERIES_STM32WBAX)
+/* The key selection field is available only on the following series:
+ * STM32H5, STM32H7RS, STM32MP13, STM32MP2, STM32N6, STM32U3, STM32U5 and STM32WBAX.
+ */
+#define STM32_CRYPTO_HAS_KEYSEL
 #endif
 
 typedef HAL_StatusTypeDef status_t;
@@ -303,11 +314,32 @@ int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 {
 	int ret;
 	struct crypto_stm32_data *data = CRYPTO_STM32_DATA(dev);
+	bool raw_key = true;
 
 	if (ctx->flags & ~(crypto_query_hwcaps(dev))) {
 		LOG_ERR("Unsupported flag");
 		return -ENOTSUP;
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
+	if ((ctx->flags & CAP_RAW_KEY) && (ctx->flags & CAP_OPAQUE_KEY_HNDL)) {
+		LOG_ERR("Unsupported key type combination");
+		return -ENOTSUP;
+	}
+
+	raw_key = (ctx->flags & CAP_RAW_KEY) != 0U;
+
+	if (raw_key && (ctx->key.bit_stream == NULL)) {
+		LOG_ERR("Invalid key buffer");
+		return -EINVAL;
+	}
+
+	if (!raw_key && (ctx->key.handle == NULL)) {
+		LOG_ERR("Invalid key handle");
+		return -EINVAL;
+	}
+
+#endif /* st_stm32_saes */
 
 	if (algo != CRYPTO_CIPHER_ALGO_AES) {
 		LOG_ERR("Unsupported algo");
@@ -414,14 +446,90 @@ int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 		}
 	}
 
-	ret = copy_words_adjust_endianness((uint8_t *)session->key, CRYPTO_STM32_AES_MAX_KEY_LEN,
-				 ctx->key.bit_stream, ctx->keylen);
-	if (ret != 0) {
-		crypto_stm32_session_release(session);
-		return -EIO;
-	}
+	if (raw_key) {
+		/* Key is provided as raw bytes by the application through the crypto context. */
+		ret = copy_words_adjust_endianness((uint8_t *)session->key,
+						   CRYPTO_STM32_AES_MAX_KEY_LEN,
+						   ctx->key.bit_stream, ctx->keylen);
+		if (ret != 0) {
+			return -EIO;
+		}
 
-	session->config.pKey = CAST_VEC(session->key);
+		session->config.pKey = CAST_VEC(session->key);
+#if defined(STM32_CRYPTO_HAS_KEYSEL)
+		session->config.KeySelect = CRYP_KEYSEL_NORMAL;
+#endif /* STM32_CRYPTO_HAS_KEYSEL */
+	}
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
+	else {
+		/* Key is provided through opaque handle, i.e. from their ID passed to
+		 * the SAES co-processor, which will load their actual content from the
+		 * hardware, directly in its key registers which are not readable.
+		 * Thus, the actual key value is not available to the CPU, nor the driver.
+		 *
+		 * The keys available through SAES as opaque key are DHUK, BHK and XORK.
+		 */
+		uint32_t key_desc = 0;
+
+		memcpy(&key_desc, ctx->key.handle, sizeof(key_desc));
+
+		/* Setting the key selection based on the key descriptor given
+		 * through the configuration.
+		 */
+		switch (crypto_stm32_xaes_key_selection(key_desc)) {
+		case STM32_xAES_KEY_SELECTION_RAW: /* Software key, loaded in key registers */
+			/* This case should not happen as the RAW key selection is meant to
+			 * be specified by the cipher context flags (CAP_RAW_KEY) and the key
+			 * value should be provided through the raw bit_stream buffer.
+			 * The opaque key handle is meant to be used only with hardware keys
+			 * managed by the SAES engine.
+			 */
+			LOG_ERR("Invalid key configuration in SAES key handle");
+			return -EINVAL;
+		case STM32_xAES_KEY_SELECTION_DHUK: /* DHUK from SAES */
+			session->config.KeySelect = CRYP_KEYSEL_HW;
+			break;
+		case STM32_xAES_KEY_SELECTION_BHK: /* BHK from SAES */
+			session->config.KeySelect = CRYP_KEYSEL_SW;
+			break;
+		case STM32_xAES_KEY_SELECTION_XORK: /* XORK from SAES */
+			session->config.KeySelect = CRYP_KEYSEL_HSW;
+			break;
+		case STM32_xAES_KEY_SELECTION_TEST: /* HW constant 256-bit key 0xA5...A5 */
+			LOG_ERR("Unsupported key selection");
+			return -ENOTSUP;
+		default:
+			LOG_ERR("Invalid key selection");
+			return -EINVAL;
+		}
+
+		/* Setting the key mode based on the key descriptor given
+		 * through the configuration.
+		 */
+		switch (crypto_stm32_xaes_key_mode(key_desc)) {
+		case STM32_xAES_KEY_MODE_NORMAL: /* Normal key */
+			session->config.KeyMode = 0;
+			break;
+		case STM32_xAES_KEY_MODE_WRAPPED: /* Wrapped key from SAES */
+			session->config.KeyMode = AES_CR_KMOD_0;
+			break;
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
+		case STM32_xAES_KEY_MODE_SHARED: /* Shared key with AES engine from SAES */
+			session->config.KeyMode = AES_CR_KMOD_1;
+			LOG_ERR("Shared key mode is not implemented yet, "
+				"key will be used as normal key");
+
+			return -ENOTSUP;
+#endif /* st_stm32_aes */
+		default:
+			LOG_ERR("Invalid key mode");
+			return -EINVAL;
+		}
+
+		session->config.pKey = NULL;
+	}
+#endif /* st_stm32_saes */
+
 	session->config.DataType = CRYP_DATATYPE_8B;
 
 #if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32l4_aes)
