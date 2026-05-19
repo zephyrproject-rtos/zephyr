@@ -480,6 +480,7 @@ New APIs and options
 
     * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LTK`
     * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LK`
+    * :c:func:`bt_sdp_unregister_service`
 
   * Host
 
