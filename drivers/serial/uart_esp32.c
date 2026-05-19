@@ -49,6 +49,7 @@
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
+#include <zephyr/cache.h>
 #include <hal/uhci_ll.h>
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 #define UHCI0 UHCI
@@ -698,6 +699,9 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	}
 
 	/* Notify RX_RDY */
+	sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
+					    data->async.rx_counter - data->async.rx_offset);
+
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
 	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
@@ -931,6 +935,8 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	dma_cfg.head_block = &dma_blk;
 	dma_blk.block_size = len;
 	dma_blk.source_address = (uint32_t)buf;
+
+	sys_cache_data_flush_range((void *)buf, len);
 
 	err = dma_config(config->dma_dev, config->tx_dma_channel, &dma_cfg);
 	if (err) {
