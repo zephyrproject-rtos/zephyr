@@ -59,6 +59,9 @@ static inline const char *llext_symbol_name(const struct llext_loader *ldr,
 					    const elf_sym_t *sym)
 {
 	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
+		if (sym->st_shndx >= ext->sect_cnt) {
+			return NULL;
+		}
 		return llext_section_name(ldr, ext, ext->sect_hdrs + sym->st_shndx);
 	} else {
 		return llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym->st_name);
