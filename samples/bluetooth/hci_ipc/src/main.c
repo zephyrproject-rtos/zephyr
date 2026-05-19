@@ -296,6 +296,7 @@ void bt_ctlr_assert_handle(char *file, uint32_t line)
 		LOG_ERR("IPC endpoint is not ready yet: %s at %d", __FILE__, __LINE__);
 	}
 
+	LOG_ERR("Controller assert in: %s at %d", file, line);
 	LOG_ERR("Halting system");
 
 #else /* !CONFIG_BT_HCI_VS_FATAL_ERROR */
