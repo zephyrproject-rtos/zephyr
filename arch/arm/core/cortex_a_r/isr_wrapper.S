@@ -274,7 +274,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	cmp r0, #1
 	bhi 1f
 	mov r0, sp
-	cps #MODE_IRQ
+	change_processor_state #MODE_IRQ, r1
 	push {r0}
 1:
 #ifdef CONFIG_TRACING_ISR
@@ -346,9 +346,9 @@ oob:
 	/*
 	 * Enable and disable interrupts again to allow nested in exception handlers.
 	 */
-	cpsie i
+	z_arm_cpsie_i
 	blx r3		/* call ISR */
-	cpsid i
+	z_arm_cpsid_i
 
 spurious_continue:
 	/* Signal end-of-interrupt */
@@ -385,7 +385,7 @@ z_arm_cortex_ar_irq_done:
 
 	/* retrieve pointer to the current thread */
 	pop {r0}
-	cps #MODE_SYS
+	change_processor_state #MODE_SYS, r1
 	mov sp, r0
 
 	ldr r1, [r2, #___cpu_t_current_OFFSET]
