@@ -1285,7 +1285,7 @@ static void s_http_start(void *o)
 
 	s->hb_context.response_data_size = RESPONSE_BUFFER_SIZE;
 
-	s->hb_context.response_data = k_calloc(s->hb_context.response_data_size, sizeof(uint8_t));
+	s->hb_context.response_data = k_malloc(s->hb_context.response_data_size);
 	if (s->hb_context.response_data == NULL) {
 		cleanup_connection(&s->hb_context.sock);
 		s->hb_context.code_status = HAWKBIT_ALLOC_ERROR;
