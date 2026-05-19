@@ -327,14 +327,22 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		 * regions.
 		 */
 		if (ldr_parm->section_detached && ldr_parm->section_detached(shdr)) {
+			void *detached_sect_ptr = llext_peek(ldr, shdr->sh_offset);
+
+			if (detached_sect_ptr == NULL) {
+				LOG_ERR("Peek of detached text section %s at ELF offset %p "
+					"unsupported or out of bounds",
+					name, (void *)shdr->sh_offset);
+				return -ENOTSUP;
+			}
+
 			if (mem_idx == LLEXT_MEM_TEXT &&
-			    !INSTR_FETCHABLE(llext_peek(ldr, shdr->sh_offset), shdr->sh_size)) {
+			    !INSTR_FETCHABLE(detached_sect_ptr, shdr->sh_size)) {
 #ifdef CONFIG_ARC
 				LOG_ERR("ELF buffer's detached text section %s not in instruction "
 					"memory: %p-%p",
-					name, (void *)(llext_peek(ldr, shdr->sh_offset)),
-					(void *)((char *)llext_peek(ldr, shdr->sh_offset) +
-						 shdr->sh_size));
+					name, detached_sect_ptr,
+					(void *)((char *)detached_sect_ptr + shdr->sh_size));
 				return -ENOEXEC;
 #else
 				LOG_WRN("Unknown if ELF buffer's detached text section %s is in "
