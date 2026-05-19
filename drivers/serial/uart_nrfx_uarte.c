@@ -3340,6 +3340,31 @@ static int uarte_instance_deinit(const struct device *dev)
 		)							       \
 	)
 
+/* If UARTE instance is using GPPI during the initialization and GPPI is using
+ * Ironside then that instance needs to be initialized once Ironside and GPPI is
+ * ready. GPPI is initialized with Ironside priority +1 so UARTE instance
+ * is initialized just after that.
+ *
+ * Macro determines if delayed initialization needs to be applied.
+ */
+#define UARTE_INIT_AFTER_GPPI(idx)					       \
+	COND_CODE_1(UTIL_AND(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER,   \
+			     UARTE_HAS_PROP(idx, timer)),		       \
+		    (UTIL_AND(IS_ENABLED(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL),      \
+			      IS_ENABLED(CONFIG_IRONSIDE_SE_CALL))), (0))
+
+/* Init phase is delayed to POST_KERNEL if it relies on Ironside+GPPI being ready. */
+#define UARTE_INIT_PHASE(idx)						       \
+	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx), (POST_KERNEL), (PRE_KERNEL_1))
+
+/* If delayed initialization is used then init priority is derived from Ironside
+ * communication initialization priority.
+ */
+#define UARTE_INIT_PRIO(idx)						       \
+	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx),				       \
+		   (UTIL_INC(UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY))),\
+		   (CONFIG_SERIAL_INIT_PRIORITY))
+
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	NRF_DT_CHECK_NODE_HAS_PINCTRL_SLEEP(UARTE(idx));		       \
 	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(UARTE(idx));	       \
@@ -3422,8 +3447,8 @@ static int uarte_instance_deinit(const struct device *dev)
 		      PM_DEVICE_DT_GET(UARTE(idx)),			       \
 		      &uarte_##idx##_data,				       \
 		      &uarte_##idx##z_config,				       \
-		      PRE_KERNEL_1,					       \
-		      CONFIG_SERIAL_INIT_PRIORITY,			       \
+		      UARTE_INIT_PHASE(idx),				       \
+		      UARTE_INIT_PRIO(idx),				       \
 		      &uart_nrfx_uarte_driver_api)
 
 #define UARTE_INT_DRIVEN(idx)						       \
