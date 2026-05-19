@@ -1017,7 +1017,9 @@ exit:
 int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 {
 	struct net_linkaddr_storage *lladdr;
+	struct net_if *orig_iface;
 	struct net_nbr *nbr;
+	bool forwarding;
 	int err;
 
 	net_ipv6_nbr_lock();
@@ -1072,7 +1074,24 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	}
 #endif
 
-	net_pkt_set_forwarding(pkt, true);
+	orig_iface = net_pkt_orig_iface(pkt);
+	forwarding = net_pkt_forwarding(pkt);
+
+	if (orig_iface != NULL) {
+		forwarding = IS_ENABLED(CONFIG_NET_ROUTING) &&
+			     orig_iface != nbr->iface;
+		net_pkt_set_forwarding(pkt, forwarding);
+	}
+
+	if (forwarding) {
+		if (NET_IPV6_HDR(pkt)->hop_limit <= 1U) {
+			err = -ETIMEDOUT;
+			goto error;
+		}
+
+		NET_IPV6_HDR(pkt)->hop_limit--;
+		net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
+	}
 
 	/* Set the destination and source ll address in the packet.
 	 * We set the destination address to be the nexthop recipient.
@@ -1097,6 +1116,8 @@ error:
 
 int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 {
+	bool forwarding = false;
+
 	/* The destination is reachable via iface. But since no valid nexthop
 	 * is known, net_pkt_lladdr_dst(pkt) cannot be set here.
 	 */
@@ -1104,7 +1125,11 @@ int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 	net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
 	net_pkt_set_iface(pkt, iface);
 
-	net_pkt_set_forwarding(pkt, true);
+	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+		forwarding = net_pkt_orig_iface(pkt) != iface;
+	}
+
+	net_pkt_set_forwarding(pkt, forwarding);
 
 	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
 	net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
