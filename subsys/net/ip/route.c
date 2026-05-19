@@ -581,9 +581,19 @@ bool net_route_ll_addr_supported(struct net_if *iface)
 
 int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 {
+	bool forwarding = false;
+
 	net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
 	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_forwarding(pkt, true);
+
+	if ((IS_ENABLED(CONFIG_NET_IPV4_FORWARDING) &&
+	     net_pkt_family(pkt) == NET_PF_INET) ||
+	    (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
+	     net_pkt_family(pkt) == NET_PF_INET6)) {
+		forwarding = net_pkt_orig_iface(pkt) != iface;
+	}
+
+	net_pkt_set_forwarding(pkt, forwarding);
 
 	if (net_route_ll_addr_supported(iface)) {
 		memcpy(net_pkt_lladdr_src(pkt)->addr,

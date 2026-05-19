@@ -254,6 +254,7 @@ int net_route_ipv6_mcast_forward_packet(struct net_pkt *pkt,
 	int err = 0;
 
 	hdr->hop_limit--;
+	net_pkt_set_ipv6_hop_limit(pkt, hdr->hop_limit);
 
 	ARRAY_FOR_EACH_PTR(route_mcast_entries, route) {
 		struct net_pkt *pkt_cpy = NULL;
@@ -452,8 +453,10 @@ bool net_route_ipv6_get_info(struct net_if *iface,
 int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nexthop)
 {
 	struct net_linkaddr *lladdr = NULL;
+	struct net_if *orig_iface;
 	struct net_if *out_iface;
 	struct net_nbr *nbr;
+	bool forwarding;
 
 	if (pkt == NULL || nexthop == NULL || net_pkt_iface(pkt) == NULL) {
 		return -EINVAL;
@@ -470,6 +473,15 @@ int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nextho
 		}
 	} else {
 		out_iface = nbr->iface;
+	}
+
+	orig_iface = net_pkt_orig_iface(pkt);
+	forwarding = net_pkt_forwarding(pkt);
+
+	if (orig_iface != NULL) {
+		forwarding = IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
+			     orig_iface != out_iface;
+		net_pkt_set_forwarding(pkt, forwarding);
 	}
 
 	if (nbr != NULL &&
@@ -495,7 +507,15 @@ int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nextho
 		}
 	}
 
-	net_pkt_set_forwarding(pkt, true);
+	if (forwarding) {
+		if (NET_IPV6_HDR(pkt)->hop_limit <= 1U) {
+			return -ETIMEDOUT;
+		}
+
+		NET_IPV6_HDR(pkt)->hop_limit--;
+		net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
+	}
+
 	net_pkt_set_iface(pkt, out_iface);
 
 	if (net_route_ll_addr_supported(net_pkt_iface(pkt))) {
