@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,6 +88,16 @@ void soc_early_init_hook(void)
 
 	/* Initializes the system */
 	SystemInit();
+
+	/* Hibernate and DeepSleep-OFF freeze all IO cells and hold them frozen
+	 * across the wake-up cold reset until firmware releases them.
+	 */
+	if (Cy_SysPm_IoIsFrozen()) {
+		Cy_SysPm_IoUnfreeze();
+	}
+	if (Cy_SysPm_DeepSleepIoIsFrozen()) {
+		Cy_SysPm_DeepSleepIoUnfreeze();
+	}
 }
 
 void soc_late_init_hook(void)
