@@ -72,7 +72,6 @@ struct bt_sdp {
 };
 
 static sys_slist_t sdp_db = SYS_SLIST_STATIC_INIT(&sdp_db);
-static uint8_t num_services;
 
 static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 
@@ -1518,15 +1517,13 @@ static uint16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf, 
 		if (state.pkt_full && !dry_run) {
 			LOG_DBG("Packet full, state.last_att %u", state.last_att);
 
-			if (state.current_svc < num_services) {
-				dry_run = true;
+			dry_run = true;
 
-				/* Add continuation state */
-				net_buf_add_u8(rsp_buf, SDP_SSA_CONT_STATE_SIZE);
-				net_buf_add_u8(rsp_buf, state.current_svc);
-				net_buf_add_u8(rsp_buf, state.last_att);
-				net_buf_add_be32(rsp_buf, state.last_att_index);
-			}
+			/* Add continuation state */
+			net_buf_add_u8(rsp_buf, SDP_SSA_CONT_STATE_SIZE);
+			net_buf_add_u8(rsp_buf, state.current_svc);
+			net_buf_add_u8(rsp_buf, state.last_att);
+			net_buf_add_be32(rsp_buf, state.last_att_index);
 
 			/* Break if it's not a partial response, else dry-run
 			 * Dry run: Look for other services that match
@@ -1732,8 +1729,6 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	*((uint32_t *)(service->attrs[0].val.data)) = service->handle;
 
 	sys_slist_append(&sdp_db, &service->node);
-
-	num_services++;
 
 	LOG_DBG("Service registered at %u", service->handle);
 
