@@ -75,6 +75,11 @@ static int crypto_stm32_saes_session_setup(const struct device *dev, struct ciph
 	/* Here, the session may be linked (so marked as in_use) or not to the
 	 * cipher context depending on the status of crypto_stm32_session_setup.
 	 */
+	if (ret != 0) {
+		/* Release the session, since not in use but in error */
+		LOG_DBG("Session setup failed, release session");
+		session->in_use = false;
+	}
 
 	return ret;
 }
