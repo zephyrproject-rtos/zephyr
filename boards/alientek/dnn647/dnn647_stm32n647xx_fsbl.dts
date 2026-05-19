@@ -9,9 +9,13 @@
 
 / {
 	model = "Alientek DNN647 board";
-	compatible = "alientek,dnn647";
+	compatible = "alientek,dnn647-fsbl";
 
-	chosen {
-		zephyr,sram = &axisram1;
+	aliases {
+		mcuboot-button0 = &wk_up;
 	};
+};
+
+&xspim {
+	status = "okay";
 };

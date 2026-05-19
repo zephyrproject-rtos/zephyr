@@ -17,6 +17,8 @@ CONFIG_ARM_MPU=y
 # Enable HW stack protection
 CONFIG_HW_STACK_PROTECTION=y
 
+# No internal Flash — FSBL runs from SRAM
+CONFIG_XIP=n
+
 # HAL needs TRUSTED_EXECUTION_SECURE explicitly enabled
 CONFIG_TRUSTED_EXECUTION_SECURE=y
-
