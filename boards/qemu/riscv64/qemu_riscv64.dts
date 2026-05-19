@@ -5,6 +5,8 @@
 
 #include <qemu/virt-riscv64.dtsi>
 
+#include <qemu/virt-riscv-virtio-net.dtsi>
+
 / {
 	chosen {
 		zephyr,console = &uart0;
