@@ -1107,6 +1107,16 @@
 			};
 		};
 
+		gpu2d: gpu@52014000 {
+			compatible = "st,neochrom-gpu2d";
+			reg = <0x52014000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 20)>;
+			interrupts = <149 0>, <150 0>;
+			interrupt-names = "gpu2d", "gpu2d_er";
+			resets = <&rctl STM32_RESET(AHB5, 20)>;
+			status = "disabled";
+		};
+
 		crc: crc@58024c00 {
 			compatible = "st,stm32-crc";
 			reg = <0x58024c00 0x400>;
