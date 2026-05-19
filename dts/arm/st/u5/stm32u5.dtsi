@@ -1055,6 +1055,16 @@
 			resets = <&rctl STM32_RESET(AHB1, 12)>;
 			status = "disabled";
 		};
+
+		gpu2d: gpu@4002f000 {
+			compatible = "st,neochrom-gpu2d";
+			reg = <0x4002f000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 20)>;
+			interrupts = <132 0>, <133 0>;
+			interrupt-names = "gpu2d", "gpu2d_er";
+			resets = <&rctl STM32_RESET(AHB1, 20)>;
+			status = "disabled";
+		};
 	};
 
 	swj_port: swj_port {
