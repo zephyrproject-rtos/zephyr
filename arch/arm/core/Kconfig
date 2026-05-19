@@ -375,7 +375,6 @@ config FP16_ARITHMETIC
 	  native f16 arithmetic capability, such as Cortex-M processors
 	  with MVE float or Cortex-A processors with NEON.
 
-rsource "arm9/Kconfig"
 rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
 
