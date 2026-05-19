@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <Cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "adi,tmc522x-stepper-ctrl"
+
+include:
+  - name: adi,trinamic-ramp-generator.yaml
+    property-allowlist:
+      - vstart
+      - a1
+      - v1
+      - amax
+      - vmax
+      - dmax
+      - d1
+      - vstop
+      - a2
+      - v2
+      - d2
+
+properties:
+  idx:
+    type: int
+    required: true
+    description: |
+      Motor index (0-based). For TMC522x with single motor, use 0.
