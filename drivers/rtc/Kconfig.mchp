@@ -1,5 +1,5 @@
-#Copyright (c) 2025 Microchip Technology Inc.
-#SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
 
 config RTC_MCHP_G1
 	bool "Microchip RTC G1 driver"
@@ -22,3 +22,10 @@ config RTC_MCHP_MSS
 	depends on DT_HAS_MICROCHIP_RTC_MSS_ENABLED
 	help
 	  Enable RTC driver for Microchip MSS.
+
+config RTC_MCHP_SUPPORTS_DUAL_ALARM
+	bool
+	default y
+	depends on RTC_MCHP_G1 && !SOC_FAMILY_MICROCHIP_PIC32CM_JH
+	help
+	  RTC supports two alarms. PIC32CM JH only supports one alarm.
