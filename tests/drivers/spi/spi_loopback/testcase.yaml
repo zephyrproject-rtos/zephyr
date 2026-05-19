@@ -399,10 +399,13 @@ tests:
     extra_configs:
       - CONFIG_SPI_SILABS_EUSART_DMA=y
       - CONFIG_SPI_ASYNC=n
-  drivers.spi.silabs_siwx91x.loopback:
-    filter: CONFIG_SOC_FAMILY_SILABS_SIWX91X
+  drivers.spi.loopback.siwx91x_udma:
     platform_allow:
+      - siwx917_dk2605a
       - siwx917_rb4338a
+      - siwx917_rb4342a
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="overlay-siwx917-udma.overlay"
   drivers.spi.cc23x0.loopback.dma.no_async:
     filter: CONFIG_SOC_FAMILY_TI_SIMPLELINK
     platform_allow:
