@@ -11,6 +11,7 @@ description: |
 
   Group g1 RTC driver supports following hardware peripherals:
     - module name="RTC" id="U2250" version="2.1.0"
+    - module name="RTC" id="03608" version="3a1"
 
 examples:
   - |
