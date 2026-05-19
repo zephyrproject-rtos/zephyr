@@ -135,12 +135,7 @@
 		};
 
 		storage_partition: partition@1fa000 {
-			reg = <0x1fa000 DT_SIZE_K(16)>;
-		};
-
-		hw_params_partition: partition@1fe000 {
-			label = "hw-parameters";
-			reg = <0x1fe000 DT_SIZE_K(8)>;
+			reg = <0x1fa000 DT_SIZE_K(24)>;
 		};
 	};
 };
