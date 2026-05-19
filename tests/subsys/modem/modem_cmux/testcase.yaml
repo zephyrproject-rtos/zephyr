@@ -1,11 +1,15 @@
 # Copyright (c) 2023 Trackunit Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+common:
+  tags: modem_cmux
+  harness: ztest
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
 tests:
-  modem.modem_cmux:
-    tags: modem_cmux
-    harness: ztest
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
+  modem.modem_cmux: {}
+  modem.modem_cmux.double_transmit:
+    extra_configs:
+      - CONFIG_TEST_MODEM_MOCK_BACKEND_DOUBLE_TRANSMIT=y

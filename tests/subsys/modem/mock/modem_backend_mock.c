@@ -47,6 +47,60 @@ static bool modem_backend_mock_update(struct modem_backend_mock *mock, const uin
 	return false;
 }
 
+#ifdef CONFIG_TEST_MODEM_MOCK_BACKEND_DOUBLE_TRANSMIT
+
+static int modem_backend_mock_transmit_double(void *data, const uint8_t *buf, size_t size,
+					      const uint8_t *extra_buf, size_t extra_size)
+{
+	struct modem_backend_mock *mock = (struct modem_backend_mock *)data;
+	int ret;
+
+	if ((size + extra_size) > mock->limit) {
+		if (size > mock->limit) {
+			size = mock->limit;
+			extra_size = 0;
+		} else {
+			extra_size = mock->limit - size;
+		}
+	}
+
+	if (mock->bridge) {
+		struct modem_backend_mock *t_mock = mock->bridge;
+
+		ret = ring_buf_put(&t_mock->rx_rb, buf, size);
+		if (extra_size > 0) {
+			ret += ring_buf_put(&t_mock->rx_rb, extra_buf, extra_size);
+		}
+		k_work_submit(&t_mock->receive_ready_work);
+		k_work_submit(&mock->transmit_idle_work);
+		return ret;
+	}
+
+	k_work_submit(&mock->transmit_idle_work);
+
+	if (modem_backend_mock_update(mock, buf, size)) {
+		/* Skip ringbuffer if transaction consumes bytes */
+		ret = size;
+		modem_backend_mock_put(mock, mock->transaction->put,
+				       mock->transaction->put_size);
+
+		modem_backend_mock_prime(mock, mock->transaction->next);
+	} else {
+		ret = ring_buf_put(&mock->tx_rb, buf, size);
+	}
+	if (modem_backend_mock_update(mock, extra_buf, extra_size)) {
+		ret += extra_size;
+		modem_backend_mock_put(mock, mock->transaction->put,
+				       mock->transaction->put_size);
+
+		modem_backend_mock_prime(mock, mock->transaction->next);
+	}
+
+	return ret;
+}
+
+#else
+
 static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t size)
 {
 	struct modem_backend_mock *mock = (struct modem_backend_mock *)data;
@@ -79,6 +133,8 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 	return ret;
 }
 
+#endif
+
 static int modem_backend_mock_receive(void *data, uint8_t *buf, size_t size)
 {
 	struct modem_backend_mock *mock = (struct modem_backend_mock *)data;
@@ -97,7 +153,11 @@ static int modem_backend_mock_close(void *data)
 
 struct modem_pipe_api modem_backend_mock_api = {
 	.open = modem_backend_mock_open,
+#ifdef CONFIG_TEST_MODEM_MOCK_BACKEND_DOUBLE_TRANSMIT
+	.transmit_double = modem_backend_mock_transmit_double,
+#else
 	.transmit = modem_backend_mock_transmit,
+#endif
 	.receive = modem_backend_mock_receive,
 	.close = modem_backend_mock_close,
 };
