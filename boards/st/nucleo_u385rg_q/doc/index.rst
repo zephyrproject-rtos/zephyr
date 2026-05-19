@@ -186,7 +186,8 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - DAC1_OUT1 : PA4
-- I2C1 SCL/SDA : PB6/PB7 (Arduino I2C)
+- I2C1 SCL/SDA : PB6/PB7 (Arduino I2C for board revision D, see board revisions)
+- I2C2 SCL/SDA : PB13/PB14 (Arduino I2C for board revision E, see board revisions)
 - FDCAN1_TX : PA12
 - FDCAN1_RX : PA11
 - LD4 : PA5
@@ -281,7 +282,7 @@ You should see the following message on the console:
 Debugging
 =========
 
-Default debugger for this board is OpenOCD. It can be used in the usual way.
+You can debug an application in the usual way.
 Here is an example for the :zephyr:code-sample:`blinky` application.
 
 .. zephyr-app-commands::
@@ -292,6 +293,29 @@ Here is an example for the :zephyr:code-sample:`blinky` application.
 Note: Check the ``build/tfm`` directory to ensure that the commands required by these scripts
 (``readlink``, etc.) are available on your system. Please also check ``STM32_Programmer_CLI``
 (which is used for initialization) is available in the PATH.
+
+Board Revisions
+***************
+
+`STM32U385RG board user manual`_ mentions two board revisions:
+
+- MB1841 D: Arduino pins D14/D15 mapped to PB7/PB6 (I2C1/I2C4)
+- MB1841 E: Arduino pins D14/D15 configurable via solder bridges SB42/SB43/SB44/SB45
+  - By default mapped to PB14/PB13 (I2C2/I3C2)
+  - Alternatively mapped to PB7/PB6 (I2C1/I2C4)
+
+By default the board revision D is used. Here is an example for building and flashing
+:zephyr:code-sample:`blinky` application on board revision E:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nucleo_u385rg_q@E
+   :goals: build flash
+
+References
+**********
+
+.. target-notes::
 
 .. _NUCLEO_U385RG website:
   https://www.st.com/en/evaluation-tools/nucleo-u385rg.html
