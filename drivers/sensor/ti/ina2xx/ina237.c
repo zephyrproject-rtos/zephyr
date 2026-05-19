@@ -243,6 +243,12 @@ static int ina237_sample_fetch(const struct device *dev, enum sensor_channel cha
 			    ina2xx_reg_read_16(&common->bus, INA237_REG_ALERT, &diag_alrt) == 0 &&
 			    (diag_alrt & INA237_DIAG_ALRT_CNVRF),
 			    5 * USEC_PER_SEC, k_sleep(K_MSEC(1)))) {
+			ret = ina2xx_reg_read_16(&common->bus, INA237_REG_ALERT, &diag_alrt);
+			if (ret < 0) {
+				LOG_ERR("INA237: failed to read conversion status after timeout: %d", ret);
+				return ret;
+			}
+
 			LOG_ERR("INA237: conversion ready timeout");
 			return -ETIMEDOUT;
 		}
