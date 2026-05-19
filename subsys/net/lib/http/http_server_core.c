@@ -190,6 +190,7 @@ static int setup_h1_h2_socket(const struct http_service_desc *svc, int af,
 	return fd;
 }
 
+#if defined(CONFIG_HTTP_SERVER_VERSION_3)
 static int setup_h3_socket(const struct http_service_desc *svc, int af,
 			   struct net_sockaddr *addr, net_socklen_t len)
 {
@@ -246,6 +247,13 @@ static int setup_h3_socket(const struct http_service_desc *svc, int af,
 out:
 	return ret;
 }
+#else /* CONFIG_HTTP_SERVER_VERSION_3 */
+static int setup_h3_socket(const struct http_service_desc *svc, int af,
+			   struct net_sockaddr *addr, net_socklen_t len)
+{
+	return -ENOTSUP;
+}
+#endif /* CONFIG_HTTP_SERVER_VERSION_3 */
 
 int http_server_init(struct http_server_ctx *ctx)
 {
@@ -1051,6 +1059,7 @@ static void handle_listen_pollin(struct http_server_ctx *ctx, int i)
 	}
 
 	if (is_h3_conn) {
+#if defined(CONFIG_HTTP_SERVER_VERSION_3)
 		if (ctx->fds[i].fd != *service->fd_h3) {
 			return;
 		}
@@ -1064,6 +1073,9 @@ static void handle_listen_pollin(struct http_server_ctx *ctx, int i)
 		}
 
 		LOG_DBG("New QUIC connection socket %d accepted", new_socket);
+#else  /* defined(CONFIG_HTTP_SERVER_VERSION_3) */
+		return;
+#endif /* defined(CONFIG_HTTP_SERVER_VERSION_3) */
 	} else {
 		new_socket = accept_new_client(ctx->fds[i].fd);
 		if (new_socket < 0) {
@@ -1092,6 +1104,7 @@ static void handle_listen_pollin(struct http_server_ctx *ctx, int i)
 		init_client_ctx(&ctx->clients[idx], service, new_socket);
 
 		if (is_h3_conn) {
+#if defined(CONFIG_HTTP_SERVER_VERSION_3)
 			int ret;
 
 			ctx->clients[idx].is_h3 = true;
@@ -1103,6 +1116,7 @@ static void handle_listen_pollin(struct http_server_ctx *ctx, int i)
 				LOG_DBG("H3: Failed to open uni streams (%d)", ret);
 				/* Non-fatal, continue without uni streams */
 			}
+#endif /* defined(CONFIG_HTTP_SERVER_VERSION_3) */
 		}
 
 		return;
