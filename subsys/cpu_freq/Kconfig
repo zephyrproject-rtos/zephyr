@@ -86,6 +86,20 @@ config CPU_FREQ_POLICY_PRESSURE
 	help
 	  Pressure based policy
 
+config CPU_FREQ_POLICY_ENERGY_AWARE
+	bool "Energy-aware Policy"
+	select CPU_WORKLOAD
+	select CPU_WORKLOAD_ESTIMATE
+	select POWER_ENERGY_MODEL
+	help
+	  Select a P-state by estimating the time needed to finish the next
+	  workload window at each available CPU frequency, rejecting P-states
+	  that cannot finish before the next policy deadline, and choosing the
+	  legal P-state with the lowest estimated active, transition and idle
+	  energy score.
+
+endchoice # CPU_FREQ_POLICY
+
 if CPU_FREQ_POLICY_PRESSURE
 
 config CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO
@@ -97,7 +111,17 @@ config CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO
 
 endif
 
-endchoice # CPU_FREQ_POLICY
+if CPU_FREQ_POLICY_ENERGY_AWARE
+
+config CPU_FREQ_POLICY_ENERGY_AWARE_DEADLINE_US
+	int "Fallback energy-aware policy deadline in microseconds"
+	default 0
+	help
+	  Fallback deadline used when PM has no earlier registered event. If set
+	  to 0, the policy uses CONFIG_CPU_FREQ_INTERVAL_MS as the fallback
+	  workload window.
+
+endif
 
 choice CPU_FREQ_PSTATE_SET
 	prompt "Select method of setting CPU P-state"

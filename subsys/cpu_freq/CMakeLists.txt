@@ -15,4 +15,5 @@ endif()
 
 zephyr_sources_ifdef(CONFIG_CPU_FREQ_POLICY_ON_DEMAND policies/on_demand/on_demand.c)
 zephyr_sources_ifdef(CONFIG_CPU_FREQ_POLICY_PRESSURE policies/pressure/pressure.c)
+zephyr_sources_ifdef(CONFIG_CPU_FREQ_POLICY_ENERGY_AWARE policies/energy_aware/energy_aware.c)
 zephyr_sources_ifdef(CONFIG_CPU_FREQ_PSTATE_SET_STUB cpu_freq_stub.c)
