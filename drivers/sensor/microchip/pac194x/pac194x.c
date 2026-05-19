@@ -76,6 +76,7 @@ static const struct pac194x_chip_info pac194x_chip_info_table[] = {
 struct pac194x_config {
 	struct i2c_dt_spec i2c;
 	uint32_t shunt_micro_ohms;
+	uint8_t refresh_mode;
 	struct pac194x_channel_config channels[4];
 };
 
@@ -703,6 +704,26 @@ static void pac194x_dump_config(const struct device *dev)
 	LOG_DBG("-------------------------------------------");
 }
 
+static void pac194x_configure_refresh(const struct device *dev)
+{
+	const struct pac194x_config *config = dev->config;
+	struct pac194x_data *data = dev->data;
+	int refresh_mode = config->refresh_mode;
+
+	switch (refresh_mode) {
+	case PAC_REFRESH_AUTO_NOWAIT:
+		data->refresh_mode = PAC194X_SENSOR_ATTR_REFRESH_MODE_AUTO_NOWAIT;
+		break;
+	case PAC_REFRESH_AUTO_WAIT:
+		data->refresh_mode = PAC194X_SENSOR_ATTR_REFRESH_MODE_AUTO_NOWAIT;
+		break;
+	case PAC_REFRESH_MANUAL:
+	default:
+		data->refresh_mode = PAC194X_SENSOR_ATTR_REFRESH_MODE_AUTO_NOWAIT;
+		break;
+	}
+}
+
 static int pac194x_configure_channels(const struct device *dev)
 {
 	const struct pac194x_config *config = dev->config;
@@ -811,6 +832,8 @@ static int pac194x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	pac194x_configure_refresh(dev);
+
 	if (pac194x_configure_channels(dev)) {
 		LOG_ERR("failed to configure channels");
 		return -EINVAL;
@@ -836,6 +859,7 @@ static int pac194x_init(const struct device *dev)
 												\
 	static const struct pac194x_config pac194x_config_##inst = {				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),						\
+		.refresh_mode = DT_INST_PROP(inst, microchip_refresh_mode),			\
 		.channels = {									\
 			DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, PAC194X_SET_CHANNEL)		\
 		},										\
