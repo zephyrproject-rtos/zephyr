@@ -79,7 +79,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 		}
 
 		if (ret < 0) {
-			LOG_ERR("PLT: failed to read RELA #%u, trying to continue", i);
+			LOG_WRN("PLT: failed to read RELA #%u, trying to continue", i);
 			continue;
 		}
 
@@ -99,7 +99,7 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 		}
 
 		if (ret < 0) {
-			LOG_ERR("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
+			LOG_WRN("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
 				j, i);
 			continue;
 		}
@@ -129,11 +129,24 @@ static void llext_link_plt(struct llext_loader *ldr, struct llext *ext,
 		size_t got_offset;
 
 		if (tgt) {
+			if (rela.r_offset >= tgt->sh_size) {
+				LOG_WRN("PLT: r_offset %#zx out of target section "
+					"(size %#zx), skipping",
+					(size_t)rela.r_offset, (size_t)tgt->sh_size);
+				continue;
+			}
 			got_offset = rela.r_offset + tgt->sh_offset -
 				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 		} else {
-			got_offset = llext_file_offset(ldr, rela.r_offset) -
-				ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+			ssize_t offset = llext_file_offset(ldr, rela.r_offset);
+
+			if (offset < 0) {
+				LOG_WRN("Offset %#zx not found in ELF, trying to continue",
+					(size_t)rela.r_offset);
+				continue;
+			}
+
+			got_offset = offset - ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 		}
 
 		uint32_t stb = ELF_ST_BIND(sym_tbl.st_info);
