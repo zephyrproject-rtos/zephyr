@@ -287,11 +287,11 @@ static void test_msg_waitall_tx_work_handler(struct k_work *work)
 	struct test_msg_waitall_data *test_data =
 		CONTAINER_OF(dwork, struct test_msg_waitall_data, tx_work);
 
-	if (test_data->retries > 0) {
+	while (test_data->retries > 0) {
 		test_send(test_data->sock, test_data->data + test_data->offset, 1, 0);
 		test_data->offset++;
 		test_data->retries--;
-		test_work_reschedule(&test_data->tx_work, K_MSEC(10));
+		k_msleep(10);
 	}
 }
 
