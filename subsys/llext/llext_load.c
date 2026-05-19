@@ -497,6 +497,11 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) &&
 		    stb == STB_GLOBAL && shndx != SHN_UNDEF) {
+			if (shndx >= ldr->sect_cnt) {
+				LOG_ERR("Symbol %d has invalid section index %u", i, shndx);
+				return -ENOEXEC;
+			}
+
 			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
