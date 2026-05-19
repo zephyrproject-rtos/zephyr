@@ -92,6 +92,40 @@
 		};
 	};
 
+	pinmux_flexio_camera: pinmux_flexio_camera {
+		/* FlexIO inputs: D0-D7 (IO6-IO13), HREF (IO2), PCLK (IO15) + VSYNC GPIO input */
+		group0 {
+			pinmux = <FLEXIO_IO6_PIO2_6>,
+				 <FLEXIO_IO7_PIO2_7>,
+				 <FLEXIO_IO8_PIO2_8>,
+				 <FLEXIO_IO9_PIO2_9>,
+				 <FLEXIO_IO10_PIO2_10>,
+				 <FLEXIO_IO11_PIO2_11>,
+				 <FLEXIO_IO12_PIO2_12>,
+				 <FLEXIO_IO13_PIO2_13>,
+				 <FLEXIO_IO2_PIO2_2>,
+				 <FLEXIO_IO15_PIO2_15>,
+				 <GPIO2_GPIO5_PIO2_5>;
+			input-enable;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+
+		/* XCLK FlexIO output */
+		group1 {
+			pinmux = <FLEXIO_IO1_PIO2_1>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+
+		/* RESET GPIO output */
+		group2 {
+			pinmux = <GPIO2_GPIO0_PIO2_0>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+	};
+
 	pinmux_lpadc0: pinmux_lpadc0 {
 		group0 {
 			pinmux = <ADC0_CH0_PIO10_0>,
