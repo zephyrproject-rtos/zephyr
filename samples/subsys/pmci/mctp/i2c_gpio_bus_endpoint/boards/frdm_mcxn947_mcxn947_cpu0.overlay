@@ -1,6 +1,11 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
-/* Sets up I2C and a GPIO on JP8 to use as our i2c bus for MCTP */
+/* Sets up I2C and a GPIO on JP8 to use as our i2c bus for MCTP.
+ * SDA: J2.18
+ * SCL: J2.20
+ * GPIO: J8.8
+ * GND: J8.2
+ */
 
 &nxp_lcd_8080_connector {
 	status = "disabled";
