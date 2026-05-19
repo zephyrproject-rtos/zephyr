@@ -6,7 +6,44 @@
 #ifndef _MACRO_PRIV_INC_
 #define _MACRO_PRIV_INC_
 
+#ifndef CONFIG_ARMV5
 #include <zephyr/arch/arm/cortex_a_r/tpidruro.h>
+#endif
+
+.macro change_processor_state mode reg
+#ifdef CONFIG_ARMV5
+	mrs \reg, cpsr
+	bic \reg, \reg, #MODE_MASK
+	orr \reg, \reg, \mode
+	msr cpsr, \reg
+#else
+	cps \mode
+#endif
+.endm
+
+.macro z_arm_cpsid_i reg
+#ifdef CONFIG_ARMV5
+	push {\reg}
+	mrs \reg, cpsr
+	orr \reg, \reg, #I_BIT
+	msr cpsr, \reg
+	pop {\reg}
+#else
+	cpsid i
+#endif
+.endm
+
+.macro z_arm_cpsie_i reg
+#ifdef CONFIG_ARMV5
+	push {\reg}
+	mrs \reg, cpsr
+	bic \reg, \reg, #I_BIT
+	msr cpsr, \reg
+	pop {\reg}
+#else
+	cpsie i
+#endif
+.endm
 
 /*
  * Get CPU id
@@ -40,11 +77,15 @@
 .endm
 
 .macro get_cpu rreg0
+#ifdef CONFIG_ARMV5
+	ldr r2, =_kernel
+#else
 	/*
          * Get CPU pointer.
 	 */
 	mrc p15, 0, \rreg0, c13, c0, 3
         and \rreg0, #TPIDRURO_CURR_CPU
+#endif
 .endm
 
 .macro z_arm_cortex_ar_enter_exc

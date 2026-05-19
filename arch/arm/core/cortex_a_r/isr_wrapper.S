@@ -260,7 +260,28 @@ spurious_continue:
  */
 SECTION_FUNC(TEXT, _isr_wrapper)
 	sub lr, #4
+#ifdef CONFIG_ARMV5
+	/*
+	 * Store r0-r3, r12, lr into the stack to construct an exception
+	 * stack frame.
+	 */
+	stm sp, {r0-r3}
+	mov r1, lr
+	mrs r2, spsr
+	mov r3, sp
+	change_processor_state #MODE_SYS, r0
+	push {r1, r2}
+	ldm r3, {r0-r3}
+	push {r0-r3, r12, lr}
+
+	/* increment exception depth */
+	ldr r2, =_kernel
+	ldrb r1, [r2, #_cpu_offset_to_exc_depth]
+	add r1, r1, #1
+	strb r1, [r2, #_cpu_offset_to_exc_depth]
+#else
 	z_arm_cortex_ar_enter_exc
+#endif
 
 	/* Increment interrupt nesting count */
 	get_cpu r2
@@ -272,8 +293,18 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	cmp r0, #1
 	bhi 1f
 	mov r0, sp
+#ifdef CONFIG_ARMV5
+	stm sp, {r1}
+	change_processor_state #MODE_IRQ, r1
+	push {r0}
+	change_processor_state #MODE_SYS, r0
+	ldm sp, {r1}
+	change_processor_state #MODE_IRQ, r0
+	ldm sp, {r0}
+#else
 	cps #MODE_IRQ
 	push {r0}
+#endif
 1:
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_enter
@@ -344,9 +375,9 @@ oob:
 	/*
 	 * Enable and disable interrupts again to allow nested in exception handlers.
 	 */
-	cpsie i
+	z_arm_cpsie_i r0
 	blx r3		/* call ISR */
-	cpsid i
+	z_arm_cpsid_i r0
 
 spurious_continue:
 	/* Signal end-of-interrupt */
@@ -383,7 +414,7 @@ z_arm_cortex_ar_irq_done:
 
 	/* retrieve pointer to the current thread */
 	pop {r0}
-	cps #MODE_SYS
+	change_processor_state #MODE_SYS, r1
 	mov sp, r0
 
 	ldr r1, [r2, #___cpu_t_current_OFFSET]
