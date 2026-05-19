@@ -11,6 +11,8 @@ tests:
     harness_config:
       pytest_dut_scope: session
       fixture: usb_hci
+    extra_args:
+      - CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
     timeout: 900
   bluetooth.classic.sdp.server.no_blobs:
     platform_allow:
