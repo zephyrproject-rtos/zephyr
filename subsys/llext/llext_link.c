@@ -276,7 +276,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		}
 
 		if (ret != 0) {
-			LOG_ERR("PLT: failed to read RELA #%u, trying to continue", i);
+			LOG_WRN("PLT: failed to read RELA #%u, trying to continue", i);
 			continue;
 		}
 
@@ -296,7 +296,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		}
 
 		if (ret != 0) {
-			LOG_ERR("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
+			LOG_WRN("PLT: failed to read symbol table #%u RELA #%u, trying to continue",
 				j, i);
 			continue;
 		}
@@ -324,7 +324,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		 * since the buffer will be directly modified.
 		 */
 		if (ldr->storage != LLEXT_STORAGE_WRITABLE) {
-			LOG_ERR("PLT: cannot link read-only ELF file");
+			LOG_WRN("PLT: cannot link read-only ELF file");
 			continue;
 		}
 
@@ -333,13 +333,19 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 
 		if (tgt) {
 			/* Relocatable / partially linked ELF. */
+			if (rela.r_offset >= tgt->sh_size) {
+				LOG_WRN("PLT: r_offset %#zx out of target section "
+					"(size %#zx), skipping",
+					(size_t)rela.r_offset, (size_t)tgt->sh_size);
+				continue;
+			}
 			rel_addr += rela.r_offset + tgt->sh_offset;
 		} else {
 			/* Shared / dynamically linked ELF */
 			ssize_t offset = llext_file_offset(ldr, rela.r_offset);
 
 			if (offset < 0) {
-				LOG_ERR("Offset %#zx not found in ELF, trying to continue",
+				LOG_WRN("Offset %#zx not found in ELF, trying to continue",
 					(size_t)rela.r_offset);
 				continue;
 			}
