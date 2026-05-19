@@ -1698,6 +1698,15 @@ void HAL_OSPI_StatusMatchCallback(OSPI_HandleTypeDef *hospi)
  */
 void HAL_OSPI_TimeOutCallback(OSPI_HandleTypeDef *hospi)
 {
+#ifdef CONFIG_STM32_MEMMAP
+	/*
+	 * When TO occurs, it only comes from MemoryMapped mode read operation
+	 * if the TimeOutActivation was enabled.
+	 * Then no sync semaphore was set when reading with memcpy().
+	 * If TimeOutActivation is not enabled, then no TO callback happens.
+	 * No need to k_sem_give(&dev_data->sync); nothing to do.
+	 */
+#else /* CONFIG_STM32_MEMMAP*/
 	struct flash_stm32_ospi_data *dev_data =
 		CONTAINER_OF(hospi, struct flash_stm32_ospi_data, hospi);
 
@@ -1706,6 +1715,7 @@ void HAL_OSPI_TimeOutCallback(OSPI_HandleTypeDef *hospi)
 	dev_data->cmd_status = -EIO;
 
 	k_sem_give(&dev_data->sync);
+#endif /* CONFIG_STM32_MEMMAP */
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
