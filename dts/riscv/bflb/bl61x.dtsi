@@ -471,7 +471,8 @@
 		wifi0: wifi@24b08000 {
 			compatible = "bflb,bl61x-wifi";
 			reg = <0x24b08000 0x1000>;
-			interrupts = <79 1>;
+			interrupts = <70 1>, <79 1>;
+			interrupt-names = "wifi", "wifi-ipc";
 			interrupt-parent = <&clic>;
 			status = "disabled";
 

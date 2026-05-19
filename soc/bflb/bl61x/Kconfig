@@ -18,3 +18,12 @@ config SOC_SERIES_BL61X
 	imply FPU
 	imply REGULATOR
 	imply XIP
+
+config BFLB_BL61X_WL_RMEM_SIZE
+	int "PHY/RF retention memory size (bytes)"
+	default 8192
+	depends on BT_BFLB_BL61X || WIFI_BFLB
+	help
+	  Size in bytes of the static buffer passed to wl_cfg_get() for
+	  PHY/RF calibration data. The buffer persists for the lifetime
+	  of the application. 8192 matches the Bouffalo SDK default.
