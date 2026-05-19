@@ -1,0 +1,18 @@
+sample:
+  name: Bluetooth Classic SPP UART Server
+  description: |
+    Demonstrates UART over Bluetooth Classic SPP (RFCOMM) in server mode.
+    The device registers as an SPP server and echoes received data.
+common:
+  tags:
+    - bluetooth
+    - classic
+    - spp
+    - uart
+  depends_on: bt_classic
+tests:
+  sample.bluetooth.classic.spp_uart_server:
+    platform_allow:
+      - native_sim/native/64
+      - qemu_x86
+    extra_args: EXTRA_DTC_OVERLAY_FILE=app.overlay
