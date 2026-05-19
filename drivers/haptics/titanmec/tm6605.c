@@ -133,7 +133,14 @@ static int tm6605_init(const struct device *dev)
 	return 0;
 }
 
+static int tm6605_select_source(const struct device *dev, const enum haptics_source src,
+				const union haptics_config *const cfg)
+{
+	return -ENOTSUP;
+}
+
 static DEVICE_API(haptics, tm6605_driver_api) = {
+	.select_source = &tm6605_select_source,
 	.start_output = &tm6605_start_output,
 	.stop_output = &tm6605_stop_output,
 };
