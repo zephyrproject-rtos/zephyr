@@ -268,6 +268,20 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	 * Notably QEMU when a CSR instruction is involved.
 	 */
 	bnez t2, 1f
+#ifdef CONFIG_RISCV_ISA_EXT_C
+       /*
+        * If compressed extension is enabled, the instruction address may
+        * be misaligned. Check and load instruction incrementally if so.
+       */
+       andi t2, t0, 3
+       beqz t0, 2f
+       lhu t2, 2(t0)
+       slli t2, t2, 16
+       lhu t1, 0(t0)
+       or t2, t2, t1
+       j 1f
+2:
+#endif
 	lw t2, 0(t0)		/* t0 = RV_EPC */
 1:
 #endif
