@@ -282,6 +282,13 @@ static enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
 			net_pkt_set_iface(pkt, route->iface);
 		}
 
+		if (IS_ENABLED(CONFIG_NET_IPV4_FORWARDING) &&
+		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
+			net_pkt_set_forwarding(pkt, true);
+		} else {
+			net_pkt_set_forwarding(pkt, false);
+		}
+
 		ret = net_route_ipv4_packet(pkt, nexthop);
 		if (ret < 0) {
 			NET_DBG("Cannot re-route pkt %p via %s at iface %p (%d)",

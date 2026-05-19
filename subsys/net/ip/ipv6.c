@@ -385,6 +385,13 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 			add_route(net_pkt_orig_iface(pkt), &src_ip, 128);
 		}
 
+		if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
+		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
+			net_pkt_set_forwarding(pkt, true);
+		} else {
+			net_pkt_set_forwarding(pkt, false);
+		}
+
 		ret = net_route_ipv6_packet(pkt, nexthop);
 		if (ret < 0) {
 			NET_DBG("Cannot re-route pkt %p via %s "

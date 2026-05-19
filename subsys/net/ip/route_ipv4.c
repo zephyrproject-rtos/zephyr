@@ -191,7 +191,31 @@ int net_route_ipv4_packet(struct net_pkt *pkt, const struct net_in_addr *nexthop
 		return -EINVAL;
 	}
 
-	net_pkt_set_forwarding(pkt, true);
+	if (net_pkt_forwarding(pkt)) {
+		struct net_ipv4_hdr *hdr = NET_IPV4_HDR(pkt);
+		uint16_t chksum = 0U;
+		int ret;
+
+		if (hdr == NULL) {
+			return -EINVAL;
+		}
+
+		if (hdr->ttl <= 1U) {
+			return -ETIMEDOUT;
+		}
+
+		hdr->ttl--;
+		net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
+
+		hdr->chksum = 0U;
+		ret = net_calc_chksum_ipv4(pkt, &chksum);
+		if (ret < 0) {
+			return ret;
+		}
+
+		hdr->chksum = chksum;
+	}
+
 	net_pkt_set_ipv4_ll_resolve_addr(pkt, nexthop);
 
 	if (net_route_ll_addr_supported(net_pkt_iface(pkt))) {
