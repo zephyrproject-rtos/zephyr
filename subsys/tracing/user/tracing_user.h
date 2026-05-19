@@ -418,6 +418,8 @@ void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iode
 					sys_trace_timer_stop_fn_expiry_enter(timer)
 #define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)			\
 					sys_trace_timer_stop_fn_expiry_exit(timer)
+#define sys_port_trace_k_timer_cleanup_enter(timer)
+#define sys_port_trace_k_timer_cleanup_exit(timer, ret)
 
 #define sys_port_trace_k_event_init(event)
 #define sys_port_trace_k_event_post_enter(event, events, events_mask)

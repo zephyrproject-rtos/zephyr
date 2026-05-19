@@ -664,6 +664,14 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	case K_OBJ_STACK:
 		k_stack_cleanup((struct k_stack *)ko->name);
 		break;
+	case K_OBJ_TIMER:
+		if ((ko->flags & K_OBJ_FLAG_INITIALIZED) == K_OBJ_FLAG_INITIALIZED) {
+			/* k_timer_cleanup() does not check if timer has been
+			 * initialized. So we need to do it here before calling.
+			 */
+			k_timer_cleanup((struct k_timer *)ko->name);
+		}
+		break;
 	default:
 		/* Nothing to do */
 		break;
