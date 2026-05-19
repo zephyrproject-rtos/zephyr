@@ -1,8 +1,12 @@
 # Copyright (c) 2023 Trackunit Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+common:
+  tags: modem_pipe
+  harness: ztest
+  platform_allow: native_sim
 tests:
-  modem.modem_pipe:
-    tags: modem_pipe
-    harness: ztest
-    platform_allow: native_sim
+  modem.modem_pipe: {}
+  modem.modem_pipe.double_transmit:
+    extra_configs:
+      - CONFIG_TEST_PIPE_BACKEND_DOUBLE_TRANSMIT=y

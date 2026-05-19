@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_PIPE_BACKEND_DOUBLE_TRANSMIT
+	bool "Support the `double_transmit` API variant"
+
+source "Kconfig.zephyr"

@@ -32,6 +32,8 @@ struct modem_backend_fake {
 
 	const uint8_t *transmit_buffer;
 	size_t transmit_buffer_size;
+	const uint8_t *extra_transmit_buffer;
+	size_t extra_transmit_buffer_size;
 
 	uint8_t *receive_buffer;
 	size_t receive_buffer_size;
@@ -39,6 +41,7 @@ struct modem_backend_fake {
 	uint8_t synchronous : 1;
 	uint8_t open_called : 1;
 	uint8_t transmit_called : 1;
+	uint8_t transmit_double_called : 1;
 	uint8_t receive_called : 1;
 	uint8_t close_called : 1;
 };
@@ -76,6 +79,30 @@ static void modem_backend_fake_transmit_idle_handler(struct k_work *item)
 	modem_pipe_notify_transmit_idle(&backend->pipe);
 }
 
+#ifdef CONFIG_TEST_PIPE_BACKEND_DOUBLE_TRANSMIT
+
+static int modem_backend_fake_transmit_double(void *data, const uint8_t *buf, size_t size,
+					      const uint8_t *extra_buf, size_t extra_size)
+{
+	struct modem_backend_fake *backend = data;
+
+	backend->transmit_double_called = true;
+	backend->transmit_buffer = buf;
+	backend->transmit_buffer_size = size;
+	backend->extra_transmit_buffer = extra_buf;
+	backend->extra_transmit_buffer_size = extra_size;
+
+	if (backend->synchronous) {
+		modem_pipe_notify_transmit_idle(&backend->pipe);
+	} else {
+		k_work_schedule(&backend->transmit_idle_dwork, TEST_MODEM_PIPE_NOTIFY_TIMEOUT);
+	}
+
+	return size + extra_size;
+}
+
+#else
+
 static int modem_backend_fake_transmit(void *data, const uint8_t *buf, size_t size)
 {
 	struct modem_backend_fake *backend = data;
@@ -92,6 +119,8 @@ static int modem_backend_fake_transmit(void *data, const uint8_t *buf, size_t si
 
 	return size;
 }
+
+#endif /* CONFIG_TEST_PIPE_BACKEND_DOUBLE_TRANSMIT */
 
 static int modem_backend_fake_receive(void *data, uint8_t *buf, size_t size)
 {
@@ -129,7 +158,11 @@ static int modem_backend_fake_close(void *data)
 
 static struct modem_pipe_api modem_backend_fake_api = {
 	.open = modem_backend_fake_open,
+#ifdef CONFIG_TEST_PIPE_BACKEND_DOUBLE_TRANSMIT
+	.transmit_double = modem_backend_fake_transmit_double,
+#else
 	.transmit = modem_backend_fake_transmit,
+#endif
 	.receive = modem_backend_fake_receive,
 	.close = modem_backend_fake_close,
 };
@@ -267,11 +300,18 @@ static void test_pipe_reclose(void)
 
 static void test_pipe_async_transmit(void)
 {
+	bool is_double = IS_ENABLED(CONFIG_TEST_PIPE_BACKEND_DOUBLE_TRANSMIT);
+
 	zassert_equal(modem_pipe_transmit(test_pipe, test_buffer, test_buffer_size),
 		      test_buffer_size, "Failed to transmit");
-	zassert_true(test_backend.transmit_called, "transmit was not called");
+	zassert_equal(is_double, test_backend.transmit_double_called,
+		      "Unexpected transmit_double call count");
+	zassert_equal(!is_double, test_backend.transmit_called, "Unexpected transmit call count");
 	zassert_equal(test_backend.transmit_buffer, test_buffer, "Incorrect buffer");
 	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size,
+		      "Incorrect buffer size");
+	zassert_equal(test_backend.extra_transmit_buffer, NULL, "Incorrect buffer");
+	zassert_equal(test_backend.extra_transmit_buffer_size, 0,
 		      "Incorrect buffer size");
 	zassert_equal(atomic_get(&test_state), 0, "Unexpected state %u",
 		      (uint32_t)atomic_get(&test_state));
@@ -282,11 +322,61 @@ static void test_pipe_async_transmit(void)
 
 static void test_pipe_sync_transmit(void)
 {
+	bool is_double = IS_ENABLED(CONFIG_TEST_PIPE_BACKEND_DOUBLE_TRANSMIT);
+
 	zassert_equal(modem_pipe_transmit(test_pipe, test_buffer, test_buffer_size),
 		      test_buffer_size, "Failed to transmit");
-	zassert_true(test_backend.transmit_called, "transmit was not called");
+	zassert_equal(is_double, test_backend.transmit_double_called,
+		      "Unexpected transmit_double call count");
+	zassert_equal(!is_double, test_backend.transmit_called, "Unexpected transmit call count");
 	zassert_equal(test_backend.transmit_buffer, test_buffer, "Incorrect buffer");
 	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size,
+		      "Incorrect buffer size");
+	zassert_equal(test_backend.extra_transmit_buffer, NULL, "Incorrect buffer");
+	zassert_equal(test_backend.extra_transmit_buffer_size, 0,
+		      "Incorrect buffer size");
+	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
+}
+
+static void test_pipe_async_transmit_double(void)
+{
+	bool is_double = IS_ENABLED(CONFIG_TEST_PIPE_BACKEND_DOUBLE_TRANSMIT);
+	int rc;
+
+	rc = modem_pipe_transmit_double(test_pipe, test_buffer, test_buffer_size, test_buffer, 1);
+	zassert_equal(is_double, test_backend.transmit_double_called,
+		      "Unexpected transmit_double call count");
+	zassert_equal(!is_double, test_backend.transmit_called, "Unexpected transmit call count");
+	zassert_equal(rc, test_buffer_size + (is_double ? 1 : 0));
+	zassert_equal(test_backend.transmit_buffer, test_buffer, "Incorrect buffer");
+	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size, "Incorrect buffer size");
+	zassert_equal(test_backend.extra_transmit_buffer, is_double ? test_buffer : NULL,
+		      "Incorrect buffer");
+	zassert_equal(test_backend.extra_transmit_buffer_size, is_double ? 1 : 0,
+		      "Incorrect buffer size");
+	zassert_equal(atomic_get(&test_state), 0, "Unexpected state %u",
+		      (uint32_t)atomic_get(&test_state));
+	k_sleep(TEST_MODEM_PIPE_WAIT_TIMEOUT);
+	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
+		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
+}
+
+static void test_pipe_sync_transmit_double(void)
+{
+	bool is_double = IS_ENABLED(CONFIG_TEST_PIPE_BACKEND_DOUBLE_TRANSMIT);
+	int rc;
+
+	rc = modem_pipe_transmit_double(test_pipe, test_buffer, test_buffer_size, test_buffer, 1);
+	zassert_equal(is_double, test_backend.transmit_double_called,
+		      "Unexpected transmit_double call count");
+	zassert_equal(!is_double, test_backend.transmit_called, "Unexpected transmit call count");
+	zassert_equal(rc, test_buffer_size + (is_double ? 1 : 0));
+	zassert_equal(test_backend.transmit_buffer, test_buffer, "Incorrect buffer");
+	zassert_equal(test_backend.transmit_buffer_size, test_buffer_size, "Incorrect buffer size");
+	zassert_equal(test_backend.extra_transmit_buffer, is_double ? test_buffer : NULL,
+		      "Incorrect buffer");
+	zassert_equal(test_backend.extra_transmit_buffer_size, is_double ? 1 : 0,
 		      "Incorrect buffer size");
 	zassert_equal(atomic_get(&test_state), BIT(TEST_MODEM_PIPE_EVENT_TRANSMIT_IDLE_BIT),
 		      "Unexpected state %u", (uint32_t)atomic_get(&test_state));
@@ -360,6 +450,7 @@ ZTEST(modem_pipe, test_sync_open_close)
 
 ZTEST(modem_pipe, test_async_transmit)
 {
+	modem_backend_fake_set_sync(&test_backend, false);
 	test_pipe_open();
 	test_reset();
 	test_pipe_async_transmit();
@@ -371,6 +462,22 @@ ZTEST(modem_pipe, test_sync_transmit)
 	test_pipe_open();
 	test_reset();
 	test_pipe_sync_transmit();
+}
+
+ZTEST(modem_pipe, test_async_transmit_double)
+{
+	modem_backend_fake_set_sync(&test_backend, false);
+	test_pipe_open();
+	test_reset();
+	test_pipe_async_transmit_double();
+}
+
+ZTEST(modem_pipe, test_sync_transmit_double)
+{
+	modem_backend_fake_set_sync(&test_backend, true);
+	test_pipe_open();
+	test_reset();
+	test_pipe_sync_transmit_double();
 }
 
 ZTEST(modem_pipe, test_attach)
