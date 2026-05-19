@@ -16,10 +16,6 @@ int tmc_i2c_write_register(const struct i2c_dt_spec *i2c, uint8_t reg_addr, uint
 	uint8_t buf[5];
 	int ret;
 
-	if (!device_is_ready(i2c->bus)) {
-		return -ENODEV;
-	}
-
 	/* TMC I2C protocol: [REG_ADDR (1 byte)] [DATA (4 bytes, MSB first)] */
 	buf[0] = reg_addr;
 	sys_put_be32(reg_val, &buf[1]);
@@ -38,10 +34,6 @@ int tmc_i2c_read_register(const struct i2c_dt_spec *i2c, uint8_t reg_addr, uint3
 {
 	uint8_t buf[4];
 	int ret;
-
-	if (!device_is_ready(i2c->bus)) {
-		return -ENODEV;
-	}
 
 	if (reg_val == NULL) {
 		return -EINVAL;

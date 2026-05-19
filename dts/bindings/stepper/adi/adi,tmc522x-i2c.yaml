@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <Cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Trinamic TMC522x stepper motor controller (I2C variant - TMC5222)
+
+compatible: "adi,tmc522x"
+
+include: [i2c-device.yaml, "adi,tmc522x-base.yaml"]
+
+examples:
+  - |
+    &i2c0 {
+        tmc5222: tmc5222@60 {
+            compatible = "adi,tmc522x";
+            reg = <0x60>;
+
+            clock-frequency = <DT_FREQ_M(16)>; /* Internal oscillator */
+
+            tmc5222_stepper_driver: stepper-driver {
+                compatible = "adi,tmc522x-stepper-driver";
+                idx = <0>;
+                stallguard2-threshold = <5>;
+                irun = <31>;
+                ihold = <16>;
+            };
+
+            tmc5222_motion_controller: motion-controller {
+                compatible = "adi,tmc522x-stepper-ctrl";
+                idx = <0>;
+
+                /* Ramp generator settings */
+                vstart = <10>;
+                a1 = <20>;
+                v1 = <30>;
+                amax = <60>;
+                vmax = <50>;
+                dmax = <70>;
+                d1 = <40>;
+                vstop = <10>;
+
+                /* Second phase (six-point ramp) */
+                a2 = <60>;
+                v2 = <40>;
+                d2 = <70>;
+            };
+        };
+    };
