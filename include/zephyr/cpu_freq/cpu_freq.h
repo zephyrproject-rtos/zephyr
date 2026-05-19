@@ -43,6 +43,19 @@ extern "C" {
 int cpu_freq_pstate_set(const struct pstate *state);
 
 /**
+ * @brief Get the last P-state applied for the current CPU.
+ *
+ * The caller must ensure that the current CPU does not change. If called from
+ * an ISR or a single CPU system, this restriction is automatically met. If
+ * called from a thread on an SMP system, either interrupts or the scheduler
+ * must be disabled to ensure the current CPU does not change.
+ *
+ * @return Pointer to the last applied P-state, or NULL if no P-state has been
+ * applied yet.
+ */
+const struct pstate *cpu_freq_pstate_current_get(void);
+
+/**
  * @}
  */
 
