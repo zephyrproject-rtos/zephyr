@@ -7,8 +7,8 @@
 /dts-v1/;
 #include <st/u3/stm32u385Xg.dtsi>
 #include <st/u3/stm32u385rgtxq-pinctrl.dtsi>
-#include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+/* arduino R3 connector is included by board revision specific overlays */
 
 / {
 	model = "STMicroelectronics STM32U385RG-NUCLEO-Q board";
