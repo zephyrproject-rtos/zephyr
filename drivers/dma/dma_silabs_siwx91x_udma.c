@@ -24,16 +24,11 @@
 #define DMA_MAX_TRANSFER_COUNT           1024
 #define DMA_CH_PRIORITY_HIGH             1
 #define DMA_CH_PRIORITY_LOW              0
-#define UDMA_ADDR_INC_NONE               0x03
+
+/* This value is missing in rsi_udma.h */
 #define UDMA_MODE_PER_ALT_SCATTER_GATHER 0x07
 
 LOG_MODULE_REGISTER(si91x_dma, CONFIG_DMA_LOG_LEVEL);
-
-enum dma_xfer_dir {
-	TRANSFER_MEM_TO_MEM,
-	TRANSFER_TO_OR_FROM_PER,
-	TRANSFER_DIR_INVALID = -1,
-};
 
 struct dma_siwx91x_channel_info {
 	dma_callback_t dma_callback;        /* User callback */
@@ -62,22 +57,21 @@ struct dma_siwx91x_data {
 					      */
 };
 
-static enum dma_xfer_dir siwx91x_transfer_direction(uint32_t dir)
+static bool siwx91x_udma_is_valid_dir(uint32_t val)
 {
-	if (dir == MEMORY_TO_MEMORY) {
-		return TRANSFER_MEM_TO_MEM;
+	switch (val) {
+	case MEMORY_TO_MEMORY:
+	case MEMORY_TO_PERIPHERAL:
+	case PERIPHERAL_TO_MEMORY:
+		return true;
+	default:
+		return false;
 	}
-
-	if (dir == MEMORY_TO_PERIPHERAL || dir == PERIPHERAL_TO_MEMORY) {
-		return TRANSFER_TO_OR_FROM_PER;
-	}
-
-	return TRANSFER_DIR_INVALID;
 }
 
-static bool siwx91x_is_data_width_valid(uint32_t data_width)
+static bool siwx91x_udma_is_valid_width(uint32_t val)
 {
-	switch (data_width) {
+	switch (val) {
 	case 1:
 	case 2:
 	case 4:
@@ -87,29 +81,26 @@ static bool siwx91x_is_data_width_valid(uint32_t data_width)
 	}
 }
 
-static int siwx91x_burst_length(uint32_t blen)
+static bool siwx91x_udma_is_valid_burst_len(uint32_t val)
 {
-	switch (blen) {
+	switch (val) {
 	case 1:
-		return SRC_INC_8;
 	case 2:
-		return SRC_INC_16;
 	case 4:
-		return SRC_INC_32;
+		return true;
 	default:
-		return -EINVAL;
+		return false;
 	}
 }
 
-static int siwx91x_addr_adjustment(uint32_t adjustment)
+static bool siwx91x_udma_is_valid_adjustment(uint32_t val)
 {
-	switch (adjustment) {
-	case 0:
-		return 0; /* Addr Increment */
-	case 2:
-		return UDMA_ADDR_INC_NONE; /* No Address increment */
+	switch (val) {
+	case DMA_ADDR_ADJ_INCREMENT:
+	case DMA_ADDR_ADJ_NO_CHANGE:
+		return true;
 	default:
-		return -EINVAL;
+		return false;
 	}
 }
 
@@ -127,48 +118,48 @@ static int siwx91x_udma_fill_block_descs(const struct dma_config *cfg,
 		RSI_UDMA_CHA_CONFIG_DATA_T *desc_cfg =
 			(RSI_UDMA_CHA_CONFIG_DATA_T *)&descs->vsUDMAChaConfigData1;
 
-		desc_cfg->srcSize = siwx91x_burst_length(cfg->source_burst_length);
-		desc_cfg->dstSize = siwx91x_burst_length(cfg->dest_burst_length);
+		desc_cfg->srcSize = find_lsb_set(cfg->source_burst_length) - 1;
+		desc_cfg->dstSize = find_lsb_set(cfg->dest_burst_length) - 1;
 		desc_cfg->totalNumOfDMATrans = (chunk / cfg->source_burst_length) - 1;
 
-		if (siwx91x_addr_adjustment(block->source_addr_adj) == UDMA_ADDR_INC_NONE) {
+		if (block->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 			descs->pSrcEndAddr = src_addr;
 		} else {
 			descs->pSrcEndAddr = src_addr + chunk - cfg->source_burst_length;
 		}
 
-		if (siwx91x_addr_adjustment(block->dest_addr_adj) == UDMA_ADDR_INC_NONE) {
+		if (block->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 			descs->pDstEndAddr = dst_addr;
 		} else {
 			descs->pDstEndAddr = dst_addr + chunk - cfg->dest_burst_length;
 		}
 
 		/* Set the transfer type based on whether it is a peripheral request */
-		if (siwx91x_transfer_direction(cfg->channel_direction) == TRANSFER_TO_OR_FROM_PER) {
-			desc_cfg->transferType = UDMA_MODE_PER_ALT_SCATTER_GATHER;
-		} else {
+		if (cfg->channel_direction == MEMORY_TO_MEMORY) {
 			desc_cfg->transferType = UDMA_MODE_MEM_ALT_SCATTER_GATHER;
+		} else {
+			desc_cfg->transferType = UDMA_MODE_PER_ALT_SCATTER_GATHER;
 		}
 
 		desc_cfg->rPower = ARBSIZE_1;
 
-		if (siwx91x_addr_adjustment(block->source_addr_adj) == UDMA_ADDR_INC_NONE) {
+		if (block->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 			desc_cfg->srcInc = UDMA_SRC_INC_NONE;
 		} else {
-			desc_cfg->srcInc = siwx91x_burst_length(cfg->source_burst_length);
+			desc_cfg->srcInc = find_lsb_set(cfg->source_burst_length) - 1;
 		}
 
-		if (siwx91x_addr_adjustment(block->dest_addr_adj) == UDMA_ADDR_INC_NONE) {
+		if (block->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 			desc_cfg->dstInc = UDMA_DST_INC_NONE;
 		} else {
-			desc_cfg->dstInc = siwx91x_burst_length(cfg->dest_burst_length);
+			desc_cfg->dstInc = find_lsb_set(cfg->dest_burst_length) - 1;
 		}
 
 		remaining -= chunk;
-		if (siwx91x_addr_adjustment(block->source_addr_adj) != UDMA_ADDR_INC_NONE) {
+		if (block->source_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
 			src_addr += chunk;
 		}
-		if (siwx91x_addr_adjustment(block->dest_addr_adj) != UDMA_ADDR_INC_NONE) {
+		if (block->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
 			dst_addr += chunk;
 		}
 		descs++;
@@ -185,8 +176,8 @@ static int siwx91x_udma_fill_sg_descs(const struct dma_config *config_zephyr,
 	int cnt = 0;
 
 	for (int i = 0; i < config_zephyr->block_count; i++) {
-		if (siwx91x_addr_adjustment(block->source_addr_adj) < 0 ||
-		    siwx91x_addr_adjustment(block->dest_addr_adj) < 0) {
+		if (!siwx91x_udma_is_valid_adjustment(block->source_addr_adj) ||
+		    !siwx91x_udma_is_valid_adjustment(block->dest_addr_adj)) {
 			return -EINVAL;
 		}
 		if (block->block_size % config_zephyr->source_burst_length) {
@@ -203,15 +194,10 @@ static int siwx91x_udma_fill_sg_descs(const struct dma_config *config_zephyr,
 	}
 
 	/* Set the transfer type for the last descriptor */
-	switch (siwx91x_transfer_direction(config_zephyr->channel_direction)) {
-	case TRANSFER_TO_OR_FROM_PER:
-		desc_base[cnt - 1].vsUDMAChaConfigData1.transferType = UDMA_MODE_BASIC;
-		break;
-	case TRANSFER_MEM_TO_MEM:
+	if (config_zephyr->channel_direction == MEMORY_TO_MEMORY) {
 		desc_base[cnt - 1].vsUDMAChaConfigData1.transferType = UDMA_MODE_AUTO;
-		break;
-	default:
-		return -EINVAL;
+	} else {
+		desc_base[cnt - 1].vsUDMAChaConfigData1.transferType = UDMA_MODE_BASIC;
 	}
 
 	return 0;
@@ -244,26 +230,24 @@ static int siwx91x_udma_config_sg(const struct device *dev, RSI_UDMA_HANDLE_T ud
 	uint32_t desc_count = siwx91x_udma_count_hw_desc(config);
 	RSI_UDMA_DESC_T *desc_base = NULL;
 	uint8_t transfer_type;
-	enum dma_xfer_dir xfer_dir;
 	int ret;
 
-	xfer_dir = siwx91x_transfer_direction(config->channel_direction);
-	if (xfer_dir == TRANSFER_DIR_INVALID) {
+	if (!siwx91x_udma_is_valid_dir(config->channel_direction)) {
 		return -EINVAL;
 	}
-	if (xfer_dir == TRANSFER_TO_OR_FROM_PER) {
-		transfer_type = UDMA_MODE_PER_SCATTER_GATHER;
-	} else {
+	if (config->channel_direction == MEMORY_TO_MEMORY) {
 		transfer_type = UDMA_MODE_MEM_SCATTER_GATHER;
+	} else {
+		transfer_type = UDMA_MODE_PER_SCATTER_GATHER;
 	}
 
-	if (!siwx91x_is_data_width_valid(config->source_data_size) ||
-	    !siwx91x_is_data_width_valid(config->dest_data_size)) {
+	if (!siwx91x_udma_is_valid_width(config->source_data_size) ||
+	    !siwx91x_udma_is_valid_width(config->dest_data_size)) {
 		return -EINVAL;
 	}
 
-	if (siwx91x_burst_length(config->source_burst_length) < 0 ||
-	    siwx91x_burst_length(config->dest_burst_length) < 0) {
+	if (!siwx91x_udma_is_valid_burst_len(config->source_burst_length) ||
+	    !siwx91x_udma_is_valid_burst_len(config->dest_burst_length)) {
 		return -EINVAL;
 	}
 
@@ -326,24 +310,21 @@ static int siwx91x_udma_config_single(const struct device *dev, RSI_UDMA_HANDLE_
 		.transferType = UDMA_MODE_BASIC,
 	};
 	RSI_UDMA_CHA_CFG_T channel_config = {};
-	enum dma_xfer_dir xfer_dir;
 	int status;
 
-	xfer_dir = siwx91x_transfer_direction(config->channel_direction);
-	if (xfer_dir == TRANSFER_DIR_INVALID) {
+	if (!siwx91x_udma_is_valid_dir(config->channel_direction)) {
 		return -EINVAL;
 	}
 
 	channel_config.channelPrioHigh = config->channel_priority;
-	channel_config.periphReq = siwx91x_transfer_direction(config->channel_direction);
 	channel_config.dmaCh = channel;
 
-	if (channel_config.periphReq) {
-		/* Arbitration power for peripheral<->memory transfers */
-		channel_control.rPower = ARBSIZE_1;
-	} else {
-		/* Arbitration power for mem-mem transfers */
+	if (config->channel_direction == MEMORY_TO_MEMORY) {
 		channel_control.rPower = ARBSIZE_1024;
+		channel_config.periphReq = 0;
+	} else {
+		channel_control.rPower = ARBSIZE_1;
+		channel_config.periphReq = 1;
 	}
 
 	/* Obtain the number of transfers */
@@ -354,32 +335,34 @@ static int siwx91x_udma_config_single(const struct device *dev, RSI_UDMA_HANDLE_
 		channel_control.totalNumOfDMATrans = dma_transfer_num;
 	}
 
-	if (!siwx91x_is_data_width_valid(config->source_data_size) ||
-	    !siwx91x_is_data_width_valid(config->dest_data_size)) {
-		return -EINVAL;
-	}
-	if (siwx91x_burst_length(config->source_burst_length) < 0 ||
-	    siwx91x_burst_length(config->dest_burst_length) < 0) {
+	if (!siwx91x_udma_is_valid_width(config->source_data_size) ||
+	    !siwx91x_udma_is_valid_width(config->dest_data_size)) {
 		return -EINVAL;
 	}
 
-	channel_control.srcSize = siwx91x_burst_length(config->source_burst_length);
-	channel_control.dstSize = siwx91x_burst_length(config->dest_burst_length);
-	if (siwx91x_addr_adjustment(config->head_block->source_addr_adj) < 0 ||
-	    siwx91x_addr_adjustment(config->head_block->dest_addr_adj) < 0) {
+	if (!siwx91x_udma_is_valid_burst_len(config->source_burst_length) ||
+	    !siwx91x_udma_is_valid_burst_len(config->dest_burst_length)) {
 		return -EINVAL;
 	}
 
-	if (siwx91x_addr_adjustment(config->head_block->source_addr_adj) == 0) {
-		channel_control.srcInc = siwx91x_burst_length(config->source_burst_length);
-	} else {
+	channel_control.srcSize = find_lsb_set(config->source_burst_length) - 1;
+	channel_control.dstSize = find_lsb_set(config->dest_burst_length) - 1;
+
+	if (!siwx91x_udma_is_valid_adjustment(config->head_block->source_addr_adj) ||
+	    !siwx91x_udma_is_valid_adjustment(config->head_block->dest_addr_adj)) {
+		return -EINVAL;
+	}
+
+	if (config->head_block->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 		channel_control.srcInc = UDMA_SRC_INC_NONE;
+	} else {
+		channel_control.srcInc = find_lsb_set(config->source_burst_length) - 1;
 	}
 
-	if (siwx91x_addr_adjustment(config->head_block->dest_addr_adj) == 0) {
-		channel_control.dstInc = siwx91x_burst_length(config->dest_burst_length);
-	} else {
+	if (config->head_block->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 		channel_control.dstInc = UDMA_DST_INC_NONE;
+	} else {
+		channel_control.dstInc = find_lsb_set(config->dest_burst_length) - 1;
 	}
 
 	/* Clear the CHNL_PRI_ALT_CLR to use primary DMA descriptor structure */
