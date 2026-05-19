@@ -1735,6 +1735,29 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	return 0;
 }
 
+int bt_sdp_unregister_service(struct bt_sdp_record *service)
+{
+	if (service == NULL) {
+		return -EINVAL;
+	}
+
+	ARRAY_FOR_EACH(bt_sdp_pool, i) {
+		if (bt_sdp_pool[i].chan.chan.conn != NULL) {
+			LOG_WRN("Active SDP channel exists on conn %p",
+				(void *)bt_sdp_pool[i].chan.chan.conn);
+			return -EBUSY;
+		}
+	}
+
+	if (!sys_slist_find_and_remove(&sdp_db, &service->node)) {
+		return -ENOENT;
+	}
+
+	LOG_DBG("Service unregistered at %u", service->handle);
+
+	return 0;
+}
+
 static int sdp_client_discover(struct bt_sdp_client *session);
 
 static void sdp_client_params_iterator(struct bt_sdp_client *session)
