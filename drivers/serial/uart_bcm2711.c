@@ -201,18 +201,28 @@ static int uart_bcm2711_fifo_read(const struct device *dev, uint8_t *rx_data,
 	return num_rx;
 }
 
+/*
+ * IER is a read/write register and the TX/RX enable bits live side
+ * by side in it; toggling one bit must not disturb the other (or
+ * any of the upper IER bits, which on the BCM283x mini-UART include
+ * the FIFO-clear shortcuts). Use read-modify-write so each helper
+ * only touches the bit it owns.
+ */
 static void uart_bcm2711_irq_tx_enable(const struct device *dev)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
+	uint32_t ier = sys_read32(uart_data->uart_addr + BCM2711_MU_IER);
 
-	sys_write32(BCM2711_MU_IER_TX_INTERRUPT, uart_data->uart_addr + BCM2711_MU_IER);
+	sys_write32(ier | BCM2711_MU_IER_TX_INTERRUPT,
+		    uart_data->uart_addr + BCM2711_MU_IER);
 }
 
 static void uart_bcm2711_irq_tx_disable(const struct device *dev)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
+	uint32_t ier = sys_read32(uart_data->uart_addr + BCM2711_MU_IER);
 
-	sys_write32((uint32_t)(~BCM2711_MU_IER_TX_INTERRUPT),
+	sys_write32(ier & ~BCM2711_MU_IER_TX_INTERRUPT,
 		    uart_data->uart_addr + BCM2711_MU_IER);
 }
 
@@ -226,15 +236,18 @@ static int uart_bcm2711_irq_tx_ready(const struct device *dev)
 static void uart_bcm2711_irq_rx_enable(const struct device *dev)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
+	uint32_t ier = sys_read32(uart_data->uart_addr + BCM2711_MU_IER);
 
-	sys_write32(BCM2711_MU_IER_RX_INTERRUPT, uart_data->uart_addr + BCM2711_MU_IER);
+	sys_write32(ier | BCM2711_MU_IER_RX_INTERRUPT,
+		    uart_data->uart_addr + BCM2711_MU_IER);
 }
 
 static void uart_bcm2711_irq_rx_disable(const struct device *dev)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
+	uint32_t ier = sys_read32(uart_data->uart_addr + BCM2711_MU_IER);
 
-	sys_write32((uint32_t)(~BCM2711_MU_IER_RX_INTERRUPT),
+	sys_write32(ier & ~BCM2711_MU_IER_RX_INTERRUPT,
 		    uart_data->uart_addr + BCM2711_MU_IER);
 }
 
