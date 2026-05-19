@@ -198,28 +198,22 @@ int video_closest_frmival_stepwise(const struct video_frmival_stepwise *stepwise
 		return -EINVAL;
 	}
 
-	uint64_t min = stepwise->min.numerator;
-	uint64_t max = stepwise->max.numerator;
-	uint64_t step = stepwise->step.numerator;
-	uint64_t goal = desired->numerator;
-
-	/* Set a common denominator to all values */
-	min *= stepwise->max.denominator * stepwise->step.denominator * desired->denominator;
-	max *= stepwise->min.denominator * stepwise->step.denominator * desired->denominator;
-	step *= stepwise->min.denominator * stepwise->max.denominator * desired->denominator;
-	goal *= stepwise->min.denominator * stepwise->max.denominator * stepwise->step.denominator;
+	/* Process everything as nanoseconds to avoid overflows */
+	uint64_t min_ns = video_frmival_nsec(&stepwise->min);
+	uint64_t max_ns = video_frmival_nsec(&stepwise->max);
+	uint64_t step_ns = video_frmival_nsec(&stepwise->step);
+	uint64_t goal_ns = video_frmival_nsec(desired);
 
 	/* Prevent division by zero */
-	if (step == 0U) {
+	if (step_ns == 0U) {
 		return -EINVAL;
 	}
 	/* Saturate the desired value to the min/max supported */
-	goal = CLAMP(goal, min, max);
+	goal_ns = CLAMP(goal_ns, min_ns, max_ns);
 
-	/* Compute a numerator and denominator */
-	match->numerator = min + DIV_ROUND_CLOSEST(goal - min, step) * step;
-	match->denominator = stepwise->min.denominator * stepwise->max.denominator *
-			     stepwise->step.denominator * desired->denominator;
+	/* Nanosecond precision is strong enough precision for finding closest frame interval */
+	match->numerator = min_ns + DIV_ROUND_CLOSEST(goal_ns - min_ns, step_ns) * step_ns;
+	match->denominator = NSEC_PER_SEC;
 
 	return 0;
 }
