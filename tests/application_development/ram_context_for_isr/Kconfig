@@ -6,6 +6,7 @@ source "Kconfig.zephyr"
 
 config TEST_IRQ_NUM
 	int "Test IRQ number"
+	depends on !TEST_FIND_FREE_IRQ
 	default 42 if BOARD_QEMU_CORTEX_M3
 	default 14 if GIC
 	default 22 if SOC_SERIES_DA1469X
@@ -38,3 +39,13 @@ config TEST_IRQ_PRIO
 	  Platform-specific defaults:
 	  - GIC platforms: IRQ_DEFAULT_PRIORITY (system default)
 	  - Other platforms: 1 (high priority for testing)
+
+config TEST_FIND_FREE_IRQ
+	bool "Find a free IRQ during test initialization"
+	depends on CPU_CORTEX_M
+	help
+	  Test environment can find a free IRQ to run the tests. Platforms willing to
+	  use a specific IRQ for this test should have this configuration disabled
+	  and set the target IRQ number in TEST_IRQ_NUM.
+
+	  This option is available only on Cortex-M based platforms.
