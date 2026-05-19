@@ -27,6 +27,13 @@ config BFLB_BTBLE_PORT_OS_SHIM
 	  Implements the btblecontroller_* OS abstraction for BL702L/BL616.
 	  Selected by SoC-specific BLE drivers that use the btblecontroller API.
 
+config BFLB_WL80211_SHIM
+	bool
+	help
+	  WL80211 supplicant bridge and RTOS port shim for the WiFi blob.
+	  Provides the wl80211_supplicant_* entry points and OS abstractions
+	  that the MACSW blob requires. Selected by the BL61x WiFi driver.
+
 config BFLB_SHIM_HEAP_SIZE
 	int "BLE shim heap size"
 	default 8192
