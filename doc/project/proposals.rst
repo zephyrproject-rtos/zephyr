@@ -3,62 +3,28 @@
 Feature Tracking
 #################
 
-For feature tracking we use Github labels to classify new features and
-enhancements. The following is the description of each category:
+To propose something new to the Zephyr Project:
 
-Enhancement
-  Changes to existing features that are not considered a bug and would not
-  block a release. This is an incremental enhancement to a feature that already
-  exists in Zephyr.
+#. Start by searching existing `issues
+   <https://github.com/zephyrproject-rtos/zephyr/issues>`_ to see if there
+   is prior work on the area.
+#. If not, feel free to create a `new issue
+   <https://github.com/zephyrproject-rtos/zephyr/issues/new/choose>`_ of
+   the appropriate type (Enhancement, RFC/Proposal, etc.)
 
-Feature request
-  A request for the implementation or inclusion of a new unit of functionality
-  that is not part of any release plans yet, that has not been vetted, and needs
-  further discussion and details.
+You should contact an assigned owner if you'd like to discuss or contribute to
+an existing issue's implementation.
 
-Feature
-  A committed and planned unit of functionality with a detailed design and
-  implementation proposal and an owner. Features must go through an RFC process
-  and must be vetted and discussed in the TSC before a target milestone is set.
+.. note::
 
-Hardware Support
-  A request or plan to port an existing feature or enhancement to a particular
-  hardware platform. This ranges from porting Zephyr itself to a new
-  architecture, SoC or board to adding an implementation of a peripheral driver
-  API for an existing hardware platform.
+   Previously, the project used `GitHub labels
+   <https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/managing-labels>`_
+   to track feature-related work. You may find issues with labels like
+   "Feature" or "Enhancement".
 
-Meta
-  A label to group other GitHub issues that are part of a single feature or unit
-  of work.
-
-The following workflow should be used to process features:.
-
-This is the formal way for asking for a new feature in Zephyr and indicating its
-importance to the project.  Often, the requester may have a readiness and
-willingness to drive implementation of the feature in an upcoming release, and
-should assign the request to themselves.
-If not though, an owner will be assigned after evaluation by the TSC.
-A feature request can also have a companion RFC with more details on the feature
-and a proposed design or implementation.
-
-- Label new features requests as ``feature-request``
-- The TSC discusses new ``feature-request`` items regularly and triages them.
-  Items are examined for similarity with existing features, how they fit with
-  the project goals and other timeline considerations. The priority is
-  determined as follows:
-
-  - High = Next milestone
-  - Medium = As soon as possible
-  - Low = Best effort
-
-- After the initial discussion and triaging, the label is moved from
-  ``feature-request`` to ``feature`` with the target milestone and an assignee.
-
-All items marked as ``feature-request`` are non-binding and those without an
-assignee are open for grabs, meaning that they can be picked up and implemented
-by any project member or the community. You should contact an assigned owner if
-you'd like to discuss or contribute to that feature's implementation
-
+   These labels are deprecated for new issues, which should be of the
+   appropriate type instead. For example, create an issue of type Enhancement
+   instead of adding the Enhancement label to a new issue.
 
 Roadmap and Release Plans
 *************************
@@ -101,6 +67,3 @@ The release plan communicates those features and enhancements slated for your
 project' next release (or the next few releases). So it acts as more of a
 project plan, breaking the big ideas down into smaller projects the community
 and main stakeholders of the project can make progress on.
-
-Items labeled as ``features`` are short or long term release items that shall
-have an assignee and a milestone set.

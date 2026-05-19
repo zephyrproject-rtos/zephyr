@@ -577,6 +577,10 @@ enum ieee802154_rx_fail_reason {
 	IEEE802154_RX_FAIL_INVALID_FCS,
 	/** Address did not match */
 	IEEE802154_RX_FAIL_ADDR_FILTERED,
+	/** No buffer available */
+	IEEE802154_RX_FAIL_NO_BUFS,
+	/** Aborted */
+	IEEE802154_RX_FAIL_ABORT,
 	/** General reason */
 	IEEE802154_RX_FAIL_OTHER
 };

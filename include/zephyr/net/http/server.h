@@ -532,9 +532,9 @@ struct http_client_ctx {
 		 */
 		union {
 			int conn_sock;
-			int stream_sock[1];
-			bool headers_sent[1];
-			struct http3_stream_ctx streams[1];
+			int stream_sock[0];
+			bool headers_sent[0];
+			struct http3_stream_ctx streams[0];
 		};
 
 #define HTTP3_SERVER_MAX_STREAMS 0

@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include <zephyr/ztest.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_utf8.h>
 #include <zephyr/ztest_assert.h>

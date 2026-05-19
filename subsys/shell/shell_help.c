@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <ctype.h>
+
+#include <zephyr/sys/minmax.h>
+
 #include "shell_ops.h"
 #include "shell_help.h"
 #include "shell_utils.h"

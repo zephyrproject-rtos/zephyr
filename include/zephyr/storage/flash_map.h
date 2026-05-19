@@ -64,7 +64,7 @@ struct flash_area {
 	size_t fa_size;
 	/** Backing flash device */
 	const struct device *fa_dev;
-#if CONFIG_FLASH_MAP_LABELS
+#if defined(CONFIG_FLASH_MAP_LABELS)
 	/** Partition label if defined in DTS. Otherwise nullptr; */
 	const char *fa_label;
 #endif
@@ -134,7 +134,10 @@ int flash_area_open(uint8_t id, const struct flash_area **fa);
  *
  * @param[in] fa Flash area to be closed.
  */
-void flash_area_close(const struct flash_area *fa);
+static inline void flash_area_close(__unused const struct flash_area *fa)
+{
+	/* nothing to do for now */
+}
 
 /**
  * @brief Verify that a device assigned to flash area is ready for use.
@@ -327,9 +330,11 @@ int flash_area_has_driver(const struct flash_area *fa);
  *
  * @return device driver.
  */
-const struct device *flash_area_get_device(const struct flash_area *fa);
+static inline const struct device *flash_area_get_device(const struct flash_area *fa)
+{
+	return fa->fa_dev;
+}
 
-#if CONFIG_FLASH_MAP_LABELS
 /**
  * Get the label property from the device tree
  *
@@ -337,8 +342,15 @@ const struct device *flash_area_get_device(const struct flash_area *fa);
  *
  * @return The label property if it is defined, otherwise NULL
  */
-const char *flash_area_label(const struct flash_area *fa);
-#endif
+static inline const char *flash_area_label(const struct flash_area *fa)
+{
+#if defined(CONFIG_FLASH_MAP_LABELS)
+	return fa->fa_label;
+#else /* CONFIG_FLASH_MAP_LABELS */
+	ARG_UNUSED(fa);
+	return NULL;
+#endif /* CONFIG_FLASH_MAP_LABELS */
+}
 
 /**
  * Get the value expected to be read when accessing any erased

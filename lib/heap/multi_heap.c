@@ -2,6 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/sys/multi_heap.h>
