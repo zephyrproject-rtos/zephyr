@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <Cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Trinamic TMC522x stepper motor controller (SPI variant - TMC5221)
+
+compatible: "adi,tmc522x"
+
+include: [spi-device.yaml, "adi,tmc522x-base.yaml"]
