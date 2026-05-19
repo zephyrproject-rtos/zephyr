@@ -94,6 +94,22 @@
 					#nvmem-cell-cells = <0>;
 					status = "disabled";
 				};
+
+				/* padding 8 bytes: next address aligned on write-block-size */
+
+				zb_settings_ifr0: zb-settings@2002010 {
+					reg = <0x2002010 0x1f0>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+					status = "disabled";
+				};
+
+				zb_secured_ifr0: zb-secured@2002200 {
+					reg = <0x2002200 0x80>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+					status = "disabled";
+				};
 			};
 		};
 
@@ -146,8 +162,8 @@
 
 	hw_params: hw-params {
 		compatible = "nxp,mcxw-hw-params";
-		nvmem-cells = <&ieee802154_eui64_ifr0>;
-		nvmem-cell-names = "ieee802154_eui64";
+		nvmem-cells = <&ieee802154_eui64_ifr0>, <&zb_settings_ifr0>, <&zb_secured_ifr0>;
+		nvmem-cell-names = "ieee802154_eui64", "zb_settings", "zb_secured";
 	};
 };
 
