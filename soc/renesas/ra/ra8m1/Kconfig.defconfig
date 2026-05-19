@@ -21,4 +21,7 @@ DT_ICLK_PATH := $(dt_nodelabel_path,cpuclk)
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,$(DT_ICLK_PATH),clock-frequency)
 
+config PM_DEVICE
+	default y if PM && "$(dt_nodelabel_enabled,sw_standby)"
+
 endif # SOC_SERIES_RA8M1
