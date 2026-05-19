@@ -62,6 +62,12 @@ static struct net_in6_addr dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0xd, 0xe, 0x5, 0x7 } } };
 static struct net_in6_addr dest_addr_alt = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 						 0, 0, 0, 0, 0xd, 0xe, 0x5, 0x8 } } };
+static struct net_in6_addr forward_src_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						    0, 0, 0, 0, 0xaa, 0xbb, 0, 0x1 } } };
+static struct net_in6_addr forward_nexthop = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						    0, 0, 0, 0, 0x0b, 0x0e, 0x0e, 0x5 } } };
+static struct net_in6_addr forward_dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						     0, 0, 0, 0, 0xd, 0xe, 0x5, 0x9 } } };
 
 /* Extra address is assigned to ll_addr */
 static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
@@ -90,6 +96,11 @@ static bool test_failed;
 static bool data_failure;
 static bool feed_data; /* feed data back to IP stack */
 static bool sent_pkt_seen;
+static bool sent_forwarding;
+static struct net_if *sent_iface;
+static struct net_if *sent_orig_iface;
+static uint8_t sent_ipv6_hop_limit;
+static const struct net_in6_addr *expected_ipv6_dst;
 
 static int msg_sending;
 
@@ -137,7 +148,7 @@ static void net_route_iface_init(struct net_if *iface)
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
-	ARG_UNUSED(dev);
+	bool notify_sender = true;
 
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
@@ -147,6 +158,23 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	/* By default we assume that the test is ok */
 	data_failure = false;
 	sent_pkt_seen = true;
+	sent_iface = net_if_lookup_by_dev(dev);
+	sent_orig_iface = net_pkt_orig_iface(pkt);
+	sent_forwarding = net_pkt_forwarding(pkt);
+	sent_ipv6_hop_limit = 0U;
+
+	if (net_pkt_family(pkt) == NET_AF_INET6 &&
+	    net_pkt_get_len(pkt) >= sizeof(struct net_ipv6_hdr)) {
+		sent_ipv6_hop_limit = NET_IPV6_HDR(pkt)->hop_limit;
+
+		if (expected_ipv6_dst != NULL &&
+		    !net_ipv6_addr_cmp_raw(NET_IPV6_HDR(pkt)->dst,
+					   expected_ipv6_dst->s6_addr)) {
+			notify_sender = false;
+		}
+	} else if (expected_ipv6_dst != NULL) {
+		notify_sender = false;
+	}
 
 	if (feed_data) {
 		DBG("Received at iface %p and feeding it into iface %p\n",
@@ -171,14 +199,16 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 	msg_sending = 0;
 out:
-	k_sem_give(&wait_data);
+	if (notify_sender) {
+		k_sem_give(&wait_data);
+	}
 
 	return 0;
 }
 
 static int tester_send_peer(const struct device *dev, struct net_pkt *pkt)
 {
-	ARG_UNUSED(dev);
+	bool notify_sender = true;
 
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
@@ -188,6 +218,23 @@ static int tester_send_peer(const struct device *dev, struct net_pkt *pkt)
 	/* By default we assume that the test is ok */
 	data_failure = false;
 	sent_pkt_seen = true;
+	sent_iface = net_if_lookup_by_dev(dev);
+	sent_orig_iface = net_pkt_orig_iface(pkt);
+	sent_forwarding = net_pkt_forwarding(pkt);
+	sent_ipv6_hop_limit = 0U;
+
+	if (net_pkt_family(pkt) == NET_AF_INET6 &&
+	    net_pkt_get_len(pkt) >= sizeof(struct net_ipv6_hdr)) {
+		sent_ipv6_hop_limit = NET_IPV6_HDR(pkt)->hop_limit;
+
+		if (expected_ipv6_dst != NULL &&
+		    !net_ipv6_addr_cmp_raw(NET_IPV6_HDR(pkt)->dst,
+					   expected_ipv6_dst->s6_addr)) {
+			notify_sender = false;
+		}
+	} else if (expected_ipv6_dst != NULL) {
+		notify_sender = false;
+	}
 
 	if (feed_data) {
 		DBG("Received at iface %p and feeding it into iface %p\n",
@@ -211,9 +258,27 @@ static int tester_send_peer(const struct device *dev, struct net_pkt *pkt)
 
 	msg_sending = 0;
 out:
-	k_sem_give(&wait_data);
+	if (notify_sender) {
+		k_sem_give(&wait_data);
+	}
 
 	return 0;
+}
+
+static void drain_wait_data(void)
+{
+	while (k_sem_take(&wait_data, K_NO_WAIT) == 0) {
+	}
+}
+
+static void reset_send_state(void)
+{
+	sent_pkt_seen = false;
+	sent_forwarding = false;
+	sent_iface = NULL;
+	sent_orig_iface = NULL;
+	sent_ipv6_hop_limit = 0U;
+	expected_ipv6_dst = NULL;
 }
 
 struct net_route_test net_route_data;
@@ -648,6 +713,106 @@ static void test_route_ipv6_packet_without_iface(void)
 	net_pkt_unref(pkt);
 }
 
+static void test_route_ipv6_forward_hop_limit_expired_is_dropped(void)
+{
+	struct net_nbr *nbr;
+	struct net_pkt *pkt;
+	struct net_ipv6_hdr *hdr;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_FORWARDING);
+
+	nbr = net_ipv6_nbr_add(peer_iface, &forward_nexthop,
+			       &net_route_data_peer.ll_addr, false,
+			       NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "Neighbor add failed");
+	reset_send_state();
+	drain_wait_data();
+	drain_wait_data();
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPV6_NEXTHDR_NONE,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "Packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vtc = 0x60;
+	hdr->len = 0U;
+	hdr->nexthdr = NET_IPV6_NEXTHDR_NONE;
+	hdr->hop_limit = 1U;
+	net_ipv6_addr_copy_raw(hdr->src, forward_src_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, forward_dest_addr.s6_addr);
+
+	net_pkt_set_orig_iface(pkt, my_iface);
+	net_pkt_set_iface(pkt, my_iface);
+	net_pkt_set_forwarding(pkt, false);
+
+	ret = net_route_ipv6_packet(pkt, &forward_nexthop);
+	zassert_equal(ret, -ETIMEDOUT, "Expected hop-limit expiry");
+	zassert_false(sent_pkt_seen,
+		      "Hop-limit-expired forwarded IPv6 packet must not be sent");
+	zassert_equal(k_sem_take(&wait_data, WAIT_TIME), -EAGAIN,
+		      "Hop-limit-expired forwarded IPv6 packet unexpectedly sent");
+}
+
+static void test_route_ipv6_forward_packet_between_ifaces(void)
+{
+	struct net_route_entry *route;
+	struct net_nbr *nbr;
+	struct net_pkt *pkt;
+	struct net_ipv6_hdr *hdr;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_FORWARDING);
+
+	route = net_route_ipv6_add(peer_iface, &forward_dest_addr, 128,
+				   &forward_nexthop,
+				   NET_IPV6_ND_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "Forwarding route add failed");
+
+	nbr = net_ipv6_nbr_add(peer_iface, &forward_nexthop,
+			       &net_route_data_peer.ll_addr, false,
+			       NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "Forwarding nexthop add failed");
+
+	reset_send_state();
+	drain_wait_data();
+	expected_ipv6_dst = &forward_dest_addr;
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPV6_NEXTHDR_NONE,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "Forwarding packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vtc = 0x60;
+	hdr->len = 0U;
+	hdr->nexthdr = NET_IPV6_NEXTHDR_NONE;
+	hdr->hop_limit = 2U;
+	net_ipv6_addr_copy_raw(hdr->src, forward_src_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, forward_dest_addr.s6_addr);
+
+	zassert_ok(net_recv_data(my_iface, pkt), "Forwarding receive failed");
+	zassert_ok(k_sem_take(&wait_data, WAIT_TIME), "Forwarded packet was not sent");
+
+	zassert_true(sent_pkt_seen, "Forwarded packet not observed");
+	zassert_equal_ptr(sent_iface, peer_iface,
+			  "Forwarded packet used wrong egress interface");
+	zassert_equal(sent_ipv6_hop_limit, 1U,
+		      "Forwarded IPv6 packet should decrement hop limit");
+
+	expected_ipv6_dst = NULL;
+	zassert_ok(net_route_ipv6_del(route), "Forwarding route del failed");
+}
+
 
 /*test case main entry*/
 ZTEST(route_test_suite, test_route)
@@ -673,6 +838,8 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv6_select_src_iface_uses_explicit_route();
 	test_route_ipv6_packet_without_neighbor_ll();
 	test_route_ipv6_packet_without_iface();
+	test_route_ipv6_forward_hop_limit_expired_is_dropped();
+	test_route_ipv6_forward_packet_between_ifaces();
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);
