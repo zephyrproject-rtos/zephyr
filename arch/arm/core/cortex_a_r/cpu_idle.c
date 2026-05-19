@@ -44,6 +44,15 @@
 	} while (false)
 #endif
 
+#ifdef CONFIG_ARMV5
+#define __WFE() __WFI()
+void __WFI(void)
+{
+	/* wait for interrupt */
+	__asm__ volatile("mcr p15, 0, %0, c7, c0, 4" :: "r"(0) : "memory");
+}
+#endif
+
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
