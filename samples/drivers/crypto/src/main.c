@@ -631,6 +631,7 @@ int main(void)
 		return 0;
 	}
 
+	LOG_INF("Testing crypto device %s", dev->name);
 	LOG_INF("Cipher Sample");
 
 	for (i = 0; modes[i].mode; i++) {
