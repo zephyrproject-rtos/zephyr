@@ -1812,19 +1812,10 @@ static void kill_handler(const struct shell *sh)
 	CODE_UNREACHABLE;
 }
 
-void shell_thread(void *shell_handle, void *arg_log_backend,
-		  void *arg_log_level)
+void shell_thread(void *shell_handle, void *, void *)
 {
 	struct shell *sh = shell_handle;
 	int err;
-
-	z_flag_handle_log_set(sh, (bool)arg_log_backend);
-	sh->ctx->log_level = POINTER_TO_UINT(arg_log_level);
-
-	err = sh->iface->api->enable(sh->iface, false);
-	if (err != 0) {
-		return;
-	}
 
 	if (IS_ENABLED(CONFIG_SHELL_AUTOSTART)) {
 		/* Enable shell and print prompt. */
@@ -1876,10 +1867,18 @@ int shell_init(const struct shell *sh, const void *transport_config,
 		return err;
 	}
 
+	z_flag_handle_log_set(sh, log_backend);
+	sh->ctx->log_level = init_log_level;
+
+	err = sh->iface->api->enable(sh->iface, false);
+	if (err != 0) {
+		instance_uninit(sh);
+		return err;
+	}
+
 	k_tid_t tid = k_thread_create(sh->thread,
 				  sh->stack, CONFIG_SHELL_STACK_SIZE,
-				  shell_thread, (void *)sh, (void *)log_backend,
-				  UINT_TO_POINTER(init_log_level),
+				  shell_thread, (void *)sh, NULL, NULL,
 				  SHELL_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	sh->ctx->tid = tid;
