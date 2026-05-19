@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#define DT_DRV_COMPAT silabs_gpdma
 #include <zephyr/irq.h>
 #include <zephyr/sys/mem_blocks.h>
 #include <zephyr/spinlock.h>
@@ -17,22 +17,21 @@
 #include "rsi_gpdma.h"
 #include "rsi_rom_gpdma.h"
 
-#define DT_DRV_COMPAT                silabs_gpdma
-#define GPDMA_DESC_MAX_TRANSFER_SIZE 4096
-#define GPDMA_MAX_CHANNEL_FIFO_SIZE  64
-#define GPDMA_MAX_PRIORITY           3
-#define GPDMA_MIN_PRIORITY           0
+#define SIWX91X_GPDMA_MAX_XFER_COUNT      4096
+#define SIWX91X_GPDMA_MAX_FIFO_SIZE         64
+#define SIWX91X_GPDMA_MAX_PRIORITY           3
+#define SIWX91X_GPDMA_MIN_PRIORITY           0
 
-LOG_MODULE_REGISTER(si91x_gpdma, CONFIG_DMA_LOG_LEVEL);
+LOG_MODULE_REGISTER(siwx91x_gpdma, CONFIG_DMA_LOG_LEVEL);
 
-enum gpdma_xfer_dir {
+enum siwx91x_gpdma_xfer_dir {
 	SIWX91X_TRANSFER_MEM_TO_MEM = 0,
 	SIWX91X_TRANSFER_MEM_TO_PER = 1,
 	SIWX91X_TRANSFER_PER_TO_MEM = 2,
 	SIWX91X_TRANSFER_DIR_INVALID = 4,
 };
 
-enum gpdma_data_width {
+enum siwx91x_gpdma_data_width {
 	SIWX91X_DATA_WIDTH_8 = 0,
 	SIWX91X_DATA_WIDTH_16 = 1,
 	SIWX91X_DATA_WIDTH_32 = 2,
@@ -43,7 +42,7 @@ struct siwx91x_gpdma_channel_info {
 	dma_callback_t cb;
 	void *cb_data;
 	RSI_GPDMA_DESC_T *desc;
-	enum gpdma_xfer_dir xfer_direction;
+	uint32_t xfer_direction;
 	bool channel_active;
 };
 
@@ -66,10 +65,14 @@ struct siwx19x_gpdma_data {
 
 static bool siwx91x_gpdma_is_priority_valid(uint32_t channel_priority)
 {
-	return (channel_priority >= GPDMA_MIN_PRIORITY && channel_priority <= GPDMA_MAX_PRIORITY);
+	if (channel_priority < SIWX91X_GPDMA_MIN_PRIORITY ||
+	    channel_priority > SIWX91X_GPDMA_MAX_PRIORITY) {
+		return false;
+	}
+	return true;
 }
 
-static enum gpdma_xfer_dir siwx91x_gpdma_xfer_dir(uint32_t dir)
+static enum siwx91x_gpdma_xfer_dir siwx91x_gpdma_xfer_dir(uint32_t dir)
 {
 	switch (dir) {
 	case MEMORY_TO_MEMORY:
@@ -83,7 +86,7 @@ static enum gpdma_xfer_dir siwx91x_gpdma_xfer_dir(uint32_t dir)
 	}
 }
 
-static enum gpdma_data_width siwx91x_gpdma_data_size(uint32_t data_size)
+static enum siwx91x_gpdma_data_width siwx91x_gpdma_data_size(uint32_t data_size)
 {
 	switch (data_size) {
 	case 1:
@@ -144,7 +147,7 @@ static int siwx91x_gpdma_count_hw_desc(const struct dma_config *config, int oper
 			total += 1;
 		} else {
 			total += DIV_ROUND_UP(block->block_size,
-					      GPDMA_DESC_MAX_TRANSFER_SIZE - operation_width);
+					      SIWX91X_GPDMA_MAX_XFER_COUNT - operation_width);
 		}
 		block = block->next_block;
 	}
@@ -185,7 +188,7 @@ static RSI_GPDMA_DESC_T *siwx91x_gpdma_block_config(struct siwx19x_gpdma_data *d
 	}
 
 	do {
-		uint32_t chunk = MIN(remaining, GPDMA_DESC_MAX_TRANSFER_SIZE - operation_width);
+		uint32_t chunk = MIN(remaining, SIWX91X_GPDMA_MAX_XFER_COUNT - operation_width);
 
 		key = k_spin_lock(&data->desc_pool_lock);
 		ret = sys_mem_blocks_alloc(data->desc_pool, 1, (void **)&desc);
@@ -335,9 +338,9 @@ static int siwx91x_gpdma_xfer_configure(const struct device *dev, const struct d
 		return -EINVAL;
 	}
 
-	if (operation_width >= GPDMA_MAX_CHANNEL_FIFO_SIZE) {
+	if (operation_width >= SIWX91X_GPDMA_MAX_FIFO_SIZE) {
 		LOG_ERR("Maximum fifo size reached: data_size × burst_length = %d >= %d",
-			operation_width, GPDMA_MAX_CHANNEL_FIFO_SIZE);
+			operation_width, SIWX91X_GPDMA_MAX_FIFO_SIZE);
 		return -EINVAL;
 	}
 
@@ -454,9 +457,9 @@ static int siwx91x_gpdma_reload(const struct device *dev, uint32_t channel, uint
 		return -EINVAL;
 	}
 
-	if (size > (GPDMA_DESC_MAX_TRANSFER_SIZE - data_size)) {
+	if (size > SIWX91X_GPDMA_MAX_XFER_COUNT - data_size) {
 		LOG_ERR("Maximum xfer size should be <= %d",
-			GPDMA_DESC_MAX_TRANSFER_SIZE - data_size);
+			SIWX91X_GPDMA_MAX_XFER_COUNT - data_size);
 		return -EINVAL;
 	}
 
@@ -662,7 +665,7 @@ static DEVICE_API(dma, siwx91x_gpdma_api) = {
 	static ATOMIC_DEFINE(siwx91x_gdma_atomic_##inst,                                           \
 			     DT_INST_PROP(inst, silabs_dma_channel_count));                        \
 	SYS_MEM_BLOCKS_DEFINE_STATIC(siwx91x_gpdma_desc_pool_##inst, 32,                           \
-				     CONFIG_GPDMA_SILABS_SIWX91X_DESCRIPTOR_COUNT, 32);            \
+				     CONFIG_DMA_SILABS_SIWX91X_GPDMA_DESCR_COUNT, 32);             \
 	static struct siwx91x_gpdma_channel_info                                                   \
 		siwx91x_gpdma_chan_info_##inst[DT_INST_PROP(inst, silabs_dma_channel_count)];      \
 	static struct siwx19x_gpdma_data siwx91x_gpdma_data_##inst = {                             \
