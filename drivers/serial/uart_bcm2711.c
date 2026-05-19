@@ -160,13 +160,11 @@ static int uart_bcm2711_poll_in(const struct device *dev, unsigned char *c)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
 
-	while (!bcm2711_mu_lowlevel_can_getc(uart_data->uart_addr)) {
-		;
+	if (!bcm2711_mu_lowlevel_can_getc(uart_data->uart_addr)) {
+		return -1;
 	}
 
-	/* got a character */
 	*c = sys_read32(uart_data->uart_addr + BCM2711_MU_IO) & 0xFF;
-
 	return 0;
 }
 
