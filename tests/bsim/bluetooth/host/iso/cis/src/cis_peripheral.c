@@ -87,7 +87,7 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 {
 	iso_recv_cnt++;
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		printk("Incoming data channel %p len %u\n", chan, buf->len);
+		printk("[%zu]: Incoming data channel %p len %u\n", iso_recv_cnt, chan, buf->len);
 		iso_print_data(buf->data, buf->len);
 		SET_FLAG(flag_data_received);
 	}
@@ -137,9 +137,6 @@ static void init(void)
 		.sdu = CONFIG_BT_ISO_TX_MTU,
 	};
 	static struct bt_iso_server iso_server = {
-#if defined(CONFIG_BT_SMP)
-		.sec_level = BT_SECURITY_L2,
-#endif /* CONFIG_BT_SMP */
 		.accept = iso_accept,
 	};
 	static struct bt_iso_chan_ops iso_ops = {
@@ -162,9 +159,6 @@ static void init(void)
 
 	iso_chan.ops = &iso_ops;
 	iso_chan.qos = &iso_qos;
-#if defined(CONFIG_BT_SMP)
-	iso_chan.required_sec_level = BT_SECURITY_L2,
-#endif /* CONFIG_BT_SMP */
 
 	err = bt_iso_server_register(&iso_server);
 	if (err) {
@@ -194,6 +188,9 @@ static void test_main(void)
 {
 	init();
 
+	/* This is being used for the disable test as well, so we may need to handle multiple
+	 * connection attempts before reaching flag_data_received
+	 */
 	while (true) {
 		adv_connect();
 		bt_testlib_conn_wait_free();
@@ -210,13 +207,11 @@ static void test_main_early_disconnect(void)
 
 	disconnect_after_recv_cnt = 10;
 
-	while (true) {
-		adv_connect();
-		bt_testlib_conn_wait_free();
+	adv_connect();
+	bt_testlib_conn_wait_free();
 
-		if (IS_FLAG_SET(flag_data_received)) {
-			TEST_PASS("Test passed");
-		}
+	if (IS_FLAG_SET(flag_data_received)) {
+		TEST_PASS("Test passed");
 	}
 }
 

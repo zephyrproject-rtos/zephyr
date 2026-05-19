@@ -21,15 +21,6 @@ macro(kernel_sources)
     list(APPEND kernel_files ${ARGN})
 endmacro()
 
-if(NOT CONFIG_ERRNO_IN_TLS AND NOT CONFIG_LIBC_ERRNO)
-  zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/sys/errno_private.h)
-endif()
-
-zephyr_syscall_header_ifdef(
-  CONFIG_ATOMIC_OPERATIONS_C
-  ${ZEPHYR_BASE}/include/zephyr/sys/atomic_c.h
-)
-
 zephyr_syscall_header_ifdef(
   CONFIG_MMU
   ${ZEPHYR_BASE}/include/zephyr/kernel/mm.h
@@ -54,16 +45,16 @@ add_library(kernel INTERFACE)
 target_link_libraries(kernel INTERFACE ${libkernel})
 
 else()
-
+# Own the kernel target in this directory so subdirectories can
+# contribute sources via target_sources().
+add_library(kernel)
 # FIXME: SHADOW_VARS: Remove this once we have enabled -Wshadow globally.
 add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
 kernel_sources(
   main_weak.c
-  banner.c
   busy_wait.c
   device.c
-  errno.c
   fatal.c
   init.c
   kheap.c
@@ -72,9 +63,24 @@ kernel_sources(
   version.c
   )
 
-kernel_sources_ifdef(CONFIG_SCHED_CPU_MASK
-  cpu_mask.c
-  )
+# Toolchain workaround: on ARM Thumb, gcc will normally enable
+# -fomit-frame-pointer at all optimization levels except -O0.  When
+# frame pointers ARE enabled, gcc will also infuriatingly disallow a
+# clobber of the r7 frame pointer register in inline assembly
+# (vs. just spilling filling as needed).  Our optimized arch_switch
+# requires the ability to clobber this (callee-saved) register.  Turn
+# the flag back on for the two files that need it.  (The error
+# behavior only gets modified at the level of a whole file, I tried
+# #pragmas and attributes to change the code generation for the
+# specific functions without success).
+if(CONFIG_CPU_CORTEX_M)
+  if(CONFIG_NO_OPTIMIZATIONS)
+    if(${COMPILER} STREQUAL "gcc")
+      set_source_files_properties(init.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
+      set_source_files_properties(sched.c PROPERTIES COMPILE_OPTIONS -fomit-frame-pointer)
+    endif()
+  endif()
+endif()
 
 kernel_sources_ifdef(CONFIG_MULTITHREADING
   idle.c
@@ -89,29 +95,29 @@ kernel_sources_ifdef(CONFIG_MULTITHREADING
   condvar.c
   thread.c
   sched.c
+  sleep.c
   pipe.c
+  scheduler.c
   )
 
 if(CONFIG_MULTITHREADING)
 if(CONFIG_SCHED_SCALABLE OR CONFIG_WAITQ_SCALABLE)
 kernel_sources(priority_queues.c)
 endif()
-
-kernel_sources_ifdef(CONFIG_SMP
-     smp.c
-     ipi.c)
+add_subdirectory_ifdef(CONFIG_SMP smp)
 else() # CONFIG_MULTITHREADING
 kernel_sources(nothread.c)
 endif() # CONFIG_MULTITHREADING
 
+
 kernel_sources_ifdef(CONFIG_TIMESLICING timeslicing.c)
+kernel_sources_ifdef(CONFIG_SCHED_DEADLINE deadline.c)
 kernel_sources_ifdef(CONFIG_SPIN_VALIDATE spinlock_validate.c)
 kernel_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
-kernel_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
 kernel_sources_ifdef(CONFIG_THREAD_MONITOR thread_monitor.c)
 kernel_sources_ifdef(CONFIG_DEMAND_PAGING_STATS paging/statistics.c)
 
-add_library(kernel ${kernel_files})
+target_sources(kernel PRIVATE ${kernel_files})
 
 # Kernel files has the macro __ZEPHYR_SUPERVISOR__ set so that it
 # optimizes the code when userspace is enabled.
@@ -128,7 +134,6 @@ target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer
 if(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME OR CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
   target_sources(kernel PRIVATE sys_clock_hw_cycles.c)
 endif()
-target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
 target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
 target_sources_ifdef(CONFIG_EVENTS                kernel PRIVATE events.c)
@@ -167,21 +172,12 @@ if(${CONFIG_KERNEL_MEM_POOL})
 
   endif()
 
+  zephyr_linker_include_var(VAR K_HEAP_MEM_POOL_SIZE VALUE ${final_heap_size})
   zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
 endif()
 
-# The last 2 files inside the target_sources_ifdef should be
-# userspace_handler.c and userspace.c. If not the linker would complain.
-# This order has to be maintained. Any new file should be placed
-# above these 2 files.
-target_sources_ifdef(
-  CONFIG_USERSPACE
-  kernel PRIVATE
-  futex.c
-  mem_domain.c
-  userspace_handler.c
-  userspace.c
-  )
+add_subdirectory_ifdef(CONFIG_USERSPACE userspace)
+add_subdirectory(sys)
 
 if(${CONFIG_DYNAMIC_THREAD})
   target_sources(kernel PRIVATE dynamic.c)

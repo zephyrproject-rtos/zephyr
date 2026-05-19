@@ -17,19 +17,18 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0000c000 0x00066000>;
 		};
 
 		slot1_partition: partition@72000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00072000 0x00066000>;
 		};
 
 		storage_partition: partition@d8000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000d8000 0x00028000>;
 		};

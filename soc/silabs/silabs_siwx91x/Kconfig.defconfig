@@ -60,6 +60,16 @@ config CMSIS_V2_THREAD_DYNAMIC_STACK_SIZE
 config CMSIS_V2_THREAD_MAX_STACK_SIZE
 	default 2048
 
+# Match the controller's buffer count
+configdefault BT_BUF_ACL_TX_COUNT
+	default 15
+
+configdefault BT_BUF_EVT_RX_COUNT
+	default 20
+
+configdefault BT_CONN_TX_MAX
+	default 15
+
 endif
 
 rsource "*/Kconfig.defconfig"

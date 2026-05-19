@@ -20,7 +20,7 @@ Installation
 
 #. :ref:`Set these environment variables <env_vars>`:
 
-   - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``llvm``.
+   - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``host/llvm``.
    - Set :envvar:`LLVM_TOOLCHAIN_PATH` to the toolchain installation directory.
 
 #. To check that you have set these variables correctly in your current
@@ -34,7 +34,7 @@ Installation
          .. code-block:: bash
 
             echo $ZEPHYR_TOOLCHAIN_VARIANT
-            llvm
+            host/llvm
             echo $LLVM_TOOLCHAIN_PATH
             /home/you/Downloads/ATfE
 
@@ -43,7 +43,7 @@ Installation
          .. code-block:: bash
 
             echo $ZEPHYR_TOOLCHAIN_VARIANT
-            llvm
+            host/llvm
             echo $LLVM_TOOLCHAIN_PATH
             /home/you/Downloads/ATfE
 
@@ -52,7 +52,7 @@ Installation
          .. code-block:: powershell
 
             > echo %ZEPHYR_TOOLCHAIN_VARIANT%
-            llvm
+            host/llvm
             > echo %LLVM_TOOLCHAIN_PATH%
             C:\ATfE
 
@@ -63,7 +63,7 @@ Installation
 
    .. code-block:: console
 
-      west build ... -- -DZEPHYR_TOOLCHAIN_VARIANT=llvm -DLLVM_TOOLCHAIN_PATH=...
+      west build ... -- -DZEPHYR_TOOLCHAIN_VARIANT=host/llvm -DLLVM_TOOLCHAIN_PATH=...
 
 Toolchain settings
 ******************
@@ -82,6 +82,6 @@ Runtime library
 
 .. code-block:: console
 
-   west build ... -- -DZEPHYR_TOOLCHAIN_VARIANT=llvm -DLLVM_TOOLCHAIN_PATH=... -DCONFIG_LLVM_USE_LLD=y -DCONFIG_COMPILER_RT_RTLIB=y
+   west build ... -- -DZEPHYR_TOOLCHAIN_VARIANT=host/llvm -DLLVM_TOOLCHAIN_PATH=... -DCONFIG_LLVM_USE_LLD=y -DCONFIG_COMPILER_RT_RTLIB=y
 
 .. _Arm Toolchain for Embedded: https://developer.arm.com/Tools%20and%20Software/Arm%20Toolchain%20for%20Embedded

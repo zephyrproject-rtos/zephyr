@@ -3,9 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
 #include <zephyr/bluetooth/conn.h>
@@ -25,20 +27,12 @@
 
 #include "hap_ha.h"
 
-#define MANDATORY_SINK_CONTEXT (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
-				BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
-				BT_AUDIO_CONTEXT_TYPE_MEDIA | \
-				BT_AUDIO_CONTEXT_TYPE_LIVE)
-
-#define AVAILABLE_SINK_CONTEXT   MANDATORY_SINK_CONTEXT
-#define AVAILABLE_SOURCE_CONTEXT MANDATORY_SINK_CONTEXT
-
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL), /* ASCS UUID */
 	BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED, /* Target Announcement */
-	BT_BYTES_LIST_LE16(AVAILABLE_SINK_CONTEXT),
-	BT_BYTES_LIST_LE16(AVAILABLE_SOURCE_CONTEXT),
-	0x00, /* Metadata length */
+	BT_BYTES_LIST_LE16(HAP_CONTEXT),
+	BT_BYTES_LIST_LE16(HAP_CONTEXT),
+	0x00U, /* Metadata length */
 };
 
 static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
@@ -59,6 +53,9 @@ static struct bt_le_ext_adv *ext_adv;
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(reason);
+
 	/* Restart advertising after disconnection */
 	k_work_schedule(&adv_work, K_SECONDS(1));
 }
@@ -86,7 +83,7 @@ static bool adv_rpa_expired_cb(struct bt_le_ext_adv *adv)
 	printk("PRSI: 0x%s\n", rsi_str);
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to set advertising data (err %d)\n", err);
 		return false;
 	}
@@ -105,15 +102,17 @@ static void adv_work_handler(struct k_work *work)
 {
 	int err;
 
+	ARG_UNUSED(work);
+
 	if (ext_adv == NULL) {
 		/* Create a connectable advertising set */
 		err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, &adv_cb, &ext_adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to create advertising set (err %d)\n", err);
 		}
 
 		err = bt_le_ext_adv_set_data(ext_adv, ad, ARRAY_SIZE(ad), NULL, 0);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to set advertising data (err %d)\n", err);
 		}
 
@@ -121,7 +120,7 @@ static void adv_work_handler(struct k_work *work)
 	}
 
 	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to start advertising set (err %d)\n", err);
 	} else {
 		printk("Advertising successfully started\n");
@@ -209,30 +208,6 @@ int main(void)
 			printk("MICP Microphone Device init failed (err %d)\n", err);
 			return 0;
 		}
-	}
-
-	if (IS_ENABLED(CONFIG_HAP_HA_HEARING_AID_BANDED)) {
-		/* HAP_d1.0r00; 3.7 BAP Unicast Server role requirements
-		 * A Banded Hearing Aid in the HA role shall set the
-		 * Front Left and the Front Right bits to a value of 0b1
-		 * in the Sink Audio Locations characteristic value.
-		 */
-		bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-				    (BT_AUDIO_LOCATION_FRONT_LEFT |
-				     BT_AUDIO_LOCATION_FRONT_RIGHT));
-	} else {
-		bt_pacs_set_location(BT_AUDIO_DIR_SINK,
-				     BT_AUDIO_LOCATION_FRONT_LEFT);
-	}
-
-	bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
-				       AVAILABLE_SINK_CONTEXT);
-
-	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
-		bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
-				     BT_AUDIO_LOCATION_FRONT_LEFT);
-		bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
-					       AVAILABLE_SOURCE_CONTEXT);
 	}
 
 	k_work_init_delayable(&adv_work, adv_work_handler);

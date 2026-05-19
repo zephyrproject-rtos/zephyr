@@ -36,7 +36,7 @@
 		rtc = &rtc;
 	};
 
-	leds {
+	leds: leds {
 		compatible = "gpio-leds";
 
 		led0: led_0 {

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <silabs/xg26/clock-hfrcodpll.dtsi>
+#include <silabs/xg26/clock-lfxo.dtsi>
 #include <zephyr/dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -141,14 +143,9 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <DT_FREQ_M(78)>;
-};
-
 &itm {
 	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
-	swo-ref-frequency = <DT_FREQ_M(78)>;
 };
 
 &hfxo {
@@ -161,36 +158,6 @@
 	ctune = <63>;
 	precision = <50>;
 	status = "okay";
-};
-
-&hfrcodpll {
-	clock-frequency = <DT_FREQ_M(78)>;
-	clocks = <&hfxo>;
-	dpll-autorecover;
-	dpll-edge = "fall";
-	dpll-lock = "phase";
-	dpll-m = <1919>;
-	dpll-n = <3839>;
-};
-
-&em23grpaclk {
-	clocks = <&lfxo>;
-};
-
-&em4grpaclk {
-	clocks = <&lfxo>;
-};
-
-&sysrtcclk {
-	clocks = <&lfxo>;
-};
-
-&wdog0clk {
-	clocks = <&lfxo>;
-};
-
-&wdog1clk {
-	clocks = <&lfxo>;
 };
 
 &usart0 {
@@ -357,12 +324,13 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* Reserve 48 KiB for the bootloader */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 			label = "mcuboot";
 			read-only;
@@ -370,18 +338,21 @@
 
 		/* Reserve 1560 KiB for the application in slot 0 */
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0000c000 DT_SIZE_K(1560)>;
 			label = "image-0";
 		};
 
 		/* Reserve 1560 KiB for the application in slot 1 */
 		slot1_partition: partition@192000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00192000 DT_SIZE_K(1560)>;
 			label = "image-1";
 		};
 
 		/* Set 32 KiB of storage at the end of the 3200 KiB of flash */
 		storage_partition: partition@318000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00318000 DT_SIZE_K(32)>;
 			label = "storage";
 		};

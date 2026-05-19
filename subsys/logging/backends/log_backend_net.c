@@ -32,7 +32,7 @@ static char dev_hostname[MAX_HOSTNAME_LEN + 1];
 
 static uint8_t output_buf[CONFIG_LOG_BACKEND_NET_MAX_BUF_SIZE];
 static bool net_init_done;
-struct net_sockaddr server_addr;
+static struct net_sockaddr_storage server_addr;
 static bool panic_mode;
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_NET_OUTPUT_DEFAULT;
 
@@ -95,11 +95,11 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 	net_socklen_t server_addr_len = 0;
 	int ret, proto = NET_IPPROTO_UDP, type = NET_SOCK_DGRAM;
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == NET_AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.ss_family == NET_AF_INET) {
 		server_addr_len = sizeof(struct net_sockaddr_in);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && server_addr.sa_family == NET_AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && server_addr.ss_family == NET_AF_INET6) {
 		server_addr_len = sizeof(struct net_sockaddr_in6);
 	}
 
@@ -115,7 +115,7 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 	}
 #endif
 
-	ret = zsock_socket(server_addr.sa_family, type, proto);
+	ret = zsock_socket(server_addr.ss_family, type, proto);
 	if (ret < 0) {
 		ret = -errno;
 		DBG("Cannot get socket (%d)\n", ret);
@@ -128,7 +128,7 @@ static int do_net_init(struct log_backend_net_ctx *ctx)
 		(void)strncpy(dev_hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
 	}
 
-	ret = zsock_connect(ctx->sock, &server_addr, server_addr_len);
+	ret = zsock_connect(ctx->sock, net_sad(&server_addr), server_addr_len);
 	if (ret < 0) {
 		ret = -errno;
 		DBG("Cannot connect socket (%d)\n", ret);
@@ -222,9 +222,9 @@ bool log_backend_net_set_addr(const char *addr)
 		return ret;
 	}
 
-	net_sin(&server_addr)->sin_port = net_htons(514);
+	net_sin(net_sad(&server_addr))->sin_port = net_htons(514);
 
-	ret = net_ipaddr_parse(addr, strlen(addr), &server_addr);
+	ret = net_ipaddr_parse(addr, strlen(addr), net_sad(&server_addr));
 	if (!ret) {
 		LOG_ERR("Cannot parse syslog server address");
 		return ret;
@@ -243,9 +243,9 @@ bool log_backend_net_set_ip(const struct net_sockaddr *addr)
 
 	if ((IS_ENABLED(CONFIG_NET_IPV4) && addr->sa_family == NET_AF_INET) ||
 	    (IS_ENABLED(CONFIG_NET_IPV6) && addr->sa_family == NET_AF_INET6)) {
-		memcpy(&server_addr, addr, sizeof(server_addr));
+		memcpy(&server_addr, addr, net_family2size(addr->sa_family));
 
-		net_port_set_default(&server_addr, 514);
+		net_port_set_default(net_sad(&server_addr), 514);
 	} else {
 		LOG_ERR("Unknown address family");
 		return false;

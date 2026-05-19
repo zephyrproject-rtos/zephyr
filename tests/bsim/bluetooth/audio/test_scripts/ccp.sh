@@ -10,7 +10,7 @@ VERBOSITY_LEVEL=2
 
 cd ${BSIM_OUT_PATH}/bin
 
-SIMULATION_ID="ccp"
+SIMULATION_ID="${BOARD_TS}_ccp"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=ccp_call_control_server \

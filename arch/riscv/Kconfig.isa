@@ -3,6 +3,7 @@
 
 RISCV_ISA_BASE_PROP := riscv,isa-base
 RISCV_ISA_EXT_PROP  := riscv,isa-extensions
+RISCV_ISA_OMIT_PROP := riscv,isa-omissions
 
 config RISCV_ISA_RV32I
 	bool
@@ -28,6 +29,14 @@ config RISCV_ISA_RV128I
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_BASE_PROP),rv128i)
 	help
 	  RV128I Base Integer Instruction Set - 128bit
+
+config RISCV_ISA_BASE_FENCE
+	bool
+	default y if !$(dt_compat_all_has_prop,riscv,$(RISCV_ISA_OMIT_PROP),fence)
+	help
+	  Standard base integer instruction set includes the fence instructon, but
+	  some implementations may lack the instruction. Barrier checks depend on
+	  this symbol to ensure the hart truly supports fence.
 
 config RISCV_ISA_EXT_M
 	bool

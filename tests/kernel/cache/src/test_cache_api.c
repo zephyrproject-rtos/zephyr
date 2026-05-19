@@ -81,6 +81,8 @@ ZTEST_USER(cache_api, test_data_cache_api_user)
 
 static void *cache_api_setup(void)
 {
+	sys_cache_data_disable();
+	sys_cache_data_flush_all();
 	sys_cache_data_enable();
 	sys_cache_instr_enable();
 

@@ -239,10 +239,10 @@ env:
 Tests
 *****
 
-Tests are detected by the presence of a ``testcase.yaml`` or a ``sample.yaml``
-files in the application's project directory. This test application
-configuration file may contain one or more entries in the ``tests:`` section each
-identifying a Test Scenario.
+Tests are detected by the presence of a ``tests.yaml`` (``sample.yaml`` and
+``testcase.yaml`` support is deprecated) files in the application's project
+directory.  This test application configuration file may contain one or more
+entries in the ``tests:`` section each identifying a Test Scenario.
 
 .. _twister_test_project_diagram:
 
@@ -292,8 +292,8 @@ Test Scenario, Test Suite, and Test Case names must follow to these basic rules:
      ``<Test Scenario identifier>.<Ztest suite name>.<Ztest test name>``
 
    * **Standalone tests and samples**:
-     a Test Scenario identifier from the corresponding ``testcase.yaml`` (or
-     ``sample.yaml``) file where the last section signifies the standalone
+     a Test Scenario identifier from the corresponding ``tests.yaml`` file where
+     the last section signifies the standalone
      Test Case name, for example: ``debug.coredump.logging_backend``.
 
 
@@ -563,6 +563,8 @@ harness: <string>
     - shell
     - power
     - display_capture
+    - script
+    - bsim
 
     See :ref:`twister_harnesses` for more information.
 
@@ -594,16 +596,13 @@ harness_config: <harness configuration options>
     only those platforms that fulfill this external dependency.
 
 
-    fixture: <expression>
+    fixture: <string or list>
         Specify a test scenario dependency on an external device(e.g., sensor),
         and identify setups that fulfill this dependency. It depends on
         specific test setup and board selection logic to pick the particular
         board(s) out of multiple boards that fulfill the dependency in an
         automation setup based on ``fixture`` keyword. Some sample fixture names
         are i2c_hts221, i2c_bme280, i2c_FRAM, ble_fw and gpio_loop.
-
-        Only one fixture can be defined per test scenario and the fixture name has to
-        be unique across all tests in the test suite.
 
     ztest_suite_repeat: <int> (default 1)
         This parameter specifies the number of times the entire test suite should be repeated.
@@ -752,6 +751,8 @@ required_snippets: <list of needed snippets>
               - cdc-acm-console
               - user-snippet-example
 
+.. _required_applications:
+
 required_applications: <list of required applications> (default empty)
     Specify a list of test applications that must be built before current test can run.
     It enables sharing of built applications between test scenarios, allowing tests
@@ -787,7 +788,9 @@ required_applications: <list of required applications> (default empty)
           sample.shared_app:
             build_only: true
 
-    Limitations: Not supported with ``--subset`` or ``--runtime-artifact-cleanup`` options.
+    Limitations: Not supported with the ``--runtime-artifact-cleanup`` option,
+    as build artifacts of required applications must be retained for use
+    by the main test application.
 
 expect_reboot: <True|False> (default False)
     Notify twister that the test scenario is expected to reboot while executing.
@@ -866,6 +869,17 @@ Expressions
 **Parameters:**
    - ``label``: The node label to match.
    - ``compat``: The parent node’s compatible string to match.
+
+``dt_label_compat_enabled(label, compat)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if a DT node with the specified label exists, is enabled, and has the
+   specified compatible string.
+
+**Parameters:**
+   - ``label``: The node label to match.
+   - ``compat``: The node compatible string to match.
 
 ``dt_chosen_enabled(chosen)``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1039,6 +1053,92 @@ pytest_dut_scope: <function|class|module|package|session> (default function)
               - test_file_2.py::test_A
               - test_file_2.py::test_B[param_a]
 
+.. _required_devices:
+
+required_devices: <list of required device entries> (default empty)
+    Specify additional DUTs required for a multi-DUT test scenario.
+    Each entry configures one extra device to reserve and flash alongside
+    the main DUT. An empty entry ``{}`` reserves a second device with
+    the same platform and application as the main DUT.
+
+    Multi-DUT testing is supported for hardware device testing and
+    ``native_sim`` simulation. QEMU
+    is not supported. For simulation targets, Twister
+    automatically creates the required placeholder DUT entries, no
+    hardware map is needed. For hardware testing, provide a hardware map
+    file (``--hardware-map``) with a matching entry per required device.
+    More details in
+    :ref:`twister_multi_duts_testing` section.
+
+    Each entry supports the following optional fields:
+
+
+    platform: <string> (optional, defaults to current test's platform)
+        Platform to use for this required device. If not specified,
+        the same platform as the main DUT is used.
+
+    application: <string> (optional, defaults to current test application)
+        Test application ID to flash on this required device. When
+        specified, Twister builds the application separately and assigns its build
+        directory to the reserved DUT before flashing.
+        If not specified, the same application as the main DUT is used.
+
+        It uses same mechanism as :ref:`required_applications <required_applications>`,
+        so the application must be available in the source tree.
+
+    fixture: <list of fixture names> (optional, defaults to empty)
+        List of fixture names that must be present on the reserved device.
+        See :ref:`Fixtures <twister_fixtures>` for details.
+
+        Fixtures support an optional parameter suffix using the ``name:param``
+        syntax (e.g., ``io_adapter:channel_a``). When the main DUT has a fixture
+        with a parameter, Twister uses that parameter value to match required
+        devices - only devices carrying the **same parameter** for that fixture
+        name are considered. This ensures that physically connected DUT pairs
+        (e.g., two boards wired together and registered with the same fixture
+        parameter in the hardware map) are always reserved together and not
+        mixed with unrelated boards.
+
+        Example hardware map entries for a paired setup:
+
+        .. code-block:: yaml
+
+            - id: 01
+              platform: nrf52840dk/nrf52840
+              serial: /dev/ttyACM0
+              fixtures:
+                - io_adapter:channel_a
+            - id: 02
+              platform: nrf52840dk/nrf52840
+              serial: /dev/ttyACM1
+              fixtures:
+                - io_adapter:channel_a
+
+        With ``fixture: [io_adapter]`` on both the main DUT and the required
+        device, Twister selects only boards sharing the same ``channel_a``
+        parameter, guaranteeing the physically paired boards are picked.
+
+
+    Example configurations with multiple required devices:
+
+    .. code-block:: yaml
+
+        tests:
+          # Two DUTs, same platform and application
+          multidut.basic:
+            harness_config:
+              required_devices:
+                - {}
+          # Second DUT fixed to a specific platform
+          multidut.fixed_platform:
+            harness_config:
+              required_devices:
+                - platform: nrf52840dk/nrf52840
+          # Second DUT flashed with a different application
+          multidut.other_app:
+            harness_config:
+              required_devices:
+                - application: multidut.basic
 
 .. _twister_console_harness:
 
@@ -1373,16 +1473,51 @@ the configured ``threshold``, the test passes.
      increases comparison time.
    - Fingerprints are specific to both the test scenario and platform.
 
+.. _twister_script_harness:
+
+Script
+======
+
+The ``script`` harness executes shell scripts as test cases. It resolves scripts
+from the ``tests_scripts`` harness configuration option, runs each script as
+a subprocess, and reports individual pass/fail results based on the script
+exit code.
+
+The ``script`` harness also serves as a base class for the ``bsim``, ``pytest``,
+and ``ctest`` harnesses, providing shared subprocess execution, output
+streaming, and log handling.
+
+tests_scripts: <list of script paths> (default tests_scripts)
+    Specify a list of shell script paths, relative to the test source
+    directory, that need to be executed when a test scenario runs.
+    Each entry can be a path to a single file or a directory.
+    When a directory is specified, all ``.sh`` files in that directory
+    are collected (excluding files starting with ``_``). The default
+    is the ``tests_scripts`` directory.
+
+    .. code-block:: yaml
+
+        harness: script
+        harness_config:
+          tests_scripts:
+            - tests_scripts/test_a.sh
+            - ../../test/test_b.sh
+            - $ENV_VAR/tests_scripts
+
+Extra arguments following ``--`` on the twister command line are passed to
+every script as additional positional arguments.
+
 .. _twister_bsim_harness:
 
 Bsim
 ====
 
-Harness ``bsim`` is implemented in limited way - it helps only to copy the
-final executable (``zephyr.exe``) from build directory to BabbleSim's
-``bin`` directory (``${BSIM_OUT_PATH}/bin``).
+The ``bsim`` harness extends the ``script`` harness to support BabbleSim tests.
+During the build phase it copies the final executable (``zephyr.exe``) from
+the build directory to BabbleSim's ``bin`` directory
+(``${BSIM_OUT_PATH}/bin``). During the run phase it executes the test scripts
+listed in ``tests_scripts``.
 
-This action is useful to allow BabbleSim's tests to directly run after.
 By default, the executable file name is (with dots and slashes
 replaced by underscores): ``bs_<platform_name>_<test_path>_<test_scenario_name>``.
 This name can be overridden with the ``bsim_exe_name`` option in
@@ -1392,6 +1527,32 @@ bsim_exe_name: <string>
     If provided, the executable filename when copying to BabbleSim's bin
     directory, will be ``bs_<platform_name>_<bsim_exe_name>`` instead of the
     default based on the test path and scenario name.
+
+Example configuration with a multi-images BabbleSim test where the advertiser
+is build-only and the scanner references it via ``required_applications``:
+
+.. code-block:: yaml
+
+    common:
+      platform_allow:
+        - nrf52_bsim/native
+      harness: bsim
+    tests:
+      bluetooth.host.adv.extended.advertiser:
+        build_only: true
+        harness_config:
+          bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf
+        extra_args:
+          CONF_FILE=prj_advertiser.conf
+      bluetooth.host.adv.extended.scanner:
+        harness_config:
+          bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf
+          tests_scripts:
+            - tests_scripts/run_adv_extended.sh
+        extra_args:
+          CONF_FILE=prj_scanner.conf
+        required_applications:
+          - name: bluetooth.host.adv.extended.advertiser
 
 .. _twister_shell_harness:
 
@@ -1491,8 +1652,7 @@ This mode is used in continuous integration (CI) and other automated
 environments used to give developers fast feedback on changes. The mode can
 be activated using the ``--integration`` option of twister and narrows down
 the scope of builds and tests if applicable to platforms defined under the
-integration keyword in the test configuration file (``testcase.yaml`` and
-``sample.yaml``).
+integration keyword in the test configuration file (``tests.yaml``).
 
 
 Running tests on custom emulator
@@ -1816,6 +1976,8 @@ Would result in calling ``./custom_flash_script.py
 --build-dir <build directory> --board-id <board identification>
 --flag "complex, argument"``.
 
+.. _twister_fixtures:
+
 Fixtures
 --------
 
@@ -1942,6 +2104,67 @@ For example:
 Both instances share the same device ID but have different serial ports, allowing
 tests to interact with multiple cores simultaneously. Each connection
 is handled independently with separate log files.
+
+.. _twister_multi_duts_testing:
+
+Multi-DUTs testing support
+--------------------------
+
+Twister supports test scenarios that require more than one device.
+This feature works only with the pytest harness (``harness: pytest``).
+Hardware and ``native_sim`` execution environments are supported.
+
+To declare that a test needs an additional device, add
+``required_devices`` under ``harness_config`` in the test's YAML file.
+Each entry in the list describes one extra DUT. An empty entry ``{}``
+reserves a second device with the same platform and application as the
+main DUT. See :ref:`required_devices <required_devices>` for all available options.
+
+Example test configuration:
+
+.. code-block:: yaml
+
+    tests:
+      multidut.basic:
+        harness: pytest
+        harness_config:
+          required_devices:
+            - {}
+
+The hardware map must contain at least one entry per required device.
+Each entry needs a matching platform and a serial connection:
+
+.. code-block:: yaml
+
+    - connected: true
+      id: 01
+      platform: nrf52840dk/nrf52840
+      serial: /dev/ttyACM0
+    - connected: true
+      id: 02
+      platform: nrf52840dk/nrf52840
+      serial: /dev/ttyACM1
+
+Run the test on hardware with:
+
+.. code-block:: console
+
+    $ west twister -vv -ll debug -T tests/subsys/testsuite/multidut \
+      --device-testing --hardware-map map.yaml
+
+Run the test on ``native_sim`` (no hardware map required):
+
+.. code-block:: console
+
+    $ west twister -vv -ll debug -T tests/subsys/testsuite/multidut -p native_sim
+
+Twister reserves all required devices (or creates placeholder entries if ``native_sim`` is used),
+then passes them to pytest with all necessary information
+(platform, serial connection, build artifacts to flash, etc.) so the
+test can interact with all devices.
+
+An example multi-DUT test can be found at
+:zephyr_file:`tests/subsys/testsuite/multidut`.
 
 Quarantine
 ----------

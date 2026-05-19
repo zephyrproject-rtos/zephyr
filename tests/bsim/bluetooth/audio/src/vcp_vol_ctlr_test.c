@@ -8,19 +8,21 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
 
 #ifdef CONFIG_BT_VCP_VOL_CTLR
-#define VOCS_DESC_SIZE 64
-#define AICS_DESC_SIZE 64
+#define VOCS_DESC_SIZE 64U
+#define AICS_DESC_SIZE 64U
 
 extern enum bst_result_t bst_result;
 
@@ -49,6 +51,8 @@ static volatile bool g_cb;
 static void vcs_state_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 			 uint8_t volume, uint8_t mute)
 {
+	ARG_UNUSED(vol_ctlr);
+
 	if (err != 0) {
 		FAIL("VCP state cb err (%d)", err);
 		return;
@@ -63,6 +67,8 @@ static void vcs_state_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 static void vcs_flags_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 			 uint8_t flags)
 {
+	ARG_UNUSED(vol_ctlr);
+
 	if (err != 0) {
 		FAIL("VCP flags cb err (%d)", err);
 		return;
@@ -75,6 +81,8 @@ static void vcs_flags_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 
 static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("VOCS state cb err (%d)", err);
 		return;
@@ -87,6 +95,8 @@ static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 
 static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("VOCS location cb err (%d)", err);
 		return;
@@ -100,6 +110,8 @@ static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 static void vocs_description_cb(struct bt_vocs *inst, int err,
 				char *description)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("VOCS description cb err (%d)", err);
 		return;
@@ -118,6 +130,8 @@ static void vocs_description_cb(struct bt_vocs *inst, int err,
 
 static void vocs_write_cb(struct bt_vocs *inst, int err)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("VOCS write failed (%d)\n", err);
 		return;
@@ -129,6 +143,8 @@ static void vocs_write_cb(struct bt_vocs *inst, int err)
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS state cb err (%d)", err);
 		return;
@@ -144,6 +160,8 @@ static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 				 int8_t minimum, int8_t maximum)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS gain setting cb err (%d)", err);
 		return;
@@ -159,6 +177,8 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 static void aics_input_type_cb(struct bt_aics *inst, int err,
 			       uint8_t input_type)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS input type cb err (%d)", err);
 		return;
@@ -171,6 +191,8 @@ static void aics_input_type_cb(struct bt_aics *inst, int err,
 
 static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS status cb err (%d)", err);
 		return;
@@ -184,6 +206,8 @@ static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 static void aics_description_cb(struct bt_aics *inst, int err,
 				char *description)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS description cb err (%d)", err);
 		return;
@@ -202,6 +226,8 @@ static void aics_description_cb(struct bt_aics *inst, int err,
 
 static void aics_write_cb(struct bt_aics *inst, int err)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS write failed (%d)\n", err);
 		return;
@@ -213,6 +239,10 @@ static void aics_write_cb(struct bt_aics *inst, int err)
 static void vcs_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 			    uint8_t vocs_count, uint8_t aics_count)
 {
+	ARG_UNUSED(vol_ctlr);
+	ARG_UNUSED(vocs_count);
+	ARG_UNUSED(aics_count);
+
 	if (err != 0) {
 		FAIL("VCP could not be discovered (%d)\n", err);
 		return;
@@ -223,6 +253,8 @@ static void vcs_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 
 static void vcs_write_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
+	ARG_UNUSED(vol_ctlr);
+
 	if (err != 0) {
 		FAIL("VCP write failed (%d)\n", err);
 		return;
@@ -999,7 +1031,7 @@ static void test_vol_down(void)
 		return;
 	}
 
-	WAIT_FOR_COND(previous_volume == 0 ||
+	WAIT_FOR_COND(previous_volume == 0U ||
 		      (g_volume < previous_volume && g_cb && g_write_complete));
 	printk("VCP volume downed\n");
 }
@@ -1080,7 +1112,7 @@ static void test_unmute_vol_down(void)
 		return;
 	}
 
-	WAIT_FOR_COND((previous_volume == 0 || g_volume < previous_volume) &&
+	WAIT_FOR_COND((previous_volume == 0U || g_volume < previous_volume) &&
 		      expected_mute == g_mute &&
 		      g_cb &&
 		      g_write_complete);

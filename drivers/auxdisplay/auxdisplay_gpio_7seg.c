@@ -119,7 +119,6 @@ static int auxdisplay_gpio_7seg_clear(const struct device *dev)
 	struct auxdisplay_gpio_7seg_data *data = dev->data;
 
 	memset(cfg->buffer, 0, cfg->digit_count);
-	data->refresh_pos = 0;
 	data->cursor_x = 0;
 	data->cursor_y = 0;
 
@@ -166,9 +165,6 @@ static int auxdisplay_gpio_7seg_write(const struct device *dev, const uint8_t *c
 		}
 	}
 
-	/* Reset the refresh position */
-	data->refresh_pos = 0;
-
 	return 0;
 }
 
@@ -195,11 +191,15 @@ static void auxdisplay_gpio_7seg_timer_stop_fn(struct k_timer *timer)
 {
 	const struct device *dev = k_timer_user_data_get(timer);
 	const struct auxdisplay_gpio_7seg_config *cfg = dev->config;
+	struct auxdisplay_gpio_7seg_data *data = dev->data;
 
 	/* Turn off all digits */
 	for (uint32_t i = 0; i < cfg->digit_count; i++) {
 		gpio_pin_set_dt(&cfg->digit_gpios[i], 0);
 	}
+
+	/* Reset the refresh position */
+	data->refresh_pos = 0;
 }
 
 static int auxdisplay_gpio_7seg_init(const struct device *dev)

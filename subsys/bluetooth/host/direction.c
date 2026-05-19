@@ -21,7 +21,6 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 
 #include "hci_core.h"
 #include "conn_internal.h"
@@ -478,8 +477,7 @@ static bool valid_conn_cte_tx_params(const struct bt_df_conn_cte_tx_param *param
 	/* If AoD is not enabled, ant_ids are ignored by controller:
 	 * BT Core spec 5.2 Vol 4, Part E sec. 7.8.84.
 	 */
-	if ((params->cte_types & BT_DF_CTE_TYPE_AOD_1US ||
-	     params->cte_types & BT_DF_CTE_TYPE_AOD_1US) &&
+	if ((params->cte_types & (BT_DF_CTE_TYPE_AOD_1US | BT_DF_CTE_TYPE_AOD_2US)) &&
 	    (params->num_ant_ids < BT_HCI_LE_SWITCH_PATTERN_LEN_MIN ||
 	     params->num_ant_ids > BT_HCI_LE_SWITCH_PATTERN_LEN_MAX || !params->ant_ids ||
 	     !BT_FEAT_LE_ANT_SWITCH_TX_AOD(bt_dev.le.features))) {
@@ -1036,10 +1034,10 @@ bt_df_set_per_adv_sync_cte_rx_enable(struct bt_le_per_adv_sync *sync, bool enabl
 int bt_df_per_adv_sync_cte_rx_enable(struct bt_le_per_adv_sync *sync,
 				     const struct bt_df_per_adv_sync_cte_rx_param *params)
 {
-	CHECKIF(!sync) {
+	if (!sync) {
 		return -EINVAL;
 	}
-	CHECKIF(!params) {
+	if (!params) {
 		return -EINVAL;
 	}
 
@@ -1048,7 +1046,7 @@ int bt_df_per_adv_sync_cte_rx_enable(struct bt_le_per_adv_sync *sync,
 
 int bt_df_per_adv_sync_cte_rx_disable(struct bt_le_per_adv_sync *sync)
 {
-	CHECKIF(!sync) {
+	if (!sync) {
 		return -EINVAL;
 	}
 
@@ -1075,11 +1073,11 @@ static int bt_df_set_conn_cte_rx_enable(struct bt_conn *conn, bool enable,
 
 int bt_df_conn_cte_rx_enable(struct bt_conn *conn, const struct bt_df_conn_cte_rx_param *params)
 {
-	CHECKIF(!conn) {
+	if (!conn) {
 		return -EINVAL;
 	}
 
-	CHECKIF(!params) {
+	if (!params) {
 		return -EINVAL;
 	}
 
@@ -1088,7 +1086,7 @@ int bt_df_conn_cte_rx_enable(struct bt_conn *conn, const struct bt_df_conn_cte_r
 
 int bt_df_conn_cte_rx_disable(struct bt_conn *conn)
 {
-	CHECKIF(!conn) {
+	if (!conn) {
 		return -EINVAL;
 	}
 
@@ -1099,11 +1097,11 @@ int bt_df_conn_cte_rx_disable(struct bt_conn *conn)
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_TX)
 int bt_df_set_conn_cte_tx_param(struct bt_conn *conn, const struct bt_df_conn_cte_tx_param *params)
 {
-	CHECKIF(!conn) {
+	if (!conn) {
 		return -EINVAL;
 	}
 
-	CHECKIF(!params) {
+	if (!params) {
 		return -EINVAL;
 	}
 
@@ -1146,11 +1144,11 @@ static int bt_df_set_conn_cte_req_enable(struct bt_conn *conn, bool enable,
 
 int bt_df_conn_cte_req_enable(struct bt_conn *conn, const struct bt_df_conn_cte_req_params *params)
 {
-	CHECKIF(!conn) {
+	if (!conn) {
 		return -EINVAL;
 	}
 
-	CHECKIF(!params) {
+	if (!params) {
 		return -EINVAL;
 	}
 
@@ -1159,7 +1157,7 @@ int bt_df_conn_cte_req_enable(struct bt_conn *conn, const struct bt_df_conn_cte_
 
 int bt_df_conn_cte_req_disable(struct bt_conn *conn)
 {
-	CHECKIF(!conn) {
+	if (!conn) {
 		return -EINVAL;
 	}
 
@@ -1170,7 +1168,7 @@ int bt_df_conn_cte_req_disable(struct bt_conn *conn)
 #if defined(CONFIG_BT_DF_CONNECTION_CTE_RSP)
 static int bt_df_set_conn_cte_rsp_enable(struct bt_conn *conn, bool enable)
 {
-	CHECKIF(!conn) {
+	if (!conn) {
 		return -EINVAL;
 	}
 

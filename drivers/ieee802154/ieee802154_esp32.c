@@ -225,6 +225,10 @@ static int handle_ack(struct ieee802154_esp32_data *data)
 		return 0;
 	}
 
+	if (!IS_ENABLED(CONFIG_NET_L2_PHY_IEEE802154)) {
+		goto free_esp_ack;
+	}
+
 	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		ack_len = data->ack_frame[0];
 	} else {
@@ -402,7 +406,7 @@ static int esp32_ed_scan(const struct device *dev, uint16_t duration, energy_sca
 		esp32_data.energy_scan_done = done_cb;
 
 		/* The duration of energy detection, in symbol unit (16 us) */
-		if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBLE) != 0) {
+		if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBOL) != 0) {
 			esp32_data.energy_scan_done = NULL;
 			err = -EBUSY;
 		}

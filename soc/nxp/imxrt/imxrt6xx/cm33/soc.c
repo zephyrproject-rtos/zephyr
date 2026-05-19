@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 NXP
+ * Copyright 2020-2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,9 +37,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #include "usb_phy.h"
 #include "usb.h"
 #endif
-
-/* Core clock frequency: 250105263Hz */
-#define CLOCK_INIT_CORE_CLOCK 250105263U
 
 #define SYSTEM_IS_XIP_FLEXSPI()                                                                    \
 	((((uint32_t)nxp_rt600_init >= 0x08000000U) &&                                             \
@@ -93,6 +90,12 @@ extern void z_arm_pendsv(void);
 extern void sys_clock_isr(void);
 extern void z_arm_exc_spurious(void);
 
+#ifdef CONFIG_USE_SWITCH
+#define PENDSV_VEC z_arm_exc_spurious
+#else
+#define PENDSV_VEC z_arm_pendsv
+#endif
+
 __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	(void (*)())(z_main_stack + CONFIG_MAIN_STACK_SIZE), /* 0x00 */
 	z_arm_reset,                                         /* 0x04 */
@@ -112,7 +115,7 @@ __imx_boot_ivt_section void (*const image_vector_table[])(void) = {
 	z_arm_svc,                      /* 0x2C */
 	z_arm_debug_monitor,            /* 0x30 */
 	(void (*)())image_vector_table, /* 0x34, imageLoadAddress. */
-	z_arm_pendsv,                   /* 0x38 */
+	PENDSV_VEC,                     /* 0x38 */
 #if defined(CONFIG_SYS_CLOCK_EXISTS) && defined(CONFIG_CORTEX_M_SYSTICK_INSTALL_ISR)
 	sys_clock_isr, /* 0x3C */
 #else
@@ -316,6 +319,16 @@ __weak void clock_init(void)
 			DT_PROP(DT_NODELABEL(i3c0), clk_divider_tc));
 #endif
 
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(acmp), nxp_kinetis_acmp, okay)
+	CLOCK_AttachClk(kMAIN_CLK_to_ACMP_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAcmpClk, 2);
+	POWER_DisablePD(kPDRUNCFG_PD_ACMP);
+	POWER_ApplyPD();
+	RESET_PeripheralReset(kACMP0_RST_SHIFT_RSTn);
+	/* Make sure ACMP voltage reference available*/
+	POWER_SetAnalogBuffer(true);
+#endif
+
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpadc0), nxp_lpc_lpadc, okay)
 	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_PD_MASK;
 	SYSCTL0->PDRUNCFG0_CLR = SYSCTL0_PDRUNCFG0_ADC_LP_MASK;
@@ -345,7 +358,7 @@ __weak void clock_init(void)
 #endif
 
 	/* Set SystemCoreClock variable. */
-	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
+	SystemCoreClock = DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency);
 
 #endif /* CONFIG_SOC_MIMXRT685S_CM33 */
 }

@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MCXA
@@ -7,33 +7,60 @@ config SOC_FAMILY_MCXA
 config SOC_FAMILY
 	default "mcxa" if SOC_FAMILY_MCXA
 
-config SOC_MCXA153
+config SOC_SERIES_MCXA1X3
 	bool
 	select SOC_FAMILY_MCXA
+
+config SOC_SERIES_MCXA1X6
+	bool
+	select SOC_FAMILY_MCXA
+
+config SOC_SERIES_MCXAXX6
+	bool
+	select SOC_FAMILY_MCXA
+
+config SOC_SERIES_MCXAXX4
+	bool
+	select SOC_FAMILY_MCXA
+
+config SOC_SERIES_MCXAXX7
+	bool
+	select SOC_FAMILY_MCXA
+
+config SOC_SERIES
+	default "mcxa1x3" if SOC_SERIES_MCXA1X3
+	default "mcxa1x6" if SOC_SERIES_MCXA1X6
+	default "mcxaxx6" if SOC_SERIES_MCXAXX6
+	default "mcxaxx4" if SOC_SERIES_MCXAXX4
+	default "mcxaxx7" if SOC_SERIES_MCXAXX7
+
+config SOC_MCXA153
+	bool
+	select SOC_SERIES_MCXA1X3
 
 config SOC_MCXA156
 	bool
-	select SOC_FAMILY_MCXA
+	select SOC_SERIES_MCXA1X6
 
 config SOC_MCXA346
 	bool
-	select SOC_FAMILY_MCXA
+	select SOC_SERIES_MCXAXX6
 
 config SOC_MCXA266
 	bool
-	select SOC_FAMILY_MCXA
+	select SOC_SERIES_MCXAXX6
 
 config SOC_MCXA366
 	bool
-	select SOC_FAMILY_MCXA
+	select SOC_SERIES_MCXAXX6
 
 config SOC_MCXA577
 	bool
-	select SOC_FAMILY_MCXA
+	select SOC_SERIES_MCXAXX7
 
 config SOC_MCXA344
 	bool
-	select SOC_FAMILY_MCXA
+	select SOC_SERIES_MCXAXX4
 
 config SOC
 	default "mcxa153" if SOC_MCXA153

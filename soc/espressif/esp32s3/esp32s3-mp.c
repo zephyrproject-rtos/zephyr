@@ -14,7 +14,7 @@
 #include <soc.h>
 #include <esp_log.h>
 #include <esp_cpu.h>
-#include "esp_rom_uart.h"
+#include "esp_rom_serial_output.h"
 
 #include "esp_mcuboot_image.h"
 #include "esp_memory_utils.h"
@@ -68,9 +68,9 @@ static int load_segment(uint32_t src_addr, uint32_t src_len, uint32_t dst_addr)
 
 int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry_addr)
 {
-	const uint32_t fa_offset = FIXED_PARTITION_OFFSET(slot0_appcpu_partition);
-	const uint32_t fa_size = FIXED_PARTITION_SIZE(slot0_appcpu_partition);
-	const uint8_t fa_id = FIXED_PARTITION_ID(slot0_appcpu_partition);
+	const uint32_t fa_offset = PARTITION_OFFSET(slot0_appcpu_partition);
+	const uint32_t fa_size = PARTITION_SIZE(slot0_appcpu_partition);
+	const uint8_t fa_id = PARTITION_ID(slot0_appcpu_partition);
 
 	if (entry_addr == NULL) {
 		ESP_EARLY_LOGE(TAG, "Can't return the entry address. Aborting!");
@@ -153,7 +153,7 @@ int IRAM_ATTR esp_appcpu_image_load(unsigned int hdr_offset, unsigned int *entry
 	map_rom_segments(1, &rom);
 
 	ESP_EARLY_LOGI(TAG, "Application start=%xh\n\n", image_header.entry_addr);
-	esp_rom_uart_tx_wait_idle(0);
+	esp_rom_output_tx_wait_idle(0);
 
 	assert(entry_addr != NULL);
 	*entry_addr = image_header.entry_addr;

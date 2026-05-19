@@ -213,7 +213,7 @@ class LldbacBinaryRunner(ZephyrBinaryRunner):
         lldbac_cmd.append(self.cfg.elf_file)
 
         # Run interactively
-        self.run_client(lldbac_cmd)
+        self.check_call_ignore_sigint(lldbac_cmd)
 
     def _build_core_properties_for_hardware(self):
         '''Build core properties string for run-lldbac --core argument.

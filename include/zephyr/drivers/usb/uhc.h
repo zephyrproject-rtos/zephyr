@@ -206,7 +206,6 @@ struct uhc_event {
 };
 
 /**
- * @typedef uhc_event_cb_t
  * @brief Callback to submit UHC event to higher layer.
  *
  * At the higher level, the event is to be inserted into a message queue.

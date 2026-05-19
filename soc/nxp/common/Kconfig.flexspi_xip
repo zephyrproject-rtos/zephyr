@@ -5,12 +5,13 @@ DT_CHOSEN_Z_FLASH := zephyr,flash
 
 DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
 DT_CHOSEN_FLASH_PARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_NODE))
+DT_CHOSEN_FLASH_GRANDPARENT := $(dt_node_parent,$(DT_CHOSEN_FLASH_PARENT))
 
-DT_FLASH_PARENT_IS_FLEXSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_PARENT),$(DT_COMPAT_NXP_IMX_FLEXSPI))
+DT_FLASH_PARENT_IS_FLEXSPI := $(dt_node_has_compat,$(DT_CHOSEN_FLASH_GRANDPARENT),$(DT_COMPAT_NXP_IMX_FLEXSPI))
 DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
 
 config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_PARENT),1) \
+	default $(dt_node_reg_addr_hex,$(DT_CHOSEN_FLASH_GRANDPARENT),1) \
 		if $(DT_FLASH_PARENT_IS_FLEXSPI)
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
@@ -26,7 +27,7 @@ config FLASH_MCUX_FLEXSPI_XIP
 		     MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 	select XIP
 	help
-	  Allows REfor the soc to safely initialize the clocks for the
+	  Allows for the soc to safely initialize the clocks for the
 	  FlexSpi when planning to execute code in FlexSpi Memory.
 
 if FLASH_MCUX_FLEXSPI_XIP && MEMC_MCUX_FLEXSPI

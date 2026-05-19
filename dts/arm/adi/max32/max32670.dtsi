@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,18 @@
 };
 
 /delete-node/ &rtc_counter;
+
+/* MAX32670 external clocks. */
+/ {
+	clocks {
+		clk_extclk2: clk_extclk2 {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <0>;
+			status = "disabled";
+		};
+	};
+};
 
 /* MAX32670 extra peripherals. */
 / {
@@ -128,7 +140,7 @@
 			reg = <0x40114000 0x1000>;
 			interrupts = <9 0>;
 			status = "disabled";
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 0>, <&clk_extclk2>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
 
@@ -143,7 +155,7 @@
 			reg = <0x40115000 0x1000>;
 			interrupts = <10 0>;
 			status = "disabled";
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 1>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 1>, <&clk_extclk2>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			prescaler = <1>;
 

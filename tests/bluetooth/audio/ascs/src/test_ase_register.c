@@ -8,8 +8,6 @@
  */
 
 #include <errno.h>
-#include <stdlib.h>
-#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/fff.h>
@@ -22,6 +20,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
@@ -32,6 +31,8 @@
 
 static void ascs_register_test_suite_after(void *f)
 {
+	ARG_UNUSED(f);
+
 	/* Attempt to clean up failing tests */
 	(void)bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
 

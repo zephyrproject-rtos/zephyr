@@ -4,14 +4,46 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * DAC output on PA10
+ * ADC input read from PB14
+ * Add a jumper between those two pins to run this test.
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&dac1 1 &adc1 1>;
+		io-channel-names = "dac1", "adc1";
+	};
+};
+
 &adc1 {
 	status = "okay";
 	pinctrl-0 = <&adc_in1_pb14>;
 	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+	};
 };
 
 &dac1 {
 	status = "okay";
 	pinctrl-0 = <&dac_out1_pa10>;
 	pinctrl-names = "default";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@1 {
+		reg = <1>;
+		zephyr,resolution = <12>;
+	};
 };

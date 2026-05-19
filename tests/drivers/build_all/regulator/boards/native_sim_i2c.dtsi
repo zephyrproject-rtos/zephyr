@@ -59,16 +59,20 @@ npm1300@2 {
 	};
 };
 
-apd356x@3 {
+adp5360@3 {
 	compatible = "adi,adp5360";
 	reg = <0x3>;
 
 	regulators {
 		compatible = "adi,adp5360-regulator";
 
-		BUCK {};
+		BUCK {
+			regulator-init-microvolt = <1300000>;
+		};
 
-		BUCKBOOST {};
+		BUCKBOOST {
+			regulator-init-microvolt = <3300000>;
+		};
 	};
 };
 
@@ -204,4 +208,19 @@ npm1304@9 {
 tps55287@a {
 	compatible = "ti,tps55287";
 	reg = <0xa>;
+};
+
+npm10xx@b {
+	compatible = "nordic,npm10xx";
+	reg = <0xb>;
+
+	regulators {
+		compatible = "nordic,npm10xx-regulator";
+
+		BUCK {};
+
+		LDO {};
+
+		LDSW {};
+	};
 };

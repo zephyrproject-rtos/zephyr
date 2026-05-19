@@ -488,6 +488,36 @@
 			num-bidir-endpoints = <20>;
 		};
 
+		sdhc0: sdh@40206000 {
+			compatible = "nuvoton,numaker-sdhc";
+			reg = <0x40206000 0x1000>;
+			interrupts = <113 0>;
+			resets = <&rst NUMAKER_SYS_SDH0RST>;
+			clocks = <&pcc NUMAKER_SDH0_MODULE NUMAKER_CLK_SDHSEL_SDH0SEL_HIRC
+				  NUMAKER_CLK_SDHDIV_SDH0DIV(30)>,
+				 <&pcc NUMAKER_SDH0_MODULE NUMAKER_CLK_SDHSEL_SDH0SEL_HCLK0
+				  NUMAKER_CLK_SDHDIV_SDH0DIV(4)>;
+			clock-names = "initial", "default";
+			min-bus-freq = <DT_FREQ_K(50)>;
+			max-bus-freq = <DT_FREQ_M(50)>;
+			status = "disabled";
+		};
+
+		sdhc1: sdh@40207000 {
+			compatible = "nuvoton,numaker-sdhc";
+			reg = <0x40207000 0x1000>;
+			interrupts = <114 0>;
+			resets = <&rst NUMAKER_SYS_SDH1RST>;
+			clocks = <&pcc NUMAKER_SDH1_MODULE NUMAKER_CLK_SDHSEL_SDH1SEL_HIRC
+				  NUMAKER_CLK_SDHDIV_SDH1DIV(30)>,
+				 <&pcc NUMAKER_SDH1_MODULE NUMAKER_CLK_SDHSEL_SDH1SEL_HCLK0
+				  NUMAKER_CLK_SDHDIV_SDH1DIV(4)>;
+			clock-names = "initial", "default";
+			min-bus-freq = <DT_FREQ_K(50)>;
+			max-bus-freq = <DT_FREQ_M(50)>;
+			status = "disabled";
+		};
+
 		wwdt: watchdog@40240000 {
 			compatible = "nuvoton,numaker-wwdt";
 			reg = <0x40240000 0x10>;

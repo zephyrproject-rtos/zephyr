@@ -3567,8 +3567,9 @@ sub process {
 #  2) indented preprocessor commands
 #  3) hanging labels
 #  4) empty lines in multi-line macros
+#  5) lines starting with 4 spaces and 'defined('
 		if ($rawline =~ /^\+ / && $line !~ /^\+ *(?:$;|#|$Ident:)/ &&
-		    $rawline !~ /^\+\s+\\$/) {
+		    $rawline !~ /^\+\s+\\$/ && $rawline !~ /^\+ {4}defined\(/) {
 			my $herevet = "$here\n" . cat_vet($rawline) . "\n";
 			if (WARN("LEADING_SPACE",
 				 "please, no spaces at the start of a line\n" . $herevet) &&
@@ -5034,8 +5035,8 @@ sub process {
 		if ($sline =~ /\breturn(?:\s*\(+\s*|\s+)(E[A-Z]+)(?:\s*\)+\s*|\s*)[;:,]/) {
 			my $name = $1;
 			if ($name ne 'EOF' && $name ne 'ERROR') {
-				# only print this warning if not dealing with 'lib/posix/*.c'
-				if ($realfile =~ /.*\/lib\/posix\/*.c/) {
+				# only print this warning if not dealing with 'subsys/portability/posix/*.c'
+				if ($realfile =~ /.*\/subsys\/portability\/posix\/*.c/) {
 					WARN("USE_NEGATIVE_ERRNO",
 						"return of an errno should typically be negative (ie: return -$1)\n" . $herecurr);
 				}

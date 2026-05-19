@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Synaptics, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_SYNA_SR100
+	bool "Synaptics SR100 Clock Control Driver"
+	default y
+	depends on DT_HAS_SYNA_SR100_CLOCK_ENABLED
+	help
+	  Enable clock control support for Synaptics SR100 SoC series.

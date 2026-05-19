@@ -14,7 +14,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include "../ip/ipv4.h"
 
 #if defined(CONFIG_NET_IPV4)
-static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
+static void ip_address_info_cb(struct net_if *iface, void *user_data)
 {
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
@@ -32,6 +32,7 @@ static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+	PR("Unicast:\n\n");
 	PR("Type      \tState    \tRef\tAddress\n");
 
 	ARRAY_FOR_EACH(ipv4->unicast, i) {
@@ -48,6 +49,21 @@ static void ip_address_lifetime_cb(struct net_if *iface, void *user_data)
 			   &ipv4->unicast[i].ipv4.address.in_addr),
 		   net_sprint_ipv4_addr(
 			   &ipv4->unicast[i].netmask));
+	}
+
+	PR("\nMulticast:\n\n");
+	PR("Joined\tRef\tAddress\n");
+
+	ARRAY_FOR_EACH(ipv4->mcast, i) {
+		if (!ipv4->mcast[i].is_used ||
+		    ipv4->mcast[i].address.family != NET_AF_INET) {
+			continue;
+		}
+
+		PR("%s\t%ld\t%s\n",
+		   ipv4->mcast[i].is_joined ? "yes" : "no",
+		   atomic_get(&ipv4->mcast[i].atomic_ref),
+		   net_sprint_ipv4_addr(&ipv4->mcast[i].address.in6_addr));
 	}
 }
 #endif /* CONFIG_NET_IPV4 */
@@ -89,7 +105,7 @@ static int cmd_net_ipv4(const struct shell *sh, size_t argc, char *argv[])
 	user_data.user_data = NULL;
 
 	/* Print information about address lifetime */
-	net_if_foreach(ip_address_lifetime_cb, &user_data);
+	net_if_foreach(ip_address_info_cb, &user_data);
 #endif /* CONFIG_NET_IPV4 */
 
 	return 0;

@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dev0 = &mspi_dummy;
+	};
+};
+
+&uart00 {
+	status = "disabled";
+};
+
+&spi00 {
+	status = "disabled";
+};
+
+&mspi00 {
+	status = "okay";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+
+	/* Dummy device so the controller has a defined target (dev_idx 0) for throughput tests. */
+	mspi_dummy: mspi_dummy@0 {
+		compatible = "zephyr,peripheral-device";
+		reg = <0>;
+		mspi-max-frequency = <DT_FREQ_M(64)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-cpp-mode = "MSPI_CPP_MODE_0";
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		mspi-hardware-ce-num = <1>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_1_BYTE";
+	};
+};

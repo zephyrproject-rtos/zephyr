@@ -7,8 +7,6 @@
 
 if SOC_SERIES_STM32H7RSX
 
-rsource "Kconfig.defconfig.stm32h7*"
-
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x0   if !BOOTLOADER_MCUBOOT

@@ -4,24 +4,56 @@
 config HAS_IRONSIDE_SE
 	bool
 
+config HAS_IRONSIDE_SE_CALL
+	bool
+
 menu "IronSide SE"
 	depends on HAS_IRONSIDE_SE
 
 config IRONSIDE_SE_CALL
 	bool "IronSide calls"
 	default y
-	depends on DT_HAS_NORDIC_IRONSIDE_CALL_ENABLED
-	depends on MULTITHREADING
-	select EVENTS
-	select MBOX
+	depends on HAS_IRONSIDE_SE_CALL
 	help
 	  Support for IronSide call APIs.
 
 if IRONSIDE_SE_CALL
 
+choice IRONSIDE_SE_CALL_DRIVER
+	prompt "IronSide calls driver implementation"
+	default IRONSIDE_SE_CALL_ZEPHYR if DT_HAS_NORDIC_IRONSIDE_CALL_ENABLED
+	default IRONSIDE_SE_CALL_MINIMAL
+	help
+	  Driver implementation used for IronSide calls.
+
+config IRONSIDE_SE_CALL_ZEPHYR
+	bool "Zephyr driver"
+	depends on DT_HAS_NORDIC_IRONSIDE_CALL_ENABLED
+	depends on MULTITHREADING
+	select EVENTS
+	select MBOX
+	help
+	  Use the default driver for IronSide calls which supports concurrent
+	  calls being made from different threads. This is the recommended implementation
+	  and should be used in most applications.
+
+config IRONSIDE_SE_CALL_MINIMAL
+	bool "Minimal driver"
+	help
+	  Use the minimal driver for IronSide calls, which is included with the
+	  IronSide APIs. This driver does not support concurrent calls from different
+	  threads, and uses busy waiting instead of interrupts when waiting for a
+	  reply from IronSide SE. It also does not perform data cache handling for the IPC
+	  buffer, and instead assumes that the IPC buffer area is not cached.
+	  This option is primarily intended for constrained applications such as bootloaders
+	  and is not recommended for general use.
+
+endchoice
+
 config IRONSIDE_SE_CALL_INIT_PRIORITY
 	int "IronSide calls' driver initialization priority"
 	default 41
+	depends on IRONSIDE_SE_CALL_ZEPHYR
 	help
 	  Initialization priority of the IronSide call protocol driver.
 	  It must be below MBOX_INIT_PRIORITY, but higher than the priority of any feature
@@ -46,6 +78,17 @@ config IRONSIDE_SE_DVFS_ABB_STATUSANA_CHECK_MAX_ATTEMPTS
 	  Maximum attempts with 10us intervals before busy status will be reported.
 
 endif # IRONSIDE_SE_DVFS
+
+config NRF_MPCCONF_SECTION
+	bool "Global Memory Privilege Controller (MPC) initialization section"
+	depends on LINKER_DEVNULL_SUPPORT
+	imply LINKER_DEVNULL_MEMORY
+	help
+	  Include static global Memory Privilege Controller (MPC) peripheral
+	  initialization values from the build in a dedicated section. The section is
+	  stripped from the firmware binary. If the UICR generator image is enabled,
+	  it will include the stripped section in the generated UICR MPCCONF blob.
+	  Currently the UICR generator supports at most one image setting this.
 
 menuconfig NRF_PERIPHCONF_SECTION
 	bool "Global peripheral initialization section"
@@ -94,5 +137,17 @@ config NRF_PERIPHCONF_SECTION_KEEP_BY_DEFAULT
 	  This is set from Sysbuild to change the default behavior for the image so that
 	  CONFIG_NRF_PERIPHCONF_SECTION_STRIP=n unless explicitly configured otherwise.
 	  To override this behavior, set CONFIG_NRF_PERIPHCONF_SECTION_STRIP=y directly.
+
+config NRF_MPCCONF_API_IN_RAM
+	bool "MPCCONF API in RAM"
+	depends on IRONSIDE_SE_CALL
+	depends on !IRONSIDE_SE_CALL_ZEPHYR || !XIP
+	help
+	  Ensure that the functions used to modify and lock the MPC configuration
+	  - namely, ironside_se_mpcconf_write() and ironside_se_mpcconf_finish_init() -
+	  are placed in RAM. This may be needed to reconfigure permissions for XIP memory.
+
+	  This is not supported with the default IronSide call driver in Zephyr,
+	  unless it and all of its dependencies are also relocated to be executed from RAM.
 
 endmenu # IronSide SE

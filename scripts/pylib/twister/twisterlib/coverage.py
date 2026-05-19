@@ -152,7 +152,7 @@ class CoverageTool:
                 coverage_completed = False
         return coverage_completed
 
-    def generate(self, outdir):
+    def generate(self, outdir) -> tuple[bool, dict]:
         coverage_completed = self.capture_data(outdir) if self.coverage_capture else True
         if not coverage_completed or not self.coverage_report:
             return coverage_completed, {}
@@ -562,8 +562,8 @@ def choose_gcov_tool(options, is_system_gcov):
     if not options.gcov_tool:
         zephyr_sdk_gcov_tool = os.path.join(
             os.environ.get("ZEPHYR_SDK_INSTALL_DIR", default=""),
-            "x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
-        if os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT") == "llvm":
+            "gnu/x86_64-zephyr-elf/bin/x86_64-zephyr-elf-gcov")
+        if os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT").endswith("/llvm"):
             llvm_path = os.environ.get("LLVM_TOOLCHAIN_PATH")
             if llvm_path is not None:
                 llvm_path = os.path.join(llvm_path, "bin")
@@ -588,7 +588,7 @@ def choose_gcov_tool(options, is_system_gcov):
 
 
 def run_coverage_tool(options, outdir, is_system_gcov, instances,
-                      coverage_capture, coverage_report):
+                      coverage_capture, coverage_report) -> tuple[bool, dict]:
     coverage_tool = CoverageTool.factory(options.coverage_tool, jobs=options.jobs)
     if not coverage_tool:
         return False, {}
@@ -620,7 +620,7 @@ def has_system_gcov(platform):
     return platform and (platform.type in {"native", "unit"})
 
 
-def run_coverage(options, testplan):
+def run_coverage(options, testplan) -> tuple[bool, dict]:
     """ Summary code coverage over the full test plan's scope.
     """
     is_system_gcov = False

@@ -71,10 +71,7 @@ __subsystem struct vtd_driver_api {
 static inline int vtd_allocate_entries(const struct device *dev,
 				       uint8_t n_entries)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	return api->allocate_entries(dev, n_entries);
+	return DEVICE_API_GET(vtd, dev)->allocate_entries(dev, n_entries);
 }
 
 /**
@@ -90,10 +87,7 @@ static inline uint32_t vtd_remap_msi(const struct device *dev,
 				     msi_vector_t *vector,
 				     uint8_t n_vector)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	return api->remap_msi(dev, vector, n_vector);
+	return DEVICE_API_GET(vtd, dev)->remap_msi(dev, vector, n_vector);
 }
 
 /**
@@ -113,10 +107,7 @@ static inline int vtd_remap(const struct device *dev,
 			    uint32_t flags,
 			    uint16_t src_id)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	return api->remap(dev, irte_idx, vector, flags, src_id);
+	return DEVICE_API_GET(vtd, dev)->remap(dev, irte_idx, vector, flags, src_id);
 }
 
 /**
@@ -132,10 +123,7 @@ static inline int vtd_set_irte_vector(const struct device *dev,
 				      uint8_t irte_idx,
 				      uint16_t vector)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	return api->set_irte_vector(dev, irte_idx, vector);
+	return DEVICE_API_GET(vtd, dev)->set_irte_vector(dev, irte_idx, vector);
 }
 
 /**
@@ -149,10 +137,7 @@ static inline int vtd_set_irte_vector(const struct device *dev,
 static inline int vtd_get_irte_by_vector(const struct device *dev,
 					 uint16_t vector)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	return api->get_irte_by_vector(dev, vector);
+	return DEVICE_API_GET(vtd, dev)->get_irte_by_vector(dev, vector);
 }
 
 /**
@@ -166,10 +151,7 @@ static inline int vtd_get_irte_by_vector(const struct device *dev,
 static inline uint16_t vtd_get_irte_vector(const struct device *dev,
 					   uint8_t irte_idx)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	return api->get_irte_vector(dev, irte_idx);
+	return DEVICE_API_GET(vtd, dev)->get_irte_vector(dev, irte_idx);
 }
 
 /**
@@ -185,10 +167,7 @@ static inline int vtd_set_irte_irq(const struct device *dev,
 				   uint8_t irte_idx,
 				   unsigned int irq)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	return api->set_irte_irq(dev, irte_idx, irq);
+	return DEVICE_API_GET(vtd, dev)->set_irte_irq(dev, irte_idx, irq);
 }
 
 /**
@@ -202,29 +181,20 @@ static inline int vtd_set_irte_irq(const struct device *dev,
 static inline int vtd_get_irte_by_irq(const struct device *dev,
 				      unsigned int irq)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	return api->get_irte_by_irq(dev, irq);
+	return DEVICE_API_GET(vtd, dev)->get_irte_by_irq(dev, irq);
 }
 
 static inline void vtd_set_irte_msi(const struct device *dev,
 				    uint8_t irte_idx,
 				    bool msi)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	api->set_irte_msi(dev, irte_idx, msi);
+	DEVICE_API_GET(vtd, dev)->set_irte_msi(dev, irte_idx, msi);
 }
 
 static inline bool vtd_irte_is_msi(const struct device *dev,
 				   uint8_t irte_idx)
 {
-	const struct vtd_driver_api *api =
-		(const struct vtd_driver_api *)dev->api;
-
-	return api->irte_is_msi(dev, irte_idx);
+	return DEVICE_API_GET(vtd, dev)->irte_is_msi(dev, irte_idx);
 }
 
 

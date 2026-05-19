@@ -227,7 +227,7 @@ static int renesas_ra_sci_spi_configure(const struct device *dev, const struct s
 	struct renesas_ra_sci_spi_data *data = dev->data;
 	fsp_err_t fsp_err;
 
-	/* Check whether the congiguration is changed */
+	/* Check whether the configuration is changed */
 	if (renesas_ra_sci_context_configured(dev, config)) {
 		return 0;
 	}

@@ -28,8 +28,8 @@ LOG_MODULE_REGISTER(i2c_litex, CONFIG_I2C_LOG_LEVEL);
 #define HIGH_STATE_ON_I2C_LINES    0x7
 
 struct i2c_litex_cfg {
-	uint32_t write_addr;
-	uint32_t read_addr;
+	mem_addr_t write_addr;
+	mem_addr_t read_addr;
 	uint32_t bitrate;
 };
 

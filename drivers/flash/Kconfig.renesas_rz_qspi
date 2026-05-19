@@ -29,9 +29,21 @@ config FLASH_RENESAS_RZ_QSPI_SPIBSC
 	help
 	  Enable Quad-SPI SPIBSC Nor flash driver for RZ series
 
+config FLASH_RENESAS_RZA2M_QSPI_SPIBSC
+	bool "Renesas RZA2M Quad-SPI SPIBSC driver"
+	default y
+	depends on DT_HAS_RENESAS_RZA2M_QSPI_SPIBSC_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select FLASH_JESD216
+	select PINCTRL
+	help
+	  Enable Quad-SPI SPIBSC Nor flash driver for RZA2M series
+
 config FLASH_RENESAS_RZ_MIRROR_OFFSET
 	hex
 	default 0x0 if SOC_SERIES_RZA3UL
-	default 0x20000000 if SOC_SERIES_RZT2M || SOC_SERIES_RZN2L
+	default 0x20000000 if SOC_SERIES_RZT2M || SOC_SERIES_RZN2L || SOC_SERIES_RZT2L
 	help
 	  Offset of mirror area in flash memory

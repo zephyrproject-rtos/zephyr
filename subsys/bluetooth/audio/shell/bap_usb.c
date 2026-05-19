@@ -65,6 +65,10 @@ static bool out_terminal_enabled;
 static void usb_terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
 				   bool microframes, void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(microframes);
+	ARG_UNUSED(user_data);
+
 	if (terminal == IN_TERMINAL_ID) {
 		in_terminal_enabled = enabled;
 	} else if (terminal == OUT_TERMINAL_ID) {
@@ -76,6 +80,8 @@ static void usb_terminal_update_cb(const struct device *dev, uint8_t terminal, b
 
 static void usb_sof_cb(const struct device *dev, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 #if defined CONFIG_BT_AUDIO_RX
 	if (in_terminal_enabled) {
 		usb_data_request(dev);
@@ -154,6 +160,10 @@ static void usb_data_request(const struct device *dev)
 static void usb_buf_release_cb(const struct device *dev, uint8_t terminal, void *buf,
 			       void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
+
 	k_mem_slab_free(&usb_in_buf_pool, buf);
 }
 
@@ -317,7 +327,9 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 			return -ENOMEM;
 		}
 
-		memcpy(decoded_sdu.left_frames[decoded_sdu.left_frames_cnt++], frame, frame_size);
+		(void)memcpy(decoded_sdu.left_frames[decoded_sdu.left_frames_cnt], frame,
+			     frame_size);
+		decoded_sdu.left_frames_cnt++;
 	} else if (is_right) {
 		if (decoded_sdu.right_frames_cnt >= ARRAY_SIZE(decoded_sdu.right_frames)) {
 			LOG_WRN("Could not add more right frames");
@@ -325,7 +337,9 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 			return -ENOMEM;
 		}
 
-		memcpy(decoded_sdu.right_frames[decoded_sdu.right_frames_cnt++], frame, frame_size);
+		(void)memcpy(decoded_sdu.right_frames[decoded_sdu.right_frames_cnt], frame,
+			     frame_size);
+		decoded_sdu.right_frames_cnt++;
 	} else if (is_mono) {
 		/* Use left as mono*/
 		if (decoded_sdu.mono_frames_cnt >= ARRAY_SIZE(decoded_sdu.left_frames)) {
@@ -334,7 +348,9 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 			return -ENOMEM;
 		}
 
-		memcpy(decoded_sdu.left_frames[decoded_sdu.mono_frames_cnt++], frame, frame_size);
+		(void)memcpy(decoded_sdu.left_frames[decoded_sdu.mono_frames_cnt], frame,
+			     frame_size);
+		decoded_sdu.mono_frames_cnt++;
 	} else {
 		/* Unsupported channel */
 		LOG_DBG("Unsupported channel %d", chan_allocation);
@@ -421,6 +437,10 @@ static void *usb_get_recv_buf_cb(const struct device *dev, uint8_t terminal, uin
 	void *buf = NULL;
 	int ret;
 
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
+
 	if (!out_terminal_enabled) {
 		return NULL;
 	}
@@ -441,6 +461,10 @@ static void usb_data_recv_cb(const struct device *dev, uint8_t terminal, void *b
 	const size_t old_write_index = write_index;
 	static size_t cnt;
 	int16_t *pcm;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
 
 	if (!out_terminal_enabled || buf == NULL || size == 0U) {
 		k_mem_slab_free(&usb_out_buf_pool, buf);

@@ -30,7 +30,7 @@ enum {
 	FRAME_DATA_BIT_6,
 	FRAME_DATA_BIT_7,
 	FRAME_START_BIT_LSB,
-	/* Theres a single bit period between the two packets that is constant high. This bit will
+	/* There's a single bit period between the two packets that is constant high. This bit will
 	 * be part of the 2nd packet's start bit thus frame length is not affected.
 	 */
 	FRAME_PARITIY_BIT_MSB,

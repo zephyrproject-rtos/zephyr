@@ -8,6 +8,8 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/misc/renesas/ra-elc/ra8m1-elc.h>
 
+/delete-node/ &drw;
+
 / {
 	clocks: clocks {
 		#address-cells = <1>;

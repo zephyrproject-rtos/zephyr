@@ -10,7 +10,7 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/dlist.h>
 
-/* Dumb Scheduling */
+/* Simple Scheduling */
 #if defined(CONFIG_SCHED_SIMPLE)
 #define _priq_run_init		z_priq_simple_init
 #define _priq_run_add		z_priq_simple_add
@@ -42,7 +42,7 @@
 #define _priq_wait_add		z_priq_rb_add
 #define _priq_wait_remove	z_priq_rb_remove
 #define _priq_wait_best		z_priq_rb_best
-/* Dumb Wait Queue */
+/* Simple Wait Queue */
 #elif defined(CONFIG_WAITQ_SIMPLE)
 #define _priq_wait_add		z_priq_simple_add
 #define _priq_wait_remove	z_priq_simple_remove
@@ -57,9 +57,6 @@
 #define TRAILING_ZEROS u32_count_trailing_zeros
 #endif /* CONFIG_64BIT */
 
-#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
-TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
-#endif
 static ALWAYS_INLINE void z_priq_simple_init(sys_dlist_t *pq)
 {
 	sys_dlist_init(pq);
@@ -348,8 +345,5 @@ static ALWAYS_INLINE struct k_thread *z_priq_mq_best(struct _priq_mq *pq)
 
 	return NULL;
 }
-#ifdef IAR_SUPPRESS_ALWAYS_INLINE_WARNING_FLAG
-TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_ALWAYS_INLINE)
-#endif
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_PRIORITY_Q_H_ */

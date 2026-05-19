@@ -1,7 +1,7 @@
 /* main.c - Application main entry point */
 
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/ccp.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -88,8 +89,8 @@ static void register_default_bearer(struct ccp_call_control_server_test_suite_fi
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = 0,
+		.technology = BT_BEARER_TECH_3G,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -114,12 +115,12 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 	for (int i = 1; i < CONFIG_BT_CCP_CALL_CONTROL_SERVER_BEARER_COUNT; i++) {
 		struct bt_tbs_register_param register_param = {
 			.provider_name = "test",
-			.uci = "un999",
+			.uci = DEFAULT_BEARER_UCI,
 			.uri_schemes_supported = "tel",
 			.gtbs = false,
 			.authorization_required = false,
-			.technology = BT_TBS_TECHNOLOGY_3G,
-			.supported_features = 0,
+			.technology = BT_BEARER_TECH_3G,
+			.optional_opcodes = 0,
 		};
 		int err;
 
@@ -143,12 +144,12 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 {
 	const struct bt_tbs_register_param register_param = {
 		.provider_name = "test",
-		.uci = "un999",
+		.uci = DEFAULT_BEARER_UCI,
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = 0,
+		.technology = BT_BEARER_TECH_3G,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -161,12 +162,12 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 {
 	const struct bt_tbs_register_param register_param = {
 		.provider_name = "test",
-		.uci = "un999",
+		.uci = DEFAULT_BEARER_UCI,
 		.uri_schemes_supported = "tel",
 		.gtbs = false,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = 0,
+		.technology = BT_BEARER_TECH_3G,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -179,12 +180,12 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 {
 	const struct bt_tbs_register_param register_param = {
 		.provider_name = "test",
-		.uci = "un999",
+		.uci = DEFAULT_BEARER_UCI,
 		.uri_schemes_supported = "tel",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = 0,
+		.technology = BT_BEARER_TECH_3G,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -203,12 +204,12 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 {
 	const struct bt_tbs_register_param register_param = {
 		.provider_name = "test",
-		.uci = "un999",
+		.uci = DEFAULT_BEARER_UCI,
 		.uri_schemes_supported = "tel",
 		.gtbs = false,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = 0,
+		.technology = BT_BEARER_TECH_3G,
+		.optional_opcodes = 0,
 	};
 	int err;
 
@@ -268,8 +269,8 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_set_bearer_provider_name)
 {
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	const char *new_bearer_name = "New bearer name";
-	const char *res_bearer_name;
 	int err;
 
 	register_default_bearer(fixture);
@@ -278,8 +279,8 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 								  new_bearer_name);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
-	err = bt_ccp_call_control_server_get_bearer_provider_name(fixture->bearers[0],
-								  &res_bearer_name);
+	err = bt_ccp_call_control_server_get_bearer_provider_name(
+		fixture->bearers[0], res_bearer_name, sizeof(res_bearer_name));
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
 	zassert_str_equal(new_bearer_name, res_bearer_name, "%s != %s", new_bearer_name,
@@ -341,12 +342,13 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_set_bearer_provider_name_inval_long_name)
 {
-	char inval_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
+	char inval_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 2];
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(inval_bearer_name); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(inval_bearer_name); i++) {
 		inval_bearer_name[i] = 'a';
 	}
+	inval_bearer_name[sizeof(inval_bearer_name) - 1U] = '\0';
 
 	register_default_bearer(fixture);
 
@@ -358,13 +360,13 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_provider_name)
 {
-	const char *res_bearer_name;
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	int err;
 
 	register_default_bearer(fixture);
 
-	err = bt_ccp_call_control_server_get_bearer_provider_name(fixture->bearers[0],
-								  &res_bearer_name);
+	err = bt_ccp_call_control_server_get_bearer_provider_name(
+		fixture->bearers[0], res_bearer_name, sizeof(res_bearer_name));
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
 	zassert_str_equal(DEFAULT_BEARER_NAME, res_bearer_name, "%s != %s", DEFAULT_BEARER_NAME,
@@ -374,7 +376,7 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_provider_name_inval_not_registered)
 {
-	const char *res_bearer_name;
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	int err;
 
 	/* Register and unregister bearer to get a valid pointer but where it is unregistered*/
@@ -382,20 +384,21 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 	err = bt_ccp_call_control_server_unregister_bearer(fixture->bearers[0]);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
-	err = bt_ccp_call_control_server_get_bearer_provider_name(fixture->bearers[0],
-								  &res_bearer_name);
+	err = bt_ccp_call_control_server_get_bearer_provider_name(
+		fixture->bearers[0], res_bearer_name, sizeof(res_bearer_name));
 	zassert_equal(err, -EFAULT, "Unexpected return value %d", err);
 }
 
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_provider_name_inval_null_bearer)
 {
-	const char *res_bearer_name;
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	int err;
 
 	register_default_bearer(fixture);
 
-	err = bt_ccp_call_control_server_get_bearer_provider_name(NULL, &res_bearer_name);
+	err = bt_ccp_call_control_server_get_bearer_provider_name(NULL, res_bearer_name,
+								  sizeof(res_bearer_name));
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
 }
 
@@ -406,18 +409,44 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 
 	register_default_bearer(fixture);
 
-	err = bt_ccp_call_control_server_get_bearer_provider_name(fixture->bearers[0], NULL);
+	err = bt_ccp_call_control_server_get_bearer_provider_name(fixture->bearers[0], NULL, 0);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
 }
 
-static ZTEST_F(ccp_call_control_server_test_suite, test_bt_ccp_call_control_server_get_bearer_uci)
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_get_bearer_provider_name_inval_size_0)
 {
-	const char *res_bearer_uci;
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
 	int err;
 
 	register_default_bearer(fixture);
 
-	err = bt_ccp_call_control_server_get_bearer_uci(fixture->bearers[0], &res_bearer_uci);
+	err = bt_ccp_call_control_server_get_bearer_provider_name(fixture->bearers[0],
+								  res_bearer_name, 0);
+	zassert_equal(err, -ENOMEM, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite,
+	       test_bt_ccp_call_control_server_get_bearer_provider_name_inval_small_size)
+{
+	char res_bearer_name[CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH + 1];
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_get_bearer_provider_name(fixture->bearers[0],
+								  res_bearer_name, 1);
+	zassert_equal(err, -ENOMEM, "Unexpected return value %d", err);
+}
+
+static ZTEST_F(ccp_call_control_server_test_suite, test_bt_ccp_call_control_server_get_bearer_uci)
+{
+	char res_bearer_uci[BT_TBS_MAX_UCI_SIZE];
+	int err;
+
+	register_default_bearer(fixture);
+
+	err = bt_ccp_call_control_server_get_bearer_uci(fixture->bearers[0], res_bearer_uci);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
 	zassert_str_equal(DEFAULT_BEARER_UCI, res_bearer_uci, "%s != %s", DEFAULT_BEARER_UCI,
@@ -427,7 +456,7 @@ static ZTEST_F(ccp_call_control_server_test_suite, test_bt_ccp_call_control_serv
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_uci_inval_not_registered)
 {
-	const char *res_bearer_uci;
+	char res_bearer_uci[BT_TBS_MAX_UCI_SIZE];
 	int err;
 
 	/* Register and unregister bearer to get a valid pointer but where it is unregistered*/
@@ -435,19 +464,19 @@ static ZTEST_F(ccp_call_control_server_test_suite,
 	err = bt_ccp_call_control_server_unregister_bearer(fixture->bearers[0]);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
 
-	err = bt_ccp_call_control_server_get_bearer_uci(fixture->bearers[0], &res_bearer_uci);
+	err = bt_ccp_call_control_server_get_bearer_uci(fixture->bearers[0], res_bearer_uci);
 	zassert_equal(err, -EFAULT, "Unexpected return value %d", err);
 }
 
 static ZTEST_F(ccp_call_control_server_test_suite,
 	       test_bt_ccp_call_control_server_get_bearer_uci_inval_null_bearer)
 {
-	const char *res_bearer_uci;
+	char res_bearer_uci[BT_TBS_MAX_UCI_SIZE];
 	int err;
 
 	register_default_bearer(fixture);
 
-	err = bt_ccp_call_control_server_get_bearer_uci(NULL, &res_bearer_uci);
+	err = bt_ccp_call_control_server_get_bearer_uci(NULL, res_bearer_uci);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);
 }
 

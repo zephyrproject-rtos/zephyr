@@ -411,20 +411,20 @@ static void telnet_restart_server(void)
 static void telnet_accept(struct zsock_pollfd *pollfd)
 {
 	int sock, ret = 0;
-	struct net_sockaddr addr;
-	net_socklen_t addrlen = sizeof(struct net_sockaddr);
+	struct net_sockaddr_storage addr;
+	net_socklen_t addrlen = sizeof(addr);
 
-	sock = zsock_accept(pollfd->fd, &addr, &addrlen);
+	sock = zsock_accept(pollfd->fd, net_sad(&addr), &addrlen);
 	if (sock < 0) {
 		ret = -errno;
-		NET_ERR("Telnet accept error (%d)", ret);
+		LOG_ERR("Telnet accept error (%d)", ret);
 		return;
 	}
 
 	if (sh_telnet->fds[SOCK_ID_CLIENT].fd > 0) {
 		/* Too many connections. */
 		ret = 0;
-		NET_ERR("Telnet client already connected.");
+		LOG_ERR("Telnet client already connected.");
 		goto error;
 	}
 
@@ -443,7 +443,7 @@ static void telnet_accept(struct zsock_pollfd *pollfd)
 	}
 
 	LOG_DBG("Telnet client connected (family NET_AF_INET%s)",
-		addr.sa_family == NET_AF_INET ? "" : "6");
+		addr.ss_family == NET_AF_INET ? "" : "6");
 
 	/* Disable echo - if command handling is enabled we reply that we
 	 * support echo.
@@ -508,7 +508,7 @@ static void telnet_server_cb(struct net_socket_service_event *evt)
 		return;
 	}
 
-	NET_ERR("Unexpected FD received for telnet, restarting service.");
+	LOG_ERR("Unexpected FD received for telnet, restarting service.");
 
 error:
 	telnet_restart_server();

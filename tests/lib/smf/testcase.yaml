@@ -8,6 +8,9 @@ tests:
   libraries.smf.hierarchical:
     extra_configs:
       - CONFIG_SMF_ANCESTOR_SUPPORT=y
+  libraries.smf.hierarchical.5.ancestors:
+    extra_configs:
+      - CONFIG_SMF_ANCESTOR_SUPPORT=y
   libraries.smf.initial_transition:
     extra_configs:
       - CONFIG_SMF_ANCESTOR_SUPPORT=y

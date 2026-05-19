@@ -245,6 +245,13 @@
 	status = "okay";
 };
 
+zephyr_udc0: &udp {
+	status = "okay";
+
+	pinctrl-0 = <&udp_default>;
+	pinctrl-names = "default";
+};
+
 ext1_spi: &spi0 {};
 
 ext1_i2c: &twi0 {};

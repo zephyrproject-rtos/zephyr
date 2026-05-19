@@ -82,6 +82,9 @@ struct log_msg_hdr {
 #if defined(CONFIG_LOG_THREAD_ID_PREFIX)
 	void *tid;
 #endif
+#if defined(CONFIG_LOG_CORE_ID_PREFIX)
+	uint8_t core_id;
+#endif
 };
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
@@ -330,11 +333,17 @@ do { \
 	int _plen; \
 	uint32_t _options = Z_LOG_MSG_CBPRINTF_FLAGS(_cstr_cnt) | \
 			  CBPRINTF_PACKAGE_ADD_RW_STR_POS; \
-	if (GET_ARG_N(1, __VA_ARGS__) == NULL) { \
+	if (is_null_no_warn((void *)GET_ARG_N(1, __VA_ARGS__))) { \
 		_plen = 0; \
 	} else { \
 		CBPRINTF_STATIC_PACKAGE(NULL, 0, _plen, Z_LOG_MSG_ALIGN_OFFSET, _options, \
 					__VA_ARGS__); \
+		/* When GCOV was enabled it was seen that compilation could fail here. */ \
+		/* Adding protection like this helps. It is compile time resolved code */ \
+		/* so has no impact on performance. */ \
+		if (_plen < 0) { \
+			break; \
+		} \
 	} \
 	TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_SHADOW) \
 	struct log_msg *_msg; \
@@ -531,9 +540,10 @@ do { \
 			( \
 			bool can_simple = LOG_MSG_SIMPLE_CHECK(__VA_ARGS__); \
 			if (can_simple && ((_dlen) == 0) && !k_is_user_context()) { \
-				LOG_MSG_DBG("create fast message\n");\
+				compiler_barrier(); \
+				LOG_MSG_DBG("create fast message\n"); \
 				Z_LOG_MSG_SIMPLE_ARGS_CREATE(_domain_id, _source, _level, \
-						     Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
+							     Z_LOG_FMT_ARGS(_fmt, ##__VA_ARGS__)); \
 				_mode = Z_LOG_MSG_MODE_SIMPLE; \
 				break; \
 			} \
@@ -813,6 +823,22 @@ static inline void *log_msg_get_tid(struct log_msg *msg)
 #else
 	ARG_UNUSED(msg);
 	return NULL;
+#endif
+}
+
+/** @brief Get Core ID.
+ *
+ * @param msg Log message.
+ *
+ * @return Core ID.
+ */
+static inline uint8_t log_msg_get_core_id(struct log_msg *msg)
+{
+#if defined(CONFIG_LOG_CORE_ID_PREFIX)
+	return msg->hdr.core_id;
+#else
+	ARG_UNUSED(msg);
+	return 0;
 #endif
 }
 

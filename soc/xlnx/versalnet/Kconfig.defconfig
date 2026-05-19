@@ -6,11 +6,10 @@
 
 if SOC_AMD_VERSALNET
 
-if SOC_AMD_VERSALNET_RPU
+configdefault CACHE_MANAGEMENT
+	default y
 
-CONFIG_CACHE_MANAGEMENT=y
-CONFIG_ARM_ARCH_TIMER=y
-CONFIG_CACHE_MANAGEMENT=y
+if SOC_AMD_VERSALNET_RPU
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used
@@ -24,9 +23,11 @@ endif # SOC_AMD_VERSALNET_RPU
 
 if SOC_AMD_VERSALNET_APU
 
-CONFIG_CACHE_MANAGEMENT=y
-CONFIG_ARM_ARCH_TIMER=y
-CONFIG_CACHE_MANAGEMENT=y
+configdefault DCACHE_LINE_SIZE
+	default 64
+
+configdefault ICACHE_LINE_SIZE
+	default 64
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used

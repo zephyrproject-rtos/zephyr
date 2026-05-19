@@ -26,7 +26,9 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 #include <sys/types.h>
@@ -47,11 +49,17 @@ DEFINE_FFF_GLOBALS;
 
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
+	ARG_UNUSED(test);
+	ARG_UNUSED(fixture);
+
 	test_mocks_init();
 }
 
 static void mock_destroy_rule_after(const struct ztest_unit_test *test, void *fixture)
 {
+	ARG_UNUSED(test);
+	ARG_UNUSED(fixture);
+
 	test_mocks_cleanup();
 }
 
@@ -119,6 +127,8 @@ static void ascs_test_suite_teardown(void *f)
 static void ascs_test_suite_after(void *f)
 {
 	int err;
+
+	ARG_UNUSED(f);
 
 	/* If any of these fails, it's a fatal error for any tests running afterwards */
 	err = bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
@@ -188,7 +198,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 	}
 
 	zexpect_not_null(ase);
-	zexpect_true(ase_id != 0x00);
+	zexpect_true(ase_id != 0x00U);
 
 	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
@@ -200,7 +210,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_callback_unregister)
 	bt_gatt_notify_cb_reset();
 
 	/* Unregister the callbacks - which will clean up the ASCS */
-	bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb);
+	zassert_ok(bt_bap_unicast_server_unregister_cb(&mock_bap_unicast_server_cb));
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 
@@ -233,7 +243,7 @@ ZTEST_F(ascs_test_suite, test_abort_client_operation_if_callback_not_registered)
 	}
 
 	zexpect_not_null(ase_cp);
-	zexpect_true(ase_id != 0x00);
+	zexpect_true(ase_id != 0x00U);
 
 	/* Set ASE to non-idle state */
 	test_ase_control_client_config_codec(conn, ase_id, stream);
@@ -273,7 +283,7 @@ ZTEST_F(ascs_test_suite, test_release_ase_on_acl_disconnection)
 	}
 
 	zexpect_not_null(ase);
-	zexpect_true(ase_id != 0x00);
+	zexpect_true(ase_id != 0x00U);
 
 	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
@@ -310,14 +320,14 @@ ZTEST_F(ascs_test_suite, test_release_ase_pair_on_acl_disconnection)
 	ase_snk = fixture->ase_snk.attr;
 	zexpect_not_null(ase_snk);
 	ase_snk_id = fixture->ase_snk.id;
-	zexpect_true(ase_snk_id != 0x00);
+	zexpect_true(ase_snk_id != 0x00U);
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_BT_ASCS_ASE_SRC);
 	memset(&src_stream, 0, sizeof(src_stream));
 	ase_src = fixture->ase_src.attr;
 	zexpect_not_null(ase_src);
 	ase_src_id = fixture->ase_src.id;
-	zexpect_true(ase_src_id != 0x00);
+	zexpect_true(ase_src_id != 0x00U);
 
 	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
@@ -426,7 +436,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
 		ase_id = fixture->ase_src.id;
 	}
 	zexpect_not_null(ase);
-	zexpect_true(ase_id != 0x00);
+	zexpect_true(ase_id != 0x00U);
 
 	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
@@ -461,7 +471,7 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 	ase = fixture->ase_src.attr;
 	ase_id = fixture->ase_src.id;
 	zexpect_not_null(ase);
-	zexpect_true(ase_id != 0x00);
+	zexpect_true(ase_id != 0x00U);
 
 	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
@@ -521,7 +531,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 		ase_id = fixture->ase_src.id;
 	}
 	zexpect_not_null(ase);
-	zexpect_true(ase_id != 0x00);
+	zexpect_true(ase_id != 0x00U);
 
 	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
@@ -571,7 +581,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 		ase_id = fixture->ase_src.id;
 	}
 	zexpect_not_null(ase);
-	zexpect_true(ase_id != 0x00);
+	zexpect_true(ase_id != 0x00U);
 
 	err = bt_bap_unicast_server_register_cb(&mock_bap_unicast_server_cb);
 	zassert_equal(err, 0, "unexpected err response %d", err);
@@ -611,7 +621,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 
 static struct bt_bap_stream *stream_allocated;
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 40000U, 40000U, 40000U, 40000U);
 
 static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
 						enum bt_audio_dir dir,
@@ -620,6 +630,11 @@ static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const stru
 						struct bt_bap_qos_cfg_pref *const pref,
 						struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(ep);
+	ARG_UNUSED(dir);
+	ARG_UNUSED(codec_cfg);
+
 	*stream = stream_allocated;
 	*pref = qos_pref;
 	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
@@ -647,7 +662,7 @@ ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
 	}
 
 	zexpect_not_null(ase);
-	zassert_not_equal(ase_id, 0x00);
+	zassert_not_equal(ase_id, 0x00U);
 
 	cp = test_ase_control_point_get();
 	zexpect_not_null(cp);
@@ -662,15 +677,15 @@ ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
 	mock_bt_gatt_notify_cb_fake.return_val = -ENOMEM;
 
 	const uint8_t buf[] = {
-		0x01,           /* Opcode = Config Codec */
-		0x01,           /* Number_of_ASEs */
+		0x01U,          /* Opcode = Config Codec */
+		0x01U,          /* Number_of_ASEs */
 		ase_id,         /* ASE_ID[0] */
-		0x01,           /* Target_Latency[0] = Target low latency */
-		0x02,           /* Target_PHY[0] = LE 2M PHY */
-		0x06,           /* Codec_ID[0].Coding_Format = LC3 */
-		0x00, 0x00,     /* Codec_ID[0].Company_ID */
-		0x00, 0x00,     /* Codec_ID[0].Vendor_Specific_Codec_ID */
-		0x00,           /* Codec_Specific_Configuration_Length[0] */
+		0x01U,          /* Target_Latency[0] = Target low latency */
+		0x02U,          /* Target_PHY[0] = LE 2M PHY */
+		0x06U,          /* Codec_ID[0].Coding_Format = LC3 */
+		0x00U, 0x00U,   /* Codec_ID[0].Company_ID */
+		0x00U, 0x00U,   /* Codec_ID[0].Vendor_Specific_Codec_ID */
+		0x00U,          /* Codec_Specific_Configuration_Length[0] */
 	};
 
 	cp->write(conn, cp, (void *)buf, sizeof(buf), 0, 0);

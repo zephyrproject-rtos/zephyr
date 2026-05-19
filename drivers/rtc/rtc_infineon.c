@@ -14,6 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 #include <cy_pdl.h>
+#include <stdlib.h>
 
 LOG_MODULE_REGISTER(ifx_cat1_rtc, CONFIG_RTC_LOG_LEVEL);
 
@@ -35,6 +36,18 @@ LOG_MODULE_REGISTER(ifx_cat1_rtc, CONFIG_RTC_LOG_LEVEL);
 #define _IFX_CAT1_RTC_BREG (BACKUP->BREG_SET1[SRSS_BACKUP_NUM_BREG1 - 1])
 #elif defined(SRSS_BACKUP_NUM_BREG0) && (SRSS_BACKUP_NUM_BREG0 > 0)
 #define _IFX_CAT1_RTC_BREG (BACKUP->BREG_SET0[SRSS_BACKUP_NUM_BREG0 - 1])
+#endif
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#if defined(SRSS_RTC_NUM_BREG3) && (SRSS_RTC_NUM_BREG3 > 0)
+#define _IFX_CAT1_RTC_BREG (RTC->BREG_SET3[SRSS_RTC_NUM_BREG3 - 1])
+#elif defined(SRSS_RTC_NUM_BREG2) && (SRSS_RTC_NUM_BREG2 > 0)
+#define _IFX_CAT1_RTC_BREG (RTC->BREG_SET2[SRSS_RTC_NUM_BREG2 - 1])
+#elif defined(SRSS_RTC_NUM_BREG1) && (SRSS_RTC_NUM_BREG1 > 0)
+#define _IFX_CAT1_RTC_BREG (RTC->BREG_SET1[SRSS_RTC_NUM_BREG1 - 1])
+#elif defined(SRSS_RTC_NUM_BREG0) && (SRSS_RTC_NUM_BREG0 > 0)
+#define _IFX_CAT1_RTC_BREG (RTC->BREG_SET0[SRSS_RTC_NUM_BREG0 - 1])
+#elif defined(SRSS_NUM_HIBDATA) && ((SRSS_NUM_HIBDATA) > 0)
+#define _IFX_CAT1_RTC_BREG (SRSS->PWR_HIB_DATA[SRSS_NUM_HIBDATA - 1])
 #endif
 #endif
 
@@ -336,8 +349,7 @@ static DEVICE_API(rtc, ifx_cat1_rtc_driver_api) = {
 #define INFINEON_CAT1_RTC_INIT(n)                                                                  \
 	static struct ifx_cat1_rtc_data ifx_cat1_rtc_data##n;                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, ifx_cat1_rtc_init, NULL, &ifx_cat1_rtc_data##n,                   \
-			      NULL, PRE_KERNEL_1, CONFIG_RTC_INIT_PRIORITY,        \
-			      &ifx_cat1_rtc_driver_api);
+	DEVICE_DT_INST_DEFINE(n, ifx_cat1_rtc_init, NULL, &ifx_cat1_rtc_data##n, NULL,             \
+			      PRE_KERNEL_1, CONFIG_RTC_INIT_PRIORITY, &ifx_cat1_rtc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_RTC_INIT)

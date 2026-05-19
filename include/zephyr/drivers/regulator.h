@@ -63,6 +63,33 @@ typedef uint8_t regulator_error_flags_t;
 
 /** @} */
 
+/**
+ * @brief Regulator event types
+ */
+enum regulator_event_type {
+	/** @brief Regulator voltage is detected */
+	REGULATOR_VOLTAGE_DETECTED,
+	/** @brief Regulator voltage is removed */
+	REGULATOR_VOLTAGE_REMOVED,
+};
+
+/** @brief Regulator event structure */
+struct regulator_event {
+	/** @brief Event type */
+	enum regulator_event_type type;
+};
+
+/**
+ * @brief Regulator callback function signature
+ *
+ * @param dev Regulator device instance
+ * @param evt Regulator event
+ * @param user_data User data
+ */
+typedef void (*regulator_callback_t)(const struct device *dev,
+				     const struct regulator_event *const evt,
+				     const void *const user_data);
+
 /** @cond INTERNAL_HIDDEN */
 
 typedef int (*regulator_dvs_state_set_t)(const struct device *dev,
@@ -102,6 +129,8 @@ typedef int (*regulator_get_active_discharge_t)(const struct device *dev,
 				    bool *active_discharge);
 typedef int (*regulator_get_error_flags_t)(
 	const struct device *dev, regulator_error_flags_t *flags);
+typedef int (*regulator_set_callback_t)(const struct device *dev,
+	regulator_callback_t cb, const void *const user_data);
 
 /** @brief Driver-specific API functions to support regulator control. */
 __subsystem struct regulator_driver_api {
@@ -120,6 +149,7 @@ __subsystem struct regulator_driver_api {
 	regulator_set_active_discharge_t set_active_discharge;
 	regulator_get_active_discharge_t get_active_discharge;
 	regulator_get_error_flags_t get_error_flags;
+	regulator_set_callback_t set_callback;
 };
 
 /**
@@ -371,8 +401,7 @@ static inline int regulator_common_get_max_voltage(const struct device *dev, int
 static inline int regulator_parent_dvs_state_set(const struct device *dev,
 						 regulator_dvs_state_t state)
 {
-	const struct regulator_parent_driver_api *api =
-		(const struct regulator_parent_driver_api *)dev->api;
+	const struct regulator_parent_driver_api *api = DEVICE_API_GET(regulator_parent, dev);
 
 	if (api->dvs_state_set == NULL) {
 		return -ENOSYS;
@@ -397,8 +426,7 @@ static inline int regulator_parent_dvs_state_set(const struct device *dev,
  */
 static inline int regulator_parent_ship_mode(const struct device *dev)
 {
-	const struct regulator_parent_driver_api *api =
-		(const struct regulator_parent_driver_api *)dev->api;
+	const struct regulator_parent_driver_api *api = DEVICE_API_GET(regulator_parent, dev);
 
 	if (api->ship_mode == NULL) {
 		return -ENOSYS;
@@ -466,8 +494,7 @@ int regulator_disable(const struct device *dev);
  */
 static inline unsigned int regulator_count_voltages(const struct device *dev)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->count_voltages == NULL) {
 		return 0U;
@@ -494,8 +521,7 @@ static inline unsigned int regulator_count_voltages(const struct device *dev)
 static inline int regulator_list_voltage(const struct device *dev,
 					 unsigned int idx, int32_t *volt_uv)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->list_voltage == NULL) {
 		return -EINVAL;
@@ -551,8 +577,7 @@ int regulator_set_voltage(const struct device *dev, int32_t min_uv,
 static inline int regulator_get_voltage(const struct device *dev,
 					int32_t *volt_uv)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->get_voltage == NULL) {
 		return -ENOSYS;
@@ -574,8 +599,7 @@ static inline int regulator_get_voltage(const struct device *dev,
  */
 static inline unsigned int regulator_count_current_limits(const struct device *dev)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->count_current_limits == NULL) {
 		return 0U;
@@ -602,8 +626,7 @@ static inline unsigned int regulator_count_current_limits(const struct device *d
 static inline int regulator_list_current_limit(const struct device *dev,
 					       unsigned int idx, int32_t *current_ua)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->list_current_limit == NULL) {
 		return -EINVAL;
@@ -645,8 +668,7 @@ int regulator_set_current_limit(const struct device *dev, int32_t min_ua,
 static inline int regulator_get_current_limit(const struct device *dev,
 					      int32_t *curr_ua)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->get_current_limit == NULL) {
 		return -ENOSYS;
@@ -686,8 +708,7 @@ int regulator_set_mode(const struct device *dev, regulator_mode_t mode);
 static inline int regulator_get_mode(const struct device *dev,
 				     regulator_mode_t *mode)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->get_mode == NULL) {
 		return -ENOSYS;
@@ -709,8 +730,7 @@ static inline int regulator_get_mode(const struct device *dev,
 static inline int regulator_set_active_discharge(const struct device *dev,
 				     bool active_discharge)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->set_active_discharge == NULL) {
 		return -ENOSYS;
@@ -732,8 +752,7 @@ static inline int regulator_set_active_discharge(const struct device *dev,
 static inline int regulator_get_active_discharge(const struct device *dev,
 				     bool *active_discharge)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->get_active_discharge == NULL) {
 		return -ENOSYS;
@@ -755,14 +774,40 @@ static inline int regulator_get_active_discharge(const struct device *dev,
 static inline int regulator_get_error_flags(const struct device *dev,
 					    regulator_error_flags_t *flags)
 {
-	const struct regulator_driver_api *api =
-		(const struct regulator_driver_api *)dev->api;
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
 
 	if (api->get_error_flags == NULL) {
 		return -ENOSYS;
 	}
 
 	return api->get_error_flags(dev, flags);
+}
+
+/**
+ * @brief Set event handler function.
+ *
+ * The regulator may generate an interrupt when, for example, the voltage is
+ * present. This can be used for USB VBUS voltage regulators to notify that a
+ * device is connected to a port.
+ *
+ * @param dev Regulator device instance
+ * @param cb Event handler
+ * @param user_data User data
+ *
+ * @retval 0 If successful.
+ * @retval -ENOSYS If not supported by the device.
+ */
+static inline int regulator_set_callback(const struct device *dev,
+					 regulator_callback_t cb,
+					 const void *const user_data)
+{
+	const struct regulator_driver_api *api = DEVICE_API_GET(regulator, dev);
+
+	if (api->set_callback == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->set_callback(dev, cb, user_data);
 }
 
 #ifdef __cplusplus

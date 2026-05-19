@@ -39,7 +39,8 @@ uploaded to the "secondary slot";  the mcuboot is responsible in swapping
 slots on boot.
 This means that pair of slots is dedicated to single upgradable application.
 In case of Zephyr this gets a little bit confusing because DTS will use
-"slot0_partition" and "slot1_partition", as label of ``fixed-partition`` dedicated
+"slot0_partition" and "slot1_partition", as label of ``fixed-partitions`` or
+``zephyr,mapped-partition`` dedicated
 to single application, but will name them as "image-0" and "image-1" respectively.
 
 Currently Zephyr supports at most two images, in which case mapping is as follows:

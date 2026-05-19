@@ -7,12 +7,14 @@ zephyr_library_sources(video_ctrls.c)
 zephyr_library_sources(video_device.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_VIDEO_ARDUCAM_MEGA video_arducam_mega.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_IMAGER video_emul_imager.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_EMUL_RX video_emul_rx.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_ESP32 video_esp32_dvp.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_GC2145 gc2145.c)
-zephyr_library_sources_ifdef(CONFIG_VIDEO_HIMAX_HM01B0 hm01b0.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_HM01B0 hm01b0.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_HM0360 hm0360.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_IMX219 imx219.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_IMX335 imx335.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_CSI video_mcux_csi.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_MCUX_MIPI_CSI2RX video_mcux_mipi_csi2rx.c)
@@ -33,5 +35,33 @@ zephyr_library_sources_ifdef(CONFIG_VIDEO_STM32_VENC video_stm32_venc.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_ST_MIPID02 video_st_mipid02.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_SW_GENERATOR video_sw_generator.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_VIDEO_SW_GENERATOR)
+    set(VIDEO_DIR ${CMAKE_CURRENT_LIST_DIR})
+
+    generate_inc_file_for_target(
+        ${ZEPHYR_CURRENT_LIBRARY}
+        ${VIDEO_DIR}/video_sw_generator_input/${CONFIG_VIDEO_SW_GENERATOR_JPEG_NAME}.jpg
+        ${ZEPHYR_BINARY_DIR}/include/generated/jpeg_frame_buffer.inc
+    )
+
+    generate_inc_file_for_target(
+        ${ZEPHYR_CURRENT_LIBRARY}
+        ${VIDEO_DIR}/video_sw_generator_input/${CONFIG_VIDEO_SW_GENERATOR_JPEG_HFLIP_NAME}.jpg
+        ${ZEPHYR_BINARY_DIR}/include/generated/jpeg_frame_buffer_hflip.inc
+    )
+
+    generate_inc_file_for_target(
+        ${ZEPHYR_CURRENT_LIBRARY}
+        ${VIDEO_DIR}/video_sw_generator_input/${CONFIG_VIDEO_SW_GENERATOR_PNG_NAME}.png
+        ${ZEPHYR_BINARY_DIR}/include/generated/png_frame_buffer.inc
+    )
+
+    generate_inc_file_for_target(
+        ${ZEPHYR_CURRENT_LIBRARY}
+        ${VIDEO_DIR}/video_sw_generator_input/${CONFIG_VIDEO_SW_GENERATOR_PNG_HFLIP_NAME}.png
+        ${ZEPHYR_BINARY_DIR}/include/generated/png_frame_buffer_hflip.inc
+    )
+endif()
 
 zephyr_linker_sources(DATA_SECTIONS video.ld)

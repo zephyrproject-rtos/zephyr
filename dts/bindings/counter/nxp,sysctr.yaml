@@ -1,0 +1,50 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP System Counter (SYS_CTR)
+
+compatible: "nxp,sysctr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register blocks for the three SYS_CTR programming models:
+        - SYS_CTR_CONTROL: counter control, frequency selection, count value
+        - SYS_CTR_READ:    read-only access to current count value
+        - SYS_CTR_COMPARE: compare frame control, interrupt mask and status
+
+  reg-names:
+    required: true
+    description: Names for the three register blocks.
+
+  interrupts:
+    required: true
+    description: |
+      Single interrupt line shared by compare frame 0 and compare frame 1.
+
+  clocks:
+    required: true
+    description: |
+      Two clock entries in order: base clock (24 MHz XTAL) and slow clock
+      (32 kHz LPO). Use IMX_CCM_SYSCTR_BASE_CLK and IMX_CCM_SYSCTR_SLOW_CLK.
+
+  clock-names:
+    required: true
+    description: |
+      Clock names. Must be "base" for the 24 MHz base clock and "slow" for
+      the 32 kHz alternate slow clock.
+
+  clock-source:
+    type: int
+    default: 0
+    enum: [0, 1]
+    description: |
+      Active clock source selection. Maps directly to sysctr_clock_source_t:
+        0 - kSYSCTR_BaseFrequency:      base clock (normal operation)
+        1 - kSYSCTR_AlternateFrequency: slow clock divided by 64
+                                         inside the hardware (low-power)
+      Defaults to 0 (base clock) if not specified.
+      NOTE: Alarm functionality is only supported with clock-source = 0.

@@ -1,6 +1,6 @@
 identifier: versalnet_apu/amd_versalnet_apu/smp
 name: AMD Development board for Versal NET APU
-arch: arm
+arch: arm64
 toolchain:
   - zephyr
 testing:

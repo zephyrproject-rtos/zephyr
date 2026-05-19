@@ -10,6 +10,7 @@
 #include <stddef.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/tmap.h>
 #include <zephyr/bluetooth/addr.h>
@@ -20,6 +21,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -33,6 +35,14 @@ CREATE_FLAG(flag_tmap_discovered);
 
 void tmap_discovery_complete_cb(enum bt_tmap_role role, struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(role);
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
+		FAIL("Failed to discover TMAS: %d", err);
+		return;
+	}
+
 	printk("TMAS discovery done\n");
 	SET_FLAG(flag_tmap_discovered);
 }
@@ -47,7 +57,7 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 	struct net_buf_simple tmas_svc_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
-	uint16_t peer_tmap_role = 0;
+	uint16_t peer_tmap_role = 0U;
 	int err;
 
 	printk("[AD]: %u data_len %u\n", data->type, data->data_len);
@@ -101,15 +111,12 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
 	printk("SCAN RCV CB\n");
 
 	/* Check for connectable, extended advertising */
 	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0) ||
 		((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE)) != 0) {
-		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-		printk("[DEVICE]: %s, ", le_addr);
+		printk("[DEVICE]: %s, ", bt_addr_le_str(info->addr));
 		/* Check for TMAS support in advertising data */
 		bt_data_parse(buf, check_audio_support_and_connect, (void *)info->addr);
 	}

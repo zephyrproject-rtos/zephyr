@@ -507,6 +507,27 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif # SHELL_BACKEND_RPMSG
 
+config SHELL_BACKEND_SSH
+	bool "SSH backend."
+	depends on SSH
+	default y
+	help
+	  Enable SSH (secure shell) backend.
+
+if SHELL_BACKEND_SSH
+
+config SHELL_PROMPT_SSH
+	string "Displayed prompt name"
+	default "zephyr:~$ "
+	help
+	  Displayed prompt name for SSH backend.
+
+module = SHELL_SSH
+module-str = SSH shell backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SHELL_BACKEND_SSH
+
 config SHELL_BACKEND_TELNET
 	bool "TELNET backend."
 	depends on NET_TCP

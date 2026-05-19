@@ -45,6 +45,7 @@
 		zephyr,flash-controller = &sim_flash;
 		zephyr,ieee802154 = &ieee802154;
 		zephyr,canbus = &can0;
+		zephyr,display = &ramfb0;
 	};
 
 	pcie0: pcie0 {
@@ -113,6 +114,32 @@
 
 	ieee802154: ieee802154 {
 		compatible = "zephyr,ieee802154-uart-pipe";
+	};
+
+	fwcfg0: fw-cfg@510 {
+		compatible = "qemu,fw-cfg-ioport";
+		reg = <0x510 0x18>;
+		status = "okay";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ramfb_mem: framebuffer@1c00000 {
+			reg = <0x01c00000 0x00400000>; /* 4 MiB */
+			no-map;
+		};
+	};
+
+	ramfb0: ramfb {
+		compatible = "qemu,ramfb";
+		fwcfg = <&fwcfg0>;
+		memory-region = <&ramfb_mem>;
+		width = <1024>;
+		height = <768>;
+		status = "okay";
 	};
 };
 

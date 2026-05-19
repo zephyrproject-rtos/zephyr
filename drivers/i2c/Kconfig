@@ -30,6 +30,25 @@ config I2C_SHELL_BUFFER_SIZE
 	  maximum size for read/write operations. Note that this is allocated
 	  on the stack.
 
+config I2C_TRANSFER_TIMEOUT_SUPPORTED
+	bool
+	help
+	  Selected by drivers that supports setting an i2c transaction timeout
+	  using the I2C_TRANSFER_TIMEOUT_MS Kconfig option.
+
+config I2C_TRANSFER_TIMEOUT_MS
+	int "Transfer timeout in milliseconds"
+	default 500
+	depends on I2C_TRANSFER_TIMEOUT_SUPPORTED
+	help
+	  Timeout in milliseconds used for each I2C transfer.
+	  In some drivers 0 means that the driver should use the K_FOREVER
+	  value, i.e. it should wait as long as necessary.
+
+	  I2C controllers that program a timeout directly into a register do
+	  not support setting this option to 0 and guard against an infinite
+	  timeout using the BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT() check.
+
 config I2C_STATS
 	bool "I2C device Stats"
 	depends on STATS
@@ -76,6 +95,9 @@ config I2C_ALLOW_NO_STOP_TRANSACTIONS
 	  Allow I2C transactions with no STOP on the last message. This is
 	  unsupported and can leave the bus in an unexpected state. The option
 	  will be removed in Zephyr 4.1.
+
+config I2C_BUS_RECOVERY
+	bool "Allows I2C bus recovery support"
 
 config I2C_RTIO
 	bool "I2C RTIO API"
@@ -131,6 +153,7 @@ source "drivers/i2c/Kconfig.ambiq"
 source "drivers/i2c/Kconfig.andes_atciic100"
 source "drivers/i2c/Kconfig.b91"
 source "drivers/i2c/Kconfig.bcm_iproc"
+source "drivers/i2c/Kconfig.bee"
 source "drivers/i2c/Kconfig.bflb"
 source "drivers/i2c/Kconfig.cc13xx_cc26xx"
 source "drivers/i2c/Kconfig.cc23x0"
@@ -150,6 +173,7 @@ source "drivers/i2c/Kconfig.lpc11u6x"
 source "drivers/i2c/Kconfig.max32"
 source "drivers/i2c/Kconfig.mchp"
 source "drivers/i2c/Kconfig.mchp_mss"
+source "drivers/i2c/Kconfig.mchp_xec"
 source "drivers/i2c/Kconfig.mcux"
 source "drivers/i2c/Kconfig.npcx"
 source "drivers/i2c/Kconfig.nrfx"
@@ -174,7 +198,6 @@ source "drivers/i2c/Kconfig.sy1xx"
 source "drivers/i2c/Kconfig.tca954x"
 source "drivers/i2c/Kconfig.test"
 source "drivers/i2c/Kconfig.wch"
-source "drivers/i2c/Kconfig.xec"
 source "drivers/i2c/Kconfig.xilinx_axi"
 # zephyr-keep-sorted-stop
 

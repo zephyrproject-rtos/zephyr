@@ -9,7 +9,9 @@
 
 static void leon_idle(unsigned int key)
 {
+#if defined(CONFIG_TRACING)
 	sys_trace_idle();
+#endif
 	irq_unlock(key);
 
 	__asm__ volatile ("wr  %g0, %asr19");

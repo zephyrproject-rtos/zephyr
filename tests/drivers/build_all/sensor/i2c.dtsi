@@ -24,6 +24,7 @@
 #include <zephyr/dt-bindings/sensor/lis2du12.h>
 #include <zephyr/dt-bindings/sensor/lis2dux12.h>
 #include <zephyr/dt-bindings/sensor/lis2de12.h>
+#include <zephyr/dt-bindings/sensor/pac194x.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/sensor/ina226.h>
@@ -1150,7 +1151,6 @@ test_i2c_bmp390: bmp390@99 {
 	compatible = "bosch,bmp390";
 	reg = <0x99>;
 	int-gpios = <&test_gpio 0 0>;
-	osr-press = <0x01>;
 	odr = "12.5";
 	osr-press = <8>;
 	osr-temp = <1>;
@@ -1529,4 +1529,109 @@ test_i2c_ism6hg256x: ism6hg256x@c8 {
 test_i2c_ltr553: ltr553@c9 {
 	compatible = "liteon,ltr553";
 	reg = <0xc9>;
+};
+
+test_i2c_stcc4: stcc4@ca {
+	compatible = "sensirion,stcc4";
+	reg = <0xca>;
+	measurement-mode = <0>;
+};
+
+test_i2c_qmi8658a: qmi8658a@cb {
+	compatible = "qst,qmi8658a";
+	reg = <0xcb>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_npm10xx: npm10xx@cc {
+	reg = <0xcc>;
+	compatible = "nordic,npm10xx";
+
+	sensor {
+		compatible = "nordic,npm10xx-adc";
+	};
+};
+
+test_i2c_adxl355: adxl55@cd {
+	compatible = "adi,adxl355";
+	reg = <0xcd>;
+	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_htu21d: htu21d@ce {
+	compatible = "meas,htu21d";
+	reg = <0xce>;
+};
+
+test_i2c_cht8315: cht8315@cf {
+	compatible = "sensylink,cht8315";
+	reg = <0xcf>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_pac194x: pac194x@d0 {
+	compatible = "microchip,pac194x";
+	reg = <0xd0>;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@1 {
+		reg = <0x1>;
+		friendly-name = "CPU";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VPOWER>;
+	};
+
+	channel@2 {
+		reg = <0x2>;
+		friendly-name = "MEM";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_BIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_BIPOLAR_HALF_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VPOWER>;
+	};
+
+	channel@3 {
+		reg = <0x3>;
+		friendly-name = "GPU";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VBUS>;
+	};
+
+	channel@4 {
+		reg = <0x4>;
+		friendly-name = "NET";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VBUS>;
+	};
+};
+
+test_i2c_fdc1004: fdc1004@d1 {
+	compatible = "ti,fdc1004";
+	reg = <0xd1>;
+	measure-rate = <100>;
+	ti,capdac = <0 0 0 0>;
+};
+
+test_i2c_htu31d: htu31d@d2 {
+	compatible = "meas,htu31d";
+	reg = <0xd2>;
+};
+
+test_i2c_ms5637: ms5637@d3 {
+	compatible = "meas,ms5637";
+	reg = <0xd3>;
+};
+
+test_i2c_max30102: max30102@d4 {
+	compatible = "maxim,max30102";
+	reg = <0xd4>;
+	acq-mode = "multi-led";
 };

@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: wio_tracker_l1
+  full_name: Wio Tracker L1
+  vendor: seeed
+  socs:
+  - name: nrf52840

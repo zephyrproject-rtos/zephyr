@@ -194,7 +194,7 @@ int pipeput(struct k_pipe *pipe,
 	end = timing_timestamp_get();
 	t = timing_cycles_get(&start, &end);
 
-	*time = timing_cycles_to_ns_avg(t, count);
+	*time = test_timing_cycles_to_ns_avg(t, count);
 
 	return 0;
 }

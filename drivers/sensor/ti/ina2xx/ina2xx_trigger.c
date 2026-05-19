@@ -25,7 +25,7 @@ int ina2xx_trigger_mode_init(struct ina2xx_trigger *trigg, const struct gpio_dt_
 	int ret;
 
 	if (!device_is_ready(alert_gpio->port)) {
-		LOG_ERR("Alert GPIO device not ready");
+		LOG_ERR_DEVICE_NOT_READY(alert_gpio->port);
 		return -ENODEV;
 	}
 

@@ -10,7 +10,8 @@
  */
 
 #include <zephyr/kernel.h>
-#include <rail.h>
+#include <sl_rail.h>
+#include <sl_rail_util_rf_path_switch.h>
 
 #include <soc_radio.h>
 
@@ -42,4 +43,10 @@ void rail_isr_installer(void)
 			    RDMAILBOX_IRQHandler,
 			    NULL, 0);
 	}));
+}
+
+void soc_radio_init(void)
+{
+	rail_isr_installer();
+	sl_rail_util_rf_path_switch_init();
 }

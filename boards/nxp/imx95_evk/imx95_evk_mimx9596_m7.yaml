@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024,2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -21,6 +21,8 @@ supported:
   - netif:eth
   - counter
   - dma
+  - gpio
+  - adc
 testing:
   binaries:
     - flash.bin

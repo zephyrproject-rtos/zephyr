@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(input_ch9350l, CONFIG_INPUT_LOG_LEVEL);
 
-/* The theorical maximum is 72 */
+/* The theoretical maximum is 72 */
 #define CH9350L_FRAME_SIZE_MAX	72
 #define CH9350L_FRAME_SIZE_MIN	8
 #define CH9350L_WAIT_TIMEOUT_MS	100
@@ -352,7 +352,7 @@ static int ch9350l_init(struct device const *dev)
 		    CONFIG_INPUT_CH9350L_FRAME_COUNT);
 
 	if (!device_is_ready(config->uart)) {
-		LOG_ERR("UART device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->uart);
 		return -ENODEV;
 	}
 

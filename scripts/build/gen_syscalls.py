@@ -198,7 +198,6 @@ class SyscallParseException(Exception):
 
 
 def typename_split(item):
-    item = item.strip().replace("\n", " ")
     if "[" in item:
         raise SyscallParseException(
             f"Please pass arrays to syscalls as pointers, unable to process '{item}'"
@@ -431,7 +430,7 @@ def analyze_fn(match_group, fn, userspace_only):
         if args == "void":
             args = []
         else:
-            args = [typename_split(a) for a in args.split(",")]
+            args = [typename_split(a.strip()) for a in args.split(",")]
 
         func_type, func_name = typename_split(func)
     except SyscallParseException:

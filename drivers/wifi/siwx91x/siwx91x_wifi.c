@@ -6,6 +6,7 @@
 #define DT_DRV_COMPAT silabs_siwx91x_wifi
 
 #include <zephyr/version.h>
+#include <zephyr/logging/log.h>
 
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
@@ -41,7 +42,9 @@ static int siwx91x_sl_to_z_mode(sl_wifi_interface_t interface)
 	return 0;
 }
 
-int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
+int siwx91x_status(const struct device *dev,
+		   struct net_if *iface,
+		   struct wifi_iface_status *status)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_interface_info_t wlan_info = { };
@@ -83,7 +86,9 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		status->link_mode = wlan_info.wireless_mode;
 		status->iface_mode = WIFI_MODE_INFRA;
 		status->channel = wlan_info.channel_number;
-		status->twt_capable = true;
+		if (status->link_mode >= WIFI_6) {
+			status->twt_capable = true;
+		}
 
 		ret = sl_wifi_get_mfp(interface, &mfp);
 		if (ret) {
@@ -160,7 +165,7 @@ int siwx91x_status(const struct device *dev, struct wifi_iface_status *status)
 		status->security = WIFI_SECURITY_TYPE_UNKNOWN;
 	}
 
-	wifi_mgmt_raise_iface_status_event(sidev->iface, status);
+	wifi_mgmt_raise_iface_status_event(iface, status);
 	return ret;
 }
 
@@ -193,7 +198,9 @@ static int siwx91x_set_max_tx_power(const struct siwx91x_config *siwx91x_cfg)
 	return sl_wifi_set_max_tx_power(interface, max_tx_power);
 }
 
-static int siwx91x_mode(const struct device *dev, struct wifi_mode_info *mode)
+static int siwx91x_mode(const struct device *dev,
+			struct net_if *iface __unused,
+			struct wifi_mode_info *mode)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	const struct siwx91x_config *siwx91x_cfg = dev->config;
@@ -303,14 +310,14 @@ unref:
 	return SL_STATUS_FAIL;
 }
 
-static enum ethernet_hw_caps siwx91x_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps siwx91x_get_capabilities(const struct device *dev __unused,
+						      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_HW_FILTERING;
 }
 
 static int siwx91x_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
 			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
@@ -367,13 +374,14 @@ static void siwx91x_ethernet_init(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-static int siwx91x_stats(const struct device *dev, struct net_stats_wifi *stats)
+static int siwx91x_stats(const struct device *dev __unused,
+			 struct net_if *iface __unused,
+			 struct net_stats_wifi *stats)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_statistics_t statistics = { };
 	int ret;
 
-	ARG_UNUSED(dev);
 	__ASSERT(stats, "stats cannot be NULL");
 
 	ret = sl_wifi_get_statistics(FIELD_GET(SIWX91X_INTERFACE_MASK, interface), &statistics);
@@ -394,7 +402,9 @@ static int siwx91x_stats(const struct device *dev, struct net_stats_wifi *stats)
 }
 #endif
 
-static int siwx91x_get_version(const struct device *dev, struct wifi_version *params)
+static int siwx91x_get_version(const struct device *dev,
+			       struct net_if *iface __unused,
+			       struct wifi_version *params)
 {
 	sl_wifi_firmware_version_t fw_version = { };
 	struct siwx91x_dev *sidev = dev->data;
@@ -455,7 +465,9 @@ static int map_sdk_region_to_zephyr_channel_info(const sli_wifi_set_region_ap_re
 	return 0;
 }
 
-static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
+static int siwx91x_wifi_reg_domain(const struct device *dev,
+				   struct net_if *iface __unused,
+				   struct wifi_reg_domain *reg_domain)
 {
 	const struct siwx91x_config *siwx91x_cfg = dev->config;
 	const sli_wifi_set_region_ap_request_t *sdk_reg = NULL;
@@ -504,8 +516,8 @@ static int siwx91x_wifi_reg_domain(const struct device *dev, struct wifi_reg_dom
 
 static void siwx91x_iface_init(struct net_if *iface)
 {
-	const struct siwx91x_config *siwx91x_cfg = iface->if_dev->dev->config;
-	struct siwx91x_dev *sidev = iface->if_dev->dev->data;
+	const struct siwx91x_config *siwx91x_cfg = net_if_get_device(iface)->config;
+	struct siwx91x_dev *sidev = net_if_get_device(iface)->data;
 	sl_wifi_advanced_client_configuration_t client_config = {
 		.max_retry_attempts = 1,
 		.scan_interval = 0,
@@ -524,6 +536,7 @@ static void siwx91x_iface_init(struct net_if *iface)
 				siwx91x_on_ap_sta_disconnect, sidev);
 	sl_wifi_set_callback_v2(SL_WIFI_STATS_RESPONSE_EVENTS,
 				siwx91x_wifi_module_stats_event_handler, sidev);
+	sl_wifi_set_callback_v2(SL_WIFI_TWT_RESPONSE_EVENTS, siwx91x_on_twt, sidev);
 
 	ret = siwx91x_set_max_tx_power(siwx91x_cfg);
 	if (ret != SL_STATUS_OK) {
@@ -553,7 +566,9 @@ static void siwx91x_iface_init(struct net_if *iface)
 	sidev->state = WIFI_STATE_INACTIVE;
 }
 
-int siwx91x_get_rts_threshold(const struct device *dev, unsigned int *rts_threshold)
+int siwx91x_get_rts_threshold(const struct device *dev,
+			     struct net_if *iface __unused,
+			     unsigned int *rts_threshold)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	struct siwx91x_dev *sidev = dev->data;
@@ -577,7 +592,9 @@ int siwx91x_get_rts_threshold(const struct device *dev, unsigned int *rts_thresh
 	return 0;
 }
 
-int siwx91x_set_rts_threshold(const struct device *dev, unsigned int rts_threshold)
+int siwx91x_set_rts_threshold(const struct device *dev,
+			      struct net_if *iface __unused,
+			      unsigned int rts_threshold)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	struct siwx91x_dev *sidev = dev->data;

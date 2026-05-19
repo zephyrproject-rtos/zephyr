@@ -29,6 +29,19 @@ extern "C" {
 
 uint32_t psci_version(void);
 
+/**
+ * @brief Function to call PSCI CPU_SUSPEND
+ *
+ * This function is API for CPU_SUSPEND PSCI SMC call.
+ *
+ * @param state CPU Power state
+ * @param entry_point The address entry when returning from suspend
+ *
+ * @retval 0 if enter suspend successfully, others for failure
+ */
+
+int psci_cpu_suspend(uint32_t state, uintptr_t entry_point);
+
 #ifdef __cplusplus
 }
 #endif

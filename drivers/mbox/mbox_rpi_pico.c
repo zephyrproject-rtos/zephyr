@@ -14,6 +14,13 @@
 
 #define DT_DRV_COMPAT raspberrypi_pico_mbox
 
+/*
+ * The RP2xxx SIO block can be exposed at multiple base addresses (e.g. secure /
+ * non-secure aliases). Pick the correct mapping based on the mailbox node's
+ * parent (sio / sio_ns) reg address.
+ */
+#define mbox_sio_hw ((sio_hw_t *)DT_REG_ADDR(DT_INST_PARENT(0)))
+
 LOG_MODULE_REGISTER(mbox_rpi_pico, CONFIG_MBOX_LOG_LEVEL);
 
 #define MAILBOX_MBOX_SIZE sizeof(uint32_t)
@@ -33,7 +40,7 @@ static struct rpi_pico_mailbox_data rpi_pico_mbox_data;
  */
 static inline void fifo_clear_status(void)
 {
-	sio_hw->fifo_st = 0xff;
+	mbox_sio_hw->fifo_st = 0xff;
 }
 
 /*
@@ -41,7 +48,7 @@ static inline void fifo_clear_status(void)
  */
 static inline bool fifo_write_ready(void)
 {
-	return sio_hw->fifo_st & SIO_FIFO_ST_RDY_BITS;
+	return mbox_sio_hw->fifo_st & SIO_FIFO_ST_RDY_BITS;
 }
 
 /*
@@ -50,7 +57,7 @@ static inline bool fifo_write_ready(void)
  */
 static inline bool fifo_read_valid(void)
 {
-	return sio_hw->fifo_st & SIO_FIFO_ST_VLD_BITS;
+	return mbox_sio_hw->fifo_st & SIO_FIFO_ST_VLD_BITS;
 }
 
 /*
@@ -59,7 +66,7 @@ static inline bool fifo_read_valid(void)
 static inline void fifo_drain(void)
 {
 	while (fifo_read_valid()) {
-		(void)sio_hw->fifo_rd;
+		(void)mbox_sio_hw->fifo_rd;
 	}
 }
 
@@ -75,8 +82,8 @@ static int rpi_pico_mbox_send(const struct device *dev,
 	}
 	/* Signalling mode: send 0 as dummy data. */
 	if (msg == NULL) {
-		LOG_DBG("CPU %d: send IP signal", sio_hw->cpuid);
-		sio_hw->fifo_wr = 0;
+		LOG_DBG("CPU %d: send IP signal", mbox_sio_hw->cpuid);
+		mbox_sio_hw->fifo_wr = 0;
 		__SEV();
 		return 0;
 	}
@@ -84,8 +91,8 @@ static int rpi_pico_mbox_send(const struct device *dev,
 	if (msg->size > MAILBOX_MBOX_SIZE) {
 		return -EMSGSIZE;
 	}
-	LOG_DBG("CPU %d: send IP data: %d", sio_hw->cpuid, *((int *)msg->data));
-	sio_hw->fifo_wr = *((uint32_t *)(msg->data));
+	LOG_DBG("CPU %d: send IP data: %d", mbox_sio_hw->cpuid, *((int *)msg->data));
+	mbox_sio_hw->fifo_wr = *((uint32_t *)(msg->data));
 	__SEV();
 
 	return 0;
@@ -156,7 +163,7 @@ static void rpi_pico_mbox_isr(const struct device *dev)
 	}
 
 	if (data->cb != NULL) {
-		uint32_t d = sio_hw->fifo_rd;
+		uint32_t d = mbox_sio_hw->fifo_rd;
 		struct mbox_msg msg = {
 			.data = &d,
 			.size = sizeof(d)};
@@ -169,12 +176,12 @@ static int rpi_pico_mbox_init(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	LOG_DBG("Initial FIFO status: 0x%x", sio_hw->fifo_st);
+	LOG_DBG("Initial FIFO status: 0x%x", mbox_sio_hw->fifo_st);
 	LOG_DBG("FIFO depth: %d", DT_INST_PROP(0, fifo_depth));
 	irq_disable(DT_INST_IRQ_BY_NAME(0, MAILBOX_DEV_NAME, irq));
 	fifo_drain();
 	fifo_clear_status();
-	LOG_DBG("FIFO status after setup: 0x%x", sio_hw->fifo_st);
+	LOG_DBG("FIFO status after setup: 0x%x", mbox_sio_hw->fifo_st);
 	IRQ_CONNECT(DT_INST_IRQ_BY_NAME(0, MAILBOX_DEV_NAME, irq),
 		DT_INST_IRQ_BY_NAME(0, MAILBOX_DEV_NAME, priority),
 		rpi_pico_mbox_isr, DEVICE_DT_INST_GET(0), 0);

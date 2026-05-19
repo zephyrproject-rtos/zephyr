@@ -13,8 +13,8 @@ extern "C" {
 
 #include <zephyr/dfu/flash_img.h>
 #include <zephyr/storage/flash_map.h>
-#define UPDATEHUB_SLOT_PARTITION_0 FIXED_PARTITION_ID(slot0_partition)
-#define UPDATEHUB_SLOT_PARTITION_1 FIXED_PARTITION_ID(slot1_partition)
+#define UPDATEHUB_SLOT_PARTITION_0 PARTITION_ID(slot0_partition)
+#define UPDATEHUB_SLOT_PARTITION_1 PARTITION_ID(slot1_partition)
 
 struct updatehub_storage_context {
 	struct flash_img_context flash_ctx;

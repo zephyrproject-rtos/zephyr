@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: mks_canable_v10
+  full_name: MKS CANable V1.0
+  vendor: makerbase
+  socs:
+    - name: stm32f072xb

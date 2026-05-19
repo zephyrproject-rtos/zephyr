@@ -14,6 +14,11 @@ menuconfig LSM6DSV16X
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),i3c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),spi) ||\
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),spi)
+
+	select I2C_RTIO if I2C && SENSOR_ASYNC_API
+	select I3C_RTIO if I3C && SENSOR_ASYNC_API
+	select SPI_RTIO if SPI && SENSOR_ASYNC_API
+
 	select HAS_STMEMSC
 	select USE_STDC_LSM6DSV16X
 	select RTIO_WORKQ if SENSOR_ASYNC_API

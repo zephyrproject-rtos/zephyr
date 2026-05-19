@@ -361,7 +361,7 @@ static int paw32xx_init(const struct device *dev)
 	int ret;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("%s is not ready", cfg->spi.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->spi.bus);
 		return -ENODEV;
 	}
 
@@ -370,7 +370,7 @@ static int paw32xx_init(const struct device *dev)
 	k_work_init(&data->motion_work, paw32xx_motion_work_handler);
 
 	if (!gpio_is_ready_dt(&cfg->motion_gpio)) {
-		LOG_ERR("%s is not ready", cfg->motion_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->motion_gpio.port);
 		return -ENODEV;
 	}
 

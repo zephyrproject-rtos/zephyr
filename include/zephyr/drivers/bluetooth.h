@@ -65,22 +65,6 @@ enum {
 	BT_HCI_QUIRK_NO_AUTO_DLE = BIT(1),
 };
 
-/** Possible values for the 'bus' member of the bt_hci_driver struct */
-enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
-	BT_HCI_BUS_VIRTUAL       = 0,
-	BT_HCI_BUS_USB           = 1,
-	BT_HCI_BUS_PCCARD        = 2,
-	BT_HCI_BUS_UART          = 3,
-	BT_HCI_BUS_RS232         = 4,
-	BT_HCI_BUS_PCI           = 5,
-	BT_HCI_BUS_SDIO          = 6,
-	BT_HCI_BUS_SPI           = 7,
-	BT_HCI_BUS_I2C           = 8,
-	BT_HCI_BUS_SMD           = 9,
-	BT_HCI_BUS_VIRTIO        = 10,
-	BT_HCI_BUS_IPC           = 11,
-};
-
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
 	UTIL_CAT(BT_HCI_QUIRK_, DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx))
 #define BT_DT_HCI_QUIRKS_GET(node_id) COND_CODE_1(DT_NODE_HAS_PROP(node_id, bt_hci_quirks), \
@@ -100,17 +84,70 @@ enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
 
 #define BT_DT_HCI_BUS_INST_GET(inst) BT_DT_HCI_BUS_GET(DT_DRV_INST(inst))
 
+/**
+ * @def_driverbackendgroup{Bluetooth HCI,bt_hci_api}
+ * @{
+ */
+
+/**
+ * @brief Deliver HCI data from the controller to the host
+ *
+ * Registered with bt_hci_open(). The HCI driver invokes this callback from thread context.
+ */
 typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
 
+/**
+ * @brief Callback API to open the HCI transport.
+ * See bt_hci_open() for argument description
+ */
+typedef int (*bt_hci_api_open_t)(const struct device *dev, bt_hci_recv_t recv);
+
+/**
+ * @brief Callback API to close the HCI transport.
+ * See bt_hci_close() for argument description
+ */
+typedef int (*bt_hci_api_close_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to send an HCI buffer to the controller.
+ * See bt_hci_send() for argument description
+ */
+typedef int (*bt_hci_api_send_t)(const struct device *dev, struct net_buf *buf);
+
+/**
+ * @brief Callback API for HCI vendor-specific setup.
+ * See bt_hci_setup() for argument description
+ */
+typedef int (*bt_hci_api_setup_t)(const struct device *dev,
+				  const struct bt_hci_setup_params *param);
+
+/**
+ * @driver_ops{Bluetooth HCI}
+ */
 __subsystem struct bt_hci_driver_api {
-	int (*open)(const struct device *dev, bt_hci_recv_t recv);
-	int (*close)(const struct device *dev);
-	int (*send)(const struct device *dev, struct net_buf *buf);
-#if defined(CONFIG_BT_HCI_SETUP)
-	int (*setup)(const struct device *dev,
-		     const struct bt_hci_setup_params *param);
-#endif /* defined(CONFIG_BT_HCI_SETUP) */
+	/**
+	 * @driver_ops_mandatory @copybrief bt_hci_open
+	 */
+	bt_hci_api_open_t open;
+	/**
+	 * @driver_ops_optional @copybrief bt_hci_close
+	 */
+	bt_hci_api_close_t close;
+	/**
+	 * @driver_ops_mandatory @copybrief bt_hci_send
+	 */
+	bt_hci_api_send_t send;
+#if defined(CONFIG_BT_HCI_SETUP) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief bt_hci_setup
+	 * @kconfig_dep{CONFIG_BT_HCI_SETUP}
+	 */
+	bt_hci_api_setup_t setup;
+#endif /* CONFIG_BT_HCI_SETUP */
 };
+/**
+ * @}
+ */
 
 /**
  * @brief Open the HCI transport.

@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(nxp_sof_host_dma);
 /* note: This driver doesn't attempt to provide
  * a generic software-based DMA engine implementation.
  * As its name suggests, its only usage is in SOF
- * (Sound Open Firmware) for NXP plaforms which are
+ * (Sound Open Firmware) for NXP platforms which are
  * able to access the host memory directly from the
  * core on which the firmware is running.
  */

@@ -37,6 +37,17 @@ from elf_parser import ZephyrElf
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'dts', 'python-devicetree', 'src'))
 
 
+def get_device_dep_ord(dev):
+    if dev.edt_node:
+        if hasattr(dev.edt_node, 'dep_ordinal'):
+            return dev.edt_node.dep_ordinal
+        if hasattr(dev.edt_node, 'ordinal'):
+            return dev.edt_node.ordinal
+
+    # For devices without DT nodes, sort by handle after all DT devices
+    return 0x7FFFFFFF + dev.handle
+
+
 def parse_args():
     global args
 
@@ -172,7 +183,7 @@ def main():
             sorted_handles = {
                 "depends": sorted(dev.devs_depends_on, key=lambda d: d.handle),
                 "injected": sorted(dev.devs_depends_on_injected, key=lambda d: d.handle),
-                "supports": sorted(dev.devs_supports, key=lambda d: d.handle),
+                "supports": sorted(dev.devs_supports, key=get_device_dep_ord),
             }
             extra_sups = args.num_dynamic_devices if dev.pm and dev.pm.is_power_domain else 0
             lines = c_handle_comment(dev, sorted_handles)

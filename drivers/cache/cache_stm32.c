@@ -12,6 +12,15 @@
 
 LOG_MODULE_REGISTER(cache_stm32, CONFIG_CACHE_LOG_LEVEL);
 
+#ifdef CONFIG_STM32_HAL2
+/* On STM32 HAL2 this macro adds the dev (for example ICACHE) instance as the first argument,
+ * with or without a comma depending on number of arguments
+ */
+#define STM32_ARG(dev, ...)	COND_CODE_1(IS_EMPTY(__VA_ARGS__), (dev), (dev, __VA_ARGS__))
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_ARG(dev, ...)	__VA_ARGS__
+#endif /* CONFIG_STM32_HAL2 */
+
 #ifdef CONFIG_DCACHE
 
 void cache_data_enable(void)
@@ -106,17 +115,17 @@ int cache_data_flush_and_invd_all(void)
 
 static inline void wait_for_icache(void)
 {
-	while (LL_ICACHE_IsActiveFlag_BUSY()) {
+	while (LL_ICACHE_IsActiveFlag_BUSY(STM32_ARG(ICACHE))) {
 	}
 
 	/* Clear BSYEND to avoid an extra interrupt if somebody enables them. */
-	LL_ICACHE_ClearFlag_BSYEND();
+	LL_ICACHE_ClearFlag_BSYEND(STM32_ARG(ICACHE));
 }
 
 void cache_instr_enable(void)
 {
 	if (IS_ENABLED(CONFIG_CACHE_STM32_ICACHE_DIRECT_MAPPING)) {
-		LL_ICACHE_SetMode(LL_ICACHE_1WAY);
+		LL_ICACHE_SetMode(STM32_ARG(ICACHE, LL_ICACHE_1WAY));
 	}
 
 	/*
@@ -124,14 +133,14 @@ void cache_instr_enable(void)
 	 * in the reference manual to ensure execution timing determinism.
 	 */
 	wait_for_icache();
-	LL_ICACHE_Enable();
+	LL_ICACHE_Enable(STM32_ARG(ICACHE));
 }
 
 void cache_instr_disable(void)
 {
-	LL_ICACHE_Disable();
+	LL_ICACHE_Disable(STM32_ARG(ICACHE));
 
-	while (LL_ICACHE_IsEnabled()) {
+	while (LL_ICACHE_IsEnabled(STM32_ARG(ICACHE))) {
 		/**
 		 * Wait until the ICACHE is disabled (CR.EN=0), at which point
 		 * all requests bypass the cache and are forwarded directly
@@ -151,7 +160,7 @@ int cache_instr_flush_all(void)
 
 int cache_instr_invd_all(void)
 {
-	LL_ICACHE_Invalidate();
+	LL_ICACHE_Invalidate(STM32_ARG(ICACHE));
 	return 0;
 }
 

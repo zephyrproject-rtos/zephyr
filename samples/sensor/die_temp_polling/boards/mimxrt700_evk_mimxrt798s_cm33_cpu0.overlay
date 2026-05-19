@@ -12,6 +12,10 @@
 	io-channels = <&lpadc0 0>;
 };
 
+&ocotp {
+	status = "okay";
+};
+
 &lpadc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;

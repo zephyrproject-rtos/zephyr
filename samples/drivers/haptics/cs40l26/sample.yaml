@@ -1,0 +1,8 @@
+sample:
+  name: CS40L26 Haptic Driver Sample
+tests:
+  sample.haptics.cs40l26:
+    build_only: true
+    tags: haptics
+    platform_allow:
+      - nucleo_f401re

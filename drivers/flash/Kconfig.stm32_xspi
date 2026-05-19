@@ -27,9 +27,9 @@ config FLASH_STM32_XSPI_DMA
 	depends on $(DT_STM32_XSPI_HAS_DMA)
 	default y
 	select DMA
-	select USE_STM32_HAL_DMA if $(DT_STM32_XSPI_HAS_DMA)
-	select USE_STM32_HAL_DMA_EX if (SOC_SERIES_STM32H5X || SOC_SERIES_STM32N6X) && \
-					$(DT_STM32_XSPI_HAS_DMA)
+	select USE_STM32_HAL_DMA
+	select USE_STM32_HAL_DMA_EX if (SOC_SERIES_STM32H5X || \
+		SOC_SERIES_STM32N6X || SOC_SERIES_STM32H7RSX)
 	help
 	  Enable the DMA mode for XSPI flash driver instance
 

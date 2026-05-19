@@ -34,50 +34,11 @@
  * @brief Macro definitions
  *****************************************************************************/
 LOG_MODULE_REGISTER(uart_mchp_sercom_g1, CONFIG_UART_LOG_LEVEL);
-#define TIMEOUT_VALUE_US       1000
-#define DELAY_US               2
-#define UART_SUCCESS           0
-#define BITSHIFT_FOR_BAUD_CALC 20
-
-/* Do the peripheral interrupt related configuration */
-#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_MCHP_ASYNC)
-
-#if DT_INST_IRQ_HAS_IDX(0, 3)
-/**
- * @brief Configure UART IRQ handler for multiple interrupts.
- *
- * This macro sets up the IRQ handler for the UART peripheral when
- * multiple interrupts are available.
- *
- * @param n Instance number.
- */
-#define UART_MCHP_IRQ_HANDLER(n)                                                                   \
-	static void uart_mchp_irq_config_##n(const struct device *dev)                             \
-	{                                                                                          \
-		MCHP_UART_IRQ_CONNECT(n, 0);                                                       \
-		MCHP_UART_IRQ_CONNECT(n, 1);                                                       \
-		MCHP_UART_IRQ_CONNECT(n, 2);                                                       \
-		MCHP_UART_IRQ_CONNECT(n, 3);                                                       \
-	}
-#else /* DT_INST_IRQ_HAS_IDX(0, 3) */
-/**
- * @brief Configure UART IRQ handler for a single interrupt.
- *
- * This macro sets up the IRQ handler for the UART peripheral when
- * only a single interrupt is available.
- *
- * @param n Instance number.
- */
-#define UART_MCHP_IRQ_HANDLER(n)                                                                   \
-	static void uart_mchp_irq_config_##n(const struct device *dev)                             \
-	{                                                                                          \
-		MCHP_UART_IRQ_CONNECT(n, 0);                                                       \
-	}
-#endif /* DT_INST_IRQ_HAS_IDX(0, 3) */
-
-#else /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC */
-#define UART_MCHP_IRQ_HANDLER(n)
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC */
+#define TIMEOUT_VALUE_US             1000
+#define DELAY_US                     2
+#define UART_SUCCESS                 0
+/* 65536 * 16 = 1 << 20 */
+#define SAMPLING_RATE_16X_ARITHMETIC 20U
 
 /******************************************************************************
  * @brief Data type definitions
@@ -243,6 +204,9 @@ typedef struct uart_mchp_dev_data {
 
 	/* RX timeout from ISR flag */
 	bool rx_timeout_from_isr;
+
+	/* First RX byte read flag */
+	bool rx_first_byte_done;
 #endif /* CONFIG_UART_MCHP_ASYNC */
 } uart_mchp_dev_data_t;
 
@@ -259,6 +223,8 @@ static void uart_mchp_dma_tx_done(const struct device *dma_dev, void *arg, uint3
 
 static void uart_mchp_dma_rx_done(const struct device *dma_dev, void *arg, uint32_t id,
 				  int error_code);
+
+static void uart_mchp_rx_buf_complete(uart_mchp_dev_data_t *dev_data);
 
 #endif /* CONFIG_UART_MCHP_ASYNC */
 
@@ -395,17 +361,15 @@ static int uart_config_stop_bits(sercom_registers_t *regs, bool is_clock_externa
 /**
  * @brief Configure the UART pinout.
  *
- * @param regs Pointer to the uart_mchp_dev_cfg_t structure.
- * @param is_clock_external Boolean to indicate external or internal clock
+ * @param cfg Pointer to the uart_mchp_dev_cfg_t structure.
  */
 static void uart_config_pinout(const uart_mchp_dev_cfg_t *const cfg)
 {
 	sercom_registers_t *regs = cfg->regs;
 	uint32_t rxpo = cfg->rxpo;
 	uint32_t txpo = cfg->txpo;
-	bool is_clock_external = cfg->is_clock_external;
 
-	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, cfg->is_clock_external);
 	uint32_t reg_value = usart->SERCOM_CTRLA;
 
 	reg_value &= ~(SERCOM_USART_CTRLA_RXPO_Msk | SERCOM_USART_CTRLA_TXPO_Msk);
@@ -532,7 +496,7 @@ static int uart_set_baudrate(sercom_registers_t *regs, bool is_clock_external, u
 		return -EINVAL;
 	}
 
-	tmp = (uint64_t)baudrate << BITSHIFT_FOR_BAUD_CALC;
+	tmp = (uint64_t)baudrate << SAMPLING_RATE_16X_ARITHMETIC;
 	tmp = (tmp + (clk_freq_hz >> 1)) / clk_freq_hz;
 
 	/* Verify that the calculated result is within range */
@@ -827,40 +791,6 @@ static bool uart_is_interrupt_pending(sercom_registers_t *regs, bool is_clock_ex
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#ifdef CONFIG_UART_MCHP_ASYNC
-/**
- * @brief Get the DMA destination address for UART.
- *
- * This function retrieves the DMA destination address for the specified UART instance.
- *
- * @param regs Pointer to the sercom_registers_t structure.
- * @param is_clock_external Boolean to indicate external or internal clock
- * @return The DMA destination address.
- */
-static inline void *uart_get_dma_dest_addr(sercom_registers_t *regs, bool is_clock_external)
-{
-	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
-
-	return (void *)&usart->SERCOM_DATA;
-}
-
-/**
- * @brief Get the DMA source address for UART.
- *
- * This function retrieves the DMA source address for the specified UART instance.
- *
- * @param regs Pointer to the sercom_registers_t structure.
- * @param is_clock_external Boolean to indicate external or internal clock
- * @return The DMA source address.
- */
-static inline void *uart_get_dma_source_addr(sercom_registers_t *regs, bool is_clock_external)
-{
-	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
-
-	return (void *)&usart->SERCOM_DATA;
-}
-#endif /* CONFIG_UART_MCHP_ASYNC */
-
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_MCHP_ASYNC)
 /**
  * @brief Enable or disable the UART RX interrupt.
@@ -940,6 +870,131 @@ static void uart_clear_interrupts(sercom_registers_t *regs, bool is_clock_extern
 				 SERCOM_USART_INTFLAG_TXC_Msk);
 }
 
+#ifdef CONFIG_UART_MCHP_ASYNC
+/**
+ * @brief Get the UART DATA register address.
+ *
+ * Returns the address of the SERCOM USART DATA register.
+ *
+ * @param regs Pointer to the SERCOM register base structure.
+ * @param is_clock_external Selects the external or internal clock register set.
+ *
+ * @return Pointer to the UART DATA register.
+ */
+static inline void *uart_get_data_reg_addr(sercom_registers_t *regs, bool is_clock_external)
+{
+	sercom_usart_registers_t *usart = UART_GET_BASE_ADDR(regs, is_clock_external);
+
+	return (void *)&usart->SERCOM_DATA;
+}
+
+/* Handle RX errors */
+static bool uart_mchp_handle_rx_error(const struct device *dev, sercom_registers_t *regs,
+				      bool is_clock_external)
+{
+	uart_mchp_dev_data_t *const dev_data = dev->data;
+
+	if (uart_get_err(dev) == 0) {
+		return false;
+	}
+
+	if (dev_data->async_cb != NULL) {
+		struct uart_event evt = {
+			.type = UART_RX_STOPPED,
+		};
+		dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+	}
+
+	uart_clear_interrupts(regs, is_clock_external);
+	uart_err_clear_all(regs, is_clock_external);
+
+	return true;
+}
+
+/* Initialize DMA channels for UART. */
+static int uart_dma_init(const struct device *dev)
+{
+	const uart_mchp_dev_cfg_t *const cfg = dev->config;
+	uart_mchp_dev_data_t *const dev_data = dev->data;
+	sercom_registers_t *regs = cfg->regs;
+	bool is_clock_external = cfg->is_clock_external;
+	int retval = UART_SUCCESS;
+
+	if (cfg->uart_dma.dma_dev == NULL) {
+		return UART_SUCCESS;
+	}
+
+	if (!device_is_ready(cfg->uart_dma.dma_dev)) {
+		return -ENODEV;
+	}
+
+	/* TX DMA configuration */
+	int dma_ch = cfg->uart_dma.tx_dma_channel;
+	int dma_ch_request = dma_request_channel(cfg->uart_dma.dma_dev, (void *)&dma_ch);
+
+	if ((cfg->uart_dma.tx_dma_channel != 0xFFU) &&
+	    (dma_ch_request == cfg->uart_dma.tx_dma_channel)) {
+		struct dma_config dma_cfg = {0};
+		struct dma_block_config dma_blk = {0};
+
+		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+		dma_cfg.source_data_size = 1;
+		dma_cfg.dest_data_size = 1;
+		dma_cfg.user_data = dev_data;
+		dma_cfg.dma_callback = uart_mchp_dma_tx_done;
+		dma_cfg.block_count = 1;
+		dma_cfg.head_block = &dma_blk;
+		dma_cfg.dma_slot = cfg->uart_dma.tx_dma_request;
+
+		dma_blk.block_size = 1;
+		dma_blk.dest_address = (uint32_t)(uart_get_data_reg_addr(regs, is_clock_external));
+		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel, &dma_cfg);
+		if (retval != 0) {
+			return retval;
+		}
+	} else {
+		LOG_WRN("UART TX DMA unavailable (configured=%d, allocated=%d)",
+			cfg->uart_dma.tx_dma_channel, dma_ch_request);
+	}
+
+	/* RX DMA configuration */
+	dma_ch = cfg->uart_dma.rx_dma_channel;
+	dma_ch_request = dma_request_channel(cfg->uart_dma.dma_dev, (void *)&dma_ch);
+
+	if ((cfg->uart_dma.rx_dma_channel != 0xFFU) &&
+	    (dma_ch_request == cfg->uart_dma.rx_dma_channel)) {
+		struct dma_config dma_cfg = {0};
+		struct dma_block_config dma_blk = {0};
+
+		dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
+		dma_cfg.source_data_size = 1;
+		dma_cfg.dest_data_size = 1;
+		dma_cfg.user_data = dev_data;
+		dma_cfg.dma_callback = uart_mchp_dma_rx_done;
+		dma_cfg.block_count = 1;
+		dma_cfg.head_block = &dma_blk;
+		dma_cfg.dma_slot = cfg->uart_dma.rx_dma_request;
+
+		dma_blk.block_size = 1;
+		dma_blk.source_address =
+			(uint32_t)(uart_get_data_reg_addr(regs, is_clock_external));
+		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+
+		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel, &dma_cfg);
+		if (retval != 0) {
+			return retval;
+		}
+	} else {
+		LOG_WRN("UART RX DMA unavailable (configured=%d, allocated=%d)",
+			cfg->uart_dma.rx_dma_channel, dma_ch_request);
+	}
+
+	return UART_SUCCESS;
+}
+#endif /* CONFIG_UART_MCHP_ASYNC */
+
 /**
  * @brief UART ISR handler.
  *
@@ -987,17 +1042,8 @@ static void uart_mchp_isr(const struct device *dev)
 	}
 
 	if (dev_data->rx_len != 0) {
-		if (uart_get_err(dev) != 0) {
 
-			if (dev_data->async_cb != NULL) {
-				struct uart_event evt = {
-					.type = UART_RX_STOPPED,
-				};
-				dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
-			}
-
-			uart_clear_interrupts(regs, is_clock_external);
-			uart_err_clear_all(regs, is_clock_external);
+		if (uart_mchp_handle_rx_error(dev, regs, is_clock_external) == true) {
 
 			/* Once the error is processed, nothing more to do for RX */
 			return;
@@ -1014,6 +1060,30 @@ static void uart_mchp_isr(const struct device *dev)
 					.type = UART_RX_BUF_REQUEST,
 				};
 				dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+			}
+
+			/*
+			 * On initial receive (!rx_first_byte_done), read first byte
+			 * directly from data register and reload DMA for remaining bytes.
+			 * On timeout restart, DMA is already configured by timeout handler.
+			 */
+			if (!dev_data->rx_first_byte_done) {
+				/* Read first byte directly */
+				dev_data->rx_buf[0] =
+					uart_get_received_char(regs, is_clock_external);
+				dev_data->rx_first_byte_done = true;
+
+				/* For 1-byte buffer, no DMA needed */
+				if (dev_data->rx_len == 1U) {
+					uart_mchp_rx_buf_complete(dev_data);
+					return;
+				}
+
+				/* Reload DMA for remaining bytes */
+				dma_reload(
+					cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
+					(uint32_t)(uart_get_data_reg_addr(regs, is_clock_external)),
+					(uint32_t)(dev_data->rx_buf + 1), dev_data->rx_len - 1);
 			}
 
 			/*
@@ -1114,66 +1184,13 @@ static int uart_mchp_init(const struct device *dev)
 #ifdef CONFIG_UART_MCHP_ASYNC
 	dev_data->dev = dev;
 	dev_data->cfg = cfg;
-	if (device_is_ready(cfg->uart_dma.dma_dev) == false) {
-		return -ENODEV;
-	}
 
 	k_work_init_delayable(&dev_data->tx_timeout_work, uart_mchp_tx_timeout);
 	k_work_init_delayable(&dev_data->rx_timeout_work, uart_mchp_rx_timeout);
 
-	int dma_ch = cfg->uart_dma.tx_dma_channel;
-	int dma_ch_request = dma_request_channel(cfg->uart_dma.dma_dev, (void *)&dma_ch);
-
-	if ((cfg->uart_dma.tx_dma_channel != 0xFFU) &&
-	    (dma_ch_request == cfg->uart_dma.tx_dma_channel)) {
-		struct dma_config dma_cfg = {0};
-		struct dma_block_config dma_blk = {0};
-
-		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
-		dma_cfg.source_data_size = 1;
-		dma_cfg.dest_data_size = 1;
-		dma_cfg.user_data = dev_data;
-		dma_cfg.dma_callback = uart_mchp_dma_tx_done;
-		dma_cfg.block_count = 1;
-		dma_cfg.head_block = &dma_blk;
-		dma_cfg.dma_slot = cfg->uart_dma.tx_dma_request;
-
-		dma_blk.block_size = 1;
-		dma_blk.dest_address = (uint32_t)(uart_get_dma_dest_addr(regs, is_clock_external));
-		dma_blk.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-
-		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel, &dma_cfg);
-		if (retval != 0) {
-			return retval;
-		}
-	}
-
-	dma_ch = cfg->uart_dma.rx_dma_channel;
-	dma_ch_request = dma_request_channel(cfg->uart_dma.dma_dev, (void *)&dma_ch);
-
-	if ((cfg->uart_dma.rx_dma_channel != 0xFFU) &&
-	    (dma_ch_request == cfg->uart_dma.rx_dma_channel)) {
-		struct dma_config dma_cfg = {0};
-		struct dma_block_config dma_blk = {0};
-
-		dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
-		dma_cfg.source_data_size = 1;
-		dma_cfg.dest_data_size = 1;
-		dma_cfg.user_data = dev_data;
-		dma_cfg.dma_callback = uart_mchp_dma_rx_done;
-		dma_cfg.block_count = 1;
-		dma_cfg.head_block = &dma_blk;
-		dma_cfg.dma_slot = cfg->uart_dma.rx_dma_request;
-
-		dma_blk.block_size = 1;
-		dma_blk.source_address =
-			(uint32_t)(uart_get_dma_source_addr(regs, is_clock_external));
-		dma_blk.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-
-		retval = dma_config(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel, &dma_cfg);
-		if (retval != 0) {
-			return retval;
-		}
+	retval = uart_dma_init(dev);
+	if (retval != 0) {
+		return retval;
 	}
 #endif /* CONFIG_UART_MCHP_ASYNC */
 
@@ -1801,7 +1818,7 @@ static void uart_mchp_rx_timeout(struct k_work *work)
 		 * empty buffer, so always restart the transfer.
 		 */
 		dma_reload(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
-			   (uint32_t)(uart_get_dma_source_addr(regs, is_clock_external)),
+			   (uint32_t)(uart_get_data_reg_addr(regs, is_clock_external)),
 			   (uint32_t)rx_dma_start, dev_data->rx_len - rx_processed);
 
 		dev_data->rx_waiting_for_irq = true;
@@ -1870,6 +1887,80 @@ static void uart_mchp_dma_tx_done(const struct device *dma_dev, void *arg, uint3
 	uart_enable_tx_complete_interrupt(cfg->regs, cfg->is_clock_external, true);
 }
 
+/* Handle RX buffer completion in async mode */
+static void uart_mchp_rx_buf_complete(uart_mchp_dev_data_t *dev_data)
+{
+	const struct device *dev = dev_data->dev;
+	const uart_mchp_dev_cfg_t *const cfg = dev_data->cfg;
+	unsigned int key = irq_lock();
+
+	if (dev_data->rx_len == 0U) {
+		irq_unlock(key);
+		return;
+	}
+
+	uart_mchp_notify_rx_processed(dev_data, dev_data->rx_len);
+
+	if (dev_data->async_cb != NULL) {
+		struct uart_event evt = {
+			.type = UART_RX_BUF_RELEASED,
+			.data.rx_buf.buf = dev_data->rx_buf,
+		};
+		dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+	}
+
+	/* No next buffer, so end the transfer */
+	if (dev_data->rx_next_len == 0) {
+		dev_data->rx_buf = NULL;
+		dev_data->rx_len = 0U;
+
+		if (dev_data->async_cb != NULL) {
+			struct uart_event evt = {
+				.type = UART_RX_DISABLED,
+			};
+			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+		}
+		irq_unlock(key);
+		return;
+	}
+
+	/* Switch to next buffer */
+	dev_data->rx_buf = dev_data->rx_next_buf;
+	dev_data->rx_len = dev_data->rx_next_len;
+	dev_data->rx_next_buf = NULL;
+	dev_data->rx_next_len = 0U;
+	dev_data->rx_processed_len = 0U;
+	dev_data->rx_first_byte_done = false;
+
+	dma_reload(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
+		   (uint32_t)(uart_get_data_reg_addr(cfg->regs, cfg->is_clock_external)),
+		   (uint32_t)dev_data->rx_buf, dev_data->rx_len);
+
+	/*
+	 * If there should be a timeout, handle starting the DMA in the
+	 * ISR, since reception resets it and DMA completion implies
+	 * reception.
+	 */
+	if (dev_data->rx_timeout_time != SYS_FOREVER_US) {
+		dev_data->rx_waiting_for_irq = true;
+		uart_enable_rx_interrupt(cfg->regs, cfg->is_clock_external, true);
+		irq_unlock(key);
+		return;
+	}
+
+	/* No timeout - start DMA immediately */
+	dma_start(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel);
+
+	if (dev_data->async_cb != NULL) {
+		struct uart_event evt = {
+			.type = UART_RX_BUF_REQUEST,
+		};
+		dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
+	}
+
+	irq_unlock(key);
+}
+
 /**
  * @brief DMA RX done callback for UART.
  *
@@ -1887,81 +1978,7 @@ static void uart_mchp_dma_rx_done(const struct device *dma_dev, void *arg, uint3
 	ARG_UNUSED(id);
 	ARG_UNUSED(error_code);
 
-	uart_mchp_dev_data_t *const dev_data = (uart_mchp_dev_data_t *const)arg;
-	const struct device *dev = dev_data->dev;
-	const uart_mchp_dev_cfg_t *const cfg = dev_data->cfg;
-	unsigned int key = irq_lock();
-
-	do {
-		if (dev_data->rx_len == 0U) {
-			break;
-		}
-
-		uart_mchp_notify_rx_processed(dev_data, dev_data->rx_len);
-
-		if (dev_data->async_cb != NULL) {
-			/* clang-format off */
-			struct uart_event evt = {
-				.type = UART_RX_BUF_RELEASED,
-				.data.rx_buf = {
-						.buf = dev_data->rx_buf,
-					},
-			};
-			/* clang-format on */
-
-			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
-		}
-
-		/* No next buffer, so end the transfer */
-		if (dev_data->rx_next_len == 0) {
-			dev_data->rx_buf = NULL;
-			dev_data->rx_len = 0U;
-
-			if (dev_data->async_cb != NULL) {
-				struct uart_event evt = {
-					.type = UART_RX_DISABLED,
-				};
-
-				dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
-			}
-			break;
-		}
-
-		dev_data->rx_buf = dev_data->rx_next_buf;
-		dev_data->rx_len = dev_data->rx_next_len;
-		dev_data->rx_next_buf = NULL;
-		dev_data->rx_next_len = 0U;
-		dev_data->rx_processed_len = 0U;
-
-		dma_reload(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
-			   (uint32_t)(uart_get_dma_source_addr(cfg->regs, cfg->is_clock_external)),
-			   (uint32_t)dev_data->rx_buf, dev_data->rx_len);
-
-		/*
-		 * If there should be a timeout, handle starting the DMA in the
-		 * ISR, since reception resets it and DMA completion implies
-		 * reception.  This also catches the case of DMA completion during
-		 * timeout handling.
-		 */
-		if (dev_data->rx_timeout_time != SYS_FOREVER_US) {
-			dev_data->rx_waiting_for_irq = true;
-			uart_enable_rx_interrupt(cfg->regs, cfg->is_clock_external, true);
-			break;
-		}
-
-		/* Otherwise, start the transfer immediately. */
-		dma_start(cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel);
-
-		if (dev_data->async_cb != NULL) {
-			struct uart_event evt = {
-				.type = UART_RX_BUF_REQUEST,
-			};
-
-			dev_data->async_cb(dev, &evt, dev_data->async_cb_data);
-		}
-	} while (0);
-
-	irq_unlock(key);
+	uart_mchp_rx_buf_complete((uart_mchp_dev_data_t *)arg);
 }
 
 /**
@@ -2011,7 +2028,7 @@ static int uart_mchp_tx(const struct device *dev, const uint8_t *buf, size_t len
 	int retval = UART_SUCCESS;
 
 	do {
-		if (cfg->uart_dma.tx_dma_channel == 0xFFU) {
+		if (cfg->uart_dma.dma_dev == NULL) {
 			retval = -ENOTSUP;
 			break;
 		}
@@ -2036,7 +2053,7 @@ static int uart_mchp_tx(const struct device *dev, const uint8_t *buf, size_t len
 
 		retval = dma_reload(
 			cfg->uart_dma.dma_dev, cfg->uart_dma.tx_dma_channel, (uint32_t)buf,
-			(uint32_t)(uart_get_dma_dest_addr(cfg->regs, cfg->is_clock_external)), len);
+			(uint32_t)(uart_get_data_reg_addr(cfg->regs, cfg->is_clock_external)), len);
 		if (retval != 0U) {
 			break;
 		}
@@ -2070,7 +2087,7 @@ static int uart_mchp_tx_abort(const struct device *dev)
 	int retval = UART_SUCCESS;
 
 	do {
-		if (cfg->uart_dma.tx_dma_channel == 0xFFU) {
+		if (cfg->uart_dma.dma_dev == NULL) {
 			retval = -ENOTSUP;
 			break;
 		}
@@ -2149,7 +2166,7 @@ static int uart_mchp_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 	int retval = UART_SUCCESS;
 
 	do {
-		if (cfg->uart_dma.rx_dma_channel == 0xFFU) {
+		if (cfg->uart_dma.dma_dev == NULL) {
 			retval = -ENOTSUP;
 			break;
 		}
@@ -2178,7 +2195,7 @@ static int uart_mchp_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 
 			retval = dma_reload(
 				cfg->uart_dma.dma_dev, cfg->uart_dma.rx_dma_channel,
-				(uint32_t)(uart_get_dma_source_addr(regs, is_clock_external)),
+				(uint32_t)(uart_get_data_reg_addr(regs, is_clock_external)),
 				(uint32_t)buf, len);
 			if (retval != 0) {
 				break;
@@ -2187,6 +2204,7 @@ static int uart_mchp_rx_enable(const struct device *dev, uint8_t *buf, size_t le
 			dev_data->rx_buf = buf;
 			dev_data->rx_len = len;
 			dev_data->rx_processed_len = 0U;
+			dev_data->rx_first_byte_done = false;
 			dev_data->rx_waiting_for_irq = true;
 			dev_data->rx_timeout_from_isr = true;
 			dev_data->rx_timeout_time = timeout;
@@ -2325,28 +2343,49 @@ static DEVICE_API(uart, uart_mchp_driver_api) = {
 };
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_MCHP_ASYNC)
-#define MCHP_UART_IRQ_CONNECT(n, m)                                                                \
+#define UART_MCHP_IRQ_CONNECT(idx, inst)                                                           \
 	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, m, irq), DT_INST_IRQ_BY_IDX(n, m, priority),     \
-			    uart_mchp_isr, DEVICE_DT_INST_GET(n), 0);                              \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, m, irq));                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(inst, idx, irq),                                    \
+			    DT_INST_IRQ_BY_IDX(inst, idx, priority), uart_mchp_isr,                \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQ_BY_IDX(inst, idx, irq));                                    \
 	} while (false)
 
-#define UART_MCHP_IRQ_HANDLER_DECL(n) static void uart_mchp_irq_config_##n(const struct device *dev)
-#define UART_MCHP_IRQ_HANDLER_FUNC(n) .irq_config_func = uart_mchp_irq_config_##n,
+#define UART_MCHP_IRQ_HANDLER_DECL(inst)                                                           \
+	static void uart_mchp_irq_config_##inst(const struct device *dev)
 
-#else /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC */
-#define UART_MCHP_IRQ_HANDLER_DECL(n)
-#define UART_MCHP_IRQ_HANDLER_FUNC(n)
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC */
+#define UART_MCHP_IRQ_HANDLER(inst)                                                                \
+	UART_MCHP_IRQ_HANDLER_DECL(inst)                                                           \
+	{                                                                                          \
+		LISTIFY(                                                       \
+			DT_INST_NUM_IRQS(inst),                               \
+			UART_MCHP_IRQ_CONNECT,                                \
+			(;),                                                  \
+			inst                                                  \
+		);                    \
+	}
+
+#define UART_MCHP_IRQ_HANDLER_FUNC(inst) .irq_config_func = uart_mchp_irq_config_##inst,
+#else /*CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC*/
+#define UART_MCHP_IRQ_HANDLER(inst)
+#define UART_MCHP_IRQ_HANDLER_DECL(inst)
+#define UART_MCHP_IRQ_HANDLER_FUNC(inst)
+#endif /*CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC*/
 
 #ifdef CONFIG_UART_MCHP_ASYNC
 #define UART_MCHP_DMA_CHANNELS(n)                                                                  \
-	.uart_dma.dma_dev = DEVICE_DT_GET(MCHP_DT_INST_DMA_CTLR(n, tx)),                           \
-	.uart_dma.tx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, tx),                                \
-	.uart_dma.tx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, tx),                                \
-	.uart_dma.rx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, rx),                                \
-	.uart_dma.rx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, rx),
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, dmas),                                                \
+		(                                                                                  \
+			.uart_dma.dma_dev = DEVICE_DT_GET(MCHP_DT_INST_DMA_CTLR(n, tx)),           \
+			.uart_dma.tx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, tx),                \
+			.uart_dma.tx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, tx),                \
+			.uart_dma.rx_dma_request = MCHP_DT_INST_DMA_TRIGSRC(n, rx),                \
+			.uart_dma.rx_dma_channel = MCHP_DT_INST_DMA_CHANNEL(n, rx),                \
+		),                                                                                 \
+		(                                                                                  \
+			.uart_dma.dma_dev = NULL,                                                  \
+		)                                                                                  \
+	)
 #else /* CONFIG_UART_MCHP_ASYNC */
 #define UART_MCHP_DMA_CHANNELS(n)
 #endif /* CONFIG_UART_MCHP_ASYNC */

@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(conn_mgr_conn, CONFIG_NET_CONNECTION_MANAGER_LOG_LEVEL);
 
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/net/conn_mgr_monitor.h>
 #include <zephyr/net/conn_mgr_connectivity.h>
@@ -30,6 +31,14 @@ int conn_mgr_if_connect(struct net_if *iface)
 	api = binding->impl->api;
 	if (!api->connect) {
 		return -ENOTSUP;
+	}
+
+	if (!conn_mgr_if_get_flag(iface, CONN_MGR_IF_PERSISTENT) && api->has_connection_config &&
+	    !api->has_connection_config(binding)) {
+		LOG_DBG("iface %p no connection configuration", iface);
+		/* Non-persistent interface does not have connection configuration */
+		net_mgmt_event_notify(NET_EVENT_CONN_IF_NO_CONFIGURATION, iface);
+		return -EAGAIN;
 	}
 
 	conn_mgr_binding_lock(binding);
@@ -445,6 +454,8 @@ static void conn_mgr_conn_self_handler(struct net_mgmt_event_callback *cb, uint6
 		/* Interface is idle, disconnect */
 		LOG_DBG("iface %d (%p) idle", net_if_get_by_iface(iface), iface);
 		conn_mgr_if_disconnect_internal(iface, true);
+		break;
+	case NET_EVENT_CONN_CMD_IF_NO_CONFIGURATION:
 		break;
 	}
 }

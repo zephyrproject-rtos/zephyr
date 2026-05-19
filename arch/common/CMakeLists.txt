@@ -17,6 +17,7 @@ if(CONFIG_GEN_ISR_TABLES)
   )
 endif()
 
+add_subdirectory_ifdef(CONFIG_ACPI acpi)
 zephyr_library_sources(init.c)
 zephyr_library_sources_ifdef(CONFIG_XIP xip.c)
 
@@ -98,6 +99,10 @@ if(DEFINED CONFIG_ARCH_SUPPORTS_ROM_OFFSET)
   # Handled in ld.cmake
 endif()
 
+zephyr_library_sources_ifdef(
+  CONFIG_EXCEPTION_DUMP_HOOK
+  exception.c
+)
 
 # isr_tables is a normal CMake library and not a zephyr_library because it
 # should not be --whole-archive'd

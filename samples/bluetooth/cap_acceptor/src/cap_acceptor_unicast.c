@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -29,6 +30,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "cap_acceptor.h"
 
@@ -140,6 +142,9 @@ static int unicast_server_reconfig_cb(struct bt_bap_stream *bap_stream, enum bt_
 				      struct bt_bap_qos_cfg_pref *const pref,
 				      struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(dir);
+	ARG_UNUSED(rsp);
+
 	LOG_INF("ASE Codec Reconfig: bap_stream %p", bap_stream);
 	log_codec_cfg(codec_cfg);
 	*pref = qos_pref;
@@ -150,6 +155,8 @@ static int unicast_server_reconfig_cb(struct bt_bap_stream *bap_stream, enum bt_
 static int unicast_server_qos_cb(struct bt_bap_stream *bap_stream, const struct bt_bap_qos_cfg *qos,
 				 struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_INF("QoS: bap_stream %p qos %p", bap_stream, qos);
 
 	log_qos(qos);
@@ -160,6 +167,9 @@ static int unicast_server_qos_cb(struct bt_bap_stream *bap_stream, const struct 
 static int unicast_server_enable_cb(struct bt_bap_stream *bap_stream, const uint8_t meta[],
 				    size_t meta_len, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(meta);
+	ARG_UNUSED(rsp);
+
 	LOG_INF("Enable: bap_stream %p meta_len %zu", bap_stream, meta_len);
 
 	return 0;
@@ -167,6 +177,8 @@ static int unicast_server_enable_cb(struct bt_bap_stream *bap_stream, const uint
 
 static int unicast_server_start_cb(struct bt_bap_stream *bap_stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_INF("Start: bap_stream %p", bap_stream);
 
 	return 0;
@@ -217,6 +229,8 @@ static int unicast_server_metadata_cb(struct bt_bap_stream *bap_stream, const ui
 
 static int unicast_server_disable_cb(struct bt_bap_stream *bap_stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_INF("Disable: bap_stream %p", bap_stream);
 
 	return 0;
@@ -224,6 +238,8 @@ static int unicast_server_disable_cb(struct bt_bap_stream *bap_stream, struct bt
 
 static int unicast_server_stop_cb(struct bt_bap_stream *bap_stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_INF("Stop: bap_stream %p", bap_stream);
 
 	return 0;
@@ -231,6 +247,8 @@ static int unicast_server_stop_cb(struct bt_bap_stream *bap_stream, struct bt_ba
 
 static int unicast_server_release_cb(struct bt_bap_stream *bap_stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	LOG_INF("Release: bap_stream %p", bap_stream);
 
 	return 0;
@@ -326,6 +344,10 @@ static void unicast_stream_released_cb(struct bt_bap_stream *bap_stream)
 static void unicast_stream_recv_cb(struct bt_bap_stream *bap_stream,
 				   const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
+	ARG_UNUSED(bap_stream);
+	ARG_UNUSED(info);
+	ARG_UNUSED(buf);
+
 	/* Triggered every time we receive an HCI data packet from the controller.
 	 * A call to this does not indicate valid data
 	 * (see the `info->flags` for which flags to check),
@@ -340,6 +362,8 @@ static void unicast_stream_recv_cb(struct bt_bap_stream *bap_stream,
 
 static void unicast_stream_sent_cb(struct bt_bap_stream *stream)
 {
+	ARG_UNUSED(stream);
+
 	/* Triggered every time we have sent an HCI data packet to the controller */
 
 	if ((total_unicast_tx_iso_packet_count % 100U) == 0U) {
@@ -358,6 +382,9 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 	struct peer_config *peer = arg1;
 	struct bt_cap_stream *cap_stream = &peer->source_stream;
 	struct bt_bap_stream *bap_stream = &cap_stream->bap_stream;
+
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
 
 	for (size_t i = 0U; i < ARRAY_SIZE(data); i++) {
 		data[i] = (uint8_t)i;

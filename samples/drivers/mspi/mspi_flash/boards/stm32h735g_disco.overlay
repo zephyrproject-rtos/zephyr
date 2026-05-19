@@ -34,7 +34,7 @@
 			status = "okay";
 
 			mx25lm51245: ospi-nor-flash@0 {
-				compatible = "jedec,mspi-nor";
+				compatible = "mxicy,mx25u", "jedec,mspi-nor";
 				reg = <0>;
 				size = <DT_SIZE_M(512)>;
 				status = "okay";

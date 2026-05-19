@@ -11,12 +11,12 @@ config SOC_FLASH_ESP32
 	help
 	  Enable ESP32 internal flash driver.
 
+if SOC_FLASH_ESP32
+
 config MPU_ALLOW_FLASH_WRITE
 	bool "Add MPU access to write to flash"
 	help
 	  Enable this to allow MPU RWX access to flash memory
-
-if SOC_FLASH_ESP32
 
 config ESP_FLASH_ASYNC
 	bool "Use asynchronous work thread to execute the flash access operations"

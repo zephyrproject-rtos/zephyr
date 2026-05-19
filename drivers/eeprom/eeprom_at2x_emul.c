@@ -88,6 +88,10 @@ static int at24_emul_transfer(const struct emul *target, struct i2c_msg *msgs,
 			/* handle read */
 			break;
 		}
+		if (msgs->len == 0) {
+			/* Zero-length write used for I2C device probing - ACK it */
+			return 0;
+		}
 		data->cur_reg = msgs->buf[0];
 		len = MIN(msgs->len - 1, cfg->size - data->cur_reg);
 		memcpy(&cfg->buf[data->cur_reg], &msgs->buf[1], len);

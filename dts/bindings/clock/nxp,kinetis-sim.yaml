@@ -1,4 +1,4 @@
-# Copyright (c) 2017, NXP
+# Copyright (c) 2017, 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: Kinetis System Integration Module (SIM) IP node
@@ -34,6 +34,10 @@ properties:
     const: 3
 
 clock-cells:
+  # 32-bit encoded id: gate_offset[31:19] | gate_bit[18:14] | clock_name[13:9] |
+  #   mux_val[8:6] | mux_shift[5:1] | has_mux[0]
+  # Use KINETIS_SIM_CLOCK() or KINETIS_SIM_CLOCK_MUX() macros from
+  # include/zephyr/dt-bindings/clock/kinetis_sim.h to build this value.
   - name
-  - offset
-  - bits
+  - offset  # gate register offset (explicit, e.g. 0x1034); kept for ADC16 compatibility
+  - bits    # gate bit index (explicit); kept for ADC16 compatibility

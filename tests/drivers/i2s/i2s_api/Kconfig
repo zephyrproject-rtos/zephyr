@@ -37,3 +37,11 @@ config I2S_TEST_ALLOWED_DATA_OFFSET
 	help
 	  Maximum allowed offset between sent and received samples. Non-zero
 	  value of this option may be needed when GPIO loopback is used.
+
+config I2S_TEST_ALLOW_VARIABLE_OFFSET
+	bool "Recalculate the data offset on every block read"
+	default n
+	help
+	  If the data offset is not consistent between reads because of
+	  timing variations in the hardware, enable this option to
+	  always recalculate the offset.

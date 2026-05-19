@@ -13,12 +13,17 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <esp_err.h>
-#include <soc/soc_pins.h>
 #include <soc/periph_defs.h>
-#include <hal/touch_sensor_types.h>
-#include <hal/touch_sensor_hal.h>
+#include <hal/touch_sensor_legacy_hal.h>
+#include <hal/touch_sensor_legacy_types.h>
+#include <hal/touch_sensor_ll.h>
+#include <hal/touch_sensor_periph.h>
+#include <soc/rtc_cntl_reg.h>
 #include <driver/rtc_io.h>
 #include <esp_intr_alloc.h>
+
+/* Denoise channel is always channel 0 */
+#define TOUCH_DENOISE_CHANNEL 0
 
 LOG_MODULE_REGISTER(espressif_esp32_touch, CONFIG_INPUT_LOG_LEVEL);
 
@@ -83,26 +88,26 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 	uint32_t pad_status;
 
 #if defined(CONFIG_SOC_SERIES_ESP32)
-	touch_hal_intr_clear();
+	touch_ll_intr_clear();
 
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
 	static uint8_t scan_done_counter;
 
-	touch_pad_intr_mask_t intr_mask = touch_hal_read_intr_status_mask();
+	touch_pad_intr_mask_t intr_mask = touch_ll_read_intr_status_mask();
 
 	if (intr_mask & TOUCH_PAD_INTR_MASK_SCAN_DONE) {
 		if (++scan_done_counter == ESP32_SCAN_DONE_MAX_COUNT) {
-			touch_hal_intr_disable(TOUCH_PAD_INTR_MASK_SCAN_DONE);
+			touch_ll_intr_disable(TOUCH_PAD_INTR_MASK_SCAN_DONE);
 			for (int i = 0; i < num_channels; i++) {
 				channel_cfg = &dev_cfg->channel_cfg[i];
 
 				/* Set interrupt threshold */
 				uint32_t benchmark_value;
 
-				touch_hal_read_benchmark(channel_cfg->channel_num,
-					&benchmark_value);
-				touch_hal_set_threshold(channel_cfg->channel_num,
-					channel_cfg->channel_sens * benchmark_value / 100);
+				touch_ll_read_benchmark(channel_cfg->channel_num, &benchmark_value);
+				touch_ll_set_threshold(channel_cfg->channel_num,
+						       channel_cfg->channel_sens * benchmark_value /
+							       100);
 			}
 		}
 		return;
@@ -122,7 +127,7 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 #if defined(CONFIG_SOC_SERIES_ESP32)
 		if (channel_status != 0) {
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
-		uint32_t channel_num = (uint32_t)touch_hal_get_current_meas_channel();
+		uint32_t channel_num = (uint32_t)touch_ll_get_current_meas_channel();
 
 		if (channel_cfg->channel_num == channel_num) {
 #endif /* CONFIG_SOC_SERIES_ESP32 */
@@ -199,15 +204,14 @@ static int esp32_touch_sensor_init(const struct device *dev)
 		const struct esp32_touch_sensor_channel_config *channel_cfg =
 			&dev_cfg->channel_cfg[i];
 
-		if (!(channel_cfg->channel_num > 0 &&
-			channel_cfg->channel_num < SOC_TOUCH_SENSOR_NUM)) {
+		if (!(channel_cfg->channel_num > 0 && channel_cfg->channel_num < TOUCH_PAD_MAX)) {
 			LOG_ERR("Touch %d configuration failed: "
 				"Touch channel error", i);
 			return -EINVAL;
 		}
 
 #if defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
-		if (channel_cfg->channel_num == SOC_TOUCH_DENOISE_CHANNEL) {
+		if (channel_cfg->channel_num == TOUCH_DENOISE_CHANNEL) {
 			LOG_ERR("Touch %d configuration failed: "
 				"TOUCH0 is internal denoise channel", i);
 			return -EINVAL;
@@ -223,9 +227,9 @@ static int esp32_touch_sensor_init(const struct device *dev)
 
 		touch_hal_config(channel_cfg->channel_num);
 #if defined(CONFIG_SOC_SERIES_ESP32)
-		touch_hal_set_threshold(channel_cfg->channel_num, 0);
-		touch_hal_set_group_mask(BIT(channel_cfg->channel_num),
-					 BIT(channel_cfg->channel_num));
+		touch_ll_set_threshold(channel_cfg->channel_num, 0);
+		touch_ll_set_group_mask(BIT(channel_cfg->channel_num),
+					BIT(channel_cfg->channel_num));
 #endif /* defined(CONFIG_SOC_SERIES_ESP32) */
 		touch_hal_set_channel_mask(BIT(channel_cfg->channel_num));
 
@@ -251,10 +255,10 @@ static int esp32_touch_sensor_init(const struct device *dev)
 			}
 			k_busy_wait(1000);
 		}
-		uint16_t touch_value = touch_hal_read_raw_data(channel_cfg->channel_num);
+		uint16_t touch_value = touch_ll_read_raw_data(channel_cfg->channel_num);
 
-		touch_hal_set_threshold(channel_cfg->channel_num,
-					touch_value * (100 - channel_cfg->channel_sens) / 100);
+		touch_ll_set_threshold(channel_cfg->channel_num,
+				       touch_value * (100 - channel_cfg->channel_sens) / 100);
 	}
 
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
@@ -266,10 +270,10 @@ static int esp32_touch_sensor_init(const struct device *dev)
 		.smh_lvl = dev_cfg->filter_smooth_level,
 	};
 	touch_hal_filter_set_config(&filter_info);
-	touch_hal_filter_enable();
+	touch_ll_filter_enable(true);
 
-	touch_hal_timeout_enable();
-	touch_hal_timeout_set_threshold(SOC_TOUCH_PAD_THRESHOLD_MAX);
+	touch_ll_timeout_enable();
+	touch_ll_timeout_set_threshold(TOUCH_PAD_THRESHOLD_MAX);
 #endif /* defined(CONFIG_SOC_SERIES_ESP32) */
 
 	flags = ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
@@ -283,10 +287,10 @@ static int esp32_touch_sensor_init(const struct device *dev)
 	}
 
 #if defined(CONFIG_SOC_SERIES_ESP32)
-	touch_hal_intr_enable();
+	touch_ll_intr_enable();
 #elif defined(CONFIG_SOC_SERIES_ESP32S2) || defined(CONFIG_SOC_SERIES_ESP32S3)
-	touch_hal_intr_enable(ESP32_TOUCH_PAD_INTR_MASK);
-	touch_hal_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
+	touch_ll_intr_enable(ESP32_TOUCH_PAD_INTR_MASK);
+	touch_ll_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
 #endif /* defined(CONFIG_SOC_SERIES_ESP32) */
 
 	touch_hal_start_fsm();

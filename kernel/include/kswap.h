@@ -7,9 +7,12 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
 
 #include <ksched.h>
+#include <run_q.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/barrier.h>
 #include <kernel_arch_func.h>
+#include <timeslicing.h>
+#include <usage.h>
 
 #ifdef CONFIG_STACK_SENTINEL
 extern void z_check_stack_sentinel(void);
@@ -114,11 +117,18 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	if (is_spinlock && lock != NULL && lock != &_sched_spinlock) {
 		k_spin_release(lock);
 	}
-	if (!is_spinlock || lock != &_sched_spinlock) {
-		(void) k_spin_lock(&_sched_spinlock);
+	if (IS_ENABLED(CONFIG_SMP) || IS_ENABLED(CONFIG_SPIN_VALIDATE)) {
+		/* Taking a nested uniprocessor lock in void context is a noop */
+		if (!is_spinlock || lock != &_sched_spinlock) {
+			(void)k_spin_lock(&_sched_spinlock);
+		}
 	}
 
+#ifdef CONFIG_SMP
 	new_thread = z_swap_next_thread();
+#else
+	new_thread = _kernel.ready_q.cache;
+#endif
 
 	if (new_thread != old_thread) {
 		z_sched_usage_switch(new_thread);
@@ -135,7 +145,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_current_thread_set(new_thread);
 
 #ifdef CONFIG_TIMESLICING
-		z_reset_time_slice(new_thread);
+		z_time_slice_reset(new_thread);
 #endif /* CONFIG_TIMESLICING */
 
 #ifdef CONFIG_SPIN_VALIDATE
@@ -146,10 +156,17 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 
 #ifdef CONFIG_SMP
 		/* Now add _current back to the run queue, once we are
-		 * guaranteed to reach the context switch in finite
-		 * time.  See z_sched_switch_spin().
+		 * guaranteed to reach the context switch in finite time.  See
+		 * z_sched_switch_spin().  The current thread can never live in
+		 * the run queue until we are inexorably on the context switch
+		 * path on SMP, otherwise there is a deadlock condition where a
+		 * set of CPUs pick a cycle of threads to run and wait for them
+		 * all to context switch forever.
 		 */
-		z_requeue_current(old_thread);
+		if (z_is_thread_queued(old_thread)) {
+			runq_add(old_thread);
+		}
+		signal_pending_ipi();
 #endif /* CONFIG_SMP */
 		void *newsh = new_thread->switch_handle;
 

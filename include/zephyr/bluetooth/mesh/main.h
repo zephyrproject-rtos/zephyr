@@ -636,7 +636,13 @@ void bt_mesh_reset(void);
  *  If at all possible, the Friendship feature should be used instead, to
  *  make the node into a Low Power Node.
  *
- *  @return 0 on success, or (negative) error code on failure.
+ *  @note Provisioning has not been designed to be suspended. If this API is
+ *  called while provisioning is in progress, suspension is not possible and
+ *  the function returns an error.
+ *
+ *  @retval 0 Success.
+ *  @retval -EBUSY Provisioning is active.
+ *  @retval Other negative errno code on failure.
  */
 int bt_mesh_suspend(void);
 

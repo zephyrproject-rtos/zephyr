@@ -26,237 +26,40 @@
  * point is at half of the full scale voltage.
  */
 
-#if defined(CONFIG_BOARD_NUCLEO_L152RE) || \
-	defined(CONFIG_BOARD_STM32F3_DISCO) || \
-	defined(CONFIG_BOARD_STM32L562E_DK) || \
-	defined(CONFIG_BOARD_NUCLEO_L552ZE_Q) || \
-	defined(CONFIG_BOARD_NUCLEO_WL55JC) || \
-	defined(CONFIG_BOARD_RONOTH_LODEV)
+static const struct dac_dt_spec dac_spec =
+	DAC_DT_SPEC_GET_BY_NAME_OR(DT_PATH(zephyr_user), dac1, {0});
+static const struct adc_dt_spec adc_spec =
+	ADC_DT_SPEC_GET_BY_NAME_OR(DT_PATH(zephyr_user), adc1, {0});
 
-/*
- * DAC output on PA4 (Arduino A2 pin of Nucleo board)
- * ADC input read from PA1 (Arduino A1 pin of Nucleo board)
- */
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(dac1)
-#define DAC_CHANNEL_ID		1
-#define DAC_RESOLUTION		12
-
-#define ADC_DEVICE_NODE		DT_NODELABEL(adc1)
-#if defined(CONFIG_BOARD_STM32L562E_DK)
-#define ADC_CHANNEL_ID		13
-#else
-#define ADC_CHANNEL_ID		1
-#endif /* CONFIG_BOARD_STM32L562E_DK */
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_INTERNAL
-/* The STM32L562E_DK does not accept ADC_ACQ_TIME_DEFAULT (=0) but the MAX one */
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_MAX
-
-
-#elif defined(CONFIG_BOARD_NUCLEO_L073RZ) || \
-	defined(CONFIG_BOARD_NUCLEO_F207ZG) || \
-	defined(CONFIG_BOARD_NUCLEO_F429ZI) || \
-	defined(CONFIG_BOARD_NUCLEO_F746ZG) || \
-	defined(CONFIG_BOARD_NUCLEO_G071RB)
-/*
- * DAC output on PA4
- * ADC input read from PA0
- */
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(dac1)
-#define DAC_CHANNEL_ID		1
-#define DAC_RESOLUTION		12
-
-#define ADC_DEVICE_NODE		DT_NODELABEL(adc1)
-#define ADC_CHANNEL_ID		0
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_INTERNAL
-/* The NUCLEO_G071RB does not accept ADC_ACQ_TIME_DEFAULT (=0) but the MAX one */
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_MAX
-
-#elif defined(CONFIG_BOARD_TWR_KE18F)
-
-/*
- * DAC0 output is internally available on ADC0_SE23 when test output
- * is enabled.
- */
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
-#define DAC_RESOLUTION		12
-#define DAC_CHANNEL_ID		0
-
-#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_CHANNEL_ID		23
-
-#elif defined(CONFIG_BOARD_FRDM_K64F)
-
-/* DAC0 output is internally available on ADC0_SE23 */
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
-#define DAC_RESOLUTION		12
-#define DAC_CHANNEL_ID		0
-
-#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_CHANNEL_ID		23
-
-#elif defined(CONFIG_BOARD_FRDM_K22F)
-
-/* DAC0 output is internally available on ADC0_SE23 */
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
-#define DAC_RESOLUTION		12
-#define DAC_CHANNEL_ID		0
-
-#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_CHANNEL_ID		23
-
-#elif defined(CONFIG_BOARD_LPCXPRESSO55S36)
-
-/* DAC0 output is internally available on ADC0_SE4 */
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
-#define DAC_RESOLUTION		12
-#define DAC_CHANNEL_ID		0
-
-#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_EXTERNAL0
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_CHANNEL_ID		0
-#define ADC_1ST_CHANNEL_INPUT	4
-
-#elif defined(CONFIG_BOARD_BL652_DVK) || \
-	defined(CONFIG_BOARD_BL653_DVK) || \
-	defined(CONFIG_BOARD_BL654_DVK)  || \
-	defined(CONFIG_BOARD_BL5340_DVK)
-#include <hal/nrf_saadc.h>
- /* DAC output from MCP4725 pin 1
-  * On BL65x ADC_1 input is read from pin SIO_3
-  * On BL5340 ADC_1 input is read from pin SIO_5
-  * Note external DAC MCP4725 is not populated on BL652_DVK, BL653_DVK and
-  * BL654_DVK at factory
-  */
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(dac0)
-#define DAC_RESOLUTION		12
-#define DAC_CHANNEL_ID		0
-
-#define ADC_DEVICE_NODE		DT_NODELABEL(adc)
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1_4
-#define ADC_REFERENCE		ADC_REF_VDD_1_4
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_CHANNEL_ID		1
-#define ADC_1ST_CHANNEL_INPUT	NRF_SAADC_INPUT_AIN1
-
-#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_ra_dac)
-
-#define DAC_DEVICE_NODE DT_NODELABEL(dac0)
-#define DAC_RESOLUTION  12
-#define DAC_CHANNEL_ID  0
-
-#define ADC_DEVICE_NODE      DT_NODELABEL(adc0)
-#define ADC_RESOLUTION       12
-#define ADC_GAIN             ADC_GAIN_1
-#define ADC_REFERENCE        ADC_REF_INTERNAL
-#define ADC_ACQUISITION_TIME ADC_ACQ_TIME_DEFAULT
-#if defined(CONFIG_BOARD_EK_RA4L1)
-#define ADC_CHANNEL_ID 1
-#elif defined(CONFIG_BOARD_EK_RA4W1)
-#define ADC_CHANNEL_ID 4
-#else
-#define ADC_CHANNEL_ID 0
-#endif
-
-#elif defined(CONFIG_SOC_FAMILY_SILABS_S2)
-
-/* VDAC0CH0 output is internally available on IADC_INPUT_DAC0 */
-
-#include <zephyr/dt-bindings/adc/silabs-adc.h>
-
-#define DAC_DEVICE_NODE		DT_NODELABEL(vdac0)
-#define DAC_RESOLUTION		12
-#define DAC_CHANNEL_ID		0
-
-#define ADC_DEVICE_NODE		DT_NODELABEL(adc0)
-#define ADC_RESOLUTION		12
-#define ADC_GAIN		ADC_GAIN_1
-#define ADC_REFERENCE		ADC_REF_VDD_1
-#define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
-#define ADC_CHANNEL_ID		0
-#define ADC_1ST_CHANNEL_INPUT	IADC_INPUT_DAC0
-
-#else
-#error "Unsupported board."
-#endif
-
-static const struct dac_channel_cfg dac_ch_cfg = {
-	.channel_id = DAC_CHANNEL_ID,
-	.resolution = DAC_RESOLUTION,
-#if defined(CONFIG_DAC_BUFFER_NOT_SUPPORT)
-	.buffered = false,
-#else
-	.buffered = true,
-#endif /* CONFIG_DAC_BUFFER_NOT_SUPPORT */
-};
-
-static const struct adc_channel_cfg adc_ch_cfg = {
-	.gain             = ADC_GAIN,
-	.reference        = ADC_REFERENCE,
-	.acquisition_time = ADC_ACQUISITION_TIME,
-	.channel_id       = ADC_CHANNEL_ID,
-
-#if defined(CONFIG_BOARD_BL652_DVK) || \
-	defined(CONFIG_BOARD_BL653_DVK) || \
-	defined(CONFIG_BOARD_BL654_DVK) || \
-	defined(CONFIG_BOARD_BL5340_DVK) || \
-	defined(CONFIG_BOARD_LPCXPRESSO55S36) || \
-	defined(CONFIG_SOC_FAMILY_SILABS_S2)
-	.input_positive   = ADC_1ST_CHANNEL_INPUT,
-#endif
-};
-
-static const struct device *init_dac(void)
+static int init_dac(void)
 {
 	int ret;
-	const struct device *const dac_dev = DEVICE_DT_GET(DAC_DEVICE_NODE);
 
-	zassert_true(device_is_ready(dac_dev), "DAC device is not ready");
+	if (!dac_spec.dev) {
+		return -ENODEV;
+	}
 
-	ret = dac_channel_setup(dac_dev, &dac_ch_cfg);
+	zassert_true(dac_is_ready_dt(&dac_spec), "DAC device is not ready");
+
+	ret = dac_channel_setup_dt(&dac_spec);
 	zassert_ok(ret, "Setting up of the first channel failed with code %d", ret);
-
-	return dac_dev;
+	return 0;
 }
 
 /* ADC necessary to read back the value from DAC */
-static const struct device *init_adc(void)
+static int init_adc(void)
 {
 	int ret;
-	const struct device *const adc_dev = DEVICE_DT_GET(ADC_DEVICE_NODE);
 
-	zassert_true(device_is_ready(adc_dev), "ADC device is not ready");
+	if (!adc_spec.dev) {
+		return -ENODEV;
+	}
 
-	ret = adc_channel_setup(adc_dev, &adc_ch_cfg);
+	zassert_true(adc_is_ready_dt(&adc_spec), "ADC device is not ready");
+
+	ret = adc_channel_setup_dt(&adc_spec);
 	zassert_ok(ret, "Setting up of the ADC channel failed with code %d", ret);
-
-	return adc_dev;
+	return 0;
 }
 
 /*
@@ -266,33 +69,40 @@ static int test_task_loopback(void)
 {
 	int ret;
 
-	const struct device *dac_dev = init_dac();
-	const struct device *adc_dev = init_adc();
+	ret = init_adc();
+	if (ret == -ENODEV) {
+		TC_PRINT("No io-channel named 'adc1' available for testing.\n");
+		ztest_test_skip();
+		return TC_SKIP;
+	}
 
-	if (!dac_dev || !adc_dev) {
-		return TC_FAIL;
+	ret = init_dac();
+
+	if (ret == -ENODEV) {
+		TC_PRINT("No io-channel named 'dac1' available for testing.\n");
+		ztest_test_skip();
+		return TC_SKIP;
 	}
 
 	/* write a value of half the full scale resolution */
-	ret = dac_write_value(dac_dev, DAC_CHANNEL_ID,
-		(1U << DAC_RESOLUTION) / 2);
+	ret = dac_write_value_dt(&dac_spec, (1U << dac_spec.channel_cfg.resolution) / 2);
 	zassert_ok(ret, "dac_write_value() failed with code %d", ret);
 
 	/* wait to let DAC output settle */
 	k_sleep(K_MSEC(10));
 
 	static int16_t m_sample_buffer[1];
-	static const struct adc_sequence sequence = {
-		.channels    = BIT(ADC_CHANNEL_ID),
+	static struct adc_sequence sequence = {
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
-		.resolution  = ADC_RESOLUTION,
 	};
 
-	ret = adc_read(adc_dev, &sequence);
+	adc_sequence_init_dt(&adc_spec, &sequence);
+
+	ret = adc_read_dt(&adc_spec, &sequence);
 	zassert_ok(ret, "adc_read() failed with code %d", ret);
 	zassert_within(m_sample_buffer[0],
-		(1U << ADC_RESOLUTION) / 2, 32,
+		(1U << adc_spec.resolution) / 2, 32,
 		"Value %d read from ADC does not match expected range.",
 		m_sample_buffer[0]);
 

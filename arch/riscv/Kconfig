@@ -19,6 +19,17 @@ config FLOAT_HARD
 	  This option enables the hard-float calling convention.
 	  Adds eight floating-point argument registers.
 
+config RISCV_USE_MSAVE_RESTORE
+	bool "Compile with -msave-restore to reduce some code footprint"
+	help
+	  The `-msave-restore` option enables the compiler to emit calls to library
+	  routines `__riscv_save_X` and `__riscv_restore_X` for preserving the
+	  callee-saved registers instead of inlining them in every function. This
+	  can reduce code size in some large functions. However, it introduces extra
+	  branching overhead, which may impact the performance in hot paths.
+
+	  If supported by your SoC, the `Zcmp` ISA extension should be preferred.
+
 choice RISCV_GP_PURPOSE
 	prompt "Purpose of the global pointer (GP) register"
 	default RISCV_GP if RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
@@ -56,10 +67,13 @@ config RISCV_ALWAYS_SWITCH_THROUGH_ECALL
 	  and most people should say n here to minimize context switching
 	  overhead.
 
+DT_CHOSEN_Z_SRAM = zephyr,sram
+
 choice RISCV_CMODEL
 	prompt "RISC-V Code Model"
-	default RISCV_CMODEL_LARGE if (SRAM_BASE_ADDRESS > 0xffffffff) || \
-				      (KERNEL_VM_BASE > 0xffffffff)
+	default RISCV_CMODEL_LARGE if (SRAM_DEPRECATED_KCONFIG_SET && SRAM_BASE_ADDRESS > 0xffffffff) || \
+		(!SRAM_DEPRECATED_KCONFIG_SET && $(dt_chosen_reg_addr_int,$(DT_CHOSEN_Z_SRAM),0) > 0xffffffff) || \
+		(KERNEL_VM_BASE > 0xffffffff)
 	default RISCV_CMODEL_MEDANY if 64BIT
 	default RISCV_CMODEL_MEDLOW
 
@@ -256,6 +270,14 @@ config RISCV_HAS_CLIC
 	help
 	  Does the SOC provide support for a Core-Local Interrupt Controller (CLIC).
 
+config RISCV_HAS_AIA
+	bool
+	depends on RISCV_PRIVILEGED
+	help
+	  Does the SOC provide support for the Advanced Interrupt Architecture (AIA),
+	  which includes APLIC (Advanced Platform-Level Interrupt Controller) and
+	  IMSIC (Incoming Message-Signaled Interrupt Controller).
+
 config CLIC_SUPPORT_INTERRUPT_LEVEL
 	bool
 	depends on RISCV_HAS_CLIC
@@ -264,13 +286,6 @@ config CLIC_SUPPORT_INTERRUPT_LEVEL
 	  higher-numbered interrupt levels can preempt lower-numbered interrupt
 	  levels. This option handles interrupt level in ISR to ensure proper
 	  nested ISR exits.
-
-config RISCV_SOC_EXCEPTION_FROM_IRQ
-	bool
-	help
-	  Option selected by SoCs that require a custom mechanism to check if
-	  an exception is the result of an interrupt or not. If selected,
-	  __soc_is_irq() needs to be implemented by the SoC.
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool "SOC-based interrupt initialization"
@@ -353,6 +368,7 @@ config EXTRA_EXCEPTION_INFO
 
 config RISCV_PMP
 	bool "RISC-V PMP Support"
+	depends on !RISCV_S_MODE
 	select THREAD_STACK_INFO
 	select CPU_HAS_MPU
 	select ARCH_HAS_USERSPACE
@@ -363,7 +379,7 @@ config RISCV_PMP
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
 	select THREAD_LOCAL_STORAGE if USERSPACE
 	select ARCH_MEM_DOMAIN_SUPPORTS_ISOLATED_STACKS
-	select MEM_DOMAIN_ISOLATED_STACKS
+	select MEM_DOMAIN_ISOLATED_STACKS if USERSPACE
 	select PMP_KERNEL_MODE_DYNAMIC if MEM_ATTR
 	help
 	  MCU implements Physical Memory Protection.
@@ -434,7 +450,7 @@ config PMP_UNLOCK_ROM_FOR_DEBUG
 endif #RISCV_PMP
 
 config PMP_STACK_GUARD
-	def_bool y
+	bool
 	depends on HW_STACK_PROTECTION
 	select PMP_KERNEL_MODE_DYNAMIC if MULTITHREADING
 
@@ -500,6 +516,46 @@ config RISCV_SMRNMI_ENABLE_NMI_DELIVERY
 	  handlers or mnret instruction support. Proper RNMI handlers must
 	  be implemented in SoC-specific code to handle NMI events.
 
+config RISCV_HAS_CUSTOM_STACK_GUARD
+	bool
+	help
+	  Selected when the hardware provides a custom stack guard.
+
+config CUSTOM_STACK_GUARD
+	bool "Thread Stack Guards based on custom stack guard"
+	depends on RISCV_HAS_CUSTOM_STACK_GUARD
+	select THREAD_STACK_INFO
+	help
+	  Enable Thread/Interrupt Stack Guards via custom stack guard.
+	  The functionality must be supported by HW.
+
+config CUSTOM_STACK_GUARD_RESERVED_SIZE
+	int "Custom stack guard reserved area size"
+	depends on CUSTOM_STACK_GUARD
+	default 1024 if 64BIT
+	default 768
+	help
+	  This is the size of the custom stack guard reserved area.
+	  This should be large enough to catch any sudden jump in stack pointer
+	  decrement, plus some wiggle room to accommodate the eventual overflow
+	  exception stack usage.
+
+config RISCV_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	imply CUSTOM_STACK_GUARD if RISCV_HAS_CUSTOM_STACK_GUARD
+	select PMP_STACK_GUARD if (!CUSTOM_STACK_GUARD && RISCV_PMP)
+	help
+	  This option enables either:
+	  - The custom stack guard, or
+	  - the PMP-based stack guard
+	  to cause a system fatal error
+	  if the bounds of the current process stack are overflowed.
+	  The two stack guard options are mutually exclusive. The
+	  selection of the custom stack guard is prioritized over the
+	  PMP-based stack guard. The developer still has the option to
+	  manually select the PMP-based stack guard, if this is desired.
+
 endmenu
 
 config MAIN_STACK_SIZE
@@ -562,6 +618,41 @@ config RISCV_NO_MTVAL_ON_FP_TRAP
 	  When this option is enabled, the mtval content cannot be relied upon
 	  to contain the faulting FP instruction, requiring alternative methods
 	  to handle FP exceptions.
+
+RISCV_PRIV_MODES_PROP := riscv,privilege-modes
+
+choice RISCV_PRIVILEGE_MODE
+	prompt "RISC-V privilege level"
+	default RISCV_M_MODE
+	help
+	  Select the privilege level at which the kernel runs.
+
+config RISCV_M_MODE
+	bool "Machine mode (M-mode)"
+	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_PRIV_MODES_PROP),m)
+	help
+	  Run the kernel in Machine mode (M-mode). This is the default
+	  privilege level for RISC-V.
+
+config RISCV_S_MODE
+	bool "Supervisor mode (S-mode)"
+	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_PRIV_MODES_PROP),s)
+	help
+	  Indicates that the kernel runs in Supervisor mode (S-mode). When
+	  enabled, the boot code performs an M-mode to S-mode transition
+	  before entering the C runtime, and a minimal SBI runtime is kept
+	  resident in M-mode to service timer and ecall requests.
+
+endchoice # RISCV_PRIVILEGE_MODE
+
+config RISCV_M_MODE_STACK_SIZE
+	int "M-mode SBI handler stack size (bytes)"
+	default 256
+	depends on RISCV_S_MODE
+	help
+	  Size in bytes of the dedicated stack used by the in-tree M-mode SBI
+	  runtime handler. Increase this if the handler is extended with
+	  functionality that requires more stack space.
 
 rsource "Kconfig.isa"
 

@@ -209,7 +209,8 @@ config NET_CONFIG_CLOCK_SNTP_INIT
 	help
 	  Perform an SNTP request over networking to get and absolute
 	  wall clock time, and initialize system time from it, so
-	  functions like time(), gettimeofday(), etc. returned the
+	  functions like sys_clock_gettime(SYS_CLOCK_REALTIME, ...),
+	  time(), gettimeofday(), etc. returned the
 	  correct absolute time (no just time since system startup).
 	  Requires networking.
 
@@ -275,7 +276,7 @@ config NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER
 	depends on NET_CONNECTION_MANAGER
 	help
 	  If this option is set, then the connection manager is used to
-	  start and stop the SNTP server. This way an SNTP request is
+	  start and stop the SNTP client. This way an SNTP request is
 	  also sent everytime when the network connection is established.
 
 endif # NET_CONFIG_SNTP_INIT_RESYNC

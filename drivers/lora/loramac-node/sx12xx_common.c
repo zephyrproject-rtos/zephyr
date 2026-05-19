@@ -376,7 +376,7 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 }
 
 int sx12xx_lora_config(const struct device *dev,
-		       struct lora_modem_config *config)
+		       const struct lora_modem_config *config)
 {
 	bool crc = !config->packet_crc_disable;
 	uint32_t bw_idx;
@@ -411,6 +411,10 @@ int sx12xx_lora_config(const struct device *dev,
 				  crc, false, 0, config->iq_inverted, true);
 	}
 
+	if (config->sync_word) {
+		/* Radio_s API doesn't expose SYNC word functionality */
+		LOG_WRN_ONCE("loramac-node doesn't support custom SYNC words");
+	}
 	Radio.SetPublicNetwork(config->public_network);
 
 	modem_release(&dev_data);

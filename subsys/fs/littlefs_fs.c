@@ -46,10 +46,10 @@ struct lfs_file_data {
 #define LFS_FILEP(fp) (&((struct lfs_file_data *)(fp->filep))->file)
 
 /* Global memory pool for open files and dirs */
-K_MEM_SLAB_DEFINE_STATIC(file_data_pool, sizeof(struct lfs_file_data),
-			 CONFIG_FS_LITTLEFS_NUM_FILES, 4);
-K_MEM_SLAB_DEFINE_STATIC(lfs_dir_pool, sizeof(struct lfs_dir),
-			 CONFIG_FS_LITTLEFS_NUM_DIRS, 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(file_data_pool, struct lfs_file_data,
+			      CONFIG_FS_LITTLEFS_NUM_FILES);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(lfs_dir_pool, struct lfs_dir,
+			      CONFIG_FS_LITTLEFS_NUM_DIRS);
 
 /* Inferred overhead, in bytes, for each k_heap_aligned allocation for
  * the filecache heap.  This relates to the CHUNK_UNIT parameter in
@@ -1133,7 +1133,7 @@ struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
 	.type = FS_LITTLEFS, \
 	.mnt_point = FSTAB_ENTRY_DT_INST_MOUNT_POINT(inst), \
 	.fs_data = &fs_data_##inst, \
-	.storage_dev = (void *)DT_FIXED_PARTITION_ID(FS_PARTITION(inst)), \
+	.storage_dev = (void *)DT_PARTITION_ID(FS_PARTITION(inst)), \
 	.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)), \
 };
 

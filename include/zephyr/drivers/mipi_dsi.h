@@ -144,9 +144,7 @@ static inline int mipi_dsi_attach(const struct device *dev,
 				  uint8_t channel,
 				  const struct mipi_dsi_device *mdev)
 {
-	const struct mipi_dsi_driver_api *api = (const struct mipi_dsi_driver_api *)dev->api;
-
-	return api->attach(dev, channel, mdev);
+	return DEVICE_API_GET(mipi_dsi, dev)->attach(dev, channel, mdev);
 }
 
 /**
@@ -162,9 +160,7 @@ static inline ssize_t mipi_dsi_transfer(const struct device *dev,
 					uint8_t channel,
 					struct mipi_dsi_msg *msg)
 {
-	const struct mipi_dsi_driver_api *api = (const struct mipi_dsi_driver_api *)dev->api;
-
-	return api->transfer(dev, channel, msg);
+	return DEVICE_API_GET(mipi_dsi, dev)->transfer(dev, channel, msg);
 }
 
 /**
@@ -238,7 +234,7 @@ static inline int mipi_dsi_detach(const struct device *dev,
 				  uint8_t channel,
 				  const struct mipi_dsi_device *mdev)
 {
-	const struct mipi_dsi_driver_api *api = (const struct mipi_dsi_driver_api *)dev->api;
+	const struct mipi_dsi_driver_api *api = DEVICE_API_GET(mipi_dsi, dev);
 
 	if (api->detach == NULL) {
 		return -ENOSYS;

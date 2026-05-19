@@ -91,6 +91,12 @@ static bool interval_check(int64_t interval, int64_t desired)
 {
 	int64_t slop = INEXACT_MS_CONVERT ? 1 : 0;
 
+	/* z_add_timeout() rounds up by one tick to guarantee "at least
+	 * N ticks" -- that can push the first fire a whole tick past
+	 * the nominal duration.
+	 */
+	slop += k_ticks_to_ms_ceil32(1);
+
 	/* Tickless kernels will advance time inside of an ISR, so it
 	 * is always possible (especially with high tick rates and
 	 * slow CPUs) for us to arrive at the uptime check above too
@@ -893,13 +899,21 @@ ZTEST_USER(timer_api, test_sleep_abs)
 	k_sleep(K_TIMEOUT_ABS_TICKS(start + sleep_ticks));
 	end = k_uptime_ticks();
 
-	/* Systems with very high tick rates and/or slow idle resume
-	 * (I've seen this on intel_adsp) can occasionally take more
-	 * than a tick to return from k_sleep().  Set a 100us real
-	 *  time slop or more depending on the time to resume
+	/* Systems with very high tick rates, slow idle resume, or QEMU
+	 * timing instability can occasionally take more than a tick to
+	 * return from k_sleep().
+	 *
+	 * The Xilinx QEMU, used to emulate the ZynqMP and Versal platforms,
+	 * is particularly unstable in terms of timing and can be several
+	 * ticks late waking from sleep.
 	 */
 	k_ticks_t late = end - (start + sleep_ticks);
+#if defined(CONFIG_SOC_XILINX_ZYNQMP) || defined(CONFIG_SOC_VERSAL_RPU)
+	/* QEMU timing instability requires larger margin */
+	int slop = MAX(10, k_us_to_ticks_ceil32(1000));
+#else
 	int slop = MAX(2, k_us_to_ticks_ceil32(250));
+#endif
 
 	zassert_true(late >= 0 && late <= slop,
 		     "expected wakeup at %lld, got %lld (late %lld)",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,10 +10,13 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
@@ -23,6 +26,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "../../../../../subsys/bluetooth/host/hci_core.h"
 #include "common.h"
@@ -75,6 +79,8 @@ static const char *phy2str(uint8_t phy)
 static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 				    uint8_t recv_state_count)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS discover failed (%d)\n", err);
 		return;
@@ -88,12 +94,9 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *info,
 				uint32_t broadcast_id)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("Scan Recv: [DEVICE]: %s, broadcast_id 0x%06X, "
 	       "interval (ms) %u), SID 0x%x, RSSI %i\n",
-	       le_addr, broadcast_id, info->interval * 5 / 4,
+	       bt_addr_le_str(info->addr), broadcast_id, info->interval * 5 / 4,
 	       info->sid, info->rssi);
 
 	(void)memcpy(&g_broadcaster_info, info, sizeof(g_broadcaster_info));
@@ -105,6 +108,8 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 static bool metadata_entry(struct bt_data *data, void *user_data)
 {
 	char metadata[CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE] = {0};
+
+	ARG_UNUSED(user_data);
 
 	(void)bin2hex(data->data, data->data_len, metadata, sizeof(metadata));
 
@@ -118,7 +123,6 @@ static void bap_broadcast_assistant_recv_state_cb(
 	struct bt_conn *conn, int err,
 	const struct bt_bap_scan_delegator_recv_state *state)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char bad_code[BT_ISO_BROADCAST_CODE_SIZE * 2 + 1];
 
 	if (err != 0) {
@@ -133,10 +137,10 @@ static void bap_broadcast_assistant_recv_state_cb(
 		return;
 	}
 
-	bt_addr_le_to_str(&state->addr, le_addr, sizeof(le_addr));
 	(void)bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
 	printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s\n",
-	       state->src_id, le_addr, state->adv_sid, state->pa_sync_state, state->encrypt_state,
+	       state->src_id, bt_addr_le_str(&state->addr), state->adv_sid, state->pa_sync_state,
+	       state->encrypt_state,
 	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? ", bad code: " : "",
 	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? bad_code : "");
 
@@ -150,18 +154,18 @@ static void bap_broadcast_assistant_recv_state_cb(
 			return;
 		}
 
-		for (uint8_t i = 0; i < state->num_subgroups; i++) {
+		for (uint8_t i = 0U; i < state->num_subgroups; i++) {
 			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
-			if (subgroup->bis_sync != BT_BAP_BIS_SYNC_FAILED) {
-				FAIL("Invalid BIS sync value 0x%08X for failed sync\n",
+			if (subgroup->bis_sync != 0U) {
+				FAIL("Invalid BIS sync value 0x%08X for bad broadcast code\n",
 				     subgroup->bis_sync);
 				return;
 			}
 		}
 	}
 
-	for (uint8_t i = 0; i < state->num_subgroups; i++) {
+	for (uint8_t i = 0U; i < state->num_subgroups; i++) {
 		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
@@ -196,6 +200,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
+	ARG_UNUSED(conn);
+
 	printk("BASS recv state %u removed\n", src_id);
 	SET_FLAG(flag_cb_called);
 
@@ -204,6 +210,8 @@ static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, 
 
 static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS scan start failed (%d)\n", err);
 		return;
@@ -215,6 +223,8 @@ static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
 
 static void bap_broadcast_assistant_scan_stop_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS scan stop failed (%d)\n", err);
 		return;
@@ -226,6 +236,8 @@ static void bap_broadcast_assistant_scan_stop_cb(struct bt_conn *conn, int err)
 
 static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS add source failed (%d)\n", err);
 		return;
@@ -237,6 +249,8 @@ static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 
 static void bap_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS modify source failed (%d)\n", err);
 		return;
@@ -248,6 +262,8 @@ static void bap_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
 
 static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("BASS broadcast code failed (%d)\n", err);
 		return;
@@ -259,6 +275,8 @@ static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn, int 
 
 static void bap_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	SET_FLAG(flag_remove_source_cb_called);
 
 	if (err != 0) {
@@ -291,6 +309,10 @@ static struct bt_bap_broadcast_assistant_cb broadcast_assistant_cbs = {
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(tx);
+	ARG_UNUSED(rx);
+
 	SET_FLAG(flag_mtu_exchanged);
 }
 
@@ -301,13 +323,9 @@ static struct bt_gatt_cb gatt_callbacks = {
 static void sync_cb(struct bt_le_per_adv_sync *sync,
 		    struct bt_le_per_adv_sync_synced_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 	       "Interval 0x%04x (%u ms), PHY %s\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr, info->interval,
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr), info->interval,
 	       info->interval * 5 / 4, phy2str(info->phy));
 
 	SET_FLAG(flag_pa_synced);
@@ -316,12 +334,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 static void term_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr);
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
 
 	SET_FLAG(flag_pa_terminated);
 }
@@ -468,7 +482,7 @@ static void test_bass_add_source(void)
 	UNSET_FLAG(flag_cb_called);
 	bt_addr_le_copy(&add_src_param.addr, &g_broadcaster_addr);
 	add_src_param.adv_sid = g_broadcaster_info.sid;
-	add_src_param.num_subgroups = 1;
+	add_src_param.num_subgroups = 1U;
 	add_src_param.pa_interval = g_broadcaster_info.interval;
 	add_src_param.pa_sync = false;
 	add_src_param.broadcast_id = g_broadcast_id;
@@ -484,13 +498,8 @@ static void test_bass_add_source(void)
 	WAIT_FOR_FLAG(flag_recv_state_updated);
 
 	if (!bt_addr_le_eq(&recv_state.addr, &add_src_param.addr)) {
-		char addr[BT_ADDR_LE_STR_LEN];
-		char expected_addr[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(&recv_state.addr, addr, sizeof(addr));
-		bt_addr_le_to_str(&add_src_param.addr, expected_addr, sizeof(expected_addr));
-
-		FAIL("Unexpected addr %s != %s\n", addr, expected_addr);
+		FAIL("Unexpected bt_addr_le_str(&recv_state.addr) %s != %s\n",
+		     bt_addr_le_str(&recv_state.addr), bt_addr_le_str(&add_src_param.addr));
 		return;
 	}
 
@@ -538,7 +547,7 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 	UNSET_FLAG(flag_write_complete);
 	UNSET_FLAG(flag_recv_state_updated);
 	mod_src_param.src_id = recv_state.src_id;
-	mod_src_param.num_subgroups = 1;
+	mod_src_param.num_subgroups = 1U;
 	mod_src_param.pa_sync = pa_sync;
 	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
@@ -643,7 +652,7 @@ static void test_bass_mod_source_long_meta(void)
 	UNSET_FLAG(flag_write_complete);
 	UNSET_FLAG(flag_recv_state_updated);
 	mod_src_param.src_id = recv_state.src_id;
-	mod_src_param.num_subgroups = 1;
+	mod_src_param.num_subgroups = 1U;
 	mod_src_param.pa_sync = true;
 	mod_src_param.subgroups = &subgroup;
 	mod_src_param.pa_interval = g_broadcaster_info.interval;
@@ -774,6 +783,9 @@ static int common_init(void)
 	update_conn_params();
 
 	test_exchange_mtu();
+
+	update_security(default_conn);
+
 	test_bass_discover();
 	test_bass_read_receive_states();
 
@@ -817,7 +829,7 @@ static void test_main_client_sync(void)
 	test_bass_add_source();
 	test_bass_mod_source(true, 0);
 	test_bass_mod_source_long_meta();
-	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1) | BT_ISO_BIS_INDEX_BIT(2));
+	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U) | BT_ISO_BIS_INDEX_BIT(2U));
 	test_bass_broadcast_code(BROADCAST_CODE);
 
 	printk("Waiting for receive state with BIS sync\n");
@@ -849,7 +861,7 @@ static void test_main_client_sync_incorrect_code(void)
 	test_bass_scan_stop();
 	test_bass_create_pa_sync();
 	test_bass_add_source();
-	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1));
+	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U));
 	WAIT_FOR_FLAG(flag_broadcast_code_requested);
 	test_bass_broadcast_code(INCORRECT_BROADCAST_CODE);
 	WAIT_FOR_FLAG(flag_incorrect_broadcast_code);

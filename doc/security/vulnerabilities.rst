@@ -1969,6 +1969,9 @@ This has been fixed in main for v4.2.0
 - `PR 93576 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/93576>`_
 
+- `PR 100474 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/100474>`_
+
 :cve:`2025-10457`
 -----------------
 
@@ -2146,3 +2149,166 @@ This has been fixed in main for v4.3.0
 
 - `PR 98985 fix for 3.7
   <https://github.com/zephyrproject-rtos/zephyr/pull/98985>`_
+
+:cve:`2026-0849`
+----------------
+
+crypto: ATAES132A response length allows stack buffer overflow
+
+Malformed ATAES132A responses with an oversized length field overflow a 52-byte
+stack buffer in the Zephyr crypto driver, allowing a compromised device or bus
+attacker to corrupt kernel memory and potentially hijack execution.
+
+- `Zephyr project bug tracker GHSA-ff4p-3ggg-prp6
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-ff4p-3ggg-prp6>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 103163 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/103163>`_
+
+:cve:`2026-1677`
+----------------
+
+net: TLS 1.2 connections allowed on TLS 1.3 sockets
+
+Zephyr sockets created with ``IPPROTO_TLS_1_3`` can still negotiate a TLS 1.2 connection when both
+TLS versions are enabled in Kconfig, because the socket-level protocol selection is not propagated
+to mbedTLS (e.g. via ``mbedtls_ssl_conf_min_tls_version``). The ClientHello advertises both versions
+and the peer can establish TLS 1.2, so applications that assumed ``IPPROTO_TLS_1_3`` enforces TLS
+1.3 may silently use TLS 1.2 and remain exposed to TLS 1.2-specific weaknesses.
+
+- `Zephyr project bug tracker GHSA-23r2-m5wx-4rvq
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-23r2-m5wx-4rvq>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102570 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102570>`_
+
+
+:cve:`2026-1678`
+----------------
+
+dns: memory‑safety issue in the DNS name parser
+
+``dns_unpack_name()`` caches the buffer tailroom once and reuses it while appending
+DNS labels. As the buffer grows, the cached size becomes incorrect, and the final
+null terminator can be written past the buffer. With assertions disabled (default),
+a malicious DNS response can trigger an out-of-bounds write when ``CONFIG_DNS_RESOLVER``
+is enabled.
+
+
+- `Zephyr project bug tracker GHSA-536f-h63g-hj42
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-536f-h63g-hj42>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 99683 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99683>`_
+
+- `PR 99830 fix for 4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99830>`_
+
+- `PR 99829 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99829>`_
+
+- `PR 99828 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/99828>`_
+
+:cve:`2026-1679`
+----------------
+
+The eswifi socket offload driver copies user-provided payloads into a fixed buffer without checking
+available space; oversized sends overflow eswifi->buf, corrupting kernel memory (CWE-120). Exploit
+requires local code that can call the socket send API; no remote attacker can reach it directly.
+
+- `Zephyr project bug tracker GHSA-qx3g-5g22-fq5w
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-qx3g-5g22-fq5w>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102119 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102119>`_
+
+:cve:`2026-1681`
+----------------
+
+net: Stack Overflow with Ping (to own IP Address) via Shell
+
+Issuing an ICMP ping via the ``net ping`` shell command to a device's own IPv4 address causes the
+network stack to recursively re-enter the input path on the same system work-queue stack. Because
+the destination is recognized as a local address, both the echo request and the resulting echo reply
+are processed inline before the current frame returns. The nested input-path frames exceed the
+work-queue stack and trigger a stack overflow.
+
+- `Zephyr project bug tracker GHSA-6fcc-8rwr-w7xx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-6fcc-8rwr-w7xx>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102268 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102268>`_
+
+:cve:`2026-4179`
+----------------
+
+stm32: usb: Infinite while loop in Interrupt Handler
+
+Issues in stm32 USB device driver can lead to an infinite while loop.
+
+- `Zephyr project bug tracker GHSA-9xg7-g3q3-9prf
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-9xg7-g3q3-9prf>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 104390 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104390>`_
+
+:cve:`2026-5066`
+----------------
+
+Under embargo until 2026-06-01
+
+:cve:`2026-5067`
+----------------
+
+Under embargo until 2026-05-23
+
+:cve:`2026-5068`
+----------------
+
+Under embargo until 2026-05-21
+
+:cve:`2026-5071`
+----------------
+
+Under embargo until 2026-05-18
+
+:cve:`2026-5072`
+----------------
+
+Under embargo until 2026-05-18
+
+:cve:`2026-5589`
+----------------
+
+Under embargo until 2026-06-03
+
+:cve:`2026-5590`
+----------------
+
+net: ip/tcp: Null pointer dereference can be triggered by a race condition
+
+A race condition during TCP connection teardown can cause tcp_recv() to operate on a connection that
+has already been released. If tcp_conn_search() returns NULL while processing a SYN packet, a NULL
+pointer derived from stale context data is passed to tcp_backlog_is_full() and dereferenced without
+validation, leading to a crash.
+
+- `Zephyr project bug tracker GHSA-4vqm-pw24-g9jp
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4vqm-pw24-g9jp>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102110 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102110>`_

@@ -32,12 +32,6 @@
 	};
 
 	soc {
-		system: system@4001e000 {
-			compatible = "renesas,ra-system";
-			reg = <0x4001e000 0x1000>;
-			status = "okay";
-		};
-
 		elc: elc@40041000 {
 			compatible = "renesas,ra-elc";
 			reg = <0x40041000 0x70>;

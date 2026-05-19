@@ -210,8 +210,6 @@ enum usbd_ch9_state {
 struct usbd_ch9_data {
 	/** Setup packet, up-to-date for the respective control request */
 	struct usb_setup_packet setup;
-	/** Control type, internally used for stage verification */
-	int ctrl_type;
 	/** Protocol state of the USB device stack */
 	enum usbd_ch9_state state;
 	/** Halted endpoints bitmap */
@@ -307,6 +305,8 @@ struct usbd_context {
 	void *fs_desc;
 	/** Pointer to High-Speed device descriptor */
 	void *hs_desc;
+	/** Pre-allocated buffer for control transfer SETUP stage */
+	struct net_buf *setup_buf;
 };
 
 /**
@@ -1028,6 +1028,19 @@ bool usbd_ep_is_halted(struct usbd_context *uds_ctx, uint8_t ep);
  */
 struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
 				  const uint8_t ep, const size_t size);
+
+/**
+ * @brief Allocate buffer for USB control transfer data stage
+ *
+ * Allocate a new buffer from controller's driver buffer pool.
+ *
+ * @param[in] uds_ctx Pointer to USB device support context
+ * @param[in] size    Size of the request buffer
+ *
+ * @return pointer to allocated request or NULL on error.
+ */
+struct net_buf *usbd_ep_ctrl_data_in_alloc(const struct usbd_context *const uds_ctx,
+					   const size_t size);
 
 /**
  * @brief Queue USB device control request

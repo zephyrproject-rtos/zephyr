@@ -1,0 +1,5 @@
+description: CHSC6540 touch controller
+
+compatible: "chipsemi,chsc6540"
+
+include: chipsemi,chsc6x-common.yaml

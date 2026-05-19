@@ -128,9 +128,9 @@ static inline int bmp180_conv_ready(const struct device *dev, uint32_t time_wait
 	k_sleep(K_MSEC(time_wait_ms));
 
 	/*
-	 * for the first while read 'delay+1' ms which is the convension time
+	 * for the first while read 'delay+1' ms which is the conversion time
 	 * descripted in the data-sheet in case the register not yet ready wait again
-	 * and return error if retry exhaused
+	 * and return error if retry exhausted
 	 */
 	while (true) {
 		k_sleep(K_MSEC(1));

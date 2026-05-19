@@ -27,10 +27,6 @@ tests:
     extra_configs:
       - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
       - CONFIG_HAWKBIT_DDI_TARGET_SECURITY=y
-  sample.net.hawkbit.ddi.no_security:
-    extra_configs:
-      - CONFIG_HAWKBIT_DDI_GATEWAY_SECURITY=n
-      - CONFIG_HAWKBIT_DDI_NO_SECURITY=y
   sample.net.hawkbit.tls:
     extra_args:
       - EXTRA_CONF_FILE="overlay-tls.conf"

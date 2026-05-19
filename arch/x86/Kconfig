@@ -75,7 +75,7 @@ config X86_64
 	select 64BIT
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
-	select SCHED_IPI_SUPPORTED
+	select SCHED_IPI_SUPPORTED if SMP
 	select X86_MMU
 	select X86_CPU_HAS_MMX
 	select X86_CPU_HAS_SSE
@@ -356,9 +356,12 @@ config X86_MAX_ADDITIONAL_MEM_DOMAINS
 
 	  Zephyr test cases assume 3 additional domains can be instantiated.
 
+DT_CHOSEN_Z_SRAM = zephyr,sram
+
 config X86_EXTRA_PAGE_TABLE_PAGES
 	int "Reserve extra pages in page table"
-	default 1 if X86_PAE && (KERNEL_VM_BASE != SRAM_BASE_ADDRESS)
+	default 1 if X86_PAE && ((SRAM_DEPRECATED_KCONFIG_SET && KERNEL_VM_BASE != SRAM_BASE_ADDRESS) || \
+		(!SRAM_DEPRECATED_KCONFIG_SET && KERNEL_VM_BASE != $(dt_chosen_reg_addr_int,$(DT_CHOSEN_Z_SRAM),0)))
 	default 0
 	depends on X86_MMU
 	help

@@ -37,6 +37,8 @@ struct i2c_silabs_dev_config {
 	void (*irq_config_func)(void);         /* IRQ configuration function */
 	const struct device *clock;            /* Clock device */
 	const struct silabs_clock_control_cmu_config clock_cfg; /* Clock control subsystem */
+	uint8_t *concat_buf;                                    /* Buffer used to merge messages */
+	uint32_t concat_buf_size;                               /* Size of concatenation buffer */
 };
 
 /* Structure for I2C device data */
@@ -46,6 +48,7 @@ struct i2c_silabs_dev_data {
 	sl_i2c_handle_t i2c_handle;          /* I2C handle structure */
 	struct i2c_silabs_dma_config dma_rx; /* DMA configuration for RX */
 	struct i2c_silabs_dma_config dma_tx; /* DMA configuration for TX */
+	uint32_t concat_buf_used;            /* Number of bytes used in concatenation buffer */
 	bool asynchronous;                   /* Indicates if transfer is asynchronous */
 	bool last_transfer;                  /* Transfer is the last in the sequence */
 	bool is_10bit_addr;                  /* Indicates if addr is 7-bit or 10-bit */
@@ -120,6 +123,99 @@ static int i2c_silabs_dev_configure(const struct device *dev, uint32_t dev_confi
 	return 0;
 }
 
+static bool i2c_silabs_should_concat_message(struct i2c_msg *msgs, uint8_t num_msgs, uint8_t i)
+{
+	/* Concatenate messages if:
+	 *  - There is a next message
+	 *  - This message doesn't end a bus transaction
+	 *  - The next message doesn't start a bus transaction
+	 *  - Both messages have the same direction
+	 */
+	return ((i + 1) < num_msgs) && !(msgs[i].flags & I2C_MSG_STOP) &&
+	       !(msgs[i + 1].flags & I2C_MSG_RESTART) &&
+	       ((msgs[i].flags & I2C_MSG_READ) == (msgs[i + 1].flags & I2C_MSG_READ));
+}
+
+static int i2c_silabs_concat_message(const struct device *dev, struct i2c_msg *msg)
+{
+	const struct i2c_silabs_dev_config *config = dev->config;
+	struct i2c_silabs_dev_data *data = dev->data;
+
+	if ((data->concat_buf_used + msg->len) > config->concat_buf_size) {
+		LOG_ERR("Need to use the internal driver buffer but its size is insufficient "
+			"(%u + %u > %u). Adjust the zephyr,concat-buf-size in the \"%s\" node.",
+			data->concat_buf_used, msg->len, config->concat_buf_size, dev->name);
+		return -ENOSPC;
+	}
+	if (!(msg->flags & I2C_MSG_READ)) {
+		memcpy(config->concat_buf + data->concat_buf_used, msg->buf, msg->len);
+	}
+	data->concat_buf_used += msg->len;
+
+	return 0;
+}
+
+static int i2c_silabs_gather_message(const struct device *dev, struct i2c_msg *msgs,
+				     uint8_t num_msgs, uint8_t *idx, uint8_t **buf,
+				     uint32_t *buf_len)
+{
+	const struct i2c_silabs_dev_config *config = dev->config;
+	struct i2c_silabs_dev_data *data = dev->data;
+	uint8_t curr_idx = *idx;
+	int err;
+
+	/* By default no concatenation, use message buffer as final buffer */
+	data->concat_buf_used = 0;
+	*buf = msgs[curr_idx].buf;
+	*buf_len = msgs[curr_idx].len;
+
+	/* Multiple messages in the same direction may need to be gathered into a single
+	 * buffer. If the next message should be concatenated with this one, add it to the
+	 * concatenation buffer.
+	 */
+	while (i2c_silabs_should_concat_message(msgs, num_msgs, curr_idx)) {
+		err = i2c_silabs_concat_message(dev, &msgs[curr_idx]);
+		if (err) {
+			return err;
+		}
+		curr_idx++;
+	}
+
+	/* At least one previous message was added to the buffer, the current message must also be
+	 * added to finalize the buffer.
+	 */
+	if (data->concat_buf_used != 0) {
+		err = i2c_silabs_concat_message(dev, &msgs[curr_idx]);
+		if (err) {
+			return err;
+		}
+
+		*buf = config->concat_buf;
+		*buf_len = data->concat_buf_used;
+	}
+
+	*idx = curr_idx;
+
+	return 0;
+}
+
+static void i2c_silabs_scatter_message(const struct device *dev, struct i2c_msg *msgs, uint8_t idx)
+{
+	const struct i2c_silabs_dev_config *config = dev->config;
+	struct i2c_silabs_dev_data *data = dev->data;
+
+	if ((msgs[idx].flags & I2C_MSG_READ) && data->concat_buf_used) {
+		int j = idx;
+
+		while (data->concat_buf_used >= msgs[j].len) {
+			data->concat_buf_used -= msgs[j].len;
+			memcpy(msgs[j].buf, config->concat_buf + data->concat_buf_used,
+			       msgs[j].len);
+			j--;
+		}
+	}
+}
+
 /* Function to handle DMA transfer */
 static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
 				   uint16_t addr, i2c_callback_t cb, void *userdata,
@@ -130,6 +226,8 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 	data->callback_invoked = false;
 #endif
 	data->pm_lock_done = false;
+	uint32_t buf_len = 0;
+	uint8_t *buf = NULL;
 	uint8_t i = 0;
 	int err = 0;
 
@@ -141,19 +239,27 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 	i2c_silabs_pm_policy_state_lock_get();
 
 	while (i < num_msgs) {
+		/* Gather subsequent writes that must be performed as a single transaction. */
+		if (!(msgs[i].flags & I2C_MSG_READ)) {
+			err = i2c_silabs_gather_message(dev, msgs, num_msgs, &i, &buf, &buf_len);
+			if (err) {
+				return err;
+			}
+		}
+
 		uint8_t msgs_in_transfer = 1;
 
 		/*  Combined DMA write-read (repeated start) */
-		if ((msgs[i].flags & I2C_MSG_WRITE) == 0 && (i + 1 < num_msgs) &&
-		    (msgs[i + 1].flags & I2C_MSG_READ)) {
+		if (!(msgs[i].flags & I2C_MSG_READ) && (i + 1 < num_msgs) &&
+		    (msgs[i + 1].flags & I2C_MSG_READ) && (msgs[i + 1].flags & I2C_MSG_RESTART)) {
 			msgs_in_transfer = 2;
 		}
 		data->last_transfer = (i + msgs_in_transfer) == num_msgs;
 
 		if (msgs_in_transfer == 2) {
-			if (sl_i2c_leader_transfer_non_blocking(
-				    &data->i2c_handle, addr, msgs[i].buf, msgs[i].len,
-				    msgs[i + 1].buf, msgs[i + 1].len, NULL) != 0) {
+			if (sl_i2c_leader_transfer_non_blocking(&data->i2c_handle, addr, buf,
+								buf_len, msgs[i + 1].buf,
+								msgs[i + 1].len, NULL) != 0) {
 				k_sem_give(&data->bus_lock);
 				i2c_silabs_pm_policy_state_lock_put();
 				return -EIO;
@@ -180,17 +286,15 @@ static int i2c_silabs_transfer_dma(const struct device *dev, struct i2c_msg *msg
 		} else {
 			/* Start DMA send */
 			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
-				if (sl_i2c_follower_send_non_blocking(&data->i2c_handle,
-								      msgs[i].buf, msgs[i].len,
-								      NULL) != 0) {
+				if (sl_i2c_follower_send_non_blocking(&data->i2c_handle, buf,
+								      buf_len, NULL) != 0) {
 					k_sem_give(&data->bus_lock);
 					i2c_silabs_pm_policy_state_lock_put();
 					return -EIO;
 				}
 			} else {
-				if (sl_i2c_leader_send_non_blocking(&data->i2c_handle, addr,
-								    msgs[i].buf, msgs[i].len,
-								    NULL) != 0) {
+				if (sl_i2c_leader_send_non_blocking(&data->i2c_handle, addr, buf,
+								    buf_len, NULL) != 0) {
 					k_sem_give(&data->bus_lock);
 					i2c_silabs_pm_policy_state_lock_put();
 					return -EIO;
@@ -222,6 +326,8 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 				    uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_silabs_dev_data *data = dev->data;
+	uint32_t buf_len = 0;
+	uint8_t *buf = NULL;
 	uint8_t i = 0;
 	int err = 0;
 
@@ -229,30 +335,46 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 	i2c_silabs_pm_policy_state_lock_get();
 
 	while (i < num_msgs) {
-		uint8_t msgs_in_transfer = 1;
+		/* Gather subsequent messages in the same direction that must be performed as a
+		 * single transaction.
+		 */
+		err = i2c_silabs_gather_message(dev, msgs, num_msgs, &i, &buf, &buf_len);
+		if (err) {
+			goto out;
+		}
 
-		if ((msgs[i].flags & I2C_MSG_WRITE) == 0 && (i + 1 < num_msgs) &&
-		    (msgs[i + 1].flags & I2C_MSG_READ)) {
-			msgs_in_transfer = 2;
-			if (sl_i2c_leader_transfer_blocking(&data->i2c_handle, addr, msgs[i].buf,
-							    msgs[i].len, msgs[i + 1].buf,
-							    msgs[i + 1].len,
+		if (!(msgs[i].flags & I2C_MSG_READ) && (i + 1 < num_msgs) &&
+		    (msgs[i + 1].flags & I2C_MSG_READ) && (msgs[i + 1].flags & I2C_MSG_RESTART)) {
+			uint8_t *tx_buf = buf;
+			uint32_t tx_buf_len = buf_len;
+
+			i++;
+
+			/* Gather subsequent messages that must be received in a single transaction,
+			 * reusing the concatenation buffer.
+			 */
+			err = i2c_silabs_gather_message(dev, msgs, num_msgs, &i, &buf, &buf_len);
+			if (err) {
+				goto out;
+			}
+
+			if (sl_i2c_leader_transfer_blocking(&data->i2c_handle, addr, tx_buf,
+							    tx_buf_len, buf, buf_len,
 							    CONFIG_I2C_SILABS_TIMEOUT) != 0) {
 				err = -EIO;
 				goto out;
 			}
-			i++;
 		} else if (msgs[i].flags & I2C_MSG_READ) {
 			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
 				if (sl_i2c_follower_receive_blocking(
-					    &data->i2c_handle, msgs[i].buf, msgs[i].len,
+					    &data->i2c_handle, buf, buf_len,
 					    CONFIG_I2C_SILABS_TIMEOUT) != 0) {
 					err = -ETIMEDOUT;
 					goto out;
 				}
 			} else {
 				if (sl_i2c_leader_receive_blocking(
-					    &data->i2c_handle, addr, msgs[i].buf, msgs[i].len,
+					    &data->i2c_handle, addr, buf, buf_len,
 					    CONFIG_I2C_SILABS_TIMEOUT) != 0) {
 					err = -ETIMEDOUT;
 					goto out;
@@ -260,22 +382,25 @@ static int i2c_silabs_transfer_sync(const struct device *dev, struct i2c_msg *ms
 			}
 		} else {
 			if (IS_ENABLED(CONFIG_I2C_TARGET)) {
-				if (sl_i2c_follower_send_blocking(&data->i2c_handle, msgs[i].buf,
-								  msgs[i].len,
+				if (sl_i2c_follower_send_blocking(&data->i2c_handle, buf, buf_len,
 								  CONFIG_I2C_SILABS_TIMEOUT) != 0) {
 					err = -ETIMEDOUT;
 					goto out;
 				}
 			} else {
-				if (sl_i2c_leader_send_blocking(&data->i2c_handle, addr,
-								msgs[i].buf, msgs[i].len,
+				if (sl_i2c_leader_send_blocking(&data->i2c_handle, addr, buf,
+								buf_len,
 								CONFIG_I2C_SILABS_TIMEOUT) != 0) {
 					err = -ETIMEDOUT;
 					goto out;
 				}
 			}
 		}
-		i += msgs_in_transfer;
+
+		/* Copy read messages from concatenation buffer into user-provided buffers */
+		i2c_silabs_scatter_message(dev, msgs, i);
+
+		i++;
 	}
 
 out:
@@ -538,6 +663,7 @@ static DEVICE_API(i2c, i2c_silabs_dev_driver_api) = {
 		.clk_branch = DT_INST_CLOCKS_CELL(idx, branch),                                    \
 		.bus_clock = (DT_INST_CLOCKS_CELL(idx, enable) ? &i2c_bus_clock_##idx : NULL),     \
 	};                                                                                         \
+	static uint8_t i2c_concat_buf_##idx[DT_INST_PROP(idx, zephyr_concat_buf_size)];            \
 												   \
 	static const struct i2c_silabs_dev_config i2c_silabs_dev_config_##idx = {                  \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                       \
@@ -546,6 +672,8 @@ static DEVICE_API(i2c, i2c_silabs_dev_driver_api) = {
 		.irq_config_func = i2c_silabs_irq_config_##idx,                                    \
 		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                                  \
 		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(idx),                                        \
+		.concat_buf = i2c_concat_buf_##idx,                                                \
+		.concat_buf_size = DT_INST_PROP(idx, zephyr_concat_buf_size),                      \
 	};                                                                                         \
                                                                                                    \
 	static struct i2c_silabs_dev_data i2c_silabs_dev_data_##idx = {                            \

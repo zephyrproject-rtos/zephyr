@@ -7,7 +7,6 @@ common:
     - video
 
 tests:
-
   drivers.video.test_pattern.sw_generator:
     platform_allow:
       - native_sim/native/64
@@ -15,9 +14,13 @@ tests:
       - native_sim/native/64
     extra_args:
       - SNIPPET="video-sw-generator"
-
   drivers.video.test_pattern.mimxrt1170_evk:
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
     extra_args:
       - SHIELD="nxp_btb44_ov5640;rk055hdmipi4ma0"
+  drivers.video.test_pattern.renesas_ceu:
+    platform_allow:
+      - aik_ra8d1/r7fa8d1bhecbd
+    extra_args:
+      - platform:aik_ra8d1/r7fa8d1bhecbd:SHIELD=renesas_aik_ov2640_cam

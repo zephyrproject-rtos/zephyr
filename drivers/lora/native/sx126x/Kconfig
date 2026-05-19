@@ -15,6 +15,15 @@ config LORA_SX126X_NATIVE
 	  This is an experimental driver that does not depend on loramac-node
 	  or lora-basics-modem external modules.
 
+config LORA_SX126X_NATIVE_SLEEP
+	bool "Sleep mode power management"
+	default y
+	depends on LORA_SX126X_NATIVE
+	help
+	  Place the SX126x radio into sleep mode when idle to reduce
+	  power consumption (~600 nA vs ~1.6 mA in standby). Disable
+	  to keep the radio in standby for faster response times.
+
 config LORA_SX126X_NATIVE_STM32WL
 	bool
 	default y

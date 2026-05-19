@@ -14,12 +14,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_ili9xxx, CONFIG_DISPLAY_LOG_LEVEL);
 
-struct ili9xxx_data {
-	uint8_t bytes_per_pixel;
-	enum display_pixel_format pixel_format;
-	enum display_orientation orientation;
-};
-
 #ifdef CONFIG_ILI9XXX_READ
 
 /* We set this LUT directly when reads are enabled,
@@ -316,40 +310,47 @@ ili9xxx_set_pixel_format(const struct device *dev,
 	return 0;
 }
 
+#define ORIENTATION_MASK (ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX | ILI9XXX_MADCTL_MY \
+	| ILI9XXX_MADCTL_ML)
+
 static int ili9xxx_set_orientation(const struct device *dev,
 				   const enum display_orientation orientation)
 {
 	const struct ili9xxx_config *config = dev->config;
 	struct ili9xxx_data *data = dev->data;
-
 	int r;
-	uint8_t tx_data = data->pixel_format == PIXEL_FORMAT_RGB_565X
-			? ILI9XXX_MADCTL_BGR : 0;
-	if (config->quirks->cmd_set == CMD_SET_1) {
-		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-			tx_data |= ILI9XXX_MADCTL_MX;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-			tx_data |= ILI9XXX_MADCTL_MV;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tx_data |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_ML;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX |
-				   ILI9XXX_MADCTL_MY;
-		}
-	} else if (config->quirks->cmd_set == CMD_SET_2) {
-		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
-			/* Do nothing */
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_90) {
-			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MY;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
-			tx_data |= ILI9XXX_MADCTL_MY | ILI9XXX_MADCTL_MX |
-				   ILI9XXX_MADCTL_ML;
-		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_270) {
-			tx_data |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX;
-		}
+
+	/* Clear all orientation-related bits */
+	data->madctl &= ~ORIENTATION_MASK;
+
+	switch (orientation) {
+	case DISPLAY_ORIENTATION_NORMAL:
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_90:
+		/* row/column exchange + right-to-left Column Address order */
+		data->madctl |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MX;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_180:
+		/* right-to-left Column Address Order + bottom-to-top Row Address order */
+		data->madctl |= ILI9XXX_MADCTL_MX | ILI9XXX_MADCTL_MY;
+		break;
+	case DISPLAY_ORIENTATION_ROTATED_270:
+		/* row/column exchange + bottom-to-top Row Address order */
+		data->madctl |= ILI9XXX_MADCTL_MV | ILI9XXX_MADCTL_MY;
+		break;
+	default:
+		return -EINVAL;
 	}
 
-	r = ili9xxx_transmit(dev, ILI9XXX_MADCTL, &tx_data, 1U);
+	if (config->horizontal_mirror) {
+		data->madctl ^= ILI9XXX_MADCTL_MX;
+	}
+
+	if (config->vertical_mirror) {
+		data->madctl ^= ILI9XXX_MADCTL_MY;
+	}
+
+	r = ili9xxx_transmit(dev, ILI9XXX_MADCTL, &data->madctl, 1U);
 	if (r < 0) {
 		return r;
 	}
@@ -386,6 +387,7 @@ static void ili9xxx_get_capabilities(const struct device *dev,
 static int ili9xxx_configure(const struct device *dev)
 {
 	const struct ili9xxx_config *config = dev->config;
+	struct ili9xxx_data *data = dev->data;
 
 	int r;
 	enum display_pixel_format pixel_format;
@@ -408,6 +410,18 @@ static int ili9xxx_configure(const struct device *dev)
 		return r;
 	}
 
+	data->madctl = config->disable_bgr_mode ? 0 : ILI9XXX_MADCTL_BGR;
+
+	if (config->bottom_top_refresh) {
+		/* LCD Refresh bottom to top */
+		data->madctl |= ILI9XXX_MADCTL_ML;
+	}
+
+	if (config->right_left_refresh) {
+		/* LCD Refresh right to left */
+		data->madctl |= ILI9XXX_MADCTL_MH;
+	}
+
 	/* orientation */
 	if (config->rotation == 0U) {
 		orientation = DISPLAY_ORIENTATION_NORMAL;
@@ -420,11 +434,16 @@ static int ili9xxx_configure(const struct device *dev)
 	}
 
 	r = ili9xxx_set_orientation(dev, orientation);
+	LOG_DBG("MADCTL: 0x%02x (BGR:%d, MH:%d, ML:%d)",
+		data->madctl,
+		(data->madctl & ILI9XXX_MADCTL_BGR) ? 1 : 0,
+		(data->madctl & ILI9XXX_MADCTL_MH) ? 1 : 0,
+		(data->madctl & ILI9XXX_MADCTL_ML) ? 1 : 0);
 	if (r < 0) {
 		return r;
 	}
 
-	if (config->inversion) {
+	if (config->bit_inversion) {
 		r = ili9xxx_transmit(dev, ILI9XXX_DINVON, NULL, 0U);
 		if (r < 0) {
 			return r;
@@ -508,67 +527,49 @@ static DEVICE_API(display, ili9xxx_api) = {
 	.set_orientation = ili9xxx_set_orientation,
 };
 
-#ifdef CONFIG_ILI9340
-static const struct ili9xxx_quirks ili9340_quirks = {
-	.cmd_set = CMD_SET_1,
-};
-#endif
-
-#ifdef CONFIG_ILI9341
-static const struct ili9xxx_quirks ili9341_quirks = {
-	.cmd_set = CMD_SET_2,
-};
-#endif
-
-#ifdef CONFIG_ILI9342C
-static const struct ili9xxx_quirks ili9342c_quirks = {
-	.cmd_set = CMD_SET_2,
-};
-#endif
-
-#ifdef CONFIG_ILI9488
-static const struct ili9xxx_quirks ili9488_quirks = {
-	.cmd_set = CMD_SET_1,
-};
-#endif
-
 #define INST_DT_ILI9XXX(n, t) DT_INST(n, ilitek_ili##t)
 
-#define ILI9XXX_INIT(n, t)                                                     \
-	ILI##t##_REGS_INIT(n);                                                 \
-									       \
-	static const struct ili9xxx_config ili9##t##_config_##n = {            \
-		.quirks = &ili##t##_quirks,                                    \
-		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),   \
-		.dbi_config = {                                                \
-			.mode = DT_STRING_UPPER_TOKEN_OR(                      \
-				INST_DT_ILI9XXX(n, t),                         \
-				mipi_mode, MIPI_DBI_MODE_SPI_4WIRE),           \
-			.config = MIPI_DBI_SPI_CONFIG_DT(                      \
-						INST_DT_ILI9XXX(n, t),         \
-						SPI_OP_MODE_MASTER |           \
-						SPI_WORD_SET(8),               \
-						0),                            \
-		},                                                             \
-		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),  \
-		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),          \
-		.x_resolution = ILI##t##_X_RES,                                \
-		.y_resolution = ILI##t##_Y_RES,                                \
-		.inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),\
-		.te_mode = MIPI_DBI_TE_MODE_DT(INST_DT_ILI9XXX(n, t), te_mode),\
-		.regs = &ili##t##_regs_##n,                                    \
-		.regs_init_fn = ili##t##_regs_init,                            \
-	};                                                                     \
-									       \
-	static struct ili9xxx_data ili9##t##_data_##n;                         \
-									       \
-	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init,                  \
-			    NULL, &ili9##t##_data_##n,                         \
-			    &ili9##t##_config_##n, POST_KERNEL,                \
-			    CONFIG_DISPLAY_INIT_PRIORITY, &ili9xxx_api)
+#define ILI9XXX_INIT(n, t)                                                                         \
+	ILI##t##_REGS_INIT(n);                                                                     \
+                                                                                                   \
+	static const struct ili9xxx_config ili9##t##_config_##n = {                                \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(INST_DT_ILI9XXX(n, t))),                       \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				.mode = DT_STRING_UPPER_TOKEN_OR(INST_DT_ILI9XXX(n, t), mipi_mode, \
+								 MIPI_DBI_MODE_SPI_4WIRE),         \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
+					INST_DT_ILI9XXX(n, t),                                     \
+					SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),                  \
+			},                                                                         \
+		.pixel_format = DT_PROP(INST_DT_ILI9XXX(n, t), pixel_format),                      \
+		.rotation = DT_PROP(INST_DT_ILI9XXX(n, t), rotation),                              \
+		.x_resolution = DT_PROP_OR(INST_DT_ILI9XXX(n, t), width, ILI##t##_X_RES),          \
+		.y_resolution = DT_PROP_OR(INST_DT_ILI9XXX(n, t), height, ILI##t##_Y_RES),         \
+		.bit_inversion = DT_PROP(INST_DT_ILI9XXX(n, t), display_inversion),                \
+		.disable_bgr_mode = DT_PROP(INST_DT_ILI9XXX(n, t), red_blue_swap),                 \
+		.horizontal_mirror = DT_PROP(INST_DT_ILI9XXX(n, t), h_mirror),                     \
+		.vertical_mirror = DT_PROP(INST_DT_ILI9XXX(n, t), v_mirror),                       \
+		.bottom_top_refresh = DT_PROP(INST_DT_ILI9XXX(n, t), bottom_top_refresh),          \
+		.right_left_refresh = DT_PROP(INST_DT_ILI9XXX(n, t), right_left_refresh),          \
+		.te_mode = MIPI_DBI_TE_MODE_DT(INST_DT_ILI9XXX(n, t), te_mode),                    \
+		.regs = &ili##t##_regs_##n,                                                        \
+		.regs_init_fn = ili##t##_regs_init,                                                \
+	};                                                                                         \
+                                                                                                   \
+	static struct ili9xxx_data ili9##t##_data_##n;                                             \
+                                                                                                   \
+	DEVICE_DT_DEFINE(INST_DT_ILI9XXX(n, t), ili9xxx_init, NULL, &ili9##t##_data_##n,           \
+			 &ili9##t##_config_##n, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,         \
+			 &ili9xxx_api)
 
 #define DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(t)                                 \
 	LISTIFY(DT_NUM_INST_STATUS_OKAY(ilitek_ili##t), ILI9XXX_INIT, (;), t)
+
+#ifdef CONFIG_ILI9163C
+#include "display_ili9163c.h"
+DT_INST_FOREACH_ILI9XXX_STATUS_OKAY(9163c);
+#endif
 
 #ifdef CONFIG_ILI9340
 #include "display_ili9340.h"

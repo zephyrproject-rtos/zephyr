@@ -269,12 +269,13 @@ controllers, and properties related to them.
 
 .. _devicetree-flash-api:
 
-Fixed flash partitions
-======================
+Fixed and mapped flash partitions
+=================================
 
 These conveniences may be used for the special-purpose ``fixed-partitions``
-compatible used to encode information about flash memory partitions in the
-device tree. See See :dtcompatible:`fixed-partition` for more details.
+and ``zephyr,mapped-partition`` compatibles used to encode information about
+flash memory partitions in the device tree. See :dtcompatible:`fixed-partitions`
+and :dtcompatible:`zephyr,mapped-partition` for more details.
 
 .. doxygengroup:: devicetree-fixed-partition
 
@@ -441,8 +442,6 @@ device.
      - Selects the CRC device used as an accelerator by the CRC subsystem
    * - zephyr,display
      - Sets the default display controller
-   * - zephyr,keyboard-scan
-     - Sets the default keyboard scan controller
    * - zephyr,dtcm
      - Data Tightly Coupled Memory node on some Arm SoCs
    * - zephyr,entropy
@@ -474,6 +473,9 @@ device.
        If defined, the UART log backend would output to the devices listed in this node.
    * - zephyr,ocm
      - On-chip memory node on Xilinx Zynq-7000 and ZynqMP SoCs
+   * - zephyr,openthread-counter
+     - Selects the counter device used by the OpenThread platform for microsecond alarm
+       timers when :kconfig:option:`CONFIG_OPENTHREAD_ALARM_COUNTER` is enabled.
    * - zephyr,osdp-uart
      - Sets UART device used by OSDP subsystem
    * - zephyr,ot-uart
@@ -482,6 +484,9 @@ device.
      - The node corresponding to the PCIe Controller
    * - zephyr,ppp-uart
      - Sets UART device used by PPP
+   * - zephyr,rtc
+     - Sets the default RTC device (used for example by the :ref:`SNTP library <sntp_interface>` to
+       set the system time when :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC` is enabled)
    * - zephyr,settings-partition
      - Fixed partition node. If defined this selects the partition used
        by the NVS and FCB settings backends.
@@ -490,6 +495,13 @@ device.
    * - zephyr,sram
      - A node whose ``reg`` sets the base address and size of SRAM memory
        available to the Zephyr image, used during linking
+   * - zephyr,system-timer
+     - Selects the hardware timer instance used as the Zephyr system timer.
+       Used when devicetree selects which timer instance provides that
+       singleton system function.
+   * - zephyr,system-timer-companion
+     - Selects the device used to keep time while the primary system timer is
+       inactive in low-power states
    * - zephyr,tracing-uart
      - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr

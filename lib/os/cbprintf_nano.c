@@ -81,7 +81,7 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fmt,
 	char *prefix, *data;
 	int min_width, precision, data_len;
 	char padding_mode, length_mod, special;
-	cbprintf_cb_local out = __out;
+	cbprintf_cb out = __out;
 
 	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
 			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;

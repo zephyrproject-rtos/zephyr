@@ -392,13 +392,10 @@ static int mtu_exchange(struct bt_conn *conn)
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
 	struct bt_conn_info conn_info;
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (conn_err) {
-		printk("%s: Failed to connect to %s (0x%02x)\n", __func__, addr,
+		printk("%s: Failed to connect to %s (0x%02x)\n", __func__, bt_conn_dst_str(conn),
 		       conn_err);
 		return;
 	}
@@ -409,7 +406,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 		return;
 	}
 
-	printk("%s: %s role %u\n", __func__, addr, conn_info.role);
+	printk("%s: %s role %u\n", __func__, bt_conn_dst_str(conn), conn_info.role);
 
 	conn_connected = bt_conn_ref(conn);
 
@@ -444,10 +441,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_conn_info conn_info;
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	err = bt_conn_get_info(conn, &conn_info);
 	if (err) {
@@ -455,8 +449,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	printk("%s: %s role %u, reason 0x%02x %s\n", __func__, addr, conn_info.role,
-	       reason, bt_hci_err_to_str(reason));
+	printk("%s: %s role %u, reason 0x%02x %s\n", __func__, bt_conn_dst_str(conn),
+	       conn_info.role, reason, bt_hci_err_to_str(reason));
 
 	conn_connected = NULL;
 
@@ -495,11 +489,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 static void le_phy_updated(struct bt_conn *conn,
 			   struct bt_conn_le_phy_info *param)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("LE PHY Updated: %s Tx 0x%x, Rx 0x%x\n", addr, param->tx_phy,
+	printk("LE PHY Updated: %s Tx 0x%x, Rx 0x%x\n", bt_conn_dst_str(conn), param->tx_phy,
 	       param->rx_phy);
 }
 #endif /* CONFIG_BT_USER_PHY_UPDATE */
@@ -508,12 +498,8 @@ static void le_phy_updated(struct bt_conn *conn,
 static void le_data_len_updated(struct bt_conn *conn,
 				struct bt_conn_le_data_len_info *info)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	printk("Data length updated: %s max tx %u (%u us) max rx %u (%u us)\n",
-	       addr, info->tx_max_len, info->tx_max_time, info->rx_max_len,
+	       bt_conn_dst_str(conn), info->tx_max_len, info->tx_max_time, info->rx_max_len,
 	       info->rx_max_time);
 }
 #endif /* CONFIG_BT_USER_DATA_LEN_UPDATE */

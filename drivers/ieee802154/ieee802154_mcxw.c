@@ -70,7 +70,7 @@ static uint16_t rf_compute_csl_phase(uint32_t aTimeUs);
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
 /* Hardware parameters partition and offsets */
-#define HW_PARAMS_PARTITION_ID FIXED_PARTITION_ID(hw_params_partition)
+#define HW_PARAMS_PARTITION_ID PARTITION_ID(hw_params_partition)
 #define MAC_ADDRESS_OFFSET     0x00
 #define MAC_ADDRESS_LEN        8
 
@@ -81,7 +81,7 @@ static uint16_t rf_compute_csl_phase(uint32_t aTimeUs);
 
 static uint8_t g_eui64[MAC_ADDRESS_LEN];
 
-static volatile uint32_t rx_on_when_idle = RX_ON_IDLE_START;
+static volatile uint32_t rx_on_when_idle = RX_ON_IDLE_STOP;
 
 /* keep RX open shortly after data poll when FP=1 and skip rf_abort while waiting for ACK */
 static uint64_t waiting_ack_until_us;
@@ -98,9 +98,26 @@ static uint32_t rf_adjust_tstamp_from_app(uint32_t time);
 
 static void rf_rx_on_idle(uint32_t newValue);
 static void rf_set_rx_time_poll(uint32_t time_poll);
+static void set_rx_state(void);
 
 static uint8_t ot_phy_ctx = (uint8_t)(-1);
 static struct mcxw_context mcxw_ctx;
+
+#if !DT_INST_NODE_HAS_PROP(0, counter)
+#error "nxp,mcxw-ieee802154 requires a 'counter' phandle property"
+#endif
+
+#define MCXW_TIMESTAMP_COUNTER_NODE DT_INST_PHANDLE(0, counter)
+
+#define MCXW_LPTMR_IS_SYSTEM_TIMER(node_id) \
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_system_timer), \
+		(DT_SAME_NODE(node_id, DT_CHOSEN(zephyr_system_timer))), \
+		(0))
+
+BUILD_ASSERT(DT_NODE_HAS_STATUS(MCXW_TIMESTAMP_COUNTER_NODE, okay),
+	"nxp,mcxw-ieee802154 counter must reference an enabled device");
+BUILD_ASSERT(!MCXW_LPTMR_IS_SYSTEM_TIMER(MCXW_TIMESTAMP_COUNTER_NODE),
+	"nxp,mcxw-ieee802154 counter must not reference zephyr,system-timer");
 
 static net_time_t mcxw_get_time_ns(const struct device *dev);
 static uint64_t mcxw_get_time_us(void);
@@ -350,7 +367,9 @@ static int mcxw_start(const struct device *dev)
 {
 	struct mcxw_context *mcxw_radio = dev->data;
 
-	__ASSERT(mcxw_radio->state == RADIO_STATE_DISABLED, "%s", __func__);
+	if (mcxw_radio->state == RADIO_STATE_RECEIVE) {
+		return -EALREADY;
+	}
 
 	mcxw_radio->state = RADIO_STATE_SLEEP;
 
@@ -365,7 +384,9 @@ static int mcxw_stop(const struct device *dev)
 {
 	struct mcxw_context *mcxw_radio = dev->data;
 
-	__ASSERT(mcxw_radio->state != RADIO_STATE_DISABLED, "%s", __func__);
+	if (mcxw_radio->state == RADIO_STATE_DISABLED) {
+		return -EALREADY;
+	}
 
 	stop_csl_receiver();
 
@@ -1202,6 +1223,7 @@ static uint32_t rf_adjust_tstamp_from_app(uint32_t time_us)
 phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 {
 	pdDataToMacMessage_t *data_msg = (pdDataToMacMessage_t *)msg;
+	bool free_msg = true;
 
 	__ASSERT_NO_MSG(msg != NULL);
 
@@ -1219,7 +1241,7 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 
 		mcxw_ctx.tx_frame.length = 0;
 		mcxw_ctx.tx_status = 0;
-		mcxw_ctx.state = RADIO_STATE_RECEIVE;
+		set_rx_state();
 
 		mcxw_ctx.rx_ack_frame.channel = mcxw_ctx.channel;
 		mcxw_ctx.rx_ack_frame.length = data_msg->msgData.dataCnf.ackLength;
@@ -1265,6 +1287,9 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 		/* add the rx message in queue */
 		if (k_msgq_put(&mcxw_ctx.rx_msgq, &rx_frame, K_NO_WAIT) < 0) {
 			LOG_ERR("Failed to push RX data to message queue");
+		} else {
+			/* message will be freed by the rx thread, k_msgq_put does a shallow copy */
+			free_msg = false;
 		}
 		break;
 
@@ -1272,8 +1297,10 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 		break;
 	}
 
-	/* The message has been allocated by the Phy, we have to free it */
-	k_free(msg);
+	/* The message has been allocated by the Phy, free it if needed */
+	if (free_msg) {
+		k_free(msg);
+	}
 
 	/* Always stop, the CSL restarts as needed */
 	stop_csl_receiver();
@@ -1298,7 +1325,7 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 		} else {
 			mcxw_ctx.tx_status = 0;
 		}
-		mcxw_ctx.state = RADIO_STATE_RECEIVE;
+		set_rx_state();
 
 		k_sem_give(&mcxw_ctx.cca_wait);
 		break;
@@ -1325,7 +1352,7 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 			}
 #endif
 
-			mcxw_ctx.state = RADIO_STATE_RECEIVE;
+			set_rx_state();
 			/* No ack */
 			mcxw_ctx.tx_status = ENOMSG;
 
@@ -1348,7 +1375,7 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 		}
 #endif
 
-		mcxw_ctx.state = RADIO_STATE_RECEIVE;
+		set_rx_state();
 		mcxw_ctx.tx_status = EIO;
 
 		k_sem_give(&mcxw_ctx.tx_wait);
@@ -1453,6 +1480,7 @@ static int mcxw_configure(const struct device *dev, enum ieee802154_config_type 
 		} else {
 			rf_rx_on_idle(RX_ON_IDLE_STOP);
 		}
+		set_rx_state();
 		break;
 
 	case IEEE802154_CONFIG_EVENT_HANDLER:
@@ -1530,8 +1558,11 @@ static int mcxw_init(const struct device *dev)
 	/* Make the psdu point to the space after macToPdDataMessage_t in the data buffer */
 	mcxw_radio->tx_frame.psdu = mcxw_radio->tx_data + sizeof(macToPdDataMessage_t);
 
-	/* Get and start LPTRM counter */
-	mcxw_radio->counter = DEVICE_DT_GET(DT_NODELABEL(lptmr0));
+	/* Use the board-provided dedicated counter for radio timestamps. */
+	mcxw_radio->counter = DEVICE_DT_GET(MCXW_TIMESTAMP_COUNTER_NODE);
+	if (!device_is_ready(mcxw_radio->counter)) {
+		return -ENODEV;
+	}
 
 	/* Start counter */
 	if (counter_start(mcxw_radio->counter)) {
@@ -1598,6 +1629,15 @@ static void rf_set_rx_time_poll(uint32_t time_poll)
 	msg.msgData.setReq.PibAttributeValue = time_poll;
 
 	MAC_PLME_SapHandler(&msg, ot_phy_ctx);
+}
+
+static void set_rx_state(void)
+{
+	if (rx_on_when_idle) {
+		mcxw_ctx.state = RADIO_STATE_RECEIVE;
+	} else {
+		mcxw_ctx.state = RADIO_STATE_DISABLED;
+	}
 }
 
 static const struct ieee802154_radio_api mcxw71_radio_api = {

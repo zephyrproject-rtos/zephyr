@@ -498,6 +498,8 @@ struct bt_l2cap_br_window {
 	uint8_t sar;
 	/** srej flag */
 	bool srej;
+	/** retransmit flag */
+	bool retransmit;
 	/* Save PDU state */
 	struct net_buf_simple_state sdu_state;
 	/** @internal Holds the sending buffer. */
@@ -672,6 +674,11 @@ struct bt_l2cap_chan_ops {
 	 *  must set this callback.
 	 *  If the application has not set a callback the L2CAP SDU MTU will be
 	 *  truncated to @ref BT_L2CAP_SDU_RX_MTU.
+	 *
+	 *  @note The stack stores the number of received segments in the first
+	 *        two bytes of the buffer user data. The buffer returned by this
+	 *        callback must have a user data size of at least
+	 *        @c sizeof(uint16_t).
 	 *
 	 *  @param chan The channel requesting a buffer.
 	 *

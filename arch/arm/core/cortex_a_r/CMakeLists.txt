@@ -14,7 +14,7 @@ zephyr_library_sources(
   irq_manage.c
   prep_c.c
   thread.c
-  cpu_idle.S
+  cpu_idle.c
   smp.c
   )
 

@@ -2,28 +2,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-menu "Universally Unique Identifier (UUID)"
-
-config UUID
-	bool "UUID support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+menuconfig UUID
+	bool "Universally Unique Identifier (UUID) library"
 	help
 	  Enable use of the UUID library.
 
+if UUID
+
 config UUID_V4
-	bool "UUID version 4 generation support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	depends on UUID
+	bool "UUID version 4 generation support"
 	depends on ENTROPY_GENERATOR
 	help
 	  Enable generation of UUID v4.
 
 config UUID_V5
-	bool "UUID version 5 generation support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	depends on UUID
-	depends on MBEDTLS
-	depends on MBEDTLS_PSA_CRYPTO_C
+	bool "UUID version 5 generation support"
 	depends on PSA_WANT_ALG_SHA_1
 	# When TF-M is enabled, Mbed TLS's MD module (which is used to generate
 	# v5 UUIDs) will dispacth hash operations to TF-M. Unfortunately TF-M
@@ -34,12 +27,10 @@ config UUID_V5
 	  Enable generation of UUID v5.
 
 config UUID_BASE64
-	bool "UUID Base64 support [EXPERIMENTAL]"
-	select EXPERIMENTAL
-	depends on UUID
+	bool "UUID Base64 support"
 	depends on BASE64
 	help
 	  Enable conversion functions to write UUIDs in base 64
 	  formats.
 
-endmenu
+endif

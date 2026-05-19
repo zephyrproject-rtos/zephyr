@@ -130,6 +130,9 @@
 #define ID_AA64PFR0_SEL2_SHIFT	(36)
 #define ID_AA64PFR0_SEL2_MASK	(0xf)
 
+#define ID_AA64ISAR2_WFXT_SHIFT	(0)
+#define ID_AA64ISAR2_WFXT_MASK	(0xf)
+
 /*
  * TODO: ACTLR is of class implementation defined. All core implementations
  * in armv8a have the same implementation so far w.r.t few controls.

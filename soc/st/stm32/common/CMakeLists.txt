@@ -14,19 +14,19 @@ if(NOT CONFIG_DEBUG AND CONFIG_PM)
   zephyr_sources_ifdef(CONFIG_DT_HAS_SWJ_CONNECTOR_ENABLED pm_debug_swj.c)
 endif()
 
-if(CONFIG_STM32_WKUP_PINS)
-  zephyr_sources(stm32_wkup_pins.c)
-endif()
-
-if(CONFIG_STM32_IOCELL)
-  zephyr_sources(stm32_iocell.c)
-endif()
+zephyr_sources_ifdef(CONFIG_STM32_WKUP_PINS stm32_wkup_pins.c)
+zephyr_sources_ifdef(CONFIG_STM32_IOCELL stm32_iocell.c)
+zephyr_sources_ifdef(CONFIG_STM32_XSPIM stm32_xspim.c)
 
 if(CONFIG_PM AND CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP)
   message(WARNING "\
 SoC Power Management (CONFIG_PM) enabled but the DBGMCU is still enabled \
 (CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP). The SoC will use more power than expected \
 in STOP modes due to internal oscillators that remain active.")
+endif()
+
+if(CONFIG_PINCTRL_STM32 OR CONFIG_GPIO_STM32)
+  zephyr_sources(gpioport_mgr.c)
 endif()
 
 zephyr_sources_ifdef(CONFIG_DCACHE stm32_cache.c)

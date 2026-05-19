@@ -36,6 +36,7 @@ try:
 except ImportError:
     from yaml import SafeLoader
 
+# NOTE: keep in sync with doc/develop/modules.rst
 METADATA_SCHEMA = '''
 ## A JSON Schema (Draft 2020-12) for basic validation of the structure of a
 ## metadata YAML file.
@@ -116,7 +117,11 @@ properties:
         click-through:
           type: boolean
         url:
-          type: string
+          anyOf:
+            - type: string
+            - type: array
+              items:
+                type: string
         description:
           type: string
         doc-url:
@@ -733,7 +738,7 @@ def west_projects(manifest=None):
                         if manifest.is_active(p)]
         else:
             projects = manifest.get_projects([])
-        manifest_path = manifest.path
+        manifest_path = manifest.abspath
         return {'manifest_path': manifest_path, 'projects': projects}
     except (ManifestImportFailed, MalformedManifest,
             ManifestVersionError, MalformedConfig) as e:

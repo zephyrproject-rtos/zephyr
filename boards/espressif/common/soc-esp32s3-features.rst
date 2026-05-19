@@ -72,7 +72,7 @@ and/or exchanging data over OpenAMP framework. See :zephyr:code-sample-category:
 
 .. note::
 
-   ** AMP and serial output support **
+   **AMP and serial output support**
 
    In the current Zephyr ESP32 implementation, access to Zephyr-managed serial
    drivers (such as ``printk()``, logging, or the console UART) is not yet

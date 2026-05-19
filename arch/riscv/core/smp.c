@@ -75,6 +75,9 @@ void arch_secondary_cpu_init(int hartid)
 #ifdef CONFIG_RISCV_PMP
 	z_riscv_pmp_init();
 #endif
+#ifdef CONFIG_CUSTOM_STACK_GUARD
+	z_riscv_custom_stack_guard_init();
+#endif /* CONFIG_CUSTOM_STACK_GUARD */
 #ifdef CONFIG_SMP
 	irq_enable(RISCV_IRQ_MSOFT);
 #endif /* CONFIG_SMP */

@@ -36,13 +36,10 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
 	memcpy(&adv_addr, addr, sizeof(adv_addr));
 
-	bt_addr_le_to_str(&adv_addr, addr_str, sizeof(addr_str));
 	LOG_DBG("Device found: %s (RSSI %d), type %u, AD data len %u",
-	       addr_str, rssi, type, ad->len);
+	       bt_addr_le_str(&adv_addr), rssi, type, ad->len);
 	atomic_set(&flag_adv_report_received, true);
 }
 

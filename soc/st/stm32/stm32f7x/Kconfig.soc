@@ -49,6 +49,10 @@ config SOC_STM32F769XX
 	bool
 	select SOC_SERIES_STM32F7X
 
+config SOC_STM32F777XX
+	bool
+	select SOC_SERIES_STM32F7X
+
 config SOC
 	default "stm32f722xx" if SOC_STM32F722XX
 	default "stm32f723xx" if SOC_STM32F723XX
@@ -59,3 +63,4 @@ config SOC
 	default "stm32f765xx" if SOC_STM32F765XX
 	default "stm32f767xx" if SOC_STM32F767XX
 	default "stm32f769xx" if SOC_STM32F769XX
+	default "stm32f777xx" if SOC_STM32F777XX

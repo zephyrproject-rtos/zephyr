@@ -7,6 +7,9 @@
 #include <kernel_internal.h>
 #include <zephyr/arch/cache.h>
 #include <zephyr/sys/barrier.h>
+#if defined(CONFIG_GIC_V3)
+#include <zephyr/drivers/interrupt_controller/gic.h>
+#endif
 #include "boot.h"
 
 void z_arm64_el2_init(void);
@@ -84,6 +87,7 @@ void z_arm64_el3_init(void)
 	if (is_sve_implemented()) {
 		reg |= CPTR_EZ_BIT;		/* Enable SVE access for lower ELs */
 		write_cptr_el3(reg);
+		barrier_isync_fence_full();
 
 		/* Initialize ZCR_EL3 for full SVE vector length */
 		/* ZCR_EL3.LEN = 0x1ff means full hardware vector length */
@@ -105,7 +109,6 @@ void z_arm64_el3_init(void)
 #endif
 	reg |= (SCR_RES1 |		/* RES1 */
 		SCR_RW_BIT |		/* EL2 execution state is AArch64 */
-		SCR_ST_BIT |		/* Do not trap EL1 accesses to timer */
 		SCR_HCE_BIT |		/* Do not trap HVC */
 		SCR_SMD_BIT);		/* Do not trap SMC */
 #ifdef CONFIG_ARM_PAC
@@ -113,6 +116,12 @@ void z_arm64_el3_init(void)
 		SCR_API_BIT);		/* Do not trap pointer authentication instructions */
 #endif
 	write_scr_el3(reg);
+	/*
+	 * With SCR_ST_BIT == 0, a CNTPS interrupt is taken to Secure EL1 when
+	 * CNTPS_CTL_EL1.ENABLE = 1. Program CVAL to the maximum 64-bit value
+	 * first to prevent an immediate interrupt on enable.
+	 */
+	write_cntps_cval_el1(~(uint64_t)0);
 
 #if defined(CONFIG_GIC_V3)
 	reg = read_sysreg(ICC_SRE_EL3);
@@ -121,6 +130,10 @@ void z_arm64_el3_init(void)
 		ICC_SRE_ELx_SRE_BIT |	/* System register interface is used */
 		ICC_SRE_ELx_EN_BIT);	/* Enables lower Exception level access to ICC_SRE_EL1 */
 	write_sysreg(reg, ICC_SRE_EL3);
+#if defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
+	/* Must be set while in Secure mode */
+	sys_write32(sys_read32(GICD_CTLR) | GICD_CTLR_DS, GICD_CTLR);
+#endif
 #endif
 
 	z_arm64_el3_plat_init();
@@ -197,9 +210,17 @@ void z_arm64_el2_init(void)
 #ifdef CONFIG_ARM64_SVE
 	/* Enable SVE for EL1 and EL0 if SVE is implemented */
 	if (is_sve_implemented()) {
-		reg &= ~CPTR_EL2_ZEN_MASK;
-		reg |= (CPTR_EL2_ZEN_EL1_EN | CPTR_EL2_ZEN_EL0_EN);
+		/*
+		 * In non-VHE CPTR_EL2, SVE trapping is controlled by the TZ
+		 * bit (bit 8) which was already cleared above.  Bits [17:16]
+		 * (ZEN) are RES0 in non-VHE mode and must not be set.
+		 *
+		 * Match the Linux kernel sequence (el2_setup.h): write
+		 * CPTR_EL2 with TZ=0, ISB, then set ZCR_EL2 for full
+		 * vector length.
+		 */
 		write_cptr_el2(reg);
+		barrier_isync_fence_full();
 
 		/* Initialize ZCR_EL2 for full SVE vector length */
 		/* ZCR_EL2.LEN = 0x1ff means full hardware vector length */
@@ -254,6 +275,7 @@ void z_arm64_el1_init(void)
 	if (is_sve_implemented()) {
 		reg |= CPACR_EL1_ZEN;	/* Do not trap SVE initially */
 		write_cpacr_el1(reg);
+		barrier_isync_fence_full();
 
 		/* Initialize ZCR_EL1 SVE vector length */
 		write_zcr_el1(CONFIG_ARM64_SVE_VL_MAX/16 - 1);
@@ -289,10 +311,6 @@ void z_arm64_el1_init(void)
 
 	write_cntv_cval_el0(~(uint64_t)0);
 	write_cntp_cval_el0(~(uint64_t)0);
-	/*
-	 * Enable secure cntps if/when we use the corresponding timer.
-	 * write_cntps_cval_el1(~(uint64_t)0);
-	 */
 
 	z_arm64_el1_plat_init();
 

@@ -31,6 +31,16 @@
 			status = "okay";
 		};
 
+		test_gpio_mmio_latch: gpio@feed0000 {
+			compatible = "gpio-mmio-latch";
+			gpio-controller;
+			reg = <0xfeed0000 0x4>;
+			#gpio-cells = <0x2>;
+			ngpios = <8>;
+			initial-output = <0x5a>;
+			status = "okay";
+		};
+
 		test_i2c: i2c@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -260,6 +270,15 @@
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
+			test_i2c_pi4ioe5v6408: pi4ioe5v6408@43 {
+				compatible = "diodes,pi4ioe5v6408";
+				reg = <0x43>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
+			};
+
 			test_i2c_axp192: axp192@d {
 				compatible = "x-powers,axp192";
 				reg = <0x0d>;
@@ -460,6 +479,17 @@
 					ngpios = <5>;
 				};
 			};
+
+			test_i2c_npm1012: pmic@1f {
+				reg = <0x1f>;
+
+				npm1012_gpio: gpio-controller {
+					compatible = "nordic,npm10xx-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <3>;
+				};
+			};
 		};
 
 		nct3807_alert_1 {
@@ -599,9 +629,9 @@
 				ngpios = <8>;
 				crc-en;
 				spi-addr = <0>;
-				ow-on-en = <0 0 0 0>;
-				ow-off-en = <0 0 0 0>;
-				sh-vdd-en = <0 0 0 0>;
+				ow-on-en = <0 0 0 0 0 0 0 0>;
+				ow-off-en = <0 0 0 0 0 0 0 0>;
+				sh-vdd-en = <0 0 0 0 0 0 0 0>;
 				drdy-gpios = <&test_gpio 0 0>;
 				fault-gpios = <&test_gpio 0 0>;
 				sync-gpios = <&test_gpio 0 0>;

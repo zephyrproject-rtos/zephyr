@@ -17,7 +17,9 @@
 /* ADC node from the devicetree. */
 #define SAMPLE_ADC_NODE DT_ALIAS(adc0)
 
-#define SAMPLE_DT_SPEC_AND_COMMA(node_id, prop, idx) ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+#define SAMPLE_DT_SPEC_AND_COMMA(node_id, prop, idx) \
+	COND_CODE_1(DT_PHA_HAS_CELL_AT_IDX(node_id, prop, idx, input), \
+		    (ADC_DT_SPEC_GET_BY_IDX(node_id, idx),), ())
 
 /* Data of ADC io-channels specified in devicetree. */
 static const struct adc_dt_spec adc_channels[] = {
@@ -101,28 +103,30 @@ static int print_adc_stream(const struct device *adc, struct rtio_iodev *local_i
 			return rc;
 		}
 
-		/* Frame iterator values when data comes from a FIFO */
-		uint32_t adc_fit = 0;
-		struct adc_data adc_data = {0};
+		for (int channel = 0; channel < adc_channels_count; channel++) {
+			/* Frame iterator values when data comes from a FIFO */
+			uint32_t adc_fit = 0;
+			struct adc_data adc_data = {0};
 
-		/* Number of accelerometer data frames */
-		uint16_t frame_count;
+			/* Number of ADC data frames */
+			uint16_t frame_count;
 
-		rc = decoder->get_frame_count(buf, 0, &frame_count);
+			rc = decoder->get_frame_count(buf, channel, &frame_count);
 
-		if (rc != 0) {
-			printk("get_frame_count failed %d\n", rc);
-			return rc;
-		}
+			if (rc != 0) {
+				printk("get_frame_count failed %d\n", rc);
+				return rc;
+			}
 
-		/* Decode all available accelerometer sample frames */
-		for (int i = 0; i < frame_count; i++) {
-			decoder->decode(buf, 0, &adc_fit, 1, &adc_data);
-
-			printk("ADC data for %s (%" PRIq(6) ") %lluns\n", adc->name,
-			PRIq_arg(adc_data.readings[0].value, 6, adc_data.shift),
-			(adc_data.header.base_timestamp_ns
-			+ adc_data.readings[0].timestamp_delta));
+			/* Decode all available ADC sample frames */
+			for (int i = 0; i < frame_count; i++) {
+				decoder->decode(buf, channel, &adc_fit, 1, &adc_data);
+				printk("ADC data for %s channel %d (%" PRIq(6) ") %lluns\n",
+				adc->name, channel,
+				PRIq_arg(adc_data.readings[0].value, 6, adc_data.shift),
+				(adc_data.header.base_timestamp_ns
+				+ adc_data.readings[0].timestamp_delta));
+			}
 		}
 
 		rtio_release_buffer(&adc_ctx, buf, buf_len);
@@ -144,6 +148,9 @@ int main(void)
 	if (ret < 0) {
 		printk("Failed to initialize ADC sequence: %d\n", ret);
 		return 0;
+	}
+	for (int i = 1; i < adc_channels_count; i++) {
+		sequence.channels |= BIT(adc_channels[i].channel_id);
 	}
 
 	print_adc_stream(adc_channels[0].dev, &iodev);

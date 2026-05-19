@@ -1,0 +1,8 @@
+board:
+  name: stm32h5f5j_dk
+  full_name: STM32H5F5J-DK Discovery
+  vendor: st
+  socs:
+    - name: stm32h5f5xx
+      variants:
+        - name: ext_flash_app

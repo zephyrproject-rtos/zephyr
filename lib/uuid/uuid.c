@@ -134,6 +134,19 @@ exit:
 }
 #endif
 
+int uuid_cmp(const struct uuid *a, const struct uuid *b)
+{
+	return memcmp(a->val, b->val, UUID_SIZE);
+}
+
+bool uuid_is_nil(const struct uuid *data)
+{
+	return UNALIGNED_GET((uint32_t *)data->val) == 0 &&
+	       UNALIGNED_GET((uint32_t *)data->val + 1) == 0 &&
+	       UNALIGNED_GET((uint32_t *)data->val + 2) == 0 &&
+	       UNALIGNED_GET((uint32_t *)data->val + 3) == 0;
+}
+
 int uuid_copy(const struct uuid *data, struct uuid *out)
 {
 	if (out == NULL) {

@@ -1,0 +1,5 @@
+# Copyright (c) 2025 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_RASPBERRY_PI_CAMERA_MODULE_2
+	def_bool $(shields_list_contains,raspberry_pi_camera_module_2)

@@ -58,8 +58,14 @@ def read_segments(filename):
     elffile = ELFFile(open(filename, 'rb'))  # noqa: SIM115
     segments = list()
     for segment_idx in range(elffile.num_segments()):
-        segments.insert(segment_idx, dict())
-        segments[segment_idx]['segment'] = elffile.get_segment(segment_idx)
+        segment = dict()
+        segment['segment'] = elffile.get_segment(segment_idx)
+
+        # PT_GNU_STACK segment has no loadable details (i.e. zero LMA/VMA and size), so skip it.
+        if segment['segment'].header.p_type == 'PT_GNU_STACK':
+            continue
+
+        segments.append(segment)
     return segments
 
 

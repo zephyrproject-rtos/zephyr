@@ -62,6 +62,11 @@ config AMBIQ_HAL_USE_I2C
 	help
 	  Use the I2C driver from Ambiq HAL
 
+config AMBIQ_HAL_USE_IOS_I2C
+	bool
+	help
+	  Use the I2C Target driver from Ambiq HAL
+
 config AMBIQ_HAL_USE_SPIC
 	bool
 	help

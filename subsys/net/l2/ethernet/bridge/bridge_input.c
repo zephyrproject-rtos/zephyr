@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(net_eth_bridge_input, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 
 #include <zephyr/net/ethernet_bridge.h>
+#include <zephyr/net/net_log.h>
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
 #include <zephyr/net/ethernet_bridge_fdb.h>
@@ -151,6 +152,11 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 	if (is_link_local_addr(dst_addr)) {
 		NET_DBG("DROP: lladdr");
 		return NET_DROP;
+	}
+
+	/* gPTP frame should be handled by original interface via gPTP bridge stack */
+	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
+		return NET_CONTINUE;
 	}
 
 	/* Handle broadcast and multicast */

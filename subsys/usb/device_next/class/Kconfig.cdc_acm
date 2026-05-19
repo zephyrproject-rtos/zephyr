@@ -37,6 +37,16 @@ config USBD_CDC_ACM_BUF_POOL
 	  ACM instances and the size of the bulk endpoints. When disabled, the
 	  implementation uses the UDC driver's pool.
 
+config USBD_CDC_ACM_BUF_POOL_SIZE
+	int "CDC ACM buffer pool size"
+	depends on USBD_CDC_ACM_BUF_POOL
+	range 512 $(UINT16_MAX)
+	default 512
+	help
+	  Size of each buffer in the CDC ACM buffer pool. This should
+	  be large enough to accommodate the maximum packet size for
+	  the endpoints.
+
 module = USBD_CDC_ACM
 module-str = usbd cdc_acm
 default-count = 1

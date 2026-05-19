@@ -92,9 +92,10 @@
 
 &flash0 {
 	reg = <0x10000000 DT_SIZE_M(16)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(16)>;
 
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -103,6 +104,7 @@
 		 * table at a much larger alignment offset.
 		 */
 		image_def: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image_def";
 			reg = <0x00000000 0x100>;
 			read-only;
@@ -114,6 +116,7 @@
 		 * image definition.
 		 */
 		code_partition: partition@100 {
+			compatible = "zephyr,mapped-partition";
 			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(16) - 0x100)>;
 			read-only;

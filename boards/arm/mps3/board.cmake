@@ -20,7 +20,6 @@ if(CONFIG_BOARD_MPS3_CORSTONE300_AN547)
   set(QEMU_FLAGS_${ARCH}
     -cpu ${QEMU_CPU_TYPE_${ARCH}}
     -machine mps3-an547
-    -nographic
     -vga none
     )
 elseif(CONFIG_BOARD_MPS3_CORSTONE300_FVP OR CONFIG_BOARD_MPS3_CORSTONE300_FVP_NS)
@@ -54,7 +53,7 @@ elseif(CONFIG_BOARD_MPS3_CORSTONE310_FVP OR CONFIG_BOARD_MPS3_CORSTONE310_FVP_NS
   endif()
 endif()
 
-board_set_debugger_ifnset(qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)
 
 if(CONFIG_BUILD_WITH_TFM)
   # Override the binary used by qemu, to use the combined

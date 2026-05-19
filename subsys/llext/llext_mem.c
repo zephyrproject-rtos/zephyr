@@ -36,6 +36,9 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 
 		switch (mem_idx) {
 		case LLEXT_MEM_TEXT:
+#ifdef CONFIG_LLEXT_VENEERS
+		case LLEXT_MEM_VENEER:
+#endif
 			ext->mem_parts[mem_idx].attr = K_MEM_PARTITION_P_RX_U_RX;
 			break;
 		case LLEXT_MEM_DATA:
@@ -136,7 +139,11 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 						mem_idx, ext->mem[mem_idx], (size_t)region_align);
 				}
 			}
-		} else if (ldr_parm->pre_located) {
+		} else if (ldr_parm->pre_located
+#ifdef CONFIG_LLEXT_VENEERS
+		   && mem_idx != LLEXT_MEM_VENEER
+#endif
+		   ) {
 			/*
 			 * In pre-located files all regions, including BSS,
 			 * are placed by the user with a linker script. No
@@ -148,7 +155,11 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 		}
 	}
 
-	if (ldr_parm->pre_located) {
+	if (ldr_parm->pre_located
+#ifdef CONFIG_LLEXT_VENEERS
+	    && mem_idx != LLEXT_MEM_VENEER
+#endif
+	    ) {
 		/*
 		 * The ELF file is supposed to be pre-located, but some
 		 * regions are not accessible or not in the correct place.
@@ -285,6 +296,9 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 		}
 		switch (mem_idx) {
 		case LLEXT_MEM_TEXT:
+#ifdef CONFIG_LLEXT_VENEERS
+		case LLEXT_MEM_VENEER:
+#endif
 			sys_cache_instr_invd_range(addr, size);
 			flags = K_MEM_PERM_EXEC;
 			break;
@@ -311,7 +325,11 @@ void llext_free_regions(struct llext *ext)
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
 #ifdef CONFIG_MMU
 		if (ext->mmu_permissions_set && ext->mem_size[i] != 0 &&
-		    (i == LLEXT_MEM_TEXT || i == LLEXT_MEM_RODATA)) {
+		    (i == LLEXT_MEM_TEXT || i == LLEXT_MEM_RODATA
+#ifdef CONFIG_LLEXT_VENEERS
+		     || i == LLEXT_MEM_VENEER
+#endif
+		     )) {
 			/* restore default RAM permissions of changed regions */
 			k_mem_update_flags(ext->mem[i],
 					   ROUND_UP(ext->mem_size[i], LLEXT_PAGE_SIZE),
@@ -321,7 +339,11 @@ void llext_free_regions(struct llext *ext)
 		if (ext->mem_on_heap[i]) {
 			LOG_DBG("freeing memory region %d", i);
 
-			if (i == LLEXT_MEM_TEXT) {
+			if (i == LLEXT_MEM_TEXT
+#ifdef CONFIG_LLEXT_VENEERS
+			    || i == LLEXT_MEM_VENEER
+#endif
+			    ) {
 				llext_free_instr(ext, ext->mem[i]);
 			} else {
 				llext_free_data(ext, ext->mem[i]);

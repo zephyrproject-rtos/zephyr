@@ -15,12 +15,10 @@ if(NOT CONFIG_TFM_PARTITION_PLATFORM)
 endif()
 
 zephyr_library_sources_ifdef(CONFIG_POWEROFF poweroff.c)
-if(CONFIG_ARM)
-  zephyr_library_sources_ifdef(CONFIG_NRF_PLATFORM_HALTIUM soc_lrcconf.c)
-endif()
 
-if((CONFIG_SOC_SERIES_NRF54H OR CONFIG_SOC_SERIES_NRF92) AND CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS)
-  zephyr_library_sources(nrf54hx_nrf92x_mpu_regions.c)
+if((CONFIG_SOC_SERIES_NRF54H OR CONFIG_SOC_SERIES_NRF92) AND CONFIG_ARM)
+  zephyr_library_sources_ifdef(CONFIG_CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS nrf54hx_nrf92x_mpu_regions.c)
+  zephyr_library_sources(soc_lrcconf.c)
 endif()
 
 zephyr_include_directories(.)
@@ -29,8 +27,11 @@ if(CONFIG_HAS_NORDIC_DMM)
   zephyr_library_sources(dmm.c)
 endif()
 
+zephyr_library_sources_ifdef(CONFIG_SHELL_REMOTE_MULTI_CLI shell_remote.c)
+
 if(CONFIG_NRFX_GPPI AND NOT CONFIG_NRFX_GPPI_V1)
   zephyr_library_sources(gppi_init.c)
+  zephyr_library_sources_ifdef(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL nrfx_gppi_sd2ppi_global.c)
 endif()
 
 if(CONFIG_TFM_PARTITION_PLATFORM)

@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/dhcpv4.h>
 #include <zephyr/net/dhcpv6.h>
 #include <zephyr/net/net_mgmt.h>
@@ -310,7 +311,12 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 static void setup_ipv6(struct net_if *iface, uint32_t flags)
 {
 	struct net_if_addr *ifaddr;
-	uint64_t mask = NET_EVENT_IPV6_DAD_SUCCEED;
+	uint64_t mask = NET_EVENT_IPV6_DAD_SUCCEED |
+			NET_EVENT_IPV6_ADDR_ADD |
+			((flags & NET_CONFIG_NEED_ROUTER) ? NET_EVENT_IPV6_ROUTER_ADD : 0);
+
+	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
+	net_mgmt_add_event_callback(&mgmt6_cb);
 
 	if (sizeof(CONFIG_NET_CONFIG_MY_IPV6_ADDR) == 1) {
 		/* Empty address, skip setting ANY address in this case */
@@ -319,16 +325,7 @@ static void setup_ipv6(struct net_if *iface, uint32_t flags)
 
 	if (net_addr_pton(NET_AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &laddr)) {
 		NET_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV6_ADDR);
-		/* some interfaces may add IP address later */
-		mask |= NET_EVENT_IPV6_ADDR_ADD;
 	}
-
-	if (flags & NET_CONFIG_NEED_ROUTER) {
-		mask |= NET_EVENT_IPV6_ROUTER_ADD;
-	}
-
-	net_mgmt_init_event_callback(&mgmt6_cb, ipv6_event_handler, mask);
-	net_mgmt_add_event_callback(&mgmt6_cb);
 
 	ifaddr = net_if_ipv6_addr_add(iface, &laddr, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
@@ -366,7 +363,15 @@ static void iface_up_handler(struct net_mgmt_event_callback *cb,
 
 static bool check_interface(struct net_if *iface)
 {
+	net_mgmt_init_event_callback(&mgmt_iface_cb, iface_up_handler,
+				     NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&mgmt_iface_cb);
+
+	/* Check after registering the callback to avoid missing NET_EVENT_IF_UP
+	 * that could fire between the check and the callback registration.
+	 */
 	if (net_if_is_up(iface)) {
+		net_mgmt_del_event_callback(&mgmt_iface_cb);
 		k_sem_reset(&counter);
 		k_sem_give(&waiter);
 		return true;
@@ -374,10 +379,6 @@ static bool check_interface(struct net_if *iface)
 
 	NET_INFO("Waiting interface %d (%p) to be up...",
 		 net_if_get_by_iface(iface), iface);
-
-	net_mgmt_init_event_callback(&mgmt_iface_cb, iface_up_handler,
-				     NET_EVENT_IF_UP);
-	net_mgmt_add_event_callback(&mgmt_iface_cb);
 
 	return false;
 }
@@ -410,7 +411,8 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 		return -ENOENT;
 	}
 
-	if (net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
+	/* Prevent NET_IF_NO_AUTO_START interfaces with link down status */
+	if (!net_if_is_up(iface) && net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
 		return -ENETDOWN;
 	}
 

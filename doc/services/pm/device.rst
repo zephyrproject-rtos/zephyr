@@ -436,6 +436,10 @@ for brevity, in real drivers they must be handled.
            * It will initialize the device's PM_DEVICE context and use the
            * dummy_driver_pm_action callback to initialize the device into
            * the appropriate state.
+            *
+            * On success, :c:func:`pm_device_driver_init` returns 0.
+            * If the callback fails (for example on ``PM_DEVICE_ACTION_RESUME``),
+            * the error is propagated and the device is not marked ``ACTIVE``.
            */
           return pm_device_driver_init(dev, dummy_driver_pm_action);
    }
@@ -507,11 +511,15 @@ If :kconfig:option:`CONFIG_PM_DEVICE` is not enabled, the device
 power state is tied to the devices initialization state.
 
 Once a device is initialized, the device driver PM action hook is
-used to move the device to the ``ACTIVE`` state through calling
+used to move the device to the expected initial state through calling
 :c:func:`pm_device_driver_init`. Following the
 ``Device actions x states`` graph and the definition of the ``OFF``
 state, this results in a call to ``PM_DEVICE_ACTION_TURN_ON``
 followed by ``PM_DEVICE_ACTION_RESUME``.
+
+If the driver's PM hook returns an error, initialization fails and the
+device is left in its previous state (for devices that support PM this is
+typically ``SUSPENDED`` or ``OFF``).
 
 Given power domains and buses are "just devices", every power
 domain and bus will be resumed before its child devices as they

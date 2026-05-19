@@ -74,20 +74,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/* In sys_clock_announce(), when a timeout expires, it is first removed
-	 * from the timeout list, then its expiration handler is called (with
-	 * unlocked interrupts). For kernel timers, the expiration handler is
-	 * this function. Usually, the timeout structure related to the timer
-	 * that is handled here will not be linked to the timeout list at this
-	 * point. But it may happen that before this function is executed and
-	 * interrupts are locked again, a given timer gets restarted from an
-	 * interrupt context that has a priority higher than the system timer
-	 * interrupt. Then, the timeout structure for this timer will turn out
-	 * to be linked to the timeout list. And in such case, since the timer
-	 * was restarted, its expiration handler should not be executed then,
-	 * so the function exits immediately.
-	 */
-	if (sys_dnode_is_linked(&t->node)) {
+	if (z_is_timeout_handler_canceled(t)) {
 		k_spin_unlock(&lock, key);
 		return;
 	}
@@ -100,9 +87,6 @@ void z_timer_expiration_handler(struct _timeout *t)
 	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
 		k_timeout_t next = timer->period;
 
-		/* see note about z_add_timeout() in z_impl_k_timer_start() */
-		next.ticks = max(next.ticks - 1, 0);
-
 #ifdef CONFIG_TIMEOUT_64BIT
 		/* Exploit the fact that uptime during a kernel
 		 * timeout handler reflects the time of the scheduled
@@ -111,11 +95,8 @@ void z_timer_expiration_handler(struct _timeout *t)
 		 * delayed for any reason, we still end up calculating
 		 * the next expiration as a regular stride from where
 		 * we "should" have run.  Requires absolute timeouts.
-		 * (Note offset by one: we're nominally at the
-		 * beginning of a tick, so need to defeat the "round
-		 * down" behavior on timeout addition).
 		 */
-		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1 + next.ticks);
+		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + next.ticks);
 #endif /* CONFIG_TIMEOUT_64BIT */
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			      next);
@@ -128,12 +109,14 @@ void z_timer_expiration_handler(struct _timeout *t)
 
 	/* invoke timer expiry function */
 	if (timer->expiry_fn != NULL) {
+		k_timer_expiry_t expiry_fn = timer->expiry_fn;
+
 		/* Unlock for user handler. */
 		k_spin_unlock(&lock, key);
 
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, expiry, timer);
 
-		timer->expiry_fn(timer);
+		expiry_fn(timer);
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, expiry, timer);
 
@@ -207,28 +190,6 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 		return;
 	}
 
-	/* z_add_timeout() always adds one to the incoming tick count
-	 * to round up to the next tick (by convention it waits for
-	 * "at least as long as the specified timeout"), but the
-	 * period interval is always guaranteed to be reset from
-	 * within the timer ISR, so no round up is desired and 1 is
-	 * subtracted in there.
-	 *
-	 * Note that the duration (!) value gets the same treatment
-	 * for backwards compatibility.  This is unfortunate
-	 * (i.e. k_timer_start() doesn't treat its initial sleep
-	 * argument the same way k_sleep() does), but historical.  The
-	 * timer_api test relies on this behavior.
-	 */
-	if (Z_IS_TIMEOUT_RELATIVE(duration)) {
-		/* For the duration == K_NO_WAIT case, ensure that behaviour
-		 * is consistent for both 32-bit k_ticks_t which are unsigned
-		 * and 64-bit k_ticks_t which are signed.
-		 */
-		duration.ticks = max(1, duration.ticks);
-		duration.ticks = duration.ticks - 1;
-	}
-
 	(void)z_abort_timeout(&timer->timeout);
 	timer->period = period;
 	timer->status = 0U;
@@ -256,9 +217,12 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
 	bool inactive = (z_abort_timeout(&timer->timeout) != 0);
 
 	if (inactive) {
+		k_spin_unlock(&lock, key);
 		return;
 	}
 
@@ -266,19 +230,28 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 
 	if (timer->stop_fn != NULL) {
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, stop_fn_expiry, timer);
+		k_spin_unlock(&lock, key);
 
 		timer->stop_fn(timer);
+
+		key = k_spin_lock(&lock);
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, stop_fn_expiry, timer);
 	}
 
-	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		struct k_thread *pending_thread = z_unpend1_no_timeout(&timer->wait_q);
+	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+		k_spin_unlock(&lock, key);
+		return;
 
-		if (pending_thread != NULL) {
-			z_ready_thread(pending_thread);
-			z_reschedule_unlocked();
-		}
+	}
+
+	struct k_thread *pending_thread = z_unpend1_no_timeout(&timer->wait_q);
+
+	if (pending_thread != NULL) {
+		z_ready_thread(pending_thread);
+		z_reschedule(&lock, key);
+	} else {
+		k_spin_unlock(&lock, key);
 	}
 }
 

@@ -3,9 +3,9 @@
 # Copyright (C) 2025 Savoir-faire Linux, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_STM32MP2X_M33
+if SOC_STM32MP257FXX_M33
 
 config NUM_IRQS
-	default 320
+	default 311
 
-endif # SOC_STM32MP2X_M33
+endif # SOC_STM32MP257FXX_M33

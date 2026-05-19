@@ -20,4 +20,4 @@ properties:
       See RGMII_Config1 (EXT_0xA003) register for details
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
-              "100BASE Full-Duplex", "1000BASE Full-Duplex"]
+              "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]

@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/arch/riscv/irq.h>
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intc_it8xxx2, LOG_LEVEL_DBG);
@@ -17,7 +18,7 @@ LOG_MODULE_REGISTER(intc_it8xxx2, LOG_LEVEL_DBG);
 #define IVECT_OFFSET_WITH_IRQ		0x10
 
 /* Interrupt number of INTC module */
-static uint8_t intc_irq;
+static ite_irq_t intc_irq;
 
 static volatile uint8_t *const reg_status[] = {
 	&ISR0, &ISR1, &ISR2, &ISR3,
@@ -190,7 +191,7 @@ int __soc_ram_code ite_intc_irq_is_enable(unsigned int irq)
 	return IS_MASK_SET(*en, BIT(i));
 }
 
-uint8_t __soc_ram_code ite_intc_get_irq_num(void)
+ite_irq_t __soc_ram_code ite_intc_get_irq_num(void)
 {
 	return intc_irq;
 }
@@ -200,7 +201,7 @@ bool __soc_ram_code ite_intc_no_irq(void)
 	return (IVECT == IVECT_OFFSET_WITH_IRQ);
 }
 
-uint8_t __soc_ram_code get_irq(void *arg)
+unsigned long __soc_ram_code __soc_handle_irq(unsigned long arg)
 {
 	ARG_UNUSED(arg);
 

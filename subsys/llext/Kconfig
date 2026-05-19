@@ -82,6 +82,20 @@ config LLEXT_HEAP_MEMBLK
 
 endchoice
 
+config LLEXT_CUSTOM_HEAP_PLACEMENT
+	bool "Custom placement of llext heap sections"
+	help
+	  Remove default placements of LLEXT heap sections in the linker script,
+	  allowing the user to place the heap(s) themselves.
+
+config LLEXT_HEAP_SIZE
+	int "llext heap memory size in kilobytes"
+	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD && !LLEXT_HEAP_MEMBLK
+	default 8
+	help
+	  Heap size in kilobytes available to llext for dynamic allocation. Replaced by
+	  LLEXT_INSTR_HEAP_SIZE and LLEXT_DATA_HEAP_SIZE if HARVARD is selected.
+
 if LLEXT_HEAP_MEMBLK
 
 config LLEXT_METADATA_HEAP_SIZE
@@ -95,8 +109,8 @@ config LLEXT_EXT_HEAP_SIZE
 	depends on !HARVARD
 	default 16
 	help
-	  Heap size in kilobytes available for LLEXT extension data. Must be a multiple of
-	  LLEXT_HEAP_MEMBLK_BLOCK_SIZE. Replaced by LLEXT_INSTR_HEAP_SIZE and
+	  Heap size in kilobytes available for LLEXT extension regions. Must be a multiple
+	  of LLEXT_HEAP_MEMBLK_BLOCK_SIZE. Replaced by LLEXT_INSTR_HEAP_SIZE and
 	  LLEXT_DATA_HEAP_SIZE if HARVARD is selected.
 
 config LLEXT_HEAP_MEMBLK_BLOCK_SIZE
@@ -104,19 +118,12 @@ config LLEXT_HEAP_MEMBLK_BLOCK_SIZE
 	default 32
 	help
 	  Block size in bytes for LLEXT sys_mem_blocks heap(s). Must be equal to or
-	  a multiple of LLEXT_PAGE_SIZE. The block size must also be equal to or a
-	  multiple of the largest alignment needed for any extension region.
-	  If MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT is selected and regions are large,
+	  a multiple of LLEXT_PAGE_SIZE if MMU or MPU are enabled. The block size must also
+	  be equal to or a multiple of the largest alignment needed for any extension
+	  region. If MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT is selected and regions are large,
 	  an unreasonably large block size may be needed to satisfy alignment requirements.
 
 endif
-
-config LLEXT_HEAP_SIZE
-	int "llext heap memory size in kilobytes"
-	depends on !LLEXT_HEAP_DYNAMIC && !HARVARD && !LLEXT_HEAP_MEMBLK
-	default 8
-	help
-	  Heap size in kilobytes available to llext for dynamic allocation
 
 config LLEXT_INSTR_HEAP_SIZE
 	int "llext instruction heap memory size in kilobytes"
@@ -124,7 +131,7 @@ config LLEXT_INSTR_HEAP_SIZE
 	default 4
 	help
 	  Instruction heap size in kilobytes available to llext.
-	  Only executable sections will be placed in this heap.
+	  Only executable regions will be placed in this heap.
 
 config LLEXT_DATA_HEAP_SIZE
 	int "llext data heap memory size in kilobytes"
@@ -217,6 +224,18 @@ config LLEXT_IMPORT_ALL_GLOBALS
 	  This option instead allows all global symbols from extensions to be
 	  used by the main application. This is useful to load basic extensions
 	  that have been compiled without the full Zephyr EDK.
+
+config LLEXT_VENEERS
+	bool "Veneer stubs for out-of-range relocations"
+	depends on ARCH_HAS_LLEXT_VENEERS
+	help
+	  When enabled, the architecture-specific LLEXT relocation handler
+	  generates veneer stubs for branch relocations whose target is outside
+	  the instruction's range. This allows linking extensions loaded into
+	  SRAM against kernel symbols in flash without -mlong-calls.
+
+	  Disable only if all external symbol calls are known to be in range
+	  or if -mlong-calls is used.
 
 config LLEXT_EXPERIMENTAL
 	bool "LLEXT experimental functionality"

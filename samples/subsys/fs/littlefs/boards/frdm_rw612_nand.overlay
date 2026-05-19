@@ -1,0 +1,23 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flexspi {
+	pinctrl-0 = <&pinmux_flexspi_psram>;
+	pinctrl-names = "default";
+};
+
+&w25n01gv {
+	status = "okay";
+};
+
+/ {
+	ftl_nand: ftl_nand {
+		compatible = "zephyr,ftl-dhara";
+		partition = <&nand_storage>;
+		disk-name = "NAND";
+		buffer-size = <2048>;
+	};
+};

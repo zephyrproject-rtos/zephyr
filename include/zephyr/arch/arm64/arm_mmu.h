@@ -7,6 +7,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM64_ARM_MMU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM64_ARM_MMU_H_
 
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm64.h>
+
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
 #include <stdlib.h>
@@ -190,6 +192,98 @@ struct arm_mmu_ptables {
 #define MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(compat, attr) \
 	DT_FOREACH_STATUS_OKAY_VARGS(compat, \
 	MMU_REGION_DT_FLAT_ENTRY, attr)
+
+/**
+ * @brief Extract ARM64 architecture bits from a DT memory attribute value.
+ *
+ * @param dt_attr The DT memory attribute value.
+ */
+#define _DT_MEM_ARM64_ARCH_BITS(dt_attr) \
+	(DT_MEM_ARCH_ATTR_GET(dt_attr) >> DT_MEM_ARCH_ATTR_SHIFT)
+
+/**
+ * @brief Convert a DT zephyr,memory-attr value to ARM64 MT_* flags.
+ *
+ * The generic DT_MEM_CACHEABLE bit selects cacheable vs non-cacheable.
+ * The arch-specific ATTR_ARM64_CACHE_WB bit selects write-back vs
+ * write-through when cacheable.  Device memory must be mapped through
+ * the MMIO device API instead.
+ *
+ * @param dt_attr The DT memory attribute value from zephyr,memory-attr.
+ */
+#define DT_MEM_ATTR_TO_MT(dt_attr)						\
+	((DT_MEM_ATTR_GET(dt_attr) & DT_MEM_CACHEABLE) ?			\
+		((_DT_MEM_ARM64_ARCH_BITS(dt_attr) & ATTR_ARM64_CACHE_WB) ?	\
+			(MT_NORMAL | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE) :	\
+			(MT_NORMAL_WT | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE)) : \
+		(MT_NORMAL_NC | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE))
+
+/**
+ * @brief Auto-generate MMU region entry from a DT node's zephyr,memory-attr.
+ *
+ * Unlike MMU_REGION_DT_FLAT_ENTRY which takes attrs as a parameter,
+ * this macro reads the memory type from the node's zephyr,memory-attr
+ * property and converts it to ARM64 MT_* flags at compile time.
+ *
+ * Nodes without zephyr,memory-attr are silently skipped.
+ *
+ * @param node_id Devicetree node identifier.
+ *
+ * @note This is a wrapper of @ref MMU_REGION_FLAT_ENTRY and inherits
+ *       its limitation: only the first reg bank is used. DT nodes
+ *       with multiple reg entries are not fully covered.
+ */
+#define MMU_REGION_DT_FLAT_ENTRY_FROM_DT(node_id)			\
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, zephyr_memory_attr),	\
+		(MMU_REGION_FLAT_ENTRY(DT_NODE_FULL_NAME(node_id),	\
+			DT_REG_ADDR(node_id),				\
+			DT_REG_SIZE(node_id),				\
+			DT_MEM_ATTR_TO_MT(				\
+				DT_PROP(node_id, zephyr_memory_attr))),))
+
+/**
+ * @brief Mask of all zephyr,memory-attr bits supported by the ARM64 MMU.
+ *
+ * Only DT_MEM_CACHEABLE and ATTR_ARM64_CACHE_WB are supported.
+ */
+#define _DT_MEM_ARM64_SUPPORTED_MASK \
+	(DT_MEM_CACHEABLE | DT_MEM_ARM64(ATTR_ARM64_CACHE_WB))
+
+/**
+ * @brief Check whether a DT memory attribute value is valid for the ARM64 MMU.
+ *
+ * @param dt_attr The DT memory attribute value.
+ * @return true if only supported bits are set.
+ */
+#define DT_MEM_ARM64_MMU_IS_VALID(dt_attr) \
+	(((dt_attr) & ~_DT_MEM_ARM64_SUPPORTED_MASK) == 0)
+
+/**
+ * @brief BUILD_ASSERT that a DT node's zephyr,memory-attr is valid for ARM64.
+ *
+ * Nodes without the property are silently skipped.
+ *
+ * @param node_id Devicetree node identifier.
+ */
+#define ARM64_MMU_VALIDATE_DT_REGION(node_id) \
+	IF_ENABLED(DT_NODE_HAS_PROP(node_id, zephyr_memory_attr), \
+		(BUILD_ASSERT(DT_MEM_ARM64_MMU_IS_VALID( \
+			DT_PROP(node_id, zephyr_memory_attr)), \
+			"Unsupported zephyr,memory-attr for ARM64 MMU region " \
+			DT_NODE_FULL_NAME(node_id));))
+
+/**
+ * @brief Auto-generate MMU region entries for all matching nodes.
+ *
+ * @param compat Devicetree compatible to iterate over.
+ *
+ * Iterates over all status = "okay" nodes of @p compat and generates
+ * an MMU region entry for each node that has a zephyr,memory-attr property.
+ *
+ * @note This is a wrapper of @ref MMU_REGION_DT_FLAT_ENTRY_FROM_DT.
+ */
+#define MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY_FROM_DT(compat) \
+	DT_FOREACH_STATUS_OKAY(compat, MMU_REGION_DT_FLAT_ENTRY_FROM_DT)
 
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).

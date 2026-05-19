@@ -10,4 +10,11 @@ config SD_CMD_TIMEOUT
 
 endif # DISK_DRIVER_SDMMC
 
+configdefault NET_L2_ETHERNET
+	default y
+
+# Enable fixed clock for ethernet phy
+config CLOCK_CONTROL_FIXED_RATE_CLOCK
+	default y if ETH_PHY_DRIVER
+
 endif # BOARD_EK_RA8P1

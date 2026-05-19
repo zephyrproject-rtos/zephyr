@@ -1,0 +1,170 @@
+:orphan:
+
+..
+  What goes here: removed/deprecated apis, new boards, new drivers, notable
+  features. If you feel like something new can be useful to a user, put it
+  under "Other Enhancements" in the first paragraph, if you feel like something
+  is worth mentioning in the project media (release blog post, release
+  livestream) put it under "Major enhancement".
+..
+  If you are describing a feature or functionality, consider adding it to the
+  actual project documentation rather than the release notes, so that the
+  information does not get lost in time.
+..
+  No list of bugfixes, minor changes, those are already in the git log, this is
+  not a changelog.
+..
+  Does the entry have a link that contains the details? Just add the link, if
+  you think it needs more details, put them in the content that shows up on the
+  link.
+..
+  Are you thinking about generating this? Don't put anything at all.
+..
+  Does the thing require the user to change their application? Put it on the
+  migration guide instead. (TODO: move the removed APIs section in the
+  migration guide)
+
+.. _zephyr_4.5:
+
+Zephyr 4.5.0 (Working Draft)
+############################
+
+We are pleased to announce the release of Zephyr version 4.5.0.
+
+Major enhancements with this release include:
+
+An overview of the changes required or recommended when migrating your application from Zephyr
+v4.4.0 to Zephyr v4.5.0 can be found in the separate :ref:`migration guide<migration_4.5>`.
+
+The following sections provide detailed lists of changes by component.
+
+Security Vulnerability Related
+******************************
+
+API Changes
+***********
+
+..
+  Only removed, deprecated and new APIs. Changes go in migration guide.
+
+Removed APIs and options
+========================
+
+* The following deprecated networking options and APIs have been removed:
+
+    * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
+    * ``CONFIG_NET_SOCKETS_POLL_MAX``
+    * ``net_ipv6_set_hop_limit()``
+    * ``net_if_ipv4_get_netmask()``
+    * ``net_if_ipv4_set_netmask()``
+    * ``net_if_ipv4_set_netmask_by_index()``
+    * ``openthread_state_changed_cb_register()``
+    * ``openthread_state_changed_cb_unregister()``
+    * ``openthread_start()``
+    * ``openthread_api_mutex_lock()``
+    * ``openthread_api_mutex_try_lock()``
+    * ``openthread_api_mutex_unlock()``
+    * ``struct openthread_state_changed_cb``
+    * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
+
+Deprecated APIs and options
+===========================
+
+* :abbr:`DMIC (Digital Microphone Interface)`
+
+  * The :c:struct:`_dmic_ops` struct has been deprecated. DMIC drivers are now expected to use the
+    :c:macro:`DEVICE_API` macro to declare their driver API.
+
+* LoRa
+
+  * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
+    to be consistent with the existing sync/async naming convention.
+
+* Ring buffer
+
+  * The ring buffer item API (:c:func:`ring_buf_item_init`, :c:func:`ring_buf_item_put`,
+    :c:func:`ring_buf_item_get`, :c:func:`ring_buf_item_space_get`) has been deprecated in favor of
+    :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`).
+
+New APIs and options
+====================
+..
+  Link to new APIs here, in a group if you think it's necessary, no need to get
+  fancy just list the link, that should contain the documentation. If you feel
+  like you need to add more details, add them in the API documentation code
+  instead.
+
+.. zephyr-keep-sorted-start re(^\* \w) ignorecase
+
+* Audio
+
+  * :c:member:`pcm_stream_cfg.gain_db`
+
+* :c:func:`lora_recv_duty_cycle_async`
+* :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
+
+.. zephyr-keep-sorted-stop
+
+New Boards
+**********
+
+..
+  You may update this list as you contribute a new board during the release cycle, in order to make
+  it visible to people who might be looking at the working draft of the release notes. However, note
+  that this list will be recomputed at the time of the release, so you don't *have* to update it.
+  In any case, just link the board, further details go in the board description.
+
+* Arduino
+
+  * :zephyr:board:`Arduino Nesso N1 <arduino_nesso_n1>` (``arduino_nesso_n1``)
+
+* Seeed
+
+  * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
+
+New Shields
+***********
+
+..
+  Same as above, this will also be recomputed at the time of the release.
+
+
+New Drivers
+***********
+
+..
+  Same as above, this will also be recomputed at the time of the release.
+  Just link the driver, further details go in the binding description
+
+* GPIO
+
+  * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
+    (:dtcompatible:`diodes,pi4ioe5v6408`).
+
+New Samples
+***********
+
+..
+  Same as above, this will also be recomputed at the time of the release.
+ Just link the sample, further details go in the sample documentation itself.
+
+* :zephyr:code-sample:`mctp_i2c_bus_host` (renamed from ``mctp_i2c_bus_owner``)
+* :zephyr:code-sample:`mctp_i3c_bus_host` (renamed from ``mctp_i3c_bus_owner``)
+
+Libraries / Subsystems
+**********************
+
+* LoRa / LoRaWAN
+
+  * Added a native LoRaWAN backend
+    (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) that implements
+    LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
+    the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
+  * :c:member:`lora_modem_config.sync_word`
+
+Other notable changes
+*********************
+
+..
+  Any more descriptive subsystem or driver changes. Do you really want to write
+  a paragraph or is it enough to link to the api/driver/Kconfig/board page above?

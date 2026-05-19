@@ -104,4 +104,18 @@ config USE_MICROCHIP_QSPI_FLASH_WITH_STM32
 	  Set to use Microchip QSPI flash memories which use the PP_1_1_4 opcode
 	  (32H) for the PP_1_4_4 operation (usually 38H).
 
+config FLASH_STM32_ACCEPT_UNALIGNED_WRITES
+	bool "Extended operation for STM32 SoCs to handle unaligned offsets and lengths."
+	depends on SOC_STM32WBA65XX
+	help
+	  Enable support for flash_write() calls when unaligned offsets and lengths are passed.
+	  DO NOT ENABLE THIS OPTION WITHOUT UNDERSTANDING THE TARGET'S FLASH HARDWARE IMPLEMENTATION
+	  DETAILS AND LIMITATIONS.
+
+	  When this option is enabled, unaligned writes will be handled by writing to all blocks in range
+	  [offset; offset + length]. Blocks for which only part of the contents are provided are padded with
+	  the flash's erase value before writing. THIS IS NOT A READ-MODIFY-WRITE type operation! The flash
+	  addresses being written to are expected to be erased before writing to them. Contens of the flash
+	  after unaligned writes depend on the flash hardware details. The operation may fault.
+
 endif # SOC_FLASH_STM32

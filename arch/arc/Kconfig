@@ -217,7 +217,7 @@ config ARC_HAS_STACK_CHECKING
 
 config ARC_CONNECT
 	bool "ARC has ARC connect"
-	select SCHED_IPI_SUPPORTED
+	select SCHED_IPI_SUPPORTED if SMP
 	help
 	  ARC is configured with ARC CONNECT which is a hardware for connecting
 	  multi cores.

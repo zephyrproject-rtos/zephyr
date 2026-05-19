@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(VEML6031, CONFIG_SENSOR_LOG_LEVEL);
  * Maximum value of ALS data which also means that the sensor is in saturation
  * and that the measured value might be wrong.
  * In such a case the user program should reduce one or more of the following
- * attributes to get a relyable value:
+ * attributes to get a reliable value:
  *   gain
  *   integration time
  *   effective photodiode size
@@ -536,7 +536,7 @@ static int veml6031_init(const struct device *dev)
 	uint8_t val8;
 
 	if (!i2c_is_ready_dt(&conf->bus)) {
-		LOG_ERR("VEML device not ready");
+		LOG_ERR_DEVICE_NOT_READY(conf->bus.bus);
 		return -ENODEV;
 	}
 

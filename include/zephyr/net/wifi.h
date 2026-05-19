@@ -113,12 +113,26 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_FT_EAP_SHA384,
 	/** SAE Extended key (uses group-dependent hashing) */
 	WIFI_SECURITY_TYPE_SAE_EXT_KEY,
+	/** WEP security with Open System authentication. */
+	WIFI_SECURITY_TYPE_WEP_OPEN,
+	/** WEP security with Shared Key authentication. */
+	WIFI_SECURITY_TYPE_WEP_SHARED,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
 	WIFI_SECURITY_TYPE_MAX = __WIFI_SECURITY_TYPE_AFTER_LAST - 1,
 	WIFI_SECURITY_TYPE_UNKNOWN
 	/** @endcond */
+};
+
+/** @brief WEP key type (based on key length). */
+enum wifi_wep_key_type {
+	/** WEP key type unknown or not applicable. */
+	WIFI_WEP_KEY_TYPE_UNKNOWN = 0,
+	/** WEP-64 (40-bit key: 5 ASCII or 10 hex chars). */
+	WIFI_WEP_KEY_TYPE_64,
+	/** WEP-128 (104-bit key: 13 ASCII or 26 hex chars). */
+	WIFI_WEP_KEY_TYPE_128,
 };
 
 /** @brief EPA method Types. */
@@ -235,6 +249,9 @@ const char *wifi_security_txt(enum wifi_security_type security);
 /** Helper function to get user-friendly wpa3 enterprise security type name. */
 const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent);
 
+/** Helper function to get user-friendly WEP key type name. */
+const char *wifi_wep_key_type_txt(enum wifi_wep_key_type wep_key_type);
+
 /** @brief IEEE 802.11w - Management frame protection. */
 enum wifi_mfp_options {
 	/** MFP disabled. */
@@ -303,6 +320,8 @@ const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 #define WIFI_PSK_MIN_LEN 8
 /** Maximum PSK length */
 #define WIFI_PSK_MAX_LEN 64
+/** Maximum WEP key length (WEP-104: 26 hex chars) */
+#define WIFI_WEP_KEY_MAX_LEN 26
 /** Max SAW password length */
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */

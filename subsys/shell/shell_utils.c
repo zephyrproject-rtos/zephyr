@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/shell/shell_remote.h>
 #include <stdlib.h>
 #include "shell_utils.h"
 #include "shell_wildcard.h"
@@ -15,6 +16,10 @@ TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_dynamic_subcmds);
 
 TYPE_SECTION_START_EXTERN(union shell_cmd_entry, shell_subcmds);
 TYPE_SECTION_END_EXTERN(union shell_cmd_entry, shell_subcmds);
+
+#if defined(CONFIG_SHELL_ALIASES)
+extern const struct shell_alias shell_aliases[];
+#endif
 
 /* Macro creates empty entry at the bottom of the memory section with subcommands
  * it is used to detect end of subcommand set that is located before this marker.
@@ -296,8 +301,14 @@ const struct shell_static_entry *z_shell_cmd_get(
 
 	__ASSERT_NO_MSG(dloc != NULL);
 
+	if (IS_ENABLED(CONFIG_SHELL_REMOTE) && (parent->args.remote_cmd)) {
+		/* Remote command */
+		return z_shell_remote_cmd_get(parent, idx, dloc);
+	}
+
 	if (parent->subcmd) {
 		if (is_dynamic_cmd(parent->subcmd)) {
+			dloc->args.remote_cmd = 0;
 			parent->subcmd->dynamic_get(idx, dloc);
 			if (dloc->syntax != NULL) {
 				res = dloc;
@@ -361,6 +372,101 @@ const struct shell_static_entry *z_shell_find_cmd(
 	}
 
 	return NULL;
+}
+
+/* Function returns pointer to a command matching given alias.
+ *
+ * @param cmd_str  Command pattern to be found.
+ * @param output   The actual command to execute instead of the alias.
+ *
+ * @return 0 if alias was found and output is set, -ENOENT if alias was
+ *         not found and -ENOTSUP if aliases are not supported.
+ */
+int z_shell_find_alias(const char *cmd_str, const char **output)
+{
+#if defined(CONFIG_SHELL_ALIASES)
+	int idx = 0;
+
+	while (shell_aliases[idx].alias != NULL) {
+		if (strcmp(shell_aliases[idx].alias, cmd_str) == 0) {
+			*output = shell_aliases[idx].command;
+			return 0;
+		}
+
+		idx++;
+	}
+
+	return -ENOENT;
+#else
+	ARG_UNUSED(cmd_str);
+	ARG_UNUSED(output);
+	return -ENOTSUP;
+#endif
+}
+
+int z_shell_expand_alias(char *cmd_buf, size_t cmd_buf_size)
+{
+#if defined(CONFIG_SHELL_ALIASES)
+	const char *alias = NULL;
+	char *first_space = strstr(cmd_buf, " ");
+	char *remaining_cmd = first_space ? first_space + 1 : NULL;
+	size_t alias_len;
+	size_t cmd_buf_len;
+	size_t separator_len;
+	size_t new_cmd_len;
+	int ret;
+
+	if (first_space != NULL) {
+		/* Temporarily terminate command buffer at first space to get root
+		 * command for alias search.
+		 */
+		*first_space = '\0';
+	}
+
+	ret = z_shell_find_alias(cmd_buf, &alias);
+	if ((ret != 0) || (alias == NULL)) {
+		if (first_space != NULL) {
+			*first_space = ' ';
+		}
+
+		return ret;
+	}
+
+	alias_len = z_shell_strlen(alias);
+	cmd_buf_len = z_shell_strlen(remaining_cmd);
+	separator_len = (remaining_cmd != NULL) ? 1U : 0U;
+	new_cmd_len = alias_len + separator_len + cmd_buf_len + 1U;
+
+	if (new_cmd_len > cmd_buf_size) {
+		if (first_space != NULL) {
+			*first_space = ' ';
+		}
+
+		return -E2BIG;
+	}
+
+	/* Move the part of command buffer after root command to the end of the
+	 * alias.
+	 */
+	if (remaining_cmd != NULL) {
+		memmove(cmd_buf + alias_len + 1, remaining_cmd, cmd_buf_len + 1);
+	}
+
+	/* Copy alias to the beginning of command buffer. */
+	memcpy(cmd_buf, alias, alias_len);
+
+	if (remaining_cmd == NULL) {
+		cmd_buf[alias_len] = '\0';
+	} else {
+		cmd_buf[alias_len] = ' ';
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(cmd_buf);
+	ARG_UNUSED(cmd_buf_size);
+	return -ENOTSUP;
+#endif
 }
 
 const struct shell_static_entry *z_shell_get_last_command(
@@ -695,4 +801,63 @@ bool shell_strtobool(const char *str, int base, int *err)
 	}
 
 	return shell_strtoul(str, base, err);
+}
+
+void shell_hexdump_line(const struct shell *sh, unsigned int offset,
+			const uint8_t *data, size_t len)
+{
+	__ASSERT_NO_MSG(sh);
+
+	int i;
+
+	shell_fprintf_normal(sh, "%08X: ", offset);
+
+	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i > 0 && !(i % 8)) {
+			shell_fprintf_normal(sh, " ");
+		}
+
+		if (i < len) {
+			shell_fprintf_normal(sh, "%02x ",
+					     data[i] & 0xFF);
+		} else {
+			shell_fprintf_normal(sh, "   ");
+		}
+	}
+
+	shell_fprintf_normal(sh, "|");
+
+	for (i = 0; i < SHELL_HEXDUMP_BYTES_IN_LINE; i++) {
+		if (i > 0 && !(i % 8)) {
+			shell_fprintf_normal(sh, " ");
+		}
+
+		if (i < len) {
+			char c = data[i];
+
+			shell_fprintf_normal(sh, "%c",
+					     isprint((int)c) != 0 ? c : '.');
+		} else {
+			shell_fprintf_normal(sh, " ");
+		}
+	}
+
+	shell_print(sh, "|");
+}
+
+void shell_hexdump(const struct shell *sh, const uint8_t *data, size_t len)
+{
+	__ASSERT_NO_MSG(sh);
+
+	const uint8_t *p = data;
+	size_t line_len;
+
+	while (len) {
+		line_len = MIN(len, SHELL_HEXDUMP_BYTES_IN_LINE);
+
+		shell_hexdump_line(sh, p - data, p, line_len);
+
+		len -= line_len;
+		p += line_len;
+	}
 }

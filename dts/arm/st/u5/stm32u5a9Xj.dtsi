@@ -12,6 +12,7 @@
 		flash-controller@40022000 {
 			flash0: flash@8000000 {
 				reg = <0x08000000 DT_SIZE_M(4)>;
+				ranges = <0 0x8000000 DT_SIZE_M(4)>;
 			};
 		};
 	};

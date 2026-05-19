@@ -97,13 +97,13 @@ int main(void)
 		printf("X-NUCLEO-IKS01A2 sensor dashboard\n\n");
 
 		/* lsm6dsl accel */
-		printf("LSM6DSL: Accel (m.s-2): x: %.1f, y: %.1f, z: %.1f\n",
+		printf("LSM6DSL: Accel (m/s^2): x: %.1f, y: %.1f, z: %.1f\n",
 		       sensor_value_to_double(&accel[0]),
 		       sensor_value_to_double(&accel[1]),
 		       sensor_value_to_double(&accel[2]));
 
 		/* lsm6dsl gyro */
-		printf("LSM6DSL: Gyro (dps): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSL: Gyro (rad/s): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&gyro[0]),
 		       sensor_value_to_double(&gyro[1]),
 		       sensor_value_to_double(&gyro[2]));
@@ -112,12 +112,12 @@ int main(void)
 		printf("LSM6DSL: Temperature: %.1f C\n",
 		       sensor_value_to_double(&temp));
 
-		printf("LSM6DSL: Pressure:%.3f kpa\n",
+		printf("LSM6DSL: Pressure:%.3f kPa\n",
 		       sensor_value_to_double(&press));
 #endif
 
 #ifdef CONFIG_LSM6DSL_EXT0_LIS2MDL
-		printf("LSM6DSL: Magn (gauss): x: %.3f, y: %.3f, z: %.3f\n",
+		printf("LSM6DSL: Magn (G): x: %.3f, y: %.3f, z: %.3f\n",
 		       sensor_value_to_double(&magn[0]),
 		       sensor_value_to_double(&magn[1]),
 		       sensor_value_to_double(&magn[2]));

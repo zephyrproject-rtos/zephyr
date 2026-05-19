@@ -1,0 +1,6 @@
+board:
+  name: mcb_rx14t
+  full_name: RX14T Motor Control Board
+  vendor: renesas
+  socs:
+  - name: r5f514t5amfm

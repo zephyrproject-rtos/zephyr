@@ -22,6 +22,9 @@ from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
 
+from twisterlib import ZEPHYR_BASE
+from twisterlib.testsuitedata import RequiredApplication
+
 import snippets
 
 try:
@@ -30,8 +33,11 @@ except ImportError:
     print("Install the anytree module to use the --test-tree option")
 
 import scl
+from devicetree import edtlib  # pylint: disable=unused-import
 from twisterlib.config_parser import TwisterConfigParser
+from twisterlib.environment import TwisterEnv
 from twisterlib.error import TwisterRuntimeError
+from twisterlib.hardwaremap import HardwareMap
 from twisterlib.platform import Platform, generate_platforms
 from twisterlib.quarantine import Quarantine
 from twisterlib.statuses import TwisterStatus
@@ -39,17 +45,6 @@ from twisterlib.testinstance import TestInstance
 from twisterlib.testsuite import TestSuite, scan_testsuite_path
 
 logger = logging.getLogger('twister')
-
-ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
-if not ZEPHYR_BASE:
-    sys.exit("$ZEPHYR_BASE environment variable undefined")
-
-# This is needed to load edt.pickle files.
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts", "dts",
-                                "python-devicetree", "src"))
-from devicetree import edtlib  # pylint: disable=unused-import
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
 
 class Filters:
@@ -148,6 +143,7 @@ class TestConfiguration:
 
         return levels
 
+
 class TestPlan:
     __test__ = False  # for pytest to skip this class when collects tests
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -160,10 +156,13 @@ class TestPlan:
         os.path.join(ZEPHYR_BASE,
                      "scripts", "schemas", "twister", "quarantine-schema.yaml"))
 
-    SAMPLE_FILENAME = 'sample.yaml'
-    TESTSUITE_FILENAME = 'testcase.yaml'
+    TEST_DEFINITION_FILENAME = [
+            'testcase.yaml',
+            'tests.yaml',
+            'sample.yaml'
+            ]
 
-    def __init__(self, env: Namespace):
+    def __init__(self, env: TwisterEnv):
 
         self.options = env.options
         self.env = env
@@ -182,7 +181,7 @@ class TestPlan:
 
         self.scenarios = []
 
-        self.hwm = env.hwm
+        self.hwm: HardwareMap = env.hwm
         # used during creating shorter build paths
         self.link_dir_counter = 0
         self.modules = [module.get('name') for module in self.env.modules]
@@ -477,6 +476,11 @@ class TestPlan:
 
         self.platform_names = [a for p in self.platforms for a in p.aliases]
 
+        # Convert short platform names from hardware map to full target names.
+        for d in self.hwm.duts:
+            if d.platform in self.platform_names:
+                d.platform = self.get_platform(d.platform).name
+
     def get_all_tests(self):
         testcases = []
         for _, ts in self.testsuites.items():
@@ -540,11 +544,10 @@ class TestPlan:
             logger.debug(f"Reading testsuite configuration files under {root}...")
 
             for dirpath, _, filenames in os.walk(root, topdown=True):
-                if self.SAMPLE_FILENAME in filenames:
-                    filename = self.SAMPLE_FILENAME
-                elif self.TESTSUITE_FILENAME in filenames:
-                    filename = self.TESTSUITE_FILENAME
-                else:
+                filename = next(
+                    (f for f in self.TEST_DEFINITION_FILENAME if f in filenames), None
+                )
+                if filename is None:
                     continue
 
                 logger.debug("Found possible testsuite in " + dirpath)
@@ -594,6 +597,22 @@ class TestPlan:
                         suite.platform_allow =  self.verify_platforms_existence(
                                 suite.platform_allow,
                                 f"platform_allow in {suite.name}")
+
+                        for req_dev in suite.harness_config.required_devices:
+                            if req_dev.platform:
+                                req_dev.platform = self.verify_platforms_existence(
+                                    [req_dev.platform],
+                                    f"required_devices.platform in {suite.name}"
+                                )[0]
+
+                        for req_app in suite.required_applications:
+                            if platform := req_app.platform:
+                                req_app.platform = self.verify_platforms_existence(
+                                    [platform],
+                                    f"required_applications.platform in {suite.name}"
+                                )[0]
+
+                        suite.update_required_applications()
 
                         if suite.harness in ['ztest', 'test']:
                             if subcases is None:
@@ -896,11 +915,10 @@ class TestPlan:
                 if itoolchain:
                     toolchain = itoolchain
                 elif plat.arch in ['posix', 'unit']:
-                    # workaround until toolchain variant in zephyr is overhauled and improved.
-                    if self.env.toolchain in ['llvm']:
-                        toolchain = 'llvm'
+                    if self.env.toolchain in ['host/llvm']:
+                        toolchain = 'host/llvm'
                     else:
-                        toolchain = 'host'
+                        toolchain = 'host/gnu'
                 else:
                     toolchain = "zephyr" if not self.env.toolchain else self.env.toolchain
 
@@ -1010,7 +1028,9 @@ class TestPlan:
                     instance.add_filter("Native platform requires Linux", Filters.ENVIRONMENT)
 
                 if not force_toolchain \
-                        and toolchain and (toolchain not in plat.supported_toolchains):
+                        and toolchain and (toolchain not in plat.supported_toolchains) and \
+                                        (toolchain.split('/')[0] not in plat.supported_toolchains):
+
                     instance.add_filter(
                         f"Not supported by the toolchain: {toolchain}",
                         Filters.PLATFORM
@@ -1235,26 +1255,20 @@ class TestPlan:
 
         return instance.status not in do_not_process
 
-    def _find_required_instance(self, required_app, instance: TestInstance) -> TestInstance | None:
-        if req_platform := required_app.get("platform", None):
-            platform = self.get_platform(req_platform)
-            if not platform:
-                raise TwisterRuntimeError(
-                    f"Unknown platform {req_platform} in required application"
-                )
-            req_platform = platform.name
-        else:
-            req_platform = instance.platform.name
-
+    def _find_required_instance(
+            self, required_app: RequiredApplication, instance: TestInstance
+    ) -> TestInstance | None:
+        req_platform = required_app.platform or instance.platform.name
         for inst in self.instances.values():
-            if required_app["name"] == inst.testsuite.id and req_platform == inst.platform.name:
+            if required_app.name == inst.testsuite.id and req_platform == inst.platform.name:
                 if self._should_instance_be_processed(inst):
                     return inst
                 break
         return None
 
-    def _find_required_application_in_outdir(self, required_app,
-                                             instance: TestInstance) -> str | None:
+    def _find_required_application_in_outdir(
+            self, required_app: RequiredApplication, instance: TestInstance
+    ) -> str | None:
         """Check if required application exists in build directory."""
         if not (
             self.options.no_clean
@@ -1264,12 +1278,11 @@ class TestPlan:
         ):
             return None
 
-        if platform := required_app.get("platform", None):
+        if platform := required_app.platform:
             platform = self.get_platform(platform)
         else:
             platform = instance.platform
-        name = required_app["name"]
-        glob_pattern = f"{self.options.outdir}/{platform.normalized_name}/**/{name}"
+        glob_pattern = f"{self.options.outdir}/{platform.normalized_name}/**/{required_app.name}"
         build_dirs = glob.glob(glob_pattern, recursive=True)
         if not build_dirs:
             return None
@@ -1286,11 +1299,6 @@ class TestPlan:
                 continue
             if instance.status == TwisterStatus.FILTER:
                 # do not proceed if the test is already filtered
-                continue
-
-            if self.options.subset:
-                instance.add_filter("Required applications are not supported with --subsets",
-                                    Filters.CMD_LINE)
                 continue
 
             if self.options.runtime_artifact_cleanup:
@@ -1312,10 +1320,10 @@ class TestPlan:
                         instance.required_build_dirs.append(req_build_dir)
                         continue
 
-                    instance.add_filter(f"Missing required application {required_app['name']}",
+                    instance.add_filter(f"Missing required application {required_app.name}",
                                         Filters.TESTSUITE)
                     logger.debug(
-                        f"{instance.name}: Required application '{required_app['name']}' was not"
+                        f"{instance.name}: Required application '{required_app.name}' was not"
                         " found. Please verify if required test is provided with --testsuite-root"
                         " or build all required applications and rerun twister with --no-cleanup"
                         " option."
@@ -1339,15 +1347,10 @@ class TestPlan:
                                      " is filtered")
                         break
 
-                if instance.testsuite.id in req_instance.testsuite.required_applications:
-                    instance.add_filter("Circular dependency in required applications",
-                                        Filters.TESTSUITE)
-                    logger.warning(f"{instance.name}: Circular dependency, current app also"
-                                   f" required by {req_instance.name}")
-                    break
                 # keep dependencies to use it in the runner module to synchronize
                 # building of applications
                 instance.required_applications.append(req_instance.name)
+                instance.required_build_dirs.append(req_instance.build_dir)
 
     def add_instances(self, instance_list):
         for instance in instance_list:

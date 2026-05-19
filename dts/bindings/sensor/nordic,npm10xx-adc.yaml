@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nPM10xx PMIC ADC
+
+include: sensor-device.yaml
+
+compatible: "nordic,npm10xx-adc"
+
+properties:
+  thermistor-beta:
+    type: int
+    description: |
+      Beta value of the battery thermistor. If not provided, the battery temperature
+      measurement will not be available.
+
+examples:
+  - |
+    npm1012: pmic@6a {
+      reg = <0x6a>;
+      compatible = "nordic,npm10xx";
+      /* ... */
+
+      sensor {
+        compatible = "nordic,npm10xx-adc";
+        thermistor-beta = <3434>;
+      };
+
+      /* ... */
+    };

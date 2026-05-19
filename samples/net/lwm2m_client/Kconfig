@@ -52,5 +52,32 @@ config NET_SAMPLE_LWM2M_WAIT_DNS
 	  Make sure we get DNS server addresses from the network
 	  before considering the connection to be up.
 
+config NET_SAMPLE_LWM2M_NTN_MODE
+	bool "Enable NTN (Non-Terrestrial Network / Satellite) mode"
+	depends on LWM2M_DTLS_SUPPORT
+	help
+	  Enable this option when using satellite/NTN connectivity.
+	  NTN has very high latency (10-15+ seconds RTT), so this
+	  option applies extended DTLS handshake timeout settings
+	  to accommodate the latency.
+
+if NET_SAMPLE_LWM2M_NTN_MODE
+
+config NET_SAMPLE_LWM2M_NTN_DTLS_HANDSHAKE_TIMEOUT_MIN_MS
+	int "NTN DTLS handshake min timeout (ms)"
+	default 20000
+	range 1000 600000
+	help
+	  Initial DTLS retransmission timeout in milliseconds for NTN mode.
+
+config NET_SAMPLE_LWM2M_NTN_DTLS_HANDSHAKE_TIMEOUT_MAX_MS
+	int "NTN DTLS handshake max timeout (ms)"
+	default 120000
+	range 1000 600000
+	help
+	  Maximum DTLS retransmission timeout in milliseconds for NTN mode.
+
+endif
+
 source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

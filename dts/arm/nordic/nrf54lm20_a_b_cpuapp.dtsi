@@ -15,11 +15,6 @@ nvic: &cpuapp_nvic {};
 /delete-node/ &cpuflpr;
 /delete-node/ &cpuflpr_clic;
 
-#ifndef USE_NON_SECURE_ADDRESS_MAP
-/delete-node/ &cpuflpr_rram;
-/delete-node/ &cpuflpr_sram;
-#endif
-
 / {
 	chosen {
 		zephyr,bt-hci = &bt_hci_controller;
@@ -50,7 +45,7 @@ nvic: &cpuapp_nvic {};
 &cpuflpr_vpr {
 	cpuapp_vevif_rx: mailbox@1 {
 		compatible = "nordic,nrf-vevif-event-rx";
-		reg = <0x0 0x1000>;
+		reg = <0x1 0x1000>;
 		status = "disabled";
 		interrupts = <76 NRF_DEFAULT_IRQ_PRIORITY>;
 		#mbox-cells = <1>;

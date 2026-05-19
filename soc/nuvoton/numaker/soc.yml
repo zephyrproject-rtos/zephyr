@@ -13,3 +13,6 @@ family:
   - name: m333x
     socs:
     - name: m333xxx
+  - name: m335x
+    socs:
+    - name: m335xxx

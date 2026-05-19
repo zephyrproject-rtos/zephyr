@@ -7,3 +7,10 @@ config DMA_MCHP_DMAC_G1
 	depends on DT_HAS_MICROCHIP_DMAC_G1_DMA_ENABLED && !DMA_64BIT
 	help
 	  Enables the G1 DMA driver support for Microchip MCUs.
+
+config DMA_MCHP_DMAC_G2
+	bool "Microchip G2 DMA driver"
+	default y
+	depends on DT_HAS_MICROCHIP_DMAC_G2_DMA_ENABLED && !DMA_64BIT
+	help
+	  Enables the G2 DMA driver support for Microchip MCUs.

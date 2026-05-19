@@ -80,17 +80,17 @@ int mec5_soc_common_init(void)
 #if defined(CONFIG_SOC_MEC_DEBUG_DISABLED)
 	config_debug = true;
 #endif
-#if defined(SOC_MEC_DEBUG_WITHOUT_TRACING)
+#if defined(CONFIG_SOC_MEC_DEBUG_WITHOUT_TRACING)
 	config_debug = true;
 	dbg_flags = BIT(XEC_DEBUG_FLAG_EN_POS) | BIT(XEC_DEBUG_IFC_SWD_POS);
 #endif
-#if defined(SOC_MEC_DEBUG_AND_TRACING)
+#if defined(CONFIG_SOC_MEC_DEBUG_AND_TRACING)
 	config_debug = true;
 #if defined(CONFIG_SOC_MEC_DEBUG_AND_SWV_TRACING)
 	dbg_flags = (BIT(XEC_DEBUG_FLAG_EN_POS) | BIT(XEC_DEBUG_IFC_SWD_POS) |
 		     BIT(XEC_DEBUG_SWD_SWV_POS));
 #endif
-#if defined(config SOC_MEC_DEBUG_AND_ETM_TRACING)
+#if defined(CONFIG_SOC_MEC_DEBUG_AND_ETM_TRACING)
 	dbg_flags = (BIT(XEC_DEBUG_FLAG_EN_POS) | BIT(XEC_DEBUG_IFC_SWD_POS) |
 		     BIT(XEC_DEBUG_FLAG_ETM_EN_POS));
 #endif

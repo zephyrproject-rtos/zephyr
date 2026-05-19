@@ -8,6 +8,7 @@
  *  SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -17,6 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #define URI_SEPARATOR ":"
 #define CALLER_ID "friend"
@@ -24,12 +26,14 @@
 static uint8_t new_call_index;
 static char remote_uri[CONFIG_BT_TBS_MAX_URI_LENGTH];
 
-static K_SEM_DEFINE(sem_discovery_done, 0, 1);
+static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 
 static struct bt_conn *default_conn;
 
 static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool gtbs_found)
 {
+	ARG_UNUSED(tbs_count);
+
 	if (!gtbs_found) {
 		printk("CCP: Failed to discover GTBS\n");
 		return;
@@ -37,7 +41,7 @@ static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool g
 
 	printk("CCP: Discovered GTBS\n");
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}
@@ -48,12 +52,14 @@ static void discover_cb(struct bt_conn *conn, int err, uint8_t tbs_count, bool g
 
 static void originate_call_cb(struct bt_conn *conn, int err, uint8_t inst_index, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+
 	if (inst_index != BT_TBS_GTBS_INDEX) {
 		printk("Unexpected %s for instance %u\n", __func__, inst_index);
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}
@@ -64,12 +70,14 @@ static void originate_call_cb(struct bt_conn *conn, int err, uint8_t inst_index,
 static void terminate_call_cb(struct bt_conn *conn, int err,
 			      uint8_t inst_index, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+
 	if (inst_index != BT_TBS_GTBS_INDEX) {
 		printk("Unexpected %s for instance %u\n", __func__, inst_index);
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}
@@ -81,12 +89,14 @@ static void read_uri_schemes_string_cb(struct bt_conn *conn, int err,
 {
 	size_t i;
 
+	ARG_UNUSED(conn);
+
 	if (inst_index != BT_TBS_GTBS_INDEX) {
 		printk("Unexpected %s for instance %u\n", __func__, inst_index);
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("%s (err %d)\n", __func__, err);
 		return;
 	}

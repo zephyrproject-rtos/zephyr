@@ -194,7 +194,11 @@ formatted to *hh:mm:ss:mmm,uuu*. Otherwise is printed in raw format.
 
 Backend options:
 
-:kconfig:option:`CONFIG_LOG_BACKEND_UART`: Enabled built-in UART backend.
+:kconfig:option:`CONFIG_LOG_BACKEND_UART`: Enable built-in UART backend.
+
+:kconfig:option:`CONFIG_LOG_BACKEND_NET`: Enable built-in Networking backend to send syslog messages
+to a network server.
+
 
 .. _log_usage:
 

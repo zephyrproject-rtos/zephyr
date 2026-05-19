@@ -14,7 +14,7 @@
 
 &i2c1 {
 	sh1107_waveshare_pico_oled_1_3: sh1107@3c {
-		compatible = "sinowealth,sh1106";
+		compatible = "sinowealth,sh1107";
 		reg = <0x3c>;
 
 		width = <64>;

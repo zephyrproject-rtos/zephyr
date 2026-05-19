@@ -42,10 +42,7 @@ static inline int shared_irq_isr_register(const struct device *dev,
 					  isr_t isr_func,
 					  const struct device *isr_dev)
 {
-	const struct shared_irq_driver_api *api =
-		(const struct shared_irq_driver_api *)dev->api;
-
-	return api->isr_register(dev, isr_func, isr_dev);
+	return DEVICE_API_GET(shared_irq, dev)->isr_register(dev, isr_func, isr_dev);
 }
 
 /**
@@ -56,10 +53,7 @@ static inline int shared_irq_isr_register(const struct device *dev,
 static inline int shared_irq_enable(const struct device *dev,
 				    const struct device *isr_dev)
 {
-	const struct shared_irq_driver_api *api =
-		(const struct shared_irq_driver_api *)dev->api;
-
-	return api->enable(dev, isr_dev);
+	return DEVICE_API_GET(shared_irq, dev)->enable(dev, isr_dev);
 }
 
 /**
@@ -70,10 +64,7 @@ static inline int shared_irq_enable(const struct device *dev,
 static inline int shared_irq_disable(const struct device *dev,
 				     const struct device *isr_dev)
 {
-	const struct shared_irq_driver_api *api =
-		(const struct shared_irq_driver_api *)dev->api;
-
-	return api->disable(dev, isr_dev);
+	return DEVICE_API_GET(shared_irq, dev)->disable(dev, isr_dev);
 }
 
 #ifdef __cplusplus

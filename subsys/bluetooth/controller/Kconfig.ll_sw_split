@@ -255,7 +255,34 @@ config BT_CTLR_CHECK_SAME_PEER_SYNC
 	depends on BT_CTLR_SYNC_PERIODIC
 	default BT_PER_ADV_SYNC_MAX > 1
 
+config BT_CTLR_ADV_AUX_SET
+	int "LE Extended Advertising Auxiliary Sets"
+	depends on BT_BROADCASTER
+	range 0 BT_CTLR_ADV_SET
+	default BT_CTLR_ADV_SET
+	help
+	  Maximum supported advertising auxiliary channel sets.
+
+config BT_CTLR_ADV_SYNC_SET
+	int "LE Periodic Advertising Sets"
+	depends on BT_CTLR_ADV_PERIODIC
+	range 1 BT_CTLR_ADV_AUX_SET
+	default 1
+	help
+	  Maximum supported periodic advertising sets.
+
 endif # BT_CTLR_ADV_EXT
+
+config BT_CTLR_ADV_DATA_BUF_MAX
+	int "Advertising Data Maximum Buffers"
+	depends on BT_BROADCASTER
+	range 1 64 if BT_CTLR_ADV_EXT
+	range 1 1 if !BT_CTLR_ADV_EXT
+	default 2 if BT_CTLR_ADV_PERIODIC
+	default 1
+	help
+	  Maximum number of buffered Advertising Data payload across enabled
+	  advertising sets.
 
 module = BT_CTLR_ISOAL
 module-str = "Bluetooth Controller ISO-AL"
@@ -369,22 +396,6 @@ config BT_CTLR_PHY_2M_NRF
 	help
 	  Enable support for Nordic Semiconductor proprietary 2Mbps PHY in the
 	  Controller. Encrypted connections are not supported.
-
-config BT_CTLR_ADV_AUX_SET
-	int "LE Extended Advertising Auxiliary Sets"
-	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
-	range 0 BT_CTLR_ADV_SET
-	default BT_CTLR_ADV_SET
-	help
-	  Maximum supported advertising auxiliary channel sets.
-
-config BT_CTLR_ADV_SYNC_SET
-	int "LE Periodic Advertising Sets"
-	depends on BT_CTLR_ADV_PERIODIC
-	range 1 BT_CTLR_ADV_AUX_SET
-	default 1
-	help
-	  Maximum supported periodic advertising sets.
 
 config BT_CTLR_ADV_DATA_CHAIN
 	bool "Advertising Data chaining [EXPERIMENTAL]"
@@ -507,17 +518,6 @@ config BT_CTLR_ADV_AUX_SYNC_OFFSET
 	  periodic interval.
 	  The offset is in microseconds, limited to an experimental maximum
 	  value of 4 seconds.
-
-config BT_CTLR_ADV_DATA_BUF_MAX
-	int "Advertising Data Maximum Buffers"
-	depends on BT_BROADCASTER
-	range 1 64 if BT_CTLR_ADV_EXT
-	range 1 1 if !BT_CTLR_ADV_EXT
-	default 2 if BT_CTLR_ADV_PERIODIC
-	default 1
-	help
-	  Maximum number of buffered Advertising Data payload across enabled
-	  advertising sets.
 
 config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	bool

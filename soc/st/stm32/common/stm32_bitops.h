@@ -14,7 +14,7 @@ static ALWAYS_INLINE void stm32_reg_write(volatile uint32_t *addr, uint32_t valu
 	sys_write32(value, (mem_addr_t)addr);
 }
 
-static ALWAYS_INLINE uint32_t stm32_reg_read(volatile uint32_t *addr)
+static ALWAYS_INLINE uint32_t stm32_reg_read(const volatile uint32_t *addr)
 {
 	return sys_read32((mem_addr_t)addr);
 }
@@ -29,7 +29,7 @@ static ALWAYS_INLINE void stm32_reg_clear_bits(volatile uint32_t *addr, uint32_t
 	sys_clear_bits((mem_addr_t)addr, mask);
 }
 
-static ALWAYS_INLINE uint32_t stm32_reg_read_bits(volatile uint32_t *addr, uint32_t mask)
+static ALWAYS_INLINE uint32_t stm32_reg_read_bits(const volatile uint32_t *addr, uint32_t mask)
 {
 	return sys_read32((mem_addr_t)addr) & mask;
 }

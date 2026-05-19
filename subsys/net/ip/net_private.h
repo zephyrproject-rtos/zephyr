@@ -40,10 +40,13 @@ union net_mgmt_events {
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 #if defined(CONFIG_NET_IPV6)
 	struct net_event_ipv6_prefix ipv6_prefix;
-#if defined(CONFIG_NET_IPV6_MLD)
+#if defined(CONFIG_NET_IPV6_ROUTE)
 	struct net_event_ipv6_route ipv6_route;
-#endif /* CONFIG_NET_IPV6_MLD */
+#endif /* CONFIG_NET_IPV6_ROUTE */
 #endif /* CONFIG_NET_IPV6 */
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	struct net_event_ipv4_route ipv4_route;
+#endif /* CONFIG_NET_IPV4_ROUTE */
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 	struct net_event_l4_hostname hostname;
 #endif /* CONFIG_NET_HOSTNAME_ENABLE */
@@ -66,12 +69,12 @@ extern void net_process_tx_packet(struct net_pkt *pkt);
 
 extern struct net_if_addr *net_if_ipv4_addr_get_first_by_index(int ifindex);
 
-extern int net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
-				       struct net_ipv4_hdr *ipv4_hdr,
-				       struct net_icmp_hdr *icmp_hdr);
-extern int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
-				       struct net_ipv6_hdr *ipv6_hdr,
-				       struct net_icmp_hdr *icmp_hdr);
+extern enum net_verdict net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
+						    struct net_ipv4_hdr *ipv4_hdr,
+						    struct net_icmp_hdr *icmp_hdr);
+extern enum net_verdict net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
+						    struct net_ipv6_hdr *ipv6_hdr,
+						    struct net_icmp_hdr *icmp_hdr);
 
 extern struct net_if *net_ipip_get_virtual_interface(struct net_if *input_iface);
 
@@ -251,6 +254,17 @@ static inline void net_coap_init(void)
 }
 #endif
 
+#if defined(CONFIG_QUIC)
+/**
+ * @brief QUIC init function declaration. It belongs here because we don't want
+ * to expose it as a public API -- it should only be called once, and only by
+ * net_core.
+ */
+extern void net_quic_init(void);
+#else
+#define net_quic_init()
+#endif
+
 #if defined(CONFIG_NET_SOCKETS_OBJ_CORE)
 struct sock_obj_type_raw_stats {
 	uint64_t sent;
@@ -302,7 +316,7 @@ extern char *net_byte_to_hex(char *ptr, uint8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len,
 				    char *buf, int buflen);
 extern uint16_t calc_chksum(uint16_t sum_in, const uint8_t *data, size_t len);
-extern uint16_t net_calc_chksum(struct net_pkt *pkt, uint8_t proto);
+extern int net_calc_chksum(struct net_pkt *pkt, uint8_t proto, uint16_t *out_chksum);
 
 /**
  * @brief Deliver the incoming packet through the recv_cb of the net_context
@@ -324,9 +338,9 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     void *user_data);
 
 #if defined(CONFIG_NET_IPV4)
-uint16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
+int net_calc_chksum_ipv4(struct net_pkt *pkt, uint16_t *out_chksum);
 #else
-#define net_calc_chksum_ipv4(...) 0U
+#define net_calc_chksum_ipv4(pkt, out_chksum) -ENOTSUP
 #endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_IPV4_IGMP)
@@ -339,39 +353,49 @@ void net_ipv4_igmp_init(struct net_if *iface);
 #endif /* CONFIG_NET_IPV4_IGMP */
 
 #if defined(CONFIG_NET_IPV4_IGMP)
-uint16_t net_calc_chksum_igmp(struct net_pkt *pkt);
+int net_calc_chksum_igmp(struct net_pkt *pkt, uint16_t *out_chksum);
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt,
 				     struct net_ipv4_hdr *ip_hdr);
 #else
 #define net_ipv4_igmp_input(...)
-#define net_calc_chksum_igmp(pkt) 0U
+#define net_calc_chksum_igmp(pkt, out_chksum) -ENOTSUP
 #endif /* CONFIG_NET_IPV4_IGMP */
 
-static inline uint16_t net_calc_chksum_icmpv6(struct net_pkt *pkt)
+static inline int net_calc_chksum_icmpv6(struct net_pkt *pkt, uint16_t *out_chksum)
 {
-	return net_calc_chksum(pkt, NET_IPPROTO_ICMPV6);
+	return net_calc_chksum(pkt, NET_IPPROTO_ICMPV6, out_chksum);
 }
 
-static inline uint16_t net_calc_chksum_icmpv4(struct net_pkt *pkt)
+static inline int net_calc_chksum_icmpv4(struct net_pkt *pkt, uint16_t *out_chksum)
 {
-	return net_calc_chksum(pkt, NET_IPPROTO_ICMP);
+	return net_calc_chksum(pkt, NET_IPPROTO_ICMP, out_chksum);
 }
 
-static inline uint16_t net_calc_chksum_udp(struct net_pkt *pkt)
+static inline int net_calc_chksum_udp(struct net_pkt *pkt, uint16_t *out_chksum)
 {
-	uint16_t chksum = net_calc_chksum(pkt, NET_IPPROTO_UDP);
+	uint16_t chksum = 0;
+	int ret;
 
-	return chksum == 0U ? 0xffff : chksum;
+	ret = net_calc_chksum(pkt, NET_IPPROTO_UDP, &chksum);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (out_chksum) {
+		*out_chksum = (chksum == 0U) ? 0xffff : chksum;
+	}
+
+	return 0;
 }
 
-static inline uint16_t net_calc_verify_chksum_udp(struct net_pkt *pkt)
+static inline int net_calc_verify_chksum_udp(struct net_pkt *pkt, uint16_t *out_chksum)
 {
-	return net_calc_chksum(pkt, NET_IPPROTO_UDP);
+	return net_calc_chksum(pkt, NET_IPPROTO_UDP, out_chksum);
 }
 
-static inline uint16_t net_calc_chksum_tcp(struct net_pkt *pkt)
+static inline int net_calc_chksum_tcp(struct net_pkt *pkt, uint16_t *out_chksum)
 {
-	return net_calc_chksum(pkt, NET_IPPROTO_TCP);
+	return net_calc_chksum(pkt, NET_IPPROTO_TCP, out_chksum);
 }
 
 static inline char *net_sprint_ll_addr(const uint8_t *ll, uint8_t ll_len)
@@ -444,3 +468,17 @@ static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *st
  * @param pkt The network packet to initialize.
  */
 void net_pkt_tx_init(struct net_pkt *pkt);
+
+/** Rejoin IGMP mcast group w/o registering address, for internal use only. */
+#if defined(CONFIG_NET_IPV4_IGMP)
+int net_ipv4_igmp_rejoin(struct net_if *iface, const struct net_in_addr *addr);
+#else
+#define net_ipv4_igmp_rejoin(...) -ENOSYS
+#endif
+
+/** Rejoin MLD mcast group w/o registering address, for internal use only. */
+#if defined(CONFIG_NET_IPV6_MLD)
+int net_ipv6_mld_rejoin(struct net_if *iface, const struct net_in6_addr *addr);
+#else
+#define net_ipv6_mld_rejoin(...) -ENOSYS
+#endif

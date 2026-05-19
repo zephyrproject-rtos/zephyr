@@ -1,0 +1,10 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_AW88298
+	bool "Awinic AW88298 digital smart amplifier"
+	default y
+	depends on DT_HAS_AWINIC_AW88298_ENABLED
+	select I2C
+	help
+	  Enable support for the Awinic AW88298 digital smart amplifier.

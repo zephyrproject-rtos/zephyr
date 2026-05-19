@@ -13,5 +13,6 @@ ram: 384
 supported:
   - can
   - gpio
+  - usbd
   - usb_device
 vendor: others

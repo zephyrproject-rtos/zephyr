@@ -4,8 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief ESP32-S2 GPIO signal map definitions
+ * @ingroup pinctrl_esp32s2
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32S2_GPIO_SIGMAP_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32S2_GPIO_SIGMAP_H_
+
+/** @cond INTERNAL_HIDDEN */
 
 #define ESP_NOSIG                       ESP_SIG_INVAL
 
@@ -312,5 +320,7 @@
 #define ESP_CLK_I2S_MUX                 251
 #define ESP_SIG_GPIO_OUT                256
 #define ESP_GPIO_MAP_DATE	        0x1904100
+
+/** @endcond */
 
 #endif  /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32S2_GPIO_SIGMAP_H_ */

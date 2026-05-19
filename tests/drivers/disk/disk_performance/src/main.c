@@ -18,11 +18,15 @@
 #define DISK_NAME "SD2"
 #elif defined(CONFIG_NVME)
 #define DISK_NAME "nvme0n0"
+#elif defined(CONFIG_DISK_DRIVER_FTL)
+#define DISK_NAME "NAND"
 #else
 #error "No disk device defined, is your board supported?"
 #endif
 
-#if CONFIG_SRAM_SIZE >= 512
+#define RAM_SIZE (DT_CHOSEN_SRAM_SIZE / 1024)
+
+#if RAM_SIZE >= 512
 /* Cap buffer size at 128 KiB */
 #define MAX_TOTAL_BUF_SIZE 128
 #elif CONFIG_SOC_POSIX
@@ -30,7 +34,7 @@
 #define MAX_TOTAL_BUF_SIZE 128
 #else
 /* Use half of all SRAM */
-#define MAX_TOTAL_BUF_SIZE (CONFIG_SRAM_SIZE / 2)
+#define MAX_TOTAL_BUF_SIZE (RAM_SIZE / 2)
 #endif
 
 #define BUF_SIZE ((MAX_TOTAL_BUF_SIZE * 1024) / 2)

@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BUILD_OUTPUT_BIN
+	default y if BOARD_SPARROWHAWK_RCAR_V4H_R8A779G0_R52

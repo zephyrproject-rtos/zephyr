@@ -30,6 +30,11 @@
 #define CMUX_BASIC_HRD_SMALL_SIZE	6
 #define CMUX_BASIC_HRD_LARGE_SIZE	7
 #define TRANSMISSION_DELAY_MS		10
+#define TRANSMISSION_DELAY		K_MSEC(TRANSMISSION_DELAY_MS)
+#define PIPE_EVENT_OPENED_BIT		BIT(0)
+#define MODEM_CMUX_T1_TIMEOUT		(K_MSEC(CONFIG_MODEM_CMUX_T1_TIMEOUT))
+#define MODEM_CMUX_T2_TIMEOUT		(K_MSEC(CONFIG_MODEM_CMUX_T2_TIMEOUT))
+#define MODEM_CMUX_T3_TIMEOUT		(K_SECONDS(CONFIG_MODEM_CMUX_T3_TIMEOUT))
 
 /*************************************************************************************************/
 /*                                          Instances                                            */
@@ -115,6 +120,8 @@ static uint8_t cmux_frame_control_sabm_cmd[] = {0xF9, 0x03, 0x3F, 0x01, 0x1C, 0x
 static uint8_t cmux_frame_control_sabm_ack[] = {0xF9, 0x03, 0x73, 0x01, 0xD7, 0xF9};
 static uint8_t cmux_frame_control_cld_cmd[] = {0xF9, 0x03, 0xEF, 0x05, 0xC3, 0x01, 0xF2, 0xF9};
 static uint8_t cmux_frame_control_cld_ack[] = {0xF9, 0x03, 0xEF, 0x05, 0xC1, 0x01, 0xF2, 0xF9};
+static uint8_t cmux_frame_dlci0_disc_cmd[] = {0xF9, 0x01, 0x53, 0x01, 0x9C, 0xF9};
+static uint8_t cmux_frame_dlci0_ua_ack[] = {0xF9, 0x01, 0x73, 0x01, 0xB6, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_cmd[] = {0xF9, 0x07, 0x3F, 0x01, 0xDE, 0xF9};
 static uint8_t cmux_frame_dlci1_sabm_ack[] = {0xF9, 0x07, 0x73, 0x01, 0x15, 0xF9};
 static uint8_t cmux_frame_dlci1_disc_cmd[] = {0xF9, 0x07, 0x53, 0x01, 0x3F, 0xF9};
@@ -208,6 +215,47 @@ static uint8_t cmux_frame_data_dlci2_ppp_18[] = {0x7E, 0xFF, 0x7D, 0x23, 0xC0, 0
 
 static uint8_t cmux_frame_data_large[127] = { [0 ... 126] = 0xAA };
 
+/*************************************************************************************************/
+/*                                   Power Save CMUX frames                                      */
+/*************************************************************************************************/
+
+/*
+ * PSC command from peer/MS to CMUX.
+ * DLCI=0, CR=0 in address (MS/DCE sends commands with C/R=0), UIH+PF control,
+ * PSC command type (ea=1, cr=1, value=0x10 -> 0x43), length=0 (0x01).
+ * FCS computed over header {0x01, 0xFF, 0x05}.
+ */
+static uint8_t cmux_frame_control_psc_cmd[] = {0xF9, 0x01, 0xFF, 0x05, 0x43, 0x01, 0x86, 0xF9};
+
+/*
+ * PSC ack from CMUX to peer.
+ * Mirrored frame: same address and control, PSC type with cr cleared (0x41).
+ */
+static uint8_t cmux_frame_control_psc_ack[] = {0xF9, 0x01, 0xFF, 0x05, 0x41, 0x01, 0x86, 0xF9};
+
+/*
+ * PSC command from CMUX acting as initiator (runtime power management).
+ * DLCI=0, CR=1 in address (TE/initiator sends commands with C/R=1), UIH+PF,
+ * PSC command type (0x43), length=0 (0x01).
+ * FCS computed over header {0x03, 0xFF, 0x05}.
+ */
+static uint8_t cmux_frame_control_psc_initiator_cmd[] = {
+	0xF9, 0x03, 0xFF, 0x05, 0x43, 0x01, 0xE7, 0xF9};
+
+/*
+ * PSC ack from peer to CMUX initiator.
+ * DCE sends responses with C/R=1, so address stays 0x03; PSC type cr cleared (0x41).
+ */
+static uint8_t cmux_frame_control_psc_initiator_ack[] = {
+	0xF9, 0x03, 0xFF, 0x05, 0x41, 0x01, 0xE7, 0xF9};
+
+/*
+ * Three flags should trigger peer to start retrying flag characters.
+ * This is used for wakeup sequence.
+ */
+static const uint8_t wakeup_pattern[] = {0xF9, 0xF9, 0xF9};
+static const uint8_t sof[] = {0xF9};
+
 const static struct modem_backend_mock_transaction transaction_control_cld = {
 	.get = cmux_frame_control_cld_cmd,
 	.get_size = sizeof(cmux_frame_control_cld_cmd),
@@ -269,6 +317,28 @@ const static struct modem_backend_mock_transaction transaction_dlci2_ppp_with_ms
 	.put_size = sizeof(cmux_frame_dlci2_msc_fcon_ack),
 	.next = &transaction_dlci2_msc};
 
+const static struct modem_backend_mock_transaction transaction_control_psc_initiator = {
+	.get = cmux_frame_control_psc_initiator_cmd,
+	.get_size = sizeof(cmux_frame_control_psc_initiator_cmd),
+	.put = cmux_frame_control_psc_initiator_ack,
+	.put_size = sizeof(cmux_frame_control_psc_initiator_ack),
+};
+
+const static struct modem_backend_mock_transaction transaction_retry_sof = {
+	.get = sof,
+	.get_size = sizeof(sof),
+	.put = sof,
+	.put_size = sizeof(sof),
+	.next = &transaction_retry_sof,
+	.optional = true};
+
+const static struct modem_backend_mock_transaction transaction_wakeup_flags = {
+	.get = wakeup_pattern,
+	.get_size = sizeof(wakeup_pattern),
+	.put = sof,
+	.put_size = sizeof(sof),
+	.next = &transaction_retry_sof};
+
 static void test_modem_cmux_callback(struct modem_cmux *cmux, enum modem_cmux_event event,
 				     void *user_data)
 {
@@ -281,6 +351,11 @@ static void test_modem_cmux_callback(struct modem_cmux *cmux, enum modem_cmux_ev
 		k_event_post(&cmux_event, EVENT_CMUX_DISCONNECTED);
 		return;
 	}
+}
+
+static bool wait_cmux_state(enum modem_cmux_state state, k_timeout_t timeout)
+{
+	return k_event_wait(&cmux.event, BIT(state), false, timeout) == BIT(state);
 }
 
 static void *test_modem_cmux_setup(void)
@@ -359,7 +434,11 @@ static void test_modem_cmux_before(void *f)
 	/* Reset mock pipes */
 	modem_backend_mock_reset(&bus_mock);
 	cmux.state = MODEM_CMUX_STATE_CONNECTED;
+	cmux.flow_control_on = true;
 	k_event_set(&cmux.event, BIT(cmux.state));
+	k_event_set(&dlci1_pipe->event, PIPE_EVENT_OPENED_BIT);
+	k_event_set(&dlci2_pipe->event, PIPE_EVENT_OPENED_BIT);
+	k_event_set(&bus_mock_pipe->event, PIPE_EVENT_OPENED_BIT);
 }
 
 ZTEST(modem_cmux, test_modem_cmux_receive_dlci2_at)
@@ -975,6 +1054,348 @@ ZTEST(modem_cmux, test_modem_cmux_invalid_command)
 
 	/* Invalid command should not cause any response */
 	zassert_equal(0, modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1)));
+}
+
+ZTEST(modem_cmux, test_modem_cmux_dlc0_disc)
+{
+	int ret;
+	uint32_t events;
+
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci0_disc_cmd,
+			       sizeof(cmux_frame_dlci0_disc_cmd));
+
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_true(ret == sizeof(cmux_frame_dlci0_ua_ack),
+		     "Incorrect number of bytes received");
+
+	zassert_mem_equal(buffer1, cmux_frame_dlci0_ua_ack,
+			    sizeof(cmux_frame_dlci0_ua_ack),
+		     "Incorrect UA ACK received");
+	events = k_event_wait(&cmux_event, EVENT_CMUX_DISCONNECTED, false, K_SECONDS(1));
+	zassert_equal(events, EVENT_CMUX_DISCONNECTED,
+		      "DLCI0 DISC should cause CMUX disconnection");
+}
+
+/*
+ * Test: peer-initiated power save.
+ *
+ * The peer sends a PSC command to CMUX. CMUX acknowledges with a PSC response
+ * frame and transitions to POWERSAVE state once the transmit buffer is flushed.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_peer_initiated)
+{
+	int ret;
+
+	/* Peer sends PSC power save command to CMUX */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_psc_cmd,
+			       sizeof(cmux_frame_control_psc_cmd));
+
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	/* CMUX must respond with a PSC ack frame */
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, sizeof(cmux_frame_control_psc_ack),
+		      "Unexpected PSC ack byte count: %d", ret);
+	zassert_mem_equal(buffer1, cmux_frame_control_psc_ack,
+			  sizeof(cmux_frame_control_psc_ack),
+			  "Incorrect PSC ack frame");
+
+	/*
+	 * State transitions CONFIRM_POWERSAVE -> POWERSAVE after the transmit
+	 * buffer is flushed by the transmit handler.
+	 */
+	k_msleep(TRANSMISSION_DELAY_MS);
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_POWERSAVE,
+		      "CMUX should be in POWERSAVE state after PSC ack flushed");
+}
+
+/*
+ * Test: wakeup from power save on received frame.
+ *
+ * When CMUX is in POWERSAVE state and a complete CMUX frame arrives from the
+ * peer, CMUX must immediately transition back to CONNECTED and deliver the
+ * frame payload to the associated DLCI pipe.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_wakeup_on_receive)
+{
+	int ret;
+	uint32_t events;
+
+	/* Force POWERSAVE state directly to isolate the wakeup-on-receive path */
+	cmux.state = MODEM_CMUX_STATE_POWERSAVE;
+	k_event_set(&cmux.event, BIT(MODEM_CMUX_STATE_POWERSAVE));
+
+	/* Peer transmits a data frame to CMUX while CMUX is asleep */
+	modem_backend_mock_put(&bus_mock, cmux_frame_dlci1_at_at,
+			       sizeof(cmux_frame_dlci1_at_at));
+
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	/* Any received frame must wake CMUX from power save */
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_CONNECTED,
+		      "CMUX should be CONNECTED after receiving frame during power save");
+
+	/* The frame payload must be available on DLCI1 */
+	events = k_event_test(&cmux_event, EVENT_CMUX_DLCI1_RECEIVE_READY);
+	zassert_equal(events, EVENT_CMUX_DLCI1_RECEIVE_READY,
+		      "Receive ready event not raised on DLCI1 after power save wakeup");
+
+	ret = modem_pipe_receive(dlci1_pipe, buffer1, sizeof(buffer1));
+	zassert_equal(ret, (int)sizeof(cmux_frame_data_dlci1_at_at),
+		      "Incorrect byte count received after power save wakeup");
+	zassert_mem_equal(buffer1, cmux_frame_data_dlci1_at_at,
+			  sizeof(cmux_frame_data_dlci1_at_at),
+			  "Incorrect data received after power save wakeup");
+}
+
+/*
+ * Test: wakeup triggered by a transmit attempt during power save.
+ *
+ * When a DLCI pipe transmits data while CMUX is in POWERSAVE, CMUX must
+ * transition to WAKEUP and send the wakeup flag sequence to the peer. Once
+ * the peer echoes flag bytes back (receive state becomes RESYNC), CMUX exits
+ * WAKEUP, returns to CONNECTED, and transmits the queued data frame.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_wakeup_on_transmit)
+{
+	int ret;
+	int data_offset;
+
+	/* Force POWERSAVE state directly to isolate the wakeup-on-transmit path */
+	cmux.state = MODEM_CMUX_STATE_POWERSAVE;
+	k_event_set(&cmux.event, BIT(MODEM_CMUX_STATE_POWERSAVE));
+
+	/* Prime the mock backend with the wakeup flags transaction */
+	modem_backend_mock_prime(&bus_mock, &transaction_wakeup_flags);
+
+	/* Transmitting while in POWERSAVE queues the data and triggers wakeup */
+	ret = modem_pipe_transmit(dlci2_pipe, cmux_frame_data_dlci2_ppp_18,
+				  sizeof(cmux_frame_data_dlci2_ppp_18));
+	zassert_equal(ret, (int)sizeof(cmux_frame_data_dlci2_ppp_18),
+		      "Transmit during power save should succeed (data is queued)");
+
+	/* Transmit handler must have entered WAKEUP and sent the wakeup pattern */
+	wait_cmux_state(MODEM_CMUX_STATE_WAKEUP, TRANSMISSION_DELAY);
+
+	/* After wake-up flags, CMUX should transition to CONNECTED */
+	wait_cmux_state(MODEM_CMUX_STATE_CONNECTED, TRANSMISSION_DELAY);
+
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	/*
+	 * The queued data frame should have been transmitted after wakeup.
+	 * The transmit buffer may be preceded by additional wakeup SOF bytes
+	 * from retry attempts before the RESYNC was detected.
+	 */
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_true(ret >= (int)sizeof(cmux_frame_dlci2_ppp_18),
+		     "Queued data frame should have been transmitted after wakeup");
+	data_offset = ret - sizeof(cmux_frame_dlci2_ppp_18);
+	for (int i = 0; i < data_offset; i++) {
+		zassert_equal(buffer1[i], 0xF9,
+			      "Pre-frame byte %d should be a SOF wakeup retry", i);
+	}
+	zassert_mem_equal(&buffer1[data_offset], cmux_frame_dlci2_ppp_18,
+			  sizeof(cmux_frame_dlci2_ppp_18),
+			  "Incorrect data frame transmitted after wakeup");
+}
+
+/*
+ * Test: CMUX-initiated power save via idle timeout (runtime power management).
+ *
+ * When runtime power management is enabled, CMUX autonomously enters power
+ * save after the configured idle period by sending a PSC command. Upon
+ * receiving the PSC ack from the peer, CMUX transitions to POWERSAVE.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_cmux_initiated)
+{
+	int ret;
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+
+	/* Enable runtime power management with a short idle timeout */
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+
+	/*
+	 * Trigger the idle timer via an empty transmit request.
+	 * modem_cmux_dlci_pipe_api_transmit() calls runtime_pm_keepalive() for
+	 * size==0 / buf==NULL, scheduling runtime_pm_work after idle_timeout.
+	 */
+	ret = modem_pipe_transmit(dlci1_pipe, NULL, 0);
+	zassert_ok(ret, "Empty transmit to arm idle timer should succeed");
+
+	/* Wait for the idle timeout to expire and the PSC command to be sent */
+	k_msleep(150);
+
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_ENTER_POWERSAVE,
+		      "CMUX should be in ENTER_POWERSAVE after idle timeout");
+
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, (int)sizeof(cmux_frame_control_psc_initiator_cmd),
+		      "PSC command should have been sent by CMUX, got %d bytes", ret);
+	zassert_mem_equal(buffer1, cmux_frame_control_psc_initiator_cmd,
+			  sizeof(cmux_frame_control_psc_initiator_cmd),
+			  "Incorrect PSC command sent by CMUX");
+
+	/* Peer acknowledges the PSC command */
+	modem_backend_mock_put(&bus_mock, cmux_frame_control_psc_initiator_ack,
+			       sizeof(cmux_frame_control_psc_initiator_ack));
+
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	zassert_equal(cmux.state, MODEM_CMUX_STATE_POWERSAVE,
+		      "CMUX should be in POWERSAVE state after PSC ack received");
+
+	/* Restore config to avoid affecting subsequent tests */
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.idle_timeout = saved_timeout;
+}
+
+/*
+ * Test: close_pipe_on_power_save.
+ *
+ * When both runtime power management and close_pipe_on_power_save are enabled,
+ * CMUX must close the underlying bus pipe once it enters POWERSAVE. When data
+ * is later transmitted on a DLCI, CMUX transitions to WAKEUP and re-opens the
+ * bus pipe before sending the wakeup flag sequence.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_close_pipe)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	bool saved_cpp = cmux.config.close_pipe_on_power_save;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+
+	/* Enable runtime power management with close_pipe_on_power_save */
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.close_pipe_on_power_save = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+
+	/* Prime mock to auto-reply PSC ack when CMUX sends PSC cmd */
+	modem_backend_mock_prime(&bus_mock, &transaction_control_psc_initiator);
+
+	/* Arm idle timer via empty transmit */
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+
+	/* Wait for idle timeout, PSC exchange, and POWERSAVE state */
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_POWERSAVE, K_MSEC(300)),
+		     "CMUX should enter POWERSAVE after idle timeout and PSC ack");
+
+	/* Bus pipe must have been closed */
+	zassert_true(k_event_test(&bus_mock_pipe->event, BIT(1)),
+		     "Bus pipe should be closed when close_pipe_on_power_save is set");
+
+	/*
+	 * Prime the mock with the wakeup transaction so that when CMUX sends
+	 * the 3-flag wakeup pattern the mock replies with a single SOF flag,
+	 * then keeps echoing SOF flags on each retry until CMUX detects RESYNC
+	 * and transitions back to CONNECTED.
+	 */
+	modem_backend_mock_prime(&bus_mock, &transaction_wakeup_flags);
+
+	/* Transmitting data triggers WAKEUP, which re-opens the bus pipe */
+	zassert_equal(modem_pipe_transmit(dlci2_pipe, cmux_frame_data_dlci2_ppp_18,
+					  sizeof(cmux_frame_data_dlci2_ppp_18)),
+		      (int)sizeof(cmux_frame_data_dlci2_ppp_18),
+		      "Transmit during POWERSAVE should queue data");
+
+	/* Wait for WAKEUP — pipe re-open and wakeup pattern transmission happen here */
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_WAKEUP, TRANSMISSION_DELAY),
+		     "CMUX should enter WAKEUP state after transmit during power save");
+
+	/* Bus pipe must have been re-opened for the wakeup sequence */
+	zassert_true(k_event_test(&bus_mock_pipe->event, BIT(0)),
+		     "Bus pipe should be re-opened during WAKEUP");
+
+	/* Wait for CMUX to exit WAKEUP and return to CONNECTED */
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_CONNECTED, MODEM_CMUX_T2_TIMEOUT),
+		     "CMUX should return to CONNECTED after wakeup resync");
+
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	/* Verify the queued data frame was transmitted after wakeup */
+	int ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	int data_offset = ret - sizeof(cmux_frame_dlci2_ppp_18);
+
+	zassert_true(ret >= (int)sizeof(cmux_frame_dlci2_ppp_18),
+		     "Queued data frame should have been transmitted after wakeup");
+	zassert_mem_equal(&buffer1[data_offset], cmux_frame_dlci2_ppp_18,
+			  sizeof(cmux_frame_dlci2_ppp_18),
+			  "Incorrect data frame transmitted after wakeup");
+
+	/* Restore config */
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.close_pipe_on_power_save = saved_cpp;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+}
+
+/*
+ * Test: disconnect while in power save with close_pipe_on_power_save.
+ *
+ * CMUX module should re-open pipe and wakeup the peer before
+ * sending the disconnect command.
+ */
+
+ZTEST(modem_cmux, test_modem_cmux_power_save_disconnect)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	bool saved_cpp = cmux.config.close_pipe_on_power_save;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+
+	/* Enable runtime power management with close_pipe_on_power_save */
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.close_pipe_on_power_save = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+
+	/* Prime mock to auto-reply PSC ack when CMUX sends PSC cmd */
+	modem_backend_mock_prime(&bus_mock, &transaction_control_psc_initiator);
+
+	/* Arm idle timer via empty transmit */
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+
+	/* Wait for idle timeout, PSC exchange, and POWERSAVE state */
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_POWERSAVE, K_MSEC(300)),
+		     "CMUX should enter POWERSAVE after idle timeout and PSC ack");
+
+	/* Bus pipe must have been closed */
+	zassert_true(k_event_test(&bus_mock_pipe->event, BIT(1)),
+		     "Bus pipe should be closed when close_pipe_on_power_save is set");
+
+	/* Prime the mock with the wakeup transaction */
+	modem_backend_mock_prime(&bus_mock, &transaction_wakeup_flags);
+
+	/* Request disconnect, while still in powersave */
+	zassert_equal(modem_cmux_disconnect_async(&cmux), 0, "Failed to request CMUX disconnect");
+
+	/* Wait for WAKEUP — pipe re-open and wakeup pattern transmission happen here */
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_WAKEUP, TRANSMISSION_DELAY),
+		     "CMUX should enter WAKEUP state after transmit during power save");
+
+	/* Bus pipe must have been re-opened for the wakeup sequence */
+	zassert_true(k_event_test(&bus_mock_pipe->event, BIT(0)),
+		     "Bus pipe should be re-opened during WAKEUP");
+
+	/* Wait for CMUX to exit WAKEUP and go to DISCONNECTING */
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_DISCONNECTING, MODEM_CMUX_T2_TIMEOUT),
+		     "CMUX should start to DISCONNECTING after wakeup resync");
+
+	modem_backend_mock_prime(&bus_mock, &transaction_control_cld);
+
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_DISCONNECTED, MODEM_CMUX_T2_TIMEOUT),
+		     "CMUX should be DISCONNECTED after wakeup resync");
+
+	/* Restore config */
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.close_pipe_on_power_save = saved_cpp;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
 }
 
 ZTEST_SUITE(modem_cmux, NULL, test_modem_cmux_setup, test_modem_cmux_before, NULL, NULL);

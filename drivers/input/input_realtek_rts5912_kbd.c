@@ -114,7 +114,7 @@ static int rts5912_kbd_init(const struct device *dev)
 	}
 
 	if (!device_is_ready(config->clk_dev)) {
-		LOG_ERR("clock kbd device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->clk_dev);
 		return -ENODEV;
 	}
 

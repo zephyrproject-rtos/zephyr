@@ -8,10 +8,9 @@
 #include <zephyr/rtio/work.h>
 #include <zephyr/kernel.h>
 
-K_MEM_SLAB_DEFINE_STATIC(rtio_work_items_slab,
-			 sizeof(struct rtio_work_req),
-			 CONFIG_RTIO_WORKQ_POOL_ITEMS,
-			 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(rtio_work_items_slab,
+			      struct rtio_work_req,
+			      CONFIG_RTIO_WORKQ_POOL_ITEMS);
 static K_THREAD_STACK_ARRAY_DEFINE(rtio_workq_threads_stack,
 				   CONFIG_RTIO_WORKQ_THREADS_POOL,
 				   CONFIG_RTIO_WORKQ_THREADS_POOL_STACK_SIZE);
@@ -78,15 +77,21 @@ static void rtio_workq_thread_fn(void *arg1, void *arg2, void *arg3)
 
 static int static_init(void)
 {
+	char workq_name[] = "RTIO WQ 0";
+	k_tid_t workq;
+
 	for (size_t i = 0 ; i < ARRAY_SIZE(rtio_work_threads) ; i++) {
-		k_thread_create(&rtio_work_threads[i],
-				rtio_workq_threads_stack[i],
-				CONFIG_RTIO_WORKQ_THREADS_POOL_STACK_SIZE,
-				rtio_workq_thread_fn,
-				NULL, NULL, NULL,
-				CONFIG_RTIO_WORKQ_THREADS_POOL_PRIO,
-				0,
-				K_NO_WAIT);
+		workq = k_thread_create(&rtio_work_threads[i],
+					rtio_workq_threads_stack[i],
+					CONFIG_RTIO_WORKQ_THREADS_POOL_STACK_SIZE,
+					rtio_workq_thread_fn,
+					NULL, NULL, NULL,
+					CONFIG_RTIO_WORKQ_THREADS_POOL_PRIO,
+					0,
+					K_NO_WAIT);
+
+		workq_name[8] = '0' + (i % 10);
+		k_thread_name_set(workq, workq_name);
 	}
 
 	return 0;

@@ -4,8 +4,9 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="iso_bis_fragment"
+simulation_id="${BOARD_TS}_iso_bis_fragment"
 verbosity_level=2
+EXECUTE_TIMEOUT=120
 
 cd ${BSIM_OUT_PATH}/bin
 

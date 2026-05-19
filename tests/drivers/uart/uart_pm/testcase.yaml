@@ -7,10 +7,12 @@ common:
     - nrf52_bsim
     - nrf52840dk/nrf52840
     - nrf5340bsim/nrf5340/cpuapp
+    - nrf5340dk/nrf5340/cpuapp
     - nrf54h20dk/nrf54h20/cpuapp
     - nrf54l15dk/nrf54l15/cpuapp
     - nrf54l15bsim/nrf54l15/cpuapp
     - nrf54lm20dk/nrf54lm20a/cpuapp
+    - nrf54lm20dk/nrf54lm20b/cpuapp
     - nrf54lm20bsim/nrf54lm20a/cpuapp
     - nrf7120dk/nrf7120/cpuapp
     - ophelia4ev/nrf54l15/cpuapp
@@ -39,6 +41,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54l15bsim/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf54lm20bsim/nrf54lm20a/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
@@ -52,6 +55,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
@@ -72,6 +76,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.uart.pm.async:
@@ -91,5 +96,6 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp

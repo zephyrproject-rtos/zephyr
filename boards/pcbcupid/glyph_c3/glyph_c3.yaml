@@ -1,0 +1,10 @@
+identifier: glyph_c3/esp32c3
+name: Glyph-C3
+vendor: pcbcupid
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart

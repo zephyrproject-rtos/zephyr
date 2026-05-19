@@ -15,7 +15,6 @@ import scl
 from twisterlib.error import ConfigurationError
 from twisterlib.testplan import TwisterConfigParser
 
-# pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
 
 

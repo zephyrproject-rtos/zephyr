@@ -104,7 +104,7 @@ static void log_stallguard(const struct device *dev, const uint32_t drv_status)
 	int32_t position;
 	int err;
 
-	err = read_actual_position(dev, &position);
+	err = tmc50xx_read_actual_position(dev, &position);
 	if (err != 0) {
 		LOG_ERR("%s: Failed to read XACTUAL register", dev->name);
 		return;
@@ -231,7 +231,7 @@ static int tmc50xx_init(const struct device *dev)
 	k_sem_init(&data->sem, 1, 1);
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->spi.bus);
 		return -ENODEV;
 	}
 

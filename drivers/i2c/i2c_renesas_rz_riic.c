@@ -425,7 +425,7 @@ static void calc_riic_master_bitrate(const struct i2c_rz_riic_config *config,
 	const uint32_t peripheral_clock = R_FSP_SystemClockHzGet(FSP_PRIV_CLOCK_P0CLK);
 	uint32_t constant_add = 0;
 
-	/* A constant is added to BRL and BRH in all formulas. This constand is 3 + nf when CKS ==
+	/* A constant is added to BRL and BRH in all formulas. This constant is 3 + nf when CKS ==
 	 * 0, or 2 + nf when CKS != 0.
 	 */
 	if (divider == 0) {

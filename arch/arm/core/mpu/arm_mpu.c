@@ -6,6 +6,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/cache.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/barrier.h>
@@ -532,9 +533,18 @@ int z_arm_mpu_init(void)
 	}
 #else
 #if !defined(CONFIG_INIT_ARCH_HW_AT_BOOT)
+	/* When the integrated Cortex-M SCB cache controller is in use
+	 * (CONFIG_ARCH_CACHE) the SCB dcache registers are available, so
+	 * call the CMSIS helper directly.  Other cache backends, such as
+	 * NXP LMEM on RT11xx CM4, must go through the generic cache API.
+	 */
+#if defined(CONFIG_ARCH_CACHE)
 	if (SCB->CCR & SCB_CCR_DC_Msk) {
 		SCB_CleanInvalidateDCache();
 	}
+#else
+	(void)sys_cache_data_flush_and_invd_all();
+#endif
 #endif
 #endif
 #endif /* CONFIG_NOCACHE_MEMORY */

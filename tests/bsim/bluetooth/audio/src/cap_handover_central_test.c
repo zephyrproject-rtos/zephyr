@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -33,6 +34,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_common.h"
 #include "bap_stream_tx.h"
@@ -70,6 +72,7 @@ static struct cap_acceptor {
 static size_t connected_conn_cnt;
 static struct bt_cap_broadcast_source *broadcast_source;
 static struct bt_cap_unicast_group *unicast_group;
+static struct bt_le_ext_adv *ext_adv;
 static bt_addr_le_t remote_dev_addr;
 
 CREATE_FLAG(flag_dev_found);
@@ -90,6 +93,9 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(member);
+
 	if (err != 0) {
 		FAIL("Failed to discover CAS: %d", err);
 
@@ -138,6 +144,8 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 						uint8_t recv_state_count)
 {
+	ARG_UNUSED(conn);
+
 	if (err == 0) {
 		LOG_DBG("BASS discover done with %u recv states", recv_state_count);
 	} else {
@@ -167,10 +175,41 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 	SET_FLAG(flag_stopped);
 }
 
+static void unicast_to_broadcast_created_cb(struct bt_cap_broadcast_source *source)
+{
+	struct bt_data per_ad;
+	int err;
+
+	if (broadcast_source != NULL) {
+		FAIL("Unexpected call to unicast_to_broadcast_created");
+	}
+
+	broadcast_source = source;
+
+	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
+
+	err = bt_cap_initiator_broadcast_get_base(source, &base_buf);
+	if (err != 0) {
+		FAIL("Failed to get encoded BASE: %d\n", err);
+		return;
+	}
+
+	per_ad.type = BT_DATA_SVC_DATA16;
+	per_ad.data_len = base_buf.len;
+	per_ad.data = base_buf.data;
+	err = bt_le_per_adv_set_data(ext_adv, &per_ad, 1);
+	if (err != 0) {
+		FAIL("Failed to set periodic advertising data: %d\n", err);
+		return;
+	}
+}
+
 static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 					     struct bt_cap_unicast_group *group,
 					     struct bt_cap_broadcast_source *source)
 {
+	ARG_UNUSED(group);
+
 	if (err != 0) {
 		FAIL("Failed to handover unicast to broadcast (failing conn %p): %d", conn, err);
 
@@ -179,7 +218,6 @@ static void unicast_to_broadcast_complete_cb(int err, struct bt_conn *conn,
 
 	LOG_DBG("Unicast to broadcast handover completed with new source %p", source);
 
-	broadcast_source = source;
 	SET_FLAG(flag_handover_unicast_to_broadcast);
 }
 
@@ -187,6 +225,8 @@ static void broadcast_to_unicast_complete_cb(int err, struct bt_conn *conn,
 					     struct bt_cap_broadcast_source *source,
 					     struct bt_cap_unicast_group *group)
 {
+	ARG_UNUSED(source);
+
 	if (err != 0) {
 		FAIL("Failed to handover broadcast to unicast (failing conn %p): %d", conn, err);
 
@@ -233,12 +273,16 @@ static void print_remote_codec(const struct bt_audio_codec_cap *codec_cap, enum 
 static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			  const struct bt_audio_codec_cap *codec_cap)
 {
+	ARG_UNUSED(conn);
+
 	print_remote_codec(codec_cap, dir);
 	SET_FLAG(flag_codec_found);
 }
 
 static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("Discovery failed: %d\n", err);
 		return;
@@ -272,6 +316,10 @@ static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_b
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(tx);
+	ARG_UNUSED(rx);
+
 	LOG_DBG("MTU exchanged");
 	SET_FLAG(flag_mtu_exchanged);
 }
@@ -282,7 +330,6 @@ static struct bt_gatt_cb gatt_callbacks = {
 
 static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_data)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t *addr = user_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
@@ -304,8 +351,7 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 		return true; /* Continue parsing to next AD data type */
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	LOG_DBG("Device found: %s", addr_str);
+	LOG_DBG("Device found: %s", bt_addr_le_str(addr));
 
 	bt_addr_le_copy(&remote_dev_addr, addr);
 	SET_FLAG(flag_dev_found);
@@ -376,11 +422,16 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 
 static void broadcast_source_started_cb(struct bt_bap_broadcast_source *source)
 {
+	ARG_UNUSED(source);
+
 	SET_FLAG(flag_broadcast_started);
 }
 
 static void broadcast_source_stopped_cb(struct bt_bap_broadcast_source *source, uint8_t reason)
 {
+	ARG_UNUSED(source);
+	ARG_UNUSED(reason);
+
 	SET_FLAG(flag_broadcast_stopped);
 }
 
@@ -394,6 +445,7 @@ static void init(void)
 		.recv_state = bap_broadcast_assistant_recv_state_cb,
 	};
 	static struct bt_cap_handover_cb cap_handover_cb = {
+		.unicast_to_broadcast_created = unicast_to_broadcast_created_cb,
 		.unicast_to_broadcast_complete = unicast_to_broadcast_complete_cb,
 		.broadcast_to_unicast_complete = broadcast_to_unicast_complete_cb,
 	};
@@ -669,8 +721,9 @@ static void unicast_audio_stop(void)
 
 	for (size_t i = 0U; i < connected_conn_cnt; i++) {
 		/* Sink param */
-		streams_to_stop[param.count++] =
+		streams_to_stop[param.count] =
 			cap_stream_from_audio_test_stream(&cap_acceptors[i].sink_stream);
+		param.count++;
 	}
 
 	param.type = BT_CAP_SET_TYPE_AD_HOC;
@@ -690,7 +743,7 @@ static void unicast_audio_stop(void)
 	WAIT_FOR_FLAG(flag_stopped);
 }
 
-static void handover_unicast_to_broadcast(struct bt_le_ext_adv *ext_adv, uint32_t broadcast_id)
+static void handover_unicast_to_broadcast(uint32_t broadcast_id)
 {
 	static struct bt_cap_initiator_broadcast_stream_param
 		stream_params[ARRAY_SIZE(cap_acceptors)];
@@ -764,7 +817,7 @@ static void handover_unicast_to_broadcast(struct bt_le_ext_adv *ext_adv, uint32_
 }
 
 static void handover_broadcast_to_unicast(
-	const struct bt_le_ext_adv *ext_adv, uint8_t adv_sid, uint32_t broadcast_id,
+	uint8_t adv_sid, uint32_t broadcast_id,
 	struct bt_cap_commander_broadcast_reception_stop_param *reception_stop_param)
 {
 	struct bt_cap_unicast_audio_start_stream_param stream_params[ARRAY_SIZE(cap_acceptors)] = {
@@ -789,8 +842,9 @@ static void handover_broadcast_to_unicast(
 		 * they cannot be handed over from broadcast
 		 */
 		if (stream_param->stream->bap_stream.group != NULL) {
-			(void)memcpy(&stream_params[stream_param_cnt++], stream_param,
+			(void)memcpy(&stream_params[stream_param_cnt], stream_param,
 				     sizeof(*stream_param));
+			stream_param_cnt++;
 		}
 	}
 
@@ -817,31 +871,7 @@ static void handover_broadcast_to_unicast(
 	LOG_DBG("Handover procedure completed");
 }
 
-static void set_base_data(struct bt_le_ext_adv *ext_adv)
-{
-	struct bt_data per_ad;
-	int err;
-
-	NET_BUF_SIMPLE_DEFINE(base_buf, 128);
-
-	err = bt_cap_initiator_broadcast_get_base(broadcast_source, &base_buf);
-	if (err != 0) {
-		FAIL("Failed to get encoded BASE: %d\n", err);
-		return;
-	}
-
-	per_ad.type = BT_DATA_SVC_DATA16;
-	per_ad.data_len = base_buf.len;
-	per_ad.data = base_buf.data;
-	err = bt_le_per_adv_set_data(ext_adv, &per_ad, 1);
-	if (err != 0) {
-		FAIL("Failed to set periodic advertising data: %d\n", err);
-		return;
-	}
-}
-
-static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uint32_t broadcast_id,
-						  struct bt_le_ext_adv **ext_adv)
+static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uint32_t broadcast_id)
 {
 
 	if (acceptor_cnt > CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT) {
@@ -857,6 +887,8 @@ static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uin
 
 		WAIT_FOR_FLAG(flag_mtu_exchanged);
 
+		update_security(cap_acceptors[i].conn);
+
 		discover_cas(cap_acceptors[i].conn);
 		discover_bass(cap_acceptors[i].conn);
 
@@ -871,12 +903,11 @@ static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uin
 	/* Wait for acceptors to receive some data */
 	backchannel_sync_wait_all();
 
-	setup_broadcast_adv(ext_adv);
+	setup_broadcast_adv(&ext_adv);
+	start_broadcast_adv(ext_adv);
 
-	handover_unicast_to_broadcast(*ext_adv, broadcast_id);
+	handover_unicast_to_broadcast(broadcast_id);
 	unicast_group = NULL;
-	set_base_data(*ext_adv);
-	start_broadcast_adv(*ext_adv);
 
 	/* Wait for acceptors to receive some data */
 	backchannel_sync_wait_all();
@@ -885,13 +916,12 @@ static void test_main_cap_handover_central_common(const size_t acceptor_cnt, uin
 static void test_main_cap_handover_central(void)
 {
 	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors */
-	uint32_t broadcast_id = 0x123456;
-	struct bt_le_ext_adv *ext_adv;
-	uint8_t adv_sid = 0x00;
+	uint32_t broadcast_id = 0x123456U;
+	uint8_t adv_sid = 0x00U;
 
-	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id, &ext_adv);
+	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id);
 
-	handover_broadcast_to_unicast(ext_adv, adv_sid, broadcast_id, NULL);
+	handover_broadcast_to_unicast(adv_sid, broadcast_id, NULL);
 	broadcast_source = NULL;
 
 	/* Wait for acceptors to receive some data */
@@ -910,22 +940,21 @@ static void test_main_cap_handover_central_reception_stop(void)
 	struct bt_cap_commander_broadcast_reception_stop_member_param
 		member_param[CONFIG_BT_MAX_CONN] = {0};
 	const size_t acceptor_cnt = get_dev_cnt() - 1; /* Assume all other devices are acceptors */
-	uint32_t broadcast_id = 0x123456;
-	struct bt_le_ext_adv *ext_adv;
-	uint8_t adv_sid = 0x00;
+	uint32_t broadcast_id = 0x123456U;
+	uint8_t adv_sid = 0x00U;
 
-	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id, &ext_adv);
+	test_main_cap_handover_central_common(acceptor_cnt, broadcast_id);
 
 	reception_stop_param.type = BT_CAP_SET_TYPE_AD_HOC;
 	reception_stop_param.param = member_param;
 	reception_stop_param.count = acceptor_cnt;
-	for (size_t i = 0; i < acceptor_cnt; i++) {
+	for (size_t i = 0U; i < acceptor_cnt; i++) {
 		reception_stop_param.param[i].member.member = cap_acceptors[i].conn;
 		reception_stop_param.param[i].src_id = cap_acceptors[i].src_id;
 		reception_stop_param.param[i].num_subgroups = broadcast_create_param.subgroup_count;
 	}
 
-	handover_broadcast_to_unicast(ext_adv, adv_sid, broadcast_id, &reception_stop_param);
+	handover_broadcast_to_unicast(adv_sid, broadcast_id, &reception_stop_param);
 	broadcast_source = NULL;
 
 	/* Wait for acceptors to receive some data */

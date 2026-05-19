@@ -12,11 +12,8 @@
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Device found: %s (RSSI %d), type %u, AD data len %u\n",
-	       addr_str, rssi, type, ad->len);
+	       bt_addr_le_str(addr), rssi, type, ad->len);
 }
 
 #if defined(CONFIG_BT_EXT_ADV)
@@ -53,7 +50,6 @@ static const char *phy2str(uint8_t phy)
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 	uint8_t data_status;
 	uint16_t data_len;
@@ -65,12 +61,11 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 
 	data_status = BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS(info->adv_props);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i "
 	       "Data status: %u, AD data len: %u Name: %s "
 	       "C:%u S:%u D:%u SR:%u E:%u Pri PHY: %s, Sec PHY: %s, "
 	       "Interval: 0x%04x (%u ms), SID: %u\n",
-	       le_addr, info->adv_type, info->tx_power, info->rssi,
+	       bt_addr_le_str(info->addr), info->adv_type, info->tx_power, info->rssi,
 	       data_status, data_len, name,
 	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,

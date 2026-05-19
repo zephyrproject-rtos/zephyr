@@ -31,9 +31,8 @@ extern "C" {
 #endif
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal driver use only, skip these in public documentation.
+ * @def_driverbackendgroup{OTP,otp_interface}
+ * @{
  */
 
 /**
@@ -49,14 +48,22 @@ typedef int (*otp_api_read)(const struct device *dev, off_t offset, void *data, 
 typedef int (*otp_api_program)(const struct device *dev, off_t offset, const void *data,
 			       size_t len);
 
+/** @driver_ops{OTP} */
 __subsystem struct otp_driver_api {
+	/** @driver_ops_mandatory @copybrief otp_read */
 	otp_api_read read;
 #if defined(CONFIG_OTP_PROGRAM) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief otp_program
+	 * @kconfig_dep{CONFIG_OTP_PROGRAM}
+	 */
 	otp_api_program program;
 #endif
 };
 
-/** @endcond */
+/**
+ * @}
+ */
 
 /**
  *  @brief Read data from OTP memory

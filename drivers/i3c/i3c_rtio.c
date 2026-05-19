@@ -186,10 +186,10 @@ int i3c_rtio_configure(struct i3c_rtio *ctx, enum i3c_config_type type, void *co
 	cqe = rtio_cqe_consume(r);
 	if (unlikely(cqe != NULL)) {
 		res = cqe->result;
+		rtio_cqe_release(r, cqe);
 	} else {
 		res = -EIO;
 	}
-	rtio_cqe_release(r, cqe);
 
 out:
 	k_sem_give(&ctx->lock);
@@ -223,10 +223,10 @@ int i3c_rtio_ccc(struct i3c_rtio *ctx, struct i3c_ccc_payload *payload)
 	cqe = rtio_cqe_consume(r);
 	if (unlikely(cqe != NULL)) {
 		res = cqe->result;
+		rtio_cqe_release(r, cqe);
 	} else {
 		res = -EIO;
 	}
-	rtio_cqe_release(r, cqe);
 
 out:
 	k_sem_give(&ctx->lock);
@@ -259,10 +259,10 @@ int i3c_rtio_recover(struct i3c_rtio *ctx)
 	cqe = rtio_cqe_consume(r);
 	if (unlikely(cqe != NULL)) {
 		res = cqe->result;
+		rtio_cqe_release(r, cqe);
 	} else {
 		res = -EIO;
 	}
-	rtio_cqe_release(r, cqe);
 
 out:
 	k_sem_give(&ctx->lock);

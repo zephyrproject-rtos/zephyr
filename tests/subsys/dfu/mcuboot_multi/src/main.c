@@ -76,8 +76,8 @@ static void _test_request_upgrade_n(uint8_t fa_id, int img_index, int confirmed)
 
 ZTEST(mcuboot_multi, test_request_upgrade_multi)
 {
-	_test_request_upgrade_n(FIXED_PARTITION_ID(slot1_partition), 0, 0);
-	_test_request_upgrade_n(FIXED_PARTITION_ID(slot3_partition), 1, 1);
+	_test_request_upgrade_n(PARTITION_ID(slot1_partition), 0, 0);
+	_test_request_upgrade_n(PARTITION_ID(slot3_partition), 1, 1);
 }
 
 static void _test_write_confirm_n(uint8_t fa_id, int img_index)
@@ -122,8 +122,8 @@ static void _test_write_confirm_n(uint8_t fa_id, int img_index)
 
 ZTEST(mcuboot_multi, test_write_confirm_multi)
 {
-	_test_write_confirm_n(FIXED_PARTITION_ID(slot0_partition), 0);
-	_test_write_confirm_n(FIXED_PARTITION_ID(slot2_partition), 1);
+	_test_write_confirm_n(PARTITION_ID(slot0_partition), 0);
+	_test_write_confirm_n(PARTITION_ID(slot2_partition), 1);
 }
 
 ZTEST_SUITE(mcuboot_multi, NULL, NULL, NULL, NULL, NULL);

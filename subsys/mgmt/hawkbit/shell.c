@@ -85,10 +85,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv)
 	shell_print(sh, "Firmware Version: %s", firmware_version);
 	shell_print(sh, "Server address: %s", hawkbit_get_server_addr());
 	shell_print(sh, "Server port: %d", hawkbit_get_server_port());
-	shell_print(sh, "DDI security token: %s",
-		    (IS_ENABLED(CONFIG_HAWKBIT_DDI_NO_SECURITY)
-			     ? "<disabled>"
-			     : hawkbit_get_ddi_security_token()));
+	shell_print(sh, "DDI security token: %s", hawkbit_get_ddi_security_token());
 
 	return 0;
 }
@@ -143,7 +140,6 @@ static int cmd_set_port(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 static int cmd_set_token(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc < 2) {
@@ -155,15 +151,12 @@ static int cmd_set_token(const struct shell *sh, size_t argc, char **argv)
 
 	return 0;
 }
-#endif /* CONFIG_HAWKBIT_DDI_NO_SECURITY */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	sub_hawkbit_set,
 	SHELL_CMD(addr, NULL, "Set hawkBit server address", cmd_set_addr),
 	SHELL_CMD(port, NULL, "Set hawkBit server port", cmd_set_port),
-#ifndef CONFIG_HAWKBIT_DDI_NO_SECURITY
 	SHELL_CMD(ddi_token, NULL, "Set hawkBit DDI Security token", cmd_set_token),
-#endif
 	SHELL_SUBCMD_SET_END);
 #endif /* CONFIG_HAWKBIT_SET_SETTINGS_RUNTIME */
 

@@ -13,3 +13,44 @@ description: 1-Wire master over Zephyr uart
 compatible: "zephyr,w1-serial"
 
 include: [uart-device.yaml, w1-master.yaml]
+
+properties:
+  overdrive-data-baud:
+    type: int
+    default: 1000000
+    description: |
+      Baud rate for overdrive speed data communication. The default value of
+      1000000 provides timing of t_low1=1.0us, t_low0=9.0us, t_slot=10.0us.
+
+  overdrive-reset-baud:
+    type: int
+    default: 115200
+    description: |
+      Baud rate for overdrive speed reset/presence detection. The default value
+      of 115200 provides timing of t_RSTL=52.1us, t_slot=86.8us.
+
+examples:
+  - |
+    /* Basic Example */
+    &uart1 {
+        status = "okay";
+        current-speed = <115200>;
+
+        w1_bus: w1-bus {
+            compatible = "zephyr,w1-serial";
+            status = "okay";
+        };
+    };
+  - |
+    /* Custom Overdrive settings Example */
+    &uart1 {
+        status = "okay";
+        current-speed = <115200>;
+
+        w1_bus: w1-bus {
+            compatible = "zephyr,w1-serial";
+            status = "okay";
+            overdrive-data-baud = <921600>;
+            overdrive-reset-baud = <115200>;
+        };
+    };

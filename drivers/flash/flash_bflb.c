@@ -21,7 +21,8 @@
 #include <hbn_reg.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
-#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
+	defined(CONFIG_SOC_SERIES_BL70XL)
 #include <l1c_reg.h>
 #endif
 
@@ -39,9 +40,15 @@ LOG_MODULE_REGISTER(flash_bflb, CONFIG_FLASH_LOG_LEVEL);
 #elif defined(CONFIG_SOC_SERIES_BL70X)
 #define BFLB_XIP_BASE BL702_FLASH_XIP_BASE
 #define BFLB_XIP_END  BL702_FLASH_XIP_END
+#elif defined(CONFIG_SOC_SERIES_BL70XL)
+#define BFLB_XIP_BASE BL70XL_FLASH_XIP_BASE
+#define BFLB_XIP_END  BL70XL_FLASH_XIP_END
 #elif defined(CONFIG_SOC_SERIES_BL61X)
 #define BFLB_XIP_BASE BL616_FLASH_XIP_BASE
 #define BFLB_XIP_END  BL616_FLASH_XIP_END
+#elif defined(CONFIG_SOC_SERIES_BL808)
+#define BFLB_XIP_BASE BL808_FLASH_XIP_BASE
+#define BFLB_XIP_END  BL808_FLASH_XIP_END
 #endif
 
 #define BFLB_FLASH_CONTROLLER_BUSY_TIMEOUT_MS	200
@@ -91,7 +98,8 @@ struct bflb_flash_cfg {
 	uint8_t  jedec_id_cmd;
 /* JEDEC ID command dummy clock */
 	uint8_t  jedec_id_cmd_dmy_clk;
-#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL60X)
+#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL60X) || \
+	defined(CONFIG_SOC_SERIES_BL70XL)
 /* QPI JEDEC ID command */
 	uint8_t  qpi_jedec_id_cmd;
 /* QPI JEDEC ID command dummy clock */
@@ -281,7 +289,8 @@ static int flash_bflb_is_valid_range(off_t offset, size_t len)
 	return 0;
 }
 
-#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL60X)
+#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL60X) || \
+	defined(CONFIG_SOC_SERIES_BL70XL)
 
 static void flash_bflb_l1c_wrap(bool enable)
 {
@@ -313,11 +322,11 @@ static void flash_bflb_l1c_wrap(bool enable)
 }
 
 
-#elif defined(CONFIG_SOC_SERIES_BL61X)
+#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 
 static void flash_bflb_l1c_wrap(bool enable)
 {
-	/* Do nothing on Bl61x: no L1C */
+	/* Do nothing on BL61x/BL808: no L1C */
 	ARG_UNUSED(enable);
 }
 

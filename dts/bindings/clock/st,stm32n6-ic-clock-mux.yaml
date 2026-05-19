@@ -9,7 +9,7 @@ description: |
   For instance:
     &ic6 {
       pll-src = <2>;
-      div = <16>;
+      ic-div = <16>;
       status = "okay";
     };
 

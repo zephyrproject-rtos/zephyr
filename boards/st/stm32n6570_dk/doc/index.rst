@@ -195,9 +195,9 @@ Board variants
 
 Three variants are available with STM32N6570_DK:
 
-- Default variant. Available as a chainloaded application which should be loaded by a
-  bootloader, it has access to the whole AXISRAM1 and AXISRAM2 regions. It is expected to
-  be built using ``--sysbuild`` option exclusively.
+- Main application (default variant). Available as a chainloaded application which should
+  be loaded by a bootloader, it has access to the whole AXISRAM1 and AXISRAM2 regions.
+  It is expected to be built using ``--sysbuild`` option exclusively.
 - ``fsbl``: First Stage Boot Loader (FSBL) which is available as an application loaded by the
   Boot ROM and flashed using ST-Link. This is typically a bootloader image. It runs
   in RAM LOAD mode on second half of AXISRAM2. 511K are available for the whole image.
@@ -341,20 +341,66 @@ You should see the following message on the console:
 Debugging
 =========
 
-You can debug an application in the usual way using the :ref:`ST-LINK GDB Server <runner_stlink_gdbserver>`.
-Here is an example for the :zephyr:code-sample:`hello_world` application.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :board: stm32n6570_dk
-   :maybe-skip-config:
-   :goals: debug
+You can debug an application in the usual way using west and the :ref:`ST-LINK GDB Server <runner_stlink_gdbserver>`.
 
 .. note::
    To enable debugging, before powering on the board, set the boot pins in the following configuration:
 
-   * BOOT0: 0
-   * BOOT1: 1
+   * BOOT0: 0 (switch SW2 in position L)
+   * BOOT1: 1 (switch SW1 in position H)
+
+   .. tabs::
+
+      .. group-tab:: Application image
+
+         To debug a multi-stage application (application loaded by a bootloader such as MCUboot), follow these steps:
+
+         First, flash your application, it is required so that MCUboot can find it in external memory (see indications above).
+
+         Then, launch debug session using the bootloader domain:
+
+         .. code-block:: console
+
+            west debug --domain mcuboot
+
+         At this step, you're able to debug the bootloader. To debug the chainloaded application, now run the following gdb commands:
+
+         .. code-block:: console
+
+            (gdb) b do_boot
+            (gdb) c
+            # Once stopped in do_boot, add chainloaded application symbols
+            (gdb) add-symbol-file ./build/hello_world/zephyr/zephyr.elf
+            # Place breakpoint on 'main' in chainloaded application
+            (gdb) b main
+            (gdb) c
+
+         Don't forget to systematically power reset the board before each debug session.
+         This can be done using :zephyr_file:`the following script:<boards/st/common/scripts/board_power_reset.sh>`
+
+         .. code-block:: console
+
+            ./boards/st/common/scripts/board_power_reset.sh
+
+      .. group-tab:: FSBL - ST-Link
+
+         Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: stm32n6570_dk/stm32n657xx/fsbl
+            :maybe-skip-config:
+            :goals: debug
+
+      .. group-tab:: FSBL - Serial Boot Loader (USB)
+
+         Here is an example for the :zephyr:code-sample:`hello_world` application.
+
+         .. zephyr-app-commands::
+            :zephyr-app: samples/hello_world
+            :board: stm32n6570_dk/stm32n657xx/sb
+            :maybe-skip-config:
+            :goals: debug
 
 Another solution for debugging is to use STM32CubeIDE:
 

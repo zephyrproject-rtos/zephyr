@@ -12,6 +12,4 @@
  * NOTE: These functions are not thread-safe!
  */
 const char *bt_hex(const void *buf, size_t len);
-const char *bt_addr_str(const bt_addr_t *addr);
-const char *bt_addr_le_str(const bt_addr_le_t *addr);
 const char *bt_uuid_str(const struct bt_uuid *uuid);

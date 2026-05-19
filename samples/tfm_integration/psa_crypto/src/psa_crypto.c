@@ -51,23 +51,13 @@ static psa_status_t crp_get_pub_key(psa_key_id_t key_id,
 				    size_t *key_len)
 {
 	psa_status_t status;
-	psa_key_handle_t key_handle;
 
 	LOG_INF("Retrieving public key for key #%d", key_id);
 	al_dump_log();
 
-	/* Now try to re-open the persisted key based on the key ID. */
-	status = al_psa_status(
-		psa_open_key(key_id, &key_handle),
-		__func__);
-	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to open persistent key #%d", key_id);
-		goto err;
-	}
-
 	/* Export the persistent key's public key part. */
 	status = al_psa_status(
-		psa_export_public_key(key_handle, key, key_buf_size, key_len),
+		psa_export_public_key(key_id, key, key_buf_size, key_len),
 		__func__);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Failed to export public key.");
@@ -77,9 +67,9 @@ static psa_status_t crp_get_pub_key(psa_key_id_t key_id,
 	/* Display the binary key data for debug purposes. */
 	sf_hex_tabulate_16(&crp_fmt, key, *key_len);
 
-	/* Close the key to free up the volatile slot. */
+	/* Purge the key to free up the volatile slot. */
 	status = al_psa_status(
-		psa_close_key(key_handle),
+		psa_purge_key(key_id),
 		__func__);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Failed to close persistent key.");
@@ -116,7 +106,7 @@ static psa_status_t crp_imp_key_secp256r1(psa_key_id_t key_id,
 	psa_key_type_t key_type =
 		PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
 	psa_algorithm_t alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
-	psa_key_handle_t key_handle;
+	psa_key_id_t key_id_out = PSA_KEY_ID_NULL;
 	size_t key_len = 32;
 	size_t data_len;
 	uint8_t data_out[65] = { 0 }; /* ECDSA public key = 65 bytes. */
@@ -134,19 +124,19 @@ static psa_status_t crp_imp_key_secp256r1(psa_key_id_t key_id,
 
 	/* Import the private key, creating the persistent key on success */
 	status = al_psa_status(
-		psa_import_key(&key_attributes, key_data, key_len, &key_handle),
+		psa_import_key(&key_attributes, key_data, key_len, &key_id_out),
 		__func__);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Failed to import key.");
 		goto err;
 	}
 
-	/* Close the key to free up the volatile slot. */
+	/* Purge the key to free up the volatile slot. */
 	status = al_psa_status(
-		psa_close_key(key_handle),
+		psa_purge_key(key_id_out),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to close persistent key.");
+		LOG_ERR("Failed to purge key.");
 		goto err;
 	}
 
@@ -155,18 +145,9 @@ static psa_status_t crp_imp_key_secp256r1(psa_key_id_t key_id,
 
 	/* Export the private key if usage includes PSA_KEY_USAGE_EXPORT. */
 	if (key_usage & PSA_KEY_USAGE_EXPORT) {
-		/* Re-open the persisted key based on the key ID. */
-		status = al_psa_status(
-			psa_open_key(key_id, &key_handle),
-			__func__);
-		if (status != PSA_SUCCESS) {
-			LOG_ERR("Failed to open persistent key #%d", key_id);
-			goto err;
-		}
-
 		/* Read the original (private) key data back. */
 		status = al_psa_status(
-			psa_export_key(key_handle, data_out,
+			psa_export_key(key_id, data_out,
 				       sizeof(data_out), &data_len),
 			__func__);
 		if (status != PSA_SUCCESS) {
@@ -192,12 +173,12 @@ static psa_status_t crp_imp_key_secp256r1(psa_key_id_t key_id,
 		al_dump_log();
 		sf_hex_tabulate_16(&crp_fmt, data_out, data_len);
 
-		/* Close the key to free up the volatile slot. */
+		/* Purge the key to free up the volatile slot. */
 		status = al_psa_status(
-			psa_close_key(key_handle),
+			psa_purge_key(key_id),
 			__func__);
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("Failed to close persistent key.");
+			LOG_ERR("Failed to purge key.");
 			goto err;
 		}
 	}
@@ -228,7 +209,7 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 	psa_key_type_t key_type =
 		PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1);
 	psa_algorithm_t alg = PSA_ALG_ECDSA(PSA_ALG_SHA_256);
-	psa_key_handle_t key_handle;
+	psa_key_id_t key_id_out = PSA_KEY_ID_NULL;
 	size_t key_len = 32;
 	size_t data_len;
 	uint8_t data_out[65] = { 0 }; /* ECDSA public key = 65 bytes. */
@@ -246,7 +227,7 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 
 	/* Generate the private key, creating the persistent key on success */
 	status = al_psa_status(
-		psa_generate_key(&key_attributes, &key_handle),
+		psa_generate_key(&key_attributes, &key_id_out),
 		__func__);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Failed to generate key.");
@@ -255,7 +236,7 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 
 	/* Close the key to free up the volatile slot. */
 	status = al_psa_status(
-		psa_close_key(key_handle),
+		psa_purge_key(key_id_out),
 		__func__);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Failed to close persistent key.");
@@ -267,18 +248,9 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 
 	/* Export the private key if usage includes PSA_KEY_USAGE_EXPORT. */
 	if (key_usage & PSA_KEY_USAGE_EXPORT) {
-		/* Re-open the persisted key based on the key ID. */
-		status = al_psa_status(
-			psa_open_key(key_id, &key_handle),
-			__func__);
-		if (status != PSA_SUCCESS) {
-			LOG_ERR("Failed to open persistent key #%d", key_id);
-			goto err;
-		}
-
 		/* Read the original (private) key data back. */
 		status = al_psa_status(
-			psa_export_key(key_handle, data_out,
+			psa_export_key(key_id, data_out,
 				       sizeof(data_out), &data_len),
 			__func__);
 		if (status != PSA_SUCCESS) {
@@ -300,10 +272,10 @@ static psa_status_t crp_gen_key_secp256r1(psa_key_id_t key_id,
 
 		/* Close the key to free up the volatile slot. */
 		status = al_psa_status(
-			psa_close_key(key_handle),
+			psa_purge_key(key_id),
 			__func__);
 		if (status != PSA_SUCCESS) {
-			LOG_ERR("Failed to close persistent key.");
+			LOG_ERR("Failed to purge persistent key.");
 			goto err;
 		}
 	}
@@ -316,17 +288,6 @@ err:
 #endif /* CONFIG_PSA_IMPORT_KEY */
 
 /**
- * @brief PSA Random number generator wrapper for Mbed TLS
- */
-static int psa_rng_for_mbedtls(void *p_rng,
-			       unsigned char *output, size_t output_len)
-{
-	(void)p_rng;
-
-	return psa_generate_random(output, output_len);
-}
-
-/**
  * @brief Generates device certificate signing request (CSR) using Mbed TLS
  * X.509 and TF-M crypto service.
  */
@@ -334,7 +295,6 @@ void crp_generate_csr(void)
 {
 	psa_status_t status;
 	psa_key_id_t key_slot = 1;
-	psa_key_handle_t key_handle;
 
 	unsigned char output_buf[1024];
 	unsigned char json_encoded_buf[1024];
@@ -432,17 +392,9 @@ void crp_generate_csr(void)
 	}
 #endif /* CONFIG_PSA_IMPORT_KEY */
 
-	status = al_psa_status(
-		psa_open_key(key_slot, &key_handle),
-		__func__);
-	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to open persistent key #%d", key_slot);
-		goto err;
-	}
-
 	psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
 
-	psa_get_key_attributes(key_handle, &attributes);
+	psa_get_key_attributes(key_slot, &attributes);
 	mbedtls_x509write_csr_set_md_alg(&req, MBEDTLS_MD_SHA256);
 
 	LOG_INF("Adding subject name to CSR");
@@ -460,9 +412,9 @@ void crp_generate_csr(void)
 	LOG_INF("Adding EC key to PK container");
 	al_dump_log();
 
-	status = mbedtls_pk_setup_opaque(&pk_key_container, key_handle);
+	status = mbedtls_pk_wrap_psa(&pk_key_container, key_slot);
 	if (status != 0) {
-		LOG_ERR("failed! mbedtls_pk_setup_opaque returned -0x%04x", (unsigned int) -status);
+		LOG_ERR("failed! mbedtls_pk_wrap_psa returned -0x%04x", (unsigned int) -status);
 		goto err;
 	}
 
@@ -474,8 +426,7 @@ void crp_generate_csr(void)
 	LOG_INF("Create device Certificate Signing Request");
 	al_dump_log();
 
-	status = mbedtls_x509write_csr_pem(&req, output_buf, sizeof(output_buf),
-					   psa_rng_for_mbedtls, NULL);
+	status = mbedtls_x509write_csr_pem(&req, output_buf, sizeof(output_buf));
 	if (status < 0) {
 		LOG_ERR("failed! mbedtls_x509write_csr_pem returned -0x%04x",
 			(unsigned int) -status);
@@ -514,10 +465,10 @@ void crp_generate_csr(void)
 
 	/* Close the key to free up the volatile slot. */
 	status = al_psa_status(
-		psa_close_key(key_handle),
+		psa_purge_key(key_slot),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to close persistent key.");
+		LOG_ERR("Failed to purge persistent key.");
 		goto err;
 	}
 
@@ -603,23 +554,13 @@ static psa_status_t crp_sign_hash(psa_key_id_t key_id,
 				  size_t *sig_len)
 {
 	psa_status_t status;
-	psa_key_handle_t key_handle;
 
 	LOG_INF("Signing SHA-256 hash");
 	al_dump_log();
 
-	/* Try to open the persisted key based on the key ID. */
-	status = al_psa_status(
-		psa_open_key(key_id, &key_handle),
-		__func__);
-	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to open persistent key #%d", key_id);
-		goto err;
-	}
-
 	/* Sign using psa_sign_hash. */
 	status = al_psa_status(
-		psa_sign_hash(key_handle,
+		psa_sign_hash(key_id,
 			      PSA_ALG_ECDSA(PSA_ALG_SHA_256),
 			      hash, hash_buf_size,
 			      sig, sig_buf_size, sig_len),
@@ -639,10 +580,10 @@ static psa_status_t crp_sign_hash(psa_key_id_t key_id,
 
 	/* Close the key to free up the volatile slot. */
 	status = al_psa_status(
-		psa_close_key(key_handle),
+		psa_purge_key(key_id),
 		__func__);
 	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to close persistent key.");
+		LOG_ERR("Failed to purge persistent key.");
 		goto err;
 	}
 
@@ -667,23 +608,13 @@ static psa_status_t crp_verify_sign(psa_key_id_t key_id,
 				    uint8_t *sig, size_t sig_len)
 {
 	psa_status_t status;
-	psa_key_handle_t key_handle;
 
 	LOG_INF("Verifying signature for SHA-256 hash");
 	al_dump_log();
 
-	/* Try to open the persisted key based on the key ID. */
-	status = al_psa_status(
-		psa_open_key(key_id, &key_handle),
-		__func__);
-	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to open persistent key #%d", key_id);
-		goto err;
-	}
-
 	/* Verify the hash signature. */
 	status = al_psa_status(
-		psa_verify_hash(key_handle,
+		psa_verify_hash(key_id,
 				PSA_ALG_ECDSA(PSA_ALG_SHA_256),
 				hash, hash_len,
 				sig, sig_len),
@@ -698,7 +629,7 @@ static psa_status_t crp_verify_sign(psa_key_id_t key_id,
 
 	/* Close the key to free up the volatile slot. */
 	status = al_psa_status(
-		psa_close_key(key_handle),
+		psa_purge_key(key_id),
 		__func__);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Failed to close persistent key.");
@@ -719,20 +650,10 @@ err:
 static psa_status_t crp_dest_key(psa_key_id_t key_id)
 {
 	psa_status_t status;
-	psa_key_handle_t key_handle;
-
-	/* Try to open the persisted key based on the key ID. */
-	status = al_psa_status(
-		psa_open_key(key_id, &key_handle),
-		__func__);
-	if (status != PSA_SUCCESS) {
-		LOG_ERR("Failed to open persistent key #%d", key_id);
-		goto err;
-	}
 
 	/* Destroy the persistent key */
 	status = al_psa_status(
-		psa_destroy_key(key_handle),
+		psa_destroy_key(key_id),
 		__func__);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("Failed to destroy a persistent key");

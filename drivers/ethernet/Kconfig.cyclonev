@@ -7,6 +7,7 @@ menuconfig ETH_CYCLONEV
 	bool "Cyclone V ethernet MAC driver"
 	default y
 	depends on DT_HAS_SNPS_ETHERNET_CYCLONEV_ENABLED
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 
 if ETH_CYCLONEV
 

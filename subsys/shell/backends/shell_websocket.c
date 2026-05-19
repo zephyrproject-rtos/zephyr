@@ -35,6 +35,8 @@ static void ws_end_client_connection(struct shell_websocket *ws)
 
 	LOG_DBG("Closing connection to #%d", ws->fds[0].fd);
 
+	k_mutex_lock(&ws->socket_lock, K_FOREVER);
+
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_WS)) {
 		(void)log_backend_ws_unregister(ws->fds[0].fd);
 	}
@@ -51,6 +53,8 @@ static void ws_end_client_connection(struct shell_websocket *ws)
 	if (ret < 0) {
 		LOG_ERR("Failed to re-register socket service (%d)", ret);
 	}
+
+	k_mutex_unlock(&ws->socket_lock);
 }
 
 static int ws_send(struct shell_websocket *ws, bool block)
@@ -102,10 +106,13 @@ static void ws_send_prematurely(struct k_work *work)
 	struct shell_websocket *ws = CONTAINER_OF(dwork,
 						  struct shell_websocket,
 						  send_work);
-	int ret;
+	int ret = -EAGAIN;
 
 	/* Use non-blocking send to prevent system workqueue blocking. */
-	ret = ws_send(ws, false);
+	if (k_mutex_lock(&ws->socket_lock, K_NO_WAIT) == 0) {
+		ret = ws_send(ws, false);
+		k_mutex_unlock(&ws->socket_lock);
+	}
 	if (ret == -EAGAIN) {
 		/* Not all data was sent, reschedule the work. */
 		k_work_reschedule(&ws->send_work, K_MSEC(WEBSOCKET_TIMEOUT));
@@ -244,6 +251,7 @@ static int init(const struct shell_transport *transport,
 
 	k_work_init_delayable(&ws->send_work, ws_send_prematurely);
 	k_mutex_init(&ws->rx_lock);
+	k_mutex_init(&ws->socket_lock);
 
 	return 0;
 }
@@ -275,11 +283,6 @@ static int sh_write(const struct shell_transport *transport,
 
 	ws = (struct shell_websocket *)transport->ctx;
 
-	if (ws->fds[0].fd < 0 || ws->output_lock) {
-		*cnt = length;
-		return 0;
-	}
-
 	*cnt = 0;
 	lb = &ws->line_out;
 
@@ -302,9 +305,19 @@ static int sh_write(const struct shell_transport *transport,
 		 * is recognized.
 		 */
 		if (lb->buf[lb->len - 1] == '\n' || lb->len == WEBSOCKET_LINE_SIZE) {
+			k_mutex_lock(&ws->socket_lock, K_FOREVER);
+			if (ws->fds[0].fd < 0 || ws->output_lock) {
+				*cnt = length;
+				k_mutex_unlock(&ws->socket_lock);
+				return 0;
+			}
 			ret = ws_send(ws, true);
+			k_mutex_unlock(&ws->socket_lock);
 			if (ret != 0) {
 				*cnt = length;
+				if (ret == -ENOTCONN || ret == -ECONNRESET || ret == -EPIPE) {
+					return 0;
+				}
 				return ret;
 			}
 		}

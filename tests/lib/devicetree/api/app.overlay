@@ -426,6 +426,27 @@
 			mbox-names = "tx", "rx", "zero";
 		};
 
+		test_dac_1: dac@10004000 {
+			reg = <0x10004000 0x1000>;
+			compatible = "vnd,dac";
+			status = "okay";
+			#io-channel-cells = <1>;
+		};
+
+		test_dac_2: dac@10005000 {
+			reg = <0x10005000 0x1000>;
+			compatible = "vnd,dac";
+			status = "okay";
+			#io-channel-cells = <1>;
+		};
+
+		/* there should only be one of these */
+		test_dac_outputs: dac-outputs {
+			compatible = "vnd,dac-outputs";
+			io-channels = <&test_dac_1 10>, <&test_dac_2 20>;
+			io-channel-names = "ch1", "ch2";
+		};
+
 		/* there should only be one of these */
 		test_reg: reg-holder@9999aaaa {
 			compatible = "vnd,reg-holder";
@@ -714,6 +735,98 @@
 			};
 		};
 
+		test_children_on_bus: controller@ccccdddd {
+			compatible = "vnd,controller";
+			reg = <0xccccdddd 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* Child number 1 of the controller */
+			test_child_on_bus_a: test-child-a@0 {
+				compatible = "vnd,device";
+				reg = <0x0 0x100>;
+				status = "okay";
+			};
+
+			/* Child number 2 of the controller */
+			test_child_on_bus_b: test-child-b@100 {
+				compatible = "vnd,device";
+				reg = <0x100 0x100>;
+				status = "okay";
+			};
+
+			/* Child number 3 of the controller */
+			test_child_on_bus_c: test-child-c@200 {
+				compatible = "vnd,device";
+				reg = <0x200 0x100>;
+				status = "disabled";
+			};
+
+			/*
+			 * Structural container only (no compatible/on-bus): descendants
+			 * below this node are still counted for the controller bus.
+			 */
+			test_child_on_bus_d: test-child-on-bus-d {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				/* Child number 4 of the controller */
+				test_child_dd: test-child-dd@300 {
+					compatible = "vnd,device";
+					reg = <0x300 0x100>;
+					status = "okay";
+				};
+
+				/* Child number 5 of the controller */
+				test_child_ee: test-child-ee@400 {
+					compatible = "vnd,device";
+					reg = <0x400 0x100>;
+					status = "disabled";
+				};
+			};
+
+			/*
+			 * Child number 6 of the controller.
+			 * Also acts as a child bus controller, so it is counted for the
+			 * parent bus, while descendants behind this node are counted only
+			 * when querying this node itself.
+			 */
+			test_child_on_bus_ext: test-child-on-bus-ext@500 {
+				compatible = "vnd,device-extender";
+				reg = <0x500 0x300>;
+				ranges = <0x0 0x600 0x200>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* Child number 1 of the extender */
+				test_child_a_on_ext: test-child-a-on-ext@0 {
+					compatible = "vnd,device";
+					reg = <0x0 0x100>;
+					status = "okay";
+				};
+
+				/* Child number 2 of the extender */
+				test_child_b_on_ext: test-child-b-on-ext@100 {
+					compatible = "vnd,device";
+					reg = <0x100 0x100>;
+					status = "disabled";
+				};
+			};
+
+			/* Not a physical child node of the controller bus */
+			controller_dev_setting_a: setting-a {
+				compatible = "vnd,controller-device-setting";
+				val1 = <1>;
+			};
+
+			/* Not a physical child node of the controller bus */
+			controller_dev_setting_b: setting-b {
+				compatible = "vnd,controller-device-setting";
+				val1 = <2>;
+			};
+		};
+
 		test-ranges {
 			#address-cells = <2>;
 			#size-cells = <1>;
@@ -744,6 +857,28 @@
 				#size-cells = <1>;
 
 				ranges;
+			};
+		};
+
+		test-regs {
+			#address-cells = <2>;
+			#size-cells = <1>;
+
+			/* there should only be one of these */
+			test_regs_test_node: testnode@2000000 {
+				compatible = "vnd,test-foreach-reg-unique";
+				reg = <0x00 0x2000000 0x40000>,
+				      <0x00 0x2200000 0x5c00000>,
+				      <0x00 0x8400000 0x7a00000>;
+			};
+
+			test_regs_other: other@107fff9000 {
+				compatible = "vnd,test-foreach-reg";
+				reg = <0x10 0x7fff9000 0x1000>;
+			};
+
+			test_regs_empty: empty {
+				compatible = "vnd,test-foreach-reg";
 			};
 		};
 
@@ -883,8 +1018,44 @@
 
 		test-mtd@ffeeddcc {
 			reg = <0xffeeddcc 0x1000>;
+			ranges = <0x0 0x0 0x100000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 0x100000>;
+				ranges;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* Purposely not using a partitions {} grouping node */
+				partition@0 {
+					compatible = "zephyr,mapped-partition";
+					label = "mapped-partition-1";
+					reg = <0x00000000 0x0000c000>;
+				};
+
+				partition@c000 {
+					compatible = "zephyr,mapped-partition";
+					label = "mapped-partition-2";
+					reg = <0x0000c000 0x00076000>;
+				};
+
+				partition@82000 {
+					compatible = "zephyr,mapped-partition";
+					label = "mapped-partition-3";
+					reg = <0x00082000 0x00007000>;
+				};
+
+				partition@89000 {
+					compatible = "zephyr,mapped-partition";
+					label = "disabled-mapped-partition";
+					status = "disabled";
+					reg = <0x00089000 0x00007000>;
+				};
+			};
 
 			flash@20000000 {
 				compatible = "soc-nv-flash";
@@ -929,6 +1100,8 @@
 
 		test-mtd@33221100 {
 			reg = <0x33221100 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			partitions {
 				compatible = "fixed-partitions";
@@ -999,6 +1172,59 @@
 			compatible = "gpio-dst";
 			gpio-controller;
 			#gpio-cells = <1>;
+		};
+	};
+
+	/* Node purposely not put in test area due to lines being too long for compliance CI */
+	test-mtd@12830 {
+		reg = <0x13830 0x1000>;
+		ranges = <0x10000000 0x10000000 0x100000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash@10000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x10000000 0x100000>;
+			ranges = <0x0 0x10000000 0x100000>;
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				partition@f8000 {
+					compatible = "zephyr,mapped-partition";
+					label = "mapped-partition-4";
+					reg = <0x000f8000 0x00008000>;
+					ranges = <0x0 0x000f8000 0x00008000>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					partition@0 {
+						compatible = "zephyr,mapped-partition";
+						label = "mapped-partition-5";
+						reg = <0x00000000 0x00003000>;
+						ranges = <0x0 0x00000000 0x00003000>;
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						partition@1000 {
+							compatible = "zephyr,mapped-partition";
+							label = "mapped-partition-6";
+							reg = <0x00001000 0x00001000>;
+						};
+					};
+
+					partition@3000 {
+						compatible = "zephyr,mapped-partition";
+						label = "mapped-partition-7";
+						reg = <0x00003000 0x00002000>;
+					};
+				};
+			};
 		};
 	};
 

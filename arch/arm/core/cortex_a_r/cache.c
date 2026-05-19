@@ -50,9 +50,18 @@ void arch_dcache_enable(void)
 {
 	uint32_t val;
 
+	val = __get_SCTLR();
+
+	/* Check if cache is already enabled */
+	if (val & SCTLR_C_Msk) {
+		/* Cache already enabled - clean and invalidate to ensure coherency */
+		L1C_CleanInvalidateDCacheAll();
+		return;
+	}
+
+	/* Cache not enabled - safe to invalidate (no dirty lines) */
 	arch_dcache_invd_all();
 
-	val = __get_SCTLR();
 	val |= SCTLR_C_Msk;
 	barrier_dsync_fence_full();
 	__set_SCTLR(val);
@@ -173,8 +182,20 @@ int arch_dcache_flush_and_invd_range(void *start_addr, size_t size)
 
 void arch_icache_enable(void)
 {
+	uint32_t val;
+
+	val = __get_SCTLR();
+
+	/* Check if cache is already enabled */
+	if (val & SCTLR_I_Msk) {
+		/* I-cache already enabled - invalidate to ensure coherency */
+		L1C_InvalidateICacheAll();
+		return;
+	}
+
+	/* Cache not enabled - invalidate before enabling */
 	arch_icache_invd_all();
-	__set_SCTLR(__get_SCTLR() | SCTLR_I_Msk);
+	__set_SCTLR(val | SCTLR_I_Msk);
 	barrier_isync_fence_full();
 }
 

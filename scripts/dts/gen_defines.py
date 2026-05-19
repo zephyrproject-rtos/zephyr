@@ -286,7 +286,7 @@ def write_special_props(node: edtlib.Node) -> None:
     # Macros that are special to bindings inherited from Linux, which
     # we can't capture with the current bindings language.
     write_pinctrls(node)
-    write_fixed_partitions(node)
+    write_partition_data(node)
     write_gpio_hogs(node)
     write_maps(node)
 
@@ -370,6 +370,21 @@ def write_regs(node: edtlib.Node) -> None:
         out_dt_define(macro, val)
     for macro, val in name_vals:
         out_dt_define(macro, val)
+
+    out_dt_define(f"{path_id}_FOREACH_REG(fn)",
+                  " ".join(f"fn(DT_{path_id}, {i})" for i,reg in enumerate(node.regs)))
+
+    out_dt_define(f"{path_id}_FOREACH_REG_SEP(fn, sep)",
+                  " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{path_id}, {i})"
+                  for i,reg in enumerate(node.regs)))
+
+    out_dt_define(f"{path_id}_FOREACH_REG_VARGS(fn, ...)",
+                  " ".join(f"fn(DT_{path_id}, {i}, __VA_ARGS__)"
+                  for i,reg in enumerate(node.regs)))
+
+    out_dt_define(f"{path_id}_FOREACH_REG_SEP_VARGS(fn, sep, ...)",
+                  " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{path_id}, {i}, __VA_ARGS__)"
+                  for i,reg in enumerate(node.regs)))
 
 
 def write_interrupts(node: edtlib.Node) -> None:
@@ -565,10 +580,12 @@ def write_pinctrls(node: edtlib.Node) -> None:
                           f"DT_{ph.z_path_id}")
 
 
-def write_fixed_partitions(node: edtlib.Node) -> None:
-    # Macros for child nodes of each fixed-partitions node.
+def write_partition_data(node: edtlib.Node) -> None:
+    # Macros for partition nodes (fixed-partitions, fixed-subpartitions, zephyr,mapped-partition)
 
-    if not (node.parent and ("fixed-partitions" in node.parent.compats or "fixed-subpartitions" in node.parent.compats)):
+    if not (node.parent and ("fixed-partitions" in node.parent.compats or
+        "zephyr,mapped-partition" in node.compats or
+        "fixed-subpartitions" in node.parent.compats)):
         return
 
     global flash_area_num
@@ -1066,6 +1083,25 @@ def write_global_macros(edt: edtlib.EDT):
 
                         out_dt_define(macro, val)
                         out_dt_define(macro + "_EXISTS", 1)
+            elif compat == "zephyr,mapped-partition":
+                parent = node.parent
+
+                while parent and "soc-nv-flash" not in parent.compats:
+                    parent = parent.parent
+
+                if not parent:
+                    err(f"zephyr,mapped-partition node lacks soc-nv-flash parent: {node.path}")
+
+                out_comment("parent NVM identifier:")
+                out_dt_define(f"{node.z_path_id}_NVM_DEVICE", f"DT_{parent.z_path_id}")
+
+                if "label" in node.props:
+                    label = node.props["label"].val
+                    macro = f"COMPAT_{str2ident(compat)}_LABEL_{str2ident(label)}"
+                    val = f"DT_{node.z_path_id}"
+
+                    out_dt_define(macro, val)
+                    out_dt_define(macro + "_EXISTS", 1)
 
     out_comment('Macros for compatibles with status "okay" nodes\n')
     for compat, okay_nodes in edt.compat2okay.items():
@@ -1083,6 +1119,44 @@ def write_global_macros(edt: edtlib.EDT):
         for bus in buses:
             out_define(
                 f"DT_COMPAT_{str2ident(compat)}_BUS_{str2ident(bus)}", 1)
+
+    bus_by_id = {}
+    for node in edt.nodes:
+        if node.bus_node is not None:
+            bus_by_id[node.bus_node.z_path_id] = node.bus_node
+
+    def _iter_descendants(node):
+        # Iterate descendants but stop recursion at bus nodes (i.e. nodes that
+        # themselves expose a bus). This allows counting devices nested below
+        # helper/container nodes while not traversing into sub-buses.
+        for child in node.children.values():
+            yield child
+            if not child.buses:
+                yield from _iter_descendants(child)
+
+    # For each bus controller and each bus type it exposes, count descendant
+    # nodes whose resolved on-bus matches that bus.
+    for bus_id, bus_node in bus_by_id.items():
+
+        for bus in bus_node.buses:
+            bus_ident = str2ident(bus)
+
+            count = 0
+            count_ok = 0
+            for descendant in _iter_descendants(bus_node):
+                # Count nodes that are on this bus, including nodes that are
+                # themselves bus nodes. Recursion into bus-node subtrees is
+                # prevented by _iter_descendants, so we won't double-count
+                # devices behind sub-buses.
+                if descendant.on_bus == bus:
+                    count += 1
+                    if descendant.status == "okay":
+                        count_ok += 1
+
+            out_comment(f"Bus info (controller: '{bus_node.path}', bus: '{bus_ident}')")
+            out_comment("Includes descendants on this bus, excludes devices behind child buses")
+            out_dt_define(f"{bus_id}_DESCENDANT_NUM_ON_BUS_{bus_ident}", count)
+            out_dt_define(f"{bus_id}_DESCENDANT_NUM_ON_BUS_{bus_ident}_STATUS_OKAY", count_ok)
 
 
 def str2ident(s: str) -> str:

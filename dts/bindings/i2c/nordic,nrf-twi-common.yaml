@@ -25,3 +25,9 @@ properties:
     description: |
       Maximum number of bits available in the EasyDMA MAXCNT register. This
       property must be set at SoC level DTS files.
+
+  clock-tolerance-percent:
+    type: int
+    description: |
+      This property is used to correct for clock inaccuracy to ensure that SCL
+      frequency does not exceed the value specified in "clock-frequency".

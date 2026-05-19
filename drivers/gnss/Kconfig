@@ -87,6 +87,7 @@ source "subsys/logging/Kconfig.template.log_config"
 # zephyr-keep-sorted-start
 rsource "Kconfig.emul"
 rsource "Kconfig.generic"
+rsource "Kconfig.globaltop_pa6h"
 rsource "Kconfig.luatos_air530z"
 rsource "Kconfig.quectel_lcx6g"
 rsource "u_blox/Kconfig"

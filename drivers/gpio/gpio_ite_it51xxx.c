@@ -24,6 +24,8 @@ LOG_MODULE_REGISTER(gpio_ite_it51xxx, LOG_LEVEL_ERR);
 #define IT515XX_GPIO_MAX_PINS 8
 #define IT515XX_GPxyVS        BIT(3)
 
+#define PORT_PIN_MODE_MASK GENMASK(7, 6)
+
 struct it51xxx_gpio_wuc_map_cfg {
 	/* WUC control device structure */
 	const struct device *wucs;
@@ -53,7 +55,7 @@ struct gpio_ite_cfg {
 	/* GPIO/KBS function selection register (bit mapping to pin) */
 	uintptr_t reg_ksfselr;
 	/* GPIO's irq */
-	uint8_t gpio_irq[8];
+	ite_irq_t gpio_irq[8];
 	/* Support input voltage selection */
 	uint8_t has_volt_sel[8];
 	/* Number of pins per group of GPIO */
@@ -77,6 +79,7 @@ static int gpio_ite_configure(const struct device *dev, gpio_pin_t pin, gpio_fla
 {
 	const struct gpio_ite_cfg *config = dev->config;
 	struct gpio_ite_data *data = dev->data;
+	uint32_t io_flags;
 	uint8_t mask = BIT(pin);
 	int rc = 0;
 
@@ -87,7 +90,8 @@ static int gpio_ite_configure(const struct device *dev, gpio_pin_t pin, gpio_fla
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
-	if (flags == GPIO_DISCONNECTED) {
+	io_flags = flags & (GPIO_INPUT | GPIO_OUTPUT);
+	if (io_flags == GPIO_DISCONNECTED) {
 		sys_write8(GPCR_PORT_PIN_MODE_TRISTATE, config->reg_gpcr + pin);
 		/*
 		 * Since not all GPIOs can be to configured as tri-state,
@@ -106,6 +110,12 @@ static int gpio_ite_configure(const struct device *dev, gpio_pin_t pin, gpio_fla
 		 * was configured as disconnected.
 		 */
 		rc = 0;
+		goto unlock_and_return;
+	}
+
+	/* unsupported input-output mode */
+	if (io_flags == (GPIO_INPUT | GPIO_OUTPUT)) {
+		rc = -ENOTSUP;
 		goto unlock_and_return;
 	}
 
@@ -326,12 +336,58 @@ static int gpio_ite_manage_callback(const struct device *dev, struct gpio_callba
 	return rc;
 }
 
+#ifdef CONFIG_GPIO_GET_DIRECTION
+static int gpio_ite_get_direction(const struct device *dev, gpio_port_pins_t map,
+				  gpio_port_pins_t *inputs, gpio_port_pins_t *outputs)
+{
+	const struct gpio_ite_cfg *config = dev->config;
+	struct gpio_ite_data *data = dev->data;
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	if (inputs) {
+		*inputs = 0;
+	}
+
+	if (outputs) {
+		*outputs = 0;
+	}
+
+	if (outputs || inputs) {
+		for (uint8_t pin = 0; pin < config->num_pins; pin++) {
+			if (!(map & BIT(pin))) {
+				continue;
+			}
+
+			uint8_t gpcr_val = sys_read8(config->reg_gpcr + pin);
+
+			if (gpcr_val == GPCR_PORT_PIN_MODE_TRISTATE) {
+				continue;
+			}
+
+			if (outputs &&
+			    (gpcr_val & PORT_PIN_MODE_MASK) == GPCR_PORT_PIN_MODE_OUTPUT) {
+				*outputs |= BIT(pin);
+			}
+
+			if (inputs && (gpcr_val & PORT_PIN_MODE_MASK) == GPCR_PORT_PIN_MODE_INPUT) {
+				*inputs |= BIT(pin);
+			}
+		}
+	}
+
+	k_spin_unlock(&data->lock, key);
+
+	return 0;
+}
+#endif /* CONFIG_GPIO_GET_DIRECTION */
+
 static void gpio_ite_isr(const void *arg)
 {
 	const struct device *dev = arg;
 	const struct gpio_ite_cfg *config = dev->config;
 	struct gpio_ite_data *data = dev->data;
-	uint8_t irq = ite_intc_get_irq_num();
+	ite_irq_t irq = ite_intc_get_irq_num();
 	uint8_t num_pins = config->num_pins;
 	uint8_t pin;
 
@@ -356,7 +412,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 {
 	const struct gpio_ite_cfg *config = dev->config;
 	uint32_t flags;
-	uint8_t gpio_irq = config->gpio_irq[pin];
+	ite_irq_t gpio_irq = config->gpio_irq[pin];
 	struct gpio_ite_data *data = dev->data;
 
 	if (!gpio_irq) {
@@ -440,6 +496,9 @@ static DEVICE_API(gpio, gpio_ite_driver_api) = {
 	.port_toggle_bits = gpio_ite_port_toggle_bits,
 	.pin_interrupt_configure = gpio_ite_pin_interrupt_configure,
 	.manage_callback = gpio_ite_manage_callback,
+#ifdef CONFIG_GPIO_GET_DIRECTION
+	.port_get_direction = gpio_ite_get_direction,
+#endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
 #define GPIO_ITE_DEV_CFG_DATA(inst)                                                                \

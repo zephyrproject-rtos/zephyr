@@ -24,7 +24,6 @@
 	status = "okay";
 	positive-mux-input = "IN0"; /* FRDM-MCXE31B J9-3 */
 	negative-mux-input = "DAC";
-	dac-vref-source = "VREFH1";
 	dac-value = <127>;
 	dac-vref-source = "VREFH1";
 };

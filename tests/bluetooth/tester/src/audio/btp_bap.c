@@ -11,6 +11,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
@@ -18,6 +20,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -68,6 +71,9 @@ static uint8_t btp_ascs_supported_commands(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len)
 {
 	struct btp_ascs_read_supported_commands_rp *rp = rsp;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_ASCS, rp->data);
 	*rsp_len += sizeof(*rp);
@@ -198,6 +204,9 @@ static uint8_t pacs_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_pacs_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_PACS, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -209,6 +218,10 @@ static uint8_t pacs_update_characteristic(const void *cmd, uint16_t cmd_len,
 {
 	const struct btp_pacs_update_characteristic_cmd *cp = cmd;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	switch (cp->characteristic) {
 	case BTP_PACS_CHARACTERISTIC_SINK_PAC:
@@ -252,6 +265,10 @@ static uint8_t pacs_set_location(const void *cmd, uint16_t cmd_len,
 	const struct btp_pacs_set_location_cmd *cp = cmd;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	err = bt_pacs_set_location((enum bt_audio_dir)cp->dir,
 				   (enum bt_audio_location)cp->location);
 
@@ -264,9 +281,13 @@ static uint8_t pacs_set_available_contexts(const void *cmd, uint16_t cmd_len,
 	const struct btp_pacs_set_available_contexts_cmd *cp = cmd;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK,
 					     (enum bt_audio_context)cp->sink_contexts);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
@@ -281,9 +302,13 @@ static uint8_t pacs_set_supported_contexts(const void *cmd, uint16_t cmd_len,
 	const struct btp_pacs_set_supported_contexts_cmd *cp = cmd;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK,
 					     (enum bt_audio_context)cp->sink_contexts);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
@@ -326,6 +351,9 @@ static uint8_t btp_bap_supported_commands(const void *cmd, uint16_t cmd_len,
 {
 	struct btp_bap_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_BAP, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -336,6 +364,8 @@ uint8_t btp_bap_audio_stream_send(const void *cmd, uint16_t cmd_len, void *rsp, 
 {
 	struct btp_bap_send_rp *rp = rsp;
 	const struct btp_bap_send_cmd *cp = cmd;
+
+	ARG_UNUSED(cmd_len);
 
 	/* Always send dummy success for now until the command has be deprecated
 	 * https://github.com/auto-pts/auto-pts/issues/1317
@@ -470,6 +500,11 @@ static const struct btp_handler bap_handlers[] = {
 		.func = btp_bap_broadcast_assistant_set_broadcast_code,
 	},
 	{
+		.opcode = BTP_BAP_BROADCAST_SINK_SET_BROADCAST_CODE,
+		.expect_len = sizeof(struct btp_bap_broadcast_sink_set_broadcast_code_cmd),
+		.func = btp_bap_set_sink_broadcast_code,
+	},
+	{
 		.opcode = BTP_BAP_SEND_PAST,
 		.expect_len = sizeof(struct btp_bap_send_past_cmd),
 		.func = btp_bap_broadcast_assistant_send_past,
@@ -509,10 +544,29 @@ uint8_t tester_init_pacs(void)
 
 	btp_bap_unicast_init();
 
-	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
-	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
-	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &vendor_cap_sink);
-	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &vendor_cap_source);
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+	if (err != 0) {
+		LOG_DBG("Failed to register sink capabilities: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+	if (err != 0) {
+		LOG_DBG("Failed to register source capabilities: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &vendor_cap_sink);
+	if (err != 0) {
+		LOG_DBG("Failed to register vendor sink capabilities: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &vendor_cap_source);
+	if (err != 0) {
+		LOG_DBG("Failed to register vendor source capabilities: %d", err);
+		return BTP_STATUS_FAILED;
+	}
 
 	err = set_location();
 	if (err != 0) {

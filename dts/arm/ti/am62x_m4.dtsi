@@ -65,10 +65,19 @@
 		#mbox-cells = <1>;
 	};
 
-	pinctrl: pinctrl@4084000 {
-		compatible = "ti,k3-pinctrl";
-		reg = <0x04084000 0x88>;
-		status = "okay";
+	mcu_padcfg0: syscon@4080000 {
+		compatible = "ti,control-module";
+		reg = <0x4080000 DT_SIZE_K(32)>;
+		ranges = <0x00 0x4080000 DT_SIZE_K(32)>;
+		ti,unlock-offsets = <0x1008 0x5008>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		pinctrl: pinctrl@4000 {
+			compatible = "ti,k3-pinctrl";
+			reg = <0x4000 0x88>;
+			status = "okay";
+		};
 	};
 
 	uart0: serial@4a00000 {

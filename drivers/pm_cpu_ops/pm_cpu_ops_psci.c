@@ -74,6 +74,16 @@ int pm_cpu_on(unsigned long cpuid,
 	return psci_to_dev_err(ret);
 }
 
+int psci_cpu_suspend(uint32_t state, uintptr_t entry_point)
+{
+	int ret;
+
+	ret = psci_data.invoke_psci_fn(PSCI_FN_NATIVE(1_1, CPU_SUSPEND),
+					state, entry_point, 0);
+
+	return psci_to_dev_err(ret);
+}
+
 #ifdef CONFIG_POWEROFF
 void z_sys_poweroff(void)
 {

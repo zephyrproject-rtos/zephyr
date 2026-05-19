@@ -21,28 +21,34 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "flash_stm32.h"
 
-#define STM32G4_SERIES_MAX_FLASH	512
-#define BANK2_OFFSET	(KB(STM32G4_SERIES_MAX_FLASH) / 2)
+#define STM32G4_SERIES_MAX_FLASH 512
+#define BANK2_OFFSET             (KB(STM32G4_SERIES_MAX_FLASH) / 2)
+#define DBANK_PAGES_PER_BANK     ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
+
+#if defined(FLASH_STM32_DBANK)
+#define IS_DUAL_BANK(flash_device)                                                                 \
+	((FLASH_STM32_REGS(flash_device)->OPTR & FLASH_OPTR_DBANK) == FLASH_OPTR_DBANK)
+#else
+/* If FLASH_STM32_DBANK is not defined this chip doesn't support dual bank operation */
+#define IS_DUAL_BANK(flash_device) false
+#endif
 
 /*
  * offset and len must be aligned on 8 for write,
  * positive and not beyond end of flash
  */
-bool flash_stm32_valid_range(const struct device *dev, off_t offset,
-			     uint32_t len,
-			     bool write)
+bool flash_stm32_valid_range(const struct device *dev, off_t offset, uint32_t len, bool write)
 {
-
-#if defined(FLASH_STM32_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
-	/*
-	 * In case of bank1/2 discontinuity, the range should not
-	 * start before bank2 and end beyond bank1 at the same time.
-	 * Locations beyond bank2 are caught by flash_stm32_range_exists.
-	 */
-	if ((offset < BANK2_OFFSET) && (offset + len > FLASH_SIZE / 2)) {
-		return 0;
+	if (IS_DUAL_BANK(dev) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)) {
+		/*
+		 * In case of bank1/2 discontinuity, the range should not
+		 * start before bank2 and end beyond bank1 at the same time.
+		 * Locations beyond bank2 are caught by flash_stm32_range_exists.
+		 */
+		if ((offset < BANK2_OFFSET) && (offset + len > FLASH_SIZE / 2)) {
+			return false;
+		}
 	}
-#endif
 
 	if (write && !flash_stm32_valid_write(offset, len)) {
 		return false;
@@ -78,9 +84,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
 	volatile uint32_t *flash = (uint32_t *)(offset + FLASH_STM32_BASE_ADDRESS);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-#if defined(FLASH_STM32_DBANK)
 	bool dcache_enabled = false;
-#endif /* FLASH_STM32_DBANK */
 	uint32_t tmp;
 	int rc;
 
@@ -107,16 +111,16 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 		return -EIO;
 	}
 
-#if defined(FLASH_STM32_DBANK)
-	/*
-	 * Disable the data cache to avoid the silicon errata ES0430 Rev 7 2.2.2:
-	 * "Data cache might be corrupted during Flash memory read-while-write operation"
-	 */
-	if (regs->ACR & FLASH_ACR_DCEN) {
-		dcache_enabled = true;
-		regs->ACR &= (~FLASH_ACR_DCEN);
+	if (IS_DUAL_BANK(dev)) {
+		/*
+		 * Disable the data cache to avoid the silicon errata ES0430 Rev 7 2.2.2:
+		 * "Data cache might be corrupted during Flash memory read-while-write operation"
+		 */
+		if (regs->ACR & FLASH_ACR_DCEN) {
+			dcache_enabled = true;
+			regs->ACR &= (~FLASH_ACR_DCEN);
+		}
 	}
-#endif /* FLASH_STM32_DBANK */
 
 	/* Set the PG bit */
 	regs->CR |= FLASH_CR_PG;
@@ -134,14 +138,12 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	/* Clear the PG bit */
 	regs->CR &= (~FLASH_CR_PG);
 
-#if defined(FLASH_STM32_DBANK)
 	/* Reset/enable the data cache if previously enabled */
 	if (dcache_enabled) {
 		regs->ACR |= FLASH_ACR_DCRST;
 		regs->ACR &= (~FLASH_ACR_DCRST);
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
-#endif /* FLASH_STM32_DBANK */
 
 	return rc;
 }
@@ -166,37 +168,42 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	}
 
 #if defined(FLASH_STM32_DBANK)
-	bool bank_swap;
-	/* Check whether bank1/2 are swapped */
-	bank_swap = (LL_SYSCFG_GetFlashBankMode() == LL_SYSCFG_BANKMODE_BANK2);
+	if (IS_DUAL_BANK(dev)) {
+		bool bank_swap;
+		/* Check whether bank1/2 are swapped */
+		bank_swap = (LL_SYSCFG_GetFlashBankMode() == LL_SYSCFG_BANKMODE_BANK2);
 
-	if ((offset < (FLASH_SIZE / 2)) && !bank_swap) {
-		/* The pages to be erased is in bank 1 */
-		regs->CR &= ~FLASH_CR_BKER_Msk;
-		page = offset / FLASH_PAGE_SIZE;
-		LOG_DBG("Erase page %d on bank 1", page);
-	} else if ((offset >= BANK2_OFFSET) && bank_swap) {
-		/* The pages to be erased is in bank 1 */
-		regs->CR &= ~FLASH_CR_BKER_Msk;
-		page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
-		LOG_DBG("Erase page %d on bank 1", page);
-	} else if ((offset < (FLASH_SIZE / 2)) && bank_swap) {
-		/* The pages to be erased is in bank 2 */
-		regs->CR |= FLASH_CR_BKER;
-		page = offset / FLASH_PAGE_SIZE;
-		LOG_DBG("Erase page %d on bank 2", page);
-	} else if ((offset >= BANK2_OFFSET) && !bank_swap) {
-		/* The pages to be erased is in bank 2 */
-		regs->CR |= FLASH_CR_BKER;
-		page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
-		LOG_DBG("Erase page %d on bank 2", page);
+		if ((offset < (FLASH_SIZE / 2)) && !bank_swap) {
+			/* The pages to be erased is in bank 1 */
+			regs->CR &= ~FLASH_CR_BKER_Msk;
+			page = offset / FLASH_PAGE_SIZE;
+			LOG_DBG("Erase page %d on bank 1", page);
+		} else if ((offset >= BANK2_OFFSET) && bank_swap) {
+			/* The pages to be erased is in bank 1 */
+			regs->CR &= ~FLASH_CR_BKER_Msk;
+			page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
+			LOG_DBG("Erase page %d on bank 1", page);
+		} else if ((offset < (FLASH_SIZE / 2)) && bank_swap) {
+			/* The pages to be erased is in bank 2 */
+			regs->CR |= FLASH_CR_BKER;
+			page = offset / FLASH_PAGE_SIZE;
+			LOG_DBG("Erase page %d on bank 2", page);
+		} else if ((offset >= BANK2_OFFSET) && !bank_swap) {
+			/* The pages to be erased is in bank 2 */
+			regs->CR |= FLASH_CR_BKER;
+			page = (offset - BANK2_OFFSET) / FLASH_PAGE_SIZE;
+			LOG_DBG("Erase page %d on bank 2", page);
+		} else {
+			LOG_ERR("Offset %d does not exist", offset);
+			return -EINVAL;
+		}
 	} else {
-		LOG_ERR("Offset %d does not exist", offset);
-		return -EINVAL;
+		page = offset / FLASH_PAGE_SIZE_128_BITS;
+		LOG_DBG("Erase page %d", page);
 	}
 #else
 	page = offset / FLASH_PAGE_SIZE;
-		LOG_DBG("Erase page %d", page);
+	LOG_DBG("Erase page %d", page);
 #endif
 
 	/* Set the PER bit and select the page you wish to erase */
@@ -216,7 +223,11 @@ static int erase_page(const struct device *dev, unsigned int offset)
 	flush_cache(regs);
 
 #ifdef FLASH_STM32_DBANK
-	regs->CR &= ~(FLASH_CR_PER | FLASH_CR_BKER);
+	if (IS_DUAL_BANK(dev)) {
+		regs->CR &= ~(FLASH_CR_PER | FLASH_CR_BKER);
+	} else {
+		regs->CR &= ~(FLASH_CR_PER);
+	}
 #else
 	regs->CR &= ~(FLASH_CR_PER);
 #endif
@@ -334,47 +345,49 @@ void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
 			     size_t *layout_size)
 {
-	ARG_UNUSED(dev);
-
-#if defined(FLASH_STM32_DBANK) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)
-#define PAGES_PER_BANK  ((FLASH_SIZE / FLASH_PAGE_SIZE) / 2)
 	static struct flash_pages_layout stm32g4_flash_layout[3];
 
-	if (stm32g4_flash_layout[0].pages_count == 0) {
-		/* Bank1 */
-		stm32g4_flash_layout[0].pages_count = PAGES_PER_BANK;
-		stm32g4_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
-		/* Dummy page corresponding to discontinuity between bank1/2 */
-		stm32g4_flash_layout[1].pages_count = 1;
-		stm32g4_flash_layout[1].pages_size = BANK2_OFFSET
-					- (PAGES_PER_BANK * FLASH_PAGE_SIZE);
-		/* Bank2 */
-		stm32g4_flash_layout[2].pages_count = PAGES_PER_BANK;
-		stm32g4_flash_layout[2].pages_size = FLASH_PAGE_SIZE;
-	}
-#else
-	static struct flash_pages_layout stm32g4_flash_layout[1];
+	if (IS_DUAL_BANK(dev) && (CONFIG_FLASH_SIZE < STM32G4_SERIES_MAX_FLASH)) {
 
-	if (stm32g4_flash_layout[0].pages_count == 0) {
-		stm32g4_flash_layout[0].pages_count = FLASH_SIZE
-						/ FLASH_PAGE_SIZE;
-		stm32g4_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
-	}
+		/*
+		 * For category 3 devices with less than 512 kB flash
+		 * which have space between banks 1 and 2.
+		 */
+
+		if (stm32g4_flash_layout[0].pages_count == 0) {
+			/* Bank1 */
+			stm32g4_flash_layout[0].pages_count = DBANK_PAGES_PER_BANK;
+			stm32g4_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
+			/* Dummy page corresponding to discontinuity between bank1/2 */
+			stm32g4_flash_layout[1].pages_count = 1;
+			stm32g4_flash_layout[1].pages_size =
+				BANK2_OFFSET - (DBANK_PAGES_PER_BANK * FLASH_PAGE_SIZE);
+			/* Bank2 */
+			stm32g4_flash_layout[2].pages_count = DBANK_PAGES_PER_BANK;
+			stm32g4_flash_layout[2].pages_size = FLASH_PAGE_SIZE;
+		}
+	} else {
+		/*
+		 * For category 3 devices with 512 kB flash or category 2/4
+		 * devices, which have no space between banks 1 and 2.
+		 */
+
+		if (stm32g4_flash_layout[0].pages_count == 0) {
+#if defined(FLASH_STM32_DBANK)
+			/* Dual or single bank with 2kB or 4kB  page size respectively */
+			stm32g4_flash_layout[0].pages_size =
+				(IS_DUAL_BANK(dev) ? FLASH_PAGE_SIZE : FLASH_PAGE_SIZE_128_BITS);
+#else
+			/* Single bank (non category 3) with 2k page size */
+			stm32g4_flash_layout[0].pages_size = FLASH_PAGE_SIZE;
 #endif
+			stm32g4_flash_layout[0].pages_count =
+				FLASH_SIZE / stm32g4_flash_layout[0].pages_size;
+		}
+	}
 
 	*layout = stm32g4_flash_layout;
-	*layout_size = ARRAY_SIZE(stm32g4_flash_layout);
-}
-
-/* Override weak function */
-int  flash_stm32_check_configuration(void)
-{
-#if defined(FLASH_STM32_DBANK)
-	if (stm32_reg_read_bits(&FLASH->OPTR, FLASH_STM32_DBANK) == 0U) {
-		/* Single bank not supported when dualbank is possible */
-		LOG_ERR("Single bank configuration not supported");
-		return -ENOTSUP;
-	}
-#endif
-	return 0;
+	*layout_size = IS_DUAL_BANK(dev) && (CONFIG_FLASH_SIZE != STM32G4_SERIES_MAX_FLASH)
+			       ? ARRAY_SIZE(stm32g4_flash_layout)
+			       : 1;
 }

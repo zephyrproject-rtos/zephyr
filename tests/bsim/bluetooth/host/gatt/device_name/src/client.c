@@ -35,13 +35,10 @@ static struct bt_conn_cb client_conn_cb;
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
+	TEST_ASSERT(err == 0, "Security update failed: %s level %u err %d", bt_conn_dst_str(conn),
+		    level, err);
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
-	TEST_ASSERT(err == 0, "Security update failed: %s level %u err %d", addr_str, level, err);
-
-	LOG_DBG("Security changed: %s level %u", addr_str, level);
+	LOG_DBG("Security changed: %s level %u", bt_conn_dst_str(conn), level);
 	SET_FLAG(client_security_changed_flag);
 }
 

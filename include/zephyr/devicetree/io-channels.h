@@ -241,6 +241,125 @@ extern "C" {
 #define DT_INST_IO_CHANNELS_INPUT(inst) DT_INST_IO_CHANNELS_INPUT_BY_IDX(inst, 0)
 
 /**
+ * @brief Get an io-channels specifier output cell at an index
+ *
+ * This macro only works for io-channels specifiers with cells named
+ * "output". Refer to the node's binding to check if necessary.
+ *
+ * Example devicetree fragment:
+ *
+ *     dac1: dac@... {
+ *             compatible = "vnd,dac";
+ *             #io-channel-cells = <1>;
+ *     };
+ *
+ *     dac2: dac@... {
+ *             compatible = "vnd,dac";
+ *             #io-channel-cells = <1>;
+ *     };
+ *
+ *     n: node {
+ *             io-channels = <&dac1 10>, <&dac2 20>;
+ *     };
+ *
+ * Bindings fragment for the vnd,dac compatible:
+ *
+ *    io-channel-cells:
+ *      - output
+ *
+ * Example usage:
+ *
+ *     DT_IO_CHANNELS_OUTPUT_BY_IDX(DT_NODELABEL(n), 0) // 10
+ *     DT_IO_CHANNELS_OUTPUT_BY_IDX(DT_NODELABEL(n), 1) // 20
+ *
+ * @param node_id node identifier for a node with an io-channels property
+ * @param idx logical index into io-channels property
+ * @return the output cell in the specifier at index "idx"
+ * @see DT_PHA_BY_IDX()
+ */
+#define DT_IO_CHANNELS_OUTPUT_BY_IDX(node_id, idx) \
+	DT_PHA_BY_IDX(node_id, io_channels, idx, output)
+
+/**
+ * @brief Get an io-channels specifier output cell by name
+ *
+ * This macro only works for io-channels specifiers with cells named
+ * "output". Refer to the node's binding to check if necessary.
+ *
+ * Example devicetree fragment:
+ *
+ *     dac1: dac@... {
+ *             compatible = "vnd,dac";
+ *             #io-channel-cells = <1>;
+ *     };
+ *
+ *     dac2: dac@... {
+ *             compatible = "vnd,dac";
+ *             #io-channel-cells = <1>;
+ *     };
+ *
+ *     n: node {
+ *             io-channels = <&dac1 10>, <&dac2 20>;
+ *             io-channel-names = "SENSOR", "BANDGAP";
+ *     };
+ *
+ * Bindings fragment for the vnd,dac compatible:
+ *
+ *    io-channel-cells:
+ *      - output
+ *
+ * Example usage:
+ *
+ *     DT_IO_CHANNELS_OUTPUT_BY_NAME(DT_NODELABEL(n), sensor) // 10
+ *     DT_IO_CHANNELS_OUTPUT_BY_NAME(DT_NODELABEL(n), bandgap) // 20
+ *
+ * @param node_id node identifier for a node with an io-channels property
+ * @param name lowercase-and-underscores name of an io-channels element
+ *             as defined by the node's io-channel-names property
+ * @return the output cell in the specifier at the named element
+ * @see DT_PHA_BY_NAME()
+ */
+#define DT_IO_CHANNELS_OUTPUT_BY_NAME(node_id, name) \
+	DT_PHA_BY_NAME(node_id, io_channels, name, output)
+
+/**
+ * @brief Equivalent to DT_IO_CHANNELS_OUTPUT_BY_IDX(node_id, 0)
+ * @param node_id node identifier for a node with an io-channels property
+ * @return the output cell in the specifier at index 0
+ * @see DT_IO_CHANNELS_OUTPUT_BY_IDX()
+ */
+#define DT_IO_CHANNELS_OUTPUT(node_id) DT_IO_CHANNELS_OUTPUT_BY_IDX(node_id, 0)
+
+/**
+ * @brief Get an output cell from the "DT_DRV_INST(inst)" io-channels
+ *        property at an index
+ * @param inst DT_DRV_COMPAT instance number
+ * @param idx logical index into io-channels property
+ * @return the output cell in the specifier at index "idx"
+ * @see DT_IO_CHANNELS_OUTPUT_BY_IDX()
+ */
+#define DT_INST_IO_CHANNELS_OUTPUT_BY_IDX(inst, idx) \
+	DT_IO_CHANNELS_OUTPUT_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Get an output cell from the "DT_DRV_INST(inst)" io-channels
+ *        property by name
+ * @param inst DT_DRV_COMPAT instance number
+ * @param name lowercase-and-underscores name of an io-channels element
+ *             as defined by the instance's io-channel-names property
+ * @return the output cell in the specifier at the named element
+ * @see DT_IO_CHANNELS_OUTPUT_BY_NAME()
+ */
+#define DT_INST_IO_CHANNELS_OUTPUT_BY_NAME(inst, name) \
+	DT_IO_CHANNELS_OUTPUT_BY_NAME(DT_DRV_INST(inst), name)
+
+/**
+ * @brief Equivalent to DT_INST_IO_CHANNELS_OUTPUT_BY_IDX(inst, 0)
+ * @param inst DT_DRV_COMPAT instance number
+ * @return the output cell in the specifier at index 0
+ */
+#define DT_INST_IO_CHANNELS_OUTPUT(inst) DT_INST_IO_CHANNELS_OUTPUT_BY_IDX(inst, 0)
+/**
  * @}
  */
 

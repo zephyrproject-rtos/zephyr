@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/byteorder.h>
@@ -26,7 +27,7 @@ extern enum bst_result_t bst_result;
 static void test_main(void)
 {
 	int err;
-	uint32_t broadcast_id = 1234;
+	uint32_t broadcast_id = 1234U;
 	struct bt_le_ext_adv *adv;
 	struct bt_data ad[2] = {
 		BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),
@@ -35,7 +36,7 @@ static void test_main(void)
 	};
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
@@ -46,7 +47,7 @@ static void test_main(void)
 
 	/* Set adv data */
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to set advertising data (err %d)\n", err);
 		return;
 	}

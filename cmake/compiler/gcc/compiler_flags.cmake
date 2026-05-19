@@ -185,10 +185,19 @@ set_compiler_property(PROPERTY security_canaries_explicit -fstack-protector-expl
 
 # Only a valid option with GCC 7.x and above, so let's do check and set.
 if(CONFIG_STACK_CANARIES_TLS)
-  check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=tls)
-  check_set_compiler_property(APPEND PROPERTY security_canaries_strong -mstack-protector-guard=tls)
-  check_set_compiler_property(APPEND PROPERTY security_canaries_all -mstack-protector-guard=tls)
-  check_set_compiler_property(APPEND PROPERTY security_canaries_explicit -mstack-protector-guard=tls)
+  if(CONFIG_STACK_CANARIES_TLS_PREPEND)
+    # The canary is at a fixed offset from the TLS base register (see
+    # STACK_CANARIES_TLS_GUARD_REG and STACK_CANARIES_TLS_GUARD_OFFSET).
+    check_set_compiler_property(APPEND PROPERTY security_canaries "SHELL:-mstack-protector-guard=tls -mstack-protector-guard-reg=${CONFIG_STACK_CANARIES_TLS_GUARD_REG} -mstack-protector-guard-offset=${CONFIG_STACK_CANARIES_TLS_GUARD_OFFSET}")
+    check_set_compiler_property(APPEND PROPERTY security_canaries_strong "SHELL:-mstack-protector-guard=tls -mstack-protector-guard-reg=${CONFIG_STACK_CANARIES_TLS_GUARD_REG} -mstack-protector-guard-offset=${CONFIG_STACK_CANARIES_TLS_GUARD_OFFSET}")
+    check_set_compiler_property(APPEND PROPERTY security_canaries_all "SHELL:-mstack-protector-guard=tls -mstack-protector-guard-reg=${CONFIG_STACK_CANARIES_TLS_GUARD_REG} -mstack-protector-guard-offset=${CONFIG_STACK_CANARIES_TLS_GUARD_OFFSET}")
+    check_set_compiler_property(APPEND PROPERTY security_canaries_explicit "SHELL:-mstack-protector-guard=tls -mstack-protector-guard-reg=${CONFIG_STACK_CANARIES_TLS_GUARD_REG} -mstack-protector-guard-offset=${CONFIG_STACK_CANARIES_TLS_GUARD_OFFSET}")
+  else()
+    check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=tls)
+    check_set_compiler_property(APPEND PROPERTY security_canaries_strong -mstack-protector-guard=tls)
+    check_set_compiler_property(APPEND PROPERTY security_canaries_all -mstack-protector-guard=tls)
+    check_set_compiler_property(APPEND PROPERTY security_canaries_explicit -mstack-protector-guard=tls)
+  endif()
 else()
   check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=global)
   check_set_compiler_property(APPEND PROPERTY security_canaries_global -mstack-protector-guard=global)

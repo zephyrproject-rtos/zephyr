@@ -1,7 +1,7 @@
 # Kinetis KE1xF series MCU
 
 # Copyright (c) 2019 Vestas Wind Systems A/S
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_KE1XF
@@ -9,10 +9,12 @@ config SOC_SERIES_KE1XF
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_NXP_SYSMPU
+	select CPU_HAS_ICACHE
 	select CPU_HAS_FPU
 	select CLOCK_CONTROL
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
+	select HAS_MCUX_LMEM_CACHE
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
 	select HAS_PM

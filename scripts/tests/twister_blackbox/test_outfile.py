@@ -15,13 +15,12 @@ import pytest
 import sys
 import tarfile
 
-# pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, suite_filename_mock
+from conftest import ZEPHYR_BASE, TEST_DATA, test_filename_mock
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
-@mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
 class TestOutfile:
     @classmethod
     def setup_class(cls):
@@ -97,7 +96,7 @@ class TestOutfile:
         assert str(sys_exit.value) == '0'
 
         relpath = os.path.relpath(path, ZEPHYR_BASE)
-        sample_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr', relpath, 'sample.basic.helloworld')
+        sample_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr_gnu', relpath, 'sample.basic.helloworld')
         listdir = os.listdir(sample_path)
         zephyr_listdir = os.listdir(os.path.join(sample_path, 'zephyr'))
 
@@ -122,7 +121,7 @@ class TestOutfile:
                ) for val in pair]
 
         relative_test_path = os.path.relpath(path, ZEPHYR_BASE)
-        test_result_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr',
+        test_result_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr_gnu',
                                         relative_test_path, 'dummy.agnostic.group2')
 
         with mock.patch.object(sys, 'argv', [sys.argv[0]] + args), \
@@ -181,7 +180,7 @@ class TestOutfile:
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
         relative_test_path = os.path.relpath(path, ZEPHYR_BASE)
-        zephyr_out_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr', relative_test_path,
+        zephyr_out_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr_gnu', relative_test_path,
                                        'sample.basic.helloworld', 'zephyr')
         args = ['-i', '--outdir', out_path, '-T', path] + \
                ['--prep-artifacts-for-testing'] + \

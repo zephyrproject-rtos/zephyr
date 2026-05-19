@@ -79,7 +79,12 @@ static void wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status = (const struct wifi_status *)cb->info;
 
-	wifi_ctx.result = status->status;
+	if (status->disconn_reason == WIFI_REASON_DISCONN_SUCCESS ||
+	    status->disconn_reason == WIFI_REASON_DISCONN_USER_REQUEST) {
+		wifi_ctx.result = 0;
+	} else {
+		wifi_ctx.result = status->status;
+	}
 
 	if (!wifi_ctx.connecting) {
 		if (wifi_ctx.result) {
@@ -116,16 +121,20 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint64_t
 	}
 }
 
-static int icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt, struct net_icmp_ip_hdr *hdr,
-		      struct net_icmp_hdr *icmp_hdr, void *user_data)
+static enum net_verdict icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
+				   struct net_icmp_ip_hdr *hdr, struct net_icmp_hdr *icmp_hdr,
+				   void *user_data)
 {
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
 	size_t hdr_offset = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) +
 			    sizeof(struct net_icmp_hdr) + sizeof(struct net_icmpv4_echo_req);
 	size_t data_len = net_pkt_get_len(pkt) - hdr_offset;
 	char buf[50];
+	uint16_t chksum = 0;
+	int ret;
 
-	if (net_calc_chksum_icmpv4(pkt)) {
+	ret = net_calc_chksum_icmpv4(pkt, &chksum);
+	if (ret < 0 || chksum != 0U) {
 		/* checksum error */
 		wifi_ctx.result = -EIO;
 		goto sem_give;
@@ -144,7 +153,7 @@ static int icmp_event(struct net_icmp_ctx *ctx, struct net_pkt *pkt, struct net_
 sem_give:
 	k_sem_give(&wifi_event);
 
-	return 0;
+	return wifi_ctx.result == 0 ? NET_OK : NET_DROP;
 }
 
 static int wifi_scan(void)

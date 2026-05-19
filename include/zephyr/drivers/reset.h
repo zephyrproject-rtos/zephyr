@@ -167,7 +167,11 @@ struct reset_dt_spec {
 #define RESET_DT_SPEC_INST_GET_OR(inst, default_value)			\
 	RESET_DT_SPEC_INST_GET_BY_IDX_OR(inst, 0, default_value)
 
-/** @cond INTERNAL_HIDDEN */
+/**
+ * @def_driverbackendgroup{Reset Controller,reset_controller_interface}
+ * @ingroup reset_controller_interface
+ * @{
+ */
 
 /**
  * API template to get the reset status of the device.
@@ -198,16 +202,20 @@ typedef int (*reset_api_line_deassert)(const struct device *dev, uint32_t id);
 typedef int (*reset_api_line_toggle)(const struct device *dev, uint32_t id);
 
 /**
- * @brief Reset Controller driver API
+ * @driver_ops{Reset Controller}
  */
 __subsystem struct reset_driver_api {
+	/** @driver_ops_optional @copybrief reset_api_status */
 	reset_api_status status;
+	/** @driver_ops_optional @copybrief reset_api_line_assert */
 	reset_api_line_assert line_assert;
+	/** @driver_ops_optional @copybrief reset_api_line_deassert */
 	reset_api_line_deassert line_deassert;
+	/** @driver_ops_optional @copybrief reset_api_line_toggle */
 	reset_api_line_toggle line_toggle;
 };
 
-/** @endcond */
+/** @} */
 
 /**
  * @brief Get the reset status
@@ -226,7 +234,7 @@ __syscall int reset_status(const struct device *dev, uint32_t id, uint8_t *statu
 
 static inline int z_impl_reset_status(const struct device *dev, uint32_t id, uint8_t *status)
 {
-	const struct reset_driver_api *api = (const struct reset_driver_api *)dev->api;
+	const struct reset_driver_api *api = DEVICE_API_GET(reset, dev);
 
 	if (api->status == NULL) {
 		return -ENOSYS;
@@ -269,7 +277,7 @@ __syscall int reset_line_assert(const struct device *dev, uint32_t id);
 
 static inline int z_impl_reset_line_assert(const struct device *dev, uint32_t id)
 {
-	const struct reset_driver_api *api = (const struct reset_driver_api *)dev->api;
+	const struct reset_driver_api *api = DEVICE_API_GET(reset, dev);
 
 	if (api->line_assert == NULL) {
 		return -ENOSYS;
@@ -311,7 +319,7 @@ __syscall int reset_line_deassert(const struct device *dev, uint32_t id);
 
 static inline int z_impl_reset_line_deassert(const struct device *dev, uint32_t id)
 {
-	const struct reset_driver_api *api = (const struct reset_driver_api *)dev->api;
+	const struct reset_driver_api *api = DEVICE_API_GET(reset, dev);
 
 	if (api->line_deassert == NULL) {
 		return -ENOSYS;
@@ -352,7 +360,7 @@ __syscall int reset_line_toggle(const struct device *dev, uint32_t id);
 
 static inline int z_impl_reset_line_toggle(const struct device *dev, uint32_t id)
 {
-	const struct reset_driver_api *api = (const struct reset_driver_api *)dev->api;
+	const struct reset_driver_api *api = DEVICE_API_GET(reset, dev);
 
 	if (api->line_toggle == NULL) {
 		return -ENOSYS;

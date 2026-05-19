@@ -8,6 +8,7 @@
 LOG_MODULE_REGISTER(npf_ethernet, CONFIG_NET_PKT_FILTER_LOG_LEVEL);
 
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt_filter.h>
 
 static bool addr_mask_compare(struct net_eth_addr *addr1,

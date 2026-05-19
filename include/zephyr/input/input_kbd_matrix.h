@@ -197,10 +197,9 @@ struct input_kbd_matrix_common_config {
 		.api = _api, \
 		.row_size = _row_size, \
 		.col_size = _col_size, \
-		.poll_period_us = DT_PROP(node_id, poll_period_ms) * USEC_PER_MSEC, \
-		.stable_poll_period_us = DT_PROP_OR(node_id, stable_poll_period_ms, \
-						    DT_PROP(node_id, poll_period_ms)) * \
-							USEC_PER_MSEC, \
+		.poll_period_us = DT_PROP(node_id, poll_period_us), \
+		.stable_poll_period_us = DT_PROP_OR(node_id, stable_poll_period_us, \
+						    DT_PROP(node_id, poll_period_us)), \
 		.poll_timeout_ms = DT_PROP(node_id, poll_timeout_ms), \
 		.debounce_down_us = DT_PROP(node_id, debounce_down_ms) * USEC_PER_MSEC, \
 		.debounce_up_us = DT_PROP(node_id, debounce_up_ms) * USEC_PER_MSEC, \
@@ -332,6 +331,28 @@ int input_kbd_matrix_common_init(const struct device *dev);
 int input_kbd_matrix_pm_action(const struct device *dev,
 			       enum pm_device_action action);
 #endif
+
+/**
+ * @brief Check whether the current keyboard matrix state has ghost keys.
+ *
+ * @param dev Keyboard matrix device instance.
+ *
+ * @retval true  Ghosting key detected.
+ * @retval false No ghosting key detected.
+ */
+bool input_kbd_matrix_ghosting(const struct device *dev);
+
+/**
+ * @brief Update the keyboard matrix state and apply debouncing.
+ *
+ * The driver must first fill @ref input_kbd_matrix_common_config and
+ * @ref input_kbd_matrix_common_data for the kbd matrix.
+ * This function then updates the stable and unstable states,
+ * performs per-key debouncing, and reports key events to the input subsystem.
+ *
+ * @param dev Keyboard matrix device instance.
+ */
+void input_kbd_matrix_update_state(const struct device *dev);
 
 /** @} */
 

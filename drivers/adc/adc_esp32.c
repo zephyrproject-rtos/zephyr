@@ -389,7 +389,7 @@ static int adc_esp32_init(const struct device *dev)
 		data->cal_handle[i] = NULL;
 	}
 
-	/* Default reference voltage. This could be calibrated externaly */
+	/* Default reference voltage. This could be calibrated externally */
 	data->meas_ref_internal = ADC_ESP32_DEFAULT_VREF_INTERNAL;
 
 	adc_hw_calibration(conf->unit);

@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+family:
+- name: microchip_pic32cm_sg_gc
+  series:
+  - name: pic32cm_gc00
+    socs:
+    - name: pic32cm5112gc00048
+    - name: pic32cm5112gc00064
+    - name: pic32cm5112gc00100
+  - name: pic32ck_sg00
+    socs:
+    - name: pic32cm5112sg00048
+    - name: pic32cm5112sg00064
+    - name: pic32cm5112sg00100

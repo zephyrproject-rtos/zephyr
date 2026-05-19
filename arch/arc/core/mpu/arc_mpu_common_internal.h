@@ -209,11 +209,16 @@ int arc_core_mpu_get_max_domain_partition_regions(void)
  */
 int arc_core_mpu_buffer_validate(const void *addr, size_t size, int write)
 {
+	/* Lock IRQs to protect MPU bank selection during region iteration */
+#if CONFIG_ARC_MPU_VER == 6
+	int key = arch_irq_lock();
+#endif
+	int result = -EPERM;
+
 	/*
 	 * For ARC MPU, smaller region number takes priority.
 	 * we can stop the iteration immediately once we find the
 	 * matched region that grants permission or denies access.
-	 *
 	 */
 	for (int r_index = 0; r_index < get_num_regions(); r_index++) {
 		if (!_is_enabled_region(r_index) || !_is_in_region(r_index, (uint32_t)addr, size)) {
@@ -221,13 +226,17 @@ int arc_core_mpu_buffer_validate(const void *addr, size_t size, int write)
 		}
 
 		if (_is_user_accessible_region(r_index, write)) {
-			return 0;
+			result = 0;
 		} else {
-			return -EPERM;
+			result = -EPERM;
 		}
+		break;
 	}
 
-	return -EPERM;
+#if CONFIG_ARC_MPU_VER == 6
+	arch_irq_unlock(key);
+#endif
+	return result;
 }
 #endif /* CONFIG_USERSPACE */
 

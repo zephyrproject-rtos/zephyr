@@ -58,7 +58,6 @@ int adc_siwx91x_channel_config(const struct device *dev, uint8_t channel)
 	uint16_t total_clk;
 	uint16_t on_clk;
 	uint16_t min_total_clk;
-	int ret;
 
 	total_clk = system_clocks.ulpss_ref_clk / f_sample_rate;
 
@@ -74,13 +73,7 @@ int adc_siwx91x_channel_config(const struct device *dev, uint8_t channel)
 		total_clk += 1;
 	}
 
-	/* MSB 16-bits contain on duration and LSB 16-bits contain total duration */
-	on_clk = FIELD_PREP(0xFFFF0000, on_clk) | total_clk;
-
-	ret = clock_control_set_rate(cfg->clock_dev, cfg->clock_subsys, &on_clk);
-	if (ret) {
-		return ret;
-	}
+	RSI_ADC_ClkDivfactor(AUX_ADC_DAC_COMP, on_clk, total_clk);
 
 	RSI_ADC_NoiseAvgMode(cfg->reg, ENABLE);
 

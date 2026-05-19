@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 ENE Technology Inc.
+ * Copyright (c) 2025-2026 ENE Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,12 +85,8 @@ static int kb106x_gpio_pin_configure(const struct device *dev, gpio_pin_t pin, g
 		/* [patch] disable open-drain when output is disabled */
 		WRITE_BIT(config->gpio_regs->GPIOOD, pin, 0);
 	}
-	/* input enable function */
-	if (flags & GPIO_INPUT) {
-		WRITE_BIT(config->gpio_regs->GPIOIE, pin, 1);
-	} else {
-		WRITE_BIT(config->gpio_regs->GPIOIE, pin, 0);
-	}
+	/* input function always enable */
+	WRITE_BIT(config->gpio_regs->GPIOIE, pin, 1);
 
 	return 0;
 }

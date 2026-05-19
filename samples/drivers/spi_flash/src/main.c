@@ -17,7 +17,7 @@
 	defined(CONFIG_BOARD_ARTY_A7_DESIGNSTART_FPGA_CORTEX_M3)
 /* The FPGA bitstream is stored in the lower 536 sectors of the flash. */
 #define SPI_FLASH_TEST_REGION_OFFSET \
-	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(fpga_bitstream))
+	DT_REG_SIZE(DT_NODE_BY_PARTITION_LABEL(fpga_bitstream))
 #elif defined(CONFIG_BOARD_NPCX9M6F_EVB) || \
 	defined(CONFIG_BOARD_NPCX7M6FB_EVB)
 #define SPI_FLASH_TEST_REGION_OFFSET 0x7F000
@@ -39,7 +39,8 @@
 #if defined(CONFIG_FLASH_STM32_OSPI) || defined(CONFIG_FLASH_STM32_QSPI) ||                        \
 	defined(CONFIG_FLASH_STM32_XSPI) || defined(CONFIG_FLASH_RENESAS_RA_OSPI_B) ||             \
 	defined(CONFIG_FLASH_RENESAS_RA_QSPI) || defined(CONFIG_FLASH_RENESAS_RZ_QSPI_XSPI) ||     \
-	defined(CONFIG_FLASH_RENESAS_RZ_QSPI_SPIBSC)
+	defined(CONFIG_FLASH_RENESAS_RZ_QSPI_SPIBSC) ||                                            \
+	defined(CONFIG_FLASH_RENESAS_RZA2M_QSPI_SPIBSC)
 #define SPI_FLASH_MULTI_SECTOR_TEST
 #endif
 
@@ -63,6 +64,8 @@
 #define SPI_FLASH_COMPAT renesas_rz_qspi_xspi
 #elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rz_qspi_spibsc)
 #define SPI_FLASH_COMPAT renesas_rz_qspi_spibsc
+#elif DT_HAS_COMPAT_STATUS_OKAY(renesas_rza2m_qspi_spibsc)
+#define SPI_FLASH_COMPAT renesas_rza2m_qspi_spibsc
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_xspi_nor)
 #define SPI_FLASH_COMPAT nxp_xspi_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_imx_flexspi_nor)

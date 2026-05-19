@@ -26,12 +26,14 @@
 			reg = <0x20010000 DT_SIZE_K(48 + 16)>;
 		};
 
+		// Leave SRAM4 for shared memory between the cores
+
 		/*
-		 * Concatenate SRAM4 through SRAM6 for the RV32
+		 * Concatenate SRAM5 through SRAM8 for the RV32
 		 */
-		rv32_sram: memory@20030000 {
+		rv32_sram: memory@20040000 {
 			compatible = "mmio-sram";
-			reg = <0x20030000 DT_SIZE_K(176)>;
+			reg = <0x20040000 DT_SIZE_K(64 + 48 + 16)>;
 		};
 	};
 
@@ -144,27 +146,30 @@ m4_uart: &uart0 {};
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 
 		m4_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-m4";
 			reg = <0x0 DT_SIZE_M(1)>;
 		};
 
 		m4_storage_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage-m4";
 			reg = <0x100000 DT_SIZE_K(256)>;
 		};
 
 		rv32_partition: partition@140000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-rv32";
 			reg = <0x140000 DT_SIZE_M(1)>;
 		};
 
 		rv32_storage_partition: partition@240000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage-rv32";
 			reg = <0x240000 DT_SIZE_K(256)>;
 		};

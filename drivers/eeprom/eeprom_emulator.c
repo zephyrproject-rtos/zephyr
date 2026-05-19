@@ -38,7 +38,7 @@
  *  ||                    XX| |                    XX|                      |
  *  ||--EEPROM page 0-------| |--EEPROM page 1-------|                      |
  *  |------------------------------------------------------------Partition--|
- *  XX: page validity marker: all 0x00: page invalid
+ *  XX: page validity marker: all inverted page erase value: page invalid
  *
  * Internally the address of an EEPROM byte is represented by a uint32_t (this
  * should be sufficient in all cases). In case the EEPROM size is smaller than
@@ -46,9 +46,9 @@
  * for a 4 byte flash write block size are a combination of 2 byte address and
  * 2 byte data.
  *
- * The EEPROM size, pagesize and the flash partition used for the EEPROM are
- * defined in the dts. The flash partition should allow at least two EEPROM
- * pages.
+ * The EEPROM size, pagesize, flash erase value and the flash partition used for
+ * the EEPROM are defined in the dts. The flash partition should allow at
+ * least two EEPROM pages.
  *
  */
 
@@ -70,7 +70,7 @@ struct eeprom_emu_config {
 	/* EEPROM is read-only */
 	bool readonly;
 	/* Page size used to emulate the EEPROM, contains one area of EEPROM
-	 * size and a area to store changes.
+	 * size and an area to store changes.
 	 */
 	size_t page_size;
 	/* Offset of the flash partition used to emulate the EEPROM */
@@ -81,7 +81,7 @@ struct eeprom_emu_config {
 	 */
 	bool partitionerase;
 	/* Size of a change block */
-	uint8_t flash_cbs;
+	uint16_t flash_cbs;
 	uint8_t *rambuf;
 	/* Device of the flash partition used to emulate the EEPROM */
 	const struct device *flash_dev;
@@ -92,6 +92,9 @@ struct eeprom_emu_data {
 	off_t write_offset;
 	/* Offset of the current (EEPROM) page */
 	off_t page_offset;
+	/* Flash erase value */
+	uint8_t flash_erase_val;
+	/* Mutex lock */
 	struct k_mutex lock;
 };
 
@@ -145,16 +148,17 @@ static inline int eeprom_emu_flash_erase(const struct device *dev, off_t offset,
 }
 
 /*
- * eeprom_emu_page_invalidate: invalidate a page by writing all zeros at the end
+ * eeprom_emu_page_invalidate: invalidate a page by writing inverted page erase value at the end
  */
 static int eeprom_emu_page_invalidate(const struct device *dev, off_t offset)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
+	const struct eeprom_emu_data *dev_data = dev->data;
 	uint8_t buf[dev_config->flash_cbs];
 
 	LOG_DBG("Invalidating page at [0x%tx]", (ptrdiff_t)offset);
 
-	memset(buf, 0x00, sizeof(buf));
+	memset(buf, ~dev_data->flash_erase_val, sizeof(buf));
 
 	offset += (dev_config->page_size - sizeof(buf));
 	return eeprom_emu_flash_write(dev, offset, buf, sizeof(buf));
@@ -190,6 +194,7 @@ static void eeprom_emu_set_change(const struct device *dev,
 				  uint8_t *blk)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
+	const struct eeprom_emu_data *dev_data = dev->data;
 
 	for (int i = 0; i < (dev_config->flash_cbs / 2); i++) {
 		(*blk++) = (*data++);
@@ -199,7 +204,7 @@ static void eeprom_emu_set_change(const struct device *dev,
 		if (i < sizeof(address)) {
 			(*blk++) = (uint8_t)(((address >> (8 * i)) & 0xff));
 		} else {
-			(*blk++) = 0xff;
+			(*blk++) = dev_data->flash_erase_val;
 		}
 
 	}
@@ -212,9 +217,10 @@ static void eeprom_emu_set_change(const struct device *dev,
 static int eeprom_emu_is_word_used(const struct device *dev, const uint8_t *blk)
 {
 	const struct eeprom_emu_config *dev_config = dev->config;
+	const struct eeprom_emu_data *dev_data = dev->data;
 
 	for (int i = 0; i < dev_config->flash_cbs; i++) {
-		if ((*blk++) != 0xff) {
+		if ((*blk++) != dev_data->flash_erase_val) {
 			return 1;
 		}
 
@@ -623,7 +629,6 @@ static int eeprom_emu_write(const struct device *dev, off_t address,
 		}
 
 	}
-
 	k_mutex_unlock(&dev_data->lock);
 
 	return rc;
@@ -650,6 +655,9 @@ static int eeprom_emu_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/* Get flash erase value */
+	dev_data->flash_erase_val = flash_get_parameters(dev_config->flash_dev)->erase_value;
+
 	/* Find the page offset */
 	dev_data->page_offset = 0U;
 	dev_data->write_offset = dev_config->page_size - sizeof(buf);
@@ -668,7 +676,7 @@ static int eeprom_emu_init(const struct device *dev)
 	}
 
 	if (dev_data->page_offset == dev_config->flash_size) {
-		__ASSERT(0, "All pages are invalid, is this a EEPROM area?");
+		__ASSERT(0, "All pages are invalid, is this an EEPROM area?");
 		return -EINVAL;
 	}
 

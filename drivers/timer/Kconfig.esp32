@@ -7,6 +7,7 @@
 config ESP32_SYS_TIMER
 	bool "ESP32 sys-timer support (ESP32Cx series)"
 	depends on SOC_SERIES_ESP32C2 || SOC_SERIES_ESP32C3 || \
+		    (SOC_SERIES_ESP32C5 && !SOC_ESP32C5_LPCORE) || \
 		    (SOC_SERIES_ESP32C6 && !SOC_ESP32C6_LPCORE) || SOC_SERIES_ESP32H2
 	default y
 	select TICKLESS_CAPABLE

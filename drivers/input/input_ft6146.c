@@ -74,9 +74,12 @@ LOG_MODULE_REGISTER(ft6146, CONFIG_INPUT_LOG_LEVEL);
 
 struct ft6146_data {
 	const struct device *dev;
-	struct gpio_callback int_cb;
 	struct k_work work;
+#ifdef CONFIG_INPUT_FT6146_INTERRUPT
+	struct gpio_callback int_cb;
+#else
 	struct k_timer poll_timer;
+#endif
 };
 
 struct ft6146_config {
@@ -153,7 +156,7 @@ static int ft6146_reset(const struct device *dev)
 	}
 
 	if (!device_is_ready(config->reset_gpio.port)) {
-		LOG_ERR("Reset GPIO not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->reset_gpio.port);
 		return -ENODEV;
 	}
 
@@ -184,7 +187,7 @@ static int ft6146_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -201,7 +204,7 @@ static int ft6146_init(const struct device *dev)
 
 #ifdef CONFIG_INPUT_FT6146_INTERRUPT
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("Interrupt GPIO controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 
@@ -226,8 +229,8 @@ static int ft6146_init(const struct device *dev)
 #else
 	/* Initialize polling timer */
 	k_timer_init(&data->poll_timer, ft6146_poll_timer_handler, NULL);
-	k_timer_start(&data->poll_timer, K_MSEC(CONFIG_INPUT_FT6146_PERIOD),
-		      K_MSEC(CONFIG_INPUT_FT6146_PERIOD));
+	k_timer_start(&data->poll_timer, K_MSEC(CONFIG_INPUT_FT6146_PERIOD_MS),
+		      K_MSEC(CONFIG_INPUT_FT6146_PERIOD_MS));
 #endif
 
 	return ret;

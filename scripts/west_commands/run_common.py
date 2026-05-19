@@ -125,7 +125,6 @@ def add_parser_common(command, parser_adder=None, parser=None):
         parser = parser_adder.add_parser(
             command.name,
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            help=command.help,
             description=command.description)
 
     # Remember to update west-completion.bash if you add or remove

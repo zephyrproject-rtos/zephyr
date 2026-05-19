@@ -16,9 +16,11 @@
 #define ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_TRINAMIC_H_
 
 /**
- * @brief Trinamic Stepper Controller Interface
- * @defgroup trinamic_stepper_interface Trinamic Stepper Controller Interface
- * @ingroup stepper_interface
+ * @brief Trinamic Stepper Controller
+ * @defgroup trinamic_stepper_ctrl Trinamic Stepper Controller
+ * @ingroup stepper_ctrl
+ * @since 4.0
+ * @version 0.9.0
  * @{
  */
 

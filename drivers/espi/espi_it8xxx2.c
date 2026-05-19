@@ -2503,7 +2503,7 @@ static void espi_it8xxx2_oob_ch_en_isr(const struct device *dev, bool enable)
  */
 static void espi_it8xxx2_flash_ch_en_isr(const struct device *dev, bool enable)
 {
-	if (enable) {
+	if (IS_ENABLED(CONFIG_ESPI_AUTOMATIC_BOOT_DONE_ACKNOWLEDGE) && enable) {
 		espi_it8xxx2_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
 		espi_it8xxx2_send_vwire(dev,
 					ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);

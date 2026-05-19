@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <zephyr/types.h>
@@ -23,23 +22,33 @@ struct mctp *mctp_ctx;
 
 #define BUS_OWNER_ID 20
 
+static void rx_message_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	mctp_message_tx(mctp_ctx, BUS_OWNER_ID, false, 0, "pong", sizeof("pong"));
+
+	k_sem_give(&mctp_rx);
+}
+K_WORK_DEFINE(rx_message_work, rx_message_handler);
+
 static void rx_message(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data, void *msg,
 		       size_t len)
 {
 	LOG_INF("received message \"%s\" from endpoint %d, replying with \"pong\"", (char *)msg,
 		eid);
 
-	mctp_message_tx(mctp_ctx, BUS_OWNER_ID, false, 0, "pong", sizeof("pong"));
-
-	k_sem_give(&mctp_rx);
+	/* While small messages, such as this "pong" can be sent from the ISR context, bigger ones,
+	 * which will be split into several packets by libmctp won't work. Using a work queue
+	 * to send replies is thus safer for more cases.
+	 */
+	k_work_submit(&rx_message_work);
 }
-
 
 int main(void)
 {
 	LOG_INF("MCTP Host EID:%d on %s\n", mctp_i2c_ctrl.endpoint_id, CONFIG_BOARD_TARGET);
 
-	mctp_set_alloc_ops(malloc, free, realloc);
 	mctp_ctx = mctp_init();
 	__ASSERT_NO_MSG(mctp_ctx != NULL);
 	mctp_register_bus(mctp_ctx, &mctp_i2c_ctrl.binding, mctp_i2c_ctrl.endpoint_id);

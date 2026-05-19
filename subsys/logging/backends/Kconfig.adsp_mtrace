@@ -16,3 +16,11 @@ backend-str = adsp_mtrace
 source "subsys/logging/Kconfig.template.log_format_config"
 
 endif # LOG_BACKEND_ADSP_MTRACE
+
+config MTRACE_LOG_CACHE_BUF_SIZE
+	int "Number of bytes dedicated for the mtrace log cache buffer"
+	depends on LOG_BACKEND_ADSP_MTRACE
+	default 0
+	range 0 32768
+	help
+	  Number of bytes dedicated for the mtrace log cache buffer.

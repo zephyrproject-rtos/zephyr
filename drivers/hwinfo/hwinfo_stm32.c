@@ -8,9 +8,7 @@
 #include <stm32_bitops.h>
 #include <stm32_ll_utils.h>
 #include <stm32_ll_rcc.h>
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
 #include <zephyr/cache.h>
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
 #include <stm32_ll_pwr.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <string.h>
@@ -20,14 +18,29 @@
 	|| defined(CONFIG_SOC_SERIES_STM32MP2X)
 
 /* No ll_utils for the stm32mp13x series, instead use the HAL functions */
+#define STM32_NUM_UID_WORDS 3
 /* zephyr-keep-sorted-start */
 #define STM32_UID_WORD_0 HAL_GetUIDw2()
 #define STM32_UID_WORD_1 HAL_GetUIDw1()
 #define STM32_UID_WORD_2 HAL_GetUIDw0()
 /* zephyr-keep-sorted-stop */
 
+#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
+
+/*
+ * The STM32WB0 series doesn't have the 96-bit UID.
+ * The LL_GetUID_WordN() API exists but returns the
+ * value of UID64 instead, so there is no "Word2".
+ */
+#define STM32_NUM_UID_WORDS 2
+/* zephyr-keep-sorted-start */
+#define STM32_UID_WORD_0 LL_GetUID_Word1()
+#define STM32_UID_WORD_1 LL_GetUID_Word0()
+/* zephyr-keep-sorted-stop */
+
 #else
 
+#define STM32_NUM_UID_WORDS 3
 /* zephyr-keep-sorted-start */
 #define STM32_UID_WORD_0 LL_GetUID_Word2()
 #define STM32_UID_WORD_1 LL_GetUID_Word1()
@@ -37,26 +50,37 @@
 #endif /* CONFIG_SOC_SERIES_STM32MP13X || CONFIG_SOC_SERIES_STM32MP2X */
 
 struct stm32_uid {
-	uint32_t id[3];
+	uint32_t id[STM32_NUM_UID_WORDS];
 };
+
+static void ll_hwinfo_force_clear_reset_flags(void)
+{
+#ifdef CONFIG_STM32_HAL2
+	LL_RCC_ForceClearResetFlags();
+#else /* CONFIG_STM32_HAL2 */
+	LL_RCC_ClearResetFlags();
+#endif /* CONFIG_STM32_HAL2 */
+}
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct stm32_uid dev_id;
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	sys_cache_instr_disable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+	if (IS_ENABLED(CONFIG_HAS_STM32_UNCACHED_ACCESS_ONLY_OTP)) {
+		sys_cache_instr_disable();
+	}
 
-	/* zephyr-keep-sorted-start */
+	/* zephyr-keep-sorted-start re(^\s+) */
 	dev_id.id[0] = sys_cpu_to_be32(STM32_UID_WORD_0);
 	dev_id.id[1] = sys_cpu_to_be32(STM32_UID_WORD_1);
+#if STM32_NUM_UID_WORDS >= 3
 	dev_id.id[2] = sys_cpu_to_be32(STM32_UID_WORD_2);
+#endif /* STM32_NUM_UID_WORDS >= 3 */
 	/* zephyr-keep-sorted-stop */
 
-#if defined(CONFIG_SOC_SERIES_STM32H5X)
-	sys_cache_instr_enable();
-#endif /* CONFIG_SOC_SERIES_STM32H5X */
+	if (IS_ENABLED(CONFIG_HAS_STM32_UNCACHED_ACCESS_ONLY_OTP)) {
+		sys_cache_instr_enable();
+	}
 
 	if (length > sizeof(dev_id.id)) {
 		length = sizeof(dev_id.id);
@@ -69,6 +93,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 
 #if defined(CONFIG_SOC_SERIES_STM32WBAX) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \
+	defined(CONFIG_SOC_SERIES_STM32WB0X) || \
 	defined(CONFIG_SOC_SERIES_STM32WLX)
 struct stm32_eui64 {
 	uint32_t id[2];
@@ -91,17 +116,29 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	uint32_t flags = 0;
 
-#if defined(RCC_FLAG_SFTRST)
+/*
+ * For STM32WB0 series, we use only series check rather than
+ * #ifdef (RCC_CSR_xxx) because the same RCC_CSR macros are
+ * provided by old SoCs (e.g., STM32F4) as "Legacy defines"
+ * so we would need a series check regardless.
+ */
+
+#if defined(RCC_FLAG_SFTRST) || defined(RCC_RSR_SFTRSTF)
 	if (LL_RCC_IsActiveFlag_SFTRST()) {
 		flags |= RESET_SOFTWARE;
 	}
 #endif
-#if defined(RCC_FLAG_PINRST)
+#if defined(RCC_FLAG_PINRST) || defined(RCC_RSR_PINRSTF)
 	if (LL_RCC_IsActiveFlag_PINRST()) {
 		flags |= RESET_PIN;
 	}
 #endif
-#if defined(RCC_FLAG_IWDGRST)
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	if (LL_RCC_IsActiveFlag_PADRST()) {
+		flags |= RESET_PIN;
+	}
+#endif
+#if defined(RCC_FLAG_IWDGRST) || (defined(RCC_RSR_IWDGRSTF) && !defined(CONFIG_SOC_SERIES_STM32H7X))
 	if (LL_RCC_IsActiveFlag_IWDGRST()) {
 		flags |= RESET_WATCHDOG;
 	}
@@ -116,7 +153,12 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_WATCHDOG;
 	}
 #endif
-#if defined(RCC_FLAG_WWDGRST)
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	if (LL_RCC_IsActiveFlag_WDGRST()) {
+		flags |= RESET_WATCHDOG;
+	}
+#endif
+#if defined(RCC_FLAG_WWDGRST) || (defined(RCC_RSR_WWDGRSTF) && !defined(CONFIG_SOC_SERIES_STM32H7X))
 	if (LL_RCC_IsActiveFlag_WWDGRST()) {
 		flags |= RESET_WATCHDOG;
 	}
@@ -136,7 +178,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_SECURITY;
 	}
 #endif
-#if defined(RCC_FLAG_BORRST)
+#if defined(RCC_FLAG_BORRST) || defined(RCC_RSR_BORRSTF)
 	if (LL_RCC_IsActiveFlag_BORRST()) {
 		flags |= RESET_BROWNOUT;
 	}
@@ -151,7 +193,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 		flags |= RESET_POR;
 	}
 #endif
-#if defined(RCC_FLAG_LPWRRST)
+#if defined(RCC_FLAG_LPWRRST) || defined(RCC_CSR_LPWRRSTF)
 	if (LL_RCC_IsActiveFlag_LPWRRST()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
@@ -181,11 +223,21 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if (LL_PWR_IsActiveFlag_C1SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
-#elif defined(PWR_FLAG_SB) || defined(PWR_FLAG_SBF)
+#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
+	if (LL_PWR_GetDeepstopSeqFlag()) {
+		flags |= RESET_LOW_POWER_WAKE;
+	}
+#elif defined(PWR_FLAG_SB) || defined(PWR_FLAG_SBF) || defined(PWR_PMSR_SBF)
 	if (LL_PWR_IsActiveFlag_SB()) {
 		flags |= RESET_LOW_POWER_WAKE;
 	}
 #endif /* PWR_FLAG_SB */
+
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+	if (LL_RCC_IsActiveFlag_LOCKUPRST()) {
+		flags |= RESET_CPU_LOCKUP;
+	}
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
 
 	*cause = flags;
 
@@ -194,7 +246,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	LL_RCC_ClearResetFlags();
+	ll_hwinfo_force_clear_reset_flags();
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CORE_CM4)
 	LL_PWR_ClearFlag_CPU2();
@@ -212,7 +264,7 @@ int z_impl_hwinfo_clear_reset_cause(void)
 	LL_PWR_ClearFlag_C1STOP_C1STB();
 #elif defined(CONFIG_SOC_SERIES_STM32U0X) && defined(PWR_FLAG_SB)
 	LL_PWR_ClearFlag_CSB();
-#elif defined(PWR_FLAG_SB)
+#elif defined(PWR_FLAG_SB) || defined(PWR_PMSR_SBF)
 	LL_PWR_ClearFlag_SB();
 #endif /* PWR_FLAG_SB */
 
@@ -222,6 +274,9 @@ int z_impl_hwinfo_clear_reset_cause(void)
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
 	*supported = (RESET_PIN
+#if defined(CONFIG_SOC_SERIES_STM32WB0X)
+		      | RESET_CPU_LOCKUP
+#endif /* CONFIG_SOC_SERIES_STM32WB0X */
 		      | RESET_WATCHDOG
 		      | RESET_SOFTWARE
 		      | RESET_SECURITY

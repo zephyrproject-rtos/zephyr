@@ -8,11 +8,8 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		storage_partition: partition@de000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000de000 0x00010000>;
 		};

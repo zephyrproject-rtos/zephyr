@@ -12,13 +12,6 @@ menuconfig NET_DSA
 
 if NET_DSA
 
-config NET_DSA_DEPRECATED
-	bool "Distributed Switch Architecture support for legacy device"
-	select DEPRECATED
-	depends on ETH_DSA_SUPPORT_DEPRECATED
-	help
-	  This is obsolete, and only used for legacy dsa device.
-
 config DSA_PORT_MAX_COUNT
 	int "DSA port max count"
 	default 8
@@ -27,8 +20,6 @@ config DSA_PORT_MAX_COUNT
 
 config DSA_TAG_SIZE
 	int "DSA tag size in bytes"
-	# These platforms are still using legacy DSA core driver
-	default 1 if DSA_KSZ8794 || DSA_KSZ8863 || DSA_KSZ8463
 	default 0
 	help
 	  Set the DSA tag length in bytes.

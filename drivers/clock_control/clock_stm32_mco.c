@@ -25,14 +25,20 @@ struct stm32_mco_config {
 	uint32_t prescaler;
 #endif
 	/* clock subsystem driving this peripheral */
-	const struct stm32_pclken pclken[1];
+	const struct stm32_pclken clksel;
+#if defined(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT)
+	const struct stm32_pclken clken;
+#endif
 };
 
 static int stm32_mco_init(const struct device *dev)
 {
 	const struct stm32_mco_config *config = dev->config;
-	const struct stm32_pclken *pclken = &config->pclken[0];
-	uint32_t enr = pclken->enr;
+	const struct stm32_pclken *clksel = &config->clksel;
+#if defined(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT)
+	const struct stm32_pclken *clken = &config->clken;
+#endif
+	uint32_t enr = clksel->enr;
 	uint32_t reg = STM32_DT_CLKSEL_REG_GET(enr);
 	uint32_t shift = STM32_DT_CLKSEL_SHIFT_GET(enr);
 	uint32_t prescaler = config->prescaler;
@@ -40,7 +46,7 @@ static int stm32_mco_init(const struct device *dev)
 	uint32_t pres_shift = STM32_DT_CLKSEL_SHIFT_GET(prescaler);
 	int err;
 
-	err = enabled_clock(pclken->bus);
+	err = enabled_clock(clksel->bus);
 	if (err < 0) {
 		/* Attempt to configure a src clock not available or not valid */
 		return err;
@@ -51,10 +57,10 @@ static int stm32_mco_init(const struct device *dev)
 			      STM32_DT_CLKSEL_MASK_GET(enr) << shift,
 			      STM32_DT_CLKSEL_VAL_GET(enr) << shift);
 
-#if defined(MCOX_ON)
-	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + STM32_DT_CLKSEL_REG_GET(pclken->enr),
-		     MCOX_ON);
-#endif
+#if defined(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT)
+	/* MCO enable */
+	sys_set_bits(DT_REG_ADDR(DT_NODELABEL(rcc)) + clken->bus, clken->enr);
+#endif /* defined(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT) */
 
 #if defined(HAS_PRESCALER)
 	/* MCO prescaler */
@@ -71,7 +77,9 @@ static int stm32_mco_init(const struct device *dev)
 											\
 	const static struct stm32_mco_config stm32_mco_config_##inst = {		\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
-		.pclken = STM32_DT_INST_CLOCKS(inst),					\
+		.clksel = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, clksel),		\
+		IF_ENABLED(CONFIG_CLOCK_STM32_MCO_HAS_ENABLE_BIT,			\
+			   (.clken = STM32_DT_INST_CLOCK_INFO_BY_NAME(inst, clken),))	\
 		IF_ENABLED(HAS_PRESCALER,						\
 			   (.prescaler = DT_PROP(DT_DRV_INST(inst), prescaler),))	\
 	};										\

@@ -7,5 +7,6 @@ set(RENODE_UART sysbus.uart0)
 set(OPENOCD_USE_LOAD_IMAGE NO)
 
 board_runner_args(openocd "--config=${BOARD_DIR}/support/openocd_hifive_unmatched.cfg")
+board_runner_args(openocd "--file-type=elf")
 
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)

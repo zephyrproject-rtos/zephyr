@@ -58,7 +58,7 @@ static void bmi08x_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 					      (uint8_t *)edata->payload, sizeof(edata->payload),
 					      &out_sqe, true);
 	if (err < 0) {
-		LOG_ERR("Failed to perpare async read operation");
+		LOG_ERR("Failed to prepare async read operation");
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;
 	}
@@ -66,7 +66,7 @@ static void bmi08x_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	complete_sqe = rtio_sqe_acquire(config->rtio_bus.ctx);
 	if (!complete_sqe) {
-		LOG_ERR("Failed to perpare async read operation");
+		LOG_ERR("Failed to prepare async read operation");
 		rtio_sqe_drop_all(config->rtio_bus.ctx);
 		rtio_iodev_sqe_err(iodev_sqe, err);
 		return;

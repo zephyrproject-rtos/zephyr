@@ -49,6 +49,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/display/lv_display.c
 
     ${LVGL_DIR}/src/draw/convert/lv_draw_buf_convert.c
+    ${LVGL_DIR}/src/draw/convert/helium/lv_draw_buf_convert_helium.c
     ${LVGL_DIR}/src/draw/convert/neon/lv_draw_buf_convert_neon.c
 
     ${LVGL_DIR}/src/draw/dma2d/lv_draw_dma2d.c
@@ -83,10 +84,11 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/lv_draw_vector.c
     ${LVGL_DIR}/src/draw/lv_image_decoder.c
 
-    ${LVGL_DIR}/src/draw/nanovg/lv_draw_nanovg.c
+    ${LVGL_DIR}/src/draw/nanovg/lv_draw_nanovg_3d.c
     ${LVGL_DIR}/src/draw/nanovg/lv_draw_nanovg_arc.c
     ${LVGL_DIR}/src/draw/nanovg/lv_draw_nanovg_border.c
     ${LVGL_DIR}/src/draw/nanovg/lv_draw_nanovg_box_shadow.c
+    ${LVGL_DIR}/src/draw/nanovg/lv_draw_nanovg.c
     ${LVGL_DIR}/src/draw/nanovg/lv_draw_nanovg_fill.c
     ${LVGL_DIR}/src/draw/nanovg/lv_draw_nanovg_grad.c
     ${LVGL_DIR}/src/draw/nanovg/lv_draw_nanovg_image.c
@@ -113,6 +115,13 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/nema_gfx/lv_draw_nema_gfx_utils.c
     ${LVGL_DIR}/src/draw/nema_gfx/lv_draw_nema_gfx_vector.c
     ${LVGL_DIR}/src/draw/nema_gfx/lv_nema_gfx_path.c
+
+    ${LVGL_DIR}/src/draw/nxp/g2d/lv_draw_buf_g2d.c
+    ${LVGL_DIR}/src/draw/nxp/g2d/lv_draw_g2d.c
+    ${LVGL_DIR}/src/draw/nxp/g2d/lv_draw_g2d_fill.c
+    ${LVGL_DIR}/src/draw/nxp/g2d/lv_draw_g2d_img.c
+    ${LVGL_DIR}/src/draw/nxp/g2d/lv_g2d_buf_map.c
+    ${LVGL_DIR}/src/draw/nxp/g2d/lv_g2d_utils.c
 
     ${LVGL_DIR}/src/draw/nxp/pxp/lv_draw_buf_pxp.c
     ${LVGL_DIR}/src/draw/nxp/pxp/lv_draw_pxp.c
@@ -157,6 +166,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/sw/blend/lv_draw_sw_blend_to_rgb888.c
     ${LVGL_DIR}/src/draw/sw/blend/neon/lv_draw_sw_blend_neon_to_rgb565.c
     ${LVGL_DIR}/src/draw/sw/blend/neon/lv_draw_sw_blend_neon_to_rgb888.c
+    ${LVGL_DIR}/src/draw/sw/blend/riscv_v/lv_draw_sw_blend_riscv_v_to_rgb888.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_arc.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_border.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_blur.c
@@ -174,38 +184,39 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_utils.c
     ${LVGL_DIR}/src/draw/sw/lv_draw_sw_vector.c
 
+    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_buf_vg_lite.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_arc.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_border.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_label.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_path.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_grad.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_stroke.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_layer.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_triangle.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_pending.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_line.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_decoder.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_box_shadow.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_fill.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_img.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_math.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_arc.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_utils.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_box_shadow.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_vector.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_label.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_layer.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_line.c
     ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_mask_rect.c
-    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_buf_vg_lite.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_triangle.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_draw_vg_lite_vector.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_bitmap_font_cache.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_decoder.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_grad.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_math.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_path.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_pending.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_stroke.c
+    ${LVGL_DIR}/src/draw/vg_lite/lv_vg_lite_utils.c
 
     ${LVGL_DIR}/src/font/binfont_loader/lv_binfont_loader.c
+    ${LVGL_DIR}/src/font/fmt_txt/lv_font_fmt_txt.c
     ${LVGL_DIR}/src/font/font_manager/lv_font_manager.c
     ${LVGL_DIR}/src/font/font_manager/lv_font_manager_recycle.c
     ${LVGL_DIR}/src/font/imgfont/lv_imgfont.c
     ${LVGL_DIR}/src/font/lv_font.c
     ${LVGL_DIR}/src/font/lv_font_dejavu_16_persian_hebrew.c
-    ${LVGL_DIR}/src/font/fmt_txt/lv_font_fmt_txt.c
     ${LVGL_DIR}/src/font/lv_font_montserrat_10.c
     ${LVGL_DIR}/src/font/lv_font_montserrat_12.c
-    ${LVGL_DIR}/src/font/lv_font_montserrat_14.c
     ${LVGL_DIR}/src/font/lv_font_montserrat_14_aligned.c
+    ${LVGL_DIR}/src/font/lv_font_montserrat_14.c
     ${LVGL_DIR}/src/font/lv_font_montserrat_16.c
     ${LVGL_DIR}/src/font/lv_font_montserrat_18.c
     ${LVGL_DIR}/src/font/lv_font_montserrat_20.c
@@ -243,32 +254,36 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/libs/barcode/lv_barcode.c
     ${LVGL_DIR}/src/libs/bin_decoder/lv_bin_decoder.c
     ${LVGL_DIR}/src/libs/bmp/lv_bmp.c
-    ${LVGL_DIR}/src/libs/expat/xmlparse.c
-    ${LVGL_DIR}/src/libs/expat/xmlrole.c
-    ${LVGL_DIR}/src/libs/expat/xmltok.c
-    ${LVGL_DIR}/src/libs/expat/xmltok_impl.c
-    ${LVGL_DIR}/src/libs/expat/xmltok_ns.c
     ${LVGL_DIR}/src/libs/ffmpeg/lv_ffmpeg.c
     ${LVGL_DIR}/src/libs/freetype/lv_freetype.c
     ${LVGL_DIR}/src/libs/freetype/lv_freetype_glyph.c
     ${LVGL_DIR}/src/libs/freetype/lv_freetype_image.c
     ${LVGL_DIR}/src/libs/freetype/lv_freetype_outline.c
     ${LVGL_DIR}/src/libs/freetype/lv_ftsystem.c
+    ${LVGL_DIR}/src/libs/frogfs/src/decomp_raw.c
+    ${LVGL_DIR}/src/libs/frogfs/src/frogfs.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_cbfs.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_fatfs.c
+    ${LVGL_DIR}/src/libs/fsdrv/lv_fs_frogfs.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_littlefs.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_memfs.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_posix.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_stdio.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_uefi.c
     ${LVGL_DIR}/src/libs/fsdrv/lv_fs_win32.c
-    ${LVGL_DIR}/src/libs/gif/AnimatedGIF/src/gif.c
-    ${LVGL_DIR}/src/libs/gif/lv_gif.c
+    ${LVGL_DIR}/src/libs/FT800-FT813/EVE_commands.c
+    ${LVGL_DIR}/src/libs/FT800-FT813/EVE_supplemental.c
+    ${LVGL_DIR}/src/libs/gif/gif.c
+    ${LVGL_DIR}/src/libs/gltf/gltf_environment/lv_gltf_ibl_sampler.c
+    ${LVGL_DIR}/src/libs/gltf/math/lv_3dmath.c
+    ${LVGL_DIR}/src/libs/gstreamer/lv_gstreamer.c
     ${LVGL_DIR}/src/libs/libjpeg_turbo/lv_libjpeg_turbo.c
     ${LVGL_DIR}/src/libs/libpng/lv_libpng.c
+    ${LVGL_DIR}/src/libs/libwebp/lv_libwebp.c
     ${LVGL_DIR}/src/libs/lodepng/lodepng.c
     ${LVGL_DIR}/src/libs/lodepng/lv_lodepng.c
     ${LVGL_DIR}/src/libs/lz4/lz4.c
+    ${LVGL_DIR}/src/libs/nanovg/nanovg.c
     ${LVGL_DIR}/src/libs/qrcode/lv_qrcode.c
     ${LVGL_DIR}/src/libs/qrcode/qrcodegen.c
     ${LVGL_DIR}/src/libs/rle/lv_rle.c
@@ -282,6 +297,7 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/libs/tjpgd/lv_tjpgd.c
     ${LVGL_DIR}/src/libs/tjpgd/tjpgd.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/lv_vg_lite_hal/lv_vg_lite_hal.c
+    ${LVGL_DIR}/src/libs/vg_lite_driver/lv_vg_lite_hal/vg_lite_os.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/VGLiteKernel/vg_lite_kernel.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/VGLite/vg_lite.c
     ${LVGL_DIR}/src/libs/vg_lite_driver/VGLite/vg_lite_image.c
@@ -334,42 +350,6 @@ zephyr_library_sources(
     ${LVGL_DIR}/src/others/fragment/lv_fragment.c
     ${LVGL_DIR}/src/others/fragment/lv_fragment_manager.c
     ${LVGL_DIR}/src/others/translation/lv_translation.c
-    ${LVGL_DIR}/src/xml/lv_xml_translation.c
-    ${LVGL_DIR}/src/xml/lv_xml_widget.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_spangroup_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_dropdown_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_scale_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_arc_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_tabview_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_slider_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_chart_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_buttonmatrix_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_canvas_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_checkbox_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_calendar_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_switch_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_bar_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_button_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_label_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_keyboard_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_obj_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_qrcode_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_textarea_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_image_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_imagebutton_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_roller_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_spinbox_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_spinner_parser.c
-    ${LVGL_DIR}/src/xml/parsers/lv_xml_table_parser.c
-    ${LVGL_DIR}/src/xml/lv_xml_parser.c
-    ${LVGL_DIR}/src/xml/lv_xml_component.c
-    ${LVGL_DIR}/src/xml/lv_xml_base_types.c
-    ${LVGL_DIR}/src/xml/lv_xml_load.c
-    ${LVGL_DIR}/src/xml/lv_xml_style.c
-    ${LVGL_DIR}/src/xml/lv_xml_test.c
-    ${LVGL_DIR}/src/xml/lv_xml_utils.c
-    ${LVGL_DIR}/src/xml/lv_xml.c
-    ${LVGL_DIR}/src/xml/lv_xml_update.c
 
     ${LVGL_DIR}/src/stdlib/builtin/lv_tlsf.c
     ${LVGL_DIR}/src/stdlib/clib/lv_string_clib.c

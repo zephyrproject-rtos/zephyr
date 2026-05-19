@@ -4,5 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config NET_SAMPLE_TLS_SESSION_CACHE
+	bool "Enable TLS session caching"
+	depends on NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable TLS client session caching for the http_get sample.
+	  Sessions are cached in RAM and reused on reconnect.
+	  Combine with CONFIG_NET_SOCKETS_TLS_SESSION_CACHE_PERSISTENT
+	  to persist sessions across reboots.
+
 source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

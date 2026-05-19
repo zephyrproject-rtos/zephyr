@@ -272,13 +272,13 @@ static status_t dsi_mcux_dcnano_transfer(const struct device *dev, uint8_t chann
 		switch (data->src_bytes_per_pixel) {
 		case 2:
 			pixfmt = PIXEL_FORMAT_RGB_565;
-			dbi_config.mode |= MIPI_DBI_MODE_RGB565;
+			dbi_config.color_coding = MIPI_DBI_MODE_RGB565;
 			DSI_SetDbiPixelFormat(config->base, kDSI_DbiRGB565);
 			break;
 		case 3:
 			pixfmt = PIXEL_FORMAT_RGB_888;
 			/* If using the DBI, only RGB888 option 1 is supported. */
-			dbi_config.mode |= MIPI_DBI_MODE_RGB888_1;
+			dbi_config.color_coding = MIPI_DBI_MODE_RGB888_1;
 			DSI_SetDbiPixelFormat(config->base, kDSI_DbiRGB888);
 			break;
 		default:
@@ -533,7 +533,7 @@ static int dsi_mcux_attach(const struct device *dev,
 	/* Calculate the delay before entering ULPS. After the last cycle of data has
 	 * been accepted from the controller to the PHY, the data still needs to be
 	 * serialized, transmitted, then the appropriate timing must be met before
-	 * entering the ULPS. The data lane rate can impact this, so calcuate the time
+	 * entering the ULPS. The data lane rate can impact this, so calculate the time
 	 * it takes for one data lane to send 1 bit in HS and LP mode first.
 	 */
 	uint32_t hs_bit_ns = 1000000000UL / dphy_bit_clk_freq;

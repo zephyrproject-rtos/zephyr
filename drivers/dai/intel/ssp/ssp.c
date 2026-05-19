@@ -147,7 +147,7 @@ static int dai_ssp_gcd(int a, int b)
 		b = -b;
 	}
 
-	/* Find the greatest power of 2 that devides both a and b */
+	/* Find the greatest power of 2 that divides both a and b */
 	for (k = 0; ((a | b) & 1) == 0; k++) {
 		a >>= 1;
 		b >>= 1;
@@ -1916,7 +1916,7 @@ static int dai_ssp_check_dma_control(const uint8_t *aux_ptr, int aux_len)
 		case SSP_LINK_CLK_SOURCE:
 			break;
 		default:
-			LOG_ERR("incorect config type %u", aux_tlv->type);
+			LOG_ERR("incorrect config type %u", aux_tlv->type);
 			return -EINVAL;
 		}
 
@@ -2393,7 +2393,7 @@ static void dai_ssp_stop(struct dai_intel_ssp *dp, int direction)
 		break;
 	}
 
-	/* stop Rx if neeed */
+	/* stop Rx if need */
 	if (direction == DAI_DIR_CAPTURE &&
 	    dp->state[DAI_DIR_CAPTURE] != DAI_STATE_PRE_RUNNING) {
 		LOG_INF("SSP%d RX", dp->dai_index);

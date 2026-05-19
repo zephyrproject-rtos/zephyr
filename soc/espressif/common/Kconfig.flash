@@ -94,7 +94,7 @@ config BOOTLOADER_FLASH_XMC_SUPPORT
 choice BOOTLOADER_VDDSDIO_BOOST
 	bool "VDDSDIO LDO voltage"
 	default BOOTLOADER_VDDSDIO_BOOST_1_9V
-	depends on !SOC_SERIES_ESP32C2 && !SOC_SERIES_ESP32C3 && !SOC_SERIES_ESP32C6 && !SOC_SERIES_ESP32H2
+	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32S2 || SOC_SERIES_ESP32S3
 	help
 	  If this option is enabled, and VDDSDIO LDO is set to 1.8V (using eFuse
 	  or MTDI bootstrapping pin), bootloader will change LDO settings to
@@ -113,14 +113,15 @@ endchoice
 
 config BOOTLOADER_REGION_PROTECTION_ENABLE
 	bool "Protect unmapped memory regions from unintended accesses"
-	default y if !RISCV_PMP && !MCUBOOT
+	default y if !RISCV_PMP && BOOTLOADER_MCUBOOT
 	help
 	  Protects the unmapped memory regions of the entire address space from unintended accesses.
 	  This will ensure that an exception will be triggered whenever the CPU performs a memory
 	  operation on unmapped regions of the address space.
 
 	  Automatically disabled when RISCV_PMP is enabled since Zephyr manages PMP directly.
-	  Also disabled for MCUboot builds since the bootloader handles its own region protection.
+	  Only enabled by default for MCUboot-loaded apps where the bootloader has already
+	  configured unlocked PMP/PMA entries during its boot stage.
 
 config SPI_FLASH_HPM_ENABLE
 	bool

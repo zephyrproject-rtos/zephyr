@@ -2,31 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-  Retention subsystem area, which has a retained memory parent. Example
-  64-byte area with 2-byte prefix and 1-byte checksum with 61 usable bytes
-  for user storage:
-
-  sram@2003FFC0 {
-    compatible = "zephyr,memory-region", "mmio-sram";
-    reg = <0x2003FFC0 64>;
-    zephyr,memory-region = "RetainedMem";
-    status = "okay";
-
-    retainedmem {
-      compatible = "zephyr,retained-ram";
-      status = "okay";
-      #address-cells = <1>;
-      #size-cells = <1>;
-
-      retention0: retention@0 {
-        compatible = "zephyr,retention";
-        status = "okay";
-        reg = <0x0 0x40>;
-        prefix = [04 fa];
-        checksum = <1>;
-      };
-    };
-  };
+  Retention subsystem area, which has a retained memory parent.
 
 compatible: "zephyr,retention"
 
@@ -64,3 +40,30 @@ properties:
       16-bit CRC, 4 for 32-bit CRC). Default is to not use a checksum.
     type: int
     default: 0
+
+examples:
+  - |
+    /* Example 64-byte area with 2-byte prefix and 1-byte checksum
+     * leaving 61 usable bytes for user storage:
+     */
+    sram@2003FFC0 {
+      compatible = "zephyr,memory-region", "mmio-sram";
+      reg = <0x2003FFC0 64>;
+      zephyr,memory-region = "RetainedMem";
+      status = "okay";
+
+      retainedmem {
+        compatible = "zephyr,retained-ram";
+        status = "okay";
+        #address-cells = <1>;
+        #size-cells = <1>;
+
+        retention0: retention@0 {
+          compatible = "zephyr,retention";
+          status = "okay";
+          reg = <0x0 0x40>;
+          prefix = [04 fa];
+          checksum = <1>;
+        };
+      };
+    };

@@ -38,6 +38,7 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_enc28j60: enc28j60@0 {
@@ -132,6 +133,7 @@
 				int-gpios = <&test_gpio 0 0>;
 				rst-gpios = <&test_gpio 0 0>;
 				local-mac-address = [00 00 00 01 02 03];
+				phy-handle = <&lan865x_phy>;
 
 				lan865x_mdio: lan865x_mdio {
 					compatible = "microchip,lan865x-mdio";
@@ -139,7 +141,7 @@
 					#address-cells = <1>;
 					#size-cells = <0>;
 
-					ethernet-phy@0 {
+					lan865x_phy: ethernet-phy@0 {
 						compatible = "microchip,t1s-phy";
 						reg = <0x0>;
 						plca-enable;
@@ -156,6 +158,14 @@
 			test_spi_lan9250: lan9250@6 {
 				compatible = "microchip,lan9250";
 				reg = <0x6>;
+				spi-max-frequency = <0>;
+				int-gpios = <&test_gpio 0 0>;
+				local-mac-address = [00 00 00 00 00 00];
+			};
+
+			test_spi_dm9051: dm9051@7 {
+				compatible = "davicom,dm9051";
+				reg = <0x7>;
 				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
 				local-mac-address = [00 00 00 00 00 00];

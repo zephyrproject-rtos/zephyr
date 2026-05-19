@@ -13,42 +13,6 @@ description: |
   child node is the node name prepended with "gdpwr",
   using underscores.
 
-  Example layout:
-
-    gdpwr {
-          compatible = "nordic,nrfs-gdpwr";
-          status = "disabled";
-
-          gdpwr_fast_active_0: fast-active-0 {
-                  #power-domain-cells = <0>;
-          };
-
-          gdpwr_fast_active_1: fast-active-1 {
-                  #power-domain-cells = <0>;
-          };
-
-          gdpwr_fast_main: fast-main {
-                  #power-domain-cells = <0>;
-          };
-
-          gdpwr_slow_active: slow-active {
-                  #power-domain-cells = <0>;
-          };
-
-          gdpwr_slow_main: slow-main {
-                  #power-domain-cells = <0>;
-          };
-  };
-
-  Example usage:
-
-    uart120: uart@8e6000 {
-            compatible = "nordic,nrf-uarte";
-            reg = <0x8e6000 0x1000>;
-            status = "disabled";
-            power-domains = <&gdpwr_fast_active_1>;
-    };
-
 compatible: "nordic,nrfs-gdpwr"
 
 include: base.yaml
@@ -63,3 +27,40 @@ child-binding:
 
     zephyr,pm-device-runtime-auto:
       type: boolean
+
+examples:
+  - |
+    /* Layout */
+    gdpwr {
+      compatible = "nordic,nrfs-gdpwr";
+      status = "disabled";
+
+      gdpwr_fast_active_0: fast-active-0 {
+        #power-domain-cells = <0>;
+      };
+
+      gdpwr_fast_active_1: fast-active-1 {
+        #power-domain-cells = <0>;
+      };
+
+      gdpwr_fast_main: fast-main {
+        #power-domain-cells = <0>;
+      };
+
+      gdpwr_slow_active: slow-active {
+        #power-domain-cells = <0>;
+      };
+
+      gdpwr_slow_main: slow-main {
+        #power-domain-cells = <0>;
+      };
+    };
+
+  - |
+    /* Usage */
+    uart120: uart@8e6000 {
+      compatible = "nordic,nrf-uarte";
+      reg = <0x8e6000 0x1000>;
+      status = "disabled";
+      power-domains = <&gdpwr_fast_active_1>;
+    };

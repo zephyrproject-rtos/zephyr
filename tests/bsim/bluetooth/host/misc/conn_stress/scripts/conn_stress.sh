@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="conn_stress"
+simulation_id="${BOARD_TS}_conn_stress"
 
 test_path="tests_bsim_bluetooth_host_misc_conn_stress"
 bsim_central_exe_name="bs_${BOARD_TS}_${test_path}_central_prj_conf"
@@ -12,7 +12,7 @@ bsim_peripheral_exe_name="bs_${BOARD_TS}_${test_path}_peripheral_prj_conf"
 bsim_args="-RealEncryption=1 -v=2 -s=${simulation_id}"
 test_args="-argstest notify_size=220 conn_interval=32"
 
-EXECUTE_TIMEOUT=120
+EXECUTE_TIMEOUT=300
 
 cd ${BSIM_OUT_PATH}/bin
 

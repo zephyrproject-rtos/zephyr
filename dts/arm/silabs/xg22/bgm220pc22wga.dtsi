@@ -15,7 +15,8 @@
 };
 
 &flash0 {
-	reg = <0x00000000 DT_SIZE_K(352)>;
+	reg = <0x0 DT_SIZE_K(352)>;
+	ranges = <0x0 0x0 DT_SIZE_K(352)>;
 };
 
 &gpioa {
@@ -48,6 +49,7 @@
 &radio {
 	ble-2mbps-supported;
 	ble-cte-tx-supported;
+	pa-max-power-dbm = <8>;
 	pa-voltage-mv = <1800>;
 };
 

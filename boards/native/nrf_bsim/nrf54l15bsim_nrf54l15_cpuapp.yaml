@@ -11,6 +11,7 @@ toolchain:
 supported:
   - counter
   - gpio
+  - bsim
 testing:
   ignore_tags:
     - modem

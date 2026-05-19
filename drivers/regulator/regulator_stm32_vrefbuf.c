@@ -118,23 +118,26 @@ static int regulator_stm32_vrefbuf_get_voltage(const struct device *dev, int32_t
 static int regulator_stm32_vrefbuf_init(const struct device *dev)
 {
 	const struct regulator_stm32_vrefbuf_config *config = dev->config;
-	const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	regulator_common_data_init(dev);
 
-	if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]) != 0) {
-		LOG_ERR("Could not enable clock");
-		return -EIO;
-	}
+	if (config->reset.dev != NULL) {
+		const struct device *const clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
-	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("Reset controller not ready");
-		return -ENODEV;
-	}
+		if (clock_control_on(clk, (clock_control_subsys_t)&config->pclken[0]) != 0) {
+			LOG_ERR("Could not enable clock");
+			return -EIO;
+		}
 
-	if (reset_line_deassert_dt(&config->reset) != 0) {
-		LOG_ERR("Could not deassert reset line");
-		return -EIO;
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("Reset controller not ready");
+			return -ENODEV;
+		}
+
+		if (reset_line_deassert_dt(&config->reset) != 0) {
+			LOG_ERR("Could not deassert reset line");
+			return -EIO;
+		}
 	}
 
 	if (config->vrefp_output_enable) {
@@ -162,8 +165,8 @@ static DEVICE_API(regulator, api) = {
 	},
 
 #define REGULATOR_STM32_VREFBUF_DEFINE(inst)                                                       \
-	static struct regulator_stm32_vrefbuf_data data_##inst;                                    \
                                                                                                    \
+	static struct regulator_stm32_vrefbuf_data data_##inst;                                    \
 	static const struct regulator_stm32_vrefbuf_voltage ref_voltages_##inst[] = {              \
 		DT_FOREACH_PROP_ELEM(DT_DRV_INST(inst), ref_voltages, VREFBUF_VOLTAGE_ELEM)        \
 	};                                                                                         \
@@ -171,7 +174,7 @@ static DEVICE_API(regulator, api) = {
 	static const struct regulator_stm32_vrefbuf_config config_##inst = {                       \
 		.common = REGULATOR_DT_INST_COMMON_CONFIG_INIT(inst),                              \
 		.pclken = STM32_DT_INST_CLOCKS(inst),                                              \
-		.reset = RESET_DT_SPEC_GET(DT_DRV_INST(inst)),                                     \
+		.reset = RESET_DT_SPEC_INST_GET_OR(inst, {0}),                                     \
 		.vrefp_output_enable = DT_INST_PROP(inst, vrefp_output_enable),                    \
 		.ref_voltages = ref_voltages_##inst,                                               \
 		.ref_voltage_count = ARRAY_SIZE(ref_voltages_##inst),                              \

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,10 @@
 #include <freq.h>
 
 / {
+	chosen {
+		zephyr,system-timer = &lptmr1;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -19,6 +23,7 @@
 		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
+			clock-frequency = <DT_FREQ_M(800)>;
 			cpu-power-states = <&wait &stop &suspend>;
 			reg = <0>;
 
@@ -156,6 +161,7 @@
 		flexspi: spi@425e0000 {
 			compatible = "nxp,imx-flexspi";
 			reg = <0x425e0000 0x4000>, <0x28000000 DT_SIZE_M(128)>;
+			reg-names = "reg_base", "ahb";
 			interrupts = <48 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -612,6 +618,18 @@
 			status = "disabled";
 		};
 
+		lptmr1: timer@44300000 {
+			compatible = "nxp,lptmr";
+			reg = <0x44300000 DT_SIZE_K(4)>;
+			interrupts = <18 0>;
+			clocks = <&scmi_clk IMX95_CLK_LPTMR1>;
+			clock-frequency = <32768>;
+			clk-source = <2>;
+			prescale-glitch-filter-bypass;
+			resolution = <32>;
+			status = "disabled";
+		};
+
 		lptmr2: timer@424d0000 {
 			compatible = "nxp,lptmr";
 			reg = <0x424d0000 DT_SIZE_K(4)>;
@@ -678,6 +696,7 @@
 				reg = <0>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 224 0>;
 			};
 
@@ -686,6 +705,7 @@
 				reg = <1>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 225 0>;
 			};
 
@@ -694,6 +714,7 @@
 				reg = <2>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 226 0>;
 			};
 
@@ -702,6 +723,7 @@
 				reg = <3>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 227 0>;
 			};
 
@@ -710,6 +732,7 @@
 				reg = <4>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 228 0>;
 			};
 
@@ -718,6 +741,7 @@
 				reg = <5>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 229 0>;
 			};
 
@@ -726,6 +750,7 @@
 				reg = <6>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 230 0>;
 			};
 
@@ -734,6 +759,7 @@
 				reg = <7>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 231 0>;
 			};
 
@@ -742,6 +768,7 @@
 				reg = <8>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 232 0>;
 			};
 
@@ -750,6 +777,7 @@
 				reg = <9>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 233 0>;
 			};
 		};
@@ -769,6 +797,7 @@
 				reg = <0>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 214 0>;
 				status = "disabled";
 			};
@@ -778,6 +807,7 @@
 				reg = <1>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 215 0>;
 				status = "disabled";
 			};
@@ -787,6 +817,7 @@
 				reg = <2>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 216 0>;
 				status = "disabled";
 			};
@@ -796,6 +827,7 @@
 				reg = <3>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 217 0>;
 				status = "disabled";
 			};
@@ -805,6 +837,7 @@
 				reg = <4>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 218 0>;
 				status = "disabled";
 			};
@@ -814,9 +847,31 @@
 				reg = <7>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 219 0>;
 				status = "disabled";
 			};
+		};
+
+		dpu: dpu@4b400000 {
+			compatible = "socionext,dpu";
+			height = <0>;
+			width = <0>;
+			reg = <0x4b400000 0x1000>;
+			interrupts = <215 0>;
+			status = "disabled";
+		};
+
+		mipi_dsi: mipi-dsi@4acf0000 {
+			compatible = "nxp,mipi-dsi-dwc";
+			nxp,dc = <&dpu>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4acf0000 0x1000>;
+			interrupt-parent = <&disp_irqsteer_master0>;
+			interrupts = <48 0>;
+			clocks = <&scmi_clk 0>;
+			status = "disabled";
 		};
 
 		netc_blk_ctrl: netc-blk-ctrl@4cde0000 {
@@ -891,6 +946,15 @@
 					status = "disabled";
 				};
 			};
+		};
+
+		sar_adc: adc@44530000 {
+			compatible = "nxp,sar-adc";
+			reg = <0x44530000 DT_SIZE_K(64)>;
+			interrupts = <201 0>;
+			#io-channel-cells = <1>;
+			clocks = <&scmi_clk IMX95_CLK_ADC>;
+			status = "disabled";
 		};
 	};
 };

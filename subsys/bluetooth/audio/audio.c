@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2022 Codecoup
- * Copyright (c) 2025 Nordic Semiconductor ASA
+ * Copyright (c) 2025-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/att.h>
@@ -57,7 +58,8 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 
 		i++; /* Increment as we have parsed the len field */
 
-		data.type = ltv[i++];
+		data.type = ltv[i];
+		i++;
 		data.data_len = len - sizeof(data.type);
 
 		if (data.data_len > 0) {
@@ -152,6 +154,9 @@ uint8_t bt_audio_get_chan_count(enum bt_audio_location chan_allocation)
 
 static bool valid_ltv_cb(struct bt_data *data, void *user_data)
 {
+	ARG_UNUSED(data);
+	ARG_UNUSED(user_data);
+
 	/* just return true to continue parsing as bt_data_parse will validate for us */
 	return true;
 }
@@ -163,13 +168,27 @@ bool bt_audio_valid_ltv(const uint8_t *data, uint8_t data_len)
 
 #if defined(CONFIG_BT_CONN)
 
-static uint8_t bt_audio_security_check(const struct bt_conn *conn)
+uint8_t bt_audio_security_check(const struct bt_conn *conn)
 {
 	struct bt_conn_info info;
 	int err;
 
 	err = bt_conn_get_info(conn, &info);
 	if (err < 0) {
+		LOG_DBG("Could not get conn info for %p: %d", conn, err);
+
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	if (info.state != BT_CONN_STATE_CONNECTED) {
+		LOG_DBG("conn %p invalid state: %d", conn, info.state);
+
+		return BT_ATT_ERR_UNLIKELY;
+	}
+
+	if (info.type != BT_CONN_TYPE_LE) {
+		LOG_DBG("conn %p invalid type: %d", conn, info.type);
+
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -181,10 +200,15 @@ static uint8_t bt_audio_security_check(const struct bt_conn *conn)
 		 * then an ATT_ERROR_RSP PDU shall be sent with the Error Code parameter set to
 		 * Insufficient Authentication (0x05).
 		 */
+		LOG_DBG("conn %p invalid security flags: %d", conn, info.security.flags);
+
 		return BT_ATT_ERR_AUTHENTICATION;
 	}
 
 	if (info.security.enc_key_size < BT_ENC_KEY_SIZE_MAX) {
+		LOG_DBG("conn %p invalid encryption key size: %u", conn,
+			info.security.enc_key_size);
+
 		return BT_ATT_ERR_ENCRYPTION_KEY_SIZE;
 	}
 
@@ -236,6 +260,8 @@ ssize_t bt_audio_write_chrc(struct bt_conn *conn, const struct bt_gatt_attr *att
 ssize_t bt_audio_ccc_cfg_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			       uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	if (conn != NULL) {
 		uint8_t err;
 

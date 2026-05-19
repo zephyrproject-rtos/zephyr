@@ -117,10 +117,9 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 #endif
 #endif
 
-/* TODO: After Kconfig item that enable/disable sof is added,
- * use the Kconfig item to control this macro.
- */
+#ifdef CONFIG_UDC_ENABLE_SOF
 #define USB_DEVICE_CONFIG_SOF_NOTIFICATIONS (1U)
+#endif
 
 #endif
 

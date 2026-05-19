@@ -90,6 +90,9 @@ static int mcux_rgpio_configure(const struct device *dev,
 #endif
 
 #if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	/* Enable Software Input On (SION) so PDIR reflects the driven pad value. */
+	reg |= BIT(MCUX_IMX_INPUT_ENABLE_SHIFT);
+
 	/* PUE/PDRV types have the same ODE bit */
 	if ((flags & GPIO_SINGLE_ENDED)) {
 		/* Set ODE bit */
@@ -98,7 +101,7 @@ static int mcux_rgpio_configure(const struct device *dev,
 		reg &= ~IOMUXC_SW_PAD_CTL_PAD_ODE_MASK;
 	}
 
-	if (config->pin_muxes[pin].pue_mux) {
+	if (config->pin_muxes[cfg_idx].pue_mux) {
 		if (flags & GPIO_PULL_UP) {
 			reg |= (IOMUXC_SW_PAD_CTL_PAD_PUS_MASK | IOMUXC_SW_PAD_CTL_PAD_PUE_MASK);
 		} else if (flags & GPIO_PULL_DOWN) {
@@ -145,7 +148,7 @@ static int mcux_rgpio_configure(const struct device *dev,
 	}
 #endif
 
-#if !defined(__ARM_FEATURE_CMSE)
+#if !defined(__ARM_FEATURE_CMSE) && !defined(CONFIG_CPU_CORTEX_A)
 	base->PCNS &= ~BIT(pin);
 	if (base->PCNS & BIT(pin)) {
 		/* We don't have access to this pin */
@@ -179,6 +182,7 @@ static int mcux_rgpio_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	RGPIO_Type *base = (RGPIO_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
+	/* Read actual pad state from the input data register. */
 	*value = base->PDIR;
 
 	return 0;
@@ -235,7 +239,7 @@ static int mcux_rgpio_pin_interrupt_configure(const struct device *dev,
 	unsigned int key;
 	uint8_t irqs, irqc;
 
-#if !defined(__ARM_FEATURE_CMSE)
+#if !defined(__ARM_FEATURE_CMSE) && !defined(CONFIG_CPU_CORTEX_A)
 	base->ICNS &= ~BIT(config->irq_sel);
 	if (base->ICNS & BIT(config->irq_sel)) {
 		/* We don't have access to this IRQ */

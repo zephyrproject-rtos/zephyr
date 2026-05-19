@@ -96,6 +96,23 @@ Connections and IOs
 
 The `SAMA7D65-Curiosity Kit User Guide`_ has detailed information about board connections.
 
+Programming
+***********
+
+Prerequisite
+============
+
+Before Zephyr runs on SAMA7D65-Curiosity, `at91bootstrap`_ (the second stage
+bootloader for Microchip MPU) needs to run first. It will initialize the
+peripherals and memory controllers, download and jump to Zephyr entry point.
+
+Loading the firmware
+====================
+
+Using a bootloader compiled with sama7d65_curiositysd1_zephyr_defconfig
+configuration, the binary for Zephyr (zephyr.bin) copied to a SD card can be
+loaded and run on the SAMA7D65-Curiosity board.
+
 References
 **********
 
@@ -107,3 +124,6 @@ SAMA7D65 Curiosity Kit Page:
 
 .. _SAMA7D65-Curiosity Kit User Guide:
     https://ww1.microchip.com/downloads/aemDocuments/documents/MPU32/ProductDocuments/UserGuides/SAMA7D65-Curiosity-Kit-User-Guide-DS50003806.pdf
+
+.. _at91bootstrap:
+    https://developerhelp.microchip.com/xwiki/bin/view/products/mcu-mpu/32bit-mpu/at91bootstrap/

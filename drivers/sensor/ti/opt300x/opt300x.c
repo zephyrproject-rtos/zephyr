@@ -120,7 +120,7 @@ static int opt300x_chip_init(const struct device *dev)
 	uint16_t value;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

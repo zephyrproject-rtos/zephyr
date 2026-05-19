@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,22 +12,63 @@
  * expects bytes, so we multiply by 1024 to convert.
  */
 static const struct arm_mpu_region mpu_regions[] = {
-	MPU_REGION_ENTRY("FLASH", CONFIG_FLASH_BASE_ADDRESS,
-			 REGION_FLASH_ATTR(CONFIG_FLASH_BASE_ADDRESS, CONFIG_FLASH_SIZE * 1024)),
+	MPU_REGION_ENTRY(
+		"FLASH",
+		CONFIG_FLASH_BASE_ADDRESS,
+		REGION_FLASH_ATTR(
+			CONFIG_FLASH_BASE_ADDRESS,
+			CONFIG_FLASH_SIZE * 1024)),
 
-	MPU_REGION_ENTRY("SRAM", CONFIG_SRAM_BASE_ADDRESS,
-			 REGION_RAM_ATTR(CONFIG_SRAM_BASE_ADDRESS, CONFIG_SRAM_SIZE * 1024)),
+	MPU_REGION_ENTRY(
+		"SRAM",
+		 DT_CHOSEN_SRAM_ADDR,
+		REGION_RAM_ATTR(
+			DT_CHOSEN_SRAM_ADDR,
+			DT_CHOSEN_SRAM_SIZE)),
+
+#if DT_NODE_EXISTS(DT_NODELABEL(m33_allocatable_shared))
+	MPU_REGION_ENTRY(
+		"SHARED_MEMORY",
+		DT_REG_ADDR(DT_NODELABEL(m33_allocatable_shared)),
+		REGION_RAM_NOCACHE_ATTR(
+			DT_REG_ADDR(DT_NODELABEL(m33_allocatable_shared)),
+			DT_REG_SIZE(DT_NODELABEL(m33_allocatable_shared)))),
+#endif
+
+#if DT_NODE_EXISTS(DT_NODELABEL(m33s_code))
+	MPU_REGION_ENTRY(
+		"M33S_CODE",
+		DT_REG_ADDR(DT_NODELABEL(m33s_code)),
+		REGION_RAM_ATTR_WITH_EXEC(
+			DT_REG_ADDR(DT_NODELABEL(m33s_code)),
+			DT_REG_SIZE(DT_NODELABEL(m33s_code)))),
+#endif
+
+#if DT_NODE_EXISTS(DT_NODELABEL(m33_code))
+	MPU_REGION_ENTRY(
+		"M33_CODE",
+		DT_REG_ADDR(DT_NODELABEL(m33_code)),
+		REGION_RAM_ATTR_WITH_EXEC(
+			DT_REG_ADDR(DT_NODELABEL(m33_code)),
+			DT_REG_SIZE(DT_NODELABEL(m33_code)))),
+#endif
 
 #if DT_NODE_EXISTS(DT_NODELABEL(itcm))
 	MPU_REGION_ENTRY(
-		"ITCM", DT_REG_ADDR(DT_NODELABEL(itcm)),
-		REGION_RAM_ATTR(DT_REG_ADDR(DT_NODELABEL(itcm)), DT_REG_SIZE(DT_NODELABEL(itcm)))),
+		"ITCM",
+		DT_REG_ADDR(DT_NODELABEL(itcm)),
+		REGION_RAM_ATTR_WITH_EXEC(
+			DT_REG_ADDR(DT_NODELABEL(itcm)),
+			DT_REG_SIZE(DT_NODELABEL(itcm)))),
 #endif
 
 #if DT_NODE_EXISTS(DT_NODELABEL(dtcm))
 	MPU_REGION_ENTRY(
-		"DTCM", DT_REG_ADDR(DT_NODELABEL(dtcm)),
-		REGION_RAM_ATTR(DT_REG_ADDR(DT_NODELABEL(dtcm)), DT_REG_SIZE(DT_NODELABEL(dtcm)))),
+		"DTCM",
+		DT_REG_ADDR(DT_NODELABEL(dtcm)),
+		REGION_RAM_ATTR(DT_REG_ADDR(
+			DT_NODELABEL(dtcm)),
+			DT_REG_SIZE(DT_NODELABEL(dtcm)))),
 #endif
 };
 

@@ -48,7 +48,7 @@ static int gpio_iproc_configure(const struct device *dev, gpio_pin_t pin, gpio_f
 	const struct gpio_iproc_config *const cfg = DEV_CFG(dev);
 	mem_addr_t base = cfg->base;
 
-	/* Setup the pin direcion. */
+	/* Setup the pin direction. */
 	if (flags & GPIO_OUTPUT) {
 		/* configure pin for output */
 		sys_set_bit(base + IPROC_GPIO_OUT_EN_OFFSET, pin);

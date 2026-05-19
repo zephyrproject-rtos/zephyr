@@ -61,6 +61,9 @@ properties:
     description: |
       Maximum number of channels
 
+io-channel-cells:
+  - output
+
 child-binding:
   description: |
     Channel configuration.
@@ -68,7 +71,6 @@ child-binding:
 
   properties:
     reg:
-      type: int
       required: true
       description: |
         DAC channel number.

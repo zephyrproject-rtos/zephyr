@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -337,6 +337,13 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 			return -ETIMEDOUT;
 		}
 		k_yield();
+	}
+
+	/* Ensure compensated count fits in 16-bit WDT match register */
+	if (dev_data->ilo_compensated_counts > UINT16_MAX) {
+		LOG_WRN("ILO compensated count %u exceeds 16-bit match register, clamping to %u",
+			dev_data->ilo_compensated_counts, UINT16_MAX);
+		dev_data->ilo_compensated_counts = UINT16_MAX;
 	}
 
 	Cy_WDT_SetIgnoreBits(dev_data->wdt_ignore_bits);

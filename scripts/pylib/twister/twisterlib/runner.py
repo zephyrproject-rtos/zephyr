@@ -17,6 +17,7 @@ import sys
 import time
 import traceback
 from collections import deque
+from collections.abc import Iterator
 from math import log10
 from multiprocessing import Lock, Process, Value
 from multiprocessing.managers import BaseManager
@@ -29,8 +30,16 @@ from elftools.elf.sections import SymbolTableSection
 from packaging import version
 from twisterlib.cmakecache import CMakeCache
 from twisterlib.constants import canonical_zephyr_base
-from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
-from twisterlib.hardwaremap import DUT
+from twisterlib.error import (
+    BuildError,
+    ConfigurationError,
+    NoDeviceAvailableException,
+    NoRequiredApplicationNotReadyException,
+    StatusAttributeError,
+    TwisterException,
+)
+from twisterlib.hardwaredata import CompoundHardwareData
+from twisterlib.hardwareutil import HardwareReservationManager
 from twisterlib.log_helper import setup_logging
 from twisterlib.statuses import TwisterStatus
 
@@ -41,13 +50,10 @@ if version.parse(elftools.__version__) < version.parse('0.24'):
 if sys.platform == 'linux':
     from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
 
-from twisterlib.constants import ZEPHYR_BASE
-
-sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib/build_helpers"))
 from domains import Domains
 from twisterlib.coverage import run_coverage_instance
 from twisterlib.environment import TwisterEnv
-from twisterlib.harness import Ctest, HarnessImporter, Pytest
+from twisterlib.harness import Harness, HarnessImporter
 from twisterlib.log_helper import log_command
 from twisterlib.platform import Platform
 from twisterlib.testinstance import TestInstance
@@ -788,6 +794,10 @@ class FilterBuilder(CMake):
             logger.debug(f"Loaded sysbuild domain data from {domain_path}")
             self.instance.domains = domains
             domain_build = domains.get_default_domain().build_dir
+            if not os.path.isabs(domain_build):
+                domain_build = os.path.normpath(
+                    os.path.join(self.build_dir, domain_build)
+                )
             cmake_cache_path = os.path.join(domain_build, "CMakeCache.txt")
             defconfig_path = os.path.join(domain_build, "zephyr", ".config")
             edt_pickle = os.path.join(domain_build, "zephyr", "edt.pickle")
@@ -885,7 +895,6 @@ class ProjectBuilder(FilterBuilder):
         self.filtered_tests = 0
         self.options = env.options
         self.env = env
-        self.duts: list[DUT] = []
 
     @property
     def trace(self) -> bool:
@@ -1113,14 +1122,17 @@ class ProjectBuilder(FilterBuilder):
 
         # Run the generated binary using one of the supported handlers
         elif op == "run":
+            processing_queue_updated = False
             try:
-                logger.debug(f"run test: {self.instance.name}")
-                self.run()
-                logger.debug(f"run status: {self.instance.name} {self.instance.status}")
+                if self.ensure_required_apps_ready(processing_ready):
+                    with self.reserve_hardware() as ready_to_run:
+                        if ready_to_run:
+                            logger.debug(f"run test: {self.instance.name}")
+                            self.run()
+                            logger.debug(f"run status: {self.instance.name} {self.instance.status}")
 
                 # to make it work with pickle
                 self.instance.handler.thread = None
-                self.instance.handler.duts = None
 
                 next_op = "coverage" if self.options.coverage else "report"
                 additionals = {
@@ -1135,8 +1147,25 @@ class ProjectBuilder(FilterBuilder):
                 self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
                 next_op = 'report'
                 additionals = {}
+            except (NoDeviceAvailableException, NoRequiredApplicationNotReadyException):
+                if processing_ready.get(self.instance.name) is None:
+                    # Register this instance as ready (build succeeded) so that other instances
+                    # listing it as a required application can unblock and proceed.
+                    # This also handles mutual dependencies between instances,
+                    # letting the pair resolve without deadlock.
+                    # The entry will be overwritten with the final state in the 'report' stage.
+                    with lock:
+                        processing_ready.update({self.instance.name: self.instance})
+
+                # no device available to run the test or required application not ready,
+                # add the task back to the pipeline to process it later
+                processing_queue.appendleft(message)
+                processing_queue_updated = True
+                # to avoid busy waiting
+                time.sleep(1)
             finally:
-                self._add_to_processing_queue(processing_queue, next_op, additionals)
+                if not processing_queue_updated:
+                    self._add_to_processing_queue(processing_queue, next_op, additionals)
 
         # Run per-instance code coverage
         elif op == "coverage":
@@ -1435,12 +1464,18 @@ class ProjectBuilder(FilterBuilder):
         self._sanitize_runners_file()
         self._sanitize_zephyr_base_from_files()
 
-    def _sanitize_runners_file(self):
+        if self.instance.sysbuild and self.instance.domains:
+            for domain in self.instance.domains.get_domains():
+                self._sanitize_runners_file(domain.name)
+                self._sanitize_zephyr_base_from_files(domain.name)
+
+    def _sanitize_runners_file(self, domain: str = ''):
         """
         Replace absolute paths of binary files for relative ones. The base
-        directory for those files is f"{self.instance.build_dir}/zephyr"
+        directory for those files is f"{self.instance.build_dir}/{domain}/zephyr"
+        for domain builds, or f"{self.instance.build_dir}/zephyr" otherwise.
         """
-        runners_dir_path: str = os.path.join(self.instance.build_dir, 'zephyr')
+        runners_dir_path: str = os.path.join(self.instance.build_dir, domain, 'zephyr')
         runners_file_path: str = os.path.join(runners_dir_path, 'runners.yaml')
         if not os.path.exists(runners_file_path):
             return
@@ -1466,7 +1501,7 @@ class ProjectBuilder(FilterBuilder):
         with open(runners_file_path, 'w') as file:
             file.write(runners_content_text)
 
-    def _sanitize_zephyr_base_from_files(self):
+    def _sanitize_zephyr_base_from_files(self, domain: str = ''):
         """
         Remove Zephyr base paths from selected files.
         """
@@ -1475,7 +1510,7 @@ class ProjectBuilder(FilterBuilder):
             os.path.join('zephyr', 'runners.yaml'),
         ]
         for file_path in files_to_sanitize:
-            file_path = os.path.join(self.instance.build_dir, file_path)
+            file_path = os.path.join(self.instance.build_dir, domain, file_path)
             if not os.path.exists(file_path):
                 continue
 
@@ -1587,8 +1622,8 @@ class ProjectBuilder(FilterBuilder):
                 if instance.handler.ready and instance.run:
                     more_info = instance.handler.type_str
                     htime = instance.execution_time
-                    if instance.dut:
-                        more_info += f": {instance.dut},"
+                    if instance.hardware_id:
+                        more_info += f": {instance.hardware_id},"
                     if htime:
                         more_info += f" {htime:.3f}s"
                 else:
@@ -1740,7 +1775,7 @@ class ProjectBuilder(FilterBuilder):
             if harness:
                 harness.instance = self.instance
                 harness.build()
-        except ConfigurationError as error:
+        except (ConfigurationError, BuildError) as error:
             self.instance.status = TwisterStatus.ERROR
             self.instance.reason = str(error)
             logger.error(self.instance.reason)
@@ -1755,9 +1790,6 @@ class ProjectBuilder(FilterBuilder):
             logger.debug(f"Reset instance status from '{instance.status}' to None before run.")
             instance.status = TwisterStatus.NONE
 
-            if instance.handler.type_str == "device":
-                instance.handler.duts = self.duts
-
             if(self.options.seed is not None and instance.platform.name.startswith("native_")):
                 self.parse_generated()
                 if('CONFIG_FAKE_ENTROPY_NATIVE_SIM' in self.defconfig and
@@ -1767,7 +1799,7 @@ class ProjectBuilder(FilterBuilder):
             if self.options.extra_test_args and instance.platform.arch == "posix":
                 instance.handler.extra_test_args = self.options.extra_test_args
 
-            harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
+            harness: Harness = HarnessImporter.get_harness(instance.testsuite.harness.capitalize())
             try:
                 harness.configure(instance)
             except ConfigurationError as error:
@@ -1775,12 +1807,9 @@ class ProjectBuilder(FilterBuilder):
                 instance.reason = str(error)
                 logger.error(instance.reason)
                 return
-            #
-            if isinstance(harness, Pytest):
-                harness.pytest_run(instance.handler.get_test_timeout())
-            elif isinstance(harness, Ctest):
-                harness.ctest_run(instance.handler.get_test_timeout())
-            else:
+
+            # If the harness does not handle execution itself, delegate to the handler.
+            if not harness.run(instance.handler.get_test_timeout()):
                 instance.handler.handle(harness)
 
         sys.stdout.flush()
@@ -1818,14 +1847,96 @@ class ProjectBuilder(FilterBuilder):
                 instance.metrics["available_ram"] = 0
             instance.metrics["handler_time"] = instance.execution_time
 
+    def _are_all_required_apps_success(
+            self, instance: TestInstance, processing_ready: dict[str, TestInstance]
+    ) -> bool:
+        """Verify that all required applications were successfully built."""
+        found_failed_app = False
+        for required_app in instance.required_applications:
+            inst = processing_ready.get(required_app)
+            if inst.status not in (TwisterStatus.PASS, TwisterStatus.NOTRUN):
+                logger.debug(f"{required_app}: Required application failed: {inst.reason}")
+                found_failed_app = True
+        return not found_failed_app
+
+    def ensure_required_apps_ready(self, processing_ready: dict[str, TestInstance]) -> bool:
+        """Check that all required applications have finished building.
+
+        Raises NoRequiredApplicationNotReadyException if any required application
+        has not yet completed, deferring this instance for later processing.
+        Returns False and marks the instance as SKIP if any required application
+        failed. Returns True when all required applications are available and successful.
+        """
+        if not self.instance.required_applications:
+            return True
+
+        instance = self.instance
+        for required_app in instance.required_applications:
+            if processing_ready.get(required_app) is None:
+                raise NoRequiredApplicationNotReadyException(
+                    f"Required application '{required_app}' is not ready"
+                )
+
+        if not self._are_all_required_apps_success(instance, processing_ready):
+            instance.status = TwisterStatus.SKIP
+            for tc in instance.testcases:
+                tc.status = TwisterStatus.SKIP
+            instance.reason = "Required application failed"
+            instance.required_applications = []
+            return False
+
+        # required applications are ready, clear to not process them later
+        instance.required_applications = []
+        return True
+
+    @contextlib.contextmanager
+    def reserve_hardware(self) -> Iterator[bool]:
+        """Context manager for reserving hardware for a test instance.
+
+        Yields True if the hardware was successfully reserved, False otherwise.
+        The hardware is automatically released when the context is exited.
+        """
+        if self.instance.handler.type_str == "device":
+            hwmgr = HardwareReservationManager(
+                self.env.hwm, self.instance.platform.name, self.testsuite.harness_config
+            )
+            try:
+                hwmgr.reserve_duts()
+                self.instance.reserved_duts = hwmgr.get_reserved_duts_as_compound_hardware_data()
+                self.instance.update_reserved_duts_with_required_applications()
+                if self.instance.reserved_duts:
+                    self.instance.hardware_id = "+".join(
+                        [str(dut.id) for dut in self.instance.reserved_duts]
+                    )
+                yield True
+            except TwisterException as error:
+                self.instance.status = TwisterStatus.FAIL
+                self.instance.reason = str(error)
+                logger.error(self.instance.reason)
+                yield False
+            finally:
+                hwmgr.release_duts(
+                    failed=self.instance.status in [TwisterStatus.ERROR, TwisterStatus.FAIL]
+                )
+                self.instance.reserved_duts = []
+
+        else:
+            # No hardware reservation needed for non-device handlers
+            for _ in range(1 + len(self.testsuite.harness_config.required_devices)):
+                self.instance.reserved_duts.append(
+                    CompoundHardwareData(platform=self.instance.platform.name)
+                )
+            self.instance.update_reserved_duts_with_required_applications()
+            yield True
+
+
 class TwisterRunner:
 
-    def __init__(self, instances, suites, env=None) -> None:
+    def __init__(self, instances, suites, env) -> None:
         self.options = env.options
         self.env = env
         self.instances: dict[str, TestInstance] = instances
         self.suites: dict[str, TestSuite] = suites
-        self.duts: list[DUT] = []
         self.jobs = 1
         self.results = None
         self.jobserver = None
@@ -1978,60 +2089,6 @@ class TwisterRunner:
                     else:
                         processing_queue.append({"op": "cmake", "test": instance})
 
-    def _are_required_apps_ready(
-            self, instance: TestInstance, processing_ready: dict[str, TestInstance]
-    ) -> bool:
-        """Verify that all required applications are ready to be used."""
-        for required_app in instance.required_applications:
-            if processing_ready.get(required_app) is None:
-                return False
-        return True
-
-    def _are_all_required_apps_success(
-            self, instance: TestInstance, processing_ready: dict[str, TestInstance]
-    ) -> bool:
-        """Verify that all required applications were successfully built."""
-        found_failed_app = False
-        for required_app in instance.required_applications:
-            inst = processing_ready.get(required_app)
-            if inst.status not in (TwisterStatus.PASS, TwisterStatus.NOTRUN):
-                logger.debug(f"{required_app}: Required application failed: {inst.reason}")
-                found_failed_app = True
-        return not found_failed_app
-
-    def are_required_apps_processed(
-            self, instance: TestInstance, processing_queue: deque,
-            processing_ready: dict[str, TestInstance], task
-    ) -> bool:
-        if not instance.required_applications:
-            return True
-
-        if not self._are_required_apps_ready(instance, processing_ready):
-            # required app not ready yet,
-            # add the task back to the pipeline to process it later
-            if self.jobs > 1:
-                # to avoid busy waiting
-                time.sleep(1)
-            processing_queue.appendleft(task)
-            return False
-
-        if not self._are_all_required_apps_success(instance, processing_ready):
-            instance.status = TwisterStatus.SKIP
-            for tc in instance.testcases:
-                tc.status = TwisterStatus.SKIP
-            instance.reason = "Required application failed"
-            instance.required_applications = []
-            processing_queue.append({"op": "report", "test": instance})
-            return False
-
-        # keep paths to required applications build directories to use it in harness module
-        for required_image in instance.required_applications:
-            instance.required_build_dirs.append(self.instances[required_image].build_dir)
-
-        # required applications are ready, clear to not process them later
-        instance.required_applications = []
-        return True
-
     def process_tasks(
             self, processing_queue: deque, processing_ready: dict[str, TestInstance],
             lock, results: ExecutionCounter
@@ -2043,15 +2100,7 @@ class TwisterRunner:
                 break
             else:
                 instance: TestInstance = task['test']
-
-                if not self.are_required_apps_processed(
-                    instance, processing_queue, processing_ready, task
-                ):
-                    # postpone processing task if required applications are not ready
-                    continue
-
                 pb = ProjectBuilder(instance, self.env, self.jobserver)
-                pb.duts = self.duts
                 pb.process(processing_queue, processing_ready, task, lock, results)
                 if (
                     self.env.options.quit_on_failure

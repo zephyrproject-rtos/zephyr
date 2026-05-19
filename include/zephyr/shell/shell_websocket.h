@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Websocket shell backend
+ * @ingroup shell_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_SHELL_WEBSOCKET_H_
 #define ZEPHYR_INCLUDE_SHELL_WEBSOCKET_H_
 
@@ -40,6 +46,9 @@ struct shell_websocket {
 
 	/** Array for sockets used by the websocket service. */
 	struct zsock_pollfd fds[1];
+
+	/** Mutex protecting the socket access. */
+	struct k_mutex socket_lock;
 
 	/** Input buffer. */
 	uint8_t rx_buf[CONFIG_SHELL_CMD_BUFF_SIZE];

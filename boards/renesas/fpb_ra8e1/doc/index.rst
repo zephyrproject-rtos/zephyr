@@ -49,11 +49,12 @@ The specifications of the CPU board are shown below:
 
 This product has the onboard debugger circuit, J-Link On-Board (hereinafter called “J-Link-OB”). When you write a program,
 connect the CPU board to PC with USB cable. J-Link-OB operates as debugger equivalent to J-Link. If connecting from flash
-programing tool (e.g. J-Flash Lite by SEGGER), set the type of debugger (tool) to “JLink”
+programming tool (e.g. J-Flash Lite by SEGGER), set the type of debugger (tool) to “JLink”
 
 Hardware
 ********
 Detailed Hardware features for the RA8E1 MCU group can be found at:
+
 - The RA8E1 MCU group: `RA8E1 Group User's Manual Hardware`_
 - The FPB-RA8E1 board: `FPB-RA8E1 - User's Manual`_
 

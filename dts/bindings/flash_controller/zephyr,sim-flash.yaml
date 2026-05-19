@@ -16,3 +16,10 @@ properties:
     description: |
       Memory region used by the simulated flash memory. If this option is used
       the memory that is used by the simulated flash memory is not erased.
+  no-explicit-erase:
+    type: boolean
+    description: |
+      When set, this instance behaves as a RAM-like device that does not
+      require explicit erase before write. Overrides the global
+      CONFIG_FLASH_SIMULATOR_EXPLICIT_ERASE Kconfig option for this instance,
+      allowing different simulator instances to have different erase modes.

@@ -15,6 +15,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_log.h>
+#include <zephyr/net/ptp_time.h>
 
 /* This test suite verifies that NET_AF_PACKET sockets behave according to well known behaviors.
  * Note, that this is not well standardized and relies on behaviors known from Linux or FreeBSD.
@@ -101,6 +103,10 @@ static const uint8_t test_payload[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 static uint8_t rx_buf[64];
 static uint8_t tx_buf[64];
 static struct net_in_addr fake_src = { { { 192, 0, 2, 2 } } };
+static struct net_ptp_time test_rx_timestamp = {
+	.second = 1234,
+	.nanosecond = 567890123,
+};
 
 static uint8_t lladdr1[] = { 0x02, 0x01, 0x01, 0x01, 0x01, 0x01 };
 static uint8_t lladdr2[] = { 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 };
@@ -142,6 +148,8 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 	recv_pkt = net_pkt_rx_clone(pkt, K_NO_WAIT);
 
 	net_pkt_set_iface(recv_pkt, target_iface);
+	net_pkt_set_timestamp(recv_pkt, &test_rx_timestamp);
+	net_pkt_set_rx_timestamping(recv_pkt, true);
 
 	k_sleep(K_MSEC(10)); /* Let the receiver run */
 
@@ -845,6 +853,79 @@ static void test_recv_common(int sock_type, int proto, bool success)
 	}
 }
 
+static void test_recvmsg_timestamping_common(size_t cmsgbuf_len, bool expect_trunc)
+{
+	struct net_sockaddr_ll ll_dst;
+	struct net_iovec io_vector = {
+		.iov_base = rx_buf,
+		.iov_len = sizeof(rx_buf),
+	};
+	struct net_msghdr msg = {
+		.msg_iov = &io_vector,
+		.msg_iovlen = 1,
+	};
+	uint8_t timestamping = ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE;
+	uint16_t offset = sizeof(struct net_eth_hdr);
+	uint16_t pkt_len;
+	int ret;
+	union {
+		struct net_cmsghdr hdr;
+		uint8_t buf[NET_CMSG_SPACE(sizeof(struct net_ptp_time))];
+	} cmsgbuf = {0};
+
+	__ASSERT_NO_MSG(cmsgbuf_len <= sizeof(cmsgbuf.buf));
+
+	setup_packet_socket(&packet_sock_1, NET_SOCK_RAW, 0);
+	prepare_test_packet(NET_SOCK_RAW, ETH_P_IP, lladdr2, lladdr1, &pkt_len);
+	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, lladdr1, ud.second);
+
+	setup_packet_socket(&packet_sock_2, NET_SOCK_DGRAM, net_htons(ETH_P_ALL));
+	bind_packet_socket(packet_sock_2, ud.first);
+
+	ret = zsock_setsockopt(packet_sock_2, ZSOCK_SOL_SOCKET, ZSOCK_SO_TIMESTAMPING,
+			       &timestamping, sizeof(timestamping));
+	zassert_equal(ret, 0, "timestamping setsockopt failed (%d)", errno);
+
+	msg.msg_control = cmsgbuf.buf;
+	msg.msg_controllen = cmsgbuf_len;
+
+	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0, (struct net_sockaddr *)&ll_dst,
+			   sizeof(struct net_sockaddr_ll));
+	zassert_not_equal(ret, -1, "Failed to send (%d)", errno);
+	zassert_equal(ret, pkt_len, "Invalid data length sent (%d/%d)", ret, pkt_len);
+
+	pkt_len -= offset;
+
+	ret = zsock_recvmsg(packet_sock_2, &msg, 0);
+	zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
+	zassert_equal(ret, pkt_len, "Invalid data size received (%d, expected %d)", ret, pkt_len);
+	zassert_mem_equal(rx_buf, tx_buf + offset, pkt_len, "Invalid payload received");
+
+	if (expect_trunc) {
+		zassert_true(msg.msg_flags & ZSOCK_MSG_CTRUNC,
+			     "Control data should have been truncated");
+		zassert_equal(msg.msg_controllen, 0, "Unexpected control data length %zu",
+			      msg.msg_controllen);
+		zassert_is_null(NET_CMSG_FIRSTHDR(&msg), "Unexpected control header");
+		return;
+	}
+
+	struct net_cmsghdr *cmsg = NET_CMSG_FIRSTHDR(&msg);
+	struct net_ptp_time timestamp;
+
+	zassert_not_null(cmsg, "Missing timestamp control message");
+	zassert_equal(msg.msg_controllen, NET_CMSG_SPACE(sizeof(struct net_ptp_time)),
+		      "Unexpected msg_controllen %zu", msg.msg_controllen);
+	zassert_equal(cmsg->cmsg_level, ZSOCK_SOL_SOCKET, "Unexpected cmsg level");
+	zassert_equal(cmsg->cmsg_type, ZSOCK_SO_TIMESTAMPING, "Unexpected cmsg type");
+	zassert_equal(cmsg->cmsg_len, NET_CMSG_LEN(sizeof(struct net_ptp_time)),
+		      "Unexpected cmsg length %u", cmsg->cmsg_len);
+
+	memcpy(&timestamp, NET_CMSG_DATA(cmsg), sizeof(timestamp));
+	zassert_mem_equal(&timestamp, &test_rx_timestamp, sizeof(timestamp),
+			  "Unexpected timestamp payload");
+}
+
 ZTEST(socket_packet, test_raw_sock_recv_no_proto)
 {
 	test_recv_common(NET_SOCK_RAW, 0, false);
@@ -882,6 +963,19 @@ static void validate_recvfrom_addr(struct net_sockaddr_ll *ll_rx, net_socklen_t 
 	zassert_equal(ll_rx->sll_pkttype, NET_PACKET_OTHERHOST, "Invalid packet type");
 	zassert_equal(ll_rx->sll_halen, NET_ETH_ADDR_LEN, "Invalid address length");
 	zassert_mem_equal(ll_rx->sll_addr, lladdr, NET_ETH_ADDR_LEN, "Invalid address");
+}
+
+static bool recvfrom_addr_matches(struct net_sockaddr_ll *ll_rx, net_socklen_t addrlen,
+				  int iface, uint8_t *lladdr)
+{
+	return addrlen == sizeof(struct net_sockaddr_ll) &&
+	       ll_rx->sll_family == NET_AF_PACKET &&
+	       ll_rx->sll_protocol == net_htons(ETH_P_IP) &&
+	       ll_rx->sll_ifindex == iface &&
+	       ll_rx->sll_hatype == NET_ARPHRD_ETHER &&
+	       ll_rx->sll_pkttype == NET_PACKET_OTHERHOST &&
+	       ll_rx->sll_halen == NET_ETH_ADDR_LEN &&
+	       memcmp(ll_rx->sll_addr, lladdr, NET_ETH_ADDR_LEN) == 0;
 }
 
 static void test_recvfrom_common(int sock_type, int proto)
@@ -937,6 +1031,16 @@ ZTEST(socket_packet, test_dgram_sock_recv_proto_wildcard)
 	test_recv_common(NET_SOCK_DGRAM, ETH_P_ALL, true);
 }
 
+ZTEST(socket_packet, test_dgram_sock_recvmsg_timestamping)
+{
+	test_recvmsg_timestamping_common(NET_CMSG_SPACE(sizeof(struct net_ptp_time)), false);
+}
+
+ZTEST(socket_packet, test_dgram_sock_recvmsg_timestamping_truncated_control)
+{
+	test_recvmsg_timestamping_common(NET_CMSG_SPACE(sizeof(struct net_ptp_time)) - 1, true);
+}
+
 ZTEST(socket_packet, test_dgram_sock_recvfrom_proto_wildcard)
 {
 	test_recvfrom_common(NET_SOCK_DGRAM, ETH_P_ALL);
@@ -949,35 +1053,51 @@ static void test_recvfrom_unbound_round(int tx_sock, int rx_sock, int sock_type,
 	uint16_t offset = (sock_type == NET_SOCK_DGRAM) ? sizeof(struct net_eth_hdr) : 0;
 	struct net_sockaddr_ll ll_dst;
 	struct net_sockaddr_ll ll_rx = { 0 };
-	net_socklen_t addrlen = sizeof(ll_rx);
+	net_socklen_t last_addrlen = 0U;
 	uint16_t pkt_len;
 	int ret;
+	int expected_iface = net_if_get_by_iface(dst_iface);
 
 	prepare_test_packet(NET_SOCK_RAW, ETH_P_IP, src_addr, dst_addr, &pkt_len);
 	prepare_test_dst_lladdr(&ll_dst, ETH_P_IP, dst_addr, src_iface);
 
-	ret = zsock_sendto(packet_sock_1, tx_buf, pkt_len, 0,
+	ret = zsock_sendto(tx_sock, tx_buf, pkt_len, 0,
 			   (struct net_sockaddr *)&ll_dst,
 			   sizeof(struct net_sockaddr_ll));
 	zassert_not_equal(ret, -1, "Failed to send (%d)", errno);
 	zassert_equal(ret, pkt_len, "Invalid data length sent (%d/%d)", ret, pkt_len);
 
+	zassert_true(pkt_len >= offset, "Packet shorter than expected L2 header");
 	pkt_len -= offset;
 
-	ret = zsock_recvfrom(packet_sock_2, rx_buf, sizeof(rx_buf), 0,
-			     (struct net_sockaddr *)&ll_rx, &addrlen);
-	zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
+	for (int attempt = 0; attempt < 4; attempt++) {
+		net_socklen_t addrlen = sizeof(ll_rx);
+
+		memset(&ll_rx, 0, sizeof(ll_rx));
+		ret = zsock_recvfrom(rx_sock, rx_buf, sizeof(rx_buf), 0,
+				     (struct net_sockaddr *)&ll_rx, &addrlen);
+		last_addrlen = addrlen;
+		zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
+
+		if (ret == pkt_len &&
+		    memcmp(rx_buf, tx_buf + offset, pkt_len) == 0 &&
+		    recvfrom_addr_matches(&ll_rx, addrlen, expected_iface, src_addr)) {
+			validate_recvfrom_addr(&ll_rx, addrlen, expected_iface, src_addr);
+			return;
+		}
+	}
+
 	zassert_equal(ret, pkt_len,
 		      "Invalid data size received (%d, expected %d)",
 		      ret, pkt_len);
 	zassert_mem_equal(rx_buf, tx_buf + offset, pkt_len,
 			  "Invalid payload received");
-	validate_recvfrom_addr(&ll_rx, addrlen, net_if_get_by_iface(dst_iface),
-			       src_addr);
+	validate_recvfrom_addr(&ll_rx, last_addrlen, expected_iface, src_addr);
 }
 
 static void test_recvfrom_common_unbound(int sock_type, bool bind_iface_0)
 {
+	struct net_sockaddr_in ip_src;
 	struct net_sockaddr_ll ll_dst;
 	static uint8_t dummy_lladdr[] = { 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
 	uint16_t pkt_len;
@@ -987,6 +1107,9 @@ static void test_recvfrom_common_unbound(int sock_type, bool bind_iface_0)
 	setup_packet_socket(&packet_sock_1, NET_SOCK_RAW, 0);
 	/* Receiving sock */
 	setup_packet_socket(&packet_sock_2, sock_type, net_htons(ETH_P_ALL));
+
+	/* Avoid ICMP destination-unreachable replies polluting the packet socket. */
+	prepare_udp_socket(&udp_sock_1, &ip_src, DST_PORT);
 
 	if (bind_iface_0) {
 		bind_packet_socket(packet_sock_2, NULL);

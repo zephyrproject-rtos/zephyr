@@ -180,7 +180,7 @@ properties:
       enable: whether scrambling feature is enabled.
       address_offset: The offset in bytes to the start address which
                       can be the offset to the start of the platform
-                      specific XIP address region or phyiscal device address.
+                      specific XIP address region or physical device address.
 
       size: The size in bytes of the region one wish to enable or disable.
       For controller that support hardware scrambling, one may use it for
@@ -198,8 +198,8 @@ properties:
     description: |
       Array of parameters to configure the auto CE break feature.
       mem_boundary: Memory boundary in bytes of a device that a transfer
-                    should't cross.
-      time_to_break: The maximum time of a transfer should't exceed for
+                    shouldn't cross.
+      time_to_break: The maximum time of a transfer shouldn't exceed for
                      a device in micro seconds(us).
 
       This is typically used with devices that has memory boundaries or

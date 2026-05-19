@@ -54,7 +54,6 @@
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * All partition sizes must be aligned to the flash memory sector size (8 KB).
@@ -204,6 +203,10 @@
 	status = "okay";
 };
 
+&ext_flash_ctrl {
+	status = "okay";
+};
+
 &w25q64jvssiq {
 	status = "okay";
 
@@ -220,6 +223,10 @@
 };
 
 &dac0 {
+	status = "okay";
+};
+
+&dac2 {
 	status = "okay";
 };
 

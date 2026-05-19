@@ -408,33 +408,6 @@ GPIO Allocation Summary
        to use these pins, please solder a module without PSRAM memory inside,
        e.g. the ESP32-WROOM-32D or ESP32-SOLO-1.
 
-Enabling Ethernet
-=================
-
-Enable Ethernet MAC, PHY and MDIO; add these to your device tree overlay:
-
-.. code-block:: devicetree
-
-    &eth {
-        status = "okay";
-    };
-
-    &phy {
-        status = "okay";
-    };
-
-    &mdio {
-        status = "okay";
-    };
-
-Enable Ethernet in KConfig:
-
-.. code-block:: cfg
-
-    CONFIG_ETH_ESP32=y
-    CONFIG_NETWORKING=y
-    CONFIG_NET_L2_ETHERNET=y
-
 Board Init
 ==========
 

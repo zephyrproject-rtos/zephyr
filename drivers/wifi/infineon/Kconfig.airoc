@@ -120,7 +120,7 @@ config CYW43439
 
 config CYW55500
 	bool "CYW55500"
-	select AIROC_WIFI6
+	select AIROC_WIFI6 if WIFI
 	help
 	  Enable Infineon AIROC CYW55500 Wi-Fi connectivity,
 	  More information about CYW55500 device you can find on

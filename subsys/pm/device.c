@@ -25,6 +25,12 @@ static const enum pm_device_state action_expected_state[] = {
 	[PM_DEVICE_ACTION_TURN_ON] = PM_DEVICE_STATE_OFF,
 };
 
+enum pm_device_deps_region {
+	PM_DEVICE_DEPS_REGION_REQUIRES  = 0,
+	PM_DEVICE_DEPS_REGION_SUPPORTS  = 1,
+	PM_DEVICE_DEPS_REGION_SUPPORTED = 2,
+};
+
 const char *pm_device_state_str(enum pm_device_state state)
 {
 	switch (state) {
@@ -124,7 +130,7 @@ static int power_domain_add_or_remove(const struct device *dev,
 	 * supported section of handles array and replace it
 	 * with the device handle.
 	 */
-	while (region != 2) {
+	while (region != PM_DEVICE_DEPS_REGION_SUPPORTED) {
 		if (*rv == Z_DEVICE_DEPS_SEP) {
 			region++;
 		}
@@ -132,24 +138,45 @@ static int power_domain_add_or_remove(const struct device *dev,
 	}
 
 	i = 0;
+
+	bool first_empty_slot_found = false;
+	size_t first_empty_slot = 0;
+
 	while (rv[i] != Z_DEVICE_DEPS_ENDS) {
-		if (add == false) {
-			if (rv[i] == dev_handle) {
+		/* Check if the device is already in the power domain */
+		if (rv[i] == dev_handle) {
+			if (add == false) {
+				/* Remove the device from the power domain */
 				dev->pm_base->domain = NULL;
 				rv[i] = DEVICE_HANDLE_NULL;
 				return 0;
 			}
-		} else {
-			if (rv[i] == DEVICE_HANDLE_NULL) {
-				dev->pm_base->domain = domain;
-				rv[i] = dev_handle;
-				return 0;
-			}
+			/* Device is already in the power domain */
+			dev->pm_base->domain = domain;
+			return -EALREADY;
+		}
+
+		/* Find the first available slot for adding a new device */
+		if (add && (rv[i] == DEVICE_HANDLE_NULL) && !first_empty_slot_found) {
+			first_empty_slot_found = true;
+			first_empty_slot = i;
 		}
 		++i;
 	}
 
-	return add ? -ENOSPC : -ENOENT;
+	if (add) {
+		/* No available slot found */
+		if (!first_empty_slot_found) {
+			return -ENOSPC;
+		}
+
+		/* Add the device to the power domain */
+		dev->pm_base->domain = domain;
+		rv[first_empty_slot] = dev_handle;
+		return 0;
+	}
+
+	return -ENOENT;
 #else
 	ARG_UNUSED(dev);
 	ARG_UNUSED(domain);
@@ -397,12 +424,14 @@ int pm_device_driver_init(const struct device *dev,
 
 	/* Startup into active mode */
 	rc = action_cb(dev, PM_DEVICE_ACTION_RESUME);
+	if (rc < 0) {
+		return rc;
+	}
 
 	/* Device is now in the ACTIVE state */
 	pm->state = PM_DEVICE_STATE_ACTIVE;
 
-	/* Return the PM_DEVICE_ACTION_RESUME result */
-	return rc;
+	return 0;
 }
 
 int pm_device_driver_deinit(const struct device *dev,

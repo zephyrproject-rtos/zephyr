@@ -28,14 +28,14 @@ BUILD_ASSERT(DT_ANY_INST_HAS_BOOL_STATUS_OKAY(rx_fifo_rx_we) ==
 #define UART_EV_RX		BIT(1)
 
 struct uart_litex_device_config {
-	uint32_t rxtx_addr;
-	uint32_t txfull_addr;
-	uint32_t rxempty_addr;
-	uint32_t ev_status_addr;
-	uint32_t ev_pending_addr;
-	uint32_t ev_enable_addr;
-	uint32_t txempty_addr;
-	uint32_t rxfull_addr;
+	mem_addr_t rxtx_addr;
+	mem_addr_t txfull_addr;
+	mem_addr_t rxempty_addr;
+	mem_addr_t ev_status_addr;
+	mem_addr_t ev_pending_addr;
+	mem_addr_t ev_enable_addr;
+	mem_addr_t txempty_addr;
+	mem_addr_t rxfull_addr;
 	uint32_t baud_rate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*config_func)(const struct device *dev);

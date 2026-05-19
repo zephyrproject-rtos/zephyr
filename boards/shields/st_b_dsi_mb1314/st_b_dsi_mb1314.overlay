@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+
+/ {
+	chosen {
+		zephyr,display = &zephyr_lcd_controller;
+	};
+};
+
+&zephyr_mipi_dsi {
+	phy-timings = <33 /* ClockLaneHS2LPTime */
+		       30 /* ClockLaneLP2HSTime */
+		       11 /* DataLaneHS2LPTime */
+		       21 /* DataLaneLP2HSTime */
+		       0 /* DataLaneMaxReadTime */
+		       7 /* StopWaitTime */ >;
+
+	host-timeouts = <1 /* TimeoutCkdiv */
+			 0 /* HighSpeedTransmissionTimeout */
+			 0 /* LowPowerReceptionTimeout */
+			 0 /* HighSpeedReadTimeout */
+			 0 /* LowPowerReadTimeout */
+			 0 /* HighSpeedWriteTimeout */
+			 0 /* HighSpeedWritePrespMode */
+			 0 /* LowPowerWriteTimeout */
+			 0 /* BTATimeout */ >;
+
+	vs-active-high;
+	hs-active-high;
+	de-active-high;
+
+	lp-rx-filter = <10000>;
+
+	status = "okay";
+
+	rm67162_g1120b0mipi: rm67162@0 {
+		compatible = "raydium,rm67162";
+		reg = <0x0>;
+		reset-gpios = <&dsi_lcd_qsh_030 57 GPIO_ACTIVE_HIGH>;
+		bl-gpios = <&dsi_lcd_qsh_030 53 GPIO_ACTIVE_HIGH>;
+		data-lanes = <1>;
+		width = <390>;
+		height = <390>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		status = "okay";
+	};
+};
+
+&zephyr_lcd_controller {
+	status = "okay";
+
+	width = <390>;
+	height = <390>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <1>;
+		vsync-len = <1>;
+		hback-porch = <1>;
+		vback-porch = <1>;
+		hfront-porch = <1>;
+		vfront-porch = <1>;
+	};
+
+	def-back-color-red = <0x0>;
+	def-back-color-green = <0x0>;
+	def-back-color-blue = <0x0>;
+};

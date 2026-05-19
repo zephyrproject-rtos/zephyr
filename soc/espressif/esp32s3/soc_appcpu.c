@@ -6,6 +6,7 @@
 
 #include <soc.h>
 #include <soc/rtc_cntl_reg.h>
+#include <soc/interrupts.h>
 #include <soc/timer_group_reg.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <xtensa/config/core-isa.h>

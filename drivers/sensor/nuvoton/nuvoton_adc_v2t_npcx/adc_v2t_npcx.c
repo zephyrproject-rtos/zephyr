@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(adc_v2t_npcx, CONFIG_SENSOR_LOG_LEVEL);
 struct adc_v2t_npcx_config {
 	/*
 	 * Pointer of ADC device that will be performing measurement, this
-	 * must be provied by device tree.
+	 * must be provided by device tree.
 	 */
 	const struct device *adc_dev;
 };
@@ -132,7 +132,7 @@ static int adc_v2t_npcx_init(const struct device *dev)
 	const struct adc_v2t_npcx_config *const config = dev->config;
 
 	if (!device_is_ready(config->adc_dev)) {
-		LOG_ERR("ADC device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->adc_dev);
 		return -EINVAL;
 	}
 

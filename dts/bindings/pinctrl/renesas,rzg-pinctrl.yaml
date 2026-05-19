@@ -10,6 +10,7 @@ description: |
 
     The pre-defined combinations for the RZ/G variants are defined in the below headers
     - pinctrl-rzg-common.h for RZ/G3S
+    - pinctrl-rzg3e.h for RZ/G3E
     - pinctrl-rzg2-common.h for RZ/G2L, RZ/G2LC, RZ/G2UL
 
     #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-rzg(2)-common.h>
@@ -81,6 +82,15 @@ child-binding:
         description: |
           Maximum sink or source current in mA for pin which shell be selected
           depending on device and pin group.
+
+      slew-rate:
+        type: string
+        default: "fast"
+        enum:
+        - "slow"
+        - "fast"
+        description: |
+          Select slew rate for pin.
 
       renesas,filter:
         type: int

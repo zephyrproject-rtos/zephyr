@@ -4,19 +4,64 @@
 menuconfig HAPTICS_CS40L5X
 	bool "CS40L5x Haptics Driver"
 	default y
-	depends on DT_HAS_CIRRUS_CS40L5X_ENABLED
+	depends on DT_HAS_CIRRUS_CS40L50_ENABLED || \
+		   DT_HAS_CIRRUS_CS40L51_ENABLED || \
+		   DT_HAS_CIRRUS_CS40L52_ENABLED || \
+		   DT_HAS_CIRRUS_CS40L53_ENABLED
 	help
 	  Enable CS40L5x haptics driver.
 
 if HAPTICS_CS40L5X
 
 config HAPTICS_CS40L5X_I2C
-	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L5X),i2c)
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L50),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L51),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L52),i2c) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L53),i2c)
 	select I2C
 
 config HAPTICS_CS40L5X_SPI
-	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L5X),spi)
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L50),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L51),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L52),spi) || \
+		 $(dt_compat_on_bus,$(DT_COMPAT_CIRRUS_CS40L53),spi)
 	select SPI
+
+config HAPTICS_CS40L5X_RESET
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),reset-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),reset-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),reset-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),reset-gpios)
+
+config HAPTICS_CS40L5X_INTERRUPT
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),int-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),int-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),int-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),int-gpios)
+
+config HAPTICS_CS40L5X_TRIGGER
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),trigger-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),trigger-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),trigger-gpios) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),trigger-gpios)
+
+config HAPTICS_CS40L5X_EXTERNAL_BOOST
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),external-boost) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),external-boost) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),external-boost) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),external-boost)
+
+config HAPTICS_CS40L5X_INTERNAL_BOOST
+	def_bool !$(dt_compat_all_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),external-boost) && \
+		 !$(dt_compat_all_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),external-boost) && \
+		 !$(dt_compat_all_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),external-boost) && \
+		 !$(dt_compat_all_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),external-boost)
+
+config HAPTICS_CS40L5X_FLASH
+	def_bool $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L50),flash-storage) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L51),flash-storage) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L52),flash-storage) || \
+		 $(dt_compat_any_has_prop,$(DT_COMPAT_CIRRUS_CS40L53),flash-storage)
 
 config HAPTICS_CS40L5X_CALIBRATION
 	bool "Calibration"
@@ -50,17 +95,6 @@ config HAPTICS_CS40L5X_DSP_LOGGER
 	  Enable runtime configuration of the DSP logger, which can
 	  report back EMF, voltage, and voltage boost information.
 
-config HAPTICS_CS40L5X_METADATA_CACHE_LEN
-	int "Metadata Storage Length"
-	default 4
-	range 1 10
-	help
-	  Used to log details of GPIO- or mailbox-triggered haptics effects.
-	  If the number of active or queued effects exceeds the number
-	  provided by this option, then generic messages will be logged for
-	  playbacks. This option directly corresponds to the length of the
-	  ring buffer used to store metadata for haptics effects.
-
 config HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS
 	int "Active Timeout"
 	default 100
@@ -76,12 +110,5 @@ config HAPTICS_CS40L5X_PM_STDBY_TIMEOUT_MS
 	help
 	  When the device enters the standby state with hibernation enabled,
 	  wait the specified amount of time (in ms) before entering hibernation.
-
-config HAPTICS_CS40L5X_TRIGGER_INTERRUPTS
-	bool "Trigger Interrupts"
-	default y
-	help
-	  Enable interrupt processing for edge-triggered events. Required
-	  for detailed logging of trigger events.
 
 endif #HAPTICS_CS40L5X

@@ -148,14 +148,25 @@ enum pm_device_action {
 	PM_DEVICE_ACTION_RESUME,
 	/**
 	 * Turn off.
-	 * @note
-	 *     Action triggered only by a power domain.
+	 * @brief Action triggered only by a power domain.
+	 *
+	 * @details This action serves as a notification to the device that its power
+	 * domain is about to be powered off. After this action completes,
+	 * the device must have disabled IRQs, released resources, and be
+	 * fully prepared for power loss.
+	 *
+	 * The actual power domain power-off timing is platform-specific and
+	 * may occur immediately, be deferred, or be handled as part of a
+	 * system-level power transition. This action only indicates that
+	 * the device should prepare for potential power loss.
 	 */
 	PM_DEVICE_ACTION_TURN_OFF,
 	/**
 	 * Turn on.
-	 * @note
-	 *     Action triggered only by a power domain.
+	 * @brief Action triggered only by a power domain.
+	 *
+	 * @details This action serves as a notification to the device that its power
+	 * domain has been powered on.
 	 */
 	PM_DEVICE_ACTION_TURN_ON,
 };

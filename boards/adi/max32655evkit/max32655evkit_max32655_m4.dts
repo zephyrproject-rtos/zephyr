@@ -127,7 +127,6 @@
 
 	spi0_cs0_flash: w25q128@0 {
 		compatible = "jedec,spi-nor";
-		status = "disabled";
 		/* 134217728 bits = 16 Mbytes */
 		size = <0x8000000>;
 		reg = <0>;

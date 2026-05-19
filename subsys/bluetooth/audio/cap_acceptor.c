@@ -69,7 +69,7 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 	cas.attrs[1].user_data = bt_csip_set_member_svc_decl_get(*svc_inst);
 
 	err = bt_gatt_service_register(&cas);
-	if (err) {
+	if (err != 0) {
 		const int csip_err = bt_csip_set_member_unregister(*svc_inst);
 
 		if (csip_err) {

@@ -8,7 +8,6 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys_clock.h>
-#include <zephyr/spinlock.h>
 #include <zephyr/arch/cpu.h>
 
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
@@ -62,7 +61,6 @@ static uint64_t cycles_max;
 #define CYCLES_MAX CYCLES_MAX_5
 #endif
 
-static struct k_spinlock lock;
 static uint64_t last_cycle;
 static uint64_t last_tick;
 static uint32_t last_elapsed;
@@ -75,7 +73,7 @@ static void arm_arch_timer_compare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = sys_clock_lock();
 
 #ifdef CONFIG_ARM_ARCH_TIMER_ERRATUM_740657
 	/*
@@ -90,7 +88,7 @@ static void arm_arch_timer_compare_isr(const void *arg)
 		 * DO NOT modify the compare register's value, DO NOT announce
 		 * elapsed ticks!
 		 */
-		k_spin_unlock(&lock, key);
+		sys_clock_unlock(key);
 		return;
 	}
 #endif /* CONFIG_ARM_ARCH_TIMER_ERRATUM_740657 */
@@ -133,13 +131,13 @@ static void arm_arch_timer_compare_isr(const void *arg)
 	}
 #endif /* CONFIG_ARM_ARCH_TIMER_ERRATUM_740657 */
 
-	k_spin_unlock(&lock, key);
-
-	sys_clock_announce(delta_ticks);
+	sys_clock_announce_locked(delta_ticks, key);
 }
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
@@ -148,7 +146,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t next_cycle;
 
 	if (ticks == K_TICKS_FOREVER) {
@@ -162,22 +159,21 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	arm_arch_timer_set_compare(next_cycle);
 	arm_arch_timer_set_irq_mask(false);
-	k_spin_unlock(&lock, key);
 }
 
 uint32_t sys_clock_elapsed(void)
 {
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint64_t curr_cycle = arm_arch_timer_count();
 	uint64_t delta_cycles = curr_cycle - last_cycle;
 	uint32_t delta_ticks = (cycle_diff_t)delta_cycles / CYC_PER_TICK;
 
 	last_elapsed = delta_ticks;
-	k_spin_unlock(&lock, key);
 	return delta_ticks;
 }
 
@@ -199,8 +195,18 @@ void arch_busy_wait(uint32_t usec_to_wait)
 	}
 
 	uint64_t start_cycles = arm_arch_timer_count();
+	uint64_t cycles_to_wait = k_us_to_cyc_ceil64(usec_to_wait);
 
-	uint64_t cycles_to_wait = sys_clock_hw_cycles_per_sec() / USEC_PER_SEC * usec_to_wait;
+#ifdef CONFIG_ARM64
+	if (is_wfxt_implemented()) {
+		uint64_t deadline = start_cycles + cycles_to_wait;
+
+		do {
+			wfet(deadline);
+		} while (arm_arch_timer_count() < deadline);
+		return;
+	}
+#endif
 
 	for (;;) {
 		uint64_t current_cycles = arm_arch_timer_count();

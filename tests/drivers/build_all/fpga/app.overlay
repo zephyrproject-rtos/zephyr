@@ -37,6 +37,27 @@
 
 			#include "spi.dtsi"
 		};
+
+		test_i2c: i2c@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2c";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+			clock-frequency = <100000>;
+
+			slg47105@0 {
+				compatible = "renesas,slg47105";
+				reg = <0x00>;
+				status = "okay";
+			};
+
+			slg47115@1 {
+				compatible = "renesas,slg47115";
+				reg = <0x01>;
+				status = "okay";
+			};
+		};
 	};
 
 	fpga0: bridges {

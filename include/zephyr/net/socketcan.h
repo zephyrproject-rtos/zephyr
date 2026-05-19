@@ -66,15 +66,6 @@ enum {
 #define CANFD_FDF 0x04 /**< Mark CAN FD for dual use of struct canfd_frame */
 
 /**
- * struct net_sockaddr_can - The net_sockaddr structure for CAN sockets
- *
- */
-struct net_sockaddr_can {
-	net_sa_family_t can_family;   /**< Address family */
-	int             can_ifindex;  /**< SocketCAN network interface index */
-};
-
-/**
  * @name Linux SocketCAN compatibility
  *
  * The following structures and functions provide compatibility with the CAN

@@ -419,7 +419,6 @@ struct spi_cs_control {
 /** @} */
 
 /**
- * @typedef spi_operation_t
  * Opaque type to hold the SPI operation flags.
  */
 #if defined(CONFIG_SPI_EXTENDED_MODES)
@@ -864,7 +863,6 @@ static inline void spi_transceive_stats(const struct device *dev, int error,
  */
 
 /**
- * @typedef spi_api_io
  * @brief Callback API for I/O.
  *
  * See spi_transceive() for argument descriptions
@@ -884,7 +882,6 @@ typedef int (*spi_api_io)(const struct device *dev,
 typedef void (*spi_callback_t)(const struct device *dev, int result, void *data);
 
 /**
- * @typedef spi_api_io_async
  * @brief Callback API for asynchronous I/O.
  *
  * See spi_transceive_signal() for argument descriptions
@@ -899,7 +896,6 @@ typedef int (*spi_api_io_async)(const struct device *dev,
 #if defined(CONFIG_SPI_RTIO) || defined(__DOXYGEN__)
 
 /**
- * @typedef spi_api_iodev_submit
  * @brief Callback API for submitting work to a SPI device with RTIO
  */
 typedef void (*spi_api_iodev_submit)(const struct device *dev,
@@ -907,7 +903,6 @@ typedef void (*spi_api_iodev_submit)(const struct device *dev,
 #endif /* CONFIG_SPI_RTIO */
 
 /**
- * @typedef spi_api_release
  * @brief Callback API for unlocking SPI device.
  * See spi_release() for argument descriptions
  */
@@ -1040,11 +1035,8 @@ static inline int z_impl_spi_transceive(const struct device *dev,
 					const struct spi_buf_set *tx_bufs,
 					const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
-	int ret;
+	int ret = DEVICE_API_GET(spi, dev)->transceive(dev, config, tx_bufs, rx_bufs);
 
-	ret = api->transceive(dev, config, tx_bufs, rx_bufs);
 	spi_transceive_stats(dev, ret, tx_bufs, rx_bufs);
 
 	return ret;
@@ -1212,10 +1204,8 @@ static inline int spi_transceive_cb(const struct device *dev,
 				    spi_callback_t callback,
 				    void *userdata)
 {
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
-
-	return api->transceive_async(dev, config, tx_bufs, rx_bufs, callback, userdata);
+	return DEVICE_API_GET(spi, dev)->transceive_async(dev, config, tx_bufs, rx_bufs, callback,
+							  userdata);
 }
 
 #if defined(CONFIG_POLL) || defined(__DOXYGEN__)
@@ -1261,11 +1251,9 @@ static inline int spi_transceive_signal(const struct device *dev,
 				       const struct spi_buf_set *rx_bufs,
 				       struct k_poll_signal *sig)
 {
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
 	spi_callback_t cb = (sig == NULL) ? NULL : z_spi_transfer_signal_cb;
 
-	return api->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
+	return DEVICE_API_GET(spi, dev)->transceive_async(dev, config, tx_bufs, rx_bufs, cb, sig);
 }
 
 /**
@@ -1363,9 +1351,8 @@ static inline void spi_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct spi_dt_spec *dt_spec = (const struct spi_dt_spec *)iodev_sqe->sqe.iodev->data;
 	const struct device *dev = dt_spec->bus;
-	const struct spi_driver_api *api = (const struct spi_driver_api *)dev->api;
 
-	api->iodev_submit(dt_spec->bus, iodev_sqe);
+	DEVICE_API_GET(spi, dev)->iodev_submit(dev, iodev_sqe);
 }
 
 /** @cond INTERNAL_HIDDEN */
@@ -1444,10 +1431,7 @@ __syscall int spi_release(const struct device *dev,
 static inline int z_impl_spi_release(const struct device *dev,
 				     const struct spi_config *config)
 {
-	const struct spi_driver_api *api =
-		(const struct spi_driver_api *)dev->api;
-
-	return api->release(dev, config);
+	return DEVICE_API_GET(spi, dev)->release(dev, config);
 }
 
 /**

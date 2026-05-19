@@ -161,6 +161,48 @@ union max14916_global_err {
 	} reg_bits;
 };
 
+union max14916_ow_off_en {
+	uint8_t reg_raw;
+	struct {
+		uint8_t OW_OFF_EN1: 1; /* BIT0 */
+		uint8_t OW_OFF_EN2: 1;
+		uint8_t OW_OFF_EN3: 1;
+		uint8_t OW_OFF_EN4: 1;
+		uint8_t OW_OFF_EN5: 1;
+		uint8_t OW_OFF_EN6: 1;
+		uint8_t OW_OFF_EN7: 1;
+		uint8_t OW_OFF_EN8: 1; /* BIT7 */
+	} reg_bits;
+};
+
+union max14916_ow_on_en {
+	uint8_t reg_raw;
+	struct {
+		uint8_t OW_ON_EN1: 1; /* BIT0 */
+		uint8_t OW_ON_EN2: 1;
+		uint8_t OW_ON_EN3: 1;
+		uint8_t OW_ON_EN4: 1;
+		uint8_t OW_ON_EN5: 1;
+		uint8_t OW_ON_EN6: 1;
+		uint8_t OW_ON_EN7: 1;
+		uint8_t OW_ON_EN8: 1; /* BIT7 */
+	} reg_bits;
+};
+
+union max14916_sht_vdd_en {
+	uint8_t reg_raw;
+	struct {
+		uint8_t SH_VDD_EN1: 1; /* BIT0 */
+		uint8_t SH_VDD_EN2: 1;
+		uint8_t SH_VDD_EN3: 1;
+		uint8_t SH_VDD_EN4: 1;
+		uint8_t SH_VDD_EN5: 1;
+		uint8_t SH_VDD_EN6: 1;
+		uint8_t SH_VDD_EN7: 1;
+		uint8_t SH_VDD_EN8: 1; /* BIT7 */
+	} reg_bits;
+};
+
 struct max149x6_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec fault_gpio;
@@ -186,9 +228,9 @@ struct max14916_data {
 		uint8_t sht_vdd;
 	} chan;
 	struct {
-		uint8_t ow_off_en;
-		uint8_t ow_on_en;
-		uint8_t sht_vdd_en;
+		union max14916_ow_off_en ow_off_en;
+		union max14916_ow_on_en ow_on_en;
+		union max14916_sht_vdd_en sht_vdd_en;
 	} chan_en;
 	struct {
 		union max14916_interrupt interrupt;

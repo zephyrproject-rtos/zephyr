@@ -1,0 +1,25 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_BL808
+
+configdefault FPU
+	default y
+
+config SOC_RESET_HOOK
+	default y
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 5000
+
+config NUM_IRQS
+	default 80
+
+config ARCH_SW_ISR_TABLE_ALIGN
+	default 64
+
+config RISCV_MCAUSE_EXCEPTION_MASK
+	default 0xFFF
+
+endif # SOC_SERIES_BL808

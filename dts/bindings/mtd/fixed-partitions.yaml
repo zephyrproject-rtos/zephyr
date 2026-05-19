@@ -16,6 +16,8 @@ description: |
 
 compatible: "fixed-partitions"
 
+include: base.yaml
+
 properties:
   "#address-cells":
     type: int

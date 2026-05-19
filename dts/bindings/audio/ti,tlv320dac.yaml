@@ -11,3 +11,10 @@ properties:
   reset-gpios:
     type: phandle-array
     required: true
+
+  use-volume-control-pin:
+    type: boolean
+    description: |
+      Control the volume of the codec using the VOL/MICDET pin. This pin is
+      shared with the microphone detection function, so it will not work if
+      the microphone detection function is enabled.

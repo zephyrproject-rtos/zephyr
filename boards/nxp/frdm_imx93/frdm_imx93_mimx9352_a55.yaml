@@ -22,7 +22,10 @@ supported:
   - net
   - watchdog
   - usbd
+  - pwm
 testing:
+  binaries:
+    - flash.bin
   ignore_tags:
     - bluetooth
 vendor: nxp

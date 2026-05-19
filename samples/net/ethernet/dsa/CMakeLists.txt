@@ -6,4 +6,3 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(dsa)
 
 target_sources(app PRIVATE src/main.c)
-target_sources_ifdef(CONFIG_NET_SAMPLE_DSA_LLDP app PRIVATE src/dsa_lldp.c)

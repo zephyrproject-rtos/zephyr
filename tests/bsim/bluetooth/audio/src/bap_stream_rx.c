@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(bap_stream_rx, LOG_LEVEL_INF);
 
-#define LOG_INTERVAL 100
+#define LOG_INTERVAL 100U
 
 static void log_stream_rx(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 			  struct net_buf *buf)

@@ -33,7 +33,7 @@ properties:
     type: int
     default: 0
     description: |
-      Align sensor chanel x output with hardware orientation axis.
+      Align sensor channel x output with hardware orientation axis.
       Defaults to x.
     enum:
       - 0 # SENSOR_AXIS_ALIGN_DT_X
@@ -44,7 +44,7 @@ properties:
     type: int
     default: 2
     description: |
-      Align sensor chanel x output with hardware orientation axis sign component.
+      Align sensor channel x output with hardware orientation axis sign component.
       Defaults to positive.
     enum:
       - 0 # SENSOR_AXIS_ALIGN_DT_NEG
@@ -54,7 +54,7 @@ properties:
     type: int
     default: 1
     description: |
-      Align sensor chanel y output with hardware orientation axis.
+      Align sensor channel y output with hardware orientation axis.
       Defaults to y.
     enum:
       - 0 # SENSOR_AXIS_ALIGN_DT_X
@@ -65,7 +65,7 @@ properties:
     type: int
     default: 2
     description: |
-      Align sensor chanel y output with hardware orientation axis sign component.
+      Align sensor channel y output with hardware orientation axis sign component.
       Defaults to positive.
     enum:
       - 0 # SENSOR_AXIS_ALIGN_DT_NEG
@@ -75,7 +75,7 @@ properties:
     type: int
     default: 2
     description: |
-      Align sensor chanel z output with hardware orientation axis.
+      Align sensor channel z output with hardware orientation axis.
       Defaults to z.
     enum:
       - 0 # SENSOR_AXIS_ALIGN_DT_X
@@ -86,7 +86,7 @@ properties:
     type: int
     default: 2
     description: |
-      Align sensor chanel z output with hardware orientation axis sign component.
+      Align sensor channel z output with hardware orientation axis sign component.
       Defaults to positive.
     enum:
       - 0 # SENSOR_AXIS_ALIGN_DT_NEG

@@ -115,14 +115,11 @@ static void lm75_sensor_value_to_temp(const struct sensor_value *val, int16_t *t
 
 static void lm75_temp_to_sensor_value(int16_t temp, struct sensor_value *val)
 {
-	/* shift right by 7, multiply by 10 to get 0.1° and divide by 2 to get °C */
-	temp = (temp / 128) * 10 / 2;
-
 	/* Integer part in degrees Celsius */
-	val->val1 = temp / 10;
+	val->val1 = (temp / 256);
 
 	/* Fractional part in micro degrees Celsius */
-	val->val2 = (temp - val->val1 * 10) * 100000U;
+	val->val2 = ((temp - (val->val1 * 256)) * 1000000) / 256;
 }
 
 static int lm75_attr_set(const struct device *dev, enum sensor_channel chan,
@@ -318,7 +315,7 @@ int lm75_init(const struct device *dev)
 #endif /* LM75_TRIGGER_SUPPORT */
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C dev not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -351,7 +348,7 @@ int lm75_init(const struct device *dev)
 		k_work_init(&data->work, lm75_trigger_work_handler);
 
 		if (!device_is_ready(cfg->int_gpio.port)) {
-			LOG_ERR("INT GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 			return -EINVAL;
 		}
 

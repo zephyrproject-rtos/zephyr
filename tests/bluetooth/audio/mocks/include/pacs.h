@@ -7,6 +7,7 @@
 #ifndef MOCKS_PACS_H_
 #define MOCKS_PACS_H_
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/conn.h>

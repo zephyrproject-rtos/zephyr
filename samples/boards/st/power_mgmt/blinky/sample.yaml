@@ -13,7 +13,7 @@ tests:
     filter: dt_compat_enabled("zephyr,power-state") and
             dt_enabled_alias_with_parent_compat("led0", "gpio-leds") and
             (dt_compat_enabled("st,stm32-lptim") or
-            dt_chosen_enabled("zephyr,cortex-m-idle-timer"))
+            dt_chosen_enabled("zephyr,system-timer-companion"))
     extra_args: "CONFIG_DEBUG=y"
     integration_platforms:
       - nucleo_wb55rg

@@ -129,6 +129,21 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		case LL_APB1_GRP1_PERIPH_I2C2:
 			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C12_CLKSOURCE);
 			break;
+		case LL_APB1_GRP1_PERIPH_SPI2:
+			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
+			break;
+		case LL_APB1_GRP1_PERIPH_SPI3:
+			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI23_CLKSOURCE);
+			break;
+		default:
+			return -ENOTSUP;
+		}
+		break;
+	case STM32_CLOCK_BUS_APB2:
+		switch (pclken->enr) {
+		case LL_APB2_GRP1_PERIPH_SPI1:
+			*rate = LL_RCC_GetUARTClockFreq(LL_RCC_SPI1_CLKSOURCE);
+			break;
 		default:
 			return -ENOTSUP;
 		}
@@ -143,6 +158,12 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 			break;
 		case LL_APB6_GRP1_PERIPH_I2C5:
 			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C5_CLKSOURCE);
+			break;
+		case LL_APB6_GRP1_PERIPH_SPI4:
+			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI4_CLKSOURCE);
+			break;
+		case LL_APB6_GRP1_PERIPH_SPI5:
+			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI5_CLKSOURCE);
 			break;
 		default:
 			return -ENOTSUP;

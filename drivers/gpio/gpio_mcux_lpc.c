@@ -422,8 +422,16 @@ static int gpio_mcux_lpc_pm_action(const struct device *dev, enum pm_device_acti
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (error < 0 && error != -ENOENT) {
+			return error;
+		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (error < 0 && error != -ENOENT) {
+			return error;
+		}
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;

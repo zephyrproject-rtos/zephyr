@@ -8,7 +8,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/posix/fcntl.h>
 #include <zephyr/zvfs/eventfd.h>
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/fdtable.h>
@@ -229,11 +228,11 @@ static int zvfs_eventfd_ioctl_op(void *obj, unsigned int request, va_list args)
 	}
 
 	switch (request) {
-	case F_GETFL:
+	case ZVFS_F_GETFL:
 		ret = efd->flags & ZVFS_EFD_FLAGS_SET;
 		break;
 
-	case F_SETFL: {
+	case ZVFS_F_SETFL: {
 		int flags;
 
 		flags = va_arg(args, int);

@@ -17,9 +17,6 @@ config MAIN_STACK_SIZE
 
 if SMP
 
-config SCHED_IPI_SUPPORTED
-	default y
-
 config SCHED_CPU_MASK
 	default y if SCHED_SIMPLE
 
@@ -36,6 +33,14 @@ config GDBSTUB_BUF_SZ
 	default 840 if GDBSTUB
 
 endif # GDBSTUB config
+
+if PM && TICKLESS_KERNEL
+
+choice XTENSA_TIMER_LPM_TIMER
+	default XTENSA_TIMER_LPM_TIMER_HOOK
+endchoice
+
+endif # PM && TICKLESS_KERNEL
 
 endif # SOC_SERIES_ESP32 config
 

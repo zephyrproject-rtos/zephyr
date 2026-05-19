@@ -84,6 +84,15 @@ static int offload_connect(void *obj, const struct net_sockaddr *addr, net_sockl
 		return -1;
 	}
 
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+	ret = sim7080_handle_ca_tls(sock);
+	if (ret != 0) {
+		LOG_ERR("Could not configure TLS for socket %d", sock->sock_fd);
+		errno = -ret;
+		return -1;
+	}
+#endif
+
 	mdata.socket_open_rc = 1;
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, cmd, ARRAY_SIZE(cmd), buf,
 				 &mdata.sem_response, MDM_CONNECT_TIMEOUT);
@@ -236,7 +245,7 @@ static int sockread_common(int sockfd, struct modem_cmd_handler_data *data, int 
 			   uint16_t len)
 {
 	struct modem_socket *sock;
-	struct socket_read_data *sock_data;
+	struct socket_read_data *sockread_data;
 	int ret, packet_size;
 
 	if (!len) {
@@ -266,17 +275,19 @@ static int sockread_common(int sockfd, struct modem_cmd_handler_data *data, int 
 		goto exit;
 	}
 
-	sock_data = (struct socket_read_data *)sock->data;
-	if (!sock_data) {
+	struct sim7080_socket_data *socket_data = sock->data;
+
+	sockread_data = (struct socket_read_data *)socket_data->data;
+	if (!sockread_data) {
 		LOG_ERR("Socket data not found! (%d)", sockfd);
 		ret = -EINVAL;
 		goto exit;
 	}
 
-	ret = net_buf_linearize(sock_data->recv_buf, sock_data->recv_buf_len, data->rx_buf, 0,
-				(uint16_t)socket_data_length);
+	ret = net_buf_linearize(sockread_data->recv_buf, sockread_data->recv_buf_len, data->rx_buf,
+				0, (uint16_t)socket_data_length);
 	data->rx_buf = net_buf_skip(data->rx_buf, ret);
-	sock_data->recv_read_len = ret;
+	sockread_data->recv_read_len = ret;
 	if (ret != socket_data_length) {
 		LOG_ERR("Total copied data is different then received data!"
 			" copied:%d vs. received:%d",
@@ -309,7 +320,8 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
 	struct modem_socket *sock = (struct modem_socket *)obj;
 	char sendbuf[sizeof("AT+CARECV=##,####")];
 	int ret, packet_size;
-	struct socket_read_data sock_data;
+	struct socket_read_data sockread_data;
+	struct sim7080_socket_data *socket_data = sock->data;
 
 	struct modem_cmd data_cmd[] = { MODEM_CMD("+CARECV: ", on_cmd_carecv, 1U, ",") };
 
@@ -343,11 +355,11 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
 	max_len = (max_len > MDM_MAX_DATA_LENGTH) ? MDM_MAX_DATA_LENGTH : max_len;
 	snprintk(sendbuf, sizeof(sendbuf), "AT+CARECV=%d,%zd", sock->id, max_len);
 
-	memset(&sock_data, 0, sizeof(sock_data));
-	sock_data.recv_buf = buf;
-	sock_data.recv_buf_len = max_len;
-	sock_data.recv_addr = src_addr;
-	sock->data = &sock_data;
+	memset(&sockread_data, 0, sizeof(sockread_data));
+	sockread_data.recv_buf = buf;
+	sockread_data.recv_buf_len = max_len;
+	sockread_data.recv_addr = src_addr;
+	socket_data->data = &sockread_data;
 	mdata.current_sock_fd = sock->sock_fd;
 
 	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, data_cmd, ARRAY_SIZE(data_cmd),
@@ -365,12 +377,12 @@ static ssize_t offload_recvfrom(void *obj, void *buf, size_t max_len, int flags,
 	}
 
 	errno = 0;
-	ret = sock_data.recv_read_len;
+	ret = sockread_data.recv_read_len;
 
 exit:
 	/* clear socket data */
 	mdata.current_sock_fd = -1;
-	sock->data = NULL;
+	socket_data->data = NULL;
 	return ret;
 }
 
@@ -436,6 +448,14 @@ static void socket_close(struct modem_socket *sock)
 	if (ret < 0) {
 		LOG_ERR("%s ret: %d", buf, ret);
 	}
+
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+	struct sim7080_socket_data *data = sock->data;
+
+	data->peer_verify = false;
+	memset(data->root_ca_dtls, 0, sizeof(data->root_ca_dtls));
+	memset(data->client_cert, 0, sizeof(data->client_cert));
+#endif
 
 	modem_socket_put(&mdata.socket_config, sock->sock_fd);
 }
@@ -541,6 +561,19 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 	}
 }
 
+static int offload_setsockopt(void *obj, int level, int optname,
+					const void *optval, net_socklen_t optlen)
+{
+	switch (level) {
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+	case ZSOCK_SOL_TLS:
+		return sim7080_tls_setsockopt(obj, optname, optval, optlen);
+#endif
+	default:
+		return -ENOTSUP;
+	}
+}
+
 const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.fd_vtable = {
 		.read	= offload_read,
@@ -556,7 +589,7 @@ const struct socket_op_vtable offload_socket_fd_op_vtable = {
 	.accept		= NULL,
 	.sendmsg	= offload_sendmsg,
 	.getsockopt	= NULL,
-	.setsockopt	= NULL,
+	.setsockopt	= offload_setsockopt,
 };
 
 void sim7080_handle_sock_data_indication(int fd)
@@ -601,6 +634,37 @@ void sim7080_handle_sock_state(int fd, uint8_t state)
 int sim7080_offload_socket(int family, int type, int proto)
 {
 	int ret;
+
+	if (family != NET_AF_INET && family != NET_AF_INET6) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	bool type_proto_ok = false;
+
+	if (type == NET_SOCK_DGRAM &&
+		(proto == NET_IPPROTO_UDP
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+		|| proto == NET_IPPROTO_DTLS_1_0 ||
+		proto == NET_IPPROTO_DTLS_1_2
+#endif
+		)) {
+		type_proto_ok = true;
+	} else if (type == NET_SOCK_STREAM &&
+		(proto == NET_IPPROTO_TCP
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+		|| proto == NET_IPPROTO_TLS_1_0 ||
+		proto == NET_IPPROTO_TLS_1_1 ||
+		proto == NET_IPPROTO_TLS_1_2
+#endif
+		)) {
+		type_proto_ok = true;
+	}
+
+	if (type_proto_ok == false) {
+		errno = -EINVAL;
+		return -1;
+	}
 
 	ret = modem_socket_get(&mdata.socket_config, family, type, proto);
 	if (ret < 0) {

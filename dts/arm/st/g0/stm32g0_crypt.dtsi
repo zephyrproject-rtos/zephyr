@@ -22,7 +22,7 @@
 		rng: rng@40025000 {
 			compatible = "st,stm32-rng";
 			reg = <0x40025000 0x400>;
-			interrupts = <31 1>;
+			interrupts = <31 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 18)>;
 			status = "disabled";
 		};

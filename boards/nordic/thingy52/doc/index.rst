@@ -12,29 +12,9 @@ Zephyr uses the thingy52/nrf52832 (PCA20020) board configuration for building
 for the Thingy:52 board. The board has the nRF52832 MCU with ARM Cortex-M4F
 processor, a set of environmental sensors, a pushbutton, and two RGB LEDs.
 
-* :abbr:`ADC (Analog to Digital Converter)`
-* CLOCK
-* FLASH
-* Gas sensor
-* :abbr:`GPIO (General Purpose Input Output)`
-* GPIO Expander
-* Humidity and temperature sensor
-* :abbr:`I2C (Inter-Integrated Circuit)`
-* :abbr:`MPU (Memory Protection Unit)`
-* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* Pressure sensor
-* :abbr:`PWM (Pulse Width Modulation)`
-* RADIO (Bluetooth Low Energy)
-* RGB LEDs
-* :abbr:`RTC (nRF RTC System Clock)`
-* :abbr:`SPI (Serial Peripheral Interface)`
-* :abbr:`UART (Universal asynchronous receiver-transmitter)`
-* :abbr:`WDT (Watchdog Timer)`
-
 More information about the board can be found at the `nRF52 DK website`_. The
 `Nordic Thingy:52 guide`_ contains the processor's information and the
 datasheet.
-
 
 Hardware
 ********

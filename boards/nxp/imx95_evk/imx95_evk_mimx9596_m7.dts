@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <nxp/imx/nxp_imx95_m7.dtsi>
 #include "imx95_evk-pinctrl.dtsi"
+#include <dt-bindings/mipi_dsi/mipi_dsi.h>
 
 / {
 	model = "NXP i.MX95 EVK board";
@@ -18,7 +19,7 @@
 		zephyr,flash = &itcm;
 		zephyr,sram = &dtcm;
 
-		zephyr,flash-controller = &mt35xu01gbba;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
 	};
@@ -57,46 +58,61 @@
 	pinctrl-0 = <&flexspi_default>;
 	pinctrl-names = "default";
 
-	mt35xu01gbba: mt35xu01gbba@0 {
+	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
 		size = <DT_SIZE_M(1024)>;
 		reg = <0>;
 		spi-max-frequency = <DT_FREQ_M(200)>;
 		status = "okay";
 		jedec-id = [2c 5b 1b];
-		erase-block-size = <DT_SIZE_K(4)>;
-		write-block-size = <2>;
 
-		partitions {
-			compatible = "fixed-partitions";
-			#address-cells = <1>;
-			#size-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x28000000 DT_SIZE_M(128)>;
 
-			/*
-			 * Partition sizes must be aligned
-			 * to the flash memory sector size of 4KB.
-			 */
-			boot_partition: partition@0 {
-				label = "mcuboot";
-				reg = <0x00000000 DT_SIZE_K(128)>;
-			};
+		mt35xu01gbba: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(128)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <2>;
 
-			slot0_partition: partition@20000 {
-				label = "image-0";
-				reg = <0x00020000 DT_SIZE_M(7)>;
-			};
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
 
-			slot1_partition: partition@720000 {
-				label = "image-1";
-				reg = <0x00720000 DT_SIZE_M(7)>;
-			};
+				/*
+				 * Partition sizes must be aligned
+				 * to the flash memory sector size of 4KB.
+				 */
+				boot_partition: partition@0 {
+					label = "mcuboot";
+					reg = <0x00000000 DT_SIZE_K(128)>;
+				};
 
-			storage_partition: partition@e20000 {
-				label = "storage";
-				reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				slot0_partition: partition@20000 {
+					label = "image-0";
+					reg = <0x00020000 DT_SIZE_M(7)>;
+				};
+
+				slot1_partition: partition@720000 {
+					label = "image-1";
+					reg = <0x00720000 DT_SIZE_M(7)>;
+				};
+
+				storage_partition: partition@e20000 {
+					label = "storage";
+					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				};
 			};
 		};
 	};
+};
+
+&lpi2c2 {
+	pinctrl-0 = <&lpi2c2_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c5 {
@@ -142,10 +158,36 @@
 	status = "okay";
 };
 
-&lptmr2 {
+&lptmr1 {
 	status = "okay";
 };
 
 &edma2 {
 	status = "okay";
 };
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&sar_adc {
+	status = "okay";
+};
+
+zephyr_dpu: &dpu {};
+
+zephyr_mipi_dsi: &mipi_dsi {};
+
+display_i2c: &lpi2c2 {};

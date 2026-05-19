@@ -32,9 +32,9 @@ LOG_MODULE_REGISTER(coredump, CONFIG_DEBUG_COREDUMP_LOG_LEVEL);
  * aligned to flash write size.
  */
 #define FLASH_PARTITION		coredump_partition
-#define FLASH_PARTITION_ID	FIXED_PARTITION_ID(FLASH_PARTITION)
+#define FLASH_PARTITION_ID	PARTITION_ID(FLASH_PARTITION)
 
-#if !FIXED_PARTITION_EXISTS(FLASH_PARTITION)
+#if !PARTITION_EXISTS(FLASH_PARTITION)
 #error "Need a fixed partition named 'coredump-partition'!"
 
 #else
@@ -257,6 +257,9 @@ static int process_stored_dump(data_read_cb_t cb, void *cb_arg)
 
 	/* Read header */
 	ret = data_read(0, (uint8_t *)&hdr, sizeof(hdr), NULL, NULL);
+	if (ret != 0) {
+		goto out;
+	}
 
 	/* Verify header signature */
 	if ((hdr.id[0] != 'C') && (hdr.id[1] != 'D')) {
@@ -632,4 +635,4 @@ struct coredump_backend_api coredump_backend_flash_partition = {
 	.cmd = coredump_flash_backend_cmd,
 };
 
-#endif /* FIXED_PARTITION_EXISTS(coredump_partition) */
+#endif /* PARTITION_EXISTS(coredump_partition) */

@@ -20,6 +20,7 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import TestConfiguration, TestPlan, change_skip_to_error_if_integration
 from twisterlib.testsuite import TestSuite
+from twisterlib.testsuitedata import RequiredApplication
 
 
 def mock_twister_env():
@@ -37,8 +38,7 @@ def mock_twister_env():
 def test_testplan_add_testsuites_short(class_testplan):
     """ Testing add_testcase function of Testsuite class in twister """
     # Test 1: Check the list of testsuites after calling add testsuites function is as expected
-    class_testplan.SAMPLE_FILENAME = 'test_sample_app.yaml'
-    class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
+    class_testplan.TEST_DEFINITION_FILENAME = ['test_sample_app.yaml', 'test_data.yaml']
     class_testplan.add_testsuites()
 
     tests_rel_dir = 'scripts/tests/twister/test_data/testsuites/tests/'
@@ -292,7 +292,7 @@ def test_apply_changes_for_required_applications(testplan_with_one_instance: Tes
     testinstance_req = next(iter(plan.instances.values()))
 
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
-    testsuite.required_applications = [{'name': 'sample_test.app'}]
+    testsuite.required_applications = [RequiredApplication(name='sample_test.app')]
     platform = plan.get_platform("demo_board_1")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -307,7 +307,7 @@ def test_apply_changes_for_required_applications_missing_app(testplan_with_one_i
     plan = testplan_with_one_instance
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
     # Set a required application that does not exist
-    testsuite.required_applications = [{'name': 'nonexistent_app'}]
+    testsuite.required_applications = [RequiredApplication(name='nonexistent_app')]
     platform = plan.get_platform("demo_board_1")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -323,7 +323,7 @@ def test_apply_changes_for_required_applications_wrong_platform(testplan_with_on
     """ Test apply_changes_for_required_applications with not matched platform """
     plan = testplan_with_one_instance
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
-    testsuite.required_applications = [{'name': 'sample_test.app', 'platform': 'demo_board_2'}]
+    testsuite.required_applications = [RequiredApplication(name='sample_test.app', platform='demo_board_2')]
     platform = plan.get_platform("demo_board_2")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -343,7 +343,7 @@ def test_apply_changes_for_required_applications_in_outdir(testplan_with_one_ins
     req_app_in_outdir = "prebuilt_sample_test.app"
 
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
-    testsuite.required_applications = [{'name': req_app_in_outdir}]
+    testsuite.required_applications = [RequiredApplication(name=req_app_in_outdir)]
     platform = plan.get_platform("demo_board_1")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -437,7 +437,7 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
     class_testplan.options.all = True
     class_testplan.platforms = platforms_list
     class_testplan.platform_names = [p.name for p in platforms_list]
-    class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
+    class_testplan.TEST_DEFINITION_FILENAME = 'test_data.yaml'
     class_testplan.add_testsuites()
 
     quarantine_list = [
@@ -1219,6 +1219,7 @@ def test_testplan_add_configurations(
     env.board_roots = [tmp_path / 'boards']
     env.soc_roots = [tmp_path]
     env.arch_roots = [tmp_path]
+    env.hwm = mock.Mock(duts=[])
     testplan = TestPlan(env=env)
     testplan.test_config = mock.Mock()
     testplan.test_config.override_default_platforms = override_default_platforms
@@ -1314,7 +1315,7 @@ def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, detai
     # │ ├ wrong_test
     # │ │ └ testcase.yaml
     # │ ├ good_sample
-    # │ │ └ sample.yaml
+    # │ │ └ tests.yaml
     # │ ├ duplicate_test
     # │ │ └ testcase.yaml
     # │ └ others

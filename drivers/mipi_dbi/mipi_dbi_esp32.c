@@ -14,7 +14,7 @@
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
-#include <soc/gdma_channel.h>
+#include <hal/gdma_channel.h>
 #include <esp_clk_tree.h>
 #include <esp_heap_caps.h>
 #include <esp_memory_utils.h>
@@ -110,11 +110,13 @@ static int mipi_dbi_esp32_switch_device(const struct device *dev,
 	switch (next_dbi_cfg->mode) {
 	case MIPI_DBI_MODE_6800_BUS_16_BIT:
 	case MIPI_DBI_MODE_8080_BUS_16_BIT:
-		lcd_ll_set_data_width(hal->dev, 16);
+		lcd_ll_set_dma_read_stride(hal->dev, 16);
+		lcd_ll_set_data_wire_width(hal->dev, 16);
 		break;
 	case MIPI_DBI_MODE_6800_BUS_8_BIT:
 	case MIPI_DBI_MODE_8080_BUS_8_BIT:
-		lcd_ll_set_data_width(hal->dev, 8);
+		lcd_ll_set_dma_read_stride(hal->dev, 8);
+		lcd_ll_set_data_wire_width(hal->dev, 8);
 		break;
 	default:
 		LOG_ERR("MIPI DBI mode %u is not supported.", next_dbi_cfg->mode);
@@ -426,7 +428,7 @@ static int mipi_dbi_esp32_init(const struct device *dev)
 	/* Set parameters */
 
 	lcd_ll_enable_rgb_mode(hal->dev, false);
-	lcd_ll_enable_rgb_yuv_convert(hal->dev, false);
+	lcd_ll_enable_color_convert(hal->dev, false);
 	lcd_ll_enable_output_always_on(hal->dev, true);
 
 	return 0;

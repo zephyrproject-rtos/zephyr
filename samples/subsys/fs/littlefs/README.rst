@@ -9,6 +9,7 @@ Overview
 
 This sample app demonstrates use of Zephyr's :ref:`file system API
 <file_system_api>` over `littlefs`_, using file system with files that:
+
 * count the number of times the system has booted
 * holds binary pattern with properly incremented values in it
 

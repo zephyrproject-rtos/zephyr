@@ -694,16 +694,40 @@
  */
 #define DT_CHILD_NUM(node_id) DT_CAT(node_id, _CHILD_NUM)
 
-
 /**
- * @brief Get the number of child nodes of a given node
- *        which child nodes' status are okay
+ * @brief Get the number of child nodes of a given node,
+ *        whose status is okay
  *
  * @param node_id a node identifier
  * @return Number of child nodes which status are okay
  */
 #define DT_CHILD_NUM_STATUS_OKAY(node_id) \
 	DT_CAT(node_id, _CHILD_NUM_STATUS_OKAY)
+
+/**
+ * @brief Get the number of descendant nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key
+ *
+ * @param node_id a node identifier
+ * @param bus bus type string
+ * @return Number of descendant nodes
+ */
+#define DT_DESCENDANT_NUM_ON_BUS(node_id, bus) \
+	DT_CAT3(node_id, _DESCENDANT_NUM_ON_BUS_, bus)
+
+/**
+ * @brief Get the number of descendant nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key,
+ *        and whose status is okay
+ *
+ * @param node_id a node identifier
+ * @param bus bus type string
+ * @return Number of descendant nodes
+ */
+#define DT_DESCENDANT_NUM_ON_BUS_STATUS_OKAY(node_id, bus) \
+	DT_CAT4(node_id, _DESCENDANT_NUM_ON_BUS_, bus, _STATUS_OKAY)
 
 /**
  * @brief Do @p node_id1 and @p node_id2 refer to the same node?
@@ -2588,6 +2612,143 @@
 
 
 /**
+ * @brief Invokes @p fn for each entry of @p node_id reg property
+ *
+ * The macro @p fn takes two parameters, @p node_id which will be the node
+ * identifier of the node with the reg property and @p idx the index of
+ * the reg array.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n: node@0 {
+ *             #address-cells = <0x2>;
+ *             #size-cells = <0x2>;
+ *             reg = <0x0 0x0 0x0 0x1000>,
+ *                   <0x0 0x1000 0x0 0x1000>,
+ *                   <0x0 0x2000 0x0 0x1000>;
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define REG_ADDR(node_id, idx) DT_REG_ADDR_BY_IDX(node_id, idx),
+ *     #define REG_SIZE(node_id, idx) DT_REG_SIZE_BY_IDX(node_id, idx),
+ *
+ *     const uint64_t reg_addrs[] = {
+ *             DT_FOREACH_REG(DT_NODELABEL(n), REG_ADDR)
+ *     };
+ *     const uint64_t reg_sizes[] = {
+ *             DT_FOREACH_REG(DT_NODELABEL(n), REG_SIZE)
+ *     };
+ * @endcode
+ *
+ * This expands to:
+ *
+ * @code{.c}
+ *     const uint64_t reg_addrs[] = {
+ *         0x0, 0x1000, 0x2000,
+ *     };
+ *     const uint64_t reg_sizes[] = {
+ *         0x1000, 0x1000, 0x1000,
+ *     };
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ */
+#define DT_FOREACH_REG(node_id, fn) \
+	DT_CAT(node_id, _FOREACH_REG)(fn)
+
+/**
+ * @brief Invokes @p fn for each entry of @p node_id reg property with separator
+ *
+ * The macro @p fn takes two parameters, @p node_id which will be the node
+ * identifier of the node with the reg property and @p idx the index of
+ * the reg array.
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n: node@0 {
+ *             #address-cells = <0x2>;
+ *             #size-cells = <0x2>;
+ *             reg = <0x0 0x0 0x0 0x1000>,
+ *                   <0x0 0x1000 0x0 0x1000>,
+ *                   <0x0 0x2000 0x0 0x1000>;
+ *     };
+ * @endcode
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     const uint64_t reg_addrs[] = {
+ *             DT_FOREACH_REG_SEP(DT_NODELABEL(n), DT_REG_ADDR_BY_IDX, (,))
+ *     };
+ *     const uint64_t reg_sizes[] = {
+ *             DT_FOREACH_REG_SEP(DT_NODELABEL(n), DT_REG_SIZE_BY_IDX, (,))
+ *     };
+ * @endcode
+ *
+ * This expands to:
+ *
+ * @code{.c}
+ *     const uint64_t reg_addrs[] = {
+ *         0x0, 0x1000, 0x2000
+ *     };
+ *     const uint64_t reg_sizes[] = {
+ *         0x1000, 0x1000, 0x1000
+ *     };
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ *
+ * @see DT_FOREACH_REG
+ */
+#define DT_FOREACH_REG_SEP(node_id, fn, sep) \
+	DT_CAT(node_id, _FOREACH_REG_SEP)(fn, sep)
+
+/**
+ * @brief Invokes @p fn for each entry of @p node_id reg property with multiple arguments.
+ *
+ * The macro @p fn takes multiple arguments. The first one @p node_id will be the node
+ * identifier of the node with the reg property and @p idx the index of the reg array.
+ * The remaining are passed-in by the caller.
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ * @param ... variable number of arguments to pass to @p fn
+ *
+ * @see DT_FOREACH_REG
+ */
+
+#define DT_FOREACH_REG_VARGS(node_id, fn, ...) \
+	DT_CAT(node_id, _FOREACH_REG_VARGS)(fn, __VA_ARGS__)
+
+/**
+ * @brief Invokes @p fn for each entry of @p node_id reg property with separator and
+ * multiple arguments.
+ *
+ * The macro @p fn takes multiple arguments. The first one @p node_id will be the node
+ * identifier of the node with the reg property and @p idx the index of the reg array.
+ * The remaining are passed-in by the caller.
+ *
+ * @param node_id node identifier
+ * @param fn macro to invoke
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... variable number of arguments to pass to @p fn
+ *
+ * @see DT_FOREACH_REG
+ */
+#define DT_FOREACH_REG_SEP_VARGS(node_id, fn, sep, ...) \
+	DT_CAT(node_id, _FOREACH_REG_SEP_VARGS)(fn, sep, __VA_ARGS__)
+
+/**
  * @}
  */
 
@@ -4141,7 +4302,8 @@
 #define DT_INST_CHILD_NUM(inst) DT_CHILD_NUM(DT_DRV_INST(inst))
 
 /**
- * @brief Get the number of child nodes of a given node
+ * @brief Get the number of child nodes of a given node,
+ *        whose status is okay
  *
  * This is equivalent to @see
  * <tt>DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))</tt>.
@@ -4151,6 +4313,37 @@
  */
 #define DT_INST_CHILD_NUM_STATUS_OKAY(inst) \
 	DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))
+
+/**
+ * @brief Get the number of descendant nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key
+ *
+ * This is equivalent to @see
+ * <tt>DT_DESCENDANT_NUM_ON_BUS(DT_DRV_INST(inst), bus)</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @param bus bus type string
+ * @return Number of descendant nodes
+ */
+#define DT_INST_DESCENDANT_NUM_ON_BUS(inst, bus) \
+	DT_DESCENDANT_NUM_ON_BUS(DT_DRV_INST(inst), bus)
+
+/**
+ * @brief Get the number of descendant nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key,
+ *        and whose status is okay
+ *
+ * This is equivalent to @see
+ * <tt>DT_DESCENDANT_NUM_ON_BUS_STATUS_OKAY(DT_DRV_INST(inst), bus)</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @param bus bus type string
+ * @return Number of descendant nodes
+ */
+#define DT_INST_DESCENDANT_NUM_ON_BUS_STATUS_OKAY(inst, bus) \
+	DT_DESCENDANT_NUM_ON_BUS_STATUS_OKAY(DT_DRV_INST(inst), bus)
 
 /**
  * @brief Get a string array of DT_DRV_INST(inst)'s node labels
@@ -4304,6 +4497,82 @@
  */
 #define DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(inst, fn, sep, ...) \
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP_VARGS(DT_DRV_INST(inst), fn, sep, __VA_ARGS__)
+
+/**
+ * @brief Call @p fn on all node reg property for a given `DT_DRV_COMPAT` instance.
+ *
+ * The macro @p fn takes two parameters, @p node_id which will be the node
+ * identifier of the node with the reg property and @p idx the index of
+ * the reg array.
+ *
+ * Equivalent to DT_FOREACH_REG(DT_DRV_INST(inst), fn).
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each reg property
+ *
+ * @see DT_FOREACH_REG
+ */
+#define DT_INST_FOREACH_REG(inst, fn) \
+	DT_FOREACH_REG(DT_DRV_INST(inst), fn)
+
+/**
+ * @brief Call @p fn on all node reg property for a given `DT_DRV_COMPAT` instance with separator.
+ *
+ * The macro @p fn takes two parameters, @p node_id which will be the node
+ * identifier of the node with the reg property and @p idx the index of
+ * the reg array.
+ *
+ * Equivalent to DT_FOREACH_REG_SEP(DT_DRV_INST(inst), fn, sep).
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each reg property
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ *
+ * @see DT_FOREACH_REG_SEP
+ */
+#define DT_INST_FOREACH_REG_SEP(inst, fn, sep) \
+	DT_FOREACH_REG_SEP(DT_DRV_INST(inst), fn, sep)
+
+/**
+ * @brief Call @p fn on all node reg property for a given `DT_DRV_COMPAT` instance
+ * with multiple arguments.
+ *
+ * The macro @p fn takes multiple arguments. The first one @p node_id will be the node
+ * identifier of the node with the reg property and @p idx the index of the reg array.
+ * The remaining are passed-in by the caller.
+ *
+ * Equivalent to DT_FOREACH_REG_VARGS(DT_DRV_INST(inst), fn, __VA_ARGS__).
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each reg property
+ * @param ... variable number of arguments to pass to @p fn
+ *
+ * @see DT_FOREACH_REG_VARGS
+ */
+#define DT_INST_FOREACH_REG_VARGS(inst, fn, ...) \
+	DT_FOREACH_REG_VARGS(DT_DRV_INST(inst), fn, __VA_ARGS__)
+
+/**
+ * @brief Call @p fn on all node reg property for a given `DT_DRV_COMPAT` instance
+ * with separator and multiple arguments.
+ *
+ * The macro @p fn takes multiple arguments. The first one @p node_id will be the node
+ * identifier of the node with the reg property and @p idx the index of the reg array.
+ * The remaining are passed-in by the caller.
+ *
+ * Equivalent to DT_FOREACH_REG_SEP_VARGS(DT_DRV_INST(inst), fn, sep, __VA_ARGS__).
+ *
+ * @param inst instance number
+ * @param fn macro to invoke on each reg property
+ * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
+ *            this is required to enable providing a comma as separator.
+ * @param ... variable number of arguments to pass to @p fn
+ *
+ * @see DT_FOREACH_REG_SEP_VARGS
+ */
+#define DT_INST_FOREACH_REG_SEP_VARGS(inst, fn, sep, ...) \
+	DT_FOREACH_REG_SEP_VARGS(DT_DRV_INST(inst), fn, sep, __VA_ARGS__)
 
 /**
  * @brief Get a `DT_DRV_COMPAT` property array value's index into its enumeration values
@@ -5695,5 +5964,9 @@
 #include <zephyr/devicetree/display.h>
 #include <zephyr/devicetree/hwspinlock.h>
 #include <zephyr/devicetree/map.h>
+#include <zephyr/devicetree/wuc.h>
+#include <zephyr/devicetree/mapped-partition.h>
+#include <zephyr/devicetree/partitions.h>
+#include <zephyr/devicetree/sram.h>
 
 #endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */

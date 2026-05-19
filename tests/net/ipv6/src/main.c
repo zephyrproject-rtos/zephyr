@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_stats.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/dummy.h>
 #include <zephyr/net/udp.h>
@@ -31,6 +32,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "icmpv6.h"
 #include "ipv6.h"
 #include "route.h"
+#include "route_ipv6.h"
 
 #include "udp_internal.h"
 
@@ -157,6 +159,61 @@ static const unsigned char ipv6_hbho[] = {
 	0x00, 0x00, 0x01, 0x00, 0x00, 0x00,             /* ...... */
 };
 
+/* clang-format off */
+/* Scenario 1: exthdr_len > (pkt_len - offset) */
+static const unsigned char ipv6_ext_hdr_err_1[] = {
+	/* IPv6 header */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x40,
+	/* Src IP */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	/* Dst IP */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	/* Hop-by-hop option */
+	0x3b, 0x05,
+	/* Padding to reach 48 bytes */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+/* Scenario 2: PADN opt_len too large */
+static const unsigned char ipv6_ext_hdr_err_2[] = {
+	/* IPv6 header */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x40,
+	/* Src IP */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	/* Dst IP */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	/* Hop-by-hop option */
+	0x3b, 0x00,
+	/* Option PADN */
+	0x01, 0x08,
+	/* Padding to reach 48 bytes */
+	0x00, 0x00, 0x00, 0x00,
+};
+
+/* Scenario 3: Unknown option opt_len too large */
+static const unsigned char ipv6_ext_hdr_err_3[] = {
+	/* IPv6 header */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x08, 0x00, 0x40,
+	/* Src IP */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	/* Dst IP */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	/* Hop-by-hop option */
+	0x3b, 0x00,
+	/* Option Unknown */
+	0x3f, 0x08,
+	/* Padding to reach 48 bytes */
+	0x00, 0x00, 0x00, 0x00,
+};
+
+/* clang-format on */
+
 static int send_msg(struct net_in6_addr *src, struct net_in6_addr *dst);
 
 typedef void (*ns_callback)(struct net_pkt *pkt, void *user_data);
@@ -238,7 +295,7 @@ static void prepare_ra_message(struct net_pkt *pkt)
 
 	hdr.type = net_htons(NET_ETH_PTYPE_IPV6);
 	memset(&hdr.src, 0, sizeof(struct net_eth_addr));
-	memcpy(&hdr.dst, net_pkt_iface(pkt)->if_dev->link_addr.addr,
+	memcpy(&hdr.dst, net_if_get_link_addr(net_pkt_iface(pkt))->addr,
 	       sizeof(struct net_eth_addr));
 
 	net_pkt_set_overwrite(pkt, false);
@@ -266,7 +323,7 @@ static void inject_na_message(struct net_if *iface, struct net_in6_addr *src,
 
 	hdr.type = net_htons(NET_ETH_PTYPE_IPV6);
 	memset(&hdr.src, 0xaa, sizeof(struct net_eth_addr));
-	memcpy(&hdr.dst, net_pkt_iface(pkt)->if_dev->link_addr.addr,
+	memcpy(&hdr.dst, net_if_get_link_addr(net_pkt_iface(pkt))->addr,
 	       sizeof(struct net_eth_addr));
 
 	/* Reserve space for the L2 header. */
@@ -739,6 +796,60 @@ ZTEST(net_ipv6, test_send_ns_no_options)
 		      "Data receive for invalid NS failed.");
 }
 
+ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_1)
+{
+	struct net_pkt *pkt;
+	struct net_if *iface;
+
+	iface = TEST_NET_IF;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_1), NET_AF_UNSPEC, 0,
+					K_FOREVER);
+
+	NET_ASSERT(pkt, "Out of TX packets");
+
+	net_pkt_write(pkt, ipv6_ext_hdr_err_1, sizeof(ipv6_ext_hdr_err_1));
+	net_pkt_lladdr_clear(pkt);
+
+	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
+}
+
+ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_2)
+{
+	struct net_pkt *pkt;
+	struct net_if *iface;
+
+	iface = TEST_NET_IF;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_2), NET_AF_UNSPEC, 0,
+					K_FOREVER);
+
+	NET_ASSERT(pkt, "Out of TX packets");
+
+	net_pkt_write(pkt, ipv6_ext_hdr_err_2, sizeof(ipv6_ext_hdr_err_2));
+	net_pkt_lladdr_clear(pkt);
+
+	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
+}
+
+ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_3)
+{
+	struct net_pkt *pkt;
+	struct net_if *iface;
+
+	iface = TEST_NET_IF;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_3), NET_AF_UNSPEC, 0,
+					K_FOREVER);
+
+	NET_ASSERT(pkt, "Out of TX packets");
+
+	net_pkt_write(pkt, ipv6_ext_hdr_err_3, sizeof(ipv6_ext_hdr_err_3));
+	net_pkt_lladdr_clear(pkt);
+
+	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
+}
+
 struct test_nd_context {
 	struct k_sem wait_ns;
 	struct net_in6_addr *exp_ns_addr;
@@ -1001,10 +1112,10 @@ static void ra_message(void)
 		      "Address type should be autoconf");
 
 	/* Check if route was added correctly. */
-	route = net_route_lookup(TEST_NET_IF, &route_prefix);
+	route = net_route_ipv6_lookup(TEST_NET_IF, &route_prefix);
 	zassert_not_null(route, "Route not found");
 	zassert_equal(route->prefix_len, 48, "Wrong prefix length set");
-	zassert_mem_equal(&route->addr, &route_prefix, sizeof(route_prefix),
+	zassert_mem_equal(&route->addr.in6_addr, &route_prefix, sizeof(route_prefix),
 			  "Wrong prefix set");
 	zassert_true(route->is_infinite, "Wrong lifetime set");
 	zassert_equal(route->preference, NET_ROUTE_PREFERENCE_HIGH,
@@ -2237,6 +2348,83 @@ ZTEST(net_ipv6, test_no_nd_flag)
 	net_if_flag_clear(iface, NET_IF_IPV6_NO_ND);
 }
 
+ZTEST(net_ipv6, test_no_mld_flag_preserves_joined_state)
+{
+	struct net_if *iface = TEST_NET_IF;
+	struct net_in6_addr mcast_addr;
+	struct net_if_mcast_addr *maddr;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x1234);
+
+	net_if_flag_set(iface, NET_IF_IPV6_NO_MLD);
+
+	maddr = net_if_ipv6_maddr_add(iface, &mcast_addr);
+	zassert_not_null(maddr, "Cannot add multicast address");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should be 1");
+
+	net_if_ipv6_maddr_join(iface, maddr);
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Multicast address should be marked joined");
+
+	/* Toggle iface down by turning off the carrier */
+	net_if_carrier_off(iface);
+	k_msleep(10);
+
+	zassert_false(net_if_is_up(iface), "Iface should be down");
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Joined multicast address was cleared when MLD is disabled");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should remain 1");
+
+	/* Turning the carrier back up to bring the iface up again */
+	net_if_carrier_on(iface);
+	k_msleep(10);
+
+	zassert_true(net_if_is_up(iface), "Iface should be up");
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Joined multicast address was not preserved across iface up");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should remain 1");
+
+	net_if_flag_clear(iface, NET_IF_IPV6_NO_MLD);
+
+	zassert_true(net_if_ipv6_maddr_rm(iface, &mcast_addr),
+		     "Failed to remove multicast address");
+}
+
+ZTEST(net_ipv6, test_mld_clears_joined_state_on_iface_down)
+{
+	struct net_if *iface = TEST_NET_IF;
+	struct net_in6_addr mcast_addr;
+	struct net_if_mcast_addr *maddr;
+
+	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x1235);
+
+	maddr = net_if_ipv6_maddr_add(iface, &mcast_addr);
+	zassert_not_null(maddr, "Cannot add multicast address");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should be 1");
+
+	net_if_ipv6_maddr_join(iface, maddr);
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Multicast address should be marked joined");
+
+	net_if_carrier_off(iface);
+	k_msleep(10);
+
+	zassert_false(net_if_is_up(iface), "Iface should be down");
+	zassert_false(net_if_ipv6_maddr_is_joined(maddr),
+		      "Joined multicast address should be cleared when MLD is enabled");
+	zassert_equal(atomic_get(&maddr->atomic_ref), 1, "Ref count should remain 1");
+
+	net_if_carrier_on(iface);
+	k_msleep(10);
+
+	zassert_true(net_if_is_up(iface), "Iface should be up");
+	zassert_true(net_if_ipv6_maddr_is_joined(maddr),
+		     "Multicast address should be rejoined when iface comes back up");
+
+	zassert_true(net_if_ipv6_maddr_rm(iface, &mcast_addr),
+		     "Failed to remove multicast address");
+}
+
 ZTEST(net_ipv6, test_nd_reachability_hint)
 {
 	struct net_nbr *nbr;
@@ -2466,6 +2654,133 @@ ZTEST(net_ipv6, test_z_privacy_extension_03_get_addr)
 		zassert_true(net_ipv6_addr_cmp(src_addr, temp_addr),
 			     "Non temporary address selected");
 	}
+}
+
+static void inject_bad_nd_message(struct net_if *iface, const uint8_t *data, size_t len)
+{
+	struct net_eth_hdr hdr;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_eth_addr) + len,
+					NET_AF_INET6, NET_IPPROTO_ICMPV6, K_NO_WAIT);
+	zassert_not_null(pkt, "Failed to allocate packet");
+
+	net_pkt_cursor_init(pkt);
+
+	hdr.type = net_htons(NET_ETH_PTYPE_IPV6);
+	memset(&hdr.src, 0, sizeof(struct net_eth_addr));
+	memcpy(&hdr.dst, net_if_get_link_addr(net_pkt_iface(pkt))->addr,
+	       sizeof(struct net_eth_addr));
+
+	net_pkt_set_overwrite(pkt, false);
+
+	zassert_ok(net_pkt_write(pkt, &hdr, sizeof(struct net_eth_hdr)),
+		   "Failed to write L2 header");
+	zassert_ok(net_pkt_write(pkt, data, len),
+		   "Failed to write ND packet data");
+
+	net_pkt_cursor_init(pkt);
+	zassert_ok((net_recv_data(iface, pkt)), "Data receive for ND packet failed.");
+}
+
+static void test_nd_packet_drop(const uint8_t *data, size_t len)
+{
+	struct net_stats_ipv6_nd ipv6_nd_before = { 0 };
+	struct net_stats_ipv6_nd ipv6_nd_after = { 0 };
+	struct net_if *iface = TEST_NET_IF;
+
+	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6_ND, NULL, &ipv6_nd_before,
+			    sizeof(ipv6_nd_before)),
+		   "Failed to retrieve stats");
+
+	inject_bad_nd_message(iface, data, len);
+
+	for (int i = 0; i < 20; i++) {
+		/* Give the packet some time to propagate into the stack. */
+		k_msleep(10);
+
+		zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6_ND, NULL, &ipv6_nd_after,
+				    sizeof(ipv6_nd_after)),
+			   "Failed to retrieve stats");
+
+		if (ipv6_nd_before.drop < ipv6_nd_after.drop) {
+			break;
+		}
+	}
+
+	zassert_equal(ipv6_nd_before.drop + 1, ipv6_nd_after.drop,
+		      "ND packet drop count did not increase");
+}
+
+/* Minimal ICMPv6 RA with bad hop limit */
+static const unsigned char icmpv6_ra_bad_hop_limit[] = {
+/* IPv6 header starts here */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x10, 0x3a, /* Invalid IPv6 hop limit */ 0x10,
+	0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x02, 0x60, 0x97, 0xff, 0xfe, 0x07, 0x69, 0xea,
+	0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* ICMPv6 RA header starts here */
+	0x86, 0x00, 0x21, 0xd5, 0x40, 0x00, 0x07, 0x08,
+	0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01,
+};
+
+ZTEST(net_ipv6, test_ra_with_bad_hop_limit)
+{
+	/* This injects RA packet with bad hop limit in the IP header,
+	 * which should be dropped.
+	 */
+	test_nd_packet_drop(icmpv6_ra_bad_hop_limit, sizeof(icmpv6_ra_bad_hop_limit));
+}
+
+/* Minimal ICMPv6 NS with bad hop limit */
+static const unsigned char icmpv6_ns_bad_hop_limit[] = {
+/* IPv6 header starts here */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x20, 0x3A, /* Invalid IPv6 hop limit */ 0x10,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* ICMPv6 NS header starts here */
+	0x87, 0x00, 0x7c, 0x9d, 0x60, 0x00, 0x00, 0x00,
+/* Target Address */
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* Source link layer address */
+	0x02, 0x01, 0x10, 0x00, 0x00, 0x00, 0x00, 0xD7,
+};
+
+ZTEST(net_ipv6, test_ns_with_bad_hop_limit)
+{
+	/* This injects NS packet with bad hop limit in the IP header,
+	 * which should be dropped.
+	 */
+	test_nd_packet_drop(icmpv6_ns_bad_hop_limit, sizeof(icmpv6_ns_bad_hop_limit));
+}
+
+/* Minimal ICMPv6 NA with bad hop limit */
+static const unsigned char icmpv6_na_bad_hop_limit[] = {
+/* IPv6 header starts here */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x20, 0x3A, /* Invalid IPv6 hop limit */ 0x10,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+/* ICMPv6 NA header starts here */
+	0x88, 0x00, 0xbb, 0x9c, 0x20, 0x00, 0x00, 0x00,
+/* Target Address */
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+/* Target link layer address */
+	0x02, 0x01, 0x10, 0x00, 0x00, 0x00, 0x00, 0xD7,
+};
+
+ZTEST(net_ipv6, test_na_with_bad_hop_limit)
+{
+	/* This injects NA packet with bad hop limit in the IP header,
+	 * which should be dropped.
+	 */
+	test_nd_packet_drop(icmpv6_na_bad_hop_limit, sizeof(icmpv6_na_bad_hop_limit));
 }
 
 ZTEST_SUITE(net_ipv6, NULL, ipv6_setup, ipv6_before, NULL, ipv6_teardown);

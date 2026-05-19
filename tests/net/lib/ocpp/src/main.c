@@ -26,7 +26,7 @@ static void test_ocpp_charge_cycle(ocpp_session_handle_t hndl)
 			break;
 		}
 	}
-	zassert_equal(ret, 0, "CP authorize fail %d");
+	zassert_equal(ret, 0, "CP authorize fail %d", ret);
 	zassert_equal(status, OCPP_AUTH_ACCEPTED, "idtag not authorized");
 
 	ret = ocpp_start_transaction(hndl, sys_rand32_get(), 1, timeout_ms);

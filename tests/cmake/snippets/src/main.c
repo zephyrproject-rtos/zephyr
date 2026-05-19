@@ -84,6 +84,21 @@ ZTEST(snippet_tests, test_overlay_config)
 		zassert_equal(CONFIG_TEST_FOO_VAL, TEST_FOO_VAL_FOO);
 		zassert_equal(CONFIG_TEST_BAR_VAL, TEST_BAR_VAL_BAR);
 		zassert_equal(CONFIG_TEST_COMMON_VAL, TEST_COMMON_VAL_FOO);
+	} else if (IS_ENABLED(CONFIG_TEST_TYPE_FILE_LIST)) {
+		/*
+		 * The 'file_list' snippet will apply two configs that should
+		 * combine to match the 'foo' values. Specifically for native_sim
+		 * we have additional configs set.
+		 */
+		zassert_equal(CONFIG_TEST_FOO_VAL, TEST_FOO_VAL_FOO);
+		zassert_equal(CONFIG_TEST_COMMON_VAL, TEST_COMMON_VAL_FOO);
+		if (strcmp(CONFIG_BOARD_TARGET, "native_sim/native") == 0) {
+			zassert_true(IS_ENABLED(CONFIG_TEST_BOARD1));
+			zassert_true(IS_ENABLED(CONFIG_TEST_BOARD2));
+		} else {
+			zassert_false(IS_ENABLED(CONFIG_TEST_BOARD1));
+			zassert_false(IS_ENABLED(CONFIG_TEST_BOARD2));
+		}
 	} else {
 		zassert(false, "Invalid test type");
 	}
@@ -141,6 +156,13 @@ ZTEST(snippet_tests, test_dtc_overlay)
 		zassert_false(DT_NODE_EXISTS(DT_PATH(deleted_by_bar)));
 		zassert_true(DT_NODE_EXISTS(DT_PATH(added_by_foo)));
 		zassert_false(DT_NODE_EXISTS(DT_PATH(added_by_bar)));
+	} else if (IS_ENABLED(CONFIG_TEST_TYPE_FILE_LIST)) {
+		/*
+		 * The 'file_list' snippet will apply two overlays, each adding
+		 * a node.
+		 */
+		zassert_true(DT_NODE_EXISTS(DT_PATH(added_by_conf1)));
+		zassert_true(DT_NODE_EXISTS(DT_PATH(added_by_conf2)));
 	} else {
 		zassert(false, "Invalid test type");
 	}
@@ -150,7 +172,8 @@ ZTEST(snippet_tests, test_cmake_include)
 {
 	if (IS_ENABLED(CONFIG_TEST_TYPE_FOO) ||
 	    IS_ENABLED(CONFIG_TEST_TYPE_FOO_BAR) ||
-	    IS_ENABLED(CONFIG_TEST_TYPE_BAR_FOO)) {
+	    IS_ENABLED(CONFIG_TEST_TYPE_BAR_FOO) ||
+	    IS_ENABLED(CONFIG_TEST_TYPE_FILE_LIST)) {
 		zassert_true(DT_NODE_EXISTS(DT_PATH(cmake_dts_configure)));
 	} else {
 		zassert_false(DT_NODE_EXISTS(DT_PATH(cmake_dts_configure)));

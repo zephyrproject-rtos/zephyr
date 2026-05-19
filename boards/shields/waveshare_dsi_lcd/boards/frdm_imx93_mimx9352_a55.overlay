@@ -1,10 +1,11 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	chosen {
@@ -23,7 +24,7 @@
 &lcdif {
 	width = <1024>;
 	height = <600>;
-	pixel-format = "argb-8888";
+	pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
 	media-axi-clk-rate = <400000000>;
 	media-apb-clk-rate = <133333334>;
 	status = "okay";
@@ -58,4 +59,15 @@
 
 &dsi_panel {
 	mipi-dsi = <&mipi_dsi>;
+};
+
+&video_pll {
+	compatible = "nxp,imx93-video-pll";
+	rdiv = <1>;
+	mfi = <200>;
+	mfn = <0>;
+	mfd = <1>;
+	odiv = <12>;
+	pll-frequency = <400000000>;
+	status = "okay";
 };

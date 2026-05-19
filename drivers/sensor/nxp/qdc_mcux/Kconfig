@@ -1,0 +1,11 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config QDC_MCUX
+	bool "NXP QDC MCUX driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_QDC_ENABLED
+	select NXP_INPUTMUX
+	select PINCTRL
+	help
+	  Enable support for NXP MCUX QDC driver.

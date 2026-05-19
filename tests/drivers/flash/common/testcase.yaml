@@ -62,9 +62,11 @@ tests:
   drivers.flash.common.default:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+      or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
     platform_exclude:
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
     integration_platforms:
       - qemu_x86
@@ -96,12 +98,14 @@ tests:
   drivers.flash.common.nrf54lm20a:
     platform_allow:
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
     harness_config:
       fixture: external_flash
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
-      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
+      and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+           or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")))
     integration_platforms:
       - nrf9161dk/nrf9161/ns
   drivers.flash.common.mx25r_high_perf:
@@ -172,7 +176,8 @@ tests:
   drivers.flash.common.stm32:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and CONFIG_SOC_FAMILY_STM32
-      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
+      and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+           or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")))
     integration_platforms:
       - nucleo_g474re
     platform_exclude:
@@ -188,9 +193,21 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
   drivers.flash.common.test_storage_partition:
     filter: CONFIG_FLASH_HAS_DRIVER_ENABLED
-      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+      and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+           or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))
     platform_exclude:
-      - beagleconnect_freedom/cc1352p7
+      - beagleconnect_freedom@C5/cc1352p
+      - beagleconnect_freedom@C7/cc1352p7
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+    extra_args:
+      - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
+  drivers.flash.common.test_storage_partition.nrf54lm20:
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+    harness_config:
+      fixture: external_flash
     extra_args:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
   drivers.flash.common.ra_ospi_b_nor:
@@ -252,3 +269,16 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="boards/mx25uw63_single_io.overlay;boards/mx25uw63_freq_1M.overlay"
     harness_config:
       fixture: gpio_loopback
+  drivers.flash.common.spi_nand.mikroe_flash_5_click:
+    harness_config:
+      fixture: mikroe_flash_5_click
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+    extra_args:
+      - SHIELD=mikroe_flash_5_click
+      - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
+  drivers.flash.common.versalnet:
+    build_only: true
+    platform_allow:
+      - versalnet_rpu/amd_versalnet_rpu

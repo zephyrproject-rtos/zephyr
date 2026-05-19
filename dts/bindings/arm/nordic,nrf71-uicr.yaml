@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF71 UICR (User Information Configuration Registers)
+
+compatible: "nordic,nrf71-uicr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  supply-config1v8:
+    type: string
+    enum:
+      - "normal"
+      - "external"
+      - "high-load"
+    description: |
+      Configuration of the VDD_AO_1V8 supply rail.
+
+        normal    - Autonomous control by the internal power management block.
+                    The LDO_VBAT_1V8 regulator operates in its default mode.
+        external  - 1.8 V supplied externally on VDD_AO_1V8 pin.
+                    Internal LDO_VBAT_1V8 regulator disabled to prevent
+                    conflict with external supply.
+        high-load - Up to 10mA can be consumed from 1V8 supply for other
+                    devices/IO. Keep LDO_VBAT_1V8 in high power mode at
+                    all times (including system OFF).
+
+      This setting, once applied, can only be unset by erasing the UICR
+      registers.  Refer to the nRF7120 Product Specification for details.

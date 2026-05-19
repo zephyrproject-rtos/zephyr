@@ -1,0 +1,67 @@
+# Copyright (c) 2024 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  IS31FL3197 4-channel LED controller with programmable pattern sequencing
+
+  Supports single-channel and RGB and maybe RGBW LEDs. For single
+  channel LEDs.
+
+  The following shows configuration for Arduino Giga Display shield
+
+  The following defines a single RGB LED in the is31fl3197 DT node:
+
+    is31fl3197@50 {
+      compatible = "issi,is31fl3197";
+      reg = <0x50>;
+
+      led_0 {
+        label = "RGB LED";
+        color-mapping =
+          <LED_COLOR_ID_RED>,
+          <LED_COLOR_ID_GREEN>,
+          <LED_COLOR_ID_BLUE>;
+      };
+    };
+
+  The following example defines three single-channel LEDs in the is31fl3197 DT node:
+
+    is31fl3197@50 {
+      compatible = "issi,is31fl3197";
+      reg = <0x50>;
+
+      led_0 {
+        label = "RED LED";
+        color-mapping = <LED_COLOR_ID_RED>;
+      };
+
+      led_1 {
+        label = "GREEN LED";
+        color-mapping = <LED_COLOR_ID_GREEN>;
+      };
+
+      led_2 {
+        label = "BLUE LED";
+        color-mapping = <LED_COLOR_ID_BLUE>;
+      };
+    };
+
+compatible: "issi,is31fl3197"
+
+include: ["i2c-device.yaml", "led-controller.yaml"]
+
+child-binding:
+  properties:
+    label:
+      required: true
+
+    color-mapping:
+      required: true
+
+    current-limit:
+      type: int
+      default: 10
+      enum:
+        - 10
+      description: |
+        The current limit for the LED in mA.

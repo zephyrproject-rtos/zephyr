@@ -17,7 +17,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <psa/crypto.h>
 #include <psa/crypto_struct.h>
 #include <psa/crypto_types.h>
@@ -55,7 +54,7 @@ int bt_rand(void *buf, size_t len)
 #else /* !CONFIG_BT_HOST_CRYPTO_PRNG */
 int bt_rand(void *buf, size_t len)
 {
-	CHECKIF(buf == NULL || len == 0) {
+	if (buf == NULL || len == 0) {
 		return -EINVAL;
 	}
 
@@ -72,7 +71,7 @@ int bt_encrypt_le(const uint8_t key[16], const uint8_t plaintext[16],
 	size_t out_len;
 	uint8_t tmp[16];
 
-	CHECKIF(key == NULL || plaintext == NULL || enc_data == NULL) {
+	if (key == NULL || plaintext == NULL || enc_data == NULL) {
 		return -EINVAL;
 	}
 
@@ -123,7 +122,7 @@ int bt_encrypt_be(const uint8_t key[16], const uint8_t plaintext[16],
 	psa_status_t status, destroy_status;
 	size_t out_len;
 
-	CHECKIF(key == NULL || plaintext == NULL || enc_data == NULL) {
+	if (key == NULL || plaintext == NULL || enc_data == NULL) {
 		return -EINVAL;
 	}
 

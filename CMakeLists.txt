@@ -92,11 +92,14 @@ endif()
 set(ZEPHYR_FINAL_EXECUTABLE zephyr_final)
 
 # Set some phony targets to collect dependencies
-set(OFFSETS_H_TARGET           offsets_h)
 set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
 set(DRIVER_VALIDATION_H_TARGET driver_validation_h_target)
 set(KOBJ_TYPES_H_TARGET        kobj_types_h_target)
 set(DEVICE_API_LD_TARGET       device_api_ld_target)
+# Backward compatibility: open-amp explicitly depends on OFFSETS_H_TARGET
+# which is redundant as zephyr_generated_headers already provides this to
+# all Zephyr libraries.  Remove once open-amp drops this.
+set(OFFSETS_H_TARGET           offsets_h)
 
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
@@ -746,6 +749,15 @@ endif()
 # of global properties such as ZEPHYR_LIBS or
 # GENERATED_KERNEL_OBJECT_FILES.
 #
+# Create an interface library which collects the dependencies to Zephyr
+# generated headers. Libraries containing files that include these headers can
+# use add_dependencies or target_link_libraries against this target to ensure
+# that generated headers are up-to-date before the libraries are built. This
+# ordering dependency can be propagated to these libraries' dependenents via
+# the PUBLIC or INTERFACE option of target_link_libraries.
+add_library(zephyr_generated_headers INTERFACE)
+add_dependencies(zephyr_generated_headers version_h)
+
 # Arch is placed early because it defines important compiler flags
 # that must be exported to external build systems defined in
 # e.g. subsys/.
@@ -1019,36 +1031,6 @@ add_custom_target(${DEVICE_API_LD_TARGET}
 
 zephyr_linker_include_generated(CMAKE ${DEVICE_API_LINKER_SECTIONS_CMAKE})
 
-# Create an interface library which collects the dependencies to Zephyr
-# generated headers. Libraries containing files that include these headers can
-# use add_dependencies or target_link_libraries against this target to ensure
-# that generated headers are up-to-date before the libraries are built. This
-# ordering dependency can be propagated to these libraries' dependenents via
-# the PUBLIC or INTERFACE option of target_link_libraries.
-
-add_library(zephyr_generated_headers INTERFACE)
-add_dependencies(zephyr_generated_headers
-  offsets_h version_h
-  )
-
-# Generate offsets.c.obj from offsets.c
-# Generate offsets.h     from offsets.c.obj
-
-set(OFFSETS_LIB offsets)
-
-set(OFFSETS_C_PATH ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c)
-set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/zephyr/offsets.h)
-
-add_library(          ${OFFSETS_LIB} OBJECT ${OFFSETS_C_PATH})
-target_include_directories(${OFFSETS_LIB} PRIVATE
-  kernel/include
-  ${ARCH_DIR}/${ARCH}/include
-  )
-
-# Make sure that LTO will never be enabled when compiling offsets.c
-set_source_files_properties(${OFFSETS_C_PATH} PROPERTIES COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
-
-target_link_libraries(${OFFSETS_LIB} zephyr_interface)
 add_dependencies(zephyr_interface
   ${SYSCALL_LIST_H_TARGET}
   ${DRIVER_VALIDATION_H_TARGET}
@@ -1056,16 +1038,17 @@ add_dependencies(zephyr_interface
   ${DEVICE_API_LD_TARGET}
   )
 
-add_custom_command(
-  OUTPUT ${OFFSETS_H_PATH}
-  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_offset_header.py
-  -i $<TARGET_OBJECTS:${OFFSETS_LIB}>
-  -o ${OFFSETS_H_PATH}
-  DEPENDS
-  ${OFFSETS_LIB}
-  $<TARGET_OBJECTS:${OFFSETS_LIB}>
+# Generate offsets.h from arch-specific offsets.c.
+# The offsets OBJECT library is also linked into the final executable
+# by toolchain linker scripts (cmake/linker/*/target.cmake).
+zephyr_constants_library(
+  NAME offsets
+  SOURCE ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c
+  INCLUDES ${ARCH_DIR}/${ARCH}/include
+  INCLUDES ${ARCH_DIR}/common/include
+  DEPENDS heap_constants
 )
-add_custom_target(${OFFSETS_H_TARGET} DEPENDS ${OFFSETS_H_PATH})
+set(OFFSETS_LIB offsets)
 
 zephyr_get_include_directories_for_lang(C ZEPHYR_INCLUDES)
 
@@ -1485,7 +1468,7 @@ if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
                     BYPRODUCTS ${PROJECT_BINARY_DIR}/${ZEPHYR_LINK_STAGE_EXECUTABLE}.map
   )
   set_property(TARGET ${ZEPHYR_LINK_STAGE_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/${ZEPHYR_CURRENT_LINKER_CMD})
-  add_dependencies(${ZEPHYR_LINK_STAGE_EXECUTABLE} linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script ${OFFSETS_LIB})
+  add_dependencies(${ZEPHYR_LINK_STAGE_EXECUTABLE} linker_zephyr_pre${ZEPHYR_CURRENT_LINKER_PASS}_script)
 
   math(EXPR ZEPHYR_CURRENT_LINKER_PASS "1 + ${ZEPHYR_CURRENT_LINKER_PASS}")
 endif()
@@ -1711,7 +1694,6 @@ set_property(TARGET
 add_dependencies(
   ${ZEPHYR_LINK_STAGE_EXECUTABLE}
   linker_zephyr_prebuilt_script_target
-  ${OFFSETS_LIB}
   )
 
 set(generated_kernel_files ${GKSF} ${GKOF})
@@ -1854,6 +1836,8 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
       ${KERNEL_HEX_NAME}
       )
     set(BYPRODUCT_KERNEL_HEX_NAME "${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}" CACHE FILEPATH "Kernel hex file" FORCE)
+  else()
+    message(WARNING "Intel HEX output format not supported by toolchain (CONFIG_BUILD_OUTPUT_HEX=y)")
   endif()
 endif()
 
@@ -1876,6 +1860,8 @@ if(CONFIG_BUILD_OUTPUT_BIN)
       ${KERNEL_BIN_NAME}
       )
     set(BYPRODUCT_KERNEL_BIN_NAME "${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}" CACHE FILEPATH "Kernel binary file" FORCE)
+  else()
+    message(WARNING "Binary output format not supported by toolchain (CONFIG_BUILD_OUTPUT_BIN=y)")
   endif()
 endif()
 
@@ -1899,12 +1885,27 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
   # are typically loaded to RAM
   if(NOT CONFIG_XIP)
     if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
-      math(EXPR code_address
+      if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+        math(EXPR code_address
           "${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA} + 0"
           OUTPUT_FORMAT HEXADECIMAL
-      )
+        )
+      else()
+        dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+        dt_reg_addr(ram_addr PATH "${chosen_sram_path}")
+
+        math(EXPR code_address
+          "${ram_addr} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA} + 0"
+          OUTPUT_FORMAT HEXADECIMAL
+        )
+      endif()
     else()
-      set(code_address "${CONFIG_SRAM_BASE_ADDRESS}")
+      if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+        set(code_address ${CONFIG_SRAM_BASE_ADDRESS})
+      else()
+        dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+        dt_reg_addr(code_address PATH "${chosen_sram_path}")
+      endif()
     endif()
   endif()
 
@@ -1943,6 +1944,8 @@ if(CONFIG_BUILD_OUTPUT_MOT)
       ${KERNEL_MOT_NAME}
       )
     set(BYPRODUCT_KERNEL_MOT_NAME "${PROJECT_BINARY_DIR}/${KERNEL_MOT_NAME}" CACHE FILEPATH "Kernel mot file" FORCE)
+  else()
+    message(WARNING "Motorola SREC output format not supported by toolchain (CONFIG_BUILD_OUTPUT_MOT=y)")
   endif()
 endif()
 
@@ -1981,7 +1984,6 @@ endif()
 if(CONFIG_BUILD_OUTPUT_S19)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(srec IN_LIST elfconvert_formats)
-    # Should we print a warning if case the tools does not support converting to s19 ?
     list(APPEND
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
@@ -1998,6 +2000,29 @@ if(CONFIG_BUILD_OUTPUT_S19)
       ${KERNEL_S19_NAME}
       )
     set(BYPRODUCT_KERNEL_S19_NAME "${PROJECT_BINARY_DIR}/${KERNEL_S19_NAME}" CACHE FILEPATH "Kernel s19 file" FORCE)
+  else()
+    message(WARNING "Motorola S19 output format not supported by toolchain (CONFIG_BUILD_OUTPUT_S19=y)")
+  endif()
+endif()
+
+if(CONFIG_BUILD_OUTPUT_VERILOG)
+  get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
+  if(verilog IN_LIST elfconvert_formats)
+    list(APPEND
+      post_build_commands
+      COMMAND
+        $<TARGET_PROPERTY:bintools,elfconvert_command>
+        $<TARGET_PROPERTY:bintools,elfconvert_flag>
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_outtarget>verilog
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_verilog_data_width>${CONFIG_BUILD_OUTPUT_VERILOG_DATA_WIDTH}
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${KERNEL_ELF_NAME}
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${KERNEL_VERILOG_NAME}
+        $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
+    )
+    list(APPEND post_build_byproducts ${KERNEL_VERILOG_NAME})
+    set(BYPRODUCT_KERNEL_VERILOG_NAME "${PROJECT_BINARY_DIR}/${KERNEL_VERILOG_NAME}" CACHE FILEPATH "Kernel Verilog file" FORCE)
+  else()
+    message(WARNING "Verilog output format not supported by toolchain (CONFIG_BUILD_OUTPUT_VERILOG=y)")
   endif()
 endif()
 
@@ -2390,22 +2415,13 @@ if(CONFIG_LLEXT_EDK)
   endif()
   set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.${llext_edk_extension})
 
-  # TODO maybe generate flags for C CXX ASM
-  zephyr_get_compile_definitions_for_lang(C zephyr_defs)
-  zephyr_get_compile_options_for_lang(C zephyr_flags)
-
-  # Filter out non LLEXT and LLEXT_EDK flags - and add required ones
-  llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
-  llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
-
-  set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
-  list(APPEND llext_edk_cflags ${llext_filt_flags})
-  list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
-  list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
-
+  # Export current settings for use in LLEXT EDK generation
   build_info(llext-edk file PATH ${llext_edk_file})
-  build_info(llext-edk cflags VALUE ${llext_edk_cflags})
-  build_info(llext-edk include-dirs VALUE "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>")
+  build_info(llext-edk remove-cflags VALUE ${LLEXT_REMOVE_FLAGS} ${LLEXT_EDK_REMOVE_FLAGS})
+  build_info(llext-edk append-cflags VALUE ${LLEXT_APPEND_FLAGS} ${LLEXT_EDK_APPEND_FLAGS} -DLL_EXTENSION_BUILD)
+
+  # Generate the compiler flag files that will be used by the EDK
+  add_subdirectory(misc/llext_edk)
 
   add_custom_command(
     OUTPUT ${llext_edk_file}
@@ -2424,7 +2440,7 @@ if(CONFIG_LLEXT_EDK)
       ${SYSCALL_SPLIT_TIMEOUT_ARG}
     COMMAND ${CMAKE_COMMAND}
         -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
-    DEPENDS ${logical_target_for_zephyr_elf} ${syscalls_json} build_info_yaml_saved
+    DEPENDS ${logical_target_for_zephyr_elf} ${syscalls_json} build_info_yaml_saved llext_edk_build_props
     COMMAND_EXPAND_LISTS
   )
   add_custom_target(llext-edk DEPENDS ${llext_edk_file})

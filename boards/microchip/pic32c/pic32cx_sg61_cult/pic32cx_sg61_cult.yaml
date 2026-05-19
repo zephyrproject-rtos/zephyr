@@ -14,12 +14,14 @@ supported:
   - clock_control
   - comparator
   - counter
+  - dac
   - dma
   - entropy
   - flash
   - gpio
   - hwinfo
   - i2c
+  - interrupt_controller
   - pinctrl
   - pwm
   - reset

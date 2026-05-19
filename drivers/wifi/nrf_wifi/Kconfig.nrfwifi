@@ -12,6 +12,7 @@ menuconfig WIFI_NRF70
 	select WIFI_USE_NATIVE_NETWORKING if NETWORKING
 	select EXPERIMENTAL if !SOC_SERIES_NRF53 && !SOC_SERIES_NRF91
 	select NRF70_BUSLIB
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	default y
 	depends on \
 		DT_HAS_NORDIC_NRF7002_SPI_ENABLED || DT_HAS_NORDIC_NRF7002_QSPI_ENABLED || \
@@ -170,6 +171,7 @@ config NRF_WIFI_LOW_POWER
 
 config NRF70_TCP_IP_CHECKSUM_OFFLOAD
 	bool "TCP/IP checksum offload"
+	depends on NET_CHECKSUM_OFFLOAD
 	default y
 
 config NRF70_REG_DOMAIN
@@ -226,6 +228,13 @@ config NRF70_SR_COEX_SWCTRL1_OUTPUT
 config NRF70_SR_COEX_BT_GRANT_ACTIVE_LOW
 	int "Configure BT grant active low"
 	default 1
+
+config NRF70_BT_SLOT_TIME
+	int "BT slot allocation time in Wi-Fi scan (ms)"
+	range 0 255
+	default 0
+	help
+	  Time allocated in milliseconds for SR between successive Wi-Fi channel scan.
 endif # NRF70_SR_COEX
 
 config NRF70_WORKQ_STACK_SIZE
@@ -610,10 +619,10 @@ if NETWORKING
 # Note: These will take effect only if the symbol is not defined already
 # (i.e., the original symbol is processed after "drivers/Kconfig")
 config NET_TX_STACK_SIZE
-	default 4096
+	default 4096 if !NRF70_SCAN_ONLY
 
 config NET_RX_STACK_SIZE
-	default 4096
+	default 4096 if !NRF70_SCAN_ONLY
 
 config NET_TC_TX_COUNT
 	default 1
@@ -916,6 +925,11 @@ config NRF_WIFI_COEX_DISABLE_PRIORITY_WINDOW_FOR_SCAN
 	help
 	  Enable this configuration to disable priority window for scan
 	  in the case of coexistence with Short Range radio.
+
+config NRF_WIFI_DISPLAY_SCAN_ABORT_ON_BSS_LIMIT
+	bool "Abort scan when display BSS limit is reached"
+	help
+	  Enable this configuration to abort display scan when the BSS limit is reached.
 
 if NETWORKING
 config NRF_WIFI_ZERO_COPY_TX

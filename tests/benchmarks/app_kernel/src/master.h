@@ -10,6 +10,8 @@
 #define _MASTER_H
 
 #include <zephyr/kernel.h>
+#include <zephyr/syscall.h>
+#include <zephyr/internal/syscall_handler.h>
 
 #include <inttypes.h>
 #include <stdio.h>
@@ -126,6 +128,7 @@ extern struct k_mem_slab MAP1;
 
 __syscall void test_thread_priority_set(k_tid_t thread, int prio);
 __syscall timing_t timing_timestamp_get(void);
+__syscall uint64_t test_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count);
 
 #include <zephyr/syscalls/master.h>
 

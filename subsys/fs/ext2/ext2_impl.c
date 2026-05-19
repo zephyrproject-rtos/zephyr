@@ -32,7 +32,7 @@ char __aligned(sizeof(void *)) __ext2_block_struct_buffer[BLOCK_STRUCT_BUFFER_SI
 
 /* Initialize heap memory allocator */
 K_HEAP_DEFINE(direntry_heap, MAX_DIRENTRY_SIZE);
-K_MEM_SLAB_DEFINE(inode_struct_slab, sizeof(struct ext2_inode), MAX_INODES, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(inode_struct_slab, struct ext2_inode, MAX_INODES);
 
 /* Helper functions --------------------------------------------------------- */
 
@@ -658,7 +658,7 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 			break;
 		}
 
-		size_t to_write = MIN(nbytes, block_size - block_off);
+		size_t to_write = MIN(nbytes - written, block_size - block_off);
 
 		memcpy(inode_current_block_mem(inode) + block_off, (uint8_t *)buf + written,
 				to_write);

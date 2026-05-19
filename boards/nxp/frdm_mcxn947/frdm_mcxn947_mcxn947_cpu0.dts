@@ -12,3 +12,8 @@
 	model = "NXP FRDM_N94 board";
 	compatible = "nxp,mcxn947", "nxp,mcx";
 };
+
+&sema42 {
+	domain-id = <1>;
+	status = "okay";
+};

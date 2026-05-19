@@ -188,10 +188,52 @@ config NET_IPV4_PMTU_DESTINATION_CACHE_ENTRIES
 	help
 	  How many PMTU entries we can track for each destination address.
 
+config NET_IPV4_NBR_CACHE
+	bool "Neighbor cache"
+	default y if NET_ARP
+	help
+	  The value depends on your network needs. You might need to enable
+	  neighbor cache and IPv4 packet routing if you have multiple network
+	  interfaces and you want to control where IPv4 packets are sent.
+
+config NET_IPV4_MAX_NEIGHBORS
+	int "How many IPv4 neighbors are supported"
+	depends on NET_IPV4_NBR_CACHE
+	default 8
+	range 1 254
+	help
+	  The value depends on your network needs.
+
+config NET_IPV4_ROUTE
+	bool
+	depends on NET_IPV4_NBR_CACHE
+	default y if NET_IPV4_NBR_CACHE
+
+config NET_IPV4_ROUTING
+	bool "IP routing between interfaces"
+	depends on NET_IPV4_ROUTE
+	help
+	  Allow IPv4 routing between different network interfaces and
+	  technologies. Currently this has limited use as some entity
+	  would need to populate the routing table.
+
+config NET_IPV4_MAX_ROUTES
+	int "Max number of routing entries stored."
+	default NET_IPV4_MAX_NEIGHBORS
+	depends on NET_IPV4_ROUTE
+	help
+	  This determines how many entries can be stored in routing table.
+
 module = NET_IPV4
 module-dep = NET_LOG
 module-str = Log level for core IPv4
 module-help = Enables core IPv4 code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+module = NET_IPV4_ROUTE
+module-dep = NET_LOG
+module-str = Log level for IPv4 route management
+module-help = Enables IPv4 routing engine debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 module = NET_ICMPV4

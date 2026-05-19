@@ -3,9 +3,9 @@
 Zephyr SDK
 ##########
 
-The Zephyr Software Development Kit (SDK) contains toolchains for each of
-Zephyr's supported architectures. It also includes additional host tools, such
-as custom QEMU and OpenOCD.
+The Zephyr Software Development Kit (SDK) contains GNU and LLVM toolchains for
+each of Zephyr's supported architectures. It also includes additional host
+tools, such as custom QEMU and OpenOCD.
 
 Use of the Zephyr SDK is highly recommended and may even be required under
 certain conditions (for example, running tests in QEMU for some architectures).
@@ -32,8 +32,37 @@ Installation bundle and variables
 
 The Zephyr SDK bundle supports all major operating systems (Linux, macOS and
 Windows) and is delivered as a compressed file.
-The installation consists of extracting the file and running the included setup
-script. Additional OS-specific instructions are described in the sections below.
+
+To ease distribution, the SDK is pre-packed in three different variants you can download:
+
+.. list-table:: SDK Bundle Variants
+   :widths: 20 20 60
+   :header-rows: 1
+
+   * - Variant
+     - Host Tools
+     - Toolchains Included
+   * - ``gnu``
+     - Yes
+     - GNU (Binutils, GCC, and GDB) for all supported architectures
+   * - ``llvm``
+     - Yes
+     - LLVM/Clang
+   * - ``minimal``
+     - Yes
+     - None
+
+The installation process consists of extracting the downloaded bundle file and running the included
+setup script.
+
+Independently of which bundle you download, during installation you will be prompted for which of
+the toolchains you want to install, and if it is not found in the local directory where the setup
+script is being executed it will be downloaded during installation.
+It is also possible to download and uncompress both the GNU and LLVM SDK bundles into the same
+directory tree and in that way install both without the need to download either during the setup
+script execution.
+
+Additional OS-specific instructions are described in the sections below.
 
 If no toolchain is selected, the build system looks for Zephyr SDK and uses the toolchain
 from there. You can enforce this by setting the environment variable
@@ -80,6 +109,11 @@ Zephyr SDK installation
           if needed; the `Zephyr SDK Releases`_ page contains all available
           SDK releases.
 
+.. note:: The instructions below are for installing using the Zephyr GNU SDK bundle,
+          which includes the GNU toolchains for all supported architectures and
+          the host tools. To install using the Zephyr LLVM SDK bundle, replace the
+          ``_gnu`` suffix with ``_llvm`` in the SDK bundle file name.
+
 .. note:: If you want to uninstall the SDK, you may simply remove the directory
           where you installed it.
 
@@ -104,7 +138,7 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            tar xvf zephyr-sdk- |sdk-version-trim| _linux-x86_64.tar.xz
+            tar xvf zephyr-sdk- |sdk-version-trim| _linux-x86_64_gnu.tar.xz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -138,7 +172,7 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            sudo cp ~/zephyr-sdk- |sdk-version-trim| /sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
+            sudo cp ~/zephyr-sdk- |sdk-version-trim| /hosttools/sysroots/x86_64-pokysdk-linux/usr/share/openocd/contrib/60-openocd.rules /etc/udev/rules.d
             sudo udevadm control --reload
 
    .. group-tab:: macOS
@@ -153,14 +187,11 @@ Zephyr SDK installation
             curl -L -O |sdk-url-macos|
             curl -L |sdk-url-macos-sha| | shasum --check --ignore-missing
 
-         If your host architecture is 64-bit ARM (Apple Silicon), replace
-         ``x86_64`` with ``aarch64`` in order to download the 64-bit ARM macOS SDK.
-
       #. Extract the Zephyr SDK bundle archive:
 
          .. parsed-literal::
 
-            tar xvf zephyr-sdk- |sdk-version-trim| _macos-x86_64.tar.xz
+            tar xvf zephyr-sdk- |sdk-version-trim| _macos-aarch64_gnu.tar.xz
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:
@@ -206,7 +237,7 @@ Zephyr SDK installation
 
          .. parsed-literal::
 
-            7z x zephyr-sdk- |sdk-version-trim| _windows-x86_64.7z
+            7z x zephyr-sdk- |sdk-version-trim| _windows-x86_64_gnu.7z
 
          .. note::
             It is recommended to extract the Zephyr SDK bundle at one of the following locations:

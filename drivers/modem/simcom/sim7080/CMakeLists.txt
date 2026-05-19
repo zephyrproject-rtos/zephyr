@@ -16,3 +16,4 @@ zephyr_library_sources(
     sim7080_gps.c
     sim7080_meas.c
     sim7080_utils.c)
+zephyr_library_sources_ifdef(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS  sim7080_tls.c)

@@ -506,7 +506,7 @@ is no longer pointing to the function that was expected.
 It means that this parser, being more compatible is limiting us from using Link Time Optimization.
 
 The local isr declaration parser uses different approach to construct
-the same arrays at binnary level.
+the same arrays at binary level.
 All the entries to the arrays are declared and defined locally,
 directly in the file where :c:macro:`IRQ_CONNECT` is used.
 They are placed in a section with the unique, synthesized name.
@@ -699,7 +699,7 @@ not implemented here can be found.
 Then two linker files are used. The :file:`isr_tables_vt.ld` file is included in place
 where the interrupt vectors are required to be placed in the selected architecture.
 The :file:`isr_tables_swi.ld` file describes the placement of the software interrupt table
-elements. The separated file is required as it might be placed in writable on nonwritable
+elements. The separated file is required as it might be placed in writable or nonwritable
 section, depending on the current configuration.
 
 x86 Details

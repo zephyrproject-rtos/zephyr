@@ -75,3 +75,52 @@ config HAL_REALTEK_BEE_AON_WDT
 
 config HAL_REALTEK_BEE_CORE_WDT
 	bool
+
+menuconfig USE_REALTEK_BEE_OS_INTERFACE
+	bool "Realtek Bee OS Interface (OSIF) Layer"
+	select POLL
+	help
+	  Enable the Realtek Bee OS Interface (OSIF) abstraction layer.
+	  This layer provides a unified API wrapper to ensure portability
+	  across different underlying operating systems for Realtek Bee
+	  family SoCs.
+
+if USE_REALTEK_BEE_OS_INTERFACE
+
+config REALTEK_BEE_OSIF_TIMER_MAX_COUNT
+	int "Maximum number of timers"
+	default 64
+	range 0 255
+	help
+	  Set the maximum number of timer objects that can be allocated
+	  simultaneously in the OSIF layer.
+
+config REALTEK_BEE_OSIF_TASK_MAX_COUNT
+	int "Maximum number of tasks"
+	default 3
+	range 0 255
+	help
+	  Set the maximum number of task (thread) objects supported by OSIF.
+
+config REALTEK_BEE_OSIF_MSGQ_MAX_COUNT
+	int "Maximum number of message queues"
+	default 3
+	range 0 255
+	help
+	  Set the maximum number of message queue objects supported by OSIF.
+
+config REALTEK_BEE_OSIF_SEM_MAX_COUNT
+	int "Maximum number of semaphores"
+	default 3
+	range 0 255
+	help
+	  Set the maximum number of semaphore objects supported by OSIF.
+
+config REALTEK_BEE_OSIF_MUTEX_MAX_COUNT
+	int "Maximum number of mutexes"
+	default 3
+	range 0 255
+	help
+	  Set the maximum number of mutex objects supported by OSIF.
+
+endif # USE_REALTEK_BEE_OS_INTERFACE

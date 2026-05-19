@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -124,6 +124,27 @@
 			interrupts = <18 4>;
 			clk-dst = <0x102>;
 			status = "disabled";
+		};
+
+		canfd0: canfd@40440000 {
+			compatible = "infineon,canfd-controller";
+			reg = <0x40440000 0x1088>, <0x40450000 0x1000>;
+			reg-names = "wrapper", "mram";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			can0: can@40440000 {
+				compatible = "infineon,can";
+				reg = <0x40440000 0x200>, <0x40450000 0x1000>;
+				reg-names = "m_can", "message_ram";
+				clk-dst = <0x10e>;
+				status = "disabled";
+				bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+				interrupts = <64 4>, <65 4>;
+				interrupt-names = "int0", "int1";
+			};
 		};
 
 		watchdog0: watchdog@4020c000 {

@@ -137,18 +137,9 @@ struct stm32_dcmipp_config {
 #define STM32_DCMIPP_WIDTH_MAX	4094
 #define STM32_DCMIPP_HEIGHT_MAX	4094
 
-#define VIDEO_FMT_IS_SEMI_PLANAR(fmt)			\
-	(((fmt)->pixelformat == VIDEO_PIX_FMT_NV12 ||	\
-	  (fmt)->pixelformat == VIDEO_PIX_FMT_NV21 ||	\
-	  (fmt)->pixelformat == VIDEO_PIX_FMT_NV16 ||	\
-	  (fmt)->pixelformat == VIDEO_PIX_FMT_NV61) ? true : false)
-
-#define VIDEO_FMT_IS_PLANAR(fmt)			\
-	(((fmt)->pixelformat == VIDEO_PIX_FMT_YUV420 ||	\
-	  (fmt)->pixelformat == VIDEO_PIX_FMT_YVU420) ? true : false)
-
 #define VIDEO_Y_PLANE_PITCH(fmt)						\
-	((VIDEO_FMT_IS_PLANAR(fmt) || VIDEO_FMT_IS_SEMI_PLANAR(fmt)) ?		\
+	((VIDEO_FMT_IS_FULL_PLANAR(fmt->pixelformat) ||				\
+	  VIDEO_FMT_IS_SEMI_PLANAR(fmt->pixelformat)) ?				\
 	 (fmt)->width : (fmt)->pitch)
 
 #define VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt)	((fmt)->width * (fmt)->height)
@@ -177,13 +168,14 @@ static void stm32_dcmipp_set_next_buffer_addr(struct stm32_dcmipp_pipe_data *pip
 		return;
 	}
 
-	if (VIDEO_FMT_IS_SEMI_PLANAR(fmt) || VIDEO_FMT_IS_PLANAR(fmt)) {
+	if (VIDEO_FMT_IS_SEMI_PLANAR(fmt->pixelformat) ||
+	    VIDEO_FMT_IS_FULL_PLANAR(fmt->pixelformat)) {
 		/* Y plane has 8 bit per pixel, next plane is located at off + width * height */
 		plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt);
 
 		stm32_reg_write(&dcmipp->hdcmipp.Instance->P1PPM1AR1, (uint32_t)plane);
 
-		if (VIDEO_FMT_IS_PLANAR(fmt)) {
+		if (VIDEO_FMT_IS_FULL_PLANAR(fmt->pixelformat)) {
 			/* In case of YUV420 / YVU420, U plane has half width / half height */
 			plane += VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt) / 4;
 
@@ -298,6 +290,7 @@ static const struct stm32_dcmipp_input_fmt {
 } stm32_dcmipp_input_fmt_desc[] = {
 	INPUT_FMT(SBGGR8, RAW8, 8, RAW8), INPUT_FMT(SGBRG8, RAW8, 8, RAW8),
 	INPUT_FMT(SGRBG8, RAW8, 8, RAW8), INPUT_FMT(SRGGB8, RAW8, 8, RAW8),
+	INPUT_FMT(GREY, RAW8, 8, RAW8),
 	INPUT_FMT(SBGGR10P, RAW10, 10, RAW10), INPUT_FMT(SGBRG10P, RAW10, 10, RAW10),
 	INPUT_FMT(SGRBG10P, RAW10, 10, RAW10), INPUT_FMT(SRGGB10P, RAW10, 10, RAW10),
 	INPUT_FMT(SBGGR12P, RAW12, 12, RAW12), INPUT_FMT(SGBRG12P, RAW12, 12, RAW12),
@@ -504,6 +497,7 @@ static const struct stm32_dcmipp_mapping {
 	RAW_BAYER_PACKED(10), RAW_BAYER_PACKED(12), RAW_BAYER_PACKED(14),
 	DUMP_PIPE_FMT(RGB565, RGB565),
 	DUMP_PIPE_FMT(YUYV, YUYV),
+	DUMP_PIPE_FMT(GREY, GREY),
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Pixel pipes format descriptions */
 	PIXEL_PIPE_FMT(RGB565, RGB565_1, 0, (BIT(1) | BIT(2))),
@@ -513,9 +507,9 @@ static const struct stm32_dcmipp_mapping {
 	PIXEL_PIPE_FMT(RGB24, RGB888_YUV444_1, 1, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(BGR24, RGB888_YUV444_1, 0, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(ARGB32, RGBA888, 1, (BIT(1) | BIT(2))),
-	PIXEL_PIPE_FMT(ABGR32, ARGB8888, 0, (BIT(1) | BIT(2))),
+	PIXEL_PIPE_FMT(ABGR32, RGBA888, 0, (BIT(1) | BIT(2))),
 	PIXEL_PIPE_FMT(RGBA32, ARGB8888, 1, (BIT(1) | BIT(2))),
-	PIXEL_PIPE_FMT(BGRA32, RGBA888, 0, (BIT(1) | BIT(2))),
+	PIXEL_PIPE_FMT(BGRA32, ARGB8888, 0, (BIT(1) | BIT(2))),
 	/* Multi-planes are only available on Pipe main (1) */
 	PIXEL_PIPE_FMT(NV12, YUV420_2, 0, BIT(1)),
 	PIXEL_PIPE_FMT(NV21, YUV420_2, 1, BIT(1)),
@@ -525,30 +519,6 @@ static const struct stm32_dcmipp_mapping {
 	PIXEL_PIPE_FMT(YVU420, YUV420_3, 1, BIT(1)),
 #endif
 };
-
-/*
- * FIXME: Helper to know colorspace of a format
- * This below to the video_common part and should be moved there
- */
-#define VIDEO_COLORSPACE_RAW	0
-#define VIDEO_COLORSPACE_RGB	1
-#define VIDEO_COLORSPACE_YUV	2
-#define VIDEO_COLORSPACE(fmt)							\
-	(((fmt) == VIDEO_PIX_FMT_RGB565X || (fmt) == VIDEO_PIX_FMT_RGB565 ||	\
-	  (fmt) == VIDEO_PIX_FMT_BGR24 || (fmt) == VIDEO_PIX_FMT_RGB24 ||	\
-	  (fmt) == VIDEO_PIX_FMT_ARGB32 || (fmt) == VIDEO_PIX_FMT_ABGR32 ||	\
-	  (fmt) == VIDEO_PIX_FMT_RGBA32 || (fmt) == VIDEO_PIX_FMT_BGRA32 ||	\
-	  (fmt) == VIDEO_PIX_FMT_XRGB32) ? VIDEO_COLORSPACE_RGB :		\
-										\
-	 ((fmt) == VIDEO_PIX_FMT_GREY ||					\
-	  (fmt) == VIDEO_PIX_FMT_YUYV || (fmt) == VIDEO_PIX_FMT_YVYU ||		\
-	  (fmt) == VIDEO_PIX_FMT_VYUY || (fmt) == VIDEO_PIX_FMT_UYVY ||		\
-	  (fmt) == VIDEO_PIX_FMT_NV12 || (fmt) == VIDEO_PIX_FMT_NV21 ||		\
-	  (fmt) == VIDEO_PIX_FMT_NV16 || (fmt) == VIDEO_PIX_FMT_NV61 ||		\
-	  (fmt) == VIDEO_PIX_FMT_YUV420 || (fmt) == VIDEO_PIX_FMT_YVU420 ||	\
-	  (fmt) == VIDEO_PIX_FMT_XYUV32) ? VIDEO_COLORSPACE_YUV :		\
-										\
-	  VIDEO_COLORSPACE_RAW)
 
 static const struct stm32_dcmipp_mapping *stm32_dcmipp_get_mapping(uint32_t pixelformat,
 								   uint32_t pipe)
@@ -859,8 +829,8 @@ const DCMIPP_ColorConversionConfTypeDef stm32_dcmipp_yuv_to_rgb = {
 };
 
 static int stm32_dcmipp_set_yuv_conversion(struct stm32_dcmipp_pipe_data *pipe,
-					   uint32_t source_colorspace,
-					   uint32_t output_colorspace)
+					   uint32_t source_pixelformat,
+					   uint32_t output_pixelformat)
 {
 	struct stm32_dcmipp_data *dcmipp = pipe->dcmipp;
 	const DCMIPP_ColorConversionConfTypeDef *cfg = NULL;
@@ -872,13 +842,11 @@ static int stm32_dcmipp_set_yuv_conversion(struct stm32_dcmipp_pipe_data *pipe,
 	}
 
 	/* Perform YUV conversion if necessary and possible */
-	if ((source_colorspace == VIDEO_COLORSPACE_RAW ||
-	     source_colorspace == VIDEO_COLORSPACE_RGB) &&
-	     output_colorspace == VIDEO_COLORSPACE_YUV) {
+	if ((VIDEO_FMT_IS_BAYER(source_pixelformat) || VIDEO_FMT_IS_RGB(source_pixelformat)) &&
+	    VIDEO_FMT_IS_YUV(output_pixelformat)) {
 		/* Need to perform RGB to YUV conversion */
 		cfg = &stm32_dcmipp_rgb_to_yuv;
-	} else if (source_colorspace == VIDEO_COLORSPACE_YUV &&
-		   output_colorspace == VIDEO_COLORSPACE_RGB) {
+	} else if (VIDEO_FMT_IS_YUV(source_pixelformat) && VIDEO_FMT_IS_RGB(output_pixelformat)) {
 		/* Need to perform YUV to RGB conversion */
 		cfg = &stm32_dcmipp_yuv_to_rgb;
 	} else {
@@ -918,7 +886,7 @@ static int stm32_dcmipp_start_pipeline(const struct device *dev,
 	HAL_StatusTypeDef hal_ret;
 
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
-	if (VIDEO_FMT_IS_PLANAR(fmt)) {
+	if (VIDEO_FMT_IS_FULL_PLANAR(fmt->pixelformat)) {
 		uint8_t *u_addr = pipe->next->buffer + VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt);
 		uint8_t *v_addr = u_addr + (VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt) / 4);
 		DCMIPP_FullPlanarDstAddressTypeDef planar_addr = {
@@ -944,7 +912,7 @@ static int stm32_dcmipp_start_pipeline(const struct device *dev,
 			LOG_ERR("Invalid bus_type");
 			hal_ret = HAL_ERROR;
 		}
-	} else if (VIDEO_FMT_IS_SEMI_PLANAR(fmt)) {
+	} else if (VIDEO_FMT_IS_SEMI_PLANAR(fmt->pixelformat)) {
 		uint8_t *uv_addr = pipe->next->buffer + VIDEO_FMT_PLANAR_Y_PLANE_SIZE(fmt);
 		DCMIPP_SemiPlanarDstAddressTypeDef semiplanar_addr = {
 			.YAddress = (uint32_t)pipe->next->buffer,
@@ -1115,9 +1083,6 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 	}
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	else if (pipe->id == DCMIPP_PIPE1 || pipe->id == DCMIPP_PIPE2) {
-		uint32_t source_colorspace = VIDEO_COLORSPACE(dcmipp->source_fmt.pixelformat);
-		uint32_t output_colorspace = VIDEO_COLORSPACE(fmt->pixelformat);
-
 		/* Enable / disable SWAPRB if necessary */
 		if (mapping->pixels.swap_uv) {
 			hal_ret = HAL_DCMIPP_PIPE_EnableRedBlueSwap(&dcmipp->hdcmipp, pipe->id);
@@ -1135,7 +1100,7 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 			}
 		}
 
-		if (source_colorspace == VIDEO_COLORSPACE_RAW) {
+		if (VIDEO_FMT_IS_BAYER(dcmipp->source_fmt.pixelformat)) {
 			/* Enable demosaicing if input format is Bayer */
 			hal_ret = HAL_DCMIPP_PIPE_EnableISPRawBayer2RGB(&dcmipp->hdcmipp,
 									DCMIPP_PIPE1);
@@ -1168,7 +1133,9 @@ static int stm32_dcmipp_stream_enable(const struct device *dev)
 		}
 
 		/* Configure YUV conversion */
-		ret = stm32_dcmipp_set_yuv_conversion(pipe, source_colorspace, output_colorspace);
+		ret = stm32_dcmipp_set_yuv_conversion(pipe,
+						      dcmipp->source_fmt.pixelformat,
+						      fmt->pixelformat);
 		if (ret < 0) {
 			goto out;
 		}
@@ -1468,6 +1435,7 @@ static int stm32_dcmipp_get_caps(const struct device *dev, struct video_caps *ca
 	}
 
 	caps->min_vbuf_count = 1;
+	caps->buf_align = 16;
 
 	return 0;
 }

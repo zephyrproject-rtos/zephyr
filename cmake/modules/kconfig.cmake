@@ -131,6 +131,18 @@ else()
   set(_local_TOOLCHAIN_HAS_PICOLIBC n)
 endif()
 
+if(TOOLCHAIN_HAS_GLIBCXX)
+  set(_local_TOOLCHAIN_HAS_GLIBCXX y)
+else()
+  set(_local_TOOLCHAIN_HAS_GLIBCXX n)
+endif()
+
+if(TOOLCHAIN_HAS_LIBCXX)
+  set(_local_TOOLCHAIN_HAS_LIBCXX y)
+else()
+  set(_local_TOOLCHAIN_HAS_LIBCXX n)
+endif()
+
 # APP_DIR: Path to the main image (sysbuild) or synonym for APPLICATION_SOURCE_DIR (non-sysbuild)
 zephyr_get(APP_DIR VAR APP_DIR APPLICATION_SOURCE_DIR)
 
@@ -156,9 +168,12 @@ set(COMMON_KCONFIG_ENV_SETTINGS
   KCONFIG_BINARY_DIR=${KCONFIG_BINARY_DIR}
   APPLICATION_SOURCE_DIR=${APPLICATION_SOURCE_DIR}
   ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
+  TOOLCHAIN_VARIANT_COMPILER=${TOOLCHAIN_VARIANT_COMPILER}
   TOOLCHAIN_KCONFIG_DIR=${TOOLCHAIN_KCONFIG_DIR}
   TOOLCHAIN_HAS_NEWLIB=${_local_TOOLCHAIN_HAS_NEWLIB}
   TOOLCHAIN_HAS_PICOLIBC=${_local_TOOLCHAIN_HAS_PICOLIBC}
+  TOOLCHAIN_HAS_GLIBCXX=${_local_TOOLCHAIN_HAS_GLIBCXX}
+  TOOLCHAIN_HAS_LIBCXX=${_local_TOOLCHAIN_HAS_LIBCXX}
   EDT_PICKLE=${EDT_PICKLE}
   # Export all Zephyr modules to Kconfig
   ${ZEPHYR_KCONFIG_MODULES_DIR}
@@ -205,27 +220,30 @@ if(NOT DEFINED KCONFIG_TARGETS)
   set(KCONFIG_TARGETS menuconfig guiconfig hardenconfig traceconfig)
 endif()
 
-foreach(kconfig_target
-    ${KCONFIG_TARGETS}
-    ${EXTRA_KCONFIG_TARGETS}
-    )
-  zephyr_custom_target_shared(
-    ${kconfig_target}
-    ${CMAKE_COMMAND} -E env
-    ZEPHYR_BASE=${ZEPHYR_BASE}
-    ${COMMON_KCONFIG_ENV_SETTINGS}
-    "SHIELD_AS_LIST=${SHIELD_AS_LIST_ESCAPED}"
-    DTS_POST_CPP=${DTS_POST_CPP}
-    DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
-    ${PTY_INTERFACE}
-    ${PYTHON_EXECUTABLE}
-    ${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
-    ${KCONFIG_ROOT}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
-    USES_TERMINAL
-    COMMAND_EXPAND_LISTS
-    )
-endforeach()
+# Create the Kconfig targets. Skipped if KCONFIG_VARIANT_SOURCE is set, because
+# a variant image shall not be configured independently of its source image.
+if(NOT KCONFIG_VARIANT_SOURCE)
+  foreach(kconfig_target
+      ${KCONFIG_TARGETS}
+      ${EXTRA_KCONFIG_TARGETS}
+      )
+    zephyr_custom_target_shared(
+      ${kconfig_target}
+      ${CMAKE_COMMAND} -E env
+      ZEPHYR_BASE=${ZEPHYR_BASE}
+      ${COMMON_KCONFIG_ENV_SETTINGS}
+      SHIELD_AS_LIST='${SHIELD_AS_LIST_ESCAPED}'
+      DTS_POST_CPP=${DTS_POST_CPP}
+      DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
+      ${PTY_INTERFACE}
+      ${PYTHON_EXECUTABLE}
+      ${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
+      ${KCONFIG_ROOT}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
+      USES_TERMINAL
+      )
+  endforeach()
+endif()
 
 # Support assigning Kconfig symbols on the command-line with CMake
 # cache variables prefixed according to the Kconfig namespace.

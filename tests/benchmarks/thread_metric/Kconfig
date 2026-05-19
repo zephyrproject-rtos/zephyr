@@ -30,7 +30,6 @@ config TM_INTERRUPT
 	bool "Interrupt processing"
 	select TEST
 	select IRQ_OFFLOAD
-	select IRQ_OFFLOAD_NESTED
 	help
 	  The interrupt processing benchmark has a single thread that causes
 	  an interrupt which results in its ISR incrementing a counter and then
@@ -42,7 +41,6 @@ config TM_INTERRUPT_PREEMPTION
 	bool "Interrupt processing preemption"
 	select TEST
 	select IRQ_OFFLOAD
-	select IRQ_OFFLOAD_NESTED
 	help
 	  The interrupt preemption benchmark counts the number of times that
 	  an ISR from a software generated interrupt results in the preemption

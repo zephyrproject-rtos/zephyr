@@ -62,7 +62,7 @@
 /* Duration to enter/exit  sleep mode (see 6.2.3 and 6.4.2 in datasheet) */
 #define GC9X01X_SLEEP_IN_OUT_DURATION_MS 120
 
-/* GC9X01X registers to be intitialized */
+/* GC9X01X registers to be initialized */
 #define GC9X01X_CMD_PWRCTRL1_LEN  1U
 #define GC9X01X_CMD_PWRCTRL2_LEN  1U
 #define GC9X01X_CMD_PWRCTRL3_LEN  1U

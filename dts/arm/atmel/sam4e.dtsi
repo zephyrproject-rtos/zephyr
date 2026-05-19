@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019 Gerson Fernando Budke
+ * Copyright (c) 2019-2026 Gerson Fernando Budke <nandojve@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -321,6 +321,18 @@
 			interrupts = <2 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 2>;
 			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		udp: udp@40084000 {
+			compatible = "atmel,sam-udp";
+			reg = <0x40084000 0x4000>;
+			interrupts = <35 3>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <5>;
+			num-out-endpoints = <4>;
+			maximum-speed = "full-speed";
 			status = "disabled";
 		};
 	};

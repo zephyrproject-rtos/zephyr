@@ -14,3 +14,11 @@ config TEST_SINGLE_CPU
 	bool "Enable mailbox test on single CPU core"
 	help
 	  Perform a test in which a CPU uses a mailbox channel to exchange messages with itself
+
+config CHANNELS_TO_TEST
+	int "Number of mbox TX/RX channel pairs to test"
+	default 4
+	help
+		The number of TX/RX channel pairs that should be exercise by
+		this test. This should match the number of pairs set in the
+		devicetree.

@@ -51,10 +51,7 @@ struct udc_ambiq_data {
 	void *usb_handle;
 	am_hal_usb_dev_speed_e usb_speed;
 	uint8_t setup[8];
-	uint8_t ctrl_pending_setup_buffer[8];
-	bool ctrl_pending_in_ack;
-	bool ctrl_pending_setup;
-	bool ctrl_setup_recv_at_status_in;
+	bool ignore_status_in;
 };
 
 struct udc_ambiq_config {
@@ -69,26 +66,6 @@ struct udc_ambiq_config {
 	void (*irq_disable_func)(const struct device *dev);
 	void (*callback_register_func)(const struct device *dev);
 };
-
-static int udc_ambiq_rx(const struct device *dev, uint8_t ep, struct net_buf *buf);
-
-static int usbd_ctrl_feed_dout(const struct device *dev, const size_t length)
-{
-	struct udc_ep_config *cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-	struct net_buf *buf;
-
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, length);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	k_fifo_put(&cfg->fifo, buf);
-	if (length) {
-		udc_ambiq_rx(dev, cfg->addr, buf);
-	}
-
-	return 0;
-}
 
 static int udc_ambiq_tx(const struct device *dev, uint8_t ep, struct net_buf *buf)
 {
@@ -206,20 +183,6 @@ static void udc_ambiq_ep0_setup_callback(const struct device *dev, uint8_t *usb_
 	struct udc_ambiq_event evt = {.type = UDC_AMBIQ_EVT_HAL_SETUP};
 	struct udc_ambiq_data *priv = udc_get_private(dev);
 
-	/* Defer Setup Packet that arrives when we are waiting for
-	 * status stage for OUT data control transfer to be completed
-	 */
-	if (priv->ctrl_pending_in_ack) {
-		priv->ctrl_pending_setup = true;
-		memcpy(priv->ctrl_pending_setup_buffer, usb_setup, 8);
-		return;
-	}
-
-	/* Check whether we received SETUP packet during OUT_ACK (a.k.a STATUS_IN)
-	 * state. If so, it might be inversion caused by register reading sequence.
-	 * Raise flag accordingly and handle later.
-	 */
-	priv->ctrl_setup_recv_at_status_in = udc_ctrl_stage_is_status_in(dev);
 	memcpy(priv->setup, usb_setup, sizeof(struct usb_setup_packet));
 	k_msgq_put(&drv_msgq, &evt, K_NO_WAIT);
 }
@@ -267,7 +230,6 @@ static enum udc_bus_speed udc_ambiq_device_speed(const struct device *dev)
 static int udc_ambiq_ep_enqueue(const struct device *dev, struct udc_ep_config *ep_cfg,
 				struct net_buf *buf)
 {
-	struct udc_ambiq_data *priv = udc_get_private(dev);
 	struct udc_ambiq_event evt = {
 		.ep = ep_cfg->addr,
 		.type = UDC_AMBIQ_EVT_XFER,
@@ -275,10 +237,14 @@ static int udc_ambiq_ep_enqueue(const struct device *dev, struct udc_ep_config *
 
 	LOG_DBG("%p enqueue %x %p", dev, ep_cfg->addr, buf);
 	udc_buf_put(ep_cfg, buf);
-	if (ep_cfg->addr == USB_CONTROL_EP_IN && buf->len == 0 && priv->ctrl_pending_in_ack) {
-		priv->ctrl_pending_in_ack = false;
-		udc_ambiq_ep_xfer_complete_callback(dev, USB_CONTROL_EP_IN, 0, 0, NULL);
-		return 0;
+
+	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->setup) {
+			/* SETUP can be received without any action */
+			return 0;
+		}
 	}
 
 	if (!ep_cfg->stat.halted) {
@@ -292,14 +258,10 @@ static int udc_ambiq_ep_dequeue(const struct device *dev, struct udc_ep_config *
 {
 	unsigned int lock_key;
 	struct udc_ambiq_data *priv = udc_get_private(dev);
-	struct net_buf *buf;
 
 	lock_key = irq_lock();
 
-	buf = udc_buf_get_all(ep_cfg);
-	if (buf) {
-		udc_submit_ep_event(dev, buf, -ECONNABORTED);
-	}
+	udc_ep_cancel_queued(dev, ep_cfg);
 
 	udc_ep_set_busy(ep_cfg, false);
 	am_hal_usb_ep_state_reset(priv->usb_handle, ep_cfg->addr);
@@ -704,40 +666,23 @@ static void udc_ambiq_unlock(const struct device *dev)
 
 static void ambiq_handle_evt_setup(const struct device *dev)
 {
+	struct usb_setup_packet *setup;
 	struct udc_ambiq_data *priv = udc_get_private(dev);
-	struct net_buf *buf;
-	int err;
 
-	/* Create network buffer for SETUP packet and pass into UDC framework */
-	buf = udc_ctrl_alloc(dev, USB_CONTROL_EP_OUT, sizeof(struct usb_setup_packet));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate for setup");
-		return;
-	}
-	net_buf_add_mem(buf, priv->setup, sizeof(priv->setup));
-	udc_ep_buf_set_setup(buf);
-	LOG_HEXDUMP_DBG(buf->data, buf->len, "setup");
-
-	/* Update to next stage of control transfer */
-	udc_ctrl_update_stage(dev, buf);
-
-	if (udc_ctrl_stage_is_data_out(dev)) {
-		/*  Allocate and feed buffer for data OUT stage */
-		LOG_DBG("s:%p|feed for -out-", buf);
-		err = usbd_ctrl_feed_dout(dev, udc_data_stage_length(buf));
-		priv->ctrl_pending_in_ack = true;
-		if (err == -ENOMEM) {
-			udc_submit_ep_event(dev, buf, err);
-		}
-	} else if (udc_ctrl_stage_is_data_in(dev)) {
-		/* Submit event for data IN stage */
-		LOG_DBG("s:%p|feed for -in-status", buf);
-		udc_ctrl_submit_s_in_status(dev);
+	setup = (struct usb_setup_packet *)priv->setup;
+	if (USB_REQTYPE_GET_DIR(setup->bmRequestType) == USB_REQTYPE_DIR_TO_DEVICE &&
+	    setup->wLength) {
+		/* Status IN after Data OUT is automatically handled.
+		 * This should not be the case because it does not allow USB
+		 * stack to stall Status stage in case the data is invalid
+		 * (determined by handler).
+		 */
+		priv->ignore_status_in = true;
 	} else {
-		/* Submit event for no-data stage */
-		LOG_DBG("s:%p|feed >setup", buf);
-		udc_ctrl_submit_s_status(dev);
+		priv->ignore_status_in = false;
 	}
+
+	udc_setup_received(dev, priv->setup);
 }
 
 static inline void ambiq_handle_evt_dout(const struct device *dev, struct udc_ep_config *const cfg)
@@ -755,20 +700,7 @@ static inline void ambiq_handle_evt_dout(const struct device *dev, struct udc_ep
 	udc_ep_set_busy(cfg, false);
 
 	/* Handle transfer complete event */
-	if (cfg->addr == USB_CONTROL_EP_OUT) {
-		if (udc_ctrl_stage_is_status_out(dev)) {
-			udc_ctrl_update_stage(dev, buf);
-			udc_ctrl_submit_status(dev, buf);
-		} else {
-			udc_ctrl_update_stage(dev, buf);
-		}
-
-		if (udc_ctrl_stage_is_status_in(dev)) {
-			udc_ctrl_submit_s_out_status(dev, buf);
-		}
-	} else {
-		udc_submit_ep_event(dev, buf, 0);
-	}
+	udc_submit_ep_event(dev, buf, 0);
 }
 
 static void ambiq_handle_zlp_tx(const struct device *dev, struct udc_ep_config *const cfg)
@@ -778,10 +710,7 @@ static void ambiq_handle_zlp_tx(const struct device *dev, struct udc_ep_config *
 
 static void ambiq_handle_evt_din(const struct device *dev, struct udc_ep_config *const cfg)
 {
-	struct udc_ambiq_data *priv = udc_get_private(dev);
-	struct udc_data *data = dev->data;
 	struct net_buf *buf;
-	bool udc_ambiq_rx_status_in_completed = false;
 
 	/* Clear endpoint busy status */
 	udc_ep_set_busy(cfg, false);
@@ -805,47 +734,7 @@ static void ambiq_handle_evt_din(const struct device *dev, struct udc_ep_config 
 	LOG_DBG("DataIn ep 0x%02x len %u", cfg->addr, buf->size);
 
 	/* Handle transfer complete event */
-	if (cfg->addr == USB_CONTROL_EP_IN) {
-		if (udc_ctrl_stage_is_status_in(dev) || udc_ctrl_stage_is_no_data(dev)) {
-			if (data->caps.out_ack == 0) {
-				/* Status stage finished, notify upper layer */
-				udc_ctrl_submit_status(dev, buf);
-			}
-
-			if (udc_ctrl_stage_is_status_in(dev)) {
-				udc_ambiq_rx_status_in_completed = true;
-			}
-		}
-
-		if (priv->ctrl_setup_recv_at_status_in && (buf->len == 0)) {
-			priv->ctrl_setup_recv_at_status_in = false;
-			net_buf_unref(buf);
-			return;
-		}
-		priv->ctrl_setup_recv_at_status_in = false;
-		/* Update to next stage of control transfer */
-		udc_ctrl_update_stage(dev, buf);
-
-		if (((data->caps.out_ack == false) && udc_ctrl_stage_is_status_out(dev)) ||
-		    ((data->caps.out_ack == true) && (data->stage == CTRL_PIPE_STAGE_SETUP))) {
-			/*
-			 * IN transfer finished, release buffer,
-			 * control OUT buffer should be already fed.
-			 */
-			net_buf_unref(buf);
-		}
-
-		/*
-		 * Trigger deferred SETUP that was hold back if we are
-		 * waiting for DATA_OUT status stage to be completed
-		 */
-		if (udc_ambiq_rx_status_in_completed && priv->ctrl_pending_setup) {
-			priv->ctrl_pending_setup = false;
-			udc_ambiq_ep0_setup_callback(dev, priv->ctrl_pending_setup_buffer);
-		}
-	} else {
-		udc_submit_ep_event(dev, buf, 0);
-	}
+	udc_submit_ep_event(dev, buf, 0);
 }
 
 static void udc_event_xfer(const struct device *dev, struct udc_ep_config *const cfg)
@@ -856,6 +745,20 @@ static void udc_event_xfer(const struct device *dev, struct udc_ep_config *const
 	if (buf == NULL) {
 		LOG_ERR("No buffer for ep 0x%02x", cfg->addr);
 		return;
+	}
+
+	if (cfg->addr == USB_CONTROL_EP_IN) {
+		struct udc_buf_info *bi = udc_get_buf_info(buf);
+
+		if (bi->status) {
+			struct udc_ambiq_data *priv = udc_get_private(dev);
+
+			if (priv->ignore_status_in) {
+				buf = udc_buf_get(cfg);
+				udc_submit_ep_event(dev, buf, 0);
+				return;
+			}
+		}
 	}
 
 	if (USB_EP_DIR_IS_IN(cfg->addr)) {

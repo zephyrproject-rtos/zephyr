@@ -1,0 +1,15 @@
+boards:
+  - name: siwx917_rb4338a
+    full_name: >-
+      SiWx917 Wi-Fi 6 and Bluetooth LE SoC 8 MB Flash Radio Board
+      (SiWx91x-RB4338A)
+    vendor: silabs
+    socs:
+      - name: siwg917m111mgtba
+  - name: siwx917_rb4342a
+    full_name: >-
+      SiWx917 Wi-Fi 6 and Bluetooth LE 8 MB Flash + 8 MB ext PSRAM Radio Board
+      (SiWx91x-RB4342A)
+    vendor: silabs
+    socs:
+      - name: siwg917m111mgtba

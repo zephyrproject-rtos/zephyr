@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -304,7 +304,7 @@ static void transfer_chunk(const struct device *dev)
 
 		if (chunk_len > IFX_CAT1_SPI_DMA_BURST_SIZE) {
 			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
-				IFX_CAT1_SPI_DMA_BURST_SIZE;
+				1;
 			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length =
 				IFX_CAT1_SPI_DMA_BURST_SIZE;
 			if (chunk_len % IFX_CAT1_SPI_DMA_BURST_SIZE != 0) {
@@ -316,7 +316,7 @@ static void transfer_chunk(const struct device *dev)
 			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
 		} else {
 			dma_rx->dma_cfg.source_burst_length = dma_tx->dma_cfg.source_burst_length =
-				0;
+				1;
 			dma_rx->dma_cfg.dest_burst_length = dma_tx->dma_cfg.dest_burst_length = 0;
 			dma_rx->dma_cfg.block_count = dma_tx->dma_cfg.block_count = 1;
 		}
@@ -636,6 +636,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_rx.dma_cfg.head_block = &data->dma_rx.blk_cfg;
 		data->dma_rx.dma_cfg.user_data = (void *)dev;
 		data->dma_rx.dma_cfg.dma_callback = dma_callback;
+		data->dma_rx.dma_cfg.source_handshake = 0;
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_RX_TR_OUT0 + data->resource.block_num,
 				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_rx.dma_channel,
@@ -653,6 +654,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		data->dma_tx.dma_cfg.head_block = &data->dma_tx.blk_cfg;
 		data->dma_tx.dma_cfg.user_data = (void *)dev;
 		data->dma_tx.dma_cfg.dma_callback = dma_callback;
+		data->dma_tx.dma_cfg.source_handshake = 1;
 #if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 		Cy_TrigMux_Connect(PERI_0_TRIG_IN_MUX_0_SCB_TX_TR_OUT0 + data->resource.block_num,
 				   PERI_0_TRIG_OUT_MUX_0_PDMA0_TR_IN0 + data->dma_tx.dma_channel,
@@ -688,7 +690,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 		.channel_direction = ch_dir,                                                       \
 		.source_data_size = src_data_size,                                                 \
 		.dest_data_size = dst_data_size,                                                   \
-		.source_burst_length = 0,                                                          \
+		.source_burst_length = 1,                                                          \
 		.dest_burst_length = 0,                                                            \
 		.block_count = 1,                                                                  \
 		.complete_callback_en = 1,                                                         \
@@ -939,64 +941,6 @@ void ifx_cat1_spi_register_callback(const struct device *dev,
 	data->irq_cause = 0;
 }
 
-#if !defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define IFX_CAT1_INSTANCE_GROUP(instance, group) (((instance) << 4) | (group))
-#endif
-
-static uint8_t ifx_cat1_get_hfclk_for_peri_group(uint8_t peri_group)
-{
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-	switch (peri_group) {
-	case IFX_CAT1_INSTANCE_GROUP(0, 0):
-	case IFX_CAT1_INSTANCE_GROUP(1, 4):
-		return CLK_HF0;
-	case IFX_CAT1_INSTANCE_GROUP(0, 7):
-	case IFX_CAT1_INSTANCE_GROUP(1, 0):
-		return CLK_HF1;
-	case IFX_CAT1_INSTANCE_GROUP(0, 3):
-	case IFX_CAT1_INSTANCE_GROUP(1, 2):
-		return CLK_HF5;
-	case IFX_CAT1_INSTANCE_GROUP(0, 4):
-	case IFX_CAT1_INSTANCE_GROUP(1, 3):
-		return CLK_HF6;
-	case IFX_CAT1_INSTANCE_GROUP(1, 1):
-		return CLK_HF7;
-	case IFX_CAT1_INSTANCE_GROUP(0, 2):
-		return CLK_HF9;
-	case IFX_CAT1_INSTANCE_GROUP(0, 1):
-	case IFX_CAT1_INSTANCE_GROUP(0, 5):
-		return CLK_HF10;
-	case IFX_CAT1_INSTANCE_GROUP(0, 8):
-		return CLK_HF11;
-	case IFX_CAT1_INSTANCE_GROUP(0, 6):
-	case IFX_CAT1_INSTANCE_GROUP(0, 9):
-		return CLK_HF13;
-	default:
-		return -EINVAL;
-	}
-#elif defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
-	switch (peri_group) {
-	case 0:
-	case 2:
-		return CLK_HF0;
-	case 1:
-	case 3:
-		return CLK_HF1;
-	case 4:
-		return CLK_HF2;
-	case 5:
-		return CLK_HF3;
-	case 6:
-		return CLK_HF4;
-	default:
-		return -EINVAL;
-	}
-#endif
-	return -EINVAL;
-}
-#endif
-
 static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t hz,
 					    uint8_t *over_sample_val)
 {
@@ -1018,7 +962,7 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 	uint32_t peri_freq = Cy_SysClk_ClkPeriGetFrequency();
 #elif defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) ||                                      \
 	defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-	uint8_t hfclk = ifx_cat1_get_hfclk_for_peri_group(data->clock_peri_group);
+	uint8_t hfclk = ifx_cat1_utils_peri_pclk_get_hfclk(data->clock_peri_group);
 
 	uint32_t peri_freq = Cy_SysClk_ClkHfGetFrequency(hfclk);
 #elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)

@@ -139,11 +139,24 @@ static inline int z_vrfy_flash_ex_op(const struct device *dev, uint16_t code,
 {
 	K_OOPS(K_SYSCALL_DRIVER_FLASH(dev, ex_op));
 
-	/*
-	 * If the code is a vendor code, then ex_op function have to perform
-	 * verification. Zephyr codes should be verified here, but currently
-	 * there are no Zephyr extended codes yet.
-	 */
+	switch (code) {
+	case FLASH_EX_OP_RESET:
+		/* No input or output for this code, so no verification needed. */
+		break;
+	case FLASH_EX_OP_IS_BAD_BLOCK:
+		K_OOPS(K_SYSCALL_MEMORY_READ(in, sizeof(off_t)));
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(out, sizeof(enum flash_block_status)));
+		break;
+	case FLASH_EX_OP_MARK_BAD_BLOCK:
+		K_OOPS(K_SYSCALL_MEMORY_READ(in, sizeof(off_t)));
+		break;
+	default:
+		/*
+		 * If the code is a vendor code, then ex_op function has to perform
+		 * verification.
+		 */
+		break;
+	}
 
 	return z_impl_flash_ex_op(dev, code, in, out);
 }

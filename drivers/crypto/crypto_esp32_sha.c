@@ -298,15 +298,14 @@ static size_t sha_make_padding(const struct esp_sha_ctx *s, const uint8_t *tail,
 static inline void sha_compress_block(const struct esp_sha_ctx *s, const uint8_t *block, bool first)
 {
 	const int words = s->params.block_bytes / 4;
-	uint32_t w[32];
-
-	for (int i = 0; i < words; i++) {
-		w[i] = sys_get_le32(&block[i * 4]);
-	}
 
 	bool first_param = (s->algo == CRYPTO_HASH_ALGO_SHA224) ? false : first;
 
-	sha_hal_hash_block(s->params.hal_mode, w, words, first_param);
+#if SOC_SHA_SUPPORT_RESUME
+	/* Newer chips have unified SHA engine that requires mode setting */
+	sha_hal_set_mode(s->params.hal_mode);
+#endif
+	sha_hal_hash_block(s->params.hal_mode, block, words, first_param);
 	sha_hal_wait_idle();
 }
 
@@ -432,23 +431,22 @@ static int sha_handler(struct hash_ctx *hctx, struct hash_pkt *pkt, bool fin)
 	sha_hal_wait_idle();
 	sha_hal_read_digest(s->params.hal_mode, s->H);
 
-	int words = s->params.out_bytes / 4;
-
 #if SOC_SHA_SUPPORT_RESUME
-	/* ESP32-S3 and newer: Use little-endian output, no word swapping */
-	for (int j = 0; j < words; j++) {
-		sys_put_le32(s->H[j], &pkt->out_buf[j * 4]);
-	}
+	/* Newer chips output digest in correct byte order */
+	memcpy(pkt->out_buf, s->H, s->params.out_bytes);
 #else
-	/* ESP32: Use big-endian output with word swapping for SHA-384/512 */
-	if (s->algo == CRYPTO_HASH_ALGO_SHA384 || s->algo == CRYPTO_HASH_ALGO_SHA512) {
-		for (int j = 0; j < words; j += 2) {
-			sys_put_be32(s->H[j + 1], &pkt->out_buf[j * 4]);
-			sys_put_be32(s->H[j], &pkt->out_buf[(j + 1) * 4]);
+	/* ESP32 outputs big-endian words. For SHA-384/512, the LL layer swaps
+	 * 32-bit word pairs to handle 64-bit state, so we need to swap them back.
+	 */
+	if (s->params.hal_mode == SHA2_384 || s->params.hal_mode == SHA2_512) {
+		for (size_t i = 0; i < s->params.out_bytes / 8; i++) {
+			/* Write high word first, then low word (big-endian 64-bit) */
+			sys_put_be32(s->H[i * 2 + 1], &pkt->out_buf[i * 8]);
+			sys_put_be32(s->H[i * 2], &pkt->out_buf[i * 8 + 4]);
 		}
 	} else {
-		for (int j = 0; j < words; j++) {
-			sys_put_be32(s->H[j], &pkt->out_buf[j * 4]);
+		for (size_t i = 0; i < s->params.out_bytes / 4; i++) {
+			sys_put_be32(s->H[i], &pkt->out_buf[i * 4]);
 		}
 	}
 #endif
@@ -529,7 +527,7 @@ static int sha_init(const struct device *dev)
 	}
 
 	if (clock_control_on(cfg->clock_dev, cfg->clock_subsys) != 0) {
-		LOG_ERR("Failed to enable clock");
+		LOG_ERR("Failed to enable SHA peripheral clock");
 		return -EIO;
 	}
 

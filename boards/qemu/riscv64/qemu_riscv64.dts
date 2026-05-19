@@ -10,6 +10,33 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &ram0;
+		zephyr,display = &ramfb0;
+	};
+
+	fwcfg0: fw-cfg@10100000 {
+		compatible = "qemu,fw-cfg-mmio";
+		reg = <0x10100000 0x18>;
+		status = "okay";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ramfb_mem: framebuffer@8fc00000 {
+			reg = <0x8fc00000 0x00400000>; /* 4 MiB */
+			no-map;
+		};
+	};
+
+	ramfb0: ramfb {
+		compatible = "qemu,ramfb";
+		fwcfg = <&fwcfg0>;
+		memory-region = <&ramfb_mem>;
+		width = <1024>;
+		height = <768>;
+		status = "okay";
 	};
 };
 

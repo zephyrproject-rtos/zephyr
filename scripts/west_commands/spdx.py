@@ -3,12 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import os
+import sys
 import uuid
 
 from west.commands import WestCommand
 
-from zspdx.sbom import SBOMConfig, makeSPDX, setupCmakeQuery
-from zspdx.version import SPDX_VERSION_2_3, SUPPORTED_SPDX_VERSIONS, parse
+script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.insert(0, os.path.join(script_dir, "pylib/"))
+from zspdx.sbom import SBOMConfig, makeSPDX, setupCmakeQuery  # noqa: E402
+from zspdx.version import SPDX_VERSION_2_3, SUPPORTED_SPDX_VERSIONS, parse  # noqa: E402
 
 SPDX_DESCRIPTION = """\
 This command creates an SPDX 2.2 or 2.3 tag-value bill of materials
@@ -24,12 +27,11 @@ class ZephyrSpdx(WestCommand):
     def __init__(self):
         super().__init__(
                 'spdx',
-                'create SPDX bill of materials',
-                SPDX_DESCRIPTION)
+                '',
+                description=SPDX_DESCRIPTION)
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(self.name,
-                help=self.help,
                 description = self.description)
 
         # If you update these options, make sure to keep the docs in

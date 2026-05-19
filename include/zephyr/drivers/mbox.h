@@ -273,8 +273,7 @@ static inline int z_impl_mbox_send(const struct device *dev,
 				   mbox_channel_id_t channel_id,
 				   const struct mbox_msg *msg)
 {
-	const struct mbox_driver_api *api =
-		(const struct mbox_driver_api *)dev->api;
+	const struct mbox_driver_api *api = DEVICE_API_GET(mbox, dev);
 
 	if (api->send == NULL) {
 		return -ENOSYS;
@@ -318,8 +317,7 @@ static inline int mbox_register_callback(const struct device *dev,
 					 mbox_callback_t cb,
 					 void *user_data)
 {
-	const struct mbox_driver_api *api =
-		(const struct mbox_driver_api *)dev->api;
+	const struct mbox_driver_api *api = DEVICE_API_GET(mbox, dev);
 
 	if (api->register_callback == NULL) {
 		return -ENOSYS;
@@ -370,8 +368,7 @@ __syscall int mbox_mtu_get(const struct device *dev);
 
 static inline int z_impl_mbox_mtu_get(const struct device *dev)
 {
-	const struct mbox_driver_api *api =
-		(const struct mbox_driver_api *)dev->api;
+	const struct mbox_driver_api *api = DEVICE_API_GET(mbox, dev);
 
 	if (api->mtu_get == NULL) {
 		return -ENOSYS;
@@ -425,8 +422,7 @@ static inline int z_impl_mbox_set_enabled(const struct device *dev,
 					  mbox_channel_id_t channel_id,
 					  bool enabled)
 {
-	const struct mbox_driver_api *api =
-		(const struct mbox_driver_api *)dev->api;
+	const struct mbox_driver_api *api = DEVICE_API_GET(mbox, dev);
 
 	if (api->set_enabled == NULL) {
 		return -ENOSYS;
@@ -464,8 +460,7 @@ __syscall uint32_t mbox_max_channels_get(const struct device *dev);
 
 static inline uint32_t z_impl_mbox_max_channels_get(const struct device *dev)
 {
-	const struct mbox_driver_api *api =
-		(const struct mbox_driver_api *)dev->api;
+	const struct mbox_driver_api *api = DEVICE_API_GET(mbox, dev);
 
 	if (api->max_channels_get == NULL) {
 		return -ENOSYS;

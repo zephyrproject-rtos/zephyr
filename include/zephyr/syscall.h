@@ -110,6 +110,12 @@ static ALWAYS_INLINE bool z_syscall_trap(void)
  * Indicate whether the CPU is currently in user mode
  *
  * @return true if the CPU is currently running with user permissions
+ *
+ * CAUTION!
+ * If you branch on k_is_user_context() and then perform a kernel-only operation, you must insert
+ * a memory barrier before the privileged operation. Both the compiler and the CPU may reorder
+ * memory operations around the branch. Without a barrier, memory accesses related to the privileged
+ * path may move before the context check or be speculated.
  */
 __pinned_func
 static inline bool k_is_user_context(void)

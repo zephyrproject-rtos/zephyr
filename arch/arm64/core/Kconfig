@@ -7,6 +7,7 @@ config CPU_CORTEX_A
 	bool
 	select CPU_CORTEX
 	select HAS_FLASH_LOAD_OFFSET
+	select KERNEL_DIRECT_MAP if MMU
 	select SCHED_IPI_SUPPORTED if SMP
 	select CPU_HAS_FPU
 	select ARCH_HAS_SINGLE_THREAD_SUPPORT if !SMP
@@ -210,6 +211,7 @@ config ARCH_HAS_STACKWALK
 	bool
 	default y
 	depends on FRAME_POINTER
+	imply THREAD_STACK_INFO
 	help
 	  Internal config to indicate that the arch_stack_walk() API is implemented
 	  and it can be enabled.
@@ -296,6 +298,7 @@ config ARM_MMU
 	select SRAM_REGION_PERMISSIONS
 	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if USERSPACE
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
+	select ARCH_MEM_DOMAIN_SUPPORTS_DEINIT if USERSPACE
 	help
 	  Memory Management Unit support.
 
@@ -312,7 +315,27 @@ config ARM64_SET_VMPIDR_EL2
 
 if ARM_MMU
 
+choice ARM64_PAGE_SIZE
+	prompt "Page size"
+	default ARM64_PAGE_SIZE_4KB
+	help
+	  Allows choosing one of the three possible page sizes. The level
+	  of the translation table is determined by a combination of page
+	  size and virtual address space size.
+
+config ARM64_PAGE_SIZE_4KB
+	bool "4KB"
+
+config ARM64_PAGE_SIZE_16KB
+	bool "16KB"
+
+config ARM64_PAGE_SIZE_64KB
+	bool "64KB"
+endchoice
+
 config MMU_PAGE_SIZE
+	default 0x10000 if ARM64_PAGE_SIZE_64KB
+	default 0x4000 if ARM64_PAGE_SIZE_16KB
 	default 0x1000
 
 choice ARM64_VA_BITS
@@ -381,9 +404,10 @@ config ARM64_PA_BITS
 config MAX_XLAT_TABLES
 	int "Maximum numbers of translation tables"
 	default 32 if USERSPACE && TEST && SMP
-	default 24 if USERSPACE && TEST
+	default 28 if USERSPACE && TEST
 	default 20 if USERSPACE && (ARM64_VA_BITS >= 40)
 	default 16 if USERSPACE
+	default 16 if SMP && (ARM64_VA_BITS >= 36)
 	default 12 if (ARM64_VA_BITS >= 40)
 	default 8
 	help
@@ -395,6 +419,20 @@ config MAX_XLAT_TABLES
 	  memory regions (both normal and device memory) are present on given
 	  platform and how much granularity is required while assigning
 	  attributes to these memory regions.
+
+config ARM64_MMU_REPORT_XLAT_TABLES_USAGE
+	bool "Trace translation table allocations"
+	depends on LOG
+	help
+	  Log a message every time the number of allocated translation tables
+	  reaches a new high-water mark. Useful for tuning
+	  CONFIG_MAX_XLAT_TABLES: the last "peak N of M allocated" line seen
+	  during a representative run is the lower bound on the value MAX
+	  must take to avoid a "too small" panic on that workload.
+
+	  Independently, a single LOG_WRN is always emitted (no Kconfig
+	  needed) the first time the pool drops below 12.5 % free, as a
+	  safety net before exhaustion.
 
 endif # ARM_MMU
 
@@ -436,5 +474,11 @@ config ARM64_SVE_VL_MAX
 	  save some per-thread memory in which case the hardware will be
 	  limited to the specified length. Having a larger value than what
 	  the hardware supports will only waste memory.
+
+config ARM64_RNG
+	bool
+	help
+	  This option signifies that the processor has the FEAT_RNG or FEAT_RNG_TRAP
+	  extension.
 
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R

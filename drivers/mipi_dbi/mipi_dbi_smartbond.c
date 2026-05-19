@@ -110,7 +110,7 @@ static void mipi_dbi_smartbond_send_single_frame(const struct device *dev)
 
 	LCDC->LCDC_INTERRUPT_REG |= LCDC_LCDC_INTERRUPT_REG_LCDC_VSYNC_IRQ_EN_Msk;
 
-	/* Setting this bit will enable the host to start outputing pixel data */
+	/* Setting this bit will enable the host to start outputting pixel data */
 	LCDC->LCDC_MODE_REG |= LCDC_LCDC_MODE_REG_LCDC_SFRAME_UPD_Msk;
 
 	/* Wait for frame update to complete */
@@ -352,7 +352,7 @@ static int mipi_dbi_smartbond_write_display(const struct device *dev,
 	 * Mainly check if the frame generator is busy with a pending frame update (might happen
 	 * when two frame updates take place one after the other and the display interface is
 	 * quite slow). VSYNC interrupt line should be asserted when the last line is being
-	 * outputed.
+	 * outputted.
 	 */
 	if (da1469x_lcdc_is_busy()) {
 		LOG_WRN("MIPI DBI host is busy");

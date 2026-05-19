@@ -9,6 +9,7 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -18,6 +19,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 static struct bt_csip_set_member_svc_inst *svc_inst;
 
@@ -25,6 +27,8 @@ static void csip_lock_changed_cb(struct bt_conn *conn,
 				 struct bt_csip_set_member_svc_inst *inst,
 				 bool locked)
 {
+	ARG_UNUSED(inst);
+
 	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");
 }
 
@@ -53,7 +57,7 @@ int csip_generate_rsi(uint8_t *rsi)
 	}
 
 	err = bt_csip_set_member_generate_rsi(svc_inst, rsi);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to generate RSI (err %d)\n", err);
 		return err;
 	}

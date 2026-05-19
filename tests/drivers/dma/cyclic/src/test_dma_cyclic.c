@@ -131,6 +131,7 @@ static int test_cyclic(void)
 
 	/* reset rx_data to validate that transfer cycles */
 	memset(rx_data, 0, sizeof(rx_data));
+	(void)memset(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
 
 	if (dma_resume(dma, chan_id) != 0) {
 		TC_PRINT("Failed to resume transfer\n");

@@ -97,6 +97,7 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 		spi-flash0 = &mx66uw1g45;
+		rtc = &rtc;
 	};
 
 	ext_flash_mem: memory@70000000 {
@@ -170,6 +171,14 @@
 	status = "okay";
 };
 
+&gpdma1 {
+	status = "okay";
+};
+
+&hpdma1 {
+	status = "okay";
+};
+
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
@@ -203,10 +212,6 @@
 };
 
 &iwdg {
-	status = "okay";
-};
-
-&wwdg {
 	status = "okay";
 };
 
@@ -433,4 +438,8 @@ st_cam_dvp: &dcmipp {
 		     &dcmipp_pixclk_pd5 &dcmipp_hsync_pg3 &dcmipp_vsync_pb7>;
 
 	pinctrl-names = "default";
+};
+
+&crc {
+	status = "okay";
 };

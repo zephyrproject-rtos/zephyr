@@ -312,6 +312,80 @@ users.
        /** @endcond */
    };
 
+.. _doxygen_driver_backend:
+
+Driver Backend API
+******************
+
+Driver subsystems expose a public API for applications and a "backend" API for driver implementers.
+
+While the backend API is not intended to be used directly by applications, it still constitutes a
+public contract between the subsystem and driver implementers and must therefore be properly
+documented. It typically includes the driver operations structure, typedefs defining the signature
+of each operation, and, in some cases, additional helper types or macros that are useful for driver
+implementation.
+
+Backend API Doxygen group
+=========================
+
+Use ``@def_driverbackendgroup`` to create a subgroup that is a child of the main API group and that
+will contain all the symbols associated with the backend API. This command takes two arguments: a
+human-readable name for the backend API (typically the same as the parent group) and the parent
+group identifier.
+
+.. code-block:: c
+
+   /**
+    * @def_driverbackendgroup{Haptics,haptics_interface}
+    * @{
+    */
+
+   /* callback typedefs, driver ops struct, helpers ... */
+
+   /** @} */
+
+Driver operations typedefs
+==========================
+
+Define a ``typedef`` for each driver operation. The detailed description may reference the
+corresponding public API function as it often has a similar signature.
+
+.. code-block:: c
+
+   /**
+    * @brief Set the haptic device to stop output.
+    * See haptics_stop_output() for argument description.
+    */
+   typedef int (*haptics_stop_output_t)(const struct device *dev);
+
+Driver operations structure
+===========================
+
+Annotate the struct with ``@driver_ops{Name}`` (where *Name* matches the name passed to
+``@def_driverbackendgroup``). For each member, use ``@driver_ops_mandatory`` or
+``@driver_ops_optional`` to indicate whether the driver must implement it, and ``@copybrief`` to
+inherit the brief from the public API function:
+
+.. code-block:: c
+
+   /**
+    * @driver_ops{Haptics}
+    */
+   __subsystem struct haptics_driver_api {
+       /**
+        * @driver_ops_mandatory @copybrief haptics_start_output
+        */
+       haptics_start_output_t start_output;
+       /**
+        * @driver_ops_mandatory @copybrief haptics_stop_output
+        */
+       haptics_stop_output_t stop_output;
+       /**
+        * @driver_ops_optional @copybrief haptics_register_error_callback
+        */
+       haptics_register_error_callback_t register_error_callback;
+   };
+
 .. _doxygen_conditional_code:
 
 Conditional code

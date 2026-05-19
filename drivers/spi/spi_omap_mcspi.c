@@ -78,8 +78,8 @@ struct omap_mcspi_regs {
 #define OMAP_MCSPI_CHCTRL_EN     BIT(0)         /* Channel enable */
 
 /* Channel Status Register */
-#define OMAP_MCSPI_CHSTAT_TXFFE BIT(3) /* Transmit buffer empty registe */
-#define OMAP_MCSPI_CHSTAT_RXFFE BIT(5) /* Receive buffer empty registe */
+#define OMAP_MCSPI_CHSTAT_TXFFE BIT(3) /* Transmit buffer empty register */
+#define OMAP_MCSPI_CHSTAT_RXFFE BIT(5) /* Receive buffer empty register */
 #define OMAP_MCSPI_CHSTAT_EOT   BIT(2) /* End of transfer status */
 #define OMAP_MCSPI_CHSTAT_TXS   BIT(1) /* Transmit register empty status */
 #define OMAP_MCSPI_CHSTAT_RXS   BIT(0) /* Receiver register full status */

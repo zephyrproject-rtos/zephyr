@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -133,5 +133,4 @@ zephyr_library_sources(${hal_dir}/source/cyhal_syspm.c)
 zephyr_library_sources(${hal_dir}/source/cyhal_system.c)
 zephyr_library_sources(${hal_dir}/source/cyhal_utils.c)
 zephyr_library_sources(${hal_dir}/source/cyhal_utils_impl.c)
-zephyr_library_sources(${hal_dir}/source/cyhal_wdt.c)
 zephyr_library_sources(${hal_dir}/source/cyhal_irq_impl.c)

@@ -176,7 +176,7 @@ static int mcux_igpio_configure(const struct device *dev,
 	if ((flags & GPIO_PULL_UP) != 0) {
 		reg |= (0x1 << MCUX_IMX_BIAS_PULL_UP_SHIFT);
 	}
-	if ((flag & GPIO_PULL_DOWN) != 0) {
+	if ((flags & GPIO_PULL_DOWN) != 0) {
 		return -ENOTSUP;
 	}
 #else

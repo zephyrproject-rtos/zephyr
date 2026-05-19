@@ -53,7 +53,6 @@ struct led_info {
 };
 
 /**
- * @typedef led_api_blink()
  * @brief Callback API for blinking an LED
  *
  * @see led_blink() for argument descriptions.
@@ -62,7 +61,6 @@ typedef int (*led_api_blink)(const struct device *dev, uint32_t led,
 			     uint32_t delay_on, uint32_t delay_off);
 
 /**
- * @typedef led_api_get_info()
  * @brief Optional API callback to get LED information
  *
  * @see led_get_info() for argument descriptions.
@@ -71,7 +69,6 @@ typedef int (*led_api_get_info)(const struct device *dev, uint32_t led,
 				const struct led_info **info);
 
 /**
- * @typedef led_api_set_brightness()
  * @brief Callback API for setting brightness of an LED
  *
  * @see led_set_brightness() for argument descriptions.
@@ -79,7 +76,6 @@ typedef int (*led_api_get_info)(const struct device *dev, uint32_t led,
 typedef int (*led_api_set_brightness)(const struct device *dev, uint32_t led,
 				      uint8_t value);
 /**
- * @typedef led_api_set_color()
  * @brief Optional API callback to set the colors of a LED.
  *
  * @see led_set_color() for argument descriptions.
@@ -88,7 +84,6 @@ typedef int (*led_api_set_color)(const struct device *dev, uint32_t led,
 				 uint8_t num_colors, const uint8_t *color);
 
 /**
- * @typedef led_api_on()
  * @brief Callback API for turning on an LED
  *
  * @see led_on() for argument descriptions.
@@ -96,7 +91,6 @@ typedef int (*led_api_set_color)(const struct device *dev, uint32_t led,
 typedef int (*led_api_on)(const struct device *dev, uint32_t led);
 
 /**
- * @typedef led_api_off()
  * @brief Callback API for turning off an LED
  *
  * @see led_off() for argument descriptions.
@@ -104,7 +98,6 @@ typedef int (*led_api_on)(const struct device *dev, uint32_t led);
 typedef int (*led_api_off)(const struct device *dev, uint32_t led);
 
 /**
- * @typedef led_api_write_channels()
  * @brief Callback API for writing a strip of LED channels
  *
  * @see led_api_write_channels() for arguments descriptions.
@@ -147,8 +140,7 @@ __syscall int led_blink(const struct device *dev, uint32_t led,
 static inline int z_impl_led_blink(const struct device *dev, uint32_t led,
 				   uint32_t delay_on, uint32_t delay_off)
 {
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
+	const struct led_driver_api *api = DEVICE_API_GET(led, dev);
 
 	if (api->blink == NULL) {
 		return -ENOSYS;
@@ -172,8 +164,7 @@ __syscall int led_get_info(const struct device *dev, uint32_t led,
 static inline int z_impl_led_get_info(const struct device *dev, uint32_t led,
 				      const struct led_info **info)
 {
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
+	const struct led_driver_api *api = DEVICE_API_GET(led, dev);
 
 	if (api->get_info == NULL) {
 		*info = NULL;
@@ -205,8 +196,7 @@ static inline int z_impl_led_set_brightness(const struct device *dev,
 					    uint32_t led,
 					    uint8_t value)
 {
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
+	const struct led_driver_api *api = DEVICE_API_GET(led, dev);
 
 	if (api->set_brightness == NULL) {
 		if (api->on == NULL || api->off == NULL) {
@@ -253,8 +243,7 @@ static inline int
 z_impl_led_write_channels(const struct device *dev, uint32_t start_channel,
 			  uint32_t num_channels, const uint8_t *buf)
 {
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
+	const struct led_driver_api *api = DEVICE_API_GET(led, dev);
 
 	if (api->write_channels == NULL) {
 		return -ENOSYS;
@@ -305,8 +294,7 @@ __syscall int led_set_color(const struct device *dev, uint32_t led,
 static inline int z_impl_led_set_color(const struct device *dev, uint32_t led,
 				       uint8_t num_colors, const uint8_t *color)
 {
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
+	const struct led_driver_api *api = DEVICE_API_GET(led, dev);
 
 	if (api->set_color == NULL) {
 		return -ENOSYS;
@@ -330,8 +318,7 @@ __syscall int led_on(const struct device *dev, uint32_t led);
 
 static inline int z_impl_led_on(const struct device *dev, uint32_t led)
 {
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
+	const struct led_driver_api *api = DEVICE_API_GET(led, dev);
 
 	if (api->set_brightness == NULL && api->on == NULL) {
 		return -ENOSYS;
@@ -360,8 +347,7 @@ __syscall int led_off(const struct device *dev, uint32_t led);
 
 static inline int z_impl_led_off(const struct device *dev, uint32_t led)
 {
-	const struct led_driver_api *api =
-		(const struct led_driver_api *)dev->api;
+	const struct led_driver_api *api = DEVICE_API_GET(led, dev);
 
 	if (api->set_brightness == NULL && api->off == NULL) {
 		return -ENOSYS;

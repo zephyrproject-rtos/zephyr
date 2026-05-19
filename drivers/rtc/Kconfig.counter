@@ -10,3 +10,14 @@ config RTC_COUNTER
 	  RTC driver applied for RTC device without broken-down time registers.
 	  Wraps the counter API to provide RTC functionality.
 	  Uses unix timestamp to convert between broken-down time and counter ticks.
+
+config RTC_COUNTER_NVMEM
+	bool "Epoch offset in NVMEM"
+	default y
+	depends on RTC_COUNTER
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_RTC_COUNTER),nvmem-cells)
+	select NVMEM
+	help
+	  Use an NVMEM cell to write the epoch offset when `rtc_set_time` is called,
+	  and read from the cell on init.
+	  Only compatible nodes with an NVMEM cell named "epoch-offset" will store data.

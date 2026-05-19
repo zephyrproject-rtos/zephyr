@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -52,7 +53,7 @@
 	((uint8_t[]){0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, \
 		     0xFF, 0xFF, 0xFF})
 
-#define BAP_RETRY_WAIT K_MSEC(100)
+#define BAP_RETRY_WAIT K_MSEC(100U)
 
 struct unicast_stream {
 	struct audio_test_stream stream;

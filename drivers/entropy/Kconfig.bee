@@ -1,0 +1,10 @@
+# Copyright(c) 2026, Realtek Semiconductor Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_BEE_TRNG
+	bool "Realtek Bee Family TRNG driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable the TRNG driver for Realtek Bee family SoCs.

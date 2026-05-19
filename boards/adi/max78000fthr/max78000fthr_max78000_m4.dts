@@ -134,3 +134,7 @@ feather_i2c: &i2c1 {
 	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
 	pinctrl-names = "default";
 };
+
+&rtc_counter {
+	status = "okay";
+};

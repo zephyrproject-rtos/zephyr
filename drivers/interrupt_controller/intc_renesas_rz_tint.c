@@ -41,10 +41,17 @@ struct intc_rz_tint_data {
 #define REG_TITSR_WRITE(tint, v)    sys_write32((v), RZ_INTC_TITSR0 + ((tint) / 16) * 4)
 #define REG_TITSR_TITSEL_MASK(tint) (BIT_MASK(2) << ((tint % 16) * 2))
 
+#ifdef CONFIG_SOC_SERIES_RZG3E
+#define REG_TSSR_READ(tint)       sys_read32(RZ_INTC_TSSR0 + ((tint) / 2) * 4)
+#define REG_TSSR_WRITE(tint, v)   sys_write32((v), RZ_INTC_TSSR0 + ((tint) / 2) * 4)
+#define REG_TSSR_TSSEL_MASK(tint) (BIT_MASK(8) << ((tint % 2) * 16))
+#define REG_TSSR_TIEN_MASK(tint)  (BIT(15) << ((tint % 2) * 16))
+#else
 #define REG_TSSR_READ(tint)       sys_read32(RZ_INTC_TSSR0 + ((tint) / 4) * 4)
 #define REG_TSSR_WRITE(tint, v)   sys_write32((v), RZ_INTC_TSSR0 + ((tint) / 4) * 4)
 #define REG_TSSR_TSSEL_MASK(tint) (BIT_MASK(7) << ((tint % 4) * 8))
 #define REG_TSSR_TIEN_MASK(tint)  (BIT(7) << ((tint % 4) * 8))
+#endif
 
 #if defined(CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG)
 /* V2H, V2N */

@@ -48,4 +48,13 @@ static inline uint32_t clock_bflb_get_root_clock(void)
 	return ((tmp & HBN_ROOT_CLK_SEL_MSK) >> HBN_ROOT_CLK_SEL_POS);
 }
 
+
+/** @cond INTERNAL_HIDDEN */
+
+/* Avoid overflow when calculating multipliers */
+#define BFLB_MUL_CLK(_value, _top, _base) \
+	(((uint64_t)(_value) * (uint64_t)(_top)) / (uint64_t)(_base))
+
+/** @endcond */
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_BFLB_COMMON_H_ */

@@ -38,14 +38,15 @@
 #define STM32_SRC_PLL_Q		(STM32_SRC_PLL_P + 1)
 #define STM32_SRC_PLL_R		(STM32_SRC_PLL_Q + 1)
 /* PLLSAI1 clocks */
+/** PLLSAI1 P output, can be selected for SAI, FDCAN and DFSDM peripherals */
 #define STM32_SRC_PLLSAI1_P	(STM32_SRC_PLL_R + 1)
+/** PLLSAI1 Q output, 48MHz clock which can be selected for USB / RNG */
 #define STM32_SRC_PLLSAI1_Q	(STM32_SRC_PLLSAI1_P + 1)
+/** PLLSAI2 R output, can be selected for ADC peripheral */
 #define STM32_SRC_PLLSAI1_R	(STM32_SRC_PLLSAI1_Q + 1)
 /* PLLSAI2 clocks */
+/** PLLSAI2 P output, can be selected for SAI and DFSDM peripherals */
 #define STM32_SRC_PLLSAI2_P	(STM32_SRC_PLLSAI1_R + 1)
-#define STM32_SRC_PLLSAI2_Q	(STM32_SRC_PLLSAI2_P + 1)
-#define STM32_SRC_PLLSAI2_R	(STM32_SRC_PLLSAI2_Q + 1)
-#define STM32_SRC_PLLSAI2_DIVR	(STM32_SRC_PLLSAI2_R + 1)
 
 /** @brief RCC_CCIPR register offset */
 #define CCIPR_REG		0x88

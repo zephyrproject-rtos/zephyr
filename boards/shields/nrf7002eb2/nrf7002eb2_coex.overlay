@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * SR co-existence via nordic_expansion_header (same nexus as main shield;
+ * nRF54L15 DK and nRF54L(m)20 DK).
+ */
+
+/ {
+	nrf_radio_coex: coex {
+		compatible = "nordic,nrf7002-coex";
+		status = "okay";
+		status0-gpios = <&nordic_expansion_header 8 GPIO_ACTIVE_HIGH>;
+		req-gpios = <&nordic_expansion_header 9 GPIO_ACTIVE_HIGH>;
+		grant-gpios = <&nordic_expansion_header 12 (GPIO_PULL_DOWN | GPIO_ACTIVE_LOW)>;
+	};
+};

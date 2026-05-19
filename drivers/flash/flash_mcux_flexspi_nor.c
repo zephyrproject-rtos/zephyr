@@ -23,8 +23,12 @@
 #include <zephyr/drivers/gpio.h>
 #endif
 
-#define NOR_WRITE_SIZE	1
 #define NOR_ERASE_VALUE	0xff
+
+#define FLEXSPI_NOR_SOC_NV_FLASH_COMPAT(node_id) \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
+#define FLEXSPI_NOR_SOC_NV_FLASH_NODE(node_id) \
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(node_id, FLEXSPI_NOR_SOC_NV_FLASH_COMPAT)
 
 #ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_WRITE_BUFFER
 static uint8_t nor_write_buf[SPI_NOR_PAGE_SIZE];
@@ -77,6 +81,10 @@ struct flash_flexspi_nor_config {
 	uint16_t rst_assert_ms;
 	uint16_t rst_deassert_ms;
 #endif
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
+	bool initial_soft_reset;
+	uint32_t reset_recovery_us;
+#endif
 };
 
 /* Device variables used in critical sections should be in this structure */
@@ -92,7 +100,32 @@ struct flash_flexspi_nor_data {
 	struct flash_pages_layout layout;
 #endif
 	struct flash_parameters flash_parameters;
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	struct k_mutex lock;
+#endif
 };
+
+static inline void flash_flexspi_nor_lock(const struct device *dev)
+{
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	struct flash_flexspi_nor_data *data = dev->data;
+
+	k_mutex_lock(&data->lock, K_FOREVER);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static inline void flash_flexspi_nor_unlock(const struct device *dev)
+{
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	struct flash_flexspi_nor_data *data = dev->data;
+
+	k_mutex_unlock(&data->lock);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
 
 /*
  * FLEXSPI LUT buffer used during configuration. Stored in .data to avoid
@@ -198,8 +231,13 @@ static int flash_flexspi_nor_read_id_helper(struct flash_flexspi_nor_data *data,
 static int flash_flexspi_nor_read_jedec_id(const struct device *dev, uint8_t *vendor_id)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+	int ret;
 
-	return flash_flexspi_nor_read_id_helper(data, vendor_id);
+	flash_flexspi_nor_lock(dev);
+	ret = flash_flexspi_nor_read_id_helper(data, vendor_id);
+	flash_flexspi_nor_unlock(dev);
+
+	return ret;
 }
 #endif
 
@@ -304,7 +342,7 @@ static int flash_flexspi_nor_page_program(struct flash_flexspi_nor_data *data,
 		.dataSize = len,
 	};
 
-	LOG_DBG("Page programming %d bytes to 0x%08zx", len, (ssize_t) offset);
+	LOG_DBG("Page programming %zu bytes to 0x%08zx", len, (ssize_t) offset);
 
 	return memc_flexspi_transfer(&data->controller, &transfer);
 }
@@ -336,10 +374,12 @@ static int flash_flexspi_nor_wait_bus_busy(struct flash_flexspi_nor_data *data)
 	return 0;
 }
 
-static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
-		void *buffer, size_t len)
+static int flash_flexspi_nor_read(const struct device *dev, off_t offset, void *buffer, size_t len)
 {
 	struct flash_flexspi_nor_data *data = dev->data;
+	int ret;
+	unsigned int key = 0U;
+	bool xip;
 
 	if (len == 0) {
 		return 0;
@@ -349,19 +389,64 @@ static int flash_flexspi_nor_read(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	flash_flexspi_nor_lock(dev);
+
 	if (!area_is_subregion(dev, offset, len)) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
-	uint8_t *src = memc_flexspi_get_ahb_address(&data->controller,
-						    data->port,
-						    offset);
+	xip = memc_flexspi_is_running_xip(&data->controller);
 
-	memcpy(buffer, src, len);
+	if (xip) {
+		key = irq_lock();
+		memc_flexspi_wait_bus_idle(&data->controller);
+	}
+
+	uint8_t *dst = (uint8_t *)buffer;
+	size_t remaining = len;
+	off_t current_offset = offset;
+	uint8_t ip_read_buf[SPI_NOR_PAGE_SIZE];
+
+	while (remaining > 0U) {
+		off_t aligned_offset = ROUND_DOWN(current_offset, sizeof(uint32_t));
+		size_t byte_offset = current_offset - aligned_offset;
+		size_t required = MIN(remaining + byte_offset, sizeof(ip_read_buf));
+		size_t read_size = MAX(ROUND_UP(required, sizeof(uint32_t)), sizeof(uint32_t));
+		size_t copy_size = MIN(remaining, read_size - byte_offset);
+		flexspi_transfer_t transfer = {
+			.deviceAddress = aligned_offset,
+			.port = data->port,
+			.cmdType = kFLEXSPI_Read,
+			.SeqNumber = 1,
+			.seqIndex = READ,
+			.data = (uint32_t *)ip_read_buf,
+			.dataSize = read_size,
+		};
+
+		ret = memc_flexspi_transfer(&data->controller, &transfer);
+		if (ret < 0) {
+			if (xip) {
+				irq_unlock(key);
+			}
+			flash_flexspi_nor_unlock(dev);
+			return ret;
+		}
+
+		memcpy(dst, &ip_read_buf[byte_offset], copy_size);
+		dst += copy_size;
+		current_offset += copy_size;
+		remaining -= copy_size;
+	}
+
+	if (xip) {
+		irq_unlock(key);
+	}
+
+	flash_flexspi_nor_unlock(dev);
 
 	return 0;
 }
-
 static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		const void *buffer, size_t len)
 {
@@ -373,7 +458,10 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 		return -EINVAL;
 	}
 
+	flash_flexspi_nor_lock(dev);
+
 	if (!area_is_subregion(dev, offset, len)) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -386,6 +474,7 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 						    offset);
 
 	if (!dst) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -434,8 +523,10 @@ static int flash_flexspi_nor_write(const struct device *dev, off_t offset,
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
+	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
+
+	flash_flexspi_nor_unlock(dev);
 
 	return 0;
 }
@@ -445,7 +536,10 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 {
 	struct flash_flexspi_nor_data *data = dev->data;
 
+	flash_flexspi_nor_lock(dev);
+
 	if (!area_is_subregion(dev, offset, size)) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -456,16 +550,19 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 						    offset);
 
 	if (!dst) {
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
 	if (offset % SPI_NOR_SECTOR_SIZE) {
 		LOG_ERR("Invalid offset");
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
 	if (size % SPI_NOR_SECTOR_SIZE) {
 		LOG_ERR("Invalid size");
+		flash_flexspi_nor_unlock(dev);
 		return -EINVAL;
 	}
 
@@ -527,8 +624,10 @@ static int flash_flexspi_nor_erase(const struct device *dev, off_t offset,
 	}
 
 #ifdef CONFIG_HAS_MCUX_CACHE
-	DCACHE_InvalidateByRange((uint32_t) dst, size);
+	DCACHE_InvalidateByRange((uintptr_t)dst, size);
 #endif
+
+	flash_flexspi_nor_unlock(dev);
 
 	return 0;
 }
@@ -874,10 +973,7 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 		.ARDSeqNumber = 1,
 		.ARDSeqIndex = READ,
 	};
-	if (en4b & BIT(6)) {
-		/* Flash is always in 4 byte mode. We just need to configure LUT */
-		return 0;
-	} else if (en4b & BIT(0)) {
+	if (en4b & BIT(0)) {
 		/* Issue instruction 0xB7 */
 		flexspi_lut[SCRATCH_CMD][0] = FLEXSPI_LUT_SEQ(
 				kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xB7,
@@ -941,6 +1037,14 @@ static int flash_flexspi_nor_4byte_enable(struct flash_flexspi_nor_data *data,
 		transfer.seqIndex = SCRATCH_CMD2;
 		transfer.cmdType = kFLEXSPI_Read;
 		return memc_flexspi_transfer(&data->controller, &transfer);
+	} else if (en4b & BIT(6)) {
+		/* Flash is always in 4 byte mode (no entry command needed).
+		 * This is checked last so that devices advertising both BIT(6)
+		 * and an active entry method (e.g. BIT(0)) still issue the
+		 * entry command — required after a warm reset (NRST) on parts
+		 * that reset to 3-byte mode despite setting BIT(6).
+		 */
+		return 0;
 	}
 
 	/* Other methods not supported. Include:
@@ -1189,8 +1293,13 @@ static int flash_flexspi_nor_sfdp_read(const struct device *dev,
 		off_t offset, void *data, size_t len)
 {
 	struct flash_flexspi_nor_data *dev_data = dev->data;
+	int ret;
 
-	return flash_flexspi_nor_sfdp_read_helper(dev_data, offset, data, len);
+	flash_flexspi_nor_lock(dev);
+	ret = flash_flexspi_nor_sfdp_read_helper(dev_data, offset, data, len);
+	flash_flexspi_nor_unlock(dev);
+
+	return ret;
 }
 
 #endif
@@ -1297,9 +1406,11 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 	case 0x16609d: /* IS25LP032 */
 	case 0x17609d: /* IS25LP064 */
 	case 0x18609d: /* IS25LP128 */
+	case 0x19609d: /* IS25LP256 */
 	case 0x16709d: /* IS25WP032 */
 	case 0x17709d: /* IS25WP064 */
 	case 0x18709d: /* IS25WP128 */
+	case 0x19709d: /* IS25WP256 */
 		/*
 		 * We can support this flash with the JEDEC probe, but we need to
 		 * ensure Dummy Cycles are at the default value
@@ -1316,6 +1427,7 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		}
 		/* Still return an error- we want the JEDEC configuration to run */
 		return -ENOTSUP;
+	case 0x1940ef: /* W25Q256JV-IQ/IN flash, uses identical LUT than W25Q512JV*/
 	case 0x2040ef:
 		/* W25Q512JV-IQ/IN flash, use 4 byte read/write */
 		flexspi_lut[READ][0] = FLEXSPI_LUT_SEQ(
@@ -1540,7 +1652,92 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 }
 
 /* Probe parameters from flash SFDP header, and use them to configure the FlexSPI */
-static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
+/*
+ * The recovery wait below runs while XIP is suspended, so every call it makes
+ * must be relocated to ITCM. k_us_to_cyc_ceil32() expands to the constant
+ * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC unless the runtime-rate path is selected,
+ * in which case it dispatches to sys_clock_hw_cycles_per_sec_runtime_get()
+ * which is *not* relocated and would fault. Forbid that combination at
+ * compile time so a downstream board cannot silently turn this into a fault.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME),
+	     "initial-soft-reset is XIP-critical: "
+	     "CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME would route "
+	     "k_us_to_cyc_ceil32() through a non-ITCM helper");
+
+/*
+ * XIP-safe busy-wait. k_busy_wait() is not relocated to SRAM and cannot be
+ * called while the outer IRQ lock is held. __always_inline ensures this code
+ * always lives inside the caller (flash_flexspi_nor_init), which is relocated
+ * to ITCM by zephyr_code_relocate(). Without it the linker script's explicit
+ * per-function enumeration would leave a separate symbol in flash.
+ */
+static __always_inline void flash_flexspi_nor_recovery_wait(uint32_t us)
+{
+	uint32_t count = k_us_to_cyc_ceil32(us);
+
+	while (count--) {
+		compiler_barrier();
+	}
+}
+
+/*
+ * Issue a software reset sequence (RSTEN 0x66 + RST 0x99) to return the
+ * flash to its power-on-reset state. This must be called after the initial
+ * LUT has been installed so IP commands can be issued. Stack-allocated LUT
+ * entries are used to avoid any flash data access during XIP critical sections.
+ */
+static __always_inline int flash_flexspi_nor_soft_reset(struct flash_flexspi_nor_data *data)
+{
+	uint32_t lut[2 * MEMC_FLEXSPI_CMD_PER_SEQ] = {0};
+	flexspi_transfer_t transfer = {
+		.deviceAddress = 0,
+		.port = data->port,
+		.SeqNumber = 1,
+		.cmdType = kFLEXSPI_Command,
+		.dataSize = 0,
+	};
+	int ret;
+
+	/*
+	 * The two LUT entries below are written contiguously starting at
+	 * SCRATCH_CMD: lut[0] holds RSTEN at SCRATCH_CMD, and the second slot
+	 * (lut[MEMC_FLEXSPI_CMD_PER_SEQ]) holds RST and *must* land at
+	 * SCRATCH_CMD + 1. If SCRATCH_CMD2 ever stops being SCRATCH_CMD + 1
+	 * the RST(0x99) would be issued from the wrong sequence index and
+	 * the soft-reset would silently complete only its first half.
+	 */
+	BUILD_ASSERT(SCRATCH_CMD2 == SCRATCH_CMD + 1,
+		     "soft-reset LUT layout assumes SCRATCH_CMD2 == SCRATCH_CMD + 1");
+
+	lut[0] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RESET_EN,
+				  kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+	lut[MEMC_FLEXSPI_CMD_PER_SEQ] = FLEXSPI_LUT_SEQ(
+				  kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, SPI_NOR_CMD_RESET_MEM,
+				  kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x0);
+
+	ret = memc_flexspi_update_lut(&data->controller, data->port, SCRATCH_CMD,
+				      lut, ARRAY_SIZE(lut));
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Send Reset Enable (0x66) */
+	transfer.seqIndex = SCRATCH_CMD;
+	ret = memc_flexspi_transfer(&data->controller, &transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Send Reset Memory (0x99) */
+	transfer.seqIndex = SCRATCH_CMD2;
+	return memc_flexspi_transfer(&data->controller, &transfer);
+}
+#endif /* DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset) */
+
+static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data,
+				   const struct flash_flexspi_nor_config *nor_cfg)
 {
 	/* JESD216B defines up to 23 basic flash parameters */
 	uint32_t param_buf[23];
@@ -1586,6 +1783,25 @@ static int flash_flexspi_nor_probe(struct flash_flexspi_nor_data *data)
 	if (ret < 0) {
 		goto _exit;
 	}
+
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
+	/* Issue software reset (RSTEN 0x66 + RST 0x99) before reading SFDP to
+	 * guarantee the flash is in 3-byte address mode after a warm reset.
+	 * The outer IRQ lock prevents any ISR-triggered XIP fetch during the
+	 * flash reset recovery window. flash_flexspi_nor_recovery_wait() is
+	 * used instead of k_busy_wait() because this file is relocated to SRAM
+	 * under CONFIG_FLASH_MCUX_FLEXSPI_XIP while k_busy_wait() is not.
+	 */
+	if (nor_cfg->initial_soft_reset) {
+		ret = flash_flexspi_nor_soft_reset(data);
+		if (ret < 0) {
+			goto _exit;
+		}
+		if (nor_cfg->reset_recovery_us > 0) {
+			flash_flexspi_nor_recovery_wait(nor_cfg->reset_recovery_us);
+		}
+	}
+#endif
 
 	/* First, check if the JEDEC ID of this flash has explicit support
 	 * in this driver
@@ -1660,6 +1876,10 @@ static int flash_flexspi_nor_init(const struct device *dev)
 	const struct flash_flexspi_nor_config *config = dev->config;
 	struct flash_flexspi_nor_data *data = dev->data;
 
+#if defined(CONFIG_FLASH_MCUX_FLEXSPI_NOR_MUTEX)
+	k_mutex_init(&data->lock);
+#endif
+
 	/* First step- use ROM pointer to controller device to create
 	 * a copy of the device structure in RAM we can use while in
 	 * critical sections of code.
@@ -1691,7 +1911,7 @@ static int flash_flexspi_nor_init(const struct device *dev)
 	}
 #endif
 
-	if (flash_flexspi_nor_probe(data)) {
+	if (flash_flexspi_nor_probe(data, config)) {
 		if (memc_flexspi_is_running_xip(&data->controller)) {
 			/* We can't continue from here- the LUT stored in
 			 * the FlexSPI will be invalid so we cannot XIP.
@@ -1751,6 +1971,15 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 #define FLASH_FLEXSPI_RST_GPIO(inst)
 #endif
 
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
+#define FLASH_FLEXSPI_SOFT_RESET(inst)                                                             \
+	.initial_soft_reset = DT_INST_PROP(inst, initial_soft_reset),                              \
+	.reset_recovery_us = DIV_ROUND_UP(DT_INST_PROP_OR(inst, t_reset_recovery, 0), \
+						1000),
+#else
+#define FLASH_FLEXSPI_SOFT_RESET(inst)
+#endif
+
 #define FLASH_FLEXSPI_DEVICE_CONFIG(n)					\
 	{								\
 		.flexspiRootClk = DT_INST_PROP(n, spi_max_frequency),	\
@@ -1780,6 +2009,7 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		flash_flexspi_nor_config_##n = {			\
 		.controller = DEVICE_DT_GET(DT_INST_BUS(n)),		\
 		FLASH_FLEXSPI_RST_GPIO(n)				\
+		FLASH_FLEXSPI_SOFT_RESET(n)				\
 	};								\
 	static struct flash_flexspi_nor_data				\
 		flash_flexspi_nor_data_##n = {				\
@@ -1794,8 +2024,9 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 			.pages_size = SPI_NOR_SECTOR_SIZE,		\
 		},))							\
 		.flash_parameters = {					\
-			.write_block_size = DT_INST_PROP_OR(n,		\
-				write_block_size, NOR_WRITE_SIZE),	\
+			.write_block_size = DT_PROP(			\
+				FLEXSPI_NOR_SOC_NV_FLASH_NODE(n),\
+				write_block_size),		\
 			.erase_value = NOR_ERASE_VALUE,			\
 		},							\
 	};								\

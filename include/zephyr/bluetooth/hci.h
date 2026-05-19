@@ -49,22 +49,6 @@ static inline const char *bt_hci_err_to_str(uint8_t hci_err)
 }
 #endif
 
-/** Allocate a HCI command buffer.
-  *
-  * This function allocates a new buffer for a HCI command. It is given
-  * the OpCode (encoded e.g. using the BT_OP macro) and the total length
-  * of the parameters. Upon successful return the buffer is ready to have
-  * the parameters encoded into it.
-  *
-  * @deprecated Use bt_hci_cmd_alloc() instead.
-  *
-  * @param opcode     Command OpCode.
-  * @param param_len  Length of command parameters.
-  *
-  * @return Newly allocated buffer.
-  */
-__deprecated struct net_buf *bt_hci_cmd_create(uint16_t opcode, uint8_t param_len);
-
 /** Allocate an HCI command buffer.
  *
  * This function allocates a new buffer for an HCI command. Upon successful

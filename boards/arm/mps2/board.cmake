@@ -7,7 +7,6 @@ if(CONFIG_BOARD_MPS2_AN385)
   set(QEMU_FLAGS_${ARCH}
     -cpu ${QEMU_CPU_TYPE_${ARCH}}
     -machine mps2-an385
-    -nographic
     -vga none
     )
   set(ARMFVP_BIN_NAME FVP_MPS2_Cortex-M3)
@@ -26,7 +25,6 @@ elseif(CONFIG_BOARD_MPS2_AN386)
   set(QEMU_FLAGS_${ARCH}
     -cpu ${QEMU_CPU_TYPE_${ARCH}}
     -machine mps2-an386
-    -nographic
     -vga none
     )
 elseif(CONFIG_BOARD_MPS2_AN500)
@@ -38,7 +36,6 @@ elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG
   set(QEMU_FLAGS_${ARCH}
     -cpu ${QEMU_CPU_TYPE_${ARCH}}
     -machine mps2-an521
-    -nographic
     -m 16
     -vga none
     )
@@ -66,8 +63,6 @@ elseif(CONFIG_BOARD_MPS2_AN521_CPU0 OR CONFIG_BOARD_MPS2_AN521_CPU0_NS OR CONFIG
   endif()
 endif()
 
-board_set_debugger_ifnset(qemu)
-
 set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
 -C fvp_mps2.telnetterminal0.start_telnet=0
 -C fvp_mps2.telnetterminal1.start_telnet=0
@@ -80,3 +75,5 @@ set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
 -C fvp_mps2.UART2.unbuffered_output=1
 -C fvp_mps2.mps2_visualisation.disable-visualisation=1
 )
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

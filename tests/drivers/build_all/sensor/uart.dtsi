@@ -40,6 +40,10 @@ test_uart_fcx_mldx5: fcx-mldx5 {
 	compatible = "ap,fcx-mldx5";
 };
 
+test_uart_s3km1110: s3km1110 {
+	compatible = "iclegend,s3km1110";
+};
+
 modbus {
 	compatible = "zephyr,modbus-serial";
 

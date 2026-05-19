@@ -148,6 +148,7 @@ static const char *const sensor_attribute_name[SENSOR_ATTR_COMMON_COUNT] = {
 	[SENSOR_ATTR_BATCH_DURATION] = "batch_dur",
 	[SENSOR_ATTR_GAIN] = "gain",
 	[SENSOR_ATTR_RESOLUTION] = "resolution",
+	[SENSOR_ATTR_CHIP_ID] = "chip_id",
 };
 
 enum sample_stats_state {
@@ -559,14 +560,14 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL || !sensor_device_check(dev)) {
 		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
-		return -ENODEV;
+		err = -ENODEV;
+		goto unlock;
 	}
 
 	if (!device_is_sensor(dev)) {
 		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
-		return -ENODEV;
+		err = -ENODEV;
+		goto unlock;
 	}
 
 	if (argc == 2) {
@@ -594,8 +595,8 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 
 	if (count == 0) {
 		shell_error(sh, "No channels to read, bailing");
-		k_mutex_unlock(&cmd_get_mutex);
-		return -EINVAL;
+		err = -EINVAL;
+		goto unlock;
 	}
 	iodev_sensor_shell_read_config.sensor = dev;
 	iodev_sensor_shell_read_config.count = count;
@@ -605,6 +606,7 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 	err = sensor_read_async_mempool(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
 	if (err < 0) {
 		shell_error(sh, "Failed to read sensor: %d", err);
+		goto unlock;
 	}
 	if (!IS_ENABLED(CONFIG_SENSOR_SHELL_STREAM)) {
 		/*
@@ -615,9 +617,9 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 						sensor_shell_processing_callback);
 	}
 
+unlock:
 	k_mutex_unlock(&cmd_get_mutex);
-
-	return 0;
+	return err;
 }
 
 static int cmd_sensor_attr_set(const struct shell *sh, size_t argc, char *argv[])
@@ -633,7 +635,6 @@ static int cmd_sensor_attr_set(const struct shell *sh, size_t argc, char *argv[]
 
 	if (!device_is_sensor(dev)) {
 		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
@@ -677,7 +678,7 @@ static void cmd_sensor_attr_get_handler(const struct shell *sh, const struct dev
 		parse_named_int(channel_name, sensor_channel_name, ARRAY_SIZE(sensor_channel_name));
 	int attr = parse_named_int(attr_name, sensor_attribute_name,
 				   ARRAY_SIZE(sensor_attribute_name));
-	struct sensor_value value = {0};
+	struct sensor_value value[3] = {{0}, {0}, {0}};
 	int rc;
 
 	if (channel < 0) {
@@ -689,7 +690,7 @@ static void cmd_sensor_attr_get_handler(const struct shell *sh, const struct dev
 		return;
 	}
 
-	rc = sensor_attr_get(dev, channel, attr, &value);
+	rc = sensor_attr_get(dev, channel, attr, &value[0]);
 
 	if (rc != 0) {
 		if (rc == -EINVAL && !print_missing_attribute) {
@@ -700,9 +701,11 @@ static void cmd_sensor_attr_get_handler(const struct shell *sh, const struct dev
 		return;
 	}
 
-	shell_info(sh, "%s(channel=%s, attr=%s) value=%.6f", dev->name,
+	shell_info(sh, "%s(channel=%s, attr=%s) value=%.6f value=%.6f value=%.6f", dev->name,
 		   sensor_channel_name[channel], sensor_attribute_name[attr],
-		   sensor_value_to_double(&value));
+		   sensor_value_to_double(&value[0]),
+		   sensor_value_to_double(&value[1]),
+		   sensor_value_to_double(&value[2]));
 }
 
 static int cmd_sensor_attr_get(const struct shell *sh, size_t argc, char *argv[])
@@ -717,7 +720,6 @@ static int cmd_sensor_attr_get(const struct shell *sh, size_t argc, char *argv[]
 
 	if (!device_is_sensor(dev)) {
 		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
@@ -1102,6 +1104,7 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 
 			if (sensor_idx < 0) {
 				shell_error(sh, "Unable to find sensor device in trigger array");
+				return -ENOENT;
 			} else {
 				sensor_trigger_devices[sensor_idx] = NULL;
 			}

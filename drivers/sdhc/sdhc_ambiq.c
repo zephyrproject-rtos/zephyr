@@ -324,7 +324,7 @@ static int ambiq_sdio_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Get the uderlying SDHC host instance */
+	/* Get the underlying SDHC host instance */
 	data->host = am_hal_get_card_host(AM_HAL_SDHC_CARD_HOST + config->inst, true);
 
 	if (data->host == NULL) {

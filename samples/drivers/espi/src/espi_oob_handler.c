@@ -14,10 +14,10 @@
 LOG_MODULE_DECLARE(espi, CONFIG_ESPI_LOG_LEVEL);
 
 struct oob_header {
-	uint8_t dest_slave_addr;
+	uint8_t dest_addr;
 	uint8_t oob_cmd_code;
 	uint8_t byte_cnt;
-	uint8_t src_slave_addr;
+	uint8_t src_addr;
 };
 
 #ifdef CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC
@@ -45,10 +45,10 @@ struct thread_context {
 
 static struct thread_context context;
 static bool need_temp;
-#endif
+#endif /* CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC */
 
 static struct espi_oob_packet resp_pckt;
-static uint8_t buf[MAX_ESPI_BUF_LEN];
+static uint8_t buf[MAX_ESPI_OOB_BUF_LEN];
 
 static int request_temp(const struct device *dev)
 {
@@ -58,10 +58,10 @@ static int request_temp(const struct device *dev)
 
 	LOG_WRN("%s", __func__);
 
-	oob_hdr.dest_slave_addr = PCH_DEST_SLV_ADDR;
-	oob_hdr.oob_cmd_code = OOB_CMDCODE;
+	oob_hdr.dest_addr = PCH_OOB_DEST_ADDR;
+	oob_hdr.oob_cmd_code = PECI_OOB_GET_TEMP_CMDCODE;
 	oob_hdr.byte_cnt = 1;
-	oob_hdr.src_slave_addr = SRC_SLV_ADDR;
+	oob_hdr.src_addr = PCH_OOB_SRC_ADDR;
 
 	/* Packetize OOB request */
 	req_pckt.buf = (uint8_t *)&oob_hdr;
@@ -92,7 +92,7 @@ static int retrieve_packet(const struct device *dev, uint8_t *sender)
 #endif
 
 	resp_pckt.buf = (uint8_t *)&buf;
-	resp_pckt.len = MAX_ESPI_BUF_LEN;
+	resp_pckt.len = MAX_ESPI_OOB_BUF_LEN;
 
 	ret = espi_receive_oob(dev, &resp_pckt);
 	if (ret) {
@@ -106,7 +106,7 @@ static int retrieve_packet(const struct device *dev, uint8_t *sender)
 	}
 
 	if (sender) {
-		*sender = buf[OOB_RESPONSE_SENDER_INDEX];
+		*sender = buf[PECI_OOB_RESPONSE_SENDER_INDEX];
 	}
 
 	return 0;
@@ -213,4 +213,5 @@ void espihub_thread(void *p1, void *p2, void *p3)
 
 	k_timer_stop(&temp_timer);
 }
+
 #endif /* CONFIG_ESPI_OOB_CHANNEL_RX_ASYNC */

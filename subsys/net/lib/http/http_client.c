@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_http_client, CONFIG_NET_HTTP_LOG_LEVEL);
 #include <stdlib.h>
 
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/http/client.h>
 #include <zephyr/net/http/status.h>
@@ -28,7 +29,7 @@ LOG_MODULE_REGISTER(net_http_client, CONFIG_NET_HTTP_LOG_LEVEL);
 #include "net_private.h"
 
 #define HTTP_CONTENT_LEN_SIZE 11
-#define MAX_SEND_BUF_LEN 192
+#define MAX_SEND_BUF_LEN CONFIG_HTTP_CLIENT_SEND_BUF_SIZE
 
 static int sendall(int sock, const void *buf, size_t len,
 			const k_timepoint_t req_end_timepoint)
@@ -41,7 +42,8 @@ static int sendall(int sock, const void *buf, size_t len,
 			int pollres;
 			k_ticks_t req_timeout_ticks =
 				sys_timepoint_timeout(req_end_timepoint).ticks;
-			int req_timeout_ms = k_ticks_to_ms_floor32(req_timeout_ticks);
+			int req_timeout_ms = (req_timeout_ticks == K_TICKS_FOREVER) ?
+					     -1 : k_ticks_to_ms_ceil32(req_timeout_ticks);
 
 			pfd.fd = sock;
 			pfd.events = ZSOCK_POLLOUT;
@@ -310,9 +312,8 @@ static int on_body(struct http_parser *parser, const char *at, size_t length)
 		req->internal.response.body_frag_start = (uint8_t *)at;
 	}
 
-	/* Calculate the length of the body contained in the recv_buf */
-	req->internal.response.body_frag_len = req->internal.response.data_len -
-		(req->internal.response.body_frag_start - req->internal.response.recv_buf);
+	/* Use the parser-decoded length. */
+	req->internal.response.body_frag_len = length;
 
 	return 0;
 }
@@ -330,11 +331,6 @@ static int on_headers_complete(struct http_parser *parser)
 
 	if (parser->status_code == HTTP_101_SWITCHING_PROTOCOLS) {
 		NET_DBG("Switching protocols, skipping body");
-		return 1;
-	}
-
-	if (parser->status_code >= 500 && parser->status_code < 600) {
-		NET_DBG("Status %d, skipping body", parser->status_code);
 		return 1;
 	}
 
@@ -495,7 +491,8 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 	do {
 		k_ticks_t req_timeout_ticks =
 			sys_timepoint_timeout(req_end_timepoint).ticks;
-		int req_timeout_ms = k_ticks_to_ms_floor32(req_timeout_ticks);
+		int req_timeout_ms = (req_timeout_ticks == K_TICKS_FOREVER) ?
+				     -1 : k_ticks_to_ms_ceil32(req_timeout_ticks);
 
 		ret = zsock_poll(fds, nfds, req_timeout_ms);
 		if (ret == 0) {

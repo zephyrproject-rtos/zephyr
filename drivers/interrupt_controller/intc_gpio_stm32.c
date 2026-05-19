@@ -75,7 +75,11 @@ static inline uint32_t stm32_exti_linenum_to_src_cfg_line(gpio_pin_t linenum)
 	return ((linenum % 4 * 4) << 16) | (linenum / 4);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32g0_exti) || \
 	defined(CONFIG_SOC_SERIES_STM32MP2X)
+#if defined(CONFIG_STM32_HAL2)
+	return (linenum & 0xF) | ((linenum / 4) << LL_EXTI_CR_REGISTER_SHIFT);
+#else /* CONFIG_STM32_HAL2 */
 	return ((linenum & 0x3) << (16 + 3)) | (linenum >> 2);
+#endif /* CONFIG_STM32_HAL2 */
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7rs_exti)
 	/* Gives the LL_SBS_EXTI_LINEn corresponding to the line number */
 	return (((linenum % 4 * 4) << LL_SBS_REGISTER_PINPOS_SHFT) | (linenum / 4));

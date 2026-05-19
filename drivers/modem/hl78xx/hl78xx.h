@@ -129,6 +129,10 @@
 /* PDP Context commands */
 #define DEACTIVATE_PDP_CONTEXT             "AT+CGACT=0"
 #define ACTIVATE_PDP_CONTEXT               "AT+CGACT=1"
+/* LTE coverage check command */
+#define CHECK_LTE_COVERAGE_CMD             "AT+KCELLMEAS=1"
+#define WAKE_LTE_LAYER_CMD                 "AT%PINGCMD=0,\"8.8.8.8\",1"
+
 /**
  * Airvantage commands
  * User initiated connection start/stop
@@ -142,6 +146,8 @@
 /* Helper macros */
 #define ATOI(s_, value_, desc_) modem_atoi(s_, value_, desc_, __func__)
 #define ATOD(s_, value_, desc_) modem_atod(s_, value_, desc_, __func__)
+/* Default dynamic AT command maximum length */
+#define HL78XX_AT_CMD_MAX_LEN       64
 
 #define HL78XX_LOG_DBG(str, ...)                                                                   \
 	COND_CODE_1(CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG, \
@@ -160,6 +166,7 @@ enum hl78xx_state {
 	MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
 	MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT,
 	MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT,
+	MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT,
 	MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT,
 	/* Full functionality, searching
 	 * CFUN=1
@@ -177,6 +184,7 @@ enum hl78xx_state {
 	 * CFUN=4
 	 */
 	MODEM_HL78XX_STATE_AIRPLANE,
+	MODEM_HL78XX_STATE_SLEEP,
 #ifdef CONFIG_HL78XX_GNSS
 	MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT,
 	MODEM_HL78XX_STATE_GNSS_SEARCH_STARTED,
@@ -184,6 +192,7 @@ enum hl78xx_state {
 	MODEM_HL78XX_STATE_INIT_POWER_OFF,
 	MODEM_HL78XX_STATE_POWER_OFF_PULSE,
 	MODEM_HL78XX_STATE_AWAIT_POWER_OFF,
+	MODEM_HL78XX_STATE_COUNT
 };
 
 enum hl78xx_event {
@@ -216,6 +225,10 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED,
 	MODEM_HL78XX_EVENT_GNSS_MODE_EXIT_REQUESTED,
 #endif /* CONFIG_HL78XX_GNSS */
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	MODEM_HL78XX_EVENT_DEVICE_ASLEEP,
+	MODEM_HL78XX_EVENT_DEVICE_AWAKE,
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 
 	/* WDSI FOTA events */
@@ -282,7 +295,62 @@ struct kband_syntax {
 	 */
 	uint8_t bnd_bitmap[MDM_BAND_HEX_STR_LEN];
 };
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+#ifdef CONFIG_MODEM_HL78XX_PSM
+struct hl78xx_psm_status {
+	enum hl78xx_psmev_event current;
+	enum hl78xx_psmev_event previous;
+	bool is_psm_active;
+};
+#endif /* CONFIG_MODEM_HL78XX_PSM */
 
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+struct hl78xx_edrx_status {
+	enum hl78xx_edrx_event current;
+	enum hl78xx_edrx_event previous;
+	bool is_edrx_idle_requested;
+};
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+struct hl78xx_power_down_status {
+	enum power_down_event current;
+	enum power_down_event previous;
+	bool is_power_down_requested;
+};
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+
+enum hl78xx_kedrx_mode {
+	HL78XX_KEDRX_MODE_DISABLE = 0,
+	HL78XX_KEDRX_MODE_ENABLE = 1,
+	HL78XX_KEDRX_MODE_ENABLE_W_URC = 2,
+	HL78XX_KEDRX_MODE_DISABLE_AND_ERASE_CFG = 3,
+};
+
+enum hl78xx_kedrx_ack_type {
+	HL78XX_KEDRX_ACK_TYPE_CATM = 4,
+	HL78XX_KEDRX_ACK_TYPE_NB = 5,
+};
+struct ksleep_syntax {
+	uint8_t mngt;
+	uint8_t level;
+	uint8_t delay;
+};
+struct cpsms_syntax {
+	/* Indication to disable or enable the use of PSM in the UE; */
+	bool mode;
+	/* TAU value (T3412) */
+	uint8_t periodic_tau;
+	/* Active Time value (T3324) */
+	uint8_t active_time;
+};
+
+struct kedrxcfg_syntax {
+	enum hl78xx_kedrx_mode mode;
+	enum hl78xx_kedrx_ack_type ack_type;
+	uint8_t requested_edrx;
+};
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 enum apn_state_enum_t {
 	APN_STATE_NOT_CONFIGURED = 0,
 	APN_STATE_CONFIGURED,
@@ -410,6 +478,28 @@ struct modem_status {
 	struct ntn_rat_state ntn_rat;
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	struct hl78xx_modem_uart_status uart;
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	/* Power Management Control */
+	struct ksleep_syntax pmc_sleep;
+	struct cpsms_syntax pmc_cpsms;
+	struct kedrxcfg_syntax pmc_kedrxcfg[2];
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	struct hl78xx_psm_status psmev;
+	bool awaiting_psm_confirmation;
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	struct hl78xx_power_down_status power_down;
+	bool ignore_power_down_feeding;
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	struct hl78xx_edrx_status edrxev;
+	bool ignore_edrx_idle_feeding;
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+	bool lpm_restore_pending;
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+	bool rrc_idle;
+	uint16_t kcellmeas_timeout;
+	bool kcellmeas_bootstrap_done;
 };
 
 struct modem_gpio_callbacks {
@@ -448,6 +538,14 @@ struct hl78xx_data {
 	struct modem_gpio_callbacks gpio_cbs;
 	struct modem_event_system events;
 	struct k_work_delayable timeout_work;
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	struct k_work_delayable hl78xx_pwr_dwn_work;
+#endif
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	struct k_work_delayable hl78xx_edrx_idle_work;
+	struct k_work_delayable hl78xx_gpio6_debounce_work;
+	bool hl78xx_gpio6_pending_state;
+#endif
 	/* Track leftover socket data state previously stored as a TU-global.
 	 * Moving this into the per-modem data reduces global BSS and keeps
 	 * state colocated with the modem instance.
@@ -468,6 +566,7 @@ struct hl78xx_data {
 
 struct hl78xx_config {
 	const struct device *uart;
+	const struct hl78xx_variant_ops *variant;
 	struct gpio_dt_spec mdm_gpio_reset;
 	struct gpio_dt_spec mdm_gpio_wake;
 	struct gpio_dt_spec mdm_gpio_pwr_on;
@@ -489,6 +588,218 @@ struct hl78xx_config {
 	const struct modem_chat_script *init_chat_script;
 	const struct modem_chat_script *periodic_chat_script;
 };
+
+/**
+ * @brief Check whether a GPIO is available (has a valid port binding).
+ */
+static inline bool hl78xx_gpio_is_enabled(const struct gpio_dt_spec *gpio)
+{
+	return (gpio->port != NULL);
+}
+
+/* Forward-declare for variant ops */
+struct hl78xx_socket_data;
+
+/**
+ * @brief Variant-specific operations for HL78xx modem family.
+ *
+ * Each module variant (HL7800, HL7812, etc.) provides a const instance
+ * of this struct.  The common driver calls through these function pointers
+ * at points where behaviour diverges between variants.
+ */
+struct hl78xx_variant_ops {
+	/* True when modem-side socket context is lost in PSM/eDRX and must be recreated. */
+	bool socket_lpm_recreate_required;
+
+	/**
+	 * @brief Select RAT command and requested RAT according to variant policy.
+	 *
+	 * @param[out] cmd_set_rat AT command string to apply selected RAT.
+	 * @param[out] rat_request Selected RAT mode.
+	 * @return 0 on success, -EINVAL when no valid RAT policy is configured.
+	 */
+	int (*cfg_select_rat)(struct hl78xx_data *data, const char **cmd_set_rat,
+			      enum hl78xx_cell_rat_mode *rat_request);
+
+	/**
+	 * @brief Apply variant-specific registration-status script after RAT selection.
+	 */
+	int (*cfg_apply_rat_post_select)(struct hl78xx_data *data,
+					 enum hl78xx_cell_rat_mode rat_request);
+
+	/**
+	 * @brief Return true if band configuration should be skipped for selected RAT.
+	 */
+	bool (*cfg_skip_band_for_rat)(struct hl78xx_data *data,
+				      enum hl78xx_cell_rat_mode rat_request);
+
+	/**
+	 * @brief Handle +KSTATEV URC payload.
+	 *
+	 * Primarily used by HL7812 to update RAT-mode transitions.
+	 */
+	void (*on_kstatev_urc)(struct hl78xx_data *data, int state_value, int rat_mode);
+
+	/**
+	 * @brief Handle +PSMEV URC payload.
+	 *
+	 * Primarily used by HL7812 where +PSMEV is authoritative.
+	 */
+	void (*on_psmev_urc)(struct hl78xx_data *data, int psmev_value);
+
+	/**
+	 * @brief Handle parsed RRC status from AT%STATUS="RRC".
+	 *
+	 * Used by GNSS/eDRX gating flow before GNSS start.
+	 */
+	void (*on_rrc_status_urc)(struct hl78xx_data *data, bool is_idle);
+
+	/**
+	 * @brief Handle GPIO6 interrupt (sleep/wake detection).
+	 *
+	 * Called from the common GPIO6 ISR with the current pin state.
+	 * HL7800: GPIO6 is the sole authoritative sleep/wake indicator.
+	 * HL7812: Supplements +PSMEV URC; tracks eDRX/power-down.
+	 */
+	void (*gpio6_handler)(struct hl78xx_data *data, bool pin_state);
+
+	/**
+	 * @brief GPIO6 debounce delay in milliseconds.
+	 *
+	 * Set to 0 to disable debounce and process GPIO6 edges immediately.
+	 */
+	uint16_t gpio6_debounce_ms;
+
+	/**
+	 * @brief Interpret +KSUP during low-power operation.
+	 *
+	 * HL7800: +KSUP on PSM/eDRX exit is informational (AT settings
+	 *         preserved). Routes GNSS-pending and config-restart cases.
+	 * HL7812: Always treated as an unexpected restart (MDM_RESTART).
+	 */
+	void (*on_ksup_lpm)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Variant-specific logic in await-registered state enter.
+	 *
+	 * HL7800: eDRX settling timer, PSM GNSS wake, "already registered"
+	 *         shortcut.
+	 * HL7812: PSM wake LTE layer only.
+	 *
+	 * @return 0 to continue default processing, 1 to skip it.
+	 */
+	int (*await_registered_enter_lpm)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Variant-specific timeout handling in await-registered state.
+	 *
+	 * Called when MODEM_HL78XX_EVENT_TIMEOUT is received while waiting
+	 * for registration in LPM flows.
+	 *
+	 * @return true if handled and caller should stop default timeout path.
+	 */
+	bool (*await_registered_timeout_lpm)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Variant-specific carrier-on enter for LPM.
+	 *
+	 * Determines whether network setup (CGCONTRDP/DNS) is needed,
+	 * handles PSM/eDRX context restoration.
+	 *
+	 * @param[out] is_lpm Set to true if LPM restore is needed.
+	 * @return 0 to continue, 1 to return early from carrier_on_enter.
+	 */
+	int (*carrier_on_enter_lpm)(struct hl78xx_data *data, bool *is_lpm);
+
+	/**
+	 * @brief Post-DNS-success cleanup in carrier-on timeout.
+	 *
+	 * HL7800: Clears PSM/eDRX exit state, releases socket semaphore.
+	 * HL7812: No-op (socket sem released via +KCELLMEAS).
+	 */
+	void (*carrier_on_dns_complete)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Handle deregistered event for PSM detection.
+	 *
+	 * HL7800: Pull WAKE LOW to allow PSM entry.
+	 * HL7812: Just log, wait for GPIO6/PSMEV.
+	 */
+	void (*carrier_on_deregistered_psm)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Prepare socket layer on sleep entry.
+	 *
+	 * HL7800: Invalidate all modem-side socket contexts (destroyed
+	 *         during PSM/eDRX).
+	 * HL7812: No-op (contexts retained).
+	 */
+	void (*on_sleep_enter)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Route state after sleep -> BUS_OPENED.
+	 *
+	 * HL7800 PSM/eDRX: Warm wake -> AWAIT_REGISTERED.
+	 * HL7800 POWER_DOWN: Full init -> RUN_INIT_SCRIPT.
+	 * HL7812: -> AWAIT_REGISTERED.
+	 */
+	void (*sleep_bus_opened_routing)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Check if modem is in LPM and needs wakeup before socket I/O.
+	 *
+	 * Called by the socket offload layer before sendto().
+	 *
+	 * @param[out] in_lpm Set to true if modem is in LPM.
+	 * @param[out] early_return Set to true to return 0 immediately
+	 *             (modem is awake, no LPM processing needed).
+	 */
+	void (*check_lpm_state)(struct hl78xx_data *data, bool *in_lpm, bool *early_return);
+
+	/**
+	 * @brief Parse +CxREG ACT value into RAT mode for variant-specific URC formats.
+	 *
+	 * @param act_value ACT value parsed from +CxREG payload.
+	 * @param[out] rat_mode Parsed RAT mode if handled.
+	 * @return true when ACT parsing is supported by this variant.
+	 */
+	bool (*cxreg_try_parse_rat_mode)(struct hl78xx_data *data, int act_value,
+					 enum hl78xx_cell_rat_mode *rat_mode);
+
+	/**
+	 * @brief Handle data-ready semantics when +CEREG/+CREG indicates registration.
+	 *
+	 * Some variants use registration URCs as an early data-ready signal
+	 * in LPM+GNSS flows; others defer readiness to +KCELLMEAS.
+	 */
+	void (*on_registered_ready)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Handle data-ready semantics when +KCELLMEAS indicates valid signal.
+	 *
+	 * Some variants release socket communications on this signal,
+	 * while others complete restore later in carrier-on processing.
+	 */
+	void (*on_kcellmeas_ready)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Handle pending GNSS mode request on CARRIER_ON entry.
+	 *
+	 * @return true if the variant handled routing and the caller should return.
+	 */
+	bool (*carrier_on_gnss_pending)(struct hl78xx_data *data);
+
+	/**
+	 * @brief Handle GNSS mode enter request while low power mode is enabled.
+	 *
+	 * @return true if the variant handled the request and caller should return.
+	 */
+	bool (*on_gnss_mode_enter_lpm)(struct hl78xx_data *data);
+};
+
+/* Variant ops instances (defined in variant-specific .c files) */
+extern const struct hl78xx_variant_ops hl78xx_variant_ops_hl7812;
+extern const struct hl78xx_variant_ops hl78xx_variant_ops_hl7800;
 
 /* socket read callback data */
 struct socket_read_data {
@@ -530,49 +841,62 @@ int dns_work_cb(const struct device *dev, bool hard_reset);
  *
  * @param data Pointer to the modem HL78xx driver data structure.
  */
-void iface_status_work_cb(struct hl78xx_data *data,
-			  modem_chat_script_callback script_user_callback);
+int iface_status_work_cb(struct hl78xx_data *data, modem_chat_script_callback script_user_callback);
+
+/**
+ * @brief Parameters for dynamic modem command execution.
+ */
+struct hl78xx_dynamic_cmd_request {
+	modem_chat_script_callback script_user_callback;
+	const uint8_t *cmd;
+	uint16_t cmd_len;
+	const struct modem_chat_match *response_matches;
+	uint16_t matches_size;
+	uint16_t response_timeout;
+	bool user_cmd;
+};
 
 /**
  * @brief Send a command to the modem and wait for matching response(s).
  *
- * This function sends a raw command to the modem and processes its response using
- * the provided match patterns. It supports asynchronous notification via callback.
- *
- * @param data Pointer to the modem HL78xx driver data structure.
- * @param script_user_callback Callback function invoked on matched responses or errors.
- * @param cmd Pointer to the command buffer to send.
- * @param cmd_len Length of the command in bytes.
- * @param response_matches Array of expected response match patterns.
- * @param matches_size Number of elements in the response_matches array.
- * @param response_timeout Response timeout in seconds.
- *
- * @return 0 on success, negative errno code on failure.
+ * Request-object API preferred for maintainability.
  */
-int modem_dynamic_cmd_send(struct hl78xx_data *data,
-			   modem_chat_script_callback script_user_callback, const uint8_t *cmd,
-			   uint16_t cmd_len, const struct modem_chat_match *response_matches,
-			   uint16_t matches_size, uint16_t response_timeout, bool user_cmd);
+int modem_dynamic_cmd_send_req(struct hl78xx_data *data,
+			       const struct hl78xx_dynamic_cmd_request *req);
 
 /**
  * @brief Send a command to the modem asynchronously and handle responses via callback.
- * This function sends a command to the modem and processes responses asynchronously
- * using the provided match patterns and callback function.
- * @param data Pointer to the modem HL78xx driver data structure.
- * @param script_user_callback Callback function invoked on matched responses or errors.
- * @param cmd Pointer to the command buffer to send.
- * @param cmd_size Size of the command in bytes.
- * @param response_matches Array of expected response match patterns.
- * @param matches_size Number of elements in the response_matches array.
- * @param response_timeout Response timeout in seconds.
- * @param user_cmd Boolean indicating if this is a user-initiated command.
- * @return 0 on success, negative errno code on failure.
+ *
+ * Request-object API preferred for maintainability.
  */
-int modem_dynamic_cmd_send_async(struct hl78xx_data *data,
-				 modem_chat_script_callback script_user_callback,
-				 const uint8_t *cmd, uint16_t cmd_size,
-				 const struct modem_chat_match *response_matches,
-				 uint16_t matches_size, uint16_t response_timeout, bool user_cmd);
+int modem_dynamic_cmd_send_async_req(struct hl78xx_data *data,
+				     const struct hl78xx_dynamic_cmd_request *req);
+
+/* Compatibility call-shapes while callsites migrate to *_req APIs. */
+#define modem_dynamic_cmd_send(_data, _script_cb, _cmd, _cmd_len, _response_matches,               \
+			       _matches_size, _response_timeout, _user_cmd)                        \
+	modem_dynamic_cmd_send_req((_data), &(const struct hl78xx_dynamic_cmd_request){            \
+						    .script_user_callback = (_script_cb),          \
+						    .cmd = (const uint8_t *)(_cmd),                \
+						    .cmd_len = (_cmd_len),                         \
+						    .response_matches = (_response_matches),       \
+						    .matches_size = (_matches_size),               \
+						    .response_timeout = (_response_timeout),       \
+						    .user_cmd = (_user_cmd),                       \
+					    })
+
+#define modem_dynamic_cmd_send_async(_data, _script_cb, _cmd, _cmd_len, _response_matches,         \
+				     _matches_size, _response_timeout, _user_cmd)                  \
+	modem_dynamic_cmd_send_async_req((_data), &(const struct hl78xx_dynamic_cmd_request){      \
+							  .script_user_callback = (_script_cb),    \
+							  .cmd = (const uint8_t *)(_cmd),          \
+							  .cmd_len = (_cmd_len),                   \
+							  .response_matches = (_response_matches), \
+							  .matches_size = (_matches_size),         \
+							  .response_timeout = (_response_timeout), \
+							  .user_cmd = (_user_cmd),                 \
+						  })
+
 #define HASH_MULTIPLIER 37
 /**
  * @brief Generate a 32-bit hash from a string.
@@ -822,10 +1146,32 @@ int check_if_any_socket_connected(const struct device *dev);
  *
  */
 void hl78xx_start_timer(struct hl78xx_data *data, k_timeout_t timeout);
+
+/**
+ * @brief Stop the timer.
+ * @param data pointer to hl78xx_data.
+ */
+void hl78xx_stop_timer(struct hl78xx_data *data);
+
 /**
  * @brief Dispatch an event
  * @param notif event information.
  */
 void event_dispatcher_dispatch(struct hl78xx_evt *notif);
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+
+#ifdef CONFIG_MODEM_HL78XX_PSM
+
+static inline bool hl78xx_psm_is_active(struct hl78xx_data *data)
+{
+	return data->status.psmev.current != HL78XX_PSM_EVENT_NONE;
+}
+
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+
+void hl78xx_release_socket_comms(struct hl78xx_data *data);
+
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
 #endif /* HL78XX_H */

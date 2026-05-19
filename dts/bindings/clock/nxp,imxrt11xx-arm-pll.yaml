@@ -1,0 +1,27 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  i.MX RT11xx ARM PLL clock provider.
+
+  New devicetree users should configure the ARM PLL using ``loop-div`` and
+  ``post-div``. The legacy ``clock-mult`` and ``clock-div`` properties are
+  still supported for compatibility, but are deprecated.
+
+compatible: "nxp,imxrt11xx-arm-pll"
+
+include: nxp,imxrt-arm-pll-common.yaml
+
+properties:
+  clock-div:
+    type: int
+    deprecated: true
+    description: |
+      Deprecated. Use post-div instead.
+
+  clock-mult:
+    type: int
+    deprecated: true
+    description: |
+      Deprecated. Use loop-div instead. The legacy property represented half
+      of the hardware loop divider, so loop-div = clock-mult * 2.

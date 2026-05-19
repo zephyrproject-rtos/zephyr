@@ -20,6 +20,7 @@ tests:
       - qemu_arc/qemu_arc_hs
       - qemu_arc/qemu_arc_hs6x
       - qemu_leon3
+      - qemu_or1k
     integration_platforms:
       - qemu_cortex_m3
       - nsim/nsim_em

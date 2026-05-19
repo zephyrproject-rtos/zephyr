@@ -22,3 +22,8 @@
 &flexpwm1_pwm0 {
 	status = "okay";
 };
+
+&sema42 {
+	domain-id = <1>;
+	status = "okay";
+};

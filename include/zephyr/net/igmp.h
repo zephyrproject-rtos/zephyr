@@ -43,7 +43,14 @@ struct igmp_param {
  * @param addr Multicast group to join
  * @param param Optional parameters
  *
- * @return Return 0 if joining was done, <0 otherwise.
+ * @retval 0 If multicast address was registered and joined successfully.
+ * @retval -ENETDOWN If multicast address was registered but not joined yet due to
+ *                   network interface being down. The address will be joined when
+ *                   interface is up again.
+ *                   This is non-fatal return code, the caller should still release
+ *                   the address with net_ipv4_igmp_leave() if no longer needed.
+ * @retval Other Any other error should be considered fatal, multicast address
+ *               was not registered for the interface.
  */
 #if defined(CONFIG_NET_IPV4_IGMP)
 int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,

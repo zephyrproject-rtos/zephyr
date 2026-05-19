@@ -8,7 +8,7 @@
 #include <zephyr/debug/coredump.h>
 #include <zephyr/kernel/thread.h>
 
-#define ARCH_HDR_VER 2
+#define ARCH_HDR_VER 3
 
 uint32_t z_arm_coredump_fault_sp;
 
@@ -34,6 +34,10 @@ struct arm_arch_block {
 		uint32_t r10;
 		uint32_t r11;
 	} r;
+	struct {
+		uint32_t	callee_saved_valid;   /* non-zero if offset is valid */
+		uint32_t	callee_saved_offset;  /* offsetof(k_thread, callee_saved) */
+	} callee;
 } __packed;
 
 /*
@@ -74,6 +78,7 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 	arch_blk.r.xpsr = esf->basic.xpsr;
 
 	arch_blk.r.sp = z_arm_coredump_fault_sp;
+	arch_blk.callee.callee_saved_valid = 0;
 
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO)
 	if (esf->extra_info.callee) {
@@ -85,6 +90,9 @@ void arch_coredump_info_dump(const struct arch_esf *esf)
 		arch_blk.r.r9 = esf->extra_info.callee->v6;
 		arch_blk.r.r10 = esf->extra_info.callee->v7;
 		arch_blk.r.r11 = esf->extra_info.callee->v8;
+
+		arch_blk.callee.callee_saved_valid = 1;
+		arch_blk.callee.callee_saved_offset = offsetof(struct k_thread, callee_saved);
 	}
 #endif
 
@@ -100,5 +108,12 @@ uint16_t arch_coredump_tgt_code_get(void)
 
 uintptr_t arch_coredump_stack_ptr_get(const struct k_thread *thread)
 {
-	return (thread == _current) ? z_arm_coredump_fault_sp : thread->callee_saved.psp;
+	if (thread == _current) {
+		return z_arm_coredump_fault_sp;
+	}
+#ifdef CONFIG_USE_SWITCH
+	return (uintptr_t)thread->switch_handle;
+#else
+	return thread->callee_saved.psp;
+#endif
 }

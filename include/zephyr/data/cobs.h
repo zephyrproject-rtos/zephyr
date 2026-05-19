@@ -11,7 +11,10 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <zephyr/sys/util.h>
+
+#if defined(CONFIG_NET_BUF)
 #include <zephyr/net_buf.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -93,6 +96,8 @@ static inline size_t cobs_max_encoded_len(size_t decoded_size, uint32_t flags)
 	}
 }
 
+#if defined(CONFIG_NET_BUF) || defined(__DOXYGEN__)
+
 /**
  * @brief COBS encoding
  *
@@ -105,6 +110,8 @@ static inline size_t cobs_max_encoded_len(size_t decoded_size, uint32_t flags)
  * @retval 0        Success
  * @retval -ENOMEM  Insufficient destination space
  * @retval -EINVAL  Invalid COBS structure or parameters
+ *
+ * @kconfig_dep{CONFIG_NET_BUF}
  */
 
 int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
@@ -121,8 +128,12 @@ int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
  * @retval 0        Success
  * @retval -ENOMEM  Insufficient destination space
  * @retval -EINVAL  Invalid COBS structure or parameters
+ *
+ * @kconfig_dep{CONFIG_NET_BUF}
  */
 int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
+
+#endif /* defined(CONFIG_NET_BUF) || defined(__DOXYGEN__) */
 
 /**
  * @brief Callback function type for streaming COBS encoder/decoder

@@ -1,0 +1,69 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config ZBUS_PROXY_AGENT_MAX_MESSAGE_SIZE
+	int "Maximum message size"
+	default 128
+	help
+	  Maximum size of a message in the ZBus proxy agent.
+
+config ZBUS_PROXY_AGENT_MAX_CHANNEL_NAME_SIZE
+	int "Maximum channel name size"
+	default 32
+	help
+	  Maximum size of a channel name in the ZBus proxy agent.
+
+config ZBUS_PROXY_AGENT_INIT_PRIORITY
+	int "Proxy agent initialization priority"
+	default 99
+	help
+	  Initialization priority for the ZBus proxy agent.
+
+config ZBUS_PROXY_AGENT_WORK_QUEUE_STACK_SIZE
+	int "Receive work queue stack size"
+	default 1024
+	help
+	  Stack size for the ZBus proxy agent work queue thread. This thread is responsible for
+	  publishing forwarded messages locally. If using listeners on the shadow channels, this stack
+	  size should be large enough to accommodate the listener callbacks.
+
+config ZBUS_PROXY_AGENT_WORK_QUEUE_PRIORITY
+	int "Receive work queue priority"
+	default 5
+	help
+	  Priority for the ZBus proxy agent work queue thread.
+
+config ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH
+	int "Receive queue depth"
+	default 4
+	help
+	  Number of proxy messages buffered per proxy agent before incoming
+	  messages are dropped.
+
+menuconfig ZBUS_PROXY_AGENT_IPC
+	bool "ZBus proxy agent IPC backend"
+	select IPC_SERVICE
+	select MBOX
+	help
+	  Enables the ZBus proxy agent IPC backend, allowing communication between domains over IPC.
+
+if ZBUS_PROXY_AGENT_IPC
+
+config ZBUS_PROXY_AGENT_IPC_BIND_TIMEOUT_MS
+	int "IPC endpoint bind timeout (milliseconds)"
+	default 5000
+	help
+	  Maximum time to wait for the remote IPC endpoint to bind during initialization.
+
+module = ZBUS_PROXY_AGENT_IPC
+module-str = zbus_proxy_agent_ipc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ZBUS_PROXY_AGENT_IPC
+
+module = ZBUS_PROXY_AGENT
+module-str = zbus_proxy_agent
+source "subsys/logging/Kconfig.template.log_config"

@@ -1,0 +1,15 @@
+identifier: qemu_riscv64/qemu_virt_riscv64/smode
+name: QEMU Emulation for RISC-V 64-bit S-mode
+type: qemu
+simulation:
+  - name: qemu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 262144
+flash: 32768
+testing:
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

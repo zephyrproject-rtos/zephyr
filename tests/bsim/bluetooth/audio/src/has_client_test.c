@@ -19,6 +19,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "../../subsys/bluetooth/audio/has_internal.h"
 
@@ -48,7 +49,9 @@ static uint8_t g_active_index;
 static void discover_cb(struct bt_conn *conn, int err, struct bt_has *has,
 			enum bt_has_hearing_aid_type type, enum bt_has_capabilities caps)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		FAIL("Failed to discover HAS (err %d)\n", err);
 		return;
 	}
@@ -61,6 +64,8 @@ static void discover_cb(struct bt_conn *conn, int err, struct bt_has *has,
 
 static void preset_switch_cb(struct bt_has *has, int err, uint8_t index)
 {
+	ARG_UNUSED(has);
+
 	if (err != 0) {
 		return;
 	}
@@ -84,7 +89,10 @@ static void check_preset_record(const struct bt_has_preset_record *record,
 static void preset_read_rsp_cb(struct bt_has *has, int err,
 			       const struct bt_has_preset_record *record, bool is_last)
 {
-	if (err) {
+	ARG_UNUSED(has);
+	ARG_UNUSED(is_last);
+
+	if (err != 0) {
 		FAIL("%s: err %d\n", __func__, err);
 		return;
 	}
@@ -105,6 +113,10 @@ static void preset_read_rsp_cb(struct bt_has *has, int err,
 static void preset_update_cb(struct bt_has *has, uint8_t index_prev,
 			     const struct bt_has_preset_record *record, bool is_last)
 {
+	ARG_UNUSED(has);
+	ARG_UNUSED(index_prev);
+	ARG_UNUSED(is_last);
+
 	if (record->index == test_preset_index_1) {
 		SET_FLAG(g_preset_1_found);
 	} else if (record->index == test_preset_index_3) {
@@ -272,9 +284,9 @@ static void test_main(void)
 	PASS("HAS main PASS\n");
 }
 
-#define FEATURES_SUB_NTF        BIT(0)
-#define ACTIVE_INDEX_SUB_NTF    BIT(1)
-#define PRESET_CHANGED_SUB_NTF  BIT(2)
+#define FEATURES_SUB_NTF        BIT(0U)
+#define ACTIVE_INDEX_SUB_NTF    BIT(1U)
+#define PRESET_CHANGED_SUB_NTF  BIT(2U)
 #define SUB_NTF_ALL		(FEATURES_SUB_NTF | ACTIVE_INDEX_SUB_NTF | PRESET_CHANGED_SUB_NTF)
 
 CREATE_FLAG(flag_features_discovered);
@@ -399,7 +411,7 @@ static uint8_t notify_handler(struct bt_conn *conn, struct bt_gatt_subscribe_par
 
 	if (notify_received_mask == SUB_NTF_ALL) {
 		SET_FLAG(flag_all_notifications_received);
-		notify_received_mask = 0;
+		notify_received_mask = 0U;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -407,6 +419,8 @@ static uint8_t notify_handler(struct bt_conn *conn, struct bt_gatt_subscribe_par
 
 static void subscribe_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_subscribe_params *params)
 {
+	ARG_UNUSED(conn);
+
 	if (err != BT_ATT_ERR_SUCCESS) {
 		return;
 	}
@@ -451,7 +465,7 @@ static uint8_t discover_features_cb(struct bt_conn *conn, const struct bt_gatt_a
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -463,7 +477,7 @@ static uint8_t discover_features_cb(struct bt_conn *conn, const struct bt_gatt_a
 		subscribe_params->subscribe = subscribe_cb;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	} else {
@@ -517,7 +531,7 @@ static uint8_t discover_active_preset_index_cb(struct bt_conn *conn,
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -529,7 +543,7 @@ static uint8_t discover_active_preset_index_cb(struct bt_conn *conn,
 		subscribe_params->subscribe = subscribe_cb;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	} else {
@@ -582,7 +596,7 @@ static uint8_t discover_control_point_cb(struct bt_conn *conn, const struct bt_g
 		subscribe_params->value_handle = bt_gatt_attr_value_handle(attr);
 
 		err = bt_gatt_discover(conn, &discover_params);
-		if (err) {
+		if (err != 0) {
 			LOG_DBG("Discover failed (err %d)", err);
 		}
 	} else if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_CCC)) {
@@ -594,7 +608,7 @@ static uint8_t discover_control_point_cb(struct bt_conn *conn, const struct bt_g
 		subscribe_params->subscribe = subscribe_cb;
 
 		err = bt_gatt_subscribe(conn, subscribe_params);
-		if (err && err != -EALREADY) {
+		if (err != 0 && err != -EALREADY) {
 			LOG_DBG("Subscribe failed (err %d)", err);
 		}
 	} else {
@@ -649,11 +663,7 @@ static void test_gatt_client(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to set security level %d (err %d)", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	WAIT_FOR_COND(security_level == BT_SECURITY_L2);
 
@@ -669,7 +679,7 @@ static void test_gatt_client(void)
 	bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
-	notify_received_mask = 0;
+	notify_received_mask = 0U;
 	UNSET_FLAG(flag_all_notifications_received);
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
@@ -682,11 +692,7 @@ static void test_gatt_client(void)
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	err = bt_conn_set_security(default_conn, BT_SECURITY_L2);
-	if (err) {
-		FAIL("Failed to set security level %d (err %d)\n", BT_SECURITY_L2, err);
-		return;
-	}
+	update_security(default_conn);
 
 	WAIT_FOR_FLAG(flag_all_notifications_received);
 

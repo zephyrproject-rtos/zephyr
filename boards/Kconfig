@@ -14,8 +14,8 @@ config BOARD_REVISION
 	def_string "$(BOARD_REVISION)"
 	help
 	  If the BOARD has a revision field set, this is the revision.
-	  Otherwise, it is the empty string. For example, if BOARD is
-	  "plank@foo", this option will be "foo". If BOARD is "plank",
+	  Otherwise, it is the empty string. For example, if building for
+	  "plank@foo", this option will be "foo". If building for "plank",
 	  this option will be the empty string.
 
 config BOARD_TARGET
@@ -44,6 +44,13 @@ config QEMU_TARGET
 	help
 	  Mark all QEMU targets with this variable for checking whether we are
 	  running in an emulated environment.
+
+config WHISPER_TARGET
+	bool
+	depends on RISCV
+	help
+	  Mark targets with this variable for checking whether we are running
+	  under the Whisper simulator.
 
 config NET_DRIVERS
 	bool
@@ -140,6 +147,8 @@ config BOARD_SERIAL_BACKEND_CDC_ACM
 	help
 	  USB stack and CDC ACM UART are configured and initialized at boot
 	  time to be used as a backend for logging or shell.
+
+rsource "Kconfig.whisper"
 
 # There might not be any board options, hence the optional source
 osource "$(KCONFIG_BOARD_DIR)/Kconfig"

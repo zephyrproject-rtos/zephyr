@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI MAX32 Backup SRAM.
+
+  The MAX32 Backup SRAM is a memory region that can retain data during low-power mode (BACKUP).
+
+compatible: "adi,max32-backup-sram"
+
+include: base.yaml
+
+properties:
+  adi,ram-bank-retained:
+    type: boolean
+    description: Mark this memory bank as retained during backup mode.
+
+examples:
+  - |
+    &sram0 {
+        adi,ram-bank-retained;
+    };

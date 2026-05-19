@@ -16,6 +16,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/sys/clock.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +61,8 @@ struct spi_context {
 	size_t tx_count;
 	const struct spi_buf *current_rx;
 	size_t rx_count;
+
+	size_t max_count;
 
 	const uint8_t *tx_buf;
 	size_t tx_len;
@@ -204,15 +207,9 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 		 */
 		if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(ctx)) {
 			timeout = K_FOREVER;
-			timeout_ms = UINT32_MAX;
 		} else {
-			uint32_t tx_len = spi_context_total_tx_len(ctx);
-			uint32_t rx_len = spi_context_total_rx_len(ctx);
-
-			timeout_ms = MAX(tx_len, rx_len) * 8 * 1000 /
-				     ctx->config->frequency;
+			timeout_ms = ctx->max_count * 8 * 1000 / ctx->config->frequency;
 			timeout_ms += CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE;
-
 			timeout = K_MSEC(timeout_ms);
 		}
 #ifdef CONFIG_MULTITHREADING
@@ -221,7 +218,7 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 			return -ETIMEDOUT;
 		}
 #else
-		if (timeout_ms == UINT32_MAX) {
+		if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 			/* In slave mode, we wait indefinitely, so we can go idle. */
 			unsigned int key = irq_lock();
 
@@ -233,15 +230,14 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 			ctx->ready = 0;
 			irq_unlock(key);
 		} else {
-			const uint32_t tms = k_uptime_get_32();
+			k_timepoint_t end = sys_timepoint_calc(timeout);
 
-			while (!atomic_get(&ctx->ready) && (k_uptime_get_32() - tms < timeout_ms)) {
+			while (!atomic_get(&ctx->ready)) {
+				if (sys_timepoint_expired(end)) {
+					LOG_ERR("Timeout waiting for transfer complete");
+					return -ETIMEDOUT;
+				}
 				k_busy_wait(1);
-			}
-
-			if (!ctx->ready) {
-				LOG_ERR("Timeout waiting for transfer complete");
-				return -ETIMEDOUT;
 			}
 
 			ctx->ready = 0;
@@ -262,7 +258,7 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 /* For synchronous transfers, this will signal to a thread waiting
  * on spi_context_wait for completion.
  *
- * For asynchronous tranfers, this will call the async callback function
+ * For asynchronous transfers, this will call the async callback function
  * with the user data.
  */
 static inline void spi_context_complete(struct spi_context *ctx,
@@ -496,6 +492,7 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 					 &ctx->rx_len, dfs);
 
 	ctx->sync_status = 0;
+	ctx->max_count = MAX(spi_context_total_tx_len(ctx), spi_context_total_rx_len(ctx));
 
 #ifdef CONFIG_SPI_SLAVE
 	ctx->recv_frames = 0;

@@ -627,7 +627,7 @@ static int nrf5_tx(const struct device *dev,
 		break;
 #endif /* CONFIG_NET_PKT_TXTIME */
 	default:
-		NET_ERR("TX mode %d not supported", mode);
+		LOG_ERR("TX mode %d not supported", mode);
 		return -ENOTSUP;
 	}
 

@@ -1,12 +1,25 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef INFINEON_KCONFIG_H__
 #define INFINEON_KCONFIG_H__
+
+/*
+ * Mappings from general Zephyr Kconfig options to ModusToolbox PDL options
+ */
+
+/*
+ * Map CONFIG_ASSERT to PDL Assert Level or ASSERT disable
+ */
+#ifdef CONFIG_ASSERT
+#define CY_ASSERT_LEVEL CY_ASSERT_CLASS_3
+#else
+#define CY_NO_ASSERT
+#endif
 
 /*
  * These are mappings of Kconfig options enabling Infineon SOCs and particular
@@ -24,6 +37,10 @@
 #if defined(CONFIG_TRUSTED_EXECUTION_SECURE)
 #define COMPONENT_SECURE_DEVICE
 #endif /* CONFIG_TRUSTED_EXECUTION_SECURE* */
+
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#define COMPONENT_NON_SECURE_DEVICE
+#endif /* CONFIG_TRUSTED_EXECUTION_NONSECURE* */
 
 #ifndef COMPONENT_CM33
 #define COMPONENT_CM33

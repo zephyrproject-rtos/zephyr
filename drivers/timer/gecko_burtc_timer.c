@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(gecko_burtc_timer);
 #define MAX_TIMEOUT_CYC (UINT32_MAX >> 1)
 
 /*
- * Mininum time interval between now and IRQ firing that can be scheduled.
+ * Minimum time interval between now and IRQ firing that can be scheduled.
  * The main cause for this is LFSYNC register update, which requires several
  * LF clk cycles for synchronization.
  * Seee e.g. "4.2.4.4.4 LFSYNC Registers" in "EFR32xG22 Reference Manual"

@@ -16,4 +16,7 @@ supported:
   - uart
   - counter
   - net
+testing:
+  binaries:
+    - flash.bin
 vendor: nxp

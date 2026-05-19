@@ -50,29 +50,25 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 	uint32_t reset_cause = POWER_GetResetCause();
 
-	switch (reset_cause) {
-	case kPOWER_ResetCauseSysResetReq:
-		*cause = RESET_SOFTWARE;
-		break;
-	case kPOWER_ResetCauseLockup:
-		*cause = RESET_CPU_LOCKUP;
-		break;
-	case kPOWER_ResetCauseWdt:
-		*cause = RESET_WATCHDOG;
-		break;
-	case kPOWER_ResetCauseApResetReq:
-		*cause = RESET_DEBUG;
-		break;
-	case kPOWER_ResetCauseCodeWdt:
-	case kPOWER_ResetCauseItrc:
-		*cause = RESET_SECURITY;
-		break;
-	case kPOWER_ResetCauseResetB:
-		*cause = RESET_HARDWARE;
-		break;
-	default:
-		*cause = 0;
-		break;
+	*cause = 0;
+
+	if (reset_cause & kPOWER_ResetCauseSysResetReq) {
+		*cause |= RESET_SOFTWARE;
+	}
+	if (reset_cause & kPOWER_ResetCauseLockup) {
+		*cause |= RESET_CPU_LOCKUP;
+	}
+	if (reset_cause & kPOWER_ResetCauseWdt) {
+		*cause |= RESET_WATCHDOG;
+	}
+	if (reset_cause & kPOWER_ResetCauseApResetReq) {
+		*cause |= RESET_DEBUG;
+	}
+	if (reset_cause & (kPOWER_ResetCauseCodeWdt | kPOWER_ResetCauseItrc)) {
+		*cause |= RESET_SECURITY;
+	}
+	if (reset_cause & kPOWER_ResetCauseResetB) {
+		*cause |= RESET_HARDWARE;
 	}
 
 	return 0;

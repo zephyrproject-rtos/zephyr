@@ -61,7 +61,7 @@ int bflb_cache_invalidate(uint32_t timeout)
 		return -EIO;
 	}
 
-#ifdef SOC_SERIES_BL70X
+#if defined(SOC_SERIES_BL70X) || defined(SOC_SERIES_BL70XL)
 	tmp &= ~(1 << L1C_FLUSH_EN_POS);
 	*((volatile uint32_t *)(cache_cfg.base + L1C_CONFIG_OFFSET)) = tmp;
 	__asm__ volatile (".rept 4 ; nop ; .endr");
@@ -134,10 +134,10 @@ void cache_data_disable(void)
 	uint32_t tmp;
 
 	tmp = *((volatile uint32_t *)(cache_cfg.base + L1C_CONFIG_OFFSET));
-	tmp |= 1 << L1C_BYPASS_POS;
 	tmp &= ~(1 << L1C_CACHEABLE_POS);
-	tmp &= ~L1C_WAY_DIS_MSK;
+	tmp |= L1C_WAY_DIS_MSK;
 	tmp &= ~(1 << L1C_CNT_EN_POS);
+	tmp &= ~(1 << L1C_BYPASS_POS);
 	*((volatile uint32_t *)(cache_cfg.base + L1C_CONFIG_OFFSET)) = tmp;
 }
 

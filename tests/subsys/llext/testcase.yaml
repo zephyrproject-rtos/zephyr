@@ -43,6 +43,7 @@ tests:
     filter: not CONFIG_MPU and not CONFIG_MMU
     extra_conf_files: ['no_mem_protection.conf']
     extra_configs:
+      - CONFIG_LLEXT_VENEERS=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
   llext.readonly.memblk:
@@ -57,8 +58,6 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
       - CONFIG_LLEXT_HEAP_MEMBLK=y
-      - arch:arc:CONFIG_LLEXT_EXT_HEAP_SIZE=64
-      - arch:arc:CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=2048
   llext.readonly_mpu:
     arch_allow:
       - arm # Xtensa needs writable storage, currently not supported on RISC-V
@@ -66,6 +65,7 @@ tests:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
+      - CONFIG_LLEXT_VENEERS=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.readonly_mpu.memblk:
     arch_allow:
@@ -76,6 +76,8 @@ tests:
       - CONFIG_USERSPACE=y
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_HEAP_MEMBLK=y
+      - CONFIG_LLEXT_EXT_HEAP_SIZE=64
+      - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=8192
   llext.readonly_mpu.memblk.power_of_two_alignment:
     arch_allow:
       - arm # Xtensa needs writable storage, currently not supported on RISC-V
@@ -93,6 +95,8 @@ tests:
       - arm
       - riscv
       - x86
+    platform_exclude:
+      - qemu_x86_tiny/atom       # See #105603
     filter: CONFIG_MMU or CONFIG_RISCV_PMP
     integration_platforms:
       - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
@@ -135,11 +139,6 @@ tests:
       - riscv
       - arc
       - x86
-    platform_exclude:
-      - qemu_arc/qemu_arc_hs5x     # See #80949
-      - nsim/nsim_hs5x             # See #80949
-      - nsim/nsim_hs5x/smp         # See #80949
-      - nsim/nsim_hs5x/smp/12cores # See #80949
     integration_platforms:
       - qemu_xtensa/dc233c      # Xtensa ISA
     filter: not CONFIG_MPU and not CONFIG_MMU
@@ -147,8 +146,6 @@ tests:
     extra_configs:
       - CONFIG_LLEXT_STORAGE_WRITABLE=y
       - CONFIG_LLEXT_HEAP_MEMBLK=y
-      - arch:arc:CONFIG_LLEXT_EXT_HEAP_SIZE=64
-      - arch:arc:CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=2048
   llext.writable_relocatable:
     arch_allow:
       - arm

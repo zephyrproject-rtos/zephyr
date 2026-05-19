@@ -120,6 +120,14 @@ config LOG_THREAD_ID_PREFIX
 	  Enable support for prefixing log message with thread name or ID.
 	  Thread name is used if THREAD_NAME is enabled.
 
+config LOG_CORE_ID_PREFIX
+	bool "Core ID prefix"
+	depends on SMP || MP_MAX_NUM_CPUS > 1
+	help
+	  Enable support for prefixing log message with core/processor ID.
+	  This is useful for multicore systems to identify which CPU core
+	  generated each log message.
+
 config LOG_CUSTOM_FORMAT_SUPPORT
 	bool "Custom format support"
 	default n

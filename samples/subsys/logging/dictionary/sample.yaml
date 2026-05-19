@@ -8,6 +8,7 @@ tests:
     platform_exclude:
       - pocketbeagle_2/am6232/m4
       - pocketbeagle_2/am6254/m4
+      - pocketbeagle_2_industrial/am6254/m4
       - beagleplay/am6254/m4
     integration_platforms:
       - qemu_x86
@@ -19,6 +20,7 @@ tests:
     platform_exclude:
       - pocketbeagle_2/am6232/m4
       - pocketbeagle_2/am6254/m4
+      - pocketbeagle_2_industrial/am6254/m4
       - beagleplay/am6254/m4
     extra_configs:
       - CONFIG_FPU=y
@@ -32,6 +34,7 @@ tests:
     platform_exclude:
       - pocketbeagle_2/am6232/m4
       - pocketbeagle_2/am6254/m4
+      - pocketbeagle_2_industrial/am6254/m4
       - beagleplay/am6254/m4
     extra_configs:
       - CONFIG_FPU=y
@@ -76,6 +79,7 @@ tests:
     platform_exclude:
       - pocketbeagle_2/am6232/m4
       - pocketbeagle_2/am6254/m4
+      - pocketbeagle_2_industrial/am6254/m4
     integration_platforms:
       - qemu_x86
       - qemu_x86_64

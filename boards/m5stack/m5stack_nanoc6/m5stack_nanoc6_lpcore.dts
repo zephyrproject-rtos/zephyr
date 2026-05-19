@@ -14,7 +14,7 @@
 	compatible = "m5stack,nanoc6";
 
 	chosen {
-		zephyr,sram = &sramlp;
+		zephyr,sram = &ulp_ram;
 		zephyr,code-partition = &slot0_lpcore_partition;
 	};
 };

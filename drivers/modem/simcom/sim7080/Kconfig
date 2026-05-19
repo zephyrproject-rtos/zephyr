@@ -71,6 +71,17 @@ config MODEM_SIMCOM_SIM7080_DNS_DEFAULT_TIMEOUT
 	help
 		The timeout for DNS queries in milliseconds
 
+config MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS
+	bool "TLS for sockets"
+	help
+	  This option enables TLS (Transport Layer Security) for sockets
+	  on the SIM7080 modem.
+
+config MODEM_SIMCOM_SIM7080_TLS_BUFFER_SIZE
+	int "Size of the tls certificate copy buffer"
+	depends on MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS
+	default 256
+
 choice MODEM_SIMCOM_SIM7080_RAT
 	bool "Radio Access Technology Mode"
 	default MODEM_SIMCOM_SIM7080_RAT_NB1

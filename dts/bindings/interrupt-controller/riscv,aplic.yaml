@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RISC-V Advanced Platform-Level Interrupt Controller (APLIC).
+
+  The APLIC routes wired interrupts in a RISC-V AIA system.  It can operate
+  in two delivery modes:
+
+    - MSI mode: interrupts are converted to Message-Signaled Interrupts and
+      forwarded to an IMSIC.  Indicated by the presence of 'msi-parent'.
+    - Direct delivery mode: interrupts are delivered directly to harts via
+      the external interrupt signal (not yet supported by Zephyr).
+
+compatible: "riscv,aplic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address and size of the APLIC registers
+
+  riscv,num-sources:
+    type: int
+    required: true
+    description: Number of interrupt sources supported by the APLIC
+
+  riscv,max-priority:
+    type: int
+    description: |
+      Maximum priority level supported by the APLIC implementation.
+      Present on some platforms (e.g., QEMU virt). Not used by Zephyr yet.
+
+  msi-parent:
+    type: phandle
+    description: |
+      Phandle to the IMSIC controller used for MSI delivery.
+      When present the driver operates in MSI mode; when absent
+      direct delivery mode is assumed.
+
+interrupt-cells:
+  - irq
+  - priority
+  - flags

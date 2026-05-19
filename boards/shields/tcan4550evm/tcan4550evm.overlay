@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 
@@ -21,9 +22,8 @@
 		compatible = "ti,tcan4x5x";
 		reg = <0>;
 		/* reduced spi-max-frequency to accommodate flywire connections */
-		spi-max-frequency = <2000000>;
-		status = "okay";
-		clock-frequency = <40000000>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		clock-frequency = <DT_FREQ_M(40)>;
 		device-state-gpios = <&arduino_header ARDUINO_HEADER_R3_D6
 				      (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
 		device-wake-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;

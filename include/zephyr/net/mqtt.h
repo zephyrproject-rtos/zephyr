@@ -570,7 +570,7 @@ struct mqtt_publish_param {
 /** @brief Parameters for subscribe/unsubscribe message. */
 struct mqtt_subscription_list {
 	/** Array containing topics along with QoS for each. */
-	struct mqtt_topic *list;
+	const struct mqtt_topic *list;
 
 	/** Number of topics in the subscription list */
 	uint16_t list_count;

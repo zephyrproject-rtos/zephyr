@@ -154,6 +154,7 @@ static void dac_conversion_speed(dac_registers_t *dac_reg, int rate, uint8_t cha
 		(dac_reg->DAC_DACCTRL[channel_id] & ~DAC_DACCTRL_CCTRL_Msk) | cctrl_val;
 }
 
+#if defined(CONFIG_DAC_MCHP_G1_EXTERNAL_FILTER)
 static inline void dac_external_filter(dac_registers_t *dac_reg, bool ext_filter,
 				       uint8_t channel_id)
 {
@@ -161,6 +162,7 @@ static inline void dac_external_filter(dac_registers_t *dac_reg, bool ext_filter
 		(dac_reg->DAC_DACCTRL[channel_id] & ~DAC_DACCTRL_FEXT_Msk) |
 		DAC_DACCTRL_FEXT(ext_filter);
 }
+#endif /* CONFIG_DAC_MCHP_G1_EXTERNAL_FILTER */
 
 static inline void dac_data_adj(dac_registers_t *dac_reg, uint8_t data_adj, uint8_t channel_id)
 {
@@ -176,6 +178,7 @@ static inline void dac_dither(dac_registers_t *dac_reg, uint8_t dither, uint8_t 
 		DAC_DACCTRL_DITHER(dither);
 }
 
+#if defined(CONFIG_DAC_MCHP_G1_REFRESH)
 static inline void dac_refresh(dac_registers_t *dac_reg, uint8_t refresh, uint8_t channel_id)
 {
 	if (refresh != 0) {
@@ -185,7 +188,9 @@ static inline void dac_refresh(dac_registers_t *dac_reg, uint8_t refresh, uint8_
 		(dac_reg->DAC_DACCTRL[channel_id] & ~DAC_DACCTRL_REFRESH_Msk) |
 		DAC_DACCTRL_REFRESH(refresh);
 }
+#endif /* CONFIG_DAC_MCHP_G1_REFRESH */
 
+#if defined(CONFIG_DAC_MCHP_G1_OVERSAMPLING_RATIO)
 static void dac_sampling_ratio(dac_registers_t *dac_reg, uint8_t sampling_ratio, uint8_t channel_id)
 {
 	uint8_t osr;
@@ -214,6 +219,7 @@ static void dac_sampling_ratio(dac_registers_t *dac_reg, uint8_t sampling_ratio,
 	dac_reg->DAC_DACCTRL[channel_id] =
 		(dac_reg->DAC_DACCTRL[channel_id] & ~DAC_DACCTRL_OSR_Msk) | DAC_DACCTRL_OSR(osr);
 }
+#endif /* CONFIG_DAC_MCHP_G1_OVERSAMPLING_RATIO */
 
 static void dac_write_channel(dac_registers_t *dac_reg, const struct dac_mchp_channel *ch_cfg,
 			      uint8_t channel_id, uint32_t value)
@@ -280,20 +286,30 @@ static int dac_configure(const struct device *dev, uint8_t channel_id)
 		/* Set the Dither */
 		dac_dither(dev_cfg->regs, dev_cfg->channels[i].dither, i);
 
+#if defined(CONFIG_DAC_MCHP_G1_REFRESH)
+
 		/* Set the refresh period */
 		if (dev_cfg->channels[i].sampling_ratio != 1) {
 			dac_refresh(dev_cfg->regs, 0, i);
 		} else {
 			dac_refresh(dev_cfg->regs, dev_cfg->channels[i].refresh, i);
 		}
+#endif /* CONFIG_DAC_MCHP_G1_REFRESH */
+
 		/* Set the conversion speed */
 		dac_conversion_speed(dev_cfg->regs, dev_cfg->channels[i].rate, i);
 
+#if defined(CONFIG_DAC_MCHP_G1_EXTERNAL_FILTER)
+
 		/* Set the External filter */
 		dac_external_filter(dev_cfg->regs, dev_cfg->channels[i].ext_filter, i);
+#endif /* CONFIG_DAC_MCHP_G1_EXTERNAL_FILTER */
+
+#if defined(CONFIG_DAC_MCHP_G1_OVERSAMPLING_RATIO)
 
 		/* Set the Oversampling Ratio */
 		dac_sampling_ratio(dev_cfg->regs, dev_cfg->channels[i].sampling_ratio, i);
+#endif /* CONFIG_DAC_MCHP_G1_OVERSAMPLING_RATIO */
 	}
 
 	return 0;

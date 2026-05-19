@@ -1,7 +1,7 @@
 /*
  * Copyright 2020 Broadcom
  * Copyright 2024-2025 NXP
- * Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ * Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -572,7 +572,6 @@ static void gicv3_dist_init(void)
 	 * the GIC single security state mode is supported.
 	 * Make sure GICD_CTRL_NS is 1.
 	 */
-	sys_set_bit(GICD_CTLR, GICD_CTRL_NS);
 	__ASSERT(sys_test_bit(GICD_CTLR, GICD_CTRL_NS),
 		 "Current GIC does not support single security state");
 #endif

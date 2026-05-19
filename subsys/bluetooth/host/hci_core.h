@@ -361,7 +361,7 @@ struct bt_dev {
 #endif
 #endif
 	/* Current local Random Address */
-	bt_addr_le_t            random_addr;
+	bt_addr_t                  random_addr;
 	uint8_t                    adv_conn_id;
 
 	/* Controller version & manufacturer information */
@@ -531,6 +531,7 @@ void bt_hci_le_past_received_v2(struct net_buf *buf);
 
 /* CS HCI event handlers */
 void bt_hci_le_cs_read_remote_supported_capabilities_complete(struct net_buf *buf);
+void bt_hci_le_cs_read_remote_supported_capabilities_complete_v2(struct net_buf *buf);
 void bt_hci_le_cs_read_remote_fae_table_complete(struct net_buf *buf);
 void bt_hci_le_cs_config_complete_event(struct net_buf *buf);
 void bt_hci_le_cs_security_enable_complete(struct net_buf *buf);
@@ -556,6 +557,7 @@ void bt_hci_remote_name_request_complete(struct net_buf *buf);
 void bt_hci_read_remote_features_complete(struct net_buf *buf);
 void bt_hci_read_remote_ext_features_complete(struct net_buf *buf);
 void bt_hci_role_change(struct net_buf *buf);
+void bt_hci_conn_pkt_type_changed(struct net_buf *buf);
 #if defined(CONFIG_BT_POWER_MODE_CONTROL)
 void bt_hci_link_mode_change(struct net_buf *buf);
 #endif /* CONFIG_BT_POWER_MODE_CONTROL */

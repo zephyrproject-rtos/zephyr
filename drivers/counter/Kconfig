@@ -10,6 +10,22 @@ menuconfig COUNTER
 
 if COUNTER
 
+config COUNTER_CAPTURE
+	bool "Counter capture"
+	select EXPERIMENTAL
+	depends on COUNTER_SUPPORTS_CAPTURE
+	help
+	  Enable support for counter capture. This is a feature that allows
+	  hardware timestamping of external events as well as a software
+	  interrupt on the event. This feature is not supported by all
+	  counter drivers.
+
+config COUNTER_SUPPORTS_CAPTURE
+	bool
+	help
+	  Select this option if the counter driver supports the counter capture
+	  API. This is to be set the driver.
+
 config COUNTER_INIT_PRIORITY
 	int "Counter init priority"
 	default 60
@@ -52,6 +68,9 @@ source "subsys/logging/Kconfig.template.log_config"
 source "drivers/counter/Kconfig.ace"
 source "drivers/counter/Kconfig.ambiq"
 source "drivers/counter/Kconfig.andes_atcpit100"
+source "drivers/counter/Kconfig.bee_rtc"
+source "drivers/counter/Kconfig.bee_timer"
+source "drivers/counter/Kconfig.bflb"
 source "drivers/counter/Kconfig.cc23x0_lgpt"
 source "drivers/counter/Kconfig.cc23x0_rtc"
 source "drivers/counter/Kconfig.cmos"
@@ -65,6 +84,7 @@ source "drivers/counter/Kconfig.infineon"
 source "drivers/counter/Kconfig.infineon_tcpwm"
 source "drivers/counter/Kconfig.ite_it51xxx"
 source "drivers/counter/Kconfig.ite_it8xxx2"
+source "drivers/counter/Kconfig.k3_rtc_counter"
 source "drivers/counter/Kconfig.max32_rtc"
 source "drivers/counter/Kconfig.max32_timer"
 source "drivers/counter/Kconfig.max32_wut"
@@ -83,6 +103,7 @@ source "drivers/counter/Kconfig.mcux_rtc"
 source "drivers/counter/Kconfig.mcux_rtc_jdp"
 source "drivers/counter/Kconfig.mcux_snvs"
 source "drivers/counter/Kconfig.mcux_stm"
+source "drivers/counter/Kconfig.mcux_sysctr"
 source "drivers/counter/Kconfig.mcux_tpm"
 source "drivers/counter/Kconfig.mspm0"
 source "drivers/counter/Kconfig.native_sim"

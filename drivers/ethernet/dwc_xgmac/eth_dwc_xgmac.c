@@ -345,7 +345,7 @@ static void dwxgmac_dma_mtl_init(const struct device *dev,
 			   MTL_OPERATION_MODE_RAA_SET(mtl_cfg->raa);
 	sys_write32(reg_val, reg_addr);
 
-	/* Program the Traffic class priorites. */
+	/* Program the Traffic class priorities. */
 	for (uint32_t tc_id = 0; tc_id < config->num_TCs; tc_id++) {
 		reg_addr = (ioaddr + XGMAC_MTL_BASE_ADDR_OFFSET + MTL_TC_PRTY_MAP0_OFST +
 			    ((tc_id / NUM_OF_TCs_PER_TC_PRTY_MAP_REG) * XGMAC_REG_SIZE_BYTES));
@@ -560,7 +560,7 @@ static void get_and_refill_desc_buffs(struct xgmac_dma_rx_desc *rx_desc, uint16_
 
 	*buff1 = (struct net_buf *)((mem_addr_t)*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC)));
 	*buff2 = (struct net_buf *)((mem_addr_t)*(rx_buffs + (desc_id * RX_FRAGS_PER_DESC) + 1u));
-	/* Reserve a free buffer in netwrok RX buffers pool */
+	/* Reserve a free buffer in network RX buffers pool */
 	new_buff = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
 	if (!new_buff) {
 		LOG_ERR("Failed to allocate a network buffer to refill the DMA descriptor");
@@ -578,12 +578,12 @@ static void get_and_refill_desc_buffs(struct xgmac_dma_rx_desc *rx_desc, uint16_
 	 */
 	rx_desc->rdes0 = POINTER_TO_UINT(new_buff->data);
 	rx_desc->rdes1 = POINTER_TO_UINT(new_buff->data) >> XGMAC_REG_SIZE_BITS;
-	/* Reserve another free buffer in netwrok RX buffers pool */
+	/* Reserve another free buffer in network RX buffers pool */
 	new_buff = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_FOREVER);
 	if (!new_buff) {
 		/**
 		 * If we fails reserve another buffer to fill the RX descriptor buffer pointer
-		 * 2, then free the previusly allocated first buffer too. Log an error and return.
+		 * 2, then free the previously allocated first buffer too. Log an error and return.
 		 */
 		rx_desc->rdes0 = 0u;
 		rx_desc->rdes0 = 1u;
@@ -605,7 +605,7 @@ static void get_and_refill_desc_buffs(struct xgmac_dma_rx_desc *rx_desc, uint16_
 	rx_desc->rdes2 = POINTER_TO_UINT(new_buff->data);
 	/**
 	 * Put the RX descriptor back to DMA ownership by setting OWN bit in RX descriptor dword3
-	 * Set IOC bit in dword3 to receive an interrupt after this RX descriptor is beling proceesd
+	 * Set IOC bit in dword3 to receive an interrupt after this RX descriptor is being proceesd
 	 * and put to application ownership.
 	 */
 	rx_desc->rdes3 = XGMAC_RDES3_OWN | XGMAC_RDES3_IOC |
@@ -744,7 +744,7 @@ static void eth_dwc_xgmac_tx_irq_work(const struct device *dev, uint32_t dma_chn
 		tx_desc = (struct xgmac_dma_tx_desc *)(fisrt_tx_desc + desc_idx);
 		arch_dcache_invd_range(tx_desc, sizeof(tx_desc));
 		if (!(tx_desc->tdes3 & XGMAC_TDES3_OWN)) {
-			/* If LD bit of this descritor set then unreferance the TX packet */
+			/* If LD bit of this descriptor set then unreferance the TX packet */
 			if (tx_desc->tdes3 & XGMAC_TDES3_LD) {
 				pkt = (struct net_pkt *)(*tx_pkt_location_in_array(
 					data->tx_pkts, dma_chnl, dma_chnl_cfg->tdrl, desc_idx));
@@ -772,7 +772,7 @@ static void eth_dwc_xgmac_dmach_isr(const struct device *dev, uint32_t dmach_int
 				    uint32_t dma_chnl)
 {
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_TI_SET_MSK) {
-		/* Tranmit interrupt */
+		/* Transmit interrupt */
 		eth_dwc_xgmac_tx_irq_work(dev, dma_chnl);
 	}
 	if (dmach_interrupt_sts & DMA_CHx_STATUS_RI_SET_MSK) {
@@ -1189,7 +1189,7 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
  * @param dev Pointer to the ethernet device
  * @retval    0 upon successful completion
  */
-static int eth_dwc_xgmac_start_device(const struct device *dev)
+static int eth_dwc_xgmac_start_device(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1267,7 +1267,7 @@ static int eth_dwc_xgmac_start_device(const struct device *dev)
  * @param dev Pointer to the ethernet device
  * @retval    0 upon successful completion
  */
-static int eth_dwc_xgmac_stop_device(const struct device *dev)
+static int eth_dwc_xgmac_stop_device(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1392,9 +1392,9 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	/* lock the TX desc ring while acquiring the resources */
 	(void)k_mutex_lock(&(context.descmeta->ring_lock), K_FOREVER);
 	(void)net_pkt_ref(pkt);
-	LOG_DBG("%s: %p packet referanced for tx", dev->name, pkt);
+	LOG_DBG("%s: %p packet referenced for tx", dev->name, pkt);
 	tdes3_fd_flg = XGMAC_TDES3_FD;
-	for (struct net_buf *frag = pkt->frags; frag; frag = frag->frags) {
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		ret = k_sem_take(&context.descmeta->free_tx_descs_sem, K_MSEC(1));
 		if (ret != 0) {
 			LOG_DBG("%s: enough free tx descriptors are not available", dev->name);
@@ -1521,7 +1521,9 @@ static inline void disable_filter_for_mac_addr(const struct device *dev, uint8_t
  *          (1) if existing configuration is equals to input configuration
  *         -ENOTSUP for invalid config type
  */
-static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_dwc_xgmac_set_config(const struct device *dev,
+				    struct net_if *iface __unused,
+				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1532,12 +1534,8 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(dev_data->mac_addr, config->mac_address.addr, ETH_MAC_ADDRESS_SIZE);
-		retval = net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
-					      ETH_MAC_ADDRESS_SIZE, NET_LINK_ETHERNET);
-		if (retval == 0) {
-			dwxgmac_set_mac_addr_by_idx(dev, dev_data->mac_addr, 0u, false);
-		}
-		break;
+		dwxgmac_set_mac_addr_by_idx(dev, dev_data->mac_addr, 0u, false);
+		return 0;
 #if (!CONFIG_ETH_DWC_XGMAC_PROMISCUOUS_EXCEPTION && CONFIG_NET_PROMISCUOUS_MODE)
 
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
@@ -1596,9 +1594,9 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
  * @param dev Pointer to the ethernet device
  * @return Enumeration containing the current XGMAC device's capabilities
  */
-static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device *dev __unused,
+							    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 
 	caps = (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE);
@@ -1630,7 +1628,8 @@ static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device 
  * @param dev Pointer to the ethernet device
  * @return Pointer to the current XGMAC device's statistics data
  */
-static struct net_stats_eth *eth_dwc_xgmac_stats(const struct device *dev)
+static struct net_stats_eth *eth_dwc_xgmac_stats(const struct device *dev,
+						 struct net_if *iface __unused)
 {
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 

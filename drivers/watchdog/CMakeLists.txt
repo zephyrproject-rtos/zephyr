@@ -3,6 +3,7 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/watchdog.h)
 
 zephyr_library()
+zephyr_library_property(ALLOW_EMPTY TRUE)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_FWDGT_GD32 wdt_fwdgt_gd32.c)
@@ -36,11 +37,13 @@ zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_RTWDOG wdt_mcux_rtwdog.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_WDOG wdt_mcux_wdog.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_WDOG32 wdt_mcux_wdog32.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_MCUX_WWDT wdt_mcux_wwdt.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_MSPM0 wdt_mspm0.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NPCX wdt_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NPM13XX wdt_npm13xx.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NPM2100 wdt_npm2100.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NPM6001 wdt_npm6001.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NRFX wdt_nrfx.c)
+zephyr_library_sources_ifdef(CONFIG_WDT_NUMAKER wdt_numaker.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NXP_EWM wdt_nxp_ewm.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NXP_FS26 wdt_nxp_fs26.c)
 zephyr_library_sources_ifdef(CONFIG_WDT_NXP_S32 wdt_nxp_s32.c)

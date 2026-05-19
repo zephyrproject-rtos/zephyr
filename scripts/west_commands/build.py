@@ -27,7 +27,7 @@ SYSBUILD_PROJ_DIR = pathlib.Path(__file__).resolve().parent.parent.parent \
 BUILD_INFO_LOG = 'build_info.yml'
 
 BUILD_USAGE = '''\
-west build [-h] [-b BOARD[@REV]]] [-d BUILD_DIR]
+west build [-h] [-b BOARD[@REV]] [-d BUILD_DIR]
            [-S SNIPPET] [--shield SHIELD]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
            [--cmake-opt CMAKE_OPT] [-n] [-o BUILD_OPT] [-f]
@@ -71,9 +71,8 @@ class Build(Forceable):
     def __init__(self):
         super().__init__(
             'build',
-            # Keep this in sync with the string in west-commands.yml.
-            'compile a Zephyr application',
-            BUILD_DESCRIPTION,
+            '',
+            description=BUILD_DESCRIPTION,
             accepts_unknown_args=True)
 
         self.source_dir = None
@@ -101,7 +100,6 @@ class Build(Forceable):
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
             self.name,
-            help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description,
             usage=BUILD_USAGE)
@@ -137,13 +135,12 @@ class Build(Forceable):
                            help='''run build system target TARGET
                            (try "-t usage")''')
         group.add_argument('-T', '--test-item',
-                           help='''Build based on test data in testcase.yaml
-                           or sample.yaml. If source directory is not used
-                           an argument has to be defined as
-                           SOURCE_PATH/TEST_NAME.
-                           E.g. samples/hello_world/sample.basic.helloworld.
-                           If source directory is passed
-                           then "TEST_NAME" is enough.''')
+                           help='''Build based on test data in test definition
+                           file. If source directory is not used an argument
+                           has to be defined as SOURCE_PATH/TEST_NAME.  E.g.
+                           samples/hello_world/sample.basic.helloworld.  If
+                           source directory is passed then "TEST_NAME" is
+                           enough.''')
         group.add_argument('-o', '--build-opt', default=[], action='append',
                            help='''options to pass to the build tool
                            (make or ninja); may be given more than once''')
@@ -256,7 +253,7 @@ class Build(Forceable):
 
         board, origin = self._find_board()
 
-        # Parse testcase.yaml or sample.yaml files for additional options.
+        # Parse test definition file for additional options.
         if self.args.test_item:
             # we get path + testitem
             item = os.path.basename(self.args.test_item)
@@ -337,7 +334,8 @@ class Build(Forceable):
 
     def _parse_test_item(self, test_item, board):
         found_test_metadata = False
-        for yp in ['sample.yaml', 'testcase.yaml']:
+        # keep sample.yaml and testcase.yaml until we completely switch to tests.yaml
+        for yp in ['tests.yaml', 'sample.yaml', 'testcase.yaml']:
             yf = os.path.join(self.args.source_dir, yp)
             if not os.path.exists(yf):
                 continue

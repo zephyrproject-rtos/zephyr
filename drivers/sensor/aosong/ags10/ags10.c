@@ -89,7 +89,7 @@ static int ags10_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&conf->bus)) {
-		LOG_ERR("Device not ready");
+		LOG_ERR_DEVICE_NOT_READY(conf->bus.bus);
 		return -ENODEV;
 	}
 

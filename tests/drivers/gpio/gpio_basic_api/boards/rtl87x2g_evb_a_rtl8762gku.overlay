@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/realtek-bee-gpio.h>
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		in-gpios = <&gpioa 2 (GPIO_ACTIVE_HIGH | BEE_GPIO_INPUT_DEBOUNCE_MS(8))>;
+	};
+};
+
+&gpioa {
+	pinctrl-0 = <&gpioa_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pinctrl {
+	gpioa_default: gpioa_default {
+		group1 {
+			psels = <BEE_PSEL_GPIOA_0_P0_0>,
+				<BEE_PSEL_GPIOA_2_P0_2>;
+		};
+	};
+};

@@ -20,21 +20,33 @@ LOG_MODULE_REGISTER(adc_esp32_dma, CONFIG_ADC_LOG_LEVEL);
 #if SOC_GDMA_SUPPORTED
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
+#include <hal/adc_ll.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32)
 #include <zephyr/dt-bindings/clock/esp32_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp-xtensa-intmux.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <hal/i2s_ll.h>
 #define ADC_DMA_I2S_HOST 0
 #elif defined(CONFIG_SOC_SERIES_ESP32S2)
 #include <zephyr/dt-bindings/clock/esp32s2_clock.h>
 #include <zephyr/dt-bindings/interrupt-controller/esp32s2-xtensa-intmux.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <hal/spi_ll.h>
+#include <hal/spi_types.h>
+#define ADC_DMA_SPI_HOST SPI3_HOST
 #endif /* SOC_GDMA_SUPPORTED */
 
 #define ADC_DMA_BUFFER_SIZE        DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
 #define ADC_DMA_MAX_CONV_DONE_TIME 1000
 
 #define UNIT_ATTEN_UNINIT UINT32_MAX
+
+/* ADC DMA interrupt mask - I2S RX EOF for ESP32, SPI for ESP32-S2 */
+#if defined(CONFIG_SOC_SERIES_ESP32)
+#define ADC_DMA_INTR_MASK I2S_LL_EVENT_RX_EOF
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
+#define ADC_DMA_INTR_MASK SPI_LL_INTR_IN_SUC_EOF
+#endif
 
 #if SOC_GDMA_SUPPORTED
 
@@ -116,14 +128,18 @@ static IRAM_ATTR void adc_esp32_dma_intr_handler(void *arg)
 	struct adc_esp32_data *data = dev->data;
 
 #if defined(CONFIG_SOC_SERIES_ESP32)
-	if (i2s_ll_get_intr_status(I2S_LL_GET_HW(ADC_DMA_I2S_HOST)) & ADC_HAL_DMA_INTR_MASK) {
-		i2s_ll_clear_intr_status(I2S_LL_GET_HW(ADC_DMA_I2S_HOST), ADC_HAL_DMA_INTR_MASK);
-#elif defined(CONFIG_SOC_SERIES_ESP32S2)
-	if (spi_ll_get_intr(SPI_LL_GET_HW(SPI3_HOST), ADC_HAL_DMA_INTR_MASK)) {
-		spi_ll_clear_intr(SPI_LL_GET_HW(SPI3_HOST), ADC_HAL_DMA_INTR_MASK);
-#endif /* defined(CONFIG_SOC_SERIES_ESP32) */
+	i2s_dev_t *i2s_dev = I2S_LL_GET_HW(ADC_DMA_I2S_HOST);
+
+	if (i2s_ll_get_intr_status(i2s_dev) & ADC_DMA_INTR_MASK) {
+		i2s_ll_clear_intr_status(i2s_dev, ADC_DMA_INTR_MASK);
 		k_sem_give(&data->dma_conv_wait_lock);
 	}
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
+	if (spi_ll_get_intr(SPI_LL_GET_HW(SPI3_HOST), ADC_DMA_INTR_MASK)) {
+		spi_ll_clear_intr(SPI_LL_GET_HW(SPI3_HOST), ADC_DMA_INTR_MASK);
+		k_sem_give(&data->dma_conv_wait_lock);
+	}
+#endif /* defined(CONFIG_SOC_SERIES_ESP32) */
 }
 
 #endif /* SOC_GDMA_SUPPORTED */
@@ -194,14 +210,15 @@ static int adc_esp32_fill_digi_ctrlr_cfg(const struct device *dev, const struct 
 	return 0;
 }
 
-static void adc_esp32_digi_start(const struct device *dev,
-				 adc_hal_digi_ctrlr_cfg_t *adc_hal_digi_ctrlr_cfg,
-				 uint32_t number_of_adc_samples, uint32_t unit_attenuation)
+static int adc_esp32_digi_start(const struct device *dev,
+				adc_hal_digi_ctrlr_cfg_t *adc_hal_digi_ctrlr_cfg,
+				uint32_t number_of_adc_samples, uint32_t unit_attenuation,
+				uint32_t dma_buffer_size)
 {
 	const struct adc_esp32_conf *conf = dev->config;
 	struct adc_esp32_data *data = dev->data;
+	__maybe_unused int err = 0;
 
-	periph_module_reset(PERIPH_SARADC_MODULE);
 	sar_periph_ctrl_adc_continuous_power_acquire();
 	adc_lock_acquire(conf->unit);
 
@@ -218,15 +235,8 @@ static void adc_esp32_digi_start(const struct device *dev,
 #endif /* SOC_ADC_ARBITER_SUPPORTED */
 
 	adc_hal_dma_config_t adc_hal_dma_config = {
-#if defined(CONFIG_SOC_SERIES_ESP32)
-		.dev = (void *)I2S_LL_GET_HW(ADC_DMA_I2S_HOST),
 		.eof_desc_num = 1,
 		.eof_step = 1,
-#elif defined(CONFIG_SOC_SERIES_ESP32S2)
-		.dev = (void *)SPI_LL_GET_HW(SPI3_HOST),
-		.eof_desc_num = 1,
-		.eof_step = 1,
-#endif /* defined(CONFIG_SOC_SERIES_ESP32) */
 		.eof_num = number_of_adc_samples,
 	};
 
@@ -234,24 +244,83 @@ static void adc_esp32_digi_start(const struct device *dev,
 	adc_hal_set_controller(conf->unit, ADC_HAL_CONTINUOUS_READ_MODE);
 	adc_hal_digi_init(&data->adc_hal_dma_ctx);
 	adc_hal_digi_controller_config(&data->adc_hal_dma_ctx, adc_hal_digi_ctrlr_cfg);
-	adc_hal_digi_start(&data->adc_hal_dma_ctx, data->dma_buffer);
+
+	adc_hal_digi_enable(false);
+
+#if defined(CONFIG_SOC_SERIES_ESP32)
+	i2s_dev_t *i2s_dev = I2S_LL_GET_HW(ADC_DMA_I2S_HOST);
+
+	i2s_ll_rx_stop_link(i2s_dev);
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
+	spi_dev_t *spi_dev = SPI_LL_GET_HW(ADC_DMA_SPI_HOST);
+
+	spi_ll_disable_intr(spi_dev, ADC_DMA_INTR_MASK);
+	spi_ll_clear_intr(spi_dev, ADC_DMA_INTR_MASK);
+	spi_dma_ll_rx_stop(spi_dev, 0);
+#endif
+
+	adc_hal_digi_connect(false);
+
+#if defined(CONFIG_SOC_SERIES_ESP32S2)
+	spi_dma_ll_rx_reset(spi_dev, 0);
+#endif
+
+	adc_hal_digi_reset();
+
+#if !SOC_GDMA_SUPPORTED
+	adc_hal_digi_dma_link(&data->adc_hal_dma_ctx, data->dma_buffer);
+#endif
+
+#if defined(CONFIG_SOC_SERIES_ESP32)
+	i2s_ll_clear_intr_status(i2s_dev, ADC_DMA_INTR_MASK);
+	i2s_ll_enable_intr(i2s_dev, ADC_DMA_INTR_MASK, true);
+	i2s_ll_enable_dma(i2s_dev, true);
+	i2s_ll_rx_start_link(i2s_dev, (uint32_t)data->adc_hal_dma_ctx.rx_desc);
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
+	spi_ll_clear_intr(spi_dev, ADC_DMA_INTR_MASK);
+	spi_ll_enable_intr(spi_dev, ADC_DMA_INTR_MASK);
+	spi_dma_ll_rx_start(spi_dev, 0, (lldesc_t *)data->adc_hal_dma_ctx.rx_desc);
+#elif SOC_GDMA_SUPPORTED
+	err = adc_esp32_dma_start(dev, data->dma_buffer, dma_buffer_size);
+	if (err) {
+		adc_lock_release(conf->unit);
+		sar_periph_ctrl_adc_continuous_power_release();
+		return err;
+	}
+#endif /* CONFIG_SOC_SERIES_ESP32 */
+
+	adc_hal_digi_connect(true);
+	adc_hal_digi_enable(true);
+
+	return 0;
 }
 
 static void adc_esp32_digi_stop(const struct device *dev)
 {
 	const struct adc_esp32_conf *conf = dev->config;
-	struct adc_esp32_data *data = dev->data;
 
-	adc_hal_digi_dis_intr(&data->adc_hal_dma_ctx, ADC_HAL_DMA_INTR_MASK);
-	adc_hal_digi_clr_intr(&data->adc_hal_dma_ctx, ADC_HAL_DMA_INTR_MASK);
-	adc_hal_digi_stop(&data->adc_hal_dma_ctx);
+#if defined(CONFIG_SOC_SERIES_ESP32)
+	i2s_dev_t *i2s_dev = I2S_LL_GET_HW(ADC_DMA_I2S_HOST);
+
+	i2s_ll_enable_intr(i2s_dev, ADC_DMA_INTR_MASK, false);
+	i2s_ll_clear_intr_status(i2s_dev, ADC_DMA_INTR_MASK);
+	i2s_ll_rx_stop_link(i2s_dev);
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
+	spi_dev_t *spi_dev = SPI_LL_GET_HW(ADC_DMA_SPI_HOST);
+
+	spi_ll_disable_intr(spi_dev, ADC_DMA_INTR_MASK);
+	spi_ll_clear_intr(spi_dev, ADC_DMA_INTR_MASK);
+	spi_dma_ll_rx_stop(spi_dev, 0);
+#endif /* CONFIG_SOC_SERIES_ESP32 */
+
+	adc_hal_digi_enable(false);
+	adc_hal_digi_connect(false);
 
 #if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
-	periph_module_reset(PERIPH_SARADC_MODULE);
-	adc_ll_digi_dma_clr_eof();
+	adc_hal_digi_clr_eof();
 #endif
 
-	adc_hal_digi_deinit(&data->adc_hal_dma_ctx);
+	adc_hal_digi_deinit();
 	adc_lock_release(conf->unit);
 	sar_periph_ctrl_adc_continuous_power_release();
 }
@@ -333,16 +402,18 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 		return -EINVAL;
 	}
 
-#if SOC_GDMA_SUPPORTED
-	err = adc_esp32_dma_start(dev, data->dma_buffer, number_of_adc_dma_data_bytes);
-#else
+#if !SOC_GDMA_SUPPORTED
 	err = esp_intr_enable(data->irq_handle);
-#endif /* SOC_GDMA_SUPPORTED */
 	if (err) {
 		return err;
 	}
+#endif /* !SOC_GDMA_SUPPORTED */
 
-	adc_esp32_digi_start(dev, &adc_hal_digi_ctrlr_cfg, number_of_adc_samples, unit_attenuation);
+	err = adc_esp32_digi_start(dev, &adc_hal_digi_ctrlr_cfg, number_of_adc_samples,
+				   unit_attenuation, number_of_adc_dma_data_bytes);
+	if (err) {
+		return err;
+	}
 
 	err = adc_esp32_wait_for_dma_conv_done(dev);
 	if (err) {
@@ -404,7 +475,10 @@ int adc_esp32_dma_init(const struct device *dev)
 
 #ifdef CONFIG_SOC_SERIES_ESP32
 	periph_module_enable(PERIPH_I2S0_MODULE);
-	i2s_ll_enable_clock(I2S_LL_GET_HW(ADC_DMA_I2S_HOST));
+
+	i2s_dev_t *i2s_dev = I2S_LL_GET_HW(ADC_DMA_I2S_HOST);
+
+	i2s_ll_enable_core_clock(i2s_dev, true);
 
 	int err = esp_intr_alloc(I2S0_INTR_SOURCE, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
 				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
@@ -417,8 +491,15 @@ int adc_esp32_dma_init(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
 #ifdef CONFIG_SOC_SERIES_ESP32S2
-	periph_module_enable(PERIPH_HSPI_MODULE);
+	spi_ll_enable_bus_clock(ADC_DMA_SPI_HOST, true);
+	spi_ll_reset_register(ADC_DMA_SPI_HOST);
+
+	periph_module_enable(PERIPH_SPI2_DMA_MODULE);
 	periph_module_enable(PERIPH_SPI3_DMA_MODULE);
+
+	spi_dev_t *spi_dev = SPI_LL_GET_HW(ADC_DMA_SPI_HOST);
+
+	spi_dma_ll_rx_enable_burst_desc(spi_dev, 0, true);
 
 	int err = esp_intr_alloc(SPI3_DMA_INTR_SOURCE,
 				 ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED,
@@ -430,6 +511,11 @@ int adc_esp32_dma_init(const struct device *dev)
 		return err;
 	}
 #endif /* CONFIG_SOC_SERIES_ESP32S2 */
+
+#if SOC_GDMA_SUPPORTED
+	adc_ll_enable_bus_clock(true);
+	adc_ll_reset_register();
+#endif /* SOC_GDMA_SUPPORTED */
 
 	return 0;
 }

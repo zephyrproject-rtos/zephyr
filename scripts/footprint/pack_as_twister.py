@@ -33,7 +33,7 @@ test suite name ('dot separated' format).
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 import argparse
 import os
 import sys
@@ -47,7 +47,6 @@ from git.exc import BadName
 
 VERSION_COMMIT_RE = re.compile(r".*-g([a-f0-9]{12})$")
 PLAN_HEADERS = ['name', 'feature', 'board', 'application', 'options', 'suite_name']
-TESTSUITE_FILENAME = { 'tests': 'testcase.yaml', 'samples': 'sample.yaml' }
 FOOTPRINT_FILES = { 'ROM': 'rom.json', 'RAM': 'ram.json' }
 RESULT_FILENAME = 'twister_footprint.json'
 HWMv2_LEVELS = 3
@@ -163,7 +162,7 @@ def main():
     skipped = 0
     filtered = 0
 
-    run_date = datetime.now(timezone.utc).isoformat(timespec='seconds')
+    run_date = datetime.now(UTC).isoformat(timespec='seconds')
 
     init_logs()
 
@@ -215,23 +214,6 @@ def main():
 
         suite_name = test_name_sep.join([plan[r_plan][n] if n in plan[r_plan] else '' for n in test_name_parts])
 
-        # Just some sanity checks of the 'application' in the current ZEPHYR_BASE
-        if args.testsuite_check:
-            suite_type = plan[r_plan]['application'].split('/')
-            if len(suite_type) and suite_type[0] in TESTSUITE_FILENAME:
-                suite_conf_name = TESTSUITE_FILENAME[suite_type[0]]
-            else:
-                logging.error(f"unknown app type to get configuration in '{report_path}'")
-                errors += 1
-                continue
-
-            suite_conf_fname = os.path.join(zephyr_base, plan[r_plan]['application'], suite_conf_name)
-            if not os.path.isfile(suite_conf_fname):
-                logging.error(f"test configuration not found for '{report_path}' at '{suite_conf_fname}'")
-                errors += 1
-                continue
-
-
         # Check SHA presence in the current ZEPHYR_BASE
         sha_match = VERSION_COMMIT_RE.search(data_id['version'])
         version_sha = sha_match.group(1) if sha_match else data_id['version']
@@ -251,7 +233,7 @@ def main():
         res['environment'] = {
             'zephyr_version': data_id['version'],
             'commit_date':
-                git_commit.committed_datetime.astimezone(timezone.utc).isoformat(timespec='seconds'),
+                git_commit.committed_datetime.astimezone(UTC).isoformat(timespec='seconds'),
             'run_date': run_date,
             'options': {
                 'testsuite_root': [ plan[r_plan]['application'] ],

@@ -872,12 +872,22 @@ static void mipi_dbi_lcdic_isr(const struct device *dev)
 
 static int mipi_dbi_lcdic_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	const struct mipi_dbi_lcdic_config *config = dev->config;
 	struct mipi_dbi_lcdic_data *data = dev->data;
+	int ret;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
 		break;
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;

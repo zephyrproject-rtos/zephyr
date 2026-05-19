@@ -1,0 +1,8 @@
+board:
+  name: nucode_nu40
+  full_name: NUCODE NU40
+  vendor: nucode
+  socs:
+  - name: nrf52840
+    variants:
+    - name: bare

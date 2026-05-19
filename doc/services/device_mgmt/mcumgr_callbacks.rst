@@ -297,7 +297,7 @@ enable the new notification system in addition to any migrations):
     :c:enumerator:`MGMT_ERR_EOK` will allow the action, any other return code
     will disallow it and return that code to the client
     (:c:enumerator:`MGMT_ERR_EACCESSDENIED` can be used for an access denied
-    error). :kconfig:option:`CONFIG_MCUMGR_GRP_IMG_STATUS_HOOKS` needs to be
+    error). :kconfig:option:`CONFIG_MCUMGR_GRP_FS_FILE_ACCESS_HOOK` needs to be
     set.
  * img_mgmt_register_callbacks
     Using :c:enumerator:`MGMT_EVT_OP_IMG_MGMT_DFU_STARTED` if
@@ -323,8 +323,7 @@ enable the new notification system in addition to any migrations):
     returned, :c:enumerator:`MGMT_ERR_EOK` will allow the action, any other
     return code will disallow it and return that code to the client
     (:c:enumerator:`MGMT_ERR_EACCESSDENIED` can be used for an access denied
-    error). :kconfig:option:`CONFIG_MCUMGR_SMP_COMMAND_STATUS_HOOKS` needs to
-    be set.
+    error). :kconfig:option:`CONFIG_MCUMGR_GRP_OS_RESET_HOOK` needs to be set.
 
 API Reference
 *************

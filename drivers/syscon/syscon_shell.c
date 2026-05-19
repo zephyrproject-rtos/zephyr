@@ -48,7 +48,7 @@ static int cmd_read(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	addr = shell_strtoul(argv[2], 0, &ret);
-	if (ret < 0 || addr > UINT16_MAX) {
+	if (ret < 0 || addr > UINT32_MAX) {
 		shell_error(sh, "Invalid address %s (%d)", argv[2], ret);
 		return -EINVAL;
 	}
@@ -76,7 +76,7 @@ static int cmd_write(const struct shell *sh, size_t argc, char **argv)
 	}
 
 	addr = shell_strtoul(argv[2], 0, &ret);
-	if (ret < 0 || addr > UINT16_MAX) {
+	if (ret < 0 || addr > UINT32_MAX) {
 		shell_error(sh, "Invalid address %s (%d)", argv[2], ret);
 		return -EINVAL;
 	}

@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* mec_assy6941 EVB with MEC1653B-NSZ daughter card
+ * MEC1653B has internal 8KB EEPROM and controller.
+ * Internal pins are disabled to reduce leakage.
+ */
+
+/ {
+	aliases {
+		eeprom-0 = &eeprom;
+	};
+};
+
+&eeprom {
+	status = "okay";
+	pinctrl-0 = <&pspi_cs_n_gpio256
+		     &pspi_clk_gpio257
+		     &pspi_sdi_gpio252
+		     &pspi_sdo_gpio251>;
+	pinctrl-names = "default";
+};

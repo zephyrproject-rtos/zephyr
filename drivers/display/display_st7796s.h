@@ -19,6 +19,7 @@
 #define ST7796S_CMD_TEON	0x35 /* Tearing effect on */
 #define ST7796S_CMD_MADCTL	0x36 /* Memory data access control */
 #define ST7796S_CMD_COLMOD	0x3A /* Interface pixel format */
+#define ST7796S_CMD_STE         0x44 /* Set tear scanline */
 #define ST7796S_CMD_FRMCTR1	0xB1 /* Frame rate control 1 (normal mode) */
 #define ST7796S_CMD_FRMCTR2	0xB2 /* Frame rate control 2 (idle mode) */
 #define ST7796S_CMD_FRMCTR3	0xB3 /* Frame rate control 3 (partial mode) */

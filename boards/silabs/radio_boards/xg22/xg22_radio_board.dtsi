@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <silabs/xg22/clock-hfrcodpll.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/regulator/silabs_dcdc.h>
@@ -46,10 +47,6 @@
 	};
 };
 
-&cpu0 {
-	clock-frequency = <76800000>;
-};
-
 &dcdc {
 	regulator-boot-on;
 	regulator-initial-mode = <SILABS_DCDC_MODE_BUCK>;
@@ -59,17 +56,6 @@
 &itm {
 	pinctrl-0 = <&itm_default>;
 	pinctrl-names = "default";
-	swo-ref-frequency = <DT_FREQ_K(76800)>;
-};
-
-&hfrcodpll {
-	clock-frequency = <DT_FREQ_K(76800)>;
-	clocks = <&hfxo>;
-	dpll-autorecover;
-	dpll-edge = "fall";
-	dpll-lock = "phase";
-	dpll-m = <1919>;
-	dpll-n = <3839>;
 };
 
 &i2c0 {
@@ -168,26 +154,30 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0000c000 DT_SIZE_K(224)>;
 			label = "image-0";
 		};
 
 		slot1_partition: partition@44000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00044000 DT_SIZE_K(224)>;
 			label = "image-1";
 		};
 
 		storage_partition: partition@7c000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0007c000 DT_SIZE_K(16)>;
 			label = "storage";
 		};

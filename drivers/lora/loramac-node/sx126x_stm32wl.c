@@ -61,7 +61,7 @@ void sx126x_set_tx_params(int8_t power, RadioRampTimes_t ramp_time)
 			power = max_power;
 		}
 		if (max_power == 15) {
-			SX126xSetPaConfig(0x07, 0x00, 0x01, 0x01);
+			SX126xSetPaConfig(0x06, 0x00, 0x01, 0x01);
 			power = 14 - (max_power - power);
 		} else if (max_power == 10) {
 			SX126xSetPaConfig(0x01, 0x00, 0x01, 0x01);

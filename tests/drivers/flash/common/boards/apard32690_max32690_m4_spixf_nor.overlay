@@ -8,6 +8,8 @@
 	status = "okay";
 };
 
+/delete-node/ &storage_partition;
+
 &mx25u64 {
 	status = "okay";
 

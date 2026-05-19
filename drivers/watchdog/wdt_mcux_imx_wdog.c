@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020, NXP
+ * Copyright (C) 2020, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys_clock.h>
 #include <fsl_wdog.h>
 
@@ -18,23 +19,31 @@ LOG_MODULE_REGISTER(wdt_mcux_wdog);
 
 #define WDOG_TMOUT_SEC(x)  (((x * 2) / MSEC_PER_SEC) - 1)
 
+#define DEV_CFG(_dev)  ((const struct mcux_wdog_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct mcux_wdog_data *)(_dev)->data)
+
 struct mcux_wdog_config {
-	WDOG_Type *base;
+	DEVICE_MMIO_NAMED_ROM(reg);
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pcfg;
 };
 
 struct mcux_wdog_data {
+	DEVICE_MMIO_NAMED_RAM(reg);
 	wdt_callback_t callback;
 	wdog_config_t wdog_config;
 	bool timeout_valid;
 };
 
+static inline WDOG_Type *get_base_address(const struct device *dev)
+{
+	return (WDOG_Type *)DEVICE_MMIO_NAMED_GET(dev, reg);
+}
+
 static int mcux_wdog_setup(const struct device *dev, uint8_t options)
 {
-	const struct mcux_wdog_config *config = dev->config;
 	struct mcux_wdog_data *data = dev->data;
-	WDOG_Type *base = config->base;
+	WDOG_Type *base = get_base_address(dev);
 
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeouts installed");
@@ -68,9 +77,8 @@ static int mcux_wdog_setup(const struct device *dev, uint8_t options)
 
 static int mcux_wdog_disable(const struct device *dev)
 {
-	const struct mcux_wdog_config *config = dev->config;
 	struct mcux_wdog_data *data = dev->data;
-	WDOG_Type *base = config->base;
+	WDOG_Type *base = get_base_address(dev);
 
 	WDOG_Deinit(base);
 	data->timeout_valid = false;
@@ -118,8 +126,7 @@ static int mcux_wdog_install_timeout(const struct device *dev,
 
 static int mcux_wdog_feed(const struct device *dev, int channel_id)
 {
-	const struct mcux_wdog_config *config = dev->config;
-	WDOG_Type *base = config->base;
+	WDOG_Type *base = get_base_address(dev);
 
 	if (channel_id != 0) {
 		LOG_ERR("Invalid channel id");
@@ -134,9 +141,8 @@ static int mcux_wdog_feed(const struct device *dev, int channel_id)
 
 static void mcux_wdog_isr(const struct device *dev)
 {
-	const struct mcux_wdog_config *config = dev->config;
 	struct mcux_wdog_data *data = dev->data;
-	WDOG_Type *base = config->base;
+	WDOG_Type *base = get_base_address(dev);
 	uint32_t flags;
 
 	flags = WDOG_GetStatusFlags(base);
@@ -151,6 +157,9 @@ static int mcux_wdog_init(const struct device *dev)
 {
 	const struct mcux_wdog_config *config = dev->config;
 	int ret;
+
+	/* Map the named MMIO region */
+	DEVICE_MMIO_NAMED_MAP(dev, reg, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	config->irq_config_func(dev);
 
@@ -169,30 +178,33 @@ static DEVICE_API(wdt, mcux_wdog_api) = {
 	.feed = mcux_wdog_feed,
 };
 
-static void mcux_wdog_config_func(const struct device *dev);
+#define MCUX_WDOG_INIT(id)								\
+	static void mcux_wdog_config_func_##id(const struct device *dev);		\
+											\
+	PINCTRL_DT_INST_DEFINE(id);							\
+											\
+	static const struct mcux_wdog_config mcux_wdog_config_##id = {			\
+		DEVICE_MMIO_NAMED_ROM_INIT(reg, DT_DRV_INST(id)),			\
+		.irq_config_func = mcux_wdog_config_func_##id,				\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),				\
+	};										\
+											\
+	static struct mcux_wdog_data mcux_wdog_data_##id;				\
+											\
+	DEVICE_DT_INST_DEFINE(id,							\
+			      &mcux_wdog_init,						\
+			      NULL,							\
+			      &mcux_wdog_data_##id, &mcux_wdog_config_##id,		\
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			      &mcux_wdog_api);						\
+											\
+	static void mcux_wdog_config_func_##id(const struct device *dev)		\
+	{										\
+		IRQ_CONNECT(DT_INST_IRQN(id),						\
+			    DT_INST_IRQ(id, priority),					\
+			    mcux_wdog_isr, DEVICE_DT_INST_GET(id), 0);			\
+											\
+		irq_enable(DT_INST_IRQN(id));						\
+	}
 
-PINCTRL_DT_INST_DEFINE(0);
-
-static const struct mcux_wdog_config mcux_wdog_config = {
-	.base = (WDOG_Type *) DT_INST_REG_ADDR(0),
-	.irq_config_func = mcux_wdog_config_func,
-	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
-};
-
-static struct mcux_wdog_data mcux_wdog_data;
-
-DEVICE_DT_INST_DEFINE(0,
-		    &mcux_wdog_init,
-		    NULL,
-		    &mcux_wdog_data, &mcux_wdog_config,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &mcux_wdog_api);
-
-static void mcux_wdog_config_func(const struct device *dev)
-{
-	IRQ_CONNECT(DT_INST_IRQN(0),
-		    DT_INST_IRQ(0, priority),
-		    mcux_wdog_isr, DEVICE_DT_INST_GET(0), 0);
-
-	irq_enable(DT_INST_IRQN(0));
-}
+DT_INST_FOREACH_STATUS_OKAY(MCUX_WDOG_INIT)

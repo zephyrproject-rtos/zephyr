@@ -113,8 +113,6 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			#address-cells = <1>;
-			#size-cells = <0>;
 			vendor-id = <0x8086>;
 			device-id = <0x7ace>;
 			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
@@ -362,7 +360,6 @@
 		uart_ec_0: uart@3f8 {
 			compatible = "ns16550";
 			reg = <0x000003f8 0x100>;
-			io-mapped;
 			clock-frequency = <1843200>;
 			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;

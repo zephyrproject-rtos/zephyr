@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -21,6 +22,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "cap_initiator.h"
@@ -59,6 +61,8 @@ static void broadcast_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t re
 
 static void broadcast_stream_sent_cb(struct bt_bap_stream *stream)
 {
+	ARG_UNUSED(stream);
+
 	/* Triggered every time we have sent an HCI data packet to the controller */
 
 	if ((total_broadcast_tx_iso_packet_count % 100U) == 0U) {
@@ -136,7 +140,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	broadcast_id = CONFIG_BROADCAST_ID;
 #else
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Unable to generate broadcast ID: %d\n", err);
 		return err;
 	}

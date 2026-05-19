@@ -13,6 +13,7 @@ LOG_MODULE_DECLARE(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
@@ -59,6 +60,8 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
 	NET_PKT_DATA_ACCESS_DEFINE(igmp_access,
 				   struct net_ipv4_igmp_v2_report);
 	struct net_ipv4_igmp_v2_report *igmp;
+	int ret;
+	uint16_t chksum = 0;
 
 	igmp = (struct net_ipv4_igmp_v2_report *)
 				net_pkt_get_data(pkt, &igmp_access);
@@ -75,12 +78,19 @@ static int igmp_v2_create(struct net_pkt *pkt, const struct net_in_addr *addr,
 		return -ENOBUFS;
 	}
 
-	igmp->chksum = net_calc_chksum_igmp(pkt);
+	ret = net_calc_chksum_igmp(pkt, &chksum);
+	if (ret < 0) {
+		return ret;
+	}
+
+	igmp->chksum = chksum;
 
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_init(pkt);
 
-	net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v2_report, chksum));
+	if (net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v2_report, chksum)) < 0) {
+		return -ENOBUFS;
+	}
 	if (net_pkt_write(pkt, &igmp->chksum, sizeof(igmp->chksum))) {
 		return -ENOBUFS;
 	}
@@ -96,7 +106,8 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 	NET_PKT_DATA_ACCESS_DEFINE(group_record_access, struct net_ipv4_igmp_v3_group_record);
 	struct net_ipv4_igmp_v3_report *igmp;
 	struct net_ipv4_igmp_v3_group_record *group_record;
-
+	int ret;
+	uint16_t chksum = 0;
 	uint16_t group_count = 0;
 
 	igmp = (struct net_ipv4_igmp_v3_report *)net_pkt_get_data(pkt, &igmp_access);
@@ -169,12 +180,20 @@ static int igmp_v3_create(struct net_pkt *pkt, uint8_t type, struct net_if_mcast
 		}
 	}
 
-	igmp->chksum = net_calc_chksum_igmp(pkt);
+	ret = net_calc_chksum_igmp(pkt, &chksum);
+	if (ret < 0) {
+		return ret;
+	}
+
+	igmp->chksum = chksum;
 
 	net_pkt_set_overwrite(pkt, true);
 	net_pkt_cursor_init(pkt);
 
-	net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v3_report, chksum));
+	if (net_pkt_skip(pkt, offsetof(struct net_ipv4_igmp_v3_report, chksum)) < 0) {
+		return -ENOBUFS;
+	}
+
 	if (net_pkt_write(pkt, &igmp->chksum, sizeof(igmp->chksum))) {
 		return -ENOBUFS;
 	}
@@ -244,6 +263,7 @@ static int igmp_v3_create_packet(struct net_pkt *pkt, const struct net_in_addr *
 
 static int igmp_send(struct net_pkt *pkt)
 {
+	__maybe_unused struct net_if *iface = net_pkt_iface(pkt);
 	int ret;
 
 	net_pkt_cursor_init(pkt);
@@ -251,11 +271,11 @@ static int igmp_send(struct net_pkt *pkt)
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		net_stats_update_ipv4_igmp_drop(net_pkt_iface(pkt));
+		net_stats_update_ipv4_igmp_drop(iface);
 		return ret;
 	}
 
-	net_stats_update_ipv4_igmp_sent(net_pkt_iface(pkt));
+	net_stats_update_ipv4_igmp_sent(iface);
 
 	return 0;
 }
@@ -414,6 +434,7 @@ drop:
 enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *ip_hdr)
 {
 	int ret;
+	uint16_t chksum = 0;
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(igmpv2_access, struct net_ipv4_igmp_v2_query);
 
 	struct net_ipv4_igmp_v2_query *igmpv2_hdr;
@@ -463,21 +484,25 @@ enum net_verdict net_ipv4_igmp_input(struct net_pkt *pkt, struct net_ipv4_hdr *i
 	}
 #endif
 
-	ret = net_calc_chksum_igmp(pkt);
-	if (ret != 0u) {
+	ret = net_calc_chksum_igmp(pkt, &chksum);
+	if (ret < 0 || chksum != 0U) {
 		NET_DBG("DROP: Invalid checksum");
 		goto drop;
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	if (version == IGMPV3) {
-		net_pkt_acknowledge_data(pkt, &igmpv3_access);
+		ret = net_pkt_acknowledge_data(pkt, &igmpv3_access);
 	} else {
 #endif
-		net_pkt_acknowledge_data(pkt, &igmpv2_access);
+		ret = net_pkt_acknowledge_data(pkt, &igmpv2_access);
 #if defined(CONFIG_NET_IPV4_IGMPV3)
 	}
 #endif
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	dbg_addr_recv("Internet Group Management Protocol", &ip_hdr->src, &ip_hdr->dst);
 
@@ -580,6 +605,40 @@ drop:
 }
 #endif
 
+int net_ipv4_igmp_rejoin(struct net_if *iface, const struct net_in_addr *addr)
+{
+	struct net_if_mcast_addr *maddr;
+	int ret = 0;
+
+	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
+	if (maddr == NULL) {
+		return -ENOENT;
+	}
+
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+	ret = igmpv3_send_generic(iface, maddr);
+#else
+	ret = igmp_send_generic(iface, addr, true);
+#endif
+	if (ret < 0) {
+		return ret;
+	}
+
+out:
+	net_if_ipv4_maddr_join(iface, maddr);
+
+	net_if_mcast_monitor(iface, &maddr->address, true);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_JOIN, iface, &maddr->address.in_addr,
+					sizeof(struct net_in_addr));
+
+	return ret;
+}
+
 int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 		       const struct igmp_param *param)
 {
@@ -587,6 +646,16 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 	int ret = 0;
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
+	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
+	if (maddr != NULL && maddr->sources_len > 0) {
+		/* For IGMPv3 specifically, if the address with non-empty
+		 * include/exclude list was registered, return an error as
+		 * registering lists from different sources is currently
+		 * not supported.
+		 */
+		return -EEXIST;
+	}
+
 	if (param != NULL) {
 		if (param->sources_len > CONFIG_NET_IF_MCAST_IPV4_SOURCE_COUNT) {
 			return -ENOMEM;
@@ -594,16 +663,19 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 	}
 #endif
 
-	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
-	if (maddr && net_if_ipv4_maddr_is_joined(maddr)) {
-		return -EALREADY;
+	maddr = net_if_ipv4_maddr_add(iface, addr);
+	if (maddr == NULL) {
+		return -ENOMEM;
 	}
 
-	if (!maddr) {
-		maddr = net_if_ipv4_maddr_add(iface, addr);
-		if (!maddr) {
-			return -ENOMEM;
+	if (net_if_ipv4_maddr_is_joined(maddr)) {
+#if defined(CONFIG_NET_IPV4_IGMPV3)
+		if (param == NULL) {
+			return 0;
 		}
+#else
+		return 0;
+#endif
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
@@ -633,6 +705,16 @@ int net_ipv4_igmp_join(struct net_if *iface, const struct net_in_addr *addr,
 #endif
 	if (ret < 0) {
 		net_if_ipv4_maddr_leave(iface, maddr);
+
+		/* -ENETDOWN Indicate that network interface is down - this may
+		 * happen and should not be considered fatal, address group will
+		 * be joined when the interface goes up. Any other error should
+		 * be considered fatal though and address should be cleaned up.
+		 */
+		if (ret != -ENETDOWN) {
+			net_if_ipv4_maddr_rm(iface, addr);
+		}
+
 		return ret;
 	}
 
@@ -655,12 +737,19 @@ out:
 
 int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 {
+	struct net_if_mcast_addr removed_addr;
 	struct net_if_mcast_addr *maddr;
 	int ret = 0;
 
 	maddr = net_if_ipv4_maddr_lookup(addr, &iface);
-	if (!maddr) {
+	if (maddr == NULL) {
 		return -ENOENT;
+	}
+
+	removed_addr = *maddr;
+	if (!net_if_ipv4_maddr_rm(iface, addr)) {
+		/* Address still in use */
+		return 0;
 	}
 
 	if (net_if_is_offloaded(iface)) {
@@ -668,10 +757,10 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 	}
 
 #if defined(CONFIG_NET_IPV4_IGMPV3)
-	maddr->record_type = IGMPV3_CHANGE_TO_INCLUDE_MODE;
-	maddr->sources_len = 0;
+	removed_addr.record_type = IGMPV3_CHANGE_TO_INCLUDE_MODE;
+	removed_addr.sources_len = 0;
 
-	ret = igmpv3_send_generic(iface, maddr);
+	ret = igmpv3_send_generic(iface, &removed_addr);
 #else
 	ret = igmp_send_generic(iface, addr, false);
 #endif
@@ -680,15 +769,10 @@ int net_ipv4_igmp_leave(struct net_if *iface, const struct net_in_addr *addr)
 	}
 
 out:
-	if (!net_if_ipv4_maddr_rm(iface, addr)) {
-		return -EINVAL;
-	}
+	net_if_mcast_monitor(iface, &removed_addr.address, false);
 
-	net_if_ipv4_maddr_leave(iface, maddr);
-
-	net_if_mcast_monitor(iface, &maddr->address, false);
-
-	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_LEAVE, iface, &maddr->address.in_addr,
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV4_MCAST_LEAVE, iface,
+					&removed_addr.address.in_addr,
 					sizeof(struct net_in_addr));
 	return ret;
 }

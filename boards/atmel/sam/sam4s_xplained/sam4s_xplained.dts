@@ -232,6 +232,13 @@ xplained4_spi: &spi0 {};
 
 xplained4_serial: &uart1 {};
 
+zephyr_udc0: &udp {
+	status = "okay";
+
+	pinctrl-0 = <&udp_default>;
+	pinctrl-names = "default";
+};
+
 &smc {
 	status = "okay";
 	pinctrl-0 = <&smc_default>;

@@ -87,8 +87,8 @@ struct ctsu_scan_msg {
 	struct st_touch_instance *p_instance;
 };
 
-SYS_MEM_BLOCKS_DEFINE_STATIC(scan_msg_allocator, sizeof(struct ctsu_scan_msg),
-			     CONFIG_INPUT_RENESAS_RA_CTSU_MSG_MEM_BLOCK_SIZE, sizeof(uint32_t));
+SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(scan_msg_allocator, struct ctsu_scan_msg,
+				  CONFIG_INPUT_RENESAS_RA_CTSU_MSG_MEM_BLOCK_SIZE);
 
 static void renesas_ra_callback_adapter(touch_callback_args_t *p_args)
 {
@@ -295,6 +295,7 @@ static int renesas_ra_ctsu_group_init(const struct device *dev)
 #endif /* CONFIG_INPUT_RENESAS_RA_QE_TOUCH_CFG */
 
 	if (!device_is_ready(cfg->ctsu_dev)) {
+		LOG_ERR_DEVICE_NOT_READY(cfg->ctsu_dev);
 		return -ENODEV;
 	}
 
@@ -559,6 +560,7 @@ static int renesas_ra_ctsu_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(ctsu_cfg->clock)) {
+		LOG_ERR_DEVICE_NOT_READY(ctsu_cfg->clock);
 		return -ENODEV;
 	}
 
@@ -653,7 +655,12 @@ static int ctsu_device_init(const struct device *dev)
 {
 	const struct ctsu_device_cfg *cfg = dev->config;
 
-	return device_is_ready(cfg->group_dev) ? 0 : -ENODEV;
+	if (!device_is_ready(cfg->group_dev)) {
+		LOG_ERR_DEVICE_NOT_READY(cfg->group_dev);
+		return -ENODEV;
+	}
+
+	return 0;
 }
 
 #undef DT_DRV_COMPAT

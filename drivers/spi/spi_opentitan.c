@@ -11,7 +11,7 @@ LOG_MODULE_REGISTER(spi_opentitan);
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <soc.h>
 #include <stdbool.h>
 

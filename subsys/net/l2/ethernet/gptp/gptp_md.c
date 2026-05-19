@@ -7,6 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
+#include <zephyr/net/net_log.h>
 #include "gptp_messages.h"
 #include "gptp_md.h"
 #include "gptp_data_set.h"
@@ -183,7 +184,7 @@ static void gptp_md_pdelay_reset(int port)
 	struct gptp_pdelay_req_state *state;
 	struct gptp_port_ds *port_ds;
 
-	NET_WARN("Reset Pdelay requests");
+	NET_DBG("Reset Pdelay requests");
 
 	state = &GPTP_PORT_STATE(port)->pdelay_req;
 	port_ds = GPTP_PORT_DS(port);
@@ -459,7 +460,7 @@ static void gptp_md_pdelay_req_timeout(struct k_timer *timer)
 	struct gptp_pdelay_req_state *state;
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		state = &GPTP_PORT_STATE(port)->pdelay_req;
 		if (timer == &state->pdelay_timer) {
 			state->pdelay_timer_expired = true;
@@ -494,7 +495,7 @@ static void gptp_md_follow_up_receipt_timeout(struct k_timer *timer)
 	struct gptp_sync_rcv_state *state;
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		state = &GPTP_PORT_STATE(port)->sync_rcv;
 		if (timer == &state->follow_up_discard_timer) {
 			NET_WARN("No %s received after %s message",
@@ -576,7 +577,7 @@ void gptp_md_init_state_machine(void)
 {
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		gptp_md_init_pdelay_req_state_machine(port);
 		gptp_md_init_pdelay_resp_state_machine(port);
 		gptp_md_init_sync_rcv_state_machine(port);

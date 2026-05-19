@@ -1,0 +1,16 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * When BLE is enabled, the hardware reserves 8 KB of
+ * exchange memory (EM) at the top of SRAM
+ * (GLB_EM_SEL=0x3 set in soc_prep_hook), reducing
+ * usable RAM from 176 KB to 168 KB.
+ */
+
+&sram0 {
+	reg = <0x42020000 DT_SIZE_K(168)>;
+};

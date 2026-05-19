@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 The Chromium OS Authors
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +14,7 @@
 
 #include "usbc_timer.h"
 #include "usbc_stack.h"
+#include "usbc_config.h"
 
 enum tc_flags {
 	/**
@@ -30,7 +32,7 @@ enum tc_flags {
 enum tc_state_t {
 	/** Super state that opens the CC lines */
 	TC_CC_OPEN_SUPER_STATE,
-#ifdef CONFIG_USBC_CSM_SINK_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SINK
 	/** Super state that applies Rd to the CC lines */
 	TC_CC_RD_SUPER_STATE,
 	/** Unattached Sink State */
@@ -39,7 +41,8 @@ enum tc_state_t {
 	TC_ATTACH_WAIT_SNK_STATE,
 	/** Attached Sink State */
 	TC_ATTACHED_SNK_STATE,
-#else
+#endif
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/** Super state that applies Rp to the CC lines */
 	TC_CC_RP_SUPER_STATE,
 	/** Unattached Source State */
@@ -51,6 +54,8 @@ enum tc_state_t {
 	/** Attached Source State */
 	TC_ATTACHED_SRC_STATE,
 #endif
+	/** Startup State */
+	TC_STARTUP_STATE,
 	/** Disabled State */
 	TC_DISABLED_STATE,
 	/** Error Recovery State */
@@ -91,9 +96,13 @@ struct tc_sm_t {
 	struct usbc_timer_t tc_t_rp_value_change;
 	/** tErrorRecovery timer */
 	struct usbc_timer_t tc_t_error_recovery;
-#ifdef CONFIG_USBC_CSM_SOURCE_ONLY
+#ifdef CONFIG_USBC_CSM_SUPPORTS_SOURCE
 	/** tVconnOff timer */
 	struct usbc_timer_t tc_t_vconn_off;
+#endif
+#ifdef CONFIG_USBC_CSM_DRP
+	/** tDRP toggle timer */
+	struct usbc_timer_t tc_t_drp_toggle;
 #endif
 };
 

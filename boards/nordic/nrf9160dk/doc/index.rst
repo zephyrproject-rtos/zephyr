@@ -10,22 +10,7 @@ Overview
 The nRF9160 DK (PCA10090) is a single-board development kit for evaluation and
 development on the nRF9160 SiP for LTE-M and NB-IoT. The nrf9160dk/nrf9160
 board configuration provides support for the Nordic Semiconductor nRF9160 ARM
-Cortex-M33F CPU with ARMv8-M Security Extension and the following devices:
-
-* :abbr:`ADC (Analog to Digital Converter)`
-* CLOCK
-* FLASH
-* :abbr:`GPIO (General Purpose Input Output)`
-* :abbr:`I2C (Inter-Integrated Circuit)`
-* :abbr:`MPU (Memory Protection Unit)`
-* :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* :abbr:`PWM (Pulse Width Modulation)`
-* :abbr:`RTC (nRF RTC System Clock)`
-* Segger RTT (RTT Console)
-* :abbr:`SPI (Serial Peripheral Interface)`
-* :abbr:`UARTE (Universal asynchronous receiver-transmitter with EasyDMA)`
-* :abbr:`WDT (Watchdog Timer)`
-* :abbr:`IDAU (Implementation Defined Attribution Unit)`
+Cortex-M33F CPU with ARMv8-M Security Extensions.
 
 .. figure:: img/nrf9160dk_nrf9160.jpg
      :align: center

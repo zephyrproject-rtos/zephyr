@@ -1189,6 +1189,19 @@ static ALWAYS_INLINE uint64_t sys_lcm_s(int32_t a, int32_t b)
 	})
 
 /**
+ * @brief Define symbol as static unless we are building with ZTEST.
+ *
+ * Define the annotated symbol (function or variable) as static (private to the translation unit),
+ * unless we are building with ZTEST. This macro can be used to define private symbols which need
+ * to be accessible from tests.
+ */
+#ifdef CONFIG_ZTEST
+#define ZTESTABLE_STATIC
+#else
+#define ZTESTABLE_STATIC static
+#endif
+
+/**
  * @}
  */
 

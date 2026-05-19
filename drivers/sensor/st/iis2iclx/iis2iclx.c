@@ -231,24 +231,31 @@ static int iis2iclx_sample_fetch(const struct device *dev,
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 	struct iis2iclx_data *data = dev->data;
 #endif /* CONFIG_IIS2ICLX_SENSORHUB */
+	int ret = 0;
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
-		iis2iclx_sample_fetch_accel(dev);
+		ret = iis2iclx_sample_fetch_accel(dev);
 		break;
 #if defined(CONFIG_IIS2ICLX_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
-		iis2iclx_sample_fetch_temp(dev);
+		ret = iis2iclx_sample_fetch_temp(dev);
 		break;
 #endif
 	case SENSOR_CHAN_ALL:
-		iis2iclx_sample_fetch_accel(dev);
+		ret = iis2iclx_sample_fetch_accel(dev);
+		if (ret != 0) {
+			break;
+		}
 #if defined(CONFIG_IIS2ICLX_ENABLE_TEMP)
-		iis2iclx_sample_fetch_temp(dev);
+		ret = iis2iclx_sample_fetch_temp(dev);
+		if (ret != 0) {
+			break;
+		}
 #endif
 #if defined(CONFIG_IIS2ICLX_SENSORHUB)
 		if (data->shub_inited) {
-			iis2iclx_sample_fetch_shub(dev);
+			ret = iis2iclx_sample_fetch_shub(dev);
 		}
 #endif
 		break;
@@ -256,7 +263,7 @@ static int iis2iclx_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static inline void iis2iclx_accel_convert(struct sensor_value *val, int raw_val,

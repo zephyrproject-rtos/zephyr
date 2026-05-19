@@ -25,15 +25,18 @@ static int iis3dhhc_sample_fetch(const struct device *dev,
 {
 	struct iis3dhhc_data *data = dev->data;
 	int16_t raw_accel[3];
+	int32_t ret = 0;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ACCEL_XYZ || chan == SENSOR_CHAN_ALL);
 
-	iis3dhhc_acceleration_raw_get(data->ctx, raw_accel);
-	data->acc[0] = raw_accel[0];
-	data->acc[1] = raw_accel[1];
-	data->acc[2] = raw_accel[2];
+	ret = iis3dhhc_acceleration_raw_get(data->ctx, raw_accel);
+	if (ret == 0) {
+		data->acc[0] = raw_accel[0];
+		data->acc[1] = raw_accel[1];
+		data->acc[2] = raw_accel[2];
+	}
 
-	return 0;
+	return ret;
 }
 
 static inline void iis3dhhc_convert(struct sensor_value *val,
@@ -194,7 +197,7 @@ static int iis3dhhc_init(const struct device *dev)
 	const struct iis3dhhc_config * const config = dev->config;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->spi.bus);
 		return -ENODEV;
 	}
 

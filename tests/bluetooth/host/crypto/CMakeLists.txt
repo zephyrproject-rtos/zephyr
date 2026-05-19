@@ -15,6 +15,8 @@ add_library(mocks STATIC
             ${ZEPHYR_BASE}/subsys/logging/log_minimal.c
             ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
             ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
+            ${ZEPHYR_BASE}/lib/utils/hex.c
+            ${ZEPHYR_BASE}/lib/uuid/uuid.c
 )
 
 target_include_directories(mocks PUBLIC
@@ -23,7 +25,8 @@ target_include_directories(mocks PUBLIC
   ${ZEPHYR_BASE}/subsys/bluetooth/host
   ${ZEPHYR_BASE}/tests/bluetooth/host
   ${ZEPHYR_BASE}/tests/bluetooth/host/crypto/mocks
-  ${ZEPHYR_MBEDTLS_MODULE_DIR}/include
+  ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/include
+  ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/
 )
 
 target_link_libraries(mocks PRIVATE test_interface)

@@ -157,5 +157,5 @@ It is expected to be used with special application performing Xen Domain-0/Dom0 
 
    The "hypervisor@x" and "memory@x" DT nodes need to be specified in
    DT application overlay with values provided on the Xen boot, because
-   normaly Xen will update DT for the target Kernel, but this is not possible
+   normally Xen will update DT for the target Kernel, but this is not possible
    in case of Zephyr. More details described in :ref:`xen_dom0`.

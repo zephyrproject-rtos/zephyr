@@ -2,7 +2,7 @@
 /*
  ****************************************************************************
  * (C) 2006 - Cambridge University
- * (C) 2021-2024 - EPAM Systems
+ * (C) 2021-2026 - EPAM Systems
  ****************************************************************************
  *
  *        File: gnttab.c
@@ -21,6 +21,7 @@
 #include <zephyr/xen/generic.h>
 #include <zephyr/xen/gnttab.h>
 #include <zephyr/xen/memory.h>
+#include <zephyr/xen/regions.h>
 #include <zephyr/xen/public/grant_table.h>
 #include <zephyr/xen/public/memory.h>
 #include <zephyr/xen/public/xen.h>
@@ -194,6 +195,17 @@ static void gop_eagain_retry(int cmd, struct gnttab_map_grant_ref *gref)
 	}
 }
 
+#ifdef CONFIG_XEN_REGIONS
+void *gnttab_get_pages(unsigned int npages)
+{
+	return xen_region_get_pages(npages);
+}
+
+int gnttab_put_pages(void *start_addr, unsigned int npages)
+{
+	return xen_region_put_pages(start_addr, npages);
+}
+#else /* CONFIG_XEN_REGIONS */
 void *gnttab_get_pages(unsigned int npages)
 {
 	int ret = 0;
@@ -282,11 +294,22 @@ int gnttab_put_pages(void *start_addr, unsigned int npages)
 
 	return 0;
 }
+#endif /* CONFIG_XEN_REGIONS */
 
 int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)
 {
 	int i, ret;
 
+#ifdef CONFIG_XEN_REGIONS
+	/* Only addresses from extended regions is supported */
+	for (i = 0; i < count; i++) {
+		if (!xen_region_is_addr_extreg(xen_to_virt(map_ops[i].host_addr))) {
+			LOG_ERR("address 0x%llx not in extended region "
+				"for gnttab_map_grant_ref #%d\n", map_ops[i].host_addr, i);
+			return -EFAULT;
+		}
+	}
+#endif /* CONFIG_XEN_REGIONS */
 	ret = HYPERVISOR_grant_table_op(GNTTABOP_map_grant_ref, map_ops, count);
 	if (ret) {
 		return ret;
@@ -305,7 +328,16 @@ int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)
 			i--;
 
 			break;
-
+#ifdef CONFIG_XEN_REGIONS
+		case GNTST_okay:
+			ret = xen_region_map(xen_to_virt(map_ops[i].host_addr), 1);
+			if (ret != 0) {
+				LOG_ERR("xen_region_map failed ret=%d addr=0x%llx",
+					ret, map_ops[i].host_addr);
+				k_panic();
+			}
+			break;
+#endif /* CONFIG_XEN_REGIONS */
 		default:
 			break;
 		}
@@ -316,6 +348,27 @@ int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count)
 
 int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int count)
 {
+#ifdef CONFIG_XEN_REGIONS
+	int i, ret;
+
+	/* Only addresses from extended regions is supported */
+	for (i = 0; i < count; i++) {
+		if (!xen_region_is_addr_extreg(xen_to_virt(unmap_ops[i].host_addr))) {
+			LOG_ERR("address 0x%llx not in extended region "
+				"for gnttab_unmap_grant_ref #%d\n", unmap_ops[i].host_addr, i);
+			return -EFAULT;
+		}
+	}
+
+	for (i = 0; i < count; i++) {
+		ret = xen_region_unmap(xen_to_virt(unmap_ops[i].host_addr), 1);
+		if (ret != 0) {
+			LOG_ERR("xen_region_unmap failed ret=%d addr=0x%llx",
+					ret, unmap_ops[i].host_addr);
+			k_panic();
+		}
+	}
+#endif /* CONFIG_XEN_REGIONS */
 	return HYPERVISOR_grant_table_op(GNTTABOP_unmap_grant_ref, unmap_ops, count);
 }
 

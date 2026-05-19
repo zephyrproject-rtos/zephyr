@@ -9,6 +9,7 @@ import os
 
 import pytest
 from twisterlib.environment import TwisterEnv, add_parse_arguments, parse_arguments
+from twisterlib.hardwaremap import HardwareMap
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import TestConfiguration, TestPlan
 
@@ -49,6 +50,7 @@ def tesenv_obj(test_data, testsuites_dir, tmpdir_factory):
                       os.path.join(testsuites_dir, 'samples')]
     env.test_config = os.path.join(test_data, "test_config.yaml")
     env.outdir = tmpdir_factory.mktemp("sanity_out_demo")
+    env.hwm = HardwareMap(options)
     return env
 
 
@@ -66,8 +68,7 @@ def testplan_obj(class_env):
 def testsuites_dict(class_testplan):
     """ Pytest fixture to call add_testcase function of
 	Testsuite class and return the dictionary of testsuites"""
-    class_testplan.SAMPLE_FILENAME = 'test_sample_app.yaml'
-    class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
+    class_testplan.TEST_DEFINITION_FILENAME = ['test_sample_app.yaml', 'test_data.yaml']
     class_testplan.add_testsuites()
     return class_testplan.testsuites
 

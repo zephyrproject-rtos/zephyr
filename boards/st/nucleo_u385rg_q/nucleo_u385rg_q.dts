@@ -55,6 +55,7 @@
 	aliases {
 		led0 = &green_led_2;
 		pwm-led0 = &green_pwm_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
@@ -62,28 +63,32 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
 
-		slot0_partition: partition@c000 {
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
-			reg = <0x0000c000 DT_SIZE_K(472)>;
+			reg = <0x00010000 DT_SIZE_K(472)>;
 		};
 
-		slot1_partition: partition@44000 {
+		slot1_partition: partition@86000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
-			reg = <0x00044000 DT_SIZE_K(476)>;
+			reg = <0x00086000 DT_SIZE_K(476)>;
 		};
 
 		storage_partition: partition@fd000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
-			reg = <0x0007d000 DT_SIZE_K(12)>;
+			reg = <0x000fd000 DT_SIZE_K(12)>;
 		};
 	};
 };
@@ -204,10 +209,6 @@
 	status = "okay";
 };
 
-&wwdg {
-	status = "okay";
-};
-
 &rtc {
 	clocks = <&rcc STM32_CLOCK(APB1, 30)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
@@ -229,4 +230,14 @@ zephyr_udc0: &usb {
 		pinctrl-0 = <&tim2_ch1_pa5>;
 		pinctrl-names = "default";
 	};
+};
+
+&crc {
+	status = "okay";
+};
+
+&i3c1 {
+	pinctrl-0 = <&i3c1_scl_pb2 &i3c1_sda_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
 };

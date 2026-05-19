@@ -50,7 +50,7 @@ int ina230_trigger_mode_init(const struct device *dev)
 
 	/* setup alert gpio interrupt */
 	if (!gpio_is_ready_dt(&config->alert_gpio)) {
-		LOG_ERR("Alert GPIO device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->alert_gpio.port);
 		return -ENODEV;
 	}
 

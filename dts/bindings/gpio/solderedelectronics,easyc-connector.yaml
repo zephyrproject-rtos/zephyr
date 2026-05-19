@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    EasyC is a 4-pin JST connector for I2C devices.
+    It's compatible with STEMMA QT, Grove, and Qwiic connectors.
+    The pin assignments are as follows:
+
+        0  SCL
+        1  SDA
+        -  VCC (3.3V)
+        -  GND
+
+compatible: "solderedelectronics,easyc-connector"
+
+include: [gpio-nexus.yaml, base.yaml]

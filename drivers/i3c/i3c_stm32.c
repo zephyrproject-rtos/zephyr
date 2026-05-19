@@ -33,6 +33,14 @@ LOG_MODULE_REGISTER(i3c_stm32, CONFIG_I3C_LOG_LEVEL);
 
 #define DT_DRV_COMPAT st_stm32_i3c
 
+#ifdef CONFIG_STM32_HAL2
+#define STM32_I3C_RXFIFO_THRESHOLD_1_BYTE	LL_I3C_RXFIFO_THRESHOLD_1_8
+#define STM32_I3C_TXFIFO_THRESHOLD_1_BYTE	LL_I3C_TXFIFO_THRESHOLD_1_8
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_I3C_RXFIFO_THRESHOLD_1_BYTE	LL_I3C_RXFIFO_THRESHOLD_1_4
+#define STM32_I3C_TXFIFO_THRESHOLD_1_BYTE	LL_I3C_TXFIFO_THRESHOLD_1_4
+#endif /* CONFIG_STM32_HAL2*/
+
 #define STM32_I3C_SCLH_I2C_MIN_FM_NS  600ull
 #define STM32_I3C_SCLH_I2C_MIN_FMP_NS 260ull
 #define STM32_I3C_SCLL_OD_MIN_FM_NS   1320ull
@@ -626,7 +634,7 @@ static int i3c_stm32_config_ctrl_bus_char(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Satisfying I3C start timing min timing will statisfy the rest of the conditions */
+	/* Satisfying I3C start timing min timing will satisfy the rest of the conditions */
 
 	if (i2c_bus_freq != 0) {
 		if (i2c_bus_freq > 400000) {
@@ -1456,8 +1464,8 @@ static void i3c_stm32_controller_init(const struct device *dev)
 	I3C_TypeDef *i3c = config->i3c;
 
 	/* Configure FIFO */
-	LL_I3C_SetRxFIFOThreshold(i3c, LL_I3C_RXFIFO_THRESHOLD_1_4);
-	LL_I3C_SetTxFIFOThreshold(i3c, LL_I3C_TXFIFO_THRESHOLD_1_4);
+	LL_I3C_SetRxFIFOThreshold(i3c, STM32_I3C_RXFIFO_THRESHOLD_1_BYTE);
+	LL_I3C_SetTxFIFOThreshold(i3c, STM32_I3C_TXFIFO_THRESHOLD_1_BYTE);
 	LL_I3C_EnableControlFIFO(i3c);
 	LL_I3C_EnableStatusFIFO(i3c);
 
@@ -1537,7 +1545,8 @@ static int i3c_stm32_init(const struct device *dev)
 	i3c_stm32_controller_init(dev);
 
 	/* Perform bus initialization only if there are devices that already exist on the bus */
-	if (config->drv_cfg.dev_list.num_i3c > 0) {
+	if (config->drv_cfg.dev_list.num_i3c > 0 &&
+	    !(config->drv_cfg.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 		ret = i3c_bus_init(dev, &config->drv_cfg.dev_list);
 		if (ret != 0) {
 			LOG_ERR("Failed to do i3c bus init, err=%d", ret);
@@ -1546,10 +1555,12 @@ static int i3c_stm32_init(const struct device *dev)
 	}
 
 #ifdef CONFIG_I3C_USE_IBI
-	LL_I3C_EnableHJAck(i3c);
-	data->hj_pm_lock = true;
-	(void)pm_device_runtime_get(dev);
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (!(config->drv_cfg.flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
+		LL_I3C_EnableHJAck(i3c);
+		data->hj_pm_lock = true;
+		(void)pm_device_runtime_get(dev);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
 #endif
 
 	return 0;
@@ -1919,7 +1930,7 @@ int i3c_stm32_ibi_hj_response(const struct device *dev, bool ack)
 	if (ack) {
 		/*
 		 * This prevents pm_device_runtime from being called multiple times
-		 * with redunant calls
+		 * with redundant calls
 		 */
 		if (!data->hj_pm_lock) {
 			data->hj_pm_lock = true;
@@ -2212,6 +2223,7 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 		.drv_cfg.dev_list.num_i3c = ARRAY_SIZE(i3c_stm32_dev_arr_##index),                 \
 		.drv_cfg.dev_list.i2c = i3c_i2c_stm32_dev_arr_##index,                             \
 		.drv_cfg.dev_list.num_i2c = ARRAY_SIZE(i3c_i2c_stm32_dev_arr_##index),             \
+		.drv_cfg.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(index),                       \
 	};                                                                                         \
                                                                                                    \
 	static struct i3c_stm32_data i3c_stm32_data_##index = {                                    \

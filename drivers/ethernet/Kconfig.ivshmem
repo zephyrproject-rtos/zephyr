@@ -10,11 +10,20 @@ menuconfig ETH_IVSHMEM
 	select IVSHMEM_V2
 	select IVSHMEM_DOORBELL
 	select OPENAMP
+	depends on DT_HAS_SIEMENS_IVSHMEM_ETH_ENABLED
+	default y
 	help
 	  Enable Inter-VM Shared Memory Ethernet driver.
 	  Used for Ethernet communication between "cells" in the Jailhouse hypervisor.
 
 if ETH_IVSHMEM
+
+config ETH_NIC_MODEL
+	string
+	default "ivshmem"
+	help
+	  Tells what Qemu network model to use. This value is given as
+	  a parameter to -nic qemu command line option.
 
 config ETH_IVSHMEM_THREAD_STACK_SIZE
 	int "IVSHMEM Ethernet thread stack size"

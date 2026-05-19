@@ -25,9 +25,7 @@ tests:
       - CONFIG_EAP_TLS=y
       - CONFIG_EAP_TTLS=y
       - CONFIG_EAP_PEAP=y
-      - CONFIG_EAP_MD5=y
       - CONFIG_EAP_MSCHAPV2=y
-      - CONFIG_EAP_LEAP=y
       - CONFIG_EAP_PSK=y
       - CONFIG_EAP_PAX=y
       - CONFIG_EAP_SAKE=y
@@ -39,7 +37,7 @@ tests:
       - CONFIG_EAP_AKA=y
   wifi.build.wpa3:
     extra_configs:
-      - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3=y
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT=y
       - CONFIG_MBEDTLS_SSL_PROTO_TLS1_2=y
   wifi.build.ap:
     extra_configs:

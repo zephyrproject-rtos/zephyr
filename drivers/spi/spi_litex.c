@@ -21,13 +21,13 @@ struct spi_litex_data {
 };
 
 struct spi_litex_cfg {
-	uint32_t control_addr;
-	uint32_t status_addr;
-	uint32_t mosi_addr;
-	uint32_t miso_addr;
-	uint32_t cs_addr;
-	uint32_t loopback_addr;
-	uint32_t clk_divider_addr;
+	mem_addr_t control_addr;
+	mem_addr_t status_addr;
+	mem_addr_t mosi_addr;
+	mem_addr_t miso_addr;
+	mem_addr_t cs_addr;
+	mem_addr_t loopback_addr;
+	mem_addr_t clk_divider_addr;
 	bool clk_divider_exists;
 	int data_width;
 	int max_cs;

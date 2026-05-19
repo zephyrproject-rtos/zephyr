@@ -258,10 +258,9 @@ static void nxp_s32_eth_rx_thread(void *arg1, void *unused1, void *unused2)
 	}
 }
 
-enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev)
+enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev __unused,
+						   struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return (ETHERNET_LINK_10BASE
 		| ETHERNET_LINK_100BASE
 		| ETHERNET_LINK_1000BASE
@@ -276,7 +275,9 @@ enum ethernet_hw_caps nxp_s32_eth_get_capabilities(const struct device *dev)
 	);
 }
 
-int nxp_s32_eth_set_config(const struct device *dev, enum ethernet_config_type type,
+int nxp_s32_eth_set_config(const struct device *dev,
+			   struct net_if *iface __unused,
+			   enum ethernet_config_type type,
 			   const struct ethernet_config *config)
 {
 	struct nxp_s32_eth_data *ctx = dev->data;
@@ -288,8 +289,6 @@ int nxp_s32_eth_set_config(const struct device *dev, enum ethernet_config_type t
 		/* Set new Ethernet MAC address and register it with the upper layer */
 		memcpy(ctx->mac_addr, config->mac_address.addr, sizeof(ctx->mac_addr));
 		Netc_Eth_Ip_SetMacAddr(cfg->si_idx, (const uint8_t *)ctx->mac_addr);
-		net_if_set_link_addr(ctx->iface, ctx->mac_addr, sizeof(ctx->mac_addr),
-				     NET_LINK_ETHERNET);
 		LOG_INF("SI%d MAC set to: %02x:%02x:%02x:%02x:%02x:%02x", cfg->si_idx,
 			ctx->mac_addr[0], ctx->mac_addr[1], ctx->mac_addr[2],
 			ctx->mac_addr[3], ctx->mac_addr[4], ctx->mac_addr[5]);

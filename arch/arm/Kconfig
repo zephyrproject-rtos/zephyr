@@ -9,6 +9,11 @@ menu "ARM Options"
 config ARCH
 	default "arm"
 
+config CPU_ARM9
+	bool
+	help
+	  This option signifies the use of a CPU of the ARM9 family.
+
 config CPU_CORTEX
 	bool
 	help
@@ -228,5 +233,8 @@ config ARM_VECTOR_TABLE_ITCM
 	  the lowest interrupt latency and is the preferred location when available.
 
 endchoice
+
+config ARCH_HAS_LLEXT_VENEERS
+	bool
 
 endmenu

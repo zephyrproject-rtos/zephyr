@@ -12,7 +12,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_numaker.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(spi_numaker, CONFIG_SPI_LOG_LEVEL);

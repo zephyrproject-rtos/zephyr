@@ -251,7 +251,8 @@
 		watchdog0: watchdog@40000400 {
 			reg = <0x40000400 0x400>;
 			interrupts = <171 0>;
-			girqs = <21 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(21, 2)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 9)>;
 			status = "disabled";
 		};
 
@@ -393,10 +394,14 @@
 		};
 
 		rtc0: rtc@400f5000 {
+			compatible = "microchip,xec-rtc";
 			reg = <0x400f5000 0x100>;
 			interrupts = <119 3>, <120 3>;
 			interrupt-names = "rtc", "rtc_alarm";
-			girqs = <21 8>, <21 9>;
+			girqs = <MCHP_XEC_ECIA(21, 8, 13, 119)
+				 MCHP_XEC_ECIA(21, 9, 13, 120)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 18)>;
+			ldn = <20>;
 			status = "disabled";
 		};
 
@@ -419,7 +424,8 @@
 			reg = <0x40004000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <20 2>;
-			girqs = <13 0>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 0)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 10)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -429,7 +435,8 @@
 			reg = <0x40004400 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <21 2>;
-			girqs = <13 1>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 1)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 13)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -439,7 +446,8 @@
 			reg = <0x40004800 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <22 2>;
-			girqs = <13 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 2)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 14)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -449,7 +457,8 @@
 			reg = <0x40004c00 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <23 2>;
-			girqs = <13 3>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 3)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 15)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -459,7 +468,8 @@
 			reg = <0x40005000 0x80>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <158 2>;
-			girqs = <13 4>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(13, 4)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 20)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -531,7 +541,8 @@
 		tach0: tach@40006000 {
 			reg = <0x40006000 0x10>;
 			interrupts = <71 3>;
-			girqs = <17 1>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 1)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 2)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -540,7 +551,8 @@
 		tach1: tach@40006010 {
 			reg = <0x40006010 0x10>;
 			interrupts = <72 3>;
-			girqs = <17 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 2)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 11)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -549,7 +561,8 @@
 		tach2: tach@40006020 {
 			reg = <0x40006020 0x10>;
 			interrupts = <73 3>;
-			girqs = <17 3>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 3)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 12)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -558,7 +571,8 @@
 		tach3: tach@40006030 {
 			reg = <0x40006030 0x10>;
 			interrupts = <159 3>;
-			girqs = <17 4>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 4)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 13)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -584,11 +598,13 @@
 			reg = <0x40007c00 0x90>;
 			interrupts = <78 3>, <79 3>;
 			interrupt-names = "single", "repeat";
-			girqs = <17 8>, <17 9>;
-			interrupt-names = "single", "repeat";
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 8)>,
+				<MCHP_XEC_ECIA_GIRQ_ENC(17, 9)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 3)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 			clktime = <32>;
+			channels = <16>;
 		};
 
 		peci0: peci@40006400 {
@@ -785,6 +801,22 @@
 				girqs = <19 9>, <19 10>;
 				status = "disabled";
 			};
+		};
+
+		symcr: symcr@40100000 {
+			compatible = "microchip,xec-symcr";
+			reg = <0x40100000 0x1000>;
+			interrupts = <68 1>;
+			pcr = <MCHP_XEC_SCR_ENCODE(3, 26)>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(16, 3)>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		rom_api: rom_api@1f000 {
+			reg = <0x1f000 0x1000>;
+			status = "disabled";
 		};
 	};
 };

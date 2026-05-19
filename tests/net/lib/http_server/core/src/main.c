@@ -2419,7 +2419,7 @@ ZTEST(server_function_tests_no_init, test_http_server_start_stop)
 	zassert_ok(http_server_start(), "Failed to start the server");
 
 	/* Let the server thread run. */
-	k_msleep(CONFIG_HTTP_SERVER_RESTART_DELAY + 10);
+	k_msleep(CONFIG_HTTP_SERVER_RESTART_DELAY + 50);
 
 	ret = zsock_socket(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP);
 	zassert_not_equal(ret, -1, "failed to create client socket (%d)", errno);
@@ -2525,7 +2525,7 @@ ZTEST(server_function_tests_no_init, test_parse_http_frames)
 FS_LITTLEFS_DECLARE_DEFAULT_CONFIG(storage);
 
 #define TEST_PARTITION		storage_partition
-#define TEST_PARTITION_ID	FIXED_PARTITION_ID(TEST_PARTITION)
+#define TEST_PARTITION_ID	PARTITION_ID(TEST_PARTITION)
 
 #define LFS_MNTP		"/littlefs"
 #define TEST_FILE		"static_file.html"

@@ -22,7 +22,25 @@ from collections.abc import Iterable
 from itertools import takewhile
 from pathlib import Path, PurePath
 
-import magic
+try:
+    import magic
+except ImportError:
+    if sys.platform != 'win32':
+        raise
+    # python-magic-bin bundles libmagic.dll under <magic_pkg>/libmagic/, but
+    # python-magic's loader.py (ahupp/python-magic@0fb1922d) only searches
+    # PATH and cwd — that subdirectory was never added. Prepend it to PATH so
+    # ctypes.util.find_library() can resolve the DLL.
+    # See: https://github.com/zephyrproject-rtos/zephyr/issues/101181
+    #      https://github.com/ahupp/python-magic/pull/294 (upstream fix pending)
+    from importlib.util import find_spec
+
+    spec = find_spec('magic')
+    if spec and spec.origin:
+        dll_dir = Path(spec.origin).parent / 'libmagic'
+        if dll_dir.is_dir():
+            os.environ['PATH'] = str(dll_dir) + os.pathsep + os.environ.get('PATH', '')
+    import magic
 import unidiff
 import yaml
 from dotenv import load_dotenv
@@ -158,6 +176,16 @@ def zephyr_doc_detail_builder(doc_subpath: str) -> str:
     return f"See https://docs.zephyrproject.org/latest{doc_subpath} for more details."
 
 
+def get_set_from_file(path) -> set[str]:
+    """
+    Load the contents of a file into a set, one element per line,
+    lines starting with # ignored, content after # ignored, whitespace stripped
+    """
+    with open(path) as f:
+        output = [line.split('#')[0].strip() for line in f.readlines() if not line.startswith('#')]
+    return set(output)
+
+
 class FmtdFailure(Failure):
     def __init__(
         self, severity, title, file, line=None, col=None, desc="", end_line=None, end_col=None
@@ -225,7 +253,7 @@ class ComplianceTest:
 
     def _result(self, res, text):
         res.text = text.rstrip()
-        self.case.result += [res]
+        self.case.append(res)
 
     def error(self, text, msg=None, type_="error"):
         """
@@ -327,7 +355,7 @@ class CheckPatch(ComplianceTest):
             except subprocess.CalledProcessError as ex:
                 output = ex.output.decode("utf-8")
                 regex = (
-                    r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)(?:\n|\r\n?)+'
+                    r'^\s*\S+:(\d+):\s*(ERROR|WARNING):(.+?):(.+)[\r\n]+'
                     r'^\s*#(\d+):\s*FILE:\s*(.+):(\d+):'
                 )
 
@@ -448,7 +476,7 @@ class ClangFormatCheck(ComplianceTest):
 
 class DevicetreeBindingsCheck(ComplianceTest):
     """
-    Checks if we are introducing any unwanted properties in Devicetree Bindings.
+    Checks for devicetree bindings.
     """
 
     name = "DevicetreeBindings"
@@ -466,15 +494,18 @@ class DevicetreeBindingsCheck(ComplianceTest):
         if nodiff:
             self.skip('no changes to bindings were made')
 
-        for binding in bindings:
-            self.check(binding, self.check_yaml_property_name)
-            self.check(binding, self.required_false_check)
+        def check(binding, callback, children=True):
+            if children:
+                while binding is not None:
+                    callback(binding)
+                    binding = binding.child_binding
+            else:
+                callback(binding)
 
-    @staticmethod
-    def check(binding, callback):
-        while binding is not None:
-            callback(binding)
-            binding = binding.child_binding
+        for binding in bindings:
+            check(binding, self.check_yaml_property_name)
+            check(binding, self.required_false_check)
+            check(binding, self.compatible_and_file_name_match_check, children=False)
 
     def get_yaml_bindings(self):
         """
@@ -525,6 +556,26 @@ class DevicetreeBindingsCheck(ComplianceTest):
                 self.failure(
                     f'{binding.path}: property "{prop_name}": '
                     "'required: false' is redundant, please remove"
+                )
+
+    def compatible_and_file_name_match_check(self, binding):
+        allowed = [f"{binding.compatible}.yaml"]
+        if binding.on_bus is not None:
+            allowed.append(f"{binding.compatible}-{binding.on_bus}.yaml")
+
+        actual_filename = Path(binding.path).name
+
+        if actual_filename not in allowed:
+            if len(allowed) > 1:
+                allowed_names = ", ".join(f"'{filename}'" for filename in allowed)
+                self.failure(
+                    f"{binding.path}: bad file name for compatible '{binding.compatible}'.\n"
+                    f"\tThe allowed file names for this binding are: {allowed_names}"
+                )
+            else:
+                self.failure(
+                    f"{binding.path}: bad file name for compatible '{binding.compatible}'; "
+                    f"this should be named '{allowed[0]}' instead"
                 )
 
 
@@ -1335,9 +1386,26 @@ https://docs.zephyrproject.org/latest/build/kconfig/tips.html#menuconfig-symbols
         """
         Checks that there are no references to undefined Kconfig symbols within
         the Kconfig files
+
+        kconfiglib warning format:
+            "warning: undefined symbol MY_SYMBOL:\n\n- Referenced at ..."
         """
+        _sym_re = re.compile(r"undefined symbol (\w+)")
+
+        # Load list of configs to ignore for this check
+        undef_kconfig_allowlist_extra = []
+        if path := os.environ.get("UNDEF_KCONFIG_INSIDE_ALLOWLIST_FILE", None):
+            logging.info(f"Loading allowed undefined symbols from {path}")
+            undef_kconfig_allowlist_extra = get_set_from_file(path)
+
+        def is_allowed(warning):
+            m = _sym_re.search(warning)
+            return m is not None and m.group(1) in undef_kconfig_allowlist_extra
+
         undef_ref_warnings = "\n\n\n".join(
-            warning for warning in kconf.warnings if "undefined symbol" in warning
+            warning
+            for warning in kconf.warnings
+            if "undefined symbol" in warning and not is_allowed(warning)
         )
 
         if undef_ref_warnings:
@@ -1424,9 +1492,38 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             cwd=GIT_TOP,
         )
 
+        if hasattr(self, 'UNDEF_KCONFIG_ALLOWLIST'):
+            # Overridden at the class level
+            undef_kconfig_allowlist = self.UNDEF_KCONFIG_ALLOWLIST
+        else:
+            # Load from the text file
+            self_folder = Path(__file__).resolve().parent
+            default_allowlist_file = self_folder / 'undef_kconfig_allowlist.txt'
+            undef_kconfig_allowlist = get_set_from_file(str(default_allowlist_file))
+
+        # Load extensions to UNDEF_KCONFIG_ALLOWLIST
+        undef_kconfig_allowlist_extra = []
+        if path := os.environ.get("UNDEF_KCONFIG_OUTSIDE_ALLOWLIST_FILE", None):
+            logging.info(f"Loading extra UNDEF_KCONFIG_ALLOWLIST values from {path}")
+            undef_kconfig_allowlist_extra = get_set_from_file(path)
+
+        # Load the per-file allowlist: files listed here are skipped entirely
+        self_folder = Path(__file__).resolve().parent
+        default_files_allowlist_file = self_folder / 'undef_kconfig_files_allowlist.txt'
+        undef_kconfig_files_allowlist = get_set_from_file(str(default_files_allowlist_file))
+
+        # Load extensions to the per-file allowlist via environment variable
+        if path := os.environ.get("UNDEF_KCONFIG_FILES_ALLOWLIST_FILE", None):
+            logging.info(f"Loading extra file allowlist entries from {path}")
+            undef_kconfig_files_allowlist |= get_set_from_file(path)
+
         # splitlines() supports various line terminators
         for grep_line in grep_stdout.splitlines():
             path, lineno, line = grep_line.split("\0")
+
+            # Skip files whose CONFIG_ references are explicitly allowlisted
+            if path in undef_kconfig_files_allowlist:
+                continue
 
             # Extract symbol references (might be more than one) within the
             # line
@@ -1434,7 +1531,8 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
                 sym_name = sym_name[len(self.CONFIG_) :]  # Strip CONFIG_
                 if (
                     sym_name not in defined_syms
-                    and sym_name not in self.UNDEF_KCONFIG_ALLOWLIST
+                    and sym_name not in undef_kconfig_allowlist
+                    and sym_name not in undef_kconfig_allowlist_extra
                     and not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms)
                     and not sym_name.startswith("BOARD_REVISION_")
                     and not (sym_name.startswith("DT_HAS_") and sym_name.endswith("_ENABLED"))
@@ -1457,7 +1555,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
 
         self.failure(f"""
 Found references to undefined Kconfig symbols. If any of these are false
-positives, then add them to UNDEF_KCONFIG_ALLOWLIST in {__file__}.
+positives, then add them to {default_allowlist_file}.
 
 If the reference is for a comment like /* CONFIG_FOO_* */ (or
 /* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
@@ -1467,174 +1565,6 @@ More generally, a reference followed by $, @, {{, (, ., *, or ## will never be
 flagged.
 
 {undef_desc}""")
-
-    # Many of these are symbols used as examples. Note that the list is sorted
-    # alphabetically, and skips the CONFIG_ prefix.
-    UNDEF_KCONFIG_ALLOWLIST = {
-        # zephyr-keep-sorted-start re(^\s+")
-        "ALSO_MISSING",
-        "APP_LINK_WITH_",
-        # Application log level is not detected correctly as
-        # the option is defined using a template, so it can't
-        # be grepped
-        "APP_LOG_LEVEL",
-        "APP_LOG_LEVEL_DBG",
-        # The ARMCLANG_STD_LIBC is defined in the
-        # toolchain Kconfig which is sourced based on
-        # Zephyr toolchain variant and therefore not
-        # visible to compliance.
-        "ARMCLANG_STD_LIBC",
-        "BINDESC_",  # Used in documentation as a prefix
-        "BOARD_",  # Used as regex in scripts/utils/board_v1_to_v2.py
-        "BOARD_MPS2_AN521_CPUTEST",  # Used for board and SoC extension feature tests
-        "BOARD_NATIVE_SIM_NATIVE_64_TWO",  # Used for board and SoC extension feature tests
-        "BOARD_NATIVE_SIM_NATIVE_ONE",  # Used for board and SoC extension feature tests
-        "BOARD_UNIT_TESTING",  # Used for tests/unit
-        "BOOT_DIRECT_XIP",  # Used in sysbuild for MCUboot configuration
-        "BOOT_DIRECT_XIP_REVERT",  # Used in sysbuild for MCUboot configuration
-        "BOOT_ENCRYPTION_KEY_FILE",  # Used in sysbuild
-        "BOOT_ENCRYPT_ALG_AES_128",  # Used in sysbuild
-        "BOOT_ENCRYPT_ALG_AES_256",  # Used in sysbuild
-        "BOOT_ENCRYPT_IMAGE",  # Used in sysbuild
-        "BOOT_FIRMWARE_LOADER",  # Used in sysbuild for MCUboot configuration
-        "BOOT_FIRMWARE_LOADER_BOOT_MODE",  # Used in sysbuild for MCUboot configuration
-        "BOOT_IMAGE_EXECUTABLE_RAM_SIZE",  # MCUboot setting
-        "BOOT_IMAGE_EXECUTABLE_RAM_START",  # MCUboot setting
-        "BOOT_MAX_IMG_SECTORS_AUTO",  # Used in sysbuild
-        "BOOT_RAM_LOAD",  # Used in sysbuild for MCUboot configuration
-        "BOOT_RAM_LOAD_REVERT",  # Used in sysbuild for MCUboot configuration
-        "BOOT_SERIAL_BOOT_MODE",  # Used in (sysbuild-based) test/documentation
-        "BOOT_SERIAL_CDC_ACM",  # Used in (sysbuild-based) test
-        "BOOT_SERIAL_ENTRANCE_GPIO",  # Used in (sysbuild-based) test
-        "BOOT_SERIAL_IMG_GRP_HASH",  # Used in documentation
-        "BOOT_SERIAL_UART",  # Used in (sysbuild-based) test
-        "BOOT_SHARE_BACKEND_RETENTION",  # Used in Kconfig text
-        "BOOT_SHARE_DATA",  # Used in Kconfig text
-        "BOOT_SHARE_DATA_BOOTINFO",  # Used in (sysbuild-based) test
-        "BOOT_SIGNATURE_KEY_FILE",  # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_ECDSA_P256",  # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_ED25519",  # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_NONE",  # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_RSA",  # MCUboot setting used by sysbuild
-        "BOOT_SWAP_USING_MOVE",  # Used in sysbuild for MCUboot configuration
-        "BOOT_SWAP_USING_OFFSET",  # Used in sysbuild for MCUboot configuration
-        "BOOT_SWAP_USING_SCRATCH",  # Used in sysbuild for MCUboot configuration
-        # Used in example adjusting MCUboot config, but
-        # symbol is defined in MCUboot itself.
-        "BOOT_UPGRADE_ONLY",
-        "BOOT_VALIDATE_SLOT0",  # Used in (sysbuild-based) test
-        "BOOT_WATCHDOG_FEED",  # Used in (sysbuild-based) test
-        "BT_6LOWPAN",  # Defined in Linux, mentioned in docs
-        "CDC_ACM_PORT_NAME_",
-        "CHRE",  # Optional module
-        "CHRE_LOG_LEVEL_DBG",  # Optional module
-        "CLOCK_STM32_SYSCLK_SRC_",
-        "CMD_CACHE",  # Defined in U-Boot, mentioned in docs
-        "CMU",
-        "COMPILER_RT_RTLIB",
-        "CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
-        "DEEP_SLEEP",  # #defined by RV32M1 in ext/
-        "DESCRIPTION",
-        "DT_HAS_",  # example from doc/build/dts/dt-vs-kconfig.rst
-        "ERR",
-        "ESP_DIF_LIBRARY",  # Referenced in CMake comment
-        "EXPERIMENTAL",
-        "EXTRA_FIRMWARE_DIR",  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "FFT",  # Used as an example in cmake/extensions.cmake
-        "FLAG",  # Used as an example
-        "FOO",
-        "FOO_LOG_LEVEL",
-        "FOO_SETTING_1",
-        "FOO_SETTING_2",
-        "HEAP_MEM_POOL_ADD_SIZE_",  # Used as an option matching prefix
-        "HUGETLBFS",  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "IAR_BUFFERED_WRITE",
-        "IAR_DATA_INIT",
-        "IAR_LIBCPP",
-        "IAR_SEMIHOSTING",
-        "IAR_ZEPHYR_INIT",
-        # Used in ICMsg tests for intercompatibility
-        # with older versions of the ICMsg.
-        "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS",
-        "LIBGCC_RTLIB",
-        "LLEXT_EXPORT_SYMBOL_GROUP_",  # Used in regexp by
-        # scripts/build/llext_inspect_discarded_groups.py
-        "LLVM_USE_LD",  # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
-        # which are only included if LLVM is selected but
-        # not other toolchains. Compliance check would complain,
-        # for example, if you are using GCC.
-        "LLVM_USE_LLD",
-        "LOG_BACKEND_MOCK_OUTPUT_DEFAULT",  # Referenced in tests/subsys/logging/log_syst
-        "LOG_BACKEND_MOCK_OUTPUT_SYST",  # Referenced in testcase.yaml of log_syst test
-        "LSM6DSO_INT_PIN",
-        "MCUBOOT_ACTION_HOOKS",  # Used in (sysbuild-based) test
-        "MCUBOOT_CLEANUP_ARM_CORE",  # Used in (sysbuild-based) test
-        "MCUBOOT_DOWNGRADE_PREVENTION",  # but symbols are defined in MCUboot itself.
-        "MCUBOOT_LOG_LEVEL_DBG",
-        "MCUBOOT_LOG_LEVEL_INF",
-        "MCUBOOT_LOG_LEVEL_WRN",  # Used in example adjusting MCUboot config,
-        "MCUBOOT_SERIAL",  # Used in (sysbuild-based) test/documentation
-        "MCUMGR_GRP_EXAMPLE_OTHER_HOOK",  # Used in documentation
-        # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
-        # It is a variable used by MCUX SDK CMake.
-        "MCUX_HW_CORE",
-        # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
-        # It is a variable used by MCUX SDK CMake.
-        "MCUX_HW_DEVICE_CORE",
-        # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
-        # It is a variable used by MCUX SDK CMake.
-        "MCUX_HW_FPU_TYPE",
-        "MISSING",
-        "MODULES",
-        "MODVERSIONS",  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "MYFEATURE",
-        "MY_DRIVER_0",
-        "NORMAL_SLEEP",  # #defined by RV32M1 in ext/
-        "NRF_WIFI_FW_BIN",  # Directly passed from CMakeLists.txt
-        "OPT",
-        "OPT_0",
-        "PEDO_THS_MIN",
-        "PSA_H",  # This is used in config-psa.h as guard for the header file
-        "REG1",
-        "REG2",
-        "RIMAGE_SIGNING_SCHEMA",  # Optional module
-        "SECURITY_LOADPIN",  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "SEL",
-        "SHIFT",
-        "SINGLE_APPLICATION_SLOT",  # Used in sysbuild for MCUboot configuration
-        "SINGLE_APPLICATION_SLOT_RAM_LOAD",  # Used in sysbuild for MCUboot configuration
-        "SOC_NORDIC_BSP_PATH_OVERRIDE",  # Used in modules/hal_nordic/nrfx/CMakeLists.txt
-        "SOC_SDKNG_UNSUPPORTED",  # Used in modules/hal_nxp/mcux/CMakeLists.txt
-        "SOC_SERIES_",  # Used as regex in scripts/utils/board_v1_to_v2.py
-        "SOC_WATCH",  # Issue 13749
-        "SOME_BOOL",
-        "SOME_INT",
-        "SOME_OTHER_BOOL",
-        "SOME_STRING",
-        "SRAM2",  # Referenced in a comment in samples/application_development
-        "STACK_SIZE",  # Used as an example in the Kconfig docs
-        "STD_CPP",  # Referenced in CMake comment
-        "TEST1",
-        "TFM_SPM_BACKEND_IPC",  # Used in TFM sample dummy partition - belongs to TFM
-        "TFM_SPM_BACKEND_SFN",  # Used in TFM sample dummy partition - belongs to TFM
-        # Defined in modules/hal_nxp/mcux/mcux-sdk-ng/basic.cmake.
-        # It is used by MCUX SDK cmake functions to add content
-        # based on current toolchain.
-        "TOOLCHAIN",
-        # The symbol is defined in the toolchain
-        # Kconfig which is sourced based on Zephyr
-        # toolchain variant and therefore not visible
-        # to compliance.
-        "TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE",
-        "TYPE_BOOLEAN",
-        "USB_CONSOLE",
-        "USE_STDC_",
-        "WHATEVER",
-        "ZEPHYR_TRY_MASS_ERASE",  # MCUBoot setting described in sysbuild documentation
-        "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
-        "ZVFS_OPEN_ADD_SIZE_",  # Used as an option matching prefix
-        # zephyr-keep-sorted-stop
-    }
 
 
 class KconfigBasicCheck(KconfigCheck):
@@ -2161,9 +2091,9 @@ class BinaryFiles(ComplianceTest):
     doc = "No binary files allowed."
 
     def run(self):
-        BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/")
+        BINARY_ALLOW_PATHS = ("doc/", "boards/", "samples/", "scripts/dashboard/static/font/")
         # svg files are always detected as binary, see .gitattributes
-        BINARY_ALLOW_EXT = (".jpg", ".jpeg", ".png", ".svg", ".webp")
+        BINARY_ALLOW_EXT = (".jpg", ".jpeg", ".png", ".svg", ".webp", ".woff2")
 
         for stat in git("diff", "--numstat", "--diff-filter=A", COMMIT_RANGE).splitlines():
             added, deleted, fname = stat.split("\t")
@@ -2185,7 +2115,7 @@ class ImageSize(ComplianceTest):
         SIZE_LIMIT = 250 << 10
         BOARD_SIZE_LIMIT = 100 << 10
 
-        for file in get_files(filter="d"):
+        for file in get_files(filter="dr"):
             full_path = GIT_TOP / file
             mime_type = magic.from_file(os.fspath(full_path), mime=True)
 
@@ -2547,7 +2477,7 @@ class PythonCompatCheck(ComplianceTest):
     name = "PythonCompat"
     doc = "Check that Python files are compatible with Zephyr minimum supported Python version."
 
-    MAX_VERSION = (3, 10)
+    MAX_VERSION = (3, 12)
     MAX_VERSION_STR = f"{MAX_VERSION[0]}.{MAX_VERSION[1]}"
 
     def run(self):
@@ -2608,6 +2538,93 @@ class PythonCompatCheck(ComplianceTest):
             )
 
 
+class DeviceMmioCheck(ComplianceTest):
+    """
+    Check that drivers use the device MMIO API instead of raw DT_REG_ADDR()
+    for register access.
+
+    Only lines added or modified in the current changeset are checked, so
+    pre-existing violations do not block unrelated changes to the same file.
+
+    Drivers that cast DT_INST_REG_ADDR() or DT_REG_ADDR() to a pointer and
+    store it directly will fail on systems with an MMU, where physical
+    addresses must be mapped before access.
+    """
+
+    name = "DeviceMmioCheck"
+    doc = zephyr_doc_detail_builder("/hardware/peripherals/index.html")
+
+    # Pattern: cast DT_[INST_]REG_ADDR[_BY_NAME] to a pointer type,
+    # e.g. (struct foo_regs *)DT_INST_REG_ADDR(n)
+    RAW_REG_ADDR_RE = re.compile(r'\([^)]*\*\s*\)\s*DT_(INST_)?REG_ADDR(_BY_NAME)?\b')
+
+    MMIO_API_RE = re.compile(
+        r'DEVICE_MMIO_ROM\b|DEVICE_MMIO_MAP\b|DEVICE_MMIO_NAMED|'
+        r'DEVICE_MMIO_TOPLEVEL\b|device_map\s*\('
+    )
+
+    # Parses unified diff hunk headers: @@ -old,count +new,count @@
+    HUNK_RE = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
+
+    @staticmethod
+    def _added_lines(fname):
+        """Return the set of line numbers that were added in COMMIT_RANGE."""
+        added = set()
+        diff_output = git('diff', '-U0', '--no-ext-diff', COMMIT_RANGE, '--', fname)
+        for line in diff_output.splitlines():
+            m = DeviceMmioCheck.HUNK_RE.match(line)
+            if m:
+                start = int(m.group(1))
+                count = int(m.group(2)) if m.group(2) is not None else 1
+                added.update(range(start, start + count))
+        return added
+
+    def run(self):
+        self.skip(
+            "Check disabled pending documentation and community discussion. "
+            "See https://github.com/zephyrproject-rtos/zephyr/issues/106966"
+        )
+
+        for fname in get_files(filter='d'):
+            if not fname.startswith('drivers/') or not fname.endswith(('.c', '.h')):
+                continue
+
+            added = self._added_lines(fname)
+            if not added:
+                continue
+
+            path = GIT_TOP / fname
+            raw_match_line = None
+            has_mmio_api = False
+
+            with open(path, encoding='utf-8', errors='ignore') as f:
+                for line_no, line in enumerate(f, start=1):
+                    if self.MMIO_API_RE.search(line):
+                        has_mmio_api = True
+                        break
+                    if (
+                        raw_match_line is None
+                        and line_no in added
+                        and self.RAW_REG_ADDR_RE.search(line)
+                    ):
+                        raw_match_line = line_no
+
+            if raw_match_line is not None and not has_mmio_api:
+                self.fmtd_failure(
+                    'warning',
+                    'DeviceMmioCheck',
+                    fname,
+                    line=raw_match_line,
+                    desc=(
+                        "Driver casts DT_REG_ADDR() to a pointer without "
+                        "using the device MMIO API. On systems with an MMU, "
+                        "physical addresses must be mapped before access. "
+                        "Use DEVICE_MMIO_ROM / DEVICE_MMIO_MAP instead of "
+                        "storing raw DT_REG_ADDR() in the config struct."
+                    ),
+                )
+
+
 class TextEncoding(ComplianceTest):
     """
     Check that any text file is encoded in ascii or utf-8.
@@ -2632,6 +2649,46 @@ class TextEncoding(ComplianceTest):
             if mime_type.rsplit('=')[-1] not in self.ALLOWED_CHARSETS:
                 desc = f"Text file with unsupported encoding: {file} has mime type {mime_type}"
                 self.fmtd_failure("error", "TextEncoding", file, desc=desc)
+
+
+class DeviceAPICheck(ComplianceTest):
+    """
+    Checks that driver API structs use the DEVICE_API() macro instead of
+    being declared as plain variables, so they are placed into iterable
+    sections.
+    """
+
+    name = "DeviceAPI"
+    doc = zephyr_doc_detail_builder("/kernel/drivers/index.html#subsystems-and-api-structures")
+
+    # Matches variable definitions like:
+    #   static const struct foo_driver_api my_api = {
+    #   const struct foo_driver_api my_api = {
+    DEVICE_API_DEF_RE = re.compile(
+        r"[^*/{]*\bstruct\s+(\w+_driver_api)\s+(\w+)\s*=",
+    )
+
+    def run(self):
+        for fname in get_files(filter="d"):
+            if not fname.endswith(".c"):
+                continue
+            if not fname.startswith("drivers/"):
+                continue
+
+            with open(GIT_TOP / fname, encoding="utf-8") as f:
+                for line_no, line in enumerate(f, start=1):
+                    match = self.DEVICE_API_DEF_RE.match(line)
+
+                    # Ignore emulation driver backends
+                    if match and "emul" not in match.group(1):
+                        self.fmtd_failure(
+                            "error",
+                            "DEVICE_API",
+                            fname,
+                            line=line_no,
+                            desc=f"Use DEVICE_API() to define '{match.group(2)}' "
+                            f"(type: {match.group(1)}) so it is placed in an iterable section.",
+                        )
 
 
 def init_logs(cli_arg):
@@ -2663,11 +2720,18 @@ def inheritors(klass):
     return subclasses
 
 
-def annotate(res):
+def annotate(res, doc=None):
     """
     https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#about-workflow-commands
     """
-    msg = res.message.replace('%', '%25').replace('\n', '%0A').replace('\r', '%0D')
+
+    def _esc(msg: str) -> str:
+        return msg.replace('%', '%25').replace('\n', '%0A').replace('\r', '%0D')
+
+    msg = _esc(res.message)
+    if doc:
+        msg += '%0A' + _esc(doc)
+
     notice = (
         f'::{res.severity} file={res.file}'
         + (f',line={res.line}' if res.line else '')
@@ -2690,15 +2754,27 @@ def resolve_path_hint(hint):
 
 def parse_args(argv):
     default_range = 'HEAD~1..HEAD'
+    # Git root empty tree sha1 (represents a tree with no files)
+    empty_tree = '4b825dc642cb6eb9a060e54bf8d69288fbee4904'
     parser = argparse.ArgumentParser(
         description="Check for coding style and documentation warnings.", allow_abbrev=False
     )
-    parser.add_argument(
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument(
         '-c',
         '--commits',
         default=default_range,
         help=f'''Commit range in the form: a..[b], default is
                         {default_range}''',
+    )
+    group.add_argument(
+        '--all-commits',
+        action='store_const',
+        dest='commits',
+        const=f'{empty_tree}..HEAD',
+        help="""The full history commit range. Useful for testing purposes.
+                WARNING: Should not be set for checks that perform per-commit actions, such as
+                GitDiffCheck/GitLint/Identity.""",
     )
     parser.add_argument(
         '-o',
@@ -2815,7 +2891,7 @@ def _main(args):
         # Annotate if required
         if args.annotate:
             for res in test.fmtd_failures:
-                annotate(res)
+                annotate(res, test.doc)
 
         suite.add_testcase(test.case)
 

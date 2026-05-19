@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <zephyr/cache.h>
 #include <zephyr/ipc/pbuf.h>
+#include <zephyr/sys/barrier.h>
 #include <zephyr/sys/byteorder.h>
 
 #if defined(CONFIG_ARCH_POSIX)
@@ -88,7 +89,7 @@ int pbuf_tx_init(struct pbuf *pb)
 	*(pb->cfg->wr_idx_loc) = pb->data.wr_idx;
 	*(pb->cfg->rd_idx_loc) = pb->data.rd_idx;
 
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	/* Take care cache. */
 	sys_cache_data_flush_range((void *)(pb->cfg->wr_idx_loc), sizeof(*(pb->cfg->wr_idx_loc)));
@@ -122,7 +123,7 @@ int pbuf_write(struct pbuf *pb, const char *data, uint16_t len)
 
 	/* Invalidate rd_idx only, local wr_idx is used to increase buffer security. */
 	sys_cache_data_invd_range((void *)(pb->cfg->rd_idx_loc), sizeof(*(pb->cfg->rd_idx_loc)));
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	uint8_t *const data_loc = pb->cfg->data_loc;
 	const uint32_t blen = pb->cfg->len;
@@ -153,7 +154,7 @@ int pbuf_write(struct pbuf *pb, const char *data, uint16_t len)
 	 */
 	*((uint32_t *)(&data_loc[wr_idx])) = 0;
 	sys_put_be16(len, &data_loc[wr_idx]);
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	sys_cache_data_flush_range(&data_loc[wr_idx], PBUF_PACKET_LEN_SZ);
 
 	wr_idx = idx_wrap(blen, wr_idx + PBUF_PACKET_LEN_SZ);
@@ -174,7 +175,7 @@ int pbuf_write(struct pbuf *pb, const char *data, uint16_t len)
 	/* Update wr_idx. */
 	pb->data.wr_idx = wr_idx;
 	*(pb->cfg->wr_idx_loc) = wr_idx;
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	sys_cache_data_flush_range((void *)pb->cfg->wr_idx_loc, sizeof(*(pb->cfg->wr_idx_loc)));
 
 	return len;
@@ -191,7 +192,7 @@ int pbuf_get_initial_buf(struct pbuf *pb, volatile char **buf, uint16_t *len)
 	}
 
 	sys_cache_data_invd_range((void *)(pb->cfg->wr_idx_loc), sizeof(*(pb->cfg->wr_idx_loc)));
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	wr_idx = *(pb->cfg->wr_idx_loc);
 	if (wr_idx >= pb->cfg->len || wr_idx > 0xFFFF || wr_idx == 0) {
@@ -200,7 +201,7 @@ int pbuf_get_initial_buf(struct pbuf *pb, volatile char **buf, uint16_t *len)
 	}
 
 	sys_cache_data_invd_range((void *)(pb->cfg->data_loc), PBUF_PACKET_LEN_SZ);
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	plen = sys_get_be16(&pb->cfg->data_loc[0]);
 
@@ -213,7 +214,7 @@ int pbuf_get_initial_buf(struct pbuf *pb, volatile char **buf, uint16_t *len)
 	*len = plen;
 
 	sys_cache_data_invd_range((void *)*buf, plen);
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	return 0;
 }
@@ -227,7 +228,7 @@ int pbuf_read(struct pbuf *pb, char *buf, uint16_t len)
 
 	/* Invalidate wr_idx only, local rd_idx is used to increase buffer security. */
 	sys_cache_data_invd_range((void *)(pb->cfg->wr_idx_loc), sizeof(*(pb->cfg->wr_idx_loc)));
-	__sync_synchronize();
+	barrier_sync_synchronize();
 
 	uint8_t *const data_loc = pb->cfg->data_loc;
 	const uint32_t blen = pb->cfg->len;
@@ -290,7 +291,7 @@ int pbuf_read(struct pbuf *pb, char *buf, uint16_t len)
 
 	pb->data.rd_idx = rd_idx;
 	*(pb->cfg->rd_idx_loc) = rd_idx;
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	sys_cache_data_flush_range((void *)pb->cfg->rd_idx_loc, sizeof(*(pb->cfg->rd_idx_loc)));
 
 	return len;
@@ -302,7 +303,7 @@ uint32_t pbuf_handshake_read(struct pbuf *pb)
 
 	__ASSERT_NO_MSG(ptr);
 	sys_cache_data_invd_range((void *)ptr, sizeof(*ptr));
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	return *ptr;
 }
 
@@ -312,6 +313,6 @@ void pbuf_handshake_write(struct pbuf *pb, uint32_t value)
 
 	__ASSERT_NO_MSG(ptr);
 	*ptr = value;
-	__sync_synchronize();
+	barrier_sync_synchronize();
 	sys_cache_data_flush_range((void *)ptr, sizeof(*ptr));
 }

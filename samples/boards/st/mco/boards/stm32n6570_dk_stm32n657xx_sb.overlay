@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 STMicroelectronics
+ */
+
+&mco2 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(MISC, 2)>, <&rcc STM32_SRC_HSE MCO2_SEL(MCO2_SEL_HSE)>;
+	clock-names = "clken", "clksel";
+	/* 48MHz (HSE) / 8 => 6MHz on the output */
+	prescaler = <MCO2_PRE(MCO_PRE_DIV_8)>;
+	/* PC9, pin 13 on STMOD+ connector (CN4) */
+	pinctrl-0 = <&rcc_mco_2_pc9>;
+	pinctrl-names = "default";
+};

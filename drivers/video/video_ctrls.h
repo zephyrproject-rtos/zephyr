@@ -13,7 +13,7 @@
 #define VIDEO_CTRL_FLAG_READ_ONLY  BIT(0)
 /** Control is write-only */
 #define VIDEO_CTRL_FLAG_WRITE_ONLY BIT(1)
-/** Control that needs a freshly read as constanly updated by HW */
+/** Control that needs a freshly read as constantly updated by HW */
 #define VIDEO_CTRL_FLAG_VOLATILE   BIT(2)
 /** Control is inactive, e.g. manual controls of an autocluster in automatic mode */
 #define VIDEO_CTRL_FLAG_INACTIVE   BIT(3)
@@ -72,8 +72,8 @@ int video_init_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint
 int video_init_int_menu_ctrl(struct video_ctrl *ctrl, const struct device *dev, uint32_t id,
 			     uint8_t def, const int64_t menu[], size_t menu_len);
 
-void video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz);
+int video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz);
 
-void video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile);
+int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile);
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_VIDEO_VIDEO_CTRLS_H_ */

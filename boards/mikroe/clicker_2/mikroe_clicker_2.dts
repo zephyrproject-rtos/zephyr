@@ -51,6 +51,52 @@
 		};
 	};
 
+	mikrobus_1_header: mikrobus-connector-1 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioa 2 0>,	/* AN   */
+			   <1 0 &gpioe 7 0>,	/* RST  */
+			   <2 0 &gpioe 8 0>,	/* CS   */
+			   <3 0 &gpioc 10 0>,	/* SCK  */
+			   <4 0 &gpioc 11 0>,	/* MISO */
+			   <5 0 &gpioc 12 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpioe 9 0>,	/* PWM  */
+			   <7 0 &gpioe 10 0>,	/* INT  */
+			   <8 0 &gpiod 6 0>,	/* RX   */
+			   <9 0 &gpiod 5 0>,	/* TX   */
+			   <10 0 &gpioa 8 0>,	/* SCL  */
+			   <11 0 &gpioc 9 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
+	};
+
+	mikrobus_2_header: mikrobus-connector-2 {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioa 3 0>,	/* AN   */
+			   <1 0 &gpioe 13 0>,	/* RST  */
+			   <2 0 &gpioe 11 0>,	/* CS   */
+			   <3 0 &gpiob 13 0>,	/* SCK  */
+			   <4 0 &gpiob 14 0>,	/* MISO */
+			   <5 0 &gpiob 15 0>,	/* MOSI */
+			   /* +3.3V */
+			   /* GND */
+			   <6 0 &gpiod 12 0>,	/* PWM  */
+			   <7 0 &gpioe 14 0>,	/* INT  */
+			   <8 0 &gpiod 9 0>,	/* RX   */
+			   <9 0 &gpiod 8 0>,	/* TX   */
+			   <10 0 &gpiob 10 0>,	/* SCL  */
+			   <11 0 &gpiob 11 0>;	/* SDA  */
+		/* +5V */
+		/* GND */
+	};
+
 	aliases {
 		led0 = &ld1;
 		led1 = &ld2;
@@ -173,3 +219,15 @@ mikrobus_2_i2c: &i2c2 {};
 mikrobus_2_spi: &spi2 {};
 
 mikrobus_2_uart: &usart3 {};
+
+mikrobus_i2c: &mikrobus_1_i2c {};
+
+mikrobus_spi: &mikrobus_1_spi {};
+
+mikrobus_uart: &mikrobus_1_uart {};
+
+mikrobus_header_1: &mikrobus_1_header {};
+
+mikrobus_header_2: &mikrobus_2_header {};
+
+mikrobus_header: &mikrobus_1_header {};

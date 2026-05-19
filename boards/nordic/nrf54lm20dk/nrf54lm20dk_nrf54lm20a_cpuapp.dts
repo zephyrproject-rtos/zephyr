@@ -8,7 +8,6 @@
 
 #include <nordic/nrf54lm20a_cpuapp.dtsi>
 #include "nrf54lm20_a_b_cpuapp_common.dtsi"
-#include <vendor/nordic/nrf54lm20a_cpuapp_partition.dtsi>
 
 / {
 	compatible = "nordic,nrf54lm20dk_nrf54lm20a-cpuapp";
@@ -19,3 +18,6 @@
 		zephyr,sram = &cpuapp_sram;
 	};
 };
+
+/* Include default memory partition configuration file */
+#include <vendor/nordic/nrf54lm20a_cpuapp_partition.dtsi>

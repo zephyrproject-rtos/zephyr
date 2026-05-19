@@ -1,7 +1,7 @@
 archs:
   - name: arc
     path: arc
-    full_name: Synopsys DesignWare ARC
+    full_name: ARC
   - name: arm
     path: arm
     full_name: ARM
@@ -11,6 +11,9 @@ archs:
   - name: mips
     path: mips
     full_name: MIPS
+  - name: openrisc
+    path: openrisc
+    full_name: OpenRISC
   - name: posix
     path: posix
     full_name: POSIX

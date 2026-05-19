@@ -1,0 +1,118 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bee Keyscan.
+
+  The Bee Keyscan should be used with an external keyscan matrix.
+  There is a total of 12 rows and 20 columns.
+  You can assign any available pins to row or colunm by pinctrl.
+  The rows and columns need to be indexed starting from 0.
+
+compatible: "realtek,bee-keyscan"
+
+include: [kbd-matrix-common.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  row-size:
+    required: true
+    default: 2
+    description: |
+      Actual row size of the external keyscan matrix.
+      Hardware supports up to 12 rows.
+
+  col-size:
+    required: true
+    default: 2
+    description: |
+      Actual column size of the external keyscan matrix.
+      Hardware supports up to 20 columns.
+
+  scan-div:
+    type: int
+    default: 1
+    description: |
+      Clock divider for the Keyscan scanning clock.
+      Formula: scan_clock = source_clock / (scan-div + 1).
+      Assuming the source_clock is 5MHz, the default value 1 results in a 2.5MHz scan_clock.
+      Maximum value: 65535.
+
+  delay-div:
+    type: int
+    default: 49
+    description: |
+      Clock divider for the Keyscan delay clock (used for debounce, poll interval and release).
+      Formula: delay_clock = scan_clock / (delay-div + 1).
+      With the default 2.5MHz scan_clock, the default value 49 results in a 50kHz delay_clock.
+      Maximum value: 255.
+      poll-period-us and release-time-us each depend on the delay_clock period
+      (T_delay = 1 / delay_clock), and each has its own maximum of 512 ticks.
+      With the default 50kHz delay_clock (20us period), all three properties have:
+        - Resolution: 20us
+        - Range: 0 to 10240us
+
+  poll-period-us:
+    description: |
+      Keyscan interval during scans, in microseconds.
+
+      In manual mode, there is no hardware limit on this value because key
+      scanning is driven by a software timer.
+
+      In auto mode, the allowed range depends on the delay clock period
+      (T_delay = 1 / delay_clock) and the maximum delay counter value
+      (512 ticks).
+
+  release-time-us:
+    type: int
+    default: 5000
+    description: |
+      Time to detect all keys released in auto-scan mode.
+
+examples:
+  - |
+    &keyscan {
+          pinctrl-0 = <&keyscan_default>;
+          pinctrl-names = "default";
+          row-size = <2>;
+          col-size = <2>;
+          debounce-down-ms = <10>;
+          debounce-up-ms = <10>;
+          poll-period-us = <10000>;
+          release-time-us = <10000>;
+          status = "okay";
+      };
+
+    &pinctrl {
+        keyscan_default: keyscan_default {
+            group1 {
+              psels = <BEE_PSEL(KEY_COL_0, P0_6)>,
+                      <BEE_PSEL(KEY_COL_1, P0_7)>;
+              output-enable;
+              output-low;
+              bias-disable;
+            };
+
+            group2 {
+              psels = <BEE_PSEL(KEY_ROW_0, P2_4)>,
+                      <BEE_PSEL(KEY_ROW_1, P2_5)>;
+              output-disable;
+              bias-pull-up;
+              bias-pull-strong;
+            };
+        };
+    };

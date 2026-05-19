@@ -18,6 +18,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
+#include <esp_rom_serial_output.h>
+#include <esp_rom_sys.h>
 
 /*
  * Timeout after which the poll_out function stops waiting for space in the tx fifo.
@@ -64,6 +66,7 @@ static int serial_esp32_usb_poll_in(const struct device *dev, unsigned char *p_c
 static void serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
 {
 	struct serial_esp32_usb_data *data = dev->data;
+	int64_t start_time = k_uptime_get();
 
 	/*
 	 * If there is no USB host connected, this function will busy-wait once for the timeout
@@ -76,7 +79,8 @@ static void serial_esp32_usb_poll_out(const struct device *dev, unsigned char c)
 			data->last_tx_time = k_uptime_get();
 			return;
 		}
-	} while ((k_uptime_get() - data->last_tx_time) < USBSERIAL_POLL_OUT_TIMEOUT_MS);
+	} while ((k_uptime_get() - start_time) < USBSERIAL_POLL_OUT_TIMEOUT_MS &&
+		 (k_uptime_get() - data->last_tx_time) < USBSERIAL_POLL_OUT_TIMEOUT_MS);
 }
 
 static int serial_esp32_usb_err_check(const struct device *dev)
@@ -99,6 +103,13 @@ static int serial_esp32_usb_init(const struct device *dev)
 	if (ret != 0) {
 		return ret;
 	}
+
+	usb_serial_jtag_ll_phy_enable_pad(true);
+
+#if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
+	defined(CONFIG_SOC_SERIES_ESP32H2)
+	usb_serial_jtag_ll_phy_set_defaults();
+#endif
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	ret = esp_intr_alloc(config->irq_source,

@@ -42,6 +42,8 @@ char *xtensa_exccause(unsigned int cause_code)
 		return "privileged";
 	case 9:
 		return "load/store alignment";
+	case 11:
+		return "exclusive error";
 	case 12:
 		return "instr PIF data error";
 	case 13:
@@ -106,6 +108,9 @@ void xtensa_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	}
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
+#if defined(CONFIG_EXCEPTION_DUMP_HOOK)
+	arch_exception_call_drain_hook(false);
+#endif
 	z_fatal_error(reason, esf);
 }
 

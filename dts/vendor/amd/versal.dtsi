@@ -68,5 +68,81 @@
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			status = "disabled";
 		};
+
+		pmc_gpio: gpio@f1020000 {
+			compatible = "xlnx,ps-gpio";
+			reg = <0xf1020000 DT_SIZE_K(4)>;
+			interrupts = <GIC_SPI 122 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			pmc_mio0: pmc_gpio_bank@0 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <26>;
+				status = "disabled";
+			};
+
+			pmc_mio1: pmc_gpio_bank@1 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x1>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <26>;
+				status = "disabled";
+			};
+
+			pmc_emio0: pmc_gpio_bank@3 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+
+			pmc_emio1: pmc_gpio_bank@4 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x4>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+		};
+
+		lpd_gpio: gpio@ff0b0000 {
+			compatible = "xlnx,ps-gpio";
+			reg = <0xff0b0000 DT_SIZE_K(4)>;
+			interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			status = "disabled";
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			lpd_mio: lpd_gpio_bank@0 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <26>;
+				status = "disabled";
+			};
+
+			lpd_emio: lpd_gpio_bank@3 {
+				compatible = "xlnx,ps-gpio-bank";
+				reg = <0x3>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <32>;
+				status = "disabled";
+			};
+		};
 	};
 };

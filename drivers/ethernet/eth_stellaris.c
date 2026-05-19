@@ -303,7 +303,8 @@ static void eth_stellaris_init(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_stellaris_stats(const struct device *dev)
+static struct net_stats_eth *eth_stellaris_stats(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	struct eth_stellaris_runtime *dev_data = dev->data;
 

@@ -15,7 +15,6 @@ common:
 tests:
   sample.psa.its.tfm:
     filter: CONFIG_BUILD_WITH_TFM
-    extra_args: EXTRA_CONF_FILE=overlay-tfm.conf
     tags:
       - trusted-firmware-m
   sample.psa.its.secure_storage.entropy_driver:

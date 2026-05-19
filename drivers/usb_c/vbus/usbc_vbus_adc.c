@@ -106,7 +106,7 @@ static int adc_vbus_discharge(const struct device *dev,
 }
 
 /**
- * @brief Sets pin to enable VBUS measurments
+ * @brief Sets pin to enable VBUS measurements
  *
  * @retval 0 on success
  * @retval -EIO on failure

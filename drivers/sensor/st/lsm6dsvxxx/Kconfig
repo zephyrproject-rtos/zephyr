@@ -18,6 +18,11 @@ menuconfig LSM6DSVXXX
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV320X),spi) ||\
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV80X),spi) ||\
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_ISM6HG256X),spi)
+
+	select I2C_RTIO if I2C && SENSOR_ASYNC_API
+	select I3C_RTIO if I3C && SENSOR_ASYNC_API
+	select SPI_RTIO if SPI && SENSOR_ASYNC_API
+
 	select HAS_STMEMSC
 	select USE_STDC_LSM6DSV320X if DT_HAS_ST_LSM6DSV320X_ENABLED
 	select USE_STDC_LSM6DSV80X if DT_HAS_ST_LSM6DSV80X_ENABLED

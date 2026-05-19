@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <nxp/imxrt/nxp_rt118x_cm7.dtsi>
 #include "mimxrt1180_evk.dtsi"
+#include <freq.h>
 
 / {
 	model = "NXP MIMXRT1180-EVK board";
@@ -17,12 +18,13 @@
 		zephyr,sram = &dtcm;
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
-		zephyr,flash-controller = &w25q128jw;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &itcm;
 		zephyr,console = &lpuart12;
 		zephyr,shell-uart = &lpuart12;
 		zephyr,canbus = &flexcan3;
 		nxp,m7-partition = &slot1_partition;
+		zephyr,edac = &mecc1;
 	};
 
 	hyperram0: memory@4000000 {
@@ -51,6 +53,10 @@
 		 */
 		status = "disabled";
 	};
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(792)>;
 };
 
 &lpuart12 {
@@ -127,5 +133,18 @@ zephyr_udc1: &usb2 {
 };
 
 &sai1 {
+	status = "okay";
+};
+
+&sema1 {
+	domain-id = <9>;
+	status = "okay";
+};
+
+&mecc1 {
+	status = "okay";
+};
+
+&mecc2 {
 	status = "okay";
 };

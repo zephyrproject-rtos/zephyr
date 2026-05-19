@@ -25,6 +25,13 @@ struct pd_gpio_monitor_data {
 	bool is_powered;
 };
 
+#ifdef CONFIG_POWER_DOMAIN_GPIO_MONITOR_INITIAL_READ
+#define DOMAIN_DEV(inst) DEVICE_DT_INST_GET(inst),
+static const struct device *const domain_devs[] = {
+	DT_INST_FOREACH_STATUS_OKAY(DOMAIN_DEV)
+};
+#endif
+
 struct pd_visitor_context {
 	const struct device *domain;
 	enum pm_device_action action;
@@ -44,12 +51,10 @@ static int pd_on_domain_visitor(const struct device *dev, void *context)
 	return 0;
 }
 
-static void pd_gpio_monitor_callback(const struct device *port,
-				    struct gpio_callback *cb, gpio_port_pins_t pins)
+static void pd_update_power_state(const struct device *dev)
 {
-	struct pd_gpio_monitor_data *data = CONTAINER_OF(cb, struct pd_gpio_monitor_data, callback);
-	const struct pd_gpio_monitor_config *config = data->dev->config;
-	const struct device *dev = data->dev;
+	const struct pd_gpio_monitor_config *config = dev->config;
+	struct pd_gpio_monitor_data *data = dev->data;
 	struct pd_visitor_context context = {.domain = dev};
 	int rc;
 
@@ -71,6 +76,15 @@ static void pd_gpio_monitor_callback(const struct device *port,
 	pm_device_children_action_run(data->dev, PM_DEVICE_ACTION_TURN_ON, NULL);
 }
 
+static void pd_gpio_monitor_callback(const struct device *port, struct gpio_callback *cb,
+				     gpio_port_pins_t pins)
+{
+	struct pd_gpio_monitor_data *data = CONTAINER_OF(cb, struct pd_gpio_monitor_data, callback);
+	const struct device *dev = data->dev;
+
+	pd_update_power_state(dev);
+}
+
 static int pd_gpio_monitor_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct pd_gpio_monitor_data *data = dev->data;
@@ -90,6 +104,28 @@ static int pd_gpio_monitor_pm_action(const struct device *dev, enum pm_device_ac
 
 	return 0;
 }
+
+#ifdef CONFIG_POWER_DOMAIN_GPIO_MONITOR_INITIAL_READ
+static int pd_gpio_monitor_initial_read(void)
+{
+	/* For each power-domain-gpio-monitor device */
+	ARRAY_FOR_EACH(domain_devs, i) {
+		if (!device_is_ready(domain_devs[i])) {
+			continue;
+		}
+		/* read GPIO and handle state */
+		pd_update_power_state(domain_devs[i]);
+	}
+
+	return 0;
+}
+
+/* Prepare delayed initial read of gpio status. We can't do this right now, because
+ * dependent devices are not initialized yet and can't receive a PM action callback now.
+ */
+SYS_INIT(pd_gpio_monitor_initial_read, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+
+#endif /* CONFIG_POWER_DOMAIN_GPIO_MONITOR_INITIAL_READ */
 
 static int pd_gpio_monitor_init(const struct device *dev)
 {

@@ -969,8 +969,8 @@ requires the following folder structure:
    ├── modules
    └── soc
 
-Twister (Test Runner)
-=====================
+Test Runner (Twister) integration
+=================================
 
 To execute both tests and samples available in modules, the Zephyr test runner
 (twister) should be pointed to the directories containing those samples and
@@ -978,7 +978,6 @@ tests. This can be done by specifying the path to both samples and tests in the
 :file:`zephyr/module.yml` file.  Additionally, if a module defines out of tree
 boards, the module file can point twister to the path where those files
 are maintained in the module. For example:
-
 
 .. code-block:: yaml
 
@@ -990,6 +989,19 @@ are maintained in the module. For example:
       - tests
     boards:
       - boards
+
+Tests and Samples defined in the :file:`zephyr/module.yml` file are not detected
+by twister automatically. To make twister aware of the tests and samples defined
+in modules, the path for those tests and samples must be added to the command line
+when executing twister, for example:
+
+.. code-block:: shell
+
+  ./scripts/zephyr_module.py --twister-out module_tests.args
+  if [ -s module_tests.args ]; then
+      ./scripts/twister +module_tests.args --outdir module_tests ...
+  fi
+
 
 .. _modules-bin-blobs:
 
@@ -1017,8 +1029,9 @@ maps, each of which has the following entries:
 - ``version``: A version string
 - ``license-path``: Path to the license file for this blob, relative to the root
   of the module repository
-- ``url``: URL that identifies the location the blob will be fetched from, as
-  well as the fetching scheme to use
+- ``url``: URL(s) that identify the location the blob will be fetched from, as
+  well as the fetching scheme to use. If it contains a list instead of a single string,
+  each URL will be considered as a fallback for fetching the same blob.
 - ``description``: Human-readable description of the binary blob
 - ``doc-url``: A URL pointing to the location of the official documentation for
   this blob

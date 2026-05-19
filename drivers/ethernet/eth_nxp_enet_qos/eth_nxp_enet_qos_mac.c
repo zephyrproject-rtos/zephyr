@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,9 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
 #include <ethernet/eth_stats.h>
 #include "../eth.h"
 #include "nxp_enet_qos_priv.h"
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+#include <zephyr/drivers/ptp_clock.h>
+#endif
 
 /* Verify configuration */
 BUILD_ASSERT((ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC) >= ENET_QOS_MAX_NORMAL_FRAME_LEN,
@@ -67,7 +70,7 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 
 	LOG_INF("Link is %s", state->is_up ? "up" : "down");
 
-	/* handle link speed in MAC configuration register */
+	/* handle link speed and duplex in MAC configuration register */
 	if (state->is_up) {
 		const struct nxp_enet_qos_mac_config *config = dev->config;
 		struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
@@ -79,6 +82,14 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 		} else {
 			LOG_DBG("Link Speed 100MBit or higher");
 			base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
+		}
+
+		if (PHY_LINK_IS_FULL_DUPLEX(state->speed)) {
+			LOG_DBG("Link Full Duplex");
+			base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
+		} else {
+			LOG_DBG("Link Half Duplex");
+			base->MAC_CONFIGURATION &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
 		}
 	}
 }
@@ -92,9 +103,7 @@ static void eth_nxp_enet_qos_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, data->mac_addr.addr,
 			     sizeof(((struct net_eth_addr *)NULL)->addr), NET_LINK_ETHERNET);
 
-	if (data->iface == NULL) {
-		data->iface = iface;
-	}
+	data->iface = iface;
 
 	ethernet_init(iface);
 
@@ -118,8 +127,11 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	volatile union nxp_enet_qos_tx_desc *last_desc_ptr;
 
 	struct net_buf *fragment = pkt->frags;
-	int frags_count = 0, total_bytes = 0;
+	int frags_count = 0, total_bytes = 0, frags_idx = 0;
 	int ret;
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	bool pkt_is_ptp;
+#endif
 
 	/* Only allow send of the maximum normal packet size */
 	while (fragment != NULL) {
@@ -155,32 +167,54 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Setting up the descriptors  */
 	fragment = pkt->frags;
-	tx_desc_ptr->read.control2 |= FIRST_DESCRIPTOR_FLAG;
-	for (int i = 0; i < frags_count; i++) {
+	tx_desc_ptr->read.control2 = FIRST_DESCRIPTOR_FLAG;
+	while (frags_idx < frags_count) {
 		net_pkt_frag_ref(fragment);
 
 		tx_desc_ptr->read.buf1_addr = (uint32_t)fragment->data;
 		tx_desc_ptr->read.control1 = FIELD_PREP(0x3FFF, fragment->len);
 		tx_desc_ptr->read.control2 |= FIELD_PREP(0x7FFF, total_bytes);
 
+		/* if there are more fragments use buffer2 - ringbuffer mode */
+		if (frags_idx + 1 < frags_count) {
+			fragment = fragment->frags;
+			net_pkt_frag_ref(fragment);
+
+			tx_desc_ptr->read.buf2_addr = (uint32_t)fragment->data;
+			tx_desc_ptr->read.control1 |= FIELD_PREP(0x3FFF0000, fragment->len);
+			frags_idx++;
+		}
+
 		fragment = fragment->frags;
 		tx_desc_ptr++;
+		frags_idx++;
 	}
 	last_desc_ptr = tx_desc_ptr - 1;
 	last_desc_ptr->read.control2 |= LAST_DESCRIPTOR_FLAG;
 	last_desc_ptr->read.control1 |= TX_INTERRUPT_ON_COMPLETE_FLAG;
 
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	pkt_is_ptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
+	if (net_pkt_is_tx_timestamping(pkt) || pkt_is_ptp) {
+		LOG_DBG("SET TX TIMESTAMP %p control %x", pkt, base->MAC_TIMESTAMP_CONTROL);
+		last_desc_ptr->read.control1 |= TX_TIMESTAMP_ENABLE_FLAG;
+	}
+#endif
+
 	LOG_DBG("Starting TX DMA on packet %p", pkt);
+	data->tx.num_descs = (frags_count + 1) / 2;
 
 	/* Set the DMA ownership of all the used descriptors */
-	for (int i = 0; i < frags_count; i++) {
+	__DMB();
+	for (int i = 0; i < data->tx.num_descs; i++) {
 		data->tx.descriptors[i].read.control2 |= OWN_FLAG;
 	}
+	__DSB();
 
 	/* This implementation is clearly naive and basic, it just changes the
 	 * ring length for every TX send, there is room for optimization
 	 */
-	base->DMA_CH[0].DMA_CHX_TXDESC_RING_LENGTH = frags_count - 1;
+	base->DMA_CH[0].DMA_CHX_TXDESC_RING_LENGTH = data->tx.num_descs - 1;
 	base->DMA_CH[0].DMA_CHX_TXDESC_TAIL_PTR =
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TXDESC_TAIL_PTR, TDTP,
 			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t) tx_desc_ptr));
@@ -202,6 +236,22 @@ static void tx_dma_done(const struct device *dev)
 		LOG_DBG("TX DMA completed on packet %p", pkt);
 	}
 
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	volatile union nxp_enet_qos_tx_desc *last_desc =
+		&tx_data->descriptors[tx_data->num_descs - 1];
+
+	if (last_desc->write.status & LAST_DESCRIPTOR_FLAG) {
+		LOG_DBG("LAST DESCRIPTOR : status: %X", last_desc->write.status);
+	}
+	if (last_desc->write.status & TX_TIMESTAMP_STATUS_FLAG) {
+		pkt->timestamp.nanosecond = last_desc->write.timestamp_low;
+		pkt->timestamp.second = last_desc->write.timestamp_high;
+		LOG_DBG("TX HARD TIMESTAMP %llu.%09u", pkt->timestamp.second,
+			pkt->timestamp.nanosecond);
+		net_if_add_tx_timestamp(pkt);
+	}
+#endif
+
 	/* Returning the buffers and packet to the pool */
 	while (fragment != NULL) {
 		net_pkt_frag_unref(fragment);
@@ -218,14 +268,18 @@ skip:
 						      k_thread_name_get(k_current_get()));
 }
 
-static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev __unused,
+							      struct net_if *iface __unused)
 {
-	return ETHERNET_LINK_100BASE |
-		ETHERNET_LINK_10BASE |
+	enum ethernet_hw_caps caps = ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE;
+
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
-		ETHERNET_PROMISC_MODE |
+	caps |= ETHERNET_PROMISC_MODE;
 #endif
-		ENET_MAC_PACKET_FILTER_PM_MASK;
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	caps |= ETHERNET_PTP;
+#endif
+	return caps;
 }
 
 static bool software_owns_descriptor(volatile union nxp_enet_qos_rx_desc *desc)
@@ -263,7 +317,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		CONTAINER_OF(work, struct nxp_enet_qos_rx_data, rx_work);
 	struct nxp_enet_qos_mac_data *data =
 		CONTAINER_OF(rx_data, struct nxp_enet_qos_mac_data, rx);
-	const struct device *dev = data->iface->if_dev->dev;
+	const struct device *dev = net_if_get_device(data->iface);
 	volatile union nxp_enet_qos_rx_desc *desc_arr = data->rx.descriptors;
 	uint32_t desc_idx = rx_data->next_desc_idx;
 	volatile union nxp_enet_qos_rx_desc *desc = &desc_arr[desc_idx];
@@ -310,9 +364,9 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		}
 
 		/* Read the cumulative length of data in this buffer and previous buffers (if any).
-		 * The complete length is in a descriptor with the last descriptor flag set
-		 * (note that it includes four byte FCS as well). This length will be validated
-		 * against processed_len to ensure it's within expected bounds.
+		 * The complete length is in a descriptor with the last descriptor flag set.
+		 * The MAC strips CRC from Type packets, so the packet passed to upper layers
+		 * does not include the FCS.
 		 */
 		pkt_len = desc->write.control3 & DESC_RX_PKT_LEN;
 		if ((pkt_len < processed_len) ||
@@ -355,6 +409,40 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 		if ((desc->write.control3 & LAST_DESCRIPTOR_FLAG) == LAST_DESCRIPTOR_FLAG) {
 			/* Propagate completed packet to network stack */
 			LOG_DBG("Receiving RX packet");
+
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+			/*
+			 * When PTP timestamping is enabled the hardware appends a
+			 * context descriptor (RDES3 bit 30 = CTXT) immediately after
+			 * the last regular descriptor.  Peek at that slot; if it is
+			 * software-owned and carries the CTXT flag, extract the RX
+			 * timestamp (RDES0 = nanoseconds, RDES1 = seconds) and
+			 * recycle the slot as a regular RX descriptor.
+			 */
+			{
+				uint32_t ctx_idx = rx_data->next_desc_idx;
+				volatile union nxp_enet_qos_rx_desc *ctx_desc = &desc_arr[ctx_idx];
+
+				if ((desc->write.control3 & RX_STATUS1_VALID_FLAG) &&
+				    (desc->write.control1 & RX_TIMESTAMP_AVAILABLE_FLAG) &&
+				    !(ctx_desc->write.control3 & OWN_FLAG) &&
+				    (ctx_desc->write.control3 & RECEIVE_CONTEXT_DESCRIPTOR_FLAG)) {
+					pkt->timestamp.nanosecond = ctx_desc->write.vlan_tag;
+					pkt->timestamp.second = ctx_desc->write.control1;
+					net_pkt_set_rx_timestamping(pkt, true);
+
+					/* Recycle the context descriptor slot as a
+					 * regular RX descriptor - the reserved_buf at
+					 * this index was untouched by the context write.
+					 */
+					ctx_desc->read.buf1_addr =
+						(uint32_t)data->rx.reserved_bufs[ctx_idx]->data;
+					ctx_desc->read.control = rx_desc_refresh_flags;
+					rx_data->next_desc_idx = (ctx_idx + 1U) % NUM_RX_BUFDESC;
+				}
+			}
+#endif /* CONFIG_PTP_CLOCK_NXP_ENET_QOS */
+
 			if (net_recv_data(data->iface, pkt)) {
 				LOG_WRN("RECV failed on pkt %p", pkt);
 				/* Error during processing, we continue with new buffer */
@@ -507,17 +595,25 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 		;
 	}
 
+#if defined(ENET_MTL_QUEUE_MTL_TXQX_OP_MODE_TQS) && defined(ENET_MTL_QUEUE_MTL_TXQX_OP_MODE_TXQEN)
 	/* Enable only Transmit Queue 0 (optimization/configuration pending) with maximum size */
 	base->MTL_QUEUE[0].MTL_TXQX_OP_MODE =
+		/* Store and forward is required for reliable PTP timestamps. */
+		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, TSF, 0b1) |
 		/* Sets the size */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, TQS, 0b111) |
 		/* Sets it to on */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, TXQEN, 0b10);
+#endif
 
 	/* Enable only Receive Queue 0 (optimization/configuration pending) with maximum size */
 	base->MTL_QUEUE[0].MTL_RXQX_OP_MODE |=
+#ifdef ENET_MTL_QUEUE_MTL_RXQX_OP_MODE_RQS
 		/* Sets the size */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, RQS, 0b111) |
+#endif
+		/* Store and forward is required for reliable PTP timestamps. */
+		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, RSF, 0b1) |
 		/* Keep small packets */
 		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_RXQX_OP_MODE, FUP, 0b1);
 }
@@ -542,24 +638,30 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qo
 		base->MAC_PACKET_FILTER |= ENET_MAC_PACKET_FILTER_PM_MASK;
 	}
 
+#ifdef ENET_MAC_ONEUS_TIC_COUNTER_TIC_1US_CNTR
 	/* Set the reference for 1 microsecond of ENET QOS CSR clock cycles */
 	base->MAC_ONEUS_TIC_COUNTER =
 		ENET_QOS_REG_PREP(MAC_ONEUS_TIC_COUNTER, TIC_1US_CNTR,
 					(clk_rate / USEC_PER_SEC) - 1);
+#endif
 
 	base->MAC_CONFIGURATION |=
 		/* For 10/100 Mbps operation */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, PS, 0b1) |
-		/* Full duplex mode */
+		/* Full duplex mode, adjust duplex in phy callback if needed */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1) |
 		/* 100 Mbps mode, adjust link speed in phy callback if needed */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1) |
+		/* Strip CRC from Type packets before handing frames to the stack */
+		ENET_QOS_REG_PREP(MAC_CONFIGURATION, CST, 0b1) |
 		/* Don't talk unless no one else is talking */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, ECRSFD, 0b1);
 
+#ifdef ENET_MAC_RXQ_CTRL_RXQ0EN
 	/* Enable the MAC RX channel 0 */
 	base->MAC_RXQ_CTRL[0] |=
 		ENET_QOS_REG_PREP(MAC_RXQ_CTRL, RXQ0EN, 0b1);
+#endif
 }
 
 static inline void enet_qos_start(enet_qos_t *base)
@@ -764,16 +866,26 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 	return ret;
 }
 
-static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev)
+static const struct device *eth_nxp_enet_qos_get_phy(const struct device *dev,
+						     struct net_if *iface __unused)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 
 	return config->phy_dev;
 }
 
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+static const struct device *eth_nxp_enet_qos_get_ptp_clock(const struct device *dev,
+							   struct net_if *iface __unused)
+{
+	const struct nxp_enet_qos_mac_config *config = dev->config;
 
+	return config->ptp_clock;
+}
+#endif
 
 static int eth_nxp_enet_qos_set_config(const struct device *dev,
+			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *cfg)
 {
@@ -798,9 +910,6 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 						data->mac_addr.addr[2] << 16 |
 						data->mac_addr.addr[1] << 8  |
 						data->mac_addr.addr[0]);
-		net_if_set_link_addr(data->iface, data->mac_addr.addr,
-				     sizeof(data->mac_addr.addr),
-				     NET_LINK_ETHERNET);
 		LOG_INF("%s MAC set to %02x:%02x:%02x:%02x:%02x:%02x",
 			dev->name,
 			data->mac_addr.addr[0], data->mac_addr.addr[1],
@@ -828,7 +937,10 @@ static const struct ethernet_api api_funcs = {
 	.send = eth_nxp_enet_qos_tx,
 	.get_capabilities = eth_nxp_enet_qos_get_capabilities,
 	.get_phy = eth_nxp_enet_qos_get_phy,
-	.set_config	= eth_nxp_enet_qos_set_config,
+	.set_config = eth_nxp_enet_qos_set_config,
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	.get_ptp_clock = eth_nxp_enet_qos_get_ptp_clock,
+#endif
 };
 
 #define NXP_ENET_QOS_NODE_HAS_MAC_ADDR_CHECK(n)                                                    \
@@ -869,7 +981,8 @@ static const struct ethernet_api api_funcs = {
 			},                                                                         \
 		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,                             \
 		.mac_addr_source = NXP_ENET_QOS_MAC_ADDR_SOURCE(n),                                \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_ENET_QOS,                                          \
+			(.ptp_clock = DEVICE_DT_GET(DT_CHILD(DT_DRV_INST(n), ptp_clock)),)) };     \
 	static struct nxp_enet_qos_mac_data enet_qos_##n##_mac_data = {                            \
 		.mac_addr.addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                       \
 	};

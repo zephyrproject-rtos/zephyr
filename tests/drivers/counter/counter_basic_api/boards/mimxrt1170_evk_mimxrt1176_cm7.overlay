@@ -31,3 +31,28 @@
 &pit2_channel3 {
 	status = "okay";
 };
+
+&gpt2 {
+	status = "okay";
+	run-mode = "free-run";
+};
+
+&gpt3 {
+	status = "okay";
+	run-mode = "free-run";
+};
+
+&gpt4 {
+	status = "okay";
+	run-mode = "free-run";
+};
+
+&gpt5 {
+	status = "okay";
+	run-mode = "free-run";
+};
+
+&gpt6 {
+	status = "okay";
+	run-mode = "free-run";
+};

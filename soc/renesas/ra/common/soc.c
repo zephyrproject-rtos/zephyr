@@ -16,6 +16,10 @@ void soc_early_init_hook(void)
 	z_arm_nmi_set_handler(NMI_Handler);
 #endif /* CONFIG_RUNTIME_NMI */
 
+#if defined(CONFIG_DCACHE)
+	sys_cache_data_enable();
+#endif /* CONFIG_DCACHE */
+
 #if defined(CONFIG_ICACHE)
 	/* Invalidate I-Cache after initializing the .ram_from_flash section. */
 	sys_cache_instr_invd_all();

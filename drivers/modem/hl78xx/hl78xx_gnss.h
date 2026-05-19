@@ -25,12 +25,19 @@
  * These states track the GNSS search lifecycle from idle to actively searching.
  * The state machine ensures proper handling of the HL78xx GNSS constraints:
  * - GNSS cannot operate when LTE is active (shared RF path)
- * - GNSS requires CFUN=4 (airplane mode) or PSM/idle-eDRX
+ * - GNSS requires CFUN=4 (airplane mode), PSM, or idle-eDRX
+ *
+ * Per HL78xx GNSS Application Note §5.3 (GNSS/LTE Co-Existence):
+ * - Airplane/CFUN=0: LTE off, GNSS can be used.
+ * - PSM:             LTE hibernating, GNSS can be used.
+ * - Idle-eDRX:       GNSS operates during idle periods; auto-stops
+ *                    when LTE wakes and auto-restarts when idle again.
+ * - LTE active:      GNSS cannot start; +GNSSEV: 1,0 is returned.
  */
 enum hl78xx_gnss_search_state {
 	/** GNSS is idle, not searching, no pending request */
 	HL78XX_GNSS_SEARCH_STATE_IDLE = 0,
-	/** Search requested but waiting for airplane mode (CFUN=4) */
+	/** Search requested but waiting for RF path to be free (airplane mode/PSM/eDRX) */
 	HL78XX_GNSS_SEARCH_STATE_WAITING_FOR_AIRPLANE,
 	/** AT+GNSSSTART sent, waiting for +GNSSEV: 1,x response */
 	HL78XX_GNSS_SEARCH_STATE_STARTING,
@@ -99,6 +106,10 @@ struct hl78xx_gnss_data {
 
 	/* Enter GNSS mode pending flag - set when GNSS mode is requested before modem is ready */
 	bool gnss_mode_enter_pending;
+
+	/* RRC IDLE check phase for GNSS start gating. */
+	bool rrc_check_phase;
+	uint8_t rrc_retry_count;
 
 #ifdef CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE
 	/* A-GNSS assistance data status - updated by AT+GNSSAD? queries */

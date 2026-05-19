@@ -293,11 +293,11 @@ function(system_to_string)
   endforeach()
 
   if(IAR_LIBC)
-    set(${STRING_STRING} "${${STRING_STRING}}if (K_HEAP_MEM_POOL_SIZE>0)\n{\n")
-    set(${STRING_STRING} "${${STRING_STRING}}  define block HEAP with alignment=8 { symbol kheap__system_heap };\n")
-    set(${STRING_STRING} "${${STRING_STRING}}}\nelse\n{\n")
-    set(${STRING_STRING} "${${STRING_STRING}}  define block HEAP with alignment=8, expanding size { };\n")
-    set(${STRING_STRING} "${${STRING_STRING}}}\n")
+    if(K_HEAP_MEM_POOL_SIZE GREATER 0)
+      set(${STRING_STRING} "${${STRING_STRING}}define block HEAP with alignment=8 { symbol kheap__system_heap };\n")
+    else()
+      set(${STRING_STRING} "${${STRING_STRING}}define block HEAP with alignment=8, expanding size { };\n")
+    endif()
     set(${STRING_STRING} "${${STRING_STRING}}\"DLib heap\": place in RAM { block HEAP };\n")
 #    set(${STRING_STRING} "${${STRING_STRING}}define exported symbol HEAP$$Base=kheap__system_heap;\n")
 #    set(${STRING_STRING} "${${STRING_STRING}}define exported symbol HEAP$$Limit=END(kheap__system_heap);\n")
@@ -616,7 +616,7 @@ function(section_to_string)
     endif()
     # In ilink if a block with min_size=X  does not match any input sections,
     # its _init block may be discarded despite being needed for spacing with
-    # other _init blocks. To get around tihs, lets tag min_size blocks as keep.
+    # other _init blocks. To get around this, lets tag min_size blocks as keep.
     if(CONFIG_IAR_ZEPHYR_INIT
        AND DEFINED group_parent_vma AND DEFINED group_parent_lma
        AND DEFINED i_min_size

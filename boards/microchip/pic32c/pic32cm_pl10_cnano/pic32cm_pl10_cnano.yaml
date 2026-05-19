@@ -10,6 +10,9 @@ toolchain:
 flash: 64
 ram: 8
 supported:
+  - clock_control
+  - dma
   - gpio
   - pinctrl
+  - uart
 vendor: microchip

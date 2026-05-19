@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,10 +29,6 @@
 				reg = <0xe000ed90 0x40>;
 			};
 		};
-	};
-
-	cmc {
-		compatible = "nxp,cmc-reset-cause";
 	};
 
 	/* Dummy pinctrl node, filled with pin mux options at board level */
@@ -340,6 +336,7 @@
 	wwdt0: watchdog@c000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xc000 0x1000>;
+		clocks = <&syscon MCUX_WWDT0_CLK>;
 		interrupts = <60 0>;
 		status = "disabled";
 		clk-divider = <1>;
@@ -348,6 +345,7 @@
 	wwdt1: watchdog@d000 {
 		compatible = "nxp,lpc-wwdt";
 		reg = <0xd000 0x1000>;
+		clocks = <&syscon MCUX_WWDT1_CLK>;
 		interrupts = <61 0>;
 		status = "disabled";
 		clk-divider = <1>;
@@ -435,7 +433,7 @@
 		reg = <0xaf000 0x1000>;
 		interrupts = <62 0>;
 		status = "disabled";
-		voltage-ref = <1>;
+		voltage-ref = <2>;
 		calibration-average = <128>;
 		power-level = <0>;
 		offset-value-a = <0>;
@@ -444,12 +442,17 @@
 		clocks = <&syscon MCUX_LPADC1_CLK>;
 	};
 
+	temp0: temp0 {
+		compatible = "nxp,lpadc-temp40";
+		status = "disabled";
+	};
+
 	lpadc1: adc@b0000 {
 		compatible = "nxp,lpc-lpadc";
 		reg = <0xb0000 0x1000>;
 		interrupts = <63 0>;
 		status = "disabled";
-		voltage-ref = <0>;
+		voltage-ref = <2>;
 		calibration-average = <128>;
 		power-level = <1>;
 		offset-value-a = <0>;
@@ -712,6 +715,39 @@
 		interrupts = <116 0>;
 		clocks = <&syscon MCUX_LPI2C4_CLK>;
 		status = "disabled";
+	};
+
+	enet: ethernet@1c000 {
+		compatible = "nxp,enet-qos";
+		reg = <0x1c000 0x1000>;
+		clocks = <&syscon MCUX_ENET_QOS_CLK>;
+
+		enet_mac: ethernet {
+			compatible = "nxp,enet-qos-mac";
+			status = "disabled";
+			interrupts = <90 0>, <91 0>;
+			interrupt-names = "mac", "power";
+		};
+
+		enet_mdio: mdio {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "nxp,enet-qos-mdio";
+			status = "disabled";
+		};
+	};
+
+	t1s: ethernet-phy@2d000 {
+		compatible = "nxp,t1s-phy";
+		reg = <0x2d000 0x200>;
+		status = "disabled";
+		interrupts = <93 0>;
+		interrupt-names = "t1s";
+	};
+
+	cmc: system-modules@c6000 {
+		compatible = "nxp,cmc";
+		reg = <0xc6000 0x1000>;
 	};
 };
 

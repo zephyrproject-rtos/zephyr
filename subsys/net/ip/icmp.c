@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(net_icmp, ICMP_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/icmp.h>
 
@@ -181,21 +182,33 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 	echo_req->identifier = net_htons(params->identifier);
 	echo_req->sequence   = net_htons(params->sequence);
 
-	net_pkt_set_data(pkt, &icmpv4_access);
+	ret = net_pkt_set_data(pkt, &icmpv4_access);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	if (params->data != NULL && params->data_size > 0) {
-		net_pkt_write(pkt, params->data, params->data_size);
+		ret = net_pkt_write(pkt, params->data, params->data_size);
+		if (ret < 0) {
+			goto drop;
+		}
 	} else if (params->data == NULL && params->data_size > 0) {
 		/* Generate payload. */
 		if (params->data_size >= sizeof(uint32_t)) {
 			uint32_t time_stamp = net_htonl(k_cycle_get_32());
 
-			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			ret = net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			if (ret < 0) {
+				goto drop;
+			}
 			params->data_size -= sizeof(time_stamp);
 		}
 
 		for (size_t i = 0; i < params->data_size; i++) {
-			net_pkt_write_u8(pkt, (uint8_t)i);
+			ret = net_pkt_write_u8(pkt, (uint8_t)i);
+			if (ret < 0) {
+				goto drop;
+			}
 		}
 	} else {
 		/* No payload. */
@@ -305,21 +318,33 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 	echo_req->identifier = net_htons(params->identifier);
 	echo_req->sequence   = net_htons(params->sequence);
 
-	net_pkt_set_data(pkt, &icmpv6_access);
+	ret = net_pkt_set_data(pkt, &icmpv6_access);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	if (params->data != NULL && params->data_size > 0) {
-		net_pkt_write(pkt, params->data, params->data_size);
+		ret = net_pkt_write(pkt, params->data, params->data_size);
+		if (ret < 0) {
+			goto drop;
+		}
 	} else if (params->data == NULL && params->data_size > 0) {
 		/* Generate payload. */
 		if (params->data_size >= sizeof(uint32_t)) {
 			uint32_t time_stamp = net_htonl(k_cycle_get_32());
 
-			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			ret = net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			if (ret < 0) {
+				goto drop;
+			}
 			params->data_size -= sizeof(time_stamp);
 		}
 
 		for (size_t i = 0; i < params->data_size; i++) {
-			net_pkt_write_u8(pkt, (uint8_t)i);
+			ret = net_pkt_write_u8(pkt, (uint8_t)i);
+			if (ret < 0) {
+				goto drop;
+			}
 		}
 	} else {
 		/* No payload. */
@@ -507,12 +532,12 @@ int net_icmp_send_echo_request_no_wait(struct net_icmp_ctx *ctx,
 						  K_NO_WAIT);
 }
 
-static int icmp_call_handlers(struct net_pkt *pkt,
-			      struct net_icmp_ip_hdr *ip_hdr,
-			      struct net_icmp_hdr *icmp_hdr)
+static enum net_verdict icmp_call_handlers(struct net_pkt *pkt,
+					   struct net_icmp_ip_hdr *ip_hdr,
+					   struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_icmp_ctx *ctx;
-	int ret = -ENOENT;
+	enum net_verdict ret = NET_DROP;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
@@ -531,22 +556,27 @@ static int icmp_call_handlers(struct net_pkt *pkt,
 			}
 
 			ret = ctx->handler(ctx, pkt, ip_hdr, icmp_hdr, ctx->user_data);
-			if (ret < 0) {
-				goto out;
+			if (ret == NET_CONTINUE) {
+				continue;
 			}
+
+			/**
+			 * Any handler returning NET_OK or NET_DROP has processed and
+			 * possibly modified the pkt
+			 */
+			break;
 		}
 	}
 
-out:
 	k_mutex_unlock(&lock);
 
 	return ret;
 }
 
 
-int net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
-				struct net_ipv4_hdr *ipv4_hdr,
-				struct net_icmp_hdr *icmp_hdr)
+enum net_verdict net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
+					     struct net_ipv4_hdr *ipv4_hdr,
+					     struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_icmp_ip_hdr ip_hdr;
 
@@ -556,9 +586,9 @@ int net_icmp_call_ipv4_handlers(struct net_pkt *pkt,
 	return icmp_call_handlers(pkt, &ip_hdr, icmp_hdr);
 }
 
-int net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
-				struct net_ipv6_hdr *ipv6_hdr,
-				struct net_icmp_hdr *icmp_hdr)
+enum net_verdict net_icmp_call_ipv6_handlers(struct net_pkt *pkt,
+					     struct net_ipv6_hdr *ipv6_hdr,
+					     struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_icmp_ip_hdr ip_hdr;
 

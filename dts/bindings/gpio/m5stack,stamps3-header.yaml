@@ -25,7 +25,7 @@ description: |
         16 GPIO/SCL0        17 GND
 
     Note: Please note that the StampS3 is not pin compatible to the
-    other Stamp variantes like StampC3 or Stamp-Pico.
+    other Stamp variants like StampC3 or Stamp-Pico.
 
 
 compatible: "m5stack,stamps3-header"

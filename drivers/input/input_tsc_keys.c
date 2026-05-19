@@ -15,7 +15,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/sys/ringq.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
@@ -90,9 +90,9 @@ void stm32_tsc_start(const struct device *dev)
 	/* enable end of acquisition and max count error interrupts */
 	sys_set_bits((mem_addr_t)&config->tsc->IER, TSC_IER_EOAIE | TSC_IER_MCEIE);
 
-	/* TODO: When sync acqusition mode is enabled, both this bit and an external input signal
-	 * should be set. When the acqusition stops this bit is cleared, so even if a sync signal is
-	 * present, the next acqusition will not start until this bit is set again.
+	/* TODO: When sync acquisition mode is enabled, both this bit and an external input signal
+	 * should be set. When the acquisition stops this bit is cleared, so even if a sync signal
+	 * is present, the next acquisition will not start until this bit is set again.
 	 */
 	/* start acquisition */
 	sys_set_bit((mem_addr_t)&config->tsc->CR, TSC_CR_START_Pos);
@@ -177,7 +177,7 @@ static int stm32_tsc_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(clk)) {
-		LOG_ERR("%s: clock controller device not ready", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(clk);
 		return -ENODEV;
 	}
 
@@ -344,8 +344,8 @@ static int stm32_tsc_init(const struct device *dev)
 DT_INST_FOREACH_STATUS_OKAY(STM32_TSC_INIT)
 
 struct input_tsc_keys_data {
-	uint32_t buffer[CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE];
-	struct ring_buf rb;
+	uint8_t buffer[CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE * sizeof(uint32_t)];
+	struct sys_ringq fifo;
 	bool expect_release;
 	struct k_timer sampling_timer;
 };
@@ -372,12 +372,11 @@ static void input_tsc_callback_handler(uint32_t count_value, void *user_data)
 		(const struct input_tsc_keys_config *)dev->config;
 	struct input_tsc_keys_data *data = (struct input_tsc_keys_data *)dev->data;
 
-	if (ring_buf_item_space_get(&data->rb) == 0) {
+	if (sys_ringq_full(&data->fifo)) {
 		uint32_t oldest_point;
 		int32_t slope;
 
-		(void)ring_buf_get(&data->rb, (uint8_t *)&oldest_point, sizeof(oldest_point));
-
+		sys_ringq_get(&data->fifo, &oldest_point);
 		slope = count_value - oldest_point;
 		if (slope < -config->noise_threshold && !data->expect_release) {
 			data->expect_release = true;
@@ -387,8 +386,7 @@ static void input_tsc_callback_handler(uint32_t count_value, void *user_data)
 			input_report_key(dev, config->zephyr_code, 0, false, K_NO_WAIT);
 		}
 	}
-
-	(void)ring_buf_put(&data->rb, (uint8_t *)&count_value, sizeof(count_value));
+	sys_ringq_put(&data->fifo, &count_value);
 }
 
 static int input_tsc_keys_init(const struct device *dev)
@@ -397,12 +395,12 @@ static int input_tsc_keys_init(const struct device *dev)
 	struct input_tsc_keys_data *data = dev->data;
 
 	if (!device_is_ready(config->tsc_dev)) {
-		LOG_ERR("%s: TSC device not ready", config->tsc_dev->name);
+		LOG_ERR_DEVICE_NOT_READY(config->tsc_dev);
 		return -ENODEV;
 	}
 
-	ring_buf_item_init(&data->rb, CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE, data->buffer);
-
+	sys_ringq_init(&data->fifo, data->buffer,
+	       CONFIG_INPUT_STM32_TSC_KEYS_BUFFER_WORD_SIZE * sizeof(uint32_t), sizeof(uint32_t));
 	uint8_t group_index = 0;
 
 	int ret = get_group_index(config->tsc_dev, config->group, &group_index);

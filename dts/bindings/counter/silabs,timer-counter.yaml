@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Phuc Hoang <donp172748@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs TIMER Counter
+
+description: |
+  TIMER peripheral on Silicon Labs Series 2 SoCs used in counter mode.
+
+  The TIMER peripheral on Silicon Labs Series 2 SoCs provides versatile 16-bit or 32-bit
+  timer/counter capabilities. In counter mode, it can be used to count events from
+  internal or external sources.
+
+compatible: "silabs,timer-counter"
+
+include: base.yaml

@@ -10,9 +10,10 @@ tests:
   sample.net.dsa:
     build_only: true
     platform_allow:
-      - ip_k66f
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+      - frdm_imxrt1186/mimxrt1186/cm33
+      - frdm_imxrt1186/mimxrt1186/cm7/extmem
       - imx943_evk/mimx94398/m33/ddr
       - imx943_evk/mimx94398/a55
     depends_on: eth

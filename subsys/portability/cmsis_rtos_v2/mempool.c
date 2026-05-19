@@ -11,8 +11,8 @@
 
 #define TIME_OUT_TICKS 10
 
-K_MEM_SLAB_DEFINE(cv2_mem_slab, sizeof(struct cmsis_rtos_mempool_cb),
-		  CONFIG_CMSIS_V2_MEM_SLAB_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE_TYPE(cv2_mem_slab, struct cmsis_rtos_mempool_cb,
+		       CONFIG_CMSIS_V2_MEM_SLAB_MAX_COUNT);
 
 static const osMemoryPoolAttr_t init_mslab_attrs = {
 	.name = "ZephyrMemPool",

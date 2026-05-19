@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_mgmt.h>
@@ -247,10 +248,16 @@ static void lcp_down(struct ppp_fsm *fsm)
 	memset(&ctx->lcp.peer_options.auth_proto, 0,
 	       sizeof(ctx->lcp.peer_options.auth_proto));
 
-	ppp_link_down(ctx);
+	k_sem_give(&ctx->wait_ppp_link_down);
+
+	if (ctx->phase != PPP_DEAD) {
+		ppp_network_all_down(ctx);
+	}
 
 	if (net_if_is_carrier_ok(ctx->iface) && ctx->is_enabled) {
 		ppp_change_phase(ctx, PPP_ESTABLISH);
+	} else {
+		ppp_change_phase(ctx, PPP_DEAD);
 	}
 }
 
@@ -301,7 +308,13 @@ static void lcp_finished(struct ppp_fsm *fsm)
 
 static int lcp_add_mru(struct ppp_context *ctx, struct net_pkt *pkt)
 {
-	net_pkt_write_u8(pkt, MRU_OPTION_LEN);
+	int ret;
+
+	ret = net_pkt_write_u8(pkt, MRU_OPTION_LEN);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return net_pkt_write_be16(pkt, ctx->lcp.my_options.mru);
 }
 
@@ -359,7 +372,13 @@ static int lcp_nak_mru(struct ppp_context *ctx, struct net_pkt *pkt,
 
 static int lcp_add_async_map(struct ppp_context *ctx, struct net_pkt *pkt)
 {
-	net_pkt_write_u8(pkt, ASYNC_MAP_OPTION_LEN);
+	int ret;
+
+	ret = net_pkt_write_u8(pkt, ASYNC_MAP_OPTION_LEN);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return net_pkt_write_be32(pkt, ctx->lcp.my_options.async_map);
 }
 
@@ -374,7 +393,7 @@ static int lcp_ack_async_map(struct ppp_context *ctx, struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-	ret = net_pkt_read(pkt, &async_map, sizeof(async_map));
+	ret = net_pkt_read_be32(pkt, &async_map);
 	if (ret) {
 		return ret;
 	}
@@ -390,14 +409,14 @@ static int lcp_nak_async_map(struct ppp_context *ctx, struct net_pkt *pkt,
 			     uint8_t oplen)
 {
 	int ret;
-	uint16_t async_map;
+	uint32_t async_map;
 
 	/* Handle NAK: accept only equal to ours */
 	if (oplen != sizeof(async_map)) {
 		return -EINVAL;
 	}
 
-	ret = net_pkt_read(pkt, &async_map, sizeof(async_map));
+	ret = net_pkt_read_be32(pkt, &async_map);
 	if (ret) {
 		return ret;
 	}
@@ -459,7 +478,7 @@ static void lcp_init(struct ppp_context *ctx)
 	ppp_fsm_name_set(&ctx->lcp.fsm, ppp_proto2str(PPP_LCP));
 
 	ctx->lcp.my_options.mru = net_if_get_mtu(ctx->iface);
-	ctx->lcp.my_options.async_map = 0xffffffff;
+	ctx->lcp.my_options.async_map = 0;
 
 	ctx->lcp.fsm.my_options.info = lcp_my_options;
 	ctx->lcp.fsm.my_options.data = ctx->lcp.my_options_data;

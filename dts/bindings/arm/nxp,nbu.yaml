@@ -3,7 +3,7 @@
 
 description: NXP NBU interruption information
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml]
 
 compatible: "nxp,nbu"
 
@@ -23,3 +23,11 @@ properties:
     type: int
     description: |
       XTAL ISEL (Current Selection) value.
+  max-tx-power-support:
+    type: array
+    description: |
+      List of supported Max TX power values in dBm.
+  max-tx-power-dbm:
+    type: int
+    description: |
+      Selected Max TX power in dBm.

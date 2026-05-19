@@ -96,17 +96,18 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 
 		m4_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-m4";
 			reg = <0x0 DT_SIZE_M(1)>;
 		};
 
 		storage_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x100000 DT_SIZE_K(64)>;
 		};
@@ -115,17 +116,18 @@
 
 &flash1 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 
 		rv32_partition: rv32_partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-rv32";
 			reg = <0x0 DT_SIZE_K(192)>;
 		};
 
 		rv32_storage_partition: rv32_partition@30000 {
+			compatible = "zephyr,mapped-partition";
 			label = "rv32-storage";
 			reg = <0x30000 DT_SIZE_K(64)>;
 		};

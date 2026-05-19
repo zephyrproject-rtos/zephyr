@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
@@ -27,6 +28,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include "dhcpv4/dhcpv4_internal.h"
 #include "ipv4.h"
 #include "pmtu.h"
+#include "route_ipv4.h"
 
 BUILD_ASSERT(sizeof(struct net_in_addr) == NET_IPV4_ADDR_SIZE);
 
@@ -110,6 +112,7 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	struct net_ipv4_hdr *ipv4_hdr;
+	int ret;
 
 	net_pkt_set_overwrite(pkt, true);
 
@@ -130,10 +133,22 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 	ipv4_hdr->proto = next_header_proto;
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
-		ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
+		uint16_t chksum = 0;
+
+		ipv4_hdr->chksum = 0;
+		ret = net_calc_chksum_ipv4(pkt, &chksum);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ipv4_hdr->chksum = chksum;
 	}
 
-	net_pkt_set_data(pkt, &ipv4_access);
+	ret = net_pkt_set_data(pkt, &ipv4_access);
+	if (ret < 0) {
+		return ret;
+	}
+
 	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
@@ -240,6 +255,69 @@ int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 }
 #endif
 
+#if defined(CONFIG_NET_IPV4_ROUTE)
+static enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
+					  struct net_ipv4_hdr *hdr)
+{
+	struct net_route_entry *route;
+	struct net_in_addr *nexthop;
+	struct net_if *iface = NULL;
+	struct net_in_addr dst_ip;
+	bool found;
+	int ret;
+
+	net_ipv4_addr_copy_raw(dst_ip.s4_addr, hdr->dst);
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTING)) {
+		found = net_route_ipv4_get_info(NULL, &dst_ip, &route, &nexthop);
+	} else {
+		found = net_route_ipv4_get_info(net_pkt_iface(pkt), &dst_ip,
+						&route, &nexthop);
+	}
+
+	if (found) {
+		net_pkt_set_orig_iface(pkt, net_pkt_iface(pkt));
+
+		if (route != NULL) {
+			net_pkt_set_iface(pkt, route->iface);
+		}
+
+		ret = net_route_ipv4_packet(pkt, nexthop);
+		if (ret < 0) {
+			NET_DBG("Cannot re-route pkt %p via %s at iface %p (%d)",
+				pkt, net_sprint_ipv4_addr(nexthop),
+				net_pkt_iface(pkt), ret);
+			goto out;
+		}
+
+		return NET_OK;
+	}
+
+	if (net_if_ipv4_addr_onlink(&iface, &dst_ip)) {
+		ret = net_route_packet_if(pkt, iface);
+		if (ret < 0) {
+			NET_DBG("Cannot re-route pkt %p at iface %p (%d)",
+				pkt, net_pkt_iface(pkt), ret);
+			goto out;
+		}
+
+		return NET_OK;
+	}
+
+out:
+	return NET_DROP;
+}
+#else
+static inline enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
+						 struct net_ipv4_hdr *hdr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+
+	return NET_DROP;
+}
+#endif /* CONFIG_NET_IPV4_ROUTE */
+
 enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
@@ -253,6 +331,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	uint8_t hdr_len;
 	uint8_t opts_len;
 	int pkt_len;
+	int ret;
 
 #if defined(CONFIG_NET_L2_IPIP)
 	struct net_pkt_cursor hdr_start;
@@ -331,10 +410,14 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER) &&
-	    net_calc_chksum_ipv4(pkt) != 0U) {
-		NET_DBG("DROP: invalid chksum");
-		goto drop;
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
+		uint16_t chksum = 0;
+
+		ret = net_calc_chksum_ipv4(pkt, &chksum);
+		if (ret < 0 || chksum != 0U) {
+			NET_DBG("DROP: invalid chksum or error %d", ret);
+			goto drop;
+		}
 	}
 
 	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
@@ -358,21 +441,32 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		net_dhcpv4_accept_unicast(pkt)))) ||
 	    (hdr->proto == NET_IPPROTO_TCP &&
 	     net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
+		if (ipv4_route_packet(pkt, hdr) == NET_OK) {
+			return NET_OK;
+		}
+
 		NET_DBG("DROP: not for me");
 		goto drop;
 	}
 
 	if (net_ipv4_is_addr_mcast_raw(hdr->dst)) {
 		struct net_if *iface = net_pkt_iface(pkt);
-		struct net_if_mcast_addr *if_mcast_addr = net_if_ipv4_maddr_lookup(
-				(struct net_in_addr *)hdr->dst, &iface);
+		struct net_if_mcast_addr *if_mcast_addr;
+		struct net_in_addr dst;
+
+		net_ipv4_addr_copy_raw(dst.s4_addr, hdr->dst);
+		if_mcast_addr = net_if_ipv4_maddr_lookup(&dst, &iface);
 		if (!net_if_ipv4_maddr_is_joined(if_mcast_addr)) {
 			NET_DBG("DROP: mcast not for me");
 			goto drop;
 		}
 	}
 
-	net_pkt_acknowledge_data(pkt, &ipv4_access);
+	ret = net_pkt_acknowledge_data(pkt, &ipv4_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	if (opts_len) {
 		/* Only few options are handled in EchoRequest, rest skipped */

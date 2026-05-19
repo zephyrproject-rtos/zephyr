@@ -314,7 +314,10 @@ enum bt_a2dp_codec_type {
 	BT_A2DP_VENDOR = 0xff
 };
 
-/** @brief A2DP structure */
+/**
+ * @struct bt_a2dp
+ * @brief A2DP structure
+ */
 struct bt_a2dp;
 
 /* Internal to pass build */

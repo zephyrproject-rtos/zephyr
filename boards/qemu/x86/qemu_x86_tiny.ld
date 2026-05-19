@@ -174,8 +174,8 @@ MEMORY
 #define LIB_KERNEL_IN_SECT(lsect)					\
 	*libkernel.a:(.##lsect)						\
 	*libkernel.a:(.##lsect##.*)					\
-	*libsubsys__demand_paging__*.a:(.##lsect)			\
-	*libsubsys__demand_paging__*.a:(.##lsect##.*)
+	*libsubsys_*_demand_paging__*.a:(.##lsect)			\
+	*libsubsys_*_demand_paging__*.a:(.##lsect##.*)
 
 /* For particular file packaged in libzephyr.a. */
 #define LIB_ZEPHYR_OBJECT_FILE_IN_SECT(lsect, objfile)			\

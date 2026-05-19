@@ -62,15 +62,13 @@ class Completion(WestCommand):
     def __init__(self):
         super().__init__(
             'completion',
-            # Keep this in sync with the string in west-commands.yml.
-            'output shell completion scripts',
-            COMP_DESCRIPTION,
+            '',
+            description=COMP_DESCRIPTION,
             accepts_unknown_args=False)
 
     def do_add_parser(self, parser_adder):
         parser = parser_adder.add_parser(
             self.name,
-            help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description)
 

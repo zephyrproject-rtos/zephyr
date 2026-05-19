@@ -122,6 +122,9 @@ static otError tx_result;
 K_FIFO_DEFINE(rx_pkt_fifo);
 K_FIFO_DEFINE(tx_pkt_fifo);
 
+void transmit_message(struct k_work *tx_job_item);
+static K_WORK_DEFINE(tx_job, transmit_message);
+
 static int8_t get_transmit_power_for_channel(uint8_t aChannel)
 {
 	int8_t channel_max_power = OT_RADIO_POWER_INVALID;
@@ -379,11 +382,11 @@ static void radio_set_channel(uint16_t ch)
 	radio_api->set_channel(radio_dev, ch);
 }
 
-void transmit_message(struct k_work *tx_job)
+void transmit_message(struct k_work *tx_job_item)
 {
 	int tx_err;
 
-	ARG_UNUSED(tx_job);
+	ARG_UNUSED(tx_job_item);
 
 	enum ieee802154_hw_caps radio_caps = radio_api->get_capabilities(radio_dev);
 
@@ -435,6 +438,11 @@ void transmit_message(struct k_work *tx_job)
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
 		radio_set_channel(sTransmitFrame.mChannel);
 		if (radio_caps & IEEE802154_HW_CSMA) {
+			struct ieee802154_config config = {
+				.csma_ca_backoffs = sTransmitFrame.mInfo.mTxInfo.mMaxCsmaBackoffs};
+
+			(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSMA_CA_BACKOFFS,
+						   &config);
 			tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA, tx_pkt,
 					       tx_payload);
 		} else {
@@ -480,6 +488,11 @@ void transmit_message(struct k_work *tx_job)
 
 static inline void handle_tx_done(otInstance *aInstance)
 {
+	struct k_work_sync sync;
+
+	/* Wait for work item to complete */
+	k_work_flush(&tx_job, &sync);
+
 	sTransmitFrame.mInfo.mTxInfo.mIsSecurityProcessed =
 		net_pkt_ieee802154_frame_secured(tx_pkt);
 	sTransmitFrame.mInfo.mTxInfo.mIsHeaderUpdated = net_pkt_ieee802154_mac_hdr_rdy(tx_pkt);
@@ -558,7 +571,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	otMessageSettings settings;
 	bool is_ip6 = PKT_IS_IPv6(pkt);
 
-	NET_DBG("Sending %s packet to ot stack", is_ip6 ? "IPv6" : "IPv4");
+	LOG_DBG("Sending %s packet to ot stack", is_ip6 ? "IPv6" : "IPv4");
 
 	settings.mPriority = OT_MESSAGE_PRIORITY_NORMAL;
 	settings.mLinkSecurityEnabled = true;
@@ -566,7 +579,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	message = is_ip6 ? otIp6NewMessage(instance, &settings)
 			 : openthread_ip4_new_msg(instance, &settings);
 	if (!message) {
-		NET_ERR("Cannot allocate new message buffer");
+		LOG_ERR("Cannot allocate new message buffer");
 		goto exit;
 	}
 
@@ -579,7 +592,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 
 	for (buf = pkt->buffer; buf; buf = buf->frags) {
 		if (otMessageAppend(message, buf->data, buf->len) != OT_ERROR_NONE) {
-			NET_ERR("Error while appending to otMessage");
+			LOG_ERR("Error while appending to otMessage");
 			otMessageFree(message);
 			goto exit;
 		}
@@ -588,7 +601,7 @@ static void openthread_handle_frame_to_send(otInstance *instance, struct net_pkt
 	error = is_ip6 ? otIp6Send(instance, message) : openthread_nat64_send(instance, message);
 
 	if (error != OT_ERROR_NONE) {
-		NET_ERR("Error while calling %s [error: %d]",
+		LOG_ERR("Error while calling %s [error: %d]",
 			is_ip6 ? "otIp6Send" : "openthread_nat64_send", error);
 	}
 
@@ -614,8 +627,6 @@ int notify_new_tx_frame(struct net_pkt *pkt)
 
 static int run_tx_task(otInstance *aInstance)
 {
-	static K_WORK_DEFINE(tx_job, transmit_message);
-
 	ARG_UNUSED(aInstance);
 
 	if (!k_work_is_pending(&tx_job)) {
@@ -1308,6 +1319,8 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 #endif
 
 	uint8_t key_id_mode = aKeyIdMode >> 3;
+	uint8_t prev_key_id = 0;
+	uint8_t next_key_id = 0;
 
 	struct ieee802154_key keys[] = {
 		{
@@ -1335,8 +1348,8 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 
 	if (key_id_mode == 1) {
 		/* aKeyId in range: (1, 0x80) means valid keys */
-		uint8_t prev_key_id = aKeyId == 1 ? 0x80 : aKeyId - 1;
-		uint8_t next_key_id = aKeyId == 0x80 ? 1 : aKeyId + 1;
+		prev_key_id = aKeyId == 1 ? 0x80 : aKeyId - 1;
+		next_key_id = aKeyId == 0x80 ? 1 : aKeyId + 1;
 
 		keys[0].key_id = &prev_key_id;
 		keys[0].key_value = (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8;

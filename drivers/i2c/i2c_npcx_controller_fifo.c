@@ -154,7 +154,7 @@ void i2c_ctrl_handle_write_int_event(const struct device *dev)
 	struct i2c_ctrl_data *const data = dev->data;
 
 	/* START condition is issued */
-	if (data->oper_state == NPCX_I2C_WAIT_START) {
+	if (data->oper_state == NPCX_I2C_WAIT_START || data->oper_state == NPCX_I2C_WAIT_RESTART) {
 		/* Write slave address with W bit */
 		i2c_ctrl_data_write(dev, ((data->addr << 1) & ~BIT(0)));
 		/* Start to proceed write process */
@@ -199,7 +199,16 @@ void i2c_ctrl_handle_write_int_event(const struct device *dev)
 				data->msg = msg;
 				data->ptr_msg = msg->buf;
 				if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-					data->oper_state = NPCX_I2C_WRITE_DATA;
+					/*
+					 * For a special sequence that requires a Repeat-Start
+					 * condition between two "Write" messages.
+					 */
+					if (msg->flags & I2C_MSG_RESTART) {
+						data->oper_state = NPCX_I2C_WAIT_RESTART;
+						i2c_ctrl_start(dev);
+					} else {
+						data->oper_state = NPCX_I2C_WRITE_DATA;
+					}
 				} else {
 					data->is_write = 0;
 					data->oper_state = NPCX_I2C_WAIT_RESTART;

@@ -12,8 +12,8 @@ build each test case on one platform per architecture, using a precedence
 list defined in an architecture configuration file, and if possible
 run the tests in any available emulators or simulators on the system.
 
-Test cases are detected by the presence of a 'testcase.yaml' or a sample.yaml
-files in the application's project directory. This file may contain one or more
+Test cases are detected by the presence of a 'tests.yaml' file in the
+application's project directory. This file may contain one or more
 blocks, each identifying a test scenario. The title of the block is a name for
 the test case, which only needs to be unique for the test cases specified in
 that testsuite meta-data. The full canonical name for each test case is <path to

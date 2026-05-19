@@ -62,8 +62,8 @@ ZTEST(test_log_output_net, test_format)
 	err = cbprintf_package(package, sizeof(package), 0, TEST_STR);
 	zassert_true(err > 0);
 
-	log_output_process(&log_output, 1000000, DNAME, SNAME, NULL, LOG_LEVEL_INF, package, NULL,
-			   0, flags);
+	log_output_process(&log_output, 1000000, DNAME, SNAME, NULL, 0, LOG_LEVEL_INF, package,
+			   NULL, 0, flags);
 
 	mock_buffer[mock_len] = '\0';
 	zassert_str_equal(exp_str, mock_buffer, "expected: %s, is: %s", exp_str, mock_buffer);

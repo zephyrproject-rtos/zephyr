@@ -9,9 +9,29 @@ config HAS_MCUX
 	depends on SOC_FAMILY_KINETIS || SOC_FAMILY_NXP_IMX || SOC_FAMILY_LPC || \
 		SOC_FAMILY_NXP_S32 || SOC_FAMILY_NXP_IMXRT || SOC_FAMILY_NXP_RW || \
 		SOC_FAMILY_MCXN || SOC_FAMILY_MCXA || SOC_FAMILY_MCXW || SOC_FAMILY_MCXC || \
-		SOC_FAMILY_MCXE
+		SOC_FAMILY_MCXE || SOC_FAMILY_MCXL
 
 if	HAS_MCUX
+
+config MCUX_OPTIMIZED_MEMCPY
+	bool "Use NXP optimized memcpy"
+	depends on !MINIMAL_LIBC
+	depends on CPU_CORTEX_M
+	# Doesn't support CM0+ and CM23
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	default y if "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu"
+	help
+	  Use NXP's optimized assembly memcpy
+
+config MCUX_OPTIMIZED_MEMSET
+	bool "Use NXP optimized memset"
+	depends on !MINIMAL_LIBC
+	depends on CPU_CORTEX_M
+	# Doesn't support CM0+ and CM23
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	default y if "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu"
+	help
+	  Use NXP's optimized assembly memset
 
 config MCUX_CORE_SUFFIX
 	string
@@ -61,6 +81,16 @@ config NXP_FW_LOADER
 	   The firmware loader is used to load firmwares to embedded transceivers.
 	   It is needed to enable connectivity features.
 
+config NXP_COMPRESSED_WIFI_NB_FW
+	bool "Use compressed Wi-Fi or NB firmware"
+	depends on NXP_MONOLITHIC_WIFI || NXP_MONOLITHIC_NBU
+	help
+	  Enable this option to use a compressed Wi-Fi or Narrowband firmware image.
+	  Using a compressed firmware reduces flash memory consumption.
+	  However, the firmware must be decompressed during initialization
+	  after being downloaded, which increases boot time and
+	  initialization latency.
+
 config NXP_MONOLITHIC_NBU
 	bool "Narrowband Unit (BT/15.4) firmware monolithic build"
 	depends on HAS_NXP_MONOLITHIC_NBU
@@ -91,6 +121,12 @@ config NXP_SNPS_BLE_CTRL
 	depends on BT
 	help
 	  If enabled, the NXP SNPS BLE Controller will be included.
+
+config NXP_MCXW7X_BLE_CTRL
+	bool "Include MCXW7X NXP BLE Controller"
+	depends on NXP_NBU
+	help
+	  If enabled, MCXW7X NXP BLE Controller will be included.
 
 endif # HAS_MCUX
 

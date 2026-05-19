@@ -151,6 +151,24 @@ void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
 #if CONFIG_PMP_SLOTS > 8
 	pmp_cfg[1] = csr_read(pmpcfg2);
 #endif
+#if CONFIG_PMP_SLOTS > 16
+	pmp_cfg[2] = csr_read(pmpcfg4);
+#endif
+#if CONFIG_PMP_SLOTS > 24
+	pmp_cfg[3] = csr_read(pmpcfg6);
+#endif
+#if CONFIG_PMP_SLOTS > 32
+	pmp_cfg[4] = csr_read(pmpcfg8);
+#endif
+#if CONFIG_PMP_SLOTS > 40
+	pmp_cfg[5] = csr_read(pmpcfg10);
+#endif
+#if CONFIG_PMP_SLOTS > 48
+	pmp_cfg[6] = csr_read(pmpcfg12);
+#endif
+#if CONFIG_PMP_SLOTS > 56
+	pmp_cfg[7] = csr_read(pmpcfg14);
+#endif
 #else
 	/* RV32: Each pmpcfg register holds 4 entries. */
 	pmp_cfg[0] = csr_read(pmpcfg0);
@@ -158,6 +176,30 @@ void z_riscv_pmp_read_config(unsigned long *pmp_cfg, size_t pmp_cfg_size)
 #if CONFIG_PMP_SLOTS > 8
 	pmp_cfg[2] = csr_read(pmpcfg2);
 	pmp_cfg[3] = csr_read(pmpcfg3);
+#endif
+#if CONFIG_PMP_SLOTS > 16
+	pmp_cfg[4] = csr_read(pmpcfg4);
+	pmp_cfg[5] = csr_read(pmpcfg5);
+#endif
+#if CONFIG_PMP_SLOTS > 24
+	pmp_cfg[6] = csr_read(pmpcfg6);
+	pmp_cfg[7] = csr_read(pmpcfg7);
+#endif
+#if CONFIG_PMP_SLOTS > 32
+	pmp_cfg[8] = csr_read(pmpcfg8);
+	pmp_cfg[9] = csr_read(pmpcfg9);
+#endif
+#if CONFIG_PMP_SLOTS > 40
+	pmp_cfg[10] = csr_read(pmpcfg10);
+	pmp_cfg[11] = csr_read(pmpcfg11);
+#endif
+#if CONFIG_PMP_SLOTS > 48
+	pmp_cfg[12] = csr_read(pmpcfg12);
+	pmp_cfg[13] = csr_read(pmpcfg13);
+#endif
+#if CONFIG_PMP_SLOTS > 56
+	pmp_cfg[14] = csr_read(pmpcfg14);
+	pmp_cfg[15] = csr_read(pmpcfg15);
 #endif
 #endif
 }
@@ -178,11 +220,30 @@ void z_riscv_pmp_read_addr(unsigned long *pmp_addr, size_t pmp_addr_size)
 	__ASSERT(pmp_addr_size == (size_t)(CONFIG_PMP_SLOTS), "PMP address array size mismatch");
 
 #define PMPADDR_READ(x) pmp_addr[x] = csr_read(pmpaddr##x)
-	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
 
+	FOR_EACH(PMPADDR_READ, (;), 0, 1, 2, 3, 4, 5, 6, 7);
 #if CONFIG_PMP_SLOTS > 8
 	FOR_EACH(PMPADDR_READ, (;), 8, 9, 10, 11, 12, 13, 14, 15);
 #endif
+#if CONFIG_PMP_SLOTS > 16
+	FOR_EACH(PMPADDR_READ, (;), 16, 17, 18, 19, 20, 21, 22, 23);
+#endif
+#if CONFIG_PMP_SLOTS > 24
+	FOR_EACH(PMPADDR_READ, (;), 24, 25, 26, 27, 28, 29, 30, 31);
+#endif
+#if CONFIG_PMP_SLOTS > 32
+	FOR_EACH(PMPADDR_READ, (;), 32, 33, 34, 35, 36, 37, 38, 39);
+#endif
+#if CONFIG_PMP_SLOTS > 40
+	FOR_EACH(PMPADDR_READ, (;), 40, 41, 42, 43, 44, 45, 46, 47);
+#endif
+#if CONFIG_PMP_SLOTS > 48
+	FOR_EACH(PMPADDR_READ, (;), 48, 49, 50, 51, 52, 53, 54, 55);
+#endif
+#if CONFIG_PMP_SLOTS > 56
+	FOR_EACH(PMPADDR_READ, (;), 56, 57, 58, 59, 60, 61, 62, 63);
+#endif
+
 #undef PMPADDR_READ
 }
 
@@ -275,23 +336,8 @@ static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 	 * accessible as if no PMP entries were matched which is otherwise
 	 * the default behavior for m-mode without MPRV.
 	 */
-	bool ok = set_pmp_entry(index_p, PMP_R | PMP_W | PMP_X,
-				0, 0, pmp_addr, pmp_cfg, index_limit);
-
-#ifdef CONFIG_QEMU_TARGET
-	if (ok) {
-		/*
-		 * Workaround: The above produced 0x1fffffff which is correct.
-		 * But there is a QEMU bug that prevents it from interpreting
-		 * this value correctly. Hardcode the special case used by
-		 * QEMU to bypass this bug for now. The QEMU fix is here:
-		 * https://lists.gnu.org/archive/html/qemu-devel/2022-04/msg00961.html
-		 */
-		pmp_addr[*index_p - 1] = -1L;
-	}
-#endif
-
-	return ok;
+	return set_pmp_entry(index_p, PMP_R | PMP_W | PMP_X,
+			     0, 0, pmp_addr, pmp_cfg, index_limit);
 }
 #endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
@@ -357,21 +403,6 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 	}
 
 	print_pmp_entries(start, end, pmp_addr, pmp_cfg, "register write");
-
-#ifdef CONFIG_QEMU_TARGET
-	/*
-	 * A QEMU bug may create bad transient PMP representations causing
-	 * false access faults to be reported. Work around it by setting
-	 * pmp registers to zero from the update start point to the end
-	 * before updating them with new values.
-	 * The QEMU fix is here with more details about this bug:
-	 * https://lists.gnu.org/archive/html/qemu-devel/2022-06/msg02800.html
-	 */
-	static const unsigned long pmp_zero[CONFIG_PMP_SLOTS] = { 0, };
-
-	z_riscv_write_pmp_entries(start, CONFIG_PMP_SLOTS, false,
-				  pmp_zero, pmp_zero);
-#endif
 
 	z_riscv_write_pmp_entries(start, end, clear_trailing_entries,
 				  pmp_addr, pmp_cfg);
@@ -669,7 +700,7 @@ void z_riscv_pmp_init(void)
 	attr_cnt = set_pmp_mem_attr(&index, pmp_addr, pmp_cfg, ARRAY_SIZE(pmp_addr));
 #endif /* CONFIG_MEM_ATTR */
 
-#if defined(CONFIG_MEM_ATTR) || defined(CONFIG_PMP_NO_LOCK_GLOBAL)
+#ifdef CONFIG_PMP_KERNEL_MODE_DYNAMIC
 	/*
 	 * This early, we want to protect unlock PMP entries as soon as
 	 * possible. But we need a temporary default "catch all" PMP entry for

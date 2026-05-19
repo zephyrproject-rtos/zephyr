@@ -5,9 +5,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -23,6 +25,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #define BROADCAST_ENQUEUE_COUNT 2U
@@ -32,8 +35,8 @@ NET_BUF_POOL_FIXED_DEFINE(tx_pool,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
 
-static K_SEM_DEFINE(sem_broadcast_started, 0, 1);
-static K_SEM_DEFINE(sem_broadcast_stopped, 0, 1);
+static K_SEM_DEFINE(sem_broadcast_started, 0U, 1U);
+static K_SEM_DEFINE(sem_broadcast_stopped, 0U, 1U);
 
 static struct bt_cap_stream broadcast_source_stream;
 static struct bt_cap_stream *broadcast_stream;
@@ -50,12 +53,12 @@ static struct bt_bap_lc3_preset broadcast_preset_48_2_1 =
 	BT_BAP_LC3_UNICAST_PRESET_48_2_1(BT_AUDIO_LOCATION_FRONT_LEFT,
 					BT_AUDIO_CONTEXT_TYPE_MEDIA);
 
-struct bt_cap_initiator_broadcast_stream_param stream_params;
-struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
-struct bt_cap_initiator_broadcast_create_param create_param;
-struct bt_cap_broadcast_source *broadcast_source;
+static struct bt_cap_initiator_broadcast_stream_param stream_params;
+static struct bt_cap_initiator_broadcast_subgroup_param subgroup_param;
+static struct bt_cap_initiator_broadcast_create_param create_param;
+static struct bt_cap_broadcast_source *broadcast_source;
 static struct k_work_delayable audio_send_work;
-struct bt_le_ext_adv *ext_adv;
+static struct bt_le_ext_adv *ext_adv;
 
 static uint8_t tmap_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL), /* TMAS UUID */
@@ -120,6 +123,8 @@ static void broadcast_sent_cb(struct bt_bap_stream *stream)
 
 static void audio_timer_timeout(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	broadcast_sent_cb(&broadcast_stream->bap_stream);
 }
 
@@ -146,14 +151,14 @@ static int setup_extended_adv(struct bt_le_ext_adv **adv)
 
 	/* Set advertising data to have complete local name set */
 	err = bt_le_ext_adv_set_data(*adv, ad, ARRAY_SIZE(ad), NULL, 0);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to set advertising data (err %d)\n", err);
 		return 0;
 	}
 
 	/* Set periodic advertising parameters */
 	err = bt_le_per_adv_set_param(*adv, BT_BAP_PER_ADV_PARAM_BROADCAST_FAST);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to set periodic advertising parameters: %d\n",
 		       err);
 		return err;
@@ -175,7 +180,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	int err;
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-	if (err) {
+	if (err != 0) {
 		printk("Unable to generate broadcast ID: %d\n", err);
 		return err;
 	}
@@ -222,14 +227,14 @@ static int start_extended_adv(struct bt_le_ext_adv *adv)
 
 	/* Start extended advertising */
 	err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to start extended advertising: %d\n", err);
 		return err;
 	}
 
 	/* Enable Periodic Advertising */
 	err = bt_le_per_adv_start(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to enable periodic advertising: %d\n", err);
 		return err;
 	}
@@ -243,19 +248,19 @@ static int stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
 
 	/* Stop extended advertising */
 	err = bt_le_per_adv_stop(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to stop periodic advertising: %d\n", err);
 		return err;
 	}
 
 	err = bt_le_ext_adv_stop(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to stop extended advertising: %d\n", err);
 		return err;
 	}
 
 	err = bt_le_ext_adv_delete(adv);
-	if (err) {
+	if (err != 0) {
 		printk("Failed to delete extended advertising: %d\n", err);
 		return err;
 	}
@@ -343,7 +348,7 @@ void cap_initiator_setup(void)
 		}
 
 		/* Run for a little while */
-		k_sleep(K_SECONDS(10));
+		k_sleep(K_SECONDS(10U));
 
 		err = bt_cap_initiator_broadcast_audio_update(broadcast_source,
 							      new_metadata,
@@ -354,7 +359,7 @@ void cap_initiator_setup(void)
 		}
 
 		/* Run for a little while */
-		k_sleep(K_SECONDS(10));
+		k_sleep(K_SECONDS(10U));
 
 		err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 		if (err != 0) {

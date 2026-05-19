@@ -18,3 +18,11 @@ tests:
     platform_allow: qemu_x86_tiny
     extra_configs:
       - CONFIG_DEMAND_PAGING_STATS_USING_TIMING_FUNCTIONS=y
+  kernel.demand_paging.mem_map.lru:
+    tags:
+      - kernel
+      - mmu
+      - demand_paging
+    platform_allow: qemu_x86_tiny
+    extra_configs:
+      - CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT=y

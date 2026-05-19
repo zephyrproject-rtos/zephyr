@@ -65,6 +65,7 @@ MAKE_REG_HELPER(cnthps_ctl_el2);
 MAKE_REG_HELPER(cntv_ctl_el0)
 MAKE_REG_HELPER(cntv_cval_el0)
 MAKE_REG_HELPER(cntp_cval_el0)
+MAKE_REG_HELPER(cntps_cval_el1)
 MAKE_REG_HELPER(cntvct_el0);
 MAKE_REG_HELPER(cntvoff_el2);
 MAKE_REG_HELPER(currentel);
@@ -164,6 +165,14 @@ static ALWAYS_INLINE void disable_fiq(void)
 #define sev()	__asm__ volatile("sev" : : : "memory")
 #define wfe()	__asm__ volatile("wfe" : : : "memory")
 #define wfi()	__asm__ volatile("wfi" : : : "memory")
+#define wfet(v)	__asm__ volatile("msr S0_3_C1_C0_0, %0" :: "r"(v) : "memory")
+#define wfit(v)	__asm__ volatile("msr S0_3_C1_C0_1, %0" :: "r"(v) : "memory")
+
+static inline bool is_wfxt_implemented(void)
+{
+	return ((read_id_aa64isar2_el1() >> ID_AA64ISAR2_WFXT_SHIFT)
+		& ID_AA64ISAR2_WFXT_MASK) != 0;
+}
 
 static inline bool is_el_implemented(unsigned int el)
 {

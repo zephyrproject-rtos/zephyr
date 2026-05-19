@@ -319,7 +319,7 @@ static int dmic_ambiq_pdm_pm_action(const struct device *dev, enum pm_device_act
 }
 #endif /* CONFIG_PM_DEVICE */
 
-static const struct _dmic_ops dmic_ambiq_ops = {
+static DEVICE_API(dmic, dmic_ambiq_ops) = {
 	.configure = dmic_ambiq_pdm_configure,
 	.trigger = dmic_ambiq_pdm_trigger,
 	.read = dmic_ambiq_pdm_read,

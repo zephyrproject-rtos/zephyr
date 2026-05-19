@@ -15,7 +15,7 @@
 
 LOG_MODULE_REGISTER(lorawan_frag_flash, CONFIG_LORAWAN_SERVICES_LOG_LEVEL);
 
-#define TARGET_IMAGE_AREA FIXED_PARTITION_ID(slot1_partition)
+#define TARGET_IMAGE_AREA PARTITION_ID(slot1_partition)
 
 struct frag_cache_entry {
 	uint32_t addr;

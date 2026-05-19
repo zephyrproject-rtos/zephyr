@@ -26,7 +26,8 @@ LOG_MODULE_REGISTER(spi_bflb, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
 
-#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X)
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
+	defined(CONFIG_SOC_SERIES_BL70XL)
 #define GLB_SPI_MODE_ADDRESS (GLB_BASE + GLB_PARM_OFFSET)
 /* be careful: counted in words here */
 #define SPI_FIFO_SIZE		4
@@ -57,7 +58,8 @@ struct spi_bflb_data {
 	struct spi_context ctx;
 };
 
-#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL60X)
+#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL60X) || \
+	defined(CONFIG_SOC_SERIES_BL70XL)
 
 static uint32_t spi_bflb_get_clk(void)
 {

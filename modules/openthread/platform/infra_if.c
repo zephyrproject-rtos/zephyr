@@ -7,10 +7,10 @@
 #include "openthread/platform/infra_if.h"
 #include "icmpv6.h"
 #include "ipv6.h"
+#include "route_ipv6.h"
 #include "openthread_border_router.h"
 #include <common/code_utils.hpp>
 #include <platform-zephyr.h>
-#include <route.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/icmp.h>
@@ -154,7 +154,7 @@ otError infra_if_init(otInstance *instance, struct net_if *ail_iface)
 	net_ipv6_addr_create_ll_allrouters_mcast(&mcast_addr);
 	ret = net_ipv6_mld_join(ail_iface, &mcast_addr);
 
-	VerifyOrExit((ret == 0 || ret == -EALREADY), error = OT_ERROR_FAILED);
+	VerifyOrExit((ret == 0), error = OT_ERROR_FAILED);
 exit:
 	return error;
 }
@@ -228,9 +228,11 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 				       sizeof(br_omr_addr->mFields.m8));
 				net_ipv6_nbr_add(ot_iface, &nexthop, net_if_get_link_addr(ot_iface),
 						 false, NET_IPV6_NBR_STATE_STALE);
-				route_added = net_route_add(ot_iface, &rio_prefix, rio->prefix_len,
-							    &nexthop, rio->route_lifetime,
-							    rio->flags.prf);
+				route_added = net_route_ipv6_add(ot_iface, &rio_prefix,
+								 rio->prefix_len,
+								 &nexthop,
+								 rio->route_lifetime,
+								 rio->flags.prf);
 			}
 			break;
 		default:
@@ -239,9 +241,9 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 	}
 }
 
-static int handle_icmp6_input(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
-			      struct net_icmp_ip_hdr *hdr,
-			      struct net_icmp_hdr *icmp_hdr, void *user_data)
+static enum net_verdict handle_icmp6_input(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
+					   struct net_icmp_ip_hdr *hdr,
+					   struct net_icmp_hdr *icmp_hdr, void *user_data)
 {
 	uint16_t length = net_pkt_get_len(pkt);
 	struct otbr_msg_ctx *req = NULL;
@@ -264,10 +266,10 @@ static int handle_icmp6_input(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
 
 exit:
 	if (error == OT_ERROR_NONE) {
-		return 0;
+		return NET_CONTINUE;
 	}
 
-	return -1;
+	return NET_DROP;
 }
 
 static void infra_if_handle_backbone_icmp6(struct otbr_msg_ctx *msg_ctx_ptr)

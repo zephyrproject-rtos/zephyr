@@ -13,9 +13,13 @@
 #include "sx126x_hal.h"
 #include "sx126x_regs.h"
 
-#define SX126X_STATE_IDLE 0
-#define SX126X_STATE_TX   1
-#define SX126X_STATE_RX   2
+enum sx126x_state {
+	SX126X_STATE_SLEEP = 0,
+	SX126X_STATE_IDLE,
+	SX126X_STATE_TX,
+	SX126X_STATE_RX,
+	SX126X_STATE_RX_DUTY_CYCLE,
+};
 
 struct sx126x_tx_result {
 	int status;
@@ -53,6 +57,12 @@ struct sx126x_data {
 	/* Async RX callback */
 	lora_recv_cb rx_cb;
 	void *rx_cb_user_data;
+
+	/* RX duty cycle parameters (in SX126x timeout ticks) */
+	struct {
+		uint32_t rx_period;
+		uint32_t sleep_period;
+	} duty_cycle;
 
 	/* Async TX signal */
 	struct k_poll_signal *tx_async_signal;

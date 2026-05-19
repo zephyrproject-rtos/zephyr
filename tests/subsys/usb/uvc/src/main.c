@@ -45,7 +45,7 @@ void *uvc_test_enable(void)
 {
 	int ret;
 
-	uvc_set_video_dev(uvc_dev, video_dev);
+	uvc_device_init(uvc_dev, video_dev);
 
 	for (size_t i = 0; i < ARRAY_SIZE(test_formats); i++) {
 		struct video_format fmt = test_formats[i];
@@ -53,11 +53,12 @@ void *uvc_test_enable(void)
 		ret = video_estimate_fmt_size(&fmt);
 		zassert_ok(ret);
 
-		ret = uvc_add_format(uvc_dev, &fmt);
+		ret = uvc_device_add_format(uvc_dev, &fmt);
 		zassert_ok(ret);
 	}
 
-	k_sleep(K_MSEC(500));
+	ret = uvc_device_enable(uvc_dev);
+	zassert_ok(ret, "Failed to initialize UVC device class");
 
 	ret = usbh_init(uhs_ctx);
 	zassert_ok(ret, "Failed to initialize USB host");
@@ -102,6 +103,9 @@ void uvc_test_shutdown(void *f)
 
 	ret = usbd_shutdown(test_usbd);
 	zassert_ok(ret, "Failed to shutdown device support");
+
+	ret = uvc_device_shutdown(uvc_dev);
+	zassert_ok(ret, "Failed to shutodwn UVC device class");
 
 	LOG_INF("Device support disabled");
 

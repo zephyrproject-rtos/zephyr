@@ -1,0 +1,23 @@
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: Microchip AES Accelerator G1
+
+description: |
+  Microchip AES (Advanced Encryption Standard) Accelerator G1.
+
+  AES device Group G1 supports following hardware peripherals:
+    - module name="AES" id="6149" version="702"
+
+compatible: "microchip,aes-g1"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true

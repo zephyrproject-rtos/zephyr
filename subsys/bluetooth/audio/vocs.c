@@ -13,6 +13,7 @@
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/vocs.h>
@@ -26,10 +27,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "audio_internal.h"
 #include "vocs_internal.h"
@@ -44,6 +47,8 @@ LOG_MODULE_REGISTER(bt_vocs);
 #if defined(CONFIG_BT_VOCS)
 static void offset_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -59,6 +64,8 @@ static ssize_t read_offset_state(struct bt_conn *conn, const struct bt_gatt_attr
 
 static void location_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -83,7 +90,7 @@ static void notify_work_reschedule(struct bt_vocs_server *inst, enum bt_vocs_not
 
 	atomic_set_bit(inst->notify, notify);
 
-	err = k_work_reschedule(&inst->notify_work, K_NO_WAIT);
+	err = k_work_reschedule(&inst->notify_work, delay);
 	if (err < 0) {
 		LOG_ERR("Failed to reschedule %s notification err %d",
 			vocs_notify_str(notify), err);
@@ -137,6 +144,9 @@ static ssize_t write_location(struct bt_conn *conn, const struct bt_gatt_attr *a
 	struct bt_vocs_server *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 	enum bt_audio_location new_location;
 
+	ARG_UNUSED(conn);
+	ARG_UNUSED(flags);
+
 	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
@@ -183,6 +193,9 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 	struct bt_vocs_server *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 	const struct bt_vocs_control *cp = buf;
 	bool notify = false;
+
+	ARG_UNUSED(conn);
+	ARG_UNUSED(flags);
 
 	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -244,6 +257,8 @@ static ssize_t write_vocs_control(struct bt_conn *conn, const struct bt_gatt_att
 #if defined(CONFIG_BT_VOCS)
 static void output_desc_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 #endif /* CONFIG_BT_VOCS */
@@ -252,6 +267,9 @@ static ssize_t write_output_desc(struct bt_conn *conn, const struct bt_gatt_attr
 				 const void *buf, uint16_t len, uint16_t offset, uint8_t flags)
 {
 	struct bt_vocs_server *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+
+	ARG_UNUSED(conn);
+	ARG_UNUSED(flags);
 
 	if (offset) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -456,7 +474,7 @@ int bt_vocs_register(struct bt_vocs *vocs,
 	}
 
 	err = bt_gatt_service_register(inst->service_p);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Could not register VOCS service");
 		return err;
 	}

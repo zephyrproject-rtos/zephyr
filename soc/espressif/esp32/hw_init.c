@@ -19,7 +19,6 @@
 #include <flash_init.h>
 #include <soc_flash_init.h>
 #include <soc_init.h>
-#include <soc_random.h>
 
 const static char *TAG = "hw_init";
 
@@ -32,6 +31,8 @@ int hardware_init(void)
 
 	WSR(MEMCTL, memctl);
 #endif /*XCHAL_ERRATUM_572*/
+
+	soc_hw_init();
 
 #ifdef CONFIG_BOOTLOADER_REGION_PROTECTION_ENABLE
 	esp_cpu_configure_region_protection();
@@ -52,7 +53,7 @@ int hardware_init(void)
 	bootloader_clock_configure();
 
 #ifdef CONFIG_ESP_CONSOLE
-	/* initialize console, from now on, we can log */
+	/* initialize console right after clock change, from now on, we can log */
 	esp_console_init();
 	print_banner();
 #endif /* CONFIG_ESP_CONSOLE */
@@ -84,8 +85,6 @@ int hardware_init(void)
 
 	check_wdt_reset();
 	config_wdt();
-
-	soc_random_enable();
 
 	return 0;
 }

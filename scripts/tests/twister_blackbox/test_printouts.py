@@ -13,18 +13,16 @@ import pytest
 import sys
 import re
 
-# pylint: disable=no-name-in-module
 from conftest import (
     TEST_DATA,
     ZEPHYR_BASE,
     clear_log_in_test,
-    sample_filename_mock,
-    suite_filename_mock
+    test_filename_mock
 )
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
 class TestPrintOuts:
     TESTDATA_1 = [
         (
@@ -465,7 +463,7 @@ class TestPrintOuts:
 
         assert str(sys_exit.value) == '0'
 
-    @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_size(self, capfd, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'samples', 'hello_world')
@@ -484,7 +482,7 @@ class TestPrintOuts:
         capfd.readouterr()
 
         p = os.path.relpath(path, ZEPHYR_BASE)
-        prev_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr', p,
+        prev_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr_gnu', p,
                                  'sample.basic.helloworld', 'zephyr', 'zephyr.elf')
         args = ['--size', prev_path]
 

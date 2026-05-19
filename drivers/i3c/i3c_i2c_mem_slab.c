@@ -12,12 +12,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(i3c, CONFIG_I3C_LOG_LEVEL);
 
-K_MEM_SLAB_DEFINE(i3c_i2c_device_desc_pool, sizeof(struct i3c_i2c_device_desc),
-	CONFIG_I3C_I2C_NUM_OF_DESC_MEM_SLABS, 4);
+K_MEM_SLAB_DEFINE_TYPE(i3c_i2c_device_desc_pool, struct i3c_i2c_device_desc,
+		       CONFIG_I3C_I2C_NUM_OF_DESC_MEM_SLABS);
 
 struct i3c_i2c_device_desc *i3c_i2c_device_desc_alloc(void)
 {
-	struct i3c_i2c_device_desc *desc;
+	struct i3c_i2c_device_desc *desc = NULL;
 
 	if (k_mem_slab_alloc(&i3c_i2c_device_desc_pool, (void **)&desc, K_NO_WAIT) == 0) {
 		memset(desc, 0, sizeof(struct i3c_i2c_device_desc));

@@ -11,6 +11,7 @@
 
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/fff.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
 
@@ -20,6 +21,9 @@
 
 static void mock_init_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
+	ARG_UNUSED(test);
+	ARG_UNUSED(fixture);
+
 	mock_bap_broadcast_source_init();
 }
 
@@ -27,7 +31,12 @@ ZTEST_RULE(mock_rule, mock_init_rule_before, NULL);
 
 static void bap_broadcast_source_test_cb_register_suite_after(void *f)
 {
-	bt_bap_broadcast_source_unregister_cb(&mock_bap_broadcast_source_cb);
+	int err;
+
+	ARG_UNUSED(f);
+
+	err = bt_bap_broadcast_source_unregister_cb(&mock_bap_broadcast_source_cb);
+	zassert_true(err == 0 || err == -ENOENT, "Unexpected error: %d", err);
 }
 
 ZTEST_SUITE(bap_broadcast_source_test_cb_register_suite, NULL, NULL, NULL,

@@ -253,7 +253,7 @@ def process_pr(gh, maintainer_file, number):
         return
 
     # areas where assignment happens if only said areas are affected
-    meta_areas = ['Release Notes', 'Documentation', 'Samples', 'Tests']
+    meta_areas = ['Release Notes', 'Documentation', 'Samples', 'Tests', 'Release']
 
     collab_per_path = set()
     additional_reviews = set()

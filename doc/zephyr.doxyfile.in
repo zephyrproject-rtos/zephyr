@@ -1107,6 +1107,7 @@ RECURSIVE              = YES
 
 EXCLUDE                = @ZEPHYR_BASE@/include/zephyr/portability/cmsis_os.h \
                          @ZEPHYR_BASE@/include/zephyr/portability/cmsis_os2.h \
+                         @ZEPHYR_BASE@/include/zephyr/toolchain/ \
                          @ZEPHYR_BASE@/include/zephyr/drivers/wifi/nrf_wifi
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
@@ -2543,8 +2544,6 @@ PREDEFINED             = __DOXYGEN__ \
                          CONFIG_BT_SMP_APP_PAIRING_ACCEPT \
                          CONFIG_CBPRINTF_LIBC_SUBSTS \
                          CONFIG_ERRNO \
-                         CONFIG_FLASH_JESD216_API \
-                         CONFIG_FLASH_PAGE_LAYOUT \
                          CONFIG_FP16 \
                          CONFIG_FPU \
                          CONFIG_FPU_SHARING \

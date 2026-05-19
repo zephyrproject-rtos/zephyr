@@ -107,4 +107,61 @@ struct uart_stm32_data {
 #endif
 };
 
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+static inline uint32_t ll_usart_is_active_txe(USART_TypeDef *usart)
+#else /* CONFIG_SOC_SERIES_STM32MP1X */
+static inline uint32_t ll_usart_is_active_txe(const USART_TypeDef *usart)
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+{
+#if defined(CONFIG_STM32_HAL2)
+	return LL_USART_IsActiveFlag_TXE_TXFNF(usart);
+#else
+	return LL_USART_IsActiveFlag_TXE(usart);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static inline void ll_usart_irq_rx_enable(USART_TypeDef *usart)
+{
+#if defined(CONFIG_STM32_HAL2)
+	LL_USART_EnableIT_RXNE_RXFNE(usart);
+#else
+	LL_USART_EnableIT_RXNE(usart);
+#endif
+}
+
+static inline void ll_usart_irq_rx_disable(USART_TypeDef *usart)
+{
+#if defined(CONFIG_STM32_HAL2)
+	LL_USART_DisableIT_RXNE_RXFNE(usart);
+#else
+	LL_USART_DisableIT_RXNE(usart);
+#endif
+}
+
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+static inline uint32_t ll_usart_is_active_rxne(USART_TypeDef *usart)
+#else /* CONFIG_SOC_SERIES_STM32MP1X */
+static inline uint32_t ll_usart_is_active_rxne(const USART_TypeDef *usart)
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+{
+#if defined(CONFIG_STM32_HAL2)
+	return LL_USART_IsActiveFlag_RXNE_RXFNE(usart);
+#else
+	return LL_USART_IsActiveFlag_RXNE(usart);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+#if defined(CONFIG_SOC_SERIES_STM32MP1X)
+static inline uint32_t ll_usart_is_enabled_rxne(USART_TypeDef *usart)
+#else /* CONFIG_SOC_SERIES_STM32MP1X */
+static inline uint32_t ll_usart_is_enabled_rxne(const USART_TypeDef *usart)
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
+{
+#if defined(CONFIG_STM32_HAL2)
+	return LL_USART_IsEnabledIT_RXNE_RXFNE(usart);
+#else
+	return LL_USART_IsEnabledIT_RXNE(usart);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
 #endif	/* ZEPHYR_DRIVERS_SERIAL_UART_STM32_H_ */

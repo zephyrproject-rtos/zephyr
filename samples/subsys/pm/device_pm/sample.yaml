@@ -14,8 +14,6 @@ tests:
     harness_config:
       type: multi_line
       regex:
-        - "parent suspending\\.\\."
-        - "child suspending\\.\\."
         - "Device PM sample app start"
         - "parent resuming\\.\\."
         - "child resuming\\.\\."

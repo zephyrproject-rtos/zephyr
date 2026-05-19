@@ -18,7 +18,6 @@ config SOC_SERIES_STM32N6X
 	select INIT_ARCH_HW_AT_BOOT
 	select SOC_RESET_HOOK
 	select SOC_EARLY_INIT_HOOK
-	select TRUSTED_EXECUTION_SECURE
 	select BUILD_OUTPUT_BIN
 	# MPU_GAP_FILLING is default when !USERSPACE, select it in the other case as well.
 	select MPU_GAP_FILLING if USERSPACE

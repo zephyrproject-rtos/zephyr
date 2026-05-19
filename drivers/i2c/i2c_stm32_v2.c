@@ -33,8 +33,18 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2);
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
+BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT();
+
+#if CONFIG_STM32_HAL2
+#define STM32_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period) \
+	LL_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period)
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period) \
+	__LL_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period)
+#endif /* CONFIG_STM32_HAL2 */
+
 #ifdef CONFIG_I2C_STM32_V2_TIMING
-/* Use the algorithm to calcuate the I2C timing */
+/* Use the algorithm to calculate the I2C timing */
 #ifndef I2C_STM32_VALID_TIMING_NBR
 #define I2C_STM32_VALID_TIMING_NBR                 128U
 #endif
@@ -120,6 +130,30 @@ static const struct i2c_stm32_charac_t i2c_stm32_charac[] = {
 static struct i2c_stm32_timings_t i2c_valid_timing[I2C_STM32_VALID_TIMING_NBR];
 static uint32_t i2c_valid_timing_nbr;
 #endif /* CONFIG_I2C_STM32_V2_TIMING */
+
+#define I2C_STM32_WAIT_POLL_SLEEP_USEC 10U
+
+#if defined(CONFIG_I2C_TARGET)
+static inline int wait_bus_idle(const struct device *dev, uint32_t timeout_us)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
+	k_timepoint_t end = sys_timepoint_calc(K_USEC(timeout_us));
+
+	/* Called from synchronous transfer path only (thread context). */
+	__ASSERT_NO_MSG(!k_is_in_isr());
+
+	while (LL_I2C_IsActiveFlag_BUSY(i2c)) {
+		if (sys_timepoint_expired(end)) {
+			return -EBUSY;
+		}
+
+		(void)k_usleep(I2C_STM32_WAIT_POLL_SLEEP_USEC);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_I2C_TARGET */
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 static int configure_dma(struct stream const *dma, struct dma_config *dma_cfg,
@@ -210,6 +244,17 @@ static void dma_finish(const struct device *dev, struct i2c_msg *msg)
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 
 #ifdef CONFIG_I2C_STM32_INTERRUPT
+static inline void i2c_stm32_signal_xfer_done(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+	if (data->current.msg == NULL) {
+		return;
+	}
+
+	data->current.msg = NULL;
+	k_sem_give(&data->device_sync_sem);
+}
 
 static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 {
@@ -229,12 +274,22 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 }
 
 #if defined(CONFIG_I2C_TARGET)
-static void i2c_stm32_target_event(const struct device *dev)
+static inline void i2c_stm32_clear_controller_request(I2C_TypeDef *i2c)
+{
+	unsigned int key = irq_lock();
+
+	/* Errata 2.19.3/2.19.4: clear any pending controller request so it
+	 * cannot restart after own-address recognition.
+	 */
+	stm32_reg_clear_bits(&i2c->CR2, I2C_CR2_START | I2C_CR2_STOP);
+	irq_unlock(key);
+}
+
+static struct i2c_target_config *i2c_stm32_target_cfg_get(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
-	const struct i2c_target_callbacks *target_cb;
 	struct i2c_target_config *target_cfg = NULL;
 
 	if (data->target_cfg != NULL) {
@@ -269,6 +324,76 @@ static void i2c_stm32_target_event(const struct device *dev)
 
 	if (target_cfg == NULL) {
 		__ASSERT_NO_MSG(0);
+		return NULL;
+	}
+
+	return target_cfg;
+}
+
+static void i2c_stm32_target_addr_setup(const struct device *dev,
+					struct i2c_target_config *target_cfg, bool clear_addr)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
+	const struct i2c_target_callbacks *target_cb = target_cfg->callbacks;
+	uint32_t dir;
+
+	if (clear_addr) {
+		LL_I2C_ClearFlag_ADDR(i2c);
+	}
+
+	dir = LL_I2C_GetTransferDirection(i2c);
+	if (dir == LL_I2C_DIRECTION_WRITE) {
+		if (target_cb->write_requested(target_cfg) < 0) {
+			LOG_ERR("Error initiating writing");
+		} else {
+			LL_I2C_EnableIT_RX(i2c);
+		}
+	} else {
+		uint8_t val;
+
+		if (target_cb->read_requested(target_cfg, &val) < 0) {
+			LOG_ERR("Error initiating reading");
+		} else {
+			LL_I2C_TransmitData8(i2c, val);
+			LL_I2C_EnableIT_TX(i2c);
+		}
+	}
+
+	LL_I2C_EnableIT_STOP(i2c);
+	LL_I2C_EnableIT_NACK(i2c);
+	LL_I2C_EnableIT_TC(i2c);
+	LL_I2C_EnableIT_ERR(i2c);
+}
+
+static void i2c_stm32_controller_abort_to_target(const struct device *dev, bool own_addr_match)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+
+	if (own_addr_match) {
+		LL_I2C_ClearFlag_ADDR(cfg->i2c);
+		i2c_stm32_clear_controller_request(cfg->i2c);
+	}
+
+	i2c_stm32_disable_transfer_interrupts(dev);
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	LL_I2C_DisableDMAReq_RX(cfg->i2c);
+	LL_I2C_DisableDMAReq_TX(cfg->i2c);
+#endif
+	LL_I2C_ClearFlag_TXE(cfg->i2c);
+	data->controller_active = false;
+	i2c_stm32_signal_xfer_done(dev);
+}
+
+static void i2c_stm32_target_event(const struct device *dev)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	I2C_TypeDef *i2c = cfg->i2c;
+	struct i2c_target_config *target_cfg = i2c_stm32_target_cfg_get(dev);
+	const struct i2c_target_callbacks *target_cb;
+
+	if (target_cfg == NULL) {
 		return;
 	}
 
@@ -318,35 +443,38 @@ static void i2c_stm32_target_event(const struct device *dev)
 	}
 
 	if (LL_I2C_IsActiveFlag_ADDR(i2c)) {
-		uint32_t dir;
-
-		LL_I2C_ClearFlag_ADDR(i2c);
-
-		dir = LL_I2C_GetTransferDirection(i2c);
-		if (dir == LL_I2C_DIRECTION_WRITE) {
-			if (target_cb->write_requested(target_cfg) < 0) {
-				LOG_ERR("Error initiating writing");
-			} else {
-				LL_I2C_EnableIT_RX(i2c);
-			}
-		} else {
-			uint8_t val;
-
-			if (target_cb->read_requested(target_cfg, &val) < 0) {
-				LOG_ERR("Error initiating reading");
-			} else {
-				LL_I2C_TransmitData8(i2c, val);
-				LL_I2C_EnableIT_TX(i2c);
-			}
-		}
-
-		LL_I2C_EnableIT_STOP(i2c);
-		LL_I2C_EnableIT_NACK(i2c);
-		LL_I2C_EnableIT_TC(i2c);
-		LL_I2C_EnableIT_ERR(i2c);
+		i2c_stm32_target_addr_setup(dev, target_cfg, true);
 	}
 }
 
+static bool i2c_stm32_target_preempt_controller_event(const struct device *dev, uint32_t isr)
+{
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_target_config *target_cfg;
+
+	if (!data->target_attached) {
+		return false;
+	}
+
+	if (data->controller_active && ((isr & I2C_ISR_ADDR) != 0U)) {
+		target_cfg = i2c_stm32_target_cfg_get(dev);
+		if (target_cfg == NULL) {
+			return true;
+		}
+
+		data->current.is_arlo = 1U;
+		i2c_stm32_controller_abort_to_target(dev, true);
+		i2c_stm32_target_addr_setup(dev, target_cfg, false);
+		return true;
+	}
+
+	if (!data->controller_active) {
+		i2c_stm32_target_event(dev);
+		return true;
+	}
+
+	return false;
+}
 /* Attach and start I2C as target */
 int i2c_stm32_target_register(const struct device *dev,
 			      struct i2c_target_config *config)
@@ -392,7 +520,7 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	if (!data->target_cfg) {
 		data->target_cfg = config;
-		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			LL_I2C_SetOwnAddress1(i2c, config->address, LL_I2C_OWNADDRESS1_10BIT);
 			LOG_DBG("i2c: target #1 registered with 10-bit address");
 		} else {
@@ -406,7 +534,7 @@ int i2c_stm32_target_register(const struct device *dev,
 	} else {
 		data->target2_cfg = config;
 
-		if (data->target2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if (data->target2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			return -EINVAL;
 		}
 		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
@@ -494,8 +622,7 @@ void i2c_stm32_event(const struct device *dev)
 	uint32_t isr = stm32_reg_read(&regs->ISR);
 
 #if defined(CONFIG_I2C_TARGET)
-	if (data->target_attached && !data->controller_active) {
-		i2c_stm32_target_event(dev);
+	if (i2c_stm32_target_preempt_controller_event(dev, isr) == true) {
 		return;
 	}
 #endif
@@ -592,14 +719,14 @@ void i2c_stm32_event(const struct device *dev)
 	 * i2c controller had a chance to clear its interrupt flags due
 	 * to bus delays
 	 */
-	(void)LL_I2C_ReadReg(regs, ISR);
+	(void)stm32_reg_read(&regs->ISR);
 	return;
 
 irq_xfer_completed:
 	/* Disable IRQ:s involved in data transfer */
 	i2c_stm32_disable_transfer_interrupts(dev);
 	/* Wakeup thread */
-	k_sem_give(&data->device_sync_sem);
+	i2c_stm32_signal_xfer_done(dev);
 }
 
 int i2c_stm32_error(const struct device *dev)
@@ -635,13 +762,14 @@ int i2c_stm32_error(const struct device *dev)
 	 */
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
-		data->current.is_err = 1U;
 #if defined(CONFIG_I2C_TARGET)
-		if (error_cb != NULL) {
-			error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+		if (!data->controller_active) {
+			if (error_cb != NULL) {
+				error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+			}
+			goto end;
 		}
 #endif
-		goto end;
 	}
 
 #if defined(CONFIG_SMBUS_STM32_SMBALERT)
@@ -663,7 +791,7 @@ end:
 #endif
 	i2c_stm32_disable_transfer_interrupts(dev);
 	/* Wakeup thread */
-	k_sem_give(&data->device_sync_sem);
+	i2c_stm32_signal_xfer_done(dev);
 	return -EIO;
 }
 
@@ -672,10 +800,11 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 	struct i2c_stm32_data *data = dev->data;
 	const struct i2c_stm32_config *cfg = dev->config;
 	bool keep_enabled = (msg->flags & I2C_MSG_STOP) == 0U;
+	bool disable_i2c;
 	int ret;
 
 	/* Wait for IRQ to complete or timeout */
-	ret = k_sem_take(&data->device_sync_sem, K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC));
+	ret = k_sem_take(&data->device_sync_sem, K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS));
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	/* Stop DMA and invalidate cache if needed */
@@ -707,24 +836,102 @@ static int stm32_i2c_irq_msg_finish(const struct device *dev, struct i2c_msg *ms
 	if (!keep_enabled || (ret != 0)) {
 		data->controller_active = false;
 	}
-	/* Don't disable I2C if a target is attached */
-	if (data->target_attached) {
-		keep_enabled = true;
-	}
 #endif
 
-	/* Don't disable I2C if SMBus Alert is active */
+	disable_i2c = !keep_enabled || (ret != 0);
+#if defined(CONFIG_I2C_TARGET)
+	if (data->target_attached) {
+		disable_i2c = false;
+	}
+#endif
 	if (data->smbalert_active) {
-		keep_enabled = true;
+		disable_i2c = false;
 	}
 
-	/* If I2C no longer need to be enabled or on error */
-	if (!keep_enabled || (ret != 0)) {
+	/* If I2C no longer need to be enabled and no other mode keeps it alive */
+	if (disable_i2c) {
 		LL_I2C_Disable(cfg->i2c);
 	}
 
 	return ret;
 }
+
+static int i2c_stm32_irq_prepare_start(const struct device *dev, struct i2c_msg *msg, uint32_t isr,
+				       I2C_TypeDef *regs, uint32_t *cr2,
+				       bool starting_controller_session)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+#if !defined(CONFIG_I2C_TARGET)
+	ARG_UNUSED(starting_controller_session);
+#endif
+
+	if ((isr & I2C_ISR_TCR) != 0U) {
+		return 0;
+	}
+
+#if defined(CONFIG_I2C_TARGET)
+	if (starting_controller_session && data->target_attached &&
+	    (wait_bus_idle(dev, CONFIG_I2C_STM32_WAIT_BUS_IDLE_TIMEOUT_USEC) != 0)) {
+		data->current.msg = NULL;
+		return -EBUSY;
+	}
+#endif
+
+	/* As TCR is not set, expect TC to be set or that this is a (re)start message
+	 * - msg->flags contains I2C_MSG_RESTART (for first start) or
+	 * - TC in ISR register is set which happens when IRQ handler
+	 *   has finalized its transfer and is waiting for restart
+	 * For both cases, a new start condition shall be sent
+	 */
+	__ASSERT_NO_MSG(((isr & I2C_ISR_TC) != 0U) || ((msg->flags & I2C_MSG_RESTART) != 0U));
+
+	if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
+		*cr2 &= ~I2C_CR2_RD_WRN;
+#ifndef CONFIG_I2C_STM32_V2_DMA
+		/* Prepare first byte in TX buffer before transfer start as a
+		 * workaround for errata: "Transmission stalled after first byte transfer"
+		 */
+		if (data->current.len > 0U) {
+			LL_I2C_TransmitData8(regs, *data->current.buf);
+			data->current.len--;
+			data->current.buf++;
+		}
+#endif
+	} else {
+		*cr2 |= I2C_CR2_RD_WRN;
+	}
+
+	/* Issue (re)start condition */
+	*cr2 |= I2C_CR2_START;
+
+	return 0;
+}
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+static int i2c_stm32_irq_start_dma(const struct device *dev, struct i2c_msg *msg, I2C_TypeDef *regs)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+	if (dma_xfer_start(dev, msg) == 0) {
+		return 0;
+	}
+
+#if defined(CONFIG_I2C_TARGET)
+	data->controller_active = false;
+	if (!data->target_attached && !data->smbalert_active) {
+		LL_I2C_Disable(regs);
+	}
+#else
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(regs);
+	}
+#endif
+	data->current.msg = NULL;
+
+	return -EIO;
+}
+#endif
 
 static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t *next_msg_flags, uint16_t target)
@@ -732,6 +939,15 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *regs = cfg->i2c;
+	int ret;
+	bool starting_controller_session = false;
+
+#if defined(CONFIG_I2C_TARGET)
+	starting_controller_session = !data->controller_active;
+#endif
+
+	/* Drop stale completion token from a previous transfer before arming a new one. */
+	k_sem_reset(&data->device_sync_sem);
 
 	data->current.len = msg->len;
 	data->current.buf = msg->buf;
@@ -739,10 +955,6 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	data->current.is_nack = 0U;
 	data->current.is_err = 0U;
 	data->current.msg = msg;
-
-#if defined(CONFIG_I2C_TARGET)
-	data->controller_active = true;
-#endif
 
 #if defined(CONFIG_I2C_STM32_V2_DMA)
 	if (!stm32_buf_in_nocache((uintptr_t)msg->buf, msg->len) &&
@@ -798,52 +1010,29 @@ static int stm32_i2c_irq_xfer(const struct device *dev, struct i2c_msg *msg,
 	 * Reload transfer will start right after writing new length
 	 * to CR2 below
 	 */
-	if ((isr & I2C_ISR_TCR) == 0U) {
-
-		/* As TCR is not set, expect TC to be set or that this is a (re)start message
-		 * - msg->flags contains I2C_MSG_RESTART (for first start) or
-		 * - TC in ISR register is set which happens when IRQ handler
-		 *   has finalized its transfer and is waiting for restart
-		 * For both cases, a new start condition shall be sent
-		 */
-		__ASSERT_NO_MSG(((isr & I2C_ISR_TC) != 0U) ||
-				((msg->flags & I2C_MSG_RESTART) != 0U));
-
-		if ((msg->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			cr2 &= ~I2C_CR2_RD_WRN;
-#ifndef CONFIG_I2C_STM32_V2_DMA
-			/* Prepare first byte in TX buffer before transfer start as a
-			 * workaround for errata: "Transmission stalled after first byte transfer"
-			 */
-			if (data->current.len > 0U) {
-				LL_I2C_TransmitData8(regs, *data->current.buf);
-				data->current.len--;
-				data->current.buf++;
-			}
-#endif
-
-		} else {
-			cr2 |= I2C_CR2_RD_WRN;
-		}
-		/* Issue (re)start condition */
-		cr2 |= I2C_CR2_START;
+	ret = i2c_stm32_irq_prepare_start(dev, msg, isr, regs, &cr2, starting_controller_session);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/* Set common interrupt enable bits */
 	uint32_t cr1 = I2C_CR1_ERRIE | I2C_CR1_STOPIE | I2C_CR1_TCIE | I2C_CR1_NACKIE;
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
-	if (dma_xfer_start(dev, msg) != 0) {
-		LL_I2C_Disable(regs);
-#if defined(CONFIG_I2C_TARGET)
-		data->controller_active = false;
-#endif
-		return -EIO;
+	ret = i2c_stm32_irq_start_dma(dev, msg, regs);
+	if (ret != 0) {
+		return ret;
 	}
 #else
 	/* If not using DMA, also enable RX and TX empty interrupts */
 	cr1 |= I2C_CR1_TXIE | I2C_CR1_RXIE;
 #endif /* CONFIG_I2C_STM32_V2_DMA */
+
+#if defined(CONFIG_I2C_TARGET)
+	if (starting_controller_session) {
+		data->controller_active = true;
+	}
+#endif
 
 	/* Commit configuration to I2C controller and start transfer */
 	stm32_reg_write(&regs->CR2, cr2);
@@ -901,6 +1090,8 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
+	data->current.is_arlo = 0U;
+
 	if (LL_I2C_IsEnabledReloadMode(i2c)) {
 		LL_I2C_SetTransferSize(i2c, msg->len);
 	} else {
@@ -923,12 +1114,7 @@ static inline void msg_init(const struct device *dev, struct i2c_msg *msg,
 		LL_I2C_DisableAutoEndMode(i2c);
 		LL_I2C_SetTransferRequest(i2c, transfer);
 		LL_I2C_SetTransferSize(i2c, msg->len);
-
-#if defined(CONFIG_I2C_TARGET)
-		data->controller_active = true;
-#endif
 		LL_I2C_Enable(i2c);
-
 		LL_I2C_GenerateStartCondition(i2c);
 	}
 }
@@ -946,7 +1132,7 @@ static inline int msg_done(const struct device *dev,
 			return -EIO;
 		}
 		if ((k_uptime_get() - start_time) >
-		    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+		    CONFIG_I2C_TRANSFER_TIMEOUT_MS) {
 			return -ETIMEDOUT;
 		}
 	}
@@ -955,7 +1141,7 @@ static inline int msg_done(const struct device *dev,
 		LL_I2C_GenerateStopCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
 			if ((k_uptime_get() - start_time) >
-			    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			    CONFIG_I2C_TRANSFER_TIMEOUT_MS) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -990,7 +1176,7 @@ static int i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
 			}
 
 			if ((k_uptime_get() - start_time) >
-			    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			    CONFIG_I2C_TRANSFER_TIMEOUT_MS) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -1021,7 +1207,7 @@ static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 				return -EIO;
 			}
 			if ((k_uptime_get() - start_time) >
-			    CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC) {
+			    CONFIG_I2C_TRANSFER_TIMEOUT_MS) {
 				return -ETIMEDOUT;
 			}
 		}
@@ -1043,9 +1229,9 @@ static int i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
  */
 #define I2C_LOOP_SCLH();						\
 	if ((tscl >= clk_min) &&					\
-		(tscl <= clk_max) &&					\
-		(tscl_h >= i2c_stm32_charac[i2c_speed].hscl_min) &&	\
-		(ti2cclk < tscl_h)) {					\
+	    (tscl <= clk_max) &&					\
+	    (tscl_h >= i2c_stm32_charac[i2c_speed].hscl_min) &&		\
+	    (ti2cclk < tscl_h)) {					\
 									\
 		int32_t error = (int32_t)tscl - (int32_t)ti2cspeed;	\
 									\
@@ -1108,7 +1294,7 @@ uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
 			 * tI2CCLK < (tLOW - tfilters) / 4 and tI2CCLK < tHIGH
 			 */
 			if ((tscl_l > i2c_stm32_charac[i2c_speed].lscl_min) &&
-				(ti2cclk < ((tscl_l - tafdel_min - dnf_delay) / 4U))) {
+			    (ti2cclk < ((tscl_l - tafdel_min - dnf_delay) / 4U))) {
 				for (sclh = 0; sclh < I2C_STM32_SCLH_MAX; sclh++) {
 					/*
 					 * tHIGH(min) <= tAF(min) + tDNF +
@@ -1140,7 +1326,7 @@ uint32_t i2c_compute_scll_sclh(uint32_t clock_src_freq, uint32_t i2c_speed)
 #define I2C_LOOP_SDADEL();								\
 											\
 	if ((tsdadel >= (uint32_t)tsdadel_min) &&					\
-		(tsdadel <= (uint32_t)tsdadel_max)) {					\
+	    (tsdadel <= (uint32_t)tsdadel_max)) {					\
 		if (presc != prev_presc) {						\
 			i2c_valid_timing[i2c_valid_timing_nbr].presc = presc;		\
 			i2c_valid_timing[i2c_valid_timing_nbr].tscldel = scldel;	\
@@ -1234,7 +1420,26 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 	uint32_t timing = 0U;
 	uint32_t idx;
 	uint32_t speed = 0U;
-	uint32_t i2c_freq = cfg->bitrate;
+	uint32_t i2c_freq;
+
+	switch (I2C_SPEED_GET(data->dev_config)) {
+	case I2C_SPEED_DT:
+		i2c_freq = cfg->bitrate;
+		break;
+	case I2C_SPEED_STANDARD:
+		i2c_freq = I2C_BITRATE_STANDARD;
+		break;
+	case I2C_SPEED_FAST:
+		i2c_freq = I2C_BITRATE_FAST;
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		i2c_freq = I2C_BITRATE_FAST_PLUS;
+		break;
+	default:
+		LOG_ERR("i2c: speed ID %u (I2C_SPEED_*) not supported",
+			I2C_SPEED_GET(data->dev_config));
+		return -EINVAL;
+	}
 
 	/* Reset valid timing count at the beginning of each new computation */
 	i2c_valid_timing_nbr = 0;
@@ -1242,7 +1447,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 	if ((clock != 0U) && (i2c_freq != 0U)) {
 		for (speed = 0 ; speed <= (uint32_t)I2C_STM32_SPEED_FREQ_FAST_PLUS ; speed++) {
 			if ((i2c_freq >= i2c_stm32_charac[speed].freq_min) &&
-				(i2c_freq <= i2c_stm32_charac[speed].freq_max)) {
+			    (i2c_freq <= i2c_stm32_charac[speed].freq_max)) {
 				i2c_compute_presc_scldel_sdadel(clock, speed);
 				idx = i2c_compute_scll_sclh(clock, speed);
 				if (idx < I2C_STM32_VALID_TIMING_NBR) {
@@ -1284,8 +1489,8 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		const struct i2c_config_timing *preset = &cfg->timings[i];
 		uint32_t speed = i2c_map_dt_bitrate(preset->i2c_speed);
 
-		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config))
-		   && (preset->periph_clock == clock)) {
+		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config)) &&
+		    (preset->periph_clock == clock)) {
 			/*  Found a matching periph clock and i2c speed */
 			LL_I2C_SetTiming(i2c, preset->timing_setting);
 			return 0;
@@ -1331,8 +1536,9 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 			continue;
 		}
 
-		timing = __LL_I2C_CONVERT_TIMINGS(presc - 1,
+		timing = STM32_I2C_CONVERT_TIMINGS(presc - 1,
 					scldel - 1, sdadel, sclh - 1, scll - 1);
+
 		break;
 	} while (presc < 16);
 
@@ -1405,16 +1611,9 @@ int i2c_stm32_transaction(const struct device *dev,
 		if (LL_I2C_IsEnabledReloadMode(i2c)) {
 			LL_I2C_DisableReloadMode(i2c);
 		}
-#if defined(CONFIG_I2C_TARGET)
-		data->controller_active = false;
-		if (!data->target_attached && !data->smbalert_active) {
-			LL_I2C_Disable(i2c);
-		}
-#else
 		if (!data->smbalert_active) {
 			LL_I2C_Disable(i2c);
 		}
-#endif
 		return -EIO;
 	}
 #endif /* CONFIG_I2C_STM32_INTERRUPT */

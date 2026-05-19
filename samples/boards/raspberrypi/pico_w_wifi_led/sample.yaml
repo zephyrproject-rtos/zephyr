@@ -1,0 +1,14 @@
+sample:
+  name: Pico W WiFi + LED
+  description: |
+    Demonstrates concurrent WiFi and LED operation on Raspberry Pi
+    Pico W and Pico 2 W using the CYW43 GPIO driver.
+tests:
+  sample.boards.raspberrypi.pico_w_wifi_led:
+    tags:
+      - wifi
+      - gpio
+    platform_allow:
+      - rpi_pico2/rp2350a/m33/w
+      - rpi_pico/rp2040/w
+    skip: true

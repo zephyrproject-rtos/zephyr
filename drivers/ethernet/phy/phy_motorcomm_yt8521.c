@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025-2026 NXP
  *
  * Inspiration from phy_mii.c, which is:
  * Copyright (c) 2021 IP-Logix Inc.
@@ -11,7 +11,7 @@
 #define DT_DRV_COMPAT motorcomm_yt8521
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(phy_motorcomm_yt8521, CONFIG_PHY_LOG_LEVEL);
+LOG_MODULE_REGISTER(phy_motorcomm_yt85xx, CONFIG_PHY_LOG_LEVEL);
 
 #include <errno.h>
 #include <zephyr/device.h>
@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(phy_motorcomm_yt8521, CONFIG_PHY_LOG_LEVEL);
 #include "phy_mii.h"
 
 #define PHY_ID_YT8521 (0x0000011A)
+#define PHY_ID_YT8531 (0x0000E91A)
 
 /* PHY Specific Status Register */
 #define SPEC_STATUS_REG_DUPLEX_MASK (1U << 13)
@@ -496,22 +497,23 @@ static int mc_ytphy_link_cb_set(const struct device *dev, phy_callback_t cb, voi
 static int mc_ytphy_get_id(const struct device *dev, uint32_t *phy_id)
 {
 	const struct mc_ytphy_config *const config = dev->config;
-	uint32_t cnt = 1000;
 	uint32_t val = 0;
+	bool found = false;
 
-	do {
+	for (uint32_t cnt = 1000; cnt > 0; cnt--) {
 		if (mc_ytphy_read(dev, MII_PHYID2R, &val) < 0) {
 			k_msleep(1);
+			continue;
 		}
-	} while (val != PHY_ID_YT8521 && --cnt > 0);
 
-	if (cnt == 0U) {
-		LOG_ERR("PHY (%d) timeout to get PHY ID", config->phy_addr);
-		return -EIO;
+		if (val == PHY_ID_YT8521 || val == PHY_ID_YT8531) {
+			found = true;
+			break;
+		}
 	}
 
-	if (val != PHY_ID_YT8521) {
-		LOG_ERR("PHY (%d) can't get PHY ID, value:0x%X", config->phy_addr, val);
+	if (!found) {
+		LOG_ERR("PHY (%d) timeout to get PHY ID", config->phy_addr);
 		return -EIO;
 	}
 
@@ -613,5 +615,11 @@ static DEVICE_API(ethphy, mc_ytphy_driver_api) = {
 	MC_YTPHY_DATA(n)                                                                           \
 	DEVICE_DT_INST_DEFINE(n, MC_YTPHY_INIT, NULL, &mc_ytphy_data_##n, &mc_ytphy_config_##n,    \
 			      POST_KERNEL, CONFIG_PHY_INIT_PRIORITY, &mc_ytphy_driver_api);
+
+DT_INST_FOREACH_STATUS_OKAY(MC_YTPHY_DEVICE)
+
+/* Support for YT8531 using the same driver */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT motorcomm_yt8531
 
 DT_INST_FOREACH_STATUS_OKAY(MC_YTPHY_DEVICE)

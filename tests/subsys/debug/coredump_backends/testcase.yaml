@@ -20,9 +20,9 @@ tests:
     platform_allow:
       - qemu_x86
       - esp32_devkitc/esp32/procpu
-      - esp32s2_saola
+      - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
-      - esp32c3_devkitm
+      - esp32c3_devkitc
   debug.coredump.backends.in_memory:
     filter: CONFIG_ARCH_SUPPORTS_COREDUMP
     extra_args: CONF_FILE=prj_in_memory.conf

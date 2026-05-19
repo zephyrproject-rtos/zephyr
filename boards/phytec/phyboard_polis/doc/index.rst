@@ -13,6 +13,8 @@ platform, the phyBOARD-Polis serves as reference design for your
 customer-specific application and enables parallel development of the software
 and carrier board for the phyCORE-i.MX 8M Mini/Nano.
 
+The phyBOARD-Polis is composed of a quad Cortex-A53 cluster and a single
+Cortex-M4 core. Zephyr OS is ported to run on both clusters.
 
 As a powerful, industrial single-board computer (SBC), the phyBOARD-Polis is
 equipped with a variety of standard interfaces which are available on standard
@@ -59,7 +61,7 @@ the phyCORE-i.MX 8M Mini/Nano.
     - JTAG 20-pin connector
     - MicroUSB for UART debug, two COM ports for A53 and M4
 
-.. image:: img/phyBOARD-Polis.jpg
+.. image:: img/phyboard_polis.jpg
    :align: center
    :alt: phyBOARD-Polis
    :width: 500
@@ -80,8 +82,10 @@ The following components are tested and working correctly.
 UART:
 -----
 
-Zephyr is configured to use UART4 on the phyBOARD-Polis by default to minimize
-problems with the A53-Core because UART4 is only accessible from the M4-Core.
+UART4 is only accessible from the M4-Core of the phyBOARD-Polis. Taking this
+into account and to minimize problems if both clusters are running, Zephyr OS
+is configured by default to use UART4 with M4-Core and UART3 with Cortex-A53
+cluster.
 
 +---------------+-----------------+-----------------------------------+
 | Board Name    | SoM Name        | Usage                             |
@@ -154,9 +158,83 @@ System Clock
 
 The M4 Core is configured to run at a 400 MHz clock speed.
 
+Programming and Debugging (A53)
+*******************************
 
-Programming and Debugging
-*************************
+Starting the A53-Core via U-Boot
+================================
+
+As an example, one can build an image with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: phyboard_polis/mimx8mm6/a53
+   :goals: build
+
+Load the compiled zephyr.bin to memory address 0x93c00000.
+This should output something like this:
+
+.. code-block:: console
+
+   u-boot=> tftp 0x93c00000 192.168.3.10:zephyr.bin
+   Using ethernet@30be0000 device
+   TFTP from server 192.168.3.10; our IP address is 192.168.3.11
+   Filename 'zephyr.bin'.
+   Load address: 0x93c000000
+   Loading: ##########
+            9.4 MiB/s
+   done
+   Bytes transferred = 49288 (c088 hex)
+
+Then use the following command to boot Zephyr on the core0:
+
+.. code-block:: console
+
+   u-boot=> dcache off; icache flush; go 0x93c00000;
+
+The A53-Core is now started up and running with the following console
+output (UART3):
+
+.. code-block:: console
+
+   ## Starting application at 0x93C00000 ...
+   *** Booting Zephyr OS build v4.3.0-7560-g0dff993ff889 ***
+   thread_a: Hello World from cpu 0 on phyboard_polis!
+   thread_b: Hello World from cpu 0 on phyboard_polis!
+   thread_a: Hello World from cpu 0 on phyboard_polis!
+   thread_b: Hello World from cpu 0 on phyboard_polis!
+
+Cortex-A53 SMP
+==============
+The default SMP variant runs on all four Cortex-A Cores, it could be changed by
+disabling some A53 Core nodes in dts and change :kconfig:option:`CONFIG_MP_MAX_NUM_CPUS`
+to the count of enabled A53 Cores in dts.
+
+Building SMP kernel, for example, with the :zephyr:code-sample:`synchronization` sample:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :host-os: unix
+   :board: phyboard_polis/mimx8mm6/a53/smp
+   :goals: build
+
+And running it, would result in the following console output (UART3):
+
+.. code-block:: console
+
+   ## Starting application at 0x93C00000 ...
+   *** Booting Zephyr OS build v4.3.0-7560-g0dff993ff889 ***
+   Secondary CPU core 1 (MPID:0x1) is up
+   Secondary CPU core 2 (MPID:0x2) is up
+   Secondary CPU core 3 (MPID:0x3) is up
+   thread_a: Hello World from cpu 0 on phyboard_polis!
+   thread_b: Hello World from cpu 1 on phyboard_polis!
+   thread_a: Hello World from cpu 0 on phyboard_polis!
+   thread_b: Hello World from cpu 1 on phyboard_polis!
+
+Programming and Debugging (M4)
+*******************************
 
 The i.MX8MM does not have a separate flash for the M4-Core. Because of this
 the A53-Core has to load the program for the M4-Core to the right memory

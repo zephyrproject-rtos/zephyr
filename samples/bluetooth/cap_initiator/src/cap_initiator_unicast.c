@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -32,12 +33,13 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "cap_initiator.h"
 
 LOG_MODULE_REGISTER(cap_initiator_unicast, LOG_LEVEL_INF);
 
-#define SEM_TIMEOUT K_SECONDS(5)
+#define SEM_TIMEOUT K_SECONDS(5U)
 
 /* We use the same config for both sink and source streams
  * For simplicity we use the mandatory configuration 16_2_1
@@ -71,10 +73,10 @@ struct peer_config {
 /* TODO: Expand to multiple ACL connections */
 static struct peer_config peer;
 
-static K_SEM_DEFINE(sem_proc, 0, 1);
-static K_SEM_DEFINE(sem_state_change, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
-static K_SEM_DEFINE(sem_security_changed, 0, 1);
+static K_SEM_DEFINE(sem_proc, 0U, 1U);
+static K_SEM_DEFINE(sem_state_change, 0U, 1U);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0U, 1U);
+static K_SEM_DEFINE(sem_security_changed, 0U, 1U);
 
 static bool is_tx_stream(struct bt_bap_stream *stream)
 {
@@ -172,6 +174,10 @@ static void unicast_stream_released_cb(struct bt_bap_stream *stream)
 static void unicast_stream_recv_cb(struct bt_bap_stream *stream,
 				   const struct bt_iso_recv_info *info, struct net_buf *buf)
 {
+	ARG_UNUSED(stream);
+	ARG_UNUSED(info);
+	ARG_UNUSED(buf);
+
 	/* Triggered every time we receive an HCI data packet from the controller.
 	 * A call to this does not indicate valid data
 	 * (see the `info->flags` for which flags to check),
@@ -186,6 +192,8 @@ static void unicast_stream_recv_cb(struct bt_bap_stream *stream,
 
 static void unicast_stream_sent_cb(struct bt_bap_stream *stream)
 {
+	ARG_UNUSED(stream);
+
 	/* Triggered every time we have sent an HCI data packet to the controller */
 
 	if ((total_unicast_tx_iso_packet_count % 100U) == 0U) {
@@ -220,6 +228,8 @@ static bool log_codec_cb(struct bt_data *data, void *user_data)
 
 static void log_codec(const struct bt_audio_codec_cap *codec_cap, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(dir);
+
 	LOG_INF("codec id 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cap->id, codec_cap->cid,
 		codec_cap->vid, codec_cap->data_len);
 
@@ -252,6 +262,8 @@ static void add_remote_source(struct bt_bap_ep *ep)
 
 static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+
 	if (dir == BT_AUDIO_DIR_SINK) {
 		if (err != 0) {
 			LOG_ERR("Discovery sinks failed: %d", err);
@@ -272,11 +284,15 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			  const struct bt_audio_codec_cap *codec_cap)
 {
+	ARG_UNUSED(conn);
+
 	log_codec(codec_cap, dir);
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
 {
+	ARG_UNUSED(conn);
+
 	if (dir == BT_AUDIO_DIR_SOURCE) {
 		add_remote_source(ep);
 	} else if (dir == BT_AUDIO_DIR_SINK) {
@@ -388,6 +404,9 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(member);
+
 	if (err != 0) {
 		LOG_ERR("CAS discovery completed with error: %d", err);
 
@@ -475,6 +494,8 @@ static int unicast_audio_start(void)
 
 static void att_mtu_updated_cb(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+
 	LOG_INF("MTU exchanged: %u/%u", tx, rx);
 	k_sem_give(&sem_mtu_exchanged);
 }
@@ -494,12 +515,8 @@ static void start_scan(void)
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err != 0) {
-		LOG_ERR("Failed to connect to %s: %u", addr, err);
+		LOG_ERR("Failed to connect to %s: %u", bt_conn_dst_str(conn), err);
 
 		bt_conn_unref(peer.conn);
 		peer.conn = NULL;
@@ -512,21 +529,18 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	LOG_INF("Connected: %s", addr);
+	LOG_INF("Connected: %s", bt_conn_dst_str(conn));
 	k_sem_give(&sem_state_change);
 }
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != peer.conn) {
 		return;
 	}
 
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_INF("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
+	LOG_INF("Disconnected: %s, reason 0x%02x %s", bt_conn_dst_str(conn),
+		reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(peer.conn);
 	peer.conn = NULL;
@@ -564,7 +578,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_data)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t *addr = user_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
@@ -588,8 +601,7 @@ static bool check_audio_support_and_connect_cb(struct bt_data *data, void *user_
 		return true; /* Continue parsing to next AD data type */
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	LOG_INF("Attempt to connect to %s", addr_str);
+	LOG_INF("Attempt to connect to %s", bt_addr_le_str(addr));
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
@@ -639,6 +651,9 @@ static int scan_and_connect(void)
 
 static void exchange_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(params);
+
 	if (err == BT_ATT_ERR_SUCCESS) {
 		LOG_INF("MTU exchange done");
 		k_sem_give(&sem_proc);

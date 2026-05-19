@@ -11,17 +11,20 @@ zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 zephyr_library_sources_ifdef(CONFIG_HTTP_PARSER http_parser.c)
 zephyr_library_sources_ifdef(CONFIG_HTTP_PARSER_URL http_parser_url.c)
 zephyr_library_sources_ifdef(CONFIG_HTTP_CLIENT http_client.c)
-zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER
-  http_server_core.c
-  http_server_http1.c
+zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER http_server_core.c)
+zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER_VERSION_1 http_server_http1.c)
+zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER_VERSION_2
   http_server_http2.c
   http_hpack.c
-  http_huffman.c
 )
+zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER_VERSION_3 http_server_http3.c)
+if(CONFIG_HTTP_SERVER AND (CONFIG_HTTP_SERVER_VERSION_2 OR CONFIG_HTTP_SERVER_VERSION_3))
+  zephyr_library_sources(http_huffman.c)
+endif()
 zephyr_library_sources_ifdef(CONFIG_HTTP_SERVER_COMPRESSION http_compression.c)
 if(CONFIG_HTTP_SERVER AND CONFIG_WEBSOCKET)
   zephyr_library_sources(http_server_ws.c)
-  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
 endif()
 
 if(CONFIG_HTTP_SERVER AND CONFIG_FILE_SYSTEM)

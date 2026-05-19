@@ -1,5 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
+zephyr_constants_library(
+  NAME heap_constants
+  INCLUDES ${ARCH_DIR}/common/include
+  SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/heap_constants.c
+)
+
 zephyr_sources(
   heap.c
   )

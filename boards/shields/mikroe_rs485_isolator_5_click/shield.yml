@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 ID8 Engineering AB
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mikroe_rs485_isolator_5_click
+  full_name: RS485 Isolator 5 Click
+  vendor: mikroe
+  supported_features:
+    - uart

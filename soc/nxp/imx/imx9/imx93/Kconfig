@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_MIMX9352_A55
@@ -7,6 +7,7 @@ config SOC_MIMX9352_A55
 	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
 	select HAS_MCUX if CLOCK_CONTROL
 	select HAS_MCUX_CACHE
+	select HAS_PM
 
 config SOC_MIMX9352_M33
 	select ARM
@@ -25,9 +26,6 @@ config SOC_MIMX9352_M33
 config MCUX_CORE_SUFFIX
 	default "_ca55" if SOC_MIMX9352_A55
 	default "_cm33" if SOC_MIMX9352_M33
-
-config INIT_VIDEO_PLL
-	bool "Init Video PLL"
 
 if SOC_MIMX9352_M33
 

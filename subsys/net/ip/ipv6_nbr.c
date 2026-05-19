@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 #include <errno.h>
 #include <stdlib.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
@@ -34,7 +35,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 #include "ipv6.h"
 #include "nbr.h"
 #include "6lo.h"
-#include "route.h"
+#include "route_ipv6.h"
 #include "net_stats.h"
 #include "pmtu.h"
 
@@ -322,7 +323,7 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct net_in6_addr *addr)
 	}
 
 	/* Remove any routes with nbr as nexthop in first place */
-	net_route_del_by_nexthop(iface, addr);
+	net_route_ipv6_del_by_nexthop(iface, addr);
 
 	nbr_free(nbr);
 
@@ -789,9 +790,9 @@ static struct net_in6_addr *check_route(struct net_if *iface,
 	struct net_route_entry *route;
 	struct net_if_router *router;
 
-	route = net_route_lookup(iface, dst);
+	route = net_route_ipv6_lookup(iface, dst);
 	if (route) {
-		nexthop = net_route_get_nexthop(route);
+		nexthop = net_route_ipv6_get_nexthop(route);
 
 		NET_DBG("Route %p nexthop %s iface %p/%d",
 			route,
@@ -800,7 +801,7 @@ static struct net_in6_addr *check_route(struct net_if *iface,
 			iface, net_if_get_by_iface(iface));
 
 		if (!nexthop) {
-			net_route_del(route);
+			net_route_ipv6_del(route);
 
 			NET_DBG("No route to host %s",
 				net_sprint_ipv6_addr(dst));
@@ -909,11 +910,11 @@ use_interface_mtu:
 	 * not enter this branch.
 	 */
 	if ((net_pkt_lladdr_dst(pkt)->len > 0 &&
-	     ((IS_ENABLED(CONFIG_NET_ROUTING) &&
+	     ((IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
 	      (net_ipv6_is_ll_addr(&dst_ip) ||
 	       net_if_ipv6_addr_onlink(NULL, &dst_ip) ||
 	       net_pkt_forwarding(pkt))) ||
-	      !IS_ENABLED(CONFIG_NET_ROUTING))) ||
+	      !IS_ENABLED(CONFIG_NET_IPV6_ROUTING))) ||
 	    net_ipv6_is_addr_mcast(&dst_ip) ||
 	    /* Workaround Linux bug, see:
 	     * https://github.com/zephyrproject-rtos/zephyr/issues/3111
@@ -1221,7 +1222,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct net_in6_addr *src,
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
 	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
@@ -1257,11 +1258,11 @@ static void ns_routing_info(struct net_pkt *pkt,
 	}
 }
 
-static int handle_ns_input(struct net_icmp_ctx *ctx,
-			   struct net_pkt *pkt,
-			   struct net_icmp_ip_hdr *hdr,
-			   struct net_icmp_hdr *icmp_hdr,
-			   void *user_data)
+static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
+					struct net_pkt *pkt,
+					struct net_icmp_ip_hdr *hdr,
+					struct net_icmp_hdr *icmp_hdr,
+					void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ns_access,
 					      struct net_icmpv6_ns_hdr);
@@ -1278,8 +1279,12 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 	struct net_in6_addr *tgt;
 	struct net_in6_addr ns_tgt, ns_src, ns_dst;
 	struct net_linkaddr src_lladdr;
+	struct net_pkt_cursor backup;
+	int ret;
 
 	src_lladdr.len = 0;
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
 		goto drop;
@@ -1300,16 +1305,29 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if (((length < (sizeof(struct net_ipv6_hdr) +
-			  sizeof(struct net_icmp_hdr) +
-			  sizeof(struct net_icmpv6_ns_hdr))) ||
-	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT)) &&
-	    (net_ipv6_is_addr_mcast(&ns_tgt) &&
-	     icmp_hdr->code != 0U)) {
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_ns_hdr))) {
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &ns_access);
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (net_ipv6_is_addr_mcast(&ns_tgt)) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
+		goto drop;
+	}
+
+	ret = net_pkt_acknowledge_data(pkt, &ns_access);
+	if (ret < 0) {
+		NET_ERR("DROP: failed to acknowledge NS data");
+		goto drop;
+	}
 
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_ns_hdr));
 	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
@@ -1321,7 +1339,11 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 	       net_pkt_ipv6_ext_opt_len(pkt) < length) {
 		uint8_t prev_opt_len;
 
-		net_pkt_acknowledge_data(pkt, &nd_access);
+		ret = net_pkt_acknowledge_data(pkt, &nd_access);
+		if (ret < 0) {
+			NET_ERR("DROP: failed to acknowledge ND data");
+			goto drop;
+		}
 
 		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
@@ -1355,7 +1377,7 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 					net_pkt_get_data(pkt, &nd_access);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
 		ifaddr = net_if_ipv6_addr_lookup(&ns_tgt, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(
@@ -1363,7 +1385,7 @@ static int handle_ns_input(struct net_icmp_ctx *ctx,
 	}
 
 	if (!ifaddr) {
-		if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+		if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
 			struct net_in6_addr *nexthop;
 
 			nexthop = check_route(NULL, &ns_tgt, NULL);
@@ -1469,7 +1491,7 @@ nexthop_found:
 	}
 
 	/* Neighbor Unreachability Detection (NUD) */
-	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
 		ifaddr = net_if_ipv6_addr_lookup(&ns_dst, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(
@@ -1500,25 +1522,27 @@ send_na:
 
 	if (!net_ipv6_send_na(net_pkt_iface(pkt), na_src,
 			      na_dst, tgt, flags)) {
-		return 0;
+		net_pkt_cursor_restore(pkt, &backup);
+		return NET_CONTINUE;
 	}
 
 	NET_DBG("DROP: Cannot send NA");
 
-	return -EIO;
+	return NET_DROP;
 
 drop:
 	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return NET_DROP;
 
 silent_drop:
 	/* If the event is not really an error then just ignore it and
-	 * return 0 so that icmpv6 module will not complain about it.
+	 * return NET_CONTINUE so that icmpv6 module will not complain about it.
 	 */
 	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 }
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
@@ -1880,11 +1904,11 @@ err:
 	return false;
 }
 
-static int handle_na_input(struct net_icmp_ctx *ctx,
-			   struct net_pkt *pkt,
-			   struct net_icmp_ip_hdr *hdr,
-			   struct net_icmp_hdr *icmp_hdr,
-			   void *user_data)
+static enum net_verdict handle_na_input(struct net_icmp_ctx *ctx,
+					struct net_pkt *pkt,
+					struct net_icmp_ip_hdr *hdr,
+					struct net_icmp_hdr *icmp_hdr,
+					void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(na_access,
 					      struct net_icmpv6_na_hdr);
@@ -1896,10 +1920,14 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 	struct net_icmpv6_na_hdr *na_hdr;
 	struct net_in6_addr na_tgt, na_dst;
 	struct net_if_addr *ifaddr;
+	struct net_pkt_cursor backup;
+	int ret;
 
 	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
 		goto drop;
 	}
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	na_hdr = (struct net_icmpv6_na_hdr *)net_pkt_get_data(pkt, &na_access);
 	if (!na_hdr) {
@@ -1915,19 +1943,35 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 	net_ipv6_addr_copy_raw(na_tgt.s6_addr, na_hdr->tgt);
 	net_ipv6_addr_copy_raw(na_dst.s6_addr, ip_hdr->dst);
 
-	if (((length < (sizeof(struct net_ipv6_hdr) +
-			sizeof(struct net_icmp_hdr) +
-			sizeof(struct net_icmpv6_na_hdr) +
-			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	     net_ipv6_is_addr_mcast(&na_tgt) ||
-	     (na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED &&
-	      net_ipv6_is_addr_mcast(&na_dst))) &&
-	    (icmp_hdr->code != 0U)) {
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_na_hdr) +
+		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &na_access);
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (net_ipv6_is_addr_mcast(&na_tgt)) {
+		goto drop;
+	}
+
+	if ((na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED) &&
+	     net_ipv6_is_addr_mcast(&na_dst)) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
+		goto drop;
+	}
+
+	ret = net_pkt_acknowledge_data(pkt, &na_access);
+	if (ret < 0) {
+		NET_ERR("DROP: failed to acknowledge NA data");
+		goto drop;
+	}
 
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_na_hdr));
 	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
@@ -1963,7 +2007,12 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 			goto drop;
 		}
 
-		net_pkt_acknowledge_data(pkt, &nd_access);
+		ret = net_pkt_acknowledge_data(pkt, &nd_access);
+		if (ret < 0) {
+			NET_ERR("DROP: failed to acknowledge ND data");
+			goto drop;
+		}
+
 		nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
 					net_pkt_get_data(pkt, &nd_access);
 	}
@@ -1993,12 +2042,13 @@ static int handle_na_input(struct net_icmp_ctx *ctx,
 		net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 	}
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 
 drop:
 	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return NET_DROP;
 }
 
 int net_ipv6_send_ns(struct net_if *iface,
@@ -2148,7 +2198,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	net_ipv6_nbr_unlock();
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
 	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
@@ -2220,7 +2270,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
 	net_stats_update_ipv6_nd_sent(iface);
 
 	return 0;
@@ -2415,6 +2465,7 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 				   struct net_icmpv6_nd_opt_prefix_info);
 	struct net_icmpv6_nd_opt_prefix_info *pfx_info;
 	uint32_t valid_lifetime, preferred_lifetime;
+	int ret;
 
 	pfx_info = (struct net_icmpv6_nd_opt_prefix_info *)
 				net_pkt_get_data(pkt, &rapfx_access);
@@ -2422,7 +2473,10 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 		return false;
 	}
 
-	net_pkt_acknowledge_data(pkt, &rapfx_access);
+	ret = net_pkt_acknowledge_data(pkt, &rapfx_access);
+	if (ret < 0) {
+		return false;
+	}
 
 	valid_lifetime = net_ntohl(pfx_info->valid_lifetime);
 	preferred_lifetime = net_ntohl(pfx_info->preferred_lifetime);
@@ -2520,20 +2574,20 @@ static inline bool handle_ra_route_info(struct net_pkt *pkt, uint8_t len,
 	}
 
 	if (route_lifetime == 0) {
-		route = net_route_lookup(net_pkt_orig_iface(pkt), &prefix_buf);
+		route = net_route_ipv6_lookup(net_pkt_orig_iface(pkt), &prefix_buf);
 		if (route != NULL) {
-			ret = net_route_del(route);
+			ret = net_route_ipv6_del(route);
 			if (ret < 0) {
 				NET_DBG("Failed to delete route");
 			}
 		}
 	} else {
-		route = net_route_add(net_pkt_orig_iface(pkt),
-				      &prefix_buf,
-				      prefix_len,
-				      ra_src,
-				      route_lifetime,
-				      preference);
+		route = net_route_ipv6_add(net_pkt_orig_iface(pkt),
+					   &prefix_buf,
+					   prefix_len,
+					   ra_src,
+					   route_lifetime,
+					   preference);
 		if (route == NULL) {
 			NET_DBG("Failed to add route");
 		}
@@ -2613,11 +2667,11 @@ static inline bool handle_ra_rdnss(struct net_pkt *pkt, uint8_t len)
 }
 #endif
 
-static int handle_ra_input(struct net_icmp_ctx *ctx,
-			   struct net_pkt *pkt,
-			   struct net_icmp_ip_hdr *hdr,
-			   struct net_icmp_hdr *icmp_hdr,
-			   void *user_data)
+static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
+					struct net_pkt *pkt,
+					struct net_icmp_ip_hdr *hdr,
+					struct net_icmp_hdr *icmp_hdr,
+					void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ra_access,
 					      struct net_icmpv6_ra_hdr);
@@ -2631,12 +2685,16 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 	uint32_t mtu, reachable_time, retrans_timer;
 	uint16_t router_lifetime;
 	struct net_in6_addr ra_src;
+	struct net_pkt_cursor backup;
+	int ret;
 
 	ARG_UNUSED(user_data);
 
 	if (net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
 		goto drop;
 	}
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	ra_hdr = (struct net_icmpv6_ra_hdr *)net_pkt_get_data(pkt, &ra_access);
 	if (!ra_hdr) {
@@ -2650,17 +2708,30 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 
 	net_ipv6_addr_copy_raw(ra_src.s6_addr, ip_hdr->src);
 
-	if (((length < (sizeof(struct net_ipv6_hdr) +
-			sizeof(struct net_icmp_hdr) +
-			sizeof(struct net_icmpv6_ra_hdr) +
-			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	     !net_ipv6_is_ll_addr(&ra_src)) &&
-		icmp_hdr->code != 0U) {
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_ra_hdr) +
+		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &ra_access);
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (!net_ipv6_is_ll_addr(&ra_src)) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
+		goto drop;
+	}
+
+	ret = net_pkt_acknowledge_data(pkt, &ra_access);
+	if (ret < 0) {
+		NET_ERR("DROP: failed to acknowledge RA data");
+		goto drop;
+	}
 
 	router_lifetime = net_ntohs(ra_hdr->router_lifetime);
 	reachable_time = net_ntohl(ra_hdr->reachable_time);
@@ -2694,7 +2765,11 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 				net_pkt_get_data(pkt, &nd_access);
 
 	while (nd_opt_hdr) {
-		net_pkt_acknowledge_data(pkt, &nd_access);
+		ret = net_pkt_acknowledge_data(pkt, &nd_access);
+		if (ret < 0) {
+			NET_ERR("DROP: failed to acknowledge ND data");
+			goto drop;
+		}
 
 		switch (nd_opt_hdr->type) {
 		case NET_ICMPV6_ND_OPT_SLLAO:
@@ -2750,7 +2825,7 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 			break;
 #endif
 		case NET_ICMPV6_ND_OPT_ROUTE:
-			if (!IS_ENABLED(CONFIG_NET_ROUTE)) {
+			if (!IS_ENABLED(CONFIG_NET_IPV6_ROUTE)) {
 				NET_DBG("Route option skipped");
 				goto skip;
 			}
@@ -2818,7 +2893,7 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 		}
 	} else {
 		net_if_ipv6_router_add(net_pkt_iface(pkt), &ra_src,
-				       router_lifetime);
+				       router_lifetime != 0, router_lifetime);
 	}
 
 	net_ipv6_nbr_lock();
@@ -2847,21 +2922,22 @@ static int handle_ra_input(struct net_icmp_ctx *ctx,
 	/* Cancel the RS timer on iface */
 	net_if_stop_rs(net_pkt_iface(pkt));
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 
 drop:
 	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return NET_DROP;
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
 #if defined(CONFIG_NET_IPV6_PMTU)
 /* Packet format described in RFC 4443 ch 3.2. Packet Too Big Message */
-static int handle_ptb_input(struct net_icmp_ctx *ctx,
-			    struct net_pkt *pkt,
-			    struct net_icmp_ip_hdr *hdr,
-			    struct net_icmp_hdr *icmp_hdr,
+static enum net_verdict handle_ptb_input(struct net_icmp_ctx *ctx,
+					 struct net_pkt *pkt,
+					 struct net_icmp_ip_hdr *hdr,
+					 struct net_icmp_hdr *icmp_hdr,
 			    void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ptb_access, struct net_icmpv6_ptb);
@@ -2872,10 +2948,13 @@ static int handle_ptb_input(struct net_icmp_ctx *ctx,
 		.sin6_family = NET_AF_INET6,
 	};
 	struct net_pmtu_entry *entry;
+	struct net_pkt_cursor backup;
 	uint32_t mtu;
 	int ret;
 
 	ARG_UNUSED(user_data);
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	ptb_hdr = (struct net_icmpv6_ptb *)net_pkt_get_data(pkt, &ptb_access);
 	if (!ptb_hdr) {
@@ -2897,7 +2976,11 @@ static int handle_ptb_input(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &ptb_access);
+	ret = net_pkt_acknowledge_data(pkt, &ptb_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge PTB data");
+		goto drop;
+	}
 
 	mtu = net_ntohl(ptb_hdr->mtu);
 
@@ -2932,19 +3015,21 @@ static int handle_ptb_input(struct net_icmp_ctx *ctx,
 			net_sprint_ipv6_addr(&ip_hdr->src), ret, mtu);
 	}
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 drop:
 	net_stats_update_ipv6_pmtu_drop(net_pkt_iface(pkt));
 
-	return -EIO;
+	return NET_DROP;
 
 silent_drop:
 	/* If the event is not really an error then just ignore it and
-	 * return 0 so that icmpv6 module will not complain about it.
+	 * return NET_CONTINUE so that icmpv6 module will not complain about it.
 	 */
 	net_stats_update_ipv6_pmtu_drop(net_pkt_iface(pkt));
 
-	return 0;
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 }
 #endif /* CONFIG_NET_IPV6_PMTU */
 

@@ -20,6 +20,7 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +30,19 @@ extern "C" {
 #define BT_RFCOMM_HDR_MAX_SIZE 4
 /** RFCOMM FCS Size */
 #define BT_RFCOMM_FCS_SIZE     1
+/** RFCOMM Credits Size */
+#define BT_RFCOMM_CREDITS_SIZE 1
+
+/** @brief RFCOMM Overhead Size
+ *
+ * The overhead size of RFCOMM includes the maximum header size, FCS size, and credits size.
+ *
+ * For the field credits size, in the CFC supported case, the space of credits should be discounted
+ * from the maximum frame size. It is used to avoid the SDU length exceeding the maximum frame size
+ * if the credits field is included.
+ */
+#define BT_RFCOMM_OVERHEAD_SIZE                                                                    \
+	(BT_RFCOMM_HDR_MAX_SIZE + BT_RFCOMM_FCS_SIZE + BT_RFCOMM_CREDITS_SIZE)
 
 /** @brief Helper to calculate needed buffer size for RFCOMM PDUs.
  *         Useful for creating buffer pools.
@@ -37,8 +51,7 @@ extern "C" {
  *
  *  @return Needed buffer size to match the requested RFCOMM PDU MTU.
  */
-#define BT_RFCOMM_BUF_SIZE(mtu)                                                                    \
-	BT_L2CAP_BUF_SIZE(BT_RFCOMM_HDR_MAX_SIZE + BT_RFCOMM_FCS_SIZE + (mtu))
+#define BT_RFCOMM_BUF_SIZE(mtu) BT_L2CAP_BUF_SIZE(BT_RFCOMM_OVERHEAD_SIZE + (mtu))
 
 /* RFCOMM channels (1-30): pre-allocated for profiles to avoid conflicts */
 enum {
@@ -111,7 +124,9 @@ struct bt_rfcomm_dlc {
 
 	struct bt_rfcomm_session  *session;
 	struct bt_rfcomm_dlc_ops  *ops;
-	struct bt_rfcomm_dlc      *_next;
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t                _node;
 
 	bt_security_t              required_sec_level;
 	bt_rfcomm_role_t           role;
@@ -149,7 +164,9 @@ struct bt_rfcomm_server {
 	int (*accept)(struct bt_conn *conn, struct bt_rfcomm_server *server,
 		      struct bt_rfcomm_dlc **dlc);
 
-	struct bt_rfcomm_server	*_next;
+	/** @cond INTERNAL_HIDDEN */
+	sys_snode_t node;
+	/** @endcond */
 };
 
 /** @brief RFCOMM RPN baud rate values */
@@ -229,6 +246,16 @@ struct bt_rfcomm_rpn {
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_rfcomm_server_register(struct bt_rfcomm_server *server);
+
+/** @brief Unregister RFCOMM server
+ *
+ *  Unregister RFCOMM server for a channel.
+ *
+ *  @param server Server structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_rfcomm_server_unregister(struct bt_rfcomm_server *server);
 
 /** @brief Connect RFCOMM channel
  *

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
@@ -35,7 +35,7 @@
 			};
 		};
 
-		cpu@1 {
+		cpu1: cpu@1 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <1>;
@@ -110,6 +110,19 @@
 		compatible = "nxp,imx-ccm-rev2";
 		reg = <0x4450000 0x4000>;
 		#clock-cells = <3>;
+
+		/*
+		 * ARM PLL is an integer PLL, with an input clock
+		 * of 24MHz. The PLL features a loop divider and
+		 * post divider. The output frequency is calculated
+		 * as Fout = 24MHz * loop-div / (2 * post-div)
+		 */
+		arm_pll: clock {
+			compatible = "nxp,imxrt118x-arm-pll";
+			#clock-cells = <0>;
+			loop-div = <132>;
+			post-div = <2>;
+		};
 
 		lpo: lpo32k {
 			compatible = "fixed-clock";
@@ -349,6 +362,29 @@
 		reg = <0x2d40000 0x4000>;
 		interrupts = <153 0>;
 		clocks = <&ccm IMX_CCM_LPI2C0506_CLK 0x80 24>;
+		status = "disabled";
+	};
+
+	mecc1: mecc@42920000 {
+		compatible = "nxp,mecc";
+		reg = <0x42920000 0x1000>;
+		interrupts = <91 0>;
+		/* OCRAM1 first 16K access is blocked by TRDC.
+		 * in order to enable the normal operation of the mecc function,
+		 * it is necessary to initialize the memory by the CPU in the
+		 * MECC driver. Therefore, reserved it for mecc1 node.
+		 */
+		memory-start-address = <0x20484000>;
+		memory-end-address = <0x204fffff>;
+		status = "disabled";
+	};
+
+	mecc2: mecc@42930000 {
+		compatible = "nxp,mecc";
+		reg = <0x42930000 0x1000>;
+		interrupts = <92 0>;
+		memory-start-address = <0x20500000>;
+		memory-end-address = <0x2053ffff>;
 		status = "disabled";
 	};
 
@@ -812,6 +848,19 @@
 		clock-names = "clksrc0";
 		clk-source = <0>;
 		number-of-mb = <96>;
+		status = "disabled";
+	};
+
+	sys_ctr: counter@44290000 {
+		compatible = "nxp,sysctr";
+		reg = <0x44290000 0x1000>,
+		      <0x442b0000 0x1000>,
+		      <0x442a0000 0x1000>;
+		reg-names = "control", "read", "compare";
+		interrupts = <74 0>;
+		clocks = <&ccm IMX_CCM_SYSCTR_BASE_CLK 0x0 0>,
+			 <&ccm IMX_CCM_SYSCTR_SLOW_CLK 0x0 0>;
+		clock-names = "base", "slow";
 		status = "disabled";
 	};
 
@@ -1601,6 +1650,22 @@
 		nxp,rx-dma-channel = <8>;
 		status = "disabled";
 	};
+
+	sema1: hwspinlock@4260000 {
+		compatible = "nxp,sema42";
+		reg = <0x4260000 0x1000>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
+		status = "disabled";
+	};
+
+	sema2: hwspinlock@2450000 {
+		compatible = "nxp,sema42";
+		reg = <0x2450000 0x1000>;
+		#hwlock-cells = <1>;
+		num-locks = <64>;
+		status = "disabled";
+	};
 };
 
 &flexspi {
@@ -1631,6 +1696,7 @@
 		reg = <0x0 DT_SIZE_K(512)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		ocram1_available: memory@4000 {
 			/* OCRAM1 first 16K access is blocked by TRDC */

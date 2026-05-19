@@ -517,7 +517,7 @@ New Boards
 * WeAct Studio
 
    * :zephyr:board:`mini_stm32h7b0` (``mini_stm32h7b0``)
-   * :zephyr:board:`weact_stm32h5_core` (``weact_stm32h5_core``)
+   * WeAct Studio STM32H5 Core Board (``weact_stm32h5_core``)
 
 * WinChipHead
 
@@ -952,7 +952,7 @@ New Samples
 * :zephyr:code-sample:`rtc`
 * :zephyr:code-sample:`sensor_batch_processing`
 * :zephyr:code-sample:`sensor_clock`
-* :zephyr:code-sample:`stream_fifo`
+* Generic device FIFO streaming (``stream_fifo``)
 * :zephyr:code-sample:`tdk_apex`
 * :zephyr:code-sample:`tmc50xx`
 * :zephyr:code-sample:`uart`

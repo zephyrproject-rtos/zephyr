@@ -14,12 +14,11 @@ import pytest
 import sys
 import json
 
-# pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock, clear_log_in_test
+from conftest import ZEPHYR_BASE, TEST_DATA, test_filename_mock, clear_log_in_test
 from twisterlib.testplan import TestPlan
 
 
-@mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+@mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
 class TestOutput:
     TESTDATA_1 = [
         ([]),
@@ -92,7 +91,7 @@ class TestOutput:
         assert str(sys_exit.value) == '1'
 
         rel_path = os.path.relpath(path, ZEPHYR_BASE)
-        build_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr', rel_path, 'always_fail.dummy', 'build.log')
+        build_path = os.path.join(out_path, 'qemu_x86_atom', 'zephyr_gnu', rel_path, 'always_fail.dummy', 'build.log')
         with open(build_path) as f:
             build_log = f.read()
 

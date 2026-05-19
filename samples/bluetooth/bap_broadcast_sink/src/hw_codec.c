@@ -13,7 +13,6 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/device.h>
@@ -21,6 +20,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/audio/codec.h>
+#include <zephyr/sys/ring_buffer.h>
+#include <zephyr/toolchain.h>
 
 LOG_MODULE_REGISTER(codec, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -46,7 +47,7 @@ LOG_MODULE_REGISTER(codec, CONFIG_LOG_DEFAULT_LEVEL);
  * 15 was selected as a conservative, comfortable default for this sample
  * application. Adjust as needed to match the desired default output level.
  */
-#define SPEAKER_VOL 15
+#define SPEAKER_VOL 15U
 
 /*
  * Total size of the ring buffer used to queue audio data for the codec.
@@ -71,6 +72,8 @@ static void tx_done(const struct device *dev, void *user_data)
 	uint32_t avail;
 	uint32_t read;
 	int written;
+
+	ARG_UNUSED(user_data);
 
 	avail = ring_buf_size_get(&rb);
 	if (avail < CODEC_BLOCK_SIZE) {

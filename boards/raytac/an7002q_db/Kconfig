@@ -13,7 +13,7 @@ config MBOX_NRFX_IPC
 if BOARD_RAYTAC_AN7002Q_DB_NRF5340_CPUAPP
 
 config BT_HCI_IPC
-	default y if BT
+	default y if BT_HCI
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	int

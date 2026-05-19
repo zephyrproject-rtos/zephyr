@@ -12,6 +12,8 @@
 /* clang-format off */
 #define DIGITAL_INPUT_STATE_RID           5500
 #define DIGITAL_INPUT_COUNTER_RID         5501
+#define CURRENT_TIME_RID                  5506
+#define FRACTIONAL_TIME_RID               5507
 #define TIMESTAMP_RID                     5518
 #define DELAY_DURATION_RID                5521
 #define TRIGGER_RID                       5523
@@ -32,6 +34,7 @@
 #define X_VALUE_RID                       5702
 #define Y_VALUE_RID                       5703
 #define Z_VALUE_RID                       5704
+#define COMPASS_DIRECTION_RID             5705
 #define COLOUR_RID                        5706
 #define APPLICATION_TYPE_RID              5750
 #define SENSOR_TYPE_RID                   5751

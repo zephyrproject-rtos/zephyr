@@ -292,6 +292,12 @@ static int _sock_send(struct esp_socket *sock, struct net_pkt *pkt)
 		dst = sock->dst;
 		k_mutex_unlock(&sock->lock);
 
+		/* ESP-AT supports IPv4 only */
+		if (dst.sa_family != NET_AF_INET) {
+			ret = -EAFNOSUPPORT;
+			goto out;
+		}
+
 		net_addr_ntop(dst.sa_family,
 			      &net_sin(&dst)->sin_addr,
 			      addr_str, sizeof(addr_str));
@@ -564,7 +570,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	}
 
 #if defined(CONFIG_WIFI_ESP_AT_CIPDINFO_USE) && !defined(CONFIG_WIFI_ESP_AT_VERSION_1_7)
-	char raw_remote_ip[INET_ADDRSTRLEN + 3] = {0};
+	char raw_remote_ip[NET_INET_ADDRSTRLEN + 3] = {0};
 	int port = 0;
 
 	err = cmd_ciprecvdata_parse(sock, data->rx_buf, len, &data_offset,
@@ -592,7 +598,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_ciprecvdata)
 	 * conv function. So we remove them by subtraction 2 from
 	 * raw_remote_ip length and index from &raw_remote_ip[1].
 	 */
-	char remote_ip_addr[INET_ADDRSTRLEN];
+	char remote_ip_addr[NET_INET_ADDRSTRLEN];
 	size_t remote_ip_str_len;
 
 	remote_ip_str_len = MIN(sizeof(remote_ip_addr) - 1,
@@ -790,7 +796,7 @@ static struct net_offload esp_offload = {
 
 int esp_offload_init(struct net_if *iface)
 {
-	iface->if_dev->offload = &esp_offload;
+	net_if_offload_set(iface, &esp_offload);
 
 	return 0;
 }

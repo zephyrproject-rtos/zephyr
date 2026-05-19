@@ -43,11 +43,7 @@ static struct test_ctx contexts[CONFIG_BT_MAX_CONN];
 
 static int send_data_over_l2cap(struct bt_l2cap_chan *chan, uint8_t *data, size_t len)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(chan->conn), addr, sizeof(addr));
-
-	LOG_DBG("[%s] chan %p data %p len %d", addr, chan, data, len);
+	LOG_DBG("[%s] chan %p data %p len %d", bt_conn_dst_str(chan->conn), chan, data, len);
 
 	struct net_buf *buf = net_buf_alloc(&sdu_tx_pool, K_NO_WAIT);
 
@@ -79,11 +75,7 @@ static void resume_sending_until_done(struct test_ctx *ctx)
 	if (ctx->sdu_count < SDU_NUM) {
 		send_data_over_l2cap(chan, tx_data, sizeof(tx_data));
 	} else {
-		char addr[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(bt_conn_get_dst(chan->conn), addr, sizeof(addr));
-
-		LOG_DBG("[%s] Done sending", addr);
+		LOG_DBG("[%s] Done sending", bt_conn_dst_str(chan->conn));
 	}
 }
 
@@ -189,21 +181,18 @@ static struct test_ctx *get_ctx_from_address(const bt_addr_le_t *address)
 static void acl_connected(struct bt_conn *conn, uint8_t err)
 {
 	const bt_addr_le_t *central = bt_conn_get_dst(conn);
-	char addr[BT_ADDR_LE_STR_LEN];
 	struct test_ctx *ctx;
 	int ret;
 
-	bt_addr_le_to_str(central, addr, sizeof(addr));
-
-	TEST_ASSERT(err == 0, "Failed to connect to %s (0x%02x)", addr, err);
+	TEST_ASSERT(err == 0, "Failed to connect to %s (0x%02x)", bt_addr_le_str(central), err);
 
 	UNSET_FLAG(ADVERTISING);
 
-	LOG_DBG("[%s] Connected (conn %p)", addr, conn);
+	LOG_DBG("[%s] Connected (conn %p)", bt_addr_le_str(central), conn);
 
 	ctx = get_ctx_from_address(central);
 	if (ctx == NULL) {
-		LOG_DBG("no initialized context for %s, allocating..", addr);
+		LOG_DBG("no initialized context for %s, allocating..", bt_addr_le_str(central));
 		ctx = alloc_ctx();
 		TEST_ASSERT(ctx, "Couldn't allocate ctx for conn %p", conn);
 
@@ -217,11 +206,7 @@ static void acl_connected(struct bt_conn *conn, uint8_t err)
 
 static void acl_disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("Disconnected from %s (reason 0x%02x)", addr, reason);
+	LOG_DBG("Disconnected from %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 }
 
 static void increment(struct bt_conn *conn, void *user_data)

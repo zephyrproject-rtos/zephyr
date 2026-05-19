@@ -15,6 +15,7 @@ import list_hardware
 import list_shields
 import yaml
 import zephyr_module
+from dts_binding_types import get_binding_type_from_path
 from gen_devicetree_rest import VndLookup
 from get_maintainer import Maintainers
 from runners.core import ZephyrBinaryRunner
@@ -122,6 +123,7 @@ def guess_image(board_or_shield):
         prefix_matches.append(f"**/{partial_name}.{{ext}}")
 
     patterns = (
+        "**/{name}.{ext}",
         *prefix_matches,
         "**/*{name}*.{ext}",
         "**/*.{ext}",
@@ -330,10 +332,8 @@ def get_catalog(generate_hw_features=False, hw_features_vendor_filter=None):
 
                     binding_path = Path(node.binding_path)
                     is_custom_binding = False
-                    if binding_path.is_relative_to(ZEPHYR_BINDINGS):
-                        binding_type = binding_path.relative_to(ZEPHYR_BINDINGS).parts[0]
-                    else:
-                        binding_type = "misc"
+                    binding_type = get_binding_type_from_path(binding_path)
+                    if binding_type == "misc" and not binding_path.is_relative_to(ZEPHYR_BINDINGS):
                         is_custom_binding = True
 
                     if node.matching_compat is None:

@@ -31,6 +31,8 @@ extern "C" {
 /** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
+/** Maximum length in bytes for options specified in @ref coap_client_option */
+#define MAX_COAP_CLIENT_OPTION_LEN (12)
 
 /**
  * @brief Representation for CoAP client response data.
@@ -51,6 +53,19 @@ struct coap_client_response_data {
 	size_t payload_len;
 	/** Indicates the last block of the response. */
 	bool last_block;
+#if defined(CONFIG_COAP_CLIENT_MULTICAST) || defined(__DOXYGEN__)
+	/**
+	 * Source address of the response.
+	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
+	 */
+	const struct net_sockaddr *source;
+
+	/**
+	 * Source address length of the response.
+	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
+	 */
+	net_socklen_t source_len;
+#endif
 };
 
 /**
@@ -61,6 +76,11 @@ struct coap_client_response_data {
  * It is used to indicate errors, response codes from server or to deliver payload.
  * Blockwise transfers cause this callback to be called sequentially with increasing payload offset
  * and only partial content in buffer pointed by payload parameter.
+ *
+ * For multicast requests the callback is invoked once per responding server with
+ * @p source set to the unicast source address of that server. When the collection window
+ * expires, the callback is invoked one final time with @p source set to @c NULL to
+ * signal that no further responses will be delivered for this request.
  *
  * @param data The CoAP response data.
  * @param user_data User provided context.
@@ -114,7 +134,7 @@ struct coap_client_option {
 	/** Option len */
 	uint8_t len;
 	/** Buffer for the length */
-	uint8_t value[12];
+	uint8_t value[MAX_COAP_CLIENT_OPTION_LEN];
 #endif
 };
 
@@ -139,10 +159,25 @@ struct coap_client_request {
 		options[MAX_EXTRA_OPTIONS];       /**< Extra options to be added to request */
 	uint8_t num_options;                      /**< Number of extra options */
 	void *user_data;                          /**< User provided context */
+#if defined(CONFIG_COAP_CLIENT_MULTICAST) || defined(__DOXYGEN__)
+	/**
+	 * Multicast response timeout in milliseconds. When > 0, indicates a multicast
+	 * request that accepts multiple responses within the timeout period. After the
+	 * timeout, a final callback with source=NULL signals completion, after which
+	 * no further callbacks will be issued. Multicast requests are always
+	 * non-confirmable (RFC 7252).
+	 *
+	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
+	 */
+	uint32_t multicast_timeout_ms;
+#endif
 };
 
 /** @cond INTERNAL_HIDDEN */
 struct coap_client_internal_request {
+	struct net_sockaddr_storage addr;
+	net_socklen_t addrlen;
+
 	uint8_t request_token[COAP_TOKEN_MAX_LEN];
 	uint32_t offset;
 	uint16_t last_id;
@@ -160,19 +195,26 @@ struct coap_client_internal_request {
 	/* For GETs with observe option set */
 	bool is_observe;
 	int last_response_id;
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	bool is_mcast;
+	k_timepoint_t mcast_timeout;
+#endif
 };
+/** @endcond */
 
+/**
+ * @brief Representation of a CoAP client.
+ */
 struct coap_client {
+	/** @cond INTERNAL_HIDDEN */
 	int fd;
-	struct net_sockaddr address;
-	net_socklen_t socklen;
 	struct k_mutex lock;
 	uint8_t recv_buf[MAX_COAP_MSG_LEN];
 	struct coap_client_internal_request requests[CONFIG_COAP_CLIENT_MAX_REQUESTS];
 	struct coap_option echo_option;
 	bool send_echo;
+	/** @endcond */
 };
-/** @endcond */
 
 /**
  * @brief Initialize the CoAP client.
@@ -235,6 +277,28 @@ void coap_client_cancel_requests(struct coap_client *client);
  * @param req Pointer to the CoAP client request to be canceled.
  */
 void coap_client_cancel_request(struct coap_client *client, struct coap_client_request *req);
+
+/**
+ * @brief Deregister matching CoAP observe subscriptions.
+ *
+ * Sends a GET with Observe option set to 1 (deregister) using the same token as the original
+ * observe request, per RFC 7641 Section 3.6. The CON/NON type mirrors the original request.
+ *
+ * For Confirmable requests the operation is asynchronous: retransmissions are handled by the
+ * library and the response callback is invoked with the server's final response once the
+ * deregistration is acknowledged.
+ *
+ * For Non-confirmable requests the deregister is sent once and the request is released
+ * immediately; the response callback is invoked with @c -ECANCELED.
+ *
+ * The matching rules are the same as @ref coap_client_cancel_request.
+ *
+ * @param client Pointer to the CoAP client instance.
+ * @param req Pointer to the CoAP client request to match for deregistration.
+ *
+ * @return 0 on success, a negative error code otherwise.
+ */
+int coap_client_deregister_observe(struct coap_client *client, struct coap_client_request *req);
 
 /**
  * @brief Initialise a Block2 option to be added to a request

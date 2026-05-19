@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/socket_offload.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -33,7 +34,7 @@ LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
  * with any net_sockaddr_* type.
  */
 #define INIT_ADDRINFO(addrinfo, sockaddr) { \
-		(addrinfo)->ai_addr = &(addrinfo)->_ai_addr; \
+		(addrinfo)->ai_addr = net_sad(&(addrinfo)->_ai_addr); \
 		(addrinfo)->ai_addrlen = sizeof(*(sockaddr)); \
 		(addrinfo)->ai_canonname = (addrinfo)->_ai_canonname; \
 		(addrinfo)->_ai_canonname[0] = '\0'; \
@@ -83,8 +84,8 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 	}
 
 	memcpy(&ai->_ai_addr, &info->ai_addr, info->ai_addrlen);
-	net_sin(&ai->_ai_addr)->sin_port = state->port;
-	ai->ai_addr = &ai->_ai_addr;
+	net_sin(net_sad(&ai->_ai_addr))->sin_port = state->port;
+	ai->ai_addr = net_sad(&ai->_ai_addr);
 	ai->ai_addrlen = info->ai_addrlen;
 	memcpy(&ai->_ai_canonname, &info->ai_canonname,
 	       sizeof(ai->_ai_canonname));
@@ -140,20 +141,27 @@ again:
 	ret = dns_get_addr_info(host, qtype, &ai_state->dns_id,
 				dns_resolve_cb, ai_state, timeout_ms);
 	if (ret == 0) {
-		/* If the DNS query for reason fails so that the
-		 * dns_resolve_cb() would not be called, then we want the
-		 * semaphore to timeout so that we will not hang forever.
-		 * So make the sem timeout longer than the DNS timeout so that
-		 * we do not need to start to cancel any pending DNS queries.
+		/* If the resolver callback is not called for any reason, let the
+		 * semaphore timeout so getaddrinfo() does not hang forever.
+		 * Keep sem timeout slightly longer than the DNS timeout.
 		 */
 		ret = k_sem_take(&ai_state->sem, K_MSEC(timeout_ms + 100));
 		if (ret == -EAGAIN) {
+			/* Explicitly cancel timed out query before retrying. This
+			 * prevents delayed callbacks from using stack-based state
+			 * after getaddrinfo() returns.
+			 *
+			 * Use name-qualified cancellation so valid resolver-assigned
+			 * id 0 queries (e.g. mDNS) are also canceled without risking
+			 * canceling an unrelated query that happens to use id 0.
+			 */
+			(void) dns_cancel_addr_info_with_name(host, qtype, ai_state->dns_id);
+
 			if (!sys_timepoint_expired(end)) {
+				k_sem_reset(&ai_state->sem);
 				timeout = recalc_timeout(end, timeout);
 				goto again;
 			}
-
-			(void)dns_cancel_addr_info(ai_state->dns_id);
 			st = DNS_EAI_AGAIN;
 		} else {
 			if (ai_state->status == DNS_EAI_CANCELED) {
@@ -171,6 +179,9 @@ again:
 		 * DNS_EAI_ADDRFAMILY.
 		 */
 		st = DNS_EAI_ADDRFAMILY;
+	} else if (ret == -EAGAIN) {
+		/* Temporary resolver-side condition (e.g. no available query slot). */
+		st = DNS_EAI_AGAIN;
 	} else {
 		errno = -ret;
 		st = DNS_EAI_SYSTEM;
@@ -188,7 +199,7 @@ static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
 
 	/* For NET_AF_UNSPEC, should we default to IPv6 or IPv4? */
 	if (hints->ai_family == NET_AF_INET || hints->ai_family == NET_AF_UNSPEC) {
-		struct net_sockaddr_in *addr = net_sin(&res->_ai_addr);
+		struct net_sockaddr_in *addr = net_sin(net_sad(&res->_ai_addr));
 
 		addr->sin_addr.s_addr = NET_INADDR_ANY;
 		addr->sin_port = net_htons(port);
@@ -196,7 +207,7 @@ static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
 		INIT_ADDRINFO(res, addr);
 		res->ai_family = NET_AF_INET;
 	} else if (hints->ai_family == NET_AF_INET6) {
-		struct net_sockaddr_in6 *addr6 = net_sin6(&res->_ai_addr);
+		struct net_sockaddr_in6 *addr6 = net_sin6(net_sad(&res->_ai_addr));
 
 		addr6->sin6_addr = net_in6addr_any;
 		addr6->sin6_port = net_htons(port);
@@ -290,7 +301,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	}
 
 	for (uint16_t idx = 0; idx < ai_state.idx; idx++) {
-		ai_addr = &ai_state.ai_arr[idx]._ai_addr;
+		ai_addr = net_sad(&ai_state.ai_arr[idx]._ai_addr);
 		net_sin(ai_addr)->sin_port = net_htons(port);
 	}
 
@@ -378,13 +389,13 @@ static int try_resolve_literal_addr(const char *host, const char *service,
 		}
 	}
 
-	result = net_ipaddr_parse(host, strlen(host), &res->_ai_addr);
+	result = net_ipaddr_parse(host, strlen(host), net_sad(&res->_ai_addr));
 
 	if (!result) {
 		return DNS_EAI_NONAME;
 	}
 
-	resolved_family = res->_ai_addr.sa_family;
+	resolved_family = res->_ai_addr.ss_family;
 
 	if ((family != NET_AF_UNSPEC) && (resolved_family != family)) {
 		return DNS_EAI_NONAME;
@@ -404,8 +415,7 @@ static int try_resolve_literal_addr(const char *host, const char *service,
 	switch (resolved_family) {
 	case NET_AF_INET:
 	{
-		struct net_sockaddr_in *addr =
-			(struct net_sockaddr_in *)&res->_ai_addr;
+		struct net_sockaddr_in *addr = net_sin(net_sad(&res->_ai_addr));
 
 		INIT_ADDRINFO(res, addr);
 		addr->sin_port = net_htons(port);
@@ -415,8 +425,7 @@ static int try_resolve_literal_addr(const char *host, const char *service,
 
 	case NET_AF_INET6:
 	{
-		struct net_sockaddr_in6 *addr =
-			(struct net_sockaddr_in6 *)&res->_ai_addr;
+		struct net_sockaddr_in6 *addr = net_sin6(net_sad(&res->_ai_addr));
 
 		INIT_ADDRINFO(res, addr);
 		addr->sin6_port = net_htons(port);

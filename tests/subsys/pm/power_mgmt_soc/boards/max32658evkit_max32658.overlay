@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sram0 {
+	adi,ram-bank-retained;
+};
+
+&sram1 {
+	adi,ram-bank-retained;
+};
+
+&sram2 {
+	adi,ram-bank-retained;
+};
+
+&sram3 {
+	adi,ram-bank-retained;
+};
+
+&sram4 {
+	adi,ram-bank-retained;
+};

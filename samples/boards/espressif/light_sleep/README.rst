@@ -1,31 +1,19 @@
 .. zephyr:code-sample:: esp32-light-sleep
    :name: Light Sleep
 
-   Use light sleep mode on ESP32 to save power while preserving the state of the memory, CPU, and
-   peripherals.
+   Use light sleep mode on ESP32 to save power while preserving the state of the memory,
+   CPU, and peripherals.
 
 Overview
 ********
 
-This example illustrates usage of light sleep mode. Unlike deep sleep mode,
-light sleep preserves the state of the memory, CPU, and peripherals. Execution
-of code on both CPUs is stopped when :c:func:`esp_light_sleep_start()` function is called.
-When the chip exits light sleep mode, execution continues at the point where it
-was stopped, and :c:func:`esp_light_sleep_start()` function returns.
+This example illustrates usage of light sleep mode. Unlike deep sleep mode, light sleep
+preserves the state of memory, CPU, and peripherals.
 
-The example enables the following wakeup sources:
-
-* ``Timer``: wake up the chip in 2 seconds.
-* ``EXT0``: wake up the chip if a button attached to GPIO0 is pressed (i.e. if
-  GPIO0 goes low).
-
-Requirements
-************
-
-This example can be used with any ESP32 development board. Most boards have a
-button attached to GPIO0, often labelled BOOT. If the board does not have such
-button, an external button can be connected, along with a 10k pull-up resistor,
-and a 100nF capacitor to ground for debouncing.
+Light sleep is entered automatically while the system is idle and power management
+is enabled. In the current implementation, wake-up from light sleep is supported only
+via an RTC timer, since execution resumes under control of the Zephyr scheduler and
+the wake-up time is scheduled in advance.
 
 Building, Flashing and Running
 ******************************
@@ -37,35 +25,22 @@ Building, Flashing and Running
    :compact:
 
 Sample Output
-=================
-ESP32 core output
------------------
+=============
 
-In the scenario below, the button attached to GPIO0 was pressed and held for
-about 500 ms, after the second wakeup from light sleep. The program has
-indicated the wakeup reason after each sleep iteration.
+The output below shows the system repeatedly entering light sleep while
+calling ``k_sleep()``. The sample uses the minimum residency time configured
+for the light sleep (standby) power state in the device tree, applies a timing
+margin, and transitions the system into light sleep. The system wakes up via
+the RTC timer and resumes execution under control of the Zephyr scheduler.
 
 .. code-block:: console
 
-   *** Booting Zephyr OS build zephyr-v3.1.0-3667-gb42e2b225ecf  ***
-
+   *** Booting Zephyr OS build v4.3.0-5178-gf042bd21bce7 ***
    Entering light sleep
-   Returned from light sleep, reason: timer, t=3344 ms, slept for 2001 ms
+   Returned from light sleep, reason: timer, t=218 ms, slept for 51 ms
    Entering light sleep
-   Returned from light sleep, reason: timer, t=5354 ms, slept for 2000 ms
+   Returned from light sleep, reason: timer, t=279 ms, slept for 51 ms
    Entering light sleep
-   Returned from light sleep, reason: pin, t=5885 ms, slept for 521 ms
-   Waiting for GPIO0 to go high...
+   Returned from light sleep, reason: timer, t=340 ms, slept for 51 ms
    Entering light sleep
-   Returned from light sleep, reason: timer, t=8765 ms, slept for 2000 ms
-   Entering light sleep
-   Returned from light sleep, reason: timer, t=10776 ms, slept for 2001 ms
-   Entering light sleep
-
-Troubleshooting
-***************
-
-If pressing the button attached to GPIO0 does not affect program behavior,
-check DTR/RTS configuration in the serial monitor. This is not necessary for
-IDF monitor, but for other tools it might be necessary to set DTR and RTS line
-state to "disabled" or "de-asserted".
+   Returned from light sleep, reason: timer, t=401 ms, slept for 51 ms

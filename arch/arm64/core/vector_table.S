@@ -37,7 +37,11 @@ _ASM_FILE_PROLOGUE
 	 *   z_arm64_context_switch() in the kernel structure.
 	 */
 
+	.cfi_startproc
+	.cfi_def_cfa_offset 0
+
 	sub	sp, sp, ___esf_t_SIZEOF
+	.cfi_adjust_cfa_offset ___esf_t_SIZEOF
 
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	.if	\el == el1
@@ -103,6 +107,13 @@ _ASM_FILE_PROLOGUE
 	bl	z_arm64_fpu_enter_exc
 #endif
 
+	/* CFI: describe the exception frame for GDB backtrace unwinding */
+	.cfi_def_cfa sp, ___esf_t_SIZEOF
+	.cfi_offset 30, (___esf_t_spsr_elr_OFFSET + 8 - ___esf_t_SIZEOF)
+#ifdef CONFIG_FRAME_POINTER
+	.cfi_offset 29, (___esf_t_fp_OFFSET - ___esf_t_SIZEOF)
+#endif
+
 .endm
 
 /*
@@ -146,6 +157,8 @@ _ASM_FILE_PROLOGUE
 
 GDATA(_vector_table)
 SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
+	/* CFI for all vector stubs in this section (GDB backtrace) */
+	.cfi_sections .debug_frame
 
 	/* The whole table must be 2K aligned */
 	.align 11
@@ -154,6 +167,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 	.align 7
 	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_sync_exc
+	.cfi_endproc
 
 	/* Current EL with SP0 / IRQ */
 	.align 7
@@ -163,6 +177,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #else
 	b	z_irq_spurious
 #endif
+	.cfi_endproc
 
 	/* Current EL with SP0 / FIQ */
 	.align 7
@@ -172,11 +187,13 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 	.align 7
 	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_serror
+	.cfi_endproc
 
 	/* Current EL with SPx / Synchronous */
 	.align 7
 	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_sync_exc
+	.cfi_endproc
 
 	/* Current EL with SPx / IRQ */
 	.align 7
@@ -186,6 +203,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #else
 	b	z_irq_spurious
 #endif
+	.cfi_endproc
 
 	/* Current EL with SPx / FIQ */
 	.align 7
@@ -195,11 +213,13 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 	.align 7
 	z_arm64_enter_exc x0, x1, el1
 	b	z_arm64_serror
+	.cfi_endproc
 
 	/* Lower EL using AArch64 / Synchronous */
 	.align 7
 	z_arm64_enter_exc x0, x1, el0
 	b	z_arm64_sync_exc
+	.cfi_endproc
 
 	/* Lower EL using AArch64 / IRQ */
 	.align 7
@@ -209,6 +229,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #else
 	b	z_irq_spurious
 #endif
+	.cfi_endproc
 
 	/* Lower EL using AArch64 / FIQ */
 	.align 7
@@ -218,6 +239,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 	.align 7
 	z_arm64_enter_exc x0, x1, el0
 	b	z_arm64_serror
+	.cfi_endproc
 
 	/* Lower EL using AArch32 / Synchronous */
 	.align 7
@@ -237,12 +259,24 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 
 GTEXT(z_arm64_serror)
 SECTION_FUNC(TEXT, z_arm64_serror)
+	/*
+	 * CFI: entered from vector stub with SP at struct arch_esf.
+	 * Describe it so GDB can unwind (e.g. from z_arm64_fatal_error).
+	 */
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	.cfi_def_cfa sp, ___esf_t_SIZEOF
+	.cfi_offset 30, (___esf_t_spsr_elr_OFFSET + 8 - ___esf_t_SIZEOF)
+#ifdef CONFIG_FRAME_POINTER
+	.cfi_offset 29, (___esf_t_fp_OFFSET - ___esf_t_SIZEOF)
+#endif
 
 	mov	x1, sp
 	mov	x0, #0 /* K_ERR_CPU_EXCEPTION */
 
 	bl	z_arm64_fatal_error
 	/* Return here only in case of recoverable error */
+	.cfi_endproc
 	b	z_arm64_exit_exc
 
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
@@ -304,8 +338,19 @@ SECTION_FUNC(TEXT, z_arm64_exit_exc)
 #ifdef CONFIG_FPU_SHARING
 	bl	z_arm64_fpu_exit_exc
 
- GTEXT(z_arm64_exit_exc_fpu_done)
- z_arm64_exit_exc_fpu_done:
+GTEXT(z_arm64_exit_exc_fpu_done)
+z_arm64_exit_exc_fpu_done:
+#endif
+	/*
+	 * CFI: alternate entry (from z_arm64_sync_exc after z_arm64_fpu_trap)
+	 * or fall-through from above. SP still points at struct arch_esf.
+	 */
+	.cfi_sections .debug_frame
+	.cfi_startproc
+	.cfi_def_cfa sp, ___esf_t_SIZEOF
+	.cfi_offset 30, (___esf_t_spsr_elr_OFFSET + 8 - ___esf_t_SIZEOF)
+#ifdef CONFIG_FRAME_POINTER
+	.cfi_offset 29, (___esf_t_fp_OFFSET - ___esf_t_SIZEOF)
 #endif
 
 	ldp	x0, x1, [sp, ___esf_t_spsr_elr_OFFSET]
@@ -353,5 +398,6 @@ SECTION_FUNC(TEXT, z_arm64_exit_exc)
 	 *   thread was switched out.
 	 * - The address of z_thread_entry() for new threads (see thread.c).
 	 */
+	.cfi_endproc
 	eret
 

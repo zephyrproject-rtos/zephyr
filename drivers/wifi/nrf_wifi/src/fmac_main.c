@@ -50,7 +50,7 @@ struct nrf_wifi_drv_priv_zep rpu_drv_priv_zep;
 extern const struct nrf_wifi_osal_ops nrf_wifi_os_zep_ops;
 extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len, char *buf, int buflen);
 
-/* 3 bytes for addreess, 3 bytes for length */
+/* 3 bytes for address, 3 bytes for length */
 #define MAX_PKT_RAM_TX_ALIGN_OVERHEAD 6
 #ifndef CONFIG_NRF70_RADIO_TEST
 #ifdef CONFIG_NRF70_DATA_TX
@@ -318,7 +318,9 @@ void nrf_wifi_event_get_reg_zep(void *vif_ctx,
 	fmac_dev_ctx->alpha2_valid = true;
 }
 
-int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
+int nrf_wifi_reg_domain(const struct device *dev,
+			struct net_if *iface __unused,
+			struct wifi_reg_domain *reg_domain)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;

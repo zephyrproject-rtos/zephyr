@@ -123,6 +123,8 @@ void nxp_pint_pin_disable(uint8_t pin)
 	if (slot == NO_PINT_ID) {
 		return;
 	}
+	/* This pin no longer have a slot assigned */
+	pin_pint_id[pin] = NO_PINT_ID;
 	/* Remove this pin from the PINT slot if one was in use */
 	pint_irq_cfg[slot].used = false;
 	PINT_PinInterruptConfig(pint_base, slot, kPINT_PinIntEnableNone, NULL);

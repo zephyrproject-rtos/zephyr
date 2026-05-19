@@ -6,12 +6,14 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <strings.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -41,8 +43,8 @@
 BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 	     "Either SCAN_SELF or SCAN_OFFLOAD must be enabled");
 
-#define SEM_TIMEOUT                 K_SECONDS(60)
-#define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120) /* 2 minutes */
+#define SEM_TIMEOUT                 K_SECONDS(60U)
+#define BROADCAST_ASSISTANT_TIMEOUT K_SECONDS(120U) /* 2 minutes */
 
 #define LOG_INTERVAL 1000U
 
@@ -52,9 +54,9 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_SCAN_SELF) || IS_ENABLED(CONFIG_SCAN_OFFLOAD),
 #define ADV_TIMEOUT K_FOREVER
 #endif /* CONFIG_SCAN_SELF */
 
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP                      5
-#define NAME_LEN                          sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1
+#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 5U /* Set the timeout relative to interval */
+#define PA_SYNC_SKIP                      5U
+#define NAME_LEN                          sizeof(CONFIG_TARGET_BROADCAST_NAME) + 1U
 #define BROADCAST_DATA_ELEMENT_SIZE       sizeof(int16_t)
 
 static K_SEM_DEFINE(sem_broadcast_sink_stopped, 0U, 1U);
@@ -344,6 +346,8 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 {
 	int err;
 
+	ARG_UNUSED(base_size);
+
 	if (base_received) {
 		return;
 	}
@@ -411,6 +415,8 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 
 static void pa_timer_handler(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	if (req_recv_state != NULL) {
 		enum bt_bap_pa_state pa_state;
 
@@ -473,6 +479,8 @@ static int pa_sync_past(struct bt_conn *conn, uint16_t pa_interval)
 static void recv_state_updated_cb(struct bt_conn *conn,
 				  const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
+	ARG_UNUSED(conn);
+
 	printk("Receive state updated, pa sync state: %u, encrypt_state %u\n",
 	       recv_state->pa_sync_state, recv_state->encrypt_state);
 
@@ -531,6 +539,8 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 {
 	int err;
 
+	ARG_UNUSED(conn);
+
 	printk("PA sync termination req, pa sync state: %u\n", recv_state->pa_sync_state);
 
 	for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
@@ -554,6 +564,8 @@ static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
 			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
+	ARG_UNUSED(conn);
+
 	printk("Broadcast code received for %p\n", recv_state);
 
 	req_recv_state = recv_state;
@@ -569,8 +581,10 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 {
 	bool sync_req = false;
 	bool bis_sync_req_no_pref = true;
-	uint8_t subgroup_sync_req_cnt = 0;
-	uint32_t bis_sync_req_bitfield = 0;
+	uint8_t subgroup_sync_req_cnt = 0U;
+	uint32_t bis_sync_req_bitfield = 0U;
+
+	ARG_UNUSED(conn);
 
 	(void)memset(requested_bis_sync, 0, sizeof(requested_bis_sync));
 
@@ -651,18 +665,15 @@ static struct bt_bap_scan_delegator_cb scan_delegator_cbs = {
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err != 0U) {
-		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
+		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
+		       err, bt_hci_err_to_str(err));
 
 		broadcast_assistant_conn = NULL;
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 	broadcast_assistant_conn = bt_conn_ref(conn);
 
 	k_sem_give(&sem_connected);
@@ -670,15 +681,12 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != broadcast_assistant_conn) {
 		return;
 	}
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(broadcast_assistant_conn);
 	broadcast_assistant_conn = NULL;
@@ -698,7 +706,6 @@ static struct bt_pacs_cap cap = {
 static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 
@@ -720,16 +727,13 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
-	       le_addr, info->sid);
+	       bt_addr_le_str(info->addr), info->sid);
 
 	if (broadcast_assistant_conn == NULL /* Not requested by Broadcast Assistant */ ||
 	    (req_recv_state != NULL && bt_addr_le_eq(info->addr, &req_recv_state->addr) &&
 	     info->sid == req_recv_state->adv_sid &&
 	     broadcast_id == req_recv_state->broadcast_id)) {
-
 		/* Store info for PA sync parameters */
 		memcpy(&broadcaster_info, info, sizeof(broadcaster_info));
 		bt_addr_le_copy(&broadcaster_addr, info->addr);
@@ -877,7 +881,7 @@ static int init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Bluetooth enable failed (err %d)\n", err);
 		return err;
 	}
@@ -885,19 +889,19 @@ static int init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		printk("Could not register PACS (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap);
-	if (err) {
+	if (err != 0) {
 		printk("Capability register failed (err %d)\n", err);
 		return err;
 	}
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cbs);
-	if (err) {
+	if (err != 0) {
 		printk("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -941,7 +945,7 @@ static int reset(void)
 
 	if (broadcast_sink != NULL) {
 		err = bt_bap_broadcast_sink_delete(broadcast_sink);
-		if (err) {
+		if (err != 0) {
 			printk("Deleting broadcast sink failed (err %d)\n", err);
 
 			return err;
@@ -952,7 +956,7 @@ static int reset(void)
 
 	if (pa_sync != NULL) {
 		bt_le_per_adv_sync_delete(pa_sync);
-		if (err) {
+		if (err != 0) {
 			printk("Deleting PA sync failed (err %d)\n", err);
 
 			return err;
@@ -1172,7 +1176,7 @@ int main(void)
 	int err;
 
 	err = init();
-	if (err) {
+	if (err != 0) {
 		printk("Init failed (err %d)\n", err);
 		return 0;
 	}

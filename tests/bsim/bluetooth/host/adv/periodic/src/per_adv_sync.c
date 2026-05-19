@@ -34,27 +34,19 @@ DEFINE_FLAG_STATIC(flag_per_adv_recv);
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err != BT_HCI_ERR_SUCCESS) {
-		TEST_FAIL("Failed to connect to %s: %u", addr, err);
+		TEST_FAIL("Failed to connect to %s: %u", bt_conn_dst_str(conn), err);
 		return;
 	}
 
-	printk("Connected to %s\n", addr);
+	printk("Connected to %s\n", bt_conn_dst_str(conn));
 	g_conn = bt_conn_ref(conn);
 	SET_FLAG(flag_connected);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s (reason %u)\n", addr, reason);
+	printk("Disconnected: %s (reason %u)\n", bt_conn_dst_str(conn), reason);
 
 	bt_conn_unref(g_conn);
 	g_conn = NULL;
@@ -112,13 +104,9 @@ static struct bt_le_scan_cb scan_callbacks = {
 static void sync_cb(struct bt_le_per_adv_sync *sync,
 		    struct bt_le_per_adv_sync_synced_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 	       "Interval 0x%04x (%u us)\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr,
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr),
 	       info->interval, BT_CONN_INTERVAL_TO_US(info->interval));
 
 	SET_FLAG(flag_per_adv_sync);
@@ -127,12 +115,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 static void term_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr);
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
 
 	SET_FLAG(flag_per_adv_sync_lost);
 }
@@ -141,16 +125,14 @@ static void recv_cb(struct bt_le_per_adv_sync *recv_sync,
 		    const struct bt_le_per_adv_sync_recv_info *info,
 		    struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	uint8_t buf_data_len;
 
 	if (IS_FLAG_SET(flag_per_adv_recv)) {
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s advertisement received\n",
-	       bt_le_per_adv_sync_get_index(recv_sync), le_addr);
+	       bt_le_per_adv_sync_get_index(recv_sync), bt_addr_le_str(info->addr));
 
 	while (buf->len > 0) {
 		buf_data_len = (uint8_t)net_buf_simple_pull_le16(buf);

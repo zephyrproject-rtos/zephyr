@@ -38,9 +38,8 @@ extern "C" {
 
 /* Helpers to access gptp_domain fields. */
 #define GPTP_PORT_START 1
-#define GPTP_PORT_END (gptp_domain.default_ds.nb_ports + GPTP_PORT_START)
-
-#define GPTP_PORT_INDEX (port - GPTP_PORT_START)
+#define GPTP_PORT_END (gptp_domain.default_ds.nb_ports - 1 + GPTP_PORT_START)
+#define GPTP_PORT_INDEX(port) (port - GPTP_PORT_START)
 
 #define GPTP_GLOBAL_DS() (&gptp_domain.global_ds)
 #define GPTP_DEFAULT_DS() (&gptp_domain.default_ds)
@@ -50,17 +49,17 @@ extern "C" {
 #define GPTP_STATE() (&gptp_domain.state)
 
 #define GPTP_PORT_DS(port) \
-	(&gptp_domain.port_ds[port - GPTP_PORT_START])
+	(&gptp_domain.port_ds[GPTP_PORT_INDEX(port)])
 #define GPTP_PORT_STATE(port) \
-	(&gptp_domain.port_state[port - GPTP_PORT_START])
+	(&gptp_domain.port_state[GPTP_PORT_INDEX(port)])
 #define GPTP_PORT_BMCA_DATA(port) \
-	(&gptp_domain.port_bmca_data[port - GPTP_PORT_START])
+	(&gptp_domain.port_bmca_data[GPTP_PORT_INDEX(port)])
 #define GPTP_PORT_IFACE(port) \
-	gptp_domain.iface[port - GPTP_PORT_START]
+	gptp_domain.iface[GPTP_PORT_INDEX(port)]
 
 #if defined(CONFIG_NET_GPTP_STATISTICS)
 #define GPTP_PORT_PARAM_DS(port)				\
-	(&gptp_domain.port_param_ds[port - GPTP_PORT_START])
+	(&gptp_domain.port_param_ds[GPTP_PORT_INDEX(port)])
 #endif
 
 #define CLEAR_RESELECT(global_ds, port) \
@@ -277,7 +276,7 @@ struct gptp_default_ds {
 	bool gm_capable;
 
 	/** Number of ports of the time-aware system. */
-	uint8_t nb_ports;
+	uint16_t nb_ports;
 
 	/** Primary priority of the time-aware system. */
 	uint8_t priority1;

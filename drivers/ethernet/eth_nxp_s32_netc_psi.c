@@ -76,7 +76,8 @@ static void phy_link_state_changed(const struct device *pdev,
 	}
 }
 
-static const struct device *nxp_s32_eth_get_phy(const struct device *dev)
+static const struct device *nxp_s32_eth_get_phy(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	const struct nxp_s32_eth_config *cfg = dev->config;
 
@@ -164,14 +165,7 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 	const struct nxp_s32_eth_config *cfg = dev->config;
 	const struct nxp_s32_eth_msix *msix;
 
-	/*
-	 * For VLAN, this value is only used to get the correct L2 driver.
-	 * The iface pointer in context should contain the main interface
-	 * if the VLANs are enabled.
-	 */
-	if (ctx->iface == NULL) {
-		ctx->iface = iface;
-	}
+	ctx->iface = iface;
 
 	Netc_Eth_Ip_SetMacAddr(cfg->si_idx, (const uint8_t *)ctx->mac_addr);
 	net_if_set_link_addr(iface, ctx->mac_addr, sizeof(ctx->mac_addr), NET_LINK_ETHERNET);
@@ -192,10 +186,11 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 			cfg->phy_dev);
 		return;
 	}
-	phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 
 	/* Do not start the interface until PHY link is up */
 	net_if_carrier_off(iface);
+
+	phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 
 	for (int i = 0; i < NETC_MSIX_EVENTS_COUNT; i++) {
 		msix = &cfg->msix[i];

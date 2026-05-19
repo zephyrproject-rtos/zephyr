@@ -16,5 +16,7 @@ tests:
       - nrf9160dk/nrf9160
       - nrf5340dk/nrf5340/cpuapp
       - frdm_mcxc444
+      - frdm_imxrt1186/mimxrt1186/cm33
+      - frdm_imxrt1186/mimxrt1186/cm7
     integration_platforms:
       - nrf9160dk/nrf9160

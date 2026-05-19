@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Maximilian Zimmermann
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    QEMU RAM framebuffer display device.
+
+    Note:
+      The QEMU binary bundled with current Zephyr SDK 1.0.0 does not
+      provide usable RAMFB display support. Use an external QEMU build with
+      ``ramfb`` and a GUI display backend (for example ``sdl``) enabled.
+      You can select the external QEMU binary by setting ``QEMU_BIN_PATH``
+      when running west.
+
+compatible: "qemu,ramfb"
+
+include: display-controller.yaml
+
+properties:
+  fwcfg:
+    type: phandle
+    required: true
+    description: fw_cfg device used to configure the ramfb endpoint.
+
+  memory-region:
+    type: phandle
+    required: true
+    description: Reserved memory node used as the framebuffer backing store.

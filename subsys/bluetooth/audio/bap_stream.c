@@ -2,7 +2,7 @@
 
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2021-2024 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2025 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,9 +31,11 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "../host/iso_internal.h"
 
+#include "ascs_internal.h"
 #include "audio_internal.h"
 #include "bap_internal.h"
 #include "bap_iso.h"
@@ -76,10 +78,9 @@ void bt_bap_stream_init(struct bt_bap_stream *stream)
 	stream->user_data = user_data;
 }
 
-void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
-			  struct bt_audio_codec_cfg *codec_cfg)
+void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep)
 {
-	LOG_DBG("conn %p stream %p ep %p codec_cfg %p", (void *)conn, stream, ep, codec_cfg);
+	LOG_DBG("conn %p stream %p ep %p", (void *)conn, stream, ep);
 
 	if (conn != NULL) {
 		__ASSERT(stream->conn == NULL || stream->conn == conn,
@@ -88,7 +89,7 @@ void bt_bap_stream_attach(struct bt_conn *conn, struct bt_bap_stream *stream, st
 			stream->conn = bt_conn_ref(conn);
 		}
 	}
-	stream->codec_cfg = codec_cfg;
+
 	stream->ep = ep;
 	ep->stream = stream;
 }
@@ -485,6 +486,602 @@ int bt_bap_stream_get_tx_sync(struct bt_bap_stream *stream, struct bt_iso_tx_inf
 #endif /* CONFIG_BT_AUDIO_TX */
 
 #if defined(CONFIG_BT_BAP_UNICAST)
+static uint8_t conn_get_role(const struct bt_conn *conn)
+{
+	struct bt_conn_info info;
+	int err;
+
+	err = bt_conn_get_info(conn, &info);
+	__ASSERT(err == 0, "Failed to get conn info");
+
+	return info.role;
+}
+
+static bool bap_stream_valid_client_snk_ase_op(enum bt_bap_ep_state ep_state, uint8_t ase_op)
+{
+	bool valid_op;
+
+	switch (ep_state) {
+	case BT_BAP_EP_STATE_IDLE:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+		case BT_ASCS_QOS_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+		case BT_ASCS_QOS_OP:
+		case BT_ASCS_ENABLE_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_ENABLING:
+		switch (ase_op) {
+		case BT_ASCS_DISABLE_OP:
+		case BT_ASCS_METADATA_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_STREAMING:
+		switch (ase_op) {
+		case BT_ASCS_DISABLE_OP:
+		case BT_ASCS_METADATA_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	default:
+		valid_op = false;
+		break;
+	}
+
+	return valid_op;
+}
+
+static bool bap_stream_valid_client_src_ase_op(enum bt_bap_ep_state ep_state, uint8_t ase_op)
+{
+	bool valid_op;
+
+	switch (ep_state) {
+	case BT_BAP_EP_STATE_IDLE:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+		case BT_ASCS_QOS_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+		case BT_ASCS_QOS_OP:
+		case BT_ASCS_ENABLE_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_ENABLING:
+		switch (ase_op) {
+		case BT_ASCS_START_OP:
+		case BT_ASCS_DISABLE_OP:
+		case BT_ASCS_METADATA_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_STREAMING:
+		switch (ase_op) {
+		case BT_ASCS_DISABLE_OP:
+		case BT_ASCS_METADATA_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_DISABLING:
+		switch (ase_op) {
+		case BT_ASCS_STOP_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	default:
+		valid_op = false;
+		break;
+	}
+
+	return valid_op;
+}
+
+static bool bap_stream_valid_client_ase_op(enum bt_audio_dir ep_dir, enum bt_bap_ep_state ep_state,
+					   uint8_t ase_op)
+{
+	bool valid_op;
+
+	if (ep_dir == BT_AUDIO_DIR_SINK && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)) {
+		valid_op = bap_stream_valid_client_snk_ase_op(ep_state, ase_op);
+	} else if (ep_dir == BT_AUDIO_DIR_SOURCE &&
+		   IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
+		valid_op = bap_stream_valid_client_src_ase_op(ep_state, ase_op);
+	} else {
+		valid_op = false;
+	}
+
+	return valid_op;
+}
+
+static bool bap_stream_valid_server_snk_ase_op(enum bt_bap_ep_state ep_state, uint8_t ase_op)
+{
+	bool valid_op;
+
+	switch (ep_state) {
+	case BT_BAP_EP_STATE_IDLE:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_ENABLING:
+		switch (ase_op) {
+		case BT_ASCS_START_OP:
+		case BT_ASCS_DISABLE_OP:
+		case BT_ASCS_METADATA_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_STREAMING:
+		switch (ase_op) {
+		case BT_ASCS_DISABLE_OP:
+		case BT_ASCS_METADATA_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	default:
+		valid_op = false;
+		break;
+	}
+
+	return valid_op;
+}
+
+static bool bap_stream_valid_server_src_ase_op(enum bt_bap_ep_state ep_state, uint8_t ase_op)
+{
+	bool valid_op;
+
+	switch (ep_state) {
+	case BT_BAP_EP_STATE_IDLE:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		switch (ase_op) {
+		case BT_ASCS_CONFIG_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_ENABLING:
+		switch (ase_op) {
+		case BT_ASCS_DISABLE_OP:
+		case BT_ASCS_METADATA_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_STREAMING:
+		switch (ase_op) {
+		case BT_ASCS_DISABLE_OP:
+		case BT_ASCS_METADATA_OP:
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_DISABLING:
+		switch (ase_op) {
+		case BT_ASCS_RELEASE_OP:
+			valid_op = true;
+			break;
+		default:
+			valid_op = false;
+			break;
+		}
+		break;
+	default:
+		valid_op = false;
+		break;
+	}
+
+	return valid_op;
+}
+
+static bool bap_stream_valid_server_ase_op(enum bt_audio_dir ep_dir, enum bt_bap_ep_state ep_state,
+					   uint8_t ase_op)
+{
+	bool valid_op;
+
+	if (ep_dir == BT_AUDIO_DIR_SINK && IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
+		valid_op = bap_stream_valid_server_snk_ase_op(ep_state, ase_op);
+	} else if (ep_dir == BT_AUDIO_DIR_SOURCE && IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
+		valid_op = bap_stream_valid_server_src_ase_op(ep_state, ase_op);
+	} else {
+		valid_op = false;
+	}
+
+	return valid_op;
+}
+
+static bool bap_stream_valid_ase_op(const struct bt_conn *conn, const struct bt_bap_ep *ep,
+				    uint8_t ase_op)
+{
+	__ASSERT_NO_MSG(ep != NULL);
+	__ASSERT_NO_MSG(ep->dir == BT_AUDIO_DIR_SINK || ep->dir == BT_AUDIO_DIR_SOURCE);
+
+	const enum bt_bap_ep_state ep_state = ep->state;
+	const enum bt_audio_dir ep_dir = ep->dir;
+	bool valid_op;
+	uint8_t role;
+
+	role = conn_get_role(conn);
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) && role == BT_CONN_ROLE_CENTRAL) {
+		valid_op = bap_stream_valid_client_ase_op(ep_dir, ep_state, ase_op);
+	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
+		valid_op = bap_stream_valid_server_ase_op(ep_dir, ep_state, ase_op);
+	} else {
+		__ASSERT(false, "Invalid conn role %u", role);
+		valid_op = false;
+	}
+
+	LOG_DBG("ASE operation (dir %d) %u in state %s is%s valid", ep_dir, ase_op,
+		bt_bap_ep_state_str(ep_state), valid_op ? "" : " not");
+
+	return valid_op;
+}
+
+static bool valid_snk_state_transition(enum bt_bap_ep_state old_state,
+				       enum bt_bap_ep_state new_state)
+{
+	bool valid_transition;
+
+	switch (old_state) {
+	case BT_BAP_EP_STATE_IDLE:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_RELEASING:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_ENABLING:
+		case BT_BAP_EP_STATE_RELEASING:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_ENABLING:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_ENABLING:
+		case BT_BAP_EP_STATE_STREAMING:
+		case BT_BAP_EP_STATE_RELEASING:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_STREAMING:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_STREAMING:
+		case BT_BAP_EP_STATE_RELEASING:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_RELEASING:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_IDLE:
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	default:
+		valid_transition = false;
+		break;
+	}
+
+	return valid_transition;
+}
+
+static bool valid_src_state_transition(enum bt_bap_ep_state old_state,
+				       enum bt_bap_ep_state new_state)
+{
+	bool valid_transition;
+
+	switch (old_state) {
+	case BT_BAP_EP_STATE_IDLE:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_IDLE:
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_RELEASING:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_ENABLING:
+		case BT_BAP_EP_STATE_RELEASING:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_ENABLING:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_ENABLING:
+		case BT_BAP_EP_STATE_STREAMING:
+		case BT_BAP_EP_STATE_DISABLING:
+		case BT_BAP_EP_STATE_RELEASING:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_STREAMING:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_QOS_CONFIGURED: /* Allowed during CIS disconnect */
+		case BT_BAP_EP_STATE_STREAMING:
+		case BT_BAP_EP_STATE_DISABLING:
+		case BT_BAP_EP_STATE_RELEASING:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_DISABLING:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		case BT_BAP_EP_STATE_RELEASING:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	case BT_BAP_EP_STATE_RELEASING:
+		switch (new_state) {
+		case BT_BAP_EP_STATE_IDLE:
+		case BT_BAP_EP_STATE_QOS_CONFIGURED:
+			valid_transition = true;
+			break;
+		default:
+			valid_transition = false;
+			break;
+		}
+		break;
+	default:
+		valid_transition = false;
+		break;
+	}
+
+	return valid_transition;
+}
+
+bool bt_bap_stream_valid_state_transition(const struct bt_bap_ep *ep, enum bt_bap_ep_state state)
+{
+	/* The tables below reflect the state machine from ASCS
+	 * The state machines in the ASCS specification does not show the unique cases of ACL
+	 * disconnection (any state -> idle or codec configured) or ISO disconnection, but they are
+	 * supported here
+	 *
+	 * ASCS_v1.0 3.2 ASE state machine transitions:
+	 *
+	 * If the server detects link loss of a CIS for an ASE in the Streaming
+	 * state or the Disabling state, the server shall immediately transition
+	 * that ASE to the QoS Configured state.
+	 */
+	__ASSERT_NO_MSG(ep != NULL);
+	__ASSERT_NO_MSG(ep->dir == BT_AUDIO_DIR_SINK || ep->dir == BT_AUDIO_DIR_SOURCE);
+
+	const enum bt_bap_ep_state ep_state = ep->state;
+	const enum bt_audio_dir ep_dir = ep->dir;
+	bool valid_transition;
+
+	if (ep_dir == BT_AUDIO_DIR_SINK && (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) ||
+					    IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK))) {
+		valid_transition = valid_snk_state_transition(ep_state, state);
+	} else if (ep_dir == BT_AUDIO_DIR_SOURCE &&
+		   (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) ||
+		    IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC))) {
+		valid_transition = valid_src_state_transition(ep_state, state);
+	} else {
+		valid_transition = false;
+	}
+
+	LOG_DBG("state transition (dir %d): %s -> %s is%s valid", ep_dir,
+		bt_bap_ep_state_str(ep_state), bt_bap_ep_state_str(state),
+		valid_transition ? "" : " not");
+
+	return valid_transition;
+}
 
 /** Checks if the stream can terminate the CIS
  *
@@ -525,14 +1122,6 @@ bool bt_bap_stream_can_disconnect(const struct bt_bap_stream *stream)
 	return false;
 }
 
-static bool bt_bap_stream_is_broadcast(const struct bt_bap_stream *stream)
-{
-	return (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SOURCE) &&
-		bt_bap_broadcast_source_has_ep(stream->ep)) ||
-	       (IS_ENABLED(CONFIG_BT_BAP_BROADCAST_SINK) &&
-		bt_bap_broadcast_sink_has_ep(stream->ep));
-}
-
 enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *stream,
 						 const struct bt_bap_qos_cfg *qos)
 {
@@ -554,8 +1143,6 @@ enum bt_bap_ascs_reason bt_bap_stream_verify_qos(const struct bt_bap_stream *str
 
 void bt_bap_stream_detach(struct bt_bap_stream *stream)
 {
-	const bool is_broadcast = bt_bap_stream_is_broadcast(stream);
-
 	LOG_DBG("stream %p conn %p ep %p", stream, (void *)stream->conn, (void *)stream->ep);
 
 	if (stream->conn != NULL) {
@@ -567,14 +1154,6 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 	if (stream->ep != NULL) {
 		stream->ep->stream = NULL;
 		stream->ep = NULL;
-	}
-
-	if (!is_broadcast) {
-		const int err = bt_bap_stream_disconnect(stream);
-
-		if (err != 0) {
-			LOG_DBG("Failed to disconnect stream %p: %d", stream, err);
-		}
 	}
 }
 
@@ -613,23 +1192,11 @@ void bt_bap_stream_reset(struct bt_bap_stream *stream)
 	bt_bap_stream_detach(stream);
 }
 
-static uint8_t conn_get_role(const struct bt_conn *conn)
-{
-	struct bt_conn_info info;
-	int err;
-
-	err = bt_conn_get_info(conn, &info);
-	__ASSERT(err == 0, "Failed to get conn info");
-
-	return info.role;
-}
-
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
-			 struct bt_audio_codec_cfg *codec_cfg)
+			 const struct bt_audio_codec_cfg *codec_cfg)
 {
-	uint8_t role;
 	int err;
 
 	LOG_DBG("conn %p stream %p, ep %p codec_cfg %p codec id 0x%02x "
@@ -647,22 +1214,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 		return -EALREADY;
 	}
 
-	role = conn_get_role(conn);
-	if (role != BT_CONN_ROLE_CENTRAL) {
-		LOG_DBG("Invalid conn role: %u, shall be central", role);
-		return -EINVAL;
-	}
-
-	switch (ep->state) {
-	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_BAP_EP_STATE_IDLE:
-		/* or 0x01 (Codec Configured) */
-	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		/* or 0x02 (QoS Configured) */
-	case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+	if (!bap_stream_valid_ase_op(conn, ep, BT_ASCS_CONFIG_OP)) {
 		return -EBADMSG;
 	}
 
@@ -673,7 +1225,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 	}
 	__ASSERT(ep->iso == NULL, "endpoint %p already bound to iso %p", ep, ep->iso);
 
-	bt_bap_stream_attach(conn, stream, ep, codec_cfg);
+	bt_bap_stream_attach(conn, stream, ep);
 
 	/* If a stream has been added to a group at this point, then it has a reference to a CIS.
 	 * and we can bind the ep to the CIS
@@ -698,7 +1250,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
 
 int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 {
-	uint8_t role;
+	struct bt_bap_stream *stream;
 	int err;
 
 	LOG_DBG("conn %p group %p", (void *)conn, group);
@@ -718,10 +1270,12 @@ int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 		return -ENOEXEC;
 	}
 
-	role = conn_get_role(conn);
-	if (role != BT_CONN_ROLE_CENTRAL) {
-		LOG_DBG("Invalid conn role: %u, shall be central", role);
-		return -EINVAL;
+	SYS_SLIST_FOR_EACH_CONTAINER(&group->streams, stream, _node) {
+		const struct bt_bap_ep *ep = stream->ep;
+
+		if (ep != NULL && !bap_stream_valid_ase_op(conn, ep, BT_ASCS_QOS_OP)) {
+			return -EBADMSG;
+		}
 	}
 
 	err = bt_bap_unicast_client_qos(conn, group);
@@ -735,7 +1289,7 @@ int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group)
 
 int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len)
 {
-	uint8_t role;
+	const struct bt_bap_ep *ep;
 	int err;
 
 	LOG_DBG("stream %p", stream);
@@ -745,15 +1299,8 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], siz
 		return -EINVAL;
 	}
 
-	role = conn_get_role(stream->conn);
-	if (role != BT_CONN_ROLE_CENTRAL) {
-		LOG_DBG("Invalid conn role: %u, shall be central", role);
-		return -EINVAL;
-	}
-
-	/* Valid for an ASE only if ASE_State field = 0x02 (QoS Configured) */
-	if (stream->ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED) {
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(stream->ep->state));
+	ep = stream->ep;
+	if (!bap_stream_valid_ase_op(stream->conn, ep, BT_ASCS_ENABLE_OP)) {
 		return -EBADMSG;
 	}
 
@@ -769,7 +1316,6 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], siz
 int bt_bap_stream_stop(struct bt_bap_stream *stream)
 {
 	struct bt_bap_ep *ep;
-	uint8_t role;
 	int err;
 
 	if (stream == NULL || stream->ep == NULL || stream->conn == NULL) {
@@ -777,20 +1323,8 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	role = conn_get_role(stream->conn);
-	if (role != BT_CONN_ROLE_CENTRAL) {
-		LOG_DBG("Invalid conn role: %u, shall be central", role);
-		return -EINVAL;
-	}
-
 	ep = stream->ep;
-
-	switch (ep->state) {
-	/* Valid only if ASE_State field = 0x03 (Disabling) */
-	case BT_BAP_EP_STATE_DISABLING:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+	if (!bap_stream_valid_ase_op(stream->conn, ep, BT_ASCS_STOP_OP)) {
 		return -EBADMSG;
 	}
 
@@ -804,10 +1338,9 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream)
 }
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 
-int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
-			     struct bt_audio_codec_cfg *codec_cfg)
+int bt_bap_stream_reconfig(struct bt_bap_stream *stream, const struct bt_audio_codec_cfg *codec_cfg)
 {
-	enum bt_bap_ep_state state;
+	struct bt_bap_ep *ep;
 	uint8_t role;
 	int err;
 
@@ -823,17 +1356,8 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 		return -EINVAL;
 	}
 
-	state = stream->ep->state;
-	switch (state) {
-	/* Valid only if ASE_State field = 0x00 (Idle) */
-	case BT_BAP_EP_STATE_IDLE:
-		/* or 0x01 (Codec Configured) */
-	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		/* or 0x02 (QoS Configured) */
-	case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+	ep = stream->ep;
+	if (!bap_stream_valid_ase_op(stream->conn, ep, BT_ASCS_CONFIG_OP)) {
 		return -EBADMSG;
 	}
 
@@ -891,7 +1415,7 @@ int bt_bap_stream_connect(struct bt_bap_stream *stream)
 
 int bt_bap_stream_start(struct bt_bap_stream *stream)
 {
-	enum bt_bap_ep_state state;
+	const struct bt_bap_ep *ep;
 	uint8_t role;
 	int err;
 
@@ -902,13 +1426,8 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 		return -EINVAL;
 	}
 
-	state = stream->ep->state;
-	switch (state) {
-	/* Valid only if ASE_State field = 0x03 (Enabling) */
-	case BT_BAP_EP_STATE_ENABLING:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+	ep = stream->ep;
+	if (!bap_stream_valid_ase_op(stream->conn, ep, BT_ASCS_START_OP)) {
 		return -EBADMSG;
 	}
 
@@ -931,7 +1450,7 @@ int bt_bap_stream_start(struct bt_bap_stream *stream)
 
 int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len)
 {
-	enum bt_bap_ep_state state;
+	const struct bt_bap_ep *ep;
 	uint8_t role;
 	int err;
 
@@ -947,15 +1466,8 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], s
 		return -EINVAL;
 	}
 
-	state = stream->ep->state;
-	switch (state) {
-	/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
-	case BT_BAP_EP_STATE_ENABLING:
-	/* or 0x04 (Streaming) */
-	case BT_BAP_EP_STATE_STREAMING:
-		break;
-	default:
-		LOG_ERR("Invalid state: %s", bt_bap_ep_state_str(state));
+	ep = stream->ep;
+	if (!bap_stream_valid_ase_op(stream->conn, ep, BT_ASCS_METADATA_OP)) {
 		return -EBADMSG;
 	}
 

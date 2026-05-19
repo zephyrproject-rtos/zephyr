@@ -12,6 +12,7 @@
 / {
 	aliases {
 		watchdog0 = &wdt;
+		rtc-0 = &rtc;
 	};
 
 	cpus {

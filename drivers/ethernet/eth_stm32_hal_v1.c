@@ -23,6 +23,8 @@
 #include "eth.h"
 #include "eth_stm32_hal_priv.h"
 
+#define DT_DRV_COMPAT st_stm32_ethernet
+
 LOG_MODULE_DECLARE(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
 void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)
@@ -217,7 +219,7 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 	}
 }
 
-int eth_stm32_hal_start(const struct device *dev)
+int eth_stm32_hal_start(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -234,7 +236,7 @@ int eth_stm32_hal_start(const struct device *dev)
 	return 0;
 }
 
-int eth_stm32_hal_stop(const struct device *dev)
+int eth_stm32_hal_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -253,8 +255,9 @@ int eth_stm32_hal_stop(const struct device *dev)
 }
 
 int eth_stm32_hal_set_config(const struct device *dev,
-				    enum ethernet_config_type type,
-				    const struct ethernet_config *config)
+			     struct net_if *iface __unused,
+			     enum ethernet_config_type type,
+			     const struct ethernet_config *config)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 	ETH_HandleTypeDef *heth = &dev_data->heth;
@@ -268,9 +271,6 @@ int eth_stm32_hal_set_config(const struct device *dev,
 			(dev_data->mac_addr[2] << 16) |
 			(dev_data->mac_addr[1] << 8) |
 			dev_data->mac_addr[0];
-		net_if_set_link_addr(dev_data->iface, dev_data->mac_addr,
-				     sizeof(dev_data->mac_addr),
-				     NET_LINK_ETHERNET);
 		return 0;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:

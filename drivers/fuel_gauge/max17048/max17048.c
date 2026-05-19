@@ -44,7 +44,7 @@ struct max17048_data {
 	/* Time in minutes */
 	uint16_t time_to_full;
 	uint16_t time_to_empty;
-	/* True if battery chargin, false if discharging */
+	/* True if battery charging, false if discharging */
 	bool charging;
 };
 

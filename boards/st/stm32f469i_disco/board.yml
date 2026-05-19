@@ -4,3 +4,5 @@ board:
   vendor: st
   socs:
     - name: stm32f469xx
+      variants:
+        - name: au1       # This variant uses the newer nt35510 device for the screen

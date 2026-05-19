@@ -38,6 +38,87 @@ static const char conflict_response[] = "HTTP/1.1 409 Conflict\r\n\r\n";
 static const char final_chunk[] = "0\r\n\r\n";
 static const char *crlf = &final_chunk[3];
 
+#define ALT_SVC_HEADER_TEMPLATE "Alt-Svc: h3=\":%u\"; ma=%d\r\n"
+#define ALT_SVC_HEADER_FINAL_TEMPLATE ALT_SVC_HEADER_TEMPLATE "\r\n"
+#define ALT_SVC_HEADER_BUFFER_SIZE \
+	sizeof("Alt-Svc: h3=\":65535\"; ma=-2147483648\r\n\r\n")
+
+#if defined(CONFIG_HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS)
+#define HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS CONFIG_HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS
+#else
+#define HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS 0
+#endif
+
+static bool http1_should_send_alt_svc(const struct http_client_ctx *client)
+{
+	enum http_h3_alt_svc_policy policy;
+	const struct http_service_desc *svc = client->service;
+
+	if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+		return false;
+	}
+
+	if (svc == NULL || svc->port == NULL || svc->fd_h3 == NULL || *svc->fd_h3 < 0) {
+		return false;
+	}
+
+	policy = svc->config == NULL ? HTTP_H3_ALT_SVC_DEFAULT :
+				       svc->config->h3_alt_svc_policy;
+
+	switch (policy) {
+	case HTTP_H3_ALT_SVC_ENABLE:
+		return true;
+	case HTTP_H3_ALT_SVC_DISABLE:
+		return false;
+	case HTTP_H3_ALT_SVC_DEFAULT:
+	default:
+		return IS_ENABLED(CONFIG_HTTP_SERVER_TO_H3_UPGRADE);
+	}
+}
+
+static int http1_send_alt_svc_header(struct http_client_ctx *client, bool end_headers)
+{
+	char alt_svc[ALT_SVC_HEADER_BUFFER_SIZE];
+	int len;
+
+	if (!http1_should_send_alt_svc(client)) {
+		return 0;
+	}
+
+	len = snprintk(alt_svc, sizeof(alt_svc),
+		       end_headers ? ALT_SVC_HEADER_FINAL_TEMPLATE :
+				     ALT_SVC_HEADER_TEMPLATE,
+		       *client->service->port,
+		       HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS);
+	if (len < 0 || len >= sizeof(alt_svc)) {
+		LOG_ERR("Failed to format Alt-Svc header");
+		return -ENOMEM;
+	}
+
+	return http_server_sendall(client, alt_svc, len);
+}
+
+static int http1_send_response_with_alt_svc(struct http_client_ctx *client,
+					    const char *response, size_t len)
+{
+	int ret;
+
+	if (!http1_should_send_alt_svc(client)) {
+		return http_server_sendall(client, response, len);
+	}
+
+	if (len < 2U) {
+		return -EINVAL;
+	}
+
+	ret = http_server_sendall(client, response, len - 2U);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return http1_send_alt_svc_header(client, true);
+}
+
 static bool is_client_http10(const struct http_client_ctx *client)
 {
 	return ((client->parser.http_major == 1) && (client->parser.http_minor == 0));
@@ -165,7 +246,7 @@ static int handle_http1_static_resource(
 			 len);
 	}
 
-	ret = http_server_sendall(client, http_response, strlen(http_response));
+	ret = http1_send_response_with_alt_svc(client, http_response, strlen(http_response));
 	if (ret < 0) {
 		return ret;
 	}
@@ -282,6 +363,11 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 				  strnlen(http_response, sizeof(http_response) - 1));
 	if (ret < 0) {
 		LOG_DBG("Failed to send HTTP headers part 1");
+		return ret;
+	}
+
+	ret = http1_send_alt_svc_header(client, false);
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -636,7 +722,8 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 		len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
 			       file_size, content_type, "", "");
 	}
-	ret = http_server_sendall(client, http_response, len);
+
+	ret = http1_send_response_with_alt_svc(client, http_response, len);
 	if (ret < 0) {
 		goto close;
 	}
@@ -884,7 +971,8 @@ static int on_header_value(struct http_parser *parser,
 			}
 
 			if (ctx->has_upgrade_header) {
-				if (strcasecmp(ctx->header_buffer, "h2c") == 0) {
+				if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) &&
+				    strcasecmp(ctx->header_buffer, "h2c") == 0) {
 					ctx->http2_upgrade = true;
 				} else if (strcasecmp(ctx->header_buffer, "websocket") == 0) {
 					ctx->websocket_upgrade = true;
@@ -895,8 +983,12 @@ static int on_header_value(struct http_parser *parser,
 
 			if (ctx->websocket_sec_key_next) {
 #if defined(CONFIG_WEBSOCKET)
-				strncpy(ctx->ws_sec_key, ctx->header_buffer,
-					MIN(sizeof(ctx->ws_sec_key), offset));
+				if (offset >= sizeof(ctx->ws_sec_key)) {
+					LOG_ERR("Sec-WebSocket-Key too long");
+					return -EBADMSG;
+				}
+				memcpy(ctx->ws_sec_key, ctx->header_buffer, offset);
+				ctx->ws_sec_key[offset] = '\0';
 #endif
 				ctx->websocket_sec_key_next = false;
 			}
@@ -921,6 +1013,7 @@ static int on_headers_complete(struct http_parser *parser)
 						   struct http_client_ctx,
 						   parser);
 
+	http_server_remove_dot_segments(ctx->url_buffer);
 	ctx->parser_state = HTTP1_RECEIVED_HEADER_STATE;
 
 	return 0;
@@ -1081,7 +1174,7 @@ int handle_http1_request(struct http_client_ctx *client)
 			goto upgrade_not_found;
 		}
 
-		if (client->http2_upgrade) {
+		if (IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_2) && client->http2_upgrade) {
 			ret = handle_http1_to_http2_upgrade(client);
 			if (ret < 0) {
 				goto error;

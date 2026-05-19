@@ -27,11 +27,7 @@
 #include "common/bt_shell_private.h"
 
 #define HELP_NONE "[none]"
-#ifdef CONFIG_ZTEST
-#define STATIC
-#else
-#define STATIC static
-#endif
+
 extern struct bt_conn *default_conn;
 
 #if defined(CONFIG_BT_HFP_HF)
@@ -316,7 +312,7 @@ void hf_query_call(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call)
 }
 #endif /* CONFIG_BT_HFP_HF_ECS */
 
-STATIC struct bt_hfp_hf_cb hf_cb = {
+ZTESTABLE_STATIC struct bt_hfp_hf_cb hf_cb = {
 	.connected = hf_connected,
 	.disconnected = hf_disconnected,
 	.sco_connected = hf_sco_connected,
@@ -1403,7 +1399,7 @@ void ag_hf_indicator_value(struct bt_hfp_ag *ag, enum hfp_ag_hf_indicators indic
 	bt_shell_print("indicator %d value %d", indicator, value);
 }
 
-STATIC struct bt_hfp_ag_cb ag_cb = {
+ZTESTABLE_STATIC struct bt_hfp_ag_cb ag_cb = {
 	.connected = ag_connected,
 	.disconnected = ag_disconnected,
 	.sco_connected = ag_sco_connected,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/init.h>
@@ -8,9 +8,6 @@
 #include "fsl_clock.h"
 #include <soc.h>
 #include <fsl_glikey.h>
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pmc_tmpsns))
-#include "fsl_romapi_otp.h"
-#endif
 
 /*!< System oscillator settling time in us */
 #define SYSOSC_SETTLING_US 220U
@@ -32,7 +29,6 @@
 #define SET_UP_FLEXCOMM_CLOCK(x)                                                                   \
 	do {                                                                                       \
 		CLOCK_AttachClk(kFCCLK0_to_FLEXCOMM##x);                                           \
-		RESET_ClearPeripheralReset(kFC##x##_RST_SHIFT_RSTn);                               \
 		CLOCK_EnableClock(kCLOCK_LPFlexComm##x);                                           \
 	} while (0)
 
@@ -190,14 +186,10 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma0))
-	CLOCK_EnableClock(kCLOCK_Dma0);
-	RESET_ClearPeripheralReset(kDMA0_RST_SHIFT_RSTn);
 	edma_enable_all_request(0);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(edma1))
-	CLOCK_EnableClock(kCLOCK_Dma1);
-	RESET_ClearPeripheralReset(kDMA1_RST_SHIFT_RSTn);
 	edma_enable_all_request(1);
 #endif
 
@@ -281,21 +273,18 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO1_DIV1_to_LPSPI14);
 	CLOCK_SetClkDiv(kCLOCK_DivLpspi14Clk, 3U);
 	CLOCK_EnableClock(kCLOCK_LPSpi14);
-	RESET_ClearPeripheralReset(kLPSPI14_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c15))
 	CLOCK_AttachClk(kSENSE_BASE_to_LPI2C15);
 	CLOCK_SetClkDiv(kCLOCK_DivLpi2c15Clk, 2U);
 	CLOCK_EnableClock(kCLOCK_LPI2c15);
-	RESET_ClearPeripheralReset(kLPI2C15_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpspi16))
 	CLOCK_AttachClk(kFRO0_DIV1_to_LPSPI16);
 	CLOCK_SetClkDiv(kCLOCK_DivLpspi16Clk, 1U);
 	CLOCK_EnableClock(kCLOCK_LPSpi16);
-	RESET_ClearPeripheralReset(kLPSPI16_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexcomm17))
@@ -422,7 +411,8 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivOstimerClk, 1U);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI
+#if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI) || \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh0)) && (CONFIG_UHC_NXP_EHCI)))
 	/* Power on COM VDDN domain for USB */
 	POWER_DisablePD(kPDRUNCFG_DSR_VDDN_COM);
 
@@ -439,14 +429,8 @@ void board_early_init_hook(void)
 	SYSCON4->USBPHY0_CLK_ACTIVE |= SYSCON4_USBPHY0_CLK_ACTIVE_IPG_CLK_ACTIVE_MASK;
 	CLOCK_AttachClk(k32KHZ_WAKE_to_USB);
 	CLOCK_AttachClk(kOSC_CLK_to_USB_24MHZ);
-	CLOCK_EnableClock(kCLOCK_Usb0);
-	CLOCK_EnableClock(kCLOCK_UsbphyRef);
 	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
 	RESET_PeripheralReset(kUSBPHY0_RST_SHIFT_RSTn);
-	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M,
-				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
-	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
-				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb0), clocks, clock_frequency));
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc0)) && CONFIG_IMX_USDHC
@@ -462,7 +446,22 @@ void board_early_init_hook(void)
 	CLOCK_InitAudioPfd(kCLOCK_Pfd0, 24U); /* Target 400MHZ. */
 	CLOCK_AttachClk(kAUDIO_PLL_PFD0_to_SDIO0);
 	CLOCK_SetClkDiv(kCLOCK_DivSdio0Clk, 1);
-	RESET_ClearPeripheralReset(kUSDHC0_RST_SHIFT_RSTn);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) && CONFIG_IMX_USDHC
+	/* Make sure USDHC1 ram buffer has power up */
+	POWER_DisablePD(kPDRUNCFG_APD_SDHC1_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_SDHC1_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PD_LPOSC);
+	POWER_ApplyPD();
+
+	/* USDHC1 */
+	/* usdhc depend on 32K clock also */
+	CLOCK_AttachClk(kLPOSC_DIV32_to_32K_WAKE);
+	CLOCK_InitAudioPfd(kCLOCK_Pfd0, 24U); /* Target 400MHZ. */
+	CLOCK_AttachClk(kAUDIO_PLL_PFD0_to_SDIO1);
+	CLOCK_SetClkDiv(kCLOCK_DivSdio1Clk, 1);
+	RESET_ClearPeripheralReset(kUSDHC1_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0))
@@ -483,7 +482,6 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kAUDIO_PLL_PFD3_to_AUDIO_VDD2);
 	CLOCK_AttachClk(kAUDIO_VDD2_to_SAI012);
 	CLOCK_SetClkDiv(kCLOCK_DivSai012Clk, 15U);
-	RESET_ClearPeripheralReset(kSAI0_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sc_timer))
@@ -552,15 +550,9 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivI3c23Clk, 4U);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(acmp))
-	CLOCK_EnableClock(kCLOCK_Acmp0);
-	RESET_ClearPeripheralReset(kACMP0_RST_SHIFT_RSTn);
-#endif
-
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pmc_tmpsns))
 	POWER_DisablePD(kPDRUNCFG_PD_PMC_TEMPSNS);
 	POWER_ApplyPD();
-	otp_init(SystemCoreClock);
 #endif
 
 #if DT_NODE_HAS_STATUS(DT_NODELABEL(co5300_zc143ac72mipi), okay)

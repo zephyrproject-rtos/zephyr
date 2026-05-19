@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -24,6 +25,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
@@ -71,6 +73,8 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 	uint32_t size;
 	int err;
 
+	ARG_UNUSED(user_data);
+
 	if (!terminal_enabled) {
 		/* Simply discard the data then */
 		(void)ring_buf_get(&usb_in_ring_buf, NULL, USB_STEREO_FRAME_SIZE);
@@ -90,7 +94,7 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 	}
 
 	if (CONFIG_INFO_REPORTING_INTERVAL > 0) {
-		if (size != 0) {
+		if (size != 0U) {
 			static size_t cnt;
 
 			if (++cnt % (CONFIG_INFO_REPORTING_INTERVAL * 10) == 0U) {
@@ -122,12 +126,21 @@ static void uac2_sof_cb(const struct device *dev, void *user_data)
 static void uac2_buf_release_cb(const struct device *dev, uint8_t terminal, void *buf,
 				void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
+
 	k_mem_slab_free(&usb_in_buf_pool, buf);
 }
 
 static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
 			       bool microframes, void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(microframes);
+	ARG_UNUSED(user_data);
+
 	terminal_enabled = enabled;
 }
 
@@ -224,7 +237,7 @@ int usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16_t *
 	const bool is_left = (chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0;
 	const bool is_right = (chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
 	const bool is_mono = chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
-	const uint8_t ts_jitter_us = 100; /* timestamps may have jitter */
+	const uint8_t ts_jitter_us = 100U; /* timestamps may have jitter */
 	static size_t cnt;
 
 	if (!terminal_enabled) {
@@ -249,7 +262,7 @@ int usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16_t *
 		return -EINVAL;
 	}
 
-	if (((is_left || is_right) && decoded_sdu.mono_frames_cnt != 0) ||
+	if (((is_left || is_right) && decoded_sdu.mono_frames_cnt != 0U) ||
 	    (is_mono &&
 	     (decoded_sdu.left_frames_cnt != 0U || decoded_sdu.right_frames_cnt != 0U))) {
 		LOG_DBG("Cannot mix and match mono with left or right");
@@ -297,7 +310,9 @@ int usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16_t *
 			return -ENOMEM;
 		}
 
-		memcpy(decoded_sdu.left_frames[decoded_sdu.left_frames_cnt++], frame, frame_size);
+		(void)memcpy(decoded_sdu.left_frames[decoded_sdu.left_frames_cnt], frame,
+			     frame_size);
+		decoded_sdu.left_frames_cnt++;
 	} else if (is_right) {
 		if (decoded_sdu.right_frames_cnt >= ARRAY_SIZE(decoded_sdu.right_frames)) {
 			LOG_WRN("Could not add more right frames");
@@ -305,7 +320,9 @@ int usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16_t *
 			return -ENOMEM;
 		}
 
-		memcpy(decoded_sdu.right_frames[decoded_sdu.right_frames_cnt++], frame, frame_size);
+		(void)memcpy(decoded_sdu.right_frames[decoded_sdu.right_frames_cnt], frame,
+			     frame_size);
+		decoded_sdu.right_frames_cnt++;
 	} else if (is_mono) {
 		/* Use left as mono*/
 		if (decoded_sdu.mono_frames_cnt >= ARRAY_SIZE(decoded_sdu.left_frames)) {
@@ -314,7 +331,9 @@ int usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16_t *
 			return -ENOMEM;
 		}
 
-		memcpy(decoded_sdu.left_frames[decoded_sdu.mono_frames_cnt++], frame, frame_size);
+		(void)memcpy(decoded_sdu.left_frames[decoded_sdu.mono_frames_cnt], frame,
+			     frame_size);
+		decoded_sdu.mono_frames_cnt++;
 	} else {
 		/* Unsupported channel */
 		LOG_DBG("Unsupported channel %d", chan_allocation);

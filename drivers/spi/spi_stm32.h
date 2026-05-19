@@ -81,6 +81,8 @@ struct spi_stm32_data {
 	volatile uint32_t status_flags;
 	struct stream dma_rx;
 	struct stream dma_tx;
+	bool tx_dma_done;
+	bool rx_dma_done;
 #endif /* CONFIG_SPI_STM32_DMA */
 	bool pm_policy_state_on;
 };
@@ -115,6 +117,26 @@ static inline uint32_t ll_spi_dma_busy(SPI_TypeDef *spi)
 #endif /* LL_SPI_SR_TXC */
 }
 #endif /* st_stm32h7_spi */
+
+static inline void ll_set_transfer_direction(SPI_TypeDef *spi, uint32_t direction)
+{
+	LL_SPI_SetTransferDirection(spi, direction);
+#if defined(CONFIG_STM32_HAL2)
+	LL_SPI_SetHalfDuplexDirection(spi, direction);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static inline uint32_t ll_get_transfer_direction(SPI_TypeDef *spi)
+{
+#if defined(CONFIG_STM32_HAL2)
+	uint32_t xfer_dir = LL_SPI_GetTransferDirection(spi);
+	uint32_t hd_dir = LL_SPI_GetHalfDuplexDirection(spi);
+
+	return hd_dir | xfer_dir;
+#else
+	return LL_SPI_GetTransferDirection(spi);
+#endif /* CONFIG_STM32_HAL2 */
+}
 
 static inline uint32_t ll_tx_is_not_full(SPI_TypeDef *spi)
 {
@@ -236,4 +258,15 @@ static inline void ll_disable_spi(SPI_TypeDef *spi)
 	}
 }
 
-#endif	/* ZEPHYR_DRIVERS_SPI_SPI_STM32_H_ */
+#if defined(SPI_CFG2_IOSWP)
+static inline void ll_spi_swap_mosi_miso(SPI_TypeDef *spi)
+{
+#if defined(CONFIG_STM32_HAL2)
+	LL_SPI_EnableMosiMisoSwap(spi);
+#else /* CONFIG_STM32_HAL2 */
+	LL_SPI_EnableIOSwap(spi);
+#endif /* CONFIG_STM32_HAL2 */
+}
+#endif /* SPI_CFG2_IOSWP */
+
+#endif	/* ZEPHYR_DRIVERS_SPI_SPI_LL_STM32_H_ */

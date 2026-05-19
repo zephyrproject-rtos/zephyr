@@ -17,6 +17,8 @@
 #include <zephyr/dt-bindings/clock/esp32c2_clock.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32C3)
 #include <zephyr/dt-bindings/clock/esp32c3_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32C5)
+#include <zephyr/dt-bindings/clock/esp32c5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32H2)

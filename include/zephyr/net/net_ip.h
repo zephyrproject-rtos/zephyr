@@ -82,6 +82,7 @@ enum net_ip_protocol_secure {
 	NET_IPPROTO_TLS_1_3 = 259,     /**< TLS 1.3 protocol */
 	NET_IPPROTO_DTLS_1_0 = 272,    /**< DTLS 1.0 protocol */
 	NET_IPPROTO_DTLS_1_2 = 273,    /**< DTLS 1.2 protocol */
+	NET_IPPROTO_QUIC = 511,        /**< QUIC protocol     */
 };
 
 /** Socket type */
@@ -199,6 +200,46 @@ struct net_sockaddr_ll {
 	uint8_t         sll_pkttype;  /**< Packet type                        */
 	uint8_t         sll_halen;    /**< Length of address                  */
 	uint8_t         sll_addr[8];  /**< Physical-layer address, big endian */
+};
+
+/** struct net_sockaddr_can - The net_sockaddr structure for CAN sockets. */
+struct net_sockaddr_can {
+	net_sa_family_t can_family;   /**< Address family */
+	int             can_ifindex;  /**< SocketCAN network interface index */
+};
+
+/**
+ * struct net_sockaddr_nm - The net_sockaddr structure for NET_MGMT sockets
+ *
+ * Similar concepts are used as in Linux AF_NETLINK. The NETLINK name is not
+ * used in order to avoid confusion between Zephyr and Linux as the
+ * implementations are different.
+ *
+ * The socket domain (address family) is AF_NET_MGMT, and the type of socket
+ * is either NET_SOCK_RAW or NET_SOCK_DGRAM, because this is a datagram-oriented
+ * service.
+ *
+ * The protocol (protocol type) selects for which feature the socket is used.
+ *
+ * When used with bind(), the nm_pid field of the net_sockaddr_nm can be
+ * filled with the calling thread' own id. The nm_pid serves here as the local
+ * address of this net_mgmt socket. The application is responsible for picking
+ * a unique integer value to fill in nm_pid.
+ */
+struct net_sockaddr_nm {
+	/** AF_NET_MGMT address family. */
+	net_sa_family_t nm_family;
+
+	/** Network interface related to this address */
+	int nm_ifindex;
+
+	/** Thread id or similar that is used to separate the different
+	 * sockets. Application can decide how the pid is constructed.
+	 */
+	uintptr_t nm_pid;
+
+	/** net_mgmt mask */
+	uint64_t nm_mask;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -1736,6 +1777,20 @@ static inline bool net_ipv6_addr_is_v4_mapped(const struct net_in6_addr *addr)
 }
 
 /**
+ *  @brief Get the IPv4 address from an IPv4 mapped IPv6 address.
+ *         The v4 mapped addresses look like \::ffff:a.b.c.d
+ *
+ *  @param addr6 IPv6 address (must be a v4-mapped address, see
+ *               net_ipv6_addr_is_v4_mapped())
+ *  @param addr4 IPv4 address to be filled in
+ */
+static inline void net_ipv6_addr_get_v4_mapped(const struct net_in6_addr *addr6,
+					       struct net_in_addr *addr4)
+{
+	addr4->s_addr = UNALIGNED_GET(&addr6->s6_addr32[3]);
+}
+
+/**
  *  @brief Generate IPv6 address using a prefix and interface identifier.
  *         Interface identifier is either generated from EUI-64 (MAC) defined
  *         in RFC 4291 or from randomized value defined in RFC 7217.
@@ -1850,6 +1905,19 @@ static inline bool net_ipv6_addr_based_on_ll(const struct net_in6_addr *addr,
 static inline struct net_sockaddr *net_sad(const struct net_sockaddr_storage *addr)
 {
 	return (struct net_sockaddr *)addr;
+}
+
+/**
+ * @brief Get net_sockaddr_storage from net_sockaddr. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to socket storage address (struct net_sockaddr_storage)
+ */
+static inline struct net_sockaddr_storage *net_sas(const struct net_sockaddr *addr)
+{
+	return (struct net_sockaddr_storage *)addr;
 }
 
 /**
@@ -2055,6 +2123,26 @@ const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
 int net_port_set_default(struct net_sockaddr *addr, uint16_t default_port);
 
 /**
+ * @brief Set the port in the sockaddr structure.
+ *
+ * @param addr Pointer to user supplied struct sockaddr.
+ * @param port Port number to set.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_port_set(struct net_sockaddr *addr, uint16_t port);
+
+/**
+ * @brief Get the port in the sockaddr structure.
+ *
+ * @param addr Pointer to user supplied struct sockaddr.
+ * @param port Pointer to a variable where the port number is returned.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int net_port_get(struct net_sockaddr *addr, uint16_t *port);
+
+/**
  * @brief Compare TCP sequence numbers.
  *
  * @details This function compares TCP sequence numbers,
@@ -2170,6 +2258,33 @@ static inline uint8_t net_priority2vlan(enum net_priority priority)
  * @return Network address family as a string, or NULL if family is unknown.
  */
 const char *net_family2str(net_sa_family_t family);
+
+/**
+ * @brief Return network address size for a given family.
+ *
+ * @param family Network address family code
+ *
+ * @return Network address size, or 0 if family is unknown.
+ */
+static inline size_t net_family2size(net_sa_family_t family)
+{
+	switch (family) {
+	case NET_AF_INET:
+		return sizeof(struct net_sockaddr_in);
+	case NET_AF_INET6:
+		return sizeof(struct net_sockaddr_in6);
+	case NET_AF_PACKET:
+		return sizeof(struct net_sockaddr_ll);
+	case NET_AF_UNIX:
+		return sizeof(struct net_sockaddr_un);
+	case NET_AF_CAN:
+		return sizeof(struct net_sockaddr_can);
+	case NET_AF_NET_MGMT:
+		return sizeof(struct net_sockaddr_nm);
+	default:
+		return 0;
+	}
+}
 
 /**
  * @brief Add IPv6 prefix as a privacy extension filter.

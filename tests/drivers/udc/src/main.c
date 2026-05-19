@@ -22,10 +22,12 @@ LOG_MODULE_REGISTER(udc_test, LOG_LEVEL_INF);
 #define BULK_IN_EP_ADDR		0x81U
 #define FALSE_EP_ADDR		0x0FU
 
-K_MSGQ_DEFINE(test_msgq, sizeof(struct udc_event), 8, sizeof(uint32_t));
+#define QUEUED_BUFFERS (CONFIG_UDC_BUF_COUNT - 4)
+
+K_MSGQ_DEFINE(test_msgq, sizeof(struct udc_event), QUEUED_BUFFERS, sizeof(uint32_t));
 static K_KERNEL_STACK_DEFINE(test_udc_stack, 512);
 static struct k_thread test_udc_thread_data;
-static K_SEM_DEFINE(ep_queue_sem, 0, 1);
+static K_SEM_DEFINE(ep_queue_sem, 0, QUEUED_BUFFERS);
 static uint8_t last_used_ep;
 static uint8_t test_event_ctx;
 
@@ -101,9 +103,25 @@ static void test_udc_ep_try_config(const struct device *dev,
 	uint16_t mps = sys_le16_to_cpu(ed->wMaxPacketSize);
 	int err;
 
-	err = udc_ep_try_config(dev, ed->bEndpointAddress,
-				ed->bmAttributes, &mps,
-				ed->bInterval);
+	for (int idx = 0; idx < 16U; idx++) {
+		uint8_t ep;
+
+		if (USB_EP_DIR_IS_IN(ed->bEndpointAddress)) {
+			ep = USB_EP_DIR_IN | idx;
+		} else {
+			ep = USB_EP_DIR_OUT | idx;
+		}
+
+		err = udc_ep_try_config(dev, ep,
+					ed->bmAttributes, &mps,
+					ed->bInterval);
+
+		if (!err) {
+			ed->bEndpointAddress = ep;
+			break;
+		}
+	}
+
 	zassert_equal(err, 0, "Failed to test endpoint configuration");
 
 	if (ed->bmAttributes == USB_EP_TYPE_CONTROL ||
@@ -325,7 +343,7 @@ static void test_udc_ep_api(const struct device *dev,
 		zassert_ok(err, "Failed to enable endpoint");
 
 		/* It needs a little reserve for memory management overhead. */
-		for (int n = 0; n < (CONFIG_UDC_BUF_COUNT - 4); n++) {
+		for (int n = 0; n < QUEUED_BUFFERS; n++) {
 			buf = udc_ep_buf_alloc(dev, ed->bEndpointAddress,
 				USB_MPS_TO_TPL(sys_le16_to_cpu(ed->wMaxPacketSize)));
 			zassert_not_null(buf,
@@ -344,8 +362,10 @@ static void test_udc_ep_api(const struct device *dev,
 		err = udc_ep_dequeue(dev, ed->bEndpointAddress);
 		zassert_ok(err, "Failed to dequeue endpoint");
 
-		err = k_sem_take(&ep_queue_sem, K_MSEC(100));
-		zassert_ok(err, "Timeout to dequeue endpoint %x %d", last_used_ep, err);
+		for (int n = 0; n < QUEUED_BUFFERS; n++) {
+			err = k_sem_take(&ep_queue_sem, K_MSEC(100));
+			zassert_ok(err, "Timeout to dequeue endpoint %x %d", last_used_ep, err);
+		}
 	}
 }
 
@@ -361,7 +381,10 @@ static void test_udc_ep_mps(uint8_t type)
 		.bInterval = 0,
 	};
 	const struct device *dev;
-	uint16_t supported = 0;
+	uint16_t out_supported = 0;
+	uint16_t in_supported = 0;
+	uint16_t out_ep = 0;
+	uint16_t in_ep = 0;
 	int err;
 
 	dev = DEVICE_DT_GET(DT_NODELABEL(zephyr_udc0));
@@ -379,10 +402,20 @@ static void test_udc_ep_mps(uint8_t type)
 
 	for (uint8_t i = 1; i < 16U; i++) {
 		err = udc_ep_try_config(dev, i,
-					ed.bmAttributes, &supported,
+					ed.bmAttributes, &out_supported,
 					ed.bInterval);
 		if (!err) {
-			ed.bEndpointAddress = i;
+			out_ep = i;
+			break;
+		}
+	}
+
+	for (uint8_t i = 1; i < 16U; i++) {
+		err = udc_ep_try_config(dev, i | USB_EP_DIR_IN,
+					ed.bmAttributes, &in_supported,
+					ed.bInterval);
+		if (!err) {
+			in_ep = i | USB_EP_DIR_IN;
 			break;
 		}
 	}
@@ -390,14 +423,24 @@ static void test_udc_ep_mps(uint8_t type)
 	zassert_ok(err, "Failed to determine MPS");
 
 	for (int i = 0; i < ARRAY_SIZE(mps); i++) {
-		if (mps[i] > supported) {
+		if (mps[i] > out_supported) {
 			continue;
 		}
 
+		ed.bEndpointAddress = out_ep;
 		ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
-		test_udc_ep_api(dev, &ed);
 
-		ed.bEndpointAddress |= USB_EP_DIR_IN;
+		test_udc_ep_api(dev, &ed);
+	}
+
+	for (int i = 0; i < ARRAY_SIZE(mps); i++) {
+		if (mps[i] > in_supported) {
+			continue;
+		}
+
+		ed.bEndpointAddress = in_ep;
+		ed.wMaxPacketSize = sys_cpu_to_le16(mps[i]);
+
 		test_udc_ep_api(dev, &ed);
 	}
 

@@ -22,7 +22,10 @@ config ENTROPY_INIT_PRIORITY
 
 # zephyr-keep-sorted-start
 source "drivers/entropy/Kconfig.ambiq"
+source "drivers/entropy/Kconfig.arm64"
 source "drivers/entropy/Kconfig.b91"
+source "drivers/entropy/Kconfig.bee"
+source "drivers/entropy/Kconfig.bflb"
 source "drivers/entropy/Kconfig.bt_hci"
 source "drivers/entropy/Kconfig.cc13xx_cc26xx"
 source "drivers/entropy/Kconfig.esp32"
@@ -52,6 +55,7 @@ source "drivers/entropy/Kconfig.smartbond"
 source "drivers/entropy/Kconfig.stm32"
 source "drivers/entropy/Kconfig.sy1xx"
 source "drivers/entropy/Kconfig.virtio"
+source "drivers/entropy/Kconfig.wch"
 # zephyr-keep-sorted-stop
 
 config ENTROPY_HAS_DRIVER
@@ -59,5 +63,20 @@ config ENTROPY_HAS_DRIVER
 	help
 	  This is an option to be enabled by individual entropy driver
 	  to signal that there is a true entropy driver.
+
+config ARCH_HAS_ENTROPY
+	bool
+	select ENTROPY_HAS_DRIVER
+	help
+	  This is a hidden option to indicate that the architecture supports
+	  entropy without a dedicated device.
+
+config ENTROPY_NEEDS_PRNG
+	bool
+	help
+	  Promptless option to signal that the entropy driver is not capable
+	  of providing large amount of data in a relatively short amount of time.
+	  For this reason crypto algorithms such as CTR_DRBG or HMAC_DRBG are
+	  used to resolve this limitation.
 
 endif

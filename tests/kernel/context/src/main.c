@@ -56,6 +56,7 @@
  */
 #elif defined(CONFIG_SPARC)
 #elif defined(CONFIG_MIPS)
+#elif defined(CONFIG_OPENRISC)
 #elif defined(CONFIG_ARCH_POSIX)
 #if defined(CONFIG_BOARD_NATIVE_SIM)
 #define TICK_IRQ TIMER_TICK_IRQ
@@ -80,6 +81,13 @@ extern const int32_t z_sys_timer_irq_for_test;
 #endif
 
 
+/* whisper simulator does not currently have working implementation for
+ * wfi instruction. It simply treats wfi as no-op such that k_cpu_idle()
+ * returns immediately and will fail idle tests.
+ */
+#if defined(CONFIG_WHISPER_TARGET)
+#undef HAS_POWERSAVE_INSTRUCTION
+#endif
 
 typedef struct {
 	int command;            /* command to process   */
@@ -225,7 +233,10 @@ static void _test_kernel_cpu_idle(int atomic)
 	uint64_t t0, dt;
 	unsigned int i, key;
 	uint32_t dur = k_ms_to_ticks_ceil32(10);
-	uint32_t slop = 1 + k_ms_to_ticks_ceil32(1);
+	/* 1 tick for z_add_timeout()'s "at least N" round-up, plus
+	 * 1 ms measurement slop.
+	 */
+	uint32_t slop = 2 + k_ms_to_ticks_ceil32(1);
 	int idle_loops;
 
 	/* Set up a time to trigger events to exit idle mode */
@@ -504,6 +515,37 @@ ZTEST(context, test_interrupts)
 	}
 
 	_test_kernel_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
+}
+
+/**
+ * @brief Test that arch_cpu_irqs_are_enabled() reports the current CPU
+ *	  interrupt-enable state without modifying it.
+ *
+ * @ingroup kernel_context_tests
+ *
+ * @see arch_cpu_irqs_are_enabled()
+ */
+ZTEST(context, test_arch_cpu_irqs_are_enabled)
+{
+	unsigned int key;
+
+	/* In thread context IRQs are enabled. Call twice to confirm the
+	 * probe does not flip the state it observes.
+	 */
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "IRQs reported disabled in thread context");
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "probe altered the IRQ state (enabled -> disabled)");
+
+	key = arch_irq_lock();
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "IRQs reported enabled after arch_irq_lock()");
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "probe altered the IRQ state (disabled -> enabled)");
+	arch_irq_unlock(key);
+
+	zassert_true(arch_cpu_irqs_are_enabled(),
+		     "IRQs reported disabled after arch_irq_unlock()");
 }
 
 /**

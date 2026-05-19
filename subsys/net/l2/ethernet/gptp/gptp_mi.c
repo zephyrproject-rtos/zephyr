@@ -7,6 +7,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
+#include <zephyr/net/net_log.h>
 #include <zephyr/drivers/ptp_clock.h>
 
 #include "gptp_messages.h"
@@ -123,7 +124,7 @@ static void gptp_mi_half_sync_itv_timeout(struct k_timer *timer)
 	struct gptp_pss_send_state *state;
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		state = &GPTP_PORT_STATE(port)->pss_send;
 		if (&state->half_sync_itv_timer == timer) {
 			if (!state->half_sync_itv_timer_expired) {
@@ -143,7 +144,7 @@ static void gptp_mi_rcv_sync_receipt_timeout(struct k_timer *timer)
 	struct gptp_pss_rcv_state *state;
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		state = &GPTP_PORT_STATE(port)->pss_rcv;
 		if (&state->rcv_sync_receipt_timeout_timer == timer) {
 			state->rcv_sync_receipt_timeout_timer_expired = true;
@@ -158,7 +159,7 @@ static void gptp_mi_send_sync_receipt_timeout(struct k_timer *timer)
 	struct gptp_pss_send_state *state;
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		state = &GPTP_PORT_STATE(port)->pss_send;
 		if (&state->send_sync_receipt_timeout_timer == timer) {
 			state->send_sync_receipt_timeout_timer_expired = true;
@@ -238,7 +239,7 @@ static void announce_timer_handler(struct k_timer *timer)
 	int port;
 	struct gptp_port_announce_information_state *state;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		state = &GPTP_PORT_STATE(port)->pa_info;
 		if (&state->ann_rcpt_expiry_timer == timer) {
 			state->ann_expired = true;
@@ -283,7 +284,7 @@ static void announce_periodic_timer_handler(struct k_timer *timer)
 	int port;
 	struct gptp_port_announce_transmit_state *state;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		state = &GPTP_PORT_STATE(port)->pa_transmit;
 		if (&state->ann_send_periodic_timer == timer) {
 			state->ann_trigger = true;
@@ -361,7 +362,7 @@ uint64_t gptp_get_current_master_time_nanosecond(void)
 
 	port_role = GPTP_GLOBAL_DS()->selected_role;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		if (port_role[port] == GPTP_PORT_MASTER) {
 			return gptp_get_current_time_nanosecond(port);
 		}
@@ -638,7 +639,7 @@ static void gptp_mi_site_ss_send_to_pss(void)
 
 	state = &GPTP_STATE()->site_ss;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		pss_send = &GPTP_PORT_STATE(port)->pss_send;
 		pss_send->pss_sync_ptr = &state->pss_send;
 		pss_send->rcvd_pss_sync = true;
@@ -992,7 +993,7 @@ static inline void gptp_mi_tx_ps_sync_cmss(void)
 
 	state = &GPTP_STATE()->clk_master_sync_send;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		pss_send = &GPTP_PORT_STATE(port)->pss_send;
 		pss_send->pss_sync_ptr = &state->pss_snd;
 
@@ -1581,7 +1582,7 @@ static void gptp_updt_role_disabled_tree(void)
 	global_ds = GPTP_GLOBAL_DS();
 
 	/* Set all elements of the selectedRole array to DisabledPort. */
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		gptp_change_port_state(port, GPTP_PORT_DISABLED);
 	}
 
@@ -1634,7 +1635,7 @@ static int compute_best_vector(void)
 
 	best_vector = gm_prio;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		challenger = &GPTP_PORT_BMCA_DATA(port)->port_priority;
 		pa_info_state = &GPTP_PORT_STATE(port)->pa_info;
 		pss_rcv = &GPTP_PORT_STATE(port)->pss_rcv;
@@ -1855,7 +1856,7 @@ static void gptp_updt_roles_tree(void)
 			net_htons(net_ntohs(bmca_data->message_steps_removed) + 1);
 	}
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		update_bmca(port, best_port, global_ds, default_ds, gm_prio);
 	}
 
@@ -1865,14 +1866,14 @@ static void gptp_updt_roles_tree(void)
 		false : true;
 
 	/* Assign the port role for port 0. */
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		if (global_ds->selected_role[port] == GPTP_PORT_SLAVE) {
 			gptp_change_port_state(0, GPTP_PORT_PASSIVE);
 			break;
 		}
 	}
 
-	if (port == GPTP_PORT_END) {
+	if (port > GPTP_PORT_END) {
 		gptp_change_port_state(0, GPTP_PORT_SLAVE);
 	}
 

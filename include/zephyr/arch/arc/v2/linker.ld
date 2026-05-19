@@ -138,6 +138,11 @@ SECTIONS {
 		*(".rodata.*")
 		*(".rodata$*")
 		*(.gnu.linkonce.r.*)
+#if defined(CONFIG_LLEXT) && defined(CONFIG_HARVARD) && \
+	!defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+		*(".llext_instr_heap")
+		*(".llext_instr_heap.*")
+#endif /* CONFIG_LLEXT && CONFIG_HARVARD && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -197,6 +202,10 @@ SECTIONS {
 		*(".data.*")
 		*(".data$*")
 		*(".kernel.*")
+#if defined(CONFIG_LLEXT) && defined(CONFIG_HARVARD) && \
+	!defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+		*(.llext_data_heap)
+#endif /* CONFIG_LLEXT && CONFIG_HARVARD && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
 
 /* This is an MWDT-specific section, created when -Hccm option is enabled */
 		*(".rodata_in_data")

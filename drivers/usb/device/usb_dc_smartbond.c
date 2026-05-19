@@ -284,7 +284,7 @@ static int usb_smartbond_dma_config(void)
 
 	/* Do not change */
 	rx_block->source_addr_adj = 0x2;
-	/* Incremenetal */
+	/* Incremental */
 	rx_block->dest_addr_adj = 0x0;
 
 	/* Should reflect USB RX FIFO */
@@ -505,7 +505,7 @@ static void start_tx_packet(struct smartbond_ep_state *ep_state)
 
 	if (ep_state->ep_addr != EP0_IN &&
 	    remaining > DMA_MIN_TRANSFER_SIZE &&
-	    (uint32_t)(ep_state->buffer) >= CONFIG_SRAM_BASE_ADDRESS &&
+	    (uint32_t)(ep_state->buffer) >= DT_CHOSEN_SRAM_ADDR &&
 	    try_allocate_dma(ep_state, USB_EP_DIR_IN)) {
 		/*
 		 * Whole packet will be put in FIFO by DMA.
@@ -1096,11 +1096,11 @@ static void usb_change_state(bool attached, bool vbus_present)
 		/*
 		 * It's imperative that USB_NAT bit-field is updated with the
 		 * USBEN bit-field being set. As such, zeroing the control
-		 * register at once will result in leaving the USB tranceivers
-		 * in a floating state. Such an action, will induce incorect
+		 * register at once will result in leaving the USB transceivers
+		 * in a floating state. Such an action, will induce incorrect
 		 * behavior for subsequent charger detection operations and given
 		 * that the device does not enter the sleep state (thus powering off
-		 * PD_SYS and resetting the controller along with its tranceivers).
+		 * PD_SYS and resetting the controller along with its transceivers).
 		 */
 		REG_CLR_BIT(USB_MCTRL_REG, USB_NAT);
 		USB->USB_MCTRL_REG = 0;

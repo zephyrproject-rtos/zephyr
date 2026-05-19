@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 # Renesas RA entropy generator driver configuration
@@ -8,7 +8,7 @@ config ENTROPY_RENESAS_RA
 	default y
 	depends on DT_HAS_RENESAS_RA_RSIP_E51A_TRNG_ENABLED || DT_HAS_RENESAS_RA_SCE9_RNG_ENABLED \
 		|| DT_HAS_RENESAS_RA_SCE7_RNG_ENABLED || DT_HAS_RENESAS_RA_SCE5_RNG_ENABLED       \
-		|| DT_HAS_RENESAS_RA_TRNG_ENABLED
+		|| DT_HAS_RENESAS_RA_TRNG_ENABLED || DT_HAS_RENESAS_RA_RSIP_E50D_TRNG_ENABLED
 	select ENTROPY_HAS_DRIVER
 	select USE_RA_FSP_SCE
 	help

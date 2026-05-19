@@ -327,11 +327,13 @@ specifier space ``foo``. For example:
 The ``dmas`` property's specifier space is "dma". The ``pwms`` property's
 specifier space is ``pwm``.
 
-Special case: GPIO
-==================
+Special case: GPIOs and IO channels
+====================================
 
-``*-gpios`` properties are special-cased so that e.g. ``foo-gpios`` resolves to
-``#gpio-cells`` rather than ``#foo-gpio-cells``.
+``*-gpios`` and ``*-io-channels`` properties are special-cased so that e.g.
+``foo-gpios`` and ``bar-io-channels`` resolve to ``#gpio-cells`` and
+``#io-channel-cells`` respectively, rather than ``#foo-gpio-cells`` and
+``#bar-io-channel-cells``.
 
 Manually specifying a space
 ===========================

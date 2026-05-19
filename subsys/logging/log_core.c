@@ -24,6 +24,7 @@
 #include <zephyr/logging/log_output_dict.h>
 #include <zephyr/logging/log_output_custom.h>
 #include <zephyr/linker/utils.h>
+#include <zephyr/arch/arch_interface.h>
 
 #if CONFIG_USERSPACE && CONFIG_LOG_ALWAYS_RUNTIME
 #include <zephyr/app_memory/app_memdomain.h>
@@ -69,6 +70,8 @@ LOG_MODULE_REGISTER(log);
 #ifndef CONFIG_LOG_FAILURE_REPORT_PERIOD
 #define CONFIG_LOG_FAILURE_REPORT_PERIOD 0
 #endif
+
+#define LOG_NO_CPU_OWNER (-1)
 
 #ifndef CONFIG_LOG_ALWAYS_RUNTIME
 BUILD_ASSERT(!IS_ENABLED(CONFIG_NO_OPTIMIZATIONS),
@@ -118,6 +121,7 @@ static log_timestamp_t prev_timestamp;
 static atomic_t unordered_cnt;
 static uint64_t last_failure_report;
 static struct k_spinlock process_lock;
+static atomic_t process_lock_owner_cpu = ATOMIC_INIT(LOG_NO_CPU_OWNER);
 
 static STRUCT_SECTION_ITERABLE(log_msg_ptr, log_msg_ptr);
 static STRUCT_SECTION_ITERABLE_ALTERNATE(log_mpsc_pbuf, mpsc_pbuf_buffer, log_buffer);
@@ -605,7 +609,7 @@ bool z_impl_log_process(void)
 		last_failure_report += CONFIG_LOG_FAILURE_REPORT_PERIOD;
 	}
 
-	return z_log_msg_pending();
+	return msg != NULL && z_log_msg_pending();
 }
 
 #ifdef CONFIG_USERSPACE
@@ -673,6 +677,39 @@ static struct log_msg *msg_alloc(struct mpsc_pbuf_buffer *buffer, uint32_t wlen)
 			: K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS));
 }
 
+static inline bool process_lock_required_for_clean_output(int owner_cpu, int curr_cpu)
+{
+	return owner_cpu != curr_cpu;
+}
+
+static bool process_lock_acquire_if_needed(k_spinlock_key_t *key)
+{
+#ifdef CONFIG_SMP
+	int curr_cpu = arch_curr_cpu()->id;
+#else
+	int curr_cpu = 0;
+#endif
+	int owner_cpu = atomic_get(&process_lock_owner_cpu);
+
+	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) ||
+	    !process_lock_required_for_clean_output(owner_cpu, curr_cpu)) {
+		return false;
+	}
+
+	*key = k_spin_lock(&process_lock);
+	atomic_set(&process_lock_owner_cpu, curr_cpu);
+
+	return true;
+}
+
+static void process_lock_release_if_needed(bool lock_acquired, k_spinlock_key_t key)
+{
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) && lock_acquired) {
+		atomic_set(&process_lock_owner_cpu, LOG_NO_CPU_OWNER);
+		k_spin_unlock(&process_lock, key);
+	}
+}
+
 struct log_msg *z_log_msg_alloc(uint32_t wlen)
 {
 	return msg_alloc(&log_buffer, wlen);
@@ -681,19 +718,15 @@ struct log_msg *z_log_msg_alloc(uint32_t wlen)
 static void msg_commit(struct mpsc_pbuf_buffer *buffer, struct log_msg *msg)
 {
 	union log_msg_generic *m = (union log_msg_generic *)msg;
+	bool lock_acquired;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		k_spinlock_key_t key;
-
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
-			key = k_spin_lock(&process_lock);
-		}
+		lock_acquired = process_lock_acquire_if_needed(&key);
 
 		msg_process(m);
 
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT)) {
-			k_spin_unlock(&process_lock, key);
-		}
+		process_lock_release_if_needed(lock_acquired, key);
 
 		return;
 	}
@@ -854,7 +887,6 @@ bool z_log_msg_pending(void)
 
 void z_log_msg_enqueue(const struct log_link *link, const void *data, size_t len)
 {
-	struct log_msg *log_msg = (struct log_msg *)data;
 	size_t wlen = DIV_ROUND_UP(ROUND_UP(len, Z_LOG_MSG_ALIGNMENT), sizeof(int));
 	struct mpsc_pbuf_buffer *mpsc_pbuffer = link->mpsc_pbuf ? link->mpsc_pbuf : &log_buffer;
 	struct log_msg *local_msg = msg_alloc(mpsc_pbuffer, wlen);
@@ -864,10 +896,10 @@ void z_log_msg_enqueue(const struct log_link *link, const void *data, size_t len
 		return;
 	}
 
-	log_msg->hdr.desc.valid = 0;
-	log_msg->hdr.desc.busy = 0;
-	log_msg->hdr.desc.domain += link->ctrl_blk->domain_offset;
 	memcpy((void *)local_msg, data, len);
+	local_msg->hdr.desc.valid = 0;
+	local_msg->hdr.desc.busy = 0;
+	local_msg->hdr.desc.domain += link->ctrl_blk->domain_offset;
 	msg_commit(mpsc_pbuffer, local_msg);
 }
 

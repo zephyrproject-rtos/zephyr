@@ -13,10 +13,12 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 # 5. Repeate steps 2 - 4 to remove RPL entry with odd address from RPL and cause fragmentation;
 overlay=overlay_pst_conf
 RunTest mesh_replay_fragmentation \
-    rpc_rx_rpl_frag -flash=../results/mesh_replay_fragmentation/flash.bin -flash_erase \
+    rpc_rx_rpl_frag \
+    -flash=../results/${BOARD_TS}_mesh_replay_fragmentation/flash.bin -flash_erase \
     rpc_tx_rpl_frag
 
 # Simulate reboot and test that RPL entries are restored correctly after defragmentation
 overlay=overlay_pst_conf
 RunTest mesh_replay_fragmentation \
-    rpc_rx_reboot_after_defrag -flash=../results/mesh_replay_fragmentation/flash.bin -flash_rm
+    rpc_rx_reboot_after_defrag \
+    -flash=../results/${BOARD_TS}_mesh_replay_fragmentation/flash.bin -flash_rm

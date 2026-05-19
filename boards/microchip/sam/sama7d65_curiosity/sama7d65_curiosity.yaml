@@ -9,8 +9,11 @@ toolchain:
   - zephyr
 ram: 128
 supported:
+  - can
+  - crypto
   - eeprom
   - i2c
   - pinctrl
+  - rtc
   - uart
 vendor: microchip

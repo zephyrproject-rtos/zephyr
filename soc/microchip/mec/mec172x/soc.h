@@ -263,7 +263,6 @@ typedef enum {
 
 /* common peripheral register defines */
 #include <soc_common.h>
-#include <soc_i2c.h>
 
 /* MEC172x SAF V2 */
 #include "soc_espi_saf_v2.h"

@@ -3,7 +3,7 @@
  * @brief Public APIs for Bluetooth Telephone Bearer Service.
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
@@ -121,18 +122,18 @@ extern "C" {
 /** @} */
 
 /**
- * @name Optional feature bits
+ * @name Optional opcodes bits
  *
- * Optional features that can be supported. See bt_tbs_client_read_optional_opcodes() on how to
+ * Optional opcodes that can be supported. See bt_tbs_client_read_optional_opcodes() on how to
  * read these from a remote device
  * @{
  */
 /** Local Hold and Local Retrieve Call Control Point Opcodes supported */
-#define BT_TBS_FEATURE_HOLD BIT(0)
+#define BT_TBS_OPTIONAL_OPCODE_HOLD BIT(0)
 /** Join Call Control Point Opcode supported */
-#define BT_TBS_FEATURE_JOIN BIT(1)
+#define BT_TBS_OPTIONAL_OPCODE_JOIN BIT(1)
 /** All Control Point Opcodes supported */
-#define BT_TBS_FEATURE_ALL  (BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN)
+#define BT_TBS_OPTIONAL_OPCODE_ALL  (BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN)
 /** @} */
 
 /**
@@ -145,30 +146,6 @@ extern "C" {
 #define BT_TBS_SIGNAL_STRENGTH_MAX                      100
 /** Signal strength is unknown  */
 #define BT_TBS_SIGNAL_STRENGTH_UNKNOWN                  255
-/** @} */
-
-/**
- * @name Bearer Technology
- * @{
- */
-/** 3G */
-#define BT_TBS_TECHNOLOGY_3G                       0x01
-/** 4G */
-#define BT_TBS_TECHNOLOGY_4G                       0x02
-/** Long-term evolution (LTE) */
-#define BT_TBS_TECHNOLOGY_LTE                      0x03
-/** Wifi */
-#define BT_TBS_TECHNOLOGY_WIFI                     0x04
-/** 5G */
-#define BT_TBS_TECHNOLOGY_5G                       0x05
-/** Global System for Mobile Communications (GSM) */
-#define BT_TBS_TECHNOLOGY_GSM                      0x06
-/** Code-Division Multiple Access (CDMA) */
-#define BT_TBS_TECHNOLOGY_CDMA                     0x07
-/** 2G */
-#define BT_TBS_TECHNOLOGY_2G                       0x08
-/** Wideband Code-Division Multiple Access (WCDMA) */
-#define BT_TBS_TECHNOLOGY_WCDMA                    0x09
 /** @} */
 
 /**
@@ -208,7 +185,10 @@ extern "C" {
  */
 #define BT_TBS_MAX_UCI_SIZE 6
 
-/** @brief Opaque Telephone Bearer Service instance. */
+/**
+ * @struct bt_tbs_instance
+ * @brief Opaque Telephone Bearer Service instance.
+ */
 struct bt_tbs_instance;
 
 /**
@@ -429,7 +409,7 @@ int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name);
  * @return int           BT_TBS_RESULT_CODE_* if positive or 0,
  *                       errno value if negative.
  */
-int bt_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t new_technology);
+int bt_tbs_set_bearer_technology(uint8_t bearer_index, enum bt_bearer_tech new_technology);
 
 /**
  * @brief Update the signal strength reported by the server.
@@ -492,6 +472,9 @@ struct bt_tbs_register_param {
 	 */
 	char *uri_schemes_supported;
 
+	/** @brief The technology of the bearer */
+	enum bt_bearer_tech technology;
+
 	/**
 	 * @brief Whether this bearer shall be registered as a Generic Telephone Bearer server
 	 *
@@ -508,18 +491,11 @@ struct bt_tbs_register_param {
 	bool authorization_required;
 
 	/**
-	 * @brief The technology of the bearer
+	 * @brief The optional supported opcodes of the bearer
 	 *
-	 * See the BT_TBS_TECHNOLOGY_* values.
+	 * See the BT_TBS_OPTIONAL_OPCODE_* values.
 	 */
-	uint8_t technology;
-
-	/**
-	 * @brief The optional supported features of the bearer
-	 *
-	 * See the BT_TBS_FEATURE_* values.
-	 */
-	uint8_t supported_features;
+	uint16_t optional_opcodes;
 };
 
 /**
@@ -737,8 +713,16 @@ struct bt_tbs_client_cb {
 	bt_tbs_client_read_string_cb         bearer_uci;
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI) */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) || defined(__DOXYGEN__)
-	/** Bearer technology has been read */
-	bt_tbs_client_read_value_cb          technology;
+	/**
+	 * @brief Bearer technology has been read.
+	 *
+	 * @param conn The connection used in the function.
+	 * @param err Error value. BT_TBS_CLIENT_RESULT_CODE_* or GATT error.
+	 * @param inst_index The index of the TBS instance that was updated.
+	 * @param tech The technology read. The value may be outside the values of the enum.
+	 */
+	void (*technology)(struct bt_conn *conn, int err, uint8_t inst_index,
+			   enum bt_bearer_tech tech);
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST) || defined(__DOXYGEN__)
 	/** Bearer URI list has been read */
@@ -1127,6 +1111,16 @@ int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs);
  */
 struct bt_tbs_instance *bt_tbs_client_get_by_ccid(const struct bt_conn *conn,
 						  uint8_t ccid);
+
+/**
+ * @brief Look up Telephone Bearer Service instance by index
+ *
+ * @param conn The connection to the TBS server.
+ * @param index The index to lookup a service instance for.
+ *
+ * @return Pointer to a Telephone Bearer Service instance if found else NULL.
+ */
+struct bt_tbs_instance *bt_tbs_client_get_by_index(const struct bt_conn *conn, uint8_t index);
 
 #ifdef __cplusplus
 }

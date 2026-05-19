@@ -7,10 +7,9 @@ type: mcu
 arch: arm
 toolchain:
   - gnuarmemb
-  - xtools
   - zephyr
-ram: 896
-flash: 512
+ram: 256
+flash: 844
 supported:
   - adc
   - gpio
@@ -18,5 +17,7 @@ supported:
   - spi
   - counter
   - watchdog
-  - adc
   - i2s
+  - pwm
+vendor: nordic
+sysbuild: true

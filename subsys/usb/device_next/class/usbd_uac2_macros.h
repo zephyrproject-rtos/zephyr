@@ -802,13 +802,21 @@
 	(struct usb_desc_header *) &DESCRIPTOR_NAME(hs_std_data_ep, node),	\
 	(struct usb_desc_header *) &DESCRIPTOR_NAME(cs_data_ep, node),
 
-#define AS_EXPLICIT_FEEDBACK_ENDPOINT_FS_DESCRIPTOR(node)			\
-	0x07,						/* bLength */		\
-	USB_DESC_ENDPOINT,				/* bDescriptorType */	\
-	AS_NEXT_IN_EP_ADDR(node),			/* bEndpointAddress */	\
-	0x11,						/* bmAttributes */	\
-	U16_LE(0x03),					/* wMaxPacketSize */	\
-	0x01, /* TODO: adjust to P 5.12.4.2 Feedback */	/* bInterval */
+#if defined(CONFIG_USBD_UAC2_FS_WINDOWS_WORKAROUND)
+#warning "CONFIG_USBD_UAC2_FS_WINDOWS_WORKAROUND violates USB standard. \
+Apply only for working with non-compliant Windows UAC2 driver"
+#define EXPLICIT_FEEDBACK_ENDPOINT_FS_FEEDBACK_LEN (0x04)
+#else
+#define EXPLICIT_FEEDBACK_ENDPOINT_FS_FEEDBACK_LEN (0x03)
+#endif
+
+#define AS_EXPLICIT_FEEDBACK_ENDPOINT_FS_DESCRIPTOR(node)				\
+	0x07,							/* bLength */		\
+	USB_DESC_ENDPOINT,					/* bDescriptorType */	\
+	AS_NEXT_IN_EP_ADDR(node),				/* bEndpointAddress */	\
+	0x11,							/* bmAttributes */	\
+	U16_LE(EXPLICIT_FEEDBACK_ENDPOINT_FS_FEEDBACK_LEN),	/* wMaxPacketSize */	\
+	0x01, /* TODO: adjust to P 5.12.4.2 Feedback */		/* bInterval */
 
 #define AS_EXPLICIT_FEEDBACK_FS_DESCRIPTOR_ARRAY(node)				\
 	static uint8_t DESCRIPTOR_NAME(fs_feedback_ep, node)[] = {		\

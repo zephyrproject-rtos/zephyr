@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI MSPM0 CANFD
+
+compatible: "ti,mspm0-canfd"
+
+include: ["bosch,m_can-base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  ti,divider:
+    type: int
+    required: true
+    enum:
+      - 1
+      - 2
+      - 4
+    description: |
+      CANCLK divider ratio for MCAN functional clock.
+      Valid values are 1, 2, or 4. Default is 1 if omitted.

@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -66,5 +66,4 @@ zephyr_library_sources(${pdl_drv_dir}/source/cy_syspm.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_syslib.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_trigmux.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_sysint.c)
-zephyr_library_sources(${pdl_drv_dir}/source/cy_flash.c)
 zephyr_library_sources(${pdl_drv_dir}/source/cy_ram.c)

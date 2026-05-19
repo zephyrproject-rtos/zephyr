@@ -194,7 +194,7 @@ static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
 	}
 }
 
-static uint32_t monitor_ts_get(void)
+static log_timestamp_t monitor_ts_get(void)
 {
 	uint64_t cycle;
 
@@ -207,7 +207,7 @@ static uint32_t monitor_ts_get(void)
 	return (cycle / (sys_clock_hw_cycles_per_sec() / MONITOR_TS_FREQ));
 }
 
-static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint32_t timestamp,
+static inline void encode_hdr(struct bt_monitor_hdr *hdr, log_timestamp_t timestamp,
 			      uint16_t opcode, uint16_t len)
 {
 	struct bt_monitor_ts32 *ts;
@@ -217,7 +217,12 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint32_t timestamp,
 
 	ts = (void *)hdr->ext;
 	ts->type = BT_MONITOR_TS32;
-	ts->ts32 = timestamp;
+	/* The btsnoop protocol only supports 32-bit timestamps (in 1/10th ms).
+	 * This overflows after 4.97 days, which is acceptable as it only affects
+	 * rendering in btmon/wireshark. Recordings are usually not that long
+	 * anyway, and packet ordering is still preserved.
+	 */
+	ts->ts32 = (uint32_t)timestamp;
 	hdr->hdr_len = sizeof(*ts);
 
 	encode_drops(hdr, BT_MONITOR_COMMAND_DROPS, &drops.cmd);
@@ -357,7 +362,7 @@ static void monitor_log_process(const struct log_backend *const backend,
 		return;
 	}
 
-	encode_hdr(&hdr, (uint32_t)log_msg_get_timestamp(&msg->log),
+	encode_hdr(&hdr, log_msg_get_timestamp(&msg->log),
 		   BT_MONITOR_USER_LOGGING,
 		   sizeof(user_log) + sizeof(id) + ctx.total_len + 1);
 

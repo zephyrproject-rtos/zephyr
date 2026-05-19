@@ -301,7 +301,6 @@ static int lis2dw12_attr_set_act_mode(const struct device *dev,
 					const struct sensor_value *val)
 {
 	const struct lis2dw12_device_config *cfg = dev->config;
-	struct lis2dw12_data *lis2dw12 = dev->data;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lis2dw12_sleep_on_t sleep_val = val->val1 & 0x03U;
 
@@ -489,7 +488,7 @@ static int lis2dw12_power_up(const struct device *dev)
 	}
 
 	/* reset device */
-	ret = lis2dw12_reset_set(ctx, PROPERTY_ENABLE);
+	ret = lis2dw12_reset_set(ctx);
 	if (ret < 0) {
 		return ret;
 	}
@@ -622,7 +621,7 @@ static int lis2dw12_init(const struct device *dev)
 
 	ret = lis2dw12_bus_check(dev);
 	if (ret < 0) {
-		LOG_ERR("Bus not ready for device %s", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(dev);
 		return ret;
 	}
 	return pm_device_driver_init(dev, lis2dw12_pm_control);

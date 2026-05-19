@@ -242,6 +242,10 @@ static void print_fatal_exception(void *print_stack, bool is_dblexc, uint32_t de
 	 */
 	if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
 		EXCEPTION_DUMP(" ** VADDR %p Invalid SP %p", (void *)bsa->excvaddr, print_stack);
+		/* Do not waste hook bandwidth on broken records. */
+#if defined(CONFIG_EXCEPTION_DUMP_HOOK)
+		arch_exception_call_drain_hook(true);
+#endif
 		return;
 	}
 
@@ -647,6 +651,9 @@ void *xtensa_excint1_c(void *esf)
 	default:
 		reason = K_ERR_CPU_EXCEPTION;
 
+		/* Default for exception */
+		is_fatal_error = true;
+
 		/* If the BSA area is invalid, we cannot trust anything coming out of it. */
 		if (xtensa_is_outside_stack_bounds((uintptr_t)bsa, sizeof(*bsa), UINT32_MAX)) {
 			goto skip_checks;
@@ -654,9 +661,6 @@ void *xtensa_excint1_c(void *esf)
 
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
-
-		/* Default for exception */
-		is_fatal_error = true;
 
 		/* We need to distinguish between an ill in xtensa_arch_except,
 		 * e.g for k_panic, and any other ill. For exceptions caused by
@@ -743,6 +747,9 @@ skip_checks:
 	}
 #endif /* CONFIG_XTENSA_MMU */
 
+#if defined(CONFIG_EXCEPTION_DUMP_HOOK)
+	arch_exception_call_drain_hook(false);
+#endif
 	return return_to(interrupted_stack);
 
 #if defined(CONFIG_XTENSA_MMU) && defined(CONFIG_USERSPACE)
@@ -751,6 +758,9 @@ return_to_interrupted:
 		XTENSA_WSR(ZSR_DEPC_SAVE_STR, 0);
 	}
 
+#if defined(CONFIG_EXCEPTION_DUMP_HOOK)
+	arch_exception_call_drain_hook(false);
+#endif
 	return interrupted_stack;
 #endif /* CONFIG_XTENSA_MMU && CONFIG_USERSPACE */
 }

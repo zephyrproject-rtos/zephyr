@@ -146,7 +146,9 @@ class Board:
                 node = Variant(None)
 
         if node in (Soc(None), Variant(None)):
-            sys.exit(f'ERROR: qualifiers {qualifiers} not found when extending board {self.name}')
+            raise RuntimeError(
+                f'Qualifiers {qualifiers} not found when extending board {self.name}'
+            )
 
         return node
 
@@ -160,9 +162,9 @@ def load_v2_boards(board_name, board_yml, systems):
 
         errors = list(board_validator.iter_errors(b))
         if errors:
-            sys.exit('ERROR: Malformed board YAML file: '
-                     f'{board_yml.as_posix()}\n'
-                     f'{best_match(errors).message} in {best_match(errors).json_path}')
+            raise RuntimeError('Malformed board YAML file: '
+                               f'{board_yml.as_posix()}\n'
+                               f'{best_match(errors).message} in {best_match(errors).json_path}')
 
         board_array = b.get('boards', [b.get('board', None)])
         for board in board_array:
@@ -198,8 +200,10 @@ def load_v2_boards(board_name, board_yml, systems):
             board_qualifiers = board_v2_qualifiers(boards[board['name']])
             duplicates = [q for q, n in Counter(board_qualifiers).items() if n > 1]
             if duplicates:
-                sys.exit(f'ERROR: Duplicated board qualifiers detected {duplicates} for board: '
-                         f'{board["name"]}.\nPlease check content of: {board_yml.as_posix()}\n')
+                raise RuntimeError(
+                    f'Duplicated board qualifiers detected {duplicates} for board: '
+                    f'{board["name"]}.\nPlease check content of: {board_yml.as_posix()}\n'
+                )
     return boards, board_extensions
 
 
@@ -214,8 +218,8 @@ def extend_v2_boards(boards, board_extensions):
             node = board.from_qualifier(v['qualifier'])
             if str(v['qualifier'] + '/' + v['name']) in board_v2_qualifiers(board):
                 board_yml = e['dir'] / BOARD_YML
-                sys.exit(f'ERROR: Variant: {v["name"]}, defined multiple times for board: '
-                         f'{board.name}.\nLast defined in {board_yml}')
+                raise RuntimeError(f'Variant: {v["name"]}, defined multiple times for board: '
+                                   f'{board.name}.\nLast defined in {board_yml}')
             node.variants.append(Variant.from_dict(v))
 
 
@@ -247,8 +251,8 @@ def find_v2_boards(args):
         b, e = load_v2_boards(args.board, board_yml, systems)
         conflict_boards = set(boards.keys()).intersection(b.keys())
         if conflict_boards:
-            sys.exit(f'ERROR: Board(s): {conflict_boards}, defined multiple times.\n'
-                     f'Last defined in {board_yml}')
+            raise RuntimeError(f'Board(s): {conflict_boards}, defined multiple times.\n'
+                               f'Last defined in {board_yml}')
         boards.update(b)
         board_extensions.extend(e)
 
@@ -351,5 +355,9 @@ def dump_v2_boards(args):
 
 
 if __name__ == '__main__':
-    args = parse_args()
-    dump_v2_boards(args)
+    try:
+        args = parse_args()
+        dump_v2_boards(args)
+    except RuntimeError as e:
+        print(f'ERROR: {e}', file=sys.stderr)
+        sys.exit(1)

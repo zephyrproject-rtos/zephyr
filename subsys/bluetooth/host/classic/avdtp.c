@@ -13,7 +13,6 @@
 #include <errno.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/hci.h>
@@ -192,10 +191,17 @@ static bool avdtp_media_chan_valid(struct bt_avdtp_sep *sep)
 	return false;
 }
 
+static void avdtp_endpoint_established(struct bt_avdtp_sep *sep)
+{
+	if (sep->ops != NULL && sep->ops->connected != NULL) {
+		sep->ops->connected(sep);
+	}
+}
+
 static void avdtp_endpoint_released(struct bt_avdtp_sep *sep)
 {
-	if (sep->endpoint_released != NULL) {
-		sep->endpoint_released(sep);
+	if (sep->ops != NULL && sep->ops->disconnected != NULL) {
+		sep->ops->disconnected(sep);
 	}
 }
 
@@ -279,6 +285,8 @@ void bt_avdtp_media_l2cap_connected(struct bt_l2cap_chan *chan)
 			req->func(req, NULL);
 		}
 	}
+
+	avdtp_endpoint_established(sep);
 }
 
 void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
@@ -324,8 +332,8 @@ int bt_avdtp_media_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	/* media data is received */
 	struct bt_avdtp_sep *sep = CONTAINER_OF(chan, struct bt_avdtp_sep, chan.chan);
 
-	if (sep->media_data_cb != NULL) {
-		sep->media_data_cb(sep, buf);
+	if (sep->ops != NULL && sep->ops->media_data_cb != NULL) {
+		sep->ops->media_data_cb(sep, buf);
 	}
 	return 0;
 }
@@ -404,7 +412,7 @@ static void avdtp_tx_rel_buf(struct net_buf *buf, struct net_buf *frag)
 	avdtp_tx_raise();
 }
 
-static void avdtp_tx_signal(struct bt_avdtp *session, struct net_buf *buf)
+static void avdtp_tx_single(struct bt_avdtp *session, struct net_buf *buf)
 {
 	int err;
 
@@ -417,7 +425,7 @@ static void avdtp_tx_signal(struct bt_avdtp *session, struct net_buf *buf)
 	}
 }
 
-static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
+static void avdtp_tx_multi(struct bt_avdtp *session, struct net_buf *buf,
 			   struct avdtp_buf_user_data *user_data)
 {
 	struct net_buf *frag;
@@ -436,6 +444,17 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 
 		if (frag == NULL) {
 			LOG_DBG("No Buff available, wait tx cb to trigger this work again");
+			/* Do NOT call `avdtp_tx_raise` here.
+			 * When there is no idle net_buf available while AVDTP TX is still pending,
+			 * the worker cannot proceed. If `avdtp_tx_raise` is invoked here, it will
+			 * immediately reschedule the worker again, causing it to spin and occupy
+			 * the CPU continuously because TX is pending but no idle net_buf exists.
+			 *
+			 * `avdtp_tx_raise` should only be triggered when at least one idle net_buf
+			 * is available. After the previously transmitted avdtp net_buf is released,
+			 * `avdtp_tx_cb` will run, and that callback will safely trigger
+			 * `avdtp_tx_raise` again.
+			 */
 			return;
 		}
 
@@ -506,6 +525,8 @@ static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
 		avdtp_tx_remove(buf);
 		net_buf_unref(buf);
 	}
+
+	avdtp_tx_raise();
 }
 
 static void avdtp_tx_processor(struct k_work *item)
@@ -532,14 +553,12 @@ static void avdtp_tx_processor(struct k_work *item)
 
 	/* The buf can be sent directly */
 	if (user_data->frag_count == 1) {
-		avdtp_tx_signal(session, buf);
+		avdtp_tx_single(session, buf);
 		avdtp_tx_raise();
 		return;
 	}
 
-	avdtp_tx_frags(session, buf, user_data);
-
-	avdtp_tx_raise();
+	avdtp_tx_multi(session, buf, user_data);
 }
 
 static void avdtp_buf_init_user_data(struct bt_avdtp *session, struct net_buf *buf)
@@ -2456,7 +2475,7 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 					*codec_info_element_len = (length - 2);
 					*codec_info_element =
 						net_buf_pull_mem(buf, (*codec_info_element_len));
-					return 0;
+					break;
 				}
 			}
 			break;
@@ -2465,7 +2484,7 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 			break;
 		}
 	}
-	return -EINVAL;
+	return (*codec_info_element != NULL) ? 0 : -EINVAL;
 }
 
 static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd,
@@ -2645,7 +2664,7 @@ int bt_avdtp_delay_report(struct bt_avdtp *session, struct bt_avdtp_delay_report
 {
 	struct net_buf *buf;
 
-	CHECKIF(param == NULL || session == NULL || param->sep == NULL) {
+	if (param == NULL || session == NULL || param->sep == NULL) {
 		LOG_DBG("Error: parameters not valid");
 		return -EINVAL;
 	}

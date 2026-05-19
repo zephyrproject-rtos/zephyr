@@ -10,19 +10,27 @@
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
+#if defined(CONFIG_TRACING)
 	sys_trace_idle();
+#endif
 	__asm__ volatile("wfi");
+#if defined(CONFIG_TRACING)
 	sys_trace_idle_exit();
-	irq_unlock(MSTATUS_IEN);
+#endif
+	irq_unlock(RV_STATUS_IE);
 }
 #endif
 
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 void arch_cpu_atomic_idle(unsigned int key)
 {
+#if defined(CONFIG_TRACING)
 	sys_trace_idle();
+#endif
 	__asm__ volatile("wfi");
+#if defined(CONFIG_TRACING)
 	sys_trace_idle_exit();
+#endif
 	irq_unlock(key);
 }
 #endif

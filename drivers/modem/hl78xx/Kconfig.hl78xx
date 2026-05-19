@@ -27,7 +27,6 @@ choice MODEM_HL78XX_VARIANT
 	bool "Sierra Wireless hl78xx variant selection"
 	default MODEM_HL78XX_12 if DT_HAS_SWIR_HL7812_ENABLED
 	default MODEM_HL78XX_00 if DT_HAS_SWIR_HL7800_ENABLED
-	default MODEM_HL78XX_AUTODETECT_VARIANT
 
 config MODEM_HL78XX_12
 	bool "Sierra Wireless hl7812"
@@ -39,12 +38,28 @@ config MODEM_HL78XX_00
 	help
 	  Support for hl7800 modem
 
-config MODEM_HL78XX_AUTODETECT_VARIANT
-	bool "detect automatically"
-	help
-	  Automatic detection of modem variant (HL7812 or HL7800)
-
 endchoice
+
+config MODEM_HL78XX_HAS_KSTATEV_URC
+	bool
+	default y if MODEM_HL78XX_12
+	help
+	  Hidden capability symbol: selected variants emit +KSTATEV URCs.
+
+config MODEM_HL78XX_HAS_KPSMEV_URC
+	bool
+	default y if MODEM_HL78XX_12
+	help
+	  Hidden capability symbol: selected variants support +KPSMEV URCs.
+
+config MODEM_HL78XX_WDSI_PROFILE_VALUE
+	int
+	default 8191 if MODEM_HL78XX_12
+	default 4479 if MODEM_HL78XX_00
+	default 0
+	help
+	  Hidden capability value: variant-specific default AT+WDSI profile.
+	  Value 0 means "query profile support at runtime" via AT+WDSI=?
 
 if MODEM_HL78XX_12
 
@@ -398,6 +413,53 @@ config HL78XX_GNSS_START_MODE_FACTORY
 	help
 	  For test purposes only. Uses no previously stored data. Uses factory default data.
 
+endchoice
+
+choice HL78XX_GNSS_REQUEST_PROCESSING_MODE
+	prompt "GNSS request processing mode"
+	default HL78XX_GNSS_PROCESS_POST_PSM
+	depends on MODEM_HL78XX_PSM
+	help
+	  Select how queued GNSS requests are handled in relation to the modem's
+	  PSM (Power Save Mode) sleep cycles.
+
+	  POST-PSM: GNSS runs after the modem naturally wakes from PSM, just
+	  before LTE re-establishes. The driver sets CFUN=4 (airplane mode) to
+	  claim the shared RF path for GNSS before LTE can register.
+
+	  PRE-PSM: GNSS runs as soon as the modem enters PSM sleep. The driver
+	  immediately wakes the modem and starts GNSS while LTE is still
+	  hibernating, without needing to set airplane mode.
+
+	  Note: This only affects queued/pending GNSS requests. Explicit
+	  hl78xx_enter_gnss_mode() calls while the modem is already sleeping
+	  always wake the modem immediately regardless of this setting.
+
+config HL78XX_GNSS_PROCESS_POST_PSM
+	bool "Process GNSS request after exiting sleep (post-PSM)"
+	help
+	  In this mode, GNSS requests are processed immediately after the modem
+	  naturally exits PSM sleep (GPIO6 asserted, wake-up pin triggered),
+	  just before the LTE connection is re-established.
+
+	  The driver intercepts the wake-up sequence and sets CFUN=4 (airplane
+	  mode) to prevent LTE from reclaiming the shared RF path, allowing
+	  GNSS to operate. After GNSS completes, the modem returns to full
+	  functionality and LTE registration proceeds.
+
+	  Use this mode when you want GNSS data available at the start of each
+	  wake cycle, before performing LTE operations.
+
+config HL78XX_GNSS_PROCESS_PRE_PSM
+	bool "Process GNSS request when entering sleep (pre-PSM)"
+	help
+	  In this mode, GNSS requests are processed as soon as the modem enters
+	  PSM sleep. The driver immediately wakes the modem and starts GNSS
+	  while the LTE modem is hibernating, so the shared RF Rx path is
+	  already free without needing to set airplane mode.
+
+	  Use this mode when you want GNSS acquisition to run during the PSM
+	  sleep window, maximizing the time available for satellite fix.
 endchoice
 
 choice HL78XX_GNSS_CONSTELLATIONS
@@ -939,6 +1001,14 @@ config MODEM_HL78XX_LOW_POWER_MODE
 
 if MODEM_HL78XX_LOW_POWER_MODE
 
+choice MODEM_HL78XX_LOW_POWER_SELECTION
+	prompt "Low power strategy"
+	default MODEM_HL78XX_PSM
+	help
+	  Select exactly one low-power strategy.
+	  Concurrent combinations (for example PSM + eDRX) are intentionally
+	  disabled until full validation is completed.
+
 config MODEM_HL78XX_EDRX
 	bool "eDRX"
 	help
@@ -946,9 +1016,15 @@ config MODEM_HL78XX_EDRX
 
 config MODEM_HL78XX_PSM
 	bool "PSM"
-	default y
 	help
 	  Enable Power Save Mode (PSM)
+
+config MODEM_HL78XX_POWER_DOWN
+	bool "Turn OFF"
+	help
+	  Power off modem
+
+endchoice
 
 if MODEM_HL78XX_EDRX
 
@@ -958,7 +1034,31 @@ config MODEM_HL78XX_EDRX_VALUE
 	help
 	  Half a byte in a 4-bit format. The eDRX value refers to bit 4 to 1
 	  of octet 3 of the Extended DRX parameters information element.
-	  Default value is 81.92 seconds.
+	  Default value is 5 (81.92) seconds.
+	  refer to Requested_eDRX_value
+
+config MODEM_HL78XX_PTW_VALUE
+	int "Requested eDRX Paging Time Window (PTW) timer"
+	default 0
+	help
+	  The PTW value refers to bits 8 to 5 of octet 3 of the Extended DRX
+	  parameters information element
+	  · CAT-M1 - actual PTW length = 1.28 sec x (1 + PTW)
+	  · NB-IoT - actual PTW length = 2.56 sec x (1 + PTW)
+
+config MODEM_HL78XX_EDRX_IDLE_TIMEOUT
+	int "eDRX idle timeout in seconds before allowing sleep"
+	default 10
+	range 2 120
+	help
+	  Unlike PSM (which sends +PSMEV URC), eDRX provides no explicit
+	  notification that the modem is ready to sleep. This timeout is used
+	  as an inactivity detector: every AT command resets the timer. When
+	  the timer expires (no AT activity), the WAKE pin is pulled LOW to
+	  allow the modem to enter eDRX low-power sleep.
+	  The value should be longer than the Paging Time Window (PTW) to
+	  avoid pulling WAKE LOW while the modem is still in a paging cycle.
+	  Default: 10 seconds.
 
 endif # MODEM_HL78XX_EDRX
 
@@ -970,7 +1070,7 @@ config MODEM_HL78XX_PSM_PERIODIC_TAU
 	help
 	  Requested extended periodic TAU (tracking area update) value (T3412)
 	  to be allocated to the UE in E-UTRAN. One byte in an 8-bit format.
-	  Default value is 1 minute.
+	  Default value is 15 minute.
 
 config MODEM_HL78XX_PSM_ACTIVE_TIME
 	string "Requested active time"
@@ -980,6 +1080,61 @@ config MODEM_HL78XX_PSM_ACTIVE_TIME
 	  One byte in an 8-bit format. Default value is 30 seconds.
 
 endif # MODEM_HL78XX_PSM
+if MODEM_HL78XX_POWER_DOWN
+
+choice MODEM_HL78XX_POWER_DOWN_MODE
+	prompt "Power Down Mode"
+	default MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+	help
+	  Choose the logic used to determine when the HL78XX modem powers down.
+	  Only one method can be selected:
+	  - 'Use delay after last data activity'
+	  - 'Use active time after RRC connection'
+
+config MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+	bool "Use delay after last data activity"
+	help
+	  Power down the modem after a specified delay (MODEM_HL78XX_POWER_DOWN_DELAY)
+	  following the last socket closure or data transmission.
+
+config MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN
+	bool "Use active time after RRC connection"
+	help
+	  Power down the modem based on a PSM-like active time (MODEM_HL78XX_POWER_DOWN_ACTIVE_TIME)
+	  starting after establishing an RRC connection.
+	  * This timer is reset only when a new RRC connection is established.
+
+endchoice
+
+if MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+
+config MODEM_HL78XX_POWER_DOWN_DELAY
+	int "Delay in seconds before power down"
+	default 15
+	range 10 600
+	help
+	  Delay in seconds before powering down the modem after the last
+	  data transfer.
+
+endif # MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
+
+if MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN
+
+config MODEM_HL78XX_POWER_DOWN_ACTIVE_TIME
+	int "Modem active time before power down"
+	default 30
+	range 20 600
+	help
+	  The active time value to be allocated to the UE before
+	  powering down the modem. One byte in an 8-bit format.
+	  Default value is 30 seconds.
+	  This setting is used to keep the modem active for a short period
+	  before powering it down.
+
+endif # MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN
+endif # MODEM_HL78XX_POWER_DOWN
+
+if !MODEM_HL78XX_POWER_DOWN
 
 choice MODEM_DEFAULT_SLEEP_LEVEL
 	prompt "Default Sleep Level"
@@ -1014,6 +1169,7 @@ config MODEM_HL78XX_SLEEP_DELAY_AFTER_REBOOT
 	int "Delay in seconds before sleep after reboot"
 	default 10
 
+endif # !MODEM_HL78XX_POWER_DOWN
 endif # MODEM_HL78XX_LOW_POWER_MODE
 
 choice MODEM_HL78XX_NETWORK_REG_STATUS_REPORT_CFG

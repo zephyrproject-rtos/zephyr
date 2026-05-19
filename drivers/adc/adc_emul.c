@@ -298,8 +298,7 @@ static int adc_emul_channel_setup(const struct device *dev,
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("unsupported differential mode");
-		return -ENOTSUP;
+		LOG_WRN("differential mode requested; samples are provided as raw codes");
 	}
 
 	emul_chan_cfg = &data->chan_cfg[channel_cfg->channel_id];

@@ -8,8 +8,6 @@
 
 if SOC_SERIES_STM32L4X
 
-rsource "Kconfig.defconfig.stm32l4*"
-
 configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers15)
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers16)

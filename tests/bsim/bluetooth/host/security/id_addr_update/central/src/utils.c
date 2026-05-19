@@ -49,13 +49,11 @@ static void print_conn_state_transition(const char *prefix, struct bt_conn *conn
 {
 	int err;
 	struct bt_conn_info info;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	err = bt_conn_get_info(conn, &info);
 	TEST_ASSERT(!err, "Unexpected conn info result.");
 
-	bt_addr_le_to_str(info.le.dst, addr_str, sizeof(addr_str));
-	printk("%s: %s\n", prefix, addr_str);
+	printk("%s: %s\n", prefix, bt_addr_le_str(info.le.dst));
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
@@ -128,7 +126,6 @@ void bs_bt_utils_setup(void)
 static void scan_connect_to_first_result__device_found(const bt_addr_le_t *addr, int8_t rssi,
 						       uint8_t type, struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	/* We're only interested in connectable events */
@@ -136,8 +133,7 @@ static void scan_connect_to_first_result__device_found(const bt_addr_le_t *addr,
 		TEST_FAIL("Unexpected advertisement type.");
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Got scan result, connecting.. dst %s, RSSI %d\n", addr_str, rssi);
+	printk("Got scan result, connecting.. dst %s, RSSI %d\n", bt_addr_le_str(addr), rssi);
 
 	err = bt_le_scan_stop();
 	TEST_ASSERT(!err, "Err bt_le_scan_stop %d", err);

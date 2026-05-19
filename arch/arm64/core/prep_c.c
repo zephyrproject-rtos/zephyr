@@ -14,15 +14,13 @@
  * initialization is performed.
  */
 
-#include "kernel_arch_func.h"
-
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/platform/hooks.h>
-#include <zephyr/arch/cache.h>
 #include <zephyr/arch/common/xip.h>
 #include <zephyr/arch/common/init.h>
 
-extern void z_arm64_mm_init(bool is_primary_core);
+#include "boot.h"
+#include "kernel_arch_func.h"
 
 __weak void z_arm64_mm_init(bool is_primary_core) { }
 
@@ -55,13 +53,9 @@ FUNC_NORETURN void z_prep_c(void)
 
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
-extern FUNC_NORETURN void arch_secondary_cpu_init(void);
 void z_arm64_secondary_prep_c(void)
 {
 	arch_secondary_cpu_init();
-#if CONFIG_ARCH_CACHE
-	arch_cache_init();
-#endif
 
 	CODE_UNREACHABLE;
 }

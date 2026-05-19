@@ -84,11 +84,11 @@
 
 &enet {
 	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
 };
 
 &enet_mac {
-	pinctrl-0 = <&pinmux_enet>;
-	pinctrl-names = "default";
 	phy-handle = <&phy>;
 	zephyr,random-mac-address;
 	phy-connection-type = "rgmii";
@@ -229,5 +229,11 @@
 display_i2c: &lpi2c1 {};
 
 zephyr_udc0: &usb1 {
+	status = "okay";
+};
+
+&pwm3 {
+	pinctrl-0 = <&tpm3_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };

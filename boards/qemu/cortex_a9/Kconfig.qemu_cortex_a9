@@ -6,4 +6,4 @@
 #
 
 config BOARD_QEMU_CORTEX_A9
-	select SOC_XILINX_XC7Z007S
+	select SOC_XC7Z007S

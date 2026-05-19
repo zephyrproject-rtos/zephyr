@@ -77,12 +77,14 @@ void sx126x_hal_dio1_irq_enable(const struct device *dev);
 
 void sx126x_hal_set_antenna_enable(const struct device *dev, bool enable);
 
-void sx126x_hal_set_rf_switch(const struct device *dev, bool tx);
+void sx126x_hal_set_rf_switch(const struct device *dev, bool enable, bool tx);
 
 int sx126x_hal_configure_gpio(const struct gpio_dt_spec *gpio,
 			      gpio_flags_t flags, const char *name);
 
 int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 				   uint32_t frequency, uint8_t ramp_time);
+
+int sx126x_hal_wakeup(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_LORA_SX126X_SX126X_HAL_H_ */

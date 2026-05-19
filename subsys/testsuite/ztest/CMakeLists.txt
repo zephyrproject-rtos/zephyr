@@ -36,3 +36,5 @@ elseif(CONFIG_ZTEST_SHELL)
 else()
   zephyr_library_sources(src/ztest_defaults.c)
 endif()
+
+add_subdirectory_ifdef(CONFIG_ZTEST_BENCHMARK benchmark)

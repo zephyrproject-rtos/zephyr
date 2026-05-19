@@ -352,6 +352,16 @@ struct btp_gap_pair_v2_cmd {
 #define BTP_GAP_BIG_CREATE_SYNC_ENC_DISABLE	0x00
 #define BTP_GAP_BIG_CREATE_SYNC_ENC_ENABLE	0x01
 
+#define BTP_GAP_SEND_SUBRATE_REQUEST	0x2b
+struct btp_gap_send_subrate_request_cmd {
+	bt_addr_le_t address;
+	uint16_t subrate_min;
+	uint16_t subrate_max;
+	uint16_t max_latency;
+	uint16_t continuation_number;
+	uint16_t supervision_timeout;
+} __packed;
+
 #define BTP_GAP_BIG_CREATE_SYNC			0x2c
 struct btp_gap_big_create_sync_cmd {
 	bt_addr_le_t address;
@@ -432,6 +442,19 @@ struct btp_gap_ead_decrypt_adv_data_cmd {
 struct btp_gap_decrypt_ead_adv_data_rp {
 	uint8_t decrypted_data_len;
 	uint8_t decrypted_data[];
+} __packed;
+
+#define BTP_GAP_PAWR_CONFIGURE			0x34
+/* Uses same flags as BTP_GAP_PADV_CONFIGURE */
+struct btp_gap_pawr_configure_cmd {
+	uint8_t flags;
+	uint16_t interval_min;
+	uint16_t interval_max;
+	uint8_t num_subevents;
+	uint8_t subevent_interval;
+	uint8_t response_slot_delay;
+	uint8_t response_slot_spacing;
+	uint8_t num_response_slots;
 } __packed;
 
 /* events */

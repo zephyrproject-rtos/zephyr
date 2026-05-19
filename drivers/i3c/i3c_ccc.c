@@ -146,7 +146,7 @@ int i3c_ccc_do_rstdaa(struct i3c_device_desc *target)
 	__ASSERT_NO_MSG(target->bus != NULL);
 
 	ccc_tgt_payload.addr = target->dynamic_addr;
-	ccc_tgt_payload.rnw = 1;
+	ccc_tgt_payload.rnw = 0;
 	ccc_tgt_payload.data_len = 0;
 
 	memset(&ccc_payload, 0, sizeof(ccc_payload));
@@ -693,6 +693,7 @@ int i3c_ccc_do_setvendor(const struct i3c_device_desc *target,
 			 size_t len)
 {
 	struct i3c_ccc_payload ccc_payload;
+	struct i3c_ccc_target_payload ccc_tgt_payload;
 
 	__ASSERT_NO_MSG(target != NULL);
 
@@ -701,10 +702,15 @@ int i3c_ccc_do_setvendor(const struct i3c_device_desc *target,
 		return -EINVAL;
 	}
 
+	ccc_tgt_payload.addr = target->dynamic_addr;
+	ccc_tgt_payload.rnw = 0;
+	ccc_tgt_payload.data = payload;
+	ccc_tgt_payload.data_len = len;
+
 	memset(&ccc_payload, 0, sizeof(ccc_payload));
 	ccc_payload.ccc.id = I3C_CCC_VENDOR(false, id);
-	ccc_payload.ccc.data = payload;
-	ccc_payload.ccc.data_len = len;
+	ccc_payload.targets.payloads = &ccc_tgt_payload;
+	ccc_payload.targets.num_targets = 1;
 
 	return i3c_do_ccc(target->bus, &ccc_payload);
 }
@@ -884,7 +890,7 @@ int i3c_ccc_do_getmxds(const struct i3c_device_desc *target,
 			if (len == SIZEOF_FIELD(union i3c_ccc_getmxds, fmt1)) {
 				mxds->fmt1.maxwr = data[0];
 				mxds->fmt1.maxrd = data[1];
-				/* It is unknown wither format 1 or format 2 is returned ahead of
+				/* It is unknown whether format 1 or format 2 is returned ahead of
 				 * time
 				 */
 				memset(&mxds->fmt2.maxrdturn, 0, sizeof(mxds->fmt2.maxrdturn));

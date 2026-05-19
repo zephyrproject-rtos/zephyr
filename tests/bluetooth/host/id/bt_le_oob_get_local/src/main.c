@@ -95,7 +95,7 @@ ZTEST(bt_le_oob_get_local, test_get_local_out_of_band_information_privacy_enable
 	bt_smp_le_oob_generate_sc_data_fake.return_val = -ENOTSUP;
 
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-	bt_addr_le_copy(&bt_dev.random_addr, BT_RPA_LE_ADDR);
+	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
 
 	err = bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
 

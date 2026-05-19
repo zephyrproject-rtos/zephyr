@@ -14,3 +14,6 @@ family:
             cpuclusters:
               - name: r52
               - name: a55
+          - name: r8a779g0
+            cpuclusters:
+              - name: r52

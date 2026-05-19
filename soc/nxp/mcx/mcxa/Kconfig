@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MCXA
@@ -10,19 +10,19 @@ config SOC_FAMILY_MCXA
 	select CPU_CORTEX_M_HAS_DWT
 	select SOC_RESET_HOOK
 
-config SOC_MCXA153
+config SOC_SERIES_MCXA1X3
 	select CPU_CORTEX_M33
 	select HAS_MCUX_CACHE
 	select HAS_PM
 
-config SOC_MCXA156
+config SOC_SERIES_MCXA1X6
 	select CPU_CORTEX_M33
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
 	select HAS_PM
 
-config SOC_MCXA346
+config SOC_SERIES_MCXAXX6
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
@@ -30,34 +30,18 @@ config SOC_MCXA346
 	select HAS_MCUX_CACHE
 	select HAS_PM
 
-config SOC_MCXA266
+config SOC_SERIES_MCXAXX4
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
-	select HAS_PM
 
-config SOC_MCXA366
-	select CPU_CORTEX_M33
-	select CPU_HAS_ARM_MPU
-	select CPU_HAS_FPU
-	select ARMV8_M_DSP
-	select HAS_MCUX_CACHE
-	select HAS_PM
-
-config SOC_MCXA577
+config SOC_SERIES_MCXAXX7
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select ARM_TRUSTZONE_M
-	select HAS_MCUX_CACHE
-
-config SOC_MCXA344
-	select CPU_CORTEX_M33
-	select CPU_HAS_ARM_MPU
-	select CPU_HAS_FPU
-	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE

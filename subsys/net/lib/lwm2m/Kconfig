@@ -415,7 +415,7 @@ config LWM2M_NUM_BLOCK1_CONTEXT
 	  CoAP block-wise transfer we can handle at the same time.
 
 config LWM2M_SWMGMT_PACKAGE_URI_LEN
-	int "Maximum size of the software management object's download URI string"
+	int "Maximum size of the firmware and software management objects URI string"
 	default 128
 
 config LWM2M_COMPOSITE_PATH_LIST_SIZE

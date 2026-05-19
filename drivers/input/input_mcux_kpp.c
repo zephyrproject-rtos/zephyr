@@ -45,7 +45,7 @@ static void get_source_clk_rate(const struct device *dev, uint32_t *clk_rate)
 	clock_control_subsys_t clk_sub_sys = dev_cfg->clk_sub_sys;
 
 	if (!device_is_ready(ccm_dev)) {
-		LOG_ERR("CCM driver is not installed");
+		LOG_ERR_DEVICE_NOT_READY(ccm_dev);
 		*clk_rate = 0;
 		return;
 	}
@@ -142,7 +142,7 @@ static int input_kpp_init(const struct device *dev)
 	status_t stable = kStatus_Success;
 
 	if (!device_is_ready(config->ccm_dev)) {
-		LOG_ERR("CCM driver is not installed");
+		LOG_ERR_DEVICE_NOT_READY(config->ccm_dev);
 		return -ENODEV;
 	}
 

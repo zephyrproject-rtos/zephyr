@@ -23,6 +23,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include "../../subsys/bluetooth/audio/micp_internal.h"
 #include "../../subsys/bluetooth/audio/aics_internal.h"
@@ -120,7 +121,7 @@ static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err
 {
 	struct bt_conn *conn;
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Discovery failed (%d)", err);
 		return;
 	}
@@ -164,6 +165,9 @@ static uint8_t micp_supported_commands(const void *cmd, uint16_t cmd_len, void *
 {
 	struct btp_micp_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_MICP, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -176,6 +180,10 @@ static uint8_t micp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	struct bt_conn *conn;
 	int err;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
 		LOG_ERR("Unknown connection");
@@ -183,7 +191,7 @@ static uint8_t micp_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	}
 
 	err = bt_micp_mic_ctlr_discover(conn, &mic_ctlr);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Fail: %d", err);
 		return BTP_STATUS_FAILED;
 	}
@@ -195,10 +203,15 @@ static uint8_t micp_mute_read(const void *cmd, uint16_t cmd_len, void *rsp, uint
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("Read mute");
 
 	err = bt_micp_mic_ctlr_mute_get(mic_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -209,10 +222,15 @@ static uint8_t micp_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MICP Mute");
 
 	err = bt_micp_mic_ctlr_mute(mic_ctlr);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -249,7 +267,7 @@ uint8_t tester_init_micp(void)
 
 	err = bt_micp_mic_ctlr_cb_register(&micp_cbs);
 
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to register callbacks: %d", err);
 		return BTP_STATUS_FAILED;
 	}
@@ -272,6 +290,9 @@ static uint8_t mics_supported_commands(const void *cmd, uint16_t cmd_len, void *
 {
 	struct btp_mics_read_supported_commands_rp *rp = rsp;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_MICS, rp->data);
 	*rsp_len += sizeof(*rp);
 
@@ -282,10 +303,15 @@ static uint8_t mics_mute_disable(const void *cmd, uint16_t cmd_len, void *rsp, u
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MICP Mute disable");
 
 	err = bt_micp_mic_dev_mute_disable();
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -296,10 +322,15 @@ static uint8_t mics_mute_read(const void *cmd, uint16_t cmd_len, void *rsp, uint
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MICS Mute state read");
 
 	err = bt_micp_mic_dev_mute_get();
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -310,10 +341,15 @@ static uint8_t mics_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MICS Mute");
 
 	err = bt_micp_mic_dev_mute();
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -324,10 +360,15 @@ static uint8_t mics_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_
 {
 	int err;
 
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("MICS Mute");
 
 	err = bt_micp_mic_dev_unmute();
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
@@ -358,29 +399,48 @@ static struct bt_micp_mic_dev_cb mic_dev_cb = {
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(gain);
+	ARG_UNUSED(mute);
+	ARG_UNUSED(mode);
+
 	LOG_DBG("AICS state callback (%d)", err);
 }
 
 static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 				 int8_t minimum, int8_t maximum)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(units);
+	ARG_UNUSED(minimum);
+	ARG_UNUSED(maximum);
+
 	LOG_DBG("AICS gain setting callback (%d)", err);
 }
 
 static void aics_input_type_cb(struct bt_aics *inst, int err,
 			       uint8_t input_type)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(input_type);
+
 	LOG_DBG("AICS input type callback (%d)", err);
 }
 
 static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(active);
+
 	LOG_DBG("AICS status callback (%d)", err);
 }
 
 static void aics_description_cb(struct bt_aics *inst, int err,
 				char *description)
 {
+	ARG_UNUSED(inst);
+	ARG_UNUSED(description);
+
 	LOG_DBG("AICS description callback (%d)", err);
 }
 
@@ -431,15 +491,14 @@ uint8_t tester_init_mics(void)
 #if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
 	char input_desc[CONFIG_BT_MICP_MIC_DEV_AICS_INSTANCE_COUNT][16];
 
-	for (size_t i = 0; i < ARRAY_SIZE(mic_dev_register_param.aics_param); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(mic_dev_register_param.aics_param); i++) {
 		mic_dev_register_param.aics_param[i].desc_writable = true;
-		snprintf(input_desc[i], sizeof(input_desc[i]),
-			 "Input %zu", i + 1);
+		snprintf(input_desc[i], sizeof(input_desc[i]), "Input %zu", i + 1U);
 		mic_dev_register_param.aics_param[i].description = input_desc[i];
 		mic_dev_register_param.aics_param[i].type = BT_AICS_INPUT_TYPE_DIGITAL;
-		mic_dev_register_param.aics_param[i].status = 1;
+		mic_dev_register_param.aics_param[i].status = true;
 		mic_dev_register_param.aics_param[i].gain_mode = BT_AICS_MODE_MANUAL;
-		mic_dev_register_param.aics_param[i].units = 1;
+		mic_dev_register_param.aics_param[i].units = 1U;
 		mic_dev_register_param.aics_param[i].min_gain = 0;
 		mic_dev_register_param.aics_param[i].max_gain = 100;
 		mic_dev_register_param.aics_param[i].cb = &aics_mic_dev_cb;
@@ -449,13 +508,13 @@ uint8_t tester_init_mics(void)
 	mic_dev_register_param.cb = &mic_dev_cb;
 
 	err = bt_micp_mic_dev_register(&mic_dev_register_param);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 
 #if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
 	err = bt_micp_mic_dev_included_get(&micp_included);
-	if (err) {
+	if (err != 0) {
 		return BTP_STATUS_FAILED;
 	}
 #endif /* CONFIG_BT_MICP_MIC_DEV_AICS */

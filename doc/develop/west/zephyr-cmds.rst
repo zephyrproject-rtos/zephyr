@@ -231,7 +231,7 @@ in ``--cache-dirs`` cli argument or ``blobs.cache-dirs`` config option.
 auto-cache) for a matching blob filename. Cached files may be stored either
 under their original filename or with a SHA-256 suffix (``<filename>.<sha>``).
 If found, the blob is copied from the cache to the blob path; otherwise
-it is downloaded from its url to the blob path.
+it is downloaded from its URL(s) to the blob path.
 
 .. _west-twister:
 

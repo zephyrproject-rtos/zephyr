@@ -106,7 +106,7 @@ static int scmi_clock_init(const struct device *dev)
 	proto = dev->data;
 	data = proto->data;
 
-	ret = scmi_clock_protocol_attributes(proto, &attributes);
+	ret = scmi_protocol_attributes_get(proto, &attributes);
 	if (ret < 0) {
 		LOG_ERR("failed to fetch clock attributes: %d", ret);
 		return ret;

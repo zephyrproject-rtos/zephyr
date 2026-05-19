@@ -38,16 +38,12 @@ static struct bt_conn *dconn;
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (conn_err) {
-		TEST_FAIL("Failed to connect to %s (%u)", addr, conn_err);
+		TEST_FAIL("Failed to connect to %s (%u)", bt_conn_dst_str(conn), conn_err);
 		return;
 	}
 
-	LOG_INF("%s: %s", __func__, addr);
+	LOG_INF("%s: %s", __func__, bt_conn_dst_str(conn));
 
 	dconn = bt_conn_ref(conn);
 	SET_FLAG(is_connected);
@@ -55,11 +51,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_INF("%s: %p %s (reason 0x%02x)", __func__, conn, addr, reason);
+	LOG_INF("%s: %p %s (reason 0x%02x)", __func__, conn, bt_conn_dst_str(conn), reason);
 
 	bt_conn_unref(dconn);
 	UNSET_FLAG(is_connected);
@@ -97,7 +89,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	char str[BT_ADDR_LE_STR_LEN];
 	struct bt_le_conn_param *param;
 	struct bt_conn *conn;
 	int err;
@@ -108,8 +99,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	bt_addr_le_to_str(addr, str, sizeof(str));
-	LOG_DBG("Connecting to %s", str);
+	LOG_DBG("Connecting to %s", bt_addr_le_str(addr));
 
 	param = BT_LE_CONN_PARAM_DEFAULT;
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, param, &conn);

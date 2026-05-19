@@ -38,6 +38,8 @@ struct counter_alarm_cfg alarm_cfg;
 #define SAMPLE_TIMER DT_INST(0, xlnx_xps_timer_1_00_a)
 #elif defined(CONFIG_COUNTER_TMR_ESP32)
 #define SAMPLE_TIMER DT_INST(0, espressif_esp32_counter)
+#elif defined(CONFIG_COUNTER_MCUX_SYSCTR)
+#define SAMPLE_TIMER DT_NODELABEL(sys_ctr)
 #elif defined(CONFIG_COUNTER_MCUX_CTIMER)
 #define SAMPLE_TIMER DT_NODELABEL(ctimer0)
 #elif defined(CONFIG_COUNTER_MSPM0_TIMER)
@@ -78,10 +80,18 @@ struct counter_alarm_cfg alarm_cfg;
 #define SAMPLE_TIMER DT_NODELABEL(pit64b1)
 #undef ALARM_FLAGS
 #define ALARM_FLAGS COUNTER_ALARM_CFG_ABSOLUTE
+#elif defined(CONFIG_COUNTER_MCHP_TC_G2)
+#define SAMPLE_TIMER DT_NODELABEL(tc0_ch0)
 #elif defined(CONFIG_COUNTER_MCUX_RTC_JDP)
 #define SAMPLE_TIMER DT_NODELABEL(rtc)
 #elif defined(CONFIG_COUNTER_MCUX_RTC)
 #define SAMPLE_TIMER DT_NODELABEL(rtc)
+#elif defined(CONFIG_COUNTER_RENESAS_RZA2M_OSTM)
+#define SAMPLE_TIMER DT_INST(0, renesas_rza2m_ostm_counter)
+#elif defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CX_SG)
+#define SAMPLE_TIMER DT_ALIAS(counter)
+#elif defined(CONFIG_COUNTER_ITE_IT51XXX)
+#define SAMPLE_TIMER DT_NODELABEL(counter0)
 #else
 #error Unable to find a counter device node in devicetree
 #endif

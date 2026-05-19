@@ -135,181 +135,219 @@ struct auxdisplay_character {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{Auxiliary Display,auxdisplay_interface}
+ * @{
  */
 
 /**
- * @typedef	auxdisplay_display_on_t
- * @brief	Callback API to turn display on
- * See auxdisplay_display_on() for argument description
+ * @brief Callback API to turn display on.
+ * See @a auxdisplay_display_on() for argument description.
  */
 typedef int (*auxdisplay_display_on_t)(const struct device *dev);
 
 /**
- * @typedef	auxdisplay_display_off_t
- * @brief	Callback API to turn display off
- * See auxdisplay_display_off() for argument description
+ * @brief Callback API to turn display off.
+ * See @a auxdisplay_display_off() for argument description.
  */
 typedef int (*auxdisplay_display_off_t)(const struct device *dev);
 
 /**
- * @typedef	auxdisplay_cursor_set_enabled_t
- * @brief	Callback API to turn display cursor visibility on or off
- * See auxdisplay_cursor_set_enabled() for argument description
+ * @brief Callback API to set display cursor visibility on or off.
+ * See @a auxdisplay_cursor_set_enabled() for argument description.
  */
 typedef int (*auxdisplay_cursor_set_enabled_t)(const struct device *dev, bool enabled);
 
 /**
- * @typedef	auxdisplay_position_blinking_set_enabled_t
- * @brief	Callback API to turn the current position blinking on or off
- * See auxdisplay_position_blinking_set_enabled() for argument description
+ * @brief Callback API to set the current position blinking on or off.
+ * See @a auxdisplay_position_blinking_set_enabled() for argument description.
  */
 typedef int (*auxdisplay_position_blinking_set_enabled_t)(const struct device *dev,
 							  bool enabled);
 
 /**
- * @typedef	auxdisplay_cursor_shift_set_t
- * @brief	Callback API to set how the cursor shifts after a character is written
- * See auxdisplay_cursor_shift_set() for argument description
+ * @brief Callback API to set how the cursor shifts after a character is written.
+ * See @a auxdisplay_cursor_shift_set() for argument description.
  */
 typedef int (*auxdisplay_cursor_shift_set_t)(const struct device *dev, uint8_t direction,
 					     bool display_shift);
 
 /**
- * @typedef	auxdisplay_cursor_position_set_t
- * @brief	Callback API to set the cursor position
- * See auxdisplay_cursor_position_set() for argument description
+ * @brief Callback API to set the cursor position.
+ * See @a auxdisplay_cursor_position_set() for argument description.
  */
 typedef int (*auxdisplay_cursor_position_set_t)(const struct device *dev,
 						enum auxdisplay_position type,
 						int16_t x, int16_t y);
 
 /**
- * @typedef	auxdisplay_cursor_position_get_t
- * @brief	Callback API to get the cursor position
- * See auxdisplay_cursor_position_get() for argument description
+ * @brief Callback API to get the cursor position.
+ * See @a auxdisplay_cursor_position_get() for argument description.
  */
 typedef int (*auxdisplay_cursor_position_get_t)(const struct device *dev, int16_t *x,
 						int16_t *y);
 
 /**
- * @typedef	auxdisplay_display_position_set_t
- * @brief	Callback API to set the current position of the display
- * See auxdisplay_display_position_set() for argument description
+ * @brief Callback API to set the current position of the display.
+ * See @a auxdisplay_display_position_set() for argument description.
  */
 typedef int (*auxdisplay_display_position_set_t)(const struct device *dev,
 						 enum auxdisplay_position type,
 						 int16_t x, int16_t y);
 
 /**
- * @typedef	auxdisplay_display_position_get_t
- * @brief	Callback API to get the current position of the display
- * See auxdisplay_display_position_get() for argument description
+ * @brief Callback API to get the current position of the display.
+ * See @a auxdisplay_display_position_get() for argument description.
  */
 typedef int (*auxdisplay_display_position_get_t)(const struct device *dev, int16_t *x,
 						 int16_t *y);
 
 /**
- * @typedef	auxdisplay_capabilities_get_t
- * @brief	Callback API to get details on the display
- * See auxdisplay_capabilities_get() for argument description
+ * @brief Callback API to get display capabilities.
+ * See @a auxdisplay_capabilities_get() for argument description.
  */
 typedef int (*auxdisplay_capabilities_get_t)(const struct device *dev,
 					     struct auxdisplay_capabilities *capabilities);
 
 /**
- * @typedef	auxdisplay_clear_t
- * @brief	Callback API to clear the contents of the display
- * See auxdisplay_clear() for argument description
+ * @brief Callback API to clear the contents of the display.
+ * See @a auxdisplay_clear() for argument description.
  */
 typedef int (*auxdisplay_clear_t)(const struct device *dev);
 
 /**
- * @typedef	auxdisplay_brightness_get_t
- * @brief	Callback API to get the current and minimum/maximum supported
- *		brightness settings of the display
- * See auxdisplay_brightness_get_api() for argument description
+ * @brief Callback API to get the current and supported brightness settings.
+ * See @a auxdisplay_brightness_get() for argument description.
  */
 typedef int (*auxdisplay_brightness_get_t)(const struct device *dev, uint8_t *brightness);
 
 /**
- * @typedef	auxdisplay_brightness_set_t
- * @brief	Callback API to set the brightness of the display
- * See auxdisplay_brightness_set_api() for argument description
+ * @brief Callback API to set the brightness of the display.
+ * See @a auxdisplay_brightness_set() for argument description.
  */
 typedef int (*auxdisplay_brightness_set_t)(const struct device *dev, uint8_t brightness);
 
 /**
- * @typedef	auxdisplay_backlight_get_t
- * @brief	Callback API to get the current and minimum/maximum supported
- *		backlight settings of the display
- * See auxdisplay_backlight_set() for argument description
+ * @brief Callback API to get the current and supported backlight settings.
+ * See @a auxdisplay_backlight_get() for argument description.
  */
 typedef int (*auxdisplay_backlight_get_t)(const struct device *dev, uint8_t *backlight);
 
 /**
- * @typedef	auxdisplay_backlight_set_t
- * @brief	Callback API to set the backlight status
- * See auxdisplay_backlight_set() for argument description
+ * @brief Callback API to set the backlight level.
+ * See @a auxdisplay_backlight_set() for argument description.
  */
 typedef int (*auxdisplay_backlight_set_t)(const struct device *dev, uint8_t backlight);
 
 /**
- * @typedef	auxdisplay_is_busy_t
- * @brief	Callback API to check if the display is busy with an operation
- * See auxdisplay_is_busy() for argument description
+ * @brief Callback API to check if the display is busy with an operation.
+ * See @a auxdisplay_is_busy() for argument description.
  */
 typedef int (*auxdisplay_is_busy_t)(const struct device *dev);
 
 /**
- * @typedef	auxdisplay_custom_character_set_t
- * @brief	Callback API to set a customer character on the display for usage
- * See auxdisplay_custom_character_set() for argument description
+ * @brief Callback API to set a custom character on the display.
+ * See @a auxdisplay_custom_character_set() for argument description.
  */
 typedef int (*auxdisplay_custom_character_set_t)(const struct device *dev,
 						 struct auxdisplay_character *character);
 
 /**
- * @typedef	auxdisplay_write_t
- * @brief	Callback API to write text to the display
- * See auxdisplay_write() for argument description
+ * @brief Callback API to write text to the display.
+ * See @a auxdisplay_write() for argument description.
  */
 typedef int (*auxdisplay_write_t)(const struct device *dev, const uint8_t *data, uint16_t len);
 
 /**
- * @typedef	auxdisplay_custom_command_t
- * @brief	Callback API to send a custom command to the display
- * See auxdisplay_custom_command() for argument description
+ * @brief Callback API to send a custom command to the display.
+ * See @a auxdisplay_custom_command() for argument description.
  */
 typedef int (*auxdisplay_custom_command_t)(const struct device *dev,
 					   struct auxdisplay_custom_data *command);
 
+/**
+ * @driver_ops{Auxiliary Display}
+ */
 __subsystem struct auxdisplay_driver_api {
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_display_on
+	 */
 	auxdisplay_display_on_t display_on;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_display_off
+	 */
 	auxdisplay_display_off_t display_off;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_cursor_set_enabled
+	 */
 	auxdisplay_cursor_set_enabled_t cursor_set_enabled;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_position_blinking_set_enabled
+	 */
 	auxdisplay_position_blinking_set_enabled_t position_blinking_set_enabled;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_cursor_shift_set
+	 */
 	auxdisplay_cursor_shift_set_t cursor_shift_set;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_cursor_position_set
+	 */
 	auxdisplay_cursor_position_set_t cursor_position_set;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_cursor_position_get
+	 */
 	auxdisplay_cursor_position_get_t cursor_position_get;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_display_position_set
+	 */
 	auxdisplay_display_position_set_t display_position_set;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_display_position_get
+	 */
 	auxdisplay_display_position_get_t display_position_get;
+	/**
+	 * @driver_ops_mandatory @copybrief auxdisplay_capabilities_get
+	 */
 	auxdisplay_capabilities_get_t capabilities_get;
+	/**
+	 * @driver_ops_mandatory @copybrief auxdisplay_clear
+	 */
 	auxdisplay_clear_t clear;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_brightness_get
+	 */
 	auxdisplay_brightness_get_t brightness_get;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_brightness_set
+	 */
 	auxdisplay_brightness_set_t brightness_set;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_backlight_get
+	 */
 	auxdisplay_backlight_get_t backlight_get;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_backlight_set
+	 */
 	auxdisplay_backlight_set_t backlight_set;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_is_busy
+	 */
 	auxdisplay_is_busy_t is_busy;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_custom_character_set
+	 */
 	auxdisplay_custom_character_set_t custom_character_set;
+	/**
+	 * @driver_ops_mandatory @copybrief auxdisplay_write
+	 */
 	auxdisplay_write_t write;
+	/**
+	 * @driver_ops_optional @copybrief auxdisplay_custom_command
+	 */
 	auxdisplay_custom_command_t custom_command;
 };
 
 /**
- * @endcond
+ * @}
  */
 
 /**
@@ -325,7 +363,7 @@ __syscall int auxdisplay_display_on(const struct device *dev);
 
 static inline int z_impl_auxdisplay_display_on(const struct device *dev)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->display_on) {
 		return -ENOSYS;
@@ -347,7 +385,7 @@ __syscall int auxdisplay_display_off(const struct device *dev);
 
 static inline int z_impl_auxdisplay_display_off(const struct device *dev)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->display_off) {
 		return -ENOSYS;
@@ -372,7 +410,7 @@ __syscall int auxdisplay_cursor_set_enabled(const struct device *dev,
 static inline int z_impl_auxdisplay_cursor_set_enabled(const struct device *dev,
 						       bool enabled)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->cursor_set_enabled) {
 		return -ENOSYS;
@@ -397,7 +435,7 @@ __syscall int auxdisplay_position_blinking_set_enabled(const struct device *dev,
 static inline int z_impl_auxdisplay_position_blinking_set_enabled(const struct device *dev,
 								  bool enabled)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->position_blinking_set_enabled) {
 		return -ENOSYS;
@@ -426,7 +464,7 @@ static inline int z_impl_auxdisplay_cursor_shift_set(const struct device *dev,
 						     uint8_t direction,
 						     bool display_shift)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->cursor_shift_set) {
 		return -ENOSYS;
@@ -460,7 +498,7 @@ static inline int z_impl_auxdisplay_cursor_position_set(const struct device *dev
 							enum auxdisplay_position type,
 							int16_t x, int16_t y)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->cursor_position_set) {
 		return -ENOSYS;
@@ -491,7 +529,7 @@ __syscall int auxdisplay_cursor_position_get(const struct device *dev,
 static inline int z_impl_auxdisplay_cursor_position_get(const struct device *dev,
 							int16_t *x, int16_t *y)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->cursor_position_get) {
 		return -ENOSYS;
@@ -521,7 +559,7 @@ static inline int z_impl_auxdisplay_display_position_set(const struct device *de
 							 enum auxdisplay_position type,
 							 int16_t x, int16_t y)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->display_position_set) {
 		return -ENOSYS;
@@ -552,7 +590,7 @@ __syscall int auxdisplay_display_position_get(const struct device *dev,
 static inline int z_impl_auxdisplay_display_position_get(const struct device *dev,
 							 int16_t *x, int16_t *y)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->display_position_get) {
 		return -ENOSYS;
@@ -576,15 +614,13 @@ __syscall int auxdisplay_capabilities_get(const struct device *dev,
 static inline int z_impl_auxdisplay_capabilities_get(const struct device *dev,
 						     struct auxdisplay_capabilities *capabilities)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	return api->capabilities_get(dev, capabilities);
+	return DEVICE_API_GET(auxdisplay, dev)->capabilities_get(dev, capabilities);
 }
 
 /**
- * @brief	Clear display of auxiliary display and return to home position (note that
- *		this does not reset the display configuration, e.g. custom characters and
- *		display mode will persist).
+ * @brief	Clear display of auxiliary display and return to home position.
+ * @details	Note that this does not reset the display configuration, e.g. custom characters and
+ *		display mode will persist.
  *
  * @param dev	Auxiliary display device instance
  *
@@ -595,9 +631,7 @@ __syscall int auxdisplay_clear(const struct device *dev);
 
 static inline int z_impl_auxdisplay_clear(const struct device *dev)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	return api->clear(dev);
+	return DEVICE_API_GET(auxdisplay, dev)->clear(dev);
 }
 
 /**
@@ -616,7 +650,7 @@ __syscall int auxdisplay_brightness_get(const struct device *dev,
 static inline int z_impl_auxdisplay_brightness_get(const struct device *dev,
 						   uint8_t *brightness)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->brightness_get) {
 		return -ENOSYS;
@@ -642,7 +676,7 @@ __syscall int auxdisplay_brightness_set(const struct device *dev,
 static inline int z_impl_auxdisplay_brightness_set(const struct device *dev,
 						   uint8_t brightness)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->brightness_set) {
 		return -ENOSYS;
@@ -667,7 +701,7 @@ __syscall int auxdisplay_backlight_get(const struct device *dev,
 static inline int z_impl_auxdisplay_backlight_get(const struct device *dev,
 						  uint8_t *backlight)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->backlight_get) {
 		return -ENOSYS;
@@ -693,7 +727,7 @@ __syscall int auxdisplay_backlight_set(const struct device *dev,
 static inline int z_impl_auxdisplay_backlight_set(const struct device *dev,
 						  uint8_t backlight)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->backlight_set) {
 		return -ENOSYS;
@@ -716,7 +750,7 @@ __syscall int auxdisplay_is_busy(const struct device *dev);
 
 static inline int z_impl_auxdisplay_is_busy(const struct device *dev)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->is_busy) {
 		return -ENOSYS;
@@ -726,16 +760,16 @@ static inline int z_impl_auxdisplay_is_busy(const struct device *dev)
 }
 
 /**
- * @brief		Sets a custom character in the display, the custom character struct
- *			must contain the pixel data for the custom character to add and valid
- *			custom character index, if successful then the character_code variable
- *			in the struct will be set to the character code that can be used with
- *			the auxdisplay_write() function to show it.
+ * @brief		Sets a custom character in the display.
+ * @details		The custom character struct must contain the pixel data for the custom
+ *			character to add and valid custom character index. If successful then the
+ *			character_code variable in the struct will be set to the character code that
+ *			can be used with the auxdisplay_write() function to show it.
  *
  *			A character must be valid for a display consisting of a uint8 array of
- *			size character width by character height, values should be 0x00 for
- *			pixel off or 0xff for pixel on, if a display supports shades then
- *			values between 0x00 and 0xff may be used (display driver dependent).
+ *			size character width by character height, values should be @c 0x00 for
+ *			pixel off or @c 0xff for pixel on, if a display supports shades then
+ *			values between @c 0x00 and @c 0xff may be used (display driver dependent).
  *
  * @param dev		Auxiliary display device instance
  * @param character	Pointer to custom character structure
@@ -751,7 +785,7 @@ __syscall int auxdisplay_custom_character_set(const struct device *dev,
 static inline int z_impl_auxdisplay_custom_character_set(const struct device *dev,
 							 struct auxdisplay_character *character)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->custom_character_set) {
 		return -ENOSYS;
@@ -777,9 +811,7 @@ __syscall int auxdisplay_write(const struct device *dev, const uint8_t *data,
 static inline int z_impl_auxdisplay_write(const struct device *dev,
 					  const uint8_t *data, uint16_t len)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
-
-	return api->write(dev, data, len);
+	return DEVICE_API_GET(auxdisplay, dev)->write(dev, data, len);
 }
 
 /**
@@ -799,7 +831,7 @@ __syscall int auxdisplay_custom_command(const struct device *dev,
 static inline int z_impl_auxdisplay_custom_command(const struct device *dev,
 						   struct auxdisplay_custom_data *data)
 {
-	struct auxdisplay_driver_api *api = (struct auxdisplay_driver_api *)dev->api;
+	const struct auxdisplay_driver_api *api = DEVICE_API_GET(auxdisplay, dev);
 
 	if (!api->custom_command) {
 		return -ENOSYS;

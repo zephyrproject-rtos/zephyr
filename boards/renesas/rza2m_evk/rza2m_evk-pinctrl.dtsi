@@ -40,4 +40,10 @@
 				 <RZA2M_PINMUX(PORT_D, 7, 1)>;	/* RIIC3SDA */
 		};
 	};
+
+	/omit-if-no-ref/ spibsc_default: spibsc_default {
+		spibsc-pinmux {
+			pinmux = <RZA2M_PINMUX(PORT_PPOC, PIN_POSEL, 3)>;
+		};
+	};
 };

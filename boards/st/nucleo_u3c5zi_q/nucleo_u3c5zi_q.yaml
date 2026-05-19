@@ -1,0 +1,24 @@
+identifier: nucleo_u3c5zi_q
+name: ST Nucleo U3C5ZI Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - can
+  - gpio
+  - i2c
+  - spi
+  - usart
+  - watchdog
+  - backup_sram
+  - dma
+  - rtc
+  - usb_device
+ram: 640
+flash: 2048

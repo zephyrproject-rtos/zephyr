@@ -4,9 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <inttypes.h>
 #include <stddef.h>
-#include <stdint.h>
+#include <zephyr/toolchain.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -39,6 +38,8 @@ static void test_ccp_call_control_server_sample_init(void)
 
 static void test_ccp_call_control_server_sample_tick(bs_time_t HW_device_time)
 {
+	ARG_UNUSED(HW_device_time);
+
 	/* TODO: Once the sample is more complete we can expand the pass criteria */
 	PASS("CCP Call Control Server sample PASSED\n");
 }

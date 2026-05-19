@@ -5,7 +5,7 @@
 '''UF2 runner (flash only) for UF2 compatible bootloaders.'''
 
 from pathlib import Path
-from shutil import copy
+from shutil import copyfile
 
 from runners.core import RunnerCaps, ZephyrBinaryRunner
 
@@ -85,7 +85,8 @@ class UF2BinaryRunner(ZephyrBinaryRunner):
     def copy_uf2_to_partition(self, part):
         self.ensure_output('uf2')
 
-        copy(self.cfg.uf2_file, part.mountpoint)
+        dest = Path(part.mountpoint) / Path(self.cfg.uf2_file).name
+        copyfile(self.cfg.uf2_file, dest)
 
     def do_run(self, command, **kwargs):
         if MISSING_PSUTIL:

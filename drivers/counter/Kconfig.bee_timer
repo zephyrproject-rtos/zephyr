@@ -1,0 +1,11 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_BEE_TIMER
+	bool "Realtek Bee series counter timer driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_COUNTER_TIMER_ENABLED
+	select HAL_REALTEK_BEE_TIM if DT_HAS_REALTEK_BEE_BASIC_TIMER_ENABLED
+	select HAL_REALTEK_BEE_ENHTIM if DT_HAS_REALTEK_BEE_ENHANCED_TIMER_ENABLED
+	help
+	  This option enables the counter timer driver for Realtek Bee SoCs.

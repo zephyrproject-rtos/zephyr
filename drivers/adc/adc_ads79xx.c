@@ -423,7 +423,7 @@ int ads79xx_init(const struct device *dev)
 	return 0;
 }
 
-struct adc_driver_api ads79xx_api = {
+static DEVICE_API(adc, ads79xx_api) = {
 	.channel_setup = ads79xx_channel_setup,
 	.read = ads79xx_read,
 #ifdef CONFIG_ADC_ASYNC

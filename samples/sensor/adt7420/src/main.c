@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Analog Devices Inc.
+ * Copyright (c) 2018, 2026 Analog Devices Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,8 @@
 #define UCEL_PER_MCEL 1000
 #define TEMP_INITIAL_CEL 21
 #define TEMP_WINDOW_HALF_UCEL 500000
+#define T_HIGH_CEL	15
+#define T_LOW_CEL	40
 
 K_SEM_DEFINE(sem, 0, 1);
 static const char *now_str(void)
@@ -100,7 +102,7 @@ static int sensor_set_window(const struct device *dev,
 
 static void process(const struct device *dev)
 {
-	struct sensor_value temp_val;
+	struct sensor_value temp_val = {0};
 	int ret;
 	bool reset_window = false;
 
@@ -127,6 +129,65 @@ static void process(const struct device *dev)
 		}
 	}
 
+	/* configuration for trigger thresholds */
+	temp_val.val1 = T_HIGH_CEL;
+	ret = sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_UPPER_THRESH,
+			      &temp_val);
+	if (ret) {
+		printf("sensor_attr_set failed ret %d\n", ret);
+		return;
+	}
+
+	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_UPPER_THRESH,
+			      &temp_val);
+	if (ret) {
+		printf("sensor_attr_get failed ret %d\n", ret);
+		return;
+	}
+
+	printf("[%s]: T_High %.6f Cel\n", now_str(),
+		sensor_value_to_double(&temp_val));
+
+	temp_val.val1 = T_LOW_CEL;
+	ret = sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_LOWER_THRESH,
+			      &temp_val);
+	if (ret) {
+		printf("sensor_attr_set failed ret %d\n", ret);
+		return;
+	}
+
+	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_LOWER_THRESH,
+			      &temp_val);
+	if (ret) {
+		printf("sensor_attr_get failed ret %d\n", ret);
+		return;
+	}
+
+	printf("[%s]: T_Low %.6f Cel\n", now_str(),
+		sensor_value_to_double(&temp_val));
+
+
+	/* Read device configuration */
+	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_HYSTERESIS,
+			      &temp_val);
+	if (ret) {
+		printf("sensor_attr_get failed ret %d\n", ret);
+		return;
+	}
+
+	printf("[%s]: T_Hyst %.6f Cel\n", now_str(),
+		sensor_value_to_double(&temp_val));
+
+	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_CONFIGURATION,
+			      &temp_val);
+	if (ret) {
+		printf("sensor_attr_get failed ret %d\n", ret);
+		return;
+	}
+
+	printf("[%s]: Config - 0x%X\n", now_str(), temp_val.val1);
+
+	/* main loop */
 	while (1) {
 		ret = sensor_sample_fetch(dev);
 		if (ret) {
@@ -149,6 +210,16 @@ static void process(const struct device *dev)
 		       sensor_value_to_double(&temp_val),
 		       reset_window ? ": NEED RESET" : "");
 
+		ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_ALERT, &temp_val);
+		if (ret) {
+			printf("sensor_attr_get failed ret %d\n", ret);
+			return;
+		}
+
+		printf("[%s]: alerts\n\tT_low %d\n\tT_high %d\n\tT_crit %d\n",
+			now_str(), ((temp_val.val1 & BIT(4)) != 0),
+			((temp_val.val1 & BIT(5)) != 0),
+			((temp_val.val1 & BIT(6)) != 0));
 
 		if (IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
 			if (reset_window) {

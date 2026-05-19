@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(iadc, CONFIG_ADC_LOG_LEVEL);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-/* Comptibility section for IADC IP version*/
+/* Compatibility section for IADC IP version*/
 #if (_IADC_IPVERSION_RESETVALUE == 0x00000000UL)
 
 #define IADC_NO_DIGAVG 1

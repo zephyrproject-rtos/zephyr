@@ -43,7 +43,6 @@ struct ft8xx_touch_transform {
 };
 
 /**
- * @typedef ft8xx_int_callback
  * @brief Callback API to inform API user that FT8xx triggered interrupt
  *
  * This callback is called from IRQ context.

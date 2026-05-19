@@ -16,6 +16,7 @@
 #include "flash_priv.h"
 
 #include "fsl_common.h"
+#include <zephyr/cache.h>
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -46,7 +47,11 @@ LOG_MODULE_REGISTER(flash_mcux);
 #if defined(SOC_HAS_IAP) && !defined(CONFIG_SOC_LPC55S36)
 #include "fsl_iap.h"
 #elif defined(CONFIG_SOC_FAMILY_MCXA)
+#if defined(CONFIG_SOC_SERIES_MCXAXX7)
+#include "fsl_flash.h"
+#else
 #include "fsl_romapi.h"
+#endif
 #define FLASH_Erase   FLASH_EraseSector
 #define FLASH_Program FLASH_ProgramPhrase
 #elif defined(CONFIG_MCUX_FLASH_K4_API)
@@ -126,6 +131,10 @@ static void clear_flash_caches(void)
 {
 	FLASH_CacheClear();
 }
+#elif CONFIG_SOC_MCXW70AC
+/* cache is managed by flash driver */
+#undef SOC_FLASH_NEED_CLEAR_CACHES
+#define clear_flash_caches(...)
 #else
 static void clear_flash_caches(void)
 {
@@ -151,6 +160,12 @@ static void clear_flash_caches(void)
 static void clear_flash_caches(void)
 {
 	SYSCON->LPCAC_CTRL |= SYSCON_LPCAC_CTRL_DIS_LPCAC(1U);
+}
+#elif defined(CONFIG_CACHE_NXP_LMEM_CACHE)
+static void clear_flash_caches(void)
+{
+	sys_cache_instr_invd_all();
+	sys_cache_data_invd_all();
 }
 #else
 #undef SOC_FLASH_NEED_CLEAR_CACHES

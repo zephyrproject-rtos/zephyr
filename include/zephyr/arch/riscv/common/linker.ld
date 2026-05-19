@@ -35,6 +35,10 @@
 #define ROM_END_OFFSET 0
 #endif
 
+#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION) && defined(CONFIG_XIP)
+#define ROM_BASE (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+#define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
+#else /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) && defined(CONFIG_XIP) */
 #if defined(CONFIG_FLASH_LOAD_OFFSET)
 #define FLASH_LOAD_OFFSET CONFIG_FLASH_LOAD_OFFSET
 #else
@@ -78,12 +82,13 @@
 #endif /* DT_NODE_HAS_COMPAT_STATUS */
 
 #else /* CONFIG_XIP */
-#define ROM_BASE CONFIG_SRAM_BASE_ADDRESS
-#define ROM_SIZE (KB(CONFIG_SRAM_SIZE) - ROM_END_OFFSET)
+#define ROM_BASE DT_CHOSEN_SRAM_ADDR
+#define ROM_SIZE (DT_CHOSEN_SRAM_SIZE - ROM_END_OFFSET)
 #endif /* CONFIG_XIP */
+#endif /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) && defined(CONFIG_XIP) */
 
-#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
-#define RAM_SIZE KB(CONFIG_SRAM_SIZE)
+#define RAM_BASE DT_CHOSEN_SRAM_ADDR
+#define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
 #ifdef CONFIG_RISCV_PMP
 	#define MPU_MIN_SIZE CONFIG_PMP_GRANULARITY
@@ -270,24 +275,21 @@ SECTIONS
 
 		 *(.data)
 		 *(".data.*")
-
-#ifdef CONFIG_RISCV_GP
-		/*
-		 * RISC-V architecture has 12-bit signed immediate offsets in the
+		 *(.sdata .sdata.* .gnu.linkonce.s.*)
+#if defined(CONFIG_RISCV_GP)
+		/* RISC-V architecture has 12-bit signed immediate offsets in the
 		 * instructions. If we can put the most commonly accessed globals
 		 * in a special 4K span of memory addressed by the GP register, then
 		 * we can access those values in a single instruction, saving both
 		 * codespace and runtime.
 		 *
 		 * Since these immediate offsets are signed, place gp 0x800 past the
-		 * beginning of .sdata so that we can use both positive and negative
+		 * end of .sdata so that we can use both positive and negative
 		 * offsets.
 		 */
 		 . = ALIGN(8);
 		 PROVIDE (__global_pointer$ = . + 0x800);
 #endif
-
-		 *(.sdata .sdata.* .gnu.linkonce.s.*)
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.

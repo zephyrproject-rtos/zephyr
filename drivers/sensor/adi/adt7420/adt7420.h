@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Analog Devices Inc.
+ * Copyright (c) 2018, 2026 Analog Devices Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,8 @@
 #define ADT7420_CONFIG_CT_POL		BIT(2)
 #define ADT7420_CONFIG_INT_POL		BIT(3)
 #define ADT7420_CONFIG_INT_CT_MODE	BIT(4)
-#define ADT7420_CONFIG_OP_MODE(x)	(((x) & 0x3) << 5)
+#define ADT7420_CONFIG_OP_MODE_MASK	GENMASK(6, 5)
+#define ADT7420_CONFIG_OP_MODE(x)	FIELD_PREP(ADT7420_CONFIG_OP_MODE_MASK, x)
 #define ADT7420_CONFIG_RESOLUTION	BIT(7)
 
 /* ADT7420_CONFIG_FAULT_QUEUE(x) options */
@@ -52,19 +53,39 @@
 #define ADT7420_OP_MODE_1_SPS		2
 #define ADT7420_OP_MODE_SHUTDOWN	3
 
+/* Hysteresis range*/
+#define ADT7420_HYST_MIN		0
+#define ADT7420_HYST_MAX		15
+
+/* Fault queue range */
+#define ADT7420_FAULT_QUEUE_MIN_IDX	0	/* 1 Fault */
+#define ADT7420_FAULT_QUEUE_MAX_IDX	3	/* 4 Faults */
+
 /* ADT7420 default ID */
 #define ADT7420_DEFAULT_ID		0xCB
 
 /* scale in micro degrees Celsius */
-#define ADT7420_TEMP_SCALE		15625
+#define ADT7420_SCALE_UVAL_TO_VAL	1000000
+
+#define ADT7420_TEMP_NEG_16BIT		BIT(16)
+#define ADT7420_TEMP_SIGN_16BIT		BIT(15)
+#define ADT7420_TEMP_CONV_16BIT_DIV	128
+
+#define ADT7420_TEMP_NEG_13BIT		BIT(13)
+#define ADT7420_TEMP_SIGN_13BIT		BIT(12)
+#define ADT7420_TEMP_CONV_13BIT_DIV	16
 
 struct adt7420_data {
-	int16_t sample;
+	uint16_t sample;
+	uint8_t suspended_op_mode;
+	bool resolution_16_bit;
 #ifdef CONFIG_ADT7420_TRIGGER
-	struct gpio_callback gpio_cb;
-
+	struct gpio_callback int_gpio_cb;
+	struct gpio_callback ct_gpio_cb;
 	sensor_trigger_handler_t th_handler;
+	sensor_trigger_handler_t ct_handler;
 	const struct sensor_trigger *th_trigger;
+	const struct sensor_trigger *ct_trigger;
 
 	const struct device *dev;
 
@@ -73,16 +94,25 @@ struct adt7420_data {
 	struct k_sem gpio_sem;
 	struct k_thread thread;
 #elif defined(CONFIG_ADT7420_TRIGGER_GLOBAL_THREAD)
-	struct k_work work;
+	struct k_work int_work;
+	struct k_work ct_work;
 #endif
 #endif /* CONFIG_ADT7420_TRIGGER */
-
 };
 
 struct adt7420_dev_config {
 	struct i2c_dt_spec i2c;
+	uint8_t init_op_mode;
+	uint8_t id_mask;
+	uint8_t max_temp;
+	int8_t min_temp;
+	bool ct_pol;
+	bool int_pol;
+	bool ct_mode;
+	bool init_res;
 #ifdef CONFIG_ADT7420_TRIGGER
 	struct gpio_dt_spec int_gpio;
+	struct gpio_dt_spec ct_gpio;
 #endif
 };
 

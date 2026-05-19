@@ -35,12 +35,6 @@
 	soc {
 		interrupt-parent = <&nvic>;
 
-		system: system@4001e000 {
-			compatible = "renesas,ra-system";
-			reg = <0x4001e000 0x1000>;
-			status = "okay";
-		};
-
 		elc: elc@40082000 {
 			compatible = "renesas,ra-elc";
 			reg = <0x40082000 0x70>;
@@ -683,7 +677,7 @@
 
 		rtc: rtc@40083000 {
 			compatible = "renesas,ra-rtc";
-			reg = <40083000 0x80>;
+			reg = <0x40083000 0x80>;
 			clocks = <&subclk>;
 			alarms-count = <1>;
 			status = "disabled";

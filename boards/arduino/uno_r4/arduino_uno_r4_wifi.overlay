@@ -113,7 +113,7 @@
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	clock-frequency = <DT_FREQ_M(1)>;
+	clock-frequency = <DT_FREQ_K(400)>;
 	interrupts = <14 1>, <15 1>, <16 1>, <17 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
 	status = "okay";

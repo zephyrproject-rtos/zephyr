@@ -588,7 +588,7 @@ static int icm42x70_fetch_from_fifo(const struct device *dev)
 	    (int_status & INT_STATUS_FIFO_FULL_INT_MASK)) {
 		uint16_t packet_count;
 
-		/* Make sure RCOSC is enabled to guarrantee FIFO read */
+		/* Make sure RCOSC is enabled to guarantee FIFO read */
 		status |= inv_imu_switch_on_mclk(&data->driver);
 
 		/* Read FIFO frame count */
@@ -598,6 +598,12 @@ static int icm42x70_fetch_from_fifo(const struct device *dev)
 		if (status != 0) {
 			status |= inv_imu_switch_off_mclk(&data->driver);
 			return status;
+		}
+
+		/* CID 520276: Constrain packet_count to the size of the driver buffer */
+		if (packet_count * packet_size > sizeof(data->driver.fifo_data)) {
+			LOG_WRN("FIFO count (%d) exceeds buffer size, capping.", packet_count);
+			packet_count = sizeof(data->driver.fifo_data) / packet_size;
 		}
 
 		/* Read FIFO data */

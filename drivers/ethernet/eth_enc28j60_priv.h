@@ -236,8 +236,6 @@ struct eth_enc28j60_runtime {
 	struct gpio_callback gpio_cb;
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
-	bool iface_initialized : 1;
-	bool iface_carrier_on_init : 1;
 };
 
 #endif /*_ENC28J60_*/

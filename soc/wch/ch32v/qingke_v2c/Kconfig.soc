@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_QINGKE_V2C
+	bool
+	select SOC_FAMILY_CH32V
+
+config SOC_SERIES
+	default "qingke_v2c" if SOC_SERIES_QINGKE_V2C
+
+rsource "Kconfig.soc.*"

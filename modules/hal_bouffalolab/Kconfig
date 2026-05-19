@@ -5,3 +5,32 @@
 
 config ZEPHYR_HAL_BOUFFALOLAB_MODULE
 	bool
+
+config BFLB_FREERTOS_SHIM
+	bool
+	help
+	  FreeRTOS-to-Zephyr shim for Bouffalo Lab BLE controller blobs.
+	  Selected by SoC-specific BLE drivers that need it.
+
+config BFLB_BTBLE_TASK_PRIO
+	int "BLE controller task priority"
+	default 5
+	depends on BFLB_FREERTOS_SHIM
+	help
+	  Priority level reported to the BLE controller blob via the
+	  FreeRTOS shim uxTaskPriorityGet() function.
+
+config BFLB_BTBLE_PORT_OS_SHIM
+	bool
+	help
+	  Zephyr RTOS port for the btblecontroller binary blob.
+	  Implements the btblecontroller_* OS abstraction for BL702L/BL616.
+	  Selected by SoC-specific BLE drivers that use the btblecontroller API.
+
+config BFLB_SHIM_HEAP_SIZE
+	int "BLE shim heap size"
+	default 8192
+	depends on BFLB_FREERTOS_SHIM || BFLB_BTBLE_PORT_OS_SHIM
+	help
+	  Size in bytes of the dedicated memory pool used by the BLE
+	  controller shim layer for threads, stacks, and queues.

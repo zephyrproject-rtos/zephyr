@@ -513,8 +513,7 @@ int adxl362_set_interrupt_mode(const struct device *dev, uint8_t mode)
 
 	new_act_inact_reg = old_act_inact_reg &
 			    ~ADXL362_ACT_INACT_CTL_LINKLOOP(3);
-	new_act_inact_reg |= old_act_inact_reg |
-			    ADXL362_ACT_INACT_CTL_LINKLOOP(mode);
+	new_act_inact_reg |= ADXL362_ACT_INACT_CTL_LINKLOOP(mode);
 
 	ret = adxl362_set_reg(dev, new_act_inact_reg,
 			      ADXL362_REG_ACT_INACT_CTL, 1);
@@ -772,7 +771,7 @@ static int adxl362_init(const struct device *dev)
 	int err;
 
 	if (!spi_is_ready_dt(&config->bus)) {
-		LOG_DBG("spi device not ready: %s", config->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -EINVAL;
 	}
 

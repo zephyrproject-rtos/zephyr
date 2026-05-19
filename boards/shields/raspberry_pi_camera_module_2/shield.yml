@@ -1,0 +1,6 @@
+shield:
+  name: raspberry_pi_camera_module_2
+  full_name: Raspberry Pi Camera Module 2
+  vendor: Raspberry Pi
+  supported_features:
+    - video

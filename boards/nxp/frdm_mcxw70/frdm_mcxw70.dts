@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxw70.dtsi>
+#include <nxp/mcx/nxp_mcxw70.dtsi>
 #include "frdm_mcxw70-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -26,8 +26,8 @@
 		zephyr,flash-controller = &fmu;
 		zephyr,code-partition = &code_partition;
 		zephyr,sram = &stcm0;
-		zephyr,console = &lpuart1;
-		zephyr,shell-uart = &lpuart1;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,bt-c2h-uart = &lpuart0;
 	};
@@ -109,8 +109,13 @@ lpuart0: &lpuart_0 {
 
 lpuart1: &lpuart_1 {
 	current-speed = <115200>;
-	status = "okay";
+	status = "disabled";
 	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
+nbu: &nbu {
+	pinctrl-0 = <&pinmux_nbu_hdi>;
 	pinctrl-names = "default";
 };
 
@@ -119,7 +124,6 @@ lpuart1: &lpuart_1 {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		storage_partition: partition@17a000 {
 			label = "storage";
@@ -138,7 +142,6 @@ lpuart1: &lpuart_1 {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
 			label = "code";
@@ -165,4 +168,12 @@ tpm2: &tpm_2 {
 
 lptmr0: &lptmr_0 {
 	status = "okay";
+};
+
+lptmr1: &lptmr_1 {
+	status = "okay";
+};
+
+&ieee802154 {
+	counter = <&lptmr1>;
 };

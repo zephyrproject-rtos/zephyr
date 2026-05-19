@@ -124,7 +124,7 @@ int icm4268x_trigger_init(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->gpio_int1)) {
-		LOG_ERR("gpio_int1 not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->gpio_int1.port);
 		return -ENODEV;
 	}
 

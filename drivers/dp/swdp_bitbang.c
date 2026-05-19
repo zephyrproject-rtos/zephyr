@@ -579,7 +579,7 @@ static int sw_port_on(const struct device *dev)
 	}
 
 	if (config->reset.port) {
-		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_ACTIVE);
+		ret = gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE);
 		if (ret) {
 			return ret;
 		}
@@ -647,7 +647,7 @@ static int sw_port_off(const struct device *dev)
 	if (config->reset.port) {
 		ret = gpio_pin_configure_dt(&config->reset,
 					    config->keep_reset_deast
-						    ? GPIO_OUTPUT_ACTIVE
+						    ? GPIO_OUTPUT_INACTIVE
 						    : GPIO_DISCONNECTED);
 		if (ret) {
 			return ret;

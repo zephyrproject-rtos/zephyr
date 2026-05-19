@@ -143,8 +143,13 @@ Enable instrumentation with:
    CONFIG_INSTRUMENTATION_MODE_CALLGRAPH=y    # For tracing
    CONFIG_INSTRUMENTATION_MODE_STATISTICAL=y  # For profiling
 
-The instrumentation subsystem uses :ref:`retained memory <retention_api>` to persist trigger/stopper
-function addresses across reboots. This must be configured in the devicetree:
+The instrumentation subsystem communicates with the target device via a UART console. Ensure that
+the ``zephyr_console`` chosen node points to the desired UART controller.
+
+:ref:`Retained memory <retention_api>` allows trigger/stopper function addresses to persist across
+reboots. This feature is optional and enabled with the
+:kconfig:option:`CONFIG_INSTRUMENTATION_DYNAMIC_TRIGGER` Kconfig option. Once enabled, devicetree
+must specify a retained memory region:
 
 .. code-block:: devicetree
 
@@ -186,8 +191,12 @@ provides an interface for controlling instrumentation and extracting data from t
 
 The tool offers several commands:
 
-- ``status``: Check if the target device supports callgraph (tracing) and statistical (profiling)
-  modes.
+- ``status``: Check if the target device supports
+
+  - callgraph (tracing) mode
+  - statistical (profiling) mode
+  - dynamic trigger/stopper functions configuration
+
 - ``trace``: Capture and display function call traces.
 - ``profile``: Capture and display function profiling data.
 - ``reboot``: Reboot the target device.

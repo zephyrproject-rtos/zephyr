@@ -35,6 +35,12 @@ static const struct device *irq_dev(unsigned int *irq_inout)
 	}
 	__ASSERT_NO_MSG(lvl1 == 2);
 	return DEVICE_DT_GET(DT_INST(1, mediatek_adsp_intc));
+#elif defined(CONFIG_SOC_SERIES_MT8365)
+	/* Controller 0 is on Xtensa vector 1 */
+	if ((*irq_inout & 0xff) == 1) {
+		*irq_inout = (*irq_inout >> 8) - 1;
+	}
+	return DEVICE_DT_GET(DT_INST(0, mediatek_adsp_intc));
 #else
 	/* Only one on 818x */
 	return DEVICE_DT_GET(DT_INST(0, mediatek_adsp_intc));
@@ -49,6 +55,12 @@ void z_soc_irq_enable(unsigned int irq)
 #if defined(CONFIG_SOC_MT8188)
 		if (irq < 25) {
 			*(volatile uint32_t*)(DT_REG_ADDR(DT_NODELABEL(intc2))) |= BIT(irq);
+		}
+#elif defined(CONFIG_SOC_SERIES_MT8365)
+		if (irq >= 2 && irq <= 5) {
+			const struct device *dev =
+				DEVICE_DT_GET(DT_INST(0, mediatek_adsp_intc));
+			intc_mtk_adsp_set_enable(dev, irq - 2, true);
 		}
 #endif
 	} else {
@@ -65,6 +77,12 @@ void z_soc_irq_disable(unsigned int irq)
 #if defined(CONFIG_SOC_MT8188)
 		if (irq < 25) {
 			*(volatile uint32_t*)(DT_REG_ADDR(DT_NODELABEL(intc2))) &= ~BIT(irq);
+		}
+#elif defined(CONFIG_SOC_SERIES_MT8365)
+		if (irq >= 2 && irq <= 5) {
+			const struct device *dev =
+				DEVICE_DT_GET(DT_INST(0, mediatek_adsp_intc));
+			intc_mtk_adsp_set_enable(dev, irq - 2, false);
 		}
 #endif
 	} else {

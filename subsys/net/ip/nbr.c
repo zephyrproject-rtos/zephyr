@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(net_nbr, CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 
 #include "net_private.h"
 

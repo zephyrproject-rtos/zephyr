@@ -200,8 +200,7 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 			thld = sensor_value_to_double(val) * cpl;
 			LOG_DBG("attr: %d, cpl: %g, thld: %x\n", attr, cpl, thld);
 
-			le16_buffer = sys_cpu_to_le16(sys_cpu_to_le16(thld));
-
+			le16_buffer = sys_cpu_to_le16(thld);
 			ret = i2c_burst_write_dt(
 				&((const struct tsl2540_config *)dev->config)->i2c_spec,
 				TSL2540_REG_AILT_LOW, (uint8_t *)&le16_buffer, sizeof(le16_buffer));
@@ -301,7 +300,7 @@ static int tsl2540_init(const struct device *dev)
 	k_sem_init(&data->sem, 1, K_SEM_MAX_LIMIT);
 
 	if (!i2c_is_ready_dt(&cfg->i2c_spec)) {
-		LOG_ERR("I2C dev %s not ready", cfg->i2c_spec.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c_spec.bus);
 		return -ENODEV;
 	}
 

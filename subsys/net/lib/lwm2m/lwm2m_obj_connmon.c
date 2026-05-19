@@ -91,9 +91,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 					CONNMON_ROUTER_IP_ADDRESS_MAX)
 
 /* resource state variables */
-static int8_t net_bearer;
+static uint8_t net_bearer;
 static int16_t rss;
 static int16_t link_quality;
+static uint8_t link_utilization;
 static uint32_t cellid;
 static uint16_t mnc;
 static uint16_t mcc;
@@ -144,6 +145,7 @@ static struct lwm2m_engine_obj_inst *connmon_create(uint16_t obj_inst_id)
 	net_bearer = 42U; /* Ethernet */
 	rss = 0;
 	link_quality = 0U;
+	link_utilization = 0U;
 	mnc = 0U;
 	mcc = 0U;
 #if CONNMON_VERSION_MINOR > 0
@@ -173,6 +175,8 @@ static struct lwm2m_engine_obj_inst *connmon_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_MULTI_OPTDATA(CONNMON_ROUTER_IP_ADDRESSES, res, i,
 				   res_inst, j, CONNMON_ROUTER_IP_ADDRESS_MAX,
 				   false);
+	INIT_OBJ_RES_DATA(CONNMON_LINK_UTILIZATION, res, i, res_inst, j,
+				   &link_utilization, sizeof(link_utilization));
 	INIT_OBJ_RES_MULTI_OPTDATA(CONNMON_APN, res, i, res_inst, j,
 				   CONNMON_APN_MAX, false);
 	INIT_OBJ_RES_DATA(CONNMON_CELLID, res, i, res_inst, j, &cellid,

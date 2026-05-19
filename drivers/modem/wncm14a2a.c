@@ -1735,7 +1735,7 @@ static void offload_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct wncm14a2a_iface_ctx *ctx = dev->data;
 
-	iface->if_dev->offload = &offload_funcs;
+	net_if_offload_set(iface, &offload_funcs);
 	net_if_set_link_addr(iface, wncm14a2a_get_mac(dev),
 			     sizeof(ctx->mac_addr),
 			     NET_LINK_ETHERNET);

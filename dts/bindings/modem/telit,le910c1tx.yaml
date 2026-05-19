@@ -1,0 +1,17 @@
+# Copyright(c) 2026 Telit Cinterion S.p.A. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telit LE910C1tx Modem
+
+compatible: "telit,le910c1tx"
+
+include: uart-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-reset-gpios:
+    type: phandle-array
+    required: true

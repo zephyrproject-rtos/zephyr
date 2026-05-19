@@ -5,10 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/audio/audio.h>
@@ -24,20 +26,23 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "tmap_central.h"
 
 static struct bt_conn *default_conn;
 
-static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_security_updated, 0, 1);
-static K_SEM_DEFINE(sem_disconnected, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
-static K_SEM_DEFINE(sem_discovery_done, 0, 1);
+static K_SEM_DEFINE(sem_connected, 0U, 1U);
+static K_SEM_DEFINE(sem_security_updated, 0U, 1U);
+static K_SEM_DEFINE(sem_disconnected, 0U, 1U);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0U, 1U);
+static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+
 	printk("MTU exchanged: %u/%u\n", tx, rx);
 	k_sem_give(&sem_mtu_exchanged);
 }
@@ -48,11 +53,13 @@ static struct bt_gatt_cb gatt_callbacks = {
 
 void tmap_discovery_complete(enum bt_tmap_role role, struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(role);
+
 	if (conn != default_conn) {
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("TMAS discovery failed! (err %d)\n", err);
 		return;
 	}
@@ -84,12 +91,9 @@ static int init(void)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err != 0) {
-		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
+		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
+		       err, bt_hci_err_to_str(err));
 
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
@@ -102,21 +106,18 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 	k_sem_give(&sem_connected);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != default_conn) {
 		return;
 	}
 
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
@@ -127,6 +128,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 				enum bt_security_err err)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(level);
+
 	if (err == 0) {
 		printk("Security changed: %u\n", err);
 		k_sem_give(&sem_security_updated);
@@ -147,7 +151,7 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 	struct net_buf_simple tmas_svc_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
-	uint16_t peer_tmap_role = 0;
+	uint16_t peer_tmap_role = 0U;
 	int err;
 
 	printk("[AD]: %u data_len %u\n", data->type, data->data_len);
@@ -201,8 +205,6 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 					struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
 	if (default_conn != NULL) {
 		/* Already connected */
 		return;
@@ -211,8 +213,7 @@ static void scan_recv(const struct bt_le_scan_recv_info *info,
 	/* Check for connectable, extended advertising */
 	if (((info->adv_props & BT_GAP_ADV_PROP_EXT_ADV) != 0) ||
 		((info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE)) != 0) {
-		bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-		printk("[DEVICE]: %s, ", le_addr);
+		printk("[DEVICE]: %s, ", bt_addr_le_str(info->addr));
 		/* Check for TMAS support in advertising data */
 		bt_data_parse(buf, check_audio_support_and_connect, (void *)info->addr);
 	}

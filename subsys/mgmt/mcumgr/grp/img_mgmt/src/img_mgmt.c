@@ -43,72 +43,77 @@
 
 #if !defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD)
 
+#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
+#define PARTITION_IS_RUNNING_APP_PARTITION(label)				\
+	DT_SAME_NODE(DT_CHOSEN(zephyr_code_partition), DT_NODELABEL(label))
+#else
 #ifndef CONFIG_FLASH_LOAD_OFFSET
 #error MCUmgr requires application to be built with CONFIG_FLASH_LOAD_OFFSET set \
 	to be able to figure out application running slot.
 #endif
 
-#define FIXED_PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
-	DT_SAME_NODE(FIXED_PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
-		FIXED_PARTITION_MTD(label)) && (FIXED_PARTITION_ADDRESS(label) <=                  \
+#define PARTITION_IS_RUNNING_APP_PARTITION(label)                                            \
+	DT_SAME_NODE(PARTITION_NODE_MTD(DT_CHOSEN(zephyr_code_partition)),                   \
+		PARTITION_MTD(label)) && (PARTITION_ADDRESS(label) <=                  \
 			(CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET) &&                  \
-		FIXED_PARTITION_ADDRESS(label) + FIXED_PARTITION_SIZE(label) >                     \
+		PARTITION_ADDRESS(label) + PARTITION_SIZE(label) >                     \
 			(CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET))
+#endif
 
 BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
 	     "struct image_header not required size");
 
 #if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
-#if FIXED_PARTITION_EXISTS(slot0_ns_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_ns_partition)
+#if PARTITION_EXISTS(slot0_ns_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot0_ns_partition)
 #define ACTIVE_IMAGE_IS 0
-#elif FIXED_PARTITION_EXISTS(slot0_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition)
+#elif PARTITION_EXISTS(slot0_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot0_partition)
 #define ACTIVE_IMAGE_IS 0
-#elif FIXED_PARTITION_EXISTS(slot1_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)
+#elif PARTITION_EXISTS(slot1_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)
 #define ACTIVE_IMAGE_IS 0
-#elif FIXED_PARTITION_EXISTS(slot2_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot2_partition)
+#elif PARTITION_EXISTS(slot2_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot2_partition)
 #define ACTIVE_IMAGE_IS 1
-#elif FIXED_PARTITION_EXISTS(slot3_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot3_partition)
+#elif PARTITION_EXISTS(slot3_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot3_partition)
 #define ACTIVE_IMAGE_IS 1
-#elif FIXED_PARTITION_EXISTS(slot4_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot4_partition)
+#elif PARTITION_EXISTS(slot4_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot4_partition)
 #define ACTIVE_IMAGE_IS 2
-#elif FIXED_PARTITION_EXISTS(slot5_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot5_partition)
+#elif PARTITION_EXISTS(slot5_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot5_partition)
 #define ACTIVE_IMAGE_IS 2
-#elif FIXED_PARTITION_EXISTS(slot6_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot6_partition)
+#elif PARTITION_EXISTS(slot6_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot6_partition)
 #define ACTIVE_IMAGE_IS 3
-#elif FIXED_PARTITION_EXISTS(slot7_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot7_partition)
+#elif PARTITION_EXISTS(slot7_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot7_partition)
 #define ACTIVE_IMAGE_IS 3
-#elif FIXED_PARTITION_EXISTS(slot8_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot8_partition)
+#elif PARTITION_EXISTS(slot8_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot8_partition)
 #define ACTIVE_IMAGE_IS 4
-#elif FIXED_PARTITION_EXISTS(slot9_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot9_partition)
+#elif PARTITION_EXISTS(slot9_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot9_partition)
 #define ACTIVE_IMAGE_IS 4
-#elif FIXED_PARTITION_EXISTS(slot10_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot10_partition)
+#elif PARTITION_EXISTS(slot10_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot10_partition)
 #define ACTIVE_IMAGE_IS 5
-#elif FIXED_PARTITION_EXISTS(slot11_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot11_partition)
+#elif PARTITION_EXISTS(slot11_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot11_partition)
 #define ACTIVE_IMAGE_IS 5
-#elif FIXED_PARTITION_EXISTS(slot12_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot12_partition)
+#elif PARTITION_EXISTS(slot12_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot12_partition)
 #define ACTIVE_IMAGE_IS 6
-#elif FIXED_PARTITION_EXISTS(slot13_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot13_partition)
+#elif PARTITION_EXISTS(slot13_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot13_partition)
 #define ACTIVE_IMAGE_IS 6
-#elif FIXED_PARTITION_EXISTS(slot14_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot14_partition)
+#elif PARTITION_EXISTS(slot14_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot14_partition)
 #define ACTIVE_IMAGE_IS 7
-#elif FIXED_PARTITION_EXISTS(slot15_partition) &&			\
-	FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot15_partition)
+#elif PARTITION_EXISTS(slot15_partition) &&			\
+	PARTITION_IS_RUNNING_APP_PARTITION(slot15_partition)
 #define ACTIVE_IMAGE_IS 7
 #else
 #define ACTIVE_IMAGE_IS 0
@@ -251,7 +256,7 @@ int img_mgmt_active_slot(int image)
 	slot = (int)temp_slot;
 #else
 	/* This covers single image, including DirectXiP */
-	if (FIXED_PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {
+	if (PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {
 		slot = 1;
 	}
 #endif

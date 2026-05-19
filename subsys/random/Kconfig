@@ -38,9 +38,11 @@ config TIMER_RANDOM_INITIAL_STATE
 
 choice RNG_GENERATOR_CHOICE
 	prompt "Random generator"
-	default ENTROPY_DEVICE_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER
+	default ARM64_RANDOM_GENERATOR if ARM64_RNG
+	default ENTROPY_DEVICE_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER && !ENTROPY_NEEDS_PRNG
+	default XOSHIRO_RANDOM_GENERATOR if ENTROPY_HAS_DRIVER && ENTROPY_NEEDS_PRNG
 	default TIMER_RANDOM_GENERATOR if TEST_RANDOM_GENERATOR
-	depends on ENTROPY_HAS_DRIVER || TEST_RANDOM_GENERATOR
+	depends on ENTROPY_HAS_DRIVER || TEST_RANDOM_GENERATOR || ARM64_RNG
 	help
 	  Platform dependent non-cryptographically secure random number support.
 
@@ -73,8 +75,33 @@ config XOSHIRO_RANDOM_GENERATOR
 	  the entropy driver as a seed source. This is a fast general-purpose
 	  non-cryptographically secure random number generator.
 
+config ARM64_RANDOM_GENERATOR
+	bool "Use ARM64 PRNG"
+	depends on ARM64_RNG
+	help
+	  Enables the pseudo-random number generator based on the RNDR instruction
+	  from the ARM extension FEAT_RNG.
+
 endchoice # RNG_GENERATOR_CHOICE
 
+if ARM64_RANDOM_GENERATOR
+
+config ARM64_RANDOM_GENERATOR_MAX_RETRIES
+	int "Maximum number of retries for ARM64 random generator"
+	default 10
+	help
+	  Maximum number of consecutive RNDR instruction failures after which the
+	  random generator gives up. Since we cannot return error, we panic the
+	  kernel.
+
+config ARM64_RANDOM_GENERATOR_RETRY_WAIT_USEC
+	int "Retry wait time for ARM64 random generator"
+	default 500
+	help
+	  Number of microseconds generator should wait before retrying after RNDR
+	  instruction failure.
+
+endif # ARM64_RANDOM_GENERATOR
 
 DT_CHOSEN_Z_ENTROPY := zephyr,entropy
 config ENTROPY_NODE_ENABLED
@@ -120,6 +147,7 @@ config CSPRNG_ENABLED
 
 choice CSPRNG_GENERATOR_CHOICE
 	prompt "Cryptographically secure random generator"
+	default PSA_CSPRNG_GENERATOR if ENTROPY_NEEDS_PRNG
 	default HARDWARE_DEVICE_CS_GENERATOR
 	default TEST_CSPRNG_GENERATOR
 	help
@@ -139,14 +167,26 @@ config HARDWARE_DEVICE_CS_GENERATOR
 
 config CTR_DRBG_CSPRNG_GENERATOR
 	bool "Use CTR-DRBG CSPRNG"
-	depends on MBEDTLS
-	depends on ENTROPY_HAS_DRIVER
-	select MBEDTLS_CIPHER_AES_ENABLED
+	depends on PSA_CRYPTO
+	select DEPRECATED
 	help
 	  Enables the CTR-DRBG pseudo-random number generator. This CSPRNG
 	  shall use the entropy API for an initialization seed. The CTR-DRBG
 	  is a FIPS140-2 recommended cryptographically secure random number
 	  generator.
+
+config PSA_CSPRNG_GENERATOR
+	bool "Use PSA CSPRNG"
+	depends on PSA_CRYPTO
+	help
+	  Enables a cryptographically secure random number generator
+	  that uses the PSA Crypto API. This CSPRNG implementation
+	  leverages the underlying PSA Crypto library's secure random
+	  number generation capabilities, which may use hardware
+	  entropy sources when available. The PSA CSPRNG provides
+	  cryptographically secure random numbers suitable for
+	  security-sensitive applications.
+
 
 config TEST_CSPRNG_GENERATOR
 	bool "Use insecure CSPRNG for testing purposes"
@@ -162,8 +202,7 @@ config CS_CTR_DRBG_PERSONALIZATION
 	default "zephyr ctr-drbg seed"
 	depends on CTR_DRBG_CSPRNG_GENERATOR
 	help
-	  Personalization data can be provided in addition to the entropy
-	  source to make the initialization of the CTR-DRBG as unique as
-	  possible.
+	  This option is deprecated (no longer needed) and will be
+	  removed in further release.
 
 endmenu

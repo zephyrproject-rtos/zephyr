@@ -16,6 +16,7 @@
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_K(3200)>;
+	ranges = <0x0 0x08000000 DT_SIZE_K(3200)>;
 };
 
 &gpioa {
@@ -46,6 +47,7 @@
 };
 
 &radio {
+	pa-max-power-dbm = <10>;
 	pa-voltage-mv = <1800>;
 };
 

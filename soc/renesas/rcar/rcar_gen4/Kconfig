@@ -1,4 +1,5 @@
 # Copyright (c) 2023 IoT.bzh
+# Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_R8A779F0_R52
@@ -11,5 +12,11 @@ config SOC_R8A779F0_R52
 config SOC_R8A779F0_A55
 	select ARM64
 	select CPU_CORTEX_A55
+	select CLOCK_CONTROL_RCAR_CPG_MSSR if CLOCK_CONTROL
+	select ARM_ARCH_TIMER
+
+config SOC_R8A779G0_R52
+	select ARM
+	select CPU_CORTEX_R52
 	select CLOCK_CONTROL_RCAR_CPG_MSSR if CLOCK_CONTROL
 	select ARM_ARCH_TIMER

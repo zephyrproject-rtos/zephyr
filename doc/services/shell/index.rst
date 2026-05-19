@@ -19,8 +19,9 @@ interaction is required. This module is a Unix-like shell with these features:
 * Support for static and dynamic commands.
 * Support for dictionary commands.
 * Smart command completion with the :kbd:`Tab` key.
-* Built-in commands: :command:`clear`, :command:`shell`, :command:`colors`,
-  :command:`echo`, :command:`history` and :command:`resize`.
+* Built-in commands: :command:`aliases`, :command:`clear`, :command:`shell`,
+  :command:`colors`, :command:`echo`, :command:`history` and
+  :command:`resize`.
 * Viewing recently executed commands using keys: :kbd:`↑` :kbd:`↓` or meta keys.
 * Text edition using keys: :kbd:`←`, :kbd:`→`, :kbd:`Backspace`,
   :kbd:`Delete`, :kbd:`End`, :kbd:`Home`, :kbd:`Insert`.
@@ -240,6 +241,13 @@ File-System
 
 - :kconfig:option:`CONFIG_FILE_SYSTEM`
 - :kconfig:option:`CONFIG_FILE_SYSTEM_SHELL`
+
+ADC
+---
+
+- :kconfig:option:`CONFIG_ADC`
+- :kconfig:option:`CONFIG_ADC_SHELL`
+- :kconfig:option:`CONFIG_ADC_EMUL_SHELL` (requires :kconfig:option:`CONFIG_ADC_EMUL`)
 
 Creating commands
 =================
@@ -557,6 +565,8 @@ Built-in commands
 
 These commands are activated by :kconfig:option:`CONFIG_SHELL_CMDS` set to ``y``.
 
+* :command:`aliases` - Shows currently configured aliases. This command needs
+  extra activation: :kconfig:option:`CONFIG_SHELL_CMDS_ALIASES` set to ``y``.
 * :command:`clear` - Clears the screen.
 * :command:`history` - Shows the recently entered commands.
 * :command:`resize` - Must be executed when terminal width is different than 80
@@ -579,6 +589,47 @@ These commands are activated by :kconfig:option:`CONFIG_SHELL_CMDS` set to ``y``
         * :command:`colors` - Toggles colored syntax. This might be helpful in
           case of Bluetooth shell to limit the amount of transferred bytes.
 	* :command:`stats` - Shows shell statistics.
+
+Alias support
+*************
+
+The shell can expand aliases before executing a command when
+:kconfig:option:`CONFIG_SHELL_ALIASES` is enabled. Zephyr always provides the
+built-in alias :command:`?`, which expands to :command:`help`.
+
+To load additional aliases from a host file, set
+:kconfig:option:`CONFIG_SHELL_ALIASES_FILE` and generate the corresponding
+include file from the application ``CMakeLists.txt`` file. When
+:kconfig:option:`CONFIG_SHELL_ALIASES_FILE` is non-empty,
+:kconfig:option:`CONFIG_SHELL_ALIASES_HAS_FILE` is enabled automatically.
+
+.. code-block:: cmake
+
+   if(CONFIG_SHELL_ALIASES_HAS_FILE)
+     set(gen_dir ${ZEPHYR_BINARY_DIR}/include/generated/)
+     set(aliases_src ${CONFIG_SHELL_ALIASES_FILE})
+
+     generate_shell_aliases_inc_file_for_target(
+       app
+       ${aliases_src}
+       ${gen_dir}/generated-shell-aliases.inc
+     )
+   endif()
+
+The aliases file uses one ``alias=command`` entry per line. Lines beginning
+with ``#`` are comments, and command strings containing spaces must be quoted.
+The sample at :zephyr_file:`samples/net/sockets/echo_service/shell_aliases.txt`
+uses the following format:
+
+.. code-block:: none
+
+   # Example shell aliases file
+   stacks="kernel thread stacks"
+   scan="wifi scan"
+   connect="wifi connect"
+
+Use the :command:`aliases` command to inspect the aliases available in the
+running shell.
 
 .. _tab-feature:
 
@@ -856,6 +907,87 @@ This allows interactive use of the shell through JLinkRTTViewer, while the log
 is written to file.
 
 See `shell backends <backends_>`_ for details on how to enable RTT as a Shell backend.
+
+Remote Shell
+************
+
+The shell module supports remote shell. Remote shell allows to execute commands
+on the remote core using the main core shell interface. User interface features
+like ``Tab`` autocompletion or history navigation are supported on the remote
+shell client. There can be multiple remote clients connected to the main core shell.
+Each remote client has its own tree of commands. Remote client commands are executed
+in the context of the remote client core. Remote shell is using :ref:`ipc_service` to
+communicate with the remote core.
+
+If only a single remote client is enabled then ``remote_shell`` command is registered as a root
+command for the remote core tree of commands. If multiple remote clients are enabled
+then ``remote_shell <core_name>`` is used as a root for the given remote client.
+
+Remote client implementation supports case where threads are disabled
+(:kconfig:option:`CONFIG_MULTITHREADING` set to ``n``).
+
+This approach has two main benefits:
+
+1. It allows to use the same shell interface for both the main and the remote cores.
+2. Full shell implementation is present only on the host core, significantly reducing the
+   memory footprint of the remote cores. Implementation uses less than 3 kB per remote client.
+   Half of the memory is used for string formatting and can be shared with other
+   modules that use string formatting (for example, logging).
+
+See :zephyr:code-sample:`shell-module` for details on how to enable remote shell.
+
+Configuration
+=============
+
+Following Kconfig options are available for remote shell host configuration:
+
+:kconfig:option:`CONFIG_SHELL_REMOTE`: Enables remote shell on the host core.
+
+:kconfig:option:`CONFIG_SHELL_REMOTE_MULTI_CLI`: Enables multiple remote clients.
+
+:kconfig:option:`CONFIG_SHELL_REMOTE_TMP_BUF_SIZE`: Size of the temporary buffer for remote shell
+command data. Need to be large enough to hold the command and its arguments.
+
+Following Kconfig options are available for remote shell client configuration:
+
+:kconfig:option:`CONFIG_SHELL_REMOTE_CLI`: Enables remote shell client on the remote core.
+
+:kconfig:option:`CONFIG_SHELL_REMOTE_CLI_BUF_SIZE`: Size of the internal buffer used for
+remote messages. Need to be large enough to hold the command syntax and help text.
+Help text is truncated if the buffer is too small. It is also used to hold data for
+shell print messages. If it is too small then the print message is replaced with
+the error message.
+
+:kconfig:option:`CONFIG_SHELL_REMOTE_CLI_KWORK`: Use kwork context for command execution.
+
+:kconfig:option:`CONFIG_SHELL_REMOTE_CLI_STACK_SIZE`: Thread stack size for remote shell client.
+
+If a single client is used then IPC service device is automatically chosen based on the devicetree
+configuration. User can specify the IPC device tree node using chosen node. If not specified then
+if there is only a single IPC device available that one is used.
+
+IPC service device tree node configuration example:
+
+.. code-block:: dts
+
+	chosen {
+		zephyr,ipc_shell = &ipc0;
+	};
+
+
+Limitations
+============
+
+Some shell features are not supported on the remote shell client:
+
+* Bypass mode is not supported on the remote shell client.
+* Select mode is not supported on the remote shell client.
+
+IPC communication assumes same endianness and alignment of the data on both sides. It has been
+tested on the following core pairs:
+
+* Cortex-M33 (host) and Cortex-M33 (client)
+* Cortex-M33 (host) and RISC-V 32 (client)
 
 Usage
 *****

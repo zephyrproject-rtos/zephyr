@@ -38,6 +38,10 @@
 	interrupts = <34 0>;
 };
 
+&mbox {
+	interrupts = <63 0>;
+};
+
 &wdt0 {
 	interrupts = <1 0>;
 };
@@ -68,6 +72,10 @@
 
 &flc0 {
 	status = "okay";
+};
+
+&flash0 {
+	interrupts = <23 0>;
 };
 
 &nvic {

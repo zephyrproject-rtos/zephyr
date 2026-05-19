@@ -531,7 +531,7 @@ static int nxp_sar_adc_init(const struct device *dev)
 	return 0;
 }
 
-static const struct adc_driver_api nxp_sar_adc_api = {
+static DEVICE_API(adc, nxp_sar_adc_api) = {
 	.channel_setup = nxp_sar_adc_channel_setup,
 	.read = nxp_sar_adc_read,
 #ifdef CONFIG_ADC_ASYNC

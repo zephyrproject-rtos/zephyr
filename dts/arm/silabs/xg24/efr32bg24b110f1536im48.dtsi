@@ -16,6 +16,7 @@
 
 &flash0 {
 	reg = <0x08000000 DT_SIZE_K(1536)>;
+	ranges = <0x0 0x08000000 DT_SIZE_K(1536)>;
 };
 
 &gpioa {
@@ -32,6 +33,10 @@
 
 &gpiod {
 	ngpios = <6>;
+};
+
+&radio {
+	pa-max-power-dbm = <10>;
 };
 
 &sram0 {

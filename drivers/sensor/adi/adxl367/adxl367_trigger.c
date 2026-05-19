@@ -22,8 +22,8 @@ static void adxl367_thread_cb(const struct device *dev)
 	uint8_t status;
 	int ret;
 
-	/* Clear the status */
-	ret = drv_data->hw_tf->read_reg(dev, ADXL367_STATUS, &status);
+	/* Check status_copy register to determine trigger source */
+	ret = drv_data->hw_tf->read_reg(dev, ADXL367_STATUS_COPY, &status);
 	if (ret != 0) {
 		return;
 	}
@@ -149,7 +149,7 @@ int adxl367_init_interrupt(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->interrupt)) {
-		LOG_ERR("GPIO port %s not ready", cfg->interrupt.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->interrupt.port);
 		return -EINVAL;
 	}
 

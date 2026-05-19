@@ -6,7 +6,6 @@
 
 #include <zephyr/linker/sections.h>
 #include <zephyr/arch/cpu.h>
-#include "mmu.h"
 
 #if CONFIG_MMU_PAGE_SIZE == 4096 || defined(CONFIG_ARM_MPU)
 #define HEADER_PGSIZE	1

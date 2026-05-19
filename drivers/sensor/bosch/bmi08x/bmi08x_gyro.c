@@ -360,7 +360,7 @@ int bmi08x_gyro_init(const struct device *dev)
 
 	ret = bmi08x_bus_check(dev);
 	if (ret < 0) {
-		LOG_ERR("Bus not ready for '%s'", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(dev);
 		return ret;
 	}
 

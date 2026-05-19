@@ -14,6 +14,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/net/mld.h>
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/net_context.h>
@@ -27,6 +28,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "ipv6.h"
 #include "nbr.h"
 #include "6lo.h"
+#include "route_ipv6.h"
 #include "route.h"
 #include "net_stats.h"
 
@@ -124,6 +126,7 @@ static int mld_create_packet(struct net_pkt *pkt, uint16_t count)
 
 static int mld_send(struct net_pkt *pkt)
 {
+	__maybe_unused struct net_if *iface = net_pkt_iface(pkt);
 	int ret;
 
 	net_pkt_cursor_init(pkt);
@@ -131,27 +134,27 @@ static int mld_send(struct net_pkt *pkt)
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		net_stats_update_icmp_drop(net_pkt_iface(pkt));
-		net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
+		net_stats_update_icmp_drop(iface);
+		net_stats_update_ipv6_mld_drop(iface);
 
 		net_pkt_unref(pkt);
 
 		return ret;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
-	net_stats_update_ipv6_mld_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
+	net_stats_update_ipv6_mld_sent(iface);
 
 	return 0;
 }
 
-#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
-static void count_mcast_routes(struct net_route_entry_mcast *entry, void *user_data)
+#if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
+static void count_mcast_routes(struct net_route_ipv6_entry_mcast *entry, void *user_data)
 {
 	(*((int *)user_data))++;
 }
 
-static void append_mcast_routes(struct net_route_entry_mcast *entry, void *user_data)
+static void append_mcast_routes(struct net_route_ipv6_entry_mcast *entry, void *user_data)
 {
 	struct mcast_route_appending_info *info = (struct mcast_route_appending_info *)user_data;
 	struct net_if_mcast_addr *mcasts = info->iface->config.ip.ipv6->mcast;
@@ -210,29 +213,18 @@ drop:
 	return ret;
 }
 
-int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
+int net_ipv6_mld_rejoin(struct net_if *iface, const struct net_in6_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
 	int ret = 0;
 
 	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
-	if (maddr && net_if_ipv6_maddr_is_joined(maddr)) {
-		return -EALREADY;
-	}
-
-	if (!maddr) {
-		maddr = net_if_ipv6_maddr_add(iface, addr);
-		if (!maddr) {
-			return -ENOMEM;
-		}
+	if (maddr == NULL) {
+		return -ENOENT;
 	}
 
 	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
 		return 0;
-	}
-
-	if (!net_if_is_up(iface)) {
-		return -ENETDOWN;
 	}
 
 	if (net_if_is_offloaded(iface)) {
@@ -256,18 +248,69 @@ out:
 	return ret;
 }
 
-int net_ipv6_mld_leave(struct net_if *iface, const struct net_in6_addr *addr)
+int net_ipv6_mld_join(struct net_if *iface, const struct net_in6_addr *addr)
 {
 	struct net_if_mcast_addr *maddr;
 	int ret = 0;
 
+	maddr = net_if_ipv6_maddr_add(iface, addr);
+	if (maddr == NULL) {
+		return -ENOMEM;
+	}
+
+	if (net_if_ipv6_maddr_is_joined(maddr)) {
+		return 0;
+	}
+
+	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
+		return 0;
+	}
+
+	if (net_if_is_offloaded(iface)) {
+		goto out;
+	}
+
+	ret = net_ipv6_mld_send_single(iface, addr, NET_IPV6_MLDv2_CHANGE_TO_EXCLUDE_MODE);
+	if (ret < 0) {
+		/* -ENETDOWN Indicate that network interface is down - this may
+		 * happen and should not be considered fatal, address group will
+		 * be joined when the interface goes up. Any other error should
+		 * be considered fatal though and address should be cleaned up.
+		 */
+		if (ret != -ENETDOWN) {
+			net_if_ipv6_maddr_rm(iface, addr);
+		}
+
+		return ret;
+	}
+
+out:
+	net_if_ipv6_maddr_join(iface, maddr);
+
+	net_if_mcast_monitor(iface, &maddr->address, true);
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_MCAST_JOIN, iface,
+					&maddr->address.in6_addr,
+					sizeof(struct net_in6_addr));
+
+	return ret;
+}
+
+int net_ipv6_mld_leave(struct net_if *iface, const struct net_in6_addr *addr)
+{
+	struct net_if_mcast_addr *maddr;
+	struct net_addr removed_addr;
+	int ret = 0;
+
 	maddr = net_if_ipv6_maddr_lookup(addr, &iface);
-	if (!maddr) {
+	if (maddr == NULL) {
 		return -ENOENT;
 	}
 
+	removed_addr = maddr->address;
 	if (!net_if_ipv6_maddr_rm(iface, addr)) {
-		return -EINVAL;
+		/* Address still in use */
+		return 0;
 	}
 
 	if (net_if_flag_is_set(iface, NET_IF_IPV6_NO_MLD)) {
@@ -284,10 +327,10 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct net_in6_addr *addr)
 	}
 
 out:
-	net_if_mcast_monitor(iface, &maddr->address, false);
+	net_if_mcast_monitor(iface, &removed_addr, false);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_MCAST_LEAVE, iface,
-					&maddr->address.in6_addr,
+					&removed_addr.in6_addr,
 					sizeof(struct net_in6_addr));
 
 	return ret;
@@ -310,12 +353,12 @@ static int send_mld_report(struct net_if *iface)
 		count++;
 	}
 
-#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
+#if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
 	/* Increase number of slots by a number of multicast routes that
 	 * can be later added to the report. Checking for duplicates is done
 	 * while appending an entry.
 	 */
-	net_route_mcast_foreach(count_mcast_routes, NULL, (void *)&count);
+	net_route_ipv6_mcast_foreach(count_mcast_routes, NULL, (void *)&count);
 #endif
 
 	pkt = net_pkt_alloc_with_buffer(iface, IPV6_OPT_HDR_ROUTER_ALERT_LEN +
@@ -344,7 +387,7 @@ static int send_mld_report(struct net_if *iface)
 		}
 	}
 
-#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
+#if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
 	/* Append information about multicast routes as packets will be
 	 * forwarded to these interfaces on reception.
 	 */
@@ -355,7 +398,7 @@ static int send_mld_report(struct net_if *iface)
 	info.iface = iface;
 	info.skipped = 0;
 
-	net_route_mcast_foreach(append_mcast_routes, NULL, &info);
+	net_route_ipv6_mcast_foreach(append_mcast_routes, NULL, &info);
 
 	ret = info.status;
 	if (ret < 0) {
@@ -369,8 +412,11 @@ static int send_mld_report(struct net_if *iface)
 		net_pkt_cursor_init(pkt);
 		net_pkt_set_overwrite(pkt, true);
 
-		net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt) +
-				  sizeof(struct net_icmp_hdr) + MLDV2_REPORT_RESERVED_BYTES);
+		if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt) +
+					      sizeof(struct net_icmp_hdr) +
+					      MLDV2_REPORT_RESERVED_BYTES) < 0) {
+			goto drop;
+		}
 
 		count -= info.skipped;
 
@@ -406,19 +452,22 @@ drop:
 #define dbg_addr_recv(pkt_str, src, dst)	\
 	dbg_addr("Received", pkt_str, src, dst)
 
-static int handle_mld_query(struct net_icmp_ctx *ctx,
-			    struct net_pkt *pkt,
-			    struct net_icmp_ip_hdr *hdr,
-			    struct net_icmp_hdr *icmp_hdr,
-			    void *user_data)
+static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
+					 struct net_pkt *pkt,
+					 struct net_icmp_ip_hdr *hdr,
+					 struct net_icmp_hdr *icmp_hdr,
+					 void *user_data)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(mld_access,
 					      struct net_icmpv6_mld_query);
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
 	uint16_t length = net_pkt_get_len(pkt);
 	struct net_icmpv6_mld_query *mld_query;
+	struct net_pkt_cursor backup;
 	uint16_t pkt_len;
 	int ret = -EIO;
+
+	net_pkt_cursor_backup(pkt, &backup);
 
 	if (net_pkt_remaining_data(pkt) < sizeof(struct net_icmpv6_mld_query)) {
 		/* MLDv1 query, drop. */
@@ -433,7 +482,11 @@ static int handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &mld_access);
+	ret = net_pkt_acknowledge_data(pkt, &mld_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	dbg_addr_recv("Multicast Listener Query", &ip_hdr->src, &ip_hdr->dst);
 
@@ -458,12 +511,20 @@ static int handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	return send_mld_report(net_pkt_iface(pkt));
+	ret = send_mld_report(net_pkt_iface(pkt));
+	if (ret < 0) {
+		NET_DBG("DROP: failed to send MLD report (%d)", ret);
+		goto drop;
+	}
+
+	net_pkt_cursor_restore(pkt, &backup);
+	return NET_CONTINUE;
 
 drop:
 	net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
 
-	return ret;
+	net_pkt_cursor_restore(pkt, &backup);
+	return ret < 0 ? NET_DROP : NET_CONTINUE;
 }
 
 void net_ipv6_mld_init(void)

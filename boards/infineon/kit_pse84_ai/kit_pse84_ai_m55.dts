@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,13 +24,51 @@
 	};
 
 	chosen {
-		/* m55_xip is used in the pse84_boot.c file for m55 core startup
+		/* m55_xip + flash0_sahb is used in the pse84_boot.c file for m55 core startup
 		 * If a different region is assigned here, it also needs to be updated at:
 		 * soc/infineon/edge/pse84/security_config/pse84_boot.c
 		 */
-		zephyr,flash = &m55_xip;
+		zephyr,flash = &flash0_sahb;
+		zephyr,code-partition = &m55_xip;
 		zephyr,sram = &m55_data;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
+		zephyr,bt-hci = &bt_hci_uart;
+		zephyr,dtcm = &dtcm;
+		zephyr,itcm = &itcm;
+	};
+};
+
+&peri0_group1_16_5bit_0 {
+	status = "okay";
+	clock-div = <1>;
+};
+
+uart4: &scb4 {
+	compatible = "infineon,uart";
+	status = "okay";
+
+	current-speed = <115200>;
+
+	clocks = <&peri0_group1_16_5bit_0>;
+
+	/* HCI-UART pins */
+	pinctrl-0 = <&p10_1_scb4_uart_tx &p10_0_scb4_uart_rx &p10_3_scb4_uart_rts
+		     &p10_2_scb4_uart_cts>;
+	pinctrl-names = "default";
+
+	/* HW Flow control must be enabled for HCI H4 */
+	hw-flow-control;
+
+	bt_hci_uart: bt_hci_uart {
+		compatible = "zephyr,bt-hci-uart";
+
+		cyw55513 {
+			status = "okay";
+			compatible = "infineon,bt-hci-uart";
+			bt-reg-on-gpios = <&gpio_prt11 0 GPIO_ACTIVE_HIGH>;
+			fw-download-speed = <115200>;
+			hci-operation-speed = <115200>;
+		};
 	};
 };

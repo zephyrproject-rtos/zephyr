@@ -6,25 +6,10 @@
 
 /dts-v1/;
 
-#include <ti/ti_am6254_a53.dtsi>
-#include "pocketbeagle_2_am62_a53-common.dtsi"
+#include "pocketbeagle_2_am6254_a53-common.dtsi"
+#include "pocketbeagle_2_a53-ddr.dtsi"
 
 / {
-	cpus {
-		cpu@0 {
-			status = "okay";
-		};
-
-		cpu@1 {
-			status = "okay";
-		};
-
-		cpu@2 {
-			status = "okay";
-		};
-
-		cpu@3 {
-			status = "okay";
-		};
-	};
+	model = "BeagleBoard.org PocketBeagle 2";
+	compatible = "beagle,pocketbeagle_2_am6254_a53";
 };

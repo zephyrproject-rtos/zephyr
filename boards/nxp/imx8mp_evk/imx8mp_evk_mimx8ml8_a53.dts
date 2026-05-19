@@ -15,6 +15,10 @@
 	model = "NXP i.MX8MP A53";
 	compatible = "fsl,mimx8mp";
 
+	aliases {
+		watchdog0 = &wdog1;
+	};
+
 	chosen {
 		zephyr,canbus = &flexcan1;
 		zephyr,console = &uart4;
@@ -62,11 +66,11 @@
 
 &enet {
 	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
 };
 
 &enet_mac {
-	pinctrl-0 = <&pinmux_enet>;
-	pinctrl-names = "default";
 	phy-handle = <&phy>;
 	zephyr,random-mac-address;
 	phy-connection-type = "rgmii";
@@ -129,5 +133,9 @@
 };
 
 &gpio5 {
+	status = "okay";
+};
+
+&wdog1 {
 	status = "okay";
 };

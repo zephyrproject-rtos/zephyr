@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 NXP
+ * Copyright 2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include <zephyr/drivers/misc/nxp_flexio/nxp_flexio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/device_mmio.h>
 #include <fsl_edma.h>
 #include <fsl_flexio_mculcd.h>
 
@@ -238,6 +239,7 @@ static int mipi_dbi_flexio_ldcif_write_display(const struct device *dev,
 	struct dma_block_config *blk_cfg;
 	struct stream *stream = &lcdif_data->dma_tx;
 	uint8_t num_of_shifters = 0;
+	DMA_Type *dma_base = (DMA_Type *)DEVICE_MMIO_GET(stream->dma_dev);
 	int ret;
 
 	ARG_UNUSED(pixfmt);
@@ -280,7 +282,7 @@ static int mipi_dbi_flexio_ldcif_write_display(const struct device *dev,
 	 * in case of the flexio module to form a circular chain between the Shift buffer
 	 * in the FLEXIO module.
 	 */
-	EDMA_SetModulo(DMA0, lcdif_data->dma_tx.channel, kEDMA_ModuloDisable,
+	EDMA_SetModulo(dma_base, lcdif_data->dma_tx.channel, kEDMA_ModuloDisable,
 		       flexio_lcdif_get_edma_modulo(num_of_shifters));
 
 	/* For 6800, de-assert the RDWR pin. */

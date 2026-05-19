@@ -49,7 +49,9 @@ tests:
     build_only: true
   sample.mcumgr.smp_svr.udp.802154.subg:
     extra_args: EXTRA_CONF_FILE="udp.conf;802154-subg.conf"
-    platform_allow: beagleconnect_freedom
+    platform_allow:
+      - beagleconnect_freedom@C5/cc1352p
+      - beagleconnect_freedom@C7/cc1352p7
   sample.mcumgr.smp_svr.cdc:
     extra_args:
       - EXTRA_CONF_FILE="cdc.conf"
@@ -206,14 +208,6 @@ tests:
       - mimxrt1050_evk/mimxrt1052/hyperflash
     integration_platforms:
       - mimxrt1050_evk/mimxrt1052/hyperflash
-  sample.mcumgr.smp_svr.ram_load.serial.fs.shell:
-    extra_args:
-      - FILE_SUFFIX="ram_load"
-      - EXTRA_CONF_FILE="serial.conf;fs.conf;shell.conf"
-    platform_allow:
-      - nrf52840dk/nrf52840
-    integration_platforms:
-      - nrf52840dk/nrf52840
   sample.mcumgr.smp_svr.raw-serial.fs:
     extra_args: EXTRA_CONF_FILE="raw-serial.conf;fs.conf"
     platform_allow:

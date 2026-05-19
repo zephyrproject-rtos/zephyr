@@ -187,7 +187,7 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 	bool has_fifo_ths_trig = fifo_ths_cfg != NULL && fifo_th == 1;
 	bool has_fifo_full_trig = fifo_full_cfg != NULL && fifo_full == 1;
 
-	/* check if no theshold/full fifo interrupt or spurious interrupts */
+	/* check if no threshold/full fifo interrupt or spurious interrupts */
 	if (!has_fifo_ths_trig && !has_fifo_full_trig) {
 		/* complete operation with no error */
 		rtio_iodev_sqe_ok(sqe->userdata, 0);
@@ -277,8 +277,9 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 	}
 
 	uint8_t *buf, *read_buf;
-	uint32_t buf_len, buf_avail;
-	uint32_t req_len = IIS3DWB_FIFO_SIZE(fifo_count) + sizeof(struct iis3dwb_fifo_data);
+	uint32_t buf_len;
+	uint32_t fifo_read_size = IIS3DWB_FIFO_SIZE(fifo_count);
+	uint32_t req_len = fifo_read_size + sizeof(struct iis3dwb_fifo_data);
 
 	if (rtio_sqe_rx_buf(iis3dwb->streaming_sqe, req_len, req_len, &buf, &buf_len) != 0) {
 		LOG_ERR("Failed to get buffer");
@@ -304,14 +305,13 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 
 	memcpy(buf, &hdr, sizeof(hdr));
 	read_buf = buf + sizeof(hdr);
-	buf_avail = buf_len - sizeof(hdr);
 
 	struct rtio_regs fifo_regs;
 	struct rtio_regs_list regs_list[] = {
 		{
 			0x80 | IIS3DWB_FIFO_DATA_OUT_TAG, /* mark the SPI read transaction */
 			read_buf,
-			buf_avail,
+			fifo_read_size,
 		},
 	};
 

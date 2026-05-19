@@ -106,6 +106,8 @@ struct flash_mspi_nor_config {
 	bool multi_io_cmd        : 1;
 	bool single_io_addr      : 1;
 	bool initial_soft_reset  : 1;
+	enum mspi_xfer_mode control_xfer_mode;
+	enum mspi_xfer_mode data_xfer_mode;
 };
 
 struct flash_mspi_nor_data {
