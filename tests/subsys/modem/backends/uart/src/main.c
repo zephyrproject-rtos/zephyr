@@ -122,7 +122,7 @@ static int transmit_prng(uint32_t remaining)
 	int ret;
 
 	fill_transmit_ring_buf();
-	reserved_size = ring_buf_get_claim(&transmit_ring_buf, &reserved, UINT32_MAX);
+	reserved_size = ring_buf_get_ptr(&transmit_ring_buf, &reserved);
 	transmit_size = MIN(transmit_size_prng_random(), reserved_size);
 	transmit_size = MIN(remaining, transmit_size);
 	ret = modem_pipe_transmit(pipe, reserved, transmit_size);
@@ -131,7 +131,7 @@ static int transmit_prng(uint32_t remaining)
 	}
 	printk("TX: %u,%u\n", transmit_size, (uint32_t)ret);
 	__ASSERT(ret <= remaining, "Impossible number of bytes sent %u", (uint32_t)ret);
-	ring_buf_get_finish(&transmit_ring_buf, ret);
+	ring_buf_consume(&transmit_ring_buf, ret);
 	return ret;
 }
 

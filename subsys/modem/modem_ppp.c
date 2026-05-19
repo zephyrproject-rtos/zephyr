@@ -405,11 +405,11 @@ static void modem_ppp_send_handler(struct k_work *item)
 		}
 
 		/* Claim as much space as possible */
-		reserved_size = ring_buf_put_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
+		reserved_size = ring_buf_put_ptr(&ppp->transmit_rb, &reserved);
 		/* Push wrapped data into claimed buffer */
 		pushed = modem_ppp_wrap(ppp, reserved, reserved_size);
 		/* Limit claimed data to what was actually pushed */
-		ring_buf_put_finish(&ppp->transmit_rb, pushed);
+		ring_buf_commit(&ppp->transmit_rb, pushed);
 
 		if (ppp->transmit_state == MODEM_PPP_TRANSMIT_STATE_IDLE) {
 			net_pkt_unref(ppp->tx_pkt);
@@ -422,15 +422,14 @@ static void modem_ppp_send_handler(struct k_work *item)
 #endif
 
 	while (!ring_buf_is_empty(&ppp->transmit_rb)) {
-		reserved_size = ring_buf_get_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
+		reserved_size = ring_buf_get_ptr(&ppp->transmit_rb, &reserved);
 
 		ret = modem_pipe_transmit(ppp->pipe, reserved, reserved_size);
 		if (ret < 0) {
-			ring_buf_get_finish(&ppp->transmit_rb, 0);
 			break;
 		}
 
-		ring_buf_get_finish(&ppp->transmit_rb, (uint32_t)ret);
+		ring_buf_consume(&ppp->transmit_rb, (uint32_t)ret);
 
 		if (ret < reserved_size) {
 			break;

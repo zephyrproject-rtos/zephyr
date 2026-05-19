@@ -33,13 +33,21 @@ A ``sys_ringq`` can be declared either using the ``SYS_RINGQ_DEFINE(name, item_s
 macro or in runtime using the
 ``sys_ringq_init(struct sys_ringq *ringq, uint8_t *data, size_t data_size, size_t item_size);`` function.
 
+The underlying ring buffer reserves one byte of the backing storage to
+disambiguate the empty and full states, so the runtime initializer requires
+``data_size`` to be at least ``item_size + 1`` bytes. The usable capacity is
+``(data_size - 1) / item_size`` items (any remainder is unused). Use the
+``SYS_RINGQ_STORAGE_SIZE(item_size, item_capacity)`` helper to size the
+backing buffer when calling :c:func:`sys_ringq_init` directly; the
+``SYS_RINGQ_DEFINE`` macro applies it automatically.
+
 .. code-block:: c
 
    SYS_RINGQ_DEFINE(my_ringq, item_size, item_capacity);
    /* equivalent to */
 
    static struct sys_ringq my_ringq;
-   static uint8_t buffer[item_size * item_capacity];
+   static uint8_t buffer[SYS_RINGQ_STORAGE_SIZE(item_size, item_capacity)];
    void init_fn (void) {
       sys_ringq_init(&my_ringq, buffer, sizeof(buffer), item_size);
       ....

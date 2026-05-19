@@ -50,9 +50,14 @@ Implementation
 
 A pipe is defined using a variable of type :c:struct:`k_pipe` and a
 byte buffer. The pipe must then be initialized by calling :c:func:`k_pipe_init`.
+The pipe stores its data in an underlying ring buffer that reserves one byte
+of the supplied backing storage to disambiguate the empty and full states,
+so the user-visible capacity of a pipe initialized with :c:func:`k_pipe_init`
+is ``buffer_size - 1`` bytes.
 
-The following code defines and initializes an empty pipe with a ring buffer
-capable of holding 100 bytes, aligned to a 4-byte boundary:
+The following code defines and initializes an empty pipe whose backing
+storage is 100 bytes (yielding a 99-byte user-visible capacity), aligned to
+a 4-byte boundary:
 
 .. code-block:: c
 
@@ -63,13 +68,16 @@ capable of holding 100 bytes, aligned to a 4-byte boundary:
 
 Alternatively, a pipe can be defined and initialized at compile time using
 the :c:macro:`K_PIPE_DEFINE` macro, which defines both the pipe and its
-ring buffer:
+ring buffer. The macro takes the desired user-visible capacity and
+allocates the extra reserved byte automatically, so the following yields a
+pipe with a 100-byte user-visible capacity:
 
 .. code-block:: c
 
     K_PIPE_DEFINE(my_pipe, 100, 4);
 
-This has the same effect as the code above.
+This has the same effect as the code above (apart from the extra byte
+reserved internally for state disambiguation).
 
 When no ring buffer is used, the buffer pointer argument should be NULL and
 the size argument should be 0.

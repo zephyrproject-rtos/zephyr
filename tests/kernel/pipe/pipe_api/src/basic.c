@@ -21,7 +21,7 @@ static struct k_pipe pipe;
 
 ZTEST(k_pipe_basic, test_init)
 {
-	uint8_t buffer[10];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(10)];
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
 	zassert_true(pipe.flags == PIPE_FLAG_OPEN, "Unexpected pipe flags");
@@ -29,7 +29,7 @@ ZTEST(k_pipe_basic, test_init)
 
 ZTEST(k_pipe_basic, test_write_read_one)
 {
-	uint8_t buffer[10];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(10)];
 	uint8_t data = 0x55;
 	uint8_t read_data;
 
@@ -43,7 +43,7 @@ ZTEST(k_pipe_basic, test_write_read_one)
 
 ZTEST(k_pipe_basic, test_write_read_multiple)
 {
-	uint8_t buffer[10];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(10)];
 	uint8_t data = 0x55;
 	uint8_t read_data;
 
@@ -58,7 +58,7 @@ ZTEST(k_pipe_basic, test_write_read_multiple)
 
 ZTEST(k_pipe_basic, test_write_full)
 {
-	uint8_t buffer[10];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(10)];
 	uint8_t data[10];
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -70,7 +70,7 @@ ZTEST(k_pipe_basic, test_write_full)
 
 ZTEST(k_pipe_basic, test_read_empty)
 {
-	uint8_t buffer[10];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(10)];
 	uint8_t read_data;
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -80,7 +80,7 @@ ZTEST(k_pipe_basic, test_read_empty)
 
 ZTEST(k_pipe_basic, test_read_write_full)
 {
-	uint8_t buffer[10];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(10)];
 	uint8_t input[10];
 	uint8_t res[10];
 
@@ -96,7 +96,7 @@ ZTEST(k_pipe_basic, test_read_write_full)
 
 ZTEST(k_pipe_basic, test_read_write_wrapp_around)
 {
-	uint8_t buffer[12];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(12)];
 	uint8_t input[8];
 	uint8_t res[16];
 
@@ -121,7 +121,7 @@ ZTEST(k_pipe_basic, test_read_write_wrapp_around)
 
 ZTEST(k_pipe_basic, test_reset)
 {
-	uint8_t buffer[10];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(10)];
 	uint8_t data = 0x55;
 	uint8_t read_data;
 
@@ -138,7 +138,7 @@ ZTEST(k_pipe_basic, test_reset)
 
 ZTEST(k_pipe_basic, test_close)
 {
-	uint8_t buffer[12];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(12)];
 	uint8_t input[8];
 	uint8_t res[16];
 

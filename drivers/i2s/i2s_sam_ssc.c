@@ -91,8 +91,10 @@ struct stream {
 struct i2s_sam_dev_data {
 	struct stream rx;
 	struct stream tx;
-	uint8_t rx_buffer[sizeof(struct queue_item) * CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT];
-	uint8_t tx_buffer[sizeof(struct queue_item) * CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT];
+	uint8_t rx_buffer[SYS_RINGQ_STORAGE_SIZE(sizeof(struct queue_item),
+						 CONFIG_I2S_SAM_SSC_RX_BLOCK_COUNT)];
+	uint8_t tx_buffer[SYS_RINGQ_STORAGE_SIZE(sizeof(struct queue_item),
+						 CONFIG_I2S_SAM_SSC_TX_BLOCK_COUNT)];
 };
 
 #define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }

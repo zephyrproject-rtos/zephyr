@@ -34,25 +34,23 @@ struct element mkelement(void)
 
 ZTEST(sys_ringq_api, test_init)
 {
-	struct element buffer[4];
+	uint8_t buffer[SYS_RINGQ_STORAGE_SIZE(sizeof(struct element), 4)];
 	struct sys_ringq f;
 
-	sys_ringq_init(&f, (uint8_t *)buffer, sizeof(buffer), sizeof(buffer[0]));
+	sys_ringq_init(&f, buffer, sizeof(buffer), sizeof(struct element));
 	zassert_true(sys_ringq_empty(&f),
 		     "sys_ringq should be empty after init");
 	zassert_false(sys_ringq_full(&f),
 		      "sys_ringq should not be full after init");
-	zassert_true(sys_ringq_capacity(&f) == ARRAY_SIZE(buffer),
+	zassert_true(sys_ringq_capacity(&f) == 4,
 		     "sys_ringq capacity should be equal to buffer size after init");
-	zassert_true(sys_ringq_space(&f) == ARRAY_SIZE(buffer),
+	zassert_true(sys_ringq_space(&f) == 4,
 		     "sys_ringq space should be equal to buffer size after init");
 	zassert_true(sys_ringq_size(&f) == 0,
 		     "sys_ringq size should be zero after init");
-	zassert_true(f.rb.buffer == (uint8_t *)buffer,
+	zassert_true(f.rb.buffer == buffer,
 		     "sys_ringq buffer should be equal to the provided buffer after init");
-	zassert_true(f.rb.size == sizeof(buffer[0]) * ARRAY_SIZE(buffer),
-		     "sys_ringq buffer size should be equal to the provided buffer size after init");
-	zassert_true(f.item_size == sizeof(buffer[0]),
+	zassert_true(f.item_size == sizeof(struct element),
 		     "sys_ringq item size should be equal to the provided item size after init");
 }
 
@@ -60,11 +58,11 @@ ZTEST(sys_ringq_api, test_put_get)
 {
 
 	struct sys_ringq f;
-	struct element buffer[1];
+	uint8_t buffer[SYS_RINGQ_STORAGE_SIZE(sizeof(struct element), 1)];
 	struct element output;
 	struct element input = mkelement();
 
-	sys_ringq_init(&f, (uint8_t *)buffer, sizeof(buffer), sizeof(buffer[0]));
+	sys_ringq_init(&f, buffer, sizeof(buffer), sizeof(struct element));
 
 	zassert_true(sys_ringq_get(&f, &output) == -ENODATA,
 		     "sys_ringq get should fail when empty");
@@ -88,11 +86,11 @@ ZTEST(sys_ringq_api, test_stress)
 	struct sys_ringq f;
 	size_t sent = 0;
 	size_t received = 0;
-	struct element buffer[4];
+	uint8_t buffer[SYS_RINGQ_STORAGE_SIZE(sizeof(struct element), 4)];
 	struct element input[12];
 	struct element output[12];
 
-	sys_ringq_init(&f, (uint8_t *)buffer, sizeof(buffer), sizeof(buffer[0]));
+	sys_ringq_init(&f, buffer, sizeof(buffer), sizeof(struct element));
 
 	for (size_t i = 0; i < ARRAY_SIZE(input); i++) {
 		input[i] = mkelement();

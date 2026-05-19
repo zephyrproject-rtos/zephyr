@@ -47,7 +47,7 @@ static void thread_read(void *arg1, void *arg2, void *arg3)
 ZTEST(k_pipe_concurrency, test_close_on_read)
 {
 	k_tid_t tid;
-	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(DUMMY_DATA_SIZE)];
 	uint8_t res;
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -64,7 +64,7 @@ ZTEST(k_pipe_concurrency, test_close_on_read)
 ZTEST(k_pipe_concurrency, test_close_on_write)
 {
 	k_tid_t tid;
-	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(DUMMY_DATA_SIZE)];
 	uint8_t garbage[DUMMY_DATA_SIZE];
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -84,7 +84,7 @@ ZTEST(k_pipe_concurrency, test_close_on_write)
 ZTEST(k_pipe_concurrency, test_reset_on_read)
 {
 	k_tid_t tid;
-	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(DUMMY_DATA_SIZE)];
 	uint8_t res;
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -104,7 +104,7 @@ ZTEST(k_pipe_concurrency, test_reset_on_read)
 ZTEST(k_pipe_concurrency, test_reset_on_write)
 {
 	k_tid_t tid;
-	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(DUMMY_DATA_SIZE)];
 	uint8_t garbage[DUMMY_DATA_SIZE];
 
 	k_pipe_init(&pipe, buffer, sizeof(buffer));
@@ -126,7 +126,7 @@ ZTEST(k_pipe_concurrency, test_reset_on_write)
 ZTEST(k_pipe_concurrency, test_partial_read)
 {
 	k_tid_t tid;
-	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(DUMMY_DATA_SIZE)];
 	uint8_t garbage[DUMMY_DATA_SIZE];
 	size_t write_size = sizeof(garbage)/2;
 
@@ -145,7 +145,7 @@ ZTEST(k_pipe_concurrency, test_partial_read)
 ZTEST(k_pipe_concurrency, test_partial_write)
 {
 	k_tid_t tid;
-	uint8_t buffer[DUMMY_DATA_SIZE];
+	uint8_t buffer[RING_BUF_STORAGE_SIZE(DUMMY_DATA_SIZE)];
 	uint8_t garbage[DUMMY_DATA_SIZE];
 	size_t read_size = sizeof(garbage)/2;
 

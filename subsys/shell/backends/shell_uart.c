@@ -79,8 +79,7 @@ static void uart_rx_handle(const struct device *dev, struct shell_uart_int_drive
 #endif
 
 	do {
-		len = ring_buf_put_claim(&sh_uart->rx_ringbuf, &data,
-					 sh_uart->rx_ringbuf.size);
+		len = ring_buf_put_ptr(&sh_uart->rx_ringbuf, &data);
 
 		if (len > 0) {
 			rd_len = uart_fifo_read(dev, data, len);
@@ -106,9 +105,7 @@ static void uart_rx_handle(const struct device *dev, struct shell_uart_int_drive
 				}
 			}
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
-			int err = ring_buf_put_finish(&sh_uart->rx_ringbuf, rd_len);
-			(void)err;
-			__ASSERT_NO_MSG(err == 0);
+			ring_buf_commit(&sh_uart->rx_ringbuf, rd_len);
 		} else {
 			uint8_t dummy;
 
@@ -177,15 +174,10 @@ static void uart_tx_handle(const struct device *dev, struct shell_uart_int_drive
 		return;
 	}
 
-	len = ring_buf_get_claim(&sh_uart->tx_ringbuf, (uint8_t **)&data,
-				 sh_uart->tx_ringbuf.size);
+	len = ring_buf_get_ptr(&sh_uart->tx_ringbuf, (uint8_t **)&data);
 	if (len) {
-		int err;
-
 		len = uart_fifo_fill(dev, data, len);
-		err = ring_buf_get_finish(&sh_uart->tx_ringbuf, len);
-		__ASSERT_NO_MSG(err == 0);
-		ARG_UNUSED(err);
+		ring_buf_consume(&sh_uart->tx_ringbuf, len);
 	} else {
 		uart_irq_tx_disable(dev);
 		sh_uart->tx_busy = 0;

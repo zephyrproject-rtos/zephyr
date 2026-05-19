@@ -1582,8 +1582,7 @@ lwm2m_cache_entry_get_by_object(const struct lwm2m_obj_path *obj_path)
 
 }
 
-int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_series_elem *data_cache,
-		       size_t cache_len)
+int lwm2m_enable_cache(const struct lwm2m_obj_path *path, uint8_t *data, size_t data_size)
 {
 #if defined(CONFIG_LWM2M_RESOURCE_DATA_CACHE_SUPPORT)
 	struct lwm2m_engine_obj_inst *obj_inst;
@@ -1591,7 +1590,6 @@ int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_seri
 	struct lwm2m_engine_res_inst *res_inst = NULL;
 	struct lwm2m_time_series_resource *cache_entry;
 	int ret = 0;
-	size_t cache_entry_size = sizeof(struct lwm2m_time_series_elem);
 
 	/* look up resource obj */
 	ret = path_to_objs(path, &obj_inst, &obj_field, NULL, &res_inst);
@@ -1627,8 +1625,8 @@ int lwm2m_enable_cache(const struct lwm2m_obj_path *path, struct lwm2m_time_seri
 		return -ENODATA;
 	}
 
-	sys_ringq_init(&cache_entry->fifo, (uint8_t *)data_cache, cache_entry_size * cache_len,
-	       cache_entry_size);
+	sys_ringq_init(&cache_entry->fifo, data, data_size,
+		       sizeof(struct lwm2m_time_series_elem));
 
 	return 0;
 #else
