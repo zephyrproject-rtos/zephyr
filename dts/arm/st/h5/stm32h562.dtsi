@@ -132,7 +132,7 @@
 			#size-cells = <0>;
 			reg = <0x40015404 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
+				 <&rcc STM32_SRC_PLL1_Q SAI1_SEL(0)>;
 			dmas = <&gpdma1 1 53 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 					      STM32_DMA_16BITS)>;
 			status = "disabled";
@@ -144,8 +144,32 @@
 			#size-cells = <0>;
 			reg = <0x40015424 0x20>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
+				 <&rcc STM32_SRC_PLL1_Q SAI1_SEL(0)>;
 			dmas = <&gpdma1 0 54 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+					      STM32_DMA_16BITS)>;
+			status = "disabled";
+		};
+
+		sai2_a: sai2@40015804 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015804 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL1_Q SAI2_SEL(0)>;
+			dmas = <&gpdma1 1 55 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
+					      STM32_DMA_16BITS)>;
+			status = "disabled";
+		};
+
+		sai2_b: sai2@40015824 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015824 0x20>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL1_Q SAI2_SEL(0)>;
+			dmas = <&gpdma1 0 56 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
 					      STM32_DMA_16BITS)>;
 			status = "disabled";
 		};
