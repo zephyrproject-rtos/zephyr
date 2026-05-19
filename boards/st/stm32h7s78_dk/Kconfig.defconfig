@@ -31,4 +31,33 @@ config INPUT_GT911_INTERRUPT
 
 endif # INPUT
 
+# Enable Neochrom GPU2D graphic acceleration using nemaGFX
+if LVGL
+
+if NEOCHROM_GPU2D
+
+configdefault LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	default 32
+
+configdefault LV_Z_NEMA_GFX_MULTI_THREAD
+	default y if LV_USE_NEMA_GFX
+
+choice LV_USE_NEMA_HAL
+	default LV_NEMA_HAL_CUSTOM
+endchoice
+
+choice LV_USE_NEMA_LIB
+	default LV_NEMA_LIB_M7
+endchoice
+
+config LV_NEMA_USE_CACHE
+	default y
+
+config LV_NEMA_CACHE_HAL_INCLUDE
+	default "stm32h7rsxx.h"
+
+endif # NEOCHROM_GPU2D
+
+endif # LVGL
+
 endif # BOARD_STM32H7S78_DK
