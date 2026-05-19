@@ -11,6 +11,12 @@ include: base.yaml
 properties:
   interrupts:
     required: true
+    description: |
+      WiFi MAC and IPC interrupts.
+      Two entries required: "wifi" (MAC) and "wifi-ipc" (IPC).
+
+  interrupt-names:
+    required: true
 
   pwr-table-11b:
     type: array
