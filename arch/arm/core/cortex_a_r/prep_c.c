@@ -27,7 +27,8 @@
 #include <zephyr/arch/common/xip.h>
 #include <zephyr/arch/common/init.h>
 
-#if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
+#if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A) \
+	|| defined(CONFIG_ARMV5)
 #include <cortex_a_r/stack.h>
 #endif
 
@@ -102,15 +103,17 @@ FUNC_NORETURN void z_prep_c(void)
 {
 	soc_prep_hook();
 
+#ifndef CONFIG_ARMV5
 	/* Initialize tpidruro with our struct _cpu instance address */
 	write_tpidruro((uintptr_t)&_kernel.cpus[0]);
+#endif
 
 #if defined(CONFIG_CPU_HAS_FPU)
 	z_arm_floating_point_init();
 #endif
 	arch_bss_zero();
 	arch_data_copy();
-#if ((defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A) || \
+#if ((defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A) || defined(CONFIG_ARMV5) || \
 	defined(CONFIG_AARCH32_ARMV8_A)) && defined(CONFIG_INIT_STACKS))
 	z_arm_init_stacks();
 #endif
