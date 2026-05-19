@@ -34,5 +34,9 @@ void *llext_buf_peek(struct llext_loader *l, size_t pos)
 {
 	struct llext_buf_loader *buf_l = CONTAINER_OF(l, struct llext_buf_loader, loader);
 
+	if (pos >= buf_l->len) {
+		return NULL;
+	}
+
 	return (void *)(buf_l->buf + pos);
 }
