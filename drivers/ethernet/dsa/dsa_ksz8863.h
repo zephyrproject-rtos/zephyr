@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2021 IP-Logix Inc.
+ * SPDX-FileCopyrightText: Copyright 2026 DZG Metering GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_ETHERNET_DSA_KSZ8863_H_
+#define ZEPHYR_DRIVERS_ETHERNET_DSA_KSZ8863_H_
+
+#include <zephyr/sys/util.h>
+
+#define KSZ8863_SPI_CMD_WR BIT(1)
+#define KSZ8863_SPI_CMD_RD (BIT(1) | BIT(0))
+
+#define KSZ8863_CHIP_ID0     0x00
+#define KSZ8863_CHIP_ID1     0x01
+#define KSZ8863_GLOBAL_CTRL1 0x03
+#define KSZ8863_GLOBAL_CTRL2 0x04
+
+#define KSZ8863_PORT_CTRL2(port) (0x12 + ((port) * 0x10))
+#define KSZ8863_PORT_STAT0(port) (0x1E + ((port) * 0x10))
+
+#define KSZ8863_CTRL2_TRANSMIT_EN  BIT(2)
+#define KSZ8863_CTRL2_RECEIVE_EN   BIT(1)
+#define KSZ8863_CTRL2_LEARNING_DIS BIT(0)
+
+#define KSZ8863_GLOBAL_CTRL1_TAIL_TAG_EN     BIT(6)
+#define KSZ8863_GLOBAL_CTRL2_PKT_SIZE_CHK_EN BIT(1)
+
+#define KSZ8863_PORT_LINK_GOOD BIT(5)
+
+#define KSZ8863_CHIP_ID0_DEFAULT 0x88
+#define KSZ8863_CHIP_ID1_DEFAULT 0x31
+
+#define KSZ8863_CPU_PORT     2
+#define KSZ8863_TAIL_TAG_LEN 1
+
+#define KSZ8863_MIN_FRAME_NO_FCS      60
+#define KSZ8863_LINK_POLL_INTERVAL_MS 1000
+
+#endif /* ZEPHYR_DRIVERS_ETHERNET_DSA_KSZ8863_H_ */

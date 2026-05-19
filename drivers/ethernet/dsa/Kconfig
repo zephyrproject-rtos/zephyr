@@ -21,6 +21,16 @@ config DSA_NXP_IMX_NETC
 	help
 	  Add support for NXP i.MX NETC DSA device driver.
 
+config DSA_KSZ8863
+	bool "Support for Microchip KSZ8863"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8863_ENABLED
+	depends on SPI
+	select GPIO
+	select DSA_TAG_PROTOCOL_KSZ8863
+	help
+	  Add support for the Microchip KSZ8863 DSA switch.
+
 config DSA_NXP_IMX_NETC_GCL_LEN
 	int "Gate control list length for i.MX NETC switch"
 	default 64
@@ -42,5 +52,12 @@ config DSA_TAG_PROTOCOL_NETC
 	depends on $(dt_compat_any_has_prop,$(DSA_PORT_COMPAT),dsa-tag-protocol,1)
 	help
 	  NXP NETC tag protocol.
+
+config DSA_TAG_PROTOCOL_KSZ8863
+	bool "Tag protocol - KSZ8863 tail tag"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DSA_PORT_COMPAT),dsa-tag-protocol,2)
+	help
+	  Microchip KSZ8863 one-byte tail tag protocol.
 
 endif # DSA_DRIVERS

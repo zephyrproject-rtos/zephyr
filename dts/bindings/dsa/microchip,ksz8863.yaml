@@ -1,0 +1,15 @@
+# Copyright 2026 DZG Metering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip KSZ8863 Ethernet switch
+
+compatible: "microchip,ksz8863"
+
+include:
+  - name: spi-device.yaml
+  - name: dsa.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: Active-low reset GPIO for the switch.

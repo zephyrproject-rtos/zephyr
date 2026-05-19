@@ -20,6 +20,7 @@ config DSA_PORT_MAX_COUNT
 
 config DSA_TAG_SIZE
 	int "DSA tag size in bytes"
+	default 1 if DSA_TAG_PROTOCOL_KSZ8863
 	default 0
 	help
 	  Set the DSA tag length in bytes.
