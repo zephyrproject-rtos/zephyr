@@ -49,6 +49,25 @@ int gptp_get_port_number(struct net_if *iface)
 	return -ENODEV;
 }
 
+int gptp_set_port_number(struct net_if *iface, uint16_t port)
+{
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+	const struct device *clk;
+
+	clk = net_eth_get_ptp_clock(iface);
+	if (clk == NULL) {
+		return -ENODEV;
+	}
+
+	if (port < GPTP_PORT_START || port > GPTP_PORT_END) {
+		return -EINVAL;
+	}
+
+	ctx->gptp_port = port;
+
+	return 0;
+}
+
 bool gptp_is_slave_port(int port)
 {
 	return (GPTP_GLOBAL_DS()->selected_role[port] == GPTP_PORT_SLAVE);
@@ -582,19 +601,14 @@ static void gptp_thread(void *p1, void *p2, void *p3)
 
 static void gptp_add_port(struct net_if *iface, void *user_data)
 {
-	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint16_t *num_ports = user_data;
-	const struct device *clk;
 
 	if (*num_ports >= CONFIG_NET_GPTP_NUM_PORTS) {
 		return;
 	}
 
-	/* Check if interface has a PTP clock. */
-	clk = net_eth_get_ptp_clock(iface);
-	if (clk) {
+	if (gptp_set_port_number(iface, GPTP_PORT_START + *num_ports) == 0) {
 		gptp_domain.iface[*num_ports] = iface;
-		ctx->gptp_port = GPTP_PORT_START + *num_ports;
 		(*num_ports)++;
 	}
 }
