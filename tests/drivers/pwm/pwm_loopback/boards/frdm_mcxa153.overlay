@@ -1,0 +1,62 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	pinmux_ctimer1_pwm_out: pinmux_ctimer1_pwm_out {
+		group0 {
+			pinmux = <CT1_MAT0_P2_4>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_ctimer2_pwm_cap: pinmux_ctimer2_pwm_cap {
+		group0 {
+			pinmux = <CT_INP15_P2_5>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+};
+
+/* To test this sample, connect
+ * PIO2_4(J1-6) ---> PIO2_5(J1-10)
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&ctimer1 0 0 PWM_POLARITY_NORMAL>, /* OUT: CT1_MAT0 P2_4 (J1-6) */
+		       <&ctimer2 0 0 PWM_POLARITY_NORMAL>; /* IN : CT_INP15 P2_5 (J1-10) */
+	};
+};
+
+&ctimer1 {
+	status = "okay";
+	compatible = "nxp,ctimer-pwm";
+	prescaler = <95>;
+	#pwm-cells = <3>;
+	pinctrl-0 = <&pinmux_ctimer1_pwm_out>;
+	pinctrl-names = "default";
+};
+
+&ctimer2 {
+	status = "okay";
+	compatible = "nxp,ctimer-pwm";
+	prescaler = <95>;
+	#pwm-cells = <3>;
+	/*
+	 * Route CT_INP15 (P2_5) to CTIMER2 CAPTSEL[0] via INPUTMUX0.
+	 * Cells: <&inputmux0 channel connection> where connection is
+	 * kINPUTMUX_CtimerInp15ToTimer2Captsel = 16U | (TIMER2CAPTSEL0 << 20)
+	 * = 0x06000010.
+	 */
+	inputmux-connections = <&inputmux0 0 0x06000010>;
+	pinctrl-0 = <&pinmux_ctimer2_pwm_cap>;
+	pinctrl-names = "default";
+};
