@@ -28,6 +28,7 @@
 #define INA237_REG_CURRENT    0x07
 #define INA237_REG_POWER      0x08
 #define INA237_REG_ALERT      0x0B
+#define INA237_DIAG_ALRT_CNVRF  BIT(1)  /* Conversion Ready Flag */
 #define INA237_REG_SOVL       0x0C
 #define INA237_REG_SUVL       0x0D
 #define INA237_REG_BOVL       0x0E

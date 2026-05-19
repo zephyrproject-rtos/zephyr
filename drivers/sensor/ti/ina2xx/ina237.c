@@ -229,7 +229,25 @@ static int ina237_sample_fetch(const struct device *dev, enum sensor_channel cha
 	int ret;
 
 	if (ina237_is_triggered_mode_set(dev)) {
+		const struct ina237_config *cfg = dev->config;
+		const struct ina2xx_config *common = &cfg->common;
+		uint16_t diag_alrt;
+
 		ret = ina237_trigg_one_shot_request(dev, chan);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* Block until CNVRF is set in DIAG_ALRT, indicating conversion is done */
+		if (!WAIT_FOR(
+			    ina2xx_reg_read_16(&common->bus, INA237_REG_ALERT, &diag_alrt) == 0 &&
+			    (diag_alrt & INA237_DIAG_ALRT_CNVRF),
+			    5 * USEC_PER_SEC, k_sleep(K_MSEC(1)))) {
+			LOG_ERR("INA237: conversion ready timeout");
+			return -ETIMEDOUT;
+		}
+
+		ret = ina2xx_sample_fetch(dev, chan);
 	} else {
 		ret = ina2xx_sample_fetch(dev, chan);
 	}
