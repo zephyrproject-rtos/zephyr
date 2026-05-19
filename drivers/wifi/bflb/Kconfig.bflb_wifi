@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_BFLB
+	bool "Bouffalo Lab WiFi driver"
+	default y
+	depends on DT_HAS_BFLB_BL61X_WIFI_ENABLED
+	depends on ZEPHYR_MBEDTLS_MODULE
+	select NET_L2_WIFI_MGMT
+	select NET_L2_ETHERNET
+	select NET_L2_ETHERNET_MGMT
+	select WIFI_USE_NATIVE_NETWORKING
+	select HWINFO
+	select WIFI_NM_WPA_SUPPLICANT
+	select WIFI_NM_WPA_SUPPLICANT_WEP
+	select WIFI_NM_WPA_SUPPLICANT_AP
+	select BFLB_WL80211_SHIM
+	select NET_SOCKETS
+	help
+	  Enable Bouffalo Lab WiFi driver using the MACSW blob.
+
+if WIFI_BFLB
+
+rsource "bl61x/Kconfig"
+
+config HEAP_MEM_POOL_ADD_SIZE_WIFI_BFLB
+	int
+	default 4096
+
+config NET_MGMT_EVENT_STACK_SIZE
+	default 4096
+
+endif # WIFI_BFLB
