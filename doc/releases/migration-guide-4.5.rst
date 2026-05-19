@@ -426,6 +426,10 @@ Mbed TLS
   :kconfig:option:`CONFIG_PSA_CRYPTO`. If you were using it, use
   :kconfig:option:`CONFIG_PSA_CRYPTO` instead. (:github:`108960`)
 
+* Interface CMake library ``mbedTLS`` has been renamed to ``mbedtls_iface``. The former is kept
+  as an alias to the latter for backward compatibility, but it will be removed in future
+  releases.
+
 Architectures
 *************
 
