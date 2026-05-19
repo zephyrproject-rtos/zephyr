@@ -27,4 +27,24 @@
 				 <PA25C_SERCOM5_PAD1>; /* RX */
 		};
 	};
+
+	mdio_default: mdio_default {
+		group1 {
+			pinmux = <PC3L_ETH_MDC>,
+				 <PC4L_ETH_MDIO>;
+		};
+	};
+
+	gmac_rmii: gmac_rmii {
+		group1 {
+			pinmux = <PC0L_ETH_TX_CLK>,
+				 <PC11L_ETH_TXEN>,
+				 <PC12L_ETH_TXD0>,
+				 <PC13L_ETH_TXD1>,
+				 <PC10L_ETH_RXDV>,
+				 <PC7L_ETH_RXD0>,
+				 <PC6L_ETH_RXD1>,
+				 <PC9L_ETH_RXER>;
+		};
+	};
 };
