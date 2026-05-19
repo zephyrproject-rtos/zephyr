@@ -732,6 +732,10 @@ int acpi_madt_entry_get(int type, ACPI_SUBTABLE_HEADER **tables, int *num_inst)
 
 		offset += subtable->Length;
 		subtable = ACPI_ADD_PTR(ACPI_SUBTABLE_HEADER, base, offset);
+
+		if (!subtable->Length) {
+			break;
+		}
 	}
 
 	return -ENODEV;
@@ -757,6 +761,10 @@ int acpi_dmar_entry_get(enum AcpiDmarType type, ACPI_SUBTABLE_HEADER **tables)
 		}
 		offset += subtable->Length;
 		subtable = ACPI_ADD_PTR(ACPI_DMAR_HEADER, base, offset);
+
+		if (!subtable->Length) {
+			break;
+		}
 	}
 
 	return -ENODEV;
