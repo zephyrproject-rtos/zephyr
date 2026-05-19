@@ -531,6 +531,12 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		enum llext_mem mem_idx = ldr->sect_map[i].mem_idx;
 
 		if (shdr->sh_type == SHT_REL || shdr->sh_type == SHT_RELA) {
+			if (shdr->sh_info >= ext->sect_cnt) {
+				LOG_ERR("Relocation section %d has invalid "
+					"target section index %zd",
+					i, (size_t)shdr->sh_info);
+				return -ENOEXEC;
+			}
 			enum llext_mem target_region = ldr->sect_map[shdr->sh_info].mem_idx;
 
 			if (target_region != LLEXT_MEM_COUNT) {
