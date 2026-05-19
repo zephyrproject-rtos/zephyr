@@ -10,8 +10,10 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/clocks/clk_ipo,clock-frequency)
 
 # if PM_S2RAM selected, HAS_PM_S2RAM_CUSTOM_MARKING must be selected
+# PM_S2RAM will only work properly when building secure images
 config PM_S2RAM
 	select HAS_PM_S2RAM_CUSTOM_MARKING
+	depends on TRUSTED_EXECUTION_SECURE
 
 config SYSTEM_TIMER_RESET_BY_LPM
 	default y if PM_S2RAM && !SYSTEM_TIMER_LPM_COMPANION_NONE
