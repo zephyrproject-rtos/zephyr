@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -26,6 +26,18 @@ endchoice
 # the companion timer is the sole time reference across the sleep.
 config SYSTEM_TIMER_RESET_BY_LPM
 	default y if PM_S2RAM
+
+# The MCWDT counter runs at full PILO (32768 Hz); the kernel tick rate is
+# PILO/4 (8192 Hz), so one system tick is ~122 us.
+# subsys/pm arms the companion (via sys_clock_set_timeout(..., idle=true)) only
+# when a power state's exit-latency-us converts to a non-zero tick count. With
+# the default nearest/floor rounding a sub-tick exit latency (e.g. the 20 us of
+# the suspend-to-idle state) rounds to 0 ticks, so the companion is never armed
+# and the core never wakes from DeepSleep. Round up so any non-zero exit latency
+# yields at least one tick and the companion is always armed.
+choice PM_PREWAKEUP_CONV_MODE
+	default PM_PREWAKEUP_CONV_MODE_CEIL if SYSTEM_TIMER_LPM_COMPANION_HOOKS
+endchoice
 
 choice NULL_POINTER_EXCEPTION_DETECTION
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE
