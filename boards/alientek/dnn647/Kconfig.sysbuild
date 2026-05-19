@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_DNN647_STM32N647XX
+
+choice BOOTLOADER
+	default BOOTLOADER_MCUBOOT
+endchoice
+
+endif
