@@ -580,6 +580,10 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			if (ldr_parm->section_detached(shdr)) {
 				void *base = llext_peek(ldr, shdr->sh_offset);
 
+				if (base == NULL) {
+					return -ENOEXEC;
+				}
+
 				sys_cache_data_flush_range(base, shdr->sh_size);
 				if (shdr->sh_flags & SHF_EXECINSTR && !ldr_parm->pre_located) {
 					sys_cache_instr_invd_range(base, shdr->sh_size);
