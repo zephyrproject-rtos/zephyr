@@ -1948,6 +1948,20 @@
  */
 #define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)
 
+/**
+ * @brief Trace Timer cleanup attempt entry
+ * @param timer Timer object
+ */
+#define sys_port_trace_k_timer_cleanup_enter(timer)
+
+/**
+ * @brief Trace Timer cleanup outcome
+ * @param timer Timer object
+ * @param ret Return value
+ */
+#define sys_port_trace_k_timer_cleanup_exit(timer, ret)
+
+
 /** @} */ /* end of subsys_tracing_apis_timer */
 
 /**
