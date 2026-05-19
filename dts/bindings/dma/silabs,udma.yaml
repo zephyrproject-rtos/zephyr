@@ -1,6 +1,6 @@
-description: Silabs SiWx91x DMA
+description: Silabs SiWx91x micro-DMA (UDMA)
 
-compatible: "silabs,siwx91x-dma"
+compatible: "silabs,udma"
 
 include: dma-controller.yaml
 

@@ -136,6 +136,14 @@ Display
   on the SDL pseudo-device node using the PANEL_PIXEL_FORMAT_* macros from
   :zephyr_file:`include/zephyr/dt-bindings/display/panel.h`. (:github:`104099`)
 
+DMA
+===
+
+* :dtcompatible:`silabs,siwx91x-dma` has been renamed :dtcompatible:`silabs,udma`. The Kconfig
+  options have also been renamed to align with this new name (``DMA_SILABS_SIWX91X`` in
+  ``DMA_SILABS_SIWX91X_UDMA`` and ``DMA_SILABS_SIWX91X_SG_BUFFER_COUNT`` in
+  ``DMA_SILABS_SIWX91X_UDMA_DESCR_COUNT``)
+
 Ethernet
 ========
 

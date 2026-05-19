@@ -318,7 +318,7 @@
 		};
 
 		ulpdma: dma@24078000 {
-			compatible = "silabs,siwx91x-dma";
+			compatible = "silabs,udma";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x24078000 0x82c>;
@@ -334,7 +334,7 @@
 		};
 
 		dma0: dma@44030000 {
-			compatible = "silabs,siwx91x-dma";
+			compatible = "silabs,udma";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44030000 0x82c>;

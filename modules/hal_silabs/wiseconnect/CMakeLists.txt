@@ -154,7 +154,7 @@ if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_RTC_SILABS_SIWX91X OR
   )
 endif()
 
-zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X
+zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X_UDMA
   UDMA_ROMDRIVER_PRESENT # replace rsi_udma.c and rsi_udma_wrapper.c
 )
 
