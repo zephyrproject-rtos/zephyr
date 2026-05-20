@@ -538,7 +538,7 @@ static void test_eth_setup(void)
 	net_if_foreach(iface_cb, &ud);
 
 	zassert_equal(ud.eth_if_count, sizeof(eth_interfaces) / sizeof(void *),
-		      "Invalid number of interfaces (%d vs %d)\n",
+		      "Invalid number of interfaces (%d vs %zu)\n",
 		      ud.eth_if_count,
 		      sizeof(eth_interfaces) / sizeof(void *));
 }
