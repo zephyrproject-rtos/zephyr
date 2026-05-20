@@ -41,8 +41,10 @@ jobs:
     - name: Fetch west.yml/Maintainer.yml from pull request
       if: >
         github.event_name == 'pull_request_target' && github.base_ref == 'main'
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
-        git fetch origin pull/${{ github.event.pull_request.number }}/merge
+        git fetch origin "pull/${PR_NUMBER}/merge"
         git show FETCH_HEAD:west.yml > pr_west.yml
         git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml
 
@@ -57,23 +59,29 @@ jobs:
     - name: Run assignment script
       env:
         GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
+        REPO_OWNER: ${{ github.event.repository.owner.login }}
+        REPO_NAME: ${{ github.event.repository.name }}
+        EVENT_NAME: ${{ github.event_name }}
+        BASE_REF: ${{ github.base_ref }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        ISSUE_NUMBER: ${{ github.event.issue.number }}
       run: |
         FLAGS="-v"
-        FLAGS+=" -o ${{ github.event.repository.owner.login }}"
-        FLAGS+=" -r ${{ github.event.repository.name }}"
+        FLAGS+=" -o ${REPO_OWNER}"
+        FLAGS+=" -r ${REPO_NAME}"
         FLAGS+=" -M MAINTAINERS.yml"
-        if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-          if [ "${{ github.base_ref }}" = "main" ]; then
-            FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
+        if [ "${EVENT_NAME}" = "pull_request_target" ]; then
+          if [ "${BASE_REF}" = "main" ]; then
+            FLAGS+=" -P ${PR_NUMBER} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
           else
-            FLAGS+=" -P ${{ github.event.pull_request.number }}"
+            FLAGS+=" -P ${PR_NUMBER}"
           fi
-        elif [ "${{ github.event_name }}" = "issues" ]; then
-          FLAGS+=" -I ${{ github.event.issue.number }}"
-        elif [ "${{ github.event_name }}" = "schedule" ]; then
+        elif [ "${EVENT_NAME}" = "issues" ]; then
+          FLAGS+=" -I ${ISSUE_NUMBER}"
+        elif [ "${EVENT_NAME}" = "schedule" ]; then
           FLAGS+=" --modules"
         else
-          echo "Unknown event: ${{ github.event_name }}"
+          echo "Unknown event: ${EVENT_NAME}"
           exit 1
         fi
         python3 scripts/ci/set_assignees.py $FLAGS

@@ -122,6 +122,10 @@ jobs:
           ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
           ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
           ELASTICSEARCH_INDEX: ${{ vars.FOOTPRINT_TRACKING_INDEX }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           shopt -s globstar
           run_date=`date --iso-8601=minutes`
@@ -129,10 +133,10 @@ jobs:
             --flatten footprint \
             --flatten-list-names "{'children':'name'}" \
             --transform "{ 'footprint_name': '^(?P<footprint_area>([^\/]+\/){0,2})(?P<footprint_path>([^\/]*\/)*)(?P<footprint_symbol>[^\/]*)$' }" \
-            --run-id "${{ github.run_id }}" \
-            --run-attempt "${{ github.run_attempt }}" \
-            --run-workflow "footprint-tracking:${{ github.event_name }}" \
-            --run-branch "${{ github.ref_name }}" \
+            --run-id "${RUN_ID}" \
+            --run-attempt "${RUN_ATTEMPT}" \
+            --run-workflow "footprint-tracking:${EVENT_NAME}" \
+            --run-branch "${REF_NAME}" \
             -i ${ELASTICSEARCH_INDEX} \
             ./footprint_data/**/twister_footprint.json
         #

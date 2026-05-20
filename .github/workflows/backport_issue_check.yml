@@ -42,9 +42,13 @@ jobs:
       - name: Run backport issue checker
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.event.repository.owner.login }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           ./scripts/release/list_backports.py \
-          -o ${{ github.event.repository.owner.login }} \
-          -r ${{ github.event.repository.name }} \
-          -b ${{ github.event.pull_request.base.ref }} \
-          -p ${{ github.event.pull_request.number }}
+          -o "${REPO_OWNER}" \
+          -r "${REPO_NAME}" \
+          -b "${BASE_REF}" \
+          -p "${PR_NUMBER}"

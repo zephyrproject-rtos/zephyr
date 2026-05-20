@@ -200,15 +200,19 @@ jobs:
           echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$( cat SDK_VERSION )" >> $GITHUB_ENV
 
       - name: Check Environment
+        env:
+          GH_REF: ${{ github.ref }}
+          GH_BASE_REF: ${{ github.base_ref }}
+          GH_REF_NAME: ${{ github.ref_name }}
         run: |
           cmake --version
           gcc --version
           cargo --version
           rustup target list --installed
           ls -la
-          echo "github.ref: ${{ github.ref }}"
-          echo "github.base_ref: ${{ github.base_ref }}"
-          echo "github.ref_name: ${{ github.ref_name }}"
+          echo "github.ref: ${GH_REF}"
+          echo "github.base_ref: ${GH_BASE_REF}"
+          echo "github.ref_name: ${GH_REF_NAME}"
 
       - name: Install Python packages
         run: |
