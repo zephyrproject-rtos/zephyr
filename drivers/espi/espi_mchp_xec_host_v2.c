@@ -10,6 +10,7 @@
 #include <soc.h>
 #include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
 #include <zephyr/drivers/espi.h>
+#include <zephyr/drivers/espi/mchp_xec_espi.h>
 #include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/kernel.h>
@@ -137,43 +138,79 @@ static uint8_t ec_host_cmd_sram[CONFIG_ESPI_XEC_PERIPHERAL_HOST_CMD_PARAM_SIZE] 
 
 #ifdef CONFIG_ESPI_PERIPHERAL_XEC_MAILBOX
 
-BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(mbox0)),
-	     "XEC mbox0 DT node is disabled!");
+#define XEC_MBOX0_NODE DT_NODELABEL(mbox0)
 
-static struct xec_mbox_config {
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(XEC_MBOX0_NODE), "XEC mbox0 DT node is disabled!");
+
+#define XEC_MBOX_H2EC_OFS      0x100U
+#define XEC_MBOX_EC2H_OFS      0x104U
+#define XEC_MBOX_SMI_SRC_OFS   0x108U
+#define XEC_MBOX_SMI_MSK_OFS   0x10cU
+/* 32 mailbox data registers. 0 < n < 32 */
+#define XEC_MBOX_NUM_8BIT_DATA 32U
+#define XEC_MBOX_DATA_OFS(n)   (0x110u + (uint32_t)(n))
+
+#define XEC_MBOX_SIRQ_EV_SLOT_VAL  CONFIG_ESPI_PERIPHERAL_XEC_MAILBOX_SIRQ_SLOT
+#define XEC_MBOX_SIRQ_SMI_SLOT_VAL CONFIG_ESPI_PERIPHERAL_XEC_MAILBOX_SMI_SIRQ_SLOT
+
+#define XEC_MBOX_GET_DATA 0
+#define XEC_MBOX_SET_DATA 1U
+
+struct xec_mbox_config {
 	uintptr_t regbase;
 	uint32_t ecia_info;
+	uint32_t host_mem_addr;
+	uint16_t host_io_addr;
 };
 
-static const struct xec_mbox0_config xec_mbox0_cfg = {
-	.regbase = DT_REG_ADDR(DT_NODELABEL(mbox0)),
-	.ecia_info = DT_PROP_BY_IDX(DT_NODELABEL(mbox0), girqs, 0),
+static const struct xec_mbox_config xec_mbox0_cfg = {
+	.regbase = (uintptr_t)DT_REG_ADDR(XEC_MBOX0_NODE),
+	.ecia_info = (uint32_t)DT_PROP_BY_IDX(XEC_MBOX0_NODE, girqs, 0),
+	.host_io_addr = (uint32_t)DT_PROP_OR(XEC_MBOX0_NODE, host_io, UINT16_MAX),
+	.host_mem_addr = (uint32_t)DT_PROP_OR(XEC_MBOX0_NODE, host_mem, UINT32_MAX),
 };
 
-/* dev is a pointer to espi0 (parent) device */
+/* dev is a pointer to espi0 (parent) device
+ * Interrupt on Host writing a byte to Host-to-EC mailbox register.
+ * EC clears interrupt line by writing 0xFF to Host-to-EC mailbox register.
+ * This also clears Host-to-EC to 0. Host can poll Host-to-EC to know
+ * EC has processed command. EC may generate an interrupt to the Host
+ * by writing a non-zero value to the EC-to-Host mailbox register.
+ * EC may choose to enable EC-to-Host Serial-IRQ and/or EC-to-Host SMI delivered
+ * by Serial-IRQ.
+ * We do not write 0xFF to the Host-to-EC register to clear the interrupt status because
+ * the Host may interpret claring of Host-to-EC as the EC has completed the requested
+ * operation. Instead, we disable the mailbox interrupt. The application can re-enable the
+ * interrupt after writing a value to Host-to-EC via our side-band API.
+ */
 static void mbox0_isr(const struct device *dev)
 {
-	uint8_t girq = MCHP_XEC_ECIA_GIRQ(xec_mbox0_cfg.ecia_info);
-	uint8_t bitpos = MCHP_XEC_ECIA_GIRQ_POS(xec_mbox0_cfg.ecia_info);
+	struct espi_xec_data *const data = dev->data;
+	mm_reg_t mregbase = xec_mbox0_cfg.regbase;
+	struct espi_event evt = {
+		ESPI_BUS_PERIPHERAL_NOTIFICATION,
+		MCHP_XEC_ESPI_PERIPHERAL_MAILBOX,
+		ESPI_PERIPHERAL_NODATA,
+	};
 
-	/* clear GIRQ source, inline version */
-	mchp_soc_ecia_girq_src_clr(girq, bitpos);
+	evt.evt_data = sys_read8(mregbase + XEC_MBOX_H2EC_OFS);
+
+	xec_ecia_info_girq_ctrl(xec_mbox0_cfg.ecia_info, MCHP_MEC_ECIA_GIRQ_DIS);
+	xec_ecia_info_girq_src_clear(xec_mbox0_cfg.ecia_info);
+
+	espi_send_callbacks(&data->callbacks, dev, evt);
 }
 
 static int connect_irq_mbox0(const struct device *dev)
 {
-	/* clear GIRQ source */
-	mchp_xec_ecia_info_girq_src_clr(xec_mbox0_cfg.ecia_info);
+	xec_ecia_info_girq_src_clear(xec_mbox0_cfg.ecia_info);
 
-	IRQ_CONNECT(DT_IRQN(DT_NODELABLE(mbox0)),
-		    DT_IRQ(DT_NODELABLE(mbox0), priority),
-		    acpi_ec0_isr,
-		    DEVICE_DT_GET(DT_NODELABEL(espi0)),
-		    0);
-	irq_enable(DT_IRQN(DT_NODELABLE(mbox0)));
+	IRQ_CONNECT(DT_IRQN(XEC_MBOX0_NODE), DT_IRQ(XEC_MBOX0_NODE, priority), mbox0_isr,
+		    DEVICE_DT_GET(XEC_ESPI0_NODE), 0);
+	irq_enable(DT_IRQN(XEC_MBOX0_NODE));
 
 	/* enable GIRQ source */
-	mchp_xec_ecia_info_girq_src_en(xec_mbox0_cfg.ecia_info);
+	xec_ecia_info_girq_ctrl(xec_mbox0_cfg.ecia_info, MCHP_MEC_ECIA_GIRQ_EN);
 
 	return 0;
 }
@@ -183,11 +220,212 @@ static int connect_irq_mbox0(const struct device *dev)
  */
 static int init_mbox0(const struct device *dev)
 {
-	struct espi_xec_config *const cfg = ESPI_XEC_CONFIG(dev);
-	struct espi_iom_regs *regs = (struct espi_iom_regs *)cfg->base_addr;
+	const struct espi_xec_config *devcfg = dev->config;
+	struct xec_espi_ioc_cfg_regs *regs =
+		(struct xec_espi_ioc_cfg_regs *)(devcfg->ioc_base_addr + MCHP_ESPI_IO_CFG_OFS);
+	uint32_t bar_val = 0;
 
-	regs->IOHBAR[IOB_MBOX] = ESPI_XEC_MBOX_BAR_ADDRESS |
-				 MCHP_ESPI_IO_BAR_HOST_VALID;
+#ifdef CONFIG_ESPI_PERIPHERAL_XEC_MAILBOX_PORT_NUM
+	bar_val = MCHP_ESPI_IO_BAR_HOST_ADDR_SET(CONFIG_ESPI_PERIPHERAL_XEC_MAILBOX_PORT_NUM);
+
+	regs->IOHBAR[IOB_MBOX] = bar_val | MCHP_ESPI_IO_BAR_HOST_VALID;
+#else
+	bar_val = xec_mbox0_cfg.host_io_addr;
+
+	if (bar_val != UINT16_MAX) {
+		bar_val = MCHP_ESPI_IO_BAR_HOST_ADDR_SET(bar_val);
+		regs->IOHBAR[IOB_MBOX] = bar_val | MCHP_ESPI_IO_BAR_HOST_VALID;
+	}
+
+	bar_val = xec_mbox0_cfg.host_mem_addr;
+	if (bar_val != UINT32_MAX) {
+		xec_espi_mbar_host_set(devcfg->mc_base_addr, MEMB_MBOX, bar_val, true);
+	}
+#endif
+
+	/* Serial IRQ */
+	regs->SIRQ[MCHP_ESPI_SIRQ_MBOX_SIRQ] = XEC_MBOX_SIRQ_EV_SLOT_VAL;
+	regs->SIRQ[MCHP_ESPI_SIRQ_MBOX_SMI] = XEC_MBOX_SIRQ_SMI_SLOT_VAL;
+
+	return 0;
+}
+
+/* Write all 32 8-bit mailbox data register as 32-bit words. These registers were designed
+ * to be accessible as 32-bit words.
+ */
+static int mbox0_data_set_all(const struct device *dev, const uint32_t *src)
+{
+	mm_reg_t mregbase = xec_mbox0_cfg.regbase;
+	uint32_t n = 0;
+
+	if (src == NULL) {
+		return -EINVAL;
+	}
+
+	for (n = 0; n < (XEC_MBOX_NUM_8BIT_DATA / 4U); n += 4U) {
+		sys_write32(src[n], mregbase + XEC_MBOX_DATA_OFS(n));
+	}
+
+	return 0;
+}
+
+/* Get all 32 8-bit mailbox data register as 32-bit words. These registers were designed
+ * to be accessible as 32-bit words.
+ */
+static int mbox0_data_get_all(const struct device *dev, uint32_t *dest)
+{
+	mm_reg_t mregbase = xec_mbox0_cfg.regbase;
+	uint32_t n = 0;
+
+	if (dest == NULL) {
+		return -EINVAL;
+	}
+
+	for (n = 0; n < (XEC_MBOX_NUM_8BIT_DATA / 4U); n += 4U) {
+		dest[n] = sys_read32(mregbase + XEC_MBOX_DATA_OFS(n));
+	}
+
+	return 0;
+}
+
+int mchp_xec_espi_pc_mailbox_get(const struct device *dev, uint8_t mbox_idx, uint8_t num_mboxes,
+				 uint8_t *dest)
+{
+	mm_reg_t mregbase = xec_mbox0_cfg.regbase;
+	uint8_t nb = 0;
+
+	if ((dev == NULL) || (dest == NULL) || (mbox_idx >= MCHP_XEC_MAX_MAILBOX_INDEX)) {
+		return -EINVAL;
+	}
+
+	mregbase += XEC_MBOX_DATA_OFS(0);
+
+	for (uint8_t idx = mbox_idx; idx < MCHP_XEC_MAX_MAILBOX_INDEX; idx++) {
+		if (idx >= num_mboxes) {
+			break;
+		}
+
+		dest[nb++] = sys_read8(mregbase + idx);
+	}
+
+	return 0;
+}
+
+int mchp_xec_espi_pc_mailbox_set(const struct device *dev, uint8_t mbox_idx, uint8_t num_mboxes,
+				 const uint8_t *src)
+{
+	mm_reg_t mregbase = xec_mbox0_cfg.regbase;
+	uint8_t nb = 0;
+
+	if ((dev == NULL) || (src == NULL) || (mbox_idx >= MCHP_XEC_MAX_MAILBOX_INDEX)) {
+		return -EINVAL;
+	}
+
+	mregbase += XEC_MBOX_DATA_OFS(0);
+
+	for (uint8_t idx = mbox_idx; idx < MCHP_XEC_MAX_MAILBOX_INDEX; idx++) {
+		if (idx >= num_mboxes) {
+			break;
+		}
+
+		sys_write8(src[nb], mregbase + idx);
+	}
+
+	return 0;
+}
+
+int mchp_xec_espi_pc_mailbox_get_all(const struct device *dev, uint32_t *dest)
+{
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	return mbox0_data_get_all(dev, dest);
+}
+
+int mchp_xec_espi_pc_mailbox_set_all(const struct device *dev, const uint32_t *src)
+{
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	return mbox0_data_set_all(dev, src);
+}
+
+int mchp_xec_espi_pc_mailbox_cmd(const struct device *dev, enum mchp_xec_espi_pc_mbox_cmd_id cmd_id,
+				 uint8_t cmd)
+{
+	mm_reg_t mregbase = xec_mbox0_cfg.regbase;
+	uint32_t ofs = 0;
+
+	if ((dev == NULL) || (cmd_id >= MCHP_XEC_ESPI_PC_MBOX_CMD_ID_MAX)) {
+		return -EINVAL;
+	}
+
+	switch (cmd_id) {
+	case MCHP_XEC_ESPI_PC_MBOX_CMD_ID_HOST_TO_EC:
+		ofs = XEC_MBOX_H2EC_OFS;
+		break;
+	case MCHP_XEC_ESPI_PC_MBOX_CMD_ID_EC_TO_HOST:
+		ofs = XEC_MBOX_EC2H_OFS;
+		break;
+	case MCHP_XEC_ESPI_PC_MBOX_CMD_ID_SMI_SRC:
+		ofs = XEC_MBOX_SMI_SRC_OFS;
+		break;
+	case MCHP_XEC_ESPI_PC_MBOX_CMD_ID_SMI_MASK:
+		ofs = XEC_MBOX_SMI_MSK_OFS;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	sys_write8(cmd, mregbase + ofs);
+
+	return 0;
+}
+
+/** @brief Write command to specified mailbox box command register
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param id enum mchp_xec_espi_pc_mbox_isrc specifying the interrupt (internal EC or serial IRQ)
+ * @param enable a zero value is disable else enable
+ *
+ * @retval 0 success
+ * @retval -EINVAL if dev is NULL or id is invalid
+ */
+int mchp_xec_espi_pc_mailbox_ictrl(const struct device *dev, enum mchp_xec_espi_pc_mbox_isrc id,
+				   uint8_t enable)
+{
+	const struct espi_xec_config *espi_drv_cfg = dev->config;
+	struct xec_espi_ioc_cfg_regs *regs =
+		(struct xec_espi_ioc_cfg_regs *)(espi_drv_cfg->ioc_base_addr +
+						 MCHP_ESPI_IO_CFG_OFS);
+	uint8_t mbox_sirq_slot_val = MCHP_ESPI_IO_SIRQ_DIS;
+
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	switch (id) {
+	case MCHP_XEC_ESPI_PC_MBOX_ISRC_EC:
+		xec_ecia_info_girq_ctrl(xec_mbox0_cfg.ecia_info, enable);
+		break;
+	case MCHP_XEC_ESPI_PC_MBOX_ISRC_SIRQ:
+		if (enable != 0) {
+			mbox_sirq_slot_val = (uint8_t)(XEC_MBOX_SIRQ_EV_SLOT_VAL);
+		}
+		regs->SIRQ[MCHP_ESPI_SIRQ_MBOX_SIRQ] = mbox_sirq_slot_val;
+		break;
+	case MCHP_XEC_ESPI_PC_MBOX_ISRC_SIRQ_SMI:
+		if (enable != 0) {
+			mbox_sirq_slot_val = (uint8_t)(XEC_MBOX_SIRQ_SMI_SLOT_VAL);
+		}
+		regs->SIRQ[MCHP_ESPI_SIRQ_MBOX_SMI] = mbox_sirq_slot_val;
+		break;
+	default:
+		return -EINVAL;
+	}
+
 	return 0;
 }
 

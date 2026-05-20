@@ -120,6 +120,33 @@ config ESPI_PERIPHERAL_XEC_MAILBOX
 	  Enable a 32 byte mailbox interface accessible via Host I/O over the
 	  ESPI Peripheral Channel.
 
+if ESPI_PERIPHERAL_XEC_MAILBOX
+
+config ESPI_PERIPHERAL_XEC_MAILBOX_PORT_NUM
+	hex "Host I/O peripheral port for the XEC Mailbox"
+	default 0x0360
+	help
+	  Host I/O port the XEC Mailbox BAR is mapped to. Make sure the value
+	  does not clash with other Host I/O peripherals.
+
+config ESPI_PERIPHERAL_XEC_MAILBOX_SIRQ_SLOT
+	int "XEC Mailbox peripheral Serial-IRQ slot number"
+	default 255
+	range 0 255
+	help
+	  Serial-IRQ slot number for a non-SMI interrupt to the Host.
+	  Range is 0 - 255 where 255 is disabled.
+
+config ESPI_PERIPHERAL_XEC_MAILBOX_SMI_SIRQ_SLOT
+	int "XEC Mailbox peripheral SMI Serial-IRQ slot number"
+	default 255
+	range 0 255
+	help
+	  Serial-IRQ slot number for a SMI interrupt to the Host.
+	  Range is 0 - 255 where 255 is disabled.
+
+endif # ESPI_PERIPHERAL_XEC_MAILBOX
+
 config ESPI_PERIPHERAL_XEC_ACPI_EC2
 	bool "SoC ACPI EC 2 over eSPI"
 	help
