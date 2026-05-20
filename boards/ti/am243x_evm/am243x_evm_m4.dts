@@ -8,7 +8,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <ti/am64x_m4.dtsi>
-#include "am243x_evm_am2434_m4-pinctrl.dtsi"
+#include "am243x_evm_m4-pinctrl.dtsi"
 
 / {
 	model = "TI AM243x EVM M4F core";
