@@ -46,12 +46,6 @@ config HCI_NXP_CONFIG_IR
 	  If enabled, the Host will send iR configuration vendor command to the Bluetooth Controller
 	  during HCI init.
 
-config BT_NXP_SHELL_INTERFACE
-	bool "Bluetooth NXP specific shell interface config"
-	help
-	  If enabled, it will add NXP specific shell commands to test features which requires
-	  shell interface commands.
-
 config HCI_NXP_RX_THREAD
 	bool "Process RX buffers in a dedicated thread"
 	help
