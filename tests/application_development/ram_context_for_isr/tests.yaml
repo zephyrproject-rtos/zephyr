@@ -2,7 +2,6 @@ common:
   tags: linker
   arch_allow: arm
   filter: CONFIG_CPU_CORTEX_M_HAS_VTOR
-          and not CONFIG_SOC_FAMILY_STM32
 tests:
   application_development.ram_context_for_isr:
     # Exclude mps3/corstone310 because it uses another mechanism to support relocation
@@ -30,3 +29,4 @@ tests:
       - mr_navq95b/mimx9596/m7
       - mr_navq95b/mimx9596/m7/flash
       - mr_navq95b/mimx9596/m7/ddr
+      - stm32n6570_dk/stm32n657xx/sb
