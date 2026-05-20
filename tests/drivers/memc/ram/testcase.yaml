@@ -21,7 +21,5 @@ tests:
       - b_u585i_iot02a
       - stm32h7s78_dk
     extra_args:
-      - platform:b_u585i_iot02a:DTC_OVERLAY_FILE=boards/b_u585i_iot02a_mspi_aps6408l.overlay
-      - platform:b_u585i_iot02a:EXTRA_CONF_FILE=boards/b_u585i_iot02a_mspi_aps6408l.conf
       - platform:stm32h7s78_dk:CONF_FILE=boards/stm32h7s78_dk_mspi_psram.conf
       - platform:stm32h7s78_dk:DTC_OVERLAY_FILE=boards/stm32h7s78_dk_mspi_psram.overlay
