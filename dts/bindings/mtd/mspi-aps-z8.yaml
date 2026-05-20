@@ -6,3 +6,5 @@ description: AP Memory pSRAM Version Z8 on MSPI bus
 compatible: "mspi-aps-z8"
 
 include: [mspi-device.yaml, "jedec,jesd216.yaml"]
+
+additional-property: true

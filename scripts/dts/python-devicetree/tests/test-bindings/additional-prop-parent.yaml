@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Additional property parent binding
+
+compatible: "additional-prop-parent"
+
+properties:
+  base:
+    type: int
+
+child-binding:
+  properties:
+    base:
+      type: int
+    child-only:
+      type: string
