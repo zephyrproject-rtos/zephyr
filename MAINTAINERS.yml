@@ -1273,6 +1273,7 @@ Display drivers:
     - VynDragon
     - KATE-WANG-NXP
     - avolmat-st
+    - RuoshanShi
   files:
     - drivers/display/
     - dts/bindings/display/
