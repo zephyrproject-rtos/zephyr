@@ -36,3 +36,6 @@ tests:
   net.dns.resolve.query_all_servers:
     extra_configs:
       - CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS=y
+  net.dns.resolve.no_additional_bufs:
+    extra_configs:
+      - CONFIG_DNS_RESOLVER_ADDITIONAL_BUF_CTR=0
