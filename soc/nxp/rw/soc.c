@@ -251,12 +251,6 @@ __weak __ramfunc void clock_init(void)
 	/* Call function set_flexspi_clock() to set flexspi clock source to aux0_pll_clk in XIP. */
 	set_flexspi_clock(FLEXSPI, 2U, 2U);
 
-	/* Deinitialization of the AVPLL. */
-	CLOCK_DeinitAvPll();
-	/* Deinitialize TDDR PLL. */
-	CLOCK_DeinitTddrRefClk();
-#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
-
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(os_timer), nxp_os_timer, okay)
 	CLOCK_AttachClk(kLPOSC_to_OSTIMER_CLK);
 #endif
@@ -270,7 +264,6 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kNONE_to_WDT0_CLK);
 #endif
 
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU) || \
 	defined(CONFIG_COMPARATOR_NXP_ACOMP)
 	/* Set 64M GAU clock from T3 PLL 256M and reset */
@@ -280,7 +273,6 @@ __weak __ramfunc void clock_init(void)
 	RESET_PeripheralReset(kGAU_RST_SHIFT_RSTn);
 	GAU_BG->CTRL &= ~BG_CTRL_PD_MASK;
 #endif /* GAU */
-#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 
 /* Any flexcomm can be USART */
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm0), nxp_lpc_usart, okay)) && CONFIG_SERIAL
@@ -432,6 +424,7 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_DeinitTddrRefClk();
 #endif
 
+#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
 }
 
 extern void nxp_rw6xx_power_init(void);
@@ -465,12 +458,9 @@ void soc_early_init_hook(void)
 
 	POWER_EnableResetSource(RESET_CAUSES);
 
-#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
-
 	/* Initialize clock */
 	clock_init();
 
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 #if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU)
 	POWER_PowerOnGau();
 #endif
