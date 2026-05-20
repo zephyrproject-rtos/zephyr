@@ -358,6 +358,7 @@ if(CONFIG_SOC_FAMILY_SILABS_S2)
   zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${emlib_dir}/src/em_iadc.c)
 endif()
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_IADC         ${peripheral_dir}/src/sl_hal_iadc.c)
+zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_ADC          ${peripheral_dir}/src/sl_hal_adc.c)
 
 # Keep em_burtc.c becaused used in gecko_burtc_timer.c
 if(CONFIG_SOC_FAMILY_SILABS_S2)
