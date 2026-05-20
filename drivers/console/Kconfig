@@ -127,15 +127,6 @@ config RAM_CONSOLE_BUFFER_SIZE
 	  one byte less. Messages will wrap around if the actual length
 	  is exceeded.
 
-config RAM_CONSOLE_HEADER
-	bool "Add RAM console header at the first 64B memory of console buffer"
-	depends on RAM_CONSOLE
-	help
-	  Add RAM console header at the first 64B memory of console buffer, the
-	  header includes the information of flag string, buffer address and size,
-	  cursor's absolute position, the header is defined in the header file:
-	  include/zephyr/drivers/console/ram_console.h
-
 config RTT_CONSOLE
 	bool "Use RTT console"
 	depends on USE_SEGGER_RTT
