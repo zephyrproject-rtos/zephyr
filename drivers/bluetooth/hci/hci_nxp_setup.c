@@ -36,8 +36,7 @@ LOG_MODULE_REGISTER(bt_nxp_ctlr);
 #define HCI_CMD_STORE_BT_CAL_DATA_PARAM_ANNEX100_LENGTH 16
 #define HCI_CMD_STORE_BT_CAL_DATA_OCF                   0x61
 #define HCI_CMD_STORE_BT_CAL_DATA_PARAM_LENGTH          32
-#define HCI_CMD_BT_CONFIG_IR_OCF                        0x0D
-#define HCI_CMD_BT_CONFIG_IR_LENGTH                     2
+
 extern const unsigned char *bt_fw_bin;
 extern const unsigned int bt_fw_bin_len;
 
@@ -1530,69 +1529,6 @@ static int bt_hci_baudrate_update(const struct device *dev, uint32_t baudrate)
 
 	return 0;
 }
-#if defined(CONFIG_HCI_NXP_CONFIG_IR)
-static int bt_nxp_configure_ir(void)
-{
-	int ret = 0;
-	const uint8_t hci_configure_ir[HCI_CMD_BT_CONFIG_IR_LENGTH] = {
-			0x02,
-			0xFF
-	};
-	uint16_t opcode = BT_OP(BT_OGF_VS, HCI_CMD_BT_CONFIG_IR_OCF);
-
-	LOG_INF("Configuring IR");
-
-	if (IS_ENABLED(CONFIG_BT_HCI_HOST)) {
-		struct net_buf *buf;
-
-		buf = bt_hci_cmd_alloc(K_FOREVER);
-		if (buf == NULL) {
-			LOG_ERR("Unable to allocate command buffer");
-			return -ENOMEM;
-		}
-
-		net_buf_add_mem(buf, hci_configure_ir, HCI_CMD_BT_CONFIG_IR_LENGTH);
-
-		ret = bt_hci_cmd_send_sync(opcode, buf, NULL);
-		if (ret) {
-			LOG_ERR("Failed to send config IR cmd (err %d)", ret);
-			return ret;
-		}
-	}
-
-	return ret;
-}
-
-void bt_nxp_trigger_ir(void)
-{
-	uint8_t ir_trigger_buf[4];
-
-	LOG_INF("Disable BT before IR");
-
-	bt_disable();
-	k_sleep(K_MSEC(500));
-
-	memset(ir_trigger_buf, 0, sizeof(ir_trigger_buf));
-
-	/*IR trigger sequence*/
-	ir_trigger_buf[0] = 0x01U;
-	ir_trigger_buf[1] = 0xFCU;
-	ir_trigger_buf[2] = 0xFCU;
-	ir_trigger_buf[3] = 0x00U; /* no data, so 0 parameter length*/
-
-	fw_upload.is_setup_done = 0;
-
-	LOG_INF("Triggering IR.");
-	for (int i = 0; i < 4; i++) {
-		uart_poll_out(uart_dev, ir_trigger_buf[i]);
-	}
-
-	LOG_INF("Downloading FW.");
-	bt_nxp_ctlr_init();
-
-	LOG_INF("Perform BT Init again to activate interface.");
-}
-#endif /* defined(CONFIG_HCI_NXP_CONFIG_IR) */
 
 int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
@@ -1648,15 +1584,6 @@ int bt_h4_vnd_setup(const struct device *dev, const struct bt_hci_setup_params *
 			LOG_ERR("Fail to load annex-100 calibration data");
 			return err;
 		}
-
-#if defined(CONFIG_HCI_NXP_CONFIG_IR)
-		err = bt_nxp_configure_ir();
-		if (err) {
-			LOG_ERR("Fail to configure IR");
-			return err;
-		}
-#endif
-
 #if defined(CONFIG_BT_NXP_CTRL_WAKE_ON_BT)
 #if DT_NODE_HAS_PROP(DT_DRV_INST(0), wakeup_bt_gpios)
 	struct gpio_dt_spec wakeup = GPIO_DT_SPEC_GET(DT_DRV_INST(0), wakeup_bt_gpios);

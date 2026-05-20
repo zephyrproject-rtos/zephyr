@@ -39,13 +39,6 @@ config HCI_NXP_SET_CAL_DATA_ANNEX100
 	  If enabled, the Host will send calibration data annex 100 to the Bluetooth Controller during HCI
 	  init.
 
-config HCI_NXP_CONFIG_IR
-	bool "Bluetooth Controller Independent Reset config"
-	default y if BT_NXP_NW612 || BT_NXP_IW416 || BT_NXP_IW610
-	help
-	  If enabled, the Host will send iR configuration vendor command to the Bluetooth Controller
-	  during HCI init.
-
 config HCI_NXP_RX_THREAD
 	bool "Process RX buffers in a dedicated thread"
 	help
