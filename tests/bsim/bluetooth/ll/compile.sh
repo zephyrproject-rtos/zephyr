@@ -17,12 +17,12 @@ app=tests/bsim/bluetooth/ll/advx \
   conf_overlay=overlay-ticker_expire_info.conf compile
 app=tests/bsim/bluetooth/ll/advx conf_overlay=overlay-scan_aux_use_chains.conf compile
 
-app=tests/bsim/bluetooth/ll/conn conf_file=prj_split.conf compile
+app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_dual_timer.conf compile
+app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_single_timer.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_1ms.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_tx_defer.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_privacy.conf compile
 app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_low_lat.conf compile
-app=tests/bsim/bluetooth/ll/conn conf_file=prj_split_single_timer.conf compile
 
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf  compile
