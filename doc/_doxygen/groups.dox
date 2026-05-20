@@ -112,4 +112,10 @@
 @{
 @}
 
+@brief Authentication
+@defgroup authentication Authentication
+@ingroup os_services
+@{
+@}
+
 */

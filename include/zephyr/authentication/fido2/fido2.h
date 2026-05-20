@@ -19,7 +19,7 @@
  * @defgroup fido2 FIDO2
  * @since 4.5
  * @version 0.1.0
- * @ingroup os_services
+ * @ingroup authentication
  * @{
  */
 
