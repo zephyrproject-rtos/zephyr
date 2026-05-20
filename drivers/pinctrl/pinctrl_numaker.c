@@ -25,11 +25,12 @@ static void gpio_configure(const pinctrl_soc_pin_t *pin, uint8_t port_idx, uint8
 	GPIO_T *port;
 
 	port = (GPIO_T *)(GPA_BASE + port_idx * GPIO_SIZE);
-
+#if !defined(CONFIG_SOC_SERIES_M031X)
 	port->SMTEN = (port->SMTEN & ~BIT(pin_idx)) |
 		      ((pin->schmitt_enable ? 1 : 0) << pin_idx);
 	port->SLEWCTL = (port->SLEWCTL & ~SLEWCTL_MASK(pin_idx)) |
 			(pin->slew_rate << SLEWCTL_PIN_SHIFT(pin_idx));
+#endif
 	port->DINOFF = (port->DINOFF & ~DINOFF_MASK(pin_idx)) |
 		       ((pin->digital_disable ? 1 : 0) << DINOFF_PIN_SHIFT(pin_idx));
 }
@@ -43,9 +44,12 @@ static void configure_pin(const pinctrl_soc_pin_t *pin)
 	uint8_t port_index = PORT_INDEX(pin_mux);
 	uint32_t mfp_cfg = MFP_CFG(pin_mux);
 
-
+#if defined(CONFIG_SOC_SERIES_M031X)
+	uint32_t *GPx_MFPx = ((uint32_t *)MFP_BASE) + port_index * 2 + (pin_index / 8);
+#else
 	uint32_t *GPx_MFPx = ((uint32_t *)MFP_BASE) + port_index * 4 + (pin_index / 4);
 	uint32_t *GPx_MFOSx = ((uint32_t *)MFOS_BASE) + port_index;
+#endif
 	uint32_t pinMask = NU_MFP_MASK(pin_index);
 
 	/*
@@ -53,12 +57,13 @@ static void configure_pin(const pinctrl_soc_pin_t *pin)
 	 * SYS_GPA_MFP0_PA0MFP_SC0_CD;
 	 */
 	*GPx_MFPx = (*GPx_MFPx & (~pinMask)) | mfp_cfg;
+#if !defined(CONFIG_SOC_SERIES_M031X)
 	if (pin->open_drain != 0) {
 		*GPx_MFOSx |= BIT(pin_index);
 	} else {
 		*GPx_MFOSx &= ~BIT(pin_index);
 	}
-
+#endif
 	gpio_configure(pin, port_index, pin_index);
 }
 
