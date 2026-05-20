@@ -4,9 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_SERIES_CYT4DN
+if SOC_SERIES_CYT4XX
 
-config SOC_CYT4DNJBZS_M0P
+config SOC_SERIES_CYT4XX_M0P
 	select ARM
 	select CPU_CORTEX_M0PLUS
 	select CPU_CORTEX_M_HAS_SYSTICK
@@ -15,13 +15,13 @@ config SOC_CYT4DNJBZS_M0P
 	select SOC_PREP_HOOK
 	select SOC_LATE_INIT_HOOK
 
-config SOC_SERIES_CYT4DN_START_M7_0
-	bool "CYT4DN M7 Core 0 during M0+ startup"
+config SOC_SERIES_CYT4XX_START_M7_0
+	bool "CYT4XX M7 Core 0 during M0+ startup"
 	help
 	  Enable starting M7 core 0 from M0+ core.
 
-config SOC_SERIES_CYT4DN_START_M7_1
-	bool "CYT4DN M7 Core 1 during M0+ startup"
+config SOC_SERIES_CYT4XX_START_M7_1
+	bool "CYT4XX M7 Core 1 during M0+ startup"
 	help
 	  Enable starting M7 core 1 from M0+ core.
 
