@@ -16,7 +16,6 @@ common:
     - frdm_mcxn947/mcxn947/cpu0/ns
     - frdm_mcxa577/mcxa577/ns
     - rd_rw612_bga/rw612/ns
-    - frdm_rw612/rw612/ns
   integration_platforms:
     - nrf9161dk/nrf9161/ns
   harness: console
@@ -43,7 +42,6 @@ tests:
   sample.tfm.regression_sfn:
     platform_exclude:
       - rd_rw612_bga/rw612/ns
-      - frdm_rw612/rw612/ns
     platform_allow:
       - max32657evkit/max32657/ns
     extra_args:
