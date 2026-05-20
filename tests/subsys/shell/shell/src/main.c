@@ -739,7 +739,7 @@ ZTEST(sh, test_shell_readline_errors)
 
 	const struct shell *sh = shell_backend_dummy_get_ptr();
 
-	shell_backend_dummy_push_input(sh, short_line, sizeof(long_line));
+	shell_backend_dummy_push_input(sh, short_line, sizeof(short_line));
 	test_shell_execute_cmd("test_readline_null_buf", -ENOBUFS);
 	shell_backend_dummy_clear_input(sh);
 
