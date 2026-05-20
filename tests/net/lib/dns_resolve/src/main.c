@@ -71,9 +71,16 @@ static struct k_sem wait_data;
 static struct k_sem wait_data2;
 static uint16_t current_dns_id;
 static struct dns_addrinfo addrinfo;
+static uint8_t send_count;
+static uint8_t success_send_count;
+
+NET_BUF_POOL_DEFINE(test_dns_qname_pool, 2, CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
+		    0, NULL);
+NET_BUF_POOL_DEFINE(test_dns_response_pool, 1,
+		    DNS_MSG_HEADER_SIZE + CONFIG_DNS_RESOLVER_MAX_QUERY_LEN +
+		    DNS_QTYPE_LEN + DNS_QCLASS_LEN, 0, NULL);
 
 #if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
-static uint8_t send_count;
 static uint8_t callback_count;
 static struct k_work multi_server_response_work;
 #endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
@@ -160,6 +167,8 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
+	send_count++;
+
 	if (!timeout_query) {
 		struct net_if_test *data = dev->data;
 
@@ -176,7 +185,6 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 		 * on an already-freed slot, corrupting the kernel timeout
 		 * queue when the next test reinitializes it.
 		 */
-		send_count++;
 		k_work_submit(&multi_server_response_work);
 #else
 		struct dns_resolve_context *ctx;
@@ -187,6 +195,10 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 		slot = get_slot_by_id(ctx, current_dns_id);
 		if (slot < 0) {
 			DBG("Skipping this query dns id %u\n", current_dns_id);
+		} else if (success_send_count > 0U &&
+			   send_count != success_send_count) {
+			DBG("Delaying response for send %u, waiting for %u\n",
+			    send_count, success_send_count);
 		} else {
 			k_work_cancel_delayable(&ctx->queries[slot].timer);
 
@@ -647,6 +659,53 @@ void dns_result_cb(enum dns_resolve_status status,
 	k_sem_give(&wait_data2);
 }
 
+static size_t dns_server_addr_len(const struct net_sockaddr *addr)
+{
+	if (addr->sa_family == NET_AF_INET) {
+		return sizeof(struct net_sockaddr_in);
+	}
+
+	return sizeof(struct net_sockaddr_in6);
+}
+
+static void inject_empty_dns_response(struct dns_resolve_context *ctx,
+				      int server_idx, uint16_t dns_id,
+				      const char *query,
+				      enum dns_query_type query_type)
+{
+	uint8_t buf[DNS_MSG_HEADER_SIZE + CONFIG_DNS_RESOLVER_MAX_QUERY_LEN +
+		    DNS_QTYPE_LEN + DNS_QCLASS_LEN];
+	uint8_t qname[CONFIG_DNS_RESOLVER_MAX_QUERY_LEN];
+	struct net_buf *dns_data;
+	uint16_t len = sizeof(buf);
+	uint16_t qname_len;
+	int ret;
+
+	ret = dns_msg_pack_qname(&qname_len, qname, sizeof(qname), query);
+	zassert_equal(ret, 0, "Cannot pack DNS qname");
+
+	ret = dns_msg_pack_query(buf, &len, sizeof(buf), qname, qname_len,
+				 dns_id, (enum dns_rr_type)query_type);
+	zassert_equal(ret, 0, "Cannot pack DNS response");
+
+	buf[2] |= 0x80;
+
+	dns_data = net_buf_alloc(&test_dns_response_pool, K_NO_WAIT);
+	zassert_not_null(dns_data, "Cannot allocate DNS response buffer");
+
+	net_buf_add_mem(dns_data, buf, len);
+
+	ret = ctx->servers[server_idx].dispatcher.cb(
+		&ctx->servers[server_idx].dispatcher,
+		ctx->servers[server_idx].sock,
+		&ctx->servers[server_idx].dns_server,
+		dns_server_addr_len(&ctx->servers[server_idx].dns_server),
+		dns_data, len);
+	zassert_equal(ret, 0, "Cannot inject DNS response");
+
+	net_buf_unref(dns_data);
+}
+
 ZTEST(dns_resolve, test_dns_query_ipv4)
 {
 	struct expected_status status = {
@@ -674,6 +733,86 @@ ZTEST(dns_resolve, test_dns_query_ipv4)
 	if (k_sem_take(&wait_data2, WAIT_TIME)) {
 		zassert_true(false, "Timeout while waiting data");
 	}
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv4_timeout_fallback)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS);
+
+	k_sem_reset(&wait_data2);
+
+	timeout_query = false;
+	send_count = 0U;
+	success_send_count = 2U;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 fallback query");
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting fallback response");
+	}
+
+	zassert_equal(send_count, 2U, "Expected query fallback to second server");
+
+	success_send_count = 0U;
+
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv4_nodata_fallback)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int ret;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS);
+
+	k_sem_reset(&wait_data2);
+
+	timeout_query = false;
+	send_count = 0U;
+	success_send_count = 2U;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 fallback query");
+
+	k_yield();
+
+	zassert_equal(send_count, 1U, "Expected initial query to first server only");
+	zassert_true(ctx->servers[0].sock >= 0, "First DNS server socket is invalid");
+
+	inject_empty_dns_response(ctx, 0, current_dns_id, NAME4, DNS_QUERY_TYPE_A);
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting fallback response");
+	}
+
+	zassert_equal(send_count, 2U, "Expected empty reply to trigger fallback");
+
+	success_send_count = 0U;
+
+	verify_cancelled();
 }
 
 ZTEST(dns_resolve, test_dns_query_ipv6)
@@ -947,9 +1086,6 @@ ZTEST(dns_resolve, test_dns_localhost_resolve_ipv6)
 			     &addr, sizeof(struct net_in6_addr)),
 		      0, "not loopback address");
 }
-
-NET_BUF_POOL_DEFINE(test_dns_qname_pool, 2, CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
-		    0, NULL);
 
 ZTEST(dns_resolve, test_dns_unpack_name)
 {
