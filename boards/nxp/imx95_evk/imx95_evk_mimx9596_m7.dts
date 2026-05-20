@@ -26,6 +26,16 @@
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
+		zephyr,canbus = &flexcan1;
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "nxp,tja1463", "can-transceiver-gpio";
+		enable-gpios = <&gpio_can 6 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpio_can 5 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+		status = "okay";
 	};
 };
 
@@ -51,6 +61,13 @@
 };
 
 &enetc_ptp_clock {
+	status = "okay";
+};
+
+&flexcan1 {
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy1>;
 	status = "okay";
 };
 
@@ -131,6 +148,29 @@
 	pinctrl-0 = <&lpi2c5_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&lpi2c6 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&lpi2c6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_can: pcal6416@21 {
+		compatible = "nxp,pcal6416";
+		reg = <0x21>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <16>;
+		status = "okay";
+
+		/* Set PDM_CAN_SEL as active high to select CAN1 */
+		can_sel_hog {
+			gpio-hog;
+			gpios = <10 GPIO_ACTIVE_HIGH>;
+			output-high;
+		};
+	};
 };
 
 &lpi2c7 {
