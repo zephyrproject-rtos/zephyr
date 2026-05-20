@@ -81,7 +81,7 @@ static const struct net_route_table_ops route_ipv6_ops = {
 };
 
 struct net_route_entry *net_route_ipv6_lookup(struct net_if *iface,
-					      struct net_in6_addr *dst)
+					      const struct net_in6_addr *dst)
 {
 	struct net_addr addr = route_ipv6_addr(dst);
 
@@ -416,7 +416,7 @@ net_route_ipv6_mcast_lookup_by_iface(struct net_in6_addr *group,
 #endif /* CONFIG_NET_IPV6_ROUTE_MCAST */
 
 bool net_route_ipv6_get_info(struct net_if *iface,
-			     struct net_in6_addr *dst,
+			     const struct net_in6_addr *dst,
 			     struct net_route_entry **route,
 			     struct net_in6_addr **nexthop)
 {
@@ -424,7 +424,9 @@ bool net_route_ipv6_get_info(struct net_if *iface,
 
 	if (net_ipv6_nbr_lookup(iface, dst) != NULL) {
 		*route = NULL;
-		*nexthop = dst;
+
+		/* The cast is needed to avoid changing lot of code all over the place */
+		*nexthop = (struct net_in6_addr *)dst;
 		return true;
 	}
 
@@ -447,7 +449,7 @@ bool net_route_ipv6_get_info(struct net_if *iface,
 	return true;
 }
 
-int net_route_ipv6_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop)
+int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nexthop)
 {
 	struct net_linkaddr *lladdr = NULL;
 	struct net_if *out_iface = net_pkt_iface(pkt);

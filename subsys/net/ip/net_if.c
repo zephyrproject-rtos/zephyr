@@ -3440,13 +3440,12 @@ static struct net_if *net_if_ipv6_select_route_iface(const struct net_in6_addr *
 		return NULL;
 	}
 
-	nbr = net_ipv6_nbr_lookup(NULL, (struct net_in6_addr *)dst);
+	nbr = net_ipv6_nbr_lookup(NULL, dst);
 	if (nbr != NULL) {
 		return nbr->iface;
 	}
 
-	if (!net_route_ipv6_get_info(NULL, (struct net_in6_addr *)dst,
-				     &route, &nexthop)) {
+	if (!net_route_ipv6_get_info(NULL, dst, &route, &nexthop)) {
 		return NULL;
 	}
 
@@ -3968,8 +3967,7 @@ static struct net_if *net_if_ipv4_select_route_iface(const struct net_in_addr *d
 		return NULL;
 	}
 
-	if (!net_route_ipv4_get_info(NULL, (struct net_in_addr *)dst,
-				     &route, &nexthop)) {
+	if (!net_route_ipv4_get_info(NULL, dst, &route, &nexthop)) {
 		return NULL;
 	}
 
