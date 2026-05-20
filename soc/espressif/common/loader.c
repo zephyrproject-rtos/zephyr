@@ -155,10 +155,10 @@ void map_rom_segments(int core, struct rom_segments *map)
 
 		if (segment_hdr.load_addr) {
 			ESP_EARLY_LOGI(TAG, "%s\t: lma=%08xh vma=%08xh size=%05xh (%6d)",
-				       IS_DRAM(segment_hdr)       ? "DRAM"
+				       segment_hdr.load_addr == map->drom_map_addr ? "DROM"
+				       : segment_hdr.load_addr == map->irom_map_addr ? "IROM"
+				       : IS_DRAM(segment_hdr)     ? "DRAM"
 				       : IS_IRAM(segment_hdr)     ? "IRAM"
-				       : IS_IROM(segment_hdr)     ? "IROM"
-				       : IS_DROM(segment_hdr)     ? "DROM"
 				       : IS_RTC_IRAM(segment_hdr) ? "RTC_IRAM"
 				       : IS_RTC_DRAM(segment_hdr) ? "RTC_DRAM"
 				       : IS_RTC_DATA(segment_hdr) ? "RTC_DATA"
