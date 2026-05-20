@@ -441,8 +441,16 @@ static int siwx91x_udma_reload(const struct device *dev, uint32_t channel, uint3
 		return -EINVAL;
 	}
 
-	/* Disable the channel before reloading transfer */
-	if (RSI_UDMA_ChannelDisable(&data->hal_handle, channel) != 0) {
+	/* SG transfers can't be reloaded */
+	if (data->drv_chans[channel].desc_base) {
+		return -EINVAL;
+	}
+
+	if (size % BIT(udma_table[channel].vsUDMAChaConfigData1.srcSize)) {
+		return -EINVAL;
+	}
+
+	if (RSI_UDMA_ChannelDisable(&data->hal_handle, channel)) {
 		return -EIO;
 	}
 
