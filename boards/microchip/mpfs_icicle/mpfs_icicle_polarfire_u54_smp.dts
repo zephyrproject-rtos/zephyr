@@ -1,8 +1,20 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
-#include "mpfs_icicle_polarfire_u54.dts"
+#include "mpfs_icicle_common.dtsi"
 
 / {
 	compatible = "microchip,mpfs-icicle-kit", "microchip,mpfs";
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+	};
 
 	chosen {
 		zephyr,console = &uart1;

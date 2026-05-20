@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /dts-v1/;
 #include "mpfs_icicle_common.dtsi"
 
@@ -6,6 +12,18 @@
 
 	cpus {
 		cpu@0 {
+			status = "disabled";
+		};
+
+		cpu@2 {
+			status = "disabled";
+		};
+
+		cpu@3 {
+			status = "disabled";
+		};
+
+		cpu@4 {
 			status = "disabled";
 		};
 	};
