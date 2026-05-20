@@ -27,13 +27,7 @@ struct dsa_ksz8863_config {
 
 struct dsa_ksz8863_data {
 	const struct dsa_ksz8863_config *config;
-	struct dsa_switch_context *switch_ctx;
-	struct k_work_delayable link_work;
 	bool initialized;
-	bool link_up[DSA_PORT_MAX_COUNT];
-	uint8_t user_ports[DSA_PORT_MAX_COUNT];
-	uint8_t user_port_count;
-	uint8_t cpu_port;
 };
 
 static int dsa_ksz8863_write_reg(const struct dsa_ksz8863_config *cfg, uint8_t reg, uint8_t value)
@@ -142,62 +136,48 @@ static int dsa_ksz8863_probe(const struct dsa_ksz8863_config *cfg)
 	return 0;
 }
 
-static bool dsa_ksz8863_port_link_up(const struct dsa_ksz8863_config *cfg, uint8_t port)
+int dsa_ksz8863_port_link_status(const struct device *dev, uint8_t port, bool *link_up)
 {
+	struct dsa_ksz8863_data *data = dev->data;
+	const struct dsa_ksz8863_config *cfg = data->config;
 	uint8_t value = 0;
+	int ret;
 
-	if (dsa_ksz8863_read_reg(cfg, KSZ8863_PORT_STAT0(port), &value) != 0) {
-		return false;
+	if (link_up == NULL) {
+		return -EINVAL;
 	}
 
-	return (value & KSZ8863_PORT_LINK_GOOD) != 0;
-}
-
-static void dsa_ksz8863_link_work(struct k_work *work)
-{
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct dsa_ksz8863_data *prv = CONTAINER_OF(dwork, struct dsa_ksz8863_data, link_work);
-	const struct dsa_ksz8863_config *cfg = prv->config;
-	struct dsa_switch_context *ctx = prv->switch_ctx;
-
-	for (uint8_t i = 0; i < prv->user_port_count; i++) {
-		const uint8_t port = prv->user_ports[i];
-		struct net_if *iface = ctx->iface_user[port];
-		bool link_up;
-
-		if (iface == NULL) {
-			continue;
-		}
-
-		link_up = dsa_ksz8863_port_link_up(cfg, port);
-		if (link_up && !prv->link_up[port]) {
-			LOG_INF("KSZ8863 port %u link up", port);
-			net_eth_carrier_on(iface);
-		} else if (!link_up && prv->link_up[port]) {
-			LOG_INF("KSZ8863 port %u link down", port);
-			net_eth_carrier_off(iface);
-		}
-
-		prv->link_up[port] = link_up;
+	ret = dsa_ksz8863_read_reg(cfg, KSZ8863_PORT_STAT0(port), &value);
+	if (ret != 0) {
+		return ret;
 	}
 
-	k_work_reschedule(&prv->link_work, K_MSEC(KSZ8863_LINK_POLL_INTERVAL_MS));
-}
-
-static int dsa_ksz8863_port_init(const struct device *dev)
-{
-	const struct dsa_port_config *cfg = dev->config;
-	struct dsa_switch_context *ctx = dev->data;
-	struct dsa_ksz8863_data *prv = PRV_DATA(ctx);
-
-	prv->switch_ctx = ctx;
-	if (cfg->ethernet_connection != NULL) {
-		prv->cpu_port = cfg->port_idx;
-	} else if (prv->user_port_count < ARRAY_SIZE(prv->user_ports)) {
-		prv->user_ports[prv->user_port_count++] = cfg->port_idx;
-	}
+	*link_up = (value & KSZ8863_PORT_LINK_GOOD) != 0;
 
 	return 0;
+}
+
+static void dsa_ksz8863_port_phylink_change(const struct device *phydev,
+					    struct phy_link_state *state, void *user_data)
+{
+	const struct device *dev = user_data;
+	const struct dsa_port_config *cfg = dev->config;
+	struct net_if *iface;
+
+	ARG_UNUSED(phydev);
+
+	iface = net_if_lookup_by_dev(dev);
+	if (iface == NULL) {
+		return;
+	}
+
+	if (state->is_up) {
+		LOG_INF("KSZ8863 port %u link up", cfg->port_idx);
+		net_eth_carrier_on(iface);
+	} else {
+		LOG_INF("KSZ8863 port %u link down", cfg->port_idx);
+		net_eth_carrier_off(iface);
+	}
 }
 
 static int dsa_ksz8863_switch_setup(const struct dsa_switch_context *ctx)
@@ -264,8 +244,6 @@ static int dsa_ksz8863_switch_setup(const struct dsa_switch_context *ctx)
 		return ret;
 	}
 
-	k_work_init_delayable(&prv->link_work, dsa_ksz8863_link_work);
-	k_work_reschedule(&prv->link_work, K_MSEC(KSZ8863_LINK_POLL_INTERVAL_MS));
 	prv->initialized = true;
 
 	return 0;
@@ -280,7 +258,7 @@ static enum ethernet_hw_caps dsa_ksz8863_get_capabilities(const struct device *d
 
 static struct dsa_api dsa_ksz8863_api = {
 	.switch_setup = dsa_ksz8863_switch_setup,
-	.port_init = dsa_ksz8863_port_init,
+	.port_phylink_change = dsa_ksz8863_port_phylink_change,
 	.get_capabilities = dsa_ksz8863_get_capabilities,
 };
 
@@ -289,7 +267,6 @@ static int dsa_ksz8863_init(const struct device *dev)
 	struct dsa_ksz8863_data *data = dev->data;
 
 	data->config = dev->config;
-	data->cpu_port = KSZ8863_CPU_PORT;
 
 	return 0;
 }

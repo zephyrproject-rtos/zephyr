@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2026 DZG Metering GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_ethernet: ethernet {
+			compatible = "vnd,ethernet";
+			local-mac-address = [00 00 5e 00 53 01];
+			status = "okay";
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_phy0: ethernet-phy-port0 {
+			compatible = "microchip,ksz8863-phy";
+			port = <0>;
+			status = "okay";
+		};
+
+		test_phy1: ethernet-phy-port1 {
+			compatible = "microchip,ksz8863-phy";
+			port = <1>;
+			status = "okay";
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+			cs-gpios = <&test_gpio 0 0>;
+
+			dsa_switch: ethernet-switch@0 {
+				compatible = "microchip,ksz8863";
+				reg = <0x0>;
+				spi-max-frequency = <1000000>;
+				reset-gpios = <&test_gpio 0 0>;
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				port@0 {
+					compatible = "zephyr,dsa-port";
+					reg = <0x0>;
+					local-mac-address = [00 00 5e 00 53 10];
+					phy-handle = <&test_phy0>;
+					status = "okay";
+				};
+
+				port@1 {
+					compatible = "zephyr,dsa-port";
+					reg = <0x1>;
+					local-mac-address = [00 00 5e 00 53 11];
+					phy-handle = <&test_phy1>;
+					status = "okay";
+				};
+
+				port@2 {
+					compatible = "zephyr,dsa-port";
+					reg = <0x2>;
+					ethernet = <&test_ethernet>;
+					phy-connection-type = "internal";
+					dsa-tag-protocol = <DSA_TAG_PROTO_KSZ8863>;
+					local-mac-address = [00 00 5e 00 53 12];
+					status = "okay";
+				};
+			};
+		};
+	};
+};

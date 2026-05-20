@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_DSA_KSZ8863_H_
 #define ZEPHYR_DRIVERS_ETHERNET_DSA_KSZ8863_H_
 
+#include <stdbool.h>
+#include <zephyr/device.h>
 #include <zephyr/sys/util.h>
 
 #define KSZ8863_SPI_CMD_WR BIT(1)
@@ -38,5 +40,7 @@
 
 #define KSZ8863_MIN_FRAME_NO_FCS      60
 #define KSZ8863_LINK_POLL_INTERVAL_MS 1000
+
+int dsa_ksz8863_port_link_status(const struct device *dev, uint8_t port, bool *link_up);
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_DSA_KSZ8863_H_ */

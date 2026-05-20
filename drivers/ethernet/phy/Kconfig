@@ -75,6 +75,13 @@ config PHY_MICROCHIP_KSZ8081
 	help
 	  Enable Microchip KSZ8081 Ethernet PHY Driver
 
+config PHY_MICROCHIP_KSZ8863
+	bool "Microchip KSZ8863 internal PHY Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_KSZ8863_PHY_ENABLED
+	help
+	  Enable the internal PHY driver for KSZ8863 DSA user ports.
+
 config PHY_MICROCHIP_KSZ9131
 	bool "Microchip KSZ9131 PHY Driver"
 	default y

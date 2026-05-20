@@ -7,10 +7,10 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_DSA_TAG_PROTO_H_
 
 /* No switch tag protocol supported */
-#define DSA_TAG_PROTO_NOTAG	0
+#define DSA_TAG_PROTO_NOTAG   0
 /* NXP NETC switch tag protocol */
-#define DSA_TAG_PROTO_NETC	1
-/* Microchip KSZ8863 tail tag protocol */
-#define DSA_TAG_PROTO_KSZ8863	2
+#define DSA_TAG_PROTO_NETC    1
+/** Microchip KSZ8863 tail tag protocol. */
+#define DSA_TAG_PROTO_KSZ8863 2
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_DSA_TAG_PROTO_H_ */

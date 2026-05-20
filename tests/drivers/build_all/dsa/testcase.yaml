@@ -1,0 +1,11 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - ethernet
+    - dsa
+tests:
+  drivers.dsa.build.ksz8863:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

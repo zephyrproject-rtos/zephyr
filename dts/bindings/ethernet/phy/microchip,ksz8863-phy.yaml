@@ -1,0 +1,14 @@
+# Copyright 2026 DZG Metering GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: KSZ8863 internal PHY exposed by the switch driver
+
+compatible: "microchip,ksz8863-phy"
+
+include: phy.yaml
+
+properties:
+  port:
+    type: int
+    required: true
+    description: KSZ8863 user port index.
