@@ -16,7 +16,6 @@ if MBOX
 source "drivers/mbox/Kconfig.adi_max32"
 source "drivers/mbox/Kconfig.andes"
 source "drivers/mbox/Kconfig.esp32"
-source "drivers/mbox/Kconfig.gen_sw_mbox"
 source "drivers/mbox/Kconfig.ivshmem"
 source "drivers/mbox/Kconfig.mhuv3"
 source "drivers/mbox/Kconfig.nrf_bellboard"
