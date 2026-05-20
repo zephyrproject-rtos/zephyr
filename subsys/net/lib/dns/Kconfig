@@ -51,16 +51,6 @@ config DNS_RESOLVER_AI_MAX_ENTRIES
 	  Defines the max number of IP addresses per domain name
 	  resolution the DNS resolver can handle.
 
-
-config DNS_RESOLVER_MAX_SERVERS
-	int "Number of DNS server addresses"
-	range 1 NET_MAX_CONTEXTS
-	default 1
-	help
-	  Max number of DNS servers that we can connect to. Normally one
-	  DNS server is enough. Each connection to DNS server will use one
-	  network context.
-
 config DNS_RESOLVER_MAX_ANSWER_SIZE
 	int "Max length of a DNS answer"
 	range 1 $(UINT16_MAX)
@@ -220,13 +210,14 @@ config DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS
 	bool "Send DNS queries to all configured servers"
 	help
 	  When enabled, DNS queries will be sent to all available DNS servers
-	  simultaneously. The first valid response received will be used.
+	  simultaneously. The first successful response received will be used.
 	  This can improve reliability and response time when multiple DNS
 	  servers are configured, but will increase network traffic.
-	  When disabled, DNS queries are sent to only the first available
-	  server.
-	  Default behavior is to query only one server to minimize network
-	  traffic.
+	  When disabled, DNS queries are sent to one configured server at a
+	  time and the resolver will fall back to the next server if the
+	  current one times out or returns a failure.
+	  Default behavior is to avoid querying all servers at once in order
+	  to minimize network traffic.
 
 endif # DNS_RESOLVER
 
@@ -404,6 +395,22 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 endif # DNS_SD
 
+config DNS_RESOLVER_MAX_SERVERS_LIMIT
+	int
+	depends on (DNS_RESOLVER || MDNS_RESPONDER)
+	default 32 if NET_MAX_CONTEXTS > 32
+	default NET_MAX_CONTEXTS
+
+config DNS_RESOLVER_MAX_SERVERS
+	int "Number of DNS server addresses"
+	depends on (DNS_RESOLVER || MDNS_RESPONDER)
+	range 1 DNS_RESOLVER_MAX_SERVERS_LIMIT
+	default 1
+	help
+	  Max number of DNS servers that we can connect to. Normally one
+	  DNS server is enough. Each connection to DNS server will use one
+	  network context.
+
 # Note that we enable the DNS socket dispatcher always if either responder or
 # resolver support is enabled to simplify things. Strictly speaking the
 # dispatcher is really needed for supporting resolver and responder at the same
@@ -421,12 +428,12 @@ if DNS_SOCKET_DISPATCHER
 
 config DNS_RESOLVER_ADDITIONAL_BUF_CTR
 	int "Additional DNS buffers"
-	default 1
+	default DNS_RESOLVER_MAX_SERVERS
 	help
 	  Number of additional buffers available for the DNS resolver.
 	  The DNS resolver requires at least one buffer. This option
-	  enables additional buffers required for multiple concurrent
-	  DNS connections.
+	  adds buffers needed for concurrent DNS server connections,
+	  so the default tracks the configured number of DNS servers.
 
 module = DNS_SOCKET_DISPATCHER
 module-dep = NET_LOG

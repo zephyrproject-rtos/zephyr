@@ -104,7 +104,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 		     int server_idx,
 		     int query_idx,
 		     uint8_t *buf, size_t buf_len, size_t max_len,
-		     struct net_buf *dns_qname,
+		     struct net_buf *dns_qname, k_timeout_t timeout,
 		     int hop_limit);
 static int dns_read(struct dns_resolve_context *ctx,
 		    struct net_buf *dns_data, size_t buf_len,
@@ -118,6 +118,191 @@ static inline void invoke_query_callback(int status,
 					 struct dns_addrinfo *info,
 					 struct dns_pending_query *pending_query);
 static void release_query(struct dns_pending_query *pending_query);
+static void dns_finalize_query(struct dns_resolve_context *ctx, int query_idx,
+			       int status);
+static int dns_query_servers(struct dns_resolve_context *ctx, int query_idx,
+			     uint8_t *buf, size_t buf_len, size_t max_len,
+			     struct net_buf *dns_qname, bool reset_server_state);
+static int dns_query_next_server(struct dns_resolve_context *ctx, int query_idx);
+static void dns_handle_server_failure(struct dns_resolve_context *ctx,
+				      int query_idx, int server_idx, int status);
+
+static void dns_query_reset_server_state(struct dns_pending_query *pending_query)
+{
+	pending_query->servers.sent = ATOMIC_INIT(0);
+	pending_query->servers.pending = ATOMIC_INIT(0);
+	pending_query->servers.failed = ATOMIC_INIT(0);
+}
+
+static bool dns_server_was_sent(const struct dns_pending_query *pending_query,
+				int server_idx)
+{
+	return atomic_test_bit(&pending_query->servers.sent, server_idx);
+}
+
+static bool dns_server_has_failed(const struct dns_pending_query *pending_query,
+				  int server_idx)
+{
+	return atomic_test_bit(&pending_query->servers.failed, server_idx);
+}
+
+static bool dns_server_awaiting_reply(const struct dns_pending_query *pending_query,
+				       int server_idx)
+{
+	return atomic_test_bit(&pending_query->servers.pending, server_idx);
+}
+
+static bool dns_server_counts_toward_remaining(
+	const struct dns_pending_query *pending_query, int server_idx)
+{
+	if (dns_server_has_failed(pending_query, server_idx)) {
+		return false;
+	}
+
+	return dns_server_awaiting_reply(pending_query, server_idx) ||
+	       !dns_server_was_sent(pending_query, server_idx);
+}
+
+static void dns_server_begin_query(struct dns_pending_query *pending_query,
+				   int server_idx)
+{
+	atomic_set_bit(&pending_query->servers.sent, server_idx);
+	atomic_set_bit(&pending_query->servers.pending, server_idx);
+}
+
+static void dns_server_mark_failed(struct dns_pending_query *pending_query,
+				   int server_idx)
+{
+	atomic_clear_bit(&pending_query->servers.pending, server_idx);
+	atomic_set_bit(&pending_query->servers.failed, server_idx);
+}
+
+static bool dns_query_has_pending_servers(const struct dns_pending_query *pending_query)
+{
+	return atomic_get(&pending_query->servers.pending) != 0U;
+}
+
+static void dns_query_fail_pending_servers(struct dns_pending_query *pending_query)
+{
+	for (size_t i = 0U; i < DNS_RESOLVER_MAX_POLL; i++) {
+		if (dns_server_awaiting_reply(pending_query, i)) {
+			dns_server_mark_failed(pending_query, i);
+		}
+	}
+}
+
+static bool dns_query_is_mdns(const char *query)
+{
+	if (query == NULL) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_MDNS_RESOLVER)) {
+		const char *ptr = strrchr(query, '.');
+
+		return ptr != NULL && strcmp(ptr, ".local") == 0;
+	}
+
+	return false;
+}
+
+static bool dns_server_is_eligible(struct dns_resolve_context *ctx,
+				      int server_idx,
+				      bool mdns_query,
+				      uint8_t *hop_limit)
+{
+	*hop_limit = 0U;
+
+	if (ctx->servers[server_idx].sock < 0) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_MDNS_RESOLVER) && mdns_query &&
+	    !ctx->servers[server_idx].is_mdns) {
+		return false;
+	}
+
+	if (!mdns_query && IS_ENABLED(CONFIG_LLMNR_RESOLVER)) {
+		if (!ctx->servers[server_idx].is_llmnr) {
+			return false;
+		}
+
+		*hop_limit = 1U;
+	}
+
+	return true;
+}
+
+static bool dns_query_uses_parallel_servers(bool mdns_query)
+{
+	if (!IS_ENABLED(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)) {
+		return false;
+	}
+
+	if (mdns_query || IS_ENABLED(CONFIG_LLMNR_RESOLVER)) {
+		return false;
+	}
+
+	return true;
+}
+
+static int dns_remaining_server_count(struct dns_resolve_context *ctx,
+				      int query_idx)
+{
+	struct dns_pending_query *pending_query = &ctx->queries[query_idx];
+	bool mdns_query = dns_query_is_mdns(pending_query->query);
+	int count = 0;
+
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		uint8_t hop_limit;
+
+		if (!dns_server_is_eligible(ctx, i, mdns_query, &hop_limit)) {
+			continue;
+		}
+
+		if (!dns_server_counts_toward_remaining(pending_query, i)) {
+			continue;
+		}
+
+		count++;
+	}
+
+	return count;
+}
+
+static k_timeout_t dns_query_next_timeout(struct dns_resolve_context *ctx,
+					  int query_idx)
+{
+	struct dns_pending_query *pending_query = &ctx->queries[query_idx];
+	bool mdns_query = dns_query_is_mdns(pending_query->query);
+	k_timeout_t timeout;
+	int remaining_servers;
+
+	if (sys_timepoint_expired(pending_query->deadline)) {
+		return K_NO_WAIT;
+	}
+
+	timeout = sys_timepoint_timeout(pending_query->deadline);
+	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		return timeout;
+	}
+
+	if (dns_query_uses_parallel_servers(mdns_query)) {
+		return timeout;
+	}
+
+	remaining_servers = dns_remaining_server_count(ctx, query_idx);
+	if (remaining_servers > 1) {
+		int remaining_ms;
+
+		remaining_ms = k_ticks_to_ms_ceil32(timeout.ticks);
+		remaining_ms = MAX(1, remaining_ms / remaining_servers);
+
+		return K_MSEC(remaining_ms);
+	}
+
+	return timeout;
+}
 
 static bool server_is_mdns(net_sa_family_t family, struct net_sockaddr *addr)
 {
@@ -290,10 +475,16 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 			 struct net_buf *dns_data, size_t len)
 {
 	struct dns_resolve_context *ctx = my_ctx->resolve_ctx;
+	struct dns_server *server;
 	struct net_buf *dns_cname = NULL;
 	uint16_t query_hash = 0U;
 	uint16_t dns_id = 0U;
 	int ret = 0, i;
+	int server_idx;
+
+	ARG_UNUSED(sock);
+	ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen);
 
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 
@@ -308,24 +499,25 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 	}
 
 	ret = dns_read(ctx, dns_data, len, &dns_id, dns_cname, &query_hash);
-	if ((ret == 0) || (ret == DNS_EAI_NODATA)) {
+	if (ret == 0) {
 		/* The callback is already called in dns_read() if there
 		 * were no errors indicated by a return of zero
-		 *
-		 * Also, in the case of no data records to process will
-		 * result in bypassing the callback. However, this goes
-		 * out a similar path as success to allow the request to
-		 * timeout or allow another packet to be processed that
-		 * might have records to validate.
 		 */
+		goto free_buf;
+	}
+
+	server = CONTAINER_OF(my_ctx, struct dns_server, dispatcher);
+	server_idx = (int)(server - ctx->servers);
+
+	if (ret == DNS_EAI_NODATA && server_idx >= 0 &&
+	    (ctx->servers[server_idx].is_mdns ||
+	     ctx->servers[server_idx].is_llmnr)) {
+		/* Another multicast responder might still reply with data. */
 		goto free_buf;
 	}
 
 	/* Query again if we got CNAME */
 	if (ret == DNS_EAI_AGAIN) {
-		int ntry = 0, nfail = 0;
-		int j;
-
 		i = get_slot_by_id(ctx, dns_id, query_hash);
 		if (i < 0) {
 			goto free_buf;
@@ -336,27 +528,12 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 			goto quit;
 		}
 
-		for (j = 0; j < SERVER_COUNT; j++) {
-			if (ctx->servers[j].sock < 0) {
-				continue;
-			}
-
-			ntry++;
-			ret = dns_write(ctx, j, i, dns_data->data, len,
-					net_buf_max_len(dns_data),
-					dns_cname, 0);
-			if (ret < 0) {
-				nfail++;
-			}
-		}
-
 		ctx->queries[i].additional_queries++;
 
-		if (nfail > 0) {
-			NET_DBG("DNS cname query %d fails on %d attempts",
-				nfail, ntry);
-		}
-		if ((ntry == 0) || (ntry == nfail)) {
+		ret = dns_query_servers(ctx, i, dns_data->data, len,
+					net_buf_max_len(dns_data),
+					dns_cname, true);
+		if (ret < 0) {
 			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
@@ -370,10 +547,18 @@ quit:
 		goto free_buf;
 	}
 
-	invoke_query_callback(ret, NULL, &ctx->queries[i]);
+	if (server_idx >= 0 &&
+	    (ret == DNS_EAI_FAIL || ret == DNS_EAI_NODATA ||
+	     ret == DNS_EAI_ADDRFAMILY || ret == DNS_EAI_SYSTEM)) {
+		/* Failure fallback can need a qname pool buffer of its own. */
+		net_buf_unref(dns_cname);
+		dns_cname = NULL;
+		dns_handle_server_failure(ctx, i, server_idx, ret);
+		ret = 0;
+		goto free_buf;
+	}
 
-	/* Marks the end of the results */
-	release_query(&ctx->queries[i]);
+	dns_finalize_query(ctx, i, ret);
 
 free_buf:
 	if (dns_cname) {
@@ -997,7 +1182,7 @@ static inline int get_cb_slot(struct dns_resolve_context *ctx)
  * @param status the query status value
  * @param info the query result structure
  * @param pending_query the query slot that will provide the callback
- **/
+ */
 static inline void invoke_query_callback(int status,
 					 struct dns_addrinfo *info,
 					 struct dns_pending_query *pending_query)
@@ -1031,6 +1216,158 @@ static void release_query(struct dns_pending_query *pending_query)
 		 */
 		pending_query->query = NULL;
 	}
+}
+
+static int dns_terminal_status(struct dns_pending_query *pending_query, int status)
+{
+	if (status == DNS_EAI_CANCELED && pending_query->cb_called) {
+		return DNS_EAI_ALLDONE;
+	}
+
+	return status;
+}
+
+static void dns_finalize_query(struct dns_resolve_context *ctx, int query_idx,
+			       int status)
+{
+	struct dns_pending_query *pending_query = &ctx->queries[query_idx];
+
+	invoke_query_callback(dns_terminal_status(pending_query, status), NULL,
+			      pending_query);
+	release_query(pending_query);
+}
+
+static int dns_query_servers(struct dns_resolve_context *ctx, int query_idx,
+			     uint8_t *buf, size_t buf_len, size_t max_len,
+			     struct net_buf *dns_qname, bool reset_server_state)
+{
+	struct dns_pending_query *pending_query = &ctx->queries[query_idx];
+	bool mdns_query = dns_query_is_mdns(pending_query->query);
+	bool parallel_servers = dns_query_uses_parallel_servers(mdns_query);
+	int ntry = 0;
+	int nfail = 0;
+
+	if (reset_server_state) {
+		dns_query_reset_server_state(pending_query);
+		pending_query->last_status = DNS_EAI_CANCELED;
+	}
+
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		k_timeout_t timeout;
+		uint8_t hop_limit;
+		int ret;
+
+		if (!dns_server_is_eligible(ctx, i, mdns_query, &hop_limit)) {
+			continue;
+		}
+
+		if (dns_server_was_sent(pending_query, i)) {
+			continue;
+		}
+
+		dns_server_begin_query(pending_query, i);
+
+		timeout = dns_query_next_timeout(ctx, query_idx);
+		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			dns_server_mark_failed(pending_query, i);
+			pending_query->last_status = DNS_EAI_CANCELED;
+			nfail++;
+			continue;
+		}
+
+		ntry++;
+
+		ret = dns_write(ctx, i, query_idx, buf, buf_len, max_len,
+				dns_qname, timeout, hop_limit);
+		if (ret < 0) {
+			dns_server_mark_failed(pending_query, i);
+			pending_query->last_status = DNS_EAI_SYSTEM;
+			nfail++;
+			continue;
+		}
+
+		if (!parallel_servers || ctx->servers[i].is_mdns ||
+		    ctx->servers[i].is_llmnr) {
+			break;
+		}
+	}
+
+	if ((ntry == 0) || (ntry == nfail)) {
+		return -ENOENT;
+	}
+
+	return 0;
+}
+
+static int dns_query_next_server(struct dns_resolve_context *ctx, int query_idx)
+{
+	struct dns_pending_query *pending_query = &ctx->queries[query_idx];
+	struct net_buf *dns_data = NULL;
+	struct net_buf *dns_qname = NULL;
+	int ret;
+
+	if (pending_query->query == NULL) {
+		return -ENOENT;
+	}
+
+	dns_data = net_buf_alloc(&dns_msg_pool, ctx->buf_timeout);
+	if (dns_data == NULL) {
+		return -ENOMEM;
+	}
+
+	dns_qname = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
+	if (dns_qname == NULL) {
+		net_buf_unref(dns_data);
+		return -ENOMEM;
+	}
+
+	ret = dns_msg_pack_qname(&dns_qname->len, dns_qname->data,
+				 CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
+				 pending_query->query);
+	if (!(ret < 0)) {
+		ret = dns_query_servers(ctx, query_idx, dns_data->data,
+					net_buf_max_len(dns_data),
+					net_buf_max_len(dns_data),
+					dns_qname, false);
+	}
+
+	net_buf_unref(dns_qname);
+	net_buf_unref(dns_data);
+
+	return ret;
+}
+
+static void dns_handle_server_failure(struct dns_resolve_context *ctx,
+				      int query_idx, int server_idx, int status)
+{
+	struct dns_pending_query *pending_query = &ctx->queries[query_idx];
+	int ret = -ENOENT;
+
+	if (pending_query->query == NULL) {
+		return;
+	}
+
+	if (server_idx >= 0) {
+		dns_server_mark_failed(pending_query, server_idx);
+	}
+
+	pending_query->last_status = status;
+
+	if (dns_query_has_pending_servers(pending_query)) {
+		return;
+	}
+
+	if (!sys_timepoint_expired(pending_query->deadline)) {
+		ret = dns_query_next_server(ctx, query_idx);
+		if (ret == 0) {
+			return;
+		}
+		if (ret != -ENOENT) {
+			pending_query->last_status = DNS_EAI_SYSTEM;
+		}
+	}
+
+	dns_finalize_query(ctx, query_idx, pending_query->last_status);
 }
 
 /* Must be invoked with context lock held */
@@ -1593,7 +1930,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 		     int server_idx,
 		     int query_idx,
 		     uint8_t *buf, size_t buf_len, size_t max_len,
-		     struct net_buf *dns_qname,
+		     struct net_buf *dns_qname, k_timeout_t timeout,
 		     int hop_limit)
 {
 	enum dns_query_type query_type;
@@ -1683,7 +2020,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 	}
 
 	ret = k_work_reschedule(&ctx->queries[query_idx].timer,
-				ctx->queries[query_idx].timeout);
+				timeout);
 	if (ret < 0) {
 		NET_DBG("[%u] cannot submit work to server idx %d for id %u "
 			"ret %d", query_idx, server_idx, dns_id, ret);
@@ -1722,11 +2059,8 @@ static int dns_write(struct dns_resolve_context *ctx,
 /* Must be invoked with context lock held */
 static void dns_resolve_cancel_slot(struct dns_resolve_context *ctx, int slot)
 {
-	if (ctx->queries[slot].cb_called) {
-		invoke_query_callback(DNS_EAI_ALLDONE, NULL, &ctx->queries[slot]);
-	} else {
-		invoke_query_callback(DNS_EAI_CANCELED, NULL, &ctx->queries[slot]);
-	}
+	invoke_query_callback(dns_terminal_status(&ctx->queries[slot], DNS_EAI_CANCELED),
+			      NULL, &ctx->queries[slot]);
 
 	release_query(&ctx->queries[slot]);
 }
@@ -1838,6 +2172,8 @@ static void query_timeout(struct k_work *work)
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct dns_pending_query *pending_query =
 		CONTAINER_OF(dwork, struct dns_pending_query, timer);
+	struct dns_resolve_context *ctx = pending_query->ctx;
+	int slot;
 	int ret;
 
 	/* We have to take the lock as we're inspecting protected content
@@ -1868,17 +2204,12 @@ static void query_timeout(struct k_work *work)
 	NET_DBG("Query timeout DNS req %u type %d hash %u", pending_query->id,
 		pending_query->query_type, pending_query->query_hash);
 
-	/* The resolve cancel will invoke release_query(), but release will
-	 * not be completed because the work item is still pending.  Instead
-	 * the release will be completed when check_query_active() confirms
-	 * the work item is no longer active.
-	 */
-	(void)dns_resolve_cancel_with_hash(pending_query->ctx,
-					   pending_query->id,
-					   pending_query->query_hash,
-					   pending_query->query);
+	slot = pending_query - ctx->queries;
 
-	k_mutex_unlock(&pending_query->ctx->lock);
+	dns_query_fail_pending_servers(pending_query);
+	dns_handle_server_failure(ctx, slot, -1, DNS_EAI_CANCELED);
+
+	k_mutex_unlock(&ctx->lock);
 }
 
 static inline bool query_type_is_valid(enum dns_query_type type)
@@ -1920,10 +2251,8 @@ int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 	struct net_buf *dns_data = NULL;
 	struct net_buf *dns_qname = NULL;
 	struct net_sockaddr addr;
-	int ret, i = -1, j = 0;
-	int ntry = 0, nfail = 0;
+	int ret, i = -1;
 	bool mdns_query = false;
-	uint8_t hop_limit;
 #ifdef CONFIG_DNS_RESOLVER_CACHE
 	struct dns_addrinfo cached_info[CONFIG_DNS_RESOLVER_AI_MAX_ENTRIES] = {0};
 #endif /* CONFIG_DNS_RESOLVER_CACHE */
@@ -2128,7 +2457,6 @@ try_resolve:
 	}
 
 	ctx->queries[i].cb = cb;
-	ctx->queries[i].timeout = tout;
 	ctx->queries[i].query = query;
 	ctx->queries[i].query_type = type;
 	ctx->queries[i].user_data = user_data;
@@ -2136,6 +2464,10 @@ try_resolve:
 	ctx->queries[i].query_hash = 0;
 	ctx->queries[i].additional_queries = 0;
 	ctx->queries[i].cb_called = false;
+	ctx->queries[i].deadline = sys_timepoint_calc(tout);
+
+	dns_query_reset_server_state(&ctx->queries[i]);
+	ctx->queries[i].last_status = DNS_EAI_CANCELED;
 
 	k_work_init_delayable(&ctx->queries[i].timer, query_timeout);
 
@@ -2182,66 +2514,11 @@ try_resolve:
 		NET_DBG("DNS id will be %u", *dns_id);
 	}
 
-	for (j = 0; j < SERVER_COUNT; j++) {
-		hop_limit = 0U;
-
-		if (ctx->servers[j].sock < 0) {
-			continue;
-		}
-
-		/* If mDNS is enabled, then send .local queries only to
-		 * a well known multicast mDNS server address.
-		 */
-		if (IS_ENABLED(CONFIG_MDNS_RESOLVER) && mdns_query &&
-		    !ctx->servers[j].is_mdns) {
-			continue;
-		}
-
-		/* If llmnr is enabled, then all the queries are sent to
-		 * LLMNR multicast address unless it is a mDNS query.
-		 */
-		if (!mdns_query && IS_ENABLED(CONFIG_LLMNR_RESOLVER)) {
-			if (!ctx->servers[j].is_llmnr) {
-				continue;
-			}
-
-			hop_limit = 1U;
-		}
-
-		ntry++;
-		ret = dns_write(ctx, j, i, dns_data->data,
+	ret = dns_query_servers(ctx, i, dns_data->data,
 				net_buf_max_len(dns_data),
 				net_buf_max_len(dns_data),
-				dns_qname, hop_limit);
-		if (ret < 0) {
-			nfail++;
-			continue;
-		}
-
-#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
-		/* Send query to all available DNS servers.
-		 * The first valid response received will be used.
-		 *
-		 * However, mDNS and LLMNR use multicast addresses,
-		 * so there is no need to send the query to more than
-		 * one multicast server of the same type.
-		 */
-		if (ctx->servers[j].is_mdns || ctx->servers[j].is_llmnr) {
-			break;
-		}
-#else
-		/* Do one concurrent query only for each name resolve.
-		 * TODO: Change the i (query index) to do multiple concurrent
-		 *       to each server.
-		 */
-		break;
-#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
-	}
-
-	if (nfail > 0) {
-		NET_DBG("DNS query %d fails on %d attempts", nfail, ntry);
-	}
-	if ((ntry == 0) || (ntry == nfail)) {
+				dns_qname, false);
+	if (ret < 0) {
 		ret = -ENOENT;
 		goto quit;
 	}
