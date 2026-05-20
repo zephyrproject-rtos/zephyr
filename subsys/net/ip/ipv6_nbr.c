@@ -1066,7 +1066,7 @@ try_send:
 }
 
 struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
-				    struct net_in6_addr *addr)
+				    const struct net_in6_addr *addr)
 {
 	struct net_nbr *nbr;
 

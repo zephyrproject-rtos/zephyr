@@ -81,7 +81,7 @@ static const struct net_route_table_ops route_ipv4_ops = {
 };
 
 struct net_route_entry *net_route_ipv4_lookup(struct net_if *iface,
-					      struct net_in_addr *dst)
+					      const struct net_in_addr *dst)
 {
 	struct net_addr addr = route_ipv4_addr(dst);
 
@@ -154,7 +154,7 @@ int net_route_ipv4_foreach(net_route_cb_t cb, void *user_data)
 }
 
 bool net_route_ipv4_get_info(struct net_if *iface,
-			     struct net_in_addr *dst,
+			     const struct net_in_addr *dst,
 			     struct net_route_entry **route,
 			     struct net_in_addr **nexthop)
 {
@@ -167,7 +167,8 @@ bool net_route_ipv4_get_info(struct net_if *iface,
 			return true;
 		}
 
-		*nexthop = dst;
+		/* The cast is needed to avoid changing lot of code all over the place */
+		*nexthop = (struct net_in_addr *)dst;
 		return true;
 	}
 
@@ -184,7 +185,7 @@ bool net_route_ipv4_get_info(struct net_if *iface,
 	return true;
 }
 
-int net_route_ipv4_packet(struct net_pkt *pkt, struct net_in_addr *nexthop)
+int net_route_ipv4_packet(struct net_pkt *pkt, const struct net_in_addr *nexthop)
 {
 	if (nexthop == NULL) {
 		return -EINVAL;
