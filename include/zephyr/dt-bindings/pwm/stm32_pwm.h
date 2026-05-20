@@ -17,10 +17,6 @@
  */
 /** PWM complementary output pin is enabled */
 #define STM32_PWM_COMPLEMENTARY	(1U << 8)
-/**
- * @deprecated Use the PWM complementary `STM32_PWM_COMPLEMENTARY` flag instead.
- */
-#define PWM_STM32_COMPLEMENTARY	(1U << 8)
 
 /** @cond INTERNAL_HIDDEN */
 #define STM32_PWM_COMPLEMENTARY_MASK	0x100
