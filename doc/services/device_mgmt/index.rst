@@ -12,6 +12,5 @@ Device Management
     smp_protocol.rst
     smp_transport.rst
     dfu.rst
-    nxp_boot.rst
     ota.rst
     ec_host_cmd.rst
