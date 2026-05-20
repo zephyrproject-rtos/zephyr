@@ -88,9 +88,11 @@ enum npm13xx_gpio_type {
 
 #define NPM13XX_GPIO_UNUSED UINT8_MAX
 
+#define NPM1300_REV_HAS_LDO_SOFTSTART(major, minor) ((major) > 2 || ((major == 2) && (minor >= 3)))
 #define NPM1304_REV_HAS_LDO_SOFTSTART(major, minor) ((major) > 1 || ((major == 1) && (minor >= 1)))
 #define DEVICE_HAS_LDO_SOFTSTART(device, major, minor)                                             \
-	((device) == NPM1304_DEVICE && NPM1304_REV_HAS_LDO_SOFTSTART(major, minor))
+	(((device) == NPM1300_DEVICE && NPM1300_REV_HAS_LDO_SOFTSTART(major, minor)) ||            \
+	 ((device) == NPM1304_DEVICE && NPM1304_REV_HAS_LDO_SOFTSTART(major, minor)))
 
 enum npm13xx_device_variant {
 	NPM1300_DEVICE,
