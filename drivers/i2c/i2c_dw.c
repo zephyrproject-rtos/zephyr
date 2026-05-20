@@ -1126,20 +1126,34 @@ static int i2c_dw_set_master_mode(const struct device *dev)
 	return 0;
 }
 
-static int i2c_dw_set_slave_mode(const struct device *dev, uint8_t addr)
+static int i2c_dw_set_slave_mode(const struct device *dev, uint16_t addr, uint8_t flags)
 {
+	struct i2c_dw_dev_config *const dw = dev->data;
 	uint32_t reg_base = get_regs(dev);
 	union ic_con_register ic_con;
 
-	ic_con.raw = read_con(reg_base);
+	ic_con = i2c_dw_target_mode_con((flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0U);
+
+	switch (I2C_SPEED_GET(dw->app_config)) {
+	case I2C_SPEED_STANDARD:
+		ic_con.bits.speed = I2C_DW_SPEED_STANDARD;
+		break;
+	case I2C_SPEED_FAST:
+		__fallthrough;
+	case I2C_SPEED_FAST_PLUS:
+		ic_con.bits.speed = I2C_DW_SPEED_FAST;
+		break;
+	case I2C_SPEED_HIGH:
+		if (!dw->support_hs_mode) {
+			return -EINVAL;
+		}
+		ic_con.bits.speed = I2C_DW_SPEED_HIGH;
+		break;
+	default:
+		return -EINVAL;
+	}
 
 	clear_bit_enable_en(reg_base);
-
-	ic_con.bits.master_mode = 0U;
-	ic_con.bits.slave_disable = 0U;
-	ic_con.bits.rx_fifo_full = 1U;
-	ic_con.bits.restart_en = 1U;
-	ic_con.bits.stop_det = 1U;
 
 	write_con(ic_con.raw, reg_base);
 	write_sar(addr, reg_base);
@@ -1163,7 +1177,11 @@ static int i2c_dw_slave_register(const struct device *dev, struct i2c_target_con
 
 	dw->read_in_progress = false;
 	dw->slave_cfg = cfg;
-	ret = i2c_dw_set_slave_mode(dev, cfg->address);
+	ret = i2c_dw_set_slave_mode(dev, cfg->address, cfg->flags);
+	if (ret != 0) {
+		return ret;
+	}
+
 	write_intr_mask(DW_INTR_MASK_RX_FULL | DW_INTR_MASK_RD_REQ |
 			DW_INTR_MASK_TX_ABRT | DW_INTR_MASK_STOP_DET |
 			DW_INTR_MASK_START_DET,
