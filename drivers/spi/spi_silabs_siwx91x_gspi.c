@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #define DT_DRV_COMPAT silabs_gspi
 
 #include <string.h>
@@ -11,7 +10,6 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
-#include "spi_rtio.h"
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
@@ -19,25 +17,25 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include "spi_rtio.h"
 #include "clock_update.h"
 
-LOG_MODULE_REGISTER(spi_siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
+LOG_MODULE_REGISTER(siwx91x_gspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
 #define SPI_HIGH_BURST_FREQ_THRESHOLD_HZ      10000000
 
-/* Warning for unsupported configurations */
-#if defined(CONFIG_SPI_ASYNC) && !defined(CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA)
+#ifdef CONFIG_SPI_ASYNC
+#if !defined(CONFIG_DMA) || CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA_DESCR_COUNT == 0
 #warning "Silabs GSPI SPI driver ASYNC without DMA is not supported"
+#endif
 #endif
 
 struct gspi_siwx91x_dma_channel {
 	const struct device *dma_dev;
 	uint8_t dma_slot;
 	int chan_nb;
-#ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
-	struct dma_block_config dma_descriptors[CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA_MAX_BLOCKS];
-#endif
+	struct dma_block_config dma_descriptors[CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA_DESCR_COUNT];
 };
 
 struct gspi_siwx91x_config {
@@ -55,23 +53,23 @@ struct gspi_siwx91x_data {
 	bool use_tx_cb;
 };
 
-#ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
 /* Placeholder buffer for unused RX data */
 static volatile uint8_t empty_buffer __aligned(4);
-#endif
 
 static bool spi_siwx91x_is_dma_enabled_instance(const struct device *dev)
 {
-#ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
 	struct gspi_siwx91x_data *data = dev->data;
 
 	/* Ensure both TX and RX DMA devices are either present or absent */
 	__ASSERT_NO_MSG(!!data->dma_tx.dma_dev == !!data->dma_rx.dma_dev);
 
-	return data->dma_rx.dma_dev != NULL;
-#else
-	return false;
-#endif
+	if (CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA_DESCR_COUNT == 0) {
+		return false;
+	}
+	if (!data->dma_rx.dma_dev) {
+		return false;
+	}
+	return true;
 }
 
 static uint32_t gspi_siwx91x_get_divider(uint32_t clock_hz, uint32_t requested_hz)
@@ -149,7 +147,6 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 
 	/* Configure FIFO thresholds */
 	cfg->reg->GSPI_FIFO_THRLD = 0;
-#ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
 	if (spi_siwx91x_is_dma_enabled_instance(dev)) {
 		if (!device_is_ready(data->dma_tx.dma_dev)) {
 			return -ENODEV;
@@ -180,13 +177,11 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 	data->ctx.callback = cb;
 	data->ctx.callback_data = userdata;
 #endif
-#endif
 	data->ctx.config = spi_cfg;
 
 	return 0;
 }
 
-#ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
 static void gspi_siwx91x_dma_callback(const struct device *dev, void *user_data, uint32_t channel,
 				      int status)
 {
@@ -410,11 +405,9 @@ static void gspi_siwx91x_gspi_fifo_reset_sync(uint32_t frequency)
 		arch_nop();
 	}
 }
-#endif /* CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA */
 
 static int gspi_siwx91x_transceive_dma(const struct device *dev, const struct spi_config *config)
 {
-#ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
 	const struct gspi_siwx91x_config *cfg = dev->config;
 	struct gspi_siwx91x_data *data = dev->data;
 	const struct device *dma_dev = data->dma_rx.dma_dev;
@@ -488,9 +481,6 @@ force_transaction_close:
 	dma_stop(data->dma_tx.dma_dev, data->dma_tx.chan_nb);
 	spi_context_cs_control(ctx, false);
 	return ret;
-#else
-	return -ENOTSUP;
-#endif
 }
 
 static inline uint16_t gspi_siwx91x_next_tx(struct gspi_siwx91x_data *data, const uint8_t dfs)
@@ -711,7 +701,7 @@ static DEVICE_API(spi, gspi_siwx91x_driver_api) = {
 	.release = gspi_siwx91x_release,
 };
 
-#ifdef CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA
+#if CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA_DESCR_COUNT > 0
 #define SPI_SILABS_SIWX91X_GSPI_DMA_CHANNEL_INIT(index, dir)                                       \
 	.dma_##dir = {                                                                             \
 		.chan_nb = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                         \
