@@ -21,13 +21,12 @@ if MBEDTLS_PSA_CRYPTO_C
 
 config MCUX_ELS_PKC
 	default y
-# Temporarily disable to use only SW
-#
-#config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
-#	default y
-#
-#config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
-#	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+	default y
+
+config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
+	default y
 
 config MBEDTLS_USER_CONFIG_ENABLE
 	default y
@@ -74,7 +73,7 @@ endif # SHELL
 if MBEDTLS_PSA_CRYPTO_C
 
 config BT_RX_STACK_SIZE
-	#default 2560 if (MCUX_ELS_PKC || MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
+	default 2560 if (MCUX_ELS_PKC || MCUX_PSA_CRYPTO_DRIVER_ELS_PKC)
 
 endif # MBEDTLS_PSA_CRYPTO_C
 
