@@ -21,12 +21,13 @@ if MBEDTLS_PSA_CRYPTO_C
 
 config MCUX_ELS_PKC
 	default y
-
-config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
-	default y
-
-config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
-	default y
+# Temporarily disable to use only SW
+#
+#config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC
+#	default y
+#
+#config MCUX_PSA_CRYPTO_DRIVER_ELS_PKC_THREAD
+#	default y
 
 config MBEDTLS_USER_CONFIG_ENABLE
 	default y

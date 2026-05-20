@@ -27,16 +27,4 @@ config GPIO
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	default 0x400 if SOC_MIMXRT1011
 
-if MBEDTLS_PSA_CRYPTO_C
-
-config PSA_CRYPTO_DRIVER_DCP
-	default y
-
-# DCP PSA driver needs heap pool for aligned
-# memory allocation because of data cache
-config HEAP_MEM_POOL_SIZE
-	default 16000
-
-endif # MBEDTLS_PSA_CRYPTO_C
-
 endif # SOC_SERIES_IMXRT10XX
