@@ -87,16 +87,14 @@ struct dns_msg_t {
 
 enum dns_rr_type {
 	DNS_RR_TYPE_INVALID = 0,
-	DNS_RR_TYPE_A	= 1,			/* IPv4  */
-	DNS_RR_TYPE_CNAME = 5,			/* CNAME */
-	DNS_RR_TYPE_PTR = 12,			/* PTR   */
-	DNS_RR_TYPE_TXT = 16,			/* TXT   */
-	DNS_RR_TYPE_AAAA = 28,			/* IPv6  */
-	DNS_RR_TYPE_SRV = 33,			/* SRV   */
-	DNS_RR_TYPE_HTTPS = 65,			/* HTTPS */
-	DNS_RR_TYPE_ANY = 0xff,			/* ANY (all records)   */
-	DNS_RR_TYPE_PRIVATE_START = 65280,	/* Private use start */
-	DNS_RR_TYPE_PRIVATE_END = 65534,	/* Private use end */
+	DNS_RR_TYPE_A	= 1,		/* IPv4  */
+	DNS_RR_TYPE_CNAME = 5,		/* CNAME */
+	DNS_RR_TYPE_PTR = 12,		/* PTR   */
+	DNS_RR_TYPE_TXT = 16,		/* TXT   */
+	DNS_RR_TYPE_AAAA = 28,		/* IPv6  */
+	DNS_RR_TYPE_SRV = 33,		/* SRV   */
+	DNS_RR_TYPE_HTTPS = 65,		/* HTTPS */
+	DNS_RR_TYPE_ANY = 0xff,		/* ANY (all records)   */
 };
 
 enum dns_response_type {
@@ -106,8 +104,7 @@ enum dns_response_type {
 	DNS_RESPONSE_TXT,
 	DNS_RESPONSE_SRV,
 	DNS_RESPONSE_CNAME_WITH_IP,
-	DNS_RESPONSE_CNAME_NO_IP,
-	DNS_RESPONSE_PRIVATE,
+	DNS_RESPONSE_CNAME_NO_IP
 };
 
 enum dns_class {
