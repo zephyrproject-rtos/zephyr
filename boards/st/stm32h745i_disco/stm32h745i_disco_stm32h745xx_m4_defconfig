@@ -2,9 +2,6 @@
 # Copyright (c) 2020 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
 # Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
 
-# Enable GPIO
-CONFIG_GPIO=y
-
 # By default SERIAL peripherals are assigned to m7
 
 # Enable uart driver
