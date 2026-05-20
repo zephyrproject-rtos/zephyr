@@ -7,5 +7,5 @@ source "Kconfig.zephyr"
 
 config TEST_ADC_ERROR_CASES_RESOLUTION
 	int
-	default 12 if SOC_FAMILY_SILABS_S2 || SOC_SERIES_PSC3
+	default 12 if SOC_FAMILY_SILABS_S2 || SOC_FAMILY_SILABS_S3 || SOC_SERIES_PSC3
 	default 10

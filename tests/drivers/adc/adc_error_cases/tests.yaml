@@ -24,6 +24,7 @@ tests:
       - bg29_rb4420a
       - slwrb4180a
       - kg100s_rb4332a
+      - sixg301_rb4407a
       - pic32cx_sg41_cult
       - sam_e54_xpro
       - pic32cm_jh01_cpro
