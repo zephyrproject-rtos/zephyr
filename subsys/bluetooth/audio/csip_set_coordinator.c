@@ -30,10 +30,11 @@
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -41,16 +42,16 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/sys/byteorder.h>
 
+#include "common/bt_str.h"
 #include "csip_crypto.h"
 #include "csip_internal.h"
-#include "common/bt_str.h"
 #include "host/conn_internal.h"
 #include "host/keys.h"
 
