@@ -81,7 +81,7 @@ static uint16_t rf_compute_csl_phase(uint32_t aTimeUs);
 
 static uint8_t g_eui64[MAC_ADDRESS_LEN];
 
-static volatile uint32_t rx_on_when_idle = RX_ON_IDLE_STOP;
+static volatile uint32_t rx_on_when_idle = RX_ON_IDLE_START;
 
 /* keep RX open shortly after data poll when FP=1 and skip rf_abort while waiting for ACK */
 static uint64_t waiting_ack_until_us;
