@@ -4405,6 +4405,7 @@ Networking:
     - pdgendt
     - kkasperczyk-no
     - edmont
+    - Cristib05
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -6727,6 +6728,7 @@ West:
     - pdgendt
     - kkasperczyk-no
     - edmont
+    - Cristib05
   files:
     - modules/openthread/
   labels:
