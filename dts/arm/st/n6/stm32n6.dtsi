@@ -76,6 +76,13 @@
 			status = "disabled";
 		};
 
+		clk_msi: clk-msi {
+			#clock-cells = <0>;
+			compatible = "st,stm32n6-msi-clock";
+			msi-range = <0>; /* 4MHz (reset value) */
+			status = "disabled";
+		};
+
 		clk_lse: clk-lse {
 			#clock-cells = <0>;
 			compatible = "st,stm32-lse-clock";
