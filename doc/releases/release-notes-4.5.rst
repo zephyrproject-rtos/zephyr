@@ -124,6 +124,19 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* Haptics
+
+  * :c:enumerator:`haptics_monitor`
+  * :c:enumerator:`haptics_monitor_type`
+  * :c:enumerator:`haptics_source`
+  * :c:union:`haptics_config`
+  * :c:func:`haptics_calibrate`
+  * :c:func:`haptics_monitor_get`
+  * :c:func:`haptics_monitor_set`
+  * :c:func:`haptics_select_source`
+  * :c:func:`haptics_set_level`
+  * :c:func:`haptics_stream_samples`
+
 * LoRa
 
   * :c:func:`lora_recv_duty_cycle`
