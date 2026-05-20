@@ -492,7 +492,7 @@ static void async_evt_rx_rdy(const struct device *dev)
 	};
 
 	LOG_DBG("RX Ready: (len: %zu off: %zu buf: %p)", event.data.rx.len,
-		event.data.rx.offset, event.data.rx.buf);
+		event.data.rx.offset, (void *)event.data.rx.buf);
 
 	/* Only send event for new data */
 	if (event.data.rx.len > 0) {
