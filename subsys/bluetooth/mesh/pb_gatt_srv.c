@@ -47,6 +47,7 @@ static int gatt_send(struct bt_conn *conn,
 
 static struct bt_mesh_proxy_role *cli;
 static bool service_registered;
+static bool adv_restart_pending;
 
 static void proxy_msg_recv(struct bt_mesh_proxy_role *role)
 {
@@ -120,6 +121,8 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 
 	if (bt_mesh_is_provisioned()) {
 		(void)bt_mesh_pb_gatt_srv_disable();
+	} else {
+		adv_restart_pending = true;
 	}
 }
 
@@ -310,7 +313,16 @@ int bt_mesh_pb_gatt_srv_adv_start(void)
 
 }
 
+static void conn_recycled(void)
+{
+	if (adv_restart_pending) {
+		adv_restart_pending = false;
+		bt_mesh_adv_gatt_update();
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = gatt_connected,
 	.disconnected = gatt_disconnected,
+	.recycled = conn_recycled,
 };
