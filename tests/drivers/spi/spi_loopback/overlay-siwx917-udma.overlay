@@ -5,13 +5,5 @@
  */
 
 &spi0 {
-	dmas =  <&dma0 11>, <&dma0 10>;
-};
-
-&dma {
-	status = "okay";
-};
-
-&gpdma {
-	status = "disabled";
+	dmas = <&dma0 11>, <&dma0 10>;
 };
