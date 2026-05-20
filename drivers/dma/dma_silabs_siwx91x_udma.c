@@ -3,6 +3,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+/* This driver was originally based on upper layer of the Wiseconnect HAL (the
+ * UDMAx_*() functions). This layer does not support Scatter-Gather transfers.
+ * Implementation of Scatter-Gather has been implemented using direct access to
+ * the hardware block. So, currently original implementation is used with only
+ * one block is requested, otherwise SG implementation is used.
+ *
+ * SG implementation support single blocks operations. So, upper layer
+ * implementation could probably be dropped. Then, hal_chans would be orphan and
+ * hal_handle would also contains orphan fields.
+ */
+
 #define DT_DRV_COMPAT silabs_udma
 #include <errno.h>
 #include <zephyr/irq.h>
