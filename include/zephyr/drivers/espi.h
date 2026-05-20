@@ -466,6 +466,13 @@ struct espi_evt_data_acpi {
 	uint32_t reserved: 16;
 };
 
+/** ACPI event: Input Buffer Full. Host wrote a data register */
+#define ESPI_EVENT_DATA_ACPI_TYPE_HOST_TO_EC_DATA    0
+/** ACPI event: Input Buffer Full. Host wrote command register */
+#define ESPI_EVENT_DATA_ACPI_TYPE_HOST_TO_EC_CMD     1U
+/** ACPI event: Output Buffer Empty: Host read data EC put in EC-to-Host register */
+#define ESPI_EVENT_DATA_ACPI_TYPE_HOST_RD_EC_TO_HOST 2U
+
 /**
  * @brief Event data format for Private Channel (PVT) events.
  *
