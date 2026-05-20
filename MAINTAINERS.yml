@@ -2140,6 +2140,7 @@ Documentation Infrastructure:
   collaborators:
     - JarmouniA
     - KATE-WANG-NXP
+    - RuoshanShi
   files:
     - drivers/mipi_dsi/
     - include/zephyr/drivers/mipi_dsi.h
