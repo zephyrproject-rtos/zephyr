@@ -6,6 +6,7 @@
 
 /dts-v1/;
 
+#include <nxp/nxp_rw6xx_ns.dtsi>
 #include "rd_rw612_bga.dtsi"
 
 /*
@@ -26,7 +27,7 @@
 		zephyr,sram = &sram0_ns;
 		zephyr,code-partition = &slot0_ns_partition;
 	};
-
+	
 	soc {
 		/delete-node/ memory@20000000;
 	};
