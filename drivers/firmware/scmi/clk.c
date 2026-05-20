@@ -291,7 +291,7 @@ int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_GET_PERMISSIONS,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_GET_PERMISSIONS,
 					SCMI_COMMAND, proto->id, 0x0);
 	msg.len = sizeof(clk_id);
 	msg.content = &clk_id;
