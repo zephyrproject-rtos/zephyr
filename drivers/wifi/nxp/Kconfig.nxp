@@ -1178,7 +1178,7 @@ config NXP_WIFI_CUSTOM_CALDATA
 	help
 	  This option force to use custom calibration data.
 
-if NXP_88W8987 || NXP_IW416 || NXP_IW610 || NXP_IW61X
+if NXP_88W8987 || NXP_IW416 || NXP_IW610
 
 config NXP_WIFI_FW_AUTO_RECONNECT
 	bool "Firmware Auto Reconnect"
