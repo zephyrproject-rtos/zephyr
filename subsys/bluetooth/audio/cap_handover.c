@@ -471,8 +471,14 @@ static bool valid_unicast_to_broadcast_stream_metadata_param(
 	}
 
 	broadcast_ret = bt_audio_codec_cfg_meta_get_stream_context(subgroup_param->codec_cfg);
+	if (broadcast_ret <= 0) {
+		LOG_DBG("Could not get broadcast stream context: %d", broadcast_ret);
+		return false;
+	}
+
 	if (unicast_ret != broadcast_ret) {
-		LOG_DBG("Could not get broadcast stream context: %d", unicast_ret);
+		LOG_DBG("Unicast and broadcast stream context differ: 0x%04X != 0x%04X",
+			unicast_ret, broadcast_ret);
 		return false;
 	}
 
