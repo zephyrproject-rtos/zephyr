@@ -27,6 +27,7 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &dram0;
 		zephyr,entropy = &rng;
+		zephyr,display = &fb0;
 	};
 
 	leds {
@@ -66,11 +67,21 @@
 		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
 		mbox-names = "vc";
 		shared-memory = <&vc_mem>;
+
+		fb0: framebuffer {
+			compatible = "raspberrypi,bcm2711-framebuffer";
+			width = <640>;
+			height = <480>;
+		};
 	};
 };
 
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(1500)>;
+};
+
+&mbox0 {
+	status = "okay";
 };
 
 &gpio1 {
