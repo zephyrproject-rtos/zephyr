@@ -145,9 +145,13 @@ enum bt_gap_adv_prop {
  */
 #define BT_GAP_ADV_MAX_EXT_ADV_DATA_LEN         1650
 
+/** Sentinel value indicating that the TX power level in dBm is not available or unknown. */
 #define BT_GAP_TX_POWER_INVALID                 0x7f
+/** Sentinel value indicating that the RSSI in dBm is not available or unknown. */
 #define BT_GAP_RSSI_INVALID                     0x7f
+/** Sentinel value indicating that the Advertising Set Identifier is invalid or unknown. */
 #define BT_GAP_SID_INVALID                      0xff
+/** Sentinel value indicating that no timeout is set. */
 #define BT_GAP_NO_TIMEOUT                       0x0000
 
 /* The maximum allowed high duty cycle directed advertising timeout, 1.28

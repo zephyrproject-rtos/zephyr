@@ -1285,10 +1285,20 @@ struct bt_conn_le_tx_power {
 	/** Input: 1M, 2M, Coded S2 or Coded S8 */
 	uint8_t phy;
 
-	/** Output: current transmit power level */
+	/** @brief Output: current transmit power level in dBm.
+	 *
+	 *  Range depends on which HCI command is used:
+	 *  - -30 to +20 when @p phy is 0 (HCI_Read_Transmit_Power_Level)
+	 *  - -127 to +20 when @p phy is non-zero (HCI_LE_Enhanced_Read_Transmit_Power_Level)
+	 */
 	int8_t current_level;
 
-	/** Output: maximum transmit power level */
+	/** @brief Output: maximum transmit power level in dBm.
+	 *
+	 *  Range depends on which HCI command is used:
+	 *  - -30 to +20 when @p phy is 0 (HCI_Read_Transmit_Power_Level)
+	 *  - -127 to +20 when @p phy is non-zero (HCI_LE_Enhanced_Read_Transmit_Power_Level)
+	 */
 	int8_t max_level;
 };
 
