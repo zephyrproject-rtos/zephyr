@@ -846,13 +846,6 @@ void soc_early_init_hook(void)
 	/* Enable data cache */
 	sys_cache_data_enable();
 
-	/**
-	 * Temporary disable cache as we need write-trough mode to operate ELE
-	 */
-#if defined(CONFIG_PSA_CRYPTO_DRIVER_ELE_S4xx)
-	sys_cache_instr_disable();
-#endif /* CONFIG_PSA_CRYPTO_DRIVER_ELE_S4XX */
-
 	__ISB();
 	__DSB();
 }
