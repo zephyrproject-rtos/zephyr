@@ -18,6 +18,13 @@ menuconfig ETH_IVSHMEM
 
 if ETH_IVSHMEM
 
+config ETH_NIC_MODEL
+	string
+	default "ivshmem"
+	help
+	  Tells what Qemu network model to use. This value is given as
+	  a parameter to -nic qemu command line option.
+
 config ETH_IVSHMEM_THREAD_STACK_SIZE
 	int "IVSHMEM Ethernet thread stack size"
 	default 4096

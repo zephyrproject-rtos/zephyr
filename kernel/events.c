@@ -33,6 +33,7 @@
 /* private kernel APIs */
 #include <wait_q.h>
 #include <ksched.h>
+#include <scheduler.h>
 
 #define K_EVENT_WAIT_ANY      0x00   /* Wait for any events */
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */

@@ -35,6 +35,7 @@ static int16_t last_response_code;
 static uint32_t messages_needing_response[2];
 static uint8_t last_token[2][COAP_TOKEN_MAX_LEN];
 static const uint8_t empty_token[COAP_TOKEN_MAX_LEN] = {0};
+static uint8_t saved_observe_token[COAP_TOKEN_MAX_LEN];
 K_SEM_DEFINE(sem1, 0, 1);
 K_SEM_DEFINE(sem2, 0, 1);
 
@@ -824,6 +825,130 @@ ZTEST(coap_client, test_observe)
 	coap_client_cancel_requests(&client);
 	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_equal(last_response_code, -ECANCELED, "");
+
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+/* Captures the token from the first outgoing packet (subscribe), then falls through to the
+ * normal sendto fake.
+ */
+static ssize_t
+z_impl_zsock_sendto_custom_fake_observe_subscribe(int sock, void *buf, size_t len, int flags,
+						  const struct net_sockaddr *dest_addr,
+						  net_socklen_t addrlen)
+{
+	memcpy(saved_observe_token, (uint8_t *)buf + TOKEN_OFFSET, COAP_TOKEN_MAX_LEN);
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake;
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static void verify_deregister_packet(void *buf, size_t len, uint8_t expected_type)
+{
+	struct coap_packet pkt = {0};
+	struct coap_option obs_opt = {0};
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	int ret;
+
+	ret = coap_packet_parse(&pkt, buf, len, NULL, 0);
+	zassert_ok(ret, "Failed to parse deregister packet");
+
+	zassert_equal(coap_header_get_type(&pkt), expected_type, "Unexpected CON/NON type");
+
+	ret = coap_find_options(&pkt, COAP_OPTION_OBSERVE, &obs_opt, 1);
+	zassert_equal(ret, 1, "Observe option missing in deregister");
+	zassert_equal(coap_option_value_to_int(&obs_opt), 1,
+		      "Observe option must be 1 (deregister)");
+
+	coap_header_get_token(&pkt, token);
+	zassert_mem_equal(token, saved_observe_token, COAP_TOKEN_MAX_LEN,
+			  "Deregister token must match original observe token");
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_deregister_con(int sock, void *buf, size_t len,
+							      int flags,
+							      const struct net_sockaddr *dest_addr,
+							      net_socklen_t addrlen)
+{
+	verify_deregister_packet(buf, len, COAP_TYPE_CON);
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_deregister_non(int sock, void *buf, size_t len,
+							      int flags,
+							      const struct net_sockaddr *dest_addr,
+							      net_socklen_t addrlen)
+{
+	verify_deregister_packet(buf, len, COAP_TYPE_NON_CON);
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+ZTEST(coap_client, test_observe_deregister_con)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {{
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		}},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* Wait for subscription confirmation */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* Deregister: CON packet with Observe=1 and same token; server ACKs with 2.05 */
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_deregister_con;
+	zassert_ok(coap_client_deregister_observe(&client, &req));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_observe_deregister_non)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = false,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {{
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		}},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* NON: sendto does not trigger POLLIN; manually deliver a subscription notification */
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* Deregister: NON packet with Observe=1 and same token; released immediately */
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_deregister_non;
+	zassert_ok(coap_client_deregister_observe(&client, &req));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
 
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 }

@@ -22,9 +22,12 @@
 #define _EXCEPTION_SECTION_NAME     exceptions
 #define _RESET_SECTION_NAME         reset
 
+#define RAM_BASE DT_CHOSEN_SRAM_ADDR
+#define RAM_SIZE DT_CHOSEN_SRAM_SIZE
+
 MEMORY
 {
-    RAM (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
+    RAM (rwx) : ORIGIN = RAM_BASE, LENGTH = RAM_SIZE
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
@@ -37,9 +40,9 @@ REGION_ALIAS("REGION_BSS", RAM);
 
 ENTRY(CONFIG_KERNEL_ENTRY)
 
-PROVIDE (__memory_base = CONFIG_SRAM_BASE_ADDRESS);
-PROVIDE (__memory_size = CONFIG_SRAM_SIZE * 1024);
-PROVIDE (__stack = CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE - 1) * 1024);
+PROVIDE (__memory_base = RAM_BASE);
+PROVIDE (__memory_size = RAM_SIZE);
+PROVIDE (__stack = RAM_BASE + (RAM_SIZE - 1024));
 
 SECTIONS
 {

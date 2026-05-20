@@ -54,6 +54,7 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, uint16_t *next_hdr_off,
 	struct net_ipv6_hdr *hdr;
 	uint8_t next_nexthdr;
 	uint8_t nexthdr;
+	int ret;
 
 	if (!pkt || !pkt->frags || !next_hdr_off || !last_hdr_off) {
 		return -EINVAL;
@@ -66,7 +67,10 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, uint16_t *next_hdr_off,
 		return -ENOBUFS;
 	}
 
-	net_pkt_acknowledge_data(pkt, &ipv6_access);
+	ret = net_pkt_acknowledge_data(pkt, &ipv6_access);
+	if (ret < 0) {
+		return ret;
+	}
 
 	nexthdr = hdr->nexthdr;
 
@@ -240,7 +244,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 	struct net_pkt *pkt;
 	struct net_buf *last;
 	uint8_t next_hdr;
-	int i, len;
+	int i, len, ret;
 
 	k_work_cancel_delayable(&reass->timer);
 
@@ -338,7 +342,11 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	ipv6.hdr->len = net_htons(len);
 
-	net_pkt_set_data(pkt, &ipv6_access);
+	ret = net_pkt_set_data(pkt, &ipv6_access);
+	if (ret < 0) {
+		goto error;
+	}
+
 	net_pkt_set_ip_reassembled(pkt, true);
 
 	NET_DBG("New pkt %p IPv6 len is %d bytes", pkt,

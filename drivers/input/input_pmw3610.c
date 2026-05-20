@@ -349,7 +349,7 @@ static int pmw3610_configure(const struct device *dev)
 
 	if (cfg->reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
-			LOG_ERR("%s is not ready", cfg->reset_gpio.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->reset_gpio.port);
 			return -ENODEV;
 		}
 
@@ -484,7 +484,7 @@ static int pmw3610_init(const struct device *dev)
 	int ret;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("%s is not ready", cfg->spi.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->spi.bus);
 		return -ENODEV;
 	}
 
@@ -493,7 +493,7 @@ static int pmw3610_init(const struct device *dev)
 	k_work_init(&data->motion_work, pmw3610_motion_work_handler);
 
 	if (!gpio_is_ready_dt(&cfg->motion_gpio)) {
-		LOG_ERR("%s is not ready", cfg->motion_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->motion_gpio.port);
 		return -ENODEV;
 	}
 

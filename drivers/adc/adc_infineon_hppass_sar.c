@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -691,7 +691,8 @@ static int ifx_hppass_sar_adc_init(const struct device *dev)
  *     Bit3 -> any of channels 24..27 present
  */
 
-#define IFX_HPPASS_SAR_CH_EXISTS(inst, ch) DT_NODE_EXISTS(DT_CHILD(DT_DRV_INST(inst), channel_##ch))
+#define IFX_HPPASS_SAR_CH_EXISTS(inst, ch) \
+	DT_NODE_EXISTS(DT_CHILD_BY_UNIT_ADDR_INT(DT_DRV_INST(inst), ch))
 
 /* Direct sampler bitmap (0..11) */
 #define IFX_HPPASS_SAR_DIR_MASK(inst)                                                              \

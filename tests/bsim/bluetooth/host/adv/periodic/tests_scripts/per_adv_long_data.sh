@@ -7,7 +7,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="per_adv_long_data"
+simulation_id="${BOARD_TS}_per_adv_long_data"
 verbosity_level=2
 EXECUTE_TIMEOUT=60
 

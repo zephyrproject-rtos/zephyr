@@ -432,13 +432,13 @@ static int ccs811_init(const struct device *dev)
 	uint8_t hw_id;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 
 	if (config->wake_gpio.port) {
 		if (!gpio_is_ready_dt(&config->wake_gpio)) {
-			LOG_ERR("GPIO device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->wake_gpio.port);
 			return -ENODEV;
 		}
 
@@ -455,7 +455,7 @@ static int ccs811_init(const struct device *dev)
 
 	if (config->reset_gpio.port) {
 		if (!gpio_is_ready_dt(&config->reset_gpio)) {
-			LOG_ERR("GPIO device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->reset_gpio.port);
 			return -ENODEV;
 		}
 
@@ -466,7 +466,7 @@ static int ccs811_init(const struct device *dev)
 
 	if (config->irq_gpio.port) {
 		if (!gpio_is_ready_dt(&config->irq_gpio)) {
-			LOG_ERR("GPIO device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->irq_gpio.port);
 			return -ENODEV;
 		}
 	}

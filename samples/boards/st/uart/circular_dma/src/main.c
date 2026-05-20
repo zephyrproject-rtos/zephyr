@@ -24,7 +24,7 @@
 static const struct device *const uart_dev = DEVICE_DT_GET(UART_DEVICE_NODE);
 
 /* uart configuration structure */
-const struct uart_config uart_cfg = {.baudrate = 115200,
+const struct uart_config uart_cfg = {.baudrate = DT_PROP(UART_DEVICE_NODE, current_speed),
 				     .parity = UART_CFG_PARITY_NONE,
 				     .stop_bits = UART_CFG_STOP_BITS_1,
 				     .data_bits = UART_CFG_DATA_BITS_8,

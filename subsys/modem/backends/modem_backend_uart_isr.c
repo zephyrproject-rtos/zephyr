@@ -12,6 +12,7 @@
 LOG_MODULE_REGISTER(modem_backend_uart_isr, CONFIG_MODEM_MODULES_LOG_LEVEL);
 
 #include <string.h>
+#include <zephyr/drivers/gpio.h>
 
 static void modem_backend_uart_isr_flush(struct modem_backend_uart *backend)
 {
@@ -92,9 +93,7 @@ static void modem_backend_uart_isr_irq_handler(const struct device *uart, void *
 {
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)user_data;
 
-	if (uart_irq_update(uart) < 1) {
-		return;
-	}
+	uart_irq_update(uart);
 
 	if (uart_irq_rx_ready(uart)) {
 		modem_backend_uart_isr_irq_handler_receive_ready(backend);
@@ -125,6 +124,9 @@ static int modem_backend_uart_isr_open(void *data)
 	}
 
 	modem_backend_uart_isr_flush(backend);
+	if (backend->dtr_gpio) {
+		gpio_pin_set_dt(backend->dtr_gpio, 1);
+	}
 	uart_irq_rx_enable(backend->uart);
 	uart_irq_tx_enable(backend->uart);
 	modem_pipe_notify_opened(&backend->pipe);
@@ -247,6 +249,9 @@ static int modem_backend_uart_isr_close(void *data)
 	int ret;
 	struct modem_backend_uart *backend = (struct modem_backend_uart *)data;
 
+	if (backend->dtr_gpio) {
+		gpio_pin_set_dt(backend->dtr_gpio, 0);
+	}
 	uart_irq_rx_disable(backend->uart);
 	uart_irq_tx_disable(backend->uart);
 	if (backend->dtr_gpio) {

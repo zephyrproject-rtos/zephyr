@@ -15,6 +15,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/minmax.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fs, CONFIG_FS_LOG_LEVEL);

@@ -29,5 +29,5 @@ examples:
     /* In DTS for STM32N6-based board */
     &usbphyc1 {
       clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
-               <&rcc STM32_SRC_HSE OTGPHY1CKREF_SEL(1)>;
+               <&rcc STM32_SRC_HSE OTGPHY1_SEL(3)>;
     };

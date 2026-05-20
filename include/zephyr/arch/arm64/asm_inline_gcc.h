@@ -48,6 +48,12 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return (key & DAIF_IRQ_BIT) == 0;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	return (read_daif() & DAIF_IRQ_BIT) == 0;
+}
+
 #ifdef __cplusplus
 }
 #endif

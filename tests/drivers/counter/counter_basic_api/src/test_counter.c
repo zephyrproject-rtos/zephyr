@@ -78,6 +78,9 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(nxp_tpm_timer)
 #endif
 	DEVS_FOR_DT_COMPAT(renesas_smartbond_timer)
+#ifdef CONFIG_COUNTER_MCUX_SYSCTR
+	DEVS_FOR_DT_COMPAT(nxp_sysctr)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_CTIMER
 	DEVS_FOR_DT_COMPAT(nxp_lpc_ctimer)
 #endif
@@ -198,6 +201,9 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_BEE_TIMER
 	DEVS_FOR_DT_COMPAT(realtek_bee_counter_timer)
+#endif
+#ifdef CONFIG_COUNTER_BEE_RTC
+	DEVS_FOR_DT_COMPAT(realtek_bee_counter_rtc)
 #endif
 };
 

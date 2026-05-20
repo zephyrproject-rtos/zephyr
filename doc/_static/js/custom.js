@@ -4,6 +4,21 @@
  * SPDX-License-Identifier: CC-BY-3.0
  */
 
+/* Ensure that dark mode toggle's set theme is propagated to the document element. */
+(() => {
+  let theme;
+  try {
+    theme = localStorage.getItem('dark-mode-toggle');
+  } catch (_) { }
+  if (theme !== 'light' && theme !== 'dark') {
+    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+
+document.addEventListener('colorschemechange', (e) => {
+  document.documentElement.setAttribute('data-theme', e.detail.colorScheme);
+});
 
 // Handle page scroll and adjust sidebar accordingly.
 

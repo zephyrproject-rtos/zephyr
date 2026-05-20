@@ -62,10 +62,6 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 		udev->speed = USB_SPEED_SPEED_FS;
 	}
 
-	if (ctx->root == NULL) {
-		ctx->root = udev;
-	}
-
 	usbh_device_connect(ctx, udev);
 }
 

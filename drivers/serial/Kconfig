@@ -116,9 +116,12 @@ config UART_WIDE_DATA
 	  This is up to the driver to implement the necessary functions
 	  to properly support this.
 
+DT_CHOSEN_ZEPHYR_UART_PIPE := zephyr,uart-pipe
+
 config UART_PIPE
 	bool "Pipe UART driver"
 	select UART_INTERRUPT_DRIVEN
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_UART_PIPE))
 	help
 	  Enable pipe UART driver. This driver allows application to communicate
 	  over UART with custom defined protocol. Driver doesn't inspect received

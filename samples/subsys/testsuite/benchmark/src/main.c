@@ -21,12 +21,12 @@ static void suit_teardown(void)
 
 ZTEST_BENCHMARK_SUITE(math_benchmarks, suit_setup, suit_teardown);
 
-ZTEST_BENCHMARK(math_benchmarks, void_test, 100)
+ZTEST_BENCHMARK(math_benchmarks, void_test, 100, NULL, NULL)
 {
 	/* Intentionally left blank */
 }
 
-ZTEST_BENCHMARK(math_benchmarks, benchmark_stack_add, 100)
+ZTEST_BENCHMARK(math_benchmarks, benchmark_stack_add, 100, NULL, NULL)
 {
 	int a = 5;
 	int b = 10;
@@ -35,7 +35,7 @@ ZTEST_BENCHMARK(math_benchmarks, benchmark_stack_add, 100)
 	c += a + b;
 }
 
-ZTEST_BENCHMARK(math_benchmarks, benchmark_stack_sub, 100)
+ZTEST_BENCHMARK(math_benchmarks, benchmark_stack_sub, 100, NULL, NULL)
 {
 	int a = 10;
 	int b = 5;
@@ -64,17 +64,17 @@ static void teardown_fn(void)
 	memset(&data, 0, sizeof(data));
 }
 
-ZTEST_BENCHMARK_SETUP_TEARDOWN(math_benchmarks, global_subtraction, 100, setup_fn, teardown_fn)
+ZTEST_BENCHMARK(math_benchmarks, global_subtraction, 100, setup_fn, teardown_fn)
 {
 	data.res = data.a - data.b;
 }
 
-ZTEST_BENCHMARK_SETUP_TEARDOWN(math_benchmarks, global_addition, 100, setup_fn, teardown_fn)
+ZTEST_BENCHMARK(math_benchmarks, global_addition, 100, setup_fn, teardown_fn)
 {
 	data.res = data.a + data.b;
 }
 
-ZTEST_BENCHMARK(math_benchmarks, benchmark_pure_asm_add, 100)
+ZTEST_BENCHMARK(math_benchmarks, benchmark_pure_asm_add, 100, NULL, NULL)
 {
 	__asm__ volatile (
 #if defined(CONFIG_X86)
@@ -91,17 +91,17 @@ ZTEST_BENCHMARK(math_benchmarks, benchmark_pure_asm_add, 100)
 
 static uint8_t buffer[32];
 #include <zephyr/random/random.h>
-ZTEST_BENCHMARK(math_benchmarks, csrand, 100)
+ZTEST_BENCHMARK(math_benchmarks, csrand, 100, NULL, NULL)
 {
 	sys_csrand_get(buffer, sizeof(buffer));
 }
 
-ZTEST_BENCHMARK_TIMED(math_benchmarks, csrand_timed, 1000)
+ZTEST_BENCHMARK_TIMED(math_benchmarks, csrand_timed, 1000, NULL, NULL)
 {
 	sys_csrand_get(buffer, sizeof(buffer));
 }
 
-ZTEST_BENCHMARK_TIMED(math_benchmarks, add_timed, 1000)
+ZTEST_BENCHMARK_TIMED(math_benchmarks, add_timed, 1000, NULL, NULL)
 {
 	int a = 10;
 	int b = 5;
@@ -110,7 +110,7 @@ ZTEST_BENCHMARK_TIMED(math_benchmarks, add_timed, 1000)
 	c += a + b;
 }
 
-ZTEST_BENCHMARK_TIMED(math_benchmarks, benchmark_pure_asm_add_timed, 1000)
+ZTEST_BENCHMARK_TIMED(math_benchmarks, benchmark_pure_asm_add_timed, 1000, NULL, NULL)
 {
 	__asm__ volatile (
 #if defined(CONFIG_X86)

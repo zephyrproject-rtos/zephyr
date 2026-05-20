@@ -4,8 +4,10 @@ sample:
 common:
   depends_on: lora
   tags: lorawan
-  filter: dt_label_with_parent_compat_enabled("slot0_partition", "fixed-partitions")
-    and dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions")
+  filter: (dt_label_with_parent_compat_enabled("slot0_partition", "fixed-partitions")
+           or dt_label_compat_enabled("slot0_partition", "zephyr,mapped-partition"))
+    and (dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions")
+         or dt_label_compat_enabled("slot1_partition", "zephyr,mapped-partition"))
     and dt_chosen_enabled("zephyr,flash-controller") and CONFIG_FLASH_HAS_DRIVER_ENABLED
   harness: console
   harness_config:

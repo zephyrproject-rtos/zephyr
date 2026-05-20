@@ -220,7 +220,7 @@ int main(void)
 {
 	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
 
-	rng_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+	rng_dev = entropy_get_default_device();
 	if (!device_is_ready(rng_dev)) {
 		printk("error: random device not ready");
 	}

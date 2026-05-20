@@ -61,6 +61,7 @@
 		led0 = &green_led;
 		led1 = &yellow_led;
 		pwm-led0 = &red_pwm_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 		volt-sensor1 = &vbat;
 		watchdog0 = &iwdg;
@@ -241,12 +242,13 @@ zephyr_udc0: &usbotg_fs {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* 128KB for bootloader */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
 			read-only;
@@ -254,18 +256,21 @@ zephyr_udc0: &usbotg_fs {
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(256)>;
 		};
 
 		/* backup slot: 384KB */
 		slot1_partition: partition@60000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00060000 DT_SIZE_K(384)>;
 		};
 
 		/* storage: 256KB for settings */
 		storage_partition: partition@c0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000c0000 DT_SIZE_K(256)>;
 		};
@@ -281,5 +286,9 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &hash {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

@@ -154,6 +154,11 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 		return NET_DROP;
 	}
 
+	/* gPTP frame should be handled by original interface via gPTP bridge stack */
+	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
+		return NET_CONTINUE;
+	}
+
 	/* Handle broadcast and multicast */
 	if (net_eth_is_addr_broadcast(dst_addr) || net_eth_is_addr_multicast(dst_addr)) {
 		if (eth_bridge_forward(bridge, iface, pkt) != 0) {

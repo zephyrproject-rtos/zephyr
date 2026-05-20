@@ -10,6 +10,17 @@
 DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, arm_scmi_pinctrl), NULL,
 		SCMI_PIN_CONTROL_PROTOCOL_SUPPORTED_VERSION);
 
+enum scmi_pinctrl_message {
+	PINCTRL_ATTRIBUTES = 0x3,
+	PINCTRL_LIST_ASSOCIATIONS = 0x4,
+	PINCTRL_SETTINGS_GET = 0x5,
+	PINCTRL_SETTINGS_CONFIGURE = 0x6,
+	PINCTRL_REQUEST = 0x7,
+	PINCTRL_RELEASE = 0x8,
+	PINCTRL_NAME_GET = 0x9,
+	PINCTRL_SET_PERMISSIONS = 0xa,
+};
+
 int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 {
 	struct scmi_protocol *proto;
@@ -42,7 +53,7 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_PINCTRL_MSG_PINCTRL_SETTINGS_CONFIGURE,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(PINCTRL_SETTINGS_CONFIGURE,
 					SCMI_COMMAND, proto->id, 0x0);
 	msg.len = sizeof(*settings) -
 		(ARM_SCMI_PINCTRL_MAX_CONFIG_SIZE - config_num * 2) * 4;

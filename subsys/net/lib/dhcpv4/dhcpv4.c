@@ -896,10 +896,14 @@ static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
 	struct net_pkt_cursor backup;
 	uint8_t len;
 	uint8_t type;
+	int ret;
 
 	if (length < 3) {
 		NET_ERR("Vendor-specific option parsing, length too short");
-		net_pkt_skip(pkt, length);
+		ret = net_pkt_skip(pkt, length);
+		if (ret < 0) {
+			return ret;
+		}
 		return -EBADMSG;
 	}
 
@@ -922,7 +926,10 @@ static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
 		length--;
 		if (length < len) {
 			NET_ERR("Vendor-specific option parsing, length too long");
-			net_pkt_skip(pkt, length);
+			ret = net_pkt_skip(pkt, length);
+			if (ret < 0) {
+				return ret;
+			}
 			return -EBADMSG;
 		}
 		net_pkt_cursor_backup(pkt, &backup);
@@ -940,7 +947,10 @@ static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
 				net_pkt_cursor_restore(pkt, &backup);
 			}
 		}
-		net_pkt_skip(pkt, len);
+		ret = net_pkt_skip(pkt, len);
+		if (ret < 0) {
+			return ret;
+		}
 		length = length - len;
 		if (length <= 0) {
 			NET_DBG("Vendor-specific options_end (no code 255)");
@@ -1556,6 +1566,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	enum net_dhcpv4_msg_type msg_type = 0;
 	struct dhcp_msg *msg;
 	struct net_if *iface;
+	int ret;
 
 	if (!conn) {
 		NET_DBG("Invalid connection");
@@ -1622,7 +1633,10 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &dhcp_access);
+	ret = net_pkt_acknowledge_data(pkt, &dhcp_access);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	/* SNAME, FILE are not used at the moment, skip it */
 	if (net_pkt_skip(pkt, SIZE_OF_SNAME + SIZE_OF_FILE)) {
@@ -2081,7 +2095,9 @@ bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
 	}
 
 	net_pkt_cursor_backup(pkt, &backup);
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt));
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt)) < 0) {
+		goto out;
+	}
 
 	/* Verify destination UDP port. */
 	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);

@@ -18,6 +18,11 @@
 #include <errno.h>
 #include <soc.h>
 
+#if CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY
+#include <zephyr/drivers/gpio.h>
+#include "i2c_bitbang.h"
+#endif /* CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY */
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(renesas_ra_iic, CONFIG_I2C_LOG_LEVEL);
 
@@ -32,6 +37,11 @@ struct i2c_ra_iic_config {
 	uint32_t ctrl_noise_filter_stage;
 	uint32_t ctrl_duty_cycle_percent;
 	uint32_t max_bitrate_supported;
+
+#if CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY
+	struct gpio_dt_spec scl;
+	struct gpio_dt_spec sda;
+#endif /* CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY */
 };
 
 struct i2c_ra_iic_data {
@@ -830,6 +840,90 @@ RELEASE_BUS:
 
 #endif /* CONFIG_I2C_TARGET */
 
+#if CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY
+static void i2c_ra_iic_bitbang_set_scl(void *io_context, int state)
+{
+	const struct i2c_ra_iic_config *config = io_context;
+
+	gpio_pin_set_dt(&config->scl, state);
+}
+
+static void i2c_ra_iic_bitbang_set_sda(void *io_context, int state)
+{
+	const struct i2c_ra_iic_config *config = io_context;
+
+	gpio_pin_set_dt(&config->sda, state);
+}
+
+static int i2c_ra_iic_bitbang_get_sda(void *io_context)
+{
+	const struct i2c_ra_iic_config *config = io_context;
+
+	return gpio_pin_get_dt(&config->sda) == 0 ? 0 : 1;
+}
+
+static int i2c_ra_iic_recover(const struct device *dev)
+{
+	const struct i2c_ra_iic_config *config = dev->config;
+	struct i2c_ra_iic_data *data = dev->data;
+	struct i2c_bitbang bitbang_ctx;
+	struct i2c_bitbang_io bitbang_io = {
+		.set_scl = i2c_ra_iic_bitbang_set_scl,
+		.set_sda = i2c_ra_iic_bitbang_set_sda,
+		.get_sda = i2c_ra_iic_bitbang_get_sda,
+	};
+
+	uint32_t bitrate_cfg;
+	int ret = 0;
+
+	if (!gpio_is_ready_dt(&config->scl)) {
+		LOG_ERR("SCL GPIO device not ready");
+		return -EIO;
+	}
+
+	if (!gpio_is_ready_dt(&config->sda)) {
+		LOG_ERR("SDA GPIO device not ready");
+		return -EIO;
+	}
+
+	k_mutex_lock(&data->bus_mutex, K_FOREVER);
+
+	ret = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure SCL GPIO (err %d)", ret);
+		goto restore;
+	}
+
+	ret = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure SDA GPIO (err %d)", ret);
+		goto restore;
+	}
+
+	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
+
+	bitrate_cfg = i2c_map_dt_bitrate(data->ctrl_fconfig.rate) | I2C_MODE_CONTROLLER;
+
+	ret = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
+	if (ret != 0) {
+		LOG_ERR("Failed to configure I2C bitbang (err %d)", ret);
+		goto restore;
+	}
+
+	ret = i2c_bitbang_recover_bus(&bitbang_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to recover bus (err %d)", ret);
+		goto restore;
+	}
+
+restore:
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	k_mutex_unlock(&data->bus_mutex);
+
+	return ret;
+}
+#endif /* CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY */
+
 static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
 	.configure = i2c_ra_iic_configure,
 	.get_config = i2c_ra_iic_get_config,
@@ -838,6 +932,9 @@ static DEVICE_API(i2c, i2c_ra_iic_driver_api) = {
 	.target_register = i2c_ra_iic_target_register,
 	.target_unregister = i2c_ra_iic_target_unregister,
 #endif /* CONFIG_I2C_TARGET */
+#if CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY
+	.recover_bus = i2c_ra_iic_recover,
+#endif /* CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY */
 };
 
 #ifdef CONFIG_I2C_TARGET
@@ -987,6 +1084,11 @@ void iic_eri_isr(const struct device *dev)
 		.ctrl_fall_time_ns = DT_INST_PROP(index, fall_time_ns),                            \
 		.ctrl_duty_cycle_percent = DT_INST_PROP(index, duty_cycle_percent),                \
 		.max_bitrate_supported = DT_INST_PROP(index, max_bitrate_supported),               \
+		IF_ENABLED(CONFIG_I2C_RENESAS_RA_IIC_BUS_RECOVERY,                                 \
+		(                                                                                  \
+			.scl = GPIO_DT_SPEC_INST_GET_OR(index, scl_gpios, { 0 }),                  \
+			.sda = GPIO_DT_SPEC_INST_GET_OR(index, sda_gpios, { 0 }),                  \
+		))                                                                                 \
 	};                                                                                         \
                                                                                                    \
 	static struct i2c_ra_iic_data i2c_ra_iic_data_##index = {                                  \

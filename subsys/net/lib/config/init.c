@@ -411,7 +411,8 @@ int net_config_init_by_iface(struct net_if *iface, const char *app_info,
 		return -ENOENT;
 	}
 
-	if (net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
+	/* Prevent NET_IF_NO_AUTO_START interfaces with link down status */
+	if (!net_if_is_up(iface) && net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
 		return -ENETDOWN;
 	}
 

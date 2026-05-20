@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 Antmicro
- * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2024-2026 Silicon Laboratories Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdint.h>
@@ -10,31 +10,16 @@
 #include <zephyr/sw_isr_table.h>
 
 #include "em_device.h"
-#include "sli_siwx917_soc.h"
-#include "sl_si91x_power_manager.h"
+#include "power.h"
 #include "sl_si91x_hal_soc_soft_reset.h"
+
 
 void soc_early_init_hook(void)
 {
-	__maybe_unused sl_power_peripheral_t peripheral_config = {};
-	__maybe_unused sl_power_ram_retention_config_t ram_configuration = {
-		.configure_ram_banks = false,
-		/* The real RAM size from DT is correct but the power manager API expect to
-		 * receive either 192/256/320 KB value, so we need to round it up to the
-		 * next boundary to avoid powering down the top M4 bank(s) by mistake.
-		 */
-		.m4ss_ram_size_kb = (DT_REG_SIZE(DT_NODELABEL(sram0)) / 1024) + 1,
-		.ulpss_ram_size_kb = 4,
-	};
-
 	SystemInit();
-	if (IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
-		sli_si91x_platform_init();
-		sl_si91x_power_manager_init();
-		sl_si91x_power_manager_remove_peripheral_requirement(&peripheral_config);
-		sl_si91x_power_manager_configure_ram_retention(&ram_configuration);
-		sl_si91x_power_manager_add_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
-		sl_si91x_power_manager_set_clock_scaling(SL_SI91X_POWER_MANAGER_PERFORMANCE);
+
+	if (IS_ENABLED(CONFIG_PM)) {
+		siwx91x_power_init();
 	}
 }
 

@@ -41,6 +41,9 @@ tests:
       - cdns_swerv/s400/pmp/whisper
       - cdns_swerv/s420/whisper
       - cdns_swerv/s420/64/whisper
+      # In S-mode only SSIP (IRQ 1) can be triggered from software; the
+      # shared interrupt test requires two independent triggerable IRQ lines.
+      - qemu_riscv64/qemu_virt_riscv64/smode
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
@@ -63,6 +66,9 @@ tests:
       - cdns_swerv/s400/pmp/whisper
       - cdns_swerv/s420/whisper
       - cdns_swerv/s420/64/whisper
+      # In S-mode only SSIP (IRQ 1) can be triggered from software; the
+      # shared interrupt test requires two independent triggerable IRQ lines.
+      - qemu_riscv64/qemu_virt_riscv64/smode
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa

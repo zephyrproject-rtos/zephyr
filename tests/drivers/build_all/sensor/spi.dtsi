@@ -515,3 +515,10 @@ test_spi_adxl355: adxl355@3e {
 	spi-max-frequency = <0>;
 	int1-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_bmp581: bmp581@3f {
+	compatible = "bosch,bmp581";
+	reg = <0x3f>;
+	spi-max-frequency = <12000000>;
+	int-gpios = <&test_gpio 0 0>;
+};

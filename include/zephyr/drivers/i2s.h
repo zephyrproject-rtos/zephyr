@@ -371,10 +371,7 @@ static inline int z_impl_i2s_configure(const struct device *dev,
 				       enum i2s_dir dir,
 				       const struct i2s_config *cfg)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
-
-	return api->configure(dev, dir, cfg);
+	return DEVICE_API_GET(i2s, dev)->configure(dev, dir, cfg);
 }
 
 /**
@@ -388,10 +385,7 @@ static inline int z_impl_i2s_configure(const struct device *dev,
 static inline const struct i2s_config *i2s_config_get(const struct device *dev,
 						      enum i2s_dir dir)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
-
-	return api->config_get(dev, dir);
+	return DEVICE_API_GET(i2s, dev)->config_get(dev, dir);
 }
 
 /**
@@ -428,10 +422,7 @@ static inline const struct i2s_config *i2s_config_get(const struct device *dev,
 static inline int i2s_read(const struct device *dev, void **mem_block,
 				 size_t *size)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
-
-	return api->read(dev, mem_block, size);
+	return DEVICE_API_GET(i2s, dev)->read(dev, mem_block, size);
 }
 
 /**
@@ -489,10 +480,7 @@ __syscall int i2s_buf_read(const struct device *dev, void *buf, size_t *size);
 static inline int i2s_write(const struct device *dev, void *mem_block,
 			    size_t size)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
-
-	return api->write(dev, mem_block, size);
+	return DEVICE_API_GET(i2s, dev)->write(dev, mem_block, size);
 }
 
 /**
@@ -540,10 +528,7 @@ static inline int z_impl_i2s_trigger(const struct device *dev,
 				     enum i2s_dir dir,
 				     enum i2s_trigger_cmd cmd)
 {
-	const struct i2s_driver_api *api =
-		(const struct i2s_driver_api *)dev->api;
-
-	return api->trigger(dev, dir, cmd);
+	return DEVICE_API_GET(i2s, dev)->trigger(dev, dir, cmd);
 }
 
 /**

@@ -252,6 +252,8 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			if ((sending_thread->base.thread_state & _THREAD_DUMMY)
 			    != 0U) {
 				z_reschedule(&mbox->lock, key);
+				SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mbox,
+						message_put, mbox, timeout, 0);
 				return 0;
 			}
 #endif /* CONFIG_NUM_MBOX_ASYNC_MSGS */

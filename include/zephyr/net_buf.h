@@ -1019,17 +1019,80 @@ struct net_buf {
 	/** Fragments associated with this buffer. */
 	struct net_buf *frags;
 
-	/** Reference count. */
-	uint8_t ref;
+	/** Reference count, packed alongside three adjacent uint8_t
+	 *  fields (`flags`, `pool_id`, `user_data_size`) in a single
+	 *  atomic_t-sized slot.
+	 *
+	 * `ref_word` is the atomic_t view used by net_buf internals for
+	 * ref/unref; `ref`, `flags`, `pool_id` and `user_data_size` are
+	 * byte-level views into the same storage.
+	 *
+	 * atomic_inc/dec on ref_word add/subtract 1 to/from the whole
+	 * word, but because the byte-struct layout below places `ref`
+	 * at the least-significant byte of `ref_word` regardless of
+	 * endianness, and because the ref count never overflows past
+	 * 254 (already implicit in its uint8_t domain), only the ref
+	 * byte changes -- the other three bytes are untouched.
+	 *
+	 * On 32-bit architectures atomic_t is 4 bytes and the byte
+	 * struct fills the slot exactly. On 64-bit, atomic_t is 8 bytes;
+	 * the upper 4 bytes are alignment padding that struct net_buf
+	 * already required (the next field is an 8-byte-aligned
+	 * pointer), so this union does not grow struct net_buf there
+	 * either. On big-endian 64-bit, the byte struct is shifted by
+	 * 4 bytes of explicit padding so `ref` still sits at the LSB of
+	 * ref_word.
+	 *
+	 * `flags`, `pool_id` and `user_data_size` are written exactly
+	 * once at allocation time on a single thread and are read-only
+	 * thereafter, so plain uint8_t reads from non-atomic call sites
+	 * remain safe. `flags` is also legally written from a context
+	 * that owns the buf exclusively (e.g. bt_buf_make_view on a
+	 * just-allocated view).
+	 */
+	union {
+		/** @cond INTERNAL_HIDDEN */
+		atomic_t ref_word;
+		/** @endcond */
+		struct {
+#if defined(CONFIG_BIG_ENDIAN)
+			/* atomic_t is typedef'd as long (BUILD_ASSERTed in
+			 * lib/net_buf/buf.c); on a 64-bit big-endian build
+			 * the byte struct needs 4 bytes of padding so that
+			 * `ref` lands on the least-significant byte of
+			 * ref_word.
+			 */
+#if (__SIZEOF_LONG__ == 8)
+			/** @cond INTERNAL_HIDDEN */
+			uint8_t _ref_word_pad[4];
+			/** @endcond */
+#endif
+			/** Size of user data on this buffer */
+			uint8_t user_data_size;
 
-	/** Bit-field of buffer flags. */
-	uint8_t flags;
+			/** Where the buffer should go when freed up. */
+			uint8_t pool_id;
 
-	/** Where the buffer should go when freed up. */
-	uint8_t pool_id;
+			/** Bit-field of buffer flags. */
+			uint8_t flags;
 
-	/** Size of user data on this buffer */
-	uint8_t user_data_size;
+			/** Reference count. */
+			uint8_t ref;
+#else
+			/** Reference count. */
+			uint8_t ref;
+
+			/** Bit-field of buffer flags. */
+			uint8_t flags;
+
+			/** Where the buffer should go when freed up. */
+			uint8_t pool_id;
+
+			/** Size of user data on this buffer */
+			uint8_t user_data_size;
+#endif
+		};
+	};
 
 	/** Union for convenience access to the net_buf_simple members, also
 	 * preserving the old API.

@@ -10,7 +10,7 @@ config SAMPLE_BIT_WIDTH
 	help
 	  PCM sample bit width.
 
-config HW_CHANNEL_INDEX
+config SAMPLE_HW_CHANNEL_INDEX
 	int "hardware controller index"
 	default 0
 	help

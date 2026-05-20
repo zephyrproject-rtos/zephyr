@@ -22,14 +22,6 @@ endif # BT
 config MIPI_DBI_STM32_FMC_MEM_BARRIER
 	default n if MIPI_DBI_STM32_FMC
 
-if DISPLAY
-
-choice ST7789V_PIXEL_FORMAT
-	default ST7789V_RGB565X
-endchoice
-
-endif # DISPLAY
-
 if INPUT
 
 config INPUT_FT5336_INTERRUPT

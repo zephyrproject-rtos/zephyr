@@ -130,6 +130,7 @@ config NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE
 config NET_QBV
 	bool "Qbv support"
 	depends on PTP_CLOCK
+	select NET_L2_ETHERNET_MGMT
 	help
 	  Enable Qbv support, Qbv is Enhancements for Scheduled Traffic (EST), one
 	  feature of TSN. It provides time "slots" for specific classes of traffic

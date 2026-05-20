@@ -53,7 +53,8 @@ struct eth_ivshmem_cfg_data {
 };
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_ivshmem_get_stats(const struct device *dev)
+static struct net_stats_eth *eth_ivshmem_get_stats(const struct device *dev,
+						   struct net_if *iface __unused)
 {
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 
@@ -61,7 +62,7 @@ static struct net_stats_eth *eth_ivshmem_get_stats(const struct device *dev)
 }
 #endif
 
-static int eth_ivshmem_start(const struct device *dev)
+static int eth_ivshmem_start(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 
@@ -73,7 +74,7 @@ static int eth_ivshmem_start(const struct device *dev)
 	return 0;
 }
 
-static int eth_ivshmem_stop(const struct device *dev)
+static int eth_ivshmem_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	struct eth_ivshmem_dev_data *dev_data = dev->data;
 
@@ -85,9 +86,9 @@ static int eth_ivshmem_stop(const struct device *dev)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_ivshmem_caps(const struct device *dev)
+static enum ethernet_hw_caps eth_ivshmem_caps(const struct device *dev __unused,
+					      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 

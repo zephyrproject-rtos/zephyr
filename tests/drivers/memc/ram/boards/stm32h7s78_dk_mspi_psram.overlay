@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &xspi1;
+
+&sram1 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	status = "disabled";
+};
+
+/ {
+	aliases {
+		psram0 = &memc;
+	};
+};
+
+/ {
+	soc {
+		xspi1: spi@52005000 {
+			compatible = "st,stm32-xspi-controller";
+			reg = <0x52005000 0x1000>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <105 0>;
+			clock-names = "xspix";
+			clocks = <&rcc STM32_CLOCK(AHB5, 5)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <DT_FREQ_M(200)>;
+			pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_dqs0_po2
+				     &xspim_p1_dqs1_po3 &xspim_p1_clk_po4
+				     &xspim_p1_io0_pp0 &xspim_p1_io1_pp1 &xspim_p1_io2_pp2
+				     &xspim_p1_io3_pp3 &xspim_p1_io4_pp4 &xspim_p1_io5_pp5
+				     &xspim_p1_io6_pp6 &xspim_p1_io7_pp7 &xspim_p1_io8_pp8
+				     &xspim_p1_io9_pp9 &xspim_p1_io10_pp10 &xspim_p1_io11_pp11
+				     &xspim_p1_io12_pp12 &xspim_p1_io13_pp13 &xspim_p1_io14_pp14
+				     &xspim_p1_io15_pp15>;
+			pinctrl-names = "default";
+			status = "okay";
+
+			memc: aps256xxn-obr@0 {
+				compatible = "st,psram-device", "mspi-aps-z8";
+				reg = <0>;
+				size = <DT_SIZE_M(128)>;
+				mspi-max-frequency = <DT_FREQ_M(200)>;
+				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+				mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
+				mspi-hardware-ce-num = <0>;
+				read-command = <0x20>;
+				write-command = <0xa0>;
+				st,timing-config = <1>;
+				command-length = "INSTR_1_BYTE";
+				address-length = "ADDR_4_BYTE";
+				rx-dummy = <7>;
+				tx-dummy = <7>;
+				xip-config = <1 0 0 0>;
+				ce-break-config = <1024 3>;
+				aps-version = "APS256";
+			};
+		};
+	};
+};

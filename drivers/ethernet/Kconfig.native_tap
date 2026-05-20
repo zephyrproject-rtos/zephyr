@@ -39,14 +39,6 @@ config ETH_NATIVE_TAP_DEV_NAME
 	help
 	  This option sets the TUN/TAP device name in your host system.
 
-config ETH_NATIVE_TAP_PTP_CLOCK
-	bool "PTP clock driver support"
-	default y if NET_GPTP || PTP
-	select PTP_CLOCK
-	depends on NET_GPTP || PTP
-	help
-	  Enable PTP clock support.
-
 config ETH_NATIVE_TAP_RANDOM_MAC
 	bool "Random MAC address"
 	depends on ENTROPY_GENERATOR

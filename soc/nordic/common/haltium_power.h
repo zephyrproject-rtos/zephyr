@@ -4,30 +4,19 @@
  */
 
 /**
- * @file Common power.h include for Nordic Haltium SoCs.
- */
-
-#ifndef _ZEPHYR_SOC_ARM_NORDIC_NRF_HALTIUM_POWER_H_
-#define _ZEPHYR_SOC_ARM_NORDIC_NRF_HALTIUM_POWER_H_
-
-/**
- * @brief Power domain early init.
+ * @file
+ * @brief [DEPRECATED] Backward-compatibility layer for <haltium_power.h>.
  *
+ * This header has been renamed to <soc_power.h>. The file exists so that
+ * out-of-tree code using the old include path keeps building during the
+ * deprecation period. It will be removed in a future release.
  */
-void nrf_power_domain_init(void);
 
-#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
-/**
- * @brief Perform a power off.
- *
- * This function performs a power off of the core.
- */
-void nrf_poweroff(void);
+#ifndef ZEPHYR_SOC_NORDIC_COMMON_HALTIUM_POWER_H_
+#define ZEPHYR_SOC_NORDIC_COMMON_HALTIUM_POWER_H_
 
-/**
- * @brief Power up and enable instruction and data cache.
- */
-void nrf_power_up_cache(void);
-#endif /* defined(CONFIG_PM) || defined(CONFIG_POWEROFF) */
+#warning "<haltium_power.h> is deprecated, include <soc_power.h> instead"
 
-#endif /* _ZEPHYR_SOC_ARM_NORDIC_NRF_HALTIUM_POWER_H_ */
+#include <soc_power.h>
+
+#endif /* ZEPHYR_SOC_NORDIC_COMMON_HALTIUM_POWER_H_ */

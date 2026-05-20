@@ -5,6 +5,7 @@
  */
 
 #include <st/h5/stm32h5e4.dtsi>
+#include <st/h5/stm32h5_crypt.dtsi>
 
 / {
 	soc {

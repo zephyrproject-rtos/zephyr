@@ -40,7 +40,6 @@
 #define BOARD_USB_PHY_TXCAL45DM (0x06U)
 #endif
 
-
 #if CONFIG_USB_DC_NXP_EHCI
 	usb_phy_config_struct_t usbPhyConfig = {
 		BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
@@ -53,7 +52,7 @@ const __imx_boot_data_section BOOT_DATA_T boot_data = {
 	.start = CONFIG_FLASH_BASE_ADDRESS,
 	.size = (uint32_t)&_flash_used,
 #else
-	.start = CONFIG_SRAM_BASE_ADDRESS,
+	.start = DT_CHOSEN_SRAM_ADDR,
 	.size = (uint32_t)&_image_ram_size,
 #endif
 	.plugin = PLUGIN_FLAG,
@@ -165,7 +164,7 @@ __weak void clock_init(void)
 	BUILD_ASSERT_PODF_IN_RANGE(ipg_podf, 1, 4);
 	CLOCK_SetDiv(kCLOCK_IpgDiv, DT_PROP(DT_CHILD(CCM_NODE, ipg_podf), clock_div) - 1);
 
-#ifdef CONFIG_SOC_MIMXRT1042
+#if (defined(CONFIG_SOC_MIMXRT1041) || defined(CONFIG_SOC_MIMXRT1042))
 	/* Set PRE_PERIPH_CLK to SYS_PLL */
 	CLOCK_SetMux(kCLOCK_PrePeriphMux, 0x0);
 #else

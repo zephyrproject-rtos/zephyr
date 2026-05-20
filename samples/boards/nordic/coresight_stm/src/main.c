@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/debug/cpu_load.h>
 
 #ifdef CONFIG_LOG_FRONTEND_STMESP
 #include <zephyr/logging/log_frontend_stmesp.h>
@@ -61,8 +62,13 @@ int main(void)
 	uint32_t rpt = 10;
 	uint32_t t0, t1, t2, t3, t_s;
 	char str[] = "test string";
+	int load;
 
 	get_core_name();
+
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		(void)cpu_load_get(true);
+	}
 
 	t = k_cycle_get_32();
 	delta = k_cycle_get_32() - t;
@@ -108,5 +114,9 @@ int main(void)
 
 	/* Needed in coverage run to separate STM logs from printk() */
 	k_msleep(400);
+	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+		load = cpu_load_get(true);
+		LOG_INF("CPU load: %d.%d", load / 10, load % 10);
+	}
 	return 0;
 }

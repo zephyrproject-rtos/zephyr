@@ -118,7 +118,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_SILABS_SIWX91X
 )
 
 # FIXME: Replace sli_si91x_clock_manager.c by native Zephyr access to the clocks
-if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_PM)
   zephyr_compile_definitions(
     ULPSS_CLOCK_ROMDRIVER_PRESENT # replace rsi_ulpss_clk.c
     CLOCK_ROMDRIVER_PRESENT # replace rsi_pll.c
@@ -148,7 +148,7 @@ endif()
 
 # FIXME: These services should rely in Zephyr RTC API
 if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_RTC_SILABS_SIWX91X OR
-   CONFIG_SILABS_SISDK_SLEEPTIMER OR CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+   CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_library_sources(
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c
   )
@@ -296,7 +296,7 @@ if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   )
 endif() # CONFIG_SILABS_SISDK_SLEEPTIMER
 
-if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+if(CONFIG_PM)
   zephyr_library_sources(
     ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_ps_ram_func.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/sl_si91x_m4_ps.c
@@ -321,4 +321,4 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     ${ZEPHYR_BASE}/drivers/gpio/gpio_silabs_siwx91x_uulp.c
     LOCATION RAM
   )
-endif() # CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR
+endif() # CONFIG_PM

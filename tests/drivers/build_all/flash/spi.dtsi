@@ -53,6 +53,7 @@ spi-nand@4 {
 	/* mt29f4g01 parameters */
 	jedec-id = [2c 35];
 	size-bytes = <536870912>;
+	plane-bytes = <536870912>;
 	erase-block-size = <262144>;
 	write-block-size = <4096>;
 	block-erase-duration-max = <10000>;

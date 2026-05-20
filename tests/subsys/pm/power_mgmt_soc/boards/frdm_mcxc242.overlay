@@ -1,0 +1,25 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/wuc/wuc_nxp_llwu.h>
+
+/ {
+	chosen {
+		zephyr,system-timer = &lptmr0;
+	};
+};
+
+&lptmr0 {
+	clock-frequency = <32768>;
+	/delete-property/ prescale-glitch-filter;
+	prescale-glitch-filter-bypass;
+	clk-source = <2>;
+	wakeup-ctrls = <&llwu NXP_LLWU_MODULE_WAKEUP(0)>;
+};
+
+&llwu {
+	status = "okay";
+};

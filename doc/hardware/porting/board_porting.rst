@@ -326,6 +326,7 @@ The skeleton of the board YAML file is:
 
    board:
      name: <board-name>
+     full_name: <board-full-name>
      vendor: <board-vendor>
      revision:
        format: <major.minor.patch|letter|number|custom>
@@ -355,9 +356,11 @@ If multiple boards are placed in the same board folder, then the file
    boards:
    - name: <board-name-1>
      vendor: <board-vendor>
+     full_name: <board-full-name>
      ...
    - name: <board-name-2>
      vendor: <board-vendor>
+     full_name: <board-full-name>
      ...
    ...
 

@@ -109,11 +109,15 @@ config GEN_UICR_PROTECTEDMEM
 
 config GEN_UICR_PROTECTEDMEM_SIZE_BYTES
 	int "Protected memory size in bytes"
+	default $(dt_nodelabel_reg_size_int,protectedmem_partition) \
+		if $(dt_nodelabel_enabled,protectedmem_partition)
 	default 4096
 	depends on GEN_UICR_PROTECTEDMEM
 	help
 	  Size of the protected memory region in bytes.
 	  This value must be divisible by 4096 (4 kiB).
+	  The size is taken from the device tree node with label 'protectedmem_partition',
+	  if defined.
 
 config GEN_UICR_MPCCONF
 	bool "UICR.MPCCONF"
@@ -223,6 +227,7 @@ config GEN_UICR_SECONDARY_WDTSTART_CRV
 
 config GEN_UICR_SECONDARY
 	bool "UICR.SECONDARY.ENABLE"
+	depends on $(dt_nodelabel_enabled,secondary_partition)
 
 if GEN_UICR_SECONDARY
 
@@ -316,11 +321,15 @@ config GEN_UICR_SECONDARY_PROTECTEDMEM
 
 config GEN_UICR_SECONDARY_PROTECTEDMEM_SIZE_BYTES
 	int "Secondary protected memory size in bytes"
+	default $(dt_nodelabel_reg_size_int,secondary_protectedmem_partition) \
+		if $(dt_nodelabel_enabled,secondary_protectedmem_partition)
 	default 4096
 	depends on GEN_UICR_SECONDARY_PROTECTEDMEM
 	help
 	  Size of the secondary protected memory region in bytes.
 	  This value must be divisible by 4096 (4 kiB).
+	  The size is taken from the device tree node with label
+	  'secondary_protectedmem_partition', if defined.
 
 config GEN_UICR_SECONDARY_MPCCONF
 	bool "UICR.SECONDARY.MPCCONF"
@@ -403,5 +412,37 @@ config GEN_UICR_POLICY_MPCCONF_STAGE_VALUE
 	default 0xBD2328A8 if GEN_UICR_POLICY_MPCCONF_STAGE_INIT
 	default 0x1730C77F if GEN_UICR_POLICY_MPCCONF_STAGE_NORMAL
 	default 0
+
+config GEN_UICR_SNAPSHOT_REGIONS
+	bool "UICR.SNAPSHOT.REGIONS"
+	depends on SOC_SERIES_NRF54H
+	help
+	  When enabled, the UICR generator will configure the snapshot regions
+	  specified in Kconfig.
+
+if GEN_UICR_SNAPSHOT_REGIONS
+
+index = 0
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 1
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 2
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 3
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 4
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 5
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+index = 6
+rsource "Kconfig.template.gen_uicr_snapshot_region"
+
+endif # GEN_UICR_SNAPSHOT_REGIONS
 
 endmenu

@@ -219,6 +219,7 @@ static int adc_esp32_digi_start(const struct device *dev,
 	struct adc_esp32_data *data = dev->data;
 	__maybe_unused int err = 0;
 
+	sar_periph_ctrl_adc_reset();
 	sar_periph_ctrl_adc_continuous_power_acquire();
 	adc_lock_acquire(conf->unit);
 
@@ -513,8 +514,7 @@ int adc_esp32_dma_init(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_ESP32S2 */
 
 #if SOC_GDMA_SUPPORTED
-	adc_ll_enable_bus_clock(true);
-	adc_ll_reset_register();
+	adc_apb_periph_claim();
 #endif /* SOC_GDMA_SUPPORTED */
 
 	return 0;

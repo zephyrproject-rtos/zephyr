@@ -19,6 +19,10 @@
 
 #include <mbedtls/debug.h>
 
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_CLIENT)
+#include <psa/crypto.h>
+#endif
+
 #if defined(CONFIG_MBEDTLS_ENABLE_HEAP) && \
 	defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
 #include <mbedtls/memory_buffer_alloc.h>

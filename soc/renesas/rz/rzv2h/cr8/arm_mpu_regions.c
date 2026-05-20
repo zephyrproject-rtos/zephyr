@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 extern const uint32_t __rom_region_start;
@@ -36,7 +37,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 	/* Basic SRAM mapping is all data, R/W + XN */
 	MPU_REGION_ENTRY(
 		"sram",
-		CONFIG_SRAM_BASE_ADDRESS,
+		DT_CHOSEN_SRAM_ADDR,
 		REGION_SRAM_SIZE,
 		{.rasr = P_RW_U_RW_Msk |
 			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE |

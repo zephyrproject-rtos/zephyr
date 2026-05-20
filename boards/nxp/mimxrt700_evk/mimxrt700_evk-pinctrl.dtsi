@@ -144,44 +144,35 @@
 		};
 	};
 
-	pinmux_usdhc: pinmux_usdhc {
+	pinmux_usdhc1: pinmux_usdhc1 {
 		group0 {
-			pinmux = <SDHC0_CMD_PIO7_1>,
-				 <USDHC0_USDHC_DATA0_PIO7_6>,
-				 <USDHC0_USDHC_DATA1_PIO7_7>,
-				 <USDHC0_USDHC_DATA2_PIO7_8>,
-				 <USDHC0_USDHC_DATA3_PIO7_9>,
-				 <USDHC0_USDHC_DATA4_PIO7_2>,
-				 <USDHC0_USDHC_DATA5_PIO7_3>,
-				 <USDHC0_USDHC_DATA6_PIO7_4>,
-				 <USDHC0_USDHC_DATA7_PIO7_5>,
-				 <SDHC0_CARD_DET_N_PIO7_11>;
+			pinmux = <SDHC1_CMD_PIO7_18>,
+				 <USDHC1_USDHC_DATA0_PIO7_19>,
+				 <USDHC1_USDHC_DATA1_PIO7_20>,
+				 <USDHC1_USDHC_DATA2_PIO7_21>,
+				 <USDHC1_USDHC_DATA3_PIO7_22>,
+				 <SDHC1_CARD_DET_N_PIO7_24>;
 			bias-pull-up;
 			input-enable;
 			slew-rate = "normal";
 			drive-strength = "normal";
+			nxp,drive-current = <3>;
 		};
 
 		group1 {
-			pinmux = <SDHC0_CLK_PIO7_0>;
-			bias-pull-down;
+			pinmux = <SDHC1_CLK_PIO7_17>;
+			bias-pull-up;
 			input-enable;
 			slew-rate = "normal";
 			drive-strength = "normal";
+			nxp,drive-current = <3>;
 		};
 
+		/* SD power enable is routed to PIO7_11 as GPIO. */
 		group2 {
-			pinmux = <GPIO7_GPIO12_PIO7_12>;
+			pinmux = <GPIO7_GPIO11_PIO7_11>;
 			bias-pull-down;
 			slew-rate = "normal";
-			drive-strength = "normal";
-		};
-
-		group3 {
-			pinmux = <SDHC0_DS_PIO7_10>;
-			bias-pull-down;
-			input-enable;
-			slew-rate = "slow";
 			drive-strength = "normal";
 		};
 	};
@@ -270,6 +261,37 @@
 			drive-strength = "normal";
 			slew-rate = "normal";
 			input-enable;
+		};
+	};
+
+	pinmux_lcdif_dbi: pinmux_lcdif_dbi {
+		group0 {
+			pinmux = <LCDIF_DBI_DATA0_PIO2_6>,
+				 <LCDIF_DBI_DATA1_PIO2_7>,
+				 <LCDIF_DBI_DATA2_PIO2_8>,
+				 <LCDIF_DBI_DATA3_PIO2_9>,
+				 <LCDIF_DBI_DATA4_PIO2_10>,
+				 <LCDIF_DBI_DATA5_PIO2_11>,
+				 <LCDIF_DBI_DATA6_PIO2_12>,
+				 <LCDIF_DBI_DATA7_PIO2_13>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			bias-pull-up;
+		};
+
+		group1 {
+			pinmux = <GPIO2_GPIO15_PIO2_15>,
+				 <LCD_DBI_CSX_AB_PIO2_0>,
+				 <LCD_DBI_WRX_PIO2_4>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+		};
+
+		group2 {
+			pinmux = <LCD_DBI_DCX_AB_PIO2_1>,
+				 <LCD_DBI_RWDX_PIO2_3>;
+			slew-rate = "normal";
+			drive-strength = "normal";
 		};
 	};
 };

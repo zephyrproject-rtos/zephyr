@@ -8,5 +8,3 @@ config QEMU_CORTEX_A53_ETH_E1000
 	select ETH_E1000
 	select NET_L2_ETHERNET
 	select PCIE
-	select PCIE_CONTROLLER
-	select PCIE_ECAM

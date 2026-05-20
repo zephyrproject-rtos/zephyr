@@ -18,22 +18,14 @@ static K_SEM_DEFINE(sem_per_sync_lost, 0, 1);
 static void sync_cb(struct bt_le_per_adv_sync *sync,
 		    struct bt_le_per_adv_sync_synced_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-	char past_peer_addr[BT_ADDR_LE_STR_LEN];
-
 	if (!info->conn) {
 		printk("Sync not from PAST\n");
 		return;
 	}
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
-	bt_addr_le_to_str(bt_conn_get_dst(info->conn), past_peer_addr,
-			  sizeof(past_peer_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, Interval 0x%04x (%u ms). PAST peer %s\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr, info->interval,
-	       info->interval * 5 / 4, past_peer_addr);
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr), info->interval,
+	       info->interval * 5 / 4, bt_conn_dst_str(info->conn));
 
 	k_sem_give(&sem_per_sync);
 }
@@ -41,12 +33,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 static void term_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr);
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
 
 	k_sem_give(&sem_per_sync_lost);
 }
@@ -55,14 +43,12 @@ static void recv_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_recv_info *info,
 		    struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char data_str[129];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, RSSI %i, CTE %u, data length %u, "
-	       "data: %s\n", bt_le_per_adv_sync_get_index(sync), le_addr,
+	       "data: %s\n", bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr),
 	       info->tx_power, info->rssi, info->cte_type, buf->len, data_str);
 }
 
@@ -74,10 +60,6 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (default_conn == NULL) {
 		default_conn = bt_conn_ref(conn);
 	}
@@ -86,20 +68,17 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != default_conn) {
 		return;
 	}
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;

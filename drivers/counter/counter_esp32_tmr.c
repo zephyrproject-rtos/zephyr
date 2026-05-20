@@ -117,6 +117,7 @@ static int counter_esp32_stop(const struct device *dev)
 	struct counter_esp32_data *data = dev->data;
 
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
+	timer_hal_set_counter_value(&data->hal_ctx, 0);
 
 	return 0;
 }
@@ -153,14 +154,14 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 	bool absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	uint64_t ticks = alarm_cfg->ticks;
 	uint64_t top = data->top_data.ticks;
-	uint64_t max_rel_val = data->top_data.ticks;
+	uint64_t max_rel_val;
 	uint64_t now;
 	uint64_t target;
 	uint64_t diff;
 	int err = 0;
 	bool irq_on_late = false;
 
-	if (ticks > data->top_data.ticks) {
+	if (ticks > top) {
 		return -EINVAL;
 	}
 
@@ -169,34 +170,37 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 
 	counter_esp32_get_value_64(dev, &now);
 
-	if (absolute == 0) {
-		target = now + ticks;
-	} else {
+	if (absolute) {
 		irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
 		max_rel_val = top - data->top_data.guard_period;
-		target = (now & ~0xFFFFFFFFULL) | ticks;
-		if (target < now) {
-			target += (1ULL << 32);
+		if (top == UINT64_MAX) {
+			diff = ticks - now - 1;
+		} else {
+			diff = (ticks - now - 1) % (top + 1);
 		}
+		target = now + diff + 1;
+	} else {
+		max_rel_val = top;
+		diff = ticks;
+		target = now + ticks;
 	}
 
-	timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id, target);
-
-	diff = absolute ? (target - now) : ticks;
 	if (diff > max_rel_val) {
 		if (absolute) {
 			err = -ETIME;
 		}
 		if (irq_on_late) {
+			counter_esp32_get_value_64(dev, &now);
+			timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id,
+						 now + 1);
 			timer_ll_enable_intr(data->hal_ctx.dev,
 					     TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id), true);
 			timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, true);
-			timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id, 0);
-
 		} else {
 			data->alarm_cfg.callback = NULL;
 		}
 	} else {
+		timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id, target);
 		timer_ll_enable_intr(data->hal_ctx.dev,
 				     TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id), true);
 		timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, true);

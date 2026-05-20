@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(net_ieee802154_test, LOG_LEVEL_DBG);
 #include <zephyr/net/socket.h>
 
 #include "net_private.h"
-#include <ieee802154_frame.h>
+#include <zephyr/net/ieee802154_frame.h>
 #include <ieee802154_priv.h>
 #include <ipv6.h>
 

@@ -37,6 +37,16 @@ LOG_MODULE_REGISTER(hci_sf32lb, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 
 struct bt_sf32lb_data {
 	struct {
+		uint8_t type;
+		struct net_buf *buf;
+		struct k_fifo fifo;
+	} tx;
+
+	struct k_sem sem;
+	bt_hci_recv_t recv;
+	ipc_queue_handle_t ipc_port;
+
+	struct {
 		struct net_buf *buf;
 		struct k_fifo fifo;
 
@@ -58,16 +68,6 @@ struct bt_sf32lb_data {
 			uint8_t hdr[4];
 		};
 	} rx;
-
-	struct {
-		uint8_t type;
-		struct net_buf *buf;
-		struct k_fifo fifo;
-	} tx;
-
-	struct k_sem sem;
-	bt_hci_recv_t recv;
-	ipc_queue_handle_t ipc_port;
 };
 
 struct bt_sf32lb_config {

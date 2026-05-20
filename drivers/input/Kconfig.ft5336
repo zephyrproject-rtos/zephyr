@@ -16,7 +16,17 @@ menuconfig INPUT_FT5336
 
 if INPUT_FT5336
 
-config INPUT_FT5336_PERIOD
+config INPUT_FT5336_INIT_DELAY_MS
+	int "Initialization delay"
+	depends on !INPUT_FT5336_INTERRUPT
+	default 10
+	help
+	  Wait duration in milliseconds before starting to
+	  poll for touch samples. This can be useful if the
+	  touch controller has an extended power on or
+	  initialization time.
+
+config INPUT_FT5336_PERIOD_MS
 	int "Sample period"
 	depends on !INPUT_FT5336_INTERRUPT
 	default 10
@@ -28,5 +38,14 @@ config INPUT_FT5336_INTERRUPT
 	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_FOCALTECH_FT5336),int-gpios)
 	help
 	  Enable interrupt support (requires GPIO).
+
+config INPUT_FT5336_PM_MODE_MONITOR
+	bool "Use monitor mode for PM suspend"
+	depends on PM_DEVICE
+	help
+	  Use monitor mode for PM suspend. Monitor mode reduces
+	  scan rate to 25fps and auto-wakes on touch detection.
+	  If disabled, hibernate mode is used which requires a
+	  hardware reset to wake (reset-gpios must be defined).
 
 endif # INPUT_FT5336

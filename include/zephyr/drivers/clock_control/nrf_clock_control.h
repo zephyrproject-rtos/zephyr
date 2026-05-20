@@ -211,6 +211,10 @@ uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 		(_CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(DT_PROP(node, nordic_frequency))), \
 		(0))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
 struct nrf_clock_spec {
 	uint32_t frequency;
 	uint16_t accuracy : 15;
@@ -235,6 +239,12 @@ __subsystem struct nrf_clock_control_driver_api {
 				const struct nrf_clock_spec *spec,
 				uint32_t *startup_time_us);
 };
+
+DEVICE_API_EXTENDS(nrf_clock_control, clock_control, std_api);
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Request a reservation to use a given clock with specified attributes.
@@ -273,10 +283,7 @@ int nrf_clock_control_request(const struct device *dev,
 			      const struct nrf_clock_spec *spec,
 			      struct onoff_client *cli)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
-
-	return api->request(dev, spec, cli);
+	return DEVICE_API_GET(nrf_clock_control, dev)->request(dev, spec, cli);
 }
 
 /**
@@ -315,10 +322,7 @@ static inline
 int nrf_clock_control_release(const struct device *dev,
 			      const struct nrf_clock_spec *spec)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
-
-	return api->release(dev, spec);
+	return DEVICE_API_GET(nrf_clock_control, dev)->release(dev, spec);
 }
 
 /**
@@ -348,10 +352,7 @@ int nrf_clock_control_cancel_or_release(const struct device *dev,
 					const struct nrf_clock_spec *spec,
 					struct onoff_client *cli)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
-
-	return api->cancel_or_release(dev, spec, cli);
+	return DEVICE_API_GET(nrf_clock_control, dev)->cancel_or_release(dev, spec, cli);
 }
 
 /**
@@ -368,8 +369,7 @@ static inline int nrf_clock_control_resolve(const struct device *dev,
 					    const struct nrf_clock_spec *req_spec,
 					    struct nrf_clock_spec *res_spec)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
+	const struct nrf_clock_control_driver_api *api = DEVICE_API_GET(nrf_clock_control, dev);
 
 	if (api->resolve == NULL) {
 		return -ENOSYS;
@@ -392,8 +392,7 @@ static inline int nrf_clock_control_get_startup_time(const struct device *dev,
 						     const struct nrf_clock_spec *spec,
 						     uint32_t *startup_time_us)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
+	const struct nrf_clock_control_driver_api *api = DEVICE_API_GET(nrf_clock_control, dev);
 
 	if (api->get_startup_time == NULL) {
 		return -ENOSYS;

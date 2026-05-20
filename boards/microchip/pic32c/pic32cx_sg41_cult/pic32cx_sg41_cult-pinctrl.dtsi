@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,14 @@
 		group1 {
 			pinmux = <PA2B_DAC_VOUT0>,	/* J600 pin 1 */
 				 <PA5B_DAC_VOUT1>;	/* J600 pin 3 */
+		};
+	};
+
+	sercom0_spi_default: sercom0_spi_default {
+		group1 {
+			pinmux = <PB24C_SERCOM0_PAD0>,
+				 <PC25C_SERCOM0_PAD3>,
+				 <PB25C_SERCOM0_PAD1>;
 		};
 	};
 };

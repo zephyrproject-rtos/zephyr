@@ -83,7 +83,7 @@
 		};
 
 		/* GPIO0_0 to GPIO0_23 */
-		gpio0: gpio@0 {
+		gpio0: gpio@a0000000 {
 			compatible = "nxp,lpc11u6x-gpio";
 			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
 			interrupts = <0 2>, <1 2>, <2 2>, <3 2>,
@@ -100,9 +100,9 @@
 		};
 
 		/* GPIO1_0 to GPIO1_31 */
-		gpio1: gpio@1 {
+		gpio1: gpio@a0000004 {
 			compatible = "nxp,lpc11u6x-gpio";
-			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
+			reg = <0xa0000004 0x8000>, <0x40048000 0x400>;
 			interrupts = <0 2>, <1 2>, <2 2>, <3 2>,
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 
@@ -116,9 +116,9 @@
 		};
 
 		/* GPIO2_2 to GPIO2_23 */
-		gpio2: gpio@2 {
+		gpio2: gpio@a0000008 {
 			compatible = "nxp,lpc11u6x-gpio";
-			reg = <0xa0000000 0x8000>, <0x40048000 0x400>;
+			reg = <0xa0000008 0x8000>, <0x40048000 0x400>;
 			interrupts = <0 2>, <1 2>, <2 2>, <3 2>,
 				     <4 2>, <5 2>, <6 2>, <7 2>;
 

@@ -269,12 +269,13 @@ controllers, and properties related to them.
 
 .. _devicetree-flash-api:
 
-Fixed flash partitions
-======================
+Fixed and mapped flash partitions
+=================================
 
 These conveniences may be used for the special-purpose ``fixed-partitions``
-compatible used to encode information about flash memory partitions in the
-device tree. See See :dtcompatible:`fixed-partition` for more details.
+and ``zephyr,mapped-partition`` compatibles used to encode information about
+flash memory partitions in the device tree. See :dtcompatible:`fixed-partitions`
+and :dtcompatible:`zephyr,mapped-partition` for more details.
 
 .. doxygengroup:: devicetree-fixed-partition
 
@@ -483,6 +484,9 @@ device.
      - The node corresponding to the PCIe Controller
    * - zephyr,ppp-uart
      - Sets UART device used by PPP
+   * - zephyr,rtc
+     - Sets the default RTC device (used for example by the :ref:`SNTP library <sntp_interface>` to
+       set the system time when :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC` is enabled)
    * - zephyr,settings-partition
      - Fixed partition node. If defined this selects the partition used
        by the NVS and FCB settings backends.

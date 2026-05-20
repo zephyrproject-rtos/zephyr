@@ -1,4 +1,4 @@
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config NUM_IRQS
@@ -9,6 +9,17 @@ if SOC_MIMXRT798S_CM33_CPU0
 
 config ROM_START_OFFSET
 	default 0x4000 if NXP_IMXRT_BOOT_HEADER
+
+# When SEGGER RTT is enabled, leave its globals in plain .bss subsections
+# (under -fdata-sections) so the SoC's rtt_nocache.ld snippet can pull them
+# into the Zephyr nocache region. Avoids the D-cache stale-buffer trap.
+if USE_SEGGER_RTT
+
+choice SEGGER_RTT_SECTION
+	default SEGGER_RTT_SECTION_NONE
+endchoice
+
+endif # USE_SEGGER_RTT
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 237500000 if CORTEX_M_SYSTICK

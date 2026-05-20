@@ -68,7 +68,6 @@ struct bee_keyscan_config {
 	uint8_t delay_div;
 	uint16_t scan_cnt;
 	uint16_t rel_cnt;
-	uint32_t poll_period_us;
 	void (*irq_config_func)(void);
 };
 
@@ -220,7 +219,7 @@ static void bee_keyscan_process_matrix(const struct device *dev, uint8_t new_pre
 
 restart_manual:
 #ifndef CONFIG_BEE_INPUT_KEYSCAN_AUTOSCAN_MODE
-	k_timer_start(&manual_keyscan_timer, K_USEC(config->poll_period_us), K_NO_WAIT);
+	k_timer_start(&manual_keyscan_timer, K_USEC(config->common.poll_period_us), K_NO_WAIT);
 #endif
 }
 
@@ -341,7 +340,7 @@ static int bee_keyscan_init(const struct device *dev)
 	  ((BEE_KEYSCAN_GET_TOTAL_DIV(index) * (uint64_t)USEC_PER_SEC) / 2)) /                     \
 	 (BEE_KEYSCAN_GET_TOTAL_DIV(index) * (uint64_t)USEC_PER_SEC))
 
-#ifndef CONFIG_BEE_INPUT_KEYSCAN_AUTOSCAN_MODE
+#ifdef CONFIG_BEE_INPUT_KEYSCAN_AUTOSCAN_MODE
 #define BEE_INPUT_KEYSCAN_ASSERT_SCAN_INTERVAL(index)                                              \
 	BUILD_ASSERT(BEE_KEYSCAN_CALC_US_TO_TICKS(index, poll_period_us, 0) <=                     \
 			     BEE_KEYSCAN_MAX_TICKS,                                                \
@@ -359,9 +358,6 @@ static int bee_keyscan_init(const struct device *dev)
 		     "DT error: 'scan-div' exceeds limit (65535)");                                \
 	BUILD_ASSERT(DT_INST_PROP(index, delay_div) <= BEE_KEYSCAN_MAX_DELAY_DIV,                  \
 		     "DT error: 'delay-div' exceeds limit (255)");                                 \
-	BUILD_ASSERT(BEE_KEYSCAN_CALC_US_TO_TICKS(index, debounce_down_us, 0) <=                   \
-			     BEE_KEYSCAN_MAX_TICKS,                                                \
-		     "DT error: 'debounce-down-us' results in ticks > 511. Increase delay-div?");  \
 	BEE_INPUT_KEYSCAN_ASSERT_SCAN_INTERVAL(index);                                             \
 	BUILD_ASSERT(BEE_KEYSCAN_CALC_US_TO_TICKS(index, release_time_us, 0) <=                    \
 			     BEE_KEYSCAN_MAX_TICKS,                                                \
@@ -384,9 +380,7 @@ static int bee_keyscan_init(const struct device *dev)
 		.scan_div = DT_INST_PROP(index, scan_div),                                         \
 		.delay_div = DT_INST_PROP(index, delay_div),                                       \
 		.scan_cnt = BEE_KEYSCAN_CALC_US_TO_TICKS(index, poll_period_us, 0),                \
-		.rel_cnt =                                                                         \
-			BEE_KEYSCAN_CALC_US_TO_TICKS(index, release_time_ms * USEC_PER_MSEC, 0),   \
-		.poll_period_us = DT_INST_PROP(index, release_time_us),                            \
+		.rel_cnt = BEE_KEYSCAN_CALC_US_TO_TICKS(index, release_time_us, 0),                \
 		.irq_config_func = bee_keyscan_irq_config_func_##index,                            \
 	};                                                                                         \
                                                                                                    \

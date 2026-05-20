@@ -143,6 +143,7 @@ chipidea	Chipidea, Inc
 chipone	ChipOne
 chipsemi	Chipsemi Corp.
 chipspark	ChipSPARK
+chipwealth	Chip Wealth Technology Ltd.
 chrontel	Chrontel, Inc.
 chrp	Common Hardware Reference Platform
 chunghwa	Chunghwa Picture Tubes Ltd.
@@ -238,6 +239,7 @@ espressif	Espressif Systems
 est	ESTeem Wireless Modems
 ettus	NI Ettus Research
 eukrea	Eukréa Electromatique
+eurovibes	Eurovibes
 everest	Everest Semiconductor Co. Ltd.
 everlight	Everlight Electronics Co. Ltd.
 everspin	Everspin Technologies, Inc.
@@ -258,6 +260,7 @@ festo	Festo SE & Co. KG
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
+flysky	FlySky
 fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
 framework	Framework Computer, Inc.
@@ -362,6 +365,7 @@ jedec	JEDEC Solid State Technology Association
 jesurun	Shenzhen Jesurun Electronics Business Dept.
 jhd	Shenzhen Jinghua Displays Electronics Co., Ltd.
 jianda	Jiandangjing Technology Co., Ltd.
+jlc	Shenzhen JLC Technology Group Co., Ltd.
 kam	Kamstrup A/S
 karo	Ka-Ro electronics GmbH
 keithkoep	Keith & Koep GmbH
@@ -415,6 +419,7 @@ loongson	Loongson Technology Corporation Limited
 lowrisc	lowRISC Community Interest Company
 lsi	LSI Corp. (LSI Logic)
 luatos	LuatOS Team
+luckfox	Shenzhen Luckfox Technology Co., Ltd.
 lwn	Liebherr-Werk Nenzing GmbH
 lxa	Linux Automation GmbH
 m5stack	M5Stack
@@ -498,6 +503,7 @@ norik	Norik Systems
 noritake	Noritake Co., Inc. Electronics Division
 novtech	NovTech, Inc.
 nuclei	Nuclei System Technology
+nucode	NUCODE Co., Ltd. (nuworks.io)
 nutsboard	NutsBoard
 nuvoton	Nuvoton Technology Corporation
 nvd	New Vision Display
@@ -633,6 +639,7 @@ semtech	Semtech Corporation
 sensirion	Sensirion AG
 sensortek	Sensortek Technology Corporation
 sensry	sensry.io
+sensylink	Sensylink Inc.
 sff	Small Form Factor Committee
 sgd	Solomon Goldentek Display Corporation
 sgmicro	SG Micro Corp
@@ -732,6 +739,8 @@ tpk	TPK U.S.A. LLC
 tplink	TP-LINK Technologies Co., Ltd.
 tpo	TPO
 tq	TQ-Systems GmbH
+trasna	Trasna
+trenz	Trenz Electronic
 tronfy	Tronfy
 tronsmart	Tronsmart
 truly	Truly Semiconductors Limited

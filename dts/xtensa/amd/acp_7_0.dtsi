@@ -1,0 +1,122 @@
+/* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors */
+/*
+ * Copyright (c) 2026 AMD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/xtensa.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@9eac0000 {
+			device_type = "cpu";
+			compatible = "cdns,tensilica-xtensa-lx7";
+			clock-frequency = <600000000>;
+			reg = <0x9eac0000>;
+		};
+	};
+
+	soc {
+		acp_intc: acp-intc {
+			compatible = "amd,acp-intc";
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			status = "okay";
+		};
+
+		acp_host_dma: acp-host-dma {
+			compatible = "amd,acp-host-dma";
+			#dma-cells = <3>;
+			status = "okay";
+		};
+
+		sdw_dai: acp-sdw-dai {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+		};
+
+		acp_sdw_dma: acp-sdw-dma@1243a00 {
+			compatible = "amd,acp-sdw-dma";
+			dma-channels = <12>;
+			#dma-cells = <3>;
+			reg = <0x1243a00 4>;
+			status = "okay";
+		};
+
+		sdw_dai0: acp-sdw-dai0 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <0>;
+		};
+
+		sdw_dai1: acp-sdw-dai1 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <1>;
+		};
+
+		sdw_dai2: acp-sdw-dai2 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <2>;
+		};
+
+		sdw_dai3: acp-sdw-dai3 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <3>;
+		};
+
+		sdw_dai4: acp-sdw-dai4 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <4>;
+		};
+
+		sdw_dai5: acp-sdw-dai5 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <5>;
+		};
+
+		sdw_dai6: acp-sdw-dai6 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <64>;
+		};
+
+		sdw_dai7: acp-sdw-dai7 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <65>;
+		};
+
+		sdw_dai8: acp-sdw-dai8 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <66>;
+		};
+
+		sdw_dai9: acp-sdw-dai9 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <67>;
+		};
+
+		sdw_dai10: acp-sdw-dai10 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <68>;
+		};
+
+		sdw_dai11: acp-sdw-dai11 {
+			compatible = "amd,acp-sdw-dai";
+			status = "okay";
+			dai-index = <69>;
+		};
+	};
+};

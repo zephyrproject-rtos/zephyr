@@ -11,7 +11,7 @@
 #include <zephyr/display/cfb.h>
 
 #include "testdata.h"
-#include "utils.h"
+#include "../../common/utils.h"
 
 LOG_MODULE_REGISTER(invert_area, CONFIG_DISPLAY_LOG_LEVEL);
 

@@ -81,3 +81,15 @@ tests:
     integration_platforms:
     - nrf9160dk@0.7.0/nrf9160
     build_only: true
+  # Test support for the *_FILE variables being lists.
+  buildsystem.snippets.file_list:
+    extra_args: SNIPPET="file_list"
+    extra_configs:
+    - CONFIG_TEST_TYPE_FILE_LIST=y
+    platform_allow:
+    - native_sim
+    - qemu_x86
+    - qemu_x86_64
+    - qemu_cortex_m3
+    integration_platforms:
+    - native_sim

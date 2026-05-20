@@ -211,7 +211,11 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 
 	ipv4_hdr->chksum = chksum;
 
-	net_pkt_set_data(pkt, &ipv4_access);
+	ret = net_pkt_set_data(pkt, &ipv4_access);
+	if (ret < 0) {
+		goto error;
+	}
+
 	net_pkt_set_ip_reassembled(pkt, true);
 
 	LOG_DBG("New pkt %p IPv4 len is %zd bytes", pkt, net_pkt_get_len(pkt));
@@ -502,7 +506,10 @@ static int send_ipv4_fragment(struct net_pkt *pkt, uint16_t rand_id, uint16_t fi
 
 	net_pkt_set_chksum_done(frag_pkt, true);
 
-	net_pkt_set_data(frag_pkt, &ipv4_access);
+	ret = net_pkt_set_data(frag_pkt, &ipv4_access);
+	if (ret < 0) {
+		goto fail;
+	}
 
 	net_pkt_set_overwrite(frag_pkt, false);
 	net_pkt_cursor_restore(frag_pkt, &cur);
@@ -581,7 +588,10 @@ int net_ipv4_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		struct net_pkt_cursor backup;
 
 		net_pkt_cursor_backup(pkt, &backup);
-		net_pkt_acknowledge_data(pkt, &frag_access);
+		ret = net_pkt_acknowledge_data(pkt, &frag_access);
+		if (ret < 0) {
+			return ret;
+		}
 
 		switch (frag_hdr->proto) {
 		case NET_IPPROTO_ICMP:

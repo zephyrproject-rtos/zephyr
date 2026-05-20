@@ -74,7 +74,7 @@ static int ms5607_i2c_read_adc(const struct ms5607_config *config, uint32_t *val
 static int ms5607_i2c_check(const struct ms5607_config *config)
 {
 	if (!device_is_ready(config->bus_cfg.i2c.bus)) {
-		LOG_DBG("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->bus_cfg.i2c.bus);
 		return -ENODEV;
 	}
 

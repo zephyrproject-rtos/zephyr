@@ -19,6 +19,10 @@ config UART_MCHP_ASYNC
 	default y
 	depends on UART_ASYNC_API
 	depends on DMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_SERCOM_G1_UART),dmas)
+	help
+	  Enable async/DMA support for UART instances that have dmas property.
+	  Instances without dmas property will return -ENOTSUP for async operations.
 
 endif # UART_MCHP_SERCOM_G1
 

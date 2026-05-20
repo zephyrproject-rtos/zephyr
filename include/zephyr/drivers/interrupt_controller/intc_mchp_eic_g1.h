@@ -18,7 +18,6 @@
 #include <zephyr/drivers/gpio.h>
 
 /**
- * @typedef mchp_eic_callback_t
  * @brief EIC ISR callback used to notify the GPIO layer of an interrupt.
  *
  * @param[in] pins Bitmask of GPIO pins that triggered (bit n => pin n).

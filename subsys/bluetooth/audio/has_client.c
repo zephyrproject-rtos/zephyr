@@ -23,6 +23,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
+#include <zephyr/toolchain.h>
 
 #include "has_internal.h"
 
@@ -288,7 +289,7 @@ static void read_presets_req_cb(struct bt_conn *conn, uint8_t err,
 
 	atomic_clear_bit(inst->flags, HAS_CLIENT_CP_OPERATION_IN_PROGRESS);
 
-	if (err) {
+	if (err != 0) {
 		client_cb->preset_read_rsp(&inst->has, err, NULL, true);
 	}
 }
@@ -321,7 +322,7 @@ static void set_active_preset_cb(struct bt_conn *conn, uint8_t err,
 
 	atomic_clear_bit(inst->flags, HAS_CLIENT_CP_OPERATION_IN_PROGRESS);
 
-	if (err) {
+	if (err != 0) {
 		client_cb->preset_switch(&inst->has, err, inst->has.active_index);
 	}
 }
@@ -472,7 +473,7 @@ static uint8_t active_index_read_cb(struct bt_conn *conn, uint8_t att_err,
 	active_index_update(inst, data, len);
 
 	err = active_index_subscribe(inst, params->by_uuid.start_handle);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Subscribe failed (err %d)", err);
 		goto fail;
 	}
@@ -519,7 +520,7 @@ static void control_point_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 	}
 
 	err = active_index_read(inst);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Active Preset Index read failed (err %d)", err);
 		goto fail;
 	}
@@ -580,7 +581,7 @@ static uint8_t control_point_discover_cb(struct bt_conn *conn, const struct bt_g
 	chrc = attr->user_data;
 
 	err = control_point_subscribe(inst, chrc->value_handle, chrc->properties);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Subscribe failed (err %d)", err);
 
 		/* Cleanup instance so that it can be reused */
@@ -642,7 +643,7 @@ static uint8_t features_read_cb(struct bt_conn *conn, uint8_t att_err,
 	}
 
 	err = control_point_discover(inst);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Control Point discover failed (err %d)", err);
 		goto fail;
 	}
@@ -686,7 +687,7 @@ static void features_subscribe_cb(struct bt_conn *conn, uint8_t att_err,
 	}
 
 	err = features_read(inst, inst->features_subscription.value_handle);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Read failed (err %d)", err);
 		goto fail;
 	}
@@ -772,13 +773,13 @@ static uint8_t features_discover_cb(struct bt_conn *conn, const struct bt_gatt_a
 	/* Subscribe first if notifications are supported, otherwise read the features */
 	if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 		err = features_subscribe(inst, chrc->value_handle);
-		if (err) {
+		if (err != 0) {
 			LOG_ERR("Subscribe failed (err %d)", err);
 			goto fail;
 		}
 	} else {
 		err = features_read(inst, chrc->value_handle);
-		if (err) {
+		if (err != 0) {
 			LOG_ERR("Read failed (err %d)", err);
 			goto fail;
 		}
@@ -860,7 +861,7 @@ int bt_has_client_discover(struct bt_conn *conn)
 	inst->conn = bt_conn_ref(conn);
 
 	err = features_discover(inst);
-	if (err) {
+	if (err != 0) {
 		atomic_clear_bit(inst->flags, HAS_CLIENT_DISCOVER_IN_PROGRESS);
 	}
 
@@ -901,7 +902,7 @@ int bt_has_client_presets_read(struct bt_has *has, uint8_t start_index, uint8_t 
 	}
 
 	err = read_presets_req(inst, start_index, count);
-	if (err) {
+	if (err != 0) {
 		atomic_clear_bit(inst->flags, HAS_CLIENT_CP_OPERATION_IN_PROGRESS);
 	}
 
@@ -990,6 +991,8 @@ int bt_has_client_preset_prev(struct bt_has *has, bool sync)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_has_client *inst = inst_by_conn(conn);
+
+	ARG_UNUSED(reason);
 
 	if (!inst) {
 		return;

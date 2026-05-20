@@ -90,8 +90,6 @@ int aplic_msi_init(const struct device *dev)
 	const struct aplic_cfg *cfg = dev->config;
 	uint32_t imsic_addr = cfg->imsic_addr;
 
-	LOG_DBG("APLIC: Got IMSIC address from DT msi-parent: 0x%08x", imsic_addr);
-
 	/* Configure MSI target address registers per RISC-V AIA spec.
 	 * MSIADDRCFG holds the base PAGE NUMBER (address >> 12), not full address!
 	 * MSIADDRCFGH holds geometry fields that tell APLIC how to calculate
@@ -130,9 +128,6 @@ int aplic_msi_init(const struct device *dev)
 		(lhxs << APLIC_MSIADDRCFGH_LHXS_SHIFT) | (lhxw << APLIC_MSIADDRCFGH_LHXW_SHIFT) |
 		(hhxs << APLIC_MSIADDRCFGH_HHXS_SHIFT) | (hhxw << APLIC_MSIADDRCFGH_HHXW_SHIFT);
 
-	LOG_DBG("SMP MSI geometry: num_harts=%u, LHXS=%u, LHXW=%u, HHXS=%u, HHXW=%u", num_harts,
-		lhxs, lhxw, hhxs, hhxw);
-
 	/* Read MSI address registers to check if they're already configured.
 	 * Some platforms have writable registers, others have read-only registers
 	 * configured via hardware pins or props files.
@@ -142,27 +137,14 @@ int aplic_msi_init(const struct device *dev)
 
 	/* If registers read as zero, try writing (writable registers) */
 	if (msi_low == 0 && msi_high == 0) {
-		LOG_DBG("MSI address registers uninitialized, configuring...");
 		wr32(cfg->base, APLIC_MSIADDRCFG, imsic_ppn);
 		wr32(cfg->base, APLIC_MSIADDRCFGH, msi_geom);
 		wr32(cfg->base, APLIC_SMSIADDRCFG, imsic_ppn);
 		wr32(cfg->base, APLIC_SMSIADDRCFGH, msi_geom);
-	} else {
-		/* Registers already configured (read-only pin/props interface) */
-		LOG_DBG("MSI address registers pre-configured (read-only interface)");
 	}
-
-	LOG_DBG("APLIC MSI address configuration:");
-	LOG_DBG("  Expected IMSIC: 0x%08x (PPN: 0x%08x)", imsic_addr, imsic_ppn);
-	LOG_DBG("  MSIADDR:  0x%08x%08x",
-		rd32(cfg->base, APLIC_MSIADDRCFGH), rd32(cfg->base, APLIC_MSIADDRCFG));
-	LOG_DBG("  SMSIADDR: 0x%08x%08x",
-		rd32(cfg->base, APLIC_SMSIADDRCFGH), rd32(cfg->base, APLIC_SMSIADDRCFG));
 
 	/* Enable MSI mode + IE in DOMAINCFG */
 	riscv_aplic_domain_enable(dev, true);
 
-	LOG_DBG("APLIC MSI init complete at 0x%lx, sources=%u", (unsigned long)cfg->base,
-		cfg->num_sources);
 	return 0;
 }

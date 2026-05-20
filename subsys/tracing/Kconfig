@@ -79,6 +79,7 @@ config TRACING_CTF_TIMESTAMP
 	bool "CTF internal timestamp"
 	default y
 	depends on TRACING_CTF
+	select TIMING_FUNCTIONS
 	help
 	  Timestamp prefix will be added to the beginning of CTF
 	  event internally.
@@ -142,7 +143,7 @@ choice TRACING_BACKEND_CHOICE
 
 config TRACING_BACKEND_UART
 	bool "UART backend"
-	depends on UART_CONSOLE
+	depends on SERIAL
 
 	help
 	  Use UART to output tracing data.

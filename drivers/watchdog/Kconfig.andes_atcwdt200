@@ -9,6 +9,7 @@ config WDT_ANDES_ATCWDT200
 	bool "Andes Watchdog driver"
 	default y
 	depends on DT_HAS_ANDESTECH_ATCWDT200_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
 	select COUNTER
 	help
 	  Enable driver for the Andes Watchdog driver.

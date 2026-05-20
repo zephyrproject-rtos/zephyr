@@ -2,15 +2,15 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
 # Simple selfchecking test for the unicast client/server samples,
 # It relies on the bs_tests hooks to register a test timer callback, which after a deadline
 # will check how many audio packets the unicast client has received, and if over a threshold
 # it considers the test passed
 
-simulation_id="unicast_samples_test"
+simulation_id="${BOARD_TS}_unicast_samples_test"
 verbosity_level=2
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 EXECUTE_TIMEOUT=100
 

@@ -4,6 +4,9 @@
 
 if SOC_SERIES_MCXW7XX
 
+config MCUX_LPTMR_TIMER
+	default y if PM
+
 config NUM_IRQS
 	default 112 if SOC_MCXW70AC
 	default 77 if SOC_MCXW727C

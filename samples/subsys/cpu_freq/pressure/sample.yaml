@@ -8,21 +8,21 @@ common:
     type: multi_line
     regex:
       - "^.*<inf> cpu_freq_pressure_sample: Mode 1: Low only"
-      - "^.*<dbg> cpu_freq_policy_pressure: thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
+      - "^.*<dbg> cpu_freq_policy_pressure.thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
          with prio: [0-9]+ status: [0-9]+"
-      - "^.*<dbg> cpu_freq_policy_pressure: thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
+      - "^.*<dbg> cpu_freq_policy_pressure.thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
          with prio: [0-9]+ status: [0-9]+"
-      - "^.*<dbg> cpu_freq_policy_pressure: thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
+      - "^.*<dbg> cpu_freq_policy_pressure.thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
          with prio: [0-9]+ status: [0-9]+"
-      - "^.*<dbg> cpu_freq_policy_pressure: thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
+      - "^.*<dbg> cpu_freq_policy_pressure.thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
          with prio: [0-9]+ status: [0-9]+"
-      - "^.*<dbg> cpu_freq_policy_pressure: thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
+      - "^.*<dbg> cpu_freq_policy_pressure.thread_eval_cb: Evaluating thread: 0x[0-9a-fA-F]+ \
          with prio: [0-9]+ status: [0-9]+"
-      - "^.*<dbg> cpu_freq_policy_pressure: get_normalized_sys_pressure: System pressure is: \
+      - "^.*<dbg> cpu_freq_policy_pressure.get_normalized_sys_pressure: System pressure is: \
          [0-9]+% \\(raw: [0-9]+ / max: [0-9]+\\)"
-      - "^.*<dbg> cpu_freq_policy_pressure: cpu_freq_policy_select_pstate: CPU[0-9]+ Pressure: \
+      - "^.*<dbg> cpu_freq_policy_pressure.cpu_freq_policy_select_pstate: CPU[0-9]+ Pressure: \
          [0-9]+%"
-      - "^.*<dbg> cpu_freq_policy_pressure: cpu_freq_policy_select_pstate: Pressure Policy: \
+      - "^.*<dbg> cpu_freq_policy_pressure.cpu_freq_policy_select_pstate: Pressure Policy: \
          Selected P-state [0-9]+ with load_threshold=[0-9]+%"
 
 tests:

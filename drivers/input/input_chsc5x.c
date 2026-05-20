@@ -121,7 +121,7 @@ static int chsc5x_verify_ic(const struct device *dev)
 	uint8_t read_buffer[4];
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -158,7 +158,7 @@ static int chsc5x_reset(const struct device *dev)
 
 	if (config->reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset_gpio)) {
-			LOG_ERR("GPIO port %s not ready", config->reset_gpio.port->name);
+			LOG_ERR_DEVICE_NOT_READY(config->reset_gpio.port);
 			return -ENODEV;
 		}
 
@@ -237,7 +237,7 @@ static int chsc5x_init(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

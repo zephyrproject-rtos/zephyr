@@ -20,8 +20,11 @@
 #define BAD_DRIVER	"bad_driver"
 #define DUMMY_DEINIT    "dummy_deinit"
 
-#define MY_DRIVER_A     "my_driver_A"
-#define MY_DRIVER_B     "my_driver_B"
+#define MY_DRIVER_A        "my_driver_A"
+#define MY_DRIVER_B        "my_driver_B"
+#define CHILD_DRIVER       "my_child_driver"
+#define GRANDCHILD_DRIVER  "my_grandchild_driver"
+#define SIBLING_DRIVER     "my_sibling_driver"
 
 #define FAKEDEFERDRIVER0	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e7000000))
 #define FAKEDEFERDRIVER1	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e8000000))
@@ -479,8 +482,104 @@ ZTEST(device, test_device_api)
 	dev = device_get_binding(MY_DRIVER_B);
 	zexpect_true(DEVICE_API_IS(abstract, dev));
 
+	/* Child, grandchild, and sibling all extend abstract */
+	dev = device_get_binding(CHILD_DRIVER);
+	zexpect_true(DEVICE_API_IS(abstract, dev));
+
+	dev = device_get_binding(GRANDCHILD_DRIVER);
+	zexpect_true(DEVICE_API_IS(abstract, dev));
+
+	dev = device_get_binding(SIBLING_DRIVER);
+	zexpect_true(DEVICE_API_IS(abstract, dev));
+
 	dev = device_get_binding(DUMMY_NOINIT);
 	zexpect_false(DEVICE_API_IS(abstract, dev));
+}
+
+ZTEST(device, test_device_api_extends)
+{
+	const struct device *dev;
+	unsigned int baz;
+	int ret;
+
+	dev = device_get_binding(CHILD_DRIVER);
+
+	/* Both APIs should return true */
+	zassert_true(DEVICE_API_IS(abstract, dev));
+	zassert_true(DEVICE_API_IS(abstract_child, dev));
+
+	/* Child is not a grandchild or sibling */
+	zassert_false(DEVICE_API_IS(abstract_grandchild, dev));
+	zassert_false(DEVICE_API_IS(abstract_sibling, dev));
+
+	ret = abstract_do_this(dev, 2, 3);
+	zexpect_equal(ret, 6);
+
+	abstract_do_that(dev, &baz);
+	zexpect_equal(baz, 3);
+
+	ret = abstract_child_do_these(dev);
+	zexpect_equal(ret, 9);
+}
+
+ZTEST(device, test_device_api_extends_grandchild)
+{
+	const struct device *dev;
+	unsigned int baz;
+	int ret;
+
+	dev = device_get_binding(GRANDCHILD_DRIVER);
+
+	/* All three levels should return true */
+	zassert_true(DEVICE_API_IS(abstract, dev));
+	zassert_true(DEVICE_API_IS(abstract_child, dev));
+	zassert_true(DEVICE_API_IS(abstract_grandchild, dev));
+
+	/* Should not match sibling */
+	zassert_false(DEVICE_API_IS(abstract_sibling, dev));
+
+	/* Parent (abstract) API works: 2 + 3 + 1 = 6 */
+	ret = abstract_do_this(dev, 2, 3);
+	zexpect_equal(ret, 6);
+
+	abstract_do_that(dev, &baz);
+	zexpect_equal(baz, 4);
+
+	/* Child API works: do_that(4) then do_this(4,4) = 4+4+1 = 9 */
+	ret = abstract_child_do_these(dev);
+	zexpect_equal(ret, 9);
+
+	/* Grandchild API: do_these(9) + val(10) = 19 */
+	ret = abstract_grandchild_do_all(dev, 10);
+	zexpect_equal(ret, 19);
+}
+
+ZTEST(device, test_device_api_extends_sibling)
+{
+	const struct device *dev;
+	unsigned int baz;
+	int ret;
+
+	dev = device_get_binding(SIBLING_DRIVER);
+
+	/* Sibling is an abstract device */
+	zassert_true(DEVICE_API_IS(abstract, dev));
+	zassert_true(DEVICE_API_IS(abstract_sibling, dev));
+
+	/* Sibling is NOT a child or grandchild */
+	zassert_false(DEVICE_API_IS(abstract_child, dev));
+	zassert_false(DEVICE_API_IS(abstract_grandchild, dev));
+
+	/* Parent API works: 7 % 3 = 1 */
+	ret = abstract_do_this(dev, 7, 3);
+	zexpect_equal(ret, 1);
+
+	abstract_do_that(dev, &baz);
+	zexpect_equal(baz, 5);
+
+	/* Sibling-specific API: 5 * 10 = 50 */
+	ret = abstract_sibling_do_other(dev, 5);
+	zexpect_equal(ret, 50);
 }
 
 ZTEST_USER(device, test_deferred_init_user)

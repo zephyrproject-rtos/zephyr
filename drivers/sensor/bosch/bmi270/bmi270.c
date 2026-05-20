@@ -690,6 +690,13 @@ static int bmi270_init(const struct device *dev)
 
 	k_usleep(BMI270_SOFT_RESET_TIME);
 
+	/* Initialize bus after soft reset according to BMI270 spec */
+	ret = bmi270_bus_init(dev);
+	if (ret != 0) {
+		LOG_ERR("Could not initiate bus communication");
+		return ret;
+	}
+
 	ret = bmi270_reg_read(dev, BMI270_REG_PWR_CONF, &adv_pwr_save, 1);
 	if (ret != 0) {
 		return ret;

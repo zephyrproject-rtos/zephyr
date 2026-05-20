@@ -89,6 +89,16 @@ static void lan865x_iface_init(struct net_if *iface)
 	struct lan865x_data *ctx = dev->data;
 	int ret;
 
+#if defined(CONFIG_NET_VLAN)
+
+	/* Increase the maximum accepted frame size to 1536 bytes. */
+	ret = oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_MAXFS);
+	if (ret < 0) {
+		LOG_ERR("LAN865x VLAN MAXFS config failed: %d", ret);
+		return;
+	}
+#endif
+
 	ret = lan865x_enable_sync(dev);
 	if (ret) {
 		LOG_ERR("LAN865x sync enable failed: %d\n", ret);
@@ -105,20 +115,24 @@ static void lan865x_iface_init(struct net_if *iface)
 	ctx->iface_initialized = true;
 }
 
-static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps lan865x_port_get_capabilities(const struct device *dev __unused,
+							   struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
+	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE
+#if defined(CONFIG_NET_VLAN)
+	       | ETHERNET_HW_VLAN
+#endif
+		;
 }
 
 static int lan865x_gpio_reset(const struct device *dev);
 static void lan865x_write_macaddress(const struct device *dev);
-static int lan865x_set_config(const struct device *dev, enum ethernet_config_type type,
+static int lan865x_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
+			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
-	const struct lan865x_config *cfg = dev->config;
 	struct lan865x_data *ctx = dev->data;
-	struct phy_plca_cfg plca_cfg;
 
 	if (type == ETHERNET_CONFIG_TYPE_PROMISC_MODE) {
 		return oa_tc6_reg_write(ctx->tc6, LAN865x_MAC_NCFGR, LAN865x_MAC_NCFGR_CAF);
@@ -130,19 +144,6 @@ static int lan865x_set_config(const struct device *dev, enum ethernet_config_typ
 		lan865x_write_macaddress(dev);
 
 		return 0;
-	}
-
-	if (type == ETHERNET_CONFIG_TYPE_T1S_PARAM) {
-		if (config->t1s_param.type == ETHERNET_T1S_PARAM_TYPE_PLCA_CONFIG) {
-			plca_cfg.enable = config->t1s_param.plca.enable;
-			plca_cfg.node_id = config->t1s_param.plca.node_id;
-			plca_cfg.node_count = config->t1s_param.plca.node_count;
-			plca_cfg.burst_count = config->t1s_param.plca.burst_count;
-			plca_cfg.burst_timer = config->t1s_param.plca.burst_timer;
-			plca_cfg.to_timer = config->t1s_param.plca.to_timer;
-
-			return phy_set_plca_cfg(cfg->phy, &plca_cfg);
-		}
 	}
 
 	return -ENOTSUP;
@@ -458,7 +459,7 @@ static int lan865x_port_send(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-const struct device *lan865x_get_phy(const struct device *dev)
+const struct device *lan865x_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct lan865x_config *cfg = dev->config;
 

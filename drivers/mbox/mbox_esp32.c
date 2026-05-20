@@ -27,18 +27,14 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <zephyr/sys/barrier.h>
 #include <soc.h>
-#include <zephyr/sys/atomic.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mbox_esp32, CONFIG_MBOX_LOG_LEVEL);
 
-#define ESP32_MBOX_LOCK_FREE_VAL 0xB33FFFFF
-#define ESP32_MBOX_NOOP_VAL      0xFF
-
-__packed struct esp32_mbox_control {
-	uint16_t dest_cpu_msg_id[2];
-	atomic_t lock;
+struct esp32_mbox_control {
+	volatile uint32_t busy[2];
 };
 
 struct esp32_mbox_memory {
@@ -106,11 +102,6 @@ IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 #endif
 	}
 
-	/* first of all take the ownership of the shared memory */
-	while (!atomic_cas(&dev_data->control->lock, ESP32_MBOX_LOCK_FREE_VAL,
-			   dev_data->this_core_id)) {
-	}
-
 	if (dev_data->cb) {
 		msg.data = (dev_data->this_core_id == 0) ? (const void *)dev_data->shm.pro_cpu_shm
 							 : (const void *)dev_data->shm.app_cpu_shm;
@@ -119,8 +110,8 @@ IRAM_ATTR static void esp32_mbox_isr(const struct device *dev)
 		dev_data->cb(dev, dev_data->other_core_id, dev_data->user_data, &msg);
 	}
 
-	/* unlock the shared memory */
-	atomic_set(&dev_data->control->lock, ESP32_MBOX_LOCK_FREE_VAL);
+	barrier_dsync_fence_full();
+	dev_data->control->busy[dev_data->this_core_id] = 0;
 }
 
 static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
@@ -141,11 +132,11 @@ static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
 
 	uint32_t key = irq_lock();
 
-	/* try to lock the shared memory */
-	while (!atomic_cas(&dev_data->control->lock, ESP32_MBOX_LOCK_FREE_VAL,
-			   dev_data->this_core_id)) {
-		k_msleep(1);
+	if (dev_data->control->busy[dev_data->other_core_id]) {
+		irq_unlock(key);
+		return -EBUSY;
 	}
+	dev_data->control->busy[dev_data->other_core_id] = 1;
 
 	/* Copy data into the other core's receive region */
 	if (msg != NULL && msg->data != NULL) {
@@ -154,10 +145,7 @@ static int esp32_mbox_send(const struct device *dev, mbox_channel_id_t channel,
 		memcpy(dest, msg->data, msg->size);
 	}
 
-	/* Only the lower 16bits of id are used */
-	dev_data->control->dest_cpu_msg_id[dev_data->other_core_id] = (uint16_t)(channel & 0xFFFF);
-
-	atomic_set(&dev_data->control->lock, ESP32_MBOX_LOCK_FREE_VAL);
+	barrier_dsync_fence_full();
 
 	/* Generate interrupt in the remote core */
 	if (dev_data->this_core_id == 0) {
@@ -249,8 +237,10 @@ static int esp32_mbox_init(const struct device *dev)
 #endif
 	data->other_core_id = (data->this_core_id == 0) ? 1 : 0;
 
-	/* pro_cpu is responsible to initialize the lock of shared memory */
 	if (data->this_core_id == 0) {
+		data->control->busy[0] = 0;
+		data->control->busy[1] = 0;
+		barrier_dsync_fence_full();
 #if !defined(CONFIG_SOC_ESP32C5_LPCORE) && !defined(CONFIG_SOC_ESP32C6_LPCORE)
 		ret = esp_intr_alloc(cfg->irq_source_pro_cpu,
 				     ESP_PRIO_TO_FLAGS(cfg->irq_priority_pro_cpu) |
@@ -261,11 +251,7 @@ static int esp32_mbox_init(const struct device *dev)
 #if defined(CONFIG_SOC_ESP32C5_HPCORE) || defined(CONFIG_SOC_ESP32C6_HPCORE)
 		SET_PERI_REG_MASK(PMU_HP_INT_ENA_REG, PMU_SW_INT_ENA);
 #endif
-		atomic_set(&data->control->lock, ESP32_MBOX_LOCK_FREE_VAL);
 	} else {
-		/* app_cpu wait for initialization from pro_cpu, then takes it,
-		 * after that releases
-		 */
 #if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)
 		s_mbox_dev = dev;
 		ulp_lp_core_intr_enable();
@@ -277,13 +263,6 @@ static int esp32_mbox_init(const struct device *dev)
 					     ESP_INTR_FLAG_IRAM,
 				     (intr_handler_t)esp32_mbox_isr, (void *)dev, NULL);
 #endif
-		LOG_DBG("Waiting CPU0 to sync");
-		while (!atomic_cas(&data->control->lock, ESP32_MBOX_LOCK_FREE_VAL,
-				   data->this_core_id)) {
-		}
-
-		atomic_set(&data->control->lock, ESP32_MBOX_LOCK_FREE_VAL);
-		LOG_DBG("Synchronization done");
 	}
 
 #if defined(CONFIG_SOC_ESP32C5_LPCORE) || defined(CONFIG_SOC_ESP32C6_LPCORE)

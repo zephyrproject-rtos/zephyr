@@ -3,14 +3,20 @@
 Overview
 ********
 
-The Microchip mpfs_icicle board is a PolarFire SoC FPGA based development board with a Microchip MPFS250T fpga device.
+The Microchip PolarFire SoC Icicle Kit is a PolarFire SoC FPGA based development board with a Microchip MPFS250T FPGA device.
 The E51 RISC-V CPU can be deployed on the mpfs_icicle board.
 More information can be found on the `Microchip website <https://www.microchip.com/en-us/product/MPFS250T>`_.
 
+Hardware
+********
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
 Programming and debugging
 *************************
-
-.. zephyr:board-supported-runners::
 
 Building
 ========

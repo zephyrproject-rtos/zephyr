@@ -48,8 +48,8 @@ static inline void mctp_i3c_recv_msg(struct mctp_binding_i3c_controller *binding
 
 	memcpy(pkt->data, msg.buf, msg.num_xfer);
 
-	/* pkt is moved to mctp and no longer owned by the binding */
 	mctp_bus_rx(&binding->binding, pkt);
+	mctp_pktbuf_free(pkt);
 }
 
 

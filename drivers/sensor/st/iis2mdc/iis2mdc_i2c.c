@@ -41,7 +41,7 @@ int iis2mdc_i2c_init(const struct device *dev)
 	const struct iis2mdc_dev_config *cfg = dev->config;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("I2C bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 

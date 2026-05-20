@@ -74,6 +74,16 @@ config BT_EXT_ADV_CODING_SELECTION
 	  This allows the Host to indicate their strict requirement
 	  concerning coding scheme when using Extended Advertising.
 
+config BT_EXT_ADV_REASSEMBLY_TIMEOUT
+	int "Extended advertising reassembly timeout"
+	depends on BT_OBSERVER
+	default 1000
+	range 100 10000
+	help
+	  Timeout in milliseconds for reassembling extended advertising reports.
+	  If reassembly is in progress, and no more data is received within this
+	  timeout, the chain will be discarded.
+
 if BT_PER_ADV_SYNC
 
 config BT_PER_ADV_SYNC_MAX

@@ -24,6 +24,7 @@
 		zephyr,shell-uart = &lpuart12;
 		zephyr,canbus = &flexcan3;
 		nxp,m7-partition = &slot1_partition;
+		zephyr,edac = &mecc1;
 	};
 
 	hyperram0: memory@4000000 {
@@ -137,5 +138,13 @@ zephyr_udc1: &usb2 {
 
 &sema1 {
 	domain-id = <9>;
+	status = "okay";
+};
+
+&mecc1 {
+	status = "okay";
+};
+
+&mecc2 {
 	status = "okay";
 };

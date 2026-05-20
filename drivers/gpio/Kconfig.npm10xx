@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NPM10XX
+	bool "nPM10xx GPIO driver"
+	default y
+	depends on DT_HAS_NORDIC_NPM10XX_GPIO_ENABLED
+	select I2C
+	help
+	  Enable the nPM10xx GPIO driver.
+
+config GPIO_NPM10XX_INIT_PRIORITY
+	int "nPM10xx GPIO driver initialization priority"
+	depends on GPIO_NPM10XX
+	default 85
+	help
+	  Initialization priority for the nPM10xx GPIO driver. It must be
+	  greater than the I2C controller init priority.

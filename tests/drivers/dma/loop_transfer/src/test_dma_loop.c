@@ -420,7 +420,13 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 		return TC_FAIL;
 	}
 
-	if (dma_stop(dma, chan_id)) {
+	int res = dma_stop(dma, chan_id);
+
+	if (res == -ENOSYS) {
+		TC_PRINT("Stop not supported.\n");
+		ztest_test_skip();
+	}
+	if (res) {
 		TC_PRINT("ERROR: transfer stop on stopped channel (%d)\n", chan_id);
 		return TC_FAIL;
 	}

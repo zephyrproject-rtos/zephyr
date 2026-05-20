@@ -110,8 +110,8 @@ struct usbfsotg_ep_event {
 	uint8_t ep;
 };
 
-K_MEM_SLAB_DEFINE(usbfsotg_ee_slab, sizeof(struct usbfsotg_ep_event),
-		  CONFIG_UDC_KINETIS_EVENT_COUNT, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(usbfsotg_ee_slab, struct usbfsotg_ep_event,
+		       CONFIG_UDC_KINETIS_EVENT_COUNT);
 
 struct usbfsotg_data {
 	struct k_work work;

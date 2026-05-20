@@ -180,9 +180,13 @@
 	status = "okay";
 };
 
-&enet_mac {
+&enet {
+	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
+};
+
+&enet_mac {
 	zephyr,random-mac-address;
 	phy-connection-type = "rmii";
 };

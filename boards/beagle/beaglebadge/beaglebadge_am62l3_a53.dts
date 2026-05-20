@@ -1,0 +1,169 @@
+/*
+ * Copyright (C) 2025 Texas Instruments Incorporated - https://www.ti.com/
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am62l3_a53.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "beaglebadge_am62l3_a53-pinctrl.dtsi"
+
+/ {
+	model = "BeagleBoard.org BeagleBadge";
+	compatible = "beagle,beaglebadge";
+
+	chosen {
+		zephyr,console = &main_uart0;
+		zephyr,shell-uart = &main_uart0;
+		zephyr,sram = &zephyr_ddr;
+		zephyr,display = &display;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+		};
+
+		cpu@1 {
+			status = "okay";
+		};
+	};
+
+	ddr0: memory@80000000 {
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(256)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* The first 32MiB is reserved for firmware (TFA, OP-TEE) */
+		zephyr_ddr: memory@80200000 {
+			reg = <0x80200000 (DT_SIZE_M(256) - DT_SIZE_M(32))>;
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		btn_up: joystick-up {
+			label = "Button UP";
+			gpios = <&main_gpio0 32 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		btn_down: joystick-down {
+			label = "Button DOWN";
+			gpios = <&main_gpio0 42 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		btn_left: joystick-left {
+			label = "Button LEFT";
+			gpios = <&main_gpio0 31 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		btn_right: joystick-right {
+			label = "Button RIGHT";
+			gpios = <&main_gpio0 95 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+
+		btn_select: button-select {
+			label = "Button SELECT";
+			gpios = <&main_gpio0 26 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+
+		btn_back: button-back {
+			label = "Button BACK";
+			gpios = <&main_gpio0 104 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_BACK>;
+		};
+	};
+
+	/* Bitbang SPI until real SPI is fixed */
+	spibb0: spibb0 {
+		compatible = "zephyr,spi-bitbang";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		clk-gpios = <&main_gpio0 89 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&main_gpio0 87 GPIO_ACTIVE_LOW>;
+		mosi-gpios = <&main_gpio0 91 GPIO_ACTIVE_HIGH>;
+	};
+
+	mipi_dbi {
+		compatible = "zephyr,mipi-dbi-spi";
+
+		spi-dev = <&spibb0>;
+		dc-gpios = <&main_gpio0 90 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&main_gpio0 24 GPIO_ACTIVE_LOW>;
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		display: ssd1683fb@0 {
+			compatible = "gooddisplay,gdey042t81", "solomon,ssd1681";
+			mipi-max-frequency = <4000000>;
+			reg = <0>;
+			width = <400>;
+			height = <300>;
+			busy-gpios = <&main_gpio0 39 GPIO_ACTIVE_HIGH>;
+
+			tssv = <0x80>; // Internal temp sensor
+
+			full {
+				border-waveform = <0x05>;
+			};
+
+			partial {
+				border-waveform = <0x3c>;
+			};
+		};
+	};
+};
+
+&main_uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_rx_default>,
+		    <&uart0_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_gpio0_0 {
+	pinctrl-0 = <&dc_pins_default>,
+		    <&res_pins_default>,
+		    <&busy_pins_default>,
+		    <&clk_pins_default>,
+		    <&cs0_pins_default>,
+		    <&mosi_pins_default>,
+		    <&btn_select_pins_default>,
+		    <&btn_left_pins_default>,
+		    <&buzzer_pins_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_gpio0_1 {
+	pinctrl-0 = <&btn_down_pins_default>,
+		    <&btn_up_pins_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_gpio0_2 {
+	pinctrl-0 = <&btn_right_pins_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_gpio0_3 {
+	pinctrl-0 = <&btn_back_pins_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

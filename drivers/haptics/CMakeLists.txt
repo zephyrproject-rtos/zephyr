@@ -10,4 +10,5 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE haptics_handlers.c)
 # zephyr-keep-sorted-start
 add_subdirectory(cirrus)
 add_subdirectory(ti)
+add_subdirectory(titanmec)
 # zephyr-keep-sorted-stop

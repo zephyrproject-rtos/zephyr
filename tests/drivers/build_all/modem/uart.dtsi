@@ -85,3 +85,10 @@ test_st_st87mxx: st87mxx {
 	mdm-reset-gpios = <&test_gpio 0 0>;
 	mdm-ring-gpios = <&test_gpio 0 0>;
 };
+
+test_trasna_lexi_r10: trasna_lexi_r10 {
+	compatible = "trasna,lexi-r10";
+
+	mdm-power-gpios = <&test_gpio 0 0>;
+	mdm-reset-gpios = <&test_gpio 0 0>;
+};

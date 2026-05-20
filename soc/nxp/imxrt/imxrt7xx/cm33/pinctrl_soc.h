@@ -54,6 +54,11 @@ typedef uint32_t pinctrl_soc_pin_t;
 #define IOPCTL_PIO_AMENA(x)                                                                        \
 	(((uint32_t)(((uint32_t)(x)) << IOPCTL_PIO_AMENA_SHIFT)) & IOPCTL_PIO_AMENA_MASK)
 
+#define IOPCTL_PIO_ODRIVE_SHIFT (12U)
+#define IOPCTL_PIO_ODRIVE_MASK  (0x3000U)
+#define IOPCTL_PIO_ODRIVE(x)                                                                       \
+	(((uint32_t)(((uint32_t)(x)) << IOPCTL_PIO_ODRIVE_SHIFT)) & IOPCTL_PIO_ODRIVE_MASK)
+
 #define Z_PINCTRL_IOPCTL_PINCFG(node_id)                                                           \
 	(IF_ENABLED(DT_PROP(node_id, bias_pull_down),				\
 	(IOPCTL_PIO_PUPDENA_MASK |))                                    /* pull down */     \
@@ -66,10 +71,12 @@ typedef uint32_t pinctrl_soc_pin_t;
 				DT_ENUM_IDX(node_id, drive_strength)) |  /* drive strength */      \
 			IOPCTL_PIO_IIENA(DT_PROP(node_id, nxp_invert)) | /* invert input */        \
 			IOPCTL_PIO_AMENA(                                                          \
-				DT_PROP(node_id, nxp_analog_mode))) /* analog multiplexor */
+				DT_PROP(node_id, nxp_analog_mode)) | /* analog multiplexor */      \
+			IOPCTL_PIO_ODRIVE(                                                         \
+				DT_PROP(node_id, nxp_drive_current))) /* transmitter drive */
 
 /* MCUX RT parts only have one pin type */
-#define Z_PINCTRL_IOCON_D_PIN_MASK (0xFFF)
+#define Z_PINCTRL_IOCON_D_PIN_MASK (0x3FFF)
 #define Z_PINCTRL_IOCON_A_PIN_MASK (0)
 #define Z_PINCTRL_IOCON_I_PIN_MASK (0)
 

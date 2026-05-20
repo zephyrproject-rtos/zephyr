@@ -5,7 +5,7 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 bsim_exe=./bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf
-simulation_id="send_on_connect_fixed"
+simulation_id="${BOARD_TS}_send_on_connect_fixed"
 verbosity_level=2
 EXECUTE_TIMEOUT=30
 

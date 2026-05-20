@@ -26,7 +26,7 @@ static struct bt_micp_mic_ctlr {
 
 struct bt_micp_mic_ctlr *bt_micp_mic_ctlr_get_by_conn(const struct bt_conn *conn)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(mic_ctlrs); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(mic_ctlrs); i++) {
 		if (mic_ctlrs[i].conn == conn) {
 			return &mic_ctlrs[i];
 		}
@@ -62,7 +62,7 @@ int bt_micp_mic_ctlr_unmute(struct bt_micp_mic_ctlr *mic_ctlr)
 
 int bt_micp_mic_ctlr_discover(struct bt_conn *conn, struct bt_micp_mic_ctlr **mic_ctlr)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(mic_ctlrs); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(mic_ctlrs); i++) {
 		if (mic_ctlrs[i].conn == NULL) {
 			for (size_t j = 0U; j < ARRAY_SIZE(mic_ctlrs[i].aics); j++) {
 				const int err = bt_aics_discover(conn, mic_ctlrs[i].aics[j], NULL);

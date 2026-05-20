@@ -8,6 +8,7 @@
 
 #include "zephyr/sys/byteorder.h"
 
+#include <zephyr/sys/minmax.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(sy1xx_i2c, CONFIG_I2C_LOG_LEVEL);
 

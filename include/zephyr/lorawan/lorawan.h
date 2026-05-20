@@ -362,10 +362,14 @@ void lorawan_enable_adr(bool enable);
  * can be used for data transmission. Some Network Servers don't use all the channels,
  * in this case, the channels mask must be provided.
  *
+ * This function must be called after lorawan_start(), once the regional
+ * channel plan has been initialized.
+ *
  * @param channels_mask Buffer with channels mask to be used.
  * @param channels_mask_size Size of channels mask buffer.
  *
  * @retval 0 successful
+ * @retval -EPERM LoRaWAN stack has not been started
  * @retval -EINVAL channels mask or channels mask size is wrong
  */
 int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size);

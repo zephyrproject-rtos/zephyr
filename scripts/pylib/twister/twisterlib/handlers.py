@@ -27,7 +27,6 @@ from queue import Empty, Queue
 
 import psutil
 from domains import Domains
-from serial.tools import list_ports
 from twisterlib import ZEPHYR_BASE
 from twisterlib.environment import strip_ansi_sequences
 from twisterlib.hardwaredata import CompoundHardwareData
@@ -36,6 +35,7 @@ from twisterlib.statuses import TwisterStatus
 
 try:
     import serial
+    from serial.tools import list_ports
 except ImportError:
     print("Install pyserial python module with pip to use --device-testing option.")
 

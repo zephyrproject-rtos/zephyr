@@ -77,7 +77,6 @@ static void adv_sent_cb(struct bt_le_ext_adv *adv,
 
 int main(void)
 {
-	char addr_s[BT_ADDR_LE_STR_LEN];
 	struct bt_le_oob oob_local;
 	int err;
 
@@ -154,8 +153,7 @@ int main(void)
 	}
 	printk("success\n");
 
-	bt_addr_le_to_str(&oob_local.addr, addr_s, sizeof(addr_s));
+	printk("Started extended advertising as %s\n", bt_addr_le_str(&oob_local.addr));
 
-	printk("Started extended advertising as %s\n", addr_s);
 	return 0;
 }

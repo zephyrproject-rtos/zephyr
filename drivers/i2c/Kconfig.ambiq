@@ -25,8 +25,18 @@ config I2C_AMBIQ_HANDLE_CACHE
 
 config I2C_AMBIQ_BUS_RECOVERY
 	bool "Bus recovery support"
+	default y if I2C_BUS_RECOVERY
 	select I2C_BITBANG
 	help
 	  Enable AMBIQ driver bus recovery support via GPIO bitbanging.
 
 endif # I2C_AMBIQ
+
+config I2C_AMBIQ_IOS
+	bool "AMBIQ IOS I2C target driver"
+	default y
+	depends on DT_HAS_AMBIQ_IOS_I2C_ENABLED
+	select AMBIQ_HAL
+	select AMBIQ_HAL_USE_IOS_I2C
+	help
+	  Enable driver for Ambiq I2C in Target mode.

@@ -12,7 +12,7 @@ menuconfig INPUT_FT6146
 
 if INPUT_FT6146
 
-config INPUT_FT6146_PERIOD
+config INPUT_FT6146_PERIOD_MS
 	int "Sample period"
 	depends on !INPUT_FT6146_INTERRUPT
 	default 10

@@ -10,6 +10,7 @@
 
 &flash0 {
 	reg = <0x0 DT_SIZE_M(8)>;
+	ranges = <0x0 0x0 DT_SIZE_M(8)>;
 };
 
 #include <espressif/partitions_0x0_default_8M.dtsi>

@@ -8,7 +8,7 @@ config MP_MAX_NUM_CPUS
 	default 2
 	range 1 2
 
-config SMP
+configdefault SMP
 	default y
 
 config PM_CPU_OPS

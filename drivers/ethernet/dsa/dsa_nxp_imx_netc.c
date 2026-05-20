@@ -101,6 +101,13 @@ static int dsa_netc_port_init(const struct device *dev)
 	}
 #endif
 
+	/* QOS configuration */
+	swt_config->ports[cfg->port_idx].commonCfg.qosMode.vlanQosMap = 0;
+	swt_config->ports[cfg->port_idx].commonCfg.qosMode.defaultIpv = 0;
+	swt_config->ports[cfg->port_idx].commonCfg.qosMode.defaultDr = 0;
+	swt_config->ports[cfg->port_idx].commonCfg.qosMode.enVlanInfo = 1;
+	swt_config->ports[cfg->port_idx].commonCfg.qosMode.vlanTagSelect = 1;
+
 #ifdef CONFIG_NET_QBV
 	memset(&(prv->qbv_config[cfg->port_idx].tgs_config), 0, sizeof(netc_tb_tgs_gcl_t));
 	memset(prv->qbv_config[cfg->port_idx].gcList, 0,
@@ -110,11 +117,6 @@ static int dsa_netc_port_init(const struct device *dev)
 #endif
 
 	return 0;
-}
-
-static void dsa_netc_port_generate_random_mac(uint8_t *mac_addr)
-{
-	gen_random_mac(mac_addr, FREESCALE_OUI_B0, FREESCALE_OUI_B1, FREESCALE_OUI_B2);
 }
 
 static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx)
@@ -129,6 +131,26 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 	swt_config->cmdRingUse = 1U;
 	swt_config->cmdBdrCfg[0].bdBase = prv->cmd_bd;
 	swt_config->cmdBdrCfg[0].bdLength = 8U;
+
+	/*
+	 * rxqosCfg has already been initialized with default values.
+	 * - PCP0-7 mapped to IPV0-7. (IPV: Internal Priority Value)
+	 * - DEI0/1 mapped to DR0/2. (DR: Drop Resilience)
+	 *
+	 * txqosCfg is initialized here.
+	 * - IPV0-7 mapped to PCP0-7.
+	 * - PCP0-7 mapped to PCP0-7.
+	 */
+	for (uint32_t i = 0; i < 2; i++) {
+		for (uint32_t j = 0; j < 8; j++) {
+			swt_config->txqosCfg.profiles[i].qos[j * 4]	  = j;
+			swt_config->txqosCfg.profiles[i].qos[j * 4 + 1]	  = j;
+			swt_config->txqosCfg.profiles[i].qos[j * 4 + 2]	  = j;
+			swt_config->txqosCfg.profiles[i].qos[j * 4 + 3]	  = j;
+
+			swt_config->txqosCfg.profiles[i].pcp[j] = j;
+		}
+	}
 
 	result = SWT_Init(&prv->swt_handle, &prv->swt_config);
 	if (result != kStatus_Success) {
@@ -528,7 +550,6 @@ static enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 
 static struct dsa_api dsa_netc_api = {
 	.port_init = dsa_netc_port_init,
-	.port_generate_random_mac = dsa_netc_port_generate_random_mac,
 	.switch_setup = dsa_netc_switch_setup,
 	.port_phylink_change = dsa_netc_port_phylink_change,
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
@@ -551,14 +572,13 @@ static struct dsa_api dsa_netc_api = {
 		.phy_mode = NETC_PHY_MODE(port),                                            \
 	};                                                                                  \
 	struct dsa_port_config dsa_##n##_##port##_config = {                                \
-		.use_random_mac_addr = DT_PROP(port, zephyr_random_mac_address),            \
-		.mac_addr = DT_PROP_OR(port, local_mac_address, {0}),                       \
+		.mcfg = NET_ETH_MAC_DT_CONFIG_INIT(port),                                   \
 		.port_idx = DT_REG_ADDR(port),                                              \
 		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, phy_handle)),             \
 		.phy_mode = DT_PROP_OR(port, phy_connection_type, ""),                      \
 		.tag_proto = DT_PROP_OR(port, dsa_tag_protocol, DSA_TAG_PROTO_NOTAG),       \
 		.ethernet_connection = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, ethernet)),   \
-		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,				            \
+		IF_ENABLED(NETC_PTP_TIMESTAMPING_SUPPORT,				    \
 			(.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, ptp_clock)),)) \
 		.prv_config = &dsa_netc_##n##_##port##_config,                              \
 	};                                                                                  \

@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic connection test: a central connects to a peripheral and expects a
 # notification, using the split controller (ULL LLL)
-simulation_id="basic_advx_scan_aux_use_chains"
+simulation_id="${BOARD_TS}_basic_advx_scan_aux_use_chains"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

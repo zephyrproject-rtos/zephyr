@@ -153,14 +153,29 @@ config SYS_HEAP_HARDENING_LEVEL
 config SYS_HEAP_CANARIES
 	bool
 
+config SYS_HEAP_CANARIES_RANDOM
+	bool "Use random base for heap canaries"
+	depends on SYS_HEAP_CANARIES
+	depends on ENTROPY_GENERATOR || TEST_RANDOM_GENERATOR
+	default y
+	help
+	  Use a random base value for heap canary computation,
+	  making canaries unpredictable across power cycles.
+	  Without this, canaries are still effective at detecting
+	  accidental corruption but are predictable.
+
 module = SYS_HEAP
 module-str = sys_heap
 source "subsys/logging/Kconfig.template.log_config"
 
+DT_CHOSEN_Z_SRAM = zephyr,sram
+DT_SRAM_SIZE = $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
+
 choice
 	prompt "Supported heap sizes"
 	depends on !64BIT
-	default SYS_HEAP_SMALL_ONLY if (SRAM_SIZE <= 256)
+	default SYS_HEAP_SMALL_ONLY if ((SRAM_DEPRECATED_KCONFIG_SET && SRAM_SIZE <= 256) || \
+		(!SRAM_DEPRECATED_KCONFIG_SET && $(DT_SRAM_SIZE) <= 256))
 	default SYS_HEAP_AUTO
 	help
 	  Heaps using reduced-size chunk headers can accommodate so called

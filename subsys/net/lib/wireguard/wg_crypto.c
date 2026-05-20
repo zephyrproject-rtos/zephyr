@@ -1339,6 +1339,16 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		return 0;
 	}
 
+	/* Limit the data_len to the max packet size that can be handled by the
+	 * crypto layer.
+	 */
+	if (data_len > (size_t)CONFIG_WIREGUARD_BUF_LEN) {
+		NET_DBG("Data length %zu exceeds max supported %d", data_len,
+			CONFIG_WIREGUARD_BUF_LEN);
+		vpn_stats_update_invalid_packet_len(ctx);
+		return -EMSGSIZE;
+	}
+
 	/* We don't know the unpadded size until we have decrypted the packet
 	 * and validated/inspected the IP header
 	 */
@@ -1349,7 +1359,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		return -ENOMEM;
 	}
 
-	copied = net_buf_linearize(buf->data, data_len, pkt->buffer,
+	copied = net_buf_linearize(buf->data, net_buf_max_len(buf), pkt->buffer,
 				   ip_udp_hdr_len + sizeof(struct msg_transport_data),
 				   data_len);
 	if (copied != data_len) {

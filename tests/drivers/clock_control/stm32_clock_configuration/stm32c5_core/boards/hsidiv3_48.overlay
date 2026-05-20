@@ -9,12 +9,6 @@
  * It is assumed that it is applied after clear_clocks.overlay file.
  */
 
-&clk_hse {
-	/* Necessary for HAL macro HSE_VALUE */
-	clock-frequency = <DT_FREQ_M(24)>;
-	status = "okay";
-};
-
 &clk_hsidiv3 {
 	clock-frequency = <DT_FREQ_M(48)>;
 	status = "okay";

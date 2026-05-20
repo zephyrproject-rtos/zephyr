@@ -62,6 +62,11 @@ config SOC_MAX32666_CPU0
 	select SOC_MAX32666
 	select SOC_FAMILY_MAX32_M4
 
+config SOC_MAX32666_CPU1
+	bool
+	select SOC_MAX32666
+	select SOC_FAMILY_MAX32_M4
+
 config SOC_MAX32670
 	bool
 	select SOC_FAMILY_MAX32_M4

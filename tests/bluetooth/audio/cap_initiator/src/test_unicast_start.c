@@ -170,15 +170,19 @@ static void cap_initiator_test_unicast_start_before(void *f)
 static void cap_initiator_test_unicast_start_after(void *f)
 {
 	struct cap_initiator_test_unicast_start_fixture *fixture = f;
+	int err;
 
-	bt_cap_initiator_unregister_cb(&mock_cap_initiator_cb);
+	err = bt_cap_initiator_unregister_cb(&mock_cap_initiator_cb);
+	zassert_true(err == 0 || err == -EINVAL, "Unexpected error: %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 
 	/* In the case of a test failing, we cancel the procedure so that subsequent won't fail */
-	bt_cap_initiator_unicast_audio_cancel();
+	err = bt_cap_initiator_unicast_audio_cancel();
+	/* May fail if no CAP procedure is in progress */
+	zassert_true(err == 0 || err == -EALREADY, "Unexpected error: %d", err);
 
 	if (fixture->unicast_group != NULL) {
 		struct bt_cap_stream
@@ -194,8 +198,15 @@ static void cap_initiator_test_unicast_start_after(void *f)
 			cap_stream_ptrs[idx] = &fixture->cap_streams[idx];
 		}
 
-		(void)bt_cap_initiator_unicast_audio_stop(&param);
-		(void)bt_cap_unicast_group_delete(fixture->unicast_group);
+		err = bt_cap_initiator_unicast_audio_stop(&param);
+		if (err != 0) {
+			printk("Failed to stop unicast audio (err %d)\n", err);
+		}
+
+		err = bt_cap_unicast_group_delete(fixture->unicast_group);
+		if (err != 0) {
+			printk("Failed to delete unicast group (err %d)\n", err);
+		}
 	}
 }
 
@@ -374,9 +385,8 @@ static ZTEST_F(cap_initiator_test_unicast_start,
 	int err;
 
 	/* CAP requires stream context - Let's remove it */
-	(void)memset(fixture->audio_start_stream_params[0].codec_cfg->meta, 0,
-		     sizeof(fixture->audio_start_stream_params[0].codec_cfg->meta));
-	fixture->audio_start_stream_params[0].codec_cfg->meta_len = 0U;
+	(void)memset(&fixture->preset.codec_cfg, 0, sizeof(fixture->preset.codec_cfg));
+	fixture->preset.codec_cfg.meta_len = 0U;
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
 	zassert_equal(err, -EINVAL, "Unexpected return value %d", err);

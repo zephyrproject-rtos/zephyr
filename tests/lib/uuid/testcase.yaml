@@ -7,8 +7,7 @@ tests:
   libraries.uuid.base:
     extra_configs:
       - CONFIG_UUID_V5=y
-      - CONFIG_MBEDTLS=y
-      - CONFIG_MBEDTLS_PSA_CRYPTO_C=y
+      - CONFIG_PSA_CRYPTO=y
       - CONFIG_PSA_WANT_ALG_SHA_1=y
       - CONFIG_UUID_BASE64=y
       - CONFIG_BASE64=y

@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: blue_led {
+			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+
+		red_led: red_led {
+			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+			label = "LED2";
+		};
+
+		green_led: green_led {
+			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+			label = "LED3";
+		};
+	};
+};
+
+&flash0 {
+	/* Partition table for MCUBoot. 64 KiB for bootloader, 480 KiB each for slot0 and slot1 */
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(128)>;
+		};
+
+		/* Slot0 and Slot1 are used to boot the M4 core */
+		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x20000 DT_SIZE_K(956)>;
+		};
+
+		slot1_partition: partition@10f000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x10f000 DT_SIZE_K(964)>;
+		};
+
+		storage_partition: partition@200000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x200000 DT_SIZE_M(1)>;
+		};
+	};
+};
+
+&flash1 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		rv32_slot0: rv32_partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-rv32";
+			reg = <0x0 DT_SIZE_K(96)>;
+		};
+
+		rv32_slot1: rv32_partition@18000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-rv32-1";
+			reg = <0x18000 DT_SIZE_K(96)>;
+		};
+
+		rv32_storage_partition: rv32_partition@30000 {
+			compatible = "zephyr,mapped-partition";
+			label = "rv32-storage";
+			reg = <0x30000 DT_SIZE_K(64)>;
+		};
+	};
+};

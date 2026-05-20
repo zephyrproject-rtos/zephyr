@@ -32,6 +32,14 @@ properties:
       Number of SD host clocks to use as a chip detect debounce filter. See
       DEBOUNCE_COUNT field of SDIF. Default value is the reset value of SOC.
 
+  cd-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO for card presence. When set, the driver uses software GPIO
+      read instead of the SDIF hardware card-detect input. Use when the socket
+      CD must be muxed as GPIO rather than SD0_CARD_DET_N. GPIO flags must
+      match the wiring; CD is typically active-low.
+
   pinctrl-0:
     required: true
 

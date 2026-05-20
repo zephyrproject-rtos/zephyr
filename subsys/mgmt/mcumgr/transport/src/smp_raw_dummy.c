@@ -54,7 +54,7 @@ static struct net_buf *mcumgr_dummy_process_frag(
 	struct mcumgr_serial_rx_ctxt *rx_ctxt,
 	const uint8_t *frag, int frag_len);
 
-K_MEM_SLAB_DEFINE(raw_dummy_mcumgr_slab, sizeof(struct uart_mcumgr_rx_buf), 1, 1);
+K_MEM_SLAB_DEFINE_TYPE(raw_dummy_mcumgr_slab, struct uart_mcumgr_rx_buf, 1);
 
 void smp_raw_dummy_clear_state(void)
 {

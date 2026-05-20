@@ -11,6 +11,11 @@ This sample application demonstrates the use of the :ref:`http_server_interface`
 This library provides high-level functions to simplify and abstract server implementation.
 The server supports the HTTP/1.1 protocol which can also be upgraded to HTTP/2,
 it also support native HTTP/2 protocol without upgrading.
+The server will support also HTTP/3 protocol if :kconfig:option:`CONFIG_QUIC` configuration
+option is enabled. By default the HTTP/1.1 session can be upgraded to HTTP/3, or
+HTTP/3 can be used natively without upgrading.
+The ``net http services`` net-shell command can show what HTTP protocols are supported
+for each configured HTTP service.
 
 Requirement
 -----------

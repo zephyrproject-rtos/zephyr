@@ -77,22 +77,22 @@ static struct pwm_ledc_esp32_channel_config *get_channel_config(const struct dev
 static void pwm_led_esp32_start(struct pwm_ledc_esp32_data *data,
 				struct pwm_ledc_esp32_channel_config *channel)
 {
-	ledc_hal_set_sig_out_en(&data->hal, channel->channel_num, true);
-	ledc_hal_set_duty_start(&data->hal, channel->channel_num);
+	ledc_hal_set_sig_out_en(&data->hal, channel->speed_mode, channel->channel_num, true);
+	ledc_hal_set_duty_start(&data->hal, channel->speed_mode, channel->channel_num);
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
-		ledc_hal_ls_channel_update(&data->hal, channel->channel_num);
+		ledc_hal_ls_channel_update(&data->hal, channel->speed_mode, channel->channel_num);
 	}
 }
 
 static void pwm_led_esp32_stop(struct pwm_ledc_esp32_data *data,
 			       struct pwm_ledc_esp32_channel_config *channel, bool idle_level)
 {
-	ledc_hal_set_idle_level(&data->hal, channel->channel_num, idle_level);
-	ledc_hal_set_sig_out_en(&data->hal, channel->channel_num, false);
+	ledc_hal_set_idle_level(&data->hal, channel->speed_mode, channel->channel_num, idle_level);
+	ledc_hal_set_sig_out_en(&data->hal, channel->speed_mode, channel->channel_num, false);
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
-		ledc_hal_ls_channel_update(&data->hal, channel->channel_num);
+		ledc_hal_ls_channel_update(&data->hal, channel->speed_mode, channel->channel_num);
 	}
 }
 
@@ -101,13 +101,16 @@ static void pwm_led_esp32_duty_set(const struct device *dev,
 {
 	struct pwm_ledc_esp32_data *data = (struct pwm_ledc_esp32_data *const)(dev)->data;
 
-	ledc_hal_set_hpoint(&data->hal, channel->channel_num, 0);
-	ledc_hal_set_duty_int_part(&data->hal, channel->channel_num, channel->duty_val);
+	ledc_hal_set_hpoint(&data->hal, channel->speed_mode, channel->channel_num, 0);
+	ledc_hal_set_duty_int_part(&data->hal, channel->speed_mode, channel->channel_num,
+				   channel->duty_val);
 	/* Set fade parameters: range=0, dir=1, cycle=1, scale=0, step=1 (no fading) */
-	ledc_hal_set_fade_param(&data->hal, channel->channel_num, 0, 1, 1, 0, 1);
+	ledc_hal_set_fade_param(&data->hal, channel->speed_mode, channel->channel_num,
+				0, 1, 1, 0, 1);
 #if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
-	ledc_hal_set_range_number(&data->hal, channel->channel_num, 1);
-	ledc_hal_clear_left_off_fade_param(&data->hal, channel->channel_num, 1);
+	ledc_hal_set_range_number(&data->hal, channel->speed_mode, channel->channel_num, 1);
+	ledc_hal_clear_left_off_fade_param(&data->hal, channel->speed_mode,
+					   channel->channel_num, 1);
 #endif
 }
 
@@ -220,17 +223,18 @@ static int pwm_led_esp32_timer_set(const struct device *dev,
 		ledc_hal_set_slow_clk_sel(&data->hal, global_clk);
 	}
 
-	ledc_hal_set_clock_divider(&data->hal, channel->timer_num, prescaler);
-	ledc_hal_set_duty_resolution(&data->hal, channel->timer_num, channel->resolution);
+	ledc_hal_set_clock_divider(&data->hal, channel->speed_mode, channel->timer_num, prescaler);
+	ledc_hal_set_duty_resolution(&data->hal, channel->speed_mode, channel->timer_num,
+				     channel->resolution);
 
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 	ledc_clk_src_t timer_clk =
 		channel->clock_src == LEDC_REF_TICK ? channel->clock_src : LEDC_SCLK;
-	ledc_hal_set_clock_source(&data->hal, channel->timer_num, timer_clk);
+	ledc_hal_set_clock_source(&data->hal, channel->speed_mode, channel->timer_num, timer_clk);
 #endif
 
 	if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
-		ledc_hal_ls_timer_update(&data->hal, channel->timer_num);
+		ledc_hal_ls_timer_update(&data->hal, channel->speed_mode, channel->timer_num);
 	}
 
 	LOG_DBG("channel_num=%d, speed_mode=%d, timer_num=%d, clock_src=%d, prescaler=%d, "
@@ -334,8 +338,6 @@ static int pwm_led_esp32_set_cycles(const struct device *dev, uint32_t channel_i
 		channel->inverted = false;
 	}
 
-	ledc_hal_init(&data->hal, channel->speed_mode);
-
 	if ((pulse_cycles == period_cycles) || (pulse_cycles == 0)) {
 		channel->freq = 0;
 		channel->duty_val = 0;
@@ -385,11 +387,10 @@ static int pwm_led_esp32_pm_action(const struct device *dev, enum pm_device_acti
 			 * and duty is neither 0% nor 100%
 			 */
 			if (channel->freq > 0) {
-				ledc_hal_init(&data->hal, channel->speed_mode);
-
 				if (action == PM_DEVICE_ACTION_SUSPEND) {
 					pwm_led_esp32_stop(data, channel, channel->inverted);
-					ledc_hal_timer_rst(&data->hal, channel->timer_num);
+					ledc_hal_timer_rst(&data->hal, channel->speed_mode,
+							   channel->timer_num);
 				} else {
 					pwm_led_esp32_start(data, channel);
 				}
@@ -423,7 +424,9 @@ int pwm_led_esp32_init(const struct device *dev)
 
 	/* Enable peripheral */
 	clock_control_on(config->clock_dev, config->clock_subsys);
-	ledc_ll_enable_clock(data->hal.dev, true);
+	ledc_ll_enable_clock(0, true);
+
+	ledc_hal_init(&data->hal, 0);
 
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 	/* Combine clock sources to include timer specific sources */
@@ -435,8 +438,6 @@ int pwm_led_esp32_init(const struct device *dev)
 	for (int i = 0; i < config->channel_len; ++i) {
 		channel = &config->channel_config[i];
 
-		ledc_hal_init(&data->hal, channel->speed_mode);
-
 		if (channel->speed_mode == LEDC_LOW_SPEED_MODE) {
 			channel->clock_src = global_clks[0];
 			ledc_hal_set_slow_clk_sel(&data->hal, channel->clock_src);
@@ -447,16 +448,18 @@ int pwm_led_esp32_init(const struct device *dev)
 		}
 #endif
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
-		ledc_hal_set_clock_source(&data->hal, channel->timer_num, channel->clock_src);
+		ledc_hal_set_clock_source(&data->hal, channel->speed_mode, channel->timer_num,
+					  channel->clock_src);
 #endif
 
 		esp_clk_tree_src_get_freq_hz(channel->clock_src,
 					     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
 					     &channel->clock_src_hz);
 
-		ledc_hal_bind_channel_timer(&data->hal, channel->channel_num, channel->timer_num);
+		ledc_hal_bind_channel_timer(&data->hal, channel->speed_mode, channel->channel_num,
+					    channel->timer_num);
 		pwm_led_esp32_stop(data, channel, channel->inverted);
-		ledc_hal_timer_rst(&data->hal, channel->timer_num);
+		ledc_hal_timer_rst(&data->hal, channel->speed_mode, channel->timer_num);
 	}
 
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);

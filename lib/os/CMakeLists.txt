@@ -6,11 +6,10 @@ zephyr_syscall_header(
 )
 
 zephyr_sources(
+  boot_banner.c
   cbprintf_packaged.c
   clock.c
   printk.c
-  sem.c
-  thread_entry.c
   )
 
 if(CONFIG_ZVFS)
@@ -57,8 +56,6 @@ if(CONFIG_ASSERT OR CONFIG_ASSERT_VERBOSE)
 zephyr_sources(assert.c)
 endif()
 
-zephyr_sources_ifdef(CONFIG_USERSPACE mutex.c user_work.c)
-
 zephyr_sources_ifdef(CONFIG_MPSC_PBUF mpsc_pbuf.c)
 
 zephyr_sources_ifdef(CONFIG_SPSC_PBUF spsc_pbuf.c)
@@ -79,3 +76,12 @@ add_subdirectory_ifdef(CONFIG_ZVFS zvfs)
 zephyr_syscall_header_ifdef(CONFIG_ZVFS_FDTABLE
   ${ZEPHYR_BASE}/include/zephyr/sys/fdtable.h
 )
+
+zephyr_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
+
+zephyr_syscall_header_ifdef(
+  CONFIG_ATOMIC_OPERATIONS_C
+  ${ZEPHYR_BASE}/include/zephyr/sys/atomic_c.h
+)
+
+zephyr_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C atomic_c.c)

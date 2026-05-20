@@ -1,0 +1,17 @@
+# Copyright(c) 2026 Telit Cinterion S.p.A. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telit LEx10Q1 Modem
+
+compatible: "telit,lex10q1"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    required: true
+
+  mdm-reset-gpios:
+    type: phandle-array
+    required: true

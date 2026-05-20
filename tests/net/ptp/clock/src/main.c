@@ -119,12 +119,14 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_capabilities(const struct device *dev __unused,
+					      struct net_if *iface __unused)
 {
 	return ETHERNET_PTP;
 }
 
-static const struct device *eth_get_ptp_clock(const struct device *dev)
+static const struct device *eth_get_ptp_clock(const struct device *dev,
+					      struct net_if *iface __unused)
 {
 	struct eth_context *context = dev->data;
 

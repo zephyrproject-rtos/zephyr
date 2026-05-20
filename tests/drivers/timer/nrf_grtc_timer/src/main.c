@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/sys/minmax.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/timer/nrf_grtc_timer.h>
 #include <zephyr/drivers/counter.h>

@@ -83,11 +83,7 @@ static void recycled(void)
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 			     enum bt_security_err err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Security changed: %s level %u\n", addr, level);
+	printk("Security changed: %s level %u\n", bt_conn_dst_str(conn), level);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
@@ -256,20 +252,12 @@ static void bt_ready(int err)
 
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Passkey for %s: %06u\n", addr, passkey);
+	printk("Passkey for %s: %06u\n", bt_conn_dst_str(conn), passkey);
 }
 
 static void auth_cancel(struct bt_conn *conn)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Pairing cancelled: %s\n", addr);
+	printk("Pairing cancelled: %s\n", bt_conn_dst_str(conn));
 }
 
 static struct bt_conn_auth_cb auth_cb_display = {

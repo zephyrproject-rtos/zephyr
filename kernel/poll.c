@@ -585,18 +585,31 @@ static void triggered_work_handler(struct k_work *work)
 	twork->real_handler(work);
 }
 
+extern int z_work_submit_to_queue(struct k_work_q *queue,
+			 struct k_work *work);
+
 static void triggered_work_expiration_handler(struct _timeout *timeout)
 {
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	if (z_is_timeout_handler_canceled(timeout)) {
+		/*
+		 * The timeout was canceled by a thread on another CPU
+		 * or another ISR. Bail.
+		 */
+		k_spin_unlock(&lock, key);
+		return;
+	}
+
 	struct k_work_poll *twork =
 		CONTAINER_OF(timeout, struct k_work_poll, timeout);
 
 	twork->poller.is_polling = false;
 	twork->poll_result = -EAGAIN;
-	k_work_submit_to_queue(twork->workq, &twork->work);
-}
+	z_work_submit_to_queue(twork->workq, &twork->work);
 
-extern int z_work_submit_to_queue(struct k_work_q *queue,
-			 struct k_work *work);
+	k_spin_unlock(&lock, key);
+}
 
 static int signal_triggered_work(struct k_poll_event *event, uint32_t status)
 {

@@ -1,0 +1,17 @@
+sample:
+  description: Display color palette bands using indexed color formats
+  name: color_palette
+common:
+  tags:
+    - display
+tests:
+  sample.subsys.display.color_palette:
+    filter: dt_compat_enabled("zephyr,panel-color-palette") and
+            dt_chosen_enabled("zephyr,display")
+    harness: none
+    integration_platforms:
+      - native_sim/native/64
+    platform_allow:
+      - native_sim/native/64
+      - reterminal_e1002/esp32s3/procpu
+      - inkplate_6color/esp32/procpu

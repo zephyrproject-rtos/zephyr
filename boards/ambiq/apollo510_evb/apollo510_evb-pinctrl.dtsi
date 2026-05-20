@@ -157,6 +157,21 @@
 		};
 	};
 
+	ios_i2c0_default: ios_i2c0_default {
+		group1 {
+			pinmux = <SLSCL_P11>, <SLSDAWIR3_P52>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
+	ios_i2c0_sleep: ios_i2c0_sleep {
+		group1 {
+			pinmux = <GPIO_P11>, <GPIO_P52>;
+		};
+	};
+
 	spid0_default: spid0_default {
 		group1 {
 			pinmux = <SLSCK_P11>, <SLMISO_P83>, <SLMOSI_P52>, <SLnCE_P13>;

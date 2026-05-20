@@ -6,7 +6,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-SIMULATION_ID="mcs_mcc"
+SIMULATION_ID="${BOARD_TS}_mcs_mcc"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=180
 

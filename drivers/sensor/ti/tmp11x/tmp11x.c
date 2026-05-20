@@ -217,9 +217,6 @@ static int tmp11x_sample_fetch(const struct device *dev, enum sensor_channel cha
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
-	/* clear sensor values */
-	drv_data->sample = 0U;
-
 	/* Make sure that a data is available */
 	rc = tmp11x_reg_read(dev, TMP11X_REG_CFGR, &cfg_reg);
 	if (rc < 0) {
@@ -544,7 +541,7 @@ static int tmp11x_init(const struct device *dev)
 	uint16_t id;
 
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
 		return -EINVAL;
 	}
 

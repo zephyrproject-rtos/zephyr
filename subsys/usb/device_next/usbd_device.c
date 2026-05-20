@@ -61,7 +61,7 @@ int usbd_device_set_bcd_usb(struct usbd_context *const uds_ctx,
 	usbd_device_lock(uds_ctx);
 
 	if (usbd_is_enabled(uds_ctx)) {
-		ret = -EALREADY;
+		ret = -EBUSY;
 		goto set_bcd_exit;
 	}
 
@@ -87,7 +87,7 @@ int usbd_device_set_vid(struct usbd_context *const uds_ctx,
 	usbd_device_lock(uds_ctx);
 
 	if (usbd_is_enabled(uds_ctx)) {
-		ret = -EALREADY;
+		ret = -EBUSY;
 		goto set_vid_exit;
 	}
 
@@ -113,7 +113,7 @@ int usbd_device_set_pid(struct usbd_context *const uds_ctx,
 	usbd_device_lock(uds_ctx);
 
 	if (usbd_is_enabled(uds_ctx)) {
-		ret = -EALREADY;
+		ret = -EBUSY;
 		goto set_pid_exit;
 	}
 
@@ -139,7 +139,7 @@ int usbd_device_set_bcd_device(struct usbd_context *const uds_ctx,
 	usbd_device_lock(uds_ctx);
 
 	if (usbd_is_enabled(uds_ctx)) {
-		ret = -EALREADY;
+		ret = -EBUSY;
 		goto set_bcd_device_exit;
 	}
 
@@ -167,7 +167,7 @@ int usbd_device_set_code_triple(struct usbd_context *const uds_ctx,
 	usbd_device_lock(uds_ctx);
 
 	if (usbd_is_enabled(uds_ctx)) {
-		ret = -EALREADY;
+		ret = -EBUSY;
 		goto set_code_triple_exit;
 	}
 

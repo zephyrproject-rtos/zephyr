@@ -4,7 +4,8 @@
 config SI7006
 	bool "SHT21, Si7006, and HTU21D Humidity and Temperature Sensors"
 	default y
-	depends on DT_HAS_SILABS_SI7006_ENABLED || DT_HAS_SENSIRION_SHT21_ENABLED
+	depends on DT_HAS_SILABS_SI7006_ENABLED || DT_HAS_SENSIRION_SHT21_ENABLED || \
+		   DT_HAS_MEAS_HTU21D_ENABLED
 	select I2C
 	select REGULATOR if $(dt_compat_any_has_prop,$(DT_COMPAT_SILABS_SI7006),vin-supply)
 	help

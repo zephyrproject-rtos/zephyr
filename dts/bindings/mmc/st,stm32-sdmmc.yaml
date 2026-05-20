@@ -1,15 +1,14 @@
-description: STM32 SDMMC Disk Access
+description: STM32 SDMMC Host Controller
 
 compatible: "st,stm32-sdmmc"
 
-include: [mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
+include: [sdhc.yaml, mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
 
 properties:
   disk-name:
     type: string
-    required: true
     description: |
-      Disk name.
+      Disk name (legacy disk driver usage).
 
   clocks:
     required: true
@@ -91,3 +90,12 @@ properties:
          dma-names = "tx", "rx";
       or
          dma-names = "txrx";
+
+  hw-flow-control:
+    type: boolean
+    description: Set to enable RTS/CTS flow control at boot time
+
+  support-1-8-v:
+    type: boolean
+    description: |
+        When defined, it indicates that the external SDIO circuit supports 1.8V signaling.

@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# These white-box unit tests compile selected PTP implementation files
+# directly, without enabling CONFIG_PTP and linking the full subsystem.
+# Per-test Kconfig files intentionally redeclare selected PTP Kconfig entries
+# so tests can provide defaults while CONFIG_PTP and its dependencies remain
+# disabled. Keep those redeclarations test-local.
+# Provide common PTP Kconfig defaults needed by those files here.
+
+config PTP_LOG_LEVEL
+	default 3

@@ -70,7 +70,8 @@ def parse_args():
         '--output',
         dest='output',
         required=True,
-        help='output file (e.g. build/zephyr/misc/generated/lib/posix/strsignal_table.h)',
+        help="""output file (e.g.
+                build/zephyr/misc/generated/subsys/portability/posix/strsignal_table.h)""",
     )
 
     args = parser.parse_args()

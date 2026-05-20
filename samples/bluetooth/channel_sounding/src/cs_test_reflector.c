@@ -66,10 +66,7 @@ static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err,
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	printk("Connected to %s (err 0x%02X)\n", addr, err);
+	printk("Connected to %s (err 0x%02X)\n", bt_conn_dst_str(conn), err);
 
 	__ASSERT(connection == conn, "Unexpected connected callback");
 

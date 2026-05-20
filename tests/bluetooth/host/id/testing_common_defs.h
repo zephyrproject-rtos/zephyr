@@ -19,3 +19,5 @@
 /** Bluetooth LE device "test" random resolvable private addresses */
 #define BT_RPA_LE_ADDR                                                                             \
 	((bt_addr_le_t[]){{BT_ADDR_LE_RANDOM, {{0x0A, 0x89, 0x67, 0x45, 0x23, 0x41}}}})
+#define BT_RPA_ADDR                                                                                \
+	((bt_addr_t[]){{{0x0A, 0x89, 0x67, 0x45, 0x23, 0x41}}})

@@ -19,6 +19,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/barrier.h>
 
 #include <fsl_common.h>
@@ -42,6 +43,8 @@ LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 
 struct dma_mcux_edma_config {
 	DEVICE_MMIO_NAMED_ROM(edma_mmio);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	DMAMUX_Type **dmamux_base;
 #endif
@@ -52,6 +55,7 @@ struct dma_mcux_edma_config {
 #if DMA_MCUX_HAS_CHANNEL_GAP
 	uint32_t channel_gap[2];
 #endif
+	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 };
@@ -1021,10 +1025,37 @@ static int dma_mcux_edma_init(const struct device *dev)
 	struct dma_mcux_edma_data *data = dev->data;
 
 	edma_config_t userConfig = { 0 };
+	int ret;
 
 	LOG_DBG("INIT NXP EDMA");
 
 	DEVICE_MMIO_NAMED_MAP(dev, edma_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
+	}
+
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("clock controller not ready");
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			LOG_ERR("Failed to enable clock (%d)", ret);
+			return ret;
+		}
+	}
 
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	uint8_t i;
@@ -1169,6 +1200,11 @@ static int dma_mcux_edma_init(const struct device *dev)
 	dma_tcdpool##n[DT_INST_PROP(n, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];\
 	static const struct dma_mcux_edma_config dma_config_##n = {		\
 		DEVICE_MMIO_NAMED_ROM_INIT(edma_mmio, DT_DRV_INST(n)),		\
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),	\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),	\
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),	\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),	\
+			((clock_control_subsys_t)0U)),				\
 		DMAMUX_BASE_INIT(n)						\
 		.dma_requests = DT_INST_PROP(n, dma_requests),			\
 		.dma_channels = DT_INST_PROP(n, dma_channels),			\
@@ -1176,6 +1212,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.tcdpool = dma_tcdpool##n,					\
 	};									\
 										\

@@ -54,7 +54,7 @@
 			reg = <0x00078000 DT_SIZE_K(416)>;
 		};
 
-		storage_partition: partition@f0000 {
+		storage_partition: partition@e0000 {
 			label = "storage";
 			reg = <0x000e0000 DT_SIZE_K(128)>;
 		};

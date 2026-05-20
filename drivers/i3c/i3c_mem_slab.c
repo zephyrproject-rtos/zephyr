@@ -20,8 +20,8 @@ LOG_MODULE_DECLARE(i3c, CONFIG_I3C_LOG_LEVEL);
 const struct device dummy_devs[] = {
 	LISTIFY(CONFIG_I3C_NUM_OF_DESC_MEM_SLABS, UNKNOWN_NAME_STR, (,)) };
 
-K_MEM_SLAB_DEFINE(i3c_device_desc_pool, sizeof(struct i3c_device_desc),
-		  CONFIG_I3C_NUM_OF_DESC_MEM_SLABS, 4);
+K_MEM_SLAB_DEFINE_TYPE(i3c_device_desc_pool, struct i3c_device_desc,
+		       CONFIG_I3C_NUM_OF_DESC_MEM_SLABS);
 
 struct i3c_device_desc *i3c_device_desc_alloc(void)
 {

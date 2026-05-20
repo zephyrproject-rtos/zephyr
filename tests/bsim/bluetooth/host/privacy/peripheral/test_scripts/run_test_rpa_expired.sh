@@ -6,7 +6,7 @@ set -eu
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
-simulation_id="rpa_expired"
+simulation_id="${BOARD_TS}_rpa_expired"
 EXECUTE_TIMEOUT=240
 
 central_exe_rpa_expired="\
@@ -17,11 +17,13 @@ cd ${BSIM_OUT_PATH}/bin
 
 Execute "$central_exe_rpa_expired" \
     -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=central_rpa_check \
-    -RealEncryption=1 -flash="${simulation_id}.central.log.bin" -flash_erase
+    -RealEncryption=1 \
+    -flash=../results/${simulation_id}/central.log.bin -flash_erase
 
 Execute "$peripheral_exe_rpa_expired" \
     -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral_rpa_expired \
-    -RealEncryption=1 -flash="${simulation_id}.peripheral.log.bin" -flash_erase
+    -RealEncryption=1 \
+    -flash=../results/${simulation_id}/peripheral.log.bin -flash_erase
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
     -D=2 -sim_length=70e6 $@

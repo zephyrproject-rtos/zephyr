@@ -79,7 +79,7 @@
 			interrupts = <9 0 0>;
 		};
 
-		/* Generated code for AFE devices */
-		#include "afe-mt8365.dts"
+/* Generated code for AFE devices */
+#include "afe-mt8365.dts"
 	}; /* soc */
 };

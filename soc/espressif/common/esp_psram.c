@@ -8,7 +8,13 @@
 #include <rom/ets_sys.h>
 #include <esp_psram.h>
 #include <esp_private/esp_psram_extram.h>
+#include <hal/cache_hal.h>
 #include <zephyr/multi_heap/shared_multi_heap.h>
+
+extern int _instruction_reserved_start;
+extern int _instruction_reserved_end;
+extern int _rodata_reserved_start;
+extern int _rodata_reserved_end;
 
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
@@ -27,6 +33,26 @@ void esp_init_psram(void)
 {
 	intptr_t mapped_vaddr = 0;
 	size_t mapped_size = 0;
+
+	/*
+	 * PSRAM chip init transitions the MSPI clock through low and high
+	 * speed modes and reprograms the flash/PSRAM tuning registers.
+	 * Cache lines fetched during that window can hold garbage. Run the
+	 * chip-init step first, invalidate the flash IROM/DROM ranges, then
+	 * run the rest of PSRAM init so the next flash fetch reloads with
+	 * the final MSPI settings.
+	 */
+	if (esp_psram_chip_init()) {
+		ets_printf("Failed to Initialize external RAM, aborting.\n");
+		return;
+	}
+
+	cache_hal_invalidate_addr((uint32_t)&_instruction_reserved_start,
+				  (uint32_t)&_instruction_reserved_end -
+					  (uint32_t)&_instruction_reserved_start);
+	cache_hal_invalidate_addr((uint32_t)&_rodata_reserved_start,
+				  (uint32_t)&_rodata_reserved_end -
+					  (uint32_t)&_rodata_reserved_start);
 
 	if (esp_psram_init()) {
 		ets_printf("Failed to Initialize external RAM, aborting.\n");

@@ -687,10 +687,8 @@ static int cdc_acm_irq_is_pending(const struct device *dev)
  * @brief Update IRQ status
  *
  * @param dev CDC ACM device struct.
- *
- * @return Always 1
  */
-static int cdc_acm_irq_update(const struct device *dev)
+static void cdc_acm_irq_update(const struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = dev->data;
 
@@ -701,8 +699,6 @@ static int cdc_acm_irq_update(const struct device *dev)
 	if (ring_buf_is_empty(dev_data->rx_ringbuf)) {
 		dev_data->rx_ready = false;
 	}
-
-	return 1;
 }
 
 /**

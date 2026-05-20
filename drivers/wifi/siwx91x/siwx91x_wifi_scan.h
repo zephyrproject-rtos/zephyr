@@ -10,6 +10,7 @@
 #include "sl_wifi_types.h"
 
 int siwx91x_scan(const struct device *dev,
+		 struct net_if *iface,
 		 struct wifi_scan_params *params,
 		 scan_result_cb_t cb);
 

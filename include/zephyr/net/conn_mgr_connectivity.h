@@ -45,6 +45,7 @@ enum {
 	NET_EVENT_CONN_CMD_IF_TIMEOUT_VAL,
 	NET_EVENT_CONN_CMD_IF_FATAL_ERROR_VAL,
 	NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT_VAL,
+	NET_EVENT_CONN_CMD_IF_NO_CONFIGURATION_VAL,
 
 	NET_EVENT_CONN_CMD_MAX
 };
@@ -56,6 +57,7 @@ enum net_event_conn_cmd {
 	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_TIMEOUT),
 	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_FATAL_ERROR),
 	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT),
+	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_NO_CONFIGURATION),
 };
 
 /** @endcond */
@@ -78,6 +80,11 @@ enum net_event_conn_cmd {
 #define NET_EVENT_CONN_IF_IDLE_TIMEOUT					\
 	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT)
 
+/**
+ * @brief net_mgmt event raised when an interface cannot connect due to a lack of configuration
+ */
+#define NET_EVENT_CONN_IF_NO_CONFIGURATION					\
+	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_NO_CONFIGURATION)
 
 /**
  * @brief Per-iface connectivity flags
@@ -138,6 +145,7 @@ enum conn_mgr_if_flag {
  * @retval 0 on success.
  * @retval -ESHUTDOWN if the iface is not admin-up.
  * @retval -ENOTSUP if the iface does not have a connectivity implementation.
+ * @retval -EAGAIN if the iface does not have configuration information to connect
  * @return implementation-specific status code otherwise.
  */
 int conn_mgr_if_connect(struct net_if *iface);

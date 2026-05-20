@@ -13,10 +13,12 @@ child-binding:
     - name: ethernet-controller.yaml
       property-allowlist:
         - zephyr,random-mac-address
+        - zephyr,mac-address-prefix
         - local-mac-address
         - phy-handle
         - phy-connection-type
         - ptp-clock
+    - name: nvmem-consumer.yaml
 
   properties:
     reg:

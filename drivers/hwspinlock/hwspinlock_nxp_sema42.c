@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/hwspinlock.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hwspinlock_nxp_sema42, CONFIG_HWSPINLOCK_LOG_LEVEL);
@@ -20,6 +21,7 @@ struct nxp_sema42_config {
 	uint8_t num_locks;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	struct reset_dt_spec reset;
 };
 
 /* SEMA42 gate n register address.
@@ -121,6 +123,20 @@ static int nxp_sema42_init(const struct device *dev)
 		}
 	}
 
+	if (cfg->reset.dev != NULL) {
+		int ret;
+
+		if (!device_is_ready(cfg->reset.dev)) {
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&cfg->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
+	}
+
 	/* Do not reset/clear gates here.
 	 *
 	 * In multi-core (multi-domain) systems, this hwspinlock device can be used to
@@ -151,6 +167,7 @@ static DEVICE_API(hwspinlock, nxp_sema42_api) = {
 		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),		\
 				((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)),	\
 				((clock_control_subsys_t)0U)),					\
+		.reset = RESET_DT_SPEC_INST_GET_OR(inst, {0}),					\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, nxp_sema42_init, NULL, NULL,				\

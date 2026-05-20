@@ -109,6 +109,20 @@ static inline void sys_clock_unlock(k_spinlock_key_t key)
 }
 #endif
 
+#if defined(CONFIG_TEST) || defined(CONFIG_ASSERT)
+/**
+ * @brief Check whether the system clock lock is currently held.
+ *
+ * Analog of z_spin_is_locked() for the timer lock exposed via
+ * sys_clock_lock().  Intended for assertions in timer driver callbacks
+ * (sys_clock_set_timeout, sys_clock_elapsed, sys_clock_idle_exit) that
+ * rely on the kernel having taken the lock before calling them.
+ *
+ * @return true if the system clock lock is held.
+ */
+bool sys_clock_is_locked(void);
+#endif
+
 /**
  * @brief Set system clock timeout
  *

@@ -145,6 +145,13 @@ bool openthread_border_router_check_packet_forwarding_rules(struct net_pkt *pkt)
  */
 bool openthread_border_router_has_ipv4_connectivity(void);
 
+/**
+ * @brief Remove transport layer checksums for Ethernet hardware offloading on IPv6 packets.
+ *
+ * @param pkt Pointer to the network packet to modify
+ */
+void openthread_border_router_remove_checksums_for_eth_offloading_ipv6(struct net_pkt *pkt);
+
 #ifdef __cplusplus
 }
 #endif

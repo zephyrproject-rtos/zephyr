@@ -13,10 +13,13 @@
 
 #include <zephyr/devicetree.h>
 
+#define RAM_ADDR DT_CHOSEN_SRAM_ADDR
+#define RAM_SIZE DT_CHOSEN_SRAM_SIZE
+
 MEMORY
 {
   rom      (rx)  : ORIGIN = 0x00000000, LENGTH = 512M
-  RAM      (rwx) : ORIGIN = CONFIG_SRAM_BASE_ADDRESS, LENGTH = KB(CONFIG_SRAM_SIZE)
+  RAM      (rwx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
   /* refer to include/linker/inlist.ld */
   IDT_LIST (wx)  : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }

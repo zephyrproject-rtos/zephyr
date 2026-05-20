@@ -40,6 +40,7 @@ LOG_MODULE_REGISTER(adc_bflb, CONFIG_ADC_LOG_LEVEL);
 #define ADC_RESOLUTION_14B_ID	2
 #define ADC_RESOLUTION_16B_ID	4
 
+#define ADC_INPUT_ID_TSEN_P	14
 #define ADC_INPUT_ID_HALF_VBAT	18
 #define ADC_INPUT_ID_GND	23
 
@@ -50,6 +51,16 @@ LOG_MODULE_REGISTER(adc_bflb, CONFIG_ADC_LOG_LEVEL);
 #define ADC_RESULT			0xFFFF
 
 #define ADC_WAIT_TIMEOUT_MS	500
+
+#define ADC_CHOP_MODE_VREF_AZ	1
+
+/* Two-phase averaging parameters for the internal TSEN measurement. After
+ * toggling TSVBE_LOW the first few samples are discarded for settling, the
+ * next batch is averaged to form one phase value.
+ */
+#define ADC_TSEN_PHASE_DISCARD	8
+#define ADC_TSEN_PHASE_AVG	16
+#define ADC_TSEN_PHASE_SAMPLES	(ADC_TSEN_PHASE_DISCARD + ADC_TSEN_PHASE_AVG)
 
 #define ADC_CLK_DIV_32	7
 
@@ -210,6 +221,21 @@ static int adc_bflb_channel_setup(const struct device *dev,
 	} else {
 		tmp &= ~AON_GPADC_DIFF_MODE;
 	}
+
+	/* Enable TSEN mode when using the internal temperature sensor channel. */
+	if (channel_cfg->input_positive == ADC_INPUT_ID_TSEN_P) {
+		tmp |= AON_GPADC_TS_EN;
+		tmp |= AON_GPADC_VREF_SEL; /* 2.0V reference for TSEN */
+		tmp &= ~AON_GPADC_TSEXT_SEL;
+		tmp &= ~AON_GPADC_PGA_VCMI_EN;
+		tmp &= ~AON_GPADC_TEST_EN;
+		tmp &= ~AON_GPADC_TEST_SEL_MASK;
+		tmp &= ~AON_GPADC_CHOP_MODE_MASK;
+		tmp |= (ADC_CHOP_MODE_VREF_AZ << AON_GPADC_CHOP_MODE_SHIFT);
+	} else {
+		tmp &= ~AON_GPADC_TS_EN;
+	}
+
 	sys_write32(tmp, cfg->reg_AON + AON_GPADC_REG_CONFIG2_OFFSET);
 
 	data->channel_count++;
@@ -248,6 +274,8 @@ static void adc_bflb_detrigger(const struct device *dev)
 	sys_write32(tmp, cfg->reg_AON + AON_GPADC_REG_CMD_OFFSET);
 }
 
+static int adc_bflb_read_tsen(const struct device *dev, const struct adc_sequence *sequence);
+
 static int adc_bflb_read(const struct device *dev,
 			const struct adc_sequence *sequence)
 {
@@ -257,13 +285,33 @@ static int adc_bflb_read(const struct device *dev,
 	uint8_t chan_nb = 0;
 	uint32_t nb_samples = 0;
 	uint8_t sample_chans[ADC_CHAN_COUNT] = {0};
+	bool has_tsen = false;
+	bool has_normal = false;
 	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(ADC_WAIT_TIMEOUT_MS));
 
 	for (uint8_t i = 0; i < ADC_CHAN_COUNT; i++) {
 		if ((sequence->channels >> i) & 0x1) {
 			sample_chans[chan_nb] = i;
 			chan_nb += 1;
+			if (data->channel_p[i] == ADC_INPUT_ID_TSEN_P) {
+				has_tsen = true;
+			} else {
+				has_normal = true;
+			}
 		}
+	}
+
+	/* TSEN needs global CONFIG2 bits (TS_EN, VREF 2.0V, chopper, plus a
+	 * software TSVBE_LOW toggle between the two measurement phases), so
+	 * it cannot share a sequence with regular analog channels.
+	 */
+	if (has_tsen && has_normal) {
+		LOG_ERR("TSEN channel cannot be mixed with other ADC channels");
+		return -EINVAL;
+	}
+
+	if (has_tsen) {
+		return adc_bflb_read_tsen(dev, sequence);
 	}
 
 	nb_samples = sequence->buffer_size / 2 / chan_nb;
@@ -309,8 +357,9 @@ static int adc_bflb_read(const struct device *dev,
 				&& !sys_timepoint_expired(end_timeout)) {
 				tmp = adc_bflb_read_one(dev);
 			}
-			((uint16_t *)sequence->buffer)[i * chan_nb + j] = ((tmp & ADC_RESULT)
-				>> (16 - sequence->resolution)) / data->cal_coe - data->cal_off;
+			((uint16_t *)sequence->buffer)[i * chan_nb + j] =
+				((tmp & ADC_RESULT) >> (16 - sequence->resolution))
+				/ data->cal_coe - data->cal_off;
 		}
 	}
 
@@ -469,7 +518,7 @@ static int adc_bflb_calibrate_efuse(const struct device *dev)
 	}
 	return 0;
 }
-#elif defined(CONFIG_SOC_SERIES_BL61X)
+#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 static int adc_bflb_calibrate_efuse(const struct device *dev)
 {
 	struct adc_bflb_data *data = dev->data;
@@ -516,7 +565,7 @@ static void adc_bflb_init_clock(const struct device *dev)
 	sys_write32(tmp, GLB_BASE + GLB_GPADC_32M_SRC_CTRL_OFFSET);
 }
 
-#elif defined(CONFIG_SOC_SERIES_BL61X)
+#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 static void adc_bflb_init_clock(const struct device *dev)
 {
 	uint32_t	tmp;
@@ -664,13 +713,93 @@ static int adc_bflb_init(const struct device *dev)
 #else
 	ret = adc_bflb_calibrate_efuse(dev);
 	if (ret < 0) {
-		LOG_ERR("Couldn't calibrate via efuses. err=%d", ret);
-		return ret;
+		LOG_WRN("ADC efuse calibration not available, using defaults");
 	}
 	adc_bflb_calibrate_gnd_offset(dev);
 #endif
 
 	cfg->irq_config_func(dev);
+	return 0;
+}
+
+/*
+ * Acquire ADC_TSEN_PHASE_SAMPLES samples with TSVBE_LOW set as requested,
+ * discard the settling prefix and return the average of the remaining
+ * samples. Used as one half of the TSEN two-phase measurement.
+ */
+static int adc_bflb_tsen_phase(const struct device *dev, bool tsvbe_low, uint32_t *avg)
+{
+	const struct adc_bflb_config *const cfg = dev->config;
+	k_timepoint_t end_timeout;
+	uint32_t sum = 0;
+	uint32_t tmp;
+
+	tmp = sys_read32(cfg->reg_AON + AON_GPADC_REG_CONFIG2_OFFSET);
+	if (tsvbe_low) {
+		tmp |= AON_GPADC_TSVBE_LOW;
+	} else {
+		tmp &= ~AON_GPADC_TSVBE_LOW;
+	}
+	sys_write32(tmp, cfg->reg_AON + AON_GPADC_REG_CONFIG2_OFFSET);
+
+	tmp = sys_read32(cfg->reg_GPIP + GPIP_GPADC_CONFIG_OFFSET);
+	tmp |= GPIP_GPADC_FIFO_CLR;
+	sys_write32(tmp, cfg->reg_GPIP + GPIP_GPADC_CONFIG_OFFSET);
+
+	adc_bflb_trigger(dev);
+
+	end_timeout = sys_timepoint_calc(K_MSEC(ADC_WAIT_TIMEOUT_MS));
+
+	for (int i = 0; i < ADC_TSEN_PHASE_SAMPLES; i++) {
+		uint32_t raw;
+
+		while ((sys_read32(cfg->reg_GPIP + GPIP_GPADC_CONFIG_OFFSET) &
+			GPIP_GPADC_FIFO_DATA_COUNT_MASK) == 0) {
+			if (sys_timepoint_expired(end_timeout)) {
+				adc_bflb_detrigger(dev);
+				return -ETIMEDOUT;
+			}
+		}
+		raw = sys_read32(cfg->reg_GPIP + GPIP_GPADC_DMA_RDATA_OFFSET) & ADC_RESULT;
+		if (i >= ADC_TSEN_PHASE_DISCARD) {
+			sum += raw;
+		}
+	}
+
+	adc_bflb_detrigger(dev);
+
+	*avg = (sum + ADC_TSEN_PHASE_AVG / 2) / ADC_TSEN_PHASE_AVG;
+	return 0;
+}
+
+/* Fill the buffer with TSEN delta samples (VBE_HIGH - VBE_LOW). */
+static int adc_bflb_read_tsen(const struct device *dev, const struct adc_sequence *sequence)
+{
+	const struct adc_bflb_config *const cfg = dev->config;
+	uint32_t nb_samples = sequence->buffer_size / sizeof(uint16_t);
+	uint32_t tmp;
+
+	/* TSEN is always sampled at 16-bit. */
+	tmp = sys_read32(cfg->reg_AON + AON_GPADC_REG_CONFIG1_OFFSET);
+	tmp &= ~AON_GPADC_RES_SEL_MASK;
+	tmp |= (ADC_RESOLUTION_16B_ID << AON_GPADC_RES_SEL_SHIFT);
+	sys_write32(tmp, cfg->reg_AON + AON_GPADC_REG_CONFIG1_OFFSET);
+
+	for (uint32_t i = 0; i < nb_samples; i++) {
+		uint32_t vbe_high, vbe_low;
+		int ret;
+
+		ret = adc_bflb_tsen_phase(dev, false, &vbe_high);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = adc_bflb_tsen_phase(dev, true, &vbe_low);
+		if (ret < 0) {
+			return ret;
+		}
+		((uint16_t *)sequence->buffer)[i] = vbe_high - vbe_low;
+	}
+
 	return 0;
 }
 

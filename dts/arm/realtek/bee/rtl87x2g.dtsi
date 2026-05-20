@@ -10,8 +10,14 @@
 #include <dt-bindings/pinctrl/rtl87x2g-pinctrl.h>
 #include <dt-bindings/clock/rtl87x2g-clocks.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -259,6 +265,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer3: timer@4003103c {
@@ -271,6 +283,12 @@
 			counter {
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -285,6 +303,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer5: timer@40031064 {
@@ -297,6 +321,12 @@
 			counter {
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -311,6 +341,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer7: timer@4003108c {
@@ -323,6 +359,12 @@
 			counter {
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -338,6 +380,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer9: timer@40017024 {
@@ -350,6 +398,12 @@
 			counter {
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -364,6 +418,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer11: timer@4001706c {
@@ -377,6 +437,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		keyscan: keyscan@40037000 {
@@ -384,6 +450,83 @@
 			reg = <0x40037000 0x34>;
 			interrupts = <58 0>;
 			clocks = <&cctl APB_CLK(KEYSCAN)>;
+			status = "disabled";
+		};
+
+		qdec: qdec@40001bd0 {
+			compatible = "realtek,bee-aon-qdec";
+			reg = <0x40001bd0 0x3>;
+			interrupts = <59 0>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@40035800 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40035800 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <30 0>;
+			clocks = <&cctl APB_CLK(I2C0)>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40035c00 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40035c00 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <31 0>;
+			clocks = <&cctl APB_CLK(I2C1)>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@40036000 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40036000 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <32 0>;
+			clocks = <&cctl APB_CLK(I2C2)>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@40036400 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40036400 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <33 0>;
+			clocks = <&cctl APB_CLK(I2C3)>;
+			status = "disabled";
+		};
+
+		rtc_counter: rtc@40001800 {
+			compatible = "realtek,bee-counter-rtc";
+			reg = <0x40001800 0x40>;
+			interrupts = <8 0>;
+			channels = <4>;
+			status = "disabled";
+		};
+
+		trng: trng@400c2400 {
+			compatible = "realtek,bee-trng";
+			reg = <0x400c2400 0x68>;
+			status = "okay";
+		};
+
+		dma0: dma@400242c0 {
+			compatible = "realtek,bee-dma";
+			reg = <0x400242c0 0x4b0>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>, <23 0>,
+				     <24 0>, <25 0>, <26 0>, <27 0>;
+			dma-channels = <9>;
+			clocks = <&cctl APB_CLK(GDMA)>;
+			dma-port = <0>;
+			#dma-cells = <3>;
 			status = "disabled";
 		};
 	};

@@ -1969,6 +1969,9 @@ This has been fixed in main for v4.2.0
 - `PR 93576 fix for main
   <https://github.com/zephyrproject-rtos/zephyr/pull/93576>`_
 
+- `PR 100474 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/100474>`_
+
 :cve:`2025-10457`
 -----------------
 
@@ -2167,7 +2170,22 @@ This has been fixed in main for v4.4.0
 :cve:`2026-1677`
 ----------------
 
-Under embargo until 2026-04-15
+net: TLS 1.2 connections allowed on TLS 1.3 sockets
+
+Zephyr sockets created with ``IPPROTO_TLS_1_3`` can still negotiate a TLS 1.2 connection when both
+TLS versions are enabled in Kconfig, because the socket-level protocol selection is not propagated
+to mbedTLS (e.g. via ``mbedtls_ssl_conf_min_tls_version``). The ClientHello advertises both versions
+and the peer can establish TLS 1.2, so applications that assumed ``IPPROTO_TLS_1_3`` enforces TLS
+1.3 may silently use TLS 1.2 and remain exposed to TLS 1.2-specific weaknesses.
+
+- `Zephyr project bug tracker GHSA-23r2-m5wx-4rvq
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-23r2-m5wx-4rvq>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102570 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102570>`_
+
 
 :cve:`2026-1678`
 ----------------
@@ -2216,7 +2234,21 @@ This has been fixed in main for v4.4.0
 :cve:`2026-1681`
 ----------------
 
-Under embargo until 2026-04-15
+net: Stack Overflow with Ping (to own IP Address) via Shell
+
+Issuing an ICMP ping via the ``net ping`` shell command to a device's own IPv4 address causes the
+network stack to recursively re-enter the input path on the same system work-queue stack. Because
+the destination is recognized as a local address, both the echo request and the resulting echo reply
+are processed inline before the current frame returns. The nested input-path frames exceed the
+work-queue stack and trigger a stack overflow.
+
+- `Zephyr project bug tracker GHSA-6fcc-8rwr-w7xx
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-6fcc-8rwr-w7xx>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 102268 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/102268>`_
 
 :cve:`2026-4179`
 ----------------

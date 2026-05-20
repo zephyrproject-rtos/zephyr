@@ -139,13 +139,14 @@ properties:
   dqs-port:
     type: int
     enum:
+      - 0
       - 1
       - 2
     description: |
       Specifies which port of the OCTOSPI IO Manager is used for the dqs pin.
 
       If absent, then n is used where `n` is the OSPI
-      instance number.
+      instance number, 0 means signal is not used.
 
       Note: You might need to enable the OCTOSPI I/O manager clock to use the
             property. Please refer to Reference Manual.

@@ -96,7 +96,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 
 void __weak arch_spin_relax(void)
 {
-	__ASSERT(!arch_irq_unlocked(arch_irq_lock()),
+	__ASSERT(!arch_cpu_irqs_are_enabled(),
 		 "this is meant to be called with IRQs disabled");
 
 	arch_nop();

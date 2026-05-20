@@ -19,4 +19,22 @@ Requirements
 
 Building and Running
 ********************
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/central_otc
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, the sample scans for a peripheral advertising the Object
+Transfer Service (OTS) and connects to it. Use the
+:zephyr:code-sample:`ble_peripheral_ots` sample on a second board as the
+peripheral. Once connected, use the four buttons to interact with objects:
+
+* Button 1 (SW0): selects the first available object on the first press,
+  advances to the next object on subsequent presses
+* Button 2 (SW1): reads object metadata
+* Button 3 (SW2): writes object data
+* Button 4 (SW3): reads object data

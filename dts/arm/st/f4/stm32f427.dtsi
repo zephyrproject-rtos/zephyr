@@ -69,7 +69,7 @@
 			#size-cells = <0>;
 			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
-			interrupts = <84 5>;
+			interrupts = <84 0>;
 			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
@@ -83,7 +83,7 @@
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
-			interrupts = <85 5>;
+			interrupts = <85 0>;
 			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
@@ -97,7 +97,7 @@
 			#size-cells = <0>;
 			reg = <0x40015400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
-			interrupts = <86 5>;
+			interrupts = <86 0>;
 			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};

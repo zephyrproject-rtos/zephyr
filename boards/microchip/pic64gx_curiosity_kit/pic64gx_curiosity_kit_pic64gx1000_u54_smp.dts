@@ -5,10 +5,16 @@
  */
 
 /dts-v1/;
-#include "pic64gx_curiosity_kit_pic64gx1000_u54.dts"
+#include "pic64gx_curiosity_kit_common.dtsi"
 
 / {
 	compatible = "microchip,pic64gx-curiosity-kit", "microchip,pic64gx";
+
+	cpus {
+		cpu@0 {
+			status = "disabled";
+		};
+	};
 
 	chosen {
 		zephyr,console = &mmuart1;

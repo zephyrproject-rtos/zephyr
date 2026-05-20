@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_DWMAC
+	bool "Synopsys DesignWare MAC MDIO driver"
+	default y
+	depends on DT_HAS_SNPS_DWMAC_MDIO_ENABLED
+	depends on ETH_DWMAC
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DWMAC_MDIO),pinctrl-0)
+	help
+	  Enable MDIO support for Synopsys DesignWare MAC devices that expose
+	  an MDIO controller as a child node of the MAC.
+
+if MDIO_DWMAC
+
+config MDIO_DWMAC_BUSY_CHECK_TIMEOUT
+	int "MDIO busy-wait timeout (us)"
+	default 10000
+	help
+	  Timeout used while waiting for MDIO transactions to complete.
+
+endif

@@ -195,6 +195,15 @@ config OPENTHREAD_ENABLE_SERVICE
 config OPENTHREAD_EXTERNAL_HEAP
 	bool "External heap support"
 
+config OPENTHREAD_EXTERNAL_HEAP_SHARED_MULTI_HEAP
+	bool "Allocate OpenThread heap from external memory"
+	depends on OPENTHREAD_EXTERNAL_HEAP
+	depends on SHARED_MULTI_HEAP
+	help
+	  Use external memory via shared multi-heap for OpenThread dynamic
+	  memory allocations (otPlatCAlloc/otPlatFree). The platform must
+	  register an external memory region with the shared multi-heap pool.
+
 config OPENTHREAD_FIREWALL
 	bool "Firewall support"
 

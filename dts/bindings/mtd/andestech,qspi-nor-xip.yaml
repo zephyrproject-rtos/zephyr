@@ -16,3 +16,7 @@ properties:
     type: int
     description: |
       The size in bytes.
+  spi-frequency:
+    type: int
+    description: |
+      Desired SPI clock frequency, in Hz.

@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 dut_exe="bs_${BOARD_TS}_$(guess_test_long_name)_dut_prj_conf"
 tester_exe="bs_${BOARD_TS}_$(guess_test_long_name)_tester_prj_conf"
 
-simulation_id="misc_disconnect"
+simulation_id="${BOARD_TS}_misc_disconnect"
 verbosity_level=2
 sim_length_us=10e6
 

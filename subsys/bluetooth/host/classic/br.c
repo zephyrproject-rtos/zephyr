@@ -742,7 +742,27 @@ void bt_hci_role_change(struct net_buf *buf)
 		}
 	}
 
-	bt_conn_role_changed(conn, evt->status);
+	bt_conn_br_role_changed(conn, evt->status);
+
+	bt_conn_unref(conn);
+}
+
+void bt_hci_conn_pkt_type_changed(struct net_buf *buf)
+{
+	struct bt_hci_evt_conn_pkt_type_changed *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	uint16_t packet_type = sys_le16_to_cpu(evt->packet_type);
+	struct bt_conn *conn;
+
+	LOG_DBG("status 0x%02x handle %u packet_type 0x%04x", evt->status, handle, packet_type);
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
+	if (conn == NULL) {
+		LOG_ERR("Can't find conn for handle %u", handle);
+		return;
+	}
+
+	bt_conn_br_packet_type_changed(conn, evt->status, packet_type);
 
 	bt_conn_unref(conn);
 }
@@ -1641,4 +1661,36 @@ int bt_br_write_local_name(const char *name)
 	strncpy((char *)name_cp->local_name, name, sizeof(name_cp->local_name));
 
 	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_LOCAL_NAME, buf, NULL);
+}
+
+int bt_br_write_eir(const struct bt_data *eir, size_t eir_count, bool fec_required)
+{
+	struct bt_hci_cp_write_ext_inquiry_response *cp;
+	struct net_buf *buf;
+	size_t offset = 0;
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (buf == NULL) {
+		return -ENOBUFS;
+	}
+
+	if (net_buf_tailroom(buf) < sizeof(*cp)) {
+		net_buf_unref(buf);
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->fec_required = fec_required ? 0x01 : 0x00;
+	(void)memset(cp->eir, 0, sizeof(cp->eir));
+
+	for (size_t i = 0; i < eir_count; i++) {
+		if (offset + BT_DATA_SERIALIZED_SIZE(eir[i].data_len) > BT_HCI_EIR_MAX_DATA_LEN) {
+			net_buf_unref(buf);
+			return -EINVAL;
+		}
+
+		offset += bt_data_serialize(&eir[i], &cp->eir[offset]);
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_EXT_INQUIRY_RESPONSE, buf, NULL);
 }

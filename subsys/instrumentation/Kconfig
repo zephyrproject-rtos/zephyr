@@ -6,6 +6,7 @@
 config INSTRUMENTATION
 	bool "Compiler Instrumentation Support"
 	select REBOOT
+	select UART_CONSOLE
 	select UART_INTERRUPT_DRIVEN
 	help
 	  Enable compiler-managed runtime system instrumentation. This requires
@@ -101,6 +102,7 @@ config INSTRUMENTATION_DYNAMIC_TRIGGER
 	select RETENTION
 	select RETENTION_MUTEX_FORCE_DISABLE
 	default y
+	depends on DT_HAS_ZEPHYR_RETAINED_RAM_ENABLED
 	help
 	  Enables configuration of trigger/stopper functions in runtime.
 	  Enabling this option requires configuration of the 'instrumentation_triggers'

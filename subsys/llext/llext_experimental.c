@@ -29,7 +29,7 @@ int llext_relink_dependency(struct llext *ext, unsigned int n_ext)
 	unsigned int i, j, k;
 
 	for (i = 0; i < n_ext; i++) {
-		for (j = 0; ext[i].dependency[j] && j < ARRAY_SIZE(ext[i].dependency); j++) {
+		for (j = 0; j < ARRAY_SIZE(ext[i].dependency) && ext[i].dependency[j]; j++) {
 			for (k = 0; k < n_ext; k++) {
 				if (!strncmp(ext[k].name, ext[i].dependency[j]->name,
 				    sizeof(ext[k].name))) {
@@ -147,7 +147,7 @@ int llext_restore(struct llext **ext, struct llext_loader **ldr, unsigned int n_
 
 	/* Restore dependencies previously saved by llext_relink_dependency() */
 	SYS_SLIST_FOR_EACH_CONTAINER(&llext_list, next, llext_list) {
-		for (j = 0; next->dependency[j] && j < ARRAY_SIZE(next->dependency); j++) {
+		for (j = 0; j < ARRAY_SIZE(next->dependency) && next->dependency[j]; j++) {
 			if (next->dependency[j] < first || next->dependency[j] >= last) {
 				/* Inconsistency detected */
 				LOG_ERR("dependency out of range");

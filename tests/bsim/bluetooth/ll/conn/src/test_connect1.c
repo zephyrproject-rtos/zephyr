@@ -256,17 +256,14 @@ static struct bt_conn_auth_info_cb auth_cb_success = {
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (conn_err) {
-		FAIL("Failed to connect to %s (%u)\n", addr, conn_err);
+		FAIL("Failed to connect to %s (%u)\n", bt_conn_dst_str(conn), conn_err);
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 
 	if (conn != default_conn) {
 		return;
@@ -378,11 +375,8 @@ static bool eir_found(struct bt_data *data, void *user_data)
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		struct net_buf_simple *ad)
 {
-	char dev[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, dev, sizeof(dev));
 	printk("[DEVICE]: %s, AD evt type %u, AD data len %u, RSSI %i\n",
-			dev, type, ad->len, rssi);
+			bt_addr_le_str(addr), type, ad->len, rssi);
 
 	/* We're only interested in connectable events */
 	if (type == BT_GAP_ADV_TYPE_ADV_IND ||
@@ -393,12 +387,9 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
+	printk("Disconnected: %s (reason 0x%02x)\n", bt_conn_dst_str(conn), reason);
 
 	if (default_conn != conn) {
 		return;

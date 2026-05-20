@@ -6,3 +6,4 @@ board:
     - name: qemu_virt_riscv64
       variants:
         - name: smp
+        - name: smode

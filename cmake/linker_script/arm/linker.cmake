@@ -63,8 +63,14 @@ else()
   endif()
 endif()
 
-set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
-math(EXPR RAM_SIZE "(${CONFIG_SRAM_SIZE} + 0) * 1024" OUTPUT_FORMAT HEXADECIMAL)
+if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+  set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
+  math(EXPR RAM_SIZE "(${CONFIG_SRAM_SIZE} + 0) * 1024" OUTPUT_FORMAT HEXADECIMAL)
+else()
+  dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+  dt_reg_addr(RAM_ADDR PATH "${chosen_sram_path}")
+  dt_reg_size(RAM_SIZE PATH "${chosen_sram_path}")
+endif()
 
 # ToDo: decide on the optimal location for this.
 # linker/ld/target.cmake based on arch, or directly in arch and scatter_script.cmake can ignore
@@ -265,9 +271,9 @@ if(DEFINED chosen_dtcm)
   if(${status_result})
     zephyr_linker_group(NAME DTCM_REGION VMA DTCM LMA ROM_REGION)
 
-    zephyr_linker_section(NAME .dtcm_bss GROUP DTCM_REGION SUBALIGN 4 TYPE BSS)
-    zephyr_linker_section(NAME .dtcm_noinit GROUP DTCM_REGION SUBALIGN 4 TYPE NOLOAD NOINIT)
-    zephyr_linker_section(NAME .dtcm_data GROUP DTCM_REGION SUBALIGN 4)
+    zephyr_linker_section(NAME .dtcm_bss GROUP DTCM_REGION ALIGN 4 TYPE BSS)
+    zephyr_linker_section(NAME .dtcm_noinit GROUP DTCM_REGION ALIGN 4 TYPE NOLOAD NOINIT)
+    zephyr_linker_section(NAME .dtcm_data GROUP DTCM_REGION ALIGN 4)
   endif()
 endif()
 

@@ -12,7 +12,7 @@ EXECUTE_TIMEOUT=20
 
 cd ${BSIM_OUT_PATH}/bin
 
-SIMULATION_ID="csip_new_size"
+SIMULATION_ID="${BOARD_TS}_csip_new_size"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator_new_size_and_rank \

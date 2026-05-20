@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,10 +21,10 @@ static const struct arm_mpu_region mpu_regions[] = {
 
 	MPU_REGION_ENTRY(
 		"SRAM",
-		CONFIG_SRAM_BASE_ADDRESS,
+		 DT_CHOSEN_SRAM_ADDR,
 		REGION_RAM_ATTR(
-			CONFIG_SRAM_BASE_ADDRESS,
-			CONFIG_SRAM_SIZE * 1024)),
+			DT_CHOSEN_SRAM_ADDR,
+			DT_CHOSEN_SRAM_SIZE)),
 
 #if DT_NODE_EXISTS(DT_NODELABEL(m33_allocatable_shared))
 	MPU_REGION_ENTRY(

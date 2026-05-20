@@ -233,8 +233,7 @@ static void tryfix_event(TL_Evt_t *tev)
 
 	if (bt_addr_eq(&evt->peer_addr.a, BT_ADDR_NONE)) {
 		LOG_WRN("Invalid peer addr %s", bt_addr_le_str(&evt->peer_addr));
-		bt_addr_copy(&evt->peer_addr.a, &evt->peer_rpa);
-		evt->peer_addr.type = BT_ADDR_LE_RANDOM;
+		bt_addr_le_copy_addr(&evt->peer_addr, &evt->peer_rpa, BT_ADDR_LE_RANDOM);
 	}
 }
 

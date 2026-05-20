@@ -78,9 +78,9 @@ net:
 
 posix:
   files:
-    - lib/posix/
+    - subsys/portability/posix/
     - include/zephyr/posix/
-    - tests/posix/
+    - tests/subsys/portability/posix
 
 test_framework:
   files:
@@ -104,4 +104,4 @@ wifi:
 # cbprintf:
 #    files:
 #        - lib/os/cbprintf*
-#        - lib/posix
+#        - subsys/portability/posix

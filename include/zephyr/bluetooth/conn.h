@@ -1401,6 +1401,27 @@ enum bt_conn_auth_keypress {
  */
 int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info);
 
+/** @cond INTERNAL_HIDDEN */
+struct bt_conn_tmp_str {
+	/* BT_ADDR_LE_STR_LEN covers both BR/EDR and LE string lengths */
+	char str[BT_ADDR_LE_STR_LEN];
+};
+
+struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn);
+/** @endcond  */
+
+/**
+ * @brief Get a string pointer to a connection destination (peer) address.
+ * @def bt_conn_dst_str()
+ *
+ * @param _conn Pointer to the connection object.
+ *
+ * @return A string pointer which is only valid until the end of the full expression.
+ *         In practice this means that this is primarily useful as an input parameter
+ *         to printk/printf or logging calls.
+ */
+#define bt_conn_dst_str(_conn) bt_conn_dst_tmp_str(_conn).str
+
 /** @brief Function to determine the type of a connection
  *
  *  @param conn The connection object
@@ -1577,11 +1598,15 @@ int bt_conn_le_read_min_conn_interval(uint16_t *min_interval_us);
 
 /** @brief Set Default Connection Rate Parameters.
  *
- *  Set default connection rate parameters to be used for future connections.
- *  This command does not affect any existing connection.
- *  Parameters set for specific connection will always have precedence.
+ *  Configure the range of Connection Rate values that this device will
+ *  accept from a Peripheral initiating a Connection Rate Update procedure.
  *
- *  @kconfig_dep{CONFIG_BT_SHORTER_CONNECTION_INTERVALS}
+ *  The configured bounds:
+ *   - Apply only to connections established after this call.
+ *   - Are overridden on a given connection by any
+ *     @ref bt_conn_le_conn_rate_request on that connection.
+ *
+ *  @kconfig_dep{CONFIG_BT_SHORTER_CONNECTION_INTERVALS,CONFIG_BT_CENTRAL}
  *
  *  @param params Connection rate parameters.
  *
@@ -2093,6 +2118,42 @@ struct bt_conn_le_cs_procedure_enable_complete {
 	uint16_t max_procedure_len;
 };
 
+/** @brief BR/EDR specific connection callbacks. */
+struct bt_conn_br_cb {
+#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+	/** @brief A BR/EDR connection mode has changed.
+	 *
+	 *  This callback notifies the application that the sniff mode has changed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param mode Active/Sniff mode.
+	 *  @param interval Sniff interval.
+	 */
+	void (*mode_changed)(struct bt_conn *conn, uint8_t mode, uint16_t interval);
+#endif /* CONFIG_BT_POWER_MODE_CONTROL */
+
+	/** @brief A BR/EDR connection role has changed.
+	 *
+	 *  This callback notifies the application that the BR/EDR role switch
+	 *  procedure has completed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param status HCI status of role change event.
+	 */
+	void (*role_changed)(struct bt_conn *conn, uint8_t status);
+
+	/** @brief The packet type of the BR/EDR connection has changed.
+	 *
+	 *  This callback notifies the application that the connection packet
+	 *  type change procedure has completed.
+	 *
+	 *  @param conn Connection object.
+	 *  @param status HCI status of the event.
+	 *  @param packet_type New packet type bitmask.
+	 */
+	void (*packet_type_changed)(struct bt_conn *conn, uint8_t status, uint16_t packet_type);
+};
+
 /** @brief Connection callback structure.
  *
  *  This structure is used for tracking the state of a connection.
@@ -2252,17 +2313,10 @@ struct bt_conn_cb {
 				      struct bt_conn_remote_info *remote_info);
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
 
-#if defined(CONFIG_BT_POWER_MODE_CONTROL)
-	/** @brief The connection mode change
-	 *
-	 *  This callback notifies the application that the sniff mode has changed
-	 *
-	 *  @param conn Connection object.
-	 *  @param mode Active/Sniff mode.
-	 *  @param interval Sniff interval.
-	 */
-	void (*br_mode_changed)(struct bt_conn *conn, uint8_t mode, uint16_t interval);
-#endif /* CONFIG_BT_POWER_MODE_CONTROL */
+#if defined(CONFIG_BT_CLASSIC)
+	/** @brief BR/EDR specific callbacks. */
+	struct bt_conn_br_cb br;
+#endif /* CONFIG_BT_CLASSIC */
 
 #if defined(CONFIG_BT_USER_PHY_UPDATE)
 	/** @brief The PHY of the connection has changed.
@@ -2506,17 +2560,6 @@ struct bt_conn_cb {
 		struct bt_conn *conn, uint8_t status,
 		struct bt_conn_le_cs_procedure_enable_complete *params);
 
-#endif
-
-#if defined(CONFIG_BT_CLASSIC)
-	/** @brief The role of the connection has changed.
-	 *
-	 *  This callback notifies the application that the role switch procedure has completed.
-	 *
-	 *  @param conn Connection object.
-	 *  @param status HCI status of role change event.
-	 */
-	void (*role_changed)(struct bt_conn *conn, uint8_t status);
 #endif
 
 #if defined(CONFIG_BT_CONN_DYNAMIC_CALLBACKS)
@@ -3303,7 +3346,75 @@ int bt_conn_br_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
  *  @return  Zero for success, non-zero otherwise.
  */
 int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
+
+/** @brief Set BR/EDR sniff subrating parameters.
+ *
+ *  Configure sniff subrating parameters for a BR/EDR connection.
+ *  Sniff subrating allows further power savings by reducing the
+ *  number of sniff anchor points the device needs to listen on.
+ *
+ *  @param conn               Connection object.
+ *  @param max_latency        Maximum allowed sniff subrate latency
+ *                            (in baseband slots of 0.625 ms).
+ *                            Range: 0x0002 to 0xFFFE.
+ *  @param min_remote_timeout Minimum sniff mode timeout for remote device
+ *                            (in baseband slots of 0.625 ms).
+ *                            Range: 0x0000 to 0xFFFE.
+ *  @param min_local_timeout  Minimum sniff mode timeout for local device
+ *                            (in baseband slots of 0.625 ms).
+ *                            Range: 0x0000 to 0xFFFE.
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_br_set_sniff_subrating(struct bt_conn *conn, uint16_t max_latency,
+				   uint16_t min_remote_timeout,
+				   uint16_t min_local_timeout);
 #endif /* CONFIG_BT_POWER_MODE_CONTROL */
+
+/** @brief Read BR/EDR supervision timeout.
+ *
+ *  Read the current link supervision timeout value for a BR/EDR connection.
+ *
+ *  @param conn     Connection object.
+ *  @param timeout  Pointer to store the supervision timeout value.
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_br_get_supervision_timeout(struct bt_conn *conn, uint16_t *timeout);
+
+/** @brief Set BR/EDR supervision timeout.
+ *
+ *  Each physical link has a timer that is used for link supervision.
+ *  This timer is used to detect physical link loss caused by devices
+ *  moving out of range, or being blocked by interference, a device's
+ *  power-down, or other similar failure cases.
+ *
+ *  @param conn  Connection object.
+ *  @param timeout Link supervision timeout, Range: 0x0001 to 0xFFFF
+ *                 Time Range: 0.625 ms to 40.9 s.
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_conn_br_set_supervision_timeout(struct bt_conn *conn, uint16_t timeout);
+
+/** @brief Change BR/EDR connection packet type.
+ *
+ *  Change which packet types can be used for an established BR/EDR
+ *  ACL connection. This allows dynamically modifying the connection to
+ *  support different types of user data for throughput optimization.
+ *
+ *  @param conn         Connection object.
+ *  @param packet_type  Raw HCI BR/EDR ACL Packet_Type field composed of
+ *                      BT_HCI_ACL_PKT_TYPE_* values. For basic rate packet
+ *                      type bits, a set bit allows use of that packet type.
+ *                      For BT_HCI_ACL_PKT_TYPE_NO_* bits, a set bit means
+ *                      the corresponding EDR packet type shall not be used,
+ *                      as defined by the Bluetooth specification.
+ *
+ *  @retval 0 On success.
+ *  @retval -errno On failure.
+ */
+int bt_conn_br_change_packet_type(const struct bt_conn *conn, uint16_t packet_type);
 
 #ifdef __cplusplus
 }

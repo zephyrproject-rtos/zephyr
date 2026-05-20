@@ -214,7 +214,7 @@ static void IRAM_ATTR i2c_hw_fsm_reset(const struct device *dev)
 {
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 
-#ifndef SOC_I2C_SUPPORT_HW_FSM_RST
+#if !I2C_LL_SUPPORT_HW_FSM_RST
 	const struct i2c_esp32_config *config = dev->config;
 	int scl_low_period, scl_high_period;
 	int scl_start_hold, scl_rstart_setup;

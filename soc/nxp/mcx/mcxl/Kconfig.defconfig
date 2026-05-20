@@ -16,7 +16,10 @@ config NUM_IRQS
 	default 161
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if \
+		SOC_MCXL255_CPU0 || SOC_MCXL254_CPU0 || SOC_MCXL253_CPU0
+	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if \
+		SOC_MCXL255_CPU1 || SOC_MCXL254_CPU1 || SOC_MCXL253_CPU1
 
 # Set to the minimal size of data which can be written.
 config FLASH_FILL_BUFFER_SIZE

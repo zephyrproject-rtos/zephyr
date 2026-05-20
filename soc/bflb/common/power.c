@@ -53,7 +53,7 @@ static void power_bflb_setup_irqs(void)
 	irq_enable(DT_INST_IRQ_BY_NAME(0, hbn1, irq));
 }
 
-#ifdef CONFIG_SOC_SERIES_BL61X
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 
 static void power_bflb_setup_bor(const struct device *dev)
 {
@@ -170,9 +170,9 @@ const struct power_bflb_config_s power_bflb_config = {
 DEVICE_DT_INST_DEFINE(0, power_bflb_init, NULL, NULL, &power_bflb_config, PRE_KERNEL_1,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
-#ifdef CONFIG_SOC_SERIES_BL61X
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 BUILD_ASSERT(DT_INST_PROP(0, brown_out_threshold_microvolt) > E907_VALID_BO_THRES_MIN,
-	     "BL61x Brown Out threshold must be > 2050000 uV");
+	     "BL61x/BL80x Brown Out threshold must be > 2050000 uV");
 #elif defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
 	defined(CONFIG_SOC_SERIES_BL70XL)
 BUILD_ASSERT(DT_INST_PROP(0, brown_out_threshold_microvolt) == E24_VALID_BO_THRES_0

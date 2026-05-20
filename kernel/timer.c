@@ -87,9 +87,6 @@ void z_timer_expiration_handler(struct _timeout *t)
 	    !K_TIMEOUT_EQ(timer->period, K_FOREVER)) {
 		k_timeout_t next = timer->period;
 
-		/* see note about z_add_timeout() in z_impl_k_timer_start() */
-		next.ticks = max(next.ticks - 1, 0);
-
 #ifdef CONFIG_TIMEOUT_64BIT
 		/* Exploit the fact that uptime during a kernel
 		 * timeout handler reflects the time of the scheduled
@@ -98,11 +95,8 @@ void z_timer_expiration_handler(struct _timeout *t)
 		 * delayed for any reason, we still end up calculating
 		 * the next expiration as a regular stride from where
 		 * we "should" have run.  Requires absolute timeouts.
-		 * (Note offset by one: we're nominally at the
-		 * beginning of a tick, so need to defeat the "round
-		 * down" behavior on timeout addition).
 		 */
-		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + 1 + next.ticks);
+		next = K_TIMEOUT_ABS_TICKS(k_uptime_ticks() + next.ticks);
 #endif /* CONFIG_TIMEOUT_64BIT */
 		z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 			      next);
@@ -194,28 +188,6 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
 		k_spin_unlock(&lock, key);
 		return;
-	}
-
-	/* z_add_timeout() always adds one to the incoming tick count
-	 * to round up to the next tick (by convention it waits for
-	 * "at least as long as the specified timeout"), but the
-	 * period interval is always guaranteed to be reset from
-	 * within the timer ISR, so no round up is desired and 1 is
-	 * subtracted in there.
-	 *
-	 * Note that the duration (!) value gets the same treatment
-	 * for backwards compatibility.  This is unfortunate
-	 * (i.e. k_timer_start() doesn't treat its initial sleep
-	 * argument the same way k_sleep() does), but historical.  The
-	 * timer_api test relies on this behavior.
-	 */
-	if (Z_IS_TIMEOUT_RELATIVE(duration)) {
-		/* For the duration == K_NO_WAIT case, ensure that behaviour
-		 * is consistent for both 32-bit k_ticks_t which are unsigned
-		 * and 64-bit k_ticks_t which are signed.
-		 */
-		duration.ticks = max(1, duration.ticks);
-		duration.ticks = duration.ticks - 1;
 	}
 
 	(void)z_abort_timeout(&timer->timeout);

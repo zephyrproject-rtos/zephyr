@@ -334,7 +334,7 @@ void z_arm_on_enter_cpu_idle_prepare(void)
 
 #if defined(CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND) || \
 	(defined(CONFIG_SOC_NRF53_RTC_PRETICK) && defined(CONFIG_SOC_NRF5340_CPUNET))
-bool z_arm_on_enter_cpu_idle(void)
+bool z_nrf53_on_enter_cpu_idle(void)
 {
 	bool ok_to_sleep = true;
 
@@ -384,6 +384,18 @@ bool z_arm_on_enter_cpu_idle(void)
 #endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND ||
 	* (CONFIG_SOC_NRF53_RTC_PRETICK && CONFIG_SOC_NRF5340_CPUNET)
 	*/
+
+#if defined(CONFIG_ARM_ON_ENTER_CPU_IDLE_HOOK) && !defined(CONFIG_NRF_CUSTOM_ON_ENTER_CPU_IDLE_HOOK)
+bool z_arm_on_enter_cpu_idle(void)
+{
+#if defined(CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND) || \
+	(defined(CONFIG_SOC_NRF53_RTC_PRETICK) && defined(CONFIG_SOC_NRF5340_CPUNET))
+	return z_nrf53_on_enter_cpu_idle();
+#endif /* CONFIG_SOC_NRF53_ANOMALY_160_WORKAROUND ||
+	* (CONFIG_SOC_NRF53_RTC_PRETICK && CONFIG_SOC_NRF5340_CPUNET)
+	*/
+}
+#endif
 
 #if CONFIG_SOC_NRF53_RTC_PRETICK
 #ifdef CONFIG_SOC_NRF5340_CPUAPP

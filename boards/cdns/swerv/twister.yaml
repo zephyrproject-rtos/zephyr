@@ -8,6 +8,14 @@ testing:
   ignore_tags:
     - benchmark
 variants:
+  cdns_swerv/s400:
+    twister: false
+  cdns_swerv/s400/pmp:
+    twister: false
+  cdns_swerv/s420:
+    twister: false
+  cdns_swerv/s420/64:
+    twister: false
   cdns_swerv/s400/whisper:
     type: sim
     simulation:

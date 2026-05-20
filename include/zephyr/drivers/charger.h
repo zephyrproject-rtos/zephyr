@@ -118,7 +118,6 @@ enum charger_property {
 };
 
 /**
- * @typedef charger_prop_t
  * @brief A charger property's identifier
  *
  * See charger_property for a list of identifiers
@@ -126,7 +125,6 @@ enum charger_property {
 typedef uint16_t charger_prop_t;
 
 /**
- * @typedef charger_custom_value_int_t
  * @brief Type for custom signed integer property values.
  *
  * Used only by downstream custom properties (>= CHARGER_PROP_CUSTOM_BEGIN).
@@ -134,7 +132,6 @@ typedef uint16_t charger_prop_t;
 typedef int32_t charger_custom_value_int_t;
 
 /**
- * @typedef charger_custom_value_uint_t
  * @brief Type for custom unsigned integer property values.
  *
  * Used only by downstream custom properties (>= CHARGER_PROP_CUSTOM_BEGIN).
@@ -142,7 +139,6 @@ typedef int32_t charger_custom_value_int_t;
 typedef uint32_t charger_custom_value_uint_t;
 
 /**
- * @typedef charger_custom_value_bool_t
  * @brief Type for custom boolean property values.
  *
  * Used only by downstream custom properties (>= CHARGER_PROP_CUSTOM_BEGIN),
@@ -396,9 +392,7 @@ __syscall int charger_get_prop(const struct device *dev, const charger_prop_t pr
 static inline int z_impl_charger_get_prop(const struct device *dev, const charger_prop_t prop,
 					  union charger_propval *val)
 {
-	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
-
-	return api->get_property(dev, prop, val);
+	return DEVICE_API_GET(charger, dev)->get_property(dev, prop, val);
 }
 
 /**
@@ -417,9 +411,7 @@ __syscall int charger_set_prop(const struct device *dev, const charger_prop_t pr
 static inline int z_impl_charger_set_prop(const struct device *dev, const charger_prop_t prop,
 					  const union charger_propval *val)
 {
-	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
-
-	return api->set_property(dev, prop, val);
+	return DEVICE_API_GET(charger, dev)->set_property(dev, prop, val);
 }
 
 /**
@@ -436,9 +428,7 @@ __syscall int charger_charge_enable(const struct device *dev, const bool enable)
 
 static inline int z_impl_charger_charge_enable(const struct device *dev, const bool enable)
 {
-	const struct charger_driver_api *api = (const struct charger_driver_api *)dev->api;
-
-	return api->charge_enable(dev, enable);
+	return DEVICE_API_GET(charger, dev)->charge_enable(dev, enable);
 }
 
 /**

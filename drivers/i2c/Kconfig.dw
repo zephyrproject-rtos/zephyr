@@ -41,3 +41,16 @@ config I2C_DW_PM_POLICY_STATE_LOCK
 	help
 	  Enable this option to block power management policy state changes
 	  during I2C transfers.
+
+config I2C_DW_IC_CLK_FREQ_OPTIMIZATION
+	bool "Core Clock Frequency Optimization"
+	depends on I2C_DW
+	help
+	  Enable hardware optimization to reduce the required I2C core clock frequency.
+
+	  This features reduces the internal latency cycles required to generate the
+	  SCL high and low periods, allowing the controller to achieve target bus
+	  speeds with a lower system clock frequency (ic_clk).
+
+	  Enable this option only if your hardware IP supports this specific latency
+	  reduction feature.

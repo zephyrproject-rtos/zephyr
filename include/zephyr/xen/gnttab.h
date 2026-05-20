@@ -72,6 +72,9 @@ int gnttab_put_pages(void *start_addr, unsigned int npages);
  * To map foreign frames you need 4K-aligned memory pages, which will be
  * used as host_addr for grant mapping - it should be acquired by gnttab_get_pages()
  * function.
+ *
+ * If CONFIG_XEN_REGIONS is enabled, only addresses from extended regions are
+ * supported.
  */
 int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count);
 
@@ -83,6 +86,9 @@ int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count);
  * @param count - number of grefs in unmap_ops array
  * @return - @count on success or negative errno on failure
  *           also per-page status will be set in unmap_ops[i].status (GNTST_*)
+ *
+ * If CONFIG_XEN_REGIONS is enabled, only addresses from extended regions are
+ * supported.
  */
 int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int count);
 

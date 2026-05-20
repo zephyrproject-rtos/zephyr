@@ -50,7 +50,7 @@ static struct {
 } event;
 
 /* Entropy device */
-static const struct device *const dev_entropy = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+static const struct device *dev_entropy;
 
 static int init_reset(void);
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL_DONE)
@@ -120,6 +120,8 @@ static void swi_ull_low_rv32m1_isr(const void *arg)
 int lll_init(void)
 {
 	int err;
+
+	dev_entropy = entropy_get_default_device();
 
 	/* Check if entropy device is ready */
 	if (!device_is_ready(dev_entropy)) {

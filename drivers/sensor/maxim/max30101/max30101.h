@@ -125,6 +125,8 @@ struct max30101_config {
 	uint8_t mode;
 	uint8_t slot[4];
 	uint8_t data_shift;
+	/* true when the chip is MAX30102 (no Green LED) */
+	bool is_max30102;
 #if CONFIG_MAX30101_TRIGGER
 	const struct gpio_dt_spec irq_gpio;
 #endif

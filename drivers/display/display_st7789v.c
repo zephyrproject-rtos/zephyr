@@ -5,6 +5,7 @@
  * Copyright (c) 2019 PHYTEC Messtechnik GmbH
  * Copyright (c) 2020 Endian Technologies AB
  * Copyright (c) 2022 Basalte bv
+ * SPDX-FileCopyrightText: 2026 Abderrahmane JARMOUNI
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +34,6 @@ struct st7789v_config {
 	uint8_t vdv_value;
 	uint8_t mdac;
 	uint8_t gamma;
-	uint8_t colmod;
 	uint8_t lcm;
 	bool inversion_on;
 	uint8_t porch_param[5];
@@ -46,6 +46,7 @@ struct st7789v_config {
 	uint16_t height;
 	uint16_t width;
 	uint8_t ready_time_ms;
+	uint32_t pixel_format;
 };
 
 struct st7789v_data {
@@ -53,11 +54,7 @@ struct st7789v_data {
 	uint16_t y_offset;
 };
 
-#ifdef CONFIG_ST7789V_RGB888
-#define ST7789V_PIXEL_SIZE 3u
-#else
-#define ST7789V_PIXEL_SIZE 2u
-#endif
+#define ST7789V_PIXEL_SIZE(fmt)	DISPLAY_BITS_PER_PIXEL(fmt) / BITS_PER_BYTE
 
 static void st7789v_set_lcd_margins(const struct device *dev,
 				    uint16_t x_offset, uint16_t y_offset)
@@ -157,11 +154,12 @@ static int st7789v_write(const struct device *dev,
 	const uint8_t *write_data_start = (uint8_t *) buf;
 	uint16_t nbr_of_writes;
 	uint16_t write_h;
-	enum display_pixel_format pixfmt;
+	enum display_pixel_format pixfmt = config->pixel_format;
+	uint8_t pixel_size = ST7789V_PIXEL_SIZE(config->pixel_format);
 	int ret;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * ST7789V_PIXEL_SIZE * desc->height) <= desc->buf_size,
+	__ASSERT((desc->pitch * pixel_size * desc->height) <= desc->buf_size,
 			"Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
@@ -175,19 +173,12 @@ static int st7789v_write(const struct device *dev,
 		write_h = 1U;
 		nbr_of_writes = desc->height;
 		mipi_desc.height = 1;
-		mipi_desc.buf_size = desc->pitch * ST7789V_PIXEL_SIZE;
+		mipi_desc.buf_size = desc->pitch * pixel_size;
 	} else {
 		write_h = desc->height;
 		nbr_of_writes = 1U;
 		mipi_desc.height = desc->height;
-		mipi_desc.buf_size = desc->width * write_h * ST7789V_PIXEL_SIZE;
-	}
-	if (IS_ENABLED(CONFIG_ST7789V_RGB565)) {
-		pixfmt = PIXEL_FORMAT_RGB_565;
-	} else if (IS_ENABLED(CONFIG_ST7789V_RGB565X)) {
-		pixfmt = PIXEL_FORMAT_RGB_565X;
-	} else {
-		pixfmt = PIXEL_FORMAT_RGB_888;
+		mipi_desc.buf_size = desc->width * write_h * pixel_size;
 	}
 
 	mipi_desc.width = desc->width;
@@ -207,7 +198,7 @@ static int st7789v_write(const struct device *dev,
 			return ret;
 		}
 
-		write_data_start += (desc->pitch * ST7789V_PIXEL_SIZE);
+		write_data_start += (desc->pitch * pixel_size);
 	}
 
 	return ret;
@@ -222,32 +213,34 @@ static void st7789v_get_capabilities(const struct device *dev,
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 
-#ifdef CONFIG_ST7789V_RGB565
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
-	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
-#elif CONFIG_ST7789V_RGB565X
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565X;
-	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565X;
-#else
-	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
-	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
-#endif
+	capabilities->supported_pixel_formats = config->pixel_format;
+	capabilities->current_pixel_format = config->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+}
+
+static inline uint8_t st7789v_get_colmod(enum display_pixel_format fmt)
+{
+	switch (fmt) {
+	case PIXEL_FORMAT_RGB_888:
+		return ST7789V_COLMOD_RGB_262K | ST7789V_COLMOD_FMT_18bit;
+	case PIXEL_FORMAT_RGB_565:
+	case PIXEL_FORMAT_RGB_565X:
+		return ST7789V_COLMOD_RGB_65K | ST7789V_COLMOD_FMT_16bit;
+	default:
+		return ST7789V_COLMOD_RGB_65K | ST7789V_COLMOD_FMT_16bit;
+	}
 }
 
 static int st7789v_set_pixel_format(const struct device *dev,
 			     const enum display_pixel_format pixel_format)
 {
-#ifdef CONFIG_ST7789V_RGB565
-	if (pixel_format == PIXEL_FORMAT_RGB_565) {
-#elif CONFIG_ST7789V_RGB565X
-	if (pixel_format == PIXEL_FORMAT_RGB_565X) {
-#else
-	if (pixel_format == PIXEL_FORMAT_RGB_888) {
-#endif
+	const struct st7789v_config *config = dev->config;
+
+	if (pixel_format == config->pixel_format) {
 		return 0;
 	}
-	LOG_ERR("Pixel format change not implemented");
+	LOG_ERR("Runtime pixel format change not supported (configured: %d, requested: %d)",
+		config->pixel_format, pixel_format);
 	return -ENOTSUP;
 }
 
@@ -346,7 +339,7 @@ static int st7789v_lcd_init(const struct device *dev)
 	}
 
 	/* Interface Pixel Format */
-	tmp = config->colmod;
+	tmp = st7789v_get_colmod(config->pixel_format);
 	ret = st7789v_transmit(dev, ST7789V_CMD_COLMOD, &tmp, 1);
 	if (ret < 0) {
 		return ret;
@@ -487,7 +480,6 @@ static DEVICE_API(display, st7789v_api) = {
 		.vdv_value = DT_INST_PROP_OR(inst, vdvs, 0),				\
 		.mdac = DT_INST_PROP(inst, mdac),					\
 		.gamma = DT_INST_PROP(inst, gamma),					\
-		.colmod = DT_INST_PROP(inst, colmod),					\
 		.lcm = DT_INST_PROP(inst, lcm),						\
 		.inversion_on = !DT_INST_PROP(inst, inversion_off),			\
 		.porch_param = DT_INST_PROP(inst, porch_param),				\
@@ -500,6 +492,7 @@ static DEVICE_API(display, st7789v_api) = {
 		.width = DT_INST_PROP(inst, width),					\
 		.height = DT_INST_PROP(inst, height),					\
 		.ready_time_ms = DT_INST_PROP(inst, ready_time_ms),			\
+		.pixel_format = DT_INST_PROP(inst, pixel_format),			\
 	};										\
 											\
 	static struct st7789v_data st7789v_data_ ## inst = {				\

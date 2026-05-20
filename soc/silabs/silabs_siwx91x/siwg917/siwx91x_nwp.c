@@ -448,7 +448,7 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev)
 	};
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)) {
+	if (!IS_ENABLED(CONFIG_PM)) {
 		/* no_op if PM is not enabled*/
 		return 0;
 	}

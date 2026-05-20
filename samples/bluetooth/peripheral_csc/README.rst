@@ -21,4 +21,14 @@ Requirements
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/peripheral_csc
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, use a Bluetooth scanner app (e.g. nRF Connect) to connect to the device
+and subscribe to the CSC Measurement characteristic to receive cycling speed and cadence
+notifications.

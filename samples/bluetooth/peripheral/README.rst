@@ -20,4 +20,16 @@ Requirements
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/peripheral
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, use a Bluetooth scanner app (e.g. nRF Connect)
+or the :zephyr:code-sample:`ble_central` sample on a second board,
+or any Bluetooth LE device to connect to the device.
+The sample exposes the following GATT services: Battery (BAS), Current Time (CTS),
+Heart Rate (HRS), Immediate Alert (IAS), and a vendor-specific service.

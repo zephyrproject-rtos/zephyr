@@ -83,8 +83,7 @@
 		antenna-selection = "ext-gpios";
 		support-1p8v;
 		enable-xtal-correction;
-		qspi-80mhz-clk;
-		clock-frequency = <120000000>;
+		clock-frequency = <DT_FREQ_M(80)>;
 		status = "okay";
 
 		bt_hci0: bt_hci {
@@ -117,6 +116,7 @@
 		flashctrl0: flash-controller@12000000 {
 			compatible = "silabs,siwx91x-flash-controller";
 			reg = <0x12000000 0x200>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 

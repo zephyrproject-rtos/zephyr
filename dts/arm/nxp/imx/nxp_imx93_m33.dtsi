@@ -195,6 +195,35 @@
 			status = "disabled";
 		};
 
+		lcdif: display-controller@4ae30000 {
+			compatible = "nxp,imx-lcdifv3";
+			media-axi-clk-rate = <400000000>;
+			media-apb-clk-rate = <133333334>;
+			reg = <0x4ae30000 0x10000>;
+			interrupts = <176 0>;
+			clocks = <&ccm IMX_CCM_MEDIA_DISP_PIX_CLK 0 0>,
+				 <&ccm IMX_CCM_MEDIA_AXI_CLK 0 0>,
+				 <&ccm IMX_CCM_MEDIA_APB_CLK 0 0>;
+			status = "disabled";
+		};
+
+		mipi_dsi: dsi@4ae10000 {
+			compatible = "nxp,mipi-dsi-dwc";
+			reg = <0x4ae10000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <177 0>;
+			clocks = <&ccm IMX_CCM_MIPI_PHY_CFG_CLK 0 0>;
+			nxp,dc = <&lcdif>;
+			status = "disabled";
+		};
+
+		media_blk_ctrl: mediamix@4ac10000 {
+			compatible = "nxp,imx93-mediamix";
+			reg = <0x4ac10000 0x1000>;
+			status = "disabled";
+		};
+
 		tpm1: pwm@44310000 {
 			compatible = "nxp,kinetis-tpm";
 			reg = <0x44310000 0x88>;
@@ -262,6 +291,12 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 			clocks = <&ccm IMX_CCM_SAR_ADC1_CLK 0x0 0>;
+		};
+
+		video_pll: videopll@44481400 {
+			compatible = "nxp,imx93-video-pll";
+			reg = <0x44481400 0x1000>;
+			status = "disabled";
 		};
 	};
 };

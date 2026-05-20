@@ -22,7 +22,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 REGION_FLASH_ATTR(REGION_FLASH_SIZE)),
 
 	/* Region 1: SRAM */
-	MPU_REGION_ENTRY("SRAM_0", CONFIG_SRAM_BASE_ADDRESS, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
+	MPU_REGION_ENTRY("SRAM_0", DT_CHOSEN_SRAM_ADDR, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
 };
 
 __weak const struct arm_mpu_config mpu_config = {

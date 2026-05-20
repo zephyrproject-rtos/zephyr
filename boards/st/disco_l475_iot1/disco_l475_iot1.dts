@@ -78,6 +78,7 @@
 		eswifi0 = &wifi0;
 		watchdog0 = &iwdg;
 		accel0 = &lsm6dsl;
+		rtc = &rtc;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 		die-temp0 = &die_temp;
@@ -225,22 +226,25 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x0 DT_SIZE_K(64)>;
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x10000 DT_SIZE_K(928)>;
 		};
 
 		storage_partition: partition@f8000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0xf8000 DT_SIZE_K(32)>;
 		};
@@ -359,5 +363,9 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &vbat {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

@@ -88,10 +88,12 @@
 			mipi-max-frequency = <DT_FREQ_M(20)>;
 			reg = <0>;
 			pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+			red-blue-swap;
 			rotation = <0>;
 			width = <240>;
 			height = <320>;
 			duplex = <0x800>;
+			v-mirror;
 		};
 	};
 };

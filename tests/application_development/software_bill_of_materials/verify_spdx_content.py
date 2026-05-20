@@ -538,7 +538,7 @@ class TestBuildTraceability:
 
     @pytest.mark.parametrize(
         "expected_source",
-        ["timer.c", "banner.c", "sched.c", "thread.c", "sem.c", "mutex.c"],
+        ["timer.c", "sched.c", "thread.c", "sem.c", "mutex.c"],
     )
     def test_libkernel_generated_from_specific_sources(self, build_doc, expected_source):
         """Test that libkernel.a is generated from expected kernel source files."""

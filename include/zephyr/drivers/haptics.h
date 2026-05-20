@@ -116,9 +116,7 @@ __syscall int haptics_start_output(const struct device *dev);
 
 static inline int z_impl_haptics_start_output(const struct device *dev)
 {
-	const struct haptics_driver_api *api = (const struct haptics_driver_api *)dev->api;
-
-	return api->start_output(dev);
+	return DEVICE_API_GET(haptics, dev)->start_output(dev);
 }
 
 /**
@@ -133,9 +131,7 @@ __syscall int haptics_stop_output(const struct device *dev);
 
 static inline int z_impl_haptics_stop_output(const struct device *dev)
 {
-	const struct haptics_driver_api *api = (const struct haptics_driver_api *)dev->api;
-
-	return api->stop_output(dev);
+	return DEVICE_API_GET(haptics, dev)->stop_output(dev);
 }
 
 /**
@@ -152,7 +148,7 @@ static inline int haptics_register_error_callback(const struct device *dev,
 						  haptics_error_callback_t cb,
 						  void *const user_data)
 {
-	const struct haptics_driver_api *api = (const struct haptics_driver_api *)dev->api;
+	const struct haptics_driver_api *api = DEVICE_API_GET(haptics, dev);
 
 	if (api->register_error_callback == NULL) {
 		return -ENOSYS;

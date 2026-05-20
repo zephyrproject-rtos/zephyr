@@ -471,7 +471,6 @@ struct mspi_callback_context {
 };
 
 /**
- * @typedef mspi_callback_handler_t
  * @brief Define the application callback handler function signature.
  *
  * @param mspi_cb_ctx Pointer to the MSPI callback context
@@ -556,9 +555,7 @@ __syscall int mspi_config(const struct mspi_dt_spec *spec);
 
 static inline int z_impl_mspi_config(const struct mspi_dt_spec *spec)
 {
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)spec->bus->api;
-
-	return api->config(spec);
+	return DEVICE_API_GET(mspi, spec->bus)->config(spec);
 }
 
 /**
@@ -598,9 +595,7 @@ static inline int z_impl_mspi_dev_config(const struct device *controller,
 					 const enum mspi_dev_cfg_mask param_mask,
 					 const struct mspi_dev_cfg *cfg)
 {
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
-
-	return api->dev_config(controller, dev_id, param_mask, cfg);
+	return DEVICE_API_GET(mspi, controller)->dev_config(controller, dev_id, param_mask, cfg);
 }
 
 /**
@@ -618,9 +613,7 @@ __syscall int mspi_get_channel_status(const struct device *controller, uint8_t c
 
 static inline int z_impl_mspi_get_channel_status(const struct device *controller, uint8_t ch)
 {
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
-
-	return api->get_channel_status(controller, ch);
+	return DEVICE_API_GET(mspi, controller)->get_channel_status(controller, ch);
 }
 
 /** @} */
@@ -662,7 +655,7 @@ static inline int z_impl_mspi_transceive(const struct device *controller,
 					 const struct mspi_dev_id *dev_id,
 					 const struct mspi_xfer *req)
 {
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
+	const struct mspi_driver_api *api = DEVICE_API_GET(mspi, controller);
 
 	if (!api->transceive) {
 		return -ENOTSUP;
@@ -700,7 +693,7 @@ static inline int z_impl_mspi_xip_config(const struct device *controller,
 					 const struct mspi_dev_id *dev_id,
 					 const struct mspi_xip_cfg *cfg)
 {
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
+	const struct mspi_driver_api *api = DEVICE_API_GET(mspi, controller);
 
 	if (!api->xip_config) {
 		return -ENOTSUP;
@@ -732,7 +725,7 @@ static inline int z_impl_mspi_scramble_config(const struct device *controller,
 					      const struct mspi_dev_id *dev_id,
 					      const struct mspi_scramble_cfg *cfg)
 {
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
+	const struct mspi_driver_api *api = DEVICE_API_GET(mspi, controller);
 
 	if (!api->scramble_config) {
 		return -ENOTSUP;
@@ -765,7 +758,7 @@ static inline int z_impl_mspi_timing_config(const struct device *controller,
 					    const struct mspi_dev_id *dev_id,
 					    const uint32_t param_mask, void *cfg)
 {
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
+	const struct mspi_driver_api *api = DEVICE_API_GET(mspi, controller);
 
 	if (!api->timing_config) {
 		return -ENOTSUP;
@@ -802,7 +795,7 @@ static inline int mspi_register_callback(const struct device *controller,
 					 mspi_callback_handler_t cb,
 					 struct mspi_callback_context *ctx)
 {
-	const struct mspi_driver_api *api = (const struct mspi_driver_api *)controller->api;
+	const struct mspi_driver_api *api = DEVICE_API_GET(mspi, controller);
 
 	if (!api->register_callback) {
 		return -ENOTSUP;

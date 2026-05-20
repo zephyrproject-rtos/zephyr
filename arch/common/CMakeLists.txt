@@ -17,6 +17,7 @@ if(CONFIG_GEN_ISR_TABLES)
   )
 endif()
 
+add_subdirectory_ifdef(CONFIG_ACPI acpi)
 zephyr_library_sources(init.c)
 zephyr_library_sources_ifdef(CONFIG_XIP xip.c)
 

@@ -387,12 +387,6 @@ static int os_mgmt_mpstat_read(struct smp_streamer *ctxt)
 	bool ok;
 
 	heap_elements = sys_heap_array_get(&heap);
-	ok = zcbor_tstr_put_lit(zse, "tasks") &&
-	     zcbor_map_start_encode(zse, heap_elements);
-
-	if (!ok) {
-		goto end;
-	}
 
 	while (i < heap_elements) {
 		struct sys_memory_stats heap_stats;
@@ -432,10 +426,6 @@ static int os_mgmt_mpstat_read(struct smp_streamer *ctxt)
 		}
 
 		++i;
-	}
-
-	if (ok == true) {
-		ok = zcbor_map_end_encode(zse, heap_elements);
 	}
 
 end:

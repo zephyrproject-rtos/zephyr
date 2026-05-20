@@ -11,12 +11,14 @@ supported:
   - adc
   - can
   - counter
+  - crc
   - dma
   - i2c
   - gpio
   - memc
   - netif:eth
   - pwm
+  - rtc
   - spi
   - uart
   - usb_device

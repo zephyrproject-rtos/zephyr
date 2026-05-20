@@ -45,7 +45,7 @@
 #define ARDUINO_NANO_HEADER_A0  14 /**< Analog pin 0 (A0) */
 #define ARDUINO_NANO_HEADER_A1  15 /**< Analog pin 1 (A1) */
 #define ARDUINO_NANO_HEADER_A2  16 /**< Analog pin 2 (A2) */
-#define ARDUINO_NANO_HEADER_A3  19 /**< Analog pin 3 (A3) */
+#define ARDUINO_NANO_HEADER_A3  17 /**< Analog pin 3 (A3) */
 #define ARDUINO_NANO_HEADER_A4  18 /**< Analog pin 4 (A4) */
 #define ARDUINO_NANO_HEADER_A5  19 /**< Analog pin 5 (A5) */
 #define ARDUINO_NANO_HEADER_A6  20 /**< Analog pin 6 (A6) */

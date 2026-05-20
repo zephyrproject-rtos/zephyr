@@ -135,3 +135,10 @@ tests:
     platform_allow:
       - ek_ra8m1
       - ek_ra8p1/r7ka8p1kflcac/cm85
+  drivers.build_all.comparator.build:
+    platform_allow:
+      - kit_psc3m5_evk
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55

@@ -8,21 +8,22 @@ toolchain:
 ram: 768
 flash: 2048
 supported:
+  - adc
   - arduino_i2c
   - arduino_spi
-  - hts221
-  - dma
-  - usb_device
-  - spi
-  - dac
-  - adc
-  - watchdog
-  - nvs
   - backup_sram
-  - pwm
   - counter
+  - crc
+  - dac
+  - dma
+  - hts221
   - i2c
-  - rtc
-  - usbd
   - memc
+  - nvs
+  - pwm
+  - rtc
+  - spi
+  - usb_device
+  - usbd
+  - watchdog
 vendor: st

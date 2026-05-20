@@ -106,7 +106,7 @@ int bmm350_trigger_mode_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->drdy_int.port)) {
-		LOG_ERR("INT device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->drdy_int.port);
 		return -ENODEV;
 	}
 

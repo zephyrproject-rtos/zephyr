@@ -75,6 +75,8 @@
 		/delete-node/ gpio@4200c000;
 		/* RT1024 has only one flexSPI controller */
 		/delete-node/ spi@402a4000;
+		/* RT1024 do not have flexcan3 */
+		/delete-node/ can@401d8000;
 	};
 };
 

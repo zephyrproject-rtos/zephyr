@@ -54,6 +54,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <errno.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/net/socket.h>
 

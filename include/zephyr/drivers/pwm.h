@@ -616,14 +616,11 @@ static inline int z_impl_pwm_set_cycles(const struct device *dev,
 					uint32_t channel, uint32_t period,
 					uint32_t pulse, pwm_flags_t flags)
 {
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
-
 	if (pulse > period) {
 		return -EINVAL;
 	}
 
-	return api->set_cycles(dev, channel, period, pulse, flags);
+	return DEVICE_API_GET(pwm, dev)->set_cycles(dev, channel, period, pulse, flags);
 }
 
 /**
@@ -644,10 +641,7 @@ static inline int z_impl_pwm_get_cycles_per_sec(const struct device *dev,
 						uint32_t channel,
 						uint64_t *cycles)
 {
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
-
-	return api->get_cycles_per_sec(dev, channel, cycles);
+	return DEVICE_API_GET(pwm, dev)->get_cycles_per_sec(dev, channel, cycles);
 }
 
 /**
@@ -839,8 +833,7 @@ static inline int pwm_configure_capture(const struct device *dev,
 					pwm_capture_callback_handler_t cb,
 					void *user_data)
 {
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
+	const struct pwm_driver_api *api = DEVICE_API_GET(pwm, dev);
 
 	if (api->configure_capture == NULL) {
 		return -ENOSYS;
@@ -875,8 +868,7 @@ __syscall int pwm_enable_capture(const struct device *dev, uint32_t channel);
 static inline int z_impl_pwm_enable_capture(const struct device *dev,
 					    uint32_t channel)
 {
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
+	const struct pwm_driver_api *api = DEVICE_API_GET(pwm, dev);
 
 	if (api->enable_capture == NULL) {
 		return -ENOSYS;
@@ -905,8 +897,7 @@ __syscall int pwm_disable_capture(const struct device *dev, uint32_t channel);
 static inline int z_impl_pwm_disable_capture(const struct device *dev,
 					     uint32_t channel)
 {
-	const struct pwm_driver_api *api =
-		(const struct pwm_driver_api *)dev->api;
+	const struct pwm_driver_api *api = DEVICE_API_GET(pwm, dev);
 
 	if (api->disable_capture == NULL) {
 		return -ENOSYS;
@@ -1094,7 +1085,7 @@ static inline void pwm_init_event_callback(struct pwm_event_callback *callback,
 static inline int pwm_add_event_callback(const struct device *dev,
 					 struct pwm_event_callback *callback)
 {
-	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+	const struct pwm_driver_api *api = DEVICE_API_GET(pwm, dev);
 
 	if (api->manage_event_callback == NULL) {
 		return -ENOSYS;
@@ -1118,7 +1109,7 @@ static inline int pwm_add_event_callback(const struct device *dev,
 static inline int pwm_remove_event_callback(const struct device *dev,
 					    struct pwm_event_callback *callback)
 {
-	const struct pwm_driver_api *api = (const struct pwm_driver_api *)dev->api;
+	const struct pwm_driver_api *api = DEVICE_API_GET(pwm, dev);
 
 	if (api->manage_event_callback == NULL) {
 		return -ENOSYS;

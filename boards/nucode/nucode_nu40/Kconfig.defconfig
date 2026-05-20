@@ -1,0 +1,23 @@
+# NUCODE NU40 board configuration
+
+# Copyright (c) 2026 NUCODE Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCODE_NU40
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+# To let the onboard UF2 bootloader load an application, the application
+# must be linked after the bootloader's MBR region.
+#
+# If the application wants to use the full partition size, use the "bare"
+# board variant instead.
+
+config FLASH_LOAD_OFFSET
+	default 0x1000
+	depends on BOARD_HAS_NRF5_BOOTLOADER && !USE_DT_CODE_PARTITION
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_NUCODE_NU40

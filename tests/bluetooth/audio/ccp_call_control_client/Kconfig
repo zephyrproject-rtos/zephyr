@@ -61,6 +61,14 @@ config BT_TBS_CLIENT_TBS
 	bool
 	default y
 
+config BT_TBS_CLIENT_BEARER_PROVIDER_NAME
+	bool
+	default y
+
+config BT_TBS_CLIENT_BEARER_UCI
+	bool
+	default y
+
 # Include Zephyr's Kconfig.
 source "Kconfig"
 source "subsys/bluetooth/audio/Kconfig"

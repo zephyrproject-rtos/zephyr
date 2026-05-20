@@ -82,7 +82,13 @@
 #define CACHE_ALIGN  CONFIG_MMU_PAGE_SIZE
 #define IROM_SEG_ORG 0x42000000
 #define IROM_SEG_LEN FLASH_SIZE
-#define DROM_SEG_ORG 0x42800000
+/* DROM shares the unified-cache linear address space with IROM. Placing
+ * drom0_0_seg at the same origin lets the linker emit .flash.rodata
+ * immediately after .text, so the MMU allocator's linear free_head
+ * advance (irom_len + drom_len) matches the actual reserved virtual
+ * range. This avoids a gap that PSRAM mapping could overrun.
+ */
+#define DROM_SEG_ORG IROM_SEG_ORG
 #define DROM_SEG_LEN FLASH_SIZE
 
 /* External RAM (PSRAM)

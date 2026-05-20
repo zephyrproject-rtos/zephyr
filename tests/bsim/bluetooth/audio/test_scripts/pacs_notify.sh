@@ -6,7 +6,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-SIMULATION_ID="pacs_notify"
+SIMULATION_ID="${BOARD_TS}_pacs_notify"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=200
 

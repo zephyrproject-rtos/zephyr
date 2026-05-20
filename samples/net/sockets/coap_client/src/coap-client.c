@@ -4,17 +4,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
-
 #include <errno.h>
+#include <string.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 
 #include <zephyr/posix/poll.h>
 #include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/netinet/in.h>
 #include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/netdb.h>
 #include <zephyr/posix/unistd.h>
 
 #include <zephyr/net/socket.h>
@@ -23,10 +24,17 @@ LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/udp.h>
 #include <zephyr/net/coap.h>
 
+#include "net_sample_common.h"
+
+LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
+
 #include "net_private.h"
 
-#define PEER_PORT 5683
 #define MAX_COAP_MSG_LEN 256
+#define COAP_DEFAULT_PORT 5683
+#define COAP_DEFAULT_PORT_STR STRINGIFY(COAP_DEFAULT_PORT)
+#define COAP_PEER_HOST_MAX_LEN 128
+#define COAP_PEER_PORT_MAX_LEN 6
 
 /* CoAP socket fd */
 static int sock;
@@ -45,11 +53,27 @@ static const char * const obs_path[] = { "obs", NULL };
 
 static struct coap_block_context blk_ctx;
 
-static void wait(void)
+static int wait_for_reply(void)
 {
-	if (poll(fds, nfds, -1) < 0) {
+	int timeout_ms = -1;
+	int ret;
+
+#if CONFIG_NET_SAMPLE_COAP_CLIENT_REPLY_TIMEOUT_MS > 0
+	timeout_ms = CONFIG_NET_SAMPLE_COAP_CLIENT_REPLY_TIMEOUT_MS;
+#endif
+
+	ret = poll(fds, nfds, timeout_ms);
+	if (ret < 0) {
 		LOG_ERR("Error in poll:%d", errno);
+		return -errno;
 	}
+
+	if (ret == 0) {
+		LOG_WRN("Timed out waiting for CoAP reply");
+		return -ETIMEDOUT;
+	}
+
+	return 0;
 }
 
 static void prepare_fds(void)
@@ -59,25 +83,138 @@ static void prepare_fds(void)
 	nfds++;
 }
 
+static int resolve_peer_addr(struct sockaddr_storage *addr, socklen_t *addrlen)
+{
+	const char *peer = CONFIG_NET_SAMPLE_COAP_CLIENT_PEER;
+	struct sockaddr_storage parsed_addr = { 0 };
+	struct addrinfo hints = {
+		.ai_family = AF_UNSPEC,
+		.ai_socktype = SOCK_DGRAM,
+		.ai_protocol = IPPROTO_UDP,
+	};
+	struct addrinfo *res = NULL;
+	struct addrinfo *entry;
+	char host[COAP_PEER_HOST_MAX_LEN];
+	char port[COAP_PEER_PORT_MAX_LEN];
+	const char *host_name = peer;
+	const char *port_ptr;
+	const char *last_colon;
+	int ret;
+	size_t host_len;
+
+	if (net_ipaddr_parse(peer, strlen(peer), net_sad(&parsed_addr))) {
+		switch (net_sad(&parsed_addr)->sa_family) {
+		case AF_INET:
+			if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+				return -EAFNOSUPPORT;
+			}
+
+			if (net_sin(net_sad(&parsed_addr))->sin_port == 0U) {
+				net_sin(net_sad(&parsed_addr))->sin_port =
+					htons(COAP_DEFAULT_PORT);
+			}
+
+			*addrlen = sizeof(struct sockaddr_in);
+			break;
+		case AF_INET6:
+			if (!IS_ENABLED(CONFIG_NET_IPV6)) {
+				return -EAFNOSUPPORT;
+			}
+
+			if (net_sin6(net_sad(&parsed_addr))->sin6_port == 0U) {
+				net_sin6(net_sad(&parsed_addr))->sin6_port =
+					htons(COAP_DEFAULT_PORT);
+			}
+
+			*addrlen = sizeof(struct sockaddr_in6);
+			break;
+		default:
+			return -EINVAL;
+		}
+
+		memcpy(addr, &parsed_addr, *addrlen);
+		return 0;
+	}
+
+	memcpy(port, COAP_DEFAULT_PORT_STR, sizeof(COAP_DEFAULT_PORT_STR));
+
+	port_ptr = strstr(peer, ":");
+	last_colon = strrchr(peer, ':');
+	if (port_ptr != NULL) {
+		if (port_ptr != last_colon || port_ptr == peer || port_ptr[1] == '\0') {
+			LOG_ERR("Invalid peer %s", peer);
+			return -EINVAL;
+		}
+
+		host_len = port_ptr - peer;
+		if (host_len >= sizeof(host)) {
+			LOG_ERR("Invalid peer %s", peer);
+			return -EINVAL;
+		}
+
+		memcpy(host, peer, host_len);
+		host[host_len] = '\0';
+		host_name = host;
+
+		if (strlen(port_ptr + 1) >= sizeof(port)) {
+			LOG_ERR("Invalid peer %s", peer);
+			return -EINVAL;
+		}
+
+		memcpy(port, port_ptr + 1, strlen(port_ptr + 1) + 1);
+	}
+
+	ret = getaddrinfo(host_name, port, &hints, &res);
+	if (ret != 0) {
+		LOG_ERR("Cannot resolve %s (%d)", peer, ret);
+		return -ENOENT;
+	}
+
+	ret = -EAFNOSUPPORT;
+
+	for (entry = res; entry != NULL; entry = entry->ai_next) {
+		if (entry->ai_addrlen > sizeof(*addr)) {
+			continue;
+		}
+
+		if (entry->ai_family == AF_INET && !IS_ENABLED(CONFIG_NET_IPV4)) {
+			continue;
+		}
+
+		if (entry->ai_family == AF_INET6 && !IS_ENABLED(CONFIG_NET_IPV6)) {
+			continue;
+		}
+
+		memcpy(addr, entry->ai_addr, entry->ai_addrlen);
+		*addrlen = entry->ai_addrlen;
+		ret = 0;
+		break;
+	}
+
+	freeaddrinfo(res);
+
+	return ret;
+}
+
 static int start_coap_client(void)
 {
 	int ret = 0;
-	struct sockaddr_in6 addr6;
+	struct sockaddr_storage peer_addr;
+	socklen_t peer_addrlen;
 
-	addr6.sin6_family = AF_INET6;
-	addr6.sin6_port = htons(PEER_PORT);
-	addr6.sin6_scope_id = 0U;
+	ret = resolve_peer_addr(&peer_addr, &peer_addrlen);
+	if (ret < 0) {
+		return ret;
+	}
 
-	inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
-		  &addr6.sin6_addr);
-
-	sock = socket(addr6.sin6_family, SOCK_DGRAM, IPPROTO_UDP);
+	sock = socket((net_sad(&peer_addr))->sa_family,
+		      SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create UDP socket %d", errno);
 		return -errno;
 	}
 
-	ret = connect(sock, (struct sockaddr *)&addr6, sizeof(addr6));
+	ret = connect(sock, net_sad(&peer_addr), peer_addrlen);
 	if (ret < 0) {
 		LOG_ERR("Cannot connect to UDP remote : %d", errno);
 		return -errno;
@@ -91,11 +228,14 @@ static int start_coap_client(void)
 static int process_simple_coap_reply(void)
 {
 	struct coap_packet reply;
-	uint8_t *data;
+	uint8_t *data = NULL;
 	int rcvd;
 	int ret;
 
-	wait();
+	ret = wait_for_reply();
+	if (ret < 0) {
+		goto end;
+	}
 
 	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
@@ -259,12 +399,15 @@ static int send_simple_coap_msgs_and_wait_for_reply(void)
 static int process_large_coap_reply(void)
 {
 	struct coap_packet reply;
-	uint8_t *data;
+	uint8_t *data = NULL;
 	bool last_block;
 	int rcvd;
 	int ret;
 
-	wait();
+	ret = wait_for_reply();
+	if (ret < 0) {
+		goto end;
+	}
 
 	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
@@ -367,6 +510,7 @@ end:
 
 static int get_large_coap_msgs(void)
 {
+	int retries = 0;
 	int r;
 
 	while (1) {
@@ -380,8 +524,19 @@ static int get_large_coap_msgs(void)
 
 		r = process_large_coap_reply();
 		if (r < 0) {
+			if (r == -ETIMEDOUT &&
+			    retries < CONFIG_NET_SAMPLE_COAP_CLIENT_BLOCKWISE_MAX_RETRIES) {
+				retries++;
+				LOG_WRN("Timed out waiting for block %zd, retry %d/%d",
+					blk_ctx.current / 64 /* COAP_BLOCK_64 */,
+					retries,
+					CONFIG_NET_SAMPLE_COAP_CLIENT_BLOCKWISE_MAX_RETRIES);
+				continue;
+			}
 			return r;
 		}
+
+		retries = 0;
 
 		/* Received last block */
 		if (r == 1) {
@@ -421,7 +576,6 @@ end:
 	k_free(data);
 }
 
-
 static int obs_notification_cb(const struct coap_packet *response,
 			       struct coap_reply *reply,
 			       const struct sockaddr *from)
@@ -446,11 +600,14 @@ static int obs_notification_cb(const struct coap_packet *response,
 static int process_obs_coap_reply(struct coap_reply *reply)
 {
 	struct coap_packet reply_msg;
-	uint8_t *data;
+	uint8_t *data = NULL;
 	int rcvd;
 	int ret;
 
-	wait();
+	ret = wait_for_reply();
+	if (ret < 0) {
+		goto end;
+	}
 
 	data = (uint8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
@@ -482,7 +639,7 @@ static int process_obs_coap_reply(struct coap_reply *reply)
 	}
 
 	if (coap_response_received(&reply_msg, NULL, reply, 1) == NULL) {
-		printk("\nOther response received\n");
+		LOG_DBG("Ignoring unrelated CoAP response");
 	}
 
 end:
@@ -634,6 +791,8 @@ int main(void)
 	int r;
 
 	LOG_DBG("Start CoAP-client sample");
+	wait_for_network();
+
 	r = start_coap_client();
 	if (r < 0) {
 		goto quit;

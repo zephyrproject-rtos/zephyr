@@ -19,4 +19,15 @@ Requirements
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/central_gatt_write
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, the sample scans for nearby Bluetooth LE devices, connects to the
+first one found, and continuously sends GATT Write Without Response commands. Use
+the :zephyr:code-sample:`ble_peripheral_gatt_write` sample on a second board as the
+peripheral.

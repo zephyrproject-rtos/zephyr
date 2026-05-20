@@ -25,7 +25,7 @@ config XTENSA_CCOUNT_HZ
 config SYS_CLOCK_TICKS_PER_SEC
 	default 50000
 
-config SMP
+configdefault SMP
 	default y
 
 config XTENSA_TIMER

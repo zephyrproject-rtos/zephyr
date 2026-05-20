@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(spi_oc_simple);
 
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 
 #include "spi_context.h"
 #include "spi_oc_simple.h"

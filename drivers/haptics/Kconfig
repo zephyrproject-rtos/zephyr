@@ -28,6 +28,7 @@ config HAPTICS_SHELL
 # zephyr-keep-sorted-start
 source "drivers/haptics/cirrus/Kconfig"
 source "drivers/haptics/ti/Kconfig"
+source "drivers/haptics/titanmec/Kconfig"
 # zephyr-keep-sorted-stop
 
 endif # HAPTICS

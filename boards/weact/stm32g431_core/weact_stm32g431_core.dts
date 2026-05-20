@@ -130,12 +130,13 @@ stm32_lp_tick_source: &lptim1 {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* 4KiB of storage at the end of the 128KiB FLASH */
 		storage_partition: partition@1f000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0001f000 DT_SIZE_K(4)>;
 		};

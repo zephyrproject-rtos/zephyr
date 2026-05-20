@@ -606,95 +606,9 @@ static void state_transition_work_handler(struct k_work *work)
 int ascs_ep_set_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-	const enum bt_bap_ep_state old_state = ep->state;
-	bool valid_state_transition = false;
 	int err;
 
-	switch (state) {
-	case BT_BAP_EP_STATE_IDLE:
-		valid_state_transition = true;
-		break;
-	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_IDLE:
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		case BT_BAP_EP_STATE_RELEASING:
-			valid_state_transition = true;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			valid_state_transition = true;
-			break;
-		case BT_BAP_EP_STATE_DISABLING:
-			valid_state_transition = ep->dir == BT_AUDIO_DIR_SOURCE;
-			break;
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			/* Source ASE transition Streaming->QoS configured is valid on case of CIS
-			 * link-loss.
-			 */
-			valid_state_transition =
-				ep->dir == BT_AUDIO_DIR_SINK || ase->unexpected_iso_link_loss;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_ENABLING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		case BT_BAP_EP_STATE_ENABLING:
-			valid_state_transition = true;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_STREAMING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = true;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_DISABLING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = ep->dir == BT_AUDIO_DIR_SOURCE;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_RELEASING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = true;
-			break;
-		case BT_BAP_EP_STATE_DISABLING:
-			valid_state_transition = ep->dir == BT_AUDIO_DIR_SOURCE;
-			break;
-		default:
-			break;
-		} break;
-	default:
-		__ASSERT_PRINT("Unhandled state %d", state);
-		break;
-	}
-
-	if (!valid_state_transition) {
-		BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-			      bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(state));
-
+	if (!bt_bap_stream_valid_state_transition(ep, state)) {
 		return -EBADMSG;
 	}
 
@@ -1373,6 +1287,8 @@ static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct bt_ascs_ase *ase = user_data;
 
+	ARG_UNUSED(handle);
+
 	if (ASE_ID(ase) == POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr))) {
 		ase->attr = attr;
 
@@ -1683,7 +1599,8 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 
 	ascs_cp_rsp_success(ASE_ID(ase));
 
-	bt_bap_stream_attach(ase->conn, stream, &ase->ep, &ase->ep.codec_cfg);
+	bt_bap_stream_attach(ase->conn, stream, &ase->ep);
+	stream->codec_cfg = &ase->ep.codec_cfg;
 
 	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 
@@ -1704,7 +1621,7 @@ static struct bt_bap_ep *ep_lookup_stream(struct bt_conn *conn, struct bt_bap_st
 }
 
 int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
-		       struct bt_audio_codec_cfg *codec_cfg,
+		       const struct bt_audio_codec_cfg *codec_cfg,
 		       const struct bt_bap_qos_cfg_pref *qos_pref)
 {
 	const struct bt_audio_codec_cap *codec_cap;
@@ -1759,7 +1676,8 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 
 	ep->qos_pref = *qos_pref;
 
-	bt_bap_stream_attach(conn, stream, ep, &ep->codec_cfg);
+	bt_bap_stream_attach(conn, stream, ep);
+	stream->codec_cfg = &ep->codec_cfg;
 
 	err = ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 	if (err != 0) {
@@ -2755,6 +2673,8 @@ static bool is_valid_stop_len(struct bt_conn *conn, struct net_buf_simple *buf)
 	const struct bt_ascs_stop_op *op;
 	struct net_buf_simple_state state;
 
+	ARG_UNUSED(conn);
+
 	net_buf_simple_save(buf, &state);
 
 	if (buf->len < sizeof(*op)) {
@@ -3225,6 +3145,8 @@ int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
 
 void bt_ascs_cleanup(void)
 {
+	int err;
+
 	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
@@ -3233,7 +3155,10 @@ void bt_ascs_cleanup(void)
 		}
 	}
 	if (unicast_server_cb != NULL) {
-		bt_iso_server_unregister(&iso_server);
+		err = bt_iso_server_unregister(&iso_server);
+		if (err != 0) {
+			LOG_ERR("Failed to unregister ISO server: %d", err);
+		}
 		unicast_server_cb = NULL;
 	}
 }

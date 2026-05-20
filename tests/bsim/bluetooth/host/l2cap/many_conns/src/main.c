@@ -204,24 +204,16 @@ static int l2cap_server_register(bt_security_t sec_level)
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
+	TEST_ASSERT(!conn_err, "Failed to connect to %s (%u)", bt_conn_dst_str(conn), conn_err);
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	TEST_ASSERT(!conn_err, "Failed to connect to %s (%u)", addr, conn_err);
-
-	LOG_DBG("%s", addr);
+	LOG_DBG("%s", bt_conn_dst_str(conn));
 
 	SET_FLAG(is_connected);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("%p %s (reason 0x%02x)", conn, addr, reason);
+	LOG_DBG("%p %s (reason 0x%02x)", conn, bt_conn_dst_str(conn), reason);
 
 	UNSET_FLAG(is_connected);
 	disconnect_counter++;
@@ -296,11 +288,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	err = bt_le_scan_stop();
 	TEST_ASSERT(!err, "Stop LE scan failed (err %d)", err);
 
-	char str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, str, sizeof(str));
-
-	LOG_DBG("Connecting to %s", str);
+	LOG_DBG("Connecting to %s", bt_addr_le_str(addr));
 
 	param = BT_LE_CONN_PARAM_DEFAULT;
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, param, &conn);

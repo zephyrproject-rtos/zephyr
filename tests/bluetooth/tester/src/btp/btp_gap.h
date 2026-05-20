@@ -444,6 +444,19 @@ struct btp_gap_decrypt_ead_adv_data_rp {
 	uint8_t decrypted_data[];
 } __packed;
 
+#define BTP_GAP_PAWR_CONFIGURE			0x34
+/* Uses same flags as BTP_GAP_PADV_CONFIGURE */
+struct btp_gap_pawr_configure_cmd {
+	uint8_t flags;
+	uint16_t interval_min;
+	uint16_t interval_max;
+	uint8_t num_subevents;
+	uint8_t subevent_interval;
+	uint8_t response_slot_delay;
+	uint8_t response_slot_spacing;
+	uint8_t num_response_slots;
+} __packed;
+
 /* events */
 #define BTP_GAP_EV_NEW_SETTINGS			0x80
 struct btp_gap_new_settings_ev {

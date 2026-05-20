@@ -106,9 +106,7 @@ __syscall ssize_t retained_mem_size(const struct device *dev);
 
 static inline ssize_t z_impl_retained_mem_size(const struct device *dev)
 {
-	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
-
-	return api->size(dev);
+	return DEVICE_API_GET(retained_mem, dev)->size(dev);
 }
 
 /**
@@ -127,7 +125,7 @@ __syscall int retained_mem_read(const struct device *dev, off_t offset, uint8_t 
 static inline int z_impl_retained_mem_read(const struct device *dev, off_t offset,
 					   uint8_t *buffer, size_t size)
 {
-	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
+	const struct retained_mem_driver_api *api = DEVICE_API_GET(retained_mem, dev);
 	size_t area_size;
 
 	/* Validate user-supplied parameters */
@@ -161,7 +159,7 @@ __syscall int retained_mem_write(const struct device *dev, off_t offset, const u
 static inline int z_impl_retained_mem_write(const struct device *dev, off_t offset,
 					    const uint8_t *buffer, size_t size)
 {
-	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
+	const struct retained_mem_driver_api *api = DEVICE_API_GET(retained_mem, dev);
 	size_t area_size;
 
 	/* Validate user-supplied parameters */
@@ -189,9 +187,7 @@ __syscall int retained_mem_clear(const struct device *dev);
 
 static inline int z_impl_retained_mem_clear(const struct device *dev)
 {
-	struct retained_mem_driver_api *api = (struct retained_mem_driver_api *)dev->api;
-
-	return api->clear(dev);
+	return DEVICE_API_GET(retained_mem, dev)->clear(dev);
 }
 
 /**

@@ -8,6 +8,7 @@ config UDC_NUMAKER
 		|| DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
 	select PINCTRL
 	select UDC_DRIVER_HAS_HIGH_SPEED_SUPPORT if DT_HAS_NUVOTON_NUMAKER_HSUSBD_ENABLED
+	select EVENTS
 	help
 	  Enable Nuvoton NuMaker USB device controller driver
 

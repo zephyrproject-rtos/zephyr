@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
@@ -37,6 +38,7 @@ enum mcux_sdif_callback_status {
 struct mcux_sdif_config {
 	SDIF_Type *base;
 	const struct pinctrl_dev_config *pincfg;
+	struct gpio_dt_spec cd_gpio;
 	uint32_t response_timeout;
 	uint32_t cd_debounce_clocks;
 	uint32_t data_timeout;
@@ -198,6 +200,17 @@ static int mcux_sdif_init(const struct device *dev)
 	host_config.dataTimeout = config->data_timeout;
 	SDIF_Init(config->base, &host_config);
 
+	if (config->cd_gpio.port) {
+		if (!device_is_ready(config->cd_gpio.port)) {
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&config->cd_gpio, GPIO_INPUT);
+		if (ret) {
+			return ret;
+		}
+	}
+
 	SDIF_TransferCreateHandle(config->base, &data->transfer_handle,
 		&sdif_cb, (void *)dev);
 	config->irq_config_func(dev);
@@ -210,6 +223,10 @@ static int mcux_sdif_init(const struct device *dev)
 static int mcux_sdif_get_card_present(const struct device *dev)
 {
 	const struct mcux_sdif_config *config = dev->config;
+
+	if (config->cd_gpio.port) {
+		return gpio_pin_get_dt(&config->cd_gpio);
+	}
 
 	return SDIF_DetectCardInsert(config->base, false);
 }
@@ -436,6 +453,7 @@ static DEVICE_API(sdhc, sdif_api) = {
 	static const struct mcux_sdif_config sdif_##n##_config = {		\
 		.base = (SDIF_Type *) DT_INST_REG_ADDR(n),			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),			\
+		.cd_gpio = GPIO_DT_SPEC_INST_GET_OR(n, cd_gpios, {0}),		\
 		.response_timeout = DT_INST_PROP(n, response_timeout),		\
 		.cd_debounce_clocks = DT_INST_PROP(n, cd_debounce_clocks),	\
 		.data_timeout = DT_INST_PROP(n, data_timeout),			\

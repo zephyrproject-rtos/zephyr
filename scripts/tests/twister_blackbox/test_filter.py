@@ -14,8 +14,7 @@ import sys
 import json
 import re
 
-# pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, suite_filename_mock
+from conftest import ZEPHYR_BASE, TEST_DATA, test_filename_mock
 from twisterlib.testplan import TestPlan
 
 
@@ -95,7 +94,7 @@ class TestFilter:
         ],
         ids=['no device, no cpp', 'no agnostic']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_exclude_tag(self, out_path, tags, expected_test_count):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy')
@@ -123,7 +122,7 @@ class TestFilter:
 
         assert str(sys_exit.value) == '0'
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_enable_slow(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
@@ -151,7 +150,7 @@ class TestFilter:
 
         assert len(filtered_j) == 6
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_enable_slow_only(self, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic')
@@ -189,7 +188,7 @@ class TestFilter:
         ],
     )
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_arch(self, capfd, out_path, arch, expected):
         path = os.path.join(TEST_DATA, 'tests', 'no_filter')
         test_platforms = ['qemu_x86', 'hsdk', 'intel_adl_crb', 'it8xxx2_evb']
@@ -223,7 +222,7 @@ class TestFilter:
         ],
     )
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_vendor(self, capfd, out_path, vendor, expected):
         path = os.path.join(TEST_DATA, 'tests', 'no_filter')
         test_platforms = ['qemu_x86', 'hsdk', 'intel_adl_crb', 'it8xxx2_evb']
@@ -254,7 +253,7 @@ class TestFilter:
         ],
         ids=['ignore_platform_key', 'without ignore_platform_key']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_ignore_platform_key(self, out_path, flag, expected_test_count):
         test_platforms = ['qemu_x86', 'qemu_x86_64']
         path = os.path.join(TEST_DATA, 'tests', 'platform_key')

@@ -19,3 +19,17 @@ tests:
     integration_platforms:
       - apollo3p_evb
       - apollo510_evb
+  sample.drivers.memc.stm32_mspi:
+    tags: mspi
+    filter: dt_alias_exists("psram0")
+    platform_allow:
+      - b_u585i_iot02a
+      - stm32h7s78_dk
+    integration_platforms:
+      - b_u585i_iot02a
+      - stm32h7s78_dk
+    extra_args:
+      - platform:b_u585i_iot02a:DTC_OVERLAY_FILE=boards/b_u585i_iot02a_mspi_aps6408l.overlay
+      - platform:b_u585i_iot02a:EXTRA_CONF_FILE=boards/b_u585i_iot02a_mspi_aps6408l.conf
+      - platform:stm32h7s78_dk:CONF_FILE=boards/stm32h7s78_dk_mspi_psram.conf
+      - platform:stm32h7s78_dk:DTC_OVERLAY_FILE=boards/stm32h7s78_dk_mspi_psram.overlay

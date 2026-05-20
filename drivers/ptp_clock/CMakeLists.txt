@@ -9,5 +9,11 @@ zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_SHELL ptp_clock_shell.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_ENET ptp_clock_nxp_enet.c)
+zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_ENET_QOS ptp_clock_nxp_enet_qos.c)
 zephyr_library_sources_ifdef(CONFIG_PTP_CLOCK_NXP_NETC ptp_clock_nxp_netc.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_PTP_CLOCK_NATIVE)
+  zephyr_library_sources(ptp_clock_native.c)
+  target_sources(native_simulator INTERFACE ptp_clock_native_bottom.c)
+endif()

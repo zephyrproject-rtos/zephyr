@@ -1,7 +1,7 @@
 /* Bluetooth TBS - Telephone Bearer Service
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  * Copyright 2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -16,6 +16,7 @@
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/ccid.h>
 #include <zephyr/bluetooth/audio/tbs.h>
@@ -33,6 +34,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "audio_internal.h"
@@ -74,7 +76,7 @@ struct tbs_inst {
 	 */
 	char provider_name[CONFIG_BT_TBS_MAX_PROVIDER_NAME_LENGTH];
 	char uci[BT_TBS_MAX_UCI_SIZE];
-	uint8_t technology;
+	enum bt_bearer_tech technology;
 	uint8_t signal_strength;
 	uint8_t signal_strength_interval;
 	uint8_t ccid;
@@ -291,26 +293,31 @@ static bool is_authorized(const struct tbs_inst *inst, struct bt_conn *conn)
 static bool uri_scheme_in_list(const char *uri_scheme, const char *uri_scheme_list)
 {
 	const size_t scheme_len = strlen(uri_scheme);
-	const size_t scheme_list_len = strlen(uri_scheme_list);
-	const char *uri_scheme_cand = uri_scheme_list;
-	size_t uri_scheme_cand_len;
-	size_t start_idx = 0;
+	const char *start = uri_scheme_list;
+	const char *end;
 
-	for (size_t i = 0; i < scheme_list_len; i++) {
-		if (uri_scheme_list[i] == ',') {
-			uri_scheme_cand_len = i - start_idx;
-			if (uri_scheme_cand_len != scheme_len) {
-				continue;
-			}
+	if (scheme_len == 0U) {
+		return false;
+	}
 
-			if (memcmp(uri_scheme, uri_scheme_cand, scheme_len) == 0) {
-				return true;
-			}
-
-			if (i + 1 < scheme_list_len) {
-				uri_scheme_cand = &uri_scheme_list[i + 1];
-			}
+	while (*start) {
+		end = strchr(start, ',');
+		if (end == NULL) {
+			/* If end is NULL, we set end to the NULL terminator of start */
+			end = start + strlen(start);
 		}
+
+		if ((size_t)(end - start) == scheme_len &&
+		    memcmp(start, uri_scheme, scheme_len) == 0) {
+			return true;
+		}
+
+		if (*end == '\0') {
+			break;
+		}
+
+		/* Set start to the next character after `,` */
+		start = end + 1;
 	}
 
 	return false;
@@ -364,6 +371,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	const uint8_t conn_index = bt_conn_index(conn);
 	int err;
+
+	ARG_UNUSED(reason);
 
 	err = k_mutex_lock(&tbs_mutex, MUTEX_TIMEOUT);
 	if (err != 0) {
@@ -1032,11 +1041,12 @@ static void notify_handler_cb(struct bt_conn *conn, void *data)
 	}
 
 	if (flags->bearer_technology_changed) {
-		LOG_DBG("Notifying Bearer Technology: %s (0x%02x)",
-			bt_tbs_technology_str(inst->technology), inst->technology);
+		const uint8_t tech = (uint8_t)inst->technology;
 
-		err = notify(conn, BT_UUID_TBS_TECHNOLOGY, inst->attrs, &inst->technology,
-			     sizeof(inst->technology));
+		LOG_DBG("Notifying Bearer Technology: %s (0x%02x)",
+			bt_bearer_tech_str(inst->technology), tech);
+
+		err = notify(conn, BT_UUID_TBS_TECHNOLOGY, inst->attrs, &tech, sizeof(tech));
 		if (err == 0) {
 			flags->bearer_technology_changed = false;
 		} else {
@@ -1287,11 +1297,11 @@ static ssize_t read_technology(struct bt_conn *conn, const struct bt_gatt_attr *
 			       uint16_t len, uint16_t offset)
 {
 	const struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
+	const uint8_t tech = (uint8_t)inst->technology;
 
-	LOG_DBG("Index %u: Technology 0x%02x", inst_index(inst), inst->technology);
+	LOG_DBG("Index %u: Technology 0x%02x", inst_index(inst), tech);
 
-	return bt_gatt_attr_read(conn, attr, buf, len, offset, &inst->technology,
-				 sizeof(inst->technology));
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &tech, sizeof(tech));
 }
 
 static void technology_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
@@ -1391,6 +1401,8 @@ static ssize_t write_signal_strength_interval(struct bt_conn *conn, const struct
 	struct tbs_inst *inst = BT_AUDIO_CHRC_USER_DATA(attr);
 	struct net_buf_simple net_buf;
 	uint8_t signal_strength_interval;
+
+	ARG_UNUSED(flags);
 
 	if (!is_authorized(inst, conn)) {
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
@@ -1659,10 +1671,12 @@ static void hold_other_calls(struct tbs_inst *inst, uint8_t call_index_cnt,
 		call_state = inst->calls[i].state;
 		if (call_state == BT_TBS_CALL_STATE_ACTIVE) {
 			inst->calls[i].state = BT_TBS_CALL_STATE_LOCALLY_HELD;
-			held_calls[held_calls_cnt++] = &inst->calls[i];
+			held_calls[held_calls_cnt] = &inst->calls[i];
+			held_calls_cnt++;
 		} else if (call_state == BT_TBS_CALL_STATE_REMOTELY_HELD) {
 			inst->calls[i].state = BT_TBS_CALL_STATE_LOCALLY_AND_REMOTELY_HELD;
-			held_calls[held_calls_cnt++] = &inst->calls[i];
+			held_calls[held_calls_cnt] = &inst->calls[i];
+			held_calls_cnt++;
 		}
 	}
 }
@@ -1712,7 +1726,7 @@ static uint8_t tbs_hold_call(struct tbs_inst *inst, const struct bt_tbs_call_cp_
 {
 	struct bt_tbs_call *call = lookup_call_in_inst(inst, ccp->call_index);
 
-	if ((inst->optional_opcodes & BT_TBS_FEATURE_HOLD) == 0) {
+	if ((inst->optional_opcodes & BT_TBS_OPTIONAL_OPCODE_HOLD) == 0) {
 		return BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED;
 	}
 
@@ -1737,7 +1751,7 @@ static uint8_t retrieve_call(struct tbs_inst *inst, const struct bt_tbs_call_cp_
 {
 	struct bt_tbs_call *call = lookup_call_in_inst(inst, ccp->call_index);
 
-	if ((inst->optional_opcodes & BT_TBS_FEATURE_HOLD) == 0) {
+	if ((inst->optional_opcodes & BT_TBS_OPTIONAL_OPCODE_HOLD) == 0) {
 		return BT_TBS_RESULT_CODE_OPCODE_NOT_SUPPORTED;
 	}
 
@@ -1795,7 +1809,7 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 	struct bt_tbs_call *joined_calls[CONFIG_BT_TBS_MAX_CALLS];
 	uint8_t call_state;
 
-	if ((inst->optional_opcodes & BT_TBS_FEATURE_JOIN) == 0) {
+	if ((inst->optional_opcodes & BT_TBS_OPTIONAL_OPCODE_JOIN) == 0) {
 		return BT_TBS_RESULT_CODE_OPERATION_NOT_POSSIBLE;
 	}
 
@@ -1856,6 +1870,8 @@ static uint8_t join_calls(struct tbs_inst *inst, const struct bt_tbs_call_cp_joi
 static void notify_app(struct bt_conn *conn, struct tbs_inst *inst, uint16_t len,
 		       const union bt_tbs_call_cp_t *ccp, uint8_t status, uint8_t call_index)
 {
+	ARG_UNUSED(status);
+
 	if (tbs_cbs == NULL) {
 		return;
 	}
@@ -1966,6 +1982,8 @@ static ssize_t write_call_cp(struct bt_conn *conn, const struct bt_gatt_attr *at
 	const bool is_gtbs = inst_is_gtbs(inst);
 	bool calls_changed = false;
 	int err;
+
+	ARG_UNUSED(flags);
 
 	if (!is_authorized(inst, conn)) {
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHORIZATION);
@@ -2478,7 +2496,7 @@ static int tbs_inst_init_and_register(struct tbs_inst *inst, struct bt_gatt_serv
 	(void)utf8_lcpy(inst->uci, param->uci, sizeof(inst->uci));
 	(void)utf8_lcpy(inst->uri_scheme_list, param->uri_schemes_supported,
 			sizeof(inst->uri_scheme_list));
-	inst->optional_opcodes = param->supported_features;
+	inst->optional_opcodes = param->optional_opcodes;
 	inst->technology = param->technology;
 	inst->attrs = svc->attrs;
 	inst->attr_count = svc->attr_count;
@@ -2553,14 +2571,14 @@ static bool valid_register_param(const struct bt_tbs_register_param *param)
 		return false;
 	}
 
-	if (!IN_RANGE(param->technology, BT_TBS_TECHNOLOGY_3G, BT_TBS_TECHNOLOGY_WCDMA)) {
+	if (!IN_RANGE(param->technology, BT_BEARER_TECH_3G, BT_BEARER_TECH_WCDMA)) {
 		LOG_DBG("Invalid technology: %u", param->technology);
 
 		return false;
 	}
 
-	if (param->supported_features > BT_TBS_FEATURE_ALL) {
-		LOG_DBG("Invalid supported_features: %u", param->supported_features);
+	if (param->optional_opcodes > BT_TBS_OPTIONAL_OPCODE_ALL) {
+		LOG_DBG("Invalid optional_opcodes: %u", param->optional_opcodes);
 
 		return false;
 	}
@@ -3176,12 +3194,12 @@ int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name)
 	return 0;
 }
 
-int bt_tbs_set_bearer_technology(uint8_t bearer_index, uint8_t new_technology)
+int bt_tbs_set_bearer_technology(uint8_t bearer_index, enum bt_bearer_tech new_technology)
 {
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
 	int err;
 
-	if (new_technology < BT_TBS_TECHNOLOGY_3G || new_technology > BT_TBS_TECHNOLOGY_WCDMA) {
+	if (new_technology < BT_BEARER_TECH_3G || new_technology > BT_BEARER_TECH_WCDMA) {
 		return -EINVAL;
 	} else if (inst == NULL) {
 		return -EINVAL;

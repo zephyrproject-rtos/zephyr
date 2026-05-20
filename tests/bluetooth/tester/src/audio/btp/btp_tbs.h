@@ -11,12 +11,12 @@
 #include <zephyr/bluetooth/addr.h>
 
 /* TBS commands */
-#define BTP_TBS_READ_SUPPORTED_COMMANDS		0x01
+#define BTP_TBS_READ_SUPPORTED_COMMANDS		0x01U
 struct btp_tbs_read_supported_commands_rp {
 	uint8_t data[0];
 } __packed;
 
-#define BTP_TBS_REMOTE_INCOMING			0x02
+#define BTP_TBS_REMOTE_INCOMING			0x02U
 struct btp_tbs_remote_incoming_cmd {
 	uint8_t index;
 	uint8_t recv_len;
@@ -26,25 +26,25 @@ struct btp_tbs_remote_incoming_cmd {
 	uint8_t data[0];
 } __packed;
 
-#define BTP_TBS_HOLD				0x03
+#define BTP_TBS_HOLD				0x03U
 struct btp_tbs_hold_cmd {
 	uint8_t index;
 } __packed;
 
-#define BTP_TBS_SET_BEARER_NAME			0x04
+#define BTP_TBS_SET_BEARER_NAME			0x04U
 struct btp_tbs_set_bearer_name_cmd {
 	uint8_t index;
 	uint8_t name_len;
 	uint8_t name[0];
 } __packed;
 
-#define BTP_TBS_SET_TECHNOLOGY			0x05
+#define BTP_TBS_SET_TECHNOLOGY			0x05U
 struct btp_tbs_set_technology_cmd {
 	uint8_t index;
 	uint8_t tech;
 } __packed;
 
-#define BTP_TBS_SET_URI_SCHEME			0x06
+#define BTP_TBS_SET_URI_SCHEME			0x06U
 struct btp_tbs_set_uri_schemes_list_cmd {
 	uint8_t index;
 	uint8_t uri_len;
@@ -52,36 +52,36 @@ struct btp_tbs_set_uri_schemes_list_cmd {
 	uint8_t uri_list[0];
 } __packed;
 
-#define BTP_TBS_SET_STATUS_FLAGS		0x07
+#define BTP_TBS_SET_STATUS_FLAGS		0x07U
 struct btp_tbs_set_status_flags_cmd {
 	uint8_t index;
 	uint16_t flags;
 } __packed;
 
-#define BTP_TBS_REMOTE_HOLD			0x08
+#define BTP_TBS_REMOTE_HOLD			0x08U
 struct btp_tbs_remote_hold_cmd {
 	uint8_t index;
 } __packed;
 
-#define BTP_TBS_ORIGINATE			0x09
+#define BTP_TBS_ORIGINATE			0x09U
 struct btp_tbs_originate_cmd {
 	uint8_t index;
 	uint8_t uri_len;
 	uint8_t uri[0];
 } __packed;
 
-#define BTP_TBS_SET_SIGNAL_STRENGTH		0x0a
+#define BTP_TBS_SET_SIGNAL_STRENGTH		0x0AU
 struct btp_tbs_set_signal_strength_cmd {
 	uint8_t index;
 	uint8_t strength;
 } __packed;
 
-#define BTP_TBS_TERMINATE_CALL			0x0b
+#define BTP_TBS_TERMINATE_CALL			0x0BU
 struct btp_tbs_terminate_call_cmd {
 	uint8_t index;
 } __packed;
 
-#define BTP_TBS_REGISTER_BEARER		0x0c
+#define BTP_TBS_REGISTER_BEARER		0x0CU
 struct btp_tbs_register_bearer_cmd {
 	uint8_t gtbs;
 	uint8_t technology;

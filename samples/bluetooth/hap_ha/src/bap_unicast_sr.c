@@ -31,6 +31,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "hap_ha.h"
 
@@ -54,7 +55,7 @@ static struct audio_source {
 static size_t configured_source_stream_count;
 
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 20000, 40000, 20000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 20000U, 40000U, 20000U, 40000U);
 
 static uint16_t get_and_incr_seq_num(const struct bt_bap_stream *stream)
 {
@@ -71,8 +72,10 @@ static uint16_t get_and_incr_seq_num(const struct bt_bap_stream *stream)
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	while (len != 0U) {
+		printk("%02x", *ptr);
+		ptr++;
+		len--;
 	}
 }
 
@@ -155,7 +158,9 @@ static void audio_timer_timeout(struct k_work *work)
 	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
 	static bool data_initialized;
 	struct net_buf *buf;
-	static size_t len_to_send = 1;
+	static size_t len_to_send = 1U;
+
+	ARG_UNUSED(work);
 
 	if (!data_initialized) {
 		/* TODO: Actually encode some audio data */
@@ -170,7 +175,7 @@ static void audio_timer_timeout(struct k_work *work)
 	 * we can use `stream[i]` to select sink streams (i.e. streams with
 	 * data going to the server)
 	 */
-	for (size_t i = 0; i < configured_source_stream_count; i++) {
+	for (size_t i = 0U; i < configured_source_stream_count; i++) {
 		struct bt_bap_stream *stream = source_streams[i].stream;
 
 		buf = net_buf_alloc(&tx_pool, K_NO_WAIT);
@@ -198,13 +203,13 @@ static void audio_timer_timeout(struct k_work *work)
 
 	len_to_send++;
 	if (len_to_send > ARRAY_SIZE(buf_data)) {
-		len_to_send = 1;
+		len_to_send = 1U;
 	}
 }
 
 static struct bt_bap_stream *stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		struct bt_bap_stream *stream = &streams[i];
 
 		if (!stream->conn) {
@@ -233,7 +238,8 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 	printk("ASE Codec Config stream %p\n", *stream);
 
 	if (dir == BT_AUDIO_DIR_SOURCE) {
-		source_streams[configured_source_stream_count++].stream = *stream;
+		source_streams[configured_source_stream_count].stream = *stream;
+		configured_source_stream_count++;
 	}
 
 	*pref = qos_pref;
@@ -245,6 +251,9 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
 			struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(dir);
+	ARG_UNUSED(pref);
+
 	printk("ASE Codec Reconfig: stream %p\n", stream);
 
 	print_codec_cfg(codec_cfg);
@@ -258,6 +267,8 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("QoS: stream %p qos %p\n", stream, qos);
 
 	print_qos(qos);
@@ -268,6 +279,9 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qo
 static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 		      struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(meta);
+	ARG_UNUSED(rsp);
+
 	printk("Enable: stream %p meta_len %zu\n", stream, meta_len);
 
 	return 0;
@@ -275,6 +289,8 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 
 static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("Start: stream %p\n", stream);
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
@@ -285,7 +301,7 @@ static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 			}
 		}
 
-		if (configured_source_stream_count > 0 &&
+		if (configured_source_stream_count > 0U &&
 		!k_work_delayable_is_pending(&audio_send_work)) {
 
 			/* Start send timer */
@@ -320,6 +336,8 @@ static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("Disable: stream %p\n", stream);
 
 	return 0;
@@ -327,6 +345,8 @@ static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 
 static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("Stop: stream %p\n", stream);
 
 	return 0;
@@ -334,6 +354,8 @@ static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 
 static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("Release: stream %p\n", stream);
 	return 0;
 }
@@ -358,6 +380,8 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 static void stream_recv(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 			struct net_buf *buf)
 {
+	ARG_UNUSED(info);
+
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 
@@ -387,33 +411,28 @@ static struct bt_bap_stream_ops stream_ops = {
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err != 0) {
-		printk("Failed to connect to %s %u %s\n", addr, err, bt_hci_err_to_str(err));
+		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
+		       err, bt_hci_err_to_str(err));
 
 		default_conn = NULL;
 		return;
 	}
 
-	printk("Connected: %s\n", addr);
+	printk("Connected: %s\n", bt_conn_dst_str(conn));
 	default_conn = bt_conn_ref(conn);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	struct k_work_sync sync;
 
 	if (conn != default_conn) {
 		return;
 	}
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
+	       reason, bt_hci_err_to_str(reason));
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
@@ -560,7 +579,7 @@ int bap_unicast_sr_init(void)
 	int err;
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		printk("Could not register PACS (err %d)\n", err);
 		return err;
 	}
@@ -574,7 +593,7 @@ int bap_unicast_sr_init(void)
 		bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		bt_bap_stream_cb_register(&streams[i], &stream_ops);
 	}
 

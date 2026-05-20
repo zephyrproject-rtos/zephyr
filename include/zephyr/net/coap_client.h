@@ -31,6 +31,8 @@ extern "C" {
 /** Maximum size of a CoAP message */
 #define MAX_COAP_MSG_LEN (CONFIG_COAP_CLIENT_MESSAGE_HEADER_SIZE + \
 			  CONFIG_COAP_CLIENT_MESSAGE_SIZE)
+/** Maximum length in bytes for options specified in @ref coap_client_option */
+#define MAX_COAP_CLIENT_OPTION_LEN (12)
 
 /**
  * @brief Representation for CoAP client response data.
@@ -132,7 +134,7 @@ struct coap_client_option {
 	/** Option len */
 	uint8_t len;
 	/** Buffer for the length */
-	uint8_t value[12];
+	uint8_t value[MAX_COAP_CLIENT_OPTION_LEN];
 #endif
 };
 
@@ -275,6 +277,28 @@ void coap_client_cancel_requests(struct coap_client *client);
  * @param req Pointer to the CoAP client request to be canceled.
  */
 void coap_client_cancel_request(struct coap_client *client, struct coap_client_request *req);
+
+/**
+ * @brief Deregister matching CoAP observe subscriptions.
+ *
+ * Sends a GET with Observe option set to 1 (deregister) using the same token as the original
+ * observe request, per RFC 7641 Section 3.6. The CON/NON type mirrors the original request.
+ *
+ * For Confirmable requests the operation is asynchronous: retransmissions are handled by the
+ * library and the response callback is invoked with the server's final response once the
+ * deregistration is acknowledged.
+ *
+ * For Non-confirmable requests the deregister is sent once and the request is released
+ * immediately; the response callback is invoked with @c -ECANCELED.
+ *
+ * The matching rules are the same as @ref coap_client_cancel_request.
+ *
+ * @param client Pointer to the CoAP client instance.
+ * @param req Pointer to the CoAP client request to match for deregistration.
+ *
+ * @return 0 on success, a negative error code otherwise.
+ */
+int coap_client_deregister_observe(struct coap_client *client, struct coap_client_request *req);
 
 /**
  * @brief Initialise a Block2 option to be added to a request

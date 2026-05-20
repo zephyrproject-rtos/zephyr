@@ -15,9 +15,6 @@
 	model = "STMicroelectronics STM32H503RB-NUCLEO board";
 	compatible = "st,stm32h503rb-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart3;
 		zephyr,shell-uart = &usart3;

@@ -11,6 +11,7 @@
  */
 
 #include <soc.h>
+#include <stm32cube_hal.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -28,6 +29,41 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
 
+
+#ifdef CONFIG_STM32_HAL2
+typedef hal_pcd_handle_t		stm32_pcd_handle_t;
+
+#define STM32_PCD_DRD_FS		HAL_PCD_DRD_FS
+#define STM32_PCD_EP_TYPE_CTRL		HAL_PCD_EP_TYPE_CTRL
+#define STM32_PCD_EP_TYPE_ISOC		HAL_PCD_EP_TYPE_ISOC
+#define STM32_PCD_EP_TYPE_BULK		HAL_PCD_EP_TYPE_BULK
+#define STM32_PCD_EP_TYPE_INTR		HAL_PCD_EP_TYPE_INTR
+#define STM32_PCD_SNG_BUF		HAL_PCD_SNG_BUF
+#define STM32_PCD_DBL_BUF		HAL_PCD_DBL_BUF
+#define STM32_PCD_SPEED_FS		HAL_PCD_SPEED_FS
+#define STM32_PCD_PHY_EXTERNAL_ULPI	HAL_PCD_PHY_EXTERNAL_ULPI
+#define STM32_PCD_PHY_EMBEDDED_FS	HAL_PCD_PHY_EMBEDDED_FS
+#define STM32_PCD_PHY_EMBEDDED_HS	HAL_PCD_PHY_EMBEDDED_HS
+#else /* CONFIG_STM32_HAL2 */
+typedef PCD_HandleTypeDef		stm32_pcd_handle_t;
+
+#ifdef USB_DRD_FS
+#define STM32_PCD_DRD_FS		USB_DRD_FS
+#endif /* USB_DRD_FS */
+#define STM32_PCD_EP_TYPE_CTRL		EP_TYPE_CTRL
+#define STM32_PCD_EP_TYPE_ISOC		EP_TYPE_ISOC
+#define STM32_PCD_EP_TYPE_BULK		EP_TYPE_BULK
+#define STM32_PCD_EP_TYPE_INTR		EP_TYPE_INTR
+#ifdef PCD_SNG_BUF
+#define STM32_PCD_SNG_BUF		PCD_SNG_BUF
+#define STM32_PCD_DBL_BUF		PCD_DBL_BUF
+#endif /* PCD_SNG_BUF */
+#define STM32_PCD_SPEED_FS		PCD_SPEED_FULL
+#define STM32_PCD_PHY_EXTERNAL_ULPI	PCD_PHY_ULPI
+#define STM32_PCD_PHY_EMBEDDED_FS	PCD_PHY_EMBEDDED
+#define STM32_PCD_PHY_EMBEDDED_HS	PCD_PHY_UTMI
+#endif /* CONFIG_STM32_HAL2 */
+
 /*
  * The STM32 HAL does not provide PCD_SPEED_HIGH and PCD_SPEED_HIGH_IN_FULL
  * on series which lack HS-capable hardware. Provide dummy definitions for
@@ -36,7 +72,7 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  * to PCD_SPEED_FULL (which is always provided).
  */
 #if !defined(PCD_SPEED_HIGH)
-#define PCD_SPEED_HIGH		(PCD_SPEED_FULL + 1)
+#define PCD_SPEED_HIGH		(STM32_PCD_SPEED_FS + 1)
 #define PCD_SPEED_HIGH_IN_FULL	(PCD_SPEED_HIGH + 1)
 #endif
 
@@ -57,11 +93,11 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  * the USB controller.
  *
  * This value may be one of:
- *    - PCD_PHY_EMBEDDED: embedded Full-Speed PHY
- *    - PCD_PHY_UTMI: embedded High-Speed PHY over UTMI+
- *    - PCD_PHY_ULPI: external High-Speed PHY over ULPI
+ *    - STM32_PCD_PHY_EMBEDDED_FS: embedded Full-Speed PHY
+ *    - STM32_PCD_PHY_EMBEDDED_HS: embedded High-Speed PHY over UTMI+
+ *    - STM32_PCD_PHY_EXTERNAL_ULPI: external High-Speed PHY over ULPI
  *
- * The correct value is always PCD_PHY_EMBEDDED for nodes
+ * The correct value is always STM32_PCD_PHY_EMBEDDED_FS for nodes
  * that are not HS-capable: these instances are always
  * hardwired to an embedded FS PHY.
  *
@@ -74,10 +110,10 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  */
 #define UDC_STM32_NODE_PHY_ITFACE(usb_node)					\
 	COND_CODE_1(USB_STM32_NODE_PHY_IS_ULPI(usb_node),			\
-		(PCD_PHY_ULPI),							\
+		(STM32_PCD_PHY_EXTERNAL_ULPI),					\
 	(COND_CODE_1(USB_STM32_NODE_PHY_IS_EMBEDDED_HS(usb_node),		\
-		(PCD_PHY_UTMI),							\
-		(PCD_PHY_EMBEDDED))						\
+		(STM32_PCD_PHY_EMBEDDED_HS),					\
+		(STM32_PCD_PHY_EMBEDDED_FS))					\
 	))
 
 /*
@@ -101,7 +137,7 @@ LOG_MODULE_REGISTER(udc_stm32, CONFIG_UDC_DRIVER_LOG_LEVEL);
  */
 #define UDC_STM32_NODE_SPEED(usb_node)					\
 	COND_CODE_0(USB_STM32_NODE_IS_HS_CAPABLE(usb_node),		\
-		(PCD_SPEED_FULL),					\
+		(STM32_PCD_SPEED_FS),					\
 	(COND_CODE_1(UDC_STM32_NODE_LIMITED_TO_FS(usb_node),		\
 		(PCD_SPEED_HIGH_IN_FULL),				\
 		(PCD_SPEED_HIGH))))
@@ -137,7 +173,7 @@ struct udc_stm32_msg {
 };
 
 struct udc_stm32_data  {
-	PCD_HandleTypeDef pcd;
+	stm32_pcd_handle_t pcd;
 	const struct device *dev;
 	uint32_t occupied_mem;
 	/* wLength of SETUP packet for s-out-status */
@@ -193,6 +229,111 @@ struct udc_stm32_config {
 
 #define hpcd2data(hpcd) CONTAINER_OF(hpcd, struct udc_stm32_data, pcd)
 
+static stm32_status_t hal_udc_open_endpoint(stm32_pcd_handle_t *hpcd, uint8_t ep_addr,
+					    uint16_t ep_mps, uint8_t ep_type)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_OpenEndpoint(hpcd, ep_addr, ep_mps, ep_type);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_EP_Open(hpcd, ep_addr, ep_mps, ep_type);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static stm32_status_t hal_udc_close_endpoint(stm32_pcd_handle_t *hpcd, uint8_t ep_addr)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_CloseEndpoint(hpcd, ep_addr);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_EP_Close(hpcd, ep_addr);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static stm32_status_t hal_udc_set_endpoint_transmit(stm32_pcd_handle_t *hpcd, uint8_t ep_addr,
+						    uint8_t *p_buffer, uint32_t size_byte)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_SetEndpointTransmit(hpcd, ep_addr, p_buffer, size_byte);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_EP_Transmit(hpcd, ep_addr, p_buffer, size_byte);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static stm32_status_t hal_udc_set_endpoint_receive(stm32_pcd_handle_t *hpcd, uint8_t ep_addr,
+						   uint8_t *p_buffer, uint32_t size_byte)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_SetEndpointReceive(hpcd, ep_addr, p_buffer, size_byte);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_EP_Receive(hpcd, ep_addr, p_buffer, size_byte);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+#if defined(USB) || defined(STM32_PCD_DRD_FS)
+static stm32_status_t hal_udc_pma_config(stm32_pcd_handle_t *hpcd, uint16_t ep_addr,
+					 uint16_t ep_kind, uint32_t pma_address)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_PMAConfig(hpcd, ep_addr, ep_kind, pma_address);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCDEx_PMAConfig(hpcd, ep_addr, ep_kind, pma_address);
+#endif /* CONFIG_STM32_HAL2 */
+}
+#endif /* USB || STM32_PCD_DRD_FS */
+
+static stm32_status_t hal_udc_set_device_address(stm32_pcd_handle_t *hpcd, uint8_t address)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_SetDeviceAddress(hpcd, address);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_SetAddress(hpcd, address);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static stm32_status_t hal_udc_remote_wakeup_start(stm32_pcd_handle_t *hpcd)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_RemoteWakeup_Start(hpcd);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_ActivateRemoteWakeup(hpcd);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static stm32_status_t hal_udc_remote_wakeup_stop(stm32_pcd_handle_t *hpcd)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_RemoteWakeup_Stop(hpcd);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_DeActivateRemoteWakeup(hpcd);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static stm32_status_t hal_udc_set_endpoint_stall(stm32_pcd_handle_t *hpcd, uint8_t ep_addr)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_SetEndpointStall(hpcd, ep_addr);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_EP_SetStall(hpcd, ep_addr);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static stm32_status_t hal_udc_clear_endpoint_stall(stm32_pcd_handle_t *hpcd, uint8_t ep_addr)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_ClearEndpointStall(hpcd, ep_addr);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_EP_ClrStall(hpcd, ep_addr);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
+static stm32_status_t hal_udc_flush_endpoint(stm32_pcd_handle_t *hpcd, uint8_t ep_addr)
+{
+#ifdef CONFIG_STM32_HAL2
+	return HAL_PCD_FlushEndpoint(hpcd, ep_addr);
+#else /* CONFIG_STM32_HAL2 */
+	return HAL_PCD_EP_Flush(hpcd, ep_addr);
+#endif /* CONFIG_STM32_HAL2 */
+}
+
 /*
  * The callbacks below are invoked by HAL_PCD_IRQHandler() when appropriate.
  * HAL_PCD_IRQHandler() is registered as ISR for this driver because it just
@@ -203,27 +344,27 @@ struct udc_stm32_config {
  * (As an exception, the Setup/DataIn/DataOut callback are right above their
  *  ISR lower half/worker thread handler functions rather than grouped here)
  */
-void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_ResetCallback(stm32_pcd_handle_t *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 	const struct device *dev = priv->dev;
 	struct udc_ep_config *ep_cfg;
-	HAL_StatusTypeDef __maybe_unused status;
+	stm32_status_t __maybe_unused status;
 
 	/* Re-Enable control endpoints */
 	ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
 	if (ep_cfg != NULL && ep_cfg->stat.enabled) {
-		status = HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_OUT,
-					 UDC_STM32_EP0_MAX_PACKET_SIZE,
-					 EP_TYPE_CTRL);
+		status = hal_udc_open_endpoint(&priv->pcd, USB_CONTROL_EP_OUT,
+					       UDC_STM32_EP0_MAX_PACKET_SIZE,
+					       STM32_PCD_EP_TYPE_CTRL);
 		__ASSERT_NO_MSG(status == HAL_OK);
 	}
 
 	ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_IN);
 	if (ep_cfg != NULL && ep_cfg->stat.enabled) {
-		status = HAL_PCD_EP_Open(&priv->pcd, USB_CONTROL_EP_IN,
-					 UDC_STM32_EP0_MAX_PACKET_SIZE,
-					 EP_TYPE_CTRL);
+		status = hal_udc_open_endpoint(&priv->pcd, USB_CONTROL_EP_IN,
+					       UDC_STM32_EP0_MAX_PACKET_SIZE,
+					       STM32_PCD_EP_TYPE_CTRL);
 		__ASSERT_NO_MSG(status == HAL_OK);
 	}
 
@@ -231,21 +372,21 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_event(priv->dev, UDC_EVT_RESET, 0);
 }
 
-void HAL_PCD_ConnectCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_ConnectCallback(stm32_pcd_handle_t *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
 	udc_submit_event(priv->dev, UDC_EVT_VBUS_READY, 0);
 }
 
-void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_DisconnectCallback(stm32_pcd_handle_t *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
 	udc_submit_event(priv->dev, UDC_EVT_VBUS_REMOVED, 0);
 }
 
-void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_SuspendCallback(stm32_pcd_handle_t *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
@@ -253,7 +394,7 @@ void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_event(priv->dev, UDC_EVT_SUSPEND, 0);
 }
 
-void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_ResumeCallback(stm32_pcd_handle_t *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
@@ -261,14 +402,14 @@ void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 	udc_submit_event(priv->dev, UDC_EVT_RESUME, 0);
 }
 
-void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_SOFCallback(stm32_pcd_handle_t *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 
 	udc_submit_sof_event(priv->dev);
 }
 
-void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
+void HAL_PCDEx_SetConnectionState(stm32_pcd_handle_t *hpcd, uint8_t state)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 	const struct udc_stm32_config *cfg = priv->dev->config;
@@ -283,7 +424,7 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *ep_cfg,
 			struct net_buf *buf)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 	uint8_t *data;
 	uint32_t len;
 
@@ -303,9 +444,10 @@ static int udc_stm32_tx(const struct device *dev, struct udc_ep_config *ep_cfg,
 	buf->data += len;
 	buf->len -= len;
 
-	status = HAL_PCD_EP_Transmit(&priv->pcd, ep_cfg->addr, data, len);
+	status = hal_udc_set_endpoint_transmit(&priv->pcd, ep_cfg->addr, data, len);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Transmit failed(0x%02x), %d", ep_cfg->addr, (int)status);
+		LOG_ERR("hal_udc_set_endpoint_transmit failed(0x%02x), %d",
+			ep_cfg->addr, (int)status);
 		return -EIO;
 	}
 
@@ -320,7 +462,7 @@ static int udc_stm32_initiate_ep_rx(const struct device *dev,
 				    struct net_buf *const buf)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 	uint32_t rx_size;
 
 	if (ep_cfg->addr == USB_CONTROL_EP_OUT) {
@@ -364,9 +506,10 @@ static int udc_stm32_initiate_ep_rx(const struct device *dev,
 		rx_size = buf->size;
 	}
 
-	status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr, buf->data, rx_size);
+	status = hal_udc_set_endpoint_receive(&priv->pcd, ep_cfg->addr, buf->data, rx_size);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Receive failed(0x%02x), %d", ep_cfg->addr, (int)status);
+		LOG_ERR("hal_udc_set_endpoint_receive failed(0x%02x), %d",
+			ep_cfg->addr, (int)status);
 		return -EIO;
 	}
 
@@ -454,7 +597,7 @@ static int udc_stm32_clock_disable(const struct device *dev)
 	return 0;
 }
 
-void HAL_PCD_DataOutStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+void HAL_PCD_DataOutStageCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
 {
 	uint32_t rx_count = HAL_PCD_EP_GetRxCount(hpcd, epnum);
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
@@ -500,13 +643,13 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 		/* Check if the data stage is complete */
 		if (rx_count == UDC_STM32_EP0_MAX_PACKET_SIZE &&
 		    buf->len < priv->ep0_out_wlength) {
-			HAL_StatusTypeDef __maybe_unused status;
+			stm32_status_t __maybe_unused status;
 			uint32_t rx_size = MIN(net_buf_tailroom(buf),
 					       UDC_STM32_EP0_MAX_PACKET_SIZE);
 
 			/* Not yet - prepare to receive more data and wait */
-			status = HAL_PCD_EP_Receive(&priv->pcd, ep_cfg->addr,
-						    net_buf_tail(buf), rx_size);
+			status = hal_udc_set_endpoint_receive(&priv->pcd, ep_cfg->addr,
+							      net_buf_tail(buf), rx_size);
 			__ASSERT_NO_MSG(status == HAL_OK);
 			return;
 		} /* else: buf->len == priv->ep0_out_wlength */
@@ -525,7 +668,7 @@ static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint
 	}
 }
 
-void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
+void HAL_PCD_DataInStageCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 	struct udc_stm32_msg msg = {
@@ -546,7 +689,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	struct udc_ep_config *ep_cfg;
 	uint8_t ep = epnum | USB_EP_DIR_IN;
 	struct net_buf *buf;
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 
 	LOG_DBG("DataIn ep 0x%02x",  ep);
 
@@ -561,9 +704,9 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	if (ep == USB_CONTROL_EP_IN && buf->len > 0U) {
 		uint32_t len = MIN(UDC_STM32_EP0_MAX_PACKET_SIZE, buf->len);
 
-		status = HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, len);
+		status = hal_udc_set_endpoint_transmit(&priv->pcd, ep, buf->data, len);
 		if (status != HAL_OK) {
-			LOG_ERR("HAL_PCD_EP_Transmit failed: %d", status);
+			LOG_ERR("hal_udc_set_endpoint_transmit failed: %d", status);
 			__ASSERT_NO_MSG(0);
 			return;
 		}
@@ -576,9 +719,9 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 
 	if (udc_ep_buf_has_zlp(buf)) {
 		udc_ep_buf_clear_zlp(buf);
-		status = HAL_PCD_EP_Transmit(&priv->pcd, ep, buf->data, 0);
+		status = hal_udc_set_endpoint_transmit(&priv->pcd, ep, buf->data, 0);
 		if (status != HAL_OK) {
-			LOG_ERR("HAL_PCD_EP_Transmit failed: %d", status);
+			LOG_ERR("hal_udc_set_endpoint_transmit failed: %d", status);
 			__ASSERT_NO_MSG(0);
 		}
 
@@ -596,7 +739,7 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	}
 }
 
-void HAL_PCD_SetupStageCallback(PCD_HandleTypeDef *hpcd)
+void HAL_PCD_SetupStageCallback(stm32_pcd_handle_t *hpcd)
 {
 	struct udc_stm32_data *priv = hpcd2data(hpcd);
 	struct udc_stm32_msg msg = {.type = UDC_STM32_MSG_SETUP};
@@ -620,7 +763,13 @@ static void udc_stm32_thread_handler(void *arg1, void *arg2, void *arg3)
 		switch (msg.type) {
 		case UDC_STM32_MSG_SETUP:
 			/* HAL copies SETUP packet contents to pcd.Setup */
-			udc_setup_received(dev, priv->pcd.Setup);
+#ifdef CONFIG_STM32_HAL2
+			const void *setup = priv->pcd.setup;
+#else /* CONFIG_STM32_HAL2 */
+			const void *setup = priv->pcd.Setup;
+#endif /* CONFIG_STM32_HAL2 */
+
+			udc_setup_received(dev, setup);
 			break;
 		case UDC_STM32_MSG_DATA_IN:
 			handle_msg_data_in(priv, msg.ep);
@@ -689,20 +838,20 @@ static int udc_stm32_ep_mem_config(const struct device *dev,
 
 	if (isochronous) {
 		/*
-		 * HAL_PCDEx_PMAConfig() `pmaaddress` parameter takes two 16-bit
+		 * hal_udc_pma_config() `pmaaddress` parameter takes two 16-bit
 		 * PMA addresses in the high/low 16 bits of fourth u32 parameter
 		 */
 		const uint16_t buf1_pma_addr = priv->occupied_mem;
 		const uint16_t buf2_pma_addr = priv->occupied_mem + (size / 2);
 
-		buftype = PCD_DBL_BUF;
+		buftype = STM32_PCD_DBL_BUF;
 		bufs = ((uint32_t)buf2_pma_addr << 16) | buf1_pma_addr;
 	} else {
-		buftype = PCD_SNG_BUF;
+		buftype = STM32_PCD_SNG_BUF;
 		bufs = priv->occupied_mem;
 	}
 
-	if (HAL_PCDEx_PMAConfig(&priv->pcd, ep_cfg->addr, buftype, bufs) != HAL_OK) {
+	if (hal_udc_pma_config(&priv->pcd, ep_cfg->addr, buftype, bufs) != HAL_OK) {
 		return -EIO;
 	}
 
@@ -716,7 +865,7 @@ static void udc_stm32_mem_init(const struct device *dev)
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
 	uint32_t rxfifo_size; /* in words */
-	HAL_StatusTypeDef __maybe_unused status;
+	stm32_status_t __maybe_unused status;
 
 	LOG_DBG("DRAM size: %uB", cfg->dram_size);
 
@@ -855,7 +1004,7 @@ int udc_stm32_init(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 	int err;
 
 	err = stm32_usb_pwr_enable();
@@ -872,6 +1021,26 @@ int udc_stm32_init(const struct device *dev)
 	/* Wipe and (re)initialize HAL context */
 	memset(&priv->pcd, 0, sizeof(priv->pcd));
 
+#ifdef CONFIG_STM32_HAL2
+	hal_pcd_config_t pcd_cfg;
+
+	priv->pcd.instance = (hal_pcd_t)cfg->base;
+	priv->pcd.endpoints_nbr = cfg->num_endpoints;
+	status = HAL_PCD_Init(&priv->pcd, priv->pcd.instance);
+	if (status != HAL_OK) {
+		LOG_ERR("PCD_Init failed, %d", (int)status);
+		return -EIO;
+	}
+
+	pcd_cfg.pcd_speed = cfg->selected_speed;
+	pcd_cfg.phy_interface = cfg->selected_phy;
+	pcd_cfg.sof_enable = IS_ENABLED(CONFIG_UDC_ENABLE_SOF);
+	status = HAL_PCD_SetConfig(&priv->pcd, &pcd_cfg);
+	if (status != HAL_OK) {
+		LOG_ERR("PCD Config failed, %d", (int)status);
+		return -EIO;
+	}
+#else /* CONFIG_STM32_HAL2 */
 	priv->pcd.Instance = cfg->base;
 	priv->pcd.Init.dev_endpoints = cfg->num_endpoints;
 	priv->pcd.Init.ep0_mps = UDC_STM32_EP0_MAX_PACKET_SIZE;
@@ -884,6 +1053,7 @@ int udc_stm32_init(const struct device *dev)
 		LOG_ERR("PCD_Init failed, %d", (int)status);
 		return -EIO;
 	}
+#endif /* CONFIG_STM32_HAL2 */
 
 	if (HAL_PCD_Stop(&priv->pcd) != HAL_OK) {
 		return -EIO;
@@ -896,7 +1066,7 @@ static int udc_stm32_enable(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 	int ret;
 
 	LOG_DBG("Enable UDC");
@@ -934,7 +1104,7 @@ static int udc_stm32_disable(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 
 	irq_disable(cfg->irqn);
 
@@ -961,14 +1131,17 @@ static int udc_stm32_shutdown(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 	const struct udc_stm32_config *cfg = dev->config;
-	HAL_StatusTypeDef status;
 	int err;
 
-	status = HAL_PCD_DeInit(&priv->pcd);
+#ifdef CONFIG_STM32_HAL2
+	HAL_PCD_DeInit(&priv->pcd);
+#else /* CONFIG_STM32_HAL2 */
+	stm32_status_t status = HAL_PCD_DeInit(&priv->pcd);
 	if (status != HAL_OK) {
 		LOG_ERR("PCD_DeInit failed, %d", (int)status);
 		/* continue anyway */
 	}
+#endif /* CONFIG_STM32_HAL2 */
 
 	if (udc_stm32_clock_disable(dev) < 0) {
 		LOG_ERR("Error disabling clock(s)");
@@ -991,13 +1164,13 @@ static int udc_stm32_shutdown(const struct device *dev)
 static int udc_stm32_set_address(const struct device *dev, const uint8_t addr)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 
 	LOG_DBG("Set Address %u", addr);
 
-	status = HAL_PCD_SetAddress(&priv->pcd, addr);
+	status = hal_udc_set_device_address(&priv->pcd, addr);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_SetAddress failed(0x%02x), %d",
+		LOG_ERR("hal_udc_set_device_address failed(0x%02x), %d",
 			addr, (int)status);
 		return -EIO;
 	}
@@ -1008,18 +1181,18 @@ static int udc_stm32_set_address(const struct device *dev, const uint8_t addr)
 static int udc_stm32_host_wakeup(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 
-	status = HAL_PCD_ActivateRemoteWakeup(&priv->pcd);
+	status = hal_udc_remote_wakeup_start(&priv->pcd);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_ActivateRemoteWakeup, %d", (int)status);
+		LOG_ERR("hal_udc_remote_wakeup_start, %d", (int)status);
 		return -EIO;
 	}
 
 	/* Must be active from 1ms to 15ms as per reference manual. */
 	k_sleep(K_MSEC(2));
 
-	status = HAL_PCD_DeActivateRemoteWakeup(&priv->pcd);
+	status = hal_udc_remote_wakeup_stop(&priv->pcd);
 	if (status != HAL_OK) {
 		return -EIO;
 	}
@@ -1034,7 +1207,7 @@ static int udc_stm32_ep_enable(const struct device *dev,
 			       struct udc_ep_config *ep_cfg)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 	uint8_t ep_type;
 	int ret;
 
@@ -1042,16 +1215,16 @@ static int udc_stm32_ep_enable(const struct device *dev,
 
 	switch (ep_cfg->attributes & USB_EP_TRANSFER_TYPE_MASK) {
 	case USB_EP_TYPE_CONTROL:
-		ep_type = EP_TYPE_CTRL;
+		ep_type = STM32_PCD_EP_TYPE_CTRL;
 		break;
 	case USB_EP_TYPE_BULK:
-		ep_type = EP_TYPE_BULK;
+		ep_type = STM32_PCD_EP_TYPE_BULK;
 		break;
 	case USB_EP_TYPE_INTERRUPT:
-		ep_type = EP_TYPE_INTR;
+		ep_type = STM32_PCD_EP_TYPE_INTR;
 		break;
 	case USB_EP_TYPE_ISO:
-		ep_type = EP_TYPE_ISOC;
+		ep_type = STM32_PCD_EP_TYPE_ISOC;
 		break;
 	default:
 		return -EINVAL;
@@ -1062,10 +1235,10 @@ static int udc_stm32_ep_enable(const struct device *dev,
 		return ret;
 	}
 
-	status = HAL_PCD_EP_Open(&priv->pcd, ep_cfg->addr,
-				 udc_mps_ep_size(ep_cfg), ep_type);
+	status = hal_udc_open_endpoint(&priv->pcd, ep_cfg->addr,
+				       udc_mps_ep_size(ep_cfg), ep_type);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Open failed(0x%02x), %d",
+		LOG_ERR("hal_udc_open_endpoint failed(0x%02x), %d",
 			ep_cfg->addr, (int)status);
 		return -EIO;
 	}
@@ -1077,13 +1250,13 @@ static int udc_stm32_ep_disable(const struct device *dev,
 			      struct udc_ep_config *ep_cfg)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 
 	LOG_DBG("Disable ep 0x%02x", ep_cfg->addr);
 
-	status = HAL_PCD_EP_Close(&priv->pcd, ep_cfg->addr);
+	status = hal_udc_close_endpoint(&priv->pcd, ep_cfg->addr);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_Close failed(0x%02x), %d",
+		LOG_ERR("hal_udc_close_endpoint failed(0x%02x), %d",
 			ep_cfg->addr, (int)status);
 		return -EIO;
 	}
@@ -1095,13 +1268,13 @@ static int udc_stm32_ep_set_halt(const struct device *dev,
 				 struct udc_ep_config *ep_cfg)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 
 	LOG_DBG("Halt ep 0x%02x", ep_cfg->addr);
 
-	status = HAL_PCD_EP_SetStall(&priv->pcd, ep_cfg->addr);
+	status = hal_udc_set_endpoint_stall(&priv->pcd, ep_cfg->addr);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_SetStall failed(0x%02x), %d",
+		LOG_ERR("hal_udc_set_endpoint_stall failed(0x%02x), %d",
 			ep_cfg->addr, (int)status);
 		return -EIO;
 	}
@@ -1118,15 +1291,15 @@ static int udc_stm32_ep_clear_halt(const struct device *dev,
 				   struct udc_ep_config *ep_cfg)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	HAL_StatusTypeDef status;
+	stm32_status_t status;
 	struct net_buf *buf;
 	int ret = 0;
 
 	LOG_DBG("Clear halt for ep 0x%02x", ep_cfg->addr);
 
-	status = HAL_PCD_EP_ClrStall(&priv->pcd, ep_cfg->addr);
+	status = hal_udc_clear_endpoint_stall(&priv->pcd, ep_cfg->addr);
 	if (status != HAL_OK) {
-		LOG_ERR("HAL_PCD_EP_ClrStall failed(0x%02x), %d",
+		LOG_ERR("hal_udc_clear_endpoint_stall failed(0x%02x), %d",
 			ep_cfg->addr, (int)status);
 		return -EIO;
 	}
@@ -1186,11 +1359,11 @@ static int udc_stm32_ep_dequeue(const struct device *dev,
 				struct udc_ep_config *ep_cfg)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
-	__maybe_unused HAL_StatusTypeDef status;
+	__maybe_unused stm32_status_t status;
 
 	LOG_DBG("Flush ep 0x%02x", ep_cfg->addr);
 
-	status = HAL_PCD_EP_Flush(&priv->pcd, ep_cfg->addr);
+	status = hal_udc_flush_endpoint(&priv->pcd, ep_cfg->addr);
 	__ASSERT_NO_MSG(status == HAL_OK);
 
 	udc_ep_cancel_queued(dev, ep_cfg);
@@ -1204,6 +1377,17 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 {
 	struct udc_stm32_data *priv = udc_get_private(dev);
 
+#ifdef CONFIG_STM32_HAL2
+	hal_pcd_device_speed_t speed = HAL_PCD_GetDeviceSpeed(&priv->pcd);
+
+	if (speed == HAL_PCD_DEVICE_SPEED_HS) {
+		return UDC_BUS_SPEED_HS;
+	}
+
+	if (speed == HAL_PCD_DEVICE_SPEED_FS) {
+		return UDC_BUS_SPEED_FS;
+	}
+#else /* CONFIG_STM32_HAL2 */
 	/*
 	 * N.B.: pcd.Init.speed is used here on purpose instead
 	 * of udc_stm32_config::selected_speed because HAL updates
@@ -1215,9 +1399,10 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 	}
 
 	if (priv->pcd.Init.speed == PCD_SPEED_HIGH_IN_FULL ||
-	    priv->pcd.Init.speed == PCD_SPEED_FULL) {
+	    priv->pcd.Init.speed == STM32_PCD_SPEED_FS) {
 		return UDC_BUS_SPEED_FS;
 	}
+#endif /* CONFIG_STM32_HAL2 */
 
 	return UDC_BUS_UNKNOWN;
 }

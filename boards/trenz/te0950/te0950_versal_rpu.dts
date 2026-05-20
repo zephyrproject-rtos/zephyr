@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/xilinx/versal_rpu.dtsi>
+#include <freq.h>
+
+/ {
+	model = "Trenz TE0950 Cortex-R5";
+
+	chosen {
+		zephyr,sram = &tcm;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,ocm = &ocm;
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <DT_FREQ_M(100)>;
+};
+
+&ttc0 {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(100)>;
+};

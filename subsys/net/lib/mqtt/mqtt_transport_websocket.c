@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_mqtt_websocket, CONFIG_MQTT_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/mqtt.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/websocket.h>
 
 #include "mqtt_os.h"

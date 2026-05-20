@@ -230,6 +230,14 @@ void handle_radio_event(const struct device *dev, enum ieee802154_event evt,
 				rx_result = OT_ERROR_DESTINATION_ADDRESS_FILTERED;
 				break;
 
+			case IEEE802154_RX_FAIL_NO_BUFS:
+				rx_result = OT_ERROR_NO_BUFS;
+				break;
+
+			case IEEE802154_RX_FAIL_ABORT:
+				rx_result = OT_ERROR_ABORT;
+				break;
+
 			case IEEE802154_RX_FAIL_OTHER:
 			default:
 				rx_result = OT_ERROR_FAILED;
@@ -438,6 +446,11 @@ void transmit_message(struct k_work *tx_job_item)
 	} else if (sTransmitFrame.mInfo.mTxInfo.mCsmaCaEnabled) {
 		radio_set_channel(sTransmitFrame.mChannel);
 		if (radio_caps & IEEE802154_HW_CSMA) {
+			struct ieee802154_config config = {
+				.csma_ca_backoffs = sTransmitFrame.mInfo.mTxInfo.mMaxCsmaBackoffs};
+
+			(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_CSMA_CA_BACKOFFS,
+						   &config);
 			tx_err = radio_api->tx(radio_dev, IEEE802154_TX_MODE_CSMA_CA, tx_pkt,
 					       tx_payload);
 		} else {
@@ -1314,6 +1327,8 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 #endif
 
 	uint8_t key_id_mode = aKeyIdMode >> 3;
+	uint8_t prev_key_id = 0;
+	uint8_t next_key_id = 0;
 
 	struct ieee802154_key keys[] = {
 		{
@@ -1341,8 +1356,8 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 
 	if (key_id_mode == 1) {
 		/* aKeyId in range: (1, 0x80) means valid keys */
-		uint8_t prev_key_id = aKeyId == 1 ? 0x80 : aKeyId - 1;
-		uint8_t next_key_id = aKeyId == 0x80 ? 1 : aKeyId + 1;
+		prev_key_id = aKeyId == 1 ? 0x80 : aKeyId - 1;
+		next_key_id = aKeyId == 0x80 ? 1 : aKeyId + 1;
 
 		keys[0].key_id = &prev_key_id;
 		keys[0].key_value = (uint8_t *)aPrevKey->mKeyMaterial.mKey.m8;

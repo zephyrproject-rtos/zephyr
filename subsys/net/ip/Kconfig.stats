@@ -93,6 +93,13 @@ config NET_STATISTICS_TCP
 	help
 	  Keep track of TCP related statistics
 
+config NET_STATISTICS_RAW
+	bool "Raw packet socket statistics"
+	depends on NET_SOCKETS_PACKET
+	default y
+	help
+	  Keep track of raw packet socket related statistics
+
 config NET_STATISTICS_MLD
 	bool "Multicast Listener Discovery (MLD) statistics"
 	depends on NET_IPV6_MLD
@@ -175,5 +182,12 @@ config NET_STATISTICS_VPN
 	default y
 	help
 	  Keep track of VPN related statistics
+
+config NET_STATISTICS_QUIC
+	bool "QUIC statistics"
+	depends on QUIC
+	default y
+	help
+	  Keep track of QUIC related statistics
 
 endif # NET_STATISTICS

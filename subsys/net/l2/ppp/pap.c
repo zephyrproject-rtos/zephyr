@@ -24,6 +24,7 @@ static struct net_pkt *pap_config_info_add(struct ppp_fsm *fsm)
 	uint8_t payload[] = { 5, 'b', 'l', 'a', 'n', 'k',
 			      5, 'b', 'l', 'a', 'n', 'k' };
 	struct net_pkt *pkt;
+	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(ppp_fsm_iface(fsm), sizeof(payload),
 					NET_AF_UNSPEC, 0, PPP_BUF_ALLOC_TIMEOUT);
@@ -31,7 +32,11 @@ static struct net_pkt *pap_config_info_add(struct ppp_fsm *fsm)
 		return NULL;
 	}
 
-	(void)net_pkt_write(pkt, payload, sizeof(payload));
+	ret = net_pkt_write(pkt, payload, sizeof(payload));
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
 
 	return pkt;
 }

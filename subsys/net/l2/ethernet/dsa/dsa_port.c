@@ -72,20 +72,23 @@ out:
 static void dsa_port_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct dsa_port_config *cfg = (struct dsa_port_config *)dev->config;
+	const struct dsa_port_config *cfg = dev->config;
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	char name[INTERFACE_NAME_LEN];
+	uint8_t mac_addr[6] = {0};
+	int ret;
 
 	/* Set interface name */
 	snprintk(name, sizeof(name), "swp%d", cfg->port_idx);
 	net_if_set_name(iface, name);
 
-	/* Use random mac address if could */
-	if (cfg->use_random_mac_addr && dsa_switch_ctx->dapi->port_generate_random_mac != NULL) {
-		dsa_switch_ctx->dapi->port_generate_random_mac(cfg->mac_addr);
+	ret = net_eth_mac_load(&cfg->mcfg, mac_addr);
+	if (ret >= 0) {
+		/* only set MAC address if successfully loaded, this way we won't overwrite a valid
+		 * MAC address, that might be already set by the dsa switch.
+		 */
+		net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
 	}
-
-	net_if_set_link_addr(iface, cfg->mac_addr, sizeof(cfg->mac_addr), NET_LINK_ETHERNET);
 
 	if (cfg->ethernet_connection != NULL) {
 		/* DSA CPU port used only for DSA management */
@@ -118,7 +121,8 @@ static void dsa_port_iface_init(struct net_if *iface)
 	phy_link_callback_set(cfg->phy_dev, dsa_switch_ctx->dapi->port_phylink_change, (void *)dev);
 }
 
-static const struct device *dsa_port_get_phy(const struct device *dev)
+static const struct device *dsa_port_get_phy(const struct device *dev,
+					     struct net_if *iface __unused)
 {
 	const struct dsa_port_config *cfg = dev->config;
 
@@ -126,7 +130,8 @@ static const struct device *dsa_port_get_phy(const struct device *dev)
 }
 
 #ifdef CONFIG_NET_L2_PTP
-const struct device *dsa_port_get_ptp_clock(const struct device *dev)
+const struct device *dsa_port_get_ptp_clock(const struct device *dev,
+					    struct net_if *iface __unused)
 {
 	const struct dsa_port_config *cfg = dev->config;
 
@@ -134,13 +139,14 @@ const struct device *dsa_port_get_ptp_clock(const struct device *dev)
 }
 #endif
 
-enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
+enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev,
+						struct net_if *iface __maybe_unused)
 {
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	uint32_t caps = 0;
 
 #ifdef CONFIG_NET_L2_PTP
-	if (dsa_port_get_ptp_clock(dev) != NULL) {
+	if (dsa_port_get_ptp_clock(dev, iface) != NULL) {
 		caps |= ETHERNET_PTP;
 	}
 #endif
@@ -152,7 +158,9 @@ enum ethernet_hw_caps dsa_port_get_capabilities(const struct device *dev)
 	return caps;
 }
 
-static int dsa_set_config(const struct device *dev, enum ethernet_config_type type,
+static int dsa_set_config(const struct device *dev,
+			  struct net_if *iface __unused,
+			  enum ethernet_config_type type,
 			  const struct ethernet_config *config)
 {
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
@@ -164,7 +172,9 @@ static int dsa_set_config(const struct device *dev, enum ethernet_config_type ty
 	return dsa_switch_ctx->dapi->set_config(dev, type, config);
 }
 
-static int dsa_get_config(const struct device *dev, enum ethernet_config_type type,
+static int dsa_get_config(const struct device *dev,
+			  struct net_if *iface __unused,
+			  enum ethernet_config_type type,
 			  struct ethernet_config *config)
 {
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;

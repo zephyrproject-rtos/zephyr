@@ -490,10 +490,9 @@ function(yaml_save)
     to_yaml("${json_content}" 0 yaml_out DIRECT)
    endif()
 
-  if(EXISTS ${yaml_file})
-    FILE(RENAME ${yaml_file} ${yaml_file}.bak)
-  endif()
-  FILE(WRITE ${yaml_file} "${yaml_out}")
+  file(WRITE ${yaml_file}.tmp "${yaml_out}")
+  zephyr_file_copy(${yaml_file}.tmp ${yaml_file} ONLY_IF_DIFFERENT)
+  file(REMOVE ${yaml_file}.tmp)
 
   set(save_target ${ARG_YAML_NAME}_yaml_saved)
   if(NOT TARGET ${save_target})

@@ -116,7 +116,7 @@ int opt300x_init_interrupt(const struct device *dev)
 	dat->dev = dev;
 
 	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
-		LOG_ERR("Interrupt gpio not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->gpio_int.port);
 		return -ENODEV;
 	}
 

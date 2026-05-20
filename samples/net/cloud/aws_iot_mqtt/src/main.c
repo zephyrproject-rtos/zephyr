@@ -76,7 +76,7 @@ static int setup_credentials(void)
 {
 	int ret;
 
-	ret = tls_credential_add(TLS_TAG_DEVICE_CERTIFICATE, TLS_CREDENTIAL_SERVER_CERTIFICATE,
+	ret = tls_credential_add(TLS_TAG_DEVICE_CERTIFICATE, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 				 public_cert, public_cert_len);
 	if (ret < 0) {
 		LOG_ERR("Failed to add device certificate: %d", ret);

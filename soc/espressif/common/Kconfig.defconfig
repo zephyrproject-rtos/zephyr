@@ -21,9 +21,6 @@ config DYNAMIC_INTERRUPTS
 config ISR_STACK_SIZE
 	default 2048
 
-config ATOMIC_OPERATIONS_C
-	default y
-
 config XTAL_FREQ_HZ
 	int
 	default $(dt_node_int_prop_int,/cpus/cpu@0,xtal-freq)

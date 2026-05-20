@@ -185,9 +185,12 @@ static inline uint32_t aplic_target_off(unsigned int src)
  *
  * Returns the device structure for the APLIC driver.
  *
- * @return Pointer to the APLIC device, or NULL if not available
+ * @return Pointer to the APLIC device
  */
-const struct device *riscv_aplic_get_dev(void);
+static inline const struct device *riscv_aplic_get_dev(void)
+{
+	return DEVICE_DT_GET_ANY(riscv_aplic);
+}
 
 /**
  * @brief Enable or disable the APLIC domain
@@ -224,7 +227,7 @@ int riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned 
  */
 int riscv_aplic_enable_src(const struct device *dev, unsigned int src, bool enable);
 
-#ifdef CONFIG_RISCV_APLIC_MSI
+#if defined(CONFIG_RISCV_APLIC_MSI) || defined(__DOXYGEN__)
 /**
  * @brief Configure MSI routing for an interrupt source
  *
@@ -272,11 +275,7 @@ uint32_t riscv_aplic_get_num_sources(const struct device *dev);
  */
 static inline void riscv_aplic_enable_source(unsigned int src)
 {
-	const struct device *dev = riscv_aplic_get_dev();
-
-	if (dev) {
-		riscv_aplic_enable_src(dev, src, true);
-	}
+	riscv_aplic_enable_src(riscv_aplic_get_dev(), src, true);
 }
 
 /**
@@ -288,14 +287,10 @@ static inline void riscv_aplic_enable_source(unsigned int src)
  */
 static inline void riscv_aplic_disable_source(unsigned int src)
 {
-	const struct device *dev = riscv_aplic_get_dev();
-
-	if (dev) {
-		riscv_aplic_enable_src(dev, src, false);
-	}
+	riscv_aplic_enable_src(riscv_aplic_get_dev(), src, false);
 }
 
-#ifdef CONFIG_RISCV_APLIC_MSI
+#if defined(CONFIG_RISCV_APLIC_MSI) || defined(__DOXYGEN__)
 /**
  * @brief Inject MSI using GENMSI (convenience wrapper)
  *
@@ -306,11 +301,7 @@ static inline void riscv_aplic_disable_source(unsigned int src)
  */
 static inline void riscv_aplic_msi_inject_genmsi(uint32_t hart, uint32_t eiid)
 {
-	const struct device *dev = riscv_aplic_get_dev();
-
-	if (dev) {
-		riscv_aplic_msi_inject_software_interrupt(dev, eiid, hart, 0);
-	}
+	riscv_aplic_msi_inject_software_interrupt(riscv_aplic_get_dev(), eiid, hart, 0);
 }
 #endif /* CONFIG_RISCV_APLIC_MSI */
 

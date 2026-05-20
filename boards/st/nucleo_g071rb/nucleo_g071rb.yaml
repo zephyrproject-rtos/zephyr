@@ -13,6 +13,7 @@ supported:
   - arduino_spi
   - arduino_serial
   - uart
+  - crc
   - gpio
   - i2c
   - spi

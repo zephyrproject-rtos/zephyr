@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2025 Arm Limited and/or its
+# SPDX-FileCopyrightText: <text>Copyright 2021-2022, 2025-2026 Arm Limited and/or its
 # affiliates <open-source-office@arm.com></text>
 # SPDX-License-Identifier: Apache-2.0
 
@@ -53,4 +53,40 @@ if(CONFIG_SAMPLE_TFLM_ETHOSU_PMU)
       ETHOSU_PMU_EVENT_3=${ETHOSU_PMU_EVENT_3}
     )
   endif()
+endif()
+
+# -----------------------------------------------------------------------------
+# Vela memory mode -> region mapping used by this sample
+# -----------------------------------------------------------------------------
+set(_REGION_WEIGHTS      "NPU_REGIONCFG_0")
+set(_REGION_SCRATCH      "NPU_REGIONCFG_1")
+set(_REGION_FAST_SCRATCH "NPU_REGIONCFG_2")
+set(_REGION_CMD_STREAM   "NPU_QCONFIG")
+
+# NOTE:
+# We intentionally use zephyr_compile_definitions() here (instead of
+# target_compile_definitions(app ...)) because these overrides must be
+# visible when the HAL itself is compiled. The HAL sources key
+# off NPU_REGIONCFG_n / NPU_QCONFIG at build time (and on Arm Ethos-U85 NPU those
+# selections index into MEM_ATTR entries), so the macros need to propagate
+# globally through Zephyr's interface. This ensures the overrides are
+# consistently picked up regardless of how the sample is built.
+if(CONFIG_SAMPLE_TFLM_ETHOSU_MEM_MODE_SHARED_SRAM)
+  zephyr_compile_definitions(
+    ${_REGION_WEIGHTS}=3
+    ${_REGION_SCRATCH}=0
+    ${_REGION_FAST_SCRATCH}=0
+    ${_REGION_CMD_STREAM}=3)
+elseif(CONFIG_SAMPLE_TFLM_ETHOSU_MEM_MODE_DEDICATED_SRAM)
+  zephyr_compile_definitions(
+    ${_REGION_WEIGHTS}=3
+    ${_REGION_SCRATCH}=3
+    ${_REGION_FAST_SCRATCH}=0
+    ${_REGION_CMD_STREAM}=3)
+elseif(CONFIG_SAMPLE_TFLM_ETHOSU_MEM_MODE_SRAM_ONLY)
+  zephyr_compile_definitions(
+    ${_REGION_WEIGHTS}=0
+    ${_REGION_SCRATCH}=0
+    ${_REGION_FAST_SCRATCH}=0
+    ${_REGION_CMD_STREAM}=0)
 endif()

@@ -167,7 +167,7 @@ static int ade7978_init(const struct device *dev)
 	int ret;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI bus not ready!");
+		LOG_ERR_DEVICE_NOT_READY(cfg->spi.bus);
 		return -ENODEV;
 	}
 

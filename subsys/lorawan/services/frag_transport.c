@@ -145,7 +145,7 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 	uint8_t tx_buf[FRAG_TRANSPORT_MAX_CMDS_PER_PACKAGE * FRAG_TRANSPORT_MAX_ANS_LEN];
 	uint8_t tx_pos = 0;
 	uint8_t rx_pos = 0;
-	int ans_delay = 0;
+	int ans_delay_ms = 0;
 	int decoder_process_status;
 
 	__ASSERT(port == LORAWAN_PORT_FRAG_TRANSPORT, "Wrong port %d", port);
@@ -192,12 +192,13 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 				tx_buf[tx_pos++] = missing_frag;
 				tx_buf[tx_pos++] = memory_error & 0x01;
 
-				ans_delay = sys_rand32_get() % (1U << (ctx.block_ack_delay + 4));
+				ans_delay_ms = sys_rand32_get() %
+					       ((1U << (ctx.block_ack_delay + 4)) * MSEC_PER_SEC);
 
 				LOG_DBG("FragSessionStatusAns index %d, NbFragReceived: %u, "
 					"MissingFrag: %u, MemoryError: %u, delay: %d",
 					index, ctx.nb_frag_received, missing_frag, memory_error,
-					ans_delay);
+					ans_delay_ms);
 			}
 			break;
 		}
@@ -365,7 +366,7 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 
 	if (tx_pos > 0) {
 		lorawan_services_schedule_uplink(LORAWAN_PORT_FRAG_TRANSPORT, tx_buf, tx_pos,
-						 ans_delay);
+						 ans_delay_ms);
 	}
 }
 

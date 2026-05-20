@@ -6,6 +6,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Dummy shell backend for testing
+ * @ingroup shell_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_SHELL_DUMMY_H_
 #define ZEPHYR_INCLUDE_SHELL_DUMMY_H_
 
@@ -34,6 +40,12 @@ struct shell_dummy {
 
 	/** input buffer for simulating user input */
 	char input_buf[CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE];
+
+	/** Event handler */
+	shell_transport_handler_t handler;
+
+	/** Event handler context. */
+	void *context;
 };
 
 #define SHELL_DUMMY_DEFINE(_name)					\

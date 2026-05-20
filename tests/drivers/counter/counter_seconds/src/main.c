@@ -24,10 +24,18 @@
 ZTEST(seconds_counter, test_seconds_rate)
 {
 	const struct device *const dev = DEVICE_DT_GET(CTR_DEV);
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 	uint32_t start, elapsed;
 	int err;
 
 	zassert_true(device_is_ready(dev), "counter device is not ready");
+
+	if (api->start != NULL) {
+		err = counter_start(dev);
+		zassert_equal(0, err, "counter_start failed");
+	} else {
+		TC_PRINT("counter_start not supported (free-running)\n");
+	}
 
 	err = counter_get_value(dev, &start);
 	zassert_true(err == 0, "failed to read counter device");

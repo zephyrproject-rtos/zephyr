@@ -119,9 +119,7 @@ static void zfm_x0_uart_callback(const struct device *uart_dev, void *user_data)
 {
 	struct zfm_x0_data *data = user_data;
 
-	if (!uart_irq_update(uart_dev)) {
-		return;
-	}
+	uart_irq_update(uart_dev);
 
 	if (uart_irq_tx_ready(uart_dev)) {
 		zfm_x0_uart_tx_handler(uart_dev, data);

@@ -107,6 +107,7 @@ static int lp_uart_esp32_param_config(const struct device *dev)
 	}
 
 	lp_uart_ll_enable_bus_clock(0, true);
+	lp_uart_ll_reset_register(0);
 	lp_uart_ll_set_source_clk(data->hal.dev, cfg->lp_uart_source_clk);
 	lp_uart_ll_sclk_enable(0);
 

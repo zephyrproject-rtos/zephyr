@@ -5,7 +5,7 @@ description: NXP LPTMR
 
 compatible: "nxp,lptmr"
 
-include: rtc.yaml
+include: [rtc.yaml, wuc-device.yaml]
 
 properties:
   reg:

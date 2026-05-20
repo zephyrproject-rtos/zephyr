@@ -348,16 +348,22 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 	const struct wifi_status *status =
 		(const struct wifi_status *) cb->info;
 	const struct shell *sh = context.sh;
+	int st = status->status;
 
 	if (context.disconnecting) {
-		if (status->status) {
-			PR_WARNING("Disconnection request failed (%d)\n", status->status);
+		if (st == WIFI_REASON_DISCONN_SUCCESS || st == WIFI_REASON_DISCONN_USER_REQUEST) {
+			PR("Disconnection request done\n");
 		} else {
-			PR("Disconnection request done (%d)\n", status->status);
+			PR_WARNING("Disconnection request failed (%s/%d)\n",
+				   wifi_disconn_reason_txt(st), st);
 		}
 		context.disconnecting = false;
 	} else {
-		PR("Disconnected\n");
+		if (st && st != WIFI_REASON_DISCONN_UNSPECIFIED) {
+			PR("Disconnected (%s/%d)\n", wifi_disconn_reason_txt(st), st);
+		} else {
+			PR("Disconnected\n");
+		}
 	}
 }
 
@@ -1266,8 +1272,10 @@ static int cmd_wifi_status(const struct shell *sh, size_t argc, char *argv[])
 					  sizeof(mac_string_buf)));
 		PR("Band: %s\n", wifi_band_txt(status.band));
 		PR("Channel: %d\n", status.channel);
-		PR("Security: %s %s\n", wifi_wpa3_enterprise_txt(status.wpa3_ent_type),
-								wifi_security_txt(status.security));
+		PR("Security: %s %s%s\n",
+		   wifi_wpa3_enterprise_txt(status.wpa3_ent_type),
+		   wifi_security_txt(status.security),
+		   wifi_wep_key_type_txt(status.wep_key_type));
 		PR("MFP: %s\n", wifi_mfp_txt(status.mfp));
 		if (status.iface_mode == WIFI_MODE_INFRA) {
 			PR("RSSI: %d\n", status.rssi);
@@ -3851,8 +3859,8 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 
 	/* Set default GO intent */
 	params.connect.go_intent = 0;
-	/* Set default frequency to 2462 MHz (channel 11, 2.4 GHz) */
-	params.connect.freq = 2462;
+	/* Let wpa_supplicant choose channel; user can override with -f */
+	params.connect.freq = 0;
 	/* Set default join to false */
 	params.connect.join = false;
 

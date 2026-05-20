@@ -64,6 +64,8 @@
 #define LAN9250_HMAC_ADDRL    0x03
 #define LAN9250_HMAC_MII_ACC  0x06
 #define LAN9250_HMAC_MII_DATA 0x07
+#define LAN9250_HMAC_VLAN1    0x09
+#define LAN9250_HMAC_VLAN2    0x0A
 
 /* LAN9250 PHY registers */
 #define LAN9250_PHY_BASIC_CONTROL            0x00

@@ -1,0 +1,6 @@
+board:
+  name: bl618g0
+  full_name: Bouffalo Lab BL618 G0 evaluation board
+  vendor: bflb
+  socs:
+    - name: bl618m05q2i

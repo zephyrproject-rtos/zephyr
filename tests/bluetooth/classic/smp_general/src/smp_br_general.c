@@ -503,7 +503,6 @@ static int cmd_ssa_discovery(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_get_security_info(const struct shell *sh, size_t argc, char *argv[])
 {
-	char addr_str[BT_ADDR_STR_LEN];
 	struct bt_conn_info info;
 	int err;
 
@@ -517,8 +516,7 @@ static int cmd_get_security_info(const struct shell *sh, size_t argc, char *argv
 		return -ENOEXEC;
 	}
 
-	bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
-	shell_print(sh, "Peer address %s", addr_str);
+	shell_print(sh, "Peer address %s", bt_addr_str(info.br.dst));
 	shell_print(sh, "Encryption key size: %d", info.security.enc_key_size);
 	shell_print(sh, "Security level: %d", info.security.level);
 

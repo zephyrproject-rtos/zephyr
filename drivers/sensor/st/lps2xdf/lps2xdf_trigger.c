@@ -124,8 +124,7 @@ int lps2xdf_init_interrupt(const struct device *dev, enum sensor_variant variant
 	/* setup data ready gpio interrupt */
 	if (!gpio_is_ready_dt(&cfg->gpio_int) && !ON_I3C_BUS(cfg)) {
 		if (cfg->gpio_int.port) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-						cfg->gpio_int.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->gpio_int.port);
 			return -ENODEV;
 		}
 

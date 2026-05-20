@@ -13,8 +13,8 @@
 
 static void zephyr_timer_wrapper(struct k_timer *timer);
 
-K_MEM_SLAB_DEFINE(cmsis_rtos_timer_cb_slab, sizeof(struct cmsis_rtos_timer_cb),
-		  CONFIG_CMSIS_V2_TIMER_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE_TYPE(cmsis_rtos_timer_cb_slab, struct cmsis_rtos_timer_cb,
+		       CONFIG_CMSIS_V2_TIMER_MAX_COUNT);
 
 static const osTimerAttr_t init_timer_attrs = {
 	.name = "ZephyrTimer",

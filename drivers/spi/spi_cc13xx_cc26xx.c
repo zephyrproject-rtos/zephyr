@@ -11,7 +11,7 @@
 LOG_MODULE_REGISTER(spi_cc13xx_cc26xx);
 
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>

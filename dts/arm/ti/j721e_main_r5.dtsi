@@ -10,6 +10,7 @@
 #include <freq.h>
 #include <arm/armv7-r.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/ti-vim.h>
+#include <ti/j721e_main.dtsi>
 
 / {
 	#address-cells = <1>;

@@ -9,6 +9,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/logging/log_frontend_stmesp.h>
 #include <ironside/se/api.h>
 #include <ironside_zephyr/se/uicr_periphconf.h>
 
@@ -95,6 +96,7 @@ static void nrf_tpiu_init(void)
 	LOG_INF("CoreSight Host TPIU initialized");
 }
 
+#ifdef CONFIG_DEBUG_NRF_ETR
 static void nrf_etr_init(uintptr_t buf, size_t buf_word_len)
 {
 	mem_addr_t etr = DT_REG_ADDR(DT_NODELABEL(etr));
@@ -113,6 +115,7 @@ static void nrf_etr_init(uintptr_t buf, size_t buf_word_len)
 
 	LOG_INF("Coresight Host ETR initialized");
 }
+#endif
 
 static void nrf_stm_init(void)
 {
@@ -134,8 +137,8 @@ static void nrf_stm_init(void)
 		sys_write32((1 << STM_STMHEMCR_EN_Pos), stm + STM_STMHEMCR_OFFSET);
 	}
 
-	sys_write32(((CONFIG_DEBUG_CORESIGHT_NRF_ATB_TRACE_ID_STM_GLOBAL & STM_STMTCSR_TRACEID_Msk)
-		     << STM_STMTCSR_TRACEID_Pos) |
+	sys_write32(((CONFIG_DEBUG_CORESIGHT_NRF_ATB_TRACE_ID_STM_GLOBAL << STM_STMTCSR_TRACEID_Pos)
+			& STM_STMTCSR_TRACEID_Msk) |
 			    (1 << STM_STMTCSR_EN_Pos) | (1 << STM_STMTCSR_TSEN_Pos),
 		    stm + STM_STMTCSR_OFFSET);
 
@@ -187,6 +190,7 @@ static void nrf_atbreplicator_init(mem_addr_t replicator_addr, uint32_t filter, 
 	coresight_lock(replicator_addr);
 }
 
+#if CONFIG_DEBUG_NRF_ETR
 static int coresight_nrf_init_stm_etr(uintptr_t buf, size_t buf_word_len)
 {
 	mem_addr_t atbfunnel211 = DT_REG_ADDR(DT_NODELABEL(atbfunnel211));
@@ -201,8 +205,12 @@ static int coresight_nrf_init_stm_etr(uintptr_t buf, size_t buf_word_len)
 	nrf_etr_init(buf, buf_word_len);
 	nrf_stm_init();
 
+ #if defined(CONFIG_LOG_FRONTEND_STMESP_EARLY_BUF_SIZE) && CONFIG_LOG_FRONTEND_STMESP_EARLY_BUF_SIZE
+	log_frontend_stmesp_etr_ready();
+ #endif
 	return 0;
 }
+#endif
 
 static int coresight_nrf_init_stm_tpiu(void)
 {
@@ -248,12 +256,14 @@ static int coresight_nrf_init(const struct device *dev)
 	case CORESIGHT_NRF_MODE_STM_TPIU: {
 		return coresight_nrf_init_stm_tpiu();
 	}
+#ifdef CONFIG_DEBUG_NRF_ETR
 	case CORESIGHT_NRF_MODE_STM_ETR: {
 		uintptr_t etr_buffer = DT_REG_ADDR(DT_NODELABEL(etr_buffer));
 		size_t buf_word_len = DT_REG_SIZE(DT_NODELABEL(etr_buffer)) / sizeof(uint32_t);
 
 		return coresight_nrf_init_stm_etr(etr_buffer, buf_word_len);
 	}
+#endif
 	default: {
 		LOG_ERR("Unsupported Coresight mode");
 		return -ENOTSUP;

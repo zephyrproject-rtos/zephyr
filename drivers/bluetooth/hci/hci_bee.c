@@ -28,7 +28,7 @@ struct rtl_bt_rx_buf {
 	uint32_t len;
 };
 
-K_MEM_SLAB_DEFINE(rx_slab, sizeof(struct rtl_bt_rx_buf), BT_BEE_RX_BUF_COUNT, 4);
+K_MEM_SLAB_DEFINE_TYPE(rx_slab, struct rtl_bt_rx_buf, BT_BEE_RX_BUF_COUNT);
 
 static struct {
 	struct k_fifo fifo;

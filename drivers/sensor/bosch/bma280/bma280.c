@@ -121,7 +121,7 @@ int bma280_init(const struct device *dev)
 	uint8_t id = 0U;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

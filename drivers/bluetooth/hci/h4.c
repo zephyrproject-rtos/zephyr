@@ -35,6 +35,14 @@ LOG_MODULE_REGISTER(bt_driver);
 
 struct h4_data {
 	struct {
+		uint8_t type;
+		struct net_buf *buf;
+		struct k_fifo fifo;
+	} tx;
+
+	bt_hci_recv_t recv;
+
+	struct {
 		struct net_buf *buf;
 		struct k_fifo   fifo;
 
@@ -56,14 +64,6 @@ struct h4_data {
 			uint8_t hdr[4];
 		};
 	} rx;
-
-	struct {
-		uint8_t         type;
-		struct net_buf *buf;
-		struct k_fifo   fifo;
-	} tx;
-
-	bt_hci_recv_t recv;
 };
 
 struct h4_config {
@@ -471,7 +471,13 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 {
 	struct device *dev = user_data;
 
-	while (uart_irq_update(uart) && uart_irq_is_pending(uart)) {
+	while (true) {
+		uart_irq_update(uart);
+
+		if (uart_irq_is_pending(uart) <= 0) {
+			break;
+		}
+
 		if (uart_irq_tx_ready(uart)) {
 			process_tx(dev);
 		}

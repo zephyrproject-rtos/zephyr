@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2026 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "ubx_evknorab2_nrf54l15_cpuflpr.dts"
+
+&cpuflpr_sram {
+	reg = <0x2002f000 DT_SIZE_K(68)>;
+	ranges = <0x0 0x2002f000 0x11000>;
+};

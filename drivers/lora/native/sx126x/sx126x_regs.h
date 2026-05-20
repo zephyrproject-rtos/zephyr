@@ -192,6 +192,10 @@
 /* TX Modulation (workaround for 500kHz BW) */
 #define SX126X_REG_TX_MODULATION            0x0889
 
+/* Register Retention List (warm-start sleep) */
+#define SX126X_REG_RETENTION_LIST           0x029F
+#define SX126X_MAX_RETENTION_REGS           4
+
 /* Random Number Generator */
 #define SX126X_REG_RANDOM_NUMBER_GEN        0x0819
 

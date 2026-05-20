@@ -263,26 +263,13 @@ Labels applicable to issues only
      - Description
 
    * - :guilabel:`priority: {high|medium|low}`
-     - To classify the impact and importance of a bug or
-       :ref:`feature <feature-tracking>`.
+     - To classify the impact and importance of a bug.
 
        Note: Issue priorities are generally set or changed during the bug-triage or TSC
        meetings.
 
    * - :guilabel:`Regression`
      - Something, which was working, but does not anymore (bug subtype).
-
-   * - :guilabel:`Enhancement`
-     - Changes/Updates/Additions to existing :ref:`features <feature-tracking>`.
-
-   * - :guilabel:`Feature request`
-     - A request for a new :ref:`feature <feature-tracking>`.
-
-   * - :guilabel:`Feature`
-     - A :ref:`planned feature<feature-tracking>` with a milestone.
-
-   * - :guilabel:`Hardware Support`
-     - Covers porting an existing feature (including Zephyr itself) to new hardware.
 
    * - :guilabel:`Duplicate`
      - This issue is a duplicate of another issue (please specify).
@@ -293,11 +280,6 @@ Labels applicable to issues only
    * - :guilabel:`Release Notes`
      - Issues that need to be mentioned in release notes as known issues with
        additional information.
-
-Any issue must be classified and labeled as either *Bug*, *Enhancement*, *RFC*,
-*Feature*, *Feature Request* or *Hardware Support*. More information on how
-feature requests are handled and become features can be found in :ref:`Feature
-Tracking<feature-tracking>`.
 
 Labels applicable to pull requests only
 =======================================
@@ -362,12 +344,6 @@ Labels applicable to both pull requests and issues
 
    * - :guilabel:`platform: {platform-name}`
      - An issue or PR which affects only a particular platform.
-
-   * - :guilabel:`dev-review`
-     - The issue is to be discussed in the following `dev-review`_ if time
-       permits.
-
-       .. _`dev-review`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Groups#zephyr-dev-meeting
 
    * - :guilabel:`TSC`
      - TSC stands for Technical Steering Committee. The issue is to be discussed in the

@@ -11,18 +11,18 @@
 #include <zephyr/bluetooth/addr.h>
 
 /* HAS commands */
-#define BTP_HAS_READ_SUPPORTED_COMMANDS	0x01
+#define BTP_HAS_READ_SUPPORTED_COMMANDS	0x01U
 struct btp_has_read_supported_commands_rp {
 	uint8_t data[0];
 } __packed;
 
-#define BTP_HAS_SET_ACTIVE_INDEX	0x02
+#define BTP_HAS_SET_ACTIVE_INDEX	0x02U
 struct btp_has_set_active_index_cmd {
 	bt_addr_le_t address;
 	uint8_t index;
 } __packed;
 
-#define BTP_HAS_SET_PRESET_NAME		0x03
+#define BTP_HAS_SET_PRESET_NAME		0x03U
 struct btp_has_set_preset_name_cmd {
 	bt_addr_le_t address;
 	uint8_t index;
@@ -30,13 +30,13 @@ struct btp_has_set_preset_name_cmd {
 	char    name[0];
 } __packed;
 
-#define BTP_HAS_REMOVE_PRESET		0x04
+#define BTP_HAS_REMOVE_PRESET		0x04U
 struct btp_has_remove_preset_cmd {
 	bt_addr_le_t address;
 	uint8_t index;
 } __packed;
 
-#define BTP_HAS_ADD_PRESET		0x05
+#define BTP_HAS_ADD_PRESET		0x05U
 struct btp_has_add_preset_cmd {
 	bt_addr_le_t address;
 	uint8_t index;
@@ -45,7 +45,7 @@ struct btp_has_add_preset_cmd {
 	char    name[0];
 } __packed;
 
-#define BTP_HAS_SET_PROPERTIES		0x06
+#define BTP_HAS_SET_PROPERTIES		0x06U
 struct btp_has_set_properties_cmd {
 	bt_addr_le_t address;
 	uint8_t index;
@@ -53,7 +53,7 @@ struct btp_has_set_properties_cmd {
 } __packed;
 
 /* HAS events */
-#define BTP_HAS_EV_OPERATION_COMPLETED	0x80
+#define BTP_HAS_EV_OPERATION_COMPLETED	0x80U
 struct btp_has_operation_completed_ev {
 	bt_addr_le_t address;
 	uint8_t index;

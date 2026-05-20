@@ -37,6 +37,24 @@
 #define NBU_RFMC_XO_ISEL_VALUE DT_INST_PROP(0, rfmc_xo_isel)
 #endif
 
+/* Check if TX power is supported*/
+#if DT_INST_NODE_HAS_PROP(0, max_tx_power_dbm)
+#define NBU_MAX_TX_POWER_DBM DT_INST_PROP(0, max_tx_power_dbm)
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, max_tx_power_support) && defined(NBU_MAX_TX_POWER_DBM)
+#define TX_POWER_SUPPORTED_LEN DT_INST_PROP_LEN(0, max_tx_power_support)
+
+#define IS_EQUAL_TO_SUPPORTED(node_id, prop, idx)                                                  \
+	(NBU_MAX_TX_POWER_DBM == DT_INST_PROP_BY_IDX(0, prop, idx))
+
+#define IS_TX_POWER_VALID()                                                                        \
+	(DT_INST_FOREACH_PROP_ELEM_SEP(0, max_tx_power_support, IS_EQUAL_TO_SUPPORTED, (||)))
+
+/* Validation only if supported values exists */
+BUILD_ASSERT(IS_TX_POWER_VALID(), "max-tx-power-dbm must be one of the supported values");
+#endif
+
 /* -------------------------------------------------------------------------- */
 /*                             Private prototypes                             */
 /* -------------------------------------------------------------------------- */

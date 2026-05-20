@@ -12,6 +12,8 @@ tests:
       - frdm_mcxn947/mcxn947/cpu0
       - frdm_imxrt1186/mimxrt1186/cm33
       - frdm_imxrt1186/mimxrt1186/cm7
+      - sama7d65_curiosity
+      - sama7g54_ek
     integration_platforms:
       - native_sim/native/64
     extra_args:

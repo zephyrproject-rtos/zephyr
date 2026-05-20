@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -392,6 +392,15 @@
 		     <133 6>; /* Consolidated interrupt for mxsdhc */
 };
 
+&lpcomp0 {
+	interrupts = <24 4>;
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+};
+
+&usbhs {
+	interrupts = <151 4>, /* usbhs_ctrl_irqn */
+		     <152 4>; /* usbhss_irqn */
 };

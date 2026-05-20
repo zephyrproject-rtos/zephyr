@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(dmic_sample);
 
 #define MAX_SAMPLE_RATE  16000
 #define SAMPLE_BIT_WIDTH CONFIG_SAMPLE_BIT_WIDTH
-#define PDM_CTL_IDX      CONFIG_HW_CHANNEL_INDEX
+#define PDM_CTL_IDX      CONFIG_SAMPLE_HW_CHANNEL_INDEX
 #define BYTES_PER_SAMPLE SAMPLE_BIT_WIDTH / 8
 /* Milliseconds to wait for a block to be read. */
 #define READ_TIMEOUT     1000

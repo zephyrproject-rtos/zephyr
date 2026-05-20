@@ -248,7 +248,7 @@ static int mcux_tsi_init(const struct device *dev)
 
 	/* Enable clock */
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("Clock device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->clock_dev);
 		return -ENODEV;
 	}
 

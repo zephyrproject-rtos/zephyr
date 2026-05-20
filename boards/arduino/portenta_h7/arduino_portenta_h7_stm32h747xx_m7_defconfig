@@ -18,3 +18,6 @@ CONFIG_USE_DT_CODE_PARTITION=y
 # Enable regulator
 CONFIG_REGULATOR=y
 CONFIG_REGULATOR_FIXED=y
+
+# Use SDHC STM32 driver (disable legacy SDMMC disk driver)
+CONFIG_SDMMC_STM32=n

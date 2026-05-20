@@ -53,6 +53,7 @@
 		led0 = &green_led;
 		led1 = &blue_led;
 		led2 = &red_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
@@ -93,6 +94,10 @@
 
 &clk_hsi {
 	hsi-div = <1>;
+	status = "okay";
+};
+
+&clk_lse {
 	status = "okay";
 };
 
@@ -341,5 +346,11 @@ csi_capture_port: &pipe_main {};
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };

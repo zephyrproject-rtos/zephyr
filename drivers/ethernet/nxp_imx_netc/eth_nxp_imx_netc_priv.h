@@ -136,10 +136,10 @@ struct netc_eth_data {
 
 int netc_eth_init_common(const struct device *dev);
 int netc_eth_tx(const struct device *dev, struct net_pkt *pkt);
-enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev);
-int netc_eth_set_config(const struct device *dev, enum ethernet_config_type type,
-			const struct ethernet_config *config);
+enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev, struct net_if *iface);
+int netc_eth_set_config(const struct device *dev, struct net_if *iface,
+			enum ethernet_config_type type, const struct ethernet_config *config);
 #ifdef NETC_PTP_TIMESTAMPING_SUPPORT
-const struct device *netc_eth_get_ptp_clock(const struct device *dev);
+const struct device *netc_eth_get_ptp_clock(const struct device *dev, struct net_if *iface);
 #endif
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_NXP_IMX_NETC_PRIV_H_ */

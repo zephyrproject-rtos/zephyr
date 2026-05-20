@@ -19,6 +19,7 @@
 		led1 = &yellow_led;
 		sw0 = &btn0;
 		sw1 = &btn1;
+		sdhc0 = &sdhc0;
 	};
 
 	chosen {
@@ -81,26 +82,30 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x0 0x8000>;
 		};
 
 		slot0_partition: partition@8000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x8000 0xf8000>;
 		};
 
 		slot1_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x100000 0xf8000>;
 		};
 
 		storage_partition: partition@1f8000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x1f8000 0x8000>;
 		};
@@ -135,4 +140,17 @@ zephyr_udc0: &usbd {
 	pinctrl-0 = <&usbd_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	card-detect-from-gpio;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };

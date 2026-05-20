@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config REALTEK_AMEBA_OS_WRAPPER
+	bool "Realtek Ameba OS Wrapper Layer"
+	depends on SOC_FAMILY_REALTEK_AMEBA
+	help
+	  Enable the Realtek Ameba OS wrapper abstraction layer.
+	  This provides RTOS abstraction for Ameba HAL drivers.

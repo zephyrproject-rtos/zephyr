@@ -97,6 +97,7 @@
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 		spi-flash0 = &mx66uw1g45;
+		rtc = &rtc;
 	};
 
 	ext_flash_mem: memory@70000000 {
@@ -437,4 +438,8 @@ st_cam_dvp: &dcmipp {
 		     &dcmipp_pixclk_pd5 &dcmipp_hsync_pg3 &dcmipp_vsync_pb7>;
 
 	pinctrl-names = "default";
+};
+
+&crc {
+	status = "okay";
 };

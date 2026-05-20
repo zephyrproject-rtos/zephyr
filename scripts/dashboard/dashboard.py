@@ -14,6 +14,7 @@ This incorporates results from various other scripts:
 '''
 
 import argparse
+import contextlib
 import glob
 import html
 import io
@@ -27,6 +28,8 @@ import subprocess
 import sys
 import webbrowser
 from datetime import datetime
+from functools import partial
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 import jinja2
@@ -386,6 +389,7 @@ class ZephyrDashboard:
             str(self.elf_file),
             '-z',
             str(self.zephyr_base.absolute()),
+            f'--workspace={self.topdir}',
             '--json',
             str(self.output_path / '{target}_report.json'),
             '--quiet',
@@ -543,6 +547,10 @@ class ZephyrDashboard:
 
         def create_tree_node(dt_node, expanded=False):
             edt_node = edt.get_node(dt_node.path)
+            if edt_node and edt_node.binding_path:
+                binding_path = self._safe_relpath(edt_node.binding_path)
+            else:
+                binding_path = ""
 
             return {
                 "id": dt_node.path,
@@ -554,6 +562,7 @@ class ZephyrDashboard:
                     "filename": self._safe_relpath(dt_node.filename),
                     "lineno": dt_node.lineno,
                     "description": edt_node.description if edt_node else "",
+                    "bindingPath": binding_path,
                 },
             }
 
@@ -581,6 +590,7 @@ class ZephyrDashboard:
                     "lineno": dt_prop.lineno,
                     "description": edt_prop.description if edt_prop else "",
                     "typeSpec": edt_prop.type if edt_prop else "",
+                    "bindingPath": "",
                 },
             }
 
@@ -767,10 +777,18 @@ class ZephyrDashboard:
     def open_browser(self):
         '''
         Open the default web browser to the index page of the dashboard.
+
+        Uses a one-shot HTTP server so that the browser loads from
+        http://localhost, which works reliably across most platforms.
         '''
 
-        fname = self.output_path / "index.html"
-        webbrowser.open(str(fname))
+        handler = partial(SimpleHTTPRequestHandler, directory=str(self.output_path))
+        server = HTTPServer(("127.0.0.1", 0), handler)
+        url = f"http://127.0.0.1:{server.server_port}/index.html"
+        logger.info("Serving dashboard at %s (Ctrl+C to stop)", url)
+        webbrowser.open(url)
+        with contextlib.suppress(KeyboardInterrupt):
+            server.serve_forever()
 
 
 def parse_args():

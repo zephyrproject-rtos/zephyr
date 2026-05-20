@@ -159,14 +159,14 @@ static int current_init(const struct device *dev)
 	__ASSERT(config->sense_milli_ohms != 0, "Milli-ohms must not be 0");
 
 	if (!adc_is_ready_dt(&config->port)) {
-		LOG_ERR("ADC is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->port.dev);
 		return -ENODEV;
 	}
 
 #ifdef CONFIG_PM_DEVICE
 	if (config->power_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->power_gpio)) {
-			LOG_ERR("Power GPIO is not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->power_gpio.port);
 			return -ENODEV;
 		}
 

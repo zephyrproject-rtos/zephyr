@@ -69,6 +69,7 @@ static void reset_test_iface_state(struct net_if *iface)
 	}
 
 	if (iface_data) {
+		iface_data->missing_connection_config = false;
 		iface_data->call_cnt_a = 0;
 		iface_data->call_cnt_b = 0;
 		iface_data->conn_bal = 0;
@@ -87,6 +88,7 @@ static K_MUTEX_DEFINE(event_mutex);
 static struct event_stats {
 	int timeout_count;
 	int fatal_error_count;
+	int no_config_count;
 	int event_count;
 	int event_info;
 	struct net_if *event_iface;
@@ -103,6 +105,10 @@ static void conn_mgr_conn_handler(struct net_mgmt_event_callback *cb,
 		test_event_stats.timeout_count += 1;
 	} else if (event == NET_EVENT_CONN_IF_FATAL_ERROR) {
 		test_event_stats.fatal_error_count += 1;
+	} else if (event == NET_EVENT_CONN_IF_NO_CONFIGURATION) {
+		test_event_stats.no_config_count += 1;
+	} else {
+		zassert_unreachable("Unhandled event");
 	}
 
 	test_event_stats.event_count += 1;
@@ -142,6 +148,7 @@ static void conn_mgr_conn_before(void *data)
 	test_event_stats.event_count = 0;
 	test_event_stats.timeout_count = 0;
 	test_event_stats.fatal_error_count = 0;
+	test_event_stats.no_config_count = 0;
 	test_event_stats.event_iface = NULL;
 	test_event_stats.event_info = 0;
 
@@ -150,8 +157,10 @@ static void conn_mgr_conn_before(void *data)
 
 static void *conn_mgr_conn_setup(void)
 {
-	net_mgmt_init_event_callback(&conn_mgr_conn_callback, conn_mgr_conn_handler,
-				     NET_EVENT_CONN_IF_TIMEOUT | NET_EVENT_CONN_IF_FATAL_ERROR);
+	uint64_t events = NET_EVENT_CONN_IF_TIMEOUT | NET_EVENT_CONN_IF_FATAL_ERROR |
+			  NET_EVENT_CONN_IF_NO_CONFIGURATION;
+
+	net_mgmt_init_event_callback(&conn_mgr_conn_callback, conn_mgr_conn_handler, events);
 	net_mgmt_add_event_callback(&conn_mgr_conn_callback);
 	return NULL;
 }
@@ -441,6 +450,43 @@ ZTEST(conn_mgr_conn, test_connect_autoup)
 	zassert_true(net_if_is_up(ifa1),	"ifa1 should be oper-up after conn_mgr_if_connect");
 	zassert_equal(ifa1_data->conn_bal, 1,	"ifa1->connect should have been called once.");
 	zassert_equal(ifa1_data->call_cnt_a, 1,	"ifa1->connect should have been called once.");
+}
+
+ZTEST(conn_mgr_conn, test_connect_no_configuration)
+{
+	struct test_conn_data *ifa1_data = conn_mgr_if_get_data(ifa1);
+	struct event_stats stats;
+
+	/* Non-persistent connection without connection information */
+	ifa1_data->missing_connection_config = true;
+	conn_mgr_if_set_flag(ifa1, CONN_MGR_IF_PERSISTENT, false);
+
+	/* Request connection */
+	zassert_equal(conn_mgr_if_connect(ifa1), -EAGAIN, "conn_mgr_if_connect should fail");
+	k_sleep(K_MSEC(1));
+
+	/* Verify iface is still down */
+	zassert_false(net_if_is_admin_up(ifa1), "ifa1 should not be admin-up.");
+	zassert_equal(ifa1_data->conn_bal, 0, "ifa1->connect should not have been called.");
+	zassert_equal(ifa1_data->call_cnt_a, 0, "ifa1->connect should not have been called.");
+	k_mutex_lock(&event_mutex, K_FOREVER);
+	stats = test_event_stats;
+	k_mutex_unlock(&event_mutex);
+	zassert_equal(stats.no_config_count, 1,
+		      "NET_EVENT_CONN_IF_NO_CONFIGURATION should have been emitted.");
+
+	/* Fix connection configuration, connection works */
+	ifa1_data->missing_connection_config = false;
+	zassert_equal(conn_mgr_if_connect(ifa1), 0, "conn_mgr_if_connect should not fail");
+	k_sleep(K_MSEC(1));
+
+	/* Verify net_if_up was called */
+	zassert_true(net_if_is_admin_up(ifa1), "ifa1 should be admin-up after conn_mgr_if_connect");
+
+	/* Verify that connection succeeds */
+	zassert_true(net_if_is_up(ifa1), "ifa1 should be oper-up after conn_mgr_if_connect");
+	zassert_equal(ifa1_data->conn_bal, 1, "ifa1->connect should have been called once.");
+	zassert_equal(ifa1_data->call_cnt_a, 1, "ifa1->connect should have been called once.");
 }
 
 /* Verify that calling disconnect on a down iface has no effect and raises no error. */

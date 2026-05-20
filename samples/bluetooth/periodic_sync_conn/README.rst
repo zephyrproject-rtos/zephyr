@@ -23,8 +23,17 @@ Requirements
 Building and Running
 ********************
 
-Use the sample found under :zephyr_file:`samples/bluetooth/periodic_adv_conn` on
-another board that will start periodic advertising and connect to this sample
-once synced.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/periodic_sync_conn
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, the device will scan for a PAwR advertiser, synchronize to it, and
+respond with its own address. Once the initiator connects, this device will disconnect
+and wait for a new connection.
+
+Use the :zephyr:code-sample:`ble_periodic_adv_conn` sample on a second board to start
+PAwR advertising and connect to this device once synced.

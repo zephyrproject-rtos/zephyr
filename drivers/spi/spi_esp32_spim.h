@@ -66,6 +66,9 @@ struct spi_esp32_data {
 	spi_hal_trans_config_t trans_config;
 	uint8_t dfs;
 	uint32_t clock_source_hz;
+#if CONFIG_PM
+	bool pm_policy_state_on;
+#endif
 };
 
 #endif /* ZEPHYR_DRIVERS_SPI_ESP32_SPIM_H_ */

@@ -28,6 +28,7 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "ipv6.h"
 #include "nbr.h"
 #include "6lo.h"
+#include "route_ipv6.h"
 #include "route.h"
 #include "net_stats.h"
 
@@ -125,6 +126,7 @@ static int mld_create_packet(struct net_pkt *pkt, uint16_t count)
 
 static int mld_send(struct net_pkt *pkt)
 {
+	__maybe_unused struct net_if *iface = net_pkt_iface(pkt);
 	int ret;
 
 	net_pkt_cursor_init(pkt);
@@ -132,27 +134,27 @@ static int mld_send(struct net_pkt *pkt)
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		net_stats_update_icmp_drop(net_pkt_iface(pkt));
-		net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
+		net_stats_update_icmp_drop(iface);
+		net_stats_update_ipv6_mld_drop(iface);
 
 		net_pkt_unref(pkt);
 
 		return ret;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(pkt));
-	net_stats_update_ipv6_mld_sent(net_pkt_iface(pkt));
+	net_stats_update_icmp_sent(iface);
+	net_stats_update_ipv6_mld_sent(iface);
 
 	return 0;
 }
 
-#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
-static void count_mcast_routes(struct net_route_entry_mcast *entry, void *user_data)
+#if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
+static void count_mcast_routes(struct net_route_ipv6_entry_mcast *entry, void *user_data)
 {
 	(*((int *)user_data))++;
 }
 
-static void append_mcast_routes(struct net_route_entry_mcast *entry, void *user_data)
+static void append_mcast_routes(struct net_route_ipv6_entry_mcast *entry, void *user_data)
 {
 	struct mcast_route_appending_info *info = (struct mcast_route_appending_info *)user_data;
 	struct net_if_mcast_addr *mcasts = info->iface->config.ip.ipv6->mcast;
@@ -351,12 +353,12 @@ static int send_mld_report(struct net_if *iface)
 		count++;
 	}
 
-#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
+#if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
 	/* Increase number of slots by a number of multicast routes that
 	 * can be later added to the report. Checking for duplicates is done
 	 * while appending an entry.
 	 */
-	net_route_mcast_foreach(count_mcast_routes, NULL, (void *)&count);
+	net_route_ipv6_mcast_foreach(count_mcast_routes, NULL, (void *)&count);
 #endif
 
 	pkt = net_pkt_alloc_with_buffer(iface, IPV6_OPT_HDR_ROUTER_ALERT_LEN +
@@ -385,7 +387,7 @@ static int send_mld_report(struct net_if *iface)
 		}
 	}
 
-#if defined(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)
+#if defined(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)
 	/* Append information about multicast routes as packets will be
 	 * forwarded to these interfaces on reception.
 	 */
@@ -396,7 +398,7 @@ static int send_mld_report(struct net_if *iface)
 	info.iface = iface;
 	info.skipped = 0;
 
-	net_route_mcast_foreach(append_mcast_routes, NULL, &info);
+	net_route_ipv6_mcast_foreach(append_mcast_routes, NULL, &info);
 
 	ret = info.status;
 	if (ret < 0) {
@@ -480,7 +482,11 @@ static enum net_verdict handle_mld_query(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &mld_access);
+	ret = net_pkt_acknowledge_data(pkt, &mld_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	dbg_addr_recv("Multicast Listener Query", &ip_hdr->src, &ip_hdr->dst);
 

@@ -43,18 +43,21 @@ static int  eth_xlnx_gem_dev_init(const struct device *dev);
 static void eth_xlnx_gem_iface_init(struct net_if *iface);
 static void eth_xlnx_gem_isr(const struct device *dev);
 static int  eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt);
-static int  eth_xlnx_gem_start_device(const struct device *dev);
-static int  eth_xlnx_gem_stop_device(const struct device *dev);
+static int  eth_xlnx_gem_start_device(const struct device *dev, struct net_if *iface);
+static int  eth_xlnx_gem_stop_device(const struct device *dev, struct net_if *iface);
 static enum ethernet_hw_caps
-	eth_xlnx_gem_get_capabilities(const struct device *dev);
+	eth_xlnx_gem_get_capabilities(const struct device *dev, struct net_if *iface);
 static int  eth_xlnx_gem_get_config(const struct device *dev,
+				    struct net_if *iface,
 				    enum ethernet_config_type type,
 				    struct ethernet_config *config);
 static int eth_xlnx_gem_set_config(const struct device *dev,
+				   struct net_if *iface,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config);
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev);
+static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev,
+						struct net_if *iface);
 #endif
 
 static void eth_xlnx_gem_reset_hw(const struct device *dev);
@@ -630,7 +633,8 @@ static int eth_xlnx_gem_stop_device(const struct device *dev)
  * @return Enumeration containing the current GEM device's capabilities
  */
 static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
-	const struct device *dev)
+	const struct device *dev,
+	struct net_if *iface __unused)
 {
 	const struct eth_xlnx_gem_dev_cfg *dev_conf = dev->config;
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
@@ -686,6 +690,7 @@ static enum ethernet_hw_caps eth_xlnx_gem_get_capabilities(
  *         is not supported by this function.
  */
 static int eth_xlnx_gem_get_config(const struct device *dev,
+				   struct net_if *iface __unused,
 				   enum ethernet_config_type type,
 				   struct ethernet_config *config)
 {
@@ -734,6 +739,7 @@ static int eth_xlnx_gem_get_config(const struct device *dev,
  *         is not supported by this function.
  */
 static int eth_xlnx_gem_set_config(const struct device *dev,
+				   struct net_if *iface __unused,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
@@ -772,7 +778,8 @@ static int eth_xlnx_gem_set_config(const struct device *dev,
  * @param dev Pointer to the device data
  * @return Pointer to the current GEM device's statistics data
  */
-static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev)
+static struct net_stats_eth *eth_xlnx_gem_stats(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	struct eth_xlnx_gem_dev_data *dev_data = dev->data;
 

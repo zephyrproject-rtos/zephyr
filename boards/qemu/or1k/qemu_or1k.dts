@@ -39,7 +39,7 @@
 		reg = <0x00000000 0x08000000>;
 	};
 
-	uart3: serial@90000300 {
+	uart3: serial@90000000 {
 		compatible = "ns16550";
 		reg = <0x90000000 0x100>;
 		reg-shift = <0>;

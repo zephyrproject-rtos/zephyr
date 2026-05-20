@@ -37,17 +37,17 @@ static void test_irq_callback(const struct device *dev, void *user_data)
 	driver_isr_addr = (uintptr_t)user_data;
 
 	/* Check that the function and its call stack are in RAM */
-	zassert_true(func_addr >= CONFIG_SRAM_BASE_ADDRESS &&
-			     func_addr <= CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE * 1024,
+	zassert_true(func_addr >= DT_CHOSEN_SRAM_ADDR &&
+			     func_addr <= DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE,
 		     "%s is not in RAM! Address: 0x%lx", __func__, func_addr);
 
-	zassert_true(driver_isr_addr >= CONFIG_SRAM_BASE_ADDRESS &&
-			     driver_isr_addr <= CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE * 1024,
+	zassert_true(driver_isr_addr >= DT_CHOSEN_SRAM_ADDR &&
+			     driver_isr_addr <= DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE,
 		     "fake_driver_isr is not in RAM! Address: 0x%lx", driver_isr_addr);
 
-	zassert_true(arch_isr_wrapper_addr >= CONFIG_SRAM_BASE_ADDRESS &&
+	zassert_true(arch_isr_wrapper_addr >= DT_CHOSEN_SRAM_ADDR &&
 			     arch_isr_wrapper_addr <=
-				     CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE * 1024,
+				     DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE,
 		     "arch_isr_wrapper_addr is not in RAM! Address: 0x%lx", arch_isr_wrapper_addr);
 
 	TC_PRINT("Callback function address: 0x%lx\n", func_addr);
@@ -61,8 +61,8 @@ ZTEST(ram_context_for_isr, test_fake_driver_in_ram)
 	const struct fake_driver_api *api = DEVICE_API_GET(fake, dev);
 	uintptr_t dev_addr = (uintptr_t)dev;
 
-	zassert_true(dev_addr >= CONFIG_SRAM_BASE_ADDRESS &&
-			     dev_addr <= CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_SIZE * 1024,
+	zassert_true(dev_addr >= DT_CHOSEN_SRAM_ADDR &&
+			     dev_addr <= DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE,
 		     "fake driver device is not in RAM! Address: 0x%lx", dev_addr);
 
 	TC_PRINT("Fake driver device address: 0x%lx\n", dev_addr);

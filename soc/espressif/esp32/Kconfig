@@ -13,6 +13,7 @@ config SOC_SERIES_ESP32
 	select CPU_HAS_FPU
 	select HAS_PM
 	select HAS_POWEROFF
+	select SCHED_IPI_SUPPORTED if SMP
 
 if SOC_SERIES_ESP32
 

@@ -167,5 +167,6 @@ add_custom_target(
   --open
   ${CMAKE_BINARY_DIR}
   DEPENDS ${logical_target_for_zephyr_elf}
+  USES_TERMINAL
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )

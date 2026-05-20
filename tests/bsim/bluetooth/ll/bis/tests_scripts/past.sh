@@ -9,7 +9,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # it will connect to the peripheral device.
 # After connection is established the Central send a Periodic Sync Transfer (PAST)
 # to the peripheral, which then synchronizes to the PA.
-simulation_id="past_basic"
+simulation_id="${BOARD_TS}_past_basic"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

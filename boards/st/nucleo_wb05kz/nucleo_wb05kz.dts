@@ -15,9 +15,6 @@
 	model = "STMicroelectronics STM32WB05KZ-NUCLEO board";
 	compatible = "st,stm32wb05kz-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
@@ -176,12 +173,13 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set 8KB of storage at the end of 192KB flash */
 		storage_partition: partition@2e000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0002e000 DT_SIZE_K(8)>;
 		};

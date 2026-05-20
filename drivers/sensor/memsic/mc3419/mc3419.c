@@ -256,7 +256,7 @@ static int mc3419_init(const struct device *dev)
 	const struct mc3419_config *cfg = dev->config;
 
 	if (!(i2c_is_ready_dt(&cfg->i2c))) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 

@@ -1,0 +1,206 @@
+/*
+ * Copyright (c) Arduino s.r.l. and/or its affiliated companies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <raspberrypi/rpi_pico/rp2040.dtsi>
+#include "arduino_nano_connect-pinctrl.dtsi"
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/arduino-nano-header.h>
+
+/ {
+	model = "Arduino Nano RP2040 Connect";
+	compatible = "arduino,nano-rp2040-connect";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &ssi;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	aliases {
+		led0 = &led0;
+		rtc = &rtc;
+		watchdog0 = &wdt0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			/* Built-in LED on GPIO6 (accent LED, directly connected) */
+			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	/* Arduino Nano connector */
+	nano_header: connector {
+		compatible = "arduino,nano-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_NANO_HEADER_D0 0 &gpio0 1 0>,	/* D0 - RX */
+			   <ARDUINO_NANO_HEADER_D1 0 &gpio0 0 0>,       /* D1 - TX */
+			   <ARDUINO_NANO_HEADER_D2 0 &gpio0 25 0>,      /* D2 */
+			   <ARDUINO_NANO_HEADER_D3 0 &gpio0 15 0>,      /* D3 */
+			   <ARDUINO_NANO_HEADER_D4 0 &gpio0 16 0>,      /* D4 */
+			   <ARDUINO_NANO_HEADER_D5 0 &gpio0 17 0>,      /* D5 */
+			   <ARDUINO_NANO_HEADER_D6 0 &gpio0 18 0>,      /* D6 */
+			   <ARDUINO_NANO_HEADER_D7 0 &gpio0 19 0>,      /* D7 */
+			   <ARDUINO_NANO_HEADER_D8 0 &gpio0 20 0>,      /* D8 */
+			   <ARDUINO_NANO_HEADER_D9 0 &gpio0 21 0>,      /* D9 */
+			   <ARDUINO_NANO_HEADER_D10 0 &gpio0 5 0>,      /* D10 - SS */
+			   <ARDUINO_NANO_HEADER_D11 0 &gpio0 7 0>,      /* D11 - MOSI */
+			   <ARDUINO_NANO_HEADER_D12 0 &gpio0 4 0>,      /* D12 - MISO */
+			   <ARDUINO_NANO_HEADER_D13 0 &gpio0 6 0>,      /* D13 - SCK/LED */
+			   <ARDUINO_NANO_HEADER_D14 0 &gpio0 26 0>,     /* A0 */
+			   <ARDUINO_NANO_HEADER_D15 0 &gpio0 27 0>,     /* A1 */
+			   <ARDUINO_NANO_HEADER_D16 0 &gpio0 28 0>,     /* A2 */
+			   <ARDUINO_NANO_HEADER_D17 0 &gpio0 29 0>,     /* A3 */
+			   <ARDUINO_NANO_HEADER_D18 0 &gpio0 12 0>,     /* A4 - SDA */
+			   <ARDUINO_NANO_HEADER_D19 0 &gpio0 13 0>;     /* A5 - SCL */
+	};
+};
+
+&ssi {
+	ranges = <0x0 0x10000000 DT_SIZE_M(16)>;
+};
+
+&flash0 {
+	/* 16MB flash */
+	reg = <0x10000000 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Reserved memory for the second stage bootloader */
+		second_stage_bootloader: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 0x100>;
+			read-only;
+		};
+
+		/*
+		 * Usable flash. Starts at 0x100, after the bootloader. The partition
+		 * size is 16MB minus the 0x100 bytes taken by the bootloader.
+		 */
+		code_partition: partition@100 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x100 (DT_SIZE_M(16) - 0x100)>;
+			read-only;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	/* LSM6DSOX IMU */
+	lsm6dsox: lsm6dsox@6a {
+		compatible = "st,lsm6dso";
+		reg = <0x6a>;
+		irq-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* ATECC608A Crypto */
+	atecc608a: atecc608a@60 {
+		compatible = "microchip,atecc608";
+		reg = <0x60>;
+	};
+};
+
+&spi0 {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+&spi1 {
+	/* SPI to NINA WiFi module */
+	clock-frequency = <DT_FREQ_M(8)>;
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+
+	nina_w102: nina_w102@0 {
+		compatible = "u-blox,nina";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		ready-gpios = <&gpio0 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		reset-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 2 GPIO_PULL_DOWN>;
+	};
+};
+
+&uart1 {
+	nina_prog: nina_prog {
+		compatible = "espressif,esp-at";
+		reset-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&timer {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&clocks RPI_PICO_CLKID_CLK_RTC>;
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_ch3a_default>;
+	pinctrl-names = "default";
+};
+
+&vreg {
+	regulator-always-on;
+	regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+};
+
+/* Aliases for Arduino compatibility */
+arduino_spi: &spi0 {};
+
+arduino_i2c: &i2c0 {};
+
+arduino_serial: &uart0 {};

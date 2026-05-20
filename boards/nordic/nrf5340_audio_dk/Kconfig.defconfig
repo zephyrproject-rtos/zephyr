@@ -32,29 +32,9 @@ if BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP || BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAP
 # For the non-secure version of the board, the firmware image SRAM is
 # always restricted to the allocated non-secure SRAM partition.
 #
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
-DT_CHOSEN_Z_SRAM_PARTITION := zephyr,sram-secure-partition
 
-if BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP && TRUSTED_EXECUTION_SECURE
-
-config FLASH_LOAD_SIZE
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
-
-config SRAM_SIZE
-	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM_PARTITION),0,K)
-
-endif # BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP && TRUSTED_EXECUTION_SECURE
-
-if BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS
-
-config FLASH_LOAD_OFFSET
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
-
-config FLASH_LOAD_SIZE
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
-
-endif # BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS
+config BOARD_NRF5340_AUDIO_DK
+	select USE_DT_CODE_PARTITION if BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS
 
 config BT_HCI_IPC
 	default y if BT_HCI
@@ -64,7 +44,3 @@ config HEAP_MEM_POOL_ADD_SIZE_BOARD
 	default 4096 if BT_HCI_IPC
 
 endif # BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP || BOARD_NRF5340_AUDIO_DK_NRF5340_CPUAPP_NS
-
-if BOARD_NRF5340_AUDIO_DK_NRF5340_CPUNET
-
-endif # BOARD_NRF5340_AUDIO_DK_NRF5340_CPUNET

@@ -144,7 +144,7 @@ static int bmi270_init_int_pin(const struct gpio_dt_spec *pin,
 	}
 
 	if (!device_is_ready(pin->port)) {
-		LOG_DBG("%s not ready", pin->port->name);
+		LOG_ERR_DEVICE_NOT_READY(pin->port);
 		return -ENODEV;
 	}
 

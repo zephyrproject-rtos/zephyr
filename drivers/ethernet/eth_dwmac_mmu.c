@@ -23,9 +23,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth_dwmac_priv.h"
 
-int dwmac_bus_init(struct dwmac_priv *p)
+int dwmac_bus_init(const struct device *dev __unused)
 {
-	p->base_addr = DT_INST_REG_ADDR(0);
 	return 0;
 }
 
@@ -38,13 +37,12 @@ static struct dwmac_dma_desc __aligned(CONFIG_DCACHE_LINE_SIZE)
 
 static struct net_eth_mac_config mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(0);
 
-int dwmac_platform_init(struct dwmac_priv *p)
+int dwmac_platform_init(const struct device *dev)
 {
+	struct dwmac_priv *p = dev->data;
 	int ret;
 	uint8_t *desc_uncached_addr;
 	uintptr_t desc_phys_addr;
-
-	p->phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phy_handle));
 
 	/* make sure no valid cache lines map to the descriptor area */
 	sys_cache_data_invd_range(dwmac_tx_rx_descriptors,
@@ -100,13 +98,18 @@ int dwmac_platform_init(struct dwmac_priv *p)
 }
 
 /* Our private device instance */
+static const struct dwmac_config dwmac_config = {
+	DEVICE_MMIO_ROM_INIT(DT_DRV_INST(0)),
+	.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(0, phy_handle)),
+};
+
 static struct dwmac_priv dwmac_instance;
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0,
 			      dwmac_probe,
 			      NULL,
 			      &dwmac_instance,
-			      NULL,
+			      &dwmac_config,
 			      CONFIG_ETH_INIT_PRIORITY,
 			      &dwmac_api,
 			      NET_ETH_MTU);

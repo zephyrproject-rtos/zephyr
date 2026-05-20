@@ -190,8 +190,8 @@
 
 /* Open Alliance definitions */
 #define ADIN2111_OA_ALLOC_TIMEOUT		K_MSEC(10)
-/* Max setting to a max RCA of 255 68-bytes ckunks */
-#define ADIN2111_OA_BUF_SZ			(255U * 64U)
+/* Max setting to a max RCA of 255 68-bytes chunks */
+#define ADIN2111_OA_BUF_SZ			(255U * 68U)
 
 #define ADIN2111_OA_CTL_LEN_PROT		16U
 #define ADIN2111_OA_CTL_LEN			12U

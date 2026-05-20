@@ -8,7 +8,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="per_adv_app_not_scanning_coded"
+simulation_id="${BOARD_TS}_per_adv_app_not_scanning_coded"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

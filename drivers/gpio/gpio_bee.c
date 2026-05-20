@@ -194,6 +194,10 @@ static int gpio_bee_pin_configure(const struct device *port, gpio_pin_t pin, gpi
 		return -ENOTSUP;
 	}
 
+	if ((flags & GPIO_INPUT) && (flags & GPIO_OUTPUT)) {
+		return -ENOTSUP;
+	}
+
 	if (flags == GPIO_DISCONNECTED) {
 		Pinmux_Deinit(pad_pin);
 		Pad_Config(pad_pin, PAD_SW_MODE, PAD_NOT_PWRON, PAD_PULL_NONE, PAD_OUT_DISABLE,

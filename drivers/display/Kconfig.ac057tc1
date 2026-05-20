@@ -6,5 +6,6 @@ config AC057TC1
 	default y
 	depends on DT_HAS_EINK_AC057TC1_ENABLED
 	select MIPI_DBI
+	select DISPLAY_COLOR_PALETTE
 	help
 	  Enable driver for AC057TC1 display controller.

@@ -8,12 +8,17 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
 
 LOG_MODULE_REGISTER(mfd_nxp_lp_flexcomm, CONFIG_MFD_LOG_LEVEL);
+
+/* Required by DEVICE_MMIO_NAMED_* macros */
+#define DEV_CFG(_dev)  ((const struct nxp_lp_flexcomm_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct nxp_lp_flexcomm_data *)(_dev)->data)
 
 struct nxp_lp_flexcomm_child {
 	const struct device *dev;
@@ -22,21 +27,23 @@ struct nxp_lp_flexcomm_child {
 };
 
 struct nxp_lp_flexcomm_data {
+	DEVICE_MMIO_NAMED_RAM(reg_base);
 	struct nxp_lp_flexcomm_child *children;
 	size_t num_children;
 };
 
 struct nxp_lp_flexcomm_config {
-	LP_FLEXCOMM_Type *base;
+	DEVICE_MMIO_NAMED_ROM(reg_base);
+	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 };
 
 void nxp_lp_flexcomm_isr(const struct device *dev)
 {
+	LP_FLEXCOMM_Type *base = (LP_FLEXCOMM_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 	uint32_t interrupt_status;
-	const struct nxp_lp_flexcomm_config *config = dev->config;
 	struct nxp_lp_flexcomm_data *data = dev->data;
-	uint32_t instance = LP_FLEXCOMM_GetInstance(config->base);
+	uint32_t instance = LP_FLEXCOMM_GetInstance(base);
 	struct nxp_lp_flexcomm_child *child;
 
 	interrupt_status = LP_FLEXCOMM_GetInterruptStatus(instance);
@@ -85,6 +92,7 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 {
 	const struct nxp_lp_flexcomm_config *config = dev->config;
 	struct nxp_lp_flexcomm_data *data = dev->data;
+	LP_FLEXCOMM_Type *base;
 	uint32_t instance;
 	struct nxp_lp_flexcomm_child *child = NULL;
 	bool spi_found = false;
@@ -109,7 +117,22 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	instance = LP_FLEXCOMM_GetInstance(config->base);
+	if (config->reset.dev != NULL) {
+		int ret;
+
+		if (!device_is_ready(config->reset.dev)) {
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+	base = (LP_FLEXCOMM_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	instance = LP_FLEXCOMM_GetInstance(base);
 
 	if (uart_found && i2c_found) {
 		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPI2CAndLPUART);
@@ -141,7 +164,8 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 	static void nxp_lp_flexcomm_config_func_##n(const struct device *dev);	\
 										\
 	static const struct nxp_lp_flexcomm_config nxp_lp_flexcomm_config_##n = { \
-		.base = (LP_FLEXCOMM_Type *)DT_INST_REG_ADDR(n),		\
+		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)),		\
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.irq_config_func = nxp_lp_flexcomm_config_func_##n,		\
 	};									\
 										\

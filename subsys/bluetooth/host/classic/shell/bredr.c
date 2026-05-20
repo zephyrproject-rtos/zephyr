@@ -21,11 +21,13 @@
 #include <zephyr/settings/settings.h>
 
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/sdp.h>
+#include <zephyr/bluetooth/classic/classic.h>
 #include <zephyr/bluetooth/classic/l2cap_br.h>
 
 #include <zephyr/shell/shell.h>
@@ -106,7 +108,6 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 static void br_device_found(const bt_addr_t *addr, int8_t rssi, const uint8_t cod[3],
 			    const uint8_t eir[240])
 {
-	char br_addr[BT_ADDR_STR_LEN];
 	char name[239];
 	int len = 240;
 
@@ -145,9 +146,7 @@ static void br_device_found(const bt_addr_t *addr, int8_t rssi, const uint8_t co
 		eir += eir[0] + 1;
 	}
 
-	bt_addr_to_str(addr, br_addr, sizeof(br_addr));
-
-	bt_shell_print("[DEVICE]: %s, RSSI %i %s", br_addr, rssi, name);
+	bt_shell_print("[DEVICE]: %s, RSSI %i %s", bt_addr_str(addr), rssi, name);
 }
 
 static struct bt_br_discovery_result br_discovery_results[5];
@@ -974,7 +973,6 @@ static int cmd_pscan_param(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 {
-	char addr[BT_ADDR_STR_LEN];
 	struct bt_br_oob oob;
 	int err;
 
@@ -984,10 +982,8 @@ static int cmd_oob(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	bt_addr_to_str(&oob.addr, addr, sizeof(addr));
-
 	shell_print(sh, "BR/EDR OOB data:");
-	shell_print(sh, "  addr %s", addr);
+	shell_print(sh, "  bt_addr_str(&oob.addr) %s", bt_addr_str(&oob.addr));
 	return 0;
 }
 
@@ -1193,17 +1189,14 @@ parse_record:
 static uint8_t sdp_hfp_ag_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			       const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result && result->resp_buf) {
 		bt_shell_print("SDP HFPAG data@%p (len %u) hint %u from remote %s",
 			       result->resp_buf, result->resp_buf->len, result->next_record_hint,
-			       addr);
+			       bt_conn_dst_str(conn));
 
 		/*
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -1235,7 +1228,7 @@ static uint8_t sdp_hfp_ag_user(struct bt_conn *conn, struct bt_sdp_client_result
 		}
 		bt_shell_print("HFPAG Supported Features param 0x%04x", features);
 	} else {
-		bt_shell_print("No SDP HFPAG data from remote %s", addr);
+		bt_shell_print("No SDP HFPAG data from remote %s", bt_conn_dst_str(conn));
 	}
 done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
@@ -1245,17 +1238,14 @@ static uint8_t sdp_hfp_hf_user(struct bt_conn *conn,
 			       struct bt_sdp_client_result *result,
 			       const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result && result->resp_buf) {
 		bt_shell_print("SDP HFPHF data@%p (len %u) hint %u from remote %s",
 			       result->resp_buf, result->resp_buf->len, result->next_record_hint,
-			       addr);
+			       bt_conn_dst_str(conn));
 
 		/*
 		 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -1287,7 +1277,7 @@ static uint8_t sdp_hfp_hf_user(struct bt_conn *conn,
 		}
 		bt_shell_print("HFPHF Supported Features param 0x%04x", features);
 	} else {
-		bt_shell_print("No SDP HFPHF data from remote %s", addr);
+		bt_shell_print("No SDP HFPHF data from remote %s", bt_conn_dst_str(conn));
 	}
 done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
@@ -1296,21 +1286,18 @@ done:
 static uint8_t sdp_a2src_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			      const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result == NULL || result->resp_buf == NULL) {
-		bt_shell_print("No SDP A2SRC data from remote %s", addr);
+		bt_shell_print("No SDP A2SRC data from remote %s", bt_conn_dst_str(conn));
 		goto done;
 	}
 
 	bt_shell_print("SDP A2SRC data@%p (len %u) hint %u from remote %s",
 		       result->resp_buf, result->resp_buf->len, result->next_record_hint,
-		       addr);
+		       bt_conn_dst_str(conn));
 
 	/*
 	 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -1361,21 +1348,18 @@ done:
 static uint8_t sdp_a2snk_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			      const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result == NULL || result->resp_buf == NULL) {
-		bt_shell_print("No SDP A2SNK data from remote %s", addr);
+		bt_shell_print("No SDP A2SNK data from remote %s", bt_conn_dst_str(conn));
 		goto done;
 	}
 
 	bt_shell_print("SDP A2SNK data@%p (len %u) hint %u from remote %s",
 		       result->resp_buf, result->resp_buf->len, result->next_record_hint,
-		       addr);
+		       bt_conn_dst_str(conn));
 
 	/*
 	 * Focus to get BT_SDP_ATTR_PROTO_DESC_LIST attribute item to
@@ -1426,20 +1410,18 @@ done:
 static uint8_t sdp_avrcp_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			      const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t param, version;
 	uint16_t features;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if (result == NULL || result->resp_buf == NULL) {
-		bt_shell_print("No SDP AVRCP data from remote %s", addr);
+		bt_shell_print("No SDP AVRCP data from remote %s", bt_conn_dst_str(conn));
 		return BT_SDP_DISCOVER_UUID_CONTINUE;
 	}
 
 	bt_shell_print("SDP AVRCP data@%p (len %u) hint %u from remote %s",
-		       result->resp_buf, result->resp_buf->len, result->next_record_hint, addr);
+		       result->resp_buf, result->resp_buf->len, result->next_record_hint,
+		       bt_conn_dst_str(conn));
 
 	err = bt_sdp_get_proto_param(result->resp_buf, BT_SDP_PROTO_L2CAP, &param);
 	if (err < 0) {
@@ -1469,15 +1451,13 @@ done:
 static uint8_t sdp_pnp_user(struct bt_conn *conn, struct bt_sdp_client_result *result,
 			    const struct bt_sdp_discover_params *params)
 {
-	char addr[BT_ADDR_STR_LEN];
 	uint16_t vendor_id, product_id;
 	int err;
 
-	conn_addr_str(conn, addr, sizeof(addr));
-
 	if ((result != NULL) && (result->resp_buf != NULL)) {
 		bt_shell_print("SDP PNP data@%p (len %u) hint %u from remote %s", result->resp_buf,
-			       result->resp_buf->len, result->next_record_hint, addr);
+			       result->resp_buf->len, result->next_record_hint,
+			       bt_conn_dst_str(conn));
 
 		err = bt_sdp_get_vendor_id(result->resp_buf, &vendor_id);
 		if (err < 0) {
@@ -1495,7 +1475,7 @@ static uint8_t sdp_pnp_user(struct bt_conn *conn, struct bt_sdp_client_result *r
 
 		bt_shell_print("PNP product id param 0x%04x", product_id);
 	} else {
-		bt_shell_print("No SDP PNP data from remote %s", addr);
+		bt_shell_print("No SDP PNP data from remote %s", bt_conn_dst_str(conn));
 	}
 done:
 	return BT_SDP_DISCOVER_UUID_CONTINUE;
@@ -1612,11 +1592,9 @@ discover:
 
 static void bond_info(const struct bt_br_bond_info *info, void *user_data)
 {
-	char addr[BT_ADDR_STR_LEN];
 	int *bond_count = user_data;
 
-	bt_addr_to_str(&info->addr, addr, sizeof(addr));
-	bt_shell_print("Remote Identity: %s", addr);
+	bt_shell_print("Remote Identity: %s", bt_addr_str(&info->addr));
 	(*bond_count)++;
 }
 
@@ -1665,7 +1643,6 @@ static int cmd_clear(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 {
-	char addr_str[BT_ADDR_STR_LEN];
 	struct bt_conn *conn;
 	bt_addr_t addr;
 	int err;
@@ -1688,8 +1665,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char *argv[])
 
 	default_conn = conn;
 
-	bt_addr_to_str(&addr, addr_str, sizeof(addr_str));
-	shell_print(sh, "Selected conn is now: %s", addr_str);
+	shell_print(sh, "Selected conn is now: %s", bt_conn_dst_str(conn));
 
 	return 0;
 }
@@ -1750,10 +1726,7 @@ static int cmd_info(const struct shell *sh, size_t argc, char *argv[])
 		    info.id);
 
 	if (info.type == BT_CONN_TYPE_BR) {
-		char addr_str[BT_ADDR_STR_LEN];
-
-		bt_addr_to_str(info.br.dst, addr_str, sizeof(addr_str));
-		shell_print(sh, "Peer address %s", addr_str);
+		shell_print(sh, "Peer address %s", bt_addr_str(info.br.dst));
 	}
 
 done:
@@ -1762,7 +1735,7 @@ done:
 	return err;
 }
 
-void role_changed(struct bt_conn *conn, uint8_t status)
+void br_role_changed(struct bt_conn *conn, uint8_t status)
 {
 	struct bt_conn_info info;
 	int err;
@@ -1776,6 +1749,71 @@ void role_changed(struct bt_conn *conn, uint8_t status)
 	}
 
 	bt_shell_print("Current role is: %s", get_conn_role_str(info.role));
+}
+
+void br_packet_type_changed(struct bt_conn *conn, uint8_t status,
+			    uint16_t packet_type)
+{
+	bt_shell_print("Packet type changed (HCI status 0x%02x) packet_type 0x%04x",
+		       status, packet_type);
+}
+
+static int cmd_change_packet_type(const struct shell *sh, size_t argc, char *argv[])
+{
+	uint16_t packet_type;
+	int err;
+
+	if (default_conn == NULL) {
+		shell_print(sh, "Not connected");
+		return -ENOEXEC;
+	}
+
+	/* Start with all EDR types disabled (all NO_* bits set) */
+	packet_type = BT_HCI_ACL_PKT_TYPE_NO_2DH1 | BT_HCI_ACL_PKT_TYPE_NO_3DH1 |
+		      BT_HCI_ACL_PKT_TYPE_NO_2DH3 | BT_HCI_ACL_PKT_TYPE_NO_3DH3 |
+		      BT_HCI_ACL_PKT_TYPE_NO_2DH5 | BT_HCI_ACL_PKT_TYPE_NO_3DH5;
+
+	for (size_t i = 1; i < argc; i++) {
+		if (!strcmp(argv[i], "DM1")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DM1;
+		} else if (!strcmp(argv[i], "DH1")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DH1;
+		} else if (!strcmp(argv[i], "DM3")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DM3;
+		} else if (!strcmp(argv[i], "DH3")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DH3;
+		} else if (!strcmp(argv[i], "DM5")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DM5;
+		} else if (!strcmp(argv[i], "DH5")) {
+			packet_type |= BT_HCI_ACL_PKT_TYPE_DH5;
+		} else if (!strcmp(argv[i], "2-DH1")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_2DH1;
+		} else if (!strcmp(argv[i], "3-DH1")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_3DH1;
+		} else if (!strcmp(argv[i], "2-DH3")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_2DH3;
+		} else if (!strcmp(argv[i], "3-DH3")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_3DH3;
+		} else if (!strcmp(argv[i], "2-DH5")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_2DH5;
+		} else if (!strcmp(argv[i], "3-DH5")) {
+			packet_type &= ~BT_HCI_ACL_PKT_TYPE_NO_3DH5;
+		} else {
+			shell_error(sh, "Unknown packet type: %s", argv[i]);
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	shell_print(sh, "Changing packet type to 0x%04x", packet_type);
+
+	err = bt_conn_br_change_packet_type(default_conn, packet_type);
+	if (err != 0) {
+		shell_error(sh, "Failed to change packet type (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
 
 static int cmd_switch_role(const struct shell *sh, size_t argc, char *argv[])
@@ -2007,6 +2045,25 @@ static int cmd_l2cap_connless_send(const struct shell *sh, size_t argc, char *ar
 }
 #endif /* CONFIG_BT_L2CAP_CONNLESS */
 
+static int cmd_write_eir_name(const struct shell *sh, size_t argc, char *argv[])
+{
+	const char *name = bt_get_name();
+	size_t len = strlen(name);
+	struct bt_data eir[] = {
+		BT_DATA(BT_DATA_NAME_COMPLETE, name, len),
+	};
+	int err;
+
+	err = bt_br_write_eir(eir, ARRAY_SIZE(eir), true);
+	if (err != 0) {
+		shell_error(sh, "Failed to write EIR (err %d)", err);
+		return err;
+	}
+
+	shell_print(sh, "EIR written with device name: %s", name);
+	return 0;
+}
+
 static int cmd_default_handler(const struct shell *sh, size_t argc, char **argv)
 {
 	if (argc == 1) {
@@ -2081,6 +2138,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(auth-pincode, NULL, "<pincode>", cmd_auth_pincode, 2, 0),
 	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(bonds, NULL, HELP_NONE, cmd_bonds, 1, 0),
+	SHELL_CMD_ARG(change-packet-type, NULL,
+		      "<[DM1] [DH1] [DM3] [DH3] [DM5] [DH5] "
+		      "[2-DH1] [3-DH1] [2-DH3] [3-DH3] [2-DH5] [3-DH5]>",
+		      cmd_change_packet_type, 2, 11),
 	SHELL_CMD_ARG(clear, NULL, "[all] ["HELP_ADDR"]", cmd_clear, 2, 0),
 	SHELL_CMD_ARG(select, NULL, HELP_ADDR, cmd_select, 2, 0),
 	SHELL_CMD_ARG(info, NULL, HELP_ADDR, cmd_info, 1, 1),
@@ -2108,6 +2169,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 #endif
 	SHELL_CMD_ARG(cod-get, NULL, HELP_NONE, cmd_get_class_of_device, 1, 0),
 	SHELL_CMD_ARG(cod-set, NULL, "<cod>", cmd_set_class_of_device, 2, 0),
+	SHELL_CMD_ARG(write-eir-name, NULL, HELP_NONE, cmd_write_eir_name, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

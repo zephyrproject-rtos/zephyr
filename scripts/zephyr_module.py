@@ -738,7 +738,7 @@ def west_projects(manifest=None):
                         if manifest.is_active(p)]
         else:
             projects = manifest.get_projects([])
-        manifest_path = manifest.path
+        manifest_path = manifest.abspath
         return {'manifest_path': manifest_path, 'projects': projects}
     except (ManifestImportFailed, MalformedManifest,
             ManifestVersionError, MalformedConfig) as e:

@@ -322,7 +322,7 @@ static int ds18b20_init(const struct device *dev)
 	struct ds18b20_data *data = dev->data;
 
 	if (device_is_ready(cfg->bus) == 0) {
-		LOG_DBG("w1 bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus);
 		return -ENODEV;
 	}
 

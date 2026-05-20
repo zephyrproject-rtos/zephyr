@@ -420,6 +420,20 @@ static const struct json_mixed_arr_descr test_mixed_arr_null_descr[] = {
 	JSON_MIXED_ARR_DESCR_PRIM(struct test_mixed_arr, status_buf, JSON_TOK_STRING_BUF, count),
 };
 
+struct polymorphic_request {
+	const char *method;
+	const char *id_string;
+	int64_t id_number;
+	int params;
+};
+
+static const struct json_obj_descr polymorphic_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct polymorphic_request, method, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct polymorphic_request, "id", id_string, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct polymorphic_request, "id", id_number, JSON_TOK_INT64),
+	JSON_OBJ_DESCR_PRIM(struct polymorphic_request, params, JSON_TOK_NUMBER),
+};
+
 ZTEST(lib_json_test, test_json_encoding)
 {
 	struct test_struct ts = {
@@ -3039,6 +3053,98 @@ ZTEST(lib_json_test, test_debug_string_types)
 
 	zassert_str_equal(decoded.string_value, "test\nvalue", "string_value not unescaped");
 	zassert_str_equal(decoded.string_buf, "buffer\ttab", "string_buf not unescaped");
+}
+
+ZTEST(lib_json_test, test_json_polymorphic_id_as_string)
+{
+	char encoded[] = "{\"method\":\"initialize\",\"id\":\"request123\",\"params\":42}";
+	struct polymorphic_request req = {0};
+	int ret;
+
+	ret = json_obj_parse(encoded, strlen(encoded), polymorphic_descr,
+			     ARRAY_SIZE(polymorphic_descr), &req);
+
+	zassert_equal(ret, (1 << 0) | (1 << 1) | (1 << 3),
+		      "Expected method, id_string, and params to be decoded, got %d", ret);
+	zassert_str_equal(req.method, "initialize", "Method not decoded correctly");
+	zassert_str_equal(req.id_string, "request123", "String ID not decoded correctly");
+	zassert_equal(req.id_number, 0, "Numeric ID should remain zero");
+	zassert_equal(req.params, 42, "Params not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_polymorphic_id_as_number)
+{
+	char encoded[] = "{\"method\":\"shutdown\",\"id\":999,\"params\":0}";
+	struct polymorphic_request req = {0};
+	int ret;
+
+	ret = json_obj_parse(encoded, strlen(encoded), polymorphic_descr,
+			     ARRAY_SIZE(polymorphic_descr), &req);
+
+	zassert_equal(ret, (1 << 0) | (1 << 2) | (1 << 3),
+		      "Expected method, id_number, and params to be decoded, got %d", ret);
+	zassert_str_equal(req.method, "shutdown", "Method not decoded correctly");
+	zassert_is_null(req.id_string, "String ID should remain null");
+	zassert_equal(req.id_number, 999, "Numeric ID not decoded correctly");
+	zassert_equal(req.params, 0, "Params not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_polymorphic_id_invalid_type)
+{
+	/* Boolean 'id' should fail to decode as both string and number */
+	char encoded[] = "{\"method\":\"test\",\"id\":true,\"params\":0}";
+	struct polymorphic_request req = {0};
+	int ret;
+
+	ret = json_obj_parse(encoded, strlen(encoded), polymorphic_descr,
+			     ARRAY_SIZE(polymorphic_descr), &req);
+	zassert_true(ret < 0, "Parsing should fail for boolean id, got %d", ret);
+}
+
+/*
+ * Test to verify safety behavior: when a complex type (object/array) token
+ * is encountered and parsing fails, the error is returned immediately rather
+ * than attempting fallback to other descriptors. This prevents undefined
+ * behavior from corrupted lexer state.
+ *
+ * Note: Polymorphic decoding is primarily intended for scalar types
+ * (string vs number). This test verifies correct error handling, not
+ * a typical use case.
+ */
+ZTEST(lib_json_test, test_json_polymorphic_complex_type_error_handling)
+{
+	struct nested_data {
+		int value;
+	};
+
+	struct complex_polymorphic {
+		struct nested_data data_obj;
+		const char *data_string;
+	};
+
+	static const struct json_obj_descr nested_data_descr[] = {
+		JSON_OBJ_DESCR_PRIM(struct nested_data, value, JSON_TOK_NUMBER),
+	};
+
+	static const struct json_obj_descr complex_descr[] = {
+		JSON_OBJ_DESCR_OBJECT_NAMED(struct complex_polymorphic, "data", data_obj,
+					    nested_data_descr),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct complex_polymorphic, "data", data_string,
+					  JSON_TOK_STRING),
+	};
+
+	/*
+	 * JSON has object token with invalid nested content. Parser must
+	 * return error immediately, not attempt fallback to string descriptor.
+	 */
+	char encoded[] = "{\"data\":{\"value\":\"not_a_number\"}}";
+	struct complex_polymorphic req = {0};
+	int ret;
+
+	ret = json_obj_parse(encoded, strlen(encoded), complex_descr, ARRAY_SIZE(complex_descr),
+			     &req);
+
+	zassert_true(ret < 0, "Parsing should fail immediately for invalid object, got %d", ret);
 }
 
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);

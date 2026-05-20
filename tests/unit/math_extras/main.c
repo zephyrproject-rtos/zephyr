@@ -49,6 +49,10 @@ ZTEST(math_extras, test_u64_ctz) {
 	run_u64_ctz();
 }
 
+ZTEST(math_extras, test_i128_mul) {
+	run_i128_mul();
+}
+
 /* clang-format on */
 
 ZTEST_SUITE(math_extras, NULL, NULL, NULL, NULL, NULL);

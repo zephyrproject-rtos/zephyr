@@ -115,7 +115,7 @@
 	pinctrl-names = "default", "sleep";
 
 	haptic_0: haptic@30 {
-		compatible = "cirrus,cs40l5x";
+		compatible = "cirrus,cs40l50";
 		reg = <0x30>;
 
 		reset-gpios = <&gpiob 4 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;

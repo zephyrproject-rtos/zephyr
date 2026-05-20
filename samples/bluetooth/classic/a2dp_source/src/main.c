@@ -51,6 +51,7 @@ static uint32_t a2dp_src_sf;
 static uint8_t a2dp_src_nc;
 static uint32_t send_samples_count;
 static uint16_t send_count;
+static uint8_t send_interval;
 /* max pcm data size per interval. The max sample freq is 48K.
  * interval * 48 * 2 (max channels) * 2 (sample width) * 2 (the worst case: send two intervals'
  * data if timer is blocked)
@@ -204,7 +205,7 @@ static uint8_t *a2dp_produce_media(uint32_t samples_num)
 	return media;
 }
 
-static void audio_play_check(void)
+static bool audio_play_check(void)
 {
 	uint32_t a2dp_src_num_samples;
 	uint32_t pcm_frame_samples;
@@ -212,33 +213,73 @@ static void audio_play_check(void)
 	struct net_buf *buf;
 	uint32_t pdu_len;
 
-	a2dp_src_num_samples = (uint16_t)((CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL * a2dp_src_sf)
-					  / 1000);
-	pcm_frame_samples = sbc_frame_samples(&encoder);
-	frame_num = a2dp_src_num_samples / pcm_frame_samples;
-	if (frame_num * pcm_frame_samples < a2dp_src_num_samples) {
-		frame_num++;
-	}
-	a2dp_src_num_samples = frame_num * pcm_frame_samples;
-
 	buf = bt_a2dp_stream_create_pdu(&a2dp_tx_pool, K_FOREVER);
-	pdu_len = frame_num * sbc_frame_encoded_bytes(&encoder);
-
-	if (pdu_len > net_buf_tailroom(buf)) {
-		printk("need increase buf size %d > %d\n", pdu_len, net_buf_tailroom(buf));
+	if (buf == NULL) {
+		printk("no buf\n");
+		return false;
 	}
 
-	pdu_len += buf->len;
-	if (pdu_len > bt_a2dp_get_mtu(&sbc_stream)) {
-		printk("need decrease CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL %d > %d\n", pdu_len,
-			bt_a2dp_get_mtu(&sbc_stream));
+	(void)net_buf_add(buf, 1u); /* sbc hdr */
+
+	if (buf->len + sbc_frame_encoded_bytes(&encoder) > bt_a2dp_get_mtu(&sbc_stream)) {
+		net_buf_unref(buf);
+		printk("error, the stream mtu is too small\n");
+		return false;
 	}
 
-	if (!a2dp_produce_media_check(a2dp_src_num_samples)) {
-		printk("need increase a2dp_pcm_buffer\n");
+	send_interval = CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL;
+
+	while (true) {
+		if (send_interval == 0) {
+			net_buf_unref(buf);
+			printk("error, the stream mtu is too small\n");
+			return false;
+		}
+
+		a2dp_src_num_samples = (uint16_t)((send_interval * a2dp_src_sf) / 1000);
+		pcm_frame_samples = sbc_frame_samples(&encoder);
+		frame_num = a2dp_src_num_samples / pcm_frame_samples;
+		if (frame_num * pcm_frame_samples < a2dp_src_num_samples) {
+			frame_num++;
+		}
+		a2dp_src_num_samples = frame_num * pcm_frame_samples;
+
+		pdu_len = buf->len + frame_num * sbc_frame_encoded_bytes(&encoder);
+
+		if (pdu_len > net_buf_tailroom(buf) + buf->len) {
+			printk("Better to increase buf size %d > %d\n", pdu_len,
+			       net_buf_tailroom(buf) + buf->len);
+			printk("stream interval is changed: %dms -> %dms\n", send_interval,
+			       send_interval / 2);
+			send_interval /= 2;
+			continue;
+		}
+
+		if (pdu_len > bt_a2dp_get_mtu(&sbc_stream)) {
+			printk("Better to decrease CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL "
+				"%d > %d\n", pdu_len, bt_a2dp_get_mtu(&sbc_stream));
+			printk("stream interval is changed: %dms -> %dms\n", send_interval,
+			       send_interval / 2);
+			send_interval /= 2;
+			continue;
+		}
+
+		if (!a2dp_produce_media_check(a2dp_src_num_samples)) {
+			printk("Better to increase a2dp_pcm_buffer\n");
+			printk("stream interval is changed: %dms -> %dms\n", send_interval,
+			       send_interval / 2);
+			send_interval /= 2;
+			continue;
+		}
+
+		break;
 	}
 
 	net_buf_unref(buf);
+
+	printk("send interval is: %dms\n", send_interval);
+
+	return true;
 }
 
 static void audio_work_handler(struct k_work *work)
@@ -263,20 +304,12 @@ static void audio_work_handler(struct k_work *work)
 		return;
 	}
 
-	buf = bt_a2dp_stream_create_pdu(&a2dp_tx_pool, K_FOREVER);
-	if (buf == NULL) {
-		/* fail */
-		printk("no buf\n");
-		return;
-	}
-
 	period_ms = k_uptime_delta(&ref_time);
 
 	pcm_frame_size = sbc_frame_bytes(&encoder);
 	pcm_frame_samples = sbc_frame_samples(&encoder);
 	encoded_frame_size = sbc_frame_encoded_bytes(&encoder);
 
-	sbc_hdr = net_buf_add(buf, 1u);
 	/* Get the number of samples */
 	a2dp_src_num_samples = (uint16_t)((period_ms * a2dp_src_sf) / 1000);
 	a2dp_src_missed_count += (uint32_t)((period_ms * a2dp_src_sf) % 1000);
@@ -284,24 +317,32 @@ static void audio_work_handler(struct k_work *work)
 	a2dp_src_num_samples = (a2dp_src_num_samples / pcm_frame_samples) * pcm_frame_samples;
 	remaining_frame_num = a2dp_src_num_samples / pcm_frame_samples;
 
-	pdu_len = buf->len + remaining_frame_num * encoded_frame_size;
-
 	/* Raw adjust for the drift */
 	while (a2dp_src_missed_count >= (1000 * pcm_frame_samples)) {
-		pdu_len += encoded_frame_size;
 		a2dp_src_num_samples += pcm_frame_samples;
 		remaining_frame_num++;
 		a2dp_src_missed_count -= (1000 * pcm_frame_samples);
 	}
 
 	do {
+		buf = bt_a2dp_stream_create_pdu(&a2dp_tx_pool, K_FOREVER);
+		if (buf == NULL) {
+			/* fail */
+			printk("no buf\n");
+			return;
+		}
+
+		sbc_hdr = net_buf_add(buf, 1u);
+
+		a2dp_src_num_samples = remaining_frame_num * pcm_frame_samples;
+		pdu_len = buf->len + remaining_frame_num * encoded_frame_size;
+
 		frame_num = remaining_frame_num;
 		/* adjust the buf size */
 		while ((pdu_len - buf->len > net_buf_tailroom(buf)) ||
 		       (pdu_len > bt_a2dp_get_mtu(&sbc_stream)) ||
 		       (!a2dp_produce_media_check(a2dp_src_num_samples))) {
 			pdu_len -= encoded_frame_size;
-			a2dp_src_missed_count += 1000 * pcm_frame_samples;
 			a2dp_src_num_samples -= pcm_frame_samples;
 			frame_num--;
 		}
@@ -378,8 +419,9 @@ static void sbc_stream_configured(struct bt_a2dp_stream *stream)
 static void sbc_stream_established(struct bt_a2dp_stream *stream)
 {
 	printk("stream established\n");
-	audio_play_check();
-	bt_a2dp_stream_start(&sbc_stream);
+	if (audio_play_check()) {
+		bt_a2dp_stream_start(&sbc_stream);
+	}
 }
 
 static void sbc_stream_released(struct bt_a2dp_stream *stream)
@@ -390,14 +432,12 @@ static void sbc_stream_released(struct bt_a2dp_stream *stream)
 
 static void sbc_stream_started(struct bt_a2dp_stream *stream)
 {
-	uint32_t audio_time_interval = CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL;
-
 	printk("stream started\n");
 	/* Start Audio Source */
 	a2dp_src_playback = true;
 
 	k_uptime_delta(&ref_time);
-	k_timer_start(&a2dp_player_timer, K_MSEC(audio_time_interval), K_MSEC(audio_time_interval));
+	k_timer_start(&a2dp_player_timer, K_MSEC(send_interval), K_MSEC(send_interval));
 }
 
 static struct bt_a2dp_stream_ops sbc_stream_ops = {
@@ -559,14 +599,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_info info;
 
 	bt_conn_get_info(conn, &info);
 
-	bt_addr_to_str(info.br.dst, addr, sizeof(addr));
-
-	printk("Security changed: %s level %u, err %s(%d)\n", addr, level,
+	printk("Security changed: %s level %u, err %s(%d)\n", bt_addr_str(info.br.dst), level,
 	       bt_security_err_to_str(err), err);
 }
 
@@ -578,7 +615,6 @@ static struct bt_conn_cb conn_callbacks = {
 
 static void discovery_timeout_cb(const struct bt_br_discovery_result *results, size_t count)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	const uint8_t *eir;
 	bool cod_a2dp = false;
 	static uint8_t temp[240];
@@ -588,8 +624,8 @@ static void discovery_timeout_cb(const struct bt_br_discovery_result *results, s
 	size_t i;
 
 	for (i = 0; i < count; i++) {
-		bt_addr_to_str(&results[i].addr, addr, sizeof(addr));
-		printk("Device[%d]: %s, rssi %d, cod 0x%02x%02x%02x", i, addr, results[i].rssi,
+		printk("Device[%d]: %s, rssi %d, cod 0x%02x%02x%02x", i,
+		       bt_addr_str(&results[i].addr), results[i].rssi,
 		       results[i].cod[0], results[i].cod[1], results[i].cod[2]);
 
 		major_device = (uint8_t)BT_COD_MAJOR_DEVICE_CLASS(results[i].cod);

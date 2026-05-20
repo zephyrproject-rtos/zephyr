@@ -1046,7 +1046,7 @@ int bmi160_init(const struct device *dev)
 	int32_t acc_range, gyr_range;
 
 	if (!cfg->bus_io->ready(dev)) {
-		LOG_ERR("Bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(dev);
 		return -EINVAL;
 	}
 

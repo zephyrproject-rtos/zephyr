@@ -6,7 +6,6 @@ config SOC_SERIES_BL61X
 	select CLOCK_CONTROL
 	select CODE_DATA_RELOCATION
 	select DCACHE
-	select FLOAT_HARD
 	select FPU
 	select ICACHE
 	select REGULATOR

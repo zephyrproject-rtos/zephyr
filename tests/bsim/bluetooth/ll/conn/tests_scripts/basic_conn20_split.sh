@@ -5,7 +5,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic connection test: a central connects to a peripheral
 # using the split controller (ULL LLL) - central disconnects and reconnects 20 times
-simulation_id="basic_conn20_split"
+simulation_id="${BOARD_TS}_basic_conn20_split"
 verbosity_level=2
 EXECUTE_TIMEOUT=60
 

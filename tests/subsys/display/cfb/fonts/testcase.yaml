@@ -1,0 +1,39 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - display
+    - drivers
+    - cfb
+  harness: ztest
+  harness_config:
+    fixture: display
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+tests:
+  display.cfb.fonts.vtiled.msbfirst_font:
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=y
+      - CONFIG_TEST_MSB_FIRST_FONT=y
+  display.cfb.fonts.vtiled.lsbfirst_font:
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=y
+      - CONFIG_TEST_MSB_FIRST_FONT=n
+  display.cfb.fonts.htiled.msbfirst_font:
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=n
+      - CONFIG_TEST_MSB_FIRST_FONT=y
+  display.cfb.fonts.htiled.lsbfirst_font:
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=n
+      - CONFIG_TEST_MSB_FIRST_FONT=n

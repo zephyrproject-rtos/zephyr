@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c5/esp32c5_wroom_n8r4.dtsi>
+#include <espressif/esp32c5/esp32c5_wroom_n8r8.dtsi>
 #include "esp32c5_devkitc_hpcore-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x2000_default_8M.dtsi>

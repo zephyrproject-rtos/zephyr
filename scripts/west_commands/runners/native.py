@@ -73,9 +73,9 @@ class NativeSimBinaryRunner(ZephyrBinaryRunner):
         #   build/CMakeCache.txt should have `CMAKE_GDB`.
 
         cmd = (self.gdb_cmd + ['--quiet', self.cfg.exe_file])
-        self.check_call(cmd)
+        self.check_call_ignore_sigint(cmd)
 
     def do_debugserver(self, **kwargs):
         cmd = (['gdbserver', f':{self.gdb_port}', self.cfg.exe_file])
 
-        self.check_call(cmd)
+        self.check_call_ignore_sigint(cmd)

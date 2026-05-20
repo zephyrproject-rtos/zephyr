@@ -136,17 +136,17 @@ ETH_NET_DEVICE_INIT(dummy_iface_a, "dummy_a", NULL, NULL,
 ETH_NET_DEVICE_INIT(dummy_iface_b, "dummy_b", NULL, NULL,
 		    NULL, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    NULL, NET_ETH_MTU);
-#define dummy_iface_a NET_IF_GET_NAME(dummy_iface_a, 0)[0]
-#define dummy_iface_b NET_IF_GET_NAME(dummy_iface_b, 0)[0]
+#define dummy_iface_a NET_IF_GET(dummy_iface_a, 0)
+#define dummy_iface_b NET_IF_GET(dummy_iface_b, 0)
 
-static NPF_IFACE_MATCH(match_iface_a, &dummy_iface_a);
-static NPF_IFACE_UNMATCH(unmatch_iface_b, &dummy_iface_b);
+static NPF_IFACE_MATCH(match_iface_a, dummy_iface_a);
+static NPF_IFACE_UNMATCH(unmatch_iface_b, dummy_iface_b);
 
 static NPF_RULE(accept_iface_a, NET_OK, match_iface_a);
 static NPF_RULE(accept_all_but_iface_b, NET_OK, unmatch_iface_b);
 
-static NPF_ORIG_IFACE_MATCH(match_orig_iface_a, &dummy_iface_a);
-static NPF_ORIG_IFACE_UNMATCH(unmatch_orig_iface_b, &dummy_iface_b);
+static NPF_ORIG_IFACE_MATCH(match_orig_iface_a, dummy_iface_a);
+static NPF_ORIG_IFACE_UNMATCH(unmatch_orig_iface_b, dummy_iface_b);
 
 static NPF_RULE(accept_orig_iface_a, NET_OK, match_orig_iface_a);
 static NPF_RULE(accept_all_but_orig_iface_b, NET_OK, unmatch_orig_iface_b);
@@ -155,8 +155,8 @@ static void *test_npf_iface(void)
 {
 	struct net_pkt *pkt_iface_a, *pkt_iface_b;
 
-	pkt_iface_a = build_test_pkt(0, 200, &dummy_iface_a);
-	pkt_iface_b = build_test_pkt(0, 200, &dummy_iface_b);
+	pkt_iface_a = build_test_pkt(0, 200, dummy_iface_a);
+	pkt_iface_b = build_test_pkt(0, 200, dummy_iface_b);
 
 	/* test with no rules */
 	zassert_true(net_pkt_filter_recv_ok(pkt_iface_a), "");
@@ -205,12 +205,12 @@ ZTEST(net_pkt_filter_test_suite, test_npf_orig_iface)
 {
 	struct net_pkt *pkt_iface_a, *pkt_iface_b;
 
-	pkt_iface_a = build_test_pkt(0, 200, &dummy_iface_a);
-	pkt_iface_b = build_test_pkt(0, 200, &dummy_iface_b);
+	pkt_iface_a = build_test_pkt(0, 200, dummy_iface_a);
+	pkt_iface_b = build_test_pkt(0, 200, dummy_iface_b);
 
 	/* Set orig_iface to different values to test orig_iface matching */
-	net_pkt_set_orig_iface(pkt_iface_a, &dummy_iface_a);
-	net_pkt_set_orig_iface(pkt_iface_b, &dummy_iface_b);
+	net_pkt_set_orig_iface(pkt_iface_a, dummy_iface_a);
+	net_pkt_set_orig_iface(pkt_iface_b, dummy_iface_b);
 
 	/* test with no rules */
 	zassert_true(net_pkt_filter_recv_ok(pkt_iface_a), "");
@@ -454,9 +454,9 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv4_address_filtering)
 	struct net_in_addr dst = { { { 192, 168, 2, 1 } } };
 	struct net_in_addr bad_addr = { { { 192, 168, 2, 3 } } };
 	struct net_pkt *pkt_v4 = build_test_ip_pkt(&ipv4_address_list[0], &dst, NET_AF_INET,
-						   &dummy_iface_a);
+						   dummy_iface_a);
 	struct net_pkt *pkt_v6 = build_test_ip_pkt(&ipv6_address_list[0], &ipv6_address_list[1],
-						   NET_AF_INET6, &dummy_iface_a);
+						   NET_AF_INET6, dummy_iface_a);
 
 	/* make sure pkt is initially accepted */
 	zassert_true(net_pkt_filter_ip_recv_ok(pkt_v4), "");
@@ -518,9 +518,9 @@ ZTEST(net_pkt_filter_test_suite, test_npf_ipv6_address_filtering)
 	struct net_in6_addr bad_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 8, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 	struct net_pkt *pkt_v6 = build_test_ip_pkt(&ipv6_address_list[0], &dst, NET_AF_INET6,
-						   &dummy_iface_a);
+						   dummy_iface_a);
 	struct net_pkt *pkt_v4 = build_test_ip_pkt(&ipv4_address_list[0], &ipv4_address_list[1],
-						   NET_AF_INET, &dummy_iface_a);
+						   NET_AF_INET, dummy_iface_a);
 
 	/* make sure pkt is initially accepted */
 	zassert_true(net_pkt_filter_ip_recv_ok(pkt_v4), "");

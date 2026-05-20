@@ -570,7 +570,7 @@ __weak void arch_reserved_pages_update(void)
 	uintptr_t page;
 	int idx;
 
-	for (page = CONFIG_SRAM_BASE_ADDRESS, idx = 0;
+	for (page = DT_CHOSEN_SRAM_ADDR, idx = 0;
 	     page < (uintptr_t)z_mapped_start;
 	     page += CONFIG_MMU_PAGE_SIZE, idx++) {
 		k_mem_page_frame_set(&k_mem_page_frames[idx], K_MEM_PAGE_FRAME_RESERVED);
@@ -1378,6 +1378,8 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain)
 	atomic_clear_bit(l1_page_tables_track, l1_table_to_track_pos(l1_table));
 
 	domain->arch.ptables = NULL;
+
+	sys_slist_find_and_remove(&xtensa_domain_list, &domain->arch.node);
 
 	k_spin_unlock(&xtensa_mmu_lock, key);
 

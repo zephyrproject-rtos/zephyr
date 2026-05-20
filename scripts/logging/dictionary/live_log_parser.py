@@ -222,7 +222,7 @@ def main():
 
     with reader.open():
         while True:
-            if hasattr(reader, 'fileno'):
+            if hasattr(reader, 'fileno') and sys.platform != "win32":
                 _, _, _ = select.select([reader], [], [])
             else:
                 time.sleep(args.polling_interval)

@@ -20,6 +20,7 @@ config FUEL_GAUGE_INIT_PRIORITY
 	  Battery fuel gauge initialization priority.
 
 # zephyr-keep-sorted-start
+source "drivers/fuel_gauge/adp5360/Kconfig"
 source "drivers/fuel_gauge/axp2101/Kconfig"
 source "drivers/fuel_gauge/bq27z746/Kconfig"
 source "drivers/fuel_gauge/bq40z50/Kconfig"

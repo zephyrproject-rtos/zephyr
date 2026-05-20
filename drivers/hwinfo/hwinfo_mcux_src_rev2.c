@@ -15,6 +15,9 @@
 
 #define MCUX_SRC_TYPE SRC_Type
 
+#define MCUX_SRC_GET_REASON(base)       ((base)->SRSR)
+#define MCUX_SRC_CLR_REASON(base, mask) ((base)->SRSR = (mask))
+
 #ifdef CONFIG_CPU_CORTEX_M7
 #define MCUX_RESET_PIN_FLAG      SRC_SRSR_IPP_USER_RESET_B_M7_MASK
 #define MCUX_RESET_SOFTWARE_FLAG SRC_SRSR_M7_LOCKUP_M7_MASK
@@ -43,6 +46,13 @@
 #elif defined(CONFIG_SOC_SERIES_IMXRT118X)
 
 #define MCUX_SRC_TYPE SRC_GENERAL_Type
+
+/*
+ * On RT118x, SRC_GENERAL->SRSR reads as zero at application startup.
+ * Use SRSR_BBSM insteads for hwinfo reset cause detection.
+ */
+#define MCUX_SRC_GET_REASON(base) ((base)->SRSR_BBSM)
+#define MCUX_SRC_CLR_REASON(base, mask) ((base)->SRSR_BBSM = (mask))
 
 #define MCUX_RESET_PIN_FLAG SRC_GENERAL_SRSR_IPP_POR_B_MASK
 #define MCUX_RESET_POR_FLAG SRC_GENERAL_SRSR_POR_RST_MASK
@@ -75,7 +85,8 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1, "No nxp,imx-src compat
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	uint32_t flags = 0;
-	uint32_t reason = ((MCUX_SRC_TYPE *)DT_INST_REG_ADDR(0))->SRSR;
+	MCUX_SRC_TYPE *base = (MCUX_SRC_TYPE *)DT_INST_REG_ADDR(0);
+	uint32_t reason = MCUX_SRC_GET_REASON(base);
 
 	if (reason & (MCUX_RESET_PIN_FLAG)) {
 		flags |= RESET_PIN;
@@ -116,9 +127,10 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	uint32_t reason = ((MCUX_SRC_TYPE *)DT_INST_REG_ADDR(0))->SRSR;
+	MCUX_SRC_TYPE *base = (MCUX_SRC_TYPE *)DT_INST_REG_ADDR(0);
+	uint32_t reason = MCUX_SRC_GET_REASON(base);
 
-	((MCUX_SRC_TYPE *)DT_INST_REG_ADDR(0))->SRSR = reason;
+	MCUX_SRC_CLR_REASON(base, reason);
 
 	return 0;
 }

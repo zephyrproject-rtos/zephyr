@@ -112,3 +112,24 @@ tests:
     build_only: true
     platform_allow:
       - mps2/an385
+
+  shell.core.no_aliases:
+    min_flash: 32
+    extra_configs:
+      - CONFIG_SHELL_ALIASES=n
+    build_only: true
+    platform_allow:
+      - mps2/an385
+
+  shell.core.aliases:
+    min_flash: 32
+    extra_configs:
+      - CONFIG_SHELL_ALIASES=y
+      - CONFIG_SHELL_TAB=y
+      - CONFIG_SHELL_TAB_AUTOCOMPLETION=y
+      - CONFIG_SHELL_ALIASES_FILE="shell_aliases.txt"
+    platform_allow:
+      - native_sim
+      - mps2/an385
+    integration_platforms:
+      - native_sim

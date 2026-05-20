@@ -128,8 +128,7 @@ static void on_mqtt_publish(struct mqtt_client *const client, const struct mqtt_
 	int rc;
 	uint8_t payload[CONFIG_NET_SAMPLE_MQTT_PAYLOAD_SIZE];
 
-	rc = mqtt_read_publish_payload(client, payload,
-					CONFIG_NET_SAMPLE_MQTT_PAYLOAD_SIZE);
+	rc = mqtt_read_publish_payload(client, payload, sizeof(payload) - 1);
 	if (rc < 0) {
 		LOG_ERR("Failed to read received MQTT payload [%d]", rc);
 		return;

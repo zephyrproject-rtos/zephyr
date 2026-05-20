@@ -37,8 +37,6 @@ extern struct bt_le_per_adv_sync *per_adv_syncs[CONFIG_BT_PER_ADV_SYNC_MAX];
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 #endif /* CONFIG_BT_EXT_ADV */
 
-void conn_addr_str(struct bt_conn *conn, char *addr, size_t len);
-
 /**
  * @brief Compares two strings without case sensitivity
  *

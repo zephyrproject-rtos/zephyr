@@ -12,19 +12,19 @@
 #include <zephyr/bluetooth/audio/csip.h>
 
 /* CAS commands */
-#define BTP_CAS_READ_SUPPORTED_COMMANDS	0x01
+#define BTP_CAS_READ_SUPPORTED_COMMANDS	0x01U
 struct btp_cas_read_supported_commands_rp {
 	uint8_t data[0];
 } __packed;
 
-#define BTP_CAS_SET_MEMBER_LOCK		0x02
+#define BTP_CAS_SET_MEMBER_LOCK		0x02U
 struct btp_cas_set_member_lock_cmd {
 	bt_addr_le_t address;
 	uint8_t lock;
 	uint8_t force;
 } __packed;
 
-#define BTP_CAS_GET_MEMBER_RSI		0x03
+#define BTP_CAS_GET_MEMBER_RSI		0x03U
 struct btp_cas_get_member_rsi_cmd {
 	bt_addr_le_t address;
 } __packed;

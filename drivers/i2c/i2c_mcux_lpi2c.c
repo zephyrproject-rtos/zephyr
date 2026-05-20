@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
 #include <zephyr/pm/device.h>
@@ -50,6 +51,7 @@ struct mcux_lpi2c_config {
 	uint32_t bitrate;
 	uint32_t bus_idle_timeout_ns;
 	const struct pinctrl_dev_config *pincfg;
+	struct reset_dt_spec reset;
 #ifdef CONFIG_I2C_MCUX_LPI2C_BUS_RECOVERY
 	struct gpio_dt_spec scl;
 	struct gpio_dt_spec sda;
@@ -561,6 +563,19 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		error = reset_line_deassert_dt(&config->reset);
+		if (error != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", error);
+			return error;
+		}
+	}
+
 	error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (error) {
 		return error;
@@ -652,6 +667,7 @@ static DEVICE_API(i2c, mcux_lpi2c_driver_api) = {
 		.irq_config_func = mcux_lpi2c_config_func_##n,		\
 		.bitrate = DT_INST_PROP(n, clock_frequency),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),		\
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),		\
 		I2C_MCUX_LPI2C_SCL_INIT(n)				\
 		I2C_MCUX_LPI2C_SDA_INIT(n)				\
 		.bus_idle_timeout_ns =					\

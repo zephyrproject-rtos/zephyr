@@ -21,10 +21,6 @@ atomic_t flag_conn_updated;
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (default_conn == NULL) {
 		default_conn = bt_conn_ref(conn);
 	}
@@ -33,26 +29,22 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		bt_conn_unref(default_conn);
 		default_conn = NULL;
 
-		TEST_FAIL("Failed to connect to %s (0x%02x)", addr, err);
+		TEST_FAIL("Failed to connect to %s (0x%02x)", bt_conn_dst_str(conn), err);
 
 		return;
 	}
 
-	printk("Connected to %s\n", addr);
+	printk("Connected to %s\n", bt_conn_dst_str(conn));
 	SET_FLAG(flag_connected);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	if (conn != default_conn) {
 		return;
 	}
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Disconnected: %s (reason 0x%02x)\n", addr, reason);
+	printk("Disconnected: %s (reason 0x%02x)\n", bt_conn_dst_str(conn), reason);
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;

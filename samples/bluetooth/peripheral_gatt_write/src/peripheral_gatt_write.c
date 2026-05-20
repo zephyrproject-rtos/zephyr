@@ -34,11 +34,7 @@ static void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 #if defined(CONFIG_BT_SMP)
 static void auth_cancel(struct bt_conn *conn)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	printk("Pairing cancelled: %s\n", addr);
+	printk("Pairing cancelled: %s\n", bt_conn_dst_str(conn));
 }
 
 static struct bt_conn_auth_cb auth_callbacks = {
@@ -59,10 +55,7 @@ static struct bt_gatt_cb gatt_callbacks = {
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
+	printk("Device found: %s (RSSI %d)\n", bt_addr_le_str(addr), rssi);
 }
 
 uint32_t peripheral_gatt_write(uint32_t count)

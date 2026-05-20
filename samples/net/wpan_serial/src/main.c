@@ -137,12 +137,13 @@ static int slip_process_byte(unsigned char c)
 static void interrupt_handler(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
+	unsigned char byte;
 
-	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
-		unsigned char byte;
+	while (true) {
+		uart_irq_update(dev);
 
-		if (!uart_irq_rx_ready(dev)) {
-			continue;
+		if (uart_irq_rx_ready(dev) <= 0) {
+			return;
 		}
 
 		while (uart_fifo_read(dev, &byte, sizeof(byte))) {

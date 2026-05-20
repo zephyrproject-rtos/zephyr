@@ -123,7 +123,7 @@ static int chsc6x_chip_init(const struct device *dev)
 	const struct chsc6x_config *cfg = dev->config;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -142,7 +142,7 @@ static int chsc6x_init(const struct device *dev)
 	const struct chsc6x_config *config = dev->config;
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

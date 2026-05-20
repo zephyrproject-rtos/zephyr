@@ -38,6 +38,13 @@ typedef void (*modem_ppp_init_iface)(struct net_if *iface);
  * @cond INTERNAL_HIDDEN
  */
 
+enum modem_ppp_state {
+	/* Pipe is attached */
+	MODEM_PPP_STATE_ATTACHED_BIT = 0,
+	/* Link is dead */
+	MODEM_PPP_STATE_DEAD_BIT,
+};
+
 enum modem_ppp_receive_state {
 	/* Searching for start of frame and header */
 	MODEM_PPP_RECEIVE_STATE_HDR_SOF = 0,
@@ -48,6 +55,8 @@ enum modem_ppp_receive_state {
 	MODEM_PPP_RECEIVE_STATE_WRITING,
 	/* Unescaping next byte before writing to network packet */
 	MODEM_PPP_RECEIVE_STATE_UNESCAPING,
+	/* Receiving an unsolicited "NO CARRIER" event */
+	MODEM_PPP_RECEIVE_STATE_UNSOLICITED_NO_CARRIER,
 };
 
 enum modem_ppp_transmit_state {
@@ -77,6 +86,7 @@ struct modem_ppp {
 
 	/* Receive PPP frame state */
 	enum modem_ppp_receive_state receive_state;
+	uint8_t receive_offset;
 
 	/* Allocated network packet being created */
 	struct net_pkt *rx_pkt;

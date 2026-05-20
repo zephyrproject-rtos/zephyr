@@ -5,7 +5,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mcxw70.dtsi>
+#include <nxp/mcx/nxp_mcxw70.dtsi>
 #include "frdm_mcxw70-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -127,12 +127,7 @@ nbu: &nbu {
 
 		storage_partition: partition@17a000 {
 			label = "storage";
-			reg = <0x17a000 DT_SIZE_K(16)>;
-		};
-
-		hw_params_partition: partition@17e000 {
-			label = "hw-parameters";
-			reg = <0x17e000 DT_SIZE_K(8)>;
+			reg = <0x17a000 DT_SIZE_K(24)>;
 		};
 	};
 };
@@ -168,4 +163,12 @@ tpm2: &tpm_2 {
 
 lptmr0: &lptmr_0 {
 	status = "okay";
+};
+
+lptmr1: &lptmr_1 {
+	status = "okay";
+};
+
+&ieee802154 {
+	counter = <&lptmr1>;
 };

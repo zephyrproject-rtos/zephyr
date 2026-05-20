@@ -8,4 +8,4 @@ set(QEMU_FLAGS_${ARCH}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   -machine lm3s6965evb
   )
-board_set_debugger_ifnset(qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

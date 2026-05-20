@@ -68,7 +68,7 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		   enum hl78xx_cell_rat_mode *rat_request)
 {
 	int ret = 0;
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 
 #if defined(CONFIG_MODEM_HL78XX_AUTORAT)
 	/* Check autorat status/configs */
@@ -155,7 +155,7 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	char bnd_bitmap[MDM_BAND_HEX_STR_LEN] = {0};
 	const char *modem_trimmed;
 	const char *expected_trimmed;
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 
 	if (rat_config_request == HL78XX_RAT_MODE_NONE) {
 		return -EINVAL;
@@ -536,7 +536,7 @@ int hl78xx_is_power_down_scheduled(struct hl78xx_data *data)
 
 int hl78xx_power_down_feed_timer(struct hl78xx_data *data, uint32_t cmd_timeout_s)
 {
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 #ifdef CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
 	uint32_t total_timeout_s = CONFIG_MODEM_HL78XX_POWER_DOWN_DELAY + cmd_timeout_s;
 #endif /* CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN */
@@ -591,7 +591,7 @@ static void hl78xx_edrx_idle_work_handler(struct k_work *work_item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work_item);
 	struct hl78xx_data *data = CONTAINER_OF(dwork, struct hl78xx_data, hl78xx_edrx_idle_work);
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 
 	LOG_DBG("eDRX idle timer expired - allowing modem to sleep");
 
@@ -641,7 +641,7 @@ bool hl78xx_edrx_idle_is_ignoring_feeding(struct hl78xx_data *data)
 
 int hl78xx_edrx_idle_feed_timer(struct hl78xx_data *data, uint32_t cmd_timeout_s)
 {
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 	uint32_t total_timeout_s = CONFIG_MODEM_HL78XX_EDRX_IDLE_TIMEOUT + cmd_timeout_s;
 
 	if (hl78xx_is_registered(data) == false) {
@@ -1010,7 +1010,7 @@ void hl78xx_extract_essential_part_apn(const char *full_apn, char *essential_apn
 
 int hl78xx_get_uart_config(struct hl78xx_data *data)
 {
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 	struct uart_config uart_cfg;
 	int ret;
 	/* Get current UART configuration */
@@ -1027,7 +1027,7 @@ int hl78xx_get_uart_config(struct hl78xx_data *data)
 
 int configure_uart_for_auto_baudrate(struct hl78xx_data *data, uint32_t baudrate)
 {
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 	struct uart_config uart_cfg;
 	int ret;
 
@@ -1122,7 +1122,7 @@ int hl78xx_detect_current_baudrate(struct hl78xx_data *data)
 int hl78xx_switch_baudrate(struct hl78xx_data *data, uint32_t target_baudrate)
 {
 	char cmd_buf[32] = {0};
-	const struct hl78xx_config *config = (const struct hl78xx_config *)data->dev->config;
+	const struct hl78xx_config *config = data->dev->config;
 	struct uart_config uart_cfg;
 	int ret;
 

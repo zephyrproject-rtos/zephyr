@@ -97,6 +97,10 @@
 
 #define MCUX_LPADC1_CLK MCUX_LPC_CLK_ID(0x0F, 0x00)
 #define MCUX_LPADC2_CLK MCUX_LPC_CLK_ID(0x0F, 0x01)
+/** LPADC3 clock control identifier. */
+#define MCUX_LPADC3_CLK MCUX_LPC_CLK_ID(0x0F, 0x02)
+/** LPADC4 clock control identifier. */
+#define MCUX_LPADC4_CLK MCUX_LPC_CLK_ID(0x0F, 0x03)
 
 #define MCUX_FLEXCAN0_CLK MCUX_LPC_CLK_ID(0x10, 0x00)
 #define MCUX_FLEXCAN1_CLK MCUX_LPC_CLK_ID(0x10, 0x01)
@@ -166,5 +170,26 @@
 #define MCUX_WWDT0_CLK MCUX_LPC_CLK_ID(0x26, 0x00)
 /** WWDT1 peripheral clock identifier. */
 #define MCUX_WWDT1_CLK MCUX_LPC_CLK_ID(0x26, 0x01)
+
+/** ENET QOS PTP peripheral clock identifier. */
+#define MCUX_ENET_QOS_PTP_CLK MCUX_LPC_CLK_ID(0x27, 0x00)
+
+/** USB0 peripheral clock identifier. */
+#define MCUX_USB0_CLK MCUX_LPC_CLK_ID(0x28, 0x00)
+/** USB1 peripheral clock identifier. */
+#define MCUX_USB1_CLK MCUX_LPC_CLK_ID(0x28, 0x01)
+/** USB PHY reference clock identifier. */
+#define MCUX_USBPHY_REF_CLK MCUX_LPC_CLK_ID(0x28, 0x02)
+
+/** EDMA0 peripheral clock identifier. */
+#define MCUX_EDMA0_CLK MCUX_LPC_CLK_ID(0x29, 0x00)
+/** EDMA1 peripheral clock identifier. */
+#define MCUX_EDMA1_CLK MCUX_LPC_CLK_ID(0x29, 0x01)
+
+/** ACMP0 peripheral clock identifier. */
+#define MCUX_ACMP0_CLK MCUX_LPC_CLK_ID(0x30, 0x00)
+
+/** LCDIF peripheral clock identifier. */
+#define MCUX_LCDIF_CLK MCUX_LPC_CLK_ID(0x31, 0x00)
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

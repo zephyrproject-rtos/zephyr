@@ -9,6 +9,7 @@ menuconfig I2C_NRFX
 	depends on SOC_FAMILY_NORDIC_NRF
 	depends on MULTITHREADING
 	select PINCTRL
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable support for nrfx TWI drivers for nRF MCU series.
 
@@ -23,14 +24,6 @@ config I2C_NRFX_TWIM
 	def_bool y
 	depends on DT_HAS_NORDIC_NRF_TWIM_ENABLED
 	select NRFX_TWIM
-
-config I2C_NRFX_TRANSFER_TIMEOUT
-	int "Transfer timeout [ms]"
-	default 500
-	help
-	  Timeout in milliseconds used for each I2C transfer.
-	  0 means that the driver should use the K_FOREVER value,
-	  i.e. it should wait as long as necessary.
 
 config I2C_NRFX_TWIS
 	def_bool y

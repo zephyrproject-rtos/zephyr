@@ -53,6 +53,7 @@ struct imx335_ctrls {
 	struct video_ctrl gain;
 	struct video_ctrl exposure;
 	struct video_ctrl pixel_rate;
+	struct video_ctrl test_pattern;
 };
 
 struct imx335_data {
@@ -99,6 +100,7 @@ struct imx335_data {
 #define IMX335_HADD_VADD		IMX335_REG8(0x3199)
 #define IMX335_MDBIT			IMX335_REG8(0x319d)
 #define IMX335_XVS_XHS_DRV		IMX335_REG8(0x31a1)
+#define IMX335_TPG			IMX335_REG8(0x329e)
 #define IMX335_TCYCLE			IMX335_REG8(0x3300)
 #define IMX335_ADBIT1			IMX335_REG16(0x341c)
 #define IMX335_LANEMODE			IMX335_REG8(0x3a01)
@@ -317,6 +319,26 @@ static const struct video_reg imx335_inck_6mhz[] = {
 	{IMX335_INCKSEL4, 0x7c},
 };
 
+static const struct video_reg16 imx335_test_pattern_enable[] = {
+	{0x3148, 0x10},
+	{0x3280, 0x00},
+	{0x329c, 0x01},
+	{0x32a0, 0x11},
+	{0x3302, 0x00},
+	{0x3303, 0x00},
+	{0x336c, 0x00},
+};
+
+static const struct video_reg16 imx335_test_pattern_disable[] = {
+	{0x3148, 0x00},
+	{0x3280, 0x01},
+	{0x329c, 0x00},
+	{0x32a0, 0x10},
+	{0x3302, 0x32},
+	{0x3303, 0x00},
+	{0x336c, 0x01},
+};
+
 static const struct video_format_cap imx335_fmts[] = {
 	/* all-pixel scan mode */
 	[IMX335_RES_2592x1944] = {
@@ -426,6 +448,31 @@ static int imx335_set_ctrl_exposure(const struct device *dev)
 	return video_write_cci_reg(&cfg->i2c, IMX335_REGHOLD, 0);
 }
 
+static int imx335_set_ctrl_test_pattern(const struct device *dev)
+{
+	const struct imx335_config *cfg = dev->config;
+	struct imx335_data *drv_data = dev->data;
+	struct imx335_ctrls *ctrls = &drv_data->ctrls;
+	const struct video_reg16 *regs;
+	size_t regs_len;
+	int ret;
+
+	if (ctrls->test_pattern.val > 0) {
+		regs = imx335_test_pattern_enable;
+		regs_len = ARRAY_SIZE(imx335_test_pattern_enable);
+
+		ret = video_write_cci_reg(&cfg->i2c, IMX335_TPG, ctrls->test_pattern.val - 1);
+		if (ret < 0) {
+			return ret;
+		}
+	} else {
+		regs = imx335_test_pattern_disable;
+		regs_len = ARRAY_SIZE(imx335_test_pattern_disable);
+	}
+
+	return video_write_cci_multiregs16(&cfg->i2c, regs, regs_len);
+}
+
 static int imx335_set_ctrl(const struct device *dev, unsigned int cid)
 {
 	switch (cid) {
@@ -433,6 +480,8 @@ static int imx335_set_ctrl(const struct device *dev, unsigned int cid)
 		return imx335_set_ctrl_gain(dev);
 	case VIDEO_CID_EXPOSURE:
 		return imx335_set_ctrl_exposure(dev);
+	case VIDEO_CID_TEST_PATTERN:
+		return imx335_set_ctrl_test_pattern(dev);
 	default:
 		return -ENOTSUP;
 	}
@@ -639,6 +688,23 @@ static int imx335_set_input_clk(const struct device *dev, uint32_t rate)
 	return ret;
 }
 
+static const char *const imx335_test_pattern_menu[] = {
+	"Off",
+	"All 000h",
+	"All FFFh",
+	"All 555h",
+	"All AAAh",
+	"Toggle 555/AAAh",
+	"Toggle AAA/555h",
+	"Toggle 000/555h",
+	"Toggle 555/000h",
+	"Toggle 000/FFFh",
+	"Toggle FFF/000h",
+	"Horizontal color bars",
+	"Vertical color bars",
+	NULL,
+};
+
 static int imx335_init_controls(const struct device *dev)
 {
 	int ret;
@@ -667,13 +733,19 @@ static int imx335_init_controls(const struct device *dev)
 		return ret;
 	}
 
-	return video_init_ctrl(
+	ret = video_init_ctrl(
 		&ctrls->pixel_rate, dev, VIDEO_CID_PIXEL_RATE,
 		(struct video_ctrl_range){
 			.min64 = IMX335_PIXEL_RATE,
 			.max64 = IMX335_PIXEL_RATE,
 			.step64 = 1,
 			.def64 = IMX335_PIXEL_RATE});
+	if (ret < 0) {
+		return ret;
+	}
+
+	return video_init_menu_ctrl(&ctrls->test_pattern, dev, VIDEO_CID_TEST_PATTERN, 0,
+				   imx335_test_pattern_menu);
 }
 
 static int imx335_init(const struct device *dev)

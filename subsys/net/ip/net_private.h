@@ -40,10 +40,13 @@ union net_mgmt_events {
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 #if defined(CONFIG_NET_IPV6)
 	struct net_event_ipv6_prefix ipv6_prefix;
-#if defined(CONFIG_NET_IPV6_MLD)
+#if defined(CONFIG_NET_IPV6_ROUTE)
 	struct net_event_ipv6_route ipv6_route;
-#endif /* CONFIG_NET_IPV6_MLD */
+#endif /* CONFIG_NET_IPV6_ROUTE */
 #endif /* CONFIG_NET_IPV6 */
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	struct net_event_ipv4_route ipv4_route;
+#endif /* CONFIG_NET_IPV4_ROUTE */
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 	struct net_event_l4_hostname hostname;
 #endif /* CONFIG_NET_HOSTNAME_ENABLE */
@@ -249,6 +252,17 @@ static inline void net_coap_init(void)
 {
 	return;
 }
+#endif
+
+#if defined(CONFIG_QUIC)
+/**
+ * @brief QUIC init function declaration. It belongs here because we don't want
+ * to expose it as a public API -- it should only be called once, and only by
+ * net_core.
+ */
+extern void net_quic_init(void);
+#else
+#define net_quic_init()
 #endif
 
 #if defined(CONFIG_NET_SOCKETS_OBJ_CORE)

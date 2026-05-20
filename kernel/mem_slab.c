@@ -13,6 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/minmax.h>
 #include <string.h>
 /* private kernel APIs */
 #include <ksched.h>

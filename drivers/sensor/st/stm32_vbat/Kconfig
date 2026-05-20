@@ -4,22 +4,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config STM32_VBAT
-	bool "STM32 Vbat Sensor"
+	bool "STM32 Vbat/Vddcore Sensor"
 	default y
-	depends on DT_HAS_ST_STM32_VBAT_ENABLED
+	depends on DT_HAS_ST_STM32_VBAT_ENABLED || DT_HAS_ST_STM32_VDDCORE_ENABLED
 	depends on DT_HAS_ST_STM32_ADC_ENABLED
 	depends on SOC_FAMILY_STM32 && !SOC_SERIES_STM32F1X
 	select ADC
 	help
-	  Enable driver for STM32 Vbat sensor and then also ADC
+	  Enable driver for STM32 Vbat/Vddcore sensor and then also ADC
 
 if STM32_VBAT
 
 config STM32_VBAT_INJECTED
-	bool "STM32 Vbat Sensor through injected channel"
+	bool "STM32 Vbat/Vddcore Sensor through injected channel"
 	depends on ADC_STM32_INJECTED_CHANNELS
 	help
-	  Vbat measurement is done using the injected channel feature.
-	  This will permanently enable the ADC Vbat sensor (VBATEN bit set to 1).
+	  Vbat/Vddcore measurement is done using the injected channel feature.
+	  This will permanently enable the ADC channel for the sensor.
 
 endif

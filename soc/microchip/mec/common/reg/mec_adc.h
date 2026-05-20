@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#if defined(CONFIG_SOC_MEC172X_NLJ)
+#if defined(CONFIG_SOC_MEC172X_NLJ) || defined(CONFIG_SOC_SERIES_MEC175X)
 /* 16 ADC channels numbered 0 - 15 */
 #define MCHP_ADC_MAX_CHAN		16u
 #define MCHP_ADC_MAX_CHAN_MASK		0x0fu
@@ -48,7 +48,7 @@
 
 /* Single Conversion Select register */
 #define MCHP_ADC_SCS_REG_OFS		0x0cu
-#if defined(CONFIG_SOC_MEC172X_NLJ)
+#if defined(CONFIG_SOC_MEC172X_NLJ) || defined(CONFIG_SOC_SERIES_MEC175X)
 #define MCHP_ADC_SCS_REG_MASK		0xffffu
 #define MCHP_ADC_SCS_CH_0_15		0xffffu
 #define MCHP_ADC_SCS_CH(n)		BIT(((n) & 0x0fu))
@@ -60,7 +60,7 @@
 
 /* Repeat Conversion Select register */
 #define MCHP_ADC_RCS_REG_OFS		0x10u
-#if defined(CONFIG_SOC_MEC172X_NLJ)
+#if defined(CONFIG_SOC_MEC172X_NLJ) || defined(CONFIG_SOC_SERIES_MEC175X)
 #define MCHP_ADC_RCS_REG_MASK		0xffffu
 #define MCHP_ADC_RCS_CH_0_15		0xffffu
 #define MCHP_ADC_RCS_CH(n)		BIT(((n) & 0x0fu))
@@ -102,7 +102,7 @@
 /* Channel Vref Select register */
 #define MCHP_ADC_CH_VREF_SEL_REG_OFS	0x80u
 #define MCHP_ADC_CH_VREF_SEL_REG_MASK	0x00ffffffu
-#if defined(CONFIG_SOC_MEC172X_NLJ)
+#if defined(CONFIG_SOC_MEC172X_NLJ) || defined(CONFIG_SOC_SERIES_MEC175X)
 #define MCHP_ADC_CH_VREF_SEL_MASK(n)	SHLU32(0x03u, (((n) & 0x0f) * 2u))
 #define MCHP_ADC_CH_VREF_SEL_PAD(n)	0u
 #define MCHP_ADC_CH_VREF_SEL_GPIO(n)	SHLU32(0x01u, (((n) & 0x0f) * 2u))

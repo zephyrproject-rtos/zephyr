@@ -31,6 +31,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 
+enum scmi_common_cmd {
+	PROTOCOL_VERSION = 0x0,
+	PROTOCOL_ATTRIBUTES = 0x1,
+	PROTOCOL_MESSAGE_ATTRIBUTES = 0x2,
+	NEGOTIATE_PROTOCOL_VERSION = 0x10,
+};
+
 struct scmi_protocol_version_reply {
 	int32_t status;
 	uint32_t version;
@@ -56,7 +63,7 @@ int scmi_protocol_get_version(struct scmi_protocol *proto, uint32_t *version)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_MSG_PROTOCOL_VERSION, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(PROTOCOL_VERSION, SCMI_COMMAND,
 			proto->id, 0x0);
 	msg.len = 0;
 	msg.content = NULL;
@@ -85,7 +92,7 @@ int scmi_protocol_attributes_get(struct scmi_protocol *proto, uint32_t *attribut
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_MSG_PROTOCOL_ATTRIBUTES, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(PROTOCOL_ATTRIBUTES, SCMI_COMMAND,
 			proto->id, 0x0);
 	msg.len = 0;
 	msg.content = NULL;
@@ -115,7 +122,7 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_MSG_MESSAGE_ATTRIBUTES, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(PROTOCOL_MESSAGE_ATTRIBUTES, SCMI_COMMAND,
 			proto->id, 0x0);
 	msg.len = sizeof(message_id);
 	msg.content = &message_id;
@@ -144,7 +151,7 @@ int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t versio
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_MSG_NEGOTIATE_PROTOCOL_VERSION, SCMI_COMMAND,
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(NEGOTIATE_PROTOCOL_VERSION, SCMI_COMMAND,
 			proto->id, 0x0);
 	msg.len = sizeof(version);
 	msg.content = &version;

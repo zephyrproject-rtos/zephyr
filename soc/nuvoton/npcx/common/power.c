@@ -67,7 +67,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 	"ldm %0, {r0-r5}\n"  /* Add a delay before instructions fetching */    \
 	"pop {r0-r5}\n"      /* Restore the registers used for delay */        \
 	"isb\n"              /* Flush the cpu pipelines */                     \
-	:: "r" (CONFIG_SRAM_BASE_ADDRESS)); /* A valid addr used for delay */  \
+	:: "r" (DT_CHOSEN_SRAM_ADDR)); /* A valid addr used for delay */  \
 	})
 
 /* Variables for tracing */

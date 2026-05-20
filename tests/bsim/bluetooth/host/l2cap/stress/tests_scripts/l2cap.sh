@@ -5,7 +5,7 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # EATT test
-simulation_id="l2cap_stress"
+simulation_id="${BOARD_TS}_l2cap_stress"
 verbosity_level=2
 EXECUTE_TIMEOUT=240
 

@@ -432,6 +432,27 @@ static inline int net_tcp_get_option(struct net_context *context,
 #endif
 
 /**
+ * @brief Get the number of bytes queued for TCP TX that have not yet been acknowledged
+ *
+ * @param context Network context
+ * @param outq_bytes Destination for the queued byte count
+ *
+ * @return 0 on success
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_get_outq(struct net_context *context, int *outq_bytes);
+#else
+static inline int net_tcp_get_outq(struct net_context *context,
+				   int *outq_bytes)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(outq_bytes);
+
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+/**
  * @brief Obtain a semaphore indicating if transfers are blocked (either due to
  *        filling TX window or entering retransmission mode).
  *

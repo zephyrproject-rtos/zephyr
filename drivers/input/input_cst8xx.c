@@ -327,8 +327,8 @@ static int cst8xx_init(const struct device *dev)
 	}
 #else
 	k_timer_init(&data->timer, cst8xx_timer_handler, NULL);
-	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_CST8XX_PERIOD),
-		      K_MSEC(CONFIG_INPUT_CST8XX_PERIOD));
+	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_CST8XX_PERIOD_MS),
+		      K_MSEC(CONFIG_INPUT_CST8XX_PERIOD_MS));
 #endif
 
 	return ret;

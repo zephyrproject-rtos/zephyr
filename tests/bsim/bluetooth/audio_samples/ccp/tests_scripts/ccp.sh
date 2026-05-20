@@ -2,12 +2,12 @@
 # Copyright 2023-2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
 # Simple selfchecking test for the CCP samples.
 
-simulation_id="ccp_samples_test"
+simulation_id="${BOARD_TS}_ccp_samples_test"
 verbosity_level=2
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 

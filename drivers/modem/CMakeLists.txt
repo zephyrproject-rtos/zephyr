@@ -6,6 +6,7 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/lib/sockets)
 add_subdirectory(simcom)
 add_subdirectory_ifdef(CONFIG_MODEM_HL78XX hl78xx)
+add_subdirectory_ifdef(CONFIG_MODEM_CELLULAR vendor_modem_cellular)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_MODEM_AT_SHELL modem_at_shell.c)

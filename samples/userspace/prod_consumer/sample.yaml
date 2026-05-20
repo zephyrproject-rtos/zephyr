@@ -17,3 +17,6 @@ tests:
       - posix
     platform_exclude:
       - ucans32k1sic
+      - mimxrt1170_evk@A/mimxrt1176/cm4
+      - mimxrt1170_evk@B/mimxrt1176/cm4
+      - mimxrt1160_evk/mimxrt1166/cm4

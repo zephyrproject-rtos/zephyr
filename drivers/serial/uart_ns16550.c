@@ -1360,10 +1360,8 @@ static int uart_ns16550_irq_is_pending(const struct device *dev)
  * @brief Update cached contents of IIR
  *
  * @param dev UART device struct
- *
- * @return Always 1
  */
-static int uart_ns16550_irq_update(const struct device *dev)
+static void uart_ns16550_irq_update(const struct device *dev)
 {
 	struct uart_ns16550_dev_data *data = dev->data;
 	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
@@ -1372,8 +1370,6 @@ static int uart_ns16550_irq_update(const struct device *dev)
 	IIRC(dev) = ns16550_inbyte(dev_cfg, IIR(dev));
 
 	k_spin_unlock(&data->lock, key);
-
-	return 1;
 }
 
 /**

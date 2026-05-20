@@ -104,6 +104,15 @@
 		};
 	};
 
+	ios_i2c0_default: ios_i2c0_default {
+		group1 {
+			pinmux = <SLSCL_P0>, <SLSDAWIR3_P1>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
 	spi0_default: spi0_default {
 		group1 {
 			pinmux = <M0SCK_P5>, <M0MISO_P7>, <M0MOSI_P6>;

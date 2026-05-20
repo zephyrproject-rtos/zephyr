@@ -55,22 +55,22 @@ ZTEST(stm32_syclck_config, test_sysclk_src)
 
 ZTEST(stm32_syclck_config, test_pll_src)
 {
-	uint32_t pll_src = __HAL_RCC_GET_PLL_OSCSOURCE();
+	uint32_t pll_src = __HAL_RCC_GET_PLL1_OSCSOURCE();
 
 #if STM32_PLL_SRC_HSE
-	zassert_equal(RCC_PLLSOURCE_HSE, pll_src,
+	zassert_equal(RCC_PLL1_SOURCE_HSE, pll_src,
 			"Expected PLL src: HSE. Actual PLL src: %d",
 			pll_src);
 #elif STM32_PLL_SRC_HSI
-	zassert_equal(RCC_PLLSOURCE_HSI, pll_src,
+	zassert_equal(RCC_PLL1_SOURCE_HSI, pll_src,
 			"Expected PLL src: HSI. Actual PLL src: %d",
 			pll_src);
 #elif STM32_PLL_SRC_CSI
-	zassert_equal(RCC_PLLSOURCE_CSI, pll_src,
+	zassert_equal(RCC_PLL1_SOURCE_CSI, pll_src,
 			"Expected PLL src: CSI. Actual PLL src: %d",
 			pll_src);
 #else
-	zassert_equal(RCC_PLLSOURCE_NONE, pll_src,
+	zassert_equal(RCC_PLL1_SOURCE_NONE, pll_src,
 			"Expected PLL src: None. Actual PLL src: %d",
 			pll_src);
 #endif

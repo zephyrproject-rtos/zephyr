@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -50,8 +50,12 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER ${pdl_drv_dir}/source/cy_
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART ${pdl_drv_dir}/source/cy_scb_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT ${pdl_drv_dir}/source/cy_wdt.c)
 
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC ${pdl_drv_dir}/source/cy_systrimm.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC ${pdl_drv_dir}/source/cy_rram.c)
+if(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC OR CONFIG_USE_INFINEON_LPCOMP)
+zephyr_library_sources(${pdl_drv_dir}/source/cy_rram.c)
+zephyr_library_sources(${pdl_drv_dir}/source/cy_systrimm.c)
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPCOMP ${pdl_drv_dir}/source/cy_lpcomp.c)
 
 if(CONFIG_USE_INFINEON_TRNG)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto.c)
@@ -107,3 +111,19 @@ zephyr_library_sources(${pdl_drv_dir}/source/cy_trigmux.c)
 
 zephyr_include_directories(${hal_dir}/include)
 zephyr_library_sources(${hal_dir}/source/mtb_hal_clock.c)
+
+if(CONFIG_BUILD_WITH_TFM)
+  zephyr_library_sources(${hal_dir}/source/mtb_hal_system.c)
+
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_pdl_srf.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_pdl_srf_common.c)
+
+  set(tfm_ifx_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/common)
+
+  zephyr_include_directories(${tfm_ifx_dir}/interface/include)
+  zephyr_library_sources(${tfm_ifx_dir}/interface/src/ifx_mtb_srf.c)
+
+  zephyr_include_directories(${tfm_ifx_dir}/spe/services/ifx_ext_sp)
+  zephyr_include_directories(${tfm_ifx_dir}/spe/svc)
+  zephyr_library_sources(${tfm_ifx_dir}/spe/services/ifx_ext_sp/ifx_ext_sp_api.c)
+endif()

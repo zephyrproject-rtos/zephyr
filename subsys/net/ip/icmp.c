@@ -182,21 +182,33 @@ static int send_icmpv4_echo_request(struct net_icmp_ctx *ctx,
 	echo_req->identifier = net_htons(params->identifier);
 	echo_req->sequence   = net_htons(params->sequence);
 
-	net_pkt_set_data(pkt, &icmpv4_access);
+	ret = net_pkt_set_data(pkt, &icmpv4_access);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	if (params->data != NULL && params->data_size > 0) {
-		net_pkt_write(pkt, params->data, params->data_size);
+		ret = net_pkt_write(pkt, params->data, params->data_size);
+		if (ret < 0) {
+			goto drop;
+		}
 	} else if (params->data == NULL && params->data_size > 0) {
 		/* Generate payload. */
 		if (params->data_size >= sizeof(uint32_t)) {
 			uint32_t time_stamp = net_htonl(k_cycle_get_32());
 
-			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			ret = net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			if (ret < 0) {
+				goto drop;
+			}
 			params->data_size -= sizeof(time_stamp);
 		}
 
 		for (size_t i = 0; i < params->data_size; i++) {
-			net_pkt_write_u8(pkt, (uint8_t)i);
+			ret = net_pkt_write_u8(pkt, (uint8_t)i);
+			if (ret < 0) {
+				goto drop;
+			}
 		}
 	} else {
 		/* No payload. */
@@ -306,21 +318,33 @@ static int send_icmpv6_echo_request(struct net_icmp_ctx *ctx,
 	echo_req->identifier = net_htons(params->identifier);
 	echo_req->sequence   = net_htons(params->sequence);
 
-	net_pkt_set_data(pkt, &icmpv6_access);
+	ret = net_pkt_set_data(pkt, &icmpv6_access);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	if (params->data != NULL && params->data_size > 0) {
-		net_pkt_write(pkt, params->data, params->data_size);
+		ret = net_pkt_write(pkt, params->data, params->data_size);
+		if (ret < 0) {
+			goto drop;
+		}
 	} else if (params->data == NULL && params->data_size > 0) {
 		/* Generate payload. */
 		if (params->data_size >= sizeof(uint32_t)) {
 			uint32_t time_stamp = net_htonl(k_cycle_get_32());
 
-			net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			ret = net_pkt_write(pkt, &time_stamp, sizeof(time_stamp));
+			if (ret < 0) {
+				goto drop;
+			}
 			params->data_size -= sizeof(time_stamp);
 		}
 
 		for (size_t i = 0; i < params->data_size; i++) {
-			net_pkt_write_u8(pkt, (uint8_t)i);
+			ret = net_pkt_write_u8(pkt, (uint8_t)i);
+			if (ret < 0) {
+				goto drop;
+			}
 		}
 	} else {
 		/* No payload. */

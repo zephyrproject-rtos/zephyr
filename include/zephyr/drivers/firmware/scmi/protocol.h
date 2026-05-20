@@ -25,6 +25,9 @@
 #include <stdint.h>
 #include <errno.h>
 
+/** @brief Maximum size of strings to describe SCMI names, including NUL terminator. */
+#define SCMI_SHORT_NAME_MAX_SIZE 16
+
 /**
  * @brief Build an SCMI message header
  *
@@ -75,16 +78,6 @@ enum scmi_status_code {
 };
 
 /**
- * @brief SCMI common command
- */
-enum scmi_common_cmd {
-	SCMI_MSG_PROTOCOL_VERSION = 0x0,
-	SCMI_MSG_PROTOCOL_ATTRIBUTES = 0x1,
-	SCMI_MSG_MESSAGE_ATTRIBUTES = 0x2,
-	SCMI_MSG_NEGOTIATE_PROTOCOL_VERSION = 0x10,
-};
-
-/**
  * @struct scmi_protocol
  *
  * @brief SCMI protocol structure
@@ -100,6 +93,30 @@ struct scmi_protocol {
 	void *data;
 	/** protocol supported version */
 	uint32_t version;
+};
+
+/**
+ * @struct scmi_protocol_version
+ *
+ * @brief SCMI protocol version
+ *
+ * Protocol versioning uses a 32-bit unsigned integer, where
+ * - the upper 16 bits are the major revision;
+ * - the lower 16 bits are the minor revision.
+ *
+ */
+struct scmi_protocol_version {
+	/** @brief Access to protocol version bits. */
+	union {
+		/** Raw 32-bit protocol version value */
+		uint32_t raw;
+		struct {
+			/** major protocol revision */
+			uint16_t minor;
+			/** minor protocol revision */
+			uint16_t major;
+		};
+	};
 };
 
 /**

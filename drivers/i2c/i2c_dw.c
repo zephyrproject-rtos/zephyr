@@ -635,7 +635,6 @@ done:
 
 static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 {
-	const struct i2c_dw_rom_config *const rom = dev->config;
 	struct i2c_dw_dev_config *const dw = dev->data;
 	uint32_t value;
 	union ic_con_register ic_con;
@@ -692,7 +691,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 		LOG_DBG("I2C: speed set to STANDARD");
 		write_ss_scl_lcnt(dw->lcnt, reg_base);
 		write_ss_scl_hcnt(dw->hcnt, reg_base);
-		write_fs_spklen(rom->fs_spk_len, reg_base);
 		ic_con.bits.speed = I2C_DW_SPEED_STANDARD;
 
 		break;
@@ -702,7 +700,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 		LOG_DBG("I2C: speed set to FAST or FAST_PLUS");
 		write_fs_scl_lcnt(dw->lcnt, reg_base);
 		write_fs_scl_hcnt(dw->hcnt, reg_base);
-		write_fs_spklen(rom->fs_spk_len, reg_base);
 		ic_con.bits.speed = I2C_DW_SPEED_FAST;
 
 		break;
@@ -714,7 +711,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 		LOG_DBG("I2C: speed set to HIGH");
 		write_hs_scl_lcnt(dw->lcnt, reg_base);
 		write_hs_scl_hcnt(dw->hcnt, reg_base);
-		write_hs_spklen(rom->hs_spk_len, reg_base);
 		ic_con.bits.speed = I2C_DW_SPEED_HIGH;
 
 		break;
@@ -967,6 +963,8 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 {
 	struct i2c_dw_dev_config *const dw = dev->data;
 	const struct i2c_dw_rom_config *const rom = dev->config;
+	uint32_t lcnt_val = 0U;
+	uint32_t hcnt_val = 0U;
 	uint32_t value = 0U;
 	uint32_t rc = 0U;
 	uint32_t reg_base = get_regs(dev);
@@ -977,87 +975,21 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 	/* and have setup the clock frequency and speed mode */
 	switch (I2C_SPEED_GET(dw->app_config)) {
 	case I2C_SPEED_STANDARD:
-		/* Following the directions on DW spec page 59, IC_SS_SCL_LCNT
-		 * must have register values larger than IC_FS_SPKLEN + 7
-		 */
-		value = I2C_STD_LCNT + rom->lcnt_offset;
-		if (value <= (rom->fs_spk_len + 7)) {
-			value = rom->fs_spk_len + 8;
-		}
-
-		dw->lcnt = value;
-
-		/* Following the directions on DW spec page 59, IC_SS_SCL_HCNT
-		 * must have register values larger than IC_FS_SPKLEN + 5
-		 */
-		value = I2C_STD_HCNT + rom->hcnt_offset;
-		if (value <= (rom->fs_spk_len + 5)) {
-			value = rom->fs_spk_len + 6;
-		}
-
-		dw->hcnt = value;
+		lcnt_val = I2C_STD_LCNT + rom->lcnt_offset;
+		hcnt_val = I2C_STD_HCNT + rom->hcnt_offset;
 		break;
 	case I2C_SPEED_FAST:
-		/*
-		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT
-		 * must have register values larger than IC_FS_SPKLEN + 7
-		 */
-		value = I2C_FS_LCNT + rom->lcnt_offset;
-		if (value <= (rom->fs_spk_len + 7)) {
-			value = rom->fs_spk_len + 8;
-		}
-
-		dw->lcnt = value;
-
-		/*
-		 * Following the directions on DW spec page 59, IC_FS_SCL_HCNT
-		 * must have register values larger than IC_FS_SPKLEN + 5
-		 */
-		value = I2C_FS_HCNT + rom->hcnt_offset;
-		if (value <= (rom->fs_spk_len + 5)) {
-			value = rom->fs_spk_len + 6;
-		}
-
-		dw->hcnt = value;
+		lcnt_val = I2C_FS_LCNT + rom->lcnt_offset;
+		hcnt_val = I2C_FS_HCNT + rom->hcnt_offset;
 		break;
 	case I2C_SPEED_FAST_PLUS:
-		/*
-		 * Following the directions on DW spec page 59, IC_FS_SCL_LCNT
-		 * must have register values larger than IC_FS_SPKLEN + 7
-		 */
-		value = I2C_FSP_LCNT + rom->lcnt_offset;
-		if (value <= (rom->fs_spk_len + 7)) {
-			value = rom->fs_spk_len + 8;
-		}
-
-		dw->lcnt = value;
-
-		/*
-		 * Following the directions on DW spec page 59, IC_FS_SCL_HCNT
-		 * must have register values larger than IC_FS_SPKLEN + 5
-		 */
-		value = I2C_FSP_HCNT + rom->hcnt_offset;
-		if (value <= (rom->fs_spk_len + 5)) {
-			value = rom->fs_spk_len + 6;
-		}
-
-		dw->hcnt = value;
+		lcnt_val = I2C_FSP_LCNT + rom->lcnt_offset;
+		hcnt_val = I2C_FSP_HCNT + rom->hcnt_offset;
 		break;
 	case I2C_SPEED_HIGH:
 		if (dw->support_hs_mode) {
-			value = I2C_HS_LCNT + rom->lcnt_offset;
-			if (value <= (rom->hs_spk_len + 7)) {
-				value = rom->hs_spk_len + 8;
-			}
-
-			dw->lcnt = value;
-
-			value = I2C_HS_HCNT + rom->hcnt_offset;
-			if (value <= (rom->hs_spk_len + 5)) {
-				value = rom->hs_spk_len + 6;
-			}
-
-			dw->hcnt = value;
+			lcnt_val = I2C_HS_LCNT + rom->lcnt_offset;
+			hcnt_val = I2C_HS_HCNT + rom->hcnt_offset;
 		} else {
 			rc = -EINVAL;
 		}
@@ -1066,6 +998,20 @@ static int i2c_dw_runtime_configure(const struct device *dev, uint32_t config)
 		/* TODO change */
 		rc = -EINVAL;
 	}
+
+	if (I2C_SPEED_GET(dw->app_config) == I2C_SPEED_HIGH) {
+		/* Ensure minimum HCNT and LCNT register values for High Speed */
+		lcnt_val = I2C_ENSURE_MIN_SCL_LCNT(lcnt_val, rom->hs_spk_len);
+		hcnt_val = I2C_ENSURE_MIN_SCL_HCNT(hcnt_val, rom->hs_spk_len);
+	} else {
+		/* Ensure minimum HCNT and LCNT register values for:
+		 * Standard, Fast and Fast Plus Speed modes
+		 */
+		lcnt_val = I2C_ENSURE_MIN_SCL_LCNT(lcnt_val, rom->fs_spk_len);
+		hcnt_val = I2C_ENSURE_MIN_SCL_HCNT(hcnt_val, rom->fs_spk_len);
+	}
+	dw->lcnt = lcnt_val;
+	dw->hcnt = hcnt_val;
 
 	/*
 	 * Clear any interrupts currently waiting in the controller
@@ -1360,6 +1306,10 @@ static int i2c_dw_initialize(const struct device *dev)
 	}
 
 	rom->config_func(dev);
+
+	/* Set spike length */
+	write_fs_spklen(rom->fs_spk_len, reg_base);
+	write_hs_spklen(rom->hs_spk_len, reg_base);
 
 	dw->app_config = I2C_MODE_CONTROLLER | i2c_map_dt_bitrate(rom->bitrate);
 

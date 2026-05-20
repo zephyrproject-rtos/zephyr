@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="iso_frag_2"
+simulation_id="${BOARD_TS}_iso_frag_2"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

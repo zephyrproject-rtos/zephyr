@@ -33,12 +33,12 @@ struct bt_audio_codec_cfg vs_codec_cfg = {
 	.cid = VS_CODEC_CID,
 	.vid = VS_CODEC_VID,
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-	.data_len = 5,
-	.data = {1, 2, 3, 4, 5}, /* any value */
+	.data_len = 5U,
+	.data = {1U, 2U, 3U, 4U, 5U}, /* any value */
 #endif                           /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
-	.meta_len = 5,
-	.meta = {10, 20, 30, 40, 50}, /* any value */
+	.meta_len = 5U,
+	.meta = {10U, 20U, 30U, 40U, 50U}, /* any value */
 #endif                                /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 };
 
@@ -50,19 +50,21 @@ struct bt_audio_codec_cap vs_codec_cap = {
 	.cid = VS_CODEC_CID,
 	.vid = VS_CODEC_VID,
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
-	.data_len = 5,
-	.data = {1, 2, 3, 4, 5}, /* any value */
+	.data_len = 5U,
+	.data = {1U, 2U, 3U, 4U, 5U}, /* any value */
 #endif                           /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0
-	.meta_len = 5,
-	.meta = {10, 20, 30, 40, 50}, /* any value */
+	.meta_len = 5U,
+	.meta = {10U, 20U, 30U, 40U, 50U}, /* any value */
 #endif                                /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 };
 
 void print_hex(const uint8_t *ptr, size_t len)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	while (len != 0U) {
+		printk("%02x", *ptr);
+		ptr++;
+		len--;
 	}
 }
 

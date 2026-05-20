@@ -1286,6 +1286,79 @@ ZTEST(dns_packet, test_dns_invalid_answer)
 	zassert_equal(ret, -EINVAL, "DNS message answer check succeed (%d)", ret);
 }
 
+static void expect_invalid_truncated_rdata(uint8_t *buf, size_t len)
+{
+	struct dns_msg_t dns_msg = {
+		.msg = buf,
+		.msg_size = len,
+		.answer_offset = DNS_HEADER_SIZE,
+	};
+	enum dns_rr_type type = DNS_RR_TYPE_INVALID;
+	uint32_t ttl = 0U;
+	int ret;
+
+	ret = dns_unpack_answer(&dns_msg, 0, &ttl, &type);
+	zassert_equal(ret, -EINVAL, "DNS message answer check succeed (%d)", ret);
+}
+
+static uint8_t invalid_answer_resp_txt_truncated_rdata[] = {
+	/* DNS msg header (12 bytes) */
+	0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+
+	/* Answer name */
+	0x00,
+
+	/* Answer type (TXT) */
+	0x00, 0x10,
+
+	/* Class */
+	0x00, 0x01,
+
+	/* TTL */
+	0x00, 0x00, 0x00, 0x04,
+
+	/* RR data length */
+	0x00, 0x05,
+
+	/* Only part of the TXT rdata is present */
+	0x02, 0x6f, 0x6b,
+};
+
+ZTEST(dns_packet, test_dns_invalid_answer_txt_rdlength)
+{
+	expect_invalid_truncated_rdata(invalid_answer_resp_txt_truncated_rdata,
+				       sizeof(invalid_answer_resp_txt_truncated_rdata));
+}
+
+static uint8_t invalid_answer_resp_srv_truncated_rdata[] = {
+	/* DNS msg header (12 bytes) */
+	0x01, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+
+	/* Answer name */
+	0x00,
+
+	/* Answer type (SRV) */
+	0x00, 0x21,
+
+	/* Class */
+	0x00, 0x01,
+
+	/* TTL */
+	0x00, 0x00, 0x00, 0x04,
+
+	/* RR data length */
+	0x00, 0x08,
+
+	/* Priority, weight, port, and only part of target name */
+	0x00, 0x01, 0x00, 0x02, 0x01, 0xbb, 0x00,
+};
+
+ZTEST(dns_packet, test_dns_invalid_answer_srv_rdlength)
+{
+	expect_invalid_truncated_rdata(invalid_answer_resp_srv_truncated_rdata,
+				       sizeof(invalid_answer_resp_srv_truncated_rdata));
+}
+
 static uint8_t recursive_query_resp_ipv4[] = {
 	/* DNS msg header (12 bytes) */
 	0x74, 0xe1, 0x81, 0x80, 0x00, 0x01, 0x00, 0x01,

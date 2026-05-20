@@ -248,10 +248,16 @@ static void lcp_down(struct ppp_fsm *fsm)
 	memset(&ctx->lcp.peer_options.auth_proto, 0,
 	       sizeof(ctx->lcp.peer_options.auth_proto));
 
-	ppp_link_down(ctx);
+	k_sem_give(&ctx->wait_ppp_link_down);
+
+	if (ctx->phase != PPP_DEAD) {
+		ppp_network_all_down(ctx);
+	}
 
 	if (net_if_is_carrier_ok(ctx->iface) && ctx->is_enabled) {
 		ppp_change_phase(ctx, PPP_ESTABLISH);
+	} else {
+		ppp_change_phase(ctx, PPP_DEAD);
 	}
 }
 
@@ -302,7 +308,13 @@ static void lcp_finished(struct ppp_fsm *fsm)
 
 static int lcp_add_mru(struct ppp_context *ctx, struct net_pkt *pkt)
 {
-	net_pkt_write_u8(pkt, MRU_OPTION_LEN);
+	int ret;
+
+	ret = net_pkt_write_u8(pkt, MRU_OPTION_LEN);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return net_pkt_write_be16(pkt, ctx->lcp.my_options.mru);
 }
 
@@ -360,7 +372,13 @@ static int lcp_nak_mru(struct ppp_context *ctx, struct net_pkt *pkt,
 
 static int lcp_add_async_map(struct ppp_context *ctx, struct net_pkt *pkt)
 {
-	net_pkt_write_u8(pkt, ASYNC_MAP_OPTION_LEN);
+	int ret;
+
+	ret = net_pkt_write_u8(pkt, ASYNC_MAP_OPTION_LEN);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return net_pkt_write_be32(pkt, ctx->lcp.my_options.async_map);
 }
 

@@ -31,11 +31,23 @@ Requirements
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+This sample uses two applications, so two devices need to be set up.
+Build and flash the advertiser application on the first board, replacing ``<board>``
+with your target board:
 
-This sample uses two applications, so two devices need to be setup.
-Flash one device with the scanner application, and another device with the
-advertiser application.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/extended_adv/advertiser
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+Build and flash the scanner application on a second board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/extended_adv/scanner
+   :board: <board>
+   :goals: build flash
+   :compact:
 
 The two devices should automatically connect if they are close enough.
 

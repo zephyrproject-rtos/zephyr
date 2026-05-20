@@ -120,6 +120,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdt;
+		adc0 = &adc0;
 	};
 
 	transceiver0: can-phy0 {

@@ -66,8 +66,8 @@ struct usbip_cmd_node {
 	struct uhc_transfer *xfer;
 };
 
-K_MEM_SLAB_DEFINE(usbip_slab, sizeof(struct usbip_cmd_node),
-		  CONFIG_USBIP_SUBMIT_BACKLOG_COUNT, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(usbip_slab, struct usbip_cmd_node,
+		       CONFIG_USBIP_SUBMIT_BACKLOG_COUNT);
 
 static ALWAYS_INLINE int usbip_send(int sock, const void *const buf, const size_t len)
 {

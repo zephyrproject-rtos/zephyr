@@ -91,6 +91,19 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return key == 0;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	/* No direct non-modifying probe available; briefly lock and
+	 * restore via the existing PIL trap interface.
+	 */
+	unsigned int key = arch_irq_lock();
+	bool enabled = arch_irq_unlocked(key);
+
+	arch_irq_unlock(key);
+	return enabled;
+}
+
 static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile ("nop");

@@ -14,6 +14,7 @@
 #define INCLUDE_ZEPHYR_DSP_UTILS_H_
 
 #include <stdint.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/kernel.h>
 #include <zephyr/dsp/types.h>
 

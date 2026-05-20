@@ -1165,6 +1165,9 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 	int ret;
 
 	while (!obj_next(obj, &kv)) {
+		bool any_descriptor_matched_name = false;
+		bool field_decoded = false;
+
 		if (kv.value.type == JSON_TOK_OBJECT_END) {
 			return decoded_fields;
 		}
@@ -1187,15 +1190,55 @@ static int64_t obj_parse(struct json_obj *obj, const struct json_obj_descr *desc
 				continue;
 			}
 
+			any_descriptor_matched_name = true;
+
 			/* Store the decoded value */
 			ret = decode_value(obj, &descr[i], &kv.value,
 					   decode_field, val);
 			if (ret < 0) {
-				return ret;
+				/*
+				 * When decode fails, we must distinguish between two cases:
+				 *
+				 * 1. Type mismatch: The JSON token type didn't match what the
+				 *    descriptor expected (e.g., token is STRING but descriptor
+				 *    expects ARRAY). In this case, equivalent_types() returned
+				 *    false and decode_value() exited early - no parsing occurred
+				 *    and the lexer state is still valid. Safe to continue and
+				 *    try alternate descriptors.
+				 *
+				 * 2. Parse failure: The token type matched but parsing the
+				 *    complex structure (object/array) failed internally. The
+				 *    lexer has advanced through partial content and its state
+				 *    may be corrupted. Must return error immediately.
+				 *
+				 * We check the actual token type (kv.value.type) rather than
+				 * the descriptor type to determine if complex parsing was
+				 * actually attempted.
+				 */
+				if (kv.value.type == JSON_TOK_OBJECT_START ||
+				    kv.value.type == JSON_TOK_ARRAY_START) {
+					return ret;
+				}
+				continue;
 			}
 
 			decoded_fields |= (int64_t)1<<i;
+			field_decoded = true;
 			break;
+		}
+
+		/*
+		 * If the field name matched at least one descriptor but all decode
+		 * attempts failed, propagate an error.
+		 *
+		 * Note: 'ret' contains the error code from the last failed
+		 * decode_value() attempt. When multiple descriptors share the same
+		 * field name (for example, in polymorphic decoding scenarios), the
+		 * specific error code returned here is implementation-defined and may
+		 * depend on descriptor ordering.
+		 */
+		if (any_descriptor_matched_name && !field_decoded) {
+			return ret;
 		}
 
 		/* Skip field, if no descriptor was found */

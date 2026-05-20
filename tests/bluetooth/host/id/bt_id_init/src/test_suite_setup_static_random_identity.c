@@ -102,7 +102,7 @@ ZTEST(bt_id_init_setup_static_random_identity, test_init_dev_identity_succeeds)
 	bt_hci_cmd_send_sync_fake.custom_fake = bt_hci_cmd_send_sync_custom_fake;
 
 	/* This will make set_random_address() succeeds and returns 0 */
-	bt_addr_copy(&bt_dev.random_addr.a, &BT_STATIC_RANDOM_LE_ADDR_1->a);
+	bt_addr_copy(&bt_dev.random_addr, &BT_STATIC_RANDOM_LE_ADDR_1->a);
 
 	err = bt_id_init();
 

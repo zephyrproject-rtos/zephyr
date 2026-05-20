@@ -47,9 +47,12 @@
 #define MDM_MAX_CGATT_WAITS 40
 #define MDM_BOOT_TRIES 2
 #define MDM_GNSS_PARSER_MAX_LEN 128
+#define MDM_SSL_CERT_NAME_MAX_LEN 64
+#define MDM_SSL_SNI_MAX_LEN 253
 #define MDM_APN CONFIG_MODEM_SIMCOM_SIM7080_APN
 #define MDM_LTE_BANDS CONFIG_MODEM_SIMCOM_SIM7080_LTE_BANDS
 #define RSSI_TIMEOUT_SECS 30
+#define MDM_MAX_TLS_CTX 6
 
 /*
  * Default length of modem data.
@@ -81,6 +84,29 @@ enum sim7080_status_flags {
 };
 
 /*
+ * Modem specific socket data.
+ */
+struct sim7080_socket_data {
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+	/*
+	 * Context index to be used by the socket.
+	 * The modem has 6 ssl contexts. Since MDM_MAX_SOCKETS
+	 * is defined as 5 each socket can have 1 ssl context.
+	 * If MDM_MAX_SOCKETS changes, this needs to be adapted.
+	 */
+	uint8_t ssl_ctx_idx;
+	/* Use peer verification */
+	bool peer_verify;
+	/* RootCA/DTLS PSK table to use */
+	uint8_t root_ca_dtls[MDM_SSL_CERT_NAME_MAX_LEN + 1];
+	/* Client certificate to use */
+	uint8_t client_cert[MDM_SSL_CERT_NAME_MAX_LEN + 1];
+#endif
+	/** temporary socket data */
+	void *data;
+};
+
+/*
  * Driver data.
  */
 struct sim7080_data {
@@ -104,6 +130,13 @@ struct sim7080_data {
 	 */
 	struct modem_socket_config socket_config;
 	struct modem_socket sockets[MDM_MAX_SOCKETS];
+	struct sim7080_socket_data socket_data[MDM_MAX_SOCKETS];
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+	/*
+	 * TLS certificate copy buffer
+	 */
+	 uint8_t tls_cert_buf[CONFIG_MODEM_SIMCOM_SIM7080_TLS_BUFFER_SIZE];
+#endif
 	/*
 	 * Current state of the modem.
 	 */
@@ -169,6 +202,7 @@ struct sim7080_data {
 	struct k_sem sem_http;
 	struct k_sem boot_sem;
 	struct k_sem pdp_sem;
+	struct k_sem fs_sem;
 };
 
 /*
@@ -206,5 +240,12 @@ void sim7080_handle_sock_data_indication(int fd);
 void sim7080_handle_sock_state(int fd, uint8_t state);
 
 int sim7080_utils_parse_time(uint8_t *date, uint8_t *time_str, struct tm *t);
+
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+int sim7080_tls_setsockopt(struct modem_socket *sock, int optname, const void *optval,
+			   net_socklen_t optlen);
+
+int sim7080_handle_ca_tls(struct modem_socket *sock);
+#endif
 
 #endif /* SIMCOM_SIM7080_H */

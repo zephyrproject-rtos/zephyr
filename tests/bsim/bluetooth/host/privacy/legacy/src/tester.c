@@ -59,8 +59,8 @@ static void cb_expect_rpa(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 	test_data.addr_set = true;
-	LOG_DBG("Old addr: %s, New addr: %s", bt_testlib_addr_to_str(&test_data.old_addr),
-		bt_testlib_addr_to_str(addr));
+	LOG_DBG("Old addr: %s, New addr: %s", bt_addr_le_str(&test_data.old_addr),
+		bt_addr_le_str(addr));
 
 	test_data.rpa_rotations++;
 
@@ -83,8 +83,8 @@ static void cb_expect_rpa(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 static void cb_expect_id(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
-	LOG_DBG("Expecting addr: %s, Got addr: %s", bt_testlib_addr_to_str(&test_data.old_addr),
-		bt_testlib_addr_to_str(addr));
+	LOG_DBG("Expecting addr: %s, Got addr: %s", bt_addr_le_str(&test_data.old_addr),
+		bt_addr_le_str(addr));
 
 	if (addr->type != BT_ADDR_LE_RANDOM) {
 		TEST_FAIL("Expected public address (0x%x) got 0x%x", BT_ADDR_LE_RANDOM, addr->type);

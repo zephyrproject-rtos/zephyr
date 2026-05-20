@@ -72,11 +72,9 @@ struct mqtt_sn_gateway {
 	size_t addr_len;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(publishes, sizeof(struct mqtt_sn_publish), CONFIG_MQTT_SN_LIB_MAX_PUBLISH,
-			 4);
-K_MEM_SLAB_DEFINE_STATIC(topics, sizeof(struct mqtt_sn_topic), CONFIG_MQTT_SN_LIB_MAX_TOPICS, 4);
-K_MEM_SLAB_DEFINE_STATIC(gateways, sizeof(struct mqtt_sn_gateway), CONFIG_MQTT_SN_LIB_MAX_GATEWAYS,
-			 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(publishes, struct mqtt_sn_publish, CONFIG_MQTT_SN_LIB_MAX_PUBLISH);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(topics, struct mqtt_sn_topic, CONFIG_MQTT_SN_LIB_MAX_TOPICS);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(gateways, struct mqtt_sn_gateway, CONFIG_MQTT_SN_LIB_MAX_GATEWAYS);
 
 enum mqtt_sn_client_state {
 	MQTT_SN_CLIENT_DISCONNECTED,

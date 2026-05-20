@@ -15,6 +15,7 @@
 #include <zephyr/arch/xtensa/mpu.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util_macro.h>
 
 #include <xtensa/corebits.h>
@@ -1011,11 +1012,16 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	uintptr_t aligned_addr;
 	size_t aligned_size, addr_offset;
-	int ret = 0;
+	int ret = -EINVAL;
 
 	/* addr/size arbitrary, fix this up into an aligned region */
 	aligned_addr = ROUND_DOWN((uintptr_t)addr, XCHAL_MPU_ALIGN);
 	addr_offset = (uintptr_t)addr - aligned_addr;
+
+	if (size_add_overflow(size, addr_offset, &aligned_size)) {
+		goto out;
+	}
+
 	aligned_size = ROUND_UP(size + addr_offset, XCHAL_MPU_ALIGN);
 
 	for (size_t offset = 0; offset < aligned_size;
@@ -1073,6 +1079,8 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 			}
 		}
 	}
+
+	ret = 0;
 
 out:
 	return ret;

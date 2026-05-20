@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,6 +69,8 @@ struct ptp_port {
 	enum ptp_port_state	       (*state_machine)(enum ptp_port_state state,
 							enum ptp_port_event event,
 							bool tt_diff);
+	/** Sequence ID for the pending Sync/Follow_Up pair. */
+	uint16_t		       sync_fup_sequence_id;
 	/** Pointer to the Port's best Foreign TimeTransmitter. */
 	struct ptp_foreign_tt_clock    *best;
 	/** List of Foreign TimeTransmitters discovered through received Announce messages. */
@@ -80,6 +83,14 @@ struct ptp_port {
 	struct net_if_timestamp_cb     delay_req_ts_cb;
 	/** Timestamping callback for sent Sync messages. */
 	struct net_if_timestamp_cb     sync_ts_cb;
+	/** True if a Sync was sent and corresponding Follow_Up is still pending. */
+	bool sync_fup_pending;
+	/** Whether to attempt recvmsg for L2 RX timestamping on this port. */
+	bool l2_try_recvmsg;
+	/** Whether the L2 recvmsg fallback warning has been logged for this port. */
+	bool l2_recvmsg_fallback_warned;
+	/** Monotonic uptime in milliseconds after which recvmsg should be retried. */
+	int64_t l2_recvmsg_retry_at;
 };
 
 /**

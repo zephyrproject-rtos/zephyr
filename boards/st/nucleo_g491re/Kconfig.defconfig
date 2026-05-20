@@ -1,0 +1,12 @@
+# STM32G491RE Nucleo board configuration
+
+# Copyright (c) 2026 Lennart Rittel <lrittel@posteo.de>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NUCLEO_G491RE
+
+config SPI_STM32_INTERRUPT
+	default y
+	depends on SPI
+
+endif # BOARD_NUCLEO_G491RE

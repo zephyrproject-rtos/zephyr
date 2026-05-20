@@ -548,6 +548,53 @@ struct bt_hci_rp_pin_code_neg_reply {
 	bt_addr_t bdaddr;
 } __packed;
 
+/** HCI Change Connection Packet Type opcode */
+#define BT_HCI_OP_CHANGE_CONN_PACKET_TYPE       BT_OP(BT_OGF_LINK_CTRL, 0x000f) /* 0x040f */
+/** HCI Change Connection Packet Type command parameters */
+struct bt_hci_cp_change_conn_packet_type {
+	/** Connection handle */
+	uint16_t handle;
+	/** Packet type bitmask */
+	uint16_t packet_type;
+} __packed;
+
+/* ACL packet type bits for HCI_Change_Connection_Packet_Type command.
+ * BR packet types (set bit = may be used):
+ *   See Core Spec v6.0, Vol 4, Part E, Section 7.1.14
+ * EDR packet types (set bit = shall NOT be used):
+ *   Note: EDR bits use reverse logic compared to BR bits.
+ */
+/** 2-DH1 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_2DH1            BIT(1)
+/** 3-DH1 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_3DH1            BIT(2)
+/** DM1 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DM1                BIT(3)
+/** DH1 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DH1                BIT(4)
+/** 2-DH3 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_2DH3            BIT(8)
+/** 3-DH3 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_3DH3            BIT(9)
+/** DM3 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DM3                BIT(10)
+/** DH3 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DH3                BIT(11)
+/** 2-DH5 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_2DH5            BIT(12)
+/** 3-DH5 shall not be used */
+#define BT_HCI_ACL_PKT_TYPE_NO_3DH5            BIT(13)
+/** DM5 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DM5                BIT(14)
+/** DH5 may be used */
+#define BT_HCI_ACL_PKT_TYPE_DH5                BIT(15)
+
+/** Bitmask of all BR basic rate ACL packet types */
+#define BT_HCI_ACL_PKT_TYPE_BR_MASK \
+	(BT_HCI_ACL_PKT_TYPE_DM1 | BT_HCI_ACL_PKT_TYPE_DH1 | \
+	 BT_HCI_ACL_PKT_TYPE_DM3 | BT_HCI_ACL_PKT_TYPE_DH3 | \
+	 BT_HCI_ACL_PKT_TYPE_DM5 | BT_HCI_ACL_PKT_TYPE_DH5)
+
 #define BT_HCI_OP_AUTH_REQUESTED                BT_OP(BT_OGF_LINK_CTRL, 0x0011) /* 0x0411 */
 struct bt_hci_cp_auth_requested {
 	uint16_t handle;
@@ -675,6 +722,28 @@ struct bt_hci_cp_sniff_mode {
 
 #define BT_HCI_OP_EXIT_SNIFF_MODE               BT_OP(BT_OGF_LINK_POLICY, 0x0004) /* 0x0804 */
 struct bt_hci_cp_exit_sniff_mode {
+	uint16_t handle;
+} __packed;
+
+/** HCI Sniff Subrating command opcode */
+#define BT_HCI_OP_SNIFF_SUBRATING              BT_OP(BT_OGF_LINK_POLICY, 0x0011) /* 0x0811 */
+/** HCI Sniff Subrating command parameters */
+struct bt_hci_cp_sniff_subrating {
+	/** ACL connection handle */
+	uint16_t handle;
+	/** Maximum latency */
+	uint16_t max_latency;
+	/** Minimum remote timeout */
+	uint16_t min_remote_timeout;
+	/** Minimum local timeout */
+	uint16_t min_local_timeout;
+} __packed;
+
+/** HCI Sniff Subrating return parameters */
+struct bt_hci_rp_sniff_subrating {
+	/** Status */
+	uint8_t  status;
+	/** ACL connection handle */
 	uint16_t handle;
 } __packed;
 
@@ -863,6 +932,33 @@ struct bt_hci_cp_host_num_completed_packets {
 	struct bt_hci_handle_count h[0];
 } __packed;
 
+/** HCI opcode for Read Link Supervision Timeout. */
+#define BT_HCI_OP_READ_LINK_SUPERVISION_TIMEOUT     BT_OP(BT_OGF_BASEBAND, 0x0036) /* 0x0c36 */
+/** HCI command parameters for Read Link Supervision Timeout. */
+struct bt_hci_cp_read_link_supervision_timeout {
+	/** Connection handle. */
+	uint16_t handle;
+} __packed;
+/** HCI response parameters for Read Link Supervision Timeout. */
+struct bt_hci_rp_read_link_supervision_timeout {
+	/** Status. */
+	uint8_t  status;
+	/** Connection handle. */
+	uint16_t handle;
+	/** Link supervision timeout. */
+	uint16_t timeout;
+} __packed;
+
+/** HCI opcode for Write Link Supervision Timeout. */
+#define BT_HCI_OP_WRITE_LINK_SUPERVISION_TIMEOUT    BT_OP(BT_OGF_BASEBAND, 0x0037) /* 0x0c37 */
+/** HCI command parameters for Write Link Supervision Timeout. */
+struct bt_hci_cp_write_link_supervision_timeout {
+	/** Connection handle. */
+	uint16_t handle;
+	/** Link supervision timeout. */
+	uint16_t timeout;
+} __packed;
+
 #define BT_HCI_OP_WRITE_CURRENT_IAC_LAP         BT_OP(BT_OGF_BASEBAND, 0x003a) /* 0x0c3a */
 struct bt_hci_iac_lap {
 	uint8_t iac[3];
@@ -892,6 +988,18 @@ struct bt_hci_cp_write_inquiry_mode {
 struct bt_hci_cp_write_page_scan_type {
 	/** Page scan type. */
 	uint8_t type;
+} __packed;
+
+/** Maximum length of Extended Inquiry Response data. */
+#define BT_HCI_EIR_MAX_DATA_LEN                 240
+/** HCI opcode for Write Extended Inquiry Response. */
+#define BT_HCI_OP_WRITE_EXT_INQUIRY_RESPONSE    BT_OP(BT_OGF_BASEBAND, 0x0052) /* 0x0c52 */
+/** HCI command parameters for Write Extended Inquiry Response. */
+struct bt_hci_cp_write_ext_inquiry_response {
+	/** FEC encoding required. */
+	uint8_t fec_required;
+	/** Extended inquiry response data. */
+	uint8_t eir[BT_HCI_EIR_MAX_DATA_LEN];
 } __packed;
 
 #define BT_HCI_OP_WRITE_SSP_MODE                BT_OP(BT_OGF_BASEBAND, 0x0056) /* 0x0c56 */
@@ -950,23 +1058,24 @@ struct bt_hci_rp_configure_data_path {
 } __packed;
 
 /* HCI version from Assigned Numbers */
-#define BT_HCI_VERSION_1_0B                     0
-#define BT_HCI_VERSION_1_1                      1
-#define BT_HCI_VERSION_1_2                      2
-#define BT_HCI_VERSION_2_0                      3
-#define BT_HCI_VERSION_2_1                      4
-#define BT_HCI_VERSION_3_0                      5
-#define BT_HCI_VERSION_4_0                      6
-#define BT_HCI_VERSION_4_1                      7
-#define BT_HCI_VERSION_4_2                      8
-#define BT_HCI_VERSION_5_0                      9
-#define BT_HCI_VERSION_5_1                      10
-#define BT_HCI_VERSION_5_2                      11
-#define BT_HCI_VERSION_5_3                      12
-#define BT_HCI_VERSION_5_4                      13
-#define BT_HCI_VERSION_6_0                      14
-#define BT_HCI_VERSION_6_1                      15
-#define BT_HCI_VERSION_6_2                      16
+#define BT_HCI_VERSION_1_0B                     0  /**< 1.0b */
+#define BT_HCI_VERSION_1_1                      1  /**< 1.1  */
+#define BT_HCI_VERSION_1_2                      2  /**< 1.2  */
+#define BT_HCI_VERSION_2_0                      3  /**< 2.0  */
+#define BT_HCI_VERSION_2_1                      4  /**< 2.1  */
+#define BT_HCI_VERSION_3_0                      5  /**< 3.0  */
+#define BT_HCI_VERSION_4_0                      6  /**< 4.0  */
+#define BT_HCI_VERSION_4_1                      7  /**< 4.1  */
+#define BT_HCI_VERSION_4_2                      8  /**< 4.2  */
+#define BT_HCI_VERSION_5_0                      9  /**< 5.0  */
+#define BT_HCI_VERSION_5_1                      10 /**< 5.1  */
+#define BT_HCI_VERSION_5_2                      11 /**< 5.2  */
+#define BT_HCI_VERSION_5_3                      12 /**< 5.3  */
+#define BT_HCI_VERSION_5_4                      13 /**< 5.4  */
+#define BT_HCI_VERSION_6_0                      14 /**< 6.0  */
+#define BT_HCI_VERSION_6_1                      15 /**< 6.1  */
+#define BT_HCI_VERSION_6_2                      16 /**< 6.2  */
+#define BT_HCI_VERSION_6_3                      17 /**< 6.3  */
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001) /* 0x1001 */
 struct bt_hci_rp_read_local_version_info {
@@ -1189,6 +1298,8 @@ struct bt_hci_cp_le_set_random_address {
 
 #define BT_LE_ADV_INTERVAL_MIN                  0x0020
 #define BT_LE_ADV_INTERVAL_MAX                  0x4000
+/** Maximum LE Extended Advertising interval (0xFFFFFF, 0.625ms units). */
+#define BT_LE_EXT_ADV_INTERVAL_MAX              0xFFFFFFU
 #define BT_LE_ADV_INTERVAL_DEFAULT              0x0800
 
 #define BT_LE_ADV_CHAN_MAP_CHAN_37              0x01
@@ -3240,6 +3351,18 @@ struct bt_hci_evt_data_buf_overflow {
 	uint8_t  link_type;
 } __packed;
 
+/** HCI Connection Packet Type Changed event. */
+#define BT_HCI_EVT_CONN_PKT_TYPE_CHANGED        0x1d
+/** HCI Connection Packet Type Changed event parameters. */
+struct bt_hci_evt_conn_pkt_type_changed {
+	/** HCI status. */
+	uint8_t  status;
+	/** Connection handle. */
+	uint16_t handle;
+	/** Packet type bitmask. */
+	uint16_t packet_type;
+} __packed;
+
 #define BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI     0x22
 struct bt_hci_evt_inquiry_result_with_rssi {
 	bt_addr_t addr;
@@ -3591,6 +3714,9 @@ struct bt_hci_evt_le_ext_advertising_info {
 	uint8_t      length;
 	uint8_t      data[0];
 } __packed;
+
+/** Maximum number of reports in an LE Extended Advertising Report. */
+#define BT_HCI_LE_EXT_ADV_REPORT_MAX_NUM_REPORTS 0x0a
 struct bt_hci_evt_le_ext_advertising_report {
 	uint8_t num_reports;
 	struct bt_hci_evt_le_ext_advertising_info adv_info[0];
@@ -4391,6 +4517,8 @@ struct bt_hci_evt_le_conn_rate_change {
 #define BT_EVT_MASK_LINK_KEY_REQ                 BT_EVT_BIT(22)
 #define BT_EVT_MASK_LINK_KEY_NOTIFY              BT_EVT_BIT(23)
 #define BT_EVT_MASK_DATA_BUFFER_OVERFLOW         BT_EVT_BIT(25)
+/** Event mask bit for Connection Packet Type Changed event. */
+#define BT_EVT_MASK_CONN_PKT_TYPE_CHANGED        BT_EVT_BIT(28)
 #define BT_EVT_MASK_INQUIRY_RESULT_WITH_RSSI     BT_EVT_BIT(33)
 #define BT_EVT_MASK_REMOTE_EXT_FEATURES          BT_EVT_BIT(34)
 #define BT_EVT_MASK_SYNC_CONN_COMPLETE           BT_EVT_BIT(43)

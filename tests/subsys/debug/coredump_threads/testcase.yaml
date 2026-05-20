@@ -13,6 +13,11 @@ common:
     - qemu_riscv32e
 tests:
   debug.coredump.threads:
+    platform_exclude:
+      # In S-mode ARCH_EXCEPT calls z_riscv_fatal_error() with esf=NULL;
+      # arch_coredump_info_dump() returns immediately when esf is NULL so
+      # the coredump output is never produced.
+      - qemu_riscv64/qemu_virt_riscv64/smode
     filter: CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS and CONFIG_MP_MAX_NUM_CPUS == 1
     harness: console
     harness_config:

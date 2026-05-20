@@ -22,6 +22,12 @@ LOG_MODULE_REGISTER(dac_stm32);
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
+#if CONFIG_STM32_HAL2
+#define STM32_DAC_OUTPUT_CONNECT_EXTERNAL	LL_DAC_OUTPUT_CONNECT_EXTERNAL
+#else /* CONFIG_STM32_HAL2 */
+#define STM32_DAC_OUTPUT_CONNECT_EXTERNAL	LL_DAC_OUTPUT_CONNECT_GPIO
+#endif /* CONFIG_STM32_HAL2 */
+
 /* some low-end MCUs have DAC with only one channel */
 #ifdef LL_DAC_CHANNEL_2
 #define STM32_CHANNEL_COUNT		2
@@ -121,7 +127,7 @@ static int dac_stm32_channel_setup(const struct device *dev,
 	if (channel_cfg->internal) {
 		cfg_setting = LL_DAC_OUTPUT_CONNECT_INTERNAL;
 	} else {
-		cfg_setting = LL_DAC_OUTPUT_CONNECT_GPIO;
+		cfg_setting = STM32_DAC_OUTPUT_CONNECT_EXTERNAL;
 	}
 
 	LL_DAC_SetOutputConnection(cfg->base, channel, cfg_setting);

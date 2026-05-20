@@ -75,12 +75,16 @@
 			reg = <0x4000c000 0x110>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges = <0x0 0x0 DT_SIZE_K(1024)>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0 DT_SIZE_K(1024)>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 			};
 		};
 

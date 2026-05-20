@@ -1,0 +1,15 @@
+sample:
+  name: Raspberry Pi Board Info
+  description: |
+    Retrieves Raspberry Pi board information using the VideoCore
+    firmware interface and prints details such as board type,
+    processor, memory size, and manufacturer.
+
+tests:
+  sample.boards.raspberrypi.rpi_board_info:
+    tags:
+      - rpi
+      - firmware
+    platform_allow:
+      - rpi_4b
+    skip: true

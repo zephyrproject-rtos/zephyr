@@ -13,31 +13,31 @@
 #include <zephyr/bluetooth/audio/tbs.h>
 
 /* CCP commands */
-#define BTP_CCP_READ_SUPPORTED_COMMANDS	0x01
+#define BTP_CCP_READ_SUPPORTED_COMMANDS	0x01U
 struct btp_ccp_read_supported_commands_rp {
 	uint8_t data[0];
 } __packed;
 
-#define BTP_CCP_DISCOVER_TBS		0x02
+#define BTP_CCP_DISCOVER_TBS		0x02U
 struct btp_ccp_discover_tbs_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_CCP_ACCEPT_CALL		0x03
+#define BTP_CCP_ACCEPT_CALL		0x03U
 struct btp_ccp_accept_call_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 	uint8_t call_id;
 } __packed;
 
-#define BTP_CCP_TERMINATE_CALL		0x04
+#define BTP_CCP_TERMINATE_CALL		0x04U
 struct btp_ccp_terminate_call_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 	uint8_t call_id;
 } __packed;
 
-#define BTP_CCP_ORIGINATE_CALL		0x05
+#define BTP_CCP_ORIGINATE_CALL		0x05U
 struct btp_ccp_originate_call_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
@@ -45,112 +45,112 @@ struct btp_ccp_originate_call_cmd {
 	char    uri[0];
 } __packed;
 
-#define BTP_CCP_READ_CALL_STATE		0x06
+#define BTP_CCP_READ_CALL_STATE		0x06U
 struct btp_ccp_read_call_state_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_BEARER_NAME	0x07
+#define BTP_CCP_READ_BEARER_NAME	0x07U
 struct btp_ccp_read_bearer_name_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_BEARER_UCI		0x08
+#define BTP_CCP_READ_BEARER_UCI		0x08U
 struct btp_ccp_read_bearer_uci_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_BEARER_TECH	0x09
+#define BTP_CCP_READ_BEARER_TECH	0x09U
 struct btp_ccp_read_bearer_technology_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_URI_LIST		0x0a
+#define BTP_CCP_READ_URI_LIST		0x0AU
 struct btp_ccp_read_uri_list_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_SIGNAL_STRENGTH	0x0b
+#define BTP_CCP_READ_SIGNAL_STRENGTH	0x0BU
 struct btp_ccp_read_signal_strength_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_SIGNAL_INTERVAL	0x0c
+#define BTP_CCP_READ_SIGNAL_INTERVAL	0x0CU
 struct btp_ccp_read_signal_interval_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_CURRENT_CALLS	0x0d
+#define BTP_CCP_READ_CURRENT_CALLS	0x0DU
 struct btp_ccp_read_current_calls_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_CCID		0x0e
+#define BTP_CCP_READ_CCID		0x0EU
 struct btp_ccp_read_ccid_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_CALL_URI		0x0f
+#define BTP_CCP_READ_CALL_URI		0x0FU
 struct btp_ccp_read_call_uri_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_STATUS_FLAGS	0x10
+#define BTP_CCP_READ_STATUS_FLAGS	0x10U
 struct btp_ccp_read_status_flags_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_OPTIONAL_OPCODES	0x11
+#define BTP_CCP_READ_OPTIONAL_OPCODES	0x11U
 struct btp_ccp_read_optional_opcodes_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_FRIENDLY_NAME	0x12
+#define BTP_CCP_READ_FRIENDLY_NAME	0x12U
 struct btp_ccp_read_friendly_name_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_READ_REMOTE_URI		0x13
+#define BTP_CCP_READ_REMOTE_URI		0x13U
 struct btp_ccp_read_remote_uri_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 } __packed;
 
-#define BTP_CCP_SET_SIGNAL_INTERVAL	0x14
+#define BTP_CCP_SET_SIGNAL_INTERVAL	0x14U
 struct btp_ccp_set_signal_interval_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 	uint8_t interval;
 } __packed;
 
-#define BTP_CCP_HOLD_CALL		0x15
+#define BTP_CCP_HOLD_CALL		0x15U
 struct btp_ccp_hold_call_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 	uint8_t call_id;
 } __packed;
 
-#define BTP_CCP_RETRIEVE_CALL		0x16
+#define BTP_CCP_RETRIEVE_CALL		0x16U
 struct btp_ccp_retrieve_call_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
 	uint8_t call_id;
 } __packed;
 
-#define BTP_CCP_JOIN_CALLS		0x17
+#define BTP_CCP_JOIN_CALLS		0x17U
 struct btp_ccp_join_calls_cmd {
 	bt_addr_le_t address;
 	uint8_t inst_index;
@@ -159,14 +159,14 @@ struct btp_ccp_join_calls_cmd {
 } __packed;
 
 /* CCP events */
-#define BTP_CCP_EV_DISCOVERED		0x80
+#define BTP_CCP_EV_DISCOVERED		0x80U
 struct btp_ccp_discovered_ev {
 	int     status;
 	uint8_t tbs_count;
 	bool	gtbs_found;
 } __packed;
 
-#define BTP_CCP_EV_CALL_STATES		0x81
+#define BTP_CCP_EV_CALL_STATES		0x81U
 struct btp_ccp_call_states_ev {
 	int     status;
 	uint8_t inst_index;
@@ -174,7 +174,7 @@ struct btp_ccp_call_states_ev {
 	struct bt_tbs_client_call_state call_states[0];
 } __packed;
 
-#define BTP_CCP_EV_CHRC_HANDLES		0x82
+#define BTP_CCP_EV_CHRC_HANDLES		0x82U
 struct btp_ccp_chrc_handles_ev {
 	uint16_t provider_name;
 	uint16_t bearer_uci;
@@ -194,7 +194,7 @@ struct btp_ccp_chrc_handles_ev {
 	uint16_t friendly_name;
 };
 
-#define BTP_CCP_EV_CHRC_VAL		0x83
+#define BTP_CCP_EV_CHRC_VAL		0x83U
 struct btp_ccp_chrc_val_ev {
 	bt_addr_le_t address;
 	uint8_t status;
@@ -202,7 +202,7 @@ struct btp_ccp_chrc_val_ev {
 	uint8_t value;
 };
 
-#define BTP_CCP_EV_CHRC_STR		0x84
+#define BTP_CCP_EV_CHRC_STR		0x84U
 struct btp_ccp_chrc_str_ev {
 	bt_addr_le_t address;
 	uint8_t status;
@@ -211,13 +211,13 @@ struct btp_ccp_chrc_str_ev {
 	char data[0];
 } __packed;
 
-#define BTP_CCP_EV_CP			0x85
+#define BTP_CCP_EV_CP			0x85U
 struct btp_ccp_cp_ev {
 	bt_addr_le_t address;
 	uint8_t status;
 } __packed;
 
-#define BTP_CCP_EV_CURRENT_CALLS	0x86
+#define BTP_CCP_EV_CURRENT_CALLS	0x86U
 struct btp_ccp_current_calls_ev {
 	bt_addr_le_t address;
 	uint8_t status;

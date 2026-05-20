@@ -14,10 +14,14 @@ flash: 256
 supported:
   - spi
   - adc
+  - dma
   - flash
   - gpio
   - can
   - uart
+  - hwinfo
   - mbox
   - i2c
+  - watchdog
+  - pwm
 vendor: nxp

@@ -24,6 +24,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_endpoint.h"
 #include "btp/btp.h"
@@ -31,8 +32,8 @@
 #define LOG_MODULE_NAME bttester_aics
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_BTTESTER_LOG_LEVEL);
 
-#define BT_AICS_MAX_INPUT_DESCRIPTION_SIZE 16
-#define BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE 16
+#define BT_AICS_MAX_INPUT_DESCRIPTION_SIZE 16U
+#define BT_AICS_MAX_OUTPUT_DESCRIPTION_SIZE 16U
 
 struct btp_aics_instance aics_client_instance;
 struct btp_aics_instance aics_server_instance;
@@ -44,6 +45,9 @@ static uint8_t aics_supported_commands(const void *cmd, uint16_t cmd_len, void *
 				       uint16_t *rsp_len)
 {
 	struct btp_aics_read_supported_commands_rp *rp = rsp;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_AICS, rp->data);
 	*rsp_len += sizeof(*rp);
@@ -110,7 +114,7 @@ void btp_send_aics_description_ev(struct bt_conn *conn, uint8_t att_status, uint
 {
 	struct btp_aics_description_ev *ev;
 
-	net_buf_simple_init(rx_ev_buf, 0);
+	net_buf_simple_init(rx_ev_buf, 0U);
 
 	ev = net_buf_simple_add(rx_ev_buf, sizeof(*ev));
 
@@ -139,6 +143,10 @@ static uint8_t aics_set_gain(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 {
 	const struct btp_aics_set_gain_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS set gain %d", cp->gain);
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -146,7 +154,7 @@ static uint8_t aics_set_gain(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_gain_set(aics_server_instance.aics[i], cp->gain) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -160,6 +168,10 @@ static uint8_t aics_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_
 {
 	const struct btp_aics_unmute_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS Unmute");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -167,7 +179,7 @@ static uint8_t aics_unmute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_unmute(aics_server_instance.aics[i]) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -181,6 +193,10 @@ static uint8_t aics_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 {
 	const struct btp_aics_mute_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS Mute");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -188,7 +204,7 @@ static uint8_t aics_mute(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t 
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_mute(aics_server_instance.aics[i]) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -202,6 +218,10 @@ static uint8_t aics_state_get(const void *cmd, uint16_t cmd_len, void *rsp, uint
 {
 	const struct btp_aics_state_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS State");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -209,7 +229,7 @@ static uint8_t aics_state_get(const void *cmd, uint16_t cmd_len, void *rsp, uint
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_state_get(aics_server_instance.aics[i]) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -223,6 +243,10 @@ static uint8_t aics_type_get(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 {
 	const struct btp_aics_type_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS Type");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -230,7 +254,7 @@ static uint8_t aics_type_get(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_type_get(aics_server_instance.aics[i]) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -244,6 +268,10 @@ static uint8_t aics_status_get(const void *cmd, uint16_t cmd_len, void *rsp, uin
 {
 	const struct btp_aics_status_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS Status");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -251,7 +279,7 @@ static uint8_t aics_status_get(const void *cmd, uint16_t cmd_len, void *rsp, uin
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_status_get(aics_server_instance.aics[i]) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -266,6 +294,10 @@ static uint8_t aics_gain_setting_prop_get(const void *cmd, uint16_t cmd_len, voi
 {
 	const struct btp_aics_gain_setting_prop_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS Gain settings properties");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -273,7 +305,7 @@ static uint8_t aics_gain_setting_prop_get(const void *cmd, uint16_t cmd_len, voi
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_gain_setting_get(aics_server_instance.aics[i]) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -287,6 +319,10 @@ static uint8_t aics_man_gain_set(const void *cmd, uint16_t cmd_len, void *rsp, u
 {
 	const struct btp_aics_manual_gain_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS set manual gain mode");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -294,7 +330,7 @@ static uint8_t aics_man_gain_set(const void *cmd, uint16_t cmd_len, void *rsp, u
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_manual_gain_set(aics_server_instance.aics[i]) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -308,6 +344,10 @@ static uint8_t aics_auto_gain_set(const void *cmd, uint16_t cmd_len, void *rsp, 
 {
 	const struct btp_aics_auto_gain_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS set automatic gain mode");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -315,7 +355,7 @@ static uint8_t aics_auto_gain_set(const void *cmd, uint16_t cmd_len, void *rsp, 
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_automatic_gain_set(aics_server_instance.aics[i]) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -328,9 +368,14 @@ static uint8_t aics_auto_gain_set(const void *cmd, uint16_t cmd_len, void *rsp, 
 static uint8_t aics_set_man_gain_only(const void *cmd, uint16_t cmd_len, void *rsp,
 				      uint16_t *rsp_len)
 {
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS manual gain only set");
 
-	for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+	for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 		if (bt_aics_gain_set_manual_only(aics_server_instance.aics[i]) != 0) {
 			return BTP_STATUS_FAILED;
 		}
@@ -342,9 +387,14 @@ static uint8_t aics_set_man_gain_only(const void *cmd, uint16_t cmd_len, void *r
 static uint8_t aics_set_auto_gain_only(const void *cmd, uint16_t cmd_len, void *rsp,
 				       uint16_t *rsp_len)
 {
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS auto gain only set");
 
-	for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+	for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 		if (bt_aics_gain_set_auto_only(aics_server_instance.aics[i]) != 0) {
 			return BTP_STATUS_FAILED;
 		}
@@ -355,9 +405,14 @@ static uint8_t aics_set_auto_gain_only(const void *cmd, uint16_t cmd_len, void *
 
 static uint8_t aics_mute_disable(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
 {
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS disable mute");
 
-	for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+	for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 		if (bt_aics_disable_mute(aics_server_instance.aics[i]) != 0) {
 			return BTP_STATUS_FAILED;
 		}
@@ -370,6 +425,9 @@ static uint8_t aics_desc_set(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 {
 	const struct btp_aics_audio_desc_cmd *cp = cmd;
 	char description[BT_AICS_MAX_INPUT_DESCRIPTION_SIZE];
+
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("AICS set description");
 
@@ -388,7 +446,7 @@ static uint8_t aics_desc_set(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	memcpy(description, cp->desc, cp->desc_len);
 	description[cp->desc_len] = '\0';
 
-	for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+	for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 		if (bt_aics_description_set(aics_server_instance.aics[i], description) != 0) {
 			return BTP_STATUS_FAILED;
 		}
@@ -401,6 +459,10 @@ static uint8_t aics_desc_get(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 {
 	const struct btp_aics_desc_cmd *cp = cmd;
 
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
+
 	LOG_DBG("AICS Description");
 
 	if (!bt_addr_le_eq(&cp->address, BT_ADDR_LE_ANY)) {
@@ -408,7 +470,7 @@ static uint8_t aics_desc_get(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 			return BTP_STATUS_FAILED;
 		}
 	} else {
-		for (uint8_t i = 0; i < aics_server_instance.aics_cnt; i++) {
+		for (uint8_t i = 0U; i < aics_server_instance.aics_cnt; i++) {
 			if (bt_aics_description_get(aics_server_instance.aics[i]) != 0) {
 				return BTP_STATUS_FAILED;
 			}
@@ -503,7 +565,7 @@ static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain, uint8_t mu
 
 	bt_aics_client_conn_get(inst, &conn);
 
-	if (err) {
+	if (err != 0) {
 		if (err < 0) {
 			err = BT_ATT_ERR_UNLIKELY;
 		}

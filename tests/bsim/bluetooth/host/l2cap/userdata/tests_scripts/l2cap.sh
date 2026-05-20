@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="l2cap_ecred_userdata"
+simulation_id="${BOARD_TS}_l2cap_ecred_userdata"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

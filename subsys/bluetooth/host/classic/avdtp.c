@@ -412,7 +412,7 @@ static void avdtp_tx_rel_buf(struct net_buf *buf, struct net_buf *frag)
 	avdtp_tx_raise();
 }
 
-static void avdtp_tx_signal(struct bt_avdtp *session, struct net_buf *buf)
+static void avdtp_tx_single(struct bt_avdtp *session, struct net_buf *buf)
 {
 	int err;
 
@@ -425,7 +425,7 @@ static void avdtp_tx_signal(struct bt_avdtp *session, struct net_buf *buf)
 	}
 }
 
-static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
+static void avdtp_tx_multi(struct bt_avdtp *session, struct net_buf *buf,
 			   struct avdtp_buf_user_data *user_data)
 {
 	struct net_buf *frag;
@@ -553,12 +553,12 @@ static void avdtp_tx_processor(struct k_work *item)
 
 	/* The buf can be sent directly */
 	if (user_data->frag_count == 1) {
-		avdtp_tx_signal(session, buf);
+		avdtp_tx_single(session, buf);
 		avdtp_tx_raise();
 		return;
 	}
 
-	avdtp_tx_frags(session, buf, user_data);
+	avdtp_tx_multi(session, buf, user_data);
 }
 
 static void avdtp_buf_init_user_data(struct bt_avdtp *session, struct net_buf *buf)
@@ -2475,7 +2475,7 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 					*codec_info_element_len = (length - 2);
 					*codec_info_element =
 						net_buf_pull_mem(buf, (*codec_info_element_len));
-					return 0;
+					break;
 				}
 			}
 			break;
@@ -2484,7 +2484,7 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 			break;
 		}
 	}
-	return -EINVAL;
+	return (*codec_info_element != NULL) ? 0 : -EINVAL;
 }
 
 static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd,

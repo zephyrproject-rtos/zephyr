@@ -8,6 +8,7 @@ config I2C_NPCX
 	default y
 	depends on DT_HAS_NUVOTON_NPCX_I2C_PORT_ENABLED
 	select PINCTRL
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  This option enables the I2C driver for NPCX family of
 	  processors.

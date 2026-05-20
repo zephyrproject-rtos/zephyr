@@ -338,6 +338,11 @@ static void cind_handle_values(struct at_client *hf_at, uint32_t index,
 
 	LOG_DBG("index: %u, name: %s, min: %u, max:%u", index, name, min, max);
 
+	if (index >= ARRAY_SIZE(hf->ind_table)) {
+		LOG_WRN("Invalid indicator index: %u", index);
+		return;
+	}
+
 	for (i = 0; i < ARRAY_SIZE(ag_ind); i++) {
 		if (strcmp(name, ag_ind[i].name) != 0) {
 			continue;
@@ -779,9 +784,9 @@ static void set_call_incoming_flag(struct bt_hfp_hf_call *call, bool incoming)
 	call_count = get_using_call_count(call->hf);
 	if (call_count > 1) {
 		if (incoming) {
-			atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY);
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY);
 		} else {
-			atomic_test_bit(call->flags, BT_HFP_HF_CALL_OUTGOING_3WAY);
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_OUTGOING_3WAY);
 		}
 	} else {
 		atomic_set_bit_to(call->flags, BT_HFP_HF_CALL_INCOMING, incoming);

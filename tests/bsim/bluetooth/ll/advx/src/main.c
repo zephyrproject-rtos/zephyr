@@ -1098,10 +1098,7 @@ static bool is_reenable_addr;
 static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 		    struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, le_addr, sizeof(le_addr));
-	printk("%s: type = 0x%x, addr = %s\n", __func__, adv_type, le_addr);
+	printk("%s: type = 0x%x, addr = %s\n", __func__, adv_type, bt_addr_le_str(addr));
 
 	if (!is_reenable_addr &&
 	    !memcmp(own_addr_reenable, addr->a.val,
@@ -1130,11 +1127,8 @@ static void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 			bt_conn_unref(conn);
 		}
 	} else if (!is_scanned) {
-		char addr_str[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 		printk("Device found: %s, type: %u, AD len: %u, RSSI %d\n",
-			addr_str, adv_type, buf->len, rssi);
+			bt_addr_le_str(addr), adv_type, buf->len, rssi);
 
 		if ((buf->len == adv_data_expected_len) &&
 		    !memcmp(buf->data, adv_data_expected,
@@ -1181,18 +1175,16 @@ static uint8_t per_adv_evt_cnt_actual;
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 
 	(void)memset(name, 0, sizeof(name));
 
 	bt_data_parse(buf, data_cb, name);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s "
 	       "C:%u S:%u D:%u SR:%u E:%u Prim: %s, Secn: %s, "
 	       "Interval: 0x%04x (%u ms), SID: %u\n",
-	       le_addr, info->adv_type, info->tx_power, info->rssi, name,
+	       bt_addr_le_str(info->addr), info->adv_type, info->tx_power, info->rssi, name,
 	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,
@@ -1253,13 +1245,9 @@ static void
 per_adv_sync_sync_cb(struct bt_le_per_adv_sync *sync,
 		     struct bt_le_per_adv_sync_synced_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 	       "Interval 0x%04x (%u ms), PHY %s\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr,
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr),
 	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
 
 	is_sync = true;
@@ -1269,12 +1257,8 @@ static void
 per_adv_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 			   const struct bt_le_per_adv_sync_term_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr);
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
 
 	is_sync_lost = true;
 }
@@ -1284,13 +1268,9 @@ per_adv_sync_recv_cb(struct bt_le_per_adv_sync *sync,
 		     const struct bt_le_per_adv_sync_recv_info *info,
 		     struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
 	       "RSSI %i, CTE %u, data length %u\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr), info->tx_power,
 	       info->rssi, info->cte_type, buf->len);
 
 	if (!is_sync_report) {

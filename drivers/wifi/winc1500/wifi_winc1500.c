@@ -983,12 +983,11 @@ static void winc1500_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static int winc1500_mgmt_scan(const struct device *dev,
-			      struct wifi_scan_params *params,
+static int winc1500_mgmt_scan(const struct device *dev __unused,
+			      struct net_if *iface __unused,
+			      struct wifi_scan_params *params __unused,
 			      scan_result_cb_t cb)
 {
-	ARG_UNUSED(params);
-
 	if (w1500_data.scan_cb) {
 		return -EALREADY;
 	}
@@ -1004,7 +1003,8 @@ static int winc1500_mgmt_scan(const struct device *dev,
 	return 0;
 }
 
-static int winc1500_mgmt_connect(const struct device *dev,
+static int winc1500_mgmt_connect(const struct device *dev __unused,
+				 struct net_if *iface __unused,
 				 struct wifi_connect_req_params *params)
 {
 	uint8_t ssid[M2M_MAX_SSID_LEN];
@@ -1050,7 +1050,8 @@ static int winc1500_mgmt_connect(const struct device *dev,
 	return 0;
 }
 
-static int winc1500_mgmt_disconnect(const struct device *dev)
+static int winc1500_mgmt_disconnect(const struct device *dev __unused,
+				    struct net_if *iface __unused)
 {
 	if (!w1500_data.connected) {
 		return -EALREADY;
@@ -1063,8 +1064,8 @@ static int winc1500_mgmt_disconnect(const struct device *dev)
 	return 0;
 }
 
-static int winc1500_mgmt_ap_enable(const struct device *dev,
-			      struct wifi_connect_req_params *params)
+static int winc1500_mgmt_ap_enable(const struct device *dev __unused, struct net_if *iface __unused,
+				   struct wifi_connect_req_params *params)
 {
 	tstrM2MAPConfig strM2MAPConfig;
 
@@ -1087,7 +1088,8 @@ static int winc1500_mgmt_ap_enable(const struct device *dev,
 	return 0;
 }
 
-static int winc1500_mgmt_ap_disable(const struct device *dev)
+static int winc1500_mgmt_ap_disable(const struct device *dev __unused,
+				    struct net_if *iface __unused)
 {
 	if (m2m_wifi_disable_ap() != M2M_SUCCESS) {
 		return -EIO;

@@ -53,13 +53,6 @@ config NET_RX_STACK_SIZE
 config NET_MGMT_EVENT_STACK_SIZE
 	default 2048
 
-config ESP32_WIFI_STA_AUTO_DHCPV4
-	bool "Automatically starts DHCP4 negotiation"
-	default y if NET_DHCPV4
-	depends on NET_IPV4
-	help
-	  WiFi driver will automatically initiate DHCPV4 negotiation when connected.
-
 config ESP32_WIFI_AP_STA_MODE
 	bool "Activates the Station/AP co-existence mode."
 	default y if WIFI_USAGE_MODE_STA_AP
@@ -380,24 +373,24 @@ config ESP32_WIFI_MBEDTLS_CRYPTO
 	select PSA_WANT_ALG_CMAC
 	select PSA_WANT_ALG_CTR
 	select PSA_WANT_ALG_ECB_NO_PADDING
+	select PSA_WANT_ALG_ECDH
+	select PSA_WANT_ALG_ECDSA
 	select PSA_WANT_ALG_HMAC
 	select PSA_WANT_ALG_SHA_1
 	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ECC_SECP_R1_256
 	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	help
 	  Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
 
 config ESP32_WIFI_ENABLE_WPA3_SAE
 	bool "WPA3-Personal"
 	select ESP32_WIFI_MBEDTLS_CRYPTO
-	select PSA_WANT_ALG_ECDH
-	select PSA_WANT_ALG_ECDSA
-	select PSA_WANT_ECC_SECP_R1_256
-	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
-	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
-	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	help
 	  Select this option to allow the device to establish a WPA3-Personal connection.
 

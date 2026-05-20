@@ -13,11 +13,15 @@ if(WHISPER_BIN STREQUAL WHISPER_BIN-NOTFOUND)
   message(WARNING "Unable to find whisper binary.")
 else()
 
+  zephyr_build_string(whisper_board_string
+    BOARD ${BOARD} BOARD_QUALIFIERS ${BOARD_QUALIFIERS}
+  )
+
   # Points to the JSON file describing the platform.
   # This is passed to the whisper executable.
   # ${BOARD_DIR}/support/${BOARD}.whisper.json is the default.
   # This can be overridden via mechanism in zephyr_get().
-  set(WHISPER_CFG ${BOARD_DIR}/support/${board_string}.whisper.json)
+  set(WHISPER_CFG ${BOARD_DIR}/support/${whisper_board_string}.whisper.json)
   zephyr_get(WHISPER_CFG)
 
   if(NOT EXISTS ${WHISPER_CFG})

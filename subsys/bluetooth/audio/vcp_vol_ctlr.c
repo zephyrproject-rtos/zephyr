@@ -30,6 +30,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "common/bt_str.h"
@@ -135,6 +136,8 @@ static uint8_t vcp_vol_ctlr_read_vol_state_cb(struct bt_conn *conn, uint8_t err,
 	int cb_err = err;
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
 
+	ARG_UNUSED(params);
+
 	atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 
 	if (cb_err) {
@@ -164,6 +167,8 @@ static uint8_t vcp_vol_ctlr_read_vol_flag_cb(struct bt_conn *conn, uint8_t err,
 {
 	int cb_err = err;
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
+
+	ARG_UNUSED(params);
 
 	atomic_clear_bit(vol_ctlr->flags, BT_VCP_VOL_CTLR_FLAG_BUSY);
 
@@ -806,8 +811,6 @@ static void vcp_vol_ctlr_vocs_discover_cb(struct bt_vocs *inst, int err)
 
 	if (vol_ctlr == NULL) {
 		LOG_ERR("Could not lookup vol_ctlr from vocs");
-		vcp_vol_ctlr_discover_complete(vol_ctlr, BT_GATT_ERR(BT_ATT_ERR_UNLIKELY));
-
 		return;
 	}
 
@@ -869,6 +872,8 @@ static void vcp_vol_ctlr_reset(struct bt_vcp_vol_ctlr *vol_ctlr)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct bt_vcp_vol_ctlr *vol_ctlr = vol_ctlr_get_by_conn(conn);
+
+	ARG_UNUSED(reason);
 
 	if (vol_ctlr->conn == conn) {
 		vcp_vol_ctlr_reset(vol_ctlr);

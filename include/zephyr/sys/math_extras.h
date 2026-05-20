@@ -164,6 +164,41 @@ static int u64_count_trailing_zeros(uint64_t x);
 
 /**@}*/
 
+/**
+ * @name 128-bit arithmetic.
+ *
+ * Functions for performing arithmetic operations on 128-bit integers.
+ * These functions provide support for high-precision calculations on platforms
+ * where native 128-bit types are not available.
+ */
+/**@{*/
+
+/**
+ * @brief 128-bit integer structure.
+ *
+ * Representation of a 128-bit integer using two 64-bit words.
+ */
+typedef struct {
+	/** Low-order 64 bits. */
+	uint64_t low;
+	/** High-order 64 bits (includes sign bit). */
+	uint64_t high;
+} int128_t;
+
+/**
+ * @brief Multiply two signed 64-bit integers and store the result in a 128-bit integer.
+ *
+ * This function performs a full precision multiplication of two signed 64-bit
+ * values. The result is guaranteed to fit in a 128-bit representation without overflow.
+ *
+ * @param a Multiplicand.
+ * @param b Multiplier.
+ * @param result Pointer to the @ref int128_t structure where the result will be stored.
+ */
+static void i128_multiply_i64_i64(int64_t a, int64_t b, int128_t *result);
+
+/**@}*/
+
 /**@}*/
 
 #include <zephyr/sys/math_extras_impl.h>

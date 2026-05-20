@@ -599,7 +599,7 @@ static int gpio_ite_manage_callback(const struct device *dev,
 
 static void gpio_ite_isr(const void *arg)
 {
-	uint8_t irq = ite_intc_get_irq_num();
+	ite_irq_t irq = ite_intc_get_irq_num();
 	const struct device *dev = arg;
 	struct gpio_ite_data *data = DEV_GPIO_DATA(dev);
 	uint8_t gpio_mask = gpio_irqs[irq].gpio_mask;

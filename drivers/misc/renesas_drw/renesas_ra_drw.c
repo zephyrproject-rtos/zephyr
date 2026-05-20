@@ -89,7 +89,7 @@ void drw_zephyr_irq_handler(const struct device *dev)
 				(uint32_t **)p_d1_handle->pp_dlist_indirect_start;
 			if (p_d1_handle->dlist_indirect_enable &&
 			    *pp_dlist_indirect_start != NULL) {
-				R_DRW->DLISTSTART = *pp_dlist_indirect_start;
+				R_DRW->DLISTSTART = (uint32_t)(uintptr_t)*pp_dlist_indirect_start;
 				p_d1_handle->pp_dlist_indirect_start++;
 			} else {
 				k_sem_give(&d1_queryirq_sem);

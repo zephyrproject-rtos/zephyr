@@ -30,6 +30,7 @@
 #define LAN865x_MAC_NCFGR        MMS_REG(0x1, 0x001)
 #define LAN865x_MAC_NCFGR_CAF    BIT(4)
 #define LAN865x_MAC_NCFGR_MTIHEN BIT(6)
+#define LAN865x_MAC_NCFGR_MAXFS  BIT(8)
 #define LAN865x_MAC_HRB          MMS_REG(0x1, 0x020)
 #define LAN865x_MAC_HRT          MMS_REG(0x1, 0x021)
 #define LAN865x_MAC_SAB1         MMS_REG(0x1, 0x022)

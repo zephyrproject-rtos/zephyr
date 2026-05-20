@@ -206,13 +206,12 @@ static void uart_rzt2m_irq_callback_set(const struct device *dev, uart_irq_callb
 	data->callback_data = cb_data;
 }
 
-static int uart_rzt2m_irq_update(const struct device *dev)
+static void uart_rzt2m_irq_update(const struct device *dev)
 {
 	const struct rzt2m_device_config *config = dev->config;
 
 	*CFCLR(config->base) = CFCLR_MASK_RDRFC;
 	*FFCLR(config->base) = FFCLR_MASK_DRC;
-	return 1;
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 

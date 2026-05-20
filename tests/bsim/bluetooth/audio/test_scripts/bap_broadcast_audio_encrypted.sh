@@ -13,7 +13,7 @@ cd ${BSIM_OUT_PATH}/bin
 
 printf "\n\n======== Broadcaster encrypted test =========\n\n"
 
-SIMULATION_ID="broadcaster_encrypted"
+SIMULATION_ID="${BOARD_TS}_broadcaster_encrypted"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source_encrypted \

@@ -232,7 +232,13 @@ static void bt_uart_isr(const struct device *unused, void *user_data)
 	ARG_UNUSED(unused);
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(hci_uart_dev) && uart_irq_is_pending(hci_uart_dev)) {
+	while (true) {
+		uart_irq_update(hci_uart_dev);
+
+		if (uart_irq_is_pending(hci_uart_dev) <= 0) {
+			break;
+		}
+
 		if (!(uart_irq_rx_ready(hci_uart_dev) ||
 		      uart_irq_tx_ready(hci_uart_dev))) {
 			LOG_DBG("spurious interrupt");
@@ -416,14 +422,13 @@ int main(void)
 
 		const struct {
 			const uint8_t h4;
-			const struct bt_hci_evt_hdr hdr;
+			const uint8_t evt;
+			const uint8_t len;
 			const struct bt_hci_evt_cmd_complete cc;
 		} __packed cc_evt = {
 			.h4 = H4_EVT,
-			.hdr = {
-				.evt = BT_HCI_EVT_CMD_COMPLETE,
-				.len = sizeof(struct bt_hci_evt_cmd_complete),
-			},
+			.evt = BT_HCI_EVT_CMD_COMPLETE,
+			.len = sizeof(struct bt_hci_evt_cmd_complete),
 			.cc = {
 				.ncmd = 1,
 				.opcode = sys_cpu_to_le16(BT_OP_NOP),

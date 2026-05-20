@@ -7,7 +7,7 @@
 /**
  * @file
  * @ingroup display_interface
- * @brief Public API for AC057TC1 7-color e-ink display
+ * @brief Palette definitions for AC057TC1 7-color e-ink display
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DISPLAY_AC057TC1_H_
@@ -29,48 +29,26 @@ extern "C" {
 #endif
 
 /**
- * @brief AC057TC1 private pixel format
- *
- * 4 bits per pixel, 2 pixels per byte (high nibble first).
- * Supports 7 colors indexed 0-6 (3-bit color palette).
- */
-#define PIXEL_FORMAT_L_4 (PIXEL_FORMAT_PRIV_START << 0)
-
-/**
- * @brief Bits per pixel for AC057TC1 format
- */
-#define AC057TC1_BITS_PER_PIXEL 4
-
-/**
  * @name AC057TC1 Color Definitions
  * @{
+ *
+ * The display supports 7 colors, mapped via 3-bit indices (0-6).
+ * The color palette in display_capabilities provides the ARGB8888 representation
+ * of these colors for UI rendering (e.g., with LVGL).
+ *
+ * The controller uses the index values directly when rendering; conversion from
+ * ARGB8888 to the hardware's color representation is application-specific.
  */
-#define AC057TC1_COLOR_BLACK  0x00 /**< Black color index */
-#define AC057TC1_COLOR_WHITE  0x01 /**< White color index */
-#define AC057TC1_COLOR_GREEN  0x02 /**< Green color index */
-#define AC057TC1_COLOR_BLUE   0x03 /**< Blue color index */
-#define AC057TC1_COLOR_RED    0x04 /**< Red color index */
-#define AC057TC1_COLOR_YELLOW 0x05 /**< Yellow color index */
-#define AC057TC1_COLOR_ORANGE 0x06 /**< Orange color index */
+#define AC057TC1_COLOR_BLACK        0x00 /**< Black color index */
+#define AC057TC1_COLOR_WHITE        0x01 /**< White color index */
+#define AC057TC1_COLOR_GREEN        0x02 /**< Green color index */
+#define AC057TC1_COLOR_BLUE         0x03 /**< Blue color index */
+#define AC057TC1_COLOR_RED          0x04 /**< Red color index */
+#define AC057TC1_COLOR_YELLOW       0x05 /**< Yellow color index */
+#define AC057TC1_COLOR_ORANGE       0x06 /**< Orange color index */
+
+#define AC057TC1_COLOR_PALETTE_SIZE 7    /**< Number of colors in palette */
 /** @} */
-
-/**
- * @brief Pack two AC057TC1 pixels into a single byte
- *
- * @param pixel1 First pixel (high nibble, left pixel)
- * @param pixel2 Second pixel (low nibble, right pixel)
- * @return Packed byte containing both pixels
- */
-#define AC057TC1_PACK_PIXELS(pixel1, pixel2) (((pixel1) << 4) | ((pixel2) & 0x0F))
-
-/**
- * @brief Calculate buffer size needed for AC057TC1 framebuffer
- *
- * @param width Display width in pixels
- * @param height Display height in pixels
- * @return Size in bytes needed for framebuffer
- */
-#define AC057TC1_BUFFER_SIZE(width, height) (((width) * (height)) / 2)
 
 #ifdef __cplusplus
 }

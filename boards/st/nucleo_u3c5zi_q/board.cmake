@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 board_runner_args(pyocd "--target=stm32u3c5zit6q")
 board_runner_args(jlink "--device=STM32U3C5ZI" "--reset-after-load")

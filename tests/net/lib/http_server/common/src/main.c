@@ -480,4 +480,60 @@ ZTEST(http_service, test_HTTP_SERVER_CONTENT_TYPE)
 	zassert_str_equal(content_type, "video/mpeg");
 }
 
+extern void http_server_remove_dot_segments(char *path);
+
+#define ASSERT_NORMALIZE(_in, _expected) do {				\
+		char _buf[64];						\
+		strcpy(_buf, _in);					\
+		http_server_remove_dot_segments(_buf);			\
+		zassert_str_equal(_buf, _expected,			\
+				  "normalize(%s) -> %s, expected %s",	\
+				  _in, _buf, _expected);		\
+	} while (0)
+
+ZTEST(http_service, test_HTTP_SERVER_REMOVE_DOT_SEGMENTS)
+{
+	/* Pass-through: nothing to resolve. */
+	ASSERT_NORMALIZE("", "");
+	ASSERT_NORMALIZE("/", "/");
+	ASSERT_NORMALIZE("/foo", "/foo");
+	ASSERT_NORMALIZE("/foo/bar", "/foo/bar");
+	ASSERT_NORMALIZE("/foo/", "/foo/");
+
+	/* Segments that look like dots but are not exact ".."/"." segments. */
+	ASSERT_NORMALIZE("/.foo", "/.foo");
+	ASSERT_NORMALIZE("/..foo", "/..foo");
+	ASSERT_NORMALIZE("/foo.", "/foo.");
+	ASSERT_NORMALIZE("/foo..", "/foo..");
+	ASSERT_NORMALIZE("/foo/.bar", "/foo/.bar");
+	ASSERT_NORMALIZE("/foo/..bar", "/foo/..bar");
+
+	/* "." segments collapse. */
+	ASSERT_NORMALIZE("/./foo", "/foo");
+	ASSERT_NORMALIZE("/foo/./bar", "/foo/bar");
+	ASSERT_NORMALIZE("/foo/.", "/foo/");
+	ASSERT_NORMALIZE("/.", "/");
+
+	/* ".." within the path stays inside and resolves correctly. */
+	ASSERT_NORMALIZE("/foo/../bar", "/bar");
+	ASSERT_NORMALIZE("/foo/bar/../baz", "/foo/baz");
+	ASSERT_NORMALIZE("/a/b/c/../..", "/a/");
+	ASSERT_NORMALIZE("/foo/bar/..", "/foo/");
+	ASSERT_NORMALIZE("/foo/..", "/");
+
+	/* ".." that would escape root is clamped to root. */
+	ASSERT_NORMALIZE("/..", "/");
+	ASSERT_NORMALIZE("/../..", "/");
+	ASSERT_NORMALIZE("/../foo", "/foo");
+	ASSERT_NORMALIZE("/a/../../b", "/b");
+
+	/* Query and fragment portions are preserved verbatim. */
+	ASSERT_NORMALIZE("/foo?bar=1", "/foo?bar=1");
+	ASSERT_NORMALIZE("/foo/../bar?x=1", "/bar?x=1");
+	ASSERT_NORMALIZE("/foo/.?x=1", "/foo/?x=1");
+	ASSERT_NORMALIZE("/foo/..?x=1", "/?x=1");
+	ASSERT_NORMALIZE("/foo#frag", "/foo#frag");
+	ASSERT_NORMALIZE("/foo/../bar#frag", "/bar#frag");
+}
+
 ZTEST_SUITE(http_service, NULL, NULL, NULL, NULL, NULL);

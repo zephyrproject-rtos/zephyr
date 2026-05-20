@@ -217,12 +217,13 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* Set 6Kb of storage at the end of the 1024Kb of flash */
 		storage_partition: partition@fe800 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x000fe800 0x00001800>;
 			label = "storage";
 		};

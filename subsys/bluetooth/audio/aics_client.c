@@ -28,6 +28,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "aics_internal.h"
@@ -364,7 +365,7 @@ static uint8_t internal_read_state_cb(struct bt_conn *conn, uint8_t err,
 		return BT_GATT_ITER_STOP;
 	}
 
-	if (err) {
+	if (err != 0) {
 		LOG_WRN("State read failed: %d", err);
 	} else if (data) {
 		if (length == sizeof(*state)) {
@@ -691,6 +692,8 @@ static void aics_client_reset(struct bt_aics *inst)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	ARG_UNUSED(reason);
+
 	for (size_t i = 0; i < ARRAY_SIZE(aics_insts); i++) {
 		if (aics_insts[i].cli.conn == conn) {
 			aics_client_reset(&aics_insts[i]);

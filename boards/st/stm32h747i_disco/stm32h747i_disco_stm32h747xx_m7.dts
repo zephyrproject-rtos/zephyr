@@ -115,12 +115,13 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set 2KB of storage at the end of first 1MB flash */
 		storage_partition: partition@ff800 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000ff800 DT_SIZE_K(2)>;
 		};

@@ -3164,7 +3164,7 @@ static int bt_sdp_parse_attribute(struct net_buf_simple *buf, struct bt_sdp_attr
 	int err;
 	uint8_t *src;
 
-	if (buf->len < (sizeof(uint8_t) + sizeof(attr->id))) {
+	if (buf->len < (sizeof(uint8_t) + sizeof(attr->id) + sizeof(type))) {
 		LOG_WRN("Malformed packet");
 		return -EBADMSG;
 	}

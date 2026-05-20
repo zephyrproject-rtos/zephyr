@@ -21,6 +21,7 @@
 #include <zephyr/drivers/i2s.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #ifdef CONFIG_CLOCK_CONTROL_MCUX_CCM
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #endif
@@ -109,6 +110,7 @@ struct i2s_mcux_config {
 	clock_control_subsys_t clk_sub_sys;
 	const struct device *ccm_dev;
 	const struct pinctrl_dev_config *pinctrl;
+	struct reset_dt_spec reset;
 	void (*irq_connect)(const struct device *dev);
 	sai_sync_mode_t rx_sync_mode;
 	sai_sync_mode_t tx_sync_mode;
@@ -1175,6 +1177,20 @@ static int i2s_mcux_initialize(const struct device *dev)
 
 	/* register ISR */
 	dev_cfg->irq_connect(dev);
+
+	if (dev_cfg->reset.dev != NULL) {
+		if (!device_is_ready(dev_cfg->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		err = reset_line_deassert_dt(&dev_cfg->reset);
+		if (err != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", err);
+			return err;
+		}
+	}
+
 	/* pinctrl */
 	err = pinctrl_apply_state(dev_cfg->pinctrl, PINCTRL_STATE_DEFAULT);
 	if (err) {
@@ -1260,6 +1276,7 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.clk_sub_sys =                                                                     \
 			(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_IDX(i2s_id, 0, name),       \
 		.ccm_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(i2s_id)),                             \
+		.reset = RESET_DT_SPEC_INST_GET_OR(i2s_id, {0}),                                   \
 		.irq_connect = i2s_irq_connect_##i2s_id,                                           \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(i2s_id),                                 \
 		.tx_sync_mode =                                                                    \

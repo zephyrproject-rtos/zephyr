@@ -79,7 +79,7 @@ typedef unsigned long blkcnt_t;
 typedef int pid_t;
 #endif
 
-#ifndef __useconds_t_defined
+#if !defined(_USECONDS_T_DECLARED) && !defined(__useconds_t_defined)
 typedef unsigned long useconds_t;
 #endif
 

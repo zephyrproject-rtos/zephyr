@@ -7,7 +7,6 @@
 
 import glob
 import os
-import signal
 import sys
 from pathlib import Path
 
@@ -179,13 +178,6 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
                     '-ex', "quit",
                     '-silent'])
         self.check_call(command)
-
-    def check_call_ignore_sigint(self, command):
-        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
-        try:
-            self.check_call(command)
-        finally:
-            signal.signal(signal.SIGINT, previous)
 
     def bmp_attach(self, command, **kwargs):
         if self.elf_file is None:

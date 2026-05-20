@@ -189,6 +189,12 @@ static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	k_spin_unlock(&data->lock, key);
 
 	LPTMR_StopTimer(config->base);
+	/*
+	 * LPTMR only has one register (CMR) for both period and alarm.
+	 * if cancel doesn't affect the period, no need restoration.
+	 */
+	LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
+	LPTMR_ClearStatusFlags(config->base, kLPTMR_TimerCompareFlag);
 
 	return 0;
 }
@@ -325,6 +331,27 @@ static void mcux_lptmr_isr(const struct device *dev)
 #endif
 }
 
+static int mcux_lptmr_reset(const struct device *dev)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+#if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+	struct mcux_lptmr_data *data = dev->data;
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+#endif
+
+	/* If stopped, the internal counter is already reset. */
+	if (config->base->CSR & LPTMR_CSR_TEN_MASK) {
+		LPTMR_StopTimer(config->base);
+		LPTMR_StartTimer(config->base);
+	}
+
+#if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+	k_spin_unlock(&data->lock, key);
+#endif
+
+	return 0;
+}
+
 static int mcux_lptmr_init(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
@@ -361,6 +388,7 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.get_pending_int = mcux_lptmr_get_pending_int,
 	.get_top_value = mcux_lptmr_get_top_value,
 	.get_freq = mcux_lptmr_get_freq,
+	.reset = mcux_lptmr_reset,
 };
 
 /*

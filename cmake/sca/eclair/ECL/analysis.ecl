@@ -7,5 +7,3 @@
 -config=B.REPORT.ECB,macros=10
 
 -enable=B.EXPLAIN
-
--eval_file=toolchain.ecl

@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Fabian Blatz <fabianblatz@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/display/panel.h>
+
+&sdl_dc {
+	width = <320>;
+	height = <240>;
+
+	color-palette {
+		compatible = "zephyr,panel-color-palette";
+		/* 16-color palette for I_4 format */
+		colors = <ARGB8888(0, 0, 0, 255)        /* 0: black */
+			  ARGB8888(128, 0, 0, 255)      /* 1: dark red */
+			  ARGB8888(0, 128, 0, 255)      /* 2: dark green */
+			  ARGB8888(128, 128, 0, 255)    /* 3: dark yellow */
+			  ARGB8888(0, 0, 128, 255)      /* 4: dark blue */
+			  ARGB8888(128, 0, 128, 255)    /* 5: dark magenta */
+			  ARGB8888(0, 128, 128, 255)    /* 6: dark cyan */
+			  ARGB8888(192, 192, 192, 255)  /* 7: light gray */
+			  ARGB8888(128, 128, 128, 255)  /* 8: dark gray */
+			  ARGB8888(255, 0, 0, 255)      /* 9: red */
+			  ARGB8888(0, 255, 0, 255)      /* 10: green */
+			  ARGB8888(255, 255, 0, 255)    /* 11: yellow */
+			  ARGB8888(0, 0, 255, 255)      /* 12: blue */
+			  ARGB8888(255, 0, 255, 255)    /* 13: magenta */
+			  ARGB8888(0, 255, 255, 255)    /* 14: cyan */
+			  ARGB8888(255, 255, 255, 255)  /* 15: white */ >;
+	};
+};

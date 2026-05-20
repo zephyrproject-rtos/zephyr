@@ -156,12 +156,18 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 	int len = 0;
 	int offset = drv_data->rx_buf.len;
 
-	if ((uart_irq_update(dev) > 0) && (uart_irq_is_pending(dev) > 0)) {
+	while (true) {
+		uart_irq_update(dev);
+
+		if (uart_irq_is_pending(dev) <= 0) {
+			break;
+		}
+
 		if (uart_irq_tx_ready(dev)) {
 			uart_cb_tx_handler(uart_dev);
 		}
 
-		while (uart_irq_rx_ready(dev)) {
+		if (uart_irq_rx_ready(dev)) {
 			len = uart_fifo_read(dev, &drv_data->rx_buf.data[offset],
 								drv_data->pkt_len);
 			offset += len;
@@ -1121,13 +1127,13 @@ static int grow_r502a_init(const struct device *dev)
 	int ret;
 
 	if (!device_is_ready(cfg->dev)) {
-		LOG_ERR("%s: grow_r502a device not ready", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->dev);
 		return -ENODEV;
 	}
 
 	if (IS_ENABLED(CONFIG_GROW_R502A_GPIO_POWER)) {
 		if (!gpio_is_ready_dt(&cfg->vin_gpios)) {
-			LOG_ERR("GPIO port %s not ready", cfg->vin_gpios.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->vin_gpios.port);
 			return -ENODEV;
 		}
 
@@ -1140,7 +1146,7 @@ static int grow_r502a_init(const struct device *dev)
 		k_sleep(K_MSEC(R502A_DELAY));
 
 		if (!gpio_is_ready_dt(&cfg->act_gpios)) {
-			LOG_ERR("GPIO port %s not ready", cfg->act_gpios.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->act_gpios.port);
 			return -ENODEV;
 		}
 

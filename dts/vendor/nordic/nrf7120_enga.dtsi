@@ -135,7 +135,7 @@
 		/* Intentionally empty because uicr is hardware fixed to Secure */
 #else
 		uicr: uicr@ffd000 {
-			compatible = "nordic,nrf-uicr";
+			compatible = "nordic,nrf71-uicr";
 			reg = <0xffd000 0x1000>;
 			ranges = <0x0 0xffd000 0x1000>;
 			#address-cells = <1>;
@@ -187,7 +187,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
-			#include "nrf7120_enga_secure_peripherals.dtsi"
+#include "nrf7120_enga_secure_peripherals.dtsi"
 #endif
 
 			dppic00: dppic@42000 {
@@ -305,8 +305,8 @@
 				status = "disabled";
 			};
 
-			qspi00: qspi@5b000 {
-				compatible = "nordic,nrf-qspi-v2", "snps,designware-ssi";
+			mspi00: mspi@5b000 {
+				compatible = "nordic,nrf-mspi", "snps,designware-ssi";
 				interrupts = <91 NRF_DEFAULT_IRQ_PRIORITY>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -320,8 +320,8 @@
 				status = "disabled";
 			};
 
-			qspi01: qspi@5c000 {
-				compatible = "nordic,nrf-qspi-v2", "snps,designware-ssi";
+			mspi01: mspi@5c000 {
+				compatible = "nordic,nrf-mspi", "snps,designware-ssi";
 				interrupts = <92 NRF_DEFAULT_IRQ_PRIORITY>;
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -656,7 +656,7 @@
 			};
 
 			nfct: nfct@d6000 {
-				compatible = "nordic,nrf-nfct";
+				compatible = "nordic,nrf-nfct-v2";
 				reg = <0xd6000 0x1000>;
 				interrupts = <214 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";

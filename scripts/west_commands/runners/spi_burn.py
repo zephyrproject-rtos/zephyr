@@ -145,7 +145,7 @@ class SpiBurnBinaryRunner(ZephyrBinaryRunner):
             ] + gdb_ex
 
             # Run gdb
-            self.run_client(client_cmd)
+            self.check_call_ignore_sigint(client_cmd)
 
         finally:
             self.stop_iceman()

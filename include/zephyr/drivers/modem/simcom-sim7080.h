@@ -11,6 +11,7 @@
 
 #include <zephyr/types.h>
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
 
@@ -454,6 +455,99 @@ int mdm_sim7080_dns_set_lookup_params(uint8_t recount, uint16_t timeout);
  * @param timeout [out] Timeout for a dns query in milliseconds.
  */
 void mdm_sim7080_dns_get_lookup_params(uint8_t *recount, uint16_t *timeout);
+
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+/**
+ * Function to provide bytes to certificate upload functions.
+ *
+ * @param buffer Destination buffer for the certificate data.
+ * @param max_len Maximum number of bytes that can be inserted to the buffer.
+ * @param offset Offset to the start of the certificate in bytes.
+ * @return The number of bytes copied to the buffer or a negative value on error.
+ */
+typedef int (*sim7080_tls_cert_read_func)(uint8_t *buf, size_t max_len, size_t offset);
+
+/**
+ * Import a root certificate to the modem.
+ *
+ * @param cert_name The NULL terminated name of the certificate.
+ * @param read_func Function to read the certificate data.
+ * @param cert_len Length of the certificacte in bytes.
+ * @return 0 on success. A negative error code otherwise.
+ *
+ * @note Certificates need to be X.509 ITU-T encoded. Following formats are
+ *       accepted: .pem, .der, .p7b.
+ * @note The certificate will be stored permanently on the modem under the given name.
+ *       This function only needs to be called only once, except the certificate changes.
+ */
+int mdm_sim7080_import_root_ca(const char *cert_name, sim7080_tls_cert_read_func read_func,
+			       size_t cert_len);
+
+/**
+ * Import a client certificate and client key to the modem.
+ *
+ * @param cert_name The NULL terminated name of the client certificate.
+ * @param cert_read_func Function to read the client certificate data.
+ * @param cert_len Length of the client certificacte in bytes.
+ * @param key_name The NULL terminated name of the client key.
+ * @param key_read_func Function to read the client key data.
+ * @param key_len Length of the client key in bytes.
+ * @param passwd The NULL terminated password of the certificate. May be NULL.
+ * @return 0 on success. A negative error code otherwise.
+ *
+ * @note Certificates need to be X.509 ITU-T encoded. Following formats are
+ *       accepted: .pem, .der, .p7b.
+ * @note The certificate will be stored permanently on the modem under the given name.
+ *       This function only needs to be called only once, except the certificate changes.
+ */
+int mdm_sim7080_import_client_cert(const char *cert_name, sim7080_tls_cert_read_func cert_read_func,
+				   size_t cert_len, const char *key_name,
+				   sim7080_tls_cert_read_func key_read_func, size_t key_len,
+				   const char *passwd);
+
+/**
+ * Import a dtls psk table to the modem.
+ *
+ * @param psk_name The NULL terminated name of the psk table.
+ * @param read_func Function to read the psk data.
+ * @param cert_len Length of the psk table in bytes.
+ * @return 0 on success. A negative error code otherwise.
+ *
+ * @note The psk table contains pairs of <identity>:<psk>.
+ *       There needs to be exactly one pair per line.
+ *       The psk needs to be given as hex string..
+ *       For example the credentials (Client_identity, 0x01020304)
+ *       needs to be formatted as Client_identity:01020304.
+ *		 Multiple pairs can be included in the same file separated by newlines.
+ * @note The psk table will be stored permanently on the modem under the given name.
+ *       This function only needs to be called only once, except the psk table changes.
+ */
+int mdm_sim7080_import_dtls_psk(const char *psk_name, sim7080_tls_cert_read_func read_func,
+				size_t psk_len);
+
+/**
+ * Configure the certificates that should be used by the socket for tls.
+ *
+ * @param fd The socket file descriptor.
+ * @param root_ca The NULL terminated root certificat name.
+ * @param client_cert The NULL terminated client certificate name. May be NULL.
+ * @return 0 on success. Otherwise a negative error code.
+ *
+ * @note This function needs tp be called before calling zsock_connect.
+ */
+int mdm_sim7080_configure_tls_certs(int fd, const char *root_ca, const char *client_cert);
+
+/**
+ * Configure the passkey table used by dtls.
+ *
+ * @param fd The socket file descriptor.
+ * @param root_ca The NULL terminated passkey talbe name
+ * @return 0 on success. Otherwise a negative error code.
+ *
+ * @note This function needs tp be called before calling zsock_connect.
+ */
+int mdm_sim7080_configure_dtls_psktable(int fd, const char *psktable);
+#endif
 
 #ifdef __cplusplus
 }

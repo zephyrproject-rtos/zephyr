@@ -4,11 +4,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="bap_broadcast_audio_assistant_incorrect_code"
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+SIMULATION_ID="${BOARD_TS}_bap_broadcast_audio_assistant_incorrect_code"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=180
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 

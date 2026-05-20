@@ -43,21 +43,6 @@ config SOC_FAMILY_MAX32_RV32
 	select CLOCK_CONTROL
 	imply XIP
 
-config SOC_MAX32655_M4
-	select MAX32_HAS_SECONDARY_RV32
-
-config SOC_MAX32680_M4
-	select MAX32_HAS_SECONDARY_RV32
-
-config SOC_MAX32690_M4
-	select MAX32_HAS_SECONDARY_RV32
-
-config SOC_MAX78000_M4
-	select MAX32_HAS_SECONDARY_RV32
-
-config SOC_MAX78002_M4
-	select MAX32_HAS_SECONDARY_RV32
-
 if SOC_FAMILY_MAX32
 
 config MAX32_ON_ENTER_CPU_IDLE_HOOK
@@ -71,13 +56,9 @@ config MAX32_ON_ENTER_CPU_IDLE_HOOK
 	  If needed, this hook can be used to prevent the CPU from actually
 	  entering sleep by skipping the WFE/WFI instruction.
 
-config MAX32_HAS_SECONDARY_RV32
-	bool
-
-if MAX32_HAS_SECONDARY_RV32
-
 config MAX32_SECONDARY_RV32
 	bool "Secondary RISC-V core enable"
+	depends on DT_HAS_ADI_MAX32_RV32_ENABLED
 
 config MAX32_STANDBY_DELAY
 	int "Prevent standby on boot for given ms"
@@ -95,7 +76,17 @@ config MAX32_SECONDARY_RV32_STARTUP_DELAY
 
 endif # MAX32_SECONDARY_RV32
 
-endif # MAX32_HAS_SECONDARY_RV32
+config MAX32_SECONDARY_M4
+	bool "Secondary M4 core enable"
+	depends on DT_HAS_ADI_MAX32_M4F_CPU1_ENABLED
+
+if MAX32_SECONDARY_M4
+
+config MAX32_SECONDARY_M4_STARTUP_DELAY
+	int "Secondary M4 core startup delay (in cycles)"
+	default 0
+
+endif # MAX32_SECONDARY_M4
 
 config BUILD_WITH_TFM
 	default y if TRUSTED_EXECUTION_NONSECURE

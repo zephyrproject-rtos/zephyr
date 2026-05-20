@@ -10,7 +10,14 @@
 #include <zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h>
 #include <zephyr/dt-bindings/pinctrl/stm32f1-afio.h>
 
-/* Adapted from Linux: include/dt-bindings/pinctrl/stm32-pinfunc.h */
+/**
+ * Originally derived from Linux: include/dt-bindings/pinctrl/stm32-pinfunc.h
+ *
+ * For compatibility with Linux, the STM32_PINMUX macro and `pinmux` property
+ * have been retained. However, the resulting value is not saved as-is inside
+ * the image: during compilation, information is extracted from `pinmux` and
+ * saved in a custom format (c.f. `soc/st/stm32/common/pinctrl_soc.h`)
+ */
 
 /**
  * @brief Macro to generate pinmux int using port, pin number and mode arguments
@@ -38,7 +45,7 @@
  *
  * @param port Port ('A'..'K')
  * @param line Pin (0..15)
- * @param mode Pin mode (ANALOG, GPIO_IN, ALTERNATE).
+ * @param mode Pin mode (ANALOG, GPIO_IN, GPIO_OUT, ALTERNATE).
  * @param remap Pin remapping configuration (NO_REMAP, REMAP_1, ...)
  */
 #define STM32F1_PINMUX(port, line, mode, remap)				       \

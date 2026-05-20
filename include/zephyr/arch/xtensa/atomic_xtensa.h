@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Intel Corporation
+ * Copyright (c) 2021, 2026 Intel Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,10 +8,12 @@
 
 /* Included from <zephyr/sys/atomic.h> */
 
+#include <xtensa/config/core-isa.h>
+
 /* Recent GCC versions actually do have working atomics support on
- * Xtensa (and so should work with CONFIG_ATOMIC_OPERATIONS_BUILTIN),
- * but existing versions of Xtensa's XCC do not.  So we define an
- * inline implementation here that is more or less identical
+ * Xtensa with S32C1I and so should work with CONFIG_ATOMIC_OPERATIONS_BUILTIN.
+ * Existing versions of Xtensa's XCC do not and GCC also do not support
+ * L32EX/S32EX.  So we define an inline implementation here for atomic CAS.
  */
 
 /** Implementation of @ref atomic_get. */
@@ -31,21 +33,62 @@ static ALWAYS_INLINE atomic_val_t atomic_get(const atomic_t *target)
 }
 
 /**
+ * @fn static atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval, atomic_val_t newval)
  * @brief Xtensa specific atomic compare-and-set (CAS).
  *
  * @param addr Address of atomic variable.
  * @param oldval Original value to compare against.
  * @param newval New value to store.
  *
+ * @return The value at the memory location before CAS.
+ *
+ * @see atomic_cas.
+ */
+
+#if XCHAL_HAVE_EXCLUSIVE || defined(__DOXYGEN__)
+
+/*
+ * This utilizes L32EX/S32EX instructions to perform compare-and-set atomic
+ * operation. This will unconditionally read from the atomic variable at @p addr
+ * before the comparison. This value is returned from the function.
+ */
+static ALWAYS_INLINE
+atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval,
+			atomic_val_t newval)
+{
+	atomic_val_t mem_val;
+
+	/* Read from address and mark it for exclusive access. */
+	__asm__ volatile("l32ex %0, %1" : "=r"(mem_val) : "r"(addr));
+
+	if (mem_val == oldval) {
+		uint32_t result;
+
+		__asm__ volatile("s32ex %1, %2; getex %0" : "=r"(result) : "r"(newval), "r"(addr));
+
+		/* If GETEX returns store successful, we return the old value.
+		 * Otherwise, we must return some other value to signal that
+		 * the store failed to function caller.
+		 */
+		return (result == 1U) ? oldval : ~oldval;
+	}
+
+	/* Since *addr != oldval, we skip writing to memory and
+	 * need to remove the exclusive lock before returning.
+	 */
+	__asm__("clrex");
+
+	return mem_val;
+}
+
+#elif XCHAL_HAVE_S32C1I
+
+/*
  * This utilizes SCOMPARE1 register and s32c1i instruction to
  * perform compare-and-set atomic operation. This will
  * unconditionally read from the atomic variable at @p addr
  * before the comparison. This value is returned from
  * the function.
- *
- * @return The value at the memory location before CAS.
- *
- * @see atomic_cas.
  */
 static ALWAYS_INLINE
 atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval,
@@ -56,6 +99,10 @@ atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval,
 
 	return newval; /* got swapped with the old memory by s32c1i */
 }
+
+#else
+#error "No available hardware support for atomic operations"
+#endif
 
 /** Implementation of @ref atomic_cas. */
 static ALWAYS_INLINE

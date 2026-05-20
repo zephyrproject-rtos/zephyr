@@ -32,22 +32,23 @@ config ETH_QEMU_IFACE_NAME
 	depends on NET_QEMU_ETHERNET
 	help
 	  The network interface name for QEMU. This value is given as
-	  a parameter to -nic qemu command line option. The network
+	  a parameter to -netdev qemu command line option. The network
 	  interface must be created before starting QEMU. The net-setup.sh
 	  script from net-tools project can be used to create the network
 	  interface.
 
 config ETH_QEMU_EXTRA_ARGS
-	string "Extra arguments to QEMU -nic option"
+	string "Extra arguments to QEMU -netdev option"
 	depends on NET_QEMU_ETHERNET
 	default ""
 	help
-	  Extra arguments passed to QEMU -nic option when Ethernet Networking
-	  is enabled. Typically this is used to set the network MAC address of
-	  Zephyr instance. This option can contain multiple QEMU option
+	  Extra arguments passed to QEMU -netdev option when Ethernet Networking
+	  is enabled. This option can contain multiple QEMU option
 	  arguments. Each QEMU argument must be separated by comma "," and no
-	  spaces between arguments. Example: "mac=02:03:04:f0:0d:01" or
-	  "mac=02:03:04:f0:0d:01,downscript=no"
+	  spaces between arguments. Example: "script=no" or
+	  "script=no,downscript=no".
+	  See https://www.qemu.org/docs/master/system/invocation.html#hxtool-5
+	  for the available options.
 
 # zephyr-keep-sorted-start
 source "drivers/ethernet/Kconfig.adin2111"

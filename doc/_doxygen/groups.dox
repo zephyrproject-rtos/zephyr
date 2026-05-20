@@ -6,6 +6,13 @@
 
 @}
 
+@defgroup toolchain Toolchain abstraction
+@brief Macros allowing to abstract compiler capabilities that utilize toolchain specific attributes
+       and/or pragmas.
+@{
+
+@}
+
 @defgroup os_services Operating System Services
 @brief Operating System Services
 @{

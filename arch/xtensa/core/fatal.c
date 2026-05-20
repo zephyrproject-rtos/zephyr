@@ -42,6 +42,8 @@ char *xtensa_exccause(unsigned int cause_code)
 		return "privileged";
 	case 9:
 		return "load/store alignment";
+	case 11:
+		return "exclusive error";
 	case 12:
 		return "instr PIF data error";
 	case 13:

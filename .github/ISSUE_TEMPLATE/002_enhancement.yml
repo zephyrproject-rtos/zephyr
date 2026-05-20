@@ -1,6 +1,5 @@
 name: Enhancement
-description: Submit an Enhancement
-labels: ["Enhancement"]
+description: Submit an Enhancement (Changes/Updates/Additions to existing features)
 type: "Enhancement"
 assignees: []
 body:

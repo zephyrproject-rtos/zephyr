@@ -949,8 +949,7 @@ static void smp_pairing_br_complete(struct bt_smp_br *smp, uint8_t status)
 	/* For dualmode devices LE address is same as BR/EDR address
 	 * and is of public type.
 	 */
-	bt_addr_copy(&addr.a, &conn->br.dst);
-	addr.type = BT_ADDR_LE_PUBLIC;
+	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
 	keys = bt_keys_find_addr(conn->id, &addr);
 
 	if (status) {
@@ -1094,8 +1093,7 @@ static void smp_br_derive_ltk(struct bt_smp_br *smp)
 	 * For dualmode devices LE address is same as BR/EDR address and is of
 	 * public type.
 	 */
-	bt_addr_copy(&addr.a, &conn->br.dst);
-	addr.type = BT_ADDR_LE_PUBLIC;
+	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
 
 	keys = bt_keys_find_addr(conn->id, &addr);
 	if (keys != NULL) {
@@ -1196,8 +1194,7 @@ static void smp_br_distribute_keys(struct bt_smp_br *smp)
 	 * For dualmode devices LE address is same as BR/EDR address and is of
 	 * public type.
 	 */
-	bt_addr_copy(&addr.a, &conn->br.dst);
-	addr.type = BT_ADDR_LE_PUBLIC;
+	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
 
 	keys = bt_keys_get_addr(conn->id, &addr);
 	if (!keys) {
@@ -1286,8 +1283,7 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 
 	conn = smp->chan.chan.conn;
 
-	addr.type = BT_ADDR_LE_PUBLIC;
-	bt_addr_copy(&addr.a, &conn->br.dst);
+	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
 	le_keys = bt_keys_find_addr(BT_ID_DEFAULT, &addr);
 
 	key = bt_keys_find_link_key(&conn->br.dst);
@@ -1514,8 +1510,7 @@ static uint8_t smp_br_ident_info(struct bt_smp_br *smp, struct net_buf *buf)
 	 * For dualmode devices LE address is same as BR/EDR address and is of
 	 * public type.
 	 */
-	bt_addr_copy(&addr.a, &conn->br.dst);
-	addr.type = BT_ADDR_LE_PUBLIC;
+	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
 
 	keys = bt_keys_get_type(BT_KEYS_IRK, conn->id, &addr);
 	if (!keys) {
@@ -1566,8 +1561,7 @@ static uint8_t smp_br_ident_addr_info(struct bt_smp_br *smp,
 	 * address we fail.
 	 */
 
-	bt_addr_copy(&addr.a, &conn->br.dst);
-	addr.type = BT_ADDR_LE_PUBLIC;
+	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
 
 	if (!bt_addr_le_eq(&addr, &req->addr)) {
 		return BT_SMP_ERR_UNSPECIFIED;
@@ -1618,8 +1612,7 @@ static uint8_t smp_br_signing_info(struct bt_smp_br *smp, struct net_buf *buf)
 	 * For dualmode devices LE address is same as BR/EDR address and is of
 	 * public type.
 	 */
-	bt_addr_copy(&addr.a, &conn->br.dst);
-	addr.type = BT_ADDR_LE_PUBLIC;
+	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
 
 	keys = bt_keys_get_type(BT_KEYS_REMOTE_CSRK, conn->id, &addr);
 	if (!keys) {

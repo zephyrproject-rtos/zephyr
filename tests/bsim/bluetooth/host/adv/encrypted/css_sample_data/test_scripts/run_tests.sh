@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="$(guess_test_long_name)"
+simulation_id="${BOARD_TS}_$(guess_test_long_name)"
 verbosity_level=2
 test_exe="bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
 

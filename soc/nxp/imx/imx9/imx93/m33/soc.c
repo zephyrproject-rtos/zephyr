@@ -1,17 +1,44 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/init.h>
+#include <fsl_clock.h>
 #include <soc.h>
 #ifdef CONFIG_USERSPACE
 #include <fsl_trdc.h>
 #include <fsl_sentinel.h>
 #endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_imx93_video_pll)
+#define VIDEO_PLL_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(nxp_imx93_video_pll)
+#endif
+
+static int imx93_video_pll_init(void)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_imx93_video_pll)
+	const fracn_pll_init_t pll_cfg = {
+		.rdiv = DT_PROP(VIDEO_PLL_NODE, rdiv),
+		.mfi = DT_PROP(VIDEO_PLL_NODE, mfi),
+		.mfn = DT_PROP(VIDEO_PLL_NODE, mfn),
+		.mfd = DT_PROP(VIDEO_PLL_NODE, mfd),
+		.odiv = DT_PROP(VIDEO_PLL_NODE, odiv),
+	};
+
+	uint32_t freq = DT_PROP(VIDEO_PLL_NODE, pll_frequency);
+
+	CLOCK_PllInit(VIDEOPLL, &pll_cfg);
+	g_clockSourceFreq[kCLOCK_VideoPll1] = freq;
+	g_clockSourceFreq[kCLOCK_VideoPll1Out] = freq;
+#endif
+
+	return 0;
+}
 
 #ifdef CONFIG_SOC_EARLY_INIT_HOOK
 #ifdef CONFIG_USERSPACE
@@ -27,18 +54,18 @@ void soc_init_trdc(void)
 	trdc_memory_access_control_config_t memAccessConfig;
 
 	(void)memset(&memAccessConfig, 0, sizeof(memAccessConfig));
-	memAccessConfig.nonsecureUsrX  = 1U;
-	memAccessConfig.nonsecureUsrW  = 1U;
-	memAccessConfig.nonsecureUsrR  = 1U;
+	memAccessConfig.nonsecureUsrX = 1U;
+	memAccessConfig.nonsecureUsrW = 1U;
+	memAccessConfig.nonsecureUsrR = 1U;
 	memAccessConfig.nonsecurePrivX = 1U;
 	memAccessConfig.nonsecurePrivW = 1U;
 	memAccessConfig.nonsecurePrivR = 1U;
-	memAccessConfig.secureUsrX     = 1U;
-	memAccessConfig.secureUsrW     = 1U;
-	memAccessConfig.secureUsrR     = 1U;
-	memAccessConfig.securePrivX    = 1U;
-	memAccessConfig.securePrivW    = 1U;
-	memAccessConfig.securePrivR    = 1U;
+	memAccessConfig.secureUsrX = 1U;
+	memAccessConfig.secureUsrW = 1U;
+	memAccessConfig.secureUsrR = 1U;
+	memAccessConfig.securePrivX = 1U;
+	memAccessConfig.securePrivW = 1U;
+	memAccessConfig.securePrivR = 1U;
 
 	TRDC_GetHardwareConfig(TRDC1, &hwConfig);
 	for (i = 0U; i < hwConfig.mrcNumber; i++) {
@@ -71,5 +98,7 @@ void soc_early_init_hook(void)
 	 */
 	soc_init_trdc();
 #endif
+	/* Init VIDEO PLL based on devicetree config */
+	(void)imx93_video_pll_init();
 }
 #endif

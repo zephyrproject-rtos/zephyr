@@ -379,7 +379,11 @@ static size_t get_long_hexdump(void)
 			 CBPRINTF_PACKAGE_ALIGNMENT) -
 		/* Hexdump message excluding data */
 		ROUND_UP(LOG_SIMPLE_MSG_LEN + STR_SIZE("hexdump") + extra_hexdump_sz,
-			 CBPRINTF_PACKAGE_ALIGNMENT);
+			 CBPRINTF_PACKAGE_ALIGNMENT) -
+		/* cbprintf_package_copy may append the format string when
+		 * the toolchain places it in a read-write section.
+		 */
+		sizeof("hexdump");
 }
 
 /*

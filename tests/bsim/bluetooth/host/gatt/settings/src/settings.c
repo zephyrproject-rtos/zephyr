@@ -14,12 +14,11 @@
 #include <zephyr/types.h>
 #include "errno.h"
 #include "argparse.h"
+#include "posix_native_task.h"
+#include "nsi_host_trampolines.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(settings_backend, 3);
-
-#define SETTINGS_FILE setting_file
-#define SETTINGS_FILE_TMP setting_file_tmp
 
 #define ENTRY_LEN_SIZE (4)
 #define ENTRY_NAME_MAX_LEN (SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN)
@@ -31,8 +30,8 @@ struct line_read_ctx {
 	const uint8_t *val;
 };
 
-static char setting_file[50];
-static char setting_file_tmp[sizeof(setting_file) + 1];
+static char *settings_file;
+static char *settings_file_tmp;
 
 static int entry_check_and_copy(FILE *fin, FILE *fout, const char *name)
 {
@@ -77,7 +76,7 @@ static ssize_t settings_line_read_cb(void *cb_arg, void *data, size_t len)
 
 static int settings_custom_load(struct settings_store *cs, const struct settings_load_arg *arg)
 {
-	FILE *fp = fopen(SETTINGS_FILE, "r+");
+	FILE *fp = fopen(settings_file, "r+");
 
 	if (fp == NULL) {
 		LOG_INF("Settings file doesn't exist, will create it");
@@ -128,21 +127,21 @@ static int settings_custom_load(struct settings_store *cs, const struct settings
 static int settings_custom_save(struct settings_store *cs, const char *name,
 				const char *value, size_t val_len)
 {
-	FILE *fcur = fopen(SETTINGS_FILE, "r+");
+	FILE *fcur = fopen(settings_file, "r+");
 	FILE *fnew = NULL;
 
 	if (fcur == NULL) {
-		fcur = fopen(SETTINGS_FILE, "w");
+		fcur = fopen(settings_file, "w");
 	} else {
-		fnew = fopen(SETTINGS_FILE_TMP, "w");
+		fnew = fopen(settings_file_tmp, "w");
 		if (fnew == NULL) {
-			LOG_ERR("Failed to create temporary file %s", SETTINGS_FILE_TMP);
+			LOG_ERR("Failed to create temporary file %s", settings_file_tmp);
 			return -1;
 		}
 	}
 
 	if (fcur == NULL) {
-		LOG_ERR("Failed to create settings file: %s", SETTINGS_FILE);
+		LOG_ERR("Failed to create settings file: %s", settings_file);
 		return -1;
 	}
 
@@ -192,8 +191,8 @@ static int settings_custom_save(struct settings_store *cs, const char *name,
 	if (fnew != NULL) {
 		fclose(fnew);
 
-		remove(SETTINGS_FILE);
-		rename(SETTINGS_FILE_TMP, SETTINGS_FILE);
+		remove(settings_file);
+		rename(settings_file_tmp, settings_file);
 	}
 
 	return 0;
@@ -212,10 +211,17 @@ static struct settings_store settings_custom_store = {
 
 int settings_backend_init(void)
 {
-	snprintf(setting_file, sizeof(setting_file), "%s_%s.log", get_simid(), get_settings_file());
-	snprintf(setting_file_tmp, sizeof(setting_file_tmp), "~%s", setting_file);
+	uint tmp_name_size;
 
-	LOG_INF("file path: %s", SETTINGS_FILE);
+	settings_file = get_settings_file();
+	tmp_name_size = strlen(settings_file) + 5; /* + .tmp + \0 */
+
+	settings_file_tmp = nsi_host_calloc(tmp_name_size, 1);
+	snprintf(settings_file_tmp, tmp_name_size, "%s.tmp", settings_file);
+
+	LOG_INF("file path: %s", settings_file);
+
+	bs_create_folders_in_path(settings_file);
 
 	/* register custom backend */
 	settings_dst_register(&settings_custom_store);
@@ -225,9 +231,19 @@ int settings_backend_init(void)
 
 void settings_test_backend_clear(void)
 {
-	snprintf(setting_file, sizeof(setting_file), "%s_%s.log", get_simid(), get_settings_file());
+	settings_file = get_settings_file();
 
-	if (remove(setting_file)) {
-		LOG_INF("error deleting file: %s", setting_file);
+	if (remove(settings_file)) {
+		LOG_INF("error deleting file: %s", settings_file);
 	}
 }
+
+static void settings_on_exit(void)
+{
+	if (settings_file_tmp != NULL) {
+		nsi_host_free(settings_file_tmp);
+		settings_file_tmp = NULL;
+	}
+}
+
+NATIVE_TASK(settings_on_exit, ON_EXIT, 0);

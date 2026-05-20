@@ -26,6 +26,8 @@
 		/delete-node/ gpio@42004000;
 		/delete-node/ gpio@42008000;
 		/delete-node/ gpio@4200c000;
+		/* RT1050 do not have flexcan3 */
+		/delete-node/ can@401d8000;
 
 		flexio2: flexio@401b0000 {
 			compatible = "nxp,flexio";

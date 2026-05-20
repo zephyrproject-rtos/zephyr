@@ -298,7 +298,7 @@ static int i2c_numaker_configure(const struct device *dev, uint32_t dev_config)
 	i2c_base->CTL0 |= (I2C_CTL0_INTEN_Msk | I2C_CTL0_I2CEN_Msk);
 	data->dev_config = dev_config;
 
-done:
+done: __maybe_unused;
 
 	irq_enable(config->irq_n);
 	k_sem_give(&data->lock);
@@ -341,11 +341,13 @@ static int i2c_numaker_transfer(const struct device *dev, struct i2c_msg *msgs,
 	k_sem_take(&data->lock, K_FOREVER);
 	irq_disable(config->irq_n);
 
+#ifdef CONFIG_I2C_TARGET
 	if (data->slave_xfer.slave_addressed) {
 		LOG_ERR("Master transfer with slave being busy");
 		err = -EBUSY;
 		goto cleanup;
 	}
+#endif
 
 	if (num_msgs == 0) {
 		goto cleanup;

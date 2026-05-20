@@ -451,24 +451,6 @@ static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
 	return (int)(intcause & (CY_SCB_TX_INTR | CY_SCB_RX_INTR));
 }
 
-/* Start processing interrupts in ISR.
- * This function should be called the first thing in the ISR. Calling
- * uart_irq_rx_ready(), uart_irq_tx_ready(), uart_irq_tx_complete()
- * allowed only after this.
- */
-static int ifx_cat1_uart_irq_update(const struct device *dev)
-{
-	struct ifx_cat1_uart_data *const data = dev->data;
-	int status = 1;
-
-	if (((ifx_cat1_uart_irq_is_pending(dev) & CY_SCB_RX_INTR) != 0u) &&
-	    (Cy_SCB_UART_GetNumInRxFifo(data->obj.base) == 0u)) {
-		status = 0;
-	}
-
-	return status;
-}
-
 static void ifx_cat1_uart_irq_callback_set(const struct device *dev,
 					   uart_irq_callback_user_data_t cb, void *cb_data)
 {
@@ -930,6 +912,25 @@ unlock:
 
 #endif /*CONFIG_UART_ASYNC_API */
 
+#if defined(CONFIG_UART_ASYNC_API) && defined(CONFIG_UART_WIDE_DATA)
+static int ifx_cat1_uart_async_tx_u16(const struct device *dev, const uint16_t *tx_data,
+				      size_t buf_size, int32_t timeout)
+{
+	return ifx_cat1_uart_async_tx(dev, (const uint8_t *)tx_data, buf_size * 2, timeout);
+}
+
+static int ifx_cat1_uart_async_rx_enable_u16(const struct device *dev, uint16_t *buf, size_t len,
+					 int32_t timeout)
+{
+	return ifx_cat1_uart_async_rx_enable(dev, (uint8_t *)buf, len * 2, timeout);
+}
+
+static int ifx_cat1_uart_async_rx_buf_rsp_u16(const struct device *dev, uint16_t *buf, size_t len)
+{
+	return ifx_cat1_uart_async_rx_buf_rsp(dev, (uint8_t *)buf, len * 2);
+}
+#endif /* CONFIG_UART_ASYNC_API && CONFIG_UART_WIDE_DATA */
+
 static int ifx_cat1_uart_init(const struct device *dev)
 {
 	struct ifx_cat1_uart_data *const data = dev->data;
@@ -1076,7 +1077,6 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 	.irq_err_enable = ifx_cat1_uart_irq_err_enable,
 	.irq_err_disable = ifx_cat1_uart_irq_err_disable,
 	.irq_is_pending = ifx_cat1_uart_irq_is_pending,
-	.irq_update = ifx_cat1_uart_irq_update,
 	.irq_callback_set = ifx_cat1_uart_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -1087,6 +1087,11 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 	.tx_abort = ifx_cat1_uart_async_tx_abort,
 	.rx_buf_rsp = ifx_cat1_uart_async_rx_buf_rsp,
 	.rx_disable = ifx_cat1_uart_async_rx_disable,
+#ifdef CONFIG_UART_WIDE_DATA
+	.tx_u16 = ifx_cat1_uart_async_tx_u16,
+	.rx_enable_u16 = ifx_cat1_uart_async_rx_enable_u16,
+	.rx_buf_rsp_u16 = ifx_cat1_uart_async_rx_buf_rsp_u16,
+#endif /* CONFIG_UART_WIDE_DATA */
 #endif /*CONFIG_UART_ASYNC_API*/
 
 };

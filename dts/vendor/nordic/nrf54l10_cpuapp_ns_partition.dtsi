@@ -45,7 +45,7 @@
 		 * header flash_layout.h of the relevant platform. Any updates in the layout
 		 * needs to happen both in the flash_layout.h and in this file at the same time.
 		 */
-		slot0_partition: partition@0 {
+		slot0_s_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000000 DT_SIZE_K(384)>;

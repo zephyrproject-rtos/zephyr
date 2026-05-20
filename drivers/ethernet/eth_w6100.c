@@ -374,10 +374,9 @@ static void w6100_iface_init(struct net_if *iface)
 	k_thread_name_set(&ctx->thread, "eth_w6100");
 }
 
-static enum ethernet_hw_caps w6100_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps w6100_get_capabilities(const struct device *dev __unused,
+						    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
@@ -386,6 +385,7 @@ static enum ethernet_hw_caps w6100_get_capabilities(const struct device *dev)
 }
 
 static int w6100_set_config(const struct device *dev,
+			    struct net_if *iface __unused,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
@@ -441,7 +441,7 @@ static int w6100_set_config(const struct device *dev,
 	}
 }
 
-static int w6100_hw_start(const struct device *dev)
+static int w6100_hw_start(const struct device *dev, struct net_if *iface __unused)
 {
 	uint8_t mode = S0_MR_MACRAW | BIT(W6100_S0_MR_MF);
 	uint8_t mask = IR_S0;
@@ -455,7 +455,7 @@ static int w6100_hw_start(const struct device *dev)
 	return 0;
 }
 
-static int w6100_hw_stop(const struct device *dev)
+static int w6100_hw_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	uint8_t mask = 0;
 
@@ -466,7 +466,7 @@ static int w6100_hw_stop(const struct device *dev)
 	return 0;
 }
 
-static const struct device *w6100_get_phy(const struct device *dev)
+static const struct device *w6100_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct w6100_config *config = dev->config;
 

@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="misc_hfc"
+simulation_id="${BOARD_TS}_misc_hfc"
 verbosity_level=2
 EXECUTE_TIMEOUT=240
 

@@ -53,7 +53,7 @@ function _Execute(){
     local devno=$2
     shift 2
     local exe=$(basename $1)
-    local out=/tmp/rr/$$-${SIMULATION_ID}-${exe}-d_${devno}
+    local out=/tmp/rr/$$-${sim_id}-${exe}-d_${devno}
     rm -rf ${out}
     rr="rr record -o ${out}"
   fi
@@ -88,7 +88,9 @@ fi
 
 cd ${EDTT_PATH}
 
-_Execute ./src/edttool.py -s=${SIMULATION_ID} -d=2 --transport bsim \
+sim_id="${BOARD_TS}_${SIMULATION_ID}"
+
+_Execute ./src/edttool.py -s=${sim_id} -d=2 --transport bsim \
   -T $TEST_MODULE -C $TEST_FILE -v=${VERBOSITY_LEVEL_EDTT} -S -l --low-level-device-nbr=3 \
   -D=2 -devs 0 1 -RxWait=2.5e3
 
@@ -96,13 +98,13 @@ cd ${BSIM_OUT_PATH}/bin
 
 _Execute \
   ${RR_ARGS_1} ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_edtt_hci_test_app_${PRJ_CONF_1}\
-  -s=${SIMULATION_ID} -d=0 -v=${VERBOSITY_LEVEL_DEV1} -RealEncryption=1
+  -s=${sim_id} -d=0 -v=${VERBOSITY_LEVEL_DEV1} -RealEncryption=1
 
 _Execute \
   ${RR_ARGS_2} ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_edtt_hci_test_app_${PRJ_CONF_2}\
-  -s=${SIMULATION_ID} -d=1 -v=${VERBOSITY_LEVEL_DEV2} -RealEncryption=1
+  -s=${sim_id} -d=1 -v=${VERBOSITY_LEVEL_DEV2} -RealEncryption=1
 
-_Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL_PHY} -s=${SIMULATION_ID} \
+_Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL_PHY} -s=${sim_id} \
   -D=4 -sim_length=3600e6 -dump_imm $@
 
 wait_for_background_jobs

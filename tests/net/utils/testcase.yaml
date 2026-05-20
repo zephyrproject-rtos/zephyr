@@ -1,8 +1,14 @@
 common:
   depends_on: netif
+  min_ram: 24
+  tags:
+    - net
+    - userspace
 tests:
-  net.util:
-    min_ram: 24
-    tags:
-      - net
-      - userspace
+  net.util: {}
+  net.util.asan:
+    extra_configs:
+      - CONFIG_ASAN=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64

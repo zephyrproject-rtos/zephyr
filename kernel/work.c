@@ -16,6 +16,7 @@
 #include <zephyr/spinlock.h>
 #include <errno.h>
 #include <ksched.h>
+#include <scheduler.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 

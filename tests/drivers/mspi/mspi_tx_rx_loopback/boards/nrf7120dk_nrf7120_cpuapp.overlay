@@ -6,7 +6,7 @@
 
 /*
  * Loopbacks required:
- * QSPI01    QSPI00
+ * MSPI01    MSPI00
  * P2.6  <-> P2.1 SCK
  * P2.11 <-> P2.5 CSN
  * P2.7  <-> P2.0 DQ0
@@ -16,26 +16,26 @@
  */
 
 &pinctrl {
-	qspi01_default: qspi01_default {
+	mspi01_default: mspi01_default {
 		group1 {
-			psels = <NRF_PSEL(QSPI_SCK, 2, 6)>,
-				<NRF_PSEL(QSPI_CSN, 2, 11)>,
-				<NRF_PSEL(QSPI_IO0, 2, 7)>,
-				<NRF_PSEL(QSPI_IO1, 2, 8)>,
-				<NRF_PSEL(QSPI_IO2, 2, 9)>,
-				<NRF_PSEL(QSPI_IO3, 2, 10)>;
+			psels = <NRF_PSEL(MSPI_SCK, 2, 6)>,
+				<NRF_PSEL(MSPI_CSN, 2, 11)>,
+				<NRF_PSEL(MSPI_IO0, 2, 7)>,
+				<NRF_PSEL(MSPI_IO1, 2, 8)>,
+				<NRF_PSEL(MSPI_IO2, 2, 9)>,
+				<NRF_PSEL(MSPI_IO3, 2, 10)>;
 		};
 	};
 
-	qspi01_sleep: qspi01_sleep {
+	mspi01_sleep: mspi01_sleep {
 		group1 {
 			low-power-enable;
-			psels = <NRF_PSEL(QSPI_SCK, 2, 6)>,
-				<NRF_PSEL(QSPI_CSN, 2, 11)>,
-				<NRF_PSEL(QSPI_IO0, 2, 7)>,
-				<NRF_PSEL(QSPI_IO1, 2, 8)>,
-				<NRF_PSEL(QSPI_IO2, 2, 9)>,
-				<NRF_PSEL(QSPI_IO3, 2, 10)>;
+			psels = <NRF_PSEL(MSPI_SCK, 2, 6)>,
+				<NRF_PSEL(MSPI_CSN, 2, 11)>,
+				<NRF_PSEL(MSPI_IO0, 2, 7)>,
+				<NRF_PSEL(MSPI_IO1, 2, 8)>,
+				<NRF_PSEL(MSPI_IO2, 2, 9)>,
+				<NRF_PSEL(MSPI_IO3, 2, 10)>;
 		};
 	};
 };
@@ -48,16 +48,16 @@
 	status = "disabled";
 };
 
-controller: &qspi00 {
+controller: &mspi00 {
 	status = "okay";
 	pinctrl-names = "default", "sleep";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
 };
 
-peripheral: &qspi01 {
+peripheral: &mspi01 {
 	status = "okay";
-	pinctrl-0 = <&qspi01_default>;
-	pinctrl-1 = <&qspi01_sleep>;
+	pinctrl-0 = <&mspi01_default>;
+	pinctrl-1 = <&mspi01_sleep>;
 	pinctrl-names = "default", "sleep";
 	op-mode = "MSPI_OP_MODE_PERIPHERAL";
 };

@@ -119,8 +119,8 @@
 	status = "okay";
 };
 
-&qspi00 {
-	pinctrl-0 = <&qspi00_default>;
-	pinctrl-1 = <&qspi00_sleep>;
+&mspi00 {
+	pinctrl-0 = <&mspi00_default>;
+	pinctrl-1 = <&mspi00_sleep>;
 	pinctrl-names = "default", "sleep";
 };

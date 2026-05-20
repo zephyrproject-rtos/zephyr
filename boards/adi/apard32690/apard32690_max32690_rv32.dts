@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32690-rv32.dtsi>
+
+#include "apard32690_max32690.dtsi"
+#include <adi/max32/max32690-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+
+/ {
+	model = "Analog Devices AD-APARD32690-SL";
+	compatible = "adi,apard32690";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram8;
+		zephyr,flash-controller = &flc1;
+		zephyr,flash = &flash1;
+		zephyr,code-partition = &rv32_slot0;
+		zephyr,settings-partition = &rv32_storage_partition;
+	};
+
+	aliases {
+		watchdog0 = &wdt1;
+		led0 = &green_led;
+	};
+};
+
+&rv32_sys_timer {
+	status = "okay";
+};
+
+&flc1 {
+	status = "okay";
+};
+
+&uart1 {
+	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+	pinctrl-0 = <&uart1a_rx_p2_14 &uart1a_tx_p2_16>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	status = "okay";
+};
+
+&flc0 {
+	status = "okay";
+};
+
+&wdt1 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};

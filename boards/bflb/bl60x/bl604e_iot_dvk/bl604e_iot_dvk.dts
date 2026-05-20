@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <bflb/bl604.dtsi>
+#include <bflb/bl60x_em_8kb.dtsi>
 #include "bl604e_iot_dvk-pinctrl.dtsi"
 
 / {
@@ -22,6 +23,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &sec_eng_trng;
+		zephyr,bt-hci = &bt_hci_bflb;
 	};
 
 	aliases {
@@ -67,4 +69,12 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};
+
+&bt_hci_bflb {
+	status = "okay";
 };

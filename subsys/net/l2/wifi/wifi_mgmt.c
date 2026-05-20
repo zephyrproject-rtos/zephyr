@@ -104,6 +104,19 @@ const char *wifi_security_txt(enum wifi_security_type security)
 	}
 }
 
+const char *wifi_wep_key_type_txt(enum wifi_wep_key_type wep_key_type)
+{
+	switch (wep_key_type) {
+	case WIFI_WEP_KEY_TYPE_64:
+		return " (64-bit key)";
+	case WIFI_WEP_KEY_TYPE_128:
+		return " (128-bit key)";
+	case WIFI_WEP_KEY_TYPE_UNKNOWN:
+	default:
+		return "";
+	}
+}
+
 const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent)
 {
 	switch (wpa3_ent) {
@@ -356,6 +369,24 @@ const char *wifi_conn_status_txt(enum wifi_conn_status status)
 	}
 }
 
+const char *wifi_disconn_reason_txt(enum wifi_disconn_reason reason)
+{
+	switch (reason) {
+	case WIFI_REASON_DISCONN_SUCCESS:
+		return "Success";
+	case WIFI_REASON_DISCONN_UNSPECIFIED:
+		return "Unspecified";
+	case WIFI_REASON_DISCONN_USER_REQUEST:
+		return "User request";
+	case WIFI_REASON_DISCONN_AP_LEAVING:
+		return "AP leaving";
+	case WIFI_REASON_DISCONN_INACTIVITY:
+		return "Inactivity";
+	default:
+		return "UNKNOWN";
+	}
+}
+
 static const struct wifi_mgmt_ops *const get_wifi_api(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
@@ -483,7 +514,7 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 	roaming_params.is_11r_used = params->ft_used;
 #endif
 
-	return wifi_mgmt_api->connect(dev, params);
+	return wifi_mgmt_api->connect(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT, wifi_connect);
@@ -536,7 +567,7 @@ static int wifi_scan(uint64_t mgmt_request, struct net_if *iface,
 	params->scan_type = WIFI_SCAN_TYPE_PASSIVE;
 #endif /* CONFIG_WIFI_MGMT_FORCED_PASSIVE_SCAN */
 
-	return wifi_mgmt_api->scan(dev, params, scan_result_cb);
+	return wifi_mgmt_api->scan(dev, iface, params, scan_result_cb);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN, wifi_scan);
@@ -555,7 +586,7 @@ static int wifi_disconnect(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->disconnect(dev);
+	return wifi_mgmt_api->disconnect(dev, iface);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DISCONNECT, wifi_disconnect);
@@ -602,23 +633,23 @@ static int wifi_start_roaming(uint64_t mgmt_request, struct net_if *iface,
 			return -ENOTSUP;
 		}
 
-		return wifi_mgmt_api->start_11r_roaming(dev);
-	} else if (wifi_mgmt_api->bss_support_neighbor_rep(dev)) {
+		return wifi_mgmt_api->start_11r_roaming(dev, iface);
+	} else if (wifi_mgmt_api->bss_support_neighbor_rep(dev, iface)) {
 		memset(&roaming_params.neighbor_rep, 0x0, sizeof(roaming_params.neighbor_rep));
 		if (wifi_mgmt_api->send_11k_neighbor_request == NULL) {
 			return -ENOTSUP;
 		}
 
-		return wifi_mgmt_api->send_11k_neighbor_request(dev, NULL);
+		return wifi_mgmt_api->send_11k_neighbor_request(dev, iface, NULL);
 	} else if (wifi_mgmt_api->bss_ext_capab &&
-			wifi_mgmt_api->bss_ext_capab(dev, WIFI_EXT_CAPAB_BSS_TRANSITION)) {
+			wifi_mgmt_api->bss_ext_capab(dev, iface, WIFI_EXT_CAPAB_BSS_TRANSITION)) {
 		if (wifi_mgmt_api->btm_query) {
-			return wifi_mgmt_api->btm_query(dev, 0x10);
+			return wifi_mgmt_api->btm_query(dev, iface, 0x10);
 		} else {
 			return -ENOTSUP;
 		}
 	} else if (wifi_mgmt_api->legacy_roam) {
-		return wifi_mgmt_api->legacy_roam(dev);
+		return wifi_mgmt_api->legacy_roam(dev, iface);
 	} else {
 		return -ENOTSUP;
 	}
@@ -649,7 +680,7 @@ static int wifi_neighbor_rep_complete(uint64_t mgmt_request, struct net_if *ifac
 		return -ENOTSUP;
 	}
 
-	return wifi_mgmt_api->candidate_scan(dev, &params);
+	return wifi_mgmt_api->candidate_scan(dev, iface, &params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE,
@@ -737,7 +768,17 @@ static int wifi_ap_enable(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->ap_enable(dev, params);
+	if (params->psk_length != 0 && (params->psk_length < 8 || params->psk_length > 64)) {
+		return -EINVAL;
+	}
+
+	if (params->sae_password_length != 0 &&
+	    (params->sae_password_length < 8 ||
+	    params->sae_password_length > WIFI_SAE_PSWD_MAX_LEN)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ap_enable(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_ENABLE, wifi_ap_enable);
@@ -756,7 +797,7 @@ static int wifi_ap_disable(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->ap_disable(dev);
+	return wifi_mgmt_api->ap_disable(dev, iface);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_DISABLE, wifi_ap_disable);
@@ -784,7 +825,7 @@ static int wifi_ap_sta_disconnect(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->ap_sta_disconnect(dev, mac);
+	return wifi_mgmt_api->ap_sta_disconnect(dev, iface, mac);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_STA_DISCONNECT, wifi_ap_sta_disconnect);
@@ -822,7 +863,7 @@ static int wifi_ap_config_params(uint64_t mgmt_request, struct net_if *iface,
 		}
 	}
 
-	return wifi_mgmt_api->ap_config_params(dev, params);
+	return wifi_mgmt_api->ap_config_params(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_CONFIG_PARAM, wifi_ap_config_params);
@@ -846,7 +887,7 @@ static int wifi_ap_set_rts_threshold(uint64_t mgmt_request, struct net_if *iface
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->set_rts_threshold(dev, *rts_threshold);
+	return wifi_mgmt_api->set_rts_threshold(dev, iface, *rts_threshold);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_RTS_THRESHOLD, wifi_ap_set_rts_threshold);
@@ -866,7 +907,7 @@ static int wifi_iface_status(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->iface_status(dev, status);
+	return wifi_mgmt_api->iface_status(dev, iface, status);
 }
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS, wifi_iface_status);
 
@@ -894,7 +935,7 @@ static int wifi_iface_stats(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->get_stats(dev, stats);
+	return wifi_mgmt_api->get_stats(dev, iface, stats);
 }
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_WIFI, wifi_iface_stats);
 
@@ -908,7 +949,7 @@ static int wifi_iface_stats_reset(uint64_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
-	return wifi_mgmt_api->reset_stats(dev);
+	return wifi_mgmt_api->reset_stats(dev, iface);
 }
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_RESET_WIFI, wifi_iface_stats_reset);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
@@ -928,7 +969,7 @@ static int wifi_11k_cfg(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->cfg_11k(dev, params);
+	return wifi_mgmt_api->cfg_11k(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_CONFIG, wifi_11k_cfg);
@@ -948,7 +989,7 @@ static int wifi_11k_neighbor_request(uint64_t mgmt_request, struct net_if *iface
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->send_11k_neighbor_request(dev, params);
+	return wifi_mgmt_api->send_11k_neighbor_request(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST,
@@ -1003,7 +1044,7 @@ static int wifi_set_power_save(uint64_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
-	return wifi_mgmt_api->set_power_save(dev, ps_params);
+	return wifi_mgmt_api->set_power_save(dev, iface, ps_params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PS, wifi_set_power_save);
@@ -1027,7 +1068,7 @@ static int wifi_get_power_save_config(uint64_t mgmt_request, struct net_if *ifac
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->get_power_save_config(dev, ps_config);
+	return wifi_mgmt_api->get_power_save_config(dev, iface, ps_config);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PS_CONFIG, wifi_get_power_save_config);
@@ -1051,7 +1092,7 @@ static int wifi_set_twt(uint64_t mgmt_request, struct net_if *iface,
 	}
 
 	if (twt_params->operation == WIFI_TWT_TEARDOWN) {
-		return wifi_mgmt_api->set_twt(dev, twt_params);
+		return wifi_mgmt_api->set_twt(dev, iface, twt_params);
 	}
 
 	if (net_mgmt(NET_REQUEST_WIFI_IFACE_STATUS, iface, &info,
@@ -1091,7 +1132,7 @@ static int wifi_set_twt(uint64_t mgmt_request, struct net_if *iface,
 		goto fail;
 	}
 
-	return wifi_mgmt_api->set_twt(dev, twt_params);
+	return wifi_mgmt_api->set_twt(dev, iface, twt_params);
 fail:
 	return -ENOEXEC;
 
@@ -1124,7 +1165,7 @@ static int wifi_set_btwt(uint64_t mgmt_request, struct net_if *iface,
 		goto fail;
 	}
 
-	return wifi_mgmt_api->set_btwt(dev, twt_params);
+	return wifi_mgmt_api->set_btwt(dev, iface, twt_params);
 fail:
 	return -ENOEXEC;
 
@@ -1158,7 +1199,7 @@ static int wifi_reg_domain(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->reg_domain(dev, reg_domain);
+	return wifi_mgmt_api->reg_domain(dev, iface, reg_domain);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_REG_DOMAIN, wifi_reg_domain);
@@ -1190,7 +1231,7 @@ static int wifi_mode(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->mode(dev, mode_info);
+	return wifi_mgmt_api->mode(dev, iface, mode_info);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_MODE, wifi_mode);
@@ -1214,7 +1255,7 @@ static int wifi_packet_filter(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->filter(dev, filter_info);
+	return wifi_mgmt_api->filter(dev, iface, filter_info);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PACKET_FILTER, wifi_packet_filter);
@@ -1238,7 +1279,7 @@ static int wifi_channel(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->channel(dev, channel_info);
+	return wifi_mgmt_api->channel(dev, iface, channel_info);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CHANNEL, wifi_channel);
@@ -1254,7 +1295,7 @@ static int wifi_get_version(uint64_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
-	return wifi_mgmt_api->get_version(dev, ver_params);
+	return wifi_mgmt_api->get_version(dev, iface, ver_params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_VERSION, wifi_get_version);
@@ -1275,7 +1316,7 @@ static int wifi_btm_query(uint64_t mgmt_request, struct net_if *iface, void *dat
 
 	if (query_reason >= WIFI_BTM_QUERY_REASON_UNSPECIFIED &&
 	    query_reason <= WIFI_BTM_QUERY_REASON_LEAVING_ESS) {
-		return wifi_mgmt_api->btm_query(dev, query_reason);
+		return wifi_mgmt_api->btm_query(dev, iface, query_reason);
 	}
 
 	return -EINVAL;
@@ -1298,7 +1339,7 @@ static int wifi_get_connection_params(uint64_t mgmt_request, struct net_if *ifac
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->get_conn_params(dev, conn_params);
+	return wifi_mgmt_api->get_conn_params(dev, iface, conn_params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONN_PARAMS, wifi_get_connection_params);
@@ -1317,7 +1358,7 @@ static int wifi_wps_config(uint64_t mgmt_request, struct net_if *iface, void *da
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->wps_config(dev, params);
+	return wifi_mgmt_api->wps_config(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG, wifi_wps_config);
@@ -1341,7 +1382,7 @@ static int wifi_set_rts_threshold(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->set_rts_threshold(dev, *rts_threshold);
+	return wifi_mgmt_api->set_rts_threshold(dev, iface, *rts_threshold);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD, wifi_set_rts_threshold);
@@ -1362,7 +1403,7 @@ static int wifi_dpp(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->dpp_dispatch(dev, params);
+	return wifi_mgmt_api->dpp_dispatch(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP, wifi_dpp);
@@ -1383,7 +1424,7 @@ static int wifi_pmksa_flush(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->pmksa_flush(dev);
+	return wifi_mgmt_api->pmksa_flush(dev, iface);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH, wifi_pmksa_flush);
@@ -1412,7 +1453,7 @@ static int wifi_config_params(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->config_params(dev, params);
+	return wifi_mgmt_api->config_params(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONFIG_PARAM, wifi_config_params);
@@ -1436,7 +1477,7 @@ static int wifi_get_rts_threshold(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->get_rts_threshold(dev, rts_threshold);
+	return wifi_mgmt_api->get_rts_threshold(dev, iface, rts_threshold);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG, wifi_get_rts_threshold);
@@ -1457,7 +1498,7 @@ static int wifi_set_enterprise_creds(uint64_t mgmt_request, struct net_if *iface
 		return -ENETDOWN;
 	}
 
-	return wifi_mgmt_api->enterprise_creds(dev, params);
+	return wifi_mgmt_api->enterprise_creds(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS, wifi_set_enterprise_creds);
@@ -1482,7 +1523,7 @@ static int wifi_set_bss_max_idle_period(uint64_t mgmt_request, struct net_if *if
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->set_bss_max_idle_period(dev, *bss_max_idle_period);
+	return wifi_mgmt_api->set_bss_max_idle_period(dev, iface, *bss_max_idle_period);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD,
@@ -1507,7 +1548,7 @@ static int wifi_set_bgscan(uint64_t mgmt_request, struct net_if *iface, void *da
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->set_bgscan(dev, params);
+	return wifi_mgmt_api->set_bgscan(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN, wifi_set_bgscan);
@@ -1528,7 +1569,7 @@ static int wifi_p2p_oper(uint64_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	return wifi_mgmt_api->p2p_oper(dev, params);
+	return wifi_mgmt_api->p2p_oper(dev, iface, params);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_P2P_OPER, wifi_p2p_oper);

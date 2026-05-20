@@ -123,26 +123,30 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
 
 		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(896)>;
 		};
 
 		slot1_partition: partition@100000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00100000 DT_SIZE_K(896)>;
 		};
 
 		storage_partition: partition@1e0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x001e0000 DT_SIZE_K(128)>;
 		};

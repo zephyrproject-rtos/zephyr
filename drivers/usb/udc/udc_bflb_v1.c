@@ -35,8 +35,16 @@ LOG_MODULE_REGISTER(udc_bflb_v1, CONFIG_UDC_DRIVER_LOG_LEVEL);
 #define BFLB_EPX_CONFIG_OFFSET(ep_idx)                                          \
 	(USB_EP1_CONFIG_OFFSET + 4U * ((ep_idx) - 1U))
 
+/* Per-endpoint xxx_done interrupt bit for EP1-7 (ep_idx must be 1..7) */
+#define BFLB_EPX_DONE_BIT(ep_idx) BIT(9U + 2U * (uint32_t)(ep_idx))
+
 /* Maximum packet size for non-control endpoints (USB FS isochronous limit) */
 #define BFLB_EPX_MPS_MAX 1023U
+
+/* ep_wait_not_busy() timeout: in the OUT-done path STS_EPx_RDY can stay set
+ * until the RX FIFO is drained (after this wait), so bound it.
+ */
+#define BFLB_EP_WAIT_NOT_BUSY_US 1000U
 
 /* EP0 maximum packet size (USB FS control endpoint) */
 #define BFLB_EP0_MPS 64U
@@ -160,19 +168,14 @@ static void fifo_rx_clear(const mm_reg_t base, const uint8_t ep_idx)
 		    base + USB_EP0_FIFO_CONFIG_OFFSET + 0x10U * ep_idx);
 }
 
-/* Wait for EP busy flag to clear */
+/* Wait (bounded) for the EP RDY status to clear. */
 static inline void ep_wait_not_busy(const mm_reg_t base, const uint8_t ep_idx)
 {
-	if (ep_idx == 0) {
-		while (sys_read32(base + USB_CONFIG_OFFSET) &
-		       USB_STS_USB_EP0_SW_RDY) {
-		}
-	} else {
-		mem_addr_t reg = base + BFLB_EPX_CONFIG_OFFSET(ep_idx);
+	mem_addr_t reg = (ep_idx == 0) ? (base + USB_CONFIG_OFFSET)
+				       : (base + BFLB_EPX_CONFIG_OFFSET(ep_idx));
+	uint32_t bit = (ep_idx == 0) ? USB_STS_USB_EP0_SW_RDY : USB_STS_EP1_RDY;
 
-		while (sys_read32(reg) & USB_STS_EP1_RDY) {
-		}
-	}
+	WAIT_FOR(!(sys_read32(reg) & bit), BFLB_EP_WAIT_NOT_BUSY_US, NULL);
 }
 
 /*
@@ -519,6 +522,9 @@ static void bflb_prep_epx_tx(const struct device *dev, struct net_buf *const buf
 
 	len = MIN(ep_cfg->mps, buf->len);
 
+	/* RM 18.3.4: wait for exrs==0 before writing the TX FIFO. */
+	ep_wait_not_busy(base, ep_idx);
+
 	/*
 	 * EPx SIZE is the MPS configuration, not the per-packet byte
 	 * count.  The hardware sends whatever is in the TX FIFO (up
@@ -535,16 +541,16 @@ static void bflb_prep_epx_tx(const struct device *dev, struct net_buf *const buf
 	epx_set_ready(base, ep_idx);
 }
 
-/*
- * Prepare and start an OUT receive for EP1-7.
- */
+/* Arm an OUT receive for EP1-7; unmask done (masked while the EP is NAKed). */
 static void bflb_prep_epx_rx(const struct device *dev,
 			     struct udc_ep_config *const ep_cfg)
 {
 	const struct udc_bflb_v1_config *const config = dev->config;
+	const mm_reg_t base = config->base;
 	const uint8_t ep_idx = USB_EP_GET_IDX(ep_cfg->addr);
 
-	epx_set_ready(config->base, ep_idx);
+	epx_set_ready(base, ep_idx);
+	sys_clear_bits(base + USB_INT_MASK_OFFSET, BFLB_EPX_DONE_BIT(ep_idx));
 }
 
 /* Handle SETUP packet received (called from thread) */
@@ -758,6 +764,32 @@ static void handle_evt_dout(const struct device *dev,
 	}
 }
 
+/* Complete an EP1-7 IN/OUT transfer in ISR context (no driver-thread bounce). */
+static void bflb_epx_xfer_complete(const struct device *dev,
+				   struct udc_ep_config *const ep_cfg)
+{
+	struct net_buf *buf = udc_buf_get(ep_cfg);
+
+	/* Clear busy unconditionally — a stuck busy flag wedges the endpoint. */
+	udc_ep_set_busy(ep_cfg, false);
+
+	if (buf == NULL) {
+		LOG_WRN("No buffer for ep 0x%02x (dequeued?)", ep_cfg->addr);
+		handle_xfer_next(dev, ep_cfg);
+		return;
+	}
+
+	if (udc_submit_ep_event(dev, buf,
+				ep_cfg->stat.halted ? -ECONNABORTED : 0) != 0) {
+		/* Event queue full: don't leak the buffer. */
+		net_buf_unref(buf);
+	}
+
+	if (!udc_ep_is_busy(ep_cfg)) {
+		handle_xfer_next(dev, ep_cfg);
+	}
+}
+
 /* Initialize EP0 and interrupt configuration after reset */
 static void reinit_ep0(const struct device *dev)
 {
@@ -833,6 +865,13 @@ static void isr_handle_in_done(const struct device *dev, const mm_reg_t base,
 		return;
 	}
 
+	/* Spurious DONE on an idle EP (init/arm): a just-queued buffer isn't
+	 * armed yet — don't consume it as sent.
+	 */
+	if (ep_idx != 0 && !udc_ep_is_busy(ep_cfg)) {
+		return;
+	}
+
 	buf = udc_buf_peek(ep_cfg);
 	if (buf == NULL) {
 		return;
@@ -846,13 +885,8 @@ static void isr_handle_in_done(const struct device *dev, const mm_reg_t base,
 		if (ep_idx == 0) {
 			bflb_prep_ep0_tx(dev, buf, ep_cfg);
 		} else if (ep_cfg->stat.halted) {
-			/*
-			 * Endpoint was halted mid-transfer.  Don't arm the
-			 * next packet (epx_set_ready would clear STALL).
-			 * Signal the thread to abort the transfer.
-			 */
-			atomic_or(&priv->xfer_finished, BIT(16U + ep_idx));
-			k_event_post(&priv->events, UDC_BFLB_V1_EVT_XFER);
+			/* Halted mid-transfer: abort (arming would clear STALL). */
+			bflb_epx_xfer_complete(dev, ep_cfg);
 		} else {
 			bflb_prep_epx_tx(dev, buf, ep_cfg);
 		}
@@ -873,15 +907,14 @@ static void isr_handle_in_done(const struct device *dev, const mm_reg_t base,
 			regval |= USB_CR_USB_EP0_SW_NACK_OUT;
 			sys_write32(regval, base + USB_CONFIG_OFFSET);
 		} else if (ep_cfg->stat.halted) {
-			atomic_or(&priv->xfer_finished, BIT(16U + ep_idx));
-			k_event_post(&priv->events, UDC_BFLB_V1_EVT_XFER);
+			bflb_epx_xfer_complete(dev, ep_cfg);
 		} else {
 			epx_set_ready(base, ep_idx);
 		}
 		return;
 	}
 
-	/* Transfer complete, defer to thread */
+	/* Transfer complete */
 	if (ep_idx == 0) {
 		sys_set_bits(base + USB_INT_MASK_OFFSET,
 			     USB_CR_EP0_IN_DONE_MASK);
@@ -897,9 +930,11 @@ static void isr_handle_in_done(const struct device *dev, const mm_reg_t base,
 
 		ep0_clear_nack_out(base);
 		priv->ep0_status_done = true;
+		atomic_or(&priv->xfer_finished, BIT(16U + ep_idx));
+		k_event_post(&priv->events, UDC_BFLB_V1_EVT_XFER);
+	} else {
+		bflb_epx_xfer_complete(dev, ep_cfg); /* EP1-7: no thread bounce */
 	}
-	atomic_or(&priv->xfer_finished, BIT(16U + ep_idx));
-	k_event_post(&priv->events, UDC_BFLB_V1_EVT_XFER);
 }
 
 /*
@@ -925,11 +960,10 @@ static void isr_handle_out_done(const struct device *dev, const mm_reg_t base,
 		if (ep_idx == 0) {
 			fifo_rx_clear(base, 0);
 		} else {
-			/*
-			 * Packet arrived after transfer was canceled; flush
-			 * stale FIFO data to keep subsequent transfers in sync.
-			 */
+			/* No buffer: flush stale data, mask done until re-armed. */
 			fifo_rx_clear(base, ep_idx);
+			sys_set_bits(base + USB_INT_MASK_OFFSET,
+				     BFLB_EPX_DONE_BIT(ep_idx));
 		}
 		return;
 	}
@@ -954,21 +988,21 @@ static void isr_handle_out_done(const struct device *dev, const mm_reg_t base,
 		}
 	}
 
-	/* EPx OUT_DONE with empty FIFO and empty buffer: either a
-	 * spurious interrupt from endpoint init/arm, or a legitimate
-	 * ZLP (e.g. URB_ZERO_PACKET) on a fresh buffer.  In both
-	 * cases, re-arm the endpoint to accept the next (real) packet
-	 * rather than completing a 0-byte transfer that would waste a
-	 * buffer round-trip through the thread.
-	 *
-	 * Only fall through to transfer-complete when buf already has
-	 * data (buf->len > 0) — that's a true end-of-transfer ZLP.
+	/* EPx OUT_DONE, no data, buffer not full yet: spurious DONE (arm) or
+	 * a NAKed transaction — re-arm; don't complete and truncate a
+	 * multi-packet OUT.
 	 */
-	if (rx_count == 0 && ep_idx > 0 && buf->len == 0) {
+	if (rx_count == 0 && ep_idx > 0 && net_buf_tailroom(buf) > 0) {
 		if (!ep_cfg->stat.halted) {
 			epx_set_ready(base, ep_idx);
 		}
 		return;
+	}
+
+	/* RM 18.3.4: count above may be partial (done precedes handshake). */
+	if (ep_idx != 0 && rx_count > 0) {
+		ep_wait_not_busy(base, ep_idx);
+		rx_count = ep_get_rxcount(base, ep_idx);
 	}
 
 	if (rx_count > 0) {
@@ -987,19 +1021,17 @@ static void isr_handle_out_done(const struct device *dev, const mm_reg_t base,
 		if (ep_idx == 0) {
 			ep0_set_ready(base);
 		} else if (ep_cfg->stat.halted) {
-			/*
-			 * Endpoint halted mid-receive.  Don't re-arm
-			 * (epx_set_ready would clear STALL).
-			 */
-			atomic_or(&priv->xfer_finished, BIT(ep_idx));
-			k_event_post(&priv->events, UDC_BFLB_V1_EVT_XFER);
+			/* Halted: abort, mask done (re-arming would clear STALL). */
+			sys_set_bits(base + USB_INT_MASK_OFFSET,
+				     BFLB_EPX_DONE_BIT(ep_idx));
+			bflb_epx_xfer_complete(dev, ep_cfg);
 		} else {
 			epx_set_ready(base, ep_idx);
 		}
 		return;
 	}
 
-	/* Transfer complete (short packet or buffer full), defer to thread */
+	/* Transfer complete (short packet or buffer full) */
 	if (ep_idx == 0) {
 		sys_set_bits(base + USB_INT_MASK_OFFSET,
 			     USB_CR_EP0_OUT_DONE_MASK);
@@ -1013,9 +1045,14 @@ static void isr_handle_out_done(const struct device *dev, const mm_reg_t base,
 		 */
 		ep0_set_nak(base);
 		priv->ep0_status_done = true;
+		atomic_or(&priv->xfer_finished, BIT(ep_idx));
+		k_event_post(&priv->events, UDC_BFLB_V1_EVT_XFER);
+	} else {
+		/* No buffer left armed: mask done until re-armed, complete here. */
+		sys_set_bits(base + USB_INT_MASK_OFFSET,
+			     BFLB_EPX_DONE_BIT(ep_idx));
+		bflb_epx_xfer_complete(dev, ep_cfg);
 	}
-	atomic_or(&priv->xfer_finished, BIT(ep_idx));
-	k_event_post(&priv->events, UDC_BFLB_V1_EVT_XFER);
 }
 
 /* ISR handler */
@@ -1318,6 +1355,12 @@ static int udc_bflb_v1_ep_enqueue(const struct device *dev,
 
 	if (ep_cfg->stat.halted) {
 		LOG_DBG("ep 0x%02x halted", ep_cfg->addr);
+		return 0;
+	}
+
+	/* EP1-7: arm here (callback holds UDC+sched lock); skips ~1 ms/packet. */
+	if (USB_EP_GET_IDX(ep_cfg->addr) != 0 && !udc_ep_is_busy(ep_cfg)) {
+		handle_xfer_next(dev, ep_cfg);
 		return 0;
 	}
 

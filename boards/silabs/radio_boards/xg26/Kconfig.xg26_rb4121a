@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Hong Nguyen
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XG26_RB4121A
+	select SOC_EFR32MG26B420F3200IM68

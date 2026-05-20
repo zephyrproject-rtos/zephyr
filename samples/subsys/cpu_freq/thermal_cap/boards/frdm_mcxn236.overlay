@@ -1,0 +1,53 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/mcux-lpadc.h>
+
+/ {
+	cpu_freq_thermal_cap: cpu-freq-thermal-cap {
+		compatible = "zephyr,cpu-freq-thermal-cap";
+		sensor = <&temp0>;
+		sensor-channel = "die-temp";
+		polling-delay-ms = <1000>;
+		trip-active-polling-delay-ms = <100>;
+
+		trip_0 {
+			temperature-millicelsius = <25000>;
+			hysteresis-millicelsius = <3000>;
+			cap-pstate = <&pstate_1>;
+		};
+
+		trip_1 {
+			temperature-millicelsius = <40000>;
+			hysteresis-millicelsius = <3000>;
+			cap-pstate = <&pstate_2>;
+		};
+	};
+};
+
+&lpadc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	voltage-ref = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_EXTERNAL0";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 131)>;
+		zephyr,differential;
+		zephyr,input-positive = <MCUX_LPADC_CH26A>;
+		zephyr,input-negative = <MCUX_LPADC_CH26B>;
+	};
+};
+
+&temp0 {
+	status = "okay";
+	io-channels = <&lpadc0 0>;
+};

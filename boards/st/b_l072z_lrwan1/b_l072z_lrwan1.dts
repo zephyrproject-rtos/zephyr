@@ -175,12 +175,13 @@ zephyr_udc0: &usb {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set aside 32KiB for data at the end of the 192KiB flash */
 		storage_partition: partition@28000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00028000 DT_SIZE_K(32)>;
 		};

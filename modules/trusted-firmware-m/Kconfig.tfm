@@ -49,10 +49,10 @@ menuconfig BUILD_WITH_TFM
 	depends on TFM_BOARD != ""
 	depends on ARM_TRUSTZONE_M
 	select BUILD_OUTPUT_HEX
-	select PSA_CRYPTO_CLIENT
 	imply INIT_ARCH_HW_AT_BOOT
 	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
 	imply MBEDTLS if !TFM_USE_NS_APP
+	imply PSA_CRYPTO if !TFM_USE_NS_APP
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionally generate a TF-M image for the Secure Execution
@@ -387,21 +387,6 @@ config TFM_SFN
 	  v1.1.
 
 endchoice # TFM_MODEL
-
-config TFM_REGRESSION_S
-	bool "TF-M Secure Regression tests"
-	help
-	  When enabled, this option signifies that the TF-M build includes
-	  the Secure domain regression tests.
-	  The regression tests will be included in the TF-M secure firmware.
-
-config TFM_REGRESSION_NS
-	bool "TF-M Non-Secure Regression tests"
-	help
-	  When enabled, this option signifies that the TF-M build includes
-	  the Non-Secure domain regression tests.
-	  The regression tests will be included in the TF-M non-secure
-	  application.
 
 choice TFM_PSA_TEST
 	prompt "Enable a PSA test suite"

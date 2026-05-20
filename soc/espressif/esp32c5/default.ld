@@ -353,6 +353,7 @@ SECTIONS
     *libzephyr.a:rtc_*.*(.literal .text .literal.* .text.*)
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:sar_periph_ctrl_common.*(.literal .text .literal.* .text.*)
     *libzephyr.a:esp_clk_tree.*(.literal .text .literal.* .text.*)
     *libgcov.a:(.literal .text .literal.* .text.*)
     *libphy.a:( .phyiram .phyiram.*)
@@ -440,10 +441,11 @@ SECTIONS
     *libzephyr.a:esp_rom_efuse.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_systimer.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_rom_wdt.*(.literal .literal.* .text .text.*)
-    *libzephyr.a:esp_rom_hp_regi2c_esp32c5.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:regi2c_impl.*(.literal .literal.* .text .text.*)
 
     /* [mapping:esp_psram] */
     *libzephyr.a:esp_psram_impl_ap_quad.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_psram.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_config.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_tuning.*(.literal .literal.* .text .text.*)
     *libzephyr.a:mspi_timing_by_mspi_delay.*(.literal .literal.* .text .text.*)
@@ -642,6 +644,7 @@ SECTIONS
 
     /* [mapping:esp_psram] */
     *libzephyr.a:esp_psram_impl_ap_quad.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_psram.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:mspi_timing_config.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:mspi_timing_tuning.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:mspi_timing_by_mspi_delay.*(.rodata .rodata.* .srodata .srodata.*)
@@ -682,7 +685,7 @@ SECTIONS
     *libzephyr.a:esp_rom_spiflash.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_rom_efuse.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_rom_systimer.*(.rodata .rodata.* .srodata .srodata.*)
-    *libzephyr.a:esp_rom_hp_regi2c_esp32c5.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:regi2c_impl.*(.rodata .rodata.* .srodata .srodata.*)
 
     *libphy.a:(.rodata .rodata.* .srodata .srodata.*)
 
@@ -770,11 +773,11 @@ SECTIONS
     *(.user_stacks*)
     z_user_stacks_end = .;
 #endif /* CONFIG_USERSPACE */
-#ifdef CONFIG_LLEXT
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
     *(.llext_heap)
     *(.llext_ext_heap)
     *(.llext_metadata_heap)
-#endif /* CONFIG_LLEXT */
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     . = ALIGN(4);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -807,8 +810,9 @@ SECTIONS
     *(.sbss2.*)
     *(.gnu.linkonce.sb2.*)
     *(.dynbss)
-    *(.bss)
-    *(.bss.*)
+
+#include <esp_spiram_relocate_bss.ld.inc>
+
     *(.share.mem)
     *(.gnu.linkonce.b.*)
     *(COMMON)
@@ -851,7 +855,6 @@ SECTIONS
     _stext = .;
     _instruction_reserved_start = ABSOLUTE(.);
     _text_start = ABSOLUTE(.);
-    _instruction_reserved_start = ABSOLUTE(.);
     __text_region_start = ABSOLUTE(.);
     __rom_region_start = ABSOLUTE(.);
 
@@ -883,9 +886,11 @@ SECTIONS
       */
     . += 16;
 
+    /* Enforce flash segment size alignment */
+    . = ALIGN(0x10);
+
     _instruction_reserved_end = ABSOLUTE(.);
     _text_end = ABSOLUTE(.);
-    _instruction_reserved_end = ABSOLUTE(.);
     __text_region_end = ABSOLUTE(.);
     /* Align for PMP granularity requirements */
     MPU_MIN_SIZE_ALIGN
@@ -904,6 +909,12 @@ SECTIONS
   {
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(ROMABLE_REGION)
+
+  /* Move drom0 after .text region to allow proper memory mapping. */
+  .flash_rodata_dummy (NOLOAD) :
+  {
+    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN);
+  } GROUP_LINK_IN(RODATA_REGION)
 
   /* Symbols used during the application memory mapping */
   _image_drom_start = LOADADDR(.flash.rodata);
@@ -980,7 +991,8 @@ SECTIONS
    * This is used to calculate the size of the _image_drom_size variable */
   .flash.rodata_end : ALIGN(0x10)
   {
-    . = ALIGN(4);
+    /* Enforce flash segment size alignment */
+    LONG(0);
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -1015,11 +1027,16 @@ SECTIONS
     *(.ext_ram.bss*)
     . = ALIGN(16);
 
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
+    . = ALIGN(16);
+
     KEEP(*(.lvgl_buf*))
     . = ALIGN(16);
     KEEP(*(.lvgl_heap*))
     . = ALIGN(16);
     KEEP(*(.mbedtls_heap*))
+    . = ALIGN(16);
+    KEEP(*(.ot_msg_pool*))
     . = ALIGN(16);
 
     _ext_ram_bss_end = ABSOLUTE(.);

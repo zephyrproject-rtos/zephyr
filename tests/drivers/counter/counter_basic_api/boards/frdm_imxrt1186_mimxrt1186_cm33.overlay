@@ -1,0 +1,9 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpt2 {
+	run-mode = "free-run";
+};

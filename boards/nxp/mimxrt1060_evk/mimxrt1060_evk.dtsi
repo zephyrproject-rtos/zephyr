@@ -160,10 +160,14 @@ arduino_i2c: &lpi2c1 {
 	pinctrl-names = "default", "sleep";
 };
 
-&enet_mac {
+&enet {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet>;
 	pinctrl-names = "default";
+};
+
+&enet_mac {
+	status = "okay";
 	phy-handle = <&phy>;
 	zephyr,random-mac-address;
 	phy-connection-type = "rmii";

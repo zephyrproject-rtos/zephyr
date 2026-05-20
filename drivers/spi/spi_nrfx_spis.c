@@ -7,7 +7,7 @@
  #define DT_DRV_COMPAT nordic_nrf_spis
 
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/gpio.h>
 #include <dmm.h>

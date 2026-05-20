@@ -1,6 +1,7 @@
 /*
- * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Meta Platforms
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +22,11 @@
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup counter_interface_ext Device-specific Counter API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <errno.h>
@@ -112,6 +118,64 @@ extern "C" {
 #define COUNTER_GUARD_PERIOD_LATE_TO_SET BIT(0)
 
 /**@} */
+
+/**
+ * @anchor COUNTER_CAPTURE_FLAGS
+ * @name Counter capture flags
+ *
+ * @brief Used by @ref counter_capture_configure.
+ * @{
+ */
+
+/**
+ * @brief Capture rising edge of an external input signal
+ */
+#define COUNTER_CAPTURE_RISING_EDGE BIT(0)
+
+/**
+ * @brief Capture falling edge of an external input signal
+ */
+#define COUNTER_CAPTURE_FALLING_EDGE BIT(1)
+
+/**
+ * @brief Capture both falling and rising edge of an external input signal
+ */
+#define COUNTER_CAPTURE_BOTH_EDGES (COUNTER_CAPTURE_FALLING_EDGE | COUNTER_CAPTURE_RISING_EDGE)
+
+/**
+ * @brief Capture an event continuously until stopped.
+ */
+#define COUNTER_CAPTURE_CONTINUOUS 0
+
+/**
+ * @brief Capture a single event
+ */
+#define COUNTER_CAPTURE_SINGLE_SHOT BIT(2)
+
+/**
+ * @brief Provides a type to hold Counter Capture configuration flags.
+ *
+ * The lower 8 bits are used for standard flags.
+ * The upper 24 bits are reserved for SoC specific flags.
+ *
+ * @see @ref COUNTER_CAPTURE_FLAGS.
+ */
+
+typedef uint32_t counter_capture_flags_t;
+
+/**@} */
+
+/** @brief Counter capture callback
+ *
+ * @param dev       Pointer to the device structure for the driver instance
+ * @param chan_id   Channel ID
+ * @param flags     Configuration flags (@ref COUNTER_CAPTURE_FLAGS)
+ * @param ticks     Counter value that triggered the capture
+ * @param user_data User data
+ */
+typedef void (*counter_capture_cb_t)(const struct device *dev, uint8_t chan_id,
+				     counter_capture_flags_t flags, uint32_t ticks,
+				     void *user_data);
 
 /** @brief Alarm callback
  *
@@ -292,6 +356,18 @@ struct counter_top_cfg_64 {
 	uint32_t flags;
 };
 
+/** @brief Counter capture callback for 64 bits ticks
+ *
+ * @param dev       Pointer to the device structure for the driver instance
+ * @param chan_id   Channel ID
+ * @param flags     Configuration flags (@ref COUNTER_CAPTURE_FLAGS)
+ * @param ticks     Counter value that triggered the capture in 64 bits
+ * @param user_data User data
+ */
+typedef void (*counter_capture_cb_64_t)(const struct device *dev, uint8_t chan_id,
+					counter_capture_flags_t flags, uint64_t ticks,
+					void *user_data);
+
 /**
  * @def_driverbackendgroup{Counter,counter_interface}
  * @{
@@ -346,6 +422,18 @@ typedef uint64_t (*counter_api_get_top_value_64)(const struct device *dev);
 /** @brief Callback API to set the counter top value (64 bits). */
 typedef int (*counter_api_set_top_value_64)(const struct device *dev,
 					    const struct counter_top_cfg_64 *cfg);
+/** @brief Callback API to configure counter capture on a channel. */
+typedef int (*counter_api_capture_configure)(const struct device *dev, uint8_t chan_id,
+					     counter_capture_flags_t flags,
+					     counter_capture_cb_t cb, void *user_data);
+/** @brief Callback API to configure counter capture on a channel with 64-bit ticks. */
+typedef int (*counter_api_capture_configure_64)(const struct device *dev, uint8_t chan_id,
+						counter_capture_flags_t flags,
+						counter_capture_cb_64_t cb, void *user_data);
+/** @brief Callback API to enable counter capture on a channel. */
+typedef int (*counter_api_enable_capture)(const struct device *dev, uint8_t chan_id);
+/** @brief Callback API to disable counter capture on a channel. */
+typedef int (*counter_api_disable_capture)(const struct device *dev, uint8_t chan_id);
 
 /**
  * @driver_ops{Counter}
@@ -439,6 +527,26 @@ __subsystem struct counter_driver_api {
 	 */
 	counter_api_set_top_value_64 set_top_value_64;
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
+#ifdef CONFIG_COUNTER_CAPTURE
+	/**
+	 * @driver_ops_mandatory @copybrief counter_capture_configure
+	 */
+	counter_api_capture_configure capture_configure;
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+	/**
+	 * @driver_ops_mandatory @copybrief counter_capture_configure_64
+	 */
+	counter_api_capture_configure_64 capture_configure_64;
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
+	/**
+	 * @driver_ops_mandatory @copybrief counter_enable_capture
+	 */
+	counter_api_enable_capture enable_capture;
+	/**
+	 * @driver_ops_mandatory @copybrief counter_disable_capture
+	 */
+	counter_api_disable_capture disable_capture;
+#endif /* CONFIG_COUNTER_CAPTURE */
 };
 /**
  * @}
@@ -493,7 +601,7 @@ __syscall uint32_t counter_get_frequency(const struct device *dev);
 static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 {
 	const struct counter_config_info *config = (const struct counter_config_info *)dev->config;
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (api->get_freq) {
 		return api->get_freq(dev);
@@ -515,7 +623,7 @@ static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 static inline uint32_t z_impl_counter_get_frequency(const struct device *dev)
 {
 	const struct counter_config_info *config = (const struct counter_config_info *)dev->config;
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	return api->get_freq ? api->get_freq(dev) : config->freq;
 }
@@ -535,7 +643,7 @@ static inline uint64_t z_impl_counter_get_frequency_64(const struct device *dev)
 {
 #ifdef CONFIG_COUNTER_64BITS_FREQ
 	const struct counter_config_info *config = (const struct counter_config_info *)dev->config;
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (api->get_freq_64) {
 		return api->get_freq_64(dev);
@@ -712,9 +820,7 @@ __syscall int counter_start(const struct device *dev);
 
 static inline int z_impl_counter_start(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->start(dev);
+	return DEVICE_API_GET(counter, dev)->start(dev);
 }
 
 /**
@@ -730,9 +836,7 @@ __syscall int counter_stop(const struct device *dev);
 
 static inline int z_impl_counter_stop(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->stop(dev);
+	return DEVICE_API_GET(counter, dev)->stop(dev);
 }
 
 /**
@@ -747,9 +851,7 @@ __syscall int counter_get_value(const struct device *dev, uint32_t *ticks);
 
 static inline int z_impl_counter_get_value(const struct device *dev, uint32_t *ticks)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->get_value(dev, ticks);
+	return DEVICE_API_GET(counter, dev)->get_value(dev, ticks);
 }
 
 /**
@@ -763,7 +865,7 @@ __syscall int counter_reset(const struct device *dev);
 
 static inline int z_impl_counter_reset(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->reset) {
 		return -ENOSYS;
@@ -784,7 +886,7 @@ __syscall int counter_set_value(const struct device *dev, uint32_t ticks);
 
 static inline int z_impl_counter_set_value(const struct device *dev, uint32_t ticks)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->set_value) {
 		return -ENOSYS;
@@ -819,7 +921,7 @@ __syscall int counter_set_channel_alarm(const struct device *dev, uint8_t chan_i
 static inline int z_impl_counter_set_channel_alarm(const struct device *dev, uint8_t chan_id,
 						   const struct counter_alarm_cfg *alarm_cfg)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (chan_id >= counter_get_num_of_channels(dev)) {
 		return -ENOTSUP;
@@ -844,7 +946,7 @@ __syscall int counter_cancel_channel_alarm(const struct device *dev, uint8_t cha
 
 static inline int z_impl_counter_cancel_channel_alarm(const struct device *dev, uint8_t chan_id)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (chan_id >= counter_get_num_of_channels(dev)) {
 		return -ENOTSUP;
@@ -886,7 +988,7 @@ __syscall int counter_set_top_value(const struct device *dev, const struct count
 static inline int z_impl_counter_set_top_value(const struct device *dev,
 					       const struct counter_top_cfg *cfg)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (cfg->ticks > counter_get_max_top_value(dev)) {
 		return -EINVAL;
@@ -912,9 +1014,7 @@ __syscall uint32_t counter_get_pending_int(const struct device *dev);
 
 static inline uint32_t z_impl_counter_get_pending_int(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->get_pending_int(dev);
+	return DEVICE_API_GET(counter, dev)->get_pending_int(dev);
 }
 
 /**
@@ -928,9 +1028,7 @@ __syscall uint32_t counter_get_top_value(const struct device *dev);
 
 static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->get_top_value(dev);
+	return DEVICE_API_GET(counter, dev)->get_top_value(dev);
 }
 
 /**
@@ -958,18 +1056,24 @@ static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
  *
  * More precisely:
  *
- * - When counting upwards (see @ref COUNTER_CONFIG_INFO_COUNT_UP) the given
- *   absolute tick value must be above (now + guard_period) % top_value to be
- *   accepted by the driver.
- * - When counting downwards, the given absolute tick value must be less than
- *   (now + top_value - guard_period) % top_value to be accepted.
+ * - When counting upwards (see @ref COUNTER_CONFIG_INFO_COUNT_UP), an alarm
+ *   is rejected as "late" if the counter has advanced past the given absolute
+ *   tick value by fewer than guard_period ticks:
+ *   (now - target) % top_value < guard_period.
+ *   Otherwise the alarm is accepted (target is still in the future, or far
+ *   enough in the past to be considered an intentional future wrap).
+ * - When counting downwards, an alarm is "late" if:
+ *   (target - now) % top_value < guard_period.
+ *   Otherwise the alarm is accepted.
  *
  * Examples:
  *
  * - counting upwards, now = 4950, top value = 5000, guard period = 100:
- *      absolute tick value >= (4950 + 100) % 5000 = 50
+ *      late zone: (4950 - target) % 5000 < 100, i.e. target in [4851, 4950]
+ *      accepted: target in [0, 4850] or [4951, 4999]
  * - counting downwards, now = 50, top value = 5000, guard period = 100:
- *      absolute tick value <= (50 + 5000 - * 100) % 5000 = 4950
+ *      late zone: (target - 50) % 5000 < 100, i.e. target in [50, 149]
+ *      accepted: target in [0, 49] or [150, 4999]
  *
  * If you need only short alarm periods, you can set the guard period very high
  * (e.g. half of the counter top value) which will make it highly unlikely that
@@ -990,7 +1094,7 @@ __syscall int counter_set_guard_period(const struct device *dev, uint32_t ticks,
 static inline int z_impl_counter_set_guard_period(const struct device *dev, uint32_t ticks,
 						  uint32_t flags)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->set_guard_period) {
 		return -ENOSYS;
@@ -1014,7 +1118,7 @@ __syscall uint32_t counter_get_guard_period(const struct device *dev, uint32_t f
 
 static inline uint32_t z_impl_counter_get_guard_period(const struct device *dev, uint32_t flags)
 {
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	return (api->get_guard_period) ? api->get_guard_period(dev, flags) : 0;
 }
@@ -1071,7 +1175,7 @@ static inline int z_impl_counter_set_top_value_64(const struct device *dev,
 						  const struct counter_top_cfg_64 *cfg)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (cfg->ticks > counter_get_max_top_value_64(dev)) {
 		return -EINVAL;
@@ -1112,7 +1216,7 @@ static inline int z_impl_counter_set_channel_alarm_64(const struct device *dev, 
 						      const struct counter_alarm_cfg_64 *alarm_cfg)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (chan_id >= counter_get_num_of_channels(dev)) {
 		return -ENOTSUP;
@@ -1139,9 +1243,7 @@ __syscall uint64_t counter_get_top_value_64(const struct device *dev);
 static inline uint64_t z_impl_counter_get_top_value_64(const struct device *dev)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
-
-	return api->get_top_value_64(dev);
+	return DEVICE_API_GET(counter, dev)->get_top_value_64(dev);
 #else
 	ARG_UNUSED(dev);
 	return 0;
@@ -1173,18 +1275,24 @@ static inline uint64_t z_impl_counter_get_top_value_64(const struct device *dev)
  *
  * More precisely:
  *
- * - When counting upwards (see @ref COUNTER_CONFIG_INFO_COUNT_UP) the given
- *   absolute tick value must be above (now + guard_period) % top_value to be
- *   accepted by the driver.
- * - When counting downwards, the given absolute tick value must be less than
- *   (now + top_value - guard_period) % top_value to be accepted.
+ * - When counting upwards (see @ref COUNTER_CONFIG_INFO_COUNT_UP), an alarm
+ *   is rejected as "late" if the counter has advanced past the given absolute
+ *   tick value by fewer than guard_period ticks:
+ *   (now - target) % top_value < guard_period.
+ *   Otherwise the alarm is accepted (target is still in the future, or far
+ *   enough in the past to be considered an intentional future wrap).
+ * - When counting downwards, an alarm is "late" if:
+ *   (target - now) % top_value < guard_period.
+ *   Otherwise the alarm is accepted.
  *
  * Examples:
  *
  * - counting upwards, now = 4950, top value = 5000, guard period = 100:
- *      absolute tick value >= (4950 + 100) % 5000 = 50
+ *      late zone: (4950 - target) % 5000 < 100, i.e. target in [4851, 4950]
+ *      accepted: target in [0, 4850] or [4951, 4999]
  * - counting downwards, now = 50, top value = 5000, guard period = 100:
- *      absolute tick value <= (50 + 5000 - * 100) % 5000 = 4950
+ *      late zone: (target - 50) % 5000 < 100, i.e. target in [50, 149]
+ *      accepted: target in [0, 49] or [150, 4999]
  *
  * If you need only short alarm periods, you can set the guard period very high
  * (e.g. half of the counter top value) which will make it highly unlikely that
@@ -1206,7 +1314,7 @@ static inline int z_impl_counter_set_guard_period_64(const struct device *dev, u
 						     uint32_t flags)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->set_guard_period_64) {
 		return -ENOSYS;
@@ -1237,7 +1345,7 @@ __syscall uint64_t counter_get_guard_period_64(const struct device *dev, uint32_
 static inline uint64_t z_impl_counter_get_guard_period_64(const struct device *dev, uint32_t flags)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	return (api->get_guard_period_64) ? api->get_guard_period_64(dev, flags) : 0;
 #else
@@ -1260,7 +1368,7 @@ __syscall int counter_get_value_64(const struct device *dev, uint64_t *ticks);
 static inline int z_impl_counter_get_value_64(const struct device *dev, uint64_t *ticks)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->get_value_64) {
 		return -ENOSYS;
@@ -1287,7 +1395,7 @@ __syscall int counter_set_value_64(const struct device *dev, uint64_t ticks);
 static inline int z_impl_counter_set_value_64(const struct device *dev, uint64_t ticks)
 {
 #ifdef CONFIG_COUNTER_64BITS_TICKS
-	const struct counter_driver_api *api = (struct counter_driver_api *)dev->api;
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
 
 	if (!api->set_value_64) {
 		return -ENOSYS;
@@ -1300,6 +1408,162 @@ static inline int z_impl_counter_set_value_64(const struct device *dev, uint64_t
 	return -ENOTSUP;
 #endif
 }
+
+#if defined(CONFIG_COUNTER_CAPTURE) || defined(__DOXYGEN__)
+/**
+ * @brief Counter capture APIs.
+ * @defgroup counter_capture Counter capture APIs
+ * @ingroup counter_interface
+ * @{
+ *
+ * [Experimental] Users should note that the APIs can change
+ * as a part of ongoing development.
+ */
+
+/**
+ * @brief Configure a capture channel and register its callback
+ *
+ * Configures the edge polarity and capture mode (single-shot vs
+ * continuous) for a capture channel, and registers the callback that
+ * delivers captured tick values.
+ *
+ * @note The mapping from a capture channel to its input source (e.g. a
+ *       physical pad or an internal signal) is vendor-specific and
+ *       is not part of this API. On most SoCs the channel-to-pin
+ *       association is fixed by the hardware and exposed through
+ *       devicetree (typically via pinctrl or a dedicated property on the
+ *       counter node). Refer to the binding for your counter device for
+ *       how to select the input. Future revisions of this API may add a
+ *       runtime source-selection call (e.g. counter_capture_set_source or
+ *       add a source argument to this function) if SoCs with a configurable
+ *       input fabric require it.
+ *
+ * @param dev  Pointer to the device structure for the driver instance
+ * @param chan_id Channel ID
+ * @param flags Configuration flags (@ref COUNTER_CAPTURE_FLAGS)
+ * @param cb Callback function reference
+ * @param user_data Argument passed to the callback function
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+static inline int counter_capture_configure(const struct device *dev, uint8_t chan_id,
+					    counter_capture_flags_t flags,
+					    counter_capture_cb_t cb, void *user_data)
+{
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
+
+	if (api->capture_configure == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (chan_id >= counter_get_num_of_channels(dev)) {
+		return -ENOTSUP;
+	}
+
+	return api->capture_configure(dev, chan_id, flags, cb, user_data);
+}
+
+#if defined(CONFIG_COUNTER_64BITS_TICKS) || defined(__DOXYGEN__)
+/**
+ * @brief Configure a capture channel and register its callback for 64 bits ticks
+ *
+ * Configures the edge polarity and capture mode (single-shot vs
+ * continuous) for a capture channel, and registers the 64b callback that
+ * delivers captured tick values.
+ *
+ * @note The mapping from a capture channel to its input source (e.g. a
+ *       physical pad or an internal signal) is vendor-specific and
+ *       is not part of this API. On most SoCs the channel-to-pin
+ *       association is fixed by the hardware and exposed through
+ *       devicetree (typically via pinctrl or a dedicated property on the
+ *       counter node). Refer to the binding for your counter device for
+ *       how to select the input. Future revisions of this API may add a
+ *       runtime source-selection call (e.g. counter_capture_set_source or
+ *       add a source argument to this function) if SoCs with a configurable
+ *       input fabric require it.
+ *
+ * @param dev  Pointer to the device structure for the driver instance
+ * @param chan_id Channel ID
+ * @param flags Configuration flags (@ref COUNTER_CAPTURE_FLAGS)
+ * @param cb Callback function reference
+ * @param user_data Argument passed to the callback function
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+static inline int counter_capture_configure_64(const struct device *dev, uint8_t chan_id,
+					       counter_capture_flags_t flags,
+					       counter_capture_cb_64_t cb, void *user_data)
+{
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
+
+	if (api->capture_configure_64 == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (chan_id >= counter_get_num_of_channels(dev)) {
+		return -ENOTSUP;
+	}
+
+	return api->capture_configure_64(dev, chan_id, flags, cb, user_data);
+}
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
+
+/**
+ * @brief Enable capture on a channel.
+ *
+ * @param dev  Pointer to the device structure for the driver instance.
+ * @param chan_id Channel ID.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+__syscall int counter_enable_capture(const struct device *dev, uint8_t chan_id);
+
+static inline int z_impl_counter_enable_capture(const struct device *dev, uint8_t chan_id)
+{
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
+
+	if (api->enable_capture == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (chan_id >= counter_get_num_of_channels(dev)) {
+		return -ENOTSUP;
+	}
+
+	return api->enable_capture(dev, chan_id);
+}
+
+/**
+ * @brief Disable capture on a channel.
+ *
+ * @param dev  Pointer to the device structure for the driver instance.
+ * @param chan_id Channel ID.
+ *
+ * @retval 0 If successful.
+ * @retval Negative error code on failure
+ */
+__syscall int counter_disable_capture(const struct device *dev, uint8_t chan_id);
+
+static inline int z_impl_counter_disable_capture(const struct device *dev, uint8_t chan_id)
+{
+	const struct counter_driver_api *api = DEVICE_API_GET(counter, dev);
+
+	if (api->disable_capture == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (chan_id >= counter_get_num_of_channels(dev)) {
+		return -ENOTSUP;
+	}
+
+	return api->disable_capture(dev, chan_id);
+}
+
+/** @} */
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 #ifdef __cplusplus
 }

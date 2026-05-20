@@ -38,7 +38,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 EXECUTE_TIMEOUT=300
 
 verbosity_level=2
-simulation_id="gatt_notify_enhanced_stress"
+simulation_id="${BOARD_TS}_gatt_notify_enhanced_stress"
 server_id="gatt_server_enhanced_notif_stress"
 client_id="gatt_client_enhanced_notif_stress"
 

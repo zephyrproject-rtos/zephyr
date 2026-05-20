@@ -44,8 +44,6 @@ static int hazard3_irq_init(const struct device *dev)
 	/* Global external IRQ enable. */
 	csr_write(mie, RVCSR_MIE_MEIE_BITS);
 
-	csr_set(mstatus, MSTATUS_IEN);
-
 	return 0;
 }
 

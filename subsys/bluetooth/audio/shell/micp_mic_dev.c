@@ -21,6 +21,7 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "common/bt_shell_private.h"
@@ -109,6 +110,9 @@ static int cmd_micp_mic_dev_param(const struct shell *sh, size_t argc,
 	int result;
 	struct bt_micp_mic_dev_register_param micp_param;
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	(void)memset(&micp_param, 0, sizeof(micp_param));
 
 #if defined(CONFIG_BT_MICP_MIC_DEV_AICS)
@@ -154,6 +158,9 @@ static int cmd_micp_mic_dev_mute_get(const struct shell *sh, size_t argc,
 {
 	int result = bt_micp_mic_dev_mute_get();
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -165,6 +172,9 @@ static int cmd_micp_mic_dev_mute(const struct shell *sh, size_t argc,
 				 char **argv)
 {
 	int result = bt_micp_mic_dev_mute();
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
@@ -178,6 +188,9 @@ static int cmd_micp_mic_dev_unmute(const struct shell *sh, size_t argc,
 {
 	int result = bt_micp_mic_dev_unmute();
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -190,6 +203,9 @@ static int cmd_micp_mic_dev_mute_disable(const struct shell *sh, size_t argc,
 {
 	int result = bt_micp_mic_dev_mute_disable();
 
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	if (result != 0) {
 		shell_error(sh, "Fail: %d", result);
 	}
@@ -201,6 +217,8 @@ static int cmd_micp_mic_dev_mute_disable(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_aics_deactivate(const struct shell *sh, size_t argc,
 					    char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -229,6 +247,8 @@ static int cmd_micp_mic_dev_aics_deactivate(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_aics_activate(const struct shell *sh, size_t argc,
 					  char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -257,6 +277,8 @@ static int cmd_micp_mic_dev_aics_activate(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_aics_input_state_get(const struct shell *sh,
 						 size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -285,6 +307,8 @@ static int cmd_micp_mic_dev_aics_input_state_get(const struct shell *sh,
 static int cmd_micp_mic_dev_aics_gain_setting_get(const struct shell *sh,
 						  size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -313,6 +337,8 @@ static int cmd_micp_mic_dev_aics_gain_setting_get(const struct shell *sh,
 static int cmd_micp_mic_dev_aics_input_type_get(const struct shell *sh,
 						size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -341,6 +367,8 @@ static int cmd_micp_mic_dev_aics_input_type_get(const struct shell *sh,
 static int cmd_micp_mic_dev_aics_input_status_get(const struct shell *sh,
 						  size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -369,6 +397,8 @@ static int cmd_micp_mic_dev_aics_input_status_get(const struct shell *sh,
 static int cmd_micp_mic_dev_aics_input_unmute(const struct shell *sh,
 					      size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -397,6 +427,8 @@ static int cmd_micp_mic_dev_aics_input_unmute(const struct shell *sh,
 static int cmd_micp_mic_dev_aics_input_mute(const struct shell *sh, size_t argc,
 					    char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -425,6 +457,8 @@ static int cmd_micp_mic_dev_aics_input_mute(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_aics_manual_input_gain_set(const struct shell *sh,
 						       size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -454,6 +488,8 @@ static int cmd_micp_mic_dev_aics_automatic_input_gain_set(const struct shell *sh
 							  size_t argc,
 							  char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -482,6 +518,8 @@ static int cmd_micp_mic_dev_aics_automatic_input_gain_set(const struct shell *sh
 static int cmd_micp_mic_dev_aics_gain_set(const struct shell *sh, size_t argc,
 					  char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 	long gain;
@@ -532,6 +570,8 @@ static int cmd_micp_mic_dev_aics_gain_set(const struct shell *sh, size_t argc,
 static int cmd_micp_mic_dev_aics_input_description_get(const struct shell *sh,
 						       size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
@@ -560,6 +600,8 @@ static int cmd_micp_mic_dev_aics_input_description_get(const struct shell *sh,
 static int cmd_micp_mic_dev_aics_input_description_set(const struct shell *sh,
 						       size_t argc, char **argv)
 {
+	ARG_UNUSED(argc);
+
 	unsigned long index;
 	int result = 0;
 
