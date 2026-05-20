@@ -18,6 +18,7 @@ supported:
   - flash
   - gpio
   - can
+  - counter
   - uart
   - hwinfo
   - mbox

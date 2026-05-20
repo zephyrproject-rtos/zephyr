@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * CM33 and CM7 share the same peripheral instances on i.MX RT1186;
+ * reuse the CM33 overlay to keep the test configuration in sync.
+ */
+#include "frdm_imxrt1186_mimxrt1186_cm33.overlay"
