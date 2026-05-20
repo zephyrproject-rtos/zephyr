@@ -1,16 +1,10 @@
 name: Pull Request/Issue Assigner
 
 on:
-  pull_request_target:
+  workflow_run:
+    workflows: ["Pull Request Assigner: Analyze"]
     types:
-    - opened
-    - synchronize
-    - reopened
-    - ready_for_review
-    branches:
-    - main
-    - collab-*
-    - v*-branch
+    - completed
   issues:
     types:
     - labeled
@@ -19,12 +13,16 @@ permissions:
   contents: read
 
 jobs:
-  assignment:
-    name: Pull Request/Issue Assignment
-    if: github.event.pull_request.draft == false
+  pr-assignment:
+    name: Pull Request Assignment
+    if: |
+      github.event_name == 'workflow_run' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
     runs-on: ubuntu-24.04
     permissions:
       issues: write        # to add assignees to issues
+      pull-requests: write # to request reviewers
 
     steps:
     - name: Check out source code
@@ -38,51 +36,99 @@ jobs:
       with:
         python-version: 3.12
 
-    - name: Fetch west.yml/Maintainer.yml from pull request
-      if: >
-        github.event_name == 'pull_request_target' && github.base_ref == 'main'
-      run: |
-        git fetch origin pull/${{ github.event.pull_request.number }}/merge
-        git show FETCH_HEAD:west.yml > pr_west.yml
-        git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml
+    - name: Download analysis artifacts
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+      with:
+        name: assigner-analysis
+        run-id: ${{ github.event.workflow_run.id }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: west setup
-      if: >
-        github.event_name == 'pull_request_target'
+    - name: Validate metadata
       run: |
-        git config --global user.email "you@example.com"
-        git config --global user.name "Your Name"
+        python3 -c "
+        import json, re, sys
+
+        with open('assignment_metadata.json') as f:
+            meta = json.load(f)
+
+        pr_number = meta.get('pr_number', '')
+        if pr_number and not str(pr_number).isdigit():
+            print(f'REJECT: pr_number must be numeric, got: {pr_number}')
+            sys.exit(1)
+
+        for field in ['repo_owner', 'repo_name']:
+            val = meta.get(field, '')
+            if val and not re.match(r'^[a-zA-Z0-9_.-]+$', val):
+                print(f'REJECT: {field} has invalid characters: {val}')
+                sys.exit(1)
+
+        print('Metadata validation passed')
+        print(json.dumps(meta, indent=2))
+        "
+
+    - name: West setup
+      run: |
+        git config --global user.email "ci@zephyrproject.org"
+        git config --global user.name "Zephyr CI"
         west init -l . || true
 
     - name: Run assignment script
       env:
         GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
       run: |
+        PR_NUMBER=$(python3 -c "import json; print(json.load(open('assignment_metadata.json'))['pr_number'])")
+        BASE_REF=$(python3 -c "import json; print(json.load(open('assignment_metadata.json'))['base_ref'])")
+        REPO_OWNER=$(python3 -c "import json; print(json.load(open('assignment_metadata.json'))['repo_owner'])")
+        REPO_NAME=$(python3 -c "import json; print(json.load(open('assignment_metadata.json'))['repo_name'])")
+
         FLAGS="-v"
-        FLAGS+=" -o ${{ github.event.repository.owner.login }}"
-        FLAGS+=" -r ${{ github.event.repository.name }}"
+        FLAGS+=" -o ${REPO_OWNER}"
+        FLAGS+=" -r ${REPO_NAME}"
         FLAGS+=" -M MAINTAINERS.yml"
-        if [ "${{ github.event_name }}" = "pull_request_target" ]; then
-          if [ "${{ github.base_ref }}" = "main" ]; then
-            FLAGS+=" -P ${{ github.event.pull_request.number }} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
-          else
-            FLAGS+=" -P ${{ github.event.pull_request.number }}"
-          fi
-        elif [ "${{ github.event_name }}" = "issues" ]; then
-          FLAGS+=" -I ${{ github.event.issue.number }}"
-        elif [ "${{ github.event_name }}" = "schedule" ]; then
-          FLAGS+=" --modules"
+        if [ "${BASE_REF}" = "main" ]; then
+          FLAGS+=" -P ${PR_NUMBER} --updated-manifest pr_west.yml --updated-maintainer-file pr_MAINTAINERS.yml"
         else
-          echo "Unknown event: ${{ github.event_name }}"
-          exit 1
+          FLAGS+=" -P ${PR_NUMBER}"
         fi
         python3 scripts/ci/set_assignees.py $FLAGS
 
     - name: Check maintainer file changes
-      if: >
-        github.event_name == 'pull_request_target' && github.base_ref == 'main'
       env:
         GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
       run: |
-        python  ./scripts/ci/check_maintainer_changes.py  \
-          --repo zephyrproject-rtos/zephyr MAINTAINERS.yml pr_MAINTAINERS.yml
+        BASE_REF=$(python3 -c "import json; print(json.load(open('assignment_metadata.json'))['base_ref'])")
+        if [ "${BASE_REF}" = "main" ] && [ -f "pr_MAINTAINERS.yml" ]; then
+          python3 ./scripts/ci/check_maintainer_changes.py \
+            --repo zephyrproject-rtos/zephyr MAINTAINERS.yml pr_MAINTAINERS.yml
+        fi
+
+  issue-assignment:
+    name: Issue Assignment
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-24.04
+    permissions:
+      issues: write
+
+    steps:
+    - name: Check out source code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        persist-credentials: false
+
+    - name: Set up Python
+      uses: zephyrproject-rtos/action-python-env@32e53bef090c33d53aa94f1d9a9d29c93cfdc5f7 # main
+      with:
+        python-version: 3.12
+
+    - name: Run assignment script
+      env:
+        GITHUB_TOKEN: ${{ secrets.ZB_PR_ASSIGNER_GITHUB_TOKEN }}
+        REPO_OWNER: ${{ github.event.repository.owner.login }}
+        REPO_NAME: ${{ github.event.repository.name }}
+        ISSUE_NUMBER: ${{ github.event.issue.number }}
+      run: |
+        python3 scripts/ci/set_assignees.py -v \
+          -o "${REPO_OWNER}" \
+          -r "${REPO_NAME}" \
+          -M MAINTAINERS.yml \
+          -I "${ISSUE_NUMBER}"

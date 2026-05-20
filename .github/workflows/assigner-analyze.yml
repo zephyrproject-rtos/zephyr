@@ -1,0 +1,142 @@
+name: "Pull Request Assigner: Analyze"
+
+on:
+  pull_request_target:
+    types:
+    - opened
+    - synchronize
+    - reopened
+    - ready_for_review
+    branches:
+    - main
+    - collab-*
+    - v*-branch
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze PR for Assignment
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+
+    steps:
+    - name: Check out source code
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        fetch-depth: 0
+        persist-credentials: false
+
+    - name: Set up Python
+      uses: zephyrproject-rtos/action-python-env@32e53bef090c33d53aa94f1d9a9d29c93cfdc5f7 # main
+      with:
+        python-version: 3.12
+
+    - name: Fetch west.yml/MAINTAINERS.yml from pull request
+      if: github.base_ref == 'main'
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        git fetch origin "pull/${PR_NUMBER}/merge"
+        git show FETCH_HEAD:west.yml > pr_west.yml 2>/dev/null || true
+        git show FETCH_HEAD:MAINTAINERS.yml > pr_MAINTAINERS.yml 2>/dev/null || true
+
+    - name: Validate PR YAML files
+      if: github.base_ref == 'main'
+      run: |
+        python3 -c "
+        import yaml, sys, re, os
+
+        def validate_maintainers(path):
+            if not os.path.isfile(path):
+                print(f'SKIP: {path} not present in PR')
+                return True
+            size = os.path.getsize(path)
+            if size > 512 * 1024:
+                print(f'REJECT: {path} exceeds 512KB ({size} bytes)')
+                return False
+            with open(path) as f:
+                doc = yaml.safe_load(f)
+            if not isinstance(doc, dict):
+                print(f'REJECT: {path} root is not a YAML mapping')
+                return False
+            for area_name, area_data in doc.items():
+                if not isinstance(area_data, dict):
+                    continue
+                for field in ['maintainers', 'collaborators']:
+                    users = area_data.get(field, [])
+                    if users is None:
+                        continue
+                    if not isinstance(users, list):
+                        print(f'REJECT: {field} in area {area_name!r} must be a list')
+                        return False
+                    for user in users:
+                        if not isinstance(user, str):
+                            print(f'REJECT: {field} entries must be strings')
+                            return False
+                        if not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,37}[a-zA-Z0-9])?$', user):
+                            print(f'REJECT: invalid GitHub username format: {user!r}')
+                            return False
+            print(f'PASS: {path} ({size} bytes, {len(doc)} areas)')
+            return True
+
+        def validate_west(path):
+            if not os.path.isfile(path):
+                print(f'SKIP: {path} not present in PR')
+                return True
+            size = os.path.getsize(path)
+            if size > 256 * 1024:
+                print(f'REJECT: {path} exceeds 256KB ({size} bytes)')
+                return False
+            with open(path) as f:
+                doc = yaml.safe_load(f)
+            if not isinstance(doc, dict):
+                print(f'REJECT: {path} root is not a YAML mapping')
+                return False
+            print(f'PASS: {path} ({size} bytes)')
+            return True
+
+        ok = True
+        ok = validate_maintainers('pr_MAINTAINERS.yml') and ok
+        ok = validate_west('pr_west.yml') and ok
+        if not ok:
+            sys.exit(1)
+        "
+
+    - name: West setup
+      run: |
+        git config --global user.email "ci@zephyrproject.org"
+        git config --global user.name "Zephyr CI"
+        west init -l . || true
+
+    - name: Generate assignment metadata
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        BASE_REF: ${{ github.base_ref }}
+        REPO_OWNER: ${{ github.event.repository.owner.login }}
+        REPO_NAME: ${{ github.event.repository.name }}
+      run: |
+        cat > assignment_metadata.json <<EOF
+        {
+          "event_name": "pull_request_target",
+          "pr_number": "${PR_NUMBER}",
+          "base_ref": "${BASE_REF}",
+          "repo_owner": "${REPO_OWNER}",
+          "repo_name": "${REPO_NAME}"
+        }
+        EOF
+        cat assignment_metadata.json
+
+    - name: Upload analysis artifacts
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: assigner-analysis
+        path: |
+          assignment_metadata.json
+          pr_west.yml
+          pr_MAINTAINERS.yml
+        retention-days: 1
+        if-no-files-found: warn
