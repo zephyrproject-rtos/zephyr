@@ -683,7 +683,7 @@ ZTEST(conn_mgr_conn, test_conn_opt)
 	buf_len = sizeof(buf);
 	zassert_equal(conn_mgr_if_get_opt(ifa1, TEST_CONN_OPT_X, &buf, &buf_len),
 		       0, "conn_mgr_if_get_opt should succeed for valid parameters");
-	printk("%d, %d", buf_len, strlen(buf) + 1);
+	printk("%zu, %zu", buf_len, strlen(buf) + 1);
 	zassert_equal(buf_len, strlen(buf) + 1, "conn_mgr_if_get_opt should return valid optlen");
 	zassert_str_equal(buf, "A",
 			  "conn_mgr_if_get_opt should retrieve \"A\"");
