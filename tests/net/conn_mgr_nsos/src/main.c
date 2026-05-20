@@ -130,7 +130,7 @@ ZTEST(conn_mgr_nsos, test_conn_mgr_nsos)
 ZTEST(conn_mgr_nsos, test_conn_mgr_nsos_idle)
 {
 	struct net_if *iface = net_if_get_default();
-	struct net_sockaddr_in v4addr;
+	struct net_sockaddr_in v4addr = {0};
 	int sock, rc;
 
 	/* 2 second idle timeout */
