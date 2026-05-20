@@ -430,11 +430,8 @@ static int siwx91x_udma_reload(const struct device *dev, uint32_t channel, uint3
 {
 	const struct siwx91x_udma_config *cfg = dev->config;
 	struct siwx91x_udma_data *data = dev->data;
-	RSI_UDMA_DESC_T *udma_table = cfg->chan_desc;
-	void *desc_src_addr;
-	void *desc_dst_addr;
+	RSI_UDMA_DESC_T *chan_desc = &cfg->chan_desc[channel];
 	uint32_t length;
-	uint8_t xfer_size = 1 << udma_table[channel].vsUDMAChaConfigData1.srcSize;
 
 	/* Expecting a fixed channel number between 0-31 for dma0 and 0-11 for ulpdma */
 	if (channel >= data->dma_ctx.dma_channels) {
@@ -446,7 +443,7 @@ static int siwx91x_udma_reload(const struct device *dev, uint32_t channel, uint3
 		return -EINVAL;
 	}
 
-	if (size % BIT(udma_table[channel].vsUDMAChaConfigData1.srcSize)) {
+	if (size % BIT(chan_desc->vsUDMAChaConfigData1.srcSize)) {
 		return -EINVAL;
 	}
 
@@ -457,33 +454,28 @@ static int siwx91x_udma_reload(const struct device *dev, uint32_t channel, uint3
 	/* Update new channel info to dev->data structure */
 	data->hal_chans[channel].SrcAddr = src;
 	data->hal_chans[channel].DestAddr = dst;
-	data->hal_chans[channel].Size = size / xfer_size;
+	data->hal_chans[channel].Size = size >> chan_desc->vsUDMAChaConfigData1.srcSize;
 
 	/* Update new transfer size to dev->data structure */
 	if (data->hal_chans[channel].Size >= SIWX91X_UDMA_MAX_XFER_COUNT) {
 		data->hal_chans[channel].Cnt = SIWX91X_UDMA_MAX_XFER_COUNT - 1;
 	} else {
-		data->hal_chans[channel].Cnt = size / xfer_size;
+		data->hal_chans[channel].Cnt = size >> chan_desc->vsUDMAChaConfigData1.srcSize;
 	}
 
 	/* Program the DMA descriptors with new transfer data information. */
-	if (udma_table[channel].vsUDMAChaConfigData1.srcInc != UDMA_SRC_INC_NONE) {
-		length = data->hal_chans[channel].Cnt
-			 << udma_table[channel].vsUDMAChaConfigData1.srcInc;
-		desc_src_addr = (void *)(src + length - 1);
-		udma_table[channel].pSrcEndAddr = desc_src_addr;
+	if (chan_desc->vsUDMAChaConfigData1.srcInc != UDMA_SRC_INC_NONE) {
+		length = data->hal_chans[channel].Cnt << chan_desc->vsUDMAChaConfigData1.srcInc;
+		chan_desc->pSrcEndAddr = (void *)(src + length - 1);
 	}
 
-	if (udma_table[channel].vsUDMAChaConfigData1.dstInc != UDMA_SRC_INC_NONE) {
-		length = data->hal_chans[channel].Cnt
-			 << udma_table[channel].vsUDMAChaConfigData1.dstInc;
-		desc_dst_addr = (void *)(dst + length - 1);
-		udma_table[channel].pDstEndAddr = desc_dst_addr;
+	if (chan_desc->vsUDMAChaConfigData1.dstInc != UDMA_SRC_INC_NONE) {
+		length = data->hal_chans[channel].Cnt << chan_desc->vsUDMAChaConfigData1.dstInc;
+		chan_desc->pDstEndAddr = (void *)(dst + length - 1);
 	}
 
-	udma_table[channel].vsUDMAChaConfigData1.totalNumOfDMATrans =
-		data->hal_chans[channel].Cnt - 1;
-	udma_table[channel].vsUDMAChaConfigData1.transferType = UDMA_MODE_BASIC;
+	chan_desc->vsUDMAChaConfigData1.totalNumOfDMATrans = data->hal_chans[channel].Cnt - 1;
+	chan_desc->vsUDMAChaConfigData1.transferType = UDMA_MODE_BASIC;
 
 	return 0;
 }
