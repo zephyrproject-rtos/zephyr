@@ -285,6 +285,18 @@ static int crypto_stm32_ctr_decrypt(struct cipher_ctx *ctx,
 	return ret;
 }
 
+static int crypto_stm32_session_release(struct crypto_stm32_session *session)
+{
+	/* Clear session configuration from any sensitive data. */
+	memset(&session->config, 0, sizeof(session->config));
+	memset(session->key, 0, sizeof(session->key));
+
+	/* Mark session as not in use. */
+	session->in_use = false;
+
+	return 0;
+}
+
 int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 			       enum cipher_algo algo, enum cipher_mode mode, enum cipher_op op_type,
 			       struct crypto_stm32_session *session)
@@ -334,7 +346,7 @@ int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 	if (data->hcryp.State == HAL_CRYP_STATE_RESET) {
 		if (HAL_CRYP_Init(&data->hcryp) != HAL_OK) {
 			LOG_ERR("Initialization error");
-			session->in_use = false;
+			crypto_stm32_session_release(session);
 			return -EIO;
 		}
 	}
@@ -405,6 +417,7 @@ int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 	ret = copy_words_adjust_endianness((uint8_t *)session->key, CRYPTO_STM32_AES_MAX_KEY_LEN,
 				 ctx->key.bit_stream, ctx->keylen);
 	if (ret != 0) {
+		crypto_stm32_session_release(session);
 		return -EIO;
 	}
 
@@ -432,7 +445,7 @@ int crypto_stm32_session_free(const struct device *dev, struct cipher_ctx *ctx,
 		if (sessions_in_use_count > 0) {
 			sessions_in_use_count--;
 		}
-		session->in_use = false;
+		crypto_stm32_session_release(session);
 	}
 
 	k_sem_take(&data->session_sem, K_FOREVER);
