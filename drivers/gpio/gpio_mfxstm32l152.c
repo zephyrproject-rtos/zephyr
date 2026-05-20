@@ -280,7 +280,6 @@ static int set_pin_dir_mode(const struct device *dev, gpio_pin_t pin, gpio_flags
 		(struct mfxstm32l152_drv_data *const)dev->data;
 	uint32_t *dir_cache = &drvdata->pins_state.direction;
 	uint32_t *mode_cache = &drvdata->pins_state.pupd;
-	bool need_update = false;
 	uint32_t dir, mode;
 	int ret = 0;
 
@@ -300,14 +299,14 @@ static int set_pin_dir_mode(const struct device *dev, gpio_pin_t pin, gpio_flags
 	}
 
 	/* Configure direction */
-	if ((flags & GPIO_OUTPUT) && ((*mode_cache & BIT(pin)) == 0)) {
-		dir = *dir_cache | BIT(pin);
-		need_update = true;
-	} else if ((flags & GPIO_INPUT) && ((*mode_cache & BIT(pin)) != 0)) {
-		dir = *dir_cache & ~BIT(pin);
-		need_update = true;
+	dir = *dir_cache;
+	if ((flags & GPIO_OUTPUT) != 0U) {
+		dir |= BIT(pin);
+	} else if ((flags & GPIO_INPUT) != 0U) {
+		dir &= ~BIT(pin);
 	}
-	if (need_update) {
+
+	if (dir != *dir_cache) {
 		ret = write_port_regs(dev, REG_GPIO_DIR, dir);
 		if (ret != 0) {
 			goto out;
@@ -316,22 +315,21 @@ static int set_pin_dir_mode(const struct device *dev, gpio_pin_t pin, gpio_flags
 	}
 
 	/* In case of input mode, configure PullUp/ PullDown */
-	need_update = false;
 	if ((flags & GPIO_INPUT) != 0U) {
-		if ((flags & GPIO_PULL_UP) && ((*mode_cache & BIT(pin)) == 0)) {
-			mode = *mode_cache | BIT(pin);
-			need_update = true;
-		} else if ((flags & GPIO_PULL_DOWN) && ((*mode_cache & BIT(pin)) != 0)) {
-			mode = *mode_cache & ~BIT(pin);
-			need_update = true;
+		mode = *mode_cache;
+		if ((flags & GPIO_PULL_UP) != 0U) {
+			mode |= BIT(pin);
+		} else if ((flags & GPIO_PULL_DOWN) != 0U) {
+			mode &= ~BIT(pin);
 		}
-	}
-	if (need_update) {
-		ret = write_port_regs(dev, REG_GPIO_PUPD, mode);
-		if (ret != 0) {
-			goto out;
+
+		if (mode != *mode_cache) {
+			ret = write_port_regs(dev, REG_GPIO_PUPD, mode);
+			if (ret != 0) {
+				goto out;
+			}
+			*mode_cache = mode;
 		}
-		*mode_cache = mode;
 	}
 
 out:
