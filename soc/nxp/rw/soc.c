@@ -321,7 +321,8 @@ __weak __ramfunc void clock_init(void)
 	CLOCK_AttachClk(kSFRO_to_FLEXCOMM14);
 #endif
 #if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(xtal32)))
-	nxp_pmu_enable_xtal32k(true);
+	CLOCK_EnableXtal32K(true);
+	CLOCK_AttachClk(kXTAL32K_to_CLK32K);
 #endif
 
 /* Clock flexcomms when used as SPI */
@@ -473,7 +474,7 @@ void soc_early_init_hook(void)
 #if defined(CONFIG_ADC_MCUX_GAU) || defined(CONFIG_DAC_MCUX_GAU)
 	POWER_PowerOnGau();
 #endif
-#endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
+
 #if CONFIG_PM
 	nxp_rw6xx_power_init();
 
@@ -491,7 +492,7 @@ void soc_early_init_hook(void)
 		IO_MUX_SetRfPinOutLevelInSleep(i, IO_MUX_SleepPinLevelLow);
 	}
 #endif
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+
 #if defined(CONFIG_BT) || defined(CONFIG_IEEE802154)
 	nxp_nbu_init();
 #endif
