@@ -659,6 +659,9 @@ static void acquire_device(const struct device *dev)
 	}
 
 	(void)pm_device_runtime_get(cfg->spi.bus);
+
+	pm_device_busy_set(dev);
+
 }
 
 /* Everything necessary to release access to the device. */
@@ -667,6 +670,8 @@ static void release_device(const struct device *dev)
 	const struct spi_nor_config *cfg = dev->config;
 
 	(void)pm_device_runtime_put(cfg->spi.bus);
+
+	pm_device_busy_clear(dev);
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
 		struct spi_nor_data *const driver_data = dev->data;
