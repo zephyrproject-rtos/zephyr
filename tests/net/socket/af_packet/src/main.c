@@ -689,7 +689,7 @@ static void test_sendto_common(int sock_type, int proto, bool do_bind,
 		ret = zsock_recv(udp_sock_1, rx_buf, sizeof(rx_buf), 0);
 		zassert_not_equal(ret, -1, "Failed to receive UDP packet (%d)", errno);
 		zassert_equal(ret, sizeof(test_payload),
-			     "Invalid data size received (%d, expected %d)",
+			     "Invalid data size received (%d, expected %zu)",
 			      ret, sizeof(test_payload));
 		zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload),
 				  "Invalid payload received");
@@ -747,7 +747,7 @@ static void test_sendmsg_common(int sock_type, int proto)
 	ret = zsock_recv(udp_sock_1, rx_buf, sizeof(rx_buf), 0);
 	zassert_not_equal(ret, -1, "Failed to receive UDP packet (%d)", errno);
 	zassert_equal(ret, sizeof(test_payload),
-		      "Invalid data size received (%d, expected %d)",
+		      "Invalid data size received (%d, expected %zu)",
 		      ret, sizeof(test_payload));
 	zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload),
 			  "Invalid payload received");
