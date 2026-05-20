@@ -6915,6 +6915,7 @@ Xilinx Platforms:
     - ibirnbaum
     - kedareswararao
     - neeliajay
+    - venodela
   files:
     - boards/amd/
     - drivers/*/*xilinx*
