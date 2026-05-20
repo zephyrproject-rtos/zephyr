@@ -1,6 +1,5 @@
 # Copyright (c) 2019 - 2023 Linaro
 # Copyright (c) 2020 - 2023 Nordic Semiconductor ASA
-# Copyright 2023-2024 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -225,9 +224,6 @@ if(CONFIG_BUILD_WITH_TFM)
 
     # Specific to nordic platform
     ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c
-
-    # Specific to nxp-rw61x platform
-    ${TFM_INTERFACE_SOURCE_DIR}/tfm_lds_api.c
     )
 
   # Get the toolchain variant
@@ -264,37 +260,6 @@ if(CONFIG_BUILD_WITH_TFM)
   if(CONFIG_BOARD_MAX32657EVKIT_MAX32657_NS OR CONFIG_BOARD_MAX32658EVKIT_MAX32658_NS)
     # Supply path to hal_adi for TF-M build
     list(APPEND TFM_CMAKE_ARGS -DHAL_ADI_PATH=${ZEPHYR_ADI_MODULE_DIR})
-  endif()
-
-  if(CONFIG_BOARD_RD_RW612_BGA)
-    # Supply path to NXP HAL sources used for TF-M build
-    list(APPEND TFM_CMAKE_ARGS -DZEPHYR_HAL_NXP_MODULE_DIR=${ZEPHYR_HAL_NXP_MODULE_DIR})
-    # Supply path to NXP HAL sources used for TF-M build
-    set(TFM_PLATFORM_NXP_HAL_FILE_PATH ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/nxp/)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_PLATFORM_NXP_HAL_FILE_PATH=${TFM_PLATFORM_NXP_HAL_FILE_PATH})
-    # Disable watchdog support on this platform for tfm_psa_tests
-    if(TFM_PSA_TEST_SUITE)
-      list(APPEND TFM_CMAKE_ARGS -DWATCHDOG_AVAILABLE=OFF)
-    endif()
-
-    # Platform specific TF-M cmake flags
-    set(TFM_CMAKE_OPTIONS_PLATFORM_FLAG
-      USE_TFM_EL2GO_DATA_IMPORT_REGION
-      USE_TFM_WIFI_FLASH_REGION
-    )
-    foreach(option ${TFM_CMAKE_OPTIONS_PLATFORM_FLAG})
-      if (CONFIG_${option})
-        set(val "ON")
-      else()
-        set(val "OFF")
-      endif()
-      list(APPEND TFM_CMAKE_ARGS -D${option}=${val})
-    endforeach()
-  endif()
-
-  if(CONFIG_TFM_BL2 AND CONFIG_TFM_MCUBOOT_PATH_LOCAL)
-    # Supply path to MCUboot for TF-M build
-    list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_PATH=${ZEPHYR_MCUBOOT_MODULE_DIR})
   endif()
 
   if(CONFIG_TFM_MCUBOOT_DATA_SHARING)
@@ -462,39 +427,6 @@ if(CONFIG_BUILD_WITH_TFM)
     # Add interface include directory (exported by TF-M) to zephyr_interface
     zephyr_include_directories(
       ${TFM_INTERFACE_INCLUDE_DIR}
-    )
-
-  # A dependency on tfm_s.hex for zephyr.elf will not cause a Zephyr re-link when
-  # tfm_s.hex is updated, as the hex is not a direct input on the executable.
-  # Instead we establish a source file dependency which ensures that tfm_api is
-  # updated when there are changes in tfm itself, this again will trigger an re-link
-  # of Zephyr.elf.
-  set_property(SOURCE interface/interface.c APPEND PROPERTY OBJECT_DEPENDS ${TFM_S_HEX_FILE})
-
-  # Non-Secure interface to request system reboot
-  if(CONFIG_TFM_PARTITION_PLATFORM AND NOT CONFIG_TFM_PARTITION_PLATFORM_CUSTOM_REBOOT)
-    zephyr_library_sources(src/reboot.c)
-  endif()
-
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM                 ${TFM_INTERFACE_SOURCE_DIR}/tfm_platform_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PROTECTED_STORAGE        ${TFM_INTERFACE_SOURCE_DIR}/tfm_ps_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE ${TFM_INTERFACE_SOURCE_DIR}/tfm_its_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_CRYPTO                   ${TFM_INTERFACE_SOURCE_DIR}/tfm_crypto_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION      ${TFM_INTERFACE_SOURCE_DIR}/tfm_attest_api.c)
-  zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE          ${TFM_INTERFACE_SOURCE_DIR}/tfm_fwu_api.c)
-
-  zephyr_library_sources(${TFM_INTERFACE_SOURCE_DIR}/tfm_tz_psa_ns_api.c)
-
-  if(CONFIG_SOC_FAMILY_NORDIC_NRF)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_ioctl_core_ns_api.c)
-  endif()
-  if(CONFIG_BOARD_RD_RW612_BGA)
-    zephyr_library_sources_ifdef(CONFIG_TFM_PARTITION_PLATFORM               ${TFM_INTERFACE_SOURCE_DIR}/tfm_lds_api.c)
-  endif()
-  target_include_directories(tfm_api PUBLIC
-    ${TFM_INTERFACE_INCLUDE_DIR}
-    ${TFM_INTERFACE_INCLUDE_DIR}/crypto_keys
-    ${ZEPHYR_BASE}/modules/mbedtls/configs
     )
 
     zephyr_library_link_libraries(
