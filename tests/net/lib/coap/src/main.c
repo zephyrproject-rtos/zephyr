@@ -2021,11 +2021,11 @@ ZTEST(coap, test_response_matching)
 		if (response->match != NULL) {
 			zassert_not_null(match, "Did not found a response match when expected");
 			zassert_equal_ptr(response->match, match,
-					  "Wrong response match, test %d match %d",
+					  "Wrong response match, test %td match %td",
 					  response - test_responses, match - matches);
 		} else {
 			zassert_is_null(match,
-					"Found unexpected response match, test %d match %d",
+					"Found unexpected response match, test %td match %td",
 					response - test_responses, match - matches);
 		}
 	}
