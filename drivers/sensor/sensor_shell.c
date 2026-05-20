@@ -560,14 +560,14 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 	dev = shell_device_get_binding(argv[1]);
 	if (dev == NULL || !sensor_device_check(dev)) {
 		shell_error(sh, "Sensor device unknown (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
-		return -ENODEV;
+		err = -ENODEV;
+		goto unlock;
 	}
 
 	if (!device_is_sensor(dev)) {
 		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
-		return -ENODEV;
+		err = -ENODEV;
+		goto unlock;
 	}
 
 	if (argc == 2) {
@@ -595,8 +595,8 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 
 	if (count == 0) {
 		shell_error(sh, "No channels to read, bailing");
-		k_mutex_unlock(&cmd_get_mutex);
-		return -EINVAL;
+		err = -EINVAL;
+		goto unlock;
 	}
 	iodev_sensor_shell_read_config.sensor = dev;
 	iodev_sensor_shell_read_config.count = count;
@@ -606,6 +606,7 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 	err = sensor_read_async_mempool(&iodev_sensor_shell_read, &sensor_read_rtio, &ctx);
 	if (err < 0) {
 		shell_error(sh, "Failed to read sensor: %d", err);
+		goto unlock;
 	}
 	if (!IS_ENABLED(CONFIG_SENSOR_SHELL_STREAM)) {
 		/*
@@ -616,9 +617,9 @@ static int cmd_get_sensor(const struct shell *sh, size_t argc, char *argv[])
 						sensor_shell_processing_callback);
 	}
 
+unlock:
 	k_mutex_unlock(&cmd_get_mutex);
-
-	return 0;
+	return err;
 }
 
 static int cmd_sensor_attr_set(const struct shell *sh, size_t argc, char *argv[])
@@ -634,7 +635,6 @@ static int cmd_sensor_attr_set(const struct shell *sh, size_t argc, char *argv[]
 
 	if (!device_is_sensor(dev)) {
 		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
@@ -720,7 +720,6 @@ static int cmd_sensor_attr_get(const struct shell *sh, size_t argc, char *argv[]
 
 	if (!device_is_sensor(dev)) {
 		shell_error(sh, "Device is not a sensor (%s)", argv[1]);
-		k_mutex_unlock(&cmd_get_mutex);
 		return -ENODEV;
 	}
 
@@ -1105,6 +1104,7 @@ static int cmd_trig_sensor(const struct shell *sh, size_t argc, char **argv)
 
 			if (sensor_idx < 0) {
 				shell_error(sh, "Unable to find sensor device in trigger array");
+				return -ENOENT;
 			} else {
 				sensor_trigger_devices[sensor_idx] = NULL;
 			}

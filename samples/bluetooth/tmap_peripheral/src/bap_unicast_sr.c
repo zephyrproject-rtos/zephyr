@@ -58,8 +58,10 @@ static const struct bt_bap_qos_cfg_pref qos_pref =
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	while (len != 0U) {
+		printk("%02x", *ptr);
+		ptr++;
+		len--;
 	}
 }
 
@@ -155,7 +157,8 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 	printk("ASE Codec Config stream %p\n", *stream);
 
 	if (dir == BT_AUDIO_DIR_SOURCE) {
-		source_streams[configured_source_stream_count++].stream = *stream;
+		source_streams[configured_source_stream_count].stream = *stream;
+		configured_source_stream_count++;
 	}
 
 	*pref = qos_pref;

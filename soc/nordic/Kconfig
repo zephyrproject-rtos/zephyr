@@ -132,13 +132,13 @@ config NRF_ACL_FLASH_REGION_SIZE
 	  FLASH region size for the NRF_ACL peripheral.
 
 choice NRF_APPROTECT_HANDLING
-	bool "APPROTECT handling"
+	bool "AP-Protect handling"
 	depends on SOC_SERIES_NRF52 || SOC_SERIES_NRF53 || SOC_NRF54L_CPUAPP_COMMON || \
 		   SOC_SERIES_NRF91
 	default NRF_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON
 	default NRF_APPROTECT_USE_UICR
 	help
-	  Specifies how the SystemInit() function should handle the APPROTECT
+	  Specifies how the SystemInit() function handles the AP-Protect
 	  mechanism.
 
 config NRF_APPROTECT_DISABLE
@@ -146,73 +146,80 @@ config NRF_APPROTECT_DISABLE
 	depends on SOC_NRF54L_CPUAPP_COMMON
 	help
 	  When this option is selected, the SystemInit() disables
-	  the APPROTECT mechanism.
+	  the AP-Protect mechanism and allows for debugging.
 
 config NRF_APPROTECT_USE_UICR
-	bool "Use UICR"
+	bool "Use UICR (default)"
 	depends on SOC_SERIES_NRF52 || SOC_SERIES_NRF53 || SOC_SERIES_NRF91
 	help
-	  When this option is selected, the SystemInit() function loads the
-	  firmware branch state of the APPROTECT mechanism from UICR, so if
-	  UICR->APPROTECT is disabled, CTRLAP->APPROTECT will be disabled.
+	  When this option is selected, the SystemInit() function sets
+	  CTRL-AP.APPROTECT.DISABLE to the UICR.APPROTECT value.
+	  If AP-Protect is disabled in UICR, AP-Protect is kept disabled.
+	  If AP-Protect is enabled in UICR, AP-Protect is kept enabled.
 
 config NRF_APPROTECT_LOCK
 	bool "Lock"
 	help
 	  When this option is selected, the SystemInit() function locks
-	  the firmware branch of the APPROTECT mechanism, preventing it
-	  from being opened.
+	  the AP-Protect mechanism. This permanently prevents debugger
+	  from accessing the device. Only the ERASEALL operation through CTRL-AP
+	  can restore the access.
 
 config NRF_APPROTECT_USER_HANDLING
 	bool "Allow user handling"
 	depends on !SOC_SERIES_NRF52
 	help
 	  When this option is selected, the SystemInit() function does not
-	  touch the APPROTECT mechanism, allowing the user code to handle it
+	  touch the AP-Protect mechanism. This allows the user code to handle it
 	  at later stages, for example, to implement authenticated debug.
 
 endchoice
 
 choice NRF_SECURE_APPROTECT_HANDLING
-	bool "Secure APPROTECT handling"
+	bool "Secure AP-Protect handling"
 	depends on SOC_NRF5340_CPUAPP || SOC_NRF54L_CPUAPP_COMMON || SOC_SERIES_NRF91
 	default NRF_SECURE_APPROTECT_DISABLE if SOC_NRF54L_CPUAPP_COMMON
 	default NRF_SECURE_APPROTECT_USE_UICR
 	help
-	  Specifies how the SystemInit() function should handle the secure
-	  APPROTECT mechanism.
+	  Specifies how the SystemInit() function handles the Secure
+	  AP-Protect mechanism. Secure AP-Protect is available for SoCs or SiPs
+	  that support ARM TrustZone and different processing environments.
 
 config NRF_SECURE_APPROTECT_DISABLE
 	bool "Disable"
 	depends on SOC_NRF54L_CPUAPP_COMMON
 	help
 	  When this option is selected, the SystemInit() disables
-	  the secure APPROTECT mechanism.
+	  the Secure AP-Protect mechanism. This allows debugging of the Secure
+	  Processing Environment (SPE).
 
 config NRF_SECURE_APPROTECT_USE_UICR
-	bool "Use UICR"
+	bool "Use UICR (default)"
 	depends on SOC_NRF5340_CPUAPP || SOC_SERIES_NRF91
 	help
-	  When this option is selected, the SystemInit() function loads the
-	  firmware branch state of the secure APPROTECT mechanism from UICR,
-	  so if UICR->SECUREAPPROTECT is disabled, CTRLAP->SECUREAPPROTECT
-	  will be disabled.
+	  When this option is selected, the SystemInit() function sets
+	  CTRL-AP.SECUREAPPROTECT.DISABLE to the UICR.SECUREAPPROTECT value.
+	  If Secure AP-Protect is disabled in UICR, Secure AP-Protect is kept
+	  disabled. If Secure AP-Protect is enabled in UICR, Secure AP-Protect
+	  is kept enabled and access to the Secure Processing Environment (SPE)
+	  is blocked.
 
 config NRF_SECURE_APPROTECT_LOCK
 	bool "Lock"
 	help
 	  When this option is selected, the SystemInit() function locks the
-	  firmware branch of the secure APPROTECT mechanism, preventing it
-	  from being opened.
+	  Secure AP-Protect mechanism. This permanently prevents debugger
+	  from accessing the Secure Processing Environment (SPE).
+	  Only the ERASEALL operation through CTRL-AP can restore the SPE access.
 
 config NRF_SECURE_APPROTECT_USER_HANDLING
 	bool "Allow user handling"
 	depends on !SOC_SERIES_NRF52
 	help
 	  When this option is selected, the SystemInit() function does not
-	  touch the secure APPROTECT mechanism, allowing the user code to
+	  touch the Secure AP-Protect mechanism. This allows the user code to
 	  handle it at later stages, for example, to implement authenticated
-	  debug.
+	  debug of the Secure Processing Environment (SPE).
 
 endchoice
 
@@ -241,5 +248,26 @@ config NRF_CUSTOM_ON_ENTER_CPU_IDLE_HOOK
 	  the hook is implemented by the user. It is the user's responsibility to
 	  implement the SoC-specific code in the hook that is present in the default
 	  implementation.
+
+# Backward-compatibility aliases for symbols removed during the Haltium / Lumos
+# Kconfig cleanup. Slated for removal in a future release.
+
+config NRF_PLATFORM_HALTIUM
+	bool "[DEPRECATED] Replaced by SOC_SERIES_NRF54H / SOC_SERIES_NRF92"
+	default y if SOC_SERIES_NRF54H || SOC_SERIES_NRF92
+	select DEPRECATED
+	help
+	  This option has been removed. Use SOC_SERIES_NRF54H or SOC_SERIES_NRF92
+	  directly. The symbol is kept temporarily so that out-of-tree code that
+	  still references it continues to build, with a deprecation warning.
+
+config NRF_PLATFORM_LUMOS
+	bool "[DEPRECATED] Replaced by SOC_SERIES_NRF54L / SOC_SERIES_NRF71"
+	default y if SOC_SERIES_NRF54L || SOC_SERIES_NRF71
+	select DEPRECATED
+	help
+	  This option has been removed. Use SOC_SERIES_NRF54L or SOC_SERIES_NRF71
+	  directly. The symbol is kept temporarily so that out-of-tree code that
+	  still references it continues to build, with a deprecation warning.
 
 endif # SOC_FAMILY_NORDIC_NRF

@@ -18,6 +18,7 @@
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/arch/common/init.h>
 #include <zephyr/logging/log.h>

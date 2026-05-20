@@ -108,11 +108,11 @@ LOG_MODULE_REGISTER(elf, CONFIG_LLEXT_LOG_LEVEL);
  * LDR.W PC, [PC, #0]   ; loads PC from following word
  * <target>             ; 32-bit absolute address
  *
- * See ARM Architecture Reference Manual ARMv7-A/R,
- * Section A8.8.63 "LDR (immediate, Thumb)" - T3 encoding.
+ * See ARM Architecture Reference Manual ARMv7-A and ARMv7-R,
+ * Version C.d, Section A8.8.65 "LDR (literal)" - T2 encoding.
  */
-#define THM_LDR_PC_PC_HI 0xF8DF  /* LDR.W PC, [PC, #imm12] */
-#define THM_LDR_PC_PC_LO 0xF000  /* imm12 = 0 */
+#define THM_LDR_PC_PC_HI 0xF8DF  /* LDR.W Rt, [PC, #imm12] */
+#define THM_LDR_PC_PC_LO 0xF000  /* Rt=15(PC), imm12 = 0 */
 
 struct arm_veneer_entry {
 	uint16_t ldr_hi;

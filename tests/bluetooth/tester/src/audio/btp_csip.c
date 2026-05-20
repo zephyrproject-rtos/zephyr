@@ -225,7 +225,8 @@ static int get_available_members(const struct bt_csip_set_coordinator_set_member
 			continue;
 		}
 
-		members[members_count++] = btp_csip_set_members[i];
+		members[members_count] = btp_csip_set_members[i];
+		members_count++;
 	}
 
 	if (members_count == 0U) {
@@ -331,7 +332,8 @@ static uint8_t btp_csip_start_ordered_access(const void *cmd, uint16_t cmd_len,
 			continue;
 		}
 
-		members[member_count++] = btp_csip_set_members[i];
+		members[member_count] = btp_csip_set_members[i];
+		member_count++;
 	}
 
 	if (member_count == 0) {

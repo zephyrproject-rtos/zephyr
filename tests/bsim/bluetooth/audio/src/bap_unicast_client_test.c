@@ -541,7 +541,7 @@ static void init(void)
 	printk("Bluetooth initialized\n");
 	bap_stream_tx_init();
 
-	for (size_t i = 0; i < ARRAY_SIZE(test_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(test_streams); i++) {
 		struct bt_bap_stream *bap_stream =
 			bap_stream_from_audio_test_stream(&test_streams[i]);
 
@@ -741,7 +741,7 @@ static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 	} while (err == -EBUSY);
 
 	while (atomic_get(&flag_stream_qos_configured) != stream_cnt) {
-		(void)k_sleep(K_MSEC(1));
+		(void)k_sleep(K_MSEC(1U));
 	}
 
 	err = bt_bap_unicast_group_get_info(unicast_group, &info);
@@ -947,7 +947,7 @@ static void transceive_streams(void)
 
 		/* Keep sending until we reach the minimum expected */
 		while (test_stream->tx_cnt < MIN_SEND_COUNT) {
-			k_sleep(K_MSEC(100));
+			k_sleep(K_MSEC(100U));
 		}
 	}
 
@@ -962,7 +962,7 @@ static void transceive_streams(void)
 
 static void disable_streams(size_t stream_cnt)
 {
-	for (size_t i = 0; i < stream_cnt; i++) {
+	for (size_t i = 0U; i < stream_cnt; i++) {
 		int err;
 
 		UNSET_FLAG(flag_operation_success);
@@ -988,7 +988,7 @@ static void stop_streams(size_t stream_cnt)
 {
 	UNSET_FLAG(flag_stream_disconnected);
 
-	for (size_t i = 0; i < stream_cnt; i++) {
+	for (size_t i = 0U; i < stream_cnt; i++) {
 		struct bt_bap_stream *source_stream;
 		int err;
 
@@ -1022,7 +1022,7 @@ static void stop_streams(size_t stream_cnt)
 
 static void release_streams(size_t stream_cnt)
 {
-	for (size_t i = 0; i < stream_cnt; i++) {
+	for (size_t i = 0U; i < stream_cnt; i++) {
 		int err;
 
 		UNSET_FLAG(flag_operation_success);
@@ -1047,8 +1047,8 @@ static void release_streams(size_t stream_cnt)
 static size_t create_unicast_group(struct bt_bap_unicast_group **unicast_group)
 {
 	struct bt_bap_unicast_group_param param;
-	size_t stream_cnt = 0;
-	size_t pair_cnt = 0;
+	size_t stream_cnt = 0U;
+	size_t pair_cnt = 0U;
 	int err;
 
 	memset(stream_params, 0, sizeof(stream_params));

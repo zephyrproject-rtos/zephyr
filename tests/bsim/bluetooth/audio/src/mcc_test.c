@@ -1556,7 +1556,7 @@ static void test_search(void)
 	 * results object ID will have been notified if the search gave results
 	 */
 	WAIT_FOR_FLAG(search_results_object_id_read);
-	if (g_search_results_object_id == 0) {
+	if (g_search_results_object_id == 0U) {
 		FAIL("No search results\n");
 		return;
 	}
@@ -2340,7 +2340,7 @@ static void test_set_playing_order(void)
 		return;
 	}
 
-	new_playing_order = 0x00;
+	new_playing_order = 0x00U;
 
 	err = bt_mcc_set_playing_order(default_conn, new_playing_order);
 	if (err == 0) {
@@ -2349,7 +2349,7 @@ static void test_set_playing_order(void)
 		return;
 	}
 
-	new_playing_order = 0x0b;
+	new_playing_order = 0x0bU;
 
 	err = bt_mcc_set_playing_order(default_conn, new_playing_order);
 	if (err == 0) {
@@ -2536,10 +2536,10 @@ void test_main(void)
 
 	/* Connect ******************************************/
 	for (unsigned int i = 0U; i < iterations; i++) {
-		const uint64_t new_current_group_object_id_1 = 0x10e;
-		const uint64_t new_current_group_object_id_2 = 0x106; /* ID of first group */
-		const uint64_t new_current_track_object_id = 0x103;
-		const uint64_t new_next_track_object = 0x102;
+		const uint64_t new_current_group_object_id_1 = 0x10eU;
+		const uint64_t new_current_group_object_id_2 = 0x106U; /* ID of first group */
+		const uint64_t new_current_track_object_id = 0x103U;
+		const uint64_t new_next_track_object = 0x102U;
 
 		printk("\n########### Running iteration #%u\n\n", i);
 

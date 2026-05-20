@@ -23,6 +23,7 @@
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 
 /* pending_current is owned by timeslicing.c; we reference it here to avoid

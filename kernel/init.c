@@ -16,6 +16,7 @@
 #include <string.h>
 #include <offsets_short.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/random/random.h>

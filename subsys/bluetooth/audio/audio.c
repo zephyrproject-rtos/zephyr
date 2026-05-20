@@ -58,7 +58,8 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 
 		i++; /* Increment as we have parsed the len field */
 
-		data.type = ltv[i++];
+		data.type = ltv[i];
+		i++;
 		data.data_len = len - sizeof(data.type);
 
 		if (data.data_len > 0) {

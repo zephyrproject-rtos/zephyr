@@ -450,7 +450,8 @@ static void cm_iface_watch(struct net_if *iface, void *user_data)
 
 static void not_available(const struct shell *sh)
 {
-	PR_INFO("This command is not available unless CONFIG_NET_CONNECTION_MANAGER is enabled.\n");
+	PR_INFO("Set %s to enable %s support.\n",
+		"CONFIG_NET_CONNECTION_MANAGER", "connection manager");
 }
 
 #endif /* !defined(CONFIG_NET_CONNECTION_MANAGER) */

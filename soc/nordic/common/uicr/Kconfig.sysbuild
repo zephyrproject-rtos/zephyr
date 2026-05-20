@@ -9,3 +9,13 @@ config NRF_GENERATE_UICR
 	  When enabled, a UICR generator image is included in the build.
 	  This generates binary configuration artifacts based on the Kconfig and device tree
 	  of the UICR generator image. See the UICR generator options for further details.
+
+config NRF_HALTIUM_GENERATE_UICR
+	bool "[DEPRECATED] Renamed to NRF_GENERATE_UICR"
+	depends on SOC_SERIES_NRF54H || SOC_SERIES_NRF92
+	select DEPRECATED
+	select NRF_GENERATE_UICR
+	help
+	  This option has been renamed. Use NRF_GENERATE_UICR instead.
+	  The old name is kept temporarily so that existing sysbuild.conf files
+	  continue to build, with a deprecation warning.

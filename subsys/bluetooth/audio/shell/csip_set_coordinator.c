@@ -229,7 +229,8 @@ static bool csip_found(struct bt_data *data, void *user_data)
 			return false;
 		}
 
-		bt_addr_le_copy(&addr_found[members_found++], addr);
+		bt_addr_le_copy(&addr_found[members_found], addr);
+		members_found++;
 
 		bt_shell_print("Found member (%u / %u)",
 			       members_found, cur_inst->info.set_size);
@@ -282,7 +283,12 @@ static int cmd_csip_set_coordinator_discover(const struct shell *sh,
 	if (!initialized) {
 		k_work_init_delayable(&discover_members_timer,
 				      discover_members_timer_handler);
-		bt_csip_set_coordinator_register_cb(&cbs);
+		err = bt_csip_set_coordinator_register_cb(&cbs);
+		if (err != 0) {
+			shell_error(sh, "Failed to register CSIP callbacks: %d", err);
+			return -ENOEXEC;
+		}
+
 		initialized = true;
 	}
 
@@ -355,8 +361,9 @@ static int cmd_csip_set_coordinator_discover_members(const struct shell *sh,
 				&set_members[i]->insts[j];
 
 			if (memcmp(inst->info.sirk, cur_inst->info.sirk, BT_CSIP_SIRK_SIZE) == 0) {
-				bt_addr_le_copy(&addr_found[members_found++],
+				bt_addr_le_copy(&addr_found[members_found],
 						bt_conn_get_dst(conns[i]));
+				members_found++;
 				break;
 			}
 		}
@@ -414,7 +421,8 @@ static int cmd_csip_set_coordinator_lock_set(const struct shell *sh,
 
 	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
 		if (set_members[i] != NULL) {
-			locked_members[conn_count++] = set_members[i];
+			locked_members[conn_count] = set_members[i];
+			conn_count++;
 		}
 	}
 
@@ -443,7 +451,8 @@ static int cmd_csip_set_coordinator_release_set(const struct shell *sh,
 
 	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
 		if (set_members[i] != NULL) {
-			locked_members[conn_count++] = set_members[i];
+			locked_members[conn_count] = set_members[i];
+			conn_count++;
 		}
 	}
 

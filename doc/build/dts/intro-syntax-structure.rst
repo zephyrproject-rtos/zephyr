@@ -396,6 +396,12 @@ Additional notes on the above:
 
   Note that the entire expression must be parenthesized.
 
+- A cell whose parenthesized expression evaluates to a negative value, such as
+  ``<(-1)>`` or ``<(4 - 6)>``, is preserved as a signed value for ``int`` and
+  ``array`` typed properties. Cells written as positive decimal or hexadecimal
+  literals (including ``0xffffffff``), or whose expression evaluates to a
+  non-negative value, remain unsigned.
+
 - Property values refer to other nodes in the devicetree by their *phandles*.
   You can write a phandle using ``&foo``, where ``foo`` is a :ref:`node label
   <dt-node-labels>`. Here is an example devicetree fragment:

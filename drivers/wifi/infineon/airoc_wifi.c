@@ -663,9 +663,9 @@ error:
 	} else {
 		net_if_dormant_off(iface);
 		data->is_sta_connected = true;
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 		net_dhcpv4_restart(iface);
-#endif /* defined(CONFIG_NET_DHCPV4) */
+#endif /* defined(CONFIG_WIFI_STA_AUTO_DHCPV4) */
 	}
 
 	wifi_mgmt_raise_connect_result_event(iface, ret);

@@ -14,6 +14,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(input_kbd_matrix, CONFIG_INPUT_LOG_LEVEL);
@@ -93,12 +94,11 @@ static bool input_kbd_matrix_is_suspended(const struct device *dev)
 #endif
 }
 
-static bool input_kbd_matrix_scan(const struct device *dev)
+static void input_kbd_matrix_scan(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
 	const struct input_kbd_matrix_api *api = cfg->api;
 	kbd_row_t row;
-	kbd_row_t key_event = 0U;
 
 	for (int col = 0; col < cfg->col_size; col++) {
 		if (cfg->actual_key_mask != NULL &&
@@ -123,12 +123,9 @@ static bool input_kbd_matrix_scan(const struct device *dev)
 		}
 
 		cfg->matrix_new_state[col] = row;
-		key_event |= row;
 	}
 
 	input_kbd_matrix_drive_column(dev, INPUT_KBD_MATRIX_COLUMN_DRIVE_NONE);
-
-	return key_event != 0U;
 }
 
 void input_kbd_matrix_update_state(const struct device *dev)
@@ -226,13 +223,12 @@ void input_kbd_matrix_update_state(const struct device *dev)
 	data->scan_cycles_idx = (data->scan_cycles_idx + 1) % INPUT_KBD_MATRIX_SCAN_OCURRENCES;
 }
 
-static bool input_kbd_matrix_check_key_events(const struct device *dev)
+static void input_kbd_matrix_check_key_events(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
-	bool key_pressed;
 
 	/* Scan the matrix */
-	key_pressed = input_kbd_matrix_scan(dev);
+	input_kbd_matrix_scan(dev);
 
 	for (int c = 0; c < cfg->col_size; c++) {
 		LOG_DBG("c=%2d u=%" PRIkbdrow " p=%" PRIkbdrow " n=%" PRIkbdrow,
@@ -244,12 +240,28 @@ static bool input_kbd_matrix_check_key_events(const struct device *dev)
 
 	/* Abort if ghosting is detected */
 	if (cfg->ghostkey_check && input_kbd_matrix_ghosting(dev)) {
-		return key_pressed;
+		return;
 	}
 
 	input_kbd_matrix_update_state(dev);
+}
 
-	return key_pressed;
+static bool input_kbd_matrix_active(const struct device *dev)
+{
+	const struct input_kbd_matrix_common_config *cfg = dev->config;
+
+	for (int c = 0; c < cfg->col_size; c++) {
+		/* Active if any keys is currently pressed or waiting to be
+		 * released or being debounced.
+		 */
+		if (cfg->matrix_stable_state[c] != 0 ||
+		    cfg->matrix_unstable_state[c] != 0 ||
+		    cfg->matrix_new_state[c] != 0)  {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static k_timepoint_t input_kbd_matrix_poll_timeout(const struct device *dev)
@@ -290,7 +302,9 @@ static void input_kbd_matrix_poll(const struct device *dev)
 	while (true) {
 		uint32_t start_period_cycles = k_cycle_get_32();
 
-		if (input_kbd_matrix_check_key_events(dev)) {
+		input_kbd_matrix_check_key_events(dev);
+
+		if (input_kbd_matrix_active(dev)) {
 			poll_time_end = input_kbd_matrix_poll_timeout(dev);
 		} else if (sys_timepoint_expired(poll_time_end)) {
 			break;

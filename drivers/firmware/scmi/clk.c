@@ -33,6 +33,11 @@ struct scmi_clock_parent_config {
 	uint32_t parent_id;
 };
 
+struct scmi_clock_get_permissions_reply {
+	int32_t status;
+	uint32_t permissions;
+};
+
 int scmi_clock_rate_get(struct scmi_protocol *proto,
 			uint32_t clk_id, uint32_t *rate)
 {
@@ -253,4 +258,42 @@ int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
 	}
 
 	return scmi_status_to_errno(attributes->status);
+}
+
+int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
+			       uint32_t *permissions)
+{
+	struct scmi_clock_get_permissions_reply reply_buffer;
+	struct scmi_message msg, reply;
+	int ret;
+
+	if (!proto || !permissions) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_CLOCK) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SCMI_CLK_MSG_CLOCK_GET_PERMISSIONS,
+					SCMI_COMMAND, proto->id, 0x0);
+	msg.len = sizeof(clk_id);
+	msg.content = &clk_id;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(reply_buffer);
+	reply.content = &reply_buffer;
+
+	ret = scmi_send_message(proto, &msg, &reply, false);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (reply_buffer.status < 0) {
+		return scmi_status_to_errno(reply_buffer.status);
+	}
+
+	*permissions = reply_buffer.permissions;
+
+	return 0;
 }

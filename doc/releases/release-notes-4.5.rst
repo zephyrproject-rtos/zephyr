@@ -80,6 +80,17 @@ Deprecated APIs and options
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
     to be consistent with the existing sync/async naming convention.
 
+* Nordic
+
+  * The internal SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM`` and
+    ``NRF_PLATFORM_LUMOS`` have been deprecated. Use specific SOC_SERIES_* Kconfig options instead.
+
+  * The sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR`` has
+    been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
+
+  * The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
+    have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
+
 * Ring buffer
 
   * The ring buffer item API (:c:func:`ring_buf_item_init`, :c:func:`ring_buf_item_put`,
@@ -114,6 +125,14 @@ New Boards
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
 
+* Arduino
+
+  * :zephyr:board:`Arduino Nesso N1 <arduino_nesso_n1>` (``arduino_nesso_n1``)
+
+* Seeed
+
+  * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
+
 New Shields
 ***********
 
@@ -127,6 +146,11 @@ New Drivers
 ..
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
+
+* GPIO
+
+  * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
+    (:dtcompatible:`diodes,pi4ioe5v6408`).
 
 New Samples
 ***********
@@ -147,6 +171,7 @@ Libraries / Subsystems
     (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) that implements
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
+  * :c:member:`lora_modem_config.sync_word`
 
 Other notable changes
 *********************

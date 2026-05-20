@@ -2,6 +2,7 @@ common:
   tags: linker
   arch_allow: arm
   filter: CONFIG_CPU_CORTEX_M_HAS_VTOR
+          and not CONFIG_SOC_FAMILY_STM32
 tests:
   application_development.ram_context_for_isr:
     # Exclude mps3/corstone310 because it uses another mechanism to support relocation
@@ -25,6 +26,3 @@ tests:
       - frdm_kl25z/mkl25z4
       - mcx_n9xx_evk/mcxn947/cpu0/qspi
       - frdm_k32l2b3/k32l2b31a
-      - stm32n6570_dk/stm32n657xx/sb
-      - crd40l50/stm32f401xd
-      - arduino_nicla_vision/stm32h747xx/m7

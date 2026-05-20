@@ -178,7 +178,7 @@ static void cap_initiator_test_unicast_stop_after(void *f)
 	err = bt_cap_initiator_unregister_cb(&mock_cap_initiator_cb);
 	zassert_true(err == 0 || err == -EINVAL, "Unexpected error: %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 

@@ -8,6 +8,7 @@
 #include <st/u0/stm32u083Xc.dtsi>
 #include <st/u0/stm32u083mctx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/input/stm32-tsc-defines.h>
 
@@ -103,10 +104,16 @@
 };
 
 &i2c1 {
-	pinctrl-0 = <&i2c1_scl_pa9 &i2c1_sda_pa10>;
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+
+	stts22h@3f {
+		compatible = "st,stts22h";
+		reg = <0x3f>;
+		sampling-rate = <STTS22H_100Hz>;
+	};
 };
 
 &i2c2 {

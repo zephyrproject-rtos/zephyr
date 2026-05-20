@@ -20,7 +20,7 @@
 		compatible = "nordic,nrf7001-spi";
 		status = "okay";
 
-		#include "nrf7002eb2_common.overlay"
+#include "nrf7002eb2_common.overlay"
 	};
 };
 

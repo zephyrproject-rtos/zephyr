@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_FLL16M
+	bool "Run test on the FLL16M"
+	default y if SOC_NRF54H20_CPUAPP
+	help
+	  When set to 'y' tests of FLL16M are executed.
+
+config TEST_HSFLL_APP
+	bool "Run test on the HSFLL APP"
+	default y if SOC_NRF54H20_CPUAPP
+	help
+	  When set to 'y' tests of HSFLL APP are executed.
+
+config TEST_HSFLL_RAD
+	bool "Run test on the HSFLL RAD"
+	default y if SOC_NRF54H20_CPURAD
+	help
+	  When set to 'y' tests of HSFLL RAD are executed.
+
+config TEST_DVFS_INIT
+	bool "Check DVFS initialization"
+	default y if SOC_NRF54H20_CPUAPP
+	help
+	  When set to 'y' DVFS is initialised at the beginning of the test suite.
+
+source "Kconfig.zephyr"

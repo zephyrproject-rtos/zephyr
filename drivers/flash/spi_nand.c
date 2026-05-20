@@ -291,10 +291,20 @@ static int spi_nand_wait_until_ready(const struct device *dev, const char *op, u
 {
 	k_ticks_t t = k_uptime_ticks();
 	k_timepoint_t timeout;
+	bool expired;
 	int ret;
 
 	timeout = sys_timepoint_calc(K_USEC(timeout_us));
 	do {
+		/* Determine the expiry status before the read to ensure that this function only
+		 * returns ETIMEDOUT if the flash still isn't ready *after* the provided timeout_us.
+		 * Checking after the read (in the while condition) can result in the status being
+		 * read once on function entry, then the thread not resuming from the k_sleep until
+		 * after the timeout expires.
+		 */
+		expired = sys_timepoint_expired(timeout);
+
+		/* Query the flash status */
 		ret = spi_nand_get_feature(dev, SPI_NAND_FEATURE_ADDR_STATUS, status);
 		if (ret != 0) {
 			return ret;
@@ -306,8 +316,11 @@ static int spi_nand_wait_until_ready(const struct device *dev, const char *op, u
 				op, *status);
 			return ret;
 		}
-		k_sleep(K_USEC(poll_us));
-	} while (!sys_timepoint_expired(timeout));
+
+		if (!expired) {
+			k_sleep(K_USEC(poll_us));
+		}
+	} while (!expired);
 
 	LOG_ERR("Ready timeout (Op %s, Status %02X)", op, *status);
 	return -ETIMEDOUT;

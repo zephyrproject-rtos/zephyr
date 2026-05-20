@@ -380,6 +380,28 @@
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
+
+		spi0: spi@40061000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40061000 0x1000>;
+			interrupts = <23 0>;
+			resets = <&rst NUMAKER_SPI0_RST>;
+			clocks = <&pcc NUMAKER_SPI0_MODULE NUMAKER_CLK_CLKSEL2_SPI0SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40062000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40062000 0x1000>;
+			interrupts = <51 0>;
+			resets = <&rst NUMAKER_SPI1_RST>;
+			clocks = <&pcc NUMAKER_SPI1_MODULE NUMAKER_CLK_CLKSEL2_SPI1SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 

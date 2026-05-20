@@ -329,8 +329,8 @@ void bmp581_stream_submit(const struct device *dev,
 		int_src_sqe->flags |= RTIO_SQE_CHAINED;
 
 		val = BMP5_SET_BITSLICE(0, BMP5_INT_MODE, BMP5_INT_MODE_PULSED);
-		val = BMP5_SET_BITSLICE(val, BMP5_INT_POL, BMP5_INT_POL_ACTIVE_HIGH);
-		val = BMP5_SET_BITSLICE(val, BMP5_INT_OD, BMP5_INT_OD_PUSHPULL);
+		val = BMP5_SET_BITSLICE(val, BMP5_INT_POL, cfg->int_polarity);
+		val = BMP5_SET_BITSLICE(val, BMP5_INT_OD, cfg->int_open_drain);
 		val = BMP5_SET_BITSLICE(val, BMP5_INT_EN, 1);
 
 		err = bmp581_prep_reg_write_rtio_async(&cfg->bus, BMP5_REG_INT_CONFIG, &val, 1,

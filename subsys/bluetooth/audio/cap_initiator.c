@@ -625,6 +625,8 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 					proc_done_cnt++;
 				} else if (state < BT_BAP_EP_STATE_CODEC_CONFIGURED) {
 					/* Unexpected state - Abort */
+					LOG_DBG("Unexpected state change");
+
 					bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
 				}
 				break;
@@ -633,12 +635,16 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 					proc_done_cnt++;
 				} else if (state < BT_BAP_EP_STATE_QOS_CONFIGURED) {
 					/* Unexpected state - Abort */
+					LOG_DBG("Unexpected state change");
+
 					bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
 				}
 				break;
 			case BT_CAP_COMMON_SUBPROC_TYPE_CONNECT:
 				if (state < BT_BAP_EP_STATE_ENABLING) {
 					/* Unexpected state - Abort */
+					LOG_DBG("Unexpected state change");
+
 					bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
 				} else if (proc_param->start.connected) {
 					proc_done_cnt++;
@@ -650,6 +656,8 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 				} else if (state < BT_BAP_EP_STATE_ENABLING ||
 					   !iso_is_in_state(cap_stream, BT_ISO_STATE_CONNECTED)) {
 					/* Unexpected state - Abort */
+					LOG_DBG("Unexpected state change");
+
 					bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
 				}
 				break;
@@ -719,6 +727,8 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 				proc_done_cnt = active_proc->proc_done_cnt + 1U;
 			} else {
 				/* Unexpected state - Abort */
+				LOG_DBG("Unexpected state change");
+
 				bt_cap_common_abort_proc(bap_stream->conn, -EBADMSG);
 			}
 			break;
@@ -909,7 +919,8 @@ static void cap_to_bap_unicast_group_pair_param(
 		struct bt_bap_unicast_group_stream_param *bap_stream_param;
 
 		if (pair_param->rx_param != NULL) {
-			bap_stream_param = &bap_params->stream_params[stream_param_idx++];
+			bap_stream_param = &bap_params->stream_params[stream_param_idx];
+			stream_param_idx++;
 
 			bap_stream_param->stream = &pair_param->rx_param->stream->bap_stream;
 			bap_stream_param->qos = pair_param->rx_param->qos_cfg;
@@ -920,7 +931,8 @@ static void cap_to_bap_unicast_group_pair_param(
 		}
 
 		if (pair_param->tx_param != NULL) {
-			bap_stream_param = &bap_params->stream_params[stream_param_idx++];
+			bap_stream_param = &bap_params->stream_params[stream_param_idx];
+			stream_param_idx++;
 
 			bap_stream_param->stream = &pair_param->tx_param->stream->bap_stream;
 			bap_stream_param->qos = pair_param->tx_param->qos_cfg;
@@ -1320,8 +1332,8 @@ void bt_cap_initiator_cp_cb(struct bt_cap_stream *cap_stream, enum bt_bap_ascs_r
 		LOG_DBG("Control point operation on stream %p failed with %d and reason %d",
 			cap_stream, rsp_code, reason);
 
-		/* Unexpected callback - Abort */
-		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
+		/* Control point operation failed or was rejected by the peer - Abort */
+		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EACCES);
 
 		if (bt_cap_common_proc_is_aborted()) {
 			if (bt_cap_common_proc_all_handled()) {
@@ -1486,6 +1498,8 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		return;
 	} else if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_CODEC_CONFIG)) {
 		/* Unexpected callback - Abort */
+		LOG_DBG("Unexpected state change");
+
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		update_proc_done_cnt(active_proc);
@@ -1643,6 +1657,8 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 	      bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_QOS_CONFIG)) &&
 	    !(bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_STOP))) {
 		/* Unexpected callback - Abort */
+		LOG_DBG("Unexpected state change");
+
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		update_proc_done_cnt(active_proc);
@@ -1750,6 +1766,8 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 
 	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_ENABLE)) {
 		/* Unexpected callback - Abort */
+		LOG_DBG("Unexpected state change");
+
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		update_proc_done_cnt(active_proc);
@@ -1856,6 +1874,8 @@ void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 
 	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_CONNECT)) {
 		/* Unexpected callback - Abort */
+		LOG_DBG("Unexpected state change");
+
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		proc_param = get_proc_param_by_cap_stream(active_proc, cap_stream);
@@ -1971,6 +1991,8 @@ void bt_cap_initiator_started(struct bt_cap_stream *cap_stream)
 		return;
 	} else if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_START)) {
 		/* Unexpected callback - Abort */
+		LOG_DBG("Unexpected state change");
+
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		update_proc_done_cnt(active_proc);
@@ -2218,6 +2240,8 @@ void bt_cap_initiator_metadata_updated(struct bt_cap_stream *cap_stream)
 
 	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE)) {
 		/* Unexpected callback - Abort */
+		LOG_DBG("Unexpected state change");
+
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		update_proc_done_cnt(active_proc);
@@ -2546,6 +2570,8 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 
 	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_DISABLE)) {
 		/* Unexpected callback - Abort */
+		LOG_DBG("Unexpected state change");
+
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		update_proc_done_cnt(active_proc);
@@ -2637,6 +2663,8 @@ void bt_cap_initiator_stopped(struct bt_cap_stream *cap_stream)
 
 	if (!bt_cap_common_proc_is_type(BT_CAP_COMMON_PROC_TYPE_STOP)) {
 		/* Unexpected callback - Abort */
+		LOG_DBG("Unexpected state change");
+
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		if (bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_STOP)) {
@@ -2733,6 +2761,8 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 
 	if (!bt_cap_common_subproc_is_type(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE)) {
 		/* Unexpected callback - Abort */
+		LOG_DBG("Unexpected state change");
+
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		/* Mark released as completed */

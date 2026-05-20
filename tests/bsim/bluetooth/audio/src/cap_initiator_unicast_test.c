@@ -513,19 +513,19 @@ static void init(void)
 		return;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(unicast_client_sink_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_client_sink_streams); i++) {
 		bt_cap_stream_ops_register(
 			cap_stream_from_audio_test_stream(&unicast_client_sink_streams[i]),
 			&unicast_stream_ops);
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(unicast_client_source_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_client_source_streams); i++) {
 		bt_cap_stream_ops_register(
 			cap_stream_from_audio_test_stream(&unicast_client_source_streams[i]),
 			&unicast_stream_ops);
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		bt_cap_stream_ops_register(
 			cap_stream_from_audio_test_stream(&unicast_streams[i].stream),
 			&unicast_stream_ops);
@@ -936,7 +936,7 @@ static void wait_for_data(void)
 static void test_main_cap_initiator_unicast(void)
 {
 	struct bt_cap_unicast_group *unicast_group;
-	const size_t iterations = 2;
+	const size_t iterations = 2U;
 
 	init();
 
@@ -974,7 +974,7 @@ static void test_main_cap_initiator_unicast(void)
 			 * easily tell the remote (CAP acceptor) how many times to wait for data,
 			 * and thus we only await one sync message from it from the first iteration
 			 */
-			if (i == 0 && j == 0) {
+			if (i == 0U && j == 0U) {
 				/* Wait until acceptors have received expected data */
 				backchannel_sync_wait_all();
 			}
@@ -1032,7 +1032,7 @@ static void test_cap_initiator_unicast_timeout(void)
 {
 	struct bt_cap_unicast_group *unicast_group;
 	const k_timeout_t timeout = K_SECONDS(10);
-	const size_t iterations = 2;
+	const size_t iterations = 2U;
 
 	init();
 
@@ -1073,7 +1073,7 @@ static void test_cap_initiator_unicast_timeout(void)
 
 static void set_invalid_metadata_type(uint8_t type)
 {
-	const uint8_t val = 0xFF;
+	const uint8_t val = 0xFFU;
 	int err;
 
 	err = bt_audio_codec_cfg_meta_set_val(&unicast_preset_16_2_1.codec_cfg, type, &val,
@@ -1098,7 +1098,7 @@ static void unset_invalid_metadata_type(uint8_t type)
 static void test_cap_initiator_unicast_ase_error(void)
 {
 	struct bt_cap_unicast_group *unicast_group;
-	const uint8_t inval_type = 0xFD;
+	const uint8_t inval_type = 0xFDU;
 
 	init();
 
@@ -1192,17 +1192,19 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_p
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
+		for (size_t j = 0U; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
 			if (param->snk_cnt[i] > j) {
 				pair_params[pair_cnt].tx_param =
-					&snk_group_stream_params[snk_stream_cnt++];
+					&snk_group_stream_params[snk_stream_cnt];
+				snk_stream_cnt++;
 			} else {
 				pair_params[pair_cnt].tx_param = NULL;
 			}
 
 			if (param->src_cnt[i] > j) {
 				pair_params[pair_cnt].rx_param =
-					&src_group_stream_params[src_stream_cnt++];
+					&src_group_stream_params[src_stream_cnt];
+				src_stream_cnt++;
 			} else {
 				pair_params[pair_cnt].rx_param = NULL;
 			}
@@ -1364,8 +1366,8 @@ static int cap_initiator_ac_unicast(const struct cap_initiator_ac_param *param,
 	/* Allocate params large enough for any params, but only use what is required */
 	struct unicast_stream *snk_uni_streams[CAP_AC_MAX_SNK];
 	struct unicast_stream *src_uni_streams[CAP_AC_MAX_SRC];
-	size_t snk_cnt = 0;
-	size_t src_cnt = 0;
+	size_t snk_cnt = 0U;
+	size_t src_cnt = 0U;
 	int err;
 
 	if (param->conn_cnt > CAP_AC_MAX_CONN) {
@@ -1374,7 +1376,7 @@ static int cap_initiator_ac_unicast(const struct cap_initiator_ac_param *param,
 		return -EINVAL;
 	}
 
-	for (size_t i = 0; i < param->conn_cnt; i++) {
+	for (size_t i = 0U; i < param->conn_cnt; i++) {
 		/* Verify conn values */
 		if (param->snk_cnt[i] > CAP_AC_MAX_SNK) {
 			FAIL("Invalid param->snk_cnt[%zu]: %zu\n", i, param->snk_cnt[i]);
@@ -1809,18 +1811,20 @@ static void test_cap_initiator_ac_11_ii(void)
 
 static void test_args(int argc, char *argv[])
 {
-	for (size_t argn = 0; argn < argc; argn++) {
+	for (size_t argn = 0U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "sink_preset") == 0) {
-			const char *preset_arg = argv[++argn];
+			argn++;
+			const char *preset_arg = argv[argn];
 
 			snk_named_preset = cap_get_named_preset(preset_arg);
 			if (snk_named_preset == NULL) {
 				FAIL("Failed to get sink preset from %s\n", preset_arg);
 			}
 		} else if (strcmp(arg, "source_preset") == 0) {
-			const char *preset_arg = argv[++argn];
+			argn++;
+			const char *preset_arg = argv[argn];
 
 			src_named_preset = cap_get_named_preset(preset_arg);
 			if (src_named_preset == NULL) {

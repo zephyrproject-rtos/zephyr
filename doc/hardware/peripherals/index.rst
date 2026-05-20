@@ -24,6 +24,7 @@ Peripherals
    counter.rst
    crc.rst
    dac.rst
+   dali.rst
    dma.rst
    display/index.rst
    eeprom/index.rst

@@ -38,7 +38,7 @@
 
 extern enum bst_result_t bst_result;
 
-#define CHANNEL_COUNT_1 BIT(0)
+#define CHANNEL_COUNT_1 BIT(0U)
 
 #define PREF_CONTEXT (BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
@@ -70,7 +70,7 @@ static struct audio_test_stream
 	test_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
 
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 40000U, 40000U, 40000U, 40000U);
 
 static struct bt_le_ext_adv *ext_adv;
 
@@ -90,7 +90,7 @@ static bool print_ase_info(struct bt_bap_ep *ep, void *user_data)
 
 static struct bt_bap_stream *stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(test_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(test_streams); i++) {
 		struct bt_bap_stream *stream = bap_stream_from_audio_test_stream(&test_streams[i]);
 
 		if (!stream->conn) {
@@ -360,7 +360,7 @@ static void transceive_test_streams(void)
 				break;
 			}
 
-			k_sleep(K_MSEC(100));
+			k_sleep(K_MSEC(100U));
 		}
 
 		if (info.dir == BT_AUDIO_DIR_SINK && sink_stream == NULL) {
@@ -376,7 +376,7 @@ static void transceive_test_streams(void)
 
 		/* Keep sending until we reach the minimum expected */
 		while (test_stream->tx_cnt < MIN_SEND_COUNT) {
-			k_sleep(K_MSEC(100));
+			k_sleep(K_MSEC(100U));
 		}
 	}
 
@@ -559,7 +559,7 @@ static void init(void)
 	set_location();
 	set_contexts();
 
-	for (size_t i = 0; i < ARRAY_SIZE(test_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(test_streams); i++) {
 		bt_bap_stream_cb_register(bap_stream_from_audio_test_stream(&test_streams[i]),
 					  &stream_ops);
 	}

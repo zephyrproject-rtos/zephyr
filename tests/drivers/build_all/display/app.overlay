@@ -698,6 +698,19 @@
 				intensity = <0>;
 				scan-limit = <7>;
 			};
+
+			test_it8951: it8951@9 {
+				compatible = "ite,it8951";
+				reg = <0x9>;
+				spi-max-frequency = <10000000>;
+				width = <1872>;
+				height = <1404>;
+				busy-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+				vcom-mv = <1400>;
+				initial-refresh-waveform = <0>;
+				refresh-waveform = <2>;
+			};
 		};
 
 		test_led_strip_matrix {

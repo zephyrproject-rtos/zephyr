@@ -34,9 +34,6 @@
 #ifdef CONFIG_BT_BAP_SCAN_DELEGATOR
 extern enum bst_result_t bst_result;
 
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP              5
-
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_pa_terminated);
 CREATE_FLAG(flag_broadcast_code_received);
@@ -162,8 +159,7 @@ static int pa_sync_past(struct bt_conn *conn,
 	} else {
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
-		(void)k_work_reschedule(&state->pa_timer,
-					K_MSEC(param.timeout * 10));
+		(void)k_work_reschedule(&state->pa_timer, K_MSEC(param.timeout * 10U));
 	}
 
 	return err;
@@ -194,8 +190,7 @@ static int pa_sync_no_past(struct sync_state *state,
 		printk("PA sync pending for addr %s\n", bt_addr_le_str(&recv_state->addr));
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
-		(void)k_work_reschedule(&state->pa_timer,
-					K_MSEC(param.timeout * 10));
+		(void)k_work_reschedule(&state->pa_timer, K_MSEC(param.timeout * 10U));
 	}
 
 	return err;

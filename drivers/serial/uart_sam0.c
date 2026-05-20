@@ -897,7 +897,7 @@ static void uart_sam0_irq_err_disable(const struct device *dev)
 }
 #endif
 
-static int uart_sam0_irq_update(const struct device *dev)
+static void uart_sam0_irq_update(const struct device *dev)
 {
 	/* Clear sticky interrupts */
 	const struct uart_sam0_dev_cfg *config = dev->config;
@@ -920,7 +920,6 @@ static int uart_sam0_irq_update(const struct device *dev)
 #else
 	regs->INTFLAG.reg = SERCOM_USART_INTENCLR_RXS;
 #endif
-	return 1;
 }
 
 static void uart_sam0_irq_callback_set(const struct device *dev,

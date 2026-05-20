@@ -19,6 +19,7 @@
 # text files to get the full set of build properties.
 
 unset(CMAKE_C_COMPILER_LAUNCHER)
+unset(CMAKE_C_COMPILER_LAUNCHER CACHE)
 unset(CMAKE_DEPFILE_FLAGS_C)
 
 set(CMAKE_C_COMPILE_OBJECT
@@ -28,4 +29,7 @@ set(CMAKE_C_COMPILE_OBJECT
     "${CMAKE_C_COMPILE_OBJECT}")
 
 add_library(llext_edk_build_props ${ZEPHYR_BASE}/misc/empty_file.c)
+set_target_properties(llext_edk_build_props PROPERTIES C_COMPILER_LAUNCHER "")
+set_property(TARGET llext_edk_build_props PROPERTY RULE_LAUNCH_COMPILE "")
+set_property(TARGET llext_edk_build_props PROPERTY RULE_LAUNCH_LINK "")
 target_link_libraries(llext_edk_build_props PUBLIC app)

@@ -135,7 +135,12 @@ static int cmd_cap_initiator_discover(const struct shell *sh, size_t argc, char 
 	}
 
 	if (!cbs_registered) {
-		bt_cap_initiator_register_cb(&cbs);
+		err = bt_cap_initiator_register_cb(&cbs);
+		if (err != 0) {
+			shell_error(sh, "Failed to register CAP initiator callbacks: %d", err);
+			return -ENOEXEC;
+		}
+
 		cbs_registered = true;
 	}
 
@@ -836,14 +841,16 @@ static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 
 			if (param->snk_cnt[i] > j) {
 				stream_pair_param->tx_param =
-					&snk_group_stream_params[snk_stream_cnt++];
+					&snk_group_stream_params[snk_stream_cnt];
+				snk_stream_cnt++;
 			} else {
 				stream_pair_param->tx_param = NULL;
 			}
 
 			if (param->src_cnt[i] > j) {
 				stream_pair_param->rx_param =
-					&src_group_stream_params[src_stream_cnt++];
+					&src_group_stream_params[src_stream_cnt];
+				src_stream_cnt++;
 			} else {
 				stream_pair_param->rx_param = NULL;
 			}
