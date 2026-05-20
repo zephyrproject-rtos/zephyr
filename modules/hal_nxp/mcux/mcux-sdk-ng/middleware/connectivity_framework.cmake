@@ -54,6 +54,7 @@ if(CONFIG_SOC_SERIES_MCXW7XX)
             gPlatformNbuDebugGpioDAccessEnabled_d=0
             gPlatformSetSfcConfigAtInit_d=0
             gPlatformSetWakeUpDelayAtInit_d=0
+            gPlatformSetBleMaxTxPowerAtInit_d=0
         )
     endif()
 endif()

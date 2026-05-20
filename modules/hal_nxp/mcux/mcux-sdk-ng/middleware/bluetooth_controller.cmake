@@ -29,10 +29,3 @@ if(CONFIG_NXP_SNPS_BLE_CTRL)
         ${CMAKE_CURRENT_BINARY_DIR}/mcuxsdk-middleware-bluetooth-controller
     )
 endif()
-
-if(CONFIG_NXP_MCXW7X_BLE_CTRL)
-    set(CONFIG_MCUX_COMPONENT_middleware.wireless.controller_api_minimal ON)
-    add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/mcuxsdk-middleware-bluetooth-controller
-        ${CMAKE_CURRENT_BINARY_DIR}/mcuxsdk-middleware-bluetooth-controller
-    )
-endif()

@@ -378,9 +378,6 @@
 		compatible = "nxp,nbu";
 		interrupts = <22 0>;
 		interrupt-names = "nbu_rx_int";
-		max-tx-power-support = <0 2 6>;
-		/* Max TX power can be overridden by the board */
-		max-tx-power-dbm = <6>;
 	};
 
 	mrt0: mrt@d000 {
