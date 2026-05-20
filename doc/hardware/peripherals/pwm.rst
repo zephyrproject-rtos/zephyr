@@ -123,7 +123,7 @@ Setting a servo position (1–2 ms pulse within a 20 ms period):
 PWM Capture
 ***********
 
-Some PWM controllers support *input capture*, which measures the period and
+Some PWM controllers support *input capture*, which measures the period and/or
 pulse width of an incoming signal. This is useful for decoding PWM signals from
 external sources such as RC receivers or sensor outputs.
 
