@@ -24,13 +24,14 @@ if(CONFIG_NXP_SNPS_BLE_CTRL)
     )
     zephyr_library_import(ble_lib_os ${BLELIBOS_PATH})
     zephyr_library_import(ble_lib_utils ${BLELIBUTILS_PATH})
+
+    add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/mcuxsdk-middleware-bluetooth-controller
+        ${CMAKE_CURRENT_BINARY_DIR}/mcuxsdk-middleware-bluetooth-controller
+    )
 endif()
 
 if(CONFIG_NXP_MCXW7X_BLE_CTRL)
     set(CONFIG_MCUX_COMPONENT_middleware.wireless.controller_api_minimal ON)
-endif()
-
-if(CONFIG_NXP_SNPS_BLE_CTRL OR CONFIG_NXP_MCXW7X_BLE_CTRL)
     add_subdirectory(${MCUX_SDK_NG_DIR}/middleware/mcuxsdk-middleware-bluetooth-controller
         ${CMAKE_CURRENT_BINARY_DIR}/mcuxsdk-middleware-bluetooth-controller
     )
