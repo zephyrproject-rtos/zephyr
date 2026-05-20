@@ -2018,6 +2018,12 @@ static int udc_dwc2_enable(const struct device *dev)
 
 	err = udc_dwc2_init_controller(dev);
 	if (err) {
+		int ret = dwc2_quirk_disable(dev);
+
+		if (ret != 0) {
+			LOG_ERR("Quirk disable failed %d", ret);
+		}
+
 		return err;
 	}
 
