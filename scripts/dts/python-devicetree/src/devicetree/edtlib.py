@@ -506,7 +506,8 @@ class Binding:
 
         ok_prop_keys = {"description", "type", "required",
                         "enum", "const", "default", "deprecated",
-                        "specifier-space", "min", "max", "min-len", "max-len"}
+                        "specifier-space", "min", "max", "min-len", "max-len",
+                        "dependency-mode"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -614,6 +615,10 @@ class PropertySpec:
       The maximum length of the array itself as given in the binding, or None.
       Corresponds to the binding key 'max-len:'.
       Only applicable to array type properties.
+
+    dependency_mode:
+      Specifies how the dependency graph should handle this property.
+      Can be "ignore", "child-ignore", "reverse", "normal" or None.
     """
 
     def __init__(self, name: str, binding: Binding):
@@ -694,6 +699,11 @@ class PropertySpec:
     def deprecated(self) -> bool:
         "See the class docstring"
         return self._raw.get("deprecated", False)
+
+    @property
+    def dependency_mode(self) -> Optional[str]:
+        "See the class docstring"
+        return self._raw.get("dependency-mode")
 
     @property
     def specifier_space(self) -> Optional[str]:
@@ -2501,6 +2511,26 @@ class EDT:
         except Exception as e:
             raise EDTError(e) from None
 
+    def _apply_dependency_mode(self, root_node: Node, dep_node: Node, prop: Property) -> None:
+        match prop.spec.dependency_mode:
+            case None | "normal":
+                self._graph.add_edge(root_node, dep_node)
+            case "reverse":
+                self._graph.add_edge(dep_node, root_node)
+            case "ignore":
+                pass
+            case "child-ignore":
+                def _is_child(child_node: Optional[Node]) -> bool:
+                    if child_node is None:
+                        return False
+                    if root_node is child_node:
+                        return True
+                    return _is_child(child_node.parent)
+                if TYPE_CHECKING:
+                    assert isinstance(prop.val, Node)
+                if not _is_child(dep_node):
+                    self._graph.add_edge(root_node, dep_node)
+
     def _process_properties_r(self, root_node: Node, props_node: Node) -> None:
         """
         Process props_node properties for dependencies, and add those as
@@ -2530,12 +2560,16 @@ class EDT:
                         assert isinstance(prop.val, Node)
                     if _is_child(props_node, prop.val):
                         continue
-                self._graph.add_edge(root_node, prop.val)
+                if TYPE_CHECKING:
+                    assert isinstance(prop.val, Node)
+                self._apply_dependency_mode(root_node, prop.val, prop)
             elif prop.type == 'phandles':
                 if TYPE_CHECKING:
                     assert isinstance(prop.val, list)
                 for phandle_node in prop.val:
-                    self._graph.add_edge(root_node, phandle_node)
+                    if TYPE_CHECKING:
+                        assert isinstance(phandle_node, Node)
+                    self._apply_dependency_mode(root_node, phandle_node, prop)
             elif prop.type == 'phandle-array':
                 if TYPE_CHECKING:
                     assert isinstance(prop.val, list)
@@ -2544,7 +2578,7 @@ class EDT:
                         continue
                     if TYPE_CHECKING:
                         assert isinstance(cd, ControllerAndData)
-                    self._graph.add_edge(root_node, cd.controller)
+                    self._apply_dependency_mode(root_node, cd.controller, prop)
 
         # A Node depends on whatever supports the interrupts it
         # generates.
@@ -3050,7 +3084,7 @@ def _bad_overwrite(to_dict: dict, from_dict: dict, prop: str,
         return False
 
     # These are overridden deliberately
-    if prop in {"title", "description", "compatible", "examples"}:
+    if prop in {"title", "description", "compatible", "examples", "dependency-mode"}:
         return False
 
     if prop == "required":
