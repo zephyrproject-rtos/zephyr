@@ -95,6 +95,17 @@
 		};
 	};
 
+	lpi2c6_default: lpi2c6_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io03_lpi2c_scl_lpi2c6_scl>,
+				 <&iomuxc_gpio_io02_lpi2c_sda_lpi2c6_sda>;
+			drive-open-drain;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
+
 	lpi2c7_default: lpi2c7_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io09_lpi2c_scl_lpi2c7_scl>,
@@ -156,6 +167,16 @@
 				 <&iomuxc_gpio_io21_sai_tx_data_bit_sai3_tx_data_bit0>,
 				 <&iomuxc_gpio_io26_sai_tx_sync_sai3_tx_sync>;
 			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
+	flexcan1_default: flexcan1_default {
+		group0 {
+			pinmux = <&iomuxc_pdm_bit_stream0_can_rx_can1_rx>,
+				 <&iomuxc_pdm_clk_can_tx_can1_tx>;
+			bias-pull-down;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
 		};
