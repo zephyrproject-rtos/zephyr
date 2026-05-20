@@ -2097,6 +2097,10 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	uint32_t prescaler = STM32_XSPI_CLOCK_PRESCALER_MIN;
 	int ret;
 
+	/* Initialize semaphores */
+	k_sem_init(&dev_data->sem, 1, 1);
+	k_sem_init(&dev_data->sync, 0, 1);
+
 #if defined(CONFIG_STM32_APP_IN_EXT_FLASH) && defined(CONFIG_XIP)
 	/* If MemoryMapped then configure skip init
 	 * Check clock status first as reading CR register without bus clock doesn't work on N6
@@ -2116,6 +2120,9 @@ static int flash_stm32_xspi_init(const struct device *dev)
 #endif
 			/* Force HAL instance in correct state */
 			dev_data->hxspi.State = HAL_XSPI_STATE_BUSY_MEM_MAPPED;
+
+			/* Run IRQ init */
+			dev_cfg->irq_config(dev);
 			return 0;
 		}
 	}
@@ -2243,10 +2250,6 @@ static int flash_stm32_xspi_init(const struct device *dev)
 	__HAL_LINKDMA(&dev_data->hxspi, hdmarx, hdma_rx);
 
 #endif /* CONFIG_USE_STM32_HAL_DMA */
-	/* Initialize semaphores */
-	k_sem_init(&dev_data->sem, 1, 1);
-	k_sem_init(&dev_data->sync, 0, 1);
-
 	/* Run IRQ init */
 	dev_cfg->irq_config(dev);
 
