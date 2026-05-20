@@ -309,6 +309,18 @@ tests:
       - CONFIG_NRF_REGTOOL_VERBOSITY=2
     platform_allow:
       - nrf54h20dk/nrf54h20/cpuapp
+  drivers.spi.nrf54h_flpr_fast_8mhz:
+    sysbuild: true
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_8mhz.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuflpr/xip
+  drivers.spi.nrf54h_flpr_fast_32mhz:
+    sysbuild: true
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_32mhz.overlay"
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuflpr/xip
   drivers.spi.nrf54l_1mhz:
     extra_args: EXTRA_DTC_OVERLAY_FILE="boards/nrf_at_1mhz.overlay"
     platform_allow:

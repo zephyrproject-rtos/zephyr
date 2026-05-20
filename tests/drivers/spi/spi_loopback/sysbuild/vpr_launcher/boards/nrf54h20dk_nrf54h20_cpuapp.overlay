@@ -3,9 +3,72 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "../../../boards/nrf54h20dk_nrf54h20_common.dtsi"
+
+&pinctrl {
+	spi120_default: spi120_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_MISO, 7, 6)>;
+		};
+
+		group2 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 3)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 7)>;
+			nordic,drive-mode = <NRF_DRIVE_E0E1>;
+		};
+	};
+
+	spi120_sleep: spi120_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 3)>,
+				<NRF_PSEL(SPIM_MISO, 7, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 7)>;
+			low-power-enable;
+		};
+	};
+
+	spi130_default: spi130_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 0)>,
+				<NRF_PSEL(SPIM_MISO, 0, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 7)>;
+		};
+	};
+
+	spi130_sleep: spi130_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 0)>,
+				<NRF_PSEL(SPIM_MISO, 0, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 7)>;
+			low-power-enable;
+		};
+	};
+};
+
+&gpio7 {
+	status = "reserved";
+};
+
+&gpio1 {
+	status = "reserved";
+};
 
 &spi130 {
 	status = "reserved";
+	pinctrl-0 = <&spi130_default>;
+	pinctrl-1 = <&spi130_sleep>;
+	pinctrl-names = "default", "sleep";
 	interrupt-parent = <&cpuppr_clic>;
+};
+
+&spi120 {
+	status = "reserved";
+	pinctrl-0 = <&spi120_default>;
+	pinctrl-1 = <&spi120_sleep>;
+	pinctrl-names = "default", "sleep";
+	memory-regions = <&dma_fast_region>;
+	interrupt-parent = <&cpuflpr_clic>;
+};
+
+&dma_fast_region {
+	status = "okay";
 };
