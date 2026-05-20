@@ -32,3 +32,9 @@ properties:
       This pin defaults to active high when consumed by the SD card. The
       property value should ensure the flags properly describe the signal
       that is presented to the driver.
+
+  oob-gpios:
+    type: phandle-array
+    description: |
+      Out of band Wi-Fi reset gpio on host platform.
+      This GPIO will be used to reset Wi-Fi controller from host side.
