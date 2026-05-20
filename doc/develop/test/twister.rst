@@ -2408,4 +2408,4 @@ To run a single testsuite instead of a whole group of test you can run:
 
 .. code-block:: bash
 
-   $ twister -p qemu_riscv32 -s tests/kernel/interrupt/arch.shared_interrupt
+   $ west twister -p qemu_riscv32 -s arch.shared_interrupt
