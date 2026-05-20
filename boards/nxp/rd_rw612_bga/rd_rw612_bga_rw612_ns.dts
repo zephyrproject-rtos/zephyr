@@ -1,12 +1,11 @@
 /*
- * Copyright 2024, 2026 NXP
+ * Copyright 2024 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/rw/nxp_rw6xx_ns.dtsi>
 #include "rd_rw612_bga.dtsi"
 
 /*
