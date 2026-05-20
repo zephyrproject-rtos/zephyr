@@ -117,3 +117,11 @@
 
 /* This is the minimum prepare duration required to setup radio for deferred transmission */
 #define HAL_RADIO_TMR_DEFERRED_TX_DELAY_US 50U
+
+/* Fallback: SW switch timer uses the same prescaler as the event timer.
+ * SoC-specific headers may override this (e.g. nRF54L dual-timer mode where
+ * SW_SWITCH_TIMER and EVENT_TIMER use different clocks and prescalers).
+ */
+#ifndef HAL_SW_SWITCH_TIMER_PRESCALER_VALUE
+#define HAL_SW_SWITCH_TIMER_PRESCALER_VALUE HAL_EVENT_TIMER_PRESCALER_VALUE
+#endif

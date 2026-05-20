@@ -12,10 +12,10 @@ verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_conn_prj_split_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_conn_prj_split_dual_timer_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -testid=peripheral_scan_window
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_conn_prj_split_conf \
+Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_conn_prj_split_dual_timer_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=central_scan_window
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
