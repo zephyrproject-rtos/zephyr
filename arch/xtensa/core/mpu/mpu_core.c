@@ -224,9 +224,10 @@ static int compare_entries(const void *a, const void *b)
  * This sorts the MPU entries in ascending order of starting address.
  * After sorting, it rewrites the segment numbers of all entries.
  */
-static void sort_entries(struct xtensa_mpu_entry *entries)
+static void sort_entries(struct xtensa_mpu_entry *entries, uint8_t first_enabled_idx)
 {
-	qsort(entries, XTENSA_MPU_NUM_ENTRIES, sizeof(entries[0]), compare_entries);
+	qsort(&entries[first_enabled_idx], (XTENSA_MPU_NUM_ENTRIES - first_enabled_idx),
+	      sizeof(entries[0]), compare_entries);
 
 	for (uint32_t idx = 0; idx < XTENSA_MPU_NUM_ENTRIES; idx++) {
 		/* Segment value must correspond to the index. */
@@ -524,7 +525,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 	}
 
 	/* Sort the entries in ascending order of starting address */
-	sort_entries(entries);
+	sort_entries(entries, first_enabled_idx);
 
 	/*
 	 * Need to figure out where the start and end entries are as sorting
