@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/espi.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/kernel.h>
 
 /* #define ESPI_XEC_V2_DEBUG	1 */
 
@@ -28,25 +29,22 @@ struct espi_vw_isr {
 };
 
 struct espi_xec_irq_info {
-	uint8_t gid;	/* GIRQ id [8, 26] */
-	uint8_t gpos;	/* bit position in GIRQ [0, 31] */
-	uint8_t anid;	/* Aggregated GIRQ NVIC number */
-	uint8_t dnid;	/* Direct GIRQ NVIC number */
+	uint8_t gid;  /* GIRQ id [8, 26] */
+	uint8_t gpos; /* bit position in GIRQ [0, 31] */
+	uint8_t anid; /* Aggregated GIRQ NVIC number */
+	uint8_t dnid; /* Direct GIRQ NVIC number */
 };
 
 struct espi_xec_config {
-	uint32_t base_addr;
+	uint32_t ioc_base_addr;
+	uint32_t mc_base_addr;
 	uint32_t vw_base_addr;
-	uint8_t pcr_idx;
-	uint8_t pcr_bitpos;
+	uint16_t pcr_scr;
 	uint8_t irq_info_size;
 	uint8_t rsvd[1];
 	const struct espi_xec_irq_info *irq_info_list;
 	const struct pinctrl_dev_config *pcfg;
 };
-
-#define ESPI_XEC_CONFIG(dev)						\
-	((struct espi_xec_config * const)(dev)->config)
 
 struct espi_xec_data {
 	sys_slist_t callbacks;
@@ -57,9 +55,6 @@ struct espi_xec_data {
 	uint32_t espi_rst_count;
 #endif
 };
-
-#define ESPI_XEC_DATA(dev)						\
-	((struct espi_xec_data * const)(dev)->data)
 
 struct xec_signal {
 	uint8_t host_idx;
@@ -102,18 +97,18 @@ enum xec_espi_girq_idx {
 	fc_girq_idx,
 	rst_girq_idx,
 	vw_ch_en_girq_idx,
+	ht_vw_bank0_idx,
+	ht_vw_bank1_idx,
 	max_girq_idx,
 };
 
 int xec_host_dev_init(const struct device *dev);
 int xec_host_dev_connect_irqs(const struct device *dev);
 
-int espi_xec_read_lpc_request(const struct device *dev,
-			      enum lpc_peripheral_opcode op,
-			      uint32_t  *data);
+int espi_xec_read_lpc_request(const struct device *dev, enum lpc_peripheral_opcode op,
+			      uint32_t *data);
 
-int espi_xec_write_lpc_request(const struct device *dev,
-			       enum lpc_peripheral_opcode op,
+int espi_xec_write_lpc_request(const struct device *dev, enum lpc_peripheral_opcode op,
 			       uint32_t *data);
 
 #endif /* ZEPHYR_DRIVERS_ESPI_MCHP_XEC_ESPI_V2_H_ */
