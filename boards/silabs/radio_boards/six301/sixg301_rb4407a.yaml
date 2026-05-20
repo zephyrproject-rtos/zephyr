@@ -13,6 +13,7 @@ supported:
   - counter
   - dma
   - entropy
+  - flash
   - gpio
   - pwm
   - spi
