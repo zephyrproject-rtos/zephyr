@@ -9,6 +9,9 @@ menu "SiSDK configuration"
 config SILABS_SISDK_ACMP
 	bool "Peripheral HAL for ACMP"
 
+config SILABS_SISDK_ADC
+	bool "Peripheral HAL for ADC"
+
 config SILABS_SISDK_BURTC
 	bool "Peripheral HAL for BURTC"
 
