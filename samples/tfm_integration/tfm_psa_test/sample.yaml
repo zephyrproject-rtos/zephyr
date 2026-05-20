@@ -9,7 +9,6 @@ common:
     - nrf9161dk/nrf9161/ns
     - v2m_musca_s1/musca_s1/ns
     - frdm_mcxn947/mcxn947/cpu0/ns
-    - rd_rw612_bga/rw612/ns
   modules:
     - psa-arch-tests
   integration_platforms:
