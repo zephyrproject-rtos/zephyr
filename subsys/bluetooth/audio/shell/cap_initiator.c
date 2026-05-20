@@ -18,12 +18,18 @@
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
+#include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
@@ -31,15 +37,10 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/shell/shell.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/audio/cap.h>
 
+#include "audio.h"
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
-#include "audio.h"
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)

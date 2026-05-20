@@ -16,23 +16,24 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
-#include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/audio/csip.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
-#include <zephyr/kernel.h>
-#include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
+#include "host/shell/bt.h"
 
 static uint8_t members_found;
 static struct k_work_delayable discover_members_timer;
