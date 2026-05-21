@@ -28,6 +28,7 @@ struct hcsr04_data {
 struct hcsr04_config {
 	struct gpio_dt_spec trigger_gpios;
 	struct gpio_dt_spec echo_gpios;
+	k_timeout_t echo_timeout;
 };
 
 static void hcsr04_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
@@ -143,7 +144,7 @@ static int hcsr04_sample_fetch(const struct device *dev, enum sensor_channel cha
 		return ret;
 	}
 
-	if (k_sem_take(&data->sem, K_MSEC(10)) != 0) {
+	if (k_sem_take(&data->sem, cfg->echo_timeout) != 0) {
 		LOG_ERR("Echo signal was not received");
 		return -EIO;
 	}
@@ -180,6 +181,7 @@ static DEVICE_API(sensor, hcsr04_driver_api) = {
 	static struct hcsr04_config hcsr04_config_##index = {                         \
 		.trigger_gpios = GPIO_DT_SPEC_INST_GET(index, trigger_gpios),         \
 		.echo_gpios = GPIO_DT_SPEC_INST_GET(index, echo_gpios),               \
+		.echo_timeout = K_MSEC(DT_INST_PROP(index, echo_timeout_ms)),     \
 	};                                                                            \
                                                                                       \
 	SENSOR_DEVICE_DT_INST_DEFINE(index, &hcsr04_init, NULL, &hcsr04_data_##index, \
