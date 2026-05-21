@@ -20,6 +20,14 @@ config OPENAMP_VENDOR_RSC_TABLE
 	  Enable vendor-specific resource table with features
 	  supported by remote processor.
 
+config OPENAMP_VENDOR_RSC_TABLE_FILE
+	string "Source file containing vendor-specific resource table"
+	default "resource_table.c"
+	depends on OPENAMP_VENDOR_RSC_TABLE
+	help
+	  Name of a source file containing vendor-specific
+	  resource table.
+
 config OPENAMP_RSC_TABLE_NUM_RPMSG_BUFF
 	int "Resource table number of rpmsg buffers"
 	default 0
@@ -61,14 +69,6 @@ config OPENAMP_COPY_RSC_TABLE
 
 	  This is not needed if the remote loads this firmware and has control
 	  over the placement of the .resource_table section such as remoteproc.
-
-config OPENAMP_VENDOR_RSC_TABLE_FILE
-	string "Source file containing vendor-specific resource table"
-	default "resource_table.c"
-	depends on OPENAMP_VENDOR_RSC_TABLE
-	help
-	  Name of a source file containing vendor-specific
-	  resource table.
 
 config OPENAMP_VENDOR_ADDR_TRANSLATION
 	bool "Address translation support for OpenAMP"
