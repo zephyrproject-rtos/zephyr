@@ -103,7 +103,7 @@ static uint32_t last_elapsed;
  */
 static volatile uint32_t overflow_cyc;
 
-static uint32_t elapsed(void);
+static uint32_t elapsed(uint32_t *val_out);
 
 #if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
 void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
@@ -121,7 +121,7 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
 	uint32_t load_old = last_load;
 
 	if (load_old != TIMER_STOPPED) {
-		cycle_count += elapsed();
+		cycle_count += elapsed(NULL);
 		overflow_cyc = 0U;
 	}
 
@@ -186,6 +186,9 @@ static cycle_t cycle_pre_idle;
  * holds the amount of elapsed HW cycles due to (possibly) multiple
  * timer wraps (overflows).
  *
+ * @param val_out Optional pointer to store the SysTick->VAL snapshot (val2)
+ *                used in the calculation.
+ *
  * Prerequisites:
  * - reprogramming of SysTick.LOAD must be clearing the SysTick.COUNTER
  *   register and the 'overflow_cyc' counter.
@@ -195,7 +198,7 @@ static cycle_t cycle_pre_idle;
  *     - and until the current call of the function is completed.
  * - the function is invoked with interrupts disabled.
  */
-static uint32_t elapsed(void)
+static uint32_t elapsed(uint32_t *val_out)
 {
 	uint32_t val1 = SysTick->VAL;	/* A */
 	uint32_t ctrl = SysTick->CTRL;	/* B */
@@ -240,6 +243,10 @@ static uint32_t elapsed(void)
 		(void)SysTick->CTRL;
 	}
 
+	if (val_out != NULL) {
+		*val_out = val2;
+	}
+
 	return (last_load - val2) + overflow_cyc;
 }
 
@@ -260,7 +267,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 	k_spinlock_key_t key = sys_clock_lock();
 
 	/* Update overflow_cyc and clear COUNTFLAG by invoking elapsed() */
-	elapsed();
+	elapsed(NULL);
 
 	/* Increment the amount of HW cycles elapsed (complete counter
 	 * cycles) and announce the progress to the kernel.
@@ -349,7 +356,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		 * calculate a difference in measurements after exiting
 		 * the low-power state.
 		 */
-		cycle_pre_idle = cycle_count + elapsed();
+		cycle_pre_idle = cycle_count + elapsed(NULL);
 #else /* CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
 		/**
 		 * SysTick will be placed under reset once we enter
@@ -370,7 +377,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
 #endif
 
-		cycle_count += elapsed();
+		cycle_count += elapsed(NULL);
 		overflow_cyc = 0;
 #endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
 		return;
@@ -382,19 +389,18 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * Sync cycle_count with current HW state, capturing any wrap that
 	 * might have occurred since the last sync point. The kernel's
 	 * preceding sys_clock_elapsed() call (or the ISR entry sync)
-	 * usually makes this redundant, but we still need to read CTRL
-	 * here to catch any wrap before writing VAL=0 destroys COUNTFLAG.
-	 *
-	 * val1 must be sampled immediately after elapsed() returns, before
-	 * the cycle_count/overflow_cyc writes below, so the window measured
-	 * by (val1 - val2) at the bottom of this function abuts the window
-	 * already accounted for by elapsed() with no gap in between. Any
-	 * instruction inserted between these two lines would be cycles that
-	 * are neither in elapsed()'s return value nor captured by the
-	 * val1/val2 drift compensation, i.e. systematically lost drift.
+	 * usually makes this redundant, but we still need to read hardware
+	 * state here to catch any wrap before writing VAL=0 destroys COUNTFLAG.
 	 */
-	uint32_t pending = elapsed();
-	uint32_t val1 = SysTick->VAL;
+
+	/* elapsed() is called passing the address of val1 so that the SysTick->VAL
+	 * snapshot used for computing 'pending' is also returned and stored
+	 * in val1. This eliminates the timing gap that would exist if we read
+	 * SysTick->VAL separately after elapsed(), ensuring perfect precision.
+	 */
+
+	uint32_t val1;
+	uint32_t pending = elapsed(&val1);
 	uint32_t old_load = last_load;
 
 	cycle_count += pending;
@@ -488,7 +494,7 @@ uint32_t sys_clock_elapsed(void)
 	}
 
 	uint32_t unannounced = cycle_count - announced_cycles;
-	uint32_t cyc = elapsed() + unannounced;
+	uint32_t cyc = elapsed(NULL) + unannounced;
 	uint32_t dticks = cyc / CYC_PER_TICK;
 
 	last_elapsed = dticks;
@@ -500,7 +506,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	k_spinlock_key_t key = sys_clock_lock();
 	uint32_t ret = cycle_count;
 
-	ret += elapsed();
+	ret += elapsed(NULL);
 	sys_clock_unlock(key);
 	return ret;
 }
@@ -509,7 +515,7 @@ uint32_t sys_clock_cycle_get_32(void)
 uint64_t sys_clock_cycle_get_64(void)
 {
 	k_spinlock_key_t key = sys_clock_lock();
-	uint64_t ret = cycle_count + elapsed();
+	uint64_t ret = cycle_count + elapsed(NULL);
 
 	sys_clock_unlock(key);
 	return ret;
@@ -530,7 +536,7 @@ void sys_clock_idle_exit(void)
 		 * Get current value for SysTick and calculate how
 		 * much time has passed since last measurement.
 		 */
-		systick_diff = cycle_count + elapsed() - cycle_pre_idle;
+		systick_diff = cycle_count + elapsed(NULL) - cycle_pre_idle;
 		systick_us =
 			((uint64_t)systick_diff * USEC_PER_SEC) / sys_clock_hw_cycles_per_sec();
 #else /* CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
@@ -565,7 +571,7 @@ void sys_clock_idle_exit(void)
 		cycle_count += missed_cycles;
 
 		/* Announce the passed ticks to the kernel */
-		dcycles = cycle_count + elapsed() - announced_cycles;
+		dcycles = cycle_count + elapsed(NULL) - announced_cycles;
 		dticks = dcycles / CYC_PER_TICK;
 		announced_cycles += dticks * CYC_PER_TICK;
 		last_elapsed = 0U;
