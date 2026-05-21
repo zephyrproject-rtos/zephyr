@@ -27,6 +27,9 @@ extern "C" {
 enum cpu_workload_source {
 	/** Recent runtime history contributed to this workload. */
 	CPU_WORKLOAD_SOURCE_RUNTIME_HISTORY = BIT(0),
+
+	/** Per-thread burst profiles contributed to this workload. */
+	CPU_WORKLOAD_SOURCE_THREAD_BURST_PROFILE = BIT(1),
 };
 
 /**

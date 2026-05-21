@@ -25,4 +25,33 @@ config CPU_WORKLOAD_HISTORY
 	  The history workload reports non-idle cycles, elapsed runtime-stat cycles,
 	  load percentage, and confidence since the previous cpu_workload query.
 
+config CPU_WORKLOAD_THREAD_PROFILE
+	bool "Per-thread workload profile"
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	select SCHED_THREAD_USAGE_ANALYSIS
+	select SCHED_THREAD_USAGE_AUTO_ENABLE
+	help
+	  Build a per-thread workload profile from scheduler runtime usage windows.
+
+config CPU_WORKLOAD_THREAD_PROFILE_EWMA_SHIFT
+	int "Per-thread workload EWMA shift"
+	default 3
+	range 1 8
+	depends on CPU_WORKLOAD_THREAD_PROFILE
+	help
+	  Shift used by the per-thread workload EWMA.
+	  A value of 3 gives alpha = 1/8, using avg = ((7 * avg) + burst) / 8.
+	  Smaller values react faster; larger values smooth more aggressively.
+
+config CPU_WORKLOAD_THREAD_PROFILE_CACHE_SIZE
+	int "Per-thread workload profile cache size"
+	default 16
+	range 1 256
+	depends on CPU_WORKLOAD_THREAD_PROFILE
+	help
+	  Maximum number of thread burst profiles cached by the subsystem.
+	  Threads that cannot be cached remain unprofiled for thread-profile
+	  consumers.
+
 endif # CPU_WORKLOAD
