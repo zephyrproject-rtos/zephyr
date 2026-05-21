@@ -49,7 +49,7 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 #ifdef CONFIG_THREAD_RUNTIME_STATS
 	THREAD_ANALYZER_PRINT(
 		THREAD_ANALYZER_FMT(
-			" %-20s: STACK: unused %zu usage %zu / %zu (%zu %%); CPU: %u %%"),
+			" %-20s: STACK: unused %4zu usage %4zu / %4zu (%3zu %%); CPU: %3u %%"),
 		THREAD_ANALYZER_VSTR(info->name),
 		info->stack_size - info->stack_used, info->stack_used,
 		info->stack_size, pcnt,
@@ -61,7 +61,7 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 
 		THREAD_ANALYZER_PRINT(
 			THREAD_ANALYZER_FMT(
-				" %-20s: PRIV_STACK: unused %zu usage %zu / %zu (%zu %%)"),
+				" %-20s: PRIV_STACK: unused %4zu usage %4zu / %4zu (%3zu %%)"),
 			" ", info->priv_stack_size - info->priv_stack_used, info->priv_stack_used,
 			info->priv_stack_size, pcnt);
 	}
@@ -84,7 +84,7 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 #else
 	THREAD_ANALYZER_PRINT(
 		THREAD_ANALYZER_FMT(
-			" %-20s: unused %zu usage %zu / %zu (%zu %%)"),
+			" %-20s: unused %4zu usage %4zu / %4zu (%3zu %%)"),
 		THREAD_ANALYZER_VSTR(info->name),
 		info->stack_size - info->stack_used, info->stack_used,
 		info->stack_size, pcnt);
