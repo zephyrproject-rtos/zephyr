@@ -99,8 +99,6 @@ static DEVICE_API(reset, reset_mmio_driver_api) = {
 
 #define DT_DRV_COMPAT reset_mmio
 #define RESET_MMIO_INIT(n)                                                                         \
-	BUILD_ASSERT(DT_INST_PROP(n, num_resets) > 0 && DT_INST_PROP(n, num_resets) < 32,          \
-		     "num-resets needs to be in [1, 31].");                                        \
 	static const struct reset_mmio_dev_config reset_mmio_dev_config_##n = {                    \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.num_resets = DT_INST_PROP(n, num_resets),                                         \

@@ -17,7 +17,8 @@ properties:
     required: true
     description: |
       Number of resets controlled by the register.
-      Can be in the range [1, 31].
+    min: 1
+    max: 31
   active-low:
     description: Reset is active in low state.
     type: boolean
