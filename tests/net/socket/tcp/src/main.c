@@ -97,6 +97,10 @@ static void test_accept(int sock, int *new_sock, struct net_sockaddr *addr,
 {
 	zassert_not_null(new_sock, "null newsock");
 
+	if ((addr != NULL) && (addrlen != NULL)) {
+		(void)memset(addr, 0, *addrlen);
+	}
+
 	*new_sock = zsock_accept(sock, addr, addrlen);
 	zassert_true(*new_sock >= 0, "accept failed");
 }
@@ -105,6 +109,10 @@ static void test_accept_timeout(int sock, int *new_sock, struct net_sockaddr *ad
 				net_socklen_t *addrlen)
 {
 	zassert_not_null(new_sock, "null newsock");
+
+	if ((addr != NULL) && (addrlen != NULL)) {
+		(void)memset(addr, 0, *addrlen);
+	}
 
 	*new_sock = zsock_accept(sock, addr, addrlen);
 	zassert_equal(*new_sock, -1, "accept succeed");
@@ -2227,7 +2235,7 @@ ZTEST(net_socket_tcp, test_close_while_accept)
 	int s_sock;
 	int new_sock;
 	struct net_sockaddr_in6 s_saddr;
-	struct net_sockaddr addr;
+	struct net_sockaddr_in6 addr = { 0 };
 	net_socklen_t addrlen = sizeof(addr);
 	struct close_data close_work_data;
 
@@ -2244,7 +2252,7 @@ ZTEST(net_socket_tcp, test_close_while_accept)
 	/* Start blocking accept(), which should be unblocked by close() from
 	 * another thread and return an error.
 	 */
-	new_sock = zsock_accept(s_sock, &addr, &addrlen);
+	new_sock = zsock_accept(s_sock, (struct net_sockaddr *)&addr, &addrlen);
 	zassert_equal(new_sock, -1, "accept did not return error");
 	zassert_equal(errno, EINTR, "Unexpected errno value: %d", errno);
 
