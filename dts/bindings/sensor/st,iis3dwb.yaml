@@ -108,9 +108,9 @@ properties:
     default: 32
     description: |
       Specify the default FIFO watermark threshold. Every unit indicates a FIFO row (1 byte of TAG +
-      6 bytes of data). (min 0; max 255)
-      A typical threshold value is 32 which is then used as default.
-      Valid range: 0 - 511
+      6 bytes of data). A typical threshold value is 32 which is then used as default.
+    min: 0
+    max: 511
 
   accel-fifo-batch-rate:
     type: int
