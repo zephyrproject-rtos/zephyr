@@ -54,4 +54,25 @@ config CPU_WORKLOAD_THREAD_PROFILE_CACHE_SIZE
 	  Threads that cannot be cached remain unprofiled for thread-profile
 	  consumers.
 
+config CPU_WORKLOAD_READY_BACKLOG
+	bool "CPU ready backlog workload"
+	select THREAD_MONITOR
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	select SCHED_THREAD_USAGE_AUTO_ENABLE
+	select CPU_WORKLOAD_THREAD_PROFILE
+	help
+	  Estimate runnable backlog work by scanning runnable threads and summing
+	  their per-thread CPU burst profiles. This exposes forward-looking runnable
+	  work that has not yet completed.
+
+config CPU_WORKLOAD_READY_BACKLOG_MIN_CONFIDENCE
+	int "Minimum thread profile confidence for ready backlog"
+	default 20
+	range 0 100
+	depends on CPU_WORKLOAD_READY_BACKLOG
+	help
+	  Minimum per-thread burst profile confidence required before that profile
+	  contributes its average burst cycles to the ready backlog.
+
 endif # CPU_WORKLOAD
