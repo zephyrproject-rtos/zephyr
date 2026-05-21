@@ -610,17 +610,22 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 	 * Set PSP to the highest address of the main stack
 	 * before enabling interrupts and jumping to main.
 	 *
-	 * The compiler may store _main on the stack, but this
-	 * location is relative to `PSP`.
-	 * This assembly block ensures that _main is stored in
-	 * a callee saved register before switching stack and continuing
-	 * with the thread entry process.
+	 * _main is saved on MSP (the interrupt stack) across the
+	 * arch_irq_unlock_outlined call rather than held in a
+	 * callee-saved register.  Enabling interrupts may let a
+	 * pending timer IRQ fire immediately; if z_arm_exc_exit
+	 * then pends PendSV, the context-switch handler’s
+	 * stmia/ldmia of r4-r11 will overwrite any callee-saved
+	 * register with the (uninitialised) target thread’s save
+	 * area — typically zero, causing z_thread_entry(NULL).
+	 * MSP contents are not touched by PendSV so the push/pop
+	 * is safe across this window.
 	 *
 	 * When calling arch_irq_unlock_outlined, LR is lost which is fine since
 	 * we do not intend to return after calling z_thread_entry.
 	 */
-	__asm__ volatile("mov   r4,  %0\n" /* force _main to be stored in a register */
-			 "msr   PSP, %1\n" /* __set_PSP(stack_ptr) */
+	__asm__ volatile("msr   PSP, %1\n" /* __set_PSP(stack_ptr) */
+			 "push  {%0}\n"    /* save _main on MSP */
 
 			 "movs  r0,  #0\n" /* arch_irq_unlock(0) */
 #ifdef CONFIG_SLOW_FLASH_DATA
@@ -631,8 +636,8 @@ void arch_switch_to_main_thread(struct k_thread *main_thread, char *stack_ptr,
 #endif
 			 "blx   r3\n"
 
-			 "mov   r0, r4\n" /* z_thread_entry(_main, NULL, NULL, NULL) */
-			 "movs  r1, #0\n"
+			 "pop   {r0}\n"    /* restore _main */
+			 "movs  r1, #0\n"  /* z_thread_entry(_main, 0, 0, 0) */
 			 "movs  r2, #0\n"
 			 "movs  r3, #0\n"
 #ifdef CONFIG_SLOW_FLASH_DATA
