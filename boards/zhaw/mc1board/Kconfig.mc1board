@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Institute of Embedded Systems ZHAW
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MC1BOARD
+	select SOC_STM32H573XX
