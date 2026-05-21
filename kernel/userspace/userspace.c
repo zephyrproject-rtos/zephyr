@@ -273,12 +273,17 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 	int i;
 	int idx;
 	int base;
+	bool ret = false;
+	k_spinlock_key_t key;
 
 	base = 0;
+	key = k_spin_lock(&lists_lock);
 	for (i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		idx = find_lsb_set(_thread_idx_map[i]);
 
 		if (idx != 0) {
+			struct dyn_obj *obj, *next;
+
 			*tidx = base + (idx - 1);
 
 			/* Clear the bit. We already know the array index,
@@ -287,16 +292,22 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 			_thread_idx_map[i] &= ~(BIT(idx - 1));
 
 			/* Clear permission from all objects */
-			k_object_wordlist_foreach(clear_perms_cb,
-						   (void *)*tidx);
 
-			return true;
+			z_object_gperf_wordlist_foreach(clear_perms_cb, (void *)*tidx);
+
+			SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&obj_list, obj, next, dobj_list) {
+				clear_perms_cb(&obj->kobj, (void *)*tidx);
+			}
+
+			ret = true;
+			break;
 		}
 
 		base += 8;
 	}
 
-	return false;
+	k_spin_unlock(&lists_lock, key);
+	return ret;
 }
 
 /**
