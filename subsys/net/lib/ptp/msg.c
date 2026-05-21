@@ -264,13 +264,16 @@ enum ptp_msg_type ptp_msg_type(const struct ptp_msg *msg)
 #if defined(CONFIG_PTP_UDP_IPV4_PROTOCOL) || defined(CONFIG_PTP_UDP_IPV6_PROTOCOL)
 static struct ptp_msg *msg_from_udp_pkt(struct net_pkt *pkt)
 {
-	static const size_t eth_hdr_len = IS_ENABLED(CONFIG_NET_VLAN)
-						  ? sizeof(struct net_eth_vlan_hdr)
-						  : sizeof(struct net_eth_hdr);
+	size_t eth_hdr_len = sizeof(struct net_eth_hdr);
 	struct net_udp_hdr *hdr;
 	struct ptp_msg *msg;
 	int payload;
 	uint16_t port;
+
+	/* Check if the packet has a VLAN tag */
+	if (IS_ENABLED(CONFIG_NET_VLAN) && net_pkt_vlan_tag(pkt) != NET_VLAN_TAG_UNSPEC) {
+		eth_hdr_len = sizeof(struct net_eth_vlan_hdr);
+	}
 
 	if (pkt->buffer->len == eth_hdr_len) {
 		/* Packet contains Ethernet header at the beginning. */
