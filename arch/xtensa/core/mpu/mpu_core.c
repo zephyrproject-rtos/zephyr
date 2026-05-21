@@ -687,6 +687,55 @@ void xtensa_mpu_init(void)
 }
 
 #ifdef CONFIG_USERSPACE
+/**
+ * Find the permission of a region at boot according to xtensa_mpu_ranges[].
+ *
+ * @param[in] start Start address of the region.
+ * @param[in] end End address of the region.
+ */
+static uint32_t find_boot_permission(const uintptr_t start, const uintptr_t end)
+{
+	/* Default is kernel only RW, same as background map. */
+	uint32_t perms = XTENSA_MPU_ACCESS_P_RW_U_NA;
+
+	/* Need to go through the whole list as it is possible that later
+	 * entry in the array overrides previous entries, similar to how
+	 * we process the array at boot.
+	 */
+	for (int i = 0; i < xtensa_mpu_ranges_num; i++) {
+		const struct xtensa_mpu_range *region = &xtensa_mpu_ranges[i];
+
+		if (IN_RANGE(start, region->start, region->end) &&
+		    IN_RANGE(end, region->start, region->end)) {
+			perms = region->access_rights;
+		}
+	}
+
+	return perms;
+}
+
+/**
+ * Restore permissions of a memory region in the MPU map.
+ *
+ * This restores the permissions of a memory region back to what is
+ * programmed at boot.
+ *
+ * @param[in,out] map Pointer to MPU map.
+ * @param[in] start_addr Start address of the region.
+ * @param[in] end_addr End address of the region.
+ * @param[in] access_rights Access rights of this region.
+ *
+ * @retval 0 Successful in adding the region.
+ * @retval -EINVAL Invalid values in function arguments.
+ */
+static int mpu_map_region_restore(struct xtensa_mpu_map *map,
+				  uintptr_t start_addr, uintptr_t end_addr)
+{
+	uint32_t access_rights = find_boot_permission(start_addr, end_addr);
+
+	return mpu_map_region_add(map, start_addr, end_addr, access_rights, NULL);
+}
+
 int arch_mem_domain_init(struct k_mem_domain *domain)
 {
 	domain->arch.mpu_map = xtensa_mpu_map_fg_kernel;
@@ -879,10 +928,8 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 		 * "adding" a new memory region to the map
 		 * as this carves a hole in the existing map.
 		 */
-		ret = mpu_map_region_add(old_map,
-					 thread->stack_info.start, stack_end_addr,
-					 XTENSA_MPU_ACCESS_P_RW_U_NA,
-					 NULL);
+		ret = mpu_map_region_restore(old_map,
+					     thread->stack_info.start, stack_end_addr);
 	}
 
 	/*
@@ -928,10 +975,8 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	 * Restore permissions on the thread's stack area since it is no
 	 * longer a member of the domain.
 	 */
-	ret = mpu_map_region_add(&domain->arch.mpu_map,
-				 thread->stack_info.start, stack_end_addr,
-				 XTENSA_MPU_ACCESS_P_RW_U_NA,
-				 NULL);
+	ret = mpu_map_region_restore(&domain->arch.mpu_map,
+				     thread->stack_info.start, stack_end_addr);
 
 	xtensa_mpu_map_write(thread);
 
