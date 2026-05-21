@@ -88,8 +88,11 @@ MEMORY
 
 #if defined(CONFIG_ESP_SPIRAM)
   /* ext_dram_seg and irom0_0_seg share the same bus (unified cache address space).
+   * Size the segment to the cache window so the dummy section reserved for
+   * flash content plus the PSRAM heap window always fit; the actual usable
+   * PSRAM is capped at link time by the ext_ram-overflow ASSERT below.
    * A dummy section is used to skip flash content and avoid overlap. */
-  ext_dram_seg(RW): org = IROM_SEG_ORG, len = CONFIG_ESP_SPIRAM_SIZE
+  ext_dram_seg(RW): org = EXTRAM_START, len = EXTRAM_SIZE
 #endif
 
 #if CONFIG_ESP32_ULP_COPROC_ENABLED
@@ -766,8 +769,23 @@ SECTIONS
   .dram0.noinit (NOLOAD):
   {
     . = ALIGN(4);
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit)
+    *(EXCLUDE_FILE(
+      *libdrivers__wifi.a:*
+      *libsubsys__net__l2__ethernet.a:*
+      *libsubsys__net__lib__config.a:*
+      *libsubsys__net__ip.a:*
+      *libsubsys__net.a:* ) .noinit.*)
+#else
     *(.noinit)
     *(.noinit.*)
+#endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
 #ifdef CONFIG_USERSPACE
     z_user_stacks_start = .;
     *(.user_stacks*)
@@ -1018,6 +1036,14 @@ SECTIONS
   {
     _ext_ram_start = ABSOLUTE(.);
     _ext_ram_noinit_start = ABSOLUTE(.);
+
+#ifdef CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM
+    *libdrivers__wifi.a:(.noinit .noinit.*)
+    *libsubsys__net__l2__ethernet.a:(.noinit .noinit.*)
+    *libsubsys__net__lib__config.a:(.noinit .noinit.*)
+    *libsubsys__net__ip.a:(.noinit .noinit.*)
+    *libsubsys__net.a:(.noinit .noinit.*)
+#endif
     . = ALIGN(16);
     *(.ext_ram_noinit.*)
     . = ALIGN(16);
