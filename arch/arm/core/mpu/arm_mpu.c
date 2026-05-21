@@ -62,21 +62,10 @@ BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
 static uint8_t static_regions_num;
 
 /* Include architecture-specific internal headers. */
-#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
-	defined(CONFIG_CPU_CORTEX_M3) || \
-	defined(CONFIG_CPU_CORTEX_M4) || \
-	defined(CONFIG_CPU_CORTEX_M7) || \
-	defined(CONFIG_ARMV7_R)
-#include "arm_mpu_v7_internal.h"
-#elif defined(CONFIG_CPU_CORTEX_M23) || \
-	defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M52) || \
-	defined(CONFIG_CPU_CORTEX_M55) || \
-	defined(CONFIG_CPU_CORTEX_M85) || \
-	defined(CONFIG_AARCH32_ARMV8_R)
+#if Z_ARM_CPU_HAS_PMSAV8_MPU
 #include "arm_mpu_v8_internal.h"
 #else
-#error "Unsupported ARM CPU"
+#include "arm_mpu_v7_internal.h"
 #endif
 
 static int region_allocate_and_init(const uint8_t index,
