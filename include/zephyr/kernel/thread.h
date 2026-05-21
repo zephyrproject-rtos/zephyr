@@ -248,6 +248,17 @@ typedef struct k_thread_runtime_stats {
 #endif
 }  k_thread_runtime_stats_t;
 
+typedef struct k_thread_arrival_stats {
+#if defined(CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS) || defined(__DOXYGEN__)
+	uint32_t source_mask;
+	uint16_t count;
+#endif /* CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS */
+
+#if !defined(CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS) && defined(__cplusplus)
+	/** Avoid a zero-sized struct in C++ when the feature is disabled. */
+	uint8_t dummy;
+#endif
+} k_thread_arrival_stats_t;
 struct z_poller {
 	bool is_polling;
 	uint8_t mode;

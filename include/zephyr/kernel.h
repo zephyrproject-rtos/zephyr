@@ -7049,6 +7049,21 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  */
 int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
 
+#if defined(CONFIG_SCHED_THREAD_USAGE) || defined(__DOXYGEN__)
+/**
+ * @brief Get and optionally reset the arrival statistics of a thread.
+ *
+ * @param thread ID of thread.
+ * @param stats Pointer to struct to copy statistics into.
+ * @param reset Reset the thread arrival window after copying the statistics.
+ *
+ * @retval 0 On success.
+ * @retval -EINVAL If @p thread or @p stats is NULL.
+ * @retval -ENOTSUP If arrival statistics are not enabled.
+ */
+int k_thread_arrival_stats_get(k_tid_t thread, k_thread_arrival_stats_t *stats,
+			       bool reset);
+#endif /* CONFIG_SCHED_THREAD_USAGE */
 /**
  * @brief Enable gathering of runtime statistics for specified thread
  *

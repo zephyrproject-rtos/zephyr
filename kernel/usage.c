@@ -307,6 +307,33 @@ int k_thread_runtime_stats_disable(k_tid_t  thread)
 }
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
+int k_thread_arrival_stats_get(k_tid_t thread, k_thread_arrival_stats_t *stats,
+				       bool reset)
+{
+	CHECKIF((thread == NULL) || (stats == NULL)) {
+		return -EINVAL;
+	}
+
+#ifdef CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&usage_lock);
+	stats->source_mask = thread->base.usage.arrival_source_mask;
+	stats->count = thread->base.usage.arrival_count;
+
+	if (reset) {
+		sched_thread_reset_arrival_stats(&thread->base.usage);
+	}
+
+	k_spin_unlock(&usage_lock, key);
+
+	return 0;
+#else
+	ARG_UNUSED(reset);
+
+	return -ENOTSUP;
+#endif /* CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS */
+}
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 void k_sys_runtime_stats_enable(void)
 {
