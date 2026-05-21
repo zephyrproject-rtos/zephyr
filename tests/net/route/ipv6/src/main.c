@@ -622,6 +622,32 @@ static void test_route_ipv6_packet_without_neighbor_ll(void)
 	zassert_true(sent_pkt_seen, "Packet was not sent");
 }
 
+static void test_route_ipv6_packet_without_iface(void)
+{
+	struct net_ipv6_hdr *hdr;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPPROTO_ICMPV6,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "Packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	hdr->vtc = 0x60;
+	net_ipv6_addr_copy_raw(hdr->src, my_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, dest_addr_alt.s6_addr);
+
+	net_pkt_set_iface(pkt, NULL);
+
+	zassert_equal(net_route_ipv6_packet(pkt, &peer_addr_alt), -EINVAL,
+		      "IPv6 route packet should reject missing iface");
+
+	net_pkt_unref(pkt);
+}
+
 
 /*test case main entry*/
 ZTEST(route_test_suite, test_route)
@@ -646,6 +672,7 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv6_preference();
 	test_route_ipv6_select_src_iface_uses_explicit_route();
 	test_route_ipv6_packet_without_neighbor_ll();
+	test_route_ipv6_packet_without_iface();
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);

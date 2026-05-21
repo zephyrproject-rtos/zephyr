@@ -452,8 +452,14 @@ bool net_route_ipv6_get_info(struct net_if *iface,
 int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nexthop)
 {
 	struct net_linkaddr *lladdr = NULL;
-	struct net_if *out_iface = net_pkt_iface(pkt);
+	struct net_if *out_iface;
 	struct net_nbr *nbr;
+
+	if (pkt == NULL || nexthop == NULL || net_pkt_iface(pkt) == NULL) {
+		return -EINVAL;
+	}
+
+	out_iface = net_pkt_iface(pkt);
 
 	nbr = net_ipv6_nbr_lookup(NULL, nexthop);
 	if (nbr == NULL) {
