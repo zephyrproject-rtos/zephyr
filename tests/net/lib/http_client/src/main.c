@@ -465,7 +465,7 @@ static const char chunked_te_response[] =
 	"0\r\n"
 	"\r\n";
 
-static K_THREAD_STACK_DEFINE(chunked_srv_stack, 1024);
+static K_THREAD_STACK_DEFINE(chunked_srv_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread chunked_srv_thread;
 static K_SEM_DEFINE(chunked_srv_ready, 0, 1);
 
