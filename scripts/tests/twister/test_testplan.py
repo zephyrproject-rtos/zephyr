@@ -8,6 +8,7 @@ This test file contains testsuites for testsuite.py module of twister
 '''
 import os
 import sys
+import textwrap
 from contextlib import nullcontext
 from pathlib import Path
 from unittest import mock
@@ -341,7 +342,7 @@ def test_apply_changes_for_required_applications(testplan_with_one_instance: Tes
     testinstance_req = next(iter(plan.instances.values()))
 
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
-    testsuite.required_applications = [RequiredApplication(name='sample_test.app')]
+    testsuite.required_applications = [RequiredApplication(application='sample_test.app')]
     platform = plan.get_platform("demo_board_1")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -356,7 +357,7 @@ def test_apply_changes_for_required_applications_missing_app(testplan_with_one_i
     plan = testplan_with_one_instance
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
     # Set a required application that does not exist
-    testsuite.required_applications = [RequiredApplication(name='nonexistent_app')]
+    testsuite.required_applications = [RequiredApplication(application='nonexistent_app')]
     platform = plan.get_platform("demo_board_1")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -372,7 +373,7 @@ def test_apply_changes_for_required_applications_wrong_platform(testplan_with_on
     """ Test apply_changes_for_required_applications with not matched platform """
     plan = testplan_with_one_instance
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
-    testsuite.required_applications = [RequiredApplication(name='sample_test.app', platform='demo_board_2')]
+    testsuite.required_applications = [RequiredApplication(application='sample_test.app', platform='demo_board_2')]
     platform = plan.get_platform("demo_board_2")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -392,7 +393,7 @@ def test_apply_changes_for_required_applications_in_outdir(testplan_with_one_ins
     req_app_in_outdir = "prebuilt_sample_test.app"
 
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
-    testsuite.required_applications = [RequiredApplication(name=req_app_in_outdir)]
+    testsuite.required_applications = [RequiredApplication(application=req_app_in_outdir)]
     platform = plan.get_platform("demo_board_1")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -739,6 +740,7 @@ def test_testplan_discover(
     testplan.run_individual_testsuite = 'ts0'
     testplan.load_errors = load_errors
     testplan.add_testsuites = mock.Mock(return_value=added_testsuite_count)
+    testplan.add_testsuites_for_required_applications = mock.Mock()
     testplan.find_subtests = mock.Mock()
     testplan.report_duplicates = mock.Mock()
     testplan.test_config = mock.Mock()
@@ -747,7 +749,7 @@ def test_testplan_discover(
     with pytest.raises(exception) if exception else nullcontext():
         testplan.discover()
 
-    testplan.add_testsuites.assert_called_once_with(testsuite_filter='ts1', testsuite_pattern=[])
+    testplan.add_testsuites.assert_called_once()
     assert all([log in caplog.text for log in expected_logs])
 
 
@@ -1464,9 +1466,114 @@ tests:
     testplan = TestPlan(env=env)
 
     res = testplan.add_testsuites(testsuite_filter, testsuite_pattern=[])
+    testplan.add_testsuites_for_required_applications()
 
     assert res == expected_suite_count
     assert testplan.load_errors == expected_errors
+
+
+@pytest.mark.parametrize(
+    ('filter_app'),
+    [
+        ('test.app.required_app.same_path'),
+        ('test.app.required_app.relative_path'),
+        ('test.app.required_app.absolute_path'),
+        ('test.app.no_build'),
+        ('test.multidut'),
+        ('test.multidut.no_build'),
+        ('test.multidut.required_relative_path'),
+        ('test.multidut.required_absolute_path'),
+    ]
+)
+def test_testplan_add_testsuites_for_required_applications(tmp_path, monkeypatch, filter_app):
+    # tmp_path
+    # └ tests
+    #   ├ hello_app
+    #   │ └ tests.yaml
+    #   └ test_app
+    #     └ tests.yaml
+    monkeypatch.setenv("TMP_PATH", str(tmp_path))
+    test_root = tmp_path / 'tests'
+    test_root.mkdir()
+
+    test_helloapp_dir = test_root / 'hello_app'
+    test_helloapp_dir.mkdir()
+    test_helloapp_yaml = textwrap.dedent("""
+        tests:
+            hello.app: {}
+    """)
+    test_helloapp = test_helloapp_dir / 'tests.yaml'
+    test_helloapp.write_text(test_helloapp_yaml)
+
+    test_app_dir = test_root / 'test_app'
+    test_app_dir.mkdir()
+    test_app_yaml = textwrap.dedent("""
+        common:
+          harness: pytest
+        tests:
+          test.app: {}
+          test.app.required_app.same_path:
+            required_applications:
+              - application: test.app
+          test.app.required_app.relative_path:
+            required_applications:
+              - application: hello.app
+                path: ../hello_app
+          test.app.required_app.absolute_path:
+            required_applications:
+              - application: hello.app
+                path: $TMP_PATH/tests/hello_app
+          test.app.no_build:
+            build: false
+            required_applications:
+              - application: test.app
+
+          test.multidut:
+            harness_config:
+              required_devices:
+                - application: test.app
+          test.multidut.no_build:
+            build: false
+            harness_config:
+              required_devices:
+                - {}
+            required_applications:
+              - application: test.app
+          test.multidut.required_relative_path:
+            harness_config:
+              required_devices:
+                - application: hello.app
+                  path: ../hello_app
+          test.multidut.required_absolute_path:
+            harness_config:
+              required_devices:
+                - application: hello.app
+                  path: $TMP_PATH/tests/hello_app
+    """)
+    test_app = test_app_dir / 'tests.yaml'
+    test_app.write_text(test_app_yaml)
+
+    env = mock.Mock(modules=[], test_roots=[test_root], alt_config_root=[])
+    env.options = mock.Mock()
+
+    testplan = TestPlan(env=env)
+
+    res = testplan.add_testsuites(testsuite_filter=[filter_app])
+    assert res == 1, (
+        f"Expected 1 testsuite to be added for {filter_app}, got {res}"
+    )
+
+    testplan.add_testsuites_for_required_applications()
+    assert len(testplan.testsuites) == 2, (
+        f"Expected 2 testsuites after adding required applications"
+        f" for {filter_app}, got {len(testplan.testsuites)}"
+    )
+
+    for ts in testplan.testsuites.values():
+        if ts.id != filter_app:
+            assert ts.build_only is True, (
+                f"Expected {ts.id}, required by {filter_app}, has build_only set to True"
+            )
 
 
 def test_testplan_str():
