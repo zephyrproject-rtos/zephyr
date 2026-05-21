@@ -397,7 +397,15 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
 
          - ``west_topdir``: The absolute path to the west workspace, as
            returned by the ``west_topdir`` command
-         - ``board``: The board name
+         - ``board``: The full board target as resolved by the Zephyr build
+           system, i.e. ``<board>/<qualifiers>``. For example, ``-b nrf5340dk``
+           and ``-b nrf5340dk//cpuapp`` both resolve to
+           ``nrf5340dk/nrf5340/cpuapp`` so equivalent inputs map to the same
+           build directory.
+         - ``normalized_board``: The same target as ``board`` but with ``/``
+           flattened to ``_`` (CMake's ``NORMALIZED_BOARD_TARGET``), in order
+           to use as a single path component. For example,
+           ``nrf5340dk_nrf5340_cpuapp``.
          - ``source_dir``: Path to the CMake source directory, relative to the
            current working directory. If the current working directory is
            inside the source directory, this is an empty string. If no source
