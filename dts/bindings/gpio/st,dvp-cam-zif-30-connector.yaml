@@ -1,4 +1,5 @@
 # Copyright (c) 2025 Charles Dias
+# Copyright (c) 2026 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
@@ -35,6 +36,6 @@ description: |
     (29)  SPI_CLK
     (30)  GND
 
-compatible: "st,dcmi-camera-fpu-330zh"
+compatible: "st,dvp-cam-zif-30-connector"
 
 include: [gpio-nexus.yaml, base.yaml]
