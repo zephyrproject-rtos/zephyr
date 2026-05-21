@@ -4,3 +4,11 @@
 config ESP32_SOC_PM_SUPPORT_CPU_PD
 	bool
 	default y
+
+config ESP32_SOC_FLASH_SUPPORTED
+	bool
+	default y
+
+config ESP32_SOC_PM_SUPPORT_VDDSDIO_PD
+	bool
+	default y
