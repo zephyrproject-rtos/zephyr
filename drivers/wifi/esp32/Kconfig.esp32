@@ -310,6 +310,15 @@ config ESP32_WIFI_MAX_THREAD_PRIORITY
 	help
 	  Maximum priority of thread used for processing driver work queue items.
 
+config ESP32_WIFI_TASK_STACK_SIZE
+	int "Wi-Fi task stack size (floor)"
+	default 3584
+	help
+	  Minimum stack size for the Wi-Fi tasks spawned by the Wi-Fi
+	  library blobs. The actual stack used is the larger of this value
+	  and the stack depth requested by the blob at runtime, so a higher
+	  Kconfig value only raises the floor.
+
 config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
 	int "Minimum active time"
 	range 8 60
