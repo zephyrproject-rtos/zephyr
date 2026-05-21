@@ -246,7 +246,7 @@ static void input_kbd_matrix_check_key_events(const struct device *dev)
 	input_kbd_matrix_update_state(dev);
 }
 
-static bool input_kbd_matrix_active(const struct device *dev)
+bool input_kbd_matrix_active(const struct device *dev)
 {
 	const struct input_kbd_matrix_common_config *cfg = dev->config;
 
