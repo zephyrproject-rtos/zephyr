@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "dnn647_common.dtsi"
+
+/ {
+	model = "Alientek DNN647 board";
+	compatible = "alientek,dnn647";
+
+	chosen {
+		zephyr,sram = &axisram1;
+	};
+};

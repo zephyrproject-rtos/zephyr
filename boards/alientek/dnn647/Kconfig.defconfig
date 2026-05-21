@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_DNN647
+
+# Enable MEMC subsystem when the HyperRAM DT node is active so that
+# CONFIG_MEMC_STM32_XSPI_HYPERRAM defaults to y automatically.
+config MEMC
+	default y if DT_HAS_ST_STM32_XSPI_HYPERRAM_ENABLED
+
+endif # BOARD_DNN647

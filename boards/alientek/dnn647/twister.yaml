@@ -1,0 +1,16 @@
+name: Alientek DNN647
+type: mcu
+arch: arm
+vendor: alientek
+ram: 1024
+flash: 1024
+supported:
+  - gpio
+  - uart
+variants:
+  dnn647/stm32n647xx:
+    twister: false
+  dnn647/stm32n647xx/sb:
+    toolchain:
+      - zephyr
+      - gnuarmemb

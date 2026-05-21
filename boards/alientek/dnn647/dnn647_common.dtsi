@@ -1,0 +1,536 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/n6/stm32n647X0.dtsi>
+#include <st/n6/stm32n647x0hxq-pinctrl.dtsi>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/display/panel.h>
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &axisram2;
+		zephyr,display = &ltdc;
+		zephyr,canbus = &fdcan3;
+		spi-flash0 = &mx25um25645g;
+		zephyr,flash-controller = &mx25um25645g;
+		zephyr,flash = &ext_flash;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiog 10 GPIO_ACTIVE_HIGH>;
+			label = "User LED0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpioe 10 GPIO_ACTIVE_HIGH>;
+			label = "User LED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		wk_up: wk_up {
+			label = "WK_UP";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		key0: key_0 {
+			label = "KEY0";
+			gpios = <&gpioc 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		key1: key_1 {
+			label = "KEY1";
+			gpios = <&gpiod 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+
+		key2: key_2 {
+			label = "KEY2";
+			gpios = <&gpiog 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_3>;
+		};
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &wk_up;
+		sw1 = &key0;
+		sw2 = &key1;
+		sw3 = &key2;
+		watchdog0 = &iwdg;
+		rtc = &rtc;
+	};
+
+	hyperram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		/*
+		 * Prevent access to the last 32 bytes of the memory-mapped device.
+		 * Issue described in the STM32N6xxxx errata sheet ES0620 Rev 1:
+		 * 2.4.5 Deadlock or data corruption when DQS is enabled and the
+		 * wrap request includes the last address of the memory
+		 */
+		reg = <0x90000000 (DT_SIZE_M(32) - 32)>;
+		zephyr,memory-region = "HYPERRAM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
+};
+
+&clk_hse {
+	hse-div2;
+	clock-frequency = <DT_FREQ_M(48)>;
+	status = "okay";
+};
+
+&clk_hsi {
+	hsi-div = <1>;
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&perck {
+	clocks = <&rcc STM32_SRC_HSI PER_SEL(0)>;
+	status = "okay";
+};
+
+&pll1 {
+	clocks = <&clk_hse>;
+	div-m = <3>;
+	mul-n = <150>;
+	div-p1 = <1>;
+	div-p2 = <1>;
+	status = "okay";
+};
+
+/* PLL2: HSI(64 MHz) / 2 * 48 = 1536 MHz VCO — used for IC4 */
+&pll2 {
+	clocks = <&clk_hsi>;
+	div-m = <2>;
+	mul-n = <48>;
+	div-p1 = <1>;
+	div-p2 = <1>;
+	status = "okay";
+};
+
+&ic1 {
+	pll-src = <1>;
+	ic-div = <3>;
+	status = "okay";
+};
+
+&ic2 {
+	pll-src = <1>;
+	ic-div = <6>;
+	status = "okay";
+};
+
+&ic6 {
+	pll-src = <1>;
+	ic-div = <2>;
+	status = "okay";
+};
+
+/* IC4: PLL2 / 32 = 48 MHz — SDMMC kernel clock */
+&ic4 {
+	pll-src = <2>;
+	ic-div = <32>;
+	status = "okay";
+};
+
+&ic11 {
+	pll-src = <1>;
+	ic-div = <3>;
+	status = "okay";
+};
+
+/* LTDC pixel clock: PLL1 (2400 MHz) / 72 = 33.33 MHz (~60 Hz for 800x480) */
+&ic16 {
+	pll-src = <1>;
+	ic-div = <72>;
+	status = "okay";
+};
+
+&cpusw {
+	clocks = <&rcc STM32_SRC_IC1 CPU_SEL(3)>;
+	clock-frequency = <DT_FREQ_M(800)>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&ic2>;
+	clock-frequency = <DT_FREQ_M(400)>;
+	ahb-prescaler = <2>;
+	timg-prescaler = <2>;
+};
+
+&usart1 {
+	clocks = <&rcc STM32_CLOCK(APB2, 4)>,
+		 <&rcc STM32_SRC_CKPER USART1_SEL(1)>;
+	pinctrl-0 = <&usart1_tx_pe5 &usart1_rx_pe6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	dmas = <&gpdma1 0 108 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+	       <&gpdma1 1 107 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&usart3 {
+	clocks = <&rcc STM32_CLOCK(APB1, 18)>,
+		 <&rcc STM32_SRC_CKPER USART3_SEL(1)>;
+	pinctrl-0 = <&usart3_tx_pe1 &usart3_rx_pd9>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart7 {
+	clocks = <&rcc STM32_CLOCK(APB1, 30)>,
+		 <&rcc STM32_SRC_CKPER UART7_SEL(1)>;
+	pinctrl-0 = <&uart7_tx_ph3 &uart7_rx_pe7>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&ltdc {
+	clocks = <&rcc STM32_CLOCK(APB5, 1)>,
+		 <&rcc STM32_SRC_IC16 LTDC_SEL(2)>;
+	pinctrl-0 = <&ltdc_g3_pa0  &ltdc_g2_pa1  &ltdc_b7_pa2
+		     &ltdc_clk_pa5  &ltdc_b6_pa8  &ltdc_b5_pa9
+		     &ltdc_b4_pa10  &ltdc_b3_pa11 &ltdc_r5_pa15
+		     &ltdc_r3_pb4   &ltdc_g7_pb10 &ltdc_g6_pb11
+		     &ltdc_g5_pb12  &ltdc_g4_pb15
+		     &ltdc_r6_pf8   &ltdc_hsync_pf9
+		     &ltdc_vsync_pg0 &ltdc_r7_pg9  &ltdc_de_pg13
+		     &ltdc_r4_ph4>;
+	pinctrl-names = "default";
+	bl-ctrl-gpios = <&gpioa 3 GPIO_ACTIVE_HIGH>;
+
+	status = "okay";
+
+	width = <800>;
+	height = <480>;
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		de-active = <0>;
+		pixelclk-active = <0>;
+		hsync-active = <0>;
+		vsync-active = <0>;
+		hsync-len = <1>;
+		vsync-len = <1>;
+		hback-porch = <46>;
+		vback-porch = <23>;
+		hfront-porch = <210>;
+		vfront-porch = <22>;
+	};
+
+	def-back-color-red = <0x00>;
+	def-back-color-green = <0x00>;
+	def-back-color-blue = <0x00>;
+};
+
+&bsec {
+	/* Required by iocell driver */
+	status = "okay";
+};
+
+&iocell {
+	status = "okay";
+
+	vddio2 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+
+	vddio3 {
+		hslv-mode = "on";
+		compensation-enabled;
+	};
+};
+
+/*
+ * XSPI1 — 32 MB HyperRAM (HyperBus x8 mode) mapped at 0x90000000.
+ * Data bus: IO[0:7] = PP[0:7]; control: NCS1=PO0, DQS0=PO2,
+ * CLK=PO4, NCLK=PO5.  IO[8:15]/DQS1 (PP[8:15]/PO3) are not
+ * connected on this board (x8 mode only).
+ */
+&xspi1 {
+	pinctrl-0 = <&xspim_p1_ncs1_po0 &xspim_p1_dqs0_po2
+		     &xspim_p1_clk_po4 &xspim_p1_nclk_po5
+		     &xspim_p1_io0_pp0 &xspim_p1_io1_pp1
+		     &xspim_p1_io2_pp2 &xspim_p1_io3_pp3
+		     &xspim_p1_io4_pp4 &xspim_p1_io5_pp5
+		     &xspim_p1_io6_pp6 &xspim_p1_io7_pp7>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/*
+	 * W958D8NBYA5I (Winbond) 32 MB HyperBus x8 DDR DRAM.
+	 * Latency settings are for operation at 200 MHz:
+	 *   tACC = 7 cycles, tRWR = 7 cycles, fixed latency.
+	 * st,refresh = 0: chip has built-in self-refresh; disable XSPI
+	 * forced-refresh limit (tCSM is managed by the chip itself).
+	 * Driver is off by default; enable CONFIG_MEMC_STM32_XSPI_HYPERRAM
+	 * or set status = "okay" in a board-specific overlay.
+	 */
+	hyperram_dev: memory@0 {
+		compatible = "st,stm32-xspi-hyperram";
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits = 32 MB */
+		max-frequency = <DT_FREQ_M(200)>;
+		rw-recovery-time-cycle = <7>;
+		access-time-cycle = <7>;
+		fixed-latency;
+		st,refresh = <0>;
+		status = "disabled";
+	};
+};
+
+&xspi2 {
+	pinctrl-0 = <&xspim_p2_ncs1_pn1 &xspim_p2_dqs0_pn0 &xspim_p2_clk_pn6
+		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3 &xspim_p2_io2_pn4
+		     &xspim_p2_io3_pn5 &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
+		     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25um25645g: ospi-nor-flash@0 {
+		compatible = "st,stm32-xspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits = 32 MB */
+		ospi-max-frequency = <DT_FREQ_M(100)>;
+		spi-bus-width = <XSPI_OCTO_MODE>;
+		data-rate = <XSPI_DTR_TRANSFER>;
+		four-byte-opcodes;
+		status = "okay";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x70000000 DT_SIZE_M(32)>;
+
+		ext_flash: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(32)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+
+			partitions {
+				compatible = "fixed-partitions";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				boot_partition: partition@0 {
+					label = "mcuboot";
+					reg = <0x00000000 DT_SIZE_K(64)>;
+				};
+
+				slot0_partition: partition@10000 {
+					label = "image-0";
+					reg = <0x10000 DT_SIZE_K(1536)>;
+				};
+
+				slot1_partition: partition@210000 {
+					label = "image-1";
+					reg = <0x210000 DT_SIZE_K(1536)>;
+				};
+
+				storage_partition: partition@410000 {
+					label = "storage";
+					reg = <0x410000 DT_SIZE_K(64)>;
+				};
+			};
+		};
+	};
+};
+
+&i2c2 {
+	clocks = <&rcc STM32_CLOCK(APB1, 22)>,
+		 <&rcc STM32_SRC_CKPER I2C2_SEL(1)>;
+	pinctrl-0 = <&i2c2_scl_pd14 &i2c2_sda_pd4>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+
+	/* Goodix GT911 capacitive touch — used when a GT911 LCD is connected.
+	 * T_PEN (PB3) is the interrupt pin; RST is shared with LCD hardware reset.
+	 */
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpiob 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		status = "disabled";
+	};
+};
+
+&i2c4 {
+	clocks = <&rcc STM32_CLOCK(APB4, 7)>,
+		 <&rcc STM32_SRC_CKPER I2C4_SEL(1)>;
+	pinctrl-0 = <&i2c4_scl_pe13 &i2c4_sda_pe14>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+};
+
+&spi5 {
+	clocks = <&rcc STM32_CLOCK(APB2, 20)>,
+		 <&rcc STM32_SRC_CKPER SPI5_SEL(1)>;
+	pinctrl-0 = <&spi5_sck_pe15 &spi5_miso_ph8 &spi5_mosi_ph7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&fdcan3 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
+		 <&rcc STM32_SRC_CKPER FDCAN_SEL(1)>;
+	pinctrl-0 = <&fdcan3_tx_pe11 &fdcan3_rx_pe12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&sdmmc1 {
+	clocks = <&rcc STM32_CLOCK(AHB5, 8)>,
+		 <&rcc STM32_SRC_IC4 SDMMC1_SEL(2)>;
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_ph2>;
+	pinctrl-names = "default";
+	bus-width = <4>;
+	disk-name = "SD";
+	status = "okay";
+};
+
+&adc1 {
+	clocks = <&rcc STM32_CLOCK(AHB1, 5)>,
+		 <&rcc STM32_SRC_CKPER ADC12_SEL(1)>;
+	clock-names = "adcx", "adc_ker";
+	pinctrl-0 = <&adc1_inp15_pf6>;
+	pinctrl-names = "default";
+	vref-mv = <1800>;
+	status = "okay";
+};
+
+/*
+ * Ethernet RMII — 50 MHz reference clock driven by the PHY on PF7.
+ * The MAC address is read from the STM32N6 OTP bank via BSEC nvmem.
+ * PHY reset (PF5, active-low) is driven by the board at power-on;
+ * connect to phy-reset-gpios if the PHY driver supports it.
+ */
+&mac {
+	pinctrl-0 = <&eth1_rmii_ref_clk_pf7
+		     &eth1_rmii_crs_dv_pf10
+		     &eth1_rmii_tx_en_pf11
+		     &eth1_rmii_txd0_pf12
+		     &eth1_rmii_txd1_pf13
+		     &eth1_rmii_rxd0_pf14
+		     &eth1_rmii_rxd1_pf15>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	nvmem-cells = <&mac_address0>;
+	nvmem-cell-names = "mac-address";
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth1_mdio_pf4 &eth1_mdc_ph5>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x0>;
+		status = "okay";
+	};
+};
+
+zephyr_udc0: &usbotg_hs1 {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+/*
+ * SAI1 block A — transmitter (MCU → audio codec).
+ * Clocked from CKPER (HSI, 64 MHz) via SAI1_SEL(1).
+ * Pins: SCK=PC2, FS=PB0, SD=PB2, MCLK=PE2.
+ */
+&sai1_a {
+	clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+		 <&rcc STM32_SRC_CKPER SAI1_SEL(1)>;
+	pinctrl-0 = <&sai1_sck_a_pc2 &sai1_fs_a_pb0
+		     &sai1_sd_a_pb2 &sai1_mclk_a_pe2>;
+	pinctrl-names = "default";
+	dmas = <&gpdma1 2 91 (STM32_DMA_MODE_NORMAL |
+			      STM32_DMA_PRIORITY_HIGH |
+			      STM32_DMA_16BITS)>;
+	status = "disabled";
+};
+
+/*
+ * SAI1 block B — receiver (audio codec → MCU), synchronous with block A.
+ * Pin: SD_B=PE3.
+ */
+&sai1_b {
+	clocks = <&rcc STM32_CLOCK(APB2, 21)>,
+		 <&rcc STM32_SRC_CKPER SAI1_SEL(1)>;
+	pinctrl-0 = <&sai1_sd_b_pe3>;
+	pinctrl-names = "default";
+	dmas = <&gpdma1 3 92 (STM32_DMA_MODE_NORMAL |
+			      STM32_DMA_PRIORITY_HIGH |
+			      STM32_DMA_16BITS)>;
+	status = "disabled";
+};
+
+/* TIM4 CH4 on PF0 — PWM_DAC output through RC low-pass filter. */
+&timers4 {
+	st,prescaler = <9999>;
+	status = "okay";
+
+	pwm4: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim4_ch4_pf0>;
+		pinctrl-names = "default";
+	};
+};
+
+
