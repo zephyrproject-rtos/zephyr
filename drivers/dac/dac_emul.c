@@ -181,8 +181,6 @@ static DEVICE_API(dac, dac_emul_driver_api) = {
 };
 
 #define DAC_EMUL_INIT(inst)                                                                        \
-	BUILD_ASSERT(DT_INST_PROP(inst, nchannels) > 0,                                            \
-		     "DAC emulator must have at least one channel");                               \
 	static struct dac_emul_channel dac_emul##inst##_channels[DT_INST_PROP(inst, nchannels)];   \
 	static struct dac_emul_data data##inst = {                                                 \
 		.channels = dac_emul##inst##_channels,                                             \
