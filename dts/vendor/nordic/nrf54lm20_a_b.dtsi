@@ -242,6 +242,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				regulator = <&vregusb>;
+				status = "disabled";
 
 				usbhs: usbhs@20000 {
 					compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
