@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 XSPI HyperRAM (HyperBus).
+
+  Configures an XSPI controller for HyperBus-protocol DRAM (e.g.
+  Winbond W958D8NBYA5I) in memory-mapped mode.  The node must be a child
+  of an st,stm32-xspi node.
+
+compatible: "st,stm32-xspi-hyperram"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  size:
+    type: int
+    required: true
+    description: Memory size in bits.
+
+  max-frequency:
+    type: int
+    required: true
+    description: Maximum clock frequency of the HyperBus interface in Hz.
+
+  rw-recovery-time-cycle:
+    type: int
+    default: 7
+    description: |
+      Read-Write recovery time (tRWR) in XSPI clock cycles.
+      Minimum CS-high time between consecutive transactions.
+
+  access-time-cycle:
+    type: int
+    default: 7
+    description: |
+      Initial access (read) latency (tACC) in XSPI clock cycles.
+      Passed as the HLCR.TACC field; must match the memory's configured
+      read latency at the target operating frequency.
+
+  fixed-latency:
+    type: boolean
+    description: |
+      Use fixed latency mode.  When not set, variable latency is used
+      and the memory drives RWDS low during the latency phase to signal
+      additional wait cycles.
+
+  write-zero-latency:
+    type: boolean
+    description: |
+      Enable zero-latency writes.  When set, write transactions have no
+      initial latency (HLCR.WZL=1).  When not set, writes use the same
+      latency as reads.
+
+  st,refresh:
+    type: int
+    required: true
+    description: |
+      Maximum number of XSPI clock cycles the chip select may remain
+      asserted (tCSM).  A value of 0 disables the limit.  Set according
+      to the memory datasheet and the actual XSPI clock frequency.

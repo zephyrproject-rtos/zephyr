@@ -43,6 +43,15 @@ config MEMC_STM32_XSPI_PSRAM
 	help
 	  Enable STM32 XSPI Memory Controller.
 
+config MEMC_STM32_XSPI_HYPERRAM
+	bool "STM32 XSPI HyperRAM"
+	default y
+	depends on DT_HAS_ST_STM32_XSPI_HYPERRAM_ENABLED
+	select USE_STM32_HAL_XSPI
+	select PINCTRL
+	help
+	  Enable STM32 XSPI HyperRAM controller driver (HyperBus protocol).
+
 config MEMC_STM32_OSPI_PSRAM
 	bool "STM32 OSPI PSRAM"
 	default y

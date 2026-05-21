@@ -224,6 +224,7 @@ family:
       - name: m33
   - name: stm32n6x
     socs:
+    - name: stm32n647xx
     - name: stm32n657xx
   - name: stm32u0x
     socs:
