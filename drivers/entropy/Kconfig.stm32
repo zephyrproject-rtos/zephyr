@@ -64,4 +64,27 @@ config ENTROPY_STM32_CLK_CHECK
 	  available, CED is enabled by default). Disable this check if CED is
 	  disabled.
 
+config ENTROPY_STM32_RNG_CLOCKON_API_REQUIRED
+	bool
+	depends on SOC_SERIES_STM32U5X
+	default y if DT_HAS_ST_STM32_SAES_ENABLED
+	select ENTROPY_STM32_RNG_CLOCKON_API
+
+config ENTROPY_STM32_RNG_CLOCKON_API
+	bool "Clock-on API for other drivers"
+	help
+	  Enable the STM32 RNG clock-on API.
+	  This clock-on API provides a way for other drivers to request the
+	  RNG peripheral to be powered and clocked when needed.
+	  This is particularly useful for drivers that rely on the RNG
+	  peripheral for their own operations, such as PKA (Public Key
+	  Accelerator) or SAES (Secure AES), ensuring that the RNG peripheral
+	  is active and ready to provide random numbers when required.
+
+	  When this option is enabled, other drivers can utilize a dedicated
+	  API to request the RNG driver to activate the peripheral as needed.
+	  This allows for efficient power management, as the RNG peripheral
+	  can be powered down when not in use and only activated when required
+	  for itself or by other drivers.
+
 endif # ENTROPY_STM32_RNG

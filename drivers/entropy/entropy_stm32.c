@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
+#include <zephyr/drivers/entropy/stm32_entropy.h>
 #include <zephyr/random/random.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
@@ -104,6 +105,17 @@ struct entropy_stm32_rng_dev_data {
 #endif /* IRQLESS_TRNG */
 	bool filling_pools;
 
+#ifdef CONFIG_ENTROPY_STM32_RNG_CLOCKON_API
+	/* Structure to track clients accessing the RNG, used to ensure the
+	 * RNG is properly enabled (clocked and initialized) when accessed
+	 * by multiple clients, such as entropy driver, SAES, PKA, etc.
+	 */
+	struct {
+		struct k_mutex *lock;
+		volatile uint32_t req_count;
+	} clock_on;
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
+
 	RNG_POOL_DEFINE(isr, CONFIG_ENTROPY_STM32_ISR_POOL_SIZE);
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_STM32_THR_POOL_SIZE);
 };
@@ -114,15 +126,121 @@ static struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
 	.pclken	= pclken_rng
 };
 
+#ifdef CONFIG_ENTROPY_STM32_RNG_CLOCKON_API
+K_MUTEX_DEFINE(entropy_stm32_rng_clients_lock);
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
+
 static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
+#ifdef CONFIG_ENTROPY_STM32_RNG_CLOCKON_API
+	.clock_on = {
+		.lock = &entropy_stm32_rng_clients_lock,
+		.req_count = 0,
+	},
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
 };
+
+#ifdef CONFIG_ENTROPY_STM32_RNG_CLOCKON_API
+static int entropy_stm32_clockon_dec(struct entropy_stm32_rng_dev_data *dev_data)
+{
+	int ret = 0;
+	bool in_isr = k_is_in_isr();
+
+	if (!in_isr) {
+		ret = k_mutex_lock(dev_data->clock_on.lock, K_FOREVER);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if (dev_data->clock_on.req_count == 0) {
+		/* This should not happen, but protect against underflow just in case */
+		if (!in_isr) {
+			k_mutex_unlock(dev_data->clock_on.lock);
+		}
+		return -EALREADY;
+	}
+
+	dev_data->clock_on.req_count--;
+
+	if (!in_isr) {
+		k_mutex_unlock(dev_data->clock_on.lock);
+	}
+
+	return ret;
+}
+
+static int entropy_stm32_clockon_inc(struct entropy_stm32_rng_dev_data *dev_data)
+{
+	int ret = 0;
+	bool in_isr = k_is_in_isr();
+
+	if (!in_isr) {
+		ret = k_mutex_lock(dev_data->clock_on.lock, K_FOREVER);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if (dev_data->clock_on.req_count == UINT32_MAX) {
+		/* This should not happen, but protect against overflow just in case */
+		if (!in_isr) {
+			k_mutex_unlock(dev_data->clock_on.lock);
+		}
+		return -EOVERFLOW;
+	}
+
+	dev_data->clock_on.req_count++;
+
+	if (!in_isr) {
+		k_mutex_unlock(dev_data->clock_on.lock);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
+
+static int entropy_stm32_clock_enable(const struct device *dev)
+{
+	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
+	clock_control_subsys_t subsys = (clock_control_subsys_t)&dev_cfg->pclken[0];
+
+#ifdef CONFIG_ENTROPY_STM32_RNG_CLOCKON_API
+	if (clock_control_get_status(dev_data->clock, subsys) == CLOCK_CONTROL_STATUS_ON) {
+		/* Clock is already on, no need to turn it on again. */
+		return 0;
+	}
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
+
+	return clock_control_on(dev_data->clock, subsys);
+}
+
+static int entropy_stm32_clock_disable(const struct device *dev)
+{
+	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
+	clock_control_subsys_t subsys = (clock_control_subsys_t)&dev_cfg->pclken[0];
+
+#ifdef CONFIG_ENTROPY_STM32_RNG_CLOCKON_API
+	if (clock_control_get_status(dev_data->clock, subsys) == CLOCK_CONTROL_STATUS_OFF) {
+		/* Clock is already off, no need to turn it off again. */
+		return 0;
+	}
+
+	if (dev_data->clock_on.req_count > 0) {
+		/* There are still clients using the RNG, so keep it activated. */
+		return 0;
+	}
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
+
+	return clock_control_off(dev_data->clock, subsys);
+}
 
 static int entropy_stm32_suspend(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
-	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_data->rng;
 	int res;
 
@@ -151,14 +269,30 @@ static int entropy_stm32_suspend(void)
  * LL_PKA_IsEnabled(). Since RNG clock is not required by PKA, we can
  * ignore the check on this series.
  */
-#if defined(PKA) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if (defined(CONFIG_ENTROPY_STM32_RNG_CLOCKON_API) || defined(PKA)) && \
+	!defined(CONFIG_SOC_SERIES_STM32WB0X)
 #if defined(CONFIG_STM32_HAL2)
 	uint32_t pka_clock_enabled = HAL_RCC_PKA_IsEnabledClock();
 #else /* CONFIG_STM32_HAL2 */
 	uint32_t pka_clock_enabled = __HAL_RCC_PKA_IS_CLK_ENABLED();
 #endif /* CONFIG_STM32_HAL2 */
 
-	if (pka_clock_enabled && LL_PKA_IsEnabled(PKA)) {
+#if defined(CONFIG_ENTROPY_STM32_RNG_CLOCKON_API)
+	/* Decrement the clock-on client counter here in entropy_stm32_suspend,
+	 * since all code-paths goes through this function (called from release_rng()).
+	 * Besides, similarly to where the incrementing is done.
+	 */
+	res = entropy_stm32_clockon_dec(dev_data);
+	if (res != 0) {
+		return res;
+	}
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
+
+	if (pka_clock_enabled && LL_PKA_IsEnabled(PKA)
+#if defined(CONFIG_ENTROPY_STM32_RNG_CLOCKON_API)
+	    || (dev_data->clock_on.req_count > 0)
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
+	    ) {
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
@@ -166,7 +300,7 @@ static int entropy_stm32_suspend(void)
 		/* PKA needs RNG clock, so exit here if in use */
 		return 0;
 	}
-#endif /* PKA && !CONFIG_SOC_SERIES_STM32WB0X */
+#endif /* (CONFIG_ENTROPY_STM32_RNG_CLOCKON_API || PKA) && !CONFIG_SOC_SERIES_STM32WB0X */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
@@ -183,8 +317,7 @@ static int entropy_stm32_suspend(void)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32WBAX */
 
-	res = clock_control_off(dev_data->clock,
-			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	res = entropy_stm32_clock_disable(dev);
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
@@ -197,12 +330,17 @@ static int entropy_stm32_resume(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
-	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_data->rng;
 	int res;
 
-	res = clock_control_on(dev_data->clock,
-			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+#if defined(CONFIG_ENTROPY_STM32_RNG_CLOCKON_API)
+	res = entropy_stm32_clockon_inc(dev_data);
+	if (res != 0) {
+		return res;
+	}
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
+
+	res = entropy_stm32_clock_enable(dev);
 #if defined(CONFIG_SOC_STM32WB09XX)
 	/**
 	 * STM32WB09 RNG clock domain runs at (16 MHz / CLKDIV).
@@ -305,6 +443,34 @@ static void release_rng(void)
 	z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 }
+
+#ifdef CONFIG_ENTROPY_STM32_RNG_CLOCKON_API
+int entropy_stm32_clockon_request(void)
+{
+	int ret;
+	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+
+	/* Increment the clock-on client counter. */
+	ret = entropy_stm32_clockon_inc(dev->data);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* And turn the RNG's clock on. */
+	return entropy_stm32_clock_enable(dev);
+}
+
+int entropy_stm32_clockon_release(void)
+{
+	/* Properly turn the RNG's clock off.
+	 * The release_rng() function will decrement the clock-on counter and
+	 * turn the RNG's clock off if needed (i.e. if no client is using it
+	 * anymore).
+	 */
+	release_rng();
+	return 0;
+}
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
 
 static int entropy_stm32_got_error(RNG_TypeDef *rng)
 {
@@ -830,6 +996,14 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 		if (!rng_already_acquired) {
 			acquire_rng();
 		}
+#if defined(CONFIG_ENTROPY_STM32_RNG_CLOCKON_API)
+		else {
+			/* Manually increment the clock-on counter since it will
+			 * not be done via acquire_rng().
+			 */
+			entropy_stm32_clockon_inc(dev->data);
+		}
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
 
 		cnt = generate_from_isr(buf, len);
 
@@ -837,6 +1011,14 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 		if (!rng_already_acquired) {
 			release_rng();
 		}
+#if defined(CONFIG_ENTROPY_STM32_RNG_CLOCKON_API)
+		else {
+			/* Manually decrement the clock-on counter since it will
+			 * not be done via release_rng().
+			 */
+			entropy_stm32_clockon_dec(dev->data);
+		}
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
 
 #if IRQLESS_TRNG
 		/* Exit critical section */
