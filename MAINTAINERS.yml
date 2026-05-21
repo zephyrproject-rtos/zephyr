@@ -573,12 +573,7 @@ Bluetooth Audio:
     - tests/bluetooth/tester/src/audio/
     - doc/services/connectivity/bluetooth/api/audio/
     - doc/services/connectivity/bluetooth/shell/audio/
-    - samples/bluetooth/bap*/
-    - samples/bluetooth/cap*/
-    - samples/bluetooth/ccp*/
-    - samples/bluetooth/hap*/
-    - samples/bluetooth/pbp*/
-    - samples/bluetooth/tmap*/
+    - samples/bluetooth/audio/
   labels:
     - "area: Bluetooth Audio"
     - "area: Bluetooth"
@@ -711,13 +706,8 @@ Bluetooth Host:
     - doc/services/connectivity/bluetooth/shell/classic/
     - doc/services/connectivity/bluetooth/shell/host/iso.rst
     - doc/services/connectivity/bluetooth/shell/audio/
-    - samples/bluetooth/bap*/
-    - samples/bluetooth/cap*/
-    - samples/bluetooth/ccp*/
-    - samples/bluetooth/hap*/
+    - samples/bluetooth/audio/
     - samples/bluetooth/hci_*/
-    - samples/bluetooth/pbp*/
-    - samples/bluetooth/tmap*/
     - samples/bluetooth/iso_*/
     - samples/bluetooth/mesh*/
     - samples/bluetooth/classic/
