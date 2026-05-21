@@ -3316,7 +3316,8 @@ static struct net_in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 			 */
 #if defined(CONFIG_NET_NATIVE_IPV6)
 			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
-			    net_virtual_get_iface_capabilities(iface) == VIRTUAL_INTERFACE_VPN) {
+			    (net_virtual_get_iface_capabilities(iface) &
+			     VIRTUAL_INTERFACE_VPN) != 0U) {
 				struct net_if_ipv6_prefix *prefix;
 				uint8_t match_prefix_len = 64U;
 
@@ -4082,7 +4083,8 @@ static struct net_in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 			 * address matches exactly the address of the interface.
 			 */
 			if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL) &&
-			    net_virtual_get_iface_capabilities(iface) == VIRTUAL_INTERFACE_VPN) {
+			    (net_virtual_get_iface_capabilities(iface) &
+			     VIRTUAL_INTERFACE_VPN) != 0U) {
 				subnet.s_addr = ipv4->unicast[i].ipv4.address.in_addr.s_addr &
 					ipv4->unicast[i].netmask.s_addr;
 
