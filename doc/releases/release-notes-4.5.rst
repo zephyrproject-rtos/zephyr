@@ -111,6 +111,10 @@ New APIs and options
 
   * :c:member:`pcm_stream_cfg.gain_db`
 
+* Buzzer
+
+  * :c:group:`buzzer_interface`
+
 * LoRa
 
   * :c:func:`lora_recv_duty_cycle`
@@ -156,6 +160,11 @@ New Drivers
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
     (:dtcompatible:`diodes,pi4ioe5v6408`).
 
+* Buzzer
+
+  * :dtcompatible:`pwm-buzzer`
+  * :dtcompatible:`gpio-buzzer`
+
 New Samples
 ***********
 
@@ -165,6 +174,7 @@ New Samples
 
 * :zephyr:code-sample:`mctp_i2c_bus_host` (renamed from ``mctp_i2c_bus_owner``)
 * :zephyr:code-sample:`mctp_i3c_bus_host` (renamed from ``mctp_i3c_bus_owner``)
+* :zephyr:code-sample:`buzzer-tone`
 
 Libraries / Subsystems
 **********************
@@ -181,6 +191,14 @@ Libraries / Subsystems
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
+
+* Buzzer
+
+  * Added a new :ref:`buzzer subsystem <buzzer_api>` that exposes buzzer devices through a
+    unified API: ``buzzer_tone()``, ``buzzer_beep()`` (plays the device's natural frequency
+    encoded in DT), ``buzzer_set_volume()`` and ``buzzer_stop()``. Two backends are available:
+    :dtcompatible:`pwm-buzzer` for passive piezo buzzers driven from a PWM channel, and
+    :dtcompatible:`gpio-buzzer` for active buzzers controlled by a single GPIO line.
 
 Devicetree
 **********
