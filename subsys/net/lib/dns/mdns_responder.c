@@ -688,8 +688,8 @@ static int dns_read(int sock,
 				DNS_SD_GET(i, &record);
 				NET_DBG("verify alias %s\n", record->alias);
 				if (record->alias && record->iface) {
-					/* The alias must contain the needle as substring */
-					if (strstr(record->alias, needle) && (0 == strcmp(ifname, record->iface))) {
+					/* The alias must match the needle */
+					if ((0 == strcmp(record->alias, needle)) && (0 == strcmp(ifname, record->iface))) {
 						NET_DBG("%s %s %s to our alias %s%s from interface %s", "mDNS",
 							family == AF_INET ? "IPv4" : "IPv6", "query",
 							record->alias, ".local", record->iface);
