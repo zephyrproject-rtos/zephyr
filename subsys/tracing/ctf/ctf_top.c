@@ -987,7 +987,7 @@ void sys_trace_socket_shutdown_exit(int sock, int ret)
 
 void sys_trace_socket_bind_enter(int sock, const struct net_sockaddr *addr, size_t addrlen)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
 
 	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
 			    sizeof(addr_str.buf));
@@ -1002,7 +1002,7 @@ void sys_trace_socket_bind_exit(int sock, int ret)
 
 void sys_trace_socket_connect_enter(int sock, const struct net_sockaddr *addr, size_t addrlen)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
 
 	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
 			    sizeof(addr_str.buf));
@@ -1222,7 +1222,7 @@ void sys_trace_socket_getpeername_enter(int sock)
 void sys_trace_socket_getpeername_exit(int sock,  struct net_sockaddr *addr,
 				       const uint32_t *addrlen, int ret)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
 
 	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
 			    sizeof(addr_str.buf));
@@ -1238,7 +1238,7 @@ void sys_trace_socket_getsockname_enter(int sock)
 void sys_trace_socket_getsockname_exit(int sock, const struct net_sockaddr *addr,
 				       const uint32_t *addrlen, int ret)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
 
 	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
 			    sizeof(addr_str.buf));
