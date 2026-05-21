@@ -91,9 +91,11 @@
 #define DROM_SEG_ORG IROM_SEG_ORG
 #define DROM_SEG_LEN FLASH_SIZE
 
-/* External RAM (PSRAM)
- * From HAL soc.h: SOC_EXTRAM_DATA_LOW = 0x42000000, SOC_EXTRAM_DATA_HIGH = 0x44000000
- * Shares the same bus as IROM/DROM (unified cache).
+/* External RAM (PSRAM) cache window. Derived from the DT ext_ram node so
+ * the linker uses the full virtual range the MMU can map (32 MB on c5),
+ * not the physical chip size. Shares the same bus as IROM/DROM (unified
+ * cache). Physical PSRAM size is enforced by the ext_ram-overflow ASSERT
+ * in default.ld using CONFIG_ESP_SPIRAM_SIZE.
  */
-#define EXTRAM_START 0x42000000
-#define EXTRAM_SIZE  0x2000000
+#define EXTRAM_START DT_REG_ADDR(DT_NODELABEL(ext_ram))
+#define EXTRAM_SIZE  DT_REG_SIZE(DT_NODELABEL(ext_ram))
