@@ -19,6 +19,12 @@ tests:
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt1170_evk@B/mimxrt1176/cm7
+
+  drivers.video.imx_mipi_csi.build:
+    platform_allow:
+      - imx95_evk/mimx9596/m7/ddr
+    extra_configs:
+      - CONFIG_VIDEO_IMX_MIPI_CSI=y
   drivers.video.mcux_smartdma.build:
     platform_allow:
       - frdm_mcxn947/mcxn947/cpu0
