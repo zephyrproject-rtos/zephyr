@@ -6,23 +6,24 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_H_
 
-#if defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M3) ||                          \
-	defined(CONFIG_CPU_CORTEX_M4) || defined(CONFIG_CPU_CORTEX_M7) || defined(CONFIG_ARMV7_R)
-#include <zephyr/arch/arm/mpu/arm_mpu_v7m.h>
-#elif defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33) ||                          \
+#if !(defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M3) ||                        \
+	defined(CONFIG_CPU_CORTEX_M4) || defined(CONFIG_CPU_CORTEX_M7) ||                          \
+	defined(CONFIG_ARMV7_R) ||                                                                 \
+	defined(CONFIG_CPU_CORTEX_M23) || defined(CONFIG_CPU_CORTEX_M33) ||                        \
 	defined(CONFIG_CPU_CORTEX_M52) || defined(CONFIG_CPU_CORTEX_M55) ||                        \
-	defined(CONFIG_CPU_CORTEX_M85) || defined(CONFIG_AARCH32_ARMV8_R)
-#include <zephyr/arch/arm/mpu/arm_mpu_v8.h>
-#else
+	defined(CONFIG_CPU_CORTEX_M85) || defined(CONFIG_AARCH32_ARMV8_R))
 #error "Unsupported ARM CPU"
 #endif
 
-#if defined(CONFIG_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE)
+#if defined(CONFIG_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE) ||                        \
+	defined(CONFIG_AARCH32_ARMV8_R)
 /* PMSAv8 MPU */
 #define Z_ARM_CPU_HAS_PMSAV8_MPU 1
+#include <zephyr/arch/arm/mpu/arm_mpu_v8.h>
 #else
 /* PMSAv6 / PMSAv7 (MPU is identical) */
 #define Z_ARM_CPU_HAS_PMSAV8_MPU 0
+#include <zephyr/arch/arm/mpu/arm_mpu_v7m.h>
 #endif
 
 #if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_MAINLINE)
