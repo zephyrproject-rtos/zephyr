@@ -14,4 +14,15 @@ module = CPU_WORKLOAD
 module-str = CPU Workload
 source "subsys/logging/Kconfig.template.log_config"
 
+config CPU_WORKLOAD_HISTORY
+	bool "CPU runtime-history workload"
+	select THREAD_RUNTIME_STATS
+	select SCHED_THREAD_USAGE
+	select SCHED_THREAD_USAGE_ALL
+	select SCHED_THREAD_USAGE_AUTO_ENABLE
+	help
+	  Track recent CPU runtime history from scheduler runtime statistics.
+	  The history workload reports non-idle cycles, elapsed runtime-stat cycles,
+	  load percentage, and confidence since the previous cpu_workload query.
+
 endif # CPU_WORKLOAD
