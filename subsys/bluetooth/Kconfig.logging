@@ -578,6 +578,12 @@ module-str = BT_OTS
 source "$(ZEPHYR_BASE)/subsys/logging/Kconfig.template.log_config"
 endif # BT_OTS
 
+if BT_HOGP_DEVICE
+module = BT_HOGP_DEVICE
+module-str = "HOGP Device"
+source "subsys/logging/Kconfig.template.log_config"
+endif # BT_HOGP_DEVICE
+
 endmenu # Services
 
 endmenu # Bluetooth logging
