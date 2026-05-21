@@ -78,6 +78,9 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 	 */
 	data->base->EIR = ENET_EIR_MII_MASK;
 
+	/* Reset semaphore to discard any stale k_sem_give from a previous timed-out transfer */
+	k_sem_reset(&data->mdio_sem);
+
 	/*
 	 * Write MDIO frame to MII management register which will
 	 * send the command and data out to the MDIO bus as this frame:
