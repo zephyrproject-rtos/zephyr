@@ -28,8 +28,6 @@ static log_timestamp_format_func_t log_timestamp_format_func;
 int log_custom_timestamp_print(const struct log_output *output, const log_timestamp_t timestamp,
 			      const log_timestamp_printer_t printer)
 {
-	__ASSERT(log_timestamp_format_func != NULL, "custom timestamp format function not set");
-
 	if (log_timestamp_format_func) {
 		return log_timestamp_format_func(output, timestamp, printer);
 	}
