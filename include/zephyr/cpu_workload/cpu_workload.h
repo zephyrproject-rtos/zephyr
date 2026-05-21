@@ -132,6 +132,40 @@ struct cpu_workload_arrival {
 int cpu_workload_history_get(int cpu_id, struct cpu_workload_history *history);
 
 /**
+ * @brief Unified CPU workload estimate for one CPU.
+ *
+ * The estimate combines recent runtime history with forward-looking workload
+ * workloads. Runtime history is used as a conservative floor for recurring work,
+ * while ready backlog and arrival workloads describe work that is already queued
+ * or recently arrived.
+ */
+struct cpu_workload_estimate {
+	/** Estimated cycles expected for the next decision window. */
+	uint64_t estimated_cycles;
+
+	/** Estimated cycles from currently runnable work. */
+	uint64_t ready_backlog_cycles;
+
+	/** Estimated cycles from recently attributed arrivals. */
+	uint64_t expected_arrival_cycles;
+
+	/** Recent non-idle runtime-history cycles. */
+	uint64_t history_cycles;
+
+	/** Runtime-history window duration in microseconds. */
+	uint32_t history_window_us;
+
+	/** Bitmask describing which sources contributed to the estimate. */
+	uint32_t source_mask;
+
+	/** Recent runtime-history load percentage. */
+	uint8_t history_load;
+
+	/** Confidence in the estimate, from 0 to 100. */
+	uint8_t confidence;
+};
+
+/**
  * @brief Get CPU ready-backlog workload.
  *
  * @param cpu_id The ID of the CPU for which to get the ready backlog.
@@ -154,6 +188,18 @@ int cpu_workload_ready_backlog_get(int cpu_id, struct cpu_workload_ready_backlog
  * @retval -ENOTSUP If arrival attribution is not enabled.
  */
 int cpu_workload_arrival_get(int cpu_id, struct cpu_workload_arrival *arrival);
+
+/**
+ * @brief Get a unified CPU workload estimate.
+ *
+ * @param cpu_id The ID of the CPU for which to get the estimate.
+ * @param estimate Pointer to the output estimate.
+ *
+ * @retval 0 If an estimate was written.
+ * @retval -EINVAL If @p cpu_id or @p estimate is invalid.
+ * @retval -ENOTSUP If unified workload estimation is not enabled.
+ */
+int cpu_workload_estimate_get(int cpu_id, struct cpu_workload_estimate *estimate);
 
 /**
  * @}

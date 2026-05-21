@@ -88,4 +88,15 @@ config CPU_WORKLOAD_ARRIVAL
 	  cycles from those arrivals using per-thread burst profiles. This provides
 	  forward-looking workload for work that arrived since the previous query.
 
+config CPU_WORKLOAD_ESTIMATE
+	bool "Unified CPU workload estimate"
+	select CPU_WORKLOAD_HISTORY
+	select CPU_WORKLOAD_READY_BACKLOG
+	select CPU_WORKLOAD_ARRIVAL
+	help
+	  Combine runtime history, ready backlog, and arrival attribution into a
+	  single estimated cycle count. The estimate uses recent runtime history as
+	  a conservative floor and adds the forward-looking ready backlog and arrival
+	  workloads.
+
 endif # CPU_WORKLOAD
