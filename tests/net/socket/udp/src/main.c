@@ -813,6 +813,7 @@ ZTEST(net_socket_udp, test_so_rcvtimeo)
 			      sizeof(optval));
 	zassert_equal(rv, 0, "setsockopt failed (%d)", errno);
 
+	(void)memset(&addr, 0, sizeof(addr));
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
 	start_time = k_uptime_get_32();
@@ -825,6 +826,8 @@ ZTEST(net_socket_udp, test_so_rcvtimeo)
 	zassert_true(time_diff >= 300, "Expected timeout after 300ms but "
 			"was %dms", time_diff);
 
+	(void)memset(&addr, 0, sizeof(addr));
+	addrlen = sizeof(addr);
 	start_time = k_uptime_get_32();
 	recved = zsock_recvfrom(sock2, rx_buf, sizeof(rx_buf),
 				0, &addr, &addrlen);
@@ -3542,6 +3545,7 @@ static void sendto_recvfrom(int client_sock,
 	k_msleep(100);
 
 	/* Test normal recvfrom() */
+	(void)memset(&addr, 0, sizeof(addr));
 	addrlen = sizeof(addr);
 	clear_buf(rx_buf);
 	recved = zsock_recvfrom(server_sock, rx_buf, sizeof(rx_buf),
@@ -3561,7 +3565,8 @@ static void sendto_recvfrom(int client_sock,
 	zassert_equal(sent, STRLEN(TEST_STR2), "sendto failed");
 
 	/* Test normal recvfrom() */
-	addrlen2 = sizeof(addr);
+	(void)memset(&addr2, 0, sizeof(addr2));
+	addrlen2 = sizeof(addr2);
 	clear_buf(rx_buf);
 	recved = zsock_recvfrom(client_sock, rx_buf, sizeof(rx_buf),
 				expect_failure ? ZSOCK_MSG_DONTWAIT : 0,
