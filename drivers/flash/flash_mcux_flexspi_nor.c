@@ -1582,6 +1582,25 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
 						JESD216_DW15_QER_VAL_S2B1v6);
 
+	case 0x3725C2:
+		/* MX25U6432F - Macronix 64Mbit (8MB) QSPI NOR */
+		/* Note: This chip is not used by official NXP boards in Zephyr,
+		 * but is used on custom board designs.
+		 * 8MB needs only 24-bit addressing.
+		 * Skip SFDP to prevent 4-byte enable breaking XIP.
+		 * LUT matches NXP boot ROM config exactly.
+		 */
+		flexspi_lut[READ][0] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_SDR, kFLEXSPI_1PAD, 0xEB,
+					kFLEXSPI_Command_RADDR_SDR, kFLEXSPI_4PAD, 24);
+		flexspi_lut[READ][1] =
+			FLEXSPI_LUT_SEQ(kFLEXSPI_Command_DUMMY_SDR, kFLEXSPI_4PAD, 6,
+					kFLEXSPI_Command_READ_SDR, kFLEXSPI_4PAD, 0x04);
+		flexspi_lut[READ][2] = FLEXSPI_LUT_SEQ(kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00,
+						       kFLEXSPI_Command_STOP, kFLEXSPI_1PAD, 0x00);
+		data->legacy_poll = true;
+		return 0;
+
 	default:
 		return -ENOTSUP;
 	}
