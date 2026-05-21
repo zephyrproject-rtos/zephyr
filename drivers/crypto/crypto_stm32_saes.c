@@ -16,12 +16,26 @@
 #include <soc.h>
 
 #include "crypto_stm32_priv.h"
+#include <zephyr/drivers/entropy/stm32_entropy.h>
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(crypto_stm32_saes);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
+
+/* The STM32 Secure AES co-processor requires the STM32 RNG peripheral to be up,
+ * running and available as pre-requisite for the SAES operations.
+ */
+#if !DT_NODE_EXISTS(DT_NODELABEL(rng)) || !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rng))
+#error "SAES requires RNG peripheral, but no enabled RNG device found in the device tree."
+#endif /* Pre-requisite */
+
+#if !defined(CONFIG_ENTROPY_STM32_RNG_CLOCKON_API)
+#error "SAES requires RNG clock-on support in the STM32 entropy driver, "\
+	"but CONFIG_ENTROPY_STM32_RNG_CLOCKON_API is not enabled"
+#endif /* Pre-requisite */
+
 #define DT_DRV_COMPAT st_stm32_saes
 
 #define STM32_CRYPTO_TYPEDEF AES_TypeDef
@@ -63,6 +77,12 @@ static int crypto_stm32_saes_session_setup(const struct device *dev, struct ciph
 	int ctx_idx, ret;
 	struct crypto_stm32_session *session;
 
+	ret = entropy_stm32_clockon_request();
+	if (ret != 0) {
+		LOG_ERR("Failed to enable RNG device");
+		return ret;
+	}
+
 	ctx_idx = crypto_stm32_saes_get_unused_session_index(dev);
 	if (ctx_idx < 0) {
 		LOG_ERR("No free session for now");
@@ -86,7 +106,7 @@ static int crypto_stm32_saes_session_setup(const struct device *dev, struct ciph
 
 static int crypto_stm32_saes_session_free(const struct device *dev, struct cipher_ctx *ctx)
 {
-	int i;
+	int i, ret;
 	uint32_t in_use_count = 0;
 
 	/* Count the number of sessions currently in use, including the one hold
@@ -98,7 +118,11 @@ static int crypto_stm32_saes_session_free(const struct device *dev, struct ciphe
 		}
 	}
 
-	return crypto_stm32_session_free(dev, ctx, in_use_count);
+	ret = crypto_stm32_session_free(dev, ctx, in_use_count);
+
+	entropy_stm32_clockon_release();
+
+	return ret;
 }
 
 static int crypto_stm32_saes_query_caps(const struct device *dev)
@@ -108,7 +132,25 @@ static int crypto_stm32_saes_query_caps(const struct device *dev)
 
 static int crypto_stm32_saes_init(const struct device *dev)
 {
-	return crypto_stm32_init(dev, CRYPTO_STM32_AES_MODES);
+	/* Ensure RNG is ready before SAES initialization,
+	 * since SAES requires RNG as pre-requisite.
+	 */
+	int ret;
+
+	LOG_DBG("SAES initialization started");
+
+	ret = entropy_stm32_clockon_request();
+	if (ret != 0) {
+		LOG_ERR("Failed to enable RNG device");
+		return ret;
+	}
+
+	ret = crypto_stm32_init(dev, CRYPTO_STM32_AES_MODES);
+
+	entropy_stm32_clockon_release();
+
+	LOG_DBG("SAES initialization completed");
+	return ret;
 }
 
 static DEVICE_API(crypto, crypto_saes_enc_funcs) = {
