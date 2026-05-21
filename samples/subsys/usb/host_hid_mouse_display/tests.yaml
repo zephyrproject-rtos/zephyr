@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+
+sample:
+  name: USB Host HID Mouse Display
+tests:
+  sample.usbh.hid.mouse_display:
+    tags:
+      - usb
+      - shield
+      - input
+    extra_args:
+      - SHIELD="st_b_lcd40_dsi1_mb1166_a09;sparkfun_max3421e"
+    platform_allow:
+      - stm32h747i_disco/stm32h747xx/m7
+    build_only: true
