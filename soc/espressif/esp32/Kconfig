@@ -84,4 +84,6 @@ config ETH_DMA_TX_BUFFER_NUM
 
 endif # ESP32_EMAC config
 
+rsource "Kconfig.caps"
+
 endif # SOC_SERIES_ESP32
