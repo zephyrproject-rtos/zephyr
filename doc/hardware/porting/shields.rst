@@ -143,6 +143,8 @@ These describe connections to cameras and displays (strictly speaking not shield
 - :dtcompatible:`nxp,cam-44pins-connector`
 - :dtcompatible:`nxp,parallel-lcd-connector`
 - :dtcompatible:`raspberrypi,csi-connector`
+- :dtcompatible:`st,dsi-lcd-qsh-030-connector`
+- :dtcompatible:`st,dvp-cam-zif-30-connector`
 - :dtcompatible:`weact,dcmi-camera-connector`
 
 
