@@ -114,6 +114,12 @@ void k_timer_init(struct k_timer *timer,
 			 k_timer_expiry_t expiry_fn,
 			 k_timer_stop_t stop_fn)
 {
+	if (timer == NULL) {
+		return;
+	}
+
+	memset(timer, 0, sizeof(*timer));
+
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
 	timer->status = 0U;
