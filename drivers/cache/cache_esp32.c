@@ -26,6 +26,21 @@ void cache_data_disable(void)
 	/* Not supported */
 }
 
+int cache_data_flush_all(void)
+{
+	return -ENOTSUP;
+}
+
+int cache_data_invd_all(void)
+{
+	return -ENOTSUP;
+}
+
+int cache_data_flush_and_invd_all(void)
+{
+	return -ENOTSUP;
+}
+
 int cache_data_flush_range(void *addr, size_t size)
 {
 	esp_err_t ret;
