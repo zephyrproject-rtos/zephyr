@@ -1944,7 +1944,7 @@ static void test_check_ttl(int sock_c, int sock_s, int sock_p,
 #define MAX_HDR_SIZE (IPV6_HDR_SIZE + UDP_HDR_SIZE)
 	uint8_t data_to_receive[sizeof(tx_buf) + MAX_HDR_SIZE];
 	struct net_sockaddr_ll src;
-	net_socklen_t addrlen;
+	net_socklen_t addrlen = sizeof(src);
 	char ifname[CONFIG_NET_INTERFACE_NAME_LEN];
 	struct net_ifreq ifreq = { 0 };
 	struct timeval timeo_optval = {
@@ -2192,7 +2192,7 @@ ZTEST(net_socket_udp, test_v4_mcast_ttl)
 	net_socklen_t optlen;
 	struct net_sockaddr_in client_addr;
 	struct net_sockaddr_in server_addr;
-	struct net_sockaddr_in sendto_addr;
+	struct net_sockaddr_in sendto_addr = { 0 };
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_SOCKETS_PACKET);
 
@@ -2221,6 +2221,8 @@ ZTEST(net_socket_udp, test_v4_mcast_ttl)
 	zassert_equal(verify, mcast_ttl, "Different multicast TTLs (%d vs %d)",
 		      mcast_ttl, verify);
 
+	sendto_addr.sin_family = NET_AF_INET;
+	sendto_addr.sin_port = net_htons(SERVER_PORT);
 	ret = net_addr_pton(NET_AF_INET, MY_MCAST_IPV4_ADDR, &sendto_addr.sin_addr);
 	zassert_equal(ret, 0, "Cannot get IPv4 address (%d)", ret);
 
@@ -2242,7 +2244,7 @@ ZTEST(net_socket_udp, test_v6_mcast_hops)
 	net_socklen_t optlen;
 	struct net_sockaddr_in6 client_addr;
 	struct net_sockaddr_in6 server_addr;
-	struct net_sockaddr_in6 sendto_addr;
+	struct net_sockaddr_in6 sendto_addr = { 0 };
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_SOCKETS_PACKET);
 
@@ -2289,6 +2291,8 @@ ZTEST(net_socket_udp, test_v6_mcast_hops)
 	zassert_equal(verify, mcast_hops, "Different multicast hop limit (%d vs %d)",
 		      mcast_hops, verify);
 
+	sendto_addr.sin6_family = NET_AF_INET6;
+	sendto_addr.sin6_port = net_htons(SERVER_PORT);
 	ret = net_addr_pton(NET_AF_INET6, MY_MCAST_IPV6_ADDR, &sendto_addr.sin6_addr);
 	zassert_equal(ret, 0, "Cannot get IPv6 address (%d)", ret);
 
