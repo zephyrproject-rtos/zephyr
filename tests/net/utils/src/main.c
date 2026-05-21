@@ -914,7 +914,7 @@ static const char *check_ipaddr(const char *addresses)
 
 		zassert_mem_equal(addr_str, expecting,
 				  *addresses == '\0' ? strlen(orig) : addresses - orig - 1,
-				  "Address mismatch, expecing %s, got %s (len %d)\n",
+				  "Address mismatch, expecing %s, got %s (len %td)\n",
 				  expecting, addr_str, addresses - orig - 1);
 	} while (addresses != NULL && *addresses != '\0');
 
