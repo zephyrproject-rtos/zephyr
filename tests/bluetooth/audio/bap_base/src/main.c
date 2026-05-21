@@ -101,6 +101,7 @@ static void bap_base_test_suite_after(void *f)
 	struct bap_base_test_suite_fixture *fixture = f;
 
 	free(fixture->valid_base_data);
+	free(fixture->invalid_base_data);
 }
 
 static void bap_base_test_suite_teardown(void *f)
