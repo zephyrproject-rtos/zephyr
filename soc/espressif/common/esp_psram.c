@@ -18,6 +18,8 @@ extern int _rodata_reserved_end;
 
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
+extern int _ext_ram_heap_start;
+extern int _ext_ram_heap_end;
 
 struct shared_multi_heap_region smh_psram = {
 	.attr = SMH_REG_ATTR_EXTERNAL,
@@ -64,14 +66,20 @@ void esp_init_psram(void)
 	}
 
 	esp_psram_get_mapped_region(&mapped_vaddr, &mapped_size);
+	ARG_UNUSED(mapped_vaddr);
+	ARG_UNUSED(mapped_size);
 
 	/*
-	 * Use the runtime MMU-mapped address for the heap. On SoCs with
-	 * unified cache (e.g. C5, C6, H2), the exact virtual address
-	 * depends on MMU page allocation at runtime.
+	 * Use the linker-reserved heap window inside the PSRAM-backed
+	 * .ext_ram.data output section. The linker places ext_ram_noinit
+	 * and ext_ram_bss content before the heap, so starting the SMH
+	 * region at the raw MMU-mapped base would overlap and clobber
+	 * those allocations (e.g. relocated thread stacks and net packet
+	 * pools under CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM).
 	 */
-	smh_psram.addr = (uintptr_t)mapped_vaddr;
-	smh_psram.size = MIN(mapped_size, CONFIG_ESP_SPIRAM_HEAP_SIZE);
+	smh_psram.addr = (uintptr_t)&_ext_ram_heap_start;
+	smh_psram.size = (uintptr_t)&_ext_ram_heap_end -
+			 (uintptr_t)&_ext_ram_heap_start;
 
 	if (IS_ENABLED(CONFIG_ESP_SPIRAM_MEMTEST)) {
 		if (esp_psram_is_initialized()) {
