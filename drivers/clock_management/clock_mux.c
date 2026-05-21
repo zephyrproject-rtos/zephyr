@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/clock_management/clock_driver.h>
+#include <zephyr/drivers/clock_management/clock_helpers.h>
 
 #define DT_DRV_COMPAT clock_mux
 
@@ -18,47 +19,26 @@ struct clock_mux_config {
 static int mux_configure(const struct clk *clk_hw, const void *mux)
 {
 	const struct clock_mux_config *config = clk_hw->hw_data;
-	const uint32_t mux_setting = (uint32_t)(uintptr_t)mux;
 
-	uint32_t mux_mask =
-		GENMASK((config->mask_width + config->mask_offset - 1), config->mask_offset);
-	uint32_t mux_val = FIELD_PREP(mux_mask, mux_setting);
-
-	if (mux_setting >= config->parent_cnt) {
-		return -EINVAL;
-	}
-
-	sys_write32((sys_read32(config->reg) & ~mux_mask) | mux_val, config->reg);
-
-	return 0;
+	return clock_management_mux_set_parent((uintptr_t)config->reg, config->mask_width,
+					       config->mask_offset, config->parent_cnt,
+					       (uint32_t)(uintptr_t)mux);
 }
 
 static int mux_get_parent(const struct clk *clk_hw)
 {
 	const struct clock_mux_config *config = clk_hw->hw_data;
 
-	uint32_t mux_mask =
-		GENMASK((config->mask_width + config->mask_offset - 1), config->mask_offset);
-	uint8_t sel = ((sys_read32(config->reg) & mux_mask) >> config->mask_offset);
-
-	if (sel >= config->parent_cnt) {
-		return -ENOTCONN;
-	}
-
-	return sel;
+	return clock_management_mux_get_parent((uintptr_t)config->reg, config->mask_width,
+					       config->mask_offset, config->parent_cnt);
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
 static int mux_configure_recalc(const struct clk *clk_hw, const void *mux)
 {
 	const struct clock_mux_config *config = clk_hw->hw_data;
-	const uint32_t mux_setting = (uint32_t)(uintptr_t)mux;
 
-	if (mux_setting >= config->parent_cnt) {
-		return -EINVAL;
-	}
-
-	return mux_setting;
+	return clock_management_mux_validate_parent(config->parent_cnt, (uint32_t)(uintptr_t)mux);
 }
 
 static int mux_validate_parent(const struct clk *clk_hw, clock_freq_t parent_freq, uint8_t new_idx)
@@ -67,11 +47,7 @@ static int mux_validate_parent(const struct clk *clk_hw, clock_freq_t parent_fre
 	ARG_UNUSED(parent_freq);
 	const struct clock_mux_config *config = clk_hw->hw_data;
 
-	if (new_idx >= config->parent_cnt) {
-		return -EINVAL;
-	}
-
-	return 0;
+	return clock_management_mux_validate_parent(config->parent_cnt, (uint32_t)new_idx);
 }
 #endif
 
