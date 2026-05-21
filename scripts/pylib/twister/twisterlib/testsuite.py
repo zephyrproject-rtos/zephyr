@@ -553,8 +553,10 @@ Tests should reference the category and subsystem with a dot as a separator.
             if not (req_dev.application or req_dev.platform):
                 # if neither application nor platform is specified, use the same application
                 continue
-            req_app = RequiredApplication(name=req_dev.application or self.id)
-            if req_dev.platform:
-                req_app.platform = req_dev.platform
+            req_app = RequiredApplication(
+                application=req_dev.application or self.id,
+                platform=req_dev.platform,
+                path=req_dev.path
+            )
             if req_app not in self.required_applications:
                 self.required_applications.append(req_app)
