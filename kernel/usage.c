@@ -151,6 +151,7 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	stats->current_cycles   = cpu->usage->current;
 	stats->peak_cycles      = cpu->usage->longest;
+	stats->window_count     = cpu->usage->num_windows;
 
 	if (cpu->usage->num_windows == 0) {
 		stats->average_cycles = 0;
@@ -207,6 +208,7 @@ void z_sched_thread_usage(struct k_thread *thread,
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	stats->current_cycles = thread->base.usage.current;
 	stats->peak_cycles    = thread->base.usage.longest;
+	stats->window_count   = thread->base.usage.num_windows;
 
 	if (thread->base.usage.num_windows == 0) {
 		stats->average_cycles = 0;

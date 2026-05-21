@@ -225,6 +225,7 @@ typedef struct k_thread_runtime_stats {
 	uint64_t current_cycles;      /* current # of non-idle cycles */
 	uint64_t peak_cycles;         /* peak # of non-idle cycles */
 	uint64_t average_cycles;      /* average # of non-idle cycles */
+	uint32_t window_count;        /* runtime usage window count */
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
