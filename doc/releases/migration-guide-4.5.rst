@@ -623,6 +623,12 @@ Bluetooth Audio
     * :kconfig:option:`CONFIG_BT_BAP_BROADCAST_ASSISTANT`
 
     (:github:`107989`)
+  * :zephyr:code-sample:`bluetooth_bap_broadcast_assistant`,
+    :zephyr:code-sample:`bluetooth_bap_broadcast_sink`,
+    :zephyr:code-sample:`bluetooth_bap_broadcast_source`,
+    :zephyr:code-sample:`bluetooth_bap_unicast_client` and
+    :zephyr:code-sample:`bluetooth_bap_unicast_server` have been moved from
+    :zephyr_file:`samples/bluetooth/` to :zephyr_file:`samples/bluetooth/audio`.
 
 * CAP
 
@@ -637,6 +643,10 @@ Bluetooth Audio
     as :c:func:`bt_cap_commander_broadcast_reception_start` now ensures this when
     :c:member:`bt_cap_commander_cb.broadcast_reception_start` is called. This also applies for
     :c:func:`bt_cap_commander_broadcast_reception_stop` in a similar manner. (:github:`101070`)
+  * :zephyr:code-sample:`bluetooth_cap_acceptor`,
+    :zephyr:code-sample:`bluetooth_cap_handover` and
+    :zephyr:code-sample:`bluetooth_cap_initiator` have been moved from
+    ``samples/bluetooth/`` to ``samples/bluetooth/audio``.
 
 * CCP
 
@@ -654,6 +664,9 @@ Bluetooth Audio
     Additionally the ``BT_TBS_FEATURE_*`` macros have been changed to ``BT_TBS_OPTIONAL_OPCODE_*``.
     Applications can do a simple search-and-replace for ``BT_TBS_FEATURE_`` to
     ``BT_TBS_OPTIONAL_OPCODE_``. (:github:`103350`)
+  * :zephyr:code-sample:`bluetooth_ccp_call_control_client` and
+    :zephyr:code-sample:`bluetooth_ccp_call_control_server` have been moved from
+    ``samples/bluetooth/`` to ``samples/bluetooth/audio``.
 
 * CSIP
 
@@ -663,6 +676,25 @@ Bluetooth Audio
     * Coordinated Set Size → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_SIZE_SUPPORT`
     * Set Member Lock → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_LOCK_SUPPORT`
     * Set Member Rank → :kconfig:option:`CONFIG_BT_CSIP_SET_MEMBER_RANK_SUPPORT`
+
+* HAP
+
+  * :zephyr:code-sample:`bluetooth_hap_ha` has been moved from
+    ``samples/bluetooth/`` to ``samples/bluetooth/audio``.
+
+* PBP
+
+  * :zephyr:code-sample:`bluetooth_public_broadcast_sink` and
+    :zephyr:code-sample:`bluetooth_public_broadcast_source` have been moved from
+    ``samples/bluetooth/`` to ``samples/bluetooth/audio``.
+
+* TMAP
+
+  * :zephyr:code-sample:`ble_peripheral_tmap_bmr`,
+    :zephyr:code-sample:`ble_peripheral_tmap_bms`,
+    :zephyr:code-sample:`ble_peripheral_tmap_central` and
+    :zephyr:code-sample:`ble_peripheral_tmap_peripheral` have been moved from
+    ``samples/bluetooth/`` to ``samples/bluetooth/audio``.
 
 .. zephyr-keep-sorted-stop
 
