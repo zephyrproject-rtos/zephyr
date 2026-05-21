@@ -2008,7 +2008,7 @@ ZTEST(coap, test_response_matching)
 		struct coap_packet response_pkt = { 0 };
 		struct net_sockaddr from = { 0 };
 		struct coap_reply *match;
-		uint8_t data[64];
+		uint8_t data[64] = { 0 };
 		int ret;
 
 		ret = coap_packet_init(&response_pkt, data, sizeof(data), COAP_VERSION_1,
