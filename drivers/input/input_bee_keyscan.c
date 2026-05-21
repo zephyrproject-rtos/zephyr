@@ -156,19 +156,6 @@ static void manual_keyscan_timer_cb(struct k_timer *timer)
 
 	bee_keyscan_init_driver(dev, KeyScan_Manual_Scan_Mode, KeyScan_Manual_Sel_Bit);
 }
-
-static bool
-bee_keyscan_all_released_and_debounced(const struct input_kbd_matrix_common_config *config)
-{
-	for (int c = 0; c < config->col_size; c++) {
-		if (config->matrix_unstable_state[c] != 0 || config->matrix_stable_state[c] != 0) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
 #endif
 
 static void bee_keyscan_process_matrix(const struct device *dev, uint8_t new_press_num,
@@ -206,7 +193,7 @@ static void bee_keyscan_process_matrix(const struct device *dev, uint8_t new_pre
 	input_kbd_matrix_update_state(dev);
 
 #ifndef CONFIG_BEE_INPUT_KEYSCAN_AUTOSCAN_MODE
-	if (new_press_num == 0 && bee_keyscan_all_released_and_debounced(cfg_common)) {
+	if (new_press_num == 0 && !input_kbd_matrix_active(dev)) {
 		k_timer_stop(&manual_keyscan_timer);
 		(void)clock_control_off(BEE_CLOCK_CONTROLLER,
 					(clock_control_subsys_t)&config->clkid);
