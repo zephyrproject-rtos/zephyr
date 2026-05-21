@@ -460,6 +460,13 @@ config SCHED_THREAD_USAGE_AUTO_ENABLE
 	  When set, this option automatically enables the gathering of both
 	  the thread and CPU usage statistics.
 
+config SCHED_THREAD_USAGE_ARRIVAL_STATS
+	bool "Track thread arrival statistics"
+	depends on SCHED_THREAD_USAGE
+	help
+	  Track raw scheduler wakeup arrival source bits and arrival counts in
+	  each thread's runtime usage statistics.
+
 endif # THREAD_RUNTIME_STATS
 
 menuconfig THREAD_RUNTIME_STACK_SAFETY

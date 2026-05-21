@@ -95,6 +95,9 @@ static ALWAYS_INLINE void *z_sched_next_handle(struct k_thread *curr)
 
 void z_sched_start(struct k_thread *thread);
 void z_ready_thread(struct k_thread *thread);
+#ifdef CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS
+void z_sched_thread_arrival_stats_update(struct k_thread *thread, uint32_t source);
+#endif /* CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS */
 struct k_thread *z_swap_next_thread(void);
 void move_current_to_end_of_prio_q(void);
 

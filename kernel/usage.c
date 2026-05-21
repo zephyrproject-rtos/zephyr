@@ -225,6 +225,35 @@ void z_sched_thread_usage(struct k_thread *thread,
 	k_spin_unlock(&usage_lock, key);
 }
 
+#ifdef CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS
+static void sched_thread_reset_arrival_stats(struct k_cycle_stats *usage)
+{
+	usage->arrival_source_mask = 0U;
+	usage->arrival_count = 0U;
+}
+
+void z_sched_thread_arrival_stats_update(struct k_thread *thread, uint32_t source)
+{
+	struct k_cycle_stats *usage = &thread->base.usage;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&usage_lock);
+
+	if (!usage->track_usage) {
+		k_spin_unlock(&usage_lock, key);
+		return;
+	}
+
+	if (usage->arrival_count < UINT16_MAX) {
+		usage->arrival_count++;
+	}
+
+	usage->arrival_source_mask |= source;
+
+	k_spin_unlock(&usage_lock, key);
+}
+#endif /* CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS */
+
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 int k_thread_runtime_stats_enable(k_tid_t  thread)
 {
@@ -238,6 +267,9 @@ int k_thread_runtime_stats_enable(k_tid_t  thread)
 
 	if (!thread->base.usage.track_usage) {
 		thread->base.usage.track_usage = true;
+#ifdef CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS
+		sched_thread_reset_arrival_stats(&thread->base.usage);
+#endif /* CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS */
 		thread->base.usage.num_windows++;
 		thread->base.usage.current = 0;
 	}
