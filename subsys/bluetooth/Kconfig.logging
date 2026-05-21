@@ -584,6 +584,12 @@ module-str = "HOGP Device"
 source "subsys/logging/Kconfig.template.log_config"
 endif # BT_HOGP_DEVICE
 
+if BT_HOGP_HOST
+module = BT_HOGP_HOST
+module-str = "HOGP Host"
+source "subsys/logging/Kconfig.template.log_config"
+endif # BT_HOGP_HOST
+
 endmenu # Services
 
 endmenu # Bluetooth logging
