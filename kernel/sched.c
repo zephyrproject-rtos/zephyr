@@ -441,7 +441,7 @@ void z_unpend_thread_no_timeout(struct k_thread *thread)
 	}
 }
 
-void z_sched_wake_thread_locked(struct k_thread *thread)
+void z_sched_wake_thread_locked_source(struct k_thread *thread, uint32_t source)
 {
 	/* No K_SPINLOCK: caller must hold _sched_spinlock when calling */
 	bool killed = (thread->base.thread_state &
@@ -453,8 +453,24 @@ void z_sched_wake_thread_locked(struct k_thread *thread)
 			unpend_thread_no_timeout(thread);
 		}
 		z_mark_thread_as_not_sleeping(thread);
+#ifdef CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS
+		/* Record the source of this wake-up for statistics and attribution purposes. */
+		z_sched_thread_arrival_stats_update(thread, source);
+#else
+		ARG_UNUSED(source);
+#endif /* CONFIG_SCHED_THREAD_USAGE_ARRIVAL_STATS */
 		ready_thread(thread);
 	}
+}
+
+void z_sched_wake_thread_locked(struct k_thread *thread)
+{
+	/*
+	 * Callers that do not pass a more specific source are treated as
+	 * synchronous wakeups. Scheduler paths with a known source can call
+	 * z_sched_wake_thread_locked_source() directly.
+	 */
+	z_sched_wake_thread_locked_source(thread, K_THREAD_ARRIVAL_SOURCE_SYNC);
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS

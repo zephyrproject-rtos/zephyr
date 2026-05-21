@@ -122,6 +122,16 @@ bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data);
 void z_sched_wake_thread_locked(struct k_thread *thread);
 
 /**
+ * Wakes the specified thread and records the scheduler arrival source.
+ *
+ * @warning Caller must hold _sched_spinlock when calling this function!
+ *
+ * @param thread Given thread to wake up.
+ * @param source Thread arrival source bitmask.
+ */
+void z_sched_wake_thread_locked_source(struct k_thread *thread, uint32_t source);
+
+/**
  * Wake up all threads pending on the provided wait queue
  *
  * Convenience function to invoke z_sched_wake() on all threads in the queue
