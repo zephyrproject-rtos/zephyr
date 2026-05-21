@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Tenstorrent AI ULC
+ * Copyright (c) 2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,10 +73,54 @@ clock_freq_t clock_management_clk_rate(const struct clk *clk_hw);
 clock_freq_t clock_management_best_rate(const struct clk *clk_hw, clock_freq_t rate_req,
 					bool commit);
 
+/**
+ * @brief Common function to validate a potential parent for a mux clock
+ *
+ * Validate a potential parent for a clock multiplexer. This function is
+ * intended to be used by clock mux drivers that have a register layout
+ * compatible with the parameters of this function, to avoid code duplication.
+ * If the given parent is valid, this function returns the parent.
+ */
+int clock_management_mux_validate_parent(uint32_t parent_cnt, uint32_t parent);
+
+/**
+ * @brief Common function to get clock parent of a mux clock
+ *
+ * Get the current configured parent of a clock multiplexer. This function is
+ * intended to be used by clock mux drivers that have a register layout
+ * compatible with the parameters of this function, to avoid code duplication.
+ * Manufacturers may place certain requirements on when and how the multiplexer
+ * can be switched. These requirements are to be handled by the caller.
+ * @param reg Register address of the multiplexer control register
+ * @param mask_width Width of the multiplexer field in bits
+ * @param mask_offset Bit offset of the multiplexer field within the register
+ * @param parent_cnt Number of parents supported by the multiplexer
+ * @return index of the current parent, or a negative errno on failure
+ */
+int clock_management_mux_get_parent(uintptr_t reg, uint8_t mask_width, uint8_t mask_offset,
+				    uint32_t parent_cnt);
+
+/**
+ * @brief Common function to set clock parent of a mux clock
+ *
+ * Set the parent of a clock multiplexer. This function is intended to be used
+ * by clock mux drivers that have a register layout compatible with the
+ * parameters of this function, to avoid code duplication. Manufacturers may
+ * place certain requirements on when and how the multiplexer can be switched.
+ * These requirements are to be handled by the caller.
+ * @param reg Register address of the multiplexer control register
+ * @param mask_width Width of the multiplexer field in bits
+ * @param mask_offset Bit offset of the multiplexer field within the register
+ * @param parent_cnt Number of parents supported by the multiplexer
+ * @param parent Index of the parent to set
+ * @return 0 on success, or a negative errno on failure
+ */
+int clock_management_mux_set_parent(uintptr_t reg, uint8_t mask_width, uint8_t mask_offset,
+				    uint32_t parent_cnt, uint32_t parent);
+
 #ifdef __cplusplus
 }
 #endif
-
 
 /**
  * @}

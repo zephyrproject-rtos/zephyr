@@ -1,6 +1,7 @@
 /*
  * Copyright 2024 NXP
  * Copyright 2025 Tenstorrent AI ULC
+ * Copyright 2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,34 +25,18 @@ struct syscon_clock_mux_config {
 static int syscon_clock_mux_get_parent(const struct clk *clk_hw)
 {
 	const struct syscon_clock_mux_config *config = clk_hw->hw_data;
-	uint32_t mux_mask = GENMASK((config->mask_width +
-				   config->mask_offset - 1),
-				   config->mask_offset);
-	uint8_t sel = ((*config->reg) & mux_mask) >> config->mask_offset;
 
-	if (sel >= config->parent_cnt) {
-		return -ENOTCONN;
-	}
-
-	return sel;
+	return clock_management_mux_get_parent((uintptr_t)config->reg, config->mask_width,
+					       config->mask_offset, config->parent_cnt);
 }
 
 static int syscon_clock_mux_configure(const struct clk *clk_hw, const void *mux)
 {
 	const struct syscon_clock_mux_config *config = clk_hw->hw_data;
 
-	uint32_t mux_mask = GENMASK((config->mask_width +
-				   config->mask_offset - 1),
-				   config->mask_offset);
-	uint32_t mux_val = FIELD_PREP(mux_mask, ((uint32_t)mux));
-
-	if (((uint32_t)mux) > config->parent_cnt) {
-		return -EINVAL;
-	}
-
-	(*config->reg) = ((*config->reg) & ~mux_mask) | mux_val;
-
-	return 0;
+	return clock_management_mux_set_parent((uintptr_t)config->reg, config->mask_width,
+					       config->mask_offset, config->parent_cnt,
+					       (uint32_t)(uintptr_t)mux);
 }
 
 #if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME)
@@ -60,11 +45,7 @@ static int syscon_clock_mux_configure_recalc(const struct clk *clk_hw,
 {
 	const struct syscon_clock_mux_config *config = clk_hw->hw_data;
 
-	if (((uint32_t)mux) > config->parent_cnt) {
-		return -EINVAL;
-	}
-
-	return (int)(uintptr_t)mux;
+	return clock_management_mux_validate_parent(config->parent_cnt, (uint32_t)(uintptr_t)mux);
 }
 
 static int syscon_clock_mux_validate_parent(const struct clk *clk_hw,
@@ -73,7 +54,7 @@ static int syscon_clock_mux_validate_parent(const struct clk *clk_hw,
 	const struct syscon_clock_mux_config *config = clk_hw->hw_data;
 	int ret;
 
-	if (new_idx >= config->parent_cnt) {
+	if (clock_management_mux_validate_parent(config->parent_cnt, (uint32_t)new_idx) < 0) {
 		return -EINVAL;
 	}
 
