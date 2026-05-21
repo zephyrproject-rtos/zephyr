@@ -28,4 +28,5 @@ supported:
   - i2c
   - watchdog
   - pwm
+  - kpp
 vendor: nxp
