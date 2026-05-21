@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(cap_initiator_self_tets)
+project(cap_initiator_self_tests)
 
 set(cap_initiator_path ${ZEPHYR_BASE}/samples/bluetooth/cap_initiator)
 
