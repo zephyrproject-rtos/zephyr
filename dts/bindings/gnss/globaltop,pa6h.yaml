@@ -14,4 +14,5 @@ properties:
     default: 1000
     description: |
       Initial fix update interval in milliseconds.
-      Valid range is 100 to 10000 ms.
+    min: 100
+    max: 10000

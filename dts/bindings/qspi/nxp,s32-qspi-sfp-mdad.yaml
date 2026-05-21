@@ -40,8 +40,9 @@ child-binding:
       default: 0
       description: |
         Defines the mask value for the ID-Match comparison.
-        Valid range: 0 - 63. The default corresponds to the
-        reset value of the register field.
+        The default corresponds to the reset value of the register field.
+      min: 0
+      max: 63
 
     domain-id:
       type: int

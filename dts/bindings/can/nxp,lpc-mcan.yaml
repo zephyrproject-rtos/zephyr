@@ -26,5 +26,7 @@ properties:
     type: int
     default: 1
     description: |
-      Configure the prescaler for the external timestamp counter. Valid range is 1 to 2048. Default
-      is 1, corresponding to the ETSCC register reset value.
+      Configure the prescaler for the external timestamp counter.
+      Default is 1, corresponding to the ETSCC register reset value.
+    min: 1
+    max: 2048

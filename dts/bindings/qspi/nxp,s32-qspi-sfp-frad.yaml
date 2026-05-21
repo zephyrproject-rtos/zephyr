@@ -49,5 +49,6 @@ child-binding:
       default: 0
       description: |
         The domain master ID that owns the exclusive access lock.
-        Valid range: 0 - 63. The default corresponds to the reset
-        value of the register field.
+        The default corresponds to the reset value of the register field.
+      min: 0
+      max: 63

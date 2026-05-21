@@ -135,8 +135,9 @@ properties:
     type: int
     required: true
     description: |
-      Data offset in the hardware RX packet buffer (in bytes). Valid range is
-      0-3 bytes.
+      Data offset in the hardware RX packet buffer (in bytes).
+    min: 0
+    max: 3
 
   hw-tx-buffer-size-full:
     type: boolean

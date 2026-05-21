@@ -15,8 +15,10 @@ properties:
     type: int
     default: 1
     description: |
-      Specifies the prescale value. Valid range: 0x0 - 0xFFFFFFFF.
+      Specifies the prescale value.
       The clock is divided by (prescaler + 1).
+    min: 0
+    max: 0xFFFFFFFF
 
   clk-source:
     type: int

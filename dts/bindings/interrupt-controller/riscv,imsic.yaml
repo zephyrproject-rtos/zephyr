@@ -18,6 +18,8 @@ properties:
     description: |
       Number of interrupt identities (EIIDs) supported by this IMSIC instance.
       Per RISC-V AIA specification, valid range is 1-2047 (EIID 0 is reserved).
+    min: 1
+    max: 2047
 
   riscv,hart-id:
     type: int
