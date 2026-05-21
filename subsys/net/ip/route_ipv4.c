@@ -187,7 +187,7 @@ bool net_route_ipv4_get_info(struct net_if *iface,
 
 int net_route_ipv4_packet(struct net_pkt *pkt, const struct net_in_addr *nexthop)
 {
-	if (nexthop == NULL) {
+	if (pkt == NULL || nexthop == NULL || net_pkt_iface(pkt) == NULL) {
 		return -EINVAL;
 	}
 

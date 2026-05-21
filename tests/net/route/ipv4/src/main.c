@@ -478,6 +478,31 @@ static void test_route_ipv4_packet_arp_handoff(void)
 		   "Original routed packet was not queued pending ARP");
 }
 
+static void test_route_ipv4_packet_without_iface(void)
+{
+	struct net_ipv4_hdr *hdr;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv4_hdr),
+					NET_AF_INET, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "Packet alloc failed");
+
+	hdr = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv4_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv4 header");
+
+	hdr->ttl = 1U;
+	net_ipv4_addr_copy_raw(hdr->src, my_addr.s4_addr);
+	net_ipv4_addr_copy_raw(hdr->dst, dest_addr.s4_addr);
+
+	net_pkt_set_iface(pkt, NULL);
+
+	zassert_equal(net_route_ipv4_packet(pkt, &gateway_addr), -EINVAL,
+		      "IPv4 route packet should reject missing iface");
+
+	net_pkt_unref(pkt);
+}
+
 static void test_route_ipv4_packet_multi_iface(void)
 {
 	struct net_route_entry *route_iface0;
@@ -571,6 +596,7 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_onlink_subnet();
 	test_route_ipv4_default_route();
 	test_route_ipv4_packet_arp_handoff();
+	test_route_ipv4_packet_without_iface();
 	test_route_ipv4_packet_multi_iface();
 	test_route_ipv4_host_route_overrides_normal_iface();
 	test_route_ipv4_select_src_iface_uses_explicit_route();
