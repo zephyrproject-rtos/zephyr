@@ -881,12 +881,13 @@ def print_property_table(prop_specs, string_io, deprecated=False):
         if prop_spec.required:
             details += '\n\nThis property is **required**.'
 
-        if prop_spec.default:
+        if prop_spec.default is not None:
             details += f'\n\nDefault value: ``{format_value(prop_spec.default)}``'
 
-        if prop_spec.const:
+        if prop_spec.const is not None:
             details += f'\n\nConstant value: ``{format_value(prop_spec.const)}``'
-        elif prop_spec.enum:
+
+        if prop_spec.enum is not None:
             details += ('\n\nLegal values: ' +
                         ', '.join(f'``{format_value(val)}``' for val in
                                   prop_spec.enum))
