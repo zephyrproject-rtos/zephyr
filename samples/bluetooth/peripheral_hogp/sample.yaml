@@ -1,0 +1,11 @@
+sample:
+  name: Bluetooth Peripheral HOGP
+  description: BLE HID over GATT Profile Device (Mouse)
+tests:
+  sample.bluetooth.peripheral_hogp:
+    tags:
+      - bluetooth
+    platform_allow:
+      - native_sim/native/64
+      - nrf52840dk/nrf52840
+    harness: bluetooth
