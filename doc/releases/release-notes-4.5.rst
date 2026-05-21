@@ -67,6 +67,8 @@ Removed APIs and options
     * ``struct openthread_state_changed_cb``
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
 
+* West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
+
 Deprecated APIs and options
 ===========================
 
