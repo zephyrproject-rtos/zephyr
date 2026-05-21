@@ -491,7 +491,7 @@ void z_thread_timeout(struct _timeout *timeout)
 	struct k_thread *thread = CONTAINER_OF(timeout,
 					       struct k_thread, base.timeout);
 
-	z_sched_wake_thread_locked(thread);
+	z_sched_wake_thread_locked_source(thread, K_THREAD_ARRIVAL_SOURCE_TIMEOUT);
 	k_spin_unlock(&_sched_spinlock, key);
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
