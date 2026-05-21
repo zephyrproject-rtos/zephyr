@@ -8,6 +8,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util_internal.h>
 #include <instances/r_adc.h>
@@ -87,6 +89,17 @@ struct adc_ra_data {
 	/** Calibration process semaphore */
 	struct k_sem calibrate_sem;
 };
+
+static inline void adc_ra_pm_policy_state_lock_get(void)
+{
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
+static inline void adc_ra_pm_policy_state_lock_put(void)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+}
 
 static adc_sample_state_reg_t map_channel_to_sample_state_reg(uint8_t channel_id)
 {
@@ -181,6 +194,13 @@ static void renesas_ra_adc_callback(adc_callback_args_t *p_args)
 
 			channels = channels >> 1;
 		}
+
+		/*
+		 * Release the PM policy locks that were acquired in
+		 * adc_context_start_sampling().
+		 */
+		adc_ra_pm_policy_state_lock_put();
+
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
 
@@ -291,7 +311,10 @@ static int adc_ra_start_read(const struct device *dev, const struct adc_sequence
 		if (FSP_SUCCESS != fsp_err) {
 			return -EIO;
 		}
+		/* Lock the PM policy state to wait for the calibration to complete */
+		adc_ra_pm_policy_state_lock_get();
 		k_sem_take(&data->calibrate_sem, K_FOREVER);
+		adc_ra_pm_policy_state_lock_put();
 	}
 
 	adc_context_start_read(&data->ctx, sequence);
@@ -324,6 +347,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_ra_data *data = CONTAINER_OF(ctx, struct adc_ra_data, ctx);
 
 	data->channels = ctx->sequence.channels;
+
+	/* Prevent the system from entering low-power states that would interfere with sampling */
+	adc_ra_pm_policy_state_lock_get();
 
 	R_ADC_ScanStart(&data->adc);
 }
@@ -372,12 +398,53 @@ static int adc_ra_init(const struct device *dev)
 		if (FSP_SUCCESS != fsp_err) {
 			return -EIO;
 		}
+		/* Lock the PM policy state to wait for the calibration to complete */
+		adc_ra_pm_policy_state_lock_get();
 		k_sem_take(&data->calibrate_sem, K_FOREVER);
+		adc_ra_pm_policy_state_lock_put();
 	}
 
 	adc_context_unlock_unconditionally(&data->ctx);
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int adc_ra_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct adc_ra_data *data = dev->data;
+	fsp_err_t fsp_err = FSP_SUCCESS;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		R_ADC_ScanStop(&data->adc);
+
+		fsp_err = R_ADC_Close(&data->adc);
+		if (fsp_err != FSP_SUCCESS) {
+			return -EIO;
+		}
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		fsp_err = R_ADC_Open(&data->adc, &data->f_config);
+		if (fsp_err != FSP_SUCCESS) {
+			return -EIO;
+		}
+
+		if (data->f_channel_cfg.scan_mask != 0) {
+			fsp_err = R_ADC_ScanCfg(&data->adc, &data->f_channel_cfg);
+			if (FSP_SUCCESS != fsp_err) {
+				return -EIO;
+			}
+		}
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
 
 #define EVENT_ADC_SCAN_END(unit) BSP_PRV_IELS_ENUM(CONCAT(EVENT_ADC, unit, _SCAN_END))
 
@@ -456,8 +523,10 @@ static int adc_ra_init(const struct device *dev)
 			},                                                                         \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(idx, adc_ra_init, NULL, &adc_ra_data_##idx, &adc_ra_config_##idx,    \
-			      POST_KERNEL, CONFIG_ADC_INIT_PRIORITY, &adc_ra_api_##idx)
+	PM_DEVICE_DT_INST_DEFINE(idx, adc_ra_pm_action);                                           \
+	DEVICE_DT_INST_DEFINE(idx, adc_ra_init, PM_DEVICE_DT_INST_GET(idx), &adc_ra_data_##idx,    \
+			      &adc_ra_config_##idx, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,         \
+			      &adc_ra_api_##idx)
 
 #define DT_DRV_COMPAT renesas_ra_adc12
 DT_INST_FOREACH_STATUS_OKAY_VARGS(ADC_RA_INIT_VARIANT, ADC_VARIANT_ADC12, 12, ADC_RESOLUTION_12_BIT)
