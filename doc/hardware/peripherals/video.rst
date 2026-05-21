@@ -48,6 +48,7 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_VIDEO`
+* :kconfig:option:`CONFIG_VIDEO_VD56G3` (STMicroelectronics VD56G3 / VB56G3 sensor)
 
 API Reference
 *************

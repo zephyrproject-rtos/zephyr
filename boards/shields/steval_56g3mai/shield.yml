@@ -1,0 +1,6 @@
+shield:
+  name: steval_56g3mai
+  full_name: ST STEVAL-56G3MAI (VD56G3 S-Board)
+  vendor: st
+  supported_features:
+    - video

@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 LANDROVAL
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STMicroelectronics VD56G3 / VB56G3 1.5 MP monochrome global shutter
+  CMOS image sensor (1124 x 1364) with MIPI CSI-2 D-PHY output (1 or 2 lanes)
+  and I2C (CCI) control interface.
+
+  VD56G3 = bare die (sensor as reconstructed wafer).
+  VB56G3 = OBGA package.
+
+  External Vertical Timing (VT) sync allows multiple cameras to be operated
+  in lock-step:
+    - "leader"   : the sensor drives an FSYNC_OUT pulse on one of its 8
+                   GPIOs (st,out-sync property).
+    - "follower" : the sensor waits for an external pulse on GPIO0 before
+                   each frame (st,in-sync property, GPIO0 only).
+
+compatible: "st,vd56g3"
+
+include: i2c-device.yaml
+
+properties:
+  clocks:
+    description: |
+      External input clock (CLKIN) feeding the sensor. Must be in the
+      6 MHz - 27 MHz range. The sensor firmware is preconfigured for 12 MHz.
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      XSHUTDOWN pin. Asserted low to keep the device in HW_STANDBY,
+      released (high) to start the boot sequence. The driver receives this
+      as an active-low signal.
+
+  st,out-sync:
+    type: array
+    description: |
+      List of on-sensor GPIO pin indices (0..7, not a Zephyr ``gpio``
+      phandle) to configure as FSYNC_OUT output, pulsed at the start of every
+      frame. Used to make this sensor act as a *leader* for one or more
+      downstream cameras in a multi-camera array.
+
+  st,in-sync:
+    type: boolean
+    description: |
+      When set, configure on-sensor GPIO0 as VT_SLAVE_MODE input. The sensor
+      will then wait for an external sync pulse on GPIO0 before each frame,
+      making it act as a *follower*. Only GPIO0 supports this mode.
+
+  st,csi-lane0-polarity-invert:
+    type: boolean
+    description: |
+      Invert the differential polarity (P/N swap) of CSI-2 data lane 0 on the
+      sensor side. Useful when the physical routing swaps the lane P/N pairs.
+
+  st,csi-lane1-polarity-invert:
+    type: boolean
+    description: |
+      Invert the differential polarity (P/N swap) of CSI-2 data lane 1 on the
+      sensor side.
+
+  st,csi-clock-polarity-invert:
+    type: boolean
+    description: |
+      Invert the differential polarity (P/N swap) of the CSI-2 clock lane on
+      the sensor side.
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml

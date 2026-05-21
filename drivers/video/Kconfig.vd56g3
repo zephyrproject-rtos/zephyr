@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 LANDROVAL
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_VD56G3
+	bool "STMicroelectronics VD56G3 / VB56G3 monochrome image sensor"
+	depends on DT_HAS_ST_VD56G3_ENABLED
+	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_VD56G3),reset-gpios)
+	default y
+	help
+	  Enable driver for the STMicroelectronics VD56G3 / VB56G3 1.5 MP
+	  monochrome global shutter CMOS image sensor with MIPI CSI-2
+	  D-PHY output and I2C (CCI) control interface.

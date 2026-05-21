@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 LANDROVAL
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_STEVAL_56G3MAI
+
+configdefault VIDEO_VD56G3 y
+
+endif # SHIELD_STEVAL_56G3MAI
+
+if SHIELD_STEVAL_56G3MAI && VIDEO_STM32_DCMIPP
+
+configdefault VIDEO_STM32_DCMIPP_SENSOR_PIXEL_FORMAT "Y10P"
+configdefault VIDEO_STM32_DCMIPP_SENSOR_WIDTH 1124
+configdefault VIDEO_STM32_DCMIPP_SENSOR_HEIGHT 1364
+
+# Assert the camera connector power rail on boards that define csi_gpio1_hog.
+configdefault GPIO_HOGS y
+
+endif # SHIELD_STEVAL_56G3MAI && VIDEO_STM32_DCMIPP

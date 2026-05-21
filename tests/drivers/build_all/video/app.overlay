@@ -17,6 +17,12 @@
 		#clock-cells = <0>;
 	};
 
+	vd56g3_input_clock: vd56g3-input-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <12000000>;
+		#clock-cells = <0>;
+	};
+
 	imx219_input_clock: imx219-input-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <24000000>;
@@ -102,9 +108,22 @@
 				};
 			};
 
-			test_i2c_mipid02: bridge@8 {
-				compatible = "st,mipid02";
+			test_i2c_vd56g3: vd56g3@8 {
+				compatible = "st,vd56g3";
 				reg = <0x8>;
+				clocks = <&vd56g3_input_clock>;
+				reset-gpios = <&test_gpio 0 0>;
+
+				port {
+					test_vd56g3_ep: endpoint {
+						remote-endpoint-label = "";
+					};
+				};
+			};
+
+			test_i2c_mipid02: bridge@9 {
+				compatible = "st,mipid02";
+				reg = <0x9>;
 				reset-gpios = <&test_gpio 0 0>;
 
 				ports {
@@ -133,21 +152,21 @@
 				};
 			};
 
-			test_i2c_ov9655: ov9655@9 {
+			test_i2c_ov9655: ov9655@a {
 				compatible = "ovti,ov9655";
-				reg = <0x9>;
-				reset-gpios = <&test_gpio 0 0>;
-			};
-
-			test_i2c_ov5642: ov5642@a {
-				compatible = "ovti,ov5642";
 				reg = <0xa>;
 				reset-gpios = <&test_gpio 0 0>;
 			};
 
-			test_i2c_hm01b0: hm01b0@b {
-				compatible = "himax,hm01b0";
+			test_i2c_ov5642: ov5642@b {
+				compatible = "ovti,ov5642";
 				reg = <0xb>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_hm01b0: hm01b0@c {
+				compatible = "himax,hm01b0";
+				reg = <0xc>;
 				status = "okay";
 				data-bits = <0x4>;
 
@@ -158,9 +177,9 @@
 				};
 			};
 
-			test_i2c_hm0360: hm0360@c {
+			test_i2c_hm0360: hm0360@d {
 				compatible = "himax,hm0360";
-				reg = <0xc>;
+				reg = <0xd>;
 				status = "okay";
 				reset-gpios = <&test_gpio 0 0>;
 				pwdn-gpios = <&test_gpio 1 0>;
@@ -172,16 +191,16 @@
 				};
 			};
 
-			test_i2c_ov7675: ov7675@d {
+			test_i2c_ov7675: ov7675@e {
 				compatible = "ovti,ov7675";
-				reg = <0xd>;
+				reg = <0xe>;
 				reset-gpios = <&test_gpio 0 1>;
 				pwdn-gpios = <&test_gpio 1 1>;
 			};
 
-			test_i2c_imx219: imx219@e {
+			test_i2c_imx219: imx219@f {
 				compatible = "sony,imx219";
-				reg = <0xe>;
+				reg = <0xf>;
 				clocks = <&imx219_input_clock>;
 			};
 		};

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 LANDROVAL
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_STEVAL_56G3MAI
+	def_bool
+
+configdefault SHIELD_STEVAL_56G3MAI
+	default $(shields_list_contains,steval_56g3mai)

@@ -34,6 +34,7 @@ zephyr_library_sources_ifdef(CONFIG_VIDEO_STM32_JPEG video_stm32_jpeg.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_STM32_VENC video_stm32_venc.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_ST_MIPID02 video_st_mipid02.c)
 zephyr_library_sources_ifdef(CONFIG_VIDEO_SW_GENERATOR video_sw_generator.c)
+zephyr_library_sources_ifdef(CONFIG_VIDEO_VD56G3 vd56g3.c)
 # zephyr-keep-sorted-stop
 
 zephyr_linker_sources(DATA_SECTIONS video.ld)
