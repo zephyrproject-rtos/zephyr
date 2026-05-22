@@ -357,6 +357,7 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 					       ARRAY_SIZE(strl));
 	hdr.log.total_len = total_len + package_len;
 	hdr.log.package_len = package_len;
+	hdr.log.has_data = desc.data_len > 0 ? 1 : 0;
 
 	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
 		STMESP_Type *stm_esp;
