@@ -1,33 +1,33 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if(SB_CONFIG_VPR_LAUNCHER)
-  set(launcher_core "cpuapp")
-  string(REPLACE "/" ";" launcher_quals ${BOARD_QUALIFIERS})
-  list(LENGTH launcher_quals launcher_quals_len)
-  list(GET launcher_quals 0 launcher_soc)
-  list(GET launcher_quals 1 launcher_vpr)
+if(SB_CONFIG_NORDIC_COPROC_LAUNCHER)
+  # Add a variant of the coproc_launcher project tailored to launch the sysbuild board target.
+  #
+  # We use the sysbuild build target to determine the build target for the coproc_launcher project
+  # along with the required snippet for the coproc_launcher project for launching the sysbuild
+  # build target:
+  #
+  #   coproc_launcher_board: <board>/<soc>/cpuapp
+  #   coproc_snippet:        nordic-<cpucluster>-<variant>
 
-  string(REPLACE "cpu" "" launcher_vpr ${launcher_vpr})
-
-  if(launcher_quals_len EQUAL 3)
-    list(GET launcher_quals 2 launcher_variant)
-    set(launcher_vpr ${launcher_vpr}-${launcher_variant})
-  endif()
-
-  string(CONCAT launcher_board ${BOARD} "/" ${launcher_soc} "/" ${launcher_core})
-
-  set(image "vpr_launcher")
+  string(REPLACE "/" ";" coproc_target_qualifiers ${BOARD_QUALIFIERS})
+  list(GET coproc_target_qualifiers 0 coproc_soc)
+  list(GET coproc_target_qualifiers 1 coproc_cpucluster)
+  string(REPLACE "cpu" "" coproc_cpucluster ${coproc_cpucluster})
+  list(POP_FRONT coproc_target_qualifiers)
+  list(POP_FRONT coproc_target_qualifiers)
+  list(PREPEND coproc_target_qualifiers ${coproc_cpucluster})
+  string(JOIN "-" coproc_snippet "nordic" ${coproc_target_qualifiers})
+  set(coproc_launcher_qualifiers "${coproc_soc}/cpuapp")
+  set(coproc_launcher_board "${BOARD}/${coproc_launcher_qualifiers}")
 
   ExternalZephyrProject_Add(
-    APPLICATION ${image}
-    SOURCE_DIR ${ZEPHYR_BASE}/samples/basic/minimal
-    BOARD ${launcher_board}
+    APPLICATION coproc_launcher
+    SOURCE_DIR ${ZEPHYR_BASE}/samples/boards/nordic/coproc_launcher
+    BOARD ${coproc_launcher_board}
+    SNIPPET ${coproc_snippet}
   )
-
-  string(CONCAT launcher_snippet "nordic-" ${launcher_vpr})
-
-  sysbuild_cache_set(VAR ${image}_SNIPPET APPEND REMOVE_DUPLICATES ${launcher_snippet})
 endif()
 
 if(SB_CONFIG_NRF_GENERATE_UICR)
