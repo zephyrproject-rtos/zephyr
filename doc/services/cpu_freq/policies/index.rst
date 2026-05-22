@@ -8,3 +8,4 @@ CPU Frequency Scaling Policies
 
    on_demand.rst
    pressure.rst
+   energy_aware.rst
