@@ -15,6 +15,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/drivers/clock_management.h>
 
 #include <wrap_max32_sys.h>
 
@@ -84,6 +85,33 @@ void soc_early_reset_hook(void)
 }
 
 #endif
+
+#if defined(CONFIG_CLOCK_MANAGEMENT)
+#if defined(CONFIG_SOC_FAMILY_MAX32_M33)
+#define DT_DRV_COMPAT arm_cortex_m33
+#else
+#define DT_DRV_COMPAT arm_cortex_m4f
+#endif /* CONFIG_SOC_FAMILY_MAX32_M33 */
+
+CLOCK_MANAGEMENT_DT_INST_DEFINE_OUTPUT(0);
+
+static const struct clock_output *cpu_clock = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(0);
+
+static int clock_init(void)
+{
+	clock_management_state_t default_state =
+		CLOCK_MANAGEMENT_DT_INST_GET_STATE(0, default, default);
+
+	clock_management_apply_state(cpu_clock, default_state);
+
+	/* The ADI hal uses the SystemCoreClock variable so we need to update it */
+	SystemCoreClockUpdate();
+
+	return 0;
+}
+
+SYS_INIT(clock_init, PRE_KERNEL_1, 0);
+#endif /* CONFIG_CLOCK_MANAGEMENT */
 
 /**
  * @brief Perform basic hardware initialization at boot.

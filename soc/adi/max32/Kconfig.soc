@@ -30,6 +30,7 @@ config SOC_FAMILY_MAX32_SECURE_BOOT_SUPPORTED
 config SOC_MAX32650
 	bool
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32651
 	bool
@@ -38,49 +39,60 @@ config SOC_MAX32651
 
 config SOC_MAX32655
 	bool
+	select CLOCK_CONTROL
 
 config SOC_MAX32655_M4
 	bool
 	select SOC_MAX32655
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32655_RV32
 	bool
 	select SOC_MAX32655
 	select SOC_FAMILY_MAX32_RV32
+	select CLOCK_CONTROL
 
 config SOC_MAX32657
 	bool
 	select SOC_FAMILY_MAX32_M33
+	select CLOCK_MANAGEMENT
 
 config SOC_MAX32658
 	bool
 	select SOC_MAX32657
+	select CLOCK_CONTROL
 
 config SOC_MAX32660
 	bool
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32662
 	bool
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32666
 	bool
+	select CLOCK_CONTROL
 
 config SOC_MAX32666_CPU0
 	bool
 	select SOC_MAX32666
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32666_CPU1
 	bool
 	select SOC_MAX32666
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32670
 	bool
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32672
 	bool
@@ -90,32 +102,39 @@ config SOC_MAX32672
 config SOC_MAX32675
 	bool
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32680
 	bool
+	select CLOCK_CONTROL
 
 config SOC_MAX32680_M4
 	bool
 	select SOC_MAX32680
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32680_RV32
 	bool
 	select SOC_MAX32680
 	select SOC_FAMILY_MAX32_RV32
+	select CLOCK_CONTROL
 
 config SOC_MAX32690
 	bool
+	select CLOCK_CONTROL
 
 config SOC_MAX32690_M4
 	bool
 	select SOC_MAX32690
 	select SOC_FAMILY_MAX32_M4
+	select CLOCK_CONTROL
 
 config SOC_MAX32690_RV32
 	bool
 	select SOC_MAX32690
 	select SOC_FAMILY_MAX32_RV32
+	select CLOCK_CONTROL
 
 config SOC_MAX78000
 	bool
