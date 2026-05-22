@@ -1111,6 +1111,10 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * above this call, which is simply input to the priority selection
  * logic.
  *
+ * @note The relative deadline is silently clamped to a maximum of
+ * INT32_MAX / 2 (2^30 cycles) to preserve the scheduler's modular
+ * comparison invariants.
+ *
  * @kconfig_dep{CONFIG_SCHED_DEADLINE}
  *
  * @param thread A thread on which to set the deadline
