@@ -10,7 +10,7 @@ This shield provides a DSI display, based on a round AMOLED touch-sensitive pane
 of 1.2 inches and 390x390 pixels. The panel controller is a RM67162 and the panel
 G1120TB103GF-001.
 
-.. figure:: mb1314.webp
+.. figure:: st_b_dsi_mb1314.webp
    :alt: B-DSI-MB1314 Image
    :align: center
 
