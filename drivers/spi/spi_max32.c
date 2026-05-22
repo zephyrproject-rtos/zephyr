@@ -1220,6 +1220,7 @@ static int spi_max32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	MXC_SPI_InitState(regs);
 	MXC_SPI_Shutdown(regs);
 
 	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
