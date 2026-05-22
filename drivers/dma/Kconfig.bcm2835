@@ -1,0 +1,20 @@
+# Broadcom BCM2835 DMA controller
+#
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_BCM2835
+	bool "Broadcom BCM2835 DMA controller driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_DMA_ENABLED
+	select CACHE_MANAGEMENT
+	help
+	  Enable the driver for the BCM2835 / BCM2710 / BCM2837 DMA
+	  controller -- a control-block (linked-list descriptor) engine
+	  used on Raspberry Pi boards. Supports single-block
+	  memory-to-memory and peripheral DREQ-paced transfers.
+
+	  CACHE_MANAGEMENT is required: the engine is not cache-coherent
+	  with the CPU, so the driver cleans control blocks and source
+	  buffers and invalidates destination buffers via the sys_cache_*
+	  API -- which compiles to a no-op without CACHE_MANAGEMENT.
