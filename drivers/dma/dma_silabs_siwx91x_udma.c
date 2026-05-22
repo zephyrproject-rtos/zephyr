@@ -705,13 +705,17 @@ static DEVICE_API(dma, siwx91x_udma_api) = {
 	.chan_filter = siwx91x_udma_chan_filter,
 };
 
+#define SIWX91X_UDMA_CHAN_DESC_ADDR(inst)                                                          \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, silabs_sram_region),                               \
+		    ((RSI_UDMA_DESC_T *)DT_REG_ADDR(DT_INST_PHANDLE(inst, silabs_sram_region))),   \
+		    (siwx91x_udma_chan_desc##inst))                                                \
+
 #define SIWX91X_UDMA_INIT(inst)                                                                    \
 	static ATOMIC_DEFINE(siwx91x_udma_chans_atomic##inst, DT_INST_PROP(inst, dma_channels));   \
 	static UDMA_Channel_Info siwx91x_udma_hal_chans##inst[DT_INST_PROP(inst, dma_channels)];   \
 	SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(siwx91x_udma_desc_pool##inst, RSI_UDMA_DESC_T,           \
 					  CONFIG_DMA_SILABS_SIWX91X_UDMA_DESCR_COUNT);             \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, silabs_sram_region),                               \
-		    (),                                                                            \
+	IF_DISABLED(DT_INST_NODE_HAS_PROP(inst, silabs_sram_region),                               \
 		    (static __aligned(1024) RSI_UDMA_DESC_T                                        \
 			     siwx91x_udma_chan_desc##inst[DT_INST_PROP(inst, dma_channels) * 2];)) \
 	static struct siwx91x_udma_chan                                                            \
@@ -735,9 +739,7 @@ static DEVICE_API(dma, siwx91x_udma_api) = {
 		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
 		.reg = (UDMA0_Type *)DT_INST_REG_ADDR(inst),                                       \
 		.irq_number = DT_INST_PROP_BY_IDX(inst, interrupts, 0),                            \
-		.chan_desc = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, silabs_sram_region),          \
-					     ((RSI_UDMA_DESC_T *)DT_REG_ADDR(DT_INST_PHANDLE(inst, silabs_sram_region))), \
-					     (siwx91x_udma_chan_desc##inst)),                      \
+		.chan_desc = SIWX91X_UDMA_CHAN_DESC_ADDR(inst),                                    \
 		.irq_configure = siwx91x_udma_irq_configure##inst,                                 \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, siwx91x_udma_pm_action);                                    \
