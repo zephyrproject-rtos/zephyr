@@ -92,6 +92,34 @@
 			status = "okay";
 		};
 
+		/*
+		 * DMA controller -- a control-block (linked-list
+		 * descriptor) engine. Peripherals such as I2S and SPI can
+		 * pace transfers off it via DREQ. Default disabled;
+		 * boards / test overlays opt in.
+		 *
+		 * brcm,dma-channel-mask = 0x7f30 keeps channels 4,5,8..14
+		 * and excludes the VideoCore-firmware-reserved and
+		 * special-function channels (0,1,2,3,6,7). The interrupts
+		 * list covers exactly those mask channels: 4,5,8,9,10 have
+		 * dedicated lines, 11..14 share one.
+		 */
+		dma: dma@3f007000 {
+			compatible = "brcm,bcm2835-dma";
+			reg = <0x3f007000 0xf00>;
+			interrupts = <BCM2835_IRQ_DMA(4)  IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(5)  IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(8)  IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(9)  IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(10) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA_SHARED IRQ_TYPE_LEVEL 0>;
+			#dma-cells = <1>;
+			dma-channels = <16>;
+			brcm,dma-channel-mask = <0x7f30>;
+			dma-buf-addr-alignment = <64>;
+			status = "disabled";
+		};
+
 		pinctrl: pin-controller@3f200000 {
 			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0x3f200000 0xf4>;
