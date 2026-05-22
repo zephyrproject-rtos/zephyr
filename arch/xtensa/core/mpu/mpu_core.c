@@ -892,19 +892,24 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	bool is_user = (thread->base.user_options & K_USER) != 0;
 	bool is_migration = (old_map != NULL) && is_user;
 
-	uintptr_t stack_end_addr = thread->stack_info.start + thread->stack_info.size;
-
-	if (stack_end_addr < thread->stack_info.start) {
-		/* Account for wrapping around back to 0. */
-		stack_end_addr = 0xFFFFFFFFU;
-	}
+	thread->arch.mpu_map = &domain->arch.mpu_map;
 
 	/*
-	 * Allow USER access to the thread's stack in its new domain if
-	 * we are migrating. If we are not migrating this is done in
+	 * If we are migrating from one memory domain to another, we need to
+	 * allow USER access to the thread's stack in its new domain and remove
+	 * access from the old domain.
+	 *
+	 * If we are not migrating, adding stack access permission is done in
 	 * xtensa_user_stack_perms().
 	 */
 	if (is_migration) {
+		uintptr_t stack_end_addr = thread->stack_info.start + thread->stack_info.size;
+
+		if (stack_end_addr < thread->stack_info.start) {
+			/* Account for wrapping around back to 0. */
+			stack_end_addr = 0xFFFFFFFFU;
+		}
+
 		/* Add stack to new domain's MPU map. */
 		ret = mpu_map_region_add(&domain->arch.mpu_map,
 					 thread->stack_info.start, stack_end_addr,
@@ -913,16 +918,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 
 		/* Probably this fails due to no more available slots in MPU map. */
 		__ASSERT_NO_MSG(ret == 0);
-	}
 
-	thread->arch.mpu_map = &domain->arch.mpu_map;
-
-	/*
-	 * Remove thread stack from old memory domain if we are
-	 * migrating away from old memory domain. This is done
-	 * by simply remove USER access from the region.
-	 */
-	if (is_migration) {
 		/*
 		 * Remove stack from old MPU map by...
 		 * "adding" a new memory region to the map
@@ -930,6 +926,9 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 		 */
 		ret = mpu_map_region_restore(old_map,
 					     thread->stack_info.start, stack_end_addr);
+
+		/* Probably this fails due to no more available slots in MPU map. */
+		__ASSERT_NO_MSG(ret == 0);
 	}
 
 	/*
