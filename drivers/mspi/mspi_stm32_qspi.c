@@ -1330,7 +1330,12 @@ static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                 \
 		.dma_specified = DT_INST_NODE_HAS_PROP(index, dmas),                           \
 	};                                                                                     \
-                                                                                               \
+	\
+	static const struct mspi_dev_id mspi_stm32_dev_id_##index = {                \
+		.ce = {0},                                                               \
+		.dev_idx = index,                                                        \
+	};                                                                           \
+	\
 	static struct mspi_stm32_data mspi_stm32_qspi_dev_data_##index = {                     \
 		.hmspi.qspi = {                                                                \
 			.Instance = (QUADSPI_TypeDef *)DT_INST_REG_ADDR(index),                \
@@ -1348,7 +1353,7 @@ static DEVICE_API(mspi, mspi_stm32_qspi_driver_api) = {
 			},                                                                     \
 		},                                                                             \
 		.memmap_base_addr = DT_INST_REG_ADDR_BY_IDX(index, 1),                         \
-		.dev_id = index,                                                               \
+		.dev_id = &mspi_stm32_dev_id_##index,                                            \
 		.lock = Z_MUTEX_INITIALIZER(mspi_stm32_qspi_dev_data_##index.lock),            \
 		.sync = Z_SEM_INITIALIZER(mspi_stm32_qspi_dev_data_##index.sync, 0, 1),        \
 		.dev_cfg = {0},                                                                \

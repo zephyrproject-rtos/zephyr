@@ -1409,7 +1409,13 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##index),                               \
 		.dma_specified = DT_INST_NODE_HAS_PROP(index, dmas),                               \
-	};                                                                                         \
+	};                                                                                     \
+	\
+	static const struct mspi_dev_id mspi_stm32_dev_id_##index = {                \
+		.ce = {0},                                                               \
+		.dev_idx = index,                                                        \
+	};                                                                           \
+	\
 	static struct mspi_stm32_data mspi_stm32_dev_data_##index = {                              \
 		.hmspi.ospi = {                                                                    \
 			.Init = {                                                                  \
@@ -1424,7 +1430,7 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 			},                                                                         \
 		},                                                                                 \
 		.memmap_base_addr = DT_INST_REG_ADDR_BY_IDX(index, 1),                             \
-		.dev_id = index,                                                                   \
+		.dev_id = &mspi_stm32_dev_id_##index,                                            \
 		.lock = Z_MUTEX_INITIALIZER(mspi_stm32_dev_data_##index.lock),                     \
 		.sync = Z_SEM_INITIALIZER(mspi_stm32_dev_data_##index.sync, 0, 1),                 \
 		.dev_cfg = {0},                                                                    \
