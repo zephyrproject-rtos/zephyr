@@ -77,7 +77,6 @@ LOG_MODULE_REGISTER(cs_etr_tbm);
 static const uint32_t wsize_mask = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int) - 1;
 static const uint32_t wsize_inc = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int) - 1;
 
-static bool in_sync;
 static int oosync_cnt;
 static volatile bool tbm_full;
 static volatile uint32_t base_wr_idx;
@@ -384,18 +383,6 @@ static void sync_loss(void)
 		mipi_stp_decoder_sync_loss();
 		log_frontend_stmesp_demux_reset();
 		oosync_cnt++;
-		in_sync = false;
-	}
-}
-
-/** @brief Indicate that STPv2 decoder is synchronized.
- *
- * That occurs when ASYNC opcode is found.
- */
-static void on_resync(void)
-{
-	if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
-		in_sync = true;
 	}
 }
 
@@ -476,7 +463,6 @@ static bool decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 
 	switch (type) {
 	case STP_DECODER_ASYNC:
-		on_resync();
 		break;
 	case STP_DECODER_MAJOR:
 		log_frontend_stmesp_demux_major(data.id);
@@ -704,9 +690,9 @@ static bool process(bool dry_run)
 				 * then assume overwrite and sync loss.
 				 */
 				sync_loss();
+			} else {
+				process_frame((uint8_t *)frame_buf, pending);
 			}
-
-			process_frame((uint8_t *)frame_buf, pending);
 			if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
 				if (new_msg_cnt && dry_run) {
 					return true;
