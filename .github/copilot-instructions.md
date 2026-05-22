@@ -63,7 +63,7 @@ with these Zephyr-specific rules:
   single-line blocks.
 - Use `/* */` for comments; `//` is not allowed.
 - Use `/** */` for Doxygen API documentation.
-- Avoid ASCII decoration or ASCII rulers delimiters in coments
+- Avoid ASCII decoration or ASCII rulers delimiters in comments
 - No binary literals (`0b...`).
 - No non-ASCII symbols in code (no emojis under any circumstances).
 - Capitalize correctly in comments: `UART` not `uart`, `CMake` not `cmake`.
@@ -162,6 +162,7 @@ Every commit message must follow this format:
 
 [Commit message body]
 
+Assisted-by: [Agent Name]:[Model Version]
 Signed-off-by: Your Full Name <your.email@example.com>
 ```
 
