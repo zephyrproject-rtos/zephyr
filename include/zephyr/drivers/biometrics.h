@@ -17,7 +17,7 @@
  * @brief Interfaces for biometric sensors.
  * @defgroup biometrics_interface Biometrics
  * @since 4.4
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup io_interfaces
  * @{
  */
@@ -32,15 +32,15 @@
 extern "C" {
 #endif
 
-/**
- * @brief Biometrics sensor types
- */
-enum biometric_sensor_type {
-	BIOMETRIC_TYPE_FINGERPRINT, /**< Fingerprint sensor */
-	BIOMETRIC_TYPE_IRIS,        /**< Iris scanner */
-	BIOMETRIC_TYPE_FACE,        /**< Face recognition */
-	BIOMETRIC_TYPE_VOICE,       /**< Voice recognition */
-};
+/** @brief Biometric modality flags */
+#define BIOMETRIC_MODALITY_FINGERPRINT BIT(0) /**< Fingerprint sensor */
+#define BIOMETRIC_MODALITY_IRIS        BIT(1) /**< Iris scanner */
+#define BIOMETRIC_MODALITY_FACE        BIT(2) /**< Face recognition */
+#define BIOMETRIC_MODALITY_VOICE       BIT(3) /**< Voice recognition */
+#define BIOMETRIC_MODALITY_PALM        BIT(4) /**< Palm recognition */
+
+/** @brief Maximum serial number string length */
+#define BIOMETRIC_SERIAL_NUMBER_MAX_LEN 16
 
 /**
  * @brief Biometric matching modes
@@ -82,6 +82,8 @@ enum biometric_attribute {
 	BIOMETRIC_ATTR_ANTI_SPOOF_LEVEL,
 	/** Last captured image quality score (sensor-specific range), read-only */
 	BIOMETRIC_ATTR_IMAGE_QUALITY,
+	/** Duplicate enrollment policy (0 = reject duplicates, 1 = allow) */
+	BIOMETRIC_ATTR_DUPLICATE_POLICY,
 	/**
 	 * Number of all common biometric attributes.
 	 */
@@ -101,8 +103,8 @@ enum biometric_attribute {
  * @brief Biometric sensor capabilities
  */
 struct biometric_capabilities {
-	/** Biometric sensor type */
-	enum biometric_sensor_type type;
+	/** Bitmask of supported modalities */
+	uint32_t supported_modalities;
 	/** Maximum templates device can store */
 	uint16_t max_templates;
 	/** Size of each template in bytes */
@@ -111,6 +113,8 @@ struct biometric_capabilities {
 	uint8_t storage_modes;
 	/** Number of samples needed for enrollment */
 	uint8_t enrollment_samples_required;
+	/** Device serial number (empty if unavailable) */
+	char serial_number[BIOMETRIC_SERIAL_NUMBER_MAX_LEN];
 };
 
 /**
@@ -123,6 +127,8 @@ struct biometric_match_result {
 	uint16_t template_id;
 	/** Quality score of the captured sample used for matching (0-100) */
 	uint8_t image_quality;
+	/** Modality that produced this result */
+	uint32_t modality;
 };
 
 /**
@@ -137,6 +143,8 @@ struct biometric_capture_result {
 	uint8_t samples_required;
 	/** Quality score of the captured sample (0-100) */
 	uint8_t quality;
+	/** Assigned template ID */
+	uint16_t template_id;
 };
 
 /**
