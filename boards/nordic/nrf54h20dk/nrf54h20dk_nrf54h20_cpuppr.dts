@@ -40,6 +40,7 @@
 &grtc {
 	status = "okay";
 	owned-channels = <5>;
+	nonsecure-channels = <5>;
 };
 
 &uart135 {

@@ -1,7 +1,3 @@
 name: nordic-rad
 append:
   EXTRA_CONF_FILE: nordic-rad.conf
-boards:
-  /.*/nrf54h20/cpuapp/:
-    append:
-      EXTRA_DTC_OVERLAY_FILE: boards/nrf54h20_cpuapp.overlay
