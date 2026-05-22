@@ -18,6 +18,10 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
 	};
+
+	aliases {
+		die-temp0 = &vc_thermal;
+	};
 };
 
 &uart1 {

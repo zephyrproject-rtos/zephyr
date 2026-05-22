@@ -18,6 +18,7 @@
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/bcm2836-l1.h>
 #include <zephyr/dt-bindings/interrupt-controller/bcm2835-armctrl.h>
+#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
 
 / {
 	cpus {
@@ -57,6 +58,36 @@
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_M(250)>;
 			#clock-cells = <0>;
+		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Shared buffer for the VideoCore firmware property
+		 * channel -- just above the kernel DRAM window. The
+		 * rpi_fw driver maps it uncached; the VPU reads property
+		 * requests from it.
+		 */
+		vc_mem: memory@10200000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x10200000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "VC_SHARED";
+		};
+	};
+
+	firmware: firmware {
+		compatible = "raspberrypi,bcm283x-firmware";
+		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
+		mbox-names = "vc";
+		shared-memory = <&vc_mem>;
+
+		vc_thermal: vc-thermal {
+			compatible = "raspberrypi,bcm283x-vc-thermal";
+			status = "okay";
 		};
 	};
 
@@ -134,6 +165,14 @@
 			clock-frequency = <DT_FREQ_M(250)>;
 			interrupts = <BCM2835_IRQ_AUX IRQ_TYPE_LEVEL 0>;
 			status = "disabled";
+		};
+
+		mbox0: mbox@3f00b880 {
+			compatible = "brcm,bcm2711-mbox";
+			reg = <0x3f00b880 0x40>;
+			interrupts = <BCM2835_IRQ_ARM_MAILBOX IRQ_TYPE_LEVEL 0>;
+			#mbox-cells = <1>;
+			status = "okay";
 		};
 
 		/*
