@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: nucleo_h7p5ii
+name: ST Nucleo H7P5II
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 320
+flash: 2048
+supported:
+  - gpio
+  - uart
+vendor: st
