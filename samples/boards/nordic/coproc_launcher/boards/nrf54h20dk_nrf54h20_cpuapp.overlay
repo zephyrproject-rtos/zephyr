@@ -1,0 +1,70 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&uart136 {
+	status = "disabled";
+};
+
+&button0 {
+	status = "disabled";
+};
+
+&button1 {
+	status = "disabled";
+};
+
+&button2 {
+	status = "disabled";
+};
+
+&button3 {
+	status = "disabled";
+};
+
+&led0 {
+	status = "disabled";
+};
+
+&led1 {
+	status = "disabled";
+};
+
+&led2 {
+	status = "disabled";
+};
+
+&led3 {
+	status = "disabled";
+};
+
+&pwm_led2 {
+	status = "disabled";
+};
+
+&gpio0 {
+	status = "disabled";
+};
+
+&pwm130 {
+	status = "disabled";
+};
+
+&gpiote130 {
+	status = "disabled";
+	owned-channels = <>;
+};
+
+&gpio9 {
+	status = "disabled";
+};
+
+&uart120 {
+	status = "disabled";
+};
+
+&adc {
+	status = "disabled";
+};
