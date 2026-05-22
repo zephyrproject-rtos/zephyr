@@ -93,16 +93,15 @@ void soc_early_reset_hook(void)
 #define DT_DRV_COMPAT arm_cortex_m4f
 #endif /* CONFIG_SOC_FAMILY_MAX32_M33 */
 
-CLOCK_MANAGEMENT_DT_INST_DEFINE_OUTPUT(0);
+CLOCK_MANAGEMENT_DT_INST_DEFINE(0);
 
-static const struct clock_output *cpu_clock = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(0);
+static const struct clock_management_data *cpu_clock_data = CLOCK_MANAGEMENT_DT_INST_GET(0);
 
 static int clock_init(void)
 {
-	clock_management_state_t default_state =
-		CLOCK_MANAGEMENT_DT_INST_GET_STATE(0, default, default);
+	clock_request_t default_state = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(0, default);
 
-	clock_management_apply_state(cpu_clock, default_state);
+	clock_management_request_state(cpu_clock_data, default_state);
 
 	/* The ADI hal uses the SystemCoreClock variable so we need to update it */
 	SystemCoreClockUpdate();
@@ -149,7 +148,6 @@ void soc_early_init_hook(void)
 	MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_CPU1);
 	MXC_GCR->rst1 |= MXC_F_GCR_RST1_CPU1;
 #endif /* CONFIG_MAX32_SECONDARY_RV32 */
-
 
 #ifdef CONFIG_MAX32_SECONDARY_M4
 

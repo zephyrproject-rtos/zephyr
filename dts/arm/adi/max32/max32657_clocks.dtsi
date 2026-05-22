@@ -1,0 +1,185 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	no_clock: no-clock {
+		/* Dummy clock for invalid or reserved mux inputs. */
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <0>;
+	};
+
+	clk_mgmt_ext: ext {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <0>;
+	};
+
+	clk_mgmt_inro: inro {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <131072>;
+	};
+
+	clk_mgmt_inro_div4: inro_div4 {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clock-div = <4>;
+		clocks = <&clk_mgmt_inro>;
+	};
+
+	clk_mgmt_rtc: rtc {
+		#clock-cells = <0>;
+		compatible = "fixed-clock";
+		clock-frequency = <0>;
+	};
+
+	clk_mgmt_pclk: pclk {
+		#clock-cells = <0>;
+		compatible = "fixed-factor-clock";
+		clock-div = <2>;
+		clocks = <&scale_sysclk_div 0>;
+	};
+};
+
+&cpu0 {
+	clock-outputs = <&sys_clk>;
+	clock-output-names = "default";
+	clock-request-0 = <&sys_clk_erfo_32>;
+	clock-request-1 = <&sys_clk_erfo_16>;
+	clock-request-2 = <&sys_clk_erfo_8>;
+	clock-request-3 = <&sys_clk_ipo>;
+	clock-request-4 = <&sys_clk_32k>;
+	clock-request-names = "default", "medium", "low", "turbo", "32k";
+};
+
+&gcr {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x0 0x400>;
+
+	clk_mgmt_erfo: erfo@8 {
+		#clock-cells = <1>;
+		compatible = "adi,max32-clock-source";
+		reg = <0x8 0x1>;
+		offset = <0x10>;
+		frequency = <DT_FREQ_M(32)>;
+		enum = <0x2>;
+	};
+
+	clk_mgmt_ertco: ertco@8 {
+		#clock-cells = <1>;
+		compatible = "adi,max32-clock-source";
+		reg = <0x8 0x1>;
+		offset = <0x11>;
+		frequency = <32768>;
+		enum = <0x6>;
+	};
+
+	clk_mgmt_ipo: ipo@8 {
+		#clock-cells = <1>;
+		compatible = "adi,max32-clock-source";
+		reg = <0x8 0x1>;
+		offset = <0x12>;
+		frequency = <DT_FREQ_M(50)>;
+		enum = <0x0>;
+	};
+
+	clk_mgmt_ibro: ibro@8 {
+		#clock-cells = <1>;
+		compatible = "adi,max32-clock-source";
+		reg = <0x8 0x1>;
+		offset = <0x14>;
+		frequency = <7372800>;
+		enum = <0x5>;
+	};
+
+	mux_sysclk_sel: mux@8 {
+		#clock-cells = <1>;
+		compatible = "clock-mux";
+		reg = <0x8 0x3>;
+		offset = <0x9>;
+		input-sources = <&clk_mgmt_ipo &no_clock &clk_mgmt_erfo &clk_mgmt_inro &no_clock
+				 &clk_mgmt_ibro &mux_32k_sel &clk_mgmt_ext>;
+	};
+
+	scale_sysclk_div: prescaler@8 {
+		#clock-cells = <1>;
+		compatible = "adi,max32-clock-div";
+		reg = <0x8 0x3>;
+		offset = <0x6>;
+		input-source = <&mux_sysclk_sel>;
+
+		sys_clk: sys_clk {
+			#clock-cells = <0>;
+			compatible = "clock-output";
+
+			sys_clk_erfo_32: sys_clk_erfo_32 {
+				compatible = "clock-state";
+				clocks = <&clk_mgmt_erfo 1 &mux_sysclk_sel 2 &scale_sysclk_div 0>;
+			};
+
+			sys_clk_erfo_16: sys_clk_erfo_16 {
+				compatible = "clock-state";
+				clocks = <&clk_mgmt_erfo 1 &mux_sysclk_sel 2 &scale_sysclk_div 1>;
+			};
+
+			sys_clk_erfo_8: sys_clk_erfo_8 {
+				compatible = "clock-state";
+				clocks = <&clk_mgmt_erfo 1 &mux_sysclk_sel 2 &scale_sysclk_div 2>;
+			};
+
+			sys_clk_ipo: sys_clk_ipo {
+				compatible = "clock-state";
+				clocks = <&clk_mgmt_ipo 1 &mux_sysclk_sel 0 &scale_sysclk_div 0>;
+			};
+
+			sys_clk_32k: sys_clk_32k {
+				compatible = "clock-state";
+				clocks = <&clk_mgmt_ertco 1 &clk_mgmt_ertco32k 1 &mux_32k_sel 0
+					  &mux_sysclk_sel 6 &scale_sysclk_div 0>;
+			};
+		};
+	};
+};
+
+&mcr {
+	ranges = <0x0 0x0 0x400>;
+
+	clk_mgmt_ertco32k: ertco32k@8 {
+		#clock-cells = <1>;
+		compatible = "clock-gate";
+		input = <&clk_mgmt_ertco>;
+		reg = <0x10 0x1>;
+		offset = <0x3>;
+	};
+
+	mux_32k_sel: mux@10 {
+		#clock-cells = <1>;
+		compatible = "clock-mux";
+		reg = <0x10 0x2>;
+		offset = <0x0>;
+		input-sources = <&clk_mgmt_ertco32k &clk_mgmt_inro_div4 &clk_mgmt_rtc>;
+	};
+};
+
+&gpio0 {
+	/delete-property/ clocks;
+};
+
+&uart0 {
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x0 0x1000>;
+
+	bclk_src: mux@0 {
+		#clock-cells = <1>;
+		compatible = "clock-mux";
+		reg = <0x0 0x3>;
+		offset = <0x10>;
+		input-sources = <&clk_mgmt_pclk &clk_mgmt_ibro>;
+	};
+};
