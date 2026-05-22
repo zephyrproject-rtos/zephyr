@@ -16,7 +16,7 @@
  */
 
 &cpuapp_sram {
-	sram0_s: image_s@0 {
+	sram0_s: sram@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Secure image memory */
@@ -24,7 +24,7 @@
 		ranges = <0x0 0x0 DT_SIZE_K(96)>;
 	};
 
-	sram0_ns: image_ns@18000 {
+	sram0_ns: sram@18000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Non-Secure image memory */
