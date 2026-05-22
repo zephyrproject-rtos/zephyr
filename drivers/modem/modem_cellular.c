@@ -2351,6 +2351,7 @@ int modem_cellular_init(const struct device *dev)
 			.transmit_buf_size = ARRAY_SIZE(data->cmux_transmit_buf),
 			.enable_runtime_power_management = config->cmux_enable_runtime_power_save,
 			.close_pipe_on_power_save = config->cmux_close_pipe_on_power_save,
+			.no_powersave_handshake = config->cmux_no_powersave_handshake,
 			.idle_timeout = config->cmux_idle_timeout,
 		};
 

@@ -1638,6 +1638,14 @@ static void modem_cmux_runtime_pm_handler(struct k_work *item)
 	if (is_active(cmux) && expired) {
 		LOG_DBG("Idle timeout, entering power saving mode");
 		set_state(cmux, MODEM_CMUX_STATE_ENTER_POWERSAVE);
+		if (cmux->config.no_powersave_handshake) {
+			set_state(cmux, MODEM_CMUX_STATE_POWERSAVE);
+			LOG_DBG("Entered power saving mode (no handshake)");
+			if (cmux->config.close_pipe_on_power_save) {
+				modem_pipe_close_async(cmux->pipe);
+			}
+			return;
+		}
 		modem_cmux_send_psc(cmux);
 		k_work_reschedule(&cmux->runtime_pm_work, MODEM_CMUX_T3_TIMEOUT);
 		return;
@@ -1690,6 +1698,12 @@ static bool powersave_wait_wakeup(struct modem_cmux *cmux)
 				modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
 				return true;
 			}
+		}
+
+		if (cmux->config.no_powersave_handshake) {
+			set_state(cmux, MODEM_CMUX_STATE_CONNECTED);
+			LOG_DBG("Woke up from power saving mode (no handshake)");
+			return false;
 		}
 
 		cmux->t3_timepoint = sys_timepoint_calc(MODEM_CMUX_T3_TIMEOUT);

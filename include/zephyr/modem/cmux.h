@@ -73,6 +73,8 @@ struct modem_cmux_config {
 	bool enable_runtime_power_management;
 	/** Close pipe on power save */
 	bool close_pipe_on_power_save;
+	/** Skip the in-band power-save handshake on both entry and exit */
+	bool no_powersave_handshake;
 	/** Idle timeout for power save */
 	k_timeout_t idle_timeout;
 };

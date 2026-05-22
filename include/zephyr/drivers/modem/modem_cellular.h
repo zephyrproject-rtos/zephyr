@@ -242,6 +242,7 @@ struct modem_cellular_config {
 	bool reset_on_recovery;
 	bool cmux_enable_runtime_power_save;
 	bool cmux_close_pipe_on_power_save;
+	bool cmux_no_powersave_handshake;
 	bool use_default_pdp_context;
 	bool use_default_apn;
 	k_timeout_t cmux_idle_timeout;
@@ -424,6 +425,8 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
 			DT_INST_PROP_OR(inst, cmux_enable_runtime_power_save, 0),                  \
 		.cmux_close_pipe_on_power_save =                                                   \
 			DT_INST_PROP_OR(inst, cmux_close_pipe_on_power_save, 0),                   \
+		.cmux_no_powersave_handshake =                                                     \
+			DT_INST_PROP_OR(inst, cmux_no_powersave_handshake, 0),                     \
 		.use_default_pdp_context = DT_INST_PROP_OR(inst, zephyr_use_default_pdp_ctx, 0),   \
 		.use_default_apn = DT_INST_PROP_OR(inst, zephyr_use_default_apn, 0),               \
 		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
