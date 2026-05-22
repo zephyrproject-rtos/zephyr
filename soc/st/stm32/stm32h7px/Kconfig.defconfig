@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32H7PX
+
+configdefault CACHE_MANAGEMENT
+	default y
+
+endif # SOC_SERIES_STM32H7PX
