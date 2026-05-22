@@ -59,11 +59,20 @@ static struct ll_conn_iso_stream cis_mock = { .established = 1, .group = &cig_mo
 /* struct ll_conn_iso_stream *ll_conn_iso_stream_get(uint16_t handle); */
 FAKE_VALUE_FUNC(struct ll_conn_iso_stream *, ll_conn_iso_stream_get, uint16_t);
 
+/* uint8_t ull_peripheral_iso_setup(...); */
+FAKE_VALUE_FUNC(uint8_t, ull_peripheral_iso_setup, struct pdu_data_llctrl_cis_ind *,
+		uint8_t, uint16_t, uint16_t *);
+
+/* void ull_peripheral_iso_release(uint16_t cis_handle); */
+FAKE_VOID_FUNC(ull_peripheral_iso_release, uint16_t);
+
 static void cis_create_setup(void *data)
 {
 	test_setup(&conn);
 
 	RESET_FAKE(ll_conn_iso_stream_get);
+	RESET_FAKE(ull_peripheral_iso_setup);
+	RESET_FAKE(ull_peripheral_iso_release);
 }
 
 static bool is_instant_reached(struct ll_conn *llconn, uint16_t instant)
@@ -1048,6 +1057,137 @@ ZTEST(cis_create, test_cc_create_central_rem_reject)
 
 	/* Done */
 	event_done(&conn);
+
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
+/*
+ * Central-initiated CIS Create procedure.
+ * Central requests CIS, peripheral Host accepts, but LL_CIS_IND has
+ * invalid sync_delay (cis_sync_delay > cig_sync_delay).
+ * The procedure should complete with an error.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_S  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |   LL_CIS_REQ              |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |      LE CIS Request       |                           |
+ *    |<--------------------------|                           |
+ *    | LE CIS Request            |                           |
+ *    | Accept                    |                           |
+ *    |-------------------------->|                           |
+ *    |                           |                           |
+ *    |                           | LL_CIS_RSP                |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |   LL_CIS_IND (invalid)    |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |      LE CIS ESTABLISHED   |                           |
+ *    |      (error)              |                           |
+ *    |<--------------------------|                           |
+ */
+ZTEST(cis_create, test_cc_create_periph_rem_invalid_cis_ind_sync_delay)
+{
+	struct node_tx *tx;
+	struct node_rx_pdu *ntf;
+	struct node_rx_conn_iso_req cis_req = {
+		.cig_id = 0x01,
+		.cis_handle = 0x00,
+		.cis_id = 0x02
+	};
+	struct pdu_data_llctrl_cis_rsp local_cis_rsp = {
+		.cis_offset_max = { 0, 0x02, 0},
+		.cis_offset_min = { 0, 0x02, 0},
+		.conn_event_count = 12
+	};
+	/* CIS_IND - values don't matter since we're mocking ull_peripheral_iso_setup
+	 * to return an error, testing the LLCP error handling path
+	 */
+	struct pdu_data_llctrl_cis_ind remote_cis_ind_invalid = {
+		.aa = { 0, 0, 0, 0},
+		.cig_sync_delay = { 0, 0, 0},
+		.cis_offset = { 0, 0, 0},
+		.cis_sync_delay = { 0, 0, 0},
+		.conn_event_count = 12
+	};
+	struct node_rx_conn_iso_estab cis_estab = {
+		.cis_handle = 0x00,
+		.status = BT_HCI_ERR_INVALID_LL_PARAM
+	};
+
+	/* Prepare mocked call to ll_conn_iso_stream_get() */
+	ll_conn_iso_stream_get_fake.return_val = &cis_mock;
+
+	/* Make ull_peripheral_iso_setup return BT_HCI_ERR_INVALID_LL_PARAM
+	 * to simulate cis_sync_delay > cig_sync_delay validation failure
+	 */
+	ull_peripheral_iso_setup_fake.return_val = BT_HCI_ERR_INVALID_LL_PARAM;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx */
+	lt_tx(LL_CIS_REQ, &conn, &remote_cis_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* There should be exactly one host notification */
+	ut_rx_node(NODE_CIS_REQUEST, &ntf, &cis_req);
+	ut_rx_q_is_empty();
+
+	/* Release Ntf */
+	release_ntf(ntf);
+
+	/* Accept request */
+	ull_cp_cc_accept(&conn, 0U);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CIS_RSP, &conn, &tx, &local_cis_rsp);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Rx - CIS_IND with invalid sync_delay */
+	lt_tx(LL_CIS_IND, &conn, &remote_cis_ind_invalid);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* There should be exactly one host notification with error */
+	ut_rx_node(NODE_CIS_ESTABLISHED, &ntf, &cis_estab);
+	ut_rx_q_is_empty();
+
+	/* Done */
+	event_done(&conn);
+
+	/* Verify ull_peripheral_iso_release was called to clean up resources */
+	zassert_equal(ull_peripheral_iso_release_fake.call_count, 1,
+		      "Expected ull_peripheral_iso_release to be called once");
 
 	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
 		      "Free CTX buffers %d", llcp_ctx_buffers_free());

@@ -44,7 +44,7 @@
 #include "ull_conn_iso_internal.h"
 #include "lll_peripheral_iso.h"
 
-void ull_peripheral_iso_release(uint16_t cis_handle)
+__weak void ull_peripheral_iso_release(uint16_t cis_handle)
 {
 }
 
@@ -55,8 +55,9 @@ uint8_t ull_peripheral_iso_acquire(struct ll_conn *acl,
 	return 0;
 }
 
-uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
-				 uint8_t cig_id, uint16_t cis_handle)
+__weak uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
+					uint8_t cig_id, uint16_t cis_handle,
+					uint16_t *conn_event_count)
 {
 	return 0;
 }
