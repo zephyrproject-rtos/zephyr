@@ -24,6 +24,7 @@
 		led0 = &led_act;
 		led1 = &led_pwr;
 		i2c-1 = &i2c1;
+		die-temp0 = &vc_thermal;
 	};
 
 	chosen {
@@ -90,6 +91,11 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <8>;
+		};
+
+		vc_thermal: vc-thermal {
+			compatible = "raspberrypi,bcm283x-vc-thermal";
+			status = "okay";
 		};
 	};
 
