@@ -66,6 +66,10 @@ LOG_MODULE_REGISTER(dac_ad5529r, CONFIG_DAC_LOG_LEVEL);
 /* DAC output registers - actual output value (0x1A8 - 0x1C6) */
 #define AD5529R_REG_DAC_OUTPUT_A_CH(n) (0x1A8 + ((n) * 2))
 
+/* Reference source select register */
+#define AD5529R_REG_REF_SEL  0x1A2
+#define AD5529R_REF_INTERNAL BIT(0)
+
 /* Interface config A bits */
 #define AD5529R_SW_RESET_KEY   (BIT(7) | BIT(4) | BIT(0))
 #define AD5529R_SDO_ACTIVE     BIT(4)
@@ -446,6 +450,13 @@ static int ad5529r_init(const struct device *dev)
 	}
 
 	LOG_DBG("scratch pad write: 0xA5, read: 0x%02X - OK", scratch);
+
+	/* Select the internal 4.096V voltage reference */
+	ret = ad5529r_write_reg(dev, AD5529R_REG_REF_SEL, AD5529R_REF_INTERNAL);
+	if (ret != 0) {
+		LOG_ERR("failed to select internal reference: %d", ret);
+		return ret;
+	}
 
 	LOG_INF("AD5529R initialized (product_id=0x%04X, device_id=%u)", product_id,
 		config->device_id);
