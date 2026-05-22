@@ -131,6 +131,14 @@
 			status = "disabled";
 		};
 
+		mbox0: mbox@3f00b880 {
+			compatible = "brcm,bcm2711-mbox";
+			reg = <0x3f00b880 0x40>;
+			interrupts = <BCM2835_IRQ_ARM_MAILBOX IRQ_TYPE_LEVEL 0>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
 		/*
 		 * The three BSC masters share BCM2835_IRQ_I2C, so enabling
 		 * more than one at a time trips a build-time IRQ_CONNECT
