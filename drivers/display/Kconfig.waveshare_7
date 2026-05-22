@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config WAVESHARE_7
+	bool "Waveshare 7in display driver"
+	default y
+	select I2C
+	depends on DT_HAS_WAVESHARE_7_ENABLED
+	help
+	  Enable driver for Waveshare 7in display
+
+if WAVESHARE_7
+
+config WAVESHARE_7_POWER_ON_DELAY_MS
+	int "Display module power on delay"
+	default 1000
+	help
+	  This option sets the power on delay time in milliseconds. This will
+	  allow time for the display module to power up and initialize itself
+	  before any I2C communications are attempted. The default value of
+	  1000ms was determined through experimentation with the PSE84 Eval
+	  board.
+
+endif # WAVESHARE_7
