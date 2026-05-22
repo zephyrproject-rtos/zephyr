@@ -75,10 +75,9 @@ LOG_MODULE_REGISTER(cs_etr_tbm);
 	} while (0)
 
 static const uint32_t wsize_mask = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int) - 1;
-static const uint32_t wsize_inc = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int) - 1;
+static atomic_t wsize_inc;
 
 static int oosync_cnt;
-static volatile bool tbm_full;
 static volatile uint32_t base_wr_idx;
 static uint32_t etr_rd_idx;
 /* Counts number of new messages completed in the current formatter frame decoding. */
@@ -550,13 +549,14 @@ static uint32_t get_wr_idx(void)
 {
 	uint32_t cnt = nrfx_tbm_count_get();
 
-	if (tbm_full && (cnt < wsize_mask)) {
+	if (wsize_inc && (cnt < wsize_mask)) {
 		/* TBM full event is generated when max value is reached and not when
 		 * overflow occurs. We cannot increment base_wr_idx just after the
 		 * event but only when counter actually wraps.
 		 */
-		base_wr_idx += wsize_inc;
-		tbm_full = false;
+		uint32_t inc = atomic_set(&wsize_inc, 0);
+
+		base_wr_idx += inc;
 	}
 
 	return cnt + base_wr_idx;
@@ -858,7 +858,7 @@ static void tbm_event_handler(nrf_tbm_event_t event)
 	ARG_UNUSED(event);
 
 	if (event == NRF_TBM_EVENT_FULL) {
-		tbm_full = true;
+		wsize_inc += DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int);
 	}
 
 #ifdef CONFIG_DEBUG_NRF_ETR_SHELL
@@ -884,7 +884,9 @@ int etr_process_init(void)
 		use_blocking = (err != 0);
 		k_sem_init(&uart_sem, 1, 1);
 	}
-	static const nrfx_tbm_config_t config = {.size = wsize_mask};
+	static const nrfx_tbm_config_t config = {
+		.size = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int)
+	};
 
 	nrfx_tbm_init(&config, tbm_event_handler);
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(tbm)), DT_IRQ(DT_NODELABEL(tbm), priority),
