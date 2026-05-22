@@ -60,6 +60,14 @@ properties:
       When runtime power management is enabled, this closes the UART.
       This requires modem to support waking up the UART using RING signal.
 
+  cmux-no-powersave-handshake:
+    type: boolean
+    description: |
+      Skip the in-band CMUX power-save handshake on both entry to and exit
+      from power save. The framework transitions directly between connected
+      and power-save states. This requires modem to drive sleep and wake via
+      a hardware line outside CMUX rather than via an in-band response.
+
   autostarts:
     type: boolean
     description: |
