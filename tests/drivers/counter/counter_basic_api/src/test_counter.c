@@ -132,6 +132,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_TMR_ESP32
 	DEVS_FOR_DT_COMPAT(espressif_esp32_counter)
 #endif
+#ifdef CONFIG_COUNTER_TMR_AMEBA
+	DEVS_FOR_DT_COMPAT(realtek_ameba_counter)
+#endif
 #ifdef CONFIG_COUNTER_RTC_ESP32
 	DEVS_FOR_DT_COMPAT(espressif_esp32_rtc_timer)
 #endif
