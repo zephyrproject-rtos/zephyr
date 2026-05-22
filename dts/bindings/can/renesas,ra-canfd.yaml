@@ -22,4 +22,5 @@ properties:
     type: int
     description: |
       To determine the maximum rx filters can be added on this CAN device.
-      Valid range: 0 - 16
+    min: 0
+    max: 16

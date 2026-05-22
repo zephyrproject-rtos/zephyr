@@ -69,7 +69,8 @@ properties:
     type: int
     description: |
       Sampling period for the filter in bus clock cycles.
-      Valid range: 0 - 255.
+    min: 0
+    max: 255
 
   dac-vref-source:
     type: string
@@ -83,7 +84,8 @@ properties:
     type: int
     description: |
       8-bit DAC code used when an input is set to DAC output.
-      Valid range: 0 - 255.
+    min: 0
+    max: 255
 
   positive-mux-input:
     type: string

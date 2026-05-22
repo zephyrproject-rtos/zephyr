@@ -119,7 +119,8 @@ properties:
         * VDO_PCABLE
         * VDO_ACABLE
         * VDO_VPD
-      Valid range: 3 - 6
+    min: 3
+    max: 6
 
   sink-vdos-v1:
     type: array
@@ -132,7 +133,8 @@ properties:
         * VDO_PRODUCT
         * VDO_CABLE
         * VDO_AMA
-      Valid range: 3 - 6
+    min: 3
+    max: 6
 
   op-sink-microwatt:
     type: int

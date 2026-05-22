@@ -132,21 +132,24 @@ properties:
     required: true
     description: |
       System clock divider for bus clock.
-      Valid range: 1 to 16.
+    min: 1
+    max: 16
 
   sys-clk-div-slow:
     type: int
     required: true
     description: |
       System clock divider for slow clock.
-      Valid range: 1 to 16.
+    min: 1
+    max: 16
 
   sys-clk-div-core:
     type: int
     required: true
     description: |
       System clock divider for core clock.
-      Valid range: 1 to 16.
+    min: 1
+    max: 16
 
   enable-sosc:
     type: boolean

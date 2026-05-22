@@ -20,17 +20,19 @@ properties:
     type: int
     description: |
       Bootloader entry point when a boot from flash is selected.
-      Valid range: 0 - 0x0effffff
       Default is 0, which is the standard initial configuration.
+    min: 0
+    max: 0x0effffff
     default: 0
 
   ti,serial-io-cfg-index:
     type: int
     description: |
       Index of which I/O mapping to use for UART/SPI.
-      Valid range: 0 - 2
       Default is 0, which is the standard initial configuration. Other values can be
       used depending on I/O availability.
+    min: 0
+    max: 2
     default: 0
 
   ti,pin-trigger:
@@ -43,9 +45,10 @@ properties:
     type: int
     description: |
       Index of DIO pin to use for pin trigger check.
-      Valid range: 0 - 25
       Default is 0, which is the standard initial configuration. Other values can be
       used depending on DIO availability.
+    min: 0
+    max: 25
     default: 0
 
   ti,pin-trigger-level-hi:
@@ -100,8 +103,9 @@ properties:
       Controls whether flash programming is allowed through SACI. The same mechanism
       controls whether the application is allowed to program these sectors.
       0 = protected.
-      Valid range: 0 - 0xffffffff
       Default is 0xffffffff to allow programming these sectors.
+    min: 0
+    max: 0xffffffff
     default: 0xffffffff
 
   ti,wr-er-prot-sect32-255:
@@ -110,32 +114,36 @@ properties:
       Bitmask for write/erase protection of groups of 8 sectors, in sector range [32, 255].
       Bit i protects sectors [32 + 8i, 39 + 8i].
       0 = protected.
-      Valid range: 0 - 0xffffffff
       Default is 0xffffffff to allow programming these sectors.
+    min: 0
+    max: 0xffffffff
     default: 0xffffffff
 
   ti,wr-er-prot-ccfg-sect:
     type: int
     description: |
       Bitmask for write/erase protection of CCFG sectors.
-      Valid range: 0 - 0xffffffff
       Default is 0 to prevent from mistakenly programming these sectors.
+    min: 0
+    max: 0xffffffff
     default: 0
 
   ti,wr-er-prot-fcfg-sect:
     type: int
     description: |
       Bitmask for write/erase protection of FCFG sectors.
-      Valid range: 0 - 0xffffffff
       Default is 0 to prevent from mistakenly programming these sectors.
+    min: 0
+    max: 0xffffffff
     default: 0
 
   ti,wr-er-prot-engr-sect:
     type: int
     description: |
       Bitmask for write/erase protection of ENGR sectors.
-      Valid range: 0 - 0xffffffff
       Default is 0 to prevent from mistakenly programming these sectors.
+    min: 0
+    max: 0xffffffff
     default: 0
 
   ti,chip-er-retain-sect0-31:
@@ -146,8 +154,9 @@ properties:
       to allow flash sectors devoted to logging or runtime state/configuration to survive
       the chip erase during a FW update.
       0 = protected.
-      Valid range: 0 - 0xffffffff
       Default is 0 to prevent from mistakenly programming these sectors.
+    min: 0
+    max: 0xffffffff
     default: 0
 
   ti,chip-er-retain-sect32-255:
@@ -156,6 +165,7 @@ properties:
       Bitmask for chip erase protection of groups of 8 sectors, in sector range [32, 255].
       Bit i protects sectors [32 + 8i, 39 + 8i].
       0 = protected.
-      Valid range: 0 - 0xffffffff
       Default is 0 to prevent from mistakenly programming these sectors.
+    min: 0
+    max: 0xffffffff
     default: 0

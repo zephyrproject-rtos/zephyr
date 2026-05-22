@@ -88,7 +88,8 @@ child-binding:
       required: true
       description: |
         The device's SMC Chip Select number.
-        Valid range: 0 - 3
+      min: 0
+      max: 3
 
     atmel,smc-write-mode:
       type: string

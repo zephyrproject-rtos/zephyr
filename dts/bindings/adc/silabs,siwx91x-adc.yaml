@@ -16,7 +16,8 @@ properties:
     description: |
         ADC reference voltage in mv. This voltage is common for all
         the channels.
-        Valid range: 1800 - 3600
+    min: 1800
+    max: 3600
     required: true
 
   silabs,adc-sampling-rate:

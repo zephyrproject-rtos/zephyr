@@ -62,7 +62,8 @@ properties:
     description: |
       VSCALE = (VDDANA * (value + 1)) / 64
       Only used when either positive or negative input is configured as "vscale".
-      Valid range: 0 to 63
+    min: 0
+    max: 63
 
   output-mode:
     type: string

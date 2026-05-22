@@ -38,4 +38,5 @@ properties:
     required: true
     description: |
         PLL multiplication factor for output clock
-        Valid range: 2 - 16
+    min: 2
+    max: 16

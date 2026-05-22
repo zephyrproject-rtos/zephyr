@@ -22,7 +22,8 @@ properties:
     type: int
     description: |
       Timer / Counter channel to use, channel 0 is the default.
-      Valid range: 0 - 2
+    min: 0
+    max: 2
 
   clk:
     type: int

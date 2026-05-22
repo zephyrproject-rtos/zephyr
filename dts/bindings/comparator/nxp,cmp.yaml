@@ -83,7 +83,8 @@ properties:
     type: int
     description: |
       Specifies the sampling period, in bus clock cycles.
-      Valid range: 0 - 255.
+    min: 0
+    max: 255
 
   dac-vref-source:
     type: string

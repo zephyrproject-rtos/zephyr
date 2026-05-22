@@ -37,7 +37,8 @@ properties:
     description: |
       Prescaler value for computing the timestamps of received messages.
       The timestamp counter is derived from the internal clock divided by this value.
-      Valid range is [1, 1024].
+    min: 1
+    max: 1024
 
   sof-on-clko:
     type: boolean

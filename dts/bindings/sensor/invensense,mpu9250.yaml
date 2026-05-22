@@ -25,7 +25,8 @@ properties:
       Default gyrscope sample rate divider. This divider is only effective
       when gyro-dlpf is in range 5-184.
       rate = sample_rate / (1 + gyro-sr-div)
-      Valid range: 0 - 255
+    min: 0
+    max: 255
 
   gyro-dlpf:
     type: int

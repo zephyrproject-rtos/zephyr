@@ -55,8 +55,9 @@ properties:
       the input filter accepting an input transition. The number of samples
       is the decimal value of this field plus three: the bit field value of 0-7
       represents 3-10 samples, respectively. The value affects the input latency.
-      Valid range: 0 - 7
       Note this property only takes effect when capture input filter register is available.
+    min: 0
+    max: 7
 
   input-filter-period:
     type: int
@@ -65,8 +66,9 @@ properties:
       Each input is sampled multiple times at the rate specified by this field.
       If the value is 0x00 (default), then the input filter is bypassed. The value affects
       the input latency.
-      Valid range: 0 - 255
       Note this property only takes effect when capture input filter register is available.
+    min: 0
+    max: 255
 
   "#pwm-cells":
     const: 3

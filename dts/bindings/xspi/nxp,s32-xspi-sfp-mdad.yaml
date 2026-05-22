@@ -48,4 +48,5 @@ child-binding:
       required: true
       description: |
         Domain ID Reference value of the Domain-ID (MID) for MID-comparison.
-        Valid range: 0 - 63.
+      min: 0
+      max: 63

@@ -183,7 +183,8 @@ child-binding:
       required: true
       description: |
         Channel X Reference Count Conversion Interval Time.
-        Valid range: 256 - 65535
+      min: 256
+      max: 65535
 
     offset:
       type: int
@@ -191,7 +192,8 @@ child-binding:
       description: |
         Channel X Conversion Offset (FDC2112 and FDC2212 only).
         The default offset value after power-on-reset is 0.
-        Valid range: 0 - 65535
+      min: 0
+      max: 65535
 
     settlecount:
       type: int
@@ -201,7 +203,8 @@ child-binding:
 
         The FDC will use this settling time to allow the LC sensor to
         stabilize before initiation of a conversion on Channel X.
-        Valid range: 0 - 65535
+      min: 0
+      max: 65535
 
     fref-divider:
       type: int
@@ -211,7 +214,8 @@ child-binding:
 
         Sets the divider for Channel X reference.
         Use this to scale the maximum conversion frequency.
-        Valid range: 1 - 1023
+      min: 1
+      max: 1023
 
     idrive:
       type: int
@@ -221,7 +225,8 @@ child-binding:
 
         This field defines the Drive Current used during the settling +
         conversion time of Channel X sensor clock.
-        Valid range: 0 - 31
+      min: 0
+      max: 31
 
     fin-sel:
       type: int
