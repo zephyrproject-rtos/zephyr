@@ -30,6 +30,7 @@ OS Services
    modem/index.rst
    notify.rst
    pm/index.rst
+   power/index.rst
    portability/index.rst
    poweroff.rst
    profiling/index.rst
