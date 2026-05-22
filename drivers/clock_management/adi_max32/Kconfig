@@ -1,0 +1,23 @@
+# Copyright 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MANAGEMENT_ADI_MAX32
+	bool
+	help
+	  ADI MAX32 clock drivers
+
+config CLOCK_MANAGEMENT_ADI_MAX32_SOURCE
+	bool "ADI MAX32 clock source driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_CLOCK_SOURCE_ENABLED
+	select CLOCK_MANAGEMENT_ADI_MAX32
+	help
+	  ADI MAX32 clock source driver
+
+config CLOCK_MANAGEMENT_ADI_MAX32_DIV
+	bool "ADI MAX32 clock source divider"
+	default y
+	depends on DT_HAS_ADI_MAX32_CLOCK_DIV_ENABLED
+	select CLOCK_MANAGEMENT_ADI_MAX32
+	help
+	  ADI MAX32 clock source divider/prescaler

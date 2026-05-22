@@ -80,6 +80,7 @@ config CLOCK_MANAGEMENT_MUX
 	  A generic mux driver where a simple bitfield will unconditionally
 	  select a clock parent.
 
+source "drivers/clock_management/adi_max32/Kconfig"
 source "drivers/clock_management/nxp_syscon/Kconfig"
 
 module = CLOCK_MANAGEMENT

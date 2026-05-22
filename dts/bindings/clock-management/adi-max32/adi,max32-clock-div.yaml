@@ -1,0 +1,36 @@
+# Copyright 2026 Analogue Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI MAX32 clock divider node. Accepts one specifier, which sets the power
+  of two factor to divide the input clock by. Valid powers are 0 to 7, which
+  correspond to divider values of 1 to 128.
+
+compatible: "adi,max32-clock-div"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Tuple containing address of register and width of the bitfield
+      to set to set the divider value.
+
+  offset:
+    type: int
+    required: true
+    description: |
+      Bit offset of the bitfield to set the divider value.
+
+  input-source:
+    type: phandle
+    required: true
+    description: |
+      phandle to the input clock source for this divider.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - divider
