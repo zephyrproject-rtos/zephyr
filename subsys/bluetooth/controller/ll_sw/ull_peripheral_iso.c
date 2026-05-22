@@ -335,6 +335,10 @@ uint8_t ull_peripheral_iso_setup(struct pdu_data_llctrl_cis_ind *ind,
 #endif /* CONFIG_BT_CTLR_PERIPHERAL_ISO_EARLY_CIG_START */
 
 	cis->sync_delay = sys_get_le24(ind->cis_sync_delay);
+	if (cis->sync_delay > cig->sync_delay) {
+		return BT_HCI_ERR_INVALID_LL_PARAM;
+	}
+
 	cis->offset = cis_offset;
 	memcpy(cis->lll.access_addr, ind->aa, sizeof(ind->aa));
 #if defined(CONFIG_BT_CTLR_ISOAL_PSN_IGNORE)

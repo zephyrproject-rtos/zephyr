@@ -480,10 +480,14 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 	switch (evt) {
 	case RP_CC_EVT_CIS_IND:
 		llcp_pdu_decode_cis_ind(ctx, pdu);
-		if (!ull_peripheral_iso_setup(&pdu->llctrl.cis_ind, ctx->data.cis_create.cig_id,
-					      ctx->data.cis_create.cis_handle,
-					      &ctx->data.cis_create.conn_event_count)) {
+	{
+		uint8_t err;
 
+		err = ull_peripheral_iso_setup(&pdu->llctrl.cis_ind,
+					       ctx->data.cis_create.cig_id,
+					       ctx->data.cis_create.cis_handle,
+					       &ctx->data.cis_create.conn_event_count);
+		if (!err) {
 			/* CIS has been setup, go wait for 'instant' before starting */
 			ctx->state = RP_CC_STATE_WAIT_INSTANT;
 
@@ -491,9 +495,13 @@ static void rp_cc_state_wait_rx_cis_ind(struct ll_conn *conn, struct proc_ctx *c
 			rp_cc_check_instant_rx_cis_ind(conn, ctx, evt, param);
 			break;
 		}
-		/* If we get to here the CIG_ID referred in req/acquire has become void/invalid */
-		/* This cannot happen unless the universe has started to deflate */
-		LL_ASSERT_DBG(0);
+
+		/* CIS setup failed due to invalid parameters */
+		ctx->data.cis_create.error = err;
+		ull_peripheral_iso_release(ctx->data.cis_create.cis_handle);
+		rp_cc_complete(conn, ctx, evt, param);
+		break;
+	}
 	case RP_CC_EVT_REJECT:
 		/* Handle CIS creation rejection */
 		ctx->data.cis_create.error = BT_HCI_ERR_REMOTE_USER_TERM_CONN;
