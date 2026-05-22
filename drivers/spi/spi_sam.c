@@ -99,6 +99,7 @@ static int spi_sam_configure(const struct device *dev,
 	Spi *regs = cfg->regs;
 	uint32_t spi_mr = 0U, spi_csr = 0U;
 	uint16_t spi_csr_idx = spi_cs_is_gpio(config) ? 0 : config->slave;
+	uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
 	int div;
 
 	if (spi_context_configured(&data->ctx, config)) {
@@ -139,11 +140,11 @@ static int spi_sam_configure(const struct device *dev,
 		spi_csr |= SPI_CSR_NCPHA;
 	}
 
-	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
+	if (word_size < 8 || word_size > 16) {
+		LOG_ERR("Unsupported word size %u (must be 8-16)", word_size);
 		return -ENOTSUP;
-	} else {
-		spi_csr |= SPI_CSR_BITS(SPI_CSR_BITS_8_BIT);
 	}
+	spi_csr |= SPI_CSR_BITS(word_size - 8);
 
 	/* Use the requested or next highest possible frequency */
 	div = SOC_ATMEL_SAM_MCK_FREQ_HZ / config->frequency;
@@ -171,6 +172,14 @@ static void spi_sam_finish(Spi *regs)
 	}
 }
 
+/* True when the current configuration uses 9-16 bit words. */
+static inline bool spi_sam_is_wide(const struct device *dev)
+{
+	struct spi_sam_data *data = dev->data;
+
+	return SPI_WORD_SIZE_GET(data->ctx.config->operation) > 8;
+}
+
 /* Fast path that transmits a buf (8-bit words) */
 static void spi_sam_fast_tx_8(Spi *regs, const uint8_t *tx_buf,
 			      const uint32_t tx_buf_len)
@@ -189,12 +198,29 @@ static void spi_sam_fast_tx_8(Spi *regs, const uint8_t *tx_buf,
 	}
 }
 
+/* Fast path that transmits a buf (9-16 bit words, packed as uint16_t) */
+static void spi_sam_fast_tx_16(Spi *regs, const uint8_t *tx_buf,
+			       const uint32_t tx_buf_len)
+{
+	const uint16_t *p = (const uint16_t *)tx_buf;
+	size_t words = tx_buf_len / 2;
+
+	for (size_t i = 0; i < words; i++) {
+		while ((regs->SPI_SR & SPI_SR_TDRE) == 0) {
+		}
+		regs->SPI_TDR = SPI_TDR_TD(p[i]);
+	}
+}
+
 /* Fast path that transmits a buf */
 static void spi_sam_fast_tx(const struct device *dev, Spi *regs,
 			    const uint8_t *tx_buf, const uint32_t tx_buf_len)
 {
-	ARG_UNUSED(dev);
-	spi_sam_fast_tx_8(regs, tx_buf, tx_buf_len);
+	if (spi_sam_is_wide(dev)) {
+		spi_sam_fast_tx_16(regs, tx_buf, tx_buf_len);
+	} else {
+		spi_sam_fast_tx_8(regs, tx_buf, tx_buf_len);
+	}
 }
 
 /* Fast path that reads into a buf (8-bit words) */
@@ -235,12 +261,32 @@ static void spi_sam_fast_rx_8(Spi *regs, uint8_t *rx_buf,
 	*rx = (uint8_t)regs->SPI_RDR;
 }
 
+/* Fast path that reads into a buf (9-16 bit words, packed as uint16_t) */
+static void spi_sam_fast_rx_16(Spi *regs, uint8_t *rx_buf,
+			       const uint32_t rx_buf_len)
+{
+	uint16_t *rx = (uint16_t *)rx_buf;
+	size_t words = rx_buf_len / 2;
+
+	for (size_t i = 0; i < words; i++) {
+		while ((regs->SPI_SR & SPI_SR_TDRE) == 0) {
+		}
+		regs->SPI_TDR = SPI_TDR_TD(0);
+		while ((regs->SPI_SR & SPI_SR_RDRF) == 0) {
+		}
+		rx[i] = (uint16_t)regs->SPI_RDR;
+	}
+}
+
 /* Fast path that reads into a buf */
 static void spi_sam_fast_rx(const struct device *dev, Spi *regs,
 			    uint8_t *rx_buf, const uint32_t rx_buf_len)
 {
-	ARG_UNUSED(dev);
-	spi_sam_fast_rx_8(regs, rx_buf, rx_buf_len);
+	if (spi_sam_is_wide(dev)) {
+		spi_sam_fast_rx_16(regs, rx_buf, rx_buf_len);
+	} else {
+		spi_sam_fast_rx_8(regs, rx_buf, rx_buf_len);
+	}
 }
 
 /* Fast path that writes and reads bufs of the same length (8-bit words) */
@@ -297,13 +343,34 @@ static void spi_sam_fast_txrx_8(Spi *regs,
 
 }
 
+/* Fast path that writes and reads bufs of the same length (9-16 bit words) */
+static void spi_sam_fast_txrx_16(Spi *regs, const uint8_t *tx_buf,
+				 const uint8_t *rx_buf, const uint32_t len)
+{
+	const uint16_t *tx = (const uint16_t *)tx_buf;
+	uint16_t *rx = (uint16_t *)rx_buf;
+	size_t words = len / 2;
+
+	for (size_t i = 0; i < words; i++) {
+		while ((regs->SPI_SR & SPI_SR_TDRE) == 0) {
+		}
+		regs->SPI_TDR = SPI_TDR_TD(tx[i]);
+		while ((regs->SPI_SR & SPI_SR_RDRF) == 0) {
+		}
+		rx[i] = (uint16_t)regs->SPI_RDR;
+	}
+}
+
 /* Fast path that writes and reads bufs of the same length */
 static void spi_sam_fast_txrx(const struct device *dev, Spi *regs,
 			      const uint8_t *tx_buf, const uint8_t *rx_buf,
 			      const uint32_t len)
 {
-	ARG_UNUSED(dev);
-	spi_sam_fast_txrx_8(regs, tx_buf, rx_buf, len);
+	if (spi_sam_is_wide(dev)) {
+		spi_sam_fast_txrx_16(regs, tx_buf, rx_buf, len);
+	} else {
+		spi_sam_fast_txrx_8(regs, tx_buf, rx_buf, len);
+	}
 }
 
 
