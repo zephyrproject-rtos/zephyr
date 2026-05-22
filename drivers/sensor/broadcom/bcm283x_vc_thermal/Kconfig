@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BCM283X_VC_THERMAL
+	bool "Raspberry Pi BCM283x VideoCore SoC temperature sensor"
+	default y
+	depends on DT_HAS_RASPBERRYPI_BCM283X_VC_THERMAL_ENABLED
+	select RASPBERRYPI_FIRMWARE
+	help
+	  Raspberry Pi BCM283x SoC die-temperature sensor. The temperature
+	  is read through the VideoCore firmware GET_TEMPERATURE property
+	  tag (the source behind `vcgencmd measure_temp`) and exposed as
+	  SENSOR_CHAN_DIE_TEMP.
