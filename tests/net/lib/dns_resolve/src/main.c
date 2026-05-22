@@ -821,64 +821,6 @@ static void inject_refused_dns_response(struct dns_resolve_context *ctx,
 	net_buf_unref(dns_data);
 }
 
-#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
-static int get_active_server_idx(struct dns_resolve_context *ctx, int nth)
-{
-	int seen = 0;
-
-	ARRAY_FOR_EACH(ctx->servers, i) {
-		if (ctx->servers[i].sock < 0) {
-			continue;
-		}
-
-		if (seen == nth) {
-			return i;
-		}
-
-		seen++;
-	}
-
-	return -1;
-}
-#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
-
-static int get_active_unicast_server_idx(struct dns_resolve_context *ctx, int nth)
-{
-	int seen = 0;
-
-	ARRAY_FOR_EACH(ctx->servers, i) {
-		if (ctx->servers[i].sock < 0 ||
-		    ctx->servers[i].is_mdns ||
-		    ctx->servers[i].is_llmnr) {
-			continue;
-		}
-
-		if (seen == nth) {
-			return i;
-		}
-
-		seen++;
-	}
-
-	return -1;
-}
-
-static int get_active_unicast_server_count(struct dns_resolve_context *ctx)
-{
-	int count = 0;
-
-	ARRAY_FOR_EACH(ctx->servers, i) {
-		if (ctx->servers[i].sock >= 0 &&
-		    !ctx->servers[i].is_mdns &&
-		    !ctx->servers[i].is_llmnr) {
-			count++;
-		}
-	}
-
-	return count;
-}
-
-#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
 static void inject_success_dns_response(struct dns_resolve_context *ctx,
 					int server_idx, uint16_t dns_id,
 					const char *query,
@@ -943,6 +885,64 @@ static void inject_success_dns_response(struct dns_resolve_context *ctx,
 	net_buf_unref(dns_data);
 }
 
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+static int get_active_server_idx(struct dns_resolve_context *ctx, int nth)
+{
+	int seen = 0;
+
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		if (ctx->servers[i].sock < 0) {
+			continue;
+		}
+
+		if (seen == nth) {
+			return i;
+		}
+
+		seen++;
+	}
+
+	return -1;
+}
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
+static int get_active_unicast_server_idx(struct dns_resolve_context *ctx, int nth)
+{
+	int seen = 0;
+
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		if (ctx->servers[i].sock < 0 ||
+		    ctx->servers[i].is_mdns ||
+		    ctx->servers[i].is_llmnr) {
+			continue;
+		}
+
+		if (seen == nth) {
+			return i;
+		}
+
+		seen++;
+	}
+
+	return -1;
+}
+
+static int get_active_unicast_server_count(struct dns_resolve_context *ctx)
+{
+	int count = 0;
+
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		if (ctx->servers[i].sock >= 0 &&
+		    !ctx->servers[i].is_mdns &&
+		    !ctx->servers[i].is_llmnr) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
 static void wait_for_callbacks(int expected_count)
 {
 	for (int i = 0; i < expected_count; i++) {
@@ -952,6 +952,18 @@ static void wait_for_callbacks(int expected_count)
 	}
 }
 #endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
+static void wait_for_send_count(uint8_t expected_count)
+{
+	int64_t end = k_uptime_get() + DNS_TIMEOUT + 300;
+
+	while (send_count < expected_count && k_uptime_get() < end) {
+		k_msleep(THREAD_SLEEP);
+	}
+
+	zassert_equal(send_count, expected_count,
+		      "Expected %u sends, got %u", expected_count, send_count);
+}
 
 ZTEST(dns_resolve, test_dns_query_ipv4)
 {
@@ -1014,6 +1026,60 @@ ZTEST(dns_resolve, test_dns_query_ipv4_timeout_fallback)
 	zassert_equal(send_count, 2U, "Expected query fallback to second server");
 
 	success_send_count = 0U;
+
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv4_timeout_fallback_accepts_late_reply)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int first_server;
+	int ret;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS);
+
+	first_server = get_active_unicast_server_idx(ctx, 0);
+
+	zassert_true(first_server >= 0, "Need first active DNS server");
+	zassert_true(get_active_unicast_server_idx(ctx, 1) >= 0,
+		     "Need second active DNS server");
+
+	k_sem_reset(&wait_data2);
+
+	timeout_query = false;
+	send_count = 0U;
+	success_send_count = 0U;
+	auto_response = false;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 timeout fallback query");
+
+	k_yield();
+
+	zassert_equal(send_count, 1U, "Expected initial query to first server only");
+
+	wait_for_send_count(2U);
+
+	inject_success_dns_response(ctx, first_server, current_dns_id,
+				     NAME4, DNS_QUERY_TYPE_A);
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting late fallback response");
+	}
+
+	zassert_equal(send_count, 2U, "Late reply should finish after fallback send");
+
+	auto_response = true;
 
 	verify_cancelled();
 }
