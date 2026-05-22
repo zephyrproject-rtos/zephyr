@@ -6,4 +6,8 @@ else()
   set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-littlearm)
 endif()
 
+if(CONFIG_CPU_CORTEX_M0 OR CONFIG_CPU_CORTEX_M0PLUS)
+  zephyr_link_libraries_ifdef(CONFIG_CPP atomic)
+endif()
+
 add_subdirectory(core)
