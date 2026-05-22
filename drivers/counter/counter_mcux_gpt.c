@@ -21,6 +21,14 @@
 
 LOG_MODULE_REGISTER(mcux_gpt, CONFIG_COUNTER_LOG_LEVEL);
 
+#ifdef CONFIG_COUNTER_CAPTURE
+#define IMX_GPT_N_CAPTURE_CHANNELS 2
+#else
+#define IMX_GPT_N_CAPTURE_CHANNELS 1
+#endif
+
+#define IMX_GPT_N_CHANNELS IMX_GPT_N_CAPTURE_CHANNELS
+
 #define DEV_CFG(_dev) ((const struct mcux_gpt_config *)(_dev)->config)
 #define DEV_DATA(_dev) ((struct mcux_gpt_data *)(_dev)->data)
 
@@ -56,7 +64,28 @@ struct mcux_gpt_data {
 	counter_top_callback_t top_callback;
 	void *alarm_user_data;
 	void *top_user_data;
+#ifdef CONFIG_COUNTER_CAPTURE
+	counter_capture_cb_t capture_callback[IMX_GPT_N_CAPTURE_CHANNELS];
+	void *capture_user_data[IMX_GPT_N_CAPTURE_CHANNELS];
+	gpt_input_operation_mode_t capture_mode[IMX_GPT_N_CAPTURE_CHANNELS];
+	bool capture_single_shot[IMX_GPT_N_CAPTURE_CHANNELS];
+#endif
 };
+
+#ifdef CONFIG_COUNTER_CAPTURE
+static const gpt_input_capture_channel_t capture_ch[IMX_GPT_N_CAPTURE_CHANNELS] = {
+	kGPT_InputCapture_Channel1, /* chan_id=0 → CAPTURE1 */
+	kGPT_InputCapture_Channel2, /* chan_id=1 → CAPTURE2 */
+};
+static const uint32_t capture_irq[IMX_GPT_N_CAPTURE_CHANNELS] = {
+	kGPT_InputCapture1InterruptEnable,
+	kGPT_InputCapture2InterruptEnable,
+};
+static const uint32_t capture_flag[IMX_GPT_N_CAPTURE_CHANNELS] = {
+	kGPT_InputCapture1Flag,
+	kGPT_InputCapture2Flag,
+};
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 static GPT_Type *get_base(const struct device *dev)
 {
@@ -145,6 +174,9 @@ void mcux_gpt_isr(const struct device *dev)
 	uint32_t status;
 
 	status =  GPT_GetStatusFlags(base, kGPT_OutputCompare1Flag |
+#ifdef CONFIG_COUNTER_CAPTURE
+				     kGPT_InputCapture1Flag | kGPT_InputCapture2Flag |
+#endif
 				     kGPT_RollOverFlag);
 	GPT_ClearStatusFlags(base, status);
 	barrier_dsync_fence_full();
@@ -160,13 +192,48 @@ void mcux_gpt_isr(const struct device *dev)
 	if ((status & kGPT_RollOverFlag) && data->top_callback) {
 		data->top_callback(dev, data->top_user_data);
 	}
+
+#ifdef CONFIG_COUNTER_CAPTURE
+	for (uint8_t i = 0; i < ARRAY_SIZE(capture_ch); i++) {
+		counter_capture_flags_t cflags;
+		counter_capture_cb_t cb;
+		bool single_shot;
+		uint32_t ticks;
+
+		if ((status & capture_flag[i]) != capture_flag[i]) {
+			continue;
+		}
+
+		/* Read ICR before potentially disabling (ICR holds until next capture) */
+		ticks = GPT_GetInputCaptureValue(base, capture_ch[i]);
+		cb = data->capture_callback[i];
+		single_shot = data->capture_single_shot[i];
+		cflags = single_shot ? COUNTER_CAPTURE_SINGLE_SHOT : COUNTER_CAPTURE_CONTINUOUS;
+
+		if (single_shot) {
+			GPT_DisableInterrupts(base, capture_irq[i]);
+			GPT_SetInputOperationMode(base, capture_ch[i],
+						  kGPT_InputOperation_Disabled);
+			data->capture_callback[i] = NULL;
+		}
+
+		if (cb != NULL) {
+			cb(dev, i, cflags, ticks, data->capture_user_data[i]);
+		}
+	}
+#endif /* CONFIG_COUNTER_CAPTURE */
 }
 
 static uint32_t mcux_gpt_get_pending_int(const struct device *dev)
 {
 	GPT_Type *base = get_base(dev);
+	uint32_t flags = kGPT_OutputCompare1Flag;
 
-	return GPT_GetStatusFlags(base, kGPT_OutputCompare1Flag);
+#ifdef CONFIG_COUNTER_CAPTURE
+	flags |= kGPT_InputCapture1Flag | kGPT_InputCapture2Flag;
+#endif
+
+	return GPT_GetStatusFlags(base, flags);
 }
 
 static int mcux_gpt_set_top_value(const struct device *dev,
@@ -196,6 +263,79 @@ static uint32_t mcux_gpt_get_top_value(const struct device *dev)
 
 	return config->info.max_top_value;
 }
+
+#ifdef CONFIG_COUNTER_CAPTURE
+static int mcux_gpt_capture_configure(const struct device *dev, uint8_t chan_id,
+				      counter_capture_flags_t flags, counter_capture_cb_t cb,
+				      void *user_data)
+{
+	GPT_Type *base = get_base(dev);
+	struct mcux_gpt_data *data = dev->data;
+	gpt_input_operation_mode_t mode;
+
+	if (chan_id >= ARRAY_SIZE(capture_ch)) {
+		return -EINVAL;
+	}
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+	if (GPT_GetInputOperationMode(base, capture_ch[chan_id]) != kGPT_InputOperation_Disabled) {
+		LOG_ERR("Invalid operation mode");
+		return -EBUSY;
+	}
+
+	if ((flags & COUNTER_CAPTURE_BOTH_EDGES) == COUNTER_CAPTURE_BOTH_EDGES) {
+		mode = kGPT_InputOperation_BothEdge;
+	} else if ((flags & COUNTER_CAPTURE_FALLING_EDGE) == COUNTER_CAPTURE_FALLING_EDGE) {
+		mode = kGPT_InputOperation_FallEdge;
+	} else if ((flags & COUNTER_CAPTURE_RISING_EDGE) == COUNTER_CAPTURE_RISING_EDGE) {
+		mode = kGPT_InputOperation_RiseEdge;
+	} else {
+		return -EINVAL;
+	}
+
+	data->capture_callback[chan_id] = cb;
+	data->capture_user_data[chan_id] = user_data;
+	data->capture_mode[chan_id] = mode;
+	data->capture_single_shot[chan_id] = (flags & COUNTER_CAPTURE_SINGLE_SHOT) != 0;
+
+	return 0;
+}
+
+static int mcux_gpt_enable_capture(const struct device *dev, uint8_t chan_id)
+{
+	GPT_Type *base = get_base(dev);
+	struct mcux_gpt_data *data = dev->data;
+
+	if (chan_id >= ARRAY_SIZE(capture_ch)) {
+		return -EINVAL;
+	}
+	if (data->capture_callback[chan_id] == NULL) {
+		return -EINVAL;
+	}
+
+	GPT_SetInputOperationMode(base, capture_ch[chan_id], data->capture_mode[chan_id]);
+	GPT_EnableInterrupts(base, capture_irq[chan_id]);
+
+	return 0;
+}
+
+static int mcux_gpt_disable_capture(const struct device *dev, uint8_t chan_id)
+{
+	GPT_Type *base = get_base(dev);
+	struct mcux_gpt_data *data = dev->data;
+
+	if (chan_id >= ARRAY_SIZE(capture_ch)) {
+		return -EINVAL;
+	}
+
+	GPT_DisableInterrupts(base, capture_irq[chan_id]);
+	GPT_SetInputOperationMode(base, capture_ch[chan_id], kGPT_InputOperation_Disabled);
+	data->capture_callback[chan_id] = NULL;
+
+	return 0;
+}
+#endif /* CONFIG_COUNTER_CAPTURE */
 
 static int mcux_gpt_reset(const struct device *dev)
 {
@@ -346,6 +486,11 @@ static DEVICE_API(counter, mcux_gpt_driver_api) = {
 	.get_pending_int = mcux_gpt_get_pending_int,
 	.get_top_value = mcux_gpt_get_top_value,
 	.reset = mcux_gpt_reset,
+#ifdef CONFIG_COUNTER_CAPTURE
+	.capture_configure = mcux_gpt_capture_configure,
+	.enable_capture = mcux_gpt_enable_capture,
+	.disable_capture = mcux_gpt_disable_capture,
+#endif
 };
 
 #ifdef CONFIG_PINCTRL
