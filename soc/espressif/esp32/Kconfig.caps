@@ -8,3 +8,7 @@ config ESP32_SOC_FLASH_SUPPORTED
 config ESP32_SOC_PM_SUPPORT_VDDSDIO_PD
 	bool
 	default y
+
+config SOC_ESP32_WIFI_SUPPORT_VARIABLE_BEACON_WINDOW
+	bool
+	default y
