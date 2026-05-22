@@ -1,0 +1,16 @@
+# Copyright (c) 2025 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: xiao_nrf54lm20a/nrf54lm20a/cpuflpr
+name: XIAO nRF54LM20A-nRF54LM20A-Fast-Lightweight-Peripheral-Processor
+vendor: seeed
+arch: riscv
+toolchain:
+  - zephyr
+sysbuild: true
+ram: 96
+flash: 0
+supported:
+  - counter
+  - gpio
+  - watchdog
