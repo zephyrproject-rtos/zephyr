@@ -3953,6 +3953,33 @@ function(build_info)
   endif()
 
   yaml_set(NAME build_info KEY cmake ${keys} ${type} "${values}" ${genex_flag})
+  zephyr_get(BUILD_INFO_SYNC SYSBUILD LOCAL)
+  if(BUILD_INFO_SYNC STREQUAL "instant")
+    build_info_save()
+  endif()
+endfunction()
+
+# Usage:
+#   build_info_save()
+#
+# This function saves the build_info.yml file with exchangeable build information
+# related to the current build.
+#
+# If no build info context has been created, then the function does nothing.
+#
+function(build_info_save)
+  zephyr_get(BUILD_INFO_SYNC SYSBUILD LOCAL)
+  if(DEFINED BUILD_INFO_SYNC AND NOT BUILD_INFO_SYNC MATCHES "(^instant$|^final$)")
+    message(WARNING
+      "BUILD_INFO_SYNC mode '${BUILD_INFO_SYNC}' unknown, valid modes are: <instant|final>"
+    )
+  endif()
+  if(COMMAND yaml_context)
+    yaml_context(EXISTS NAME build_info result)
+    if(result)
+      yaml_save(NAME build_info)
+    endif()
+  endif()
 endfunction()
 
 ########################################################

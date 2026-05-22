@@ -2472,4 +2472,4 @@ toolchain_linker_finalize()
 build_info(zephyr version VALUE ${PROJECT_VERSION_STR})
 build_info(zephyr zephyr-base VALUE ${ZEPHYR_BASE})
 
-yaml_save(NAME build_info)
+build_info_save()
