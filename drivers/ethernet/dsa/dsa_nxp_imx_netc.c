@@ -192,7 +192,6 @@ static void dsa_netc_port_phylink_change(const struct device *phydev, struct phy
 					 void *user_data)
 {
 	const struct device *dev = (struct device *)user_data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 	const struct dsa_port_config *cfg = dev->config;
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
@@ -206,10 +205,8 @@ static void dsa_netc_port_phylink_change(const struct device *phydev, struct phy
 		if (result != kStatus_Success) {
 			LOG_ERR("DSA user port %d failed to set MAC up", cfg->port_idx);
 		}
-		net_eth_carrier_on(iface);
 	} else {
 		LOG_INF("DSA user port %d Link down", cfg->port_idx);
-		net_eth_carrier_off(iface);
 	}
 }
 
