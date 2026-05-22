@@ -92,6 +92,12 @@
 			status = "okay";
 		};
 
+		rng: rng@3f104000 {
+			compatible = "brcm,bcm2835-rng";
+			reg = <0x3f104000 0x10>;
+			status = "okay";
+		};
+
 		pinctrl: pin-controller@3f200000 {
 			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0x3f200000 0xf4>;

@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM2835 simple hardware RNG block.
+
+  Present on the BCM2835/BCM2836/BCM2837/BCM2710 SoCs (Raspberry Pi
+  1/2/3/Zero family). Distinct from the iProc RNG200 on BCM2711 (Pi 4),
+  which uses the "brcm,iproc-rng200" compatible.
+
+compatible: "brcm,bcm2835-rng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

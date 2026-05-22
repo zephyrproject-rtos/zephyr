@@ -17,6 +17,7 @@
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
+		zephyr,entropy = &rng;
 	};
 };
 
