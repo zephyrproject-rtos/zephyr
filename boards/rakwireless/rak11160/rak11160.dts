@@ -51,9 +51,9 @@
 
 &pll {
 	div-m = <1>;
-	mul-n = <3>;
-	div-r = <2>;
-	div-q = <2>;
+	mul-n = <6>;
+	div-r = <4>;
+	div-q = <4>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
