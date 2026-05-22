@@ -15,6 +15,10 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/barrier.h>
 
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 LOG_MODULE_REGISTER(mcux_gpt, CONFIG_COUNTER_LOG_LEVEL);
 
 #define DEV_CFG(_dev) ((const struct mcux_gpt_config *)(_dev)->config)
@@ -40,7 +44,9 @@ struct mcux_gpt_config {
 	uint32_t low_freq;
 	uint32_t osc_freq;
 #endif
-
+#ifdef CONFIG_PINCTRL
+	const struct pinctrl_dev_config *pincfg;
+#endif
 	void (*irq_config_func)(void);
 };
 
@@ -244,6 +250,16 @@ static int mcux_gpt_init(const struct device *dev)
 	GPT_Type *base;
 
 	DEVICE_MMIO_NAMED_MAP(dev, gpt_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
+#ifdef CONFIG_PINCTRL
+	{
+		int ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
+	}
+#endif
 
 	GPT_GetDefaultConfig(&gptConfig);
 	gptConfig.enableFreeRun = config->enable_free_run;
