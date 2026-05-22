@@ -399,7 +399,7 @@ static void on_resync(void)
 	}
 }
 
-static void decoder_cb_debug(enum mipi_stp_decoder_ctrl_type type,
+static bool decoder_cb_debug(enum mipi_stp_decoder_ctrl_type type,
 			     union mipi_stp_decoder_data data,
 			     uint64_t *ts, bool marked)
 {
@@ -457,18 +457,21 @@ static void decoder_cb_debug(enum mipi_stp_decoder_ctrl_type type,
 		DBG("OTHER\n");
 		break;
 	}
+
+	return true;
 }
 
-static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
+static bool decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 		       union mipi_stp_decoder_data data, uint64_t *ts,
 		       bool marked)
 {
 	int rv = 0;
+	bool valid = true;
 
-	decoder_cb_debug(type, data, ts, marked);
+	(void)decoder_cb_debug(type, data, ts, marked);
 
 	if (!IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
-		return;
+		return true;
 	}
 
 	switch (type) {
@@ -544,6 +547,7 @@ static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 
 	/* Only -ENOMEM is accepted failure. */
 	__ASSERT_NO_MSG((rv >= 0) || (rv == -ENOMEM));
+	return valid;
 }
 
 static void deformatter_cb(uint32_t id, const uint8_t *data, size_t len)

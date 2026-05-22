@@ -91,8 +91,9 @@ union mipi_stp_decoder_data {
  * @param data		Data. Data associated with a given @p type.
  * @param ts		Timestamp. Present if not NULL.
  * @param marked	Set to true if opcode was marked.
+ * @return true if the data is valid, false is data indicates synchronization loss.
  */
-typedef void (*mipi_stp_decoder_cb)(enum mipi_stp_decoder_ctrl_type type,
+typedef bool (*mipi_stp_decoder_cb)(enum mipi_stp_decoder_ctrl_type type,
 				    union mipi_stp_decoder_data data,
 				    uint64_t *ts, bool marked);
 
