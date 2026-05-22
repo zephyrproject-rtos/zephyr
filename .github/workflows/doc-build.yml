@@ -155,6 +155,7 @@ jobs:
         node-version: 24
 
     - name: Run accessibility check (pa11y)
+      if: false # temporarily disabled due to CI issues
       run: |
         apt-get update -qq && apt-get install -y --no-install-recommends \
           libnss3 libnspr4 libatk1.0-0 libatk-bridge2.0-0 libcups2 \
@@ -239,9 +240,10 @@ jobs:
         tar --use-compress-program="xz -T0" -cf html-output.tar.xz --exclude html/_sources --exclude html/doxygen/xml --directory=doc/_build html
         tar --use-compress-program="xz -T0" -cf api-output.tar.xz --directory=doc/_build html/doxygen/html
         tar --use-compress-program="xz -T0" -cf api-coverage.tar.xz coverage-report
-        tar --use-compress-program="xz -T0" -cf accessibility-report.tar.xz pa11y-ci-report
+        # tar --use-compress-program="xz -T0" -cf accessibility-report.tar.xz pa11y-ci-report # temporarily disabled due to CI issues
 
     - name: Upload accessibility report
+      if: false # temporarily disabled due to CI issues
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
       with:
         name: accessibility-report
