@@ -1,0 +1,192 @@
+/*
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Broadcom BCM2710 SoC (Raspberry Pi 3 / Pi Zero 2 W).
+ *
+ * Interrupts are handled by the native BCM283x controller pair --
+ * brcm,bcm2836-l1-intc (per-core timers, mailboxes, PMU and the GPU
+ * cascade) and brcm,bcm2835-armctrl-ic (the peripheral aggregator) --
+ * driven through the arm64 custom-interrupt-controller hooks in
+ * soc/brcm/bcm2710/soc_irq.c.
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/bcm2836-l1.h>
+#include <zephyr/dt-bindings/interrupt-controller/bcm2835-armctrl.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a53";
+			reg = <0>;
+		};
+	};
+
+	interrupt-parent = <&armctrl_intc>;
+
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&local_intc>;
+		/* 0 = secure phys, 1 = nonsec phys, 2 = virtual, 3 = hyp phys */
+		interrupts = <BCM2836_LOCAL_IRQ_CNTPSIRQ IRQ_TYPE_LEVEL 0>,
+			     <BCM2836_LOCAL_IRQ_CNTPNSIRQ IRQ_TYPE_LEVEL 0>,
+			     <BCM2836_LOCAL_IRQ_CNTVIRQ IRQ_TYPE_LEVEL 0>,
+			     <BCM2836_LOCAL_IRQ_CNTHPIRQ IRQ_TYPE_LEVEL 0>;
+	};
+
+	clocks {
+		clk_uart: clk-uart {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+		};
+
+		/* VPU core clock that feeds the BSC (I2C) CDIV divider; tracks
+		 * the firmware-side core_freq, typically 250 MHz.
+		 */
+		clk_core: clk-core {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(250)>;
+			#clock-cells = <0>;
+		};
+	};
+
+	soc {
+		/*
+		 * DRAM window the Zephyr image is linked into. Base 0x200000
+		 * leaves the bottom 2 MiB free; flashing to hardware needs a
+		 * matching kernel_address=0x200000 line in config.txt. The
+		 * VPU firmware reserves the top of DRAM, so 256 MiB from
+		 * 0x200000 is well within the Pi Zero 2 W's 512 MiB.
+		 */
+		sram0: memory@200000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x200000 0x10000000>;
+		};
+
+		local_intc: interrupt-controller@40000000 {
+			compatible = "brcm,bcm2836-l1-intc";
+			reg = <0x40000000 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			status = "okay";
+		};
+
+		armctrl_intc: interrupt-controller@3f00b200 {
+			compatible = "brcm,bcm2835-armctrl-ic";
+			reg = <0x3f00b200 0x200>;
+			interrupt-parent = <&local_intc>;
+			interrupts = <BCM2836_LOCAL_IRQ_GPU IRQ_TYPE_LEVEL 0>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			status = "okay";
+		};
+
+		pinctrl: pin-controller@3f200000 {
+			compatible = "brcm,bcm2711-pinctrl";
+			reg = <0x3f200000 0xf4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio0: gpio@0 {
+				compatible = "brcm,bcm2711-gpio";
+				reg = <0>;
+				interrupts = <BCM2835_IRQ_GPIO0 IRQ_TYPE_LEVEL 0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <28>;
+				status = "okay";
+			};
+
+			gpio1: gpio@1c {
+				compatible = "brcm,bcm2711-gpio";
+				reg = <28>;
+				interrupts = <BCM2835_IRQ_GPIO1 IRQ_TYPE_LEVEL 0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <18>;
+				status = "disabled";
+			};
+		};
+
+		uart0: uart@3f201000 {
+			compatible = "arm,pl011";
+			reg = <0x3f201000 0x200>;
+			interrupts = <BCM2835_IRQ_UART IRQ_TYPE_LEVEL 0>;
+			interrupt-names = "uart0";
+			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+		uart1: uart@3f215040 {
+			compatible = "brcm,bcm2711-aux-uart";
+			reg = <0x3f215040 0x40>;
+			clock-frequency = <DT_FREQ_M(250)>;
+			interrupts = <BCM2835_IRQ_AUX IRQ_TYPE_LEVEL 0>;
+			status = "disabled";
+		};
+
+		/*
+		 * BSC (I2C) master controllers. Three instances on this SoC:
+		 *
+		 *   i2c0 (0x3f205000) - HAT-ID EEPROM bus (GPIO 0/1); the
+		 *                       firmware drives it at boot, so most
+		 *                       app code should leave it alone.
+		 *   i2c1 (0x3f804000) - user-facing 40-pin-header bus
+		 *                       (GPIO 2/3 ALT0).
+		 *   i2c2 (0x3f805000) - reserved for the HDMI DDC line; do
+		 *                       not enable from application code.
+		 *
+		 * All three share BCM2835_IRQ_I2C; that's fine while only
+		 * one is enabled at a time (the typical case), and surfaces
+		 * a build-time IRQ_CONNECT duplicate if more than one is.
+		 *
+		 * Driver lives upstream as drivers/i2c/i2c_bcm2711.c
+		 * (brcm,bcm2711-i2c); the BSC IP is identical across BCM2835
+		 * / BCM2710 / BCM2711 -- only the peripheral-base differs --
+		 * so the BCM2711 driver drives this silicon unchanged.
+		 *
+		 * Default disabled; board / sample overlay opts in by
+		 * setting pinctrl + clock-frequency on the relevant node.
+		 */
+		i2c0: i2c@3f205000 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0x3f205000 0x200>;
+			interrupts = <BCM2835_IRQ_I2C IRQ_TYPE_LEVEL 0>;
+			clocks = <&clk_core>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@3f804000 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0x3f804000 0x200>;
+			interrupts = <BCM2835_IRQ_I2C IRQ_TYPE_LEVEL 0>;
+			clocks = <&clk_core>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c2: i2c@3f805000 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0x3f805000 0x200>;
+			interrupts = <BCM2835_IRQ_I2C IRQ_TYPE_LEVEL 0>;
+			clocks = <&clk_core>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+};

@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Jonathan Elliot Peace
+# SPDX-License-Identifier: Apache-2.0
+
+# Platform configuration
+CONFIG_ARM64_VA_BITS_36=y
+CONFIG_ARM64_PA_BITS_36=y
+
+# 64 KiB MMU page granule, matching the BCM283x SoC family.
+CONFIG_ARM64_PAGE_SIZE_64KB=y
+
+# The default 8 MMU translation tables are insufficient once the image
+# map, the SoC device regions and the 64 KiB-granule table splits are
+# accounted for.
+CONFIG_MAX_XLAT_TABLES=12
+
+# RAM-loaded image -- no execute-in-place flash.
+CONFIG_XIP=n
+CONFIG_FLASH_SIZE=0
+CONFIG_FLASH_BASE_ADDRESS=0x0
+
+# Serial / console
+CONFIG_SERIAL=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# ARM generic timer frequency is read at runtime.
+CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME=y
