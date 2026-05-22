@@ -13,6 +13,7 @@ For specific Bluetooth functionality see also the following shell documentation
 
    shell/audio/bap.rst
    shell/audio/bap_broadcast_assistant.rst
+   shell/audio/bap_broadcast_sink.rst
    shell/audio/bap_scan_delegator.rst
    shell/audio/cap.rst
    shell/audio/ccp.rst
