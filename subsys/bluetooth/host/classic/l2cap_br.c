@@ -1190,12 +1190,17 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P) &&
 		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED)) ||
 		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY) &&
-		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED)) ||
-		    atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME)) {
+		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED))) {
 			alloc = true;
 		}
 
 		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_P) &&
+		    !l2cap_br_send_i_frame(br_chan, pdu)) {
+			alloc = true;
+		}
+
+		/* Only send the S-frame if there is no any I-frames to be sent. */
+		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME) &&
 		    !l2cap_br_send_i_frame(br_chan, pdu)) {
 			alloc = true;
 		}
@@ -1219,8 +1224,6 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 				LOG_WRN("Cannot sending S-frame on %p", br_chan);
 				return NULL;
 			}
-
-			atomic_clear_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME);
 
 			if (BT_L2CAP_RT_FC_SDU_TAIL_SIZE(br_chan)) {
 				uint16_t fcs =
@@ -1484,6 +1487,9 @@ send_i_frame:
 	}
 
 done:
+	/* Clear S frame flag if any frame sent */
+	atomic_clear_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME);
+
 	/* This is used by `conn.c` to figure out if the PDU is done sending. */
 	*length = br_chan->_pdu_remaining;
 
