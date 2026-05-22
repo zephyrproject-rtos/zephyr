@@ -171,8 +171,9 @@ static void spi_sam_finish(Spi *regs)
 	}
 }
 
-/* Fast path that transmits a buf */
-static void spi_sam_fast_tx(Spi *regs, const uint8_t *tx_buf, const uint32_t tx_buf_len)
+/* Fast path that transmits a buf (8-bit words) */
+static void spi_sam_fast_tx_8(Spi *regs, const uint8_t *tx_buf,
+			      const uint32_t tx_buf_len)
 {
 	const uint8_t *p = tx_buf;
 	const uint8_t *pend = (uint8_t *)tx_buf + tx_buf_len;
@@ -188,8 +189,17 @@ static void spi_sam_fast_tx(Spi *regs, const uint8_t *tx_buf, const uint32_t tx_
 	}
 }
 
-/* Fast path that reads into a buf */
-static void spi_sam_fast_rx(Spi *regs, uint8_t *rx_buf, const uint32_t rx_buf_len)
+/* Fast path that transmits a buf */
+static void spi_sam_fast_tx(const struct device *dev, Spi *regs,
+			    const uint8_t *tx_buf, const uint32_t tx_buf_len)
+{
+	ARG_UNUSED(dev);
+	spi_sam_fast_tx_8(regs, tx_buf, tx_buf_len);
+}
+
+/* Fast path that reads into a buf (8-bit words) */
+static void spi_sam_fast_rx_8(Spi *regs, uint8_t *rx_buf,
+			      const uint32_t rx_buf_len)
 {
 	uint8_t *rx = rx_buf;
 	int len = rx_buf_len;
@@ -225,11 +235,19 @@ static void spi_sam_fast_rx(Spi *regs, uint8_t *rx_buf, const uint32_t rx_buf_le
 	*rx = (uint8_t)regs->SPI_RDR;
 }
 
-/* Fast path that writes and reads bufs of the same length */
-static void spi_sam_fast_txrx(Spi *regs,
-			      const uint8_t *tx_buf,
-			      const uint8_t *rx_buf,
-			      const uint32_t len)
+/* Fast path that reads into a buf */
+static void spi_sam_fast_rx(const struct device *dev, Spi *regs,
+			    uint8_t *rx_buf, const uint32_t rx_buf_len)
+{
+	ARG_UNUSED(dev);
+	spi_sam_fast_rx_8(regs, rx_buf, rx_buf_len);
+}
+
+/* Fast path that writes and reads bufs of the same length (8-bit words) */
+static void spi_sam_fast_txrx_8(Spi *regs,
+				const uint8_t *tx_buf,
+				const uint8_t *rx_buf,
+				const uint32_t len)
 {
 	const uint8_t *tx = tx_buf;
 	const uint8_t *txend = tx_buf + len;
@@ -277,6 +295,15 @@ static void spi_sam_fast_txrx(Spi *regs,
 
 	*rx = (uint8_t)regs->SPI_RDR;
 
+}
+
+/* Fast path that writes and reads bufs of the same length */
+static void spi_sam_fast_txrx(const struct device *dev, Spi *regs,
+			      const uint8_t *tx_buf, const uint8_t *rx_buf,
+			      const uint32_t len)
+{
+	ARG_UNUSED(dev);
+	spi_sam_fast_txrx_8(regs, tx_buf, rx_buf, len);
 }
 
 
@@ -448,14 +475,14 @@ static inline int spi_sam_rx(const struct device *dev,
 	if ((rx_buf_len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) &&
 	    !IS_ENABLED(CONFIG_SPI_RTIO)) {
 		key = spi_spin_lock(dev);
-		spi_sam_fast_rx(regs, rx_buf, rx_buf_len);
+		spi_sam_fast_rx(dev, regs, rx_buf, rx_buf_len);
 	} else {
 		/* RTIO Transfers should always fall here */
 		return spi_sam_dma_txrx(dev, regs, NULL, rx_buf, rx_buf_len);
 	}
 #else
 	key = spi_spin_lock(dev);
-	spi_sam_fast_rx(regs, rx_buf, rx_buf_len);
+	spi_sam_fast_rx(dev, regs, rx_buf, rx_buf_len);
 #endif
 	spi_sam_finish(regs);
 
@@ -476,14 +503,14 @@ static inline int spi_sam_tx(const struct device *dev,
 	if ((tx_buf_len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) &&
 	    !IS_ENABLED(CONFIG_SPI_RTIO)) {
 		key = spi_spin_lock(dev);
-		spi_sam_fast_tx(regs, tx_buf, tx_buf_len);
+		spi_sam_fast_tx(dev, regs, tx_buf, tx_buf_len);
 	} else {
 		/* RTIO Transfers should always fall here */
 		return spi_sam_dma_txrx(dev, regs, tx_buf, NULL, tx_buf_len);
 	}
 #else
 	key = spi_spin_lock(dev);
-	spi_sam_fast_tx(regs, tx_buf, tx_buf_len);
+	spi_sam_fast_tx(dev, regs, tx_buf, tx_buf_len);
 #endif
 	spi_sam_finish(regs);
 	spi_spin_unlock(dev, key);
@@ -505,14 +532,14 @@ static inline int spi_sam_txrx(const struct device *dev,
 	if ((buf_len < SAM_SPI_DMA_THRESHOLD || cfg->dma_dev == NULL) &&
 	    !IS_ENABLED(CONFIG_SPI_RTIO)) {
 		key = spi_spin_lock(dev);
-		spi_sam_fast_txrx(regs, tx_buf, rx_buf, buf_len);
+		spi_sam_fast_txrx(dev, regs, tx_buf, rx_buf, buf_len);
 	} else {
 		/* RTIO Transfers should always fall here */
 		return spi_sam_dma_txrx(dev, regs, tx_buf, rx_buf, buf_len);
 	}
 #else
 	key = spi_spin_lock(dev);
-	spi_sam_fast_txrx(regs, tx_buf, rx_buf, buf_len);
+	spi_sam_fast_txrx(dev, regs, tx_buf, rx_buf, buf_len);
 #endif
 	spi_sam_finish(regs);
 	spi_spin_unlock(dev, key);
