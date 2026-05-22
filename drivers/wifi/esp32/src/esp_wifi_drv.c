@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
 #include <soc.h>
+#include "esp_private/sleep_modem.h"
 #include "esp_private/wifi.h"
 #include "esp_event.h"
 #include "esp_rom_sys.h"
@@ -39,7 +40,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <esp_private/adc_share_hw_ctrl.h>
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
-#define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
+#define DHCPV4_MASK  (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
 
 /* use global iface pointer to support any ethernet driver */
 /* necessary for wifi callback functions */
@@ -96,6 +97,13 @@ static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt
 {
 	switch (mgmt_event) {
 	case NET_EVENT_IPV4_DHCP_BOUND:
+		/* Inform the Wi-Fi firmware of the station IP once DHCP is bound. The
+		 * modem needs this to handle ARP and buffered-frame delivery while the
+		 * CPU sleeps in Wi-Fi power-save / modem light sleep. Without it, data
+		 * (e.g. ICMP replies) is not delivered after a modem sleep cycle.
+		 * Mirrors the IDF STA_GOT_IP -> esp_wifi_internal_set_sta_ip() path.
+		 */
+		esp_wifi_internal_set_sta_ip();
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 		break;
 	default:
@@ -1515,9 +1523,25 @@ static int esp32_wifi_pm_action(const struct device *dev, enum pm_device_action 
 			return -EBUSY;
 		}
 #endif
+#if CONFIG_ESP32_WIFI_ENHANCED_LIGHT_SLEEP
+		if (sleep_modem_wifi_modem_state_skip_light_sleep()) {
+			/* Block the system from entering sleep before modem link done */
+			return -EBUSY;
+		}
+#endif
 		break;
 
 	case PM_DEVICE_ACTION_TURN_ON:
+		/* Enables the Advanced DTIM sleep function in the WiFi modem
+		 * (CONFIG_ESP32_WIFI_ENHANCED_LIGHT_SLEEP) and sets CPU-frequency-aware
+		 * wake/sleep timing parameters (CONFIG_ESP32_WIFI_SLP_IRAM_OPT).
+		 */
+#if CONFIG_PM
+		sleep_modem_configure(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+				    CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, true);
+#endif
+		break;
+
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 
