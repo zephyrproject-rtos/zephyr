@@ -1,0 +1,145 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7p/stm32h7p5Xi.dtsi>
+#include <st/h7p/stm32h7p(4-5)i(g-i)kx-pinctrl.dtsi>
+#include "arduino_r3_connector.dtsi"
+#include "st_morpho_connector.dtsi"
+
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	compatible = "st,stm32h7p5ii-nucleo";
+	model = "STMicroelectronics STM32H7P5II-NUCLEO board";
+
+	aliases {
+		led0 = &green_led;
+		led1 = &red_led;
+		led2 = &blue_led;
+		sw0 = &user_button;
+	};
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			label = "User";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		green_led: led_0 {
+			gpios = <&gpiog 9 GPIO_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+
+		red_led: led_1 {
+			gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpiof 4 GPIO_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+	};
+};
+
+&clk_lse {
+	driving-capability = <0>;
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&pll {
+	/*
+	 * f(hse_ck)    =  24 MHz
+	 * f(vco1_ck)   = 520 MHz: (24 / 6) * 130
+	 * f(pll1_p_ck) = 520 MHz: (520 / 1)
+	 * f(pll1_q_ck) =  65 MHz: (520 / 8)
+	 * pll1_s_ck is not used
+	 */
+	clocks = <&clk_hse>;
+	div-m = <6>;
+	mul-n = <130>;
+	div-p = <1>;
+	div-q = <8>;
+	status = "okay";
+};
+
+&rcc {
+	/*
+	 * Select pll1_p_ck as system clock (sys_ck).
+	 * BMPRE is set to 2 to satisfy Fbus <= Fbusmax = 260 MHz.
+	 * PPRE1/PPRE4 are set to 2 to satisfy Fbus <= Fbusmax/2.
+	 */
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(520)>;
+	cpre = <1>;
+	bmpre = <2>;
+	ppre1 = <2>;
+	ppre2 = <1>;
+	ppre4 = <2>;
+};
+
+&pwr {
+	st,power-supply = "internal-regulator";
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
+		};
+
+		storage_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00020000 DT_SIZE_K(128)>;
+			label = "storage";
+		};
+
+		application_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00040000 (DT_SIZE_M(2) - DT_SIZE_K(256))>;
+			label = "application";
+		};
+	};
+};
+
+/* ST-Link VCP UART */
+&usart2 {
+	pinctrl-0 = <&usart2_rx_pa3 &usart2_tx_pa2>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart4 {
+	/* Arduino D0 (RX) / D1 (TX) */
+	pinctrl-0 = <&uart4_rx_pd11 &uart4_tx_pd12>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
