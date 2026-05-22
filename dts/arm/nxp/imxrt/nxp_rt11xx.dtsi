@@ -120,6 +120,8 @@
 			reg = <0x400f0000 0x4000>;
 			interrupts = <120 0>;
 			gptfreq = <DT_FREQ_M(24)>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(16)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x41 0>;
 		};
 
@@ -128,6 +130,8 @@
 			reg = <0x400f4000 0x4000>;
 			interrupts = <121 0>;
 			gptfreq = <DT_FREQ_M(24)>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(16)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x42 0>;
 		};
 
@@ -136,6 +140,8 @@
 			reg = <0x400f8000 0x4000>;
 			interrupts = <122 0>;
 			gptfreq = <DT_FREQ_M(24)>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(16)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x43 0>;
 		};
 
@@ -144,6 +150,8 @@
 			reg = <0x400fc000 0x4000>;
 			interrupts = <123 0>;
 			gptfreq = <DT_FREQ_M(24)>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(16)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x44 0>;
 		};
 
@@ -152,6 +160,8 @@
 			reg = <0x40100000 0x4000>;
 			interrupts = <124 0>;
 			gptfreq = <DT_FREQ_M(24)>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(16)>;
 			clocks = <&ccm IMX_CCM_GPT_CLK 0x45 0>;
 		};
 
