@@ -26,3 +26,13 @@
 	current-speed = <115200>;
 	status = "okay";
 };
+
+/*
+ * Enable SPI0 on the 40-pin header. No pinctrl-0 here: SPI pin
+ * roles can be application-specific (e.g. a display sharing the
+ * MISO pin for a D/C line), so muxing is left to an application
+ * overlay.
+ */
+&spi0 {
+	status = "okay";
+};

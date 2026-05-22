@@ -128,6 +128,25 @@
 			status = "disabled";
 		};
 
+		/*
+		 * SPI0 -- the "main" SPI controller on the 40-pin header
+		 * (GPIO 7..11, ALT0). Default disabled; boards opt in and
+		 * add cs-gpios plus a pinctrl group as needed.
+		 *
+		 * clock-frequency tracks the VPU core clock, which is
+		 * 250 MHz when config.txt sets core_freq=250 -- the same
+		 * knob the mini-UART baud divisor already depends on.
+		 */
+		spi0: spi@3f204000 {
+			compatible = "brcm,bcm2835-spi";
+			reg = <0x3f204000 0x200>;
+			interrupts = <BCM2835_IRQ_SPI IRQ_TYPE_LEVEL 0>;
+			clock-frequency = <DT_FREQ_M(250)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		uart1: uart@3f215040 {
 			compatible = "brcm,bcm2711-aux-uart";
 			reg = <0x3f215040 0x40>;

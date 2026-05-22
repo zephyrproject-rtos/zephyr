@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&pinctrl {
+	spi0_loopback: spi0-loopback {
+		group1 {
+			pinmux = <SPI0_MISO_GPIO9>,
+				 <SPI0_MOSI_GPIO10>,
+				 <SPI0_SCLK_GPIO11>;
+		};
+	};
+};
+
+&spi0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&spi0_loopback>;
+	cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};
