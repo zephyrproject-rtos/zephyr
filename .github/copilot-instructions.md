@@ -63,6 +63,7 @@ with these Zephyr-specific rules:
   single-line blocks.
 - Use `/* */` for comments; `//` is not allowed.
 - Use `/** */` for Doxygen API documentation.
+- Avoid ASCII decoration or ASCII rulers delimiters in coments
 - No binary literals (`0b...`).
 - No non-ASCII symbols in code (no emojis under any circumstances).
 - Capitalize correctly in comments: `UART` not `uart`, `CMake` not `cmake`.
