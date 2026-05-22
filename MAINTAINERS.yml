@@ -411,6 +411,38 @@ Arduino Platforms:
     - drivers/*/*modulino*
     - dts/vendor/arduino/
 
+Authentication:
+  status: maintained
+  maintainers:
+    - heronet
+  collaborators:
+    - ceolin
+  files:
+    - include/zephyr/authentication/
+    - subsys/authentication/
+    - samples/subsys/authentication/
+    - doc/services/authentication/
+  labels:
+    - "area: Authentication"
+  tests:
+    - sample.authentication
+
+"Authentication: FIDO2":
+  status: maintained
+  maintainers:
+    - heronet
+  collaborators:
+    - ceolin
+  files:
+    - include/zephyr/authentication/fido2/
+    - subsys/authentication/fido2/
+    - samples/subsys/authentication/fido2/
+    - doc/services/authentication/fido2/
+  labels:
+    - "area: FIDO2"
+  tests:
+    - sample.authentication.fido2
+
 Base OS:
   status: maintained
   maintainers:
