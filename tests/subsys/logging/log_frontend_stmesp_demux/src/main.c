@@ -334,7 +334,7 @@ ZTEST(log_frontend_stmesp_demux_test, test_drop_too_many_active)
 
 	demux_init();
 
-	PACKET_START(NULL, NULL, hdr.raw, ts, -EINVAL);
+	PACKET_START(NULL, NULL, hdr.raw, ts, -EBADMSG);
 
 	/* Start writing to 3 packets */
 	PACKET_START(&m_id0, &c_id0, hdr.raw, ts, 0);
@@ -458,7 +458,7 @@ ZTEST(log_frontend_stmesp_demux_test, test_reset)
 
 	demux_init();
 
-	PACKET_START(NULL, NULL, hdr.raw, ts, -EINVAL);
+	PACKET_START(NULL, NULL, hdr.raw, ts, -EBADMSG);
 
 	/* Start writing to 3 packets */
 	PACKET_START(&m_id0, &c_id0, hdr.raw, ts, 0);
