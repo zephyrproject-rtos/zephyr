@@ -38,3 +38,12 @@ tests:
       - mimxrt1064_evk
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+  drivers.counter.build.imx_gpt.capture:
+    extra_configs:
+      - CONFIG_COUNTER_CAPTURE=y
+    platform_allow:
+      - mimxrt1064_evk
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - imx943_evk/mimx94398/m33
+      - imx8mp_evk/mimx8ml8/m7
