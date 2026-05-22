@@ -2288,7 +2288,26 @@ Under embargo until 2026-05-18
 :cve:`2026-5072`
 ----------------
 
-Under embargo until 2026-05-18
+net: ptp: Potential Denial of Service via PTP Interval Shift
+
+A bitwise shift vulnerability allows a remote attacker to cause undefined
+behavior and potential crashes in the PTP subsystem by sending a crafted PTP
+Management or Delay Response packet containing a large, unvalidated, negative
+log_announce_interval used in the bitwise shift operation.
+
+- `Zephyr project bug tracker GHSA-3v98-458v-388r
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-3v98-458v-388r>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 104613 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104613>`_
+
+- `PR 108337 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108337>`_
+
+- `PR 108338 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108338>`_
 
 :cve:`2026-5589`
 ----------------
