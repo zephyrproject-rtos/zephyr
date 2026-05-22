@@ -9,6 +9,7 @@
 #include <infineon/edge/mpns/pse846gps2dbzc4a.dtsi>
 #include <infineon/edge/pse84/pse84.cm55.dtsi>
 #include <infineon/edge/pse84/system_clocks.dtsi>
+#include <zephyr/dt-bindings/display/panel.h>
 
 #include "kit_pse84_eval_common.dtsi"
 #include "kit_pse84_eval_memory_map.dtsi"
@@ -36,7 +37,39 @@
 		zephyr,dtcm = &dtcm;
 		zephyr,itcm = &itcm;
 		zephyr,touch = &ft5406;
+		zephyr,display = &display_controller;
 	};
+};
+
+&clk_hf12 {
+	status = "okay";
+	clock-div = <IFX_CLK_HF_DIVIDE_BY_2>;
+	source-path = <IFX_CLK_HF_IN_CLKPATH3>;
+};
+
+&display_controller {
+	status = "okay";
+
+	height = <480>;
+	width = <832>;
+
+	pixel-clock-khz = <33768>;
+	hsync-width = <10>;
+	hfp = <210>;
+	hbp = <20>;
+	vsync-width = <5>;
+	vfp = <20>;
+	vbp = <20>;
+
+	data-lanes = <1>;
+	per-lane-mbps = <810>;
+
+	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+	panel = <&display_panel>;
+};
+
+&gcnano {
+	status = "okay";
 };
 
 &i2c0 {
@@ -49,6 +82,15 @@
 		inverted-y;
 		screen-width = <480>;
 		screen-height = <800>;
+	};
+
+	display_panel: waveshare_panel@45 {
+		compatible = "waveshare,4p3";
+		reg = <0x45>;
+		pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+		status = "okay";
+		height = <480>;
+		width = <832>;
 	};
 };
 
