@@ -177,7 +177,7 @@ static int nrf_mram_erase_and_verify_word(uint32_t addr, size_t len)
 	return -EIO;
 }
 
-#ifdef CONFIG_MRAM_LATENCY
+#if defined(CONFIG_MRAM_LATENCY) && defined(CONFIG_SOC_SERIES_NRF54H)
 static inline bool nrf_mram_ready(uint32_t addr, uint32_t ironside_se_ver)
 {
 	if (ironside_se_ver < IRONSIDE_SE_SUPPORT_READY_VER) {
