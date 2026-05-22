@@ -1,0 +1,10 @@
+common:
+  filter: not CONFIG_BUILD_WITH_TFM
+  tags:
+    - mbedtls
+    - psa
+
+tests:
+  crypto.psa_acceleration:
+    integration_platforms:
+      - native_sim/native/64
