@@ -19,7 +19,92 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/posix/poll.h>
 
+#if defined(CONFIG_WIFI)
+
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_mgmt.h>
+
+#endif /* CONFIG_WIFI */
+
 LOG_MODULE_REGISTER(main, CONFIG_LOG_DEFAULT_LEVEL);
+
+#if defined(CONFIG_WIFI)
+
+#define WIFI_SSID CONFIG_SAMPLE_WIFI_SSID
+#define WIFI_PSK  CONFIG_SAMPLE_WIFI_PSK
+
+#define STATIC_IP      CONFIG_NET_CONFIG_MY_IPV4_ADDR
+#define STATIC_GW      CONFIG_NET_CONFIG_MY_IPV4_GW
+#define STATIC_NETMASK CONFIG_NET_CONFIG_MY_IPV4_NETMASK
+
+static K_SEM_DEFINE(wifi_connected_sem, 0, 1);
+
+static struct net_mgmt_event_callback wifi_cb;
+
+static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
+			       struct net_if *iface)
+{
+	if (mgmt_event == NET_EVENT_WIFI_CONNECT_RESULT) {
+		const struct wifi_status *status = (const struct wifi_status *)cb->info;
+		if (status->status == 0) { /* 0 = success */
+			LOG_INF("WiFi connected");
+			k_sem_give(&wifi_connected_sem);
+		} else {
+			LOG_ERR("WiFi connection failed: %d", status->status);
+		}
+	}
+}
+
+static int connect_wifi(void)
+{
+	struct net_if *iface = net_if_get_default();
+	struct wifi_connect_req_params params = {
+		.ssid = WIFI_SSID,
+		.ssid_length = strlen(WIFI_SSID),
+		.psk = WIFI_PSK,
+		.psk_length = strlen(WIFI_PSK),
+		.channel = WIFI_CHANNEL_ANY,
+		.security = WIFI_SECURITY_TYPE_PSK,
+		.band = WIFI_FREQ_BAND_2_4_GHZ, /* or _5_GHZ */
+		.mfp = WIFI_MFP_OPTIONAL,
+	};
+
+	/* Register for wifi events */
+	net_mgmt_init_event_callback(&wifi_cb, wifi_event_handler, NET_EVENT_WIFI_CONNECT_RESULT);
+	net_mgmt_add_event_callback(&wifi_cb);
+
+	LOG_INF("Connecting to SSID: %s", WIFI_SSID);
+	int ret = net_mgmt(NET_REQUEST_WIFI_CONNECT, iface, &params, sizeof(params));
+	if (ret) {
+		LOG_ERR("WiFi connect request failed: %d", ret);
+		return ret;
+	}
+
+	/* Wait for connection */
+	if (k_sem_take(&wifi_connected_sem, K_SECONDS(30))) {
+		LOG_ERR("WiFi connection timeout");
+		return -ETIMEDOUT;
+	}
+
+	/* Set static IP — must be done after interface is up */
+	struct in_addr ip, gw, nm;
+
+	net_addr_pton(AF_INET, STATIC_IP, &ip);
+	net_addr_pton(AF_INET, STATIC_GW, &gw);
+	net_addr_pton(AF_INET, STATIC_NETMASK, &nm);
+
+	net_if_ipv4_addr_add(iface, &ip, NET_ADDR_MANUAL, 0);
+	net_if_ipv4_set_gw(iface, &gw);
+	net_if_ipv4_set_netmask_by_addr(iface, &ip, &nm);
+
+	LOG_INF("Static IP set: %s", STATIC_IP);
+	return 0;
+}
+
+#endif /* CONFIG_WIFI */
 
 #define MY_PORT          5000
 #define MAX_CLIENT_QUEUE 1
@@ -210,6 +295,13 @@ void stop_encoder(void)
 
 int main(void)
 {
+#if defined(CONFIG_WIFI)
+	if (connect_wifi()) {
+		LOG_ERR("Failed to connect to WiFi");
+		return 0;
+	}
+#endif
+
 	struct sockaddr_in addr, client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
 	struct video_buffer *buffers[CONFIG_VIDEO_CAPTURE_N_BUFFERING];

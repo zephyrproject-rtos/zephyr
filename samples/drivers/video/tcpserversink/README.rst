@@ -69,6 +69,27 @@ support using the venc file_suffix at the end of the following command:
    :goals: build
    :compact:
 
+WiFi Support
+============
+
+Instead of Ethernet, WiFi can be used by applying the ``overlay-wifi.conf`` overlay and
+setting the network credentials:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/video/tcpserversink
+   :board: <your_board>
+   :shield: <your_camera_shield>
+   :conf: "prj.conf overlay-wifi.conf"
+   :goals: build
+   :compact:
+
+The SSID and password can be set either by editing ``overlay-wifi.conf`` directly or
+by passing them as build arguments:
+
+.. code-block:: console
+
+   west build -- -DCONFIG_SAMPLE_WIFI_SSID=\"MyNetwork\" -DCONFIG_SAMPLE_WIFI_PSK=\"MyPassword\"
+
 
 Sample Output
 =============

@@ -77,4 +77,13 @@ config VIDEO_ENCODED_PIXEL_FORMAT
 
 endmenu
 
+if WIFI
+config SAMPLE_WIFI_SSID
+	string "WIFI SSID - Network name"
+	default "my_network"
+config SAMPLE_WIFI_PSK
+	string "WIFI PSK - Network password key"
+	default "secret_passwd"
+endif
+
 source "Kconfig.zephyr"
