@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7p/stm32h7p4.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32h7p5", "st,stm32h7p", "simple-bus";
+
+		/*
+		 * The additional IP on STM32H7P5 compared to STM32H7P4
+		 * is the Neural-ART accelerator™ neural processing unit,
+		 * which is not supported yet.
+		 */
+	};
+};
