@@ -1149,7 +1149,7 @@ static void mcux_flexcan_isr(const struct device *dev)
 	CAN_Type *base = get_base(dev);
 
 	FLEXCAN_BusoffErrorHandleIRQ(base, &data->handle);
-	FLEXCAN_MbHandleIRQ(base, &data->handle, 0U, config->number_of_mb);
+	FLEXCAN_MbHandleIRQ(base, &data->handle, 0U, config->number_of_mb - 1U);
 }
 
 static int mcux_flexcan_init(const struct device *dev)
