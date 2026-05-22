@@ -8,6 +8,7 @@ config SOC_MIMXRT595S_CM33
 	select CPU_CORTEX_M_HAS_DWT
 	select ARM
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 	select HAS_POWEROFF
 	select CPU_HAS_ARM_SAU
 	select CPU_HAS_ARM_MPU

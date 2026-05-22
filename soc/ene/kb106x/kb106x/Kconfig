@@ -5,4 +5,5 @@ config SOC_SERIES_KB106X
 	select ARM
 	select CPU_CORTEX_M3
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 	select SOC_EARLY_INIT_HOOK
