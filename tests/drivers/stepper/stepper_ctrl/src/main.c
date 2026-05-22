@@ -21,7 +21,7 @@ void *user_data_received;
 #define POLL_AND_CHECK_SIGNAL(signal, event, expected_event, timeout)                              \
 	({                                                                                         \
 		do {                                                                               \
-			(void)k_poll(&(event), 1, timeout);                                        \
+			zassert_ok(k_poll(&(event), 1, timeout));                                  \
 			unsigned int signaled;                                                     \
 			int result;                                                                \
 			k_poll_signal_check(&(signal), &signaled, &result);                        \
@@ -78,7 +78,7 @@ static void *stepper_ctrl_setup(void)
 static void stepper_ctrl_before(void *f)
 {
 	struct stepper_ctrl_fixture *fixture = f;
-	(void)stepper_ctrl_set_reference_position(fixture->dev, 0);
+	zassert_ok(stepper_ctrl_set_reference_position(fixture->dev, 0));
 
 	k_poll_signal_reset(&stepper_signal);
 
@@ -259,7 +259,7 @@ ZTEST_F(stepper_ctrl, test_run_negative_direction)
 ZTEST_F(stepper_ctrl, test_stop)
 {
 	/* Run the stepper in positive direction */
-	(void)stepper_ctrl_run(fixture->dev, STEPPER_CTRL_DIRECTION_POSITIVE);
+	zassert_ok(stepper_ctrl_run(fixture->dev, STEPPER_CTRL_DIRECTION_POSITIVE));
 
 	/* Stop the stepper */
 	int ret = stepper_ctrl_stop(fixture->dev);
