@@ -26,6 +26,23 @@ from .datatypes import (
 from .getincludes import getCIncludes
 
 
+def is_subpath(path, base_path):
+    """
+    Return True if path is inside base_path.
+
+    On Windows, os.path.commonpath() raises ValueError when paths are on
+    different drives, e.g. C:\\... and S:\\... . In that case, the path
+    cannot be inside base_path, so return False.
+    """
+    if not path or not base_path:
+        return False
+
+    try:
+        return os.path.commonpath([path, base_path]) == base_path
+    except ValueError:
+        return False
+
+
 # WalkerConfig contains configuration data for the Walker.
 @dataclass(eq=True)
 class WalkerConfig:
@@ -720,18 +737,11 @@ class Walker:
                         f"package {pkgBuild.cfg.name}")
                 srcDoc = self.docBuild
                 srcPkg = pkgBuild
-            elif (
-                self.cfg.includeSDK
-                and os.path.commonpath([srcAbspath, pkgSDK.cfg.relativeBaseDir])
-                == pkgSDK.cfg.relativeBaseDir
-            ):
+            elif self.cfg.includeSDK and is_subpath(srcAbspath, pkgSDK.cfg.relativeBaseDir):
                 log.dbg(f"  - {srcAbspath}: assigning to sdk document")
                 srcDoc = self.docSDK
                 srcPkg = pkgSDK
-            elif (
-                os.path.commonpath([srcAbspath, pkgApp.cfg.relativeBaseDir])
-                == pkgApp.cfg.relativeBaseDir
-            ):
+            elif is_subpath(srcAbspath, pkgApp.cfg.relativeBaseDir):
                 log.dbg(f"  - {srcAbspath}: assigning to app document")
                 srcDoc = self.docApp
                 srcPkg = pkgApp
@@ -768,7 +778,7 @@ class Walker:
         # should get the file path.
         pkgLongestMatch = None
         for pkg in document.pkgs.values():
-            if os.path.commonpath([srcAbspath, pkg.cfg.relativeBaseDir]) == pkg.cfg.relativeBaseDir:
+            if is_subpath(srcAbspath, pkg.cfg.relativeBaseDir):
                 # the package does contain this file; is it the deepest?
                 if pkgLongestMatch:
                     if len(pkg.cfg.relativeBaseDir) > len(pkgLongestMatch.cfg.relativeBaseDir):
