@@ -1,8 +1,8 @@
 sample:
-  description: Dali Zephyr driver application
-  name: dali-zephyr
+  description: Dali Zephyr driver blinky application
+  name: dali-blinky
 tests:
-  sample.drivers.dali:
+  sample.drivers.dali.blinky:
     tags: dali
     integration_platforms:
       - nucleo_f091rc
