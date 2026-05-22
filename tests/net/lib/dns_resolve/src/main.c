@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/hostname.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/udp.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -38,6 +39,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #define NAME4 "4.zephyr.test"
 #define NAME6 "6.zephyr.test"
+#define NAME_MDNS "test.local"
+#define NAME_LLMNR "zephyr"
 #define NAME_IPV4 "192.0.2.1"
 #define NAME_IPV6 "2001:db8::1"
 
@@ -165,11 +168,43 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 	return -1;
 }
 
+static bool is_dns_query_packet(struct net_pkt *pkt)
+{
+	struct net_udp_hdr *udp;
+	uint16_t dst_port;
+	uint8_t proto;
+
+	if (net_pkt_family(pkt) == NET_AF_INET) {
+		proto = NET_IPV4_HDR(pkt)->proto;
+	} else if (net_pkt_family(pkt) == NET_AF_INET6) {
+		proto = NET_IPV6_HDR(pkt)->nexthdr;
+	} else {
+		return false;
+	}
+
+	if (proto != NET_IPPROTO_UDP) {
+		return false;
+	}
+
+	udp = net_udp_get_hdr(pkt, NULL);
+	if (udp == NULL) {
+		return false;
+	}
+
+	dst_port = net_ntohs(udp->dst_port);
+
+	return dst_port == 53U || dst_port == 5353U || dst_port == 5355U;
+}
+
 static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
 		return -ENODATA;
+	}
+
+	if (!is_dns_query_packet(pkt)) {
+		return 0;
 	}
 
 	send_count++;
@@ -191,7 +226,14 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 		 * queue when the next test reinitializes it.
 		 */
 		if (query_all_auto_response) {
-			k_work_submit(&multi_server_response_work);
+			struct dns_resolve_context *ctx;
+			int slot;
+
+			ctx = dns_resolve_get_default();
+			slot = get_slot_by_id(ctx, current_dns_id);
+			if (slot >= 0) {
+				k_work_submit(&multi_server_response_work);
+			}
 		}
 #else
 		struct dns_resolve_context *ctx;
@@ -779,6 +821,7 @@ static void inject_refused_dns_response(struct dns_resolve_context *ctx,
 	net_buf_unref(dns_data);
 }
 
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
 static int get_active_server_idx(struct dns_resolve_context *ctx, int nth)
 {
 	int seen = 0;
@@ -797,13 +840,37 @@ static int get_active_server_idx(struct dns_resolve_context *ctx, int nth)
 
 	return -1;
 }
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
 
-static int get_active_server_count(struct dns_resolve_context *ctx)
+static int get_active_unicast_server_idx(struct dns_resolve_context *ctx, int nth)
+{
+	int seen = 0;
+
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		if (ctx->servers[i].sock < 0 ||
+		    ctx->servers[i].is_mdns ||
+		    ctx->servers[i].is_llmnr) {
+			continue;
+		}
+
+		if (seen == nth) {
+			return i;
+		}
+
+		seen++;
+	}
+
+	return -1;
+}
+
+static int get_active_unicast_server_count(struct dns_resolve_context *ctx)
 {
 	int count = 0;
 
 	ARRAY_FOR_EACH(ctx->servers, i) {
-		if (ctx->servers[i].sock >= 0) {
+		if (ctx->servers[i].sock >= 0 &&
+		    !ctx->servers[i].is_mdns &&
+		    !ctx->servers[i].is_llmnr) {
 			count++;
 		}
 	}
@@ -1006,7 +1073,7 @@ ZTEST(dns_resolve, test_dns_query_ipv4_timeout_all_servers)
 
 	k_sem_reset(&wait_data);
 
-	active_servers = get_active_server_count(ctx);
+	active_servers = get_active_unicast_server_count(ctx);
 	zassert_true(active_servers >= 2, "Need at least two active DNS servers");
 
 	timeout_query = true;
@@ -1046,7 +1113,7 @@ ZTEST(dns_resolve, test_dns_query_ipv4_all_servers_refused)
 
 	k_sem_reset(&wait_data2);
 
-	active_servers = get_active_server_count(ctx);
+	active_servers = get_active_unicast_server_count(ctx);
 	zassert_true(active_servers >= 2, "Need at least two active DNS servers");
 
 	timeout_query = false;
@@ -1067,7 +1134,7 @@ ZTEST(dns_resolve, test_dns_query_ipv4_all_servers_refused)
 	zassert_equal(send_count, 1U, "Expected initial query to first server only");
 
 	for (int nth = 0; nth < active_servers; nth++) {
-		int server_idx = get_active_server_idx(ctx, nth);
+		int server_idx = get_active_unicast_server_idx(ctx, nth);
 
 		zassert_true(server_idx >= 0, "Cannot find active DNS server %d", nth);
 
@@ -1856,7 +1923,7 @@ ZTEST(dns_resolve, test_dns_query_all_servers_ipv4)
 		      "Query should be sent to all %d servers, got %u",
 		      EXPECTED_SERVER_COUNT, send_count);
 
-	success_server = get_active_server_idx(ctx, 0);
+	success_server = get_active_unicast_server_idx(ctx, 0);
 	zassert_true(success_server >= 0, "Cannot find active DNS server");
 
 	inject_success_dns_response(ctx, success_server, current_dns_id,
@@ -2032,6 +2099,118 @@ ZTEST(dns_resolve, test_dns_query_all_servers_all_fail_ipv4)
 	zassert_equal(callback_count, 1,
 		      "Expected one terminal failure callback, got %u",
 		      callback_count);
+
+	query_all_auto_response = true;
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_all_servers_mdns_single_send)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESOLVER);
+
+	timeout_query = false;
+	send_count = 0;
+	callback_count = 0;
+	query_all_auto_response = true;
+	k_sem_reset(&wait_data2);
+
+	ret = dns_get_addr_info(NAME_MDNS,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_multi_server_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create mDNS query");
+
+	wait_for_callbacks(2);
+
+	zassert_equal(send_count, 1U,
+		      "mDNS multicast query should be sent once, got %u",
+		      send_count);
+
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_all_servers_llmnr_single_send)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_LLMNR_RESOLVER);
+
+	timeout_query = false;
+	send_count = 0;
+	callback_count = 0;
+	query_all_auto_response = true;
+	k_sem_reset(&wait_data2);
+
+	ret = dns_get_addr_info(NAME_LLMNR,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_multi_server_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create LLMNR query");
+
+	wait_for_callbacks(2);
+
+	zassert_equal(send_count, 1U,
+		      "LLMNR multicast query should be sent once, got %u",
+		      send_count);
+
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_all_servers_llmnr_enabled_dns_fanout)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int success_server;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_LLMNR_RESOLVER);
+
+	timeout_query = false;
+	send_count = 0;
+	callback_count = 0;
+	query_all_auto_response = false;
+	k_sem_reset(&wait_data2);
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_multi_server_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create DNS query");
+
+	k_yield();
+
+	zassert_equal(send_count, EXPECTED_SERVER_COUNT,
+		      "Normal DNS query should fan out to %d configured servers, got %u",
+		      EXPECTED_SERVER_COUNT, send_count);
+
+	success_server = get_active_server_idx(ctx, 0);
+	zassert_true(success_server >= 0, "Cannot find active DNS server");
+
+	inject_success_dns_response(ctx, success_server, current_dns_id,
+				     NAME4, DNS_QUERY_TYPE_A);
+	wait_for_callbacks(2);
 
 	query_all_auto_response = true;
 	verify_cancelled();

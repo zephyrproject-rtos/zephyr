@@ -30,9 +30,10 @@ config LLMNR_RESOLVER
 	help
 	  This option enables link local multicast name resolution client side
 	  support. See RFC 4795 for details. LLMNR is typically used by Windows
-	  hosts. If you enable this option, then the DNS requests are ONLY sent
-	  to LLMNR well known multicast address 224.0.0.252:5355 or
-	  [ff02::1:3]:5355 and other DNS server addresses are ignored.
+	  hosts. If you enable this option, then single-label queries are sent
+	  to the LLMNR well known multicast address 224.0.0.252:5355 or
+	  [ff02::1:3]:5355. Queries containing dots continue using the
+	  configured DNS servers.
 
 config DNS_RESOLVER_ADDITIONAL_QUERIES
 	int "Additional DNS queries"

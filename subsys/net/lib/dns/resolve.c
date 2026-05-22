@@ -206,9 +206,23 @@ static bool dns_query_is_mdns(const char *query)
 	return false;
 }
 
+static bool dns_query_is_llmnr(const char *query)
+{
+	if (query == NULL) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_LLMNR_RESOLVER)) {
+		return strchr(query, '.') == NULL;
+	}
+
+	return false;
+}
+
 static bool dns_server_is_eligible(struct dns_resolve_context *ctx,
 				      int server_idx,
 				      bool mdns_query,
+				      bool llmnr_query,
 				      uint8_t *hop_limit)
 {
 	*hop_limit = 0U;
@@ -222,24 +236,31 @@ static bool dns_server_is_eligible(struct dns_resolve_context *ctx,
 		return false;
 	}
 
-	if (!mdns_query && IS_ENABLED(CONFIG_LLMNR_RESOLVER)) {
+	if (mdns_query) {
+		return true;
+	}
+
+	if (IS_ENABLED(CONFIG_LLMNR_RESOLVER) && llmnr_query) {
 		if (!ctx->servers[server_idx].is_llmnr) {
 			return false;
 		}
 
 		*hop_limit = 1U;
+	} else if (ctx->servers[server_idx].is_mdns ||
+		   ctx->servers[server_idx].is_llmnr) {
+		return false;
 	}
 
 	return true;
 }
 
-static bool dns_query_uses_parallel_servers(bool mdns_query)
+static bool dns_query_uses_parallel_servers(bool mdns_query, bool llmnr_query)
 {
 	if (!IS_ENABLED(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)) {
 		return false;
 	}
 
-	if (mdns_query || IS_ENABLED(CONFIG_LLMNR_RESOLVER)) {
+	if (mdns_query || llmnr_query) {
 		return false;
 	}
 
@@ -251,12 +272,14 @@ static int dns_remaining_server_count(struct dns_resolve_context *ctx,
 {
 	struct dns_pending_query *pending_query = &ctx->queries[query_idx];
 	bool mdns_query = dns_query_is_mdns(pending_query->query);
+	bool llmnr_query = dns_query_is_llmnr(pending_query->query);
 	int count = 0;
 
 	ARRAY_FOR_EACH(ctx->servers, i) {
 		uint8_t hop_limit;
 
-		if (!dns_server_is_eligible(ctx, i, mdns_query, &hop_limit)) {
+		if (!dns_server_is_eligible(ctx, i, mdns_query, llmnr_query,
+					    &hop_limit)) {
 			continue;
 		}
 
@@ -275,6 +298,7 @@ static k_timeout_t dns_query_next_timeout(struct dns_resolve_context *ctx,
 {
 	struct dns_pending_query *pending_query = &ctx->queries[query_idx];
 	bool mdns_query = dns_query_is_mdns(pending_query->query);
+	bool llmnr_query = dns_query_is_llmnr(pending_query->query);
 	k_timeout_t timeout;
 	int remaining_servers;
 
@@ -287,7 +311,7 @@ static k_timeout_t dns_query_next_timeout(struct dns_resolve_context *ctx,
 		return timeout;
 	}
 
-	if (dns_query_uses_parallel_servers(mdns_query)) {
+	if (dns_query_uses_parallel_servers(mdns_query, llmnr_query)) {
 		return timeout;
 	}
 
@@ -1243,7 +1267,9 @@ static int dns_query_servers(struct dns_resolve_context *ctx, int query_idx,
 {
 	struct dns_pending_query *pending_query = &ctx->queries[query_idx];
 	bool mdns_query = dns_query_is_mdns(pending_query->query);
-	bool parallel_servers = dns_query_uses_parallel_servers(mdns_query);
+	bool llmnr_query = dns_query_is_llmnr(pending_query->query);
+	bool parallel_servers = dns_query_uses_parallel_servers(mdns_query,
+								llmnr_query);
 	int ntry = 0;
 	int nfail = 0;
 
@@ -1257,7 +1283,8 @@ static int dns_query_servers(struct dns_resolve_context *ctx, int query_idx,
 		uint8_t hop_limit;
 		int ret;
 
-		if (!dns_server_is_eligible(ctx, i, mdns_query, &hop_limit)) {
+		if (!dns_server_is_eligible(ctx, i, mdns_query, llmnr_query,
+					    &hop_limit)) {
 			continue;
 		}
 
@@ -2491,9 +2518,9 @@ try_resolve:
 
 	ctx->queries[i].id = sys_rand16_get();
 
-	/* If mDNS is enabled, then send .local queries only to multicast
-	 * address. For mDNS the id should be set to 0, see RFC 6762 ch. 18.1
-	 * for details.
+	/* Send multicast lookups only to their well-known multicast address.
+	 * For mDNS the id should be set to 0, see RFC 6762 ch. 18.1 for
+	 * details.
 	 */
 	if (IS_ENABLED(CONFIG_MDNS_RESOLVER)) {
 		const char *ptr = strrchr(query, '.');
