@@ -1048,7 +1048,7 @@ static bool wildcard_check_report(const struct shell *sh, bool found,
  */
 static int execute(const struct shell *sh)
 {
-	struct shell_static_entry dloc; /* Memory for dynamic commands. */
+	struct shell_static_entry dloc = {0}; /* Memory for dynamic commands. */
 	const char *argv[CONFIG_SHELL_ARGC_MAX + 1] = {0}; /* +1 reserved for NULL */
 	const struct shell_static_entry *parent = selected_cmd_get(sh);
 	const struct shell_static_entry *entry = NULL;
