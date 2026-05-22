@@ -28,16 +28,8 @@ properties:
   phy-freq-range:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
-      - 0x2
-      - 0x3
-      - 0x4
-      - 0x5
-      - 0x6
-      - 0x7
-      - 0x8
+    min: 0x0
+    max: 0x8
     description: |
       D-PHY PLL input frequency range. This is used to select the appropriate
       frequency range for the D-PHY PLL operation.
@@ -54,23 +46,8 @@ properties:
   phy-low-power-offset:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
-      - 0x2
-      - 0x3
-      - 0x4
-      - 0x5
-      - 0x6
-      - 0x7
-      - 0x8
-      - 0x9
-      - 0xA
-      - 0xB
-      - 0xC
-      - 0xD
-      - 0xE
-      - 0xF
+    min: 0x0
+    max: 0xF
     description: |
       D-PHY low power offset configuration specific to STM32U5 series.
         0x0 : PHY_LP_OFFSSET_0_CLKP        (0 CLKP)
@@ -93,9 +70,8 @@ properties:
   pll-vco-range:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
+    min: 0x0
+    max: 0x1
     description: |
       PLL VCO frequency range configuration for STM32U5 D-PHY.
         0x0 : DSI_DPHY_VCO_FRANGE_500MHZ_800MHZ
@@ -104,11 +80,8 @@ properties:
   pll-charge-pump:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
-      - 0x2
-      - 0x3
+    min: 0x0
+    max: 0x3
     description: |
       PLL charge pump configuration for STM32U5 D-PHY.
       Valid values:
@@ -121,10 +94,8 @@ properties:
   pll-tuning:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
-      - 0x2
+    min: 0x0
+    max: 0x2
     description: |
       PLL tuning parameter (loop filter) for STM32U5 D-PHY.
         0x0 : DSI_PLL_LOOP_FILTER_2000HZ_4400HZ
