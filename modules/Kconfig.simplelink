@@ -52,46 +52,6 @@ config HAS_CC27XX_SDK
 config HAS_CC35XX_SDK
 	bool
 
-#====== RCL (Radio Control Layer) ======#
-
-config SIMPLELINK_F3_RADIO_DRIVER
-	bool "Build the RCL driver"
-	depends on HAS_CC23X0_SDK || HAS_CC27XX_SDK
-	select ENTROPY_GENERATOR
-	default n if MCUBOOT
-	default y
-	help
-		Build the RCL driver
-
-config SIMPLELINK_F3_RF_SETTING_PREGEN
-	bool "Use the pre-generated radio settings"
-	depends on SIMPLELINK_F3_RADIO_DRIVER
-	default y
-	help
-		Use the pre-generated radio settings
-
-menu "Regulatory Domain Selection"
-	depends on SIMPLELINK_F3_RADIO_DRIVER
-	depends on SOC_CC2755P10 || SOC_CC2755R10 || SOC_CC2745R10_Q1
-
-config RCL_REGULATORY_DOMAIN_ETSI
-	bool "ESTI: European Telecommunications Standards Institute (Europe)"
-	default n
-
-config RCL_REGULATORY_DOMAIN_FCC
-	bool "FCC: Federal Communications Commission (USA)"
-	default n
-
-config RCL_REGULATORY_DOMAIN_MIIT
-	bool "MIIT: Ministry of Information and Communications Technology (China)"
-	default n
-
-config RCL_REGULATORY_DOMAIN_RUNTIME_MODIFIABLE
-	bool "Allow runtime modification of regulatory domain mask"
-	default n
-
-endmenu
-
 #====== LogSinkTrace ======#
 
 config SIMPLELINK_LPF3_TRACE
