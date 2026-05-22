@@ -59,6 +59,9 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
+#ifdef CONFIG_X2APIC
+#include <zephyr/arch/x86/cpuid.h>
+#endif
 #include <string.h>
 
 #include <zephyr/drivers/interrupt_controller/ioapic.h> /* public API declarations */
@@ -68,6 +71,9 @@
 DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
 
 #define IOAPIC_REG DEVICE_MMIO_TOPLEVEL_GET(ioapic_regs)
+
+#define APIC_ID_TO_DEST(id)	(((id) & 0xFF) << 24)
+#define DEFAULT_RTE_DEST	(0xFFU << 24)
 
 /*
  * Destination field (bits[56:63]) defines a set of processors, which is
@@ -81,10 +87,7 @@ DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
  * In this case, LDR is read-only to system software and supports up to 16
  * logical IDs. (Cluster ID: don't care to IO APIC).
  *
- * In either case, regardless how many CPUs in the system, 0xff implies that
- * it's intended to deliver to all possible 8 local APICs.
  */
-#define DEFAULT_RTE_DEST (0xFFU << 24)
 
 static uint32_t ioapic_rtes;
 
@@ -165,12 +168,20 @@ int ioapic_init(const struct device *unused)
 #ifdef CONFIG_IOAPIC_MASK_RTE
 	int32_t ix;	/* redirection table index */
 	uint32_t rteValue; /* value to copy into redirection table entry */
+	uint32_t dest_apic_id;
 
+#ifdef CONFIG_X2APIC
+	dest_apic_id = APIC_ID_TO_DEST(z_x86_cpuid_get_current_physical_apic_id());
+	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
+		   0 /* dummy vector */;
+#else
+	dest_apic_id = DEFAULT_RTE_DEST;
 	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
 		   IOAPIC_LOGICAL | 0 /* dummy vector */;
+#endif
 
 	for (ix = 0; ix < ioapic_rtes; ix++) {
-		ioApicRedSetHi(ix, DEFAULT_RTE_DEST);
+		ioApicRedSetHi(ix, dest_apic_id);
 		ioApicRedSetLo(ix, rteValue);
 	}
 #endif
@@ -290,25 +301,39 @@ int ioapic_resume_from_suspend(const struct device *port)
 	int irq;
 	uint32_t flags;
 	uint32_t rteValue;
+	uint32_t dest_apic_id;
 
 	ARG_UNUSED(port);
+
+#ifdef CONFIG_X2APIC
+	dest_apic_id = APIC_ID_TO_DEST(z_x86_cpuid_get_current_physical_apic_id());
+#else
+	dest_apic_id = DEFAULT_RTE_DEST;
+#endif
 
 	for (irq = 0; irq < ioapic_rtes; irq++) {
 		if (_irq_to_interrupt_vector[irq]) {
 			/* Get the saved flags */
 			flags = restore_flags(irq);
+#ifndef CONFIG_X2APIC
 			/* Appending the flags that are never modified */
 			flags = flags | IOAPIC_LOGICAL;
-
+#endif
 			rteValue = (_irq_to_interrupt_vector[irq] &
 					IOAPIC_VEC_MASK) | flags;
 		} else {
 			/* Initialize the other RTEs to sane values */
+#ifdef CONFIG_X2APIC
+			rteValue = IOAPIC_EDGE | IOAPIC_HIGH |
+				IOAPIC_FIXED | IOAPIC_INT_MASK |
+				0; /* dummy vector */
+#else
 			rteValue = IOAPIC_EDGE | IOAPIC_HIGH |
 				IOAPIC_FIXED | IOAPIC_INT_MASK |
 				IOAPIC_LOGICAL | 0 ; /* dummy vector*/
+#endif
 		}
-		ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
+		ioApicRedSetHi(irq, dest_apic_id);
 		ioApicRedSetLo(irq, rteValue);
 	}
 	return 0;
@@ -386,12 +411,22 @@ no_vtd:
 #else
 	{
 #endif /* CONFIG_INTEL_VTD_ICTL && !CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH */
+
+		uint32_t dest_apic_id;
+
+#ifdef CONFIG_X2APIC
+		dest_apic_id = APIC_ID_TO_DEST(z_x86_cpuid_get_current_physical_apic_id());
+		rteValue = IOAPIC_INT_MASK |
+			(vector & IOAPIC_VEC_MASK) | flags;
+#else
+		dest_apic_id = DEFAULT_RTE_DEST;
 		/* the delivery mode is determined by the flags
 		 * passed from drivers
 		 */
 		rteValue = IOAPIC_INT_MASK | IOAPIC_LOGICAL |
 			(vector & IOAPIC_VEC_MASK) | flags;
-		ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
+#endif
+		ioApicRedSetHi(irq, dest_apic_id);
 		ioApicRedSetLo(irq, rteValue);
 	}
 }
