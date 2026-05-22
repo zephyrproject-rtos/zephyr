@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
 #include <soc.h>
+#include <esp_private/sleep_modem.h>
 #include <esp_private/wifi.h>
 #include <esp_event.h>
 #include <esp_rom_sys.h>
@@ -1869,9 +1870,26 @@ static int esp32_wifi_pm_action(const struct device *dev, enum pm_device_action 
 			return -EBUSY;
 		}
 #endif
+#if defined(CONFIG_ESP32_WIFI_ENHANCED_LIGHT_SLEEP)
+		if (sleep_modem_wifi_modem_state_skip_light_sleep()) {
+			/* Block the system from entering sleep before modem link done */
+			return -EBUSY;
+		}
+#endif
 		break;
 
 	case PM_DEVICE_ACTION_TURN_ON:
+#if defined(CONFIG_PM)
+		/* Register the Wi-Fi modem sleep configuration. Advanced DTIM
+		 * sleep (ESP32_WIFI_ENHANCED_LIGHT_SLEEP) and default sleep
+		 * timing parameters (SOC_ESP32_PM_SLP_DEFAULT_PARAMS_OPT) are
+		 * applied inside when those options are enabled.
+		 */
+		sleep_modem_configure(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+				      CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, true);
+#endif
+		break;
+
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 
