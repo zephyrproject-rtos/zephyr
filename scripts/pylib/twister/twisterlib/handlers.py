@@ -1110,9 +1110,15 @@ class QEMUHandler(Handler):
                 logger.debug("Timed out while monitoring QEMU output")
 
             if os.path.exists(self.pid_fn):
-                with open(self.pid_fn) as pid_file:
-                    qemu_pid = int(pid_file.read())
-                os.unlink(self.pid_fn)
+                try:
+                    with open(self.pid_fn) as pid_file:
+                        qemu_pid = int(pid_file.read())
+                    os.unlink(self.pid_fn)
+                except FileNotFoundError:
+                    # QEMU may have exited and removed its own pid file
+                    # between the existence check above and the unlink
+                    # here. Don't let that crash the whole pipeline.
+                    pass
 
         logger.debug(f"return code from QEMU ({qemu_pid}): {self.returncode}")
 
