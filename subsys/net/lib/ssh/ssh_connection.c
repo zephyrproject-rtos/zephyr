@@ -255,6 +255,7 @@ int ssh_connection_process_msg(struct ssh_transport *transport, uint8_t msg_id,
 		struct ssh_string channel_type;
 		uint32_t sender_channel, initial_window_size, maximum_packet_size;
 		struct ssh_channel *channel;
+		struct ssh_transport_event event;
 
 		NET_DBG("CHANNEL_OPEN");
 
@@ -291,14 +292,19 @@ int ssh_connection_process_msg(struct ssh_transport *transport, uint8_t msg_id,
 		/* TODO: MTU = sizeof(transport->rx_buf) - HEADER_LEN - MAX_PADDING - MAC_LEN? */
 		channel->rx_mtu = sizeof(channel->rx_ring_buf_data);
 
-		if (transport->callback != NULL) {
-			struct ssh_transport_event event;
+		event.type = SSH_TRANSPORT_EVENT_CHANNEL_OPEN;
+		event.channel_open.channel = channel;
 
-			event.type = SSH_TRANSPORT_EVENT_CHANNEL_OPEN;
-			event.channel_open.channel = channel;
+		ret = ssh_transport_traverse_callbacks(true, transport, &event);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (transport->callback != NULL) {
 			ret = transport->callback(transport, &event,
 						  transport->callback_user_data);
 		}
+
 		break;
 	}
 #endif

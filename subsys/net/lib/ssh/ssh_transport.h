@@ -229,4 +229,7 @@ int ssh_transport_send_service_request(struct ssh_transport *transport,
 int ssh_transport_send_server_sig_algs(struct ssh_transport *transport);
 #endif
 
+int ssh_transport_register_callback(struct ssh_transport_conf *conf, bool is_server);
+int ssh_transport_unregister_callback(struct ssh_transport_conf *conf, bool is_server);
+
 #endif
