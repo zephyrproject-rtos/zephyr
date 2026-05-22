@@ -5,6 +5,8 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/clock.h>
+#include <zephyr/sys/timeutil.h>
 #include <zephyr/toolchain.h>
 #include <ksched.h>
 #include <scheduler.h>
@@ -21,6 +23,10 @@ static struct k_spinlock condvar_lock;
 int z_impl_k_condvar_init(struct k_condvar *condvar)
 {
 	z_waitq_init(&condvar->wait_q);
+#ifdef CONFIG_CONDVAR_OPTIONS
+	condvar->options = SYS_CLOCK_REALTIME;
+#endif
+
 	k_object_init(condvar);
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR
@@ -146,3 +152,93 @@ int z_vrfy_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 }
 #include <zephyr/syscalls/k_condvar_wait_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_CONDVAR_OPTIONS
+int z_impl_k_condvar_clockwait(struct k_condvar *condvar, struct k_mutex *mutex,
+	uint32_t clock_id, const struct timespec *abstime)
+{
+	int ret;
+	k_timeout_t timeout;
+	k_timepoint_t timepoint;
+
+	switch (clock_id) {
+	case SYS_CLOCK_REALTIME:
+	case SYS_CLOCK_MONOTONIC:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	if (!timespec_is_valid(abstime)) {
+		return EINVAL;
+	}
+
+	timepoint = timespec_abs_to_timepoint(clock_id, abstime);
+	if (sys_timepoint_expired(timepoint)) {
+		return -ETIMEDOUT;
+	}
+
+	timeout = sys_timepoint_timeout(timepoint);
+
+	ret = k_condvar_wait(condvar, mutex, timeout);
+	switch (ret) {
+	case -EAGAIN:
+		ret = -ETIMEDOUT;
+		__fallthrough;
+	default:
+		break;
+	}
+
+	return ret;
+}
+
+int z_impl_k_condvar_init_ext(struct k_condvar *condvar, uint32_t options)
+{
+	switch (SYS_CLOCK_MASK & options) {
+	case SYS_CLOCK_REALTIME:
+	case SYS_CLOCK_MONOTONIC:
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	condvar->options = options;
+
+	return z_impl_k_condvar_init(condvar);
+}
+
+int z_impl_k_condvar_timedwait(struct k_condvar *condvar, struct k_mutex *mutex,
+	const struct timespec *abstime)
+{
+	return z_impl_k_condvar_clockwait(condvar, mutex, (SYS_CLOCK_MASK & condvar->options), abstime);
+}
+
+#ifdef CONFIG_USERSPACE
+int z_vrfy_k_condvar_clockwait(struct k_condvar *condvar, struct k_mutex *mutex,
+	uint32_t clock_id, const struct timespec *abstime)
+{
+	K_OOPS(K_SYSCALL_OBJ(condvar, K_OBJ_CONDVAR));
+	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
+	K_OOPS(K_SYSCALL_MEMORY_READ(abstime, sizeof(*abstime)));
+	return z_impl_k_condvar_clockwait(condvar, mutex, clock_id, abstime);
+}
+#include <zephyr/syscalls/k_condvar_clockwait_mrsh.c>
+
+int z_vrfy_k_condvar_init_ext(struct k_condvar *condvar, uint32_t options)
+{
+	K_OOPS(K_SYSCALL_OBJ_INIT(condvar, K_OBJ_CONDVAR));
+	return z_impl_k_condvar_init_ext(condvar, options);
+}
+#include <zephyr/syscalls/k_condvar_init_ext_mrsh.c>
+
+int z_vrfy_k_condvar_timedwait(struct k_condvar *condvar, struct k_mutex *mutex,
+	const struct timespec *abstime)
+{
+	K_OOPS(K_SYSCALL_OBJ(condvar, K_OBJ_CONDVAR));
+	K_OOPS(K_SYSCALL_OBJ(mutex, K_OBJ_MUTEX));
+	K_OOPS(K_SYSCALL_MEMORY_READ(abstime, sizeof(*abstime)));
+	return z_impl_k_condvar_timedwait(condvar, mutex, abstime);
+}
+#include <zephyr/syscalls/k_condvar_timedwait_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_CONDVAR_OPTIONS */

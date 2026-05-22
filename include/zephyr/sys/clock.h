@@ -415,6 +415,13 @@ static inline bool sys_timepoint_expired(k_timepoint_t timepoint)
 #define SYS_CLOCK_MONOTONIC 4
 
 /**
+ * @brief A mask useful for selecting a clock from the SYS_CLOCK_MASK family.
+ *
+ * This mask can be used to select a clock from the SYS_CLOCK_MASK family.
+ */
+ #define SYS_CLOCK_MASK BIT_MASK(3)
+
+/**
  * @brief The flag used for specifying absolute timeouts
  *
  * This flag may be passed to @ref sys_clock_nanosleep to indicate the requested timeout is an

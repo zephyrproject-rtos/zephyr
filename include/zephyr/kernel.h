@@ -3817,6 +3817,9 @@ struct k_condvar {
 #ifdef CONFIG_OBJ_CORE_CONDVAR
 	struct k_obj_core  obj_core;
 #endif
+#ifdef CONFIG_CONDVAR_OPTIONS
+	uint32_t options;
+#endif
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3846,6 +3849,70 @@ struct k_condvar {
  * @retval 0 Condition variable created successfully
  */
 __syscall int k_condvar_init(struct k_condvar *condvar);
+
+#ifdef CONFIG_CONDVAR_OPTIONS
+/**
+ * @brief Initialize a condition variable with options.
+ *
+ * This routine initializes a condition variable object, prior to its first use.
+ *
+ * @param condvar Address of the condition variable.
+ * @param options Options for condition variable initialization.
+ *
+ * Currently, valid options include:
+ * - @ref SYS_CLOCK_REALTIME
+ * - @ref SYS_CLOCK_MONOTONIC
+ *
+ * @retval 0 Condition variable object created
+ * @retval -EINVAL Invalid options
+ */
+__syscall int k_condvar_init_ext(struct k_condvar *condvar, uint32_t options);
+
+/**
+ * @brief Waits on the condition variable releasing the mutex lock until an absolute time.
+ *
+ * Atomically releases the currently owned mutex, blocks the current thread
+ * waiting on the condition variable specified by @a condvar,
+ * and finally acquires the mutex again.
+ *
+ * The waiting thread unblocks only after another thread calls
+ * @ref k_condvar_signal, or @ref k_condvar_broadcast with the same condition variable.
+ *
+ * This call measures @a abstime against the clock specified via the `options` parameter in @ref k_condvar_init_ext.
+ *
+ * @param condvar pointer to a @ref k_condvar structure
+ * @param mutex Address of the mutex.
+ * @param abstime Absolute timepoint to wait until
+ *
+ * @retval 0 On success
+ * @retval -ETIMEDOUT The absolute timepoint has passed.
+ */
+ __syscall int k_condvar_timedwait(struct k_condvar *condvar, struct k_mutex *mutex,
+	const struct timespec *abstime);
+
+/**
+ * @brief Waits on the condition variable releasing the mutex lock until an absolute time.
+ *
+ * Atomically releases the currently owned mutex, blocks the current thread
+ * waiting on the condition variable specified by @a condvar,
+ * and finally acquires the mutex again.
+ *
+ * The waiting thread unblocks only after another thread calls
+ * @ref k_condvar_signal, or @ref k_condvar_broadcast with the same condition variable.
+ *
+ * This call measures @a abstime against the clock specified via the @a clock_id parameter.
+ *
+ * @param condvar pointer to a @ref k_condvar structure
+ * @param mutex Address of the mutex.
+ * @param clock_id Clock to wait on.
+ * @param abstime Absolute timepoint to wait until on the specified clock.
+ *
+ * @retval 0 On success
+ * @retval -ETIMEDOUT The absolute timepoint has passed.
+ */
+ __syscall int k_condvar_clockwait(struct k_condvar *condvar, struct k_mutex *mutex,
+	uint32_t clock_id, const struct timespec *abstime);
+#endif /* CONFIG_CONDVAR_OPTIONS */
 
 /**
  * @brief Signals one thread that is pending on the condition variable
@@ -3897,6 +3964,23 @@ __syscall int k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 #define K_CONDVAR_DEFINE(name)                                                 \
 	STRUCT_SECTION_ITERABLE(k_condvar, name) =                             \
 		Z_CONDVAR_INITIALIZER(name)
+
+#if defined(CONFIG_CONDVAR_OPTIONS) || defined(__DOXYGEN__)
+/**
+	* @brief Statically define and initialize a condition variable, with options.
+	*
+	* The condition variable can be accessed outside the module where it is defined using:
+	*
+	* @code extern struct k_condvar <name>; @endcode
+	*
+	* @param name Name of the mutex.
+	* @param opts Options for condition variable initialization.
+	*/
+#define K_CONDVAR_DEFINE_EXT(name, opts)                                                             \
+	STRUCT_SECTION_ITERABLE(k_condvar, name) = Z_CONDVAR_INITIALIZER_EXT(name, opts);              \
+	BUILD_ASSERT(((opts) == SYS_CLOCK_REALTIME) || ((opts) == SYS_CLOCK_MONOTONIC))
+#endif
+
 /**
  * @}
  */
