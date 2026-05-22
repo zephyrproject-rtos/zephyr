@@ -93,7 +93,6 @@ properties:
         * PDO_BATT
         * PDO_VAR
         * PDO_PPS_APDO
-      Valid range: 1 - 7
 
   sink-pdos:
     type: array
@@ -105,7 +104,6 @@ properties:
         * PDO_BATT
         * PDO_VAR
         * PDO_PPS_APDO
-      Valid range: 1 - 7
 
   sink-vdos:
     type: array
