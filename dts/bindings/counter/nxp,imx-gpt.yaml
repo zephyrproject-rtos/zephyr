@@ -17,8 +17,12 @@ properties:
 
   gptfreq:
     type: int
-    required: true
-    description: gpt frequencies
+    description: |
+      Desired counter tick frequency in Hz. Required for all internal clock
+      sources (periph, high-freq, low-freq, osc).
+      Can be left out when clock-source = "ext" — the external clock
+      frequency is unknown; counter_get_freq() returns 0 and the prescaler
+      is fixed at 1.
 
   run-mode:
     type: string
@@ -35,3 +39,40 @@ properties:
       - restart
       - free-run
     default: restart
+
+  clock-source:
+    type: string
+    description: |
+      GPT clock source. The enum order matches gpt_clock_source_t in fsl_gpt.h
+      exactly so DT_INST_ENUM_IDX can be cast directly to gpt_clock_source_t.
+    enum:
+      - "off"
+      - "periph"
+      - "high-freq"
+      - "ext"
+      - "low-freq"
+      - "osc"
+    default: "periph"
+
+  high-freq:
+    type: int
+    description:
+      High-frequency reference clock in Hz. Only applies when clock-source = "high-freq".
+
+  low-freq:
+    type: int
+    description:
+      Low-frequency reference clock in Hz. Only applies when clock-source = "low-freq".
+
+  osc-freq:
+    type: int
+    description:
+      Oscillator frequency expressed in Hz. Only applies when clock-source = "osc".
+
+  osc-divider:
+    type: int
+    default: 1
+    min: 1
+    max: 16
+    description: |
+      Prescaler for the oscillator clock. Only applies when clock-source = "osc".
