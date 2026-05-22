@@ -14,7 +14,6 @@ config SOC_SERIES_MCXA1X3
 	select CPU_CORTEX_M33
 	select HAS_MCUX_CACHE
 	select HAS_PM
-	select PM_STATE_SET_IRQ_LOCKED
 
 config SOC_SERIES_MCXA1X6
 	select CPU_CORTEX_M33
@@ -22,7 +21,6 @@ config SOC_SERIES_MCXA1X6
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
 	select HAS_PM
-	select PM_STATE_SET_IRQ_LOCKED
 
 config SOC_SERIES_MCXAXX6
 	select CPU_CORTEX_M33
@@ -31,7 +29,6 @@ config SOC_SERIES_MCXAXX6
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
 	select HAS_PM
-	select PM_STATE_SET_IRQ_LOCKED
 
 config SOC_SERIES_MCXAXX4
 	select CPU_CORTEX_M33

@@ -84,14 +84,14 @@ idle-exit accounting. After that bookkeeping is complete and
 :c:func:`pm_system_suspend` returns, the idle thread restores the original
 interrupt key.
 
-Architectures and SoCs that opt in to the ``CONFIG_PM_STATE_SET_IRQ_LOCKED``
-contract use the architecture hooks immediately around the low-power instruction
-so that it can still observe a wake event without dispatching the wake-source ISR
-first. In that mode, :c:func:`pm_state_set` and
+Architectures and SoCs that do not select ``CONFIG_PM_STATE_SET_IRQ_UNLOCKED``
+use the architecture hooks immediately around the low-power instruction so that
+it can still observe a wake event without dispatching the wake-source ISR first.
+In that mode, :c:func:`pm_state_set` and
 :c:func:`pm_state_exit_post_ops` must be used for SoC-specific hardware work
 only, not as final interrupt unmask points.
 
-When this contract is enabled, the interrupt ownership sequence is:
+When this default contract is used, the interrupt ownership sequence is:
 
 .. mermaid::
    :caption: System PM interrupt restore ownership
@@ -136,11 +136,11 @@ When this contract is enabled, the interrupt ownership sequence is:
             Note over Workers: Non-idle thread starts executing
         end
 
-SoC implementations that use this contract must not unmask interrupts from
-:c:func:`pm_state_set` or :c:func:`pm_state_exit_post_ops`. Legacy
+SoC implementations that use this default contract must not unmask interrupts
+from :c:func:`pm_state_set` or :c:func:`pm_state_exit_post_ops`. Legacy
 implementations that still call ``irq_unlock(0)``, ``arch_irq_unlock(0)``,
-``__enable_irq()``, or equivalent operations from those hooks must be migrated
-before they can opt in to the kernel-owned ordering guarantee.
+``__enable_irq()``, or equivalent operations from those hooks must select
+``CONFIG_PM_STATE_SET_IRQ_UNLOCKED`` until they are migrated.
 
 .. note::
 

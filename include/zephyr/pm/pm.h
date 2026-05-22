@@ -168,11 +168,12 @@ void pm_system_resume(void);
  *
  * This function implements the SoC specific details necessary
  * to put the processor into available power states. Implementations that select
- * CONFIG_PM_STATE_SET_IRQ_LOCKED must not unmask interrupts or otherwise
- * dispatch pending wake-source ISRs from this hook. Architecture helpers may
- * adjust interrupt state immediately around the low-power instruction, but the
- * kernel idle path restores the original interrupt state after PM resume
- * housekeeping is complete.
+ * CONFIG_PM_STATE_SET_IRQ_UNLOCKED may still follow the legacy behavior of
+ * unmasking interrupts from this hook. Other implementations must not unmask
+ * interrupts or otherwise dispatch pending wake-source ISRs from this hook.
+ * Architecture helpers may adjust interrupt state immediately around the
+ * low-power instruction, but the kernel idle path restores the original
+ * interrupt state after PM resume housekeeping is complete.
  *
  * @note When system PM keeps interrupts locked across resume (currently selected
  *       via CONFIG_PM_STATE_SET_IRQ_LOCKED), the locked-resume ordering
@@ -192,11 +193,11 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
  * This function is a place holder to do any operations that may be needed after
  * a sleep state exits. It is called after any system-managed devices have been
  * resumed and while interrupts are still locked, before PM exit notifications
- * and system clock idle-exit accounting have completed. Implementations must
- * use this hook for hardware resume operations only. They must not unmask
- * interrupts or otherwise dispatch pending wake-source ISRs from this hook; the
- * kernel idle path restores the original interrupt state after PM resume
- * housekeeping is complete.
+ * and system clock idle-exit accounting have completed. Implementations that do
+ * not select CONFIG_PM_STATE_SET_IRQ_UNLOCKED must use this hook for hardware
+ * resume operations only. They must not unmask interrupts or otherwise dispatch
+ * pending wake-source ISRs from this hook; the kernel idle path restores the
+ * original interrupt state after PM resume housekeeping is complete.
  *
  * @note As with @ref pm_state_set, when system PM keeps interrupts locked
  *       across resume, this ordering covers only interrupts that
