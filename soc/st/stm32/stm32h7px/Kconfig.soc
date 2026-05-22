@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32H7PX
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32h7px" if SOC_SERIES_STM32H7PX
+
+config SOC_STM32H7P4XX
+	bool
+	select SOC_SERIES_STM32H7PX
+
+config SOC_STM32H7P5XX
+	bool
+	select SOC_SERIES_STM32H7PX
+
+config SOC
+	default "stm32h7p4xx" if SOC_STM32H7P4XX
+	default "stm32h7p5xx" if SOC_STM32H7P5XX
