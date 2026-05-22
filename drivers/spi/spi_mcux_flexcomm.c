@@ -433,7 +433,11 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 		}
 		blk_cfg->source_address = (uint32_t)&data->last_word;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		blk_cfg->block_size = data->word_size_bytes;
+		/* The last word is always 32 bits to include the EOT flag.
+		 * There are some special handling in the dma driver that will ensure
+		 * that the last transfer width is 32bit.
+		 */
+		blk_cfg->block_size = sizeof(uint32_t);
 		blk_cfg->next_block = NULL;
 	} else {
 		blk_cfg->block_size = len * data->word_size_bytes;
