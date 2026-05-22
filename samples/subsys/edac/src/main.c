@@ -24,16 +24,24 @@ static atomic_t handled;
  */
 static void notification_callback(const struct device *dev, void *data)
 {
-	/* Special care need to be taken for NMI callback:
-	 * delayed_work, mutex and semaphores are not working stable
-	 * here, using integer increment for now
+	ARG_UNUSED(dev);
+	ARG_UNUSED(data);
+
+	/* This runs in interrupt (ISR) context: k_work/mutex/semaphore are
+	 * not safe here, so just raise an atomic flag for the worker thread
+	 * to observe.
 	 */
-	atomic_set(&handled, true);
+	atomic_set(&handled, 1);
 }
 
 int main(void)
 {
 	const struct device *const dev = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_edac));
+
+	if (dev == NULL) {
+		printk("EDAC device not found.\n");
+		return 0;
+	}
 
 	if (!device_is_ready(dev)) {
 		printk("%s: device not ready.\n", dev->name);
@@ -49,12 +57,12 @@ int main(void)
 	return 0;
 }
 
-void thread_function(void)
+static void thread_function(void)
 {
 	LOG_DBG("Thread started");
 
 	while (true) {
-		if (atomic_cas(&handled, true, false)) {
+		if (atomic_cas(&handled, 1, 0)) {
 			printk("Got notification about ECC event\n");
 			k_sleep(K_MSEC(300));
 		}
