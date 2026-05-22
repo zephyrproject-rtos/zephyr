@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_BCM283X
+	bool "Raspberry Pi BCM283x device ID via VideoCore firmware"
+	default y
+	depends on DT_HAS_RASPBERRYPI_BCM283X_FIRMWARE_ENABLED
+	select HWINFO_HAS_DRIVER
+	select RASPBERRYPI_FIRMWARE
+	help
+	  Implement hwinfo_get_device_id() for Raspberry Pi BCM283x devices
+	  by issuing the GET_BOARD_SERIAL property tag to the VideoCore
+	  firmware. Returns the 64-bit serial number burned into OTP at the
+	  factory.
