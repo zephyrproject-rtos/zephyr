@@ -46,7 +46,8 @@ properties:
         On all other SoCs, the division factor M is shared between
         PLL, PLLSAI and PLLI2S, hence same value must be used
         for those PLLs when used together.
-        Valid range: 2 - 63
+    min: 2
+    max: 63
 
   mul-n:
     type: int
@@ -79,7 +80,8 @@ properties:
         and on all STM32F7x for PLLI2S.
         Available only on STM32F427, F429, F437, F439, F446, F469, F479
         and on all STM32F7x for PLLSAI.
-        Valid range: 2 - 15
+    min: 2
+    max: 15
 
   post-div-q:
     type: int
@@ -91,7 +93,8 @@ properties:
         and on all STM32F7x for PLLSAI.
         If the div-q property is used and this property is applicable for the SoC, then it is
         required to define it.
-        Valid range: 1 - 32
+    min: 1
+    max: 32
 
   div-r:
     type: int
@@ -101,7 +104,8 @@ properties:
         Available on all SoCs except STM32F410 for PLLI2S.
         Available only on STM32F427, F429, F437, F439, F469, F479
         and on STM32F74x and higher for PLLSAI.
-        Valid range: 2 - 7
+    min: 2
+    max: 7
 
   post-div-r:
     type: int
