@@ -55,6 +55,12 @@ if(CONFIG_MBEDTLS)
     # This is used by Secure Storage.
     target_compile_definitions(tfpsacrypto PRIVATE BUILDING_MBEDTLS_CRYPTO)
 
+    if(CONFIG_TF_PSA_CRYPTO_EXTERNAL_ACCELERATOR_INTEGRATION)
+      target_compile_definitions(tfpsacrypto PRIVATE PSA_CRYPTO_DRIVER_EXTERNAL_INTEGRATION)
+      # Any code instantiating multi-part contexts needs this definition
+      target_compile_definitions(mbedTLS INTERFACE PSA_CRYPTO_DRIVER_EXTERNAL_INTEGRATION)
+    endif()
+
     # Add Mbed TLS libraries ("tfpsacrypto" and "mbedx509" are linked to "mbedtls")
     # to ZEPHYR_LIBS list.
     zephyr_append_cmake_library(mbedtls)

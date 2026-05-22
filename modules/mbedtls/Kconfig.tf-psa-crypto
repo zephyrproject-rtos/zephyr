@@ -18,6 +18,14 @@ config TF_PSA_CRYPTO_USER_CONFIG_FILE
 config TF_PSA_CRYPTO_USER_CONFIG
 	def_bool TF_PSA_CRYPTO_USER_CONFIG_FILE != ""
 
+config TF_PSA_CRYPTO_EXTERNAL_ACCELERATOR_INTEGRATION
+	bool "Integrate external cryptographic accelerators"
+	help
+	  Enable hooks for accelerated implementations of cryptographic
+	  operations outside of the `tf-psa-crypto` repo. When enabled,
+	  implementations for all functions in
+	  <tf-psa-crypto/drivers/external_integration.h> must be provided.
+
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NIST curves optimization"
 	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
