@@ -25,5 +25,5 @@ bt_tmap_peripheral,default,nrf5340dk/nrf5340/cpuapp,samples/bluetooth/tmap_perip
 bt_tmap_bms,default,nrf5340dk/nrf5340/cpuapp,samples/bluetooth/tmap_bms,
 bt_tmap_bmr,default,nrf5340dk/nrf5340/cpuapp,samples/bluetooth/tmap_bmr,
 bt_hci_ipc,default,nrf5340dk/nrf5340/cpunet,samples/bluetooth/hci_ipc,
-bt_hci_ipc,iso-broadcast,nrf5340dk/nrf5340/cpunet,samples/bluetooth/hci_ipc,-DCONF_FILE=nrf5340_cpunet_iso_broadcast-bt_ll_sw_split.conf
-bt_hci_ipc,iso-receive,nrf5340dk/nrf5340/cpunet,samples/bluetooth/hci_ipc,-DCONF_FILE=nrf5340_cpunet_iso_receive-bt_ll_sw_split.conf
+bt_hci_ipc,iso-broadcast,nrf5340dk/nrf5340/cpunet,samples/bluetooth/hci_ipc,-DEXTRA_CONF_FILE=extra-iso_broadcast-bt_ll_sw_split.conf
+bt_hci_ipc,iso-receive,nrf5340dk/nrf5340/cpunet,samples/bluetooth/hci_ipc,-DEXTRA_CONF_FILE=extra-iso_receive-bt_ll_sw_split.conf
