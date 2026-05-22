@@ -7,8 +7,3 @@
 	execution-memory = <&cpuppr_code_partition>;
 	/delete-property/ source-memory;
 };
-
-&uart135 {
-	status = "reserved";
-	interrupt-parent = <&cpuppr_clic>;
-};
