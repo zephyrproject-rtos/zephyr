@@ -257,7 +257,7 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 		.set_sda = i2c_stm32_bitbang_set_sda,
 		.get_sda = i2c_stm32_bitbang_get_sda,
 	};
-	uint32_t bitrate_cfg;
+	uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
 	int error = 0;
 
 	LOG_ERR("attempting to recover bus");
@@ -288,7 +288,6 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 
 	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
 
-	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
 	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
 	if (error != 0) {
 		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
@@ -302,6 +301,15 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 
 restore:
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
+	/* Re-initialize the I2C peripheral after GPIO-based bus recovery.
+	 * pinctrl_apply_state() restores the pin configuration, but the
+	 * peripheral registers remain in a faulted state. Re-running
+	 * runtime_configure() restores the peripheral to a working state.
+	 */
+	if (i2c_stm32_runtime_configure(dev, bitrate_cfg) != 0) {
+		LOG_ERR("failed to restore I2C peripheral after bus recovery");
+	}
 
 	k_sem_give(&data->bus_mutex);
 
