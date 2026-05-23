@@ -190,3 +190,43 @@ ZTEST_P(ztest_params, test_range_param)
 
 ZTEST_DEFINE_PARAM_RANGE(even_range, int, 0, 10, 2);
 ZTEST_INSTANTIATE_TEST_SUITE_P(evens, ztest_params, test_range_param, even_range);
+
+/* ---- Use-case 8: runtime-generated parameters (generator callback) ------ */
+
+/*
+ * Demonstrates ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP.
+ *
+ * setup_cb resets a static counter to zero before the dispatch loop begins.
+ * gen_cb returns the current counter value and then increments it, so each
+ * invocation receives a value equal to its index.
+ *
+ * This verifies:
+ *   a) setup_cb is called exactly once before iteration 0 (reset fires),
+ *   b) gen_cb is called per invocation in index order,
+ *   c) the delivered value matches ztest_get_current_param_index().
+ */
+static uint32_t z_test_gen_counter;
+
+static void reset_gen_counter(void)
+{
+	z_test_gen_counter = 0U;
+}
+
+static void counter_gen(size_t idx, void *out)
+{
+	ARG_UNUSED(idx);
+	*(uint32_t *)out = z_test_gen_counter++;
+}
+
+ZTEST_P(ztest_params, test_generator_param)
+{
+	size_t   idx = ztest_get_current_param_index();
+	uint32_t val = ZTEST_GET_PARAM(uint32_t);
+
+	zassert_equal(val, (uint32_t)idx,
+		      "generator value %u at index %zu unexpected", val, idx);
+}
+
+ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(counter_vals, uint32_t, 5U,
+					reset_gen_counter, counter_gen);
+ZTEST_INSTANTIATE_TEST_SUITE_P(gen, ztest_params, test_generator_param, counter_vals);

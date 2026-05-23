@@ -130,16 +130,28 @@ struct ztest_param_values {
 	/** Optional callback returning a human-readable name for the value at @p index. */
 	const char *(*name_cb)(size_t index, const void *value);
 	/**
-	 * @brief Optional value generator for range-based parameters.
+	 * @brief Optional value generator for range-based or runtime parameters.
 	 *
 	 * When non-NULL, called once per invocation with the 0-based index
 	 * and a pointer to an aligned scratch buffer of at least @p elem_size
 	 * bytes.  The callback must write exactly @p elem_size bytes into
 	 * @p out.  @p values must be NULL when this callback is provided.
 	 *
-	 * Use ZTEST_DEFINE_PARAM_RANGE() instead of setting this directly.
+	 * Use ZTEST_DEFINE_PARAM_RANGE() or ZTEST_DEFINE_PARAM_GENERATOR()
+	 * instead of setting this directly.
 	 */
 	void (*value_at_cb)(size_t index, void *out);
+	/**
+	 * @brief Optional one-time setup called before the dispatch loop.
+	 *
+	 * When non-NULL, invoked exactly once per parameterized test dispatch
+	 * before the first value is produced.  Useful for seeding a PRNG,
+	 * resetting stateful generators, or any other per-test-run
+	 * initialisation.  May be NULL.
+	 *
+	 * Use ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP() to set this field.
+	 */
+	void (*setup_cb)(void);
 };
 
 /**
@@ -505,6 +517,7 @@ bool ztest_has_current_param(void);
 		.elem_size    = sizeof(type_),                                                \
 		.name_cb      = NULL,                                                        \
 		.value_at_cb  = NULL,                                                        \
+		.setup_cb     = NULL,                                                        \
 	}
 
 /**
@@ -520,6 +533,7 @@ bool ztest_has_current_param(void);
 		.elem_size   = sizeof((array_)[0]),                                          \
 		.name_cb     = NULL,                                                         \
 		.value_at_cb = NULL,                                                         \
+		.setup_cb    = NULL,                                                         \
 	}
 
 /**
@@ -559,6 +573,82 @@ bool ztest_has_current_param(void);
 		.elem_size   = sizeof(type_),                                                \
 		.name_cb     = NULL,                                                         \
 		.value_at_cb = z_ztest_range_value_at_##name_,                              \
+		.setup_cb    = NULL,                                                         \
+	}
+
+/**
+ * @brief Declare a runtime-generated parameter set.
+ *
+ * @p gen_cb_ is called once per invocation with the 0-based iteration index
+ * and a pointer to an aligned scratch buffer; it must write exactly
+ * ``sizeof(type_)`` bytes into that buffer.  The callback may read any
+ * runtime state — random numbers, hardware registers, computed values, etc.
+ *
+ * Values are never stored in an array; @p count_ iterations cost no extra RAM
+ * regardless of type size.
+ *
+ * For generators that require one-time initialisation (e.g. seeding a PRNG)
+ * use ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP() instead.
+ *
+ * Constraint (checked at compile time): ``sizeof(type_)`` must not exceed
+ * 16 bytes.
+ *
+ * @param name_    Identifier for the resulting variable.
+ * @param type_    C type of each generated value.
+ * @param count_   Number of invocations (constant expression).
+ * @param gen_cb_  Generator: ``void (*)(size_t index, void *out)``.
+ */
+#define ZTEST_DEFINE_PARAM_GENERATOR(name_, type_, count_, gen_cb_)                          \
+	BUILD_ASSERT(sizeof(type_) <= 16U,                                                   \
+		     "ZTEST_DEFINE_PARAM_GENERATOR: type too large for scratch buffer");     \
+	static const struct ztest_param_values name_ = {                                     \
+		.values      = NULL,                                                         \
+		.count       = (count_),                                                     \
+		.elem_size   = sizeof(type_),                                                \
+		.name_cb     = NULL,                                                         \
+		.value_at_cb = (gen_cb_),                                                    \
+		.setup_cb    = NULL,                                                         \
+	}
+
+/**
+ * @brief Declare a runtime-generated parameter set with one-time setup.
+ *
+ * Identical to ZTEST_DEFINE_PARAM_GENERATOR() but also registers
+ * @p setup_cb_, which is called **once** before the first iteration of the
+ * dispatch loop.  Use this to seed a PRNG, reset a stateful counter, or
+ * perform any other per-test-run initialisation that must happen before
+ * values are generated.
+ *
+ * Example — reproducible fuzz testing:
+ *
+ * @code{.c}
+ * static void seed_rng(void) { sys_rand_seed(MY_FUZZ_SEED); }
+ * static void rand_u32(size_t idx, void *out)
+ * {
+ *     ARG_UNUSED(idx);
+ *     *(uint32_t *)out = sys_rand32_get();
+ * }
+ * ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(fuzz_vals, uint32_t,
+ *                                         MY_FUZZ_ITERATIONS,
+ *                                         seed_rng, rand_u32);
+ * @endcode
+ *
+ * @param name_      Identifier for the resulting variable.
+ * @param type_      C type of each generated value.
+ * @param count_     Number of invocations (constant expression).
+ * @param setup_cb_  Setup: ``void (*)(void)`` — called once before iteration 0.
+ * @param gen_cb_    Generator: ``void (*)(size_t index, void *out)``.
+ */
+#define ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(name_, type_, count_, setup_cb_, gen_cb_)    \
+	BUILD_ASSERT(sizeof(type_) <= 16U,                                                   \
+		     "ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP: type too large");             \
+	static const struct ztest_param_values name_ = {                                     \
+		.values      = NULL,                                                         \
+		.count       = (count_),                                                     \
+		.elem_size   = sizeof(type_),                                                \
+		.name_cb     = NULL,                                                         \
+		.value_at_cb = (gen_cb_),                                                    \
+		.setup_cb    = (setup_cb_),                                                  \
 	}
 
 /**
