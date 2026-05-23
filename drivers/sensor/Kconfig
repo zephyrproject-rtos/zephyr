@@ -170,6 +170,7 @@ source "drivers/sensor/tsic_xx6/Kconfig"
 source "drivers/sensor/veaa_x_3/Kconfig"
 source "drivers/sensor/voltage_divider/Kconfig"
 source "drivers/sensor/xbr818/Kconfig"
+source "drivers/sensor/xgzp68xxd/Kconfig"
 # zephyr-keep-sorted-stop
 
 endif # SENSOR

@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Nexrem
+# SPDX-License-Identifier: Apache-2.0
+
+title: CFSensor XGZP68XXD Pressure Sensor
+
+description: |
+  The XGZP68XXD family of pressure sensors provide digital calibrated
+  pressure and temperature readings over I2C. Sensors exist in ranges
+  from -100kPa to 1500kPa. Both absolute and differential versions
+  are supported.
+
+compatible: "cfsensor,xgzp68xxd"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  k-value:
+    type: int
+    default: 8
+    description: |
+      The K value is selected for the appropriate pressure kPa range:
+      Pressure range      | K value
+      500 < kPa <= 1000   | 8
+      260 < kPa <= 500    | 16
+      130 < kPa <= 260    | 32
+      65  < kPa <= 130    | 64
+      32  < kPa <= 65     | 128
+      16  < kPa <= 32     | 256
+      8   < kPa <= 16     | 512
+      4   < kPa <= 8      | 1024
+      2   < kPa <= 4      | 2048
+      1   < kPa <= 2      | 4096
+    enum:
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+      - 2048
+      - 4096
