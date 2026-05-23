@@ -458,6 +458,11 @@ void srandom(unsigned int seed)
 	/* TRNG-based, no seeding needed */
 }
 
+int bl_rand(void)
+{
+	return (int)sys_rand32_get();
+}
+
 /* Stack info for blob */
 
 /*
