@@ -322,10 +322,12 @@ static ZTEST_DMEM struct net_addr_test_data ipv6_ntop_7 = {
 	.ipv6.addr.s6_addr16 = { 0, net_htons(0xff08), 0, 0, 0, 0, 0, 0 },
 };
 
-static const struct {
+struct net_addr_test_case {
 	const char *name;
 	struct net_addr_test_data *data;
-} tests[] = {
+};
+
+static const struct net_addr_test_case net_addr_test_cases[] = {
 	/* IPv4 net_addr_pton */
 	{ "test_ipv4_pton_1", &ipv4_pton_1},
 	{ "test_ipv4_pton_2", &ipv4_pton_2},
@@ -366,6 +368,21 @@ static const struct {
 	{ "test_ipv6_ntop_5", &ipv6_ntop_5},
 	{ "test_ipv6_ntop_6", &ipv6_ntop_6},
 	{ "test_ipv6_ntop_7", &ipv6_ntop_7},
+};
+
+static const char *net_addr_test_name(size_t index, const void *value)
+{
+	const struct net_addr_test_case *tc = value;
+
+	ARG_UNUSED(index);
+	return tc->name;
+}
+
+static const struct ztest_param_values net_addr_cases = {
+	.values    = net_addr_test_cases,
+	.count     = ARRAY_SIZE(net_addr_test_cases),
+	.elem_size = sizeof(net_addr_test_cases[0]),
+	.name_cb   = net_addr_test_name,
 };
 
 static bool check_net_addr(struct net_addr_test_data *data)
@@ -495,22 +512,12 @@ static bool check_net_addr(struct net_addr_test_data *data)
 	return true;
 }
 
-ZTEST(test_utils_fn, test_net_addr)
+ZTEST_P(test_utils_fn, test_net_addr)
 {
-	int count, pass;
+	const struct net_addr_test_case *tc =
+		ZTEST_GET_PARAM_PTR(struct net_addr_test_case);
 
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_PRINT("Running test: %s: ", tests[count].name);
-
-		if (check_net_addr(tests[count].data)) {
-			TC_PRINT("passed\n");
-			pass++;
-		} else {
-			TC_PRINT("failed\n");
-		}
-	}
-
-	zassert_equal(pass, ARRAY_SIZE(tests), "check_net_addr error");
+	zassert_true(check_net_addr(tc->data), "check_net_addr failed: %s", tc->name);
 }
 
 ZTEST(test_utils_fn, test_addr_parse)
@@ -1885,3 +1892,4 @@ ZTEST(test_utils_fn, test_parse_ipv6_overflow)
 }
 
 ZTEST_SUITE(test_utils_fn, NULL, NULL, NULL, NULL, NULL);
+ZTEST_INSTANTIATE_TEST_SUITE_P(all, test_utils_fn, test_net_addr, net_addr_cases);
