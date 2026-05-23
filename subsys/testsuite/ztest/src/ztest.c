@@ -855,6 +855,9 @@ static int z_ztest_run_test_dispatch(struct ztest_suite_node *suite,
 	}
 
 	/* Parameterized: run once per registered value. */
+	if (inst->values->setup_cb != NULL) {
+		inst->values->setup_cb();
+	}
 	base = (const uint8_t *)inst->values->values;
 	for (size_t i = 0U; i < inst->values->count; i++) {
 		if (inst->values->value_at_cb != NULL) {

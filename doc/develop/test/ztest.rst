@@ -199,6 +199,58 @@ array is allocated, so large ranges have zero RAM overhead:
    ``ZTEST_DEFINE_PARAM_RANGE`` requires ``end > begin`` and ``step > 0``,
    both enforced at compile time via :c:macro:`BUILD_ASSERT`.
 
+For values that must be **computed at runtime** — for instance random numbers,
+hardware sensor readings, or values produced by a custom algorithm — use
+:c:macro:`ZTEST_DEFINE_PARAM_GENERATOR` or
+:c:macro:`ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP`.  Both accept a
+user-provided generator callback with the signature
+``void gen(size_t index, void *out)`` that writes one value per invocation.
+Like ranges, no backing array is allocated.
+
+The ``_WITH_SETUP`` variant additionally calls a ``void setup(void)`` hook
+**once** before the dispatch loop.  This is the right place to seed a PRNG,
+reset a stateful counter, or open any resource needed by the generator:
+
+.. code-block:: C
+
+   #include <zephyr/random/random.h>
+
+   /* Seed the RNG before the first iteration so failures are reproducible. */
+   static void seed_rng(void)
+   {
+        sys_rand_seed(MY_FUZZ_SEED);
+   }
+
+   static void rand_u32_gen(size_t idx, void *out)
+   {
+        ARG_UNUSED(idx);
+        *(uint32_t *)out = sys_rand32_get();
+   }
+
+   ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(fuzz_vals, uint32_t,
+                                        MY_FUZZ_ITERATIONS,
+					seed_rng, rand_u32_gen);
+   ZTEST_INSTANTIATE_TEST_SUITE_P(fuzz, my_suite, test_my_function, fuzz_vals);
+
+When no setup is needed, use the simpler form:
+
+.. code-block:: C
+
+   static void deterministic_gen(size_t idx, void *out)
+   {
+	/* Deterministic but computed at runtime (e.g. based on hardware ID). */
+        *(uint32_t *)out = get_device_seed() ^ (uint32_t)idx;
+   }
+
+   ZTEST_DEFINE_PARAM_GENERATOR(hw_vals, uint32_t, 16U, deterministic_gen);
+   ZTEST_INSTANTIATE_TEST_SUITE_P(hw, my_suite, test_my_function, hw_vals);
+
+.. note::
+
+   The ``count_`` argument to both generator macros must be a constant
+   expression (a numeric literal, a ``#define``, or a Kconfig symbol such as
+   ``MY_FUZZ_ITERATIONS``).  Truly dynamic counts are not supported.
+
 Struct-typed parameters work the same way:
 
 .. code-block:: C
