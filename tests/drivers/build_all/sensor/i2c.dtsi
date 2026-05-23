@@ -1658,3 +1658,10 @@ test_i2c_max30009: max30009@d7 {
 	reg = <0xd7>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_xgzp68xxd: xgzp68xxd@d8 {
+	compatible = "cfsensor,xgzp68xxd";
+	reg = <0xd5>;
+	k-value = <8>;
+	status = "okay";
+};
