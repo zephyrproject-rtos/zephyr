@@ -80,6 +80,8 @@ struct z_ztest_param_ctx {
 	size_t index;
 	size_t elem_size;
 	bool active;
+	/* Formatted display name used by TC_START / Z_TC_END_RESULT */
+	char display_name[128];
 };
 
 static ZTEST_BMEM struct z_ztest_param_ctx z_ztest_param_state;
@@ -503,8 +505,12 @@ void ztest_test_expect_fail(void)
 static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test, void *data)
 {
 	int ret = TC_PASS;
+	const char *tc_name = (z_ztest_param_state.active &&
+			       z_ztest_param_state.display_name[0] != '\0')
+			      ? z_ztest_param_state.display_name
+			      : test->name;
 
-	TC_START(test->name);
+	TC_START(tc_name);
 	__ztest_set_test_phase(TEST_PHASE_BEFORE);
 
 	if (test_result == ZTEST_RESULT_SUITE_FAIL) {
@@ -549,7 +555,7 @@ out:
 	ret |= cleanup_test(test);
 
 	ret = get_final_test_result(test, ret);
-	Z_TC_END_RESULT(ret, test->name);
+	Z_TC_END_RESULT(ret, tc_name);
 	if (ret == TC_SKIP && current_test_failed_assumption) {
 		test_status = ZTEST_STATUS_HAS_FAILURE;
 	}
@@ -682,11 +688,15 @@ static void test_cb(void *a, void *b, void *c)
 static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test, void *data)
 {
 	int ret = TC_PASS;
+	const char *tc_name = (z_ztest_param_state.active &&
+			       z_ztest_param_state.display_name[0] != '\0')
+			      ? z_ztest_param_state.display_name
+			      : test->name;
 
 #if CONFIG_ZTEST_TEST_DELAY_MS > 0
 	k_busy_wait(CONFIG_ZTEST_TEST_DELAY_MS * USEC_PER_MSEC);
 #endif
-	TC_START(test->name);
+	TC_START(tc_name);
 
 	__ztest_set_test_phase(TEST_PHASE_BEFORE);
 
@@ -752,7 +762,7 @@ static int run_test(struct ztest_suite_node *suite, struct ztest_unit_test *test
 	}
 
 	ret = get_final_test_result(test, ret);
-	Z_TC_END_RESULT(ret, test->name);
+	Z_TC_END_RESULT(ret, tc_name);
 	if (ret == TC_SKIP && current_test_failed_assumption) {
 		test_status = ZTEST_STATUS_HAS_FAILURE;
 	}
@@ -824,6 +834,7 @@ static int z_ztest_run_test_dispatch(struct ztest_suite_node *suite,
 		z_ztest_param_state.value = NULL;
 		z_ztest_param_state.index = 0U;
 		z_ztest_param_state.elem_size = 0U;
+		z_ztest_param_state.display_name[0] = '\0';
 		test->stats->run_count++;
 		tc_result = run_test(suite, test, data);
 		if (tc_result == TC_PASS) {
@@ -844,6 +855,26 @@ static int z_ztest_run_test_dispatch(struct ztest_suite_node *suite,
 		z_ztest_param_state.index = i;
 		z_ztest_param_state.elem_size = inst->values->elem_size;
 		z_ztest_param_state.active = true;
+
+		/* Build a unique display name: test_name[instance/N] or
+		 * test_name[instance/custom] when name_cb is provided.
+		 * This mirrors the Google Test naming convention and makes
+		 * each parameter invocation distinguishable in the output.
+		 */
+		if (inst->values->name_cb != NULL) {
+			const char *param_name =
+				inst->values->name_cb(i, z_ztest_param_state.value);
+
+			snprintf(z_ztest_param_state.display_name,
+				 sizeof(z_ztest_param_state.display_name),
+				 "%s[%s/%s]", test->name, inst->instance_name,
+				 param_name);
+		} else {
+			snprintf(z_ztest_param_state.display_name,
+				 sizeof(z_ztest_param_state.display_name),
+				 "%s[%s/%zu]", test->name, inst->instance_name, i);
+		}
+
 		test->stats->run_count++;
 		tc_result = run_test(suite, test, data);
 		if (tc_result == TC_PASS) {
@@ -860,6 +891,7 @@ static int z_ztest_run_test_dispatch(struct ztest_suite_node *suite,
 	}
 	z_ztest_param_state.active = false;
 	z_ztest_param_state.value = NULL;
+	z_ztest_param_state.display_name[0] = '\0';
 	return fail;
 }
 

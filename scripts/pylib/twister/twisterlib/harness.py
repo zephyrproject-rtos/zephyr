@@ -929,7 +929,7 @@ class Test(Harness):
     test_suite_end_pattern = re.compile(
         r"TESTSUITE (?P<suite_name>\S*)\s+(?P<suite_status>succeeded|failed)"
     )
-    test_case_start_pattern = re.compile(r"START - (test_)?([a-zA-Z0-9_-]+)")
+    test_case_start_pattern = re.compile(r"START - (test_)?(\S+)")
     test_case_end_pattern = re.compile(
         r".*(PASS|FAIL|SKIP) - (test_)?(\S*) in (\d*[.,]?\d*) seconds"
     )
