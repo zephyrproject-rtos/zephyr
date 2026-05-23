@@ -8,6 +8,7 @@
 #include <nordic/nrf52840_partition_uf2_sdv7.dtsi>
 #include <zephyr/dt-bindings/adc/nrf-saadc.h>
 #include <zephyr/dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "wio_tracker_l1-pinctrl.dtsi"
 
 / {
@@ -79,11 +80,17 @@
 		power-gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
 	};
 
+	buzzer: buzzer {
+		compatible = "pwm-buzzer";
+		pwms = <&pwm0 0 PWM_HZ(2700) PWM_POLARITY_NORMAL>;
+	};
+
 	aliases {
 		led0 = &led0;
 		sw0 = &button0;
 		lora0 = &lora;
 		gnss = &gnss;
+		buzzer0 = &buzzer;
 		watchdog0 = &wdt0;
 	};
 };
@@ -171,6 +178,13 @@
 		compatible = "gnss-nmea-generic";
 		status = "okay";
 	};
+};
+
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-1 = <&pwm0_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &spi3 {
