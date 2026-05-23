@@ -9,6 +9,6 @@
 	};
 
 	aliases {
-		buzzer = &buzzer_pwm;
+		buzzer0 = &buzzer_pwm;
 	};
 };

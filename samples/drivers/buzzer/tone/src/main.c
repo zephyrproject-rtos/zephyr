@@ -9,9 +9,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
 
-#define BUZZER_NODE DT_ALIAS(buzzer)
+#define BUZZER_NODE DT_ALIAS(buzzer0)
 BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(BUZZER_NODE),
-	     "No default buzzer specified in DT (add `aliases { buzzer = ... };`)");
+	     "No default buzzer specified in DT (add `aliases { buzzer0 = ... };`)");
 
 #define TONE_C5_HZ 523U
 #define TONE_E5_HZ 659U
