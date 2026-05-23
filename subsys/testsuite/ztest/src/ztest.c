@@ -1057,7 +1057,9 @@ static void __ztest_show_suite_summary_oneline(struct ztest_suite_node *suite)
 		suite_duration_worst_ms += test->stats->duration_worst_ms;
 		if (test->stats->skip_count == test->stats->run_count) {
 			distinct_skip++;
-		} else if (test->stats->pass_count == test->stats->run_count) {
+		} else if (test->stats->pass_count + test->stats->skip_count ==
+			   test->stats->run_count) {
+			/* all non-skipped invocations passed */
 			distinct_pass++;
 		} else {
 			distinct_fail++;
@@ -1101,7 +1103,9 @@ static void __ztest_show_suite_summary_verbose(struct ztest_suite_node *suite)
 	while (((test = z_ztest_get_next_test(suite->name, test)) != NULL)) {
 		if (test->stats->skip_count == test->stats->run_count) {
 			tc_result = TC_SKIP;
-		} else if (test->stats->pass_count == test->stats->run_count) {
+		} else if (test->stats->pass_count + test->stats->skip_count ==
+			   test->stats->run_count) {
+			/* all non-skipped invocations passed */
 			tc_result = TC_PASS;
 		} else if (test->stats->pass_count == 0) {
 			tc_result = TC_FAIL;
