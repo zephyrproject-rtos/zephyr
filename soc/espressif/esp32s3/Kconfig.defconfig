@@ -4,7 +4,7 @@
 if SOC_SERIES_ESP32S3
 
 configdefault CACHE_MANAGEMENT
-	default y if ESP_SPIRAM
+	default y
 
 choice CACHE_TYPE
 	default EXTERNAL_CACHE if CACHE_MANAGEMENT
