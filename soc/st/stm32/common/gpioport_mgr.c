@@ -55,10 +55,21 @@
  * End of the generic macrobatics
  */
 
+/*
+ * Check that the node is active AND has compatible handled by this driver.
+ * It is possible for DT nodes to use a `gpioX` nodelabel despite not being
+ * an in-SoC GPIO controller, in which case we would try to instantiate them
+ * even though this driver does not know how to handle them.
+ */
 #define GPIOPORT_DEVICE_IS_ACTIVE(port)					\
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##port))
+	UTIL_OR(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32_gpio, okay),		\
+		DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32mp2_gpio, okay))
+
 #define GET_GPIOPORT_DEVICE_OR_NULL(port)				\
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio##port))
+	COND_CODE_1(GPIOPORT_DEVICE_IS_ACTIVE(port),			\
+		    (DEVICE_DT_GET(DT_NODELABEL(gpio##port))), (NULL))
 
 /* UTIL_INC() is needed because LAST_LIST_ELEM_INDEX() is zero-based */
 #define LAST_ACTIVE_GPIO_PORT_IDX	\
@@ -335,7 +346,7 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 			 STM32_PORT##__SUFFIX)
 
 #define GPIO_PORT_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX)			\
-	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)),	\
+	IF_ENABLED(GPIOPORT_DEVICE_IS_ACTIVE(__suffix),				\
 		   (GPIO_PORT_DEVICE_INIT_STM32(__suffix, __SUFFIX)))
 
 #define DEVICE_INIT_IF_OKAY(idx, __suffix)				\
