@@ -80,9 +80,6 @@ static int adt7420_set_threshold(const struct device *dev, uint8_t reg,
 	/* threshold values will always be in 16-bit, regardless of bit mode */
 	value = ((int64_t)val->val1 * ADT7420_SCALE_UVAL_TO_VAL + val->val2) *
 		ADT7420_TEMP_CONV_16BIT_DIV;
-	if (value < 0) {
-		value = value + (ADT7420_TEMP_NEG_16BIT * ADT7420_SCALE_UVAL_TO_VAL);
-	}
 
 	payload = (int16_t)(value / ADT7420_SCALE_UVAL_TO_VAL);
 
@@ -244,13 +241,12 @@ static int adt7420_get_threshold(const struct device *dev, uint8_t reg,
 		return ret;
 	}
 
-	value = (int64_t)uval16 * ADT7420_SCALE_UVAL_TO_VAL;
+	value = (int64_t)uval16;
 	if (uval16 & ADT7420_TEMP_SIGN_16BIT) {
-		value = (value - ADT7420_TEMP_NEG_16BIT) /
-			ADT7420_TEMP_CONV_16BIT_DIV;
-	} else {
-		value = value / ADT7420_TEMP_CONV_16BIT_DIV;
+		value = value - ADT7420_TEMP_NEG_16BIT;
 	}
+
+	value = (value * ADT7420_SCALE_UVAL_TO_VAL) / ADT7420_TEMP_CONV_16BIT_DIV;
 
 	val->val1 = value / ADT7420_SCALE_UVAL_TO_VAL;
 	val->val2 = value % ADT7420_SCALE_UVAL_TO_VAL;
@@ -400,21 +396,19 @@ static int adt7420_channel_get(const struct device *dev,
 
 	if (drv_data->resolution_16_bit) {
 		if (drv_data->sample & ADT7420_TEMP_SIGN_16BIT) {
-			value = (int64_t)drv_data->sample * ADT7420_SCALE_UVAL_TO_VAL;
-			value = (value - ADT7420_TEMP_NEG_16BIT) /
-				ADT7420_TEMP_CONV_16BIT_DIV;
+			value = (int64_t)drv_data->sample - ADT7420_TEMP_NEG_16BIT;
+			value = value * ADT7420_SCALE_UVAL_TO_VAL / ADT7420_TEMP_CONV_16BIT_DIV;
 		} else {
 			value = (int64_t)drv_data->sample * ADT7420_SCALE_UVAL_TO_VAL /
 				ADT7420_TEMP_CONV_16BIT_DIV;
 		}
 	} else {
-		if (drv_data->sample & ADT7420_TEMP_SIGN_13BIT) {
-			value = (int64_t)(drv_data->sample >> 3) *
-				ADT7420_SCALE_UVAL_TO_VAL;
-			value = (value - ADT7420_TEMP_NEG_13BIT) /
-				ADT7420_TEMP_CONV_13BIT_DIV;
+		value = (int64_t)(drv_data->sample >> 3);
+		if (value & ADT7420_TEMP_SIGN_13BIT) {
+			value = value - ADT7420_TEMP_NEG_13BIT;
+			value = value * ADT7420_SCALE_UVAL_TO_VAL / ADT7420_TEMP_CONV_13BIT_DIV;
 		} else {
-			value = (int64_t)(drv_data->sample >> 3) * ADT7420_SCALE_UVAL_TO_VAL /
+			value = value * ADT7420_SCALE_UVAL_TO_VAL /
 				ADT7420_TEMP_CONV_13BIT_DIV;
 		}
 	}
