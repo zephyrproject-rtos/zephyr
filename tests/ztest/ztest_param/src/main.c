@@ -169,3 +169,24 @@ ZTEST_INSTANTIATE_TEST_SUITE_P(positive, ztest_params,
 ZTEST_DEFINE_PARAM_VALUES(neg_vals, int, -1, -2);
 ZTEST_INSTANTIATE_TEST_SUITE_P(negative, ztest_params,
 			       test_multi_instantiate, neg_vals);
+
+/* ---- Use-case 7: range parameters --------------------------------------- */
+
+/*
+ * ZTEST_DEFINE_PARAM_RANGE produces values on demand without a backing array.
+ * Range is [0, 10) step 2 => {0, 2, 4, 6, 8}, count=5.
+ * Each invocation must receive value == index * 2.
+ */
+ZTEST_P(ztest_params, test_range_param)
+{
+	size_t idx = ztest_get_current_param_index();
+	int val    = ZTEST_GET_PARAM(int);
+
+	zassert_equal(val, (int)(idx * 2U),
+		      "range param index %zu: expected %d got %d",
+		      idx, (int)(idx * 2U), val);
+	zassert_true(val >= 0 && val < 10, "range value %d out of [0,10)", val);
+}
+
+ZTEST_DEFINE_PARAM_RANGE(even_range, int, 0, 10, 2);
+ZTEST_INSTANTIATE_TEST_SUITE_P(evens, ztest_params, test_range_param, even_range);
