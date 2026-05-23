@@ -18,6 +18,7 @@ from west.util import WestNotFound, west_topdir
 from west.version import __version__
 
 from build_helpers import (
+    BUILD_HELPERS_LOGGER,
     FIND_BUILD_DIR_DESCRIPTION,
     find_build_dir,
     forward_logging_to_west,
@@ -221,7 +222,7 @@ class Build(Forceable):
         self.config_board = config_get('board', None)
         # Forward debug output from the build_helpers/zcmake module
         # loggers so it is visible under "west -v" / "west -vv".
-        forward_logging_to_west(self, ['build_helpers', 'zcmake'])
+        forward_logging_to_west(self, [BUILD_HELPERS_LOGGER, 'zcmake'])
         self.dbg(f'args: {args} remainder: {remainder}',
                 level=Verbosity.DBG_EXTREME)
         # Store legacy -s option locally

@@ -15,7 +15,7 @@ from elftools.elf.elffile import ELFFile
 from west import manifest
 from west.util import quote_sh_list
 
-from build_helpers import find_build_dir, is_zephyr_build, \
+from build_helpers import BUILD_HELPERS_LOGGER, find_build_dir, is_zephyr_build, \
     forward_logging_to_west, FIND_BUILD_DIR_DESCRIPTION
 from runners.core import BuildConfiguration
 from zcmake import CMakeCache
@@ -142,7 +142,7 @@ schema (rimage "target") is not defined in board.cmake.''')
         self.args = args        # for check_force
         # Forward debug output from the build_helpers/zcmake module
         # loggers so it is visible under "west -v" / "west -vv".
-        forward_logging_to_west(self, ['build_helpers', 'zcmake'])
+        forward_logging_to_west(self, [BUILD_HELPERS_LOGGER, 'zcmake'])
 
         # Find the build directory and parse .config and DT.
         build_dir = find_build_dir(args.build_dir)

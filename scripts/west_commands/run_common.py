@@ -21,8 +21,8 @@ import textwrap
 import traceback
 
 from dataclasses import dataclass
-from build_helpers import find_build_dir, is_zephyr_build, load_domains, \
-    forward_logging_to_west, FIND_BUILD_DIR_DESCRIPTION
+from build_helpers import BUILD_HELPERS_LOGGER, find_build_dir, is_zephyr_build, \
+    load_domains, forward_logging_to_west, FIND_BUILD_DIR_DESCRIPTION
 from west.commands import CommandError, Verbosity
 from west.configuration import config
 from runners.core import FileType
@@ -179,7 +179,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
     # Forward records from this module's logger and the build_helpers /
     # zcmake module loggers to the WestCommand so they are shown under
     # "west -v" / "west -vv" and use west's colorization for banners.
-    forward_logging_to_west(command, [__name__, 'build_helpers', 'zcmake'])
+    forward_logging_to_west(command, [__name__, BUILD_HELPERS_LOGGER, 'zcmake'])
 
     # Holds a list of run once commands, this is useful for sysbuild images
     # whereby there are multiple images per board with flash commands that can

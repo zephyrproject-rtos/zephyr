@@ -21,7 +21,12 @@ from west.util import escapes_directory
 
 import zcmake
 
-_logger = logging.getLogger(__name__)
+# Explicit, flat name: avoids colliding with scripts/pylib/build_helpers/
+# domains.py (which grabs `logging.getLogger('build_helpers')` at import
+# time), and avoids the `west.*` namespace whose NullHandler would defeat
+# the hasHandlers() guard in forward_logging_to_west.
+BUILD_HELPERS_LOGGER = 'zephyr_build_helpers'
+_logger = logging.getLogger(BUILD_HELPERS_LOGGER)
 
 
 class WestLogFormatter(logging.Formatter):
