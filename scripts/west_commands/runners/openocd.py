@@ -258,6 +258,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
             thread_msg = '; no thread info available'
+        elif not self.target_supports_rtos():
+            thread_msg = '; no thread info available (OpenOCD Zephyr RTOS ' \
+                         'awareness is not supported on this architecture)'
         elif self.supports_thread_info():
             thread_msg = '; thread info enabled'
         else:
@@ -285,6 +288,17 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         # Zephyr rtos was introduced after 0.11.0
         (major, minor, rev) = self.read_version()
         return (major, minor, rev) > (0, 11, 0)
+
+    def target_supports_rtos(self):
+        # OpenOCD's '-rtos Zephyr' awareness is only implemented for a
+        # subset of target architectures (cortex_m, cortex_r4, hla_target
+        # and arcv2). Appending it for any other architecture makes OpenOCD
+        # abort with "Could not find target in Zephyr compatibility list",
+        # which surfaces as a silent 'west debug' timeout. Gate on the arch
+        # so unsupported targets degrade gracefully instead.
+        return (self.build_conf.getboolean('CONFIG_CPU_CORTEX_M') or
+                self.build_conf.getboolean('CONFIG_CPU_AARCH32_CORTEX_R') or
+                self.build_conf.getboolean('CONFIG_ISA_ARCV2'))
 
     def do_run(self, command, **kwargs):
         self.require(self.openocd_cmd[0])
@@ -412,7 +426,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append("-c")
             pre_init_cmd.append(i)
 
-        if self.thread_info_enabled and self.supports_thread_info():
+        if (self.thread_info_enabled and self.supports_thread_info() and
+                self.target_supports_rtos()):
             pre_init_cmd.append("-c")
             rtos_command = f'${self.target_handle} configure -rtos Zephyr'
             pre_init_cmd.append(rtos_command)
@@ -510,7 +525,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_init_cmd.append("-c")
             pre_init_cmd.append(i)
 
-        if self.thread_info_enabled and self.supports_thread_info():
+        if (self.thread_info_enabled and self.supports_thread_info() and
+                self.target_supports_rtos()):
             pre_init_cmd.append("-c")
             rtos_command = f'${self.target_handle} configure -rtos Zephyr'
             pre_init_cmd.append(rtos_command)
