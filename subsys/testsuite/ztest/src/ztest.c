@@ -82,6 +82,12 @@ struct z_ztest_param_ctx {
 	bool active;
 	/* Formatted display name used by TC_START / Z_TC_END_RESULT */
 	char display_name[128];
+	/*
+	 * Aligned scratch buffer for range-generated values.
+	 * The value_at_cb writes here; 'value' is then pointed at this storage.
+	 * Two uint64_t words (16 bytes) cover every scalar type up to __int128.
+	 */
+	uint64_t value_buf[2];
 };
 
 static ZTEST_BMEM struct z_ztest_param_ctx z_ztest_param_state;
@@ -851,7 +857,16 @@ static int z_ztest_run_test_dispatch(struct ztest_suite_node *suite,
 	/* Parameterized: run once per registered value. */
 	base = (const uint8_t *)inst->values->values;
 	for (size_t i = 0U; i < inst->values->count; i++) {
-		z_ztest_param_state.value = base + i * inst->values->elem_size;
+		if (inst->values->value_at_cb != NULL) {
+			/* Range-generated: compute value into aligned scratch
+			 * buffer and point state.value at it.
+			 */
+			inst->values->value_at_cb(i, z_ztest_param_state.value_buf);
+			z_ztest_param_state.value = (const void *)z_ztest_param_state.value_buf;
+		} else {
+			/* Array-backed: direct pointer into values array. */
+			z_ztest_param_state.value = base + i * inst->values->elem_size;
+		}
 		z_ztest_param_state.index = i;
 		z_ztest_param_state.elem_size = inst->values->elem_size;
 		z_ztest_param_state.active = true;

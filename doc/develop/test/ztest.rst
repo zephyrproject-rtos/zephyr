@@ -38,7 +38,7 @@ Below is an example of a test suite using a predicate:
 
    static bool predicate(const void *global_state)
    {
-   	return ((const struct test_state*)global_state)->x == 5;
+        return ((const struct test_state*)global_state)->x == 5;
    }
 
    ZTEST_SUITE(alternating_suite, predicate, NULL, NULL, NULL, NULL);
@@ -76,27 +76,27 @@ This is achieved via fixtures in the following way:
    #include <zephyr/ztest.h>
 
    struct my_suite_fixture {
-   	size_t max_size;
-   	size_t size;
-   	uint8_t buff[1];
+        size_t max_size;
+        size_t size;
+        uint8_t buff[1];
    };
 
    static void *my_suite_setup(void)
    {
-   	/* Allocate the fixture with 256 byte buffer */
-      struct my_suite_fixture *fixture = malloc(sizeof(struct my_suite_fixture) + 255);
+	/* Allocate the fixture with 256 byte buffer */
+       struct my_suite_fixture *fixture = malloc(sizeof(struct my_suite_fixture) + 255);
 
-   	zassume_not_null(fixture, NULL);
-   	fixture->max_size = 256;
+	zassume_not_null(fixture, NULL);
+	fixture->max_size = 256;
 
-   	return fixture;
+	return fixture;
    }
 
    static void my_suite_before(void *f)
    {
-   	struct my_suite_fixture *fixture = (struct my_suite_fixture *)f;
-   	memset(fixture->buff, 0, fixture->max_size);
-   	fixture->size = 0;
+	struct my_suite_fixture *fixture = (struct my_suite_fixture *)f;
+	memset(fixture->buff, 0, fixture->max_size);
+	fixture->size = 0;
    }
 
    static void my_suite_teardown(void *f)
@@ -108,8 +108,8 @@ This is achieved via fixtures in the following way:
 
    ZTEST_F(my_suite, test_feature_x)
    {
-   	zassert_equal(0, fixture->size);
-   	zassert_equal(256, fixture->max_size);
+        zassert_equal(0, fixture->size);
+        zassert_equal(256, fixture->max_size);
    }
 
 Using memory allocated by a test fixture in a userspace thread, such as during execution of
@@ -180,6 +180,24 @@ For values already stored in an array use :c:macro:`ZTEST_DEFINE_PARAM_VALUES_AR
 
    static const int big_factors[] = { 10, 100, 1000 };
    ZTEST_DEFINE_PARAM_VALUES_ARRAY(big_factor_vals, big_factors);
+
+For a numeric range use :c:macro:`ZTEST_DEFINE_PARAM_RANGE`, which mirrors
+GoogleTest's ``testing::Range(begin, end [, step])`` semantics.  Values are
+``{begin, begin+step, ...}`` up to but **not** including ``end``.  No backing
+array is allocated, so large ranges have zero RAM overhead:
+
+.. code-block:: C
+
+   /* {0, 2, 4, 6, 8} — 5 values, step defaults is supplied explicitly */
+   ZTEST_DEFINE_PARAM_RANGE(even_vals, int, 0, 10, 2);
+
+   /* {1, 2, 3, 4, 5} — step=1 is the common case */
+   ZTEST_DEFINE_PARAM_RANGE(one_to_five, int, 1, 6, 1);
+
+.. note::
+
+   ``ZTEST_DEFINE_PARAM_RANGE`` requires ``end > begin`` and ``step > 0``,
+   both enforced at compile time via :c:macro:`BUILD_ASSERT`.
 
 Struct-typed parameters work the same way:
 

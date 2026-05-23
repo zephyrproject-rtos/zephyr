@@ -129,6 +129,17 @@ struct ztest_param_values {
 	size_t elem_size;
 	/** Optional callback returning a human-readable name for the value at @p index. */
 	const char *(*name_cb)(size_t index, const void *value);
+	/**
+	 * @brief Optional value generator for range-based parameters.
+	 *
+	 * When non-NULL, called once per invocation with the 0-based index
+	 * and a pointer to an aligned scratch buffer of at least @p elem_size
+	 * bytes.  The callback must write exactly @p elem_size bytes into
+	 * @p out.  @p values must be NULL when this callback is provided.
+	 *
+	 * Use ZTEST_DEFINE_PARAM_RANGE() instead of setting this directly.
+	 */
+	void (*value_at_cb)(size_t index, void *out);
 };
 
 /**
@@ -489,10 +500,11 @@ bool ztest_has_current_param(void);
 #define ZTEST_DEFINE_PARAM_VALUES(name_, type_, ...)                                         \
 	static const type_ z_ztest_param_arr_##name_[] = {__VA_ARGS__};                     \
 	static const struct ztest_param_values name_ = {                                     \
-		.values    = z_ztest_param_arr_##name_,                                      \
-		.count     = ARRAY_SIZE(z_ztest_param_arr_##name_),                          \
-		.elem_size = sizeof(type_),                                                  \
-		.name_cb   = NULL,                                                           \
+		.values       = z_ztest_param_arr_##name_,                                   \
+		.count        = ARRAY_SIZE(z_ztest_param_arr_##name_),                       \
+		.elem_size    = sizeof(type_),                                                \
+		.name_cb      = NULL,                                                        \
+		.value_at_cb  = NULL,                                                        \
 	}
 
 /**
@@ -503,10 +515,50 @@ bool ztest_has_current_param(void);
  */
 #define ZTEST_DEFINE_PARAM_VALUES_ARRAY(name_, array_)                                       \
 	static const struct ztest_param_values name_ = {                                     \
-		.values    = (array_),                                                       \
-		.count     = ARRAY_SIZE(array_),                                             \
-		.elem_size = sizeof((array_)[0]),                                            \
-		.name_cb   = NULL,                                                           \
+		.values      = (array_),                                                     \
+		.count       = ARRAY_SIZE(array_),                                           \
+		.elem_size   = sizeof((array_)[0]),                                          \
+		.name_cb     = NULL,                                                         \
+		.value_at_cb = NULL,                                                         \
+	}
+
+/**
+ * @brief Declare a numeric range for use with ZTEST_INSTANTIATE_TEST_SUITE_P().
+ *
+ * Modelled on GoogleTest's ``testing::Range(begin, end [, step])``.  The range
+ * is half-open: values are ``{begin, begin+step, begin+2*step, ...}`` up to
+ * (but not including) @p end_.  @p step_ defaults to 1 when omitted.
+ *
+ * Values are computed on demand via a generated callback — no array is
+ * allocated, so arbitrarily large ranges have zero RAM cost.
+ *
+ * Constraints (checked at compile time):
+ * - @p end_ > @p begin_
+ * - @p step_ > 0
+ * - ``sizeof(type_)`` must not exceed 16 bytes
+ *
+ * @param name_   Identifier for the resulting variable.
+ * @param type_   Scalar C type (e.g. ``int``, ``uint32_t``).
+ * @param begin_  First value in the range (inclusive).
+ * @param end_    Upper bound of the range (exclusive).
+ * @param step_   Increment between successive values (default 1).
+ */
+#define ZTEST_DEFINE_PARAM_RANGE(name_, type_, begin_, end_, step_)                          \
+	BUILD_ASSERT((end_) > (begin_), "ZTEST_DEFINE_PARAM_RANGE: end must be > begin"); \
+	BUILD_ASSERT((step_) > 0, "ZTEST_DEFINE_PARAM_RANGE: step must be > 0");          \
+	BUILD_ASSERT(sizeof(type_) <= 16U,                                                   \
+		     "ZTEST_DEFINE_PARAM_RANGE: type too large for scratch buffer");        \
+	static void z_ztest_range_value_at_##name_(size_t z_idx_, void *z_out_)             \
+	{                                                                                    \
+		type_ z_val_ = (type_)(begin_) + (type_)(step_) * (type_)(z_idx_);         \
+		*(type_ *)z_out_ = z_val_;                                                   \
+	}                                                                                    \
+	static const struct ztest_param_values name_ = {                                     \
+		.values      = NULL,                                                         \
+		.count       = (size_t)(((end_) - (begin_) - 1) / (step_) + 1),             \
+		.elem_size   = sizeof(type_),                                                \
+		.name_cb     = NULL,                                                         \
+		.value_at_cb = z_ztest_range_value_at_##name_,                              \
 	}
 
 /**
