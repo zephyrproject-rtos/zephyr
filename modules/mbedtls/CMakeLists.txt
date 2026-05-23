@@ -59,9 +59,13 @@ if(CONFIG_MBEDTLS)
     # to ZEPHYR_LIBS list.
     zephyr_append_cmake_library(mbedtls)
 
-    # Add Mbed TLS public include directories to the "mbedTLS" interface library.
+    # Don't add all '$<TARGET_PROPERTY:mbedtls,INTERFACE_INCLUDE_DIRECTORIES>'
+    # as this list includes the `tf-psa-crypto' headers from the subfolder, as opposed
+    # to our actual ${TF_PSA_CRYPTO_DIR} directory.
     target_include_directories(mbedTLS INTERFACE
-      $<TARGET_PROPERTY:mbedtls,INTERFACE_INCLUDE_DIRECTORIES>
+      ${ZEPHYR_MBEDTLS_MODULE_DIR}/include
+      ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/include
+      ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include
     )
 
     # Add local include directories to the "mbedTLS" interface library.
