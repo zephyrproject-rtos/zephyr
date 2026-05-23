@@ -804,112 +804,107 @@ struct ztest_unit_test *z_ztest_get_next_test(const char *suite, struct ztest_un
 }
 
 /*
- * Return the first registered ztest_param_inst that matches (suite_name, test_name),
- * or NULL if the test has no parameterized instantiation.
- */
-static const struct ztest_param_inst *z_ztest_find_param_inst(const char *suite_name,
-							      const char *test_name)
-{
-	STRUCT_SECTION_FOREACH(ztest_param_inst, inst) {
-		if (strcmp(inst->test_suite_name, suite_name) == 0 &&
-		    strcmp(inst->test_name, test_name) == 0) {
-			return inst;
-		}
-	}
-	return NULL;
-}
-
-/*
- * Run a single unit test, dispatching once per parameter value when the test
- * has a registered ztest_param_inst, or once without param context otherwise.
+ * Run a single unit test, dispatching once per parameter value for each
+ * registered ztest_param_inst that matches (suite, test_name).  Supports
+ * multiple instantiations of the same ZTEST_P function (one per instance
+ * name), each with an independent parameter set.  Falls back to a single
+ * non-parameterized run when no matching instantiation exists.
  *
  * Returns the number of failures accumulated across all invocations.
  */
 static int z_ztest_run_test_dispatch(struct ztest_suite_node *suite,
 				     struct ztest_unit_test *test, void *data)
 {
-	const struct ztest_param_inst *inst =
-		z_ztest_find_param_inst(suite->name, test->name);
 	const uint8_t *base;
 	int tc_result;
 	int fail = 0;
+	bool any_inst = false;
 
-	if (inst == NULL) {
-		/* Non-parameterized: clear context and run once. */
-		z_ztest_param_state.active = false;
-		z_ztest_param_state.value = NULL;
-		z_ztest_param_state.index = 0U;
-		z_ztest_param_state.elem_size = 0U;
-		z_ztest_param_state.display_name[0] = '\0';
-		test->stats->run_count++;
-		tc_result = run_test(suite, test, data);
-		if (tc_result == TC_PASS) {
-			test->stats->pass_count++;
-		} else if (tc_result == TC_SKIP) {
-			test->stats->skip_count++;
-		} else if (tc_result == TC_FAIL) {
-			test->stats->fail_count++;
-			fail++;
+	STRUCT_SECTION_FOREACH(ztest_param_inst, inst) {
+		if (strcmp(inst->test_suite_name, suite->name) != 0 ||
+		    strcmp(inst->test_name, test->name) != 0) {
+			continue;
 		}
-		return fail;
-	}
 
-	/* Parameterized: run once per registered value. */
-	if (inst->values->setup_cb != NULL) {
-		inst->values->setup_cb();
-	}
-	base = (const uint8_t *)inst->values->values;
-	for (size_t i = 0U; i < inst->values->count; i++) {
-		if (inst->values->value_at_cb != NULL) {
-			/* Range-generated: compute value into aligned scratch
-			 * buffer and point state.value at it.
+		any_inst = true;
+
+		/* Parameterized: run once per registered value. */
+		if (inst->values->setup_cb != NULL) {
+			inst->values->setup_cb();
+		}
+		base = (const uint8_t *)inst->values->values;
+		for (size_t i = 0U; i < inst->values->count; i++) {
+			if (inst->values->value_at_cb != NULL) {
+				/* Range-generated: compute value into aligned scratch
+				 * buffer and point state.value at it.
+				 */
+				inst->values->value_at_cb(i, z_ztest_param_state.value_buf);
+				z_ztest_param_state.value =
+					(const void *)z_ztest_param_state.value_buf;
+			} else {
+				/* Array-backed: direct pointer into values array. */
+				z_ztest_param_state.value = base + i * inst->values->elem_size;
+			}
+			z_ztest_param_state.index = i;
+			z_ztest_param_state.elem_size = inst->values->elem_size;
+			z_ztest_param_state.active = true;
+
+			/* Build a unique display name: test_name[instance/N] or
+			 * test_name[instance/custom] when name_cb is provided.
+			 * This mirrors the Google Test naming convention and makes
+			 * each parameter invocation distinguishable in the output.
 			 */
-			inst->values->value_at_cb(i, z_ztest_param_state.value_buf);
-			z_ztest_param_state.value = (const void *)z_ztest_param_state.value_buf;
-		} else {
-			/* Array-backed: direct pointer into values array. */
-			z_ztest_param_state.value = base + i * inst->values->elem_size;
-		}
-		z_ztest_param_state.index = i;
-		z_ztest_param_state.elem_size = inst->values->elem_size;
-		z_ztest_param_state.active = true;
+			if (inst->values->name_cb != NULL) {
+				const char *param_name =
+					inst->values->name_cb(i, z_ztest_param_state.value);
 
-		/* Build a unique display name: test_name[instance/N] or
-		 * test_name[instance/custom] when name_cb is provided.
-		 * This mirrors the Google Test naming convention and makes
-		 * each parameter invocation distinguishable in the output.
-		 */
-		if (inst->values->name_cb != NULL) {
-			const char *param_name =
-				inst->values->name_cb(i, z_ztest_param_state.value);
+				snprintf(z_ztest_param_state.display_name,
+					 sizeof(z_ztest_param_state.display_name),
+					 "%s[%s/%s]", test->name, inst->instance_name,
+					 param_name);
+			} else {
+				snprintf(z_ztest_param_state.display_name,
+					 sizeof(z_ztest_param_state.display_name),
+					 "%s[%s/%zu]", test->name, inst->instance_name, i);
+			}
 
-			snprintf(z_ztest_param_state.display_name,
-				 sizeof(z_ztest_param_state.display_name),
-				 "%s[%s/%s]", test->name, inst->instance_name,
-				 param_name);
-		} else {
-			snprintf(z_ztest_param_state.display_name,
-				 sizeof(z_ztest_param_state.display_name),
-				 "%s[%s/%zu]", test->name, inst->instance_name, i);
-		}
-
-		test->stats->run_count++;
-		tc_result = run_test(suite, test, data);
-		if (tc_result == TC_PASS) {
-			test->stats->pass_count++;
-		} else if (tc_result == TC_SKIP) {
-			test->stats->skip_count++;
-		} else if (tc_result == TC_FAIL) {
-			test->stats->fail_count++;
-			fail++;
-		}
-		if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
-			break;
+			test->stats->run_count++;
+			tc_result = run_test(suite, test, data);
+			if (tc_result == TC_PASS) {
+				test->stats->pass_count++;
+			} else if (tc_result == TC_SKIP) {
+				test->stats->skip_count++;
+			} else if (tc_result == TC_FAIL) {
+				test->stats->fail_count++;
+				fail++;
+			}
+			if ((fail && FAIL_FAST) || test_status == ZTEST_STATUS_CRITICAL_ERROR) {
+				goto done;
+			}
 		}
 	}
+
+done:
 	z_ztest_param_state.active = false;
 	z_ztest_param_state.value = NULL;
 	z_ztest_param_state.display_name[0] = '\0';
+
+	if (!any_inst) {
+		/* Non-parameterized: clear context and run once. */
+		z_ztest_param_state.index = 0U;
+		z_ztest_param_state.elem_size = 0U;
+		test->stats->run_count++;
+		tc_result = run_test(suite, test, data);
+		if (tc_result == TC_PASS) {
+			test->stats->pass_count++;
+		} else if (tc_result == TC_SKIP) {
+			test->stats->skip_count++;
+		} else if (tc_result == TC_FAIL) {
+			test->stats->fail_count++;
+			fail++;
+		}
+	}
+
 	return fail;
 }
 
