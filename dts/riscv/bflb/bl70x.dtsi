@@ -427,10 +427,15 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x42018000 DT_SIZE_K(96)>;
 
-			/* 88 KB — top 8 KB reserved for BLE exchange memory */
+			/* 88 KB — top 8 KB or 16 KB reserved for BLE exchange memory */
 			sram0_bt: sram@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(88)>;
+			};
+
+			sram0_bt_em16k: sram_16k@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(80)>;
 			};
 		};
 	};
