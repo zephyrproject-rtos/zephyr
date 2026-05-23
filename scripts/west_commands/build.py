@@ -740,7 +740,7 @@ class Build(Forceable):
         if self.args.build_opt:
             extra_args.append('--')
             extra_args.extend(self.args.build_opt)
-        if self.args.verbose:
+        if self.verbosity >= Verbosity.DBG:
             self._append_verbose_args(extra_args,
                                       not bool(self.args.build_opt))
 
