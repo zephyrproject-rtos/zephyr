@@ -43,7 +43,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
     of displaying it on stdout/stderr..'''
     cmake = shutil.which('cmake')
     if cmake is None and not dry_run:
-        log.die('CMake is not installed or cannot be found; cannot build.')
+        sys.exit('CMake is not installed or cannot be found; cannot build.')
     _ensure_min_version(cmake, dry_run)
 
     cmd = [cmake] + args
@@ -302,25 +302,24 @@ def _ensure_min_version(cmake, dry_run):
     try:
         version_out = subprocess.check_output(cmd, stderr=subprocess.DEVNULL)
     except subprocess.CalledProcessError as cpe:
-        log.die('cannot get cmake version:', str(cpe))
+        sys.exit('cannot get cmake version: {}'.format(cpe))
     decoded = version_out.decode('utf-8')
     lines = decoded.splitlines()
     if not lines:
-        log.die('can\'t get cmake version: ' +
-                'unexpected "cmake --version" output:\n{}\n'.
-                format(decoded) +
-                'Please install CMake ' + _MIN_CMAKE_VERSION_STR +
-                ' or higher (https://cmake.org/download/).')
+        sys.exit('can\'t get cmake version: ' +
+                 'unexpected "cmake --version" output:\n{}\n'.
+                 format(decoded) +
+                 'Please install CMake ' + _MIN_CMAKE_VERSION_STR +
+                 ' or higher (https://cmake.org/download/).')
     version = lines[0].split()[2]
     if '-' in version:
         # Handle semver cases like "3.19.20210206-g1e50ab6"
         # which Kitware uses for prerelease versions.
         version = version.split('-', 1)[0]
     if packaging.version.parse(version) < _MIN_CMAKE_VERSION:
-        log.die('cmake version', version,
-                'is less than minimum version {};'.
-                format(_MIN_CMAKE_VERSION_STR),
-                'please update your CMake (https://cmake.org/download/).')
+        sys.exit(f'cmake version {version} is less than minimum version '
+                 f'{_MIN_CMAKE_VERSION_STR}; please update your CMake '
+                 '(https://cmake.org/download/).')
     else:
         log.dbg('cmake version', version, 'is OK; minimum version is',
                 _MIN_CMAKE_VERSION_STR)

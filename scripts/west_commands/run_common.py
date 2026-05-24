@@ -193,7 +193,7 @@ def get_domains_to_process(build_dir, args, domain_file, get_all_domain=False):
     try:
         domains = load_domains(build_dir)
     except Exception as e:
-        log.die(f"Failed to load domains: {e}")
+        sys.exit(f"Failed to load domains: {e}")
 
     if domain_file is None:
         if getattr(args, "domain", None) is None and get_all_domain:
@@ -559,7 +559,7 @@ def get_build_dir(args, die_if_none=True):
             msg = msg + ('{} is not a build directory and the default build '
                          'directory cannot be determined. Check your '
                          'build.dir-fmt configuration option')
-        log.die(msg.format(getcwd(), dir))
+        sys.exit(msg.format(getcwd(), dir))
     else:
         return None
 
@@ -568,7 +568,7 @@ def load_cmake_cache(build_dir, args):
     try:
         return zcmake.CMakeCache(cache_file)
     except FileNotFoundError:
-        log.die(f'no CMake cache found (expected one at {cache_file})')
+        sys.exit(f'no CMake cache found (expected one at {cache_file})')
 
 def skip_rebuild(command, args):
     if args.rebuild is not None:
@@ -601,9 +601,9 @@ def rebuild(command, build_dir, args):
 def runners_yaml_path(build_dir, board):
     ret = Path(build_dir) / 'zephyr' / 'runners.yaml'
     if not ret.is_file():
-        log.die(f'no runners.yaml found in {build_dir}/zephyr. '
-        f"Either board {board} doesn't support west flash/debug/simulate,"
-        ' or a pristine build is needed.')
+        sys.exit(f'no runners.yaml found in {build_dir}/zephyr. '
+                 f"Either board {board} doesn't support west flash/debug/simulate,"
+                 ' or a pristine build is needed.')
     return ret
 
 def load_runners_yaml(path):
@@ -613,7 +613,7 @@ def load_runners_yaml(path):
         with open(path, 'r') as f:
             content = yaml.safe_load(f.read())
     except FileNotFoundError:
-        log.die(f'runners.yaml file not found: {path}')
+        sys.exit(f'runners.yaml file not found: {path}')
 
     if not content.get('runners'):
         log.wrn(f'no pre-configured runners in {path}; '
@@ -711,8 +711,8 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
         if file_path:
             log.inf(f'Using {file_path}')
         else:
-            log.die(f'--file-type {file_type_arg} specified but no '
-                    f'{file_type_arg} build artifact found')
+            sys.exit(f'--file-type {file_type_arg} specified but no '
+                     f'{file_type_arg} build artifact found')
 
     return RunnerConfig(build_dir,
                         yaml_config['board_dir'],
