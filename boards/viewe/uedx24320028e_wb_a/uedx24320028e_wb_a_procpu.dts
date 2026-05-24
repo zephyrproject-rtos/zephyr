@@ -22,6 +22,7 @@
 		uart-0 = &uart0;
 		sw0 = &button0;
 		led-strip = &rgb_led;
+		buzzer0 = &buzzer;
 		sdhc0 = &sdhc0;
 	};
 
@@ -37,13 +38,9 @@
 		zephyr,sdhc = &sdhc0;
 	};
 
-	leds {
-		compatible = "gpio-leds";
-
-		buzzer: buzzer {
-			gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
-			label = "Buzzer";
-		};
+	buzzer: buzzer {
+		compatible = "gpio-buzzer";
+		gpios = <&gpio1 6 GPIO_ACTIVE_HIGH>;
 	};
 
 	buttons {
