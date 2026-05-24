@@ -395,7 +395,7 @@ def dump_content(bindings, base_binding, vnd_lookup, type_lookup, driver_sources
 
     setup_bindings_dir(bindings, out_dir)
     if turbo_mode:
-        write_dummy_index(bindings, out_dir)
+        write_dummy_index(bindings, vnd_lookup, out_dir)
     else:
         write_bindings_rst(vnd_lookup, type_lookup, out_dir)
         write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir)
@@ -422,13 +422,21 @@ def setup_bindings_dir(bindings, out_dir):
                 path.unlink()
 
 
-def write_dummy_index(bindings, out_dir):
+def write_dummy_index(bindings, vnd_lookup, out_dir):
     # Write out_dir / bindings.rst, with dummy anchors
 
     # header
     content = '\n'.join((
         '.. _devicetree_binding_index:',
-        '.. _dt_vendor_zephyr:',
+        ''
+    ))
+
+    content += '\n'.join(
+        f'.. _dt_vendor_{vnd}:' for vnd in vnd_lookup.vnd2bindings if isinstance(vnd, str)
+    )
+
+    content += '\n'.join((
+        '',
         '',
         'Dummy bindings index',
         '####################',
