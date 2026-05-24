@@ -21,9 +21,8 @@ import textwrap
 import traceback
 
 from dataclasses import dataclass
-from west import log
 from build_helpers import find_build_dir, is_zephyr_build, load_domains, \
-    FIND_BUILD_DIR_DESCRIPTION
+    forward_logging_to_west, FIND_BUILD_DIR_DESCRIPTION
 from west.commands import CommandError, Verbosity
 from west.configuration import config
 from runners.core import FileType
@@ -49,46 +48,7 @@ IGNORED_RUN_ONCE_PRIORITY = -1
 SOC_FILE_RUN_ONCE_DEFAULT_PRIORITY = 0
 BOARD_FILE_RUN_ONCE_DEFAULT_PRIORITY = 10
 
-if log.VERBOSE >= log.VERBOSE_NORMAL:
-    # Using level 1 allows sub-DEBUG levels of verbosity. The
-    # west.log module decides whether or not to actually print the
-    # message.
-    #
-    # https://docs.python.org/3.7/library/logging.html#logging-levels.
-    LOG_LEVEL = 1
-else:
-    LOG_LEVEL = logging.INFO
-
-def _banner(msg):
-    log.inf('-- ' + msg, colorize=True)
-
-class WestLogFormatter(logging.Formatter):
-
-    def __init__(self):
-        super().__init__(fmt='%(name)s: %(message)s')
-
-class WestLogHandler(logging.Handler):
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.setFormatter(WestLogFormatter())
-        self.setLevel(LOG_LEVEL)
-
-    def emit(self, record):
-        fmt = self.format(record)
-        lvl = record.levelno
-        if lvl > logging.CRITICAL:
-            log.die(fmt)
-        elif lvl >= logging.ERROR:
-            log.err(fmt)
-        elif lvl >= logging.WARNING:
-            log.wrn(fmt)
-        elif lvl >= logging.INFO:
-            _banner(fmt)
-        elif lvl >= logging.DEBUG:
-            log.dbg(fmt)
-        else:
-            log.dbg(fmt, level=log.VERBOSE_EXTREME)
+_logger = logging.getLogger(__name__)
 
 @dataclass
 class UsedFlashCommand:
@@ -215,6 +175,11 @@ def get_domains_to_process(build_dir, args, domain_file, get_all_domain=False):
 def do_run_common(command, user_args, user_runner_args, domain_file=None):
     # This is the main routine for all the "west flash", "west debug",
     # etc. commands.
+
+    # Forward records from this module's logger and the build_helpers /
+    # zcmake module loggers to the WestCommand so they are shown under
+    # "west -v" / "west -vv" and use west's colorization for banners.
+    forward_logging_to_west(command, [__name__, 'build_helpers', 'zcmake'])
 
     # Holds a list of run once commands, this is useful for sysbuild images
     # whereby there are multiple images per board with flash commands that can
@@ -376,12 +341,8 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
                                 cache)
     runner_name = runner_cls.name()
 
-    # Set up runner logging to delegate to west.log commands.
-    logger = logging.getLogger('runners')
-    logger.setLevel(LOG_LEVEL)
-    if not logger.hasHandlers():
-        # Only add a runners log handler if none has been added already.
-        logger.addHandler(WestLogHandler())
+    # Set up runner logging to delegate to the WestCommand logging methods.
+    forward_logging_to_west(command, 'runners')
 
     # If the user passed -- to force the parent argument parser to stop
     # parsing, it will show up here, and needs to be filtered out.
@@ -589,7 +550,7 @@ def rebuild(command, build_dir, args):
     if skip_rebuild(command, args):
         return
 
-    _banner(f'west {command.name}: rebuilding')
+    command.inf(f'-- west {command.name}: rebuilding', colorize=True)
     try:
         zcmake.run_build(build_dir)
     except CalledProcessError:
@@ -616,8 +577,8 @@ def load_runners_yaml(path):
         sys.exit(f'runners.yaml file not found: {path}')
 
     if not content.get('runners'):
-        log.wrn(f'no pre-configured runners in {path}; '
-                "this probably won't work")
+        _logger.warning(f'no pre-configured runners in {path}; '
+                        "this probably won't work")
 
     return content
 
@@ -631,7 +592,7 @@ def use_runner_cls(command, board, args, runners_yaml, cache):
         command.die(f'no {command.name} runner available for board {board}. '
                     "Check the board's documentation for instructions.")
 
-    _banner(f'west {command.name}: using runner {runner}')
+    command.inf(f'-- west {command.name}: using runner {runner}', colorize=True)
 
     available = runners_yaml.get('runners', [])
     if runner not in available:
@@ -709,7 +670,7 @@ def get_runner_config(build_dir, yaml_path, runners_yaml, args=None):
     if file_type_arg and not file_path:
         file_path = output_file(file_type_arg.lower())
         if file_path:
-            log.inf(f'Using {file_path}')
+            _logger.info(f'Using {file_path}')
         else:
             sys.exit(f'--file-type {file_type_arg} specified but no '
                      f'{file_type_arg} build artifact found')
@@ -735,7 +696,7 @@ def dump_traceback():
     close(fd)        # traceback has no use for the fd
     with open(name, 'w') as f:
         traceback.print_exc(file=f)
-    log.inf("An exception trace has been saved in", name)
+    _logger.info(f'An exception trace has been saved in {name}')
 
 #
 # west {command} --context

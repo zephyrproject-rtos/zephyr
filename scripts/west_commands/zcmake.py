@@ -11,6 +11,7 @@ See build.py for the build command itself.
 
 from collections import OrderedDict
 import argparse
+import logging
 import os.path
 import re
 import subprocess
@@ -18,8 +19,9 @@ import shutil
 import sys
 
 import packaging.version
-from west import log
 from west.util import quote_sh_list
+
+_logger = logging.getLogger(__name__)
 
 DEFAULT_CACHE = 'CMakeCache.txt'
 
@@ -58,10 +60,10 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
 
     if dry_run:
         in_cwd = ' (in {})'.format(cwd) if cwd else ''
-        log.inf('Dry run{}:'.format(in_cwd), quote_sh_list(cmd))
+        _logger.info(f'Dry run{in_cwd}: {quote_sh_list(cmd)}')
         return None
 
-    log.dbg('Running CMake:', quote_sh_list(cmd), level=log.VERBOSE_NORMAL)
+    _logger.debug('Running CMake: %s', quote_sh_list(cmd))
     p = subprocess.Popen(cmd, env=env, **kwargs)
     out, _ = p.communicate()
     out = out.decode(sys.getdefaultencoding()) if out else None
@@ -73,7 +75,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False, env=None):
     else:
         # A real error occurred, raise an exception
         if out:
-            log.err(out)
+            _logger.error(out)
         raise subprocess.CalledProcessError(p.returncode, p.args)
 
 
@@ -296,7 +298,7 @@ class CMakeCache:
 def _ensure_min_version(cmake, dry_run):
     cmd = [cmake, '--version']
     if dry_run:
-        log.inf('Dry run:', quote_sh_list(cmd))
+        _logger.info(f'Dry run: {quote_sh_list(cmd)}')
         return
 
     try:
@@ -321,8 +323,8 @@ def _ensure_min_version(cmake, dry_run):
                  f'{_MIN_CMAKE_VERSION_STR}; please update your CMake '
                  '(https://cmake.org/download/).')
     else:
-        log.dbg('cmake version', version, 'is OK; minimum version is',
-                _MIN_CMAKE_VERSION_STR)
+        _logger.debug('cmake version %s is OK; minimum version is %s',
+                      version, _MIN_CMAKE_VERSION_STR)
 
 _MIN_CMAKE_VERSION_STR = '3.13.1'
 _MIN_CMAKE_VERSION = packaging.version.parse(_MIN_CMAKE_VERSION_STR)
