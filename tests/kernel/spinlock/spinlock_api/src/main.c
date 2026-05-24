@@ -83,6 +83,9 @@ static void bounce_once(int id, bool trylock)
 		}
 
 		k_spin_unlock(&bounce_lock, key);
+		if (trylock) {
+			k_yield();
+		}
 		k_busy_wait(1);
 	}
 
