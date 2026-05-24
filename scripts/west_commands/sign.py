@@ -19,7 +19,7 @@ from west.commands import Verbosity
 from west.util import quote_sh_list
 
 from build_helpers import find_build_dir, is_zephyr_build, \
-    FIND_BUILD_DIR_DESCRIPTION
+    forward_logging_to_west, FIND_BUILD_DIR_DESCRIPTION
 from runners.core import BuildConfiguration
 from zcmake import CMakeCache
 from zephyr_ext_common import Forceable, ZEPHYR_SCRIPTS
@@ -163,6 +163,9 @@ schema (rimage "target") is not defined in board.cmake.''')
 
     def do_run(self, args, ignored):
         self.args = args        # for check_force
+        # Forward debug output from the build_helpers/zcmake module
+        # loggers so it is visible under "west -v" / "west -vv".
+        forward_logging_to_west(self, ['build_helpers', 'zcmake'])
 
         # Find the build directory and parse .config and DT.
         build_dir = find_build_dir(args.build_dir)

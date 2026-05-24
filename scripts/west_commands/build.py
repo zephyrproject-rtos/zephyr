@@ -17,7 +17,13 @@ from west.configuration import config
 from west.util import WestNotFound, west_topdir
 from west.version import __version__
 
-from build_helpers import FIND_BUILD_DIR_DESCRIPTION, find_build_dir, is_zephyr_build, load_domains
+from build_helpers import (
+    FIND_BUILD_DIR_DESCRIPTION,
+    find_build_dir,
+    forward_logging_to_west,
+    is_zephyr_build,
+    load_domains,
+)
 from zcmake import DEFAULT_CMAKE_GENERATOR, CMakeCache, run_build, run_cmake
 from zephyr_ext_common import Forceable
 
@@ -213,6 +219,9 @@ class Build(Forceable):
     def do_run(self, args, remainder):
         self.args = args        # Avoid having to pass them around
         self.config_board = config_get('board', None)
+        # Forward debug output from the build_helpers/zcmake module
+        # loggers so it is visible under "west -v" / "west -vv".
+        forward_logging_to_west(self, ['build_helpers', 'zcmake'])
         self.dbg(f'args: {args} remainder: {remainder}',
                 level=Verbosity.DBG_EXTREME)
         # Store legacy -s option locally
