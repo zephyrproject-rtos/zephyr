@@ -1004,6 +1004,18 @@ static int zms_find_ate_with_id(struct zms_fs *fs, zms_id_t id, uint64_t start_a
 	uint8_t current_cycle;
 
 	wlk_addr = start_addr;
+	if (wlk_addr == fs->ate_wra) {
+		/* fs->ate_wra points to the next write slot, not to a valid ATE. */
+		rc = zms_compute_prev_addr(fs, &wlk_addr);
+		if (rc) {
+			return rc;
+		}
+
+		if (wlk_addr == end_addr) {
+			*ate_addr = end_addr;
+			return 0;
+		}
+	}
 
 	do {
 		wlk_prev_addr = wlk_addr;
