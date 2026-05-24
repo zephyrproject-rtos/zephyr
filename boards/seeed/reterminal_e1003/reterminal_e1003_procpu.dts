@@ -33,7 +33,7 @@
 		display0 = &it8951_epd;
 		i2c-0 = &i2c0;
 		led0 = &green_led0;
-		pwm-led0 = &buzzer0;
+		buzzer0 = &buzzer0;
 		rtc = &pcf8563_rtc;
 		sdhc0 = &sdcard0;
 		sw0 = &refresh_key0;
@@ -86,12 +86,9 @@
 		};
 	};
 
-	pwmleds {
-		compatible = "pwm-leds";
-
-		buzzer0: pwmled_0 {
-			pwms = <&ledc0 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
-		};
+	buzzer0: buzzer0 {
+		compatible = "pwm-buzzer";
+		pwms = <&ledc0 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
 	};
 };
 
