@@ -1156,7 +1156,7 @@ static int set_format(struct uvc_host_data *const host_data,
 
 	/* PROBE SET */
 	ret = vs_request(host_data, UVC_SET_CUR, UVC_VS_PROBE_CONTROL,
-				  &host_data->probe, sizeof(host_data->probe));
+			 &host_data->probe, sizeof(host_data->probe));
 	if (ret == -EPIPE) {
 		LOG_WRN("Request 0x%02x not supported by device, control selector 0x%02x",
 			UVC_SET_CUR, UVC_VS_PROBE_CONTROL);
@@ -1243,49 +1243,30 @@ static int set_format(struct uvc_host_data *const host_data,
 	return 0;
 }
 
-/* Set UVC device frame rate */
-static int set_frame_rate(const struct device *dev, uint32_t fps)
+/* Set frame interval (frame rate) */
+static int usbh_uvc_set_frmival(const struct device *dev, struct video_frmival *const frmival)
 {
+	struct video_frmival_enum fie = {.discrete = *frmival};
 	struct uvc_host_data *const host_data = dev->data;
 	const struct usb_if_descriptor *stream_iface;
-	struct video_frmival_enum fie = {0};
-	uint32_t best_frmival = 0;
 	uint32_t byte_per_sec = 0;
-	uint32_t target_frmival = 0;
+	uint32_t frmival_100ns;
 	int ret;
 
-	if (fps == 0) {
-		return -EINVAL;
+	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
+		return -ENODEV;
 	}
-
-	/* target_frmival in 100ns */
-	target_frmival = (NSEC_PER_SEC / 100) / fps;
-
-	if (host_data->current_format.frmival_100ns == target_frmival) {
-		LOG_DBG("Frame rate already set to %u fps", fps);
-		return 0;
-	}
-
-	fie.discrete.numerator = target_frmival;
-	fie.discrete.denominator = NSEC_PER_SEC / 100;
 
 	video_closest_frmival(dev, &fie);
 
-	best_frmival =
-		(fie.discrete.numerator * (NSEC_PER_SEC / 100ULL)) / fie.discrete.denominator;
-
-	LOG_DBG("Selected frame interval index: %u, interval: %u (100ns units)", fie.index,
-		best_frmival);
-	LOG_INF("Setting frame rate: %u fps -> %u fps", fps, (NSEC_PER_SEC / 100) / best_frmival);
+	frmival_100ns = video_frmival_nsec(frmival) / 100;
 
 	k_mutex_lock(&host_data->lock, K_FOREVER);
-
 	memset(&host_data->probe, 0, sizeof(host_data->probe));
 	host_data->probe.bmHint = sys_cpu_to_le16(0x0001);
 	host_data->probe.bFormatIndex = host_data->current_format.format_index;
 	host_data->probe.bFrameIndex = host_data->current_format.frame_index;
-	host_data->probe.dwFrameInterval = sys_cpu_to_le32(best_frmival);
-
+	host_data->probe.dwFrameInterval = sys_cpu_to_le32(frmival_100ns);
 	k_mutex_unlock(&host_data->lock);
 
 	ret = vs_request(host_data, UVC_SET_CUR, UVC_VS_PROBE_CONTROL,
@@ -1295,7 +1276,10 @@ static int set_frame_rate(const struct device *dev, uint32_t fps)
 		return ret;
 	}
 
+	k_mutex_lock(&host_data->lock, K_FOREVER);
 	memset(&host_data->probe, 0, sizeof(host_data->probe));
+	k_mutex_unlock(&host_data->lock);
+
 	ret = vs_request(host_data, UVC_GET_CUR, UVC_VS_PROBE_CONTROL,
 			 &host_data->probe, sizeof(host_data->probe));
 	if (ret != 0) {
@@ -1304,14 +1288,14 @@ static int set_frame_rate(const struct device *dev, uint32_t fps)
 	}
 
 	ret = vs_request(host_data, UVC_SET_CUR, UVC_VS_COMMIT_CONTROL,
-				  &host_data->probe, sizeof(host_data->probe));
+			 &host_data->probe, sizeof(host_data->probe));
 	if (ret != 0) {
 		LOG_ERR("COMMIT request failed: %d", ret);
 		return ret;
 	}
 
 	k_mutex_lock(&host_data->lock, K_FOREVER);
-	host_data->current_format.frmival_100ns = best_frmival;
+	host_data->current_format.frmival_100ns = frmival_100ns;
 	k_mutex_unlock(&host_data->lock);
 
 	LOG_INF("Frame rate successfully set to %u fps",
@@ -2490,31 +2474,6 @@ static int usbh_uvc_get_caps(const struct device *dev, struct video_caps *const 
 	struct uvc_host_data *host_data = dev->data;
 
 	return get_device_caps(host_data, caps);
-}
-
-/* Set frame interval (frame rate) */
-static int usbh_uvc_set_frmival(const struct device *dev, struct video_frmival *const frmival)
-{
-	struct uvc_host_data *host_data = dev->data;
-	uint32_t fps;
-	int ret;
-
-	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
-		return -ENODEV;
-	}
-
-	if (frmival->numerator == 0 || frmival->denominator == 0) {
-		return -EINVAL;
-	}
-
-	fps = frmival->denominator / frmival->numerator;
-
-	ret = set_frame_rate(dev, fps);
-	if (ret != 0) {
-		LOG_ERR("Failed to set UVC frame rate: %d", ret);
-	}
-
-	return ret;
 }
 
 /* Get current frame interval */
