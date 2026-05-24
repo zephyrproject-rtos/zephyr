@@ -913,15 +913,10 @@ scan_interface_endpoints(const struct usb_if_descriptor *const if_desc,
 /* Select streaming alternate setting based on bandwidth */
 static int select_streaming_alternate(struct uvc_host_data *const host_data)
 {
-	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
+	struct uvc_stream_iface_info stream_info = {};
 	uint32_t max_tpl = sys_le32_to_cpu(host_data->probe.dwMaxPayloadTransferSize);
 	const enum usb_device_speed device_speed = host_data->udev->speed;
-	const struct usb_if_descriptor *selected_interface = NULL;
-	const struct usb_ep_descriptor *selected_endpoint = NULL;
-	const struct usb_if_descriptor *if_desc;
-	const struct usb_ep_descriptor *ep_desc;
 	uint32_t optimal_bandwidth = UINT32_MAX;
-	uint32_t selected_payload_size = 0;
 	uint32_t ep_bandwidth;
 	uint32_t required_bandwidth;
 
@@ -938,10 +933,13 @@ static int select_streaming_alternate(struct uvc_host_data *const host_data)
 		(device_speed == USB_SPEED_SPEED_HS) ? "High Speed" : "Full Speed");
 
 	/* Scan all streaming interfaces */
-	for (uint8_t i = 0;
-	     i < CONFIG_USBH_VIDEO_MAX_STREAM_INTERFACE_ALT && host_data->stream_iface_alts[i];
-	     i++) {
-		if_desc = host_data->stream_iface_alts[i];
+	for (uint8_t i = 0; i < CONFIG_USBH_VIDEO_MAX_STREAM_INTERFACE_ALT; i++) {
+		const struct usb_if_descriptor *const if_desc = host_data->stream_iface_alts[i];
+		const struct usb_ep_descriptor *ep_desc;
+
+		if (if_desc == NULL) {
+			break;
+		}
 
 		/* Skip Alt 0 (idle state) */
 		if (if_desc->bAlternateSetting == 0) {
@@ -950,33 +948,36 @@ static int select_streaming_alternate(struct uvc_host_data *const host_data)
 
 		ep_desc = scan_interface_endpoints(if_desc, device_speed, required_bandwidth,
 						   max_tpl, &ep_bandwidth);
-
-		if (ep_desc && ep_bandwidth < optimal_bandwidth) {
-			optimal_bandwidth = ep_bandwidth;
-			selected_interface = if_desc;
-			selected_endpoint = ep_desc;
-			selected_payload_size =
-				get_endpoint_payload_size(ep_desc, device_speed);
-
-			LOG_DBG("Selected optimal EP: iface %u alt %u EP 0x%02x, bw=%u, payload=%u",
-				if_desc->bInterfaceNumber, if_desc->bAlternateSetting,
-				ep_desc->bEndpointAddress, ep_bandwidth, selected_payload_size);
+		if (ep_desc == NULL) {
+			continue;
 		}
+
+		if (ep_bandwidth >= optimal_bandwidth) {
+			continue;
+		}
+
+		optimal_bandwidth = ep_bandwidth;
+
+		stream_info.iface = if_desc;
+		stream_info.ep = ep_desc;
+		stream_info.ep_mps_mult = get_endpoint_payload_size(ep_desc, device_speed);
+
+		LOG_DBG("Selected optimal EP: iface %u alt %u EP 0x%02x, bw=%u, payload=%u",
+			if_desc->bInterfaceNumber, if_desc->bAlternateSetting,
+			ep_desc->bEndpointAddress, ep_bandwidth, stream_info.ep_mps_mult);
 	}
 
-	if (selected_endpoint == NULL) {
-		LOG_ERR("No EP satisfies bandwidth %u and payload size %u", required_bandwidth,
-			max_tpl);
+	if (stream_info.ep == NULL) {
+		LOG_ERR("No EP satisfies bandwidth %u and payload size %u",
+			required_bandwidth, max_tpl);
 		return -ENOTSUP;
 	}
 
-	stream_info->iface = selected_interface;
-	stream_info->ep = selected_endpoint;
-	stream_info->ep_mps_mult = selected_payload_size;
+	host_data->current_stream_iface_info = stream_info;
 
 	LOG_DBG("Selected iface %u alt %u EP 0x%02x (bw=%u, payload=%u)",
-		selected_interface->bInterfaceNumber, selected_interface->bAlternateSetting,
-		selected_endpoint->bEndpointAddress, optimal_bandwidth, selected_payload_size);
+		stream_info.iface->bInterfaceNumber, stream_info.iface->bAlternateSetting,
+		stream_info.ep->bEndpointAddress, optimal_bandwidth, stream_info.ep_mps_mult);
 
 	return 0;
 }
