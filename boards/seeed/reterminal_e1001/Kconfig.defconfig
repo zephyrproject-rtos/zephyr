@@ -14,4 +14,16 @@ endchoice
 
 endif # LVGL
 
+if FUEL_GAUGE
+
+# Composite fuel gauge gets battery voltage from ADC-based voltage-divider sensor
+
+config ADC
+	default y
+
+config SENSOR
+	default y
+
+endif # FUEL_GAUGE
+
 endif # BOARD_RETERMINAL_E1001_ESP32S3_PROCPU
