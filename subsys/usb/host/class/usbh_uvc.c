@@ -793,20 +793,6 @@ static bool ep_has_enough_bandwidth(const struct usb_ep_descriptor *ep_desc,
 	uint16_t ep_mps;
 	uint8_t interval;
 
-	/* Validate endpoint descriptor */
-	if (!usbh_desc_is_valid_endpoint(ep_desc)) {
-		LOG_WRN("Invalid endpoint descriptor, skipping");
-		return false;
-	}
-
-	/* Check if this is an isochronous IN endpoint */
-	if ((ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK) != USB_EP_TYPE_ISO ||
-	    (ep_desc->bEndpointAddress & USB_EP_DIR_MASK) != USB_EP_DIR_IN) {
-		LOG_WRN("Endpoint 0x%02x not supported (only isochronous IN endpoints supported)",
-			ep_desc->bEndpointAddress);
-		return false;
-	}
-
 	/* Calculate bandwidth */
 	interval = BIT(ep_desc->bInterval - 1);
 	ep_mps = USB_MPS_EP_SIZE(ep_desc->wMaxPacketSize);
@@ -875,32 +861,39 @@ scan_interface_endpoints(const struct usb_if_descriptor *const if_desc,
 			 uint32_t required_bandwidth, uint32_t max_tpl,
 			 uint32_t *found_bandwidth)
 {
-	const struct usb_desc_header *desc;
-	const struct usb_ep_descriptor *ep_desc;
+	const struct usb_desc_header *desc = (const void *)if_desc;
 	const struct usb_ep_descriptor *best_ep = NULL;
 	uint32_t best_bandwidth = UINT32_MAX;
 	uint32_t ep_bandwidth = 0;
-	int ep_count = 0;
 
 	LOG_DBG("Checking interface %u alt %u (%u endpoints)", if_desc->bInterfaceNumber,
 		if_desc->bAlternateSetting, if_desc->bNumEndpoints);
 
 	/* Iterate through all descriptors following the interface descriptor */
-	desc = (const struct usb_desc_header *)if_desc;
-	while ((desc = usbh_desc_get_next(desc)) != NULL && ep_count < if_desc->bNumEndpoints) {
-		/* Stop if we hit another interface descriptor */
-		if (desc->bDescriptorType == USB_DESC_INTERFACE) {
+	for (int n = 0; n < if_desc->bNumEndpoints; n++) {
+		/* Stop if we hit another interface descriptor or the end of descriptors */
+		desc = usbh_desc_get_next(desc);
+		if (desc == NULL || desc->bDescriptorType == USB_DESC_INTERFACE) {
 			break;
 		}
 
 		/* Process endpoint descriptors */
-		if (desc->bDescriptorType == USB_DESC_ENDPOINT) {
-			ep_desc = (const void *)desc;
+		if (usbh_desc_is_valid_endpoint(desc)) {
+			const struct usb_ep_descriptor *const ep_desc = (const void *)desc;
+
+			if ((ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK) !=
+			    USB_EP_TYPE_ISO) {
+				LOG_WRN("Only ISO endpoints supported");
+				continue;
+			}
+
+			if (!USB_EP_DIR_IS_IN(ep_desc->bEndpointAddress)) {
+				LOG_WRN("Only IN endpoints supportedx");
+				continue;
+			}
 
 			if (ep_has_enough_bandwidth(ep_desc, if_desc, device_speed,
-						    required_bandwidth,
-						    max_tpl)) {
-				/* Endpoint bandwidth in bytes/sec */
+						    required_bandwidth, max_tpl)) {
 				ep_bandwidth = get_endpoint_bandwidth(ep_desc, device_speed);
 
 				/* Select endpoint with smallest sufficient bandwidth */
@@ -909,14 +902,10 @@ scan_interface_endpoints(const struct usb_if_descriptor *const if_desc,
 					best_ep = ep_desc;
 				}
 			}
-
-			ep_count++;
 		}
 	}
 
-	if (best_ep && found_bandwidth) {
-		*found_bandwidth = best_bandwidth;
-	}
+	*found_bandwidth = best_bandwidth;
 
 	return best_ep;
 }
