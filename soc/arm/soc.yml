@@ -13,6 +13,9 @@ family:
       - name: cpu1
   - name: mps3
     socs:
+    - name: an536
+      cpuclusters:
+      - name: cpu0
     - name: corstone300
     - name: corstone310
   - name: mps4

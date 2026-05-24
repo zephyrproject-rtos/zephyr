@@ -1,5 +1,6 @@
 # Copyright (c) 2017-2021 Linaro Limited
 # Copyright 2024-2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright (c) 2026 Andrei-Edward Popa
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_MPS3
@@ -25,6 +26,14 @@ config SOC_CORSTONE310
 	select ARMV8_1_M_MVEI
 	select ARMV8_1_M_MVEF
 	select ARMV8_1_M_PMU
+
+config SOC_AN536
+	select CPU_CORTEX_R52
+	select CPU_HAS_ARM_MPU
+	select VFP_DP_D16
+	select VFP_DP_D32_FP16_FMAC if !USE_SWITCH
+	select GIC_SINGLE_SECURITY_STATE
+	select ARM_ARCH_TIMER
 
 config ARMV8_1_M_PMU_EVENTCNT
 	int
