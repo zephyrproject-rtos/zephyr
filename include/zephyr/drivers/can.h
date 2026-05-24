@@ -868,7 +868,7 @@ struct can_device_state {
  * @param dev  Pointer to the device structure for the driver instance.
  * @param[out] rate CAN core clock rate in Hz.
  *
- * @return 0 on success, or a negative error code on error
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int can_get_core_clock(const struct device *dev, uint32_t *rate);
 
@@ -1062,11 +1062,11 @@ __syscall int can_calc_timing_data(const struct device *dev, struct can_timing *
  * @param dev         Pointer to the device structure for the driver instance.
  * @param timing_data Bus timings for data phase
  *
- * @retval 0 If successful.
- * @retval -EBUSY if the CAN controller is not in stopped state.
+ * @retval 0 on success.
+ * @retval -EBUSY CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
- * @retval -ENOTSUP if the timing parameters are not supported by the driver.
- * @retval -ENOSYS if CAN FD support is not implemented by the driver.
+ * @retval -ENOTSUP Timing parameters are not supported by the driver.
+ * @retval -ENOSYS CAN FD support is not implemented by the driver.
  */
 __syscall int can_set_timing_data(const struct device *dev,
 				  const struct can_timing *timing_data);
@@ -1091,12 +1091,12 @@ __syscall int can_set_timing_data(const struct device *dev,
  * @param dev          Pointer to the device structure for the driver instance.
  * @param bitrate_data Desired data phase bitrate.
  *
- * @retval 0 If successful.
- * @retval -EBUSY if the CAN controller is not in stopped state.
- * @retval -EINVAL if the requested bitrate is out of range.
- * @retval -ENOTSUP if the requested bitrate not supported by the CAN controller/transceiver
+ * @retval 0 on success.
+ * @retval -EBUSY CAN controller is not in stopped state.
+ * @retval -EINVAL Requested bitrate is out of range.
+ * @retval -ENOTSUP Requested bitrate not supported by the CAN controller/transceiver
  *                  combination.
- * @retval -ERANGE if the resulting sample point is off by more than +/- 5%.
+ * @retval -ERANGE Resulting sample point is off by more than +/- 5%.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
 __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_data);
@@ -1109,9 +1109,9 @@ __syscall int can_set_bitrate_data(const struct device *dev, uint32_t bitrate_da
  * @param dev         Pointer to the device structure for the driver instance.
  * @param timing      Bus timings.
  *
- * @retval 0 If successful.
- * @retval -EBUSY if the CAN controller is not in stopped state.
- * @retval -ENOTSUP if the timing parameters are not supported by the driver.
+ * @retval 0 on success.
+ * @retval -EBUSY CAN controller is not in stopped state.
+ * @retval -ENOTSUP Timing parameters are not supported by the driver.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_timing(const struct device *dev,
@@ -1127,7 +1127,7 @@ __syscall int can_set_timing(const struct device *dev,
  * @param dev      Pointer to the device structure for the driver instance.
  * @param[out] cap Supported capabilities.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input/output error, failed to get capabilities.
  */
 __syscall int can_get_capabilities(const struct device *dev, can_mode_t *cap);
@@ -1168,8 +1168,8 @@ static const struct device *z_impl_can_get_transceiver(const struct device *dev)
  * @see can_transceiver_enable()
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @retval 0 if successful.
- * @retval -EALREADY if the device is already started.
+ * @retval 0 on success.
+ * @retval -EALREADY Device is already started.
  * @retval -EIO General input/output error, failed to start device.
  */
 __syscall int can_start(const struct device *dev);
@@ -1190,8 +1190,8 @@ static inline int z_impl_can_start(const struct device *dev)
  * @see can_transceiver_disable()
  *
  * @param dev Pointer to the device structure for the driver instance.
- * @retval 0 if successful.
- * @retval -EALREADY if the device is already stopped.
+ * @retval 0 on success.
+ * @retval -EALREADY Device is already stopped.
  * @retval -EIO General input/output error, failed to stop device.
  */
 __syscall int can_stop(const struct device *dev);
@@ -1207,8 +1207,8 @@ static inline int z_impl_can_stop(const struct device *dev)
  * @param dev  Pointer to the device structure for the driver instance.
  * @param mode Operation mode.
  *
- * @retval 0 If successful.
- * @retval -EBUSY if the CAN controller is not in stopped state.
+ * @retval 0 on success.
+ * @retval -EBUSY CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
  */
 __syscall int can_set_mode(const struct device *dev, can_mode_t mode);
@@ -1251,12 +1251,12 @@ static inline can_mode_t z_impl_can_get_mode(const struct device *dev)
  * @param dev          Pointer to the device structure for the driver instance.
  * @param bitrate      Desired arbitration phase bitrate.
  *
- * @retval 0 If successful.
- * @retval -EBUSY if the CAN controller is not in stopped state.
- * @retval -EINVAL if the requested bitrate is out of range.
- * @retval -ENOTSUP if the requested bitrate not supported by the CAN controller/transceiver
+ * @retval 0 on success.
+ * @retval -EBUSY CAN controller is not in stopped state.
+ * @retval -EINVAL Requested bitrate is out of range.
+ * @retval -ENOTSUP Requested bitrate not supported by the CAN controller/transceiver
  *                  combination.
- * @retval -ERANGE if the resulting sample point is off by more than +/- 5%.
+ * @retval -ERANGE Resulting sample point is off by more than +/- 5%.
  * @retval -EIO General input/output error, failed to set bitrate.
  */
 __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
@@ -1302,14 +1302,14 @@ __syscall int can_set_bitrate(const struct device *dev, uint32_t bitrate);
  *                  if called from user mode.
  * @param user_data User data to pass to callback function.
  *
- * @retval 0 if successful.
- * @retval -EINVAL if an invalid parameter was passed to the function.
- * @retval -ENOTSUP if an unsupported parameter was passed to the function.
- * @retval -ENETDOWN if the CAN controller is in stopped state.
- * @retval -ENETUNREACH if the CAN controller is in bus-off state.
- * @retval -EBUSY if CAN bus arbitration was lost (only applicable if automatic
+ * @retval 0 on success.
+ * @retval -EINVAL Invalid parameter was passed to the function.
+ * @retval -ENOTSUP Unsupported parameter was passed to the function.
+ * @retval -ENETDOWN CAN controller is in stopped state.
+ * @retval -ENETUNREACH CAN controller is in bus-off state.
+ * @retval -EBUSY CAN bus arbitration was lost (only applicable if automatic
  *                retransmissions are disabled).
- * @retval -EIO if a general transmit error occurred (e.g. missing ACK if
+ * @retval -EIO General transmit error occurred (e.g. missing ACK if
  *              automatic retransmissions are disabled).
  * @retval -EAGAIN on timeout.
  */
@@ -1421,9 +1421,9 @@ static inline void z_impl_can_remove_rx_filter(const struct device *dev, int fil
  * @param ide Get the maximum standard (11-bit) CAN ID filters if false, or extended (29-bit) CAN ID
  *            filters if true.
  *
- * @retval >=0 number of maximum concurrent filters.
+ * @return Number of maximum concurrent filters on success.
  * @retval -EIO General input/output error.
- * @retval -ENOSYS If this function is not implemented by the driver.
+ * @retval -ENOSYS Function is not implemented by the driver.
  */
 __syscall int can_get_max_filters(const struct device *dev, bool ide);
 
@@ -1456,7 +1456,7 @@ static inline int z_impl_can_get_max_filters(const struct device *dev, bool ide)
  * @param[out] state   Pointer to the state destination enum or NULL.
  * @param[out] err_cnt Pointer to the err_cnt destination structure or NULL.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input/output error, failed to get state.
  */
 __syscall int can_get_state(const struct device *dev, enum can_state *state,
