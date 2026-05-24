@@ -58,6 +58,19 @@ static uint8_t png_frame_buffer_hflip[] = {
 #include "png_frame_buffer_hflip.inc"
 };
 
+#ifdef CONFIG_VIDEO_SW_GENERATOR_H264
+#define H264_NAL_TYPE_MASK 0x1f
+#define H264_NAL_TYPE_AUD  9
+
+/* Static H.264 Annex-B test stream generated at build time. */
+static const uint8_t h264_frame_buffer[] = {
+#include "video_sw_generator_h264.inc"
+};
+
+static const uint8_t h264_start_code_3[] = {0x00, 0x00, 0x01};
+static const uint8_t h264_start_code_4[] = {0x00, 0x00, 0x00, 0x01};
+#endif
+
 struct video_sw_generator_data {
 	const struct device *dev;
 	struct sw_ctrls ctrls;
@@ -68,6 +81,9 @@ struct video_sw_generator_data {
 	int pattern;
 	struct k_poll_signal *sig;
 	uint32_t frame_rate;
+#ifdef CONFIG_VIDEO_SW_GENERATOR_H264
+	size_t h264_offset;
+#endif
 };
 
 #define VIDEO_SW_GENERATOR_FORMAT_CAP(pixfmt)                                                      \
@@ -110,8 +126,123 @@ static const struct video_format_cap fmts[] = {
 		.width_step = 1,
 		.height_step = 1,
 	},
+#ifdef CONFIG_VIDEO_SW_GENERATOR_H264
+	{
+		.pixelformat = VIDEO_PIX_FMT_H264,
+		.width_min = CONFIG_VIDEO_SW_GENERATOR_H264_WIDTH,
+		.width_max = CONFIG_VIDEO_SW_GENERATOR_H264_WIDTH,
+		.height_min = CONFIG_VIDEO_SW_GENERATOR_H264_HEIGHT,
+		.height_max = CONFIG_VIDEO_SW_GENERATOR_H264_HEIGHT,
+		.width_step = 1,
+		.height_step = 1,
+	},
+#endif
 	{0},
 };
+
+#ifdef CONFIG_VIDEO_SW_GENERATOR_H264
+static bool video_sw_generator_h264_match_start_code(size_t offset, const uint8_t *start_code,
+						     size_t start_code_len)
+{
+	if (offset + start_code_len > sizeof(h264_frame_buffer)) {
+		return false;
+	}
+
+	for (size_t i = 0; i < start_code_len; i++) {
+		if (h264_frame_buffer[offset + i] != start_code[i]) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* Scan through raw bytes of the buffer searching for the next start code */
+static int video_sw_generator_h264_next_start_code(size_t offset, size_t *start, size_t *prefix_len)
+{
+	for (size_t i = offset; i + sizeof(h264_start_code_3) <= sizeof(h264_frame_buffer); i++) {
+		if (video_sw_generator_h264_match_start_code(i, h264_start_code_4,
+							     sizeof(h264_start_code_4))) {
+			*start = i;
+			*prefix_len = sizeof(h264_start_code_4);
+			return 0;
+		}
+
+		if (video_sw_generator_h264_match_start_code(i, h264_start_code_3,
+							     sizeof(h264_start_code_3))) {
+			*start = i;
+			*prefix_len = sizeof(h264_start_code_3);
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
+/* Verify if the current NAL block at position "start" is a AUD (access unit delmiter) */
+static bool video_sw_generator_h264_is_aud(size_t start, size_t prefix_len)
+{
+	if (start + prefix_len >= sizeof(h264_frame_buffer)) {
+		return false;
+	}
+
+	return (h264_frame_buffer[start + prefix_len] & H264_NAL_TYPE_MASK) == H264_NAL_TYPE_AUD;
+}
+
+static int video_sw_generator_h264_next_access_unit(size_t offset, size_t *start, size_t *end)
+{
+	size_t prefix_len;
+	size_t next;
+	size_t next_prefix_len;
+
+	if (offset >= sizeof(h264_frame_buffer)) {
+		offset = 0;
+	}
+
+	if (video_sw_generator_h264_next_start_code(offset, start, &prefix_len) < 0) {
+		return -EINVAL;
+	}
+
+	if (!video_sw_generator_h264_is_aud(*start, prefix_len)) {
+		return -EINVAL;
+	}
+
+	*end = sizeof(h264_frame_buffer);
+	next = *start + prefix_len;
+
+    /* Skip NALs blocks until the next AUD (access unit delimiter) */
+	while (video_sw_generator_h264_next_start_code(next, &next, &next_prefix_len) == 0) {
+		if (next > *start && video_sw_generator_h264_is_aud(next, next_prefix_len)) {
+			*end = next;
+			break;
+		}
+
+		next += next_prefix_len;
+	}
+
+	return *end > *start ? 0 : -EINVAL;
+}
+
+static size_t video_sw_generator_h264_max_access_unit_size(void)
+{
+	size_t offset = 0;
+	size_t max_size = 0;
+
+	do {
+		size_t start;
+		size_t end;
+
+		if (video_sw_generator_h264_next_access_unit(offset, &start, &end) < 0) {
+			break;
+		}
+
+		max_size = MAX(max_size, end - start);
+		offset = end;
+	} while (offset < sizeof(h264_frame_buffer));
+
+	return max_size;
+}
+#endif
 
 static const char *const test_pattern_menu[] = {
 	"Color bars",
@@ -142,6 +273,16 @@ static int video_sw_generator_set_fmt(const struct device *dev, struct video_for
 	if (fmt->pixelformat == VIDEO_PIX_FMT_PNG) {
 		fmt->size = MAX(sizeof(png_frame_buffer), sizeof(png_frame_buffer_hflip));
 	}
+#ifdef CONFIG_VIDEO_SW_GENERATOR_H264
+	if (fmt->pixelformat == VIDEO_PIX_FMT_H264) {
+		fmt->size = video_sw_generator_h264_max_access_unit_size();
+		if (fmt->size == 0) {
+			LOG_ERR("Invalid generated H.264 stream");
+			return -EINVAL;
+		}
+		data->h264_offset = 0;
+	}
+#endif
 
 	data->fmt = *fmt;
 	return 0;
@@ -302,6 +443,35 @@ static uint16_t video_sw_generator_fill_bayer8(uint8_t *buffer, uint16_t width, 
 	return 2;
 }
 
+#ifdef CONFIG_VIDEO_SW_GENERATOR_H264
+static int video_sw_generator_fill_h264(struct video_sw_generator_data *data,
+					struct video_buffer *vbuf)
+{
+	size_t start;
+	size_t end;
+	size_t frame_size;
+
+	if (video_sw_generator_h264_next_access_unit(data->h264_offset, &start, &end) < 0) {
+		data->h264_offset = 0;
+		return -EINVAL;
+	}
+
+	frame_size = end - start;
+	if (vbuf->size < frame_size) {
+		LOG_ERR("Buffer too small (need %u, have %u)", frame_size, vbuf->size);
+		return -ENOBUFS;
+	}
+
+	memcpy(vbuf->buffer, &h264_frame_buffer[start], frame_size);
+	vbuf->bytesused = frame_size;
+	vbuf->timestamp = k_uptime_get_32();
+	vbuf->line_offset = 0;
+	data->h264_offset = end < sizeof(h264_frame_buffer) ? end : 0;
+
+	return 0;
+}
+#endif
+
 static int video_sw_generator_fill_compressed(struct video_buffer *vbuf, bool hflip,
 					      uint32_t pix_format)
 {
@@ -354,6 +524,12 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	size_t pitch = fmt->width * video_bits_per_pixel(fmt->pixelformat) / BITS_PER_BYTE;
 	bool hflip = data->ctrls.hflip.val;
 	uint16_t lines = 0;
+
+#ifdef CONFIG_VIDEO_SW_GENERATOR_H264
+	if (data->fmt.pixelformat == VIDEO_PIX_FMT_H264) {
+		return video_sw_generator_fill_h264(data, vbuf);
+	}
+#endif
 
 	/* Handle JPEG and PNG formats specially */
 	if ((data->fmt.pixelformat == VIDEO_PIX_FMT_JPEG) ||
