@@ -922,8 +922,7 @@ scan_interface_endpoints(const struct usb_if_descriptor *const if_desc,
 }
 
 /* Select streaming alternate setting based on bandwidth */
-static int select_streaming_alternate(struct uvc_host_data *const host_data,
-				      uint32_t required_bandwidth)
+static int select_streaming_alternate(struct uvc_host_data *const host_data)
 {
 	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
 	uint32_t max_tpl = sys_le32_to_cpu(host_data->probe.dwMaxPayloadTransferSize);
@@ -935,6 +934,15 @@ static int select_streaming_alternate(struct uvc_host_data *const host_data,
 	uint32_t optimal_bandwidth = UINT32_MAX;
 	uint32_t selected_payload_size = 0;
 	uint32_t ep_bandwidth;
+	uint32_t required_bandwidth;
+
+	/* In byte per second  */
+	required_bandwidth = host_data->current_format.video_fmt.size *
+		       ((NSEC_PER_SEC / 100ULL) / host_data->current_format.frmival_100ns);
+	if (required_bandwidth == 0) {
+		LOG_ERR("Cannot calculate required bandwidth");
+		return -EINVAL;
+	}
 
 	LOG_DBG("Required bandwidth: %u bytes/sec, Max payload: %u bytes (device speed: %s)",
 		required_bandwidth, max_tpl,
@@ -1132,7 +1140,6 @@ static int set_format(struct uvc_host_data *const host_data,
 	const struct uvc_format_common_descriptor *format;
 	const struct uvc_frame_common_descriptor *frame;
 	uint32_t frmival;
-	uint32_t byte_per_sec;
 	int ret;
 
 	/* Find matching format and frame descriptors */
@@ -1207,16 +1214,8 @@ static int set_format(struct uvc_host_data *const host_data,
 	host_data->current_format.frame_ptr = frame;
 	k_mutex_unlock(&host_data->lock);
 
-	/* Calculate required bandwidth */
-	byte_per_sec = host_data->current_format.video_fmt.size *
-		       ((NSEC_PER_SEC / 100ULL) / host_data->current_format.frmival_100ns);
-	if (byte_per_sec == 0) {
-		LOG_WRN("Cannot calculate required bandwidth");
-		return -EINVAL;
-	}
-
 	/* Select streaming interface alternate setting */
-	ret = select_streaming_alternate(host_data, byte_per_sec);
+	ret = select_streaming_alternate(host_data);
 	if (ret != 0) {
 		LOG_ERR("Select stream alternate failed: %d", ret);
 		return ret;
@@ -1249,7 +1248,6 @@ static int usbh_uvc_set_frmival(const struct device *dev, struct video_frmival *
 	struct video_frmival_enum fie = {.discrete = *frmival};
 	struct uvc_host_data *const host_data = dev->data;
 	const struct usb_if_descriptor *stream_iface;
-	uint32_t byte_per_sec = 0;
 	uint32_t frmival_100ns;
 	int ret;
 
@@ -1301,14 +1299,7 @@ static int usbh_uvc_set_frmival(const struct device *dev, struct video_frmival *
 	LOG_INF("Frame rate successfully set to %u fps",
 		(NSEC_PER_SEC / 100) / host_data->current_format.frmival_100ns);
 
-	byte_per_sec = host_data->current_format.video_fmt.size *
-		       ((NSEC_PER_SEC / 100ULL) / host_data->current_format.frmival_100ns);
-	if (byte_per_sec == 0) {
-		LOG_ERR("Cannot calculate required bandwidth");
-		return -ERANGE;
-	}
-
-	ret = select_streaming_alternate(host_data, byte_per_sec);
+	ret = select_streaming_alternate(host_data);
 	if (ret != 0) {
 		LOG_ERR("Failed to select streaming alternate: %d", ret);
 		return ret;
