@@ -5,3 +5,4 @@
 # Use this for files that intentionally reference symbols that are not
 # defined in the main Kconfig tree, e.g. out-of-tree module documentation or
 # generated files that are only used with specific configurations.
+scripts/ci/gen_catalogs.py
