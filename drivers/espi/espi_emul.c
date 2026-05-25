@@ -212,7 +212,7 @@ int espi_emul_register(const struct device *dev, struct espi_emul *emul)
 }
 
 /* Device instantiation */
-static struct emul_espi_driver_api emul_espi_driver_api = {
+static DEVICE_API(emul_espi, emul_driver_api) = {
 	.espi_api = {
 		.config = espi_emul_config,
 		.get_channel_status = espi_emul_get_channel_status,
@@ -240,6 +240,6 @@ static struct emul_espi_driver_api emul_espi_driver_api = {
 	};                                                                                         \
 	static struct espi_emul_data espi_emul_data_##n;                                           \
 	DEVICE_DT_INST_DEFINE(n, &espi_emul_init, NULL, &espi_emul_data_##n, &espi_emul_cfg_##n,   \
-			      POST_KERNEL, CONFIG_ESPI_INIT_PRIORITY, &emul_espi_driver_api);
+			      POST_KERNEL, CONFIG_ESPI_INIT_PRIORITY, &emul_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESPI_EMUL_INIT)

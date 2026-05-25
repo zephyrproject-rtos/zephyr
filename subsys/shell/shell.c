@@ -7,6 +7,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_remote.h>
 #if defined(CONFIG_SHELL_BACKEND_DUMMY)

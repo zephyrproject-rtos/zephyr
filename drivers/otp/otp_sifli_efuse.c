@@ -13,6 +13,7 @@
 #include <zephyr/drivers/otp.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 
 #include <soc.h>

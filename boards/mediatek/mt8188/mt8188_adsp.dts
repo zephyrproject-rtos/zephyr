@@ -82,8 +82,8 @@
 			interrupts = <2 0 0>;
 		};
 
-		/* Generated code for AFE devices */
-		#include "afe-mt8188.dtsi"
+/* Generated code for AFE devices */
+#include "afe-mt8188.dtsi"
 	}; /* soc */
 
 	chosen {};

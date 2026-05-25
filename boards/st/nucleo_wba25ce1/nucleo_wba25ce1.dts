@@ -176,6 +176,10 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
+&aes {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };

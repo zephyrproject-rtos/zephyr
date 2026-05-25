@@ -331,7 +331,7 @@ static void verify_raw_recv_success(int sock, net_sa_family_t family)
 
 	ret = zsock_recv(sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_not_equal(ret, -1, "Failed to receive RAW packet (%d)", errno);
-	zassert_equal(ret, expected_len, "Invalid data size received (%d, expected %d)",
+	zassert_equal(ret, expected_len, "Invalid data size received (%d, expected %zu)",
 		      ret, expected_len);
 
 	validate_ip_udp_hdr(family, &src_addr, &dst_addr, rx_buf, ret);
@@ -416,7 +416,7 @@ static void test_raw_sock_send(net_sa_family_t family, enum net_ip_protocol prot
 	ret = zsock_recv(udp_sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_not_equal(ret, -1, "Failed to receive UDP packet (%d)", errno);
 	zassert_equal(ret, sizeof(test_payload),
-		     "Invalid data size received (%d, expected %d)",
+		     "Invalid data size received (%d, expected %zu)",
 		      ret, sizeof(test_payload));
 	zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload),
 			  "Invalid payload received");
@@ -466,7 +466,7 @@ static void test_raw_sock_sendto(net_sa_family_t family)
 	ret = zsock_recv(udp_sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_not_equal(ret, -1, "Failed to receive UDP packet (%d)", errno);
 	zassert_equal(ret, sizeof(test_payload),
-		     "Invalid data size received (%d, expected %d)",
+		     "Invalid data size received (%d, expected %zu)",
 		      ret, sizeof(test_payload));
 	zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload),
 			  "Invalid payload received");
@@ -505,7 +505,7 @@ static void test_raw_sock_sendmsg(net_sa_family_t family)
 	ret = zsock_recv(udp_sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_not_equal(ret, -1, "Failed to receive UDP packet (%d)", errno);
 	zassert_equal(ret, sizeof(test_payload),
-		     "Invalid data size received (%d, expected %d)",
+		     "Invalid data size received (%d, expected %zu)",
 		      ret, sizeof(test_payload));
 	zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload),
 			  "Invalid payload received");
@@ -600,7 +600,7 @@ static void test_raw_sock_recvfrom(net_sa_family_t family)
 	ret = zsock_recvfrom(raw_sock, rx_buf, sizeof(rx_buf), 0,
 			     &recv_addr, &recv_addrlen);
 	zassert_not_equal(ret, -1, "Failed to receive RAW packet (%d)", errno);
-	zassert_equal(ret, expected_len, "Invalid data size received (%d, expected %d)",
+	zassert_equal(ret, expected_len, "Invalid data size received (%d, expected %zu)",
 		      ret, expected_len);
 	validate_ip_udp_hdr(family, &src_addr, &dst_addr, rx_buf, ret);
 	zassert_mem_equal(rx_buf + headers_len, test_payload, sizeof(test_payload),
@@ -655,7 +655,7 @@ static void test_raw_sock_recvmsg(net_sa_family_t family)
 
 	ret = zsock_recvmsg(raw_sock, &msg, 0);
 	zassert_not_equal(ret, -1, "Failed to receive RAW packet (%d)", errno);
-	zassert_equal(ret, expected_len, "Invalid data size received (%d, expected %d)",
+	zassert_equal(ret, expected_len, "Invalid data size received (%d, expected %zu)",
 		      ret, expected_len);
 	validate_ip_udp_hdr(family, &src_addr, &dst_addr, rx_buf, ret);
 	zassert_mem_equal(rx_buf + headers_len, test_payload, sizeof(test_payload),
@@ -826,7 +826,7 @@ static void test_raw_and_udp_socks_recv(net_sa_family_t family)
 	ret = zsock_recv(raw_sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_not_equal(ret, -1, "Failed to receive RAW packet (%d)", errno);
 	zassert_equal(ret, expected_len,
-		      "Invalid data size received (%d, expected %d)",
+		      "Invalid data size received (%d, expected %zu)",
 		      ret, expected_len);
 
 	validate_ip_udp_hdr(family, &src_addr, &dst_addr, rx_buf, ret);
@@ -836,7 +836,7 @@ static void test_raw_and_udp_socks_recv(net_sa_family_t family)
 	ret = zsock_recv(udp_sock_2, rx_buf, sizeof(rx_buf), 0);
 	zassert_not_equal(ret, -1, "Failed to receive UDP packet (%d)", errno);
 	zassert_equal(ret, sizeof(test_payload),
-		     "Invalid data size received (%d, expected %d)",
+		     "Invalid data size received (%d, expected %zu)",
 		      ret, sizeof(test_payload));
 	zassert_mem_equal(rx_buf, test_payload, sizeof(test_payload),
 			  "Invalid payload received");
@@ -872,7 +872,7 @@ static void test_packet_and_raw_socks_recv(net_sa_family_t family, uint16_t pack
 	ret = zsock_recv(packet_sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
 	zassert_equal(ret, expected_len,
-		      "Invalid data size received (%d, expected %d)",
+		      "Invalid data size received (%d, expected %zu)",
 		      ret, expected_len);
 
 	validate_ip_udp_hdr(family, &src_addr, &dst_addr, rx_buf, ret);
@@ -884,7 +884,7 @@ static void test_packet_and_raw_socks_recv(net_sa_family_t family, uint16_t pack
 	ret = zsock_recv(raw_sock, rx_buf, sizeof(rx_buf), 0);
 	zassert_not_equal(ret, -1, "Failed to receive RAW packet (%d)", errno);
 	zassert_equal(ret, expected_len,
-		      "Invalid data size received (%d, expected %d)",
+		      "Invalid data size received (%d, expected %zu)",
 		      ret, expected_len);
 
 	validate_ip_udp_hdr(family, &src_addr, &dst_addr, rx_buf, ret);

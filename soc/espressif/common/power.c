@@ -16,6 +16,8 @@
 #include <esp_private/esp_clk.h>
 #include <esp_private/systimer.h>
 #include <hal/gpio_hal.h>
+#include <driver/rtc_io.h>
+#include <soc/gpio_periph.h>
 
 #include <power.h>
 
@@ -96,9 +98,17 @@ static bool rtc_wakeup_enable(enum pm_state state, bool enable)
 
 void esp32_sleep_gpio_hold_config(uint8_t gpio_num, bool enable)
 {
-	if (gpio_num >= SOC_GPIO_PIN_COUNT ||
-	    !(SOC_GPIO_VALID_OUTPUT_GPIO_MASK & (1ULL << gpio_num))) {
-		/* Skip pins that are not output capable */
+	if (gpio_num >= SOC_GPIO_PIN_COUNT) {
+		return;
+	}
+
+	bool is_rtc_io = rtc_gpio_is_valid_gpio(gpio_num);
+	bool is_digital_hold = !is_rtc_io && (GPIO_HOLD_MASK[gpio_num] != 0);
+
+	if (!is_rtc_io && !is_digital_hold) {
+		if (enable) {
+			LOG_WRN("GPIO %d does not support sleep-hold-en flag", gpio_num);
+		}
 		return;
 	}
 
@@ -117,12 +127,18 @@ void esp32_sleep_gpio_prepare(void)
 			continue;
 		}
 
-		bool held_before = gpio_hal_is_digital_io_hold(&gpio_hal, gpio);
-
-		if (held_before) {
-			gpio_was_held |= (1ULL << gpio);
+		if (rtc_gpio_is_valid_gpio(gpio)) {
+#if SOC_RTCIO_HOLD_SUPPORTED
+			/* RTC IO: no is_held query available; always enable hold */
+			rtc_gpio_hold_en(gpio);
+#endif
 		} else {
-			gpio_hal_hold_en(&gpio_hal, gpio);
+			/* Digital IO: preserve application-set holds */
+			if (gpio_hal_is_digital_io_hold(&gpio_hal, gpio)) {
+				gpio_was_held |= (1ULL << gpio);
+			} else {
+				gpio_hal_hold_en(&gpio_hal, gpio);
+			}
 		}
 	}
 }
@@ -138,11 +154,18 @@ void esp32_sleep_gpio_restore(void)
 		/* After sleep, check which pins are currently in hold mode but were not
 		 * before sleep (pins originally held by the application). This allows us
 		 * to release hold only for the pins that were held by the sleep code.
+		 * Note: RTC IO pins with sleep-hold-en are always held and released during
+		 * sleep cycles. To keep a pin held independently across sleep, use a
+		 * digital IO pad instead.
 		 */
-		bool held_now = gpio_hal_is_digital_io_hold(&gpio_hal, gpio);
-
-		if (held_now && !(gpio_was_held & (1ULL << gpio))) {
-			gpio_hal_hold_dis(&gpio_hal, gpio);
+		if (rtc_gpio_is_valid_gpio(gpio)) {
+#if SOC_RTCIO_HOLD_SUPPORTED
+			rtc_gpio_hold_dis(gpio);
+#endif
+		} else {
+			if (!(gpio_was_held & (1ULL << gpio))) {
+				gpio_hal_hold_dis(&gpio_hal, gpio);
+			}
 		}
 	}
 

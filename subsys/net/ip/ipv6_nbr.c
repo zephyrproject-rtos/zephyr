@@ -910,11 +910,11 @@ use_interface_mtu:
 	 * not enter this branch.
 	 */
 	if ((net_pkt_lladdr_dst(pkt)->len > 0 &&
-	     ((IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
+	     ((IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
 	      (net_ipv6_is_ll_addr(&dst_ip) ||
 	       net_if_ipv6_addr_onlink(NULL, &dst_ip) ||
 	       net_pkt_forwarding(pkt))) ||
-	      !IS_ENABLED(CONFIG_NET_IPV6_ROUTING))) ||
+	      !IS_ENABLED(CONFIG_NET_IPV6_FORWARDING))) ||
 	    net_ipv6_is_addr_mcast(&dst_ip) ||
 	    /* Workaround Linux bug, see:
 	     * https://github.com/zephyrproject-rtos/zephyr/issues/3111
@@ -1066,7 +1066,7 @@ try_send:
 }
 
 struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
-				    struct net_in6_addr *addr)
+				    const struct net_in6_addr *addr)
 {
 	struct net_nbr *nbr;
 
@@ -1377,7 +1377,7 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 					net_pkt_get_data(pkt, &nd_access);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
 		ifaddr = net_if_ipv6_addr_lookup(&ns_tgt, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(
@@ -1385,7 +1385,7 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 	}
 
 	if (!ifaddr) {
-		if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
+		if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
 			struct net_in6_addr *nexthop;
 
 			nexthop = check_route(NULL, &ns_tgt, NULL);
@@ -1491,7 +1491,7 @@ nexthop_found:
 	}
 
 	/* Neighbor Unreachability Detection (NUD) */
-	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
 		ifaddr = net_if_ipv6_addr_lookup(&ns_dst, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(

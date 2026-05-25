@@ -189,4 +189,36 @@
 /** ACMP0 peripheral clock identifier. */
 #define MCUX_ACMP0_CLK MCUX_LPC_CLK_ID(0x30, 0x00)
 
+/** LCDIF peripheral clock identifier. */
+#define MCUX_LCDIF_CLK MCUX_LPC_CLK_ID(0x31, 0x00)
+
+/** GPIO0 peripheral clock identifier. */
+#define MCUX_GPIO0_CLK MCUX_LPC_CLK_ID(0x32, 0x00)
+/** GPIO1 peripheral clock identifier. */
+#define MCUX_GPIO1_CLK MCUX_LPC_CLK_ID(0x32, 0x01)
+/** GPIO2 peripheral clock identifier. */
+#define MCUX_GPIO2_CLK MCUX_LPC_CLK_ID(0x32, 0x02)
+/** GPIO3 peripheral clock identifier. */
+#define MCUX_GPIO3_CLK MCUX_LPC_CLK_ID(0x32, 0x03)
+/** GPIO4 peripheral clock identifier. */
+#define MCUX_GPIO4_CLK MCUX_LPC_CLK_ID(0x32, 0x04)
+/** GPIO5 peripheral clock identifier. */
+#define MCUX_GPIO5_CLK MCUX_LPC_CLK_ID(0x32, 0x05)
+/** GPIO6 peripheral clock identifier. */
+#define MCUX_GPIO6_CLK MCUX_LPC_CLK_ID(0x32, 0x06)
+/** GPIO7 peripheral clock identifier. */
+#define MCUX_GPIO7_CLK MCUX_LPC_CLK_ID(0x32, 0x07)
+/** GPIO8 peripheral clock identifier. */
+#define MCUX_GPIO8_CLK MCUX_LPC_CLK_ID(0x32, 0x08)
+/** GPIO9 peripheral clock identifier. */
+#define MCUX_GPIO9_CLK MCUX_LPC_CLK_ID(0x32, 0x09)
+/** GPIO10 peripheral clock identifier. */
+#define MCUX_GPIO10_CLK MCUX_LPC_CLK_ID(0x32, 0x0A)
+
+/** IOCON0 peripheral clock identifier. */
+#define MCUX_IOCON0_CLK MCUX_LPC_CLK_ID(0x33, 0x00)
+/** IOCON1 peripheral clock identifier. */
+#define MCUX_IOCON1_CLK MCUX_LPC_CLK_ID(0x33, 0x01)
+/** IOCON2 peripheral clock identifier. */
+#define MCUX_IOCON2_CLK MCUX_LPC_CLK_ID(0x33, 0x02)
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

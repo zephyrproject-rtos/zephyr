@@ -248,10 +248,16 @@ static void lcp_down(struct ppp_fsm *fsm)
 	memset(&ctx->lcp.peer_options.auth_proto, 0,
 	       sizeof(ctx->lcp.peer_options.auth_proto));
 
-	ppp_link_down(ctx);
+	k_sem_give(&ctx->wait_ppp_link_down);
+
+	if (ctx->phase != PPP_DEAD) {
+		ppp_network_all_down(ctx);
+	}
 
 	if (net_if_is_carrier_ok(ctx->iface) && ctx->is_enabled) {
 		ppp_change_phase(ctx, PPP_ESTABLISH);
+	} else {
+		ppp_change_phase(ctx, PPP_DEAD);
 	}
 }
 

@@ -167,7 +167,12 @@ void pm_system_resume(void);
  * @brief Put processor into a power state.
  *
  * This function implements the SoC specific details necessary
- * to put the processor into available power states.
+ * to put the processor into available power states. Implementations that select
+ * CONFIG_PM_STATE_SET_IRQ_LOCKED must not unmask interrupts or otherwise
+ * dispatch pending wake-source ISRs from this hook. Architecture helpers may
+ * adjust interrupt state immediately around the low-power instruction, but the
+ * kernel idle path restores the original interrupt state after PM resume
+ * housekeeping is complete.
  *
  * @param state Power state.
  * @param substate_id Power substate id.
@@ -177,10 +182,14 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
 /**
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
  *
- * This function is a place holder to do any operations that may
- * be needed to be done after sleep state exits. Currently it enables
- * interrupts after resuming from sleep state. In future, the enabling
- * of interrupts may be moved into the kernel.
+ * This function is a place holder to do any operations that may be needed after
+ * a sleep state exits. It is called after any system-managed devices have been
+ * resumed and while interrupts are still locked, before PM exit notifications
+ * and system clock idle-exit accounting have completed. Implementations must
+ * use this hook for hardware resume operations only. They must not unmask
+ * interrupts or otherwise dispatch pending wake-source ISRs from this hook; the
+ * kernel idle path restores the original interrupt state after PM resume
+ * housekeeping is complete.
  *
  * @param state Power state.
  * @param substate_id Power substate id.

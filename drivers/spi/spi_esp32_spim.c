@@ -11,9 +11,7 @@
 #include <hal/spi_ll.h>
 #include <esp_attr.h>
 #include <esp_clk_tree.h>
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
-#include <esp_cache.h>
-#endif
+#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
@@ -371,13 +369,11 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	if (cfg->dma_enabled) {
 		if (hal_trans->rcv_buffer) {
 			dma_stop(cfg->dma_dev, cfg->dma_rx_ch);
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
-			/* Invalidate cache for RX buffer - S3/S2 have data cache that
-			 * needs to be invalidated after DMA writes to memory
+			/* Invalidate cache for the RX buffer so the CPU reads fresh
+			 * data the DMA just wrote to memory. No-op when CACHE_MANAGEMENT
+			 * is disabled.
 			 */
-			esp_cache_msync(hal_trans->rcv_buffer, transfer_len_bytes,
-					ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-#endif
+			sys_cache_data_invd_range(hal_trans->rcv_buffer, transfer_len_bytes);
 		}
 		if (hal_trans->send_buffer) {
 			dma_stop(cfg->dma_dev, cfg->dma_tx_ch);

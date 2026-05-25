@@ -27,7 +27,7 @@ extern enum bst_result_t bst_result;
 static void test_main(void)
 {
 	int err;
-	uint32_t broadcast_id = 1234;
+	uint32_t broadcast_id = 1234U;
 	struct bt_le_ext_adv *adv;
 	struct bt_data ad[2] = {
 		BT_DATA_BYTES(BT_DATA_FLAGS, BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR),

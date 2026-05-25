@@ -11,8 +11,6 @@
 / {
 	model = "Luckfox Pico Ultra W";
 	compatible = "luckfox,pico-ultra-w";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	chosen {
 		zephyr,sram = &ddr;

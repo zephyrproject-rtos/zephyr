@@ -39,6 +39,7 @@
 		zephyr,uart-mcumgr = &lpuart0;
 		zephyr,canbus = &flexcan0;
 		zephyr,system-timer-companion = &lptmr0;
+		zephyr,edac = &erm0;
 	};
 
 	leds {
@@ -301,4 +302,16 @@ zephyr_udc0: &usb {
 			reg = <0x000e4000 DT_SIZE_K(112)>;
 		};
 	};
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
 };

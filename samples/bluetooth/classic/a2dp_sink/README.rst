@@ -22,11 +22,13 @@ Requirements
 Building and Running
 ********************
 
-1. Build and flash the sample to the board.
-2. The device will become discoverable as "a2dp_sink".
-3. Connect and stream audio on your A2DP source device.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/classic/a2dp_sink
+   :board: mimxrt1170_evk@B/mimxrt1176/cm7
+   :goals: build flash
+   :compact:
 
-This sample can be found under :zephyr_file:`samples/bluetooth/classic/a2dp_sink` in
-the Zephyr tree.
+After flashing, the device becomes discoverable as ``a2dp_sink``. Connect and stream audio
+from your A2DP source device.
 
 See :zephyr:code-sample-category:`bluetooth` samples for details.

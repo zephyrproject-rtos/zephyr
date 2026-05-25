@@ -146,7 +146,7 @@ static void read_bearer_values(void)
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
-	for (size_t i = 0; i < client_bearers.tbs_count; i++) {
+	for (size_t i = 0U; i < client_bearers.tbs_count; i++) {
 		if (IS_ENABLED(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)) {
 			read_bearer_name(client_bearers.tbs_bearers[i]);
 		}

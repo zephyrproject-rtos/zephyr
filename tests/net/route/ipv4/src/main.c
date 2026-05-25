@@ -30,6 +30,8 @@ static struct net_in_addr dest_addr = { .s4_addr = { 203, 0, 113, 7 } };
 static struct net_in_addr dest_addr_iface0 = { .s4_addr = { 203, 0, 113, 10 } };
 static struct net_in_addr dest_addr_iface1 = { .s4_addr = { 203, 0, 113, 11 } };
 static struct net_in_addr dest_addr_override = { .s4_addr = { 192, 0, 3, 77 } };
+static struct net_in_addr default_route_addr = { .s4_addr = { 0, 0, 0, 0 } };
+static struct net_in_addr default_route_dest = { .s4_addr = { 198, 18, 0, 1 } };
 static struct net_in_addr gateway_addr = { .s4_addr = { 192, 0, 2, 2 } };
 static struct net_in_addr gateway_addr_alt = { .s4_addr = { 192, 0, 3, 2 } };
 static struct net_in_addr subnet_addr = { .s4_addr = { 198, 51, 100, 99 } };
@@ -407,6 +409,40 @@ static void test_route_ipv4_onlink_subnet(void)
 	zassert_ok(net_route_ipv4_del(entry), "On-link route del failed");
 }
 
+static void test_route_ipv4_default_route(void)
+{
+	struct net_route_entry *entry;
+	struct net_route_entry *lookup;
+	struct net_route_entry *info_route;
+	struct net_in_addr *nexthop;
+	struct net_in_addr *info_nexthop;
+
+	entry = net_route_ipv4_add(my_iface, &default_route_addr, 0,
+				   &gateway_addr, NET_ROUTE_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_MEDIUM);
+	zassert_not_null(entry, "Default route add failed");
+	zassert_true(net_ipv4_addr_cmp(&entry->addr.in_addr, &default_route_addr),
+		     "Stored default route prefix was not normalized");
+
+	nexthop = net_route_ipv4_get_nexthop(entry);
+	zassert_not_null(nexthop, "Default route should have a nexthop");
+	zassert_true(net_ipv4_addr_cmp(nexthop, &gateway_addr),
+		     "Default route nexthop mismatch");
+
+	lookup = net_route_ipv4_lookup(my_iface, &default_route_dest);
+	zassert_equal_ptr(lookup, entry, "Default route lookup failed");
+
+	zassert_true(net_route_ipv4_get_info(my_iface, &default_route_dest,
+					     &info_route, &info_nexthop),
+		     "Default route info lookup failed");
+	zassert_equal_ptr(info_route, entry, "Route info returned wrong default route");
+	zassert_not_null(info_nexthop, "Default route should return a nexthop");
+	zassert_true(net_ipv4_addr_cmp(info_nexthop, &gateway_addr),
+		     "Route info returned wrong default-route nexthop");
+
+	zassert_ok(net_route_ipv4_del(entry), "Default route del failed");
+}
+
 static void test_route_ipv4_packet_arp_handoff(void)
 {
 	struct net_ipv4_hdr *hdr;
@@ -440,6 +476,31 @@ static void test_route_ipv4_packet_arp_handoff(void)
 	zassert_true(sent_arp_request_seen, "ARP request was not captured");
 	zassert_ok(net_arp_clear_pending(my_iface, &gateway_addr),
 		   "Original routed packet was not queued pending ARP");
+}
+
+static void test_route_ipv4_packet_without_iface(void)
+{
+	struct net_ipv4_hdr *hdr;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv4_hdr),
+					NET_AF_INET, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "Packet alloc failed");
+
+	hdr = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv4_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv4 header");
+
+	hdr->ttl = 1U;
+	net_ipv4_addr_copy_raw(hdr->src, my_addr.s4_addr);
+	net_ipv4_addr_copy_raw(hdr->dst, dest_addr.s4_addr);
+
+	net_pkt_set_iface(pkt, NULL);
+
+	zassert_equal(net_route_ipv4_packet(pkt, &gateway_addr), -EINVAL,
+		      "IPv4 route packet should reject missing iface");
+
+	net_pkt_unref(pkt);
 }
 
 static void test_route_ipv4_packet_multi_iface(void)
@@ -487,6 +548,34 @@ static void test_route_ipv4_host_route_overrides_normal_iface(void)
 	zassert_ok(net_route_ipv4_del(route_override), "Override route del failed");
 }
 
+static void test_route_ipv4_select_src_iface_uses_explicit_route(void)
+{
+	const struct net_in_addr *src_addr;
+	struct net_if *iface;
+	struct net_route_entry *route;
+
+	net_if_ipv4_set_gw(my_iface, &gateway_addr);
+
+	route = net_route_ipv4_add(my_iface_alt, &dest_addr_iface1, 32,
+				   &gateway_addr_alt, NET_ROUTE_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "Selection route add failed");
+
+	src_addr = net_if_ipv4_select_src_addr(NULL, &dest_addr_iface1);
+	zassert_false(src_addr == net_ipv4_unspecified_address(),
+		      "Source address selection failed");
+	zassert_true(net_ipv4_addr_cmp(src_addr, &my_addr_alt),
+		     "Source address should come from the routed interface");
+
+	iface = net_if_ipv4_select_src_iface(&dest_addr_iface1);
+	zassert_equal_ptr(iface, my_iface_alt,
+			  "Explicit host route should select alt interface");
+
+	net_if_ipv4_set_gw(my_iface, net_ipv4_unspecified_address());
+
+	zassert_ok(net_route_ipv4_del(route), "Selection route del failed");
+}
+
 ZTEST(route_test_suite, test_route)
 {
 	test_init();
@@ -505,9 +594,12 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_lifetime();
 	test_route_ipv4_preference();
 	test_route_ipv4_onlink_subnet();
+	test_route_ipv4_default_route();
 	test_route_ipv4_packet_arp_handoff();
+	test_route_ipv4_packet_without_iface();
 	test_route_ipv4_packet_multi_iface();
 	test_route_ipv4_host_route_overrides_normal_iface();
+	test_route_ipv4_select_src_iface_uses_explicit_route();
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);

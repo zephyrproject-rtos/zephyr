@@ -59,6 +59,7 @@
 			gpio-controller;
 			ngpios = <2>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -79,6 +80,7 @@
 			gpio-controller;
 			ngpios = <1>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -89,6 +91,7 @@
 			gpio-controller;
 			ngpios = <2>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -109,6 +112,7 @@
 			gpio-controller;
 			ngpios = <1>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -119,6 +123,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -129,6 +134,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -139,6 +145,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -149,6 +156,7 @@
 			gpio-controller;
 			ngpios = <4>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -159,6 +167,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -169,6 +178,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -179,6 +189,7 @@
 			gpio-controller;
 			ngpios = <6>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -189,6 +200,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -199,6 +211,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -209,6 +222,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -219,6 +233,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -229,6 +244,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -239,6 +255,7 @@
 			gpio-controller;
 			ngpios = <2>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -249,6 +266,7 @@
 			gpio-controller;
 			ngpios = <2>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -259,6 +277,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -269,6 +288,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -276,6 +296,9 @@
 			compatible = "infineon,lp-comp";
 			reg = <0x42880000 0x10000>;
 			status = "disabled";
+			wakeup-source;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			lpcomp0_0: lpcomp0-0 {
 				compatible = "infineon,lp-comp-channel";
@@ -294,9 +317,32 @@
 			compatible = "infineon,autanalog";
 			reg = <0x42e00000 0x100000>;
 			interrupts = <57 4>;
+			wakeup-source;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
+
+			ctb0: ctb0@0 {
+				compatible = "infineon,autanalog-ctb";
+				reg = <0x0 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			ctb1: ctb1@10000 {
+				compatible = "infineon,autanalog-ctb";
+				reg = <0x10000 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			ptcomp0: ptcomp@40000 {
+				compatible = "infineon,autanalog-ptcomp";
+				reg = <0x40000 0xf00>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 
 			adc0: adc0@80000 {
 				compatible = "infineon,autanalog-sar-adc";
@@ -327,6 +373,7 @@
 			interrupts = <43 4>;
 			clk-dst = <0x100>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		scb2: scb@429a0000 {
@@ -429,6 +476,7 @@
 			reg = <0x4240c000 0x180>;
 			interrupts = <54 4>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		mcwdt0: mcwdt@4240d000 {
@@ -436,6 +484,7 @@
 			reg = <0x4240d000 0x40>;
 			interrupts = <55 4>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		mcwdt1: mcwdt@4240d040 {
@@ -443,6 +492,7 @@
 			reg = <0x4240d040 0x40>;
 			interrupts = <0 4>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		rtc0: rtc@42420000 {
@@ -451,6 +501,7 @@
 			interrupts = <56 4>;
 			alarms-count = <2>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		canfd0: canfd@42840000 {

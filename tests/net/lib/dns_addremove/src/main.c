@@ -60,6 +60,7 @@ static struct net_in_addr my_addr2 = { { { 192, 0, 2, 1 } } };
 static struct net_mgmt_event_callback mgmt_cb;
 static struct k_sem dns_added;
 static struct k_sem dns_removed;
+static struct k_sem dns_reconfigured;
 
 static struct net_if *iface1;
 
@@ -145,6 +146,10 @@ static void dns_evt_handler(struct net_mgmt_event_callback *cb,
 		k_sem_give(&dns_added);
 	} else if (mgmt_event == NET_EVENT_DNS_SERVER_DEL) {
 		k_sem_give(&dns_removed);
+	} else if (mgmt_event == NET_EVENT_DNS_SERVERS_RECONFIGURED) {
+		k_sem_give(&dns_reconfigured);
+	} else {
+		/* Ignore other events. */
 	}
 }
 
@@ -202,10 +207,12 @@ static void *test_init(void)
 
 	k_sem_init(&dns_added, 0, 1);
 	k_sem_init(&dns_removed, 0, 1);
+	k_sem_init(&dns_reconfigured, 0, 1);
 
 	net_mgmt_init_event_callback(&mgmt_cb, dns_evt_handler,
 				     NET_EVENT_DNS_SERVER_ADD |
-				     NET_EVENT_DNS_SERVER_DEL);
+				     NET_EVENT_DNS_SERVER_DEL |
+				     NET_EVENT_DNS_SERVERS_RECONFIGURED);
 	net_mgmt_add_event_callback(&mgmt_cb);
 
 	return NULL;
@@ -494,6 +501,75 @@ ZTEST(dns_addremove, test_dns_reconfigure_callback)
 		zassert_true(false,
 			     "Timeout while waiting for DNS removed callback");
 	}
+#endif
+}
+
+ZTEST(dns_addremove, test_dns_reconfigure_event)
+{
+#if defined(CONFIG_NET_IPV4)
+	struct dns_resolve_context *dnsCtx = &resv_ipv4;
+	int ret;
+
+	/* test_init() left resv_ipv4 open with no servers; drain any
+	 * callbacks pending from prior tests in the suite.
+	 */
+	dns_resolve_close(dnsCtx);
+	k_yield();
+	k_sem_reset(&dns_added);
+	k_sem_reset(&dns_removed);
+	k_sem_reset(&dns_reconfigured);
+
+	/* Initial add: ADD fires; RECONFIGURED does not fire from the
+	 * init path (it is specific to dns_resolve_reconfigure).
+	 */
+	ret = dns_resolve_init(dnsCtx,
+			       (const char *[]){ DNS_NAME_IPV4, NULL }, NULL);
+	zassert_equal(ret, 0, "dns_resolve_init fail (%d)", ret);
+
+	k_yield();
+
+	if (k_sem_take(&dns_added, WAIT_TIME)) {
+		zassert_true(false,
+			     "Timeout waiting for ADD callback after init");
+	}
+	zassert_not_equal(k_sem_take(&dns_reconfigured, K_NO_WAIT), 0,
+			  "Unexpected RECONFIGURED callback from init path");
+
+	/* Reconfigure with an identical server set: dns_servers_exists()
+	 * short-circuits and ADD is suppressed; RECONFIGURED still fires
+	 * as the configuration-refresh signal.
+	 */
+	ret = dns_resolve_reconfigure(dnsCtx,
+				      (const char *[]){ DNS_NAME_IPV4, NULL },
+				      NULL, DNS_SOURCE_MANUAL);
+	zassert_equal(ret, 0, "reconfigure (dedup) fail (%d)", ret);
+
+	k_yield();
+
+	if (k_sem_take(&dns_reconfigured, WAIT_TIME)) {
+		zassert_true(false,
+			     "Timeout waiting for RECONFIGURED on dedup re-push");
+	}
+	zassert_not_equal(k_sem_take(&dns_added, K_NO_WAIT), 0,
+			  "Unexpected ADD callback on identical re-push");
+
+	/* Reconfigure with a different server set: RECONFIGURED fires
+	 * again on the post-init success path.
+	 */
+	ret = dns_resolve_reconfigure(dnsCtx,
+				      (const char *[]){ DNS2_NAME_IPV4, NULL },
+				      NULL, DNS_SOURCE_MANUAL);
+	zassert_equal(ret, 0, "reconfigure (changed) fail (%d)", ret);
+
+	k_yield();
+
+	if (k_sem_take(&dns_reconfigured, WAIT_TIME)) {
+		zassert_true(false,
+			     "Timeout waiting for RECONFIGURED on changed reconfigure");
+	}
+
+	ret = dns_resolve_close(dnsCtx);
+	zassert_equal(ret, 0, "dns_resolve_close fail (%d)", ret);
 #endif
 }
 

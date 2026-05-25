@@ -1,0 +1,97 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: ITE IT8951 E-Paper TCON
+
+description: |
+  IT8951 timing controller for SPI-connected electrophoretic displays.
+
+compatible: "ite,it8951"
+
+include: [display-controller.yaml, spi-device.yaml]
+
+properties:
+  busy-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Host-ready/busy GPIO.
+
+      The IT8951 HRDY/BUSY signal is active low. If connected directly the MCU pin should be
+      configured as active low.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Reset GPIO.
+
+  enable-gpios:
+    type: phandle-array
+    description: Optional display power-enable GPIO.
+
+  ite-enable-gpios:
+    type: phandle-array
+    description: Optional IT8951/controller power-enable GPIO.
+
+  vcom-mv:
+    type: int
+    required: true
+    description: |
+      Panel VCOM voltage in millivolts, encoded as the positive millivolt magnitude expected by the
+      IT8951 VCOM command.
+
+      This is intentionally required instead of defaulted: VCOM is panel-lot specific and an
+      incorrect value can cause poor image quality or panel damage.
+
+  initial-refresh-waveform:
+    type: int
+    required: true
+    description: |
+      Waveform index for the first full-panel refresh issued after boot.
+
+      Interpretation is panel- and firmware-specific (LUT indexing); boards must set the value
+      required for proper panel bring-up on their EPD.
+
+  refresh-waveform:
+    type: int
+    required: true
+    description: |
+      Waveform index used for subsequent panel refreshes.
+
+  h-mirror:
+    type: boolean
+    description: |
+      Enable horizontal mirroring correction.
+
+  reset-delay-ms:
+    type: int
+    default: 20
+    description: |
+      Reset pulse width in milliseconds.
+
+  reset-wait-ms:
+    type: int
+    default: 150
+    description: |
+      Delay after reset release in milliseconds.
+
+  ready-timeout-ms:
+    type: int
+    default: 5000
+    description: |
+      Timeout for command-ready waits in milliseconds.
+
+      Default value of 5 seconds leaves margin for the IT8951 to become ready after reset.
+
+  refresh-timeout-ms:
+    type: int
+    default: 40000
+    description: |
+      Timeout for display refresh completion in milliseconds.
+
+      Default value of 40 seconds matches (very) worst-case full-refresh timeouts.
+
+  panel-temp-c:
+    type: int
+    description: |
+      Optional fixed panel temperature in degrees Celsius.

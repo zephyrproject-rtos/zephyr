@@ -12,11 +12,41 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@1 {
+		cpu0: cpu@1 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m55";
 			reg = <1>;
 			clock-frequency = <400000000>;
+			cpu-power-states = <&sleep &deepsleep>;
+		};
+	};
+
+	power-states {
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <0>;
+		};
+
+		deepsleep: deepsleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <100>;
+			exit-latency-us = <20>;
+		};
+
+		deepsleep_off: deepsleep_off {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <1>;
+			status = "disabled";
+		};
+
+		hibernate: hibernate {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <0>;
+			status = "disabled";
 		};
 	};
 

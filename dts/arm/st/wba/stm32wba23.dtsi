@@ -55,6 +55,10 @@
 			interrupts = <44 0>;
 		};
 
+		aes: aes@420c0000 {
+			interrupts = <52 0>;
+		};
+
 		rng: rng@420c0800 {
 			interrupts = <53 0>;
 		};

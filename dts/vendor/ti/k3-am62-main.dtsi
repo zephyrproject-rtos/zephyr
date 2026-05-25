@@ -298,4 +298,17 @@
 		#size-cells = <0>;
 		status = "disabled";
 	};
+
+	main_rtc0: rtc@2b1f0000 {
+		compatible = "ti,k3-rtc-counter";
+		reg = <0x2b1f0000 0x64>;
+		clock-frequency = <32768>;
+		status = "disabled";
+
+		counter_rtc0: counter_rtc {
+			compatible = "zephyr,rtc-counter";
+			alarms-count = <2>;
+			status = "disabled";
+		};
+	};
 };

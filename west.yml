@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: 05cb90227d4dc2ace31991f85809ba33331be9bc
+      revision: 7f2e2f94ac76c7161c94d26b9806020c2de40389
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,12 +188,12 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: ab7351b491e360329ce564e087cac6aef0bf4b08
+      revision: 0c36e77f427236fbc7036eab0dd6e8af9539869d
       path: modules/hal/infineon
       groups:
         - hal
     - name: hal_intel
-      revision: 2ddab7fe5bfe85c7af8b87a490c4a0e560dc1078
+      revision: 7c8942c1ecb38b53dae0a02aeb4ab08371f4d4bf
       path: modules/hal/intel
       groups:
         - hal
@@ -203,17 +203,17 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: a820f00abfc2fe2f4d03ebdb3d185e21607e9006
+      revision: 3c08112f3d92c81b98134479c01d3cfd40f54016
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: bed550b27c00f0ee4a8086f3eeb9daf7a1aa6c32
+      revision: fc037be030993efd998c89309c0f840f31491ca6
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 8e39b38f4c13aa1f1d4a5f1033d8d9ec196bac99
+      revision: 91bd9377e18d002822f6d920804bad7d00e0c38c
       path: modules/hal/nxp
       groups:
         - hal
@@ -294,7 +294,7 @@ manifest:
         - hal
     - name: hostap
       path: modules/lib/hostap
-      revision: 970cc28c58ab86cfc34a5d6c7486222f998b24dc
+      revision: 45e1b7c2b186d39eae2acad37ade4a079726328b
     - name: liblc3
       revision: 48bbd3eacd36e99a57317a0a4867002e0b09e183
       path: modules/lib/liblc3
@@ -358,7 +358,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: b452ce26db23a79fe50d7307adabfff3a75a53ad
+      revision: cd44ed9674d115457fd620d5a43741576f328e4b
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 47bd5b4ebd357ba637be0f2b092e1c0d370eea2f
@@ -389,7 +389,7 @@ manifest:
       groups:
         - debug
     - name: tf-m-tests
-      revision: 42f0fb9250acdd62219a13b8d272072f94446b84
+      revision: 7bb7b7999ee74a0aebb9a91fd8056698c552008b
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing

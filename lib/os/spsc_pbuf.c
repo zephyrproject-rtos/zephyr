@@ -8,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <zephyr/cache.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/spsc_pbuf.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/byteorder.h>

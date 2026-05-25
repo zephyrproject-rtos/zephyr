@@ -122,6 +122,8 @@ struct dma_mcux_edma_data {
 #define EDMA_TCD_CITER(tcd, flag)     ((tcd)->CITER)
 #define EDMA_TCD_CSR(tcd, flag)       ((tcd)->CSR)
 #define EDMA_TCD_DLAST_SGA(tcd, flag) ((tcd)->DLAST_SGA)
+#define EDMA_TCD_SOFF(tcd, flag)      ((tcd)->SOFF)
+#define EDMA_TCD_DOFF(tcd, flag)      ((tcd)->DOFF)
 #if defined(CONFIG_DMA_MCUX_EDMA_V3)
 #define DMA_CSR_DREQ                  DMA_TCD_CSR_DREQ
 #define EDMA_HW_TCD_CH_ACTIVE_MASK    (DMA_CH_CSR_ACTIVE_MASK)
@@ -430,7 +432,7 @@ static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 	return ret;
 }
 
-static int dma_mcux_edma_configure_sg_dynamic(const struct device *dev,
+static inline int dma_mcux_edma_configure_sg_dynamic(const struct device *dev,
 					      uint32_t channel,
 					      struct dma_config *config,
 					      edma_transfer_type_t transfer_type)
@@ -438,33 +440,53 @@ static int dma_mcux_edma_configure_sg_dynamic(const struct device *dev,
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 	struct dma_block_config *block_config = config->head_block;
-	int ret = 0;
+	edma_transfer_type_t block_transfer_type;
 
 	/* Dynamic Scatter Gather mode */
 	EDMA_InstallTCDMemory(p_handle, DEV_CFG(dev)->tcdpool[channel],
 			      CONFIG_DMA_TCD_QUEUE_SIZE);
 
 	while (block_config != NULL) {
+
+		if (block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE &&
+			block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+			block_transfer_type = kEDMA_PeripheralToPeripheral;
+		} else {
+			block_transfer_type = transfer_type;
+		}
+
 		EDMA_PrepareTransfer(&(data->transferConfig),
 				     (void *)block_config->source_address,
 				     config->source_data_size,
 				     (void *)block_config->dest_address,
 				     config->dest_data_size,
 				     config->source_burst_length,
-				     block_config->block_size, transfer_type);
+				     block_config->block_size, block_transfer_type);
 
 		const status_t submit_status =
 			EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
 
 		if (submit_status != kStatus_Success) {
-			LOG_ERR("Error submitting EDMA Transfer: 0x%x",
-				submit_status);
-			ret = -EFAULT;
+			LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
+			return -EFAULT;
 		}
+
+		EDMA_TcdDisableInterrupts(&DEV_CFG(dev)->tcdpool[channel][p_handle->tcdUsed - 1],
+			kEDMA_MajorInterruptEnable);
+
 		block_config = block_config->next_block;
 	}
 
-	return ret;
+	if (p_handle->tcdUsed > 1) {
+		/* If more than 1 TCD is used, then disable the interrupt */
+		EDMA_DisableChannelInterrupts(p_handle->base, channel, kEDMA_MajorInterruptEnable);
+	}
+
+	/* Enable Major loop interrupt for last entry in SG chain */
+	EDMA_TcdEnableInterrupts(&DEV_CFG(dev)->tcdpool[channel][p_handle->tcdUsed - 1],
+			kEDMA_MajorInterruptEnable);
+
+	return 0;
 }
 
 static int dma_mcux_edma_configure_basic(const struct device *dev,
@@ -621,8 +643,15 @@ static inline void dma_mcux_edma_set_xfer_settings(const struct device *dev, uin
 	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
 	struct dma_block_config *block_config = config->head_block;
 
+	/* Only collapse the minor loop into the whole block for genuine
+	 * software-triggered mem2mem transfers. When a peripheral request is
+	 * routed via the channel mux (dma_slot != 0), each minor loop is
+	 * paced by that request and the caller-chosen burst length must be
+	 * preserved (e.g. FlexIO LCDIF expects one minor loop per shifter
+	 * round).
+	 */
 	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory &&
-	    !config->source_chaining_en) {
+	    !config->source_chaining_en && config->dma_slot == 0) {
 		xfer_settings->source_burst_length = block_config->block_size;
 	}
 #endif
@@ -644,7 +673,7 @@ static inline void dma_mcux_edma_reset_channel(const struct device *dev, uint32_
 		EDMA_AbortTransfer(p_handle);
 	}
 
-	EDMA_ResetChannel(DEV_BASE(dev), hw_channel);
+	/* CreateHandle resets the TCD state  */
 	EDMA_CreateHandle(p_handle, DEV_BASE(dev), hw_channel);
 	EDMA_SetCallback(p_handle, nxp_edma_callback, (void *)data);
 }

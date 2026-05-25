@@ -423,6 +423,11 @@ DEF_EXCINT 7, _handle_excint, xtensa_int7_c
 DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
 #endif
 
+#ifdef CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE
+#include "emulate_load_store.S"
+.pushsection .iram.text, "ax"
+_Level1RealVectorExtended:
+#else
 /* The user exception vector is defined here, as we need to handle
  * MOVSP exceptions in assembly (the result has to be to unspill the
  * caller function of the code that took the exception, and that can't
@@ -438,6 +443,7 @@ DEF_EXCINT XCHAL_DEBUGLEVEL, _handle_excint, xtensa_debugint_c
 .pushsection .UserExceptionVector.text, "ax"
 .global _Level1RealVector
 _Level1RealVector:
+#endif /* CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE */
 	wsr a0, ZSR_A0SAVE
 	rsync
 	rsr.exccause a0
@@ -447,6 +453,26 @@ _Level1RealVector:
 #ifdef CONFIG_USERSPACE
 	beqi a0, EXCCAUSE_SYSCALL, _syscall
 #endif /* CONFIG_USERSPACE */
+
+#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE)
+	beqi a0, EXCCAUSE_LOAD_STORE_ERROR, _EmulateLoadStore
+
+	/* Branch immediate instructions have limited encoding, and cannot take 9
+	 * as an immediate operand. We also only have a single working register
+	 * here, which already is storing exccause, so we cannot use branch /
+	 * compare instructions without immediate operands. This procedure uses a
+	 * combination of inequality comparisons to accomplish the same thing, in a
+	 * roundabout way.
+	 */
+	blti a0, 10, _less_than_10
+	j _continue
+_less_than_10:
+	beqi a0, 8, _continue
+	bgei a0, 8, _EmulateLoadStore /* EXCCAUSE_UNALIGNED (9) */
+
+_continue:
+#endif /* CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE */
+
 #ifdef CONFIG_XTENSA_MMU
 	addi a0, a0, -EXCCAUSE_DTLB_MISS
 	beqz a0, _handle_tlb_miss_user
@@ -484,6 +510,14 @@ _syscall:
 	j xtensa_do_syscall
 #endif /* CONFIG_USERSPACE */
 .popsection
+
+#if defined(CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE)
+.pushsection .UserExceptionVector.text, "ax"
+.global _Level1RealVector
+_Level1RealVector:
+	j _Level1RealVectorExtended
+.popsection
+#endif /* CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE */
 
 /* In theory you can have levels up to 15, but known hardware only uses 7. */
 #if XCHAL_NMILEVEL > 7

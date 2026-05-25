@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
  * Memory configuration: Flash size, RAM Size, Data Flash size
  * and additional nodes for 2532 memory variants
  */
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	soc {
@@ -17,6 +18,45 @@
 
 		sram0: memory@20000000 {
 			reg = <0x20000000 DT_SIZE_K(32)>;
+		};
+
+		tcc0: tcc@42002400 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x42002400 0x80>;
+			interrupts = <17 0>;
+			interrupt-names = "mc3-mc0";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TCC0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC0>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <24>;
+			channels = <4>;
+			status = "disabled";
+		};
+
+		tcc1: tcc@42002800 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x42002800 0x80>;
+			interrupts = <18 0>;
+			interrupt-names = "mc3-mc0";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TCC1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC1>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <24>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tcc2: tcc@42000c00 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x42002c00 0x80>;
+			interrupts = <19 0>;
+			interrupt-names = "mc3-mc0";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TCC2>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC2>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+			status = "disabled";
 		};
 	};
 };

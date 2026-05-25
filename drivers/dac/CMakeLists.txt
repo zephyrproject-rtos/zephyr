@@ -8,6 +8,7 @@ zephyr_library_sources_ifdef(CONFIG_DAC_SHELL dac_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE dac_handlers.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_DAC_AD5529R dac_ad5529r.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_AD559X dac_ad559x.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_AD569X dac_ad569x.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_AD56X1 dac_ad56x1.c)

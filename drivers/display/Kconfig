@@ -16,6 +16,18 @@ config DISPLAY_INIT_PRIORITY
 	help
 	  Display devices initialization priority.
 
+config DISPLAY_COLOR_PALETTE
+	bool "Support for color palette"
+	help
+	  Enable support for color palette in display drivers.
+
+config DISPLAY_COLOR_PALETTE_MAX_SIZE
+	int "Maximum size of color palette"
+	default 8
+	depends on DISPLAY_COLOR_PALETTE
+	help
+	  Maximum size of color palette in display drivers.
+
 module = DISPLAY
 module-str = display
 source "subsys/logging/Kconfig.template.log_config"
@@ -33,6 +45,7 @@ source "drivers/display/Kconfig.ili9806e_dsi"
 source "drivers/display/Kconfig.ili9xxx"
 source "drivers/display/Kconfig.intel_multibootfb"
 source "drivers/display/Kconfig.ist3931"
+source "drivers/display/Kconfig.it8951"
 source "drivers/display/Kconfig.led_strip_matrix"
 source "drivers/display/Kconfig.lpm013m126"
 source "drivers/display/Kconfig.ls0xx"
@@ -54,6 +67,7 @@ source "drivers/display/Kconfig.rm68200"
 source "drivers/display/Kconfig.rm692c9"
 source "drivers/display/Kconfig.sdl"
 source "drivers/display/Kconfig.sh1122"
+source "drivers/display/Kconfig.socionext_dpu"
 source "drivers/display/Kconfig.ssd1306"
 source "drivers/display/Kconfig.ssd1320"
 source "drivers/display/Kconfig.ssd1322"

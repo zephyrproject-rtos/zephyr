@@ -41,6 +41,43 @@ Boards
   populated the Kconfig values). If either option is manually adjusted, it will cause
   :kconfig:option:`CONFIG_SRAM_DEPRECATED_KCONFIG_SET` to be set which indicates this deprecation.
 
+* The internal Nordic SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM``
+  and ``NRF_PLATFORM_LUMOS`` are no longer used by in-tree code, which now
+  relies on explicit :kconfig:option:`CONFIG_SOC_SERIES_NRF54H`,
+  :kconfig:option:`CONFIG_SOC_SERIES_NRF92`,
+  :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` and
+  :kconfig:option:`CONFIG_SOC_SERIES_NRF71` checks. Both symbols are kept
+  as deprecated stubs that default to ``y`` when the corresponding SoC
+  series is selected, so existing ``CONFIG_NRF_PLATFORM_*=y`` lines and
+  ``depends on NRF_PLATFORM_*`` clauses keep building with a Kconfig
+  deprecation warning. Out-of-tree Kconfig, CMake and code using these
+  symbols should be updated:
+
+  * The ``CONFIG_NRF_PLATFORM_HALTIUM`` with
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF54H` or
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF92`.
+  * The ``CONFIG_NRF_PLATFORM_LUMOS`` with
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` or
+    :kconfig:option:`CONFIG_SOC_SERIES_NRF71`.
+
+* The Nordic sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR``
+  has been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
+  Update sysbuild configurations to use the new name.
+
+* The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
+  have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
+  Forwarder headers under the old names remain available and emit a ``#warning``
+  pointing to the new include paths. Out-of-tree code that includes the old paths
+  should be updated:
+
+  * ``#include <haltium_power.h>`` with ``#include <soc_power.h>``.
+  * ``#include <haltium_pm_s2ram.h>`` with ``#include <soc_pm_s2ram.h>``.
+
+* The system clock on STM32H7RS-based boards (stm32h7s78_dk and nucleo_h7s3l8)
+  has been increased to 600 MHz. This is achieved by increasing the PLL1 frequency
+  to 300 MHz, which also affects the bus and kernel clocks, resulting in slightly
+  higher frequencies.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -58,6 +95,14 @@ Haptics
 .. ===
 ..
 .. ...
+
+* The :c:macro:`DEVICE_API` macro is now mandatory for declaring device driver API instances of any
+  upstream driver class, including in out-of-tree drivers. :c:macro:`DEVICE_API_GET` now asserts
+  that the API belongs to the requested class, which requires the instance to live in the class's
+  iterable section. Out-of-tree driver classes that embed an upstream API as their first member
+  must also declare the relationship with :c:macro:`DEVICE_API_EXTENDS`, so that
+  :c:macro:`DEVICE_API_GET` for the parent class succeeds on devices implementing the child API.
+  See :ref:`device_driver_api` for details.
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
@@ -77,6 +122,15 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+Devicetree
+==========
+
+* ``int`` and ``array`` typed devicetree properties whose DTS source uses a negative literal
+  (e.g. ``<(-1)>``) now expand to a negative value instead of the two's-complement unsigned
+  value used previously. Code that relied on the old unsigned representation, for example
+  unsigned comparisons or ``BUILD_ASSERT(DT_PROP(node, foo) > 0, ...)`` checks, must be updated
+  to use signed types or signed-aware checks (:github:`107271`).
+
 Digital Microphone
 ==================
 
@@ -86,6 +140,14 @@ Digital Microphone
   instances to ``DEVICE_API(dmic, ...)``. See :github:`107695` for examples of how in-tree drivers
   have been updated. Application code using :c:func:`dmic_configure`, :c:func:`dmic_trigger`, and
   :c:func:`dmic_read` is not impacted.
+
+Display
+=======
+
+* The Kconfig options ``CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_*`` for SDL display pixel-format
+  selection have been removed in favour of setting the pixel-format property directly in devicetree
+  on the SDL pseudo-device node using the PANEL_PIXEL_FORMAT_* macros from
+  :zephyr_file:`include/zephyr/dt-bindings/display/panel.h`. (:github:`104099`)
 
 Ethernet
 ========
@@ -107,6 +169,12 @@ Ethernet
   ``mac_addr`` and ``use_random_mac_addr`` members of :c:struct:`dsa_port_config` were removed.
   Out-of-tree DSA drivers must update their port configuration code to use the new API and
   structures. (:github:`108952`)
+
+* The Kconfig option ``CONFIG_ETH_NATIVE_TAP_PTP_CLOCK`` has been replaced by
+  :kconfig:option:`CONFIG_PTP_CLOCK_NATIVE`. A new compatible
+  :dtcompatible:`zephyr,native-ptp-clock` has been added for the native_sim PTP clock driver.
+  :kconfig:option:`CONFIG_PTP_CLOCK_NATIVE` is enabled by default when the
+  :dtcompatible:`zephyr,native-ptp-clock` compatible is present.
 
 Flash
 =====
@@ -147,6 +215,14 @@ Input
   Users of the default configuration are advised to reconsider whether it really is appropriate;
   migration to ``zephyr,suspend-action = "full-disconnect";`` is recommended. (:github:`108294`)
 
+* Kconfig options for the ft6146, ft5336, and cst8xx input drivers have been renamed to be
+  consistent with the other input drivers. Applications using the following Kconfig options
+  must update their configurations accordingly:
+
+  * ``CONFIG_INPUT_FT5336_PERIOD`` → :kconfig:option:`CONFIG_INPUT_FT5336_PERIOD_MS`
+  * ``CONFIG_INPUT_CST8XX_PERIOD`` → :kconfig:option:`CONFIG_INPUT_CST8XX_PERIOD_MS`
+  * ``CONFIG_INPUT_FT6146_PERIOD`` → :kconfig:option:`CONFIG_INPUT_FT6146_PERIOD_MS`
+
 NXP
 ===
 
@@ -167,6 +243,9 @@ PWM
 * The ``pcrs`` property (array type) of :dtcompatible:`microchip,xec-pwm` has been replaced
   by ``pcr-scr`` (int type) to use encoded PCR register index and bit position macros
   (:github:`104570`).
+
+* STM32 PWM DT bindings macro ``PWM_STM32_COMPLEMENTARY`` that is deprecated since
+  Zephyr v3.3.0 is no more defined. One shall use ``STM32_PWM_COMPLEMENTARY`` instead.
 
 SD Host Controller
 ==================
@@ -193,6 +272,11 @@ SD Host Controller
   consolidated into the existing ``pwr-gpios`` property. Replace
   ``sdhi-on-gpios`` with ``pwr-gpios`` in out-of-tree devicetree nodes.
 
+* :dtcompatible:`litex,mmc` now uses the ``dma-coherent`` devicetree property to indicate that the
+  controller's DMA accesses are coherent with the CPU.
+  :kconfig:option:`CONFIG_SDHC_LITEX_LITESDCARD_NO_COHERENT_DMA` is automatically set based on that
+  property and is no longer user-configurable. (:github:`108411`)
+
 Sensor
 ======
 
@@ -200,6 +284,12 @@ Sensor
   replaced by ``pcr-scr`` (int type) to use encoded PCR register index and bit position macros.
   GIRQ configuration is now handled via the ``microchip,dmec-ecia-girq`` binding include
   (:github:`104808`).
+
+Serial
+======
+
+* The return type of :c:func:`uart_irq_update` is now ``void`` instead of ``int``.
+  (:github:`105231`)
 
 STM32
 =====
@@ -220,6 +310,14 @@ Syscon
   larger register offsets. Code that explicitly declares ``uint16_t`` variables for the
   register parameter or implements the syscon driver API functions may need to be updated.
 
+USB
+===
+
+* On STM32N6, the ``clocks`` cell which configures the USBPHYC clock mux has been moved
+  from :samp:`usbotg_hs{N}` to :samp:`usbphyc{N}` nodes at SoC DTSI level. Boards which
+  use an STM32N6 SoC with custom clock mux configuration must now set the ``clocks``
+  property on :samp:`usbphyc{N}` instead of :samp:`usbotg_hs{N}`. (:github:`107813`)
+
 WiFi
 ====
 
@@ -227,6 +325,11 @@ WiFi
   :c:struct:`ethernet_api` and :c:struct:`wifi_mgmt_ops`, a additional argument was added for
   a pointer to :c:struct:`net_if`. This api is not directly exposed to the application, so only
   out-of-tree drivers need to be updated. (:github:`106086`)
+
+* The Espressif Wi-Fi driver Kconfig option ``CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4`` has been
+  removed in favor of the generic :kconfig:option:`CONFIG_WIFI_STA_AUTO_DHCPV4`. Applications
+  that previously disabled the Espressif-specific option must now disable the generic option
+  to retain manual DHCPv4 or static IP behavior after STA connection.
 
 .. zephyr-keep-sorted-stop
 
@@ -294,6 +397,12 @@ Bluetooth Audio
     ``BT_TBS_TECHNOLOGY`` to ``BT_BEARER_TECH``. Additionally the values are now defined in
     :zephyr_file:`include/zephyr/bluetooth/assigned_numbers.h` instead of
     :zephyr_file:`include/zephyr/bluetooth/audio/tbs.h`. (:github:`102430`)
+  * ``bt_tbs_register_param.supported_features`` has been renamed to
+    :c:member:`bt_tbs_register_param.optional_opcodes`. Applications can do a simple
+    search-and-replace for ``supported_features`` to ``optional_opcodes``.
+    Additionally the ``BT_TBS_FEATURE_*`` macros have been changed to ``BT_TBS_OPTIONAL_OPCODE_*``.
+    Applications can do a simple search-and-replace for ``BT_TBS_FEATURE_`` to
+    ``BT_TBS_OPTIONAL_OPCODE_``. (:github:`103350`)
 
 * CSIP
 
@@ -334,11 +443,46 @@ Networking
   them. This is done so that we can have IPv4 routing symbols that provide same
   functionality as IPv6 ones but can be controlled separately.
 
+* IPv4 and IPv6 unicast route-table support is now exposed through the
+  :kconfig:option:`CONFIG_NET_IPV4_ROUTE` and
+  :kconfig:option:`CONFIG_NET_IPV6_ROUTE` options.
+
+  These options control the per-family unicast route tables that are used by
+  static route management, networking shell route commands, and host-side route
+  selection for locally originated traffic such as VPN-bound packets. They do
+  not, by themselves, enable packet forwarding between interfaces.
+
+* The Kconfig options :kconfig:option:`CONFIG_NET_IPV4_ROUTING` and
+  :kconfig:option:`CONFIG_NET_IPV6_ROUTING` have been renamed to
+  :kconfig:option:`CONFIG_NET_IPV4_FORWARDING` and
+  :kconfig:option:`CONFIG_NET_IPV6_FORWARDING`.
+
+  The renamed options explicitly describe IP forwarding between interfaces.
+  Applications that only need route-table lookups or static routes should
+  enable :kconfig:option:`CONFIG_NET_IPV4_ROUTE` or
+  :kconfig:option:`CONFIG_NET_IPV6_ROUTE` and leave forwarding disabled.
+  Applications acting as routers should enable both the route-table option and
+  the corresponding forwarding option.
+
+* Out-of-tree IPv6 configurations should also migrate away from the deprecated
+  legacy aliases :kconfig:option:`CONFIG_NET_ROUTE`,
+  :kconfig:option:`CONFIG_NET_ROUTING`,
+  :kconfig:option:`CONFIG_NET_MAX_ROUTES`, and
+  :kconfig:option:`CONFIG_NET_MAX_NEXTHOPS` and use the
+  :kconfig:option:`CONFIG_NET_IPV6_*` symbols directly.
+
+
 Ethernet
 ========
 
 * :kconfig:option:`CONFIG_NET_DEFAULT_IF_ETHERNET` now allows to get the first ethernet interface,
   instead of the first between ethernet and wifi.
+
+* The :kconfig:option:`CONFIG_ETH_QEMU_EXTRA_ARGS` and
+  :kconfig:option:`CONFIG_NET_QEMU_USER_EXTRA_ARGS` options can no longer be used to specify the MAC
+  address for the QEMU Ethernet device. Instead, :kconfig:option:`CONFIG_NET_QEMU_DEVICE_EXTRA_ARGS`
+  can be used. This is because we are no longer using the ``-nic`` option for QEMU, but the
+  ``-netdev`` and ``-device`` options. (:github:`107326`)
 
 PTP
 ===
@@ -349,6 +493,20 @@ PTP
     :kconfig:option:`CONFIG_PTP_UDP_IPV4_PROTOCOL`
   * :kconfig:option:`CONFIG_PTP_UDP_IPv6_PROTOCOL` to
     :kconfig:option:`CONFIG_PTP_UDP_IPV6_PROTOCOL`
+
+gPTP
+====
+
+* Converted ``int port`` to ``uint16_t gptp_port`` in
+  :c:struct:`ethernet_context` to make it clear that the field used only
+  by the gPTP stack to store the gPTP port number.
+
+* Used ``uint16_t`` for ``nb_ports`` in :c:struct:`gptp_default_ds` per
+  IEEE 1588 standard.
+
+* Removed ``net_eth_get_ptp_port`` and ``net_eth_set_ptp_port``.
+  New :c:func:`gptp_get_port_number` and :c:func:`gptp_set_port_number`
+  can be used instead.
 
 Other subsystems
 ****************

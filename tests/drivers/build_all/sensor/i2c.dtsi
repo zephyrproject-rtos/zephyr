@@ -1629,3 +1629,9 @@ test_i2c_ms5637: ms5637@d3 {
 	compatible = "meas,ms5637";
 	reg = <0xd3>;
 };
+
+test_i2c_max30102: max30102@d4 {
+	compatible = "maxim,max30102";
+	reg = <0xd4>;
+	acq-mode = "multi-led";
+};

@@ -2,7 +2,7 @@
 # or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
-#
+
 # Infineon CAT1 LPTIMER configuration options
 
 config INFINEON_LP_TIMER_HAL

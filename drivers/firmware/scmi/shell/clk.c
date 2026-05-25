@@ -174,7 +174,9 @@ static int cmd_clk_info(const struct shell *sh, size_t argc, char **argv)
 
 static int cmd_clk_set_enabled(const struct shell *sh, size_t argc, char **argv)
 {
+	struct scmi_clock_attributes attributes;
 	struct scmi_clock_config cfg = { 0 };
+	uint32_t permissions;
 	uint32_t clk_id;
 	bool enable;
 	int ret;
@@ -192,6 +194,26 @@ static int cmd_clk_set_enabled(const struct shell *sh, size_t argc, char **argv)
 	if (ret) {
 		shell_error(sh, "Failed to fetch clock ID: %d", ret);
 		return  ret;
+	}
+
+	ret = scmi_clock_attributes(_proto, clk_id, &attributes);
+	if (ret) {
+		shell_error(sh, "Failed to query clock %d attributes: %d", clk_id, ret);
+		return ret;
+	}
+
+	if (SCMI_CLK_HAS_RESTRICTIONS(attributes.attributes)) {
+		ret = scmi_clock_get_permissions(_proto, clk_id, &permissions);
+		if (ret) {
+			shell_error(sh, "Failed to query clock %d permissions: %d",
+				    clk_id, ret);
+			return ret;
+		}
+
+		if (!SCMI_CLK_STATE_CONTROL_ALLOWED(permissions)) {
+			shell_print(sh, "Clock %d doesn't allow gate/ungate", clk_id);
+			return 0;
+		}
 	}
 
 	cfg.attributes = SCMI_CLK_CONFIG_ENABLE_DISABLE(enable);

@@ -197,6 +197,57 @@
 #define DT_NODELABEL(label) DT_CAT(DT_N_NODELABEL_, label)
 
 /**
+ * @brief Get the C symbolic name of a node identifier by index
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n1: node-1 {
+ *             foo = <&n2 &n3>;
+ *     };
+ *
+ *     n2: n2_1: node-2 { ... };
+ *     n3: &n2:  node-3 { ... };
+ * @endcode
+ *
+ * Above, `foo` has type phandles and has two elements:
+ *
+ * - index 0 has phandle `&n2`, which is `node-2`'s phandle
+ * - index 1 has phandle `&n3`, which is `node-3`'s phandle
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define N1 DT_NODELABEL(n1)
+ *
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 0), 0) // n2
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 0), 1) // n2_1
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 1), 0) // n2
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 1), 1) // n2_1
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 1), 2) // n3
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param idx index into @p node_id
+ * @return C symbolic name of the node for the given index
+ * @note The @p idx retrieves node labels in left-to-right order, as shown
+ *       in the example.
+ */
+#define DT_NODELABEL_C_TOKEN_BY_IDX(node_id, idx) \
+	DT_CAT5(DT_N_NODELABEL_, node_id, _IDX_, idx, _C_TOKEN)
+
+/**
+ * @brief Get the C symbolic name for a node identifier
+ *
+ * This is equivalent to DT_NODELABEL_C_TOKEN_BY_IDX(node_id, 0).
+ *
+ * @param node_id node identifier
+ * @return C symbolic name of the node
+ */
+#define DT_NODELABEL_C_TOKEN(node_id) \
+	DT_NODELABEL_C_TOKEN_BY_IDX(node_id, 0)
+
+/**
  * @brief Get a node identifier from /aliases
  *
  * This macro's argument is a property of the `/aliases` node. It
@@ -694,16 +745,40 @@
  */
 #define DT_CHILD_NUM(node_id) DT_CAT(node_id, _CHILD_NUM)
 
-
 /**
- * @brief Get the number of child nodes of a given node
- *        which child nodes' status are okay
+ * @brief Get the number of child nodes of a given node,
+ *        whose status is okay
  *
  * @param node_id a node identifier
  * @return Number of child nodes which status are okay
  */
 #define DT_CHILD_NUM_STATUS_OKAY(node_id) \
 	DT_CAT(node_id, _CHILD_NUM_STATUS_OKAY)
+
+/**
+ * @brief Get the number of descendant nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key
+ *
+ * @param node_id a node identifier
+ * @param bus bus type string
+ * @return Number of descendant nodes
+ */
+#define DT_DESCENDANT_NUM_ON_BUS(node_id, bus) \
+	DT_CAT3(node_id, _DESCENDANT_NUM_ON_BUS_, bus)
+
+/**
+ * @brief Get the number of descendant nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key,
+ *        and whose status is okay
+ *
+ * @param node_id a node identifier
+ * @param bus bus type string
+ * @return Number of descendant nodes
+ */
+#define DT_DESCENDANT_NUM_ON_BUS_STATUS_OKAY(node_id, bus) \
+	DT_CAT4(node_id, _DESCENDANT_NUM_ON_BUS_, bus, _STATUS_OKAY)
 
 /**
  * @brief Do @p node_id1 and @p node_id2 refer to the same node?
@@ -4278,7 +4353,8 @@
 #define DT_INST_CHILD_NUM(inst) DT_CHILD_NUM(DT_DRV_INST(inst))
 
 /**
- * @brief Get the number of child nodes of a given node
+ * @brief Get the number of child nodes of a given node,
+ *        whose status is okay
  *
  * This is equivalent to @see
  * <tt>DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))</tt>.
@@ -4288,6 +4364,37 @@
  */
 #define DT_INST_CHILD_NUM_STATUS_OKAY(inst) \
 	DT_CHILD_NUM_STATUS_OKAY(DT_DRV_INST(inst))
+
+/**
+ * @brief Get the number of descendant nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key
+ *
+ * This is equivalent to @see
+ * <tt>DT_DESCENDANT_NUM_ON_BUS(DT_DRV_INST(inst), bus)</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @param bus bus type string
+ * @return Number of descendant nodes
+ */
+#define DT_INST_DESCENDANT_NUM_ON_BUS(inst, bus) \
+	DT_DESCENDANT_NUM_ON_BUS(DT_DRV_INST(inst), bus)
+
+/**
+ * @brief Get the number of descendant nodes of a given node
+ *        that are on the given bus,
+ *        whose binding defines the given bus as their on-bus key,
+ *        and whose status is okay
+ *
+ * This is equivalent to @see
+ * <tt>DT_DESCENDANT_NUM_ON_BUS_STATUS_OKAY(DT_DRV_INST(inst), bus)</tt>.
+ *
+ * @param inst Devicetree instance number
+ * @param bus bus type string
+ * @return Number of descendant nodes
+ */
+#define DT_INST_DESCENDANT_NUM_ON_BUS_STATUS_OKAY(inst, bus) \
+	DT_DESCENDANT_NUM_ON_BUS_STATUS_OKAY(DT_DRV_INST(inst), bus)
 
 /**
  * @brief Get a string array of DT_DRV_INST(inst)'s node labels

@@ -410,19 +410,31 @@ static void transport_init_recv_msghdr(struct ptp_msg *msg, struct net_msghdr *m
 	};
 }
 
-static bool transport_extract_rx_timestamp(struct ptp_msg *msg, struct net_msghdr *msghdr)
+static int transport_extract_rx_timestamp(struct ptp_msg *msg, struct net_msghdr *msghdr,
+					  bool *rx_ts_found)
 {
+	*rx_ts_found = false;
+
 	for (struct net_cmsghdr *cmsg = NET_CMSG_FIRSTHDR(msghdr); cmsg != NULL;
 	     cmsg = NET_CMSG_NXTHDR(msghdr, cmsg)) {
+		if (cmsg->cmsg_len < NET_CMSG_LEN(0)) {
+			return -EINVAL;
+		}
+
 		if (cmsg->cmsg_level == ZSOCK_SOL_SOCKET &&
 		    cmsg->cmsg_type == ZSOCK_SO_TIMESTAMPING) {
+			if (cmsg->cmsg_len < NET_CMSG_LEN(sizeof(struct net_ptp_time))) {
+				return -EINVAL;
+			}
+
 			memcpy(&msg->timestamp.host, NET_CMSG_DATA(cmsg),
 			       sizeof(struct net_ptp_time));
-			return true;
+			*rx_ts_found = true;
+			return 0;
 		}
 	}
 
-	return false;
+	return 0;
 }
 
 static void transport_set_host_timestamp_now(struct ptp_msg *msg)
@@ -452,6 +464,7 @@ static void transport_finalize_l2_rx_timestamp(struct ptp_port *port, struct ptp
 static int transport_recv_l2_msg(struct ptp_port *port, struct ptp_msg *msg)
 {
 	bool recvmsg_ok = false;
+	bool rx_ts_found = false;
 	uint8_t ctrl[NET_CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
 	struct net_msghdr msghdr;
 	struct net_iovec iov;
@@ -501,17 +514,26 @@ static int transport_recv_l2_msg(struct ptp_port *port, struct ptp_msg *msg)
 		}
 	}
 
-	transport_finalize_l2_rx_timestamp(
-		port, msg, recvmsg_ok && transport_extract_rx_timestamp(msg, &msghdr));
+	if (recvmsg_ok) {
+		int ret = transport_extract_rx_timestamp(msg, &msghdr, &rx_ts_found);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	transport_finalize_l2_rx_timestamp(port, msg, rx_ts_found);
 
 	return cnt;
 }
 
 static int transport_recv_udp_msg(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
+	bool rx_ts_found;
 	uint8_t ctrl[NET_CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
 	struct net_msghdr msghdr;
 	struct net_iovec iov;
+	int ret;
 	int cnt;
 
 	transport_init_recv_msghdr(msg, &msghdr, &iov, ctrl, sizeof(ctrl));
@@ -522,7 +544,12 @@ static int transport_recv_udp_msg(struct ptp_port *port, struct ptp_msg *msg, en
 		return cnt;
 	}
 
-	msg->rx_timestamp_valid = transport_extract_rx_timestamp(msg, &msghdr);
+	ret = transport_extract_rx_timestamp(msg, &msghdr, &rx_ts_found);
+	if (ret < 0) {
+		return ret;
+	}
+
+	msg->rx_timestamp_valid = rx_ts_found;
 
 	return cnt;
 }

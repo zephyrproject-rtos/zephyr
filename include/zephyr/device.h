@@ -1422,7 +1422,12 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
  *
  * @return the pointer to the device API.
  */
-#define DEVICE_API_GET(_class, _dev) Z_DEVICE_API_GET(_class, _dev)
+#define DEVICE_API_GET(_class, _dev)                                                               \
+	({                                                                                         \
+		__ASSERT(_dev != NULL, "device is NULL");                                          \
+		__ASSERT(DEVICE_API_IS(_class, _dev), "device API is not %s", STRINGIFY(_class));  \
+		Z_DEVICE_API_GET(_class, _dev);                                                    \
+	})
 
 #ifdef __cplusplus
 }

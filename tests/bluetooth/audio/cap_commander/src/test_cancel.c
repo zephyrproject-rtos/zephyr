@@ -48,7 +48,7 @@ static void test_start_param_init(void *f)
 
 	fixture->start_param.count = ARRAY_SIZE(fixture->start_member_params);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->subgroups); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->subgroups); i++) {
 		fixture->subgroups[i].bis_sync = BIT(i);
 		fixture->subgroups[i].metadata_len = 0;
 	}
@@ -64,7 +64,7 @@ static void test_start_param_init(void *f)
 		fixture->start_member_params[i].num_subgroups = CONFIG_BT_BAP_BASS_MAX_SUBGROUPS;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		err = bt_cap_commander_discover(&fixture->conns[i]);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -73,7 +73,7 @@ static void test_start_param_init(void *f)
 static void
 cap_commander_test_cancel_fixture_init(struct cap_commander_test_cancel_fixture *fixture)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		test_conn_init(&fixture->conns[i]);
 	}
 
@@ -101,10 +101,12 @@ static void cap_commander_test_cancel_before(void *f)
 static void cap_commander_test_cancel_after(void *f)
 {
 	struct cap_commander_test_cancel_fixture *fixture = f;
+	int err;
 
-	bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
+	err = bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
+	zassert_true(err == 0 || err == -EINVAL, "Unexpected error: %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 }

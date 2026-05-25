@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/numaker_m335x_clock.h>
 #include <zephyr/dt-bindings/reset/numaker_m335x_reset.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
@@ -289,6 +290,42 @@
 			status = "disabled";
 		};
 
+		i2c0: i2c@40080000 {
+			compatible = "nuvoton,numaker-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40080000 0x1000>;
+			interrupts = <38 0>;
+			resets = <&rst NUMAKER_I2C0_RST>;
+			clocks = <&pcc NUMAKER_I2C0_MODULE 0 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c1: i2c@40081000 {
+			compatible = "nuvoton,numaker-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40081000 0x1000>;
+			interrupts = <39 0>;
+			resets = <&rst NUMAKER_I2C1_RST>;
+			clocks = <&pcc NUMAKER_I2C1_MODULE 0 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c2: i2c@40082000 {
+			compatible = "nuvoton,numaker-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			reg = <0x40082000 0x1000>;
+			interrupts = <82 0>;
+			resets = <&rst NUMAKER_I2C2_RST>;
+			clocks = <&pcc NUMAKER_I2C2_MODULE 0 0>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
 		rtc: rtc@40041000 {
 			compatible = "nuvoton,numaker-rtc";
 			reg = <0x40041000 0x138>;
@@ -341,6 +378,50 @@
 			prescaler = <19>;
 			clocks = <&pcc NUMAKER_PWM1_MODULE NUMAKER_CLK_CLKSEL2_PWM1SEL_PCLK1 0>;
 			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		spi0: spi@40061000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40061000 0x1000>;
+			interrupts = <23 0>;
+			resets = <&rst NUMAKER_SPI0_RST>;
+			clocks = <&pcc NUMAKER_SPI0_MODULE NUMAKER_CLK_CLKSEL2_SPI0SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40062000 {
+			compatible = "nuvoton,numaker-spi";
+			reg = <0x40062000 0x1000>;
+			interrupts = <51 0>;
+			resets = <&rst NUMAKER_SPI1_RST>;
+			clocks = <&pcc NUMAKER_SPI1_MODULE NUMAKER_CLK_CLKSEL2_SPI1SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uspi0: spi@400d0000 {
+			compatible = "nuvoton,numaker-usci-spi";
+			reg = <0x400d0000 0x1000>;
+			interrupts = <76 0>;
+			resets = <&rst NUMAKER_USCI0_RST>;
+			clocks = <&pcc NUMAKER_USCI0_MODULE 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uspi1: spi@400d1000 {
+			compatible = "nuvoton,numaker-usci-spi";
+			reg = <0x400d1000 0x1000>;
+			interrupts = <77 0>;
+			resets = <&rst NUMAKER_USCI1_RST>;
+			clocks = <&pcc NUMAKER_USCI1_MODULE 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

@@ -1,0 +1,12 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Solomon SSD1305 display controller on I2C bus
+
+description: |
+    The Solomon SSD1305 is a monochrome OLED controller
+    with a maximum 132x64 resolution.
+
+compatible: "solomon,ssd1305"
+
+include: ["solomon,ssd1306-common.yaml", "i2c-device.yaml"]

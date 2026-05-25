@@ -21,6 +21,7 @@
 #include <run_q.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/logging/log.h>
 
 /**

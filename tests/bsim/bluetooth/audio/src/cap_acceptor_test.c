@@ -78,7 +78,7 @@ static uint32_t base_bis_index_bitfield;                        /* BIS indexes i
 static uint32_t bis_sync_bitfield;                              /* BIS indexes synced to */
 static uint32_t g_total_bis_sync_req = BT_BAP_BIS_SYNC_NO_PREF; /* BIS indexes requested */
 
-#define UNICAST_CHANNEL_COUNT_1 BIT(0)
+#define UNICAST_CHANNEL_COUNT_1 BIT(0U)
 
 static struct audio_test_stream
 	unicast_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
@@ -725,7 +725,7 @@ static struct bt_csip_set_member_svc_inst *csip_set_member;
 
 static struct bt_bap_stream *unicast_stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream =
 			bap_stream_from_audio_test_stream(&unicast_streams[i]);
 

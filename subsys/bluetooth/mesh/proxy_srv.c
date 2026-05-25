@@ -71,6 +71,7 @@ static struct bt_mesh_proxy_client {
 };
 
 static bool service_registered;
+static bool adv_restart_pending;
 
 static struct bt_mesh_proxy_client *find_client(struct bt_conn *conn)
 {
@@ -957,11 +958,9 @@ static struct bt_gatt_attr proxy_attrs[] = {
 
 static struct bt_gatt_service proxy_svc = BT_GATT_SERVICE(proxy_attrs);
 
-int bt_mesh_proxy_gatt_enable(void)
+static int proxy_gatt_service_register(void)
 {
 	int err;
-
-	LOG_DBG("");
 
 	if (!bt_mesh_is_provisioned()) {
 		return -ENOTSUP;
@@ -983,6 +982,20 @@ int bt_mesh_proxy_gatt_enable(void)
 		if (clients[i].cli) {
 			clients[i].filter_type = ACCEPT;
 		}
+	}
+
+	return 0;
+}
+
+int bt_mesh_proxy_gatt_enable(void)
+{
+	int err;
+
+	LOG_DBG("");
+
+	err = proxy_gatt_service_register();
+	if (err) {
+		return err;
 	}
 
 	bt_mesh_adv_gatt_update();
@@ -1168,7 +1181,8 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 
 	if (!service_registered && bt_mesh_is_provisioned()) {
-		(void)bt_mesh_proxy_gatt_enable();
+		(void)proxy_gatt_service_register();
+		adv_restart_pending = true;
 		return;
 	}
 
@@ -1176,6 +1190,7 @@ static void gatt_disconnected(struct bt_conn *conn, uint8_t reason)
 	if (client->cli) {
 		bt_mesh_proxy_role_cleanup(client->cli);
 		client->cli = NULL;
+		adv_restart_pending = true;
 	}
 }
 
@@ -1207,9 +1222,18 @@ int bt_mesh_proxy_adv_start(void)
 	return gatt_proxy_advertise();
 }
 
+static void conn_recycled(void)
+{
+	if (adv_restart_pending) {
+		adv_restart_pending = false;
+		bt_mesh_adv_gatt_update();
+	}
+}
+
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = gatt_connected,
 	.disconnected = gatt_disconnected,
+	.recycled = conn_recycled,
 };
 
 uint8_t bt_mesh_proxy_srv_connected_cnt(void)

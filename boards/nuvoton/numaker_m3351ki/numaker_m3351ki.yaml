@@ -12,4 +12,6 @@ ram: 128
 flash: 1024
 supported:
   - gpio
+  - i2c
+  - arduino_i2c
 vendor: nuvoton

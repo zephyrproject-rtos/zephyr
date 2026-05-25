@@ -861,6 +861,323 @@ def test_prop_enums():
     assert not no_enum.spec.enum_tokenizable
     assert not no_enum.spec.enum_upper_tokenizable
 
+def test_prop_ranges():
+    '''test properties with min:/max: in the binding'''
+
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+    props = edt.get_node('/ranges-node').props
+
+    int_with_min = props['int-with-min']
+    int_with_max = props['int-with-max']
+    int_with_range = props['int-with-range']
+    array_with_range = props['array-with-range']
+    no_range = props['no-range']
+    int_with_negative_range = props['int-with-negative-range']
+    array_with_signed_range = props['array-with-signed-range']
+
+    assert int_with_min.val == 10
+    assert int_with_max.val == 50
+    assert int_with_range.val == 42
+    assert array_with_range.val == [0, 25, 50]
+    assert int_with_negative_range.val == -42
+    assert array_with_signed_range.val == [-50, 0, 50]
+
+    assert int_with_min.spec.min == 5
+    assert int_with_min.spec.max is None
+
+    assert int_with_max.spec.min is None
+    assert int_with_max.spec.max == 100
+
+    assert int_with_range.spec.min == 0
+    assert int_with_range.spec.max == 100
+
+    assert array_with_range.spec.min == 0
+    assert array_with_range.spec.max == 50
+
+    assert no_range.spec.min is None
+    assert no_range.spec.max is None
+
+    assert int_with_negative_range.spec.min == -100
+    assert int_with_negative_range.spec.max == -10
+
+    assert array_with_signed_range.spec.min == -50
+    assert array_with_signed_range.spec.max == 50
+
+def test_prop_range_errs(tmp_path):
+    '''Test errors when property values violate min:/max: constraints'''
+
+    dts_file = tmp_path / "test_range_err.dts"
+
+    def write_and_check(dts_content, expected_err):
+        with open(dts_file, "w", encoding="utf-8") as f:
+            f.write(dts_content)
+            f.flush()
+        with pytest.raises(edtlib.EDTError) as e:
+            with from_here():
+                edtlib.EDT(str(dts_file), ["test-bindings"])
+        assert str(e.value) == expected_err
+
+    binding_path = hpath("test-bindings/min-max.yaml")
+
+    # Value below min
+    write_and_check(
+        """\
+/dts-v1/;
+/ { ranges-node { compatible = "min-max"; int-with-min = <3>; }; };
+""",
+        f"value of property 'int-with-min' on /ranges-node in "
+        f"{str(dts_file)} (3) is less than the "
+        f"'min' value in {binding_path} (5)")
+
+    # Value above max
+    write_and_check(
+        """\
+/dts-v1/;
+/ { ranges-node { compatible = "min-max"; int-with-max = <200>; }; };
+""",
+        f"value of property 'int-with-max' on /ranges-node in "
+        f"{str(dts_file)} (200) is greater than the "
+        f"'max' value in {binding_path} (100)")
+
+    # Array element above max
+    write_and_check(
+        """\
+/dts-v1/;
+/ { ranges-node { compatible = "min-max"; array-with-range = <0 25 51>; }; };
+""",
+        f"value of property 'array-with-range' on /ranges-node in "
+        f"{str(dts_file)} (51) is greater than the "
+        f"'max' value in {binding_path} (50)")
+
+    # Negative value below negative min
+    write_and_check(
+        """\
+/dts-v1/;
+/ { ranges-node { compatible = "min-max"; int-with-negative-range = <(-101)>; }; };
+""",
+        f"value of property 'int-with-negative-range' on /ranges-node in "
+        f"{str(dts_file)} (-101) is less than the "
+        f"'min' value in {binding_path} (-100)")
+
+    # Negative value above negative max (i.e. less negative than allowed)
+    write_and_check(
+        """\
+/dts-v1/;
+/ { ranges-node { compatible = "min-max"; int-with-negative-range = <(-1)>; }; };
+""",
+        f"value of property 'int-with-negative-range' on /ranges-node in "
+        f"{str(dts_file)} (-1) is greater than the "
+        f"'max' value in {binding_path} (-10)")
+
+    # Array element below negative min
+    write_and_check(
+        """\
+/dts-v1/;
+/ { ranges-node { compatible = "min-max"; array-with-signed-range = <(-51) 0 50>; }; };
+""",
+        f"value of property 'array-with-signed-range' on /ranges-node in "
+        f"{str(dts_file)} (-51) is less than the "
+        f"'min' value in {binding_path} (-50)")
+
+def test_prop_range_binding_errs(tmp_path):
+    '''Test errors in binding definitions with invalid min:/max:'''
+
+    def check_binding_err(yaml_content, expected_err):
+        binding_file = tmp_path / "bad-ranges.yaml"
+        with open(binding_file, "w", encoding="utf-8") as f:
+            f.write(yaml_content)
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding(str(binding_file), {})
+        assert str(e.value) == expected_err
+
+    path = str(tmp_path / "bad-ranges.yaml")
+
+    # min/max on unsupported type
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: string
+    min: 0
+""",
+        f"'min:'/'max:' in '{path}' for 'foo' requires "
+        f"'type: int' or 'type: array', but has type 'string'")
+
+    # min/max combined with enum
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    min: 0
+    enum:
+      - 1
+      - 2
+""",
+        f"'min:'/'max:' cannot be combined with 'enum:' "
+        f"for 'foo' in '{path}'")
+
+    # min > max
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    min: 10
+    max: 5
+""",
+        f"'min:' (10) > 'max:' (5) for 'foo' in '{path}'")
+
+    # min > max (both negative)
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    min: -5
+    max: -10
+""",
+        f"'min:' (-5) > 'max:' (-10) for 'foo' in '{path}'")
+
+    # non-integer min
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    min: "bad"
+""",
+        f"'min:' for 'foo' in '{path}' is not an integer")
+
+    # non-integer max
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    max: "bad"
+""",
+        f"'max:' for 'foo' in '{path}' is not an integer")
+
+    # default below min
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    min: 10
+    default: 5
+""",
+        f"'default: 5' for 'foo' in '{path}' is less than 'min: 10'")
+
+    # default above max
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    max: 10
+    default: 20
+""",
+        f"'default: 20' for 'foo' in '{path}' is greater than 'max: 10'")
+
+    # boolean min (bool is a subclass of int in Python, must be rejected)
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    min: true
+""",
+        f"'min:' for 'foo' in '{path}' is not an integer")
+
+    # boolean max
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    max: false
+""",
+        f"'max:' for 'foo' in '{path}' is not an integer")
+
+    # const below min
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    min: 10
+    const: 5
+""",
+        f"'const: 5' for 'foo' in '{path}' is less than 'min: 10'")
+
+    # const above max
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: int
+    max: 10
+    const: 20
+""",
+        f"'const: 20' for 'foo' in '{path}' is greater than 'max: 10'")
+
+    # const array element below min
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: array
+    min: 5
+    const:
+      - 10
+      - 3
+""",
+        f"'const: [10, 3]' for 'foo' in '{path}' is less than 'min: 5'")
+
+    # const array element above max
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: array
+    max: 10
+    const:
+      - 5
+      - 15
+""",
+        f"'const: [5, 15]' for 'foo' in '{path}' is greater than 'max: 10'")
+
 def test_binding_inference():
     '''Test inferred bindings for special zephyr-specific nodes.'''
     warnings = io.StringIO()

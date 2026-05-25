@@ -200,6 +200,7 @@ enum {
 	NET_EVENT_L4_CMD_VPN_DISCONNECTED_VAL,
 	NET_EVENT_L4_CMD_VPN_PEER_ADD_VAL,
 	NET_EVENT_L4_CMD_VPN_PEER_DEL_VAL,
+	NET_EVENT_L4_CMD_DNS_SERVERS_RECONFIGURED_VAL,
 
 	NET_EVENT_L4_CMD_MAX
 };
@@ -223,6 +224,7 @@ enum net_event_l4_cmd {
 	NET_MGMT_CMD(NET_EVENT_L4_CMD_VPN_DISCONNECTED),
 	NET_MGMT_CMD(NET_EVENT_L4_CMD_VPN_PEER_ADD),
 	NET_MGMT_CMD(NET_EVENT_L4_CMD_VPN_PEER_DEL),
+	NET_MGMT_CMD(NET_EVENT_L4_CMD_DNS_SERVERS_RECONFIGURED),
 };
 
 /** @endcond */
@@ -453,6 +455,21 @@ enum net_event_l4_cmd {
 /** Event emitted when a DNS server is removed from the system. */
 #define NET_EVENT_DNS_SERVER_DEL			\
 	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DNS_SERVER_DEL)
+
+/** Event emitted when the DNS server configuration is refreshed.
+ *
+ * Raised on every successful reconfigure, including the case where
+ * the new server set is identical to the existing one (in which
+ * case the per-slot ADD/DEL delta events are intentionally
+ * suppressed to avoid cancelling in-flight queries on DHCP-offer
+ * retransmit and IPv6 RA). Consumers that need a "DNS configuration
+ * is ready again" signal after a network event should listen for
+ * this event rather than NET_EVENT_DNS_SERVER_ADD.
+ *
+ * The event carries a NULL iface payload (system-level event).
+ */
+#define NET_EVENT_DNS_SERVERS_RECONFIGURED		\
+	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DNS_SERVERS_RECONFIGURED)
 
 /** Event emitted when the system hostname is changed. */
 #define NET_EVENT_HOSTNAME_CHANGED			\

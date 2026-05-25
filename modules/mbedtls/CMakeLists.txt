@@ -51,6 +51,16 @@ if(CONFIG_MBEDTLS)
       add_dependencies(${lib} zephyr_generated_headers)
     endforeach()
 
+    if(CONFIG_ARCH_POSIX AND CONFIG_ASAN AND NOT CONFIG_64BIT AND NOT CONFIG_NO_OPTIMIZATIONS)
+      # i386 assembly code used in TF-PSA-Crypto does not compile with size
+      # optimization if address sanitizer is enabled, as such switch default
+      # optimization level to speed.
+      set_source_files_properties(
+        ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/src/bignum_core.c
+        DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mbedtls/tf-psa-crypto/drivers/builtin
+        PROPERTIES COMPILE_OPTIONS "${COMPILER_OPTIMIZE_FOR_SPEED_FLAG}")
+    endif()
+
     # Custom macro to tell that a TF-PSA-Crypto source file is being compiled.
     # This is used by Secure Storage.
     target_compile_definitions(tfpsacrypto PRIVATE BUILDING_MBEDTLS_CRYPTO)

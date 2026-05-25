@@ -35,7 +35,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.12', '3.13']
-        os: [ubuntu-24.04, macos-14, windows-2022]
+        os: [ubuntu-24.04, macos-14, windows-2025]
     steps:
     - name: checkout
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -50,6 +50,12 @@ jobs:
     - name: Install Python packages
       run: |
         pip install -r scripts/requirements-actions.txt --require-hashes
+
+    - name: west setup
+      run: |
+        git config --global user.email "you@example.com"
+        git config --global user.name "Your Name"
+        west init -l . || true
 
     - name: run pytest-win
       if: runner.os == 'Windows'

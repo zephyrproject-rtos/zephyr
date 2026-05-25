@@ -127,12 +127,7 @@ nbu: &nbu {
 
 		storage_partition: partition@17a000 {
 			label = "storage";
-			reg = <0x17a000 DT_SIZE_K(16)>;
-		};
-
-		hw_params_partition: partition@17e000 {
-			label = "hw-parameters";
-			reg = <0x17e000 DT_SIZE_K(8)>;
+			reg = <0x17a000 DT_SIZE_K(24)>;
 		};
 	};
 };

@@ -43,7 +43,7 @@
 #define test_source_ase_state_transition_fixture test_ase_state_transition_fixture
 
 static const struct bt_bap_qos_cfg_pref qos_pref =
-	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02, 10, 40000, 40000, 40000, 40000);
+	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 40000U, 40000U, 40000U, 40000U);
 
 struct test_ase_state_transition_fixture {
 	struct bt_conn conn;

@@ -9,8 +9,12 @@
 config BMP581
 	bool "BMP581 barometric pressure sensor"
 	depends on DT_HAS_BOSCH_BMP581_ENABLED
-	select I2C
-	select I2C_RTIO
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),i2c)
+	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),spi)
+	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),spi)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),i3c)
+	select I3C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),i3c)
 	default y
 
 config BMP581_STREAM

@@ -32,6 +32,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/minmax.h>
 
 #include <usage.h>
 
@@ -294,7 +295,7 @@ static inline int z_vrfy_k_thread_name_copy(k_tid_t thread,
 	/* Special case: we allow reading the names of initialized threads
 	 * even if we don't have permission on them
 	 */
-	if ((thread == NULL) || (ko->type != K_OBJ_THREAD) ||
+	if ((ko == NULL) || (ko->type != K_OBJ_THREAD) ||
 		((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0)) {
 		return -EINVAL;
 	}

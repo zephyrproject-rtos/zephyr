@@ -9,6 +9,7 @@ config SOC_SERIES_ESP32S2
 	select PINCTRL
 	select HAS_ESPRESSIF_HAL
 	select ARCH_SUPPORTS_COREDUMP
+	select CPU_HAS_DCACHE
 	select HAS_PM
 	select HAS_POWEROFF
 

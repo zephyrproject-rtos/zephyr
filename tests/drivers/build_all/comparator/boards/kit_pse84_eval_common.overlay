@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/comparator/infineon-autanalog-ptcomp.h>
+
 / {
 	zephyr,user {
 		signal-gpios = <&gpio_prt10 5 0>, <&gpio_prt10 4 0>;
@@ -35,4 +37,26 @@
 	intr-type = "both";
 	input-p = "gpio";
 	input-n = "local_vref";
+};
+
+&ptcomp0 {
+	status = "okay";
+
+	comp0: comp@0 {
+		compatible = "infineon,autanalog-ptcomp-comp";
+		reg = <0>;
+		power-mode = <IFX_AUTANALOG_PTCOMP_PWR_NORMAL>;
+		interrupt-mode = <IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING>;
+		positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+		negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>;  /* P15.2 */
+	};
+
+	comp1: comp@1 {
+		compatible = "infineon,autanalog-ptcomp-comp";
+		reg = <1>;
+		power-mode = <IFX_AUTANALOG_PTCOMP_PWR_NORMAL>;
+		interrupt-mode = <IFX_AUTANALOG_PTCOMP_INT_EDGE_RISING>;
+		positive-mux = <IFX_AUTANALOG_PTCOMP_MUX_GPIO2>; /* P15.2 */
+		negative-mux = <IFX_AUTANALOG_PTCOMP_MUX_PRB_OUT0>;
+	};
 };

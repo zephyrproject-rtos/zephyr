@@ -32,36 +32,40 @@ struct bap_base_test_suite_fixture {
 static void bap_base_test_suite_fixture_init(struct bap_base_test_suite_fixture *fixture)
 {
 	uint8_t base_data[] = {
-		0x51, 0x18,                   /* uuid */
-		0x40, 0x9C, 0x00,             /* pd */
-		0x02,                         /* subgroup count */
-		0x01,                         /* Subgroup 1: bis count */
-		0x06, 0x00, 0x00, 0x00, 0x00, /* LC3 codec_id*/
-		0x10,                         /* cc length */
-		0x02, 0x01, 0x03, 0x02, 0x02, 0x01, 0x05, 0x03,
-		0x01, 0x00, 0x00, 0x00, 0x03, 0x04, 0x28, 0x00, /* cc */
-		0x04,                                           /* meta length */
-		0x03, 0x02, 0x01, 0x00,                         /* meta */
-		0x01,                                           /* bis index */
-		0x03,                                           /* bis cc length */
-		0x02, 0x03, 0x03,                               /* bis cc length */
-		0x01,                                           /* Subgroup 1: bis count */
-		0x06, 0x00, 0x00, 0x00, 0x00,                   /* LC3 codec_id*/
-		0x10,                                           /* cc length */
-		0x02, 0x01, 0x03, 0x02, 0x02, 0x01, 0x05, 0x03,
-		0x01, 0x00, 0x00, 0x00, 0x03, 0x04, 0x28, 0x00, /* cc */
-		0x04,                                           /* meta length */
-		0x03, 0x02, 0x01, 0x00,                         /* meta */
-		0x02,                                           /* bis index */
-		0x03,                                           /* bis cc length */
-		0x02, 0x03, 0x03                                /* bis cc length */
+		0x51U, 0x18U,                      /* uuid */
+		0x40U, 0x9CU, 0x00U,               /* pd */
+		0x02U,                             /* subgroup count */
+		0x01U,                             /* Subgroup 1: bis count */
+		0x06U, 0x00U, 0x00U, 0x00U, 0x00U, /* LC3 codec_id*/
+		0x10U,                             /* cc length */
+		0x02U, 0x01U, 0x03U, 0x02U,
+		0x02U, 0x01U, 0x05U, 0x03U,
+		0x01U, 0x00U, 0x00U, 0x00U,
+		0x03U, 0x04U, 0x28U, 0x00U,        /* cc */
+		0x04U,                             /* meta length */
+		0x03U, 0x02U, 0x01U, 0x00U,        /* meta */
+		0x01U,                             /* bis index */
+		0x03U,                             /* bis cc length */
+		0x02U, 0x03U, 0x03U,               /* bis cc length */
+		0x01U,                             /* Subgroup 1: bis count */
+		0x06U, 0x00U, 0x00U, 0x00U, 0x00U, /* LC3 codec_id*/
+		0x10U,                             /* cc length */
+		0x02U, 0x01U, 0x03U, 0x02U,
+		0x02U, 0x01U, 0x05U, 0x03U,
+		0x01U, 0x00U, 0x00U, 0x00U,
+		0x03U, 0x04U, 0x28U, 0x00U,        /* cc */
+		0x04U,                             /* meta length */
+		0x03U, 0x02U, 0x01U, 0x00U,        /* meta */
+		0x02U,                             /* bis index */
+		0x03U,                             /* bis cc length */
+		0x02U, 0x03U, 0x03U                /* bis cc length */
 	};
 
 	fixture->valid_base_data = malloc(sizeof(base_data));
 	zassert_not_null(fixture->valid_base_data);
 	memcpy(fixture->valid_base_data, base_data, sizeof(base_data));
 
-	fixture->valid_base_ad.type = 0x16; /* service data */
+	fixture->valid_base_ad.type = 0x16U; /* service data */
 	fixture->valid_base_ad.data_len = sizeof(base_data);
 	fixture->valid_base_ad.data = fixture->valid_base_data;
 
@@ -71,7 +75,7 @@ static void bap_base_test_suite_fixture_init(struct bap_base_test_suite_fixture 
 	zassert_not_null(fixture->invalid_base_data);
 	memcpy(fixture->invalid_base_data, base_data, sizeof(base_data));
 
-	fixture->invalid_base_ad.type = 0x16; /* service data */
+	fixture->invalid_base_ad.type = 0x16U; /* service data */
 	fixture->invalid_base_ad.data_len = sizeof(base_data);
 	fixture->invalid_base_ad.data = fixture->invalid_base_data;
 }
@@ -132,7 +136,7 @@ ZTEST_F(bap_base_test_suite, test_base_get_base_from_ad_inval_param_type)
 {
 	const struct bt_bap_base *base;
 
-	fixture->valid_base_ad.type = 0x03; /* BT_DATA_UUID16_ALL */
+	fixture->valid_base_ad.type = 0x03U; /* BT_DATA_UUID16_ALL */
 
 	base = bt_bap_base_get_base_from_ad(&fixture->valid_base_ad);
 
@@ -143,7 +147,7 @@ ZTEST_F(bap_base_test_suite, test_base_get_base_from_ad_inval_param_len)
 {
 	const struct bt_bap_base *base;
 
-	fixture->valid_base_ad.data_len = 0x03; /* Minimum len is BASE_MIN_SIZE (16) */
+	fixture->valid_base_ad.data_len = 0x03U; /* Minimum len is BASE_MIN_SIZE (16) */
 
 	base = bt_bap_base_get_base_from_ad(&fixture->valid_base_ad);
 
@@ -230,7 +234,7 @@ ZTEST_F(bap_base_test_suite, test_base_get_bis_indexes)
 
 	ret = bt_bap_base_get_bis_indexes(base, &bis_indexes);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
-	zassert_equal(bis_indexes, 0x00000003 /* Bit 1 and 2 */,
+	zassert_equal(bis_indexes, 0x00000003U /* Bit 1 and 2 */,
 		      "Unexpected BIS index value: 0x%08X", bis_indexes);
 }
 
@@ -276,7 +280,7 @@ ZTEST_F(bap_base_test_suite, test_base_foreach_subgroup)
 
 	ret = bt_bap_base_foreach_subgroup(base, test_base_foreach_subgroup_cb, &count);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
-	zassert_equal(count, 0x02, "Unexpected subgroup count value: %u", count);
+	zassert_equal(count, 0x02U, "Unexpected subgroup count value: %u", count);
 }
 
 ZTEST_F(bap_base_test_suite, test_base_foreach_subgroup_inval_param_null_base)
@@ -309,9 +313,9 @@ static bool test_base_get_subgroup_codec_id_cb(const struct bt_bap_base_subgroup
 
 	ret = bt_bap_base_get_subgroup_codec_id(subgroup, &codec_id);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
-	zassert_equal(codec_id.id, 0x06, "Unexpected codec.id value: %u", codec_id.id);
-	zassert_equal(codec_id.cid, 0x0000, "Unexpected codec.cid value: %u", codec_id.cid);
-	zassert_equal(codec_id.vid, 0x0000, "Unexpected codec.vid value: %u", codec_id.vid);
+	zassert_equal(codec_id.id, 0x06U, "Unexpected codec.id value: %u", codec_id.id);
+	zassert_equal(codec_id.cid, 0x0000U, "Unexpected codec.cid value: %u", codec_id.cid);
+	zassert_equal(codec_id.vid, 0x0000U, "Unexpected codec.vid value: %u", codec_id.vid);
 
 	return true;
 }
@@ -384,8 +388,8 @@ static bool test_base_get_subgroup_codec_data_cb(const struct bt_bap_base_subgro
 						 void *user_data)
 {
 	const uint8_t expected_data[] = {
-		0x02, 0x01, 0x03, 0x02, 0x02, 0x01, 0x05, 0x03,
-		0x01, 0x00, 0x00, 0x00, 0x03, 0x04, 0x28, 0x00,
+		0x02U, 0x01U, 0x03U, 0x02U, 0x02U, 0x01U, 0x05U, 0x03U,
+		0x01U, 0x00U, 0x00U, 0x00U, 0x03U, 0x04U, 0x28U, 0x00U,
 	};
 	uint8_t *data;
 	int ret;
@@ -466,7 +470,7 @@ ZTEST_F(bap_base_test_suite, test_base_get_subgroup_codec_data_inval_param_null)
 static bool test_base_get_subgroup_codec_meta_cb(const struct bt_bap_base_subgroup *subgroup,
 						 void *user_data)
 {
-	const uint8_t expected_data[] = {0x03, 0x02, 0x01, 0x00};
+	const uint8_t expected_data[] = {0x03U, 0x02U, 0x01U, 0x00U};
 	uint8_t *data;
 	int ret;
 
@@ -546,10 +550,10 @@ ZTEST_F(bap_base_test_suite, test_base_get_subgroup_codec_meta_inval_param_null)
 static bool test_base_subgroup_codec_to_codec_cfg_cb(const struct bt_bap_base_subgroup *subgroup,
 						     void *user_data)
 {
-	const uint8_t expected_meta[] = {0x03, 0x02, 0x01, 0x00};
+	const uint8_t expected_meta[] = {0x03U, 0x02U, 0x01U, 0x00U};
 	const uint8_t expected_data[] = {
-		0x02, 0x01, 0x03, 0x02, 0x02, 0x01, 0x05, 0x03,
-		0x01, 0x00, 0x00, 0x00, 0x03, 0x04, 0x28, 0x00,
+		0x02U, 0x01U, 0x03U, 0x02U, 0x02U, 0x01U, 0x05U, 0x03U,
+		0x01U, 0x00U, 0x00U, 0x00U, 0x03U, 0x04U, 0x28U, 0x00U,
 	};
 	struct bt_audio_codec_cfg codec_cfg;
 	int ret;
@@ -690,7 +694,7 @@ test_bt_bap_base_subgroup_get_bis_indexes_cb(const struct bt_bap_base_subgroup *
 
 	ret = bt_bap_base_subgroup_get_bis_indexes(subgroup, &bis_indexes);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
-	zassert_not_equal(bis_indexes, 0 /* May be Bit 1 or 2 */,
+	zassert_not_equal(bis_indexes, 0U /* May be Bit 1 or 2 */,
 			  "Unexpected BIS index value: 0x%08X", bis_indexes);
 
 	return true;
@@ -783,7 +787,7 @@ static bool test_base_subgroup_foreach_bis_subgroup_cb(const struct bt_bap_base_
 	ret = bt_bap_base_subgroup_foreach_bis(
 		subgroup, test_base_subgroup_foreach_bis_subgroup_bis_cb, &count);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
-	zassert_equal(count, 0x01, "Unexpected subgroup count value: %u", count);
+	zassert_equal(count, 0x01U, "Unexpected subgroup count value: %u", count);
 
 	*total_count += count;
 
@@ -801,7 +805,7 @@ ZTEST_F(bap_base_test_suite, test_base_subgroup_foreach_bis)
 	ret = bt_bap_base_foreach_subgroup(base, test_base_subgroup_foreach_bis_subgroup_cb,
 					   &count);
 	zassert_equal(ret, 0, "Unexpected return value: %d", ret);
-	zassert_equal(count, 0x02, "Unexpected subgroup count value: %u", count);
+	zassert_equal(count, 0x02U, "Unexpected subgroup count value: %u", count);
 }
 
 static bool test_base_subgroup_foreach_bis_inval_param_null_subgroup_cb(
@@ -862,7 +866,7 @@ static bool
 test_base_subgroup_bis_codec_to_codec_cfg_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
 						 void *user_data)
 {
-	const uint8_t expected_data[] = {0x02, 0x03, 0x03};
+	const uint8_t expected_data[] = {0x02U, 0x03U, 0x03U};
 	struct bt_audio_codec_cfg codec_cfg;
 	int ret;
 

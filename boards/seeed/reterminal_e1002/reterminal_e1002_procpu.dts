@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <espressif/partitions_0x0_amp_32M.dtsi>
 #include "reterminal_e1002-pinctrl.dtsi"
 
@@ -110,6 +111,18 @@
 			width = <800>;
 			height = <480>;
 			busy-gpios = <&gpio0 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+
+			color-palette {
+				compatible = "zephyr,panel-color-palette";
+
+				colors = <ARGB8888(0,   0,   0,   255) /* 0x00 = Black */
+					  ARGB8888(245, 245, 240, 255) /* 0x01 = White */
+					  ARGB8888(230, 200, 40,  255) /* 0x02 = Yellow */
+					  ARGB8888(196, 50,  58,  255) /* 0x03 = Red */
+					  PANEL_COLOR_PALETTE_NULL /* 0x04 = Unused / reserved */
+					  ARGB8888(40,  85,  180, 255) /* 0x05 = Blue */
+					  ARGB8888(60,  140, 75,  255) /* 0x06 = Green */ >;
+			};
 		};
 	};
 };

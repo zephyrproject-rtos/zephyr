@@ -8,60 +8,76 @@
 #include <zephyr/toolchain.h>
 
 /*
- * ARM64 atomic operations with explicit memory barriers for FVP.
+ * ARM64 atomic operations with explicit YIELD hints, for FVP.
  *
- * This implementation adds DMB (Data Memory Barrier) instructions before
- * atomic operations that read from memory. According to the ARM Architecture
- * Reference Manual, atomic instructions with acquire/release semantics
- * (LDAR, LDAXR, LDADDAL, etc.) should already provide the necessary memory
- * ordering and cache coherency guarantees. The LDAR instruction in particular
- * is expected to ensure that the loaded value reflects any prior stores from
- * other CPUs.
+ * This is a workaround for the FastModel's quantum-based execution model,
+ * not for any cache-coherency or atomic-emulation defect.
  *
- * However, on FVP (ARM Fixed Virtual Platform), these guarantees do not appear
- * to be properly implemented, leading to race conditions where one CPU may read
- * stale cached values even after another CPU has performed an atomic update.
- * This manifests as assertion failures in kernel/sched.c (switch_handle checks)
- * notably with the tests/kernel/smp_abort test, and performance issues in
- * lockfree data structures e.g. tests/lib/lockfree test hanging.
+ * The FastModel CPU simulators are single-threaded: each CPU runs a fixed
+ * block of instructions (a "quantum", default 10 000) before the simulator
+ * switches to the next CPU. Per the Arm Fast Models Reference Manual
+ * ("Timing accuracy of Fast Models"), the conditions that can cause the
+ * processor to yield to another thread before the quantum expires are:
+ * non-DMI memory transactions, signal changes, WFE/WFI instructions,
+ * barrier instructions, YIELD instructions, and Generic Timer accesses.
+ * Plain load-acquires (LDAR/LDAXR) and LSE atomics (LDADDAL, SWPAL,
+ * CAS, ...) are not on that list. As a result, a CPU spinning on a
+ * load-acquire waiting for a release from another CPU can consume its
+ * entire quantum before the producing CPU has had a chance to run. From
+ * the OS's point of view this looks like livelock: the spinning thread
+ * yields, the scheduler finds no other runnable thread on that core
+ * (the producer is pinned to a different core and hasn't run yet), and
+ * reschedules the same thread, repeating until the quantum ends.
  *
- * The explicit DMB SY barriers work around this FVP issue by forcing cache
- * invalidation before reads, ensuring that CPUs observe the latest values
- * written by other CPUs in SMP configurations.
+ * Inserting an explicit YIELD before each atomic operation that may
+ * observe a value gives the simulator an opportunity to switch CPUs,
+ * letting other CPUs make progress and breaking the apparent livelock.
+ * The hint is placed on atomic reads (atomic_get, atomic_ptr_get),
+ * compare-and-swap (atomic_cas, atomic_ptr_cas), and read-modify-write
+ * operations (atomic_add and friends) -- everywhere the CPU might be
+ * waiting for a release from another CPU. Pure unconditional writes
+ * (atomic_set, atomic_ptr_set, and the *_clear helpers built on them)
+ * carry no hint: nothing busy-waits on the writer side, and a reader
+ * on another CPU picks up the update on its own next quantum yield.
  *
- * Note: Setting FVP's cache_state_modelled parameter improves lockfree test
- * performance but does not fully resolve the switch_handle race condition,
- * suggesting the issue is in FVP's atomic instruction emulation rather than
- * just cache modeling granularity.
+ * Without these hints, kernel scheduler code (e.g. switch_handle in
+ * kernel/sched.c) and lockfree algorithms (e.g. tests/lib/lockfree,
+ * k_sem and k_msgq fast paths) run pathologically slowly on
+ * fvp_base_revc_2xaem -- often slow enough to appear hung and exceed
+ * test timeouts.
+ *
+ * Caveats:
+ *   - Reducing the quantum at the model level (e.g. `-Q 50`) avoids the
+ *     pathological slowdown without any code change, at the cost of
+ *     simulation throughput on every other workload.
+ *   - Enabling cache state modeling (`-C cache_state_modelled=1`) reduces
+ *     but does not eliminate the issue, because the dominant effect is
+ *     scheduling, not cache state.
  */
 
 bool atomic_cas(atomic_t *target, atomic_val_t old_value, atomic_val_t new_value)
 {
-	/* Add barrier before read for compare-and-swap */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_compare_exchange_n(target, &old_value, new_value,
 					   0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 bool atomic_ptr_cas(atomic_ptr_t *target, void *old_value, void *new_value)
 {
-	/* Add barrier before read for compare-and-swap */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_compare_exchange_n(target, &old_value, new_value,
 					   0, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
 }
 
 atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
 {
-	/* Add barrier before read for fetch-and-add */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_fetch_add(target, value, __ATOMIC_SEQ_CST);
 }
 
 atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
 {
-	/* Add barrier before read for fetch-and-sub */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_fetch_sub(target, value, __ATOMIC_SEQ_CST);
 }
 
@@ -77,29 +93,23 @@ atomic_val_t atomic_dec(atomic_t *target)
 
 atomic_val_t atomic_get(const atomic_t *target)
 {
-	/* Add explicit barrier before read to ensure cache coherency */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
 }
 
 void *atomic_ptr_get(const atomic_ptr_t *target)
 {
-	/* Add explicit barrier before read to ensure cache coherency */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_load_n(target, __ATOMIC_SEQ_CST);
 }
 
 atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
 {
-	/* Add barrier before read for atomic exchange */
-	__asm__ __volatile__("dmb sy" ::: "memory");
 	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
 }
 
 void *atomic_ptr_set(atomic_ptr_t *target, void *value)
 {
-	/* Add barrier before read for atomic exchange */
-	__asm__ __volatile__("dmb sy" ::: "memory");
 	return __atomic_exchange_n(target, value, __ATOMIC_SEQ_CST);
 }
 
@@ -115,28 +125,24 @@ void *atomic_ptr_clear(atomic_ptr_t *target)
 
 atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
 {
-	/* Add barrier before read for fetch-and-or */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_fetch_or(target, value, __ATOMIC_SEQ_CST);
 }
 
 atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
 {
-	/* Add barrier before read for fetch-and-xor */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_fetch_xor(target, value, __ATOMIC_SEQ_CST);
 }
 
 atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
 {
-	/* Add barrier before read for fetch-and-and */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_fetch_and(target, value, __ATOMIC_SEQ_CST);
 }
 
 atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
 {
-	/* Add barrier before read for fetch-and-nand */
-	__asm__ __volatile__("dmb sy" ::: "memory");
+	__asm__ __volatile__("yield" ::: "memory");
 	return __atomic_fetch_nand(target, value, __ATOMIC_SEQ_CST);
 }

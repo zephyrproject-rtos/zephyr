@@ -64,6 +64,9 @@ enum {
 	/** Identifier for in-tree Virtiofs file system. */
 	FS_VIRTIOFS,
 
+	/** Identifier for in-tree Native Simulator mount file system. */
+	FS_NATIVE_MOUNT,
+
 	/** Base identifier for external file systems. */
 	FS_TYPE_EXTERNAL_BASE,
 };

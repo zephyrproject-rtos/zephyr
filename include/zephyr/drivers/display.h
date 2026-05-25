@@ -18,7 +18,7 @@
  * @brief Interfaces for display controllers.
  * @defgroup display_interface Display
  * @since 1.14
- * @version 0.9.0
+ * @version 0.10.0
  * @ingroup io_interfaces
  * @{
  *
@@ -230,6 +230,22 @@ enum display_pixel_format {
 	 * right pixel. Palette semantics are display-specific.
 	 */
 	PIXEL_FORMAT_I_4 = BIT(13), /**< Packed 4-bit indexed color */
+
+	/**
+	 * @brief 4-bit greyscale format with 2 pixels packed per byte.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | GgggHhhh | IiiiJjjj | ...
+	 * @endcode
+	 *
+	 * The high nibble stores the left pixel and the low nibble stores the
+	 * right pixel.
+	 */
+	PIXEL_FORMAT_L_4 = BIT(14), /**< Packed 4-bit Grayscale/Luminance */
 };
 
 /**
@@ -253,7 +269,8 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_ABGR_8888) >> 10) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_RGBA_8888) >> 11) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
-	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U))
+	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U) +				\
+	(((fmt & PIXEL_FORMAT_L_4) >> 14) * 4U))
 
 /**
  * @brief Display screen information
@@ -293,6 +310,22 @@ enum display_orientation {
 	DISPLAY_ORIENTATION_ROTATED_270, /**< Rotated 270 degrees clockwise */
 };
 
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
+
+/** @brief Structure representing a color palette entry in ARGB8888 format. */
+struct display_palette_color {
+	/** Blue component (0-255) */
+	uint8_t b;
+	/** Green component (0-255) */
+	uint8_t g;
+	/** Red component (0-255) */
+	uint8_t r;
+	/** Alpha component (0-255) */
+	uint8_t a;
+};
+
+#endif /* defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__) */
+
 /** @brief Structure holding display capabilities. */
 struct display_capabilities {
 	/** Display resolution in the X direction */
@@ -307,6 +340,10 @@ struct display_capabilities {
 	enum display_pixel_format current_pixel_format;
 	/** Current display orientation */
 	enum display_orientation current_orientation;
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
+	/** Color palette supported by the display, indexed by pixel value */
+	struct display_palette_color color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
+#endif /* defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__) */
 };
 
 /** @brief Structure to describe display data buffer layout */

@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <posix/posix.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
@@ -196,6 +197,7 @@
 
 	sdl_dc: sdl_dc {
 		compatible = "zephyr,sdl-dc";
+		pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
 		height = <240>;
 		width = <320>;
 	};
@@ -261,5 +263,10 @@
 			load-threshold = <0>;
 			pstate-id = <2>;
 		};
+	};
+
+	ptp_clock: ptp_clock {
+		compatible = "zephyr,native-ptp-clock";
+		status = "okay";
 	};
 };

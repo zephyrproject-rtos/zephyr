@@ -167,7 +167,22 @@ config NET_QEMU_USER_EXTRA_ARGS
 	help
 	  Extra arguments passed to QEMU when User Networking is enabled. This may
 	  include host / guest port forwarding, device id, Network address
-	  information etc. This string is appended to the QEMU "-net user" option.
+	  information etc. This string is appended to the QEMU "-netdev user" option.
+
+config NET_QEMU_DEVICE_EXTRA_ARGS
+	string "Qemu Networking Device Args"
+	depends on NET_QEMU_USER || NET_QEMU_ETHERNET
+	default ""
+	help
+	  Extra arguments passed to the QEMU networking device.
+	  This string is appended to the QEMU "-device" option.
+	  Typically this is used to set the network MAC address of
+	  Zephyr instance. This option can contain multiple QEMU option
+	  arguments. Each QEMU argument must be separated by comma "," and no
+	  spaces between arguments. Example: "mac=02:03:04:f0:0d:01" or
+	  "mac=02:03:04:f0:0d:01,addr=2.0". The mac option is available
+	  for all networking devices, other options depend on the device,
+	  like "addr=2.0", which can be used to set the pci slot.
 
 if !NET_RAW_MODE
 
@@ -189,6 +204,11 @@ config NET_IP_DSCP_ECN
 source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"
+
+config NET_PKT_ORIG_IFACE
+	bool
+	default y
+	depends on NET_IPV4_ROUTE || NET_IPV6_ROUTE || NET_ETHERNET_BRIDGE
 
 config NET_IPV4_MAPPING_TO_IPV6
 	bool "Support IPv4 mapped on IPv6 addresses"

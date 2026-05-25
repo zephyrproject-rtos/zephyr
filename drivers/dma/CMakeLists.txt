@@ -3,11 +3,13 @@
 zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/dma.h)
 
 zephyr_library()
+zephyr_library_include_directories(.)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_DMAMUX_STM32 dmamux_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_AMD_ACP_HOST dma_amd_acp_host.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_AMD_ACP_SDW dma_amd_acp_sdw.c)
+zephyr_library_sources_ifdef(CONFIG_DMA_AMEBA dma_ameba_gdma.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_ANDES_ATCDMACX00 dma_andes_atcdmacx00.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_BEE dma_bee.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_BFLB dma_bflb.c)
@@ -31,6 +33,7 @@ zephyr_library_sources_ifdef(CONFIG_DMA_IPROC_PAX_V2 dma_iproc_pax_v2.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_MAX32 dma_max32.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_MCHP_DMAC_G1 dma_mchp_dmac_g1.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_MCHP_DMAC_G2 dma_mchp_dmac_g2.c)
+zephyr_library_sources_ifdef(CONFIG_DMA_MCHP_DMAC_G3 dma_mchp_dmac_g3.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_MCHP_XEC dma_mchp_xec.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_MCUX_EDMA dma_mcux_edma.c)
 zephyr_library_sources_ifdef(CONFIG_DMA_MCUX_EDMA_V3 dma_mcux_edma.c)

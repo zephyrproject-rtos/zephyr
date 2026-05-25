@@ -14,8 +14,6 @@
 
 / {
 	compatible = "arm,mps2";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	aliases {
 		led0 = &led_0;
@@ -121,7 +119,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
 
-			#include "mps2_an521-common.dtsi"
+#include "mps2_an521-common.dtsi"
 		};
 	};
 };

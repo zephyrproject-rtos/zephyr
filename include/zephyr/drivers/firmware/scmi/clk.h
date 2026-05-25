@@ -41,6 +41,12 @@
 /** get the clock's enabled status based on given attributes */
 #define SCMI_CLK_ENABLED(attributes) ((attributes) & BIT(0))
 
+/** check if a clock has restrictions based on given attributes */
+#define SCMI_CLK_HAS_RESTRICTIONS(attributes) ((attributes) & BIT(1))
+
+/** check if clock allows gating/ungating based on its permissions */
+#define SCMI_CLK_STATE_CONTROL_ALLOWED(permissions) ((permissions) & BIT(31))
+
 /**
  * @struct scmi_clock_config
  *
@@ -80,29 +86,6 @@ struct scmi_clock_attributes {
 	/** clock enable delay incurred by platform */
 	uint32_t clock_enable_delay;
 } __packed;
-
-/**
- * @brief Clock protocol command message IDs
- */
-enum scmi_clock_message {
-	SCMI_CLK_MSG_PROTOCOL_VERSION = 0x0,
-	SCMI_CLK_MSG_PROTOCOL_ATTRIBUTES = 0x1,
-	SCMI_CLK_MSG_PROTOCOL_MESSAGE_ATTRIBUTES = 0x2,
-	SCMI_CLK_MSG_CLOCK_ATTRIBUTES = 0x3,
-	SCMI_CLK_MSG_CLOCK_DESCRIBE_RATES = 0x4,
-	SCMI_CLK_MSG_CLOCK_RATE_SET = 0x5,
-	SCMI_CLK_MSG_CLOCK_RATE_GET = 0x6,
-	SCMI_CLK_MSG_CLOCK_CONFIG_SET = 0x7,
-	SCMI_CLK_MSG_CLOCK_NAME_GET = 0x8,
-	SCMI_CLK_MSG_CLOCK_RATE_NOTIFY = 0x9,
-	SCMI_CLK_MSG_CLOCK_RATE_CHANGE_REQUESTED_NOTIFY = 0xa,
-	SCMI_CLK_MSG_CLOCK_CONFIG_GET = 0xb,
-	SCMI_CLK_MSG_CLOCK_POSSIBLE_PARENTS_GET = 0xc,
-	SCMI_CLK_MSG_CLOCK_PARENT_SET = 0xd,
-	SCMI_CLK_MSG_CLOCK_PARENT_GET = 0xe,
-	SCMI_CLK_MSG_CLOCK_GET_PERMISSIONS = 0xf,
-	SCMI_CLK_MSG_NEGOTIATE_PROTOCOL_VERSION = 0x10,
-};
 
 /**
  * @brief Send the CLOCK_CONFIG_SET command and get its reply
@@ -178,6 +161,19 @@ int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
  */
 int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
 			  struct scmi_clock_attributes *attributes);
+
+/**
+ * @brief Send the CLOCK_GET_PERMISSIONS command and get its reply
+ *
+ * @param proto pointer to SCMI clock protocol data
+ * @param clk_id ID of the clock for which the query is done
+ * @param permissions clock permissions returned by the command
+ *
+ * @retval 0 if successful
+ * @retval negative errno if failure
+ */
+int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
+			       uint32_t *permissions);
 /**
  * @}
  */

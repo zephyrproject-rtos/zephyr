@@ -12,8 +12,8 @@
 &zephyr_i2c {
 	status = "okay";
 
-	m5stack_unit_minioled_display: ssd1306@3c {
-		compatible = "solomon,ssd1306";
+	m5stack_unit_minioled_display: ssd1315@3c {
+		compatible = "solomon,ssd1315";
 		reg = <0x3c>;
 		width = <72>;
 		height = <40>;

@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Draeger
+# SPDX-License-Identifier: Apache-2.0
+
+config LP586X
+	bool "LP586X LED matrix controller"
+	default y
+	depends on \
+		DT_HAS_TI_LP5860_ENABLED || \
+		DT_HAS_TI_LP5861_ENABLED || \
+		DT_HAS_TI_LP5862_ENABLED || \
+		DT_HAS_TI_LP5864_ENABLED || \
+		DT_HAS_TI_LP5866_ENABLED || \
+		DT_HAS_TI_LP5868_ENABLED
+	select I2C
+	help
+	  Enable driver for the Texas Instruments LP586X I2C LED
+	  matrix controllers. It supports: LP5860, LP5861, LP5862,
+	  LP5864, LP5866 and LP5868.

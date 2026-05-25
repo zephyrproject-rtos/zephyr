@@ -317,6 +317,25 @@ typedef void (*gptp_port_cb_t)(int port, struct net_if *iface,
 void gptp_foreach_port(gptp_port_cb_t cb, void *user_data);
 
 /**
+ * @brief Get the gptp port number of the network interface.
+ *
+ * @param iface Network Interface acting as a gptp port.
+ *
+ * @return gptp port number if found, ENODEV otherwise.
+ */
+int gptp_get_port_number(struct net_if *iface);
+
+/**
+ * @brief Set the gptp port number to the network interface.
+ *
+ * @param iface Network Interface acting as a gptp port.
+ * @param port gptp port number.
+ *
+ * @return 0 if set is successful, <0 otherwise.
+ */
+int gptp_set_port_number(struct net_if *iface, uint16_t port);
+
+/**
  * @brief Get gPTP domain.
  * @details This contains all the configuration / status of the gPTP domain.
  *

@@ -46,6 +46,8 @@ static struct net_context *udp_ctx;
 /* Interface 1 is the default host and it has my_addr assigned to it */
 static struct net_in6_addr my_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct net_in6_addr my_addr_alt = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					      0, 0, 0, 0, 0, 0, 0, 0x2 } } };
 
 /* Interface 2 is the secondary host for peer device with address peer_addr */
 static struct net_in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
@@ -58,6 +60,8 @@ static struct net_in6_addr peer_addr_alt = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0
 /* The dest_addr is only reachable via peer_addr */
 static struct net_in6_addr dest_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					 0, 0, 0, 0, 0xd, 0xe, 0x5, 0x7 } } };
+static struct net_in6_addr dest_addr_alt = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						 0, 0, 0, 0, 0xd, 0xe, 0x5, 0x8 } } };
 
 /* Extra address is assigned to ll_addr */
 static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
@@ -85,6 +89,7 @@ static struct net_in6_addr dest_addresses[MAX_ROUTES];
 static bool test_failed;
 static bool data_failure;
 static bool feed_data; /* feed data back to IP stack */
+static bool sent_pkt_seen;
 
 static int msg_sending;
 
@@ -132,6 +137,8 @@ static void net_route_iface_init(struct net_if *iface)
 
 static int tester_send(const struct device *dev, struct net_pkt *pkt)
 {
+	ARG_UNUSED(dev);
+
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
@@ -139,6 +146,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 
 	/* By default we assume that the test is ok */
 	data_failure = false;
+	sent_pkt_seen = true;
 
 	if (feed_data) {
 		DBG("Received at iface %p and feeding it into iface %p\n",
@@ -170,6 +178,8 @@ out:
 
 static int tester_send_peer(const struct device *dev, struct net_pkt *pkt)
 {
+	ARG_UNUSED(dev);
+
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
@@ -177,6 +187,7 @@ static int tester_send_peer(const struct device *dev, struct net_pkt *pkt)
 
 	/* By default we assume that the test is ok */
 	data_failure = false;
+	sent_pkt_seen = true;
 
 	if (feed_data) {
 		DBG("Received at iface %p and feeding it into iface %p\n",
@@ -266,6 +277,13 @@ static void test_init(void)
 				      NET_ADDR_MANUAL, 0);
 	zassert_not_null(ifaddr,
 			 "Cannot add IPv6 address");
+
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	ifaddr = net_if_ipv6_addr_add(peer_iface, &my_addr_alt,
+				      NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr,
+			 "Cannot add alternate IPv6 address");
 
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
@@ -544,6 +562,92 @@ static void test_route_ipv6_preference(void)
 	net_route_ipv6_del(route_entry);
 }
 
+static void test_route_ipv6_select_src_iface_uses_explicit_route(void)
+{
+	const struct net_in6_addr *src_addr;
+	struct net_if_router *router;
+	struct net_if *iface;
+	struct net_route_entry *route;
+
+	router = net_if_ipv6_router_add(my_iface, &peer_addr, true,
+					 0U);
+	zassert_not_null(router, "Default router add failed");
+
+	route = net_route_ipv6_add(peer_iface, &dest_addr_alt, 128,
+				   &peer_addr_alt,
+				   NET_IPV6_ND_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "Selection route add failed");
+
+	src_addr = net_if_ipv6_select_src_addr(NULL, &dest_addr_alt);
+	zassert_false(src_addr == net_ipv6_unspecified_address(),
+		      "Source address selection failed");
+	zassert_true(net_ipv6_addr_cmp(src_addr, &my_addr_alt),
+		     "Source address should come from the routed interface");
+
+	iface = net_if_ipv6_select_src_iface(&dest_addr_alt);
+	zassert_equal_ptr(iface, peer_iface,
+			  "Explicit IPv6 route should select peer interface");
+
+	zassert_ok(net_route_ipv6_del(route), "Selection route del failed");
+	zassert_true(net_if_ipv6_router_rm(router), "Default router del failed");
+}
+
+static void test_route_ipv6_packet_without_neighbor_ll(void)
+{
+	struct net_ipv6_hdr *hdr;
+	struct net_pkt *pkt;
+	int ret;
+
+	sent_pkt_seen = false;
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPPROTO_ICMPV6,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "Packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	hdr->vtc = 0x60;
+	net_ipv6_addr_copy_raw(hdr->src, my_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, dest_addr_alt.s6_addr);
+
+	net_pkt_set_orig_iface(pkt, my_iface);
+	net_pkt_set_iface(pkt, my_iface);
+
+	ret = net_route_ipv6_packet(pkt, &peer_addr_alt);
+	zassert_ok(ret, "IPv6 route packet failed without LL neighbor");
+	zassert_true(sent_pkt_seen, "Packet was not sent");
+}
+
+static void test_route_ipv6_packet_without_iface(void)
+{
+	struct net_ipv6_hdr *hdr;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(my_iface, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPPROTO_ICMPV6,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "Packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	hdr->vtc = 0x60;
+	net_ipv6_addr_copy_raw(hdr->src, my_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, dest_addr_alt.s6_addr);
+
+	net_pkt_set_iface(pkt, NULL);
+
+	zassert_equal(net_route_ipv6_packet(pkt, &peer_addr_alt), -EINVAL,
+		      "IPv6 route packet should reject missing iface");
+
+	net_pkt_unref(pkt);
+}
+
 
 /*test case main entry*/
 ZTEST(route_test_suite, test_route)
@@ -566,6 +670,9 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv6_del_many();
 	test_route_ipv6_lifetime();
 	test_route_ipv6_preference();
+	test_route_ipv6_select_src_iface_uses_explicit_route();
+	test_route_ipv6_packet_without_neighbor_ll();
+	test_route_ipv6_packet_without_iface();
 }
 
 ZTEST_SUITE(route_test_suite, NULL, NULL, NULL, NULL, NULL);

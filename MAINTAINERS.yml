@@ -502,6 +502,8 @@ Bluetooth Audio:
     - pin-zephyr
     - niym-ot
     - jthm-ot
+    - alexsven
+    - koffes
   files:
     - subsys/bluetooth/audio/
     - include/zephyr/bluetooth/audio/
@@ -990,6 +992,8 @@ Cache:
   status: maintained
   maintainers:
     - nashif
+  collaborators:
+    - JarmouniA
   files:
     - include/zephyr/drivers/cache.h
     - include/zephyr/cache.h
@@ -1271,6 +1275,7 @@ Display drivers:
     - VynDragon
     - KATE-WANG-NXP
     - avolmat-st
+    - RuoshanShi
   files:
     - drivers/display/
     - dts/bindings/display/
@@ -1296,9 +1301,9 @@ Documentation:
   status: maintained
   maintainers:
     - kartben
-    - carlescufi
   collaborators:
     - nashif
+    - carlescufi
   files:
     - CODE_OF_CONDUCT.md
     - CONTRIBUTING.rst
@@ -1369,6 +1374,7 @@ Documentation Infrastructure:
 "Drivers: Audio":
   status: odd fixes
   collaborators:
+    - rriveramcrus
     - lyakh
     - lgirdwood
     - kv2019i
@@ -1404,6 +1410,21 @@ Documentation Infrastructure:
     - "area: Aux display"
   tests:
     - sample.drivers.auxdisplay
+
+"Drivers: Buzzer":
+  status: maintained
+  maintainers:
+    - carlocaione
+  files:
+    - doc/hardware/peripherals/buzzer.rst
+    - drivers/buzzer/
+    - dts/bindings/buzzer/
+    - include/zephyr/drivers/buzzer.h
+    - samples/drivers/buzzer/
+  labels:
+    - "area: Buzzer"
+  tests:
+    - sample.drivers.buzzer
 
 "Drivers: CAN":
   status: maintained
@@ -2137,6 +2158,7 @@ Documentation Infrastructure:
   collaborators:
     - JarmouniA
     - KATE-WANG-NXP
+    - RuoshanShi
   files:
     - drivers/mipi_dsi/
     - include/zephyr/drivers/mipi_dsi.h
@@ -3094,6 +3116,7 @@ Infineon Platforms:
     - Peterson-Brett
     - lauracarlesso
     - merin-infineon
+    - ifx-rmcs
   files:
     - boards/cypress/
     - boards/infineon/
@@ -4401,6 +4424,7 @@ Networking:
     - pdgendt
     - kkasperczyk-no
     - edmont
+    - Cristib05
   files:
     - subsys/net/l2/openthread/
     - samples/net/openthread/
@@ -4821,6 +4845,7 @@ Raspberry Pi Pico Platforms:
     - boards/sparkfun/rp2040_mikrobus/
     - boards/waveshare/rp2040_zero/
     - boards/wiznet/w5500_evb_pico*/
+    - boards/wiznet/w6100_evb_pico*/
     - dts/arm/raspberrypi/rpi_pico/
     - dts/bindings/*/raspberrypi,pico*
     - dts/vendor/raspberrypi/
@@ -4837,6 +4862,8 @@ Realtek Ameba Platforms:
   maintainers:
     - zjian-zhang
     - Derek-RTK
+  collaborators:
+    - minyuan-xue
   files:
     - boards/realtek/rtl872*/
     - drivers/*/*ameba*
@@ -5741,6 +5768,7 @@ USB:
   collaborators:
     - josuah
     - MarkWangChinese
+    - roma-jam
   files:
     - drivers/usb/
     - dts/bindings/usb/
@@ -6225,6 +6253,7 @@ West:
     - Peterson-Brett
     - lauracarlesso
     - merin-infineon
+    - ifx-rmcs
   files:
     - modules/Kconfig.infineon
     - modules/hal_infineon/
@@ -6341,6 +6370,7 @@ West:
   collaborators:
     - Derek-RTK
     - YuzhuoLiuRTK
+    - minyuan-xue
   files: []
   labels:
     - "platform: Realtek"
@@ -6718,6 +6748,7 @@ West:
     - pdgendt
     - kkasperczyk-no
     - edmont
+    - Cristib05
   files:
     - modules/openthread/
   labels:
@@ -6912,6 +6943,7 @@ Xilinx Platforms:
     - ibirnbaum
     - kedareswararao
     - neeliajay
+    - venodela
   files:
     - boards/amd/
     - drivers/*/*xilinx*

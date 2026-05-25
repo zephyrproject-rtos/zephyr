@@ -20,20 +20,15 @@ config NET_ROUTE
 	depends on NET_IPV6_NBR_CACHE
 	default y if NET_IPV6_ROUTE
 	help
-	  This symbol is deprecated and is driven by NET_IPV6_ROUTE
-	  symbol which is the master one. Note that this symbol is
-	  removed when the other deprecated route symbols are removed.
+	  This symbol is deprecated and is driven by NET_IPV6_ROUTE,
+	  which is the user-visible IPv6 route table option.
 
 config NET_ROUTING
-	bool "IP routing between interfaces [DEPRECATED]"
+	bool "IPv6 forwarding between interfaces [DEPRECATED]"
 	depends on NET_ROUTE
 	select DEPRECATED
 	help
-	  Allow IPv6 routing between different network interfaces and
-	  technologies. Currently this has limited use as some entity
-	  would need to populate the routing table. RPL used to do that
-	  earlier but currently there is no RPL support in Zephyr.
-	  This symbol is deprected, use NET_IPV6_ROUTING instead.
+	  This symbol is deprecated, use NET_IPV6_FORWARDING instead.
 
 config NET_MAX_ROUTES
 	int "Max number of routing entries stored [DEPRECATED]."
@@ -91,7 +86,8 @@ config NET_MCAST_ROUTE_MLD_REPORTS
 config NET_ROUTE_SYMBOLS_DEPRECATED
 	bool
 	default y
-	depends on NET_ROUTING || NET_ROUTE_MCAST || NET_MCAST_ROUTE_MLD_REPORTS
+	depends on NET_ROUTING || NET_IPV6_ROUTING || NET_ROUTE_MCAST || \
+		   NET_MCAST_ROUTE_MLD_REPORTS
 
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
@@ -180,19 +176,35 @@ config NET_IPV6_MAX_NEIGHBORS
 # Normally the route support is enabled by RPL or similar technology
 # that needs to use the routing infrastructure.
 config NET_IPV6_ROUTE
-	bool
+	bool "IPv6 unicast route table support"
 	depends on NET_IPV6_NBR_CACHE
 	default y if NET_IPV6_NBR_CACHE
+	help
+	  Enable the IPv6 unicast route table and route-aware destination
+	  selection for locally originated traffic.
 
-config NET_IPV6_ROUTING
-	bool "IP routing between interfaces"
-	default NET_ROUTING if NET_ROUTE_SYMBOLS_DEPRECATED
+	  This option is needed for static IPv6 routes, route lookups from
+	  networking shell commands, and host-side route selection such as
+	  VPN traffic steering. Enable NET_IPV6_FORWARDING as well if the
+	  device must forward packets between interfaces.
+
+config NET_IPV6_FORWARDING
+	bool "IPv6 forwarding between interfaces"
+	default y if NET_ROUTING || NET_IPV6_ROUTING
 	depends on NET_IPV6_ROUTE
 	help
-	  Allow IPv6 routing between different network interfaces and
-	  technologies. Currently this has limited use as some entity
-	  would need to populate the routing table. RPL used to do that
-	  earlier but currently there is no RPL support in Zephyr.
+	  Allow the device to forward IPv6 packets between different network
+	  interfaces and technologies.
+
+	  This is separate from NET_IPV6_ROUTE, which only enables the IPv6
+	  route table for host-side route selection and shell route commands.
+
+config NET_IPV6_ROUTING
+	bool "IPv6 routing between interfaces [DEPRECATED]"
+	depends on NET_IPV6_ROUTE
+	select DEPRECATED
+	help
+	  This symbol is deprecated, use NET_IPV6_FORWARDING instead.
 
 config NET_IPV6_MAX_ROUTES
 	int "Max number of routing entries stored."

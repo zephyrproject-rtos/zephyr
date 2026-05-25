@@ -83,6 +83,76 @@
 			reg = <0xe001d900 0x8>;
 		};
 
+		mcan0: mcan@e0828000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe0828000 0x100>, <0x100000 0x7800>, <0xe181c030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 58>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0x3400 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
+		mcan1: mcan@e082c000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe082c000 0x100>, <0x100000 0xbc00>, <0xe181c030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 115 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 59>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0x7800 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
+		mcan2: mcan@e0830000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe0830000 0x100>, <0x100000 0x10000>, <0xe181c030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 116 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 60>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0xbc00 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
+		mcan3: mcan@e0834000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe0834000 0x100>, <0x110000 0x4400>, <0xe181c030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 117 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 61>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
+		mcan4: mcan@e0838000 {
+			compatible = "atmel,sam-can";
+			reg = <0xe0838000 0x100>, <0x110000 0x8800>, <0xe181c030 0x4>;
+			reg-names = "m_can", "message_ram", "sram_sel";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 118 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "int0", "int1";
+			clocks = <&pmc PMC_TYPE_GCK 62>;
+			clock-names = "gck";
+			bosch,mram-cfg = <0x4400 15 15 8 8 0 15 15>;
+			status = "disabled";
+		};
+
 		aes: aes@e1600000 {
 			compatible = "microchip,aes-g1";
 			reg = <0xe1600000 0x100>;

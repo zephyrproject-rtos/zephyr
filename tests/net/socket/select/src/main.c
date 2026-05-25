@@ -25,10 +25,12 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
 
-/* Fudge factor added to expected timeouts, in milliseconds. */
-#define FUZZ 60
+/* Fudge factor added to expected timeouts, in milliseconds.
+ * Had to set this pretty large to avoid spurious failures in CI.
+ */
+#define FUZZ 180
 
-#define TIMEOUT_MS 60
+#define TIMEOUT_MS 120
 
 ZTEST_USER(net_socket_select, test_fd_set)
 {

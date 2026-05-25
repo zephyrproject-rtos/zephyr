@@ -29,6 +29,7 @@ source "subsys/logging/Kconfig.template.log_config"
 # zephyr-keep-sorted-start
 source "drivers/dma/Kconfig.acp_host"
 source "drivers/dma/Kconfig.acp_sdw"
+source "drivers/dma/Kconfig.ameba"
 source "drivers/dma/Kconfig.andes_atcdmacx00"
 source "drivers/dma/Kconfig.bee"
 source "drivers/dma/Kconfig.bflb"

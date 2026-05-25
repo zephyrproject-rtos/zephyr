@@ -314,7 +314,7 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 			if (ret < 0) {
 				goto end;
 			}
-			memcpy(ra_cmd.data, priv->sdmmc_ctrl.aligned_buff, 8);
+			memcpy(ra_cmd.data, priv->sdmmc_ctrl.aligned_buff, ra_cmd.sector_size);
 			priv->sdmmc_event.transfer_completed = false;
 			break;
 		}

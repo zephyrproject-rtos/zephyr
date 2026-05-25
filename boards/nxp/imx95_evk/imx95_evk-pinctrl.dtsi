@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -179,6 +179,15 @@
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
 			input-enable;
+		};
+	};
+
+	flexio1_io2_default: flexio1_io2_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io02_flexio_flexio_bit_flexio1_flexio_bit2>;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			bias-pull-up;
 		};
 	};
 };

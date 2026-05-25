@@ -112,7 +112,7 @@ static void notify_params_deep_copy_destroy(struct bt_gatt_notify_params *params
 {
 	struct bt_gatt_notify_params *copy;
 
-	for (unsigned int i = 0; i < mock_bt_gatt_notify_cb_fake.call_count; i++) {
+	for (unsigned int i = 0U; i < mock_bt_gatt_notify_cb_fake.call_count; i++) {
 		copy = mock_bt_gatt_notify_cb_fake.arg1_history[i];
 		if (copy != params) {
 			continue;
@@ -135,7 +135,7 @@ static void notify_params_deep_copy_destroy_all(void)
 {
 	struct bt_gatt_notify_params *copy;
 
-	for (unsigned int i = 0; i < mock_bt_gatt_notify_cb_fake.call_count; i++) {
+	for (unsigned int i = 0U; i < mock_bt_gatt_notify_cb_fake.call_count; i++) {
 		copy = mock_bt_gatt_notify_cb_fake.arg1_history[i];
 		if (copy == NULL) {
 			continue;
@@ -288,7 +288,7 @@ static void foreach_attr_type_dyndb(uint16_t start_handle, uint16_t end_handle,
 			}
 		}
 
-		for (i = 0; i < svc->attr_count; i++) {
+		for (i = 0U; i < svc->attr_count; i++) {
 			struct bt_gatt_attr *attr = &svc->attrs[i];
 
 			if (gatt_foreach_iter(attr, attr->handle, start_handle, end_handle, uuid,
@@ -315,7 +315,7 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 	}
 
 	if (start_handle <= last_static_handle) {
-		uint16_t handle = 1;
+		uint16_t handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 
 		STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 			/* Skip ahead if start is not within service handles */
@@ -324,7 +324,7 @@ void bt_gatt_foreach_attr_type(uint16_t start_handle, uint16_t end_handle,
 				continue;
 			}
 
-			for (i = 0; i < static_svc->attr_count; i++, handle++) {
+			for (i = 0U; i < static_svc->attr_count; i++, handle++) {
 				if (gatt_foreach_iter(&static_svc->attrs[i],
 						      handle, start_handle,
 						      end_handle, uuid,
@@ -380,7 +380,7 @@ static void gatt_insert(struct bt_gatt_service *svc, uint16_t last_handle)
 {
 	struct bt_gatt_service *tmp, *prev = NULL;
 
-	if (last_handle == 0 || svc->attrs[0].handle > last_handle) {
+	if (last_handle == 0U || svc->attrs[0].handle > last_handle) {
 		sys_slist_append(&db, &svc->node);
 		return;
 	}
@@ -410,7 +410,7 @@ static int gatt_register(struct bt_gatt_service *svc)
 
 	if (sys_slist_is_empty(&db)) {
 		handle = last_static_handle;
-		last_handle = 0;
+		last_handle = 0U;
 		goto populate;
 	}
 
@@ -584,7 +584,7 @@ bool bt_gatt_is_subscribed(struct bt_conn *conn,
 
 uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 {
-	uint16_t handle = 1;
+	uint16_t handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE;
 
 	if (!attr) {
 		return 0;
@@ -597,12 +597,12 @@ uint16_t bt_gatt_attr_get_handle(const struct bt_gatt_attr *attr)
 	STRUCT_SECTION_FOREACH(bt_gatt_service_static, static_svc) {
 		/* Skip ahead if start is not within service attributes array */
 		if ((attr < &static_svc->attrs[0]) ||
-		    (attr > &static_svc->attrs[static_svc->attr_count - 1])) {
+		    (attr > &static_svc->attrs[static_svc->attr_count - 1U])) {
 			handle += static_svc->attr_count;
 			continue;
 		}
 
-		for (size_t i = 0; i < static_svc->attr_count; i++, handle++) {
+		for (size_t i = 0U; i < static_svc->attr_count; i++, handle++) {
 			if (attr == &static_svc->attrs[i]) {
 				return handle;
 			}

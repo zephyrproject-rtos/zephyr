@@ -339,10 +339,10 @@ static int dynamic_request_headers_cb(struct http_client_ctx *client,
 				      const struct http_request_ctx *request_ctx,
 				      struct http_response_ctx *response_ctx, void *user_data)
 {
-	ptrdiff_t offset;
 	struct http_header *hdrs_src;
 	struct http_header *hdrs_dst;
 	struct test_headers_clone *clone = (struct test_headers_clone *)user_data;
+	const char *src_buffer = (const char *)client->header_capture_ctx.buffer;
 
 	if (status == HTTP_SERVER_TRANSACTION_ABORTED ||
 	    status == HTTP_SERVER_TRANSACTION_COMPLETE) {
@@ -362,15 +362,16 @@ static int dynamic_request_headers_cb(struct http_client_ctx *client,
 
 		hdrs_src = request_ctx->headers;
 		hdrs_dst = clone->headers;
-		offset = clone->buffer - client->header_capture_ctx.buffer;
 
 		for (int i = 0; i < request_ctx->header_count; i++) {
 			if (hdrs_src[i].name != NULL) {
-				hdrs_dst[i].name = hdrs_src[i].name + offset;
+				hdrs_dst[i].name =
+					(char *)clone->buffer + (hdrs_src[i].name - src_buffer);
 			}
 
 			if (hdrs_src[i].value != NULL) {
-				hdrs_dst[i].value = hdrs_src[i].value + offset;
+				hdrs_dst[i].value =
+					(char *)clone->buffer + (hdrs_src[i].value - src_buffer);
 			}
 		}
 	}

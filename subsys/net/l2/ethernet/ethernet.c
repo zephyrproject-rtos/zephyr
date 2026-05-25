@@ -996,22 +996,6 @@ const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 }
 #endif /* CONFIG_PTP_CLOCK */
 
-#if defined(CONFIG_NET_L2_PTP)
-int net_eth_get_ptp_port(struct net_if *iface)
-{
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-
-	return ctx->port;
-}
-
-void net_eth_set_ptp_port(struct net_if *iface, int port)
-{
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-
-	ctx->port = port;
-}
-#endif /* CONFIG_NET_L2_PTP */
-
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_eth_promisc_mode(struct net_if *iface, bool enable)
 {

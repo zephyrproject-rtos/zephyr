@@ -14,53 +14,6 @@ menuconfig SDL_DISPLAY
 
 if SDL_DISPLAY
 
-choice SDL_DISPLAY_DEFAULT_PIXEL_FORMAT
-	prompt "Default pixel format"
-	default SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888
-	help
-	  Default pixel format to be used by the display
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888
-		bool "ARGB 8888"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888
-		bool "XRGB 8888"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888
-		bool "RGB 888"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01
-		bool "Mono Black=0"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10
-		bool "Mono Black=1"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565
-		bool "RGB 565"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X
-		bool "RGB 565X"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_L_8
-		bool "Grayscale 8bit"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88
-		bool "Grayscale 8bit with Alpha"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_888
-		bool "BGR 888"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ABGR_8888
-		bool "ABGR 8888"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGBA_8888
-		bool "RGBA 8888"
-
-	config SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGRA_8888
-		bool "BGRA 8888"
-
-endchoice
-
 config SDL_DISPLAY_ZOOM_PCT
 	int "Default zoom percentage"
 	default 100

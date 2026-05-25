@@ -204,6 +204,35 @@ void arch_cpu_idle(void);
  */
 void arch_cpu_atomic_idle(unsigned int key);
 
+/**
+ * @brief Prepare interrupt state before entering a system PM state
+ *
+ * This hook is called with interrupts locked by SoC PM implementations that keep
+ * IRQ dispatch blocked across system PM resume. It should be called immediately
+ * before the low-power instruction. Architectures may use it to allow a pending
+ * wake event to bring the CPU out of the low-power instruction without allowing
+ * regular interrupt handlers to run before PM resume bookkeeping.
+ *
+ * Despite the name, this is not a pm_state_set() boundary hook. SoC code should
+ * call it immediately around the low-power instruction, typically WFI, to
+ * minimize the window of restrictive interrupt masking.
+ *
+ * @return Architecture-specific key to pass to arch_pm_state_set_finish().
+ */
+unsigned int arch_pm_state_set_prepare(void);
+
+/**
+ * @brief Restore interrupt state after leaving a system PM state
+ *
+ * This hook restores the interrupt state prepared by arch_pm_state_set_prepare()
+ * back to the locked state expected by the PM core. The original idle-thread
+ * interrupt key is still owned by the idle path and restored after PM resume
+ * bookkeeping is complete.
+ *
+ * @param key Architecture-specific key returned by arch_pm_state_set_prepare().
+ */
+void arch_pm_state_set_finish(unsigned int key);
+
 /** @} */
 
 

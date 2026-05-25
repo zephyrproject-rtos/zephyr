@@ -545,7 +545,7 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 	src_ids[conn_index] = state->src_id;
 	valid_src_id[conn_index] = true;
 
-	for (uint8_t i = 0; i < state->num_subgroups; i++) {
+	for (uint8_t i = 0U; i < state->num_subgroups; i++) {
 		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
@@ -556,7 +556,7 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 					      subgroup->metadata_len);
 		bt_data_parse(&buf, metadata_entry, NULL);
 
-		if (subgroup->bis_sync != 0) {
+		if (subgroup->bis_sync != 0U) {
 			SET_FLAG(flag_recv_state_updated_with_bis_sync);
 		}
 	}
@@ -1111,7 +1111,7 @@ static void test_broadcast_reception_start(struct bt_conn *conns[], size_t conn_
 		}
 
 		reception_start_param.param[i].num_subgroups = num_subgroups;
-		for (size_t j = 0; j < num_subgroups; j++) {
+		for (size_t j = 0U; j < num_subgroups; j++) {
 			reception_start_param.param[i].subgroups[j].bis_sync = bis_sync[j];
 		}
 	}
@@ -1333,7 +1333,7 @@ static void test_main_cap_commander_broadcast_reception_error(void)
 		 * The failing devices should be failing in the order that they appear in
 		 * connected_conns
 		 */
-		if (i > 0U && connected_conn_cnt > 1) {
+		if (i > 0U && connected_conn_cnt > 1U) {
 			printk("Attempting reception stop on %zu connections\n",
 			       connected_conn_cnt - i);
 			test_broadcast_reception_stop(connected_conns, connected_conn_cnt - i);

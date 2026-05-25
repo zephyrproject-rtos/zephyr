@@ -37,6 +37,8 @@ extern "C" {
 #define ED2208_GCA_COLOR_RED    0x03 /**< Red color index */
 #define ED2208_GCA_COLOR_BLUE   0x05 /**< Blue color index */
 #define ED2208_GCA_COLOR_GREEN  0x06 /**< Green color index */
+
+#define ED2208_GCA_COLOR_PALETTE_SIZE 7    /**< Number of colors in palette, including empty slot */
 /** @} */
 
 #ifdef __cplusplus

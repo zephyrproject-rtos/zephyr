@@ -158,7 +158,7 @@ static void test_recvmsg(int sock,
 	recved = zsock_recvmsg(sock, msg, flags);
 
 	zassert_equal(recved, expected,
-		      "line %d, unexpected received bytes (%d vs %d)",
+		      "line %d, unexpected received bytes (%zd vs %zu)",
 		      line, recved, expected);
 }
 
@@ -352,8 +352,9 @@ void tcp_server_block_thread(void *vps_sock, void *unused2, void *unused3)
 		recved = zsock_recv(new_sock, buffer, chunk_size, 0);
 
 		zassert(recved > 0, "received bigger then 0",
-			"Error receiving bytes %i bytes, got %i on top of %i in iteration %i, errno %i",
-			chunk_size,	recved, total_received, iteration, errno);
+			"Error receiving bytes %zu bytes, got %zu on top of %zu in iteration %i, "
+			"errno %i",
+			chunk_size, recved, total_received, iteration, errno);
 
 		/* Validate the contents */
 		for (int i = 0; i < recved; i++) {
@@ -438,7 +439,7 @@ void test_send_recv_large_common(int tcp_nodelay, int family)
 		int send_bytes = zsock_send(c_sock, buffer, chunk_size, 0);
 
 		zassert(send_bytes > 0, "send_bytes bigger then 0",
-			"Error sending %i bytes on top of %i, got %i in iteration %i, errno %i",
+			"Error sending %zu bytes on top of %zu, got %i in iteration %i, errno %i",
 			chunk_size, total_send, send_bytes, iteration, errno);
 		total_send += send_bytes;
 		iteration++;
@@ -2331,7 +2332,7 @@ static void test_ioctl_fionread_common(int af)
 		zassert_equal(1, write(fd[i], "\x73", 1));
 		k_msleep(100);
 		zassert_ok(zsock_ioctl(fd[j], ZFD_IOCTL_FIONREAD, &avail));
-		zassert_equal(ARRAY_SIZE(bytes), avail, "exp: %d: act: %d", ARRAY_SIZE(bytes),
+		zassert_equal(ARRAY_SIZE(bytes), avail, "exp: %zd: act: %d", ARRAY_SIZE(bytes),
 			      avail);
 	}
 
@@ -2399,7 +2400,7 @@ static void test_ioctl_fionwrite_common(int af)
 	/* With all loopback packets dropped, sent bytes remain queued */
 	avail = -1;
 	zassert_ok(zsock_ioctl(fd[CLIENT], ZFD_IOCTL_FIONWRITE, &avail));
-	zassert_equal(strlen(TEST_STR_SMALL), avail, "exp: %d: act: %d",
+	zassert_equal(strlen(TEST_STR_SMALL), avail, "exp: %zd: act: %d",
 		      strlen(TEST_STR_SMALL), avail);
 
 	/* Once packets are delivered, FIONWRITE returns 0 again */

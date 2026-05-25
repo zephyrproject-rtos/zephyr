@@ -31,8 +31,8 @@
 		qspi-frequency = <24000000>;
 		qspi-quad-mode;
 
-		#include "nrf70_common.dtsi"
-		#include "nrf70_common_5g.dtsi"
+#include "nrf70_common.dtsi"
+#include "nrf70_common_5g.dtsi"
 	};
 };
 

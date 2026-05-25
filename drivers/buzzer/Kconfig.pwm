@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BUZZER_PWM
+	bool "PWM-driven passive piezo buzzer"
+	default y
+	depends on DT_HAS_PWM_BUZZER_ENABLED
+	select PWM
+	help
+	  Enable the PWM backend for passive piezo buzzers. The PWM
+	  channel's period sets the audio frequency and the duty cycle
+	  sets the volume.

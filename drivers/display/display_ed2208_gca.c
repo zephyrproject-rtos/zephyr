@@ -9,6 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/drivers/display/ed2208-gca.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/kernel.h>
@@ -53,6 +54,7 @@ struct ed2208_gca_config {
 	const struct device *mipi_dev;
 	struct mipi_dbi_config dbi_config;
 	struct gpio_dt_spec busy_gpio;
+	uint32_t color_palette[ED2208_GCA_COLOR_PALETTE_SIZE];
 	uint16_t width;
 	uint16_t height;
 };
@@ -305,6 +307,7 @@ static void ed2208_gca_get_capabilities(const struct device *dev, struct display
 	const struct ed2208_gca_config *config = dev->config;
 
 	memset(caps, 0, sizeof(*caps));
+	memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
 	caps->supported_pixel_formats = PIXEL_FORMAT_I_4;
@@ -389,6 +392,8 @@ static DEVICE_API(display, ed2208_gca_api) = {
 };
 
 #define ED2208_GCA_DEFINE(inst)                                                                    \
+	BUILD_ASSERT(CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE >=                                      \
+		     DT_PROP_LEN(DT_INST_CHILD(inst, color_palette), colors));                     \
 	static const struct ed2208_gca_config ed2208_gca_cfg_##inst = {                            \
 		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
 		.dbi_config =                                                                      \
@@ -398,6 +403,7 @@ static DEVICE_API(display, ed2208_gca_api) = {
 					inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),            \
 			},                                                                         \
 		.busy_gpio = GPIO_DT_SPEC_INST_GET(inst, busy_gpios),                              \
+		.color_palette = DT_PROP(DT_INST_CHILD(inst, color_palette), colors),              \
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \
 	};                                                                                         \
