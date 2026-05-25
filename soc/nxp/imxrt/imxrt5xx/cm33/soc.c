@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023, NXP
+ * Copyright 2022-2023, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,9 +17,9 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
-#include <fsl_power.h>
-#include <fsl_clock.h>
-#include <fsl_cache.h>
+#include "fsl_power.h"
+#include "fsl_clock.h"
+#include <zephyr/cache.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -554,5 +554,37 @@ void soc_early_init_hook(void)
 #ifdef CONFIG_PM
 	rt5xx_power_init();
 #endif
+}
 
+#if defined(CONFIG_LV_USE_DRAW_VG_LITE)
+static int gpu2d_init_imxrt5xx(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	SYSCTL0->PDRUNCFG1_CLR = SYSCTL0_PDRUNCFG1_GPU_SRAM_APD_MASK;
+	SYSCTL0->PDRUNCFG1_CLR = SYSCTL0_PDRUNCFG1_GPU_SRAM_PPD_MASK;
+	POWER_ApplyPD();
+
+	CLOCK_AttachClk(kMAIN_CLK_to_GPU_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivGpuClk, 2);
+	CLOCK_EnableClock(kCLOCK_Gpu);
+	CLOCK_EnableClock(kCLOCK_AxiSwitch);
+
+	RESET_ClearPeripheralReset(kGPU_RST_SHIFT_RSTn);
+	RESET_ClearPeripheralReset(kAXI_SWITCH_RST_SHIFT_RSTn);
+
+	NVIC_SetPriority(GPU_IRQn, CONFIG_VG_LITE_INTERRUPT_PRIORITY);
+	EnableIRQ((IRQn_Type)GPU_IRQn);
+
+	return 0;
+}
+
+DEVICE_DT_DEFINE(DT_INST(0, nxp_gpu2d), gpu2d_init_imxrt5xx, NULL,
+		      NULL, NULL, POST_KERNEL,
+		      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+#endif /* CONFIG_LV_USE_DRAW_VG_LITE */
+
+void clear_cache_op(void)
+{
+	sys_cache_data_flush_all();
 }

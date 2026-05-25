@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2025 NXP
+ * Copyright 2021-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -929,3 +929,33 @@ static int second_core_boot(void)
 
 SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
+
+#if defined(CONFIG_LV_USE_DRAW_VG_LITE)
+static int gpu2d_init_imxrt11xx(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	const clock_root_config_t gpu2d_clock_cfg = {
+		.clockOff = false,
+		.mux      = kCLOCK_GC355_ClockRoot_MuxVideoPllOut,
+		.div      = 2,
+	};
+
+	CLOCK_SetRootClock(kCLOCK_Root_Gc355, &gpu2d_clock_cfg);
+	CLOCK_EnableClock(kCLOCK_Gpu2d);
+	NVIC_SetPriority(GPU2D_IRQn, CONFIG_VG_LITE_INTERRUPT_PRIORITY);
+	EnableIRQ((IRQn_Type)GPU2D_IRQn);
+
+	return 0;
+}
+
+DEVICE_DT_DEFINE(DT_INST(0, nxp_gpu2d), gpu2d_init_imxrt11xx, NULL,
+		NULL, NULL, POST_KERNEL,
+		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+
+#endif /* CONFIG_LV_USE_DRAW_VG_LITE */
+
+void clear_cache_op(void)
+{
+	sys_cache_data_flush_all();
+}
