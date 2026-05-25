@@ -210,8 +210,9 @@ static int cmd_timer_periodic(const struct shell *shctx, size_t argc, char **arg
 
 	/* Checking periodic interrupt for PERIODIC_CYCLES times and then unblocking shell.
 	 * Timer is still running and interrupt is triggered periodically.
+	 * Wait for the exact number of periodic cycles configured
 	 */
-	while (++count < PERIODIC_CYCLES) {
+	for (count = 0; count < PERIODIC_CYCLES; count++) {
 		k_sem_take(&timer_sem, K_FOREVER);
 	}
 
