@@ -30,18 +30,36 @@
 #include <stm32_ll_dma.h>
 #include "mspi_stm32.h"
 
-#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value, index)                             \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, prop),				\
-		    (_CONCAT(HAL_OSPIM_, DT_INST_STRING_TOKEN(index, prop))),	\
-		    (default_value))
+/*
+ * Map a DT_INST ordinal to the hardware OCTOSPI instance number (1, 2, ...).
+ *
+ * COND_CODE_1(DT_NODE_EXISTS(...)) is evaluated entirely by the preprocessor
+ * and emits the ternary arm only when the node label exists in the current DTS.
+ * This avoids expanding DT_NODELABEL(octospiN) on chips that have fewer
+ * instances, making the macro portable across all STM32 OCTOSPI variants.
+ *
+ * The result is a stacked ternary whose trailing 0 (unknown node) is caught at
+ * compile time by BUILD_ASSERT in MSPI_STM32_INIT.
+ */
+#define OSPI_INST_NUM(index)                                                           \
+	(COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(octospi1)),                               \
+		(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi1)) ? 1 :),    \
+		())                                                                   \
+	COND_CODE_1(DT_NODE_EXISTS(DT_NODELABEL(octospi2)),                               \
+		(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi2)) ? 2 :),    \
+		())                                                                   \
+	0)
 
 /*
- * Determine the hardware OSPI instance number (1, 2, ...) from the DTS node,
- * regardless of the DT_INST ordinal index which depends on enumeration order.
+ * OSPIM-specific macros: HAL_OSPIM_IOPORT_* constants are only defined by the
+ * STM32 HAL when the OCTOSPI I/O Manager peripheral is present.  Guard them so
+ * the driver compiles cleanly on chips without OCTOSPIM (e.g. STM32L4/L5).
  */
-#define OSPI_INST_NUM(index)                                              \
-	(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi1)) ? 1 : \
-	 DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi2)) ? 2 : 1)
+#if defined(OCTOSPIM)
+#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value, index)                          \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, prop),                              \
+		    (_CONCAT(HAL_OSPIM_, DT_INST_STRING_TOKEN(index, prop))),         \
+		    (default_value))
 
 #define OSPI_INST_IO_LOW_PORT(index)                              \
 	((OSPI_INST_NUM(index) == 1) ? HAL_OSPIM_IOPORT_1_LOW :  \
@@ -52,6 +70,12 @@
 	((OSPI_INST_NUM(index) == 1) ? HAL_OSPIM_IOPORT_1_HIGH :  \
 	 (OSPI_INST_NUM(index) == 2) ? HAL_OSPIM_IOPORT_2_HIGH :  \
 	 HAL_OSPIM_IOPORT_1_HIGH)
+#else
+/* No OCTOSPIM: io port fields are unused; provide neutral zero values. */
+#define DT_OSPI_IO_PORT_PROP_OR(prop, default_value, index) 0
+#define OSPI_INST_IO_LOW_PORT(index)  0
+#define OSPI_INST_IO_HIGH_PORT(index) 0
+#endif /* OCTOSPIM */
 
 LOG_MODULE_REGISTER(ospi_stm32, CONFIG_MSPI_LOG_LEVEL);
 
@@ -176,7 +200,7 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 	struct mspi_stm32_data *dev_data = controller->data;
 	OSPI_RegularCmdTypeDef s_command =
 		mspi_stm32_ospi_prepare_cmd(dev_data->dev_cfg.io_mode, dev_data->dev_cfg.data_rate);
-	OSPI_MemoryMappedTypeDef s_MemMappedCfg;
+	OSPI_MemoryMappedTypeDef s_MemMappedCfg = {0};
 	HAL_StatusTypeDef hal_ret;
 
 	if (mspi_stm32_ospi_is_memorymap(controller)) {
@@ -1221,8 +1245,7 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	ospi_mgr_cfg.IOHighPort = dev_cfg->ospim_io_high_port;
 
 	if (dev_data->hmspi.ospi.Instance != OCTOSPI1 &&
-		dev_data->hmspi.ospi.Instance != OCTOSPI2)
-	{
+		dev_data->hmspi.ospi.Instance != OCTOSPI2){
 		LOG_ERR("Unknown OSPI Instance");
 		ret = -EINVAL;
 		goto end;
@@ -1422,6 +1445,8 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 	}
 
 #define MSPI_STM32_INIT(index)                                                                     \
+	BUILD_ASSERT(OSPI_INST_NUM(index) != 0,                                                    \
+		     "Unsupported OSPI instance: DTS node must be octospi1 or octospi2");          \
 	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);           \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
