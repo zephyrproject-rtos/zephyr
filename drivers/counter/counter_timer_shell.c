@@ -124,8 +124,16 @@ static int cmd_timer_oneshot(const struct shell *shctx, size_t argc, char **argv
 		return -ERANGE;
 	}
 
+	/* Validate ticks against hardware maximum to prevent truncation issues */
+	uint32_t ticks = counter_us_to_ticks(timer_dev, delay);
+
+	if (ticks > counter_get_max_top_value(timer_dev)) {
+		shell_error(shctx, "%s: delay exceeds hardware maximum", argv[ARGV_DEV]);
+		return -ERANGE;
+	}
+
 	alarm_cfg.flags = 0;
-	alarm_cfg.ticks = counter_us_to_ticks(timer_dev, (uint64_t)delay);
+	alarm_cfg.ticks = ticks;
 	alarm_cfg.callback = timer_alarm_handler;
 	alarm_cfg.user_data = NULL;
 
@@ -167,8 +175,16 @@ static int cmd_timer_periodic(const struct shell *shctx, size_t argc, char **arg
 		return -ERANGE;
 	}
 
+	/* Validate ticks against hardware maximum to prevent truncation issues */
+	uint32_t ticks = counter_us_to_ticks(timer_dev, delay);
+
+	if (ticks > counter_get_max_top_value(timer_dev)) {
+		shell_error(shctx, "%s: delay exceeds hardware maximum", argv[ARGV_DEV]);
+		return -ERANGE;
+	}
+
 	top_cfg.flags = 0;
-	top_cfg.ticks = counter_us_to_ticks(timer_dev, (uint64_t)delay);
+	top_cfg.ticks = ticks;
 	/* interrupt will be triggered periodically */
 	top_cfg.callback = timer_top_handler;
 	top_cfg.user_data = NULL;
