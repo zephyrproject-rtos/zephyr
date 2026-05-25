@@ -3317,12 +3317,12 @@ Kernel:
   maintainers:
     - andyross
     - peter-mitsis
+    - npitre
   collaborators:
     - nashif
     - ceolin
     - dcpleung
     - cfriedt
-    - npitre
     - TaiJuWu
     - Mattemagikern
   files:
