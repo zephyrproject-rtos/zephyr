@@ -48,58 +48,110 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define IEEE802154_ESP32_TX_TIMEOUT_MS (100)
 
+struct ieee802154_esp32_rx_msg {
+	/* PHR at [0], PSDU bytes follow (length per PHR, max IEEE802154_MAX_PHY_PACKET_SIZE). */
+	uint8_t frame[IEEE802154_MAX_PHY_PACKET_SIZE + 1U];
+	esp_ieee802154_frame_info_t info;
+};
+
 static struct ieee802154_esp32_data esp32_data;
 
-/* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
-void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info)
+K_MSGQ_DEFINE(ieee802154_esp32_rx_msgq, sizeof(struct ieee802154_esp32_rx_msg),
+	      CONFIG_IEEE802154_ESP32_RX_BUFFER_SIZE, 4);
+
+static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx)
 {
+	struct ieee802154_esp32_data *data = &esp32_data;
 	struct net_pkt *pkt;
+	const uint8_t *raw = rx->frame;
+	const esp_ieee802154_frame_info_t *frame_info = &rx->info;
 	uint8_t *payload;
 	uint8_t len;
 	int err;
+
+	if (data->iface == NULL) {
+		return;
+	}
 
 	/* The ESP-IDF HAL handles FCS already and drops frames with bad checksum. The checksum at
 	 * the end of a valid frame is replaced with RSSI and LQI values.
 	 * Zephyr L2 expects only valid frames, so checksum is not needed for a re-check.
 	 */
 	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
-		len = frame[0];
+		len = raw[0];
 	} else {
-		len = frame[0] - IEEE802154_FCS_LENGTH;
+		len = raw[0] - IEEE802154_FCS_LENGTH;
 	}
 
 #if defined(CONFIG_NET_BUF_DATA_SIZE)
 	__ASSERT_NO_MSG(len <= CONFIG_NET_BUF_DATA_SIZE);
 #endif
 
-	payload = frame + 1;
+	payload = (uint8_t *)raw + 1;
 
 	LOG_HEXDUMP_DBG(payload, len, "RX buffer:");
 
-	pkt = net_pkt_rx_alloc_with_buffer(esp32_data.iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface, len, NET_AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No pkt available");
-		goto exit;
+		return;
 	}
 
 	err = net_pkt_write(pkt, payload, len);
 	if (err != 0) {
 		LOG_ERR("Failed to write to a packet: %d", err);
 		net_pkt_unref(pkt);
-		goto exit;
+		return;
 	}
 
 	net_pkt_set_ieee802154_lqi(pkt, frame_info->lqi);
 	net_pkt_set_ieee802154_rssi_dbm(pkt, frame_info->rssi);
 	net_pkt_set_ieee802154_ack_fpb(pkt, frame_info->pending);
 
-	err = net_recv_data(esp32_data.iface, pkt);
+	err = net_recv_data(data->iface, pkt);
 	if (err != 0) {
 		LOG_ERR("RCV Packet dropped by NET stack: %d", err);
 		net_pkt_unref(pkt);
 	}
+}
 
-exit:
+static void ieee802154_esp32_rx_thread_fn(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	struct ieee802154_esp32_rx_msg rx;
+
+	for (;;) {
+		k_msgq_get(&ieee802154_esp32_rx_msgq, &rx, K_FOREVER);
+		ieee802154_esp32_rx_deliver(&rx);
+	}
+}
+#include <rom/ets_sys.h>
+K_THREAD_DEFINE(ieee802154_esp32_rx, CONFIG_IEEE802154_ESP32_RX_STACK_SIZE,
+		ieee802154_esp32_rx_thread_fn, NULL, NULL, NULL,
+		K_PRIO_PREEMPT(CONFIG_IEEE802154_ESP32_RX_THREAD_PRIORITY), 0, 0);
+
+/* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
+void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info)
+{
+	struct ieee802154_esp32_rx_msg msg;
+	uint8_t phr_len = frame[0];
+
+	if (phr_len > IEEE802154_MAX_PHY_PACKET_SIZE) {
+		LOG_WRN("Invalid RX PHR length %u", phr_len);
+		goto done;
+	}
+ets_printf(".");
+	memcpy(msg.frame, frame, (size_t)phr_len + 1U);
+	msg.info = *frame_info;
+
+	if (k_msgq_put(&ieee802154_esp32_rx_msgq, &msg, K_NO_WAIT) != 0) {
+		LOG_WRN("RX queue full, dropping frame");
+	}
+
+done:
 	esp_ieee802154_receive_handle_done(frame);
 }
 
