@@ -74,7 +74,6 @@ static int cmd_timer_free_running(const struct shell *shctx, size_t argc, char *
 
 static int cmd_timer_stop(const struct shell *shctx, size_t argc, char **argv)
 {
-	uint32_t ticks1 = 0, ticks2 = 0;
 	const struct device *timer_dev;
 	int err = parse_device(shctx, argc, argv, &timer_dev);
 
@@ -82,16 +81,12 @@ static int cmd_timer_stop(const struct shell *shctx, size_t argc, char **argv)
 		return err;
 	}
 
-	counter_stop(timer_dev);
-
-	counter_get_value(timer_dev, &ticks1);
-	counter_get_value(timer_dev, &ticks2);
-
-	if (ticks1 == ticks2) {
+	err = counter_stop(timer_dev);
+	if (err == 0) {
 		shell_info(shctx, "Timer Stopped");
 	} else {
-		shell_error(shctx, "Failed to stop timer");
-		return -EIO;
+		shell_error(shctx, "Failed to stop timer, err: %d", err);
+		return err;
 	}
 
 	return 0;
