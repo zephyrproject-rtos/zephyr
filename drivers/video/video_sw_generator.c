@@ -13,6 +13,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <inttypes.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"
@@ -334,7 +335,8 @@ static int video_sw_generator_fill_compressed(struct video_buffer *vbuf, bool hf
 
 	/* Check if buffer is large enough */
 	if (vbuf->size < frame_size) {
-		LOG_ERR("Buffer too small (need %u, have %zu)", frame_size, vbuf->size);
+		LOG_ERR("Buffer too small (need %" PRIu32 ", have %" PRIu32 ")", frame_size,
+			vbuf->size);
 		return -ENOMEM;
 	}
 
