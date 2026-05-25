@@ -23,7 +23,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -33,6 +33,8 @@
 #include "bap_common.h"
 #include "bstests.h"
 #include <zephyr/syscalls/kernel.h>
+
+LOG_MODULE_REGISTER(bap_broadcast_assistant_test);
 
 #ifdef CONFIG_BT_BAP_BROADCAST_ASSISTANT
 
@@ -86,7 +88,7 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("BASS discover done with %u recv states\n", recv_state_count);
+	LOG_INF("BASS discover done with %u recv states", recv_state_count);
 	g_recv_state_count = recv_state_count;
 	SET_FLAG(flag_discovery_complete);
 }
@@ -94,10 +96,10 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *info,
 				uint32_t broadcast_id)
 {
-	printk("Scan Recv: [DEVICE]: %s, broadcast_id 0x%06X, "
-	       "interval (ms) %u), SID 0x%x, RSSI %i\n",
-	       bt_addr_le_str(info->addr), broadcast_id, info->interval * 5 / 4,
-	       info->sid, info->rssi);
+	LOG_DBG("Scan Recv: [DEVICE]: %s, broadcast_id 0x%06X, "
+		"interval (ms) %u), SID 0x%x, RSSI %i",
+		bt_addr_le_str(info->addr), broadcast_id, info->interval * 5 / 4,
+		info->sid, info->rssi);
 
 	(void)memcpy(&g_broadcaster_info, info, sizeof(g_broadcaster_info));
 	bt_addr_le_copy(&g_broadcaster_addr, info->addr);
@@ -113,8 +115,8 @@ static bool metadata_entry(struct bt_data *data, void *user_data)
 
 	(void)bin2hex(data->data, data->data_len, metadata, sizeof(metadata));
 
-	printk("\t\tMetadata length %u, type %u, data: %s\n",
-	       data->data_len, data->type, metadata);
+	LOG_DBG("\t\tMetadata length %u, type %u, data: %s",
+		data->data_len, data->type, metadata);
 
 	return true;
 }
@@ -138,11 +140,11 @@ static void bap_broadcast_assistant_recv_state_cb(
 	}
 
 	(void)bin2hex(state->bad_code, BT_ISO_BROADCAST_CODE_SIZE, bad_code, sizeof(bad_code));
-	printk("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s\n",
-	       state->src_id, bt_addr_le_str(&state->addr), state->adv_sid, state->pa_sync_state,
-	       state->encrypt_state,
-	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? ", bad code: " : "",
-	       state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? bad_code : "");
+	LOG_DBG("BASS recv state: src_id %u, addr %s, sid %u, sync_state %u, encrypt_state %u%s%s",
+		state->src_id, bt_addr_le_str(&state->addr), state->adv_sid, state->pa_sync_state,
+		state->encrypt_state,
+		state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? ", bad code: " : "",
+		state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE ? bad_code : "");
 
 	if (state->encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ) {
 		SET_FLAG(flag_broadcast_code_requested);
@@ -169,8 +171,8 @@ static void bap_broadcast_assistant_recv_state_cb(
 		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 		struct net_buf_simple buf;
 
-		printk("\t[%d]: BIS sync %u, metadata_len %u\n",
-		       i, subgroup->bis_sync, subgroup->metadata_len);
+		LOG_DBG("\t[%d]: BIS sync %u, metadata_len %u",
+			i, subgroup->bis_sync, subgroup->metadata_len);
 
 		net_buf_simple_init_with_data(&buf, (void *)subgroup->metadata,
 					      subgroup->metadata_len);
@@ -183,7 +185,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_SENDER)
 	if (state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
-		printk("Sending PAST %p to %p\n", g_pa_sync, conn);
+		LOG_INF("Sending PAST %p to %p", g_pa_sync, conn);
 		err = bt_le_per_adv_sync_transfer(g_pa_sync, conn,
 						  BT_UUID_BASS_VAL);
 		if (err != 0) {
@@ -202,7 +204,7 @@ static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, 
 {
 	ARG_UNUSED(conn);
 
-	printk("BASS recv state %u removed\n", src_id);
+	LOG_INF("BASS recv state %u removed", src_id);
 	SET_FLAG(flag_cb_called);
 
 	SET_FLAG(flag_recv_state_removed);
@@ -217,7 +219,7 @@ static void bap_broadcast_assistant_scan_start_cb(struct bt_conn *conn, int err)
 		return;
 	}
 
-	printk("BASS scan start successful\n");
+	LOG_INF("BASS scan start successful");
 	SET_FLAG(flag_write_complete);
 }
 
@@ -230,7 +232,7 @@ static void bap_broadcast_assistant_scan_stop_cb(struct bt_conn *conn, int err)
 		return;
 	}
 
-	printk("BASS scan stop successful\n");
+	LOG_INF("BASS scan stop successful");
 	SET_FLAG(flag_write_complete);
 }
 
@@ -243,7 +245,7 @@ static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 		return;
 	}
 
-	printk("BASS add source successful\n");
+	LOG_INF("BASS add source successful");
 	SET_FLAG(flag_write_complete);
 }
 
@@ -256,7 +258,7 @@ static void bap_broadcast_assistant_mod_src_cb(struct bt_conn *conn, int err)
 		return;
 	}
 
-	printk("BASS modify source successful\n");
+	LOG_INF("BASS modify source successful");
 	SET_FLAG(flag_write_complete);
 }
 
@@ -269,7 +271,7 @@ static void bap_broadcast_assistant_broadcast_code_cb(struct bt_conn *conn, int 
 		return;
 	}
 
-	printk("BASS broadcast code successful\n");
+	LOG_INF("BASS broadcast code successful");
 	SET_FLAG(flag_write_complete);
 }
 
@@ -282,7 +284,7 @@ static void bap_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
 	if (err != 0) {
 		if (err == BT_ATT_ERR_WRITE_REQ_REJECTED) {
 			SET_FLAG(flag_remove_source_rejected);
-			printk("Remove source rejected (expected): err=%d\n", err);
+			LOG_INF("Remove source rejected (expected): err=%d", err);
 			return;
 		}
 
@@ -290,7 +292,7 @@ static void bap_broadcast_assistant_rem_src_cb(struct bt_conn *conn, int err)
 		return;
 	}
 
-	printk("BASS remove source successful\n");
+	LOG_INF("BASS remove source successful");
 	SET_FLAG(flag_write_complete);
 }
 
@@ -323,10 +325,10 @@ static struct bt_gatt_cb gatt_callbacks = {
 static void sync_cb(struct bt_le_per_adv_sync *sync,
 		    struct bt_le_per_adv_sync_synced_info *info)
 {
-	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
-	       "Interval 0x%04x (%u ms), PHY %s\n",
-	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr), info->interval,
-	       info->interval * 5 / 4, phy2str(info->phy));
+	LOG_INF("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
+		"Interval 0x%04x (%u ms), PHY %s",
+		bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr), info->interval,
+		info->interval * 5 / 4, phy2str(info->phy));
 
 	SET_FLAG(flag_pa_synced);
 }
@@ -334,8 +336,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 static void term_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
-	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
+	LOG_INF("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated",
+		bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
 
 	SET_FLAG(flag_pa_terminated);
 }
@@ -348,7 +350,7 @@ static struct bt_le_per_adv_sync_cb sync_callbacks = {
 static void test_exchange_mtu(void)
 {
 	WAIT_FOR_FLAG(flag_mtu_exchanged);
-	printk("MTU exchanged\n");
+	LOG_INF("MTU exchanged");
 }
 
 static void update_conn_params(void)
@@ -378,7 +380,7 @@ static void test_bass_discover(void)
 {
 	int err;
 
-	printk("Discovering BASS\n");
+	LOG_INF("Discovering BASS");
 	UNSET_FLAG(flag_discovery_complete);
 	err = bt_bap_broadcast_assistant_discover(default_conn);
 	if (err != 0) {
@@ -397,7 +399,7 @@ static void test_bass_discover(void)
 	}
 
 	WAIT_FOR_FLAG(flag_discovery_complete);
-	printk("Discovery complete\n");
+	LOG_INF("Discovery complete");
 }
 
 static void test_bass_read_receive_states(void)
@@ -416,14 +418,14 @@ static void test_bass_read_receive_states(void)
 		WAIT_FOR_FLAG(flag_recv_state_read);
 	}
 
-	printk("Receive state read complete\n");
+	LOG_INF("Receive state read complete");
 }
 
 static void test_bass_scan_start(void)
 {
 	int err;
 
-	printk("Starting scan\n");
+	LOG_INF("Starting scan");
 	UNSET_FLAG(flag_write_complete);
 	err = bt_bap_broadcast_assistant_scan_start(default_conn, true);
 	if (err != 0) {
@@ -433,14 +435,14 @@ static void test_bass_scan_start(void)
 
 	WAIT_FOR_FLAG(flag_write_complete);
 	WAIT_FOR_FLAG(flag_broadcaster_found);
-	printk("Scan started\n");
+	LOG_INF("Scan started");
 }
 
 static void test_bass_scan_stop(void)
 {
 	int err;
 
-	printk("Stopping scan\n");
+	LOG_INF("Stopping scan");
 	UNSET_FLAG(flag_write_complete);
 	err = bt_bap_broadcast_assistant_scan_stop(default_conn);
 	if (err != 0) {
@@ -449,7 +451,7 @@ static void test_bass_scan_stop(void)
 	}
 
 	WAIT_FOR_FLAG(flag_write_complete);
-	printk("Scan stopped\n");
+	LOG_INF("Scan stopped");
 }
 
 static void test_bass_create_pa_sync(void)
@@ -457,7 +459,7 @@ static void test_bass_create_pa_sync(void)
 	int err;
 	struct bt_le_per_adv_sync_param sync_create_param = { 0 };
 
-	printk("Creating Periodic Advertising Sync...\n");
+	LOG_INF("Creating Periodic Advertising Sync...");
 	bt_addr_le_copy(&sync_create_param.addr, &g_broadcaster_addr);
 	sync_create_param.sid = g_broadcaster_info.sid;
 	sync_create_param.timeout = 0xa;
@@ -468,7 +470,7 @@ static void test_bass_create_pa_sync(void)
 	}
 
 	WAIT_FOR_FLAG(flag_pa_synced);
-	printk("PA synced\n");
+	LOG_INF("PA synced");
 }
 
 static void test_bass_add_source(void)
@@ -477,7 +479,7 @@ static void test_bass_add_source(void)
 	struct bt_bap_broadcast_assistant_add_src_param add_src_param = { 0 };
 	struct bt_bap_bass_subgroup subgroup = { 0 };
 
-	printk("Adding source\n");
+	LOG_INF("Adding source");
 	UNSET_FLAG(flag_write_complete);
 	UNSET_FLAG(flag_cb_called);
 	bt_addr_le_copy(&add_src_param.addr, &g_broadcaster_addr);
@@ -532,7 +534,7 @@ static void test_bass_add_source(void)
 	WAIT_FOR_FLAG(flag_cb_called);
 	WAIT_FOR_FLAG(flag_write_complete);
 
-	printk("Source added\n");
+	LOG_INF("Source added");
 }
 
 static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
@@ -542,7 +544,7 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 	struct bt_bap_bass_subgroup subgroup = {0};
 	uint32_t remote_bis_sync;
 
-	printk("Modify source\n");
+	LOG_INF("Modify source");
 	UNSET_FLAG(flag_cb_called);
 	UNSET_FLAG(flag_write_complete);
 	UNSET_FLAG(flag_recv_state_updated);
@@ -564,14 +566,14 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 	}
 
 	if (recv_state.pa_sync_state == BT_BAP_PA_STATE_NOT_SYNCED) {
-		printk("Source modified, waiting for server to PA sync\n");
+		LOG_INF("Source modified, waiting for server to PA sync");
 
 		WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
 	}
 
 	if (recv_state.pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
 		/* Wait for PAST to finish and then a new receive state */
-		printk("Waiting for PAST sync\n");
+		LOG_INF("Waiting for PAST sync");
 		WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
 	}
 
@@ -594,13 +596,13 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 
 	/* Wait for another notification that updates the metadata of the subgroups */
 	if (recv_state.subgroups[0].metadata_len == 0U) {
-		printk("Waiting for another receive state update with metadata\n");
+		LOG_INF("Waiting for another receive state update with metadata");
 		WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
 	}
 
 	if (bis_sync != 0) {
 		remote_bis_sync = recv_state.subgroups[0].bis_sync;
-		printk("Waiting for BIS sync\n");
+		LOG_INF("Waiting for BIS sync");
 
 		if (remote_bis_sync == 0U &&
 		    recv_state.encrypt_state == BT_BAP_BIG_ENC_STATE_NO_ENC) {
@@ -608,19 +610,19 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 			 * broadcast code for encrypted broadcasts, or have the BIS sync
 			 * values set
 			 */
-			printk("Waiting for another receive state update with BIS sync\n");
+			LOG_INF("Waiting for another receive state update with BIS sync");
 			WAIT_FOR_AND_CLEAR_FLAG(flag_recv_state_updated);
 			remote_bis_sync = recv_state.subgroups[0].bis_sync;
 		}
 
 		if (recv_state.encrypt_state == BT_BAP_BIG_ENC_STATE_BCODE_REQ) {
-			printk("Remote is requesting broadcast code\n");
+			LOG_INF("Remote is requesting broadcast code");
 			if (remote_bis_sync != 0U) {
 				FAIL("Unexpected BIS sync value: %u", remote_bis_sync);
 				return;
 			}
 		} else if (recv_state.encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
-			printk("Remote responded with bad code\n");
+			LOG_INF("Remote responded with bad code");
 			if (remote_bis_sync != 0U) {
 				FAIL("Unexpected BIS sync value: %u", remote_bis_sync);
 				return;
@@ -637,7 +639,7 @@ static void test_bass_mod_source(bool pa_sync, uint32_t bis_sync)
 
 	WAIT_FOR_FLAG(flag_cb_called);
 	WAIT_FOR_FLAG(flag_write_complete);
-	printk("Source modified\n");
+	LOG_INF("Source modified");
 }
 
 static void test_bass_mod_source_long_meta(void)
@@ -647,7 +649,7 @@ static void test_bass_mod_source_long_meta(void)
 	struct bt_bap_bass_subgroup subgroup = { 0 };
 	uint32_t remote_bis_sync;
 
-	printk("Long write\n");
+	LOG_INF("Long write");
 	UNSET_FLAG(flag_cb_called);
 	UNSET_FLAG(flag_write_complete);
 	UNSET_FLAG(flag_recv_state_updated);
@@ -665,7 +667,7 @@ static void test_bass_mod_source_long_meta(void)
 		FAIL("Could not modify source (err %d)\n", err);
 		return;
 	}
-	printk("Source modified, waiting for receive state\n");
+	LOG_INF("Source modified, waiting for receive state");
 
 	WAIT_FOR_FLAG(flag_recv_state_updated);
 
@@ -699,14 +701,14 @@ static void test_bass_mod_source_long_meta(void)
 
 	WAIT_FOR_FLAG(flag_cb_called);
 	WAIT_FOR_FLAG(flag_write_complete);
-	printk("Source modified with long meta\n");
+	LOG_INF("Source modified with long meta");
 }
 
 static void test_bass_broadcast_code(const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	int err;
 
-	printk("Adding broadcast code\n");
+	LOG_INF("Adding broadcast code");
 	UNSET_FLAG(flag_write_complete);
 
 	do {
@@ -721,14 +723,14 @@ static void test_bass_broadcast_code(const uint8_t broadcast_code[BT_ISO_BROADCA
 	} while (err == -EBUSY);
 
 	WAIT_FOR_FLAG(flag_write_complete);
-	printk("Broadcast code added\n");
+	LOG_INF("Broadcast code added");
 }
 
 static void test_bass_remove_source(void)
 {
 	int err;
 
-	printk("Removing source\n");
+	LOG_INF("Removing source");
 	UNSET_FLAG(flag_cb_called);
 	UNSET_FLAG(flag_write_complete);
 	UNSET_FLAG(flag_remove_source_cb_called);
@@ -744,13 +746,13 @@ static void test_bass_remove_source(void)
 	WAIT_FOR_FLAG(flag_remove_source_cb_called);
 
 	if (TEST_FLAG(flag_remove_source_rejected)) {
-		printk("Remove source was rejected as expected\n");
+		LOG_INF("Remove source was rejected as expected");
 		return;
 	}
 
 	WAIT_FOR_FLAG(flag_cb_called);
 	WAIT_FOR_FLAG(flag_write_complete);
-	printk("Source removed\n");
+	LOG_INF("Source removed");
 }
 
 static int common_init(void)
@@ -769,14 +771,14 @@ static int common_init(void)
 	bt_le_per_adv_sync_cb_register(&sync_callbacks);
 	bt_le_scan_cb_register(&common_scan_cb);
 
-	printk("Starting scan\n");
+	LOG_INF("Starting scan");
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return err;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_INF("Scanning successfully started");
 
 	WAIT_FOR_FLAG(flag_connected);
 
@@ -832,7 +834,7 @@ static void test_main_client_sync(void)
 	test_bass_mod_source(true, BT_ISO_BIS_INDEX_BIT(1U) | BT_ISO_BIS_INDEX_BIT(2U));
 	test_bass_broadcast_code(BROADCAST_CODE);
 
-	printk("Waiting for receive state with BIS sync\n");
+	LOG_INF("Waiting for receive state with BIS sync");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	test_bass_mod_source(false, 0);
@@ -892,15 +894,15 @@ static void test_main_server_sync_client_rem(void)
 
 	test_bass_broadcast_code(BROADCAST_CODE);
 
-	printk("Waiting for receive state with BIS sync\n");
+	LOG_INF("Waiting for receive state with BIS sync");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
-	printk("Attempting to remove source for the first time\n");
+	LOG_INF("Attempting to remove source for the first time");
 	test_bass_mod_source(false, 0);
 	test_bass_remove_source();
 
 	WAIT_FOR_FLAG(flag_remove_source_rejected);
-	printk("First remove source attempt was rejected as expected\n");
+	LOG_INF("First remove source attempt was rejected as expected");
 
 	test_bass_remove_source();
 
@@ -927,7 +929,7 @@ static void test_main_server_sync_server_rem(void)
 
 	test_bass_broadcast_code(BROADCAST_CODE);
 
-	printk("Waiting for receive state with BIS sync\n");
+	LOG_INF("Waiting for receive state with BIS sync");
 	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
 
 	WAIT_FOR_FLAG(flag_recv_state_removed);

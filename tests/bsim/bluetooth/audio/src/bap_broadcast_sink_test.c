@@ -27,7 +27,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -36,6 +36,8 @@
 #include "bap_stream_rx.h"
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(bap_broadcast_sink_test);
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SINK)
 extern enum bst_result_t bst_result;
@@ -104,7 +106,7 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 
 	ret = bt_bap_base_subgroup_codec_to_codec_cfg(subgroup, &codec_cfg);
 	if (ret < 0) {
-		printk("Could not get subgroup codec_cfg: %d\n", ret);
+		LOG_ERR("Could not get subgroup codec_cfg: %d", ret);
 
 		return false;
 	}
@@ -118,12 +120,12 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 		const int freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
 
 		if (freq < 0) {
-			printk("Invalid subgroup frequency value: %d (%d)\n", ret, freq);
+			LOG_ERR("Invalid subgroup frequency value: %d (%d)", ret, freq);
 
 			return false;
 		}
 	} else {
-		printk("Could not get subgroup frequency: %d\n", ret);
+		LOG_ERR("Could not get subgroup frequency: %d", ret);
 
 		return false;
 	}
@@ -133,13 +135,13 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 		const int frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
 
 		if (frame_duration_us < 0) {
-			printk("Invalid subgroup frame duration value: %d (%d)\n", ret,
-			       frame_duration_us);
+			LOG_ERR("Invalid subgroup frame duration value: %d (%d)", ret,
+				frame_duration_us);
 
 			return false;
 		}
 	} else {
-		printk("Could not get subgroup frame duration: %d\n", ret);
+		LOG_ERR("Could not get subgroup frame duration: %d", ret);
 
 		return false;
 	}
@@ -148,13 +150,13 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 	if (ret == 0) {
 		chan_cnt = bt_audio_get_chan_count(chan_allocation);
 	} else {
-		FAIL("Could not get subgroup channel allocation: %d\n", ret);
+		LOG_ERR("Could not get subgroup channel allocation: %d", ret);
 
 		return false;
 	}
 
 	if (chan_cnt == 0U || (BIT(chan_cnt - 1U) & SUPPORTED_CHAN_COUNTS) == 0U) {
-		printk("Unsupported channel count: %u\n", chan_cnt);
+		LOG_ERR("Unsupported channel count: %u", chan_cnt);
 
 		return false;
 	}
@@ -163,14 +165,14 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 	if (ret > 0) {
 		octets_per_frame = (uint16_t)ret;
 	} else {
-		printk("Could not get subgroup octets per frame: %d\n", ret);
+		LOG_ERR("Could not get subgroup octets per frame: %d", ret);
 
 		return false;
 	}
 
 	if (!IN_RANGE(octets_per_frame, SUPPORTED_MIN_OCTETS_PER_FRAME,
 		      SUPPORTED_MAX_OCTETS_PER_FRAME)) {
-		printk("Unsupported octets per frame: %u\n", octets_per_frame);
+		LOG_ERR("Unsupported octets per frame: %u", octets_per_frame);
 
 		return false;
 	}
@@ -179,7 +181,7 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 	if (ret > 0) {
 		frames_blocks_per_sdu = (uint8_t)ret;
 	} else {
-		FAIL("Could not get frame blocks per SDU: %d\n", ret);
+		LOG_ERR("Could not get frame blocks per SDU: %d", ret);
 
 		return false;
 	}
@@ -189,10 +191,10 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 	 */
 	min_sdu_size_required = chan_cnt * octets_per_frame * frames_blocks_per_sdu;
 	if (min_sdu_size_required > SUPPORTED_MAX_SDU_SIZE) {
-		printk("With %zu channels and %u octets per frame and %u frames per block, SDUs "
-		       "shall be at minimum %zu, we only support %d\n",
-		       chan_cnt, octets_per_frame, frames_blocks_per_sdu, min_sdu_size_required,
-		       SUPPORTED_MAX_SDU_SIZE);
+		LOG_ERR("With %zu channels and %u octets per frame and %u frames per block, SDUs "
+			"shall be at minimum %zu, we only support %d",
+			chan_cnt, octets_per_frame, frames_blocks_per_sdu, min_sdu_size_required,
+			SUPPORTED_MAX_SDU_SIZE);
 
 		return false;
 	}
@@ -211,13 +213,13 @@ static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *
 
 	ret = bt_bap_base_get_subgroup_codec_meta(subgroup, &meta);
 	if (ret < 0) {
-		FAIL("Could not get subgroup meta: %d\n", ret);
+		LOG_ERR("Could not get subgroup meta: %d", ret);
 		return false;
 	}
 
 	if (TEST_FLAG(flag_base_received) &&
 	    ((size_t)ret != metadata_size || memcmp(meta, metadata, metadata_size) != 0)) {
-		printk("Metadata updated\n");
+		LOG_INF("Metadata updated");
 		SET_FLAG(flag_base_metadata_updated);
 	}
 
@@ -225,7 +227,7 @@ static bool base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup, void *
 	(void)memcpy(metadata, meta, metadata_size);
 
 	if (!valid_base_subgroup(subgroup)) {
-		printk("Invalid or unsupported subgroup\n");
+		LOG_ERR("Invalid or unsupported subgroup");
 		return false;
 	}
 
@@ -240,8 +242,8 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 	ARG_UNUSED(base_size);
 
-	printk("Received BASE with %d subgroups from broadcast sink %p\n",
-	       bt_bap_base_get_subgroup_count(base), sink);
+	LOG_INF("Received BASE with %d subgroups from broadcast sink %p",
+		bt_bap_base_get_subgroup_count(base), sink);
 
 	ret = bt_bap_base_foreach_subgroup(base, base_subgroup_cb, NULL);
 	if (ret != 0) {
@@ -273,20 +275,20 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 
 static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
-	printk("Broadcast sink %p syncable with%s encryption\n",
-	       sink, biginfo->encryption ? "" : "out");
+	LOG_INF("Broadcast sink %p syncable with%s encryption",
+		sink, biginfo->encryption ? "" : "out");
 	SET_FLAG(flag_syncable);
 }
 
 static void broadcast_sink_started_cb(struct bt_bap_broadcast_sink *sink)
 {
-	printk("Broadcast sink %p started\n", sink);
+	LOG_INF("Broadcast sink %p started", sink);
 	SET_FLAG(flag_sink_started);
 }
 
 static void broadcast_sink_stopped_cb(struct bt_bap_broadcast_sink *sink, uint8_t reason)
 {
-	printk("Broadcast sink %p stopped with reason 0x%02X\n", sink, reason);
+	LOG_INF("Broadcast sink %p stopped with reason 0x%02X", sink, reason);
 	UNSET_FLAG(flag_sink_started);
 
 	if (reason == BT_HCI_ERR_TERM_DUE_TO_MIC_FAIL) {
@@ -330,8 +332,8 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 
 	broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
 
-	printk("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
-	       bt_addr_le_str(info->addr), info->sid);
+	LOG_INF("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X", broadcast_id,
+		bt_addr_le_str(info->addr), info->sid);
 
 	SET_FLAG(flag_broadcaster_found);
 
@@ -361,8 +363,8 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 	ARG_UNUSED(info);
 
 	if (sync == pa_sync) {
-		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
-		       broadcaster_broadcast_id);
+		LOG_INF("PA sync %p synced for broadcast sink with broadcast ID 0x%06X", sync,
+			broadcaster_broadcast_id);
 
 		SET_FLAG(flag_pa_synced);
 	}
@@ -372,7 +374,7 @@ static void bap_pa_sync_terminated_cb(struct bt_le_per_adv_sync *sync,
 				      const struct bt_le_per_adv_sync_term_info *info)
 {
 	if (sync == pa_sync) {
-		printk("PA sync %p lost with reason %u\n", sync, info->reason);
+		LOG_INF("PA sync %p lost with reason %u", sync, info->reason);
 		pa_sync = NULL;
 
 		SET_FLAG(flag_pa_sync_lost);
@@ -430,7 +432,7 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 
 	req_recv_state = recv_state;
 
-	printk("BIS sync request received for %p: 0x%08x\n", recv_state, bis_sync_req[0]);
+	LOG_INF("BIS sync request received for %p: 0x%08x", recv_state, bis_sync_req[0]);
 	/* We only care about a single subgroup in this test */
 	requested_bis_sync = bis_sync_req[0];
 	broadcaster_broadcast_id = recv_state->broadcast_id;
@@ -458,7 +460,7 @@ static void scanning_state_cb(struct bt_conn *conn, bool is_scanning)
 {
 	ARG_UNUSED(conn);
 
-	printk("Assistant scanning %s\n", is_scanning ? "started" : "stopped");
+	LOG_INF("Assistant scanning %s", is_scanning ? "started" : "stopped");
 
 }
 
@@ -626,7 +628,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 		return;
 	}
 
-	printk("Stream %p started\n", stream);
+	LOG_INF("Stream %p started", stream);
 	k_sem_give(&sem_stream_started);
 
 	validate_stream_codec_cfg(stream);
@@ -634,7 +636,7 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
-	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stream %p stopped with reason 0x%02X", stream, reason);
 	k_sem_give(&sem_stream_stopped);
 }
 
@@ -666,7 +668,7 @@ static int init(void)
 		return err;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 
 	err = bt_pacs_register(&pacs_param);
 	if (err != 0) {
@@ -749,7 +751,7 @@ static void test_scan_and_pa_sync(void)
 {
 	int err;
 
-	printk("Scanning for broadcast sources\n");
+	LOG_INF("Scanning for broadcast sources");
 	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, NULL);
 	if (err != 0) {
 		FAIL("Unable to start scan for broadcast sources: %d", err);
@@ -758,22 +760,22 @@ static void test_scan_and_pa_sync(void)
 
 	WAIT_FOR_FLAG(flag_broadcaster_found);
 
-	printk("Broadcast source found, stopping scan\n");
+	LOG_INF("Broadcast source found, stopping scan");
 	err = bt_le_scan_stop();
 	if (err != 0) {
 		FAIL("bt_le_scan_stop failed with %d\n", err);
 		return;
 	}
 
-	printk("Scan stopped, attempting to PA sync to the broadcaster with id 0x%06X\n",
-	       broadcaster_broadcast_id);
+	LOG_INF("Scan stopped, attempting to PA sync to the broadcaster with id 0x%06X",
+		broadcaster_broadcast_id);
 	err = pa_sync_create();
 	if (err != 0) {
 		FAIL("Could not create Broadcast PA sync: %d\n", err);
 		return;
 	}
 
-	printk("Waiting for PA sync\n");
+	LOG_INF("Waiting for PA sync");
 	WAIT_FOR_FLAG(flag_pa_synced);
 }
 
@@ -781,14 +783,14 @@ static void test_broadcast_sink_create(void)
 {
 	int err;
 
-	printk("Creating the broadcast sink\n");
+	LOG_INF("Creating the broadcast sink");
 	err = bt_bap_broadcast_sink_create(pa_sync, broadcaster_broadcast_id, &g_sink);
 	if (err != 0) {
 		FAIL("Unable to create the sink: %d\n", err);
 		return;
 	}
 
-	printk("Created broadcast sink %p\n", g_sink);
+	LOG_INF("Created broadcast sink %p", g_sink);
 }
 
 static void test_broadcast_sink_create_inval(void)
@@ -818,7 +820,7 @@ static void test_broadcast_sync(const uint8_t broadcast_code[BT_ISO_BROADCAST_CO
 {
 	int err;
 
-	printk("Syncing sink %p to 0x%08x\n", g_sink, bis_index_bitfield);
+	LOG_INF("Syncing sink %p to 0x%08x", g_sink, bis_index_bitfield);
 	err = bt_bap_broadcast_sink_sync(g_sink, bis_index_bitfield, streams, broadcast_code);
 	if (err != 0) {
 		FAIL("Unable to sync the sink: %d\n", err);
@@ -892,7 +894,7 @@ static void test_broadcast_stop(void)
 {
 	int err;
 
-	printk("Stopping broadcast sink %p\n", g_sink);
+	LOG_INF("Stopping broadcast sink %p", g_sink);
 
 	err = bt_bap_broadcast_sink_stop(g_sink);
 	if (err != 0) {
@@ -900,7 +902,7 @@ static void test_broadcast_stop(void)
 		return;
 	}
 
-	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
+	LOG_INF("Waiting for %zu streams to be stopped", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		err = k_sem_take(&sem_stream_stopped, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
@@ -947,13 +949,13 @@ static void test_broadcast_delete_inval(void)
 
 static void wait_for_data(void)
 {
-	printk("Waiting for data\n");
+	LOG_INF("Waiting for data");
 	ARRAY_FOR_EACH_PTR(broadcast_sink_streams, test_stream) {
 		if (audio_test_stream_is_streaming(test_stream)) {
 			WAIT_FOR_FLAG(test_stream->flag_audio_received);
 		}
 	}
-	printk("Data received\n");
+	LOG_INF("Data received");
 }
 
 static void test_common(void)
@@ -971,11 +973,11 @@ static void test_common(void)
 	test_broadcast_sink_create_inval();
 	test_broadcast_sink_create();
 
-	printk("Broadcast source PA synced, waiting for BASE\n");
+	LOG_INF("Broadcast source PA synced, waiting for BASE");
 	WAIT_FOR_FLAG(flag_base_received);
-	printk("BASE received\n");
+	LOG_INF("BASE received");
 
-	printk("Waiting for BIG syncable\n");
+	LOG_INF("Waiting for BIG syncable");
 	WAIT_FOR_FLAG(flag_syncable);
 
 	test_broadcast_sync_inval();
@@ -984,7 +986,7 @@ static void test_common(void)
 	WAIT_FOR_FLAG(flag_sink_started);
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	LOG_INF("Waiting for %zu streams to be started", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		err = k_sem_take(&sem_stream_started, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
@@ -1004,10 +1006,10 @@ static void test_main(void)
 	 * and depend on timeout parameters. We just wait for PA first, but
 	 * either way will work.
 	 */
-	printk("Waiting for PA disconnected\n");
+	LOG_INF("Waiting for PA disconnected");
 	WAIT_FOR_FLAG(flag_pa_sync_lost);
 
-	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
+	LOG_INF("Waiting for %zu streams to be stopped", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		__maybe_unused int err;
 
@@ -1024,7 +1026,7 @@ static void test_main_update(void)
 	test_common();
 
 	/* Ensure that we also see the metadata update */
-	printk("Waiting for metadata update\n");
+	LOG_INF("Waiting for metadata update");
 	WAIT_FOR_FLAG(flag_base_metadata_updated)
 
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
@@ -1035,10 +1037,10 @@ static void test_main_update(void)
 	 * and depend on timeout parameters. We just wait for PA first, but
 	 * either way will work.
 	 */
-	printk("Waiting for PA disconnected\n");
+	LOG_INF("Waiting for PA disconnected");
 	WAIT_FOR_FLAG(flag_pa_sync_lost);
 
-	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
+	LOG_INF("Waiting for %zu streams to be stopped", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		__maybe_unused int err = k_sem_take(&sem_stream_stopped, K_FOREVER);
 
@@ -1062,7 +1064,7 @@ static void test_sink_disconnect(void)
 	WAIT_FOR_FLAG(flag_sink_started);
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	LOG_INF("Waiting for %zu streams to be started", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		__maybe_unused int err = k_sem_take(&sem_stream_started, K_FOREVER);
 
@@ -1093,11 +1095,11 @@ static void test_sink_encrypted(void)
 
 	test_broadcast_sink_create();
 
-	printk("Broadcast source PA synced, waiting for BASE\n");
+	LOG_INF("Broadcast source PA synced, waiting for BASE");
 	WAIT_FOR_FLAG(flag_base_received);
-	printk("BASE received\n");
+	LOG_INF("BASE received");
 
-	printk("Waiting for BIG syncable\n");
+	LOG_INF("Waiting for BIG syncable");
 	WAIT_FOR_FLAG(flag_syncable);
 
 	test_broadcast_sync(BROADCAST_CODE);
@@ -1105,7 +1107,7 @@ static void test_sink_encrypted(void)
 	WAIT_FOR_FLAG(flag_sink_started);
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	LOG_INF("Waiting for %zu streams to be started", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		err = k_sem_take(&sem_stream_started, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
@@ -1121,10 +1123,10 @@ static void test_sink_encrypted(void)
 	 * and depend on timeout parameters. We just wait for PA first, but
 	 * either way will work.
 	 */
-	printk("Waiting for PA disconnected\n");
+	LOG_INF("Waiting for PA disconnected");
 	WAIT_FOR_FLAG(flag_pa_sync_lost);
 
-	printk("Waiting for %zu streams to be stopped\n", stream_sync_cnt);
+	LOG_INF("Waiting for %zu streams to be stopped", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		err = k_sem_take(&sem_stream_stopped, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
@@ -1147,11 +1149,11 @@ static void test_sink_encrypted_incorrect_code(void)
 
 	test_broadcast_sink_create();
 
-	printk("Broadcast source PA synced, waiting for BASE\n");
+	LOG_INF("Broadcast source PA synced, waiting for BASE");
 	WAIT_FOR_FLAG(flag_base_received);
-	printk("BASE received\n");
+	LOG_INF("BASE received");
 
-	printk("Waiting for BIG syncable\n");
+	LOG_INF("Waiting for BIG syncable");
 	WAIT_FOR_FLAG(flag_syncable);
 
 	test_broadcast_sync(INCORRECT_BROADCAST_CODE);
@@ -1161,7 +1163,7 @@ static void test_sink_encrypted_incorrect_code(void)
 	test_broadcast_sync(BROADCAST_CODE);
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	LOG_INF("Waiting for %zu streams to be started", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		err = k_sem_take(&sem_stream_started, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
@@ -1189,27 +1191,27 @@ static void broadcast_sink_with_assistant(void)
 	setup_connectable_adv(&ext_adv);
 	WAIT_FOR_FLAG(flag_connected);
 
-	printk("Waiting for PA sync request\n");
+	LOG_INF("Waiting for PA sync request");
 	WAIT_FOR_FLAG(flag_pa_request);
 
 	test_scan_and_pa_sync();
 	test_broadcast_sink_create();
 
-	printk("Broadcast source PA synced, waiting for BASE\n");
+	LOG_INF("Broadcast source PA synced, waiting for BASE");
 	WAIT_FOR_FLAG(flag_base_received);
-	printk("BASE received\n");
+	LOG_INF("BASE received");
 
-	printk("Waiting for BIG syncable\n");
+	LOG_INF("Waiting for BIG syncable");
 	WAIT_FOR_FLAG(flag_syncable);
 
-	printk("Waiting for BIG sync request\n");
+	LOG_INF("Waiting for BIG sync request");
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
 	test_broadcast_sync(NULL);
 
 	WAIT_FOR_FLAG(flag_sink_started);
 
 	/* Wait for all to be started */
-	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	LOG_INF("Waiting for %zu streams to be started", stream_sync_cnt);
 	for (size_t i = 0U; i < stream_sync_cnt; i++) {
 		err = k_sem_take(&sem_stream_started, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
@@ -1218,11 +1220,11 @@ static void broadcast_sink_with_assistant(void)
 	wait_for_data();
 	backchannel_sync_send_all(); /* let other devices know we have received what we wanted */
 
-	printk("Waiting for BIG sync terminate request\n");
+	LOG_INF("Waiting for BIG sync terminate request");
 	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
 	test_broadcast_stop();
 
-	printk("Waiting for PA sync terminate request\n");
+	LOG_INF("Waiting for PA sync terminate request");
 	WAIT_FOR_UNSET_FLAG(flag_pa_request);
 	test_pa_sync_delete();
 	test_broadcast_delete();
@@ -1246,20 +1248,20 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 	setup_connectable_adv(&ext_adv);
 	WAIT_FOR_FLAG(flag_connected);
 
-	printk("Waiting for PA sync request\n");
+	LOG_INF("Waiting for PA sync request");
 	WAIT_FOR_FLAG(flag_pa_request);
 
 	test_scan_and_pa_sync();
 	test_broadcast_sink_create();
 
-	printk("Broadcast source PA synced, waiting for BASE\n");
+	LOG_INF("Broadcast source PA synced, waiting for BASE");
 	WAIT_FOR_FLAG(flag_base_received);
-	printk("BASE received\n");
+	LOG_INF("BASE received");
 
-	printk("Waiting for BIG syncable\n");
+	LOG_INF("Waiting for BIG syncable");
 	WAIT_FOR_FLAG(flag_syncable);
 
-	printk("Waiting for BIG sync request\n");
+	LOG_INF("Waiting for BIG sync request");
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
 	test_broadcast_sync(recv_state_broadcast_code);
 	/* Wait for MIC failure */
@@ -1267,7 +1269,7 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 
 	backchannel_sync_send_all(); /* let other devices know we have received data */
 
-	printk("Waiting for PA sync terminate request\n");
+	LOG_INF("Waiting for PA sync terminate request");
 	WAIT_FOR_UNSET_FLAG(flag_pa_request);
 	test_pa_sync_delete();
 	test_broadcast_delete();

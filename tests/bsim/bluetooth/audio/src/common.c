@@ -25,7 +25,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic_types.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -38,6 +38,8 @@
 #include "bsim_args_runner.h"
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(common);
 
 extern enum bst_result_t bst_result;
 struct bt_conn *default_conn;
@@ -95,7 +97,7 @@ static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	printk("Device found: %s (RSSI %d)\n", bt_addr_le_str(info->addr), info->rssi);
+	LOG_INF("Device found: %s (RSSI %d)", bt_addr_le_str(info->addr), info->rssi);
 
 	/* connect only to devices in close proximity */
 	if (info->rssi < -70) {
@@ -103,7 +105,7 @@ static void device_found(const struct bt_le_scan_recv_info *info, struct net_buf
 		return;
 	}
 
-	printk("Stopping scan\n");
+	LOG_INF("Stopping scan");
 	if (bt_le_scan_stop()) {
 		FAIL("Could not stop scan");
 		return;
@@ -133,7 +135,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	printk("Connected to %s (%p)\n", bt_conn_dst_str(conn), conn);
+	LOG_INF("Connected to %s (%p)", bt_conn_dst_str(conn), conn);
 	SET_FLAG(flag_connected);
 }
 
@@ -143,7 +145,7 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	printk("Disconnected: %s (reason 0x%02x)\n", bt_conn_dst_str(conn), reason);
+	LOG_INF("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 
 	bt_conn_drop(&default_conn);
 	UNSET_FLAG(flag_connected);
@@ -156,7 +158,7 @@ void disconnected(struct bt_conn *conn, uint8_t reason)
 static void conn_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint16_t latency,
 				  uint16_t timeout)
 {
-	printk("Connection parameter updated: %p 0x%04X (%u us), 0x%04X, 0x%04X\n", conn, interval,
+	LOG_INF("Connection parameter updated: %p 0x%04X (%u us), 0x%04X, 0x%04X", conn, interval,
 	       BT_CONN_INTERVAL_TO_US(interval), latency, timeout);
 
 	SET_FLAG(flag_conn_updated);
@@ -164,7 +166,7 @@ static void conn_param_updated_cb(struct bt_conn *conn, uint16_t interval, uint1
 
 static void security_changed_cb(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	printk("Security changed: %p level %d err %d\n", conn, level, err);
+	LOG_INF("Security changed: %p level %d err %d", conn, level, err);
 
 	if (err == BT_SECURITY_ERR_SUCCESS) {
 		security_level = level;
@@ -189,7 +191,7 @@ void update_security(struct bt_conn *conn)
 	__ASSERT(err == 0, "Failed to get conn info: %d", err);
 
 	if (info.security.level >= BT_SECURITY_L2) {
-		printk("Skipping security update for %p\n", conn);
+		LOG_WRN("Skipping security update for %p", conn);
 		return;
 	}
 
@@ -238,7 +240,7 @@ void setup_connectable_adv(struct bt_le_ext_adv **ext_adv)
 		return;
 	}
 
-	printk("Advertising started\n");
+	LOG_INF("Advertising started");
 }
 
 void setup_broadcast_adv(struct bt_le_ext_adv **adv)
@@ -303,7 +305,7 @@ void start_broadcast_adv(struct bt_le_ext_adv *adv)
 		}
 	}
 
-	printk("Started advertising with addr %s\n", bt_addr_le_str(info.addr));
+	LOG_INF("Started advertising with addr %s", bt_addr_le_str(info.addr));
 }
 
 void test_tick(bs_time_t HW_device_time)
@@ -444,7 +446,7 @@ void backchannel_sync_send(uint dev)
 	const uint chan_id = get_chan_id_from_chan_num(get_chan_num((uint16_t)dev));
 	uint8_t sync_msg[SYNC_MSG_SIZE] = {0};
 
-	printk("Sending sync to %u\n", chan_id);
+	LOG_INF("Sending sync to %u", chan_id);
 	bs_bc_send_msg(chan_id, sync_msg, ARRAY_SIZE(sync_msg));
 }
 
@@ -463,7 +465,7 @@ void backchannel_sync_wait(uint dev)
 {
 	const uint chan_id = get_chan_id_from_chan_num(get_chan_num((uint16_t)dev));
 
-	printk("Waiting for sync to %u\n", chan_id);
+	LOG_INF("Waiting for sync to %u", chan_id);
 
 	while (true) {
 		if (bs_bc_is_msg_received(chan_id) > 0) {
