@@ -14,11 +14,13 @@
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(tbs_client_test);
 
 #ifdef CONFIG_BT_TBS_CLIENT
 static struct bt_conn_cb conn_callbacks;
@@ -59,7 +61,7 @@ static void tbs_client_call_states_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("Index %u\n", index);
+	LOG_DBG("Index %u", index);
 	if (err != 0) {
 		FAIL("Call could not read call states (%d)\n", err);
 		return;
@@ -67,7 +69,7 @@ static void tbs_client_call_states_cb(struct bt_conn *conn, int err,
 
 	call_index = call_states[0].index;
 	call_state = call_states[0].state;
-	printk("call index %u - state %u\n", call_index, call_state);
+	LOG_INF("call index %u - state %u", call_index, call_state);
 }
 
 static void tbs_client_read_bearer_provider_name(struct bt_conn *conn, int err,
@@ -81,9 +83,9 @@ static void tbs_client_read_bearer_provider_name(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("Index %u\n", index);
-	printk("Bearer name pointer: %p\n", value);
-	printk("Bearer name: %s\n", value);
+	LOG_DBG("Index %u", index);
+	LOG_DBG("Bearer name pointer: %p", value);
+	LOG_DBG("Bearer name: %s", value);
 	read_complete = true;
 	SET_FLAG(provider_name);
 }
@@ -94,7 +96,7 @@ static void tbs_client_discover_cb(struct bt_conn *conn, int err,
 	ARG_UNUSED(conn);
 	ARG_UNUSED(gtbs_found);
 
-	printk("%s\n", __func__);
+	LOG_DBG("");
 
 	if (err != 0) {
 		FAIL("TBS_CLIENT could not be discovered (%d)\n", err);
@@ -121,7 +123,7 @@ static void tbs_client_read_ccid_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("Read CCID %u on index %u\n", value, inst_index);
+	LOG_INF("Read CCID %u on index %u", value, inst_index);
 
 	inst = bt_tbs_client_get_by_ccid(conn, (uint8_t)value);
 	if (inst == NULL) {
@@ -140,7 +142,7 @@ static void tbs_client_originate_call_cb(struct bt_conn *conn, int err,
 	ARG_UNUSED(err);
 	ARG_UNUSED(inst_index);
 
-	printk("%s %u:\n", __func__, call_index);
+	LOG_DBG("%u:", call_index);
 	call_placed = true;
 }
 
@@ -155,8 +157,7 @@ static void tbs_client_hold_call_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u Call index: %u\n", __func__, inst_index,
-						  call_index);
+	LOG_DBG("Instance: %u Call index: %u", inst_index, call_index);
 }
 
 static void tbs_client_retrieve_call_cb(struct bt_conn *conn, int err,
@@ -170,8 +171,7 @@ static void tbs_client_retrieve_call_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u Call index: %u\n", __func__, inst_index,
-						  call_index);
+	LOG_DBG("Instance: %u Call index: %u", inst_index, call_index);
 }
 
 static void tbs_client_technology_cb(struct bt_conn *conn, int err, uint8_t inst_index,
@@ -184,7 +184,7 @@ static void tbs_client_technology_cb(struct bt_conn *conn, int err, uint8_t inst
 		return;
 	}
 
-	printk("%s Instance: %u Technology: %d\n", __func__, inst_index, technology);
+	LOG_DBG("Instance: %u Technology: %d", inst_index, technology);
 
 	SET_FLAG(flag_technology);
 }
@@ -200,7 +200,7 @@ static void tbs_client_signal_strength_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u, Strength: %u\n", __func__, inst_index, value);
+	LOG_DBG("Instance: %u, Strength: %u", inst_index, value);
 
 	SET_FLAG(signal_strength);
 }
@@ -216,7 +216,7 @@ static void tbs_client_signal_interval_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u Interval: %u\n", __func__, inst_index, value);
+	LOG_DBG("Instance: %u Interval: %u", inst_index, value);
 
 	SET_FLAG(signal_interval);
 }
@@ -232,7 +232,7 @@ static void tbs_client_status_flags_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u Flags: %u\n", __func__, inst_index, value);
+	LOG_DBG("Instance: %u Flags: %u", inst_index, value);
 
 	SET_FLAG(status_flags);
 }
@@ -247,8 +247,7 @@ static void tbs_client_terminate_call_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u Call index: %u\n", __func__, inst_index,
-						  call_index);
+	LOG_DBG("Instance: %u Call index: %u", inst_index, call_index);
 
 	SET_FLAG(call_terminated);
 }
@@ -263,8 +262,7 @@ static void tbs_client_accept_call_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u Call index: %u\n", __func__, inst_index,
-						  call_index);
+	LOG_DBG("Instance: %u Call index: %u", inst_index, call_index);
 
 	SET_FLAG(call_accepted);
 }
@@ -280,7 +278,7 @@ static void tbs_client_bearer_uci_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u UCI: %s\n", __func__, inst_index, value);
+	LOG_DBG("Instance: %u UCI: %s", inst_index, value);
 
 	SET_FLAG(bearer_uci);
 }
@@ -295,7 +293,7 @@ static void tbs_client_uri_list_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u URI list: %s\n", __func__, inst_index, value);
+	LOG_DBG("Instance: %u URI list: %s", inst_index, value);
 
 	SET_FLAG(uri_list);
 }
@@ -313,8 +311,7 @@ static void tbs_client_current_calls_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("%s Instance: %u Call count: %u\n", __func__, inst_index,
-						  call_count);
+	LOG_DBG("Instance: %u Call count: %u", inst_index, call_count);
 
 	SET_FLAG(current_calls);
 }
@@ -330,8 +327,8 @@ static void tbs_client_call_uri_cb(struct bt_conn *conn, int err,
 		return;
 	}
 
-	printk("Incoming URI callback\n");
-	printk("%s Instance: %u URI: %s\n", __func__, inst_index, value);
+	LOG_INF("Incoming URI callback");
+	LOG_DBG("Instance: %u URI: %s", inst_index, value);
 
 	SET_FLAG(uri_inc);
 }
@@ -345,7 +342,7 @@ static void tbs_client_term_reason_cb(struct bt_conn *conn,
 	ARG_UNUSED(err);
 	ARG_UNUSED(call_index);
 
-	printk("%s Instance: %u Reason: %u\n", __func__, inst_index, reason);
+	LOG_DBG("Instance: %u Reason: %u", inst_index, reason);
 
 	SET_FLAG(term_reason);
 }
@@ -379,7 +376,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		return;
 	}
 
-	printk("Connected to %s\n", bt_conn_dst_str(conn));
+	LOG_INF("Connected to %s", bt_conn_dst_str(conn));
 	is_connected = true;
 }
 
@@ -404,7 +401,7 @@ static void test_ccid(void)
 		int err;
 
 		UNSET_FLAG(ccid_read_flag);
-		printk("Reading GTBS CCID\n");
+		LOG_INF("Reading GTBS CCID");
 
 		err = bt_tbs_client_read_ccid(default_conn, BT_TBS_GTBS_INDEX);
 		if (err != 0) {
@@ -419,7 +416,7 @@ static void test_ccid(void)
 		int err;
 
 		UNSET_FLAG(ccid_read_flag);
-		printk("Reading bearer CCID on index %u\n", i);
+		LOG_INF("Reading bearer CCID on index %u", i);
 
 		err = bt_tbs_client_read_ccid(default_conn, i);
 		if (err != 0) {
@@ -437,7 +434,7 @@ static void test_signal_strength(uint8_t index)
 
 	UNSET_FLAG(signal_strength);
 
-	printk("%s\n", __func__);
+	LOG_DBG("");
 
 	err = bt_tbs_client_read_signal_strength(default_conn, index);
 	if (err != 0) {
@@ -447,7 +444,7 @@ static void test_signal_strength(uint8_t index)
 
 	WAIT_FOR_FLAG(signal_strength);
 
-	printk("Client read signal strength test success\n");
+	LOG_INF("Client read signal strength test success");
 }
 
 static void test_technology(uint8_t index)
@@ -456,7 +453,7 @@ static void test_technology(uint8_t index)
 
 	UNSET_FLAG(flag_technology);
 
-	printk("%s\n", __func__);
+	LOG_DBG("");
 
 	err = bt_tbs_client_read_technology(default_conn, index);
 	if (err != 0) {
@@ -466,7 +463,7 @@ static void test_technology(uint8_t index)
 
 	WAIT_FOR_FLAG(flag_technology);
 
-	printk("Client read technology test success\n");
+	LOG_INF("Client read technology test success");
 }
 
 static void test_status_flags(uint8_t index)
@@ -475,7 +472,7 @@ static void test_status_flags(uint8_t index)
 
 	UNSET_FLAG(status_flags);
 
-	printk("%s\n", __func__);
+	LOG_DBG("");
 
 	err = bt_tbs_client_read_status_flags(default_conn, index);
 	if (err != 0) {
@@ -485,7 +482,7 @@ static void test_status_flags(uint8_t index)
 
 	WAIT_FOR_FLAG(status_flags);
 
-	printk("Client read status flags test success\n");
+	LOG_INF("Client read status flags test success");
 }
 
 static void test_signal_interval(uint8_t index)
@@ -494,7 +491,7 @@ static void test_signal_interval(uint8_t index)
 
 	UNSET_FLAG(signal_interval);
 
-	printk("%s\n", __func__);
+	LOG_DBG("");
 
 	err = bt_tbs_client_read_signal_interval(default_conn, index);
 	if (err != 0) {
@@ -504,7 +501,7 @@ static void test_signal_interval(uint8_t index)
 
 	WAIT_FOR_FLAG(signal_interval);
 
-	printk("Client signal interval test success\n");
+	LOG_INF("Client signal interval test success");
 }
 
 static void discover_tbs(void)
@@ -545,20 +542,20 @@ static void test_main(void)
 
 	WAIT_FOR_COND(bt_init);
 
-	printk("Audio Server: Bluetooth discovered\n");
+	LOG_INF("Audio Server: Bluetooth discovered");
 
 	setup_connectable_adv(&ext_adv);
 
-	printk("Advertising successfully started\n");
+	LOG_INF("Advertising successfully started");
 
 	WAIT_FOR_COND(is_connected);
 
 	discover_tbs();
 	discover_tbs(); /* test that we can discover twice */
 
-	printk("GTBS %sfound\n", is_gtbs_found ? "" : "not ");
+	LOG_INF("GTBS %sfound", is_gtbs_found ? "" : "not ");
 
-	printk("Placing call\n");
+	LOG_INF("Placing call");
 	err = bt_tbs_client_originate_call(default_conn, 0, "tel:123456789012");
 	if (err != 0) {
 		FAIL("Originate call failed (%d)\n", err);
@@ -570,10 +567,10 @@ static void test_main(void)
 	 * 3) Active
 	 * 4) Remotely Held
 	 */
-	printk("Waiting for remotely held\n");
+	LOG_INF("Waiting for remotely held");
 	WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_REMOTELY_HELD);
 
-	printk("Holding call\n");
+	LOG_INF("Holding call");
 	err = bt_tbs_client_hold_call(default_conn, index, call_index);
 	if (err != 0) {
 		FAIL("Hold call failed (%d)\n", err);
@@ -585,7 +582,7 @@ static void test_main(void)
 	 */
 	WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_LOCALLY_HELD);
 
-	printk("Retrieving call\n");
+	LOG_INF("Retrieving call");
 	err = bt_tbs_client_retrieve_call(default_conn, index, call_index);
 	if (err != 0) {
 		FAIL("Retrieve call failed (%d)\n", err);
@@ -593,7 +590,7 @@ static void test_main(void)
 
 	WAIT_FOR_COND(call_state == BT_TBS_CALL_STATE_ACTIVE);
 
-	printk("Reading bearer provider name\n");
+	LOG_INF("Reading bearer provider name");
 	UNSET_FLAG(provider_name);
 	err = bt_tbs_client_read_bearer_provider_name(default_conn, index);
 	if (err != 0) {
