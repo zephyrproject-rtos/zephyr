@@ -50,9 +50,14 @@
 #define COUNTER_SPAN (GRTC_SYSCOUNTERL_VALUE_Msk | ((uint64_t)GRTC_SYSCOUNTERH_VALUE_Msk << 32))
 #define MAX_ABS_TICKS (COUNTER_SPAN / CYC_PER_TICK)
 
-/* To allow use of CCADD we need to limit max cycles to 31 bits. */
-#define MAX_REL_CYCLES BIT_MASK(31)
-#define MAX_REL_TICKS (MAX_REL_CYCLES / CYC_PER_TICK)
+/* Max cycles the deadline can be placed past last_count.
+ *
+ * sys_clock_announce() takes an int32_t tick count; the announced dticks
+ * must therefore stay within INT32_MAX. Leave 1/4 of that range as
+ * headroom for IRQ servicing latency between fire and the handler
+ * computing dticks from the live counter.
+ */
+#define CYCLES_MAX (((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK) * 3 / 4)
 
 #if DT_NODE_HAS_STATUS_OKAY(LFCLK_NODE)
 #define LFCLK_FREQUENCY_HZ DT_PROP(LFCLK_NODE, clock_frequency)
@@ -72,7 +77,7 @@ const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
 static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_context);
 
 static uint64_t last_count; /* Time (SYSCOUNTER value) @last sys_clock_announce() */
-static uint64_t last_elapsed;
+static uint32_t last_elapsed; /* Ticks observed by the last sys_clock_elapsed() */
 static uint64_t cc_value; /* Value that is expected to be in CC register. */
 static uint64_t expired_cc; /* Value that is expected to be in CC register. */
 static atomic_t int_mask;
@@ -162,7 +167,11 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 	uint32_t dticks;
 
 	sys_event_unregister(false);
-	dticks = counter_sub(cc_val, last_count) / CYC_PER_TICK;
+	/* Read the current counter so any latency between the compare event
+	 * and this handler is folded into the announced ticks. A target that
+	 * landed in the past is recovered in a single invocation.
+	 */
+	dticks = counter_sub(counter(), last_count) / CYC_PER_TICK;
 	last_count += (dticks * CYC_PER_TICK);
 	expired_cc = cc_val;
 
@@ -493,9 +502,8 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	last_elapsed = counter_sub(counter(), last_count);
-
-	return (uint32_t)(last_elapsed / CYC_PER_TICK);
+	last_elapsed = counter_sub(counter(), last_count) / CYC_PER_TICK;
+	return last_elapsed;
 }
 
 #if !defined(CONFIG_GEN_SW_ISR_TABLE)
@@ -636,37 +644,29 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	bool sys_evt = ticks <= 30;
 	uint32_t ch = system_clock_channel_data.channel;
-
-	sys_event_unregister(true);
-	if ((cc_value == expired_cc) && (ticks <= MAX_REL_TICKS)) {
-		uint32_t cyc = ticks * CYC_PER_TICK;
-
-		if (cyc == 0) {
-			/* GRTC will expire anyway since HW ensures that past value triggers an
-			 * event but we need to ensure to always progress the cc_value as this
-			 * if condition expects that cc_value will change after each call to
-			 * set_timeout function.
-			 */
-			cyc = 1;
-		}
-
-		/* If it's the first timeout setting after previous expiration and timeout
-		 * is short so fast method can be used which utilizes relative CC configuration.
-		 */
-		cc_value += cyc;
-		if (IS_ENABLED(USE_SYS_EVENT)) {
-			sys_evt_handle = sys_evt ? nrf_sys_event_register(cyc, false) : -1;
-		}
-		nrfx_grtc_syscounter_cc_rel_set(ch, cyc, NRFX_GRTC_CC_RELATIVE_COMPARE);
-		return;
-	}
-
-	uint64_t cyc = (uint64_t)ticks * CYC_PER_TICK;
 	bool safe_setting = false;
 	uint64_t prev_cc_val = cc_value;
-	uint64_t now = last_count + last_elapsed;
 
-	cc_value = now + cyc;
+	sys_event_unregister(true);
+
+	if (ticks == K_TICKS_FOREVER) {
+		/* No future timer interrupt required: park the comparator
+		 * as far as the announce API permits.
+		 */
+		cc_value = last_count + CYCLES_MAX;
+	} else {
+		/* Compute an absolute, tick-aligned deadline anchored on
+		 * last_count plus the kernel-visible elapsed tick count
+		 * (last_elapsed). The fire lands on the requested tick
+		 * boundary, independent of the sub-tick offset of the
+		 * current counter. Like arm_arch_timer.c.
+		 */
+		cc_value = last_count +
+			   ((uint64_t)last_elapsed + (uint64_t)ticks) * CYC_PER_TICK;
+		if ((cc_value - last_count) > CYCLES_MAX) {
+			cc_value = last_count + CYCLES_MAX;
+		}
+	}
 
 	/* In case of timeout abort it may happen that CC is being set to a value
 	 * that later than previous CC. If previous CC value is not far in the
@@ -676,7 +676,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	 * event.
 	 */
 	if (prev_cc_val < cc_value) {
-		safe_setting = (int64_t)(prev_cc_val - now) < LATENCY_THR_TICKS;
+		safe_setting = (int64_t)(prev_cc_val - counter()) < LATENCY_THR_TICKS;
 	}
 
 	if (IS_ENABLED(USE_SYS_EVENT)) {
