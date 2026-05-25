@@ -31,6 +31,8 @@ tests:
     min_ram: 32
     harness: none
     extra_args: SHIELD="rk055hdmipi4ma0"
+    modules:
+      - gpu_vglite
     platform_allow:
       - mimxrt1170_evk/mimxrt1176/cm7
       - mimxrt595_evk/mimxrt595s/cm33
