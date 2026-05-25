@@ -287,6 +287,14 @@ if(CONFIG_BUILD_WITH_TFM)
     )
   endif()
 
+  # By default TF-M installs TF-PSA-Crypto include files in the build directory,
+  # but this will duplicate what's already provided by the TF-PSA-Crypto library
+  # itself. Disable this, unless CONFIG_TFM_USE_NS_APP is set because in that
+  # case the NS app is built in a completely different way than what Zephyr does.
+  if(NOT CONFIG_TFM_USE_NS_APP)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_INSTALL_TF_PSA_CRYPTO_HEADERS=OFF)
+  endif()
+
   # Prevent TF-M's CMake build system from signing images.
   # Zephyr does not follow the official TF-M build pattern [1] and instead it
   # reimplements some steps including the signature. This is done below through
