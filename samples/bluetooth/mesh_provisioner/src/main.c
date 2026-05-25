@@ -7,6 +7,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/settings/settings.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/mesh.h>
 #include <zephyr/drivers/gpio.h>
 
@@ -15,8 +16,8 @@
 static const uint16_t net_idx;
 static const uint16_t app_idx;
 static uint16_t self_addr = 1, node_addr;
-static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
-static uint8_t node_uuid[16];
+static const uint8_t dev_uuid[BT_UUID_SIZE_128] = { 0xdd, 0xdd };
+static uint8_t node_uuid[BT_UUID_SIZE_128];
 
 K_SEM_DEFINE(sem_unprov_beacon, 0, 1);
 K_SEM_DEFINE(sem_node_added, 0, 1);
@@ -235,15 +236,27 @@ static void configure_node(struct bt_mesh_cdb_node *node)
 	printk("Configuration complete\n");
 }
 
-static void unprovisioned_beacon(uint8_t uuid[16],
+static void unprovisioned_beacon(uint8_t uuid[BT_UUID_SIZE_128],
 				 bt_mesh_prov_oob_info_t oob_info,
 				 uint32_t *uri_hash)
 {
-	memcpy(node_uuid, uuid, 16);
-	k_sem_give(&sem_unprov_beacon);
+	uint8_t i = 0;
+
+	/* Check if UUID is already set */
+	for (i = 0; i < BT_UUID_SIZE_128; i++) {
+		if (node_uuid[i] != 0) {
+			break;
+		}
+	}
+
+	/* Only set a new UUID if not currently set */
+	if (i == BT_UUID_SIZE_128) {
+		memcpy(node_uuid, uuid, BT_UUID_SIZE_128);
+		k_sem_give(&sem_unprov_beacon);
+	}
 }
 
-static void node_added(uint16_t idx, uint8_t uuid[16], uint16_t addr, uint8_t num_elem)
+static void node_added(uint16_t idx, uint8_t uuid[BT_UUID_SIZE_128], uint16_t addr, uint8_t num_elem)
 {
 	node_addr = addr;
 	k_sem_give(&sem_node_added);
@@ -381,7 +394,7 @@ int main(void)
 			continue;
 		}
 
-		bin2hex(node_uuid, 16, uuid_hex_str, sizeof(uuid_hex_str));
+		bin2hex(node_uuid, BT_UUID_SIZE_128, uuid_hex_str, sizeof(uuid_hex_str));
 
 #ifdef CONFIG_MESH_PROVISIONER_USE_SW0
 		k_sem_reset(&sem_button_pressed);
