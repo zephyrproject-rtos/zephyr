@@ -137,6 +137,12 @@ static int cmd_timer_oneshot(const struct shell *shctx, size_t argc, char **argv
 	alarm_cfg.callback = timer_alarm_handler;
 	alarm_cfg.user_data = NULL;
 
+	err = counter_start(timer_dev);
+	if (err != 0 && err != -EALREADY) {
+		shell_error(shctx, "%s: failed to start counter, err: %d", argv[ARGV_DEV], err);
+		return err;
+	}
+
 	/* set an alarm */
 	err = counter_set_channel_alarm(timer_dev, (uint8_t)channel, &alarm_cfg);
 	if (err != 0) {
@@ -188,6 +194,12 @@ static int cmd_timer_periodic(const struct shell *shctx, size_t argc, char **arg
 	/* interrupt will be triggered periodically */
 	top_cfg.callback = timer_top_handler;
 	top_cfg.user_data = NULL;
+
+	err = counter_start(timer_dev);
+	if (err != 0 && err != -EALREADY) {
+		shell_error(shctx, "%s: failed to start counter, err: %d", argv[ARGV_DEV], err);
+		return err;
+	}
 
 	/* set top value */
 	err = counter_set_top_value(timer_dev, &top_cfg);
