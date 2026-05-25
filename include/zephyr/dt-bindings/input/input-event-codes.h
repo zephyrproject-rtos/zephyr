@@ -56,8 +56,8 @@
 #define INPUT_KEY_BACKSLASH 43          /**< Backslash Key */
 #define INPUT_KEY_BACKSPACE 14          /**< Backspace Key */
 #define INPUT_KEY_BLUETOOTH 237         /**< Bluetooth Key */
-#define INPUT_KEY_BRIGHTNESSDOWN 224    /**< Brightness Up Key */
-#define INPUT_KEY_BRIGHTNESSUP 225      /**< Brightneess Down Key */
+#define INPUT_KEY_BRIGHTNESSDOWN 224    /**< Brightness Down Key */
+#define INPUT_KEY_BRIGHTNESSUP 225      /**< Brightness Up Key */
 #define INPUT_KEY_C 46                  /**< C Key */
 #define INPUT_KEY_CAPSLOCK 58           /**< Caps Lock Key */
 #define INPUT_KEY_CLOSECD 160           /**< Close CD Key */
