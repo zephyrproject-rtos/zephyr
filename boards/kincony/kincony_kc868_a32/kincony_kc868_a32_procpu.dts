@@ -44,36 +44,44 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 
-	i2c0_pcf8574@21 {
+	pcf8574_relays_17_24: i2c0_pcf8574@21 {
 		compatible = "nxp,pcf857x";
 		reg = <0x21>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
+		gpio-line-names = "RLY17", "RLY18", "RLY19", "RLY20",
+				  "RLY21", "RLY22", "RLY23", "RLY24";
 	};
 
-	i2c0_pcf8574@22 {
+	pcf8574_relays_25_32: i2c0_pcf8574@22 {
 		compatible = "nxp,pcf857x";
 		reg = <0x22>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
+		gpio-line-names = "RLY25", "RLY26", "RLY27", "RLY28",
+				  "RLY29", "RLY30", "RLY31", "RLY32";
 	};
 
-	i2c0_pcf8574@24 {
+	pcf8574_relays_1_8: i2c0_pcf8574@24 {
 		compatible = "nxp,pcf857x";
 		reg = <0x24>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
+		gpio-line-names = "RLY1", "RLY2", "RLY3", "RLY4",
+				  "RLY5", "RLY6", "RLY7", "RLY8";
 	};
 
-	i2c0_pcf8574@25 {
+	pcf8574_relays_9_16: i2c0_pcf8574@25 {
 		compatible = "nxp,pcf857x";
 		reg = <0x25>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
+		gpio-line-names = "RLY9", "RLY10", "RLY11", "RLY12",
+				  "RLY13", "RLY14", "RLY15", "RLY16";
 	};
 };
 
@@ -85,36 +93,44 @@
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 
-	i2c1_pcf8574@21 {
+	pcf8574_inputs_17_24: i2c1_pcf8574@21 {
 		compatible = "nxp,pcf857x";
 		reg = <0x21>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
+		gpio-line-names = "IN17", "IN18", "IN19", "IN20",
+				  "IN21", "IN22", "IN23", "IN24";
 	};
 
-	i2c1_pcf8574@22 {
+	pcf8574_inputs_25_32: i2c1_pcf8574@22 {
 		compatible = "nxp,pcf857x";
 		reg = <0x22>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
+		gpio-line-names = "IN25", "IN26", "IN27", "IN28",
+				  "IN29", "IN30", "IN31", "IN32";
 	};
 
-	i2c1_pcf8574@24 {
+	pcf8574_inputs_1_8: i2c1_pcf8574@24 {
 		compatible = "nxp,pcf857x";
 		reg = <0x24>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
+		gpio-line-names = "IN1", "IN2", "IN3", "IN4",
+				  "IN5", "IN6", "IN7", "IN8";
 	};
 
-	i2c1_pcf8574@25 {
+	pcf8574_inputs_9_16: i2c1_pcf8574@25 {
 		compatible = "nxp,pcf857x";
 		reg = <0x25>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
+		gpio-line-names = "IN9", "IN10", "IN11", "IN12",
+				  "IN13", "IN14", "IN15", "IN16";
 	};
 };
 
