@@ -229,6 +229,35 @@ should see the following message in the terminal:
    *** Booting Zephyr OS v3.7.0 ***
    Hello World! mimxrt700_evk/mimxrt798s/cm33_cpu0
 
+Building with VG-Lite GPU Acceleration
+=======================================
+When using LVGL with VG-Lite GPU acceleration on the MIMXRT700 EVK, use the
+``mimxrt700_evk/mimxrt798s/cm33_cpu0/extmem`` board variant which provides
+expanded memory:
+
+- SRAM: 512 KB → 6136 KB
+- XSPI Flash: Expanded to 128 MB
+
+This variant is required for:
+
+- Large display resolutions
+- LVGL with VG-Lite GPU acceleration
+- Graphics-intensive applications
+
+See :ref:`external_module_gpu_vglite` for instructions on pulling in the
+gpu-vglite module and details on ``VGLITE_OS`` and ``VGLITE_PLATFORM``
+variables.
+
+Example building for :zephyr:board:`mimxrt700_evk` with VG-Lite GPU acceleration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: mimxrt700_evk/mimxrt798s/cm33_cpu0/extmem
+   :shield: rk055hdmipi4ma0
+   :goals: build flash
+   :gen-args: -DVGLITE_OS=zephyr -DVGLITE_PLATFORM=rt700
+              -DCONFIG_LV_USE_DRAW_VG_LITE=y
+
 SEGGER RTT Logging
 ==================
 
