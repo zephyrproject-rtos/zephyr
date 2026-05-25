@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_T_DECK
+	bool "LilyGO T-Deck"
+	select SOC_ESP32S3_WROOM_N16R8
+	select SOC_ESP32S3_PROCPU if BOARD_T_DECK_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_T_DECK_ESP32S3_APPCPU
