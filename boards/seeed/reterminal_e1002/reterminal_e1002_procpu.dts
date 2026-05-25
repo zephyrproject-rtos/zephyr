@@ -117,7 +117,7 @@
 					  ARGB8888(196, 50,  58,  255) /* 0x03 = Red */
 					  PANEL_COLOR_PALETTE_NULL /* 0x04 = Unused / reserved */
 					  ARGB8888(40,  85,  180, 255) /* 0x05 = Blue */
-					  ARGB8888(60,  140, 75,  255) /* 0x06 = Green */ >;
+					  ARGB8888(60,  140, 75,  255) /* 0x06 = Green */>;
 			};
 		};
 	};
