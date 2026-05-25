@@ -1266,6 +1266,12 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 		}
 	}
 
+	if (!wpa_cli_cmd_v("set_network %d ssid_protection %d",
+			   resp.network_id, params->ssid_protection)) {
+		goto out;
+	}
+
+
 	memcpy((void *)&mac, params->bssid, WIFI_MAC_ADDR_LEN);
 	if (net_eth_is_addr_broadcast(&mac) ||
 	    net_eth_is_addr_multicast(&mac)) {

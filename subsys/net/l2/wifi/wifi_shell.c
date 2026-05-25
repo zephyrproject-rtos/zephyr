@@ -887,6 +887,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 		{"iface", sys_getopt_required_argument, 0, 'i'},
 		{"server-cert-domain-exact", sys_getopt_required_argument, 0, 'e'},
 		{"server-cert-domain-suffix", sys_getopt_required_argument, 0, 'x'},
+		{"ssid-protection", sys_getopt_required_argument, 0, 'C'},
 		{"help", sys_getopt_no_argument, 0, 'h'},
 		{0, 0, 0, 0}};
 	char *endptr;
@@ -915,7 +916,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 	params->verify_peer_cert = false;
 
-	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:x:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
+	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:x:w:b:c:m:t:a:B:K:S:C:T:A:V:I:P:g:Rh:i:",
 				  long_options, &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
@@ -1144,6 +1145,13 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'R':
 			params->ft_used = true;
+			break;
+		case 'C':
+			params->ssid_protection = atoi(state->optarg);
+			if (params->ssid_protection != 0U && params->ssid_protection != 1U) {
+				PR_WARNING("ssid_protection error %d\n", params->ssid_protection);
+				return -EINVAL;
+			}
 			break;
 		case 'g':
 			params->ignore_broadcast_ssid = shell_strtol(state->optarg, 10, &ret);
@@ -5162,8 +5170,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "[-V, --eap-version]: 0 or 1. Default 1: eap version 1\n"
 				 "[-I, --eap-id1...--eap-id8]: Client Identity. Default no eap identity\n"
 				 "[-P, --eap-pwd1...--eap-pwd8]: Client Password\n"
-				 "Default no password for eap user"),
-		      cmd_wifi_ap_enable, 2, 47),
+				 "Default no password for eap user\n"
+				 "[-C, --ssid-protection]: Whether to use SSID protection in\n"
+				 "4-way handshake: 0:Disable, 1:Enable"),
+		      cmd_wifi_ap_enable, 2, 49),
 	SHELL_CMD_ARG(stations, NULL,
 		      SHELL_HELP("List stations connected to the AP",
 				 "[-i, --iface=<interface index>]"),
@@ -5304,9 +5314,11 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 			    "[-e, --server-cert-domain-exact]: Full domain names for "
 			    "server certificate match\n"
 			    "[-x, --server-cert-domain-suffix]: Domain name suffixes for "
-			    "server certificate match"),
+			    "server certificate match\n"
+			    "[-C, --ssid-protection]: Whether to use SSID protection in\n"
+			    "4-way handshake: 0:Disable, 1:Enable"),
 		 cmd_wifi_connect,
-		 2, 46);
+		 2, 48);
 
 SHELL_SUBCMD_ADD((wifi), disconnect, NULL,
 		 SHELL_HELP("Disconnect from the Wi-Fi AP",

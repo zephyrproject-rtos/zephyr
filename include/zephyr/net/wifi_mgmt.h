@@ -843,6 +843,11 @@ struct wifi_connect_req_params {
 	const uint8_t *server_cert_domain_suffix;
 	/** Length of the server_cert_domain_suffix string, maximum 64 bytes */
 	uint8_t server_cert_domain_suffix_len;
+	/** SSID protection in 4-way handshake (needs RSNXE support)
+	 * 0: Disable (default)
+	 * 1: Enable
+	 */
+	uint8_t ssid_protection;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
