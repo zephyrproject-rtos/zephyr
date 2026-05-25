@@ -95,7 +95,8 @@ static int32_t elapsed(void)
 	if (this_cpu_announcing()) {
 		return 0U;
 	}
-	return sys_clock_elapsed() + announce_remaining;
+	return sys_clock_elapsed() +
+	       (IS_ENABLED(CONFIG_SMP) ? announce_remaining : 0);
 }
 
 static int32_t next_timeout(int32_t ticks_elapsed)
