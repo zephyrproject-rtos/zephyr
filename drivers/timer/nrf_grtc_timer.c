@@ -65,11 +65,6 @@
 #define LFCLK_FREQUENCY_HZ CONFIG_CLOCK_CONTROL_NRF_K32SRC_FREQUENCY
 #endif
 
-/* Threshold used to determine if there is a risk of unexpected GRTC COMPARE event coming
- * from previous CC value.
- */
-#define LATENCY_THR_TICKS 200
-
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
 #endif
@@ -644,8 +639,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 	bool sys_evt = ticks <= 30;
 	uint32_t ch = system_clock_channel_data.channel;
-	bool safe_setting = false;
-	uint64_t prev_cc_val = cc_value;
 
 	sys_event_unregister(true);
 
@@ -668,21 +661,10 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		}
 	}
 
-	/* In case of timeout abort it may happen that CC is being set to a value
-	 * that later than previous CC. If previous CC value is not far in the
-	 * future, there is a risk that COMPARE event will be triggered for that
-	 * previous CC value. If there is such risk safe procedure must be applied
-	 * which is more time consuming but ensures that there will be no spurious
-	 * event.
-	 */
-	if (prev_cc_val < cc_value) {
-		safe_setting = (int64_t)(prev_cc_val - counter()) < LATENCY_THR_TICKS;
-	}
-
 	if (IS_ENABLED(USE_SYS_EVENT)) {
 		sys_evt_handle = sys_evt ? nrf_sys_event_abs_register(cc_value, false) : -1;
 	}
-	nrfx_grtc_syscounter_cc_abs_set(ch, cc_value, safe_setting);
+	nrfx_grtc_syscounter_cc_abs_set(ch, cc_value, false);
 }
 
 #if defined(CONFIG_NRF_GRTC_TIMER_APP_DEFINED_INIT)
