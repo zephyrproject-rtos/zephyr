@@ -100,11 +100,11 @@ static int cmd_timer_oneshot(const struct shell *shctx, size_t argc, char **argv
 	int err = parse_device(shctx, argc, argv, &timer_dev);
 	struct counter_alarm_cfg alarm_cfg;
 
-	k_sem_init(&timer_sem, 0, 1);
-
 	if (err != 0) {
 		return err;
 	}
+
+	k_sem_init(&timer_sem, 0, 1);
 
 	delay = shell_strtoul(argv[ARGV_ONESHOT_TIME], 10, &err);
 	if (err != 0) {
@@ -152,11 +152,11 @@ static int cmd_timer_periodic(const struct shell *shctx, size_t argc, char **arg
 	int err = parse_device(shctx, argc, argv, &timer_dev);
 	struct counter_top_cfg top_cfg;
 
-	k_sem_init(&timer_sem, 0, 1);
-
 	if (err != 0) {
 		return err;
 	}
+
+	k_sem_init(&timer_sem, 0, 1);
 
 	delay = shell_strtoul(argv[ARGV_PERIODIC_TIME], 10, &err);
 	if (err != 0) {
