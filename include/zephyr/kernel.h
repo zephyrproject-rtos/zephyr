@@ -4834,6 +4834,30 @@ struct k_work_q {
  */
 };
 
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+/**
+ * @brief Work queue timeout policy handler.
+ *
+ * Called from ISR context when a work handler exceeds its configured
+ * timeout. The culprit queue, work item, and handler function pointer
+ * are logged before this function is called.
+ *
+ * The default implementation either aborts the work queue thread
+ * (when @kconfig{CONFIG_WORKQUEUE_WORK_TIMEOUT_ABORT} is set) or
+ * performs a cold system reboot via sys_reboot()
+ * (when @kconfig{CONFIG_WORKQUEUE_WORK_TIMEOUT_REBOOT} is set).
+ *
+ * Applications may override this function to implement custom policy.
+ * As this is called from ISR context, only ISR-safe functions may be
+ * used (such as k_thread_abort() or sys_reboot()), and ISR-unsafe
+ * functions may not be used (such as sleep or block).
+ *
+ * @param queue  The work queue whose handler timed out.
+ * @param work   The work item whose handler timed out.
+ */
+void k_work_queue_timeout_cb(struct k_work_q *queue, struct k_work *work);
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
+
 /* Provide the implementation for inline functions declared above */
 
 static inline bool k_work_is_pending(const struct k_work *work)

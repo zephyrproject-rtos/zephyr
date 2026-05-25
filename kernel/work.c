@@ -18,8 +18,24 @@
 #include <scheduler.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/sys/reboot.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+__weak void k_work_queue_timeout_cb(struct k_work_q *queue, struct k_work *work)
+{
+	ARG_UNUSED(work);
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT_REBOOT)
+	ARG_UNUSED(queue);
+	LOG_PANIC();
+	sys_reboot(SYS_REBOOT_COLD);
+#else
+	k_thread_abort(queue->thread_id);
+#endif
+}
+#endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
 static inline void flag_clear(uint32_t *flagp,
 			      uint32_t bit)
@@ -643,7 +659,7 @@ static void work_timeout_handler(struct _timeout *record)
 	LOG_ERR("queue %p%s%s blocked by work %p with handler %p",
 		queue, space, name, work, handler);
 
-	k_thread_abort(queue->thread_id);
+	k_work_queue_timeout_cb(queue, work);
 }
 
 static void work_timeout_start_locked(struct k_work_q *queue, struct k_work *work)

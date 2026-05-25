@@ -490,9 +490,35 @@ config WORKQUEUE_WORK_TIMEOUT
 	bool "Support workqueue work timeout monitoring"
 	help
 	  If enabled, the workqueue will monitor the duration of each work item.
-	  If the work item handler takes longer than the specified time to
-	  execute, the work queue thread will be aborted, and an error will be
-	  logged.
+	  If the work item handler takes longer than the configured timeout,
+	  the culprit queue, work item, and handler are logged and
+	  k_work_queue_timeout_cb() is invoked. Applications may override
+	  k_work_queue_timeout_cb() for custom policy. Per-queue timeout is
+	  configured via work_timeout_ms in k_work_queue_config.
+
+choice WORKQUEUE_WORK_TIMEOUT_ACTION
+	prompt "Action on work handler timeout"
+	depends on WORKQUEUE_WORK_TIMEOUT
+	default WORKQUEUE_WORK_TIMEOUT_ABORT
+	help
+	  Selects the default action taken when a work handler exceeds its
+	  configured timeout.
+
+config WORKQUEUE_WORK_TIMEOUT_ABORT
+	bool "Abort work queue thread"
+	help
+	  Abort the work queue thread when a handler exceeds its timeout.
+
+config WORKQUEUE_WORK_TIMEOUT_REBOOT
+	bool "Reboot system"
+	select REBOOT
+	help
+	  Perform a cold system reboot via sys_reboot(SYS_REBOOT_COLD) when
+	  a handler exceeds its timeout. Only bare-metal register-level
+	  operations are safe in the callback override as it runs from ISR
+	  context.
+
+endchoice
 
 menu "System Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
