@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2023 NXP
+ * Copyright 2022-2023, 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -413,5 +413,5 @@ SYS_INIT(board_config_pmic, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
 /* Framebuffers should be setup after PSRAM is initialized but before
  * Graphics framework init
  */
-SYS_INIT(init_psram_framebufs, POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(init_psram_framebufs, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #endif
