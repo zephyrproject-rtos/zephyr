@@ -65,9 +65,14 @@ static void gmap_reset(struct bt_gmap_client *gmap_cli)
 {
 	if (gmap_cli->conn != NULL) {
 		bt_conn_unref(gmap_cli->conn);
+		gmap_cli->conn = NULL;
 	}
 
-	memset(gmap_cli, 0, sizeof(*gmap_cli));
+	gmap_cli->role = 0;
+	(void)memset(&gmap_cli->feat, 0, sizeof(gmap_cli->feat));
+	gmap_cli->svc_start_handle = 0U;
+	gmap_cli->svc_end_handle = 0U;
+	(void)memset(&gmap_cli->params, 0, sizeof(gmap_cli->params));
 }
 
 static struct bt_gmap_client *client_by_conn(struct bt_conn *conn)
@@ -116,7 +121,11 @@ static void discover_failed(struct bt_gmap_client *gmap_cli, int err)
 
 	LOG_DBG("conn %p err %d", (void *)conn, err);
 
-	gmap_cb->discover(conn, err, 0, (struct bt_gmap_feat){0});
+	atomic_clear_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY);
+
+	if (gmap_cb->discover != NULL) {
+		gmap_cb->discover(conn, err, 0, (struct bt_gmap_feat){0});
+	}
 }
 
 static uint8_t bgr_feat_read_cb(struct bt_conn *conn, uint8_t att_err,
