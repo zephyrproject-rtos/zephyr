@@ -698,10 +698,10 @@ static int i2c_dw_setup(const struct device *dev, uint16_t target_address)
 	/* Disable the device controller to be able set TAR */
 	clear_bit_enable_en(reg_base);
 
-	/* enable bus clear feature */
-	ic_con.bits.bus_clear = 1U;
-	/* enable tx empty control to fix timing issue */
-	ic_con.bits.tx_empty_ctl = 1U;
+	/* disable bus clear feature */
+	ic_con.bits.bus_clear = 0U;
+	/* disable tx empty control to fix timing issue */
+	ic_con.bits.tx_empty_ctl = 0U;
 
 	/* Disable interrupts */
 	write_intr_mask(0, reg_base);
