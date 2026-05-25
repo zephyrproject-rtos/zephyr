@@ -108,7 +108,7 @@ static void discover_complete(struct bt_gmap_client *gmap_cli)
 
 	atomic_clear_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY);
 
-	if (gmap_cb->discover != NULL) {
+	if (gmap_cb != NULL && gmap_cb->discover != NULL) {
 		gmap_cb->discover(gmap_cli->conn, 0, gmap_cli->role, gmap_cli->feat);
 	}
 }
@@ -123,7 +123,7 @@ static void discover_failed(struct bt_gmap_client *gmap_cli, int err)
 
 	atomic_clear_bit(gmap_cli->flags, GMAP_CLIENT_FLAG_BUSY);
 
-	if (gmap_cb->discover != NULL) {
+	if (gmap_cb != NULL && gmap_cb->discover != NULL) {
 		gmap_cb->discover(conn, err, 0, (struct bt_gmap_feat){0});
 	}
 }
