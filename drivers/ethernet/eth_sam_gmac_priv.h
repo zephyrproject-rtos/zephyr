@@ -255,7 +255,7 @@ struct gmac_queue {
 
 /* Device constant configuration parameters */
 struct eth_sam_dev_cfg {
-	Gmac *regs;
+	DEVICE_MMIO_ROM;
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	const struct atmel_sam_pmc_config clock_cfg;
 #endif
@@ -273,6 +273,7 @@ struct eth_sam_dev_cfg {
 
 /* Device run time data */
 struct eth_sam_dev_data {
+	DEVICE_MMIO_RAM;
 	struct net_if *iface;
 	uint8_t mac_addr[6];
 	bool link_up;
