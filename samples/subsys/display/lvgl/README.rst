@@ -63,6 +63,16 @@ or
 - :zephyr:board:`mimxrt1060_evk`
 - `RK043FN02H-CT`_
 
+or
+
+- :zephyr:board:`mimxrt595_evk`
+- Requires ``mimxrt595_evk_sram.overlay`` for expanded memory
+
+or
+
+- :zephyr:board:`mimxrt700_evk`
+- Requires ``mimxrt700_evk_expanded_memory.overlay`` for expanded memory
+
 Building and Running
 ********************
 
@@ -83,6 +93,77 @@ Example building for :zephyr:board:`native_sim <native_sim>`:
 
 Alternatively, if building from a 64-bit host machine, the previous target
 board argument may also be replaced by ``native_sim/native/64``.
+
+Example building for :zephyr:board:`mimxrt1170_evk` with VG-Lite GPU acceleration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: mimxrt1170_evk/mimxrt1176/cm7
+   :shield: rk055hdmipi4ma0
+   :goals: build flash
+   :gen-args: -DBOARD_REVISION=A -DVGLITE_OS=zephyr
+              -DVGLITE_PLATFORM=rt1170 -DCONFIG_VGLITE=y
+
+Example building for :zephyr:board:`mimxrt1160_evk` with VG-Lite GPU acceleration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: mimxrt1160_evk/mimxrt1166/cm7
+   :shield: rk055hdmipi4ma0
+   :goals: build flash
+   :gen-args: -DVGLITE_OS=zephyr -DVGLITE_PLATFORM=rt1160 -DCONFIG_VGLITE=y
+
+Example building for :zephyr:board:`mimxrt595_evk` with VG-Lite GPU acceleration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: mimxrt595_evk
+   :goals: build flash
+   :gen-args: -DDTC_OVERLAY_FILE="boards/mimxrt595_evk_sram.overlay"
+              -DVGLITE_OS=zephyr -DVGLITE_PLATFORM=rt595 -DCONFIG_VGLITE=y
+
+Example building for :zephyr:board:`mimxrt700_evk` with VG-Lite GPU acceleration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: mimxrt700_evk
+   :goals: build flash
+   :gen-args: -DDTC_OVERLAY_FILE="boards/mimxrt700_evk_expanded_memory.overlay"
+              -DVGLITE_OS=zephyr -DVGLITE_PLATFORM=rt700 -DCONFIG_VGLITE=y
+
+Board-Specific Requirements
+****************************
+
+MIMXRT595 EVK
+=============
+
+When using LVGL with VG-Lite GPU acceleration on the MIMXRT595 EVK, the default
+SRAM allocation is insufficient. Use the ``mimxrt595_evk_sram.overlay`` to expand
+the available heap memory:
+
+- Default SRAM: 3072 KB
+- With overlay: 4608 KB (full SRAM)
+
+This overlay is required for:
+
+- Large display resolutions (e.g., 1280x720)
+- LVGL with VG-Lite GPU acceleration
+- Applications with large framebuffers
+
+MIMXRT700 EVK
+=============
+
+When using LVGL with VG-Lite GPU acceleration on the MIMXRT700 EVK, use the
+``mimxrt700_evk_expanded_memory.overlay`` to expand available memory:
+
+- SRAM: 512 KB → 6136 KB
+- XSPI Flash: Expanded to 128 MB
+
+This overlay is required for:
+
+- Large display resolutions
+- LVGL with VG-Lite GPU acceleration
+- Graphics-intensive applications
 
 References
 **********
