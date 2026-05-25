@@ -115,10 +115,12 @@ config NUM_METAIRQ_PRIORITIES
 
 config SCHED_DEADLINE
 	bool "Earliest-deadline-first scheduling"
+	select CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
+
 	help
 	  This enables a simple "earliest deadline first" scheduling
 	  mode where threads can set "deadline" deltas measured in
-	  k_cycle_get_32() units.  Priority decisions within (!!) a
+	  k_cycle_get_64() units.  Priority decisions within (!!) a
 	  single priority will choose the next expiring deadline and
 	  not simply the least recently added thread.
 

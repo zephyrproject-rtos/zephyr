@@ -106,7 +106,7 @@ static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct 
 		   * Note that this is not a simple d1 - d2, because that can
 		   * overflow and give the wrong sign.  Instead we check if
 		   * d2 is greater than d1, which is equivalent to checking
-		   * if (d1 - d2) is negative without risking overflow.
+		   * if (d1 - d2) is greater than or less than  without risking overflow.
 		  */
 
 			 return (int32_t)((d2 > d1) ? 1 : -1);
