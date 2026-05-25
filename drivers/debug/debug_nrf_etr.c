@@ -335,8 +335,9 @@ static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *pa
 		return;
 	}
 
+	uint32_t id = (uint32_t)packet->id - CONFIG_LOG_FRONTEND_STMESP_TP_CHAN_BASE;
 	static const union cbprintf_package_hdr desc = {.desc = {.len = 3 /* hdr + fmt + id */}};
-	uint32_t tp_p[] = {(uint32_t)desc.raw, (uint32_t)tp, packet->id};
+	uint32_t tp_p[] = {(uint32_t)desc.raw, (uint32_t)tp, id};
 
 	log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 0,
 			   1, (const uint8_t *)tp_p, NULL, 0, flags);
