@@ -46,6 +46,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "ieee802154_esp32.h"
 #include <esp_ieee802154.h>
 #include <esp_ieee802154_dev.h>
+#include <esp_timer.h>
 #include <esp_mac.h>
 
 #define IEEE802154_ESP32_TX_TIMEOUT_MS (100)
@@ -189,6 +190,9 @@ static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx
 	net_pkt_set_ieee802154_lqi(pkt, frame_info->lqi);
 	net_pkt_set_ieee802154_rssi_dbm(pkt, frame_info->rssi);
 	net_pkt_set_ieee802154_ack_fpb(pkt, frame_info->pending);
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	net_pkt_set_timestamp_ns(pkt, frame_info->timestamp * NSEC_PER_USEC);
+#endif
 
 	err = net_recv_data(data->iface, pkt);
 	if (err != 0) {
@@ -608,6 +612,13 @@ static int esp32_stop(const struct device *dev)
 	return 0;
 }
 
+static net_time_t esp32_get_time(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return (net_time_t)esp_timer_get_time() * NSEC_PER_USEC;
+}
+
 static void esp32_ed_scan_work_handler(struct k_work *work)
 {
 	energy_scan_done_cb_t callback = esp32_data.energy_scan_done;
@@ -748,7 +759,7 @@ static void esp32_iface_init(struct net_if *iface)
 
 static const struct ieee802154_radio_api esp32_radio_api = {
 	.iface_api.init = esp32_iface_init,
-
+	.get_time         = esp32_get_time,
 	.get_capabilities = esp32_get_capabilities,
 	.cca              = esp32_cca,
 	.set_channel      = esp32_set_channel,
