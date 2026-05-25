@@ -35,8 +35,23 @@
 		    (_CONCAT(HAL_OSPIM_, DT_INST_STRING_TOKEN(index, prop))),	\
 		    (default_value))
 
-#define DT_OSPI_PROP_OR(prop, default_value, index)                                     \
-	DT_INST_PROP_OR(index, prop, default_value)
+/*
+ * Determine the hardware OSPI instance number (1, 2, ...) from the DTS node,
+ * regardless of the DT_INST ordinal index which depends on enumeration order.
+ */
+#define OSPI_INST_NUM(index)                                              \
+	(DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi1)) ? 1 : \
+	 DT_SAME_NODE(DT_DRV_INST(index), DT_NODELABEL(octospi2)) ? 2 : 1)
+
+#define OSPI_INST_IO_LOW_PORT(index)                              \
+	((OSPI_INST_NUM(index) == 1) ? HAL_OSPIM_IOPORT_1_LOW :  \
+	 (OSPI_INST_NUM(index) == 2) ? HAL_OSPIM_IOPORT_2_LOW :  \
+	 HAL_OSPIM_IOPORT_1_LOW)
+
+#define OSPI_INST_IO_HIGH_PORT(index)                              \
+	((OSPI_INST_NUM(index) == 1) ? HAL_OSPIM_IOPORT_1_HIGH :  \
+	 (OSPI_INST_NUM(index) == 2) ? HAL_OSPIM_IOPORT_2_HIGH :  \
+	 HAL_OSPIM_IOPORT_1_HIGH)
 
 LOG_MODULE_REGISTER(ospi_stm32, CONFIG_MSPI_LOG_LEVEL);
 
@@ -107,8 +122,6 @@ static OSPI_RegularCmdTypeDef mspi_stm32_ospi_prepare_cmd(uint8_t cfg_mode, uint
 								  : HAL_OSPI_DATA_DTR_ENABLE;
 	/* AddressWidth must be set to 32bits for init and mem config phase */
 	cmd_tmp.AddressSize = HAL_OSPI_ADDRESS_32_BITS;
-	cmd_tmp.DataDtrMode = (cfg_rate == MSPI_DATA_RATE_SINGLE) ? HAL_OSPI_DATA_DTR_DISABLE
-								  : HAL_OSPI_DATA_DTR_ENABLE;
 	cmd_tmp.DQSMode =
 		(cfg_rate == MSPI_DATA_RATE_SINGLE) ? HAL_OSPI_DQS_DISABLE : HAL_OSPI_DQS_ENABLE;
 	cmd_tmp.SIOOMode = HAL_OSPI_SIOO_INST_EVERY_CMD;
@@ -1201,19 +1214,15 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	/* OCTOSPI I/O manager init Function */
 	OSPIM_CfgTypeDef ospi_mgr_cfg = {0};
 
-	if (dev_data->hmspi.ospi.Instance == OCTOSPI1) {
-		ospi_mgr_cfg.ClkPort = dev_cfg->ospim_clk_port;
-		ospi_mgr_cfg.DQSPort = dev_cfg->ospim_dqs_port;
-		ospi_mgr_cfg.NCSPort = dev_cfg->ospim_ncs_port;
-		ospi_mgr_cfg.IOLowPort = dev_cfg->ospim_io_low_port;
-		ospi_mgr_cfg.IOHighPort = dev_cfg->ospim_io_high_port;
-	} else if (dev_data->hmspi.ospi.Instance == OCTOSPI2) {
-		ospi_mgr_cfg.ClkPort = dev_cfg->ospim_clk_port;
-		ospi_mgr_cfg.DQSPort = dev_cfg->ospim_dqs_port;
-		ospi_mgr_cfg.NCSPort = dev_cfg->ospim_ncs_port;
-		ospi_mgr_cfg.IOLowPort = dev_cfg->ospim_io_low_port;
-		ospi_mgr_cfg.IOHighPort = dev_cfg->ospim_io_high_port;
-	} else {
+	ospi_mgr_cfg.ClkPort    = dev_cfg->ospim_clk_port;
+	ospi_mgr_cfg.DQSPort    = dev_cfg->ospim_dqs_port;
+	ospi_mgr_cfg.NCSPort    = dev_cfg->ospim_ncs_port;
+	ospi_mgr_cfg.IOLowPort  = dev_cfg->ospim_io_low_port;
+	ospi_mgr_cfg.IOHighPort = dev_cfg->ospim_io_high_port;
+
+	if (dev_data->hmspi.ospi.Instance != OCTOSPI1 &&
+		dev_data->hmspi.ospi.Instance != OCTOSPI2)
+	{
 		LOG_ERR("Unknown OSPI Instance");
 		ret = -EINVAL;
 		goto end;
@@ -1430,15 +1439,15 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.mspicfg.num_ce_gpios = ARRAY_SIZE(ce_gpios##index),                               \
 		.dma_specified = DT_INST_NODE_HAS_PROP(index, dmas),                               \
-		.ospim_clk_port = DT_INST_PROP_OR(index, st_clk_port, 0),                         \
+		.ospim_clk_port = DT_INST_PROP_OR(index, st_clk_port,                              \
+						   OSPI_INST_NUM(index)),                          \
 		.ospim_dqs_port = DT_INST_PROP_OR(index, st_dqs_port, 0),                         \
-		.ospim_ncs_port = DT_INST_PROP_OR(index, st_ncs_port, 0),                         \
+		.ospim_ncs_port = DT_INST_PROP_OR(index, st_ncs_port,                              \
+						   OSPI_INST_NUM(index)),                          \
 		.ospim_io_low_port = DT_OSPI_IO_PORT_PROP_OR(st_io_low_port,                      \
-							 ((index) == 0 ? HAL_OSPIM_IOPORT_1_LOW :       \
-									HAL_OSPIM_IOPORT_2_LOW), index),      \
+						      OSPI_INST_IO_LOW_PORT(index), index),        \
 		.ospim_io_high_port = DT_OSPI_IO_PORT_PROP_OR(st_io_high_port,                    \
-							  ((index) == 0 ? HAL_OSPIM_IOPORT_1_HIGH :      \
-									 HAL_OSPIM_IOPORT_2_HIGH), index),     \
+						       OSPI_INST_IO_HIGH_PORT(index), index),      \
 	};                                                                                         \
 	static struct mspi_stm32_data mspi_stm32_dev_data_##index = {                              \
 		.hmspi.ospi = {                                                                    \
