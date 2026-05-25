@@ -228,6 +228,31 @@ should see the following message in the terminal:
    *** Booting Zephyr OS v2.7 ***
    Hello World! mimxrt595_evk
 
+Building with VG-Lite GPU Acceleration
+=======================================
+When using LVGL with VG-Lite GPU acceleration on the MIMXRT595 EVK, the default
+SRAM allocation is insufficient. Use the ``mimxrt595_evk_sram.overlay`` to expand
+the available heap memory:
+
+- Default SRAM: 3072 KB
+- With overlay: 4608 KB (full SRAM)
+
+This overlay is required for:
+
+- Large display resolutions (e.g., 1280x720)
+- LVGL with VG-Lite GPU acceleration
+- Applications with large framebuffers
+
+Example building for :zephyr:board:`mimxrt595_evk` with VG-Lite GPU acceleration:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/display/lvgl
+   :board: mimxrt595_evk
+   :goals: build flash
+   :gen-args: -DDTC_OVERLAY_FILE="boards/mimxrt595_evk_sram.overlay"
+              -DVGLITE_OS=zephyr -DVGLITE_PLATFORM=rt595 -DCONFIG_VGLITE=y
+              -DCONFIG_LV_USE_DRAW_VG_LITE=y
+
 Troubleshooting
 ===============
 
