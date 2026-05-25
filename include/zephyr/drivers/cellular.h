@@ -234,10 +234,9 @@ __subsystem struct cellular_driver_api {
  * @param networks List of cellular network configurations to apply.
  * @param size Size of list of cellular network configurations.
  *
- * @retval 0 if successful.
- * @retval -EINVAL if any provided cellular network configuration is invalid or unsupported.
- * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval <0 Negative errno-code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL Any provided cellular network configuration is invalid or unsupported.
+ * @retval -ENOTSUP API is not supported by cellular network device.
  */
 static inline int cellular_configure_networks(const struct device *dev,
 					      const struct cellular_network *networks, uint8_t size)
@@ -258,9 +257,8 @@ static inline int cellular_configure_networks(const struct device *dev,
  * @param networks Pointer to list of supported cellular network configurations.
  * @param size Size of list of cellular network configurations.
  *
- * @retval 0 if successful.
- * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval <0 Negative errno-code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not supported by cellular network device.
  */
 static inline int cellular_get_supported_networks(const struct device *dev,
 						  const struct cellular_network **networks,
@@ -282,10 +280,9 @@ static inline int cellular_get_supported_networks(const struct device *dev,
  * @param type Type of the signal information requested
  * @param value Signal strength destination (one of RSSI, RSRP, RSRQ)
  *
- * @retval 0 if successful.
- * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval -ENODATA if device is not in a state where signal can be polled
- * @retval <0 Negative errno-code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not supported by cellular network device.
+ * @retval -ENODATA Device is not in a state where signal can be polled.
  */
 static inline int cellular_get_signal(const struct device *dev,
 				      const enum cellular_signal_type type, int16_t *value)
@@ -307,10 +304,9 @@ static inline int cellular_get_signal(const struct device *dev,
  * @param info Info string destination
  * @param size Info string size
  *
- * @retval 0 if successful.
- * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval -ENODATA if modem does not provide info requested
- * @retval <0 Negative errno-code from chat module otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not supported by cellular network device.
+ * @retval -ENODATA Modem does not provide the requested info.
  */
 static inline int cellular_get_modem_info(const struct device *dev,
 					  const enum cellular_modem_info_type type, char *info,
@@ -332,10 +328,9 @@ static inline int cellular_get_modem_info(const struct device *dev,
  * @param tech Which access technology to get status for
  * @param status Registration status for given access technology
  *
- * @retval 0 if successful.
- * @retval -ENOSYS if API is not supported by cellular network device.
- * @retval -ENODATA if modem does not provide info requested
- * @retval <0 Negative errno-code from chat module otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ * @retval -ENODATA Modem does not provide the requested info.
  */
 static inline int cellular_get_registration_status(const struct device *dev,
 						   enum cellular_access_technology tech,
@@ -359,12 +354,11 @@ static inline int cellular_get_registration_status(const struct device *dev,
  * @param dev Cellular device
  * @param apn Zero-terminated APN string (max length is driver-specific)
  *
- * @retval 0 if successful.
- * @retval -ENOSYS if API is not supported by cellular network device.
- * @retval -EINVAL if APN string invalid or too long.
- * @retval -EALREADY if APN identical to current one, nothing to do
- * @retval -EBUSY if modem is already dialled, APN cannot be changed
- * @retval <0 Negative errno-code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ * @retval -EINVAL APN string invalid or too long.
+ * @retval -EALREADY APN identical to current one, nothing to do.
+ * @retval -EBUSY Modem is already dialled, APN cannot be changed.
  */
 static inline int cellular_set_apn(const struct device *dev, const char *apn)
 {
@@ -385,11 +379,10 @@ static inline int cellular_set_apn(const struct device *dev, const char *apn)
  * @param cb Callback to call when the event occurs, or NULL to unsubscribe
  * @param user_data Pointer to user data that will be passed to the callback
  *
- * @retval 0         Success
- * @retval -ENOSYS   Driver does not support event callbacks
- * @retval -EINVAL   Bad parameters
- * @retval -ENOMEM   No space left for another subscriber
- * @retval <0        Driver-specific error
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Driver does not support event callbacks.
+ * @retval -EINVAL Bad parameters.
+ * @retval -ENOMEM No space left for another subscriber.
  */
 static inline int cellular_set_callback(const struct device *dev, cellular_event_mask_t mask,
 					cellular_event_cb_t cb, void *user_data)
