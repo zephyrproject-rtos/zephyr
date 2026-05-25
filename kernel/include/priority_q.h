@@ -91,8 +91,8 @@ static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct 
 	 * leverage that to compare the values without having to check
 	 * the current time.
 	 */
-	uint32_t d1 = thread_1->base.prio_deadline;
-	uint32_t d2 = thread_2->base.prio_deadline;
+	uint64_t d1 = thread_1->base.prio_deadline;
+	uint64_t d2 = thread_2->base.prio_deadline;
 
 	if (d1 != d2) {
 		/* Sooner deadline means higher effective priority.

@@ -63,6 +63,11 @@ void z_impl_k_thread_absolute_deadline_set(k_tid_t tid, int64_t deadline)
 void z_impl_k_thread_deadline_set(k_tid_t tid, int64_t deadline)
 {
 	deadline = clamp(deadline, 0, INT64_MAX);
+/*
+ This could also over flow but only for systems with very long uptime for years 
+ and very high clock frequency, so we assume that the deadline is always in the 
+"near future" and thus the addition cannot overflow.
+*/
 
 	int64_t newdl = k_cycle_get_64() + deadline;
 
