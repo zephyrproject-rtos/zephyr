@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,8 @@
  */
 void soc_early_init_hook(void)
 {
+	SystemInit();
+
 #ifdef CONFIG_SOC_MCXE31B
 	enable_sram_extra_latency(true);
 #else
