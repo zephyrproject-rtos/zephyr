@@ -17,6 +17,26 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
+/* Opaque key tests
+ *
+ * To enable opaque key tests, one must define the following things:
+ *	- OPAQUE_KEY_DATATYPE: the type of the opaque key.
+ *	- OPAQUE_KEY_VALUES: a list of tuple of <key name, opaque key data> to
+ *		test, with their name and value, i.e. a list of structures of
+ *		the form:
+ *			{const char *name, const OPAQUE_KEY_DATATYPE key_data}
+ *
+ * Notes:
+ *	The opaque key tests will be run only if the crypto driver supports
+ *	opaque keys, i.e. if the crypto driver capabilities (given by
+ *	crypto_query_hwcaps()) include the CAP_OPAQUE_KEY_HNDL bit, and if
+ *	the OPAQUE_KEY_DATATYPE and OPAQUE_KEY_VALUES definitions are provided.
+ *
+ *	If the crypto driver does not support opaque keys, the
+ *	OPAQUE_KEY_DATATYPE and OPAQUE_KEY_VALUES definitions will be ignored,
+ *	and no opaque key test will be run.
+ */
+
 #ifdef CONFIG_CRYPTO_MBEDTLS_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_cryp)
@@ -50,6 +70,19 @@ LOG_MODULE_REGISTER(main);
 #else
 #error "You need to enable one crypto device"
 #endif
+
+#if !defined(OPAQUE_KEY_DATATYPE)
+#define OPAQUE_KEY_DATATYPE void *
+#endif
+
+#if !defined(OPAQUE_KEY_VALUES)
+#define OPAQUE_KEY_VALUES /* No opaque keys */
+#endif
+
+static const struct {
+	const char *name;
+	OPAQUE_KEY_DATATYPE key_data;
+} opaque_keys[] = {OPAQUE_KEY_VALUES};
 
 /* Some crypto drivers require IO buffers to be aligned, i.e. due to underlying DMA requirements. */
 #define IO_ALIGNMENT_BYTES 4
@@ -681,7 +714,7 @@ int main(void)
 		{ .mode = "GCM Mode", .mode_func = gcm_mode },
 		{ },
 	};
-	int i;
+	int i, k;
 
 	if (validate_hw_compatibility(dev, CAP_RAW_KEY)) {
 		LOG_ERR("Incompatible h/w");
@@ -689,11 +722,35 @@ int main(void)
 	}
 
 	LOG_INF("Testing crypto device %s", dev->name);
+
+	LOG_INF("Raw key tests");
 	LOG_INF("Cipher Sample");
 
 	for (i = 0; modes[i].mode; i++) {
 		LOG_INF("%s", modes[i].mode);
 		modes[i].mode_func(dev, NULL);
 	}
+
+	if ((crypto_query_hwcaps(dev) & CAP_OPAQUE_KEY_HNDL) == 0U) {
+		LOG_INF("The device does not support opaque key handles");
+		return 0;
+	}
+
+	/* Opaque key handle tests */
+	if (validate_hw_compatibility(dev, CAP_OPAQUE_KEY_HNDL)) {
+		LOG_INF("Opaque key not supported by device %s", dev->name);
+		return 0;
+	}
+
+	LOG_INF("Opaque key tests");
+	LOG_INF("Cipher Sample");
+
+	for (i = 0; modes[i].mode; i++) {
+		for (k = 0; k < ARRAY_SIZE(opaque_keys); k++) {
+			LOG_INF("%s using %s", modes[i].mode, opaque_keys[k].name);
+			modes[i].mode_func(dev, (void *)&opaque_keys[k].key_data);
+		}
+	}
+
 	return 0;
 }
