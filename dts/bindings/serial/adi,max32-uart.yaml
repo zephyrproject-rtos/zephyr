@@ -3,7 +3,7 @@
 
 description: MAX32 UART
 
-include: [uart-controller.yaml, pinctrl-device.yaml]
+include: [uart-controller.yaml, pinctrl-device.yaml, clock-device.yaml]
 
 compatible: "adi,max32-uart"
 

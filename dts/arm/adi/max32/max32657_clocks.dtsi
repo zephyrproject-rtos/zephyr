@@ -43,6 +43,15 @@
 		clock-div = <2>;
 		clocks = <&scale_sysclk_div 0>;
 	};
+
+	/* The UART mux cannot exist in the UART node otherwise it leads to a circular dependency */
+	bclk_src: mux@50042000 {
+		#clock-cells = <1>;
+		compatible = "clock-mux";
+		reg = <0x50042000 0x3>;
+		offset = <0x10>;
+		input-sources = <&clk_mgmt_pclk &clk_mgmt_ibro>;
+	};
 };
 
 &cpu0 {
@@ -144,6 +153,36 @@
 			};
 		};
 	};
+
+	clk_mgmt_uart_pclk: clk_mgmt_uart_pclk@24 {
+		#clock-cells = <1>;
+		compatible = "clock-gate";
+		input = <&bclk_src>;
+		reg = <0x24 0x1>;
+		offset = <0x9>;
+		invert;
+
+		bclk_uart0: bclk_uart0 {
+			#clock-cells = <0>;
+			compatible = "clock-output";
+
+			/* clk_mgmt_uart_pclk must be first as it ungates access to bclk_src */
+			bclk_uart0_pclk: bclk_uart0_pclk {
+				compatible = "clock-state";
+				clocks = <&clk_mgmt_uart_pclk 1 &bclk_src 0>;
+			};
+
+			bclk_uart0_ibro: bclk_uart0_ibro {
+				compatible = "clock-state";
+				clocks = <&clk_mgmt_uart_pclk 1 &clk_mgmt_ibro 1 &bclk_src 1>;
+			};
+
+			bclk_uart0_off: bclk_uart0_off {
+				compatible = "clock-state";
+				clocks = <&clk_mgmt_uart_pclk 0>;
+			};
+		};
+	};
 };
 
 &mcr {
@@ -171,15 +210,10 @@
 };
 
 &uart0 {
-	#address-cells = <1>;
-	#size-cells = <1>;
-	ranges = <0x0 0x0 0x1000>;
-
-	bclk_src: mux@0 {
-		#clock-cells = <1>;
-		compatible = "clock-mux";
-		reg = <0x0 0x3>;
-		offset = <0x10>;
-		input-sources = <&clk_mgmt_pclk &clk_mgmt_ibro>;
-	};
+	clock-outputs = <&bclk_uart0>;
+	clock-output-names = "default";
+	clock-request-0 = <&bclk_uart0_pclk>;
+	clock-request-1 = <&bclk_uart0_ibro>;
+	clock-request-2 = <&bclk_uart0_off>;
+	clock-request-names = "default", "ibro", "off";
 };
