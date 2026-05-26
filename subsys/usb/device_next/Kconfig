@@ -106,5 +106,6 @@ config USBD_HWINFO_DEVID_LENGTH
 
 rsource "class/Kconfig"
 rsource "app/Kconfig.cdc_acm_serial"
+rsource "app/Kconfig.usbd_fastbootd"
 
 endif # USB_DEVICE_STACK_NEXT

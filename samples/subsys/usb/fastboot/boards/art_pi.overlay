@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 jeck chen <baidxi404629@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * DTS overlay for the USB Fastboot sample on ART-Pi (STM32H750).
+ *
+ * Defines the "boot" and "app" partition nodes required by
+ * FASTBOOT_PART_DEFINE(boot, ...) and FASTBOOT_PART_DEFINE(app, ...).
+ * The node label (before the colon) MUST match the first argument
+ * passed to FASTBOOT_PART_DEFINE.
+ *
+ * Adjust reg addresses and sizes to match your actual flash layout.
+ */
+
+/*
+ * Remove the original boot_partition to avoid label conflict,
+ * then define boot and app partitions under internal flash.
+ */
+/delete-node/ &boot_partition;
+
+&flash0 {
+	partitions {
+		/* STM32H750 internal flash: 128KB total */
+		boot: partition@0 {
+			label = "boot";
+			reg = <0x00000000 DT_SIZE_K(64)>;
+		};
+
+		app: partition@10000 {
+			label = "app";
+			reg = <0x00010000 DT_SIZE_K(64)>;
+		};
+	};
+};

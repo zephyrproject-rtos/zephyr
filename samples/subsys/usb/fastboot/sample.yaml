@@ -1,0 +1,14 @@
+sample:
+  name: USB Fastboot
+tests:
+  sample.usb_device_next.fastboot:
+    depends_on: usbd
+    tags: usb fastboot
+    platform_allow: art_pi
+    integration_platforms:
+      - art_pi
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Fastboot sample started"

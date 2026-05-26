@@ -84,6 +84,11 @@ zephyr_library_sources_ifdef(
 )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USBD_FASTBOOT_CLASS
+  class/usbd_fastboot.c
+)
+
+zephyr_library_sources_ifdef(
   CONFIG_USBD_HID_SUPPORT
   class/usbd_hid.c
   class/usbd_hid_api.c

@@ -1,0 +1,24 @@
+# Copyright (c) 2026 jeck chen <baidxi404629@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_FASTBOOT_CLASS
+	bool "USB Fastboot class"
+	help
+	  USB device Fastboot class implementation.
+	  Implements Android Fastboot protocol for firmware download via USB.
+
+if USBD_FASTBOOT_CLASS
+
+config USBD_FASTBOOT_DOWNLOAD_BUF_SIZE
+	int "Download buffer size (bytes)"
+	default 32768
+	range 4096 262144
+	help
+	  Size of the download buffer for receiving firmware images.
+
+module = USBD_FASTBOOT
+module-str = usbd fastboot
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

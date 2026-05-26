@@ -1,0 +1,53 @@
+# Copyright (c) 2026 jeck chen <baidxi404629@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_FASTBOOTD
+	bool "USB fastboot device"
+	help
+	  Automatically initializes a USB Fastboot class via SYS_INIT.
+	  Use this for bootloader applications that need firmware update
+	  over USB.
+
+if USBD_FASTBOOTD
+
+config USBD_FASTBOOTD_VID
+	hex "USB Vendor ID"
+	default 0x2FE3
+	help
+	  You must use your own VID for samples and applications outside of
+	  Zephyr Project.
+
+config USBD_FASTBOOTD_PID
+	hex "USB Product ID"
+	default 0x1001
+	help
+	  You must use your own PID for samples and applications outside of
+	  Zephyr Project.
+
+config USBD_FASTBOOTD_MANUFACTURER_STRING
+	string "Manufacturer string"
+	default "ART-Pi2"
+	help
+	  USB device manufacturer string descriptor.
+
+config USBD_FASTBOOTD_PRODUCT_STRING
+	string "Product string"
+	default "ART-Pi2 Bootloader"
+	help
+	  USB device product string descriptor.
+
+config USBD_FASTBOOTD_MAX_POWER
+	int "Max power (2mA units)"
+	default 250
+	range 0 500
+	help
+	  bMaxPower value in the configuration in 2 mA units.
+
+config USBD_FASTBOOTD_SELF_POWERED
+	bool "Self-powered"
+	default n
+	help
+	  Set the Self-powered attribute in the configuration.
+
+endif
