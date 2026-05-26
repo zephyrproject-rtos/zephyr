@@ -7,11 +7,15 @@ common:
 tests:
   net.pmtu.ipv4:
     extra_configs:
+      - CONFIG_NET_IPV4_PMTU_DPLPMTUD=y
       - CONFIG_NET_IPV4_PMTU=y
   net.pmtu.ipv6:
     extra_configs:
+      - CONFIG_NET_IPV6_PMTU_DPLPMTUD=y
       - CONFIG_NET_IPV6_PMTU=y
   net.pmtu.all:
     extra_configs:
+      - CONFIG_NET_IPV4_PMTU_DPLPMTUD=y
       - CONFIG_NET_IPV4_PMTU=y
+      - CONFIG_NET_IPV6_PMTU_DPLPMTUD=y
       - CONFIG_NET_IPV6_PMTU=y
