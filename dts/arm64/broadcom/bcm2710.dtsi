@@ -98,6 +98,11 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
+			/*
+			 * legacy-pull-control selects the BCM2835-family
+			 * GPPUD/GPPUDCLK pull sequence; the BCM2711
+			 * PUP_PDN_CNTRL_REG at 0xE4 is reserved on this SoC.
+			 */
 			gpio0: gpio@0 {
 				compatible = "brcm,bcm2711-gpio";
 				reg = <0>;
@@ -105,6 +110,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <28>;
+				legacy-pull-control;
 				status = "okay";
 			};
 
@@ -115,7 +121,8 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <18>;
-				status = "disabled";
+				legacy-pull-control;
+				status = "okay";
 			};
 		};
 

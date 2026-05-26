@@ -27,6 +27,16 @@
 #define GPAFEN(base, n) (base + 0x88 + 0x04 * n)
 #define GPPULL(base, n) (base + 0xE4 + 0x04 * n)
 
+/* Legacy pull-control regs (BCM2835 / 2836 / 2837 / 2710) -- the
+ * modern GPPULL register at 0xE4 is reserved on these chips.
+ */
+#define GPPUD(base)        ((base) + 0x94)
+#define GPPUDCLK(base, n)  ((base) + 0x98 + 0x04 * (n))
+
+#define LEGACY_PULL_OFF	0x0
+#define LEGACY_PULL_DOWN	0x1
+#define LEGACY_PULL_UP	0x2
+
 #define FSEL_GROUPS (10)
 #define FSEL_BITS   (3)
 #define FSEL_OUTPUT (0x1)
@@ -55,6 +65,7 @@ struct gpio_bcm2711_config {
 
 	uint8_t offset;
 	uint8_t ngpios;
+	bool legacy_pull;
 };
 
 struct gpio_bcm2711_data {
@@ -106,10 +117,46 @@ static int gpio_bcm2711_pin_configure(const struct device *port, gpio_pin_t pin,
 		}
 	}
 
-	/* Set pull */
-	{
+	/* Set pull. Two register layouts -- BCM2711 has a single
+	 * GPPULL/PUP_PDN_CNTRL_REG at offset 0xE4 (2 bits per pin); the
+	 * BCM2835 family (used in Pi 1..3 / Pi Zero / Pi Zero 2 W) has
+	 * a legacy GPPUD/GPPUDCLK0/GPPUDCLK1 sequence at 0x94/0x98/0x9C.
+	 * Branch by the binding's legacy-pull-control flag.
+	 */
+	if (DEV_CFG(port)->legacy_pull) {
+		uint32_t pin_num = RPI_PIN_NUM(port, pin);
+		uint32_t pud;
+
+		if (flags & GPIO_PULL_UP) {
+			pud = LEGACY_PULL_UP;
+		} else if (flags & GPIO_PULL_DOWN) {
+			pud = LEGACY_PULL_DOWN;
+		} else {
+			pud = LEGACY_PULL_OFF;
+		}
+
+		/* The BCM2835 datasheet's recommended sequence:
+		 *   1. write GPPUD with the pull mode
+		 *   2. wait >= 150 cycles for the value to set up
+		 *   3. write GPPUDCLK with a 1 in the bit for the target pin
+		 *   4. wait >= 150 cycles for the clock pulse to register
+		 *   5. write GPPUD = 0 and GPPUDCLK = 0
+		 *
+		 * 150 cycles at the (up to) 250 MHz core clock is < 1 us;
+		 * k_busy_wait(1) is the smallest available wait and rounds
+		 * up to ~1 us. Plenty.
+		 */
+		sys_write32(pud, GPPUD(data->base));
+		k_busy_wait(1);
+		sys_write32(BIT(pin_num & 0x1F),
+			    GPPUDCLK(data->base, pin_num >> 5));
+		k_busy_wait(1);
+		sys_write32(0, GPPUD(data->base));
+		sys_write32(0, GPPUDCLK(data->base, pin_num >> 5));
+	} else {
 		group = GPIO_REG_GROUP(RPI_PIN_NUM(port, pin), PULL_GROUPS);
-		shift = GPIO_REG_SHIFT(RPI_PIN_NUM(port, pin), PULL_GROUPS, PULL_BITS);
+		shift = GPIO_REG_SHIFT(RPI_PIN_NUM(port, pin), PULL_GROUPS,
+				       PULL_BITS);
 
 		regval = sys_read32(GPPULL(data->base, group));
 		regval &= ~(BIT_MASK(PULL_BITS) << shift);
@@ -251,6 +298,13 @@ static int gpio_bcm2711_pin_interrupt_configure(const struct device *port, gpio_
 	regval &= ~BIT(shift);
 	sys_write32(regval, GPAFEN(data->base, group));
 
+	/* Clear any pending event left from a prior detector mode, so the
+	 * first ISR after reconfigure reflects a real edge -- not a stale
+	 * one (especially important for EDGE_BOTH, where a stale latch
+	 * would consume one of the two edges the caller expects to see).
+	 */
+	sys_write32(BIT(shift), GPEDS(data->base, group));
+
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		if (trig & GPIO_INT_LOW_0) {
 			regval = sys_read32(GPLEN(data->base, group));
@@ -298,12 +352,16 @@ static void gpio_bcm2711_isr(const struct device *port)
 
 	regval &= BIT_MASK(cfg->ngpios) << cfg->offset;
 
-	pins = (uint32_t)(regval >> cfg->offset);
-	gpio_fire_callbacks(&data->cb, port, pins);
-
-	/* Write to clear */
+	/* Clear the latched events before running callbacks: a callback may
+	 * itself generate a new edge on a watched pin (e.g. EDGE_BOTH where
+	 * the handler toggles the output), and a post-callback W1C write
+	 * would race with that new edge.
+	 */
 	sys_write32(FROM_U64(regval, 0), GPEDS(data->base, 0));
 	sys_write32(FROM_U64(regval, 1), GPEDS(data->base, 1));
+
+	pins = (uint32_t)(regval >> cfg->offset);
+	gpio_fire_callbacks(&data->cb, port, pins);
 }
 
 int gpio_bcm2711_init(const struct device *port)
@@ -346,6 +404,7 @@ static DEVICE_API(gpio, gpio_bcm2711_api) = {
 		.irq_config_func = gpio_bcm2711_irq_config_func_##n,                               \
 		.offset = DT_INST_REG_ADDR(n),                                                     \
 		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
+		.legacy_pull = DT_INST_PROP(n, legacy_pull_control),                               \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, gpio_bcm2711_init, NULL, &gpio_bcm2711_data_##n,                  \
