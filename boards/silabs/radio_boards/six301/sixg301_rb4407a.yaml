@@ -10,6 +10,7 @@ toolchain:
 supported:
   - bluetooth
   - comparator
+  - counter
   - dma
   - entropy
   - gpio
