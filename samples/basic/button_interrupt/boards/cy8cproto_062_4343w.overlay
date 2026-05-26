@@ -1,0 +1,22 @@
+/ {
+	aliases {
+		/* Keep led0 available for apps that use DT_ALIAS(led0). */
+		led0 = &{/leds/led_0};
+		/* sw0 button for LED control. */
+		sw0 = &{/gpio_keys/button_0};
+	};
+};
+
+&{/leds/led_0} {
+	status = "okay";
+	label = "LED_0";
+	gpios = <&gpio_prt13 7 GPIO_ACTIVE_LOW>;
+};
+
+&gpio_prt0 {
+	status = "okay";
+};
+
+&gpio_prt13 {
+	status = "okay";
+};

@@ -1,0 +1,15 @@
+sample:
+  name: Button interrupt
+
+tests:
+  sample.basic.button_interrupt:
+    tags:
+      - gpio
+      - interrupt
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Press SW0 to toggle LED ON/OFF"
+    platform_allow:
+      - cy8cproto_062_4343w
