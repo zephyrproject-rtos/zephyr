@@ -133,6 +133,15 @@
 #define SATP_MODE_SV57	10
 #define SATP_MODE_SV64	11
 
+/**
+ * PMPCFG CSR base address
+ */
+#define CSR_PMPCFG_BASE  0x3a0
+/**
+ * PMPADDR CSR base address
+ */
+#define CSR_PMPADDR_BASE 0x3b0
+
 #define PMP_R		0x01
 #define PMP_W		0x02
 #define PMP_X		0x04
@@ -215,6 +224,16 @@
 	__rv;							\
 })
 
+/**
+ * Same as csr_read, but instead of a name string, the CSR is given as immediate address
+ */
+#define csr_read_imm(csr)                                                                          \
+	({                                                                                         \
+		register unsigned long __rv;                                                       \
+		__asm__ volatile("csrr %0, %1" : "=r"(__rv) : "i"(csr));                           \
+		__rv;                                                                              \
+	})
+
 #define csr_write(csr, val)					\
 	do {							\
 		unsigned long __wv = (unsigned long)(val);	\
@@ -224,6 +243,14 @@
 				  : "memory");		\
 	} while (0)
 
+/**
+ * Same as csr_write, but instead of a name string, the CSR is given as immediate address
+ */
+#define csr_write_imm(csr, val)                                                                    \
+	do {                                                                                       \
+		unsigned long __wv = (unsigned long)(val);                                         \
+		__asm__ volatile("csrw %0, %1" : : "i"(csr), "rK"(__wv) : "memory");               \
+	} while (0)
 
 #define csr_read_set(csr, val)					\
 ({								\
