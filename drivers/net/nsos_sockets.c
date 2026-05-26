@@ -832,7 +832,7 @@ static int nsos_accept(void *obj, struct net_sockaddr *addr, net_socklen_t *addr
 		goto close_adapt_fd;
 	}
 
-	conn_sock = nsi_host_malloc(sizeof(*conn_sock));
+	conn_sock = nsi_host_calloc(1, sizeof(*conn_sock));
 	if (!conn_sock) {
 		ret = -NSI_ERRNO_MID_ENOMEM;
 		goto free_zephyr_fd;
@@ -840,6 +840,8 @@ static int nsos_accept(void *obj, struct net_sockaddr *addr, net_socklen_t *addr
 
 	conn_sock->fd = zephyr_fd;
 	conn_sock->poll.mid.fd = adapt_fd;
+	conn_sock->recv_timeout = K_FOREVER;
+	conn_sock->send_timeout = K_FOREVER;
 
 	zvfs_finalize_typed_fd(zephyr_fd, conn_sock, &nsos_socket_fd_op_vtable.fd_vtable,
 			       ZVFS_MODE_IFSOCK);
