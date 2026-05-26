@@ -11,5 +11,6 @@ tests:
   no_self_build.pytest:
     build: false
     required_applications:
-      - name: sample.basic.helloworld
+      - application: sample.basic.helloworld
+        path: $ZEPHYR_BASE/samples/hello_world
     harness: pytest
