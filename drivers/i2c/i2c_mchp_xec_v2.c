@@ -104,6 +104,8 @@ struct i2c_xec_config {
 	uint8_t girq_pos;
 	uint8_t enc_pcr;
 	uint8_t port_sel;
+	uint8_t wake_girq_pos;
+	bool wakeup_source;
 	struct gpio_dt_spec sda_gpio;
 	struct gpio_dt_spec scl_gpio;
 	const struct pinctrl_dev_config *pcfg;
@@ -1310,17 +1312,49 @@ static int i2c_xec_v2_pm_action(const struct device *dev, enum pm_device_action 
 {
 	const struct i2c_xec_config *cfg = dev->config;
 	mm_reg_t rb = cfg->base_addr;
+	bool arm_wake = false;
 	int ret = 0;
+
+#ifdef CONFIG_I2C_TARGET
+	struct i2c_xec_data *const data = dev->data;
+
+	arm_wake = cfg->wakeup_source && data->target_attached;
+#endif
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		/* Disable I2C block */
-		sys_clear_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_ENAB_POS);
+		if (IS_ENABLED(CONFIG_I2C_TARGET) && arm_wake) {
+			/* Enable I2C START-bit wake. CFG.ENAB and pinctrl
+			 * must stay in their active state - the block samples
+			 * SCL/SDA asynchronously and generate awake event if a
+			 * START bit is detected on the bus.
+			 */
+			sys_write8(BIT(XEC_I2C_WKSR_SB_POS), rb + XEC_I2C_WKSR_OFS);
+			sys_write8(BIT(XEC_I2C_WKCR_SBEN_POS), rb + XEC_I2C_WKCR_OFS);
+			soc_ecia_girq_status_clear(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos);
+			soc_ecia_girq_ctrl(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos, 1U);
+		} else {
+			/* Disable I2C block */
+			sys_clear_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_ENAB_POS);
+		}
 		break;
 
 	case PM_DEVICE_ACTION_RESUME:
-		/* Enable I2C block */
-		sys_set_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_ENAB_POS);
+		if (IS_ENABLED(CONFIG_I2C_TARGET) && arm_wake) {
+			/* CFG.ENAB and pinctrl were left untouched on suspend.
+			 * Turn on the clock so the block can complete the in-flight
+			 * AAT (auto-stretching SCL since the wake-up START), then
+			 * disarm the wake hardware. The regular GIRQ13 ISR will
+			 * service the AAT match once the master proceeds.
+			 */
+			soc_ecia_girq_ctrl(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos, 0);
+			sys_write8(0, rb + XEC_I2C_WKCR_OFS);
+			sys_write8(BIT(XEC_I2C_WKSR_SB_POS), rb + XEC_I2C_WKSR_OFS);
+			soc_ecia_girq_status_clear(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos);
+		} else {
+			/* Enable I2C block */
+			sys_set_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_ENAB_POS);
+		}
 		break;
 
 	default:
@@ -1394,6 +1428,13 @@ static int i2c_xec_v2_init(const struct device *dev)
 #define XEC_I2C_GIRQ_POS_DT(inst, idx)                                                             \
 	(uint8_t)MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, idx))
 
+/* GIRQ22 source bit: bit 0 = SPI_ASYNC_WAKE, bits 1..5 = SMB controllers 0..4.
+ * Derive the SMB instance from the controller's MMIO offset within its bank
+ * (one 0x400-byte block per controller).
+ */
+#define XEC_I2C_WAKE_GIRQ_POS_DT(inst)                                                             \
+	(uint8_t)((((DT_INST_REG_ADDR(inst)) / XEC_I2C_SMB_INST_SIZE) & 0x7U) + 1U)
+
 #define I2C_XEC_DEVICE(n)                                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void i2c_xec_irq_config_func_##n(void);                                             \
@@ -1405,6 +1446,8 @@ static int i2c_xec_v2_init(const struct device *dev)
 		.girq = XEC_I2C_GIRQ_DT(n, 0),                                                     \
 		.girq_pos = XEC_I2C_GIRQ_POS_DT(n, 0),                                             \
 		.enc_pcr = DT_INST_PROP(n, pcr_scr),                                               \
+		.wake_girq_pos = XEC_I2C_WAKE_GIRQ_POS_DT(n),                                      \
+		.wakeup_source = DT_INST_PROP(n, wakeup_source),                                   \
 		.irq_config_func = i2c_xec_irq_config_func_##n,                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.sda_gpio = GPIO_DT_SPEC_INST_GET(n, sda_gpios),                                   \
