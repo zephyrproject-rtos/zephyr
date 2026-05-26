@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: am243x_evm/am2434/r5f0_0
-name: AM243x R5 Core
+name: TI AM243x EVM R5FSS0 Core 0
 type: mcu
 arch: arm
 ram: 256
@@ -11,6 +11,15 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - spi
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - ipc
+  - serial
   - sdhc
+  - spi
+  - timer
+  - uart
+  - watchdog
 vendor: ti
