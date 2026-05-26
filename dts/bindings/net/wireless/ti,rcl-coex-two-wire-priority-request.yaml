@@ -1,0 +1,94 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI RCL RF Coexistence - Two-Wire Mode (REQUEST + PRIORITY)
+
+  Uses two output signals without grant monitoring:
+    - REQUEST (output): Indicates upcoming RF activity, asserted T1 µs before transmission
+    - PRIORITY (output): Shows priority level for T2 µs, then Tx/Rx indicator
+
+  If T2 is set to 0, PRIORITY skips the priority indication phase and immediately
+  shows Rx/Tx activity indicator.
+
+  GPIO Pin Constraints:
+
+    Only DIOs with LRFD peripheral functions can be used.
+    --------+----------------------------------------------------------------
+    Device  | Valid DIO Choices
+    --------+----------------------------------------------------------------
+    CC23X0  | DIO1, DIO3, DIO4, DIO5, DIO6, DIO7, DIO9, DIO11, DIO14, DIO21
+    CC27XX  | DIO17, DIO18, DIO19, DIO20, DIO21, DIO22, DIO27, DIO28
+    --------+----------------------------------------------------------------
+
+  Example on CC27XX devices:
+
+  &pinctrl {
+      coex_request_default: coex_request_default {
+          pinmux = <22 DIO22_LRFD5>; /* REQUEST - output */
+      };
+
+      coex_priority_default: coex_priority_default {
+          pinmux = <27 DIO27_LRFD6>; /* PRIORITY - output */
+      };
+
+      coex_request_sleep: coex_request_sleep {
+          pinmux = <22 DIO22_GPIO22>;
+      };
+
+      coex_priority_sleep: coex_priority_sleep {
+          pinmux = <27 DIO27_GPIO27>;
+      };
+  };
+
+  / {
+      ti_rcl_coex: rcl_coex {
+          compatible = "ti,rcl-coex-two-wire-priority-request";
+          status = "okay";
+
+          pinctrl-0 = <&coex_request_default &coex_priority_default>;
+          pinctrl-1 = <&coex_request_sleep &coex_priority_sleep>;
+          pinctrl-names = "default", "sleep";
+
+          request-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+          priority-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;
+
+          t1-us = <120>;
+          t2-us = <20>;
+      };
+  };
+
+
+compatible: "ti,rcl-coex-two-wire-priority-request"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  request-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for REQUEST signal. Must be a DIO that supports LRFD peripheral
+      function. Use GPIO_ACTIVE_HIGH/LOW flag for polarity.
+
+  priority-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for PRIORITY signal. Must be a DIO that supports LRFD peripheral
+      function. Use GPIO_ACTIVE_HIGH/LOW flag for polarity.
+
+  t1-us:
+    type: int
+    default: 120
+    description: |
+      RF Activity Latency Time in microseconds [90, 150]. Time from REQUEST
+      assertion to actual RF activity start. Default 120 µs matches SimpleLink.
+
+  t2-us:
+    type: int
+    default: 20
+    description: |
+      Priority Indication Time in microseconds 0 or [3, 30].
+      - If 0: PRIORITY shows Rx/Tx activity only (no priority indication)
+      - If 3-30: PRIORITY shows priority level for T2 µs, then switches to Rx/Tx indicator

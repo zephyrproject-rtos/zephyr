@@ -1,0 +1,59 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI RCL RF Coexistence - One-Wire Mode (GRANT only)
+
+  Uses single input signal for passive coexistence control:
+    - GRANT (input): Monitored by hardware
+
+  GPIO Pin Constraints:
+
+    Only DIOs with LRFD peripheral functions can be used.
+    --------+----------------------------------------------------------------
+    Device  | Valid DIO Choices
+    --------+----------------------------------------------------------------
+    CC23X0  | DIO1, DIO3, DIO4, DIO5, DIO6, DIO7, DIO9, DIO11, DIO14, DIO21
+    CC27XX  | DIO17, DIO18, DIO19, DIO20, DIO21, DIO22, DIO27, DIO28
+    --------+----------------------------------------------------------------
+
+  Example on CC27XX devices:
+
+  &pinctrl {
+      coex_grant_default: coex_grant_default {
+          pinmux = <17 DIO17_LRFD0>; /* GRANT - input */
+          input-enable;
+          bias-pull-up;
+      };
+
+      coex_grant_sleep: coex_grant_sleep {
+          pinmux = <17 DIO17_GPIO17>;
+          input-enable;
+          bias-pull-up;
+      };
+  };
+
+  / {
+      ti_rcl_coex: rcl_coex {
+          compatible = "ti,rcl-coex-one-wire-grant";
+          status = "okay";
+
+          pinctrl-0 = <&coex_grant_default>;
+          pinctrl-1 = <&coex_grant_sleep>;
+          pinctrl-names = "default", "sleep";
+
+          grant-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+      };
+  };
+
+compatible: "ti,rcl-coex-one-wire-grant"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  grant-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIO for GRANT signal. Must be a DIO that supports LRFD peripheral
+      function. Use GPIO_ACTIVE_HIGH/LOW flag for polarity.
