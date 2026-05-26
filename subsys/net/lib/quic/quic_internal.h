@@ -137,6 +137,12 @@ struct quic_sent_pkt_info {
 	/** True if loss detection queued this frame for retransmission */
 	bool retransmit_pending;
 
+	/** True if this packet is a DPLPMTUD probe. */
+	bool dplpmtud_probe;
+
+	/** UDP payload size targeted by this DPLPMTUD probe. */
+	uint16_t dplpmtud_probe_size;
+
 	/* Stream frame carried by this packet (for retransmission).
 	 * Only valid when has_stream_frame is true.
 	 * One STREAM frame per packet is assumed, which matches the
@@ -274,6 +280,10 @@ struct quic_token_validation {
 	uint8_t orig_dcid[MAX_CONN_ID_LEN];
 	uint8_t orig_dcid_len;
 };
+
+/* RFC 8899 DPLPMTUD for QUIC uses 1200-byte UDP payloads as the base size. */
+#define QUIC_DPLPMTUD_BASE_PLPMTU                1200U
+#define QUIC_DPLPMTUD_MAX_PROBE_RETRIES          3U
 
 /** A list of secure tags that TLS context should use. */
 struct sec_tag_list {
@@ -732,6 +742,7 @@ struct quic_endpoint {
 		uint64_t initial_max_streams_bidi;
 		uint64_t initial_max_streams_uni;
 		uint64_t max_idle_timeout;
+		uint16_t max_udp_payload_size;
 		uint64_t max_streams_bidi;
 		uint64_t max_streams_uni;
 		bool parsed;
@@ -821,6 +832,33 @@ struct quic_endpoint {
 		/** Prevent duplicate deferred release submissions */
 		bool release_pending;
 	} recovery;
+
+	/** DPLPMTUD path state for this endpoint. */
+	struct {
+		/** Largest UDP payload size confirmed by ACK. */
+		uint16_t validated_payload_size;
+
+		/** Local receive/transmit ceiling derived from socket/interface MTU. */
+		uint16_t local_max_payload_size;
+
+		/** Binary-search lower bound for the next probe. */
+		uint16_t search_low;
+
+		/** Binary-search upper bound for the next probe. */
+		uint16_t search_high;
+
+		/** Current in-flight or pending probe size. */
+		uint16_t probe_size;
+
+		/** Number of probe transmissions attempted at probe_size. */
+		uint8_t probe_attempts;
+
+		/** A probe of probe_size is currently in flight. */
+		bool probe_in_flight;
+
+		/** The endpoint should send a new or repeated probe. */
+		bool probe_pending;
+	} dplpmtud;
 
 	/** Max TX payload size for this endpoint, based on path MTU discovery.
 	 * Initialized to a default value and updated based on peer's
@@ -1244,7 +1282,12 @@ void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 				  enum quic_secret_level level,
 				  uint64_t pkt_num,
 				  size_t sent_bytes,
-				  bool ack_eliciting);
+				  bool ack_eliciting,
+				  bool dplpmtud_probe,
+				  uint16_t dplpmtud_probe_size);
+void quic_dplpmtud_refresh_state(struct quic_endpoint *ep);
+void quic_dplpmtud_on_probe_acked(struct quic_endpoint *ep, uint16_t probe_size);
+void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep, uint16_t probe_size);
 int handle_crypto_frame(struct quic_endpoint *ep,
 			 enum quic_secret_level level,
 			 const uint8_t *data,
