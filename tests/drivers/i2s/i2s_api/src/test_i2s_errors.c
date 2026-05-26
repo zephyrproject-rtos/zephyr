@@ -177,7 +177,7 @@ ZTEST_USER(i2s_errors, test_i2s_get_caps)
 	 * Test Case 1: Normal operation - Valid parameters
 	 * Expected: Function should return 0 (success) or -ENOSYS (not implemented)
 	 */
-	ret = i2s_get_caps(dev_i2s, &caps, I2S_DIR_RX);
+	ret = i2s_get_caps(dev_i2s, &caps, I2S_DIR_TX);
 
 	/* Handle case where driver doesn't implement get_caps */
 	if (ret == -ENOSYS) {
@@ -215,7 +215,7 @@ ZTEST_USER(i2s_errors, test_i2s_get_caps)
 	 * Test Case 3: Error handling - NULL caps pointer
 	 * Expected: Function should return -EINVAL for invalid parameter
 	 */
-	ret = i2s_get_caps(dev_i2s, NULL, I2S_DIR_RX);
+	ret = i2s_get_caps(dev_i2s, NULL, I2S_DIR_TX);
 	zassert_equal(ret, -EINVAL,
 		      "i2s_get_caps should return -EINVAL for NULL caps pointer, got %d", ret);
 }
