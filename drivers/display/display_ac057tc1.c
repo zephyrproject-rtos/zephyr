@@ -11,6 +11,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/display/ac057tc1.h>
+#include <zephyr/drivers/display/color_dither.h>
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
@@ -58,6 +59,7 @@ struct ac057tc1_config {
 };
 
 struct ac057tc1_data {
+	struct display_color_dither_state color_dither;
 	bool blanking_on;
 	struct k_sem busy_sem;
 	struct gpio_callback busy_cb;
@@ -278,10 +280,16 @@ static int ac057tc1_init(const struct device *dev)
 static int ac057tc1_write(const struct device *dev, const uint16_t x, const uint16_t y,
 			  const struct display_buffer_descriptor *desc, const void *buf)
 {
+	struct display_buffer_descriptor scratch;
 	const struct ac057tc1_config *config = dev->config;
 	struct ac057tc1_data *data = dev->data;
 	int ret;
 	size_t buf_len;
+
+	ret = display_color_dither_prepare(dev, &data->color_dither, &desc, &buf, &scratch);
+	if (ret < 0) {
+		return ret;
+	}
 
 	LOG_DBG("write x=%u y=%u w=%u h=%u pitch=%u", x, y, desc->width, desc->height, desc->pitch);
 
@@ -292,7 +300,7 @@ static int ac057tc1_write(const struct device *dev, const uint16_t x, const uint
 	}
 
 	/* Calculate buffer length - 4 bits per pixel, 2 pixels per byte */
-	buf_len = (desc->width * desc->height) / 2U;
+	buf_len = DIV_ROUND_UP(desc->width, 2U) * desc->height;
 
 	if (buf == NULL || desc->buf_size < buf_len) {
 		LOG_ERR("Invalid buffer: buf=%p size=%u expected=%u", buf, desc->buf_size, buf_len);
@@ -388,6 +396,7 @@ static int ac057tc1_blanking_off(const struct device *dev)
 static void ac057tc1_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ac057tc1_config *config = dev->config;
+	struct ac057tc1_data *data = dev->data;
 
 	memset(caps, 0, sizeof(struct display_capabilities));
 	memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
@@ -396,16 +405,14 @@ static void ac057tc1_get_capabilities(const struct device *dev, struct display_c
 	caps->supported_pixel_formats = PIXEL_FORMAT_I_4;
 	caps->current_pixel_format = PIXEL_FORMAT_I_4;
 	caps->screen_info = SCREEN_INFO_EPD;
+	display_color_dither_patch_caps(&data->color_dither, caps);
 }
 
 static int ac057tc1_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
 {
-	if (pf == PIXEL_FORMAT_I_4) {
-		return 0;
-	}
+	struct ac057tc1_data *data = dev->data;
 
-	LOG_ERR("Pixel format not supported");
-	return -ENOTSUP;
+	return display_color_dither_set_input_format(&data->color_dither, pf);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -440,6 +447,7 @@ static DEVICE_API(display, ac057tc1_api) = {
 #define AC057TC1_DEFINE(inst)                                                                      \
 	BUILD_ASSERT(CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE >=                                      \
 		     DT_PROP_LEN(DT_INST_CHILD(inst, color_palette), colors));                     \
+	DISPLAY_COLOR_DITHER_DEFINE(inst);                                                         \
 	static const struct ac057tc1_config ac057tc1_cfg_##inst = {                                \
 		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
 		.dbi_config =                                                                      \
@@ -453,7 +461,9 @@ static DEVICE_API(display, ac057tc1_api) = {
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \
 	};                                                                                         \
-	static struct ac057tc1_data ac057tc1_data_##inst;                                          \
+	static struct ac057tc1_data ac057tc1_data_##inst = {                                       \
+		.color_dither = DISPLAY_COLOR_DITHER_INIT(inst),                                   \
+	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, ac057tc1_pm_action);                                        \
 	DEVICE_DT_INST_DEFINE(inst, ac057tc1_init, PM_DEVICE_DT_INST_GET(inst),                    \
 			      &ac057tc1_data_##inst, &ac057tc1_cfg_##inst, POST_KERNEL,            \
