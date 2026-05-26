@@ -108,3 +108,15 @@ tests:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
     tags: bluetooth
     harness: bluetooth
+  bluetooth.general.tester.ti_lpf3:
+    extra_args: OVERLAY_CONFIG="boards/ti_lpf3.conf"
+    build_only: true
+    platform_allow:
+      - lp_em_cc2340r5
+      - lp_em_cc2340r5moda
+      - lp_em_cc2340r53
+      - lp_em_cc2340r53_wcsp
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2745r10_q1/cc2755r10
+    tags: bluetooth
+    harness: bluetooth
