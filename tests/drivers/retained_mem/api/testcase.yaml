@@ -45,3 +45,8 @@ tests:
     tags:
       - drivers
       - retained_mem
+  drivers.retained_mem.api.snvs_gpr:
+    platform_allow: mimxrt1064_evk
+    tags:
+      - drivers
+      - retained_mem

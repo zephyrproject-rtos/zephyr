@@ -1,0 +1,14 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Basalte bv
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		retainedmemtestdevice = &snvs_gpr;
+	};
+};
+
+&snvs_gpr {
+	status = "okay";
+};
