@@ -22,9 +22,13 @@ properties:
 
   row-size:
     required: true
+    min: 1
+    max: 9
 
   col-size:
     required: true
+    min: 1
+    max: 19
 
   kso-ignore-mask:
     type: int

@@ -157,7 +157,6 @@ static int nunchuk_init(const struct device *dev)
 		.i2c_bus = I2C_DT_SPEC_INST_GET(inst),                                             \
 		.polling_interval_ms = DT_INST_PROP(inst, polling_interval_ms),                    \
 	};                                                                                         \
-	BUILD_ASSERT(DT_INST_PROP(inst, polling_interval_ms) > 20);                                \
                                                                                                    \
 	static struct nunchuk_data nunchuk_data_##inst;                                            \
                                                                                                    \

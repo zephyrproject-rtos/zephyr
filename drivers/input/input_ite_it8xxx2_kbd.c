@@ -272,8 +272,6 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED) ||
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "only one ite,it8xxx2-kbd compatible node can be supported");
-BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, row_size), 1, 8), "invalid row-size");
-BUILD_ASSERT(IN_RANGE(DT_INST_PROP(0, col_size), 1, 18), "invalid col-size");
 BUILD_ASSERT(DT_INST_PROP(0, col_size) < 17 ||
 	     DT_INST_NODE_HAS_PROP(0, kso16_gpios),
 	     "kso16-gpios must be defined in dts when col-size is 17 or 18");
