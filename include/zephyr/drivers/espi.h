@@ -674,10 +674,10 @@ __subsystem struct espi_driver_api {
  * @param dev Pointer to the device structure for the driver instance.
  * @param cfg the device runtime configuration for the eSPI controller.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error, failed to configure device.
- * @retval -EINVAL invalid capabilities, failed to configure device.
- * @retval -ENOTSUP capability not supported by eSPI target.
+ * @retval -EINVAL Invalid capabilities, failed to configure device.
+ * @retval -ENOTSUP Capability not supported by eSPI target.
  */
 __syscall int espi_config(const struct device *dev, struct espi_cfg *cfg);
 
@@ -723,8 +723,8 @@ static inline bool z_impl_espi_get_channel_status(const struct device *dev,
  * @param req Address of structure representing a memory,
  *            I/O or message read request.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if eSPI controller doesn't support raw packets and instead
+ * @retval 0 on success.
+ * @retval -ENOTSUP eSPI controller doesn't support raw packets and instead
  *         low memory transactions are handled by controller hardware directly.
  * @retval -EIO General input / output error, failed to send over the bus.
  */
@@ -753,8 +753,8 @@ static inline int z_impl_espi_read_request(const struct device *dev,
  * @param req Address of structure representing a memory, I/O or
  *            message write request.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if eSPI controller doesn't support raw packets and instead
+ * @retval 0 on success.
+ * @retval -ENOTSUP eSPI controller doesn't support raw packets and instead
  *         low memory transactions are handled by controller hardware directly.
  * @retval -EIO General input / output error, failed to send over the bus.
  */
@@ -786,9 +786,9 @@ static inline int z_impl_espi_write_request(const struct device *dev,
  * @param op Enum representing opcode for peripheral type and read request.
  * @param data Parameter to be read from to the LPC peripheral.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if eSPI peripheral is off or not supported.
- * @retval -EINVAL for unimplemented lpc opcode, but in range.
+ * @retval 0 on success.
+ * @retval -ENOTSUP eSPI peripheral is off or not supported.
+ * @retval -EINVAL For unimplemented lpc opcode, but in range.
  */
 __syscall int espi_read_lpc_request(const struct device *dev,
 				    enum lpc_peripheral_opcode op,
@@ -819,9 +819,9 @@ static inline int z_impl_espi_read_lpc_request(const struct device *dev,
  * @param op Enum representing an opcode for peripheral type and write request.
  * @param data Represents the parameter passed to the LPC peripheral.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if eSPI peripheral is off or not supported.
- * @retval -EINVAL for unimplemented lpc opcode, but in range.
+ * @retval 0 on success.
+ * @retval -ENOTSUP eSPI peripheral is off or not supported.
+ * @retval -EINVAL For unimplemented lpc opcode, but in range.
  */
 __syscall int espi_write_lpc_request(const struct device *dev,
 				     enum lpc_peripheral_opcode op,
@@ -851,10 +851,10 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
  * @param signal The signal to be sent to eSPI controller.
  * @param level The level of signal requested. LOW (0) or HIGH (1).
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error, failed to send over the bus.
- * @retval -EINVAL invalid signal.
- * @retval -ETIMEDOUT timeout waiting for eSPI controller to process the VW.
+ * @retval -EINVAL Invalid signal.
+ * @retval -ETIMEDOUT Timeout waiting for eSPI controller to process the VW.
  */
 __syscall int espi_send_vwire(const struct device *dev,
 			      enum espi_vwire_signal signal,
