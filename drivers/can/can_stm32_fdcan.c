@@ -519,7 +519,7 @@ static int can_stm32fd_init(const struct device *dev)
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	if (stm32fd_cfg->external_timestamp_counter_dev != NULL) {
 		if (!device_is_ready(stm32fd_cfg->external_timestamp_counter_dev)) {
-			LOG_ERR("Timestamp counter device not ready");
+			LOG_ERR_DEVICE_NOT_READY(stm32fd_cfg->external_timestamp_counter_dev);
 			return -ENODEV;
 		}
 

@@ -607,7 +607,7 @@ static int can_stm32_init(const struct device *dev)
 
 	if (cfg->common.phy != NULL) {
 		if (!device_is_ready(cfg->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->common.phy);
 			return -ENODEV;
 		}
 	}
