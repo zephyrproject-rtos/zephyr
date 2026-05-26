@@ -58,6 +58,7 @@ static const char test_str_all_tx_bufs[] =
 #define CLIENT_PORT 9898
 
 static ZTEST_BMEM char rx_buf[NET_ETH_MTU + 1];
+static ZTEST_BMEM uint8_t dontfrag_tx_buf[1300];
 
 /* Common routine to communicate packets over pair of sockets. */
 static void comm_sendto_recvfrom(int client_sock,
@@ -699,6 +700,95 @@ ZTEST_USER(net_socket_udp, test_v6_sendmsg_recvfrom_connected)
 			      server_sock,
 			      (struct net_sockaddr *)&server_addr,
 			      sizeof(server_addr));
+
+	rv = zsock_close(client_sock);
+	zassert_equal(rv, 0, "close failed");
+	rv = zsock_close(server_sock);
+	zassert_equal(rv, 0, "close failed");
+}
+
+ZTEST_USER(net_socket_udp, test_v6_sendmsg_dontfrag_ancillary)
+{
+	int rv;
+	int recved;
+	int client_sock;
+	int server_sock;
+	int mtu;
+	int dontfrag;
+	net_socklen_t optlen;
+	struct net_sockaddr_in6 client_addr;
+	struct net_sockaddr_in6 server_addr;
+	struct net_msghdr msg;
+	struct net_cmsghdr *cmsg;
+	struct net_iovec io_vector[1];
+	union {
+		struct net_cmsghdr hdr;
+		unsigned char buf[NET_CMSG_SPACE(sizeof(int))];
+	} cmsgbuf;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_FRAGMENT);
+
+	memset(dontfrag_tx_buf, 'x', sizeof(dontfrag_tx_buf));
+
+	prepare_sock_udp_v6(MY_IPV6_ADDR, ANY_PORT, &client_sock, &client_addr);
+	prepare_sock_udp_v6(MY_IPV6_ADDR, SERVER_PORT, &server_sock, &server_addr);
+
+	rv = zsock_bind(server_sock, (struct net_sockaddr *)&server_addr, sizeof(server_addr));
+	zassert_equal(rv, 0, "server bind failed");
+
+	rv = zsock_bind(client_sock, (struct net_sockaddr *)&client_addr, sizeof(client_addr));
+	zassert_equal(rv, 0, "client bind failed");
+
+	mtu = 1200;
+	rv = zsock_setsockopt(client_sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_MTU, &mtu,
+			      sizeof(mtu));
+	zassert_equal(rv, 0, "setsockopt(IPV6_MTU) failed (%d)", errno);
+
+	dontfrag = -1;
+	optlen = sizeof(dontfrag);
+	rv = zsock_getsockopt(client_sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_DONTFRAG,
+			      &dontfrag, &optlen);
+	zassert_equal(rv, 0, "getsockopt(IPV6_DONTFRAG) failed (%d)", errno);
+	zassert_equal(dontfrag, 0, "Unexpected socket-wide DONTFRAG state (%d)", dontfrag);
+
+	io_vector[0].iov_base = dontfrag_tx_buf;
+	io_vector[0].iov_len = sizeof(dontfrag_tx_buf);
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_name = &server_addr;
+	msg.msg_namelen = sizeof(server_addr);
+	msg.msg_iov = io_vector;
+	msg.msg_iovlen = 1;
+
+	rv = zsock_sendmsg(client_sock, &msg, 0);
+	zassert_equal(rv, sizeof(dontfrag_tx_buf), "baseline sendmsg failed (%d)", errno);
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	recved = zsock_recv(server_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_equal(recved, sizeof(dontfrag_tx_buf), "recv failed (%d)", recved);
+	zassert_mem_equal(rx_buf, dontfrag_tx_buf, sizeof(dontfrag_tx_buf), "wrong data");
+
+	msg.msg_control = &cmsgbuf.buf;
+	msg.msg_controllen = sizeof(cmsgbuf.buf);
+
+	cmsg = NET_CMSG_FIRSTHDR(&msg);
+	cmsg->cmsg_len = NET_CMSG_LEN(sizeof(int));
+	cmsg->cmsg_level = NET_IPPROTO_IPV6;
+	cmsg->cmsg_type = ZSOCK_IPV6_DONTFRAG;
+	*(int *)NET_CMSG_DATA(cmsg) = 1;
+
+	errno = 0;
+	rv = zsock_sendmsg(client_sock, &msg, 0);
+	zassert_equal(rv, -1, "sendmsg unexpectedly succeeded");
+	zassert_equal(errno, EMSGSIZE, "Unexpected sendmsg errno %d", errno);
+
+	dontfrag = -1;
+	optlen = sizeof(dontfrag);
+	rv = zsock_getsockopt(client_sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_DONTFRAG,
+			      &dontfrag, &optlen);
+	zassert_equal(rv, 0, "getsockopt(IPV6_DONTFRAG) failed (%d)", errno);
+	zassert_equal(dontfrag, 0, "Ancillary DONTFRAG mutated socket option (%d)", dontfrag);
 
 	rv = zsock_close(client_sock);
 	zassert_equal(rv, 0, "close failed");
