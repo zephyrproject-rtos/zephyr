@@ -18,11 +18,29 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
 	};
+
+	aliases {
+		sdhc0 = &emmc;
+	};
 };
 
 &uart1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart1_gpio14>;
 	current-speed = <115200>;
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+/* Arasan SDHCI -> on-module CYW43xx SDIO wireless chip. The slot is
+ * a board-level fact (PCB pad, GPIO 34..39 ALT3 + GPCLK2 on GPIO 43);
+ * the routing lives in the board DTS.
+ */
+&emmc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&emmc_gpio34>;
 	status = "okay";
 };

@@ -1,0 +1,58 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM283x Arasan SDHCI host controller. Standard SDHCI
+  register layout with two silicon quirks: all register accesses
+  must be 32-bit aligned and 32-bit wide, and the CAPABILITIES
+  register reads as zero (capability values are hardcoded by the
+  driver).
+
+compatible: "brcm,bcm2835-sdhci"
+
+include: [sdhc.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Frequency in Hz of clk_emmc, the input clock provided by the
+      BCM2835 clock manager. The SDHCI clock divider scales this
+      down to the bus SD clock. Typical 100 MHz with core_freq=250
+      in config.txt; consult the board doc.
+
+  bus-width:
+    type: int
+    default: 4
+    enum:
+      - 1
+      - 4
+    description: |
+      Number of data lines wired between the controller and the
+      attached card / chip. The Arasan core does not support 8-bit.
+
+  dmas:
+    required: true
+    description: |
+      Single DMA channel specifier for the controller's data phase.
+      The Arasan core's built-in DMA (SDMA / ADMA2) is not usable on
+      this silicon (CAPABILITIES register reads zero); instead the
+      external BCM2835 DMA engine drains/fills the BUFFER FIFO via
+      a DREQ. The single dma-cell is that DREQ number — 11 for the
+      Arasan SDHCI per the BCM2835 ARM Peripherals datasheet.
+
+  dma-names:
+    required: true
+    description: |
+      Must be "rx-tx" — a single shared channel is reconfigured for
+      each direction at request() time rather than holding two
+      channels open simultaneously (only one transfer is ever in
+      flight on this controller).
+

@@ -148,4 +148,24 @@
 #define I2C6_SDA_GPIO22   BCM2711_PINMUX(22, BCM2711_FSEL_ALT5)
 #define I2C6_SCL_GPIO23   BCM2711_PINMUX(23, BCM2711_FSEL_ALT5)
 
+/* Arasan SDHCI (SD1) pinmux on GPIO 34..39 (ALT3) and GPCLK2 on
+ * GPIO 43 (ALT0). On BCM2710 boards this routing is typically used
+ * for an on-module SDIO peripheral; GPCLK2 supplies its reference
+ * clock.
+ */
+/** @brief Arasan SDHCI (SD1) clock on GPIO 34 via ALT3. */
+#define EMMC_CLK_GPIO34   BCM2711_PINMUX(34, BCM2711_FSEL_ALT3)
+/** @brief Arasan SDHCI (SD1) command on GPIO 35 via ALT3. */
+#define EMMC_CMD_GPIO35   BCM2711_PINMUX(35, BCM2711_FSEL_ALT3)
+/** @brief Arasan SDHCI (SD1) DAT0 on GPIO 36 via ALT3. */
+#define EMMC_DAT0_GPIO36  BCM2711_PINMUX(36, BCM2711_FSEL_ALT3)
+/** @brief Arasan SDHCI (SD1) DAT1 on GPIO 37 via ALT3. */
+#define EMMC_DAT1_GPIO37  BCM2711_PINMUX(37, BCM2711_FSEL_ALT3)
+/** @brief Arasan SDHCI (SD1) DAT2 on GPIO 38 via ALT3. */
+#define EMMC_DAT2_GPIO38  BCM2711_PINMUX(38, BCM2711_FSEL_ALT3)
+/** @brief Arasan SDHCI (SD1) DAT3 on GPIO 39 via ALT3. */
+#define EMMC_DAT3_GPIO39  BCM2711_PINMUX(39, BCM2711_FSEL_ALT3)
+/** @brief General-purpose clock 2 on GPIO 43 via ALT0 (SD1 reference). */
+#define GPCLK2_GPIO43     BCM2711_PINMUX(43, BCM2711_FSEL_ALT0)
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_BCM2711_PINCTRL_H_ */

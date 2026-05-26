@@ -221,5 +221,21 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		/*
+		 * Arasan SDHCI controller (EMMC port). DREQ 11 paces the
+		 * external DMA engine that drives the data path; the board
+		 * overlay must also enable &dma. Default disabled.
+		 */
+		emmc: sdhci@3f300000 {
+			compatible = "brcm,bcm2835-sdhci";
+			reg = <0x3f300000 0x100>;
+			interrupts = <BCM2835_IRQ_ARASAN_SDIO IRQ_TYPE_LEVEL 0>;
+			clock-frequency = <DT_FREQ_M(200)>;
+			bus-width = <4>;
+			dmas = <&dma 11>;
+			dma-names = "rx-tx";
+			status = "disabled";
+		};
 	};
 };
