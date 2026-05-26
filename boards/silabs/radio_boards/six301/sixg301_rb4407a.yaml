@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
 supported:
   - bluetooth
+  - comparator
   - dma
   - entropy
   - gpio
