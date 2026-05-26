@@ -27,33 +27,33 @@
 
 /* Local APIC Version Register Bits */
 
-#define LOAPIC_VERSION_MASK 0x000000ff /* LO APIC Version mask */
-#define LOAPIC_MAXLVT_MASK 0x00ff0000  /* LO APIC Max LVT mask */
-#define LOAPIC_PENTIUM4 0x00000014     /* LO APIC in Pentium4 */
+#define LOAPIC_VERSION_MASK 0x000000ffU /* LO APIC Version mask */
+#define LOAPIC_MAXLVT_MASK 0x00ff0000U  /* LO APIC Max LVT mask */
+#define LOAPIC_PENTIUM4 0x00000014U     /* LO APIC in Pentium4 */
 #define LOAPIC_LVT_PENTIUM4 5	  /* LO APIC LVT - Pentium4 */
 #define LOAPIC_LVT_P6 4		       /* LO APIC LVT - P6 */
 #define LOAPIC_LVT_P5 3		       /* LO APIC LVT - P5 */
 
 /* Local APIC Vector Table Bits */
 
-#define LOAPIC_VECTOR 0x000000ff /* vectorNo */
-#define LOAPIC_MODE 0x00000700   /* delivery mode */
-#define LOAPIC_FIXED 0x00000000  /* delivery mode: FIXED */
-#define LOAPIC_SMI 0x00000200    /* delivery mode: SMI */
-#define LOAPIC_NMI 0x00000400    /* delivery mode: NMI */
-#define LOAPIC_EXT 0x00000700    /* delivery mode: ExtINT */
-#define LOAPIC_IDLE 0x00000000   /* delivery status: Idle */
-#define LOAPIC_PEND 0x00001000   /* delivery status: Pend */
-#define LOAPIC_HIGH 0x00000000   /* polarity: High */
-#define LOAPIC_LOW 0x00002000    /* polarity: Low */
-#define LOAPIC_REMOTE 0x00004000 /* remote IRR */
-#define LOAPIC_EDGE 0x00000000   /* trigger mode: Edge */
-#define LOAPIC_LEVEL 0x00008000  /* trigger mode: Level */
+#define LOAPIC_VECTOR 0x000000ffU /* vectorNo */
+#define LOAPIC_MODE 0x00000700U   /* delivery mode */
+#define LOAPIC_FIXED 0x00000000U  /* delivery mode: FIXED */
+#define LOAPIC_SMI 0x00000200U    /* delivery mode: SMI */
+#define LOAPIC_NMI 0x00000400U    /* delivery mode: NMI */
+#define LOAPIC_EXT 0x00000700U    /* delivery mode: ExtINT */
+#define LOAPIC_IDLE 0x00000000U   /* delivery status: Idle */
+#define LOAPIC_PEND 0x00001000U   /* delivery status: Pend */
+#define LOAPIC_HIGH 0x00000000U   /* polarity: High */
+#define LOAPIC_LOW 0x00002000U    /* polarity: Low */
+#define LOAPIC_REMOTE 0x00004000U /* remote IRR */
+#define LOAPIC_EDGE 0x00000000U   /* trigger mode: Edge */
+#define LOAPIC_LEVEL 0x00008000U  /* trigger mode: Level */
 
 /* Local APIC Spurious-Interrupt Register Bits */
 
-#define LOAPIC_ENABLE 0x100	/* APIC Enabled */
-#define LOAPIC_FOCUS_DISABLE 0x200 /* Focus Processor Checking */
+#define LOAPIC_ENABLE 0x100U	/* APIC Enabled */
+#define LOAPIC_FOCUS_DISABLE 0x200U /* Focus Processor Checking */
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR_ID == -1
 #define LOAPIC_SPURIOUS_VECTOR_ID (CONFIG_IDT_NUM_VECTORS - 1)
@@ -101,7 +101,7 @@ void z_loapic_enable(unsigned char cpu_number)
 	 *
 	 * in X2APIC, LDR is read-only.
 	 */
-	x86_write_xapic(LOAPIC_LDR, 1 << (cpu_number + 24));
+	x86_write_xapic(LOAPIC_LDR, 1U << (cpu_number + 24));
 #endif
 
 	/*
@@ -129,7 +129,7 @@ void z_loapic_enable(unsigned char cpu_number)
 
 #ifndef CONFIG_X2APIC
 	/* Flat model */
-	x86_write_loapic(LOAPIC_DFR, 0xffffffff);  /* no DFR in x2APIC mode */
+	x86_write_loapic(LOAPIC_DFR, 0xffffffffU); /* no DFR in x2APIC mode */
 #endif
 
 	x86_write_loapic(LOAPIC_TPR, 0x0);
@@ -166,7 +166,7 @@ void z_loapic_enable(unsigned char cpu_number)
 	}
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR
-	x86_write_loapic(LOAPIC_SVR, (x86_read_loapic(LOAPIC_SVR) & 0xFFFFFF00) |
+	x86_write_loapic(LOAPIC_SVR, (x86_read_loapic(LOAPIC_SVR) & 0xFFFFFF00U) |
 		     (LOAPIC_SPURIOUS_VECTOR_ID & 0xFF));
 #endif
 
@@ -222,8 +222,8 @@ void z_loapic_int_vec_set(unsigned int irq, /* IRQ number of the interrupt */
 	/* update the 'vector' bits in the LVT */
 
 	oldLevel = irq_lock();
-	x86_write_loapic(LOAPIC_TIMER + (irq * 0x10),
-		     (x86_read_loapic(LOAPIC_TIMER + (irq * 0x10)) &
+	x86_write_loapic(LOAPIC_TIMER + (irq * 0x10U),
+		     (x86_read_loapic(LOAPIC_TIMER + (irq * 0x10U)) &
 		      ~LOAPIC_VECTOR) | vector);
 	irq_unlock(oldLevel);
 }
@@ -248,8 +248,8 @@ void z_loapic_irq_enable(unsigned int irq)
 	/* clear the mask bit in the LVT */
 
 	oldLevel = irq_lock();
-	x86_write_loapic(LOAPIC_TIMER + (irq * 0x10),
-		     x86_read_loapic(LOAPIC_TIMER + (irq * 0x10)) &
+	x86_write_loapic(LOAPIC_TIMER + (irq * 0x10U),
+		     x86_read_loapic(LOAPIC_TIMER + (irq * 0x10U)) &
 		     ~LOAPIC_LVT_MASKED);
 	irq_unlock(oldLevel);
 }
@@ -274,8 +274,8 @@ void z_loapic_irq_disable(unsigned int irq)
 	/* set the mask bit in the LVT */
 
 	oldLevel = irq_lock();
-	x86_write_loapic(LOAPIC_TIMER + (irq * 0x10),
-		     x86_read_loapic(LOAPIC_TIMER + (irq * 0x10)) |
+	x86_write_loapic(LOAPIC_TIMER + (irq * 0x10U),
+		     x86_read_loapic(LOAPIC_TIMER + (irq * 0x10U)) |
 		     LOAPIC_LVT_MASKED);
 	irq_unlock(oldLevel);
 }

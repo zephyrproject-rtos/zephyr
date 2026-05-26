@@ -329,7 +329,7 @@ static void config_timer0(unsigned int irq)
 	uint32_t val = hpet_timer_conf_get();
 
 	/* 5-bit IRQ field starting at bit 9 */
-	val = (val & ~(0x1f << 9)) | ((irq & 0x1f) << 9);
+	val = (val & ~(0x1fU << 9U)) | (((uint32_t)irq & 0x1fU) << 9U);
 
 #ifdef HPET_INT_LEVEL_TRIGGER
 	/* Set level trigger if selected */

@@ -41,14 +41,14 @@
 #define LOAPIC_TIMER_CONFIG 0x3e0 /* Timer Divide Config Reg */
 #define LOAPIC_SELF_IPI 0x3f0	/* Self IPI Reg, only support in X2APIC mode */
 
-#define LOAPIC_ICR_BUSY		0x00001000	/* delivery status: 1 = busy */
+#define LOAPIC_ICR_BUSY		0x00001000U	/* delivery status: 1 = busy */
 
 #define LOAPIC_ICR_IPI_SPECIFIC 0x00004000U     /* target IPI to specific CPU */
 #define LOAPIC_ICR_IPI_OTHERS	0x000C4000U	/* normal IPI to other CPUs */
 #define LOAPIC_ICR_IPI_INIT	0x00004500U
 #define LOAPIC_ICR_IPI_STARTUP	0x00004600U
 
-#define LOAPIC_LVT_MASKED 0x00010000   /* mask */
+#define LOAPIC_LVT_MASKED 0x00010000U  /* mask */
 
 /* Defined in intc_loapic.c */
 #define LOAPIC_REGS_STR				loapic_regs	/* mmio device name */
@@ -173,7 +173,7 @@ static inline void z_loapic_ipi(uint8_t apic_id, uint32_t ipi, uint8_t vector)
 	while (x86_read_xapic(LOAPIC_ICRLO) & LOAPIC_ICR_BUSY) {
 	}
 
-	x86_write_xapic(LOAPIC_ICRHI, apic_id << 24);
+	x86_write_xapic(LOAPIC_ICRHI, ((uint32_t)apic_id) << 24U);
 	x86_write_xapic(LOAPIC_ICRLO, ipi);
 #else
 	/*
