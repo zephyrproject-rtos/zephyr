@@ -101,7 +101,8 @@ int net_ipv4_create(struct net_pkt *pkt,
 		net_ipv4_set_ecn(&tos, net_pkt_ip_ecn(pkt));
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4_PMTU) && net_pkt_ipv4_pmtu(pkt)) {
+	if ((IS_ENABLED(CONFIG_NET_IPV4_PMTU) && net_pkt_ipv4_pmtu(pkt)) ||
+	    net_pkt_dont_fragment(pkt)) {
 		flags = NET_IPV4_DF;
 	}
 

@@ -1028,6 +1028,18 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  */
 #define ZSOCK_IP_MTU 14
 
+/** Disable local IPv4 fragmentation for packets sent on this socket.
+ *
+ *  Takes an integer boolean (0 = allow fragmentation, non-zero = disable).
+ *  When enabled, datagrams larger than the interface MTU are rejected locally
+ *  with errno set to ``EMSGSIZE`` instead of being fragmented. For IPv4 this also
+ *  sets the Don't Fragment (DF) bit in the IP header.
+ *
+ *  Valid for ``setsockopt()`` and ``getsockopt()`` at the ``NET_IPPROTO_IP``
+ *  level.
+ */
+#define ZSOCK_IP_DONTFRAG 15
+
 /** Set IPv4 multicast datagram network interface. */
 #define ZSOCK_IP_MULTICAST_IF 32
 /** Set IPv4 multicast TTL value. */
@@ -1079,6 +1091,17 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  * the device MTU or the path MTU when path MTU discovery is enabled.
  */
 #define ZSOCK_IPV6_MTU 24
+
+/** Disable local IPv6 fragmentation for packets sent on this socket.
+ *
+ *  Takes an integer boolean (0 = allow fragmentation, non-zero = disable).
+ *  When enabled, datagrams larger than the interface MTU are rejected locally
+ *  with errno set to ``EMSGSIZE`` instead of being fragmented by the stack.
+ *
+ *  Valid for ``setsockopt()`` and ``getsockopt()`` at the ``NET_IPPROTO_IPV6``
+ *  level.
+ */
+#define ZSOCK_IPV6_DONTFRAG 62
 
 /** Don't support IPv4 access */
 #define ZSOCK_IPV6_V6ONLY 26
