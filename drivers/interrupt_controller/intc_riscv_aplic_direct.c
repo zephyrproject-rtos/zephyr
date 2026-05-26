@@ -20,8 +20,27 @@
 
 LOG_MODULE_REGISTER(intc_riscv_aplic_direct, CONFIG_LOG_DEFAULT_LEVEL);
 
+/* APLIC registers are 32-bit memory-mapped */
+#define APLIC_REG_SIZE 32
+#define APLIC_REG_MASK BIT_MASK(LOG2(APLIC_REG_SIZE))
+
 static uint32_t save_irq[CONFIG_MP_MAX_NUM_CPUS];
 static const struct device *save_dev[CONFIG_MP_MAX_NUM_CPUS];
+
+static inline uint32_t local_irq_to_reg_index(uint32_t local_irq)
+{
+	return local_irq >> LOG2(APLIC_REG_SIZE);
+}
+
+static inline uint32_t local_irq_to_reg_offset(uint32_t local_irq)
+{
+	return local_irq_to_reg_index(local_irq) * sizeof(uint32_t);
+}
+
+static inline uint32_t local_irq_to_reg_bitpos(uint32_t local_irq)
+{
+	return 1U << (local_irq & APLIC_REG_MASK);
+}
 
 int riscv_aplic_direct_mode_enable(const struct device *dev, bool enable)
 {
@@ -31,11 +50,10 @@ int riscv_aplic_direct_mode_enable(const struct device *dev, bool enable)
 	uint32_t v = rd32(cfg->base, APLIC_DOMAINCFG);
 
 	if (enable) {
-		/* Do not modify other bits - respect hardware/props configuration.
-		 */
-		v |= APLIC_DOMAINCFG_DM;
-	} else {
+		/* Enable direct delivery mode (DM field = 0) */
 		v &= ~APLIC_DOMAINCFG_DM;
+	} else {
+		v |= APLIC_DOMAINCFG_DM;
 	}
 	wr32(cfg->base, APLIC_DOMAINCFG, v);
 
@@ -44,27 +62,26 @@ int riscv_aplic_direct_mode_enable(const struct device *dev, bool enable)
 	return 0;
 }
 
-int riscv_aplic_is_enabled(uint32_t irq)
+int riscv_aplic_is_enabled(uint32_t local_irq)
 {
 	const struct device *dev = riscv_aplic_get_dev();
 	const struct aplic_cfg *cfg = dev->config;
-	const uint32_t local_irq = irq_from_level_2(irq);
 
 	if (local_irq == 0 || local_irq > cfg->num_sources) {
 		return 0;
 	}
 
-	uint32_t enabled = rd32(cfg->base, APLIC_SETIENUM);
+	const uint32_t setie_offset = APLIC_SETIE_BASE + local_irq_to_reg_offset(local_irq);
+	const uint32_t setie_value = rd32(cfg->base, setie_offset);
 
-	return !!enabled;
+	return !!(setie_value & local_irq_to_reg_bitpos(local_irq));
 }
 
-int riscv_aplic_set_priority(uint32_t irq, uint32_t prio)
+int riscv_aplic_set_priority(uint32_t local_irq, uint32_t prio)
 {
 	const struct device *dev = riscv_aplic_get_dev();
 	const struct aplic_cfg *cfg = dev->config;
 	struct aplic_data *data = dev->data;
-	const uint32_t local_irq = irq_from_level_2(irq);
 
 	if (local_irq == 0U || local_irq > cfg->num_sources) {
 		return -EINVAL;
@@ -77,7 +94,7 @@ int riscv_aplic_set_priority(uint32_t irq, uint32_t prio)
 	if (prio > cfg->max_prio) {
 		LOG_WRN("AIA-APLIC-Direct: Invalid priority specified (irq %u, prio %u, max_prio "
 			"%u)",
-			irq, prio, cfg->max_prio);
+			local_irq, prio, cfg->max_prio);
 		return -EINVAL;
 	}
 

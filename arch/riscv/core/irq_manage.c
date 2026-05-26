@@ -15,6 +15,9 @@
 #ifdef CONFIG_RISCV_HAS_PLIC
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #endif
+#ifdef CONFIG_RISCV_APLIC_DIRECT
+#include <zephyr/drivers/interrupt_controller/riscv_aplic_direct.h>
+#endif
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -45,6 +48,13 @@ FUNC_NORETURN void z_irq_spurious(const void *unused)
 		const struct device *save_dev = riscv_plic_get_dev();
 
 		LOG_ERR("PLIC interrupt line causing the IRQ: %d (%p)", save_irq, save_dev);
+	}
+#elif defined(CONFIG_RISCV_APLIC_DIRECT)
+	if (cause == RISCV_IRQ_MEXT) {
+		unsigned int save_irq = riscv_aplic_get_saved_irq();
+		const struct device *save_dev = riscv_aplic_get_saved_dev();
+
+		LOG_ERR("APLIC interrupt line causing the IRQ: %d (%p)", save_irq, save_dev);
 	}
 #endif
 	z_riscv_fatal_error(K_ERR_SPURIOUS_IRQ, NULL);
