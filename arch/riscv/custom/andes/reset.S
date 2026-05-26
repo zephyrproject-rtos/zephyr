@@ -81,15 +81,6 @@ andes_cold_boot:
 #endif
 
 #ifdef CONFIG_DCACHE
-	/*
-	 * Enable D cache with HW prefetcher and D-cache write-around
-	 * (threshold: 4 cache lines).
-	 */
-	li t0, (0x3 << 13)
-	csrc NDS_MCACHE_CTL, t0
-	li t0, (1 << 13) | (1 << 10) | (1 << 1)
-	csrs NDS_MCACHE_CTL, t0
-
 #if DT_HAS_COMPAT_STATUS_OKAY(andestech_l2c)
 	/* Enable D-cache CM (Coherence Manager). */
 	li t0, (1 << 19)
@@ -99,7 +90,7 @@ andes_cold_boot:
 	csrr t0, NDS_MCACHE_CTL
 	li t1, (1 << 19)
 	and t0, t0, t1
-	beqz t0, cache_enable_finish
+	beqz t0, cm_enable_finish
 
 	/* If CPU support CM, check if CM is enabled. */
 	li t1, (1 << 20)
@@ -108,8 +99,17 @@ check_cm_enabled:
 	and t0, t0, t1
 	beqz t0, check_cm_enabled
 
-cache_enable_finish:
+cm_enable_finish:
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(andestech_l2c) */
+
+	/*
+	 * Enable D cache with HW prefetcher and D-cache write-around
+	 * (threshold: 4 cache lines).
+	 */
+	li t0, (0x3 << 13)
+	csrc NDS_MCACHE_CTL, t0
+	li t0, (1 << 13) | (1 << 10) | (1 << 1)
+	csrs NDS_MCACHE_CTL, t0
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(andestech_ilm)
