@@ -143,34 +143,30 @@ static int entropy_stm32_suspend(void)
 	LL_RNG_SetAesReset(rng, 1);
 #endif /* CONFIG_SOC_STM32WB09XX */
 
-/*
- * The PKA IP is currently not supported by Zephyr but may be used by
- * external code, such as wireless stack for example. Since the RNG
- * clock must be enabled when PKA is used on certain series, check if
- * the PKA is in use and keep RNG clock active if so.
- *
- * A notable exception is the STM32WB0 series where PKA can operate
- * autonomously and, on certain SoCs, lacks PKA_CR.EN and corresponding
- * LL_PKA_IsEnabled(). Since RNG clock is not required by PKA, we can
- * ignore the check on this series.
- */
-#if (defined(CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON) || defined(PKA)) && \
-	!defined(CONFIG_SOC_SERIES_STM32WB0X)
-#if defined(CONFIG_STM32_HAL2)
-	uint32_t pka_clock_enabled = HAL_RCC_PKA_IsEnabledClock();
-#else /* CONFIG_STM32_HAL2 */
-	uint32_t pka_clock_enabled = __HAL_RCC_PKA_IS_CLK_ENABLED();
-#endif /* CONFIG_STM32_HAL2 */
-
-	if (pka_clock_enabled && LL_PKA_IsEnabled(PKA)) {
+#if defined(CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+	do {
+		/* While the entropy driver is the primary user of the RNG
+		 * peripheral, it is possible that other drivers may also use
+		 * it as a pre-requisite for their own operations, such as the
+		 * PKA or SAES on some STM32 series.
+		 *
+		 * Such drivers, either in Zephyr or in external code, may
+		 * request the activation of the RNG peripheral to ensure it
+		 * is up-and-clocked when they need it, and release it when
+		 * they are done. The STM32 entropy driver is somehow
+		 * self-managing its suspend/resume operations, which may be
+		 * incompatible with other drivers. In such cases, the other
+		 * RNG suspend operation will be partially executed, in order
+		 * to keep the RNG peripheral clocked on.
+		 */
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
 		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
-		/* PKA needs RNG clock, so exit here if in use */
+		/* Some other HW IPs need RNG to be clocked, so exit here. */
 		return 0;
-	}
-#endif /* (CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON || PKA) && !CONFIG_SOC_SERIES_STM32WB0X */
+	} while (0);
+#endif /* CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON && !CONFIG_SOC_SERIES_STM32WB0X */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
