@@ -170,7 +170,7 @@ static int can_esp32_twai_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(twai_config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERR_DEVICE_NOT_READY(twai_config->clock_dev);
 		return -ENODEV;
 	}
 

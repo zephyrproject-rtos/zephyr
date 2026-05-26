@@ -1163,13 +1163,13 @@ static int mcux_flexcan_init(const struct device *dev)
 
 	if (config->common.phy != NULL) {
 		if (!device_is_ready(config->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->common.phy);
 			return -ENODEV;
 		}
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->clock_dev);
 		return -ENODEV;
 	}
 

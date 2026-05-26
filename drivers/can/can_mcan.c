@@ -1422,7 +1422,7 @@ int can_mcan_init(const struct device *dev)
 	k_sem_init(&data->tx_sem, cbs->num_tx, cbs->num_tx);
 
 	if (config->common.phy != NULL && !device_is_ready(config->common.phy)) {
-		LOG_ERR("CAN transceiver not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->common.phy);
 		return -ENODEV;
 	}
 
