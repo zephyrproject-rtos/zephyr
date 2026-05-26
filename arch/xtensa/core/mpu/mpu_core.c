@@ -386,59 +386,41 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 
 	first_enabled_idx = find_first_enabled_entry(entries);
 	if (first_enabled_idx >= XTENSA_MPU_NUM_ENTRIES) {
-
 		/*
-		 * If the last entry in the map is not enabled and the start
-		 * address is NULL, we can assume the map has not been populated
-		 * at all. This is because we group all enabled entries at
-		 * the end of map.
+		 * Map is empty and has not been populated. We can simply
+		 * put the entries at the end of map.
 		 */
-		struct xtensa_mpu_entry *last_entry = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
 
-		if (!xtensa_mpu_entry_enable_get(last_entry) &&
-		    (xtensa_mpu_entry_start_address_get(last_entry) == 0U)) {
-			/* Empty table, so populate the entries as-is. */
-			if (end_addr == 0xFFFFFFFFU) {
-				/*
-				 * Region goes to end of memory, so only need to
-				 * program one entry.
-				 */
-				entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
+		if (end_addr == 0xFFFFFFFFU) {
+			/*
+			 * Region goes to end of memory, so only need to
+			 * program one entry.
+			 */
+			entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
 
-				xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
-						     access_rights, memory_type);
-				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 1;
-				goto end;
-			} else {
-				/*
-				 * Populate the last two entries to indicate
-				 * a memory region. Notice that the second entry
-				 * is not enabled as it is merely marking the end of
-				 * a region and is not the starting of another
-				 * enabled MPU region.
-				 */
-				entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 2];
-				entry_slot_e = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
+			xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
+					     access_rights, memory_type);
+			first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 1;
+		} else {
+			/*
+			 * Populate the last two entries to indicate
+			 * a memory region. Notice that the second entry
+			 * is not enabled as it is merely marking the end of
+			 * a region and is not the starting of another
+			 * enabled MPU region.
+			 */
+			entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 2];
+			entry_slot_e = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
 
-				xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
-						     access_rights, memory_type);
-				xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
-						     XTENSA_MPU_ACCESS_P_NA_U_NA,
-						     CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE);
-				first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 2;
-				goto end;
-			}
-
-			ret = 0;
-			goto out;
+			xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
+					     access_rights, memory_type);
+			xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
+					     XTENSA_MPU_ACCESS_P_NA_U_NA,
+					     CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE);
+			first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 2;
 		}
 
-		first_enabled_idx = consolidate_entries(entries, first_enabled_idx);
-
-		if (first_enabled_idx >= XTENSA_MPU_NUM_ENTRIES) {
-			ret = -EINVAL;
-			goto out;
-		}
+		goto end;
 	}
 
 	entry_slot_s = (struct xtensa_mpu_entry *)
