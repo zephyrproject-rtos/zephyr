@@ -143,7 +143,7 @@ static int entropy_stm32_suspend(void)
 	LL_RNG_SetAesReset(rng, 1);
 #endif /* CONFIG_SOC_STM32WB09XX */
 
-#if defined(CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if defined(CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON)
 	do {
 		/* While the entropy driver is the primary user of the RNG
 		 * peripheral, it is possible that other drivers may also use
@@ -166,7 +166,7 @@ static int entropy_stm32_suspend(void)
 		/* Some other HW IPs need RNG to be clocked, so exit here. */
 		return 0;
 	} while (0);
-#endif /* CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON && !CONFIG_SOC_SERIES_STM32WB0X */
+#endif /* CONFIG_ENTROPY_STM32_ALWAYS_CLOCKON */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
