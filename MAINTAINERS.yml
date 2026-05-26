@@ -6859,7 +6859,7 @@ West:
     - ithinuel
   files:
     - modules/mbedtls/
-    - tests/crypto/mbedtls_psa/
+    - tests/crypto/psa/
     - tests/crypto/secp256r1/
     - tests/benchmarks/mbedtls/
   labels:

@@ -13,7 +13,7 @@
 
 #include <psa/crypto.h>
 
-ZTEST_USER(test_mbedtls_psa, test_generate_random)
+ZTEST_USER(psa_crypto_test_suite, test_generate_random)
 {
 	uint8_t tmp[64];
 	psa_status_t status;
@@ -22,7 +22,7 @@ ZTEST_USER(test_mbedtls_psa, test_generate_random)
 	zassert_equal(status, PSA_SUCCESS);
 }
 
-ZTEST_USER(test_mbedtls_psa, test_sha1)
+ZTEST_USER(psa_crypto_test_suite, test_sha1)
 {
 	uint8_t in_buf[] = { 'a' };
 	uint8_t out_buf[PSA_HASH_LENGTH(PSA_ALG_SHA_1)] = { 0 };
@@ -39,7 +39,7 @@ ZTEST_USER(test_mbedtls_psa, test_sha1)
 	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
 }
 
-ZTEST_USER(test_mbedtls_psa, test_sha224)
+ZTEST_USER(psa_crypto_test_suite, test_sha224)
 {
 	uint8_t in_buf[] = { 'a' };
 	uint8_t out_buf[PSA_HASH_LENGTH(PSA_ALG_SHA_224)] = { 0 };
@@ -57,7 +57,7 @@ ZTEST_USER(test_mbedtls_psa, test_sha224)
 	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
 }
 
-ZTEST_USER(test_mbedtls_psa, test_sha256)
+ZTEST_USER(psa_crypto_test_suite, test_sha256)
 {
 	uint8_t in_buf[] = { 'a' };
 	uint8_t out_buf[PSA_HASH_LENGTH(PSA_ALG_SHA_256)] = { 0 };
@@ -76,7 +76,7 @@ ZTEST_USER(test_mbedtls_psa, test_sha256)
 	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
 }
 
-ZTEST_USER(test_mbedtls_psa, test_sha384)
+ZTEST_USER(psa_crypto_test_suite, test_sha384)
 {
 	uint8_t in_buf[] = { 'a' };
 	uint8_t out_buf[PSA_HASH_LENGTH(PSA_ALG_SHA_384)] = { 0 };
@@ -96,7 +96,7 @@ ZTEST_USER(test_mbedtls_psa, test_sha384)
 	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
 }
 
-ZTEST_USER(test_mbedtls_psa, test_sha512)
+ZTEST_USER(psa_crypto_test_suite, test_sha512)
 {
 	uint8_t in_buf[] = { 'a' };
 	uint8_t out_buf[PSA_HASH_LENGTH(PSA_ALG_SHA_512)] = { 0 };
@@ -118,7 +118,7 @@ ZTEST_USER(test_mbedtls_psa, test_sha512)
 	zassert_mem_equal(out_buf, out_buf_ref, sizeof(out_buf_ref));
 }
 
-ZTEST_USER(test_mbedtls_psa, test_hmac_sha256)
+ZTEST_USER(psa_crypto_test_suite, test_hmac_sha256)
 {
 	uint8_t key[] = { 'a' };
 	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -151,7 +151,7 @@ ZTEST_USER(test_mbedtls_psa, test_hmac_sha256)
 	zassert_equal(status, PSA_SUCCESS);
 }
 
-ZTEST_USER(test_mbedtls_psa, test_aes_ecb)
+ZTEST_USER(psa_crypto_test_suite, test_aes_ecb)
 {
 	uint8_t key[] = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7,
 			 0x8, 0x9, 0xa, 0xb, 0xc, 0xd, 0xe, 0xf};
@@ -186,4 +186,4 @@ ZTEST_USER(test_mbedtls_psa, test_aes_ecb)
 	zassert_equal(status, PSA_SUCCESS);
 }
 
-ZTEST_SUITE(test_mbedtls_psa, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(psa_crypto_test_suite, NULL, NULL, NULL, NULL, NULL);
