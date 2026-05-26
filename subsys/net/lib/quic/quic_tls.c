@@ -1146,7 +1146,6 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 	pos += ret;
 
 	max_payload_size = quic_get_local_max_udp_payload_size(ctx->ep);
-	ctx->ep->dplpmtud.local_max_payload_size = max_payload_size;
 
 	val_size = quic_get_varint_size(max_payload_size);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
@@ -4138,26 +4137,6 @@ static uint8_t *quic_prepare_crypto_frame(struct quic_endpoint *ep,
 	return &buf[pos];
 }
 
-static int quic_set_socket_dont_fragment(struct quic_endpoint *ep, int value)
-{
-	int level;
-	int optname;
-
-	if (ep->remote_addr.ss_family == NET_AF_INET) {
-		level = NET_IPPROTO_IP;
-		optname = ZSOCK_IP_DONTFRAG;
-	} else {
-		level = NET_IPPROTO_IPV6;
-		optname = ZSOCK_IPV6_DONTFRAG;
-	}
-
-	if (zsock_setsockopt(ep->sock, level, optname, &value, sizeof(value)) < 0) {
-		return -errno;
-	}
-
-	return 0;
-}
-
 /*
  * Send a QUIC packet using scatter-gather I/O.
  *
@@ -4184,12 +4163,12 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 	size_t padding;
 	size_t extra_padding = 0;
 	int ret;
-	int saved_dont_fragment = 0;
 	ssize_t sent;
 	size_t total_len;
 	bool ack_eliciting;
-	bool restore_dont_fragment = false;
-	net_socklen_t optlen = sizeof(saved_dont_fragment);
+	uint8_t control[NET_CMSG_SPACE(sizeof(int))] = { 0 };
+	struct net_cmsghdr *cmsg;
+	int dont_fragment_value = 1;
 
 	/* Encrypted payload goes into endpoint's tx_buffer */
 	uint8_t *ciphertext = ep->crypto.tx_buffer;
@@ -4378,31 +4357,27 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 		ep->sock);
 
 	if (dont_fragment) {
-		if (ep->remote_addr.ss_family == NET_AF_INET) {
-			ret = zsock_getsockopt(ep->sock, NET_IPPROTO_IP, ZSOCK_IP_DONTFRAG,
-					       &saved_dont_fragment, &optlen);
-		} else {
-			ret = zsock_getsockopt(ep->sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_DONTFRAG,
-					       &saved_dont_fragment, &optlen);
+		msg.msg_control = control;
+		msg.msg_controllen = sizeof(control);
+
+		cmsg = NET_CMSG_FIRSTHDR(&msg);
+		if (cmsg == NULL) {
+			return -EINVAL;
 		}
 
-		if (ret < 0) {
-			return -errno;
-		}
-
-		ret = quic_set_socket_dont_fragment(ep, 1);
-		if (ret < 0) {
-			return ret;
-		}
-
-		restore_dont_fragment = true;
+		cmsg->cmsg_len = NET_CMSG_LEN(sizeof(dont_fragment_value));
+		cmsg->cmsg_level = ep->remote_addr.ss_family == NET_AF_INET ?
+				   NET_IPPROTO_IP : NET_IPPROTO_IPV6;
+		cmsg->cmsg_type = ep->remote_addr.ss_family == NET_AF_INET ?
+				  ZSOCK_IP_DONTFRAG : ZSOCK_IPV6_DONTFRAG;
+		memcpy(NET_CMSG_DATA(cmsg), &dont_fragment_value,
+		       sizeof(dont_fragment_value));
 	}
 
 	sent = zsock_sendmsg(ep->sock, &msg, 0);
 	if (sent < 0) {
 		ret = -errno;
-
-		goto out_restore;
+		goto out;
 	}
 
 	/* XXX: TODO: Handle partial sends properly */
@@ -4438,15 +4413,7 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 
 	ret = 0;
 
-out_restore:
-	if (restore_dont_fragment) {
-		int restore_ret = quic_set_socket_dont_fragment(ep, saved_dont_fragment);
-
-		if (restore_ret < 0 && ret == 0) {
-			ret = restore_ret;
-		}
-	}
-
+out:
 	if (ret < 0) {
 		NET_DBG("Failed to send packet (%d)", ret);
 		QUIC_EP_STAT_INC(ep, drop_tx);
