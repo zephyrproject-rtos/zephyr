@@ -165,6 +165,10 @@ New APIs and options
   * :c:func:`haptics_set_level`
   * :c:func:`haptics_stream_samples`
 
+* Kernel
+
+  * :c:func:`k_thread_runtime_stats_is_enabled`
+
 * LoRa
 
   * :c:func:`lora_recv_duty_cycle`
