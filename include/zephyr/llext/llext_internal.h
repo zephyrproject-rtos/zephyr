@@ -32,6 +32,10 @@ const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, u
 static inline const char *llext_string(const struct llext_loader *ldr, const struct llext *ext,
 	enum llext_mem mem_idx, unsigned int idx)
 {
+	if (idx >= ext->mem_size[mem_idx]) {
+		return NULL;
+	}
+
 	return (const char *)ext->mem[mem_idx] + idx;
 }
 
