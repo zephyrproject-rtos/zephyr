@@ -60,8 +60,8 @@ const struct clock_management_standard_api fixed_factor_clock_api = {
 #define FIXED_FACTOR_CLOCK_DEFINE(inst)                                                            \
 	const struct fixed_factor_clock_data fixed_factor_clock_data_##inst = {                    \
 		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_CLOCKS_CTLR(DT_DRV_INST(inst))))     \
-			.divider = DT_INST_PROP_OR(inst, clock - div, 1),                          \
-		.multiplier = DT_INST_PROP_OR(inst, clock - mult, 1),                              \
+			.divider = DT_INST_PROP_OR(inst, clock_div, 1),                            \
+		.multiplier = DT_INST_PROP_OR(inst, clock_mult, 1),                                \
 	};                                                                                         \
                                                                                                    \
 	CLOCK_DT_INST_DEFINE(inst, &fixed_factor_clock_data_##inst, &fixed_factor_clock_api);
