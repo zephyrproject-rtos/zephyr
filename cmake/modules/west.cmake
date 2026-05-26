@@ -98,4 +98,8 @@ if(WEST_VERSION)
       set(WEST WEST-NOTFOUND CACHE INTERNAL "West")
     endif()
   endif()
+
+  if(WEST_TOPDIR)
+    file(TO_CMAKE_PATH "${WEST_TOPDIR}" WEST_TOPDIR)
+  endif()
 endif()
