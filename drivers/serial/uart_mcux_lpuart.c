@@ -1422,6 +1422,10 @@ static int mcux_lpuart_config_get(const struct device *dev, struct uart_config *
 static int mcux_lpuart_configure(const struct device *dev,
 				 const struct uart_config *cfg)
 {
+	/* Wait for Transmission Complete Flag */
+	while (!(get_base(dev)->STAT & LPUART_STAT_TC_MASK)) {
+	}
+
 	/* Disable Transmitter and Receiver */
 	get_base(dev)->CTRL &= ~(LPUART_CTRL_TE_MASK | LPUART_CTRL_RE_MASK);
 
