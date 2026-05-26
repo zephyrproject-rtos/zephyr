@@ -356,6 +356,11 @@
 					status = "disabled";
 				};
 			};
+
+			snvs_gpr: gpr {
+				compatible = "nxp,imx-snvs-gpr";
+				status = "disabled";
+			};
 		};
 
 		gpio1: gpio@401b8000 {
