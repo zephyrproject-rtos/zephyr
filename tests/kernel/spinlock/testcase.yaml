@@ -28,5 +28,6 @@ tests:
     depends_on:
       - smp
     extra_configs:
+      - CONFIG_SCHED_SIMPLE=y
       - CONFIG_SCHED_CPU_MASK=y
       - CONFIG_TICKET_SPINLOCKS=y
