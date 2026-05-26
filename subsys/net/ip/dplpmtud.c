@@ -11,8 +11,10 @@
 LOG_MODULE_DECLARE(net_pmtu, CONFIG_NET_PMTU_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
+#include <zephyr/net/dplpmtud.h>
 #include <zephyr/net/net_ip.h>
 #include "dplpmtud_internal.h"
+#include "pmtu.h"
 
 #if defined(CONFIG_NET_IPV4_PMTU_DPLPMTUD)
 #define NET_IPV4_DPLPMTUD_ENTRIES CONFIG_NET_IPV4_PMTU_DESTINATION_CACHE_ENTRIES
@@ -44,6 +46,15 @@ static inline uint16_t normalize_max_plpmtu(uint16_t base_plpmtu, uint16_t max_p
 {
 	if (max_plpmtu == 0U) {
 		return base_plpmtu;
+	}
+
+	return max_plpmtu;
+}
+
+static inline uint16_t normalize_path_max_plpmtu(uint16_t max_plpmtu)
+{
+	if (max_plpmtu == 0U) {
+		return UINT16_MAX;
 	}
 
 	return max_plpmtu;
@@ -169,6 +180,26 @@ static inline bool family_enabled(net_sa_family_t family)
 	}
 }
 
+static inline uint16_t get_path_limit(const struct net_dplpmtud_path *path,
+				      const struct net_dplpmtud_entry *entry)
+{
+	return MIN(entry->max_plpmtu, path->max_plpmtu);
+}
+
+static int copy_path_dst(struct net_dplpmtud_path *path, const struct net_sockaddr *dst)
+{
+	switch (dst->sa_family) {
+	case NET_AF_INET:
+		memcpy(&path->dst, net_sas(dst), sizeof(struct net_sockaddr_in));
+		return 0;
+	case NET_AF_INET6:
+		memcpy(&path->dst, net_sas(dst), sizeof(struct net_sockaddr_in6));
+		return 0;
+	default:
+		return -EAFNOSUPPORT;
+	}
+}
+
 static inline void invalidate_entry_locked(struct net_dplpmtud_entry *entry)
 {
 	entry->in_use = false;
@@ -231,6 +262,169 @@ static struct net_dplpmtud_entry *get_free_entry_locked(void)
 	}
 
 	return entry;
+}
+
+static struct net_dplpmtud_entry *get_path_entry(struct net_dplpmtud_path *path,
+						 bool create)
+{
+	struct net_dplpmtud_entry *entry;
+	int mtu;
+
+	if (path == NULL || !path->in_use ||
+	    !family_enabled(net_sad(&path->dst)->sa_family)) {
+		return NULL;
+	}
+
+	if (create) {
+		entry = net_dplpmtud_get_or_create_entry(net_sad(&path->dst));
+	} else {
+		entry = net_dplpmtud_get_entry(net_sad(&path->dst));
+	}
+
+	if (entry == NULL) {
+		return NULL;
+	}
+
+	mtu = net_pmtu_get_mtu(net_sad(&path->dst));
+	if (mtu > 0) {
+		net_dplpmtud_set_max_plpmtu(entry, (uint16_t)mtu);
+	}
+
+	return entry;
+}
+
+int net_dplpmtud_init_path(struct net_dplpmtud_path *path,
+			   const struct net_sockaddr *dst,
+			   uint16_t max_plpmtu)
+{
+	if (path == NULL || dst == NULL || !family_enabled(dst->sa_family)) {
+		return -EINVAL;
+	}
+
+	memset(path, 0, sizeof(*path));
+
+	if (copy_path_dst(path, dst) < 0) {
+		return -EINVAL;
+	}
+
+	path->max_plpmtu = normalize_path_max_plpmtu(max_plpmtu);
+	path->in_use = true;
+
+	if (get_path_entry(path, true) == NULL) {
+		memset(path, 0, sizeof(*path));
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+void net_dplpmtud_set_path_max_plpmtu(struct net_dplpmtud_path *path,
+				      uint16_t max_plpmtu)
+{
+	if (path == NULL || !path->in_use) {
+		return;
+	}
+
+	path->max_plpmtu = normalize_path_max_plpmtu(max_plpmtu);
+}
+
+int net_dplpmtud_get_path_mtu(struct net_dplpmtud_path *path)
+{
+	struct net_dplpmtud_entry *entry;
+
+	entry = get_path_entry(path, true);
+	if (entry == NULL) {
+		return -ENOENT;
+	}
+
+	return get_path_limit(path, entry) < entry->validated_plpmtu ?
+		get_path_limit(path, entry) : entry->validated_plpmtu;
+}
+
+int net_dplpmtud_get_path_probe_size(struct net_dplpmtud_path *path)
+{
+	struct net_dplpmtud_entry *entry;
+	uint16_t path_limit;
+	uint16_t search_high;
+
+	entry = get_path_entry(path, true);
+	if (entry == NULL) {
+		return -ENOENT;
+	}
+
+	path_limit = get_path_limit(path, entry);
+
+	if (entry->probe_in_flight ||
+	    (entry->probe_size > entry->validated_plpmtu &&
+	     entry->probe_count > 0U)) {
+		if (entry->probe_size <= path_limit) {
+			return entry->probe_size;
+		}
+
+		return 0;
+	}
+
+	search_high = MIN(entry->search_high, path_limit);
+	if (search_high <= entry->validated_plpmtu) {
+		return 0;
+	}
+
+	return next_probe_size(entry->search_low, search_high);
+}
+
+int net_dplpmtud_on_path_probe_sent(struct net_dplpmtud_path *path,
+				    uint16_t probe_size)
+{
+	struct net_dplpmtud_entry *entry;
+
+	entry = get_path_entry(path, true);
+	if (entry == NULL) {
+		return -ENOENT;
+	}
+
+	if (probe_size > get_path_limit(path, entry)) {
+		return -EMSGSIZE;
+	}
+
+	return net_dplpmtud_start_probe(entry, probe_size);
+}
+
+int net_dplpmtud_on_path_probe_acked(struct net_dplpmtud_path *path,
+				     uint16_t probe_size)
+{
+	struct net_dplpmtud_entry *entry;
+
+	entry = get_path_entry(path, false);
+	if (entry == NULL) {
+		return -ENOENT;
+	}
+
+	return net_dplpmtud_probe_acked(entry, probe_size);
+}
+
+int net_dplpmtud_on_path_probe_lost(struct net_dplpmtud_path *path,
+				    uint16_t probe_size)
+{
+	struct net_dplpmtud_entry *entry;
+
+	entry = get_path_entry(path, false);
+	if (entry == NULL) {
+		return -ENOENT;
+	}
+
+	return net_dplpmtud_probe_lost(entry, probe_size);
+}
+
+void net_dplpmtud_note_path_blackhole(struct net_dplpmtud_path *path)
+{
+	struct net_dplpmtud_entry *entry;
+
+	entry = get_path_entry(path, true);
+	if (entry == NULL) {
+		return;
+	}
+
+	net_dplpmtud_note_blackhole(entry);
 }
 
 struct net_dplpmtud_entry *net_dplpmtud_get_entry(const struct net_sockaddr *dst)

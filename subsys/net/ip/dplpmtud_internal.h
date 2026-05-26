@@ -10,25 +10,14 @@
 #ifndef ZEPHYR_SUBSYS_NET_IP_DPLPMTUD_H_
 #define ZEPHYR_SUBSYS_NET_IP_DPLPMTUD_H_
 
-#include <zephyr/net/net_ip.h>
+#include <zephyr/net/dplpmtud.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/** Default base PLPMTU from RFC 8899/RFC 9000 for UDP-based transports. */
-#define NET_DPLPMTUD_BASE_PLPMTU 1200U
-
 /** Maximum number of retries for a single probe size before clamping search. */
 #define NET_DPLPMTUD_MAX_PROBE_RETRIES 3U
-
-/** DPLPMTUD search state. */
-enum net_dplpmtud_state {
-	NET_DPLPMTUD_STATE_BASE = 0,      /**< Path is using the base PLPMTU. */
-	NET_DPLPMTUD_STATE_SEARCHING,     /**< Path is actively probing for a larger PLPMTU. */
-	NET_DPLPMTUD_STATE_SEARCH_COMPLETE, /**< Path has no larger probe candidate. */
-	NET_DPLPMTUD_STATE_ERROR,         /**< Path fell back after black-hole detection. */
-};
 
 /** Per-destination DPLPMTUD state. */
 struct net_dplpmtud_entry {
@@ -63,7 +52,7 @@ struct net_dplpmtud_entry {
 	uint8_t blackhole_count;
 
 	/** Current search state. */
-	uint8_t state;
+	enum net_dplpmtud_state state;
 
 	/** Entry is in use. */
 	bool in_use : 1;
