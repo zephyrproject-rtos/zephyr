@@ -17,6 +17,7 @@ source "subsys/net/Kconfig.template.log_config.net"
 config WIFI_INIT_PRIORITY
 	int "Wi-Fi driver init priority"
 	default 86 if WIFI_AIROC && AIROC_WIFI_BUS_SDIO
+	default 86 if WIFI_BRCMFMAC
 	default 80
 	help
 	  Wi-Fi device driver initialization priority.
@@ -38,6 +39,7 @@ config WIFI_USE_NATIVE_NETWORKING
 
 # zephyr-keep-sorted-start
 source "drivers/wifi/ameba/Kconfig.ameba"
+source "drivers/wifi/brcmfmac/Kconfig.brcmfmac"
 source "drivers/wifi/esp32/Kconfig.esp32"
 source "drivers/wifi/esp_at/Kconfig.esp_at"
 source "drivers/wifi/esp_hosted/Kconfig.esp_hosted"

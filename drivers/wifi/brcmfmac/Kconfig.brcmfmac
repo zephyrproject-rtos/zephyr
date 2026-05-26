@@ -1,0 +1,56 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_BRCMFMAC
+	bool "Broadcom BCM43xxx SDIO Wi-Fi (brcmfmac)"
+	depends on DT_HAS_BRCM_BCM43XXX_SDIO_ENABLED
+	default y
+	select WIFI_OFFLOAD
+	select WIFI_USE_NATIVE_NETWORKING
+	select NET_L2_ETHERNET
+	select NET_L2_WIFI_MGMT
+	select SDHC
+	select SDIO_STACK
+	select GPIO
+	help
+	  Native-L2 driver for SDIO-attached Broadcom/Cypress combo chips
+	  speaking the brcmfmac SDPCM+BCDC protocol. The chip handles
+	  802.11; Zephyr's ethernet/IP stack runs on top. Firmware and
+	  per-board NVRAM are supplied by the hal_broadcom module via
+	  `west blobs fetch hal_broadcom`.
+
+	  When using samples/net/wifi/shell, raise
+	  CONFIG_NET_MGMT_EVENT_STACK_SIZE to 4096 -- the 768-byte default
+	  overflows on scan-result formatting (each AP raises a net_mgmt
+	  event whose handler prints a row).
+
+if WIFI_BRCMFMAC
+
+config WIFI_BRCMFMAC_FIRMWARE_FILE
+	string "Firmware file name (under hal_broadcom blobs)"
+	default "brcmfmac43436s-sdio.bin"
+	help
+	  Name of the brcmfmac firmware blob under
+	  ${ZEPHYR_HAL_BROADCOM_MODULE_DIR}/zephyr/blobs/img/brcmfmac/.
+	  Set by the board defconfig to match the on-board chip.
+
+config WIFI_BRCMFMAC_NVRAM_FILE
+	string "NVRAM file name (under hal_broadcom blobs)"
+	default "brcmfmac43436s-sdio.txt"
+	help
+	  Name of the brcmfmac per-board NVRAM blob under
+	  ${ZEPHYR_HAL_BROADCOM_MODULE_DIR}/zephyr/blobs/img/brcmfmac/.
+	  Encodes board-specific antenna, calibration and PA settings.
+
+config WIFI_BRCMFMAC_RX_THREAD_STACK_SIZE
+	int "RX thread stack size"
+	default 4096
+	help
+	  Stack for the dedicated RX polling thread that drains F2 and
+	  dispatches frames by SDPCM channel.
+
+config WIFI_BRCMFMAC_RX_THREAD_PRIO
+	int "RX thread priority"
+	default 4
+
+endif # WIFI_BRCMFMAC
