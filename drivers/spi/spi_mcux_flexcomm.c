@@ -922,6 +922,8 @@ static int spi_mcux_init_common(const struct device *dev)
 
 static int spi_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	int ret;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		break;
@@ -934,7 +936,10 @@ static int spi_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_
 		force_reconfig = true;
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		spi_mcux_init_common(dev);
+		ret = spi_mcux_init_common(dev);
+		if (ret < 0) {
+			return ret;
+		}
 		break;
 	default:
 		return -ENOTSUP;
