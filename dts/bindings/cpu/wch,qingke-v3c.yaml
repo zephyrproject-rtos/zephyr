@@ -1,0 +1,8 @@
+# Copyright (c) 2025 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH QingKe V3C RISC-V MCU
+
+compatible: "wch,qingke-v3c"
+
+include: riscv-common.yaml
