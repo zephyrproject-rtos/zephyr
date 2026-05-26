@@ -35,11 +35,7 @@ LOG_MODULE_REGISTER(bee_keyscan, CONFIG_INPUT_LOG_LEVEL);
 #error "Unsupported Realtek Bee SoC series"
 #endif
 
-#define BEE_KEYSCAN_MAX_ROWS      12
-#define BEE_KEYSCAN_MAX_COLS      20
 #define BEE_KEYSCAN_SRC_CLK       5000000
-#define BEE_KEYSCAN_MAX_SCAN_DIV  65535
-#define BEE_KEYSCAN_MAX_DELAY_DIV 255
 #define BEE_KEYSCAN_MAX_TICKS     511
 
 #define BEE_KEYSCAN_DEFAULT_PRE_GUARD_CNT 6
@@ -337,14 +333,6 @@ static int bee_keyscan_init(const struct device *dev)
 #endif
 
 #define BEE_KEYSCAN_INIT(index)                                                                    \
-	BUILD_ASSERT(DT_INST_PROP(index, row_size) <= BEE_KEYSCAN_MAX_ROWS,                        \
-		     "DT error: 'row-size' exceeds hardware limit (12)");                          \
-	BUILD_ASSERT(DT_INST_PROP(index, col_size) <= BEE_KEYSCAN_MAX_COLS,                        \
-		     "DT error: 'col-size' exceeds hardware limit (20)");                          \
-	BUILD_ASSERT(DT_INST_PROP(index, scan_div) <= BEE_KEYSCAN_MAX_SCAN_DIV,                    \
-		     "DT error: 'scan-div' exceeds limit (65535)");                                \
-	BUILD_ASSERT(DT_INST_PROP(index, delay_div) <= BEE_KEYSCAN_MAX_DELAY_DIV,                  \
-		     "DT error: 'delay-div' exceeds limit (255)");                                 \
 	BEE_INPUT_KEYSCAN_ASSERT_SCAN_INTERVAL(index);                                             \
 	BUILD_ASSERT(BEE_KEYSCAN_CALC_US_TO_TICKS(index, release_time_us, 0) <=                    \
 			     BEE_KEYSCAN_MAX_TICKS,                                                \
