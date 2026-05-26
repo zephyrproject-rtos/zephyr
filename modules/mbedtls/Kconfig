@@ -157,42 +157,6 @@ config MBEDTLS_DEBUG_STRIP_NEWLINE
 
 endif # MBEDTLS_DEBUG
 
-config MBEDTLS_ENABLE_HEAP
-	bool "Global heap for mbed TLS"
-	help
-	  This option enables the mbedtls to use the heap. This setting must
-	  be global so that various applications and libraries in Zephyr do not
-	  try to do this themselves as there can be only one heap defined
-	  in mbedtls. If this is enabled, and MBEDTLS_INIT is enabled then the
-	  Zephyr will, during the device startup, initialize the heap automatically.
-
-if MBEDTLS_ENABLE_HEAP
-
-config MBEDTLS_HEAP_SIZE
-	int "Heap size for mbed TLS"
-	default 15360 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
-	default 1024 if OPENTHREAD_CRYPTO_PSA
-	default 512
-	help
-	  The mbedtls routines will use this heap if enabled.
-	  See ext/lib/crypto/mbedtls/include/mbedtls/config.h and
-	  MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details. That option is not
-	  enabled by default.
-	  Default value for the heap size is not set as it depends on the
-	  application. For streaming communication with arbitrary (HTTPS)
-	  servers on the Internet, 32KB + overheads (up to another 20KB) may
-	  be needed. For some dedicated and specific usage of mbedtls API, the
-	  1000 bytes might be ok.
-
-config MBEDTLS_HEAP_CUSTOM_SECTION
-	bool "Use a custom section for the Mbed TLS heap"
-	help
-	  Place Mbed TLS heap in custom section, with tag ".mbedtls_heap".
-	  This can be used by custom linker scripts to relocate the Mbed TLS
-	  heap to a custom location, such as another SRAM region or external memory.
-
-endif # MBEDTLS_ENABLE_HEAP
-
 config MBEDTLS_INIT
 	bool "Initialize mbed TLS at boot"
 	default y
