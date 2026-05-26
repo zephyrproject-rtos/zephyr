@@ -14,19 +14,29 @@ struct clock_gate_config {
 	STANDARD_CLK_SUBSYS_DATA_DEFINE
 	uintptr_t reg;
 	uint8_t enable_offset;
+	bool invert;
 };
 
 static clock_freq_t clock_gate_recalc_rate(const struct clk *clk_hw, clock_freq_t parent_rate)
 {
 	const struct clock_gate_config *config = clk_hw->hw_data;
+	bool enabled = (sys_read32(config->reg) & BIT(config->enable_offset)) != 0;
 
-	return (sys_read32(config->reg) & BIT(config->enable_offset)) ? parent_rate : 0;
+	if (config->invert) {
+		enabled = !enabled;
+	}
+
+	return enabled ? parent_rate : 0;
 }
 
 static int clock_gate_configure(const struct clk *clk_hw, const void *data)
 {
 	const struct clock_gate_config *config = clk_hw->hw_data;
 	bool ungate = (bool)data;
+
+	if (config->invert) {
+		ungate = !ungate;
+	}
 
 	if (ungate) {
 		sys_write32(sys_read32(config->reg) | BIT(config->enable_offset), config->reg);
@@ -55,8 +65,13 @@ static clock_freq_t clock_gate_best_rate(const struct clk *clk_hw, clock_freq_t 
 {
 	if (commit) {
 		const struct clock_gate_config *config = clk_hw->hw_data;
+		bool enable = (rate_req != 0);
 
-		if (rate_req != 0) {
+		if (config->invert) {
+			enable = !enable;
+		}
+
+		if (enable) {
 			sys_write32(sys_read32(config->reg) | BIT(config->enable_offset),
 				    config->reg);
 		} else {
@@ -64,6 +79,7 @@ static clock_freq_t clock_gate_best_rate(const struct clk *clk_hw, clock_freq_t 
 				    config->reg);
 		}
 	}
+
 	return (rate_req != 0) ? parent_rate : 0;
 }
 #endif
@@ -84,6 +100,7 @@ const struct clock_management_standard_api clock_gate_api = {
 		STANDARD_CLK_SUBSYS_DATA_INIT(CLOCK_DT_GET(DT_INST_PHANDLE(inst, input))).reg =    \
 			DT_INST_REG_ADDR(inst),                                                    \
 		.enable_offset = (uint8_t)DT_INST_PROP(inst, offset),                              \
+		.invert = (bool)DT_INST_PROP(inst, invert),                                                  \
 	};                                                                                         \
                                                                                                    \
 	CLOCK_DT_INST_DEFINE(inst, &clock_gate_##inst, &clock_gate_api);

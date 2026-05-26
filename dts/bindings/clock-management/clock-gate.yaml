@@ -31,6 +31,14 @@ properties:
     description: |
       Offset of bitfield within register to set to ungate clock.
 
+  invert:
+    type: boolean
+    description: |
+      If true, the clock is gated when the bitfield is set to 1, and ungated
+      when the bitfield is set to 0. If false or not specified, the clock is
+      gated when the bitfield is set to 0, and ungated when the bitfield is set
+      to 1.
+
   "#clock-cells":
     const: 1
 
