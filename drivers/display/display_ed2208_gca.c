@@ -9,6 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/display.h>
+#include <zephyr/drivers/display/color_dither.h>
 #include <zephyr/drivers/display/ed2208-gca.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
@@ -60,6 +61,7 @@ struct ed2208_gca_config {
 };
 
 struct ed2208_gca_data {
+	struct display_color_dither_state color_dither;
 	bool blanking_on;
 	struct k_sem busy_sem;
 	struct gpio_callback busy_cb;
@@ -203,17 +205,24 @@ static int ed2208_gca_deep_sleep(const struct device *dev)
 static int ed2208_gca_write(const struct device *dev, const uint16_t x, const uint16_t y,
 			    const struct display_buffer_descriptor *desc, const void *buf)
 {
+	struct display_buffer_descriptor scratch;
 	const struct ed2208_gca_config *config = dev->config;
 	struct ed2208_gca_data *data = dev->data;
-	const uint8_t *src = buf;
+	const uint8_t *src;
 	struct display_buffer_descriptor mipi_desc = {
 		.width = ED2208_GCA_TX_CHUNK_SIZE,
 		.height = 1,
 		.pitch = ED2208_GCA_TX_CHUNK_SIZE,
 	};
-	size_t buf_len = config->width * config->height / 2U;
+	size_t buf_len = DIV_ROUND_UP(config->width, 2U) * config->height;
 	size_t offset = 0U;
 	int ret;
+
+	ret = display_color_dither_prepare(dev, &data->color_dither, &desc, &buf, &scratch);
+	if (ret < 0) {
+		return ret;
+	}
+	src = buf;
 
 	if (x != 0U || y != 0U || desc->width != config->width || desc->height != config->height) {
 		LOG_ERR("Partial updates not supported");
@@ -305,6 +314,7 @@ static int ed2208_gca_blanking_off(const struct device *dev)
 static void ed2208_gca_get_capabilities(const struct device *dev, struct display_capabilities *caps)
 {
 	const struct ed2208_gca_config *config = dev->config;
+	struct ed2208_gca_data *data = dev->data;
 
 	memset(caps, 0, sizeof(*caps));
 	memcpy(caps->color_palette, config->color_palette, sizeof(config->color_palette));
@@ -313,17 +323,14 @@ static void ed2208_gca_get_capabilities(const struct device *dev, struct display
 	caps->supported_pixel_formats = PIXEL_FORMAT_I_4;
 	caps->current_pixel_format = PIXEL_FORMAT_I_4;
 	caps->screen_info = SCREEN_INFO_EPD;
+	display_color_dither_patch_caps(&data->color_dither, caps);
 }
 
 static int ed2208_gca_set_pixel_format(const struct device *dev, const enum display_pixel_format pf)
 {
-	ARG_UNUSED(dev);
+	struct ed2208_gca_data *data = dev->data;
 
-	if (pf == PIXEL_FORMAT_I_4) {
-		return 0;
-	}
-
-	return -ENOTSUP;
+	return display_color_dither_set_input_format(&data->color_dither, pf);
 }
 
 static int ed2208_gca_init(const struct device *dev)
@@ -394,6 +401,7 @@ static DEVICE_API(display, ed2208_gca_api) = {
 #define ED2208_GCA_DEFINE(inst)                                                                    \
 	BUILD_ASSERT(CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE >=                                      \
 		     DT_PROP_LEN(DT_INST_CHILD(inst, color_palette), colors));                     \
+	DISPLAY_COLOR_DITHER_DEFINE(inst);                                                         \
 	static const struct ed2208_gca_config ed2208_gca_cfg_##inst = {                            \
 		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                   \
 		.dbi_config =                                                                      \
@@ -407,7 +415,9 @@ static DEVICE_API(display, ed2208_gca_api) = {
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \
 	};                                                                                         \
-	static struct ed2208_gca_data ed2208_gca_data_##inst;                                      \
+	static struct ed2208_gca_data ed2208_gca_data_##inst = {                                   \
+		.color_dither = DISPLAY_COLOR_DITHER_INIT(inst),                                   \
+	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, ed2208_gca_pm_action);                                      \
 	DEVICE_DT_INST_DEFINE(inst, ed2208_gca_init, PM_DEVICE_DT_INST_GET(inst),                  \
 			      &ed2208_gca_data_##inst, &ed2208_gca_cfg_##inst, POST_KERNEL,        \
