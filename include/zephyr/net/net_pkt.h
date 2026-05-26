@@ -400,6 +400,9 @@ struct net_pkt {
 	uint8_t ipv4_ll_resolve_addr_set : 1;
 #endif /* CONFIG_NET_IPV4_ROUTE */
 
+	/* Disable local IP fragmentation for this packet. */
+	uint8_t dont_fragment : 1;
+
 	/* @endcond */
 };
 
@@ -943,6 +946,16 @@ static inline void net_pkt_set_ipv4_ll_resolve_addr(struct net_pkt *pkt,
 	ARG_UNUSED(addr);
 }
 #endif /* CONFIG_NET_IPV4_ROUTE */
+
+static inline bool net_pkt_dont_fragment(struct net_pkt *pkt)
+{
+	return !!pkt->dont_fragment;
+}
+
+static inline void net_pkt_set_dont_fragment(struct net_pkt *pkt, bool value)
+{
+	pkt->dont_fragment = value;
+}
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
 static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)

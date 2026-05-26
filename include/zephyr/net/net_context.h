@@ -401,6 +401,9 @@ __net_socket struct net_context {
 			bool ipv6_mcast_loop;  /**< IPv6 multicast loop */
 			bool ipv4_mcast_loop;  /**< IPv4 multicast loop */
 		};
+
+		/** Disable local IP fragmentation for packets sent by this context. */
+		bool dont_fragment;
 #endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
@@ -1405,6 +1408,7 @@ enum net_context_option {
 	NET_OPT_IPV6_MCAST_LOOP	  = 22, /**< IPV6 multicast loop */
 	NET_OPT_IPV4_MCAST_LOOP	  = 23, /**< IPV4 multicast loop */
 	NET_OPT_RECV_HOPLIMIT     = 24, /**< Receive hop limit information */
+	NET_OPT_DONT_FRAGMENT     = 25, /**< Disable local IP fragmentation */
 };
 
 /**
