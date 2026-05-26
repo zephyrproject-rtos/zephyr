@@ -15,6 +15,7 @@ The Wi-Fi management API is used to manage Wi-Fi networks. It supports below mod
 Only personal mode security is supported with below types:
 
 * Open
+* OWE
 * WEP
 * WPA2-PSK
 * WPA2-PSK-256
