@@ -42,19 +42,22 @@ void esp_init_psram(void)
 	 * Cache lines fetched during that window can hold garbage. Run the
 	 * chip-init step first, invalidate the flash IROM/DROM ranges, then
 	 * run the rest of PSRAM init so the next flash fetch reloads with
-	 * the final MSPI settings.
+	 * the final MSPI settings. ESP32 cache has no per-address
+	 * invalidate primitive, so the invalidate step is skipped there.
 	 */
 	if (esp_psram_chip_init()) {
 		ets_printf("Failed to Initialize external RAM, aborting.\n");
 		return;
 	}
 
+#if !defined(CONFIG_SOC_SERIES_ESP32)
 	cache_hal_invalidate_addr((uint32_t)&_instruction_reserved_start,
 				  (uint32_t)&_instruction_reserved_end -
 					  (uint32_t)&_instruction_reserved_start);
 	cache_hal_invalidate_addr((uint32_t)&_rodata_reserved_start,
 				  (uint32_t)&_rodata_reserved_end -
 					  (uint32_t)&_rodata_reserved_start);
+#endif
 
 	if (esp_psram_init()) {
 		ets_printf("Failed to Initialize external RAM, aborting.\n");
