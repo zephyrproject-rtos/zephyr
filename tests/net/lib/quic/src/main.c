@@ -963,11 +963,94 @@ ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 
 	quic_recovery_init(ep);
 	quic_recovery_begin_shutdown(ep);
-	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, 1, 123, true);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, 1, 123, true,
+				      false, 0);
 
 	zassert_true(ep->recovery.closing, "Recovery must stay in shutdown state");
 	zassert_equal(ep->recovery.bytes_in_flight, 0,
 		      "Shutdown recovery must not track new in-flight bytes");
+}
+
+static void init_test_dplpmtud_endpoint(struct quic_endpoint *ep)
+{
+	reset_test_ep(ep);
+	quic_recovery_init(ep);
+	ep->handshake.completed = true;
+	ep->peer_params.max_udp_payload_size = UINT16_MAX;
+	ep->dplpmtud.validated_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+	ep->dplpmtud.local_max_payload_size = 1452U;
+	ep->dplpmtud.search_low = QUIC_DPLPMTUD_BASE_PLPMTU;
+	ep->dplpmtud.search_high = 1452U;
+	ep->max_tx_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+}
+
+ZTEST(net_socket_quic, test_095_dplpmtud_keeps_peer_cap_separate)
+{
+	struct quic_endpoint *ep = &test_ep_a;
+
+	init_test_dplpmtud_endpoint(ep);
+	ep->peer_params.max_udp_payload_size = 1400U;
+
+	quic_dplpmtud_refresh_state(ep);
+
+	zassert_equal(ep->peer_params.max_udp_payload_size, 1400U,
+		      "Peer max UDP payload size must be stored separately");
+	zassert_equal(ep->max_tx_payload_size, QUIC_DPLPMTUD_BASE_PLPMTU,
+		      "TX payload size must stay at the validated base size");
+	zassert_true(ep->dplpmtud.probe_pending,
+		     "A larger payload should schedule probing");
+}
+
+ZTEST(net_socket_quic, test_096_dplpmtud_probe_ack_raises_payload_limit)
+{
+	struct quic_endpoint *ep = &test_ep_a;
+	uint16_t probe_size = 1326U;
+
+	init_test_dplpmtud_endpoint(ep);
+	ep->dplpmtud.probe_in_flight = true;
+	ep->dplpmtud.probe_size = probe_size;
+	ep->dplpmtud.probe_attempts = 1U;
+
+	quic_dplpmtud_on_probe_acked(ep, probe_size);
+
+	zassert_equal(ep->dplpmtud.validated_payload_size, probe_size,
+		      "ACKed probe must raise the validated payload size");
+	zassert_equal(ep->max_tx_payload_size, probe_size,
+		      "TX payload size must follow the validated probe size");
+	zassert_true(ep->dplpmtud.probe_pending,
+		     "A larger ceiling should keep probing enabled");
+}
+
+ZTEST(net_socket_quic, test_097_dplpmtud_probe_loss_retries_then_clamps)
+{
+	struct quic_endpoint *ep = &test_ep_a;
+	uint16_t probe_size = 1400U;
+
+	init_test_dplpmtud_endpoint(ep);
+	ep->dplpmtud.probe_in_flight = true;
+	ep->dplpmtud.probe_size = probe_size;
+	ep->dplpmtud.probe_attempts = 1U;
+
+	quic_dplpmtud_on_probe_lost(ep, probe_size);
+
+	zassert_false(ep->dplpmtud.probe_in_flight,
+		      "Lost probe must leave the in-flight state");
+	zassert_true(ep->dplpmtud.probe_pending,
+		     "Lost probe below retry limit must be retried");
+	zassert_equal(ep->dplpmtud.probe_size, probe_size,
+		      "Retry must keep the same probe size");
+
+	ep->dplpmtud.probe_in_flight = true;
+	ep->dplpmtud.probe_attempts = QUIC_DPLPMTUD_MAX_PROBE_RETRIES;
+
+	quic_dplpmtud_on_probe_lost(ep, probe_size);
+
+	zassert_equal(ep->dplpmtud.search_high, probe_size - 1U,
+		      "Exhausted probe retries must clamp the search upper bound");
+	zassert_equal(ep->dplpmtud.probe_size, 0U,
+		      "A failed probe size must be cleared");
+	zassert_true(ep->dplpmtud.probe_pending,
+		     "A smaller candidate should still be probed");
 }
 
 static void init_test_crypto_endpoint(struct quic_endpoint *ep,
