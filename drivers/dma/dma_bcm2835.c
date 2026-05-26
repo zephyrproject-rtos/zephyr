@@ -8,8 +8,19 @@
  * The BCM283x DMA engine is a control-block (linked-list descriptor)
  * controller: each channel has a register block at base + ch*0x100,
  * and a transfer is driven by a 32-byte Control Block (CB) in memory
- * that the hardware reads and walks. This driver builds one CB per
- * channel and runs single-block transfers (block_count == 1).
+ * that the hardware reads and walks. Each CB points to the next via
+ * its `next` field; the engine stops when it loads `next = 0`. This
+ * driver supports two shapes:
+ *
+ *   - Single-block (block_count == 1) transfers. One CB; runs once,
+ *     stops, fires a completion callback. The simplest path; what
+ *     tests/drivers/dma exercises.
+ *   - Cyclic chains (block_count >= 1, dma_config.cyclic == 1). N CBs
+ *     are built from the caller's dma_block_config list and chained
+ *     into a ring (last CB's next loops back to the first). Used by
+ *     audio-class drivers (e.g. I2S) where DMA must run continuously
+ *     without re-arm latency between blocks. INT_EN is set on every
+ *     CB, so the completion callback fires per block.
  *
  * Completion is IRQ-driven; the SoC interrupt cascade
  * (soc/brcm/bcm2710/soc_irq.c) is already up, and each channel has a
@@ -36,15 +47,9 @@
  *     brcm,dma-channel-mask in DT marks the channels safe for this
  *     driver, and chan_filter() enforces it.
  *
- * Scope: MEMORY_TO_MEMORY is wired and exercised by tests/drivers/dma.
- * The MEMORY_TO_PERIPHERAL / PERIPHERAL_TO_MEMORY DREQ paths are wired
- * (PER_MAP from dma_slot, plus the S/D_DREQ bits) but are not yet
- * covered by an in-tree consumer. 2D mode, chained CBs, and the
- * careful mid-transfer paused-abort dance Linux performs are not
- * implemented.
- *
- * Reference: Linux drivers/dma/bcm2835-dma.c; BCM2835 ARM Peripherals
- * datasheet ch. 4 (DMA Controller).
+ * Reference: Linux drivers/dma/bcm2835-dma.c (which uses a cyclic
+ * descriptor chain via dmaengine_pcm for ALSA); BCM2835 ARM
+ * Peripherals datasheet ch. 4 (DMA Controller).
  */
 
 #define DT_DRV_COMPAT brcm_bcm2835_dma
@@ -88,6 +93,12 @@ LOG_MODULE_REGISTER(dma_bcm2835, CONFIG_DMA_LOG_LEVEL);
 #define TI_SRC_DREQ  BIT(10)
 #define TI_PERMAP(x) (((x) & 0x1fU) << 16)
 
+/* Maximum CBs per channel. Bounds the cyclic ring depth; single-block
+ * transfers use 1. Configurable so audio paths needing deeper rings
+ * (more headroom against jitter) can grow it.
+ */
+#define MAX_CBS_PER_CHAN CONFIG_DMA_BCM2835_MAX_CBS_PER_CHANNEL
+
 /* The DMA engine is a VideoCore-bus master and does not see ARM-physical
  * addresses directly. Two ranges matter:
  *
@@ -130,21 +141,28 @@ struct bcm2835_dma_cb {
 	uint32_t dst;    /* DEST_AD -- bus address */
 	uint32_t length; /* TXFR_LEN */
 	uint32_t stride; /* STRIDE -- 2D mode only, 0 here */
-	uint32_t next;   /* NEXTCONBK -- 0, single block */
+	uint32_t next;   /* NEXTCONBK -- next CB's bus address, 0 to stop */
 	uint32_t pad[2];
+};
+
+/* ARM-side address + length kept per CB for cache maintenance: the CB
+ * itself holds bus addresses, which sys_cache_* cannot use.
+ */
+struct dma_bcm2835_cb_info {
+	uintptr_t src;
+	uintptr_t dst;
+	size_t len;
 };
 
 struct dma_bcm2835_channel {
 	dma_callback_t callback;
 	void *user_data;
 	uint32_t direction;
-	/* ARM-side addresses + length, kept for cache maintenance: the
-	 * CB itself holds bus addresses, which sys_cache_* cannot use.
-	 */
-	uintptr_t src;
-	uintptr_t dst;
-	size_t len;
+	uint32_t n_blocks;  /* 1..MAX_CBS_PER_CHAN */
+	uint32_t cur_cb;    /* software cursor: next CB to ack */
+	bool cyclic;
 	bool busy;
+	struct dma_bcm2835_cb_info info[MAX_CBS_PER_CHAN];
 };
 
 struct dma_bcm2835_config {
@@ -156,9 +174,10 @@ struct dma_bcm2835_config {
 
 struct dma_bcm2835_data {
 	struct dma_context ctx; /* must be first -- see dma_request_channel() */
+
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 	struct dma_bcm2835_channel *channels;
-	struct bcm2835_dma_cb *cbs;
+	struct bcm2835_dma_cb (*cbs)[MAX_CBS_PER_CHAN];
 };
 
 /* The plain DEVICE_MMIO_RAM macro stores the mapped register base at
@@ -190,83 +209,135 @@ static inline bool chan_valid(const struct dma_bcm2835_config *cfg, uint32_t cha
 	return channel < cfg->num_channels && (cfg->channel_mask & BIT(channel)) != 0U;
 }
 
+/* Build the TI (transfer information) word for one block. */
+static uint32_t dma_bcm2835_build_ti(uint32_t direction, uint32_t dma_slot,
+				     uint8_t src_adj, uint8_t dst_adj)
+{
+	uint32_t ti = TI_INT_EN | TI_WAIT_RESP;
+
+	if (src_adj == DMA_ADDR_ADJ_INCREMENT) {
+		ti |= TI_SRC_INC;
+	}
+	if (dst_adj == DMA_ADDR_ADJ_INCREMENT) {
+		ti |= TI_DEST_INC;
+	}
+
+	switch (direction) {
+	case MEMORY_TO_PERIPHERAL:
+		ti |= TI_DEST_DREQ | TI_PERMAP(dma_slot);
+		break;
+	case PERIPHERAL_TO_MEMORY:
+		ti |= TI_SRC_DREQ | TI_PERMAP(dma_slot);
+		break;
+	default:
+		break;
+	}
+
+	return ti;
+}
+
 static int dma_bcm2835_config(const struct device *dev, uint32_t channel,
 			      struct dma_config *cfg)
 {
 	const struct dma_bcm2835_config *dcfg = dev->config;
 	struct dma_bcm2835_data *data = dev->data;
-	struct dma_block_config *blk = cfg->head_block;
+	struct dma_block_config *blk;
 	struct dma_bcm2835_channel *chan;
-	struct bcm2835_dma_cb *cb;
-	uint32_t ti;
+	struct bcm2835_dma_cb *cbs;
+	uint32_t ti, n;
 
 	if (!chan_valid(dcfg, channel)) {
 		LOG_ERR("channel %u unavailable (mask 0x%x)", channel, dcfg->channel_mask);
 		return -EINVAL;
 	}
 
-	if (cfg->block_count != 1U || blk == NULL) {
-		LOG_ERR("only single-block transfers are supported");
+	if (cfg->block_count == 0U || cfg->block_count > MAX_CBS_PER_CHAN ||
+	    cfg->head_block == NULL) {
+		LOG_ERR("block_count %u out of range [1..%u]",
+			cfg->block_count, MAX_CBS_PER_CHAN);
 		return -ENOTSUP;
-	}
-
-	if (blk->source_addr_adj == DMA_ADDR_ADJ_DECREMENT ||
-	    blk->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT) {
-		LOG_ERR("address decrement not supported");
-		return -ENOTSUP;
-	}
-
-	ti = TI_INT_EN | TI_WAIT_RESP;
-	if (blk->source_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
-		ti |= TI_SRC_INC;
-	}
-	if (blk->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
-		ti |= TI_DEST_INC;
 	}
 
 	switch (cfg->channel_direction) {
 	case MEMORY_TO_MEMORY:
-		break;
 	case MEMORY_TO_PERIPHERAL:
-		ti |= TI_DEST_DREQ | TI_PERMAP(cfg->dma_slot);
-		break;
 	case PERIPHERAL_TO_MEMORY:
-		ti |= TI_SRC_DREQ | TI_PERMAP(cfg->dma_slot);
 		break;
 	default:
 		LOG_ERR("channel_direction %u not supported", cfg->channel_direction);
 		return -ENOTSUP;
 	}
 
-	cb = &data->cbs[channel];
-	cb->info = ti;
-	cb->src = dma_bcm2835_bus_addr((uintptr_t)blk->source_address);
-	cb->dst = dma_bcm2835_bus_addr((uintptr_t)blk->dest_address);
-	cb->length = blk->block_size;
-	cb->stride = 0U;
-	cb->next = 0U;
-	cb->pad[0] = 0U;
-	cb->pad[1] = 0U;
-
 	chan = &data->channels[channel];
+	cbs = data->cbs[channel];
+
+	blk = cfg->head_block;
+	for (n = 0; n < cfg->block_count; n++) {
+		if (blk == NULL) {
+			LOG_ERR("head_block chain shorter than block_count");
+			return -EINVAL;
+		}
+		if (blk->source_addr_adj == DMA_ADDR_ADJ_DECREMENT ||
+		    blk->dest_addr_adj == DMA_ADDR_ADJ_DECREMENT) {
+			LOG_ERR("address decrement not supported");
+			return -ENOTSUP;
+		}
+
+		ti = dma_bcm2835_build_ti(cfg->channel_direction, cfg->dma_slot,
+					  blk->source_addr_adj,
+					  blk->dest_addr_adj);
+
+		cbs[n].info = ti;
+		cbs[n].src = dma_bcm2835_bus_addr((uintptr_t)blk->source_address);
+		cbs[n].dst = dma_bcm2835_bus_addr((uintptr_t)blk->dest_address);
+		cbs[n].length = blk->block_size;
+		cbs[n].stride = 0U;
+		cbs[n].next = 0U; /* set after the loop */
+		cbs[n].pad[0] = 0U;
+		cbs[n].pad[1] = 0U;
+
+		chan->info[n].src = (uintptr_t)blk->source_address;
+		chan->info[n].dst = (uintptr_t)blk->dest_address;
+		chan->info[n].len = blk->block_size;
+
+		blk = blk->next_block;
+	}
+
+	/* Chain: each CB's next points to the next slot. The last CB
+	 * either loops back (cyclic) or terminates (next == 0).
+	 */
+	for (n = 0; n < cfg->block_count - 1U; n++) {
+		cbs[n].next = dma_bcm2835_bus_addr((uintptr_t)&cbs[n + 1]);
+	}
+	if (cfg->cyclic) {
+		cbs[cfg->block_count - 1U].next =
+			dma_bcm2835_bus_addr((uintptr_t)&cbs[0]);
+	} else {
+		cbs[cfg->block_count - 1U].next = 0U;
+	}
+
 	chan->callback = cfg->dma_callback;
 	chan->user_data = cfg->user_data;
 	chan->direction = cfg->channel_direction;
-	chan->src = (uintptr_t)blk->source_address;
-	chan->dst = (uintptr_t)blk->dest_address;
-	chan->len = blk->block_size;
+	chan->n_blocks = cfg->block_count;
+	chan->cur_cb = 0U;
+	chan->cyclic = cfg->cyclic != 0U;
 	chan->busy = false;
 
 	return 0;
 }
 
+/* Reload updates the first CB's src / dst / length in place. Intended
+ * for non-cyclic single-block re-arming between transfers; modifying a
+ * CB the engine is actively walking is a race.
+ */
 static int dma_bcm2835_reload(const struct device *dev, uint32_t channel,
 			      uint32_t src, uint32_t dst, size_t size)
 {
 	const struct dma_bcm2835_config *dcfg = dev->config;
 	struct dma_bcm2835_data *data = dev->data;
 	struct dma_bcm2835_channel *chan;
-	struct bcm2835_dma_cb *cb;
+	struct bcm2835_dma_cb *cbs;
 
 	if (!chan_valid(dcfg, channel)) {
 		return -EINVAL;
@@ -276,17 +347,53 @@ static int dma_bcm2835_reload(const struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 
-	cb = &data->cbs[channel];
-	cb->src = dma_bcm2835_bus_addr(src);
-	cb->dst = dma_bcm2835_bus_addr(dst);
-	cb->length = size;
-
 	chan = &data->channels[channel];
-	chan->src = src;
-	chan->dst = dst;
-	chan->len = size;
+	cbs = data->cbs[channel];
+
+	cbs[0].src = dma_bcm2835_bus_addr(src);
+	cbs[0].dst = dma_bcm2835_bus_addr(dst);
+	cbs[0].length = size;
+
+	chan->info[0].src = src;
+	chan->info[0].dst = dst;
+	chan->info[0].len = size;
+	chan->cur_cb = 0U;
 
 	return 0;
+}
+
+/* Cache-flush a CB's source range (memory-side) before DMA reads it. */
+static void dma_bcm2835_flush_src(uint32_t direction,
+				  const struct dma_bcm2835_cb_info *info)
+{
+	if (direction == MEMORY_TO_MEMORY ||
+	    direction == MEMORY_TO_PERIPHERAL) {
+		sys_cache_data_flush_range((void *)info->src, info->len);
+	}
+}
+
+/* Cache-flush+invalidate a CB's destination range before DMA writes
+ * it, so no dirty CPU line later writes back over the DMA result.
+ */
+static void dma_bcm2835_prep_dst(uint32_t direction,
+				 const struct dma_bcm2835_cb_info *info)
+{
+	if (direction == MEMORY_TO_MEMORY ||
+	    direction == PERIPHERAL_TO_MEMORY) {
+		sys_cache_data_flush_and_invd_range((void *)info->dst, info->len);
+	}
+}
+
+/* Invalidate a CB's destination range after DMA completes, so the CPU
+ * re-reads fresh.
+ */
+static void dma_bcm2835_invd_dst(uint32_t direction,
+				 const struct dma_bcm2835_cb_info *info)
+{
+	if (direction == MEMORY_TO_MEMORY ||
+	    direction == PERIPHERAL_TO_MEMORY) {
+		sys_cache_data_invd_range((void *)info->dst, info->len);
+	}
 }
 
 static int dma_bcm2835_start(const struct device *dev, uint32_t channel)
@@ -294,35 +401,30 @@ static int dma_bcm2835_start(const struct device *dev, uint32_t channel)
 	const struct dma_bcm2835_config *dcfg = dev->config;
 	struct dma_bcm2835_data *data = dev->data;
 	struct dma_bcm2835_channel *chan;
-	struct bcm2835_dma_cb *cb;
+	struct bcm2835_dma_cb *cbs;
 
 	if (!chan_valid(dcfg, channel)) {
 		return -EINVAL;
 	}
 
 	chan = &data->channels[channel];
-	cb = &data->cbs[channel];
+	cbs = data->cbs[channel];
 
-	/* The DMA engine does not snoop the A53 caches. Clean source
-	 * data to DRAM; clean+invalidate the destination so no dirty
-	 * line later writes back over the DMA result, and so the CPU
-	 * re-reads fresh after completion.
+	/* The DMA engine does not snoop the A53 caches. Prime every
+	 * source and destination block in the chain, then flush the CBs
+	 * themselves -- the engine reads them from DRAM too.
 	 */
-	if (chan->direction == MEMORY_TO_MEMORY ||
-	    chan->direction == MEMORY_TO_PERIPHERAL) {
-		sys_cache_data_flush_range((void *)chan->src, chan->len);
+	for (uint32_t i = 0; i < chan->n_blocks; i++) {
+		dma_bcm2835_flush_src(chan->direction, &chan->info[i]);
+		dma_bcm2835_prep_dst(chan->direction, &chan->info[i]);
 	}
-	if (chan->direction == MEMORY_TO_MEMORY ||
-	    chan->direction == PERIPHERAL_TO_MEMORY) {
-		sys_cache_data_flush_and_invd_range((void *)chan->dst, chan->len);
-	}
-	/* The CB is itself read from DRAM by the engine. */
-	sys_cache_data_flush_range(cb, sizeof(*cb));
+	sys_cache_data_flush_range(cbs, chan->n_blocks * sizeof(*cbs));
 
-	/* Clear stale status, point the channel at the CB, then go. */
+	/* Clear stale status, point the channel at the first CB, then go. */
 	dma_wr(dev, chan_off(channel, DMA_CS), CS_INT | CS_END);
 	dma_wr(dev, chan_off(channel, DMA_CONBLK_AD),
-	       dma_bcm2835_bus_addr((uintptr_t)cb));
+	       dma_bcm2835_bus_addr((uintptr_t)&cbs[0]));
+	chan->cur_cb = 0U;
 	chan->busy = true;
 	dma_wr(dev, chan_off(channel, DMA_CS), CS_ACTIVE);
 
@@ -345,6 +447,69 @@ static int dma_bcm2835_stop(const struct device *dev, uint32_t channel)
 	 */
 	dma_wr(dev, chan_off(channel, DMA_CS), CS_RESET);
 	data->channels[channel].busy = false;
+
+	return 0;
+}
+
+/* CS_RESET zeros the channel state machine, including the engine's
+ * internal mid-CB byte counter. Without RESET, clearing CS_ACTIVE
+ * alone pauses the channel but leaves the engine partway through the
+ * current CB; resuming continues those leftover bytes rather than
+ * starting the CB cleanly, which leaves a stale "skipped" region in
+ * the destination if the CPU touched it during suspend. RESET loses
+ * mid-block progress -- the correct semantics for a "pause / play"
+ * style streaming consumer.
+ *
+ * The CB chain itself lives in DRAM and is unaffected; resume then
+ * re-points CONBLK_AD at cb[0] and sets ACTIVE.
+ */
+static int dma_bcm2835_suspend(const struct device *dev, uint32_t channel)
+{
+	const struct dma_bcm2835_config *dcfg = dev->config;
+
+	if (!chan_valid(dcfg, channel)) {
+		return -EINVAL;
+	}
+
+	dma_wr(dev, chan_off(channel, DMA_CS), CS_RESET);
+
+	return 0;
+}
+
+/* On resume:
+ *   - Rewind the channel to cb[0]. Cyclic suspend pauses the engine
+ *     mid-block; without rewinding, the partial block before the pause
+ *     point is never overwritten on the next pass and shows up as
+ *     stale data. Rewinding loses mid-block progress, which matches
+ *     standard "pause/play" semantics for streaming.
+ *   - Re-prep destinations. The CPU may have touched destination
+ *     buffers while paused (reading a captured block, or a test
+ *     memset between iterations); dirty CPU lines would later evict
+ *     and clobber the DMA-written data in DRAM.
+ */
+static int dma_bcm2835_resume(const struct device *dev, uint32_t channel)
+{
+	const struct dma_bcm2835_config *dcfg = dev->config;
+	struct dma_bcm2835_data *data = dev->data;
+	struct dma_bcm2835_channel *chan;
+	struct bcm2835_dma_cb *cbs;
+
+	if (!chan_valid(dcfg, channel)) {
+		return -EINVAL;
+	}
+
+	chan = &data->channels[channel];
+	cbs = data->cbs[channel];
+
+	for (uint32_t i = 0; i < chan->n_blocks; i++) {
+		dma_bcm2835_prep_dst(chan->direction, &chan->info[i]);
+	}
+
+	dma_wr(dev, chan_off(channel, DMA_CONBLK_AD),
+	       dma_bcm2835_bus_addr((uintptr_t)&cbs[0]));
+	chan->cur_cb = 0U;
+
+	dma_wr(dev, chan_off(channel, DMA_CS), CS_ACTIVE);
 
 	return 0;
 }
@@ -395,6 +560,7 @@ static void dma_bcm2835_isr(const struct device *dev)
 		struct dma_bcm2835_channel *chan;
 		uint32_t cs;
 		int status;
+		uint32_t cb_idx;
 
 		if (!(dcfg->channel_mask & BIT(ch))) {
 			continue;
@@ -405,22 +571,40 @@ static void dma_bcm2835_isr(const struct device *dev)
 			continue;
 		}
 
-		/* Ack: INT and END are write-1-to-clear. */
-		dma_wr(dev, chan_off(ch, DMA_CS), CS_INT | CS_END);
+		/* Ack: INT and END are W1C. Read CS back first and OR in the
+		 * two ack bits so the other bits keep their value -- in
+		 * particular ACTIVE (bit 0) is R/W, and writing 0 to it
+		 * pauses the DMA. A bare W1C of just INT|END would silently
+		 * halt a cyclic chain after the first CB completion.
+		 */
+		dma_wr(dev, chan_off(ch, DMA_CS), cs | CS_INT | CS_END);
 
 		chan = &data->channels[ch];
 		status = (cs & CS_ERROR) ? -EIO : DMA_STATUS_COMPLETE;
 
-		/* The destination is now fresh in DRAM; drop any line the
-		 * CPU may have speculatively pulled back since start().
+		/* The CB that just signalled completion is the one at the
+		 * current cursor; advance the cursor for the next CB.
 		 */
-		if (status == DMA_STATUS_COMPLETE &&
-		    (chan->direction == MEMORY_TO_MEMORY ||
-		     chan->direction == PERIPHERAL_TO_MEMORY)) {
-			sys_cache_data_invd_range((void *)chan->dst, chan->len);
+		cb_idx = chan->cur_cb;
+		if (cb_idx >= chan->n_blocks) {
+			cb_idx = 0U;
 		}
 
-		chan->busy = false;
+		if (status == DMA_STATUS_COMPLETE) {
+			dma_bcm2835_invd_dst(chan->direction,
+					     &chan->info[cb_idx]);
+		}
+
+		if (chan->cyclic) {
+			chan->cur_cb = (cb_idx + 1U) % chan->n_blocks;
+		} else if (cb_idx + 1U >= chan->n_blocks ||
+			   status != DMA_STATUS_COMPLETE) {
+			/* Last CB done or fault: chain has stopped. */
+			chan->busy = false;
+			chan->cur_cb = 0U;
+		} else {
+			chan->cur_cb = cb_idx + 1U;
+		}
 
 		if (chan->callback != NULL) {
 			chan->callback(dev, chan->user_data, ch, status);
@@ -451,6 +635,8 @@ static DEVICE_API(dma, dma_bcm2835_driver_api) = {
 	.reload = dma_bcm2835_reload,
 	.start = dma_bcm2835_start,
 	.stop = dma_bcm2835_stop,
+	.suspend = dma_bcm2835_suspend,
+	.resume = dma_bcm2835_resume,
 	.get_status = dma_bcm2835_get_status,
 	.chan_filter = dma_bcm2835_chan_filter,
 };
@@ -470,7 +656,8 @@ static DEVICE_API(dma, dma_bcm2835_driver_api) = {
 	static struct dma_bcm2835_channel                                      \
 		dma_bcm2835_channels_##n[DT_INST_PROP(n, dma_channels)];        \
 	static struct bcm2835_dma_cb                                           \
-		dma_bcm2835_cbs_##n[DT_INST_PROP(n, dma_channels)] __aligned(32); \
+		dma_bcm2835_cbs_##n[DT_INST_PROP(n, dma_channels)]              \
+				   [MAX_CBS_PER_CHAN] __aligned(32);            \
 	ATOMIC_DEFINE(dma_bcm2835_atomic_##n, DT_INST_PROP(n, dma_channels));   \
                                                                                \
 	static struct dma_bcm2835_data dma_bcm2835_data_##n = {                \

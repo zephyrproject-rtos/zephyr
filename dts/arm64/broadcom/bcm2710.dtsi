@@ -107,10 +107,10 @@
 		dma: dma@3f007000 {
 			compatible = "brcm,bcm2835-dma";
 			reg = <0x3f007000 0xf00>;
-			interrupts = <BCM2835_IRQ_DMA(4)  IRQ_TYPE_LEVEL 0>,
-				     <BCM2835_IRQ_DMA(5)  IRQ_TYPE_LEVEL 0>,
-				     <BCM2835_IRQ_DMA(8)  IRQ_TYPE_LEVEL 0>,
-				     <BCM2835_IRQ_DMA(9)  IRQ_TYPE_LEVEL 0>,
+			interrupts = <BCM2835_IRQ_DMA(4) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(5) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(8) IRQ_TYPE_LEVEL 0>,
+				     <BCM2835_IRQ_DMA(9) IRQ_TYPE_LEVEL 0>,
 				     <BCM2835_IRQ_DMA(10) IRQ_TYPE_LEVEL 0>,
 				     <BCM2835_IRQ_DMA_SHARED IRQ_TYPE_LEVEL 0>;
 			#dma-cells = <1>;

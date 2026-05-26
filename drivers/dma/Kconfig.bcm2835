@@ -11,10 +11,26 @@ config DMA_BCM2835
 	help
 	  Enable the driver for the BCM2835 / BCM2710 / BCM2837 DMA
 	  controller -- a control-block (linked-list descriptor) engine
-	  used on Raspberry Pi boards. Supports single-block
-	  memory-to-memory and peripheral DREQ-paced transfers.
+	  used on Raspberry Pi boards. Supports memory-to-memory and
+	  peripheral DREQ-paced transfers, with optional cyclic descriptor
+	  chains for audio-class consumers (I2S).
 
 	  CACHE_MANAGEMENT is required: the engine is not cache-coherent
 	  with the CPU, so the driver cleans control blocks and source
 	  buffers and invalidates destination buffers via the sys_cache_*
 	  API -- which compiles to a no-op without CACHE_MANAGEMENT.
+
+if DMA_BCM2835
+
+config DMA_BCM2835_MAX_CBS_PER_CHANNEL
+	int "Maximum DMA control blocks per channel"
+	default 4
+	range 1 32
+	help
+	  Bounds the descriptor chain depth a single channel can carry.
+	  Single-block (loop_transfer-style) consumers need 1; cyclic
+	  audio rings want more (typically 4..8) to absorb application
+	  jitter. Storage cost is N_CHANNELS * value * 32 bytes (CBs) +
+	  N_CHANNELS * value * 24 bytes (cache-maintenance bookkeeping).
+
+endif # DMA_BCM2835
