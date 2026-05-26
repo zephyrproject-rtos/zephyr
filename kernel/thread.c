@@ -703,7 +703,7 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	}
 #endif /* CONFIG_USERSPACE */
 #ifdef CONFIG_SCHED_DEADLINE
-	new_thread->base.prio_deadline = INT64_MAX;
+	new_thread->base.prio_deadline = 0;
 #endif /* CONFIG_SCHED_DEADLINE */
 	new_thread->resource_pool = _current->resource_pool;
 

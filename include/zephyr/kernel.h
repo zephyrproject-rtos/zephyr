@@ -1090,15 +1090,15 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * @brief Set relative deadline expiration time for scheduler
  *
  * This sets the "deadline" expiration as a time delta from the
- * current time, in the same units used by k_cycle_get_32().  The
+ * current time, in the same units used by k_cycle_get_64().  The
  * scheduler (when deadline scheduling is enabled) will choose the
  * next expiring thread when selecting between threads at the same
  * static priority.  Threads at different priorities will be scheduled
  * according to their static priority.
  *
- * @note Deadlines are stored internally using 32 bit unsigned
+ * @note Deadlines are stored internally using 64 bit signed
  * integers.  The number of cycles between the "first" deadline in the
- * scheduler queue and the "last" deadline must be less than 2^31 (i.e
+ * scheduler queue and the "last" deadline must be less than 2^63 (i.e
  * a signed non-negative quantity).  Failure to adhere to this rule
  * may result in scheduled threads running in an incorrect deadline
  * order.
@@ -1123,7 +1123,7 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int64_t deadline);
  * @brief Set absolute deadline expiration time for scheduler
  *
  * This sets the "deadline" expiration as a timestamp in the same
- * units used by k_cycle_get_32(). The scheduler (when deadline scheduling
+ * units used by k_cycle_get_64(). The scheduler (when deadline scheduling
  * is enabled) will choose the next expiring thread when selecting between
  * threads at the same static priority.  Threads at different priorities
  * will be scheduled according to their static priority.
@@ -1135,9 +1135,9 @@ __syscall void k_thread_deadline_set(k_tid_t thread, int64_t deadline);
  * This allows the caller to specify deadlines for multiple threads
  * using a common "now".
  *
- * @note Deadlines are stored internally using 32 bit unsigned
+ * @note Deadlines are stored internally using 64 bit signed
  * integers.  The number of cycles between the "first" deadline in the
- * scheduler queue and the "last" deadline must be less than 2^31 (i.e
+ * scheduler queue and the "last" deadline must be less than 2^63 (i.e
  * a signed non-negative quantity).  Failure to adhere to this rule
  * may result in scheduled threads running in an incorrect deadline
  * order.

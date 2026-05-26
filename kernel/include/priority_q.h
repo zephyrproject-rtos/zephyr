@@ -71,8 +71,7 @@ static ALWAYS_INLINE void z_priq_simple_init(sys_dlist_t *pq)
  * (Again, like memcmp.)
  */
 
- #pragma GCC push_options
-#pragma GCC optimize ("O0") 
+
 static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct k_thread *thread_2)
 {
 	/* `prio` is <32b, so the below cannot overflow. */
@@ -84,24 +83,14 @@ static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct 
 	}
 
 #ifdef CONFIG_SCHED_DEADLINE
-	/* If we assume all deadlines live within the same "half" of
-	 * the 32 bit modulus space (this is a documented API rule),
-	 * then the latest deadline in the queue minus the earliest is
-	 * guaranteed to be (2's complement) non-negative.  We can
-	 * leverage that to compare the values without having to check
-	 * the current time.
+	/*we assume deadline is a 64-bit value, so the below cannot overflow.
 	 */
-	uint64_t d1 = thread_1->base.prio_deadline;
-	uint64_t d2 = thread_2->base.prio_deadline;
+	int64_t d1 = thread_1->base.prio_deadline;
+	int64_t d2 = thread_2->base.prio_deadline;
 
 	if (d1 != d2) {
-		/* Sooner deadline means higher effective priority.
-		 * Doing the calculation with unsigned types and casting
-		 * to signed isn't perfect, but at least reduces this
-		 * from UB on overflow to impdef.
 
-		 
-		 */
+
           /*
 		   * Note that this is not a simple d1 - d2, because that can
 		   * overflow and give the wrong sign.  Instead we check if
@@ -114,7 +103,7 @@ static ALWAYS_INLINE int32_t z_sched_prio_cmp(struct k_thread *thread_1, struct 
 #endif /* CONFIG_SCHED_DEADLINE */
 	return 0;
 }
-#pragma GCC pop_options
+
 
 static ALWAYS_INLINE void z_priq_simple_add(sys_dlist_t *pq, struct k_thread *thread)
 {
