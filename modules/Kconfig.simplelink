@@ -43,20 +43,21 @@ config HAS_CC23X0_SDK
 config HAS_CC35XX_SDK
 	bool
 
-# CC27XX SDK HAL configuration
+# CC27XXX10 SDK HAL configuration
 
-config HAS_CC27XX_SDK
+config HAS_CC27XXX10_SDK
 	bool
 
-# CC35XX SDK HAL configuration
-config HAS_CC35XX_SDK
+# CC27XXX20 SDK HAL configuration
+
+config HAS_CC27XXX20_SDK
 	bool
 
 #====== LogSinkTrace ======#
 
 config SIMPLELINK_LPF3_TRACE
 	bool "LogSinkTrace support"
-	depends on HAS_CC23X0_SDK || HAS_CC27XX_SDK
+	depends on SOC_SERIES_CC27XX || SOC_SERIES_CC23X0
 	default n
 	help
 	  Enable LogSinkTrace for debugging and tracing purposes

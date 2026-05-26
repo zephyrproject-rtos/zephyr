@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpio0 11 0>;   /* DIO11 */
+		in-gpios = <&gpio0 5 0>;    /* DIO5 */
+	};
+};

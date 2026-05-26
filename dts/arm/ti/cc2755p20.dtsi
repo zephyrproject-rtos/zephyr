@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <ti/cc27xx.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(288)>;
+	};
+};
+
+/* Main flash */
+&flash0 {
+	reg = <0x0 DT_SIZE_K(2048)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 0x000e4000>;
+		};
+
+		/*
+		 * Storage partition will be used by NVS
+		 * if enabled. The rest of the flash (96kB)
+		 * is reserved for HSM
+		 */
+		storage_partition: partition@e4000 {
+			label = "storage";
+			reg = <0x000e4000 0x00004000>;
+		};
+	};
+};
+
+/* CCFG */
+&flash1 {
+	reg = <0x4e020000 DT_SIZE_K(2)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ti_ccfg_partition: partition@4e020000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x4e020000 0x800>;
+			zephyr,memory-region = "FLASH_CCFG";
+		};
+	};
+};
+
+/* SCFG */
+&flash2 {
+	reg = <0x4e040000 DT_SIZE_K(8)>;
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ti_scfg_partition: partition@4e040000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x4e040000 0x400>;
+			zephyr,memory-region = "FLASH_SCFG";
+		};
+	};
+};

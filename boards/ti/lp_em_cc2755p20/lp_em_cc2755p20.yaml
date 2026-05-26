@@ -1,0 +1,31 @@
+identifier: lp_em_cc2755p20
+name: TI SimpleLink CC2755P20 LaunchPad
+type: mcu
+arch: arm
+ram: 288
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - dma
+  - crypto
+  - spi
+  - i2s
+  - adc
+  - pm
+  - pwm
+  - watchdog
+  - counter
+  - rtc
+  - nvs
+  - entropy
+  - flash
+  - pinctrl
+  - serial
+  - timer
+  - i2c
+  - uart
+vendor: ti
