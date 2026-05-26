@@ -610,8 +610,7 @@ static inline uint32_t z_impl_counter_get_max_top_value(const struct device *dev
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval 0 If successful.
- * @retval <0 Negative errno code if failure.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_start(const struct device *dev);
 
@@ -627,8 +626,8 @@ static inline int z_impl_counter_start(const struct device *dev)
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if the device doesn't support stopping the
+ * @retval 0 on success.
+ * @retval -ENOTSUP Device doesn't support stopping the
  *                        counter.
  */
 __syscall int counter_stop(const struct device *dev);
@@ -645,8 +644,7 @@ static inline int z_impl_counter_stop(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param ticks Pointer to where to store the current counter value
  *
- * @retval 0 If successful.
- * @retval <0 Negative error code on failure getting the counter value
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_get_value(const struct device *dev, uint32_t *ticks);
 
@@ -661,8 +659,7 @@ static inline int z_impl_counter_get_value(const struct device *dev, uint32_t *t
  * @brief Reset the counter to the initial value.
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval 0 If successful.
- * @retval -errno Negative error code on failure resetting the counter value.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_reset(const struct device *dev);
 
@@ -682,8 +679,7 @@ static inline int z_impl_counter_reset(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param ticks Tick value to set
  *
- * @retval 0 If successful.
- * @retval Negative error code on failure setting the counter value
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_set_value(const struct device *dev, uint32_t ticks);
 
@@ -711,12 +707,12 @@ static inline int z_impl_counter_set_value(const struct device *dev, uint32_t ti
  * @param chan_id	Channel ID.
  * @param alarm_cfg	Alarm configuration.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported (device does not support
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported (device does not support
  *		    interrupts or requested channel).
- * @retval -EINVAL if alarm settings are invalid.
- * @retval -ETIME  if absolute alarm was set too late.
- * @retval -EBUSY  if alarm is already active.
+ * @retval -EINVAL Alarm settings are invalid.
+ * @retval -ETIME  Absolute alarm was set too late.
+ * @retval -EBUSY  Alarm is already active.
  */
 __syscall int counter_set_channel_alarm(const struct device *dev, uint8_t chan_id,
 					const struct counter_alarm_cfg *alarm_cfg);
@@ -741,8 +737,8 @@ static inline int z_impl_counter_set_channel_alarm(const struct device *dev, uin
  * @param dev		Pointer to the device structure for the driver instance.
  * @param chan_id	Channel ID.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported or the counter was not started
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported or the counter was not started
  *		    yet.
  */
 __syscall int counter_cancel_channel_alarm(const struct device *dev, uint8_t chan_id);
@@ -778,12 +774,12 @@ static inline int z_impl_counter_cancel_channel_alarm(const struct device *dev, 
  * @param dev		Pointer to the device structure for the driver instance.
  * @param cfg		Configuration. Cannot be NULL.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported (e.g. top value cannot be
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported (e.g. top value cannot be
  *		    changed or counter cannot/must be reset during top value
 		    update).
- * @retval -EBUSY if any alarm is active.
- * @retval -ETIME if @ref COUNTER_TOP_CFG_DONT_RESET was set and new top value
+ * @retval -EBUSY Any alarm is active.
+ * @retval -ETIME @ref COUNTER_TOP_CFG_DONT_RESET was set and new top value
  *		  is smaller than current counter value (counter counting up).
  */
 __syscall int counter_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg);
@@ -886,9 +882,9 @@ static inline uint32_t z_impl_counter_get_top_value(const struct device *dev)
  * @param ticks		Guard period in counter ticks.
  * @param flags		See @ref COUNTER_GUARD_PERIOD_FLAGS.
  *
- * @retval 0 if successful.
- * @retval -ENOSYS if function or flags are not supported.
- * @retval -EINVAL if ticks value is invalid.
+ * @retval 0 on success.
+ * @retval -ENOSYS Function or flags are not supported.
+ * @retval -EINVAL Ticks value is invalid.
  */
 __syscall int counter_set_guard_period(const struct device *dev, uint32_t ticks, uint32_t flags);
 
@@ -961,12 +957,12 @@ static inline uint64_t z_impl_counter_get_max_top_value_64(const struct device *
  * @param dev		Pointer to the device structure for the driver instance.
  * @param cfg		Configuration. Cannot be NULL.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported (e.g. top value cannot be
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported (e.g. top value cannot be
  *		    changed or counter cannot/must be reset during top value
 		    update).
- * @retval -EBUSY if any alarm is active.
- * @retval -ETIME if @ref COUNTER_TOP_CFG_DONT_RESET was set and new top value
+ * @retval -EBUSY Any alarm is active.
+ * @retval -ETIME @ref COUNTER_TOP_CFG_DONT_RESET was set and new top value
  *		  is smaller than current counter value (counter counting up).
  */
 __syscall int counter_set_top_value_64(const struct device *dev,
@@ -1003,12 +999,12 @@ static inline int z_impl_counter_set_top_value_64(const struct device *dev,
  * @param chan_id	Channel ID.
  * @param alarm_cfg	Alarm configuration.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported (device does not support
+ * @retval 0 on success.
+ * @retval -ENOTSUP Request is not supported (device does not support
  *		    interrupts or requested channel).
- * @retval -EINVAL if alarm settings are invalid.
- * @retval -ETIME  if absolute alarm was set too late.
- * @retval -EBUSY  if alarm is already active.
+ * @retval -EINVAL Alarm settings are invalid.
+ * @retval -ETIME  Absolute alarm was set too late.
+ * @retval -EBUSY  Alarm is already active.
  */
 __syscall int counter_set_channel_alarm_64(const struct device *dev, uint8_t chan_id,
 					   const struct counter_alarm_cfg_64 *alarm_cfg);
@@ -1101,9 +1097,9 @@ static inline uint64_t z_impl_counter_get_top_value_64(const struct device *dev)
  * @param ticks		Guard period in counter ticks of 64 bits.
  * @param flags		See @ref COUNTER_GUARD_PERIOD_FLAGS.
  *
- * @retval 0 if successful.
- * @retval -ENOSYS if function or flags are not supported.
- * @retval -EINVAL if ticks value is invalid.
+ * @retval 0 on success.
+ * @retval -ENOSYS Function or flags are not supported.
+ * @retval -EINVAL Ticks value is invalid.
  */
 __syscall int counter_set_guard_period_64(const struct device *dev, uint64_t ticks, uint32_t flags);
 
@@ -1157,8 +1153,7 @@ static inline uint64_t z_impl_counter_get_guard_period_64(const struct device *d
  * @param dev Pointer to the device structure for the driver instance.
  * @param ticks Pointer to where to store the current counter value in 64 bits.
  *
- * @retval 0 If successful.
- * @retval <0 Negative error code on failure getting the counter value
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_get_value_64(const struct device *dev, uint64_t *ticks);
 
@@ -1184,8 +1179,7 @@ static inline int z_impl_counter_get_value_64(const struct device *dev, uint64_t
  * @param dev Pointer to the device structure for the driver instance.
  * @param ticks Tick value to set in 64 bits
  *
- * @retval 0 If successful.
- * @retval <0 Negative error code on failure setting the counter value
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int counter_set_value_64(const struct device *dev, uint64_t ticks);
 
