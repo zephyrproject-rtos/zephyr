@@ -423,36 +423,58 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		goto end;
 	}
 
-	entry_slot_s = (struct xtensa_mpu_entry *)
-		       check_addr_in_mpu_entries(entries, start_addr, first_enabled_idx,
-						 &exact_s, &idx_s);
-	entry_slot_e = (struct xtensa_mpu_entry *)
-		       check_addr_in_mpu_entries(entries, end_addr, first_enabled_idx,
-						 &exact_e, &idx_e);
+	do {
+		/*
+		 * Figure out if we need to add new slots for either addresses.
+		 * If the addresses match exactly the addresses current in map,
+		 * we can reuse those entries without adding new one.
+		 * If not, we need to find some free slots to insert new entries.
+		 */
 
-	__ASSERT_NO_MSG(entry_slot_s != NULL);
-	__ASSERT_NO_MSG(entry_slot_e != NULL);
-	__ASSERT_NO_MSG(start_addr < end_addr);
+		entry_slot_s = (struct xtensa_mpu_entry *)
+			       check_addr_in_mpu_entries(entries, start_addr, first_enabled_idx,
+							 &exact_s, &idx_s);
+		entry_slot_e = (struct xtensa_mpu_entry *)
+			       check_addr_in_mpu_entries(entries, end_addr, first_enabled_idx,
+							 &exact_e, &idx_e);
 
-	if ((entry_slot_s == NULL) || (entry_slot_e == NULL)) {
-		ret = -EINVAL;
-		goto out;
-	}
+		__ASSERT_NO_MSG(entry_slot_s != NULL);
+		__ASSERT_NO_MSG(entry_slot_e != NULL);
+		__ASSERT_NO_MSG(start_addr < end_addr);
 
-	/*
-	 * Figure out if we need to add new slots for either addresses.
-	 * If the addresses match exactly the addresses current in map,
-	 * we can reuse those entries without adding new one.
-	 */
-	if (!exact_s || !exact_e) {
-		uint8_t needed = (exact_s ? 0 : 1) + (exact_e ? 0 : 1);
-
-		/* Check if there are enough empty slots. */
-		if (first_enabled_idx < needed) {
-			ret = -ENOMEM;
+		if ((entry_slot_s == NULL) || (entry_slot_e == NULL)) {
+			ret = -EINVAL;
 			goto out;
 		}
-	}
+
+		/* One or both have no exact match. Need to find free slots. */
+		if (!exact_s || !exact_e) {
+			uint8_t needed = (exact_s ? 0 : 1) + (exact_e ? 0 : 1);
+
+			/* Check if there are enough empty slots. */
+			if (first_enabled_idx < needed) {
+				bool success;
+
+				/* Try compacting the MPU map to free up some slots. */
+				success = consolidate_entries(entries, &first_enabled_idx);
+				if (success) {
+					/* Map consolidated. So we try to find free slots
+					 * again.
+					 */
+					continue;
+				}
+
+				/* If we still do not have enough slots after compacting
+				 * the MPU map. We bail.
+				 */
+				ret = -ENOMEM;
+				goto out;
+			}
+		}
+
+		/* We have enough information and space to proceed. */
+		break;
+	} while (true);
 
 	/*
 	 * Need to keep track of the attributes of the memory region before
