@@ -26,4 +26,5 @@ supported:
   - flash
   - netif:eth
   - edac
+  - can
 vendor: nxp
