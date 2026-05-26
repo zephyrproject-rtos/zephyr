@@ -31,9 +31,18 @@ LOG_MODULE_DECLARE(net_pmtu, CONFIG_NET_PMTU_LOG_LEVEL);
 static struct net_dplpmtud_entry dplpmtud_entries[NET_DPLPMTUD_MAX_ENTRIES];
 static K_MUTEX_DEFINE(lock);
 
-static inline uint16_t clamp_plpmtu(uint16_t base_plpmtu, uint16_t max_plpmtu)
+static inline uint16_t normalize_plpmtu(uint16_t plpmtu)
 {
-	if (max_plpmtu < base_plpmtu) {
+	if (plpmtu == 0U) {
+		return NET_DPLPMTUD_BASE_PLPMTU;
+	}
+
+	return plpmtu;
+}
+
+static inline uint16_t normalize_max_plpmtu(uint16_t base_plpmtu, uint16_t max_plpmtu)
+{
+	if (max_plpmtu == 0U) {
 		return base_plpmtu;
 	}
 
@@ -89,12 +98,18 @@ static int copy_dst_addr(struct net_dplpmtud_entry *entry, const struct net_sock
 
 static void update_state_locked(struct net_dplpmtud_entry *entry)
 {
-	if (entry->state == NET_DPLPMTUD_STATE_ERROR) {
+	if (entry->validated_plpmtu < entry->base_plpmtu) {
+		entry->state = NET_DPLPMTUD_STATE_ERROR;
 		return;
 	}
 
-	if (entry->validated_plpmtu <= entry->base_plpmtu) {
-		entry->state = NET_DPLPMTUD_STATE_BASE;
+	if (entry->validated_plpmtu == entry->base_plpmtu) {
+		if (entry->probe_in_flight) {
+			entry->state = NET_DPLPMTUD_STATE_SEARCHING;
+		} else {
+			entry->state = NET_DPLPMTUD_STATE_BASE;
+		}
+
 		return;
 	}
 
@@ -104,6 +119,85 @@ static void update_state_locked(struct net_dplpmtud_entry *entry)
 	}
 
 	entry->state = NET_DPLPMTUD_STATE_SEARCHING;
+}
+
+static inline void reset_probe_locked(struct net_dplpmtud_entry *entry)
+{
+	entry->probe_size = 0U;
+	entry->probe_count = 0U;
+	entry->probe_in_flight = false;
+}
+
+static inline void sync_search_bounds_locked(struct net_dplpmtud_entry *entry)
+{
+	entry->validated_plpmtu = MIN(entry->validated_plpmtu, entry->max_plpmtu);
+	entry->search_low = entry->validated_plpmtu;
+	entry->search_high = MIN(entry->search_high, entry->max_plpmtu);
+	entry->search_high = MAX(entry->search_high, entry->search_low);
+
+	if (entry->probe_size <= entry->validated_plpmtu ||
+	    entry->probe_size > entry->search_high) {
+		reset_probe_locked(entry);
+	}
+}
+
+static inline void init_entry_defaults_locked(struct net_dplpmtud_entry *entry,
+					      uint16_t base_plpmtu,
+					      uint16_t max_plpmtu)
+{
+	entry->base_plpmtu = normalize_plpmtu(base_plpmtu);
+	entry->max_plpmtu = normalize_max_plpmtu(entry->base_plpmtu, max_plpmtu);
+	entry->validated_plpmtu = MIN(entry->base_plpmtu, entry->max_plpmtu);
+	entry->search_low = entry->validated_plpmtu;
+	entry->search_high = entry->max_plpmtu;
+	reset_probe_locked(entry);
+	entry->blackhole_count = 0U;
+	entry->last_update = k_uptime_get_32();
+	entry->state = NET_DPLPMTUD_STATE_BASE;
+	update_state_locked(entry);
+}
+
+static inline bool family_enabled(net_sa_family_t family)
+{
+	switch (family) {
+	case NET_AF_INET:
+		return IS_ENABLED(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+	case NET_AF_INET6:
+		return IS_ENABLED(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+	default:
+		return false;
+	}
+}
+
+static inline void invalidate_entry_locked(struct net_dplpmtud_entry *entry)
+{
+	entry->in_use = false;
+	reset_probe_locked(entry);
+	entry->last_update = 0U;
+	entry->blackhole_count = 0U;
+	entry->base_plpmtu = 0U;
+	entry->validated_plpmtu = 0U;
+	entry->max_plpmtu = 0U;
+	entry->search_low = 0U;
+	entry->search_high = 0U;
+	entry->state = NET_DPLPMTUD_STATE_BASE;
+	memset(&entry->dst, 0, sizeof(entry->dst));
+}
+
+static inline void reuse_entry_locked(struct net_dplpmtud_entry *entry,
+				      const struct net_sockaddr *dst)
+{
+	memset(entry, 0, sizeof(*entry));
+	entry->in_use = true;
+	entry->last_update = k_uptime_get_32();
+
+	if (copy_dst_addr(entry, dst) < 0) {
+		invalidate_entry_locked(entry);
+		return;
+	}
+
+	init_entry_defaults_locked(entry, NET_DPLPMTUD_BASE_PLPMTU,
+				   NET_DPLPMTUD_BASE_PLPMTU);
 }
 
 static struct net_dplpmtud_entry *get_entry_locked(const struct net_sockaddr *dst)
@@ -143,7 +237,7 @@ struct net_dplpmtud_entry *net_dplpmtud_get_entry(const struct net_sockaddr *dst
 {
 	struct net_dplpmtud_entry *entry;
 
-	if (dst == NULL) {
+	if (dst == NULL || !family_enabled(dst->sa_family)) {
 		return NULL;
 	}
 
@@ -157,9 +251,8 @@ struct net_dplpmtud_entry *net_dplpmtud_get_entry(const struct net_sockaddr *dst
 struct net_dplpmtud_entry *net_dplpmtud_get_or_create_entry(const struct net_sockaddr *dst)
 {
 	struct net_dplpmtud_entry *entry;
-	int ret;
 
-	if (dst == NULL) {
+	if (dst == NULL || !family_enabled(dst->sa_family)) {
 		return NULL;
 	}
 
@@ -175,22 +268,11 @@ struct net_dplpmtud_entry *net_dplpmtud_get_or_create_entry(const struct net_soc
 		goto out;
 	}
 
-	memset(entry, 0, sizeof(*entry));
-
-	ret = copy_dst_addr(entry, dst);
-	if (ret < 0) {
+	reuse_entry_locked(entry, dst);
+	if (!entry->in_use) {
 		entry = NULL;
 		goto out;
 	}
-
-	entry->in_use = true;
-	entry->last_update = k_uptime_get_32();
-	entry->base_plpmtu = NET_DPLPMTUD_BASE_PLPMTU;
-	entry->validated_plpmtu = NET_DPLPMTUD_BASE_PLPMTU;
-	entry->max_plpmtu = NET_DPLPMTUD_BASE_PLPMTU;
-	entry->search_low = NET_DPLPMTUD_BASE_PLPMTU;
-	entry->search_high = NET_DPLPMTUD_BASE_PLPMTU;
-	entry->state = NET_DPLPMTUD_STATE_BASE;
 
 out:
 	k_mutex_unlock(&lock);
@@ -208,18 +290,7 @@ void net_dplpmtud_init_entry(struct net_dplpmtud_entry *entry,
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	entry->base_plpmtu = MAX(base_plpmtu, (uint16_t)NET_DPLPMTUD_BASE_PLPMTU);
-	entry->validated_plpmtu = entry->base_plpmtu;
-	entry->max_plpmtu = clamp_plpmtu(entry->base_plpmtu, max_plpmtu);
-	entry->search_low = entry->validated_plpmtu;
-	entry->search_high = entry->max_plpmtu;
-	entry->probe_size = 0U;
-	entry->probe_count = 0U;
-	entry->blackhole_count = 0U;
-	entry->probe_in_flight = false;
-	entry->last_update = k_uptime_get_32();
-	entry->state = NET_DPLPMTUD_STATE_BASE;
-	update_state_locked(entry);
+	init_entry_defaults_locked(entry, base_plpmtu, max_plpmtu);
 
 	k_mutex_unlock(&lock);
 }
@@ -232,22 +303,9 @@ void net_dplpmtud_set_base_plpmtu(struct net_dplpmtud_entry *entry, uint16_t bas
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	entry->base_plpmtu = MAX(base_plpmtu, (uint16_t)NET_DPLPMTUD_BASE_PLPMTU);
-	entry->max_plpmtu = clamp_plpmtu(entry->base_plpmtu, entry->max_plpmtu);
-	entry->validated_plpmtu = MAX(entry->validated_plpmtu, entry->base_plpmtu);
-	entry->validated_plpmtu = MIN(entry->validated_plpmtu, entry->max_plpmtu);
-	entry->search_low = MAX(entry->search_low, entry->validated_plpmtu);
-	entry->search_low = MAX(entry->search_low, entry->base_plpmtu);
-	entry->search_high = MIN(entry->search_high, entry->max_plpmtu);
-	entry->search_high = MAX(entry->search_high, entry->search_low);
-
-	if (entry->probe_size <= entry->validated_plpmtu ||
-	    entry->probe_size > entry->search_high) {
-		entry->probe_size = 0U;
-		entry->probe_count = 0U;
-		entry->probe_in_flight = false;
-	}
-
+	entry->base_plpmtu = normalize_plpmtu(base_plpmtu);
+	entry->max_plpmtu = normalize_max_plpmtu(entry->base_plpmtu, entry->max_plpmtu);
+	sync_search_bounds_locked(entry);
 	entry->last_update = k_uptime_get_32();
 	update_state_locked(entry);
 
@@ -262,20 +320,8 @@ void net_dplpmtud_set_max_plpmtu(struct net_dplpmtud_entry *entry, uint16_t max_
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	entry->max_plpmtu = clamp_plpmtu(entry->base_plpmtu, max_plpmtu);
-	entry->validated_plpmtu = MIN(entry->validated_plpmtu, entry->max_plpmtu);
-	entry->search_low = MIN(entry->search_low, entry->validated_plpmtu);
-	entry->search_low = MAX(entry->search_low, entry->base_plpmtu);
-	entry->search_high = MIN(entry->search_high, entry->max_plpmtu);
-	entry->search_high = MAX(entry->search_high, entry->search_low);
-
-	if (entry->probe_size <= entry->validated_plpmtu ||
-	    entry->probe_size > entry->search_high) {
-		entry->probe_size = 0U;
-		entry->probe_count = 0U;
-		entry->probe_in_flight = false;
-	}
-
+	entry->max_plpmtu = normalize_max_plpmtu(entry->base_plpmtu, max_plpmtu);
+	sync_search_bounds_locked(entry);
 	entry->last_update = k_uptime_get_32();
 	update_state_locked(entry);
 
@@ -353,11 +399,9 @@ int net_dplpmtud_probe_acked(struct net_dplpmtud_entry *entry, uint16_t probe_si
 		goto out;
 	}
 
-	entry->validated_plpmtu = MAX(entry->validated_plpmtu, probe_size);
+	entry->validated_plpmtu = MIN(probe_size, entry->max_plpmtu);
 	entry->search_low = entry->validated_plpmtu;
-	entry->probe_size = 0U;
-	entry->probe_count = 0U;
-	entry->probe_in_flight = false;
+	reset_probe_locked(entry);
 	entry->last_update = k_uptime_get_32();
 	update_state_locked(entry);
 
@@ -415,12 +459,10 @@ void net_dplpmtud_note_blackhole(struct net_dplpmtud_entry *entry)
 	k_mutex_lock(&lock, K_FOREVER);
 
 	entry->blackhole_count++;
-	entry->validated_plpmtu = entry->base_plpmtu;
-	entry->search_low = entry->base_plpmtu;
-	entry->search_high = entry->base_plpmtu;
-	entry->probe_size = 0U;
-	entry->probe_count = 0U;
-	entry->probe_in_flight = false;
+	entry->validated_plpmtu = MIN(entry->base_plpmtu, entry->max_plpmtu);
+	entry->search_low = entry->validated_plpmtu;
+	entry->search_high = entry->validated_plpmtu;
+	reset_probe_locked(entry);
 	entry->state = NET_DPLPMTUD_STATE_ERROR;
 	entry->last_update = k_uptime_get_32();
 
