@@ -15,9 +15,6 @@
 #include <zephyr/devicetree.h>
 
 #include <zephyr/arch/arm/cortex_m/nvic.h>
-#ifndef _ASMLANGUAGE
-#include <zephyr/arch/arm/arm-m-switch.h>
-#endif
 
 /* for assembler, only works with constants */
 #define Z_EXC_PRIO(pri) (((pri) << (8 - NUM_IRQ_PRIO_BITS)) & 0xff)
@@ -65,6 +62,7 @@ GTEXT(z_arm_exc_exit);
 #endif
 #else
 #include <zephyr/types.h>
+#include <zephyr/arch/arm/arm-m-switch.h>
 
 #ifdef __cplusplus
 extern "C" {
