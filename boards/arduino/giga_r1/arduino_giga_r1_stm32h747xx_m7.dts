@@ -60,6 +60,15 @@
 	status = "okay";
 };
 
+&pll2 {
+	clocks = <&clk_hse>;
+	div-m = <4>;
+	mul-n = <50>;
+	div-p = <50>;
+	div-q = <2>;
+	div-r = <2>;
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(480)>;
@@ -105,6 +114,18 @@
 			bt-dev-wake-gpios = <&gpioh 7 GPIO_ACTIVE_HIGH>;
 			fw-download-speed = <115200>;
 		};
+	};
+};
+
+&pdm0 {
+	pinctrl-0 = <&dfsdm1_ckout_pd3
+		     &dfsdm1_datin0_pc1>;
+	pinctrl-names = "default";
+	dmas = <&dmamux1 0 101 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+	dma-names = "rx";
+
+	dfsdm_channel_0: channel@0 {
+		reg = <0>;
 	};
 };
 
