@@ -1331,6 +1331,8 @@ int net_context_sendto(struct net_context *context,
  * @details This function has similar semantics as Posix sendmsg() call.
  * For unconnected socket, the msg_name field in net_msghdr must be set. For
  * connected socket the msg_name should be set to NULL, and msg_namelen to 0.
+ * For UDP sockets, msg_control may also carry per-datagram ancillary data such
+ * as @ref ZSOCK_IP_DONTFRAG or @ref ZSOCK_IPV6_DONTFRAG.
  * After the network buffer is sent, a caller-supplied callback is called.
  * Note that the callback might be called after this function has returned.
  *
