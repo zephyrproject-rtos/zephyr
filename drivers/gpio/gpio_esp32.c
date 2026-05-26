@@ -454,6 +454,12 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 {
 	const struct gpio_esp32_config *const cfg = port->config;
 	uint32_t io_pin = (uint32_t) pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
+
+	/* Wakeup is configured in gpio_esp32_config(); strip the bit so
+	 * convert_int_type() only sees edge/level trigger bits.
+	 */
+	trig &= ~GPIO_INT_WAKEUP;
+
 	int intr_trig_mode = convert_int_type(mode, trig);
 	uint32_t key;
 
