@@ -33,7 +33,12 @@ int llext_section_shndx(const struct llext_loader *ldr, const struct llext *ext,
 	for (i = 1; i < ext->sect_cnt; i++) {
 		const char *name = llext_section_name(ldr, ext, ext->sect_hdrs + i);
 
-		if (!strcmp(name, sect_name)) {
+		if (name == NULL) {
+			LOG_ERR("Out of bounds string table index %u "
+				"for section name of section %d",
+				ext->sect_hdrs[i].sh_name, i);
+			return -ENOEXEC;
+		} else if (strcmp(name, sect_name) == 0) {
 			return i;
 		}
 	}

@@ -249,6 +249,13 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 
 		name = llext_section_name(ldr, ext, shdr);
 
+		if (name == NULL) {
+			LOG_ERR("section %d has out of bounds string table index %d "
+				"for section name",
+				shdr->sh_name, i);
+			return -ENOEXEC;
+		}
+
 		if (ldr->sect_map[i].mem_idx != LLEXT_MEM_COUNT) {
 			LOG_DBG("section %d name %s already mapped to region %d",
 				i, name, ldr->sect_map[i].mem_idx);
@@ -572,8 +579,6 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 	size_t ent_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_entsize;
 	size_t syms_size = ldr->sects[LLEXT_MEM_SYMTAB].sh_size;
 	int sym_cnt = syms_size / sizeof(elf_sym_t);
-	elf_shdr_t *str_region = ldr->sects + LLEXT_MEM_STRTAB;
-	size_t str_reg_size = str_region->sh_size;
 	const char *name;
 	elf_sym_t sym;
 	int i, ret;
@@ -600,17 +605,17 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 			return ret;
 		}
 
-		if (sym.st_name >= str_reg_size) {
-			LOG_ERR("Invalid symbol name index %d in symbol %d",
-				sym.st_name, i);
-			return -ENOEXEC;
-		}
-
 		uint32_t stt = ELF_ST_TYPE(sym.st_info);
 		uint32_t stb = ELF_ST_BIND(sym.st_info);
 		uint32_t sect = sym.st_shndx;
 
 		name = llext_symbol_name(ldr, ext, &sym);
+
+		if (name == NULL) {
+			LOG_ERR("Out of bounds string table index for symbol name %d in symbol %d",
+				sym.st_name, i);
+			return -ENOEXEC;
+		}
 
 		if ((stt == STT_FUNC || stt == STT_OBJECT) && stb == STB_GLOBAL) {
 			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
@@ -796,6 +801,13 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 
 			const char *name = llext_symbol_name(ldr, ext, &sym);
 
+			if (name == NULL) {
+				LOG_ERR("Symbol %d has out of bounds string table index %d for "
+					"symbol name",
+					i, sym.st_name);
+				return -ENOEXEC;
+			}
+
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
 
 			sym_tab->syms[j].name = name;
@@ -836,25 +848,6 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 	}
 
 	llext_sort_symbols(sym_tab);
-
-	return 0;
-}
-
-static int llext_validate_sections_name(struct llext_loader *ldr, struct llext *ext)
-{
-	const elf_shdr_t *shstrtab = ldr->sects + LLEXT_MEM_SHSTRTAB;
-	size_t shstrtab_size = shstrtab->sh_size;
-	int i;
-
-	for (i = 0; i < ext->sect_cnt; i++) {
-		elf_shdr_t *shdr = ext->sect_hdrs + i;
-
-		if (shdr->sh_name >= shstrtab_size) {
-			LOG_ERR("Invalid section name index %d in section %d",
-				shdr->sh_name, i);
-			return -ENOEXEC;
-		}
-	}
 
 	return 0;
 }
@@ -902,12 +895,6 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 	ret = llext_copy_strings(ldr, ext, ldr_parm);
 	if (ret != 0) {
 		LOG_ERR("Failed to copy ELF string sections, ret %d", ret);
-		goto out;
-	}
-
-	ret = llext_validate_sections_name(ldr, ext);
-	if (ret != 0) {
-		LOG_ERR("Failed to validate ELF section names, ret %d", ret);
 		goto out;
 	}
 
