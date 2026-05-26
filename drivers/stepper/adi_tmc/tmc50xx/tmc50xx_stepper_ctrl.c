@@ -472,7 +472,6 @@ static DEVICE_API(stepper_ctrl, tmc50xx_stepper_ctrl_api) = {
 };
 
 #define TMC50XX_STEPPER_CTRL_DEFINE(inst)                                                         \
-	IF_ENABLED(CONFIG_STEPPER_ADI_TMC50XX_RAMP_GEN, (CHECK_RAMP_DT_DATA(DT_DRV_INST(inst))));  \
 	static const struct tmc50xx_stepper_ctrl_config tmc50xx_stepper_ctrl_cfg_##inst = {      \
 		.controller = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                         \
 		.index = DT_INST_PROP(inst, idx),                                                  \

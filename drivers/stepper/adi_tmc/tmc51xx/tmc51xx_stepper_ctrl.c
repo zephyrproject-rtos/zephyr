@@ -487,7 +487,6 @@ static DEVICE_API(stepper_ctrl, tmc51xx_stepper_ctrl_api) = {
 };
 
 #define TMC51XX_STEPPER_CTRL_DEFINE(inst)                                                         \
-	IF_ENABLED(CONFIG_STEPPER_ADI_TMC51XX_RAMP_GEN,	(CHECK_RAMP_DT_DATA(inst)));               \
 	static const struct tmc51xx_stepper_ctrl_config tmc51xx_stepper_ctrl_cfg_##inst = {      \
 		.controller = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                         \
 		.sg_threshold_velocity = DT_INST_PROP(inst, stallguard_threshold_velocity),        \
