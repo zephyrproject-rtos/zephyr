@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from conftest import RC_GDB, RC_OPENOCD
@@ -43,6 +43,13 @@ def require_patch(program):
     assert program in [RC_OPENOCD, RC_GDB]
 
 
+def openocd_cmd(command, check_call, popen_ignore_int):
+    if command == 'debugserver':
+        return check_call.call_args[0][0]
+
+    return popen_ignore_int.call_args[0][0]
+
+
 @pytest.fixture
 def openocd(runner_config):
     def _factory(enabled_configs):
@@ -60,27 +67,43 @@ def openocd(runner_config):
     return _factory
 
 
+@pytest.mark.parametrize('command', ['debugserver', 'debug'])
 @pytest.mark.parametrize('enabled_configs, rtos_supported', ARCH_CASES)
 @patch('runners.openocd.OpenOcdBinaryRunner.read_version', return_value=(0, 12, 0))
+@patch('runners.openocd.OpenOcdBinaryRunner.check_call_ignore_sigint')
+@patch('runners.openocd.OpenOcdBinaryRunner.popen_ignore_int', return_value=MagicMock())
 @patch('runners.openocd.OpenOcdBinaryRunner.check_call')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 def test_debugserver_rtos_arch_gate(
-    require, check_call, read_version, enabled_configs, rtos_supported, openocd
+    require,
+    check_call,
+    popen_ignore_int,
+    check_call_ignore_sigint,
+    read_version,
+    command,
+    enabled_configs,
+    rtos_supported,
+    openocd,
 ):
     '''The '-rtos Zephyr' command is only emitted for RTOS-aware archs.'''
-    openocd(enabled_configs).run('debugserver')
+    openocd(enabled_configs).run(command)
 
-    cmd = check_call.call_args[0][0]
+    cmd = openocd_cmd(command, check_call, popen_ignore_int)
     assert (RTOS_COMMAND in cmd) == rtos_supported
 
 
+@pytest.mark.parametrize('command', ['debugserver', 'debug'])
 @patch('runners.openocd.OpenOcdBinaryRunner.read_version', return_value=(0, 11, 0))
+@patch('runners.openocd.OpenOcdBinaryRunner.check_call_ignore_sigint')
+@patch('runners.openocd.OpenOcdBinaryRunner.popen_ignore_int', return_value=MagicMock())
 @patch('runners.openocd.OpenOcdBinaryRunner.check_call')
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
-def test_debugserver_rtos_old_openocd(require, check_call, read_version, openocd):
+def test_debugserver_rtos_old_openocd(
+    require, check_call, popen_ignore_int, check_call_ignore_sigint, read_version, command, openocd
+):
     '''An OpenOCD too old for Zephyr awareness never gets the command, even
     on an otherwise supported architecture.'''
-    openocd({'CONFIG_CPU_CORTEX_M': True}).run('debugserver')
+    openocd({'CONFIG_CPU_CORTEX_M': True}).run(command)
 
-    cmd = check_call.call_args[0][0]
+    cmd = openocd_cmd(command, check_call, popen_ignore_int)
     assert RTOS_COMMAND not in cmd
