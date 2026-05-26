@@ -606,6 +606,7 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 	}
 
 	I2C_MasterGetDefaultConfig(&master_config);
+	master_config.enableMaster = false;
 	I2C_MasterInit(base, &master_config, clock_freq);
 	I2C_MasterTransferCreateHandle(base, &data->handle,
 				       mcux_flexcomm_master_transfer_callback,
@@ -634,8 +635,10 @@ static int i2c_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_
 		if (error < 0 && error != -ENOENT) {
 			return error;
 		}
+		I2C_MasterEnable(config->base, true);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		I2C_MasterEnable(config->base, false);
 		error = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
 		if (error < 0 && error != -ENOENT) {
 			return error;
