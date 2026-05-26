@@ -285,7 +285,7 @@ static int dsa_ksz8863_init(const struct device *dev)
 
 #define DSA_KSZ8863_DEVICE(n)                                                                      \
 	static const struct dsa_ksz8863_config dsa_ksz8863_config_##n = {                          \
-		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8), 0),                                \
+		.spi = SPI_DT_SPEC_INST_GET(n, SPI_WORD_SET(8)),                                   \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
 	};                                                                                         \
 	static struct dsa_ksz8863_data dsa_ksz8863_data_##n;                                       \
