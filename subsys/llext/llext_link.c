@@ -259,9 +259,16 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 	uint8_t *text = ext->mem[LLEXT_MEM_TEXT];
 	int link_err = 0;
 
-	LOG_DBG("Found %p in PLT %u size %zu cnt %u text %p",
-		(void *)llext_section_name(ldr, ext, shdr),
-		shdr->sh_type, (size_t)shdr->sh_entsize, sh_cnt, (void *)text);
+	const char *sect_name = llext_section_name(ldr, ext, shdr);
+
+	if (sect_name == NULL) {
+		LOG_WRN("PLT: out of bounds string table index %u for section name, "
+			"trying to continue",
+			shdr->sh_name);
+	}
+
+	LOG_DBG("Found %p in PLT %u size %zu cnt %u text %p", (void *)sect_name, shdr->sh_type,
+		(size_t)shdr->sh_entsize, sh_cnt, (void *)text);
 
 	const elf_shdr_t *sym_shdr = ldr->sects + LLEXT_MEM_SYMTAB;
 	unsigned int sym_cnt = sym_shdr->sh_size / sym_shdr->sh_entsize;
@@ -311,6 +318,13 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		}
 
 		const char *name = llext_symbol_name(ldr, ext, &sym);
+
+		if (name == NULL) {
+			LOG_ERR("PLT: out of bounds string table index %u for symbol name",
+				sym.st_name);
+			link_err = -ENOEXEC;
+			continue;
+		}
 
 		/*
 		 * Both r_offset and sh_addr are addresses for which the extension
@@ -460,6 +474,13 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 		name = llext_section_name(ldr, ext, shdr);
 
+		if (name == NULL) {
+			LOG_ERR("Section %d has out of bounds string table index %d "
+				"for section name",
+				shdr->sh_name, i);
+			return -ENOEXEC;
+		}
+
 		/*
 		 * FIXME: The Xtensa port is currently using a different way of
 		 * handling relocations that ultimately results in separate
@@ -528,8 +549,16 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			ret = llext_read_symbol(ldr, ext, &rel, &sym);
 			if (ret == 0) {
 				name = llext_symbol_name(ldr, ext, &sym);
-				ret = llext_lookup_symbol(ldr, ext, &link_addr, &rel, &sym,
-							  name, shdr);
+				if (name == NULL) {
+					LOG_ERR("out of bounds string table index %u "
+						"for symbol name",
+						sym.st_name);
+					name = "<out of bounds>";
+					ret = -ENOEXEC;
+				} else {
+					ret = llext_lookup_symbol(ldr, ext, &link_addr, &rel, &sym,
+								  name, shdr);
+				}
 			} else {
 				name = "<unknown>";
 			}
