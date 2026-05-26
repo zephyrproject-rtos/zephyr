@@ -32,7 +32,7 @@
 #define SLEEPTIME 250
 
 #define TRANSFER_LOOPS (4)
-#define DMA_DATA_ALIGNMENT DT_INST_PROP_OR(tst_dma0, dma_buf_addr_alignment, 32)
+#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
 
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t
