@@ -211,6 +211,11 @@ Devicetree
 Other notable changes
 *********************
 
+* Wi-Fi
+
+  * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
+    certificates (DES-encrypted private keys). Use ``rsa2k_no_des`` instead.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
