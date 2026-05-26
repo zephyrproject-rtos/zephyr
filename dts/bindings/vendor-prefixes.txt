@@ -137,6 +137,7 @@ cdns	Cadence Design Systems Inc.
 cdtech	CDTech(H.K.) Electronics Limited
 cellwise	CellWise Microelectronics Co., Ltd
 ceva	Ceva, Inc.
+cfsensor	CFSensor Co., Ltd
 checkpoint	Check Point Software Technologies Ltd.
 chefree	Chefree Technology Corp.
 chipidea	Chipidea, Inc

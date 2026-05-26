@@ -1,0 +1,12 @@
+# XGZP68XXD Pressure sensor configuration options
+
+# Copyright (c) 2026 Nexrem
+# SPDX-License-Identifier: Apache-2.0
+
+config XGZP68XXD
+	bool "CFSensor XGZP68XXD pressure sensor"
+	default y
+	depends on DT_HAS_CFSENSOR_XGZP68XXD_ENABLED
+	select I2C
+	help
+	  Enable driver for CFSensor XGZP68XXD pressure sensor.

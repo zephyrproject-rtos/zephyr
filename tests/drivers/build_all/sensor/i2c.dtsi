@@ -1635,3 +1635,10 @@ test_i2c_max30102: max30102@d4 {
 	reg = <0xd4>;
 	acq-mode = "multi-led";
 };
+
+test_i2c_xgzp68xxd: xgzp68xxd@d5 {
+	compatible = "cfsensor,xgzp68xxd";
+	reg = <0xd5>;
+	k-value = <8>;
+	status = "okay";
+};
