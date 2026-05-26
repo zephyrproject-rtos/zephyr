@@ -896,6 +896,9 @@ static int on_header_field(struct http_parser *parser, const char *at,
 				ctx->has_upgrade_header = true;
 			} else if (strcasecmp(ctx->header_buffer, "Sec-WebSocket-Key") == 0) {
 				ctx->websocket_sec_key_next = true;
+			} else if (strcasecmp(ctx->header_buffer,
+					     "Sec-WebSocket-Protocol") == 0) {
+				ctx->websocket_sec_protocol_next = true;
 			}
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
 			else if (strcasecmp(ctx->header_buffer, "Accept-Encoding") == 0) {
@@ -991,6 +994,40 @@ static int on_header_value(struct http_parser *parser,
 				ctx->ws_sec_key[offset] = '\0';
 #endif
 				ctx->websocket_sec_key_next = false;
+			}
+
+			if (ctx->websocket_sec_protocol_next) {
+#if defined(CONFIG_WEBSOCKET)
+				/* Select the first subprotocol in the
+				 * client's comma-separated list. Per RFC
+				 * 6455 the server picks one of the listed
+				 * subprotocols and echoes it back; if the
+				 * client list overflows our buffer, drop
+				 * the header rather than truncate to a
+				 * partial token.
+				 */
+				const char *comma = memchr(ctx->header_buffer,
+							   ',', offset);
+				size_t token_len = comma ?
+					(size_t)(comma - (char *)ctx->header_buffer) :
+					offset;
+
+				while (token_len > 0 &&
+				       (ctx->header_buffer[token_len - 1] == ' ' ||
+					ctx->header_buffer[token_len - 1] == '\t')) {
+					token_len--;
+				}
+
+				if (token_len >= sizeof(ctx->ws_sec_protocol)) {
+					LOG_WRN("Sec-WebSocket-Protocol token too long, ignoring");
+					ctx->ws_sec_protocol[0] = '\0';
+				} else {
+					memcpy(ctx->ws_sec_protocol,
+					       ctx->header_buffer, token_len);
+					ctx->ws_sec_protocol[token_len] = '\0';
+				}
+#endif
+				ctx->websocket_sec_protocol_next = false;
 			}
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
 			if (ctx->accept_encoding_next) {
