@@ -48,7 +48,7 @@ void soc_early_init_hook(void)
 	tmp = (tmp & GLB_UART_SWAP_SET_UMSK) | (0U << GLB_UART_SWAP_SET_POS);
 	sys_write32(tmp, GLB_BASE + GLB_PARM_OFFSET);
 
-	/* CLear all interrupt */
+	/* Clear all interrupt */
 	p = (uint32_t *)(CLIC_HART0_ADDR + CLIC_INTIE);
 
 	for (i = 0; i < (IRQn_LAST + 3) / 4; i++) {
@@ -61,5 +61,11 @@ void soc_early_init_hook(void)
 		p[i] = 0;
 	}
 
+#if !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(psram))
+	/* If no PSRAM configured, reuse its GPIO registers (32-37) for external pins that have
+	 * registers allocated to SF2 internal flash (23-28).
+	 */
+	sys_write32(GLB_CFG_GPIO_USE_PSRAM_IO_MSK, GLB_BASE + GLB_GPIO_USE_PSRAM__IO_OFFSET);
+#endif
 	sys_cache_data_flush_and_invd_all();
 }
