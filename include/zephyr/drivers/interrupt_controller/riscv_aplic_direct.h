@@ -34,21 +34,21 @@ int riscv_aplic_direct_mode_enable(const struct device *dev, bool enable);
 /**
  * @brief Check if a riscv APLIC-specific interrupt line is enabled
  *
- * @param irq IRQ number to check
+ * @param local_irq Local IRQ number to check
  *
  * @return 1 if enabled, 0 otherwise
  */
-int riscv_aplic_is_enabled(uint32_t irq);
+int riscv_aplic_is_enabled(uint32_t local_irq);
 
 /**
  * @brief Configure the priority for a specified interrupt source
  *        for a domain with direct delivery mode enabled.
  *
- * @param irq IRQ whose target register will be configured
+ * @param local_irq Local IRQ whose target register will be configured
  * @param prio Priority value to set
  * @return 0 on success, negative error code on failure
  */
-int riscv_aplic_set_priority(uint32_t irq, uint32_t prio);
+int riscv_aplic_set_priority(uint32_t local_irq, uint32_t prio);
 
 /**
  * @brief Get active interrupt ID
