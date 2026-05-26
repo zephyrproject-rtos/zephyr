@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		sdhc0 = &sdhc0;
+	};
+};
+
+&pinctrl {
+	status = "okay";
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpiob 19 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
+};
