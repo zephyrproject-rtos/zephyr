@@ -78,6 +78,11 @@ Boards
   to 300 MHz, which also affects the bus and kernel clocks, resulting in slightly
   higher frequencies.
 
+* :kconfig:option:`CONFIG_GPIO` is no longer enabled by default on most STM32 boards.
+  (boards with GPIO hogs keep it enabled as GPIO is needed for hogs to work).
+  Applications that relied on ``CONFIG_GPIO=y`` being the default will need to enable
+  the option explicitly. (:github:`109468`)
+
 Device Drivers and Devicetree
 *****************************
 
