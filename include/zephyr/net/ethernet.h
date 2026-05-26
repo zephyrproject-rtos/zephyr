@@ -204,6 +204,9 @@ enum ethernet_hw_caps {
 
 	/** TX-Injection supported */
 	ETHERNET_TXINJECTION_MODE	= BIT(20),
+
+	/** Ethernet bridge offloading supported */
+	ETHERNET_HW_BRIDGE		= BIT(21),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -483,6 +486,24 @@ enum ethernet_stats_type {
 	ETHERNET_STATS_TYPE_ALL = 0xFFFFFFFFU,
 };
 
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+/** Action for bridge interface membership operations */
+enum net_bridge_if_action {
+	/** Add an interface to the bridge */
+	NET_BRIDGE_IF_ADD,
+	/** Remove an interface from the bridge */
+	NET_BRIDGE_IF_DEL,
+};
+
+/** Action for bridge forwarding control operations */
+enum net_bridge_fwd_action {
+	/** Start forwarding on a bridge interface */
+	NET_BRIDGE_FWD_START,
+	/** Stop forwarding on a bridge interface */
+	NET_BRIDGE_FWD_STOP,
+};
+#endif /* CONFIG_NET_BRIDGE_HW_OFFLOAD */
+
 /** Ethernet L2 API operations. */
 struct ethernet_api {
 	/**
@@ -546,6 +567,26 @@ struct ethernet_api {
 
 	/** Return PHY device that is tied to this ethernet device */
 	const struct device *(*get_phy)(const struct device *dev, struct net_if *iface);
+
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+	/** Add or remove an interface from a hardware offloaded bridge */
+	int (*bridge_setif)(const struct device *dev, struct net_if *br,
+			    struct net_if *iface, enum net_bridge_if_action action);
+
+	/** Start or stop forwarding for a hardware offloaded bridge interface */
+	int (*bridge_setfwd)(const struct device *dev, struct net_if *br,
+			     struct net_if *iface, enum net_bridge_fwd_action action);
+
+	/**
+	 * Dump hardware FDB entries for a bridge member interface.
+	 * The driver calls @p cb once per entry; the HW FDB is per-switch so
+	 * only one member needs to be queried per bridge.
+	 */
+	int (*bridge_fdb_dump)(const struct device *dev, struct net_if *iface,
+			       void (*cb)(const uint8_t *mac, uint32_t port_mask,
+					  bool dynamic, void *user_data),
+			       void *user_data);
+#endif
 
 	/** Send a network packet */
 	int (*send)(const struct device *dev, struct net_pkt *pkt);

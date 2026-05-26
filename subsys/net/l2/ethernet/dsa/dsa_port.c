@@ -194,6 +194,32 @@ static int dsa_get_config(const struct device *dev,
 	return dsa_switch_ctx->dapi->get_config(dev, type, config);
 }
 
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+static int dsa_bridge_setif(const struct device *dev, struct net_if *br, struct net_if *iface,
+			    enum net_bridge_if_action action)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+
+	if (!dsa_switch_ctx->dapi->bridge_setif) {
+		return -ENOTSUP;
+	}
+
+	return dsa_switch_ctx->dapi->bridge_setif(dev, br, iface, action);
+}
+
+static int dsa_bridge_setfwd(const struct device *dev, struct net_if *br, struct net_if *iface,
+			     enum net_bridge_fwd_action action)
+{
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+
+	if (!dsa_switch_ctx->dapi->bridge_setfwd) {
+		return -ENOTSUP;
+	}
+
+	return dsa_switch_ctx->dapi->bridge_setfwd(dev, br, iface, action);
+}
+#endif /* CONFIG_NET_BRIDGE_HW_OFFLOAD */
+
 const struct ethernet_api dsa_eth_api = {
 	.iface_api.init = dsa_port_iface_init,
 	.get_phy = dsa_port_get_phy,
@@ -204,4 +230,8 @@ const struct ethernet_api dsa_eth_api = {
 	.get_capabilities = dsa_port_get_capabilities,
 	.set_config = dsa_set_config,
 	.get_config = dsa_get_config,
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+	.bridge_setif = dsa_bridge_setif,
+	.bridge_setfwd = dsa_bridge_setfwd,
+#endif
 };
