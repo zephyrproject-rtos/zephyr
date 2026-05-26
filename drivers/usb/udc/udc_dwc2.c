@@ -1749,6 +1749,11 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		return ret;
 	}
 
+	/* Clear PCGCCTL. Some integrators leave it non-zero across the
+	 * core soft reset, which keeps the PHY clock or power gated.
+	 */
+	sys_write32(0, (mem_addr_t)&base->pcgcctl);
+
 	/* Enable RTL workarounds based on controller revision */
 	gsnpsid = sys_read32((mem_addr_t)&base->gsnpsid);
 	priv->wa_essregrestored = gsnpsid < USB_DWC2_GSNPSID_REV_5_00A;
@@ -1763,11 +1768,15 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	/*
-	 * Force device mode as we do no support role changes.
-	 * Wait 25ms for the change to take effect.
+	/* Force device mode (no role changes supported). Read-modify-
+	 * write to preserve PHY-config bits, and program USBTrdTim
+	 * explicitly per Linux dwc2 defaults (5 for 16-bit UTMI, 9 for
+	 * 8-bit). Wait 25ms for the change to take effect.
 	 */
-	gusbcfg = USB_DWC2_GUSBCFG_FORCEDEVMODE;
+	gusbcfg = sys_read32(gusbcfg_reg);
+	gusbcfg |= USB_DWC2_GUSBCFG_FORCEDEVMODE;
+	gusbcfg &= ~(0xFu << 10);
+	gusbcfg |= ((gusbcfg & USB_DWC2_GUSBCFG_PHYIF_16_BIT) ? 5u : 9u) << 10;
 	sys_write32(gusbcfg, gusbcfg_reg);
 	k_msleep(25);
 
@@ -1936,6 +1945,13 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		/* Get available SPRAM size and calculate max allocatable RX fifo size */
 		val = sys_read32((mem_addr_t)&base->gdfifocfg);
 		spram_size = usb_dwc2_get_gdfifocfg_gdfifocfg(val);
+		if (spram_size == 0) {
+			/* Fall back to the silicon-fixed total DFIFO depth
+			 * when the ROM/bootloader has not initialised
+			 * GDFIFOCFG.
+			 */
+			spram_size = priv->dfifodepth;
+		}
 		max_rxfifo = ((spram_size * MAX_RXFIFO_GDFIFO_PERCENTAGE) / 100);
 
 		/* TODO: For proper runtime FIFO sizing UDC driver would have to
@@ -1956,7 +1972,14 @@ static int udc_dwc2_init_controller(const struct device *dev)
 		/* Driver does not dynamically resize RxFIFO so there is no need
 		 * to store reset value. Read the reset value and make sure that
 		 * the programmed value is not greater than what driver sets.
+		 *
+		 * If GRXFSIZ reads 0 (POR on some integrations) the MIN
+		 * below would clamp to 0 and the RX FIFO would never see a
+		 * SETUP packet. Fall back to the driver default.
 		 */
+		if (priv->rxfifo_depth == 0) {
+			priv->rxfifo_depth = default_depth;
+		}
 		priv->rxfifo_depth = MIN(MIN(priv->rxfifo_depth, default_depth), max_rxfifo);
 		sys_write32(usb_dwc2_set_grxfsiz(priv->rxfifo_depth), grxfsiz_reg);
 
