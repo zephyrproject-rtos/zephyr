@@ -38,6 +38,11 @@ struct eth_fake_context {
 	struct net_if *iface;
 	struct net_pkt *sent_pkt;
 	uint8_t mac_address[6];
+	int bridge_addif_count;
+	int bridge_delif_count;
+	int bridge_start_count;
+	int bridge_stop_count;
+	bool hw_bridge;
 	bool promisc_mode;
 };
 
@@ -95,7 +100,9 @@ static int eth_fake_send(const struct device *dev,
 static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev,
 						       struct net_if *iface __unused)
 {
-	return ETHERNET_PROMISC_MODE;
+	struct eth_fake_context *ctx = dev->data;
+
+	return ETHERNET_PROMISC_MODE | (ctx->hw_bridge ? ETHERNET_HW_BRIDGE : 0);
 }
 
 static int eth_fake_set_config(const struct device *dev,
@@ -122,10 +129,52 @@ static int eth_fake_set_config(const struct device *dev,
 	return 0;
 }
 
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+static int eth_fake_bridge_setif(const struct device *dev, struct net_if *br __unused,
+				 struct net_if *iface __unused,
+				 enum net_bridge_if_action action)
+{
+	struct eth_fake_context *ctx = dev->data;
+
+	switch (action) {
+	case NET_BRIDGE_IF_ADD:
+		ctx->bridge_addif_count++;
+		return 0;
+	case NET_BRIDGE_IF_DEL:
+		ctx->bridge_delif_count++;
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int eth_fake_bridge_setfwd(const struct device *dev, struct net_if *br __unused,
+				  struct net_if *iface __unused,
+				  enum net_bridge_fwd_action action)
+{
+	struct eth_fake_context *ctx = dev->data;
+
+	switch (action) {
+	case NET_BRIDGE_FWD_START:
+		ctx->bridge_start_count++;
+		return 0;
+	case NET_BRIDGE_FWD_STOP:
+		ctx->bridge_stop_count++;
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
+#endif /* CONFIG_NET_BRIDGE_HW_OFFLOAD */
+
 static const struct ethernet_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
 	.get_capabilities = eth_fake_get_capabilities,
 	.set_config = eth_fake_set_config,
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+	.bridge_setif = eth_fake_bridge_setif,
+	.bridge_setfwd = eth_fake_bridge_setfwd,
+#endif
 	.send = eth_fake_send,
 };
 
@@ -134,6 +183,7 @@ static int eth_fake_init(const struct device *dev)
 	struct eth_fake_context *ctx = dev->data;
 
 	ctx->promisc_mode = false;
+	ctx->hw_bridge = false;
 
 	return 0;
 }
@@ -445,6 +495,67 @@ static void test_recv_after_bridging(void)
 	test_recv_before_bridging();
 }
 
+static void test_recv_with_hw_offload_bridge(void)
+{
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+	int ret;
+
+	for (int i = 0; i < ARRAY_SIZE(eth_fake_data); i++) {
+		eth_fake_data[i].hw_bridge = true;
+		eth_fake_data[i].bridge_addif_count = 0;
+		eth_fake_data[i].bridge_delif_count = 0;
+		eth_fake_data[i].bridge_start_count = 0;
+		eth_fake_data[i].bridge_stop_count = 0;
+	}
+
+	ret = eth_bridge_iface_add(bridge, fake_iface[0]);
+	zassert_equal(ret, 0, "");
+	ret = eth_bridge_iface_add(bridge, fake_iface[1]);
+	zassert_equal(ret, 0, "");
+	ret = eth_bridge_iface_add(bridge, fake_iface[2]);
+	zassert_equal(ret, 0, "");
+
+	for (int i = 0; i < ARRAY_SIZE(eth_fake_data); i++) {
+		zassert_equal(eth_fake_data[i].bridge_addif_count, 1, "");
+	}
+
+	ret = net_if_up(bridge);
+	zassert_equal(ret, 0, "");
+
+	for (int i = 0; i < ARRAY_SIZE(eth_fake_data); i++) {
+		zassert_equal(eth_fake_data[i].bridge_start_count, 1, "");
+	}
+
+	_recv_data(fake_iface[0]);
+	k_sleep(K_MSEC(100));
+
+	zassert_is_null(eth_fake_data[0].sent_pkt, "");
+	zassert_is_null(eth_fake_data[1].sent_pkt, "");
+	zassert_is_null(eth_fake_data[2].sent_pkt, "");
+
+	ret = net_if_down(bridge);
+	zassert_equal(ret, 0, "");
+
+	for (int i = 0; i < ARRAY_SIZE(eth_fake_data); i++) {
+		zassert_equal(eth_fake_data[i].bridge_stop_count, 1, "");
+	}
+
+	ret = eth_bridge_iface_remove(bridge, fake_iface[0]);
+	zassert_equal(ret, 0, "");
+	ret = eth_bridge_iface_remove(bridge, fake_iface[1]);
+	zassert_equal(ret, 0, "");
+	ret = eth_bridge_iface_remove(bridge, fake_iface[2]);
+	zassert_equal(ret, 0, "");
+
+	for (int i = 0; i < ARRAY_SIZE(eth_fake_data); i++) {
+		zassert_equal(eth_fake_data[i].bridge_delif_count, 1, "");
+		eth_fake_data[i].hw_bridge = false;
+	}
+
+	check_free_packet_count();
+#endif /* CONFIG_NET_BRIDGE_HW_OFFLOAD */
+}
+
 /* Make sure bridge interface support promiscuous API */
 ZTEST(net_eth_bridge, test_verify_promisc_mode)
 {
@@ -465,6 +576,8 @@ ZTEST(net_eth_bridge, test_net_eth_bridge)
 	test_recv_with_bridge_fdb();
 	DBG("After bridging\n");
 	test_recv_after_bridging();
+	DBG("With HW offload bridging\n");
+	test_recv_with_hw_offload_bridge();
 }
 
 ZTEST_SUITE(net_eth_bridge, NULL, NULL, NULL, NULL, NULL);
