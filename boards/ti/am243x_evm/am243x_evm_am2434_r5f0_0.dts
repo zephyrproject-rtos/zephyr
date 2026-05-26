@@ -15,7 +15,7 @@
 	compatible = "ti,am243x-evm-r5f-cluster-0-core-0";
 
 	chosen {
-		zephyr,sram = &sram;
+		zephyr,sram = &msram2;
 		zephyr,console = &main_uart0;
 		zephyr,shell-uart = &main_uart0;
 		zephyr,ipc = &ipc0;
