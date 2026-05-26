@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 if ARM_SCMI
@@ -29,6 +29,13 @@ config ARM_SCMI_SMC_TRANSPORT
 	help
 	  Enable support for SCMI transport based on shared memory
 	  and ARM SMC as doorbell.
+
+config ARM_SCMI_PERF
+	bool "SCMI performance domain protocol"
+	default y
+	depends on DT_HAS_ARM_SCMI_PERF_ENABLED
+	help
+	  Enable support for SCMI performance domain protocol function.
 
 config ARM_SCMI_PINCTRL_HELPERS
 	bool "Helper functions for SCMI pinctrl protocol"
@@ -108,6 +115,24 @@ config ARM_SCMI_BASE_HELPERS
 	bool "Helper functions for SCMI base protocol"
 	help
 	  Enable support for SCMI base protocol helper functions.
+
+if ARM_SCMI_PERF
+
+config ARM_SCMI_PERF_OPPS_PER_MSG
+	int "Maximum OPPs per DESCRIBE_LEVELS reply buffer"
+	default 4
+	help
+	  Size of the reply buffer for one PERFORMANCE_DESCRIBE_LEVELS
+	  exchange, expressed as the maximum number of v4 OPP entries
+	  (each 20 bytes) the buffer can hold.
+
+	  The firmware returns as many OPPs as fit in the shmem region:
+	    max_opps = floor((shmem_size - shmem_header - msg_header) / 20)
+	  Common values:
+	    128-byte shmem (i.MX95 default): floor((128 - 28 - 4) / 20) = 4
+	    256-byte shmem:                  floor((256 - 28 - 4) / 20) = 11
+
+endif # ARM_SCMI_PERF
 
 source "drivers/firmware/scmi/nxp/Kconfig"
 source "drivers/firmware/scmi/shell/Kconfig"

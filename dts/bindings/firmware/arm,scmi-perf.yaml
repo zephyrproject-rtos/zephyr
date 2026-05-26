@@ -1,0 +1,13 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: SCMI (System Control and Management Interface) performance domain protocol
+
+compatible: "arm,scmi-perf"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    const: [0x13]
