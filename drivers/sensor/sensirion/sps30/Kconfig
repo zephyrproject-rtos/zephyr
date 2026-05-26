@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Shi Weizhi
+# SPDX-License-Identifier: Apache-2.0
+
+config SPS30
+	bool "SPS30 Particulate Matter Sensor"
+	default y
+	depends on DT_HAS_SENSIRION_SPS30_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable driver for the Sensirion SPS30 particulate matter sensor.
