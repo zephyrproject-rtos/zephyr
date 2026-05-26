@@ -15,4 +15,28 @@ config SENSOR
 
 endif # FUEL_GAUGE
 
+if LVGL
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_24
+endchoice
+
+config LV_Z_COLOR_24_BGR_TO_RGB
+	default n
+
+config LV_Z_FULL_REFRESH
+	default y
+
+config LV_Z_VDB_CUSTOM_SECTION
+	default y
+
+config ESP_SPIRAM
+	default y
+
+endif # LVGL
+
+choice SPIRAM_MODE
+	default SPIRAM_MODE_OCT
+endchoice
+
 endif # BOARD_RETERMINAL_E1002_ESP32S3_PROCPU

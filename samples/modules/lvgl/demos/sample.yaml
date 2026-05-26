@@ -59,6 +59,10 @@ tests:
       - CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE=y
       - CONFIG_LV_Z_LVGL_WORKQUEUE_STACK_SIZE=8192
       - CONFIG_LV_Z_LVGL_WORKQUEUE_PRIORITY=0
+  sample.modules.lvgl.demos.dithering:
+    filter: CONFIG_DISPLAY_COLOR_DITHER_SUPPORTED
+    platform_allow:
+      - reterminal_e1002/esp32s3/procpu
   sample.modules.lvgl.demos.rk043fn66hs_ctg:
     platform_allow: mimxrt1060_evk/mimxrt1062/qspi
     extra_args: SHIELD=rk043fn66hs_ctg
