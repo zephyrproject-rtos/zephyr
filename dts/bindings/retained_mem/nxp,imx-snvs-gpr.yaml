@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+title: |
+  NXP i.MX SNVS Low-Power General Purpose Registers.
+
+description: |
+  The SNVS LPGPR bank retains its contents across resets as long as the SNVS
+  Low-Power domain is powered (typically via VBAT). A security violation
+  detected by the SNVS tamper logic will zeroize this bank.
+
+compatible: "nxp,imx-snvs-gpr"
+
+include: base.yaml
