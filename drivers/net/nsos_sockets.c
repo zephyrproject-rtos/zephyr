@@ -212,13 +212,11 @@ static int nsos_socket_create(int family, int type, int proto)
 		return -1;
 	}
 
-	sock = nsi_host_malloc(sizeof(*sock));
+	sock = nsi_host_calloc(1, sizeof(*sock));
 	if (!sock) {
 		errno = ENOMEM;
 		goto free_fd;
 	}
-
-	memset(sock, 0, sizeof(*sock));
 
 	sock->fd = fd;
 	sock->recv_timeout = K_FOREVER;
