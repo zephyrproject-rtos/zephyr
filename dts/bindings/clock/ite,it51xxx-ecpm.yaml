@@ -19,11 +19,13 @@ properties:
       - 1
       - 2
       - 3
+      - 4
     description: |
       0 = PLL_18400_KHZ,
       1 = PLL_32300_KHZ,
       2 = PLL_64500_KHZ,
       3 = PLL_48000_KHZ,
+      4 = PLL_96000_KHZ,
 
   "#clock-cells":
     const: 2

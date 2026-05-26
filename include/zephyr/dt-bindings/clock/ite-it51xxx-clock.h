@@ -18,4 +18,7 @@
 #define PLL_64500_KHZ 2
 #define PLL_48000_KHZ 3
 
+/** PLL frequency 96 MHz. */
+#define PLL_96000_KHZ 4
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IT51XXX_CLOCK_H_ */
