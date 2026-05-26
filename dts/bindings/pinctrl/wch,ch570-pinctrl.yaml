@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH570/CH572 Alternate Function
+
+compatible: "wch,ch570-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  "#address-cells":
+    required: true
+    const: 1
+  "#size-cells":
+    required: true
+    const: 1
+
+child-binding:
+  description: |
+    Each child node defines the configuration for a particular state.
+  child-binding:
+    description: |
+      The grandchild nodes group pins that share the same pin configuration.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-disable
+          - bias-high-impedance
+          - bias-pull-up
+          - bias-pull-down
+          - drive-push-pull
+          - output-high
+          - output-low
+
+    properties:
+      output-capacity:
+        type: string
+        default: "5mA-level"
+        enum:
+          - "5mA-level"
+          - "20mA-level"
+
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using pre-defined macros.
