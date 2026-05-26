@@ -18,6 +18,10 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
 	};
+
+	aliases {
+		sdhc0 = &sdhost;
+	};
 };
 
 &uart1 {
@@ -25,4 +29,19 @@
 	pinctrl-0 = <&uart1_gpio14>;
 	current-speed = <115200>;
 	status = "okay";
+};
+
+/* Legacy SDHost controller -> external microSD card slot. The slot
+ * is a board-level fact (PCB pad, GPIO 48..53 ALT0 routing is fixed),
+ * so the enablement and sdmmc-disk child live in the board DTS.
+ */
+&sdhost {
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdhost_gpio48>;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+	};
 };
