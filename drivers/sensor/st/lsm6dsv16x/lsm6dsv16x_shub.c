@@ -492,6 +492,18 @@ static struct lsm6dsv16x_shub_slist {
 #endif /* CONFIG_LSM6DSV16X_EXT_LPS22DF */
 };
 
+enum sensor_channel lsm6dsv16x_shub_type(uint8_t k)
+{
+	struct lsm6dsv16x_shub_slist *sp;
+
+	if (k > LSM6DSV16X_SHUB_MAX_NUM_TARGETS) {
+		return SENSOR_CHAN_COMMON_COUNT;
+	}
+
+	sp = &lsm6dsv16x_shub_slist[k];
+	return sp->type;
+}
+
 static int lsm6dsv16x_shub_wait_completed(stmdev_ctx_t *ctx)
 {
 	lsm6dsv16x_status_master_t status;
