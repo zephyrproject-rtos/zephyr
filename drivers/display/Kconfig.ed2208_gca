@@ -7,5 +7,6 @@ config ED2208_GCA
 	depends on DT_HAS_EINK_ED2208_GCA_ENABLED
 	select MIPI_DBI
 	select DISPLAY_COLOR_PALETTE
+	select DISPLAY_COLOR_DITHER_SUPPORTED
 	help
 	  Enable driver for ED2208-GCA (EL073TF1) Spectra 6 e-ink displays.
