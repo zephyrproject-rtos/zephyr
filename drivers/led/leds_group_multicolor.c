@@ -38,7 +38,7 @@ static int leds_group_multicolor_set_color(const struct device *dev, uint32_t le
 	for (uint8_t i = 0; i < num_colors; i++) {
 		int err;
 
-		err = led_set_brightness_dt(&config->led[i], color[i]);
+		err = led_set_brightness_dt(&config->led[i], color[i] * LED_BRIGHTNESS_MAX / 255U);
 		if (err) {
 			return err;
 		}
