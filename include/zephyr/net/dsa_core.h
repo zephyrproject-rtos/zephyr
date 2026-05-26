@@ -136,6 +136,20 @@ struct dsa_api {
 	int (*get_config)(const struct device *dev,
 			  enum ethernet_config_type type,
 			  struct ethernet_config *config);
+
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+	/** Add (@p add true) or remove (@p add false) a DSA user port from a
+	 *  hardware offloaded bridge
+	 */
+	int (*bridge_setif)(const struct device *dev, struct net_if *br, struct net_if *iface,
+			    bool add);
+
+	/** Start (@p start true) or stop (@p start false) forwarding for a
+	 *  hardware offloaded bridge port
+	 */
+	int (*bridge_setfwd)(const struct device *dev, struct net_if *br, struct net_if *iface,
+			     bool start);
+#endif /* CONFIG_NET_BRIDGE_HW_OFFLOAD */
 };
 
 /**

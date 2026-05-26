@@ -152,4 +152,18 @@ config NET_CHECKSUM_OFFLOAD
 	  If supported by the driver checksum checking and calculation
 	  is offloaded.
 
+config NET_BRIDGE_HW_OFFLOAD_SUPPORTED
+	bool
+	help
+	  Has to be selected by a drivers, that support hardware bridge
+	  offloading.
+
+config NET_BRIDGE_HW_OFFLOAD
+	bool "Hardware offloaded bridge support"
+	depends on NET_BRIDGE_HW_OFFLOAD_SUPPORTED
+	default y
+	help
+	  Enable hardware offloaded bridge support, which allows to add interfaces
+	  to a hardware offloaded bridge.
+
 endif # NET_L2_ETHERNET

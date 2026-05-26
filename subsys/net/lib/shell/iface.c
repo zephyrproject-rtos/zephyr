@@ -70,6 +70,7 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_DSA_CONDUIT_PORT,     "DSA conduit port"),
 #endif
 	EC(ETHERNET_TXINJECTION_MODE,     "TX-Injection supported"),
+	EC(ETHERNET_HW_BRIDGE,            "Ethernet bridge offload"),
 };
 
 static void print_supported_ethernet_capabilities(

@@ -204,6 +204,9 @@ enum ethernet_hw_caps {
 
 	/** TX-Injection supported */
 	ETHERNET_TXINJECTION_MODE	= BIT(20),
+
+	/** Ethernet bridge offloading supported */
+	ETHERNET_HW_BRIDGE		= BIT(21),
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -546,6 +549,30 @@ struct ethernet_api {
 
 	/** Return PHY device that is tied to this ethernet device */
 	const struct device *(*get_phy)(const struct device *dev, struct net_if *iface);
+
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
+	/** Add (@p add true) or remove (@p add false) an interface from a
+	 *  hardware offloaded bridge
+	 */
+	int (*bridge_setif)(const struct device *dev, struct net_if *br,
+			    struct net_if *iface, bool add);
+
+	/** Start (@p start true) or stop (@p start false) forwarding for a
+	 *  hardware offloaded bridge interface
+	 */
+	int (*bridge_setfwd)(const struct device *dev, struct net_if *br,
+			     struct net_if *iface, bool start);
+
+	/**
+	 * Dump hardware FDB entries for a bridge member interface.
+	 * The driver calls @p cb once per entry; the HW FDB is per-switch so
+	 * only one member needs to be queried per bridge.
+	 */
+	int (*bridge_fdb_dump)(const struct device *dev, struct net_if *iface,
+			       void (*cb)(const uint8_t *mac, uint32_t port_mask,
+					  bool dynamic, void *user_data),
+			       void *user_data);
+#endif
 
 	/** Send a network packet */
 	int (*send)(const struct device *dev, struct net_pkt *pkt);

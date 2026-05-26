@@ -137,13 +137,14 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	struct net_if *bridge = net_eth_get_bridge(ctx);
+	struct eth_bridge_iface_context *br_ctx = net_if_get_device(bridge)->data;
 	struct net_eth_addr *dst_addr = (struct net_eth_addr *)(net_pkt_lladdr_dst(pkt)->addr);
 	struct net_eth_addr *bridge_addr =
 		(struct net_eth_addr *)(net_if_get_link_addr(bridge)->addr);
 
 	/* Lookup FDB table to forward */
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
-	if (eth_bridge_fdb_forward(bridge, iface, pkt)) {
+	if (!br_ctx->hw_offload && eth_bridge_fdb_forward(bridge, iface, pkt)) {
 		return NET_DROP;
 	}
 #endif
@@ -161,7 +162,7 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 
 	/* Handle broadcast and multicast */
 	if (net_eth_is_addr_broadcast(dst_addr) || net_eth_is_addr_multicast(dst_addr)) {
-		if (eth_bridge_forward(bridge, iface, pkt) != 0) {
+		if (!br_ctx->hw_offload && eth_bridge_forward(bridge, iface, pkt) != 0) {
 			return NET_DROP;
 		}
 
@@ -179,8 +180,10 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 		return NET_OK;
 	}
 
-	/* Forward others */
-	(void)eth_bridge_forward(bridge, iface, pkt);
+	if (!br_ctx->hw_offload) {
+		/* Forward others */
+		(void)eth_bridge_forward(bridge, iface, pkt);
+	}
 
 	/* Drop forwarded pkt for original iface */
 	return NET_DROP;

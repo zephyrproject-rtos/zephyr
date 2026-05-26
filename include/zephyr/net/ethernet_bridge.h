@@ -63,6 +63,9 @@ struct eth_bridge_iface_context {
 
 	/* Is the interface enabled or not */
 	bool status : 1;
+
+	/* Is bridge forwarding offloaded to hardware */
+	bool hw_offload : 1;
 };
 
 /** @endcond */
