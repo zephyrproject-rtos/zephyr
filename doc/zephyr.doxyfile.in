@@ -305,6 +305,7 @@ ALIASES                = "kconfig{1}=\c \1" \
 ALIASES               += "def_driverbackendgroup{2}=\defgroup \2_backend \1 Driver Backend API ^^\
                                                     \brief This group contains the API type definitions, callback signatures, and other helpers required to implement a \1 driver. ^^\
                                                     \ingroup \2"
+ALIASES               += "in_driverbackendgroup{1}=\ingroup \1_backend"
 ALIASES               += "driver_ops{1}=\brief \htmlonly <span class=\"mlabel\">Driver Operations</span> \endhtmlonly \1 driver operations \
                                         \details This is the driver API structure any \1 driver needs to define. \
                                                  It contains function pointers to the operations the driver implements, \
