@@ -28,6 +28,8 @@ config DISPLAY_COLOR_PALETTE_MAX_SIZE
 	help
 	  Maximum size of color palette in display drivers.
 
+source "drivers/display/Kconfig.color_dither"
+
 module = DISPLAY
 module-str = display
 source "subsys/logging/Kconfig.template.log_config"
