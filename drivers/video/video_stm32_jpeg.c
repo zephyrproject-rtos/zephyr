@@ -37,6 +37,7 @@ struct video_m2m_common {
 };
 
 #define YCBCR_420_MCU_BLOCK_SIZE 384 /* 4 8x8 Y, 1 8x8 Cb, 1 8x8 Cr */
+#define GRAYSCALE_MCU_BLOCK_SIZE 64  /* 1 byte per pixel (8x8) */
 
 struct stm32_jpeg_data {
 	const struct device *dev;
@@ -51,7 +52,10 @@ struct stm32_jpeg_data {
 
 	uint32_t current_x_mcu;
 	uint32_t current_y_mcu;
-	uint8_t mcu_ycbcr[YCBCR_420_MCU_BLOCK_SIZE];
+	union {
+		uint8_t mcu_ycbcr[YCBCR_420_MCU_BLOCK_SIZE];
+		uint8_t mcu_y[GRAYSCALE_MCU_BLOCK_SIZE];
+	};
 };
 
 struct stm32_jpeg_config {
@@ -82,13 +86,56 @@ static const struct stm32_jpeg_fmt_conf stm32_jpeg_confs[] = {
 		.hmcu_div = 16,
 		.vmcu_div = 16,
 	},
+	/* Grayscale */
+	{
+		.pixelformat = VIDEO_PIX_FMT_GREY,
+		.subsampling = JPEG_444_SUBSAMPLING,
+		.hmcu_div = 8,
+		.vmcu_div = 8,
+	},
+
 	/* TODO: YCrCb 4:2:2 to be added */
 	/* TODO: YCrCb 4:4:4 to be added */
 };
 
-#define MCU_WIDTH    16
-#define MCU_HEIGHT   16
-#define MCU_BLOCK_SZ 8
+static const struct video_format_cap stm32_jpeg_in_fmts[] = {
+	{
+		.pixelformat = VIDEO_PIX_FMT_NV12,
+		.width_min = 16,
+		.width_max = 65520,
+		.height_min = 16,
+		.height_max = 65520,
+		.width_step = 16,
+		.height_step = 16,
+	},
+	{
+		.pixelformat = VIDEO_PIX_FMT_GREY,
+		.width_min = 16,
+		.width_max = 65520,
+		.height_min = 16,
+		.height_max = 65520,
+		.width_step = 16,
+		.height_step = 16,
+	},
+	{0}};
+
+static const struct video_format_cap stm32_jpeg_out_fmts[] = {
+	{
+		.pixelformat = VIDEO_PIX_FMT_JPEG,
+		.width_min = 16,
+		.width_max = 65520,
+		.height_min = 16,
+		.height_max = 65520,
+		.width_step = 16,
+		.height_step = 16,
+	},
+	{0}};
+
+#define MCU_BLOCK_SZ         8
+#define MCU_WIDTH            16
+#define MCU_HEIGHT           16
+#define MCU_WIDTH_GRAYSCALE  8
+#define MCU_HEIGHT_GRAYSCALE 8
 
 static void stm32_jpeg_nv12_to_ycbcr_mcu(const uint8_t mcu_x, const uint8_t mcu_y,
 					 const uint8_t *in_y, const uint8_t *in_uv, uint8_t *out,
@@ -138,6 +185,17 @@ static void stm32_jpeg_nv12_to_ycbcr_mcu(const uint8_t mcu_x, const uint8_t mcu_
 	}
 }
 
+static void stm32_jpeg_grey_to_y_mcu(const uint8_t mcu_x, const uint8_t mcu_y, const uint8_t *in_y,
+				     const uint8_t *in_uv, uint8_t *out, uint32_t width)
+{
+	for (int y = 0; y < MCU_BLOCK_SZ; ++y) {
+		int src_y = mcu_y * MCU_BLOCK_SZ + y;
+		int src_x = mcu_x * MCU_BLOCK_SZ;
+
+		memcpy(out + y * MCU_BLOCK_SZ, in_y + (src_y * width) + src_x, MCU_BLOCK_SZ);
+	}
+}
+
 static const struct stm32_jpeg_fmt_conf *stm32_jpeg_get_conf(uint32_t pixelformat)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(stm32_jpeg_confs); i++) {
@@ -151,13 +209,24 @@ static const struct stm32_jpeg_fmt_conf *stm32_jpeg_get_conf(uint32_t pixelforma
 
 static void stm32_jpeg_convert_next_mcu(struct stm32_jpeg_data *data)
 {
-	stm32_jpeg_nv12_to_ycbcr_mcu(
-		data->current_x_mcu++, data->current_y_mcu, data->current_in->buffer,
-		data->current_in->buffer + data->m2m.in.fmt.width * data->m2m.in.fmt.height,
-		data->mcu_ycbcr, data->m2m.in.fmt.width);
-	if (data->current_x_mcu >= data->m2m.in.fmt.width / MCU_WIDTH) {
-		data->current_x_mcu = 0;
-		data->current_y_mcu++;
+	if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_NV12) {
+		stm32_jpeg_nv12_to_ycbcr_mcu(
+			data->current_x_mcu++, data->current_y_mcu, data->current_in->buffer,
+			data->current_in->buffer + data->m2m.in.fmt.width * data->m2m.in.fmt.height,
+			data->mcu_ycbcr, data->m2m.in.fmt.width);
+		if (data->current_x_mcu >= data->m2m.in.fmt.width / MCU_WIDTH) {
+			data->current_x_mcu = 0;
+			data->current_y_mcu++;
+		}
+	} else if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
+		stm32_jpeg_grey_to_y_mcu(
+			data->current_x_mcu++, data->current_y_mcu, data->current_in->buffer,
+			data->current_in->buffer + data->m2m.in.fmt.width * data->m2m.in.fmt.height,
+			data->mcu_ycbcr, data->m2m.in.fmt.width);
+		if (data->current_x_mcu >= data->m2m.in.fmt.width / MCU_WIDTH_GRAYSCALE) {
+			data->current_x_mcu = 0;
+			data->current_y_mcu++;
+		}
 	}
 }
 
@@ -190,7 +259,11 @@ static int stm32_jpeg_start_codec(const struct device *dev)
 		data->current_y_mcu = 0;
 
 		/* JPEG Encoding */
-		jpeg_conf.ColorSpace = JPEG_YCBCR_COLORSPACE;
+		if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
+			jpeg_conf.ColorSpace = JPEG_GRAYSCALE_COLORSPACE;
+		} else {
+			jpeg_conf.ColorSpace = JPEG_YCBCR_COLORSPACE;
+		}
 		jpeg_conf.ChromaSubsampling = conf->subsampling;
 		jpeg_conf.ImageWidth = data->m2m.in.fmt.width;
 		jpeg_conf.ImageHeight = data->m2m.in.fmt.height;
@@ -207,9 +280,15 @@ static int stm32_jpeg_start_codec(const struct device *dev)
 
 		/* Convert the first MCU (and store it into mcu_ycbcr) */
 		stm32_jpeg_convert_next_mcu(data);
-
-		hret = HAL_JPEG_Encode_IT(&data->hjpeg, data->mcu_ycbcr, YCBCR_420_MCU_BLOCK_SIZE,
-					  data->current_out->buffer, data->current_out->size);
+		if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
+			hret = HAL_JPEG_Encode_IT(
+				&data->hjpeg, data->mcu_ycbcr, GRAYSCALE_MCU_BLOCK_SIZE,
+				data->current_out->buffer, data->current_out->size);
+		} else {
+			hret = HAL_JPEG_Encode_IT(
+				&data->hjpeg, data->mcu_ycbcr, YCBCR_420_MCU_BLOCK_SIZE,
+				data->current_out->buffer, data->current_out->size);
+		}
 		if (hret != HAL_OK) {
 			LOG_ERR("Failed to request encoding");
 			ret = -EIO;
@@ -290,7 +369,11 @@ void HAL_JPEG_GetDataCallback(JPEG_HandleTypeDef *hjpeg, uint32_t nb_encoded_dat
 	/* Convert the next MCU */
 	stm32_jpeg_convert_next_mcu(data);
 
-	HAL_JPEG_ConfigInputBuffer(hjpeg, data->mcu_ycbcr, YCBCR_420_MCU_BLOCK_SIZE);
+	if (data->m2m.in.fmt.pixelformat == VIDEO_PIX_FMT_GREY) {
+		HAL_JPEG_ConfigInputBuffer(hjpeg, data->mcu_ycbcr, GRAYSCALE_MCU_BLOCK_SIZE);
+	} else {
+		HAL_JPEG_ConfigInputBuffer(hjpeg, data->mcu_ycbcr, YCBCR_420_MCU_BLOCK_SIZE);
+	}
 }
 
 static int stm32_jpeg_get_fmt(const struct device *dev, struct video_format *fmt)
@@ -307,27 +390,25 @@ static int stm32_jpeg_set_fmt(const struct device *dev, struct video_format *fmt
 	struct stm32_jpeg_data *data = dev->data;
 	struct video_common_header *common =
 		fmt->type == VIDEO_BUF_TYPE_INPUT ? &data->m2m.in : &data->m2m.out;
-	const struct stm32_jpeg_fmt_conf *conf;
 	int ret = 0;
-
-	/* Validate the settings */
-	conf = stm32_jpeg_get_conf(fmt->pixelformat);
-	if (conf == NULL) {
-		return -EINVAL;
-	}
-	if (fmt->width % conf->hmcu_div || fmt->height % conf->vmcu_div) {
-		LOG_ERR("Format %s: %d pixels width / %d pixels height multiple required",
-			VIDEO_FOURCC_TO_STR(fmt->pixelformat), conf->hmcu_div, conf->vmcu_div);
-		return -EINVAL;
-	}
+	size_t fmt_idx;
 
 	/*
-	 * For the time being only encode is supported, aka NV12 as input and JPEG as output.
+	 * For the time being only encode is supported, aka NV12/GREY as input and JPEG as output.
 	 * Once decode will also be supported this test can be removed.
 	 */
-	if ((fmt->type == VIDEO_BUF_TYPE_INPUT && fmt->pixelformat != VIDEO_PIX_FMT_NV12) ||
-	    (fmt->type == VIDEO_BUF_TYPE_OUTPUT && fmt->pixelformat != VIDEO_PIX_FMT_JPEG)) {
-		return -ENOTSUP;
+	if (fmt->type == VIDEO_BUF_TYPE_INPUT) {
+		ret = video_format_caps_index(stm32_jpeg_in_fmts, fmt, &fmt_idx);
+		if (ret < 0) {
+			LOG_ERR("Unsupported pixel format or resolution");
+			return ret;
+		}
+	} else if (fmt->type == VIDEO_BUF_TYPE_OUTPUT) {
+		ret = video_format_caps_index(stm32_jpeg_out_fmts, fmt, &fmt_idx);
+		if (ret < 0) {
+			LOG_ERR("Unsupported pixel format or resolution");
+			return ret;
+		}
 	}
 
 	k_mutex_lock(&data->lock, K_FOREVER);
@@ -427,30 +508,6 @@ static int stm32_jpeg_dequeue(const struct device *dev, struct video_buffer **vb
 
 	return 0;
 }
-
-static const struct video_format_cap stm32_jpeg_in_fmts[] = {
-	{
-		.pixelformat = VIDEO_PIX_FMT_NV12,
-		.width_min = 16,
-		.width_max = 65520,
-		.height_min = 16,
-		.height_max = 65520,
-		.width_step = 16,
-		.height_step = 16,
-	},
-	{0}};
-
-static const struct video_format_cap stm32_jpeg_out_fmts[] = {
-	{
-		.pixelformat = VIDEO_PIX_FMT_JPEG,
-		.width_min = 16,
-		.width_max = 65520,
-		.height_min = 16,
-		.height_max = 65520,
-		.width_step = 16,
-		.height_step = 16,
-	},
-	{0}};
 
 static int stm32_jpeg_get_caps(const struct device *dev, struct video_caps *caps)
 {
