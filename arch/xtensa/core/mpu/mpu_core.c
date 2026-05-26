@@ -240,17 +240,18 @@ static void sort_entries(struct xtensa_mpu_entry *entries, uint8_t first_enabled
  *
  * This removes consecutive entries where the attributes are the same.
  *
- * @param entries Array of MPU entries with XTENSA_MPU_NUM_ENTRIES elements.
- * @param first_enabled_idx Index of first enabled entry.
+ * @param[in] entries Array of MPU entries with XTENSA_MPU_NUM_ENTRIES elements.
+ * @param[in,out] first_enabled_idx Index of first enabled entry. The new index
+ *                                  is written into this.
  *
- * @return Index of the first enabled entry after consolidation.
+ * @retval true If any consolidation was done.
+ * @retval false If no consolidation was done.
  */
-static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
-				   uint8_t first_enabled_idx)
+static bool consolidate_entries(struct xtensa_mpu_entry *entries, uint8_t *first_enabled_idx)
 {
-	uint8_t new_first;
-	uint8_t idx_0 = first_enabled_idx;
-	uint8_t idx_1 = first_enabled_idx + 1;
+	uint8_t new_first = *first_enabled_idx;
+	uint8_t idx_0 = new_first;
+	uint8_t idx_1 = new_first + 1;
 	bool to_consolidate = false;
 
 	/* For each a pair of entries... */
@@ -307,7 +308,7 @@ static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
 		uint8_t write_idx = XTENSA_MPU_NUM_ENTRIES;
 
 		/* Go through the map from the end and copy enabled entries in place. */
-		while (read_idx >= first_enabled_idx) {
+		while (read_idx >= new_first) {
 			struct xtensa_mpu_entry *entry_rd = &entries[read_idx];
 
 			if (entry_rd->as.p.mbz != 1U) {
@@ -341,12 +342,11 @@ static uint8_t consolidate_entries(struct xtensa_mpu_entry *entries,
 			/* Use default memory type for disabled entries. */
 			e->at.p.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
 		}
-	} else {
-		/* No need to conlidate entries. Map is same as before. */
-		new_first = first_enabled_idx;
+
+		*first_enabled_idx = new_first;
 	}
 
-	return new_first;
+	return to_consolidate;
 }
 
 /**
@@ -655,7 +655,7 @@ void xtensa_mpu_init(void)
 	}
 
 	/* Consolidate entries so we have a compact map at boot. */
-	consolidate_entries(xtensa_mpu_map_fg_kernel.entries, first_enabled_idx);
+	(void)consolidate_entries(xtensa_mpu_map_fg_kernel.entries, &first_enabled_idx);
 
 	/* Write the map into hardware. There is no turning back now. */
 #ifdef CONFIG_USERSPACE
