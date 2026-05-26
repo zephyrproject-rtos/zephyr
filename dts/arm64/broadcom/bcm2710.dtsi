@@ -156,6 +156,17 @@
 			status = "disabled";
 		};
 
+		i2s: i2s@3f203000 {
+			compatible = "brcm,bcm2835-i2s";
+			reg = <0x3f203000 0x24>;
+			interrupts = <BCM2835_IRQ_PCM IRQ_TYPE_LEVEL 0>;
+			dmas = <&dma 2>, <&dma 3>;
+			dma-names = "tx", "rx";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
 		uart1: uart@3f215040 {
 			compatible = "brcm,bcm2711-aux-uart";
 			reg = <0x3f215040 0x40>;

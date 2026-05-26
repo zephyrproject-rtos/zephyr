@@ -1,0 +1,51 @@
+# Broadcom BCM2835 I2S / PCM controller
+#
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_BCM2835
+	bool "Broadcom BCM2835 I2S / PCM controller driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_I2S_ENABLED
+	select DMA
+	select CACHE_MANAGEMENT
+	help
+	  Enable the driver for the BCM2835 / BCM2710 / BCM2837 PCM / I2S
+	  controller -- the audio interface on the Raspberry Pi 40-pin
+	  header. Master mode, I2S (Philips) format, 16-bit stereo;
+	  sample buffers are streamed through the BCM2835 DMA controller's
+	  cyclic-chain mode, paced by the PCM TX/RX DREQ lines.
+
+if I2S_BCM2835
+
+config I2S_BCM2835_TX_BLOCK_COUNT
+	int "TX ring depth"
+	default 4
+	range 2 32
+	help
+	  Number of internal TX buffers the driver cycles through. Deeper
+	  rings absorb more application-side jitter before an underrun.
+	  Capped by DMA_BCM2835_MAX_CBS_PER_CHANNEL; bump that knob in
+	  step if you raise this past its default.
+
+config I2S_BCM2835_RX_BLOCK_COUNT
+	int "RX ring depth"
+	default 4
+	range 2 32
+	help
+	  Number of internal RX buffers the driver cycles through. Deeper
+	  rings tolerate more application-side latency before an overrun.
+	  Capped by DMA_BCM2835_MAX_CBS_PER_CHANNEL; bump that knob in
+	  step if you raise this past its default.
+
+config I2S_BCM2835_MAX_BLOCK_SIZE
+	int "Maximum I2S block size in bytes"
+	default 4096
+	range 64 65536
+	help
+	  Upper bound on i2s_config.block_size for this driver. Sized for
+	  the worst-case ring buffer the driver statically reserves per
+	  direction (ring depth * this value, cache-line aligned). The
+	  default covers up to ~23 ms of stereo 16-bit at 44.1 kHz.
+
+endif # I2S_BCM2835
