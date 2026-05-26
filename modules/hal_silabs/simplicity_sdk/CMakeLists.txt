@@ -341,7 +341,12 @@ if(CONFIG_SILABS_SISDK_CORE)
     SL_CODE_COMPONENT_CORE=core
   )
 endif()
-zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_ACMP      ${EMLIB_DIR}/src/em_acmp.c)
+
+if(CONFIG_SILABS_SISDK_ACMP)
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_acmp.c)
+  zephyr_library_sources(${PERIPHERAL_DIR}/src/sl_hal_acmp.c)
+endif()
+
 zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_EMU       ${EMLIB_DIR}/src/em_emu.c)
 if(CONFIG_SILABS_SISDK_GPIO)
   zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2  ${EMLIB_DIR}/src/em_gpio.c)
