@@ -66,12 +66,14 @@ config ENTROPY_STM32_CLK_CHECK
 
 config ENTROPY_STM32_RNG_CLOCKON_API_REQUIRED
 	bool
+	depends on !SOC_SERIES_STM32WB0X # PKA not requiring RNG clocked
 	depends on SOC_SERIES_STM32U5X
 	default y if DT_HAS_ST_STM32_SAES_ENABLED
 	select ENTROPY_STM32_RNG_CLOCKON_API
 
 config ENTROPY_STM32_RNG_CLOCKON_API
 	bool "Clock-on API for other drivers"
+	depends on !SOC_SERIES_STM32WB0X # PKA not requiring RNG clocked
 	help
 	  Enable the STM32 RNG clock-on API.
 	  This clock-on API provides a way for other drivers to request the
@@ -86,5 +88,10 @@ config ENTROPY_STM32_RNG_CLOCKON_API
 	  This allows for efficient power management, as the RNG peripheral
 	  can be powered down when not in use and only activated when required
 	  for itself or by other drivers.
+
+	  A notable exception is the STM32WB0 series where PKA can operate
+	  autonomously and, on certain SoCs, lacks PKA_CR.EN and corresponding
+	  LL_PKA_IsEnabled(). Since RNG clock is not required by PKA, we can
+	  ignore the check on this series.
 
 endif # ENTROPY_STM32_RNG

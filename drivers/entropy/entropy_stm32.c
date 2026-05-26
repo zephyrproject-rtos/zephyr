@@ -258,7 +258,7 @@ static int entropy_stm32_suspend(void)
 	LL_RNG_SetAesReset(rng, 1);
 #endif /* CONFIG_SOC_STM32WB09XX */
 
-#if defined(CONFIG_ENTROPY_STM32_RNG_CLOCKON_API) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+#if defined(CONFIG_ENTROPY_STM32_RNG_CLOCKON_API)
 	/* While the entropy driver is the primary user of the RNG peripheral,
 	 * it is possible that other drivers may also use it as a pre-requisite
 	 * for their own operations, such as the PKA or SAES on some STM32 series.
@@ -270,11 +270,6 @@ static int entropy_stm32_suspend(void)
 	 * ensuring that the RNG peripheral remains active as long as at least one
 	 * client requires it, and is properly suspended when no client is using
 	 * it anymore.
-	 *
-	 * A notable exception is the STM32WB0 series where PKA can operate
-	 * autonomously and, on certain SoCs, lacks PKA_CR.EN and corresponding
-	 * LL_PKA_IsEnabled(). Since RNG clock is not required by PKA, we can
-	 * ignore the check on this series.
 	 */
 
 	/* Decrement the clock-on client counter here in entropy_stm32_suspend,
@@ -294,7 +289,7 @@ static int entropy_stm32_suspend(void)
 		/* Some other HW IPs need RNG to be clocked, so exit here if in use */
 		return 0;
 	}
-#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API && !CONFIG_SOC_SERIES_STM32WB0X */
+#endif /* CONFIG_ENTROPY_STM32_RNG_CLOCKON_API */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
