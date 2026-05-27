@@ -1242,7 +1242,7 @@ static int arducam_mega_init_controls(const struct device *dev)
 	if (drv_data->features & MEGA_HAS_FOCUS) {
 		ret = video_init_ctrl(
 			&ctrls->focus_auto, dev, VIDEO_CID_FOCUS_AUTO,
-			(struct video_ctrl_range){.min = 0, .max = 65535, .step = 1, .def = 0});
+			(struct video_ctrl_range){.min = 0, .max = 1, .step = 1, .def = 0});
 		if (ret < 0) {
 			return ret;
 		}
