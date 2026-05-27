@@ -24,16 +24,11 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(pinmux), 0),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE),
 
-	MMU_REGION_FLAT_ENTRY("GIC_0",
-			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 0),
-			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 0),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
-
-	MMU_REGION_FLAT_ENTRY("GIC_1",
-			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 1),
-			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 1),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_RW | MT_DEFAULT_SECURE_STATE),
-
+	/*
+	 * The GIC distributor/redistributor banks are mapped by the arch core
+	 * (arch/arm64/core/mmu.c), which dropped the previous EL0 access. The
+	 * ITS is a separate node, so it still needs an explicit entry here.
+	 */
 	MMU_REGION_FLAT_ENTRY("GIC_ITS",
 			      DT_REG_ADDR(DT_NODELABEL(its)),
 			      DT_REG_SIZE(DT_NODELABEL(its)),
