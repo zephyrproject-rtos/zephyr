@@ -87,6 +87,13 @@ void soc_early_init_hook(void)
 	systeminit_enable_clocks();
 	systeminit_enable_peri();
 
+#ifdef CONFIG_FLASH_INFINEON_SMIF_HW_INIT
+	/* Initialize power domain and peripheral group slave for SMIF init */
+	Cy_System_EnablePD1();
+	Cy_SysClk_PeriGroupSlaveInit(CY_MMIO_SMIF0_PERI_NR, CY_MMIO_SMIF0_GROUP_NR,
+				     CY_MMIO_SMIF0_SLAVE_NR, CY_MMIO_SMIF0_CLK_HF_NR);
+#endif
+
 	/* Initializes the system */
 	SystemInit();
 }
