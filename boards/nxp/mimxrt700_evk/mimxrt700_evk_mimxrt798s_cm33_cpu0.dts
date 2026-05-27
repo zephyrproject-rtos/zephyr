@@ -611,3 +611,7 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 dvp_20pin_i2c: &flexcomm8_lpi2c8 {};
 
 dvp_20pin_interface: &flexio_camera {};
+
+&jpegdec {
+	status = "okay";
+};
