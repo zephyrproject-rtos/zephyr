@@ -212,6 +212,16 @@ config QUIC_SERVER_RETRY
 	  Initial packets. Disable this only when interoperability testing
 	  explicitly requires accepting tokenless Initial packets directly.
 
+config QUIC_0RTT
+	bool "QUIC 0-RTT support"
+	help
+	  Enable ticket-based QUIC 0-RTT support, including early-data offer,
+	  acceptance, replay handling, and remembered early-data policy.
+
+	  0-RTT early data is replayable by a network attacker (RFC 9001 section 9.2),
+	  so it is disabled by default and should only be enabled by applications
+	  that restrict early data to idempotent operations.
+
 config QUIC_TOKEN_MAX_LEN
 	int "Maximum QUIC address-validation token length"
 	default 256

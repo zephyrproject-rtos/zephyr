@@ -418,6 +418,12 @@ static int quic_setsockopt_ctx(void *obj, int level, int optname,
 				break;
 			}
 
+			if (!IS_ENABLED(CONFIG_QUIC_0RTT) &&
+			    *(const uint32_t *)optval > 0U) {
+				err = -ENOTSUP;
+				break;
+			}
+
 			ep->crypto.tls.max_early_data_size = *(const uint32_t *)optval;
 			err = 0;
 			break;
@@ -1080,6 +1086,10 @@ int quic_prepare_rejected_early_data_replay(struct quic_endpoint *ep)
 	struct quic_context *ctx = quic_find_context(ep);
 	struct quic_stream *stream, *tmp;
 
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		return 0;
+	}
+
 	if (ctx == NULL) {
 		return -ENOENT;
 	}
@@ -1114,6 +1124,10 @@ int quic_replay_rejected_early_data(struct quic_endpoint *ep)
 	struct quic_context *ctx = quic_find_context(ep);
 	struct quic_stream *stream, *tmp;
 	int ret;
+
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		return 0;
+	}
 
 	if (ctx == NULL) {
 		return -ENOENT;

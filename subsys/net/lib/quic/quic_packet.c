@@ -14,6 +14,12 @@ static int quic_track_early_data_bytes(struct quic_endpoint *ep, uint8_t frame_t
 {
 	struct quic_tls_context *tls = &ep->crypto.tls;
 
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		return quic_send_frame_close(ep, frame_type,
+					     QUIC_ERROR_PROTOCOL_VIOLATION,
+					     "0-RTT disabled");
+	}
+
 	if (!ep->is_server || data_len == 0U) {
 		return 0;
 	}
@@ -584,7 +590,8 @@ static int handle_max_data_frame(struct quic_endpoint *ep,
 			}
 		}
 
-		if (ep->crypto.tls.early_data_rejected) {
+		if (IS_ENABLED(CONFIG_QUIC_0RTT) &&
+		    ep->crypto.tls.early_data_rejected) {
 			(void)quic_replay_rejected_early_data(ep);
 		}
 	} else {
@@ -629,7 +636,8 @@ static int handle_max_stream_data_frame(struct quic_endpoint *ep,
 			/* Signal that stream may now be writable */
 			k_poll_signal_raise(&stream->send.signal, 0);
 
-			if (ep->crypto.tls.early_data_rejected) {
+			if (IS_ENABLED(CONFIG_QUIC_0RTT) &&
+			    ep->crypto.tls.early_data_rejected) {
 				(void)quic_replay_rejected_early_data(ep);
 			}
 		}

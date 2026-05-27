@@ -14,3 +14,9 @@ tests:
     platform_allow:
       - native_sim
       - qemu_x86
+  net.quic.0rtt:
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    extra_configs:
+      - CONFIG_QUIC_0RTT=y
