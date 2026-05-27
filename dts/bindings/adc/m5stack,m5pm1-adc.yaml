@@ -1,0 +1,27 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  M5Stack M5PM1 ADC.
+
+  The exposed input channels are:
+    0: VREF   - internal reference voltage (mV)
+    1: VBAT   - battery voltage (mV)
+    2: VIN    - VIN / USB input voltage (mV)
+    3: 5VOUT  - 5 V boost output voltage (mV)
+    4: GPIO1  - external analog input on pin IO1 (mV)
+    5: GPIO2  - external analog input on pin IO2 (mV)
+    6: TEMP   - on-chip temperature (degrees Celsius, not mV)
+
+compatible: "m5stack,m5pm1-adc"
+
+include: adc-controller.yaml
+
+on-bus: m5pm1
+
+properties:
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input
