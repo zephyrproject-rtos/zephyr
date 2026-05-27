@@ -18,6 +18,7 @@
 
 	chosen {
 		zephyr,sram = &ddr1;
+		zephyr,romstart = &atcm;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,ipc = &ipc0;

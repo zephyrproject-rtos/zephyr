@@ -22,7 +22,12 @@ elseif(CONFIG_SOC_SERIES_AM62X_M4 OR CONFIG_SOC_SERIES_AM64X_M4)
 elseif(CONFIG_SOC_SERIES_AM62AX_R5 OR CONFIG_SOC_SERIES_AM64X_R5 OR CONFIG_SOC_SERIES_J721E_R5 OR CONFIG_SOC_SERIES_J722S_R5)
   zephyr_sources(cortex_r/soc.c)
   zephyr_sources_ifdef(CONFIG_ARM_MPU cortex_r/arm_mpu_regions.c)
-  zephyr_sources_ifdef(CONFIG_SOC_FAMILY_TI_K3_BOOT_SPRINGBOARD cortex_r/boot.S)
+
+  if(CONFIG_SOC_FAMILY_TI_K3_BOOT_SPRINGBOARD)
+    zephyr_sources(cortex_r/boot.S)
+    zephyr_code_relocate(FILES ${ZEPHYR_BASE}/soc/ti/k3/common/cortex_r/boot.S LOCATION ATCM NOKEEP)
+    zephyr_code_relocate(LIBRARY arch__arm__core__cortex_a_r LOCATION ATCM NOKEEP NOCOPY)
+  endif()
 
   zephyr_include_directories(cortex_r)
 
