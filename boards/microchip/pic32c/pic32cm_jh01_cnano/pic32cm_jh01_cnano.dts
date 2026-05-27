@@ -16,6 +16,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,console = &sercom1;
+		zephyr,shell-uart = &sercom1;
 	};
 
 	aliases {
@@ -131,4 +133,17 @@
 			gclkperiph-en = <1>;
 		};
 	};
+};
+
+&sercom1 {
+	compatible = "microchip,sercom-g1-uart";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom1_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
