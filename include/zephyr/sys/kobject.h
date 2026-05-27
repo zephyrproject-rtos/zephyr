@@ -25,10 +25,11 @@ struct z_futex_data;
  *
  * This enumeration needs to be kept in sync with the lists of kernel objects
  * and subsystems in scripts/build/gen_kobject_list.py, as well as the otype_to_str()
- * function in kernel/userspace.c
+ * function in kernel/userspace/userspace.c
  */
 enum k_objects {
-	K_OBJ_ANY,
+	K_OBJ_ANY,         /**< Used for matching any object type */
+	K_OBJ_DRIVER_ANY,  /**< Used for matching any driver object type */
 
 	/** @cond
 	 *  Doxygen should ignore this build-time generated include file
