@@ -679,6 +679,33 @@ static size_t append_cid_transport_param(uint8_t *buf, size_t buf_len,
 	return pos;
 }
 
+static size_t append_varint_transport_param(uint8_t *buf, size_t buf_len,
+					    uint64_t param_id, uint64_t value)
+{
+	uint8_t value_buf[8];
+	size_t pos = 0;
+	int ret;
+	int value_len;
+
+	ret = quic_put_varint(&buf[pos], buf_len - pos, param_id);
+	zassert_true(ret > 0, "Failed to encode transport param id %" PRIu64, param_id);
+	pos += ret;
+
+	value_len = quic_put_varint(value_buf, sizeof(value_buf), value);
+	zassert_true(value_len > 0, "Failed to encode transport param value %" PRIu64, value);
+
+	ret = quic_put_varint(&buf[pos], buf_len - pos, value_len);
+	zassert_true(ret > 0, "Failed to encode transport param value len %d", value_len);
+	pos += ret;
+
+	zassert_true(pos + value_len <= buf_len,
+		     "Transport param buffer too small (%zu > %zu)", pos + value_len, buf_len);
+	memcpy(&buf[pos], value_buf, value_len);
+	pos += value_len;
+
+	return pos;
+}
+
 static void build_test_retry_info(struct quic_long_header_info *info,
 				  uint8_t *packet,
 				  const uint8_t *src_conn_id,
@@ -4505,6 +4532,26 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 		      "Unexpected session state version %u", session_state.version);
 	zassert_true(session_state.ticket_len > 0U, "Expected a non-empty session ticket");
 	zassert_true(session_state.psk_len > 0U, "Expected a non-empty resumption PSK");
+	zassert_true(session_state.transport_params.valid,
+		     "Expected remembered transport parameters in session state");
+	zassert_equal(session_state.transport_params.initial_max_data,
+		      CONFIG_QUIC_INITIAL_MAX_DATA,
+		      "Unexpected remembered initial_max_data");
+	zassert_equal(session_state.transport_params.initial_max_stream_data_bidi_local,
+		      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL,
+		      "Unexpected remembered bidi_local stream data limit");
+	zassert_equal(session_state.transport_params.initial_max_stream_data_bidi_remote,
+		      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE,
+		      "Unexpected remembered bidi_remote stream data limit");
+	zassert_equal(session_state.transport_params.initial_max_stream_data_uni,
+		      CONFIG_QUIC_INITIAL_MAX_STREAM_DATA_UNI,
+		      "Unexpected remembered uni stream data limit");
+	zassert_equal(session_state.transport_params.initial_max_streams_bidi,
+		      CONFIG_QUIC_INITIAL_MAX_STREAMS_BIDI,
+		      "Unexpected remembered bidi stream count limit");
+	zassert_equal(session_state.transport_params.initial_max_streams_uni,
+		      CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI,
+		      "Unexpected remembered uni stream count limit");
 
 	server_ticket_data.test_done = true;
 
@@ -4715,6 +4762,131 @@ ZTEST(net_socket_quic, test_466_session_ticket_resumption_can_exchange_data)
 
 	quic_server_and_client_with_session_resumption(LOCAL_ADDR_IPV4_STR3,
 							 REMOTE_ADDR_IPV4_STR3);
+}
+
+ZTEST(net_socket_quic, test_467_resumed_transport_params_reject_lower_early_data_limits)
+{
+	static const uint8_t original_dcid[] = {
+		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	};
+	static const uint8_t initial_scid[] = {
+		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+	};
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	size_t pos = 0;
+	int ret;
+
+	ep->is_server = false;
+	ep->crypto.tls.is_initialized = true;
+	ep->crypto.tls.session_state_valid = true;
+	ep->crypto.tls.early_data_accepted = true;
+	ep->crypto.tls.session_state.transport_params.valid = true;
+	ep->crypto.tls.session_state.transport_params.initial_max_data = 4096U;
+	ep->crypto.tls.session_state.transport_params.initial_max_stream_data_bidi_local = 2048U;
+	ep->crypto.tls.session_state.transport_params.initial_max_stream_data_bidi_remote = 2048U;
+	ep->crypto.tls.session_state.transport_params.initial_max_stream_data_uni = 1024U;
+	ep->crypto.tls.session_state.transport_params.initial_max_streams_bidi = 4U;
+	ep->crypto.tls.session_state.transport_params.initial_max_streams_uni = 4U;
+	ep->token.client_initial_dcid_len = sizeof(original_dcid);
+	memcpy(ep->token.client_initial_dcid, original_dcid, sizeof(original_dcid));
+	ep->peer_cid_len = sizeof(initial_scid);
+	memcpy(ep->peer_cid, initial_scid, sizeof(initial_scid));
+
+	pos += append_cid_transport_param(&ep->crypto.tls.peer_tp[pos],
+					  sizeof(ep->crypto.tls.peer_tp) - pos,
+					  QUIC_ORIGINAL_DESTINATION_CONNECTION_ID,
+					  original_dcid, sizeof(original_dcid));
+	pos += append_cid_transport_param(&ep->crypto.tls.peer_tp[pos],
+					  sizeof(ep->crypto.tls.peer_tp) - pos,
+					  QUIC_INITIAL_SOURCE_CONNECTION_ID,
+					  initial_scid, sizeof(initial_scid));
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_DATA, 2048U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, 2048U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, 2048U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAM_DATA_UNI, 1024U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAMS_BIDI, 4U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAMS_UNI, 4U);
+	ep->crypto.tls.peer_tp_len = pos;
+
+	ret = parse_peer_transport_params(ep);
+	zassert_equal(ret, -EPROTO,
+		      "Lower resumed early-data transport params must fail (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_468_resumed_transport_params_accept_equal_or_larger_limits)
+{
+	static const uint8_t original_dcid[] = {
+		0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+	};
+	static const uint8_t initial_scid[] = {
+		0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+	};
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	size_t pos = 0;
+	int ret;
+
+	ep->is_server = false;
+	ep->crypto.tls.is_initialized = true;
+	ep->crypto.tls.session_state_valid = true;
+	ep->crypto.tls.early_data_accepted = true;
+	ep->crypto.tls.session_state.transport_params.valid = true;
+	ep->crypto.tls.session_state.transport_params.initial_max_data = 2048U;
+	ep->crypto.tls.session_state.transport_params.initial_max_stream_data_bidi_local = 1024U;
+	ep->crypto.tls.session_state.transport_params.initial_max_stream_data_bidi_remote = 1024U;
+	ep->crypto.tls.session_state.transport_params.initial_max_stream_data_uni = 512U;
+	ep->crypto.tls.session_state.transport_params.initial_max_streams_bidi = 2U;
+	ep->crypto.tls.session_state.transport_params.initial_max_streams_uni = 2U;
+	ep->token.client_initial_dcid_len = sizeof(original_dcid);
+	memcpy(ep->token.client_initial_dcid, original_dcid, sizeof(original_dcid));
+	ep->peer_cid_len = sizeof(initial_scid);
+	memcpy(ep->peer_cid, initial_scid, sizeof(initial_scid));
+
+	pos += append_cid_transport_param(&ep->crypto.tls.peer_tp[pos],
+					  sizeof(ep->crypto.tls.peer_tp) - pos,
+					  QUIC_ORIGINAL_DESTINATION_CONNECTION_ID,
+					  original_dcid, sizeof(original_dcid));
+	pos += append_cid_transport_param(&ep->crypto.tls.peer_tp[pos],
+					  sizeof(ep->crypto.tls.peer_tp) - pos,
+					  QUIC_INITIAL_SOURCE_CONNECTION_ID,
+					  initial_scid, sizeof(initial_scid));
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_DATA, 4096U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL, 1024U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE, 2048U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAM_DATA_UNI, 1024U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAMS_BIDI, 3U);
+	pos += append_varint_transport_param(&ep->crypto.tls.peer_tp[pos],
+					     sizeof(ep->crypto.tls.peer_tp) - pos,
+					     QUIC_INITIAL_MAX_STREAMS_UNI, 4U);
+	ep->crypto.tls.peer_tp_len = pos;
+
+	ret = parse_peer_transport_params(ep);
+	zassert_ok(ret, "Equal or larger resumed early-data transport params must pass (%d)",
+		   ret);
+	zassert_true(ep->peer_params.parsed, "Peer transport params should be marked parsed");
+	zassert_equal(ep->tx_fc.max_data, 4096U,
+		      "Expected parsed initial_max_data to update connection flow control");
 }
 
 #define LOCAL_ADDR_IPV4_STR4 "127.0.0.1:54324"

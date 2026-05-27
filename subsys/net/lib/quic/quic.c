@@ -6004,6 +6004,42 @@ static int quic_endpoint_send_connection_close(struct quic_endpoint *ep,
 	return quic_endpoint_send_transport_close(ep, error_code, 0, reason);
 }
 
+#define QUIC_CHECK_RESUMED_TP_GE(field)							\
+	do {										\
+		if (ret == 0 && ep->peer_params.field < remembered->field) {		\
+			NET_ERR("[EP:%p/%d] Resumed transport parameter " #field	\
+				" shrank from %" PRIu64 " to %" PRIu64,			\
+				ep, quic_get_by_ep(ep), remembered->field,		\
+				ep->peer_params.field);					\
+			ret = -EPROTO;							\
+		}									\
+	} while (false)
+
+static int quic_validate_resumed_transport_params(struct quic_endpoint *ep)
+{
+	const struct quic_tls_context *tls = &ep->crypto.tls;
+	const struct quic_session_transport_params *remembered =
+		&tls->session_state.transport_params;
+	int ret = 0;
+
+	if (ep->is_server || !tls->session_state_valid || !remembered->valid ||
+	    !tls->early_data_accepted) {
+		goto out;
+	}
+
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_data);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_stream_data_bidi_local);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_stream_data_bidi_remote);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_stream_data_uni);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_streams_bidi);
+	QUIC_CHECK_RESUMED_TP_GE(initial_max_streams_uni);
+
+#undef QUIC_CHECK_RESUMED_TP_GE
+
+out:
+	return ret;
+}
+
 /* Parse peer's transport parameters and initialize flow control */
 ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
 {
@@ -6150,6 +6186,11 @@ ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
 				ep, quic_get_by_ep(ep));
 			return -EINVAL;
 		}
+	}
+
+	ret = quic_validate_resumed_transport_params(ep);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ep->peer_params.parsed = true;
