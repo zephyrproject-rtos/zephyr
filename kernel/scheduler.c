@@ -131,14 +131,11 @@ bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 	bool ret = false;
 
 	K_SPINLOCK(&_sched_spinlock) {
-		thread = _priq_wait_best(&wait_q->waitq);
-
+		thread = z_unpend_first_thread_locked(wait_q);
 		if (thread != NULL) {
 			z_thread_return_value_set_with_data(thread,
 							    swap_retval,
 							    swap_data);
-			unpend_thread_no_timeout(thread);
-			(void)z_try_abort_thread_timeout(thread);
 			z_sched_ready_locked(thread);
 			ret = true;
 		}
