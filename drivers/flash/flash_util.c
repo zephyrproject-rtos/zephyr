@@ -213,6 +213,8 @@ int z_impl_flash_copy(const struct device *src_dev, off_t src_offset, const stru
 int z_vrfy_flash_copy(const struct device *src_dev, off_t src_offset, const struct device *dst_dev,
 		      off_t dst_offset, off_t size, uint8_t *buf, size_t buf_size)
 {
+	K_OOPS(K_SYSCALL_DRIVER_FLASH(src_dev, read));
+	K_OOPS(K_SYSCALL_DRIVER_FLASH(dst_dev, write));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, buf_size));
 	return z_impl_flash_copy(src_dev, src_offset, dst_dev, dst_offset, size, buf, buf_size);
 }
