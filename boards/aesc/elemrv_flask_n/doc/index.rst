@@ -1,4 +1,4 @@
-.. zephyr:board:: elemrv
+.. zephyr:board:: elemrv_flask_n
 
 Overview
 ********
@@ -58,7 +58,7 @@ By default, ``uart0`` operates at a baud rate of ``115200``, which can be adjust
 To evaluate the UART interface, build and run the following sample:
 
 .. zephyr-app-commands::
-   :board: elemrv/elemrv_n
+   :board: elemrv_flask_n
    :zephyr-app: samples/hello_world
    :goals: build
 
@@ -74,7 +74,7 @@ setting the direction of data flow.
 The Blinky sample provides a simple way to explore how a GPIO can be used to control an external LED.
 
 .. zephyr-app-commands::
-   :board: elemrv/elemrv_n
+   :board: elemrv_flask_n
    :zephyr-app: samples/basic/blinky
    :goals: build
 
