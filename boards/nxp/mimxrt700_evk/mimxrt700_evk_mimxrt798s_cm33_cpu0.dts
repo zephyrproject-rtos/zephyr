@@ -552,3 +552,7 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 &crc {
 	status = "okay";
 };
+
+&pngdec {
+	status = "okay";
+};
