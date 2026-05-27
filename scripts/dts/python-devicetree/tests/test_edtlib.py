@@ -1460,6 +1460,32 @@ def test_child_dependencies():
     assert edt.get_node("/child-binding/child-1/grandchild") in dep_node.required_by
     assert edt.get_node("/child-binding/child-2") in dep_node.required_by
 
+def test_dependency_mode():
+    '''Test dependency relations affected by dependency-mode in bindings.'''
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    target = edt.get_node("/dependency-mode-target")
+    normal = edt.get_node("/dependency-mode-normal")
+    reverse = edt.get_node("/dependency-mode-reverse")
+    ignore = edt.get_node("/dependency-mode-ignore")
+    child_ignore = edt.get_node("/dependency-mode-child-ignore")
+    local_child = edt.get_node("/dependency-mode-child-ignore/local-child")
+
+    assert target in normal.depends_on
+    assert normal in target.required_by
+
+    assert reverse in target.depends_on
+    assert target in reverse.required_by
+
+    assert target not in ignore.depends_on
+    assert ignore not in target.required_by
+
+    assert local_child not in child_ignore.depends_on
+    assert child_ignore not in local_child.required_by
+    assert target in child_ignore.depends_on
+    assert child_ignore in target.required_by
+
 def test_slice_errs(tmp_path):
     '''Test error messages from the internal _slice() helper'''
 
