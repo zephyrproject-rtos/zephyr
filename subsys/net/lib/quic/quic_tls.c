@@ -45,6 +45,11 @@ static struct quic_server_ticket_entry quic_server_ticket_cache[QUIC_SESSION_TIC
 static uint8_t quic_server_ticket_cache_replace_idx;
 static K_MUTEX_DEFINE(quic_server_ticket_cache_lock);
 
+static bool quic_0rtt_enabled(void)
+{
+	return IS_ENABLED(CONFIG_QUIC_0RTT);
+}
+
 /**
  * Add intermediate certificate to chain by sec_tag
  */
@@ -583,6 +588,9 @@ static int quic_tls_get_session_state(struct quic_tls_context *ctx,
 	}
 
 	*state = ctx->session_state;
+	if (!quic_0rtt_enabled()) {
+		state->max_early_data_size = 0U;
+	}
 
 	return 0;
 }
@@ -656,6 +664,9 @@ static int quic_tls_set_session_state(struct quic_tls_context *ctx,
 	}
 
 	ctx->session_state = *state;
+	if (!quic_0rtt_enabled()) {
+		ctx->session_state.max_early_data_size = 0U;
+	}
 	ctx->session_state_valid = true;
 	ctx->psk = ctx->session_state.psk;
 	ctx->psk_len = ctx->session_state.psk_len;
@@ -713,7 +724,7 @@ static int tls_emit_client_early_traffic_secret(struct quic_tls_context *ctx)
 	uint8_t client_early_traffic_secret[QUIC_HASH_MAX_LEN];
 	int ret;
 
-	if (ctx->secret_cb == NULL) {
+	if (!quic_0rtt_enabled() || ctx->secret_cb == NULL) {
 		return 0;
 	}
 
@@ -1305,8 +1316,9 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 
 		ctx->psk_offered = true;
 		ctx->use_psk_key_schedule = true;
-		ctx->early_data_offered = offered_early_data;
-		ctx->early_data_accepted = offered_early_data &&
+		ctx->early_data_offered = quic_0rtt_enabled() && offered_early_data;
+		ctx->early_data_accepted = quic_0rtt_enabled() &&
+			offered_early_data &&
 			matched_session_ticket &&
 			matched_ticket_max_early_data_size > 0U &&
 			ctx->max_early_data_size >= matched_ticket_max_early_data_size;
@@ -1503,7 +1515,7 @@ static int build_client_hello(struct quic_tls_context *ctx,
 		buf[pos++] = 0x01;
 		buf[pos++] = TLS_PSK_KE_MODE_PSK_DHE_KE;
 
-		if (ctx->early_data_offered) {
+		if (quic_0rtt_enabled() && ctx->early_data_offered) {
 			/* early_data extension is advertised in ClientHello only when armed. */
 			buf[pos++] = 0x00;
 			buf[pos++] = TLS_EXT_EARLY_DATA;
@@ -2072,7 +2084,7 @@ static int build_encrypted_extensions(struct quic_tls_context *ctx,
 		NET_DBG("Added ALPN extension: %s", ctx->negotiated_alpn);
 	}
 
-	if (ctx->early_data_accepted) {
+	if (quic_0rtt_enabled() && ctx->early_data_accepted) {
 		if (pos + 4 > buf_size) {
 			return -ENOBUFS;
 		}
@@ -2985,7 +2997,8 @@ static int parse_new_session_ticket(struct quic_tls_context *ctx,
 	ctx->session_state.cipher_suite = ctx->ks.cipher_suite;
 	ctx->session_state.ticket_lifetime = ticket_lifetime;
 	ctx->session_state.ticket_age_add = ticket_age_add;
-	ctx->session_state.max_early_data_size = max_early_data_size;
+	ctx->session_state.max_early_data_size =
+		quic_0rtt_enabled() ? max_early_data_size : 0U;
 	ctx->session_state.issue_time_ms = k_uptime_get();
 	ctx->session_state.ticket_len = ticket_len;
 	ctx->session_state.psk_len = ctx->ks.hash_len;
@@ -3043,7 +3056,8 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 					    ctx->ks.cipher_suite,
 					    QUIC_SESSION_TICKET_LIFETIME_SEC,
 					    ticket_age_add,
-					    ctx->max_early_data_size);
+					    quic_0rtt_enabled() ?
+					    ctx->max_early_data_size : 0U);
 	if (ret != 0) {
 		return ret;
 	}
@@ -3064,7 +3078,7 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 	memcpy(&msg[pos], ticket, sizeof(ticket));
 	pos += sizeof(ticket);
 
-	if (ctx->max_early_data_size > 0U) {
+	if (quic_0rtt_enabled() && ctx->max_early_data_size > 0U) {
 		msg[pos++] = 0x00;
 		msg[pos++] = 0x08;
 		msg[pos++] = 0x00;
@@ -3495,7 +3509,8 @@ ZTESTABLE_STATIC int parse_encrypted_extensions(struct quic_tls_context *ctx,
 
 		switch (ext_type) {
 		case TLS_EXT_EARLY_DATA:
-			if (!ctx->early_data_offered || ext_len != 0U) {
+			if (!quic_0rtt_enabled() || !ctx->early_data_offered ||
+			    ext_len != 0U) {
 				return -EINVAL;
 			}
 
@@ -3536,7 +3551,8 @@ ZTESTABLE_STATIC int parse_encrypted_extensions(struct quic_tls_context *ctx,
 		pos += ext_len;
 	}
 
-	ctx->early_data_accepted = ctx->early_data_offered && saw_early_data;
+	ctx->early_data_accepted = quic_0rtt_enabled() &&
+		ctx->early_data_offered && saw_early_data;
 	ctx->early_data_rejected = ctx->early_data_offered && !saw_early_data;
 
 	return 0;
@@ -5846,7 +5862,8 @@ static int quic_tls_client_start(struct quic_tls_context *ctx)
 	ctx->ks.cipher_suite = TLS_AES_128_GCM_SHA256;
 	ctx->psk_offered = ctx->psk_configured;
 	ctx->use_psk_key_schedule = ctx->psk_configured;
-	ctx->early_data_offered = ctx->session_state_valid &&
+	ctx->early_data_offered = quic_0rtt_enabled() &&
+		ctx->session_state_valid &&
 		(ctx->session_state.max_early_data_size > 0U);
 	ctx->early_data_accepted = false;
 	ctx->early_data_rejected = false;

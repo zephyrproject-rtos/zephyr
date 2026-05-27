@@ -1042,6 +1042,7 @@ ZTEST(net_socket_quic, test_081_0rtt_frame_type_level_validation)
 ZTEST(net_socket_quic, test_082_client_early_data_arming_uses_session_state)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	enum quic_secret_level expected_level;
 
 	ep->is_server = false;
 	ep->crypto.tls.is_initialized = true;
@@ -1050,10 +1051,13 @@ ZTEST(net_socket_quic, test_082_client_early_data_arming_uses_session_state)
 	ep->crypto.tls.session_state.max_early_data_size = 4096U;
 	ep->crypto.early.initialized = true;
 
-	zassert_true(quic_early_data_is_armed(ep),
-		     "Imported session state should arm 0-RTT before handshake completion");
-	zassert_equal(quic_stream_send_level(ep), QUIC_SECRET_LEVEL_EARLY,
-		      "Armed early data must use 0-RTT packet protection");
+	expected_level = IS_ENABLED(CONFIG_QUIC_0RTT) ?
+		QUIC_SECRET_LEVEL_EARLY : QUIC_SECRET_LEVEL_APPLICATION;
+
+	zassert_equal(quic_early_data_is_armed(ep), IS_ENABLED(CONFIG_QUIC_0RTT),
+		      "Imported session state should only arm 0-RTT when enabled");
+	zassert_equal(quic_stream_send_level(ep), expected_level,
+		      "Unexpected send level when early data is configured");
 
 	ep->crypto.tls.session_state_valid = false;
 	zassert_false(quic_early_data_is_armed(ep),
@@ -1075,11 +1079,16 @@ ZTEST(net_socket_quic, test_083_client_early_data_decision_tracks_encrypted_exte
 	tls.early_data_offered = true;
 
 	ret = parse_encrypted_extensions(&tls, accept_ee, sizeof(accept_ee));
-	zassert_ok(ret, "EncryptedExtensions with early_data should parse (%d)", ret);
-	zassert_true(tls.early_data_accepted,
-		     "early_data extension should mark 0-RTT as accepted");
-	zassert_false(tls.early_data_rejected,
-		      "Accepted early data must not leave rejection state set");
+	if (IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		zassert_ok(ret, "EncryptedExtensions with early_data should parse (%d)", ret);
+		zassert_true(tls.early_data_accepted,
+			     "early_data extension should mark 0-RTT as accepted");
+		zassert_false(tls.early_data_rejected,
+			      "Accepted early data must not leave rejection state set");
+	} else {
+		zassert_equal(ret, -EINVAL,
+			      "EncryptedExtensions must reject early_data when disabled");
+	}
 
 	tls.early_data_accepted = false;
 	tls.early_data_rejected = false;
@@ -1109,9 +1118,17 @@ ZTEST(net_socket_quic, test_084_rejected_early_data_clears_inflight_tracking)
 
 	ret = quic_mark_rejected_early_data(ep);
 	zassert_ok(ret, "Rejected 0-RTT cleanup should succeed (%d)", ret);
-	zassert_false(info->in_flight, "Rejected early packets must stop counting as in-flight");
-	zassert_equal(ep->recovery.bytes_in_flight, 0U,
-		      "Rejected early packets must be removed from bytes-in-flight");
+	if (IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		zassert_false(info->in_flight,
+			      "Rejected early packets must stop counting as in-flight");
+		zassert_equal(ep->recovery.bytes_in_flight, 0U,
+			      "Rejected early packets must be removed from bytes-in-flight");
+	} else {
+		zassert_true(info->in_flight,
+			     "Disabled 0-RTT must leave early-packet state untouched");
+		zassert_equal(ep->recovery.bytes_in_flight, 123U,
+			      "Disabled 0-RTT must not alter bytes-in-flight accounting");
+	}
 }
 
 ZTEST(net_socket_quic, test_085_rejected_early_data_disarms_send_path)
@@ -4568,6 +4585,7 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 	static K_THREAD_STACK_DEFINE(server_ticket_thread_stack, SERVER_TICKET_STACK_SIZE);
 	static struct k_thread server_ticket_thread_data;
 	static struct config server_ticket_data;
+	uint32_t expected_early_data_size;
 
 	ret = k_sem_init(&server_ticket_data.sem, 0, 1);
 	zassert_ok(ret, "Failed to initialize semaphore (%d)", ret);
@@ -4599,7 +4617,12 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 			       ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE,
 			       &ticket_early_data_size,
 			       sizeof(ticket_early_data_size));
-	zassert_equal(ret, 0, "Failed to set ticket early-data size (%d)", -errno);
+	if (IS_ENABLED(CONFIG_QUIC_0RTT) || ticket_early_data_size == 0U) {
+		zassert_equal(ret, 0, "Failed to set ticket early-data size (%d)", -errno);
+	} else {
+		zassert_equal(ret, -1, "Expected non-zero 0-RTT policy to be rejected");
+		zassert_equal(errno, ENOTSUP, "Expected ENOTSUP, got %d", errno);
+	}
 
 	setup_quic_certs(server_sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
 	setup_quic_certs(client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
@@ -4665,7 +4688,9 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 		      "Unexpected session state version %u", session_state.version);
 	zassert_true(session_state.ticket_len > 0U, "Expected a non-empty session ticket");
 	zassert_true(session_state.psk_len > 0U, "Expected a non-empty resumption PSK");
-	zassert_equal(session_state.max_early_data_size, ticket_early_data_size,
+	expected_early_data_size = IS_ENABLED(CONFIG_QUIC_0RTT) ?
+		ticket_early_data_size : 0U;
+	zassert_equal(session_state.max_early_data_size, expected_early_data_size,
 		      "Unexpected remembered early-data size %" PRIu32,
 		      session_state.max_early_data_size);
 	zassert_true(session_state.transport_params.valid,

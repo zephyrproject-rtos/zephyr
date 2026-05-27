@@ -144,7 +144,8 @@ enum {
 	 * stream to attempt session resumption and, when permitted, 0-RTT. Since
 	 * 0-RTT data can be replayed or rejected by the peer, applications must
 	 * only send replay-safe early data and be prepared to retry after the
-	 * handshake completes.
+	 * handshake completes. When CONFIG_QUIC_0RTT is disabled, imported
+	 * session state still resumes at 1-RTT but does not arm early data.
 	 */
 	ZSOCK_QUIC_SO_SESSION_STATE = 5,
 
@@ -165,7 +166,8 @@ enum {
 	 * 0-RTT for new tickets; a non-zero value both enables 0-RTT and sets the
 	 * maximum number of early-data bytes a resuming client may send. This only
 	 * affects newly issued tickets; applications must still treat accepted
-	 * early data as replayable at the protocol level.
+	 * early data as replayable at the protocol level. Non-zero values require
+	 * CONFIG_QUIC_0RTT; otherwise setsockopt() fails with ENOTSUP.
 	 */
 	ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE = 7,
 };

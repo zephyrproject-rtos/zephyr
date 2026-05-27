@@ -5791,6 +5791,12 @@ static int handle_0rtt_packet(struct quic_endpoint *ep,
 {
 	int ret;
 
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		NET_DBG("[EP:%p/%d] Dropping 0-RTT packet while support is disabled",
+			ep, quic_get_by_ep(ep));
+		return 0;
+	}
+
 	if (ep->is_server && !ep->crypto.tls.early_data_accepted) {
 		NET_DBG("[EP:%p/%d] Ignoring 0-RTT packet before acceptance", ep,
 			quic_get_by_ep(ep));
@@ -5813,7 +5819,8 @@ ZTESTABLE_STATIC bool quic_early_data_is_armed(const struct quic_endpoint *ep)
 {
 	const struct quic_tls_context *tls;
 
-	if (ep == NULL || ep->is_server || ep->handshake.completed) {
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT) || ep == NULL || ep->is_server ||
+	    ep->handshake.completed) {
 		return false;
 	}
 
@@ -5833,6 +5840,10 @@ ZTESTABLE_STATIC int quic_mark_rejected_early_data(struct quic_endpoint *ep)
 {
 	struct quic_stream *stream;
 	int pn_space = level_to_pn_space(QUIC_SECRET_LEVEL_EARLY);
+
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		return 0;
+	}
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
@@ -6483,7 +6494,8 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 
 	quic_endpoint_handshake_complete(ep);
 
-	if (!ep->is_server && tls->early_data_rejected) {
+	if (IS_ENABLED(CONFIG_QUIC_0RTT) && !ep->is_server &&
+	    tls->early_data_rejected) {
 		ret = quic_mark_rejected_early_data(ep);
 		if (ret != 0) {
 			return ret;
