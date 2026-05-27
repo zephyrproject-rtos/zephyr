@@ -1705,6 +1705,19 @@ Documentation Infrastructure:
   labels:
     - "area: DAI"
 
+"Drivers: DALI":
+  status: maintained
+  maintainers:
+    - svenhaedrich
+  files:
+    - doc/hardware/peripherals/dali.rst
+    - drivers/dali/
+    - dts/bindings/dali/
+    - include/zephyr/drivers/dali.h
+    - samples/drivers/dali/
+  labels:
+    - "area: DALI"
+
 "Drivers: DMA":
   status: maintained
   maintainers:
