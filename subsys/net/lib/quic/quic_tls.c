@@ -3451,6 +3451,7 @@ static uint64_t get_next_packet_number(struct quic_endpoint *ep,
 	case QUIC_SECRET_LEVEL_HANDSHAKE:
 		pn = ep->tx_pn.handshake++;
 		break;
+	case QUIC_SECRET_LEVEL_EARLY:
 	case QUIC_SECRET_LEVEL_APPLICATION:
 	default:
 		pn = ep->tx_pn.application++;
@@ -3513,7 +3514,7 @@ static size_t calculate_padding_for_level(struct quic_endpoint *ep,
 	}
 
 	/* Only client Initial packets require padding to 1200 bytes */
-	if (level != 0 || ep->is_server) {
+	if (level != QUIC_SECRET_LEVEL_INITIAL || ep->is_server) {
 		return padding;
 	}
 
@@ -3801,6 +3802,100 @@ static int build_handshake_header(struct quic_endpoint *ep,
 }
 
 /*
+ * Build 0-RTT packet header (RFC 9000 Section 17.2.3)
+ *
+ * 0-RTT Packet {
+ *   Header Form (1) = 1,
+ *   Fixed Bit (1) = 1,
+ *   Long Packet Type (2) = 1,
+ *   Reserved Bits (2),
+ *   Packet Number Length (2),
+ *   Version (32),
+ *   Destination Connection ID Length (8),
+ *   Destination Connection ID (0..160),
+ *   Source Connection ID Length (8),
+ *   Source Connection ID (0..160),
+ *   Length (i),
+ *   Packet Number (8..32),
+ * }
+ */
+static int build_0rtt_header(struct quic_endpoint *ep,
+			     uint64_t packet_number,
+			     size_t pn_len,
+			     size_t payload_len,
+			     uint8_t *out, size_t out_size,
+			     size_t *out_len, size_t *pn_offset)
+{
+	size_t pos = 0;
+	size_t length_val;
+
+	if (pos >= out_size) {
+		return -ENOBUFS;
+	}
+
+	out[pos++] = QUIC_LONG_HEADER_0RTT | ((pn_len - 1) & 0x03);
+
+	if (pos + 4 > out_size) {
+		return -ENOBUFS;
+	}
+	out[pos++] = (QUIC_VERSION_1 >> 24) & 0xFF;
+	out[pos++] = (QUIC_VERSION_1 >> 16) & 0xFF;
+	out[pos++] = (QUIC_VERSION_1 >> 8) & 0xFF;
+	out[pos++] = QUIC_VERSION_1 & 0xFF;
+
+	if (pos + 1 + ep->peer_cid_len > out_size) {
+		return -ENOBUFS;
+	}
+
+	out[pos++] = ep->peer_cid_len;
+	if (ep->peer_cid_len > 0) {
+		memcpy(&out[pos], ep->peer_cid, ep->peer_cid_len);
+		pos += ep->peer_cid_len;
+	}
+
+	if (pos + 1 + ep->my_cid_len > out_size) {
+		return -ENOBUFS;
+	}
+
+	out[pos++] = ep->my_cid_len;
+	if (ep->my_cid_len > 0) {
+		memcpy(&out[pos], ep->my_cid, ep->my_cid_len);
+		pos += ep->my_cid_len;
+	}
+
+	length_val = pn_len + payload_len;
+	if (length_val > 0x3FFF) {
+		if (pos + 4 > out_size) {
+			return -ENOBUFS;
+		}
+		out[pos++] = 0x80 | ((length_val >> 24) & 0x3F);
+		out[pos++] = (length_val >> 16) & 0xFF;
+		out[pos++] = (length_val >> 8) & 0xFF;
+		out[pos++] = length_val & 0xFF;
+	} else {
+		if (pos + 2 > out_size) {
+			return -ENOBUFS;
+		}
+		out[pos++] = 0x40 | ((length_val >> 8) & 0x3F);
+		out[pos++] = length_val & 0xFF;
+	}
+
+	*pn_offset = pos;
+
+	if (pos + pn_len > out_size) {
+		return -ENOBUFS;
+	}
+
+	for (size_t i = 0; i < pn_len; i++) {
+		out[pos++] = (packet_number >> (8 * (pn_len - 1 - i))) & 0xFF;
+	}
+
+	*out_len = pos;
+
+	return 0;
+}
+
+/*
  * Build short (1-RTT) packet header (RFC 9000 Section 17.3)
  *
  * 1-RTT Packet {
@@ -3889,6 +3984,11 @@ static int build_packet_header(struct quic_endpoint *ep,
 					      payload_len,
 					      out, out_size,
 					      header_len, pn_offset);
+	case QUIC_SECRET_LEVEL_EARLY:
+		return build_0rtt_header(ep, packet_number, pn_len,
+					 payload_len,
+					 out, out_size,
+					 header_len, pn_offset);
 	case QUIC_SECRET_LEVEL_APPLICATION:
 		return build_short_header(ep, packet_number, pn_len,
 					  out, out_size,
@@ -3915,6 +4015,9 @@ quic_get_crypto_context_by_level(struct quic_endpoint *ep,
 		break;
 	case QUIC_SECRET_LEVEL_HANDSHAKE:
 		ctx = &ep->crypto.handshake;
+		break;
+	case QUIC_SECRET_LEVEL_EARLY:
+		ctx = &ep->crypto.early;
 		break;
 	case QUIC_SECRET_LEVEL_APPLICATION:
 		ctx = &ep->crypto.application;
@@ -4203,7 +4306,8 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 		NET_DBG("Crypto context not initialized for level %d", level);
 
 		if (level == QUIC_SECRET_LEVEL_HANDSHAKE ||
-		    level == QUIC_SECRET_LEVEL_APPLICATION) {
+		    level == QUIC_SECRET_LEVEL_APPLICATION ||
+		    level == QUIC_SECRET_LEVEL_EARLY) {
 			return -EAGAIN;
 		}
 
@@ -4401,6 +4505,7 @@ static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
 	case QUIC_SECRET_LEVEL_HANDSHAKE:
 		QUIC_EP_STAT_INC(ep, handshake_resp_tx);
 		break;
+	case QUIC_SECRET_LEVEL_EARLY:
 	case QUIC_SECRET_LEVEL_APPLICATION:
 		QUIC_EP_STAT_INC(ep, valid_tx);
 		break;
@@ -5523,6 +5628,7 @@ static struct quic_tls_context *tls_init(struct quic_endpoint *ep)
 	struct quic_tls_context *tls = &ep->crypto.tls;
 
 	memset(&ep->crypto.initial, 0, sizeof(ep->crypto.initial));
+	memset(&ep->crypto.early, 0, sizeof(ep->crypto.early));
 
 	/* Clear and initialize the embedded TLS context */
 	memset(tls, 0, sizeof(*tls));

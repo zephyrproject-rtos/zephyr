@@ -2425,8 +2425,7 @@ static struct quic_crypto_context *quic_get_crypto_context(struct quic_endpoint 
 	case QUIC_PACKET_TYPE_HANDSHAKE:
 		return ep->crypto.handshake.initialized ? &ep->crypto.handshake : NULL;
 	case QUIC_PACKET_TYPE_0RTT:
-		/* 0-RTT not implemented */
-		return NULL;
+		return ep->crypto.early.initialized ? &ep->crypto.early : NULL;
 	default:
 		break;
 	}
@@ -3071,6 +3070,7 @@ static int quic_endpoint_unref(struct quic_endpoint *ep)
 	quic_crypto_context_destroy(&ep->crypto.initial);
 	quic_crypto_context_destroy(&ep->crypto.handshake);
 	quic_crypto_context_destroy(&ep->crypto.application);
+	quic_crypto_context_destroy(&ep->crypto.early);
 
 	if (ep->parent != NULL) {
 		/* The ref was taken in process_long_header() when we assigned
@@ -3441,6 +3441,7 @@ static inline int level_to_pn_space(enum quic_secret_level level)
 		return 0;
 	case QUIC_SECRET_LEVEL_HANDSHAKE:
 		return 1;
+	case QUIC_SECRET_LEVEL_EARLY:
 	case QUIC_SECRET_LEVEL_APPLICATION:
 	default:
 		return 2;
@@ -5568,6 +5569,11 @@ static int quic_tls_secret_callback(void *user_data,
 				quic_log_tls_secret("CLIENT_TRAFFIC_SECRET_0",
 						    tls->client_random, tx_secret, secret_len);
 			}
+		} else if (level == QUIC_SECRET_LEVEL_EARLY) {
+			quic_log_tls_secret("CLIENT_EARLY_TRAFFIC_SECRET",
+					    tls->client_random,
+					    ep->is_server ? rx_secret : tx_secret,
+					    secret_len);
 		}
 	}
 
@@ -5601,6 +5607,9 @@ static int quic_tls_secret_callback(void *user_data,
 		break;
 	case QUIC_SECRET_LEVEL_APPLICATION:
 		crypto_ctx = &ep->crypto.application;
+		break;
+	case QUIC_SECRET_LEVEL_EARLY:
+		crypto_ctx = &ep->crypto.early;
 		break;
 	default:
 		NET_ERR("Invalid secret level: %d", level);
