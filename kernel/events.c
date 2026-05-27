@@ -156,7 +156,7 @@ static int event_walk_op(struct k_thread *thread, void *data)
 		if (thread->event_options & K_EVENT_OPTION_CLEAR) {
 			event_data->clear_events |= match;
 		}
-		z_abort_thread_timeout(thread);
+		(void)z_try_abort_thread_timeout(thread);
 
 #ifndef CONFIG_WAITQ_SCALABLE
 		/*
