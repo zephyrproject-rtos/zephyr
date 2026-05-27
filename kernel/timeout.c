@@ -48,6 +48,13 @@ static inline bool any_cpu_announcing(void)
 	return announcing_cpu != -1;
 }
 
+/* Timeout whose handler is currently being dispatched, or NULL when no
+ * handler is in flight. Set by the announcing CPU under timeout_lock
+ * before the handler is called, cleared after the handler returns.
+ * Only the announcing CPU writes this; other CPUs read it.
+ */
+static struct _timeout *inflight_timeout;
+
 static struct _timeout *first(void)
 {
 	sys_dnode_t *t = sys_dlist_peek_head(&timeout_list);
@@ -213,6 +220,39 @@ int z_abort_timeout(struct _timeout *to)
 	return ret;
 }
 
+int z_try_abort_timeout(struct _timeout *to)
+{
+	int ret = -EINVAL;
+
+	K_SPINLOCK(&timeout_lock) {
+		if (sys_dnode_is_linked(&to->node)) {
+			bool is_first = (to == first());
+
+			remove_timeout(to);
+			to->dticks = TIMEOUT_DTICKS_ABORTED;
+			ret = 0;
+			if (is_first) {
+				sys_clock_set_timeout(next_timeout(elapsed()), false);
+			}
+		} else if (inflight_timeout == to) {
+			if (this_cpu_announcing()) {
+				/* Same-CPU IRQ on this CPU's announce gap:
+				 * can't wait; best-effort mark ABORTED.
+				 */
+				to->dticks = TIMEOUT_DTICKS_ABORTED;
+			} else if (IS_ENABLED(CONFIG_SMP)) {
+				ret = -EAGAIN;
+			}
+		}
+	}
+
+	if (ret == -EAGAIN) {
+		arch_spin_relax();
+	}
+
+	return ret;
+}
+
 /* must be locked */
 static k_ticks_t timeout_rem(const struct _timeout *timeout)
 {
@@ -307,10 +347,12 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 
 		sys_dlist_remove(&t->node);
 		t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
+		inflight_timeout = t;
 
 		k_spin_unlock(&timeout_lock, key);
 		handler(t);
 		key = k_spin_lock(&timeout_lock);
+		inflight_timeout = NULL;
 	}
 
 	if (t != NULL) {
