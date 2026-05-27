@@ -361,6 +361,16 @@ struct quic_tls_context {
 	uint8_t server_random[32];
 	bool client_hello_prepared;
 
+	/* External PSK configuration and negotiated use */
+	const uint8_t *psk;
+	size_t psk_len;
+	const uint8_t *psk_identity;
+	size_t psk_identity_len;
+	bool psk_configured;
+	bool psk_offered;
+	bool use_psk_key_schedule;
+	bool early_data_offered;
+
 	/* Certificate request context */
 #define QUIC_CERT_REQ_CONTEXT_LEN 8
 	uint8_t cert_request_context[QUIC_CERT_REQ_CONTEXT_LEN];
