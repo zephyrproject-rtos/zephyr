@@ -477,6 +477,10 @@ STM32
   boards which modified the ``interrupts`` property on either node must be updated
   to set the property on the top-level ``&radio`` node instead. (:github:`110546`)
 
+* Renamed ST gpio-nexus for camera and display connectors as follow:
+  ``st,dsi-lcd-qsh-030`` is renamed into :dtcompatible:`st,dsi-lcd-qsh-030-connector`
+  ``st,stm32-dcmi-camera-fpu-330zh`` is renamed into :dtcompatible:`st,dvp-cam-zif-30-connector`
+
 Syscon
 ======
 
