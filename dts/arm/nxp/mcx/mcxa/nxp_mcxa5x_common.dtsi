@@ -890,6 +890,11 @@
 		interrupts = <89 0>;
 		clocks = <&syscon MCUX_ESPI0_CLK>;
 		status = "disabled";
+
+		espi_taf: espi-taf {
+			compatible = "nxp,espi-taf";
+			status = "disabled";
+		};
 	};
 
 	cmc: system-modules@c6000 {
