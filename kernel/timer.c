@@ -74,7 +74,16 @@ void z_timer_expiration_handler(struct _timeout *t)
 	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	if (z_is_timeout_handler_canceled(t)) {
+	/* A same-CPU IRQ may have raced with our dispatch between
+	 * sys_clock_announce() popping us off the list and us taking
+	 * timer.c::lock. Two cases:
+	 *  - The timer was restarted (z_add_timeout re-linked the node):
+	 *    sys_dnode_is_linked() is true, the new schedule fires later.
+	 *  - The timer was stopped (z_try_abort_timeout marked the
+	 *    in-flight slot superseded): bail without firing expiry_fn.
+	 */
+	if (sys_dnode_is_linked(&t->node) ||
+	    z_timeout_inflight_superseded(t)) {
 		k_spin_unlock(&lock, key);
 		return;
 	}
@@ -178,24 +187,25 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, start, timer, duration, period);
 
-	/* Acquire spinlock to ensure safety during concurrent calls to
-	 * k_timer_start for scheduling or rescheduling. This is necessary
-	 * since k_timer_start can be preempted, especially for the same
-	 * timer instance.
-	 */
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
 	if (K_TIMEOUT_EQ(duration, K_FOREVER)) {
-		k_spin_unlock(&lock, key);
 		return;
 	}
 
-	(void)z_abort_timeout(&timer->timeout);
+	/* Hold the timer lock across abort + add to serialize against a
+	 * concurrent k_timer_start on the same timer. An in-flight handler
+	 * (z_try_abort_timeout() returning non-zero) is flagged superseded
+	 * and will bail; the re-arm below also re-links the node, which
+	 * makes a not-yet-committed handler bail too. Either way we do not
+	 * wait for it.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	(void)z_try_abort_timeout(&timer->timeout);
+
 	timer->period = period;
 	timer->status = 0U;
 
-	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
-		     duration);
+	z_add_timeout(&timer->timeout, z_timer_expiration_handler, duration);
 
 	z_timer_observer_on_start(timer, duration, period);
 
@@ -219,9 +229,12 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	bool inactive = (z_abort_timeout(&timer->timeout) != 0);
-
-	if (inactive) {
+	if (z_try_abort_timeout(&timer->timeout) != 0) {
+		/* Not removed from the queue: either the timer was not
+		 * active, or its handler is in flight. In the latter case
+		 * z_try_abort_timeout() has flagged it superseded so the
+		 * handler bails; we do not wait for it. Nothing to stop here.
+		 */
 		k_spin_unlock(&lock, key);
 		return;
 	}
