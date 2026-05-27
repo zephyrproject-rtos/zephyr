@@ -434,9 +434,6 @@ static int pat9136_init(const struct device *dev)
 
 #define PAT9136_INIT(inst)									   \
 												   \
-	BUILD_ASSERT(DT_PROP(DT_DRV_INST(inst), resolution) >= 0 &&				   \
-		     DT_PROP(DT_DRV_INST(inst), resolution) <= 0xC7,				   \
-		     "Resolution must be in range 0-199");					   \
 	BUILD_ASSERT(DT_PROP(DT_DRV_INST(inst), cooldown_timer_ms) <				   \
 		     DT_PROP(DT_DRV_INST(inst), backup_timer_ms),				   \
 		     "Cooldown timer must be less than backup timer");				   \
