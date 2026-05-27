@@ -42,6 +42,26 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 
 int z_abort_timeout(struct _timeout *to);
 
+/* Attempt to abort a timeout. Unlike z_abort_timeout(), this is safe to use
+ * for callers that need to be certain the handler is not in flight (e.g. when
+ * about to free the timeout's storage), as long as the caller is prepared to
+ * drop any locks the handler may need and retry.
+ *
+ * Returns:
+ *   0       — the timeout was active and has been removed from the queue.
+ *   -EINVAL — the timeout was not active (never linked, already done, or
+ *             a same-CPU IRQ aborted while the handler was paused on this
+ *             CPU; the latter is best-effort, the handler will resume and
+ *             fire).
+ *   -EAGAIN — the handler is currently in flight on another CPU. The caller
+ *             must drop any lock that the handler may need and retry. A short
+ *             arch_spin_relax() has already been done before this return.
+ *
+ * On -EAGAIN, the only correct response is to drop outer locks and call again.
+ * After a non-EAGAIN return, the handler is guaranteed not to be in flight.
+ */
+int z_try_abort_timeout(struct _timeout *to);
+
 /* Determine if the timeout handler should continue.
  *
  * The routine sys_clock_announce() both removes the timeout from the timeout
