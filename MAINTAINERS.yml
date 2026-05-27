@@ -185,6 +185,7 @@ ADI Platforms:
     - boards/adi/
     - boards/common/*adi*
     - boards/shields/ad_apardpfw_sl/
+    - boards/shields/adi_lsmspg/
     - boards/shields/eval*ardz/
     - boards/shields/pmod_acl/
     - drivers/*/*max*
