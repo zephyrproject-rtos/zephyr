@@ -744,6 +744,16 @@
 		interrupt-names = "t1s";
 	};
 
+	espi0: espi@1f000 {
+		compatible = "nxp,espi";
+		reg = <0x1f000 0x200>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <89 0>;
+		clocks = <&syscon MCUX_ESPI0_CLK>;
+		status = "disabled";
+	};
+
 	cmc: system-modules@c6000 {
 		compatible = "nxp,cmc";
 		reg = <0xc6000 0x1000>;
