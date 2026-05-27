@@ -10,12 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ETH_INTEL_PLAT_H__
-#define ZEPHYR_INCLUDE_DRIVERS_ETH_INTEL_PLAT_H__
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef ZEPHYR_DRIVERS_ETH_INTEL_PLAT_H__
+#define ZEPHYR_DRIVERS_ETH_INTEL_PLAT_H__
 
 /**
  * @brief Retrieve the PCIe Bus/Device/Function of the device.
@@ -25,4 +21,4 @@ extern "C" {
  */
 extern uint32_t eth_intel_get_pcie_bdf(const struct device *dev);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_ETH_INTEL_PLAT_H__ */
+#endif /* ZEPHYR_DRIVERS_ETH_INTEL_PLAT_H__ */

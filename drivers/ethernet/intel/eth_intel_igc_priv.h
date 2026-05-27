@@ -12,7 +12,6 @@
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/msi.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/drivers/ethernet/eth_intel_plat.h>
 
 #define ETH_MAX_FRAME_SZ       2048
 #define INTEL_IGC_MAX_QCNT     4
