@@ -906,7 +906,6 @@ Build system:
     - buildsystem
     - sample.app_dev
     - application_development
-    - bootloader.mcuboot.build
 
 C library:
   status: maintained
@@ -1179,10 +1178,12 @@ Debug:
     - samples/subsys/profiling/perf/
     - scripts/profiling/stackcollapse.py
     - subsys/profiling/
+    - tests/subsys/logging/log_frontend_stmesp_demux/
   labels:
     - "area: Debugging"
   tests:
     - debug
+    - debug.coresight
     - sample.debug
     - sample.perf
 
@@ -3522,8 +3523,8 @@ Linker Scripts:
     - "area: Linker Scripts"
   tests:
     - linker
-    - buildsystem.app_dev
-    - sample.app_dev
+    - buildsystem.app_dev.code_relocation
+    - sample.app_dev.code_relocation_nocopy
 
 Linters and Static Analyzers:
   status: maintained
@@ -3659,13 +3660,14 @@ Logging:
     - scripts/logging/
     - doc/services/logging/
     - tests/lib/spsc_pbuf/
+  files-exclude:
+    - tests/subsys/logging/log_frontend_stmesp_demux/
   labels:
     - "area: Logging"
   tests:
     - logging
     - libraries.mpsc_pbuf
     - libraries.spsc_pbuf
-    - debug.coresight
     - sample.logging
 
 MAINTAINERS file:
@@ -6887,10 +6889,11 @@ West:
   files:
     - modules/Kconfig.mcuboot
     - tests/boot/
+  files-exclude:
+    - tests/boot/uefi/
   labels:
     - "area: MCUBoot"
   tests:
-    - boot.uefi
     - boot.with_mcumgr
     - bootloader.mcuboot
 
