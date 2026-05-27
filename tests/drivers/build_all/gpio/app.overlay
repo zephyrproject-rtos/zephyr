@@ -188,6 +188,18 @@
 				gpio-controller;
 			};
 
+			test_i2c_m5pm1: pmic@6e {
+				compatible = "m5stack,m5pm1";
+				reg = <0x6e>;
+
+				test_i2c_m5pm1_gpio: gpio {
+					compatible = "m5stack,m5pm1-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <5>;
+				};
+			};
+
 			mfd-nct38xx@9 {
 				compatible = "nuvoton,nct38xx";
 				reg = <0x09>;
