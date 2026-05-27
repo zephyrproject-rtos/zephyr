@@ -141,7 +141,10 @@ enum {
 	 * getsockopt() on a connected client connection socket after a
 	 * NewSessionTicket has been received, then pass the returned state to
 	 * setsockopt() on a new client connection socket before opening the first
-	 * stream to attempt session resumption.
+	 * stream to attempt session resumption and, when permitted, 0-RTT. Since
+	 * 0-RTT data can be replayed or rejected by the peer, applications must
+	 * only send replay-safe early data and be prepared to retry after the
+	 * handshake completes.
 	 */
 	ZSOCK_QUIC_SO_SESSION_STATE = 5,
 
@@ -160,7 +163,9 @@ enum {
 	 * The option value is a pointer to a uint32_t. Set it on a listening or
 	 * server-side connection socket before the handshake. A value of 0 disables
 	 * 0-RTT for new tickets; a non-zero value both enables 0-RTT and sets the
-	 * maximum number of early-data bytes a resuming client may send.
+	 * maximum number of early-data bytes a resuming client may send. This only
+	 * affects newly issued tickets; applications must still treat accepted
+	 * early data as replayable at the protocol level.
 	 */
 	ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE = 7,
 };
@@ -217,7 +222,7 @@ struct quic_session_state {
 	uint32_t ticket_lifetime;
 	/** Random ticket_age_add value from NewSessionTicket. */
 	uint32_t ticket_age_add;
-	/** Max early data size from NewSessionTicket, or 0 when not permitted. */
+	/** Max early data size from NewSessionTicket, or 0 when 0-RTT is not permitted. */
 	uint32_t max_early_data_size;
 	/** Local monotonic timestamp in milliseconds when the ticket was received. */
 	uint64_t issue_time_ms;

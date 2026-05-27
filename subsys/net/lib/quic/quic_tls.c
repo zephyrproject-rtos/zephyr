@@ -21,6 +21,7 @@ static int quic_derive_secret(struct quic_tls_context *ctx,
 			      const uint8_t *secret,
 			      const char *label,
 			      uint8_t *out);
+static int tls_emit_client_early_traffic_secret(struct quic_tls_context *ctx);
 
 #define QUIC_SESSION_TICKET_NONCE_LEN 8U
 #define QUIC_SESSION_TICKET_ID_LEN 32U
@@ -705,6 +706,33 @@ static int quic_derive_secret_ex(struct quic_tls_context *ctx,
 					 (const uint8_t *)label, strlen(label),
 					 transcript, transcript_len,
 					 out, ctx->ks.hash_len);
+}
+
+static int tls_emit_client_early_traffic_secret(struct quic_tls_context *ctx)
+{
+	uint8_t client_early_traffic_secret[QUIC_HASH_MAX_LEN];
+	int ret;
+
+	if (ctx->secret_cb == NULL) {
+		return 0;
+	}
+
+	if ((!ctx->ep->is_server && !ctx->early_data_offered) ||
+	    (ctx->ep->is_server && !ctx->early_data_accepted)) {
+		return 0;
+	}
+
+	ret = quic_derive_secret(ctx, ctx->ks.early_secret,
+				 TLS13_LABEL_C_E_TRAFFIC,
+				 client_early_traffic_secret);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_EARLY,
+			      client_early_traffic_secret,
+			      client_early_traffic_secret,
+			      ctx->ks.hash_len);
 }
 
 /*
@@ -3682,6 +3710,11 @@ static int handle_client_hello(struct quic_tls_context *ctx,
 		return ret;
 	}
 
+	ret = tls_emit_client_early_traffic_secret(ctx);
+	if (ret != 0) {
+		return ret;
+	}
+
 	/* Build ServerHello */
 	ret = build_server_hello(ctx, server_hello, server_hello_size, &sh_len);
 	if (ret != 0) {
@@ -5760,6 +5793,12 @@ static int quic_tls_send_client_hello(struct quic_tls_context *ctx,
 		ret = transcript_update(ctx, wrapped, wrapped_len);
 		if (ret != 0) {
 			NET_DBG("Failed to update transcript: %d", ret);
+			return ret;
+		}
+
+		ret = tls_emit_client_early_traffic_secret(ctx);
+		if (ret != 0) {
+			NET_DBG("Failed to derive early traffic secret: %d", ret);
 			return ret;
 		}
 	}
