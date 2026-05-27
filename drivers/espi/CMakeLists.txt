@@ -5,10 +5,15 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/espi.h)
 zephyr_library()
 
 # zephyr-keep-sorted-start
+zephyr_library_include_directories_ifdef(CONFIG_ESPI_NXP
+    ${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/espi)
 zephyr_library_sources_ifdef(CONFIG_ESPI_EMUL espi_emul.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_IT8XXX2 espi_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_NPCX espi_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_NPCX host_subs_npcx.c)
+zephyr_library_sources_ifdef(CONFIG_ESPI_NXP espi_nxp.c)
+zephyr_library_sources_ifdef(CONFIG_ESPI_NXP
+    ${ZEPHYR_HAL_NXP_MODULE_DIR}/mcux/mcux-sdk-ng/drivers/espi/fsl_espi.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_RTS5912 espi_realtek_rts5912.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_TAF_NPCX espi_taf_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_TAF_XEC espi_saf_mchp_xec.c)
