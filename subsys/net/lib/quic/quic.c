@@ -6319,6 +6319,12 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 
 	quic_endpoint_negotiate_idle_timeout(ep);
 
+	ret = quic_tls_note_handshake_complete(tls);
+	if (ret != 0) {
+		NET_ERR("Failed to finalize TLS resumption state");
+		return ret;
+	}
+
 	/* Derive application traffic secrets */
 	ret = derive_application_secrets(tls);
 	if (ret != 0) {
@@ -6338,6 +6344,14 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 		if (ret != 0) {
 			NET_WARN("[EP:%p/%d] Failed to send NEW_TOKEN (%d)",
 				 ep, quic_get_by_ep(ep), ret);
+		}
+
+		if (tls->issue_session_tickets) {
+			ret = quic_tls_send_new_session_ticket(tls);
+			if (ret != 0 && ret != -ENOTSUP) {
+				NET_WARN("[EP:%p/%d] Failed to send NewSessionTicket (%d)",
+					 ep, quic_get_by_ep(ep), ret);
+			}
 		}
 	}
 

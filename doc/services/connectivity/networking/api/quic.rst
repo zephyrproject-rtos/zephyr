@@ -252,6 +252,87 @@ Note that the list items must be constants, and they cannot be variables.
    }
 
 
+.. _quic_session_resumption:
+
+Session Resumption and 0-RTT
+****************************
+
+After a full handshake a server may issue a TLS 1.3 *NewSessionTicket*. A client
+can store the resulting session state and present it on a later connection to
+**resume** without a full handshake, and -- when the server permits it -- to send
+**0-RTT early data** in the very first flight, before the handshake completes.
+
+0-RTT support is compiled in with :kconfig:option:`CONFIG_QUIC_0RTT` (**disabled
+by default**). Session resumption at 1-RTT works without it; enabling it adds the
+early-data offer/accept/replay handling.
+
+.. warning::
+
+   0-RTT early data is **replayable** by a network attacker (:rfc:`9001`
+   Section 9.2). Only send data for idempotent / replay-safe operations over
+   0-RTT, and be prepared for the peer to reject it (the data must then be
+   retried after the handshake completes). The stack makes issued tickets
+   single-use and applies an age-freshness window, but this anti-replay state is
+   in-memory and per-instance only (it does not survive a restart and is not
+   shared across server instances).
+
+**Client: export and reuse session state**
+
+After the handshake, read the resumable state from the connection socket and
+keep it. On a new connection, import it before opening the first stream. When
+0-RTT is armed, the first stream data is carried as early data.
+
+.. code-block:: c
+
+   struct quic_session_state state;
+   net_socklen_t optlen = sizeof(state);
+
+   /* After the first connection's handshake completes: */
+   zsock_getsockopt(conn_sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_SESSION_STATE,
+                    &state, &optlen);
+
+   /* On a later connection, before the first stream is opened: */
+   zsock_setsockopt(new_conn_sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_SESSION_STATE,
+                    &state, sizeof(state));
+
+Since ``struct quic_session_state`` carries the resumption secret, treat it as
+sensitive and store it securely. Its layout is versioned with
+``QUIC_SESSION_STATE_VERSION``.
+
+**Server: issue tickets and permit 0-RTT**
+
+Set these options on the listening (or server-side connection) socket before the
+handshake:
+
+* ``ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE`` (pointer to ``int``) -- non-zero makes
+  the server send a NewSessionTicket after the handshake, enabling 1-RTT
+  resumption.
+* ``ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE`` (pointer to ``uint32_t``) -- any non-zero
+  value enables 0-RTT on newly issued tickets (and requires
+  :kconfig:option:`CONFIG_QUIC_0RTT`, else ``setsockopt()`` fails with
+  ``ENOTSUP``). Per :rfc:`9001` Section 4.6.1 the ticket always advertises the
+  fixed ``0xffffffff`` sentinel; the amount of early data a client may actually
+  send is bounded by the connection's flow-control (transport-parameter) limits,
+  so this option is an enable switch, not a byte budget.
+
+.. code-block:: c
+
+   int enable = 1;
+   uint32_t early_data = 1; /* non-zero enables 0-RTT for issued tickets */
+
+   zsock_setsockopt(quic_sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE,
+                    &enable, sizeof(enable));
+   zsock_setsockopt(quic_sock, ZSOCK_SOL_QUIC, ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE,
+                    &early_data, sizeof(early_data));
+
+**Per-stream early-data status**
+
+On a server, query whether a given stream carried accepted 0-RTT data with
+``ZSOCK_QUIC_SO_STREAM_EARLY_DATA`` (pointer to ``int``) on the **stream**
+socket. This lets a protocol layer apply replay protection (for example, HTTP/3
+answers a non-idempotent early request with ``425 Too Early``).
+
+
 .. _quic_dplpmtud:
 
 Path MTU Discovery (DPLPMTUD)
