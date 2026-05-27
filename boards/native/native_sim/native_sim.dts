@@ -30,6 +30,7 @@
 	};
 
 	aliases {
+		codec0 = &audio_codec;
 		eeprom-0 = &eeprom0;
 		i2c-0 = &i2c0;
 		spi-0 = &spi0;
@@ -231,6 +232,11 @@
 		compatible = "zephyr,adc-emul";
 		nchannels = <2>;
 		#io-channel-cells = <1>;
+		status = "okay";
+	};
+
+	audio_codec: audio_codec {
+		compatible = "zephyr,dummy-codec";
 		status = "okay";
 	};
 
