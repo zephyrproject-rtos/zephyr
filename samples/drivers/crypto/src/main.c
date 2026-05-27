@@ -97,12 +97,12 @@ static void print_buffer_comparison(const uint8_t *wanted_result,
 	printk("\n");
 }
 
-int validate_hw_compatibility(const struct device *dev)
+int validate_hw_compatibility(const struct device *dev, uint32_t key_cap_flag)
 {
 	uint32_t flags = 0U;
 
 	flags = crypto_query_hwcaps(dev);
-	if ((flags & CAP_RAW_KEY) == 0U) {
+	if ((flags & key_cap_flag) == 0U) {
 		LOG_INF("Please provision the key separately "
 			"as the module doesnt support a raw key");
 		return -1;
@@ -120,7 +120,7 @@ int validate_hw_compatibility(const struct device *dev)
 		return -1;
 	}
 
-	cap_flags = CAP_RAW_KEY | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS;
+	cap_flags = key_cap_flag | CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS;
 
 	return 0;
 
@@ -628,7 +628,7 @@ int main(void)
 	};
 	int i;
 
-	if (validate_hw_compatibility(dev)) {
+	if (validate_hw_compatibility(dev, CAP_RAW_KEY)) {
 		LOG_ERR("Incompatible h/w");
 		return 0;
 	}
