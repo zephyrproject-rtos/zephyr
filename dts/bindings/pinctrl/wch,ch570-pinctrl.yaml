@@ -42,6 +42,9 @@ child-binding:
         enum:
           - "5mA-level"
           - "20mA-level"
+        description: |
+          Configures the output pin drive strength (5 mA or 20 mA current
+          drive capability).
 
       pinmux:
         required: true
