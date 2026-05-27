@@ -671,6 +671,63 @@ static int i3c_stm32_config_get(const struct device *dev, enum i3c_config_type t
 	return 0;
 }
 
+#ifdef CONFIG_I3C_CONTROLLER
+static uint8_t i3c_stm32_calc_free_timing(uint64_t min_ns, uint32_t i3c_clock)
+{
+	uint32_t cycles = min_ns * i3c_clock / 1000000000ULL;
+
+	return (uint8_t)((cycles + 1) / 2);
+}
+
+static int i3c_stm32_configure_free_timing(const struct device *dev, uint32_t i3c_clock)
+{
+	const struct i3c_stm32_config *config = dev->config;
+	uint8_t free_timing = 0;
+	struct i3c_stm32_data *data = dev->data;
+	uint32_t i2c_bus_freq = data->drv_data.ctrl_config.scl.i2c;
+	I3C_TypeDef *i3c = config->i3c;
+
+	if (i2c_bus_freq != 0) {
+		if (i2c_bus_freq > 400000) {
+			/* Mixed bus with I2C FM+ device */
+			free_timing = i3c_stm32_calc_free_timing(STM32_I3C_TBUF_FMP_MIN_NS,
+				i3c_clock);
+		} else {
+			/* Mixed bus with I2C FM device */
+			free_timing = i3c_stm32_calc_free_timing(STM32_I3C_TBUF_FM_MIN_NS,
+				i3c_clock);
+		}
+	} else {
+		if (config->drv_cfg.dev_list.num_i2c > 0) {
+			enum i3c_bus_mode mode = i3c_bus_mode(&config->drv_cfg.dev_list);
+
+			if (mode == I3C_BUS_MODE_MIXED_FAST) {
+				if (get_i3c_lvr_ic_mode(&config->drv_cfg.dev_list) ==
+				    I3C_LVR_I2C_FM_MODE) {
+					/* Mixed bus with I2C FM device */
+					free_timing = i3c_stm32_calc_free_timing(
+						STM32_I3C_TBUF_FM_MIN_NS,
+						i3c_clock);
+				} else {
+					/* Mixed bus with I2C FM+ device */
+					free_timing = i3c_stm32_calc_free_timing(
+						STM32_I3C_TBUF_FMP_MIN_NS,
+						i3c_clock);
+				}
+			} else {
+				return -EINVAL;
+			}
+		} else {
+			/* Pure I3C bus */
+			free_timing = i3c_stm32_calc_free_timing(STM32_I3C_TCAS_MIN_NS, i3c_clock);
+		}
+	}
+	LL_I3C_SetFreeTiming(i3c, free_timing);
+	LL_I3C_SetDataHoldTime(i3c, LL_I3C_SDA_HOLD_TIME_1_5);
+	return 0;
+}
+#endif /* CONFIG_I3C_CONTROLLER */
+
 static int i3c_stm32_config_ctrl_bus_char(const struct device *dev, enum i3c_config_type type)
 {
 	const struct i3c_stm32_config *config = dev->config;
@@ -688,53 +745,11 @@ static int i3c_stm32_config_ctrl_bus_char(const struct device *dev, enum i3c_con
 	/* Satisfying I3C start timing min timing will satisfy the rest of the conditions */
 #ifdef CONFIG_I3C_CONTROLLER
 	if (type == I3C_CONFIG_CONTROLLER) {
-		uint8_t free_timing = 0;
-		struct i3c_stm32_data *data = dev->data;
-		uint32_t i2c_bus_freq = data->drv_data.ctrl_config.scl.i2c;
+		int ret = i3c_stm32_configure_free_timing(dev, i3c_clock);
 
-		if (i2c_bus_freq != 0) {
-			if (i2c_bus_freq > 400000) {
-				/* Mixed bus with I2C FM+ device */
-				free_timing = (uint8_t)ceil(
-					(STM32_I3C_TBUF_FMP_MIN_NS * i3c_clock / 1e9 - 0.5) / 2);
-			} else {
-				/* Mixed bus with I2C FM device */
-				free_timing = (uint8_t)ceil(
-					(STM32_I3C_TBUF_FM_MIN_NS * i3c_clock / 1e9 - 0.5) / 2);
-			}
-		} else {
-			if (config->drv_cfg.dev_list.num_i2c > 0) {
-				enum i3c_bus_mode mode = i3c_bus_mode(&config->drv_cfg.dev_list);
-
-				if (mode == I3C_BUS_MODE_MIXED_FAST) {
-					if (get_i3c_lvr_ic_mode(&config->drv_cfg.dev_list) ==
-					    I3C_LVR_I2C_FM_MODE) {
-						/* Mixed bus with I2C FM device */
-						free_timing =
-							(uint8_t)ceil((STM32_I3C_TBUF_FM_MIN_NS *
-									       i3c_clock / 1e9 -
-								       0.5) /
-								      2);
-					} else {
-						/* Mixed bus with I2C FM+ device */
-						free_timing =
-							(uint8_t)ceil((STM32_I3C_TBUF_FMP_MIN_NS *
-									       i3c_clock / 1e9 -
-								       0.5) /
-								      2);
-					}
-				} else {
-					return -EINVAL;
-				}
-			} else {
-				/* Pure I3C bus */
-				free_timing =
-					(uint8_t)ceil((STM32_I3C_TCAS_MIN_NS *
-						i3c_clock / 1e9 - 0.5) / 2);
-			}
+		if (ret != 0) {
+			return ret;
 		}
-		LL_I3C_SetFreeTiming(i3c, free_timing);
-		LL_I3C_SetDataHoldTime(i3c, LL_I3C_SDA_HOLD_TIME_1_5);
 	}
 #endif /*CONFIG_I3C_CONTROLLER*/
 
@@ -1727,36 +1742,47 @@ static int i3c_stm32_init(const struct device *dev)
 #endif /*CONFIG_I3C_CONTROLLER*/
 }
 
+#ifdef CONFIG_I3C_TARGET
+static void i3c_stm32_process_target_txfnf(const struct device *dev)
+{
+	struct i3c_stm32_data *data = dev->data;
+	const struct i3c_stm32_config *config = dev->config;
+	I3C_TypeDef *i3c = config->i3c;
+
+	while (LL_I3C_IsActiveFlag_TXFNF(i3c)) {
+
+		if (data->target_config != NULL && data->target_config->callbacks != NULL) {
+			if (data->target_config->callbacks->read_processed_cb != NULL) {
+				uint8_t byte = 0;
+
+				data->target_config->callbacks->read_processed_cb(
+					data->target_config, &byte);
+				LL_I3C_TransmitData8(i3c, byte);
+			}
+
+			if (!LL_I3C_IsActiveTxPreload(i3c) &&
+			    data->target_config->callbacks->read_requested_cb != NULL) {
+				data->target_config->callbacks->read_requested_cb(
+					data->target_config, NULL);
+			}
+		}
+	}
+}
+#endif /*CONFIG_I3C_CONTROLLER*/
+
 static void i3c_stm32_event_isr_tx(const struct device *dev)
 {
 	const struct i3c_stm32_config *config = dev->config;
-	struct i3c_stm32_data *data = dev->data;
 	I3C_TypeDef *i3c = config->i3c;
 
 #if CONFIG_I3C_TARGET
 	if (!ll_i3c_is_in_controller_mode(i3c)) {
-		while (LL_I3C_IsActiveFlag_TXFNF(i3c)) {
-
-			if (data->target_config != NULL &&
-			    data->target_config->callbacks != NULL) {
-				if (data->target_config->callbacks->read_processed_cb != NULL) {
-					uint8_t byte = 0;
-
-					data->target_config->callbacks->read_processed_cb(
-						data->target_config, &byte);
-					LL_I3C_TransmitData8(i3c, byte);
-				}
-
-				if (!LL_I3C_IsActiveTxPreload(i3c) &&
-				    data->target_config->callbacks->read_requested_cb != NULL) {
-					data->target_config->callbacks->read_requested_cb(
-						data->target_config, NULL);
-				}
-			}
-		}
+		i3c_stm32_process_target_txfnf(dev);
 	}
 #endif /*CONFIG_I3C_TARGET*/
 #if CONFIG_I3C_CONTROLLER
+	struct i3c_stm32_data *data = dev->data;
+
 	switch (data->msg_state) {
 	case STM32_I3C_MSG: {
 		uint8_t *buf = NULL;
@@ -1967,6 +1993,61 @@ static void i3c_stm32_event_isr_cf(const struct device *dev)
 		break;
 	}
 }
+
+#if CONFIG_I3C_USE_IBI
+static void i3c_stm32_isr_controller_ibi(const struct device *dev)
+{
+	const struct i3c_stm32_config *config = dev->config;
+	struct i3c_stm32_data *data = dev->data;
+	I3C_TypeDef *i3c = config->i3c;
+
+	k_sem_take(&data->ibi_lock_sem, K_FOREVER);
+
+	if (LL_I3C_IsActiveFlag_IBI(i3c)) {
+		/* Clear frame complete flag */
+		LL_I3C_ClearFlag_IBI(i3c);
+		data->ibi_payload = LL_I3C_GetIBIPayload(i3c);
+		data->ibi_payload_size = LL_I3C_GetNbIBIAddData(i3c);
+		data->ibi_target_addr = LL_I3C_GetIBITargetAddr(i3c);
+		if ((data->ibi_payload == 0) && (data->ibi_payload_size == 0) &&
+		    (data->ibi_target_addr == 0)) {
+			LOG_ERR("Invalid Payload");
+		} else {
+			LOG_DBG("IBI done, payload received :%d,%d,%d", data->ibi_payload,
+				data->ibi_payload_size, data->ibi_target_addr);
+			if ((data->ibi_payload != 0) && (data->ibi_payload_size != 0)) {
+				struct i3c_device_desc *target;
+
+				target = i3c_dev_list_i3c_addr_find(dev, data->ibi_target_addr);
+
+				if (target != NULL) {
+					if (i3c_ibi_work_enqueue_target_irq(
+						    target, (uint8_t *)&data->ibi_payload,
+						    data->ibi_payload_size) != 0) {
+						LOG_ERR("Error enqueue IBI IRQ work");
+					}
+				} else {
+					LOG_ERR("IBI from unknown device addr 0x%x",
+						data->ibi_target_addr);
+				}
+			}
+		}
+	}
+
+	if (LL_I3C_IsActiveFlag_HJ(i3c)) {
+		int ret;
+
+		LL_I3C_ClearFlag_HJ(i3c);
+
+		ret = i3c_ibi_work_enqueue_hotjoin(dev);
+		if (ret != 0) {
+			LOG_ERR("IBI Failed to enqueue hotjoin work");
+		}
+	}
+
+	k_sem_give(&data->ibi_lock_sem);
+}
+#endif /* CONFIG_I3C_USE_IBI */
 #endif /* CONFIG_I3C_CONTROLLER */
 
 /* Handles the I3C event ISR */
@@ -2047,52 +2128,7 @@ static void i3c_stm32_event_isr(void *arg)
 #ifdef CONFIG_I3C_USE_IBI
 #ifdef CONFIG_I3C_CONTROLLER
 	if (ll_i3c_is_in_controller_mode(i3c)) {
-		k_sem_take(&data->ibi_lock_sem, K_FOREVER);
-
-		if (LL_I3C_IsActiveFlag_IBI(i3c)) {
-			/* Clear frame complete flag */
-			LL_I3C_ClearFlag_IBI(i3c);
-			data->ibi_payload = LL_I3C_GetIBIPayload(i3c);
-			data->ibi_payload_size = LL_I3C_GetNbIBIAddData(i3c);
-			data->ibi_target_addr = LL_I3C_GetIBITargetAddr(i3c);
-			if ((data->ibi_payload == 0) && (data->ibi_payload_size == 0) &&
-			    (data->ibi_target_addr == 0)) {
-				LOG_ERR("Invalid Payload");
-			} else {
-				LOG_DBG("IBI done, payload received :%d,%d,%d", data->ibi_payload,
-					data->ibi_payload_size, data->ibi_target_addr);
-				if ((data->ibi_payload != 0) && (data->ibi_payload_size != 0)) {
-					struct i3c_device_desc *target;
-
-					target = i3c_dev_list_i3c_addr_find(dev,
-									    data->ibi_target_addr);
-
-					if (target != NULL) {
-						if (i3c_ibi_work_enqueue_target_irq(
-							    target, (uint8_t *)&data->ibi_payload,
-							    data->ibi_payload_size) != 0) {
-							LOG_ERR("Error enqueue IBI IRQ work");
-						}
-					} else {
-						LOG_ERR("IBI from unknown device addr 0x%x",
-							data->ibi_target_addr);
-					}
-				}
-			}
-		}
-
-		if (LL_I3C_IsActiveFlag_HJ(i3c)) {
-			int ret;
-
-			LL_I3C_ClearFlag_HJ(i3c);
-
-			ret = i3c_ibi_work_enqueue_hotjoin(dev);
-			if (ret != 0) {
-				LOG_ERR("IBI Failed to enqueue hotjoin work");
-			}
-		}
-
-		k_sem_give(&data->ibi_lock_sem);
+		i3c_stm32_isr_controller_ibi(dev);
 	}
 #endif /*CONFIG_I3C_CONTROLLER*/
 #endif /*CONFIG_I3C_USE_IBI*/
