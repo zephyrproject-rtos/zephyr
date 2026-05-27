@@ -20,6 +20,7 @@
 
 /* Key schedule labels */
 #define TLS13_LABEL_DERIVED        "derived"
+#define TLS13_LABEL_C_E_TRAFFIC    "c e traffic"
 #define TLS13_LABEL_C_HS_TRAFFIC   "c hs traffic"
 #define TLS13_LABEL_S_HS_TRAFFIC   "s hs traffic"
 #define TLS13_LABEL_C_AP_TRAFFIC   "c ap traffic"

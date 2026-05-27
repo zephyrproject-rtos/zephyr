@@ -1114,6 +1114,24 @@ ZTEST(net_socket_quic, test_084_rejected_early_data_clears_inflight_tracking)
 		      "Rejected early packets must be removed from bytes-in-flight");
 }
 
+ZTEST(net_socket_quic, test_085_rejected_early_data_disarms_send_path)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+
+	ep->is_server = false;
+	ep->crypto.tls.is_initialized = true;
+	ep->crypto.tls.session_state_valid = true;
+	ep->crypto.tls.early_data_offered = true;
+	ep->crypto.tls.early_data_rejected = true;
+	ep->crypto.tls.session_state.max_early_data_size = 4096U;
+	ep->crypto.early.initialized = true;
+
+	zassert_false(quic_early_data_is_armed(ep),
+		      "Rejected early data must disarm the 0-RTT send path");
+	zassert_equal(quic_stream_send_level(ep), QUIC_SECRET_LEVEL_APPLICATION,
+		      "Rejected early data must fall back to application keys");
+}
+
 ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
@@ -4520,7 +4538,8 @@ static void quic_server_and_client_with_psk(const char *server, const char *clie
 	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
 }
 
-static void quic_server_and_client_with_session_resumption(const char *server, const char *client)
+static void quic_server_and_client_with_session_resumption(const char *server, const char *client,
+							   uint32_t ticket_early_data_size)
 {
 	struct net_sockaddr_storage server_addr;
 	struct net_sockaddr_storage client_addr;
@@ -4575,6 +4594,12 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 			       &enable_session_tickets,
 			       sizeof(enable_session_tickets));
 	zassert_equal(ret, 0, "Failed to enable session tickets (%d)", -errno);
+
+	ret = zsock_setsockopt(server_sock, ZSOCK_SOL_QUIC,
+			       ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE,
+			       &ticket_early_data_size,
+			       sizeof(ticket_early_data_size));
+	zassert_equal(ret, 0, "Failed to set ticket early-data size (%d)", -errno);
 
 	setup_quic_certs(server_sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
 	setup_quic_certs(client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
@@ -4640,6 +4665,9 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 		      "Unexpected session state version %u", session_state.version);
 	zassert_true(session_state.ticket_len > 0U, "Expected a non-empty session ticket");
 	zassert_true(session_state.psk_len > 0U, "Expected a non-empty resumption PSK");
+	zassert_equal(session_state.max_early_data_size, ticket_early_data_size,
+		      "Unexpected remembered early-data size %" PRIu32,
+		      session_state.max_early_data_size);
 	zassert_true(session_state.transport_params.valid,
 		     "Expected remembered transport parameters in session state");
 	zassert_equal(session_state.transport_params.initial_max_data,
@@ -4693,10 +4721,6 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 	zassert_equal(ret, 0, "Failed to close client connection (%d)", ret);
 	client_sock = -1;
 
-	ret = quic_connection_close(server_sock);
-	zassert_equal(ret, 0, "Failed to close first server connection (%d)", ret);
-	server_sock = -1;
-
 	if (server_addr.ss_family == NET_AF_INET) {
 		struct net_sockaddr_in *addr = net_sin((struct net_sockaddr *)&client_addr);
 
@@ -4714,6 +4738,7 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 	zassert_true(client_sock >= 0, "Failed to create resumed client socket");
 
 	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+	setup_quic_certs(client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
 
 	ret = zsock_setsockopt(client_sock, ZSOCK_SOL_QUIC,
 			       ZSOCK_QUIC_SO_SESSION_STATE,
@@ -4736,6 +4761,9 @@ static void quic_server_and_client_with_session_resumption(const char *server, c
 
 	ret = quic_connection_close(client_sock);
 	zassert_equal(ret, 0, "Failed to close resumed client connection (%d)", ret);
+
+	ret = quic_connection_close(server_sock);
+	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
 }
 
 ZTEST(net_socket_quic, test_410_client_cert_optional)
@@ -4861,7 +4889,7 @@ ZTEST(net_socket_quic, test_465_external_psk_handshake_can_exchange_data)
 	quic_server_and_client_with_psk(LOCAL_ADDR_IPV4_STR3, REMOTE_ADDR_IPV4_STR3);
 }
 
-ZTEST(net_socket_quic, test_466_session_ticket_resumption_can_exchange_data)
+ZTEST(net_socket_quic, test_466_session_ticket_resumption_round_trips_0rtt_policy)
 {
 	int ret;
 
@@ -4869,10 +4897,23 @@ ZTEST(net_socket_quic, test_466_session_ticket_resumption_can_exchange_data)
 	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
 
 	quic_server_and_client_with_session_resumption(LOCAL_ADDR_IPV4_STR3,
-							 REMOTE_ADDR_IPV4_STR3);
+							 REMOTE_ADDR_IPV4_STR3,
+							 4096U);
 }
 
-ZTEST(net_socket_quic, test_467_resumed_transport_params_reject_lower_early_data_limits)
+ZTEST(net_socket_quic, test_467_session_ticket_resumption_round_trips_disabled_0rtt_policy)
+{
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	quic_server_and_client_with_session_resumption(LOCAL_ADDR_IPV4_STR3,
+							 REMOTE_ADDR_IPV4_STR3,
+							 0U);
+}
+
+ZTEST(net_socket_quic, test_468_resumed_transport_params_reject_lower_early_data_limits)
 {
 	static const uint8_t original_dcid[] = {
 		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
@@ -4933,7 +4974,7 @@ ZTEST(net_socket_quic, test_467_resumed_transport_params_reject_lower_early_data
 		      "Lower resumed early-data transport params must fail (%d)", ret);
 }
 
-ZTEST(net_socket_quic, test_468_resumed_transport_params_accept_equal_or_larger_limits)
+ZTEST(net_socket_quic, test_469_resumed_transport_params_accept_equal_or_larger_limits)
 {
 	static const uint8_t original_dcid[] = {
 		0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
