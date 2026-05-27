@@ -86,6 +86,12 @@ config VIDEO_TRANSFORM_NXP_JPEGDEC
 	help
 	  Use NXP JPEG decoder to decompress JPEG frames
 
+config VIDEO_TRANSFORM_NXP_PNGDEC
+	bool "Use NXP PNG decoder for video transform"
+	depends on VIDEO_MCUX_PNGDEC
+	help
+	  Use NXP PNG decoder to decompress PNG frames
+
 endchoice
 
 endmenu
