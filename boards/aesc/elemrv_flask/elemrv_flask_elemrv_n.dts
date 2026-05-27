@@ -7,11 +7,11 @@
 /dts-v1/;
 
 #include <aesc/elemrv-n.dtsi>
-#include "elemrv_elemrv_n-pinctrl.dtsi"
+#include "elemrv_flask_elemrv_n-pinctrl.dtsi"
 
 / {
-	model = "ElemRV-N";
-	compatible = "aesc,elemrv-n";
+	model = "ElemRV Flask (ElemRV-N)";
+	compatible = "aesc,elemrv-flask";
 
 	aliases {
 		led0 = &led0;
