@@ -57,8 +57,12 @@ else()
   file(WRITE "${_extram_inc}" "")
 endif()
 
-# Get flash size to use in esptool as string
-math(EXPR esptoolpy_flashsize "${CONFIG_FLASH_SIZE} / 0x100000")
+if(NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE))
+  # Get flash size in MB for esptool from the chosen zephyr,flash node
+  dt_chosen(dts_flash PROPERTY "zephyr,flash")
+  dt_reg_size(flash_size_bytes PATH ${dts_flash})
+  math(EXPR esptoolpy_flashsize "${flash_size_bytes} / 0x100000")
+endif()
 
 # Get UART baudrate from DT
 dt_chosen(dts_shell_uart PROPERTY "zephyr,shell-uart")
