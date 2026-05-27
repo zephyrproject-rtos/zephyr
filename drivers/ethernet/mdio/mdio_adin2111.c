@@ -14,7 +14,8 @@ LOG_MODULE_REGISTER(mdio_adin2111, CONFIG_MDIO_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mdio.h>
-#include <zephyr/drivers/ethernet/eth_adin2111.h>
+
+#include "../eth_adin2111_priv.h"
 
 /* MDIO ready check retry delay */
 #define ADIN2111_MDIO_READY_AWAIT_DELAY_POLL_US		5U
