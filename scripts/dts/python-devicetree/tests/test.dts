@@ -595,6 +595,35 @@
 	};
 
 	//
+	// Node with properties using 'dependency-mode:' in binding
+	//
+
+	dependency-mode-target {};
+
+	dependency-mode-normal {
+		compatible = "dependency-mode-test";
+		normal-ref = <&{/dependency-mode-target}>;
+	};
+
+	dependency-mode-reverse {
+		compatible = "dependency-mode-test";
+		reverse-ref = <&{/dependency-mode-target}>;
+	};
+
+	dependency-mode-ignore {
+		compatible = "dependency-mode-test";
+		ignore-ref = <&{/dependency-mode-target}>;
+	};
+
+	dependency-mode-child-ignore {
+		compatible = "dependency-mode-test";
+		child-ignore-ref = <&{/dependency-mode-child-ignore/local-child}>;
+		child-ignore-external-ref = <&{/dependency-mode-target}>;
+
+		local-child {};
+	};
+
+	//
 	// zephyr,user binding inference
 	//
 
