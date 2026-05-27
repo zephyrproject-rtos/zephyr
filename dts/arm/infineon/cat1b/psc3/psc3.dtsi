@@ -152,7 +152,7 @@
 			interrupts = <108 4>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
+			ranges = <0x0 0x42b00000 0x100000>;
 			status = "disabled";
 
 			/*
@@ -181,6 +181,89 @@
 				interrupts = <109 4>;
 				status = "disabled";
 				#io-channel-cells = <1>;
+			};
+
+			csg0: csg@b0000 {
+				compatible = "infineon,hppass-csg";
+				reg = <0x000b0000 0x10000>;
+				interrupts = <138 4>;
+				clk-dst = <0x515>;
+				infineon,num-slices = <5>;
+				infineon,slice-reg-spacing = <0x40>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+				status = "disabled";
+
+				comp0: comparator@b0000 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0000 0x40>;
+					status = "disabled";
+				};
+
+				comp1: comparator@b0040 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0040 0x40>;
+					status = "disabled";
+				};
+
+				comp2: comparator@b0080 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0080 0x40>;
+					status = "disabled";
+				};
+
+				comp3: comparator@b00c0 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b00c0 0x40>;
+					status = "disabled";
+				};
+
+				comp4: comparator@b0100 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0100 0x40>;
+					status = "disabled";
+				};
+
+				dac0: dac@b0004 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0004 0x20>;
+					interrupts = <130 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				dac1: dac@b0044 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0044 0x20>;
+					interrupts = <131 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				dac2: dac@b0084 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0084 0x20>;
+					interrupts = <132 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				dac3: dac@b00c4 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b00c4 0x20>;
+					interrupts = <133 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				dac4: dac@b0104 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0104 0x20>;
+					interrupts = <134 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
 			};
 		};
 
