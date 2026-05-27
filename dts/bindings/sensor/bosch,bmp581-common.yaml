@@ -137,7 +137,8 @@ properties:
     description: |
       Specify the FIFO watermark level in frame count.
       Only supports frames with both Pressure and Temperature
-      Valid range: 1 - 15
+    min: 1
+    max: 15
 
   int-active-low:
     type: boolean
