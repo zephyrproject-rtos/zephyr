@@ -97,6 +97,15 @@ config MBEDTLS_HMAC_DRBG_C
 
 comment "Other configurations"
 
+config MBEDTLS_MEMORY_BUFFER_ALLOC_C
+	bool "Buffer memory allocator"
+	default y
+	help
+	  Enable the buffer allocator implementation that makes use of a (stack)
+	  based buffer to 'allocate' dynamic memory. (replaces calloc() and free() calls)
+
+if MBEDTLS_MEMORY_BUFFER_ALLOC_C
+
 config MBEDTLS_MEMORY_DEBUG
 	bool "mbed TLS memory debug activation"
 	help
@@ -104,8 +113,11 @@ config MBEDTLS_MEMORY_DEBUG
 	  prints (to stderr) all (fatal) messages on memory allocation
 	  issues. Enables function for 'debug output' of allocated memory.
 
+endif # MBEDTLS_MEMORY_BUFFER_ALLOC_C
+
 config MBEDTLS_ENABLE_HEAP
 	bool "Global heap for mbed TLS"
+	select MBEDTLS_MEMORY_BUFFER_ALLOC_C
 	help
 	  This option enables the mbedtls to use the heap. This setting must
 	  be global so that various applications and libraries in Zephyr do not
@@ -122,9 +134,7 @@ config MBEDTLS_HEAP_SIZE
 	default 512
 	help
 	  The mbedtls routines will use this heap if enabled.
-	  See ext/lib/crypto/mbedtls/include/mbedtls/config.h and
-	  MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details. That option is not
-	  enabled by default.
+	  See the MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details.
 	  Default value for the heap size is not set as it depends on the
 	  application. For streaming communication with arbitrary (HTTPS)
 	  servers on the Internet, 32KB + overheads (up to another 20KB) may
