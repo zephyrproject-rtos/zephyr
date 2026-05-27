@@ -238,26 +238,35 @@ static inline void unpend_thread_no_timeout(struct k_thread *thread)
 }
 
 /*
- * In a multiprocessor system, z_unpend_first_thread() must lock the scheduler
- * spinlock _sched_spinlock. However, in a uniprocessor system, that is not
- * necessary as the caller has already taken precautions (in the form of
- * locking interrupts).
+ * Pick the best-priority waiter from @p wait_q, unpend it, and abort any
+ * timeout it had pending. Returns the thread, or NULL if the wait_q was
+ * empty.
+ *
+ * Caller MUST hold _sched_spinlock and MUST complete the wake (set return
+ * value, ready the thread) under the same lock acquisition before releasing
+ * it. Otherwise a racing in-flight timeout handler can ready the thread
+ * before the caller's wake state is in place, exposing the woken thread
+ * to a stale swap_retval. The pre-1b8c7a3 dticks-cancel check used to
+ * close this window; doing all the wake work atomically under the sched
+ * lock is now the way.
+ *
+ * z_sched_wake() is the convenient wrapper for the common case of
+ * "wake one waiter with this retval and this swap_data".
  */
-static ALWAYS_INLINE struct k_thread *z_unpend_first_thread(_wait_q_t *wait_q)
+static ALWAYS_INLINE struct k_thread *z_unpend_first_thread_locked(_wait_q_t *wait_q)
 {
-	struct k_thread *thread = NULL;
+	struct k_thread *thread = _priq_wait_best(&wait_q->waitq);
 
-	__ASSERT_EVAL(, int key = arch_irq_lock(); arch_irq_unlock(key),
-		      !arch_irq_unlocked(key), "");
-
-	LOCK_SCHED_SPINLOCK {
-		thread = _priq_wait_best(&wait_q->waitq);
-		if (unlikely(thread != NULL)) {
-			unpend_thread_no_timeout(thread);
-			z_abort_thread_timeout(thread);
-		}
+	if (unlikely(thread != NULL)) {
+		unpend_thread_no_timeout(thread);
+		/* A racing in-flight handler will be blocked on the sched
+		 * lock for the duration of the caller's locked region; when
+		 * it eventually runs, the thread is already unpended and
+		 * (depending on caller flow) readied, so the handler's
+		 * z_sched_wake_thread_locked() path is a no-op.
+		 */
+		(void)z_try_abort_thread_timeout(thread);
 	}
-
 	return thread;
 }
 
