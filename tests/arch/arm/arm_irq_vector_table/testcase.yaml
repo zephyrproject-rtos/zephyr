@@ -16,3 +16,6 @@ tests:
       - imx95_evk/mimx9596/m7/ddr
       - imx95_evk/mimx9596/m7/flash
       - imx952_evk/mimx9529/m7
+      - mr_navq95b/mimx9596/m7
+      - mr_navq95b/mimx9596/m7/flash
+      - mr_navq95b/mimx9596/m7/ddr
