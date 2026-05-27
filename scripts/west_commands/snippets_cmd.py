@@ -6,13 +6,13 @@ import argparse
 import os
 import re
 import shutil
-import subprocess
 import sys
 import textwrap
 from pathlib import Path
 
 from west.commands import WestCommand
 
+from zcmake import run_cmake
 from zephyr_ext_common import ZEPHYR_BASE
 
 sys.path.append(os.fspath(Path(__file__).parent.parent))
@@ -88,8 +88,7 @@ class Snippets(WestCommand):
 
         # Use the CMake package helper to get the list of all snippets found
         # in the system.
-        cmake_cmd = [
-            'cmake',
+        cmake_args = [
             '-S',
             'samples/hello_world/',
             '-B',
@@ -101,15 +100,10 @@ class Snippets(WestCommand):
             './cmake/package_helper.cmake',
         ]
 
-        result = subprocess.run(
-            cmake_cmd,
-            capture_output=True,
-            text=True,
-            cwd=ZEPHYR_BASE,
-        )
+        lines = run_cmake(cmake_args, cwd=ZEPHYR_BASE, capture_output=True) or []
 
         snippet_paths = []
-        for line in (result.stdout).splitlines():
+        for line in lines:
             m = re.match(r'^-- SNIPPET_PATHS:\s*(.*)', line)
             if m:
                 snippet_paths = [Path(p) for p in m.group(1).strip().split(';') if p]
