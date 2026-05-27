@@ -13,6 +13,9 @@ config HAS_MCUX
 
 if	HAS_MCUX
 
+DT_CHOSEN_MCUX_DTCM := zephyr,dtcm
+DT_CHOSEN_MCUX_ITCM := zephyr,itcm
+
 config MCUX_OPTIMIZED_MEMCPY
 	bool "Use NXP optimized memcpy"
 	depends on !MINIMAL_LIBC
@@ -32,6 +35,102 @@ config MCUX_OPTIMIZED_MEMSET
 	default y if "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu"
 	help
 	  Use NXP's optimized assembly memset
+
+choice MCUX_DATA_QUICK_ACCESS_PLACEMENT
+	prompt "MCUX SDK DataQuickAccess placement"
+	depends on CPU_CORTEX_M
+	default MCUX_DATA_QUICK_ACCESS_SRAM
+	help
+	  Select where the MCUX SDK DataQuickAccess input section is
+	  placed.
+
+config MCUX_DATA_QUICK_ACCESS_SRAM
+	bool "Place DataQuickAccess in zephyr,sram"
+	help
+	  Place DataQuickAccess in the regular Zephyr read-write data
+	  section. This preserves the existing behavior.
+
+config MCUX_DATA_QUICK_ACCESS_DTCM
+	bool "Place DataQuickAccess in zephyr,dtcm"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_MCUX_DTCM))
+	help
+	  Place DataQuickAccess in the DTCM data section selected by
+	  the zephyr,dtcm devicetree chosen node.
+
+config MCUX_DATA_QUICK_ACCESS_CUSTOM
+	bool "Use custom DataQuickAccess placement"
+	help
+	  Do not add the default MCUX SDK linker snippet for
+	  DataQuickAccess. The board or application must provide a
+	  linker snippet that consumes the DataQuickAccess input section.
+	  If this section contains initialized data and is placed in a
+	  non-standard memory region, the board or application must ensure
+	  that the data is copied from ROM to that region before use.
+
+endchoice
+
+choice MCUX_CODE_QUICK_ACCESS_PLACEMENT
+	prompt "MCUX SDK CodeQuickAccess placement"
+	depends on CPU_CORTEX_M
+	default MCUX_CODE_QUICK_ACCESS_RAMFUNC if ARCH_HAS_RAMFUNC_SUPPORT
+	default MCUX_CODE_QUICK_ACCESS_CUSTOM
+	help
+	  Select where the MCUX SDK CodeQuickAccess input section is
+	  placed.
+
+config MCUX_CODE_QUICK_ACCESS_RAMFUNC
+	bool "Place CodeQuickAccess in ramfunc"
+	depends on ARCH_HAS_RAMFUNC_SUPPORT
+	help
+	  Place CodeQuickAccess in the Zephyr ramfunc section. This
+	  preserves the existing behavior when ramfunc support is enabled.
+
+config MCUX_CODE_QUICK_ACCESS_ITCM
+	bool "Place CodeQuickAccess in zephyr,itcm"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_MCUX_ITCM))
+	help
+	  Place CodeQuickAccess in the ITCM section selected by the
+	  zephyr,itcm devicetree chosen node.
+
+config MCUX_CODE_QUICK_ACCESS_CUSTOM
+	bool "Use custom CodeQuickAccess placement"
+	help
+	  Do not add the default MCUX SDK linker snippet for
+	  CodeQuickAccess. The board or application must provide a linker
+	  snippet that consumes the CodeQuickAccess input section if needed.
+	  If this section is placed in a non-standard memory region, the
+	  board or application must ensure that the code is loaded or copied
+	  to that region before execution.
+
+endchoice
+
+choice MCUX_NONCACHEABLE_PLACEMENT
+	prompt "MCUX SDK NonCacheable placement"
+	default MCUX_NONCACHEABLE_NOCACHE if NOCACHE_MEMORY
+	default MCUX_NONCACHEABLE_CUSTOM
+	help
+	  Select where the MCUX SDK NonCacheable and NonCacheable.init
+	  input sections are placed.
+
+config MCUX_NONCACHEABLE_NOCACHE
+	bool "Place NonCacheable sections in Zephyr nocache memory"
+	depends on NOCACHE_MEMORY
+	help
+	  Place NonCacheable and NonCacheable.init input sections in the
+	  Zephyr nocache section. This preserves the existing behavior when
+	  nocache memory support is enabled.
+
+config MCUX_NONCACHEABLE_CUSTOM
+	bool "Use custom NonCacheable placement"
+	help
+	  Do not add the default MCUX SDK linker snippet for NonCacheable
+	  and NonCacheable.init. The board or application must provide a
+	  linker snippet that consumes these input sections if needed.
+	  If NonCacheable.init is placed in a non-standard memory region,
+	  the board or application must ensure that initialized data is
+	  copied from ROM to that region before use.
+
+endchoice
 
 config MCUX_CORE_SUFFIX
 	string

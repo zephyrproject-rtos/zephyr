@@ -72,20 +72,32 @@ enable_language(C ASM)
 if(CONFIG_CPU_CORTEX_A)
   zephyr_compile_definitions(FSL_SDK_DRIVER_QUICK_ACCESS_DISABLE)
 else()
-  zephyr_linker_sources(RWDATA
-    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
-    )
+  if(CONFIG_MCUX_DATA_QUICK_ACCESS_SRAM)
+    zephyr_linker_sources(RWDATA
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
+      )
+  elseif(CONFIG_MCUX_DATA_QUICK_ACCESS_DTCM)
+    zephyr_linker_sources(DTCM_SECTION
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
+      )
+  endif()
 
-  zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-    RAMFUNC_SECTION
-    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
-    )
+  if(CONFIG_MCUX_CODE_QUICK_ACCESS_RAMFUNC)
+    zephyr_linker_sources(RAMFUNC_SECTION
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
+      )
+  elseif(CONFIG_MCUX_CODE_QUICK_ACCESS_ITCM)
+    zephyr_linker_sources(ITCM_SECTION
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
+      )
+  endif()
 endif()
 
-zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
-  NOCACHE_SECTION
-  ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/nocache.ld
-  )
+if(CONFIG_MCUX_NONCACHEABLE_NOCACHE)
+  zephyr_linker_sources(NOCACHE_SECTION
+    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/nocache.ld
+    )
+endif()
 
 if(NOT CONFIG_ASSERT OR CONFIG_FORCE_NO_ASSERT)
   zephyr_compile_definitions(NDEBUG) # squelch fsl_flexcan.c warning
