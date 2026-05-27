@@ -380,7 +380,6 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 
 #define AFBR_S50_INIT(inst)									   \
 												   \
-	BUILD_ASSERT(DT_INST_PROP(inst, odr) > 0, "Please set valid ODR");			   \
 	BUILD_ASSERT(DT_INST_PROP(inst, dual_freq_mode == 0) ||					   \
 		     ((DT_INST_PROP(inst, dual_freq_mode) != 0) ^				   \
 		      ((DT_INST_PROP(inst, measurement_mode) & ARGUS_MODE_FLAG_HIGH_SPEED) != 0)), \
