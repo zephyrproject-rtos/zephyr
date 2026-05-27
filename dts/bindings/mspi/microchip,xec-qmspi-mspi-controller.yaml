@@ -1,0 +1,48 @@
+# Copyright (c) 2026 Microchip Technology Inc. and its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC QMSPI MSPI controller
+
+compatible: "microchip,xec-qmspi-mspi-controller"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      QMSPI input clock frequency in Hz. For MEC175x this is 96000000.
+
+  pcr:
+    type: int
+    required: true
+    description: |
+      PCR sleep control register encoding for power gating this peripheral.
+
+  girqs:
+    type: array
+    required: true
+    description: |
+      GIRQ and bit-position encoding for this peripheral interrupt source.
+
+  num-hw-ce:
+    type: int
+    default: 1
+    description: |
+      Number of hardware chip selects available (1 or 2).
+      This value can vary by the SPI port. The Shared SPI
+      port has two HW chip enables. The Private and Internal
+      SPI ports only have one HW chip enable.

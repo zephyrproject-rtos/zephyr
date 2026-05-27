@@ -1,0 +1,36 @@
+# Microchip XEC QMSPI MSPI driver configuration
+#
+# Copyright (c) 2026 Microchip Technology Inc. and its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_MCHP_XEC_QMSPI
+	bool "Microchip XEC QMSPI MSPI controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_QMSPI_MSPI_CONTROLLER_ENABLED
+	select PINCTRL
+	select PINCTRL_KEEP_SLEEP_STATE
+	help
+	  Enable MSPI driver for Microchip MEC174x/MEC175x/MEC165xB QMSPI controller.
+	  Supports PIO transfers using descriptors and the 8-byte TX/RX FIFOs.
+	  Uses register definitions from
+	  soc/microchip/mec/common/reg/mec_qmspi.h.
+
+	  Pin assignments are board-specific; add QMSPI pinctrl nodes to
+	  the board DTS and reference them via pinctrl-0 on the qspi0 node.
+
+if MSPI_MCHP_XEC_QMSPI
+
+config MSPI_MCHP_XEC_QMSPI_LDMA
+	bool "QMSPI Local-DMA data path"
+	default y
+	depends on MSPI_DMA
+	help
+	  Use the QMSPI controller's three TX and three RX Local-DMA channels
+	  for command, address, and data phases when an MSPI request specifies
+	  xfer_mode=MSPI_DMA. Length-override on each channel drives the byte
+	  count, bypassing the descriptor 15-bit NQUNITS limit.
+
+	  When this is disabled, MSPI_DMA requests are rejected and only the
+	  PIO (FIFO) path is built.
+
+endif # MSPI_MCHP_XEC_QMSPI
