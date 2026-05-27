@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+socs:
+- name: sun50i_h618
