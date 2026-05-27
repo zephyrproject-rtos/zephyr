@@ -71,6 +71,22 @@
 	 (pin << SOC_PINMUX_PIN_POS) |	 \
 	 (hsiom << SOC_PINMUX_HSIOM_FUNC_POS))
 
+/**
+ * Port indices for the SMIF dedicated GPIO ports (PSE84).
+ *
+ * SMIF data/clock pins live on dedicated GPIO ports inside the SMIF
+ * blocks (SMIF{0,1}_CORE_SMIF_GPIO_SMIF_PRT{0,1,2}), separate from the
+ * standard IOSS GPIO ports. The Infineon pinctrl driver maps these
+ * indices to the SMIF port bases so that DT pinctrl-0 entries can
+ * target SMIF pins.
+ */
+#define IFX_SMIF0_PORT0               (22) /**< SMIF0 GPIO port 0 index. */
+#define IFX_SMIF0_PORT1               (23) /**< SMIF0 GPIO port 1 index. */
+#define IFX_SMIF0_PORT2               (24) /**< SMIF0 GPIO port 2 index. */
+#define IFX_SMIF1_PORT0               (25) /**< SMIF1 GPIO port 0 index. */
+#define IFX_SMIF1_PORT1               (26) /**< SMIF1 GPIO port 1 index. */
+#define IFX_SMIF1_PORT2               (27) /**< SMIF1 GPIO port 2 index. */
+
 /* Redefine DT GPIO label (Px) to CYHAL port macros (CYHAL_PORT_x) */
 #define P0  CYHAL_PORT_0
 #define P1  CYHAL_PORT_1
