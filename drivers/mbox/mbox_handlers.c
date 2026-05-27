@@ -12,6 +12,12 @@ static inline int z_vrfy_mbox_send(const struct device *dev,
 				   const struct mbox_msg *msg)
 {
 	K_OOPS(K_SYSCALL_DRIVER_MBOX(dev, send));
+
+	if (msg == NULL) {
+		/* Signalling mode: NULL msg is valid per the API contract */
+		return z_impl_mbox_send(dev, channel_id, NULL);
+	}
+
 	K_OOPS(K_SYSCALL_MEMORY_READ(msg, sizeof(struct mbox_msg)));
 	K_OOPS(K_SYSCALL_MEMORY_READ(msg->data, msg->size));
 
