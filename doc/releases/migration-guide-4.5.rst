@@ -579,6 +579,14 @@ Other subsystems
      ZTEST_BENCHMARK(suite, my_bench, 100, setup, teardown) { /* ... */ }
      ZTEST_BENCHMARK_TIMED(suite, my_bench, 1000, setup, teardown) { /* ... */ }
 
+Random
+======
+
+* ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR`` has been removed.
+  Use :kconfig:option:`CONFIG_PSA_CSPRNG_GENERATOR` instead.
+
+* ``CONFIG_CS_CTR_DRBG_PERSONALIZATION`` has been removed. It did not have any effect.
+
 Modules
 *******
 
