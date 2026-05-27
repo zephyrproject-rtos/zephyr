@@ -126,6 +126,9 @@ struct quic_sent_pkt_info {
 	/** Time packet was sent (k_uptime_get() value in ms) */
 	int64_t sent_time;
 
+	/** Secret level that protected this packet when it was sent. */
+	uint8_t level;
+
 	/** Size of packet in bytes (for bytes_in_flight tracking) */
 	uint16_t sent_bytes;
 
@@ -371,8 +374,11 @@ struct quic_tls_context {
 	bool use_psk_key_schedule;
 	bool early_data_offered;
 	bool early_data_accepted;
+	bool early_data_rejected;
 	bool session_state_valid;
 	bool issue_session_tickets;
+	uint32_t max_early_data_size;
+	uint32_t early_data_bytes_received;
 	uint8_t resumption_master_secret[QUIC_HASH_MAX_LEN];
 	size_t resumption_master_secret_len;
 	struct quic_session_state session_state;
@@ -1036,6 +1042,9 @@ __net_socket struct quic_stream {
 
 	/** TX side reset because peer sent STOP_SENDING */
 	bool tx_reset : 1;
+
+	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
+	bool replay_fin_pending : 1;
 };
 
 /**
@@ -1224,6 +1233,8 @@ void quic_context_stream_foreach(struct quic_context *ctx,
  * @param user_data Caller specific data.
  */
 void quic_stream_foreach(quic_stream_cb_t cb, void *user_data);
+int quic_prepare_rejected_early_data_replay(struct quic_endpoint *ep);
+int quic_replay_rejected_early_data(struct quic_endpoint *ep);
 
 #if defined(CONFIG_NET_TEST)
 /* Test-only function declarations */
@@ -1234,6 +1245,9 @@ int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val);
 int quic_validate_frame_type(uint8_t frame_type, enum quic_secret_level level);
 bool quic_early_data_is_armed(const struct quic_endpoint *ep);
 enum quic_secret_level quic_stream_send_level(const struct quic_endpoint *ep);
+int parse_encrypted_extensions(struct quic_tls_context *ctx,
+			       const uint8_t *msg, size_t msg_len);
+int quic_mark_rejected_early_data(struct quic_endpoint *ep);
 
 bool quic_setup_initial_secrets(struct quic_endpoint *ep,
 				const uint8_t *cid, size_t cid_len,

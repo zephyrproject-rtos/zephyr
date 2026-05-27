@@ -33,6 +33,7 @@ struct quic_server_ticket_entry {
 	uint64_t issued_at_ms;
 	uint32_t ticket_lifetime;
 	uint32_t ticket_age_add;
+	uint32_t max_early_data_size;
 	uint16_t cipher_suite;
 	uint16_t ticket_len;
 	uint16_t psk_len;
@@ -521,7 +522,8 @@ static int tls_server_ticket_cache_store(const uint8_t *ticket, size_t ticket_le
 					 const uint8_t *psk, size_t psk_len,
 					 uint16_t cipher_suite,
 					 uint32_t ticket_lifetime,
-					 uint32_t ticket_age_add)
+					 uint32_t ticket_age_add,
+					 uint32_t max_early_data_size)
 {
 	struct quic_server_ticket_entry *entry;
 
@@ -541,6 +543,7 @@ static int tls_server_ticket_cache_store(const uint8_t *ticket, size_t ticket_le
 	entry->issued_at_ms = k_uptime_get();
 	entry->ticket_lifetime = ticket_lifetime;
 	entry->ticket_age_add = ticket_age_add;
+	entry->max_early_data_size = max_early_data_size;
 	entry->cipher_suite = cipher_suite;
 	entry->ticket_len = ticket_len;
 	entry->psk_len = psk_len;
@@ -908,6 +911,7 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	bool verified_psk_binder = false;
 	bool offered_early_data = false;
 	bool matched_session_ticket = false;
+	uint32_t matched_ticket_max_early_data_size = 0U;
 	uint8_t matched_ticket_psk[QUIC_MAX_RESUMPTION_PSK_LEN];
 	size_t matched_ticket_psk_len = 0U;
 
@@ -985,6 +989,9 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	ctx->psk_offered = false;
 	ctx->use_psk_key_schedule = false;
 	ctx->early_data_offered = false;
+	ctx->early_data_accepted = false;
+	ctx->early_data_rejected = false;
+	ctx->early_data_bytes_received = 0U;
 
 	while (pos + 4 <= ext_end) {
 		uint16_t ext_type = (data[pos] << 8) | data[pos + 1];
@@ -1146,6 +1153,8 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 								matched_identity_idx = identity_idx;
 								matched_session_ticket = true;
 								matched_ticket_psk_len = entry.psk_len;
+								matched_ticket_max_early_data_size =
+									entry.max_early_data_size;
 								memcpy(matched_ticket_psk, entry.psk,
 								       matched_ticket_psk_len);
 							}
@@ -1269,6 +1278,11 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 		ctx->psk_offered = true;
 		ctx->use_psk_key_schedule = true;
 		ctx->early_data_offered = offered_early_data;
+		ctx->early_data_accepted = offered_early_data &&
+			matched_session_ticket &&
+			matched_ticket_max_early_data_size > 0U &&
+			ctx->max_early_data_size >= matched_ticket_max_early_data_size;
+		ctx->early_data_rejected = offered_early_data && !ctx->early_data_accepted;
 	}
 
 	ctx->ks.cipher_suite = ctx->use_psk_key_schedule ?
@@ -2028,6 +2042,17 @@ static int build_encrypted_extensions(struct quic_tls_context *ctx,
 		pos += alpn_len;
 
 		NET_DBG("Added ALPN extension: %s", ctx->negotiated_alpn);
+	}
+
+	if (ctx->early_data_accepted) {
+		if (pos + 4 > buf_size) {
+			return -ENOBUFS;
+		}
+
+		buf[pos++] = 0x00;
+		buf[pos++] = TLS_EXT_EARLY_DATA;
+		buf[pos++] = 0x00;
+		buf[pos++] = 0x00;
 	}
 
 	/* QUIC Transport Parameters extension (type 0x39) */
@@ -2989,7 +3014,8 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 					    ticket_psk, ctx->ks.hash_len,
 					    ctx->ks.cipher_suite,
 					    QUIC_SESSION_TICKET_LIFETIME_SEC,
-					    ticket_age_add);
+					    ticket_age_add,
+					    ctx->max_early_data_size);
 	if (ret != 0) {
 		return ret;
 	}
@@ -3009,8 +3035,22 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 	msg[pos++] = sizeof(ticket);
 	memcpy(&msg[pos], ticket, sizeof(ticket));
 	pos += sizeof(ticket);
-	msg[pos++] = 0x00;
-	msg[pos++] = 0x00;
+
+	if (ctx->max_early_data_size > 0U) {
+		msg[pos++] = 0x00;
+		msg[pos++] = 0x08;
+		msg[pos++] = 0x00;
+		msg[pos++] = TLS_EXT_EARLY_DATA;
+		msg[pos++] = 0x00;
+		msg[pos++] = 0x04;
+		msg[pos++] = (ctx->max_early_data_size >> 24) & 0xFF;
+		msg[pos++] = (ctx->max_early_data_size >> 16) & 0xFF;
+		msg[pos++] = (ctx->max_early_data_size >> 8) & 0xFF;
+		msg[pos++] = ctx->max_early_data_size & 0xFF;
+	} else {
+		msg[pos++] = 0x00;
+		msg[pos++] = 0x00;
+	}
 
 	ret = wrap_handshake_message(TLS_HS_NEW_SESSION_TICKET,
 				     msg, pos,
@@ -3393,12 +3433,13 @@ static int parse_server_hello(struct quic_tls_context *ctx,
  *
  * For QUIC, the transport parameters extension is critical.
  */
-static int parse_encrypted_extensions(struct quic_tls_context *ctx,
-				      const uint8_t *msg, size_t msg_len)
+ZTESTABLE_STATIC int parse_encrypted_extensions(struct quic_tls_context *ctx,
+						const uint8_t *msg, size_t msg_len)
 {
 	size_t pos = 0;
 	size_t extensions_len;
 	size_t extensions_end;
+	bool saw_early_data = false;
 
 	if (msg_len < 2) {
 		NET_DBG("EncryptedExtensions too short");
@@ -3425,6 +3466,14 @@ static int parse_encrypted_extensions(struct quic_tls_context *ctx,
 		}
 
 		switch (ext_type) {
+		case TLS_EXT_EARLY_DATA:
+			if (!ctx->early_data_offered || ext_len != 0U) {
+				return -EINVAL;
+			}
+
+			saw_early_data = true;
+			break;
+
 		case TLS_EXT_QUIC_TRANSPORT_PARAMS:
 			if (ext_len <= sizeof(ctx->peer_tp)) {
 				NET_DBG("Got server transport params, len: %u", ext_len);
@@ -3458,6 +3507,9 @@ static int parse_encrypted_extensions(struct quic_tls_context *ctx,
 
 		pos += ext_len;
 	}
+
+	ctx->early_data_accepted = ctx->early_data_offered && saw_early_data;
+	ctx->early_data_rejected = ctx->early_data_offered && !saw_early_data;
 
 	return 0;
 }
@@ -5755,9 +5807,10 @@ static int quic_tls_client_start(struct quic_tls_context *ctx)
 	ctx->ks.cipher_suite = TLS_AES_128_GCM_SHA256;
 	ctx->psk_offered = ctx->psk_configured;
 	ctx->use_psk_key_schedule = ctx->psk_configured;
-	ctx->early_data_offered = ctx->session_state_valid ?
-		(ctx->session_state.max_early_data_size > 0U) :
-		ctx->psk_configured;
+	ctx->early_data_offered = ctx->session_state_valid &&
+		(ctx->session_state.max_early_data_size > 0U);
+	ctx->early_data_accepted = false;
+	ctx->early_data_rejected = false;
 	ret = key_schedule_init(ctx);
 	if (ret != 0) {
 		NET_DBG("Failed to initialize key schedule: %d", ret);
@@ -6489,6 +6542,7 @@ static int quic_tls_clone(struct quic_tls_context *target_tls,
 	target_tls->tls_version = source_tls->tls_version;
 	target_tls->type = source_tls->type;
 	target_tls->issue_session_tickets = source_tls->issue_session_tickets;
+	target_tls->max_early_data_size = source_tls->max_early_data_size;
 
 	memcpy(&target_tls->options, &source_tls->options,
 	       sizeof(target_tls->options));
