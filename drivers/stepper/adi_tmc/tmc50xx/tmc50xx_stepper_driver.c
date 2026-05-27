@@ -167,9 +167,6 @@ static DEVICE_API(stepper, tmc50xx_stepper_driver_api) = {
 };
 
 #define TMC50XX_STEPPER_DRV_DEFINE(inst)                                                           \
-	COND_CODE_1(DT_PROP_EXISTS(inst, stallguard_threshold_velocity),                           \
-	BUILD_ASSERT(DT_PROP(inst, stallguard_threshold_velocity),                                 \
-			"stallguard threshold velocity must be a positive value"), ());            \
 	static const struct tmc50xx_stepper_driver_config tmc50xx_stepper_driver_config_##inst = { \
 		.controller = DEVICE_DT_GET(DT_PARENT(DT_DRV_INST(inst))),                         \
 		.default_micro_step_res = DT_INST_PROP(inst, micro_step_res),                      \
