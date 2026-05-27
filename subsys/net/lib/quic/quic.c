@@ -3569,6 +3569,7 @@ ZTESTABLE_STATIC void quic_recovery_init(struct quic_endpoint *ep)
 			ep->recovery.sent_pkts[pn_space][i].dplpmtud_probe = false;
 			ep->recovery.sent_pkts[pn_space][i].dplpmtud_probe_size = 0U;
 			ep->recovery.sent_pkts[pn_space][i].has_stream_frame = false;
+			ep->recovery.sent_pkts[pn_space][i].level = QUIC_SECRET_LEVEL_INITIAL;
 		}
 	}
 
@@ -3608,6 +3609,7 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	/* Record this packet */
 	info->pkt_num = pkt_num;
 	info->sent_time = k_uptime_get();
+	info->level = level;
 	info->sent_bytes = (uint16_t)MIN(sent_bytes, UINT16_MAX);
 	info->ack_eliciting = ack_eliciting;
 	info->in_flight = ack_eliciting; /* Only ack-eliciting packets count */
@@ -5789,6 +5791,12 @@ static int handle_0rtt_packet(struct quic_endpoint *ep,
 {
 	int ret;
 
+	if (ep->is_server && !ep->crypto.tls.early_data_accepted) {
+		NET_DBG("[EP:%p/%d] Ignoring 0-RTT packet before acceptance", ep,
+			quic_get_by_ep(ep));
+		return 0;
+	}
+
 	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_EARLY,
 					 payload, payload_len, packet_len, NULL);
 	if (ret >= 0) {
@@ -5813,11 +5821,47 @@ ZTESTABLE_STATIC bool quic_early_data_is_armed(const struct quic_endpoint *ep)
 
 	if (!tls->is_initialized || !tls->session_state_valid ||
 	    !tls->early_data_offered ||
+	    tls->early_data_rejected ||
 	    tls->session_state.max_early_data_size == 0U) {
 		return false;
 	}
 
 	return ep->crypto.early.initialized;
+}
+
+ZTESTABLE_STATIC int quic_mark_rejected_early_data(struct quic_endpoint *ep)
+{
+	struct quic_stream *stream;
+	int pn_space = level_to_pn_space(QUIC_SECRET_LEVEL_EARLY);
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[pn_space][i];
+
+		if (info->level != QUIC_SECRET_LEVEL_EARLY) {
+			continue;
+		}
+
+		if (info->in_flight) {
+			ep->recovery.bytes_in_flight -= info->sent_bytes;
+			info->in_flight = false;
+		}
+
+		if (!info->has_stream_frame || !info->stream_fin) {
+			continue;
+		}
+
+		stream = quic_find_stream_by_id(ep, info->stream_id);
+		if (stream != NULL) {
+			stream->replay_fin_pending = true;
+		}
+	}
+
+	quic_reset_pto_timer_locked(ep);
+	k_mutex_unlock(&ep->recovery.lock);
+
+	return 0;
 }
 
 ZTESTABLE_STATIC enum quic_secret_level quic_stream_send_level(const struct quic_endpoint *ep)
@@ -6438,6 +6482,24 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
 
 	quic_endpoint_handshake_complete(ep);
+
+	if (!ep->is_server && tls->early_data_rejected) {
+		ret = quic_mark_rejected_early_data(ep);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = quic_prepare_rejected_early_data_replay(ep);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = quic_replay_rejected_early_data(ep);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	(void)quic_dplpmtud_maybe_probe(ep);
 
 	NET_DBG("[EP:%p/%d] QUIC handshake complete", ep, quic_get_by_ep(ep));

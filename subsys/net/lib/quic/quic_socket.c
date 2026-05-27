@@ -412,6 +412,16 @@ static int quic_setsockopt_ctx(void *obj, int level, int optname,
 			err = 0;
 			break;
 
+		case ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE:
+			if (!ep->is_server || optval == NULL || optlen != sizeof(uint32_t)) {
+				err = -EINVAL;
+				break;
+			}
+
+			ep->crypto.tls.max_early_data_size = *(const uint32_t *)optval;
+			err = 0;
+			break;
+
 		default:
 			err = -ENOPROTOOPT;
 			break;
@@ -921,6 +931,226 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 
 	NET_DBG("[ST:%p/%d] Sent FIN for stream %" PRIu64 " at offset %" PRIu64,
 		stream, quic_get_by_stream(stream), stream->id, stream->bytes_sent);
+
+	return 0;
+}
+
+static uint64_t quic_stream_remote_tx_limit(const struct quic_endpoint *ep, uint64_t stream_id)
+{
+	bool local_initiator = (stream_id & 0x01U) == (ep->is_server ? 0x01U : 0x00U);
+	bool bidirectional = (stream_id & 0x02U) == 0U;
+
+	if (!bidirectional) {
+		return local_initiator ? ep->peer_params.initial_max_stream_data_uni : 0U;
+	}
+
+	return local_initiator ?
+		ep->peer_params.initial_max_stream_data_bidi_remote :
+		ep->peer_params.initial_max_stream_data_bidi_local;
+}
+
+static ssize_t quic_stream_replay_pending_data(struct quic_stream *stream)
+{
+	struct quic_endpoint *ep = stream->ep;
+	struct quic_stream_tx_buffer *tx = &stream->tx_buf;
+	enum quic_secret_level level;
+	size_t stream_window;
+	size_t conn_window;
+	size_t available_window;
+	size_t max_payload_size;
+	size_t queued_len;
+	size_t source_offset;
+	size_t to_send;
+	uint64_t this_offset;
+	uint64_t sent_pn;
+	uint8_t frame[CONFIG_QUIC_TX_BUFFER_SIZE];
+	size_t frame_len = 0;
+	int state;
+	int ret;
+
+	if (ep == NULL) {
+		return -ENOTCONN;
+	}
+
+	level = quic_stream_send_level(ep);
+	state = quic_stream_get_state(stream);
+	if (state == STATE_RESET_SENT || state == STATE_DATA_READ) {
+		return -EPIPE;
+	}
+
+	if (stream->bytes_sent < tx->base_offset ||
+	    stream->bytes_sent > tx->base_offset + tx->len) {
+		return -EINVAL;
+	}
+
+	queued_len = tx->len - (size_t)(stream->bytes_sent - tx->base_offset);
+	if (stream->bytes_sent >= stream->remote_max_data) {
+		stream_window = 0;
+	} else {
+		stream_window = stream->remote_max_data - stream->bytes_sent;
+	}
+
+	if (ep->tx_fc.bytes_sent >= ep->tx_fc.max_data) {
+		conn_window = 0;
+	} else {
+		conn_window = ep->tx_fc.max_data - ep->tx_fc.bytes_sent;
+	}
+
+	available_window = MIN(stream_window, conn_window);
+	if (available_window == 0U) {
+		if (stream_window == 0U) {
+			quic_send_stream_data_blocked(ep, stream);
+		}
+
+		if (conn_window == 0U) {
+			quic_send_data_blocked(ep);
+		}
+
+		return -EAGAIN;
+	}
+
+	max_payload_size = MIN(sizeof(frame), ep->max_tx_payload_size);
+
+	{
+		size_t quic_overhead = 1 + ep->my_cid_len + 4 + QUIC_AEAD_TAG_LEN;
+		size_t stream_hdr = 1 + quic_get_varint_size(stream->id) +
+				    quic_get_varint_size(stream->bytes_sent) + 2;
+
+		if (max_payload_size > quic_overhead + stream_hdr) {
+			max_payload_size -= quic_overhead + stream_hdr;
+		} else {
+			max_payload_size = 0U;
+		}
+	}
+
+	to_send = MIN(queued_len, available_window);
+	to_send = MIN(to_send, max_payload_size);
+	if (to_send == 0U) {
+		return -EAGAIN;
+	}
+
+	this_offset = stream->bytes_sent;
+	source_offset = (size_t)(stream->bytes_sent - tx->base_offset);
+
+	frame[frame_len++] = QUIC_FRAME_TYPE_STREAM_BASE | 0x04 | 0x02;
+
+	ret = quic_put_len(&frame[frame_len], sizeof(frame) - frame_len, stream->id);
+	if (ret != 0) {
+		return -EINVAL;
+	}
+
+	frame_len += quic_get_varint_size(stream->id);
+
+	ret = quic_put_len(&frame[frame_len], sizeof(frame) - frame_len, stream->bytes_sent);
+	if (ret != 0) {
+		return -EINVAL;
+	}
+
+	frame_len += quic_get_varint_size(stream->bytes_sent);
+
+	ret = quic_put_len(&frame[frame_len], sizeof(frame) - frame_len, to_send);
+	if (ret != 0) {
+		return -EINVAL;
+	}
+
+	frame_len += quic_get_varint_size(to_send);
+
+	if (frame_len + to_send > sizeof(frame)) {
+		return -ENOBUFS;
+	}
+
+	memcpy(&frame[frame_len], &tx->data[source_offset], to_send);
+	frame_len += to_send;
+
+	ret = quic_send_packet_with_pn(ep, level, frame, frame_len, &sent_pn);
+	if (ret < 0) {
+		return ret;
+	}
+
+	stream->bytes_sent += to_send;
+	ep->tx_fc.bytes_sent += to_send;
+	quic_annotate_sent_stream(ep, level, sent_pn, stream->id, this_offset,
+				  (uint16_t)to_send, false);
+
+	return (ssize_t)to_send;
+}
+
+int quic_prepare_rejected_early_data_replay(struct quic_endpoint *ep)
+{
+	struct quic_context *ctx = quic_find_context(ep);
+	struct quic_stream *stream, *tmp;
+
+	if (ctx == NULL) {
+		return -ENOENT;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
+		uint64_t outstanding;
+
+		if (stream->ep != ep) {
+			continue;
+		}
+
+		stream->remote_max_data = quic_stream_remote_tx_limit(ep, stream->id);
+
+		if (stream->bytes_sent <= stream->bytes_acked) {
+			continue;
+		}
+
+		outstanding = stream->bytes_sent - stream->bytes_acked;
+		if (outstanding > ep->tx_fc.bytes_sent) {
+			return -EOVERFLOW;
+		}
+
+		ep->tx_fc.bytes_sent -= outstanding;
+		stream->bytes_sent = stream->bytes_acked;
+	}
+
+	return 0;
+}
+
+int quic_replay_rejected_early_data(struct quic_endpoint *ep)
+{
+	struct quic_context *ctx = quic_find_context(ep);
+	struct quic_stream *stream, *tmp;
+	int ret;
+
+	if (ctx == NULL) {
+		return -ENOENT;
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
+		if (stream->ep != ep) {
+			continue;
+		}
+
+		while (stream->bytes_sent < stream->tx_buf.base_offset + stream->tx_buf.len) {
+			ret = quic_stream_replay_pending_data(stream);
+			if (ret == -EAGAIN) {
+				break;
+			}
+
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		if (!stream->replay_fin_pending ||
+		    stream->bytes_sent != stream->tx_buf.base_offset + stream->tx_buf.len) {
+			continue;
+		}
+
+		ret = quic_send_stream_fin(stream);
+		if (ret == -EAGAIN) {
+			continue;
+		}
+
+		if (ret < 0) {
+			return ret;
+		}
+
+		stream->replay_fin_pending = false;
+	}
 
 	return 0;
 }

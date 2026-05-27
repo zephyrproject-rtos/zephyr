@@ -6,6 +6,35 @@
 
 static int quic_send_max_stream_data(struct quic_endpoint *ep,
 				     struct quic_stream *stream);
+static int quic_send_frame_close(struct quic_endpoint *ep, uint8_t frame_type,
+				 uint64_t error_code, const char *reason);
+
+static int quic_track_early_data_bytes(struct quic_endpoint *ep, uint8_t frame_type,
+				       uint64_t data_len)
+{
+	struct quic_tls_context *tls = &ep->crypto.tls;
+
+	if (!ep->is_server || data_len == 0U) {
+		return 0;
+	}
+
+	if (!tls->early_data_accepted) {
+		return quic_send_frame_close(ep, frame_type,
+					     QUIC_ERROR_PROTOCOL_VIOLATION,
+					     "0-RTT not accepted");
+	}
+
+	if ((uint64_t)tls->early_data_bytes_received + data_len >
+	    (uint64_t)tls->max_early_data_size) {
+		return quic_send_frame_close(ep, frame_type,
+					     QUIC_ERROR_PROTOCOL_VIOLATION,
+					     "0-RTT exceeds early-data limit");
+	}
+
+	tls->early_data_bytes_received += (uint32_t)data_len;
+
+	return 0;
+}
 
 static int quic_send_frame_close(struct quic_endpoint *ep, uint8_t frame_type,
 				 uint64_t error_code, const char *reason)
@@ -128,7 +157,8 @@ ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
  */
 static int handle_stream_frame(struct quic_endpoint *ep,
 			       const uint8_t *buf, size_t len,
-			       size_t *consumed)
+			       size_t *consumed,
+			       enum quic_secret_level level)
 {
 	uint8_t frame_type = buf[0];
 	bool has_offset = (frame_type & 0x04) != 0;
@@ -139,6 +169,8 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	uint64_t stream_id;
 	uint64_t offset = 0;
 	uint64_t data_len;
+	uint64_t fc_bytes_received_before;
+	uint64_t early_data_delta;
 	size_t pos = 1;
 	int ret;
 
@@ -267,8 +299,18 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		k_yield();
 	}
 
+	fc_bytes_received_before = stream->fc_bytes_received;
+
 	/* Deliver data to the stream */
 	ret = quic_stream_receive_data(stream, offset, &buf[pos], data_len, is_fin);
+	early_data_delta = stream->fc_bytes_received - fc_bytes_received_before;
+	if (level == QUIC_SECRET_LEVEL_EARLY && early_data_delta > 0U) {
+		int early_ret = quic_track_early_data_bytes(ep, frame_type, early_data_delta);
+
+		if (early_ret < 0) {
+			return early_ret;
+		}
+	}
 	if (ret < 0) {
 		if (ret == -EAGAIN) {
 			/* Out-of-order data. This is not fatal, consume the frame bytes */
@@ -541,6 +583,10 @@ static int handle_max_data_frame(struct quic_endpoint *ep,
 				}
 			}
 		}
+
+		if (ep->crypto.tls.early_data_rejected) {
+			(void)quic_replay_rejected_early_data(ep);
+		}
 	} else {
 		NET_DBG("[EP:%p/%d] MAX_DATA: %" PRIu64 " (no change)",
 			ep, quic_get_by_ep(ep), max_data);
@@ -582,6 +628,10 @@ static int handle_max_stream_data_frame(struct quic_endpoint *ep,
 			stream->remote_max_data = max_stream_data;
 			/* Signal that stream may now be writable */
 			k_poll_signal_raise(&stream->send.signal, 0);
+
+			if (ep->crypto.tls.early_data_rejected) {
+				(void)quic_replay_rejected_early_data(ep);
+			}
 		}
 	} else {
 		NET_DBG("[EP:%p/%d] MAX_STREAM_DATA: stream=%" PRIu64
@@ -1692,7 +1742,8 @@ static int handle_1rtt_packet(struct quic_pkt *pkt)
 
 		/* Check for STREAM frames (0x08 - 0x0f) */
 		if ((frame_type & 0xF8) == QUIC_FRAME_TYPE_STREAM_BASE) {
-			ret = handle_stream_frame(ep, &buf[pos], len - pos, &consumed);
+			ret = handle_stream_frame(ep, &buf[pos], len - pos, &consumed,
+						QUIC_SECRET_LEVEL_APPLICATION);
 			if (ret < 0) {
 				ret = quic_handle_stream_frame_error(ep, frame_type, ret);
 				NET_DBG("[EP:%p/%d] Failed to handle STREAM frame: %d",
@@ -2111,7 +2162,7 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 		/* Handle STREAM frames (type 0x08-0x0f) */
 		if ((frame_type & 0xF8) == QUIC_FRAME_TYPE_STREAM_BASE) {
 			ret = handle_stream_frame(ep, &payload[pos],
-						  payload_len - pos, &consumed);
+						  payload_len - pos, &consumed, level);
 			if (ret < 0) {
 				ret = quic_handle_stream_frame_error(ep, frame_type, ret);
 				NET_DBG("[EP:%p/%d] Failed to handle %s frame: %d",

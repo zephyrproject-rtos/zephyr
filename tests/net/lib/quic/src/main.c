@@ -1062,6 +1062,58 @@ ZTEST(net_socket_quic, test_082_client_early_data_arming_uses_session_state)
 		      "Missing resumable state must fall back to application keys");
 }
 
+ZTEST(net_socket_quic, test_083_client_early_data_decision_tracks_encrypted_extensions)
+{
+	static const uint8_t accept_ee[] = {
+		0x00, 0x04,
+		0x00, TLS_EXT_EARLY_DATA, 0x00, 0x00,
+	};
+	static const uint8_t reject_ee[] = { 0x00, 0x00 };
+	struct quic_tls_context tls = { 0 };
+	int ret;
+
+	tls.early_data_offered = true;
+
+	ret = parse_encrypted_extensions(&tls, accept_ee, sizeof(accept_ee));
+	zassert_ok(ret, "EncryptedExtensions with early_data should parse (%d)", ret);
+	zassert_true(tls.early_data_accepted,
+		     "early_data extension should mark 0-RTT as accepted");
+	zassert_false(tls.early_data_rejected,
+		      "Accepted early data must not leave rejection state set");
+
+	tls.early_data_accepted = false;
+	tls.early_data_rejected = false;
+
+	ret = parse_encrypted_extensions(&tls, reject_ee, sizeof(reject_ee));
+	zassert_ok(ret, "EncryptedExtensions without early_data should parse (%d)", ret);
+	zassert_false(tls.early_data_accepted,
+		      "Missing early_data extension must reject 0-RTT");
+	zassert_true(tls.early_data_rejected,
+		     "Rejected 0-RTT must be recorded for replay fallback");
+}
+
+ZTEST(net_socket_quic, test_084_rejected_early_data_clears_inflight_tracking)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_sent_pkt_info *info;
+	/* 0-RTT shares the application-data packet number space. */
+	int pn_space = 2;
+	int ret;
+
+	quic_recovery_init(ep);
+	info = &ep->recovery.sent_pkts[pn_space][0];
+	info->level = QUIC_SECRET_LEVEL_EARLY;
+	info->in_flight = true;
+	info->sent_bytes = 123U;
+	ep->recovery.bytes_in_flight = 123U;
+
+	ret = quic_mark_rejected_early_data(ep);
+	zassert_ok(ret, "Rejected 0-RTT cleanup should succeed (%d)", ret);
+	zassert_false(info->in_flight, "Rejected early packets must stop counting as in-flight");
+	zassert_equal(ep->recovery.bytes_in_flight, 0U,
+		      "Rejected early packets must be removed from bytes-in-flight");
+}
+
 ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);

@@ -153,6 +153,16 @@ enum {
 	 * the server send NewSessionTicket after the handshake completes.
 	 */
 	ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE = 6,
+
+	/**
+	 * Configure the server's advertised 0-RTT limit for newly issued tickets.
+	 *
+	 * The option value is a pointer to a uint32_t. Set it on a listening or
+	 * server-side connection socket before the handshake. A value of 0 disables
+	 * 0-RTT for new tickets; a non-zero value both enables 0-RTT and sets the
+	 * maximum number of early-data bytes a resuming client may send.
+	 */
+	ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE = 7,
 };
 
 /** Version of struct quic_session_state. */
