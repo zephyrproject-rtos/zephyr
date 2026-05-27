@@ -10,6 +10,7 @@ For more details, refer to the official `GitHub Project`_.
 .. toctree::
    :maxdepth: 1
 
+   elemrv_h.rst
    elemrv_n.rst
 
 .. _GitHub Project:

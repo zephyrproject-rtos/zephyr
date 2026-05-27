@@ -2,4 +2,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_ELEMRV_FLASK
+	select SOC_ELEMRV_H if BOARD_ELEMRV_FLASK_ELEMRV_H
 	select SOC_ELEMRV_N if BOARD_ELEMRV_FLASK_ELEMRV_N

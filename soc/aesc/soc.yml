@@ -1,4 +1,7 @@
 series:
+- name: hydrogen
+  socs:
+  - name: elemrv_h
 - name: nitrogen
   socs:
   - name: elemrv_n
