@@ -1006,6 +1006,62 @@ ZTEST(net_socket_quic, test_080_frame_type_level_validation)
 	zassert_equal(ret, -ENOTSUP, "Unknown frame type must be rejected (%d)", ret);
 }
 
+ZTEST(net_socket_quic, test_081_0rtt_frame_type_level_validation)
+{
+	int ret;
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_STREAM_BASE,
+					 QUIC_SECRET_LEVEL_EARLY);
+	zassert_equal(ret, 0, "STREAM must be allowed in 0-RTT (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_MAX_DATA,
+					 QUIC_SECRET_LEVEL_EARLY);
+	zassert_equal(ret, 0, "MAX_DATA must be allowed in 0-RTT (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_PATH_CHALLENGE,
+					 QUIC_SECRET_LEVEL_EARLY);
+	zassert_equal(ret, 0, "PATH_CHALLENGE must be allowed in 0-RTT (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_ACK,
+					 QUIC_SECRET_LEVEL_EARLY);
+	zassert_equal(ret, -EPROTO, "ACK must be forbidden in 0-RTT (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_CRYPTO,
+					 QUIC_SECRET_LEVEL_EARLY);
+	zassert_equal(ret, -EPROTO, "CRYPTO must be forbidden in 0-RTT (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_NEW_TOKEN,
+					 QUIC_SECRET_LEVEL_EARLY);
+	zassert_equal(ret, -EPROTO, "NEW_TOKEN must be forbidden in 0-RTT (%d)", ret);
+
+	ret = quic_validate_frame_type(QUIC_FRAME_TYPE_PATH_RESPONSE,
+					 QUIC_SECRET_LEVEL_EARLY);
+	zassert_equal(ret, -EPROTO, "PATH_RESPONSE must be forbidden in 0-RTT (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_082_client_early_data_arming_uses_session_state)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+
+	ep->is_server = false;
+	ep->crypto.tls.is_initialized = true;
+	ep->crypto.tls.session_state_valid = true;
+	ep->crypto.tls.early_data_offered = true;
+	ep->crypto.tls.session_state.max_early_data_size = 4096U;
+	ep->crypto.early.initialized = true;
+
+	zassert_true(quic_early_data_is_armed(ep),
+		     "Imported session state should arm 0-RTT before handshake completion");
+	zassert_equal(quic_stream_send_level(ep), QUIC_SECRET_LEVEL_EARLY,
+		      "Armed early data must use 0-RTT packet protection");
+
+	ep->crypto.tls.session_state_valid = false;
+	zassert_false(quic_early_data_is_armed(ep),
+		      "Missing resumable session state must disable 0-RTT");
+	zassert_equal(quic_stream_send_level(ep), QUIC_SECRET_LEVEL_APPLICATION,
+		      "Missing resumable state must fall back to application keys");
+}
+
 ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);

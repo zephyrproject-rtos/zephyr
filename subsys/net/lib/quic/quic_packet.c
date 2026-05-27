@@ -70,12 +70,21 @@ ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
 	case QUIC_FRAME_TYPE_PING:
 	case QUIC_FRAME_TYPE_CONNECTION_CLOSE_TRANSPORT:
 	case QUIC_FRAME_TYPE_CONNECTION_CLOSE_APPLICATION:
-	case QUIC_FRAME_TYPE_ACK:
-	case QUIC_FRAME_TYPE_ACK_ECN:
-	case QUIC_FRAME_TYPE_CRYPTO:
 		return 0;
 
+	case QUIC_FRAME_TYPE_ACK:
+	case QUIC_FRAME_TYPE_ACK_ECN:
+		return level == QUIC_SECRET_LEVEL_EARLY ? -EPROTO : 0;
+
+	case QUIC_FRAME_TYPE_CRYPTO:
+		return level == QUIC_SECRET_LEVEL_EARLY ? -EPROTO : 0;
+
 	case QUIC_FRAME_TYPE_NEW_TOKEN:
+	case QUIC_FRAME_TYPE_RETIRE_CONNECTION_ID:
+	case QUIC_FRAME_TYPE_PATH_RESPONSE:
+	case QUIC_FRAME_TYPE_HANDSHAKE_DONE:
+		return level == QUIC_SECRET_LEVEL_APPLICATION ? 0 : -EPROTO;
+
 	case QUIC_FRAME_TYPE_MAX_DATA:
 	case QUIC_FRAME_TYPE_MAX_STREAM_DATA:
 	case QUIC_FRAME_TYPE_MAX_STREAMS_BIDI:
@@ -85,17 +94,16 @@ ZTESTABLE_STATIC int quic_validate_frame_type(uint8_t frame_type,
 	case QUIC_FRAME_TYPE_STREAMS_BLOCKED_BIDI:
 	case QUIC_FRAME_TYPE_STREAMS_BLOCKED_UNI:
 	case QUIC_FRAME_TYPE_NEW_CONNECTION_ID:
-	case QUIC_FRAME_TYPE_RETIRE_CONNECTION_ID:
 	case QUIC_FRAME_TYPE_PATH_CHALLENGE:
-	case QUIC_FRAME_TYPE_PATH_RESPONSE:
-	case QUIC_FRAME_TYPE_HANDSHAKE_DONE:
 	case QUIC_FRAME_TYPE_RESET_STREAM:
 	case QUIC_FRAME_TYPE_STOP_SENDING:
-		return level == QUIC_SECRET_LEVEL_APPLICATION ? 0 : -EPROTO;
+		return level == QUIC_SECRET_LEVEL_APPLICATION ||
+		       level == QUIC_SECRET_LEVEL_EARLY ? 0 : -EPROTO;
 
 	default:
 		if ((frame_type & 0xF8) == QUIC_FRAME_TYPE_STREAM_BASE) {
-			return level == QUIC_SECRET_LEVEL_APPLICATION ? 0 : -EPROTO;
+			return level == QUIC_SECRET_LEVEL_APPLICATION ||
+			       level == QUIC_SECRET_LEVEL_EARLY ? 0 : -EPROTO;
 		}
 
 		return -ENOTSUP;
@@ -2018,7 +2026,8 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] Processing %s packet, payload %zu bytes",
 		ep, quic_get_by_ep(ep),
 		level == QUIC_SECRET_LEVEL_INITIAL ? "Initial" :
-		level == QUIC_SECRET_LEVEL_HANDSHAKE ? "Handshake" : "Application",
+		level == QUIC_SECRET_LEVEL_HANDSHAKE ? "Handshake" :
+		level == QUIC_SECRET_LEVEL_EARLY ? "0-RTT" : "Application",
 		payload_len);
 
 	while (pos < payload_len) {
@@ -2130,8 +2139,9 @@ static int handle_crypto_level_packet(struct quic_endpoint *ep,
 			return 1; /* Signal connection closing */
 		}
 
-		/* Handle Application-level frame types */
-		if (level == QUIC_SECRET_LEVEL_APPLICATION) {
+		/* Handle application-data packet number space frame types. */
+		if (level == QUIC_SECRET_LEVEL_APPLICATION ||
+		    level == QUIC_SECRET_LEVEL_EARLY) {
 			switch (frame_type) {
 			case QUIC_FRAME_TYPE_NEW_CONNECTION_ID:
 				ret = handle_new_connection_id_frame(ep, &payload[pos],

@@ -865,6 +865,7 @@ static int quic_stream_ioctl_vmeth(void *obj, unsigned int request, va_list args
 static int quic_send_stream_fin(struct quic_stream *stream)
 {
 	uint8_t frame[32]; /* 1 type + max 8 stream_id + max 8 offset + max 2 len */
+	enum quic_secret_level level;
 	size_t frame_len = 0;
 	uint64_t sent_pn;
 	int ret;
@@ -904,8 +905,9 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 	}
 	frame_len += quic_get_varint_size(0ULL);
 
-	ret = quic_send_packet_with_pn(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
-				       frame, frame_len, &sent_pn);
+	level = quic_stream_send_level(stream->ep);
+
+	ret = quic_send_packet_with_pn(stream->ep, level, frame, frame_len, &sent_pn);
 	if (ret < 0) {
 		NET_DBG("[ST:%p/%d] Failed to send FIN for stream %" PRIu64 " : %d",
 			stream, quic_get_by_stream(stream), stream->id, ret);
@@ -913,8 +915,8 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 	}
 
 	/* Annotate the packet for loss recovery / retransmission tracking */
-	quic_annotate_sent_stream(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
-				  sent_pn, stream->id, stream->bytes_sent,
+	quic_annotate_sent_stream(stream->ep, level, sent_pn,
+				  stream->id, stream->bytes_sent,
 				  0 /* data_len */, true /* stream_fin */);
 
 	NET_DBG("[ST:%p/%d] Sent FIN for stream %" PRIu64 " at offset %" PRIu64,
@@ -927,6 +929,7 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 				size_t buf_len, int32_t timeout)
 {
 	struct quic_endpoint *ep;
+	enum quic_secret_level level;
 	size_t stream_window;
 	size_t conn_window;
 	size_t available_window;
@@ -945,6 +948,7 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	ARG_UNUSED(timeout);
 
 	ep = stream->ep;
+	level = quic_stream_send_level(ep);
 
 	/* Check if stream has a valid endpoint with crypto context */
 	if (ep == NULL) {
@@ -1103,8 +1107,7 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	k_mutex_unlock(&stream->tx_lock);
 
 	/* Send the packet */
-	ret = quic_send_packet_with_pn(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, frame_len,
-				       &sent_pn);
+	ret = quic_send_packet_with_pn(ep, level, frame, frame_len, &sent_pn);
 	if (ret < 0) {
 		/* Roll back TX buffer on send failure */
 		k_mutex_lock(&stream->tx_lock, K_FOREVER);
@@ -1134,7 +1137,7 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	/* Annotate the sent_pkt ring-buffer entry with stream frame info
 	 * so loss detection knows what to retransmit.
 	 */
-	quic_annotate_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION, sent_pn,
+	quic_annotate_sent_stream(ep, level, sent_pn,
 				  stream->id, this_offset,
 				  (uint16_t)to_send, false);
 
@@ -2123,7 +2126,7 @@ have_endpoint:
 		}
 
 		/* Wait for handshake to complete if not already done */
-		if (!ep->handshake.completed) {
+		if (!ep->handshake.completed && !quic_early_data_is_armed(ep)) {
 			ret = k_sem_take(&ep->handshake.sem,
 					 K_MSEC(ep->handshake.timeout_ms));
 			if (ret != 0) {
@@ -2137,6 +2140,9 @@ have_endpoint:
 				quic_stats_update_stream_open_failed();
 				return -ECONNREFUSED;
 			}
+		} else if (!ep->handshake.completed) {
+			NET_DBG("[EP:%p/%d] Allowing client stream open with 0-RTT armed",
+				ep, quic_get_by_ep(ep));
 		}
 	}
 
