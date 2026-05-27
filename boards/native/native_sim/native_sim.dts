@@ -31,6 +31,7 @@
 
 	aliases {
 		codec0 = &audio_codec;
+		dmic-dev = &dmic0;
 		eeprom-0 = &eeprom0;
 		i2c-0 = &i2c0;
 		spi-0 = &spi0;
@@ -237,6 +238,11 @@
 
 	audio_codec: audio_codec {
 		compatible = "zephyr,dummy-codec";
+		status = "okay";
+	};
+
+	dmic0: dmic0 {
+		compatible = "zephyr,native-sim-dmic";
 		status = "okay";
 	};
 
