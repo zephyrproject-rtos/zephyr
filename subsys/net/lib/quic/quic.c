@@ -399,6 +399,8 @@ static void quic_dplpmtud_on_probe_acked_locked(struct quic_endpoint *ep,
 						uint16_t probe_size);
 static void quic_dplpmtud_on_probe_lost_locked(struct quic_endpoint *ep,
 					       uint16_t probe_size);
+ZTESTABLE_STATIC bool quic_early_data_is_armed(const struct quic_endpoint *ep);
+ZTESTABLE_STATIC enum quic_secret_level quic_stream_send_level(const struct quic_endpoint *ep);
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 static struct net_stats_quic *quic_stats_get_for_ep(struct quic_endpoint *ep)
@@ -3995,7 +3997,7 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 {
 	/* Small fixed header, 1 + 8 + 8 + 8 bytes max */
 	uint8_t hdr[32];
-	uint8_t payload[CONFIG_QUIC_TX_BUFFER_SIZE];
+	enum quic_secret_level level;
 	size_t hdr_len = 0;
 	struct quic_stream_tx_buffer *tx;
 	struct quic_stream *stream;
@@ -4010,14 +4012,7 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 		return;
 	}
 
-	if (lost->stream_data_len > sizeof(payload)) {
-		NET_WARN("[EP:%p/%d] Lost frame too large to retransmit (%u)",
-			 ep, quic_get_by_ep(ep), lost->stream_data_len);
-		return;
-	}
-
-	k_mutex_lock(&stream->tx_lock, K_FOREVER);
-
+	level = quic_stream_send_level(ep);
 	tx = &stream->tx_buf;
 
 	if (lost->stream_offset < tx->base_offset) {
@@ -4034,7 +4029,6 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	}
 
 	payload_len = lost->stream_data_len;
-	memcpy(payload, &tx->data[buf_off], payload_len);
 
 	k_mutex_unlock(&stream->tx_lock);
 
@@ -4063,15 +4057,15 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	}
 	hdr_len += quic_get_varint_size(lost->stream_data_len);
 
-	/* Send: header from stack, payload copied under tx_lock above */
-	ret = quic_send_packet_sg(ep, QUIC_SECRET_LEVEL_APPLICATION,
-				  hdr, hdr_len,
-				  payload, payload_len,
+	/* Send: header from stack, payload directly from tx_buf */
+	ret = quic_send_packet_sg(ep, level, hdr, hdr_len,
+				  &tx->data[buf_off], lost->stream_data_len,
 				  &sent_pn);
 	if (ret == 0) {
-		quic_annotate_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
-					  sent_pn, lost->stream_id,
-					  lost->stream_offset, lost->stream_data_len,
+		quic_annotate_sent_stream(ep, level, sent_pn,
+					  lost->stream_id,
+					  lost->stream_offset,
+					  lost->stream_data_len,
 					  lost->stream_fin);
 	}
 }
@@ -5788,6 +5782,50 @@ static int handle_handshake_packet(struct quic_endpoint *ep,
 	return ret;
 }
 
+static int handle_0rtt_packet(struct quic_endpoint *ep,
+			      const uint8_t *payload,
+			      size_t payload_len,
+			      size_t packet_len)
+{
+	int ret;
+
+	ret = handle_crypto_level_packet(ep, QUIC_SECRET_LEVEL_EARLY,
+					 payload, payload_len, packet_len, NULL);
+	if (ret >= 0) {
+		QUIC_EP_STAT_INC(ep, valid_rx);
+	} else {
+		QUIC_EP_STAT_INC(ep, invalid_packet);
+		QUIC_EP_STAT_INC(ep, drop_rx);
+	}
+
+	return ret;
+}
+
+ZTESTABLE_STATIC bool quic_early_data_is_armed(const struct quic_endpoint *ep)
+{
+	const struct quic_tls_context *tls;
+
+	if (ep == NULL || ep->is_server || ep->handshake.completed) {
+		return false;
+	}
+
+	tls = &ep->crypto.tls;
+
+	if (!tls->is_initialized || !tls->session_state_valid ||
+	    !tls->early_data_offered ||
+	    tls->session_state.max_early_data_size == 0U) {
+		return false;
+	}
+
+	return ep->crypto.early.initialized;
+}
+
+ZTESTABLE_STATIC enum quic_secret_level quic_stream_send_level(const struct quic_endpoint *ep)
+{
+	return quic_early_data_is_armed(ep) ? QUIC_SECRET_LEVEL_EARLY :
+					      QUIC_SECRET_LEVEL_APPLICATION;
+}
+
 /*
  * Derive application traffic secrets after handshake completes
  */
@@ -7032,7 +7070,21 @@ static void process_pkt(struct quic_pkt *pkt)
 		break;
 
 	case QUIC_PACKET_TYPE_0RTT:
-		/* TODO: Handle 0-RTT */
+		ret = handle_0rtt_packet(pkt->ep,
+					 pkt->data,
+					 pkt->len,
+					 pkt->total_len);
+		if (ret < 0) {
+			NET_DBG("[EP:%p/%d] %s packet handling failure (%d)",
+				pkt->ep, quic_get_by_ep(pkt->ep), "0-RTT", ret);
+			if (!pkt->ep->handshake.completed) {
+				quic_endpoint_notify_streams_closed(pkt->ep);
+			}
+		} else if (ret == 1) {
+			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
+				pkt->ep, quic_get_by_ep(pkt->ep), "0-RTT");
+			quic_endpoint_unref(pkt->ep);
+		}
 		break;
 
 	case QUIC_PACKET_TYPE_1RTT:
