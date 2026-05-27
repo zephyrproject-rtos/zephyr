@@ -4193,6 +4193,7 @@ NXP Platforms (MCU):
       collaborators:
         - bperseghetti
         - PetervdPerk-NXP
+        - AndreHeinemans-NXP
       files:
         - boards/nxp/vmu*/
         - boards/nxp/rddrone_fmuk66/
