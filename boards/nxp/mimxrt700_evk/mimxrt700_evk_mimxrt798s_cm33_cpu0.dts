@@ -615,3 +615,7 @@ dvp_20pin_interface: &flexio_camera {};
 &jpegdec {
 	status = "okay";
 };
+
+&pngdec {
+	status = "okay";
+};
