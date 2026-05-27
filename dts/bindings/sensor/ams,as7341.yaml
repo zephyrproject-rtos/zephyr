@@ -1,0 +1,5 @@
+description: AMS AS7341 spectral sensor
+
+compatible: "ams,as7341"
+
+include: [sensor-device.yaml, i2c-device.yaml]

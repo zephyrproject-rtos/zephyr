@@ -1,0 +1,7 @@
+config AMS_AS7341
+    bool "AMS AS7341 spectral sensor"
+    default y
+    depends on DT_HAS_AMS_AS7341_ENABLED
+    select I2C
+    help
+      Enable AMS AS7341 driver
