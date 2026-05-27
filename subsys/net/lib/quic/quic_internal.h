@@ -565,6 +565,7 @@ struct quic_endpoint {
 		struct quic_crypto_context initial;
 		struct quic_crypto_context handshake;
 		struct quic_crypto_context application;
+		struct quic_crypto_context early;
 
 		/** Crypto stream state per level (Initial, Handshake, 1-RTT) */
 		struct quic_crypto_stream stream[3];
