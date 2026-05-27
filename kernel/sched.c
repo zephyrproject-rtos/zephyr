@@ -482,29 +482,21 @@ void z_sched_wake_thread_locked(struct k_thread *thread)
 /* Timeout handler for *_thread_timeout() APIs */
 void z_thread_timeout(struct _timeout *timeout)
 {
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
-
-	if (z_is_timeout_handler_canceled(timeout)) {
-		/*
-		 * The timeout handler was canceled by a thread on another
-		 * CPU or another ISR. Bail.
-		 *
-		 * NOTE: this cancel-check remains while migration to the
-		 * z_try_abort_timeout() pattern is in progress. Sites that
-		 * still call z_abort_thread_timeout() (sem.c, mutex.c, ...
-		 * via z_unpend_first_thread()) rely on it. It will be
-		 * removed in a follow-up commit once those callers have
-		 * been migrated.
-		 */
-		k_spin_unlock(&_sched_spinlock, key);
-		return;
-	}
-
 	struct k_thread *thread = CONTAINER_OF(timeout,
 					       struct k_thread, base.timeout);
 
-	z_sched_wake_thread_locked(thread);
-	k_spin_unlock(&_sched_spinlock, key);
+	K_SPINLOCK(&_sched_spinlock) {
+		/* A concurrent waker (e.g. a sem give on another CPU) may
+		 * have unpended and readied the thread, after which the
+		 * thread could run and re-pend elsewhere -- possibly with no
+		 * timeout. Such a waker aborts this timeout, flagging it
+		 * superseded; bail so we don't wake the thread from its new
+		 * wait.
+		 */
+		if (!z_timeout_inflight_superseded(timeout)) {
+			z_sched_wake_thread_locked(thread);
+		}
+	}
 }
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 

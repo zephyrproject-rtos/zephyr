@@ -259,11 +259,11 @@ static ALWAYS_INLINE struct k_thread *z_unpend_first_thread_locked(_wait_q_t *wa
 
 	if (unlikely(thread != NULL)) {
 		unpend_thread_no_timeout(thread);
-		/* A racing in-flight handler will be blocked on the sched
-		 * lock for the duration of the caller's locked region; when
-		 * it eventually runs, the thread is already unpended and
-		 * (depending on caller flow) readied, so the handler's
-		 * z_sched_wake_thread_locked() path is a no-op.
+		/* Abort the thread's timeout. If its handler is in flight on
+		 * another CPU it is blocked on the sched lock; the abort flags
+		 * it superseded, and z_thread_timeout() bails on that flag when
+		 * it finally runs -- so it won't wake the thread from whatever
+		 * it has since re-pended on. We don't wait for it here.
 		 */
 		(void)z_try_abort_thread_timeout(thread);
 	}
