@@ -14,7 +14,8 @@ LOG_MODULE_REGISTER(mdio_lan865x, CONFIG_MDIO_LOG_LEVEL);
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mdio.h>
-#include <zephyr/drivers/ethernet/eth_lan865x.h>
+
+#include "../eth_lan865x_priv.h"
 
 struct mdio_lan865x_config {
 	const struct device *dev;
