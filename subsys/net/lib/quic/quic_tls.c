@@ -583,6 +583,53 @@ static int quic_tls_get_session_state(struct quic_tls_context *ctx,
 	return 0;
 }
 
+static void quic_tls_snapshot_session_transport_params(struct quic_tls_context *ctx)
+{
+	struct quic_endpoint *ep = ctx->ep;
+	struct quic_session_transport_params *params = &ctx->session_state.transport_params;
+
+	memset(params, 0, sizeof(*params));
+
+	if (ep == NULL || !ep->peer_params.parsed) {
+		return;
+	}
+
+	params->valid = true;
+	params->initial_max_data = ep->peer_params.initial_max_data;
+	params->initial_max_stream_data_bidi_local =
+		ep->peer_params.initial_max_stream_data_bidi_local;
+	params->initial_max_stream_data_bidi_remote =
+		ep->peer_params.initial_max_stream_data_bidi_remote;
+	params->initial_max_stream_data_uni = ep->peer_params.initial_max_stream_data_uni;
+	params->initial_max_streams_bidi = ep->peer_params.initial_max_streams_bidi;
+	params->initial_max_streams_uni = ep->peer_params.initial_max_streams_uni;
+	params->max_idle_timeout = ep->peer_params.max_idle_timeout;
+	params->max_udp_payload_size = ep->peer_params.max_udp_payload_size;
+}
+
+static void quic_tls_restore_session_transport_params(struct quic_tls_context *ctx)
+{
+	struct quic_endpoint *ep = ctx->ep;
+	const struct quic_session_transport_params *params = &ctx->session_state.transport_params;
+
+	if (ep == NULL || !params->valid) {
+		return;
+	}
+
+	ep->peer_params.initial_max_data = params->initial_max_data;
+	ep->peer_params.initial_max_stream_data_bidi_local =
+		params->initial_max_stream_data_bidi_local;
+	ep->peer_params.initial_max_stream_data_bidi_remote =
+		params->initial_max_stream_data_bidi_remote;
+	ep->peer_params.initial_max_stream_data_uni = params->initial_max_stream_data_uni;
+	ep->peer_params.initial_max_streams_bidi = params->initial_max_streams_bidi;
+	ep->peer_params.initial_max_streams_uni = params->initial_max_streams_uni;
+	ep->peer_params.max_idle_timeout = params->max_idle_timeout;
+	ep->peer_params.max_udp_payload_size = params->max_udp_payload_size;
+	ep->peer_params.parsed = true;
+	ep->tx_fc.max_data = params->initial_max_data;
+}
+
 static int quic_tls_set_session_state(struct quic_tls_context *ctx,
 				      const struct quic_session_state *state)
 {
@@ -599,6 +646,11 @@ static int quic_tls_set_session_state(struct quic_tls_context *ctx,
 		return -EINVAL;
 	}
 
+	if (state->transport_params.valid &&
+	    state->transport_params.max_udp_payload_size < 1200U) {
+		return -EINVAL;
+	}
+
 	ctx->session_state = *state;
 	ctx->session_state_valid = true;
 	ctx->psk = ctx->session_state.psk;
@@ -606,6 +658,7 @@ static int quic_tls_set_session_state(struct quic_tls_context *ctx,
 	ctx->psk_identity = ctx->session_state.ticket;
 	ctx->psk_identity_len = ctx->session_state.ticket_len;
 	ctx->psk_configured = true;
+	quic_tls_restore_session_transport_params(ctx);
 
 	return 0;
 }
@@ -2892,6 +2945,7 @@ static int parse_new_session_ticket(struct quic_tls_context *ctx,
 		return ret;
 	}
 
+	quic_tls_snapshot_session_transport_params(ctx);
 	ctx->session_state_valid = true;
 
 	NET_DBG("[EP:%p/%d] Stored session ticket (%u bytes)",

@@ -156,13 +156,41 @@ enum {
 };
 
 /** Version of struct quic_session_state. */
-#define QUIC_SESSION_STATE_VERSION 1U
+#define QUIC_SESSION_STATE_VERSION 2U
 
 /** Maximum serialized ticket length exported through struct quic_session_state. */
 #define QUIC_MAX_SESSION_TICKET_LEN 256U
 
 /** Maximum resumable PSK length exported through struct quic_session_state. */
 #define QUIC_MAX_RESUMPTION_PSK_LEN 48U
+
+/**
+ * @brief Remembered peer transport parameters for resumption.
+ *
+ * These are the server limits associated with the stored ticket. They are used
+ * to initialize early flow-control state and to validate a later 0-RTT-capable
+ * resumption attempt.
+ */
+struct quic_session_transport_params {
+	/** True when the remembered transport-parameter snapshot is present. */
+	bool valid;
+	/** Remembered initial_max_data. */
+	uint64_t initial_max_data;
+	/** Remembered initial_max_stream_data_bidi_local. */
+	uint64_t initial_max_stream_data_bidi_local;
+	/** Remembered initial_max_stream_data_bidi_remote. */
+	uint64_t initial_max_stream_data_bidi_remote;
+	/** Remembered initial_max_stream_data_uni. */
+	uint64_t initial_max_stream_data_uni;
+	/** Remembered initial_max_streams_bidi. */
+	uint64_t initial_max_streams_bidi;
+	/** Remembered initial_max_streams_uni. */
+	uint64_t initial_max_streams_uni;
+	/** Remembered max_idle_timeout in milliseconds. */
+	uint64_t max_idle_timeout;
+	/** Remembered max_udp_payload_size. */
+	uint16_t max_udp_payload_size;
+};
 
 /**
  * @brief Resumable QUIC client session state.
@@ -191,6 +219,8 @@ struct quic_session_state {
 	uint8_t ticket[QUIC_MAX_SESSION_TICKET_LEN];
 	/** Derived resumption PSK used for the next resumed handshake. */
 	uint8_t psk[QUIC_MAX_RESUMPTION_PSK_LEN];
+	/** Remembered peer transport parameters associated with the ticket. */
+	struct quic_session_transport_params transport_params;
 };
 
 /**

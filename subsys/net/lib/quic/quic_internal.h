@@ -370,6 +370,7 @@ struct quic_tls_context {
 	bool psk_offered;
 	bool use_psk_key_schedule;
 	bool early_data_offered;
+	bool early_data_accepted;
 	bool session_state_valid;
 	bool issue_session_tickets;
 	uint8_t resumption_master_secret[QUIC_HASH_MAX_LEN];
