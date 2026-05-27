@@ -11,6 +11,10 @@
 #ifndef _CH32FUN_H
 #define _CH32FUN_H
 
+#ifndef asm
+#define asm __asm /* -std-c17 compatibility */
+#endif
+
 #if defined(CONFIG_SOC_SERIES_QINGKE_V2A)
 #define CH32V003 1
 #include <ch32fun.h>
@@ -25,6 +29,12 @@
 #define CH32V10x 1
 #include <ch32fun.h>
 #endif /* defined(CONFIG_SOC_SERIES_QINGKE_V3A) */
+
+#if defined(CONFIG_SOC_SERIES_QINGKE_V3C)
+#define CH57x       1
+#define MCU_PACKAGE 0
+#include <ch32fun.h>
+#endif /* defined(CONFIG_SOC_SERIES_QINGKE_V3C) */
 
 #if defined(CONFIG_SOC_SERIES_QINGKE_V4B)
 #define CH32V20x    1
