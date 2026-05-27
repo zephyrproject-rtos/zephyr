@@ -266,6 +266,141 @@ static int transcript_hash_get(struct quic_tls_context *ctx,
 	return 0;
 }
 
+static int tls_cipher_suite_hash_params(uint16_t cipher_suite,
+					psa_algorithm_t *hash_alg,
+					size_t *hash_len)
+{
+	switch (cipher_suite) {
+	case TLS_AES_128_GCM_SHA256:
+	case TLS_CHACHA20_POLY1305_SHA256:
+		*hash_alg = PSA_ALG_SHA_256;
+		*hash_len = 32;
+		return 0;
+	case TLS_AES_256_GCM_SHA384:
+		*hash_alg = PSA_ALG_SHA_384;
+		*hash_len = 48;
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
+static bool tls_external_psk_cipher_supported(uint16_t cipher_suite)
+{
+	return cipher_suite == TLS_AES_128_GCM_SHA256 ||
+	       cipher_suite == TLS_CHACHA20_POLY1305_SHA256;
+}
+
+static int tls_compute_hmac(psa_algorithm_t hash_alg,
+			    const uint8_t *key, size_t key_len,
+			    const uint8_t *data, size_t data_len,
+			    uint8_t *out, size_t out_size, size_t *out_len)
+{
+	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
+	psa_key_id_t hmac_key_id = 0;
+	psa_status_t status;
+
+	psa_set_key_usage_flags(&attr, PSA_KEY_USAGE_SIGN_MESSAGE);
+	psa_set_key_algorithm(&attr, PSA_ALG_HMAC(hash_alg));
+	psa_set_key_type(&attr, PSA_KEY_TYPE_HMAC);
+
+	status = psa_import_key(&attr, key, key_len, &hmac_key_id);
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Failed to import HMAC key: %d", status);
+		return -EIO;
+	}
+
+	status = psa_mac_compute(hmac_key_id, PSA_ALG_HMAC(hash_alg),
+				 data, data_len,
+				 out, out_size, out_len);
+	psa_destroy_key(hmac_key_id);
+
+	if (status != PSA_SUCCESS) {
+		NET_DBG("Failed to compute HMAC: %d", status);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int tls_compute_external_psk_binder(const uint8_t *psk, size_t psk_len,
+					   psa_algorithm_t hash_alg,
+					   size_t hash_len,
+					   const uint8_t *truncated_ch,
+					   size_t truncated_ch_len,
+					   uint8_t *binder, size_t binder_len)
+{
+	uint8_t early_secret[QUIC_HASH_MAX_LEN];
+	uint8_t binder_key[QUIC_HASH_MAX_LEN];
+	uint8_t finished_key[QUIC_HASH_MAX_LEN];
+	uint8_t transcript_hash[QUIC_HASH_MAX_LEN];
+	uint8_t empty_hash[QUIC_HASH_MAX_LEN];
+	size_t empty_hash_len;
+	size_t transcript_hash_len;
+	size_t computed_len;
+	psa_status_t status;
+	int ret;
+
+	if (binder_len < hash_len) {
+		return -ENOBUFS;
+	}
+
+	status = psa_hash_compute(hash_alg, NULL, 0,
+				  empty_hash, sizeof(empty_hash),
+				  &empty_hash_len);
+	if (status != PSA_SUCCESS) {
+		return -EIO;
+	}
+
+	ret = quic_hkdf_extract_ex(hash_alg, NULL, 0,
+				   psk, psk_len,
+				   early_secret, hash_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = quic_hkdf_expand_label_ex(hash_alg,
+					early_secret, hash_len,
+					(const uint8_t *)TLS13_LABEL_EXT_BINDER,
+					strlen(TLS13_LABEL_EXT_BINDER),
+					empty_hash, empty_hash_len,
+					binder_key, hash_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = quic_hkdf_expand_label_ex(hash_alg,
+					binder_key, hash_len,
+					(const uint8_t *)TLS13_LABEL_FINISHED,
+					strlen(TLS13_LABEL_FINISHED),
+					NULL, 0,
+					finished_key, hash_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	status = psa_hash_compute(hash_alg,
+				  truncated_ch, truncated_ch_len,
+				  transcript_hash, sizeof(transcript_hash),
+				  &transcript_hash_len);
+	if (status != PSA_SUCCESS) {
+		return -EIO;
+	}
+
+	ret = tls_compute_hmac(hash_alg, finished_key, hash_len,
+			       transcript_hash, transcript_hash_len,
+			       binder, binder_len, &computed_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if (computed_len != hash_len) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
 /*
  * Derive-Secret (RFC 8446 Section 7.1)
  * Derive-Secret(Secret, Label, Messages) =
@@ -492,16 +627,24 @@ static bool handle_key_share_ext(struct quic_tls_context *ctx,
  * Parse ClientHello message
  */
 static int parse_client_hello(struct quic_tls_context *ctx,
-			      const uint8_t *data, size_t len)
+			      const uint8_t *data, size_t len,
+			      const uint8_t *full_msg, size_t full_msg_len)
 {
 #define MIN_TLS_CLIENT_HELLO_SIZE 38
 	size_t pos = 0;
 	uint16_t legacy_version;
 	uint8_t session_id_len;
 	uint16_t cipher_suites_len;
+	uint16_t selected_cipher_suite = 0;
+	uint16_t selected_psk_cipher_suite = 0;
 	uint8_t compression_len;
 	uint16_t extensions_len;
 	size_t ext_end;
+	bool saw_psk_ke_modes = false;
+	bool offered_psk_dhe = false;
+	bool got_pre_shared_key = false;
+	bool verified_psk_binder = false;
+	bool offered_early_data = false;
 
 	if (len < MIN_TLS_CLIENT_HELLO_SIZE) {
 		return -EINVAL;
@@ -536,26 +679,27 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 	}
 
 	/* Find a supported cipher suite */
-	ctx->ks.cipher_suite = 0;
 	for (size_t i = 0; i < cipher_suites_len; i += 2) {
 		uint16_t suite = (data[pos + i] << 8) | data[pos + i + 1];
 
 		if (suite == TLS_AES_128_GCM_SHA256 ||
 		    suite == TLS_AES_256_GCM_SHA384 ||
 		    suite == TLS_CHACHA20_POLY1305_SHA256) {
-			ctx->ks.cipher_suite = suite;
-			break;
+			if (selected_cipher_suite == 0U) {
+				selected_cipher_suite = suite;
+			}
+
+			if (selected_psk_cipher_suite == 0U &&
+			    tls_external_psk_cipher_supported(suite)) {
+				selected_psk_cipher_suite = suite;
+			}
 		}
 	}
 
-	if (ctx->ks.cipher_suite == 0) {
+	if (selected_cipher_suite == 0U) {
 		NET_DBG("No supported cipher suite found");
 		return -ENOTSUP;
 	}
-
-	NET_DBG("Selected cipher suite %s (0x%04x)",
-		cipher_suite_name(ctx->ks.cipher_suite),
-		ctx->ks.cipher_suite);
 
 	pos += cipher_suites_len;
 
@@ -573,6 +717,9 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 
 	/* Parse extensions */
 	ext_end = pos + extensions_len;
+	ctx->psk_offered = false;
+	ctx->use_psk_key_schedule = false;
+	ctx->early_data_offered = false;
 
 	while (pos + 4 <= ext_end) {
 		uint16_t ext_type = (data[pos] << 8) | data[pos + 1];
@@ -665,6 +812,146 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 			}
 			break;
 
+		case TLS_EXT_PSK_KEY_EXCHANGE_MODES:
+			saw_psk_ke_modes = true;
+			for (size_t mode_pos = pos + 1; mode_pos < pos + ext_len; mode_pos++) {
+				if (data[mode_pos] == TLS_PSK_KE_MODE_PSK_DHE_KE) {
+					offered_psk_dhe = true;
+					break;
+				}
+			}
+			break;
+
+		case TLS_EXT_EARLY_DATA:
+			offered_early_data = true;
+			break;
+
+		case TLS_EXT_PRE_SHARED_KEY:
+			{
+				size_t identities_len;
+				size_t identities_pos;
+				size_t identities_end;
+				size_t binders_len;
+				size_t binders_pos;
+				size_t binders_end;
+				size_t matched_binder_offset = SIZE_MAX;
+				size_t matched_binder_len = 0U;
+				uint16_t matched_identity_idx = UINT16_MAX;
+				uint16_t identity_idx = 0U;
+				psa_algorithm_t psk_hash_alg;
+				size_t psk_hash_len;
+				uint8_t expected_binder[QUIC_HASH_MAX_LEN];
+
+				got_pre_shared_key = true;
+
+				if (ext_len < 4U) {
+					return -EINVAL;
+				}
+
+				identities_len = ((size_t)data[pos] << 8) | data[pos + 1];
+				identities_pos = pos + 2;
+				identities_end = identities_pos + identities_len;
+
+				if (identities_end + 2U > pos + ext_len) {
+					return -EINVAL;
+				}
+
+				while (identities_pos + 6U <= identities_end) {
+					size_t identity_len =
+						((size_t)data[identities_pos] << 8) |
+						data[identities_pos + 1];
+
+					identities_pos += 2;
+					if (identities_pos + identity_len + 4U > identities_end) {
+						return -EINVAL;
+					}
+
+					if (ctx->psk_configured &&
+					    matched_identity_idx == UINT16_MAX &&
+					    identity_len == ctx->psk_identity_len &&
+					    memcmp(&data[identities_pos], ctx->psk_identity,
+						   identity_len) == 0) {
+						matched_identity_idx = identity_idx;
+					}
+
+					identities_pos += identity_len + 4;
+					identity_idx++;
+				}
+
+				if (identities_pos != identities_end) {
+					return -EINVAL;
+				}
+
+				binders_len = ((size_t)data[identities_end] << 8) |
+					     data[identities_end + 1];
+				binders_pos = identities_end + 2;
+				binders_end = binders_pos + binders_len;
+				identity_idx = 0U;
+
+				if (binders_end > pos + ext_len) {
+					return -EINVAL;
+				}
+
+				while (binders_pos + 1U <= binders_end) {
+					size_t binder_len = data[binders_pos++];
+
+					if (binders_pos + binder_len > binders_end) {
+						return -EINVAL;
+					}
+
+					if (identity_idx == matched_identity_idx) {
+						matched_binder_offset = binders_pos;
+						matched_binder_len = binder_len;
+					}
+
+					binders_pos += binder_len;
+					identity_idx++;
+				}
+
+				if (binders_pos != binders_end) {
+					return -EINVAL;
+				}
+
+				if (matched_identity_idx != UINT16_MAX) {
+					psk_hash_alg = PSA_ALG_SHA_256;
+					psk_hash_len = 32U;
+
+					if (matched_binder_len != psk_hash_len) {
+						return -EBADMSG;
+					}
+
+					if (4U + matched_binder_offset > full_msg_len) {
+						return -EINVAL;
+					}
+
+					if (!offered_psk_dhe) {
+						return -ENOTSUP;
+					}
+
+					if (selected_psk_cipher_suite == 0U) {
+						return -ENOTSUP;
+					}
+
+					if (tls_compute_external_psk_binder(ctx->psk, ctx->psk_len,
+									    psk_hash_alg, psk_hash_len,
+									    full_msg,
+									    4U + matched_binder_offset,
+									    expected_binder,
+									    sizeof(expected_binder)) != 0) {
+						return -EIO;
+					}
+
+					if (mbedtls_ct_memcmp(expected_binder,
+							      &data[matched_binder_offset],
+							      psk_hash_len) != 0) {
+						return -EBADMSG;
+					}
+
+					verified_psk_binder = true;
+				}
+			}
+			break;
+
 		default:
 			break;
 		}
@@ -677,6 +964,32 @@ static int parse_client_hello(struct quic_tls_context *ctx,
 		NET_DBG("No matching ALPN protocol found");
 		return -ENOPROTOOPT;  /* Specific error for ALPN mismatch */
 	}
+
+	if (offered_early_data && !got_pre_shared_key) {
+		return -EINVAL;
+	}
+
+	if (verified_psk_binder) {
+		if (!saw_psk_ke_modes || !offered_psk_dhe) {
+			return -ENOTSUP;
+		}
+
+		ctx->psk_offered = true;
+		ctx->use_psk_key_schedule = true;
+		ctx->early_data_offered = offered_early_data;
+	}
+
+	ctx->ks.cipher_suite = ctx->use_psk_key_schedule ?
+		selected_psk_cipher_suite : selected_cipher_suite;
+
+	if (ctx->ks.cipher_suite == 0U) {
+		return -ENOTSUP;
+	}
+
+	NET_DBG("Selected cipher suite %s (0x%04x)%s",
+		cipher_suite_name(ctx->ks.cipher_suite),
+		ctx->ks.cipher_suite,
+		ctx->use_psk_key_schedule ? " with external PSK" : "");
 
 	return 0;
 }
@@ -694,16 +1007,22 @@ static int parse_client_hello(struct quic_tls_context *ctx,
  * }
  */
 static int build_client_hello(struct quic_tls_context *ctx,
-			      uint8_t *buf, size_t buf_size, size_t *out_len)
+			      uint8_t *buf, size_t buf_size, size_t *out_len,
+			      size_t *binder_offset)
 {
 	size_t pos = 0;
 	size_t ext_start;
 	size_t ext_len;
 	size_t ks_ext_len;
+	size_t cipher_suites_len;
 	int ret;
 
 	if (buf_size < 256) {
 		return -ENOBUFS;
+	}
+
+	if (binder_offset != NULL) {
+		*binder_offset = SIZE_MAX;
 	}
 
 	/* Legacy version: TLS 1.2 (0x0303) */
@@ -721,12 +1040,15 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	buf[pos++] = 0;
 
 	/* Cipher suites (2 bytes length + suites) */
-	buf[pos++] = 0x00;
-	buf[pos++] = 0x06;  /* 3 cipher suites = 6 bytes */
+	cipher_suites_len = ctx->psk_configured ? 4U : 6U;
+	buf[pos++] = (cipher_suites_len >> 8) & 0xFF;
+	buf[pos++] = cipher_suites_len & 0xFF;
 	buf[pos++] = (TLS_AES_128_GCM_SHA256 >> 8) & 0xFF;
 	buf[pos++] = TLS_AES_128_GCM_SHA256 & 0xFF;
-	buf[pos++] = (TLS_AES_256_GCM_SHA384 >> 8) & 0xFF;
-	buf[pos++] = TLS_AES_256_GCM_SHA384 & 0xFF;
+	if (!ctx->psk_configured) {
+		buf[pos++] = (TLS_AES_256_GCM_SHA384 >> 8) & 0xFF;
+		buf[pos++] = TLS_AES_256_GCM_SHA384 & 0xFF;
+	}
 	buf[pos++] = (TLS_CHACHA20_POLY1305_SHA256 >> 8) & 0xFF;
 	buf[pos++] = TLS_CHACHA20_POLY1305_SHA256 & 0xFF;
 
@@ -833,6 +1155,56 @@ static int build_client_hello(struct quic_tls_context *ctx,
 	memcpy(&buf[pos], ctx->local_tp, ctx->local_tp_len);
 	pos += ctx->local_tp_len;
 
+	if (ctx->psk_configured) {
+		size_t identities_len;
+		size_t ext_data_len;
+
+		/* psk_key_exchange_modes extension (required with pre_shared_key) */
+		buf[pos++] = 0x00;
+		buf[pos++] = TLS_EXT_PSK_KEY_EXCHANGE_MODES;
+		buf[pos++] = 0x00;
+		buf[pos++] = 0x02;
+		buf[pos++] = 0x01;
+		buf[pos++] = TLS_PSK_KE_MODE_PSK_DHE_KE;
+
+		/* early_data extension is advertised in ClientHello when a PSK is offered. */
+		buf[pos++] = 0x00;
+		buf[pos++] = TLS_EXT_EARLY_DATA;
+		buf[pos++] = 0x00;
+		buf[pos++] = 0x00;
+
+		/* pre_shared_key MUST be the final ClientHello extension. */
+		identities_len = 2 + ctx->psk_identity_len + 4;
+		ext_data_len = 2 + identities_len + 2 + 1 + ctx->ks.hash_len;
+
+		buf[pos++] = 0x00;
+		buf[pos++] = TLS_EXT_PRE_SHARED_KEY;
+		buf[pos++] = (ext_data_len >> 8) & 0xFF;
+		buf[pos++] = ext_data_len & 0xFF;
+
+		buf[pos++] = (identities_len >> 8) & 0xFF;
+		buf[pos++] = identities_len & 0xFF;
+		buf[pos++] = (ctx->psk_identity_len >> 8) & 0xFF;
+		buf[pos++] = ctx->psk_identity_len & 0xFF;
+		memcpy(&buf[pos], ctx->psk_identity, ctx->psk_identity_len);
+		pos += ctx->psk_identity_len;
+
+		/* External PSKs do not carry ticket age. */
+		memset(&buf[pos], 0, 4);
+		pos += 4;
+
+		buf[pos++] = 0x00;
+		buf[pos++] = (1 + ctx->ks.hash_len) & 0xFF;
+		buf[pos++] = ctx->ks.hash_len;
+
+		if (binder_offset != NULL) {
+			*binder_offset = pos;
+		}
+
+		memset(&buf[pos], 0, ctx->ks.hash_len);
+		pos += ctx->ks.hash_len;
+	}
+
 	/* Fill in extensions length */
 	ext_len = pos - ext_start - 2;
 	buf[ext_start] = (ext_len >> 8) & 0xFF;
@@ -906,6 +1278,15 @@ static int build_server_hello(struct quic_tls_context *ctx,
 	memcpy(&buf[pos], ctx->ecdh_public_key, ctx->ecdh_public_key_len);
 	pos += ctx->ecdh_public_key_len;
 
+	if (ctx->use_psk_key_schedule) {
+		buf[pos++] = 0x00;
+		buf[pos++] = TLS_EXT_PRE_SHARED_KEY;
+		buf[pos++] = 0x00;
+		buf[pos++] = 0x02;
+		buf[pos++] = 0x00;
+		buf[pos++] = 0x00;
+	}
+
 	/* Fill in extensions length */
 	ext_len = pos - ext_start - 2;
 	buf[ext_start] = (ext_len >> 8) & 0xFF;
@@ -945,23 +1326,31 @@ static int key_schedule_init(struct quic_tls_context *ctx)
 {
 	psa_status_t status;
 	uint8_t zero_psk[QUIC_HASH_MAX_LEN] = {0};
+	const uint8_t *psk = zero_psk;
 	size_t psk_len;
+	int ret;
 
-	/* Determine hash algorithm based on cipher suite */
-	switch (ctx->ks.cipher_suite) {
-	case TLS_AES_128_GCM_SHA256:
-	case TLS_CHACHA20_POLY1305_SHA256:
-		ctx->ks.hash_alg = PSA_ALG_SHA_256;
-		ctx->ks.hash_len = 32;
-		psk_len = 32;
-		break;
-	case TLS_AES_256_GCM_SHA384:
-		ctx->ks.hash_alg = PSA_ALG_SHA_384;
-		ctx->ks.hash_len = 48;
-		psk_len = 48;
-		break;
-	default:
-		return -ENOTSUP;
+	ret = tls_cipher_suite_hash_params(ctx->ks.cipher_suite,
+					 &ctx->ks.hash_alg,
+					 &ctx->ks.hash_len);
+	if (ret != 0) {
+		return ret;
+	}
+
+	psk_len = ctx->ks.hash_len;
+
+	if (ctx->use_psk_key_schedule) {
+		if (!ctx->psk_configured || ctx->psk == NULL || ctx->psk_len == 0U) {
+			return -EINVAL;
+		}
+
+		if (!tls_external_psk_cipher_supported(ctx->ks.cipher_suite)) {
+			NET_DBG("External PSK requires a SHA-256 TLS 1.3 cipher suite");
+			return -ENOTSUP;
+		}
+
+		psk = ctx->psk;
+		psk_len = ctx->psk_len;
 	}
 
 	/* Initialize transcript hash operation to zero/clean state */
@@ -973,9 +1362,9 @@ static int key_schedule_init(struct quic_tls_context *ctx)
 		return -EIO;
 	}
 
-	/* Early Secret = HKDF-Extract(0, PSK), using zero PSK for now */
+	/* Early Secret = HKDF-Extract(0, PSK) */
 	if (quic_hkdf_extract_ex(ctx->ks.hash_alg, NULL, 0,
-				 zero_psk, psk_len,
+				 psk, psk_len,
 				 ctx->ks.early_secret, ctx->ks.hash_len) != 0) {
 		NET_DBG("Failed to derive early secret");
 		return -EIO;
@@ -2191,7 +2580,7 @@ static int send_server_handshake_flight(struct quic_tls_context *ctx)
 	}
 
 	/* 2. CertificateRequest (optional, if we want client cert) */
-	if (ctx->options.verify_level > 0) {
+	if (!ctx->use_psk_key_schedule && ctx->options.verify_level > 0) {
 		ret = build_certificate_request(ctx, msg_buf, msg_buf_size, &msg_len);
 		if (ret != 0) {
 			return ret;
@@ -2224,7 +2613,8 @@ static int send_server_handshake_flight(struct quic_tls_context *ctx)
 	}
 
 	/* 3. Certificate (if we have one with a valid signing key) */
-	if (ctx->my_cert != NULL && ctx->my_cert_len > 0 && ctx->signing_key_id != 0) {
+	if (!ctx->use_psk_key_schedule &&
+	    ctx->my_cert != NULL && ctx->my_cert_len > 0 && ctx->signing_key_id != 0) {
 		ret = build_certificate(ctx, msg_buf, msg_buf_size, &msg_len);
 		if (ret != 0) {
 			return ret;
@@ -2346,6 +2736,7 @@ static int parse_server_hello(struct quic_tls_context *ctx,
 	size_t extensions_end;
 	bool got_key_share = false;
 	bool got_version = false;
+	bool server_selected_psk = false;
 
 	if (msg_len < 38) {
 		NET_DBG("ServerHello too short");
@@ -2453,6 +2844,18 @@ static int parse_server_hello(struct quic_tls_context *ctx,
 			}
 			break;
 
+		case TLS_EXT_PRE_SHARED_KEY:
+			if (!ctx->psk_offered || ext_len != 2U) {
+				return -EINVAL;
+			}
+
+			if (((uint16_t)msg[pos] << 8) | msg[pos + 1]) {
+				return -ENOTSUP;
+			}
+
+			server_selected_psk = true;
+			break;
+
 		default:
 			/* Ignore unknown extensions */
 			break;
@@ -2470,6 +2873,12 @@ static int parse_server_hello(struct quic_tls_context *ctx,
 		NET_DBG("ServerHello missing key_share extension");
 		return -EINVAL;
 	}
+
+	if (server_selected_psk && !tls_external_psk_cipher_supported(cipher_suite)) {
+		return -ENOTSUP;
+	}
+
+	ctx->use_psk_key_schedule = server_selected_psk;
 
 	return 0;
 }
@@ -2561,6 +2970,7 @@ static int handle_server_hello(struct quic_tls_context *ctx,
 {
 	uint16_t old_cipher_suite = ctx->ks.cipher_suite;
 	psa_algorithm_t old_hash_alg = ctx->ks.hash_alg;
+	bool old_use_psk = ctx->use_psk_key_schedule;
 	size_t saved_transcript_len;
 	int ret;
 
@@ -2577,7 +2987,8 @@ static int handle_server_hello(struct quic_tls_context *ctx,
 	 * If so, we need to reinitialize the key schedule with the new hash
 	 * algorithm and re-hash the ClientHello from the transcript buffer.
 	 */
-	if (ctx->ks.cipher_suite != old_cipher_suite) {
+	if (ctx->ks.cipher_suite != old_cipher_suite ||
+	    ctx->use_psk_key_schedule != old_use_psk) {
 		psa_algorithm_t new_hash_alg;
 
 		/* Determine new hash algorithm */
@@ -2592,7 +3003,8 @@ static int handle_server_hello(struct quic_tls_context *ctx,
 			break;
 		}
 
-		if (new_hash_alg != old_hash_alg) {
+		if (new_hash_alg != old_hash_alg ||
+		    ctx->use_psk_key_schedule != old_use_psk) {
 			psa_status_t status;
 
 			NET_DBG("Cipher suite changed from 0x%04x to 0x%04x, "
@@ -2663,7 +3075,7 @@ static int handle_client_hello(struct quic_tls_context *ctx,
 	size_t sh_len, wrapped_len;
 	int ret;
 
-	ret = parse_client_hello(ctx, msg, msg_len);
+	ret = parse_client_hello(ctx, msg, msg_len, full_msg, full_msg_len);
 	if (ret != 0) {
 		/* In QUIC, TLS alerts are sent via CONNECTION_CLOSE frames
 		 * with error code 0x100 + TLS_alert_code (RFC 9001 Section 4.8)
@@ -3364,7 +3776,8 @@ ZTESTABLE_STATIC int process_handshake_message(struct quic_tls_context *ctx,
 
 	case TLS_HS_FINISHED:
 		NET_DBG("[%p] HS finished", ctx);
-		if (quic_tls_effective_verify_level(ctx) == MBEDTLS_SSL_VERIFY_REQUIRED &&
+		if (!ctx->use_psk_key_schedule &&
+		    quic_tls_effective_verify_level(ctx) == MBEDTLS_SSL_VERIFY_REQUIRED &&
 		    ctx->peer_cert_len == 0) {
 			NET_DBG("Peer certificate required but not provided");
 			return -EACCES;
@@ -4725,6 +5138,7 @@ static int quic_tls_send_client_hello(struct quic_tls_context *ctx,
 	size_t client_hello_size;
 	uint8_t *wrapped;
 	size_t wrapped_size;
+	size_t binder_offset;
 	size_t ch_len, wrapped_len;
 	int ret;
 
@@ -4745,7 +5159,8 @@ static int quic_tls_send_client_hello(struct quic_tls_context *ctx,
 	}
 
 	/* Build ClientHello */
-	ret = build_client_hello(ctx, client_hello, client_hello_size, &ch_len);
+	ret = build_client_hello(ctx, client_hello, client_hello_size, &ch_len,
+				 &binder_offset);
 	if (ret != 0) {
 		NET_DBG("Failed to build ClientHello: %d", ret);
 		return ret;
@@ -4758,6 +5173,22 @@ static int quic_tls_send_client_hello(struct quic_tls_context *ctx,
 	if (ret != 0) {
 		NET_DBG("Failed to wrap ClientHello: %d", ret);
 		return ret;
+	}
+
+	if (binder_offset != SIZE_MAX) {
+		uint8_t binder[QUIC_HASH_MAX_LEN];
+
+		ret = tls_compute_external_psk_binder(ctx->psk, ctx->psk_len,
+						      ctx->ks.hash_alg, ctx->ks.hash_len,
+						      wrapped, 4U + binder_offset,
+						      binder, sizeof(binder));
+		if (ret != 0) {
+			NET_DBG("Failed to compute PSK binder: %d", ret);
+			return ret;
+		}
+
+		memcpy(&client_hello[binder_offset], binder, ctx->ks.hash_len);
+		memcpy(&wrapped[4 + binder_offset], binder, ctx->ks.hash_len);
 	}
 
 	if (update_transcript) {
@@ -4809,6 +5240,9 @@ static int quic_tls_client_start(struct quic_tls_context *ctx)
 
 	/* Initialize key schedule (will be updated when we receive ServerHello) */
 	ctx->ks.cipher_suite = TLS_AES_128_GCM_SHA256;
+	ctx->psk_offered = ctx->psk_configured;
+	ctx->use_psk_key_schedule = ctx->psk_configured;
+	ctx->early_data_offered = ctx->psk_configured;
 	ret = key_schedule_init(ctx);
 	if (ret != 0) {
 		NET_DBG("Failed to initialize key schedule: %d", ret);
@@ -5004,8 +5438,17 @@ static int tls_set_psk(struct quic_tls_context *tls,
 		       struct tls_credential *psk,
 		       struct tls_credential *psk_id)
 {
-	/* TODO: Implement PSK support here and remove this stub function */
 #if defined(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED)
+	if (tls->psk_configured) {
+		return -EALREADY;
+	}
+
+	tls->psk = psk->buf;
+	tls->psk_len = psk->len;
+	tls->psk_identity = psk_id->buf;
+	tls->psk_identity_len = psk_id->len;
+	tls->psk_configured = true;
+
 	return 0;
 #else
 	return -ENOTSUP;

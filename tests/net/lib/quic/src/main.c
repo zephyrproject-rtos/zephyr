@@ -36,6 +36,14 @@ LOG_MODULE_REGISTER(net_test, CONFIG_QUIC_LOG_LEVEL);
 #define REMOTE_ADDR_IPV4 "192.0.2.2"
 #define REMOTE_ADDR_IPV6 "2001:db8::2"
 
+#define QUIC_EXTERNAL_PSK_TAG 42426
+
+static const uint8_t quic_external_psk[] = {
+	0x61, 0x02, 0x33, 0x74, 0x95, 0xa6, 0x17, 0x28,
+	0x39, 0x4a, 0x5b, 0x6c, 0x7d, 0x8e, 0x9f, 0xb0,
+};
+static const uint8_t quic_external_psk_id[] = "quic-external-psk";
+
 static struct net_sockaddr_in local_addr_ipv4;
 static struct net_sockaddr_in6 local_addr_ipv6;
 
@@ -284,6 +292,18 @@ static void setup_certs(void)
 				 client_private_key, sizeof(client_private_key));
 	if (ret < 0) {
 		LOG_ERR("Failed to register client private key: %d", ret);
+	}
+
+	ret = tls_credential_add(QUIC_EXTERNAL_PSK_TAG, TLS_CREDENTIAL_PSK,
+				 quic_external_psk, sizeof(quic_external_psk));
+	if (ret < 0) {
+		LOG_ERR("Failed to register QUIC PSK: %d", ret);
+	}
+
+	ret = tls_credential_add(QUIC_EXTERNAL_PSK_TAG, TLS_CREDENTIAL_PSK_ID,
+				 quic_external_psk_id, sizeof(quic_external_psk_id) - 1);
+	if (ret < 0) {
+		LOG_ERR("Failed to register QUIC PSK identity: %d", ret);
 	}
 }
 
@@ -4239,6 +4259,132 @@ cleanup:
 	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
 }
 
+static void quic_server_and_client_with_psk(const char *server, const char *client)
+{
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	sec_tag_t sec_tags[] = {
+		QUIC_EXTERNAL_PSK_TAG,
+	};
+	static const char * const alpn_list[] = {
+		"test-quic-psk",
+		NULL
+	};
+	static uint8_t tx_buf[] = "Hello with external PSK!";
+	static uint8_t rx_buf[64];
+	struct zsock_pollfd pfd;
+	int server_sock, client_sock, client_stream_sock = -1, server_stream_sock;
+	int server_connected_sock = -1;
+	k_tid_t tid;
+	int ret;
+
+#define SERVER_PSK_STACK_SIZE 2048
+	static K_THREAD_STACK_DEFINE(server_psk_thread_stack, SERVER_PSK_STACK_SIZE);
+	static struct k_thread server_psk_thread_data;
+	static struct config server_psk_data;
+
+	ret = k_sem_init(&server_psk_data.sem, 0, 1);
+	zassert_ok(ret, "Failed to initialize semaphore (%d)", ret);
+
+	ret = net_ipaddr_parse(server, strlen(server),
+			       (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server IP address %s", server);
+
+	ret = net_ipaddr_parse(client, strlen(client),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address %s", client);
+
+	prepare_quic_socket(&server_sock, NULL,
+			    (const struct net_sockaddr *)&server_addr);
+	prepare_quic_socket(&client_sock,
+			    (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+
+	zassert_true(server_sock >= 0, "Failed to create server socket");
+	zassert_true(client_sock >= 0, "Failed to create client socket");
+
+	setup_quic_certs(server_sock, sec_tags, ARRAY_SIZE(sec_tags));
+	setup_alpn(server_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	server_psk_data.sock = server_sock;
+	server_psk_data.counter = 1;
+	server_psk_data.error = 0;
+	server_psk_data.connected_sock = -1;
+	server_psk_data.stream_recv_sock = -1;
+	server_psk_data.test_done = false;
+
+	tid = k_thread_create(&server_psk_thread_data, server_psk_thread_stack,
+			      K_THREAD_STACK_SIZEOF(server_psk_thread_stack),
+			      server_thread, &server_psk_data, NULL, NULL,
+			      K_PRIO_PREEMPT(1), 0, K_FOREVER);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		k_thread_name_set(&server_psk_thread_data, "quic_srv_psk");
+	}
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&server_psk_data.sem, K_FOREVER);
+	zassert_ok(ret, "Failed to take semaphore (%d)", ret);
+
+	setup_quic_certs(client_sock, sec_tags, ARRAY_SIZE(sec_tags));
+	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	client_stream_sock = quic_stream_open(client_sock, QUIC_STREAM_CLIENT,
+					      QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(client_stream_sock >= 0, "Failed to open client stream (%d)",
+		     client_stream_sock);
+
+	ret = zsock_send(client_stream_sock, tx_buf, sizeof(tx_buf), 0);
+	zassert_equal(ret, sizeof(tx_buf), "Failed to send data (%d)", -errno);
+
+	pfd.fd = client_stream_sock;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+
+	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
+	zassert_true(ret >= 0, "Poll failed (%d)", -errno);
+
+	ret = zsock_recv(client_stream_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_true(ret > 0, "Failed to receive data (%d)", -errno);
+	zassert_mem_equal(tx_buf, rx_buf, sizeof(tx_buf), "Received PSK echo mismatch");
+
+	server_psk_data.test_done = true;
+
+	if (client_stream_sock >= 0) {
+		ret = zsock_close(client_stream_sock);
+		zassert_equal(ret, 0, "Failed to close client stream (%d)", ret);
+	}
+
+	ret = k_thread_join(&server_psk_thread_data, K_MSEC(500));
+	zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
+
+	zassert_equal(server_psk_data.error, 0, "Server thread reported error (%d)",
+		      server_psk_data.error);
+
+	server_stream_sock = server_psk_data.stream_recv_sock;
+	zassert_true(server_stream_sock >= 0, "Invalid server stream socket (%d)",
+		     server_stream_sock);
+
+	ret = quic_stream_close(server_stream_sock);
+	zassert_equal(ret, 0, "Failed to close server stream %d (%d)",
+		      server_stream_sock, ret);
+
+	server_connected_sock = server_psk_data.connected_sock;
+	zassert_true(server_connected_sock >= 0, "Invalid connected socket (%d)",
+		     server_connected_sock);
+
+	ret = quic_connection_close(server_connected_sock);
+	zassert_equal(ret, 0, "Failed to close server connection %d (%d)",
+		      server_connected_sock, ret);
+
+	ret = quic_connection_close(client_sock);
+	zassert_equal(ret, 0, "Failed to close client connection (%d)", ret);
+
+	ret = quic_connection_close(server_sock);
+	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_410_client_cert_optional)
 {
 	int ret;
@@ -4348,6 +4494,18 @@ ZTEST(net_socket_quic, test_460_required_peer_verification_rejects_finished_with
 		      ret);
 	zassert_not_equal(ctx.state, QUIC_TLS_STATE_CONNECTED,
 			  "Handshake must not reach CONNECTED without peer certificate");
+}
+
+ZTEST(net_socket_quic, test_465_external_psk_handshake_can_exchange_data)
+{
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(MBEDTLS_SSL_HANDSHAKE_WITH_PSK_ENABLED);
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	quic_server_and_client_with_psk(LOCAL_ADDR_IPV4_STR3, REMOTE_ADDR_IPV4_STR3);
 }
 
 #define LOCAL_ADDR_IPV4_STR4 "127.0.0.1:54324"
