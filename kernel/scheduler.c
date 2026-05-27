@@ -138,7 +138,7 @@ bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 							    swap_retval,
 							    swap_data);
 			unpend_thread_no_timeout(thread);
-			z_abort_thread_timeout(thread);
+			(void)z_try_abort_thread_timeout(thread);
 			z_sched_ready_locked(thread);
 			ret = true;
 		}
