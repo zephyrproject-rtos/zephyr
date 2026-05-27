@@ -146,7 +146,6 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-1 = <&pinmux_lpuart1_sleep>;
@@ -154,7 +153,6 @@
 };
 
 &lpuart12 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart12>;
 	pinctrl-1 = <&pinmux_lpuart12_sleep>;
