@@ -62,3 +62,17 @@ tests:
       - native_sim/native/64
     integration_platforms:
       - native_sim/native/64
+  sample.video.capture.pngdec:
+    tags:
+      - video
+      - samples
+    extra_args:
+      - EXTRA_CONF_FILE="boards/mimxrt700_evk_mimxrt798s_cm33_cpu0_pngdec.conf"
+      - EXTRA_DTC_OVERLAY_FILE="boards/mimxrt700_evk_mimxrt798s_cm33_cpu0_pngdec.overlay"
+    extra_configs:
+      - CONFIG_FPU=y
+    build_only: true
+    platform_allow:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    integration_platforms:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
