@@ -64,4 +64,6 @@ properties:
   fifo-watermark:
     type: int
     description: |
-      FIFO Watermark in number of frames. Ranges between 1 and 99
+      FIFO Watermark in number of frames.
+    min: 1
+    max: 99
