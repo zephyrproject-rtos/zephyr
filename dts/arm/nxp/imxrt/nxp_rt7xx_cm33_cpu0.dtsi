@@ -1231,6 +1231,13 @@
 		reg = <0x151000 0x1000>;
 		status = "disabled";
 	};
+
+	pngdec: pngdec@a7000 {
+		compatible = "nxp,pngdec";
+		reg = <0xa7000 0x1000>;
+		interrupts = <140 0>;
+		status = "disabled";
+	};
 };
 
 &xspi0 {
