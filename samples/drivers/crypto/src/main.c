@@ -126,7 +126,7 @@ int validate_hw_compatibility(const struct device *dev, uint32_t key_cap_flag)
 
 }
 
-void ecb_mode(const struct device *dev)
+void ecb_mode(const struct device *dev, void *key_handle)
 {
 	/* from FIPS-197 test vectors */
 	const uint8_t ecb_key[16] = {
@@ -142,9 +142,11 @@ void ecb_mode(const struct device *dev)
 
 	uint8_t encrypted[16] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t decrypted[16] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(ecb_key),
-		.key.bit_stream = ecb_key,
 		.flags = cap_flags,
 	};
 	struct cipher_pkt encrypt = {
@@ -160,6 +162,12 @@ void ecb_mode(const struct device *dev)
 		.out_buf_max = sizeof(decrypted),
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = ecb_key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_ECB,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -173,15 +181,18 @@ void ecb_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, ecb_ciphertext, sizeof(ecb_ciphertext))) {
-		LOG_ERR("ECB mode ENCRYPT - Mismatch between expected and "
-			    "returned cipher text");
-		print_buffer_comparison(ecb_ciphertext, encrypt.out_buf,
-					sizeof(ecb_ciphertext));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, ecb_ciphertext, sizeof(ecb_ciphertext))) {
+			LOG_ERR("ECB mode ENCRYPT - Mismatch between expected and "
+				    "returned cipher text");
+			print_buffer_comparison(ecb_ciphertext, encrypt.out_buf,
+						sizeof(ecb_ciphertext));
+			goto out;
+		}
+
+		LOG_INF("ECB mode ENCRYPT - Match");
 	}
 
-	LOG_INF("ECB mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -205,7 +216,7 @@ void ecb_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("ECB mode DECRYPT - Match");
+	LOG_INF("ECB mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -220,13 +231,15 @@ static const uint8_t cbc_ciphertext[80] = {
 	0x12, 0x0e, 0xca, 0x30, 0x75, 0x86, 0xe1, 0xa7
 };
 
-void cbc_mode(const struct device *dev)
+void cbc_mode(const struct device *dev, void *key_handle)
 {
 	uint8_t encrypted[80] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t decrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(key),
-		.key.bit_stream = key,
 		.flags = cap_flags,
 	};
 	struct cipher_pkt encrypt = {
@@ -247,6 +260,12 @@ void cbc_mode(const struct device *dev)
 		0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CBC,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -260,15 +279,18 @@ void cbc_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, cbc_ciphertext, sizeof(cbc_ciphertext))) {
-		LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
-			    "returned cipher text");
-		print_buffer_comparison(cbc_ciphertext, encrypt.out_buf,
-					sizeof(cbc_ciphertext));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, cbc_ciphertext, sizeof(cbc_ciphertext))) {
+			LOG_ERR("CBC mode ENCRYPT - Mismatch between expected and "
+				    "returned cipher text");
+			print_buffer_comparison(cbc_ciphertext, encrypt.out_buf,
+						sizeof(cbc_ciphertext));
+			goto out;
+		}
+
+		LOG_INF("CBC mode ENCRYPT - Match");
 	}
 
-	LOG_INF("CBC mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -292,7 +314,7 @@ void cbc_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("CBC mode DECRYPT - Match");
+	LOG_INF("CBC mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -308,13 +330,15 @@ static const uint8_t ctr_ciphertext[64] = {
 	0xa3, 0x5c, 0x85, 0x3a, 0xb9, 0x2c, 0x6, 0xbb
 };
 
-void ctr_mode(const struct device *dev)
+void ctr_mode(const struct device *dev, void *key_handle)
 {
 	uint8_t encrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t decrypted[64] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(key),
-		.key.bit_stream = key,
 		.flags = cap_flags,
 		/*  ivlen + ctrlen = keylen , so ctrlen is 128 - 96 = 32 bits */
 		.mode_params.ctr_info.ctr_len = 32,
@@ -336,6 +360,12 @@ void ctr_mode(const struct device *dev)
 		0xf8, 0xf9, 0xfa, 0xfb
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CTR,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -349,15 +379,18 @@ void ctr_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
-		LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(ctr_ciphertext, encrypt.out_buf,
-					sizeof(ctr_ciphertext));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, ctr_ciphertext, sizeof(ctr_ciphertext))) {
+			LOG_ERR("CTR mode ENCRYPT - Mismatch between expected "
+				    "and returned cipher text");
+			print_buffer_comparison(ctr_ciphertext, encrypt.out_buf,
+						sizeof(ctr_ciphertext));
+			goto out;
+		}
+
+		LOG_INF("CTR mode ENCRYPT - Match");
 	}
 
-	LOG_INF("CTR mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -381,7 +414,7 @@ void ctr_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("CTR mode DECRYPT - Match");
+	LOG_INF("CTR mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -406,13 +439,15 @@ static const uint8_t ccm_expected[31] = {0x58, 0x8c, 0x97, 0x9a, 0x61, 0xc6, 0x6
 					 0x6d, 0x5f, 0x6b, 0x61, 0xda, 0xc3, 0x84, 0x17,
 					 0xe8, 0xd1, 0x2c, 0xfd, 0xf9, 0x26, 0xe0};
 
-void ccm_mode(const struct device *dev)
+void ccm_mode(const struct device *dev, void *key_handle)
 {
 	uint8_t encrypted[50] __aligned(IO_ALIGNMENT_BYTES);
 	uint8_t decrypted[32] __aligned(IO_ALIGNMENT_BYTES);
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(ccm_key),
-		.key.bit_stream = ccm_key,
 		.mode_params.ccm_info = {
 			.nonce_len = sizeof(ccm_nonce),
 			.tag_len = 8,
@@ -438,6 +473,12 @@ void ccm_mode(const struct device *dev)
 		.out_buf_max = sizeof(decrypted),
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = ccm_key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_CCM,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -452,15 +493,18 @@ void ccm_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, ccm_expected, sizeof(ccm_expected))) {
-		LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(ccm_expected,
-					encrypt.out_buf, sizeof(ccm_expected));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, ccm_expected, sizeof(ccm_expected))) {
+			LOG_ERR("CCM mode ENCRYPT - Mismatch between expected "
+				    "and returned cipher text");
+			print_buffer_comparison(ccm_expected,
+						encrypt.out_buf, sizeof(ccm_expected));
+			goto out;
+		}
+
+		LOG_INF("CCM mode ENCRYPT - Match");
 	}
 
-	LOG_INF("CCM mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -485,7 +529,7 @@ void ccm_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("CCM mode DECRYPT - Match");
+	LOG_INF("CCM mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
@@ -512,13 +556,15 @@ static const uint8_t gcm_expected[58] = {
 	0x2e, 0x1c, 0x9b, 0x72, 0xee, 0xe7, 0xc9, 0xde, 0x7d, 0x52, 0xb3, 0xf3, 0xd6, 0xa5, 0x28,
 	0x4f, 0x4a, 0x6d, 0x3f, 0xe2, 0x2a, 0x5d, 0x6c, 0x2b, 0x96, 0x04, 0x94, 0xc3};
 
-void gcm_mode(const struct device *dev)
+void gcm_mode(const struct device *dev, void *key_handle)
 {
 	uint8_t encrypted[60] __aligned(IO_ALIGNMENT_BYTES) = {0};
 	uint8_t decrypted[44] __aligned(IO_ALIGNMENT_BYTES) = {0};
+
+	bool raw_key = (cap_flags & CAP_RAW_KEY) != 0U;
+
 	struct cipher_ctx ini = {
 		.keylen = sizeof(gcm_key),
-		.key.bit_stream = gcm_key,
 		.mode_params.gcm_info = {
 			.nonce_len = sizeof(gcm_nonce),
 			.tag_len = 16,
@@ -544,6 +590,12 @@ void gcm_mode(const struct device *dev)
 		.out_buf_max = sizeof(decrypted),
 	};
 
+	if (raw_key) {
+		ini.key.bit_stream = gcm_key;
+	} else {
+		ini.key.handle = key_handle;
+	}
+
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
 				 CRYPTO_CIPHER_MODE_GCM,
 				 CRYPTO_CIPHER_OP_ENCRYPT)) {
@@ -558,15 +610,18 @@ void gcm_mode(const struct device *dev)
 
 	LOG_INF("Output length (encryption): %d", encrypt.out_len);
 
-	if (memcmp(encrypt.out_buf, gcm_expected, sizeof(gcm_expected))) {
-		LOG_ERR("GCM mode ENCRYPT - Mismatch between expected "
-			    "and returned cipher text");
-		print_buffer_comparison(gcm_expected,
-					encrypt.out_buf, sizeof(gcm_expected));
-		goto out;
+	if (raw_key) {
+		if (memcmp(encrypt.out_buf, gcm_expected, sizeof(gcm_expected))) {
+			LOG_ERR("GCM mode ENCRYPT - Mismatch between expected "
+				    "and returned cipher text");
+			print_buffer_comparison(gcm_expected,
+						encrypt.out_buf, sizeof(gcm_expected));
+			goto out;
+		}
+
+		LOG_INF("GCM mode ENCRYPT - Match");
 	}
 
-	LOG_INF("GCM mode ENCRYPT - Match");
 	cipher_free_session(dev, &ini);
 
 	if (cipher_begin_session(dev, &ini, CRYPTO_CIPHER_ALGO_AES,
@@ -591,14 +646,14 @@ void gcm_mode(const struct device *dev)
 		goto out;
 	}
 
-	LOG_INF("GCM mode DECRYPT - Match");
+	LOG_INF("GCM mode %s - Match", raw_key ? "DECRYPT" : "ROUNDTRIP");
 out:
 	cipher_free_session(dev, &ini);
 }
 
 struct mode_test {
 	const char *mode;
-	void (*mode_func)(const struct device *dev);
+	void (*mode_func)(const struct device *dev, void *key_handle);
 };
 
 int main(void)
@@ -638,7 +693,7 @@ int main(void)
 
 	for (i = 0; modes[i].mode; i++) {
 		LOG_INF("%s", modes[i].mode);
-		modes[i].mode_func(dev);
+		modes[i].mode_func(dev, NULL);
 	}
 	return 0;
 }
