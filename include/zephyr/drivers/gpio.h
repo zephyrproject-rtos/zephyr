@@ -1782,9 +1782,8 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
  * @brief Add an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid Application's callback structure pointer.
- * @retval 0 If successful
- * @retval -ENOSYS If driver does not implement the operation
- * @retval -errno Other negative errno code on failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Driver does not implement the operation.
  *
  * @note Callbacks may be added to the device from within a callback
  * handler invocation, but whether they are invoked for the current
@@ -1832,9 +1831,8 @@ static inline int gpio_add_callback_dt(const struct gpio_dt_spec *spec,
  * @brief Remove an application callback.
  * @param port Pointer to the device structure for the driver instance.
  * @param callback A valid application's callback structure pointer.
- * @retval 0 If successful
- * @retval -ENOSYS If driver does not implement the operation
- * @retval -errno Other negative errno code on failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Driver does not implement the operation.
  *
  * @warning It is explicitly permitted, within a callback handler, to
  * remove the registration for the callback that is running, i.e. @p
