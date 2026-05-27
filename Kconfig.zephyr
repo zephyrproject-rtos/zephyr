@@ -556,11 +556,35 @@ endchoice
 
 config LTO
 	bool "Link Time Optimization"
-	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
 	depends on !NATIVE_LIBRARY
 	depends on !CODE_DATA_RELOCATION
 	help
 	  This option enables Link Time Optimization.
+
+if LTO
+
+choice LTO_MODE
+	prompt "Link-Time Optimization Mode"
+	default LTO_MODE_SELECTIVE if SOC_FAMILY_ESPRESSIF_ESP32
+	default LTO_MODE_GLOBAL
+
+config LTO_MODE_GLOBAL
+	bool "Global LTO"
+	depends on !(GEN_ISR_TABLES || GEN_IRQ_VECTOR_TABLE) || ISR_TABLES_LOCAL_DECLARATION
+	depends on !SOC_FAMILY_ESPRESSIF_ESP32
+	help
+	  Enable LTO globally for all libraries in the build.
+
+config LTO_MODE_SELECTIVE
+	bool "Selective LTO"
+	help
+	  Enable LTO selectively. Application and high-level middleware are compiled
+	  with LTO, while low-level SoC and HAL components are automatically exempted
+	  to prevent boot and exception vector failures.
+
+endchoice
+
+endif # LTO
 
 config LTO_SINGLE_THREADED
 	bool "Single-threaded LTO"
