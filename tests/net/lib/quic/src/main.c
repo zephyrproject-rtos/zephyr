@@ -4385,6 +4385,204 @@ static void quic_server_and_client_with_psk(const char *server, const char *clie
 	zassert_equal(ret, 0, "Failed to close server connection (%d)", ret);
 }
 
+static void quic_server_and_client_with_session_resumption(const char *server, const char *client)
+{
+	struct net_sockaddr_storage server_addr;
+	struct net_sockaddr_storage client_addr;
+	sec_tag_t server_sec_tags[] = {
+		SERVER_CERTIFICATE_TAG,
+	};
+	sec_tag_t client_sec_tags[] = {
+		CA_CERTIFICATE_TAG,
+	};
+	static const char * const alpn_list[] = {
+		"test-quic-ticket",
+		NULL
+	};
+	static uint8_t tx_buf[] = "Hello with session resumption!";
+	static uint8_t rx_buf[96];
+	struct quic_session_state session_state = { 0 };
+	struct zsock_pollfd pfd;
+	int server_sock = -1, client_sock = -1, client_stream_sock = -1;
+	int server_connected_sock = -1, server_stream_sock = -1;
+	int enable_session_tickets = 1;
+	int ret;
+	net_socklen_t optlen;
+	k_tid_t tid;
+
+#define SERVER_TICKET_STACK_SIZE 2048
+	static K_THREAD_STACK_DEFINE(server_ticket_thread_stack, SERVER_TICKET_STACK_SIZE);
+	static struct k_thread server_ticket_thread_data;
+	static struct config server_ticket_data;
+
+	ret = k_sem_init(&server_ticket_data.sem, 0, 1);
+	zassert_ok(ret, "Failed to initialize semaphore (%d)", ret);
+
+	ret = net_ipaddr_parse(server, strlen(server),
+			       (struct net_sockaddr *)&server_addr);
+	zassert_true(ret, "Failed to parse server IP address %s", server);
+
+	ret = net_ipaddr_parse(client, strlen(client),
+			       (struct net_sockaddr *)&client_addr);
+	zassert_true(ret, "Failed to parse client IP address %s", client);
+
+	prepare_quic_socket(&server_sock, NULL,
+			    (const struct net_sockaddr *)&server_addr);
+	prepare_quic_socket(&client_sock,
+			    (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+
+	zassert_true(server_sock >= 0, "Failed to create server socket");
+	zassert_true(client_sock >= 0, "Failed to create client socket");
+
+	ret = zsock_setsockopt(server_sock, ZSOCK_SOL_QUIC,
+			       ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE,
+			       &enable_session_tickets,
+			       sizeof(enable_session_tickets));
+	zassert_equal(ret, 0, "Failed to enable session tickets (%d)", -errno);
+
+	setup_quic_certs(server_sock, server_sec_tags, ARRAY_SIZE(server_sec_tags));
+	setup_quic_certs(client_sock, client_sec_tags, ARRAY_SIZE(client_sec_tags));
+	setup_alpn(server_sock, alpn_list, ARRAY_SIZE(alpn_list));
+	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	server_ticket_data.sock = server_sock;
+	server_ticket_data.counter = 1;
+	server_ticket_data.error = 0;
+	server_ticket_data.connected_sock = -1;
+	server_ticket_data.stream_recv_sock = -1;
+	server_ticket_data.test_done = false;
+
+	tid = k_thread_create(&server_ticket_thread_data, server_ticket_thread_stack,
+			      K_THREAD_STACK_SIZEOF(server_ticket_thread_stack),
+			      server_thread, &server_ticket_data, NULL, NULL,
+			      K_PRIO_PREEMPT(1), 0, K_FOREVER);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		k_thread_name_set(&server_ticket_thread_data, "quic_ticket_srv");
+	}
+
+	k_thread_start(tid);
+
+	ret = k_sem_take(&server_ticket_data.sem, K_FOREVER);
+	zassert_ok(ret, "Failed to take semaphore (%d)", ret);
+
+	client_stream_sock = quic_stream_open(client_sock, QUIC_STREAM_CLIENT,
+					      QUIC_STREAM_BIDIRECTIONAL, 0);
+	zassert_true(client_stream_sock >= 0, "Failed to open client stream (%d)",
+		     client_stream_sock);
+
+	ret = zsock_send(client_stream_sock, tx_buf, sizeof(tx_buf), 0);
+	zassert_equal(ret, sizeof(tx_buf), "Failed to send data (%d)", -errno);
+
+	pfd.fd = client_stream_sock;
+	pfd.events = ZSOCK_POLLIN;
+	pfd.revents = 0;
+
+	ret = zsock_poll(&pfd, 1, SYS_FOREVER_MS);
+	zassert_true(ret >= 0, "Poll failed (%d)", -errno);
+
+	ret = zsock_recv(client_stream_sock, rx_buf, sizeof(rx_buf), 0);
+	zassert_true(ret > 0, "Failed to receive data (%d)", -errno);
+	zassert_mem_equal(tx_buf, rx_buf, sizeof(tx_buf), "Received ticket echo mismatch");
+
+	for (int attempt = 0; attempt < 50; attempt++) {
+		optlen = sizeof(session_state);
+		ret = zsock_getsockopt(client_sock, ZSOCK_SOL_QUIC,
+				       ZSOCK_QUIC_SO_SESSION_STATE,
+				       &session_state, &optlen);
+		if (ret == 0) {
+			break;
+		}
+
+		k_sleep(K_MSEC(20));
+	}
+
+	zassert_equal(ret, 0, "Failed to export session state (%d)", -errno);
+	zassert_equal(optlen, sizeof(session_state), "Unexpected session state size %u",
+		      optlen);
+	zassert_equal(session_state.version, QUIC_SESSION_STATE_VERSION,
+		      "Unexpected session state version %u", session_state.version);
+	zassert_true(session_state.ticket_len > 0U, "Expected a non-empty session ticket");
+	zassert_true(session_state.psk_len > 0U, "Expected a non-empty resumption PSK");
+
+	server_ticket_data.test_done = true;
+
+	ret = zsock_close(client_stream_sock);
+	zassert_equal(ret, 0, "Failed to close client stream (%d)", ret);
+	client_stream_sock = -1;
+
+	ret = k_thread_join(&server_ticket_thread_data, K_MSEC(500));
+	zassert_equal(ret, 0, "Cannot join thread (%d)", ret);
+
+	zassert_equal(server_ticket_data.error, 0, "Server thread reported error (%d)",
+		      server_ticket_data.error);
+
+	server_stream_sock = server_ticket_data.stream_recv_sock;
+	server_connected_sock = server_ticket_data.connected_sock;
+
+	zassert_true(server_stream_sock >= 0, "Invalid server stream socket (%d)",
+		     server_stream_sock);
+	zassert_true(server_connected_sock >= 0, "Invalid connected socket (%d)",
+		     server_connected_sock);
+
+	ret = quic_stream_close(server_stream_sock);
+	zassert_equal(ret, 0, "Failed to close server stream %d (%d)",
+		      server_stream_sock, ret);
+
+	ret = quic_connection_close(server_connected_sock);
+	zassert_equal(ret, 0, "Failed to close server connection %d (%d)",
+		      server_connected_sock, ret);
+
+	ret = quic_connection_close(client_sock);
+	zassert_equal(ret, 0, "Failed to close client connection (%d)", ret);
+	client_sock = -1;
+
+	ret = quic_connection_close(server_sock);
+	zassert_equal(ret, 0, "Failed to close first server connection (%d)", ret);
+	server_sock = -1;
+
+	if (server_addr.ss_family == NET_AF_INET) {
+		struct net_sockaddr_in *addr = net_sin((struct net_sockaddr *)&client_addr);
+
+		addr->sin_port = net_htons(net_ntohs(addr->sin_port) + 1U);
+	} else {
+		struct net_sockaddr_in6 *addr = net_sin6((struct net_sockaddr *)&client_addr);
+
+		addr->sin6_port = net_htons(net_ntohs(addr->sin6_port) + 1U);
+	}
+
+	prepare_quic_socket(&client_sock,
+			    (const struct net_sockaddr *)&server_addr,
+			    (const struct net_sockaddr *)&client_addr);
+
+	zassert_true(client_sock >= 0, "Failed to create resumed client socket");
+
+	setup_alpn(client_sock, alpn_list, ARRAY_SIZE(alpn_list));
+
+	ret = zsock_setsockopt(client_sock, ZSOCK_SOL_QUIC,
+			       ZSOCK_QUIC_SO_SESSION_STATE,
+			       &session_state, sizeof(session_state));
+	zassert_equal(ret, 0, "Failed to import session state (%d)", -errno);
+
+	{
+		struct quic_session_state imported_state = { 0 };
+
+		optlen = sizeof(imported_state);
+		ret = zsock_getsockopt(client_sock, ZSOCK_SOL_QUIC,
+				       ZSOCK_QUIC_SO_SESSION_STATE,
+				       &imported_state, &optlen);
+		zassert_equal(ret, 0, "Failed to read imported session state (%d)", -errno);
+		zassert_equal(optlen, sizeof(imported_state),
+			      "Unexpected imported session state size %u", optlen);
+		zassert_mem_equal(&session_state, &imported_state, sizeof(session_state),
+				  "Imported session state mismatch");
+	}
+
+	ret = quic_connection_close(client_sock);
+	zassert_equal(ret, 0, "Failed to close resumed client connection (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_410_client_cert_optional)
 {
 	int ret;
@@ -4506,6 +4704,17 @@ ZTEST(net_socket_quic, test_465_external_psk_handshake_can_exchange_data)
 	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
 
 	quic_server_and_client_with_psk(LOCAL_ADDR_IPV4_STR3, REMOTE_ADDR_IPV4_STR3);
+}
+
+ZTEST(net_socket_quic, test_466_session_ticket_resumption_can_exchange_data)
+{
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set packet drop ratio (%d)", ret);
+
+	quic_server_and_client_with_session_resumption(LOCAL_ADDR_IPV4_STR3,
+							 REMOTE_ADDR_IPV4_STR3);
 }
 
 #define LOCAL_ADDR_IPV4_STR4 "127.0.0.1:54324"

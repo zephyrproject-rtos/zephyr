@@ -158,7 +158,8 @@ static int quic_getsockopt_ctx(void *obj, int level, int optname,
 		ep = SYS_SLIST_PEEK_HEAD_CONTAINER(&ctx->endpoints, ep, node);
 	}
 
-	if (level != ZSOCK_SOL_TLS && level != ZSOCK_SOL_SOCKET) {
+	if (level != ZSOCK_SOL_TLS && level != ZSOCK_SOL_SOCKET &&
+	    level != ZSOCK_SOL_QUIC) {
 		/* If we have not created any endpoint yet, the socket options
 		 * cannot be applied.
 		 */
@@ -176,6 +177,37 @@ static int quic_getsockopt_ctx(void *obj, int level, int optname,
 	}
 
 	switch (level) {
+	case ZSOCK_SOL_QUIC:
+		switch (optname) {
+		case ZSOCK_QUIC_SO_SESSION_STATE: {
+			struct quic_session_state *state = optval;
+			int ret;
+
+			if (ep == NULL) {
+				errno = ENOTCONN;
+				return -1;
+			}
+
+			if (*optlen < sizeof(*state)) {
+				errno = ENOBUFS;
+				return -1;
+			}
+
+			ret = quic_tls_get_session_state(&ep->crypto.tls, state);
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			*optlen = sizeof(*state);
+			return 0;
+		}
+
+		default:
+			break;
+		}
+		break;
+
 	case ZSOCK_SOL_TLS:
 		switch (optname) {
 		case ZSOCK_TLS_ALPN_LIST: {
@@ -359,6 +391,25 @@ static int quic_setsockopt_ctx(void *obj, int level, int optname,
 				}
 			}
 
+			break;
+
+		case ZSOCK_QUIC_SO_SESSION_STATE:
+			if (optval == NULL || optlen != sizeof(struct quic_session_state)) {
+				err = -EINVAL;
+				break;
+			}
+
+			err = quic_tls_set_session_state(&ep->crypto.tls, optval);
+			break;
+
+		case ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE:
+			if (!ep->is_server || optval == NULL || optlen != sizeof(int)) {
+				err = -EINVAL;
+				break;
+			}
+
+			ep->crypto.tls.issue_session_tickets = *(const int *)optval != 0;
+			err = 0;
 			break;
 
 		default:

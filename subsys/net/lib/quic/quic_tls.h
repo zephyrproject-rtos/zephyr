@@ -15,6 +15,7 @@
 #define TLS_HS_CERTIFICATE           11
 #define TLS_HS_CERTIFICATE_REQUEST   13
 #define TLS_HS_CERTIFICATE_VERIFY    15
+#define TLS_HS_NEW_SESSION_TICKET    4
 #define TLS_HS_FINISHED              20
 
 /* Key schedule labels */
@@ -26,6 +27,7 @@
 #define TLS13_LABEL_EXT_BINDER     "ext binder"
 #define TLS13_LABEL_FINISHED       "finished"
 #define TLS13_LABEL_RES_MASTER     "res master"
+#define TLS13_LABEL_RESUMPTION     "resumption"
 
 /* Supported cipher suites for QUIC */
 #define TLS_AES_128_GCM_SHA256       0x1301

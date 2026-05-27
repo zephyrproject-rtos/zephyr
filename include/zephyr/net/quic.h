@@ -133,6 +133,64 @@ enum {
 
 	/** Set the error code to use when sending STOP_SENDING frame on stream close */
 	ZSOCK_QUIC_SO_STOP_SENDING_CODE = 4,
+
+	/**
+	 * Export or import resumable client session state.
+	 *
+	 * The option value is a pointer to struct quic_session_state. Use
+	 * getsockopt() on a connected client connection socket after a
+	 * NewSessionTicket has been received, then pass the returned state to
+	 * setsockopt() on a new client connection socket before opening the first
+	 * stream to attempt session resumption.
+	 */
+	ZSOCK_QUIC_SO_SESSION_STATE = 5,
+
+	/**
+	 * Enable or disable server-side session ticket issuance.
+	 *
+	 * The option value is a pointer to an int. Set a non-zero value on a
+	 * listening or server-side connection socket before the handshake to have
+	 * the server send NewSessionTicket after the handshake completes.
+	 */
+	ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE = 6,
+};
+
+/** Version of struct quic_session_state. */
+#define QUIC_SESSION_STATE_VERSION 1U
+
+/** Maximum serialized ticket length exported through struct quic_session_state. */
+#define QUIC_MAX_SESSION_TICKET_LEN 256U
+
+/** Maximum resumable PSK length exported through struct quic_session_state. */
+#define QUIC_MAX_RESUMPTION_PSK_LEN 48U
+
+/**
+ * @brief Resumable QUIC client session state.
+ *
+ * The structure is exported with getsockopt() and imported with setsockopt()
+ * using ZSOCK_QUIC_SO_SESSION_STATE on a connection socket.
+ */
+struct quic_session_state {
+	/** Structure format version, must be QUIC_SESSION_STATE_VERSION. */
+	uint16_t version;
+	/** TLS 1.3 cipher suite associated with the resumable state. */
+	uint16_t cipher_suite;
+	/** Ticket lifetime in seconds from NewSessionTicket. */
+	uint32_t ticket_lifetime;
+	/** Random ticket_age_add value from NewSessionTicket. */
+	uint32_t ticket_age_add;
+	/** Max early data size from NewSessionTicket, or 0 when not permitted. */
+	uint32_t max_early_data_size;
+	/** Local monotonic timestamp in milliseconds when the ticket was received. */
+	uint64_t issue_time_ms;
+	/** Length of the opaque ticket identity. */
+	uint16_t ticket_len;
+	/** Length of the derived resumption PSK. */
+	uint16_t psk_len;
+	/** Opaque ticket identity from NewSessionTicket. */
+	uint8_t ticket[QUIC_MAX_SESSION_TICKET_LEN];
+	/** Derived resumption PSK used for the next resumed handshake. */
+	uint8_t psk[QUIC_MAX_RESUMPTION_PSK_LEN];
 };
 
 /**
