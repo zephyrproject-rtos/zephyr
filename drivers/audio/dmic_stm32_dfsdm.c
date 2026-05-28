@@ -596,6 +596,7 @@ static int dmic_stm32_dfsdm_configure(const struct device *dev, struct dmic_cfg 
 	uint8_t hw_chan = drv_cfg->hw_channel;
 	uint8_t pdm_idx;
 	enum pdm_lr lr = 0;
+	HAL_StatusTypeDef hal_ret;
 	int ret = 0;
 
 	if (data->state == DMIC_STATE_ACTIVE) {
@@ -635,6 +636,25 @@ static int dmic_stm32_dfsdm_configure(const struct device *dev, struct dmic_cfg 
 		if (ret < 0) {
 			LOG_ERR("Could not reinit DMIC: %d", ret);
 			return ret;
+		}
+	}
+
+	/* Tear down a previous configuration before reprogramming the channel */
+	if (data->state == DMIC_STATE_CONFIGURED) {
+		if (HAL_DFSDM_ChannelGetState(data->hchannels) != HAL_DFSDM_CHANNEL_STATE_RESET) {
+			hal_ret = HAL_DFSDM_ChannelDeInit(data->hchannels);
+			if (hal_ret != HAL_OK) {
+				LOG_ERR("Failed to deinit channel before reconfiguring");
+				return -EIO;
+			}
+		}
+
+		if (HAL_DFSDM_FilterGetState(&data->hfilter) != HAL_DFSDM_FILTER_STATE_RESET) {
+			hal_ret = HAL_DFSDM_FilterDeInit(&data->hfilter);
+			if (hal_ret != HAL_OK) {
+				LOG_ERR("Failed to deinit filter before reconfiguring");
+				return -EIO;
+			}
 		}
 	}
 
