@@ -36,6 +36,7 @@ LOG_MODULE_REGISTER(hci_sf32lb, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 #define BT_HCI_EXT_SF32LB52_BT_READY BT_OP(BT_OGF_VS, 0x11)
 
 struct bt_sf32lb_data {
+	/* bt_hci_driver_data must be first */
 	struct bt_hci_driver_data common;
 	struct {
 		uint8_t type;
@@ -71,6 +72,7 @@ struct bt_sf32lb_data {
 };
 
 struct bt_sf32lb_config {
+	/* bt_hci_driver_config must be first */
 	struct bt_hci_driver_config common;
 	const struct device *mbox;
 	k_thread_stack_t *rx_thread_stack;

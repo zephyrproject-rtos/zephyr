@@ -82,6 +82,7 @@ static bool reliable_packet(uint8_t type)
 				 ((hdr)[2] |= (len) >> 4))
 
 struct h5_data {
+	/* bt_hci_driver_data must be first */
 	struct bt_hci_driver_data common;
 
 	/* Needed for delayed work callbacks */
@@ -119,6 +120,7 @@ struct h5_data {
 };
 
 struct h5_config {
+	/* bt_hci_driver_config must be first */
 	struct bt_hci_driver_config common;
 
 	const struct device *uart;

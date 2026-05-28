@@ -38,6 +38,7 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_CONN) || IS_ENABLED(CONFIG_BT_HCI_ACL_FLOW_CO
 	((USEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC) > CONFIG_BT_HCI_IPC_SEND_RETRY_DELAY_US))
 
 struct ipc_data {
+	/* bt_hci_driver_data must be first */
 	struct bt_hci_driver_data common;
 	struct ipc_ept hci_ept;
 	struct ipc_ept_cfg hci_ept_cfg;

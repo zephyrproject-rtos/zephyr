@@ -34,6 +34,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define DT_DRV_COMPAT zephyr_bt_hci_uart
 
 struct h4_data {
+	/* bt_hci_driver_data must be first */
 	struct bt_hci_driver_data common;
 
 	struct {
@@ -67,6 +68,7 @@ struct h4_data {
 };
 
 struct h4_config {
+	/* bt_hci_driver_config must be first */
 	struct bt_hci_driver_config common;
 
 	const struct device *uart;
