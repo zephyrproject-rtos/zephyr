@@ -326,6 +326,16 @@ static int dmic_stm32_dfsdm_get_all_osrs(const struct device *dev,
 	return 0;
 }
 
+/* Reclaim completed buffers still queued for the consumer */
+static void dmic_stm32_dfsdm_purge_rx_queue(struct dmic_stm32_dfsdm_filter_data *data)
+{
+	void *buffer;
+
+	while (k_msgq_get(data->rx_queue, &buffer, K_NO_WAIT) == 0) {
+		k_mem_slab_free(data->mem_slab, buffer);
+	}
+}
+
 static int dmic_stm32_dfsdm_stop(const struct device *dev)
 {
 	struct dmic_stm32_dfsdm_filter_data *data = dev->data;
@@ -351,6 +361,14 @@ static int dmic_stm32_dfsdm_stop(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Conversions and their IRQs are stopped: release the in-flight buffer
+	 * the driver still owns so it is not leaked across a stop/start cycle.
+	 */
+	if (data->buffer != NULL) {
+		k_mem_slab_free(data->mem_slab, data->buffer);
+		data->buffer = NULL;
+	}
+
 	return 0;
 }
 
@@ -359,6 +377,11 @@ static int dmic_stm32_dfsdm_start(const struct device *dev)
 	struct dmic_stm32_dfsdm_filter_data *data = dev->data;
 	HAL_StatusTypeDef hal_ret;
 	int ret;
+
+	/* Reclaim any buffers left queued by a previous (stopped) capture so a
+	 * fresh start always begins with the full mem_slab available.
+	 */
+	dmic_stm32_dfsdm_purge_rx_queue(data);
 
 	ret = k_mem_slab_alloc(data->mem_slab, &data->buffer, K_NO_WAIT);
 	if (ret < 0) {
@@ -395,6 +418,9 @@ static int dmic_stm32_dfsdm_filter_deinit(const struct device *dev)
 		k_mem_slab_free(data->mem_slab, data->buffer);
 		data->buffer = NULL;
 	}
+
+	/* Drop any completed buffers the consumer never read */
+	dmic_stm32_dfsdm_purge_rx_queue(data);
 
 	data->state = DMIC_STATE_UNINIT;
 
