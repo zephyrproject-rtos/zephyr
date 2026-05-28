@@ -400,8 +400,7 @@ static void h5_process_complete_packet(const struct device *dev, uint8_t *hdr)
 
 	process_unack(h5);
 
-	buf = h5->rx_buf;
-	h5->rx_buf = NULL;
+	buf = net_buf_take(&h5->rx_buf);
 
 	switch (H5_HDR_PKT_TYPE(hdr)) {
 	case HCI_3WIRE_ACK_PKT:
