@@ -11,6 +11,7 @@ Peripherals
 
    w1.rst
    adc.rst
+   analog_switch.rst
    auxdisplay.rst
    audio/index.rst
    bbram.rst
