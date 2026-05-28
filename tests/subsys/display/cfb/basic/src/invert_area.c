@@ -36,27 +36,27 @@ static void cfb_test_before(void *text_fixture)
 
 	zassert_ok(display_blanking_off(dev));
 
-	zassert_ok(cfb_framebuffer_init(dev));
+	zassert_ok(cfb_framebuffer_init(fb));
 }
 
 static void cfb_test_after(void *test_fixture)
 {
-	cfb_framebuffer_deinit(dev);
+	cfb_framebuffer_deinit(fb);
 }
 
 ZTEST(invert_area, test_invert_area_whole_screen)
 {
-	zassert_ok(cfb_invert_area(dev, 0, 0, 320, 240));
-	zassert_ok(cfb_framebuffer_finalize(dev), "cfb_framebuffer_finalize failed");
+	zassert_ok(cfb_invert_area(fb, 0, 0, 320, 240));
+	zassert_ok(cfb_framebuffer_finalize(fb), "cfb_framebuffer_finalize failed");
 
 	zassert_true(verify_color_inside_rect(0, 0, 320, 240, 0xFFFFFF));
 }
 
 ZTEST(invert_area, test_invert_area_overlapped_2times)
 {
-	zassert_ok(cfb_invert_area(dev, 33, 37, 79, 77));
-	zassert_ok(cfb_invert_area(dev, 100, 37, 53, 77));
-	zassert_ok(cfb_framebuffer_finalize(dev), "cfb_framebuffer_finalize failed");
+	zassert_ok(cfb_invert_area(fb, 33, 37, 79, 77));
+	zassert_ok(cfb_invert_area(fb, 100, 37, 53, 77));
+	zassert_ok(cfb_framebuffer_finalize(fb), "cfb_framebuffer_finalize failed");
 
 	zassert_true(verify_color_inside_rect(33, 37, 67, 77, 0xFFFFFF));
 	zassert_true(verify_color_inside_rect(100, 37, 12, 77, 0x0));
@@ -66,8 +66,8 @@ ZTEST(invert_area, test_invert_area_overlapped_2times)
 
 ZTEST(invert_area, test_invert_area_overlap_top_left)
 {
-	zassert_ok(cfb_invert_area(dev, -10, -10, 20, 20));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_invert_area(fb, -10, -10, 20, 20));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, 10, 10, 0xFFFFFF));
 	zassert_true(verify_color_outside_rect(0, 0, 10, 10, 0x0));
@@ -75,8 +75,8 @@ ZTEST(invert_area, test_invert_area_overlap_top_left)
 
 ZTEST(invert_area, test_invert_area_overlap_top_right)
 {
-	zassert_ok(cfb_invert_area(dev, display_width - 10, -10, 20, 20));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_invert_area(fb, display_width - 10, -10, 20, 20));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(display_width - 10, 0, 10, 10, 0xFFFFFF));
 	zassert_true(verify_color_outside_rect(display_width - 10, 0, 10, 10, 0x0));
@@ -84,8 +84,8 @@ ZTEST(invert_area, test_invert_area_overlap_top_right)
 
 ZTEST(invert_area, test_invert_area_overlap_bottom_left)
 {
-	zassert_ok(cfb_invert_area(dev, -10, display_height - 10, 20, 20));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_invert_area(fb, -10, display_height - 10, 20, 20));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, display_height - 10, 10, 10, 0xFFFFFF));
 	zassert_true(verify_color_outside_rect(0, display_height - 10, 10, 10, 0x0));
@@ -93,8 +93,8 @@ ZTEST(invert_area, test_invert_area_overlap_bottom_left)
 
 ZTEST(invert_area, test_invert_area_overlap_bottom_right)
 {
-	zassert_ok(cfb_invert_area(dev, display_width - 10, display_height - 10, 20, 20));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_invert_area(fb, display_width - 10, display_height - 10, 20, 20));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(display_width - 10, display_height - 10, 10, 10,
 					      0xFFFFFF));
@@ -104,40 +104,40 @@ ZTEST(invert_area, test_invert_area_overlap_bottom_right)
 
 ZTEST(invert_area, test_invert_area_outside_top_left)
 {
-	zassert_ok(cfb_invert_area(dev, -10, -10, 10, 10));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_invert_area(fb, -10, -10, 10, 10));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0x0));
 }
 
 ZTEST(invert_area, test_invert_area_outside_left_only)
 {
-	zassert_ok(cfb_invert_area(dev, -11, 0, 10, 10));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_invert_area(fb, -11, 0, 10, 10));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0x0));
 }
 
 ZTEST(invert_area, test_invert_area_outside_top_only)
 {
-	zassert_ok(cfb_invert_area(dev, 0, -11, 10, 10));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_invert_area(fb, 0, -11, 10, 10));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0x0));
 }
 
 ZTEST(invert_area, test_invert_area_outside_bottom_right)
 {
-	zassert_ok(cfb_invert_area(dev, display_width, display_height, 20, 20));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_invert_area(fb, display_width, display_height, 20, 20));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0x0));
 }
 
 ZTEST(invert_area, test_invert_area_outside_bottom_only)
 {
-	zassert_ok(cfb_invert_area(dev, 0, display_height, 10, 10));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_invert_area(fb, 0, display_height, 10, 10));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0x0));
 }

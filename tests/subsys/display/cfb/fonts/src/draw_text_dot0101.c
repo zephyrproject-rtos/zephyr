@@ -39,15 +39,15 @@ static void cfb_test_before(void *text_fixture)
 
 	zassert_ok(display_blanking_off(dev));
 
-	zassert_ok(cfb_framebuffer_init(dev));
+	zassert_ok(cfb_framebuffer_init(fb));
 
-	for (int idx = 0; idx < cfb_get_numof_fonts(dev); idx++) {
-		if (cfb_get_font_size(dev, idx, &font_width, &font_height)) {
+	for (int idx = 0; idx < cfb_get_numof_fonts(fb); idx++) {
+		if (cfb_get_font_size(fb, idx, &font_width, &font_height)) {
 			break;
 		}
 
 		if (font_width == 1 && font_height == 1) {
-			cfb_framebuffer_set_font(dev, idx);
+			cfb_framebuffer_set_font(fb, idx);
 			font_found = true;
 			break;
 		}
@@ -58,7 +58,7 @@ static void cfb_test_before(void *text_fixture)
 
 static void cfb_test_after(void *test_fixture)
 {
-	cfb_framebuffer_deinit(dev);
+	cfb_framebuffer_deinit(fb);
 }
 
 /*
@@ -66,16 +66,16 @@ static void cfb_test_after(void *test_fixture)
  */
 ZTEST(draw_text_dot0101, test_draw_text_at_0_0)
 {
-	zassert_ok(cfb_draw_text(dev, "1", 0, 0));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_draw_text(fb, "1", 0, 0));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_pixel_and_bg(0, 0, 1, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_at_1_1)
 {
-	zassert_ok(cfb_draw_text(dev, "1", 1, 1));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_draw_text(fb, "1", 1, 1));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_pixel_and_bg(1, 1, 1, 0));
 }
@@ -85,24 +85,24 @@ ZTEST(draw_text_dot0101, test_draw_text_at_1_1)
  */
 ZTEST(draw_text_dot0101, test_draw_text_at_9_15)
 {
-	zassert_ok(cfb_draw_text(dev, "1", 9, 15));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_draw_text(fb, "1", 9, 15));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_pixel_and_bg(9, 15, 1, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_at_10_16)
 {
-	zassert_ok(cfb_draw_text(dev, "1", 10, 16));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_draw_text(fb, "1", 10, 16));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_pixel_and_bg(10, 16, 1, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_at_11_17)
 {
-	zassert_ok(cfb_draw_text(dev, "1", 11, 17));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_draw_text(fb, "1", 11, 17));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_pixel_and_bg(11, 17, 1, 0));
 }
@@ -112,63 +112,63 @@ ZTEST(draw_text_dot0101, test_draw_text_at_11_17)
  */
 ZTEST(draw_text_dot0101, test_draw_text_at_0_0_kerning_3)
 {
-	cfb_set_kerning(dev, 3);
-	zassert_ok(cfb_draw_text(dev, "11", 0, 0));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	cfb_set_kerning(fb, 3);
+	zassert_ok(cfb_draw_text(fb, "11", 0, 0));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_image_and_bg(0, 0, kerning_3_2dot0101, 5, 1, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_at_1_1_kerning_3)
 {
-	cfb_set_kerning(dev, 3);
-	zassert_ok(cfb_draw_text(dev, "11", 1, 1));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	cfb_set_kerning(fb, 3);
+	zassert_ok(cfb_draw_text(fb, "11", 1, 1));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_image_and_bg(1, 1, kerning_3_2dot0101, 5, 1, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_at_9_15_kerning_3)
 {
-	cfb_set_kerning(dev, 3);
-	zassert_ok(cfb_draw_text(dev, "11", 9, 15));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	cfb_set_kerning(fb, 3);
+	zassert_ok(cfb_draw_text(fb, "11", 9, 15));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_image_and_bg(9, 15, kerning_3_2dot0101, 5, 1, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_at_10_16_kerning_3)
 {
-	cfb_set_kerning(dev, 3);
-	zassert_ok(cfb_draw_text(dev, "11", 10, 16));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	cfb_set_kerning(fb, 3);
+	zassert_ok(cfb_draw_text(fb, "11", 10, 16));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_image_and_bg(10, 16, kerning_3_2dot0101, 5, 1, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_at_11_17_kerning_3)
 {
-	cfb_set_kerning(dev, 3);
-	zassert_ok(cfb_draw_text(dev, "11", 11, 17));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	cfb_set_kerning(fb, 3);
+	zassert_ok(cfb_draw_text(fb, "11", 11, 17));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_image_and_bg(11, 17, kerning_3_2dot0101, 5, 1, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_at_right_border_17_kerning_3)
 {
-	cfb_set_kerning(dev, 3);
-	zassert_ok(cfb_draw_text(dev, "11", display_width - 5, 17));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	cfb_set_kerning(fb, 3);
+	zassert_ok(cfb_draw_text(fb, "11", display_width - 5, 17));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_image_and_bg(display_width - 5, 17, kerning_3_2dot0101, 5, 1, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_kerning_3_over_border)
 {
-	cfb_set_kerning(dev, 3);
-	zassert_ok(cfb_draw_text(dev, "11", display_width - 4, 17));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	cfb_set_kerning(fb, 3);
+	zassert_ok(cfb_draw_text(fb, "11", display_width - 4, 17));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_pixel(display_width - 4, 17, 0xFFFFFF));
 	zassert_true(verify_pixel(display_width - 3, 17, 0x0));
@@ -179,32 +179,32 @@ ZTEST(draw_text_dot0101, test_draw_text_kerning_3_over_border)
 
 ZTEST(draw_text_dot0101, test_draw_text_outside_top_left)
 {
-	zassert_ok(cfb_draw_text(dev, "1", 0, -1));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_draw_text(fb, "1", 0, -1));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_outside_top_right)
 {
-	zassert_ok(cfb_draw_text(dev, "1", display_width, 0));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_draw_text(fb, "1", display_width, 0));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_outside_bottom_right)
 {
-	zassert_ok(cfb_draw_text(dev, "1", 0, display_height));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_draw_text(fb, "1", 0, display_height));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0));
 }
 
 ZTEST(draw_text_dot0101, test_draw_text_outside_bottom_left)
 {
-	zassert_ok(cfb_draw_text(dev, "1", display_width, -1));
-	zassert_ok(cfb_framebuffer_finalize(dev));
+	zassert_ok(cfb_draw_text(fb, "1", display_width, -1));
+	zassert_ok(cfb_framebuffer_finalize(fb));
 
 	zassert_true(verify_color_inside_rect(0, 0, display_width, display_height, 0));
 }

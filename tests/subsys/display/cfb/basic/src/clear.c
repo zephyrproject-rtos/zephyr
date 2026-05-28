@@ -36,17 +36,17 @@ static void cfb_test_before(void *text_fixture)
 
 	zassert_ok(display_blanking_off(dev));
 
-	zassert_ok(cfb_framebuffer_init(dev));
+	zassert_ok(cfb_framebuffer_init(fb));
 }
 
 static void cfb_test_after(void *test_fixture)
 {
-	cfb_framebuffer_deinit(dev);
+	cfb_framebuffer_deinit(fb);
 }
 
 ZTEST(clear, test_clear_false)
 {
-	zassert_ok(cfb_framebuffer_clear(dev, false));
+	zassert_ok(cfb_framebuffer_clear(fb, false));
 
 	/* checking memory not updated */
 	zassert_false(verify_color_inside_rect(0, 0, 320, 240, 0x0));
@@ -54,7 +54,7 @@ ZTEST(clear, test_clear_false)
 
 ZTEST(clear, test_clear_true)
 {
-	zassert_ok(cfb_framebuffer_clear(dev, true));
+	zassert_ok(cfb_framebuffer_clear(fb, true));
 
 	zassert_true(verify_color_inside_rect(0, 0, 320, 240, 0x0));
 }

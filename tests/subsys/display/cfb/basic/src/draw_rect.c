@@ -36,12 +36,12 @@ static void cfb_test_before(void *text_fixture)
 
 	zassert_ok(display_blanking_off(dev));
 
-	zassert_ok(cfb_framebuffer_init(dev));
+	zassert_ok(cfb_framebuffer_init(fb));
 }
 
 static void cfb_test_after(void *test_fixture)
 {
-	cfb_framebuffer_deinit(dev);
+	cfb_framebuffer_deinit(fb);
 }
 
 /*
@@ -52,8 +52,8 @@ ZTEST(draw_rect, test_draw_rect_1123_at_0_0)
 	struct cfb_position start = {0, 0};
 	struct cfb_position end = {start.x + 10, start.y + 22};
 
-	zassert_ok(cfb_draw_rect(dev, &start, &end), "");
-	zassert_ok(cfb_framebuffer_finalize(dev), "");
+	zassert_ok(cfb_draw_rect(fb, &start, &end), "");
+	zassert_ok(cfb_framebuffer_finalize(fb), "");
 
 	zassert_true(verify_image_and_bg(0, 0, rectspace1123, 11, 23, 0), "");
 }
@@ -63,8 +63,8 @@ ZTEST(draw_rect, test_draw_rect_1123_at_1_1)
 	struct cfb_position start = {1, 1};
 	struct cfb_position end = {start.x + 10, start.y + 22};
 
-	zassert_ok(cfb_draw_rect(dev, &start, &end), "");
-	zassert_ok(cfb_framebuffer_finalize(dev), "");
+	zassert_ok(cfb_draw_rect(fb, &start, &end), "");
+	zassert_ok(cfb_framebuffer_finalize(fb), "");
 
 	zassert_true(verify_image_and_bg(1, 1, rectspace1123, 11, 23, 0), "");
 }
@@ -75,8 +75,8 @@ ZTEST(draw_rect, test_draw_rect_1123_at_9_15)
 	struct cfb_position start = {9, 15};
 	struct cfb_position end = {start.x + 10, start.y + 22};
 
-	zassert_ok(cfb_draw_rect(dev, &start, &end), "");
-	zassert_ok(cfb_framebuffer_finalize(dev), "");
+	zassert_ok(cfb_draw_rect(fb, &start, &end), "");
+	zassert_ok(cfb_framebuffer_finalize(fb), "");
 
 	zassert_true(verify_image_and_bg(9, 15, rectspace1123, 11, 23, 0), "");
 }
@@ -86,8 +86,8 @@ ZTEST(draw_rect, test_draw_rect_1123_at_10_16)
 	struct cfb_position start = {10, 16};
 	struct cfb_position end = {start.x + 10, start.y + 22};
 
-	zassert_ok(cfb_draw_rect(dev, &start, &end), "");
-	zassert_ok(cfb_framebuffer_finalize(dev), "");
+	zassert_ok(cfb_draw_rect(fb, &start, &end), "");
+	zassert_ok(cfb_framebuffer_finalize(fb), "");
 
 	zassert_true(verify_image_and_bg(10, 16, rectspace1123, 11, 23, 0), "");
 }
@@ -97,8 +97,8 @@ ZTEST(draw_rect, test_draw_rect_1123_at_11_17)
 	struct cfb_position start = {11, 17};
 	struct cfb_position end = {start.x + 10, start.y + 22};
 
-	zassert_ok(cfb_draw_rect(dev, &start, &end), "");
-	zassert_ok(cfb_framebuffer_finalize(dev), "");
+	zassert_ok(cfb_draw_rect(fb, &start, &end), "");
+	zassert_ok(cfb_framebuffer_finalize(fb), "");
 
 	zassert_true(verify_image_and_bg(11, 17, rectspace1123, 11, 23, 0), "");
 }
@@ -111,8 +111,8 @@ ZTEST(draw_rect, test_draw_rect_1123_outside_top_left)
 	struct cfb_position start = {-(11 - 3), -(23 - 4)};
 	struct cfb_position end = {start.x + 10, start.y + 22};
 
-	zassert_ok(cfb_draw_rect(dev, &start, &end), "");
-	zassert_ok(cfb_framebuffer_finalize(dev), "");
+	zassert_ok(cfb_draw_rect(fb, &start, &end), "");
+	zassert_ok(cfb_framebuffer_finalize(fb), "");
 
 	zassert_true(verify_image_and_bg(0, 0, outside_top_left, 3, 4, 0), "");
 }
@@ -122,8 +122,8 @@ ZTEST(draw_rect, test_draw_rect_1123_outside_top_right)
 	struct cfb_position start = {display_width - 5, -(23 - 8)};
 	struct cfb_position end = {start.x + 10, start.y + 22};
 
-	zassert_ok(cfb_draw_rect(dev, &start, &end), "");
-	zassert_ok(cfb_framebuffer_finalize(dev), "");
+	zassert_ok(cfb_draw_rect(fb, &start, &end), "");
+	zassert_ok(cfb_framebuffer_finalize(fb), "");
 
 	zassert_true(verify_image(display_width - 5, 0, outside_top_right, 5, 8), "");
 }
@@ -133,8 +133,8 @@ ZTEST(draw_rect, test_draw_rect_1123_outside_bottom_right)
 	struct cfb_position start = {display_width - 3, display_height - 5};
 	struct cfb_position end = {start.x + 10, start.y + 22};
 
-	zassert_ok(cfb_draw_rect(dev, &start, &end), "");
-	zassert_ok(cfb_framebuffer_finalize(dev), "");
+	zassert_ok(cfb_draw_rect(fb, &start, &end), "");
+	zassert_ok(cfb_framebuffer_finalize(fb), "");
 
 	zassert_true(
 		verify_image(display_width - 3, display_height - 5, outside_bottom_right, 3, 5),
@@ -146,8 +146,8 @@ ZTEST(draw_rect, test_draw_rect_1123_outside_bottom_left)
 	struct cfb_position start = {-(11 - 3), display_height - 14};
 	struct cfb_position end = {start.x + 10, start.y + 22};
 
-	zassert_ok(cfb_draw_rect(dev, &start, &end), "");
-	zassert_ok(cfb_framebuffer_finalize(dev), "");
+	zassert_ok(cfb_draw_rect(fb, &start, &end), "");
+	zassert_ok(cfb_framebuffer_finalize(fb), "");
 
 	zassert_true(verify_image(0, display_height - 14, outside_bottom_left, 3, 14), "");
 }
