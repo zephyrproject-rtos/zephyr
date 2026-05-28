@@ -51,8 +51,9 @@ int z_abort_timeout(struct _timeout *to);
  *   0       — the timeout was active and has been removed from the queue.
  *   -EINVAL — the timeout was not active (never linked, already done, or
  *             a same-CPU IRQ aborted while the handler was paused on this
- *             CPU; the latter is best-effort, the handler will resume and
- *             fire).
+ *             CPU; in that case the in-flight slot is marked superseded
+ *             so handlers that need to bail may check via
+ *             z_timeout_inflight_superseded()).
  *   -EAGAIN — the handler is currently in flight on another CPU. The caller
  *             must drop any lock that the handler may need and retry. A short
  *             arch_spin_relax() has already been done before this return.
@@ -61,6 +62,13 @@ int z_abort_timeout(struct _timeout *to);
  * After a non-EAGAIN return, the handler is guaranteed not to be in flight.
  */
 int z_try_abort_timeout(struct _timeout *to);
+
+/* True if @to is the currently in-flight timeout and a same-CPU aborter
+ * has marked the slot as superseded. Handlers with non-idempotent side
+ * effects (e.g. k_timer's expiry_fn) should call this at entry, after
+ * taking their own lock, and bail if it returns true.
+ */
+bool z_timeout_inflight_superseded(const struct _timeout *to);
 
 /* Determine if the timeout handler should continue.
  *
