@@ -850,6 +850,14 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 
 	LOG_DBG("chan %p buf %p len %u", br_chan, buf, buf->len);
 
+	if (net_buf_headroom(buf) < BT_L2CAP_CHAN_SEND_RESERVE) {
+		/* Call `net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE)`
+		 * when allocating buffers intended for bt_l2cap_chan_send().
+		 */
+		LOG_ERR("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_BASIC) {
 		hdr = net_buf_push(buf, sizeof(*hdr));
