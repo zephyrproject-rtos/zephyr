@@ -5778,8 +5778,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 			return -ESHUTDOWN;
 		}
 
-		buf = br_chan->_sdu;
-		br_chan->_sdu = NULL;
+		buf = net_buf_take(&br_chan->_sdu);
 		br_chan->_sdu_len = 0;
 
 		/* Receiving complete SDU, notify channel and reset SDU buf */
