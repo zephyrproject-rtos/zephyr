@@ -127,5 +127,11 @@
 			reg = <18>;
 			#power-domain-cells = <0>;
 		};
+
+		dss_pd: power_domain@27 {
+			compatible = "arm,scmi-power-domain";
+			reg = <39>;
+			#power-domain-cells = <0>;
+		};
 	};
 };

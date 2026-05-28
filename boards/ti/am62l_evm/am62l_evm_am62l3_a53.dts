@@ -17,6 +17,7 @@
 		zephyr,console = &main_uart0;
 		zephyr,shell-uart = &main_uart0;
 		zephyr,sram = &ddr0;
+		zephyr,display = &dss;
 	};
 
 	aliases {
@@ -144,5 +145,59 @@
 };
 
 &main_rti0 {
+	status = "okay";
+};
+
+&dss {
+	pinctrl-0 = <&dss_vout0_data0>,
+			<&dss_vout0_data1>,
+			<&dss_vout0_data2>,
+			<&dss_vout0_data3>,
+			<&dss_vout0_data4>,
+			<&dss_vout0_data5>,
+			<&dss_vout0_data6>,
+			<&dss_vout0_data7>,
+			<&dss_vout0_data8>,
+			<&dss_vout0_data9>,
+			<&dss_vout0_data10>,
+			<&dss_vout0_data11>,
+			<&dss_vout0_data12>,
+			<&dss_vout0_data13>,
+			<&dss_vout0_data14>,
+			<&dss_vout0_data15>,
+			<&dss_vout0_data16>,
+			<&dss_vout0_data17>,
+			<&dss_vout0_data18>,
+			<&dss_vout0_data19>,
+			<&dss_vout0_data20>,
+			<&dss_vout0_data21>,
+			<&dss_vout0_data22>,
+			<&dss_vout0_data23>,
+			<&dss_vout0_de>,
+			<&dss_vout0_extpclkin>,
+			<&dss_vout0_hsync>,
+			<&dss_vout0_pclk>,
+			<&dss_vout0_vsync>;
+	pinctrl-names = "default";
+
+	data-width = <24>;
+	height = <1080>;
+	width = <1920>;
+
+	display-timings {
+		compatible = "zephyr,panel-timing";
+		clock-frequency = <148500000>;
+		hfront-porch    = <88>;
+		hback-porch     = <148>;
+		hsync-len       = <44>;
+		vfront-porch    = <4>;
+		vback-porch     = <36>;
+		vsync-len       = <5>;
+		hsync-active    = <1>;
+		vsync-active    = <1>;
+		de-active       = <1>;
+		pixelclk-active = <0>;
+	};
+
 	status = "okay";
 };

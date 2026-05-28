@@ -196,3 +196,8 @@
 	interrupts = <GIC_SPI 173 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&gic>;
 };
+
+&dss {
+	interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+	interrupt-parent = <&gic>;
+};

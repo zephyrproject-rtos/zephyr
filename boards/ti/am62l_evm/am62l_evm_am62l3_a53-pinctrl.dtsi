@@ -42,4 +42,120 @@
 	main_i2c1_sda: i2c1_sda_default {
 		pinmux = <K3_PINMUX(0x01d8, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (A6) I2C1_SDA */
 	};
+	
+	dss_vout0_data0: dss_vout0_data0 {
+		pinmux = <K3_PINMUX(0x078, PIN_OUTPUT, MUX_MODE_1)>; /* (L22) DSS_VOUT0_DATA0 */
+	};
+
+	dss_vout0_data1: dss_vout0_data1 {
+		pinmux = <K3_PINMUX(0x07C, PIN_OUTPUT, MUX_MODE_1)>; /* (L23) DSS_VOUT0_DATA1 */
+	};
+
+	dss_vout0_data2: dss_vout0_data2 {
+		pinmux = <K3_PINMUX(0x080, PIN_OUTPUT, MUX_MODE_1)>; /* (K22) DSS_VOUT0_DATA2 */
+	};
+
+	dss_vout0_data3: dss_vout0_data3 {
+		pinmux = <K3_PINMUX(0x084, PIN_OUTPUT, MUX_MODE_1)>; /* (J23) DSS_VOUT0_DATA3 */
+	};
+
+	dss_vout0_data4: dss_vout0_data4 {
+		pinmux = <K3_PINMUX(0x088, PIN_OUTPUT, MUX_MODE_1)>; /* (K23) DSS_VOUT0_DATA4 */
+	};
+
+	dss_vout0_data5: dss_vout0_data5 {
+		pinmux = <K3_PINMUX(0x08C, PIN_OUTPUT, MUX_MODE_1)>; /* (H22) DSS_VOUT0_DATA5 */
+	};
+
+	dss_vout0_data6: dss_vout0_data6 {
+		pinmux = <K3_PINMUX(0x090, PIN_OUTPUT, MUX_MODE_1)>; /* (H23) DSS_VOUT0_DATA6 */
+	};
+
+	dss_vout0_data7: dss_vout0_data7 {
+		pinmux = <K3_PINMUX(0x094, PIN_OUTPUT, MUX_MODE_1)>; /* (J22) DSS_VOUT0_DATA7 */
+	};
+
+	dss_vout0_data8: dss_vout0_data8 {
+		pinmux = <K3_PINMUX(0x098, PIN_OUTPUT, MUX_MODE_1)>; /* (H19) DSS_VOUT0_DATA8 */
+	};
+
+	dss_vout0_data9: dss_vout0_data9 {
+		pinmux = <K3_PINMUX(0x09C, PIN_OUTPUT, MUX_MODE_1)>; /* (H20) DSS_VOUT0_DATA9 */
+	};
+
+	dss_vout0_data10: dss_vout0_data10 {
+		pinmux = <K3_PINMUX(0x0A0, PIN_OUTPUT, MUX_MODE_1)>; /* (H21) DSS_VOUT0_DATA10 */
+	};
+
+	dss_vout0_data11: dss_vout0_data11 {
+		pinmux = <K3_PINMUX(0x0A4, PIN_OUTPUT, MUX_MODE_1)>; /* (H18) DSS_VOUT0_DATA11 */
+	};
+
+	dss_vout0_data12: dss_vout0_data12 {
+		pinmux = <K3_PINMUX(0x0A8, PIN_OUTPUT, MUX_MODE_1)>; /* (G23) DSS_VOUT0_DATA12 */
+	};
+
+	dss_vout0_data13: dss_vout0_data13 {
+		pinmux = <K3_PINMUX(0x0AC, PIN_OUTPUT, MUX_MODE_1)>; /* (G22) DSS_VOUT0_DATA13 */
+	};
+
+	dss_vout0_data14: dss_vout0_data14 {
+		pinmux = <K3_PINMUX(0x0B0, PIN_OUTPUT, MUX_MODE_1)>; /* (F22) DSS_VOUT0_DATA14 */
+	};
+
+	dss_vout0_data15: dss_vout0_data15 {
+		pinmux = <K3_PINMUX(0x0B4, PIN_OUTPUT, MUX_MODE_1)>; /* (F23) DSS_VOUT0_DATA15 */
+	};
+
+	dss_vout0_data16: dss_vout0_data16 {
+		pinmux = <K3_PINMUX(0x0B8, PIN_OUTPUT, MUX_MODE_1)>; /* (L21) DSS_VOUT0_DATA16 */
+	};
+
+	dss_vout0_data17: dss_vout0_data17 {
+		pinmux = <K3_PINMUX(0x0C0, PIN_OUTPUT, MUX_MODE_1)>; /* (N19) DSS_VOUT0_DATA17 */
+	};
+
+	dss_vout0_data18: dss_vout0_data18 {
+		pinmux = <K3_PINMUX(0x0C4, PIN_OUTPUT, MUX_MODE_1)>; /* (N20) DSS_VOUT0_DATA18 */
+	};
+
+	dss_vout0_data19: dss_vout0_data19 {
+		pinmux = <K3_PINMUX(0x0C8, PIN_OUTPUT, MUX_MODE_1)>; /* (M19) DSS_VOUT0_DATA19 */
+	};
+
+	dss_vout0_data20: dss_vout0_data20 {
+		pinmux = <K3_PINMUX(0x0CC, PIN_OUTPUT, MUX_MODE_1)>; /* (P23) DSS_VOUT0_DATA20 */
+	};
+
+	dss_vout0_data21: dss_vout0_data21 {
+		pinmux = <K3_PINMUX(0x0D0, PIN_OUTPUT, MUX_MODE_1)>; /* (P22) DSS_VOUT0_DATA21 */
+	};
+
+	dss_vout0_data22: dss_vout0_data22 {
+		pinmux = <K3_PINMUX(0x0D4, PIN_OUTPUT, MUX_MODE_1)>; /* (N23) DSS_VOUT0_DATA22 */
+	};
+
+	dss_vout0_data23: dss_vout0_data23 {
+		pinmux = <K3_PINMUX(0x0D8, PIN_OUTPUT, MUX_MODE_1)>; /* (N22) DSS_VOUT0_DATA23 */
+	};
+
+	dss_vout0_de: dss_vout0_de {
+		pinmux = <K3_PINMUX(0x0E0, PIN_OUTPUT, MUX_MODE_1)>; /* (M21) DSS_VOUT0_DE */
+	};
+
+	dss_vout0_extpclkin: dss_vout0_extpclkin {
+		pinmux = <K3_PINMUX(0x0EC, PIN_OUTPUT, MUX_MODE_5)>; /* (M23) DSS_VOUT0_EXTPCLKIN */
+	};
+
+	dss_vout0_hsync: dss_vout0_hsync {
+		pinmux = <K3_PINMUX(0x0DC, PIN_OUTPUT, MUX_MODE_1)>; /* (N21) DSS_VOUT0_HSYNC */
+	};
+
+	dss_vout0_pclk: dss_vout0_pclk {
+		pinmux = <K3_PINMUX(0x0E8, PIN_OUTPUT, MUX_MODE_1)>; /* (L19) DSS_VOUT0_PCLK */
+	};
+
+	dss_vout0_vsync: dss_vout0_vsync {
+		pinmux = <K3_PINMUX(0x0E4, PIN_OUTPUT, MUX_MODE_1)>; /* (L20) DSS_VOUT0_VSYNC */
+	};
 };

@@ -355,4 +355,23 @@
 		power-domains = <&main_timer3_pd>;
 		status = "disabled";
 	};
+
+	dss: dss@30200000 {
+		compatible = "ti,tidss";
+		reg = <0x30200000 0x1000>,  /* common  */
+		      <0x30202000 0x1000>,  /* vid */
+		      <0x30207000 0x1000>,  /* ovr */
+		      <0x3020a000 0x1000>;  /* vp */
+		reg-names = "common", "vid", "ovr", "vp";
+		/*
+		 * VP1 is index 0 — used for IRQ routing in DSS_VP_IRQENABLE/STATUS(0).
+		 * CHANNELIN = 1 → VIDL1 (lite plane) in DSS_OVR_ATTRIBUTES.
+		 */
+		ti,vp-index = <0>;
+		ti,vid-channel = <1>;
+		clocks = <&scmi_clk 161>, <&scmi_clk 162>;
+		clock-names = "vp", "fclk";
+		power-domains = <&dss_pd>;
+		status = "disabled";
+	};
 };
