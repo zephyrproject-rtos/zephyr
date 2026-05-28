@@ -150,7 +150,7 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&uart1 {
+arduino_serial: &uart1 {
 	compatible = "nordic,nrf-uarte";
 	status = "okay";
 	current-speed = <115200>;
@@ -159,10 +159,10 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&i2c0 {
+arduino_i2c: &i2c0 {
 	compatible = "nordic,nrf-twi";
 	/* Cannot be used together with spi0. */
-	/* status = "okay"; */
+	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
@@ -192,9 +192,10 @@
 	pinctrl-names = "default", "sleep";
 };
 
-&spi3 {
+arduino_spi: &spi3 {
 	compatible = "nordic,nrf-spim";
 	status = "okay";
+	cs-gpios = <&gpio1 12 GPIO_ACTIVE_LOW>; /* D10 */
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
