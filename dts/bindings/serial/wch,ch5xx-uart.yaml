@@ -10,3 +10,18 @@ include: [uart-controller.yaml, pinctrl-device.yaml]
 properties:
   reg:
     required: true
+
+  data-bits:
+    default: 8
+
+  stop-bits:
+    default: "1"
+
+  prescaler-divisor:
+    type: int
+    default: 1
+    description: |
+      Prescaler divisor for baud rate generation between 1 and 127.
+      This value is used to calculate the baud rate register value as follows:
+      baud_rate_register =
+                    2 * clock-frequency / prescaler-divisor / 16 / baud_rate
