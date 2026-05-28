@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&adc0 0>;
+		reference-mv = <3300>;
+		expected-accuracy = <33>;
+	};
+};
+
+&pinctrl {
+	adc0_default: adc0_default {
+		group1 {
+			/* input */
+			psels = <RA_PSEL(RA_PSEL_ADC, 0, 0)>;
+			renesas,analog-enable;
+		};
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&scan_group0 {
+	interrupts = <60 12>;
+	interrupt-names = "scanend";
+	renesas,converter-unit-id = <0>;
+	status = "okay";
+};
+
+/* ADC1 is used for calibration, so it needs to be enabled. */
+&adc1 {
+	interrupts = <63 12>, <64 12>;
+	interrupt-names = "calend", "convserr";
+	status = "okay";
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	interrupts = <61 12>, <62 12>;
+	interrupt-names = "calend", "convserr";
+	renesas,adc-method = "oversample";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,input-positive = <RENESAS_ADC_B_CH0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <16>;
+		zephyr,acquisition-time = <0>;
+		renesas,scan-group = <&scan_group0>;
+	};
+};
