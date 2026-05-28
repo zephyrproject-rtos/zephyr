@@ -1659,6 +1659,22 @@ void net_buf_unref(struct net_buf *buf);
 struct net_buf * __must_check net_buf_ref(struct net_buf *buf);
 
 /**
+ * @brief Move a buffer pointer, setting the orig to NULL.
+ *
+ * This performs an atomic exchange on @p orig. setting it to NULL and
+ * returning the previous value.
+ *
+ * @param orig Pointer to the buffer pointer to transfer. Will be set to NULL
+ *		on return.
+ *
+ * @return The buffer originally pointed to by @p orig
+ */
+static inline struct net_buf *__must_check net_buf_take(struct net_buf **orig)
+{
+	return (struct net_buf *)atomic_ptr_clear((atomic_ptr_t *)orig);
+}
+
+/**
  * @brief Clone buffer
  *
  * Duplicate given buffer including any (user) data and headers currently stored.
