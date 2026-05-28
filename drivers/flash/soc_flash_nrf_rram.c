@@ -286,15 +286,65 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 	return ret;
 }
 
+#ifdef CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED
+static inline bool rram_line_holds(const uint8_t *line, uint32_t pat)
+{
+	__ASSERT(((uintptr_t)line & (WRITE_LINE_SIZE - 1U)) == 0,
+		 "line must be write-line aligned");
+	const uint32_t *w = (const uint32_t *)line;
+
+	BUILD_ASSERT(WRITE_LINE_SIZE == 16,
+		     "skip-if-filled fast path assumes WRITE_LINE_SIZE == 16");
+	return (w[0] == pat) && (w[1] == pat) && (w[2] == pat) && (w[3] == pat);
+}
+#endif /* CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED */
+
 /**
  * @brief Internal helper used by both erase emulation and the api->fill
  *        callback. Writes @p len bytes of @p val starting at flash @p addr,
  *        going through the same locking, throttling, RRAMC config and
  *        radio-sync paths as a regular write.
+ *
+ * When CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED is enabled the helper first
+ * scans the target region in write-line granularity and skips lines that
+ * already hold @p val. Consecutive dirty lines are batched into a single
+ * underlying nrf_write() call. The optimisation works for any @p val,
+ * not only the device ERASE_VALUE.
  */
 static int nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
 {
+#ifdef CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED
+	const uint32_t pat = (uint32_t)val * 0x01010101U;
+	int ret = 0;
+	off_t cur = addr;
+	const off_t end = addr + (off_t)len;
+
+	while (cur < end) {
+		while (cur < end &&
+			rram_line_holds((const uint8_t *)(cur + RRAM_START), pat)) {
+			cur += WRITE_LINE_SIZE;
+		}
+		if (cur >= end) {
+			break;
+		}
+
+		const off_t dirty_start = cur;
+
+		while (cur < end &&
+			!rram_line_holds((const uint8_t *)(cur + RRAM_START), pat)) {
+			cur += WRITE_LINE_SIZE;
+		}
+
+		ret = nrf_write(dirty_start, NULL, val, (size_t)(cur - dirty_start));
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return ret;
+#else
 	return nrf_write(addr, NULL, val, len);
+#endif /* CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED */
 }
 
 static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
