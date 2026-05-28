@@ -328,6 +328,58 @@
 				status = "disabled";
 			};
 		};
+
+		dfsdm: dfsdm@40016000 {
+			compatible = "st,stm32-dfsdm";
+			reg = <0x40016000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 24)>,
+				 <&rcc STM32_SRC_PLLSAI1_P NO_SEL>;
+			clock-names = "pclk", "aclk";
+			resets = <&rctl STM32_RESET(APB2, 24)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			pdm0: filter@0 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <0>;
+				interrupts = <61 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm1: filter@1 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <1>;
+				interrupts = <62 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm2: filter@2 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <2>;
+				interrupts = <63 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm3: filter@3 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <3>;
+				interrupts = <42 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
 	};
 
 	die_temp: dietemp {
