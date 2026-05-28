@@ -599,19 +599,18 @@ extern int z_work_submit_to_queue(struct k_work_q *queue,
 
 static void triggered_work_expiration_handler(struct _timeout *timeout)
 {
+	struct k_work_poll *twork =
+		CONTAINER_OF(timeout, struct k_work_poll, timeout);
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	if (z_is_timeout_handler_canceled(timeout)) {
-		/*
-		 * The timeout was canceled by a thread on another CPU
-		 * or another ISR. Bail.
+	if (!twork->poller.is_polling) {
+		/* signal_triggered_work() or triggered_work_cancel() has
+		 * already claimed this wake under the same lock; nothing
+		 * for us to do.
 		 */
 		k_spin_unlock(&lock, key);
 		return;
 	}
-
-	struct k_work_poll *twork =
-		CONTAINER_OF(timeout, struct k_work_poll, timeout);
 
 	twork->poller.is_polling = false;
 	twork->poll_result = -EAGAIN;
@@ -629,7 +628,11 @@ static int signal_triggered_work(struct k_poll_event *event, uint32_t status)
 	if (poller->is_polling && twork->workq != NULL) {
 		struct k_work_q *work_q = twork->workq;
 
-		z_abort_timeout(&twork->timeout);
+		/* Claim the wake before aborting so a racing in-flight
+		 * handler observes is_polling=false and bails.
+		 */
+		poller->is_polling = false;
+		(void)z_try_abort_timeout(&twork->timeout);
 		twork->poll_result = 0;
 		z_work_submit_to_queue(work_q, &twork->work);
 	}
@@ -642,8 +645,22 @@ static int triggered_work_cancel(struct k_work_poll *work,
 {
 	/* Check if the work waits for event. */
 	if (work->poller.is_polling && work->poller.mode != MODE_NONE) {
-		/* Remove timeout associated with the work. */
-		z_abort_timeout(&work->timeout);
+		/* Claim the wake before aborting so a racing in-flight
+		 * handler observes is_polling=false and bails.
+		 */
+		work->poller.is_polling = false;
+		/* Then wait for any in-flight handler to actually complete
+		 * before we proceed. This is needed both so the caller may
+		 * safely free `work` (the handler still has a pending
+		 * dereference of work->poller.is_polling) and so that
+		 * k_work_poll_submit_to_queue() may safely re-arm the same
+		 * `work` for a new poll without the old handler eventually
+		 * acting on the new setup.
+		 */
+		while (z_try_abort_timeout(&work->timeout) == -EAGAIN) {
+			k_spin_unlock(&lock, key);
+			key = k_spin_lock(&lock);
+		}
 
 		/*
 		 * Prevent work execution if event arrives while we will be
