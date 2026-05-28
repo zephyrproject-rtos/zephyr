@@ -251,7 +251,7 @@ static int flash_mcux_xspi_write(const struct device *dev, off_t offset, const v
 	}
 
 	while (len > 0) {
-		write_size = MIN(len, SPI_NOR_PAGE_SIZE);
+		write_size = MIN(len, SPI_NOR_PAGE_SIZE - (offset % SPI_NOR_PAGE_SIZE));
 
 		ret = flash_mcux_xspi_write_enable(dev, 0, true);
 		if (ret < 0) {
@@ -540,7 +540,7 @@ static DEVICE_API(flash, flash_mcux_xspi_api) = {
 		.xspi_dev = DEVICE_DT_GET(DT_INST_BUS(n)),	\
 		.dev_name = DT_INST_PROP(n, device_name),	\
 		.flash_param = {	\
-				.write_block_size = 1,	\
+				.write_block_size = 2,	\
 				.erase_value = 0xFF,	\
 				.caps = {	\
 						.no_explicit_erase = false,	\
