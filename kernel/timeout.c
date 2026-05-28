@@ -212,28 +212,6 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	return ticks;
 }
 
-int z_abort_timeout(struct _timeout *to)
-{
-	int ret = -EINVAL;
-
-	K_SPINLOCK(&timeout_lock) {
-		if (sys_dnode_is_linked(&to->node)) {
-			bool is_first = (to == first());
-
-			remove_timeout(to);
-			to->dticks = TIMEOUT_DTICKS_ABORTED;
-			ret = 0;
-			if (is_first) {
-				sys_clock_set_timeout(next_timeout(elapsed()), false);
-			}
-		} else if (to->dticks == TIMEOUT_DTICKS_ANNOUNCING) {
-			to->dticks = TIMEOUT_DTICKS_ABORTED;
-		}
-	}
-
-	return ret;
-}
-
 int z_try_abort_timeout(struct _timeout *to)
 {
 	int ret = -EINVAL;
@@ -378,7 +356,6 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key)
 		announce_remaining -= t->dticks;
 
 		sys_dlist_remove(&t->node);
-		t->dticks = TIMEOUT_DTICKS_ANNOUNCING;
 		inflight_timeout = t;
 
 		k_spin_unlock(&timeout_lock, key);
