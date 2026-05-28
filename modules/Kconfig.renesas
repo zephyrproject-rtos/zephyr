@@ -330,6 +330,11 @@ config USE_RA_FSP_SCI_B_LIN
 	help
 	  Enable RA FSP SCI-B LIN driver
 
+config USE_RA_FSP_ADC_B
+	bool
+	help
+	  Enable RX FSP ADC-B driver
+
 endif # HAS_RENESAS_RA_FSP
 
 if HAS_RENESAS_RZ_FSP
