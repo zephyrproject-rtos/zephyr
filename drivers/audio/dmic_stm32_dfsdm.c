@@ -13,6 +13,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
 
@@ -50,6 +51,7 @@ struct dmic_stm32_dfsdm_filter_osr {
 	uint16_t iosr;		/* Integrator oversampling */
 	uint16_t fosr;		/* Filter oversampling */
 	uint8_t rshift;		/* Output sample right shift (hardware shift) */
+	int8_t pcm_shift;	/* PCM scaling shift after the hardware shift */
 	uint64_t res;		/* Output sample resolution */
 };
 
@@ -67,6 +69,7 @@ struct dmic_stm32_dfsdm_filter_data {
 	uint16_t block_size;
 	uint8_t sincorder;
 	uint8_t pcm_width;
+	int8_t pcm_shift;	/* PCM scaling shift for the active filter output */
 };
 
 struct dmic_stm32_dfsdm_filter_cfg {
@@ -114,6 +117,23 @@ void HAL_DFSDM_FilterErrorCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter)
 	data->state = DMIC_STATE_ERROR;
 }
 
+static void dmic_stm32_dfsdm_write_sample(uint8_t *dst, uint8_t sample_size, int32_t sample)
+{
+	switch (sample_size) {
+	case 1:
+		*dst = (uint8_t)CLAMP(sample, INT8_MIN, INT8_MAX);
+		break;
+	case 2:
+		sys_put_le16((uint16_t)CLAMP(sample, INT16_MIN, INT16_MAX), dst);
+		break;
+	case 3:
+		sys_put_le24((uint32_t)CLAMP(sample, -BIT(23), BIT(23) - 1), dst);
+		break;
+	default:
+		break;
+	}
+}
+
 void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filter)
 {
 	struct dmic_stm32_dfsdm_filter_data *data =
@@ -134,13 +154,18 @@ void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filt
 
 	sample_size = DIV_ROUND_UP(data->pcm_width, BITS_PER_BYTE);
 
+	if (data->pcm_shift > 0) {
+		sample >>= data->pcm_shift;
+	} else if (data->pcm_shift < 0) {
+		sample <<= -data->pcm_shift;
+	} else {
+		/* Already in the correct format, no need to shift */
+	}
+
 	/* Write sample into current buffer */
 	if (data->buf_pos + sample_size <= data->block_size) {
-		/* Shift 24-bit DFSDM sample down to 16-bit before storing. */
-		if (sample_size == 2) {
-			sample >>= 8;
-		}
-		memcpy((uint8_t *)data->buffer + data->buf_pos, &sample, sample_size);
+		dmic_stm32_dfsdm_write_sample((uint8_t *)data->buffer + data->buf_pos,
+					      sample_size, sample);
 		data->buf_pos += sample_size;
 	}
 
@@ -182,7 +207,8 @@ static uint32_t hw_chan_from_index(uint8_t idx)
  * IOSR - Integrator OverSampling Ratio (sum of data for a given number of samples from the filter)
  */
 static int dmic_stm32_dfsdm_compute_osrs(struct dmic_stm32_dfsdm_filter_osr *osr, uint32_t ford,
-					 uint8_t fast_mode, unsigned int oversamp)
+					 uint8_t fast_mode, unsigned int oversamp,
+					 uint8_t pcm_width)
 {
 	uint32_t fosr, iosr;
 	uint64_t res;
@@ -254,15 +280,17 @@ static int dmic_stm32_dfsdm_compute_osrs(struct dmic_stm32_dfsdm_filter_osr *osr
 				if (shift > 0) {
 					/* Resolution is lower than 24 bits */
 					osr->rshift = 0;
+					osr->pcm_shift = (int8_t)bits - (int8_t)pcm_width;
 				} else {
 					osr->rshift = 1 - shift;
+					osr->pcm_shift = DFSDM_DATA_RES - pcm_width - 1;
 				}
 			}
 		}
 	}
 
-	LOG_DBG("fast_mode %d, fosr %d, iosr %d, res 0x%llx/%d bits, rshift %d",
-		fast_mode, osr->fosr, osr->iosr, osr->res, bits, osr->rshift);
+	LOG_DBG("fast_mode %d, fosr %d, iosr %d, res 0x%llx/%d bits, rshift %d, pcm_shift %d",
+		fast_mode, osr->fosr, osr->iosr, osr->res, bits, osr->rshift, osr->pcm_shift);
 	if (!osr->res) {
 		return -EINVAL;
 	}
@@ -271,7 +299,7 @@ static int dmic_stm32_dfsdm_compute_osrs(struct dmic_stm32_dfsdm_filter_osr *osr
 }
 
 static int dmic_stm32_dfsdm_get_all_osrs(const struct device *dev,
-					 unsigned int oversamp)
+					 unsigned int oversamp, uint8_t pcm_width)
 {
 	struct dmic_stm32_dfsdm_filter_data *data = dev->data;
 	int ret = 0;
@@ -280,14 +308,15 @@ static int dmic_stm32_dfsdm_get_all_osrs(const struct device *dev,
 	memset(&data->osr[1], 0, sizeof(data->osr[1]));
 
 	/* Compute OSR for regular conversion mode */
-	ret = dmic_stm32_dfsdm_compute_osrs(&data->osr[0], data->sincorder, 0, oversamp);
+	ret = dmic_stm32_dfsdm_compute_osrs(&data->osr[0], data->sincorder, 0, oversamp, pcm_width);
 	if (ret < 0) {
 		LOG_ERR("Filter parameters not found for regular conversion: %d", ret);
 		return -EINVAL;
 	}
 
 	/* Compute OSR for fast conversion mode */
-	ret = dmic_stm32_dfsdm_compute_osrs(&data->osr[1], data->sincorder, 1, oversamp);
+	ret = dmic_stm32_dfsdm_compute_osrs(&data->osr[1], data->sincorder, 1, oversamp,
+					    pcm_width);
 	if (ret < 0) {
 		LOG_ERR("Filter parameters not found for fast mode conversion: %d", ret);
 		return -EINVAL;
@@ -446,6 +475,7 @@ static int dmic_stm32_dfsdm_setup_channel(const struct device *dev, uint32_t div
 		fast_mode = 1;
 	}
 
+	data->pcm_shift = data->osr[fast_mode].pcm_shift;
 	hchannel->Init.RightBitShift = data->osr[fast_mode].rshift;
 	hchannel->Init.OutputClock.Divider = div;
 	hchannel->Init.SerialInterface.SpiClock = DFSDM_CHANNEL_SPI_CLOCK_INTERNAL;
@@ -601,7 +631,7 @@ static int dmic_stm32_dfsdm_configure(const struct device *dev, struct dmic_cfg 
 		bitclk_rate * min, min, bitclk_rate);
 
 	oversamp = DIV_ROUND_CLOSEST(bitclk_rate, stream->pcm_rate);
-	ret = dmic_stm32_dfsdm_get_all_osrs(dev, oversamp);
+	ret = dmic_stm32_dfsdm_get_all_osrs(dev, oversamp, stream->pcm_width);
 	if (ret < 0) {
 		return ret;
 	}
