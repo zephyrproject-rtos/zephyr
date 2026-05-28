@@ -444,10 +444,14 @@ static int dmic_stm32_dfsdm_trigger(const struct device *dev, enum dmic_trigger 
 		data->state = DMIC_STATE_CONFIGURED;
 		break;
 	case DMIC_TRIGGER_START:
-		if (data->state == DMIC_STATE_CONFIGURED &&
-		    dmic_stm32_dfsdm_start(dev) < 0) {
-			LOG_ERR("Could not start DMIC");
+		if (data->state != DMIC_STATE_CONFIGURED) {
 			return -EIO;
+		}
+
+		ret = dmic_stm32_dfsdm_start(dev);
+		if (ret < 0) {
+			LOG_ERR("Could not start DMIC");
+			return ret;
 		}
 		break;
 	case DMIC_TRIGGER_RELEASE:
