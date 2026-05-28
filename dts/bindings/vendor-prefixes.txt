@@ -431,6 +431,7 @@ macnica	Macnica Americas
 madmachine	Shenzhen FeiKaiTe Technology Co., Ltd.
 makerbase	Makerbase Co., Ltd.
 makerdiary	Shenzhen Zaowubang Technology Co., Ltd.
+makerfabs	Makerfabs
 mantix	Mantix Display Technology Co.,Ltd.
 mapleboard	Mapleboard.org
 marvell	Marvell Technology Group Ltd.

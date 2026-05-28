@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Sahaj Sarup
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MATOUCH_MTRO128G
+
+configdefault KERNEL_MEM_POOL
+	default y
+
+if DISPLAY
+
+if LVGL
+
+configdefault LV_COLOR_16_SWAP
+	default y
+
+configdefault LV_Z_VDB_SIZE
+	default 20
+
+endif # LVGL
+
+config REGULATOR
+	default y
+
+endif # DISPLAY
+
+if DISK_ACCESS
+
+config SPI
+	default y
+
+config DISK_DRIVER_SDMMC
+	default y
+
+endif # CONFIG_DISK_ACCESS
+
+endif # BOARD_MATOUCH_MTRO128G
