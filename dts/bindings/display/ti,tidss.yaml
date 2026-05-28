@@ -1,0 +1,135 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI K3 family Display Sub-System (DSS) controller — generic binding.
+
+  Supports any TI DSS variant regardless of how many VP/OVR/VID/VIDL
+  blocks exist in hardware.  The DT node always describes exactly ONE
+  pipeline triple that the driver shall use:
+
+    DDR framebuffer  →  one video plane (VID or VIDL)
+    →  one Overlay (OVR)  →  one Video Port (VP)
+    →  OLDI TX or DPI pad
+
+  The DSS register space must be split into four named MMIO regions:
+    "common"  — top-level control, interrupt routing, MFLAG
+    "vid"     — the video plane registers to use (vid, vidl1, vid2 …)
+    "ovr"     — the overlay registers to use (ovr1, ovr2 …)
+    "vp"      — the video port registers to use (vp1, vp2 …)
+
+  These are LOGICAL names — the physical addresses in 'reg' select
+  which actual hardware block is used.  This lets the same driver work
+  on AM62L (1 VP, 1 VIDL), AM62P51/52 (2 VPs, 1 VID + 1 VIDL), or
+  any future variant without driver changes.
+
+  Panel timing must be provided via a child node named display-timings
+  with compatible "zephyr,panel-timing".  Example::
+
+    display-timings {
+      compatible = "zephyr,panel-timing";
+      clock-frequency  = <148500000>;
+      hfront-porch     = <88>;
+      hback-porch      = <148>;
+      hsync-len        = <44>;
+      vfront-porch     = <4>;
+      vback-porch      = <36>;
+      vsync-len        = <5>;
+      hsync-active     = <1>;
+      vsync-active     = <1>;
+      de-active        = <1>;
+      pixelclk-active  = <0>;
+    };
+
+  Supported SoC variants and their typical wiring
+  ────────────────────────────────────────────────
+  AM62L (single DSS):
+    reg-names = "common", "vid", "ovr", "vp"
+    physical  =  common(0x30200000), vidl1(0x30202000),
+                 ovr1(0x30207000),   vp1(0x3020a000)
+    ti,vp-index   = <0>   (VP1 = index 0)
+    ti,vid-channel = <1>   (VIDL1)
+
+  AM62P51 DSS0 — using VP2 (DPI):
+    reg-names = "common", "vid", "ovr", "vp"
+    physical  =  common(0x30200000), vidl1(0x30202000),
+                 ovr2(0x30208000),   vp2(0x3020b000)
+    ti,vp-index   = <1>   (VP2 = index 1)
+    ti,vid-channel = <1>   (VIDL1)
+
+compatible: "ti,tidss"
+
+include: [display-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Four MMIO register regions, always in the order:
+        common, vid, ovr, vp
+      "vid", "ovr", and "vp" hold the physical base addresses of
+      whichever hardware blocks are selected for this output pipeline.
+
+  reg-names:
+    required: true
+    type: string-array
+    description: |
+      Names for each entry in 'reg'.  Must be exactly:
+        "common", "vid", "ovr", "vp"
+
+  ti,vp-index:
+    type: int
+    required: true
+    description: |
+      0-based index of the Video Port used by this pipeline.
+        0 = VP1 (first hardware VP)
+        1 = VP2 (second hardware VP)
+
+  ti,vid-channel:
+    type: int
+    required: true
+    enum:
+      - 0   # full VID plane  (vid)
+      - 1   # lite VID plane  (vidl1)
+    description: |
+      CHANNELIN value written to DSS_OVR_ATTRIBUTES[4:1].
+        0 = full VID plane connected to the overlay input
+        1 = VIDL1 (lite) plane connected to the overlay input
+      Use 0 when the 'vid' region points to a full VID plane,
+      use 1 when it points to a VIDL (lite) plane such as vidl1.
+
+  clocks:
+    required: true
+    description: |
+      Phandle(s) to the clock controller(s).  Must have entries named
+      "vp" (VP pixel clock) and "fclk" (DSS functional clock).
+      "vp" is a logical name — map it to whichever physical VP pixel
+      clock (vp1, vp2 …) is used by this pipeline.
+
+  clock-names:
+    required: true
+    type: string-array
+    description: Clock names.  Must include "vp" and "fclk".
+
+  interrupts:
+    required: true
+    description: DSS interrupt line.
+
+  interrupt-names:
+    type: string-array
+    description: Optional label for the interrupt (e.g. "vp0", "vp1").
+
+  data-width:
+    type: int
+    required: true
+    enum:
+      - 12
+      - 16
+      - 18
+      - 24
+      - 30
+      - 36
+    description: |
+      Output data bus width in bits.  Encoded into DSS_VP_CONTROL[10:8].
+      Typical values are 18 (18-bit DPI) or 24 (24-bit DPI / OLDI JEIDA-24).
+
