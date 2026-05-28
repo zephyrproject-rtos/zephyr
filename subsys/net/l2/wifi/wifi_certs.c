@@ -291,7 +291,10 @@ int process_certificates(void)
 		return -1;
 	}
 
-	wifi_set_enterprise_credentials(iface, 0);
+	ret = wifi_set_enterprise_credentials(iface, 0);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (config_process_blob(wpa_s->conf, "ca_cert",
 				enterprise_creds_params.ca_cert,
