@@ -24,11 +24,13 @@ static int rsi_bt_driver_send_tx_pwr_vs_cmd(const struct device *dev, uint8_t pr
 static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t *resp_buf);
 
 struct hci_config {
+	/* bt_hci_driver_config must be first */
 	struct bt_hci_driver_config common;
 	const struct device *nwp_dev;
 };
 
 struct hci_data {
+	/* bt_hci_driver_data must be first */
 	struct bt_hci_driver_data common;
 	rsi_data_packet_t rsi_data_packet;
 };

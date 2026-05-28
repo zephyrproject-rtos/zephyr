@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(bt_driver);
 #define DT_DRV_COMPAT zephyr_bt_hci_userchan
 
 struct uc_data {
+	/* bt_hci_driver_data must be first */
 	struct bt_hci_driver_data common;
 	int           fd;
 };
