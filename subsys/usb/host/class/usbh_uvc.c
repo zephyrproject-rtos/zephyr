@@ -895,7 +895,7 @@ scan_interface_endpoints(const struct usb_if_descriptor *const if_desc,
 			}
 
 			if (!USB_EP_DIR_IS_IN(ep_desc->bEndpointAddress)) {
-				LOG_WRN("Only IN endpoints supportedx");
+				LOG_WRN("Only IN endpoints supported");
 				continue;
 			}
 
