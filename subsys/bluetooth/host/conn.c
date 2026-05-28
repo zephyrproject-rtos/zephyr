@@ -477,8 +477,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	}
 
 	/* L2CAP frame complete. */
-	buf = conn->rx;
-	conn->rx = NULL;
+	buf = net_buf_take(&conn->rx);
 
 	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
 	if (bt_conn_is_br(conn)) {
