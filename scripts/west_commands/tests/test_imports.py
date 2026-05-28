@@ -52,6 +52,7 @@ def test_runner_imports():
         'renode',
         'renode-robot',
         'rfp',
+        'rtsflash',
         'sftool',
         'silabs_commander',
         'spi_burn',
