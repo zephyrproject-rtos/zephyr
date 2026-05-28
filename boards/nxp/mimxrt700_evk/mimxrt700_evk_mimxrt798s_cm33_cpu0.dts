@@ -388,7 +388,7 @@ nxp_8080_touch_panel_i2c: &flexcomm8_lpi2c8 {};
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
 			erase-block-size = <DT_SIZE_K(4)>;
-			write-block-size = <2>;
+			write-block-size = <4>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
