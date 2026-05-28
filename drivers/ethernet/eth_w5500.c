@@ -286,7 +286,6 @@ static void w5500_update_link_status(const struct device *dev)
 
 	if (IS_BIT_SET(phycfgr, W5500_PHYCFGR_LNK_BIT)) {
 		if (ctx->state.is_up != true) {
-			LOG_INF("%s: Link up", dev->name);
 			ctx->state.is_up = true;
 			net_eth_carrier_on(ctx->iface);
 		}
@@ -310,7 +309,6 @@ static void w5500_update_link_status(const struct device *dev)
 	}
 
 	if (ctx->state.is_up) {
-		LOG_INF("%s: Link down", dev->name);
 		ctx->state.is_up = false;
 		ctx->state.speed = 0;
 		net_eth_carrier_off(ctx->iface);

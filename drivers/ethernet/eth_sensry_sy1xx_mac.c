@@ -262,8 +262,6 @@ static void phy_link_state_changed(const struct device *pdev, struct phy_link_st
 		data->link_is_up = is_up;
 
 		if (is_up) {
-			LOG_DBG("Link up");
-
 			/* enable mac controller */
 			en = sys_read32(cfg->ctrl_addr + SY1XX_MAC_CTRL_REG);
 			en |= BIT(SY1XX_MAC_CTRL_TX_EN_OFFS) | BIT(SY1XX_MAC_CTRL_RX_EN_OFFS);
@@ -273,8 +271,6 @@ static void phy_link_state_changed(const struct device *pdev, struct phy_link_st
 			net_eth_carrier_on(data->iface);
 
 		} else {
-			LOG_DBG("Link down");
-
 			/* disable mac controller */
 			en = sys_read32(cfg->ctrl_addr + SY1XX_MAC_CTRL_REG);
 			en &= ~(BIT(SY1XX_MAC_CTRL_TX_EN_OFFS) | BIT(SY1XX_MAC_CTRL_RX_EN_OFFS));

@@ -651,7 +651,6 @@ static int eth_dm9051_update_link_status(const struct device *dev)
 
 	if ((nsr & DM9051_NSR_LINKST) > 0) {
 		if (data->state.is_up != true) {
-			LOG_INF("%s: Link up", dev->name);
 			data->state.is_up = true;
 			net_eth_carrier_on(data->iface);
 		}
@@ -672,7 +671,6 @@ static int eth_dm9051_update_link_status(const struct device *dev)
 		}
 	} else {
 		if (data->state.is_up != false) {
-			LOG_INF("%s: Link down", dev->name);
 			data->state.is_up = false;
 			data->state.speed = 0;
 			net_eth_carrier_off(data->iface);
