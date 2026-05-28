@@ -5225,7 +5225,14 @@ static struct quic_context *quic_context_init(struct quic_context *ctx)
 	k_sem_init(&ctx->pending.accept_sem, 0, 1);
 
 	k_fifo_init(&ctx->incoming.stream_q);
-	k_sem_init(&ctx->incoming.stream_sem, 0, 1);
+	/*
+	 * Use K_SEM_MAX_LIMIT so each peer-initiated stream gets its own
+	 * semaphore count.  A cap of 1 would silently discard wakeups when
+	 * multiple streams arrive in the same 0-RTT or coalesced packet,
+	 * causing quic_stream_accept() to block even though the FIFO is
+	 * non-empty.
+	 */
+	k_sem_init(&ctx->incoming.stream_sem, 0, K_SEM_MAX_LIMIT);
 
 	sys_slist_init(&ctx->endpoints);
 	sys_slist_init(&ctx->streams);
@@ -6305,6 +6312,8 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	struct quic_context *listen_ctx;
 	struct quic_context *child_ctx;
 	struct quic_stream *stream, *tmp;
+	struct quic_stream *queued_streams[ARRAY_SIZE(streams)];
+	size_t queued_stream_count = 0U;
 
 	/* Only server child endpoints should be enqueued */
 	if (!child_ep->is_server || child_ep->parent == NULL) {
@@ -6335,12 +6344,19 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 	sys_slist_find_and_remove(&listen_ctx->endpoints, &child_ep->node);
 	sys_slist_prepend(&child_ctx->endpoints, &child_ep->node);
 
-	/* Migrate any pending streams to the new context as well. This
-	 * can happen if the connection accept queue has not been processed
-	 * fully yet and the streams were allocated to wrong connection context.
+	/* Migrate any pending streams to the new context as well. This can happen
+	 * if peer streams arrive before the accepted child socket is created.
+	 * Keep the original FIFO arrival order when those streams are later
+	 * delivered via accept(), so control streams are not reordered behind
+	 * request streams.
+	 *
+	 * Do NOT pre-allocate file descriptors here.  fd allocation is the
+	 * exclusive responsibility of quic_stream_accept(); doing it here
+	 * would cause a double-allocation (and fd leak) when quic_stream_accept()
+	 * subsequently allocates another fd for the same stream.
 	 */
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&listen_ctx->streams, stream, tmp, node) {
-		if (stream->conn != listen_ctx) {
+		if (stream->conn != listen_ctx || stream->ep != child_ep) {
 			continue;
 		}
 
@@ -6355,55 +6371,37 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 
 		stream->conn = child_ctx;
 		stream->ep = child_ep;
+	}
 
-		/* Remove stream from listen_ctx pending accept queue if it's there,
-		 * since it should now be delivered to the new child_ctx accept queue.
-		 */
-		do {
-			struct quic_stream *st = k_fifo_get(&listen_ctx->incoming.stream_q,
-							    K_NO_WAIT);
-
-			if (st == stream) {
-				/* Found the stream, don't put it back */
-				break;
-			} else if (st == NULL) {
-				/* No more streams in the queue */
-				break;
-			}
-
-			/* Not the stream we're looking for, put it back and keep looking */
-			k_fifo_put(&listen_ctx->incoming.stream_q, st);
-		} while (true);
-
-		/* Reparent only already-instantiated stream sockets.
-		 * Peer-created streams normally get their fd later in accept().
-		 */
-		if (stream->sock >= 0) {
-			zvfs_free_fd(stream->sock);
-			(void)sock_obj_core_dealloc(stream->sock);
-
-			stream->sock = zvfs_reserve_fd();
-			if (stream->sock < 0) {
-				NET_ERR("[EP:%p/%d] Failed to reserve fd for stream %p/%d: %d",
-					child_ep, quic_get_by_ep(child_ep),
-					stream, quic_get_by_stream(stream),
-					stream->sock);
-				quic_stream_unref(stream);
-				break;
-			}
-
-			zvfs_finalize_typed_fd(stream->sock, stream,
-					       (const struct fd_op_vtable *)
-					       &quic_stream_fd_op_vtable,
-					       ZVFS_MODE_IFSOCK);
-
-			(void)sock_obj_core_alloc_find(child_ctx->sock, stream->sock,
-						       NET_SOCK_STREAM);
+	while (queued_stream_count < ARRAY_SIZE(queued_streams)) {
+		stream = k_fifo_get(&listen_ctx->incoming.stream_q, K_NO_WAIT);
+		if (stream == NULL) {
+			break;
 		}
 
-		/* Queue for accept() call */
-		k_fifo_put(&child_ctx->incoming.stream_q, stream);
-		k_sem_give(&child_ctx->incoming.stream_sem);
+		queued_streams[queued_stream_count++] = stream;
+	}
+
+	k_sem_reset(&listen_ctx->incoming.stream_sem);
+
+	for (size_t i = 0U; i < queued_stream_count; i++) {
+		stream = queued_streams[i];
+
+		if (stream->ep == child_ep) {
+			if (stream->conn == listen_ctx) {
+				sys_slist_find_and_remove(&listen_ctx->streams, &stream->node);
+				sys_slist_prepend(&child_ctx->streams, &stream->node);
+
+				stream->conn = child_ctx;
+				stream->ep = child_ep;
+			}
+
+			k_fifo_put(&child_ctx->incoming.stream_q, stream);
+			k_sem_give(&child_ctx->incoming.stream_sem);
+		} else {
+			k_fifo_put(&listen_ctx->incoming.stream_q, stream);
+			k_sem_give(&listen_ctx->incoming.stream_sem);
+		}
 	}
 
 	k_mutex_unlock(&endpoints_lock);
@@ -6453,16 +6451,16 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 
 	quic_endpoint_negotiate_idle_timeout(ep);
 
-	ret = quic_tls_note_handshake_complete(tls);
-	if (ret != 0) {
-		NET_ERR("Failed to finalize TLS resumption state");
-		return ret;
-	}
-
 	/* Derive application traffic secrets */
 	ret = derive_application_secrets(tls);
 	if (ret != 0) {
 		NET_ERR("Failed to derive application secrets");
+		return ret;
+	}
+
+	ret = quic_tls_note_handshake_complete(tls);
+	if (ret != 0) {
+		NET_ERR("Failed to finalize TLS resumption state");
 		return ret;
 	}
 
@@ -7084,6 +7082,92 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 	return stream;
 }
 
+#if defined(CONFIG_QUIC_0RTT)
+static int quic_buffer_deferred_0rtt_packet(struct quic_pkt *pkt)
+{
+	struct quic_endpoint *ep = pkt->ep;
+	struct quic_deferred_0rtt_packet *deferred;
+
+	if (!ep->is_server) {
+		return -EINVAL;
+	}
+
+	if (ep->deferred_0rtt.count >= ARRAY_SIZE(ep->deferred_0rtt.packets)) {
+		return -ENOBUFS;
+	}
+
+	deferred = &ep->deferred_0rtt.packets[ep->deferred_0rtt.count++];
+	deferred->len = pkt->len;
+	deferred->total_len = pkt->total_len;
+	deferred->pn_offset = pkt->pn_offset;
+	memcpy(deferred->data, pkt->data, pkt->total_len);
+
+	return 0;
+}
+
+static int quic_flush_deferred_0rtt_packets(struct quic_endpoint *ep)
+{
+	struct quic_crypto_context *crypto_ctx;
+
+	if (!ep->is_server || ep->deferred_0rtt.count == 0U) {
+		return 0;
+	}
+
+	if (!ep->crypto.tls.early_data_accepted) {
+		if (ep->crypto.tls.early_data_rejected || ep->handshake.completed) {
+			ep->deferred_0rtt.count = 0U;
+		}
+
+		return 0;
+	}
+
+	crypto_ctx = quic_get_crypto_context_by_level(ep, QUIC_SECRET_LEVEL_EARLY);
+	if (crypto_ctx == NULL || !crypto_ctx->initialized) {
+		return 0;
+	}
+
+	while (ep->deferred_0rtt.count > 0U) {
+		struct quic_deferred_0rtt_packet *deferred = &ep->deferred_0rtt.packets[0];
+		struct quic_pkt *pkt;
+
+		pkt = quic_pkt_alloc(&quic_pkts, K_MSEC(CONFIG_QUIC_PKT_ALLOC_TIMEOUT));
+		if (pkt == NULL) {
+			return -ENOMEM;
+		}
+
+		pkt->ep = ep;
+		pkt->old_ep = ep->parent;
+		pkt->ptype = QUIC_PACKET_TYPE_0RTT;
+		pkt->htype = QUIC_HEADER_TYPE_LONG;
+		pkt->pn_offset = deferred->pn_offset;
+		pkt->pos = 0U;
+		pkt->len = deferred->len;
+		pkt->total_len = deferred->total_len;
+		memcpy(pkt->data, deferred->data, deferred->total_len);
+
+		quic_endpoint_ref(pkt->ep);
+		k_fifo_put(&quic_queue, pkt);
+
+		ep->deferred_0rtt.count--;
+		if (ep->deferred_0rtt.count > 0U) {
+			memmove(&ep->deferred_0rtt.packets[0],
+				&ep->deferred_0rtt.packets[1],
+				ep->deferred_0rtt.count *
+					sizeof(ep->deferred_0rtt.packets[0]));
+		}
+	}
+
+	return 0;
+}
+#else
+static int quic_flush_deferred_0rtt_packets(struct quic_endpoint *ep)
+{
+	ARG_UNUSED(ep);
+
+	return 0;
+}
+#endif /* CONFIG_QUIC_0RTT */
+
 static void process_pkt(struct quic_pkt *pkt)
 {
 	int ret = 0;
@@ -7113,6 +7197,15 @@ static void process_pkt(struct quic_pkt *pkt)
 			quic_endpoint_unref(pkt->ep);
 		}
 
+		if (ret == 0) {
+			int flush_ret = quic_flush_deferred_0rtt_packets(pkt->ep);
+
+			if (flush_ret < 0) {
+				NET_WARN("[EP:%p/%d] Failed to flush deferred 0-RTT packets (%d)",
+					 pkt->ep, quic_get_by_ep(pkt->ep), flush_ret);
+			}
+		}
+
 		break;
 
 	case QUIC_PACKET_TYPE_HANDSHAKE:
@@ -7139,6 +7232,15 @@ static void process_pkt(struct quic_pkt *pkt)
 			NET_DBG("[EP:%p/%d] Connection closing after %s packet",
 				pkt->ep, quic_get_by_ep(pkt->ep), "Handshake");
 			quic_endpoint_unref(pkt->ep);
+		}
+
+		if (ret == 0) {
+			int flush_ret = quic_flush_deferred_0rtt_packets(pkt->ep);
+
+			if (flush_ret < 0) {
+				NET_WARN("[EP:%p/%d] Failed to flush deferred 0-RTT packets (%d)",
+					 pkt->ep, quic_get_by_ep(pkt->ep), flush_ret);
+			}
 		}
 
 		break;
@@ -7251,6 +7353,28 @@ static bool process_long_header_msg(struct quic_pkt *pkt)
 		QUIC_EP_STAT_INC(ep, drop_rx);
 		goto fail;
 	}
+
+#if defined(CONFIG_QUIC_0RTT)
+	if (ptype == QUIC_PACKET_TYPE_0RTT) {
+		struct quic_crypto_context *crypto_ctx;
+
+		crypto_ctx = quic_get_crypto_context_by_level(ep, QUIC_SECRET_LEVEL_EARLY);
+		if (crypto_ctx == NULL || !crypto_ctx->initialized) {
+			ret = quic_buffer_deferred_0rtt_packet(pkt);
+			if (ret < 0) {
+				NET_DBG("[EP:%p/%d] Failed to defer 0-RTT packet (%d)",
+					ep, quic_get_by_ep(ep), ret);
+				QUIC_EP_STAT_INC(ep, alloc_failed);
+				QUIC_EP_STAT_INC(ep, drop_rx);
+				goto fail;
+			}
+
+			NET_DBG("[EP:%p/%d] Deferred 0-RTT packet until early keys are ready",
+				ep, quic_get_by_ep(ep));
+			return false;
+		}
+	}
+#endif /* CONFIG_QUIC_0RTT */
 
 	/*
 	 * Decrypt the complete packet:

@@ -528,6 +528,17 @@ struct quic_deferred_crypto_payload {
 };
 #endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
+#if defined(CONFIG_QUIC_0RTT)
+#define QUIC_MAX_DEFERRED_0RTT_PACKETS 4
+
+struct quic_deferred_0rtt_packet {
+	size_t len;
+	size_t total_len;
+	size_t pn_offset;
+	uint8_t data[CONFIG_QUIC_ENDPOINT_PENDING_DATA_LEN];
+};
+#endif /* CONFIG_QUIC_0RTT */
+
 /**
  * Long header information parsed from an incoming packet, used for initial
  * processing before we know which endpoint it belongs to.
@@ -707,6 +718,13 @@ struct quic_endpoint {
 		 */
 		uint8_t data[CONFIG_QUIC_ENDPOINT_PENDING_DATA_LEN];
 	} pending;
+
+#if defined(CONFIG_QUIC_0RTT)
+	struct {
+		struct quic_deferred_0rtt_packet packets[QUIC_MAX_DEFERRED_0RTT_PACKETS];
+		uint8_t count;
+	} deferred_0rtt;
+#endif /* CONFIG_QUIC_0RTT */
 
 	/** Peer connection id pool */
 	struct {
@@ -1045,6 +1063,9 @@ __net_socket struct quic_stream {
 
 	/** A rejected 0-RTT FIN must be replayed after queued data is resent. */
 	bool replay_fin_pending : 1;
+
+	/** RX side of this stream has carried accepted 0-RTT data. */
+	bool received_early_data : 1;
 };
 
 /**

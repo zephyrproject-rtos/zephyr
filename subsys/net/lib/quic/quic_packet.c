@@ -305,6 +305,10 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 		k_yield();
 	}
 
+	if (level == QUIC_SECRET_LEVEL_EARLY) {
+		stream->received_early_data = true;
+	}
+
 	fc_bytes_received_before = stream->fc_bytes_received;
 
 	/* Deliver data to the stream */
