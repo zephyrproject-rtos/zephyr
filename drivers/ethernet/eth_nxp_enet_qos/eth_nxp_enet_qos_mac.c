@@ -68,8 +68,6 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 		net_eth_carrier_off(data->iface);
 	}
 
-	LOG_INF("Link is %s", state->is_up ? "up" : "down");
-
 	/* handle link speed and duplex in MAC configuration register */
 	if (state->is_up) {
 		const struct nxp_enet_qos_mac_config *config = dev->config;

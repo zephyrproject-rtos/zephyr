@@ -117,10 +117,8 @@ static void phy_link_state_changed(const struct device *pdev,
 
 		cfg->base->MAC_CONFIGURATION |= GMAC_MAC_CONFIGURATION_DM(gmac_cfg.Duplex);
 
-		LOG_DBG("Link up");
 		net_eth_carrier_on(ctx->iface);
 	} else {
-		LOG_DBG("Link down");
 		net_eth_carrier_off(ctx->iface);
 	}
 }
