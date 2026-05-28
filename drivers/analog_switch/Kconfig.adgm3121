@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ANALOG_SWITCH_ADGM3121
+	bool "Analog Devices ADGM3121 MEMS switch driver"
+	default y
+	depends on DT_HAS_ADI_ADGM3121_ENABLED || \
+		   DT_HAS_ADI_ADGM3121_GPIO_ENABLED
+	depends on SPI || GPIO
+	help
+	  Enable driver for Analog Devices ADGM3121 DPDT MEMS switch
+	  (DC-24GHz). Supports both SPI and parallel GPIO control modes.

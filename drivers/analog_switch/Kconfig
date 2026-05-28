@@ -19,4 +19,6 @@ config ANALOG_SWITCH_INIT_PRIORITY
 	help
 	  System initialization priority for analog switch drivers.
 
+rsource "Kconfig.adgm3121"
+
 endif # ANALOG_SWITCH
