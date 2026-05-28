@@ -26,7 +26,6 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>

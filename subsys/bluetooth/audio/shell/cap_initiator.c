@@ -32,7 +32,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -1487,13 +1486,13 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 
 	err = bt_le_ext_adv_get_info(adv, &adv_info);
 	if (err != 0) {
-		shell_error(sh, "Failed to get adv info: %d\n", err);
+		shell_error(sh, "Failed to get adv info: %d", err);
 		return -ENOEXEC;
 	}
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err != 0) {
-		bt_shell_error("Unable to generate broadcast ID: %d\n", err);
+		bt_shell_error("Unable to generate broadcast ID: %d", err);
 
 		return -ENOEXEC;
 	}
@@ -1715,7 +1714,7 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 
 		err = bt_cap_initiator_broadcast_get_base(default_source.cap_source, &base_buf);
 		if (err != 0) {
-			bt_shell_error("Unable to get BASE: %d\n", err);
+			bt_shell_error("Unable to get BASE: %d", err);
 
 			return 0U;
 		}
