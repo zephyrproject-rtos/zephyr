@@ -11,8 +11,8 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,console = &uart3;
-		zephyr,shell-uart = &uart3;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 	};
 
 	cpus {
@@ -39,7 +39,7 @@
 		reg = <0x00000000 0x08000000>;
 	};
 
-	uart3: serial@90000000 {
+	uart0: serial@90000000 {
 		compatible = "ns16550";
 		reg = <0x90000000 0x100>;
 		reg-shift = <0>;
