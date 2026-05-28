@@ -421,11 +421,6 @@ static int i2c_silabs_transfer_impl(const struct device *dev, struct i2c_msg *ms
 	struct i2c_silabs_dev_data *data = dev->data;
 	int ret = -EINVAL; /* Initialize ret to a default error value */
 
-	/* Check for invalid number of messages */
-	if (!num_msgs) {
-		return -EINVAL;
-	}
-
 	/* Check and set the address mode (7-bit or 10-bit) based on */
 	/* the provided address */
 	if (addr <= 0x7F) {

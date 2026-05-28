@@ -632,10 +632,6 @@ static int it51xxx_i3cm_i2c_api_transfer(const struct device *dev, struct i2c_ms
 		return -EINVAL;
 	}
 
-	if (num_msgs == 0) {
-		return 0;
-	}
-
 	for (uint8_t i = 0; i < num_msgs; i++) {
 		if (!msgs[i].buf) {
 			return -EINVAL;
@@ -927,10 +923,6 @@ static int it51xxx_i3cm_transfer(const struct device *dev, struct i3c_device_des
 
 	if (!msgs || target->dynamic_addr == 0U) {
 		return -EINVAL;
-	}
-
-	if (num_msgs == 0) {
-		return 0;
 	}
 
 	for (uint8_t i = 0; i < num_msgs; i++) {

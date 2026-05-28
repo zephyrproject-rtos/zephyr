@@ -611,10 +611,6 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	struct ifx_cat1_i2c_data *data = dev->data;
 	int ret;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	/* Acquire semaphore (block I2C transfer for another thread) */
 	ret = k_sem_take(&data->operation_sem, K_FOREVER);
 	if (ret < 0) {
