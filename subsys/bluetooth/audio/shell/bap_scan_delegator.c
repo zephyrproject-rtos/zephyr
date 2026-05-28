@@ -29,7 +29,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
@@ -411,10 +410,10 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	printk("BIS sync request received for %p\n", recv_state);
+	bt_shell_print("BIS sync request received for %p", recv_state);
 
 	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
-		printk("  [%d]: 0x%08x\n", i, bis_sync_req[i]);
+		bt_shell_print("  [%d]: 0x%08x", i, bis_sync_req[i]);
 	}
 
 	return 0;

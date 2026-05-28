@@ -27,7 +27,6 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
@@ -144,24 +143,23 @@ static void csip_set_coordinator_ordered_access_cb(
 	ARG_UNUSED(set_info);
 
 	if (err != 0) {
-		printk("Ordered access failed with err %d\n", err);
+		bt_shell_print("Ordered access failed with err %d", err);
 	} else if (locked) {
-		printk("Cannot do ordered access as member %p is locked\n",
-		       member);
+		bt_shell_print("Cannot do ordered access as member %p is locked", member);
 	} else {
-		printk("Ordered access procedure finished\n");
+		bt_shell_print("Ordered access procedure finished");
 	}
 }
 
 static void csip_set_coordinator_lock_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst,
 						 bool locked)
 {
-	bt_shell_print("Inst %p %s\n", inst, locked ? "locked" : "released");
+	bt_shell_print("Inst %p %s", inst, locked ? "locked" : "released");
 }
 
 static void csip_set_coordinator_sirk_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst)
 {
-	bt_shell_print("Inst %p SIRK changed\n", inst);
+	bt_shell_print("Inst %p SIRK changed", inst);
 	bt_shell_hexdump(inst->info.sirk, BT_CSIP_SIRK_SIZE);
 }
 
@@ -171,7 +169,7 @@ csip_set_coordinator_size_changed_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("Inst %p size changed: %u\n", inst, inst->info.set_size);
+	bt_shell_print("Inst %p size changed: %u", inst, inst->info.set_size);
 }
 
 static struct bt_csip_set_coordinator_cb cbs = {
@@ -191,7 +189,7 @@ static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set
 	ARG_UNUSED(set_info);
 
 	for (size_t i = 0; i < count; i++) {
-		printk("Ordered access for members[%zu]: %p\n", i, members[i]);
+		bt_shell_print("Ordered access for members[%zu]: %p", i, members[i]);
 	}
 
 	return true;
