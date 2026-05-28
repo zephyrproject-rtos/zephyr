@@ -39,8 +39,7 @@ int set_flexcan_clock(uint32_t clk_id)
 	return ret;
 }
 
-#define FLEXCAN_CLOCK_SETUP(node_id) \
-	set_flexcan_clock(DT_CLOCKS_CELL_BY_IDX(node_id, 0, name));
+#define FLEXCAN_CLOCK_SETUP(node_id) set_flexcan_clock(DT_CLOCKS_CELL_BY_IDX(node_id, 0, name));
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_i2s)
 static int set_audiopll1_clock(struct scmi_protocol *proto)
@@ -321,9 +320,9 @@ static int soc_init(void)
 	}
 #endif
 
-DT_FOREACH_STATUS_OKAY(nxp_flexcan, FLEXCAN_CLOCK_SETUP)
+	DT_FOREACH_STATUS_OKAY(nxp_flexcan, FLEXCAN_CLOCK_SETUP)
 
-DT_FOREACH_STATUS_OKAY(nxp_mcux_i2s, SAI_CLOCK_SETUP)
+	DT_FOREACH_STATUS_OKAY(nxp_mcux_i2s, SAI_CLOCK_SETUP)
 
 #if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
 	cpu_cfg.cpu_id = CPU_IDX_M7P;
@@ -367,8 +366,7 @@ void pm_state_before(void)
 
 	/* Set wakeup mask */
 	uint32_t wake_mask[GPC_CMC_IRQ_WAKEUP_MASK_COUNT] = {
-		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1]  = 0xFFFFFFFFU
-	};
+		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1] = 0xFFFFFFFFU};
 
 	/* IRQs enabled at NVIC level become GPC wake sources */
 	for (uint32_t idx = 0; idx < 8; idx++) {
@@ -440,8 +438,7 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 
 	/* Restore scmi cpu wake mask */
 	uint32_t wake_mask[GPC_CMC_IRQ_WAKEUP_MASK_COUNT] = {
-		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1] = 0x0U
-	};
+		[0 ... GPC_CMC_IRQ_WAKEUP_MASK_COUNT - 1] = 0x0U};
 
 	cpu_irq_mask_cfg.cpu_id = CPU_IDX_M7P;
 	cpu_irq_mask_cfg.mask_idx = 0;
