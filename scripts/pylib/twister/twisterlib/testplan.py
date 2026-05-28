@@ -1044,7 +1044,6 @@ class TestPlan:
                     robot_targets = [
                         'renode',
                         'native',
-                        'qemu'
                     ]
                     if ts.harness == 'robot' and not (sim and sim.name in robot_targets):
                         instance.add_filter(
