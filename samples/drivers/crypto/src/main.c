@@ -44,7 +44,17 @@ LOG_MODULE_REGISTER(main);
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_aes)
 #define CRYPTO_DEV_COMPAT st_stm32_aes
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
+#include <zephyr/crypto/crypto_xaes_stm32.h>
 #define CRYPTO_DEV_COMPAT st_stm32_saes
+#define OPAQUE_KEY_DATATYPE uint32_t
+#define OPAQUE_KEY_DEFINE(key_name, key_mode)                                                     \
+	{#key_name "-" #key_mode, STM32_xAES_KEYDESC(CONCAT(STM32_xAES_KEY_SELECTION_, key_name), \
+						     CONCAT(STM32_xAES_KEY_MODE_, key_mode))}
+/* Only test the DHUK in normal mode.
+ * The BHK and XORK keys are not supported yet since they also require the
+ * TAMP IP properly configured.
+ */
+#define OPAQUE_KEY_VALUES OPAQUE_KEY_DEFINE(DHUK, NORMAL)
 #elif DT_HAS_COMPAT_STATUS_OKAY(microchip_aes_g1)
 #define CRYPTO_DEV_COMPAT microchip_aes_g1
 #elif DT_HAS_COMPAT_STATUS_OKAY(nxp_mcux_dcp)

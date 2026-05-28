@@ -50,6 +50,7 @@ tests:
     harness_config:
       type: multi_line
       regex:
+        - ".*: Raw key tests"
         - ".*: Cipher Sample"
         - ".*: ECB mode ENCRYPT - Match"
         - ".*: ECB mode DECRYPT - Match"
@@ -57,6 +58,27 @@ tests:
         - ".*: CBC mode DECRYPT - Match"
         - ".*: CTR mode ENCRYPT - Match"
         - ".*: CTR mode DECRYPT - Match"
+  sample.drivers.crypto.stm32_saes:
+    tags: crypto
+    filter: dt_compat_enabled("st,stm32-saes")
+    integration_platforms:
+      - b_u585i_iot02a
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - ".*: Raw key tests"
+        - ".*: Cipher Sample"
+        - ".*: ECB mode ENCRYPT - Match"
+        - ".*: ECB mode DECRYPT - Match"
+        - ".*: CBC mode ENCRYPT - Match"
+        - ".*: CBC mode DECRYPT - Match"
+        - ".*: Opaque key tests"
+        - ".*: Cipher Sample"
+        - ".*: ECB Mode using DHUK-NORMAL"
+        - ".*: ECB mode ROUNDTRIP - Match"
+        - ".*: CBC Mode using DHUK-NORMAL"
+        - ".*: CBC mode ROUNDTRIP - Match"
   sample.drivers.crypto.mcux_dcp:
     tags: crypto
     filter: dt_compat_enabled("nxp,mcux-dcp")
