@@ -49,11 +49,25 @@ static inline bool any_cpu_announcing(void)
 }
 
 /* Timeout whose handler is currently being dispatched, or NULL when no
- * handler is in flight. Set by the announcing CPU under timeout_lock
- * before the handler is called, cleared after the handler returns.
- * Only the announcing CPU writes this; other CPUs read it.
+ * handler is in flight. The announcing CPU sets the pointer before
+ * calling the handler and clears it afterwards; any aborter may set the
+ * low "superseded" bit (struct _timeout is pointer-aligned so bit 0 is
+ * free). Accessors below mask the bit.
  */
 static struct _timeout *inflight_timeout;
+
+#define INFLIGHT_SUPERSEDED_BIT 1UL
+
+static inline struct _timeout *inflight_ptr(void)
+{
+	return (struct _timeout *)((uintptr_t)inflight_timeout & ~INFLIGHT_SUPERSEDED_BIT);
+}
+
+static inline void inflight_mark_superseded(void)
+{
+	inflight_timeout = (struct _timeout *)((uintptr_t)inflight_timeout |
+					       INFLIGHT_SUPERSEDED_BIT);
+}
 
 static struct _timeout *first(void)
 {
@@ -234,15 +248,21 @@ int z_try_abort_timeout(struct _timeout *to)
 			if (is_first) {
 				sys_clock_set_timeout(next_timeout(elapsed()), false);
 			}
-		} else if (inflight_timeout == to) {
-			if (this_cpu_announcing()) {
-				/* Same-CPU IRQ on this CPU's announce gap:
-				 * can't wait; best-effort mark ABORTED.
-				 */
-				to->dticks = TIMEOUT_DTICKS_ABORTED;
-			} else if (IS_ENABLED(CONFIG_SMP)) {
-				ret = -EAGAIN;
-			}
+		} else if (IS_ENABLED(CONFIG_SMP) && inflight_ptr() == to &&
+			   !this_cpu_announcing()) {
+			/* Handler in flight on another CPU. Free-safety
+			 * callers retry on -EAGAIN to wait it out; others
+			 * rely on the superseded mark below and don't.
+			 */
+			ret = -EAGAIN;
+		}
+
+		/* Record that the in-flight timeout has been aborted, so a
+		 * handler that checks (z_timeout_inflight_superseded) can
+		 * tell its dispatch was overtaken.
+		 */
+		if (inflight_ptr() == to) {
+			inflight_mark_superseded();
 		}
 	}
 
@@ -251,6 +271,18 @@ int z_try_abort_timeout(struct _timeout *to)
 	}
 
 	return ret;
+}
+
+bool z_timeout_inflight_superseded(const struct _timeout *to)
+{
+	bool superseded = false;
+
+	K_SPINLOCK(&timeout_lock) {
+		superseded = inflight_timeout ==
+			     (struct _timeout *)((uintptr_t)to | INFLIGHT_SUPERSEDED_BIT);
+	}
+
+	return superseded;
 }
 
 /* must be locked */
