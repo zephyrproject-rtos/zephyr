@@ -5,6 +5,8 @@
  */
 
 #include <stdlib.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/devicetree/mapped-partition.h>
 #include <image_header.h>
 #include <rom_uuid.h>
 #include <version.h>
@@ -35,7 +37,7 @@ const T_IMG_HEADER_FORMAT img_header __attribute__((section(".image_header"))) =
 	.load_dst = 0,
 	.exe_base = (unsigned int)z_arm_reset,
 	.load_len = 0,
-	.image_base = CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET,
+	.image_base = DT_MAPPED_PARTITION_ADDR(DT_CHOSEN(zephyr_code_partition)),
 	.git_ver = {
 			.ver_info.sub_version._version_major = KERNEL_VERSION_MAJOR,
 			.ver_info.sub_version._version_minor = KERNEL_VERSION_MINOR,
