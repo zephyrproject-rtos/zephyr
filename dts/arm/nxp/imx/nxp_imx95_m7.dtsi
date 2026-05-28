@@ -113,6 +113,36 @@
 		};
 	};
 
+	performance-states {
+		m7_pstate_odv: pstate-odv {
+			compatible = "arm,scmi-perf-pstate";
+			load-threshold = <70>;
+			scmi-perf-domain = <3>;
+			scmi-perf-level-khz = <800000>;
+		};
+
+		m7_pstate_nom: pstate-nom {
+			compatible = "arm,scmi-perf-pstate";
+			load-threshold = <40>;
+			scmi-perf-domain = <3>;
+			scmi-perf-level-khz = <666667>;
+		};
+
+		m7_pstate_low: pstate-low {
+			compatible = "arm,scmi-perf-pstate";
+			load-threshold = <10>;
+			scmi-perf-domain = <3>;
+			scmi-perf-level-khz = <400000>;
+		};
+
+		m7_pstate_prk: pstate-prk {
+			compatible = "arm,scmi-perf-pstate";
+			load-threshold = <0>;
+			scmi-perf-domain = <3>;
+			scmi-perf-level-khz = <24000>;
+		};
+	};
+
 	power-domains {
 		#address-cells = <1>;
 		#size-cells = <0>;
