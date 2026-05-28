@@ -21,6 +21,54 @@ Bootstrap JavaScript and CSS Files
   * :zephyr_file:`scripts/dashboard/static/js/bootstrap-chop.js`
   * :zephyr_file:`scripts/dashboard/static/css/bootstrap-chop.css`
 
+noUiSlider Library
+------------------
+
+* *Origin:* `noUiSlider <https://refreshless.com/nouislider/>`_ (Léon Gersen and contributors)
+* *Licensing:* `MIT License`_
+* *Impact:* These files are used in the documentation to provide the flash/RAM range sliders in the
+  board catalog and are never linked into a firmware.
+* *Files:*
+
+  * :zephyr_file:`doc/_extensions/zephyr/domain/static/js/nouislider.min.js`
+  * :zephyr_file:`doc/_extensions/zephyr/domain/static/css/nouislider.min.css`
+
+Tippy.js Library
+----------------
+
+* *Origin:* `Tippy.js <https://atomiks.github.io/tippyjs/>`_ (atomiks)
+* *Licensing:* `MIT License`_
+* *Impact:* This file is used by the documentation's Doxygen tooltip extension to render tooltips
+  and is never linked into a firmware.
+* *Files:*
+
+  * :zephyr_file:`doc/_extensions/zephyr/doxytooltip/static/tippy/tippy-bundle.umd.min.js`
+
+Popper.js Library
+-----------------
+
+* *Origin:* `Popper.js <https://popper.js.org/>`_ (Federico Zivolo and contributors)
+* *Licensing:* `MIT License`_
+* *Impact:* This file is used by Tippy.js to position tooltips in the documentation's Doxygen
+  tooltip extension and is never linked into a firmware.
+* *Files:*
+
+  * :zephyr_file:`doc/_extensions/zephyr/doxytooltip/static/tippy/popper.min.js`
+
+Godot Documentation Theme Files
+-------------------------------
+
+* *Origin:* `Godot Engine documentation <https://github.com/godotengine/godot-docs>`_
+* *Licensing:* `CC-BY-3.0`_
+* *Impact:* These files customize the Sphinx Read the Docs theme used to render the documentation
+  and were used as a starting point for Zephyr's own theme. They are never linked into a firmware.
+* *Files:*
+
+  * :zephyr_file:`doc/_static/css/custom.css`
+  * :zephyr_file:`doc/_static/css/dark.css`
+  * :zephyr_file:`doc/_static/css/light.css`
+  * :zephyr_file:`doc/_static/js/custom.js`
+
 Continuous Integration Scripts
 ------------------------------
 
@@ -159,6 +207,9 @@ WireGuard VPN Files
 
 .. _BSD-2-clause:
    https://opensource.org/license/bsd-2-clause
+
+.. _CC-BY-3.0:
+   https://creativecommons.org/licenses/by/3.0/
 
 .. _Coccinelle:
    https://coccinelle.gitlabpages.inria.fr/website/
