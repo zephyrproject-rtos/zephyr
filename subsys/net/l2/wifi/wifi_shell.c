@@ -1034,7 +1034,11 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-		wifi_set_enterprise_credentials(iface, 0);
+		ret = wifi_set_enterprise_credentials(iface, 0);
+		if (ret != 0) {
+			PR_ERROR("Failed to set enterprise credentials (%d)\n", ret);
+			return -ENOEXEC;
+		}
 	}
 #endif
 
@@ -2104,7 +2108,11 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-		wifi_set_enterprise_credentials(iface, 1);
+		ret = wifi_set_enterprise_credentials(iface, 1);
+		if (ret != 0) {
+			PR_ERROR("Failed to set enterprise credentials (%d)\n", ret);
+			return -ENOEXEC;
+		}
 	}
 #endif
 
