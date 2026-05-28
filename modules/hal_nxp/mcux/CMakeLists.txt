@@ -129,6 +129,14 @@ zephyr_library_compile_definitions_ifdef(CONFIG_HAS_MCUX_CACHE
   FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL
   )
 
+# CMSIS SystemInit() disables the hardware watchdog by default
+# (DISABLE_WDOG defaults to 1). Leave it running so the Zephyr watchdog
+# driver can manage it when a SoC opts in and the boot-time disable policy
+# asks to preserve it (see CONFIG_MCUX_SYSINIT_KEEP_WATCHDOG).
+zephyr_library_compile_definitions_ifdef(CONFIG_MCUX_SYSINIT_KEEP_WATCHDOG
+  DISABLE_WDOG=0
+  )
+
 # MCUX_SDK and MCUX_SDK_NG share wireless/framework_5.3.3, wifi_nxp
 add_subdirectory_ifdef(CONFIG_IEEE802154_KW41Z
   ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/middleware/wireless/framework_5.3.3

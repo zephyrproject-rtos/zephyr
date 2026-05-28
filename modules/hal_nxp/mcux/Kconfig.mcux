@@ -70,6 +70,22 @@ config HAS_MCUX_SYSCON_LPCAC
 	help
 	  Set if the SYSCON LPCAC module is present on the SoC.
 
+config HAS_MCUX_SYSINIT_DISABLE_WDOG
+	bool
+	help
+	  Set by SoCs whose MCUX CMSIS SystemInit() honors the DISABLE_WDOG
+	  macro to control the hardware watchdog at boot.
+
+config MCUX_SYSINIT_KEEP_WATCHDOG
+	bool
+	depends on HAS_MCUX_SYSINIT_DISABLE_WDOG
+	default y if WATCHDOG && HAS_WDT_DISABLE_AT_BOOT && !WDT_DISABLE_AT_BOOT
+	help
+	  When set, DISABLE_WDOG=0 is defined for the MCUX HAL so that CMSIS
+	  SystemInit() leaves the hardware watchdog running and the Zephyr
+	  watchdog driver manages it. Otherwise CMSIS disables it at boot,
+	  which is its default behavior.
+
 config HAS_NXP_MONOLITHIC_NBU
 	bool
 	help
