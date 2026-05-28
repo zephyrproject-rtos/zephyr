@@ -136,37 +136,6 @@ static const struct uvc_control_map uvc_control_map_su[] = {
 	},
 };
 
-static const struct uvc_control_map uvc_control_map_xu[] = {
-	{
-		.size = 4,
-		.bit = 0,
-		.selector = UVC_XU_BASE_CONTROL + 0,
-		.cid = VIDEO_CID_PRIVATE_BASE + 0,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 4,
-		.bit = 1,
-		.selector = UVC_XU_BASE_CONTROL + 1,
-		.cid = VIDEO_CID_PRIVATE_BASE + 1,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 4,
-		.bit = 2,
-		.selector = UVC_XU_BASE_CONTROL + 2,
-		.cid = VIDEO_CID_PRIVATE_BASE + 2,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-	{
-		.size = 4,
-		.bit = 3,
-		.selector = UVC_XU_BASE_CONTROL + 3,
-		.cid = VIDEO_CID_PRIVATE_BASE + 3,
-		.type = UVC_CONTROL_UNSIGNED,
-	},
-};
-
 int uvc_get_control_map(uint8_t subtype, const struct uvc_control_map **map, size_t *length)
 {
 	switch (subtype) {
@@ -183,8 +152,8 @@ int uvc_get_control_map(uint8_t subtype, const struct uvc_control_map **map, siz
 		*length = ARRAY_SIZE(uvc_control_map_pu);
 		break;
 	case UVC_VC_EXTENSION_UNIT:
-		*map = uvc_control_map_xu;
-		*length = ARRAY_SIZE(uvc_control_map_xu);
+		*map = NULL;
+		*length = 0;
 		break;
 	default:
 		return -EINVAL;
