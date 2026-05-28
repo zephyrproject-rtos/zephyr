@@ -20,7 +20,11 @@ properties:
     type: int
     required: true
     description: |
-        PLL clock source
+      PLL clock used as source:
+        1: PLL1
+        2: PLL2
+        3: PLL3
+        4: PLL4
     min: 1
     max: 4
 
