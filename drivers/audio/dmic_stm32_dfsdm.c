@@ -749,8 +749,8 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev,
 		.Instance = DMIC_DFSDM_CHAN_REG_ADDR(chan),                    \
 		.Init = {                                                      \
 			.Awd = {                                               \
-				.FilterOrder = 0,                              \
-				.Oversampling = 0,                             \
+				.FilterOrder = DFSDM_CHANNEL_FASTSINC_ORDER,   \
+				.Oversampling = 1,                             \
 			},                                                     \
 			.Input = {                                             \
 				.DataPacking = DFSDM_CHANNEL_STANDARD_MODE,    \
