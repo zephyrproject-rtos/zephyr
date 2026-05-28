@@ -1,0 +1,118 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA ADC_B converter unit node.
+
+  Represents one ADC converter (ADC0 or ADC1) of the ADC_B controller.
+  This is the Zephyr ADC device that applications reference through
+  io-channels.
+
+  Each channel child node is one virtual channel. It maps a physical
+  analog input (zephyr,input-positive) to a scan-group via the
+  renesas,scan-group phandle. The scan-group, in turn, selects the
+  converter that runs it (see renesas,ra-adc-b-scan-group). A channel
+  must therefore be placed under the adc-unit whose unit-id matches the
+  scan-group's renesas,converter-unit-id.
+
+  Example:
+    zephyr,user {
+        io-channels = <&adc0 0>, <&adc0 1>;
+    };
+
+    &adc0 {
+        channel@0 {
+            reg = <0>;
+            zephyr,gain = "ADC_GAIN_1";
+            zephyr,reference = "ADC_REF_INTERNAL";
+            zephyr,resolution = <16>;
+            zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+            zephyr,input-positive = <0>;
+            zephyr,oversampling = <2>;
+            renesas,scan-group = <&scan_group0>;
+        };
+    };
+
+compatible: "renesas,ra-adc-b"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  unit-id:
+    type: int
+    required: true
+    enum: [0, 1]
+    description: |
+      ADC converter ID (0 for ADC0, 1 for ADC1).
+
+  channel-available-mask:
+    type: int
+    description: |
+      Bitmask of physical analog channels this converter can sample.
+      The driver uses it to validate zephyr,input-positive of each
+      channel.
+
+  interrupts:
+    description: |
+      Calibration and conversion interrupts on each converter unit.
+
+  vref-mv:
+    type: int
+    description: ADC reference voltage in millivolts.
+
+  "#io-channel-cells":
+    const: 1
+
+  "#address-cells":
+    type: int
+    required: true
+    const: 1
+
+  "#size-cells":
+    type: int
+    required: true
+    const: 0
+
+  renesas,adc-method:
+    type: string
+    default: "oversample"
+    enum: ["sar", "oversample", "hybrid"]
+    description: |
+      Conversion method for this converter. Determines how each virtual
+      channel under this unit is converted:
+
+        - "sar": every channel uses Successive Approximation, one
+          conversion per trigger, up to 12-bit. Digital filter disabled.
+          zephyr,oversampling on a channel is ignored.
+
+        - "oversample": every channel is oversampled, multiple conversions
+          per trigger averaged in hardware, up to 16-bit. Digital filter
+          enabled. zephyr,oversampling on each channel selects the average
+          count (2^N samples); if omitted it defaults to no averaging.
+
+        - "hybrid": channels may mix SAR and oversampling within the same
+          converter. Each channel decides individually via
+          zephyr,oversampling: 0 (or omitted) runs SAR (<=12-bit),
+          >=1 runs oversampling with 2^N averaging (<=16-bit). Use this
+          when some channels need speed (SAR) and others need precision
+          (oversample) on the same converter.
+
+io-channel-cells:
+  - input
+
+child-binding:
+  description: |
+    Virtual channel under this ADC_B unit.
+
+  properties:
+    renesas,scan-group:
+      type: phandle
+      required: true
+      description: |
+        Selects the scan-group this virtual channel belongs to. The
+        scan-group's renesas,converter-unit-id MUST equal this
+        adc-unit's unit-id (the driver enforces this with BUILD_ASSERT
+        so a mismatch fails the build).
+
+        zephyr,input-positive of the channel must also be within the
+        channel-available-mask of this adc-unit.
