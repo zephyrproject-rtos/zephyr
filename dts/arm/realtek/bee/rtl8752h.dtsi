@@ -121,38 +121,47 @@
 				erase-block-size = <4096>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				/* reg and ranges are specified in the SoC-variant dtsi
+				 * (e.g., rtl8752hjf.dtsi).
+				 */
 
 				partitions {
-					compatible = "fixed-partitions";
+					ranges;
 					#address-cells = <1>;
 					#size-cells = <1>;
 
 					rsvd_partition: partition@0 {
+						compatible = "zephyr,mapped-partition";
 						label = "rsvd-image";
 						reg = <0x0 DT_SIZE_K(4)>;
 					};
 
 					oem_cfg_partition: partition@1000 {
+						compatible = "zephyr,mapped-partition";
 						label = "oem-cfg-image";
 						reg = <0x1000 DT_SIZE_K(4)>;
 					};
 
 					ota_header_partition: partition@2000 {
+						compatible = "zephyr,mapped-partition";
 						label = "ota-header-image";
 						reg = <0x2000 DT_SIZE_K(4)>;
 					};
 
 					rom_patch_partition: partition@3000 {
+						compatible = "zephyr,mapped-partition";
 						label = "rom-patch-image";
 						reg = <0x3000 DT_SIZE_K(28)>;
 					};
 
 					fsbl_partition: partition@a000 {
+						compatible = "zephyr,mapped-partition";
 						label = "fsbl-image";
 						reg = <0xa000 DT_SIZE_K(4)>;
 					};
 
 					bt_stack_patch_partition: partition@b000 {
+						compatible = "zephyr,mapped-partition";
 						label = "bt-stack-patch-image";
 						reg = <0xb000 DT_SIZE_K(40)>;
 					};

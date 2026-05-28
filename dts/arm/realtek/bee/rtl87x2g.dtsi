@@ -125,9 +125,12 @@
 				erase-block-size = <4096>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				/* reg and ranges are specified in the SoC-variant dtsi
+				 * (e.g., rtl8762gkh_gku.dtsi).
+				 */
 
 				partitions {
-					compatible = "fixed-partitions";
+					ranges;
 					#address-cells = <1>;
 					#size-cells = <1>;
 
@@ -135,36 +138,43 @@
 					 * Do not use.
 					 */
 					reserved: partition@0 {
+						compatible = "zephyr,mapped-partition";
 						label = "reserved-image";
 						reg = <0x0 DT_SIZE_K(4)>;
 					};
 
 					config_file: partition@1000 {
+						compatible = "zephyr,mapped-partition";
 						label = "config-file-image";
 						reg = <0x1000 DT_SIZE_K(4)>;
 					};
 
 					boot_patch_0: partition@2000 {
+						compatible = "zephyr,mapped-partition";
 						label = "boot-patch-0-image";
 						reg = <0x2000 DT_SIZE_K(32)>;
 					};
 
 					boot_patch_1: partition@a000 {
+						compatible = "zephyr,mapped-partition";
 						label = "boot-patch-1-image";
 						reg = <0xa000 DT_SIZE_K(32)>;
 					};
 
 					ota_header: partition@12000 {
+						compatible = "zephyr,mapped-partition";
 						label = "ota-header-image";
 						reg = <0x12000 DT_SIZE_K(4)>;
 					};
 
 					system_patch: partition@13000 {
+						compatible = "zephyr,mapped-partition";
 						label = "system-patch-image";
 						reg = <0x13000 DT_SIZE_K(32)>;
 					};
 
 					stack_patch: partition@1b000 {
+						compatible = "zephyr,mapped-partition";
 						label = "stack-patch-image";
 						reg = <0x1b000 DT_SIZE_K(72)>;
 					};
