@@ -170,6 +170,15 @@ enum {
 	 * CONFIG_QUIC_0RTT; otherwise setsockopt() fails with ENOTSUP.
 	 */
 	ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE = 7,
+
+	/**
+	 * Query whether a QUIC stream has received accepted 0-RTT data.
+	 *
+	 * The option value is a pointer to an int and is only valid on QUIC stream
+	 * sockets. A non-zero result means the receive side of that stream has
+	 * already carried accepted early data on this connection.
+	 */
+	ZSOCK_QUIC_SO_STREAM_EARLY_DATA = 8,
 };
 
 /** Version of struct quic_session_state. */

@@ -496,6 +496,27 @@ out:
 	return 0;
 }
 
+/*
+ * Drain any peer-initiated streams that were received but never accepted via
+ * zsock_accept(). Each such stream holds a reference to its parent context;
+ * if these references are not released here, ctx->refcount will never reach
+ * zero and the context leaks.
+ *
+ * stream->ep is cleared before the unref so that quic_stream_unref() does
+ * not try to send MAX_STREAMS frames on a connection that is already closing.
+ */
+static void quic_ctx_drain_incoming_streams(struct quic_context *ctx)
+{
+	struct quic_stream *stream;
+
+	while ((stream = k_fifo_get(&ctx->incoming.stream_q, K_NO_WAIT)) != NULL) {
+		NET_DBG("[CO:%p/%d] Releasing unaccepted stream %" PRIu64,
+			ctx, quic_get_by_conn(ctx), stream->id);
+		stream->ep = NULL;
+		quic_stream_unref(stream);
+	}
+}
+
 static int quic_ctx_close_vmeth(void *obj)
 {
 	struct quic_context *ctx = obj;
@@ -510,15 +531,21 @@ static int quic_ctx_close_vmeth(void *obj)
 	(void)sock_obj_core_dealloc(ctx->sock);
 
 	/*
-	 * Clear ctx->sock before calling quic_context_unref so that the
-	 * ref=0 path in quic_context_unref doesn't call zsock_close() on
-	 * the same fd that's already being torn down by the outer zsock_close().
+	 * Clear ctx->sock before draining and before calling quic_context_unref
+	 * so that the ref=0 path in quic_context_unref doesn't call zsock_close()
+	 * on the same fd that's already being torn down by the outer zsock_close().
 	 * Zephyr's zvfs_close() removes the fd from the table before calling
 	 * the vtable close, so zvfs_get_fd_obj() inside quic_connection_close()
 	 * would return NULL and silently skip the unref which would leak the
 	 * context.
 	 */
 	ctx->sock = -1;
+
+	/*
+	 * Release any unaccepted incoming streams. Each holds a context ref;
+	 * without this, ctx->refcount stays elevated and the context leaks.
+	 */
+	quic_ctx_drain_incoming_streams(ctx);
 
 	quic_context_unref(ctx);
 
@@ -873,6 +900,31 @@ static int quic_stream_ioctl_vmeth(void *obj, unsigned int request, va_list args
 	return 0;
 }
 
+static int quic_wait_for_application_send_ready(struct quic_endpoint *ep,
+						enum quic_secret_level level)
+{
+	int ret;
+
+	if (ep == NULL || level != QUIC_SECRET_LEVEL_APPLICATION ||
+	    ep->crypto.application.initialized || ep->handshake.completed) {
+		return 0;
+	}
+
+	ret = k_sem_take(&ep->handshake.sem, K_MSEC(ep->handshake.timeout_ms));
+	if (ret != 0) {
+		return -ETIMEDOUT;
+	}
+
+	/* Preserve the completion signal for any later waiters. */
+	k_sem_give(&ep->handshake.sem);
+
+	if (!ep->handshake.completed || !ep->crypto.application.initialized) {
+		return -ENOTCONN;
+	}
+
+	return 0;
+}
+
 /**
  * Send a STREAM frame with the FIN bit set and zero payload.
  * This signals to the peer that we have finished sending on this stream.
@@ -922,6 +974,10 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 	frame_len += quic_get_varint_size(0ULL);
 
 	level = quic_stream_send_level(stream->ep);
+	ret = quic_wait_for_application_send_ready(stream->ep, level);
+	if (ret < 0) {
+		return ret;
+	}
 
 	ret = quic_send_packet_with_pn(stream->ep, level, frame, frame_len, &sent_pn);
 	if (ret < 0) {
@@ -1193,6 +1249,10 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 
 	ep = stream->ep;
 	level = quic_stream_send_level(ep);
+	ret = quic_wait_for_application_send_ready(ep, level);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Check if stream has a valid endpoint with crypto context */
 	if (ep == NULL) {
@@ -1640,6 +1700,10 @@ static int quic_stream_accept(struct quic_context *ctx, k_timeout_t timeout,
 	stream->sock = fd;
 	*new_stream = stream;
 
+	if (stream->rx_buf.head != stream->rx_buf.tail || stream->rx_buf.fin_received) {
+		k_poll_signal_raise(&stream->recv.signal, 0);
+	}
+
 	NET_DBG("[CO:%p/%d] Accepted stream %" PRIu64 " on fd %d",
 		ctx, quic_get_by_conn(ctx), stream->id, fd);
 
@@ -1974,6 +2038,16 @@ static int quic_stream_getsockopt_ctx(void *obj, int level, int optname,
 			*(int *)optval = stream->type;
 			return 0;
 		}
+
+		case ZSOCK_QUIC_SO_STREAM_EARLY_DATA: {
+			if (*optlen != sizeof(int)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			*(int *)optval = stream->received_early_data ? 1 : 0;
+			return 0;
+		}
 		}
 		break;
 
@@ -2039,7 +2113,7 @@ static int quic_stream_close_vmeth(void *obj)
 	 *   - Stream was reset (RESET_STREAM already sent/received)
 	 *   - FIN was already sent (DATA_SENT or DATA_RECVD)
 	 */
-	if (stream->ep != NULL) {
+	if (stream->ep != NULL && stream->ep->crypto.application.initialized) {
 		state = quic_stream_get_state(stream);
 
 		if (state != STATE_RESET_SENT &&
@@ -2270,6 +2344,14 @@ int quic_connection_close(int sock)
 		quic_stats_update_connection_close_failed();
 		return -EINVAL;
 	}
+
+	/*
+	 * Release any peer-initiated streams that were received but never
+	 * accepted via zsock_accept(). Each holds a context reference; without
+	 * this the context refcount stays elevated and quic_context_unref()
+	 * below never reaches zero, leaving the context pool slot occupied.
+	 */
+	quic_ctx_drain_incoming_streams(ctx);
 
 	(void)sock_obj_core_dealloc(ctx->sock);
 	quic_context_unref(ctx);
