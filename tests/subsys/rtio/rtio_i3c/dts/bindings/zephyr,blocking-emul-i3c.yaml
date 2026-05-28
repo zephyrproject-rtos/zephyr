@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  I3C peripheral emulator used by the subsys/rtio rtio_i3c test.
+  Sits on a zephyr,i3c-emul bus and forwards xfers / do_ccc to
+  FFF-wrapped fakes so tests can intercept and assert on the
+  driver-supplied messages.
+
+compatible: "zephyr,blocking-emul-i3c"
+
+include: [i3c-device.yaml]
+
+properties:
+  bcr:
+    type: int
+    default: 0x20
+
+  dcr:
+    type: int
+    default: 0x6c

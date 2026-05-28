@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Meta Platforms
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i3c0 {
+	blocking_emul: blocking_emul@550000abcd00001234 {
+		compatible = "zephyr,blocking-emul-i3c";
+		reg = <0x55 0xabcd 0x00001234>;
+		bcr = <0x20>;
+		dcr = <0x6c>;
+	};
+};
