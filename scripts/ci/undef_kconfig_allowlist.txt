@@ -1,3 +1,7 @@
+# Copyright (c) 2025 Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 # Many of these are symbols used as examples. Note that the list is sorted
 # alphabetically, and skips the CONFIG_ prefix.
 # zephyr-keep-sorted-start re(^\s+")
@@ -78,6 +82,16 @@ FOO
 FOO_LOG_LEVEL
 FOO_SETTING_1
 FOO_SETTING_2
+GPU_DEV  # Defined by the external gpu-vglite module (VeriSilicon)
+GPU_DEV_NAME  # Defined by the external gpu-vglite module (VeriSilicon)
+VG_LITE_INTERRUPT_PRIORITY # Defined by the external gpu-vglite module (VeriSilicon)
+PM_DEVICE  # Defined by the external gpu-vglite module (VeriSilicon)
+VGLITE_STACK_SIZE  # Defined by the external gpu-vglite module (VeriSilicon)
+VGLITE_TESS_WIDTH  # Defined by the external gpu-vglite module (VeriSilicon)
+VGLITE_TESS_HEIGHT  # Defined by the external gpu-vglite module (VeriSilicon)
+VGLITE_CMD_BUF_SIZE  # Defined by the external gpu-vglite module (VeriSilicon)
+VGLITE_CONTIGUOUS_ALIGN  # Defined by the external gpu-vglite module (VeriSilicon)
+VGLITE_HEAP_USE_CUSTOM_SECTION  # Defined by the external gpu-vglite module (VeriSilicon)
 HEAP_MEM_POOL_ADD_SIZE_  # Used as an option matching prefix
 HUGETLBFS  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
 IAR_BUFFERED_WRITE
@@ -165,6 +179,7 @@ TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE
 TYPE_BOOLEAN
 USB_CONSOLE
 USE_STDC_
+VG_LITE_K_MEM_POOL_SIZE  # Defined by the external gpu-vglite module (VeriSilicon)
 WHATEVER
 ZEPHYR_TRY_MASS_ERASE  # MCUBoot setting described in sysbuild documentation
 ZTEST_FAIL_TEST_  # regex in tests/ztest/fail/CMakeLists.txt
