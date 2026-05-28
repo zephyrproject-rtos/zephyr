@@ -50,7 +50,7 @@ struct ti_dm_timer_data {
 	uint32_t last_cycle;
 };
 
-static const struct device *systick_timer_dev;
+static const struct device *systick_timer_dev = DEVICE_DT_GET(DT_DRV_INST(0));
 
 #define TI_DM_TIMER_MASK(reg)  TI_DM_TIMER_##reg##_MASK
 #define TI_DM_TIMER_SHIFT(reg) TI_DM_TIMER_##reg##_SHIFT
@@ -164,8 +164,6 @@ unsigned int sys_clock_elapsed(void)
 static int sys_clock_driver_init(void)
 {
 	struct ti_dm_timer_data *data;
-
-	systick_timer_dev = DEVICE_DT_GET(DT_DRV_INST(0));
 
 #if DT_NODE_HAS_STATUS_OKAY(CLKSEL_SYSCON)
 	int rv;
