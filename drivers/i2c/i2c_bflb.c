@@ -645,10 +645,6 @@ static int i2c_bflb_transfer(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (num_msgs == 0) {
-		return 0;
-	}
-
 	ret = k_mutex_lock(&data->lock, K_FOREVER);
 	if (ret < 0) {
 		return ret;

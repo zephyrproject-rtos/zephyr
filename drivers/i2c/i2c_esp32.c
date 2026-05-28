@@ -640,10 +640,6 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	uint32_t timeout = I2C_TRANSFER_TIMEOUT_MSEC * USEC_PER_MSEC;
 	int ret = 0;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	while (i2c_ll_is_bus_busy(data->hal.dev)) {
 		k_busy_wait(1);
 		if (timeout-- == 0) {

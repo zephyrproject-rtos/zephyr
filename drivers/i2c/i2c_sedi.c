@@ -83,9 +83,6 @@ static int i2c_sedi_api_full_io(const struct device *dev, struct i2c_msg *msgs, 
 	int ret = 0;
 	struct i2c_sedi_context *context = dev->data;
 
-	if (!num_msgs) {
-		return 0;
-	}
 	__ASSERT_NO_MSG(msgs);
 
 	k_mutex_lock(context->mutex, K_FOREVER);

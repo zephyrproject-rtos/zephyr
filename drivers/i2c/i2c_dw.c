@@ -843,9 +843,6 @@ static int i2c_dw_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	uint32_t value = 0;
 
 	__ASSERT_NO_MSG(msgs);
-	if (!num_msgs) {
-		return 0;
-	}
 
 	/* semaphore to support I2C_CALLBACK */
 	ret = k_sem_take(&dw->bus_sem, K_FOREVER);

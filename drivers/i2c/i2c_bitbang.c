@@ -210,10 +210,6 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 	unsigned int flags;
 	int result = -EIO;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	/* We want an initial Start condition */
 	flags = I2C_MSG_RESTART;
 

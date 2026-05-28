@@ -215,10 +215,6 @@ static int i2c_rcar_transfer(const struct device *dev,
 	uint16_t timeout = 0;
 	int ret;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	/* Wait for the bus to be available */
 	while ((i2c_rcar_read(config, RCAR_I2C_ICMCR) & RCAR_I2C_ICMCR_FSDA) && (timeout < 10)) {
 		k_busy_wait(USEC_PER_MSEC);
