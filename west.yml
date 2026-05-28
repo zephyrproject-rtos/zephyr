@@ -389,7 +389,7 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: efdf9e209cc3b2c7be93ac81c7c96cd2550bbe27
+      revision: pull/10/head
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
