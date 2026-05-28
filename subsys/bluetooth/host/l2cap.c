@@ -2648,8 +2648,7 @@ static void l2cap_chan_le_recv_seg(struct bt_l2cap_le_chan *chan,
 		return;
 	}
 
-	buf = chan->_sdu;
-	chan->_sdu = NULL;
+	buf = net_buf_take(&chan->_sdu);
 	chan->_sdu_len = 0U;
 
 	l2cap_chan_le_recv_sdu(chan, buf, seg);
