@@ -16,6 +16,9 @@ properties:
   interrupts:
     required: true
 
+  phy-handle:
+    required: true
+
   clock-frequency:
     type: int
     required: true
