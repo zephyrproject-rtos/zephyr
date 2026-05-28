@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet_bridge.h>
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
@@ -303,6 +304,7 @@ static int cmd_bridge_fdb_show(const struct shell *sh, size_t argc, char *argv[]
 #endif /* CONFIG_NET_ETHERNET_BRIDGE_FDB */
 }
 
+#if defined(CONFIG_NET_BRIDGE_HW_OFFLOAD)
 struct hw_fdb_cb_data {
 	const struct shell *sh;
 	uint32_t count;
@@ -393,6 +395,7 @@ static int cmd_bridge_fdb_hwshow(const struct shell *sh, size_t argc, char *argv
 
 	return ret;
 }
+#endif /* CONFIG_NET_BRIDGE_HW_OFFLOAD */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bridge_fdb_commands,
 	SHELL_CMD_ARG(add, NULL,
@@ -404,9 +407,11 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bridge_fdb_commands,
 	SHELL_CMD_ARG(show, NULL,
 		SHELL_HELP("Show fdb table", ""),
 		cmd_bridge_fdb_show, 1, 0),
-	SHELL_CMD_ARG(hwshow, NULL,
-		SHELL_HELP("Show hardware FDB table for a bridge", "<bridge_index>"),
-		cmd_bridge_fdb_hwshow, 2, 0),
+	COND_CODE_1(CONFIG_NET_BRIDGE_HW_OFFLOAD, (
+		SHELL_CMD_ARG(hwshow, NULL,
+			SHELL_HELP("Show hardware FDB table for a bridge", "<bridge_index>"),
+			cmd_bridge_fdb_hwshow, 2, 0),
+	), ())
 	SHELL_SUBCMD_SET_END
 );
 

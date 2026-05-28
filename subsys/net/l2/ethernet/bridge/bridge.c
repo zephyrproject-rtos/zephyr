@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #include "net_private.h"
+#include "../arp.h"
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_TXRX_DEBUG)
 #define DEBUG_TX 1
@@ -571,6 +572,39 @@ int bridge_iface_send(struct net_if *iface, struct net_pkt *pkt)
 
 		net_pkt_hexdump(pkt, str);
 	}
+
+#if defined(CONFIG_NET_ARP)
+	/* Add ARP flow same as ethernet_send() for locally-generated IPv4 unicast
+	 * packets so the bridge IP stack gets correct L2 headers.
+	 */
+	if (!net_pkt_is_l2_bridged(pkt) && net_pkt_family(pkt) == NET_AF_INET &&
+	    net_pkt_ll_proto_type(pkt) == NET_ETH_PTYPE_IP &&
+	    !net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), NET_IPV4_HDR(pkt)->dst) &&
+	    !net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst)) {
+		struct net_pkt *arp_pkt = NULL;
+		int ret;
+
+		net_linkaddr_set(net_pkt_lladdr_src(pkt),
+				 net_if_get_link_addr(iface)->addr,
+				 net_if_get_link_addr(iface)->len);
+		net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
+		ret = net_arp_prepare(pkt, (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst,
+				      NULL, &arp_pkt);
+		switch (ret) {
+		case NET_ARP_COMPLETE:
+			break;
+		case NET_ARP_PKT_REPLACED:
+			net_pkt_unref(pkt);
+			pkt = arp_pkt;
+			break;
+		case NET_ARP_PKT_QUEUED:
+			return 0;
+		default:
+			return ret;
+		}
+	}
+#endif /* CONFIG_NET_ARP */
 
 	(void)bridge_iface_send_process(iface, pkt);
 
