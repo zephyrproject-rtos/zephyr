@@ -812,12 +812,19 @@ static bool ep_has_enough_bandwidth(const struct usb_ep_descriptor *ep_desc,
 		ep_mps, ep_tpl, interval,
 		(device_speed == USB_SPEED_SPEED_HS) ? "uframes" : "frames", ep_bandwidth);
 
-	/* Check if this endpoint meets requirements */
-	if (ep_bandwidth >= required_bandwidth && ep_tpl >= max_tpl) {
-		return true;
+	if (ep_bandwidth < required_bandwidth) {
+		LOG_DBG("Endpoint bandwidth (%d) less than required bandwidth (%d), skipping",
+			ep_bandwidth, required_bandwidth);
+		return false;
 	}
 
-	return false;
+	if (ep_tpl < max_tpl) {
+		LOG_DBG("wMaxPacketSize (%d) less than dwMaxPayloadTransferSize (%d), skipping",
+			ep_tpl, max_tpl);
+		return false;
+	}
+
+	return true;
 }
 
 /* Calculate endpoint bandwidth */
