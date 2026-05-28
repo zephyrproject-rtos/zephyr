@@ -374,8 +374,13 @@ static DEVICE_API(dac, dac_ifx_autanalog_api) = {
 
 /* clang-format off */
 
-/* Derive DAC index from the node's position among its parent's children */
-#define IFX_AUTANALOG_CTDAC_IDX(n) DT_NODE_CHILD_IDX(DT_DRV_INST(n))
+/*
+ * Derive DAC hardware index (0 or 1) from the node's position relative to
+ * the first DAC sibling (dac0).  Both dac0 and dac1 are adjacent children
+ * of the autanalog parent, so subtracting dac0's child index yields 0 or 1.
+ */
+#define IFX_AUTANALOG_CTDAC_IDX(n) \
+	(DT_NODE_CHILD_IDX(DT_DRV_INST(n)) - DT_NODE_CHILD_IDX(DT_NODELABEL(dac0)))
 
 /* Extract peripheral clock divider info from the DTS clocks phandle */
 #define CTDAC_PERI_CLOCK_INIT(n)                                                               \
