@@ -360,10 +360,14 @@ static inline int z_impl_stepper_ctrl_move_by(const struct device *dev, const in
  * @note The stepper will move to the given micro-steps position from the reference position.
  * This function is non-blocking.
  *
+ * The distance i.e. steps to be traversed in micro-steps between the actual position in and the
+ * target position in micro-steps must not be greater than 2147483647(2^31−1).
+ *
  * @param dev pointer to the device structure for the driver instance.
  * @param micro_steps target position to set in micro-steps
  *
  * @retval -EIO General input / output error
+ * @retval -ERANGE If the distance to traverse is more than 2147483647(2^31−1) micro-steps
  * @retval -EINVAL If the timing for steps is incorrectly configured
  * @retval 0 Success
  */
@@ -371,6 +375,20 @@ __syscall int stepper_ctrl_move_to(const struct device *dev, const int32_t micro
 
 static inline int z_impl_stepper_ctrl_move_to(const struct device *dev, const int32_t micro_steps)
 {
+	int64_t steps_to_move;
+	int32_t actual_position;
+	int err;
+
+	err = DEVICE_API_GET(stepper_ctrl, dev)->get_actual_position(dev, &actual_position);
+	if (err != 0) {
+		return -EIO;
+	}
+
+	steps_to_move = (int64_t)micro_steps - actual_position;
+	if (steps_to_move > INT32_MAX || steps_to_move < -INT32_MAX) {
+		return -ERANGE;
+	}
+
 	return DEVICE_API_GET(stepper_ctrl, dev)->move_to(dev, micro_steps);
 }
 
