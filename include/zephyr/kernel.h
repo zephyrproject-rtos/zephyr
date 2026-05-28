@@ -2130,6 +2130,28 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
 	return timer->user_data;
 }
 
+/**
+ * @brief Clean up a dynamically allocated timer before freeing it.
+ *
+ * If a k_timer object is dynamically allocated, its timeout must be
+ * cancelled and any in-flight expiration handler must complete before
+ * the storage may be freed -- otherwise the handler dereferences freed
+ * memory. This function performs both: it removes the timer from the
+ * timeout queue and waits for any in-flight handler on another CPU to
+ * finish.
+ *
+ * Unlike k_timer_stop(), this function does not invoke the user
+ * stop_fn callback and does not touch the wait queue: if the
+ * function returns 0 the caller assumes responsibility for the
+ * storage and there is no other consumer of the timer left.
+ *
+ * @param timer Address of the timer.
+ * @retval 0 on success.
+ * @retval -EAGAIN when threads are still pending on the timer's
+ *         wait queue (e.g. via k_timer_status_sync()).
+ */
+int k_timer_cleanup(struct k_timer *timer);
+
 /** @} */
 
 /**

@@ -677,6 +677,16 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	case K_OBJ_STACK:
 		k_stack_cleanup((struct k_stack *)ko->name);
 		break;
+	case K_OBJ_TIMER:
+		/* k_timer_cleanup() does not check whether the timer has
+		 * been initialized; calling it on an uninitialized timer
+		 * would read garbage from an uninitialized dnode. Guard
+		 * explicitly here.
+		 */
+		if ((ko->flags & K_OBJ_FLAG_INITIALIZED) != 0U) {
+			k_timer_cleanup((struct k_timer *)ko->name);
+		}
+		break;
 	default:
 		/* Nothing to do */
 		break;

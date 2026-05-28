@@ -8,6 +8,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
+#include <zephyr/sys/check.h>
 #include <stdbool.h>
 #include <zephyr/spinlock.h>
 #include <ksched.h>
@@ -151,6 +152,57 @@ void z_timer_expiration_handler(struct _timeout *t)
 	k_spin_unlock(&lock, key);
 
 	z_ready_thread(thread);
+}
+
+
+int k_timer_cleanup(struct k_timer *timer)
+{
+	/* Not callable from an ISR: this is the one timer path that can
+	 * spin waiting for an in-flight handler, and an ISR spinning here
+	 * could starve the very CPU the handler needs to make progress.
+	 */
+	__ASSERT(!arch_is_in_isr(), "");
+
+	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, cleanup, timer);
+
+	k_spinlock_key_t key;
+
+	/* Refuse if anyone is still pending on the timer's wait queue
+	 * (e.g. via k_timer_status_sync()): freeing the storage would
+	 * leave dangling pended_on pointers.
+	 */
+retry:
+	key = k_spin_lock(&lock);
+
+	CHECKIF(z_waitq_head(&timer->wait_q) != NULL) {
+		k_spin_unlock(&lock, key);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, -EAGAIN);
+		return -EAGAIN;
+	}
+
+	/* Cancel the timeout AND wait for any in-flight expiration
+	 * handler on another CPU to complete before returning. Unlike
+	 * k_timer_stop(), we do not call any user stop_fn here: the
+	 * caller is about to free the storage and there is no further
+	 * consumer of the timer.
+	 *
+	 * This is the one timer path that waits on the handler (it must,
+	 * before the storage is freed). The wait can only stall if the
+	 * handler itself blocks on this CPU making progress -- e.g. an
+	 * expiry_fn that aborts a thread running here. Freeing a timer
+	 * whose handler does that is a caller bug; ordinary stop/start do
+	 * not wait and so cannot stall.
+	 */
+	if (z_try_abort_timeout(&timer->timeout) == -EAGAIN) {
+		k_spin_unlock(&lock, key);
+		goto retry;
+	}
+
+	k_spin_unlock(&lock, key);
+
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, 0);
+
+	return 0;
 }
 
 
