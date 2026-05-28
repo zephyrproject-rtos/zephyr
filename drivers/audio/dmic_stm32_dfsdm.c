@@ -822,7 +822,7 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev,
 				.RegularParam = {                              \
 					.DmaMode = DISABLE,                    \
 					.FastMode = ENABLE,                    \
-					.Trigger = DT_PROP(flt, filter0_sync), \
+					.Trigger = DFSDM_FILTER_SW_TRIGGER,    \
 				},                                             \
 			},                                                     \
 		},                                                             \
