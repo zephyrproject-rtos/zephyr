@@ -128,6 +128,24 @@
 		sram0_ns_modem: sram0_ns@0 {
 			/* Modem (shared) memory */
 			reg = <0x0 DT_SIZE_K(40)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x0 0xa000>;
+
+			cpuapp_cpucell_ipc_shm_ctrl: sram0_ns_modem@0 {
+				/* Modem IPC control */
+				reg = <0x0 0x4e8>;
+			};
+
+			cpuapp_cpucell_ipc_shm_heap: sram0_ns_modem@4e8 {
+				/* Modem IPC transmit */
+				reg = <0x4e8 0x2080>;
+			};
+
+			cpucell_cpuapp_ipc_shm_heap: sram0_ns_modem@2568 {
+				/* Modem IPC receive */
+				reg = <0x2568 0x2000>;
+			};
 		};
 
 		sram0_ns_app: sram0_ns@a000 {
