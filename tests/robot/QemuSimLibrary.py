@@ -5,6 +5,7 @@
 import atexit
 import contextlib
 import os
+import signal
 import subprocess
 import threading
 import time
@@ -22,6 +23,7 @@ class QemuSimLibrary(SimLibraryBase):
         super().__init__()
         self._qemu_thread = None
         self._fifo_in_fp = None
+        self._proc = None
 
     def start_qemu(self, build_dir, generator_cmd):
         """Create FIFOs and start QEMU via ``generator_cmd -C build_dir run``.
@@ -42,17 +44,21 @@ class QemuSimLibrary(SimLibraryBase):
                 os.unlink(path)
             os.mkfifo(path)
 
-        # Start QEMU in a daemon thread so it does not block the keyword
+        # Start QEMU in a daemon thread so it does not block the keyword.
+        # Use start_new_session=True so the build tool and its QEMU child form
+        # their own process group, which lets stop_qemu kill them all at once.
         def _run_qemu():
             log_path = os.path.join(build_dir, "qemu.robot.log")
             with open(log_path, "w") as log_fp:
-                proc = subprocess.Popen(
+                self._proc = subprocess.Popen(
                     [generator_cmd, "-C", build_dir, "run"],
                     stdout=log_fp,
                     stderr=subprocess.STDOUT,
                     cwd=build_dir,
+                    start_new_session=True,
                 )
-                proc.wait()
+                self._proc.wait()
+            self._proc = None
 
         self._qemu_thread = threading.Thread(target=_run_qemu, daemon=True)
         self._qemu_thread.start()
@@ -97,7 +103,15 @@ class QemuSimLibrary(SimLibraryBase):
         self._fifo_in_fp.flush()
 
     def stop_qemu(self):
-        """Close FIFOs; the QEMU process exits naturally when FIFOs are closed."""
+        """Kill the QEMU process group and close FIFOs."""
+        proc = self._proc
+        if proc is not None:
+            with contextlib.suppress(OSError):
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            with contextlib.suppress(OSError):
+                proc.wait(timeout=5)
+            with contextlib.suppress(OSError):
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
         if self._fifo_in_fp:
             with contextlib.suppress(OSError):
                 self._fifo_in_fp.close()
