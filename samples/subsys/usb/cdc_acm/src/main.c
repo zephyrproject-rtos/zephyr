@@ -19,6 +19,9 @@ LOG_MODULE_REGISTER(cdc_acm_echo, LOG_LEVEL_INF);
 
 const struct device *const uart_dev = DEVICE_DT_GET_ONE(zephyr_cdc_acm_uart);
 
+#define TX_BUF_SIZE 64
+#define RX_BUF_SIZE 64
+
 #define RING_BUF_SIZE 1024
 uint8_t ring_buffer[RING_BUF_SIZE];
 
@@ -101,6 +104,8 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
+	int fill_space;
+
 	while (true) {
 		uart_irq_update(dev);
 
@@ -110,7 +115,7 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 
 		if (!rx_throttled && uart_irq_rx_ready(dev)) {
 			int recv_len, rb_len;
-			uint8_t buffer[64];
+			uint8_t buffer[RX_BUF_SIZE];
 			size_t len = MIN(ring_buf_space_get(&ringbuf),
 					 sizeof(buffer));
 
@@ -138,11 +143,11 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 			}
 		}
 
-		if (uart_irq_tx_ready(dev)) {
-			uint8_t buffer[64];
+		if ((fill_space = uart_irq_tx_ready(dev))) {
+			uint8_t buffer[TX_BUF_SIZE];
 			int rb_len, send_len;
 
-			rb_len = ring_buf_get(&ringbuf, buffer, sizeof(buffer));
+			rb_len = ring_buf_get(&ringbuf, buffer, MIN(fill_space, sizeof(buffer)));
 			if (!rb_len) {
 				LOG_DBG("Ring buffer empty, disable TX IRQ");
 				uart_irq_tx_disable(dev);
