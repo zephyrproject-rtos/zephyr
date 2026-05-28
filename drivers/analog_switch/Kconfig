@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ANALOG_SWITCH
+	bool "Analog switch drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Include analog switch drivers in the system configuration.
+
+if ANALOG_SWITCH
+
+module = ANALOG_SWITCH
+module-str = analog_switch
+source "subsys/logging/Kconfig.template.log_config"
+
+config ANALOG_SWITCH_INIT_PRIORITY
+	int "Analog switch initialization priority"
+	default 90
+	help
+	  System initialization priority for analog switch drivers.
+
+endif # ANALOG_SWITCH

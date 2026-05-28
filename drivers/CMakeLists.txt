@@ -14,6 +14,7 @@ add_subdirectory(usb)
 add_subdirectory(usb_c)
 
 add_subdirectory_ifdef(CONFIG_ADC adc)
+add_subdirectory_ifdef(CONFIG_ANALOG_SWITCH analog_switch)
 add_subdirectory_ifdef(CONFIG_ARM_SIP_SVC_DRIVER sip_svc)
 add_subdirectory_ifdef(CONFIG_AUDIO audio)
 add_subdirectory_ifdef(CONFIG_AUXDISPLAY auxdisplay)
