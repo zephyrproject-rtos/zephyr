@@ -13,6 +13,7 @@ if(CONFIG_CPU_FREQ_POLICY_NONE)
   message(FATAL_ERROR "No CPU frequency policy selected. Please choose a valid policy in Kconfig.")
 endif()
 
+zephyr_sources_ifdef(CONFIG_CPU_FREQ_ARM_SCMI cpu_freq_arm_scmi.c)
 zephyr_sources_ifdef(CONFIG_CPU_FREQ_POLICY_ON_DEMAND policies/on_demand/on_demand.c)
 zephyr_sources_ifdef(CONFIG_CPU_FREQ_POLICY_PRESSURE policies/pressure/pressure.c)
 zephyr_sources_ifdef(CONFIG_CPU_FREQ_PSTATE_SET_STUB cpu_freq_stub.c)

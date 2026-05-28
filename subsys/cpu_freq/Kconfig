@@ -20,6 +20,14 @@ module = CPU_FREQ
 module-str = CPU Frequency Scaling
 source "subsys/logging/Kconfig.template.log_config"
 
+config CPU_FREQ_ARM_SCMI
+	bool "SCMI Performance Domain cpu_freq backend"
+	default y
+	depends on ARM_SCMI_PERF
+	help
+	  Implement cpu frequency switch using the SCMI Performance Domain
+	  Protocol.
+
 config CPU_FREQ_INTERVAL_MS
 	int "CPU Freq evaluation interval"
 	default 1000
