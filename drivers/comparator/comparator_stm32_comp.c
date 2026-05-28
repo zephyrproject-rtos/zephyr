@@ -205,9 +205,11 @@ static void stm32_comp_irq_handler(const struct device *dev)
 	const struct stm32_comp_config *cfg = dev->config;
 	struct stm32_comp_data *data = dev->data;
 
-	if (stm32_exti_is_pending(cfg->exti_line_number)) {
-		stm32_exti_clear_pending(cfg->exti_line_number);
+	if (!stm32_exti_is_pending(cfg->exti_line_number)) {
+		return;
 	}
+
+	stm32_exti_clear_pending(cfg->exti_line_number);
 
 	if (data->callback == NULL) {
 		return;
