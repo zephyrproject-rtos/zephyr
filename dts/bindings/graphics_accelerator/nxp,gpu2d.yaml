@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Felipe Neves ryukokki.felipe@gmail.com
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+description: NXP GPU2D graphics accelerator
+
+compatible: "nxp,gpu2d"
+
+include: [reset-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

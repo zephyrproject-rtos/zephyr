@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 NXP
+ * Copyright 2024, 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,14 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			zephyr,memory-region = "OCRAM2";
 			reg = <0x202c0000 DT_SIZE_K(512)>;
+		};
+
+		gpu2d: gpu2d@41800000 {
+			compatible = "nxp,gpu2d";
+			reg = <0x41800000 0x4000>;
+			interrupts = <60 0>;
+			clocks = <&ccm 128 0 0>;
+			status = "okay";
 		};
 	};
 };
