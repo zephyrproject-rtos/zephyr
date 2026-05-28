@@ -133,7 +133,8 @@ jobs:
       fail-fast: false
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
-    timeout-minutes: 1440
+    # weekly run might take longer time, set timeout to 24 hours, for other runs set it to 2 hours
+    timeout-minutes: ${{ fromJSON(github.event_name == 'schedule' && '1440' || '120') }}
     env:
       CCACHE_DIR: /node-cache/ccache-zephyr
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
