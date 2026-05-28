@@ -90,6 +90,7 @@ int http_hpack_huffman_decode(const uint8_t *encoded_buf, size_t encoded_len,
 #define QPACK_STATIC_STATUS_200         25
 #define QPACK_STATIC_STATUS_304         26
 #define QPACK_STATIC_STATUS_404         27
+#define QPACK_STATIC_STATUS_425         70
 #define QPACK_STATIC_STATUS_503         28
 #define QPACK_STATIC_CONTENT_TYPE_HTML  52
 #define QPACK_STATIC_PATH_INDEX_HTML    63
@@ -238,6 +239,49 @@ static struct h3_conn_ctx h3_conn_contexts[CONFIG_HTTP_SERVER_MAX_CLIENTS];
 static int h3_conn_ctx_fds[CONFIG_HTTP_SERVER_MAX_CLIENTS] = {
 	[0 ... CONFIG_HTTP_SERVER_MAX_CLIENTS - 1] = -1
 };
+
+static struct http3_stream_ctx *h3_stream_ctx(struct http_client_ctx *client);
+int h3_identify_uni_stream(struct http_client_ctx *client, int fd);
+int h3_handle_uni_stream_data(struct http_client_ctx *client, int fd);
+
+static bool h3_stream_received_early_data(struct http_client_ctx *client)
+{
+	struct http3_stream_ctx *stream = h3_stream_ctx(client);
+	net_socklen_t optlen = sizeof(int);
+	int early_data = 0;
+
+	if (stream == NULL) {
+		return false;
+	}
+
+	if (stream->early_data) {
+		return true;
+	}
+
+	if (zsock_getsockopt(client->fd, ZSOCK_SOL_QUIC,
+			     ZSOCK_QUIC_SO_STREAM_EARLY_DATA,
+			     &early_data, &optlen) < 0) {
+		return false;
+	}
+
+	if (optlen == sizeof(int) && early_data != 0) {
+		stream->early_data = true;
+	}
+
+	return stream->early_data;
+}
+
+static bool h3_request_method_is_replay_safe(enum http_method method)
+{
+	switch (method) {
+	case HTTP_GET:
+	case HTTP_HEAD:
+	case HTTP_OPTIONS:
+		return true;
+	default:
+		return false;
+	}
+}
 
 struct h3_conn_ctx *h3_get_conn_ctx(struct http_client_ctx *client)
 {
@@ -727,6 +771,8 @@ static int qpack_static_status_index(enum http_status status)
 		return QPACK_STATIC_STATUS_304;
 	case HTTP_404_NOT_FOUND:
 		return QPACK_STATIC_STATUS_404;
+	case HTTP_425_TOO_EARLY:
+		return QPACK_STATIC_STATUS_425;
 	case HTTP_503_SERVICE_UNAVAILABLE:
 		return QPACK_STATIC_STATUS_503;
 	default:
@@ -1120,6 +1166,26 @@ static int h3_send_404(struct http_client_ctx *client)
 	}
 
 	ret = h3_send_data_frame(client, NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return h3_end_response(client);
+}
+
+static int h3_send_425(struct http_client_ctx *client)
+{
+	struct http3_stream_ctx *stream = h3_stream_ctx(client);
+	int ret;
+
+	client->current_detail = NULL;
+	if (stream != NULL) {
+		stream->current_detail = NULL;
+		stream->request_headers_pending = false;
+	}
+
+	ret = h3_send_headers_frame(client, HTTP_425_TOO_EARLY,
+				    NULL, NULL, 0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1526,6 +1592,11 @@ static int h3_handle_dynamic_resource(
 static int h3_dispatch_request(struct http_client_ctx *client,
 			       struct http_resource_detail *detail)
 {
+	if (h3_stream_received_early_data(client) &&
+	    !h3_request_method_is_replay_safe(client->method)) {
+		return h3_send_425(client);
+	}
+
 	switch (detail->type) {
 	case HTTP_RESOURCE_TYPE_STATIC:
 		return h3_handle_static_resource(
@@ -2793,6 +2864,8 @@ static int handle_accepted_stream(struct http_client_ctx *client,
 
 	/* Check if this is a unidirectional stream */
 	if (h3_is_unidirectional_stream(stream_sock)) {
+		int ret;
+
 		/* Server-initiated uni streams (our control/QPACK streams) should not be
 		 * handled in accept path, they're already tracked in h3_conn_ctx.
 		 * Only process peer (client) initiated uni streams.
@@ -2811,6 +2884,20 @@ static int handle_accepted_stream(struct http_client_ctx *client,
 			/* No client context yet, close and let it reconnect */
 			zsock_close(stream_sock);
 			return H3_STREAM_IGNORED;
+		}
+
+		ret = h3_identify_uni_stream(client, stream_sock);
+		if (ret != 0) {
+			if (ret == -EAGAIN) {
+				return 0;
+			}
+
+			return ret;
+		}
+
+		ret = h3_handle_uni_stream_data(client, stream_sock);
+		if (ret != 0) {
+			return ret;
 		}
 
 		/*
