@@ -16,6 +16,8 @@
 
 	aliases {
 		watchdog0 = &wdog5;
+		i2s-codec-tx = &sai3_2;
+		i2s-tx = &sai3_2;
 	};
 
 	chosen {
@@ -218,6 +220,13 @@
 &sai3 {
 	pinctrl-0 = <&sai3_default>;
 	pinctrl-names = "default";
+};
+
+&sai3_2 {
+	mclk-output;
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
 
 &tpm2 {
