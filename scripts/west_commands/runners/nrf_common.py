@@ -219,21 +219,26 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         if self.family is not None:
             return
 
-        if self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF51'):
+        def build_conf_any(*configs):
+            # Are any of the list of booleans set
+            return any([self.build_conf.getboolean(c) for c in configs])
+
+        # Legacy 'X' suffix supported to allow flashing build folders from previous releases
+        if build_conf_any('CONFIG_SOC_SERIES_NRF51', 'CONFIG_SOC_SERIES_NRF51X'):
             self.family = 'nrf51'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF52'):
+        elif build_conf_any('CONFIG_SOC_SERIES_NRF52', 'CONFIG_SOC_SERIES_NRF52X'):
             self.family = 'nrf52'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF53'):
+        elif build_conf_any('CONFIG_SOC_SERIES_NRF53', 'CONFIG_SOC_SERIES_NRF53X'):
             self.family = 'nrf53'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54L'):
+        elif build_conf_any('CONFIG_SOC_SERIES_NRF54L', 'CONFIG_SOC_SERIES_NRF54LX'):
             self.family = 'nrf54l'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF54H'):
+        elif build_conf_any('CONFIG_SOC_SERIES_NRF54H', 'CONFIG_SOC_SERIES_NRF54HX'):
             self.family = 'nrf54h'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF71'):
+        elif build_conf_any('CONFIG_SOC_SERIES_NRF71'):
             self.family = 'nrf71'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF91'):
+        elif build_conf_any('CONFIG_SOC_SERIES_NRF91', 'CONFIG_SOC_SERIES_NRF91X'):
             self.family = 'nrf91'
-        elif self.build_conf.getboolean('CONFIG_SOC_SERIES_NRF92'):
+        elif build_conf_any('CONFIG_SOC_SERIES_NRF92'):
             self.family = 'nrf92'
         else:
             raise RuntimeError(f'unknown nRF; update {__file__}')
