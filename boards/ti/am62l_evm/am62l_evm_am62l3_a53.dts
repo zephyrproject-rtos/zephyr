@@ -141,6 +141,15 @@
 		#gpio-cells = <2>;
 		ngpios = <24>;
 	};
+
+	sii9022a: sii9022a@3b {
+		compatible = "sil,sii9022a";
+		reg = <0x3b>;
+		/* HDMI RGB output; pixel clock latched on falling edge */
+		output-format = <0>;
+		clk-falling;
+		display-controller = <&dss>;
+	};
 };
 
 &main_rti0 {
