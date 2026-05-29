@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/dt-bindings/clock/bflb_bl808_clock.h>
 #include <zephyr/logging/log.h>
@@ -1318,12 +1318,12 @@ static int clock_control_bl808_clock_trim_32M(void)
 	int err;
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 
-	err = syscon_read_reg(efuse, EFUSE_RC32M_TRIM_OFFSET, &trim);
+	err = otp_read(efuse, EFUSE_RC32M_TRIM_OFFSET, &trim, sizeof(uint32_t));
 	if (err < 0) {
 		LOG_ERR("Failed to read RC32M trim efuse (err %d)", err);
 		return err;
 	}
-	err = syscon_read_reg(efuse, EFUSE_RC32M_TRIM_EP_OFFSET, &trim_ep);
+	err = otp_read(efuse, EFUSE_RC32M_TRIM_EP_OFFSET, &trim_ep, sizeof(uint32_t));
 	if (err < 0) {
 		LOG_ERR("Failed to read RC32M trim enable efuse (err %d)", err);
 		return err;

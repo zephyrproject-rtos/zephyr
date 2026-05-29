@@ -10,7 +10,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(bflb_tsen, CONFIG_SENSOR_LOG_LEVEL);
@@ -129,7 +129,7 @@ static uint32_t tsen_read_efuse_trim(void)
 	uint32_t val;
 	int ret;
 
-	ret = syscon_read_reg(efuse, TSEN_EFUSE_TRIM_REG, &val);
+	ret = otp_read(efuse, TSEN_EFUSE_TRIM_REG, &val, sizeof(uint32_t));
 	if (ret < 0) {
 		LOG_WRN("Failed to read TSEN efuse trim: %d", ret);
 		return TSEN_DEFAULT_OFFSET;
@@ -144,7 +144,7 @@ static uint32_t tsen_read_efuse_trim(void)
 	uint32_t val;
 	int ret;
 
-	ret = syscon_read_reg(efuse, TSEN_EFUSE_ENABLE_REG, &val);
+	ret = otp_read(efuse, TSEN_EFUSE_ENABLE_REG, &val, sizeof(uint32_t));
 	if (ret < 0) {
 		LOG_WRN("Failed to read TSEN efuse enable: %d", ret);
 		return TSEN_DEFAULT_OFFSET;
@@ -153,7 +153,7 @@ static uint32_t tsen_read_efuse_trim(void)
 		LOG_WRN("TSEN efuse trim not programmed, using default");
 		return TSEN_DEFAULT_OFFSET;
 	}
-	ret = syscon_read_reg(efuse, TSEN_EFUSE_TRIM_REG, &val);
+	ret = otp_read(efuse, TSEN_EFUSE_TRIM_REG, &val, sizeof(uint32_t));
 	if (ret < 0) {
 		LOG_WRN("Failed to read TSEN efuse trim: %d", ret);
 		return TSEN_DEFAULT_OFFSET;
