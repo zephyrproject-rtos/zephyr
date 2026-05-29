@@ -224,7 +224,7 @@ int flash_stm32_ex_op_update_rdp(const struct device *dev, bool enable,
 		LOG_INF("RDP changed from 0x%02x to 0x%02x", current_level,
 			target_level);
 
-		flash_stm32_set_rdp_level(dev, target_level);
+		return flash_stm32_set_rdp_level(dev, target_level);
 	}
 	return 0;
 }
