@@ -119,6 +119,11 @@ Kernel
   :c:func:`k_ticks_to_ms_ceil64`.  Out of tree tracing backends defining any of
   the retired hooks must be updated.
 
+* :c:struct:`k_futex` is no longer a kernel object and the corresponding type
+  :c:enumerator:`K_OBJ_FUTEX` has been removed. Any user-accessible memory can
+  be used as futex address. The error -EINVAL can no longer happen on futex
+  operations.
+
 Boards
 ******
 
