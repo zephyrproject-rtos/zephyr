@@ -2499,13 +2499,13 @@ try_resolve:
 	k_work_init_delayable(&ctx->queries[i].timer, query_timeout);
 
 	dns_data = net_buf_alloc(&dns_msg_pool, ctx->buf_timeout);
-	if (!dns_data) {
+	if (dns_data == NULL) {
 		ret = -ENOMEM;
 		goto quit;
 	}
 
 	dns_qname = net_buf_alloc(&dns_qname_pool, ctx->buf_timeout);
-	if (!dns_qname) {
+	if (dns_qname == NULL) {
 		ret = -ENOMEM;
 		goto quit;
 	}
@@ -2525,7 +2525,7 @@ try_resolve:
 	if (IS_ENABLED(CONFIG_MDNS_RESOLVER)) {
 		const char *ptr = strrchr(query, '.');
 
-		if (ptr && strcmp(ptr, ".local") == 0) {
+		if (ptr != NULL && strcmp(ptr, ".local") == 0) {
 			mdns_query = true;
 
 			ctx->queries[i].id = 0;
@@ -2535,7 +2535,7 @@ try_resolve:
 	/* Do this immediately after calculating the Id so that the unit
 	 * test will work properly.
 	 */
-	if (dns_id) {
+	if (dns_id != NULL) {
 		*dns_id = ctx->queries[i].id;
 
 		NET_DBG("DNS id will be %u", *dns_id);
@@ -2558,16 +2558,16 @@ quit:
 			release_query(&ctx->queries[i]);
 		}
 
-		if (dns_id) {
+		if (dns_id != NULL) {
 			*dns_id = 0U;
 		}
 	}
 
-	if (dns_data) {
+	if (dns_data != NULL) {
 		net_buf_unref(dns_data);
 	}
 
-	if (dns_qname) {
+	if (dns_qname != NULL) {
 		net_buf_unref(dns_qname);
 	}
 
