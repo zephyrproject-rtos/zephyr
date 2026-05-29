@@ -6,7 +6,8 @@
 #ifndef ZEPHYR_MODULES_CMSIS_CMSIS_H_
 #define ZEPHYR_MODULES_CMSIS_CMSIS_H_
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R) \
+	|| defined(CONFIG_CPU_AARCH32_ARM11)
 #include "cmsis_core_a_r.h"
 #endif
 

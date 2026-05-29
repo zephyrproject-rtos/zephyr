@@ -50,13 +50,14 @@ extern "C" {
 #include <core_cr8.h>
 #elif defined(CONFIG_CPU_CORTEX_R52)
 #include <core_cr52.h>
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_ARM11)
 /*
  * Any defines relevant for the proper inclusion of CMSIS' Cortex-A
  * Common Peripheral Access Layer (such as __CORTEX_A) which are not
  * covered by the Kconfig-based default assignments above must be
  * provided by each aarch32 Cortex-A SoC's header file (already in-
- * cluded above).
+ * cluded above).  ARM11 (ARMv6) uses the same CMSIS Cortex-A core
+ * header; the SoC must define __CORTEX_A accordingly.
  */
 #include <core_ca.h>
 #else

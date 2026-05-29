@@ -23,7 +23,8 @@
 #include <zephyr/arch/exception.h>
 #include <cmsis_core.h>
 
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A) \
+	|| defined(CONFIG_CPU_AARCH32_ARM11)
 #include <zephyr/arch/arm/cortex_a_r/cpu.h>
 #endif
 
@@ -57,7 +58,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	__set_BASEPRI_MAX(_EXC_IRQ_DEFAULT_PRIO);
 	__ISB();
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
+	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_ARMV6_ARM1176)
 	__asm__ volatile(
 		"mrs %0, cpsr;"
 		"and %0, #" STRINGIFY(I_BIT) ";"
@@ -89,7 +90,7 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 	__set_BASEPRI(key);
 	__ISB();
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
+	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_ARMV6_ARM1176)
 	if (key != 0U) {
 		return;
 	}
@@ -113,7 +114,7 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	return __get_BASEPRI() == 0U;
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
-	|| defined(CONFIG_ARMV7_A)
+	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_ARMV6_ARM1176)
 	unsigned int cpsr;
 
 	__asm__ volatile("mrs %0, cpsr" : "=r" (cpsr));

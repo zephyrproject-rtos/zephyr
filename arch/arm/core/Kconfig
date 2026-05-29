@@ -55,7 +55,7 @@ config CPU_AARCH32_CORTEX_R
 
 config ARM_ZIMAGE_HEADER
 	bool "zImage Header"
-	depends on CPU_AARCH32_CORTEX_R || CPU_AARCH32_CORTEX_A || CPU_CORTEX_M_HAS_VTOR
+	depends on CPU_AARCH32_CORTEX_R || CPU_AARCH32_CORTEX_A || CPU_AARCH32_ARM11 || CPU_CORTEX_M_HAS_VTOR
 	help
 	  This option adds a zImage Header.
 
@@ -74,6 +74,21 @@ config CPU_AARCH32_CORTEX_A
 	select EXTRA_EXCEPTION_INFO if GDBSTUB
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
+
+config CPU_AARCH32_ARM11
+	bool
+	select CPU_HAS_MMU
+	select HAS_CMSIS_CORE
+	select HAS_FLASH_LOAD_OFFSET
+	select ARCH_HAS_USERSPACE if ARM_AARCH32_MMU && !USE_SWITCH
+	select ARCH_MEM_DOMAIN_SYNCHRONOUS_API if ARM_AARCH32_MMU && USERSPACE
+	select ARCH_HAS_EXTRA_EXCEPTION_INFO if !USE_SWITCH
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select USE_SWITCH_SUPPORTED
+	select ARCH_HAS_GDBSTUB
+	select EXTRA_EXCEPTION_INFO if GDBSTUB
+	help
+	  This option signifies the use of a CPU of the ARM11 family (ARMv6).
 
 config GDBSTUB_BUF_SZ
 	# GDB for ARM expects up to 18 4-byte plus 8 12-byte
