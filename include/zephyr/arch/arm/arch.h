@@ -46,6 +46,10 @@
 #else
 #include <zephyr/arch/arm/cortex_a_r/timer.h>
 #endif
+#elif defined(CONFIG_CPU_AARCH32_ARM11)
+#include <zephyr/arch/arm/cortex_a_r/cpu.h>
+#include <zephyr/arch/arm/cortex_a_r/sys_io.h>
+#include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #endif
 
 #ifdef __cplusplus
@@ -144,7 +148,7 @@ enum k_fatal_error_reason_arch {
  * User thread stacks must respect the minimum MPU region
  * alignment requirement.
  */
-#if defined(CONFIG_USERSPACE)
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARM_MPU)
 #define Z_THREAD_MIN_STACK_ALIGN CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 #elif defined(CONFIG_ARM_AARCH32_MMU)
 #define Z_THREAD_MIN_STACK_ALIGN CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE
@@ -257,9 +261,12 @@ enum k_fatal_error_reason_arch {
 #else
 #define ARCH_THREAD_STACK_OBJ_ALIGN(size)	MAX(Z_THREAD_MIN_STACK_ALIGN, \
 						    Z_MPU_GUARD_ALIGN)
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_ARM_MPU)
 #define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
 	ROUND_UP(size, CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
+#elif defined(CONFIG_USERSPACE) && defined(CONFIG_ARM_AARCH32_MMU)
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size) \
+	ROUND_UP(size, CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE)
 #endif
 #endif
 

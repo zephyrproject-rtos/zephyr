@@ -66,4 +66,22 @@
 	strb r1, [r2, #_cpu_offset_to_exc_depth]
 .endm
 
+.macro data_sync_barrier
+#if defined(CONFIG_ARMV6_ARM1176)
+	mov ip, #0
+	mcr p15, 0, ip, c7, c10, 4
+#else
+	dsb
+#endif
+.endm
+
+.macro instr_sync_barrier
+#if defined(CONFIG_ARMV6_ARM1176)
+	mov ip, #0
+	mcr p15, 0, ip, c7, c5, 4
+#else
+	isb
+#endif
+.endm
+
 #endif /* _MACRO_PRIV_INC_ */

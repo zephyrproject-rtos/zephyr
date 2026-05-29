@@ -279,7 +279,7 @@ _vfp_not_enabled:
     push {lr}
 
     /* Align stack at double-word boundary */
-    /* TODO: Question, why push {r2, r3} here */
+    /* Reserve stack space for callee-saved register bookkeeping. */
     and r3, sp, #4
     sub sp, sp, r3
     push {r2, r3}
@@ -409,13 +409,13 @@ valid_syscall_id:
     bic r1, #1
     /* Store (privileged) mode in thread's mode state variable */
     str r1, [r0, #_thread_offset_to_mode]
-    dsb
+    data_sync_barrier
 
     /* ISB is not strictly necessary here (stack pointer is not being
      * touched), but it's recommended to avoid executing pre-fetched
      * instructions with the previous privilege.
      */
-    isb
+    instr_sync_barrier
 
     /* Return to _arm_do_syscall in system state. */
     b z_arm_int_exit

@@ -55,6 +55,12 @@
 #define SCTLR_A_BIT		BIT(1)
 #define SCTLR_C_BIT		BIT(2)
 #define SCTLR_I_BIT		BIT(12)
+#ifndef SCTLR_DZ_Msk
+/** Bit position of the SCTLR divide-by-zero trap enable field. */
+#define SCTLR_DZ_Pos		19U
+/** Bit mask of the SCTLR divide-by-zero trap enable field. */
+#define SCTLR_DZ_Msk		BIT(SCTLR_DZ_Pos)
+#endif
 
 /* Armv8-R Cortex-R52 Cache Segregation Control Register */
 #define IMP_CSCTLR_DFLW_SHIFT	(0)
