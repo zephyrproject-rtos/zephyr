@@ -1,0 +1,18 @@
+/*
+ * Copyright 2026 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		watchdog0 = &cpuapp_gswdt;
+	};
+};
+
+&cpuapp_gswdt {
+	status = "okay";
+};
+
+&cpuapp_cpusys_gswdt_mbox {
+	status = "okay";
+};
