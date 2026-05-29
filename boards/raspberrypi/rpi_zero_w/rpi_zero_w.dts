@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2026
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/brcm-bcm2835-pinctrl.h>
+#include <broadcom/bcm2835.dtsi>
+
+/ {
+	model = "Raspberry Pi Zero W";
+	compatible = "raspberrypi,zero-w", "brcm,bcm2835";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	aliases {
+		led0 = &act_led;
+	};
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,system-timer = &system_timer;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		act_led: led_0 {
+			gpios = <&gpio2 1 GPIO_ACTIVE_LOW>;
+			label = "ACT";
+		};
+	};
+};
+
+&pinctrl {
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <BCM2835_PINMUX(14, BCM2835_ALT5)>;
+			bias-disable;
+		};
+
+		group2 {
+			pinmux = <BCM2835_PINMUX(15, BCM2835_ALT5)>;
+			bias-pull-up;
+		};
+	};
+};
+
+&system_timer {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&uart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
