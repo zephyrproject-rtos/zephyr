@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+struct k_mem_domain;
+
 /*
  * Comp.:
  * ARM Architecture Reference Manual, ARMv7-A and ARMv7-R edition,
@@ -49,6 +51,39 @@
 #define MATTR_CACHE_INNER_WB_nWA	BIT(15)
 
 #define MATTR_MAY_MAP_L1_SECTION	BIT(16)
+
+#if defined(CONFIG_CPU_AARCH32_ARM11) && defined(CONFIG_USERSPACE)
+typedef uint32_t k_mem_partition_attr_t;
+
+#define K_MEM_PARTITION_P_NA_U_NA \
+	((k_mem_partition_attr_t)(MT_NORMAL | MATTR_CACHE_OUTER_WB_WA | \
+				  MATTR_CACHE_INNER_WB_WA))
+#define K_MEM_PARTITION_P_RW_U_RW \
+	((k_mem_partition_attr_t)(MT_NORMAL | MPERM_R | MPERM_W | \
+				  MPERM_UNPRIVILEGED | MATTR_CACHE_OUTER_WB_WA | \
+				  MATTR_CACHE_INNER_WB_WA))
+#define K_MEM_PARTITION_P_RW_U_NA \
+	((k_mem_partition_attr_t)(MT_NORMAL | MPERM_R | MPERM_W | \
+				  MATTR_CACHE_OUTER_WB_WA | MATTR_CACHE_INNER_WB_WA))
+#define K_MEM_PARTITION_P_RO_U_RO \
+	((k_mem_partition_attr_t)(MT_NORMAL | MPERM_R | MPERM_UNPRIVILEGED | \
+				  MATTR_CACHE_OUTER_WB_nWA | MATTR_CACHE_INNER_WB_nWA))
+#define K_MEM_PARTITION_P_RO_U_NA \
+	((k_mem_partition_attr_t)(MT_NORMAL | MPERM_R | \
+				  MATTR_CACHE_OUTER_WB_nWA | MATTR_CACHE_INNER_WB_nWA))
+#define K_MEM_PARTITION_P_RWX_U_RWX \
+	((k_mem_partition_attr_t)(MT_NORMAL | MPERM_R | MPERM_W | MPERM_X | \
+				  MPERM_UNPRIVILEGED | MATTR_CACHE_OUTER_WB_WA | \
+				  MATTR_CACHE_INNER_WB_WA))
+#define K_MEM_PARTITION_P_RX_U_RX \
+	((k_mem_partition_attr_t)(MT_NORMAL | MPERM_R | MPERM_X | \
+				  MPERM_UNPRIVILEGED | MATTR_CACHE_OUTER_WB_nWA | \
+				  MATTR_CACHE_INNER_WB_nWA))
+
+#define K_MEM_PARTITION_IS_WRITABLE(attr) (((attr) & MPERM_W) != 0)
+#define K_MEM_PARTITION_IS_EXECUTABLE(attr) (((attr) & MPERM_X) != 0)
+
+#endif /* CONFIG_CPU_AARCH32_ARM11 && CONFIG_USERSPACE */
 
 /*
  * The following macros are used for adding constant entries
@@ -141,6 +176,11 @@ struct arm_mmu_config {
 extern const struct arm_mmu_config mmu_config;
 
 int z_arm_mmu_init(void);
+
+#if defined(CONFIG_CPU_AARCH32_ARM11) && defined(CONFIG_USERSPACE)
+void z_arm_mmu_remap_user_region(void *addr, size_t size, k_mem_partition_attr_t attr);
+void z_arm_mmu_apply_mem_domain(struct k_mem_domain *domain);
+#endif
 
 #endif /* _ASMLANGUAGE */
 
