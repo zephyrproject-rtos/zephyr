@@ -27,7 +27,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-channels = <8>;
 			dma-requests = <52>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
