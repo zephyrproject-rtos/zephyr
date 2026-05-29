@@ -3567,7 +3567,7 @@ def _check_dt(dt: DT) -> None:
 
         ranges_prop = node.props.get("ranges")
         if ranges_prop and ranges_prop.type not in (Type.EMPTY, Type.NUMS):
-            _err(f"expected 'ranges = < ... >;' in {node.path} in "
+            _err(f"expected 'ranges = <...>;' in {node.path} in "
                  f"{node.dt.filename}, not '{ranges_prop}' "
                   "(see the devicetree specification)")
 
