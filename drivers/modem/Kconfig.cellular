@@ -67,6 +67,12 @@ config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES
 	int "The size of the buffers used for each user pipe in bytes."
 	default 128
 
+config MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA
+	default 256 if DT_HAS_TELIT_LE910C1TX_ENABLED
+
+config MODEM_CMUX_MSC_FC_THRESHOLD
+	default 64 if DT_HAS_TELIT_LE910C1TX_ENABLED
+
 config MODEM_CELLULAR_NEW_BAUDRATE
 	int "New baudrate to configure modem to, if supported"
 	range 9600 4000000
