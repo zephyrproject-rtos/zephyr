@@ -6,6 +6,7 @@ zephyr_library()
 
 # CAN subsystem include paths for out-of-tree drivers
 # zephyr-keep-sorted-start
+zephyr_library_include_directories_ifdef(CONFIG_CAN_MCAN .)
 zephyr_library_include_directories_ifdef(CONFIG_CAN_SJA1000 .)
 # zephyr-keep-sorted-stop
 
