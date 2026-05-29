@@ -3,8 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import hashlib
+import logging
 
-from west import log
+_logger = logging.getLogger(__name__)
 
 
 def getHashes(filePath):
@@ -20,7 +21,7 @@ def getHashes(filePath):
     hSHA256 = hashlib.sha256()
     hMD5 = hashlib.md5(usedforsecurity=False)
 
-    log.dbg(f"  - getting hashes for {filePath}")
+    _logger.debug("  - getting hashes for %s", filePath)
 
     try:
         with open(filePath, 'rb') as f:

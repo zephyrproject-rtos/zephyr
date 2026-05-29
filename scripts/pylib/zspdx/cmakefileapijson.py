@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
+import logging
 import os
 
-from west import log
-
 from . import cmakefileapi
+
+_logger = logging.getLogger(__name__)
 
 
 def parseReply(replyIndexPath):
@@ -21,26 +22,26 @@ def parseReply(replyIndexPath):
             # get reply object
             reply_dict = js.get("reply", {})
             if reply_dict == {}:
-                log.err('no "reply" field found in index file')
+                _logger.error('no "reply" field found in index file')
                 return None
             # get codemodel object
             cm_dict = reply_dict.get("codemodel-v2", {})
             if cm_dict == {}:
-                log.err('no "codemodel-v2" field found in "reply" object in index file')
+                _logger.error('no "codemodel-v2" field found in "reply" object in index file')
                 return None
             # and get codemodel filename
             jsonFile = cm_dict.get("jsonFile", "")
             if jsonFile == "":
-                log.err('no "jsonFile" field found in "codemodel-v2" object in index file')
+                _logger.error('no "jsonFile" field found in "codemodel-v2" object in index file')
                 return None
 
             return parseCodemodel(replyDir, jsonFile)
 
-    except OSError as e:
-        log.err(f"Error loading {replyIndexPath}: {str(e)}")
+    except OSError:
+        _logger.exception("Error loading %s", replyIndexPath)
         return None
-    except json.decoder.JSONDecodeError as e:
-        log.err(f"Error parsing JSON in {replyIndexPath}: {str(e)}")
+    except json.decoder.JSONDecodeError:
+        _logger.exception("Error parsing JSON in %s", replyIndexPath)
         return None
 
 def parseCodemodel(replyDir, codemodelFile):
@@ -55,18 +56,25 @@ def parseCodemodel(replyDir, codemodelFile):
             # for correctness, check kind and version
             kind = js.get("kind", "")
             if kind != "codemodel":
-                log.err('Error loading CMake API reply: expected "kind":"codemodel" '
-                        f'in {codemodelPath}, got {kind}')
+                _logger.error(
+                    'Error loading CMake API reply: expected "kind":"codemodel" in %s, got %s',
+                    codemodelPath, kind,
+                )
                 return None
             version = js.get("version", {})
             versionMajor = version.get("major", -1)
             if versionMajor != 2:
                 if versionMajor == -1:
-                    log.err("Error loading CMake API reply: expected major version 2 "
-                            f"in {codemodelPath}, no version found")
+                    _logger.error(
+                        "Error loading CMake API reply: expected major version 2 in %s, "
+                        "no version found",
+                        codemodelPath,
+                    )
                     return None
-                log.err("Error loading CMake API reply: expected major version 2 "
-                        f"in {codemodelPath}, got {versionMajor}")
+                _logger.error(
+                    "Error loading CMake API reply: expected major version 2 in %s, got %d",
+                    codemodelPath, versionMajor,
+                )
                 return None
 
             # get paths
@@ -86,11 +94,11 @@ def parseCodemodel(replyDir, codemodelFile):
 
             return cm
 
-    except OSError as e:
-        log.err(f"Error loading {codemodelPath}: {str(e)}")
+    except OSError:
+        _logger.exception("Error loading %s", codemodelPath)
         return None
-    except json.decoder.JSONDecodeError as e:
-        log.err(f"Error parsing JSON in {codemodelPath}: {str(e)}")
+    except json.decoder.JSONDecodeError:
+        _logger.exception("Error parsing JSON in %s", codemodelPath)
         return None
 
 def parseConfig(cfg_dict, replyDir):
@@ -187,11 +195,11 @@ def parseTarget(targetPath):
 
             return target
 
-    except OSError as e:
-        log.err(f"Error loading {targetPath}: {str(e)}")
+    except OSError:
+        _logger.exception("Error loading %s", targetPath)
         return None
-    except json.decoder.JSONDecodeError as e:
-        log.err(f"Error parsing JSON in {targetPath}: {str(e)}")
+    except json.decoder.JSONDecodeError:
+        _logger.exception("Error parsing JSON in %s", targetPath)
         return None
 
 def parseTargetType(targetType):
