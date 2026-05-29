@@ -9,7 +9,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_numaker.h>
 #include <zephyr/logging/log.h>

@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>

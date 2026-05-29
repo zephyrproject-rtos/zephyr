@@ -6,8 +6,8 @@
  *
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_MCAN_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_MCAN_H_
+#ifndef ZEPHYR_DRIVERS_CAN_CAN_MCAN_H_
+#define ZEPHYR_DRIVERS_CAN_CAN_MCAN_H_
 
 #include <zephyr/cache.h>
 #include <zephyr/devicetree.h>
@@ -1696,4 +1696,4 @@ int can_mcan_get_state(const struct device *dev, enum can_state *state,
 void can_mcan_set_state_change_callback(const struct device *dev,
 					can_state_change_callback_t callback, void *user_data);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_MCAN_H_ */
+#endif /* ZEPHYR_DRIVERS_CAN_CAN_MCAN_H_ */
