@@ -33,6 +33,13 @@ config MCTP_MAX_MESSAGE_SIZE
 	  so CONFIG_MCTP_HEAP_SIZE must be large enough to hold at least one
 	  such buffer per concurrently-active reassembly context.
 
+config MCTP_LOG_CUSTOM_ZEPHYR
+	bool "Bridge libmctp logs into Zephyr logging"
+	depends on LOG
+	help
+	  Compile support that routes libmctp logs through Zephyr's logging
+	  subsystem using the configured MCTP log level.
+
 config MCTP_UART
 	bool "MCTP UART Binding"
 	depends on UART_ASYNC_API
