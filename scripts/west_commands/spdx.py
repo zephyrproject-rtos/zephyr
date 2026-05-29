@@ -2,11 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 import os
 import sys
 import uuid
 
 from west.commands import WestCommand
+
+from build_helpers import forward_logging_to_west
 
 script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(script_dir, "pylib/"))
@@ -55,6 +58,11 @@ class ZephyrSpdx(WestCommand):
         return parser
 
     def do_run(self, args, unknown_args):
+        # Forward debug output from the zspdx package so module-level
+        # logging is visible under "west -v" / "west -vv".
+        forward_logging_to_west(self, 'zspdx')
+        logging.getLogger('zspdx').propagate = False
+
         self.dbg("running zephyr SPDX generator")
 
         self.dbg("  --init is", args.init)
