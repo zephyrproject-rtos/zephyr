@@ -36,11 +36,16 @@ data buffer to empty.
 A ``struct ring_buf`` may be placed anywhere in user-accessible
 memory, and must be initialized with :c:func:`ring_buf_init` before use.
 This must be provided a region of user-controlled memory for use as the buffer itself.
-Note carefully that the units of the size of the buffer passed change (either bytes or words)
-depending on how the ring buffer will be used later. Macros for combining these steps in a
-single static declaration exist for convenience.
-:c:macro:`RING_BUF_DECLARE` will declare and statically initialize a ring
-buffer with a specified byte count, where
+The ``size`` argument to :c:func:`ring_buf_init` describes the backing storage
+size in bytes; the user-visible capacity is ``size - 1`` because one byte is
+reserved internally to disambiguate the empty and full states. The
+:c:macro:`RING_BUF_STORAGE_SIZE` helper computes the backing storage size
+required for a desired user-visible capacity.
+
+Macros for combining these steps in a single static declaration exist for
+convenience. :c:macro:`RING_BUF_DECLARE` will declare and statically
+initialize a ring buffer with a specified user-visible byte capacity (the
+extra byte for the reserved slot is allocated automatically).
 
 "Bytes" data may be copied into the ring buffer using
 :c:func:`ring_buf_put`, passing a data pointer and byte count.  These
@@ -64,13 +69,6 @@ Similarly, :c:func:`ring_buf_get_ptr` returns a pointer to internal ring
 buffer data from which the user can read without making a verbatim
 copy, and :c:func:`ring_buf_consume` signals the buffer with how many
 bytes have been consumed and allows for a new transfer to begin.
-
-The legacy :c:func:`ring_buf_put_claim` / :c:func:`ring_buf_put_finish` and
-:c:func:`ring_buf_get_claim` / :c:func:`ring_buf_get_finish` APIs provide
-similar functionality but reserve the claimed region until finished, which
-incurs additional code size and runtime cost. These APIs are deprecated
-and will be removed in a future release; new code should use the
-``_ptr`` / ``_commit`` / ``_consume`` variants described above.
 
 The user can manage the capacity of a ring buffer without modifying it
 using either :c:func:`ring_buf_space_get` which returns the number of free bytes,
@@ -138,12 +136,20 @@ set of "head" and "tail" indices representing where the next read and write
 operations may occur.
 
 This boundary is invisible to the user using the normal put/get APIs,
-but becomes a barrier to the "claim" API, because obviously no
-contiguous region can be returned that crosses the end of the buffer.
-This can be surprising to application code, and produce performance
-artifacts when transfers need to happen close to the end of the
-buffer, as the number of calls to claim/finish needs to double for such
-transfers.
+but becomes visible to the zero-copy ``_ptr`` API, because no contiguous
+region can be returned that crosses the end of the buffer. The size
+returned by :c:func:`ring_buf_put_ptr` and :c:func:`ring_buf_get_ptr` may
+therefore be smaller than the total free space or available data; in that
+case a second call after the matching :c:func:`ring_buf_commit` /
+:c:func:`ring_buf_consume` will return the remainder from the start of
+the buffer.
+
+The ring buffer is implemented as a header-only library. Index wrap-around
+is handled with explicit comparisons (no ``%`` operator), and one slot of
+backing storage is reserved (the "sacrificed slot") to disambiguate the
+empty and full states without an additional flag. The user-visible
+capacity is therefore one less than the backing storage size. This avoids
+hardware-divide latency on all targets.
 
 
 Implementation
@@ -246,7 +252,9 @@ Configuration Options
 
 Related configuration options:
 
-* :kconfig:option:`CONFIG_RING_BUFFER`: Enable ring buffer.
+* :kconfig:option:`CONFIG_RING_BUFFER_LARGE`: Increase the maximum buffer
+  size from 64 KiB to 4 GiB. When enabled the per-instance ring buffer
+  indices grow from 16 to 32 bits.
 
 API Reference
 *************
