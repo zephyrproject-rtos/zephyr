@@ -13,6 +13,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_BMP581_BMP581_H_
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
@@ -359,6 +360,7 @@ struct bmp581_stream {
 	uint8_t wr_wm_fifo_sel_reg;
 	uint8_t wr_wm_fifo_sel_data;
 	uint8_t wr_wm_odr_data_b;
+	struct k_work latched_int_recover_work;
 	atomic_t state;
 };
 
@@ -376,6 +378,7 @@ struct bmp581_config {
 	struct gpio_dt_spec int_gpio;
 	bool int_polarity;
 	bool int_open_drain;
+	bool int_latched;
 };
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMP581_BMP581_H_ */

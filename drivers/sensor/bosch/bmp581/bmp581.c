@@ -917,6 +917,7 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, {0}),                           \
 		.int_polarity = !DT_INST_PROP(i, int_active_low),                                  \
 		.int_open_drain = DT_INST_PROP(i, int_open_drain),                                 \
+		.int_latched = DT_INST_PROP(i, int_latched),                                       \
 	};                                                                                         \
                                                                                                    \
 	PM_DEVICE_DT_INST_DEFINE(i, bmp581_pm_action);                                             \

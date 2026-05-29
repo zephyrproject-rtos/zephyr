@@ -28,6 +28,7 @@
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/sensor/ina226.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/sensor/apds9253.h>
 #include <zephyr/dt-bindings/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
@@ -918,7 +919,10 @@ test_i2c_ags10: ags10@7e {
 test_i2c_bmp581: bmp581@7f {
 	compatible = "bosch,bmp581";
 	reg = <0x7f>;
-	int-gpios = <&test_gpio 0 0>;
+	int-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+	int-active-low;
+	int-open-drain;
+	int-latched;
 };
 
 test_i2c_lis2de12: lis2de12@80 {
