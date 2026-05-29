@@ -1,0 +1,8 @@
+board:
+  name: mini_stm32h750
+  full_name: MiniSTM32H750 Core Board
+  vendor: weact
+  socs:
+    - name: stm32h750xx
+      variants:
+        - name: ext_flash_app
