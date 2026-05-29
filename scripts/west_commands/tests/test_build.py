@@ -8,7 +8,6 @@ from build import Build, SYSBUILD_PROJ_DIR
 from build_helpers import DEFAULT_BUILD_DIR
 from pathlib import Path
 import argparse
-import configparser
 import os
 import pytest
 
@@ -141,6 +140,7 @@ def test_cmake_args(monkeypatch, test_case):
     expected = test_case['e']
 
     b = Build()
+    b.config = _FakeConfig()
 
     # --- Setup argument parser ---
     parser = argparse.ArgumentParser(allow_abbrev=False)
@@ -252,12 +252,6 @@ BUILD_DIR_FMT_INVALID = [
 
 def mock_dir_fmt_config(monkeypatch, b, dir_fmt):
     b.config = _FakeConfig({'build.dir-fmt': dir_fmt})
-    # build.py still reads board/pristine/etc. via the deprecated ConfigParser
-    # global; patch it so those lookups return empty for these tests.
-    config = configparser.ConfigParser()
-    config.add_section("build")
-    config.set("build", "dir-fmt", dir_fmt)
-    monkeypatch.setattr("build.config", config)
 
 def mock_is_zephyr_build(monkeypatch, func):
     monkeypatch.setattr("build_helpers.is_zephyr_build", func)
@@ -271,8 +265,6 @@ def build_instance(monkeypatch):
     b.config_board = None
     b.config = _FakeConfig()
 
-    # mock configparser read method to bypass configs during test
-    monkeypatch.setattr(configparser.ConfigParser, "read", lambda self, filenames: None)
     # mock os.makedirs to avoid filesystem operations during test
     monkeypatch.setattr("os.makedirs", lambda *a, **kw: None)
     # mock is_zephyr_build to always return False
