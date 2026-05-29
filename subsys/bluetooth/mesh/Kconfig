@@ -1948,11 +1948,15 @@ config BT_MESH_SELF_TEST
 	  mesh networking is initialized.
 
 config BT_MESH_STATISTIC
-	bool "The frame handling statistics [EXPERIMENTAL]"
+	bool "Mesh communication statistics [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
 	  The module gathers statistics of received, relayed, and transmitted
 	  frames. This helps to estimate the quality of the communication and
 	  the sufficiency of configured advertiser instances.
+
+	  When LPN functionality is enabled, the module also measures
+	  LPN friendship timing parameters (ReceiveDelay, ReceiveWindow) by
+	  timestamping protocol events during each poll cycle.
 
 endif # BT_MESH
