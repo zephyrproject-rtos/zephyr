@@ -4,6 +4,7 @@ tests:
   drivers.i3c.emul:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     tags:
       - drivers
       - i3c
