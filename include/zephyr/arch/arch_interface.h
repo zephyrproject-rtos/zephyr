@@ -96,6 +96,9 @@ static inline uint64_t arch_k_cycle_get_64(void);
  *
  * @see K_THREAD_STACK_RESERVED
  */
+#ifdef __DOXYGEN__
+#define ARCH_THREAD_STACK_RESERVED
+#endif
 
 /**
  * @def ARCH_STACK_PTR_ALIGN
@@ -115,6 +118,9 @@ static inline uint64_t arch_k_cycle_get_64(void);
  *
  * @see Z_THREAD_STACK_OBJ_ALIGN
  */
+#ifdef __DOXYGEN__
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)
+#endif
 
 /**
  * @def ARCH_THREAD_STACK_SIZE_ADJUST(size)
@@ -136,8 +142,14 @@ static inline uint64_t arch_k_cycle_get_64(void);
  *   with an MPU that requires such alignment
  * - Rounded up to ARCH_STACK_PTR_ALIGN
  *
+ * @param size Requested size of the stack buffer
+ * @return Adjusted size of the stack object
+ *
  * @see Z_THREAD_STACK_SIZE_ADJUST
  */
+#ifdef __DOXYGEN__
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size)
+#endif
 
 /**
  * @def ARCH_KERNEL_STACK_RESERVED
@@ -152,11 +164,20 @@ static inline uint64_t arch_k_cycle_get_64(void);
  *
  * @see K_KERNEL_STACK_RESERVED
  */
+#ifdef __DOXYGEN__
+#define ARCH_KERNEL_STACK_RESERVED
+#endif
 
 /**
  * @def ARCH_KERNEL_STACK_OBJ_ALIGN
  * @brief Required alignment of the lowest address of a kernel-only stack.
+ *
+ * @param size Requested size of the stack buffer
+ * @return Alignment of the kernel-only stack object
  */
+#ifdef __DOXYGEN__
+#define ARCH_KERNEL_STACK_OBJ_ALIGN(size)
+#endif
 
 /** @} */
 
@@ -410,6 +431,9 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  *
  * @see IRQ_CONNECT()
  */
+#ifdef __DOXYGEN__
+#define ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
+#endif
 
 #ifdef CONFIG_PCIE
 /**
@@ -424,30 +448,45 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
  *
  * @see IRQ_DIRECT_CONNECT()
  */
+#ifdef __DOXYGEN__
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
+#endif
 
 /**
  * @def ARCH_ISR_DIRECT_PM()
  *
  * @see ISR_DIRECT_PM()
  */
+#ifdef __DOXYGEN__
+#define ARCH_ISR_DIRECT_PM()
+#endif
 
 /**
  * @def ARCH_ISR_DIRECT_HEADER()
  *
  * @see ISR_DIRECT_HEADER()
  */
+#ifdef __DOXYGEN__
+#define ARCH_ISR_DIRECT_HEADER()
+#endif
 
 /**
  * @def ARCH_ISR_DIRECT_FOOTER(swap)
  *
  * @see ISR_DIRECT_FOOTER()
  */
+#ifdef __DOXYGEN__
+#define ARCH_ISR_DIRECT_FOOTER(swap)
+#endif
 
 /**
  * @def ARCH_ISR_DIRECT_DECLARE(name)
  *
  * @see ISR_DIRECT_DECLARE()
  */
+#ifdef __DOXYGEN__
+#define ARCH_ISR_DIRECT_DECLARE(name)
+#endif
 
 #ifndef CONFIG_PCIE_CONTROLLER
 /**
@@ -496,6 +535,9 @@ bool arch_irq_is_used(unsigned int irq);
  *
  * @param reason_p K_ERR_ scoped reason code for the fatal error.
  */
+#ifdef __DOXYGEN__
+#define ARCH_EXCEPT(reason_p)
+#endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
 /**
