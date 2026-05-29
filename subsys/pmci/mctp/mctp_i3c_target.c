@@ -66,13 +66,6 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 {
 	struct mctp_binding_i3c_target *b =
 		CONTAINER_OF(binding, struct mctp_binding_i3c_target, binding);
-
-	uint8_t payload = MCTP_I3C_MDB_PENDING_READ;
-	struct i3c_ibi ibi_req = {
-		.ibi_type = I3C_IBI_TARGET_INTR,
-		.payload = &payload,
-		.payload_len = 1,
-	};
 	int ret;
 
 	k_sem_take(b->tx_lock, K_FOREVER);
@@ -86,8 +79,19 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 		goto out;
 	}
 
+#ifdef CONFIG_I3C_USE_IBI
+	uint8_t payload = MCTP_I3C_MDB_PENDING_READ;
+	struct i3c_ibi ibi_req = {
+		.ibi_type = I3C_IBI_TARGET_INTR,
+		.payload = &payload,
+		.payload_len = 1,
+	};
+
 	ret = i3c_ibi_raise(b->i3c, &ibi_req);
 	__ASSERT_NO_MSG(ret == 0);
+#else
+	ret = 0;
+#endif
 	k_sem_take(b->tx_complete, K_FOREVER);
 
 out:
