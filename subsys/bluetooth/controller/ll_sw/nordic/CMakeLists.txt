@@ -92,9 +92,19 @@ zephyr_library_sources(
 zephyr_library_sources(
   hal/nrf5/cntr.c
   hal/nrf5/radio/radio.c
-  hal/nrf5/mayfly.c
   hal/nrf5/ticker.c
   )
+
+zephyr_library_sources_ifdef(
+  CONFIG_BT_CTLR_MAYFLY_META_IRQ
+  hal/nrf5/mayfly_meta_irq.c
+  )
+
+if(NOT CONFIG_BT_CTLR_MAYFLY_META_IRQ)
+zephyr_library_sources(
+  hal/nrf5/mayfly.c
+  )
+endif()
 
 zephyr_library_sources_ifdef(
   CONFIG_BT_CTLR_CRYPTO

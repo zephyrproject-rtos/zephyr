@@ -1246,6 +1246,26 @@ config BT_CTLR_SCAN_UNRESERVED
 	  Scanner will not use time space reservation for scan window when in
 	  continuous scan mode.
 
+config BT_CTLR_MAYFLY_META_IRQ
+	bool "Use meta-IRQ threads for mayfly execution"
+	depends on NUM_METAIRQ_PRIORITIES > 0
+	help
+	  Use Zephyr meta-IRQ priority threads instead of SWI (Software
+	  Interrupts) for the mayfly scheduling abstraction. When enabled,
+	  mayfly_pend will wake up a meta-IRQ thread that will execute the
+	  corresponding mayfly_run for that execution context.
+
+	  This provides a portable alternative to the hardware-specific SWI
+	  and NVIC tail-chaining approach used on ARM Cortex-M platforms.
+
+config BT_CTLR_MAYFLY_META_IRQ_STACK_SIZE
+	int "Meta-IRQ mayfly thread stack size"
+	depends on BT_CTLR_MAYFLY_META_IRQ
+	default 1024
+	help
+	  Stack size for the meta-IRQ threads used for mayfly execution
+	  contexts (LLL, ULL_HIGH, ULL_LOW).
+
 config BT_MAYFLY_YIELD_AFTER_CALL
 	bool "Yield from mayfly thread after first call"
 	default y
