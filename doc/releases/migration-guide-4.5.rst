@@ -730,3 +730,8 @@ Architectures
 
 * ``xtensa_soc_mpu_ranges[]`` and ``xtensa_soc_mpu_ranges_num`` are removed. If SoC or board
   needs its own memory regions at boot, override :c:var:`xtensa_mpu_ranges` instead.
+
+* The Xtensa MPU (:kconfig:option:`CONFIG_XTENSA_MPU`) userspace port can now support
+  generated privileged stacks (:kconfig:option:`CONFIG_GEN_PRIV_STACKS`) instead of
+  embedding the privilege stack inside each thread stack object. Linker scripts and
+  ``xtensa_soc_mpu_ranges[]`` may need to be modified to accommodate this if enabled.

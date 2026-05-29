@@ -42,6 +42,10 @@ struct _thread_arch {
 	struct xtensa_mpu_map *mpu_map;
 #endif
 
+#ifdef CONFIG_GEN_PRIV_STACKS
+	uint8_t *psp_stack_start;
+#endif /* CONFIG_GEN_PRIV_STACKS */
+
 	/* Initial privilege mode stack pointer when doing a system call.
 	 * Un-set for surpervisor threads.
 	 */

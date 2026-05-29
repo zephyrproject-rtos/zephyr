@@ -777,7 +777,7 @@ ZTEST(userspace_domain, test_1st_init_and_access_other_memdomain)
 	spawn_user(&default_bool);
 }
 
-#if (defined(CONFIG_ARM) || (defined(CONFIG_GEN_PRIV_STACKS) && defined(CONFIG_RISCV)))
+#if defined(CONFIG_GEN_PRIV_STACKS)
 extern uint8_t *z_priv_stack_find(void *obj);
 #endif
 extern k_thread_stack_t ztest_thread_stack[];
@@ -1203,11 +1203,15 @@ void *userspace_setup(void)
 				  Z_RISCV_STACK_GUARD_SIZE);
 #endif
 #elif defined(CONFIG_XTENSA)
+#if defined(CONFIG_GEN_PRIV_STACKS)
+	priv_stack_ptr = (char *)z_priv_stack_find(ztest_thread_stack);
+#else
 	struct xtensa_thread_stack_header *hdr;
 	void *vhdr = ((struct xtensa_thread_stack_header *)ztest_thread_stack);
 
 	hdr = vhdr;
 	priv_stack_ptr = (((char *)&hdr->privilege_stack) + (sizeof(hdr->privilege_stack) - 1));
+#endif /* CONFIG_GEN_PRIV_STACKS */
 #endif
 	k_thread_access_grant(k_current_get(),
 			      &test_thread, &test_stack,

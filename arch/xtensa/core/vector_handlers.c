@@ -85,14 +85,34 @@ bool xtensa_is_outside_stack_bounds(uintptr_t addr, size_t sz, uint32_t ps)
 		 */
 		start = (uintptr_t)thread->stack_obj;
 		end = Z_STACK_PTR_ALIGN(thread->stack_info.start + thread->stack_info.size);
+
+#ifdef CONFIG_GEN_PRIV_STACKS
+		invalid = (addr <= start) || ((addr + sz) >= end);
+
+		/* With generated privilege stack, we also need to check the bound of
+		 * the separate privilege stack.
+		 */
+		if (invalid && (ps == UINT32_MAX)) {
+			start = (uintptr_t)thread->arch.psp_stack_start;
+			end = start + CONFIG_PRIVILEGED_STACK_SIZE;
+
+			invalid = (addr <= start) || ((addr + sz) >= end);
+		}
+#endif /* CONFIG_GEN_PRIV_STACKS */
+
 	} else if (((ps & PS_RING_MASK) == 0U) &&
 		   ((thread->base.user_options & K_USER) == K_USER)) {
 		/* Check if this is a user thread, and that it was running in
 		 * kernel mode. If so, we must have been doing a syscall, so
 		 * check with privileged stack bounds.
 		 */
+#ifdef CONFIG_GEN_PRIV_STACKS
+		start = (uintptr_t)thread->arch.psp_stack_start;
+		end = start + CONFIG_PRIVILEGED_STACK_SIZE;
+#else /* CONFIG_GEN_PRIV_STACKS */
 		start = thread->stack_info.start - CONFIG_PRIVILEGED_STACK_SIZE;
 		end = thread->stack_info.start;
+#endif /* CONFIG_GEN_PRIV_STACKS */
 #endif
 	} else {
 		start = thread->stack_info.start;
