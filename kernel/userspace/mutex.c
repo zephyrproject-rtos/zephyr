@@ -7,7 +7,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/mutex.h>
 #include <zephyr/internal/syscall_handler.h>
-#include <zephyr/kernel_structs.h>
 
 static struct k_mutex *get_k_mutex(struct sys_mutex *mutex)
 {

@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/toolchain.h>
 #include <ksched.h>
 #include <wait_q.h>

@@ -8,7 +8,6 @@
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/kernel_structs.h>
 
 #if CONFIG_MP_MAX_NUM_CPUS < 2
 #error SMP test requires at least two CPUs!

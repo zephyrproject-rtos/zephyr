@@ -13,7 +13,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
-#include <zephyr/kernel_structs.h>
 
 /*
  * @brief Read 64-bit timestamp value

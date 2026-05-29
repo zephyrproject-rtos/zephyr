@@ -22,7 +22,6 @@
 #include <zephyr/random/random.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/toolchain.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/linker/linker-defs.h>

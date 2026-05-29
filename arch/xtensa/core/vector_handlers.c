@@ -7,7 +7,6 @@
 #include <string.h>
 #include <xtensa_asm2_context.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <zephyr/toolchain.h>

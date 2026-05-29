@@ -14,7 +14,6 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_arch_interface.h>
 #include <ipi.h>
 #include <zephyr/init.h>

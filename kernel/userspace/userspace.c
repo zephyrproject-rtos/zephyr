@@ -9,7 +9,6 @@
 #include <string.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/rb.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/sys_io.h>
 #include <ksched.h>
 #include <zephyr/syscall.h>
