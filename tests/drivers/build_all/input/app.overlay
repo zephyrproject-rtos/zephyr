@@ -346,6 +346,19 @@
 					zephyr,codes = <0>, <1>, <2>;
 				};
 			};
+
+			tsc2007@10 {
+				compatible = "ti,tsc2007";
+				status = "okay";
+				reg = <0x10>;
+				int-gpios = <&test_gpio 0 1>;
+				screen-width = <10>;
+				screen-height = <10>;
+				raw-x-min = <0>;
+				raw-y-min = <0>;
+				raw-x-max = <1>;
+				raw-y-max = <1>;
+			};
 		};
 
 		spi@2 {

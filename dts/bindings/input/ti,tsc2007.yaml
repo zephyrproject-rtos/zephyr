@@ -1,0 +1,39 @@
+# Copyright (c) 2026, Institute of Embedded Systems ZHAW
+# SPDX-License-Identifier: Apache-2.0
+
+description: TSC2007 touch panel controller
+
+compatible: "ti,tsc2007"
+
+include: [i2c-device.yaml, touchscreen-common.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt GPIO. Used by the controller to signal touch data is
+      available. Active low.
+
+  raw-x-min:
+    type: int
+    description: |
+      Signed raw X axis start for scaling the reported coordinates.
+      No effect if screen size is not set.
+
+  raw-y-min:
+    type: int
+    description: |
+      Signed raw Y axis start for scaling the reported coordinates.
+      No effect if screen size is not set.
+
+  raw-x-max:
+    type: int
+    description: |
+      Raw X axis end for scaling the reported coordinates.
+      No effect if screen size is not set.
+
+  raw-y-max:
+    type: int
+    description: |
+      Raw Y axis end for scaling the reported coordinates.
+      No effect if screen size is not set.
