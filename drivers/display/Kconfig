@@ -34,6 +34,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
 source "drivers/display/Kconfig.ac057tc1"
+source "drivers/display/Kconfig.charlieplex_led_matrix"
 source "drivers/display/Kconfig.co5300"
 source "drivers/display/Kconfig.dummy"
 source "drivers/display/Kconfig.ed2208_gca"
