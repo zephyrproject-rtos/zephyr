@@ -166,8 +166,8 @@ static void wifi_setup(void)
 		(LRCCONF_POWERON_MAIN_AlwaysOn << LRCCONF_POWERON_MAIN_Pos);
 	NRF_WIFICORE_LMAC_VPR->INITPC = NRF_WICR->RESERVED[0];
 	NRF_WIFICORE_LMAC_VPR->CPURUN = (VPR_CPURUN_EN_Running << VPR_CPURUN_EN_Pos);
-#endif
 }
+#endif
 #endif
 
 void soc_early_init_hook(void)
