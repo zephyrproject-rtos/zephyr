@@ -369,7 +369,7 @@ Sensors
         op-mode = "high-perf";
         power-mode = "normal";
         events-interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
-        drdy-interrupt-gpios = < &gpio1 2 GPIO_ACTIVE_HIGH >;
+        drdy-interrupt-gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>;
       };
     };
 
