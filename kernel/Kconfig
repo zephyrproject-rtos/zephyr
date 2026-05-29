@@ -300,8 +300,7 @@ config SCHED_MULTIQ
 	  But it requires a fairly large RAM budget to store those list
 	  heads, and the limited features make it incompatible with
 	  features like deadline scheduling that need to sort threads
-	  more finely, and SMP affinity which need to traverse the list
-	  of threads.  Typical applications with small numbers of runnable
+	  more finely.  Typical applications with small numbers of runnable
 	  threads probably want the simple scheduler.
 
 endchoice # SCHED_ALGORITHM
