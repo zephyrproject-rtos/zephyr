@@ -70,7 +70,9 @@ struct mcux_lptmr_data {
 #if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
 	counter_alarm_callback_t alarm_callback;
 	void *alarm_user_data;
+	uint32_t guard_period;
 	bool alarm_active;
+	bool alarm_sw_pending;
 	struct k_spinlock lock;
 #else
 	counter_top_callback_t top_callback;
@@ -113,16 +115,44 @@ static int mcux_lptmr_get_value(const struct device *dev, uint32_t *ticks)
 static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg)
 {
-	ARG_UNUSED(chan_id);
-
 	const struct mcux_lptmr_config *config = dev->config;
 	struct mcux_lptmr_data *data = dev->data;
+	uint32_t now;
+	uint32_t ticks;
+	bool absolute;
+	bool late;
+	bool irq_on_late;
+	bool sw_pending;
+	int ret = 0;
 
 	/* Counter API: Alarm callback cannot be NULL. */
-	if ((alarm_cfg == NULL) || (alarm_cfg->callback == NULL) ||
+	if ((chan_id >= config->info.channels) || (alarm_cfg == NULL) ||
+		(alarm_cfg->callback == NULL) ||
 		(alarm_cfg->ticks > config->info.max_top_value)) {
 		return -EINVAL;
 	}
+
+	absolute = (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0U;
+	irq_on_late =
+		(alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE) != 0U;
+	now = LPTMR_GetCurrentTimerCount(config->base);
+	ticks = alarm_cfg->ticks;
+	late = false;
+
+	if (absolute) {
+		uint32_t back = (now >= ticks) ?
+			(now - ticks) : (config->info.max_top_value - ticks + now + 1U);
+
+		if ((data->guard_period != 0U) && (back < data->guard_period)) {
+			late = true;
+			ret = -ETIME;
+		} else {
+			ticks = (ticks >= now) ?
+				(ticks - now) : (config->info.max_top_value - now + ticks + 1U);
+		}
+	}
+
+	sw_pending = late || (ticks == 0U);
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
@@ -131,11 +161,23 @@ static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 		return -EBUSY;
 	}
 
+	if (late && !irq_on_late) {
+		k_spin_unlock(&data->lock, key);
+		return ret;
+	}
+
 	data->alarm_callback = alarm_cfg->callback;
 	data->alarm_user_data = alarm_cfg->user_data;
 	data->alarm_active = true;
+	data->alarm_sw_pending = sw_pending;
 
 	k_spin_unlock(&data->lock, key);
+
+	if (late) {
+		LPTMR_EnableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
+		irq_set_pending(config->irqn);
+		return ret;
+	}
 
 	/* Handle timer state: stop if running, clear flags if stopped */
 	if (config->base->CSR & LPTMR_CSR_TEN_MASK) {
@@ -143,7 +185,7 @@ static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 		LPTMR_StopTimer(config->base);
 	}
 
-	if (alarm_cfg->ticks == 0U) {
+	if (ticks == 0U) {
 		/*
 		 * Trigger the alarm callback immediately by setting the IRQ pending.
 		 * The ISR checks alarm_active/callback and does not require HW flags.
@@ -155,7 +197,7 @@ static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 
 	/* Normal case: set period and start timer */
-	LPTMR_SetTimerPeriod(config->base, alarm_cfg->ticks);
+	LPTMR_SetTimerPeriod(config->base, ticks);
 	/* RM recommendation: clear status flag after setting period
 	 * when timer is disabled.
 	 */
@@ -168,11 +210,13 @@ static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 
 static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
-	ARG_UNUSED(chan_id);
-
 	const struct mcux_lptmr_config *config = dev->config;
 	struct mcux_lptmr_data *data = dev->data;
 	k_spinlock_key_t key;
+
+	if (chan_id >= config->info.channels) {
+		return -EINVAL;
+	}
 
 	key = k_spin_lock(&data->lock);
 	if (!data->alarm_active) {
@@ -184,6 +228,7 @@ static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 
 	data->alarm_callback = NULL;
 	data->alarm_user_data = NULL;
+	data->alarm_sw_pending = false;
 	data->alarm_active = false;
 
 	k_spin_unlock(&data->lock, key);
@@ -196,6 +241,34 @@ static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
 	LPTMR_ClearStatusFlags(config->base, kLPTMR_TimerCompareFlag);
 
+	return 0;
+}
+
+static uint32_t mcux_lptmr_get_guard_period(const struct device *dev, uint32_t flags)
+{
+	struct mcux_lptmr_data *data = dev->data;
+
+	if (flags & COUNTER_GUARD_PERIOD_LATE_TO_SET) {
+		return data->guard_period;
+	}
+
+	return 0U;
+}
+
+static int mcux_lptmr_set_guard_period(const struct device *dev, uint32_t ticks, uint32_t flags)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+	struct mcux_lptmr_data *data = dev->data;
+
+	if (!(flags & COUNTER_GUARD_PERIOD_LATE_TO_SET)) {
+		return -ENOSYS;
+	}
+
+	if (ticks >= config->info.max_top_value) {
+		return -EINVAL;
+	}
+
+	data->guard_period = ticks;
 	return 0;
 }
 
@@ -253,6 +326,23 @@ static int mcux_lptmr_set_top_value(const struct device *dev,
 
 	return 0;
 }
+
+static uint32_t mcux_lptmr_get_guard_period(const struct device *dev, uint32_t flags)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(flags);
+
+	return 0U;
+}
+
+static int mcux_lptmr_set_guard_period(const struct device *dev, uint32_t ticks, uint32_t flags)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(ticks);
+	ARG_UNUSED(flags);
+
+	return -ENOSYS;
+}
 #endif /* CONFIG_COUNTER_MCUX_LPTMR_ALARM */
 
 static uint32_t mcux_lptmr_get_pending_int(const struct device *dev)
@@ -304,16 +394,19 @@ static void mcux_lptmr_isr(const struct device *dev)
 
 	if ((callback != NULL) && (data->alarm_active)) {
 		void *user_data = data->alarm_user_data;
+		bool sw_pending = data->alarm_sw_pending;
 
 		LPTMR_DisableInterrupts(config->base, kLPTMR_TimerInterruptEnable);
 
 		data->alarm_callback = NULL;
 		data->alarm_user_data = NULL;
+		data->alarm_sw_pending = false;
 		data->alarm_active = false;
 
 		k_spin_unlock(&data->lock, key);
 
-		uint32_t current_count = LPTMR_GetCurrentTimerCount(config->base);
+		uint32_t current_count = sw_pending ? 0U :
+			LPTMR_GetCurrentTimerCount(config->base);
 
 		LPTMR_StopTimer(config->base);
 		LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
@@ -387,6 +480,8 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 	.set_top_value = mcux_lptmr_set_top_value,
 	.get_pending_int = mcux_lptmr_get_pending_int,
 	.get_top_value = mcux_lptmr_get_top_value,
+	.get_guard_period = mcux_lptmr_get_guard_period,
+	.set_guard_period = mcux_lptmr_set_guard_period,
 	.get_freq = mcux_lptmr_get_freq,
 	.reset = mcux_lptmr_reset,
 };
