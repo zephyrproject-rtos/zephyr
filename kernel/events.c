@@ -122,7 +122,7 @@ static void event_post_walk_op(int status, void *data)
 	thread = walk_data->head;
 
 	while (thread != NULL) {
-		next = thread->next_event_link;
+		next = thread->next_wake_link;
 
 		arch_thread_return_value_set(thread, 0);
 		z_sched_wake_thread_locked(thread);
@@ -168,7 +168,7 @@ static int event_walk_op(struct k_thread *thread, void *data)
 		arch_thread_return_value_set(thread, 0);
 		z_sched_wake_thread_locked(thread);
 #else /* !CONFIG_WAITQ_SCALABLE */
-		thread->next_event_link = event_data->head;
+		thread->next_wake_link = event_data->head;
 		event_data->head = thread;
 #endif /* !CONFIG_WAITQ_SCALABLE */
 	}
