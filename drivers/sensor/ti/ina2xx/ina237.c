@@ -226,10 +226,27 @@ static int ina237_trigg_one_shot_request(const struct device *dev, enum sensor_c
  */
 static int ina237_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
+	const struct ina237_config *config = dev->config;
+	const struct ina2xx_config *common = &config->common;
 	int ret;
 
 	if (ina237_is_triggered_mode_set(dev)) {
 		ret = ina237_trigg_one_shot_request(dev, chan);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* Poll DIAG_ALRT register until CNVRF (conversion ready) is set */
+		uint16_t reg_alert;
+
+		do {
+			ret = ina2xx_reg_read_16(&common->bus, INA237_REG_ALERT, &reg_alert);
+			if (ret < 0) {
+				return ret;
+			}
+		} while (!(reg_alert & INA237_ALERT_CNVRF));
+
+		ret = ina2xx_sample_fetch(dev, chan);
 	} else {
 		ret = ina2xx_sample_fetch(dev, chan);
 	}
