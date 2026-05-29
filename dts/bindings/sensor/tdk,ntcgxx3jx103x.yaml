@@ -1,8 +1,8 @@
 # Copyright (c) 2023 Urban Sky LLC.
 # SPDX-License-Identifier: Apache-2.0
 
-description: TDK NTCG163JF103FT1 thermistor
+description: TDK NTCGXX3JX103X thermistor
 
-compatible: "tdk,ntcg163jf103ft1"
+compatible: "tdk,ntcgxx3jx103x"
 
 include: ntc-thermistor.yaml
