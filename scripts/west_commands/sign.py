@@ -145,7 +145,7 @@ schema (rimage "target") is not defined in board.cmake.''')
         forward_logging_to_west(self, [BUILD_HELPERS_LOGGER, 'zcmake'])
 
         # Find the build directory and parse .config and DT.
-        build_dir = find_build_dir(args.build_dir)
+        build_dir = find_build_dir(args.build_dir, config=self.config)
         self.check_force(os.path.isdir(build_dir),
                          'no such build directory {}'.format(build_dir))
         self.check_force(is_zephyr_build(build_dir),
