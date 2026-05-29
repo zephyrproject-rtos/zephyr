@@ -23,7 +23,7 @@ static int max30101_sample_fetch(const struct device *dev,
 	int num_bytes;
 
 	/* Read all the active channels for one sample */
-	num_bytes = data->total_channels * MAX30101_BYTES_PER_CHANNEL;
+	num_bytes = data->total_slots_used * MAX30101_BYTES_PER_CHANNEL;
 	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_FIFO_DATA, buffer,
 			      num_bytes)) {
 		LOG_ERR("Could not fetch sample");
@@ -31,7 +31,7 @@ static int max30101_sample_fetch(const struct device *dev,
 	}
 
 	fifo_chan = 0;
-	for (int i = 0; i < num_bytes; i += 3) {
+	for (int i = 0; i < num_bytes; i += MAX30101_BYTES_PER_CHANNEL) {
 		/* Each channel is 18-bits */
 		fifo_data = (buffer[i] << 16) | (buffer[i + 1] << 8) |
 			    (buffer[i + 2]);
@@ -101,19 +101,19 @@ static int max30101_channel_get(const struct device *dev,
 	 * channel. If the fifo channel isn't valid, then the led channel
 	 * isn't active.
 	 */
-	fifo_chan = data->num_channels[led_chan];
+	fifo_chan = data->num_slots_per_chan[led_chan];
 	if (!fifo_chan) {
 		LOG_ERR("Inactive sensor channel");
 		return -ENOTSUP;
 	}
 
 	val->val1 = 0;
-	for (fifo_chan = 0; fifo_chan < data->num_channels[led_chan]; fifo_chan++) {
+	for (fifo_chan = 0; fifo_chan < data->num_slots_per_chan[led_chan]; fifo_chan++) {
 		val->val1 += data->raw[data->map[led_chan][fifo_chan]];
 	}
 
 	/* TODO: Scale the raw data to standard units */
-	val->val1 /= data->num_channels[led_chan];
+	val->val1 /= data->num_slots_per_chan[led_chan];
 	val->val2 = 0;
 
 	return 0;
@@ -242,23 +242,23 @@ static int max30101_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Count the number of active channels and build a map that translates
-	 * the LED channel number (red/ir/green) to the fifo channel number.
+	/* Count the number of active channels and build a map that translates the LED
+	 * channel number (red/ir/green) to the fifo channel number (4 slots available).
 	 */
-	for (int fifo_chan = 0; fifo_chan < MAX30101_MAX_NUM_CHANNELS; fifo_chan++) {
+	for (int fifo_chan = 0; fifo_chan < MAX30101_MAX_NUM_SLOTS; fifo_chan++) {
 		led_chan = (config->slot[fifo_chan] & MAX30101_SLOT_LED_MASK) - 1;
 		if (led_chan >= MAX30101_MAX_NUM_CHANNELS) {
 			continue;
 		}
 
-		for (int i = 0; i < MAX30101_MAX_NUM_CHANNELS; i++) {
-			if (data->map[led_chan][i] == MAX30101_MAX_NUM_CHANNELS) {
+		for (int i = 0; i < MAX30101_MAX_NUM_SLOTS; i++) {
+			if (data->map[led_chan][i] == MAX30101_MAX_NUM_SLOTS) {
 				data->map[led_chan][i] = fifo_chan;
-				data->num_channels[led_chan]++;
+				data->num_slots_per_chan[led_chan]++;
 				break;
 			}
 		}
-		data->total_channels++;
+		data->total_slots_used++;
 	}
 
 	return 0;
@@ -314,9 +314,9 @@ static int max30101_init(const struct device *dev)
 			(.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(n, irq_gpios, {0}),) \
 		) };              \
 	static struct max30101_data chip##_data_##n = {                                            \
-		.map = {{3, 3, 3}, {3, 3, 3}, {3, 3, 3}},                                          \
-		.num_channels = {0, 0, 0},                                                         \
-		.total_channels = 0,                                                               \
+		.map = MAX30101_MAP_INIT,                                                          \
+		.num_slots_per_chan = {0, 0, 0},                                                   \
+		.total_slots_used = 0,                                                             \
 	};                                                                                         \
 	SENSOR_DEVICE_DT_INST_DEFINE(n, max30101_init, NULL, &chip##_data_##n,                     \
 				     &chip##_config_##n, POST_KERNEL,                              \
