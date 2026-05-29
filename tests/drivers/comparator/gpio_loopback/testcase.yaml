@@ -67,6 +67,7 @@ tests:
       - frdm_mcxa344
       - frdm_mcxa346
       - frdm_mcxa366
+      - frdm_mcxa577
       - frdm_mcxe31b
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0/qspi
