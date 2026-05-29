@@ -1,16 +1,16 @@
 /*
- * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT bflb_efuse
 
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(efuse_bflb, CONFIG_SYSCON_LOG_LEVEL);
+LOG_MODULE_REGISTER(efuse_bflb, CONFIG_OTP_LOG_LEVEL);
 
 #include <bflb_soc.h>
 #include <hbn_reg.h>
@@ -179,11 +179,24 @@ static void efuse_bflb_cache(const struct device *dev)
 	irq_unlock(key);
 }
 
-static int efuse_bflb_read(const struct device *dev, uint32_t reg, uint32_t *val)
+static int efuse_bflb_read(const struct device *dev, off_t offset, void *out, size_t len)
 {
+	const struct efuse_bflb_config *config = dev->config;
 	struct efuse_bflb_data *data = dev->data;
 
-	if (!val) {
+	if (len == 0) {
+		return 0;
+	}
+
+	if (out == NULL) {
+		return -EINVAL;
+	}
+
+	if (offset < 0) {
+		return -EINVAL;
+	}
+
+	if (offset > config->size || len > config->size || offset + len > config->size) {
 		return -EINVAL;
 	}
 
@@ -191,30 +204,13 @@ static int efuse_bflb_read(const struct device *dev, uint32_t reg, uint32_t *val
 		efuse_bflb_cache(dev);
 	}
 
-	*val = *((uint32_t *)&data->cache[reg]);
+	memcpy(out, &data->cache[offset], len);
+
 	return 0;
 }
 
-static int efuse_bflb_size(const struct device *dev, size_t *size)
-{
-	const struct efuse_bflb_config *config = dev->config;
-
-	*size = config->size;
-	return 0;
-}
-
-static int efuse_bflb_get_base(const struct device *dev, uintptr_t *addr)
-{
-	struct efuse_bflb_data *data = dev->data;
-
-	*addr = (uintptr_t)data->cache;
-	return 0;
-}
-
-static DEVICE_API(syscon, efuse_bflb_api) = {
+static DEVICE_API(otp, efuse_bflb_api) = {
 	.read = efuse_bflb_read,
-	.get_size = efuse_bflb_size,
-	.get_base = efuse_bflb_get_base,
 };
 
 static const struct efuse_bflb_config efuse_config = {
@@ -227,6 +223,5 @@ static struct efuse_bflb_data efuse_data = {
 	.cache = {0},
 };
 
-
 DEVICE_DT_INST_DEFINE(0, NULL, NULL, &efuse_data, &efuse_config, POST_KERNEL,
-		      CONFIG_SYSCON_INIT_PRIORITY, &efuse_bflb_api);
+		      CONFIG_OTP_INIT_PRIORITY, &efuse_bflb_api);

@@ -12,6 +12,7 @@ config SOC_SERIES_BL70X
 	select FPU
 	select GEN_IRQ_VECTOR_TABLE
 	select INCLUDE_RESET_VECTOR
+	select OTP
 	select REGULATOR
 	select RISCV
 	select RISCV_HAS_CLIC
@@ -22,5 +23,4 @@ config SOC_SERIES_BL70X
 	select RISCV_VECTORED_MODE
 	select SOC_EARLY_INIT_HOOK
 	select SOC_PREP_HOOK
-	select SYSCON
 	select XIP
