@@ -226,9 +226,8 @@ __subsystem struct reset_driver_api {
  * @param id Reset line.
  * @param status Where to write the reset status.
  *
- * @retval 0 On success.
- * @retval -ENOSYS If the functionality is not implemented by the driver.
- * @retval -errno Other negative errno in case of failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Functionality is not implemented by the driver.
  */
 __syscall int reset_status(const struct device *dev, uint32_t id, uint8_t *status);
 
@@ -269,9 +268,8 @@ static inline int reset_status_dt(const struct reset_dt_spec *spec, uint8_t *sta
  * @param dev Reset controller device.
  * @param id Reset line.
  *
- * @retval 0 On success.
- * @retval -ENOSYS If the functionality is not implemented by the driver.
- * @retval -errno Other negative errno in case of failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Functionality is not implemented by the driver.
  */
 __syscall int reset_line_assert(const struct device *dev, uint32_t id);
 
@@ -311,9 +309,8 @@ static inline int reset_line_assert_dt(const struct reset_dt_spec *spec)
  * @param dev Reset controller device.
  * @param id Reset line.
  *
- * @retval 0 On success.
- * @retval -ENOSYS If the functionality is not implemented by the driver.
- * @retval -errno Other negative errno in case of failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Functionality is not implemented by the driver.
  */
 __syscall int reset_line_deassert(const struct device *dev, uint32_t id);
 
@@ -352,9 +349,8 @@ static inline int reset_line_deassert_dt(const struct reset_dt_spec *spec)
  * @param dev Reset controller device.
  * @param id Reset line.
  *
- * @retval 0 On success.
- * @retval -ENOSYS If the functionality is not implemented by the driver.
- * @retval -errno Other negative errno in case of failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Functionality is not implemented by the driver.
  */
 __syscall int reset_line_toggle(const struct device *dev, uint32_t id);
 
