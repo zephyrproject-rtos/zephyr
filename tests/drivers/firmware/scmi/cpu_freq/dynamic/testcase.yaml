@@ -1,0 +1,24 @@
+common:
+  tags:
+    - drivers
+    - firmware
+    - scmi
+    - cpu_freq
+
+tests:
+  # Dynamic (timer-driven) SCMI cpu_freq test.
+  # Runs with CONFIG_CPU_FREQ_INTERVAL_MS=50 so the on_demand policy
+  # fires ~20 times per second and reacts to load changes.
+  drivers.firmware.scmi.cpu_freq.dynamic:
+    harness: ztest
+    timeout: 120
+    platform_allow:
+      - imx95_evk/mimx9596/m7
+      - imx943_evk/mimx94398/m33
+      - imx943_evk/mimx94398/m7_0
+      - imx943_evk/mimx94398/m7_1
+    integration_platforms:
+      - imx95_evk/mimx9596/m7
+      - imx943_evk/mimx94398/m33
+      - imx943_evk/mimx94398/m7_0
+      - imx943_evk/mimx94398/m7_1

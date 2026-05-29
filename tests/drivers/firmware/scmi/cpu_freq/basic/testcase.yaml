@@ -1,0 +1,23 @@
+common:
+  tags:
+    - drivers
+    - firmware
+    - scmi
+    - cpu_freq
+
+tests:
+  # Static SCMI cpu_freq tests — timer disabled (interval=1000000 ms).
+  # The test thread has exclusive control over frequency transitions.
+  drivers.firmware.scmi.cpu_freq.basic:
+    harness: ztest
+    timeout: 60
+    platform_allow:
+      - imx95_evk/mimx9596/m7
+      - imx943_evk/mimx94398/m33
+      - imx943_evk/mimx94398/m7_0
+      - imx943_evk/mimx94398/m7_1
+    integration_platforms:
+      - imx95_evk/mimx9596/m7
+      - imx943_evk/mimx94398/m33
+      - imx943_evk/mimx94398/m7_0
+      - imx943_evk/mimx94398/m7_1
