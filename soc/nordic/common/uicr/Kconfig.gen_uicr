@@ -181,6 +181,7 @@ config GEN_UICR_WDTSTART_CRV
 	  Must be at least 15 (0xF) to ensure proper watchdog operation.
 	  Default value 65535 creates a 2-second timeout.
 
+
 config GEN_UICR_SECONDARY_WDTSTART
 	bool "UICR.SECONDARY.WDTSTART"
 	depends on GEN_UICR_SECONDARY
@@ -224,6 +225,22 @@ config GEN_UICR_SECONDARY_WDTSTART_CRV
 	  This value determines the watchdog timeout period.
 	  Must be at least 15 (0xF) to ensure proper watchdog operation.
 	  Default value 65535 creates a 2-second timeout.
+
+config GEN_UICR_CUSTOMER
+	bool "UICR.CUSTOMER"
+	help
+	  When enabled, the UICR generator will use a customer-provided
+	  .bin file for the CUSTOMER field.
+
+config GEN_UICR_CUSTOMER_BIN_FILE
+	string "Path to bin file for UICR customer data."
+	depends on GEN_UICR_CUSTOMER
+	help
+	  Path to binary (.bin) file. This file contains data to be stored
+	  in UICR.CUSTOMER. The size of the file must be less than the
+	  UICR.CUSTOMER area. The data will be stored starting from the start
+	  of UICR.CUSTOMER. The path can be absolute, or relative. If the
+	  path is relative, it will be relative to the gen_uicr image.
 
 config GEN_UICR_SECONDARY
 	bool "UICR.SECONDARY.ENABLE"
