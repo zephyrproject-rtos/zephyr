@@ -19,6 +19,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	aliases {
