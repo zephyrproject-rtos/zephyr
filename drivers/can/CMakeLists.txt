@@ -4,6 +4,11 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/can.h)
 
 zephyr_library()
 
+# CAN subsystem include paths for out-of-tree drivers
+# zephyr-keep-sorted-start
+zephyr_library_include_directories_ifdef(CONFIG_CAN_SJA1000 .)
+# zephyr-keep-sorted-stop
+
 # CAN subsystem common files
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_CAN can_common.c)
