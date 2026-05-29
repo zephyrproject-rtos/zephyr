@@ -12,5 +12,6 @@ supported:
   - dma
   - entropy
   - gpio
+  - spi
   - uart
 vendor: silabs
