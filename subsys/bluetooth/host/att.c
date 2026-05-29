@@ -3407,6 +3407,18 @@ static void bt_att_released(struct bt_l2cap_chan *ch)
 
 	LOG_DBG("chan %p", chan);
 
+	/* Drop any pending/in-flight ATT TX metadata still referencing this
+	 * channel, so the deferred att_on_sent_cb()/bt_att_sent() work cannot
+	 * dereference the channel after it is freed here. Bluetooth uses a
+	 * cooperative system workqueue, so this runs serialized with
+	 * att_tx_destroy_work_handler() and aligned pointer writes are atomic.
+	 */
+	ARRAY_FOR_EACH(tx_meta_data_storage, i) {
+		if (tx_meta_data_storage[i].att_chan == chan) {
+			tx_meta_data_storage[i].att_chan = NULL;
+		}
+	}
+
 	k_mem_slab_free(&chan_slab, (void *)chan);
 }
 
