@@ -24,7 +24,8 @@ from dataclasses import dataclass
 from build_helpers import BUILD_HELPERS_LOGGER, find_build_dir, is_zephyr_build, \
     load_domains, forward_logging_to_west, FIND_BUILD_DIR_DESCRIPTION
 from west.commands import CommandError, Verbosity
-from west.configuration import config
+from west.configuration import Configuration
+from west.util import WestNotFound, west_topdir
 from runners.core import FileType
 from runners.core import BuildConfiguration
 import yaml
@@ -212,7 +213,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
                 module_name, Path(module.project) / runner["file"]
             )
 
-    build_dir = get_build_dir(user_args)
+    build_dir = get_build_dir(user_args, config=command.config)
     rebuild(command, build_dir, user_args)
 
     domains = get_domains_to_process(build_dir, user_args, domain_file)
@@ -228,7 +229,7 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
         board_names = set()
         for d in domains:
             if d.build_dir is None:
-                build_dir = get_build_dir(user_args)
+                build_dir = get_build_dir(user_args, config=command.config)
             else:
                 build_dir = d.build_dir
 
@@ -323,7 +324,7 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     global re
     command_name = command.name
     if build_dir is None:
-        build_dir = get_build_dir(user_args)
+        build_dir = get_build_dir(user_args, config=command.config)
     cache = load_cmake_cache(build_dir, user_args)
     build_conf = BuildConfiguration(build_dir)
     board = build_conf.get('CONFIG_BOARD_TARGET')
@@ -501,14 +502,23 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
             raise
     return runner
 
-def get_build_dir(args, die_if_none=True):
+def get_build_dir(args, die_if_none=True, *, config=None):
     # Get the build directory for the given argument list and environment.
+    #
+    # `config` is a west.configuration.Configuration object. When None, one
+    # is instantiated from the current west workspace; if we are not inside
+    # a workspace, the `build.guess-dir` lookup is skipped.
     if args.build_dir:
         return args.build_dir
 
-    guess = config.get('build', 'guess-dir', fallback='never')
+    if config is None:
+        try:
+            config = Configuration(topdir=west_topdir())
+        except WestNotFound:
+            config = None
+    guess = config.get('build.guess-dir', default='never') if config is not None else 'never'
     guess = guess == 'runners'
-    dir = find_build_dir(None, guess)
+    dir = find_build_dir(None, guess, config=config)
 
     if dir and is_zephyr_build(dir):
         return dir
@@ -539,7 +549,7 @@ def skip_rebuild(command, args):
         command.wrn("--skip-rebuild is deprecated. Please use --no-rebuild instead")
         return True
 
-    rebuild_config = config.getboolean(command.name, 'rebuild', fallback=None)
+    rebuild_config = command.config.getboolean(f'{command.name}.rebuild', default=None)
 
     if rebuild_config is not None:
         return not rebuild_config
@@ -703,7 +713,7 @@ def dump_traceback():
 #
 
 def dump_context(command, args, unknown_args):
-    build_dir = get_build_dir(args, die_if_none=False)
+    build_dir = get_build_dir(args, die_if_none=False, config=command.config)
     get_all_domain = False
 
     if build_dir is None:
