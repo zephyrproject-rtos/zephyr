@@ -8,3 +8,14 @@ config WDT_SILABS_SIWX91X
 	depends on CLOCK_CONTROL
 	help
 	  Enable the Watchdog driver for the Silabs SiWx91x SoC series.
+
+config WDT_SILABS_WDOG
+	bool "Silabs Series 3 Watchdog driver"
+	default y
+	select HAS_WDT_DISABLE_AT_BOOT
+	select HAS_WDT_MULTISTAGE
+	select SILABS_SISDK_WDOG
+	depends on DT_HAS_SILABS_WDOG_ENABLED
+	depends on CLOCK_CONTROL
+	help
+	  Enable the Watchdog driver for Silicon Labs Series 3 devices.
