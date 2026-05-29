@@ -102,6 +102,7 @@ set(periphconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/periphconf.hex)
 set(secondary_periphconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_periphconf.hex)
 set(mpcconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/mpcconf.hex)
 set(secondary_mpcconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_mpcconf.hex)
+set(in_customer_bin_file ${CONFIG_GEN_UICR_CUSTOMER_BIN_FILE})
 
 # These are always output, others depend on the options
 set(gen_uicr_outputs ${merged_hex_file} ${uicr_hex_file})
@@ -262,6 +263,24 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF OR CONFIG_GEN_UICR_SECONDARY_GENERATE_PER
       list(APPEND gen_uicr_depends ${elf})
     endforeach()
   endif()
+endif()
+
+if(CONFIG_GEN_UICR_CUSTOMER)
+  if("${CONFIG_GEN_UICR_CUSTOMER_BIN_FILE}" STREQUAL "")
+    message(FATAL_ERROR
+      "CONFIG_GEN_UICR_CUSTOMER_BIN_FILE is an empty string."
+    )
+  endif()
+  if(NOT CONFIG_GEN_UICR_CUSTOMER_BIN_FILE MATCHES "\\.bin$")
+    message(FATAL_ERROR "CONFIG_GEN_UICR_CUSTOMER_BIN_FILE is not a .bin file")
+  endif()
+  if(IS_ABSOLUTE ${in_customer_bin_file})
+    set(in_customer_bin_file_path ${in_customer_bin_file})
+  else()
+    set(in_customer_bin_file_path ${APPLICATION_CONFIG_DIR}/${in_customer_bin_file})
+  endif()
+  list(APPEND customer_args --in-customer-bin ${in_customer_bin_file_path})
+  list(APPEND gen_uicr_outputs ${in_customer_bin_file_path})
 endif()
 
 if(CONFIG_GEN_UICR_SECONDARY)
@@ -463,6 +482,7 @@ add_custom_command(
           ${secondary_args}
           ${policy_args}
           ${snapshot_args}
+          ${customer_args}
   ${periphconf_validate_build_command}
   ${secondary_periphconf_validate_build_command}
   DEPENDS ${gen_uicr_depends}
