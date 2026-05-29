@@ -1169,13 +1169,44 @@
 		low-power-enable;
 	};
 
-	/omit-if-no-ref/ qspi_shd_cs0_n_gpio055_fp: qspi_shd_cs0_n_gpio055_fp {
+	/omit-if-no-ref/ qspi_shd_cs0_n_gpio055_lp: qspi_shd_cs0_n_gpio055_lp {
 		pinmux = <MCHP_XEC_PINMUX(0055, MCHP_AF2)>;
 		low-power-enable;
 	};
 
 	/omit-if-no-ref/ qspi_shd_cs1_n_gpio002_lp: qspi_shd_cs1_n_gpio002_lp {
 		pinmux = <MCHP_XEC_PINMUX(0002, MCHP_AF2)>;
+		low-power-enable;
+	};
+
+	/* PVT spi */
+	/omit-if-no-ref/ qspi_pvt_io3_gpio126_sleep: qspi_pvt_io3_gpio126_sleep {
+		pinmux = <MCHP_XEC_PINMUX(0126, MCHP_AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ qspi_pvt_io2_gpio123_sleep: qspi_pvt_io2_gpio123_sleep {
+		pinmux = <MCHP_XEC_PINMUX(0123, MCHP_AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ qspi_pvt_io1_gpio122_sleep: qspi_pvt_io1_gpio122_sleep {
+		pinmux = <MCHP_XEC_PINMUX(0122, MCHP_AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ qspi_pvt_io0_gpio121_sleep: qspi_pvt_io0_gpio121_sleep {
+		pinmux = <MCHP_XEC_PINMUX(0121, MCHP_AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ qspi_pvt_clk_gpio125_sleep: qspi_pvt_clk_gpio125_sleep {
+		pinmux = <MCHP_XEC_PINMUX(0125, MCHP_AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ qspi_pvt_cs_n_gpio124_sleep: qspi_pvt_cs_n_gpio124_sleep {
+		pinmux = <MCHP_XEC_PINMUX(0124, MCHP_AF1)>;
 		low-power-enable;
 	};
 
