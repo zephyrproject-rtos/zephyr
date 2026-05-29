@@ -29,6 +29,7 @@ struct mctp_binding_i3c_target {
 	struct k_sem *tx_complete;
 	struct mctp_pktbuf *rx_pkt;
 	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_I3C_MAX_PKT_SIZE)] PKTBUF_STORAGE_ALIGN;
+	uint8_t tx_ptr;
 	/** @endcond INTERNAL_HIDDEN */
 };
 

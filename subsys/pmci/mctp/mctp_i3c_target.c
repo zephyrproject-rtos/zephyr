@@ -50,8 +50,61 @@ int mctp_i3c_target_stop(struct i3c_target_config *config)
 	return 0;
 }
 
+int mctp_i3c_target_write_received(struct i3c_target_config *config, uint8_t val)
+{
+	struct mctp_binding_i3c_target *b =
+		CONTAINER_OF(config, struct mctp_binding_i3c_target, i3c_target_cfg);
+
+	if (b->rx_pkt == NULL) {
+		/*
+		 * First byte of the transaction, so allocate
+		 * Do it here since not all i3c drivers might call write_requested
+		 *
+		 * mctp_pktbuf_alloc implementation always allocates a fixed amount per binding.
+		 * The 0 len passed in indicates that we start with 0 bytes valid in the allocated
+		 * buffer. The bytes are then pushed 1-by-1 via mctp_pktbuf_push.
+		 */
+		b->rx_pkt = mctp_pktbuf_alloc(&b->binding, 0);
+		if (b->rx_pkt == NULL) {
+			LOG_ERR("Could not allocate pktbuf for I3C RX");
+			return -ENOMEM;
+		}
+	}
+
+	if (mctp_pktbuf_push(b->rx_pkt, &val, 1) < 0) {
+		LOG_WRN("I3C RX packet exceeded max size %zu", b->binding.pkt_size);
+		return -EMSGSIZE;
+	}
+
+	return 0;
+}
+
+int mctp_i3c_target_read_processed(struct i3c_target_config *config, uint8_t *val)
+{
+	struct mctp_binding_i3c_target *b =
+		CONTAINER_OF(config, struct mctp_binding_i3c_target, i3c_target_cfg);
+	uint8_t pkt_len;
+
+	if (b->tx_pkt == NULL) {
+		return -EIO;
+	}
+
+	pkt_len = b->tx_pkt->end - b->tx_pkt->start;
+	if (b->tx_ptr >= pkt_len) {
+		return -EIO;
+	}
+
+	*val = b->tx_pkt->data[b->tx_pkt->start + b->tx_ptr++];
+
+	return 0;
+}
+
 const struct i3c_target_callbacks mctp_i3c_target_callbacks = {
+	.write_received_cb = mctp_i3c_target_write_received,
+	.read_processed_cb = mctp_i3c_target_read_processed,
+#ifdef CONFIG_I3C_TARGET_BUFFER_MODE
 	.buf_write_received_cb = mctp_i3c_target_buf_write,
+#endif
 	.stop_cb = mctp_i3c_target_stop,
 };
 
@@ -71,7 +124,7 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt)
 	k_sem_take(b->tx_lock, K_FOREVER);
 
 	b->tx_pkt = pkt;
-
+	b->tx_ptr = 0U;
 	/* Some I3C IP need to have data at TX fifo before raising IBI */
 	ret = i3c_target_tx_write(b->i3c, pkt->data + pkt->start, pkt->end - pkt->start, 0);
 	if (ret < 0) {
