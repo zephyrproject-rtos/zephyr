@@ -2913,7 +2913,7 @@
  *
  * @code{.dts}
  *     my-serial: serial@abcd1234 {
- *             interrupts = < 33 0 >, < 34 1 >;
+ *             interrupts = <33 0>, <34 1>;
  *     };
  * @endcode
  *
@@ -4265,7 +4265,7 @@
  * @code{.dts}
  *     i2c@deadbeef {
  *             status = "okay";
- *             clock-frequency = < 100000 >;
+ *             clock-frequency = <100000>;
  *
  *             i2c_device: accelerometer@12 {
  *                     ...

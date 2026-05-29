@@ -1282,7 +1282,7 @@ def test_slice_errs(tmp_path):
 / {
 	sub {
 		interrupts = <1>;
-		interrupt-parent = < &{/controller} >;
+		interrupt-parent = <&{/controller}>;
 	};
 	controller {
 		interrupt-controller;
