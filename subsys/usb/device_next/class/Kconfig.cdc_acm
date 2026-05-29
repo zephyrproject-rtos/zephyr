@@ -47,6 +47,13 @@ config USBD_CDC_ACM_BUF_POOL_SIZE
 	  be large enough to accommodate the maximum packet size for
 	  the endpoints.
 
+config USBD_CDC_ACM_TX_DELAY_MS
+	int
+	default 100
+	help
+	  Time in milliseconds to wait before sending actual payload to host.
+	  This is needed to prevent tty ECHO on Linux.
+
 module = USBD_CDC_ACM
 module-str = usbd cdc_acm
 default-count = 1
