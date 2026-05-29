@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026 Qualcomm Innovation Center, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test fixture: a small charlieplex matrix wired to native_sim's emulated GPIO
+ * (gpio0 / zephyr,gpio-emul) and software counter (counter0). Lets the real
+ * driver run under twister with no hardware.
+ *
+ * 3 GPIO lines, 2x2 = 4 pixels. pixel-pairs use distinct {high,low} index
+ * pairs so the test can reason about the framebuffer mapping.
+ */
+
+/* Drop native_sim's default SDL display so the charlieplex node is the only
+ * zephyr,display chosen by the test.
+ */
+&sdl_dc {
+	status = "disabled";
+};
+
+/ {
+	chosen {
+		zephyr,display = &test_matrix;
+	};
+
+	test_matrix: charlieplex-led-matrix {
+		compatible = "charlieplex-led-matrix";
+		gpios = <&gpio0 0 0>, <&gpio0 1 0>, <&gpio0 2 0>;
+		counter = <&counter0>;
+		refresh-frequency = <100>;
+		width = <2>;
+		height = <2>;
+		grayscale-bits = <1>;
+		/* (high<<8)|low, framebuffer (row-major) order */
+		pixel-pairs = <0x0001 0x0100 0x0002 0x0200>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+	ngpios = <8>;
+};
+
+&counter0 {
+	status = "okay";
+};
