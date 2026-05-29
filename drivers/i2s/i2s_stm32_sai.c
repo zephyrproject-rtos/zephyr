@@ -115,6 +115,7 @@ struct stm32_sai_sub_cfg {
 	bool mclk_enable;
 	enum mclk_divider mclk_div;
 	bool synchronous;
+	enum i2s_dir dir;
 
 	const struct device *controller;
 };
@@ -554,6 +555,11 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 	hsai->Init.Synchro = SAI_ASYNCHRONOUS;
 
 	if (dir == I2S_DIR_RX) {
+		if (sub_cfg->dir == I2S_DIR_TX) {
+			LOG_ERR("Invalid direction, SAI configured as TX");
+			return -EINVAL;
+		}
+
 		hsai->Init.AudioMode = SAI_MODEMASTER_RX;
 
 		if (stream->master == false) {
@@ -564,6 +570,11 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 		}
 
 	} else if (dir == I2S_DIR_TX) {
+		if (sub_cfg->dir == I2S_DIR_RX) {
+			LOG_ERR("Invalid direction, SAI configured as RX");
+			return -EINVAL;
+		}
+
 		hsai->Init.AudioMode = SAI_MODEMASTER_TX;
 
 		if (stream->master == false) {
@@ -724,9 +735,15 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 
 static int stm32_sai_sub_write(const struct device *dev, void *mem_block, size_t size)
 {
+	const struct stm32_sai_sub_cfg *const sub_cfg = dev->config;
 	struct stm32_sai_sub_data *sub_data = dev->data;
 	struct stream *stream = &sub_data->stream;
 	int ret;
+
+	if (sub_cfg->dir == I2S_DIR_RX) {
+		LOG_ERR("Invalid operation, SAI configured as RX");
+		return -EIO;
+	}
 
 	if (stream->state != I2S_STATE_RUNNING && stream->state != I2S_STATE_READY) {
 		LOG_ERR("TX Invalid state: %d", stream->state);
@@ -751,9 +768,15 @@ static int stm32_sai_sub_write(const struct device *dev, void *mem_block, size_t
 
 static int stm32_sai_sub_read(const struct device *dev, void **mem_block, size_t *size)
 {
+	const struct stm32_sai_sub_cfg *const sub_cfg = dev->config;
 	struct stm32_sai_sub_data *sub_data = dev->data;
 	struct queue_item item;
 	int ret;
+
+	if (sub_cfg->dir == I2S_DIR_TX) {
+		LOG_ERR("Invalid operation, SAI configured as TX");
+		return -EIO;
+	}
 
 	if (sub_data->stream.state == I2S_STATE_NOT_READY ||
 	    sub_data->stream.state == I2S_STATE_ERROR) {
@@ -1008,6 +1031,7 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 		.mclk_div = DT_ENUM_IDX(node, mclk_divider),                                       \
 		.synchronous = DT_PROP(node, synchronous),                                         \
 		.controller = DEVICE_DT_GET(DT_PARENT(node)),                                      \
+		.dir = COND_CODE_1(DT_DMAS_HAS_NAME(node, tx), (I2S_DIR_TX), (I2S_DIR_RX)),        \
 	};                                                                                         \
 	DEVICE_DT_DEFINE(node, &sai_sub_init, NULL, &sub_data_##node, &sub_cfg_##node,             \
 			 POST_KERNEL, CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_sai_api);               \
