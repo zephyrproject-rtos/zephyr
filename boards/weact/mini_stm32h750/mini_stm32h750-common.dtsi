@@ -1,0 +1,219 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/h7/stm32h750Xb.dtsi>
+#include <st/h7/stm32h750vbtx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+	};
+
+	ext_flash_mem: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 8MB */
+		zephyr,memory-region = "EXT_FLASH";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led: led {
+			gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button {
+			label = "User PB";
+			gpios = <&gpioc 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	aliases {
+		led0 = &user_led;
+		sw0 = &user_button;
+		watchdog0 = &iwdg;
+		sdhc0 = &sdmmc1;
+	};
+
+	dcmi_camera_connector: connector_dcmi_camera {
+		compatible = "weact,dcmi-camera-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		gpio-map = <3 0 &gpiob 9 0>,  /* DVP_SDA (I2C1_SDA) */
+			   <5 0 &gpiob 8 0>,  /* DVP_SCL (I2C1_SCL) */
+			   <7 0 &gpiob 7 0>,  /* DVP_VSYNC */
+			   <8 0 &gpioa 7 0>,  /* DVP_PWDN */
+			   <9 0 &gpioa 4 0>,  /* DVP_HSYNC */
+			   <12 0 &gpioe 6 0>,  /* DVP_D7 */
+			   <13 0 &gpioa 8 0>,  /* DVP_XCLK (RCC_MCO1) */
+			   <14 0 &gpioe 5 0>,  /* DVP_D6 */
+			   <16 0 &gpiod 3 0>,  /* DVP_D5 */
+			   <17 0 &gpioa 6 0>,  /* DVP_PCLK */
+			   <18 0 &gpioe 4 0>,  /* DVP_D4 */
+			   <19 0 &gpioc 6 0>,  /* DVP_D0 */
+			   <20 0 &gpioe 1 0>,  /* DVP_D3 */
+			   <21 0 &gpioc 7 0>,  /* DVP_D1 */
+			   <22 0 &gpioe 0 0>;  /* DVP_D2 */
+	};
+};
+
+&flash0 {
+	status = "okay";
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <192>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(480)>;
+	d1cpre = <1>;
+	hpre = <2>;
+	d1ppre = <2>;
+	d2ppre1 = <2>;
+	d2ppre2 = <2>;
+	d3ppre = <2>;
+};
+
+&pwr {
+	power-supply = "ldo";
+};
+
+&sdmmc1 {
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpiod 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	disk-name = "SD";
+	status = "okay";
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&quadspi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	status = "okay";
+
+	ext_flash_ctrl: qspi-flash-controller@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		qspi-max-frequency = <100000000>;
+		cs-high-time = <2>; /* >= 50 ns */
+		status = "okay";
+		spi-bus-width = <4>;
+		writeoc = "PP_1_1_4";
+		reset-cmd;
+		reset-cmd-wait = <2000>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+
+		/* Sector erase 64KB uniform granularity for each Flash */
+		/* Subsector erase 4KB, 32KB granularity for each Flash */
+		ext_flash: w25q64_qspi: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>; /* 8MB */
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+		};
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pd7>;
+	cs-gpios = <&gpiod 6 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	w25q64_spi: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <40000000>;
+		size = <DT_SIZE_M(64)>; /* 64 Mbits */
+		status = "okay";
+		jedec-id = [ef 40 17];
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+	};
+};
+
+&gpioe {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&backup_sram {
+	status = "okay";
+};
+
+&iwdg1 {
+	status = "okay";
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb14 &usart1_rx_pb15>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+zephyr_camera_i2c: &i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+};
+
+zephyr_camera_dvp: &dcmi {
+	pinctrl-0 = <&dcmi_hsync_pa4 &dcmi_pixclk_pa6 &dcmi_vsync_pb7
+		     &dcmi_d0_pc6 &dcmi_d1_pc7 &dcmi_d2_pe0 &dcmi_d3_pe1
+		     &dcmi_d4_pe4 &dcmi_d5_pd3 &dcmi_d6_pe5 &dcmi_d7_pe6>;
+	pinctrl-names = "default";
+};
