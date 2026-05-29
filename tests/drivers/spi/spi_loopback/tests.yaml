@@ -403,22 +403,24 @@ tests:
       - CONFIG_PM_DEVICE_RUNTIME=y
     filter: CONFIG_SOC_FAMILY_NORDIC_NRF
   drivers.spi.silabs_s2.loopback.no_async:
-    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    filter: CONFIG_SOC_FAMILY_SILABS_S2 or CONFIG_SOC_FAMILY_SILABS_S3
     platform_allow:
       - xg23_rb4210a
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a
+      - sixg301_rb4407a
     extra_configs:
       - CONFIG_SPI_SILABS_EUSART_DMA=n
       - CONFIG_SPI_ASYNC=n
   drivers.spi.silabs_s2.loopback.dma.no_async:
-    filter: CONFIG_SOC_FAMILY_SILABS_S2
+    filter: CONFIG_SOC_FAMILY_SILABS_S2 or CONFIG_SOC_FAMILY_SILABS_S3
     platform_allow:
       - xg23_rb4210a
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a
+      - sixg301_rb4407a
     extra_configs:
       - CONFIG_SPI_SILABS_EUSART_DMA=y
       - CONFIG_SPI_ASYNC=n
