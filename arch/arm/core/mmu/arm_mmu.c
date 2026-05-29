@@ -809,10 +809,26 @@ int z_arm_mmu_init(void)
 		perms_attrs = arm_mmu_convert_attr_flags(attrs);
 
 		while (rem_size > 0) {
-			arm_mmu_l2_map_page(va, pa, perms_attrs);
-			rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
-			va += KB(4);
-			pa += KB(4);
+			if (rem_size >= MB(1) &&
+			    (pa & 0xFFFFF) == 0 &&
+			    (va & 0xFFFFF) == 0 &&
+			    pa == va &&
+			    (attrs & MATTR_MAY_MAP_L1_SECTION)) {
+				/*
+				 * Remaining area size > 1 MB & matching alignment
+				 * -> map a 1 MB section instead of individual 4 kB
+				 * pages with identical configuration.
+				 */
+				arm_mmu_l1_map_section(va, pa, perms_attrs);
+				rem_size -= MB(1);
+				va += MB(1);
+				pa += MB(1);
+			} else {
+				arm_mmu_l2_map_page(va, pa, perms_attrs);
+				rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
+				va += KB(4);
+				pa += KB(4);
+			}
 		}
 	}
 
