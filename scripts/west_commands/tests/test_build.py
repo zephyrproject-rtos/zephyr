@@ -12,6 +12,8 @@ import configparser
 import os
 import pytest
 
+from conftest import _FakeConfig
+
 TEST_CASES = [
     {'r': [],
      's': None, 'c': []},
@@ -248,11 +250,13 @@ BUILD_DIR_FMT_INVALID = [
 ]
 
 
-def mock_dir_fmt_config(monkeypatch, dir_fmt):
+def mock_dir_fmt_config(monkeypatch, b, dir_fmt):
+    b.config = _FakeConfig({'build.dir-fmt': dir_fmt})
+    # build.py still reads board/pristine/etc. via the deprecated ConfigParser
+    # global; patch it so those lookups return empty for these tests.
     config = configparser.ConfigParser()
     config.add_section("build")
     config.set("build", "dir-fmt", dir_fmt)
-    monkeypatch.setattr("build_helpers.config", config)
     monkeypatch.setattr("build.config", config)
 
 def mock_is_zephyr_build(monkeypatch, func):
@@ -265,6 +269,7 @@ def build_instance(monkeypatch):
     b = Build()
     b.args = DEFAULT_ARGS
     b.config_board = None
+    b.config = _FakeConfig()
 
     # mock configparser read method to bypass configs during test
     monkeypatch.setattr(configparser.ConfigParser, "read", lambda self, filenames: None)
@@ -291,7 +296,7 @@ def test_build_dir_fmt_is_used(monkeypatch, build_instance, test_case):
     b = build_instance
 
     # mock the config
-    mock_dir_fmt_config(monkeypatch, dir_fmt)
+    mock_dir_fmt_config(monkeypatch, b, dir_fmt)
 
     b._setup_build_dir()
     assert Path(b.build_dir) == expected
@@ -304,7 +309,7 @@ def test_build_dir_fmt_is_not_resolvable(monkeypatch, build_instance, dir_fmt):
     b.args.board = None
 
     # mock the config
-    mock_dir_fmt_config(monkeypatch, dir_fmt)
+    mock_dir_fmt_config(monkeypatch, b, dir_fmt)
 
     b._setup_build_dir()
     assert Path(b.build_dir) == cwd / DEFAULT_BUILD_DIR
@@ -316,7 +321,7 @@ def test_dir_fmt_preferred_over_others(monkeypatch, build_instance):
     dir_fmt = "my-dir-fmt-build-folder"
 
     # mock the config and is_zephyr_build
-    mock_dir_fmt_config(monkeypatch, dir_fmt)
+    mock_dir_fmt_config(monkeypatch, b, dir_fmt)
     mock_is_zephyr_build(monkeypatch,
         lambda path: path in [dir_fmt, cwd, DEFAULT_BUILD_DIR])
 
@@ -329,7 +334,7 @@ def test_non_existent_dir_fmt_preferred_over_others(monkeypatch, build_instance)
     dir_fmt = "my-dir-fmt-build-folder"
 
     # mock the config and is_zephyr_build
-    mock_dir_fmt_config(monkeypatch, dir_fmt)
+    mock_dir_fmt_config(monkeypatch, b, dir_fmt)
     mock_is_zephyr_build(monkeypatch,
         lambda path: path in [cwd, DEFAULT_BUILD_DIR])
 
@@ -354,7 +359,7 @@ def test_cwd_preferred_over_non_resolvable_dir_fmt(monkeypatch, build_instance, 
     b = build_instance
 
     # mock the config and is_zephyr_build
-    mock_dir_fmt_config(monkeypatch, dir_fmt)
+    mock_dir_fmt_config(monkeypatch, b, dir_fmt)
     mock_is_zephyr_build(monkeypatch,
         lambda path: path in [str(cwd)])
 
@@ -368,7 +373,7 @@ def test_cwd_preferred_over_non_existent_dir_fmt(monkeypatch, build_instance, te
     b = build_instance
 
     # mock the config and is_zephyr_build
-    mock_dir_fmt_config(monkeypatch, dir_fmt)
+    mock_dir_fmt_config(monkeypatch, b, dir_fmt)
     mock_is_zephyr_build(monkeypatch,
         lambda path: path in [str(cwd)])
 

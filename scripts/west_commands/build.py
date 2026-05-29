@@ -523,7 +523,7 @@ class Build(Forceable):
         # The CMake Cache has not been loaded yet, so this is safe
 
         context = self._get_dir_fmt_context()
-        build_dir = find_build_dir(self.args.build_dir, **context)
+        build_dir = find_build_dir(self.args.build_dir, config=self.config, **context)
         if not build_dir:
             self.die('Unable to determine a default build folder. Check '
                     'your build.dir-fmt configuration option')
