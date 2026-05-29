@@ -751,6 +751,7 @@ static int fw_upload_uart_reconfig(uint32_t speed, bool flow_control)
 {
 	struct uart_config config;
 	int err;
+	int64_t tx_drain_deadline;
 
 	config.baudrate = speed;
 	config.data_bits = UART_CFG_DATA_BITS_8;
@@ -760,6 +761,21 @@ static int fw_upload_uart_reconfig(uint32_t speed, bool flow_control)
 
 	uart_irq_rx_disable(uart_dev);
 	uart_irq_tx_disable(uart_dev);
+
+	/*
+	 * Wait for the TX FIFO and shift register to drain before reconfiguring
+	 * the baud rate.  Disabling the TX IRQ does not flush in-flight bytes;
+	 * calling uart_configure() while the FIFO still has data causes the
+	 * tail bytes to be clocked out at the wrong speed, corrupting the last
+	 * bytes of any command just sent (e.g. CMD5).  Poll uart_irq_tx_complete()
+	 * up to 20 ms (> worst-case drain time of a 64-byte FIFO at 115200 baud
+	 * ~ 5.6 ms) then fall through regardless.
+	 */
+	tx_drain_deadline = k_uptime_get() + 20;
+	do {
+		uart_irq_update(uart_dev);
+	} while (!uart_irq_tx_complete(uart_dev) && (k_uptime_get() < tx_drain_deadline));
+
 	fw_upload_read_to_clear();
 	err = uart_configure(uart_dev, &config);
 	uart_irq_rx_enable(uart_dev);
