@@ -14,6 +14,7 @@ select = [
     "F",      # pyflakes
     "I",      # isort
     "SIM",    # flake8-simplify
+    "TID251", # flake8-tidy-imports: banned-api (deprecated west APIs)
     "UP",     # pyupgrade
     "W",      # pycodestyle warnings
     # zephyr-keep-sorted-stop
@@ -24,6 +25,30 @@ ignore = [
     "SIM108", # Allow if-else blocks instead of forcing ternary operator
     # zephyr-keep-sorted-stop
 ]
+
+[lint.flake8-tidy-imports.banned-api]
+# Deprecated west APIs.
+"west.log".msg = """\
+    west.log is deprecated; use logging.getLogger(__name__) \
+    and bridge to the command via forward_logging_to_west() \
+    from scripts/west_commands/build_helpers.py. \
+    See details in https://github.com/zephyrproject-rtos/west/issues/952"""
+
+"west.configuration.config".msg = """\
+    The west.configuration `config` module-level global is deprecated; \
+    use the Configuration class (typically `self.config` inside a WestCommand)."""
+
+"west.configuration.read_config".msg = """\
+    west.configuration.read_config is deprecated; \
+    instantiate Configuration(topdir=...) and use its get method."""
+
+"west.configuration.update_config".msg = """\
+    west.configuration.update_config is deprecated; \
+    instantiate Configuration(topdir=...) and use its set method."""
+
+"west.configuration.delete_config".msg = """\
+    west.configuration.delete_config is deprecated; \
+    instantiate Configuration(topdir=...) and use its delete method."""
 
 [format]
 quote-style = "preserve"
