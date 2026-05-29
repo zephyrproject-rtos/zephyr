@@ -1,0 +1,5 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QNXHV_VM
+	select SOC_QNXHV_VM

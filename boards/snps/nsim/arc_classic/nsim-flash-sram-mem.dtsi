@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2022, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+#include <mem.h>
+
+#define DT_FLASH_SIZE		DT_SIZE_M(4)
+#define DT_SRAM_SIZE		DT_SIZE_M(4)
+
+/ {
+	/* We are carving out of DRAM for a pseudo flash and sram region */
+	flash0: flash@80000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x80000000 DT_FLASH_SIZE>;
+	};
+
+	sram0: sram@80400000 {
+		device_type = "memory";
+		reg = <0x80400000 DT_SRAM_SIZE>;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};

@@ -1,0 +1,93 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Binding file for testing diamond inheritance (top-bottom).
+#
+#                diamond.yaml
+#                  /    \
+#                 /      \
+#   base_amend.yaml      thing.yaml
+#                \         /
+#                 \       /
+#                 base.yaml
+#
+# Which properties are specified at which levels is summarized below
+# for convenience.
+#
+# * Binding level.
+#   Diamond's left:
+#   - prop-1 (amended in base_amend.yaml)
+#   - prop-enum (amended in base_amend.yaml)
+#   - prop-default (inherited from base.yaml)
+#   Diamond's right:
+#   - prop-1 (last amended in thing.yaml)
+#   - prop-enum (amended in thing.yaml)
+#   - prop-thing (inherited from thing.yaml)
+#   Diamond's top:
+#   - prop-enum (last amended here)
+#   - prop-diamond
+#
+# * Child-binding level:
+#   Diamond's left:
+#   - child-prop-1 (amended in base_amend.yaml)
+#   - child-prop-enum (amended in base_amend.yaml)
+#   - child-prop-default (inherited from base.yaml)
+#   Diamond's right:
+#   - child-prop-1 (last amended in thing.yaml)
+#   - child-prop-enum (amended in thing.yaml)
+#   - child-prop-thing (inherited from thing.yaml)
+#   Diamond's top:
+#   - child-prop-enum (last amended here)
+#   - child-prop-diamond
+#
+# * Grandchild-binding level:
+#   Diamond's left:
+#   - grandchild-prop-1 (amended in base_amend.yaml)
+#   - grandchild-prop-enum (amended in base_amend.yaml)
+#   - grandchild-prop-default (inherited from base.yaml)
+#   Diamond's right:
+#   - grandchild-prop-1 (last amended in thing.yaml)
+#   - grandchild-prop-enum (amended in thing.yaml)
+#   - grandchild-prop-thing (inherited from thing.yaml)
+#   Diamond's top:
+#   - grandchild-prop-enum (last amended here)
+#   - grandchild-prop-diamond
+
+description: Diamond's top.
+
+compatible: diamond
+
+include:
+  # Diamond's left.
+  - name: base_amend.yaml
+    property-allowlist: [prop-1, prop-enum, prop-default]
+    child-binding:
+      property-allowlist: [child-prop-1, child-prop-enum, child-prop-default]
+      child-binding:
+        property-allowlist: [grandchild-prop-1, grandchild-prop-enum, grandchild-prop-default]
+  # Diamond's right.
+  - name: thing.yaml
+
+properties:
+  prop-diamond:
+    type: int
+  prop-enum:
+    description: Overwritten in diamond.yaml.
+    default: FOO
+
+child-binding:
+  description: Diamond's child-binding.
+
+  properties:
+    child-prop-diamond:
+      type: int
+    child-prop-enum:
+      description: Overwritten in diamond.yaml (child).
+      default: CHILD_FOO
+
+  child-binding:
+    properties:
+      grandchild-prop-diamond:
+        type: int
+      grandchild-prop-enum:
+        description: Overwritten in diamond.yaml (grandchild).
+        default: GRANDCHILD_FOO

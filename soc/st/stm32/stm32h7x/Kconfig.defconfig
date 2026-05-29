@@ -1,0 +1,32 @@
+# ST Microelectronics STM32H7 MCU line
+
+# Copyright (c) 2019 Linaro  Limited
+# Copyright (c) 2022 SILA Embedded Solutions GmbH <office@embedded-solutions.at>
+# SPDX-License-Identifier: Apache-2.0
+
+# Kconfig symbols common to STM32H7 series
+
+if SOC_SERIES_STM32H7X
+
+rsource "Kconfig.defconfig.stm32h7*"
+
+configdefault SHARED_INTERRUPTS
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers12)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers13)
+	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers14)
+
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+	default 0x0   if !BOOTLOADER_MCUBOOT
+
+config CACHE_MANAGEMENT
+	default y if CPU_CORTEX_M7
+
+if LVGL
+
+config LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32h7xx.h"
+
+endif # LVGL
+
+endif # SOC_SERIES_STM32H7X

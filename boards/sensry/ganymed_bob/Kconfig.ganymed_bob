@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 sensry.io
+
+config BOARD_GANYMED_BOB
+	select SOC_SY120_GBM if BOARD_GANYMED_BOB_SY120_GBM
+	select SOC_SY120_GEN1 if BOARD_GANYMED_BOB_SY120_GEN1

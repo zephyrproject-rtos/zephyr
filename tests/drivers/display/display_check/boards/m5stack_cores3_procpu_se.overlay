@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mipi_dbi {
+	status = "okay";
+};
+
+&spim2_default {
+	group1 {
+		pinmux = <SPIM2_SCLK_GPIO36>;
+	};
+};

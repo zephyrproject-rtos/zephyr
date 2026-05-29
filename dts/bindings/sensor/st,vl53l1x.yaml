@@ -1,0 +1,25 @@
+# Copyright (c) 2023 Prosaris Solutions Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics VL53L1X Time of Flight sensor
+
+compatible: "st,vl53l1x"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  xshut-gpios:
+    type: phandle-array
+    description: |
+      Driving the XSHUT pin low puts the VL53L1X into hardware
+      standby (if VDD is present) or complete power off (if
+      VDD is not present). Additionally, if XSHUT is connected
+      directly to VDD, the sensor will go into boot mode on a
+      transition from LOW to HIGH.
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      An interrupt is raised when a distance measurement is ready.
+      GPIO1 is the interrupt pin on the VL53L1X (active low). This
+      can be disabled if the user prefers to use polling instead.

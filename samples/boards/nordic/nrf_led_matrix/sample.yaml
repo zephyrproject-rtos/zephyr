@@ -1,0 +1,15 @@
+sample:
+  name: nRF LED matrix sample
+tests:
+  sample.boards.nrf.nrf_led_matrix:
+    filter: dt_compat_enabled("nordic,nrf-led-matrix")
+    integration_platforms:
+      - bbc_microbit_v2
+      - bbc_microbit
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "nRF LED matrix sample on .*"
+        - "Started"

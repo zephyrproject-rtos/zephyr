@@ -1,0 +1,73 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP32 on-chip LDO voltage regulators.
+
+  Some Espressif SoCs include internal general-purpose LDO channels
+  that can supply power to internal and external peripherals such as
+  SPI flash and PSRAM.
+
+  Supported voltage range: 500mV to 2700mV (continuously adjustable),
+  or 3300mV (rail bypass mode). Some channels have eFuse-calibrated
+  output for precise voltage regulation.
+
+compatible: "espressif,esp32-regulator"
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-name
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+
+  properties:
+    regulator-min-microvolt:
+      default: 500000
+
+    regulator-max-microvolt:
+      default: 3300000
+
+    espressif,ldo-channel:
+      type: int
+      required: true
+      enum:
+        - 1
+        - 2
+        - 3
+        - 4
+      description: |
+        LDO output channel number (1-4), corresponding to VO1-VO4.
+        All channels support eFuse-calibrated output for precise voltage
+        regulation. Refer to the SoC datasheet for channel-specific
+        capabilities and typical usage.
+
+examples:
+  - |
+    ldo {
+      compatible = "espressif,esp32-regulator";
+
+      ldo1 {
+        regulator-name = "ldo1";
+        regulator-min-microvolt = <500000>;
+        regulator-max-microvolt = <3300000>;
+        regulator-boot-on;
+        regulator-always-on;
+        regulator-init-microvolt = <3300000>;
+        espressif,ldo-channel = <1>;
+      };
+
+      ldo2 {
+        regulator-name = "ldo2";
+        regulator-min-microvolt = <500000>;
+        regulator-max-microvolt = <3300000>;
+        regulator-init-microvolt = <1800000>;
+        espressif,ldo-channel = <2>;
+      };
+    };

@@ -1,0 +1,21 @@
+family:
+- name: numaker
+  series:
+  - name: m46x
+    socs:
+    - name: m467
+  - name: m2l31x
+    socs:
+    - name: m2l31xxx
+  - name: m55m1x
+    socs:
+    - name: m55m1xxx
+  - name: m333x
+    socs:
+    - name: m333xxx
+  - name: m335x
+    socs:
+    - name: m335xxx
+  - name: m031x
+    socs:
+    - name: m031xxx

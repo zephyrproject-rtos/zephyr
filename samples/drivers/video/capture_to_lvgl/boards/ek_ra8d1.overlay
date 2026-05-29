@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&renesas_mipi_i2c {
+	gt911_rtkmipilcdb00000be: gt911-rtkmipilcdb00000be@5d {
+		status = "disabled";
+	};
+};
+
+&zephyr_lcdif {
+	input-pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+};

@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Javad Rahimipetroudi <javad.rahimipetroudi@mind.be>
+# SPDX-License-Identifier: Apache-2.0
+
+config TLC59731_STRIP
+	bool "TLC59731 LED controller"
+	default y
+	depends on DT_HAS_TI_TLC59731_ENABLED
+	select GPIO
+	help
+	  Enable driver for the Texas Instruments TLC59731 EasySet LED
+	  controllers.

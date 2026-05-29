@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "RTC CLK Test Configuration"
+
+source "Kconfig.zephyr"
+
+config FIXTURE_XTAL
+	bool "Selected when external crystal is present"
+	default n

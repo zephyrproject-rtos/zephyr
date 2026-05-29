@@ -1,0 +1,34 @@
+common:
+  platform_type:
+    - qemu
+    - native
+  tags:
+    - log_api
+    - logging
+  integration_platforms:
+    - native_sim
+  filter: not CONFIG_LOG_ALWAYS_RUNTIME
+tests:
+  logging.message:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+
+  logging.message.no_overflow:
+    extra_configs:
+      - CONFIG_LOG_MODE_OVERFLOW=n
+
+  logging.message.64b_timestamp:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y
+
+  logging.message.fp:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+
+  logging.message.fp_64b_timestamp:
+    extra_configs:
+      - CONFIG_CBPRINTF_COMPLETE=y
+      - CONFIG_CBPRINTF_FP_SUPPORT=y
+      - CONFIG_LOG_TIMESTAMP_64BIT=y

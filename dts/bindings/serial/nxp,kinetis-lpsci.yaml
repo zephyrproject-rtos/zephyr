@@ -1,0 +1,15 @@
+description: Kinetis LPSCI UART
+
+compatible: "nxp,kinetis-lpsci"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true

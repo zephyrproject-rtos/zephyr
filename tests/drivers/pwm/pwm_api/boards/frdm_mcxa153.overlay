@@ -1,0 +1,31 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &ctimer0;
+	};
+};
+
+&pinctrl {
+	ctimer0_default: ctimer0_default {
+		group0 {
+			/* PWM output P2_12 (J2_12) */
+			pinmux = <CT0_MAT0_P2_12>;
+			drive-strength = "high";
+			slew-rate = "fast";
+		};
+	};
+};
+
+&ctimer0 {
+	compatible = "nxp,ctimer-pwm";
+	status = "okay";
+	pinctrl-0 = <&ctimer0_default>;
+	pinctrl-names = "default";
+	#pwm-cells = <3>;
+	prescaler = <1>;
+};

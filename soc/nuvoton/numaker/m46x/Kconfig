@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_M46X
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_CORTEX_M_HAS_DWT
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CORTEX_M_SYSTICK if SYS_CLOCK_EXISTS
+	select HAS_POWEROFF
+
+config SOC_M467
+	select HAS_NUMAKER_HAL

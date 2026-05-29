@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2021 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* NOTE: this feature is only available in nRF9160 DK v0.14.0 or later. */
+
+&switch1_pin_routing {
+	status = "disabled";
+};
+
+&switch2_pin_routing {
+	status = "disabled";
+};
+
+&button1_pin_routing {
+	status = "disabled";
+};
+
+&button2_pin_routing {
+	status = "disabled";
+};
+
+&io_expander_pins_routing {
+	status = "okay";
+};

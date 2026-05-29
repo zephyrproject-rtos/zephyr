@@ -1,0 +1,342 @@
+/*
+ * Copyright (c) 2019 Antmicro <www.antmicro.com>
+ * Copyright (c) 2024 Vogl Electronic GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT litex_liteeth
+
+#define LOG_MODULE_NAME eth_litex_liteeth
+#define LOG_LEVEL CONFIG_ETHERNET_LOG_LEVEL
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
+#include <zephyr/kernel.h>
+#include <zephyr/device.h>
+#include <soc.h>
+#include <stdbool.h>
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/phy.h>
+
+#include <zephyr/sys/printk.h>
+#include <zephyr/irq.h>
+
+#include "eth.h"
+
+#define MAX_TX_FAILURE K_MSEC(100)
+
+#define ETH_LITEX_SLOT_SIZE 0x0800
+
+struct eth_litex_dev_data {
+	uint8_t txslot;
+	struct k_sem sem_tx_ready;
+};
+
+struct eth_litex_config {
+	struct net_if *iface;
+	const struct device *phy_dev;
+	void (*config_func)(const struct device *dev);
+	struct net_eth_mac_config mcfg;
+	mem_addr_t rx_slot_addr;
+	mem_addr_t rx_length_addr;
+	mem_addr_t rx_ev_pending_addr;
+	mem_addr_t rx_ev_enable_addr;
+	mem_addr_t tx_start_addr;
+	mem_addr_t tx_ready_addr;
+	mem_addr_t tx_slot_addr;
+	mem_addr_t tx_length_addr;
+	mem_addr_t tx_ev_pending_addr;
+	mem_addr_t tx_ev_enable_addr;
+	mem_addr_t tx_buf_addr;
+	mem_addr_t rx_buf_addr;
+	uint8_t tx_buf_n;
+	uint8_t rx_buf_n;
+};
+
+static int eth_initialize(const struct device *dev)
+{
+	const struct eth_litex_config *config = dev->config;
+	struct eth_litex_dev_data *context = dev->data;
+
+	k_sem_init(&context->sem_tx_ready, 1, 1);
+
+	config->config_func(dev);
+
+	return 0;
+}
+
+static int eth_tx(const struct device *dev, struct net_pkt *pkt)
+{
+	uint16_t len;
+	struct eth_litex_dev_data *context = dev->data;
+	const struct eth_litex_config *config = dev->config;
+	int ret;
+
+	/* get data from packet and send it */
+	len = net_pkt_get_len(pkt);
+	net_pkt_read(pkt,
+		     UINT_TO_POINTER(config->tx_buf_addr + (context->txslot * ETH_LITEX_SLOT_SIZE)),
+		     len);
+
+	litex_write8(context->txslot, config->tx_slot_addr);
+	litex_write16(len, config->tx_length_addr);
+
+	/* wait for the device to be ready to transmit */
+	ret = k_sem_take(&context->sem_tx_ready, MAX_TX_FAILURE);
+	if (ret < 0) {
+		LOG_ERR("TX fifo failed");
+		return -EIO;
+	};
+	/* start transmitting */
+	litex_write8(1, config->tx_start_addr);
+
+	/* change slot */
+	context->txslot = (context->txslot + 1) % config->tx_buf_n;
+
+	return 0;
+}
+
+static void eth_rx(const struct device *port)
+{
+	struct net_pkt *pkt;
+	const struct eth_litex_config *config = port->config;
+
+	int r;
+	uint16_t len = 0;
+	uint8_t rxslot = 0;
+
+	if (!net_if_flag_is_set(config->iface, NET_IF_UP)) {
+		return;
+	}
+
+	/* get frame's length */
+	len = litex_read16(config->rx_length_addr);
+
+	/* which slot is the frame in */
+	rxslot = litex_read8(config->rx_slot_addr);
+
+	/* obtain rx buffer */
+	pkt = net_pkt_rx_alloc_with_buffer(config->iface, len, NET_AF_UNSPEC, 0,
+					   K_NO_WAIT);
+	if (pkt == NULL) {
+		LOG_ERR("Failed to obtain RX buffer of length %u", len);
+		return;
+	}
+
+	/* copy data to buffer */
+	if (net_pkt_write(pkt,
+			  UINT_TO_POINTER(config->rx_buf_addr + (rxslot * ETH_LITEX_SLOT_SIZE)),
+			  len) != 0) {
+		LOG_ERR("Failed to append RX buffer to context buffer");
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	/* receive data */
+	r = net_recv_data(config->iface, pkt);
+	if (r < 0) {
+		LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
+		net_pkt_unref(pkt);
+	}
+}
+
+static void eth_irq_handler(const struct device *port)
+{
+	struct eth_litex_dev_data *context = port->data;
+	const struct eth_litex_config *config = port->config;
+	/* check sram reader events (tx) */
+	if (litex_read8(config->tx_ev_pending_addr) & BIT(0)) {
+		k_sem_give(&context->sem_tx_ready);
+
+		/* ack reader irq */
+		litex_write8(BIT(0), config->tx_ev_pending_addr);
+	}
+
+	/* check sram writer events (rx) */
+	if (litex_read8(config->rx_ev_pending_addr) & BIT(0)) {
+		eth_rx(port);
+
+		/* ack writer irq */
+		litex_write8(BIT(0), config->rx_ev_pending_addr);
+	}
+}
+
+static int eth_set_config(const struct device *dev __unused,
+			  struct net_if *iface __unused,
+			  enum ethernet_config_type type,
+			  const struct ethernet_config *config __unused)
+{
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
+		return 0;
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
+	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
+		return 0;
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
+	default:
+		break;
+	}
+
+	return -ENOTSUP;
+}
+
+static int eth_start(const struct device *dev, struct net_if *iface __unused)
+{
+	struct eth_litex_dev_data *context = dev->data;
+	const struct eth_litex_config *config = dev->config;
+
+	if (litex_read8(config->tx_ready_addr)) {
+		k_sem_give(&context->sem_tx_ready);
+	}
+
+	litex_write8(BIT(0), config->tx_ev_pending_addr);
+	litex_write8(BIT(0), config->rx_ev_pending_addr);
+
+	litex_write8(1, config->tx_ev_enable_addr);
+	litex_write8(1, config->rx_ev_enable_addr);
+
+	return 0;
+}
+
+static int eth_stop(const struct device *dev, struct net_if *iface __unused)
+{
+	const struct eth_litex_config *config = dev->config;
+
+	litex_write8(0, config->tx_ev_enable_addr);
+	litex_write8(0, config->rx_ev_enable_addr);
+
+	return 0;
+}
+
+static const struct device *eth_get_phy(const struct device *dev, struct net_if *iface __unused)
+{
+	const struct eth_litex_config *config = dev->config;
+
+	return config->phy_dev;
+}
+
+static void phy_link_state_changed(const struct device *phy_dev __unused,
+				   struct phy_link_state *state,
+				   void *user_data)
+{
+	struct net_if *iface = (struct net_if *)user_data;
+
+	if (state->is_up) {
+		net_eth_carrier_on(iface);
+	} else {
+		net_eth_carrier_off(iface);
+	}
+}
+
+static void eth_iface_init(struct net_if *iface)
+{
+	const struct device *port = net_if_get_device(iface);
+	const struct eth_litex_config *config = port->config;
+	uint8_t mac_addr[NET_ETH_ADDR_LEN] = {0};
+
+	/* initialize ethernet L2 */
+	ethernet_init(iface);
+
+	(void)net_eth_mac_load(&config->mcfg, mac_addr);
+
+	/* set MAC address */
+	(void)net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
+
+	net_lldp_set_lldpdu(iface);
+
+	if (config->phy_dev == NULL) {
+		LOG_WRN("No PHY device");
+		return;
+	}
+
+	net_if_carrier_off(iface);
+
+	if (device_is_ready(config->phy_dev)) {
+		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)iface);
+	} else {
+		LOG_ERR("PHY device not ready");
+	}
+}
+
+static enum ethernet_hw_caps eth_caps(const struct device *dev __unused,
+				      struct net_if *iface __unused)
+{
+	return
+#ifdef CONFIG_NET_VLAN
+		ETHERNET_HW_VLAN |
+#endif
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
+		ETHERNET_PROMISC_MODE |
+#endif
+#ifdef CONFIG_NET_LLDP
+		ETHERNET_LLDP |
+#endif
+		ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
+}
+
+static const struct ethernet_api eth_api = {
+	.iface_api.init = eth_iface_init,
+	.start = eth_start,
+	.stop = eth_stop,
+	.get_capabilities = eth_caps,
+	.set_config = eth_set_config,
+	.get_phy = eth_get_phy,
+	.send = eth_tx
+};
+
+#define ETH_LITEX_SLOT_RX_ADDR(n)                                                                  \
+	DT_INST_REG_ADDR_BY_NAME_OR(n, rx_buffers, (DT_INST_REG_ADDR_BY_NAME(n, buffers)))
+#define ETH_LITEX_SLOT_TX_ADDR(n)                                                                  \
+	DT_INST_REG_ADDR_BY_NAME_OR(n, tx_buffers,                                                 \
+				    (DT_INST_REG_ADDR_BY_NAME(n, buffers) +                        \
+				     (DT_INST_REG_SIZE_BY_NAME(n, buffers) / 2)))
+#define ETH_LITEX_SLOT_RX_N(n)                                                                     \
+	(DT_INST_REG_SIZE_BY_NAME_OR(n, rx_buffers, (DT_INST_REG_SIZE_BY_NAME(n, buffers) / 2)) /  \
+	 ETH_LITEX_SLOT_SIZE)
+#define ETH_LITEX_SLOT_TX_N(n)                                                                     \
+	(DT_INST_REG_SIZE_BY_NAME_OR(n, tx_buffers, (DT_INST_REG_SIZE_BY_NAME(n, buffers) / 2)) /  \
+	 ETH_LITEX_SLOT_SIZE)
+
+#define ETH_LITEX_INIT(n)                                                                          \
+                                                                                                   \
+	static void eth_irq_config##n(const struct device *dev)                                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), eth_irq_handler,            \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+                                                                                                   \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}                                                                                          \
+                                                                                                   \
+	static struct eth_litex_dev_data eth_data##n;                                              \
+                                                                                                   \
+	static const struct eth_litex_config eth_config##n;                                        \
+                                                                                                   \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_initialize, NULL, &eth_data##n, &eth_config##n,       \
+				      CONFIG_ETH_INIT_PRIORITY, &eth_api, NET_ETH_MTU);            \
+                                                                                                   \
+	static const struct eth_litex_config eth_config##n = {                                     \
+		.iface = NET_IF_DT_INST_GET(n, 0),                                                 \
+		.phy_dev = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, phy_handle)),                  \
+		.config_func = eth_irq_config##n,                                                  \
+		.mcfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),                                        \
+		.rx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_slot),                              \
+		.rx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_length),                          \
+		.rx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_pending),                  \
+		.rx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, rx_ev_enable),                    \
+		.tx_start_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_start),                            \
+		.tx_ready_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ready),                            \
+		.tx_slot_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_slot),                              \
+		.tx_length_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_length),                          \
+		.tx_ev_pending_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_pending),                  \
+		.tx_ev_enable_addr = DT_INST_REG_ADDR_BY_NAME(n, tx_ev_enable),                    \
+		.rx_buf_addr = ETH_LITEX_SLOT_RX_ADDR(n),                                          \
+		.tx_buf_addr = ETH_LITEX_SLOT_TX_ADDR(n),                                          \
+		.rx_buf_n = ETH_LITEX_SLOT_RX_N(n),                                                \
+		.tx_buf_n = ETH_LITEX_SLOT_TX_N(n),                                                \
+	};
+
+DT_INST_FOREACH_STATUS_OKAY(ETH_LITEX_INIT);

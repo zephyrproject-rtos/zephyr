@@ -1,0 +1,10 @@
+# Copyright (c) 2025, Realtek, SIBG-SD7
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_REALTEK_RTS5912
+	bool "Realtek RTS5912 ADC drivers"
+	default y
+	depends on DT_HAS_REALTEK_RTS5912_ADC_ENABLED
+	select PINCTRL
+	help
+	  This option enables the ADC driver for Realtek RTS5912 of processors.

@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board-specific overlay for the Nucleo-WL55JC:
+ *  - USART1 pinctrl on PB6 (TX) / PB7 (RX)
+ *  - Disable SPI1 whose SCK (PA5) conflicts with GNSS WAKEUP (D13)
+ *  - GPIO hogs to hold RESET (PC1/D7) and WAKEUP (PA5/D13) high
+ */
+
+&spi1 {
+	status = "disabled";
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pb6 &usart1_rx_pb7>;
+	pinctrl-names = "default";
+};
+
+/* GNSS RESET — active-low, hold high so module runs */
+&gpioc {
+	gnss_reset_hog: gnss-reset-hog {
+		gpio-hog;
+		gpios = <1 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "GNSS_RESET";
+	};
+};
+
+/* GNSS WAKEUP — must be high for module to transmit */
+&gpioa {
+	gnss_wakeup_hog: gnss-wakeup-hog {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "GNSS_WAKEUP";
+	};
+};

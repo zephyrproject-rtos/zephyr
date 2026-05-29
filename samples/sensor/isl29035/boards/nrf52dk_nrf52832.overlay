@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2019 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 { /* SDA P0.26, SCL P0.27, ALERT P1.11 */
+	isl29035@44 {
+		compatible = "isil,isl29035";
+		reg = <0x44>;
+		int-gpios = <&gpio0 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+	};
+};

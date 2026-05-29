@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2020, Bernhard Kraemer
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: teensymm
+name: PJRC TEENSY_MICROMOD
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 768
+flash: 8192
+supported:
+  - counter
+  - gpio
+  - usb_device
+testing:
+  ignore_tags:
+    - net
+    - posix
+vendor: sparkfun

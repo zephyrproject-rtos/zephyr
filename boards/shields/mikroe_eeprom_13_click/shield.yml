@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mikroe_eeprom_13_click
+  full_name: EEPROM 13 Click
+  vendor: mikroe
+  supported_features:
+    - mtd

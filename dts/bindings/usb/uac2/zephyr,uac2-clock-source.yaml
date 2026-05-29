@@ -1,0 +1,52 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: USB Audio Class 2 Clock Source entity
+
+compatible: "zephyr,uac2-clock-source"
+
+properties:
+  clock-type:
+    type: string
+    required: true
+    description: |
+      Clock Type indicating whether the Clock Source represents an external
+      clock or an internal clock with either fixed frequency, variable
+      frequency, or programmable frequency.
+    enum:
+      - "external"
+      - "internal-fixed"
+      - "internal-variable"
+      - "internal-programmable"
+
+  sof-synchronized:
+    type: boolean
+    description: |
+      True if clock is synchronized to USB Start of Frame. False if clock is
+      free running. External clock must be free running.
+
+  frequency-control:
+    type: string
+    description: Clock Frequency Control capabilities
+    enum:
+      - "read-only"
+      - "host-programmable"
+
+  validity-control:
+    type: string
+    description: Clock Validity Control capabilities
+    enum:
+      - "read-only"
+
+  assoc-terminal:
+    type: phandle
+    description: |
+      Input or Output Terminal associated with this Clock Source. Set if clock
+      is derived from USB OUT data endpoint (point the handle to respective
+      Input Terminal) or from input signal on S/PDIF connector.
+
+  sampling-frequencies:
+    type: array
+    required: true
+    description: |
+      Sampling Frequencies, in Hz, this Clock Source Entity can generate.

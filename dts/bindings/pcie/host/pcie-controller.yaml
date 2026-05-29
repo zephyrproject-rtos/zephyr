@@ -1,0 +1,18 @@
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for PCIe bus controllers
+
+include: [base.yaml, acpi.yaml]
+
+description: Generic PCIe host controller
+
+compatible: "pcie-controller"
+
+bus: pcie
+
+properties:
+  "#address-cells":
+    required: true
+  "#size-cells":
+    required: true

@@ -1,0 +1,6 @@
+board:
+  name: nucleo_c542rc
+  full_name: Nucleo C542RC
+  vendor: st
+  socs:
+    - name: stm32c542xx

@@ -1,0 +1,8 @@
+# Arduino Portenta H7 board configuration
+
+# Copyright (c) 2022 Benjamin Björnsson <benjamin.bjornsson@gmail.com>.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ARDUINO_PORTENTA_H7
+	select SOC_STM32H747XX_M7 if BOARD_ARDUINO_PORTENTA_H7_STM32H747XX_M7
+	select SOC_STM32H747XX_M4 if BOARD_ARDUINO_PORTENTA_H7_STM32H747XX_M4

@@ -1,0 +1,57 @@
+# Copyright 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB Memory Peripheral Interface (MPI) in QSPI NOR mode
+
+compatible: "sifli,sf32lb-mpi-qspi-nor"
+
+include: base.yaml
+
+bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  clocks:
+    required: true
+
+  dmas:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 1
+
+  "#size-cells":
+    required: true
+    const: 0
+
+  sifli,lines:
+    type: int
+    enum:
+      - 1
+      - 4
+    description: |
+      Number of data lines connected to the flash device.
+
+  sifli,psclr:
+    type: int
+    default: 4
+    description: |
+      Prescaler value for the MPI clock. The MPI clock frequency (MCLK) is:
+
+        MCLK = FCLK         if PSCLR  = 0
+             = FCLK / PSCLR if PSCLR != 0
+
+      where FCLK is the frequency of the clock provided to the MPI peripheral.
+      The value must be between 0 and 255. Default is boot time value.
+
+  sifli,invert-rx-clk:
+    type: boolean
+    description: |
+      Invert internal RX clock to add half-cycle delay (coarse tune) when
+      sampling data. It may be needed for flash devices with high frequency.

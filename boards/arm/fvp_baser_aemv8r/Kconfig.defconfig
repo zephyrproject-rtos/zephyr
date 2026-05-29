@@ -1,0 +1,9 @@
+# Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FVP_BASER_AEMV8R
+
+config BUILD_OUTPUT_BIN
+	default y
+
+endif # BOARD_FVP_BASER_AEMV8R

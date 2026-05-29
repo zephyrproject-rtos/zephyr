@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2025 Ezurio LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "bl54l15u_dvk_nrf54l15_common.dtsi"

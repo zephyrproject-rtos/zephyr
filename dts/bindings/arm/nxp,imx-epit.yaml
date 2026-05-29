@@ -1,0 +1,20 @@
+# Copyright 2018, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: i.MX Enhanced Periodic Interrupt Timer (EPIT)
+
+compatible: "nxp,imx-epit"
+
+include: [base.yaml, "nxp,rdc-policy.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  prescaler:
+    type: int
+    required: true
+    description: Set the EPIT prescaler between 0 and 4095

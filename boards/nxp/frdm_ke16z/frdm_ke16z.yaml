@@ -1,0 +1,13 @@
+identifier: frdm_ke16z
+name: NXP FRDM-KE16Z
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+flash: 64
+ram: 8
+supported:
+  - flash
+  - gpio
+  - uart

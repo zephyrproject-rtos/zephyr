@@ -1,0 +1,29 @@
+# TCAN4x5x configuration options
+
+# Copyright (c) 2023 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_TCAN4X5X
+	bool "TI TCAN4x5x"
+	default y
+	depends on DT_HAS_TI_TCAN4X5X_ENABLED
+	select CAN_MCAN
+	select SPI
+	help
+	  Enable support for the Texas Instruments TCAN4x5x.
+
+if CAN_TCAN4X5X
+
+config CAN_TCAN4X5X_THREAD_STACK_SIZE
+	int "Stack size for the TCAN4x5x interrupt thread"
+	default 1024
+	help
+	  Size of the stack used for the thread handling interrupts and dispatching callbacks.
+
+config CAN_TCAN4X5X_THREAD_PRIO
+	int "Priority for the TCAN4x5x interrupt thread"
+	default 0
+	help
+	  Priority level for the thread handling interrupts and dispatching callbacks.
+
+endif # CAN_TCAN4X5X

@@ -1,0 +1,6 @@
+board:
+  name: uedx24240013_md50e
+  full_name: VIEWE UEDX24240013-MD50E
+  vendor: viewe
+  socs:
+  - name: esp32c3

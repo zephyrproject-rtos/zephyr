@@ -1,0 +1,32 @@
+# Copyright (c) 2022 Andriy Gelman <andriy.gelman@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon XMC4XXX ADC
+  Each ADC group XMC4XXX is assigned to a Zephyr device. Refer to Infineon XMC4XXX reference manual
+  (Section Port I/O functions) for the group/channel mapping to a specific port-pin on the board.
+  For example on the xmc45_relax_kit P14.0 is mapped to adc0,channel0 and P14.1 is mapped to
+  adc0,channel1.
+
+compatible: "infineon,xmc4xxx-adc"
+
+include: adc-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  vref-internal-mv:
+    type: int
+    required: true
+    description: |
+      This property sets the internal reference voltage (in millivolts).
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

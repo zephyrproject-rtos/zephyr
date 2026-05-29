@@ -1,0 +1,124 @@
+/*
+ * Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32c6/esp32c6_wroom_n4.dtsi>
+#include "m5stack_nanoc6_hpcore-pinctrl.dtsi"
+#include "grove_connectors.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <espressif/partitions_0x0_default.dtsi>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
+
+/ {
+	model = "m5stack_nanoc6";
+	compatible = "m5stack,nanoc6";
+
+	chosen {
+		zephyr,sram = &sramhp;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
+	aliases {
+		sw0 = &user_button1;
+		watchdog0 = &wdt0;
+		led0 = &blue_led;
+		led-strip = &status_rgb_led;
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button1: button_1 {
+			label = "User SW1";
+			gpios = <&gpio0 9 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+			label = "LED0";
+		};
+
+		ir_led: led_1 {
+			gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+			label = "IR";
+		};
+	};
+
+	status_rgb_led_en {
+		compatible = "regulator-fixed";
+		regulator-name = "status_rgb_led_enable";
+		enable-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	line-idle-low;
+	pinctrl-0 = <&spim2_ws2812_led>;
+	pinctrl-names = "default";
+
+	status_rgb_led: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		reg = <0>;
+		spi-max-frequency = <WS2812C_SPI_FREQ>;
+
+		chain-length = <1>;
+		color-mapping = <LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_BLUE>;
+		spi-one-frame = <WS2812C_ONE_FRAME>;
+		spi-zero-frame = <WS2812C_ZERO_FRAME>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&wifi {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};

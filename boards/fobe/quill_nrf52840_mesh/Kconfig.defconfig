@@ -1,0 +1,10 @@
+# QUILL NRF52840 MESH board configuration
+
+# Copyright (c) 2025 Chiho Sin
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_QUILL_NRF52840_MESH
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_QUILL_NRF52840_MESH

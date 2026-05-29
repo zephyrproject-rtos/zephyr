@@ -1,0 +1,23 @@
+sample:
+  description: SMF Calculator GUI Application
+  name: smf_calculator
+tests:
+  sample.smf.smf_calculator:
+    filter: dt_chosen_enabled("zephyr,display")
+    # Sample takes ~300k on disco_l475_iot1 board, add 50k just in case.
+    # Ram usage is 70k on disco_l475_iot1 board with adafruit_2_8_tft_touch_v2.
+    # Can be reduced by changing CONFIG_LV_Z_VDB_SIZE,
+    # CONFIG_LV_Z_MEM_POOL_SIZE and CONFIG_MAIN_STACK_SIZE.
+    min_flash: 350
+    min_ram: 75
+    harness: none
+    tags:
+      - samples
+      - display
+      - gui
+      - lvgl
+      - smf
+    modules:
+      - lvgl
+    integration_platforms:
+      - native_sim/native/64

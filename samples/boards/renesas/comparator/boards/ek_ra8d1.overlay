@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		sample-comp = &acmphs0;
+	};
+
+	zephyr,user {
+		vref-dac = <&dac0>;
+	};
+};
+
+&acmphs_global {
+	status = "okay";
+
+	acmphs0 {
+		/*
+		 * Since ivref3 is internally routed from to DA0 (DAC),
+		 * there is no need to add pinsel of ivref3.
+		 */
+		pinctrl-0 = <&acmphs0_ivcmp3>;
+		pinctrl-names = "default";
+		interrupts = <90 12>;
+		interrupt-names = "hs";
+		reference-input-source = "ivref3";
+		compare-input-source = "ivcmp3";
+		status = "okay";
+	};
+};

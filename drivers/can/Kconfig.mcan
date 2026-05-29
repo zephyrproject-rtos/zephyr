@@ -1,0 +1,9 @@
+# Bosch M_CAN configuration options
+
+# Copyright (c) 2020 Alexander Wachter
+# SPDX-License-Identifier: Apache-2.0
+
+config CAN_MCAN
+	bool
+	help
+	  Enable the Bosch M_CAN CAN IP module driver backend.

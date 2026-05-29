@@ -1,0 +1,30 @@
+/*
+ * Copyright 2024 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	i2c1: i2c@400 {
+		status = "okay";
+		compatible = "zephyr,i2c-emul-controller";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#forward-cells = <1>;
+		reg = <0x400 4>;
+	};
+
+	i2c2: i2c@500 {
+		status = "okay";
+		compatible = "zephyr,i2c-emul-controller";
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		#forward-cells = <1>;
+		reg = <0x500 4>;
+	};
+};
+
+&i2c0 {
+	forwards = <&i2c1 0x20>, <&i2c2 0x24>;
+};

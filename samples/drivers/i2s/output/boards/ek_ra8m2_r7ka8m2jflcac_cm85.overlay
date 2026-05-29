@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		i2s-tx = &i2s1;
+	};
+};
+
+&pinctrl {
+	ssie1_default: ssie1_default {
+		group1 {
+			/* SSI_BCK SSI_LRCK SSI_DATA */
+			psels = <RA_PSEL(RA_PSEL_SSIE, 9, 7)>,
+				<RA_PSEL(RA_PSEL_SSIE, 9, 6)>,
+				<RA_PSEL(RA_PSEL_SSIE, 2, 6)>;
+			drive-strength = "high";
+		};
+	};
+
+	pwm2_default: pwm2_default {
+		group1 {
+			/* GTIOC2A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 7, 13)>;
+		};
+	};
+};
+
+&i2s1 {
+	pinctrl-0 = <&ssie1_default>;
+	pinctrl-names = "default";
+	interrupts = <95 1>, <94 1>;
+	interrupt-names = "ssi_rt", "ssi_if";
+	status = "okay";
+	clocks = <&pclkb MSTPC 7>, <&ssi_internal_clock 0>;
+	clock-names = "pclk", "audio-clock";
+};
+
+&pwm2 {
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-names = "default";
+	interrupts = <93 1>, <92 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+
+	ssi_internal_clock: pwmclock {
+		status = "okay";
+		compatible = "pwm-clock";
+		#clock-cells = <1>;
+		pwms = <&pwm2 0 PWM_HZ(2822400) PWM_POLARITY_NORMAL>;
+	};
+};

@@ -1,0 +1,9 @@
+# Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: acp_7_0_adsp
+  full_name: ACP 7.0 Xtensa Audio DSP
+  vendor: amd
+  socs:
+    - name: acp_7_0

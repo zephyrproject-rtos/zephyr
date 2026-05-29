@@ -1,0 +1,13 @@
+# Drivers configuration options for Sensirion SCD4x
+
+# Copyright (c) 2024 Jan Fäh
+# SPDX-License-Identifier: Apache-2.0
+
+config SCD4X
+	bool "SCD4x Carbon Dioxide Sensor"
+	default y
+	depends on DT_HAS_SENSIRION_SCD41_ENABLED || DT_HAS_SENSIRION_SCD40_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable driver for the Sensirion SCD4x carbon dioxide sensors.

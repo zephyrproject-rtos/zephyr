@@ -1,0 +1,28 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek Bee Timer.
+
+compatible: "realtek,bee-timer"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  prescaler:
+    type: int
+    default: 1
+    description: |
+      Clock division factor.
+      For RTL87X2G series: 1/2/4/8/16/32/40/64.
+      For RTL8752H series: 1/2/4/8/40/125.
+    enum: [1, 2, 4, 8, 16, 32, 40, 64, 125]

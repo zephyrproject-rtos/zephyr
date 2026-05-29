@@ -1,0 +1,7 @@
+/*
+ * Copyright (C) 2024 EPAM Systems.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &hscif0;

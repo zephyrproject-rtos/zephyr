@@ -1,0 +1,16 @@
+common:
+  timeout: 5
+  platform_allow:
+    - stm32n6570_dk/stm32n657xx/sb
+    - nucleo_n657x0_q/stm32n657xx/sb
+  integration_platforms:
+    - stm32n6570_dk/stm32n657xx/sb
+tests:
+  drivers.clock.stm32_clock_configuration.n6_device.hsi:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/devices_on_hsi.overlay"
+  drivers.clock.stm32_clock_configuration.n6_device.perclk:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/devices_on_perclk.overlay"
+  drivers.clock.stm32_clock_configuration.n6_device.icx:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/devices_on_icx.overlay"
+  drivers.clock.stm32_clock_configuration.n6_device.timg:
+    extra_args: DTC_OVERLAY_FILE="boards/clear_clocks.overlay;boards/devices_on_timg.overlay"

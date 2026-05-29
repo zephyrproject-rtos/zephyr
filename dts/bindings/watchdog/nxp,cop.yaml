@@ -1,0 +1,41 @@
+# Copyright (c) 2025 Alexandre Rey
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP COP watchdog
+
+compatible: "nxp,cop"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clk-source:
+    type: int
+    required: true
+    description: |
+      Watchdog counter clock source.
+      - 0: LPO clock (1 kHz)
+      - 1: MCGIRCLK
+      - 2: OSCERCLK
+      - 3: Bus clock
+
+  timeout-cycles:
+    type: int
+    required: true
+    description: Watchdog timeout cycles
+    enum:
+      - 32
+      - 256
+      - 1024
+      - 8192
+      - 65536
+      - 262144
+
+  windowed-mode:
+    type: boolean
+    description: |
+      Watchdog timeout mode. Allowed only when timeout-cycles is 8192, 65526 or
+      262144 cycles. If enabled, the COP window opens during the last 3 quarters
+      of the timeout period.

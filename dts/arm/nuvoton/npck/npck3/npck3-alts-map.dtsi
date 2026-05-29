@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common pin-mux configurations in npck */
+#include <nuvoton/npck/npck-alts-map.dtsi>
+
+/* Specific pin-mux configurations in npck3 series */
+/ {
+	npcx-alts-map {
+		compatible = "nuvoton,npcx-pinctrl-conf";
+	};
+};

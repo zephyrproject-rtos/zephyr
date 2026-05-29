@@ -1,0 +1,30 @@
+# Memory Protection Unit (MPU) configuration options
+
+#Copyright (c) 2017 Linaro Limited.
+#Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+
+# SPDX-License-Identifier: Apache-2.0
+
+if CPU_HAS_MPU
+
+
+config ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
+	int
+	default 64 if ARM_MPU
+	default 4
+	help
+	  Minimum size (and alignment) of an ARM MPU region. Use this
+	  symbol to guarantee minimum size and alignment of MPU regions.
+	  A minimum 4-byte alignment is enforced in ARM builds without
+	  support for Memory Protection.
+
+if ARM_MPU
+
+config MPU_ALLOW_FLASH_WRITE
+	bool "Add MPU access to write to flash"
+	help
+	  Enable this to allow MPU RWX access to flash memory
+
+endif # ARM_MPU
+
+endif # CPU_HAS_MPU

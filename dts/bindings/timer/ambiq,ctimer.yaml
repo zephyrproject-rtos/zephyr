@@ -1,0 +1,62 @@
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq CTIMER timer
+
+compatible: "ambiq,ctimer"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clk-source:
+    type: string
+    required: true
+    enum:
+      - "CLK_SELECT_CLK_PIN"
+      - "CLK_SELECT_HFRC_12MHZ"
+      - "CLK_SELECT_HFRC_3MHZ"
+      - "CLK_SELECT_HFRC_187_5KHZ"
+      - "CLK_SELECT_HFRC_47KHZ"
+      - "CLK_SELECT_HFRC_12KHZ"
+      - "CLK_SELECT_XT_32_768KHZ"
+      - "CLK_SELECT_XT_16_384KHZ"
+      - "CLK_SELECT_XT_2_048KHZ"
+      - "CLK_SELECT_XT_256HZ"
+      - "CLK_SELECT_LFRC_512HZ"
+      - "CLK_SELECT_LFRC_32HZ"
+      - "CLK_SELECT_LFRC_1HZ"
+      - "CLK_SELECT_LFRC_1_16HZ"
+      - "CLK_SELECT_RTC_100HZ"
+      - "CLK_SELECT_HCLK_DIV4"
+      - "CLK_SELECT_XT_DIV4"
+      - "CLK_SELECT_XT_DIV8"
+      - "CLK_SELECT_XT_DIV32"
+      - "CLK_SELECT_RSVD"
+    description: |
+      Clock source selection: 32 KHz is available in deep sleep.
+      - AM_HAL_CTIMER_CLK_PIN               _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x00)
+      - AM_HAL_CTIMER_HFRC_12MHZ            _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x01)
+      - AM_HAL_CTIMER_HFRC_3MHZ             _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x02)
+      - AM_HAL_CTIMER_HFRC_187_5KHZ         _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x03)
+      - AM_HAL_CTIMER_HFRC_47KHZ            _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x04)
+      - AM_HAL_CTIMER_HFRC_12KHZ            _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x05)
+      - AM_HAL_CTIMER_XT_32_768KHZ          _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x06)
+      - AM_HAL_CTIMER_XT_16_384KHZ          _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x07)
+      - AM_HAL_CTIMER_XT_2_048KHZ           _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x08)
+      - AM_HAL_CTIMER_XT_256HZ              _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x09)
+      - AM_HAL_CTIMER_LFRC_512HZ            _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x0A)
+      - AM_HAL_CTIMER_LFRC_32HZ             _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x0B)
+      - AM_HAL_CTIMER_LFRC_1HZ              _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x0C)
+      - AM_HAL_CTIMER_LFRC_1_16HZ           _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x0D)
+      - AM_HAL_CTIMER_RTC_100HZ             _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x0E)
+      - AM_HAL_CTIMER_HCLK_DIV4             _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x0F)
+      - AM_HAL_CTIMER_XT_DIV4               _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x10)
+      - AM_HAL_CTIMER_XT_DIV8               _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x11)
+      - AM_HAL_CTIMER_XT_DIV32              _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x12)
+      - AM_HAL_CTIMER_RSVD                  _VAL2FLD(CTIMER_CTRL0_TMRA0CLK, 0x13)

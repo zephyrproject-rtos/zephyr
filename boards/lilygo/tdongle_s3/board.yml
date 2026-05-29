@@ -1,0 +1,6 @@
+board:
+  name: tdongle_s3
+  full_name: T-Dongle S3
+  vendor: lilygo
+  socs:
+  - name: esp32s3

@@ -1,0 +1,52 @@
+# Copyright (c) 2021 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: OpenAMP (RPMsg with static VRINGs) backend
+
+compatible: "zephyr,ipc-openamp-static-vrings"
+
+include: base.yaml
+
+properties:
+  role:
+    description: OpenAMP roles
+    required: true
+    type: string
+    enum:
+      - host
+      - remote
+
+  memory-region:
+    description: phandle to the shared memory region
+    required: true
+    type: phandle
+
+  mboxes:
+    description: phandle to the MBOX controller (TX and RX are required)
+    required: true
+
+  mbox-names:
+    description: MBOX channel names (must be called "tx" and "rx")
+    required: true
+
+  zephyr,priority:
+    type: array
+    description: |
+      WQ priority for the instance. This property is an array composed by the
+      priority level and the type of priority (PRIO_COOP for cooperative or
+      PRIO_PREEMPT for preemptive).
+
+      For example for a thread priority K_PRIO_COOP(1) in DT we have
+        priority = <1 PRIO_COOP>;
+      or for K_PRIO_PREEMPT(2)
+        priority = <2 PRIO_PREEMPT>;
+
+      When this property is missing a default priority of <0 PRIO_PREEMPT> is
+      assumed.
+
+  zephyr,buffer-size:
+    type: int
+    description: |
+      The size of the buffer used to send data between host and remote. Default
+      value is RPMSG_BUFFER_SIZE. This property must be the same for host and
+      remote and preferably a multiple of the cache line size.

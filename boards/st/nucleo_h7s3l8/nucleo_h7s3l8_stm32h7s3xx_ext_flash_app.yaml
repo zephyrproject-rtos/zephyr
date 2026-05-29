@@ -1,0 +1,20 @@
+identifier: nucleo_h7s3l8/stm32h7s3xx/ext_flash_app
+name: ST Nucleo H7S3L8 nucleo with App in Ext Flash
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 456
+flash: 8191  # size in kB of 1 app slot minus MCUboot header size (1KB)
+sysbuild: true
+supported:
+  - gpio
+  - uart
+  - watchdog
+  - entropy
+  - adc
+  - octospi
+  - can
+  - canfd
+  - netif:eth
+vendor: st

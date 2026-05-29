@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2021 Laird Connectivity
+ * Copyright (c) 2024 Ezurio
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf5340_cpuapp_qkaa.dtsi>
+#include "bl5340_dvk_nrf5340_cpuapp_common.dtsi"
+
+/ {
+	model = "Ezurio BL5340 (nRF5340) Application";
+	compatible = "ezurio,bl5340-dvk-cpuapp";
+
+	chosen {
+		zephyr,sram = &sram0_image;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram-secure-partition = &sram0_s;
+		zephyr,sram-non-secure-partition = &sram0_ns;
+	};
+};
+
+zephyr_udc0: &usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "okay";
+};

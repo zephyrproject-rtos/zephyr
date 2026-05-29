@@ -1,0 +1,136 @@
+.. zephyr:code-sample:: testusb-app
+   :name: USB device testing application
+   :relevant-api: usbd_api
+
+   Test USB device drivers using a loopback function.
+
+This sample implements a loopback function that can be used
+to test USB device drivers and the device stack connected to a Linux host
+and has a similar interface to "Gadget Zero" of the Linux kernel.
+The userspace tool ``testusb`` is needed to start the tests.
+
+Building and flashing
+*********************
+
+Follow the general procedure for building and flashing Zephyr device.
+
+Testing
+*******
+
+To run USB tests:
+
+#. Load the ``usbtest`` Linux kernel module on the Linux Host.
+
+   .. code-block:: console
+
+      $ sudo modprobe usbtest vendor=0x2fe3 product=0x0009
+
+   By checking the kernel diagnostic messages, you should see that the ``usbtest``
+   module has claimed the device:
+
+   .. code-block:: console
+
+      [21746.128743] usb 9-1: new full-speed USB device number 16 using uhci_hcd
+      [21746.303051] usb 9-1: New USB device found, idVendor=2fe3, idProduct=0009, bcdDevice= 2.03
+      [21746.303055] usb 9-1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+      [21746.303058] usb 9-1: Product: Zephyr testusb sample
+      [21746.303060] usb 9-1: Manufacturer: ZEPHYR
+      [21746.303063] usb 9-1: SerialNumber: 86FE679A598AC47A
+      [21746.306149] usbtest 9-1:1.0: matched module params, vend=0x2fe3 prod=0x0009
+      [21746.306153] usbtest 9-1:1.0: Generic USB device
+      [21746.306156] usbtest 9-1:1.0: full-speed {control} tests
+
+   .. note::
+     The kernel diagnostic messages can be displayed using a command such as
+     ``journalctl -k -n 20`` or ``dmesg`` (these commands may need to be
+     executed as root - e.g., ``sudo dmesg``).
+
+   The first line of the diagnostic messages above contains two important
+   pieces of information that will be needed later on:
+
+     * The USB bus number: ``9`` in ``usb 9-1: [...]``
+
+     * The device under testing (DUT)'s USB device number: ``16`` in ``USB device number 16``
+
+#. Use the ``testusb`` tool in ``linux/tools/usb`` inside Linux kernel source directory
+   to start the tests.
+
+   .. code-block:: console
+
+      $ sudo ./testusb -D /dev/bus/usb/009/016
+      /dev/bus/usb/009/016 test 0,    0.000007 secs
+      /dev/bus/usb/009/016 test 9,    4.994475 secs
+      /dev/bus/usb/009/016 test 10,   11.990054 secs
+
+   .. note::
+      In this command, replace ``009`` and ``016`` with the USB bus number and
+      DUT's device number, respectively, as found in the debugging messages on
+      your host. Do not forget to pad with zeros.
+
+#. The Linux ``usbtest`` driver does not support this Zephyr sample's VID/PID
+   so we cannot run all the tests by default. To run all the tests, we can use
+   the feature described in the `"Dynamic USB device IDs" LWN.net article`_ to
+   write one of the supported VID/PID pair to the ``new_id`` sysfs attribute
+   of our device. Since the sample implements an interface similar to the
+   "Gadget Zero" interface, we specify reference device ``0525:a4a0``.
+
+   .. code-block:: console
+
+      $ sudo sh -c "echo 0x2fe3 0x0009 0 0x0525 0xa4a0 > /sys/bus/usb/drivers/usbtest/new_id"
+
+   .. note::
+      This step can be performed right after loading the ``usbtest`` module instead.
+      Otherwise, you may have to disconnect and reconnect the DUT in order for the
+      Gadget Zero interface to become enabled.
+
+      Once this step has been performed, the kernel diagnostic messages upon connecting
+      the DUT should be similar to the following:
+
+      .. code-block::
+
+         [100458.667241] usb 3-5.3.1: new full-speed USB device number 38 using xhci_hcd
+         [100458.761743] usb 3-5.3.1: New USB device found, idVendor=2fe3, idProduct=0009, bcdDevice= 4.02
+         [100458.761750] usb 3-5.3.1: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+         [100458.761753] usb 3-5.3.1: Product: Zephyr testusb sample
+         [100458.761755] usb 3-5.3.1: Manufacturer: Zephyr Project
+         [100458.761757] usb 3-5.3.1: SerialNumber: 2034354E32365007003C001C
+         [100458.773785] usbtest 3-5.3.1:1.0: Linux gadget zero
+         [100458.773791] usbtest 3-5.3.1:1.0: full-speed {control in/out bulk-in bulk-out} tests (+alt)
+         [100458.773858] usbtest 3-5.3.1:1.1: Linux gadget zero
+         [100458.773859] usbtest 3-5.3.1:1.1: full-speed {control in/out int-in int-out} tests (+alt)
+         [100458.773914] usbtest 3-5.3.1:1.2: Linux gadget zero
+         [100458.773916] usbtest 3-5.3.1:1.2: full-speed {control in/out iso-in iso-out} tests (+alt)
+
+#. Use the ``testusb`` tool in ``linux/tools/usb`` inside Linux kernel source directory
+   to start the tests.
+
+   .. code-block:: console
+
+      $ sudo ./testusb -v 512 -D /dev/bus/usb/009/016
+      /dev/bus/usb/009/017 test 0,    0.000008 secs
+      /dev/bus/usb/009/017 test 1,    2.000001 secs
+      /dev/bus/usb/009/017 test 2,    2.003058 secs
+      /dev/bus/usb/009/017 test 3,    1.054082 secs
+      /dev/bus/usb/009/017 test 4,    1.001010 secs
+      /dev/bus/usb/009/017 test 5,   57.962142 secs
+      /dev/bus/usb/009/017 test 6,   35.000096 secs
+      /dev/bus/usb/009/017 test 7,   30.000063 secs
+      /dev/bus/usb/009/017 test 8,   18.000159 secs
+      /dev/bus/usb/009/017 test 9,    4.984975 secs
+      /dev/bus/usb/009/017 test 10,   11.991022 secs
+      /dev/bus/usb/009/017 test 11,   17.030996 secs
+      /dev/bus/usb/009/017 test 12,   17.103034 secs
+      /dev/bus/usb/009/017 test 13,   18.022084 secs
+      /dev/bus/usb/009/017 test 14,    2.458976 secs
+      /dev/bus/usb/009/017 test 17,    2.001089 secs
+      /dev/bus/usb/009/017 test 18,    1.998975 secs
+      /dev/bus/usb/009/017 test 19,    2.010055 secs
+      /dev/bus/usb/009/017 test 20,    1.999911 secs
+      /dev/bus/usb/009/017 test 21,    2.440972 secs
+      /dev/bus/usb/009/017 test 24,   55.112078 secs
+      /dev/bus/usb/009/017 test 27,   56.911052 secs
+      /dev/bus/usb/009/017 test 28,   34.163089 secs
+      /dev/bus/usb/009/017 test 29,    3.983999 secs
+
+.. _"Dynamic USB device IDs" LWN.net article:
+   https://lwn.net/Articles/160944/

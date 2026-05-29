@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_K(76800)>;
+};
+
+&em01grpaclk {
+	clocks = <&hfrcodpll>;
+};
+
+&em01grpbclk {
+	clocks = <&hfrcodpll>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_K(76800)>;
+	clocks = <&hfxo>;
+	dpll-autorecover;
+	dpll-edge = "fall";
+	dpll-lock = "phase";
+	dpll-m = <1919>;
+	dpll-n = <3839>;
+};
+
+&hfxo {
+	status = "okay";
+};
+
+&itm {
+	swo-ref-frequency = <DT_FREQ_K(76800)>;
+};
+
+&sysclk {
+	clocks = <&hfrcodpll>;
+};

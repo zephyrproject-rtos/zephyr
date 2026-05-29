@@ -1,0 +1,32 @@
+tests:
+  kernel.multiprocessing.spinlock:
+    tags:
+      - kernel
+      - smp
+      - spinlock
+    filter: CONFIG_SMP and CONFIG_MP_MAX_NUM_CPUS > 1 and CONFIG_MP_MAX_NUM_CPUS <= 4
+    depends_on:
+      - smp
+  kernel.multiprocessing.spinlock.minimallibc:
+    tags:
+      - kernel
+      - smp
+      - spinlock
+      - libc
+    filter: CONFIG_SMP and CONFIG_MP_MAX_NUM_CPUS > 1 and CONFIG_MP_MAX_NUM_CPUS <= 4 and
+      CONFIG_MINIMAL_LIBC_SUPPORTED
+    depends_on:
+      - smp
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+  kernel.multiprocessing.spinlock_fairness:
+    tags:
+      - kernel
+      - smp
+      - spinlock
+    filter: CONFIG_SMP and CONFIG_MP_MAX_NUM_CPUS > 1 and CONFIG_MP_MAX_NUM_CPUS <= 4
+    depends_on:
+      - smp
+    extra_configs:
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_TICKET_SPINLOCKS=y

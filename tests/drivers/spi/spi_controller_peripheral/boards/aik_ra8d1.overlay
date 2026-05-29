@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * To run this test on AIK-RA8D1 board on PMOD 1, set S4-1 to UART/SPI position.
+ */
+
+&pmod1_spi {
+	status = "okay";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+dut_spis: &pmod5_spi {
+	status = "okay";
+};

@@ -1,0 +1,6 @@
+board:
+  name: fpb_ra0e1
+  full_name: RA0E1 Fast Prototype Board
+  vendor: renesas
+  socs:
+  - name: r7fa0e1073cfj

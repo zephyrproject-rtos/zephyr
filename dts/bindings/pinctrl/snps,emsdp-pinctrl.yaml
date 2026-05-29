@@ -1,0 +1,39 @@
+# Copyright (c) 2023 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Synopsys ARC EMSDP board Pin controller for Pmod and Arduino shield interface.
+
+  Device pin configuration should be placed in the child nodes of this node.
+  Populate the 'pinmux' field with a pair consisting of a pin number and its IO
+  function.
+
+  For example, setting PmodA to SPI would look like this:
+
+    #include <zephyr/dt-bindings/pinctrl/emsdp-pinctrl.h>
+
+    &pinctrl {
+      pmodA_spi1_cs0: pmodA_spi1_cs0 {
+        pinmux = <PMOD_A PMOD_SPI>;
+      };
+    };
+
+compatible: "snps,emsdp-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    This binding gives a base representation of the EMSDP pins
+    configuration.
+
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        EMSDP pin's configuration (pin, IO function).

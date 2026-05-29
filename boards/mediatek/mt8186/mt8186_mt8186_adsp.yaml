@@ -1,0 +1,11 @@
+identifier: mt8186/mt8186/adsp
+name: Mediatek mt8186 Audio DSP
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  only_tags:
+    - kernel
+    - sof
+vendor: mediatek

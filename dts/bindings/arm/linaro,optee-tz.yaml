@@ -1,0 +1,17 @@
+# Copyright (c) 2023 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: OPTEE
+
+compatible: "linaro,optee-tz"
+
+include: base.yaml
+
+properties:
+  method:
+    type: string
+    required: true
+    description: The method of calling the OP-TEE Trusted OS.
+    enum:
+      - smc
+      - hvc

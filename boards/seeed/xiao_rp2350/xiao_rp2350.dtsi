@@ -1,0 +1,256 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+#include <raspberrypi/partitions_4M_default.dtsi>
+
+#include "xiao_rp2350-pinctrl.dtsi"
+#include "seeed_xiao_connector.dtsi"
+#include "seeed_xiao_pads.dtsi"
+
+/ {
+	model = "Seeed Studio XIAO RP2350";
+	compatible = "seeed,xiao-rp2350";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &qmi;
+		zephyr,code-partition = &code_partition;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &rng;
+	};
+
+	aliases {
+		led0 = &led0;
+		pwm-led0 = &pwm_led0;
+		led-strip = &ws2812;
+		watchdog0 = &wdt0;
+	};
+
+	zephyr,user {
+		io-channels = <&adc 0>,	/* XIAO (1:1) */
+			      <&adc 1>,	/* XIAO (1:1) */
+			      <&adc 2>,	/* XIAO (1:1) */
+			      <&adc 3>;	/* VBAT (1:2) */
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			label = "LED";
+		};
+	};
+
+	pwm_leds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm 9 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM_LED";
+		};
+	};
+
+	/*
+	 * The neopixel on this board has its own power switch with enable
+	 * signal hooked up to a GPIO pin rather than a permanent positive
+	 * voltage rail to save on power. This will enable the digital RGB
+	 * LED on board initialization. Application code can switch it off
+	 * later on demand.
+	 */
+	neopixel_power_enable: neopixel-power-enable {
+		compatible = "regulator-fixed";
+		status = "okay";
+
+		enable-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		regulator-name = "neopixel_enable";
+		regulator-boot-on;
+	};
+
+	/*
+	 * The battery voltage rail on this board is gated by a power switch
+	 * with enable signal hooked up to a GPIO pin rather than a permanent
+	 * positive voltage rail to decouple the ADC input from VBAT or save
+	 * on power. This will enable the ADC input channel gate on board
+	 * initialization. Application code can switch it off later on demand.
+	 */
+	battery_adc_enable: battery-adc-enable {
+		compatible = "regulator-fixed";
+		status = "okay";
+
+		enable-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		regulator-name = "battery_adc_enable";
+		regulator-boot-on;
+	};
+};
+
+/* overwrite for 2M; there is no default 2M partition DTS include for RP2350 */
+&flash0 {
+	status = "okay";
+	reg = <0x10000000 DT_SIZE_M(2)>;
+};
+
+&storage_partition {
+	reg = <0x100000 DT_SIZE_M(1)>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&timer1 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+&pwm {
+	status = "okay";
+	pinctrl-0 = <&pwm_ch4b_default>;
+	pinctrl-names = "default";
+};
+
+gpio0_lo: &gpio0 {
+	status = "okay";
+};
+
+&pio0 {
+	status = "okay";
+
+	pio-ws2812 {
+		compatible = "worldsemi,ws2812-rpi_pico-pio";
+		status = "okay";
+
+		pinctrl-0 = <&ws2812_pio0_default>;
+		pinctrl-names = "default";
+
+		/* HI: 0x3F0: 1111110000: 0.750 us high and 0.500 us low */
+		/* LO: 0x380: 1110000000: 0.375 us high and 0.875 us low */
+		bit-waveform = <3>, <3>, <4>;
+
+		ws2812: ws2812 {
+			status = "okay";
+
+			chain-length = <1>;
+			color-mapping = <LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
+
+			/* PIO0:OUT @ GP8 and Tbit = 1.25 us / 10 */
+			gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+			frequency = <DT_FREQ_K(800)>;
+			reset-delay = <280>;
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(20)>;
+};
+
+&spi1 {
+	status = "okay";
+	pinctrl-0 = <&spi1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(20)>;
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&die_temp {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};

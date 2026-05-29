@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: Apache-2.0
+
+zephyr_library_sources(net_shell.c)
+zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/l2)
+zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/lib)
+zephyr_library_include_directories_ifdef(CONFIG_WIREGUARD . ${ZEPHYR_BASE}/subsys/net/lib/wireguard)
+zephyr_library_include_directories_ifdef(CONFIG_SSH . ${ZEPHYR_BASE}/subsys/net/lib/ssh)
+zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/ip)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
+
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_PKT_ALLOC_SUPPORTED allocs.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_ETHERNET_SUPPORTED arp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_CAPTURE_SUPPORTED capture.c)
+zephyr_library_sources(conn.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_DHCPV4_SUPPORTED dhcpv4.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_DHCPV6_SUPPORTED dhcpv6.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_DNS_RESOLVER_SUPPORTED dns.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_EVENT_MONITOR_SUPPORTED events.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_FTP_SUPPORTED ftp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_GPTP_SUPPORTED gptp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_HTTP_CLIENT_SUPPORTED http_client.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_PTP_SUPPORTED ptp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_HTTP_SERVER_SUPPORTED http.c)
+zephyr_library_sources(iface.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_CONNECTION_MANAGER_SUPPORTED cm.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_IPV4_SUPPORTED ipv4.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_IPV6_SUPPORTED ipv6.c)
+zephyr_library_sources(mem.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_IPV6_SUPPORTED nbr.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_IP_SUPPORTED ping.c)
+zephyr_library_sources(pkt.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_PKT_FILTER_SUPPORTED filter.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_PMTU_SUPPORTED pmtu.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_PPP_SUPPORTED ppp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_POWER_MANAGEMENT_SUPPORTED resume.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_ROUTE_SUPPORTED route.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_SOCKETS_SERVICE_SUPPORTED sockets.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_STATISTICS_SUPPORTED stats.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_POWER_MANAGEMENT_SUPPORTED suspend.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_TCP_SUPPORTED tcp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_UDP_SUPPORTED udp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_VIRTUAL_SUPPORTED virtual.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_VLAN_SUPPORTED vlan.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WEBSOCKET_SUPPORTED websocket.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_QBV_SUPPORTED qbv_shell.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_QUIC_SUPPORTED quic_shell.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_WIREGUARD_SUPPORTED wg_shell.c)
+
+if(CONFIG_NET_SHELL_HTTP_CLIENT_HAS_CERTIFICATE)
+  set(CERTIFICATE_PATH
+    ${APPLICATION_SOURCE_DIR}/certs/${CONFIG_NET_SHELL_HTTP_CLIENT_CERTIFICATE}
+  )
+
+  if(NOT EXISTS ${CERTIFICATE_PATH})
+    message(FATAL_ERROR
+      "HTTP client SSL certificate not found: ${CERTIFICATE_PATH}"
+    )
+  endif()
+
+  generate_inc_file_for_target(
+    app
+    ${CERTIFICATE_PATH}
+    ${ZEPHYR_BINARY_DIR}/include/generated/net_shell_http_client_ca.der.inc
+  )
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_NET_SHELL_SSH_SUPPORTED ssh_shell.c)
+if(CONFIG_SSH_SERVER OR CONFIG_SSH_CLIENT)
+  zephyr_library_sources(ssh_keygen_shell.c)
+endif()

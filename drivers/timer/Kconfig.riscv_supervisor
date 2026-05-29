@@ -1,0 +1,17 @@
+# Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+# Copyright (c) 2018-2023 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_SUPERVISOR_TIMER
+	bool "RISCV Supervisor Timer"
+	default y
+	depends on RISCV_S_MODE
+	depends on DT_HAS_RISCV_MACHINE_TIMER_ENABLED || \
+		   DT_HAS_NUCLEI_SYSTIMER_ENABLED
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This module implements a kernel device driver for the RISC-V supervisor
+	  mode timer. It uses the SBI timer extension to set timer deadlines and
+	  reads time via the "time" CSR. It provides the standard "system clock
+	  driver" interfaces.

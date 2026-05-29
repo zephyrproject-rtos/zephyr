@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 u-blox AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54l10_cpuapp.dtsi>
+#include "nrf54l_05_10_15_cpuapp_common.dtsi"
+
+/ {
+	compatible = "u-blox,ubx_evknorab2_nrf54l10-cpuapp";
+	model = "u-blox EVK-NORA-B2 (NORA-B21x) nRF54L10 Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+/* Include default memory partition configuration file */
+#include <vendor/nordic/nrf54l10_cpuapp_partition.dtsi>

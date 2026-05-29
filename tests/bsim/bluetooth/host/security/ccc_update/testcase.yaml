@@ -1,0 +1,22 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.security.ccc_update:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_security_ccc_update_prj_conf
+  bluetooth.host.security.ccc_update_no_lazy_load:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_security_ccc_update_overlay-no_lazy_load_conf
+    extra_args:
+      EXTRA_CONF_FILE=overlay-no_lazy_load.conf
+  bluetooth.host.security.ccc_update_no_long_wq:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_security_ccc_update_overlay-no_long_wq_conf
+    extra_args:
+      EXTRA_CONF_FILE=overlay-no_long_wq.conf

@@ -1,0 +1,7 @@
+tests:
+  drivers.clock.pwm_clock:
+    filter: dt_compat_enabled("pwm-clock") and dt_compat_enabled("test-clock-control-pwm-clock")
+    tags:
+      - drivers
+      - clock
+      - pwm

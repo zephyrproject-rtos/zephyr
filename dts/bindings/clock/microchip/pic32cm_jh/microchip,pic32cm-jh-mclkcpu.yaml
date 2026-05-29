@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CM_JH Main clock for CPU
+
+description: |
+  Main Clock Controller provides synchronous system clocks to the CPU.
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cm-jh-mclkcpu"
+
+properties:
+  mclk-cpu-div:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+    default: 1
+    description: |
+      CPU Clock Division Factor

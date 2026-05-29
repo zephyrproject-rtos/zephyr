@@ -1,0 +1,18 @@
+identifier: qemu_x86/atom/virt
+name: QEMU Emulation for X86 (Run in Virtual Address Space)
+type: qemu
+arch: x86
+simulation:
+  - name: qemu
+toolchain:
+  - zephyr
+testing:
+  default: true
+  only_tags:
+    - kernel
+    - userspace
+    - llext
+  ignore_tags:
+    - benchmark
+ram: 3000
+vendor: qemu

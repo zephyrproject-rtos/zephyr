@@ -1,0 +1,164 @@
+/*
+ * Copyright (c) 2024-2025 Henrik Brix Andersen <henrik@brixandersen.dk>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <freq.h>
+#include <mem.h>
+#include <atmel/same70x20b.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+#include "canbardo-pinctrl.dtsi"
+
+/ {
+	model = "CANbardo board";
+	compatible = "canbardo", "atmel,same70n20b", "atmel,same70b";
+
+	chosen {
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,canbus = &can0;
+	};
+
+	aliases {
+		led0 = &dfu_led;
+		sw0 = &sw;
+		mcuboot-led0 = &dfu_led;
+		mcuboot-button0 = &sw;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		dfu_led: dfu_led {
+			gpios = <&piod 9 GPIO_ACTIVE_LOW>;
+			label = "DFU LED";
+		};
+
+		can_0_ledr: can_0_ledr {
+			gpios = <&piod 25 GPIO_ACTIVE_LOW>;
+			label = "CAN0 LED ERR";
+		};
+
+		can_0_ledg: can_0_ledg {
+			gpios = <&piod 22 GPIO_ACTIVE_LOW>;
+			label = "CAN0 LED RDY";
+		};
+
+		can_0_ledy: can_0_ledy {
+			gpios = <&piod 24 GPIO_ACTIVE_LOW>;
+			label = "CAN0 LED ACT";
+		};
+
+		can_1_ledr: can_1_ledr {
+			gpios = <&piod 19 GPIO_ACTIVE_LOW>;
+			label = "CAN1 LED ERR";
+		};
+
+		can_1_ledg: can_1_ledg {
+			gpios = <&piod 17 GPIO_ACTIVE_LOW>;
+			label = "CAN1 LED RDY";
+		};
+
+		can_1_ledy: can_1_ledy {
+			gpios = <&piod 18 GPIO_ACTIVE_LOW>;
+			label = "CAN1 LED ACT";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		sw: sw {
+			label = "SW";
+			gpios = <&piod 15 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	transceiver0: can-phy0 {
+		compatible = "microchip,mcp2558fd", "can-transceiver-gpio";
+		enable-gpios = <&piod 26 GPIO_ACTIVE_LOW>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+
+	transceiver1: can-phy1 {
+		compatible = "microchip,mcp2558fd", "can-transceiver-gpio";
+		enable-gpios = <&piod 20 GPIO_ACTIVE_LOW>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(300)>;
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&can0 {
+	status = "okay";
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
+	phys = <&transceiver0>;
+};
+
+&can1 {
+	status = "okay";
+	pinctrl-0 = <&can1_default>;
+	pinctrl-names = "default";
+	phys = <&transceiver1>;
+};
+
+&wdt {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* First half of sector 0 */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+			read-only;
+		};
+
+		/* From sector 1 to sector 3 (included) */
+		slot0_partition: partition@20000 {
+			label = "image-0";
+			reg = <0x00020000 DT_SIZE_K(384)>;
+		};
+
+		/* From sector 4 to sector 6 (included) */
+		slot1_partition: partition@80000 {
+			label = "image-1";
+			reg = <0x00080000 DT_SIZE_K(384)>;
+		};
+
+		/* Sector 7 */
+		storage_partition: partition@e0000 {
+			label = "storage";
+			reg = <0x000e0000 DT_SIZE_K(128)>;
+		};
+	};
+};

@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Joel Jaldemark
+# SPDX-License-Identifier: Apache-2.0
+
+description: ILI2132A capacitive touch controller
+
+compatible: "ilitek,ili2132a"
+
+include: i2c-device.yaml
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin
+
+  rst-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Reset pin

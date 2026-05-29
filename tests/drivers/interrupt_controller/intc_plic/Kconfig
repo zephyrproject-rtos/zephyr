@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_INTC_PLIC
+	bool
+	default y
+	help
+	   Declare some intc_plic.c functions in the global scope for verification.
+
+config TEST_INTC_PLIC_ALT_MAPPING
+	bool "Test alternate hartid - context mapping"
+
+source "Kconfig"

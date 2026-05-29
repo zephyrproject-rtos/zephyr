@@ -1,0 +1,40 @@
+# iMX7D core series
+
+# Copyright 2017,2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_IMX7D
+	bool
+	select SOC_FAMILY_NXP_IMX
+	help
+	  Enable support for iMX7D MCU series
+
+config SOC_MCIMX7D
+	bool
+	select SOC_SERIES_IMX7D
+
+config SOC_MCIMX7D_M4
+	bool
+	select SOC_MCIMX7D
+	help
+	  NXP iMX7 Dual M4 Core
+
+config SOC_SERIES
+	default "imx7d" if SOC_SERIES_IMX7D
+
+config SOC
+	default "mcimx7d" if SOC_MCIMX7D
+
+config SOC_PART_NUMBER_MCIMX7D7DVM10SC
+	bool
+
+config SOC_PART_NUMBER_MCIMX7D5EVM10SC
+	bool
+
+config SOC_PART_NUMBER_MCIMX7S3DVK08SA
+	bool
+
+config SOC_PART_NUMBER
+	default	"MCIMX7D7DVM10SC" if SOC_PART_NUMBER_MCIMX7D7DVM10SC
+	default "MCIMX7D5EVM10SC" if SOC_PART_NUMBER_MCIMX7D5EVM10SC
+	default "MCIMX7S3DVK08SA" if SOC_PART_NUMBER_MCIMX7S3DVK08SA

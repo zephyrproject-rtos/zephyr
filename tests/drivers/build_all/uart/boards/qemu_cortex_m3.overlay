@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2023 Meta Platforms
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	uart3: uart@88888888 {
+		compatible = "cdns,uart";
+		reg = <0x88888888 0x400>;
+		interrupt-parent = <&nvic>;
+		interrupts = <4 1>;
+		clock-frequency = <100000000>;
+		current-speed = <921600>;
+		bdiv = <4>;
+		parity = "none";
+	};
+};

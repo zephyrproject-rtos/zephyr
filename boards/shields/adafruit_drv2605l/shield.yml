@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: adafruit_drv2605l
+  full_name: Adafruit DRV2605L Haptic Motor Controller Shield
+  vendor: adafruit
+  supported_features:
+    - haptics

@@ -1,0 +1,12 @@
+identifier: mck_ra4t1
+name: Renesas MCK-RA4T1
+type: mcu
+arch: arm
+ram: 40
+flash: 256
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+vendor: renesas

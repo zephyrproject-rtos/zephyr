@@ -1,0 +1,15 @@
+#
+# Copyright 2022, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "mipi-dsi API Test"
+
+source "Kconfig.zephyr"
+
+config MIPI_DSI_TEST_CHANNEL
+	int "MIPI-DSI device channel number"
+	default 0
+	help
+	  MIPI device channel number used for testing.

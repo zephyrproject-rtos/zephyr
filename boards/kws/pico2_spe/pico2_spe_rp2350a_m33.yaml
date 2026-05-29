@@ -1,0 +1,20 @@
+identifier: pico2_spe/rp2350a/m33
+name: KWS Pico2 SinglePairEthernet
+type: mcu
+arch: arm
+flash: 4096
+ram: 520
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart

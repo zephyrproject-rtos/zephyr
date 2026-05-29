@@ -1,0 +1,40 @@
+description: ESP32 Low Power UART
+
+compatible: "espressif,esp32-lpuart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  tx-pin:
+    type: int
+    default: 5
+    enum:
+      - 5
+    description: In ESP32-C6, TX pin is fixed to GPIO5
+
+  rx-pin:
+    type: int
+    default: 4
+    enum:
+      - 4
+    description: In ESP32-C6, RX pin is fixed to GPIO4
+
+  rts-pin:
+    type: int
+    default: 2
+    enum:
+      - 2
+    description: In ESP32-C6, RTS pin is fixed to GPIO2
+
+  cts-pin:
+    type: int
+    default: 3
+    enum:
+      - 3
+    description: In ESP32-C6, CTS pin is fixed to GPIO3
+
+  current-speed:
+    type: int

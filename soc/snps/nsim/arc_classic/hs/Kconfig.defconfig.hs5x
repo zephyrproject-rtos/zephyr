@@ -1,0 +1,23 @@
+# Copyright (c) 2022 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NSIM_HS5X
+
+config CPU_HS5X
+	default y
+
+config NUM_IRQ_PRIO_LEVELS
+	# This processor supports 16 priority levels:
+	default 2
+
+config NUM_IRQS
+	# must be > the highest interrupt number used
+	default 30
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 5000000
+
+config CACHE_MANAGEMENT
+	default y
+
+endif # SOC_NSIM_HS5X

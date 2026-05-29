@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Meta Platforms
+
+config TEST_MULTILEVEL_IRQ
+	bool "Build the tests in multilevel_irq.c"
+	depends on MULTI_LEVEL_INTERRUPTS
+
+source "Kconfig.zephyr"

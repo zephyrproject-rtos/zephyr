@@ -1,0 +1,7 @@
+# Copyright (c) 2023 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ARC_HSDK4XD
+	select ARC
+	select CPU_HAS_FPU
+	select CPU_HAS_DSP

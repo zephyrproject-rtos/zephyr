@@ -1,0 +1,4 @@
+# Copyright (c) 2026 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+source "drivers/sensor/ene/kb106x/Kconfig"

@@ -1,0 +1,7 @@
+# EVAL ADIN2111D1Z board configuration
+
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ADI_EVAL_ADIN2111D1Z
+	select SOC_MAX32690_M4

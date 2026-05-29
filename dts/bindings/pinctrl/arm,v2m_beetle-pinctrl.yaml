@@ -1,0 +1,40 @@
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    The node has the 'pinctrl' node label set in your SoC's devicetree,
+    so you can modify it like this:
+
+      &pinctrl {
+              /* your modifications go here */
+      };
+
+    All device pin configurations should be placed in child nodes of the
+    'pinctrl' node, as shown in this example:
+
+      /* You can put this in places like a board-pinctrl.dtsi file in
+       * your board directory, or a devicetree overlay in your application.
+       */
+
+compatible: "arm,v2m_beetle-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Definitions for a pinctrl state.
+  child-binding:
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - input-enable
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. Each
+          element of the array is an integer constructed from the
+          pin number and the alternative function of the pin.

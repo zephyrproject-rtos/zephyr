@@ -1,0 +1,15 @@
+# Kconfig Andes ATCGPIO100 configuration option
+#
+# Copyright (c) 2021 Andes Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config GPIO_ANDES_ATCGPIO100
+	bool "Andes ATCGPIO100 GPIO driver"
+	default y
+	depends on DT_HAS_ANDESTECH_ATCGPIO100_ENABLED
+	help
+	  Enable driver for the Andes ATCGPIO100 GPIO controller.
+
+	  Says n if not sure.

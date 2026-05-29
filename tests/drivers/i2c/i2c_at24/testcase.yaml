@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  depends_on: i2c
+  tags:
+    - drivers
+    - i2c
+  filter: dt_compat_enabled("atmel,at24")
+  harness: ztest
+  harness_config:
+    fixture: i2c_at24
+
+tests:
+  drivers.i2c.at24:
+    depends_on: i2c
+    tags:
+      - drivers
+      - i2c
+  drivers.i2c.at24.pm:
+    filter: CONFIG_HAS_PM
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+  drivers.i2c.at24.rtio:
+    extra_configs:
+      - CONFIG_I2C_RTIO=y
+      - CONFIG_ZTEST_THREAD_PRIORITY=2
+  drivers.i2c.at24.pm.rtio:
+    filter: CONFIG_HAS_PM and CONFIG_I2C_RTIO
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_I2C_RTIO=y
+      - CONFIG_ZTEST_THREAD_PRIORITY=2

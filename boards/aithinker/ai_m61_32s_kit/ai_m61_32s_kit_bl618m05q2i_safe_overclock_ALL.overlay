@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	/* ALL revision is BL618M65, which has an internal XMC Flash die
+	 * instead of an external SOIC Flash.
+	 */
+	compatible = "soc-nv-flash", "xmc,xm25qw64";
+};
+
+&clk_flash {
+	/* 1 Unit of delay (4 Cycles) for XMC Flash at 120 MHz Flash clock */
+	read-delay = <1>;
+	/delete-property/ rx-clock-invert;
+};

@@ -1,0 +1,15 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM MHU (Message Handling Unit)
+
+compatible: "arm,mhu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

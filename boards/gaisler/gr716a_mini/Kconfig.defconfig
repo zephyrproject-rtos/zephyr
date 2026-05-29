@@ -1,0 +1,13 @@
+# Copyright (c) 2019-2020 Cobham Gaisler AB
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_GR716A_MINI
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 20000000
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+endif

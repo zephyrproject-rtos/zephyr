@@ -1,0 +1,79 @@
+/*
+ * Copyright (c) 2025, Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+#include <arm64/armv8-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <amd/versalnet_apu.dtsi>
+
+/ {
+	model = "Versal NET APU";
+	#address-cells = <2>;
+	#size-cells = <2>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a78";
+			reg = <0>;
+			enable-method = "psci";
+		};
+
+		cpu100: cpu@100 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a78";
+			enable-method = "psci";
+			reg = <0x100>;
+		};
+
+		cpu200: cpu@200 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a78";
+			enable-method = "psci";
+			reg = <0x200>;
+		};
+
+		cpu300: cpu@300 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a78";
+			enable-method = "psci";
+			reg = <0x300>;
+		};
+	};
+
+	psci {
+		compatible = "arm,psci-1.1";
+		method = "smc";
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+};
+
+&soc {
+	interrupt-parent = <&gic>;
+
+	gic: interrupt-controller@e2000000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0x0 0xe2000000 0x0 0x10000>,
+		      <0x0 0xe2060000 0x0 0x200000>;
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};

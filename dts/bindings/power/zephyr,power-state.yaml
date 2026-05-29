@@ -1,0 +1,45 @@
+# Copyright (c) 2020, Intel Corporation
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Properties for power management idle states.
+
+compatible: "zephyr,power-state"
+
+properties:
+  power-state-name:
+    type: string
+    required: true
+    description: indicates a power state
+    enum:
+      - "active"
+      - "runtime-idle"
+      - "suspend-to-idle"
+      - "standby"
+      - "suspend-to-ram"
+      - "suspend-to-disk"
+      - "soft-off"
+  substate-id:
+    type: int
+    description: Platform specific identification.
+  min-residency-us:
+    type: int
+    description: |
+      Minimum residency duration in microseconds.
+
+      How much time the residency in a given idle state must last for state entry
+      to be worthwhile energywise. It includes the time to enter into this state
+      and represents the "break-even" time to justify the time and power spent
+      on the work needed for entering and exiting the state based on how much actual energy
+      is saved once in the state, compared to choosing the next shallowest state.
+  exit-latency-us:
+    type: int
+    description: |
+        Worst case latency in microseconds required to exit the idle state.
+  zephyr,pm-device-disabled:
+    type: boolean
+    description: |
+       Disable system managed device power management for this state. When set,
+       the power management subsystem will not suspend devices before entering
+       this state.

@@ -1,0 +1,13 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel HDA DAI controller
+
+compatible: "intel,hda-dai"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

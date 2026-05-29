@@ -1,0 +1,36 @@
+# Copyright (c) 2021 Stephanos Ioannidis <root@stephanos.io>
+# SPDX-License-Identifier: Apache-2.0
+
+config CMSIS_DSP_TEST_TRANSFORM_CQ15
+	bool "Test: Transform CQ15"
+
+config CMSIS_DSP_TEST_TRANSFORM_RQ15
+	bool "Test: Transform RQ15"
+
+config CMSIS_DSP_TEST_TRANSFORM_CQ31
+	bool "Test: Transform CQ31"
+
+config CMSIS_DSP_TEST_TRANSFORM_RQ31
+	bool "Test: Transform RQ31"
+
+config CMSIS_DSP_TEST_TRANSFORM_CF16
+	bool "Test: Transform CF16"
+	depends on CMSIS_DSP_FLOAT16
+
+config CMSIS_DSP_TEST_TRANSFORM_RF16
+	bool "Test: Transform RF16"
+	depends on CMSIS_DSP_FLOAT16
+
+config CMSIS_DSP_TEST_TRANSFORM_CF32
+	bool "Test: Transform CF32"
+
+config CMSIS_DSP_TEST_TRANSFORM_RF32
+	bool "Test: Transform RF32"
+
+config CMSIS_DSP_TEST_TRANSFORM_CF64
+	bool "Test: Transform CF64"
+
+config CMSIS_DSP_TEST_TRANSFORM_RF64
+	bool "Test: Transform RF64"
+
+source "Kconfig"

@@ -1,0 +1,19 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensry SY1xx SPI
+
+compatible: "sensry,sy1xx-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  instance:
+    type: int
+    required: true

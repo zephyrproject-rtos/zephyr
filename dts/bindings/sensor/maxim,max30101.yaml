@@ -1,0 +1,21 @@
+# Device Tree binding for Maxim MAX30101
+#
+# Copyright (c) 2018, NXP
+# Copyright (c) 2025, CATIE
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX30101 heart rate and pulse oximeter sensor
+
+compatible: "maxim,max30101"
+
+include: maxim,max3010x-common.yaml
+
+properties:
+  led-pa:
+    default: [0xff, 0xff, 0xff]
+    description: |
+      [0]: Red LED
+      [1]: IR LED
+      [2]: Green LED
+      Default set to [0xff, 0xff, 0xff], activate any chosen LED channel.

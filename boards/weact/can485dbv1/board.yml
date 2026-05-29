@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: can485dbv1
+  full_name: CAN485 DevBoard V1
+  vendor: weact
+  socs:
+  - name: esp32

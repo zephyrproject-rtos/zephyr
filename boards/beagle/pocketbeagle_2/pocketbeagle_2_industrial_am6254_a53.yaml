@@ -1,0 +1,13 @@
+identifier: pocketbeagle_2_industrial/am6254/a53
+name: BeagleBoard.org PocketBeagle 2 Industrial
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1048576
+vendor: beagle
+supported:
+  - uart
+  - i2c
+  - gpio

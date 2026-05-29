@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BASE_BOARD_SETTING
+	bool "Base board test string"
+	help
+	  This kconfig is set when the base board config fragment is supposed to
+	  be sourced, that is when oot variant defines
+	  'extends:'
+	  '  board: native_sim'
+	  '  qualifier: posix'
+	  '  inherit: 1'
+
+source "Kconfig.zephyr"

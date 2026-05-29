@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Yestin Sun
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32L562E_DK
+	select SOC_STM32L562XX

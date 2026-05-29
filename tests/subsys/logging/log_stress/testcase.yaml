@@ -1,0 +1,34 @@
+common:
+  filter: CONFIG_QEMU_TARGET and not CONFIG_SMP
+  tags:
+    - log_api
+    - logging
+  integration_platforms:
+    - qemu_x86
+tests:
+  logging.stress.light:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+  logging.stress.light_no_overflow:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=n
+  logging.log_stress:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_a9
+      - qemu_x86_64
+  logging.stress.no_overflow:
+    extra_configs:
+      - CONFIG_LOG_MODE_DEFERRED=y
+      - CONFIG_LOG_MODE_OVERFLOW=n
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_a9
+      - qemu_x86_64

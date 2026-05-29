@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <adi/max32/max78000.dtsi>
+#include <adi/max32/max32xxx-rv32.dtsi>
+
+&flash0 {
+	interrupts = <24 0>;
+};
+
+&gpio2 {
+	interrupts = <27 0>;
+};
+
+&gpio3 {
+	interrupts = <6 0>;
+};
+
+&spi1 {
+	interrupts = <22 0>;
+};
+
+&dma0 {
+	interrupts = <28 0>, <29 0>, <30 0>, <31 0>;
+};
+
+&w1 {
+	interrupts = <54 0>;
+};
+
+&wdt1 {
+	interrupts = <48 0>;
+};
+
+&lptimer0 {
+	interrupts = <12 0>;
+};
+
+&lptimer1 {
+	interrupts = <13 0>;
+};

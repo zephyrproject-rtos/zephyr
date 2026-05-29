@@ -1,0 +1,7 @@
+# Copyright (c) 2025 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/sensor/omron/2smpb_02e/Kconfig"
+source "drivers/sensor/omron/d6f/Kconfig"
+# zephyr-keep-sorted-stop

@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2024 Norik Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
+				<NRF_PSEL(TWIM_SCL, 0, 3)>;
+		};
+	};
+
+	i2c0_sleep: i2c0_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 4)>,
+				<NRF_PSEL(TWIM_SCL, 0, 3)>;
+			low-power-enable;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 2)>,
+				<NRF_PSEL(TWIM_SCL, 0, 1)>;
+		};
+	};
+
+	i2c1_sleep: i2c1_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 0, 2)>,
+				<NRF_PSEL(TWIM_SCL, 0, 1)>;
+			low-power-enable;
+		};
+	};
+};

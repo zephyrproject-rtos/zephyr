@@ -1,0 +1,22 @@
+#
+# Copyright 2023 Google LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+compatible: "sbs,default-sbs-gauge"
+
+include: ["sbs,sbs-gauge-new-api.yaml", "battery-cutoff.yaml"]
+
+description: |
+  Default generic smart battery fuel gauge driver. Includes support for battery cutoff if enabled.
+
+  This compatible is intended to be used with the abstract SBS Gauge compatible because it is
+  actuated by the SBS driver for SBS compliant fuel gauge ICs.
+
+properties:
+  battery-cutoff-reg-addr:
+    # For SBS compliant fuel gauges this is usually "ManufactuerAccess"
+    default: 0x0
+  battery-cutoff-payload:
+    default: [0x0010, 0x0010]

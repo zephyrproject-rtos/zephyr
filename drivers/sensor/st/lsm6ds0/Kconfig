@@ -1,0 +1,103 @@
+# LSM6DS0 accelerometer and gyroscope sensor configuration
+# options
+
+# Copyright (c) 2016 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LSM6DS0
+	bool "LSM6DS0 I2C accelerometer and gyroscope Chip"
+	default y
+	depends on DT_HAS_ST_LSM6DS0_ENABLED
+	select I2C
+	help
+	  Enable driver for LSM6DS0 I2C-based accelerometer and gyroscope
+	  sensor.
+
+if LSM6DS0
+
+config LSM6DS0_ACCEL_ENABLE_X_AXIS
+	bool "Accelerometer X axis"
+	default y
+	help
+	  Enable/disable accelerometer X axis totally by stripping everything
+	  related in driver.
+
+config LSM6DS0_ACCEL_ENABLE_Y_AXIS
+	bool "Accelerometer Y axis"
+	default y
+	help
+	  Enable/disable accelerometer Y axis totally by stripping everything
+	  related in driver.
+
+config LSM6DS0_ACCEL_ENABLE_Z_AXIS
+	bool "Accelerometer Z axis"
+	default y
+	help
+	  Enable/disable accelerometer Z axis totally by stripping everything
+	  related in driver.
+
+config LSM6DS0_GYRO_ENABLE_X_AXIS
+	bool "Gyroscope X axis"
+	default y
+	help
+	  Enable/disable gyroscope X axis totally by stripping everything
+	  related in driver.
+
+config LSM6DS0_GYRO_ENABLE_Y_AXIS
+	bool "Gyroscope Y axis"
+	default y
+	help
+	  Enable/disable gyroscope Y axis totally by stripping everything
+	  related in driver.
+
+config LSM6DS0_GYRO_ENABLE_Z_AXIS
+	bool "Gyroscope Z axis"
+	default y
+	help
+	  Enable/disable gyroscope Z axis totally by stripping everything
+	  related in driver.
+
+config LSM6DS0_ENABLE_TEMP
+	bool "Temperature"
+	help
+	  Enable/disable temperature totally by stripping everything related in
+	  driver.
+
+menu "Attributes"
+
+config LSM6DS0_GYRO_FULLSCALE
+	int "Gyroscope full-scale range"
+	default 245
+	help
+	  Specify the default gyroscope full-scale range.
+	  An X value for the config represents a range of +/- X degree per
+	  second. Valid values are 245, 500 and 2000.
+
+config LSM6DS0_GYRO_SAMPLING_RATE
+	int "Output data rate"
+	default 15
+	help
+	  Specify the default gyroscope output data rate expressed in samples
+	  per second (Hz).
+	  Data rates supported by the chip are 0, 15, 60, 119, 238, 476,
+	  952.
+
+config LSM6DS0_ACCEL_FULLSCALE
+	int "Accelerometer full-scale range"
+	default 2
+	help
+	  Specify the default accelerometer full-scale range.
+	  An X value for the config represents a range of +/- X G. Valid values
+	  are 2, 4, 8 and 16.
+
+config LSM6DS0_ACCEL_SAMPLING_RATE
+	int "Output data rate"
+	default 10
+	help
+	  Specify the default accelerometer output data rate expressed in
+	  samples per second (Hz).
+	  Data rates supported by the chip are 0, 10, 50, 119, 238, 476, 952.
+
+endmenu
+
+endif # LSM6DS0

@@ -1,0 +1,12 @@
+# Microchip XEC PECI configuration options
+
+# Copyright (c) 2020 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config PECI_XEC
+	bool "XEC Microchip PECI driver"
+	default y
+	depends on DT_HAS_MICROCHIP_XEC_PECI_ENABLED
+	select PINCTRL
+	help
+	  Enable the Microchip XEC PECI IO driver.

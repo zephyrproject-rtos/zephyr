@@ -1,0 +1,5 @@
+# Copyright (c) 2016, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OLIMEXINO_STM32
+	select SOC_STM32F103XB

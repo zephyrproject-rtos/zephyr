@@ -1,0 +1,9 @@
+description: ARMv8-M MPU (Memory Protection Unit)
+
+compatible: "arm,armv8m-mpu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

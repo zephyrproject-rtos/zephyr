@@ -1,0 +1,12 @@
+# Copyright (c) 2025, STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ST STM32N6 Ethernet
+
+  This binding file describes the device tree properties required to configure
+  and use the Ethernet controller on STM32N6 series microcontrollers.
+
+compatible: "st,stm32n6-ethernet"
+
+include: st,stm32-ethernet-common.yaml

@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_M2L31X
+	bool
+	select SOC_FAMILY_NUMAKER
+	help
+	  Enable support for Nuvoton M2L31X MCU series
+
+config SOC_M2L31XXX
+	bool
+	select SOC_SERIES_M2L31X
+
+config SOC_SERIES
+	default "m2l31x" if SOC_SERIES_M2L31X
+
+config SOC
+	default "m2l31xxx" if SOC_M2L31XXX

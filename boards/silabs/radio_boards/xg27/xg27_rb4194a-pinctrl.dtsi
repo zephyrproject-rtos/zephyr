@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/xg27-pinctrl.h>
+
+&pinctrl {
+	eusart0_default: eusart0_default {
+		group0 {
+			pins = <EUSART0_TX_PC0>, <EUSART0_SCLK_PC2>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <EUSART0_RX_PC1>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+
+	iadc0_default: iadc0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_CDODD0_IADC0>;
+		};
+	};
+
+	itm_default: itm_default {
+		group0 {
+			pins = <GPIO_SWV_PA3>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group0 {
+			pins = <I2C0_SCL_PB2>, <I2C0_SDA_PB3>;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	letimer0_default: letimer0_default {
+		group0 {
+			pins = <LETIMER0_OUT0_PB0>;
+			drive-open-drain;
+			bias-pull-up;
+		};
+	};
+
+	pti_default: pti_default {
+		group0 {
+			pins = <PTI_DOUT_PC4>, <PTI_DFRAME_PC5>;
+			drive-push-pull;
+			output-high;
+		};
+	};
+
+	usart1_default: usart1_default {
+		group0 {
+			pins = <USART1_TX_PA5>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART1_RX_PA6>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};

@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_AMEBA_LOGUART
+	bool "Ameba LOGUART driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_LOGUART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the LOGUART driver for Realtek Ameba SoCs.

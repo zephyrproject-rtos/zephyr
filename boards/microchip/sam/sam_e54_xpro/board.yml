@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: sam_e54_xpro
+  full_name: SAM E54 Xplained Pro
+  vendor: microchip
+  socs:
+    - name: atsame54p20a

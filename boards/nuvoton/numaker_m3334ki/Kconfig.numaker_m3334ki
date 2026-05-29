@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Nuvoton NuMaker M3334KI board configuration
+#
+# Copyright (c) 2025 Nuvoton Technology Corporation.
+
+config BOARD_NUMAKER_M3334KI
+	select SOC_M333XXX

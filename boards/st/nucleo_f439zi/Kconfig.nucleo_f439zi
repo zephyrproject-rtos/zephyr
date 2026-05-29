@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Mathieu Anquetin <mathieu.anquetin@groupe-cahors.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F439ZI
+	select SOC_STM32F439XX

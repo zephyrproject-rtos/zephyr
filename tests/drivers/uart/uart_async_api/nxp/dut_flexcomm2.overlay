@@ -1,0 +1,14 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * To test this sample
+ * lpcxpresso55s69/lpc55s69/cpu0 Short P18.13 and P18.15
+ */
+
+dut: &flexcomm2 {
+	status = "okay";
+};

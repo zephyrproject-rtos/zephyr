@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Würth Elektronik WSEN-PDMS-25131308XXX05 differential pressure sensor (SPI bus)
+
+compatible: "we,wsen-pdms-25131308XXX05"
+
+include: ["spi-device.yaml", "we,wsen-pdms-25131308XXX05-common.yaml"]

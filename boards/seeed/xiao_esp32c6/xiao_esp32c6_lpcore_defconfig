@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+# Memory protection
+CONFIG_THREAD_STACK_INFO=n
+CONFIG_THREAD_CUSTOM_DATA=n
+
+# Boot
+CONFIG_BOOT_BANNER=n
+
+# Console
+CONFIG_PRINTK=n
+
+# Build
+CONFIG_SIZE_OPTIMIZATIONS=y

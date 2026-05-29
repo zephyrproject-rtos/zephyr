@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_XTENSA_SAMPLE_CONTROLLER32
+
+# CONFIG_PRIVILEGED_STACK_SIZE must be aligned as specified by XCHAL_MPU_ALIGN.
+# For `sample_controller32`, that value is equal to 4096
+config PRIVILEGED_STACK_SIZE
+	default 4096 if XTENSA_MPU
+
+endif # SOC_XTENSA_SAMPLE_CONTROLLER32

@@ -1,0 +1,16 @@
+identifier: linkw
+name: WCH LinkW
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 64
+flash: 128
+supported:
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - uart
+  - watchdog

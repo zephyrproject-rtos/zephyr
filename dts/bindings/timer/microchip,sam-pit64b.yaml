@@ -1,0 +1,22 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  Microchip SAM 64-bit Periodic Interval Timer (PIT64B).
+
+compatible: "microchip,sam-pit64b"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-frequency:
+    type: int
+    description: Clock frequency in Hz

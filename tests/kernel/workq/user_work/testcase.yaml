@@ -1,0 +1,10 @@
+tests:
+  kernel.workqueue.user:
+    min_flash: 34
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
+    tags:
+      - kernel
+      - userspace
+      - workqueue

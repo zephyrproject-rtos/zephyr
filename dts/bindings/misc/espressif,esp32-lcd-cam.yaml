@@ -1,0 +1,13 @@
+# Copyright (c) 2025 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ESP32 LCD-CAM controller
+
+  The LCD-CAM controller consists of two functional modules: an LCD output block
+  and a DVP camera input block. Both modules share the same clock and pinctrl
+  resources.
+
+compatible: "espressif,esp32-lcd-cam"
+
+include: [base.yaml, pinctrl-device.yaml]

@@ -1,0 +1,18 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxa577/mcxa577/t1s
+name: NXP FRDM-MCXA577 (10BASE-T1S PHY)
+type: mcu
+arch: arm
+ram: 640
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - netif:eth
+vendor: nxp

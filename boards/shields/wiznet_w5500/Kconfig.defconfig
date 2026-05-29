@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Krisztian Szilvasi
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_WIZNET_W5500
+
+configdefault NET_L2_ETHERNET
+	default y
+
+endif # SHIELD_WIZNET_W5500

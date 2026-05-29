@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STMicroelectronics DFSDM DMIC
+
+description: |
+  This device represents each DFSDM child node matching a filter instance.  The
+  filter handles one or multiple channels, and each filter is linked to a
+  digital microphone.
+
+  There can be up to 4 or 6 filter nodes under DFSDM base node depending on the
+  hardware limitations.
+
+compatible: "st,stm32-dfsdm-dmic"
+
+include: ["base.yaml", "pinctrl-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  filter-order:
+    type: int
+    default: 3
+    min: 0
+    max: 5
+    description: |
+      SinC filter order from 0 to 5.
+      - 0: FastSinC
+      - [1-5]: order 1 to 5.
+      For audio purpose it is recommended to use order 3 to 5.
+
+  filter0-sync:
+    type: boolean
+    description: |
+      When set synchronize with DFSDM filter instance 0.  Used for multi
+      microphones synchronization.  This option cannot be set on filter
+      instance 0.
+
+child-binding:
+  description: Channel instances linked to the filter node.
+
+  properties:
+    reg:
+      type: int
+      required: true

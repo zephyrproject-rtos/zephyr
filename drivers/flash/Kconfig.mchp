@@ -1,0 +1,26 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_MCHP_NVMCTRL_G1
+	bool "Microchip G1 Flash Driver for NVMCTRL"
+	default y
+	depends on DT_HAS_MICROCHIP_NVMCTRL_G1_FLASH_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EX_OP
+	select FLASH_EX_OP_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
+	help
+	  Enable Flash driver for Microchip Non Volatile Memory Controller.
+
+config FLASH_HAS_UNALIGNED_WRITE
+	bool "Provide unaligned write support"
+	depends on FLASH_MCHP_NVMCTRL_G1
+	help
+	  Enable this option to allow the Zephyr flash API to write data to flash
+	  memory at offsets that are not aligned to the device's write block size
+	  When enabled, the driver will handle unaligned writes internally, typically
+	  using read-modify-write operations to ensure data integrity. This allows
+	  applications to write data starting at any offset within the flash memory
+	  space, not just at aligned addresses.

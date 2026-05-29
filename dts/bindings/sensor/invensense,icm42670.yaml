@@ -1,0 +1,57 @@
+# Copyright (c) 2024 TDK Invensense
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICM-42670 motion tracking device
+
+include: invensense,icm42x70.yaml
+
+properties:
+  gyro-hz:
+    type: int
+    required: true
+    description: |
+      Default frequency of gyroscope. (Unit - Hz)
+      Maps to GYRO_ODR field in GYRO_CONFIG0 setting
+      Power-on reset value is 800.
+    enum:
+      - 0
+      - 1600
+      - 800
+      - 400
+      - 200
+      - 100
+      - 50
+      - 25
+      - 12
+
+  gyro-fs:
+    type: int
+    required: true
+    description: |
+      Default full scale of gyroscope. (Unit - DPS)
+      Maps to GYRO_FS_SEL field in GYRO_CONFIG0 setting
+      Power-on reset value is 2000
+    enum:
+      - 2000
+      - 1000
+      - 500
+      - 250
+
+  gyro-filt-bw-hz:
+    type: int
+    default: 180
+    description: |
+      Gyroscope low pass filter bandwidth frequency (Unit - Hz).
+      Maps to GYRO_UI_FILT_BW field in GYRO_CONFIG1 setting.
+      The default corresponds to the reset value of the register field.
+    enum:
+      - 0
+      - 180
+      - 121
+      - 73
+      - 53
+      - 34
+      - 25
+      - 16

@@ -1,0 +1,18 @@
+# Copyright (c) 2022 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_HASH_FUNC_NUM_BUCKETS
+	int "Number of buckets for Hash Function test"
+	range 40 2147483648
+	default 40
+
+config TEST_HASH_FUNC_NUM_ENTRIES
+	int "Number of entries for Hash Function test"
+	range 400 2147483648
+	default 400
+
+config TEST_HASH_FUNC_DEBUG
+	bool "Print debugging information"
+
+source "Kconfig.zephyr"

@@ -1,0 +1,117 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <bflb/bl808.dtsi>
+#include "m1s-pinctrl.dtsi"
+
+/ {
+	model = "Sipeed M1S";
+	compatible = "bflb,bl808";
+
+	chosen {
+		zephyr,flash-controller = &flashctrl;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,log-uart = &log_uarts;
+		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &sec_eng_trng;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+
+	log_uarts: log_uarts {
+		compatible = "zephyr,log-uart";
+		uarts = <&uart1>;
+	};
+};
+
+&flashctrl {
+	flash0: flash@58000000 {
+		compatible = "soc-nv-flash", "winbond,w25q128jv";
+		reg = <0x58000000 (DT_SIZE_M(16) - DT_SIZE_K(8))>;
+		write-block-size = <1>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_partition: partition@0 {
+				label = "mcuboot";
+				reg = <0x00000000 DT_SIZE_K(64)>;
+				read-only;
+			};
+
+			slot0_partition: partition@10000 {
+				label = "image-0";
+				reg = <0x00010000 (DT_SIZE_M(8) - DT_SIZE_K(64))>;
+			};
+
+			slot1_partition: partition@800000 {
+				label = "image-1";
+				reg = <0x00800000 (DT_SIZE_M(8) - DT_SIZE_K(64))>;
+			};
+
+			storage_partition: partition@ff0000 {
+				label = "storage";
+				reg = <0x00ff0000 (DT_SIZE_K(64) - DT_SIZE_K(8))>;
+			};
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(320)>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-1 = <&uart1_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};
+
+&sec_eng_aes {
+	status = "okay";
+};
+
+&sec_eng_sha {
+	status = "okay";
+};

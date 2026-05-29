@@ -1,0 +1,20 @@
+# Copyright (c), 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nRF53X regulator (high voltage stage of the main supply)
+
+compatible: "nordic,nrf53x-regulator-hv"
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-name
+
+properties:
+  reg:
+    required: true
+
+  regulator-name:
+    required: true

@@ -1,0 +1,9 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_WCH
+	bool "WCH SPI Controller"
+	default y
+	depends on DT_HAS_WCH_SPI_ENABLED
+	help
+	  Enable the SPI peripherals on CH32s

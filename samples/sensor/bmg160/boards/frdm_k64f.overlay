@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2019, Linaro Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	bmg160@68 {
+		compatible = "bosch,bmg160";
+		reg = <0x68>;
+		int-gpios = <&gpioc 6 0>;
+	};
+};

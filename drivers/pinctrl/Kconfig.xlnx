@@ -1,0 +1,10 @@
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_XLNX_ZYNQ
+	bool "Xilinx Zynq 7000 processor system MIO pin controller driver"
+	default y
+	depends on DT_HAS_XLNX_PINCTRL_ZYNQ_ENABLED
+	depends on SYSCON
+	help
+	  Enable the Xilinx Zynq 7000 processor system MIO pin controller driver.

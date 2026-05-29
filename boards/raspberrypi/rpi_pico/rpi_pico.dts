@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2021 Yonatan Schachter
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "rpi_pico-common.dtsi"
+#include "../common/rpi_pico-led.dtsi"

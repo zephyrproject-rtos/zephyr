@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2024 Alexandre Bailon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		/* 40 KiB (0xa000) for MCUboot */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x0000a000>;
+		};
+
+		/* 136 KiB (0x22000) per slot for application */
+		slot0_partition: partition@a000 {
+			label = "image-0";
+			reg = <0x0000a000 0x0004e000>;
+		};
+
+		slot1_partition: partition@58000 {
+			label = "image-1";
+			reg = <0x00058000 0x0004e000>;
+		};
+
+		/* 32 KiB (0x8000) for storage */
+		storage_partition: partition@a6000 {
+			label = "storage";
+			reg = <0x000a6000 0x00008000>;
+		};
+
+		/* CCFG (customer configuration area) is located in uppermost
+		 * flash sector (0x2000/8 KiB @ 0xae000), keep it unused.
+		 */
+	};
+};

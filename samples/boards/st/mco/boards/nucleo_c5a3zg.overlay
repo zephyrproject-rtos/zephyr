@@ -1,0 +1,21 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 STMicroelectronics
+ */
+
+&mco1 {
+	clocks = <&rcc STM32_SRC_PSIS MCO1_SEL(MCO1_SEL_PSIS)>;
+	prescaler = <MCO1_PRE(MCO_PRE_DIV_2)>;
+	pinctrl-0 = <&rcc_mco1_pa8>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mco2 {
+	clocks = <&rcc STM32_SRC_HSE MCO2_SEL(MCO2_SEL_HSE)>;
+	prescaler = <MCO2_PRE(MCO_PRE_DIV_8)>;
+	pinctrl-0 = <&rcc_mco2_pa9>;
+	pinctrl-names = "default";
+	status = "okay";
+};

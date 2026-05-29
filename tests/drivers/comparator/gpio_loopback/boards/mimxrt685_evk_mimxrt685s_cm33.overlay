@@ -1,0 +1,55 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_imx/rt/MIMXRT685SFVKB-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/*
+ * PIO0_5(J30-1) looped back to CMP input PIO2_14(J1-9)
+ */
+
+/ {
+	aliases {
+		test-comp = &acmp;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pinctrl {
+	acmp_default: acmp_default {
+		group0 {
+			pinmux = <CMP_IN1_PIO2_14>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+			nxp,analog-mode;
+		};
+	};
+};
+
+&acmp {
+	pinctrl-0 = <&acmp_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	positive-mux-input = "IN1";
+	positive-port-input = "MUX";
+	negative-mux-input = "IN7";
+	negative-port-input = "DAC";
+
+	discrete-mode-enable-positive-channel;
+
+	dac-vref-source = "VIN2";
+	dac-value = <127>;
+	dac-enable;
+};

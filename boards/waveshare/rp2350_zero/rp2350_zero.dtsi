@@ -1,0 +1,156 @@
+/*
+ * Copyright (c) 2025 Stephano Cetola
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <freq.h>
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2350a-pinctrl.h>
+#include "rp2350_zero-pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led-strip = &ws2812;
+	};
+
+	wszero_header: connector {
+		compatible = "gpio-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 0 0>,	/* GP0 */
+			   <1 0 &gpio0 1 0>,	/* GP1 */
+			   <2 0 &gpio0 2 0>,	/* GP2 */
+			   <3 0 &gpio0 3 0>,	/* GP3 */
+			   <4 0 &gpio0 4 0>,	/* GP4 */
+			   <5 0 &gpio0 5 0>,	/* GP5 */
+			   <6 0 &gpio0 6 0>,	/* GP6 */
+			   <7 0 &gpio0 7 0>,	/* GP7 */
+			   <8 0 &gpio0 8 0>,	/* GP8 */
+			   <9 0 &gpio0 9 0>,	/* GP9 */
+			   <10 0 &gpio0 10 0>,	/* GP10 */
+			   <11 0 &gpio0 11 0>,	/* GP11 */
+			   <12 0 &gpio0 12 0>,	/* GP12 */
+			   <13 0 &gpio0 13 0>,	/* GP13 */
+			   <14 0 &gpio0 14 0>,	/* GP14 */
+			   <15 0 &gpio0 15 0>,	/* GP15 */
+			   <16 0 &gpio0 16 0>,	/* GP16 */
+			   <17 0 &gpio0 17 0>,	/* GP17 */
+			   <18 0 &gpio0 18 0>,	/* GP18 */
+			   <19 0 &gpio0 19 0>,	/* GP19 */
+			   <20 0 &gpio0 20 0>,	/* GP20 */
+			   <21 0 &gpio0 21 0>,	/* GP21 */
+			   <22 0 &gpio0 22 0>,	/* GP22 */
+			   <26 0 &gpio0 26 0>,	/* GP26 */
+			   <27 0 &gpio0 27 0>,	/* GP27 */
+			   <28 0 &gpio0 28 0>,	/* GP28 */
+			   <29 0 &gpio0 29 0>;	/* GP29 */
+	};
+};
+
+&flash0 {
+	reg = <0x10000000 DT_SIZE_M(4)>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi0 {
+	clock-frequency = <DT_FREQ_M(8)>;
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&adc {
+	status = "okay";
+	pinctrl-0 = <&adc_default>;
+	pinctrl-names = "default";
+};
+
+&pio0 {
+	status = "okay";
+
+	pio-ws2812 {
+		compatible = "worldsemi,ws2812-rpi_pico-pio";
+		status = "okay";
+		pinctrl-0 = <&ws2812_pio0_default>;
+		pinctrl-names = "default";
+		bit-waveform = <3>, <3>, <4>;
+
+		ws2812: ws2812 {
+			status = "okay";
+			gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+			chain-length = <1>;
+			color-mapping = <LED_COLOR_ID_RED
+					 LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_BLUE>;
+			reset-delay = <280>;
+			frequency = <DT_FREQ_K(800)>;
+		};
+	};
+};
+
+&pio1 {
+	status = "okay";
+};
+
+&pwm {
+	pinctrl-0 = <&pwm_ch4b_default>;
+	pinctrl-names = "default";
+	divider-int-0 = <255>;
+};
+
+&timer0 {
+	status = "okay";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+zephyr_udc0: &usbd {
+	status = "okay";
+};
+
+pico_spi: &spi0 {};
+
+pico_i2c0: &i2c0 {};
+
+pico_i2c1: &i2c1 {};
+
+pico_serial: &uart0 {};

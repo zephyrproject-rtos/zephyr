@@ -1,0 +1,61 @@
+# Copyright (c) 2018 STMicroelectronics
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  int1-gpios:
+    type: phandle-array
+    description: |
+      INT_1 pin
+
+      This pin defaults to active high when produced by the sensor. The property value should ensure
+      the flags properly describe the signal that is presented to the driver.
+
+  int2-gpios:
+    type: phandle-array
+    description: |
+      INT_2 pin
+
+      This pin defaults to active high when produced by the sensor. The property value should ensure
+      the flags properly describe the signal that is presented to the driver.
+
+  drdy-int-pad:
+    type: int
+    enum: [1, 2]
+    description: |
+      Select DRDY pin number (1 or 2).
+
+      This number represents which of the two interrupt pins (INT_1 or INT_2), if any, the DRDY
+      interrupt should be generated from. If this property is not specified, no data ready
+      interrupts can be registered.
+
+      - 1 # drdy is generated on INT1
+      - 2 # drdy is generated on INT2
+
+  threshold-int-pad:
+    type: int
+    enum: [1, 2]
+    description: |
+      Select threshold interrupt pin number (1 or 2).
+
+      This number represents which of the two interrupt pins (INT_1 or INT_2), if any, the threshold
+      interrupt should be generated from. If this property is not specified, no threshold interrupts
+      can be registered.
+
+      - 1 # threshold interrupt is generated on INT1
+      - 2 # threshold interrupt is generated on INT2
+
+  range:
+    type: int
+    default: 2
+    description: |
+      Range in g. Default is power-up configuration.
+
+      - 16 # 16g (1.952 mg/LSB)
+      - 8  #  8g (0.976 mg/LSB)
+      - 4  #  4g (0.488 mg/LSB)
+      - 2  #  2g (0.244 mg/LSB)
+
+    enum: [16, 8, 4, 2]

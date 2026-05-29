@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Titouan Christophe
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cirrus CS43L22 audio DAC
+
+include: [i2c-device.yaml]
+
+compatible: "cirrus,cs43l22"
+
+properties:
+  reg:
+    required: true
+
+  reset-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      RESET pin

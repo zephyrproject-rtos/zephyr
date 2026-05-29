@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_IWDG_WCH
+	bool "WCH Independent Watchdog (IWDG) driver"
+	default y
+	depends on DT_HAS_WCH_IWDG_ENABLED
+	help
+	  Enable the Independent Watchdog (IWDG) driver. Tested on the
+	  CH32V003 and CH32V208.

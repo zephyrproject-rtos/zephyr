@@ -1,0 +1,15 @@
+identifier: ucan
+name: FYSETC UCAN
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 16
+flash: 128
+supported:
+  - can
+  - gpio
+  - usb_device
+  - usbd
+vendor: fysetc

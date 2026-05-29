@@ -1,0 +1,45 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_SAMA7D6
+	bool
+	select SOC_FAMILY_MICROCHIP_SAMA7
+	help
+	  Enable support for Microchip SAMA7D6 Cortex-A Microprocessors.
+
+config SOC_SERIES
+	default "sama7d6" if SOC_SERIES_SAMA7D6
+
+config SOC_SAMA7D65
+	bool
+	select SOC_SERIES_SAMA7D6
+
+config SOC_SAMA7D65D1G
+	bool
+	select SOC_SERIES_SAMA7D6
+
+config SOC_SAMA7D65D1GN2
+	bool
+	select SOC_SERIES_SAMA7D6
+
+config SOC_SAMA7D65D2G
+	bool
+	select SOC_SERIES_SAMA7D6
+
+config SOC_SAMA7D65D2GN8
+	bool
+	select SOC_SERIES_SAMA7D6
+
+config SOC_SAMA7D65D5M
+	bool
+	select SOC_SERIES_SAMA7D6
+
+config SOC
+	default "sama7d65" if SOC_SAMA7D65
+	default "sama7d65d1g" if SOC_SAMA7D65D1G
+	default "sama7d65d1gn2" if SOC_SAMA7D65D1GN2
+	default "sama7d65d2g" if SOC_SAMA7D65D2G
+	default "sama7d65d2gn8" if SOC_SAMA7D65D2GN8
+	default "sama7d65d5m" if SOC_SAMA7D65D5M

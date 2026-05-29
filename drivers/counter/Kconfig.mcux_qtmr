@@ -1,0 +1,11 @@
+# MCUXpresso SDK QTMR
+
+# Copyright (c) 2022 KT-Elektronik, Klaucke und Partner GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_QTMR
+	bool "MCUX QTMR driver"
+	default y
+	depends on DT_HAS_NXP_IMX_TMR_ENABLED
+	help
+	  Enable support for mcux Quad Timer (QTMR) driver.

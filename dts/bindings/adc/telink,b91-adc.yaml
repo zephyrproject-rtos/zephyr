@@ -1,0 +1,38 @@
+# Copyright (c) 2022, Telink Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: Telink B91 ADC node
+
+compatible: "telink,b91-adc"
+
+include: adc-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+  sample-freq:
+    type: int
+    required: true
+    enum:
+      - 23000
+      - 48000
+      - 96000
+    description: |
+      This property selects the ADC source frequency: 23 kHz, 48 kHz, or 96 kHz.
+
+  vref-internal-mv:
+    type: int
+    required: true
+    enum:
+      - 900
+      - 1200
+    description: |
+      This property selects the internal reference voltage source (in millivolts).
+      The external reference source is not supported.
+
+io-channel-cells:
+  - input

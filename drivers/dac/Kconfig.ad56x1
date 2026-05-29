@@ -1,0 +1,24 @@
+# DAC configuration options
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config DAC_AD56X1
+	bool "Analog Devices AD56x1 DAC driver"
+	default y
+	select SPI
+	depends on DT_HAS_ADI_AD5601_ENABLED \
+		|| DT_HAS_ADI_AD5611_ENABLED \
+		|| DT_HAS_ADI_AD5621_ENABLED
+	help
+	  Enable the driver for the Analog Devices AD56x1 DAC
+
+if DAC_AD56X1
+
+config DAC_AD56X1_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  Analog Devices AD56x1 DAC device driver initialization priority.
+
+endif # DAC_AD56X1

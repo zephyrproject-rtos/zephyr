@@ -1,0 +1,8 @@
+tests:
+  logging.backend.initialization:
+    integration_platforms:
+      - qemu_x86
+    tags:
+      - log_core
+      - logging
+    filter: not CONFIG_LOG_MODE_IMMEDIATE

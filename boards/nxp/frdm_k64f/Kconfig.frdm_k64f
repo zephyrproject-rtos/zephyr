@@ -1,0 +1,6 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_K64F
+	select SOC_MK64F12
+	select SOC_PART_NUMBER_MK64FN1M0VLL12

@@ -1,0 +1,10 @@
+# Copyright (c) 2023 bytes at work AG
+# Copyright (c) 2024 Erik Andersson <erian747@gmail.com>
+
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ST_B_LCD40_DSI1_MB1166
+	def_bool $(shields_list_contains,st_b_lcd40_dsi1_mb1166)
+
+config SHIELD_ST_B_LCD40_DSI1_MB1166_A09
+	def_bool $(shields_list_contains,st_b_lcd40_dsi1_mb1166_a09)

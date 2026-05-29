@@ -1,0 +1,9 @@
+# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_ARM_MPS4
+	bool "Arm MPS4 pin controller driver"
+	default y
+	depends on DT_HAS_ARM_MPS4_PINCTRL_ENABLED
+	help
+	  Arm MPS4 pinctrl driver

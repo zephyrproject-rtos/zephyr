@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2021 ASPEED Technology Inc.
+
+if SOC_SERIES_AST10X0
+
+rsource "Kconfig.defconfig.ast10*0"
+
+config ICACHE_LINE_SIZE
+	default 32
+
+config DCACHE_LINE_SIZE
+	default 32
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+endif # SOC_SERIES_AST10X0

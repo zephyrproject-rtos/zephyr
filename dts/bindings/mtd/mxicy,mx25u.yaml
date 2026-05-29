@@ -1,0 +1,8 @@
+# Copyright (c) 2026 EXALT Technologies.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Macronix MX25U series SPI NOR flash
+
+compatible: "mxicy,mx25u"
+
+include: jedec,mspi-nor.yaml

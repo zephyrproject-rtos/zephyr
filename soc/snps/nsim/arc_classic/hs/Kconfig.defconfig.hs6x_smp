@@ -1,0 +1,30 @@
+# Copyright (c) 2021 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_NSIM_HS6X_SMP
+
+config CPU_HS6X
+	default y
+
+config NUM_IRQ_PRIO_LEVELS
+	# This processor supports 16 priority levels:
+	default 2
+
+config NUM_IRQS
+	# must be > the highest interrupt number used
+	default 30
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# SMP simulation is slower than single core, 1 Mhz seems reasonable match with wallclock
+	default 1000000
+
+config CACHE_MANAGEMENT
+	default y
+
+config ARC_CONNECT
+	default y
+
+config MP_MAX_NUM_CPUS
+	default 2
+
+endif # SOC_NSIM_HS6X_SMP

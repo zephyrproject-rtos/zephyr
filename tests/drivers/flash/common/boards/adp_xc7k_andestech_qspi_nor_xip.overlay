@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Andes Technology Corporation.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,flash = &mx25u16;
+	};
+};
+
+/delete-node/ &storage_partition;
+
+&mx25u16 {
+	partitions {
+		/* Reserve 512 KiB for XIP execution */
+		storage_partition: partition@80000 {
+			label = "storage";
+			reg = <0x80000 DT_SIZE_K(512)>;
+		};
+	};
+};

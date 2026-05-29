@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		io-channels = <&dac1 2>;
+		io-channel-names = "dac1";
+	};
+};
+
+&dac1 {
+	status = "okay";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@2 {
+		reg = <2>;
+		zephyr,resolution = <12>;
+	};
+};

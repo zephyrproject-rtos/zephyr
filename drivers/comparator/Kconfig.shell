@@ -1,0 +1,21 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_SHELL
+	bool "Comparator shell"
+	default y
+	depends on SHELL
+	help
+	  Comparator device driver shell.
+
+if COMPARATOR_SHELL
+
+config COMPARATOR_SHELL_AWAIT_TRIGGER_DEFAULT_TIMEOUT
+	int "Default timeout for await_trigger command in seconds"
+	default 10
+
+config COMPARATOR_SHELL_AWAIT_TRIGGER_MAX_TIMEOUT
+	int "Max timeout for await_trigger command in seconds"
+	default 60
+
+endif # COMPARATOR_SHELL

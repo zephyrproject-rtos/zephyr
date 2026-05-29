@@ -1,0 +1,6 @@
+shield:
+  name: swir_hl78xx_ev_kit
+  full_name: Sierra Wireless HL/RC Module Evaluation Kit
+  vendor: Sierra Wireless
+  supported_features:
+    - modem

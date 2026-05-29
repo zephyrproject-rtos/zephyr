@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Meta Platforms
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config PROFILING_PERF_HAS_BACKEND
+	bool
+	help
+	  Selected when there's an implementation for
+	  `arch_perf_current_stack_trace()`
+
+config PROFILING_PERF_BACKEND_RISCV
+	bool
+	default y
+	depends on RISCV
+	depends on THREAD_STACK_INFO
+	depends on FRAME_POINTER
+	select PROFILING_PERF_HAS_BACKEND
+
+config PROFILING_PERF_BACKEND_X86
+	bool
+	default y
+	depends on X86 && !X86_64
+	depends on THREAD_STACK_INFO
+	depends on FRAME_POINTER
+	select PROFILING_PERF_HAS_BACKEND
+
+config PROFILING_PERF_BACKEND_X86_64
+	bool
+	default y
+	depends on X86_64
+	depends on THREAD_STACK_INFO
+	depends on FRAME_POINTER
+	select PROFILING_PERF_HAS_BACKEND

@@ -1,0 +1,18 @@
+# Copyright (c) 2024-2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32H7S78_DK_STM32H7S7XX_EXT_FLASH_APP
+
+choice BOOTLOADER
+	default BOOTLOADER_MCUBOOT
+endchoice
+
+choice BOOT_SIGNATURE_TYPE
+	default BOOT_SIGNATURE_TYPE_NONE
+endchoice
+
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_SINGLE_APP
+endchoice
+
+endif # BOARD_STM32H7S78_DK_STM32H7S7XX_EXT_FLASH_APP

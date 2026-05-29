@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ATMEL_SAM
+	select ASF
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+if SOC_FAMILY_ATMEL_SAM
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_ATMEL_SAM

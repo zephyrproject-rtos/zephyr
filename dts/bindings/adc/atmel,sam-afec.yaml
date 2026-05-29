@@ -1,0 +1,23 @@
+description: Atmel SAM family AFEC
+
+compatible: "atmel,sam-afec"
+
+include:
+  - name: adc-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

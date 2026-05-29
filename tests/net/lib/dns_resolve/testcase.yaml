@@ -1,0 +1,38 @@
+common:
+  tags:
+    - dns
+    - net
+  depends_on: netif
+  timeout: 600
+  min_ram: 21
+tests:
+  net.dns.resolve:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+  net.dns.resolve.preempt:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.dns.resolve.no_ipv6:
+    extra_args: CONF_FILE=prj-no-ipv6.conf
+    min_ram: 16
+  net.mdns.resolve:
+    extra_configs:
+      - CONFIG_MDNS_RESOLVER=y
+      - CONFIG_MDNS_RESPONDER=n
+      - CONFIG_NET_IPV6_MLD=y
+      - CONFIG_NET_IPV4_IGMP=y
+  net.dns.resolve.hostname:
+    extra_configs:
+      - CONFIG_NET_HOSTNAME_ENABLE=y
+      - CONFIG_NET_HOSTNAME="test-zephyr"
+      - CONFIG_NET_IPV6=y
+      - CONFIG_NET_IPV4=y
+      - CONFIG_NET_SOCKETS_DNS_TIMEOUT=5
+      - CONFIG_ZTEST_STACK_SIZE=1280
+  net.dns.resolve.private_rr:
+    extra_configs:
+      - CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT=y
+      - CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN=128
+  net.dns.resolve.query_all_servers:
+    extra_configs:
+      - CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS=y

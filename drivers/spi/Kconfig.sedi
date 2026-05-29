@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SPI_SEDI
+	bool "Intel SEDI SPI driver"
+	default y
+	depends on DT_HAS_INTEL_SEDI_SPI_ENABLED
+	help
+	  This option enables the Intel SEDI SPI driver.
+	  This driver is simply a shim driver built upon the SEDI
+	  bare metal SPI driver in the hal-intel module

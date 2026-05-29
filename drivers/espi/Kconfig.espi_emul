@@ -1,0 +1,19 @@
+# Copyright 2020 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_EMUL
+	bool "eSPI emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_ESPI_EMUL_CONTROLLER_ENABLED
+	depends on EMUL
+	help
+	  Enable the eSPI emulator driver. This is a fake driver,
+	  it does not talk to real hardware. Instead it talks to emulation
+	  drivers that pretend to be devices on the emulated eSPI bus. It is
+	  used for testing drivers for eSPI devices.
+
+	  eSPI is an interface using SPI wires, whose main goal is to reduce the
+	  number of required pins. It includes the functionality of LPC, SMB, SPI
+	  itself (flash access) and GPIO (virtual wires). Please refer to the
+	  specification for more details (it is good for the introduction as well)
+	  https://www.intel.com/content/dam/support/us/en/documents/software/chipset-software/327432-004_espi_base_specification_rev1.0_cb.pdf

@@ -1,0 +1,48 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-test = &sc_timer;
+	};
+};
+
+&pinctrl {
+	pinmux_pwm0: pinmux_pwm0 {
+		group0 {
+			pinmux = <SCT0_OUT0_PIO1_4>;
+			slew-rate = "standard";
+		};
+
+		group1 {
+			pinmux = <SCT0_IN1_PIO0_13>;
+			slew-rate = "standard";
+		};
+	};
+};
+
+/* To test this sample, connect
+ * J10-5 ---> J10-3
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&sc_timer 0 0 PWM_POLARITY_NORMAL>, /* PIO1_4 J10 pin 5 */
+		       <&sc_timer 1 0 PWM_POLARITY_NORMAL>; /* PIO0_13 J10 pin 3 */
+	};
+};
+
+&sc_timer {
+	status = "okay";
+	pinctrl-0 = <&pinmux_pwm0>;
+	pinctrl-names = "default";
+	prescaler = <1>;
+	input-channels = <1>;
+	inputmux-connections = <0>;
+};

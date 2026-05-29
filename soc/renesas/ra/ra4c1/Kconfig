@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA4C1
+	select ARM
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M33
+	select HAS_RENESAS_RA_FSP
+	select CPU_CORTEX_M_HAS_DWT
+	select CLOCK_CONTROL_RENESAS_RA_CGC if CLOCK_CONTROL
+	select ARMV8_M_DSP
+	select CPU_HAS_FPU
+	select FPU
+	select HAS_SWO
+	select XIP
+	select SOC_RA_DYNAMIC_INTERRUPT_NUMBER
+
+if SOC_SERIES_RA4C1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 2
+	default 2 if SOC_R7FA4C1BD3CFP
+	help
+	  Package type:
+	  1 -> FM: LQFP 64 pins
+	  2 -> FP: LQFP 100 pins
+
+endif # SOC_SERIES_RA4C1

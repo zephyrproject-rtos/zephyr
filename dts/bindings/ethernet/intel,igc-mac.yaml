@@ -1,0 +1,26 @@
+# Copyright 2025 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel IGC MAC bindings.
+
+compatible: "intel,igc-mac"
+
+include: [base.yaml, ethernet-controller.yaml]
+
+properties:
+  num-queues:
+    type: int
+    default: 4
+    description: Number of queues supported by the IGC MAC.
+
+  num-tx-desc:
+    type: int
+    default: 512
+    description: The number of transmit descriptors per queue can range from 128 to 4096,
+                 depending on the configuration.
+
+  num-rx-desc:
+    type: int
+    default: 512
+    description: The number of receive descriptors per queue can range from 128 to 4096,
+                 depending on the configuration.

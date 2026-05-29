@@ -1,0 +1,12 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: LPC RNG (Random Number Generator)
+
+compatible: "nxp,lpc-rng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

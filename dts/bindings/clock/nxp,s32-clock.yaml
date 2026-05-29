@@ -1,0 +1,18 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 clock generator IP node
+
+compatible: "nxp,s32-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - name

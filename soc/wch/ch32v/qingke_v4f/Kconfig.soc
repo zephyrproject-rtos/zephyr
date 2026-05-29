@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_QINGKE_V4F
+	bool
+	select SOC_FAMILY_CH32V
+
+config SOC_SERIES
+	default "qingke_v4f" if SOC_SERIES_QINGKE_V4F
+
+rsource "Kconfig.soc.*"

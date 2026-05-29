@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Antmicro <www.antmicro.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pcie0 {
+	eth0: eth0 {
+		status = "disabled";
+	};
+
+	virtio_net: virtio-net {
+		compatible = "virtio,pci";
+
+		vendor-id = <0x1af4>;
+		device-id = <0x1000>;
+
+		interrupts = <0xb 0x0 0x0>;
+		interrupt-parent = <&intc>;
+
+		device {
+			compatible = "virtio,net";
+			status = "okay";
+			zephyr,random-mac-address;
+		};
+	};
+};

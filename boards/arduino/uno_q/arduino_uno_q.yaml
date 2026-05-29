@@ -1,0 +1,25 @@
+identifier: arduino_uno_q
+name: Arduino UNO Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 786
+flash: 2048
+supported:
+  - arduino_i2c
+  - arduino_spi
+  - hts221
+  - dma
+  - spi
+  - dac
+  - adc
+  - watchdog
+  - nvs
+  - pwm
+  - counter
+  - i2c
+  - rtc
+# - usbd # enable usbotg_fs in DTS
+vendor: arduino

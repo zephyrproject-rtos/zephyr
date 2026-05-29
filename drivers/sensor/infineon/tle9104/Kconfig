@@ -1,0 +1,10 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config TLE9104_DIAGNOSTICS
+	bool "Output diagnostics of TLE9104"
+	default y
+	depends on DT_HAS_INFINEON_TLE9104_DIAGNOSTICS_ENABLED
+	help
+	  Enable driver for the output diagnostics of the power train
+	  switch TLE9104.

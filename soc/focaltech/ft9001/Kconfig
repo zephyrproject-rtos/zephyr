@@ -1,0 +1,13 @@
+# Copyright (c) 2025, FocalTech Systems CO.,Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FT9001
+	select ARM
+	select CPU_CORTEX_M4
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_CORTEX_M_HAS_VTOR
+	select SOC_EARLY_INIT_HOOK
+	select BUILD_OUTPUT_HEX
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE

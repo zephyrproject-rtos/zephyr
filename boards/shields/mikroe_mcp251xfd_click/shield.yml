@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright (c) 2023 Andriy Gelman
+# SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+shields:
+  - name: mikroe_mcp2517fd_click
+    full_name: MikroElektronika MCP2517FD Click shield
+    vendor: mikroe
+    supported_features:
+      - can
+
+  - name: mikroe_mcp2518fd_click
+    full_name: MikroElektronika MCP2518FD Click shield
+    vendor: mikroe
+    supported_features:
+      - can
+
+  - name: mikroe_mcp251863_click
+    full_name: MikroElektronika MCP251863 Click shield
+    vendor: mikroe
+    supported_features:
+      - can

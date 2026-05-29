@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Kanak Shilledar <kanakshilledar111@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_VISIONFIVE2_JH7110
+
+config SYS_CLOCK_TICKS_PER_SEC
+	default 1000
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 1000000
+
+endif # BOARD_VISIONFIVE2_JH7110

@@ -1,0 +1,63 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		led0 = &seeed_xiao_cob_led_led_0;
+		led1 = &seeed_xiao_cob_led_led_1;
+
+		pwm-led0 = &seeed_xiao_cob_led_pwm_led_0;
+		pwm-led1 = &seeed_xiao_cob_led_pwm_led_1;
+		pwm-led2 = &seeed_xiao_cob_led_pwm_led_2;
+		pwm-led3 = &seeed_xiao_cob_led_pwm_led_3;
+	};
+
+	seeed_xiao_cob_led_leds: leds {
+		compatible = "gpio-leds";
+
+		seeed_xiao_cob_led_led_0: xiao_cob_led_0 {
+			gpios = <&xiao_d 0 GPIO_ACTIVE_HIGH>;
+			label = "COB LED on D0";
+		};
+
+		seeed_xiao_cob_led_led_1: xiao_cob_led_1 {
+			gpios = <&xiao_d 1 GPIO_ACTIVE_HIGH>;
+			label = "COB LED on D1";
+		};
+	};
+
+	/*
+	 * The PWM LED nodes below are disabled by default to allow any board to still be able to
+	 * use the regular LEDs (on D0 and D1) even when PWM configuration is not available.
+	 *
+	 * Board-specific overlays are expected to enable the PWM LED nodes and configure the PWM
+	 * hardware as needed, see boards/xiao_esp32s3_esp32s3_procpu.overlay for an example.
+	 */
+	seeed_xiao_cob_led_pwm_leds: pwmleds {
+		compatible = "pwm-leds";
+
+		seeed_xiao_cob_led_pwm_led_0: xiao_cob_pwm_led_0 {
+			status = "disabled";
+			label = "COB LED on D2";
+		};
+
+		seeed_xiao_cob_led_pwm_led_1: xiao_cob_pwm_led_1 {
+			status = "disabled";
+			label = "COB LED on D3";
+		};
+
+		seeed_xiao_cob_led_pwm_led_2: xiao_cob_pwm_led_2 {
+			status = "disabled";
+			label = "COB LED on D8";
+		};
+
+		seeed_xiao_cob_led_pwm_led_3: xiao_cob_pwm_led_3 {
+			status = "disabled";
+			label = "COB LED on D9";
+		};
+	};
+};

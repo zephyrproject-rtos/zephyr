@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_EMUL
+	bool "Emulated RTC driver"
+	default y
+	depends on DT_HAS_ZEPHYR_RTC_EMUL_ENABLED
+	help
+	  Enable emulated Real-Time Clock (RTC) driver.

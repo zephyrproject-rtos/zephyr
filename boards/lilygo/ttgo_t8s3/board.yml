@@ -1,0 +1,6 @@
+board:
+  name: ttgo_t8s3
+  full_name: TTGO T8-S3
+  vendor: lilygo
+  socs:
+  - name: esp32s3

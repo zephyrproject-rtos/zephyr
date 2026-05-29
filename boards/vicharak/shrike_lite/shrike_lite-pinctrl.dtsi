@@ -1,0 +1,67 @@
+/*
+ * Copyright (C) 2025 Dhruv Menon <dhruvmenon1104@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	fpga_pwr_default: fpga_pwr_default {
+		group1 {
+			pinmux = <GPIO_P12>;
+		};
+	};
+
+	fpga_en_default: fpga_en_default {
+		group1 {
+			pinmux = <GPIO_P13>;
+		};
+	};
+
+	fpga_flash_default: fpga_flash_default {
+		group1 {
+			pinmux = <SPI0_SCK_P2>, <SPI0_TX_P3>, <SPI0_CSN_P1>;
+		};
+
+		group2 {
+			pinmux = <SPI0_RX_P0>;
+			input-enable;
+		};
+	};
+
+	/* I2C1 on pins 14 (SDA) and 15 (SCL): Connected to both pinout and FPGA */
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_P14>;
+			input-enable;
+			input-schmitt-enable;
+		};
+
+		group2 {
+			pinmux = <I2C1_SCL_P15>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	uart1_default: uart1_default {
+		group1 {
+			pinmux = <UART1_TX_P8>;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_P9>;
+			input-enable;
+		};
+	};
+
+	adc_default: adc_default {
+		group1 {
+			pinmux = <ADC_CH0_P26>,
+				 <ADC_CH1_P27>,
+				 <ADC_CH2_P28>,
+				 <ADC_CH3_P29>;
+			input-enable;
+		};
+	};
+};

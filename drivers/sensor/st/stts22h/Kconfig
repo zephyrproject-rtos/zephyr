@@ -1,0 +1,24 @@
+# ST Microelectronics STTS22H temperature sensor
+
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig STTS22H
+	bool "STTS22H temperature sensor"
+	default y
+	depends on DT_HAS_ST_STTS22H_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C
+	select HAS_STMEMSC
+	select USE_STDC_STTS22H
+	help
+	  Enable driver for STTS22H I2C-based temperature sensor.
+
+if STTS22H
+
+module = STTS22H
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # STTS22H

@@ -1,0 +1,37 @@
+# Copyright (c) 2023 Enphase Energy
+# Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_AM64X
+
+config KERNEL_ENTRY
+	default "_vector_table" if SOC_SERIES_AM64X_R5
+
+config NUM_IRQS
+	default 64 if SOC_SERIES_AM64X_M4
+	default 256 if SOC_SERIES_AM64X_R5
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 400000000 if SOC_SERIES_AM64X_M4
+	default 25000000 if SOC_SERIES_AM64X_R5
+
+if SERIAL
+
+config UART_NS16550
+	default y
+
+config UART_NS16550_TI_K3
+	default y if SOC_SERIES_AM64X_M4
+	default y if SOC_SERIES_AM64X_R5
+
+choice UART_NS16550_VARIANT
+	default UART_NS16550_VARIANT_NS16750
+endchoice
+
+endif # SERIAL
+
+config BUILD_OUTPUT_BIN
+	default n if SOC_SERIES_AM64X_M4
+	default n if SOC_SERIES_AM64X_R5
+
+endif # SOC_SERIES_AM64X

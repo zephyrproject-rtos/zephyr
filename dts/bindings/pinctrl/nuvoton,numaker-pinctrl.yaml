@@ -1,0 +1,88 @@
+# Copyright (c) Nuvoton Technology Corp. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Pin controller is responsible for controlling pin function
+  selection and pin properties. For example, for example you can
+  use this node to set UART0 RX as pin PB12 to fulfill SYS_GPB_MFP3_PB12MFP_UART0_RXD.
+
+  The node has the 'pinctrl' node label set in your SoC's devicetree,
+  so you can modify it like this:
+
+    &pinctrl {
+            /* your modifications go here */
+    };
+
+  All device pin configurations should be placed in child nodes of the
+  'pinctrl' node, as shown in this example:
+
+    &pinctrl {
+      /* configuration for the uart0 "default" state */
+      uart0_default: uart0_default {
+          /* configure PB13 as UART0 TX and PB12 as UART0 RX */
+        group0 {
+          pinmux = <PB12MFP_UART0_RXD>, <PB13MFP_UART0_TXD>;
+        };
+      };
+    };
+
+
+  To link pin configurations with a device, use a pinctrl-N property for some
+  number N, like this example you could place in your board's DTS file:
+
+    #include "board-pinctrl.dtsi"
+
+    &uart0 {
+        pinctrl-0 = <&uart0_default>;
+        pinctrl-names = "default";
+    };
+
+compatible: "nuvoton,numaker-pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: NuMaker pin controller pin group
+  child-binding:
+    description: |
+      Each child node defines the configuration for a particular state.
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-open-drain
+          - input-schmitt-enable
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. The pins should
+          be defined using pre-defined macros or, alternatively, using NVT_PINMUX
+          macros depending on the pinmux model used by the SoC series.
+      drive-strength:
+        type: string
+        default: "low"
+        enum:
+          - "low"
+          - "fast"
+        description: |
+          Set the driving strength of a pin. Hardware default configuration is low and
+          it's enough to drive most components, like as LED, CAN transceiver and so on.
+      slew-rate:
+        type: string
+        default: "low"
+        enum:
+          - "low"
+          - "high"
+          - "fast"
+        description: |
+          Set the speed of a pin. This setting effectively limits the
+          slew rate of the output signal. Hardware default configuration is low.
+          Fast slew rate could support fast speed pins, like as SPI CLK up to 50MHz.
+      digital-path-disable:
+        type: boolean
+        description: disable digital path on a pin.

@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2023 Andes Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+tst_dma0: &dma0 {
+	status = "okay";
+};

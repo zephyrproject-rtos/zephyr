@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config OPAMP_MCUX_OPAMP_FAST
+	bool "NXP MCUX Opamp_fast driver"
+	default y
+	depends on DT_HAS_NXP_OPAMP_FAST_ENABLED
+	select PINCTRL
+	select CLOCK_CONTROL

@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Example board overlay for this test.
+ *
+ * Copy this to boards/<BOARD>.overlay, or pass it through
+ * EXTRA_DTC_OVERLAY_FILE, then update the bus instance and EEPROM
+ * properties to match the actual AT24-compatible device on the board.
+ *
+ * If the board has more than one AT24-compatible EEPROM, keep the
+ * standard eeprom-0 alias so the test can select the intended target.
+ */
+
+/ {
+	aliases {
+		eeprom-0 = &eeprom0;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	/* Set this to the bus speed the board wiring and EEPROM support. */
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+};

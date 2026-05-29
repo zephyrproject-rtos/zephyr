@@ -1,0 +1,6 @@
+board:
+  name: beaglebadge
+  full_name: BeagleBadge
+  vendor: beagle
+  socs:
+  - name: am62l3

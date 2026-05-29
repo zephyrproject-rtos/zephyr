@@ -1,0 +1,18 @@
+description: Kinetis UART
+
+compatible: "nxp,kinetis-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true

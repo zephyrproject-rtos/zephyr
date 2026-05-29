@@ -1,0 +1,8 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: VIRTIO over MMIO
+
+compatible: "virtio,mmio"
+
+include: [base.yaml]

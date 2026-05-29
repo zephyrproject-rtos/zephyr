@@ -1,0 +1,7 @@
+# Holyiot 21014 board configuration
+
+# SPDX-FileCopyrightText: Copyright (c) 2025 Clunky Machines
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_HOLYIOT_21014
+	select SOC_NRF52810_QFAA

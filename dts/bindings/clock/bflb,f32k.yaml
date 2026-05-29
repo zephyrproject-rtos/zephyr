@@ -1,0 +1,15 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalolab F32K clock
+
+compatible: "bflb,f32k"
+
+include: fixed-clock.yaml
+
+properties:
+  clocks:
+    type: phandle-array
+    required: true
+    description: |
+      Source of the F32K. RC32K, XTAL32K, or DIG32K (unimplemented).

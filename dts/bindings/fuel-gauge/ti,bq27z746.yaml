@@ -1,0 +1,13 @@
+# Copyright (c) 2023, ithinx GmbH
+# Copyright (c) 2023, Tonies GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments BQ27Z746 fuel gauge. For more info visit
+  https://www.ti.com/product/BQ27Z746
+
+
+compatible: "ti,bq27z746"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]

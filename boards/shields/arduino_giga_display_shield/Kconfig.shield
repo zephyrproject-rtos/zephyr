@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Arduino SA
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ARDUINO_GIGA_DISPLAY_SHIELD
+	def_bool $(shields_list_contains,arduino_giga_display_shield)

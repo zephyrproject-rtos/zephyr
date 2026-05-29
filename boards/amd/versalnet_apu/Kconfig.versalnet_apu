@@ -1,0 +1,8 @@
+#
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_VERSALNET_APU
+	select SOC_AMD_VERSALNET_APU

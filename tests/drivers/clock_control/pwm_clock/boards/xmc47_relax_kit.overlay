@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023 Andriy Gelman
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	pwmclock: pwmclock {
+		status = "okay";
+		compatible = "pwm-clock";
+		#clock-cells = <1>;
+		clock-frequency = <1000000>;
+		pwms = <&pwm_ccu80 0 PWM_KHZ(1000) PWM_POLARITY_NORMAL>;
+	};
+
+	samplenode: samplenode {
+		status = "okay";
+		compatible = "test-clock-control-pwm-clock";
+		clocks = <&pwmclock 0>;
+	};
+};
+
+&pwm_ccu80 {
+	status = "okay";
+	slice-prescaler = <0 0 0 0>;
+};

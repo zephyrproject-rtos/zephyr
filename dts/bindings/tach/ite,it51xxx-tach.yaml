@@ -1,0 +1,31 @@
+# Copyright (c) 2025 ITE Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE, it51xxx Tachometer node
+
+compatible: "ite,it51xxx-tach"
+
+include: [tach.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  input-pin:
+    type: int
+    required: true
+    enum:
+      - 0
+      - 1
+    description: 0 = TACH_INPUT_PIN_A, 1 = TACH_INPUT_PIN_B
+
+  pulses-per-round:
+    type: int
+    required: true
+    description: number of pulses per round of tachometer's input
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

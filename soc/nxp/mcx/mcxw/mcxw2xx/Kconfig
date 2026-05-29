@@ -1,0 +1,13 @@
+# Copyright 2025-2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_MCXW2XX
+	select HAS_PM
+	select HAS_POWEROFF
+	select NXP_SNPS_BLE_CTRL if BT
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select HAS_PM

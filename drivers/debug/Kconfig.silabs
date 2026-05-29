@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DEBUG_SILABS_PTI
+	bool "Silicon Labs Packet Trace Interface"
+	default y
+	depends on DT_HAS_SILABS_PTI_ENABLED
+	depends on PINCTRL
+	depends on SOC_GECKO_USE_RAIL
+	help
+	  Enable the Packet Trace Interface, providing a mechanism for viewing
+	  transmitted and received radio packets for network sniffing or debugging.

@@ -1,0 +1,9 @@
+board:
+  name: nrf52840dk
+  full_name: nRF52840 DK
+  vendor: nordic
+  socs:
+  # Physical nRF52840 SoC on PCA10056
+  - name: nrf52840
+  # nRF52840 SoC in nRF52811 emulation mode on PCA10056
+  - name: nrf52811

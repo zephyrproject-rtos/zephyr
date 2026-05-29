@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# This binding should not try to change the "enum:" values
+# in a property specification inherited from an included file.
+#
+# Bindings, child-bindings and grandchild-bindings have
+# to be tested separately, see also:
+# - invalid_child_propenum.yaml
+# - invalid_grandchild_propenum.yaml
+
+include: base.yaml
+
+properties:
+  prop-enum:
+    enum:
+      - OTHER_FOO
+      - OTHER_BAR

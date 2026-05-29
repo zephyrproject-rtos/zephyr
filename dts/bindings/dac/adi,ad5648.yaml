@@ -1,0 +1,8 @@
+# Copyright (c) 2023 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Devices 14-Bit 8-channel SPI DAC
+
+compatible: "adi,ad5648"
+
+include: adi,ad56xx-base.yaml

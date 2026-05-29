@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54l15tag_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,flash-controller = &rram_controller;
+		zephyr,flash = &cpuapp_rram;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,boot-mode = &boot_mode0;
+	};
+
+	aliases {
+		mcuboot-led0 = &led1_blue;
+		mcuboot-button0 = &button0;
+	};
+};
+
+&grtc {
+	owned-channels = <0 1 2 3 4 5 6 7 8 9 10 11>;
+	/* Channels 7-11 reserved for Zero Latency IRQs, 3-4 for FLPR */
+	child-owned-channels = <3 4 7 8 9 10 11>;
+	status = "okay";
+};
+
+&lfxo {
+	status = "okay";
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <9000>;
+};
+
+&hfxo {
+	status = "okay";
+	load-capacitors = "internal";
+	load-capacitance-femtofarad = <8000>;
+};
+
+&radio {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+};
+
+&temp {
+	status = "okay";
+};
+
+&clock {
+	status = "okay";
+};
+
+&regulators {
+	status = "okay";
+};
+
+&vregmain {
+	status = "okay";
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+};
+
+&gpregret1 {
+	status = "okay";
+
+	boot_mode0: boot_mode@0 {
+		compatible = "zephyr,retention";
+		status = "okay";
+		reg = <0x0 0x1>;
+	};
+};
+
+&adc {
+	status = "okay";
+};
+
+&i2c21 {
+	status = "okay";
+};
+
+&bme688 {
+	status = "okay";
+};
+
+&adxl367 {
+	status = "okay";
+};
+
+&spi22 {
+	status = "okay";
+};
+
+&bmi270 {
+	status = "okay";
+};
+
+/* Initially connect ANT1 to SoC */
+&gpio1 {
+	antenna_switch_v1 {
+		gpio-hog;
+		gpios = <9 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+
+	antenna_switch_v2 {
+		gpio-hog;
+		gpios = <10 GPIO_ACTIVE_HIGH>;
+		output-low;
+	};
+};

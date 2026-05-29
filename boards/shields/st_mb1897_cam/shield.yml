@@ -1,0 +1,6 @@
+shield:
+  name: st_mb1897_cam
+  full_name: ST MB1897 camera module
+  vendor: st
+  supported_features:
+    - video

@@ -1,0 +1,70 @@
+# Copyright 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+name: Scripts tests
+
+on:
+  push:
+    branches:
+      - main
+      - v*-branch
+    paths:
+      - 'scripts/build/**'
+      - '.github/workflows/scripts_tests.yml'
+  pull_request:
+    branches:
+      - main
+      - v*-branch
+    paths:
+      - 'scripts/build/**'
+      - '.github/workflows/scripts_tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  scripts-tests:
+    name: Scripts tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ['3.12', '3.13']
+        os: [ubuntu-24.04]
+    steps:
+      - name: checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Rebase
+        continue-on-error: true
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git config --global user.email "actions@zephyrproject.org"
+          git config --global user.name "Github Actions"
+          rm -fr ".git/rebase-apply"
+          rm -fr ".git/rebase-merge"
+          git rebase origin/${BASE_REF}
+          git clean -f -d
+          git log --graph --oneline HEAD...${PR_HEAD}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: scripts/requirements-actions.txt
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
+      - name: Run pytest
+        env:
+          ZEPHYR_BASE: ./
+        run: |
+          echo "Run script tests"
+          pytest ./scripts/build

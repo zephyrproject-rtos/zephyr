@@ -1,0 +1,12 @@
+shields:
+  - name: mchp_rnbd451_bt_mikrobus
+    full_name: RNBD451 Add-on Board (Mikro BUS)
+    vendor: microchip
+    supported_features:
+      - bluetooth
+
+  - name: mchp_rnbd451_bt_xplained_pro
+    full_name: RNBD451 Add-on Board (Xplained Pro)
+    vendor: microchip
+    supported_features:
+      - bluetooth

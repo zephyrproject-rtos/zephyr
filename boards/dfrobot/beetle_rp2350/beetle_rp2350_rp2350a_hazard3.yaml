@@ -1,0 +1,22 @@
+identifier: beetle_rp2350/rp2350a/hazard3
+name: DFRobot Beetle RP2350 (Hazard3)
+type: mcu
+arch: riscv
+flash: 2048
+ram: 520
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - clock
+  - counter
+  - dma
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - usbd
+  - watchdog

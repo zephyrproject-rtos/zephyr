@@ -1,0 +1,141 @@
+# Copyright (c) 2024 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32WB0 power controller
+
+compatible: "st,stm32wb0-pwr"
+
+include: "st,stm32-pwr.yaml"
+
+properties:
+  smps-mode:
+    type: string
+    required: true
+    description: |
+      SMPS mode selection
+
+      OFF:
+        - SMPS converter disabled
+        - LDOs supply voltage: VDD
+
+      WARNING: The SMPS must not be disabled on board using the
+      'SMPS supply configuration', so this mode should NEVER be
+      selected on these boards. Only use this mode if your board
+      is using the 'NOSMPS supply configuration'.
+
+      Refer to RM0505 §5.5 "SMPS step down regulator" for details.
+
+      PRECHARGE: (also called BYPASS)
+        - SMPS converter enabled - clock disabled
+        - LDOs supply voltage: VDD (though SMPS)
+          - Current supplied to LDOs can be limited
+            (feature only supported on STM32WB05 / STM32WB09)
+
+      RUN: (also called ON)
+        - SMPS converter enabled - clock enabled
+        - LDOs supply voltage: regulated SMPS output
+          - Target output voltage can be programmed
+    enum:
+      - "OFF"
+      - "PRECHARGE"
+      - "RUN"
+
+  smps-bom:
+    type: int
+    description: |
+      SMPS L/C BOM selection
+
+      Indicates which L/C BOM is present on the board:
+        1: 1.5µH inductance, 2.2µF output capacitance
+        2: 2.2µH inductance, 4.7µF output capacitance
+        3: 10µH inductance, 4.7µF output capacitance
+      Refer to RM0505 §5.5 for more details about L/C BOM.
+
+      This property is required if `smps-mode` is not "OFF".
+    enum:
+      - 1
+      - 2
+      - 3
+
+  smps-clock-prescaler:
+    type: int
+    default: 4
+    description: |
+      SMPS clock prescaler factor
+
+      The SMPS clock, CLK_SMPS, comes from a 16 MHz source that
+      goes through one of two prescalers, with a respective
+      division factor of 2 and 4. This property selects which
+      prescaler should be used.
+
+      Setting this property to 2 results in CLK_SMPS = 8 MHz.
+      Setting this property to 4 results in CLK_SMPS = 4 MHz.
+
+      All features of the SMPS can be used regardless of which
+      prescaler has been chosen. Since a slower clock results
+      in less power consumption, this property defaults to 4.
+
+      This property is only used if `smps-mode` is not "OFF".
+    enum:
+      - 2
+      - 4
+
+  smps-lp-floating:
+    type: boolean
+    description: |
+      Floating SMPS output in low-power state
+
+      If this property is set, the SMPS output pin (VFBSD)
+      is left floating when the SoC is in low-power state.
+
+      If this property is not set, the SMPS is placed in
+      PRECHARGE mode when the SoC is in low-power state.
+      (i.e., VFBSD voltage is equal to VDD)
+
+  smps-current-limit:
+    type: string
+    default: "20"
+    description: |
+      SMPS output current limit (in mA)
+
+      The default value of 20 mA corresponds to the maximal
+      output current allowed for the SMPS, and is also equal
+      to the hardware reset configuration.
+
+      On STM32WB06 and STM32WB07, this property is ignored as
+      the output current limitation feature is not available.
+
+      This property is only used if `smps-mode` is "PRECHARGE".
+    enum:
+      - "2_5"
+      - "5"
+      - "10"
+      - "20"
+
+  smps-output-voltage:
+    type: string
+    default: "1V40"
+    description: |
+      SMPS regulated output voltage
+
+      The default value corresponds to the hardware reset
+      configuration of 1.40V regulated output.
+
+      This property is only used if `smps-mode` is "RUN".
+    enum:
+      - "1V20"
+      - "1V25"
+      - "1V30"
+      - "1V35"
+      - "1V40"
+      - "1V45"
+      - "1V50"
+      - "1V55"
+      - "1V60"
+      - "1V65"
+      - "1V70"
+      - "1V75"
+      - "1V80"
+      - "1V85"
+      - "1V90"
+      - "1V95"

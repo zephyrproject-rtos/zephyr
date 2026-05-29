@@ -1,0 +1,34 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA SCI-B I2C controller
+
+compatible: "renesas,ra-i2c-sci-b"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+
+  channel:
+    required: true
+    type: int
+
+  sda-output-delay:
+    type: int
+    default: 300
+    description: |
+      SDA Output Delay in nano seconds.
+
+  noise-filter-clock-select:
+    type: int
+    default: 1
+    enum: [1, 2, 3, 4]
+    description: |
+      Select the on-chip baud rate generator source clock
+      division setting for the digital noise filter.
+
+  bit-rate-modulation:
+    type: boolean
+    description: |
+      Enabling bitrate modulation reduces the percent error
+      of the actual bitrate with respect to the requested baud rate.

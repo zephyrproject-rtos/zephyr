@@ -1,0 +1,10 @@
+# Copyright (c) 2024 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Latency Measure Benchmark"
+
+source "Kconfig.zephyr"
+
+config BENCHMARK_NUM_ITERATIONS
+	int "Number of iterations to gather data"
+	default 1000

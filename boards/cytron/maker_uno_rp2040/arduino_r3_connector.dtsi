@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 26 0>,	/* A0 */
+			   <1 0 &gpio0 27 0>,	/* A1 */
+			   <2 0 &gpio0 28 0>,	/* A2 */
+			   <3 0 &gpio0 29 0>,	/* A3 */
+			   <4 0 &gpio0 20 0>,	/* SDA */
+			   <5 0 &gpio0 21 0>,	/* SCL */
+			   <6 0 &gpio0 1 0>,	/* GP1 */
+			   <7 0 &gpio0 0 0>,	/* GP0 */
+			   <8 0 &gpio0 2 0>,	/* GP2 */
+			   <9 0 &gpio0 3 0>,	/* GP3 */
+			   <10 0 &gpio0 4 0>,	/* GP4 */
+			   <11 0 &gpio0 5 0>,	/* GP5 */
+			   <12 0 &gpio0 6 0>,	/* GP6 */
+			   <13 0 &gpio0 7 0>,	/* GP7 */
+			   <14 0 &gpio0 8 0>,	/* GP8 */
+			   <15 0 &gpio0 9 0>,	/* GP9 */
+			   <16 0 &gpio0 13 0>,	/* GP13 */
+			   <17 0 &gpio0 11 0>,	/* GP11 */
+			   <18 0 &gpio0 12 0>,	/* GP12 */
+			   <19 0 &gpio0 10 0>,	/* GP10 */
+			   <20 0 &gpio0 20 0>,	/* GP20 */
+			   <21 0 &gpio0 21 0>;	/* GP21 */
+	};
+};
+
+arduino_i2c: &i2c0 {};
+
+arduino_serial: &uart0 {};
+
+arduino_spi: &spi1 {};

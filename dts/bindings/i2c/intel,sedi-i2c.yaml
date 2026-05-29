@@ -1,0 +1,41 @@
+#
+# Copyright (c) 2023 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Intel SEDI I2C
+
+compatible: "intel,sedi-i2c"
+
+include: i2c-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  peripheral-id:
+    type: int
+    description: Peripheral Instance ID
+    required: true
+
+  # Optional bus timing values (all units are nanoseconds). If omitted,
+  # driver will use built-in defaults.
+  bus-timings-std:
+    type: array
+    description: Standard mode timings [sda-hold, hcnt, lcnt] in ns
+
+  bus-timings-fst:
+    type: array
+    description: Fast mode timings [sda-hold, hcnt, lcnt] in ns
+
+  bus-timings-fsp:
+    type: array
+    description: Fast-plus mode timings [sda-hold, hcnt, lcnt] in ns
+
+  bus-timings-high:
+    type: array
+    description: High mode timings [sda-hold, hcnt, lcnt] in ns

@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n8.dtsi>
+#include <espressif/partitions_0x0_amp.dtsi>
+#include "adafruit_feather_esp32s3-pinctrl.dtsi"
+
+/ {
+	model = "Adafruit Feather ESP32S3 APPCPU";
+	compatible = "adafruit,feather_esp32s3", "espressif,esp32s3";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&ipm0 {
+	status = "okay";
+};

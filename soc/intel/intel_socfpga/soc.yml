@@ -1,0 +1,9 @@
+family:
+  - name: intel_socfpga
+    series:
+      - name: agilex
+        socs:
+          - name: agilex
+      - name: agilex5
+        socs:
+          - name: agilex5

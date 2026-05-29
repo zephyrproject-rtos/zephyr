@@ -1,0 +1,15 @@
+# Simple SPI Driver configuration options
+
+# Copyright (c) 2019 Western Digital Corporation or its affiliates
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SPI_OC_SIMPLE
+	bool "OpenCores Simple SPI controller driver"
+	default y
+	depends on DT_HAS_OPENCORES_SPI_SIMPLE_ENABLED
+	help
+	  Enable the Simple SPI controller
+
+config SPI_OC_SIMPLE_BUS_WIDTH
+	def_int 8
+	depends on SPI_OC_SIMPLE

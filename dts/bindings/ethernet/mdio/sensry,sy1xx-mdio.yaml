@@ -1,0 +1,18 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensry SY1XX MDIO Driver node
+
+compatible: "sensry,sy1xx-mdio"
+
+include: [base.yaml, mdio-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

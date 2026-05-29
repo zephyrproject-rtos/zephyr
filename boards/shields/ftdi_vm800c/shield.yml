@@ -1,0 +1,6 @@
+shield:
+  name: ftdi_vm800c
+  full_name: FTDI VM800C Display Shield
+  vendor: ftdi
+  supported_features:
+    - display

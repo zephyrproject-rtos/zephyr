@@ -1,0 +1,6 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UCANS32K1SIC
+	select SOC_S32K146
+	select SOC_PART_NUMBER_FS32K146UAT0VLHT

@@ -1,0 +1,67 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: array
+items:
+  type: object
+  properties:
+    available:
+      type: boolean
+    connected:
+      type: boolean
+    id:
+      type: string
+    notes:
+      type: string
+    platform: {}
+    probe_id:
+      type: string
+    product:
+      type: string
+    runner:
+      type: string
+    runner_params:
+      type: array
+      items:
+        type: string
+    serial_pty:
+      type: string
+    serial:
+      type: string
+    baud:
+      type: integer
+    serial_baud:
+      type: integer
+    post_script:
+      type: string
+    post_flash_script:
+      type: string
+    pre_script:
+      type: string
+    fixtures:
+      type: array
+      items:
+        type: string
+    flash_timeout:
+      type: integer
+    flash_with_test:
+      type: boolean
+    flash_before:
+      type: boolean
+    script_param:
+      type: object
+      properties:
+        pre_script_timeout:
+          type: integer
+        post_script_timeout:
+          type: integer
+        post_flash_timeout:
+          type: integer
+      additionalProperties: false
+    west_flash_cmd:
+      type: string
+  required:
+    - connected
+    - id
+    - platform
+    - product
+    - runner
+  additionalProperties: false

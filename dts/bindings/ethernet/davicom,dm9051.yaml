@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Andrei-Edward Popa
+# SPDX-License-Identifier: Apache-2.0
+
+description: Davicom DM9051 10/100BASE-T Ethernet Controller with SPI interface
+
+compatible: "davicom,dm9051"
+
+include: [spi-device.yaml, ethernet-controller.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Interrupt pin of DM9051. The interrupt pin is active low.

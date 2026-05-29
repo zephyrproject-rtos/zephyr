@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_SAM_UDP
+	bool "Atmel SAM USB Device Port (UDP) Controller"
+	default y
+	depends on DT_HAS_ATMEL_SAM_UDP_ENABLED
+	depends on SOC_FAMILY_ATMEL_SAM
+	select PINCTRL
+	select EVENTS
+	help
+	  Enable Atmel SAM USB Device Port (UDP) controller driver.
+	  This controller supports full-speed USB 2.0 device mode with
+	  8 endpoints.
+
+if UDC_SAM_UDP
+
+config UDC_SAM_UDP_THREAD_STACK_SIZE
+	int "USB device controller driver thread stack size"
+	default 2048
+	help
+	  Stack size of the USB device controller driver thread.
+	  The thread processes USB events including OUT data reception.
+	  A larger stack is needed to handle the callback chain from
+	  udc_submit_ep_event() which may invoke USB class drivers.
+
+config UDC_SAM_UDP_THREAD_PRIORITY
+	int "USB device controller driver thread priority"
+	default 8
+	help
+	  Priority of the USB device controller driver thread.
+
+endif # UDC_SAM_UDP

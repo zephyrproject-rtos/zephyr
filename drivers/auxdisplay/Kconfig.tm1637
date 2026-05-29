@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Siratul Islam
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_TM1637
+	bool "Titan Micro TM1637 7-segment display support"
+	default y
+	select GPIO
+	depends on DT_HAS_TITANMEC_TM1637_ENABLED
+	help
+	  Enable driver for TM (Shenzhen Titan Micro Elec) TM1637 7-segment LED display.
+	  This driver supports 4-digit 7-segment displays commonly found in clock modules
+	  and simple numeric displays.
+
+	  The TM1637 uses a two-wire serial interface (CLK and DIO) and can control up to
+	  4 digits with brightness control.
+
+	  This driver implements the auxdisplay API, allowing generic display usage.
+	  Helper APIs for direct number display are also available.

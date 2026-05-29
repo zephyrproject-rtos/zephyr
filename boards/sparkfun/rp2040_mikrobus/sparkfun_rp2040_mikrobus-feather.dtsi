@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	feather_header: feather-connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <0 0 &gpio0 26 0>,  /* A0   */
+			   <1 0 &gpio0 27 0>,  /* A1   */
+			   <2 0 &gpio0 28 0>,  /* A2   */
+			   <3 0 &gpio0 29 0>,  /* A3   */
+			   /*  4 - not wired */
+			   /*  5 - not wired */
+			   <6 0 &gpio0 2 0>,   /* SCK  */
+			   <7 0 &gpio0 3 0>,   /* COPI */
+			   <8 0 &gpio0 4 0>,   /* CIPO */
+			   <9 0 &gpio0 1 0>,   /* RX   */
+			   <10 0 &gpio0 0 0>,  /* TX   */
+			   /* 11 - not wired, but DO of WS2812 */
+			   <12 0 &gpio0 6 0>,  /* SDA  */
+			   <13 0 &gpio0 7 0>,  /* SCL  */
+			   <14 0 &gpio0 22 0>, /* GP22 */
+			   <15 0 &gpio0 21 0>, /* GP21 */
+			   <16 0 &gpio0 20 0>, /* GP20 */
+			   <17 0 &gpio0 19 0>, /* GP19 */
+			   <18 0 &gpio0 18 0>, /* GP18 */
+			   <19 0 &gpio0 17 0>, /* GP17 */
+			   <20 0 &gpio0 16 0>; /* GP16 */
+	};
+};
+
+feather_adc: &zephyr_adc {
+	status = "okay";
+};
+
+feather_i2c: &zephyr_i2c {
+	status = "okay";
+};
+
+feather_spi: &zephyr_spi {
+	status = "okay";
+};
+
+feather_serial: &zephyr_serial {
+	status = "okay";
+};

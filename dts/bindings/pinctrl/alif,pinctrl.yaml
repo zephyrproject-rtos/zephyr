@@ -1,0 +1,131 @@
+# Copyright (c) 2025 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+title: Alif Semiconductor pin controller
+description: |
+  The Alif pin controller manages pin multiplexing and pad configuration for
+  Alif SoCs. Each I/O pin can be assigned to one of up to eight alternate
+  functions (peripheral signals). Additionally, pad configuration settings
+  control electrical properties such as input enable, drive strength, and
+  slew rate.
+
+  I/O pins are organized into ports, with each port containing up to 8 pins.
+  Pin multiplexing configurations are specified using predefined macros from
+  the SoC-specific pinctrl header (e.g., alif-ensemble-pinctrl.h). These macros
+  encode the port, pin number, and alternate function.
+
+  For example, PIN_P0_0__UART0_RX_A represents port 0, pin 0, configured for the
+  UART0 RX alternate function.
+
+  Pad configuration is specified using standard pinctrl properties.
+
+  Example:
+
+    #include <dt-bindings/pinctrl/alif-ensemble-pinctrl.h>
+
+    &pinctrl {
+      uart4_default: uart4_default {
+        group0 {
+          pinmux = <PIN_P12_1__UART4_RX_B>;
+          input-enable;
+        };
+        group1 {
+          pinmux = <PIN_P12_2__UART4_TX_B>;
+        };
+      };
+    };
+
+  In the example above:
+  - "&pinctrl" references the pin controller node defined in the SoC devicetree.
+  - "uart4_default" is a user-defined state node that groups all pin configurations
+    for UART4's default operating state.
+  - "group0" and "group1" are pin group nodes. Pins within a group share the same
+    pad configuration properties. The RX pin needs input-enable, while the TX pin
+    uses default settings, so they are placed in separate groups.
+  - "pinmux = <PIN_P12_1__UART4_RX_B>" specifies the pin function. The macro
+    PIN_P12_1__UART4_RX_B selects port 12, pin 1, configured for UART4 RX function.
+    These macros are defined in alif-ensemble-pinctrl.h.
+  - "input-enable" enables the input buffer for the RX pin. Other pad
+    configuration properties are supported as defined in the property-allowlist.
+
+  To link the pin configuration to a device:
+
+    &uart4 {
+      pinctrl-0 = <&uart4_default>;
+      pinctrl-names = "default";
+    };
+
+compatible: "alif,pinctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Pin controller register regions. Two regions are required:
+      1. Main pinctrl registers for GPIO ports P0-P14
+      2. LPGPIO pinctrl registers for low-power GPIO
+
+  reg-names:
+    required: true
+    description: |
+      Names for the register regions:
+      - "pinctrl": Main GPIO pin control registers
+      - "lpgpio_pinctrl": Low-power GPIO pin control registers
+
+child-binding:
+  description: |
+    Pin configuration state node. Each child represents a named pinctrl
+    state (e.g., "default", "sleep") containing one or more pin groups.
+
+  child-binding:
+    description: |
+      Pin group node. Pins within a group share the same pad configuration
+      properties. Use multiple groups when pins require different settings.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-high-impedance
+          - bias-pull-up
+          - bias-pull-down
+          - bias-bus-hold
+          - input-enable
+          - input-disable
+          - input-schmitt-enable
+          - input-schmitt-disable
+          - drive-push-pull
+          - drive-open-drain
+          - drive-strength
+
+    properties:
+      pinmux:
+        required: true
+        type: array
+        description: |
+          Array of pin function selections. Each element is a 32-bit value
+          encoding port, pin, and alternate function using ALIF_PINMUX() or
+          predefined macros from alif-ensemble-pinctrl.h (e.g., PIN_P0_0__UART0_RX_A).
+
+      drive-strength:
+        type: int
+        enum: [2, 4, 8, 12]
+        default: 4
+        description: |
+          Output drive strength in milliamps.
+          - 2: 2 mA
+          - 4: 4 mA (default)
+          - 8: 8 mA
+          - 12: 12 mA
+
+      slew-rate:
+        type: string
+        enum:
+          - "slow"
+          - "fast"
+        default: "slow"
+        description: |
+          Output slew rate control.
+          - slow: Slow slew rate (default)
+          - fast: Fast slew rate

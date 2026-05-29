@@ -1,0 +1,25 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP RSTCTL Peripheral reset controller
+
+compatible: "nxp,rstctl"
+
+include: [reset-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  offset-base:
+    type: int
+    description: |
+      Base PRSTCTL register index for this RSTCTL instance when a SoC encodes
+      reset IDs in a single global namespace across multiple reset-controller
+      instances. If omitted, reset IDs are interpreted as instance-local.
+
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+  - id

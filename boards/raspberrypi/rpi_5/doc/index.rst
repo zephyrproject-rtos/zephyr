@@ -1,0 +1,161 @@
+.. zephyr:board:: rpi_5
+
+Overview
+********
+
+`Raspberry Pi 5 product-brief`_
+
+Hardware
+********
+
+- Broadcom BCM2712 2.4GHz quad-core 64-bit Arm Cortex-A76 CPU, with cryptography extensions, 512KB per-core L2 caches and a 2MB shared L3 cache
+- VideoCore VII GPU, supporting OpenGL ES 3.1, Vulkan 1.2
+- Dual 4Kp60 HDMI® display output with HDR support
+- 4Kp60 HEVC decoder
+- LPDDR4X-4267 SDRAM (1GB, 2GB, 4GB, 8GB and 16GB SKUs available)
+- Dual-band 802.11ac Wi-Fi®
+- Bluetooth 5.0 / Bluetooth Low Energy (BLE)
+- microSD card slot, with support for high-speed SDR104 mode
+- 2 x USB 3.0 ports, supporting simultaneous 5Gbps operation
+- 2 x USB 2.0 ports
+- Gigabit Ethernet, with PoE+ support (requires separate PoE+ HAT)
+- 2 x 4-lane MIPI camera/display transceivers
+- PCIe 2.0 x1 interface for fast peripherals (requires separate M.2 HAT or other adapter)
+- 5V/5A DC power via USB-C, with Power Delivery support
+- Raspberry Pi standard 40-pin header
+- Real-time clock (RTC), powered from external battery
+- Power button
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
+See `Raspberry Pi hardware`_ for the complete list of hardware features.
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
+
+Blinky
+======
+
+In brief,
+    1. Format your Micro SD card with MBR and FAT32.
+    2. Save three files below in the root directory.
+        * config.txt
+        * zephyr.bin
+        * `bcm2712-rpi-5-b.dtb`_
+    3. Insert the Micro SD card and power on the Raspberry Pi 5.
+
+then, You will see the Raspberry Pi 5 running the :file:`zephyr.bin`.
+
+config.txt
+----------
+
+.. code-block:: text
+
+   kernel=zephyr.bin
+
+
+zephyr.bin
+----------
+
+Build an app, for example :zephyr:code-sample:`blinky`
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: rpi_5
+   :goals: build
+
+Copy :file:`zephyr.bin` from :file:`build/zephyr` directory to the root directory of the Micro SD
+card.
+
+Insert the Micro SD card and power on the Raspberry Pi 5. And then, the STAT LED will start to blink.
+
+
+Serial Communication
+====================
+
+wiring
+------
+
+You will need the following items:
+   * `Raspberry Pi Debug Probe`_
+   * JST cable: 3-pin JST connector to 3-pin JST connector cable
+   * USB cable: USB A male - Micro USB B male
+
+Use the JST cable to connect the Raspberry Pi Debug Probe UART port to the Raspberry Pi 5 UART port between the HDMI ports.
+
+Then connect the Raspberry Pi Debug Probe to your computer with a USB cable.
+
+
+config.txt
+----------
+
+.. code-block:: text
+
+   kernel=zephyr.bin
+   enable_uart=1
+   uart_2ndstage=1
+
+
+zephyr.bin
+----------
+
+Build an app, for example :zephyr:code-sample:`hello_world`:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: rpi_5
+   :goals: build
+
+Copy :file:`zephyr.bin` from :file:`build/zephyr` directory to the root directory of the Micro SD card.
+
+Insert the Micro SD card into your Raspberry Pi 5.
+
+
+serial terminal emulator
+------------------------
+
+When you power on the Raspberry Pi 5, you will see the following output in the serial console:
+
+.. code-block:: text
+
+   *** Booting Zephyr OS build XXXXXXXXXXXX  ***
+   Hello World! rpi_5/bcm2712
+
+
+.. _Raspberry Pi 5 product-brief:
+   https://datasheets.raspberrypi.com/rpi5/raspberry-pi-5-product-brief.pdf
+
+.. _Raspberry Pi hardware:
+   https://www.raspberrypi.com/documentation/computers/raspberry-pi.html
+
+.. _bcm2712-rpi-5-b.dtb:
+   https://github.com/raspberrypi/firmware/raw/master/boot/bcm2712-rpi-5-b.dtb
+
+.. _Raspberry Pi Debug Probe:
+   https://www.raspberrypi.com/products/debug-probe/
+
+XEN Dom0
+========
+
+The Raspberry Pi 5 platform can be used to run as Xen Zephyr Dom0. For such
+purposes the ``xen_dom0`` snippet can be used.
+
+Run below command as an example of RPI 5 Zephyr build as Dom0:
+
+.. code-block:: bash
+
+   west build -b rpi_5 -p always -S xen_dom0 samples/hello_world
+
+It is expected to be used with special application performing Xen Domain-0/Dom0 functions.
+
+.. note::
+
+   The "hypervisor@x" and "memory@x" DT nodes need to be specified in
+   DT application overlay with values provided on the Xen boot, because
+   normally Xen will update DT for the target Kernel, but this is not possible
+   in case of Zephyr. More details described in :ref:`xen_dom0`.

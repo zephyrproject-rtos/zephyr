@@ -1,0 +1,224 @@
+/*
+ * Copyright 2020-2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_
+
+/* Note- clock identifiers in this file must be unique,
+ * as the driver uses them in a switch case
+ */
+
+#define MCUX_LPC_CLK_ID(high, low) ((high << 8) | (low))
+
+/* These IDs are used within SOC macros, and thus cannot be defined
+ * using the standard MCUX_LPC_CLK_ID form
+ */
+#define MCUX_CTIMER0_CLK 0
+#define MCUX_CTIMER1_CLK 1
+#define MCUX_CTIMER2_CLK 2
+#define MCUX_CTIMER3_CLK 3
+#define MCUX_CTIMER4_CLK 4
+#define MCUX_CTIMER5_CLK 5
+#define MCUX_CTIMER6_CLK 6
+#define MCUX_CTIMER7_CLK 7
+
+#define MCUX_FLEXCOMM0_CLK  MCUX_LPC_CLK_ID(0x01, 0x00)
+#define MCUX_FLEXCOMM1_CLK  MCUX_LPC_CLK_ID(0x01, 0x01)
+#define MCUX_FLEXCOMM2_CLK  MCUX_LPC_CLK_ID(0x01, 0x02)
+#define MCUX_FLEXCOMM3_CLK  MCUX_LPC_CLK_ID(0x01, 0x03)
+#define MCUX_FLEXCOMM4_CLK  MCUX_LPC_CLK_ID(0x01, 0x04)
+#define MCUX_FLEXCOMM0_LP_CLK  MCUX_LPC_CLK_ID(0x01, 0x80)
+#define MCUX_FLEXCOMM1_LP_CLK  MCUX_LPC_CLK_ID(0x01, 0x81)
+#define MCUX_FLEXCOMM2_LP_CLK  MCUX_LPC_CLK_ID(0x01, 0x82)
+#define MCUX_FLEXCOMM3_LP_CLK  MCUX_LPC_CLK_ID(0x01, 0x83)
+#define MCUX_FLEXCOMM5_CLK  MCUX_LPC_CLK_ID(0x01, 0x05)
+#define MCUX_FLEXCOMM6_CLK  MCUX_LPC_CLK_ID(0x01, 0x06)
+#define MCUX_FLEXCOMM7_CLK  MCUX_LPC_CLK_ID(0x01, 0x07)
+#define MCUX_FLEXCOMM8_CLK  MCUX_LPC_CLK_ID(0x01, 0x08)
+#define MCUX_FLEXCOMM9_CLK  MCUX_LPC_CLK_ID(0x01, 0x09)
+#define MCUX_FLEXCOMM10_CLK MCUX_LPC_CLK_ID(0x01, 0x0A)
+#define MCUX_FLEXCOMM11_CLK MCUX_LPC_CLK_ID(0x01, 0x0B)
+#define MCUX_FLEXCOMM12_CLK MCUX_LPC_CLK_ID(0x01, 0x0C)
+#define MCUX_FLEXCOMM13_CLK MCUX_LPC_CLK_ID(0x01, 0x0D)
+#define MCUX_HS_SPI_CLK     MCUX_LPC_CLK_ID(0x01, 0x0E)
+#define MCUX_FLEXCOMM14_CLK MCUX_HS_SPI_CLK
+#define MCUX_PMIC_I2C_CLK   MCUX_LPC_CLK_ID(0x01, 0x0F)
+#define MCUX_HS_SPI1_CLK    MCUX_LPC_CLK_ID(0x01, 0x10)
+#define MCUX_FLEXCOMM17_CLK MCUX_LPC_CLK_ID(0x01, 0x11)
+#define MCUX_FLEXCOMM18_CLK MCUX_LPC_CLK_ID(0x01, 0x12)
+#define MCUX_FLEXCOMM19_CLK MCUX_LPC_CLK_ID(0x01, 0x13)
+#define MCUX_FLEXCOMM20_CLK MCUX_LPC_CLK_ID(0x01, 0x14)
+/* On RT7xx, flexcomm14 and 16 only can be LPSPI, flexcomm15 only can be I2C. */
+#define MCUX_LPSPI14_CLK    MCUX_LPC_CLK_ID(0x01, 0x24)
+#define MCUX_LPI2C15_CLK    MCUX_LPC_CLK_ID(0x01, 0x25)
+#define MCUX_LPSPI16_CLK    MCUX_LPC_CLK_ID(0x01, 0x26)
+#define MCUX_USDHC1_CLK     MCUX_LPC_CLK_ID(0x02, 0x00)
+#define MCUX_USDHC2_CLK     MCUX_LPC_CLK_ID(0x02, 0x01)
+
+#define MCUX_MCAN_CLK MCUX_LPC_CLK_ID(0x03, 0x00)
+
+#define MCUX_BUS_CLK MCUX_LPC_CLK_ID(0x04, 0x00)
+
+#define MCUX_SDIF_CLK MCUX_LPC_CLK_ID(0x05, 0x00)
+
+#define MCUX_I3C_CLK MCUX_LPC_CLK_ID(0x06, 0x00)
+#define MCUX_I3C2_CLK MCUX_LPC_CLK_ID(0x06, 0x01)
+#define MCUX_I3C3_CLK MCUX_LPC_CLK_ID(0x06, 0x02)
+#define MCUX_I3C4_CLK MCUX_LPC_CLK_ID(0x06, 0x03)
+
+#define MCUX_MIPI_DSI_DPHY_CLK MCUX_LPC_CLK_ID(0x07, 0x00)
+#define MCUX_MIPI_DSI_ESC_CLK  MCUX_LPC_CLK_ID(0x07, 0x01)
+
+#define MCUX_LCDIF_PIXEL_CLK MCUX_LPC_CLK_ID(0x08, 0x00)
+
+#define MCUX_SCTIMER_CLK MCUX_LPC_CLK_ID(0x09, 0x00)
+
+#define MCUX_DMIC_CLK MCUX_LPC_CLK_ID(0x0A, 0x00)
+
+#define MCUX_MRT_CLK     MCUX_LPC_CLK_ID(0x0B, 0x00)
+#define MCUX_FREEMRT_CLK MCUX_LPC_CLK_ID(0x0B, 0x01)
+
+#define MCUX_PORT0_CLK MCUX_LPC_CLK_ID(0x0C, 0x00)
+#define MCUX_PORT1_CLK MCUX_LPC_CLK_ID(0x0C, 0x01)
+#define MCUX_PORT2_CLK MCUX_LPC_CLK_ID(0x0C, 0x02)
+#define MCUX_PORT3_CLK MCUX_LPC_CLK_ID(0x0C, 0x03)
+#define MCUX_PORT4_CLK MCUX_LPC_CLK_ID(0x0C, 0x04)
+#define MCUX_PORT5_CLK MCUX_LPC_CLK_ID(0x0C, 0x05)
+
+#define MCUX_ENET_QOS_CLK MCUX_LPC_CLK_ID(0x0D, 0x00)
+
+#define MCUX_ENET_CLK MCUX_LPC_CLK_ID(0x0D, 0x80)
+#define MCUX_ENET_PLL MCUX_LPC_CLK_ID(0x0D, 0x81)
+
+#define MCUX_LCDIC_CLK MCUX_LPC_CLK_ID(0x0E, 0x00)
+
+#define MCUX_LPADC1_CLK MCUX_LPC_CLK_ID(0x0F, 0x00)
+#define MCUX_LPADC2_CLK MCUX_LPC_CLK_ID(0x0F, 0x01)
+/** LPADC3 clock control identifier. */
+#define MCUX_LPADC3_CLK MCUX_LPC_CLK_ID(0x0F, 0x02)
+/** LPADC4 clock control identifier. */
+#define MCUX_LPADC4_CLK MCUX_LPC_CLK_ID(0x0F, 0x03)
+
+#define MCUX_FLEXCAN0_CLK MCUX_LPC_CLK_ID(0x10, 0x00)
+#define MCUX_FLEXCAN1_CLK MCUX_LPC_CLK_ID(0x10, 0x01)
+
+#define MCUX_FLEXIO0_CLK MCUX_LPC_CLK_ID(0x11, 0x00)
+
+#define MCUX_AUDIO_MCLK MCUX_LPC_CLK_ID(0x12, 0x00)
+
+#define MCUX_LPUART0_CLK MCUX_LPC_CLK_ID(0x13, 0x00)
+#define MCUX_LPUART1_CLK MCUX_LPC_CLK_ID(0x13, 0x01)
+#define MCUX_LPUART2_CLK MCUX_LPC_CLK_ID(0x13, 0x02)
+#define MCUX_LPUART3_CLK MCUX_LPC_CLK_ID(0x13, 0x03)
+#define MCUX_LPUART4_CLK MCUX_LPC_CLK_ID(0x13, 0x04)
+#define MCUX_LPUART5_CLK MCUX_LPC_CLK_ID(0x13, 0x05)
+
+#define MCUX_LPI2C0_CLK MCUX_LPC_CLK_ID(0x14, 0x00)
+#define MCUX_LPI2C1_CLK MCUX_LPC_CLK_ID(0x14, 0x01)
+#define MCUX_LPI2C2_CLK MCUX_LPC_CLK_ID(0x14, 0x02)
+#define MCUX_LPI2C3_CLK MCUX_LPC_CLK_ID(0x14, 0x03)
+#define MCUX_LPI2C4_CLK MCUX_LPC_CLK_ID(0x14, 0x04)
+
+#define MCUX_XSPI_CLK  MCUX_LPC_CLK_ID(0x15, 0x00)
+#define MCUX_XSPI0_CLK MCUX_LPC_CLK_ID(0x15, 0x00)
+#define MCUX_XSPI1_CLK MCUX_LPC_CLK_ID(0x15, 0x01)
+#define MCUX_XSPI2_CLK MCUX_LPC_CLK_ID(0x15, 0x02)
+
+#define MCUX_SAI0_CLK MCUX_LPC_CLK_ID(0x16, 0x00)
+#define MCUX_SAI1_CLK MCUX_LPC_CLK_ID(0x16, 0x01)
+#define MCUX_SAI2_CLK MCUX_LPC_CLK_ID(0x16, 0x02)
+
+#define MCUX_LPSPI0_CLK MCUX_LPC_CLK_ID(0x17, 0x00)
+#define MCUX_LPSPI1_CLK MCUX_LPC_CLK_ID(0x17, 0x01)
+#define MCUX_LPSPI2_CLK MCUX_LPC_CLK_ID(0x17, 0x02)
+#define MCUX_LPSPI3_CLK MCUX_LPC_CLK_ID(0x17, 0x03)
+#define MCUX_LPSPI4_CLK MCUX_LPC_CLK_ID(0x17, 0x04)
+#define MCUX_LPSPI5_CLK MCUX_LPC_CLK_ID(0x17, 0x05)
+
+#define MCUX_OPAMP0_CLK MCUX_LPC_CLK_ID(0x18, 0x00)
+#define MCUX_OPAMP1_CLK MCUX_LPC_CLK_ID(0x18, 0x01)
+#define MCUX_OPAMP2_CLK MCUX_LPC_CLK_ID(0x18, 0x02)
+#define MCUX_OPAMP3_CLK MCUX_LPC_CLK_ID(0x18, 0x03)
+
+#define MCUX_ELS_CLK MCUX_LPC_CLK_ID(0x19, 0x0)
+
+#define MCUX_TRNG_CLK MCUX_LPC_CLK_ID(0x1A, 0x0)
+
+#define MCUX_MICFIL_CLK MCUX_LPC_CLK_ID(0x20, 0x00)
+
+#define MCUX_HSCMP0_CLK MCUX_LPC_CLK_ID(0x21, 0x00)
+#define MCUX_HSCMP1_CLK MCUX_LPC_CLK_ID(0x21, 0x01)
+#define MCUX_HSCMP2_CLK MCUX_LPC_CLK_ID(0x21, 0x02)
+
+#define MCUX_LPCMP0_CLK MCUX_LPC_CLK_ID(0x22, 0x00)
+#define MCUX_LPCMP1_CLK MCUX_LPC_CLK_ID(0x22, 0x01)
+#define MCUX_LPCMP2_CLK MCUX_LPC_CLK_ID(0x22, 0x02)
+
+/** SEMA42 peripheral clock identifier. */
+#define MCUX_SEMA42_CLK MCUX_LPC_CLK_ID(0x23, 0x00)
+
+#define MCUX_FLEXSPI_CLK  MCUX_LPC_CLK_ID(0x24, 0x00)
+#define MCUX_FLEXSPI2_CLK MCUX_LPC_CLK_ID(0x24, 0x01)
+
+/** TSI (Touch Sensing Input) clock identifier */
+#define MCUX_TSI_CLK MCUX_LPC_CLK_ID(0x25, 0x0)
+
+/** WWDT0 peripheral clock identifier. */
+#define MCUX_WWDT0_CLK MCUX_LPC_CLK_ID(0x26, 0x00)
+/** WWDT1 peripheral clock identifier. */
+#define MCUX_WWDT1_CLK MCUX_LPC_CLK_ID(0x26, 0x01)
+
+/** ENET QOS PTP peripheral clock identifier. */
+#define MCUX_ENET_QOS_PTP_CLK MCUX_LPC_CLK_ID(0x27, 0x00)
+
+/** USB0 peripheral clock identifier. */
+#define MCUX_USB0_CLK MCUX_LPC_CLK_ID(0x28, 0x00)
+/** USB1 peripheral clock identifier. */
+#define MCUX_USB1_CLK MCUX_LPC_CLK_ID(0x28, 0x01)
+/** USB PHY reference clock identifier. */
+#define MCUX_USBPHY_REF_CLK MCUX_LPC_CLK_ID(0x28, 0x02)
+
+/** EDMA0 peripheral clock identifier. */
+#define MCUX_EDMA0_CLK MCUX_LPC_CLK_ID(0x29, 0x00)
+/** EDMA1 peripheral clock identifier. */
+#define MCUX_EDMA1_CLK MCUX_LPC_CLK_ID(0x29, 0x01)
+
+/** ACMP0 peripheral clock identifier. */
+#define MCUX_ACMP0_CLK MCUX_LPC_CLK_ID(0x30, 0x00)
+
+/** LCDIF peripheral clock identifier. */
+#define MCUX_LCDIF_CLK MCUX_LPC_CLK_ID(0x31, 0x00)
+
+/** GPIO0 peripheral clock identifier. */
+#define MCUX_GPIO0_CLK MCUX_LPC_CLK_ID(0x32, 0x00)
+/** GPIO1 peripheral clock identifier. */
+#define MCUX_GPIO1_CLK MCUX_LPC_CLK_ID(0x32, 0x01)
+/** GPIO2 peripheral clock identifier. */
+#define MCUX_GPIO2_CLK MCUX_LPC_CLK_ID(0x32, 0x02)
+/** GPIO3 peripheral clock identifier. */
+#define MCUX_GPIO3_CLK MCUX_LPC_CLK_ID(0x32, 0x03)
+/** GPIO4 peripheral clock identifier. */
+#define MCUX_GPIO4_CLK MCUX_LPC_CLK_ID(0x32, 0x04)
+/** GPIO5 peripheral clock identifier. */
+#define MCUX_GPIO5_CLK MCUX_LPC_CLK_ID(0x32, 0x05)
+/** GPIO6 peripheral clock identifier. */
+#define MCUX_GPIO6_CLK MCUX_LPC_CLK_ID(0x32, 0x06)
+/** GPIO7 peripheral clock identifier. */
+#define MCUX_GPIO7_CLK MCUX_LPC_CLK_ID(0x32, 0x07)
+/** GPIO8 peripheral clock identifier. */
+#define MCUX_GPIO8_CLK MCUX_LPC_CLK_ID(0x32, 0x08)
+/** GPIO9 peripheral clock identifier. */
+#define MCUX_GPIO9_CLK MCUX_LPC_CLK_ID(0x32, 0x09)
+/** GPIO10 peripheral clock identifier. */
+#define MCUX_GPIO10_CLK MCUX_LPC_CLK_ID(0x32, 0x0A)
+
+/** IOCON0 peripheral clock identifier. */
+#define MCUX_IOCON0_CLK MCUX_LPC_CLK_ID(0x33, 0x00)
+/** IOCON1 peripheral clock identifier. */
+#define MCUX_IOCON1_CLK MCUX_LPC_CLK_ID(0x33, 0x01)
+/** IOCON2 peripheral clock identifier. */
+#define MCUX_IOCON2_CLK MCUX_LPC_CLK_ID(0x33, 0x02)
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_MCUX_LPC_SYSCON_H_ */

@@ -1,0 +1,11 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	sy24651: sy24651@48 {
+		compatible = "silergy,sy24561";
+		reg = <0x48>;
+		status = "okay";
+	};
+};

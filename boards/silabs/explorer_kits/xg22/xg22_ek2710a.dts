@@ -1,0 +1,50 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg22/efr32mg22e224f512im40.dtsi>
+#include "xg22_explorer_kit.dtsi"
+
+/ {
+	model = "Silicon Labs BRD2710A (xG22 Explorer Kit)";
+	compatible = "silabs,xg22_ek2710a", "silabs,efr32mg22";
+};
+
+&radio {
+	pa-voltage-mv = <1800>;
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};
+
+&lfxo {
+	ctune = <25>;
+	precision = <50>;
+	status = "okay";
+};
+
+&em23grpaclk {
+	clocks = <&lfxo>;
+};
+
+&em4grpaclk {
+	clocks = <&lfxo>;
+};
+
+&prortcclk {
+	clocks = <&lfxo>;
+};
+
+&rtccclk {
+	clocks = <&lfxo>;
+};
+
+&wdog0clk {
+	clocks = <&lfxo>;
+};

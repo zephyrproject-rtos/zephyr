@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set last blocks of the code flash as storage partition */
+		storage_partition: partition@1e0000 {
+			label = "storage";
+			reg = <0x1e000 DT_SIZE_K(8)>;
+		};
+	};
+};

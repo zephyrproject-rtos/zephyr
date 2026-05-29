@@ -1,0 +1,18 @@
+# Copyright (c) 2017 Christian Taedcke
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32WG
+	bool
+	select SOC_FAMILY_SILABS_S0
+	help
+	  Silicon Labs EFM32WG (Wonder Gecko) Series MCU
+
+config SOC_EFM32WG990F256
+	bool
+	select SOC_SERIES_EFM32WG
+
+config SOC_SERIES
+	default "efm32wg" if SOC_SERIES_EFM32WG
+
+config SOC
+	default "efm32wg990f256" if SOC_EFM32WG990F256

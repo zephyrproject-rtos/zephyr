@@ -1,0 +1,10 @@
+/*
+ * Copyright 2021 Google LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&adc0 {
+	ref-internal-mv = <3300>;
+	ref-external1-mv = <5000>;
+};

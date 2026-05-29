@@ -1,0 +1,8 @@
+# Copyright (c) 2018 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys ARC EM CPU
+
+compatible: "snps,arcem"
+
+include: cpu.yaml

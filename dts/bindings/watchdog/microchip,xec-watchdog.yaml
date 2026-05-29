@@ -1,0 +1,23 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC watchdog timer
+
+include:
+  - name: base.yaml
+  - name: microchip,dmec-ecia-girq.yaml
+
+compatible: "microchip,xec-watchdog"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pcr-scr:
+    type: int
+    required: true
+    description: |
+      WDT Power Clock Reset(PCR) peripheral index and bit position.

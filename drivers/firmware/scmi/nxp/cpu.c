@@ -1,0 +1,202 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <string.h>
+#include <zephyr/drivers/firmware/scmi/nxp/cpu.h>
+#include <zephyr/kernel.h>
+
+DT_SCMI_PROTOCOL_DEFINE_NODEV(DT_INST(0, nxp_scmi_cpu), NULL,
+		SCMI_NXP_CPU_PROTOCOL_SUPPORTED_VERSION);
+
+enum scmi_nxp_cpu_domain_message {
+	CPU_ATTRIBUTES = 0x3,
+	CPU_START = 0x4,
+	CPU_STOP = 0x5,
+	CPU_RESET_VECTOR_SET = 0x6,
+	CPU_SLEEP_MODE_SET = 0x7,
+	CPU_IRQ_WAKE_SET = 0x8,
+	CPU_NON_IRQ_WAKE_SET = 0x9,
+	CPU_PD_LPM_CONFIG_SET = 0xA,
+	CPU_PER_LPM_CONFIG_SET = 0xB,
+	CPU_INFO_GET = 0xC,
+};
+
+struct scmi_nxp_cpu_info_get_reply {
+	int32_t status;
+	struct scmi_nxp_cpu_info data;
+};
+
+int scmi_nxp_cpu_sleep_mode_set(struct scmi_nxp_cpu_sleep_mode_config *cfg)
+{
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
+	struct scmi_message msg, reply;
+	int status, ret;
+	bool use_polling;
+
+	/* input validation */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_SLEEP_MODE_SET, SCMI_COMMAND,
+					proto->id, 0x0);
+	msg.len = sizeof(*cfg);
+	msg.content = cfg;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(status);
+	reply.content = &status;
+
+	/* Set the PM-related scmi api to use poll mode to ensure that
+	 * the CPU is not woken up by unnecessary scmi interrupts
+	 */
+	use_polling = true;
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return scmi_status_to_errno(status);
+}
+
+int scmi_nxp_cpu_pd_lpm_set(struct scmi_nxp_cpu_pd_lpm_config *cfg)
+{
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
+	struct scmi_message msg, reply;
+	int status, ret;
+	bool use_polling;
+
+	/* input validation */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_PD_LPM_CONFIG_SET, SCMI_COMMAND,
+					proto->id, 0x0);
+	msg.len = sizeof(*cfg);
+	msg.content = cfg;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(status);
+	reply.content = &status;
+
+	use_polling = true;
+
+	ret = scmi_send_message(proto, &msg, &reply, use_polling);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return scmi_status_to_errno(status);
+}
+
+int scmi_nxp_cpu_set_irq_mask(struct scmi_nxp_cpu_irq_mask_config *cfg)
+{
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
+	struct scmi_message msg, reply;
+	int status, ret;
+
+	/* input validation */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_IRQ_WAKE_SET, SCMI_COMMAND,
+					proto->id, 0x0);
+	msg.len = sizeof(*cfg);
+	msg.content = cfg;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(status);
+	reply.content = &status;
+
+	ret = scmi_send_message(proto, &msg, &reply, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return scmi_status_to_errno(status);
+}
+
+int scmi_nxp_cpu_reset_vector(struct scmi_nxp_cpu_vector_config *cfg)
+{
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
+	struct scmi_message msg, reply;
+	int status, ret;
+
+	/* input validation */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_RESET_VECTOR_SET, SCMI_COMMAND,
+					proto->id, 0x0);
+	msg.len = sizeof(*cfg);
+	msg.content = cfg;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(status);
+	reply.content = &status;
+
+	ret = scmi_send_message(proto, &msg, &reply, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return scmi_status_to_errno(status);
+}
+
+int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg)
+{
+	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
+	struct scmi_message msg, reply;
+	struct scmi_nxp_cpu_info_get_reply reply_buffer;
+	int ret;
+
+	/* input validation */
+	if (!proto || !cfg) {
+		return -EINVAL;
+	}
+
+	if (proto->id != SCMI_PROTOCOL_NXP_CPU_DOMAIN) {
+		return -EINVAL;
+	}
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_INFO_GET, SCMI_COMMAND,
+					proto->id, 0x0);
+	msg.len = sizeof(uint32_t);
+	msg.content = &cpu_id;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(reply_buffer);
+	reply.content = &reply_buffer;
+
+	ret = scmi_send_message(proto, &msg, &reply, true);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*cfg = reply_buffer.data;
+
+	return scmi_status_to_errno(reply_buffer.status);
+}

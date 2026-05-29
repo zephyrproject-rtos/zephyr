@@ -1,0 +1,88 @@
+# Copyright(c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G1 RTC driver
+
+description: |
+  Microchip RTC driver.
+
+  This driver configures the RTC peripheral in Microchip
+  microcontrollers for clock and interrupts.
+
+  Group g1 RTC driver supports following hardware peripherals:
+    - module name="RTC" id="U2250" version="2.1.0"
+
+  The node has the 'rtc' node label set in your SoC's devicetree, so you can
+  modify it like this:
+
+    &rtc {
+        /* your modifications go here */
+    };
+
+    Example:
+    Correction in ppm = (FREQCORR.VALUE * 1e6 ppm) / (8192 * 128)
+
+    &rtc {
+      cal-constant = <1048576>; /* 8192 * 128 */
+    };
+
+compatible: "microchip,rtc-g1"
+
+include:
+  - name: rtc.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Register base address and size for the RTC peripheral.
+
+  clocks:
+    required: true
+    description: |
+      Clock phandles used to drive the RTC.
+
+  clock-names:
+    required: true
+    description: |
+      Clock name corresponding to the `clocks` entry.
+
+  interrupts:
+    required: true
+    description: |
+      Interrupt specifier for the RTC peripheral.
+
+  prescaler:
+    type: int
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+    description: |
+      RTC frequency equals clock-frequency divided by the prescaler value
+
+  alarms-count:
+    type: int
+    default: 0
+    description: |
+      Number of alarms supported by RTC device.
+
+      The number of alarms defaults to 0, which indicates that the RTC has
+      no alarms.
+
+  cal-constant:
+    type: int
+    description: |
+      Define the constant used to calculate the calibration.
+
+      More information can be found in the datasheet of each SoC series at
+      RTC Frequency Correction topic.

@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2022 Kumar Gala <galak@kernel.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run the
+    tests/drivers/spi/spi_loopback test in Zephyr.
+
+compatible: "test-spi-loopback-fast"
+
+include: [spi-device.yaml]

@@ -1,0 +1,7 @@
+# reel board configuration
+
+# Copyright (c) 2018-2019 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_REEL_BOARD
+	select SOC_NRF52840_QIAA

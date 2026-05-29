@@ -1,0 +1,15 @@
+identifier: inkplate_6color/esp32/procpu
+name: Inkplate 6Color
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - pinmux
+  - nvs
+vendor: solderedelectronics

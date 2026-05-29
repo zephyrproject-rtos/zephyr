@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DMA_AMD_ACP_SDW
+	bool "AMD ACP SoundWire DMA driver"
+	default y
+	depends on DMA && DT_HAS_AMD_ACP_SDW_DMA_ENABLED
+	help
+	  Enable support for AMD Audio Co-Processor (ACP) SoundWire DMA driver.
+	  This driver provides DMA functionality for SoundWire interface transfers
+	  in AMD ACP 7.0 audio subsystem, enabling audio streaming over SoundWire
+	  bus for connected audio peripherals and codecs.
+
+if DMA_AMD_ACP_SDW
+
+config DMA_AMD_ACP_SDW_TRANS_SIZE
+	int "DMA transfer size"
+	default 128
+	help
+	  ACP SoundWire DMA transfer size.
+
+config DMA_AMD_ACP_SDW_CHANNEL_COUNT
+	int "Maximum channel count"
+	default 12
+	help
+	  Maximum number of ACP SoundWire DMA channels.
+
+endif # DMA_AMD_ACP_SDW

@@ -1,0 +1,4 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+source "drivers/sensor/iclegend/s3km1110/Kconfig"

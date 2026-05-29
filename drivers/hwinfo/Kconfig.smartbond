@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_SMARTBOND
+	bool "Smartbond device reset cause"
+	default y
+	depends on SOC_FAMILY_RENESAS_SMARTBOND
+	select HWINFO_HAS_DRIVER
+	help
+	  Enable Smartbond reset cause hwinfo driver.

@@ -1,0 +1,21 @@
+identifier: ttgo_t8s3/esp32s3/procpu
+name: TTGO T8S3 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - i2s
+  - spi
+  - can
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - input
+  - video
+vendor: lilygo

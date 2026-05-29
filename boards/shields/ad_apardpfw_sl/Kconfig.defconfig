@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_AD_APARDPFW_SL
+
+if ETH_ADIN2111
+
+config NET_IF_MAX_IPV4_COUNT
+	default 3
+
+config NET_IF_MAX_IPV6_COUNT
+	default 3
+
+endif # ETH_ADIN2111
+
+endif # SHIELD_AD_APARDPFW_SL

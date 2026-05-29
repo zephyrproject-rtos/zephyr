@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Florian Weber <Florian.Weber@live.de>
+# SPDX-License-Identifier: Apache-2.0
+
+
+config MLX90394
+	bool "MLX90394 Magnetometer"
+	default y
+	depends on DT_HAS_MELEXIS_MLX90394_ENABLED
+	select I2C
+	help
+	  Enable driver for MLX90394 magnetometer.

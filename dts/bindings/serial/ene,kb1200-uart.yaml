@@ -1,0 +1,24 @@
+# Copyright (c) 2023 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ENE KB1200 UART
+
+compatible: "ene,kb1200-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  current-speed:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Iclegend S3KM1110 24 GHz mmWave presence radar.
+
+compatible: "iclegend,s3km1110"
+
+include: [sensor-device.yaml, uart-device.yaml]

@@ -1,0 +1,53 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UOSCORE
+	bool "UOSCORE library"
+	depends on ZCBOR
+	depends on ZCBOR_CANONICAL
+	select UOSCORE_UEDHOC_CRYPTO_COMMON
+
+	help
+	  This option enables the UOSCORE library.
+
+if UOSCORE
+
+config UOSCORE_DEBUG
+	bool "Debug logs in the uoscore library"
+
+endif # UOSCORE
+
+menuconfig UEDHOC
+	bool "UEDHOC library"
+	depends on ZCBOR
+	depends on ZCBOR_CANONICAL
+	select UOSCORE_UEDHOC_CRYPTO_COMMON
+	help
+	  This option enables the UEDHOC library.
+
+if UEDHOC
+
+config UEDHOC_DEBUG
+	bool "Debug logs in the uedhoc library"
+
+endif # UEDHOC
+
+if UOSCORE || UEDHOC
+
+config UOSCORE_UEDHOC_CRYPTO_COMMON
+	bool
+	select PSA_CRYPTO
+	select PSA_WANT_ALG_ECDH
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_GENERATE
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	select PSA_WANT_ECC_SECP_R1_256
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CCM
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_SHA_256
+
+endif # UOSCORE || UEDHOC

@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Nathan Winslow <natelostintimeandspace@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config FUEL_GAUGE_LTC2959
+	depends on DT_HAS_ADI_LTC2959_ENABLED
+	bool "LTC2959 Fuel Gauge"
+	default y
+	select I2C
+	help
+	  Enable the LTC2959 fuel gauge driver from Analog Devices.
+
+config EMUL_LTC2959
+	bool "Emulate an LTC2959 fuel gauge"
+	default y
+	depends on EMUL
+	depends on FUEL_GAUGE_LTC2959
+	help
+	  It provides readings which follow a simple sequence, thus allowing
+	  test code to check that things are working as expected.

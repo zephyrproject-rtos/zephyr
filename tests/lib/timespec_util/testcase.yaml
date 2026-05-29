@@ -1,0 +1,91 @@
+# FIXME: this should be under tests/unit/timeutil but will not work due to #90029
+common:
+  tags:
+    - timeutils
+  # 1 tier0 platform per supported architecture
+  platform_key:
+    - arch
+    - simulation
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+tests:
+  libraries.timespec_utils: {}
+  libraries.timespec_utils.timeout_32bit:
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+
+  # Using platform_allow below because some platforms such as qemu_cortex_r5/zynqmp_rpu throw
+  # build errors when the timer tick frequency is not divisible by the system tick frequency.
+  #
+  # The test configurations below are mainly for numerical coverage and correctness.
+  libraries.timespec_utils.speed.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_SPEED_OPTIMIZATIONS=y
+  libraries.timespec_utils.speed.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SPEED_OPTIMIZATIONS=y
+  libraries.timespec_utils.low_tick_rate.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1
+  libraries.timespec_utils.low_tick_rate.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1
+  libraries.timespec_utils.high_tick_rate.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000000
+  libraries.timespec_utils.high_tick_rate.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000000
+  libraries.timespec_utils.32k_tick_rate.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=32768
+  libraries.timespec_utils.32k_tick_rate.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=32768
+  libraries.timespec_utils.prime_tick_rate.timeout_32bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=n
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=10007
+  libraries.timespec_utils.prime_tick_rate.timeout_64bit:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_TIMEOUT_64BIT=y
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=10007

@@ -1,0 +1,29 @@
+# Copyright (c) 2024 GARDENA GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Si32 DMA controller
+
+compatible: "silabs,si32-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+    description: >
+      Limiting the number of enabled channels saves RAM.
+
+  "#dma-cells":
+    const: 3
+
+dma-cells:
+  - channel
+  - high-prio
+  - rpower

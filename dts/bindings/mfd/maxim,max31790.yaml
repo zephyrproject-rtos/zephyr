@@ -1,0 +1,14 @@
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxim MAX31790 6-channel I2C-bus PWM controller, MFD device
+
+compatible: "maxim,max31790"
+
+include: i2c-device.yaml
+
+bus: max31790
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,18 @@
+# Copyright (c) 2019 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MEC1501MODULAR_ASSY6885
+
+#PS/2 driver is compiled in terms of this flag.
+config ESPI_PERIPHERAL_8042_KBC
+	default y
+	depends on ESPI_XEC
+
+if ESPI
+
+config ESPI_PERIPHERAL_UART_SOC_MAPPING
+	default 1
+
+endif # ESPI
+
+endif # BOARD_MEC1501MODULAR_ASSY6885

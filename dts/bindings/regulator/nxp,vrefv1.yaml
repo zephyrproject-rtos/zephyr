@@ -1,0 +1,56 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP VREF SOC peripheral
+
+compatible: "nxp,vrefv1"
+
+include:
+  - name: base.yaml
+  - name: regulator.yaml
+    property-allowlist:
+      - regulator-init-microvolt
+      - regulator-min-microvolt
+      - regulator-max-microvolt
+      - regulator-initial-mode
+      - regulator-allowed-modes
+
+properties:
+  reg:
+    required: true
+
+  bandgap-startup-time-us:
+    type: int
+    required: true
+    description: |
+      Maximum bandgap startup time as specified in the appropriate device
+      data sheet, in microseconds.
+
+  buffer-startup-delay-us:
+    type: int
+    required: true
+    description: |
+      Buffer startup delay as specified in the appropriate device data sheet,
+      in microseconds.
+
+  chop-oscillator-en:
+    type: boolean
+    description: |
+      Enables the chop oscillator. When set, the internal chopping operation
+      is enabled and the internal analog offset is minimized. When using the
+      internal voltage regulator, you must also enable the chop oscillator.
+      If the chop oscillator is to be used in very low power modes, the system
+      (bandgap) voltage reference must also be enabled.
+
+  current-compensation-en:
+    type: boolean
+    description: |
+      Enable second-order curvature compensation.
+      This must be enabled to achieve the performance stated in the datasheet.
+      However, the reset value of the peripheral has it disabled.
+
+  internal-voltage-regulator-en:
+    type: boolean
+    description: |
+      Enables the internal 1.75V regulator to produce a constant internal voltage
+      supply to reduce the sensitivity to external supply noise and variation.

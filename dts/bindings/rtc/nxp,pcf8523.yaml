@@ -1,0 +1,60 @@
+# Copyright (c) 2019-2023 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCF8523 RTC
+
+compatible: "nxp,pcf8523"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+  - name: pm.yaml
+    property-allowlist:
+      - wakeup-source
+
+properties:
+  quartz-load-femtofarads:
+    type: int
+    enum:
+      - 7000
+      - 12500
+    default: 7000
+    description: |
+      Capacitive load of the quartz crystal in femtofarads (fF). Default is 7000 femtofarads (equal
+      to 7pF) which corresponds to the reset value of the CAP_SEL field in the "Control 1" register
+      of the PCF8523.
+
+  clkout-frequency:
+    type: int
+    default: 32768
+    enum:
+      - 32768
+      - 16384
+      - 8192
+      - 4096
+      - 1024
+      - 32
+      - 1
+      - 0
+    description: |
+      Frequency of the CLKOUT signal in Hertz (Hz). Default is 32768 Hz which corresponds to the
+      reset value of the COF field in the Tmr_CLKOUT_ctrl register of the PCF8523. Set to 0 to
+      disable the CLKOUT signal (High-Z).
+
+  battery-switch-over:
+    type: string
+    required: true
+    enum:
+      - standard
+      - direct
+      - disabled
+    description: |
+      Battery switch-over function selection:
+        - standard: The power failure condition happens when VDD < VBAT and VDD < Vth(sw)bat
+        - direct: The power failure condition happens when VDD < VBAT
+        - disabled: Battery switch-over disabled - only one power supply (VDD)
+
+  int1-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the PC8523 INT1 interrupt output. This signal is open-drain, active low.

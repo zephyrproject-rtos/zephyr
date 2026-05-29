@@ -1,0 +1,17 @@
+common:
+  integration_platforms:
+    - native_sim
+
+tests:
+  logging.output.default_timestamp:
+    tags:
+      - log_output
+      - logging
+      - timestamp
+  logging.output.custom_timestamp:
+    tags:
+      - log_output
+      - logging
+      - timestamp
+    extra_configs:
+      - CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP=y

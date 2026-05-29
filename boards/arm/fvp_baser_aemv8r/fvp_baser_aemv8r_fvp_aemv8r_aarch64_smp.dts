@@ -1,0 +1,6 @@
+/*
+ * Copyright (c) 2021 Arm Limited (or its affiliates). All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "fvp_baser_aemv8r_fvp_aemv8r_aarch64.dts"

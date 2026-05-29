@@ -1,0 +1,15 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2025 Linumiz GmbH
+ */
+
+/ {
+	aliases {
+		rtc = &rtc;
+	};
+};
+
+&rtc {
+	status = "okay";
+};

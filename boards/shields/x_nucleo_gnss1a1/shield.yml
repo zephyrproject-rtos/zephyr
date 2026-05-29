@@ -1,0 +1,6 @@
+shield:
+  name: x_nucleo_gnss1a1
+  full_name: X-NUCLEO-GNSS1A1
+  vendor: st
+  supported_features:
+    - gnss

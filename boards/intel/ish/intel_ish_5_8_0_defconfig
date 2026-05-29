@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2023-2024 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# uart & console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_SERIAL=y

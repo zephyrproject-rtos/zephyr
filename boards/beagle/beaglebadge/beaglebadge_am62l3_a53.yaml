@@ -1,0 +1,13 @@
+identifier: beaglebadge/am62l3/a53
+name: BeagleBoard.org BeagleBadge
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 224
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: ti

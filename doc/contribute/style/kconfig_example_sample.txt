@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# Examples of Kconfig symbols for samples
+
+# start-after-here
+
+config SAMPLE_LOCK
+	bool "Locking feature"
+
+config SAMPLE_TEMPERATURE_READINGS
+	bool "Fetch readings from temperature sensor"

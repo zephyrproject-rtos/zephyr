@@ -1,0 +1,13 @@
+# Copyright 2020 Matija Tudan
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MAX17262
+	bool "MAX17262 Fuel Gauge"
+	default y
+	depends on DT_HAS_MAXIM_MAX17262_ENABLED
+	select I2C
+	help
+	  Enable I2C-based driver for MAX17262 Fuel Gauge. This driver supports
+	  reading various sensor settings including voltage, current, temperature,
+	  time to full/empty and remaining capacity in mAh.

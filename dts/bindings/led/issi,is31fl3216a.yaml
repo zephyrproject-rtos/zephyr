@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Endor AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  is31fl3216a LED driver for Lumissil Microsystems (a division of ISSI)
+
+compatible: "issi,is31fl3216a"
+
+include: i2c-device.yaml

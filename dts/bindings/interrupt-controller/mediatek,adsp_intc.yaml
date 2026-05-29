@@ -1,0 +1,33 @@
+# Copyright 2023 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: MediaTek MT8xxx Audio DSP Interrupt Controller
+
+compatible: "mediatek,adsp_intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#interrupt-cells":
+    const: 3
+
+  status-reg:
+    description: Register address of interrupt-is-signaled bits
+    type: int
+    required: true
+
+  mask:
+    description: Mask of valid interrupt bits
+    type: int
+    required: true
+
+interrupt-cells:
+  - irq
+  - sense
+  - priority

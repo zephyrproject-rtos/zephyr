@@ -1,0 +1,623 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/init.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/sys_clock.h>
+#include <cmsis_core.h>
+#include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/drivers/counter.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/timer/system_timer_lpm.h>
+
+#define COUNTER_MAX 0x00ffffff
+#define TIMER_STOPPED 0xff000000
+
+#define SYSTICK_CTRL_CLKSOURCE_MSK_GET()					\
+	COND_CODE_1(DT_PROP(DT_NODELABEL(systick), external_clock_source),	\
+		    (0), (SysTick_CTRL_CLKSOURCE_Msk))
+
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) ||			\
+	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
+extern unsigned int z_clock_hw_cycles_per_sec;
+/* CYC_PER_TICK must be inside of systick capacities (<1Ghz) */
+#define CYC_PER_TICK (z_clock_hw_cycles_per_sec/CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#else
+#define CYC_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC/CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#if (COUNTER_MAX / CYC_PER_TICK) == 1
+#pragma message("tickless does nothing as CONFIG_SYS_CLOCK_TICKS_PER_SEC too low")
+#endif
+#endif
+
+/* Largest delta we can program into the 24-bit LOAD register. */
+#define MAX_CYCLES ((uint32_t)COUNTER_MAX)
+
+/* Minimum cycles in the future to try to program.  Note that this is
+ * NOT simply "enough cycles to get the counter read and reprogrammed
+ * reliably" -- it becomes the minimum value of the LOAD register, and
+ * thus reflects how much time we can reliably see expire between
+ * calls to elapsed() to read the COUNTFLAG bit.  So it needs to be
+ * set to be larger than the maximum time the interrupt might be
+ * masked.  Choosing a fraction of a tick is probably a good enough
+ * default, with an absolute minimum of 1k cyc.
+ *
+ * The MIN_DELAY can be overridden via device tree property "zephyr,min-timeout-cycles"
+ * for boards with low-frequency clock sources (e.g., 32kHz).
+ */
+#define MIN_DELAY DT_PROP_OR(DT_NODELABEL(systick), zephyr_min_timeout_cycles, \
+			MAX(1024U, ((uint32_t)CYC_PER_TICK/16U)))
+
+static uint32_t last_load;
+
+#ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
+typedef uint64_t cycle_t;
+typedef int64_t cycle_diff_t;
+#else
+typedef uint32_t cycle_t;
+typedef int32_t cycle_diff_t;
+#endif
+
+/*
+ * This local variable holds the amount of SysTick HW cycles elapsed
+ * and it is updated in sys_clock_isr() and sys_clock_set_timeout().
+ *
+ * Note:
+ *  At an arbitrary point in time the "current" value of the SysTick
+ *  HW timer is calculated as:
+ *
+ * t = cycle_counter + elapsed();
+ */
+static cycle_t cycle_count;
+
+/*
+ * This local variable holds the amount of elapsed SysTick HW cycles
+ * that have been announced to the kernel.
+ *
+ * Note:
+ * Additions/subtractions/comparisons of 64-bits values on 32-bits systems
+ * are very cheap. Divisions are not. Make sure the difference between
+ * cycle_count and announced_cycles is stored in a 32-bit variable before
+ * dividing it by CYC_PER_TICK.
+ */
+static cycle_t announced_cycles;
+
+/*
+ * Ticks reported to the kernel via sys_clock_elapsed() since the last
+ * announce. Reset in sys_clock_isr() / sys_clock_idle_exit() after an
+ * announce. Used by sys_clock_set_timeout() to compute a tick-aligned
+ * absolute deadline relative to announced_cycles.
+ */
+static uint32_t last_elapsed;
+
+/*
+ * This local variable holds the amount of elapsed HW cycles due to
+ * SysTick timer wraps ('overflows') and is used in the calculation
+ * in elapsed() function, as well as in the updates to cycle_count.
+ *
+ * Note:
+ * Each time cycle_count is updated with the value from overflow_cyc,
+ * the overflow_cyc must be reset to zero.
+ */
+static volatile uint32_t overflow_cyc;
+
+static uint32_t elapsed(void);
+
+#if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
+void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz)
+{
+	uint32_t old_hz = (uint32_t)z_clock_hw_cycles_per_sec;
+
+	if ((old_hz == 0U) || (new_hz == 0U) || (old_hz == new_hz)) {
+		return;
+	}
+
+	k_spinlock_key_t key = sys_clock_lock();
+
+	/* Publish the new frequency. */
+	z_clock_hw_cycles_per_sec = new_hz;
+	uint32_t load_old = last_load;
+
+	if (load_old != TIMER_STOPPED) {
+		cycle_count += elapsed();
+		overflow_cyc = 0U;
+	}
+
+	/* Rescale internal counters from old cycles to new cycles. */
+	cycle_count = (cycle_t)(((uint64_t)cycle_count * (uint64_t)new_hz) / (uint64_t)old_hz);
+	announced_cycles = (cycle_t)(((uint64_t)announced_cycles * (uint64_t)new_hz) /
+				     (uint64_t)old_hz);
+
+	if (load_old != TIMER_STOPPED) {
+		uint32_t new_load;
+
+		if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+			uint32_t val = SysTick->VAL;
+
+			if (val == 0U) {
+				val = load_old;
+			}
+
+			new_load = (uint32_t)(((uint64_t)val * (uint64_t)new_hz) /
+					      (uint64_t)old_hz);
+		} else {
+			new_load = CYC_PER_TICK;
+		}
+
+		new_load = MAX(new_load, MIN_DELAY);
+		if (new_load > COUNTER_MAX) {
+			new_load = COUNTER_MAX;
+		}
+
+		last_load = new_load;
+		SysTick->LOAD = new_load - 1U;
+		SysTick->VAL = 0U;
+		SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+	}
+
+	sys_clock_unlock(key);
+}
+#endif /* CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
+
+#if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
+/* This local variable indicates that the timeout was set right before
+ * entering idle state.
+ *
+ * It is used for chips that has to use a separate idle timer in such
+ * case because the Cortex-m SysTick is not clocked in the low power
+ * mode state.
+ */
+static bool timeout_idle;
+
+#if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
+/* Cycle counter before entering the idle state. */
+static cycle_t cycle_pre_idle;
+#endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+#endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
+
+/* This internal function calculates the amount of HW cycles that have
+ * elapsed since the last time the absolute HW cycles counter has been
+ * updated. 'cycle_count' may be updated either by the ISR, or when we
+ * re-program the SysTick.LOAD register, in sys_clock_set_timeout().
+ *
+ * Additionally, the function updates the 'overflow_cyc' counter, that
+ * holds the amount of elapsed HW cycles due to (possibly) multiple
+ * timer wraps (overflows).
+ *
+ * Prerequisites:
+ * - reprogramming of SysTick.LOAD must be clearing the SysTick.COUNTER
+ *   register and the 'overflow_cyc' counter.
+ * - ISR must be clearing the 'overflow_cyc' counter.
+ * - no more than one counter-wrap has occurred between
+ *     - the timer reset or the last time the function was called
+ *     - and until the current call of the function is completed.
+ * - the function is invoked with interrupts disabled.
+ */
+static uint32_t elapsed(void)
+{
+	uint32_t val1 = SysTick->VAL;	/* A */
+	uint32_t ctrl = SysTick->CTRL;	/* B */
+	uint32_t val2 = SysTick->VAL;	/* C */
+
+	/* SysTick behavior: The counter wraps after zero automatically.
+	 * The COUNTFLAG field of the CTRL register is set when it
+	 * decrements from 1 to 0. Reading the control register
+	 * automatically clears that field. When a timer is started,
+	 * count begins at zero then wraps after the first cycle.
+	 * Reference:
+	 *  Armv6-m (B3.3.1) https://developer.arm.com/documentation/ddi0419
+	 *  Armv7-m (B3.3.1) https://developer.arm.com/documentation/ddi0403
+	 *  Armv8-m (B11.1)  https://developer.arm.com/documentation/ddi0553
+	 *
+	 * First, manually wrap/realign val1 and val2 from [0:last_load-1]
+	 * to [1:last_load]. This allows subsequent code to assume that
+	 * COUNTFLAG and wrapping occur on the same cycle.
+	 *
+	 * If the count wrapped...
+	 * 1) Before A then COUNTFLAG will be set and val1 >= val2
+	 * 2) Between A and B then COUNTFLAG will be set and val1 < val2
+	 * 3) Between B and C then COUNTFLAG will be clear and val1 < val2
+	 * 4) After C we'll see it next time
+	 *
+	 * So the count in val2 is post-wrap and last_load needs to be
+	 * added if and only if COUNTFLAG is set or val1 < val2.
+	 */
+	if (val1 == 0) {
+		val1 = last_load;
+	}
+	if (val2 == 0) {
+		val2 = last_load;
+	}
+
+	if ((ctrl & SysTick_CTRL_COUNTFLAG_Msk)
+	    || (val1 < val2)) {
+		overflow_cyc += last_load;
+
+		/* We know there was a wrap, but we might not have
+		 * seen it in CTRL, so clear it. */
+		(void)SysTick->CTRL;
+	}
+
+	return (last_load - val2) + overflow_cyc;
+}
+
+/* sys_clock_isr is calling directly from the platform's vectors table.
+ * However using ISR_DIRECT_DECLARE() is not so suitable due to possible
+ * tracing overflow, so here is a stripped down version of it.
+ */
+ARCH_ISR_DIAG_OFF
+__attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
+{
+#ifdef CONFIG_TRACING_ISR
+	sys_trace_isr_enter();
+#endif /* CONFIG_TRACING_ISR */
+
+	uint32_t dcycles;
+	uint32_t dticks;
+
+	k_spinlock_key_t key = sys_clock_lock();
+
+	/* Update overflow_cyc and clear COUNTFLAG by invoking elapsed() */
+	elapsed();
+
+	/* Increment the amount of HW cycles elapsed (complete counter
+	 * cycles) and announce the progress to the kernel.
+	 */
+	cycle_count += overflow_cyc;
+	overflow_cyc = 0;
+
+#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER)
+	/* Rare case, when the interrupt was triggered, with previously programmed
+	 * LOAD value, just before entering the idle mode (SysTick is clocked) or right
+	 * after exiting the idle mode, before executing the procedure in the
+	 * sys_clock_idle_exit function.
+	 */
+	if (timeout_idle) {
+		sys_clock_unlock(key);
+		ISR_DIRECT_PM();
+		z_arm_int_exit();
+
+		return;
+	}
+#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER */
+
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* In TICKLESS mode, the SysTick.LOAD is re-programmed
+		 * in sys_clock_set_timeout(), followed by resetting of
+		 * the counter (VAL = 0).
+		 *
+		 * If a timer wrap occurs right when we re-program LOAD,
+		 * the ISR is triggered immediately after sys_clock_set_timeout()
+		 * returns; in that case we shall not increment the cycle_count
+		 * because the value has been updated before LOAD re-program.
+		 *
+		 * We can assess if this is the case by inspecting COUNTFLAG.
+		 */
+
+		dcycles = cycle_count - announced_cycles;
+		dticks = dcycles / CYC_PER_TICK;
+		announced_cycles += dticks * CYC_PER_TICK;
+		last_elapsed = 0U;
+		sys_clock_announce_locked(dticks, key);
+	} else {
+		sys_clock_announce_locked(1, key);
+	}
+
+	ISR_DIRECT_PM();
+
+#ifdef CONFIG_TRACING_ISR
+	sys_trace_isr_exit();
+#endif /* CONFIG_TRACING_ISR */
+
+	z_arm_int_exit();
+}
+ARCH_ISR_DIAG_ON
+
+void sys_clock_set_timeout(int32_t ticks, bool idle)
+{
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
+	/* Fast CPUs and a 24 bit counter mean that even idle systems
+	 * need to wake up multiple times per second.  If the kernel
+	 * allows us to miss tick announcements in idle, then shut off
+	 * the counter. (Note: we can assume if idle==true that
+	 * interrupts are already disabled)
+	 */
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && idle && ticks == K_TICKS_FOREVER) {
+		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+		last_load = TIMER_STOPPED;
+		return;
+	}
+
+#if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
+	if (idle) {
+		uint64_t timeout_us =
+			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+		timeout_idle = true;
+
+		/**
+		 * Invoke platform-specific layer to configure LPTIM
+		 * such that system wakes up after timeout elapses.
+		 */
+		z_sys_clock_lpm_enter(timeout_us);
+
+#if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
+		/* Store current value of SysTick counter to be able to
+		 * calculate a difference in measurements after exiting
+		 * the low-power state.
+		 */
+		cycle_pre_idle = cycle_count + elapsed();
+#else /* CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+		/**
+		 * SysTick will be placed under reset once we enter
+		 * low-power mode. Turn it off right now then update
+		 * the cycle counter now, since we won't be able to
+		 * to it after waking up.
+		 */
+		sys_clock_disable();
+		/* Ensure the SysTick interrupt is not pending. This is safe
+		 * as we just did the ISR's job, and MUST be done because
+		 * a pending interrupt could inhibit low-power mode entry.
+		 * Note: On Armv8-M, ICSR.STTNS is R/W, so preserve it while
+		 * writing the write-1-to-clear PENDSTCLR bit.
+		 */
+#ifdef SCB_ICSR_STTNS_Msk
+		SCB->ICSR = (SCB->ICSR & SCB_ICSR_STTNS_Msk) | SCB_ICSR_PENDSTCLR_Msk;
+#else
+		SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
+#endif
+
+		cycle_count += elapsed();
+		overflow_cyc = 0;
+#endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+		return;
+	}
+#endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
+
+#if defined(CONFIG_TICKLESS_KERNEL)
+	/*
+	 * Sync cycle_count with current HW state, capturing any wrap that
+	 * might have occurred since the last sync point. The kernel's
+	 * preceding sys_clock_elapsed() call (or the ISR entry sync)
+	 * usually makes this redundant, but we still need to read CTRL
+	 * here to catch any wrap before writing VAL=0 destroys COUNTFLAG.
+	 *
+	 * val1 must be sampled immediately after elapsed() returns, before
+	 * the cycle_count/overflow_cyc writes below, so the window measured
+	 * by (val1 - val2) at the bottom of this function abuts the window
+	 * already accounted for by elapsed() with no gap in between. Any
+	 * instruction inserted between these two lines would be cycles that
+	 * are neither in elapsed()'s return value nor captured by the
+	 * val1/val2 drift compensation, i.e. systematically lost drift.
+	 */
+	uint32_t pending = elapsed();
+	uint32_t val1 = SysTick->VAL;
+	uint32_t old_load = last_load;
+
+	cycle_count += pending;
+	overflow_cyc = 0U;
+
+	uint32_t cycles;
+
+	cycle_diff_t unannounced = cycle_count - announced_cycles;
+
+	if (ticks == K_TICKS_FOREVER) {
+		/* Schedule as far out as SysTick can go in one LOAD. */
+		cycles = MAX_CYCLES;
+	} else if (unannounced < 0) {
+		/*
+		 * cycle_count has overtaken announced_cycles by more than half
+		 * the cycle_diff_t range. This is reachable when the ISR is
+		 * starved (e.g. a long-running higher-priority IRQ holds the
+		 * CPU) while sys_clock_set_timeout() keeps growing cycle_count
+		 * call after call. Force a near-immediate fire so the ISR can
+		 * drain the backlog before the gap wraps past the unsigned
+		 * range and we start losing cycles permanently. In the 64-bit
+		 * cycle_t configuration this branch is statically unreachable.
+		 */
+		cycles = MIN_DELAY;
+	} else {
+		/*
+		 * Compute the number of cycles from 'now' to a tick-aligned
+		 * deadline measured from the last announce. last_elapsed is
+		 * the tick count most recently reported to the kernel via
+		 * sys_clock_elapsed(); the kernel's 'ticks' argument is
+		 * measured from that report. 64-bit math absorbs arbitrarily
+		 * large 'ticks' without overflowing the intermediate product.
+		 */
+		int64_t want = ((uint64_t)last_elapsed + ticks) * CYC_PER_TICK;
+		int64_t delta_64 = want - unannounced;
+
+		/*
+		 * Clamp to [MIN_DELAY, MAX_CYCLES] so the programmed LOAD is
+		 * within SysTick's 24-bit range and leaves enough cycles to
+		 * reliably service the next ISR. A past-deadline request
+		 * (delta_64 <= 0) is pulled up to MIN_DELAY to fire ASAP.
+		 */
+		cycles = CLAMP(delta_64, (int64_t)MIN_DELAY, (int64_t)MAX_CYCLES);
+	}
+
+	/*
+	 * val2 must be sampled while the OLD LOAD is still the reload source:
+	 * if a wrap happened between SysTick->LOAD being reprogrammed and the
+	 * val2 read, VAL would reload from the NEW LOAD and the drift-comp
+	 * formula below (which uses old_load for the wrap case) would be
+	 * wrong. Updating last_load (a software shadow) is HW-inert and safe
+	 * to do before val2.
+	 *
+	 * COUNTFLAG is not checked here: the caller guarantees this runs
+	 * faster than MIN_DELAY cycles, so a wrap cannot be missed.
+	 */
+	last_load = cycles;
+
+	uint32_t val2 = SysTick->VAL;
+
+	SysTick->LOAD = cycles - 1U;
+	SysTick->VAL = 0U;	/* resets counter, clears COUNTFLAG */
+
+	/*
+	 * Clear any pending SysTick exception from the old schedule.
+	 * Writing VAL=0 clears COUNTFLAG in CTRL but not ICSR.PENDSTSET,
+	 * so without this a wrap that fired just before the reprogram
+	 * would still trigger the ISR once interrupts are re-enabled.
+	 * On Armv8-M, preserve STTNS (R/W) while writing the W1C bit.
+	 */
+#ifdef SCB_ICSR_STTNS_Msk
+	SCB->ICSR = (SCB->ICSR & SCB_ICSR_STTNS_Msk) | SCB_ICSR_PENDSTCLR_Msk;
+#else
+	SCB->ICSR = SCB_ICSR_PENDSTCLR_Msk;
+#endif
+
+	if (val1 < val2) {
+		cycle_count += val1 + (old_load - val2);
+	} else {
+		cycle_count += val1 - val2;
+	}
+#endif
+}
+
+uint32_t sys_clock_elapsed(void)
+{
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		return 0;
+	}
+
+	uint32_t unannounced = cycle_count - announced_cycles;
+	uint32_t cyc = elapsed() + unannounced;
+	uint32_t dticks = cyc / CYC_PER_TICK;
+
+	last_elapsed = dticks;
+	return dticks;
+}
+
+uint32_t sys_clock_cycle_get_32(void)
+{
+	k_spinlock_key_t key = sys_clock_lock();
+	uint32_t ret = cycle_count;
+
+	ret += elapsed();
+	sys_clock_unlock(key);
+	return ret;
+}
+
+#ifdef CONFIG_CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
+uint64_t sys_clock_cycle_get_64(void)
+{
+	k_spinlock_key_t key = sys_clock_lock();
+	uint64_t ret = cycle_count + elapsed();
+
+	sys_clock_unlock(key);
+	return ret;
+}
+#endif
+
+void sys_clock_idle_exit(void)
+{
+#if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
+	if (timeout_idle) {
+		k_spinlock_key_t key = sys_clock_lock();
+		cycle_t systick_diff, missed_cycles;
+		uint32_t dcycles, dticks;
+		uint64_t systick_us, idle_timer_us;
+
+#if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
+		/**
+		 * Get current value for SysTick and calculate how
+		 * much time has passed since last measurement.
+		 */
+		systick_diff = cycle_count + elapsed() - cycle_pre_idle;
+		systick_us =
+			((uint64_t)systick_diff * USEC_PER_SEC) / sys_clock_hw_cycles_per_sec();
+#else /* CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+		/* SysTick was placed under reset so it didn't tick */
+		systick_diff = systick_us = 0;
+#endif /* !CONFIG_SYSTEM_TIMER_RESET_BY_LPM */
+
+		/**
+		 * Query platform-specific code for elapsed time according to LPTIM.
+		 */
+		idle_timer_us = z_sys_clock_lpm_exit();
+
+		/* Calculate difference in measurements to get how much time
+		 * the SysTick missed in idle state.
+		 */
+		if (idle_timer_us < systick_us) {
+			/* This case is possible, when the time in low power mode is
+			 * very short or 0. SysTick usually has higher measurement
+			 * resolution of than the IDLE timer, thus the measurement of
+			 * passed time since the sys_clock_set_timeout call can be higher.
+			 */
+			missed_cycles = 0;
+		} else {
+			uint64_t measurement_diff_us;
+
+			measurement_diff_us = idle_timer_us - systick_us;
+			missed_cycles = (sys_clock_hw_cycles_per_sec() * measurement_diff_us) /
+					USEC_PER_SEC;
+		}
+
+		/* Update the cycle counter to include the cycles missed in idle */
+		cycle_count += missed_cycles;
+
+		/* Announce the passed ticks to the kernel */
+		dcycles = cycle_count + elapsed() - announced_cycles;
+		dticks = dcycles / CYC_PER_TICK;
+		announced_cycles += dticks * CYC_PER_TICK;
+		last_elapsed = 0U;
+		timeout_idle = false;
+		sys_clock_announce_locked(dticks, key);
+	}
+#endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
+
+	if (last_load == TIMER_STOPPED || IS_ENABLED(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)) {
+		/* SysTick was stopped or placed under reset.
+		 * Restart the timer from scratch.
+		 */
+		k_spinlock_key_t key = sys_clock_lock();
+
+		last_load = CYC_PER_TICK;
+		SysTick->LOAD = last_load - 1;
+		SysTick->VAL = 0; /* resets timer to last_load */
+		if (!IS_ENABLED(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)) {
+			SysTick->CTRL |= SysTick_CTRL_ENABLE_Msk;
+		} else {
+			NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+			SysTick->CTRL |= (SysTick_CTRL_ENABLE_Msk |
+					  SysTick_CTRL_TICKINT_Msk |
+					  SYSTICK_CTRL_CLKSOURCE_MSK_GET());
+		}
+
+		sys_clock_unlock(key);
+	}
+}
+
+void sys_clock_disable(void)
+{
+	SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
+}
+
+static int sys_clock_driver_init(void)
+{
+
+	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
+	last_load = CYC_PER_TICK;
+	overflow_cyc = 0U;
+	SysTick->LOAD = last_load - 1;
+	SysTick->VAL = 0; /* resets timer to last_load */
+
+	uint32_t ctrl_flags = SysTick_CTRL_ENABLE_Msk |
+			      SysTick_CTRL_TICKINT_Msk |
+			      SYSTICK_CTRL_CLKSOURCE_MSK_GET();
+
+	SysTick->CTRL = ctrl_flags;
+
+	return 0;
+}
+
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2,
+	 CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

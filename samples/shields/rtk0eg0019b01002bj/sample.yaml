@@ -1,0 +1,9 @@
+sample:
+  name: RTK0EG0019B01002BJ Capacitive Touch Application Shield
+tests:
+  sample.shields.rtk0eg0019b01002bj:
+    harness: shield
+    tags: shield
+    platform_allow:
+      - rssk_ra2l1
+    extra_args: SHIELD=rtk0eg0019b01002bj

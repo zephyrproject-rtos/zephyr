@@ -1,0 +1,297 @@
+/*
+ * Copyright 2025-2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/nxp_mcxe31b.dtsi>
+#include "frdm_mcxe31b-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP FRDM_MCXE31B board";
+	compatible = "nxp,mcxe31b";
+
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		sw0 = &user_button;
+		rtc = &counter_rtc;
+		watchdog0 = &swt_0;
+	};
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+		zephyr,console = &lpuart_5;
+		zephyr,edac = &erm0;
+		zephyr,shell-uart = &lpuart_5;
+		zephyr,canbus = &flexcan_0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: led_0 {
+			gpios = <&gpioc_h 0 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+
+		green_led: led_1 {
+			gpios = <&gpiob_h 6 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+
+		blue_led: led_2 {
+			gpios = <&gpioc_l 14 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			label = "User SW3";
+			gpios = <&gpiod_l 5 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	arduino_header: connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <ARDUINO_HEADER_R3_A0 0 &gpioe_h 0 0>,
+			   <ARDUINO_HEADER_R3_A1 0 &gpioe_l 15 0>,
+			   <ARDUINO_HEADER_R3_A2 0 &gpiod_l 1 0>,
+			   <ARDUINO_HEADER_R3_A3 0 &gpioe_l 10 0>,
+			   <ARDUINO_HEADER_R3_A4 0 &gpioc_l 11 0>,
+			   <ARDUINO_HEADER_R3_A5 0 &gpioc_l 10 0>,
+			   <ARDUINO_HEADER_R3_D0 0 &gpioa_l 8 0>,
+			   <ARDUINO_HEADER_R3_D1 0 &gpioa_l 9 0>,
+			   <ARDUINO_HEADER_R3_D2 0 &gpioe_h 7 0>,
+			   <ARDUINO_HEADER_R3_D3 0 &gpioa_l 13 0>,
+			   <ARDUINO_HEADER_R3_D4 0 &gpioe_h 6 0>,
+			   <ARDUINO_HEADER_R3_D5 0 &gpioe_h 5 0>,
+			   <ARDUINO_HEADER_R3_D6 0 &gpioa_h 0 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpioe_h 1 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpioe_h 2 0>,
+			   <ARDUINO_HEADER_R3_D9 0 &gpioa_l 15 0>,
+			   <ARDUINO_HEADER_R3_D10 0 &gpioe_l 6 0>,
+			   <ARDUINO_HEADER_R3_D11 0 &gpioe_l 2 0>,
+			   <ARDUINO_HEADER_R3_D12 0 &gpioe_l 0 0>,
+			   <ARDUINO_HEADER_R3_D13 0 &gpioe_l 1 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpioc_l 6 0>,
+			   <ARDUINO_HEADER_R3_D15 0 &gpioc_l 7 0>;
+	};
+
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <9 0 &gpiob_l 14 0>,
+			   <10 0 &gpioc_l 9 0>,
+			   <11 0 &gpiob_l 15 0>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		ivt_header: partition@0 {
+			label = "ivt-header";
+			reg = <0x00000000 0x100>;
+		};
+
+		code_partition: partition@100 {
+			label = "code-partition";
+			reg = <0x00000100 (DT_SIZE_K(3920) - 0x100)>;
+		};
+	};
+};
+
+&core0 {
+	clock-frequency = <DT_FREQ_M(160)>;
+};
+
+&edma {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel14 {
+	status = "okay";
+};
+
+&eim0_channel15 {
+	status = "okay";
+};
+
+&gpiob_l {
+	status = "okay";
+};
+
+&gpiob_h {
+	status = "okay";
+};
+
+&lpuart_2 {
+	pinctrl-0 = <&pinmux_lpuart_2>;
+	pinctrl-names = "default";
+	dmas = <&edma 16 38>, <&edma 17 39>;
+	dma-names = "tx", "rx";
+};
+
+&lpuart_5 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart_5>;
+	pinctrl-names = "default";
+	dmas = <&edma 1 44>, <&edma 2 45>;
+	dma-names = "tx", "rx";
+};
+
+&flexcan_0 {
+	pinctrl-0 = <&pinmux_flexcan_0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpioc_l {
+	status = "okay";
+};
+
+&gpioc_h {
+	status = "okay";
+};
+
+&gpiod_l {
+	status = "okay";
+};
+
+&eirq0 {
+	pinctrl-0 = <&eirq0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&firc {
+	status = "okay";
+	firc-div = "UnDiv";
+};
+
+&fxosc {
+	status = "okay";
+	freq = <16000000>;
+	workmode = "crystal";
+	delay = <49>;
+	overdrive = <12>;
+};
+
+&pit_0 {
+	status = "okay";
+};
+
+&pll {
+	status = "okay";
+	workmode = "Integer";
+	prediv = <2>;
+	postdiv = <2>;
+	multiplier = <120>;
+	fracloopdiv = <0>;
+	stepsize = <0>;
+	stepnum = <0>;
+	accuracy = "Accuracy9";
+	outdiv = <3 3>;
+};
+
+&mc_cgm {
+	status = "okay";
+	max-ido-change = <50>;
+	step-duration = <1>;
+	clk-src-freq = <160000000>;
+	mux-0-dc-0-div = <1>;
+	mux-0-dc-1-div = <2>;
+	mux-0-dc-2-div = <4>;
+	mux-0-dc-3-div = <2>;
+	mux-0-dc-4-div = <4>;
+	mux-0-dc-5-div = <4>;
+	mux-0-dc-6-div = <1>;
+	mux-1-dc-0-div = <1>;
+	mux-2-dc-0-div = <1>;
+};
+
+&stm_0 {
+	status = "okay";
+	prescaler = <1>;
+};
+
+&rtc {
+	status = "okay";
+};
+
+&counter_rtc {
+	status = "okay";
+};
+
+&swt_0 {
+	status = "okay";
+};
+
+&adc_0 {
+	status = "okay";
+};
+
+/* Add lpuart2 label to lpuart_2. */
+lpuart2: &lpuart_2 {};
+
+&flexio {
+	status = "okay";
+
+	zephyr_mipi_dbi_parallel: flexio-lcd {
+		compatible = "nxp,mipi-dbi-flexio-lcdif";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		dmas = <&edma 0 33>;
+		dma-names = "tx";
+		shifters-count = <4>;
+		timers-count = <1>;
+		enwr-pin = <15>;
+		rd-pin = <14>;
+		data-pin-start = <16>;
+		reset-gpios = <&gpiob_l 15 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpiob_l 1 GPIO_ACTIVE_HIGH>;
+		rs-gpios = <&gpioc_l 8 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&pinmux_flexio_lcd>;
+		pinctrl-names = "default";
+	};
+};
+
+nxp_8080_touch_panel_i2c: &lpi2c_1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c_1>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+};

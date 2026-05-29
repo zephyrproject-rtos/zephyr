@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Bootlin
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32v20x_30x-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PA9_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+
+		group2 {
+			pinmux = <USART1_RX_PA10_0>;
+			bias-pull-up;
+		};
+	};
+};

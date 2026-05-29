@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m7";
+			reg = <0>;
+			clock-frequency = <350000000>;
+		};
+	};
+
+	dtcm: dtcm@20000000 {
+		compatible = "zephyr,memory-region", "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "DTCM";
+	};
+
+	itcm: itcm@0 {
+		compatible = "zephyr,memory-region", "arm,itcm";
+		reg = <0x00000000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "ITCM";
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

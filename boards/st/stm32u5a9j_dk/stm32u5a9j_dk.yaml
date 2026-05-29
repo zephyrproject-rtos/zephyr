@@ -1,0 +1,26 @@
+identifier: stm32u5a9j_dk
+name: ST STM32U5A9J-DK Discovery Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - led
+  - button
+  - adc
+  - uart
+  - usart
+  - lpuart
+  - watchdog
+  - spi
+  - i2c
+  - flash
+  - sdmmc
+  - timer
+  - rng
+  - rtc
+ram: 2496
+flash: 4096
+vendor: st

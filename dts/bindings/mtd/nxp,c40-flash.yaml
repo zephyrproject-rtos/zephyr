@@ -1,0 +1,19 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+title: NXP C40 Internal Flash
+
+description: |
+  On-chip C40 flash array used with NXP C40 flash controller.
+
+compatible: "nxp,c40-flash"
+
+include: soc-nv-flash.yaml
+
+properties:
+  erase-block-size:
+    const: 8192
+    description: Minimum erase size for C40 is 8 KiB.
+
+  write-block-size:
+    const: 8
+    description: Smallest programmable unit is 8 bytes.

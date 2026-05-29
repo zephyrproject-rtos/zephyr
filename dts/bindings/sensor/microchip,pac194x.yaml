@@ -1,0 +1,61 @@
+# Microchip PAC195X power monitor driver
+#
+# Copyright (c) 2026 Google, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description:
+  Microchip PAC194X/PAC195X Power Monitor
+
+compatible: "microchip,pac194x"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+child-binding:
+  description: PAC194X/PAC195X specific channel configuration
+  properties:
+    reg:
+      type: int
+      required: true
+      description: Channel index (1 to 4)
+
+    friendly-name:
+      type: string
+
+    microchip,shunt-resistor-micro-ohms:
+      type: int
+      required: true
+      description: Value of the shunt resistor in micro-ohms
+
+    microchip,vbus-mode:
+      type: int
+      default: 0
+      description: |
+        VBUS Voltage sampling mode.
+        The default corresponds to the reset value of the register field.
+      enum:
+        - 0 # PAC_UNIPOLAR_FSR
+        - 1 # PAC_BIPOLAR_FSR
+        - 2 # PAC_BIPOLAR_HALF_FSR
+
+    microchip,vsense-mode:
+      type: int
+      default: 0
+      description: |
+        VSENSE Current sampling mode.
+        The default corresponds to the reset value of the register field.
+      enum:
+        - 0 # PAC_UNIPOLAR_FSR
+        - 1 # PAC_BIPOLAR_FSR
+        - 2 # PAC_BIPOLAR_HALF_FSR
+
+    microchip,accumulation-mode:
+      type: int
+      default: 0
+      description: |
+        Accumulation configuration for this specific channel.
+        The default corresponds to the reset value of the register field.
+      enum:
+        - 0 # PAC_ACCUM_VPOWER
+        - 1 # PAC_ACCUM_VSENSE
+        - 2 # PAC_ACCUM_VBUS

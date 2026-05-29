@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RZT2L
+	bool
+	select SOC_FAMILY_RENESAS_RZ
+	help
+	  Renesas RZ/T2L series
+
+config SOC_SERIES
+	default "rzt2l" if SOC_SERIES_RZT2L
+
+config SOC_R9A07G074M04GBG
+	bool
+	select SOC_SERIES_RZT2L
+	help
+	  R9A07G074M04GBG
+
+config SOC
+	default "r9a07g074m04gbg" if SOC_R9A07G074M04GBG

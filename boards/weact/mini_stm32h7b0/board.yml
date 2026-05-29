@@ -1,0 +1,6 @@
+board:
+  name: mini_stm32h7b0
+  full_name: MiniSTM32H7B0 Core Board
+  vendor: weact
+  socs:
+    - name: stm32h7b0xx

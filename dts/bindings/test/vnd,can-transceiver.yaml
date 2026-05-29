@@ -1,0 +1,8 @@
+# Copyright (c) 2020 Vestas Wind Systems A/S
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test CAN transceiver node
+
+compatible: "vnd,can-transceiver"
+
+include: can-transceiver.yaml

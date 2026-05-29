@@ -1,0 +1,25 @@
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Parade PS8xxx series TCPC chip
+
+compatible: "parade,ps8xxx"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  irq-gpios:
+    type: phandle-array
+    description: |
+      Alert pin from the TCPC triggering interrupt
+
+  transmit-retries:
+    type: int
+    default: 2
+    description: |
+      Maximum number of packet retransmissions done by TCPC. Valid values are <0, 3>.
+      This value is used to fill the Retry Counter part of the TCPCI Transmit register.

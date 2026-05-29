@@ -1,0 +1,23 @@
+# Device Tree binding for Maxim MAX30102
+#
+# Copyright (c) 2026, Md Shofiqul Islam
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MAX30102 heart rate and pulse oximeter sensor.
+
+  The MAX30102 has two LED channels (Red + IR) and is register-compatible
+  with the MAX30101 except that the Green LED (LED3) is not present.
+
+compatible: "maxim,max30102"
+
+include: maxim,max3010x-common.yaml
+
+properties:
+  led-pa:
+    default: [0xff, 0xff]
+    description: |
+      [0]: Red LED
+      [1]: IR LED
+      The MAX30102 has no Green LED. Array must have exactly 2 elements.

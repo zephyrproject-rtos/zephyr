@@ -1,0 +1,5 @@
+# PCIe RC/EP drivers configuration options
+
+source "drivers/pcie/host/Kconfig"
+source "drivers/pcie/endpoint/Kconfig"
+source "drivers/pcie/controller/Kconfig"

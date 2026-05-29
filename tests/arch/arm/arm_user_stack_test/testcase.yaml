@@ -1,0 +1,20 @@
+common:
+  tags:
+    - arm
+  timeout: 120
+  # TODO: remove the platform_exclude once the MPS2 issue is fixed
+  # (this seems to be an issue with QEMU as these tests pass in FVP)
+  platform_exclude:
+    - mps2/an385
+    - mps2/an386
+tests:
+  arch.arm.user.stack:
+    filter: CONFIG_CPU_CORTEX_M
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  arch.arm.user.stack.float:
+    filter: CONFIG_CPU_CORTEX_M and CONFIG_CPU_HAS_FPU
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_FPU=y
+      - CONFIG_FPU_SHARING=y

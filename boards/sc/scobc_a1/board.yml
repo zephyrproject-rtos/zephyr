@@ -1,0 +1,12 @@
+board:
+  name: scobc_a1
+  full_name: SC-OBC Module A1
+  vendor: sc
+  revision:
+    format: major.minor.patch
+    default: 2.0.0
+    revisions:
+      - name: 1.0.0
+      - name: 2.0.0
+  socs:
+    - name: designstart_fpga_cortex_m3

@@ -1,0 +1,8 @@
+# Copyright (c) 2018, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics LPS25HB pressure sensor
+
+compatible: "st,lps25hb-press"
+
+include: [sensor-device.yaml, i2c-device.yaml]

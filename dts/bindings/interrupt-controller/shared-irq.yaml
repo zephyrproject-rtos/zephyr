@@ -1,0 +1,9 @@
+description: Shared IRQ interrupt dispatcher
+
+compatible: "shared-irq"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  interrupts:
+    required: true

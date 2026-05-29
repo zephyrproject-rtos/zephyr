@@ -1,0 +1,33 @@
+# Copyright (c) 2024 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Composite fuel-gauge constructed from sensor devices
+
+compatible: "zephyr,fuel-gauge-composite"
+
+include: [fuel-gauge.yaml, battery.yaml]
+
+properties:
+  source-primary:
+    type: phandle
+    required: true
+    description: |
+      Primary device to read sensor data from.
+      Device must implement the sensor API.
+
+  source-secondary:
+    type: phandle
+    description: |
+      Secondary device to read sensor data from.
+      This device will be used if input-primary does not expose
+      a channel.
+
+      Device must implement the sensor API.
+
+  fuel-gauge-channels:
+    type: boolean
+    description: |
+      Sources should be queried by the sensor API fuel gauge
+      channels (SENSOR_CHAN_GAUGE_*), instead of the generic
+      channels (SENSOR_CHAN_VOLTAGE, etc).

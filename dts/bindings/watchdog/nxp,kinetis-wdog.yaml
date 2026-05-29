@@ -1,0 +1,18 @@
+# Copyright (c) 2018, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Kinetis watchdog
+
+compatible: "nxp,kinetis-wdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

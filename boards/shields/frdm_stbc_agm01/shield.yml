@@ -1,0 +1,6 @@
+shield:
+  name: frdm_stbc_agm01
+  full_name: FRDM-ST BC-AGM01
+  vendor: nxp
+  supported_features:
+    - sensor

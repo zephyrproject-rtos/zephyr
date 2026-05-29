@@ -1,0 +1,8 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SHIELD_WAVESHARE_7INCH_DSI_LCD_C
+	def_bool $(shields_list_contains,waveshare_7inch_dsi_lcd_c)

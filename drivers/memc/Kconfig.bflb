@@ -1,0 +1,11 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_BFLB_BL61X
+	bool "Bouffalolab BL61x PSRAM Controller"
+	default y
+	depends on DT_HAS_BFLB_BL61X_PSRAM_ENABLED
+	depends on SYSCON
+	depends on CLOCK_CONTROL
+	help
+	  Enable Bouffalolab BL61x PSRAM Controller.

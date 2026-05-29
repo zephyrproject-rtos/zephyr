@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm/renesas/rz/rzn/r9a07g087.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "rzn2h_evb-pinctrl.dtsi"
+
+/ {
+	model = "RZ/N2H Evaluation Board Kit";
+	compatible = "renesas,rzn2h-evb";
+
+	chosen {
+		zephyr,sram = &atcm;
+		zephyr,flash = &xspi1_cs0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	aliases {
+		led0 = &led8;
+		sw0 = &sw3;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led8: led8 {
+			gpios = <&gpio14 6 GPIO_ACTIVE_HIGH>;
+			label = "user_led0";
+		};
+
+		led9: led9 {
+			gpios = <&gpio14 7 GPIO_ACTIVE_HIGH>;
+			label = "user_led1";
+		};
+
+		led10: led10 {
+			gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
+			label = "user_led2";
+		};
+
+		led11: led11 {
+			gpios = <&gpio3 0 GPIO_ACTIVE_HIGH>;
+			label = "user_led3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		sw3: sw3 {
+			label = "sw3";
+			gpios = <&gpio0 4 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		sw4: sw4 {
+			label = "sw4";
+			gpios = <&gpio18 7 GPIO_ACTIVE_HIGH>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+};
+
+&sci0 {
+	pinctrl-0 = <&sci0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	uart0: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&irq3 {
+	trigger-type = "falling";
+	pinctrl-0 = <&irq3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+	irqs = <&irq3 4>;
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio14 {
+	status = "okay";
+};
+
+&gpio18 {
+	status = "okay";
+};

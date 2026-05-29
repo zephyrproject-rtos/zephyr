@@ -1,0 +1,6 @@
+board:
+  name: esp_threadbr
+  full_name: ESP Thread Border Router / ZigBee Gateway
+  vendor: espressif
+  socs:
+  - name: esp32s3

@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2026 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SLOT0_IMAGE_BUILD_ONLY
+	bool "Slot0 image build only"
+
+source "share/sysbuild/Kconfig"

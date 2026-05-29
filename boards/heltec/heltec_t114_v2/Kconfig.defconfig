@@ -1,0 +1,35 @@
+# Copyright (c) 2024 MASSDRIVER EI (massdriver.space)
+# Copyright (c) 2018-2023 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_HELTEC_T114_V2
+
+config ARM_MPU
+	default y
+
+config HW_STACK_PROTECTION
+	default y
+
+config GPIO
+	default y
+
+config USB_DEVICE_REMOTE_WAKEUP
+	default n
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+# Timing in nanoseconds / cycles at 64MHz for led strip
+config DELAY_T0H
+	default 19
+
+config DELAY_T1H
+	default 38
+
+config DELAY_T0L
+	default 58
+
+config DELAY_T1L
+	default 38
+
+endif # BOARD_HELTEC_T114_V2

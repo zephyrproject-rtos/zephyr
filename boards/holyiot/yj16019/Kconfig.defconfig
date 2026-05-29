@@ -1,0 +1,8 @@
+# Holyiot YJ-16019 board configuration
+
+# Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_HOLYIOT_YJ16019
+
+endif # BOARD_HOLYIOT_YJ16019

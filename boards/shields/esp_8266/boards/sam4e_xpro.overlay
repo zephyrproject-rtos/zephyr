@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2020 Gerson Fernando Budke <nandojve@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	usart1_esp_wifi: usart1_esp_wifi {
+		group1 {
+			pinmux = <PA21A_USART1_RXD>,
+				 <PA22A_USART1_TXD>;
+		};
+	};
+};
+
+&usart1 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&usart1_esp_wifi>;
+	pinctrl-names = "default";
+
+	esp8266 {
+		compatible = "espressif,esp-at";
+		status = "okay";
+	};
+};

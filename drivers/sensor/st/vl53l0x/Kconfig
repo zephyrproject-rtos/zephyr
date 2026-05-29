@@ -1,0 +1,34 @@
+# VL53L0X time of flight sensor configuration options
+
+# Copyright (c) 2017 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig VL53L0X
+	bool "VL53L0X time of flight sensor"
+	default y
+	depends on DT_HAS_ST_VL53L0X_ENABLED
+	depends on ZEPHYR_HAL_ST_MODULE
+	select I2C
+	select HAS_STLIB
+	help
+	  Enable driver for VL53L0X I2C-based time of flight sensor.
+
+config VL53L0X_PROXIMITY_THRESHOLD
+	int "Proximity threshold in millimeters"
+	default 100
+	depends on VL53L0X
+	help
+	  Threshold used for proximity detection when sensor is used with SENSOR_CHAN_PROX.
+
+config VL53L0X_RECONFIGURE_ADDRESS
+	bool "Support reconfigurable sensor address"
+	depends on VL53L0X
+	help
+	  Enable support for reconfiguring the sensor address at runtime.
+	  When this option is enabled, all sensors declared in the device tree
+	  must have an xshut-gpio property.
+
+	  All sensors are disabled during initialization. When reading the first
+	  value from a sensor, it is powered up and its I2C address is reconfigured
+	  from the manufacturer default (0x29) to the address specified in the
+	  device tree.

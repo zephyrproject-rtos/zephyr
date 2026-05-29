@@ -1,0 +1,12 @@
+# Copyright (c) 2018 SiFive Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFive Freedom I2C interface
+
+compatible: "sifive,i2c0"
+
+include: [i2c-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true

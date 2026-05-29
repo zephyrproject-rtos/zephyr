@@ -1,0 +1,7 @@
+tests:
+  drivers.can.timing:
+    tags:
+      - drivers
+      - can
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")

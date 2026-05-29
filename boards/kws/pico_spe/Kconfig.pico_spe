@@ -1,0 +1,5 @@
+# Copyright (c) 2024 KWS Computersysteme Gmbh
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_PICO_SPE
+	select SOC_RP2040

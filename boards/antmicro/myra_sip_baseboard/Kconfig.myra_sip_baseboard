@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Antmicro
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MYRA_SIP_BASEBOARD
+	select SOC_MYRA

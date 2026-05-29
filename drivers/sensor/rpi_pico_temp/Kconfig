@@ -1,0 +1,13 @@
+# Raspberry Pi Pico temperature sensor configuration options
+
+# Copyright (c) 2023 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config RPI_PICO_TEMP
+	bool "Raspberry Pi Pico CPU Temperature Sensor"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_TEMP_ENABLED
+	select ADC
+
+	help
+	  Enable driver for Raspberry Pi Pico CPU temperature sensor.

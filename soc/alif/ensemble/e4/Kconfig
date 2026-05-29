@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_AE402FA0E5597LE0_RTSS_HE
+	select SOC_FAMILY_ENSEMBLE_RTSS
+
+config SOC_AE402FA0E5597LE0_RTSS_HP
+	select SOC_FAMILY_ENSEMBLE_RTSS

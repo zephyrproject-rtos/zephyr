@@ -1,0 +1,9 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
+CONFIG_CLOCK_CONTROL=y
+
+# Run from Code MRAM
+CONFIG_XIP=y

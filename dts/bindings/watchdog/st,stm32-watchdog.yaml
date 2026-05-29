@@ -1,0 +1,12 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 watchdog
+
+compatible: "st,stm32-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip PIC32CM_PL SOC family clock
+
+description: |
+  Microchip PIC32CM_PL SOC family clock (OSCCTRL, OSC32KCTRL, GCLK, MCLK)
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+compatible: "microchip,pic32cm-pl-clock"
+
+properties:
+  on-timeout-ms:
+    type: int
+    default: 5
+    description: |
+      Timeout in milliseconds for clock to be on.
+
+      Driver waits in clock on API to check if the clock is actually on,
+      so that the waiting time is not indefinite.

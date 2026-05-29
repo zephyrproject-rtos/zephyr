@@ -1,0 +1,62 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/ra_pwm.h>
+
+/ {
+	aliases {
+		pwm-gen = &pwm1;
+		pwm-cap = &pwm2;
+		elc-link = &elc;
+	};
+};
+
+&pinctrl {
+	pwm1_default: pwm1_default {
+		group1 {
+			/* GTIOC1A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 1, 3)>,
+				<RA_PSEL(RA_PSEL_GPT1, 1, 2)>;
+			drive-strength = "high";
+		};
+	};
+
+	pwm2_default: pwm2_default {
+		group1 {
+			/* GTIOC2A */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 4, 9)>,
+				<RA_PSEL(RA_PSEL_GPT1, 4, 8)>;
+			drive-strength = "high";
+		};
+	};
+};
+
+&pwm2 {
+	pinctrl-0 = <&pwm2_default>;
+	pinctrl-names = "default";
+	interrupt-names = "gtioca", "overflow";
+	interrupts = <92 1>, <93 1>;
+	divider = <RA_PWM_SOURCE_DIV_256>;
+	status = "okay";
+};
+
+&pwm1 {
+	pinctrl-0 = <&pwm1_default>;
+	pinctrl-names = "default";
+	interrupts = <94 1>, <95 1>;
+	interrupt-names = "gtioca", "overflow";
+	divider = <RA_PWM_SOURCE_DIV_256>;
+	renesas-elcs = <&elc RA_ELC_PERIPHERAL_GPT_A RA_ELC_EVENT_ELC_SOFTWARE_EVENT_0>,
+		       <&elc RA_ELC_PERIPHERAL_GPT_B RA_ELC_EVENT_ELC_SOFTWARE_EVENT_1>;
+	renesas-elc-names = "start", "stop";
+	start-source = "GPT_SOURCE_GPT_A";
+	stop-source = "GPT_SOURCE_GPT_B";
+	status = "okay";
+};
+
+&elc {
+	status = "okay";
+};

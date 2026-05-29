@@ -1,0 +1,23 @@
+description: Realtek rts5912 ADC
+
+compatible: "realtek,rts5912-adc"
+
+include: [adc-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  vref-mv:
+    type: int
+    default: 3300
+    description: The reference voltage of the ADC in mV.
+
+io-channel-cells:
+  - input

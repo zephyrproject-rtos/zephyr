@@ -1,0 +1,12 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys ARC nSIM UART
+
+compatible: "snps,nsim-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true

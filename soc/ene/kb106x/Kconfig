@@ -1,0 +1,13 @@
+# Copyright (c) 2025 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_KB106X
+	select BUILD_OUTPUT_HEX
+	select BUILD_OUTPUT_BIN
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+
+if SOC_FAMILY_KB106X
+
+rsource "*/Kconfig"
+
+endif # SOC_FAMILY_KB106X

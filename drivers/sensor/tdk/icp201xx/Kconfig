@@ -1,0 +1,25 @@
+# ICP201xx High Accuracy, Low Power, Barometric Pressure and Temperature Sensor IC
+#
+# Copyright (c) 2025 TDK Invensense
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ICP201XX
+	bool "ICP201xx Barometric Pressure and Temperature Sensor"
+	default y
+	depends on DT_HAS_INVENSENSE_ICP201XX_ENABLED
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICP201XX),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICP201XX),spi)
+	select USE_EMD_ICP201XX
+	select FPU if CPU_HAS_FPU
+	help
+		Enable driver for ICP101xx Barometric Pressure and Temperature Sensor.
+
+if ICP201XX
+
+module = ICP201XX
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # ICP201XX

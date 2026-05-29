@@ -1,0 +1,26 @@
+# Copyright (c) 2019 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_WNC_M14A2A
+
+if NETWORKING
+
+config MODEM
+	default y
+
+config MODEM_SHELL
+	default y
+
+config MODEM_WNCM14A2A
+	default y
+
+config UART_INTERRUPT_DRIVEN
+	default y
+
+# extend retry timing to 20 seconds for LTE/LTE-M
+config COAP_INIT_ACK_TIMEOUT_MS
+	default 20000
+
+endif # NETWORKING
+
+endif # SHIELD_WNC_M14A2A

@@ -1,0 +1,22 @@
+# USB AUDIO configuration options
+
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USB_DEVICE_AUDIO
+	bool "USB Audio Device Class Driver"
+	select EXPERIMENTAL
+	select USB_COMPOSITE_DEVICE
+	help
+	  USB Audio Device Class driver.
+	  Zephyr USB Audio Class is considered experimental
+	  and not full.
+	  Device configuration is done via dt overlay.
+
+if USB_DEVICE_AUDIO
+
+module = USB_AUDIO
+module-str = USB Audio
+source "subsys/logging/Kconfig.template.log_config"
+
+endif #USB_DEVICE_AUDIO

@@ -1,0 +1,5 @@
+# Copyright (c) 2016 RnDity Sp. z o.o.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM3210C_EVAL
+	select SOC_STM32F107XC

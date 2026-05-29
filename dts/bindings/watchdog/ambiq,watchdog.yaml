@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq Watchdog
+
+compatible: "ambiq,watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+
+  interrupts:
+    required: true

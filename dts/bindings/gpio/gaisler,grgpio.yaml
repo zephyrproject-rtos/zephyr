@@ -1,0 +1,16 @@
+description: Gaisler GRLIB GRGPIO - General Purpose I/O Port
+
+compatible: "gaisler,grgpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

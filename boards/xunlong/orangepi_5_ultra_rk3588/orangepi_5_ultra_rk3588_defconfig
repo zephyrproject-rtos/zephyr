@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright The Zephyr Project Contributors
+
+# Platform Configuration
+CONFIG_ARM_ARCH_TIMER=y
+CONFIG_CLOCK_CONTROL=y
+CONFIG_ARM64_VA_BITS_40=y
+CONFIG_ARM64_PA_BITS_40=y
+
+# Serial Drivers
+CONFIG_SERIAL=y
+CONFIG_UART_NS16550=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# ARMv8 NS world with cache management
+CONFIG_ARMV8_A_NS=y
+CONFIG_CACHE_MANAGEMENT=y

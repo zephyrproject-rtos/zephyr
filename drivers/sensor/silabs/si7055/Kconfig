@@ -1,0 +1,21 @@
+# Copyright (c) 2019 Electronut Labs
+# Copyright (c) 2020 Laird Connectivity
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SI7055
+	bool "Si7055 Temperature Sensor"
+	default y
+	depends on DT_HAS_SILABS_SI7055_ENABLED
+	select I2C
+	select CRC
+	help
+	  Enable I2C-based driver for Si7055 Temperature Sensor.
+
+if SI7055
+
+config SI7055_ENABLE_CHECKSUM
+	bool "SI7055 Checksum On Measurement"
+	help
+	  Validates the additional checksum byte for temperature measurements.
+
+endif # SI7055

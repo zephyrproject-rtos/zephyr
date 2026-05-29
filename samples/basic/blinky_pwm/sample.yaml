@@ -1,0 +1,19 @@
+sample:
+  name: Blink LED (PWM based)
+tests:
+  sample.basic.blink_led:
+    filter: dt_alias_exists("pwm-led0") and dt_compat_enabled("pwm-leds")
+    tags:
+      - drivers
+      - pwm
+    depends_on: pwm
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "PWM-based blinky"
+        - "Calibrating for channel [0-9]+"
+        - "Done calibrating; maximum/minimum periods [0-9]+/[0-9]+ nsec"
+        - "Using period [0-9]+"
+        - "Using period [0-9]+"

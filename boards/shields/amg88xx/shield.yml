@@ -1,0 +1,12 @@
+shields:
+  - name: amg88xx_grid_eye_eval_shield
+    full_name: Panasonic Grid-EYE Evaluation Shield
+    vendor: panasonic
+    supported_features:
+      - sensor
+
+  - name: amg88xx_eval_kit
+    full_name: Panasonic Grid-EYE Evaluation Kit
+    vendor: panasonic
+    supported_features:
+      - sensor

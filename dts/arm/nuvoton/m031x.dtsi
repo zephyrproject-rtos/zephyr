@@ -1,0 +1,263 @@
+/*
+ * Copyright (c) 2026 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/clock/numaker_m031x_clock.h>
+#include <zephyr/dt-bindings/reset/numaker_m031x_reset.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	chosen {
+		zephyr,flash-controller = &fmc;
+	};
+
+	aliases {
+		rtc = &rtc;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0";
+			reg = <0>;
+		};
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(48)>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		scc: system-clock-controller@40000200 {
+			compatible = "nuvoton,numaker-scc";
+			reg = <0x40000200 0x100>;
+			#clock-cells = <0>;
+			lxt = "enable";
+			clk-pclkdiv = <(NUMAKER_CLK_PCLKDIV_APB0DIV_DIV1 |
+					NUMAKER_CLK_PCLKDIV_APB1DIV_DIV1)>;
+			core-clock = <DT_FREQ_M(48)>;
+
+			pcc: peripheral-clock-controller {
+				compatible = "nuvoton,numaker-pcc";
+				#clock-cells = <3>;
+			};
+		};
+
+		rst: reset-controller@40000000 {
+			compatible = "nuvoton,numaker-rst";
+			reg = <0x40000000 0x20>;
+			#reset-cells = <1>;
+		};
+
+		fmc: flash-controller@4000c000 {
+			compatible = "nuvoton,numaker-fmc";
+			reg = <0x4000c000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <512>;
+				write-block-size = <4>;
+			};
+		};
+
+		uart0: serial@40070000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40070000 0x1000>;
+			interrupts = <12 0>;
+			resets = <&rst NUMAKER_UART0_RST>;
+			clocks = <&pcc NUMAKER_UART0_MODULE NUMAKER_CLK_CLKSEL1_UART0SEL_HIRC
+				  NUMAKER_CLK_CLKDIV0_UART0(1)>;
+			status = "disabled";
+		};
+
+		uart1: serial@40071000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40071000 0x1000>;
+			interrupts = <13 0>;
+			resets = <&rst NUMAKER_UART1_RST>;
+			clocks = <&pcc NUMAKER_UART1_MODULE NUMAKER_CLK_CLKSEL1_UART1SEL_HIRC
+				  NUMAKER_CLK_CLKDIV0_UART1(1)>;
+			status = "disabled";
+		};
+
+		uart2: serial@40072000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40072000 0x1000>;
+			interrupts = <12 0>;
+			resets = <&rst NUMAKER_UART2_RST>;
+			clocks = <&pcc NUMAKER_UART2_MODULE NUMAKER_CLK_CLKSEL3_UART2SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART2(1)>;
+			status = "disabled";
+		};
+
+		uart3: serial@40073000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40073000 0x1000>;
+			interrupts = <13 0>;
+			resets = <&rst NUMAKER_UART3_RST>;
+			clocks = <&pcc NUMAKER_UART3_MODULE NUMAKER_CLK_CLKSEL3_UART3SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART3(1)>;
+			status = "disabled";
+		};
+
+		uart4: serial@40074000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40074000 0x1000>;
+			interrupts = <27 0>;
+			resets = <&rst NUMAKER_UART4_RST>;
+			clocks = <&pcc NUMAKER_UART4_MODULE NUMAKER_CLK_CLKSEL3_UART4SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART4(1)>;
+			status = "disabled";
+		};
+
+		uart5: serial@40075000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40075000 0x1000>;
+			interrupts = <17 0>;
+			resets = <&rst NUMAKER_UART5_RST>;
+			clocks = <&pcc NUMAKER_UART5_MODULE NUMAKER_CLK_CLKSEL3_UART5SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART5(1)>;
+			status = "disabled";
+		};
+
+		uart6: serial@40076000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40076000 0x1000>;
+			interrupts = <27 0>;
+			resets = <&rst NUMAKER_UART6_RST>;
+			clocks = <&pcc NUMAKER_UART6_MODULE NUMAKER_CLK_CLKSEL3_UART6SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART6(1)>;
+			status = "disabled";
+		};
+
+		uart7: serial@40077000 {
+			compatible = "nuvoton,numaker-uart";
+			reg = <0x40077000 0x1000>;
+			interrupts = <17 0>;
+			resets = <&rst NUMAKER_UART7_RST>;
+			clocks = <&pcc NUMAKER_UART7_MODULE NUMAKER_CLK_CLKSEL3_UART7SEL_HIRC
+				  NUMAKER_CLK_CLKDIV4_UART7(1)>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@40000030 {
+			compatible = "nuvoton,numaker-pinctrl";
+			reg = <0x40000030 0x40
+			       0x40000070 0x08>;
+			reg-names = "mfp", "mfos";
+		};
+
+		gpioa: gpio@40004000 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004000 0x40>;
+			clocks = <&pcc NUMAKER_GPA_MODULE 0 0>;
+			status = "disabled";
+			interrupts = <4 2>;
+		};
+
+		gpiob: gpio@40004040 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004040 0x40>;
+			clocks = <&pcc NUMAKER_GPB_MODULE 0 0>;
+			status = "disabled";
+			interrupts = <4 2>;
+		};
+
+		gpioc: gpio@40004080 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004080 0x40>;
+			clocks = <&pcc NUMAKER_GPC_MODULE 0 0>;
+			status = "disabled";
+			interrupts = <5 2>;
+		};
+
+		gpiod: gpio@400040c0 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x400040c0 0x40>;
+			clocks = <&pcc NUMAKER_GPD_MODULE 0 0>;
+			status = "disabled";
+			interrupts = <5 2>;
+		};
+
+		gpioe: gpio@40004100 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004100 0x40>;
+			clocks = <&pcc NUMAKER_GPE_MODULE 0 0>;
+			status = "disabled";
+			interrupts = <5 2>;
+		};
+
+		gpiof: gpio@40004140 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004140 0x40>;
+			clocks = <&pcc NUMAKER_GPF_MODULE 0 0>;
+			status = "disabled";
+			interrupts = <5 2>;
+		};
+
+		gpiog: gpio@40004180 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x40004180 0x40>;
+			clocks = <&pcc NUMAKER_GPG_MODULE 0 0>;
+			status = "disabled";
+			interrupts = <4 2>;
+		};
+
+		gpioh: gpio@400041c0 {
+			compatible = "nuvoton,numaker-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			reg = <0x400041c0 0x40>;
+			clocks = <&pcc NUMAKER_GPH_MODULE 0 0>;
+			status = "disabled";
+			interrupts = <4 2>;
+		};
+
+		wwdt: watchdog@40040100 {
+			compatible = "nuvoton,numaker-wwdt";
+			reg = <0x40040100 0x10>;
+			interrupts = <1 0>;
+			clocks = <&pcc NUMAKER_WWDT_MODULE NUMAKER_CLK_CLKSEL1_WWDTSEL_LIRC 0>;
+			status = "disabled";
+		};
+
+		rtc: rtc@40041000 {
+			compatible = "nuvoton,numaker-rtc";
+			reg = <0x40041000 0x138>;
+			interrupts = <31 0>;
+			oscillator = "lxt";
+			clocks = <&pcc NUMAKER_RTC_MODULE 0 0>;
+			alarms-count = <1>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

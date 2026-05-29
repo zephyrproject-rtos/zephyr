@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BL706_IOT_DVK
+	select SOC_BL706C00Q2I

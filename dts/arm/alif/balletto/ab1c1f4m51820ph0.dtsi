@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <alif/balletto/common/balletto_common.dtsi>
+
+&soc {
+	mram: flash@80000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x80000000 DT_SIZE_K(1800)>;
+		zephyr,memory-region = "MRAM";
+	};
+};

@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas Option-Setting Memory
+
+  The option-setting memory determines the state of the MCU after a reset.
+  The option-setting memory is allocated to the configuration setting area
+  of the flash memory.
+
+compatible: "renesas,ofs-memory"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true

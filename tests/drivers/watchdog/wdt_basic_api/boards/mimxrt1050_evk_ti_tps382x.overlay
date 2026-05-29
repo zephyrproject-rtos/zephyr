@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2023 Prevas A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		watchdog0 = &wd_external;
+	};
+
+	wd_external: wd_external {
+		compatible = "ti,tps382x";
+		status = "okay";
+		wdi-gpios = <&gpio1 21 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&wdog0 {
+	status = "disabled";
+};

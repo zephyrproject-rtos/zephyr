@@ -1,0 +1,10 @@
+# CC32XX GPIO configuration options
+
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_CC32XX
+	bool "TI CC32XX GPIO driver"
+	default y
+	depends on DT_HAS_TI_CC32XX_GPIO_ENABLED
+	help
+	  Enable the GPIO driver on TI SimpleLink CC32xx boards

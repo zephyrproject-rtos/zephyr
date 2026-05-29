@@ -1,0 +1,59 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+include: sensor-device.yaml
+
+properties:
+  interrupt-gpios:
+    type: phandle-array
+    description: |
+      Interrupt pin.
+      Interrupt is active high by default.
+
+  odr:
+    type: int
+    required: true
+    enum:
+    - 0
+    - 1
+    - 10
+    - 25
+    - 50
+    - 75
+    - 100
+    - 200
+    description: |
+      Sensor output data rate expressed in samples per second.
+      Data rates supported by the chip are 0 (power down), 1,
+      10, 25, 50, 75, 100 and 200.
+
+  configuration:
+    type: string
+    default: "Low_Power"
+    enum:
+    - "Low_Power"
+    - "Low_Noise"
+    description: |
+      Configuration of sensor to either be low power or low noise.
+      Maximum ODR in Low Noise configuration is 75Hz.
+      Defaults to Low_Power, which is the configuration at power-up.
+
+  additional-low-pass-filter:
+    type: boolean
+    description: |
+      Enable or disable the additional low pass filter of the sensor.
+
+  additional-low-pass-filter-configuration:
+    type: int
+    default: 0
+    enum:
+    - 0
+    - 1
+    description: |
+      Configuration of the additional low pass filter of the sensor.
+      Defaults to 0, which is the configuration at power-up.
+
+  threshold:
+    type: int
+    description: |
+      Threshold for the differential pressure interrupt in Pa.

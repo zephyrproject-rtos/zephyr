@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_3d_hall_3_click
+  full_name: 3D Hall 3 Click
+  vendor: mikroe
+  supported_features:
+    - sensor

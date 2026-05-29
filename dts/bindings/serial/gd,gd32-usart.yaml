@@ -1,0 +1,21 @@
+# Copyright (c) 2021, ATL Electronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: GigaDevice USART
+
+compatible: "gd,gd32-usart"
+
+include: [uart-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true

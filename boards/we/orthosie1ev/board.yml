@@ -1,0 +1,6 @@
+board:
+  name: we_orthosie1ev
+  full_name: Orthosie-I-EV
+  vendor: we
+  socs:
+  - name: esp32c3

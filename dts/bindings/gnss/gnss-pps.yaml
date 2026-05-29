@@ -1,0 +1,23 @@
+# Copyright (c) 2023 Trackunit Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  pps-mode:
+    type: string
+    required: true
+    description: |
+      PPS output mode:
+      - GNSS_PPS_MODE_DISABLED: Output disabled
+      - GNSS_PPS_MODE_ENABLED: Output always enabled
+      - GNSS_PPS_MODE_ENABLED_AFTER_LOCK: Output enabled from first lock
+      - GNSS_PPS_MODE_ENABLED_WHILE_LOCKED: Output enabled only while locked
+    enum:
+      - GNSS_PPS_MODE_DISABLED
+      - GNSS_PPS_MODE_ENABLED
+      - GNSS_PPS_MODE_ENABLED_AFTER_LOCK
+      - GNSS_PPS_MODE_ENABLED_WHILE_LOCKED
+
+  pps-pulse-width:
+    type: int
+    description: 1PPS pulse width
+    default: 100

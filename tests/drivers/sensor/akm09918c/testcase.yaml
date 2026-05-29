@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.akm09918c:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim

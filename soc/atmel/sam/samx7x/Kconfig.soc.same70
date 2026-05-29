@@ -1,0 +1,106 @@
+# Atmel SAM E70 MCU series
+
+# Copyright (c) 2016 Piotr Mienkowski
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# Copyright (c) 2024 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ATMEL_SAME70
+	select SOC_SERIES_SAMX7X
+	bool
+
+config SOC_ATMEL_SAME70_REVB
+	select SOC_SERIES_SAMX7X
+	bool
+
+config SOC_SAME70J19
+	bool
+	select SOC_ATMEL_SAME70
+
+config SOC_SAME70J20
+	bool
+	select SOC_ATMEL_SAME70
+
+config SOC_SAME70J21
+	bool
+	select SOC_ATMEL_SAME70
+
+config SOC_SAME70N19
+	bool
+	select SOC_ATMEL_SAME70
+
+config SOC_SAME70N20
+	bool
+	select SOC_ATMEL_SAME70
+
+config SOC_SAME70N21
+	bool
+	select SOC_ATMEL_SAME70
+
+config SOC_SAME70Q19
+	bool
+	select SOC_ATMEL_SAME70
+
+config SOC_SAME70Q20
+	bool
+	select SOC_ATMEL_SAME70
+
+config SOC_SAME70Q21
+	bool
+	select SOC_ATMEL_SAME70
+
+config SOC_SAME70J19B
+	bool
+	select SOC_ATMEL_SAME70_REVB
+
+config SOC_SAME70J20B
+	bool
+	select SOC_ATMEL_SAME70_REVB
+
+config SOC_SAME70J21B
+	bool
+	select SOC_ATMEL_SAME70_REVB
+
+config SOC_SAME70N19B
+	bool
+	select SOC_ATMEL_SAME70_REVB
+
+config SOC_SAME70N20B
+	bool
+	select SOC_ATMEL_SAME70_REVB
+
+config SOC_SAME70N21B
+	bool
+	select SOC_ATMEL_SAME70_REVB
+
+config SOC_SAME70Q19B
+	bool
+	select SOC_ATMEL_SAME70_REVB
+
+config SOC_SAME70Q20B
+	bool
+	select SOC_ATMEL_SAME70_REVB
+
+config SOC_SAME70Q21B
+	bool
+	select SOC_ATMEL_SAME70_REVB
+
+config SOC
+	default "same70j19" if SOC_SAME70J19
+	default "same70j20" if SOC_SAME70J20
+	default "same70j21" if SOC_SAME70J21
+	default "same70n19" if SOC_SAME70N19
+	default "same70n20" if SOC_SAME70N20
+	default "same70n21" if SOC_SAME70N21
+	default "same70q19" if SOC_SAME70Q19
+	default "same70q20" if SOC_SAME70Q20
+	default "same70q21" if SOC_SAME70Q21
+	default "same70j19b" if SOC_SAME70J19B
+	default "same70j20b" if SOC_SAME70J20B
+	default "same70j21b" if SOC_SAME70J21B
+	default "same70n19b" if SOC_SAME70N19B
+	default "same70n20b" if SOC_SAME70N20B
+	default "same70n21b" if SOC_SAME70N21B
+	default "same70q19b" if SOC_SAME70Q19B
+	default "same70q20b" if SOC_SAME70Q20B
+	default "same70q21b" if SOC_SAME70Q21B

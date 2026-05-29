@@ -1,0 +1,35 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: WM8904 audio codec
+
+include: [i2c-device.yaml]
+
+compatible: "wolfson,wm8904"
+
+properties:
+  reg:
+    required: true
+  clock-source:
+    type: string
+    default: "MCLK"
+    description: |
+      Codec's internal clock signal (SYSCLK) source selection. These options
+      are available:
+      - "MCLK": WM8904's MCLK pin (supplied by the host)
+      - "FLL":  WM8904's FLL facility, can be free-running
+      The "MCLK" option is default, as this clock signal is usually supplied
+      by the host.
+    enum:
+      - "MCLK"
+      - "FLL"
+  fs-ratio:
+    type: int
+    default: 256
+    enum: [64, 128, 192, 256, 384, 512, 768, 1024, 1408, 1536]
+    description: |
+      This property is intended for platforms where the MCLK frequency is
+      not directly available to the driver.
+      On such platforms, the driver assumes the MCLK frequency to be equal
+      to (fs-ratio * <sample rate>), where the sample rate comes from the
+      audio codec configuration provided at runtime.

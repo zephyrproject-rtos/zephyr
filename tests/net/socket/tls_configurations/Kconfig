@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config SERVER_PORT
+	int "Server port to connect to"
+	default 4242
+
+source "Kconfig.zephyr"

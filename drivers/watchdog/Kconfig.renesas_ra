@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_RENESAS_RA
+	bool "Watchdog Driver for Renesas RA family"
+	default y
+	depends on DT_HAS_RENESAS_RA_WDT_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	select SOC_OPTION_SETTING_MEMORY if SOC_SERIES_RA4M1
+	select USE_RA_FSP_WDT
+	help
+	  Enable watchdog driver for Renesas RA MCUs
+
+if WDT_RENESAS_RA
+
+config WDT_RENESAS_RA_NMI
+	bool "NMI interrupt enable"
+	default y
+	select RUNTIME_NMI
+	help
+	  Watchdog timer generates NMI at value 0
+
+config WDT_RENESAS_RA_START_IN_BOOT
+	bool "Start WDT in boot time"
+	default y
+	depends on !HAS_WDT_DISABLE_AT_BOOT
+	help
+	  Start watchdog in boot time
+
+endif # WDT_RENESAS_RA

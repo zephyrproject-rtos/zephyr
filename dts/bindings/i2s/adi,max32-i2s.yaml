@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Croxel Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Analog Devices MAX32 series I2S controller
+
+compatible: "adi,max32-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  dmas:
+    required: true
+    description: |
+      DMA channels for both RX and TX.
+
+  dma-names:
+    required: true
+    description: |
+      Names of DMA channels for both RX and TX.
+
+  i2s-clk-frequency:
+    type: int
+    default: 12288000
+    description: |
+      Frequency of the I2S clock in Hz.
+      This clock is used to derive the bit clock and frame clock.
+      Default to 12.288 MHz, which is suitable for common audio sample rates.

@@ -1,0 +1,10 @@
+# Copyright (c) 2025 CISPA Helmholtz Center for Information Security
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for MDIO controllers
+
+include: mdio-controller.yaml
+
+compatible: xlnx,xps-ethernetlite-3.00.a-mdio
+
+title: MDIO interface of Xilinx AXI Ethernet Lite (version 3.00.a).

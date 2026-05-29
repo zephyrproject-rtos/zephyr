@@ -1,0 +1,41 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	flexpwm1_pwm0_default: flexpwm1_pwm0_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_00_flexpwm1_pwm0_a>;
+			drive-strength = "normal";
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <&iomuxc_gpio_ad_06_flexpwm1_pwm0_x>;
+			drive-strength = "normal";
+			slew-rate = "fast";
+		};
+	};
+};
+/* To test this sample, connect
+ * gpio_ad_00(J69-3) ---> gpio_ad_06(J70-1)
+ */
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&flexpwm1_pwm0 0 0 PWM_POLARITY_NORMAL>, /* gpio_ad_00 J69-3, out */
+		       <&flexpwm1_pwm0 2 0 PWM_POLARITY_NORMAL>; /*  gpio_ad_06 J70-1, in */
+	};
+};
+
+&flexpwm1_pwm0 {
+	status = "okay";
+	pinctrl-0 = <&flexpwm1_pwm0_default>;
+	pinctrl-names = "default";
+	input-filter-count = <1>;
+	input-filter-period = <1>;
+};

@@ -1,0 +1,5 @@
+# Copyright (c) 2021 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_X_NUCLEO_EEPRMA2
+	def_bool $(shields_list_contains,x_nucleo_eeprma2)

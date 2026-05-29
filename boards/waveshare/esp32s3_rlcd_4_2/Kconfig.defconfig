@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 1
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1
+endchoice
+
+config LV_Z_AREA_X_ALIGNMENT_WIDTH
+	default 12
+
+config LV_Z_AREA_Y_ALIGNMENT_WIDTH
+	default 2
+
+endif # LVGL

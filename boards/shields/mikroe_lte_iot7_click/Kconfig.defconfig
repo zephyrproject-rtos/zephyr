@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 ID8 Engineering AB
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MIKROE_LTE_IOT7_CLICK
+
+if MODEM_CELLULAR
+
+# Needed by the regulator-fixed node in the shield overlay.
+config REGULATOR
+	default y
+
+endif # MODEM_CELLULAR
+
+endif # SHIELD_MIKROE_LTE_IOT7_CLICK

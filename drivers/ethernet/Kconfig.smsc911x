@@ -1,0 +1,17 @@
+# Copyright (c) 2018 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_SMSC911X
+	bool "SMSC911x/9220 Ethernet driver"
+	default y
+	depends on DT_HAS_SMSC_LAN9220_ENABLED
+	help
+	  Enable driver for SMSC/LAN911x/9220 family of chips.
+
+config ETH_NIC_MODEL
+	string
+	default "lan9118"
+	depends on ETH_SMSC911X
+	help
+	  Tells what Qemu network model to use. This value is given as
+	  a parameter to -nic qemu command line option.

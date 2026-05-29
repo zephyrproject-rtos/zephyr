@@ -1,0 +1,16 @@
+common:
+  build_only: true
+  tags:
+    - bluetooth
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.l2cap.credits_seg_recv:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_credits_seg_recv_prj_conf
+  bluetooth.host.l2cap.credits_seg_recv_ecred:
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_host_l2cap_credits_seg_recv_prj_conf_overlay-ecred_conf
+    extra_args: EXTRA_CONF_FILE="overlay-ecred.conf"

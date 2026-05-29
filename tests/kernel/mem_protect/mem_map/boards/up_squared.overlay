@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2021 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* there is a memory hole from address 0x10000000-0x12150fff
+ * in the ram on up_squared, we don't have access to read/write
+ * this range, so limit the memory range below 0x10000000.
+ */
+&dram0 {
+	reg = <0x0 0x10000000>;
+};

@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_RA4L1
+
+config NUM_IRQS
+	default 64
+
+DT_ICLK_PATH := $(dt_nodelabel_path,iclk)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_ICLK_PATH),clock-frequency)
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config CLOCK_CONTROL
+	default y
+
+endif # SOC_SERIES_RA4L1

@@ -1,0 +1,10 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - i2c
+    - smbus
+tests:
+  drivers.smbus.build.stm32:
+    platform_allow:
+      - nucleo_g071rb

@@ -1,0 +1,54 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bouffalolab Infrared Receiver Peripheral
+  Wire the output of a diode like VS1838B to the specified GPIO pin.
+
+compatible: "bflb,irx"
+
+include:
+  - name: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  ir-gpios:
+    required: true
+    type: phandle-array
+    description: |
+      Single GPIO used as input pin, must be first port (gpio0).
+      Flags do not apply as it is a special usage.
+
+  protocol:
+    required: true
+    type: string
+    description: |
+      What IR protocol is used:
+        - NEC: NEC Protocol
+        - RC5: RC5 Protocol
+        - PW: Pulse width: count the length of each on/off pulse in us.
+          PW will easily overflow FIFO on BL60x and BL70x.
+          On BL61x, increase CONFIG_INPUT_QUEUE_MAX_MSGS to handle the large amount of data.
+    enum:
+      - "NEC"
+      - "RC5"
+      - "PW"
+
+  pw-end-pulse-width:
+    type: int
+    description: |
+      Length of time for a pulse / lack of pulse in microseconds to trigger the end of transmission
+      interrupt in pulse width mode.
+
+  invert:
+    type: boolean
+    description: |
+      Invert input. With VS1838B wired directly, you want this enabled.
+
+  deglitch-cnt:
+    type: int
+    default: 0
+    description: |
+      Deglitch count, 4-bits value. It is unnecessary most of the time, 0 disables it.

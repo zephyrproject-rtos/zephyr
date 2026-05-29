@@ -1,0 +1,43 @@
+#
+#  Copyright (c) 2021 Jimmy Johnson <catch22@fastmail.net>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "TMP108 sample application"
+
+config APP_REPORT_TEMP_ALERTS
+	bool "Report over and under temperature alerts"
+	default n
+
+config APP_ENABLE_ONE_SHOT
+	bool "One shot low power mode"
+	default n
+	help
+		One shot requires a callback to be invoked after the tmp108 has
+		woken up and taken a temperature reading, calling sample_fetch
+		starts this process. Set this to enable 1 shot mode example.
+
+config APP_TEMP_ALERT_HIGH_THRESH
+	int "RH [%] high threshold for alert trigger in celsius"
+	range 0 50
+	default 26
+	help
+		Set this to enable alerts for high temperatures
+		although this will work with one shot enabled,
+		it requires continuous monitoring mode to be enabled
+		to work in real time.
+		See spec sheet for more details.
+
+config APP_TEMP_ALERT_LOW_THRESH
+	int "RH [%] low threshold for alert trigger in celsius"
+	range 0 50
+	default 18
+	help
+		Set this to enable alerts for low temperatures
+		although this will work with one shot enabled,
+		it requires continuous monitoring mode to be enabled
+		to work in real time.
+		See spec sheet for more details.
+
+source "Kconfig.zephyr"

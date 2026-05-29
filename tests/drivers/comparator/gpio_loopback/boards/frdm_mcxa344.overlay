@@ -1,0 +1,28 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/* To test this case, connect J2-1(P2_7,VREFI) to J6-7(VDD) and J2-17 to J2-7. */
+/ {
+	aliases {
+		test-comp = &lpcmp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>; /* FRDM-MCXA344 J2-7 */
+	};
+};
+
+&lpcmp0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpcmp0>;
+	pinctrl-names = "default";
+	positive-mux-input = "IN1"; /* FRDM-MCXA344 J2-17 */
+	negative-mux-input = "DAC";
+	dac-value = <127>;
+	dac-vref-source = "VREFH1";
+};

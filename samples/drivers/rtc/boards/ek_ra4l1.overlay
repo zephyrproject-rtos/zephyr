@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		rtc = &rtc;
+	};
+};
+
+&rtc {
+	interrupts = <63 1>;
+	interrupt-names = "cup";
+	status = "okay";
+};

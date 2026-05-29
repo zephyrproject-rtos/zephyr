@@ -1,0 +1,39 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 SENT (Single Edge Nibble Transmission) Receiver Controller
+
+compatible: "nxp,s32-sent"
+
+include: [sent-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+child-binding:
+
+  properties:
+    bus-timeout-cycles:
+      type: int
+      enum:
+        - 0
+        - 256
+        - 512
+        - 1024
+        - 2048
+      default: 0
+      description: |
+        Specifies the number of bus timeout cycles. This value determines the maximum number
+        of cycles the bus will wait before timing out. The default value is 0, which disables
+        the bus timeout.

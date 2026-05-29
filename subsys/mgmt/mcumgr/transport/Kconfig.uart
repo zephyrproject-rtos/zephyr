@@ -1,0 +1,35 @@
+# Copyright Runtime.io 2018. All rights reserved.
+# Copyright Nordic Semiconductor ASA 2020-2022. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+# The Kconfig file is dedicated to UART transport of MCUmgr
+# subsystem and provides Kconfig options to control aspects of
+# the transport.
+#
+# Options defined in this file should be prefixed:
+#  MCUMGR_TRANSPORT_UART_
+
+menuconfig MCUMGR_TRANSPORT_UART
+	bool "UART MCUmgr SMP transport"
+	depends on CONSOLE
+	depends on BASE64
+	depends on CRC
+	depends on UART_MCUMGR
+	depends on !UART_MCUMGR_RAW_PROTOCOL
+	select MCUMGR_TRANSPORT_SERIAL_HAS_SMP_OVER_CONSOLE
+	help
+	  Enables handling of SMP commands received over UART. This is a lightweight alternative
+	  to MCUMGR_TRANSPORT_SHELL. It allows MCUmgr commands to be received over UART without
+	  requiring an additional thread.
+
+if MCUMGR_TRANSPORT_UART
+
+config MCUMGR_TRANSPORT_UART_MTU
+	int "UART SMP MTU"
+	default 256
+	help
+	  Maximum size of SMP frames sent and received over UART, in bytes. This value must
+	  satisfy the following relation:
+	  MCUMGR_TRANSPORT_UART_MTU <= MCUMGR_TRANSPORT_NETBUF_SIZE + 2
+
+endif # MCUMGR_TRANSPORT_UART

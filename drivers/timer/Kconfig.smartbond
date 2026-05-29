@@ -1,0 +1,13 @@
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SMARTBOND_TIMER
+	bool "Renesas SmartBond(tm) timer"
+	default y
+	depends on SOC_FAMILY_RENESAS_SMARTBOND
+	depends on CLOCK_CONTROL
+	depends on !$(dt_nodelabel_enabled,timer2)
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the TIMER2 timer
+	  and provides the standard "system clock driver" interfaces.

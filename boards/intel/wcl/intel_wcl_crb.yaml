@@ -1,0 +1,20 @@
+identifier: intel_wcl_crb
+name: Wildcat Lake CRB
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
+ram: 2048
+supported:
+  - acpi
+  - smp
+  - smbus
+  - watchdog
+  - rtc
+  - gpio
+  - pwm
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: intel

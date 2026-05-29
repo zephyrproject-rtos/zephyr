@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+&sysrtc0 {
+	status = "okay";
+};

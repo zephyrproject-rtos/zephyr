@@ -1,0 +1,56 @@
+common:
+  tags:
+    - drivers
+    - mipi-dbi
+
+tests:
+  drivers.mipi_dbi.api:
+    filter: dt_nodelabel_enabled("mipi-dbi")
+  drivers.mipi_dbi.rpi_pico.pio0.single_split:
+    platform_allow:
+      - rpi_pico/rp2040
+      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/hazard3
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_pio0_1_split.overlay
+  drivers.mipi_dbi.rpi_pico.pio0.four_splits:
+    platform_allow:
+      - rpi_pico/rp2040
+      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/hazard3
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_pio0_4_splits.overlay
+  drivers.mipi_dbi.rpi_pico.pio1.single_split:
+    platform_allow:
+      - rpi_pico/rp2040
+      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/hazard3
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_pio1_1_split.overlay
+  drivers.mipi_dbi.rpi_pico.pio1.four_splits:
+    platform_allow:
+      - rpi_pico/rp2040
+      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/hazard3
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_pio1_4_splits.overlay
+  drivers.mipi_dbi.rpi_pico.multiple_instances.four_splits:
+    platform_allow:
+      - rpi_pico/rp2040
+      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/hazard3
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_multiple_instances_4_splits.overlay
+      - MULTIPLE_INSTANCES=1
+  drivers.mipi_dbi.rpi_pico.pio2.single_split:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/hazard3
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_pio2_1_split.overlay
+  drivers.mipi_dbi.rpi_pico.pio2.four_splits:
+    platform_allow:
+      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/hazard3
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=overlays/mipi_dbi_rpi_pico_pio2_4_splits.overlay

@@ -1,0 +1,12 @@
+description: TI MSP432P4XX UART
+
+compatible: "ti,msp432p4xx-uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

@@ -1,0 +1,14 @@
+# Atmel SAM3X MCU series configuration options
+
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Intel Corporation.
+# Copyright (c) 2017 Justin Watson
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAM3X
+
+config NUM_IRQS
+	default 45
+
+endif # SOC_SERIES_SAM3X

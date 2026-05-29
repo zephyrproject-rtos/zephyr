@@ -1,0 +1,48 @@
+/* Copyright (c) 2023 North River Systems Ltd
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/sensor/ina237.h>
+
+&i2c0 {
+	status = "okay";
+
+	/* standard precision mode */
+	ina237_default_test: ina237@40 {
+		compatible = "ti,ina237";
+		reg = <0x40>;
+		rshunt-micro-ohms = <400>;
+		current-lsb-microamps = <123>;
+		status = "okay";
+	};
+
+	/* high precision mode */
+	ina237@41 {
+		compatible = "ti,ina237";
+		reg = <0x41>;
+		high-precision;
+		rshunt-micro-ohms = <400>;
+		current-lsb-microamps = <123>;
+		status = "okay";
+	};
+
+	/* high precision mode, maximum current lsb */
+	ina237@42 {
+		compatible = "ti,ina237";
+		reg = <0x42>;
+		high-precision;
+		rshunt-micro-ohms = <0x00ff>;
+		current-lsb-microamps = <0xffff>;
+		status = "okay";
+	};
+
+	/* high precision mode, maximum rshunt */
+	ina237@43 {
+		compatible = "ti,ina237";
+		reg = <0x43>;
+		high-precision;
+		rshunt-micro-ohms = <0xffff>;
+		current-lsb-microamps = <0x00ff>;
+		status = "okay";
+	};
+};

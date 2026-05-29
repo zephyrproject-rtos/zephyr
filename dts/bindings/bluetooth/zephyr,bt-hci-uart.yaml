@@ -1,0 +1,20 @@
+# UART Bluetooth HCI device
+
+description: Bluetooth HCI behind a UART device (H:4)
+
+compatible: "zephyr,bt-hci-uart"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "H:4"
+  bt-hci-bus:
+    default: "uart"
+  reset-gpios:
+    type: phandle-array
+  reset-assert-duration-ms:
+    type: int
+    description:
+      Minimum duration to hold the reset-gpios pin low for.
+      If not specified no delay beyond the code path execution time is guaranteed.

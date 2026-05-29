@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+
+config $(cur-level)_LVL_INTR_0$(aggregator)_OFFSET
+	int "Level $(prev-level-num) IRQ line for $(cur-level) level aggregator $(aggregator)"
+	default 0
+	depends on $(cur-level)_LEVEL_INTERRUPTS
+	help
+	  This is the level $(prev-level-num) interrupt number for level
+	  $(cur-level-num) interrupt aggregator $(aggregator).

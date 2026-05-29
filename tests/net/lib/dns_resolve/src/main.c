@@ -1,0 +1,1505 @@
+/*
+ * Copyright (c) 2017 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
+
+#include <zephyr/types.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <string.h>
+#include <errno.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/random/random.h>
+
+#include <zephyr/ztest.h>
+
+#include <zephyr/net/ethernet.h>
+#include <zephyr/net/dummy.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/net/hostname.h>
+#include <zephyr/net/socket.h>
+
+#define NET_LOG_ENABLED 1
+#include "net_private.h"
+#include "dns_pack.h"
+
+#if defined(CONFIG_DNS_RESOLVER_LOG_LEVEL_DBG)
+#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#else
+#define DBG(fmt, ...)
+#endif
+
+#define NAME4 "4.zephyr.test"
+#define NAME6 "6.zephyr.test"
+#define NAME_IPV4 "192.0.2.1"
+#define NAME_IPV6 "2001:db8::1"
+
+#define DNS_TIMEOUT 500 /* ms */
+#define THREAD_SLEEP 10
+
+#if defined(CONFIG_NET_IPV6)
+/* Interface 1 addresses */
+static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+static struct net_in6_addr my_addr3 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+
+/* Extra address is assigned to ll_addr */
+static struct net_in6_addr ll_addr = { { { 0xfe, 0x80, 0x43, 0xb8, 0, 0, 0, 0,
+				       0, 0, 0, 0xf2, 0xaa, 0x29, 0x02,
+				       0x04 } } };
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+/* Interface 1 addresses */
+static struct net_in_addr my_addr2 = { { { 192, 0, 2, 1 } } };
+#endif
+
+static struct net_if *iface1;
+
+static bool test_failed;
+static bool test_started;
+static bool timeout_query;
+static struct k_sem wait_data;
+static struct k_sem wait_data2;
+static uint16_t current_dns_id;
+static struct dns_addrinfo addrinfo;
+
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+static uint8_t send_count;
+static uint8_t callback_count;
+static struct k_work multi_server_response_work;
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
+#define EXPECTED_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
+#else
+#define EXPECTED_SERVER_COUNT (CONFIG_DNS_RESOLVER_MAX_SERVERS / 2)
+#endif
+
+/* this must be higher that the DNS_TIMEOUT */
+#define WAIT_TIME K_MSEC(DNS_TIMEOUT + 300)
+
+struct net_if_test {
+	uint8_t idx;
+	uint8_t mac_addr[sizeof(struct net_eth_addr)];
+	struct net_linkaddr ll_addr;
+};
+
+#if defined(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT)
+static uint8_t test_private_data[CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN];
+
+static void init_test_private_data(void)
+{
+	/* Initialize with test pattern */
+	for (int i = 0; i < CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN; i++) {
+		test_private_data[i] = 0x01 + i;
+	}
+}
+#endif /* CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT */
+
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+static void multi_server_response_handler(struct k_work *work);
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
+static uint8_t *net_iface_get_mac(const struct device *dev)
+{
+	struct net_if_test *data = dev->data;
+
+	if (data->mac_addr[2] == 0x00) {
+		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+		data->mac_addr[0] = 0x00;
+		data->mac_addr[1] = 0x00;
+		data->mac_addr[2] = 0x5E;
+		data->mac_addr[3] = 0x00;
+		data->mac_addr[4] = 0x53;
+		data->mac_addr[5] = sys_rand8_get();
+	}
+
+	memcpy(data->ll_addr.addr, data->mac_addr, sizeof(data->mac_addr));
+	data->ll_addr.len = 6U;
+
+	return data->mac_addr;
+}
+
+static void net_iface_init(struct net_if *iface)
+{
+	uint8_t *mac = net_iface_get_mac(net_if_get_device(iface));
+
+	net_if_set_link_addr(iface, mac, sizeof(struct net_eth_addr),
+			     NET_LINK_ETHERNET);
+
+	net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
+}
+
+static inline int get_slot_by_id(struct dns_resolve_context *ctx,
+				 uint16_t dns_id)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		if (ctx->queries[i].cb && ctx->queries[i].id == dns_id) {
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+static int sender_iface(const struct device *dev, struct net_pkt *pkt)
+{
+	if (!pkt->frags) {
+		DBG("No data to send!\n");
+		return -ENODATA;
+	}
+
+	if (!timeout_query) {
+		struct net_if_test *data = dev->data;
+
+		if (net_if_get_by_iface(net_pkt_iface(pkt)) != data->idx) {
+			DBG("Invalid interface %d index, expecting %d\n",
+			    data->idx, net_if_get_by_iface(net_pkt_iface(pkt)));
+			test_failed = true;
+		}
+
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+		/* Defer response until all dns_write() calls complete.
+		 * Each dns_write() re-arms the query timer before sendto(),
+		 * so responding synchronously here would orphan the timer
+		 * on an already-freed slot, corrupting the kernel timeout
+		 * queue when the next test reinitializes it.
+		 */
+		send_count++;
+		k_work_submit(&multi_server_response_work);
+#else
+		struct dns_resolve_context *ctx;
+		int slot;
+
+		ctx = dns_resolve_get_default();
+
+		slot = get_slot_by_id(ctx, current_dns_id);
+		if (slot < 0) {
+			DBG("Skipping this query dns id %u\n", current_dns_id);
+		} else {
+			k_work_cancel_delayable(&ctx->queries[slot].timer);
+
+			DBG("Calling cb %p with user data %p\n",
+			    ctx->queries[slot].cb,
+			    ctx->queries[slot].user_data);
+
+			ctx->queries[slot].cb(DNS_EAI_INPROGRESS,
+					      &addrinfo,
+					      ctx->queries[slot].user_data);
+			ctx->queries[slot].cb(DNS_EAI_ALLDONE,
+					      NULL,
+					      ctx->queries[slot].user_data);
+
+			ctx->queries[slot].cb = NULL;
+		}
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+	}
+
+return 0;
+}
+
+struct net_if_test net_iface1_data;
+
+static struct dummy_api net_iface_api = {
+	.iface_api.init = net_iface_init,
+	.send = sender_iface,
+};
+
+#define _ETH_L2_LAYER DUMMY_L2
+#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
+
+NET_DEVICE_INIT_INSTANCE(net_iface1_test,
+			 "iface1",
+			 iface1,
+			 NULL,
+			 NULL,
+			 &net_iface1_data,
+			 NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_iface_api,
+			 _ETH_L2_LAYER,
+			 _ETH_L2_CTX_TYPE,
+			 127);
+
+static void *test_init(void)
+{
+	struct net_if_addr *ifaddr;
+
+	/* The semaphore is there to wait the data to be received. */
+	k_sem_init(&wait_data, 0, UINT_MAX);
+	k_sem_init(&wait_data2, 0, UINT_MAX);
+
+	iface1 = net_if_get_by_index(0);
+	zassert_is_null(iface1, "iface1");
+
+	iface1 = net_if_get_by_index(1);
+
+	((struct net_if_test *) net_if_get_device(iface1)->data)->idx =
+		net_if_get_by_iface(iface1);
+
+#if defined(CONFIG_NET_IPV6)
+	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv6 address %s\n",
+		       net_sprint_ipv6_addr(&my_addr1));
+		zassert_not_null(ifaddr, "addr1");
+
+		return NULL;
+	}
+
+	/* For testing purposes we need to set the adddresses preferred */
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	ifaddr = net_if_ipv6_addr_add(iface1, &ll_addr,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv6 address %s\n",
+		       net_sprint_ipv6_addr(&ll_addr));
+		zassert_not_null(ifaddr, "ll_addr");
+
+		return NULL;
+	}
+
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+	ifaddr = net_if_ipv4_addr_add(iface1, &my_addr2,
+				      NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		DBG("Cannot add IPv4 address %s\n",
+		       net_sprint_ipv4_addr(&my_addr2));
+		zassert_not_null(ifaddr, "addr2");
+
+		return NULL;
+	}
+
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+#endif
+
+#if defined(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT)
+	/* Initialize test data for private RR tests */
+	init_test_private_data();
+#endif
+
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+	k_work_init(&multi_server_response_work, multi_server_response_handler);
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
+	net_if_up(iface1);
+
+	/* The interface might receive data which might fail the checks
+	 * in the iface sending function, so we need to reset the failure
+	 * flag.
+	 */
+	test_failed = false;
+
+	test_started = true;
+
+	return NULL;
+}
+
+void dns_result_cb_dummy(enum dns_resolve_status status,
+			 struct dns_addrinfo *info,
+			 void *user_data)
+{
+	return;
+}
+
+ZTEST(dns_resolve, test_dns_query_invalid_timeout)
+{
+	int ret;
+
+	ret = dns_get_addr_info(NAME6,
+				DNS_QUERY_TYPE_AAAA,
+				NULL,
+				dns_result_cb_dummy,
+				NULL,
+				0);
+	zassert_equal(ret, -EINVAL, "Wrong return code for timeout");
+}
+
+ZTEST(dns_resolve, test_dns_query_invalid_context)
+{
+	int ret;
+
+	ret = dns_resolve_name(NULL,
+			       NAME6,
+			       DNS_QUERY_TYPE_AAAA,
+			       NULL,
+			       dns_result_cb_dummy,
+			       NULL,
+			       DNS_TIMEOUT);
+	zassert_equal(ret, -EINVAL, "Wrong return code for context");
+}
+
+ZTEST(dns_resolve, test_dns_query_invalid_callback)
+{
+	int ret;
+
+	ret = dns_get_addr_info(NAME6,
+				DNS_QUERY_TYPE_AAAA,
+				NULL,
+				NULL,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_equal(ret, -EINVAL, "Wrong return code for callback");
+}
+
+ZTEST(dns_resolve, test_dns_query_invalid_query)
+{
+	int ret;
+
+	ret = dns_get_addr_info(NULL,
+				DNS_QUERY_TYPE_AAAA,
+				NULL,
+				dns_result_cb_dummy,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_equal(ret, -EINVAL, "Wrong return code for query");
+}
+
+void dns_result_cb_timeout(enum dns_resolve_status status,
+			   struct dns_addrinfo *info,
+			   void *user_data)
+{
+	int expected_status = POINTER_TO_INT(user_data);
+
+	if (expected_status != status) {
+		DBG("Result status %d\n", status);
+		DBG("Expected status %d\n", expected_status);
+
+		zassert_equal(expected_status, status, "Invalid status");
+	}
+
+	k_sem_give(&wait_data);
+}
+
+ZTEST(dns_resolve, test_dns_query_server_count)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int i, count = 0;
+
+	for (i = 0; i < EXPECTED_SERVER_COUNT; i++) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
+			continue;
+		}
+
+		if (ctx->servers[i].sock < 0) {
+			continue;
+		}
+
+		count++;
+	}
+
+	zassert_equal(count, EXPECTED_SERVER_COUNT,
+		      "Invalid number of servers (%d vs %d)",
+		      count, EXPECTED_SERVER_COUNT);
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv4_server_count)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int i, count = 0, port = 0;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4)) {
+		return;
+	}
+
+	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
+			continue;
+		}
+
+		if (ctx->servers[i].sock < 0) {
+			continue;
+		}
+
+		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
+			continue;
+		}
+
+		count++;
+
+		if (net_sin(&ctx->servers[i].dns_server)->sin_port ==
+		    net_ntohs(53)) {
+			port++;
+		}
+	}
+
+	zassert_equal(count, 2, "Invalid number of IPv4 servers");
+	zassert_equal(port, 1, "Invalid number of IPv4 servers with port 53");
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv6_server_count)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int i, count = 0, port = 0;
+
+	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS; i++) {
+		if (ctx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
+			continue;
+		}
+
+		if (ctx->servers[i].sock < 0) {
+			continue;
+		}
+
+		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET) {
+			continue;
+		}
+
+		count++;
+
+		if (net_sin6(&ctx->servers[i].dns_server)->sin6_port ==
+		    net_ntohs(53)) {
+			port++;
+		}
+	}
+
+#if defined(CONFIG_NET_IPV6)
+	zassert_equal(count, 2, "Invalid number of IPv6 servers");
+	zassert_equal(port, 1, "Invalid number of IPv6 servers with port 53");
+#else
+	zassert_equal(count, 0, "Invalid number of IPv6 servers");
+	zassert_equal(port, 0, "Invalid number of IPv6 servers with port 53");
+#endif
+}
+
+ZTEST(dns_resolve, test_dns_query_too_many)
+{
+	int expected_status = DNS_EAI_CANCELED;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				NULL,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				NULL,
+				dns_result_cb_dummy,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, -EAGAIN, "Should have run out of space");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting data");
+	}
+
+	timeout_query = false;
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv4_timeout)
+{
+	int expected_status = DNS_EAI_CANCELED;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				NULL,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting data");
+	}
+
+	timeout_query = false;
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv6_timeout)
+{
+	int expected_status = DNS_EAI_CANCELED;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info(NAME6,
+				DNS_QUERY_TYPE_AAAA,
+				NULL,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv6 query");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting data");
+	}
+
+	timeout_query = false;
+}
+
+static void verify_cancelled(void)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int i, count = 0, timer_not_stopped = 0;
+
+	for (i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		if (ctx->queries[i].cb) {
+			count++;
+		}
+
+		if (k_work_delayable_busy_get(&ctx->queries[i].timer) != 0) {
+			timer_not_stopped++;
+		}
+	}
+
+	zassert_equal(count, 0, "Not all pending queries vere cancelled");
+	zassert_equal(timer_not_stopped, 0, "Not all timers vere cancelled");
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv4_cancel)
+{
+	int expected_status = DNS_EAI_CANCELED;
+	uint16_t dns_id;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&dns_id,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	ret = dns_cancel_addr_info(dns_id);
+	zassert_equal(ret, 0, "Cannot cancel IPv4 query");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting data");
+	}
+
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv6_cancel)
+{
+	int expected_status = DNS_EAI_CANCELED;
+	uint16_t dns_id;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info(NAME6,
+				DNS_QUERY_TYPE_AAAA,
+				&dns_id,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv6 query");
+
+	ret = dns_cancel_addr_info(dns_id);
+	zassert_equal(ret, 0, "Cannot cancel IPv6 query");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting data");
+	}
+
+	verify_cancelled();
+}
+
+struct expected_status {
+	int status1;
+	int status2;
+	const char *caller;
+};
+
+void dns_result_cb(enum dns_resolve_status status,
+		   struct dns_addrinfo *info,
+		   void *user_data)
+{
+	struct expected_status *expected = user_data;
+
+	if (status != expected->status1 && status != expected->status2) {
+		DBG("Result status %d\n", status);
+		DBG("Expected status1 %d\n", expected->status1);
+		DBG("Expected status2 %d\n", expected->status2);
+		DBG("Caller %s\n", expected->caller);
+
+		zassert_true(false, "Invalid status");
+	}
+
+	k_sem_give(&wait_data2);
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv4)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	timeout_query = false;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	DBG("Query id %u\n", current_dns_id);
+
+	/* Let the network stack to proceed */
+	k_msleep(THREAD_SLEEP);
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting data");
+	}
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv6)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	timeout_query = false;
+
+	ret = dns_get_addr_info(NAME6,
+				DNS_QUERY_TYPE_AAAA,
+				&current_dns_id,
+				dns_result_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv6 query");
+
+	DBG("Query id %u\n", current_dns_id);
+
+	k_yield(); /* mandatory so that net_if send func gets to run */
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting data");
+	}
+}
+
+struct expected_addr_status {
+	struct net_sockaddr addr;
+	int status1;
+	int status2;
+	const char *caller;
+};
+
+void dns_result_numeric_cb(enum dns_resolve_status status,
+			   struct dns_addrinfo *info,
+			   void *user_data)
+{
+	struct expected_addr_status *expected = user_data;
+
+	if (status != expected->status1 && status != expected->status2) {
+		DBG("Result status %d\n", status);
+		DBG("Expected status1 %d\n", expected->status1);
+		DBG("Expected status2 %d\n", expected->status2);
+		DBG("Caller %s\n", expected->caller);
+
+		zassert_true(false, "Invalid status");
+	}
+
+	if (info && info->ai_family == NET_AF_INET) {
+#if defined(CONFIG_NET_IPV4)
+		if (net_ipv4_addr_cmp(&net_sin(&info->ai_addr)->sin_addr,
+				      &my_addr2) != true) {
+			zassert_true(false, "IPv4 address does not match");
+		}
+#endif
+	}
+
+	if (info && info->ai_family == NET_AF_INET6) {
+#if defined(CONFIG_NET_IPV6)
+		if (net_ipv6_addr_cmp(&net_sin6(&info->ai_addr)->sin6_addr,
+				      &my_addr3) != true) {
+			zassert_true(false, "IPv6 address does not match");
+		}
+#endif
+	}
+
+	k_sem_give(&wait_data2);
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv4_numeric)
+{
+	struct expected_addr_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	timeout_query = false;
+
+	ret = dns_get_addr_info(NAME_IPV4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_numeric_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 numeric query");
+
+	DBG("Query id %u\n", current_dns_id);
+
+	k_yield(); /* mandatory so that net_if send func gets to run */
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting data");
+	}
+}
+
+ZTEST(dns_resolve, test_dns_query_ipv6_numeric)
+{
+	struct expected_addr_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	timeout_query = false;
+
+	ret = dns_get_addr_info(NAME_IPV6,
+				DNS_QUERY_TYPE_AAAA,
+				&current_dns_id,
+				dns_result_numeric_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv6 query");
+
+	DBG("Query id %u\n", current_dns_id);
+
+	k_yield(); /* mandatory so that net_if send func gets to run */
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting data");
+	}
+}
+
+#define MDNS_IPV4_ADDR "224.0.0.251:5353"
+#define MDNS_IPV6_ADDR "[ff02::fb]:5353"
+
+ZTEST(dns_resolve, test_mdns_ipv4_igmp_group)
+{
+	struct net_if_mcast_addr *maddr;
+	struct net_sockaddr_in addr4;
+	bool st;
+
+	/* Skip this test if mDNS responder is enabled because it will join
+	 * multicast group automatically.
+	 */
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_IGMP);
+
+	st = net_ipaddr_parse(MDNS_IPV4_ADDR, sizeof(MDNS_IPV4_ADDR) - 1,
+			      (struct net_sockaddr *)&addr4);
+	zassert_true(st, "Cannot parse IPv4 address");
+
+	maddr = net_if_ipv4_maddr_lookup(&addr4.sin_addr, NULL);
+	zassert_not_null(maddr, "IPv4 mDNS address not found");
+
+	st = net_if_ipv4_maddr_is_joined(maddr);
+	zassert_true(st, "IPv4 mDNS group not joined");
+}
+
+ZTEST(dns_resolve, test_mdns_ipv6_mld_group)
+{
+	struct net_if_mcast_addr *maddr;
+	struct net_sockaddr_in6 addr6;
+	bool st;
+
+	/* Skip this test if mDNS responder is enabled because it will join
+	 * multicast group automatically.
+	 */
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_MLD);
+
+	st = net_ipaddr_parse(MDNS_IPV6_ADDR, sizeof(MDNS_IPV6_ADDR) - 1,
+			      (struct net_sockaddr *)&addr6);
+	zassert_true(st, "Cannot parse IPv6 address");
+
+	maddr = net_if_ipv6_maddr_lookup(&addr6.sin6_addr, NULL);
+	zassert_not_null(maddr, "IPv6 mDNS address not found");
+
+	st = net_if_ipv6_maddr_is_joined(maddr);
+	zassert_true(st, "IPv6 mDNS group not joined");
+}
+
+#define MAX_HOSTNAME_LEN 64
+
+ZTEST(dns_resolve, test_dns_hostname_resolve_ipv4)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_HOSTNAME_ENABLE);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4);
+
+	struct zsock_addrinfo hints = { 0 };
+	struct zsock_addrinfo *addrinfos;
+	char hostname[MAX_HOSTNAME_LEN + 1] = { 0 };
+	int ret;
+
+	hints.ai_family = NET_AF_INET;
+	strncpy(hostname, net_hostname_get(), sizeof(hostname) - 1);
+
+	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
+	zassert_equal(ret, 0, "getaddrinfo failed with %d (%s)",
+		      ret, zsock_gai_strerror(ret));
+
+	DBG("Query %s -> address  %s\n", hostname,
+	    net_sprint_ipv4_addr(&net_sin(addrinfos[0].ai_addr)->sin_addr));
+
+	hostname[strlen(hostname) - 1] = '\0';
+	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
+	zassert_not_equal(ret, 0, "getaddrinfo succeed but should have failed");
+}
+
+ZTEST(dns_resolve, test_dns_hostname_resolve_ipv6)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_HOSTNAME_ENABLE);
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
+
+	struct zsock_addrinfo hints = { 0 };
+	struct zsock_addrinfo *addrinfos;
+	char hostname[MAX_HOSTNAME_LEN + 1] = { 0 };
+	int ret;
+
+	hints.ai_family = NET_AF_INET6;
+	strncpy(hostname, net_hostname_get(), sizeof(hostname) - 1);
+
+	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
+	zassert_equal(ret, 0, "getaddrinfo failed with %d (%s)",
+		      ret, zsock_gai_strerror(ret));
+
+	DBG("Query %s -> address  %s\n", hostname,
+	    net_sprint_ipv6_addr(&net_sin6(addrinfos[0].ai_addr)->sin6_addr));
+
+	hostname[strlen(hostname) - 1] = '\0';
+	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
+	zassert_not_equal(ret, 0, "getaddrinfo succeed but should have failed");
+}
+
+ZTEST(dns_resolve, test_dns_localhost_resolve_ipv4)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4);
+
+	struct net_in_addr addr = NET_INADDR_LOOPBACK_INIT;
+	struct zsock_addrinfo hints = { 0 };
+	struct zsock_addrinfo *addrinfos;
+	const char *hostname = "localhost";
+	int ret;
+
+	hints.ai_family = NET_AF_INET;
+
+	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
+	zassert_equal(ret, 0, "getaddrinfo failed with %d (%s)",
+		      ret, zsock_gai_strerror(ret));
+
+	zassert_equal(memcmp(&net_sin(addrinfos[0].ai_addr)->sin_addr,
+			     &addr, sizeof(struct net_in_addr)),
+		      0, "not loopback address");
+}
+
+ZTEST(dns_resolve, test_dns_localhost_resolve_ipv6)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
+
+	struct net_in6_addr addr = NET_IN6ADDR_LOOPBACK_INIT;
+	struct zsock_addrinfo hints = { 0 };
+	struct zsock_addrinfo *addrinfos;
+	const char *hostname = "localhost";
+	int ret;
+
+	hints.ai_family = NET_AF_INET6;
+
+	ret = zsock_getaddrinfo(hostname, NULL, &hints, &addrinfos);
+	zassert_equal(ret, 0, "getaddrinfo failed with %d (%s)",
+		      ret, zsock_gai_strerror(ret));
+
+	zassert_equal(memcmp(&net_sin6(addrinfos[0].ai_addr)->sin6_addr,
+			     &addr, sizeof(struct net_in6_addr)),
+		      0, "not loopback address");
+}
+
+NET_BUF_POOL_DEFINE(test_dns_qname_pool, 2, CONFIG_DNS_RESOLVER_MAX_QUERY_LEN,
+		    0, NULL);
+
+ZTEST(dns_resolve, test_dns_unpack_name)
+{
+	/* NULL string terminator serves a role of a final zero-length label */
+	static const uint8_t *test_records[] = {
+		/* example.com */
+		"\007example\003com",
+		/* www.zephyrproject.org */
+		"\003www\015zephyrproject\003org",
+		/* These records should barely fit (fills up the buffer size limit). */
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\076very_long_record_that_has_a_length_of_62_bytes_xxxxxxxxxxxxxxx",
+	};
+	static const uint8_t *expected_names[] = {
+		"example.com",
+		"www.zephyrproject.org",
+		"very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx."
+		"very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx."
+		"very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx."
+		"very_long_record_that_has_a_length_of_62_bytes_xxxxxxxxxxxxxxx",
+
+	};
+	struct net_buf *result;
+	int ret;
+
+	zassert_equal(CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 255, "Invalid test configuration");
+
+	for (int i = 0; i < ARRAY_SIZE(test_records); i++) {
+		const uint8_t *end_of_label = NULL;
+
+		result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+		zassert_not_null(result, "Failed to allocate buffer");
+
+		/* +1 to include NULL as terminating label */
+		ret = dns_unpack_name(test_records[i], strlen(test_records[i]) + 1,
+				      test_records[i], result, &end_of_label);
+		zassert_equal(ret, strlen(expected_names[i]),
+			      "Error parsing records (%d)", ret);
+		zassert_str_equal(expected_names[i], result->data,
+				  "Parsed wrong name (%s)", result->data);
+		zassert_equal_ptr(test_records[i] + strlen(test_records[i]) + 1,
+				  end_of_label, "Wrong end of label");
+
+		net_buf_unref(result);
+	}
+}
+
+ZTEST(dns_resolve, test_dns_unpack_name_with_pointer)
+{
+	static const uint8_t test_records[] = {
+		/* www.example.com followed by ftp.example.com with pointer */
+		"\003www\007example\003com\000\003ftp\300\004" /* Last two bytes are pointer */
+	};
+	static const uint8_t *expected_names[] = {
+		"www.example.com",
+		"ftp.example.com",
+	};
+	const size_t offset_2nd_rec = 17;
+	const uint8_t *end_of_label = NULL;
+	struct net_buf *result;
+	int ret;
+
+	/* First name */
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[0]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[0], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	zassert_equal_ptr(test_records + offset_2nd_rec, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+
+	/* Second name with a pointer within */
+	end_of_label = NULL;
+
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records + offset_2nd_rec, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[1]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[1], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	/* -1 as end_of_label should point to the null terminator in the buffer */
+	zassert_equal_ptr(test_records + sizeof(test_records) - 1, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+}
+
+ZTEST(dns_resolve, test_dns_unpack_name_with_nested_pointer)
+{
+	static const uint8_t test_records[] = {
+		/* www.example.com */
+		"\003www\007example\003com\000"
+		/* ftp.xyz.com, using pointer for .com */
+		"\003ftp\003xyz\300\014"
+		/* ssh.xyz.com, using pointer for xyz.com, which is nested */
+		"\003ssh\300\025"
+	};
+	static const uint8_t *expected_names[] = {
+		"www.example.com",
+		"ftp.xyz.com",
+		"ssh.xyz.com"
+	};
+	const size_t offset_2nd_rec = 17;
+	const size_t offset_3rd_rec = 27;
+	const uint8_t *end_of_label = NULL;
+	struct net_buf *result;
+	int ret;
+
+	/* First name */
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[0]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[0], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	zassert_equal_ptr(test_records + offset_2nd_rec, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+
+	/* Second name with a pointer within */
+	end_of_label = NULL;
+
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records + offset_2nd_rec, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[1]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[1], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	zassert_equal_ptr(test_records + offset_3rd_rec, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+
+	/* Third name with a nested pointer */
+	end_of_label = NULL;
+
+	result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+	zassert_not_null(result, "Failed to allocate buffer");
+
+	ret = dns_unpack_name(test_records, sizeof(test_records),
+			      test_records + offset_3rd_rec, result, &end_of_label);
+	zassert_equal(ret, strlen(expected_names[2]),
+		      "Error parsing records (%d)", ret);
+	zassert_str_equal(expected_names[2], result->data,
+			  "Parsed wrong name (%s)", result->data);
+	/* -1 as end_of_label should point to the null terminator in the buffer */
+	zassert_equal_ptr(test_records + sizeof(test_records) - 1, end_of_label,
+			  "Wrong end of label");
+
+	net_buf_unref(result);
+}
+
+ZTEST(dns_resolve, test_dns_unpack_name_overflow)
+{
+	static const uint8_t *test_records[] = {
+		/* 4 records 63 bytes (252 bytes) + 3 bytes for dot separators,
+		 * no space left for NULL terminator.
+		 */
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx",
+		/* 4 records fit (251 bytes), 4 bytes for dot separators, 5th one-byte
+		 * record won't fit.
+		 */
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\077very_long_record_that_has_a_length_of_63_bytes_xxxxxxxxxxxxxxxx"
+		"\076very_long_record_that_has_a_length_of_62_bytes_xxxxxxxxxxxxxxx"
+		"\001x",
+		/* Single 64 byte record, that's forbidden (max record len is 63). */
+		"\100very_long_record_that_has_a_length_of_64_bytes_that_is_incorrect",
+	};
+	struct net_buf *result;
+	int ret;
+
+	zassert_equal(CONFIG_DNS_RESOLVER_MAX_QUERY_LEN, 255, "Invalid test configuration");
+
+	for (int i = 0; i < ARRAY_SIZE(test_records); i++) {
+		result = net_buf_alloc(&test_dns_qname_pool, K_NO_WAIT);
+		zassert_not_null(result, "Failed to allocate buffer");
+
+		/* +1 to include NULL as terminating label */
+		ret = dns_unpack_name(test_records[i], strlen(test_records[i]) + 1,
+				      test_records[i], result, NULL);
+		zassert_equal(ret, -EMSGSIZE, "Name parsing should've failed");
+
+		net_buf_unref(result);
+	}
+}
+
+#if defined(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT)
+
+#define PRIVATE_RR_TYPE_TEST 65280  /* Start of private range */
+
+struct expected_private_status {
+	uint16_t expected_type;
+	size_t expected_datalen;
+	int status1;
+	int status2;
+	const char *caller;
+	bool verified;
+};
+
+void dns_result_private_cb(enum dns_resolve_status status,
+			   struct dns_addrinfo *info,
+			   void *user_data)
+{
+	struct expected_private_status *expected = user_data;
+
+	if (status != expected->status1 && status != expected->status2) {
+		DBG("Result status %d\n", status);
+		DBG("Expected status1 %d\n", expected->status1);
+		DBG("Expected status2 %d\n", expected->status2);
+		DBG("Caller %s\n", expected->caller);
+
+		zassert_true(false, "Invalid status");
+	}
+
+	if (status == DNS_EAI_INPROGRESS && info) {
+		zassert_equal(info->ai_family, NET_AF_UNSPEC,
+			      "Private RR should use NET_AF_UNSPEC");
+		zassert_equal(info->ai_extension, DNS_RESOLVE_PRIVATE,
+			      "Extension type should be DNS_RESOLVE_PRIVATE");
+		zassert_equal(info->ai_private.type, expected->expected_type,
+			      "Private RR type mismatch");
+		zassert_equal(info->ai_private.datalen, expected->expected_datalen,
+			      "Private RR data length mismatch");
+
+		/* Verify the actual data content matches test pattern */
+		zassert_equal(memcmp(info->ai_private.data, test_private_data,
+				     expected->expected_datalen), 0,
+			      "Private RR data content mismatch");
+
+		expected->verified = true;
+	}
+
+	k_sem_give(&wait_data2);
+}
+
+ZTEST(dns_resolve, test_dns_query_private_rr_success)
+{
+	struct expected_private_status status = {
+		.expected_type = PRIVATE_RR_TYPE_TEST,
+		.expected_datalen = CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN,
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+		.verified = false,
+	};
+	int ret;
+
+	timeout_query = false;
+
+	/* Setup addrinfo for private RR response */
+	memset(&addrinfo, 0, sizeof(addrinfo));
+	addrinfo.ai_family = NET_AF_UNSPEC;
+	addrinfo.ai_extension = DNS_RESOLVE_PRIVATE;
+	addrinfo.ai_private.type = PRIVATE_RR_TYPE_TEST;
+	addrinfo.ai_private.datalen = CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN;
+
+	memcpy(addrinfo.ai_private.data, test_private_data,
+	       CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN);
+
+	ret = dns_get_addr_info("test.private.local",
+				PRIVATE_RR_TYPE_TEST,
+				&current_dns_id,
+				dns_result_private_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create private RR query");
+
+	DBG("Private RR Query id %u\n", current_dns_id);
+
+	k_yield();
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting for private RR data");
+	}
+
+	zassert_true(status.verified, "Private RR data was not verified");
+}
+
+ZTEST(dns_resolve, test_dns_query_invalid_rr_type)
+{
+	int ret;
+	uint16_t dns_id;
+
+	/* Test 1: Type just below private range (65279) - should be rejected */
+	ret = dns_get_addr_info("invalid1.test",
+				(enum dns_query_type)65279,
+				&dns_id,
+				dns_result_cb_dummy,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_not_equal(ret, 0, "Type 65279 should be rejected (below private range)");
+	DBG("Type 65279 correctly rejected with code: %d\n", ret);
+
+	/* Test 2: Reserved type (65535) - should be rejected */
+	ret = dns_get_addr_info("invalid2.test",
+				DNS_QUERY_TYPE_RESERVED,
+				&dns_id,
+				dns_result_cb_dummy,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_not_equal(ret, 0, "Type 65535 (RESERVED) should be rejected");
+	DBG("Type 65535 (RESERVED) correctly rejected with code: %d\n", ret);
+
+	/* Test 3: Undefined standard type (e.g., 100) - should be rejected */
+	ret = dns_get_addr_info("invalid3.test",
+				(enum dns_query_type)100,
+				&dns_id,
+				dns_result_cb_dummy,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_not_equal(ret, 0, "Undefined type 100 should be rejected");
+	DBG("Type 100 correctly rejected with code: %d\n", ret);
+
+	/* Test 4: Type 0 (INVALID) - should be rejected */
+	ret = dns_get_addr_info("invalid4.test",
+				(enum dns_query_type)DNS_RR_TYPE_INVALID,
+				&dns_id,
+				dns_result_cb_dummy,
+				NULL,
+				DNS_TIMEOUT);
+	zassert_not_equal(ret, 0, "Type 0 (INVALID) should be rejected");
+	DBG("Type 0 (INVALID) correctly rejected with code: %d\n", ret);
+
+	/* Verify no resource leaks - all queries should be cleaned up */
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_private_rr_cancel)
+{
+	int expected_status = DNS_EAI_CANCELED;
+	uint16_t dns_id;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info("cancel.private.test",
+				PRIVATE_RR_TYPE_TEST,
+				&dns_id,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create private RR query for cancellation");
+
+	ret = dns_cancel_addr_info(dns_id);
+	zassert_equal(ret, 0, "Cannot cancel private RR query");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting for cancel confirmation");
+	}
+
+	verify_cancelled();
+
+	timeout_query = false;
+}
+
+ZTEST(dns_resolve, test_dns_query_private_rr_timeout)
+{
+	int expected_status = DNS_EAI_CANCELED;
+	int ret;
+
+	timeout_query = true;
+
+	ret = dns_get_addr_info("timeout.private.test",
+				PRIVATE_RR_TYPE_TEST,
+				NULL,
+				dns_result_cb_timeout,
+				INT_TO_POINTER(expected_status),
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create private RR timeout query");
+
+	if (k_sem_take(&wait_data, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting for timeout callback");
+	}
+
+	timeout_query = false;
+}
+
+#endif /* CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT */
+
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+
+void dns_result_multi_server_cb(enum dns_resolve_status status,
+				struct dns_addrinfo *info,
+				void *user_data)
+{
+	struct expected_status *expected = user_data;
+
+	if (status != expected->status1 && status != expected->status2) {
+		DBG("Result status %d\n", status);
+		DBG("Expected status1 %d\n", expected->status1);
+		DBG("Expected status2 %d\n", expected->status2);
+		DBG("Caller %s\n", expected->caller);
+
+		zassert_true(false, "Invalid status");
+	}
+
+	callback_count++;
+
+	k_sem_give(&wait_data2);
+}
+
+static void multi_server_response_handler(struct k_work *work)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int slot;
+
+	slot = get_slot_by_id(ctx, current_dns_id);
+	if (slot < 0) {
+		DBG("Response work: slot already released for dns id %u\n",
+		    current_dns_id);
+		return;
+	}
+
+	DBG("Response work: processing first response for dns id %u\n",
+	    current_dns_id);
+
+	/* Now safe to cancel — no further dns_write will reschedule it */
+	k_work_cancel_delayable(&ctx->queries[slot].timer);
+
+	ctx->queries[slot].cb(DNS_EAI_INPROGRESS,
+			      &addrinfo,
+			      ctx->queries[slot].user_data);
+	ctx->queries[slot].cb(DNS_EAI_ALLDONE,
+			      NULL,
+			      ctx->queries[slot].user_data);
+
+	ctx->queries[slot].cb = NULL;
+}
+
+ZTEST(dns_resolve, test_dns_query_all_servers_ipv4)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	timeout_query = false;
+	send_count = 0;
+	callback_count = 0;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_multi_server_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	DBG("Multi-server Query id %u\n", current_dns_id);
+
+	k_yield(); /* mandatory so that net_if send func gets to run */
+
+	/* First response wins: expect exactly 2 callbacks (INPROGRESS + ALLDONE) */
+	for (int i = 0; i < 2; i++) {
+		if (k_sem_take(&wait_data2, WAIT_TIME)) {
+			zassert_true(false, "Timeout waiting for callback %d", i + 1);
+		}
+	}
+
+	DBG("Total sends: %u, Total callbacks: %u\n",
+	    send_count, callback_count);
+
+	/* Query must have been sent to every server */
+	zassert_equal(send_count, EXPECTED_SERVER_COUNT,
+		      "Query should be sent to all %d servers, got %u",
+		      EXPECTED_SERVER_COUNT, send_count);
+
+	/* But only the first response is processed */
+	zassert_equal(callback_count, 2,
+		      "First response wins: expected 2 callbacks (INPROGRESS + ALLDONE), got %u",
+		      callback_count);
+
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_all_servers_ipv6)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
+
+	timeout_query = false;
+	send_count = 0;
+	callback_count = 0;
+
+	ret = dns_get_addr_info(NAME6,
+				DNS_QUERY_TYPE_AAAA,
+				&current_dns_id,
+				dns_result_multi_server_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv6 query");
+
+	DBG("Multi-server Query id %u\n", current_dns_id);
+
+	k_yield(); /* mandatory so that net_if send func gets to run */
+
+	/* First response wins: expect exactly 2 callbacks (INPROGRESS + ALLDONE) */
+	for (int i = 0; i < 2; i++) {
+		if (k_sem_take(&wait_data2, WAIT_TIME)) {
+			zassert_true(false, "Timeout waiting for callback %d", i + 1);
+		}
+	}
+
+	DBG("Total sends: %u, Total callbacks: %u\n",
+	    send_count, callback_count);
+
+	/* Query must have been sent to every server */
+	zassert_equal(send_count, EXPECTED_SERVER_COUNT,
+		      "Query should be sent to all %d servers, got %u",
+		      EXPECTED_SERVER_COUNT, send_count);
+
+	/* But only the first response is processed */
+	zassert_equal(callback_count, 2,
+		      "First response wins: expected 2 callbacks (INPROGRESS + ALLDONE), got %u",
+		      callback_count);
+
+	verify_cancelled();
+}
+
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
+ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);

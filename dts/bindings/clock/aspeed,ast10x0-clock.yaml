@@ -1,0 +1,15 @@
+# Copyright (c) 2022 Aspeed Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Aspeed AST10X0 Clock Controller
+
+compatible: "aspeed,ast10x0-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clk_id

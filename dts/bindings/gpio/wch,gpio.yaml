@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Michael Hope
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH32V00x General-Purpose Input/Output (GPIO)
+
+compatible: "wch,gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

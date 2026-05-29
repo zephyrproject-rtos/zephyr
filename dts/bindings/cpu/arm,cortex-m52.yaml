@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Cortex-M52 CPU
+
+compatible: "arm,cortex-m52"
+
+include: arm,cortex-m.yaml

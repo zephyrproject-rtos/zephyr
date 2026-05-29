@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/comparator/nrf-comp.h>
+
+/ {
+	aliases {
+		test-comp = &comp;
+	};
+
+	zephyr,user {
+		first-gpios = <&gpio7 2 GPIO_ACTIVE_HIGH>;
+		second-gpios = <&gpio7 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio7 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&comp {
+	status = "okay";
+	psel = <NRF_COMP_AIN5>;
+	refsel = "AREF";
+	extrefsel = <NRF_COMP_AIN1>;
+	sp-mode = "HIGH";
+	th-up = <36>;
+	th-down = <30>;
+	isource = "DISABLED";
+	enable-hyst;
+};

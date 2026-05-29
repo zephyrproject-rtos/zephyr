@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpioa {
+	status = "okay";
+	pinctrl-0 = <&gpioa_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioa 31 GPIO_ACTIVE_LOW>;
+	dmas = <&dma0 0 4 0x10021>, <&dma0 1 5 0xa>;
+	dma-names = "tx", "rx";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&pinctrl {
+	spi0_default: spi0_default {
+		group1 {
+			psels = <BEE_PSEL(SPI0_CLK_MASTER, P4_0)>,
+				<BEE_PSEL(SPI0_MO_MASTER, P4_1)>,
+				<BEE_PSEL(SPI0_MI_MASTER, P4_2)>;
+			output-enable;
+			output-high;
+			bias-pull-up;
+		};
+	};
+
+	gpioa_default: gpioa_default {
+		group1 {
+			psels = <BEE_PSEL_GPIOA_31_P4_3>;
+		};
+	};
+};

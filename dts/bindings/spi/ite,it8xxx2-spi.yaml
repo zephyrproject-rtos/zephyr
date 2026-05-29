@@ -1,0 +1,22 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: IT8XXX2 SPI
+
+compatible: "ite,it8xxx2-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  pinctrl-0:
+    type: phandles
+    required: true

@@ -1,0 +1,12 @@
+# MCUX LPC GPIO configuration options
+
+# Copyright (c) 2017, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MCUX_LPC
+	bool "MCUX LPC GPIO driver"
+	default y
+	depends on DT_HAS_NXP_LPC_GPIO_PORT_ENABLED
+	select PINCTRL
+	help
+	  Enable the MCUX LPC pinmux driver.

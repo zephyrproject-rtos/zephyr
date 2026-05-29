@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA SCE5 TRNG
+
+compatible: "renesas,ra-sce5-rng"
+
+include: base.yaml

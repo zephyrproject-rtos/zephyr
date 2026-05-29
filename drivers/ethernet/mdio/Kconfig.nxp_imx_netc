@@ -1,0 +1,10 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_NXP_IMX_NETC
+	bool "NXP i.MX NETC External MDIO driver"
+	default y
+	depends on DT_HAS_NXP_IMX_NETC_EMDIO_ENABLED
+	depends on ETH_NXP_IMX_NETC
+	help
+	  Enable NETC External MDIO Controller driver for NXP i.MX SoCs.

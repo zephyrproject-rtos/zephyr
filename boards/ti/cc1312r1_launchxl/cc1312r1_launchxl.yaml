@@ -1,0 +1,16 @@
+identifier: cc1312r1_launchxl
+name: TI SimpleLink CC1312R1 LaunchPad
+type: mcu
+arch: arm
+ram: 80
+flash: 352
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - hwinfo
+vendor: ti

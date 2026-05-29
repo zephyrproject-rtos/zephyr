@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* do not define the leds on the pa5 and pb14 but pwmleds */
+	leds {
+		status = "disabled";
+	};
+};
+
+&pwmleds {
+	/* NOTE: enable here because it is disabled by default */
+	status = "okay";
+};
+
+&timers2 {
+	pwm2: pwm {
+		/* Change the pin used for PWM2 channel 1 */
+		/delete-property/ pinctrl-0;
+		pinctrl-0 = <&tim2_ch1_pa5>;
+	};
+};

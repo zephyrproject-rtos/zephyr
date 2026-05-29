@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2018-2019 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 { /* SDA 0, SCL 1 */
+	sht3xd@44 {
+		compatible = "sensirion,sht3xd";
+		reg = <0x44>;
+		alert-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+	};
+};

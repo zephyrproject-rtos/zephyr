@@ -1,0 +1,9 @@
+/*
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wdt {
+	status = "okay";
+};

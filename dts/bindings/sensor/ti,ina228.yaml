@@ -1,0 +1,12 @@
+#
+# Copyright 2025 Nova Dynamics LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    TI INA228 Bidirectional Power/Energy/Charge Monitor.
+
+compatible: "ti,ina228"
+
+include: ti,ina237.yaml

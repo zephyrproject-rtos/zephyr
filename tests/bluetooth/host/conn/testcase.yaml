@@ -1,0 +1,11 @@
+common:
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host.conn.test_default:
+    type: unit
+  bluetooth.host.conn.check_null_before_create:
+    type: unit
+    extra_configs:
+      - CONFIG_BT_CONN_CHECK_NULL_BEFORE_CREATE=y

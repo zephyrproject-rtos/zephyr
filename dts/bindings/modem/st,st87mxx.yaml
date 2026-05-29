@@ -1,0 +1,19 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST87MXX NBIoT modem
+
+compatible: "st,st87mxx"
+
+include: uart-device.yaml
+
+properties:
+  mdm-reset-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO for modem reset
+
+  mdm-ring-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO for modem wake

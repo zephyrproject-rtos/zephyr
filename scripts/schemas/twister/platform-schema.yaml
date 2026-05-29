@@ -1,0 +1,121 @@
+#
+# Schema to validate a YAML file describing a Zephyr test platform
+#
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$defs:
+  platform:
+    type: object
+    properties:
+      variants:
+        type: object
+        patternProperties:
+          "[a-zA-Z0-9_]+":
+            $ref: "#/$defs/platform"
+        additionalProperties: false
+      identifier:
+        type: string
+      maintainers:
+        type: array
+        items:
+          type: string
+      name:
+        type: string
+      type:
+        type: string
+        enum: ["mcu", "qemu", "sim", "unit", "native"]
+      simulation:
+        type: array
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+              enum:
+                - qemu
+                - simics
+                - xt-sim
+                - renode
+                - nsim
+                - mdb-nsim
+                - tsim
+                - armfvp
+                - native
+                - custom
+                - whisper
+            exec:
+              type: string
+          required:
+            - name
+          additionalProperties: false
+      arch:
+        type: string
+        enum:
+          - arc
+          - arm
+          - arm64
+          - mips
+          - nios2
+          - openrisc
+          - posix
+          - riscv
+          - rx
+          - sparc
+          - x86
+          - xtensa
+          - unit
+      vendor:
+        type: string
+      tier:
+        type: integer
+      toolchain:
+        type: array
+        items:
+          type: string
+      sysbuild:
+        type: boolean
+      env:
+        type: array
+        items:
+          type: string
+      ram:
+        type: integer
+      flash:
+        type: integer
+      twister:
+        type: boolean
+      supported:
+        type: array
+        items:
+          type: string
+      testing:
+        type: object
+        properties:
+          timeout_multiplier:
+            type: number
+          default:
+            type: boolean
+          flash_before:
+            type: boolean
+          binaries:
+            type: array
+            items:
+              type: string
+          only_tags:
+            type: array
+            items:
+              type: string
+          ignore_tags:
+            type: array
+            items:
+              type: string
+          renode:
+            type: object
+            properties:
+              uart:
+                type: string
+              resc:
+                type: string
+            additionalProperties: false
+        additionalProperties: false
+    additionalProperties: false
+$ref: "#/$defs/platform"

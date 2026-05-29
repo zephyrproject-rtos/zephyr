@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+# Default configurations applied to the whole Balletto family
+
+if SOC_FAMILY_BALLETTO
+
+# Source series Kconfig files first, so SoCs
+# can override the defaults given here
+rsource "*/Kconfig.defconfig"
+
+configdefault CLOCK_CONTROL
+	default y
+
+configdefault CACHE_MANAGEMENT
+	default y
+
+endif # SOC_FAMILY_BALLETTO

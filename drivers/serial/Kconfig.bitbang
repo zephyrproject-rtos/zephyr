@@ -1,0 +1,24 @@
+# Copyright (c) 2025 Joel Guittet
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_BITBANG
+	bool "Bitbang UART controller driver"
+	default y
+	depends on DT_HAS_ZEPHYR_UART_BITBANG_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select COUNTER
+	select RING_BUFFER
+	help
+	  Enable the Bitbang UART controller.
+	  The driver relies on counter interrupts to generate/sample UART
+	  frames. By nature the accuracy of the interrupts period is not
+	  guaranteed and subject to some impacts from the other activities of
+	  the application. The relative deviation that could be observed is
+	  lower when the baudrate is low. It is also recommended to have parity
+	  and/or other error detection mechanisms to detect transmission
+	  errors.
+	  This driver is provided in the hope it will be useful to provide
+	  extra UART interfaces and/or supports modes that are not supported by
+	  hardware UART peripherals on some platforms. Applications integrating
+	  this driver should be aware of the above limitations.
