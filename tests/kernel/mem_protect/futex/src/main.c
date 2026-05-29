@@ -37,9 +37,8 @@ ZTEST_BMEM int woken;
 ZTEST_BMEM int timeout;
 ZTEST_BMEM struct k_futex simple_futex;
 ZTEST_BMEM struct k_futex multiple_futex[TOTAL_THREADS_WAITING];
+ZTEST_BMEM atomic_t any_address_futex;
 struct k_futex no_access_futex;
-ZTEST_BMEM atomic_t not_a_futex;
-ZTEST_BMEM struct sys_mutex also_not_a_futex;
 
 struct k_thread futex_tid;
 struct k_thread futex_wake_tid;
@@ -588,19 +587,28 @@ ZTEST(futex, test_futex_independent_wait_wake)
 	}
 }
 
+ZTEST_USER(futex, test_user_futex_any_address)
+{
+	int ret;
+
+	/* Use futex from arbitrary userspace-accessible address */
+	ret = k_futex_wait((struct k_futex *)&any_address_futex, 0, K_NO_WAIT);
+	zassert_equal(ret, -ETIMEDOUT, "didn't time out");
+	ret = k_futex_wake((struct k_futex *)&any_address_futex, false);
+	zassert_equal(ret, 0, "didn't succeed");
+}
+
 /**
- * @brief Verify that futex calls reject invalid objects, values and states.
+ * @brief Verify that futex calls reject invalid values and states.
  *
  * @details
  * From user mode every futex argument is untrusted, so each way it can be
- * wrong has its own error: memory the caller cannot access is -EACCES, an
- * address that is not a futex kernel object is -EINVAL, a mismatched
- * expected value is -EAGAIN, and a matching value with K_NO_WAIT times out
- * with -ETIMEDOUT.
+ * wrong has its own error: memory the caller cannot access is -EACCES, a
+ * mismatched expected value is -EAGAIN, and a matching value with K_NO_WAIT
+ * times out with -ETIMEDOUT.
  *
  * Test steps:
  * - Wait on and wake a futex the caller has no access to.
- * - Wait on and wake two objects that are not futexes.
  * - Wait with an expected value that does not match the futex.
  * - Wait with the matching value and K_NO_WAIT.
  *
@@ -610,7 +618,7 @@ ZTEST(futex, test_futex_independent_wait_wake)
  * @see k_futex_wait()
  * @see k_futex_wake()
  */
-ZTEST_USER(futex, test_futex_bad_inputs)
+ZTEST_USER(futex, test_user_futex_bad)
 {
 	int ret;
 
@@ -619,18 +627,6 @@ ZTEST_USER(futex, test_futex_bad_inputs)
 	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
 	ret = k_futex_wake(&no_access_futex, false);
 	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
-
-	/* Access to memory, but not a kernel object */
-	ret = k_futex_wait((struct k_futex *)&not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
-	ret = k_futex_wake((struct k_futex *)&not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
-
-	/* Access to memory, but wrong object type */
-	ret = k_futex_wait((struct k_futex *)&also_not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
-	ret = k_futex_wake((struct k_futex *)&also_not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
 
 	/* Wait with unexpected value */
 	atomic_set(&simple_futex.val, 100);
