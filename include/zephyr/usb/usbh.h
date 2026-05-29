@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright Nordic Semiconductor ASA
- * SPDX-FileCopyrightText: Copyright 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -139,6 +139,8 @@ struct usbh_class_data {
 enum usbh_class_state {
 	/** The class is available to be associated to an USB device function. */
 	USBH_CLASS_STATE_IDLE,
+	/** The class is tentatively reserved during configuration matching. */
+	USBH_CLASS_STATE_RESERVED,
 	/** The class got bound to an USB function of a particular device on the bus. */
 	USBH_CLASS_STATE_BOUND,
 	/** The class failed to initialize and cannot be used. */
