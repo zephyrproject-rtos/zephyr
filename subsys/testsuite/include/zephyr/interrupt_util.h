@@ -269,6 +269,39 @@ static inline void trigger_irq(int irq)
 		_sw_isr_table[irq - CONFIG_GEN_IRQ_START_VECTOR].arg);
 }
 
+#elif defined(CONFIG_SOC_BCM2835)
+/*
+ * BCM2835 ARMCTRL does not expose an NVIC/GIC-style software-pend register
+ * for arbitrary GPU IRQ lines.  The pending registers are read-only status,
+ * the enable/disable registers only affect masks, and FIQ control only routes
+ * one selected source to FIQ.  Dispatch through the SW ISR table so common
+ * interrupt tests can exercise the Zephyr ISR connection path.  This is not a
+ * hardware-pended interrupt.
+ */
+#include <zephyr/irq.h>
+#include <zephyr/sw_isr_table.h>
+
+#ifndef CONFIG_GEN_SW_ISR_TABLE
+#error "trigger_irq for BCM2835 requires CONFIG_GEN_SW_ISR_TABLE"
+#endif
+
+static inline void trigger_irq(int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "attempting to trigger invalid IRQ (%u)", irq);
+	__ASSERT(irq >= CONFIG_GEN_IRQ_START_VECTOR, "attempting to trigger reserved IRQ (%u)",
+		 irq);
+	__ASSERT(_sw_isr_table[irq - CONFIG_GEN_IRQ_START_VECTOR].isr != NULL,
+		 "attempting to trigger unregistered IRQ (%u)", irq);
+
+	if (irq_is_enabled(irq) <= 0) {
+		return;
+	}
+
+	k_str_out_count("Triggering irq\n");
+	_sw_isr_table[irq - CONFIG_GEN_IRQ_START_VECTOR].isr(
+		_sw_isr_table[irq - CONFIG_GEN_IRQ_START_VECTOR].arg);
+}
+
 #else
 #define NO_TRIGGER_FROM_SW
 #endif

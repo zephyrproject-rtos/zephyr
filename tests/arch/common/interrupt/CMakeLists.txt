@@ -23,6 +23,7 @@ endif()
 target_sources_ifdef(CONFIG_DYNAMIC_INTERRUPTS app PRIVATE src/dynamic_isr.c)
 target_sources_ifdef(CONFIG_X86 app PRIVATE src/regular_isr.c)
 target_sources_ifdef(CONFIG_SHARED_INTERRUPTS app PRIVATE src/static_shared_irq.c)
+target_sources_ifdef(CONFIG_SOC_BCM2835 app PRIVATE src/bcm2835_armctrl.c)
 
 if(CONFIG_SHARED_INTERRUPTS)
 target_sources_ifdef(CONFIG_DYNAMIC_INTERRUPTS app PRIVATE src/dynamic_shared_irq.c)

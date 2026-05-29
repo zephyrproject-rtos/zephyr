@@ -98,6 +98,14 @@ void isr_handler(const void *param)
 #define TEST_IRQ_DYN_LINE 0
 #endif
 
+#elif defined(CONFIG_SOC_BCM2835)
+/*
+ * GPU IRQ line away from the Pi Zero W lines used during bring-up
+ * (system timer=3, mini-UART=29, GPIO 49/50).  Distinct from nested_irq.c
+ * (62,63) so dynamic install does not clash across tests.
+ */
+#define TEST_IRQ_DYN_LINE 61
+
 #else
 #define TEST_IRQ_DYN_LINE 0
 #endif

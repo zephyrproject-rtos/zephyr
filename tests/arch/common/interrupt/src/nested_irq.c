@@ -12,7 +12,7 @@
  * Run the nested interrupt test for the supported platforms only.
  */
 #if defined(CONFIG_CPU_CORTEX_M) || defined(CONFIG_ARC) || \
-	defined(CONFIG_GIC) || defined(CONFIG_NRFX_CLIC)
+	defined(CONFIG_GIC) || defined(CONFIG_NRFX_CLIC) || defined(CONFIG_SOC_BCM2835)
 #define TEST_NESTED_ISR
 #endif
 
@@ -82,6 +82,19 @@
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2
+#elif defined(CONFIG_SOC_BCM2835)
+/*
+ * GPU IRQ lines away from the Pi Zero W lines used during bring-up
+ * (system timer=3, mini-UART=29, GPIO 49/50).  BCM2835 ARMCTRL has no
+ * per-IRQ priority scheme in this driver; trigger_irq() dispatches via the
+ * SW ISR table, so this validates nested ISR control flow rather than
+ * hardware priority preemption.
+ */
+#define IRQ0_LINE	62
+#define IRQ1_LINE	63
+
+#define IRQ0_PRIO	1
+#define IRQ1_PRIO	0
 #else
 /*
  * For all the other platforms, use the last two available IRQ lines for
