@@ -9,8 +9,8 @@
  * @brief API for NXP SJA1000 (and compatible) CAN controller frontend drivers.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_SJA1000_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_SJA1000_H_
+#ifndef ZEPHYR_DRIVERS_CAN_CAN_SJA1000_H_
+#define ZEPHYR_DRIVERS_CAN_CAN_SJA1000_H_
 
 #include <zephyr/drivers/can.h>
 
@@ -274,4 +274,4 @@ void can_sja1000_isr(const struct device *dev);
  */
 int can_sja1000_init(const struct device *dev);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_SJA1000_H_ */
+#endif /* ZEPHYR_DRIVERS_CAN_CAN_SJA1000_H_ */
