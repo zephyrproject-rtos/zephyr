@@ -109,7 +109,6 @@ endif
 config MCTP_I3C_TARGET
 	bool "MCTP I3C Target Binding"
 	depends on I3C_TARGET
-	depends on I3C_TARGET_BUFFER_MODE
 	help
 	  Build the MCTP I3C target binding to use MCTP over Zephyr's I3C target
 	  interface and optionally IBI to signal a request to send messages to the bus controller.
