@@ -40,7 +40,7 @@ static int fake_eeprom_read_delegate(const struct device *dev, off_t offset, voi
 	return 0;
 }
 
-size_t fake_eeprom_size_delegate(const struct device *dev)
+static size_t fake_eeprom_size_delegate(const struct device *dev)
 {
 	const struct fake_eeprom_config *config = dev->config;
 
