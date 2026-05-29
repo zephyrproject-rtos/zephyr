@@ -1032,7 +1032,6 @@
 				      133 0 134 0 135 0 136 0 137 0 138 0 139 0 140 0>;
 			dma-channels = <16>;
 			dma-requests = <109>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
@@ -1047,7 +1046,6 @@
 				     <145 0>, <146 0>, <147 0>, <148 0>;
 			dma-channels = <16>;
 			dma-requests = <20>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 

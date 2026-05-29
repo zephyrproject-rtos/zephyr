@@ -293,7 +293,6 @@
 			interrupts = <23 0>, <24 0>, <25 0>, <26 0>;
 			dma-channels = <4>;
 			dma-requests = <94>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
@@ -305,7 +304,6 @@
 			interrupts = <78 0>, <79 0>, <80 0>, <81 0>;
 			dma-channels = <4>;
 			dma-requests = <94>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
