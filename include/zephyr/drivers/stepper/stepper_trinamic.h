@@ -35,6 +35,22 @@ extern "C" {
 #define TMC_RAMP_XACTUAL_SHIFT  31
 
 /**
+ * @brief Trinamic Stepper StallGuard Settings
+ */
+struct tmc_stallguard_settings {
+	/** Enable StallGuard2 feature*/
+	bool is_sg_enabled;
+	/**
+	 * Stallguard should not be enabled during motor spin-up.
+	 * This delay is used to check if the actual stepper velocity is greater than
+	 * stallguard-threshold-velocity before enabling stallguard.
+	 */
+	uint16_t sg_velocity_check_interval_ms;
+	/** StallGuard2 threshold velocity */
+	uint32_t sg_threshold_velocity;
+};
+
+/**
  * @brief Trinamic Stepper Ramp Generator data
  */
 struct tmc_ramp_generator_data {
@@ -124,6 +140,25 @@ int tmc50xx_stepper_ctrl_set_ramp(const struct device *dev,
  * @retval 0 Success
  */
 int tmc50xx_stepper_ctrl_set_max_velocity(const struct device *dev, uint32_t velocity);
+
+/**
+ * @brief Configure TMC50XX Stepper StallGuard settings
+ *
+ * @param dev Pointer to the stepper motor controller instance
+ * @param sg_settings Pointer to a struct containing the required StallGuard parameters
+ *
+ */
+void tmc50xx_stepper_ctrl_configure_stallguard(const struct device *dev,
+					       const struct tmc_stallguard_settings *sg_settings);
+
+/**
+ * @brief Configure TMC51XX Stepper StallGuard settings
+ *
+ * @param dev Pointer to the stepper motor controller instance
+ * @param sg_settings Pointer to a struct containing the required StallGuard parameters
+ */
+void tmc51xx_stepper_ctrl_configure_stallguard(const struct device *dev,
+					       const struct tmc_stallguard_settings *sg_settings);
 
 /**
  * @brief Set the maximum velocity of the stepper motor
