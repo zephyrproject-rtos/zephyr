@@ -86,20 +86,8 @@ Boards
 Device Drivers and Devicetree
 *****************************
 
-Haptics
-=======
-
-* The ``cirrus,cs40l5x`` compatible has been replaced by variant-specific compatibles
-  :dtcompatible:`cirrus,cs40l50`, :dtcompatible:`cirrus,cs40l51`, :dtcompatible:`cirrus,cs40l52`,
-  and :dtcompatible:`cirrus,cs40l53`. Applications using the old compatible must update their
-  devicetree nodes accordingly.
-
-.. Group contents in this section by subsystem, e.g.:
-..
-.. ADC
-.. ===
-..
-.. ...
+.. Only place contents common to all device drivers here. Contents specific to one driver subsystem
+   goes into its own subsection, below.
 
 * The :c:macro:`DEVICE_API` macro is now mandatory for declaring device driver API instances of any
   upstream driver class, including in out-of-tree drivers. :c:macro:`DEVICE_API_GET` now asserts
@@ -108,6 +96,13 @@ Haptics
   must also declare the relationship with :c:macro:`DEVICE_API_EXTENDS`, so that
   :c:macro:`DEVICE_API_GET` for the parent class succeeds on devices implementing the child API.
   See :ref:`device_driver_api` for details.
+
+.. Group contents in this section by subsystem, e.g.:
+..
+.. ADC
+.. ===
+..
+.. ...
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
@@ -198,6 +193,14 @@ GPIO
   behavior as before since these flags were effectively ignored. (:github:`104690`)
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
+
+Haptics
+=======
+
+* The ``cirrus,cs40l5x`` compatible has been replaced by variant-specific compatibles
+  :dtcompatible:`cirrus,cs40l50`, :dtcompatible:`cirrus,cs40l51`, :dtcompatible:`cirrus,cs40l52`,
+  and :dtcompatible:`cirrus,cs40l53`. Applications using the old compatible must update their
+  devicetree nodes accordingly.
 
 Input
 =====
