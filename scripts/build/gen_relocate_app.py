@@ -178,7 +178,6 @@ SOURCE_CODE_INCLUDES = """
 /* Auto generated code. Do not modify.*/
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/common/init.h>
 """

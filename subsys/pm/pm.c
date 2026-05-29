@@ -6,7 +6,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/init.h>
 #include <string.h>
 #include <zephyr/drivers/timer/system_timer.h>

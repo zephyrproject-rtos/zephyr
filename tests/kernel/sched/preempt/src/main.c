@@ -6,7 +6,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/irq_offload.h>
-#include <zephyr/kernel_structs.h> /* for _THREAD_PENDING */
 
 /* Explicit preemption test.  Works by creating a set of threads in
  * each priority class (cooperative, preemptive, metairq) which all go

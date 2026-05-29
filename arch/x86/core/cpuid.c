@@ -6,7 +6,6 @@
 
 #include <cpuid.h> /* Header provided by the toolchain. */
 
-#include <zephyr/kernel_structs.h>
 #include <zephyr/arch/x86/cpuid.h>
 #include <zephyr/kernel.h>
 

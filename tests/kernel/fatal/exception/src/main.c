@@ -8,7 +8,6 @@
 #include <zephyr/ztest.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/test_toolchain.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/irq_offload.h>
 #include <kswap.h>
 #include <assert.h>

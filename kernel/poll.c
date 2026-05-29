@@ -16,7 +16,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <wait_q.h>
 #include <ksched.h>
