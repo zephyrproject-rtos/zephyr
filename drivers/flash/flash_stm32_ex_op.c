@@ -350,7 +350,7 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		int rv2;
 
 		rv = flash_stm32_option_bytes_lock(dev, false);
-		if (rv > 0) {
+		if (rv != 0) {
 			break;
 		}
 
@@ -358,7 +358,7 @@ int flash_stm32_ex_op(const struct device *dev, uint16_t code,
 		/* returned later, we always re-lock */
 
 		rv = flash_stm32_option_bytes_lock(dev, true);
-		if (rv > 0) {
+		if (rv != 0) {
 			break;
 		}
 
