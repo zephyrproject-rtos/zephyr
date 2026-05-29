@@ -24,8 +24,8 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
-#include <em_cmu.h>
-#include <em_eusart.h>
+
+#include <sl_hal_eusart.h>
 
 LOG_MODULE_REGISTER(spi_silabs_eusart, CONFIG_SPI_LOG_LEVEL);
 
@@ -82,34 +82,23 @@ static bool spi_silabs_eusart_is_dma_enabled_instance(const struct device *dev)
 #endif
 }
 
-static int spi_silabs_eusart_configure(const struct device *dev, const struct spi_config *config)
+static int spi_silabs_eusart_setup(const struct device *dev, const struct spi_config *config)
 {
-	struct spi_silabs_eusart_data *data = dev->data;
+	sl_hal_eusart_spi_advanced_init_t adv_init = SL_HAL_EUSART_SPI_ADVANCED_INIT_DEFAULT;
+	sl_hal_eusart_spi_init_t init = SL_HAL_EUSART_SPI_MASTER_INIT_DEFAULT_HF;
 	const struct spi_silabs_eusart_config *eusart_cfg = dev->config;
-	uint32_t spi_frequency;
-
-	EUSART_SpiAdvancedInit_TypeDef eusartAdvancedSpiInit = EUSART_SPI_ADVANCED_INIT_DEFAULT;
-	EUSART_SpiInit_TypeDef eusartInit = EUSART_SPI_MASTER_INIT_DEFAULT_HF;
-
+	struct spi_silabs_eusart_data *data = dev->data;
+	uint32_t spi_frequency, ref_frequency;
 	int err;
-
-	if (spi_context_configured(&data->ctx, config)) {
-		/* Already configured. No need to do it again, but must re-enable in case
-		 * TXEN/RXEN were cleared.
-		 */
-		EUSART_Enable(eusart_cfg->base, eusartEnable);
-
-		return 0;
-	}
 
 	err = clock_control_get_rate(eusart_cfg->clock_dev,
 				     (clock_control_subsys_t)&eusart_cfg->clock_cfg,
-				     &spi_frequency);
+				     &ref_frequency);
 	if (err) {
 		return err;
 	}
 	/* Max supported SPI frequency is half the source clock */
-	spi_frequency /= 2;
+	spi_frequency = ref_frequency / 2;
 
 	if (config->operation & SPI_HALF_DUPLEX) {
 		LOG_ERR("Half-duplex not supported");
@@ -144,39 +133,40 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 	if (config->frequency) {
 		spi_frequency = MIN(config->frequency, spi_frequency);
 	}
-	eusartInit.bitRate = spi_frequency;
+
+	init.clock_div = sl_hal_eusart_spi_calculate_clock_div(ref_frequency, spi_frequency);
 
 	if (config->operation & SPI_MODE_LOOP) {
-		eusartInit.loopbackEnable = eusartLoopbackEnable;
+		init.loopback_enable = SL_HAL_EUSART_LOOPBACK_ENABLE;
 	} else {
-		eusartInit.loopbackEnable = eusartLoopbackDisable;
+		init.loopback_enable = SL_HAL_EUSART_LOOPBACK_DISABLE;
 	}
 
 	/* Set Clock Mode */
 	if (config->operation & SPI_MODE_CPOL) {
 		if (config->operation & SPI_MODE_CPHA) {
-			eusartInit.clockMode = eusartClockMode3;
+			init.clock_mode = SL_HAL_EUSART_CLOCK_MODE_3;
 		} else {
-			eusartInit.clockMode = eusartClockMode2;
+			init.clock_mode = SL_HAL_EUSART_CLOCK_MODE_2;
 		}
 	} else {
 		if (config->operation & SPI_MODE_CPHA) {
-			eusartInit.clockMode = eusartClockMode1;
+			init.clock_mode = SL_HAL_EUSART_CLOCK_MODE_1;
 		} else {
-			eusartInit.clockMode = eusartClockMode0;
+			init.clock_mode = SL_HAL_EUSART_CLOCK_MODE_0;
 		}
 	}
 
 	if (config->operation & SPI_CS_ACTIVE_HIGH) {
-		eusartAdvancedSpiInit.csPolarity = eusartCsActiveHigh;
+		adv_init.cs_polarity = SL_HAL_EUSART_CS_ACTIVE_HIGH;
 	} else {
-		eusartAdvancedSpiInit.csPolarity = eusartCsActiveLow;
+		adv_init.cs_polarity = SL_HAL_EUSART_CS_ACTIVE_LOW;
 	}
 
-	eusartAdvancedSpiInit.msbFirst = !(config->operation & SPI_TRANSFER_LSB);
-	eusartAdvancedSpiInit.autoCsEnable = !spi_cs_is_gpio(config);
-	eusartInit.databits = eusartDataBits8;
-	eusartInit.advancedSettings = &eusartAdvancedSpiInit;
+	adv_init.msb_first = !(config->operation & SPI_TRANSFER_LSB);
+	adv_init.auto_cs_enable = !spi_cs_is_gpio(config);
+	init.data_bits = SL_HAL_EUSART_DATA_BITS_8;
+	init.advanced_config = &adv_init;
 
 #ifdef CONFIG_SPI_SILABS_EUSART_DMA
 	if (spi_silabs_eusart_is_dma_enabled_instance(dev)) {
@@ -184,8 +174,8 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 			return -ENODEV;
 		}
 
-		eusartAdvancedSpiInit.TxFifoWatermark = eusartTxFiFoWatermark1Frame;
-		eusartAdvancedSpiInit.RxFifoWatermark = eusartRxFiFoWatermark1Frame;
+		adv_init.tx_fifo_watermark = SL_HAL_EUSART_FIFO_INTERRUPT_WATERMARK_FRAMES_ONE;
+		adv_init.rx_fifo_watermark = SL_HAL_EUSART_FIFO_INTERRUPT_WATERMARK_FRAMES_ONE;
 
 		if (data->dma_chan_rx.chan_nb < 0) {
 			data->dma_chan_rx.chan_nb =
@@ -218,7 +208,7 @@ static int spi_silabs_eusart_configure(const struct device *dev, const struct sp
 	}
 
 	/* Initialize the EUSART */
-	EUSART_SpiInit(eusart_cfg->base, &eusartInit);
+	sl_hal_eusart_init_spi(eusart_cfg->base, &init);
 
 	data->ctx.config = config;
 
@@ -234,6 +224,27 @@ exit:
 	}
 #endif
 	return err;
+}
+
+static int spi_silabs_eusart_configure(const struct device *dev, const struct spi_config *config)
+{
+	struct spi_silabs_eusart_data *data = dev->data;
+	const struct spi_silabs_eusart_config *eusart_cfg = dev->config;
+	int err;
+
+	if (!spi_context_configured(&data->ctx, config)) {
+		/* Skip initial setup if context is already configured */
+		err = spi_silabs_eusart_setup(dev, config);
+		if (err) {
+			return err;
+		}
+	}
+
+	sl_hal_eusart_enable(eusart_cfg->base);
+	sl_hal_eusart_enable_tx(eusart_cfg->base);
+	sl_hal_eusart_enable_rx(eusart_cfg->base);
+
+	return 0;
 }
 
 static inline void spi_silabs_eusart_pm_policy_get(const struct device *dev)
@@ -305,21 +316,19 @@ static void spi_silabs_dma_rx_callback(const struct device *dev, void *user_data
 	}
 
 	spi_context_cs_control(instance_ctx, false);
-	EUSART_Enable(config->base, eusartDisable);
+	sl_hal_eusart_disable_rx(config->base);
+	sl_hal_eusart_disable_tx(config->base);
+	sl_hal_eusart_wait_sync(config->base, EUSART_SYNCBUSY_RXDIS | EUSART_SYNCBUSY_TXDIS);
+	sl_hal_eusart_disable(config->base);
+	sl_hal_eusart_wait_ready(config->base);
 	spi_silabs_eusart_pm_policy_put(spi_dev);
 	spi_context_complete(instance_ctx, spi_dev, status);
 }
 
 static void spi_silabs_eusart_clear_txrx_fifos(EUSART_TypeDef *eusart)
 {
-	sys_write32(EUSART_CMD_CLEARTX, (mem_addr_t)&eusart->CMD_SET);
-
-	while (sys_read32((mem_addr_t)&eusart->STATUS) & EUSART_STATUS_RXFL) {
-		(void)sys_read32((mem_addr_t)&eusart->RXDATA);
-	}
-
-	while (sys_read32((mem_addr_t)&eusart->STATUS) & EUSART_STATUS_CLEARTXBUSY) {
-	}
+	sl_hal_eusart_clear_tx(eusart);
+	sl_hal_eusart_clear_rx(eusart);
 }
 
 static size_t spi_silabs_longest_transfer_size(struct spi_context *instance_ctx)
@@ -501,7 +510,7 @@ static int spi_eusart_prepare_dma_transaction(const struct device *dev,
 static void spi_silabs_eusart_send(EUSART_TypeDef *eusart, uint8_t frame)
 {
 	/* Write frame to register */
-	EUSART_Tx(eusart, frame);
+	sl_hal_eusart_tx(eusart, frame);
 
 	/* Wait until the transfer ends */
 	while (!(eusart->STATUS & EUSART_STATUS_TXC)) {
@@ -511,7 +520,7 @@ static void spi_silabs_eusart_send(EUSART_TypeDef *eusart, uint8_t frame)
 static uint8_t spi_silabs_eusart_recv(EUSART_TypeDef *eusart)
 {
 	/* Return data inside rx register */
-	return EUSART_Rx(eusart);
+	return sl_hal_eusart_rx(eusart);
 }
 
 static bool spi_silabs_eusart_transfer_ongoing(struct spi_silabs_eusart_data *data)
@@ -599,7 +608,11 @@ force_transaction_close:
 	dma_stop(data->dma_chan_rx.dma_dev, data->dma_chan_rx.chan_nb);
 	dma_stop(data->dma_chan_tx.dma_dev, data->dma_chan_tx.chan_nb);
 	spi_context_cs_control(ctx, false);
-	EUSART_Enable(eusart_config->base, eusartDisable);
+	sl_hal_eusart_disable_rx(eusart_config->base);
+	sl_hal_eusart_disable_tx(eusart_config->base);
+	sl_hal_eusart_wait_sync(eusart_config->base, EUSART_SYNCBUSY_RXDIS | EUSART_SYNCBUSY_TXDIS);
+	sl_hal_eusart_disable(eusart_config->base);
+	sl_hal_eusart_wait_ready(eusart_config->base);
 	spi_silabs_eusart_pm_policy_put(dev);
 	return ret;
 #else
@@ -625,8 +638,11 @@ static int spi_silabs_eusart_xfer_polling(const struct device *dev,
 
 	spi_context_cs_control(ctx, false);
 	spi_context_complete(ctx, dev, 0);
-
-	EUSART_Enable(eusart_config->base, eusartDisable);
+	sl_hal_eusart_disable_rx(eusart_config->base);
+	sl_hal_eusart_disable_tx(eusart_config->base);
+	sl_hal_eusart_wait_sync(eusart_config->base, EUSART_SYNCBUSY_RXDIS | EUSART_SYNCBUSY_TXDIS);
+	sl_hal_eusart_disable(eusart_config->base);
+	sl_hal_eusart_wait_ready(eusart_config->base);
 	spi_silabs_eusart_pm_policy_put(dev);
 	return ret;
 }
