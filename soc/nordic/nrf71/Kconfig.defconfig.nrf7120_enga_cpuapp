@@ -8,4 +8,10 @@ if SOC_NRF7120_ENGA_CPUAPP
 config NUM_IRQS
 	default 304
 
+if BUILD_WITH_TFM
+choice TFM_MODEL
+	default TFM_SFN 
+endchoice
+endif # BUILD_WITH_TFM
+
 endif # SOC_NRF7120_ENGA_CPUAPP
