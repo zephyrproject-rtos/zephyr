@@ -21,6 +21,7 @@
 #include <zephyr/irq.h>
 
 #define BCM2711_MU_IO			0x00
+#define BCM2711_AUX_ENABLES		(-0x3c)
 #define BCM2711_MU_IER			0x04
 #define BCM2711_MU_IIR			0x08
 #define BCM2711_MU_LCR			0x0c
@@ -50,10 +51,14 @@
 #define BCM2711_MU_CNTL_RX_ENABLE	BIT(0)
 #define BCM2711_MU_CNTL_TX_ENABLE	BIT(1)
 
+#define BCM2711_AUX_ENABLES_MU		BIT(0)
+
 struct bcm2711_uart_config {
 	DEVICE_MMIO_ROM; /* Must be first */
 	uint32_t baud_rate;
 	uint32_t clocks;
+	bool enable_aux;
+	bool configure_baudrate;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -90,10 +95,22 @@ static void bcm2711_mu_lowlevel_putc(mem_addr_t base, uint8_t ch)
 	sys_write32(ch, base + BCM2711_MU_IO);
 }
 
-static void bcm2711_mu_lowlevel_init(mem_addr_t base, bool skip_baudrate_config,
-			      uint32_t baudrate, uint32_t input_clock)
+static void bcm2711_mu_lowlevel_init(mem_addr_t base, bool enable_aux,
+				     bool configure_baudrate, uint32_t baudrate,
+				     uint32_t input_clock)
 {
 	uint32_t divider;
+
+	if (enable_aux) {
+		/*
+		 * The mini UART block sits inside the AUX peripheral block and its
+		 * registers are only accessible once the UART sub-block is enabled.
+		 * The AUX_ENABLES register is at a fixed offset before AUX_MU_IO on
+		 * BCM2835-class parts.
+		 */
+		sys_write32(sys_read32(base + BCM2711_AUX_ENABLES) | BCM2711_AUX_ENABLES_MU,
+			    base + BCM2711_AUX_ENABLES);
+	}
 
 	/* Wait until there is data in the FIFO */
 	while (!bcm2711_mu_lowlevel_can_putc(base)) {
@@ -108,7 +125,7 @@ static void bcm2711_mu_lowlevel_init(mem_addr_t base, bool skip_baudrate_config,
 
 	/* Setup 8bit data width and baudrate */
 	sys_write32(BCM2711_MU_LCR_8BIT, base + BCM2711_MU_LCR);
-	if (!skip_baudrate_config) {
+	if (configure_baudrate) {
 		divider = (input_clock / (baudrate * 8));
 		sys_write32(divider - 1, base + BCM2711_MU_BAUD);
 	}
@@ -141,7 +158,9 @@ static int uart_bcm2711_init(const struct device *dev)
 		return err;
 	}
 
-	bcm2711_mu_lowlevel_init(uart_data->uart_addr, 1, uart_cfg->baud_rate, uart_cfg->clocks);
+	bcm2711_mu_lowlevel_init(uart_data->uart_addr, uart_cfg->enable_aux,
+				 uart_cfg->configure_baudrate, uart_cfg->baud_rate,
+				 uart_cfg->clocks);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_cfg->irq_config_func(dev);
@@ -320,10 +339,15 @@ static DEVICE_API(uart, uart_bcm2711_driver_api) = {
 
 #define UART_BCM2711_IRQ_CONF_FUNC_SET(port) .irq_config_func = irq_config_func_##port,
 
+#define UART_BCM2711_IRQ_PRIO(port)                                                           \
+	COND_CODE_1(DT_INST_IRQ_HAS_CELL(port, priority),                                     \
+		    (DT_INST_IRQ(port, priority)),                                            \
+		    (0))
+
 #define UART_BCM2711_IRQ_CONF_FUNC(port)                                                           \
 	static void irq_config_func_##port(const struct device *dev)                               \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(port), DT_INST_IRQ(port, priority), uart_isr,             \
+		IRQ_CONNECT(DT_INST_IRQN(port), UART_BCM2711_IRQ_PRIO(port), uart_isr,           \
 			    DEVICE_DT_INST_GET(port), 0);                                          \
 		irq_enable(DT_INST_IRQN(port));                                                    \
 	}
@@ -343,6 +367,8 @@ static DEVICE_API(uart, uart_bcm2711_driver_api) = {
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(port)),                                           \
 		.baud_rate = DT_INST_PROP(port, current_speed),                                    \
 		.clocks = DT_INST_PROP(port, clock_frequency),                                     \
+		.enable_aux = DT_INST_NODE_HAS_COMPAT(port, brcm_bcm2835_aux_uart),                \
+		.configure_baudrate = DT_INST_NODE_HAS_COMPAT(port, brcm_bcm2835_aux_uart),        \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(port),                                    \
 		UART_BCM2711_IRQ_CONF_FUNC_SET(port)}
 

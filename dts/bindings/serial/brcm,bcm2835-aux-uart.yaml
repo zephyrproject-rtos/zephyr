@@ -1,0 +1,5 @@
+description: BCM2835 AUX mini UART
+
+compatible: "brcm,bcm2835-aux-uart"
+
+include: brcm,bcm2711-aux-uart.yaml
