@@ -328,6 +328,11 @@ Sensor
   GIRQ configuration is now handled via the ``microchip,dmec-ecia-girq`` binding include
   (:github:`104808`).
 
+* The devicetree compatible ``tdk,ntcg163jf103ft1`` has been renamed to
+  :dtcompatible:`tdk,ntcgxx3jx103x` to reflect that the compensation values are identical for TDK
+  NTCG thermistor parts with the same resistance (R25) and beta (B25/85) values, as indicated in the
+  part naming scheme (:github:`110123`).
+
 Serial
 ======
 
