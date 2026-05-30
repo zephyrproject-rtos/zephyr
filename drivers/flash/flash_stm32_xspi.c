@@ -2553,9 +2553,10 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		.qer_type = DT_QER_PROP_OR(inst, JESD216_DW15_QER_VAL_S1B6),			\
 		.write_opcode = DT_WRITEOC_PROP_OR(inst, SPI_NOR_WRITEOC_NONE),			\
 		.page_size = SPI_NOR_PAGE_SIZE, /* by default, to be updated by sfdp */		\
-		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, jedec_id), (				\
-			.jedec_id = DT_INST_PROP(inst, jedec_id),				\
-		))										\
+		IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, jedec_id), (			\
+			IF_ENABLED(CONFIG_FLASH_JESD216_API,				\
+				(.jedec_id = DT_INST_PROP(inst, jedec_id),))			\
+		))									\
 												\
 		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), tx, TX, MEMORY, PERIPHERAL)		\
 		XSPI_DMA_CHANNEL(STM32_XSPI_NODE(inst), rx, RX, PERIPHERAL, MEMORY)		\
