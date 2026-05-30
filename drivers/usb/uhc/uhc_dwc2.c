@@ -151,14 +151,14 @@ struct uhc_dwc2_data {
 	uint32_t numhstchnl;
 	/* Number of channels currently not claimed */
 	uint32_t free_chs;
+	/* Current frame counter incremented every SoF interrupt */
+	atomic_t microframe_number;
+	/* Time in 125us units incremented between two SOF interrupts, 8 or 1 depending on speed */
+	uint8_t microframe_increment;
 	/* Root port does the debounce of connection/disconnection */
 	bool debouncing;
 	/* Root port has an attached device */
 	bool has_device;
-	/* Time in 125us units incremented between two SOF interrupts, 8 or 1 depending on speed */
-	uint8_t microframe_increment;
-	/* Current frame counter incremented every SoF interrupt */
-	atomic_t microframe_number;
 };
 
 struct usb_dwc2_reg *uhc_dwc2_get_base(const struct device *dev)
