@@ -15,7 +15,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, cfg, device, app_address, erase=False, reset=False,
                  baud=921600, flash_size='detect', flash_freq='40m', flash_mode='dio',
-                 espidf=None, encrypt=False, no_stub=False):
+                 espidf=None, encrypt=False, no_stub=False, reset_type=None):
         super().__init__(cfg)
         self.elf = cfg.elf_file
         self.app_bin = cfg.bin_file
@@ -30,6 +30,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         self.espidf = espidf
         self.encrypt = encrypt
         self.no_stub = no_stub
+        self.reset_type = reset_type
 
     @classmethod
     def name(cls):
@@ -37,7 +38,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash'}, erase=True, reset=True)
+        return RunnerCaps(commands={'flash'}, erase=True, reset=True, reset_types=True,
+                          reset_types_supported=['hard-reset', 'watchdog-reset'])
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -77,7 +79,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             cfg, args.esp_device, app_address=args.esp_app_address, erase=args.erase,
             reset=args.reset, baud=args.esp_baud_rate, flash_size=args.esp_flash_size,
             flash_freq=args.esp_flash_freq, flash_mode=args.esp_flash_mode,
-            espidf=args.esp_idf_path, encrypt=args.esp_encrypt, no_stub=args.esp_no_stub)
+            espidf=args.esp_idf_path, encrypt=args.esp_encrypt, no_stub=args.esp_no_stub,
+            reset_type=args.reset_type)
 
     def do_run(self, command, **kwargs):
 
@@ -94,8 +97,11 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
             cmd_flash.extend(['--no-stub'])
         cmd_flash.extend(['--baud', self.baud])
         cmd_flash.extend(['--before', 'default-reset'])
+        if self.reset_type is not None and not self.reset:
+            self.logger.warning(
+                '--reset-type is ignored because reset is disabled (--no-reset)')
         if self.reset:
-            cmd_flash.extend(['--after', 'hard-reset', 'write-flash', '-u'])
+            cmd_flash.extend(['--after', self.reset_type or 'hard-reset', 'write-flash', '-u'])
         cmd_flash.extend(['--flash-mode', self.flash_mode])
         cmd_flash.extend(['--flash-freq', self.flash_freq])
         cmd_flash.extend(['--flash-size', self.flash_size])

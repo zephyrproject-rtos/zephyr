@@ -104,6 +104,17 @@ application.
    :board: <board>
    :goals: flash
 
+.. note::
+
+   On targets that expose the built-in USB Serial/JTAG controller, the chip can
+   stay in download mode after ``west flash`` and will not boot the new image
+   until it is power cycled. If that happens, flash with a watchdog reset so the
+   chip restarts on its own:
+
+   .. code-block:: shell
+
+      west flash --reset-type watchdog-reset
+
 Open the serial monitor using the following command:
 
 .. code-block:: shell
