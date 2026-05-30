@@ -22,9 +22,15 @@
 		zephyr,ipc        = &ipc0;
 	};
 
-	ddr0: memory@9ce00000 {
+	rsc_table: memory@9ce00000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9ce00000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	ddr0: memory@9ce01000 {
 		compatible = "mmio-sram";
-		reg = <0x9ce00000 DT_SIZE_M(1)>;
+		reg = <0x9ce01000 (DT_SIZE_M(1) - DT_SIZE_K(4))>;
 	};
 
 	ddr1: memory@9cf00000 {
