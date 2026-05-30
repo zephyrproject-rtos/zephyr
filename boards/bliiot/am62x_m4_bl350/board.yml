@@ -1,0 +1,6 @@
+board:
+  name: am62x_m4_bl350
+  full_name: BLIIoT ARMxy BL352BW (AM625SIP Cortex-M4F)
+  vendor: bliiot
+  socs:
+  - name: am6234

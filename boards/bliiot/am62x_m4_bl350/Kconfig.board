@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Chrispine Tinega <chrispinetinega@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_AM62X_M4_BL350
+	select SOC_AM6234_M4

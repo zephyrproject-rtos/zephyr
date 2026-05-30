@@ -112,6 +112,7 @@ beagle	BeagleBoard.org Foundation
 bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
+bliiot	BLIIoT Technology Co., Ltd.
 blackberry	BlackBerry Limited
 blues	Blues Wireless
 blutek	BluTek Power

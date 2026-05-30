@@ -1,0 +1,14 @@
+identifier: am62x_m4_bl350/am6234/m4
+name: BLIIoT BL352BW AM62x M4
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: bliiot
+supported:
+  - uart
+  - can
+  - gpio
+  - watchdog
+  - ipc

@@ -446,6 +446,15 @@ BeagleBoard Platforms:
   labels:
     - "platform: BeagleBoard"
 
+BLIIoT Platforms:
+  status: maintained
+  maintainers:
+    - tinegachris
+  files:
+    - boards/bliiot/
+  labels:
+    - "platform: BLIIoT"
+
 Benchmarks:
   status: maintained
   maintainers:

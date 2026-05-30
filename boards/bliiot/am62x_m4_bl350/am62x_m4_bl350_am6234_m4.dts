@@ -1,0 +1,153 @@
+/*
+ * Copyright (c) 2026 Chrispine Tinega <chrispinetinega@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am62x_m4.dtsi>
+#include "am62x_m4_bl350_am6234_m4-pinctrl.dtsi"
+
+/ {
+	model = "BLIIoT BL352BW AM625SIP Cortex-M4F";
+	compatible = "bliiot,am62x-m4-bl350", "ti,am625";
+
+	chosen {
+		zephyr,sram       = &ddr1;
+		zephyr,flash      = &ddr0;
+		zephyr,console    = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,ipc_shm    = &ipc_carveout;
+		zephyr,ipc        = &ipc0;
+	};
+
+	ddr0: memory@9ce00000 {
+		compatible = "mmio-sram";
+		reg = <0x9ce00000 DT_SIZE_M(1)>;
+	};
+
+	ddr1: memory@9cf00000 {
+		compatible = "mmio-sram";
+		reg = <0x9cf00000 DT_SIZE_M(1)>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		ipc_carveout: ipc@9c800000 {
+			compatible = "shared-dma-pool";
+			reg = <0x9C800000 0x400000>; /* 4 MB */
+			no-map;
+		};
+
+		m4f-trace@9cc00000 {
+			reg = <0x9CC00000 0x100000>; /* 1 MB */
+			no-map;
+		};
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,ipc-openamp-static-vrings";
+		memory-region = <&ipc_carveout>;
+		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mbox-names = "tx", "rx";
+		role = "remote";
+		status = "okay";
+	};
+
+	soc {
+		compatible = "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		mcu_mcan0: can@4e08000 {
+			compatible = "bosch,m_can";
+			reg = <0x04e08000 0x200>, <0x04e00000 0x8000>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <18 0>, <19 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&k3_clks>;
+			bus-speed = <500000>;
+			bus-speed-data = <2000000>;
+			status = "disabled";
+		};
+
+		mcu_mcan1: can@4e18000 {
+			compatible = "bosch,m_can";
+			reg = <0x04e18000 0x200>, <0x04e10000 0x8000>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <20 0>, <21 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&k3_clks>;
+			bus-speed = <500000>;
+			bus-speed-data = <2000000>;
+			status = "disabled";
+		};
+
+		k3_clks: dummy-clks {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <48000000>;
+		};
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&mcu_uart0_rx_default &mcu_uart0_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&main_uart0 {
+	compatible = "ns16550";
+	current-speed = <115200>;
+	status = "okay";
+	interrupts = <20 0>;
+	interrupt-parent = <&nvic>;
+
+	modbus0: modbus0 {
+		compatible = "zephyr,modbus-serial";
+		status = "okay";
+	};
+};
+
+&main_uart5 {
+	compatible = "ns16550";
+	current-speed = <115200>;
+	status = "okay";
+	interrupts = <21 0>;
+	interrupt-parent = <&nvic>;
+};
+
+&mbox0 {
+	status = "okay";
+};
+
+/* Provide standard labels expected by the BL350 EMS application overlay */
+can0: &mcu_mcan0 {};
+can1: &mcu_mcan1 {};
+
+uart1: &main_uart1 {
+	compatible = "ns16550";
+	status = "okay";
+	interrupts = <22 0>;
+	interrupt-parent = <&nvic>;
+};
+
+uart2: &main_uart2 {
+	compatible = "ns16550";
+	status = "okay";
+	interrupts = <23 0>;
+	interrupt-parent = <&nvic>;
+};
+
+gpio1: &main_gpio1 {
+	status = "okay";
+	interrupts = <24 0>;
+	interrupt-parent = <&nvic>;
+};
