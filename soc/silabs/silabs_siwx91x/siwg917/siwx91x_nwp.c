@@ -14,6 +14,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/wifi.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/devicetree.h>
 
@@ -42,6 +43,7 @@ struct siwx91x_nwp_data {
 };
 
 struct siwx91x_nwp_config {
+	const struct pinctrl_dev_config *pcfg;
 	void (*config_irq)(const struct device *dev);
 	uint32_t stack_size;
 	uint8_t antenna_selection;
@@ -325,8 +327,13 @@ static int siwx91x_check_nwp_version(void)
 	if (siwx91x_nwp_fw_expected_version.security_version != version.security_version) {
 		return -EINVAL;
 	}
-	if (siwx91x_nwp_fw_expected_version.patch_num != version.patch_num) {
-		return -EINVAL;
+	if (siwx91x_nwp_fw_expected_version.patch_num > version.patch_num) {
+		LOG_WRN("patch_num diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.patch_num, version.patch_num);
+	}
+	if (siwx91x_nwp_fw_expected_version.patch_num < version.patch_num) {
+		LOG_DBG("patch_num diverge: expected %d, actual %d",
+			siwx91x_nwp_fw_expected_version.patch_num, version.patch_num);
 	}
 	if (siwx91x_nwp_fw_expected_version.customer_id != version.customer_id) {
 		LOG_DBG("customer_id diverge: expected %d, actual %d",
@@ -350,7 +357,9 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 		.band = SL_SI91X_WIFI_BAND_2_4GHZ,
 		.boot_option = LOAD_NWP_FW,
 		.boot_config = {
-			.feature_bit_map = SL_SI91X_FEAT_WPS_DISABLE | SL_SI91X_FEAT_AGGREGATION,
+			.feature_bit_map = SL_SI91X_FEAT_WPS_DISABLE |
+					   SL_SI91X_FEAT_AGGREGATION |
+					   SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS,
 			.tcp_ip_feature_bit_map = SL_SI91X_TCP_IP_FEAT_EXTENSION_VALID,
 			.custom_feature_bit_map = SL_SI91X_CUSTOM_FEAT_EXTENSION_VALID |
 						  SL_SI91X_CUSTOM_FEAT_ASYNC_CONNECTION_STATUS,
@@ -374,9 +383,6 @@ static int siwx91x_get_nwp_config(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_HIDE_PSK_CREDENTIALS)) {
-		boot_config->feature_bit_map |= SL_SI91X_FEAT_HIDE_PSK_CREDENTIALS;
-	}
 	siwx91x_apply_sram_config(boot_config);
 	siwx91x_apply_boot_config(dev, boot_config);
 
@@ -482,6 +488,14 @@ static int siwx91x_nwp_init(const struct device *dev)
 	sl_wifi_device_configuration_t network_config;
 	int ret;
 
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0 && ret != -ENOENT) {
+		return ret;
+	}
+	if (config->antenna_selection == 2 && ret == -ENOENT) {
+		LOG_WRN("'ext-gpios' expects some pinctrl configuration");
+	}
+
 	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) || IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
 		data->power_profile = ASSOCIATED_POWER_SAVE;
 	}
@@ -550,23 +564,15 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 		.power_profile = DEEP_SLEEP_WITH_RAM_RETENTION,                                    \
 	};                                                                                         \
                                                                                                    \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	static const struct siwx91x_nwp_config siwx91x_nwp_config_##inst = {                       \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.config_irq = silabs_siwx91x_nwp_irq_configure_##inst,                             \
-		.stack_size = DT_INST_PROP(inst, stack_size),                                      \
 		.support_1p8v = DT_INST_PROP(inst, support_1p8v),                                  \
 		.enable_xtal_correction = DT_INST_PROP(inst, enable_xtal_correction),              \
 		.qspi_80mhz_clk = DT_INST_PROP(inst, qspi_80mhz_clk),                              \
 		.antenna_selection = DT_INST_ENUM_IDX(inst, antenna_selection),                    \
 		.clock_frequency = DT_INST_PROP(inst, clock_frequency)                             \
-	};                                                                                         \
-                                                                                                   \
-	/* Coprocessor uses value stored in IVT to store its stack. We can't use Z_ISR_DECLARE() */\
-	static uint8_t __aligned(8) siwx91x_nwp_stack_##inst[DT_INST_PROP(inst, stack_size)];      \
-	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList)                          \
-		__used __isr_siwg917_coprocessor_stack_irq_##inst = {                              \
-			.irq = DT_IRQ_BY_NAME(DT_DRV_INST(inst), nwp_stack, irq),                  \
-			.flags = ISR_FLAG_DIRECT,                                                  \
-			.func = &siwx91x_nwp_stack_##inst[sizeof(siwx91x_nwp_stack_##inst) - 1],   \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &siwx91x_nwp_init, NULL, &siwx91x_nwp_data_##inst,             \

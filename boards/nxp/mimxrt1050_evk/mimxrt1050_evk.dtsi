@@ -140,6 +140,9 @@ zephyr_lcdif: &lcdif {
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio1 16 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio1 17 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 
 	fxos8700: fxos8700@1f {
 		compatible = "nxp,fxos8700";

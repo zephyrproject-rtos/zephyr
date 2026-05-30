@@ -48,9 +48,9 @@ Boards
   :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` and
   :kconfig:option:`CONFIG_SOC_SERIES_NRF71` checks. Both symbols are kept
   as deprecated stubs that default to ``y`` when the corresponding SoC
-  series is selected, so existing ``CONFIG_NRF_PLATFORM_*=y`` lines and
-  ``depends on NRF_PLATFORM_*`` clauses keep building with a Kconfig
-  deprecation warning. Out-of-tree Kconfig, CMake and code using these
+  series is selected and :kconfig:option:`CONFIG_NRF_PLATFORM_DEPRECATED_SYMBOLS` is enabled,
+  so existing ``CONFIG_NRF_PLATFORM_*=y`` lines and ``depends on NRF_PLATFORM_*`` clauses keep
+  building with a Kconfig deprecation warning. Out-of-tree Kconfig, CMake and code using these
   symbols should be updated:
 
   * The ``CONFIG_NRF_PLATFORM_HALTIUM`` with
@@ -78,23 +78,16 @@ Boards
   to 300 MHz, which also affects the bus and kernel clocks, resulting in slightly
   higher frequencies.
 
+* :kconfig:option:`CONFIG_GPIO` is no longer enabled by default on most STM32 boards.
+  (boards with GPIO hogs keep it enabled as GPIO is needed for hogs to work).
+  Applications that relied on ``CONFIG_GPIO=y`` being the default will need to enable
+  the option explicitly. (:github:`109468`)
+
 Device Drivers and Devicetree
 *****************************
 
-Haptics
-=======
-
-* The ``cirrus,cs40l5x`` compatible has been replaced by variant-specific compatibles
-  :dtcompatible:`cirrus,cs40l50`, :dtcompatible:`cirrus,cs40l51`, :dtcompatible:`cirrus,cs40l52`,
-  and :dtcompatible:`cirrus,cs40l53`. Applications using the old compatible must update their
-  devicetree nodes accordingly.
-
-.. Group contents in this section by subsystem, e.g.:
-..
-.. ADC
-.. ===
-..
-.. ...
+.. Only place contents common to all device drivers here. Contents specific to one driver subsystem
+   goes into its own subsection, below.
 
 * The :c:macro:`DEVICE_API` macro is now mandatory for declaring device driver API instances of any
   upstream driver class, including in out-of-tree drivers. :c:macro:`DEVICE_API_GET` now asserts
@@ -103,6 +96,13 @@ Haptics
   must also declare the relationship with :c:macro:`DEVICE_API_EXTENDS`, so that
   :c:macro:`DEVICE_API_GET` for the parent class succeeds on devices implementing the child API.
   See :ref:`device_driver_api` for details.
+
+.. Group contents in this section by subsystem, e.g.:
+..
+.. ADC
+.. ===
+..
+.. ...
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
@@ -193,6 +193,14 @@ GPIO
   behavior as before since these flags were effectively ignored. (:github:`104690`)
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
+
+Haptics
+=======
+
+* The ``cirrus,cs40l5x`` compatible has been replaced by variant-specific compatibles
+  :dtcompatible:`cirrus,cs40l50`, :dtcompatible:`cirrus,cs40l51`, :dtcompatible:`cirrus,cs40l52`,
+  and :dtcompatible:`cirrus,cs40l53`. Applications using the old compatible must update their
+  devicetree nodes accordingly.
 
 Input
 =====
@@ -471,6 +479,11 @@ Networking
   :kconfig:option:`CONFIG_NET_MAX_NEXTHOPS` and use the
   :kconfig:option:`CONFIG_NET_IPV6_*` symbols directly.
 
+* The ``samples/net/wifi/test_certs/rsa2k`` enterprise test certificates have
+  been removed. TF-PSA-Crypto cannot decrypt their DES-encrypted PKCS#8 private
+  keys. Use ``samples/net/wifi/test_certs/rsa2k_no_des`` instead, or set
+  :envvar:`WIFI_TEST_CERTS_DIR` to another AES-encrypted certificate directory.
+
 
 Ethernet
 ========
@@ -594,6 +607,10 @@ Mbed TLS
 * ``CONFIG_PSA_CRYPTO_CLIENT`` has been removed as it was a duplicate of
   :kconfig:option:`CONFIG_PSA_CRYPTO`. If you were using it, use
   :kconfig:option:`CONFIG_PSA_CRYPTO` instead. (:github:`108960`)
+
+* Interface CMake library ``mbedTLS`` has been renamed to ``mbedtls_iface``. The former is kept
+  as an alias to the latter for backward compatibility, but it will be removed in future
+  releases.
 
 Architectures
 *************

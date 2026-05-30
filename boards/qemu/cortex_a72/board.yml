@@ -1,0 +1,6 @@
+board:
+  name: qemu_cortex_a72
+  full_name: QEMU Emulation for ARM Cortex-A72
+  vendor: raspberrypi
+  socs:
+  - name: bcm2711

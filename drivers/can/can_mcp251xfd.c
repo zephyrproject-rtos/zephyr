@@ -1527,7 +1527,7 @@ static int mcp251xfd_init(const struct device *dev)
 		uint32_t clk_id = dev_cfg->clk_id;
 
 		if (!device_is_ready(dev_cfg->clk_dev)) {
-			LOG_ERR("Clock controller not ready");
+			LOG_ERR_DEVICE_NOT_READY(dev_cfg->clk_dev);
 			return -ENODEV;
 		}
 
@@ -1544,12 +1544,12 @@ static int mcp251xfd_init(const struct device *dev)
 	k_mutex_init(&dev_data->mutex);
 
 	if (!spi_is_ready_dt(&dev_cfg->bus)) {
-		LOG_ERR("SPI bus %s not ready", dev_cfg->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(dev_cfg->bus.bus);
 		return -ENODEV;
 	}
 
 	if (!gpio_is_ready_dt(&dev_cfg->int_gpio_dt)) {
-		LOG_ERR("GPIO port not ready");
+		LOG_ERR_DEVICE_NOT_READY(dev_cfg->int_gpio_dt.port);
 		return -ENODEV;
 	}
 

@@ -12,7 +12,7 @@ config MBEDTLS_CONFIG_FILE
 	default MBEDTLS_CFG_FILE if MBEDTLS_CFG_FILE != "" # deprecated
 	default "config-mbedtls.h"
 	help
-	  Use a specific mbedTLS configuration file. The default config file
+	  Use a specific Mbed TLS configuration file. The default config file
 	  file can be tweaked with Kconfig. The default configuration is
 	  suitable to communicate with majority of HTTPS servers on the Internet,
 	  but has relatively many features enabled. To optimize resources for
@@ -210,7 +210,7 @@ config MBEDTLS_HAVE_TIME_DATE
 	bool "Date/time validation in mbed TLS"
 	help
 	  System has time.h, time(), and an implementation for gmtime_r().
-	  There also need to be a valid time source in the system, as mbedTLS
+	  There also need to be a valid time source in the system, as Mbed TLS
 	  expects a valid date/time for certificate validation.
 
 config MBEDTLS_SSL_CACHE_C

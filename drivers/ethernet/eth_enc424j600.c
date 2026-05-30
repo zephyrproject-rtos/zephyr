@@ -765,19 +765,27 @@ static int enc424j600_init(const struct device *dev)
 	return 0;
 }
 
-static struct enc424j600_runtime enc424j600_0_runtime = {
-	.tx_rx_sem = Z_SEM_INITIALIZER(enc424j600_0_runtime.tx_rx_sem,
-				       1,  UINT_MAX),
-	.int_sem  = Z_SEM_INITIALIZER(enc424j600_0_runtime.int_sem,
-				      0, UINT_MAX),
-};
+#define ENC424J600_INIT(inst)						\
+	static struct enc424j600_runtime enc424j600_##inst##_runtime = {	\
+		.tx_rx_sem = Z_SEM_INITIALIZER(			\
+			enc424j600_##inst##_runtime.tx_rx_sem,	\
+			1, UINT_MAX),				\
+		.int_sem = Z_SEM_INITIALIZER(			\
+			enc424j600_##inst##_runtime.int_sem,	\
+			0, UINT_MAX),				\
+	};							\
+								\
+	static const struct enc424j600_config enc424j600_##inst##_config = { \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),	\
+		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),	\
+	};							\
+								\
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst,			\
+		enc424j600_init, NULL,				\
+		&enc424j600_##inst##_runtime,			\
+		&enc424j600_##inst##_config,			\
+		CONFIG_ETH_INIT_PRIORITY,			\
+		&api_funcs,					\
+		NET_ETH_MTU);
 
-static const struct enc424j600_config enc424j600_0_config = {
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
-	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-};
-
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
-		    enc424j600_init, NULL,
-		    &enc424j600_0_runtime, &enc424j600_0_config,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
+DT_INST_FOREACH_STATUS_OKAY(ENC424J600_INIT)

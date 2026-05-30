@@ -6300,12 +6300,4 @@ if(CMAKE_SCRIPT_MODE_FILE)
   function(set_target_properties)
     # This silence the error: 'set_target_properties command is not scriptable'
   endfunction()
-
-  # Build info creates a custom target for handling of build info.
-  # build_info is not needed in script mode but still called by Zephyr CMake
-  # modules. Therefore disable build_info(...) in when including
-  # extensions.cmake in script mode.
-  function(build_info)
-    # This silence the error: 'Unknown CMake command "yaml_context"'
-  endfunction()
 endif()

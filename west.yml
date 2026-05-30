@@ -172,7 +172,7 @@ manifest:
       groups:
         - hal
     - name: hal_espressif
-      revision: e317fb14bf61a772161b3c2913451b96e751d6dc
+      revision: 22474f2034d4f9c3be20f6162b0e0f1518225827
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: 0c36e77f427236fbc7036eab0dd6e8af9539869d
+      revision: d9e6846717489b75ebc51c9ccac8ddc650d2a32f
       path: modules/hal/infineon
       groups:
         - hal
@@ -229,12 +229,12 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: 428e4ddd2a19560cb32ddd56cbb62bf4597edafd
+      revision: 825297ca86d24286dd5c6ebb50a716c93ac29304
       groups:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: b994af098811b0ea02d5388efeefd0ac54f082e3
+      revision: 29d0d3b9c7f9e3929839c74a6cb10c487c24994f
       groups:
         - hal
     - name: hal_rpi_pico
@@ -324,14 +324,8 @@ manifest:
       revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 6a08a7eb799853ce2a9053d24ecde31bf3a1322c
+      revision: 554163f6f7b2ec71fed9b423e81f2217a8615d29
       path: modules/crypto/mbedtls
-      groups:
-        - crypto
-    - name: mbedtls-3.6 # Required for TF-M build until we bump it to v2.3
-      repo-path: mbedtls
-      revision: a00e23de17b6b0a0de28e180cb186da6f0008836
-      path: modules/crypto/mbedtls-3.6
       groups:
         - crypto
     - name: mcuboot
@@ -358,7 +352,7 @@ manifest:
       groups:
         - tools
     - name: nrf_hw_models
-      revision: cd44ed9674d115457fd620d5a43741576f328e4b
+      revision: 309d02c0df8625c52a6abc2fd95dc77fe80c163a
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 47bd5b4ebd357ba637be0f2b092e1c0d370eea2f
@@ -378,7 +372,7 @@ manifest:
       path: modules/lib/picolibc
       revision: 01254932e8e81085817ed61fd858648584ffe37c
     - name: psa-arch-tests
-      revision: 6e8219237435112df33bbcf37b7f5657fcfb9cff
+      revision: 588572c0ebd835c7e0929eaf3007d4fbadb47b5b
       path: modules/tee/tf-m/psa-arch-tests
       groups:
         - testing
@@ -389,7 +383,7 @@ manifest:
       groups:
         - debug
     - name: tf-m-tests
-      revision: 7bb7b7999ee74a0aebb9a91fd8056698c552008b
+      revision: 2f9d323198329cc3df0d6145ec924222cf4ae440
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing
@@ -405,7 +399,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 9a4cb1a280b63a5e66bd469e82eb75f2b3e05a78
+      revision: 35210614ac5ab8b3334a385a4f07dbd209390a05
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

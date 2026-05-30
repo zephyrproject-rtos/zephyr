@@ -106,8 +106,19 @@ config BFLB_BL70X_BLE_M1S1
 
 config BFLB_BL70X_BLE_M16S1
 	bool "m16s1: All roles, 16 master + 1 slave"
+	help
+	  16 Central + 1 Peripheral connections.
+	  Uses 16KB exchange memory (vs 8KB for other variants).
+	  The memory size must be correctly configured in the DTS (sram0_bt_em16k).
 
 endchoice
+
+config BFLB_BL70X_BLE_EM_16K
+	bool
+	default y if BFLB_BL70X_BLE_M16S1
+	help
+	  Use 16KB exchange memory for BLE controller.
+	  Only needed for the m16s1 variant.
 
 endif # BT_BFLB_BL70X
 
@@ -231,6 +242,7 @@ config BFLB_BL70XL_BLE_M8S1P
 	help
 	  8 BLE connections, master or slave. All controller code in flash.
 	  Supports PDS. Uses 16KB exchange memory (vs 8KB for other variants).
+	  The memory size must be correctly configured in the DTS (sram0_bt_em16k).
 
 endchoice
 

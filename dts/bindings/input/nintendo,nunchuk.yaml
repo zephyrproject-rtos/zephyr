@@ -13,3 +13,4 @@ properties:
     default: 50
     description: |
       Interval between two reads, in ms. The interval must be greater than 21 ms. Default to 50 ms.
+    min: 21

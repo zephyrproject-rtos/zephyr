@@ -1,7 +1,7 @@
 sample:
   name: ISO-TP sample
 tests:
-  sample.subsys.canbus.isotp:
+  sample.canbus.isotp:
     tags:
       - can
       - isotp
@@ -14,7 +14,7 @@ tests:
       type: one_line
       regex:
         - "(.*)Got 247 bytes in total"
-  sample.subsys.canbus.isotp.fd:
+  sample.canbus.isotp.fd:
     tags:
       - can
       - isotp

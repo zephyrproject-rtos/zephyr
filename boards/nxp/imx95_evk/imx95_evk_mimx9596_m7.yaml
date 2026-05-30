@@ -23,6 +23,7 @@ supported:
   - dma
   - gpio
   - adc
+  - watchdog
 testing:
   binaries:
     - flash.bin

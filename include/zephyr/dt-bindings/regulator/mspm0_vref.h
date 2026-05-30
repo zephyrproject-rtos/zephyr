@@ -4,19 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup regulator_mspm0_vref
+ * @brief Header file for MSPM0 VREF Devicetree helpers.*
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_MSPM0_VREF_H
 #define ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_MSPM0_VREF_H
 
 /**
- * @file mspm0_vref.h
- * @brief MSPM0 VREF regulator devicetree helpers
- * @defgroup regulator_mspm0_vref Devicetree helpers
- * @ingroup regulator_interface
+ * @defgroup regulator_mspm0_vref MSPM0 VREF Devicetree helpers
+ * @brief Texas Instruments MSPM0 VREF regulator driver Devicetree helpers
+ * @ingroup devicetree-regulator
  * @{
  */
 
 /**
- * @name MSPM0 VREF Regulator API Modes
+ * @name MSPM0 VREF regulator modes
  * @{
  */
 /** Normal operating mode */

@@ -24,4 +24,5 @@ properties:
       4: around 1.048 MHz
       5: around 2.097 MHz (reset value)
       6: around 4.194 MHz
-    enum: [0, 1, 2, 3, 4, 5, 6]
+    min: 0
+    max: 6

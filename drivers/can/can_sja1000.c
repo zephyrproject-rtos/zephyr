@@ -741,7 +741,7 @@ int can_sja1000_init(const struct device *dev)
 
 	if (config->common.phy != NULL) {
 		if (!device_is_ready(config->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->common.phy);
 			return -ENODEV;
 		}
 	}

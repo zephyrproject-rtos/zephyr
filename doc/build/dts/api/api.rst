@@ -501,7 +501,7 @@ device.
        singleton system function.
    * - zephyr,system-timer-companion
      - Selects the device used to keep time while the primary system timer is
-       inactive in low-power states
+       inactive in low-power states. It must implement the :ref:`counter_api` API.
    * - zephyr,tracing-uart
      - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr

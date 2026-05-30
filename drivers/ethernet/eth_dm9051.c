@@ -23,8 +23,15 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/phy.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 
 #include "eth.h"
+
+/* DM9051 adds 4-byte CRC to each frame in internal SRAM */
+#define ETH_DM9051_CRC_SIZE		4
+
+/* Minimum Ethernet frame size (64 bytes including CRC) */
+#define ETH_DM9051_MIN_FRAME_SIZE	64
 
 /* DM9051 Product ID */
 #define DM9051_ID			0x9051
@@ -174,8 +181,8 @@ struct eth_dm9051_config {
 
 struct eth_dm9051_data {
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_DM9051_RX_THREAD_STACK_SIZE);
-	uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE];
-	uint8_t rx_buf[NET_ETH_MAX_FRAME_SIZE];
+	uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE + ETH_DM9051_CRC_SIZE];
+	uint8_t rx_buf[NET_ETH_MAX_FRAME_SIZE + ETH_DM9051_CRC_SIZE];
 	struct gpio_callback gpio_cb;
 	struct phy_link_state state;
 	struct k_thread rx_thread;
@@ -514,14 +521,15 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 	rx_len = sys_get_le16(rxhdr.len);
 
 	/* Check for RX errors */
-	if ((rxhdr.status & ~DM9051_RSR_MF) > 0 || (rx_len > NET_ETH_MAX_FRAME_SIZE)) {
+	if ((rxhdr.status & ~DM9051_RSR_MF) > 0 ||
+	    !IN_RANGE(rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf))) {
 		if ((rxhdr.status & ~DM9051_RSR_MF) > 0) {
 			LOG_DBG("%s: RX status error: %02x", dev->name, rxhdr.status);
 		}
 
-		if (rx_len > NET_ETH_MAX_FRAME_SIZE) {
-			LOG_DBG("%s: RX length too large: %u > %u", dev->name,
-				rx_len, NET_ETH_MAX_FRAME_SIZE);
+		if (!IN_RANGE(rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf))) {
+			LOG_DBG("%s: RX length out of range: %u (min: %u, max: %zu)",
+				dev->name, rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf));
 		}
 
 		(void)eth_dm9051_hw_start(dev, data->iface);
@@ -529,7 +537,9 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 	}
 
 	/* Alloc RX net_pkt and subtract 4 from RX length to discard CRC */
-	pkt = net_pkt_rx_alloc_with_buffer(data->iface, rx_len - 4, NET_AF_UNSPEC, 0,
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface,
+					   rx_len - ETH_DM9051_CRC_SIZE,
+					   NET_AF_UNSPEC, 0,
 					   K_MSEC(CONFIG_ETH_DM9051_TIMEOUT));
 	if (!pkt) {
 		/* Discard received data */
@@ -544,7 +554,7 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 	}
 
 	/* Write RX data to net_pkt */
-	ret = net_pkt_write(pkt, data->rx_buf, rx_len - 4);
+	ret = net_pkt_write(pkt, data->rx_buf, rx_len - ETH_DM9051_CRC_SIZE);
 	if (ret < 0) {
 		goto out_net_pkt_unref;
 	}

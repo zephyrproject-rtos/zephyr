@@ -1,3 +1,6 @@
 name: slot1-partition
+description: |
+  Changes the chosen flash partition to slot1_partition for MCUboot direct-xip
+  or firmware loader modes.
 append:
   EXTRA_DTC_OVERLAY_FILE: slot1-partition.overlay

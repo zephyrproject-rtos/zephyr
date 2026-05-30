@@ -69,3 +69,7 @@ rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"
 rsource "Kconfig.lcd_cam"
+
+if PM && TICKLESS_KERNEL
+rsource "Kconfig.pm"
+endif

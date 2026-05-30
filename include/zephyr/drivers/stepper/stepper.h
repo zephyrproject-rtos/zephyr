@@ -169,7 +169,6 @@ __syscall int stepper_enable(const struct device *dev);
 
 static inline int z_impl_stepper_enable(const struct device *dev)
 {
-	__ASSERT_NO_MSG(dev != NULL);
 	return DEVICE_API_GET(stepper, dev)->enable(dev);
 }
 
@@ -188,7 +187,6 @@ __syscall int stepper_disable(const struct device *dev);
 
 static inline int z_impl_stepper_disable(const struct device *dev)
 {
-	__ASSERT_NO_MSG(dev != NULL);
 	return DEVICE_API_GET(stepper, dev)->disable(dev);
 }
 
@@ -209,7 +207,6 @@ __syscall int stepper_set_micro_step_res(const struct device *dev,
 static inline int z_impl_stepper_set_micro_step_res(const struct device *dev,
 							enum stepper_micro_step_resolution res)
 {
-	__ASSERT_NO_MSG(dev != NULL);
 	if (!VALID_MICRO_STEP_RES(res)) {
 		return -EINVAL;
 	}
@@ -231,7 +228,6 @@ __syscall int stepper_get_micro_step_res(const struct device *dev,
 static inline int z_impl_stepper_get_micro_step_res(const struct device *dev,
 							enum stepper_micro_step_resolution *res)
 {
-	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(res != NULL);
 	return DEVICE_API_GET(stepper, dev)->get_micro_step_res(dev, res);
 }
@@ -253,7 +249,6 @@ __syscall int stepper_set_event_cb(const struct device *dev, stepper_event_cb_t 
 static inline int z_impl_stepper_set_event_cb(const struct device *dev,
 						  stepper_event_cb_t cb, void *user_data)
 {
-	__ASSERT_NO_MSG(dev != NULL);
 	if (DEVICE_API_GET(stepper, dev)->set_event_cb == NULL) {
 		return -ENOSYS;
 	}

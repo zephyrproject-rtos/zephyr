@@ -97,12 +97,58 @@ config MBEDTLS_HMAC_DRBG_C
 
 comment "Other configurations"
 
+config MBEDTLS_MEMORY_BUFFER_ALLOC_C
+	bool "Buffer memory allocator"
+	default y
+	help
+	  Enable the buffer allocator implementation that makes use of a (stack)
+	  based buffer to 'allocate' dynamic memory. (replaces calloc() and free() calls)
+
+if MBEDTLS_MEMORY_BUFFER_ALLOC_C
+
 config MBEDTLS_MEMORY_DEBUG
 	bool "mbed TLS memory debug activation"
 	help
 	  Enable debugging of buffer allocator memory issues. Automatically
 	  prints (to stderr) all (fatal) messages on memory allocation
 	  issues. Enables function for 'debug output' of allocated memory.
+
+endif # MBEDTLS_MEMORY_BUFFER_ALLOC_C
+
+config MBEDTLS_ENABLE_HEAP
+	bool "Global heap for mbed TLS"
+	select MBEDTLS_MEMORY_BUFFER_ALLOC_C
+	help
+	  This option enables the mbedtls to use the heap. This setting must
+	  be global so that various applications and libraries in Zephyr do not
+	  try to do this themselves as there can be only one heap defined
+	  in mbedtls. If this is enabled, and MBEDTLS_INIT is enabled then the
+	  Zephyr will, during the device startup, initialize the heap automatically.
+
+if MBEDTLS_ENABLE_HEAP
+
+config MBEDTLS_HEAP_SIZE
+	int "Heap size for mbed TLS"
+	default 15360 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	default 1024 if OPENTHREAD_CRYPTO_PSA
+	default 512
+	help
+	  The mbedtls routines will use this heap if enabled.
+	  See the MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details.
+	  Default value for the heap size is not set as it depends on the
+	  application. For streaming communication with arbitrary (HTTPS)
+	  servers on the Internet, 32KB + overheads (up to another 20KB) may
+	  be needed. For some dedicated and specific usage of mbedtls API, the
+	  1000 bytes might be ok.
+
+config MBEDTLS_HEAP_CUSTOM_SECTION
+	bool "Use a custom section for the Mbed TLS heap"
+	help
+	  Place Mbed TLS heap in custom section, with tag ".mbedtls_heap".
+	  This can be used by custom linker scripts to relocate the Mbed TLS
+	  heap to a custom location, such as another SRAM region or external memory.
+
+endif # MBEDTLS_ENABLE_HEAP
 
 config MBEDTLS_CIPHER
 	bool "Generic cipher layer"
@@ -162,7 +208,7 @@ config MBEDTLS_HAVE_ASM
 	bool "Use of assembly code"
 	default y if !ARM
 	help
-	  Enable use of assembly code in mbedTLS. This improves the performances
+	  Enable use of assembly code in Mbed TLS. This improves the performance
 	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
@@ -192,9 +238,9 @@ config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	depends on OPENTHREAD
 	default y if !NET_SOCKETS_SOCKOPT_TLS
 	help
-	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  Enable some OpenThread specific Mbed TLS optimizations that allows to
 	  save some RAM/ROM when OpenThread is used. Note, that when application
-	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  aims to use other Mbed TLS services on top of OpenThread (e.g. secure
 	  sockets), it's advised to disable this option.
 
 config MBEDTLS_PK_PARSE_C

@@ -146,25 +146,28 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 
 &flash {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Partition sizes must be aligned
 		 * to the flash memory sector size of 8KB.
 		 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
 
 		slot0_partition: partition@14000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(984)>;
 		};
 
 		slot1_partition: partition@10a000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x0010a000 DT_SIZE_K(984)>;
 		};
@@ -207,6 +210,9 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 			reg = <0x0 DT_SIZE_M(8)>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
 };

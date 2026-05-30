@@ -242,6 +242,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				regulator = <&vregusb>;
+				status = "disabled";
 
 				usbhs: usbhs@20000 {
 					compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
@@ -252,6 +253,12 @@
 					ghwcfg1 = <0x0>;
 					ghwcfg2 = <0x22affc52>;
 					ghwcfg4 = <0x3e10aa60>;
+					status = "disabled";
+				};
+
+				usbhs_bc12: usbhs_bc12 {
+					compatible = "nordic,nrf-usbhs-bc12";
+					charging-mode = "BC12_TYPE_NONE";
 					status = "disabled";
 				};
 			};

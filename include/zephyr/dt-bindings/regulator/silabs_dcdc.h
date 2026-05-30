@@ -3,17 +3,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup regulator_silabs_dcdc
+ * @brief Header file for Silicon Labs DCDC regulator Devicetree helpers.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_SILABS_DCDC_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_SILABS_DCDC_H_
 
 /**
- * @defgroup regulator_silabs_dcdc Silabs DCDC devicetree helpers.
- * @ingroup regulator_interface
+ * @defgroup regulator_silabs_dcdc Silicon Labs DCDC Devicetree helpers
+ * @brief Silicon Labs DCDC regulator driver Devicetree helpers
+ * @ingroup devicetree-regulator
  * @{
  */
 
 /**
- * @name Silabs DCDC modes
+ * @name Silicon Labs DCDC modes
  * @{
  */
 /** Buck mode */

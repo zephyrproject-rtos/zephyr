@@ -10,7 +10,7 @@ tests:
     integration_platforms:
       - native_sim
     filter: CONFIG_CONSOLE_HAS_DRIVER
-  bootloader.mcuboot.build:
+  buildsystem.bootloader.mcuboot.build:
     tags: mcuboot
     build_only: true
     platform_allow:

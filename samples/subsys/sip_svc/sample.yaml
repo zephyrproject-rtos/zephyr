@@ -5,7 +5,7 @@ common:
   integration_platforms:
     - intel_socfpga_agilex_socdk
 tests:
-  sample.subsys.sip_svc:
+  sample.sip_svc:
     tags:
       - sipsvc
     platform_allow:

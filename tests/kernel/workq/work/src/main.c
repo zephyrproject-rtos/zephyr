@@ -331,7 +331,7 @@ ZTEST(work_1cpu, test_1cpu_simple_queue)
 /* Basic SMP check submitting with a non-blocking handler. */
 ZTEST(work, test_smp_simple_queue)
 {
-	if (!IS_ENABLED(CONFIG_SMP)) {
+	if (!IS_ENABLED(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS == 1)) {
 		ztest_test_skip();
 		return;
 	}
@@ -828,7 +828,7 @@ ZTEST(work, test_smp_running_cancel)
 {
 	int rc;
 
-	if (!IS_ENABLED(CONFIG_SMP)) {
+	if (!IS_ENABLED(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS == 1)) {
 		ztest_test_skip();
 		return;
 	}

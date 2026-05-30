@@ -95,6 +95,9 @@ const char *otype_to_str(enum k_objects otype)
 	case K_OBJ_ANY:
 		ret = "generic";
 		break;
+	case K_OBJ_DRIVER_ANY:
+		ret = "generic driver";
+		break;
 #include <zephyr/otype-to-str.h>
 	default:
 		ret = "?";
@@ -854,9 +857,16 @@ void k_object_access_all_grant(const void *object)
 int k_object_validate(struct k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
-	if (unlikely((ko == NULL) ||
-		((otype != K_OBJ_ANY) && (ko->type != otype)))) {
+	if (unlikely(ko == NULL)) {
 		return -EBADF;
+	}
+
+	if (unlikely((otype != K_OBJ_ANY) && (otype != ko->type))) {
+		if ((otype != K_OBJ_DRIVER_ANY) ||
+		    (ko->type < K_OBJ_DRIVER_FIRST) ||
+		    (ko->type > K_OBJ_DRIVER_LAST)) {
+			return -EBADF;
+		}
 	}
 
 	/* Manipulation of any kernel objects by a user thread requires that

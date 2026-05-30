@@ -36,7 +36,6 @@
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,code-partition = &slot0_partition;
-		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -233,8 +232,4 @@ zephyr_udc0: &usb {
 			reg = <0x00038000 DT_SIZE_K(32)>;
 		};
 	};
-};
-
-&crc {
-	status = "okay";
 };

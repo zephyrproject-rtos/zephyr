@@ -450,26 +450,43 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 				  void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
-	enum cellular_registration_status registration_status = 0;
+	enum cellular_registration_status registration_status = CELLULAR_REGISTRATION_UNKNOWN;
+	enum cellular_registration_status registration_prev;
+	uint8_t num_args;
+	uint8_t base;
 
 	/* This receives both +C*REG? read command answers and unsolicited notifications.
 	 * Their syntax differs in that the former has one more parameter, <n>, which is first.
 	 */
 	if (argc >= 3 && argv[2][0] != '"') {
 		/* +CEREG: <n>,<stat>[,<tac>[...]] */
-		registration_status = atoi(argv[2]);
+		base = 2;
 	} else if (argc >= 2) {
 		/* +CEREG: <stat>[,<tac>[...]] */
-		registration_status = atoi(argv[1]);
+		base = 1;
 	} else {
 		return;
 	}
+	/* Long form of the various CXREG options:
+	 *   +CREG: <stat>[,<lac>,<ci>[,<AcT>]]
+	 *   +CGREG:<stat>[,<lac>,<ci>[,<AcT>,<rac>]]
+	 *   +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>]]
+	 */
+	num_args = argc - base;
+	registration_status = atoi(argv[base]);
+	if (num_args >= 4) {
+		data->access_tech = strtol(argv[base + 3], NULL, 10);
+	}
+	LOG_DBG("REG %d AcT %d", registration_status, data->access_tech);
 
 	if (strcmp(argv[0], "+CREG: ") == 0) {
+		registration_prev = data->registration_status_gsm;
 		data->registration_status_gsm = registration_status;
 	} else if (strcmp(argv[0], "+CGREG: ") == 0) {
+		registration_prev = data->registration_status_gprs;
 		data->registration_status_gprs = registration_status;
 	} else { /* CEREG */
+		registration_prev = data->registration_status_lte;
 		data->registration_status_lte = registration_status;
 	}
 
@@ -477,6 +494,18 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
 	} else {
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
+		/* If we transitioned into a deregistered state, issue a NETWORK_STATUS event,
+		 * as we cannot guarantee periodic network status AT commands will respond normally.
+		 */
+		if (registration_prev != registration_status) {
+			struct cellular_evt_network_status evt = {
+				.status = registration_status,
+				.access_tech = data->access_tech,
+			};
+
+			modem_cellular_emit_event(data, CELLULAR_EVENT_NETWORK_STATUS_CHANGED,
+						  &evt);
+		}
 	}
 	modem_cellular_emit_reg_state(data, registration_status);
 }
@@ -550,7 +579,9 @@ MODEM_CHAT_MATCH_DEFINE(cimi_match __maybe_unused, "", "", modem_cellular_chat_o
 MODEM_CHAT_MATCH_DEFINE(cgmi_match __maybe_unused, "", "", modem_cellular_chat_on_cgmi);
 MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused, "", "", modem_cellular_chat_on_cgmr);
 
-MODEM_CHAT_MATCHES_DEFINE(abort_matches, MODEM_CHAT_MATCH("ERROR", "", NULL));
+MODEM_CHAT_MATCHES_DEFINE(abort_matches,
+			  MODEM_CHAT_MATCH("ERROR", "", NULL),
+			  MODEM_CHAT_MATCH("+CME ERROR", "", NULL));
 
 MODEM_CHAT_MATCHES_DEFINE(__maybe_unused dial_abort_matches,
 			  MODEM_CHAT_MATCH("ERROR", "", NULL),
@@ -2279,6 +2310,8 @@ int modem_cellular_init(const struct device *dev)
 
 	k_sem_init(&data->suspended_sem, 0, 1);
 
+	data->access_tech = CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN;
+
 	if (modem_cellular_gpio_is_enabled(&config->wake_gpio)) {
 		gpio_pin_configure_dt(&config->wake_gpio, GPIO_OUTPUT_INACTIVE);
 	}
@@ -2351,6 +2384,7 @@ int modem_cellular_init(const struct device *dev)
 			.transmit_buf_size = ARRAY_SIZE(data->cmux_transmit_buf),
 			.enable_runtime_power_management = config->cmux_enable_runtime_power_save,
 			.close_pipe_on_power_save = config->cmux_close_pipe_on_power_save,
+			.no_powersave_handshake = config->cmux_no_powersave_handshake,
 			.idle_timeout = config->cmux_idle_timeout,
 		};
 

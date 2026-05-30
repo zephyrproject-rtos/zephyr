@@ -22,6 +22,7 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
@@ -37,8 +38,8 @@
 
 LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 
-#include "common/bt_str.h"
 #include "common/assert.h"
+#include "common/bt_str.h"
 
 #include "../host/att_internal.h"
 
@@ -48,8 +49,8 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 #include "bap_iso.h"
 #include "bap_stream.h"
 #include "bap_unicast_server.h"
-#include "pacs_internal.h"
 #include "cap_internal.h"
+#include "pacs_internal.h"
 
 #define ASE_BUF_SEM_TIMEOUT K_MSEC(CONFIG_BT_ASCS_ASE_BUF_TIMEOUT)
 

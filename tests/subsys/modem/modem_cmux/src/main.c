@@ -1334,6 +1334,82 @@ ZTEST(modem_cmux, test_modem_cmux_power_save_close_pipe)
 }
 
 /*
+ * Test: no_powersave_handshake.
+ *
+ * When no_powersave_handshake is set, CMUX must skip the in-band handshake
+ * on both halves of power save: enter POWERSAVE directly after the idle
+ * timeout (no PSC frame on the bus, no T3 wait) and exit POWERSAVE directly
+ * once the bus pipe re-opens on transmit (no wakeup pattern, no
+ * STATE_RESYNC wait). The queued data frame is the first thing that appears
+ * on the bus after resume.
+ */
+ZTEST(modem_cmux, test_modem_cmux_power_save_no_powersave_handshake)
+{
+	bool saved_rpm = cmux.config.enable_runtime_power_management;
+	bool saved_cpp = cmux.config.close_pipe_on_power_save;
+	bool saved_nwh = cmux.config.no_powersave_handshake;
+	k_timeout_t saved_timeout = cmux.config.idle_timeout;
+	int ret;
+
+	/* Enable runtime power management with close_pipe + no_powersave_handshake */
+	cmux.config.enable_runtime_power_management = true;
+	cmux.config.close_pipe_on_power_save = true;
+	cmux.config.no_powersave_handshake = true;
+	cmux.config.idle_timeout = K_MSEC(100);
+
+	/* Arm idle timer via empty transmit. The bus mock is intentionally not
+	 * primed for a PSC reply; no_powersave_handshake expects CMUX not to
+	 * send one.
+	 */
+	zassert_ok(modem_pipe_transmit(dlci1_pipe, NULL, 0),
+		   "Empty transmit to arm idle timer should succeed");
+
+	/* Wait for idle timeout and POWERSAVE state */
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_POWERSAVE, K_MSEC(300)),
+		     "CMUX should enter POWERSAVE directly without an in-band handshake");
+
+	/* Bus pipe must have been closed */
+	zassert_true(k_event_test(&bus_mock_pipe->event, BIT(1)),
+		     "Bus pipe should be closed when close_pipe_on_power_save is set");
+
+	/* Bus must be empty on entry; no PSC frame should have been sent */
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, 0,
+		      "Bus must be empty on entry; no PSC frame was expected");
+
+	/* Transmitting data during POWERSAVE re-opens the pipe and resumes */
+	zassert_equal(modem_pipe_transmit(dlci2_pipe, cmux_frame_data_dlci2_ppp_18,
+					  sizeof(cmux_frame_data_dlci2_ppp_18)),
+		      (int)sizeof(cmux_frame_data_dlci2_ppp_18),
+		      "Transmit during POWERSAVE should queue data");
+
+	/* With no_powersave_handshake, CMUX reaches CONNECTED without an in-band exchange */
+	zassert_true(wait_cmux_state(MODEM_CMUX_STATE_CONNECTED, TRANSMISSION_DELAY),
+		     "CMUX should return to CONNECTED without sending a wakeup pattern");
+
+	/* Bus pipe must have been re-opened */
+	zassert_true(k_event_test(&bus_mock_pipe->event, BIT(0)),
+		     "Bus pipe should be re-opened during wakeup");
+
+	k_msleep(TRANSMISSION_DELAY_MS);
+
+	/* The queued data frame should be the only thing on the bus */
+	ret = modem_backend_mock_get(&bus_mock, buffer1, sizeof(buffer1));
+	zassert_equal(ret, (int)sizeof(cmux_frame_dlci2_ppp_18),
+		      "Bus should contain only the data frame; no wakeup pattern was sent");
+	zassert_mem_equal(buffer1, cmux_frame_dlci2_ppp_18,
+			  sizeof(cmux_frame_dlci2_ppp_18),
+			  "Incorrect data frame transmitted after wakeup");
+
+	/* Restore config */
+	cmux.config.enable_runtime_power_management = saved_rpm;
+	cmux.config.close_pipe_on_power_save = saved_cpp;
+	cmux.config.no_powersave_handshake = saved_nwh;
+	cmux.config.idle_timeout = saved_timeout;
+	k_work_cancel_delayable(&cmux.runtime_pm_work);
+}
+
+/*
  * Test: disconnect while in power save with close_pipe_on_power_save.
  *
  * CMUX module should re-open pipe and wakeup the peer before

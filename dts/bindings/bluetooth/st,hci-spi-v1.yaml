@@ -10,3 +10,15 @@ include: zephyr,bt-hci-spi.yaml
 properties:
   bt-hci-quirks:
     default: ["no-reset"]
+
+  reset-event:
+    type: boolean
+    description:
+      It indicates whether a proprietary event is generated after reset to inform the host
+      that the controller is ready to receive commands.
+
+  req-ll-only:
+    type: boolean
+    description:
+      It indicates that the host needs to send a vendor-specific command to put the BlueNRG
+      into controller-only mode.

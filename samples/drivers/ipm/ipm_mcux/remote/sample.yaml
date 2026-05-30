@@ -3,7 +3,7 @@ sample:
     using a mailbox.
   name: IPM MCUX Mailbox Sample
 tests:
-  sample.ipm.ipm_mcux.remote:
+  sample.drivers.ipm.ipm_mcux.remote:
     platform_allow:
       - lpcxpresso54114/lpc54114/m0
       - lpcxpresso55s69/lpc55s69/cpu1

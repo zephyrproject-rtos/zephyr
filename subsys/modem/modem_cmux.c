@@ -211,33 +211,37 @@ static bool modem_cmux_command_length_is_valid(const struct modem_cmux_command_l
 
 static bool modem_cmux_command_is_valid(const struct modem_cmux_command *command)
 {
+	uint8_t length;
+
 	if (!modem_cmux_command_type_is_valid(command->type)) {
 		return false;
 	}
 	if (!modem_cmux_command_length_is_valid(command->length)) {
 		return false;
 	}
+
 	/* Verify known value sizes as specified in 3GPP TS 27.010
 	 * section 5.4.6.3 Message Type and Actions
 	 */
+	length = command->length.value;
+
 	switch (command->type.value) {
 	case MODEM_CMUX_COMMAND_PN:
-		return command->length.value == 8;
+		return length == 8;
 	case MODEM_CMUX_COMMAND_TEST:
-		return (command->length.value > 0 &&
-			command->length.value <= MODEM_CMUX_CMD_DATA_SIZE_MAX - 2);
+		return (length > 0 && length <= MODEM_CMUX_CMD_DATA_SIZE_MAX - 2);
 	case MODEM_CMUX_COMMAND_MSC:
-		return command->length.value == 2 || command->length.value == 3;
+		return length == 2 || length == 3;
 	case MODEM_CMUX_COMMAND_NSC:
-		return command->length.value == 1;
+		return length == 1;
 	case MODEM_CMUX_COMMAND_RPN:
-		return command->length.value == 1 || command->length.value == 8;
+		return length == 1 || length == 8;
 	case MODEM_CMUX_COMMAND_RLS:
-		return command->length.value == 2;
+		return length == 2;
 	case MODEM_CMUX_COMMAND_SNC:
-		return command->length.value == 1 || command->length.value == 3;
+		return length == 1 || length == 3;
 	default:
-		return command->length.value == 0;
+		return length == 0;
 	}
 }
 
@@ -313,7 +317,7 @@ static struct modem_cmux_command modem_cmux_command_decode(const uint8_t *data, 
  *
  * @param command command to encode
  * @param len encoded length of the command is written here
- * @return pointer to encoded command buffer on success, NULL on failure
+ * @return pointer to encoded command buffer
  */
 static uint8_t *modem_cmux_command_encode(struct modem_cmux_command *command, uint16_t *len)
 {
@@ -703,10 +707,6 @@ static void modem_cmux_send_psc(struct modem_cmux *cmux)
 		.length.value = 0,
 	}, &len);
 
-	if (data == NULL) {
-		return;
-	}
-
 	struct modem_cmux_frame frame = {
 		.dlci_address = 0,
 		.cr = cmux->initiator,
@@ -754,10 +754,6 @@ static void modem_cmux_send_msc(struct modem_cmux *cmux, struct modem_cmux_dlci 
 
 	uint16_t len;
 	uint8_t *data = modem_cmux_command_encode(&cmd, &len);
-
-	if (data == NULL) {
-		return;
-	}
 
 	struct modem_cmux_frame frame = {
 		.dlci_address = 0,
@@ -912,10 +908,6 @@ static void modem_cmux_respond_unsupported_cmd(struct modem_cmux *cmux)
 
 	uint16_t len;
 	uint8_t *data = modem_cmux_command_encode(&nsc_cmd, &len);
-
-	if (data == NULL) {
-		return;
-	}
 
 	frame.data = data;
 	frame.data_len = len;
@@ -1638,6 +1630,14 @@ static void modem_cmux_runtime_pm_handler(struct k_work *item)
 	if (is_active(cmux) && expired) {
 		LOG_DBG("Idle timeout, entering power saving mode");
 		set_state(cmux, MODEM_CMUX_STATE_ENTER_POWERSAVE);
+		if (cmux->config.no_powersave_handshake) {
+			set_state(cmux, MODEM_CMUX_STATE_POWERSAVE);
+			LOG_DBG("Entered power saving mode (no handshake)");
+			if (cmux->config.close_pipe_on_power_save) {
+				modem_pipe_close_async(cmux->pipe);
+			}
+			return;
+		}
 		modem_cmux_send_psc(cmux);
 		k_work_reschedule(&cmux->runtime_pm_work, MODEM_CMUX_T3_TIMEOUT);
 		return;
@@ -1690,6 +1690,12 @@ static bool powersave_wait_wakeup(struct modem_cmux *cmux)
 				modem_cmux_raise_event(cmux, MODEM_CMUX_EVENT_DISCONNECTED);
 				return true;
 			}
+		}
+
+		if (cmux->config.no_powersave_handshake) {
+			set_state(cmux, MODEM_CMUX_STATE_CONNECTED);
+			LOG_DBG("Woke up from power saving mode (no handshake)");
+			return false;
 		}
 
 		cmux->t3_timepoint = sys_timepoint_calc(MODEM_CMUX_T3_TIMEOUT);
@@ -1857,11 +1863,6 @@ static void modem_cmux_disconnect_handler(struct k_work *item)
 
 	uint16_t len;
 	uint8_t *data = modem_cmux_command_encode(&command, &len);
-
-	if (data == NULL) {
-		return;
-	}
-
 
 	struct modem_cmux_frame frame = {
 		.dlci_address = 0,

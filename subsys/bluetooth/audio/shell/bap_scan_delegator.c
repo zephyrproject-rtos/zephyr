@@ -14,12 +14,13 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
-#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/iso.h>
@@ -28,15 +29,14 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include <audio/bap_internal.h>
 #include "audio.h"
-#include "host/shell/bt.h"
 #include "common/bt_shell_private.h"
+#include "host/shell/bt.h"
 
 #define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
 #define PA_SYNC_SKIP              5
@@ -410,10 +410,10 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	printk("BIS sync request received for %p\n", recv_state);
+	bt_shell_print("BIS sync request received for %p", recv_state);
 
 	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
-		printk("  [%d]: 0x%08x\n", i, bis_sync_req[i]);
+		bt_shell_print("  [%d]: 0x%08x", i, bis_sync_req[i]);
 	}
 
 	return 0;

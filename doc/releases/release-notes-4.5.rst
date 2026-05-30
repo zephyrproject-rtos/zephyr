@@ -73,6 +73,8 @@ Removed APIs and options
     * ``struct openthread_state_changed_cb``
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
 
+* West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
+
 Deprecated APIs and options
 ===========================
 
@@ -116,6 +118,11 @@ New APIs and options
 * Audio
 
   * :c:member:`pcm_stream_cfg.gain_db`
+
+* Devicetree
+
+  * :c:macro:`DT_IRQN_BY_NAME`
+  * :c:macro:`DT_INST_IRQN_BY_NAME`
 
 * LoRa
 
@@ -194,8 +201,20 @@ Devicetree
   * :c:macro:`DT_NODELABEL_C_TOKEN`
   * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
 
+
+* TF-M
+
+  * TF-M was updated from version 2.2.2 to version 2.3.0. Release notes can be
+    found at:
+    https://trustedfirmware-m.readthedocs.io/en/tf-mv2.3.0/releases/2.3.0.html
+
 Other notable changes
 *********************
+
+* Wi-Fi
+
+  * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
+    certificates (DES-encrypted private keys). Use ``rsa2k_no_des`` instead.
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write

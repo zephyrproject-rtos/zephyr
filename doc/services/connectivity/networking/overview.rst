@@ -62,7 +62,7 @@ can be disabled if not needed.
 
 * **Secure Sockets API** Experimental support for TLS/DTLS secure protocols and
   configuration options for sockets API. Secure functions for the implementation
-  are provided by mbedTLS library.
+  are provided by Mbed TLS library.
 
 * **MQTT** Message Queue Telemetry Transport (ISO/IEC PRF 20922) versions 3.1.1 and 5.0
   are supported.
