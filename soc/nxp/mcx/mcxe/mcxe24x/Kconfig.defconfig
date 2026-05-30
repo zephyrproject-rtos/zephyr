@@ -33,7 +33,7 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
-configdefault WDT_DISABLE_AT_BOOT
+config WDT_DISABLE_AT_BOOT
 	default y
 
 endif # SOC_SERIES_MCXE24X
