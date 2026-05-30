@@ -8,8 +8,8 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/slist.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/drivers/mfd/npm13xx.h>
 
 #define NPM13XX_TIME_BASE 0x07U
@@ -53,7 +53,8 @@ struct mfd_npm13xx_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	struct k_work work;
-	sys_slist_t callbacks;
+	sys_slist_t user_callbacks;
+	struct k_mutex event_lock;
 };
 
 struct event_reg_t {
@@ -89,7 +90,11 @@ static void work_callback(struct k_work *work)
 {
 	struct mfd_npm13xx_data *data = CONTAINER_OF(work, struct mfd_npm13xx_data, work);
 	const struct mfd_npm13xx_config *config = data->dev->config;
+	struct mfd_npm13xx_event_callback *cb;
+	struct mfd_npm13xx_event_callback *tmp;
 	uint8_t buf[MAIN_SIZE];
+	npm13xx_event_t events = 0U;
+	bool resubmit = false;
 	int ret;
 
 	/* Read all MAIN registers into temporary buffer */
@@ -99,23 +104,43 @@ static void work_callback(struct k_work *work)
 		return;
 	}
 
+	/* Accumulate the set of fired events and clear them in the device */
 	for (int i = 0; i < NPM13XX_EVENT_MAX; i++) {
 		int offset = event_reg[i].offset + MAIN_OFFSET_CLR;
 
 		if ((buf[offset] & event_reg[i].mask) != 0U) {
-			gpio_fire_callbacks(&data->callbacks, data->dev, BIT(i));
-
 			ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE, offset,
 						    event_reg[i].mask);
 			if (ret < 0) {
-				k_work_submit(&data->work);
-				return;
+				/*
+				 * Stop clearing on failure, but still dispatch the
+				 * events already cleared below; a later read will no
+				 * longer see them, so returning here would drop them.
+				 * Resubmit to retry the events not yet cleared.
+				 */
+				resubmit = true;
+				break;
 			}
+
+			events |= BIT(i);
 		}
 	}
 
-	/* Resubmit handler to queue if interrupt is still active */
-	if (gpio_pin_get_dt(&config->host_int_gpios) != 0) {
+	/*
+	 * Dispatch the fired events to the registered user callbacks. event_lock
+	 * guards only callback list modification (add/remove) and is deliberately
+	 * NOT held here, so a handler may re-enter the driver. The _SAFE walk
+	 * caches the next node, so a handler that removes its own callback does
+	 * not truncate the dispatch. Mirrors mfd_npm10xx.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->user_callbacks, cb, tmp, node) {
+		if ((cb->event_mask & events) != 0U) {
+			cb->handler(data->dev, cb, cb->event_mask & events);
+		}
+	}
+
+	/* Resubmit if a clear failed above, or the interrupt is still active */
+	if (resubmit || gpio_pin_get_dt(&config->host_int_gpios) != 0) {
 		k_work_submit(&data->work);
 	}
 }
@@ -131,6 +156,7 @@ static int mfd_npm13xx_init(const struct device *dev)
 	}
 
 	k_mutex_init(&mfd_data->mutex);
+	k_mutex_init(&mfd_data->event_lock);
 
 	mfd_data->dev = dev;
 
@@ -279,39 +305,59 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms)
 	return mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_HIBERNATE, 1U);
 }
 
-int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *callback)
+int mfd_npm13xx_add_callback(const struct device *dev, struct mfd_npm13xx_event_callback *callback)
 {
 	struct mfd_npm13xx_data *data = dev->data;
+	int ret = 0;
+
+	k_mutex_lock(&data->event_lock, K_FOREVER);
+
+	if (sys_slist_find(&data->user_callbacks, &callback->node, NULL)) {
+		ret = -EINVAL;
+		goto unlock;
+	}
 
 	/* Enable interrupts for specified events */
 	for (int i = 0; i < NPM13XX_EVENT_MAX; i++) {
-		if ((callback->pin_mask & BIT(i)) != 0U) {
+		if ((callback->event_mask & BIT(i)) != 0U) {
 			/* Clear pending interrupt */
-			int ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
-							event_reg[i].offset + MAIN_OFFSET_CLR,
-							event_reg[i].mask);
-
+			ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
+						    event_reg[i].offset + MAIN_OFFSET_CLR,
+						    event_reg[i].mask);
 			if (ret < 0) {
-				return ret;
+				goto unlock;
 			}
 
 			ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
 						    event_reg[i].offset + MAIN_OFFSET_INTENSET,
 						    event_reg[i].mask);
 			if (ret < 0) {
-				return ret;
+				goto unlock;
 			}
 		}
 	}
 
-	return gpio_manage_callback(&data->callbacks, callback, true);
+	sys_slist_prepend(&data->user_callbacks, &callback->node);
+
+unlock:
+	k_mutex_unlock(&data->event_lock);
+	return ret;
 }
 
-int mfd_npm13xx_remove_callback(const struct device *dev, struct gpio_callback *callback)
+int mfd_npm13xx_remove_callback(const struct device *dev,
+				struct mfd_npm13xx_event_callback *callback)
 {
 	struct mfd_npm13xx_data *data = dev->data;
+	int ret = 0;
 
-	return gpio_manage_callback(&data->callbacks, callback, false);
+	k_mutex_lock(&data->event_lock, K_FOREVER);
+
+	if (!sys_slist_find_and_remove(&data->user_callbacks, &callback->node)) {
+		ret = -EINVAL;
+	}
+
+	k_mutex_unlock(&data->event_lock);
+	return ret;
 }
 
 #define MFD_NPM13XX_DEFINE(partno, n)                                                              \
