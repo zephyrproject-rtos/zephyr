@@ -30,7 +30,6 @@ LOG_MODULE_REGISTER(test);
 
 #define RINGBUFFER_SIZE 5
 RING_BUF_DECLARE(ringbuf_raw, RING_BUF_STORAGE_SIZE(RINGBUFFER_SIZE));
-
 /**
  * @brief verify that ringbuffer can be placed in any user-controlled memory
  *
@@ -128,7 +127,7 @@ ZTEST(ringbuffer_api, test_capacity)
 {
 	uint32_t capacity;
 
-	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buffer);
+	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE + 1, ringbuf_raw.buffer);
 
 	capacity = ring_buf_capacity_get(&ringbuf_raw);
 	zassert_equal(RINGBUFFER_SIZE, capacity, "Unexpected capacity");
@@ -139,7 +138,7 @@ ZTEST(ringbuffer_api, test_size)
 	uint32_t size;
 	static uint8_t buf[RINGBUFFER_SIZE];
 
-	ring_buf_init(&ringbuf_raw, sizeof(buf), ringbuf_raw.buffer);
+	ring_buf_init(&ringbuf_raw, sizeof(buf) + 1, ringbuf_raw.buffer);
 
 	/* Test 0 */
 	size = ring_buf_size_get(&ringbuf_raw);
@@ -173,7 +172,7 @@ ZTEST(ringbuffer_api, test_peek)
 	uint8_t byte = 0x42;
 	static uint8_t buf[RINGBUFFER_SIZE];
 
-	ring_buf_init(&ringbuf_raw, sizeof(buf), ringbuf_raw.buffer);
+	ring_buf_init(&ringbuf_raw, sizeof(buf) + 1, ringbuf_raw.buffer);
 
 	/* Test 0 */
 	size = ring_buf_peek(&ringbuf_raw, (uint8_t *)0x1, 42424242);
@@ -221,7 +220,7 @@ ZTEST(ringbuffer_api, test_reset)
 	uint32_t granted;
 	uint32_t space;
 
-	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE, ringbuf_raw.buffer);
+	ring_buf_init(&ringbuf_raw, RINGBUFFER_SIZE + 1, ringbuf_raw.buffer);
 
 	len = 3;
 	out_len = ring_buf_put(&ringbuf_raw, indata, len);
@@ -250,7 +249,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_zero_copy)
 	uint8_t *ref, *ref2;
 	size_t read_sz;
 	size_t write_sz;
-	uint8_t buf[16];
+	uint8_t buf[16 + 1];
 	uint8_t input[12];
 	struct ring_buf rb;
 
@@ -267,8 +266,8 @@ ZTEST(ringbuffer_api, test_ringbuffer_zero_copy)
 	zassert_equal(read_sz, sizeof(input), "Unexpected read size");
 	zassert_true(memcmp(ref, input, read_sz) == 0, "Data corrupted after get_ptr");
 	zassert_equal(ring_buf_size_get(&rb), read_sz, "Size calculation incorrect after get_ptr");
-	zassert_equal(ring_buf_capacity_get(&rb), sizeof(buf), "Capacity changed after get_ptr");
-	zassert_equal(ring_buf_space_get(&rb), sizeof(buf) - read_sz,
+	zassert_equal(ring_buf_capacity_get(&rb), sizeof(buf) - 1, "Capacity changed after get_ptr");
+	zassert_equal(ring_buf_space_get(&rb), sizeof(buf) - 1 - read_sz,
 			"Space calculation incorrect after get_ptr");
 
 	zassert_equal(ring_buf_get_ptr(&rb, &ref2), read_sz,
@@ -277,8 +276,8 @@ ZTEST(ringbuffer_api, test_ringbuffer_zero_copy)
 
 	ring_buf_consume(&rb, read_sz);
 	zassert_equal(ring_buf_size_get(&rb), 0, "Size not zero after consuming all data");
-	zassert_equal(ring_buf_capacity_get(&rb), sizeof(buf), "Capacity changed after consume");
-	zassert_equal(ring_buf_space_get(&rb), sizeof(buf),
+	zassert_equal(ring_buf_capacity_get(&rb), sizeof(buf) - 1, "Capacity changed after consume");
+	zassert_equal(ring_buf_space_get(&rb), sizeof(buf) - 1,
 			"Space not fully restored after consuming all data");
 	zassert_equal(ring_buf_get_ptr(&rb, &ref), 0,
 			"Data still available after consuming all data");
@@ -287,8 +286,8 @@ ZTEST(ringbuffer_api, test_ringbuffer_zero_copy)
 	zassert_equal(write_sz, sizeof(buf) - sizeof(input),
 			"Unexpected write size");
 	zassert_equal(ring_buf_size_get(&rb), 0, "Change in data without commit");
-	zassert_equal(ring_buf_capacity_get(&rb), sizeof(buf), "Capacity changed after put_ptr");
-	zassert_equal(ring_buf_space_get(&rb), sizeof(buf), "Space changed after put_ptr");
+	zassert_equal(ring_buf_capacity_get(&rb), sizeof(buf) - 1, "Capacity changed after put_ptr");
+	zassert_equal(ring_buf_space_get(&rb), sizeof(buf) - 1, "Space changed after put_ptr");
 
 	zassert_equal(ring_buf_put_ptr(&rb, &ref2), write_sz,
 			"Subsequent put_ptr calls returned different sizes");
@@ -305,7 +304,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_zero_copy)
 
 	write_sz = ring_buf_put_ptr(&rb, &ref);
 	zassert_equal(ref, buf, "Data pointer incorrect after buffer empty");
-	zassert_equal(write_sz, sizeof(buf),
+	zassert_equal(write_sz, sizeof(buf) - 1,
 			"Unexpected write size after buffer empty");
 	memcpy(ref, input, sizeof(buf) / 2);
 	ring_buf_commit(&rb, sizeof(buf) / 2);
@@ -324,7 +323,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_put_ptr)
 {
 	uint8_t *ref, *ref2;
 	size_t write_sz, write_sz2;
-	uint8_t buf[16];
+	uint8_t buf[16 + 1];
 	uint8_t tmp[16];
 	uint8_t input[13];
 	struct ring_buf rb;
@@ -336,7 +335,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_put_ptr)
 	ring_buf_init(&rb, sizeof(buf), buf);
 
 	write_sz = ring_buf_put_ptr(&rb, &ref);
-	zassert_equal(write_sz, sizeof(buf), "Unexpected write size");
+	zassert_equal(write_sz, sizeof(buf) - 1, "Unexpected write size");
 	write_sz2 = ring_buf_put_ptr(&rb, &ref2);
 	zassert_equal(write_sz2, write_sz, "Subsequent put_ptr calls returned different sizes");
 	zassert_equal(ref, ref2, "Subsequent put_ptr calls returned different pointers");
@@ -363,7 +362,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_put_ptr)
 	ring_buf_commit(&rb, write_sz);
 
 	write_sz = ring_buf_put_ptr(&rb, &ref);
-	zassert_equal(write_sz, sizeof(input) - 3,
+	zassert_equal(write_sz, sizeof(input) - 4,
 			"Unexpected write size, should be able to write until data start");
 	zassert_equal(ref, buf, "Data pointer incorrect after full buffer wrap-around put_ptr");
 	write_sz2 = ring_buf_put_ptr(&rb, &ref2);
@@ -371,7 +370,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_put_ptr)
 	zassert_equal(ref, ref2, "Subsequent put_ptr calls returned different pointers");
 	memcpy(ref, &input[0], write_sz);
 	ring_buf_commit(&rb, write_sz);
-	zassert_equal(ring_buf_size_get(&rb), sizeof(buf), "buffer should be full now");
+	zassert_equal(ring_buf_size_get(&rb), sizeof(buf) - 1, "buffer should be full now");
 	zassert_equal(ring_buf_space_get(&rb), 0, "no space should be left in buffer");
 }
 
@@ -380,7 +379,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_get_ptr)
 {
 	uint8_t *ref, *ref2;
 	size_t read_sz;
-	uint8_t buf[16];
+	uint8_t buf[16 + 1];
 	uint8_t input[13];
 	struct ring_buf rb;
 
@@ -434,6 +433,7 @@ ZTEST(ringbuffer_api, test_ringbuffer_get_ptr)
 	ring_buf_put(&rb, input, sizeof(input));
 	zassert_equal(sizeof(input), ring_buf_get(&rb, buf, sizeof(input)), "Unexpected read size");
 }
+
 
 static void verify_init_state(struct ring_buf *rb)
 {
