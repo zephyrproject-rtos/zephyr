@@ -41,7 +41,8 @@ struct i2s_ambiq_data {
 	uint32_t *dma_tcb_rx_buf;
 	bool pm_policy_state_on;
 	/* Per-instance copies: the HAL holds pointers into these so they
-	 * must not be shared across instances or reused as globals. */
+	 * must not be shared across instances or reused as globals.
+	 */
 	am_hal_i2s_data_format_t i2s_data_format;
 	am_hal_i2s_io_signal_t i2s_io_config;
 
@@ -193,7 +194,8 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		break;
 	case I2S_FMT_DATA_FORMAT_PCM_SHORT:
 		data->i2s_hal_cfg.eData->eDataDelay = 0x1;
-		data->i2s_io_config.sFsyncPulseCfg.eFsyncPulseType = AM_HAL_I2S_FSYNC_PULSE_ONE_BIT_CLOCK;
+		data->i2s_io_config.sFsyncPulseCfg.eFsyncPulseType =
+			AM_HAL_I2S_FSYNC_PULSE_ONE_BIT_CLOCK;
 		data->i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
 		break;
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
@@ -396,7 +398,13 @@ static int i2s_ambiq_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 			ret = -EIO;
 			break;
 		}
-		data->i2s_state = I2S_STATE_STOPPING;
+		/* Wait for the in-flight DMA buffer to finish before stopping,
+		 * otherwise LRCK and BCLK keep toggling after the trigger.
+		 */
+		k_sem_take(&data->tx_ready_sem, K_FOREVER);
+		am_hal_i2s_dma_transfer_complete(data->i2s_handler);
+		am_hal_i2s_disable(data->i2s_handler);
+		data->i2s_state = I2S_STATE_READY;
 		break;
 
 	case I2S_TRIGGER_START:
