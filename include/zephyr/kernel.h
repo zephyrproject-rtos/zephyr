@@ -1196,6 +1196,10 @@ __syscall void k_reschedule(void);
  * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
  *
+ * @note Not permitted when @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is
+ * enabled.  PIN_ONLY requires every thread to carry exactly one CPU bit;
+ * clearing all bits violates that invariant and will trigger an assertion.
+ *
  * @param thread Thread to operate upon
  * @return Zero on success, otherwise error code
  */
@@ -1209,6 +1213,11 @@ int k_thread_cpu_mask_clear(k_tid_t thread);
  *
  * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
+ *
+ * @note Not permitted when @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is
+ * enabled.  PIN_ONLY requires every thread to carry exactly one CPU bit;
+ * setting all bits violates that invariant and will trigger an assertion.
+ * Use :c:func:`k_thread_cpu_pin` instead.
  *
  * @param thread Thread to operate upon
  * @return Zero on success, otherwise error code
@@ -1236,6 +1245,11 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  *
  * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
+ *
+ * @note Not permitted when @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is
+ * enabled.  PIN_ONLY requires exactly one CPU bit to remain set; removing
+ * that bit would leave an empty mask and will trigger an assertion.
+ * Use :c:func:`k_thread_cpu_pin` to move a thread to a different CPU.
  *
  * @param thread Thread to operate upon
  * @param cpu CPU index
