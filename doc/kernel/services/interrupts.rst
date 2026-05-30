@@ -174,6 +174,13 @@ verifying correct behavior). Zero-latency interrupts may not modify any data
 inspected by kernel APIs invoked from normal Zephyr contexts and shall not
 generate exceptions that need to be handled synchronously (e.g. kernel panic).
 
+When system power management keeps interrupts locked across the resume (currently
+selected by :kconfig:option:`CONFIG_PM_STATE_SET_IRQ_LOCKED`), a zero-latency
+interrupt may also be dispatched during the PM resume window, before PM resume
+bookkeeping and SoC/device hardware restore have completed. Such an ISR must be
+PM-wake-safe: it must not rely on clocks, power, or peripherals that power
+management restores during resume.
+
 .. important::
     Zero-latency interrupts are supported on an architecture-specific basis.
     The feature is currently implemented in the ARM Cortex-M architecture

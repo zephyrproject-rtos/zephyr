@@ -174,6 +174,22 @@ void pm_system_resume(void);
  * kernel idle path restores the original interrupt state after PM resume
  * housekeeping is complete.
  *
+ * @note The locked-resume ordering guarantee (selected via
+ *       CONFIG_PM_STATE_SET_IRQ_LOCKED) covers only interrupts that
+ *       arch_irq_lock() can mask. On architectures where that lock is a
+ *       priority threshold rather than a global disable (for example the
+ *       BASEPRI lock on Cortex-M Mainline), zero-latency interrupts
+ *       (IRQ_ZERO_LATENCY) run above the lock and may be dispatched during the
+ *       resume window, before PM resume bookkeeping completes, i.e. before the
+ *       post-wake remainder of this hook, device resume, and
+ *       @ref pm_state_exit_post_ops finish restoring hardware. (NMI and faults
+ *       are likewise outside any arch_irq_lock()-based ordering; ZLIs are the
+ *       configurable case authors interact with.) This is by design: declaring
+ *       an interrupt IRQ_ZERO_LATENCY is the author's assertion that the
+ *       handler is PM-wake-safe and may run in a half-restored system, so it
+ *       must not rely on clocks, power, or peripherals that PM restores during
+ *       resume.
+ *
  * @param state Power state.
  * @param substate_id Power substate id.
  */
@@ -190,6 +206,11 @@ void pm_state_set(enum pm_state state, uint8_t substate_id);
  * interrupts or otherwise dispatch pending wake-source ISRs from this hook; the
  * kernel idle path restores the original interrupt state after PM resume
  * housekeeping is complete.
+ *
+ * @note As with @ref pm_state_set, this locked-resume ordering covers only
+ *       interrupts that arch_irq_lock() can mask. A zero-latency interrupt
+ *       (IRQ_ZERO_LATENCY) may run during the resume window before this hook
+ *       completes and must be PM-wake-safe (see @ref pm_state_set).
  *
  * @param state Power state.
  * @param substate_id Power substate id.
