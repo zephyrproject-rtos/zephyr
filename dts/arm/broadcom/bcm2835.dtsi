@@ -12,6 +12,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/interrupt-controller/bcm2835-armctrl.h>
+#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
 
 / {
 	#address-cells = <1>;
@@ -36,6 +37,30 @@
 			clock-frequency = <DT_FREQ_M(48)>;
 			#clock-cells = <0>;
 		};
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Shared buffer for the VideoCore firmware property channel.
+		 * Sits just above the 248 MiB sram0 window. The rpi_fw driver
+		 * maps it uncached; the VPU reads property requests from it.
+		 */
+		vc_mem: memory@f810000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0f810000 DT_SIZE_K(64)>;
+			zephyr,memory-region = "VC_SHARED";
+		};
+	};
+
+	firmware: firmware {
+		compatible = "raspberrypi,bcm283x-firmware";
+		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
+		mbox-names = "vc";
+		shared-memory = <&vc_mem>;
 	};
 
 	soc {
@@ -120,6 +145,32 @@
 			clock-frequency = <DT_FREQ_M(250)>;
 			interrupts = <BCM2835_IRQ_AUX IRQ_TYPE_LEVEL 0>;
 			interrupt-names = "uart1";
+			status = "disabled";
+		};
+
+		mbox0: mbox@2000b880 {
+			compatible = "brcm,bcm2711-mbox";
+			reg = <0x2000b880 0x40>;
+			interrupts = <BCM2835_IRQ_ARM_MAILBOX IRQ_TYPE_LEVEL 0>;
+			#mbox-cells = <1>;
+			status = "okay";
+		};
+
+		/*
+		 * Synopsys DesignWare USB 2.0 OTG controller, wired to the
+		 * micro-USB data connector. GHWCFG1/2/4 values are silicon-
+		 * fixed and required by snps,dwc2 for endpoint counts and
+		 * FIFO topology.
+		 */
+		usb: zephyr_udc0: usb@20980000 {
+			compatible = "brcm,bcm2835-usb", "snps,dwc2";
+			reg = <0x20980000 0x10000>;
+			interrupts = <BCM2835_IRQ_USB IRQ_TYPE_LEVEL 0>;
+			num-in-eps = <8>;
+			num-out-eps = <8>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x228ddd50>;
+			ghwcfg4 = <0x1ff00020>;
 			status = "disabled";
 		};
 	};
