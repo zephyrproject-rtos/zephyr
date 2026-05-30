@@ -68,7 +68,7 @@ static int usbh_hub_get_status_common(struct usb_device *const udev,
 	struct net_buf *buf;
 	int ret;
 
-	buf = usbh_xfer_buf_alloc(udev, 4, K_NO_WAIT);
+	buf = usbh_xfer_buf_alloc(udev, 4, USB_CONTROL_EP_IN, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer for status");
 		return -ENOMEM;
@@ -107,7 +107,7 @@ int usbh_req_desc_hub(struct usb_device *const udev,
 	struct net_buf *buf;
 	int ret;
 
-	buf = usbh_xfer_buf_alloc(udev, len, K_NO_WAIT);
+	buf = usbh_xfer_buf_alloc(udev, len, USB_CONTROL_EP_IN, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer for hub descriptor");
 		return -ENOMEM;
