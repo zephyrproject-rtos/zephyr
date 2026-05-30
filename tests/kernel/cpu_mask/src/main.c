@@ -106,6 +106,14 @@ ZTEST(cpu_mask, test_api_rejects_running_thread)
  */
 ZTEST(cpu_mask, test_mask_clear_prevents_execution)
 {
+	/* k_thread_cpu_mask_clear() sets the mask to zero.  In PIN_ONLY mode
+	 * cpu_mask_mod() asserts that the mask is a single set bit after every
+	 * modification, so a clear would panic rather than succeed.
+	 */
+	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
+		ztest_test_skip();
+	}
+
 	k_tid_t tid;
 	int prio = k_thread_priority_get(k_current_get()) - 1;
 	int ret;
