@@ -169,5 +169,19 @@
 			clocks = <&clk_uart>;
 			status = "disabled";
 		};
+
+		/* Broadcom GENET v5 Gigabit Ethernet — ARM physical address */
+		genet: ethernet@fd580000 {
+			compatible = "brcm,bcm2711-genet";
+			reg = <0xfd580000 0x10000>;
+			interrupts = <GIC_SPI 157 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 158 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			phy-addr = <1>;
+			phy-connection-type = "rgmii";
+			rx-internal-delay-ps = <2000>; /* RGMII-RXID: 2 ns RX delay */
+			status = "disabled";
+		};
 	};
 };

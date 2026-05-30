@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Khaled Abdalla <khaled.3bdulaziz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Broadcom BCM2711 GENET v5 Gigabit Ethernet MAC controller.
+  The GENET block includes an integrated UMAC (Unimac), Hardware Filter
+  Block (HFB), TX/RX DMA rings, and an internal MDIO bus for PHY management.
+
+compatible: "brcm,bcm2711-genet"
+
+include: [ethernet-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: MMIO base address and size of the GENET register block.
+
+  interrupts:
+    required: true
+    description: |
+      Two interrupt lines:
+        [0] INTRL2_0 — RX DMA done, link events, MDIO done.
+        [1] INTRL2_1 — TX DMA done.
+
+  phy-addr:
+    type: int
+    required: true
+    description: MDIO address of the PHY (0-31).
+
+  rx-internal-delay-ps:
+    type: int
+    default: 0
+    description: |
+      Internal RX delay in picoseconds inserted by the MAC.
+      Set to a non-zero value to enable RGMII-RXID mode (PHY provides
+      TX delay; MAC provides RX delay). Typical value: 2000 (2 ns).
+
+  local-mac-address:
+    type: uint8-array
+    description: |
+      6-byte MAC address. If omitted the driver generates a random address
+      from the Zephyr entropy source.

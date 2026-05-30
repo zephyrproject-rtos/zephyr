@@ -25,6 +25,7 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &dram0;
 		zephyr,entropy = &rng;
+		zephyr,ethernet = &genet;
 	};
 
 	leds {
@@ -80,4 +81,9 @@
 	pinctrl-0 = <&uart1_gpio14>;
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&genet {
+	status = "okay";
+	local-mac-address = [dc a6 32 eb 17 24];
 };

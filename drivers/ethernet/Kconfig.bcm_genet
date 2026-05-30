@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Khaled Abdalla <khaled.3bdulaziz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_BCM_GENET
+	bool "Broadcom GENET v5 Ethernet driver (BCM2711 / Raspberry Pi 4)"
+	default y
+	depends on DT_HAS_BRCM_BCM2711_GENET_ENABLED
+	help
+	  Enable the Broadcom GENET v5 Gigabit Ethernet driver for the
+	  BCM2711 SoC (Raspberry Pi 4 Model B).
+
+	  The driver supports:
+	    - 10/100/1000 Mbps via RGMII / RGMII-RXID
+	    - Interrupt-driven RX (ring 0) and TX (ring 16)
+	    - MDIO-based PHY management (BCM54213PE default)
+	    - Static MAC address or random locally-administered address
+
+if ETH_BCM_GENET
+
+config ETH_BCM_GENET_LOG_LEVEL
+	int "GENET driver log level"
+	default 3
+	range 0 4
+	help
+	  Log verbosity: 0=off 1=error 2=warning 3=info 4=debug.
+
+endif # ETH_BCM_GENET
