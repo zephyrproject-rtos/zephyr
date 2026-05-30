@@ -18,6 +18,9 @@
 LOG_MODULE_REGISTER(ra8_spi_b);
 
 #include "spi_context.h"
+#ifdef CONFIG_SPI_RTIO
+#include "spi_rtio.h"
+#endif
 
 #if defined(CONFIG_SPI_B_INTERRUPT)
 void spi_b_rxi_isr(void);
@@ -408,6 +411,9 @@ static DEVICE_API(spi, ra_spi_driver_api) = {.transceive = ra_spi_b_transceive,
 #ifdef CONFIG_SPI_ASYNC
 					     .transceive_async = ra_spi_b_transceive_async,
 #endif /* CONFIG_SPI_ASYNC */
+#ifdef CONFIG_SPI_RTIO
+					     .iodev_submit = spi_rtio_iodev_default_submit,
+#endif /* CONFIG_SPI_RTIO */
 					     .release = ra_spi_b_release};
 
 static spi_b_clock_source_t ra_spi_b_clock_name(const struct device *clock_dev)
