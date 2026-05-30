@@ -511,4 +511,49 @@ ZTEST(cpu_mask, test_pinned_and_free_thread_coexist)
 	k_thread_join(unmasked, K_FOREVER);
 }
 
+/**
+ * @brief Verify that CPU pinning persists across k_yield()
+ *
+ * @ingroup kernel_cpu_mask_tests
+ *
+ * @details Pin one thread per available CPU to its corresponding CPU.
+ * Each thread yields 30 times and re-checks its CPU after every yield
+ * to confirm the scheduler always returns it to the pinned CPU.
+ */
+static void check_affinity(void *arg0, void *arg1, void *arg2)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+
+	int affinity = POINTER_TO_INT(arg0);
+	int counter = 30;
+
+	while (counter != 0) {
+		zassert_equal(affinity, curr_cpu(),
+			      "affinity lost after yield: on CPU %d, expected %d",
+			      curr_cpu(), affinity);
+		counter--;
+		k_yield();
+	}
+}
+
+ZTEST(cpu_mask, test_pin_affinity_across_yield)
+{
+	unsigned int ncpus = arch_num_cpus();
+
+	for (unsigned int i = 0U; i < ncpus; i++) {
+		k_thread_create(&worker_threads[i], worker_stacks[i],
+				STACK_SIZE, check_affinity,
+				INT_TO_POINTER(i), NULL, NULL,
+				0, 0U, K_FOREVER);
+
+		(void)k_thread_cpu_pin(&worker_threads[i], (int)i);
+		k_thread_start(&worker_threads[i]);
+	}
+
+	for (unsigned int i = 0U; i < ncpus; i++) {
+		k_thread_join(&worker_threads[i], K_FOREVER);
+	}
+}
+
 ZTEST_SUITE(cpu_mask, NULL, NULL, NULL, NULL, NULL);
