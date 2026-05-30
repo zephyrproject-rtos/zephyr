@@ -1010,10 +1010,9 @@ static void esp32_wifi_init(struct net_if *iface)
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 	struct wifi_nm_instance *nm = wifi_nm_get_instance("esp32_wifi_nm");
 #endif
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	uint8_t *mac_addr;
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 	if (iface == esp32_wifi_iface_ap) {
