@@ -93,6 +93,8 @@ instruction) interrupt masking operation.  That, and the fact that the
 IRQ lock is global, means that code expecting to be run in an SMP
 context should be using the spinlock API wherever possible.
 
+.. _smp_cpu_mask:
+
 CPU Mask
 ********
 
