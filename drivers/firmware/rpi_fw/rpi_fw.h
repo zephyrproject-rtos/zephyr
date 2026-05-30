@@ -233,4 +233,35 @@
  */
 int rpi_fw_transfer(const struct device *dev, uint32_t tag, void *data, uint32_t data_size);
 
+/**
+ * @brief Configure and allocate a VideoCore framebuffer (HDMI).
+ *
+ * Sends the framebuffer set-up tags as a single chained property
+ * request: SET_PHYSICAL_SIZE, SET_VIRTUAL_SIZE, SET_DEPTH,
+ * SET_PIXEL_ORDER, ALLOCATE_BUFFER and GET_PITCH. These tags must
+ * travel in one request -- VC clamps the virtual size and depth to
+ * minimums when ALLOCATE_BUFFER arrives in a separate message -- so
+ * they cannot be issued one at a time via rpi_fw_transfer(). Matches
+ * Linux drivers/video/fbdev/bcm2708_fb.c.
+ *
+ * @param dev         Firmware device from DEVICE_DT_GET_ONE(raspberrypi_bcm283x_firmware).
+ * @param width       In: requested width.  Out: granted (virtual) width.
+ * @param height      In: requested height. Out: granted (virtual) height.
+ * @param depth       In: requested bits-per-pixel. Out: granted bpp.
+ * @param pixel_order In: 0=BGR, 1=RGB. Out: granted order.
+ * @param alignment   Framebuffer base-address alignment in bytes.
+ * @param fb_bus      Out: framebuffer VideoCore-bus base address.
+ * @param fb_size     Out: framebuffer size in bytes.
+ * @param pitch       Out: bytes per row (VC may pad beyond width * bpp).
+ *
+ * @retval 0          Success.
+ * @retval -EINVAL    A required pointer was NULL.
+ * @retval -ENODEV    Firmware device not ready.
+ * @retval -EIO       Firmware rejected the request chain.
+ * @retval -ETIMEDOUT Firmware did not respond within the timeout.
+ */
+int rpi_fw_fb_setup(const struct device *dev, uint32_t *width, uint32_t *height, uint32_t *depth,
+		    uint32_t *pixel_order, uint32_t alignment, uintptr_t *fb_bus, uint32_t *fb_size,
+		    uint32_t *pitch);
+
 #endif /* ZEPHYR_DRIVERS_FIRMWARE_RPI_FW_RPI_FW_H_ */

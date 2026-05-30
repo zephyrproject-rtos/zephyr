@@ -16,7 +16,13 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rpi_fw, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define RPI_FW_RESPONSE_TIMEOUT 100U
+/*
+ * Some VC firmware tags (SET_POWER_STATE, clock changes) can take
+ * several hundred ms to complete -- the firmware brings up real
+ * clocks / PHYs before responding. Matches the 1-second polling
+ * window the pre-rpi_fw bcm2835 mailbox driver used in production.
+ */
+#define RPI_FW_RESPONSE_TIMEOUT 1000U
 #define RPI_FW_RESPONSE_STATUS  1U
 #define RPI_FW_RESPONSE_TAG     2U
 #define RPI_FW_BUF_OVERHEAD     12U
@@ -137,6 +143,121 @@ int rpi_fw_transfer(const struct device *dev, uint32_t tag, void *data, uint32_t
 	}
 
 	memcpy(data, (uint8_t *)&buf[RPI_FW_RESPONSE_TAG] + hdr_size, data_size);
+
+release_lock:
+	k_mutex_unlock(&fw_data->lock);
+	return ret;
+}
+
+int rpi_fw_fb_setup(const struct device *dev, uint32_t *width, uint32_t *height, uint32_t *depth,
+		    uint32_t *pixel_order, uint32_t alignment, uintptr_t *fb_bus, uint32_t *fb_size,
+		    uint32_t *pitch)
+{
+	if (width == NULL || height == NULL || depth == NULL || pixel_order == NULL ||
+	    fb_bus == NULL || fb_size == NULL || pitch == NULL) {
+		return -EINVAL;
+	}
+
+	if (!device_is_ready(dev)) {
+		LOG_ERR_DEVICE_NOT_READY(dev);
+		return -ENODEV;
+	}
+
+	const struct rpi_fw_config *fw_config = dev->config;
+	struct rpi_fw_data *fw_data = dev->data;
+	/*
+	 * volatile so each word is a single 32-bit store. The shm is mapped
+	 * Device-nGnRnE (K_MEM_CACHE_NONE); without volatile the optimiser
+	 * merges this contiguous run of stores into 64-bit STUR/STP pairs,
+	 * which alignment-fault at the 4-byte-aligned tag offsets.
+	 */
+	volatile uint32_t *buf = (volatile uint32_t *)fw_data->shm;
+	struct mbox_msg msg;
+	int ret;
+
+	k_mutex_lock(&fw_data->lock, K_FOREVER);
+
+	/*
+	 * Chained property request. Each tag is {id, value-buffer bytes,
+	 * request code = 0, value words...}; VC writes responses back into
+	 * the same value words. The setup tags must share one request --
+	 * VC clamps SET_VIRTUAL_SIZE / SET_DEPTH to minimums when
+	 * ALLOCATE_BUFFER lands in a separate message.
+	 *
+	 *   [0]      total bytes
+	 *   [1]      request code
+	 *   [2..6]   SET_PHYSICAL_SIZE : id, 8, 0, W, H
+	 *   [7..11]  SET_VIRTUAL_SIZE  : id, 8, 0, W, H
+	 *   [12..15] SET_DEPTH         : id, 4, 0, bpp
+	 *   [16..19] SET_PIXEL_ORDER   : id, 4, 0, order
+	 *   [20..24] ALLOCATE_BUFFER   : id, 8, 0, alignment, (size out)
+	 *   [25..28] GET_PITCH         : id, 4, 0, (pitch out)
+	 *   [29]     end tag
+	 */
+	buf[1] = RPI_FW_REQUEST_PROCESS;
+
+	buf[2] = RPI_FW_TAG_FB_SET_PHYSICAL_SIZE;
+	buf[3] = 8U;
+	buf[4] = 0U;
+	buf[5] = *width;
+	buf[6] = *height;
+
+	buf[7] = RPI_FW_TAG_FB_SET_VIRTUAL_SIZE;
+	buf[8] = 8U;
+	buf[9] = 0U;
+	buf[10] = *width;
+	buf[11] = *height;
+
+	buf[12] = RPI_FW_TAG_FB_SET_DEPTH;
+	buf[13] = 4U;
+	buf[14] = 0U;
+	buf[15] = *depth;
+
+	buf[16] = RPI_FW_TAG_FB_SET_PIXEL_ORDER;
+	buf[17] = 4U;
+	buf[18] = 0U;
+	buf[19] = *pixel_order;
+
+	buf[20] = RPI_FW_TAG_FB_ALLOCATE_BUFFER;
+	buf[21] = 8U;
+	buf[22] = 0U;
+	buf[23] = alignment;
+	buf[24] = 0U;
+
+	buf[25] = RPI_FW_TAG_FB_GET_PITCH;
+	buf[26] = 4U;
+	buf[27] = 0U;
+	buf[28] = 0U;
+
+	buf[29] = RPI_FW_TAG_END;
+
+	buf[0] = 30U * sizeof(uint32_t);
+
+	/* All shared memory addresses exchanged via the mailbox must be
+	 * physical bus addresses; the VideoCore has no view of the ARM
+	 * virtual address space.
+	 */
+	msg.data = (void *)fw_config->shm;
+	msg.size = sizeof(uint32_t);
+
+	ret = rpi_fw_transaction(dev, &msg);
+	if (ret < 0) {
+		goto release_lock;
+	}
+
+	if (!rpi_fw_is_response_success((uint32_t *)buf)) {
+		LOG_ERR("Firmware rejected fb chain: status=0x%08x", buf[1]);
+		ret = -EIO;
+		goto release_lock;
+	}
+
+	*width = buf[10]; /* virtual size is what the FB actually is */
+	*height = buf[11];
+	*depth = buf[15];
+	*pixel_order = buf[19];
+	*fb_bus = buf[23];
+	*fb_size = buf[24];
+	*pitch = buf[28];
 
 release_lock:
 	k_mutex_unlock(&fw_data->lock);
