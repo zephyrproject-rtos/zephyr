@@ -261,17 +261,14 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    void *const cb_priv,
 				    const k_timeout_t timeout)
 {
-	const uint8_t ep_idx = USB_EP_GET_IDX(ep);
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_transfer *xfer = NULL;
-	uint16_t mps;
-	uint16_t interval;
-	uint8_t type;
 	int ret;
 
 	api->lock(dev);
 
 	if (!uhc_is_initialized(dev)) {
+		LOG_ERR("Cannot allocate for %s, it is not initialized", dev->name);
 		goto end;
 	}
 
@@ -282,10 +279,51 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		goto end;
 	}
 
-	/* ep_desc parsing */
+	memset(xfer, 0, sizeof(struct uhc_transfer));
+
+	ret = uhc_get_ep_properties(dev, udev, ep, &xfer->mps, &xfer->bInterval,
+				    &xfer->microframe_interval, &xfer->type);
+	if (ret != 0) {
+		LOG_ERR("Failed to get endpoint properties");
+		goto dealloc;
+	}
+
+	sys_ref_init(&xfer->ref);
+
+	xfer->ep = ep;
+	xfer->udev = udev;
+	xfer->cb = cb;
+	xfer->priv = cb_priv;
+
+	goto end;
+dealloc:
+	k_mem_slab_free(&uhc_xfer_pool, xfer);
+	xfer = NULL;
+end:
+	api->unlock(dev);
+
+	return xfer;
+}
+
+int uhc_get_ep_properties(const struct device *dev,
+			  struct usb_device *const udev,
+			  const uint8_t ep,
+			  uint16_t *const mps_p,
+			  uint8_t *const bInterval_p,
+			  uint32_t *const microframe_interval_p,
+			  uint8_t *const type_p)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	const uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
+	uint16_t mps;
+	uint8_t bInterval = 0;
+	uint32_t microframe_interval = 0;
+	uint8_t type;
+	int ret = 0;
+
+	api->lock(dev);
 
 	if (ep_idx == 0) {
-		interval = 0;
 		type = USB_EP_TYPE_CONTROL;
 		mps = udev->dev_desc.bMaxPacketSize0;
 	} else {
@@ -298,48 +336,44 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 		}
 		if (ep_desc == NULL) {
 			LOG_ERR("Endpoint 0x%02x is not configured", ep);
-			goto dealloc;
+			ret = -ENOENT;
+			goto end;
 		}
 
 		mps = ep_desc->wMaxPacketSize;
-		interval = ep_desc->bInterval;
+		bInterval = ep_desc->bInterval;
 		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
-	}
 
-	/* fill xfer */
-
-	memset(xfer, 0, sizeof(struct uhc_transfer));
-	sys_ref_init(&xfer->ref);
-
-	if (ep_idx != 0) {
-		xfer->bInterval = ep_desc->bInterval;
-
-		ret = uhc_xfer_bInterval_to_microframe(interval,
-						       &xfer->microframe_interval,
+		ret = uhc_xfer_bInterval_to_microframe(ep_desc->bInterval,
+						       &microframe_interval,
 						       udev->speed, type);
 		if (ret < 0) {
 			LOG_ERR("Invalid bInterval value 0x%02u", ep_desc->bInterval);
-			goto dealloc;
+			goto end;
 		}
 	}
 
-	xfer->ep = ep;
-	xfer->mps = mps;
-	xfer->interval = interval;
-	xfer->type = type;
-	xfer->udev = udev;
-	xfer->cb = cb;
-	xfer->priv = cb_priv;
+	if (mps == 0) {
+		return -EBADMSG;
+	}
 
-	goto end;
+	if (mps_p != NULL) {
+		*mps_p = mps;
+	}
+	if (bInterval_p != NULL) {
+		*bInterval_p = bInterval;
+	}
+	if (microframe_interval_p != NULL) {
+		*microframe_interval_p = microframe_interval;
+	}
+	if (type_p != NULL) {
+		*type_p = type;
+	}
 
-dealloc:
-	k_mem_slab_free(&uhc_xfer_pool, xfer);
-	xfer = NULL;
 end:
 	api->unlock(dev);
 
-	return xfer;
+	return ret;
 }
 
 struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
@@ -403,6 +437,9 @@ int uhc_xfer_buf_add(const struct device *dev,
 	int ret = 0;
 
 	api->lock(dev);
+
+	__ASSERT(xfer->buf == NULL, "Expecting the previous buffer to be freed");
+
 	if (xfer->queued) {
 		ret = -EBUSY;
 	} else {
