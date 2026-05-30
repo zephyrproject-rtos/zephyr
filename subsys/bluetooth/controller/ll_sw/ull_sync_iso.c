@@ -688,7 +688,7 @@ void ull_sync_iso_setup(struct ll_sync_iso_set *sync_iso,
 	}
 
 	/* setup to use ISO create prepare function until sync established */
-	mfy_lll_prepare.fp = lll_sync_iso_create_prepare;
+	sync_iso->lll_prepare_fp = lll_sync_iso_create_prepare;
 
 	handle = sync_iso_handle_get(sync_iso);
 	ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
@@ -713,11 +713,11 @@ void ull_sync_iso_estab_done(struct node_rx_event_done *done)
 	struct node_rx_pdu *rx;
 
 	if (done->extra.trx_cnt || done->extra.estab_failed) {
-		/* Switch to normal prepare */
-		mfy_lll_prepare.fp = lll_sync_iso_prepare;
-
 		/* Get reference to ULL context */
 		sync_iso = CONTAINER_OF(done->param, struct ll_sync_iso_set, ull);
+
+		/* Switch to normal prepare */
+		sync_iso->lll_prepare_fp = lll_sync_iso_prepare;
 
 		/* Prepare BIG Sync Established */
 		rx = (void *)sync_iso->sync->iso.node_rx_estab;
@@ -954,7 +954,7 @@ static void timeout_cleanup(struct ll_sync_iso_set *sync_iso)
 	rx->hdr.handle = sync_iso_handle_get(sync_iso);
 	rx->rx_ftr.param = sync_iso;
 
-	if (mfy_lll_prepare.fp == lll_sync_iso_prepare) {
+	if (sync_iso->lll_prepare_fp == lll_sync_iso_prepare) {
 		rx->hdr.type = NODE_RX_TYPE_SYNC_ISO_LOST;
 		*((uint8_t *)rx->pdu) = BT_HCI_ERR_CONN_TIMEOUT;
 	} else {
@@ -991,6 +991,7 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.lazy = lazy;
 	p.force = force;
 	p.param = lll;
+	mfy_lll_prepare.fp = sync_iso->lll_prepare_fp;
 	mfy_lll_prepare.param = &p;
 
 	/* Kick LLL prepare */

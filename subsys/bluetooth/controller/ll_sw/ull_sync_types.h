@@ -118,6 +118,9 @@ struct ll_sync_iso_set {
 	struct ull_hdr ull;
 	struct lll_sync_iso lll;
 
+	/* LLL prepare callback */
+	void (*lll_prepare_fp)(void *);
+
 	/* Periodic Advertising Sync that contained the BIGInfo */
 	struct ll_sync_set *sync;
 
