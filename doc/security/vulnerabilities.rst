@@ -2283,7 +2283,32 @@ Under embargo until 2026-05-21
 :cve:`2026-5071`
 ----------------
 
-Under embargo until 2026-05-18
+can: Local Denial of Service via SocketCAN Send
+
+The SocketCAN send path (``zcan_sendto_ctx``) validated the caller-supplied buffer
+length with a ``NET_ASSERT`` instead of a real runtime check. In production builds
+where assertions are compiled out, a userspace app could pass a buffer shorter
+than ``struct socketcan_frame``, and ``socketcan_to_can_frame()`` would dereference
+fields past the end of that buffer — an out-of-bounds read that can crash the
+system (local DoS) or, because the parsed frame is then transmitted, potentially
+leak adjacent memory.
+
+- `Zephyr project bug tracker GHSA-c3w6-x7m3-3c58
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-c3w6-x7m3-3c58>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 104654 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104654>`_
+
+- `PR 104679 fix for 4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104679>`_
+
+- `PR 104678 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104678>`_
+
+- `PR 104677 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104677>`_
 
 :cve:`2026-5072`
 ----------------
