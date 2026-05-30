@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_AM62X_M4_BL350
-	select SOC_AM6234_M4
+	select SOC_AM6234_M4 if BOARD_AM62X_M4_BL350_AM6234_M4

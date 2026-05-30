@@ -87,12 +87,13 @@
 			bus-speed-data = <2000000>;
 			status = "disabled";
 		};
+	};
 
-		k3_clks: dummy-clks {
-			compatible = "fixed-clock";
-			#clock-cells = <0>;
-			clock-frequency = <48000000>;
-		};
+	/* Placeholder clock for CAN FD bit timing — replaced by real TI K3 clock driver */
+	k3_clks: dummy-clks {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <48000000>;
 	};
 };
 

@@ -1,12 +1,13 @@
 # Copyright (c) 2026 Chrispine Tinega <chrispinetinega@gmail.com>
 # SPDX-License-Identifier: Apache-2.0
 
-# Platform
-CONFIG_CORTEX_M_SYSTICK=y
+# XIP is required to place text and data sections in I-RAM and D-RAM respectively
 CONFIG_XIP=y
 
-# Serial
+# Serial Driver
 CONFIG_SERIAL=y
+
+# Enable Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 CONFIG_UART_INTERRUPT_DRIVEN=y

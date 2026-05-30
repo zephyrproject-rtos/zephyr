@@ -6,7 +6,4 @@ if BOARD_AM62X_M4_BL350
 config BOARD
 	default "am62x_m4_bl350"
 
-config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 400000000
-
 endif # BOARD_AM62X_M4_BL350
