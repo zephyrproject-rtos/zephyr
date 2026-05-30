@@ -433,29 +433,24 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const k_timeout_t timeout);
 
 /**
- * @brief Allocate UHC transfer with buffer
+ * @brief Query the properties of an endpoint, if found
  *
- * Allocate a new transfer from common transfer pool with buffer.
+ * The pointers are filled with the values from the device and configuration descriptors,
+ * only available after successful enumeration.
  *
- * @param[in] dev     Pointer to device struct of the driver instance
- * @param[in] ep      Endpoint address
- * @param[in] udev    Pointer to USB device
- * @param[in] cb      Transfer completion callback
- * @param[in] cb_priv Completion callback callback private data
- * @param[in] size    Size of the buffer
- * @param[in] timeout Waiting period to wait for allocation to complete.
- *                    Use K_NO_WAIT to return without waiting,
- *                    or K_FOREVER to wait as long as necessary.
+ * @param[in] udev        Pointer to USB device
+ * @param[in] ep          Endpoint address
+ * @param[out] mps_p      If not NULL, receives the max packet size value
+ * @param[out] interval_p If not NULL, receives the interval value
+ * @param[out] type_p     If not NULL, receives the type value
  *
- * @return pointer to allocated transfer or NULL on error.
+ * @return 0 on success, all other values should be treated as error.
  */
-struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
-					     const uint8_t ep,
-					     struct usb_device *const udev,
-					     void *const cb,
-					     void *const cb_priv,
-					     size_t size,
-					     const k_timeout_t timeout);
+int uhc_get_ep_properties(struct usb_device *const udev,
+			  const uint8_t ep,
+			  uint16_t *const mps_p,
+			  uint16_t *const interval_p,
+			  uint8_t *const type_p);
 
 /**
  * @brief Free UHC transfer and any buffers

@@ -91,30 +91,21 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 	net_buf_unref(buf);
 }
 
-struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
-				    const uint8_t ep,
-				    struct usb_device *const udev,
-				    void *const cb,
-				    void *const cb_priv,
-				    const k_timeout_t timeout)
+int uhc_get_ep_properties(struct usb_device *const udev,
+			  const uint8_t ep,
+			  uint16_t *const mps_p,
+			  uint16_t *const interval_p,
+			  uint8_t *const type_p)
 {
-	uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
-	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
-	struct uhc_transfer *xfer = NULL;
+	const uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
 	uint16_t mps;
 	uint16_t interval;
 	uint8_t type;
 
-	api->lock(dev);
-
-	if (!uhc_is_initialized(dev)) {
-		goto xfer_alloc_error;
-	}
-
 	if (ep_idx == 0) {
+		mps = udev->dev_desc.bMaxPacketSize0;
 		interval = 0;
 		type = USB_EP_TYPE_CONTROL;
-		mps = udev->dev_desc.bMaxPacketSize0;
 	} else {
 		struct usb_ep_descriptor *ep_desc;
 
@@ -126,12 +117,50 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 
 		if (ep_desc == NULL) {
 			LOG_ERR("Endpoint 0x%02x is not configured", ep);
-			goto xfer_alloc_error;
+			return -ENOENT;
 		}
 
 		mps = ep_desc->wMaxPacketSize;
 		interval = ep_desc->bInterval;
 		type = ep_desc->bmAttributes & USB_EP_TRANSFER_TYPE_MASK;
+	}
+
+	if (mps_p != NULL) {
+		*mps_p = mps;
+	}
+	if (interval_p != NULL) {
+		*interval_p = interval;
+	}
+	if (type_p != NULL) {
+		*type_p = type;
+	}
+
+	return 0;
+}
+
+struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
+				    const uint8_t ep,
+				    struct usb_device *const udev,
+				    void *const cb,
+				    void *const cb_priv,
+				    const k_timeout_t timeout)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	struct uhc_transfer *xfer = NULL;
+	uint16_t mps;
+	uint16_t interval;
+	uint8_t type;
+	int ret;
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		goto xfer_alloc_error;
+	}
+
+	ret = uhc_get_ep_properties(udev, ep, &mps, &interval, &type);
+	if (ret != 0) {
+		goto xfer_alloc_error;
 	}
 
 	LOG_DBG("Allocate xfer, ep 0x%02x mps %u cb %p", ep, mps, cb);
@@ -152,33 +181,6 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 
 xfer_alloc_error:
 	api->unlock(dev);
-
-	return xfer;
-}
-
-struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
-					     const uint8_t ep,
-					     struct usb_device *const udev,
-					     void *const cb,
-					     void *const cb_priv,
-					     size_t size,
-					     const k_timeout_t timeout)
-{
-	struct uhc_transfer *xfer;
-	struct net_buf *buf;
-
-	buf = uhc_xfer_buf_alloc(dev, size, timeout);
-	if (buf == NULL) {
-		return NULL;
-	}
-
-	xfer = uhc_xfer_alloc(dev, ep, udev, cb, cb_priv, timeout);
-	if (xfer == NULL) {
-		net_buf_unref(buf);
-		return NULL;
-	}
-
-	xfer->buf = buf;
 
 	return xfer;
 }
@@ -212,6 +214,9 @@ int uhc_xfer_buf_add(const struct device *dev,
 	int ret = 0;
 
 	api->lock(dev);
+
+	__ASSERT(xfer->buf == NULL, "Expecting the previous buffer to be freed");
+
 	if (xfer->queued) {
 		ret = -EBUSY;
 	} else {
