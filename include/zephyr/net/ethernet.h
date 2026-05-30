@@ -1476,6 +1476,18 @@ static inline bool net_eth_type_is_ethernet(struct net_if *iface)
 }
 
 /**
+ * @brief Set the Ethernet interface type to Wi-Fi.
+ *
+ * @param iface Network interface
+ */
+static inline void net_eth_set_if_type_wifi(struct net_if *iface)
+{
+	struct ethernet_context *ctx = (struct ethernet_context *)net_if_l2_data(iface);
+
+	ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+}
+
+/**
  * @}
  */
 
