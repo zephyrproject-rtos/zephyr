@@ -104,9 +104,9 @@ int gnssloc_dms_to_ndeg(const char *str, int64_t *ndeg)
 	 * The string looks like "13.61 Sec N" - we need just "13.61"
 	 */
 	sec_len = 0;
-	while (ptr[sec_len] && (ptr[sec_len] == '.' ||
-	       (ptr[sec_len] >= '0' && ptr[sec_len] <= '9') ||
-	       ptr[sec_len] == '-')) {
+	while (ptr[sec_len] &&
+	       (ptr[sec_len] == '.' || (ptr[sec_len] >= '0' && ptr[sec_len] <= '9') ||
+		ptr[sec_len] == '-')) {
 		if (sec_len >= sizeof(sec_buf) - 1) {
 			return -EINVAL;
 		}
@@ -158,9 +158,9 @@ int gnssloc_dms_to_ndeg(const char *str, int64_t *ndeg)
 	 * 1 minute = 1/60 degree
 	 * 1 second = 1/3600 degree
 	 */
-	result = degrees * 1000000000LL;                  /* Degrees to nanodegrees */
-	result += (minutes * 1000000000LL) / 60LL;        /* Minutes to nanodegrees */
-	result += seconds_nano / 3600LL;                  /* Seconds (in nano) to nanodegrees */
+	result = degrees * 1000000000LL;           /* Degrees to nanodegrees */
+	result += (minutes * 1000000000LL) / 60LL; /* Minutes to nanodegrees */
+	result += seconds_nano / 3600LL;           /* Seconds (in nano) to nanodegrees */
 
 	/* Apply sign based on direction */
 	if (direction == 'S' || direction == 'W') {
@@ -241,12 +241,8 @@ int gnssloc_parse_gpstime(const char *str, struct gnss_time *utc)
 	}
 
 	/* Validate ranges */
-	if (year < 2000 || year > 2099 ||
-	    month < 1 || month > 12 ||
-	    day < 1 || day > 31 ||
-	    hour < 0 || hour > 23 ||
-	    minute < 0 || minute > 59 ||
-	    second < 0 || second > 59) {
+	if (year < 2000 || year > 2099 || month < 1 || month > 12 || day < 1 || day > 31 ||
+	    hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
 		return -ERANGE;
 	}
 

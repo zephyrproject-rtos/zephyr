@@ -165,6 +165,11 @@
 		    (LOG_DBG(str, ##__VA_ARGS__)), \
 		    ((void)0))
 
+#define HL78XX_LOG_HEXDUMP_DBG(str, ...)                                                           \
+	COND_CODE_1(CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG, \
+		    (LOG_HEXDUMP_DBG(str, ##__VA_ARGS__)), \
+		    ((void)0))
+
 /* clang-format on */
 
 /* HL78XX States */
