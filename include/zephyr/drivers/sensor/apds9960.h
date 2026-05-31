@@ -10,8 +10,7 @@
 
 /**
  * @file
- * @brief Extended public API for the APDS9960 ambient light, RGB, proximity and
- *        gesture sensor.
+ * @brief Header file for extended sensor API of APDS9960 sensor
  * @ingroup apds9960_interface
  */
 
@@ -22,24 +21,39 @@ extern "C" {
 #endif
 
 /**
- * @brief APDS9960 ambient light, RGB, proximity and gesture sensor
+ * @brief Avago APDS9960 ambient light, RGB, proximity and gesture sensor
  * @defgroup apds9960_interface APDS9960
  * @ingroup sensor_interface_ext
  * @{
  */
 
-/** @brief Custom sensor channels for the APDS9960. */
+/**
+ * @brief Custom sensor channels for the APDS9960.
+ */
 enum sensor_channel_apds9960 {
-	/** Detected gesture, reported as an @ref apds9960_gesture value. */
+	/**
+	 * Most recently detected gesture.
+	 *
+	 * - @c sensor_value.val1 is the gesture, one of the @ref apds9960_gesture values.
+	 * - @c sensor_value.val2 is unused (always 0).
+	 */
 	SENSOR_CHAN_APDS9960_GESTURE = SENSOR_CHAN_PRIV_START,
 };
 
-/** @brief Gesture values reported on @ref SENSOR_CHAN_APDS9960_GESTURE. */
+/**
+ * @brief Gesture values reported in @c sensor_value.val1 of the @ref SENSOR_CHAN_APDS9960_GESTURE
+ * channel.
+ */
 enum apds9960_gesture {
+	/** No gesture detected. */
 	APDS9960_GESTURE_NONE,
+	/** Upward gesture (hand moving up across the sensor). */
 	APDS9960_GESTURE_UP,
+	/** Downward gesture (hand moving down across the sensor). */
 	APDS9960_GESTURE_DOWN,
+	/** Leftward gesture (hand moving left across the sensor). */
 	APDS9960_GESTURE_LEFT,
+	/** Rightward gesture (hand moving right across the sensor). */
 	APDS9960_GESTURE_RIGHT,
 };
 
