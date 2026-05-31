@@ -436,6 +436,8 @@ Bluetooth Classic
 
   (:github:`108022`)
 
+* Renamed ``BT_DEVICE_VEDNOR_ID`` to :kconfig:option:`BT_DEVICE_VENDOR_ID` to fix a typo.
+
 Bluetooth HCI
 =============
 
