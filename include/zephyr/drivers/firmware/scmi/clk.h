@@ -44,6 +44,23 @@
 #define SCMI_CLK_PROTOCOL_SUPPORTED_VERSION	0x30000
 
 /** Clock name length (short version) */
+/**
+ * @brief Extract major version from SCMI protocol version
+ *
+ * @param v Combined 32-bit protocol version (major << 16 | minor)
+ * @return Major version number
+ */
+#define SCMI_PROTO_VER_MAJOR(v) ((v) >> 16)
+
+/**
+ * @brief Extract minor version from SCMI protocol version
+ *
+ * @param v Combined 32-bit protocol version (major << 16 | minor)
+ * @return Minor version number
+ */
+#define SCMI_PROTO_VER_MINOR(v) ((v) & 0xFFFF)
+
+/** clock name length (short version) */
 #define SCMI_CLK_NAME_LEN 16
 
 /** Get the clock's enabled status based on given attributes */
@@ -91,15 +108,13 @@ struct scmi_clock_rate_config {
  * @brief Describes the content of the CLOCK_ATTRIBUTES command reply
  */
 struct scmi_clock_attributes {
-	/** Reply status */
-	int32_t status;
-	/** Clock attributes */
+	/** clock attributes */
 	uint32_t attributes;
 	/** Clock name */
 	uint8_t clock_name[SCMI_CLK_NAME_LEN];
 	/** Clock enable delay incurred by platform */
 	uint32_t clock_enable_delay;
-} __packed;
+};
 
 /**
  * @brief Send the CLOCK_CONFIG_SET command and get its reply
