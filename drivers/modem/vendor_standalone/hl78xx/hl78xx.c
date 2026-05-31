@@ -92,6 +92,8 @@ static const char *hl78xx_state_str(enum hl78xx_state state)
 		return "idle";
 	case MODEM_HL78XX_STATE_RESET_PULSE:
 		return "reset pulse";
+	case MODEM_HL78XX_STATE_SOFT_RESET:
+		return "soft reset";
 	case MODEM_HL78XX_STATE_POWER_ON_PULSE:
 		return "power pulse";
 	case MODEM_HL78XX_STATE_AWAIT_POWER_ON:
@@ -146,6 +148,8 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 		return "resume";
 	case MODEM_HL78XX_EVENT_SUSPEND:
 		return "suspend";
+	case MODEM_HL78XX_EVENT_RESTART_REQUESTED:
+		return "restart requested";
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
 		return "script success";
 	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
@@ -1282,11 +1286,7 @@ static int modem_init_chat(const struct device *dev)
 static void hl78xx_dynamic_cmd_feed_lpm_timers(struct hl78xx_data *data, uint16_t response_timeout)
 {
 #if defined(CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN)
-	if (hl78xx_power_down_is_ignoring_feeding(data) == false) {
-		hl78xx_power_down_feed_timer(data, response_timeout);
-	} else {
-		hl78xx_power_down_allow_feeding(data);
-	}
+	hl78xx_power_down_feed_timer(data, response_timeout);
 #endif /* CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN */
 
 #if defined(CONFIG_MODEM_HL78XX_EDRX)
@@ -1424,11 +1424,23 @@ int modem_dynamic_cmd_send_async_req(struct hl78xx_data *data,
  * - lightweight wrappers for GPIO interrupts (logging & event dispatch)
  * -------------------------------------------------------------------------
  */
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+static void hl78xx_dispatch_vgpio_state(struct hl78xx_data *data, bool pin_state)
+{
+	struct hl78xx_evt vgpio_evt = {
+		.type = pin_state ? HL78XX_VGPIO_HIGH : HL78XX_VGPIO_LOW,
+	};
+
+	event_dispatcher_dispatch(&vgpio_evt);
+}
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
 void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
 	struct hl78xx_data *data = CONTAINER_OF(cb, struct hl78xx_data, gpio_cbs.vgpio_cb);
 	const struct hl78xx_config *config = data->dev->config;
 	const struct gpio_dt_spec *spec = &config->mdm_gpio_vgpio;
+	bool pin_state;
 
 	if (spec == NULL || spec->port == NULL) {
 		LOG_ERR("VGPIO GPIO spec is not configured properly");
@@ -1437,7 +1449,19 @@ void mdm_vgpio_callback_isr(const struct device *port, struct gpio_callback *cb,
 	if (!(pins & BIT(spec->pin))) {
 		return; /*  not our pin */
 	}
-	LOG_DBG("VGPIO ISR callback %s %d %d", spec->port->name, spec->pin, gpio_pin_get_dt(spec));
+	pin_state = gpio_pin_get_dt(spec);
+	LOG_DBG("VGPIO ISR callback %s %d %d", spec->port->name, spec->pin, pin_state);
+
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	if (config->variant->vgpio_debounce_ms > 0) {
+		data->hl78xx_vgpio_pending_state = pin_state;
+		k_work_reschedule(&data->hl78xx_vgpio_debounce_work,
+				  K_MSEC(config->variant->vgpio_debounce_ms));
+		return;
+	}
+
+	hl78xx_dispatch_vgpio_state(data, pin_state);
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 }
 
 #if HAS_UART_DSR_GPIO
@@ -1489,6 +1513,34 @@ void mdm_gpio6_callback_isr(const struct device *port, struct gpio_callback *cb,
 }
 
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+static void hl78xx_vgpio_debounce_work_handler(struct k_work *work_item)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work_item);
+	struct hl78xx_data *data =
+		CONTAINER_OF(dwork, struct hl78xx_data, hl78xx_vgpio_debounce_work);
+	const struct hl78xx_config *config = data->dev->config;
+	const struct gpio_dt_spec *spec = &config->mdm_gpio_vgpio;
+	bool pin_state;
+
+	if (!hl78xx_gpio_is_enabled(spec)) {
+		return;
+	}
+
+	if (config->variant->vgpio_debounce_ms == 0) {
+		return;
+	}
+
+	pin_state = gpio_pin_get_dt(spec);
+	if (pin_state != data->hl78xx_vgpio_pending_state) {
+		LOG_DBG("VGPIO debounce ignored unstable edge (sample=%d pending=%d)", pin_state,
+			data->hl78xx_vgpio_pending_state);
+		return;
+	}
+
+	LOG_DBG("VGPIO debounce accepted stable state %d", pin_state);
+	hl78xx_dispatch_vgpio_state(data, pin_state);
+}
+
 static void hl78xx_gpio6_debounce_work_handler(struct k_work *work_item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work_item);
@@ -1542,12 +1594,43 @@ bool hl78xx_is_registered(struct hl78xx_data *data)
 		CELLULAR_REGISTRATION_REGISTERED_ROAMING);
 }
 
-/*
- * hl78xx_is_registered - convenience helper
- *
- * Simple predicate to test if the modem reports a registered state.
- */
+static void hl78xx_suspend_uart(const struct hl78xx_config *config)
+{
+#ifdef CONFIG_PM_DEVICE
 
+	int rc;
+
+	uart_irq_rx_disable(config->uart);
+	rc = pm_device_action_run(config->uart, PM_DEVICE_ACTION_SUSPEND);
+	if (rc < 0 && rc != -EALREADY) {
+		LOG_ERR("UART suspend failed: %d", rc);
+	}
+#else
+	ARG_UNUSED(config);
+#endif /* CONFIG_PM_DEVICE */
+}
+
+static void hl78xx_resume_uart(const struct hl78xx_config *config)
+{
+#ifdef CONFIG_PM_DEVICE
+
+	int rc;
+
+	rc = pm_device_action_run(config->uart, PM_DEVICE_ACTION_RESUME);
+	if (rc < 0 && rc != -EALREADY && rc != -ENOTSUP) {
+		LOG_ERR("UART resume failed: %d", rc);
+	}
+	uart_irq_rx_enable(config->uart);
+#else
+	ARG_UNUSED(config);
+#endif /* CONFIG_PM_DEVICE */
+}
+
+/* -------------------------------------------------------------------------
+ * State machine handlers
+ * - state enter/leave and per-state event handlers
+ * -------------------------------------------------------------------------
+ */
 static int hl78xx_on_reset_pulse_state_enter(struct hl78xx_data *data)
 {
 	const struct hl78xx_config *config = data->dev->config;
@@ -1559,12 +1642,6 @@ static int hl78xx_on_reset_pulse_state_enter(struct hl78xx_data *data)
 	hl78xx_start_timer(data, K_MSEC(config->reset_pulse_duration_ms));
 	return 0;
 }
-
-/* -------------------------------------------------------------------------
- * State machine handlers
- * - state enter/leave and per-state event handlers
- * -------------------------------------------------------------------------
- */
 
 static void hl78xx_reset_pulse_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
@@ -1592,6 +1669,64 @@ static int hl78xx_on_reset_pulse_state_leave(struct hl78xx_data *data)
 	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
 		gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
 	}
+	hl78xx_stop_timer(data);
+	return 0;
+}
+
+static int hl78xx_on_soft_reset_state_enter(struct hl78xx_data *data)
+{
+	const struct hl78xx_config *config = data->dev->config;
+	const char *cmd_restart = (const char *)SET_AIRPLANE_MODE_CMD;
+	int ret;
+
+	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
+		gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
+		LOG_DBG("Set WAKE pin to 1 for soft reset");
+	}
+
+	ret = modem_dynamic_cmd_send_req(data, &(const struct hl78xx_dynamic_cmd_request){
+						       .script_user_callback = NULL,
+						       .cmd = (const uint8_t *)cmd_restart,
+						       .cmd_len = strlen(cmd_restart),
+						       .response_matches = hl78xx_get_ok_match(),
+						       .matches_size = hl78xx_get_ok_match_size(),
+						       .response_timeout = MDM_CMD_TIMEOUT,
+						       .user_cmd = false,
+					       });
+	if (ret < 0) {
+			LOG_WRN("Failed to request soft reset: %d", ret);
+			hl78xx_start_timer(data, K_NO_WAIT);
+			return 0;
+	}
+
+	hl78xx_start_timer(data, K_SECONDS(MDM_CMD_TIMEOUT));
+	return 0;
+}
+
+static void hl78xx_soft_reset_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
+{
+	switch (evt) {
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		LOG_INF("Soft reset restart indication received");
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
+
+	case MODEM_HL78XX_EVENT_TIMEOUT:
+		LOG_ERR("Soft reset did not complete, falling back to full restart");
+		hl78xx_enter_restart_fallback_state(data);
+		break;
+
+	case MODEM_HL78XX_EVENT_SUSPEND:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
+		break;
+
+	default:
+		break;
+	}
+}
+
+static int hl78xx_on_soft_reset_state_leave(struct hl78xx_data *data)
+{
 	hl78xx_stop_timer(data);
 	return 0;
 }
@@ -1639,13 +1774,19 @@ static int hl78xx_on_await_power_on_state_enter(struct hl78xx_data *data)
 	const struct hl78xx_config *config = data->dev->config;
 
 	hl78xx_start_timer(data, K_MSEC(config->startup_time_ms));
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	hl78xx_power_down_allow_feeding(data);
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 	return 0;
 }
 
 static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
+	const struct hl78xx_config *config = data->dev->config;
+
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+		hl78xx_resume_uart(config);
 		modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
 		modem_pipe_open_async(data->uart_pipe);
 		break;
@@ -1765,6 +1906,13 @@ static void hl78xx_set_baudrate_event_handler(struct hl78xx_data *data, enum hl7
 
 static int hl78xx_on_run_init_script_state_enter(struct hl78xx_data *data)
 {
+	const struct hl78xx_config *config = data->dev->config;
+
+	if (hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
+		gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
+		LOG_DBG("Set WAKE pin to 1 for init script");
+	}
+
 	return hl78xx_run_init_script_async(data);
 }
 
@@ -1903,6 +2051,7 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	if (modem_require_restart) {
 		HL78XX_LOG_DBG("Modem restart required to apply new RAT/Band settings");
+		data->status.config_restart_pending = true;
 		ret = modem_dynamic_cmd_send_req(data,
 						 &(const struct hl78xx_dynamic_cmd_request){
 							 .script_user_callback = NULL,
@@ -1914,6 +2063,7 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 							 .user_cmd = false,
 						 });
 		if (ret < 0) {
+			data->status.config_restart_pending = false;
 			goto error;
 		}
 		hl78xx_start_timer(data,
@@ -1930,6 +2080,7 @@ error:
 
 static int hl78xx_on_rat_cfg_script_state_leave(struct hl78xx_data *data)
 {
+	data->status.config_restart_pending = false;
 	hl78xx_stop_timer(data);
 	return 0;
 }
@@ -1938,6 +2089,10 @@ static void hl78xx_run_rat_cfg_script_event_handler(struct hl78xx_data *data, en
 {
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+		if (hl78xx_is_config_restart_pending(data)) {
+			LOG_DBG("Config restart in progress; waiting for modem restart indication");
+			break;
+		}
 #ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
 		if (IS_ENABLED(CONFIG_MODEM_HL78XX_AUTOBAUD_CHANGE_PERSISTENT) == false) {
 			hl78xx_enter_state(data, MODEM_HL78XX_STATE_SET_BAUDRATE);
@@ -1995,6 +2150,7 @@ static int hl78xx_on_pmc_cfg_script_state_enter(struct hl78xx_data *data)
 		const char *cmd_restart = (const char *)SET_AIRPLANE_MODE_CMD;
 
 		LOG_DBG("%d Reset required", __LINE__);
+		data->status.config_restart_pending = true;
 
 		ret = modem_dynamic_cmd_send_req(data,
 						 &(const struct hl78xx_dynamic_cmd_request){
@@ -2007,6 +2163,7 @@ static int hl78xx_on_pmc_cfg_script_state_enter(struct hl78xx_data *data)
 							 .user_cmd = false,
 						 });
 		if (ret < 0) {
+			data->status.config_restart_pending = false;
 			goto error;
 		}
 		hl78xx_start_timer(data, K_MSEC(100));
@@ -2028,11 +2185,20 @@ static void hl78xx_run_pmc_cfg_script_event_handler(struct hl78xx_data *data, en
 
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+		if (hl78xx_is_config_restart_pending(data)) {
+			LOG_DBG("Config restart in progress; waiting for modem restart indication");
+			break;
+		}
 		LOG_DBG("Rebooting modem to apply new RAT settings");
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_REQUIRE_RESTART);
 		break;
 
+	case MODEM_HL78XX_EVENT_MDM_RESTART:
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+		break;
+
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		data->status.boot.init_sequence_completed = true;
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT);
 		break;
 
@@ -2058,6 +2224,7 @@ static void hl78xx_run_pmc_cfg_script_event_handler(struct hl78xx_data *data, en
 
 static int hl78xx_on_run_pmc_cfg_script_state_leave(struct hl78xx_data *data)
 {
+	data->status.config_restart_pending = false;
 	return 0;
 }
 
@@ -2833,17 +3000,12 @@ static int hl78xx_on_sleep_state_enter(struct hl78xx_data *data)
 static void hl78xx_sleep_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	const struct hl78xx_config *config = data->dev->config;
-	int rc;
 
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_BUS_CLOSED:
 		/* Modem bus is closed, suspend UART to save power */
 		LOG_DBG("Modem bus closed, suspending UART");
-		uart_irq_rx_disable(config->uart);
-		rc = pm_device_action_run(config->uart, PM_DEVICE_ACTION_SUSPEND);
-		if (rc < 0 && rc != -EALREADY) {
-			LOG_ERR("UART suspend failed: %d", rc);
-		}
+		hl78xx_suspend_uart(config);
 #ifdef CONFIG_HL78XX_GNSS
 		if (hl78xx_gnss_is_pending(data)) {
 #if defined(CONFIG_HL78XX_GNSS_PROCESS_PRE_PSM)
@@ -2872,11 +3034,7 @@ static void hl78xx_sleep_event_handler(struct hl78xx_data *data, enum hl78xx_eve
 			gpio_pin_set_dt(&config->mdm_gpio_wake, 1);
 			LOG_DBG("Set WAKE pin to 1");
 		}
-		rc = pm_device_action_run(config->uart, PM_DEVICE_ACTION_RESUME);
-		if (rc < 0 && rc != -EALREADY) {
-			LOG_ERR("UART resume failed: %d", rc);
-		}
-		uart_irq_rx_enable(config->uart);
+		hl78xx_resume_uart(config);
 		hl78xx_start_timer(data, K_MSEC(config->startup_time_ms));
 		break;
 	case MODEM_HL78XX_EVENT_DEVICE_AWAKE:
@@ -3083,7 +3241,6 @@ static int hl78xx_on_idle_state_enter(struct hl78xx_data *data)
 	modem_chat_release(&data->chat);
 	modem_pipe_attach(data->uart_pipe, hl78xx_bus_pipe_handler, data);
 	modem_pipe_close_async(data->uart_pipe);
-	k_sem_give(&data->suspended_sem);
 	return 0;
 }
 
@@ -3093,6 +3250,9 @@ static void hl78xx_idle_event_handler(struct hl78xx_data *data, enum hl78xx_even
 
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_BUS_CLOSED:
+		LOG_DBG("Modem bus closed in idle state, suspending UART");
+		hl78xx_suspend_uart(config);
+		k_sem_give(&data->suspended_sem);
 		break;
 	case MODEM_HL78XX_EVENT_RESUME:
 		if (config->autostarts) {
@@ -3113,6 +3273,7 @@ static void hl78xx_idle_event_handler(struct hl78xx_data *data, enum hl78xx_even
 		break;
 
 	case MODEM_HL78XX_EVENT_SUSPEND:
+		hl78xx_suspend_uart(config);
 		k_sem_give(&data->suspended_sem);
 		break;
 
@@ -3197,6 +3358,14 @@ static void hl78xx_event_handler(struct hl78xx_data *data, enum hl78xx_event evt
 	hl78xx_log_event(evt);
 	s = data->status.state;
 	state = data->status.state;
+	if (evt == MODEM_HL78XX_EVENT_RESTART_REQUESTED) {
+		hl78xx_handle_restart_requested_event(data);
+		if (state != data->status.state) {
+			hl78xx_log_state_changed(state, data->status.state);
+		}
+		return;
+	}
+
 	if ((int)s < MODEM_HL78XX_STATE_COUNT && hl78xx_state_table[s].on_event) {
 		hl78xx_state_table[s].on_event(data, evt);
 	} else {
@@ -3222,6 +3391,7 @@ static int hl78xx_driver_pm_action(const struct device *dev, enum pm_device_acti
 	case PM_DEVICE_ACTION_SUSPEND:
 		/* suspend the device */
 		LOG_DBG("%d PM_DEVICE_ACTION_SUSPEND", __LINE__);
+		k_sem_take(&data->suspended_sem, K_NO_WAIT);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SUSPEND);
 		ret = k_sem_take(&data->suspended_sem, K_SECONDS(30));
 		break;
@@ -3285,6 +3455,9 @@ static int hl78xx_init(const struct device *dev)
 #ifdef CONFIG_MODEM_HL78XX_EDRX
 	hl78xx_edrx_idle_init(data);
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
+	k_work_init_delayable(&data->hl78xx_vgpio_debounce_work,
+			      hl78xx_vgpio_debounce_work_handler);
+	data->hl78xx_vgpio_pending_state = false;
 	k_work_init_delayable(&data->hl78xx_gpio6_debounce_work,
 			      hl78xx_gpio6_debounce_work_handler);
 	data->hl78xx_gpio6_pending_state = false;
@@ -3388,7 +3561,7 @@ static int hl78xx_init(const struct device *dev)
 		{&config->mdm_gpio_gpio8, GPIO_INPUT, "GPIO8"},
 #endif
 #if HAS_SIM_SWITCH_GPIO
-		{&config->mdm_gpio_sim_switch, GPIO_INPUT, "SIM_SWITCH"},
+		{&config->mdm_gpio_sim_switch, GPIO_OUTPUT, "SIM_SWITCH"},
 #endif
 	};
 	for (int i = 0; i < ARRAY_SIZE(gpio_config); i++) {
@@ -3473,6 +3646,11 @@ const static struct hl78xx_state_handlers hl78xx_state_table[] = {
 		hl78xx_on_reset_pulse_state_enter,
 		hl78xx_on_reset_pulse_state_leave,
 		hl78xx_reset_pulse_event_handler
+	},
+	[MODEM_HL78XX_STATE_SOFT_RESET] = {
+		hl78xx_on_soft_reset_state_enter,
+		hl78xx_on_soft_reset_state_leave,
+		hl78xx_soft_reset_event_handler
 	},
 	[MODEM_HL78XX_STATE_POWER_ON_PULSE] = {
 		hl78xx_on_power_on_pulse_state_enter,
@@ -3611,7 +3789,7 @@ static DEVICE_API(cellular, hl78xx_api) = {
 		.mdm_gpio_vgpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_vgpio_gpios, {}),             \
 		.mdm_gpio_gpio6 = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_gpio6_gpios, {}),             \
 		.mdm_gpio_gpio8 = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_gpio8_gpios, {}),             \
-		.mdm_gpio_sim_switch = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_sim_select_gpios, {}),   \
+		.mdm_gpio_sim_switch = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_sim_switch_gpios, {}),   \
 		.power_pulse_duration_ms = (power_ms),                                             \
 		.reset_pulse_duration_ms = (reset_ms),                                             \
 		.startup_time_ms = (startup_ms),                                                   \

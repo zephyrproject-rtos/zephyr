@@ -571,20 +571,152 @@ int hl78xx_edrx_settings(struct hl78xx_data *data)
 	return 0;
 }
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+
+static void hl78xx_power_down_shutdown_fn(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct hl78xx_data *data =
+		CONTAINER_OF(dwork, struct hl78xx_data, power_down_shutdown_work);
+
+	LOG_DBG("%d: power down shutdown: entering INIT_POWER_OFF", __LINE__);
+	data->status.power_down.previous = data->status.power_down.current;
+	data->status.power_down.current = POWER_DOWN_EVENT_ENTER;
+
+	hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
+	data->status.power_down.is_power_down_requested = true;
+}
+
 static void hl78xx_power_down_work_handler(struct k_work *work_item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work_item);
 	struct hl78xx_data *data = CONTAINER_OF(dwork, struct hl78xx_data, hl78xx_pwr_dwn_work);
 
 	LOG_DBG("%d: Power down work handler called", __LINE__);
-	hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
-	data->status.power_down.is_power_down_requested = true;
+
+	notif_carrier_off(data->dev);
+
+	struct hl78xx_evt pd_evt = {.type = HL78XX_POWER_DOWN_UPDATE};
+
+	hl78xx_power_down_ignore_feeding(data);
+	pd_evt.content.power_down_event = POWER_DOWN_EVENT_ENTER;
+	event_dispatcher_dispatch(&pd_evt);
+
+	/* Give the application time to perform graceful teardown (e.g. cloud
+	 * disconnect).
+	 */
+	k_work_reschedule(&data->power_down_shutdown_work,
+			  K_SECONDS(CONFIG_MODEM_HL78XX_POWER_DOWN_CONFIRM_TIMEOUT_S));
+}
+
+int hl78xx_power_down_trigger(const struct device *dev, k_timeout_t delay)
+{
+	struct hl78xx_data *data;
+
+	if ((dev == NULL) || (dev->data == NULL)) {
+		return -EINVAL;
+	}
+
+	data = dev->data;
+
+	LOG_INF("Power down trigger requested by application");
+	hl78xx_power_down_ignore_feeding(data);
+	(void)k_work_reschedule(&data->hl78xx_pwr_dwn_work, delay);
+
+	return 0;
+}
+
+int hl78xx_power_down_cancel(const struct device *dev)
+{
+	struct hl78xx_data *data;
+	int ret;
+
+	if ((dev == NULL) || (dev->data == NULL)) {
+		return -EINVAL;
+	}
+
+	data = dev->data;
+
+	if (!hl78xx_is_power_down_scheduled(data)) {
+		return -ENOENT;
+	}
+
+	ret = hl78xx_cancel_power_down(data);
+	if (ret < 0) {
+		return ret;
+	}
+
+	hl78xx_power_down_allow_feeding(data);
+	LOG_INF("Pending power down timer canceled by application");
+
+	return 0;
+}
+
+static int hl78xx_power_down_apply_response(struct hl78xx_data *data,
+					    enum hl78xx_power_down_response response,
+					    uint32_t timeout_s)
+{
+	if (data == NULL) {
+		return -EINVAL;
+	}
+
+	if (!k_work_delayable_is_pending(&data->power_down_shutdown_work)) {
+		return -ENOENT;
+	}
+
+	switch (response) {
+	case HL78XX_POWER_DOWN_RESPONSE_IMMEDIATE:
+		LOG_INF("Power down confirmed by application, proceeding immediately");
+		hl78xx_power_down_allow_feeding(data);
+		(void)k_work_reschedule(&data->power_down_shutdown_work, K_NO_WAIT);
+		return 0;
+
+	case HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE:
+		if (timeout_s == 0U) {
+			return -EINVAL;
+		}
+
+		LOG_INF("Power down rescheduled by application: %u s", timeout_s);
+		hl78xx_power_down_ignore_feeding(data);
+		(void)k_work_reschedule(&data->power_down_shutdown_work, K_SECONDS(timeout_s));
+		return 0;
+
+	default:
+		return -EINVAL;
+	}
+}
+
+int hl78xx_power_down_respond(const struct device *dev, enum hl78xx_power_down_response response,
+			      uint32_t timeout_s)
+{
+	if ((dev == NULL) || (dev->data == NULL)) {
+		return -EINVAL;
+	}
+
+	return hl78xx_power_down_apply_response(dev->data, response, timeout_s);
+}
+
+/**
+ * @brief Confirm that the application has finished its cleanup and the modem
+ *        may proceed with the physical shutdown sequence.
+ *
+ * Call this from the application side (e.g. when CLOUD_EVT_DISCONNECTED is
+ * received) to allow the driver to enter MODEM_HL78XX_STATE_INIT_POWER_OFF
+ * immediately instead of waiting for the full confirmation timeout.
+ *
+ * If no power-down shutdown is pending, the call is a no-op.
+ *
+ * @param dev Pointer to the HL78xx modem device.
+ */
+void hl78xx_power_down_confirm(const struct device *dev)
+{
+	(void)hl78xx_power_down_respond(dev, HL78XX_POWER_DOWN_RESPONSE_IMMEDIATE, 0U);
 }
 
 int hl78xx_init_power_down(struct hl78xx_data *data)
 {
 	LOG_DBG("%d Initializing Power Down", __LINE__);
 	k_work_init_delayable(&data->hl78xx_pwr_dwn_work, hl78xx_power_down_work_handler);
+	k_work_init_delayable(&data->power_down_shutdown_work, hl78xx_power_down_shutdown_fn);
 	data->status.power_down.current = POWER_DOWN_EVENT_NONE;
 	data->status.power_down.previous = POWER_DOWN_EVENT_NONE;
 	data->status.power_down.is_power_down_requested = false;
@@ -625,6 +757,16 @@ int hl78xx_power_down_feed_timer(struct hl78xx_data *data, uint32_t cmd_timeout_
 #ifdef CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN
 	uint32_t total_timeout_s = CONFIG_MODEM_HL78XX_POWER_DOWN_DELAY + cmd_timeout_s;
 #endif /* CONFIG_MODEM_HL78XX_USE_DELAY_BASED_POWER_DOWN */
+	if (hl78xx_power_down_is_ignoring_feeding(data)) {
+		LOG_DBG("Not feeding timer because feeding is currently ignored");
+		return 0;
+	}
+
+	if (!hl78xx_is_power_down_scheduled(data)) {
+		LOG_DBG("Not feeding timer because no power down timer is pending");
+		return 0;
+	}
+
 	if (hl78xx_is_registered(data) == false) {
 		LOG_DBG("Not feeding timer because modem is not registered");
 		return 0;

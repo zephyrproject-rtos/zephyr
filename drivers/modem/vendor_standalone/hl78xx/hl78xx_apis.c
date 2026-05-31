@@ -684,7 +684,21 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 {
 	char cmd_string[sizeof(SET_FULLFUNCTIONAL_MODE_CMD) + sizeof(int)] = {0};
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
+	struct hl78xx_evt event = {.type = HL78XX_LTE_PHONE_FUNCTIONALITY_UPDATE};
 	int ret = 0;
+
+#ifdef CONFIG_HL78XX_GNSS
+	if (!reset && functionality == HL78XX_FULLY_FUNCTIONAL &&
+	    data->status.phone_functionality.functionality == HL78XX_AIRPLANE &&
+	    data->status.state != MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT &&
+	    data->status.boot.init_sequence_completed == false) {
+		/* RUN_ENABLE_GPRS_SCRIPT is already the deferred LTE restore path. */
+		LOG_INF("Restoring LTE after GNSS: delegating to modem_workq");
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED);
+		return 0;
+	}
+#endif /* CONFIG_HL78XX_GNSS */
+	LOG_DBG("Setting phone functionality to %d with reset %d", functionality, reset);
 
 	/* configure modem functionality with/without restart  */
 	snprintf(cmd_string, sizeof(cmd_string), "AT+CFUN=%d,%d", functionality, reset);
@@ -693,9 +707,57 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 	if (ret == 0) {
 		data->status.phone_functionality.in_progress = true;
 		data->status.phone_functionality.functionality = functionality;
+		event.content.value = functionality;
+		event_dispatcher_dispatch(&event);
 	}
 
 	return ret;
+}
+
+int hl78xx_api_func_restart(const struct device *dev, enum hl78xx_modem_restart_mode mode)
+{
+	struct hl78xx_data *data;
+	const struct hl78xx_config *config;
+	enum hl78xx_state state;
+
+	if ((dev == NULL) || (dev->data == NULL)) {
+		return -EINVAL;
+	}
+
+	if ((mode != HL78XX_MODEM_RESTART_HARD) && (mode != HL78XX_MODEM_RESTART_SOFT)) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+	config = dev->config;
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	if (data->status.restart_requested) {
+		k_mutex_unlock(&data->api_lock);
+		return -EBUSY;
+	}
+
+	state = data->status.state;
+	if ((mode == HL78XX_MODEM_RESTART_HARD) &&
+	    !hl78xx_gpio_is_enabled(&config->mdm_gpio_reset)) {
+		k_mutex_unlock(&data->api_lock);
+		return -ENOTSUP;
+	}
+
+	if ((mode == HL78XX_MODEM_RESTART_SOFT) && !hl78xx_soft_restart_state_is_ready(state)) {
+		k_mutex_unlock(&data->api_lock);
+		return -EAGAIN;
+	}
+
+	data->status.restart_requested = true;
+	data->status.restart_mode = mode;
+	k_mutex_unlock(&data->api_lock);
+
+	LOG_INF("Restart requested via %s path",
+		mode == HL78XX_MODEM_RESTART_HARD ? "hard" : "soft");
+	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_RESTART_REQUESTED);
+
+	return 0;
 }
 
 int hl78xx_api_func_get_phone_functionality(const struct device *dev,
@@ -704,8 +766,17 @@ int hl78xx_api_func_get_phone_functionality(const struct device *dev,
 	const char *cmd_string = GET_FULLFUNCTIONAL_MODE_CMD;
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
 	/* get modem phone functionality */
-	return hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(),
-			       hl78xx_get_ok_match_size());
+	int ret = hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(),
+				  hl78xx_get_ok_match_size());
+
+	/* hl78xx_on_cfun() updates data->status.phone_functionality.functionality
+	 * synchronously before the OK is matched. Copy it back to the caller.
+	 */
+	if (ret == 0 && functionality != NULL) {
+		*functionality = data->status.phone_functionality.functionality;
+	}
+
+	return ret;
 }
 
 int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char *cmd,
@@ -774,6 +845,88 @@ int hl78xx_stop_airvantage_dm_session(const struct device *dev)
 	return 0;
 }
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
+
+static int hl78xx_set_wake_pin_level(const struct device *dev, int value)
+{
+	struct hl78xx_data *data;
+	const struct hl78xx_config *config;
+	int ret;
+
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+	config = dev->config;
+	if (data == NULL || config == NULL) {
+		return -EINVAL;
+	}
+
+	if (!hl78xx_gpio_is_enabled(&config->mdm_gpio_wake)) {
+		return -ENOTSUP;
+	}
+
+	ret = gpio_pin_set_dt(&config->mdm_gpio_wake, value);
+	if (ret < 0) {
+		LOG_ERR("Failed to set WAKE pin to %d: %d", value, ret);
+		return ret;
+	}
+
+	LOG_DBG("Set WAKE pin to %d via public API", value);
+	return 0;
+}
+
+int hl78xx_set_wake_pin_low(const struct device *dev)
+{
+	return hl78xx_set_wake_pin_level(dev, 0);
+}
+
+int hl78xx_set_wake_pin_high(const struct device *dev)
+{
+	return hl78xx_set_wake_pin_level(dev, 1);
+}
+
+int hl78xx_set_active_sim(const struct device *dev, enum hl78xx_sim_slot sim_slot)
+{
+	struct hl78xx_data *data;
+	const struct hl78xx_config *config;
+	int ret;
+	int value;
+
+	if (dev == NULL) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+	config = dev->config;
+	if ((data == NULL) || (config == NULL)) {
+		return -EINVAL;
+	}
+
+	if (!hl78xx_gpio_is_enabled(&config->mdm_gpio_sim_switch)) {
+		return -ENOTSUP;
+	}
+
+	switch (sim_slot) {
+	case HL78XX_SIM_SLOT_1:
+		value = 0;
+		break;
+	case HL78XX_SIM_SLOT_2:
+		value = 1;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	ret = gpio_pin_set_dt(&config->mdm_gpio_sim_switch, value);
+	if (ret < 0) {
+		LOG_ERR("Failed to select SIM slot %d: %d", sim_slot + 1, ret);
+		return ret;
+	}
+
+	LOG_DBG("Selected SIM slot %d via public API", sim_slot + 1);
+	return 0;
+}
 
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 int hl78xx_wakeup_modem(const struct device *dev)
