@@ -170,7 +170,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 61>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0x3400 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0x3400 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
@@ -184,7 +184,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 62>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0x7800 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0x7800 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
@@ -198,7 +198,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 63>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0xbc00 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0xbc00 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
@@ -212,7 +212,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 64>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0x0 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
@@ -226,7 +226,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 65>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0x4400 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0x4400 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
@@ -240,7 +240,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_GCK 66>;
 			clock-names = "gck";
-			bosch,mram-cfg = <0x8800 15 15 8 8 0 15 15>;
+			bosch,mram-cfg = <0x8800 15 15 16 0 0 15 15>;
 			status = "disabled";
 		};
 
