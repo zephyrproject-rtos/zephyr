@@ -581,6 +581,25 @@ struct hl78xx_network {
 };
 
 /**
+ * @brief Parsed +CTZEU update payload.
+ *
+ * The @p tz field already includes any daylight saving adjustment, matching the
+ * modem specification for +CTZEU.
+ */
+struct hl78xx_ctzeu_update {
+	/** Local timezone offset from GMT in quarter-hours, including DST adjustment. */
+	int tz;
+	/** Daylight saving indicator reported by the modem (0, 1, or 2). */
+	int dst;
+	/** Universal time field is present in the notification. */
+	bool has_utime;
+	/** Parsed universal time in UTC Unix epoch milliseconds. */
+	int64_t date_time_ms;
+	/** Parsed universal time in broken-down UTC form. Valid when has_utime is true. */
+	struct tm utc_time;
+};
+
+/**
  * @brief HL78xx event types
  *
  * Asynchronous event notifications from the HL78xx modem
@@ -596,6 +615,14 @@ enum hl78xx_evt_type {
 	HL78XX_LTE_MODEM_STARTUP,
 	/** FOTA update status changed */
 	HL78XX_LTE_FOTA_UPDATE_STATUS,
+	/** DNS resolution path completed and modem is ready for data transmission */
+	HL78XX_LTE_DNS_READY,
+	/** The AT command interface is ready for application use. */
+	HL78XX_LTE_AT_CMD_READY,
+	/** Phone functionality changed (+CFUN) */
+	HL78XX_LTE_PHONE_FUNCTIONALITY_UPDATE,
+	/** Extended timezone and universal time update (+CTZEU) */
+	HL78XX_LTE_CTZEU_UPDATE,
 #ifdef CONFIG_HL78XX_GNSS
 	/** GNSS engine initialized and ready */
 	HL78XX_GNSS_ENGINE_READY,
@@ -769,6 +796,8 @@ struct hl78xx_evt {
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 		/** Cellular measurement event content */
 		struct k_cellmeas_signal_info cellmeas;
+		/** Full +CTZEU update payload */
+		struct hl78xx_ctzeu_update ctzeu;
 		/** Boolean status value */
 		bool status;
 		/** Integer value */

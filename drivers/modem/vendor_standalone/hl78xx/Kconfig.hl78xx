@@ -1399,6 +1399,26 @@ config MODEM_MIN_ALLOWED_SIGNAL_STRENGTH
 	    default -140
 	    range - 140 0
 
+config MODEM_MIN_ALLOWED_SIGNAL_QUALITY
+	int "Minimum allowed RSRQ signal quality (dB)"
+	default -20
+	range -20 0
+	help
+	  Minimum accepted Reference Signal Received Quality threshold used by
+	  HL78xx helper APIs. Lower values are worse. A permissive default of
+	  -20 dB keeps the current behavior unless the application opts in to a
+	  stricter gate.
+
+config MODEM_MIN_ALLOWED_SINR
+	int "Minimum allowed SINR (dB)"
+	default -20
+	range -20 40
+	help
+	  Minimum accepted Signal-to-Interference-plus-Noise Ratio threshold
+	  used by HL78xx helper APIs. Higher values are better. A permissive
+	  default of -20 dB keeps the current behavior unless the application
+	  opts in to a stricter gate.
+
 config MODEM_HL78XX_AIRVANTAGE
 	bool "AirVantage"
 	help

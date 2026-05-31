@@ -43,6 +43,13 @@ static void hl78xx_hl7812_on_kstatev_urc(struct hl78xx_data *data, int state_val
 		data->status.registration.rat_mode = rat_mode;
 		event.content.rat_mode = data->status.registration.rat_mode;
 		event_dispatcher_dispatch(&event);
+#if defined(CONFIG_MODEM_HL78XX_AUTORAT) && defined(CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC)
+		/* Schedule reg-status URC reconfiguration for the new RAT.
+		 * Cannot call the script directly from URC context; delegate
+		 * to the state machine work queue.
+		 */
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_AUTORAT_RAT_CHANGED);
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT && CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC */
 	}
 }
 
@@ -514,7 +521,7 @@ static void hl78xx_hl7812_check_lpm_state(struct hl78xx_data *data, bool *in_lpm
  */
 static void hl78xx_hl7812_on_kcellmeas_ready(struct hl78xx_data *data)
 {
-	/* HL7812: +KCELLMEAS is authoritative "ready for data" signal. */
+	/* HL7812: +KCELLMEAS on LTE/NB and +KCELL on GSM gate data readiness. */
 	hl78xx_release_socket_comms(data);
 }
 

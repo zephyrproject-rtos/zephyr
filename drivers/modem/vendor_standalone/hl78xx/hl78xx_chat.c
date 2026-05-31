@@ -37,6 +37,9 @@ void hl78xx_gnss_on_gnssev(struct modem_chat *chat, char **argv, uint16_t argc, 
 LOG_MODULE_DECLARE(hl78xx_dev, CONFIG_MODEM_LOG_LEVEL);
 
 /* Forward declarations of handlers implemented in hl78xx.c (extern linkage) */
+#ifdef CONFIG_MODEM_HL78XX_HAS_CTZEU_URC
+void hl78xx_on_ctzeu(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+#endif /* CONFIG_MODEM_HL78XX_HAS_CTZEU_URC */
 void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 /* +CGCONTRDP handler implemented in hl78xx_sockets.c - declared here so the
  * chat match may reference it. This handler parses PDP context response and
@@ -54,6 +57,7 @@ void hl78xx_on_cpsms(struct modem_chat *chat, char **argv, uint16_t argc, void *
 void hl78xx_on_rrc_status(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 #endif /* CONFIG_HL78XX_GNSS */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+void hl78xx_on_kcell(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_kcellmeas(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_socknotifydata(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_ktcpstat(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
@@ -71,6 +75,7 @@ void hl78xx_on_ktcpind(struct modem_chat *chat, char **argv, uint16_t argc, void
  */
 void hl78xx_on_udprcv(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_kbndcfg(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+void hl78xx_on_kbnd(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_csq(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_cesq(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_cfun(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
@@ -191,18 +196,18 @@ static const modem_chat_match_callback hl78xx_unsol_handlers[] = {
 	hl78xx_on_psmev,
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 	hl78xx_on_cpsms,
-#endif        /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	NULL, /* +KCELL: */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+	hl78xx_on_kcell,
 	hl78xx_on_kcellmeas,
 	hl78xx_on_kbndcfg,
-	NULL, /* +KBND: */
+	hl78xx_on_kbnd,
 	hl78xx_on_csq,
 	hl78xx_on_cesq,
 	hl78xx_on_cfun,
 	hl78xx_on_cops,
 #ifdef CONFIG_MODEM_HL78XX_HAS_CTZEU_URC
-	NULL, /* +CTZEU: */
-#endif        /* CONFIG_MODEM_HL78XX_HAS_CTZEU_URC */
+	hl78xx_on_ctzeu,
+#endif /* CONFIG_MODEM_HL78XX_HAS_CTZEU_URC */
 };
 
 #ifdef CONFIG_HL78XX_GNSS
@@ -382,17 +387,21 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", hl78xx_cimi_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CTZU=1", hl78xx_ok_match),
+#ifdef CONFIG_MODEM_HL78XX_HAS_CTZEU_URC
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CTZR=3", hl78xx_ok_match),
+#endif /* CONFIG_MODEM_HL78XX_HAS_CTZEU_URC */
 #ifdef CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSTATEV=1", hl78xx_ok_match),
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KNTNCFG=\"POS\"", hl78xx_kntncfg_match),
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 #endif /* CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC */
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KCELLMEAS?", hl78xx_ok_match),
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 #ifdef CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KPSMEV=1", hl78xx_ok_match),
 #endif /* CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC */
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+KCELLMEAS?", hl78xx_ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS?", hl78xx_ok_match),
 
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
