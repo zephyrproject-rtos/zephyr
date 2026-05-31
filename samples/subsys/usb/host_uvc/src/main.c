@@ -196,7 +196,6 @@ static int setup_video_streaming(const struct device *uvc_dev,
 				 struct video_format *const fmt)
 {
 	struct video_caps caps = {.type = VIDEO_BUF_TYPE_OUTPUT};
-	size_t bsize;
 	int ret;
 
 	/* Get capabilities */
@@ -213,18 +212,10 @@ static int setup_video_streaming(const struct device *uvc_dev,
 
 	log_video_info(uvc_dev, &caps, fmt);
 
-	bsize = fmt->width * fmt->height * 2;
+	video_estimate_fmt_size(fmt);
 
-	if (caps.min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    bsize > (CONFIG_APP_VIDEO_FRAME_WIDTH * CONFIG_APP_VIDEO_FRAME_HEIGHT * 2)) {
-		LOG_ERR("Not enough buffers or memory to start streaming");
-		return -ENOMEM;
-	}
-
-	ret = allocate_buffers_and_start_stream(uvc_dev, allocated_vbufs,
-						allocated_count, bsize, caps.type);
-
-	return ret;
+	return allocate_buffers_and_start_stream(uvc_dev, allocated_vbufs,
+						 allocated_count, fmt->size, caps.type);
 }
 
 /* Cleanup video streaming resources */
