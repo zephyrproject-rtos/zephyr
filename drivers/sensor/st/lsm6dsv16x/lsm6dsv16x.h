@@ -90,6 +90,7 @@ struct lsm6dsv16x_config {
 #ifdef CONFIG_LSM6DSV16X_TRIGGER
 	const struct gpio_dt_spec int1_gpio;
 	const struct gpio_dt_spec int2_gpio;
+	const uint8_t int_mode;
 	uint8_t drdy_pin;
 	bool trig_enabled;
 #if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)

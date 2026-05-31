@@ -13,6 +13,10 @@ void arch_cpu_idle(void)
 	sys_trace_idle();
 #endif
 	__asm__ volatile ("waiti 0");
+
+#if defined(CONFIG_TRACING)
+	sys_trace_idle_exit();
+#endif
 }
 #endif
 
@@ -25,5 +29,9 @@ void arch_cpu_atomic_idle(unsigned int key)
 	__asm__ volatile ("waiti 0\n\t"
 			  "wsr.ps %0\n\t"
 			  "rsync" :: "a"(key));
+
+#if defined(CONFIG_TRACING)
+	sys_trace_idle_exit();
+#endif
 }
 #endif
