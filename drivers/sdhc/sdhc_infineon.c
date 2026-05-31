@@ -42,6 +42,7 @@
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
 #include <zephyr/cache.h>
+#include "sdhc_helpers.h"
 
 #include "cy_sd_host.h"
 #include "cy_sysclk.h"
@@ -746,9 +747,9 @@ static int sdhc_infineon_set_io(const struct device *dev, struct sdhc_io *ios)
 	cy_en_sd_host_bus_speed_mode_t speed_mode;
 	int ret = 0;
 
-	LOG_INF("SDHC I/O: bus width %d, clock %dHz, card power %s, voltage %s, timing %d",
+	LOG_INF("SDHC I/O: bus width %d, clock %dHz, card power %s, voltage %s, timing %s",
 		ios->bus_width, ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
-		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V", ios->timing);
+		sd_voltage_str(ios->signal_voltage), sdhc_timing_mode_str(ios->timing));
 
 	/* Toggle card power supply */
 	if (sdhc_data->power_mode != ios->power_mode) {

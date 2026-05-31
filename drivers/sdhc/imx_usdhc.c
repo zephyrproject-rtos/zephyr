@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include "sdhc_helpers.h"
 #define PINCTRL_STATE_SLOW   PINCTRL_STATE_PRIV_START
 #define PINCTRL_STATE_MED    (PINCTRL_STATE_PRIV_START + 1U)
 #define PINCTRL_STATE_FAST   (PINCTRL_STATE_PRIV_START + 2U)
@@ -344,9 +345,9 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 	struct sdhc_io *host_io = &data->host_io;
 	USDHC_Type *base = get_base(dev);
 
-	LOG_DBG("SDHC I/O: bus width %d, clock %dHz, card power %s, voltage %s", ios->bus_width,
-		ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
-		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
+	LOG_DBG("SDHC I/O: bus width %d, clock %dHz, card power %s, timing %s, voltage %s",
+		ios->bus_width, ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
+		sdhc_timing_mode_str(ios->timing), sd_voltage_str(ios->signal_voltage));
 
 	if (clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &src_clk_hz)) {
 		return -EINVAL;
