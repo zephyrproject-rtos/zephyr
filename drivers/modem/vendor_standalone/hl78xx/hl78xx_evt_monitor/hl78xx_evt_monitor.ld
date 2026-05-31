@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Netfeasa Ltd.
- *
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Netfeasa Ltd.
  * SPDX-License-Identifier: Apache-2.0
  */
 
