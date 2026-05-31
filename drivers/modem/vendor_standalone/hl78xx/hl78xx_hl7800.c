@@ -32,6 +32,7 @@
 
 LOG_MODULE_DECLARE(hl78xx_dev, CONFIG_MODEM_LOG_LEVEL);
 
+#define HL7800_VGPIO_DEBOUNCE_MS 0
 #define HL7800_GPIO6_DEBOUNCE_MS 0
 
 static void hl78xx_hl7800_on_rrc_status_urc(struct hl78xx_data *data, bool is_idle)
@@ -125,6 +126,11 @@ static void hl78xx_hl7800_gpio6_handler(struct hl78xx_data *data, bool pin_state
 	bool dispatch_lpm_evt = false;
 
 	if (!pin_state) {
+		if (hl78xx_is_config_restart_pending(data)) {
+			LOG_DBG("GPIO6 LOW during config restart - ignoring low-power transition");
+			return;
+		}
+
 		/* GPIO6 LOW: modem is entering sleep */
 #ifdef CONFIG_MODEM_HL78XX_PSM
 		data->status.psmev.previous = data->status.psmev.current;
@@ -139,12 +145,7 @@ static void hl78xx_hl7800_gpio6_handler(struct hl78xx_data *data, bool pin_state
 		data->status.power_down.previous = data->status.power_down.current;
 		if (data->status.power_down.is_power_down_requested) {
 			data->status.power_down.current = POWER_DOWN_EVENT_ENTER;
-			if (data->status.power_down.current != data->status.power_down.previous) {
-				struct hl78xx_evt pd_evt = {.type = HL78XX_POWER_DOWN_UPDATE};
-
-				pd_evt.content.power_down_event = data->status.power_down.current;
-				event_dispatcher_dispatch(&pd_evt);
-			}
+			LOG_DBG("GPIO6 LOW: power-down confirmed (internal state updated)");
 		}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
@@ -158,6 +159,13 @@ static void hl78xx_hl7800_gpio6_handler(struct hl78xx_data *data, bool pin_state
 		dispatch_lpm_evt = true;
 
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
+
+		/* Notify application: raw GPIO6 LOW pin-state signal (unconditional). */
+		{
+			struct hl78xx_evt gpio6_evt = {.type = HL78XX_GPIO6_LOW};
+
+			event_dispatcher_dispatch(&gpio6_evt);
+		}
 
 		/* Dispatch sleep event to drive state machine into SLEEP */
 		if (data->status.state != MODEM_HL78XX_STATE_SLEEP &&
@@ -180,13 +188,7 @@ static void hl78xx_hl7800_gpio6_handler(struct hl78xx_data *data, bool pin_state
 		data->status.power_down.previous = data->status.power_down.current;
 		if (data->status.power_down.is_power_down_requested) {
 			data->status.power_down.current = POWER_DOWN_EVENT_EXIT;
-			LOG_DBG("GPIO6 indicates wake, set power down event to EXIT");
-			if (data->status.power_down.current != data->status.power_down.previous) {
-				struct hl78xx_evt pd_evt = {.type = HL78XX_POWER_DOWN_UPDATE};
-
-				pd_evt.content.power_down_event = data->status.power_down.current;
-				event_dispatcher_dispatch(&pd_evt);
-			}
+			LOG_DBG("GPIO6 HIGH: modem waking from power-down (state updated)");
 		}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
@@ -201,6 +203,13 @@ static void hl78xx_hl7800_gpio6_handler(struct hl78xx_data *data, bool pin_state
 		dispatch_lpm_evt = true;
 
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
+
+		/* Notify application: raw GPIO6 HIGH pin-state signal (unconditional). */
+		{
+			struct hl78xx_evt gpio6_evt = {.type = HL78XX_GPIO6_HIGH};
+
+			event_dispatcher_dispatch(&gpio6_evt);
+		}
 
 		/* Intentionally do not dispatch DEVICE_AWAKE from raw GPIO6 HIGH.
 		 * Keep wake sequencing centralized in explicit RESUME handling.
@@ -236,11 +245,12 @@ static void hl78xx_hl7800_on_ksup_lpm(struct hl78xx_data *data)
 	} else {
 #endif /* CONFIG_HL78XX_GNSS */
 		if (data->status.state == MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT ||
-		    data->status.state == MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT) {
-			/* KSUP during RAT_CFG or PMC_CFG state: these states
-			 * explicitly send AT+CFUN=4,1 and are waiting for the
-			 * modem to reboot.  Dispatch MDM_RESTART so the event
-			 * handler transitions to RUN_INIT_SCRIPT.
+		    data->status.state == MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT ||
+		    data->status.state == MODEM_HL78XX_STATE_SOFT_RESET) {
+			/* KSUP during RAT_CFG, PMC_CFG, or SOFT_RESET means the driver
+			 * explicitly sent AT+CFUN=4,1 and is waiting for the modem to
+			 * reboot. Dispatch MDM_RESTART so the event handler transitions
+			 * back to RUN_INIT_SCRIPT.
 			 */
 			LOG_DBG("KSUP after config restart (state=%d) - "
 				"dispatching MDM_RESTART",
@@ -488,6 +498,7 @@ const struct hl78xx_variant_ops hl78xx_variant_ops_hl7800 = {
 	.on_psmev_urc = NULL,   /* HL7800 does not use +PSMEV */
 	.on_rrc_status_urc = hl78xx_hl7800_on_rrc_status_urc,
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	.vgpio_debounce_ms = HL7800_VGPIO_DEBOUNCE_MS,
 	.gpio6_debounce_ms = HL7800_GPIO6_DEBOUNCE_MS,
 	.gpio6_handler = hl78xx_hl7800_gpio6_handler,
 	.on_ksup_lpm = hl78xx_hl7800_on_ksup_lpm,

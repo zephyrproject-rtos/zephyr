@@ -535,8 +535,10 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_rrc_query_script, hl78xx_rrc_query_script_cmds,
 #ifndef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_disable_pmc_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSLEEP=2", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS=0", hl78xx_ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KEDRXCFG=0", hl78xx_ok_match));
+#ifndef CONFIG_MODEM_HL78XX_RAT_NBNTN
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KEDRXCFG=0", hl78xx_ok_match),
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS=0", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_disable_pmc_chat_script, hl78xx_disable_pmc_chat_script_cmds,
 			 hl78xx_abort_matches, hl78xx_chat_callback_handler,

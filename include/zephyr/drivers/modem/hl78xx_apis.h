@@ -37,10 +37,23 @@ extern "C" {
 /* clang-format off */
 /** Unknown RSSI value returned by AT+CSQ command */
 #define CSQ_RSSI_UNKNOWN         (99)
+/** Maximum valid RSSI code returned by AT+CSQ command */
+#define CSQ_RSSI_MAX             (31)
 /** Unknown RSRP value returned by AT+CESQ command */
 #define CESQ_RSRP_UNKNOWN        (255)
+/** Maximum valid RSRP code returned by AT+CESQ command */
+#define CESQ_RSRP_MAX            (97)
 /** Unknown RSRQ value returned by AT+CESQ command */
 #define CESQ_RSRQ_UNKNOWN        (255)
+/** Maximum valid RSRQ code returned by AT+CESQ command */
+#define CESQ_RSRQ_MAX            (34)
+
+/** Modem response type for generic ERROR responses returned by public AT helpers. */
+#define HL78XX_MODEM_AT_ERROR     1
+/** Modem response type for +CME ERROR responses returned by public AT helpers. */
+#define HL78XX_MODEM_AT_CME_ERROR 2
+/** Modem response type for +CMS ERROR responses returned by public AT helpers. */
+#define HL78XX_MODEM_AT_CMS_ERROR 3
 
 /**
  * Convert CSQ RSSI value to dBm
@@ -51,15 +64,15 @@ extern "C" {
 /**
  * Convert CESQ RSRP value to dBm
  * @param v RSRP value (0-97)
- * @return Reference signal received power in dBm (-140 to -44)
+ * @return Conservative lower-bound representative in dBm (-141 to -44)
  */
-#define CESQ_RSRP_TO_DB(v)       (-140 + (v))
+#define CESQ_RSRP_TO_DB(v)       (-141 + (v))
 /**
  * Convert CESQ RSRQ value to dB
  * @param v RSRQ value (0-34)
- * @return Reference signal received quality in dB (-20 to -3)
+ * @return Conservative integer representative in dB (-21 to -3)
  */
-#define CESQ_RSRQ_TO_DB(v)       (-20 + ((v) / 2))
+#define CESQ_RSRQ_TO_DB(v)       (((v) == 0U) ? -21 : (-20 + ((v) / 2)))
 
 /** Monitor is paused */
 #define PAUSED                   1
@@ -277,6 +290,29 @@ enum hl78xx_phone_functionality {
 	HL78XX_FULLY_FUNCTIONAL,
 	/** Airplane mode, RF transmitters disabled */
 	HL78XX_AIRPLANE = 4,
+};
+
+/**
+ * @brief External SIM slot selection driven by the optional SIM-switch GPIO.
+ *
+ * Slot 1 maps to a logical low on the SIM-switch GPIO, and slot 2 maps to a
+ * logical high. Devicetree polarity flags still apply to the physical pin.
+ */
+enum hl78xx_sim_slot {
+	/** Select SIM slot 1 (logical low). */
+	HL78XX_SIM_SLOT_1 = 0,
+	/** Select SIM slot 2 (logical high). */
+	HL78XX_SIM_SLOT_2 = 1,
+};
+
+/**
+ * @brief Driver-managed modem restart modes.
+ */
+enum hl78xx_modem_restart_mode {
+	/** Restart the modem with the dedicated reset pin. */
+	HL78XX_MODEM_RESTART_HARD = 0,
+	/** Restart the modem by issuing `AT+CFUN=4,1`. */
+	HL78XX_MODEM_RESTART_SOFT,
 };
 
 /**
@@ -518,6 +554,19 @@ enum power_down_event {
 	/** No power down event */
 	POWER_DOWN_EVENT_NONE,
 };
+
+/**
+ * @brief Application responses to a pending power-down request
+ *
+ * These values control how the driver handles the stage-2 shutdown work after
+ * HL78XX_POWER_DOWN_UPDATE is dispatched with POWER_DOWN_EVENT_ENTER.
+ */
+enum hl78xx_power_down_response {
+	/** Proceed with shutdown as soon as the driver workqueue can run it */
+	HL78XX_POWER_DOWN_RESPONSE_IMMEDIATE = 0,
+	/** Extend the shutdown grace period from now by a caller-supplied timeout */
+	HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE,
+};
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
 #ifdef CONFIG_MODEM_HL78XX_EDRX
@@ -654,6 +703,14 @@ enum hl78xx_evt_type {
 	/** Modem power-down event update */
 	HL78XX_POWER_DOWN_UPDATE,
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+	/** VGPIO pin went LOW */
+	HL78XX_VGPIO_LOW,
+	/** VGPIO pin went HIGH */
+	HL78XX_VGPIO_HIGH,
+	/** GPIO6 pin went LOW indicating sleep or power-down entry */
+	HL78XX_GPIO6_LOW,
+	/** GPIO6 pin went HIGH indicating wake from sleep or power-down */
+	HL78XX_GPIO6_HIGH,
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	/** Cellular measurement update */
 	HL78XX_CELLMEAS_UPDATE,
@@ -1171,6 +1228,31 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 					    bool reset);
 
 /**
+ * @brief Request a driver-managed modem restart.
+ *
+ * Hard restart enters the reset-pin state-machine path. Soft restart enters
+ * a driver-owned `AT+CFUN=4,1` path and waits for the modem restart
+ * indication before re-running initialization.
+ *
+ * Soft restart requires the modem chat path to be active. If the modem is in
+ * sleep, idle, or power-off transition states, the call returns `-EAGAIN`.
+ * If the soft-reset request cannot be issued or the modem never reports the
+ * restart indication, the driver falls back to the full restart path when
+ * hardware restart control is available.
+ *
+ * @param dev Cellular network device instance.
+ * @param mode Requested restart mode.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p dev or @p mode is invalid.
+ * @retval -ENOTSUP if hard restart is requested but no reset GPIO is configured.
+ * @retval -EAGAIN if a soft restart is requested while the modem is not ready
+ *         to accept AT commands.
+ * @retval -EBUSY if another restart is already in progress.
+ */
+int hl78xx_api_func_restart(const struct device *dev, enum hl78xx_modem_restart_mode mode);
+
+/**
  * @brief Get phone functionality mode (internal implementation)
  *
  * Internal function to query the modem's phone functionality mode.
@@ -1351,6 +1433,132 @@ int hl78xx_api_func_modem_dynamic_cmd_send(const struct device *dev, const char 
 					   uint16_t cmd_size,
 					   const struct modem_chat_match *response_matches,
 					   uint16_t matches_size);
+
+/**
+ * @brief Send a formatted AT command to the modem (va_list variant).
+ *
+ * This is the va_list form of hl78xx_modem_at_printf(). Use this when
+ * implementing your own variadic wrapper.
+ *
+ * @param dev Cellular network device instance
+ * @param fmt Command format string
+ * @param args Format arguments
+ * @return 0 on success, positive encoded modem error, or negative errno on failure
+ */
+__printf_like(2, 0)
+int hl78xx_modem_at_printf_va(const struct device *dev, const char *fmt, va_list args);
+
+/**
+ * @brief Send a formatted AT command to the modem.
+ *
+ * This helper is analogous to nrf_modem_at_printf(). It returns 0 on OK responses,
+ * a positive encoded modem error on ERROR/+CME ERROR/+CMS ERROR responses, and a
+ * negative errno on local formatting or transport failure.
+ *
+ * @param dev Cellular network device instance
+ * @param fmt Command format string
+ * @param ... Format arguments
+ * @return 0 on success, positive encoded modem error, or negative errno on failure
+ */
+__printf_like(2, 3)
+static inline int hl78xx_modem_at_printf(const struct device *dev, const char *fmt, ...)
+{
+	va_list args;
+	int ret;
+
+	va_start(args, fmt);
+	ret = hl78xx_modem_at_printf_va(dev, fmt, args);
+	va_end(args);
+
+	return ret;
+}
+
+/**
+ * @brief Send an AT command and parse the modem response with scanf()-style formatting
+ * (va_list variant).
+ *
+ * This is the va_list form of hl78xx_modem_at_scanf(). Use this when
+ * implementing your own variadic wrapper.
+ *
+ * @param dev Cellular network device instance
+ * @param cmd AT command string sent as-is
+ * @param fmt scanf()-style response format string
+ * @param args Output arguments as va_list
+ * @return number of matched arguments on success, or negative errno on failure
+ */
+int hl78xx_modem_at_scanf_va(const struct device *dev, const char *cmd, const char *fmt,
+			     va_list args);
+
+/**
+ * @brief Send an AT command and parse the modem response with scanf()-style formatting.
+ *
+ * This helper is analogous to nrf_modem_at_scanf(). The command string is sent as-is,
+ * and the received response is parsed with vsscanf().
+ *
+ * @param dev Cellular network device instance
+ * @param cmd AT command string sent as-is
+ * @param fmt scanf()-style response format string
+ * @param ... Output arguments for parsed values
+ * @return number of matched arguments on success, or negative errno on failure
+ */
+static inline int hl78xx_modem_at_scanf(const struct device *dev, const char *cmd,
+					const char *fmt, ...)
+{
+	va_list args;
+	int ret;
+
+	va_start(args, fmt);
+	ret = hl78xx_modem_at_scanf_va(dev, cmd, fmt, args);
+	va_end(args);
+
+	return ret;
+}
+
+/**
+ * @brief Send a formatted AT command and copy the modem response into a buffer
+ * (va_list variant).
+ *
+ * This is the va_list form of hl78xx_modem_at_cmd(). Use this when
+ * implementing your own variadic wrapper.
+ *
+ * @param dev Cellular network device instance
+ * @param response Output buffer for the whole modem response
+ * @param response_size Output buffer size
+ * @param fmt Command format string
+ * @param args Format arguments
+ * @return 0 on success, positive encoded modem error, or negative errno on failure
+ */
+__printf_like(4, 0)
+int hl78xx_modem_at_cmd_va(const struct device *dev, char *response, size_t response_size,
+			   const char *fmt, va_list args);
+
+/**
+ * @brief Send a formatted AT command and copy the whole modem response into a buffer.
+ *
+ * This helper is analogous to nrf_modem_at_cmd(). The response buffer receives the whole
+ * modem response collected by the driver, including terminal lines.
+ *
+ * @param dev Cellular network device instance
+ * @param response Output buffer for the whole modem response
+ * @param response_size Output buffer size
+ * @param fmt Command format string
+ * @param ... Format arguments
+ * @return 0 on success, positive encoded modem error, or negative errno on failure
+ */
+__printf_like(4, 5)
+static inline int hl78xx_modem_at_cmd(const struct device *dev, char *response,
+				      size_t response_size, const char *fmt, ...)
+{
+	va_list args;
+	int ret;
+
+	va_start(args, fmt);
+	ret = hl78xx_modem_at_cmd_va(dev, response, response_size, fmt, args);
+	va_end(args);
+
+	return ret;
+}
+
 /**
  * @brief Get modem info for the device
  *
@@ -1468,6 +1676,22 @@ static inline int hl78xx_set_phone_functionality(const struct device *dev,
 {
 	return hl78xx_api_func_set_phone_functionality(dev, functionality, reset);
 }
+
+/**
+ * @brief Request a driver-managed modem restart.
+ *
+ * @param dev Pointer to the modem device instance.
+ * @param mode Restart mode to execute.
+ *
+ * @retval 0 on success.
+ * @retval Negative errno-code on failure.
+ */
+static inline int hl78xx_restart_modem(const struct device *dev,
+					 enum hl78xx_modem_restart_mode mode)
+{
+	return hl78xx_api_func_restart(dev, mode);
+}
+
 /**
  * @brief Get the current phone functionality mode of the modem.
  *
@@ -1514,6 +1738,32 @@ static inline int hl78xx_modem_cmd_send(const struct device *dev, const char *cm
 	return hl78xx_api_func_modem_dynamic_cmd_send(dev, cmd, cmd_size, response_matches,
 						      matches_size);
 }
+
+/**
+ * @brief Return the modem error type encoded in hl78xx_modem_at_printf/cmd return values.
+ *
+ * @param error Return value from hl78xx_modem_at_printf() or hl78xx_modem_at_cmd().
+ *
+ * @retval HL78XX_MODEM_AT_ERROR for ERROR responses.
+ * @retval HL78XX_MODEM_AT_CME_ERROR for +CME ERROR responses.
+ * @retval HL78XX_MODEM_AT_CMS_ERROR for +CMS ERROR responses.
+ */
+static inline int hl78xx_modem_at_err_type(int error)
+{
+	return (error & 0x00ff0000) >> 16;
+}
+
+/**
+ * @brief Return the modem CME/CMS error code encoded in hl78xx_modem_at_printf/cmd.
+ *
+ * @param error Return value from hl78xx_modem_at_printf() or hl78xx_modem_at_cmd().
+ *
+ * @return Encoded modem error value, or 0 for generic ERROR responses.
+ */
+static inline int hl78xx_modem_at_err(int error)
+{
+	return (error & 0xff00ffff);
+}
 /**
  * @brief Convert raw RSSI value from the modem to dBm.
  *
@@ -1534,7 +1784,7 @@ static inline int hl78xx_parse_rssi(uint8_t rssi, int16_t *value)
 	 * - ber is an integer from 0 to 7 that describes the error rate, it can also
 	 *   be 99 for an unknown error rate
 	 */
-	if (rssi == CSQ_RSSI_UNKNOWN) {
+	if ((rssi == CSQ_RSSI_UNKNOWN) || (rssi > CSQ_RSSI_MAX)) {
 		return -EINVAL;
 	}
 
@@ -1562,10 +1812,12 @@ static inline int hl78xx_parse_rsrp(uint8_t rsrp, int16_t *value)
 	 * Signal Receive Quality between -20 dB for 0 and -3 dB for 34
 	 * (0.5 dB steps), or unknown for 255
 	 * rsrp is an integer from 0 to 97 that describes the Reference Signal
-	 * Receive Power between -140 dBm for 0 and -44 dBm for 97 (1 dBm steps),
-	 * or unknown for 255
+	 * Receive Power between below -140 dBm for 0 and -44 dBm for 97
+	 * (1 dBm steps), or unknown for 255. Return a conservative lower-bound
+	 * integer so threshold comparisons do not treat code 0 as valid for a
+	 * -140 dBm minimum.
 	 */
-	if (rsrp == CESQ_RSRP_UNKNOWN) {
+	if ((rsrp == CESQ_RSRP_UNKNOWN) || (rsrp > CESQ_RSRP_MAX)) {
 		return -EINVAL;
 	}
 
@@ -1587,7 +1839,10 @@ static inline int hl78xx_parse_rsrp(uint8_t rsrp, int16_t *value)
  */
 static inline int hl78xx_parse_rsrq(uint8_t rsrq, int16_t *value)
 {
-	if (rsrq == CESQ_RSRQ_UNKNOWN) {
+	/* AT+CESQ encodes RSRQ in 0.5 dB steps. Return a conservative integer dB
+	 * representative so code 0 stays below a -20 dB threshold.
+	 */
+	if ((rsrq == CESQ_RSRQ_UNKNOWN) || (rsrq > CESQ_RSRQ_MAX)) {
 		return -EINVAL;
 	}
 
@@ -1780,6 +2035,52 @@ int hl78xx_start_airvantage_dm_session(const struct device *dev);
 int hl78xx_stop_airvantage_dm_session(const struct device *dev);
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
+/**
+ * @brief Drive the modem WAKE pin low.
+ *
+ * This directly maps to `gpio_pin_set_dt(&config->mdm_gpio_wake, 0)` inside
+ * the driver.
+ *
+ * @param dev Pointer to the modem device.
+ * @return 0 on success.
+ * @return -EINVAL if @p dev is invalid.
+ * @return -ENOTSUP if the modem WAKE GPIO is not configured in devicetree.
+ * @return Negative errno from the GPIO driver on failure.
+ */
+int hl78xx_set_wake_pin_low(const struct device *dev);
+
+/**
+ * @brief Drive the modem WAKE pin high.
+ *
+ * This directly maps to `gpio_pin_set_dt(&config->mdm_gpio_wake, 1)` inside
+ * the driver.
+ *
+ * @param dev Pointer to the modem device.
+ * @return 0 on success.
+ * @return -EINVAL if @p dev is invalid.
+ * @return -ENOTSUP if the modem WAKE GPIO is not configured in devicetree.
+ * @return Negative errno from the GPIO driver on failure.
+ */
+int hl78xx_set_wake_pin_high(const struct device *dev);
+
+/**
+ * @brief Select the active external SIM slot.
+ *
+ * This only drives the optional `mdm-sim-switch-gpios` line exposed by the
+ * modem devicetree node. It does not perform any modem state transition or
+ * restart sequence, so callers should switch SIMs only when the modem is in a
+ * safe state for the attached hardware.
+ *
+ * @param dev Pointer to the modem device.
+ * @param sim_slot SIM slot to select. Only slot 1 and slot 2 are supported.
+ * @return 0 on success.
+ * @return -EINVAL if @p dev or @p sim_slot is invalid.
+ * @return -ENOTSUP if the modem SIM-switch GPIO is not configured in
+ *         devicetree.
+ * @return Negative errno from the GPIO driver on failure.
+ */
+int hl78xx_set_active_sim(const struct device *dev, enum hl78xx_sim_slot sim_slot);
+
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 /**
  * @brief Wake the modem from PSM sleep
@@ -1948,6 +2249,63 @@ int hl78xx_gnss_assist_data_delete(const struct device *dev);
 #endif /* CONFIG_HL78XX_GNSS_SUPPORT_ASSISTED_MODE */
 
 #endif /* CONFIG_HL78XX_GNSS */
+
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+/**
+ * @brief Trigger the HL78xx shutdown process after a caller-supplied delay.
+ *
+ * This overrides any currently pending stage-1 power-down delay. Pass
+ * K_NO_WAIT to dispatch HL78XX_POWER_DOWN_UPDATE immediately, or a relative
+ * delay such as K_SECONDS(5) to start the graceful shutdown flow later.
+ *
+ * @param dev Pointer to the HL78xx modem device.
+ * @param delay Delay before stage-1 power-down notification runs.
+ *
+ * @return 0 on success or -EINVAL for invalid arguments.
+ */
+int hl78xx_power_down_trigger(const struct device *dev, k_timeout_t delay);
+
+/**
+ * @brief Cancel a pending stage-1 HL78xx shutdown timer.
+ *
+ * @param dev Pointer to the HL78xx modem device.
+ *
+ * @return 0 on success, -EINVAL for invalid arguments, or -ENOENT if no
+ *         stage-1 shutdown timer is pending.
+ */
+int hl78xx_power_down_cancel(const struct device *dev);
+
+/**
+ * @brief Respond to a pending HL78XX power-down update.
+ *
+ * Call this after receiving HL78XX_POWER_DOWN_UPDATE with
+ * POWER_DOWN_EVENT_ENTER. Use HL78XX_POWER_DOWN_RESPONSE_IMMEDIATE to allow
+ * the modem to proceed with physical shutdown right away, or
+ * HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE to extend the shutdown grace period by
+ * @p timeout_s seconds from the time of this call.
+ *
+ * @param dev Pointer to the HL78xx modem device.
+ * @param response Requested handling of the pending shutdown.
+ * @param timeout_s New grace period in seconds when @p response is
+ *        HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE. Ignored otherwise.
+ *
+ * @return 0 on success, -EINVAL for invalid arguments, or -ENOENT if no
+ *         application-controlled shutdown is pending.
+ */
+int hl78xx_power_down_respond(const struct device *dev,
+			      enum hl78xx_power_down_response response,
+			      uint32_t timeout_s);
+
+/**
+ * @brief Confirm that application cleanup is complete and the modem may
+ *        proceed with physical shutdown.
+ *
+ * If no shutdown is pending this call is a no-op.
+ *
+ * @param dev Pointer to the HL78xx modem device.
+ */
+void hl78xx_power_down_confirm(const struct device *dev);
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
 #ifdef __cplusplus
 }
