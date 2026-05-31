@@ -311,11 +311,16 @@ _idle_state_cleared:
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
 
 	/*
-	 * Enable and disable interrupts again to allow nested in exception handlers.
+	 * Run the ISR with interrupts masked (no IRQ nesting).
+	 *
+	 * Unlike the Cortex-A/R donor, ISRs here execute in IRQ mode. If a
+	 * nested IRQ were allowed it would re-enter IRQ mode and overwrite the
+	 * banked lr_irq/spsr_irq that the in-flight ISR still relies on (a leaf
+	 * ISR holds its return address in lr_irq), corrupting its return and
+	 * faulting to a poison PC. Single-core ARM1176 has no priority-based
+	 * preemption need, so masking across the ISR is the safe choice.
 	 */
-	cpsie i
 	blx r3		/* call ISR */
-	cpsid i
 
 spurious_continue:
 	/* Signal end-of-interrupt */
