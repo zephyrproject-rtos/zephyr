@@ -105,7 +105,12 @@ void entry_cpu_exception_extend(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_ARM64)
 	__asm__ volatile ("svc 0");
-#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A)
+#elif defined(CONFIG_CPU_AARCH32_CORTEX_R) || defined(CONFIG_CPU_AARCH32_CORTEX_A) ||              \
+	defined(CONFIG_CPU_AARCH32_ARMV6)
+	/* ARM1176 (ARMv6) has no hardware integer divide, so a C divide-by-zero
+	 * is a libgcc helper call that does not trap. Use an undefined
+	 * instruction to raise a CPU exception, as on Cortex-A/R.
+	 */
 	__asm__ volatile ("udf #0");
 #elif defined(CONFIG_CPU_CORTEX_M)
 	__asm__ volatile ("udf #0");
