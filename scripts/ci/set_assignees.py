@@ -314,7 +314,9 @@ def process_manifest(old_manifest_file: str) -> list:
         logger.warning("west.yml not found; skipping manifest processing")
         return []
     if not os.path.isfile(old_manifest_file):
-        logger.warning("Old manifest '%s' not found; skipping manifest processing", old_manifest_file)
+        logger.warning(
+            "Old manifest '%s' not found; skipping manifest processing", old_manifest_file
+        )
         return []
 
     old_manifest = Manifest.from_file(old_manifest_file)
@@ -349,14 +351,14 @@ def _diff_area_entry(old_entry: dict, new_entry: dict) -> list:
     """Return human-readable change strings between two MAINTAINERS area entries."""
     changes = []
     fields = [
-        ("maintainers",   "Maintainers"),
+        ("maintainers", "Maintainers"),
         ("collaborators", "Collaborators"),
-        ("labels",        "Labels"),
-        ("files",         "Files"),
-        ("files-regex",   "files-regex"),
+        ("labels", "Labels"),
+        ("files", "Files"),
+        ("files-regex", "files-regex"),
     ]
     for key, label in fields:
-        added   = set_or_empty(new_entry, key) - set_or_empty(old_entry, key)
+        added = set_or_empty(new_entry, key) - set_or_empty(old_entry, key)
         removed = set_or_empty(old_entry, key) - set_or_empty(new_entry, key)
         if added:
             changes.append(f"{label} added: {', '.join(sorted(added))}")
@@ -376,9 +378,9 @@ def compare_areas(old: dict, new: dict) -> set:
     old_areas = set(old.keys())
     new_areas = set(new.keys())
 
-    added_areas   = new_areas - old_areas
+    added_areas = new_areas - old_areas
     removed_areas = old_areas - new_areas
-    common_areas  = old_areas & new_areas
+    common_areas = old_areas & new_areas
 
     if added_areas:
         logger.info("Areas added (%d):", len(added_areas))
@@ -431,10 +433,18 @@ def _pick_assignees(pr, area_counter: dict, all_maintainers: dict, num_files: in
         # FIXME: identify platform areas and other areas using some flag in the
         # MAINTAINERS.yml data instead of relying on the name containing "Platform".
         if 'platform' in area.name.lower():
-            logger.debug("Platform area '%s' with maintainers %s added as fallback for assignment", area.name, assignees)
+            logger.debug(
+                "Platform area '%s' with maintainers %s added as fallback for assignment",
+                area.name,
+                assignees,
+            )
             ranked_assignees.append(assignees)
         elif area.name not in META_AREAS:
-            logger.debug("Non-platform area '%s' with maintainers %s takes priority for assignment", area.name, assignees)
+            logger.debug(
+                "Non-platform area '%s' with maintainers %s takes priority for assignment",
+                area.name,
+                assignees,
+            )
             # Non-platform area: highest priority — insert at front and stop.
             ranked_assignees.insert(0, assignees)
             break
@@ -483,7 +493,9 @@ def _add_reviewers(
     review_users, _review_teams = pr.get_review_requests()
     existing_reviewers.update(review_users)
 
-    logger.debug("Existing reviewers: %s", [u.login for u in existing_reviewers if hasattr(u, 'login')])
+    logger.debug(
+        "Existing reviewers: %s", [u.login for u in existing_reviewers if hasattr(u, 'login')]
+    )
 
     # Track users who removed themselves; do not re-add them.
     self_removed = set()
@@ -495,7 +507,9 @@ def _add_reviewers(
         logger.info(
             "PR #%d already has %d reviewer(s) (limit %d); "
             "restricting candidates to primary area maintainers",
-            pr.number, len(existing_reviewers), MAX_REVIEWERS,
+            pr.number,
+            len(existing_reviewers),
+            MAX_REVIEWERS,
         )
         # Preserve extra_reviewers (e.g. MAINTAINERS.yml-change reviewers)
         # even in the overflow path so they are never silently dropped.
@@ -564,8 +578,8 @@ _SIZE_LABELS = frozenset({'size: XS', 'size: S', 'size: M', 'size: L', 'size: XL
 # (max total lines changed inclusive, label name) in ascending order.
 # XS is handled separately by update_size_xs_label / update_size_labels.
 _SIZE_THRESHOLDS = (
-    (9,   'size: S'),
-    (49,  'size: M'),
+    (9, 'size: S'),
+    (49, 'size: M'),
     (499, 'size: L'),
 )
 
@@ -581,10 +595,7 @@ def update_size_xs_label(pr, args, changed_files: list, labels: set):
     touches_manifest = any(f.filename in _MANIFEST_FILES for f in changed_files)
     current_label_names = {label.name for label in pr.labels}
     qualifies_for_xs = (
-        pr.commits == 1
-        and pr.additions <= 1
-        and pr.deletions <= 1
-        and not touches_manifest
+        pr.commits == 1 and pr.additions <= 1 and pr.deletions <= 1 and not touches_manifest
     )
 
     if qualifies_for_xs:
@@ -592,7 +603,10 @@ def update_size_xs_label(pr, args, changed_files: list, labels: set):
     elif 'size: XS' in current_label_names:
         logger.info(
             "Removing 'size: XS' label from PR #%d (commits=%d, +%d/-%d)",
-            pr.number, pr.commits, pr.additions, pr.deletions,
+            pr.number,
+            pr.commits,
+            pr.additions,
+            pr.deletions,
         )
         if not args.dry_run:
             pr.remove_from_labels('size: XS')
@@ -610,10 +624,7 @@ def update_size_labels(pr, args, changed_files: list, labels: set):
     touches_manifest = any(f.filename in _MANIFEST_FILES for f in changed_files)
 
     qualifies_for_xs = (
-        pr.commits == 1
-        and pr.additions <= 1
-        and pr.deletions <= 1
-        and not touches_manifest
+        pr.commits == 1 and pr.additions <= 1 and pr.deletions <= 1 and not touches_manifest
     )
 
     if qualifies_for_xs:
@@ -631,7 +642,8 @@ def update_size_labels(pr, args, changed_files: list, labels: set):
     for label in sorted(stale):
         logger.info(
             "Removing stale size label '%s' from PR #%d",
-            label, pr.number,
+            label,
+            pr.number,
         )
         if not args.dry_run:
             pr.remove_from_labels(label)
@@ -639,8 +651,12 @@ def update_size_labels(pr, args, changed_files: list, labels: set):
     labels.add(correct_label)
     logger.info(
         "PR #%d size: %s (+%d/-%d, %d total line(s), %d commit(s))",
-        pr.number, correct_label, pr.additions, pr.deletions,
-        total_lines, pr.commits,
+        pr.number,
+        correct_label,
+        pr.additions,
+        pr.deletions,
+        total_lines,
+        pr.commits,
     )
 
 
@@ -671,7 +687,9 @@ def process_pr(gh, args, maintainer_file, number: int):
     if num_files > MAX_FILES:
         logger.warning(
             "PR #%d has %d changed files (limit %d); skipping",
-            pr.number, num_files, MAX_FILES,
+            pr.number,
+            num_files,
+            MAX_FILES,
         )
         return
 
@@ -793,19 +811,24 @@ def process_pr(gh, args, maintainer_file, number: int):
         else:
             logger.warning(
                 "Too many labels (%d) for PR #%d; skipping label assignment",
-                len(labels), pr.number,
+                len(labels),
+                pr.number,
             )
 
     # Request reviews.
     if collab or additional_reviews:
         primary_area = next(iter(area_counter), None)
         primary_maintainers = (
-            maintainer_file.areas[primary_area.name].maintainers
-            if primary_area else []
+            maintainer_file.areas[primary_area.name].maintainers if primary_area else []
         )
         _add_reviewers(
-            gh, gh_repo, pr, args,
-            collab, primary_maintainers, frozenset(additional_reviews),
+            gh,
+            gh_repo,
+            pr,
+            args,
+            collab,
+            primary_maintainers,
+            frozenset(additional_reviews),
         )
 
     # Set assignees (only when none are set yet, unless doing a dry run).
@@ -860,9 +883,7 @@ def process_issue(gh, args, maintainer_file, number: int):
     logger.info("Matched labels: %s", issue_labels)
 
     if not issue_labels or issue_labels not in label_to_maintainer:
-        logger.warning(
-            "No matching label set found for issue #%d; not assigning", issue.number
-        )
+        logger.warning("No matching label set found for issue #%d; not assigning", issue.number)
         return
 
     for maintainer in label_to_maintainer[issue_labels]:
@@ -891,7 +912,9 @@ def process_modules(gh, args, maintainers_file):
 
         logger.debug(
             "Project '%s': maintainers=%s, collaborators=%s",
-            project.name, area.maintainers, area.collaborators,
+            project.name,
+            area.maintainers,
+            area.collaborators,
         )
         repos[f"{args.org}/{project.name}"] = area
 
@@ -912,7 +935,8 @@ def process_modules(gh, args, maintainers_file):
         if pull.assignees:
             logger.error(
                 "PR %s unexpectedly has assignees %s despite no:assignee filter",
-                pull.html_url, pull.assignees,
+                pull.html_url,
+                pull.assignees,
             )
             continue
 
@@ -936,10 +960,7 @@ def main():
 
     token = os.environ.get('GITHUB_TOKEN')
     if not token:
-        sys.exit(
-            'GITHUB_TOKEN environment variable is not set. '
-            'Please set it and retry.'
-        )
+        sys.exit('GITHUB_TOKEN environment variable is not set. Please set it and retry.')
 
     gh = Github(auth=Auth.Token(token))
     maintainer_file = Maintainers(args.maintainer_file)
