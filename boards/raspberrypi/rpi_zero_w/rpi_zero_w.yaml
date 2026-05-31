@@ -1,0 +1,9 @@
+identifier: rpi_zero_w
+name: Raspberry Pi Zero / Zero W
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+testing:
+  default: false

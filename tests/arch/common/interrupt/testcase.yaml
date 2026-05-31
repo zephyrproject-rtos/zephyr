@@ -9,6 +9,7 @@ tests:
       # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
+      - rpi_zero_w
     filter: not CONFIG_TRUSTED_EXECUTION_NONSECURE
   arch.interrupt.qemu_cortex_m0:
     platform_allow: qemu_cortex_m0
@@ -22,6 +23,7 @@ tests:
       # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
+      - rpi_zero_w
     tags:
       - libc
     extra_configs:
@@ -55,6 +57,7 @@ tests:
       # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
+      - rpi_zero_w
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa
@@ -83,6 +86,7 @@ tests:
       # No trigger_irq implementation for the BCM2836 L1 + BCM2835 ARMC
       # interrupt controller pair in interrupt_util.h yet.
       - rpi_zero_2w
+      - rpi_zero_w
     arch_exclude:
       # test needs 2 working interrupt lines
       - xtensa

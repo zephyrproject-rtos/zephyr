@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <broadcom/bcm2835.dtsi>
+
+/ {
+	model = "Raspberry Pi Zero W";
+	compatible = "raspberrypi,model-zero-w", "brcm,bcm2835";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+};
+
+/* Enable the DWC2 USB controller on the micro-USB OTG port so users can
+ * build with the upstream `cdc-acm-console` snippet for a single-cable
+ * shell over USB-CDC. Power-on of the USB block goes through the VC
+ * mailbox / rpi_fw driver (Pi-family firmware sequence).
+ */
+&zephyr_udc0 {
+	status = "okay";
+};

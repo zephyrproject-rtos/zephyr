@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# RAM-loaded image -- no execute-in-place flash.
+CONFIG_XIP=n
+
+# Serial / console, interrupt-driven (shell needs UART RX interrupts).
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+CONFIG_UART_INTERRUPT_DRIVEN=y
+
+# BCM2835 system timer drives a periodic (non-tickless) kernel tick.
+CONFIG_TICKLESS_KERNEL=n
+
+# Full managed MMU (arm_mmu.c) — auto-enabled via CPU_HAS_MMU + the
+# VMSA_V7 short-descriptor path (ARM1176 uses it with XP instead of AFE).
+
+# Classic ARM mode / exception stacks.
+CONFIG_ARMV6_EXCEPTION_STACK_SIZE=4096
+CONFIG_ARMV6_FIQ_STACK_SIZE=4096
+CONFIG_ARMV6_SVC_STACK_SIZE=4096
+CONFIG_ARMV6_SYS_STACK_SIZE=4096
+
+# Kernel stacks.
+CONFIG_ISR_STACK_SIZE=4096
+CONFIG_MAIN_STACK_SIZE=4096
+CONFIG_IDLE_STACK_SIZE=4096
+
+# VC mailbox firmware driver -- required to power on the USB PHY
+# (rpi_fw SET_POWER_STATE) when the DWC2 USB controller is in use.
+# Cheap when unused; enables the upstream `cdc-acm-console` snippet
+# to bring up a single-cable shell on the OTG micro-USB port.
+CONFIG_RASPBERRYPI_FIRMWARE=y
+
+# BCM2835-specific USB-CDC tuning -- the upstream `cdc-acm-console`
+# snippet is generic and assumes the DWC2 controller's DMA-mode init
+# and default stack sizes work. They don't on BCM2835/AArch32:
+#   - DWC2 IP variant hangs in DMA-descriptor init (use buffered I/O)
+#   - default 1KB USBD/UDC thread stacks silently overflow on AArch32
+#   - boot-time CDC ACM auto-init races the rpi_fw USB power-on
+CONFIG_UDC_DWC2_DMA=n
+CONFIG_UDC_DWC2_STACK_SIZE=4096
+CONFIG_USBD_THREAD_STACK_SIZE=4096
+CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT=n
