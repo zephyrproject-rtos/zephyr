@@ -3435,6 +3435,16 @@ Logging:
   tests:
     - logging
 
+M5Stack Platforms:
+  status: maintained
+  maintainers:
+    - thc1006
+  files:
+    - boards/m5stack/
+    - boards/shields/m5stack_*/
+  labels:
+    - "platform: M5Stack"
+
 MAINTAINERS file:
   status: maintained
   maintainers:
