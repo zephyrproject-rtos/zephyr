@@ -95,6 +95,8 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #define DM9051_RCR_DIS_LONG		BIT(5)
 /* DIS_CRC - Discard CRC Error Packet */
 #define DM9051_RCR_DIS_CRC		BIT(4)
+/* ALL - Receive All Multicast */
+#define DM9051_RCR_ALL			BIT(3)
 /* PRMSC - Promiscuous Mode */
 #define DM9051_RCR_PRMSC		BIT(1)
 /* RXEN - RX Enable */
@@ -119,7 +121,7 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #define DM9051_EPAR_PHY_ADR_SHIFT	6
 
 /* 0x16 + 7 */
-/* Bit 7 = Enable all broadcast packets */
+/* Bit 7 = Enable broadcast packets */
 #define DM9051_MAR_7_BCAST_EN		0x80
 
 /* 0x1F */
@@ -361,7 +363,8 @@ static int eth_dm9051_nsr_poll(const struct device *dev, k_timeout_t timeout)
 static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __unused)
 {
 	const uint8_t imr = DM9051_IMR_PRI | DM9051_IMR_PTI | DM9051_IMR_LNKCHGI | DM9051_IMR_PAR;
-	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_DIS_CRC | DM9051_RCR_DIS_LONG;
+	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_ALL |
+			    DM9051_RCR_DIS_CRC | DM9051_RCR_DIS_LONG;
 	const struct eth_dm9051_config *config = dev->config;
 	uint8_t gpr;
 	int ret;
@@ -400,7 +403,7 @@ static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __
 		return ret;
 	}
 
-	/* Enable all broadcast packets */
+	/* Enable broadcast packets */
 	ret = eth_dm9051_spi_write_reg(dev, DM9051_MAR + 7, DM9051_MAR_7_BCAST_EN);
 	if (ret < 0) {
 		return ret;
