@@ -9,9 +9,6 @@ CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 CONFIG_UART_INTERRUPT_DRIVEN=y
 
-# BCM2835 system timer drives a periodic (non-tickless) kernel tick.
-CONFIG_TICKLESS_KERNEL=n
-
 # Full managed MMU (arm_mmu.c) — auto-enabled via CPU_HAS_MMU + the
 # VMSA_V7 short-descriptor path (ARM1176 uses it with XP instead of AFE).
 
