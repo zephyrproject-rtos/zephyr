@@ -13,10 +13,14 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
 
+#include <stdarg.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <stddef.h>
+#include <stdint.h>
+#include <time.h>
 #include <zephyr/modem/chat.h>
 #include <zephyr/drivers/cellular.h>
 #include <zephyr/sys/util_macro.h>
@@ -81,6 +85,12 @@ extern "C" {
 #define MDM_MAX_HOSTNAME_LEN     128
 /** Maximum length of serial number string */
 #define MDM_SERIAL_NUMBER_LENGTH 32
+/** Recommended buffer size for extracted +CTZEU universal time strings */
+#define HL78XX_CTZEU_UTIME_MAX_LEN     32
+/** Maximum length of CEREG timer string */
+#define HL78XX_CEREG_TIMER_STR_LEN     9
+/** Maximum length of network address string */
+#define HL78XX_NETWORK_ADDRESS_MAX_LEN 46
 
 /**
  * @brief Initial active state for HL78xx monitors.
@@ -206,6 +216,56 @@ enum hl78xx_cell_rat_mode {
 };
 
 /**
+ * @brief Raw AT+KSELACQ PRL RAT entries.
+ *
+ * These values follow the modem command syntax directly and are not the same
+ * numeric encoding as enum hl78xx_cell_rat_mode.
+ */
+enum hl78xx_kselacq_rat {
+	/** Clear PRL and disable automatic RAT switching. */
+	HL78XX_KSELACQ_RAT_CLEAR = 0,
+	/** PRL entry for Cat-M1. */
+	HL78XX_KSELACQ_RAT_CAT_M1 = 1,
+	/** PRL entry for NB-IoT. */
+	HL78XX_KSELACQ_RAT_NB1 = 2,
+	/** PRL entry for GSM. Supported only on HL7812. */
+	HL78XX_KSELACQ_RAT_GSM = 3,
+};
+
+/**
+ * @brief KSELACQ RAT configuration syntax
+ */
+struct kselacq_syntax {
+	/** 0 = configure PRL, 1 = reserved. */
+	bool mode;
+	/** Preferred RAT in PRL position 1, expressed as raw AT+KSELACQ value. */
+	enum hl78xx_kselacq_rat rat1;
+	/** Preferred RAT in PRL position 2, expressed as raw AT+KSELACQ value. */
+	enum hl78xx_kselacq_rat rat2;
+	/** Preferred RAT in PRL position 3, expressed as raw AT+KSELACQ value. */
+	enum hl78xx_kselacq_rat rat3;
+};
+
+/**
+ * @brief Callback used to supply an optional runtime band override for a RAT.
+ *
+ * The modem driver stays agnostic to how callers store or derive runtime band
+ * choices. When a provider is registered, hl78xx_band_cfg() asks for an
+ * override band for the requested RAT and falls back to Kconfig defaults when
+ * none is supplied.
+ *
+ * @param dev Cellular network device instance.
+ * @param rat RAT currently being configured.
+ * @param band Output band number, written only when the callback returns true.
+ * @param user_data Opaque caller-owned context passed at registration time.
+ * @return true when a valid runtime band override exists for @p rat.
+ */
+typedef bool (*hl78xx_runtime_band_provider_t)(const struct device *dev,
+					       enum hl78xx_cell_rat_mode rat,
+					       uint16_t *band,
+					       void *user_data);
+
+/**
  * @brief Phone functionality modes
  *
  * AT+CFUN command modes for controlling modem operational state
@@ -247,16 +307,124 @@ enum hl78xx_module_status {
  * Types of modem information that can be queried
  */
 enum hl78xx_modem_info_type {
-	/** Access Point Name */
-	HL78XX_MODEM_INFO_APN,
-	/** Current Radio Access Technology */
-	HL78XX_MODEM_INFO_CURRENT_RAT,
-	/** Network Operator name */
-	HL78XX_MODEM_INFO_NETWORK_OPERATOR,
 	/** Modem Serial Number */
 	HL78XX_MODEM_INFO_SERIAL_NUMBER,
 	/** Current Baud Rate */
 	HL78XX_MODEM_INFO_CURRENT_BAUD_RATE,
+};
+
+/**
+ * @brief Network operator format options
+ */
+enum hl78xx_operator_format {
+	/** Long alphanumeric operator name format (AT+COPS format 0) */
+	HL78XX_OPERATOR_FORMAT_LONG_ALPHANUMERIC = 0,
+	/** Short alphanumeric operator name format (AT+COPS format 1) */
+	HL78XX_OPERATOR_FORMAT_SHORT_ALPHANUMERIC,
+	/** Numeric operator name format / MCC-MNC (AT+COPS format 2) */
+	HL78XX_OPERATOR_FORMAT_NUMERIC,
+};
+
+/**
+ * @brief Cached +CEREG/+CREG registration details.
+ */
+struct hl78xx_cxreg_status {
+	/** Registration status from +CEREG/+CREG. */
+	enum cellular_registration_status reg_status;
+	/** Parsed tracking area code is present. */
+	bool has_tac;
+	/** Tracking area code from +CEREG/+CREG. */
+	uint32_t tac;
+	/** Parsed cell ID is present. */
+	bool has_cell_id;
+	/** Cell ID from +CEREG/+CREG. */
+	uint32_t cell_id;
+	/** Parsed RAT mode is present. */
+	bool has_rat_mode;
+	/** RAT mode derived from +CEREG/+CREG AcT. */
+	enum hl78xx_cell_rat_mode rat_mode;
+	/** Cause type is present. */
+	bool has_cause_type;
+	/** Registration reject cause type. */
+	int cause_type;
+	/** Reject cause is present. */
+	bool has_reject_cause;
+	/** Registration reject cause value. */
+	int reject_cause;
+	/** Active time field is present. */
+	bool has_active_time;
+	/** Raw active time timer string. */
+	char active_time[HL78XX_CEREG_TIMER_STR_LEN];
+	/** TAU field is present. */
+	bool has_tau;
+	/** Raw TAU timer string. */
+	char tau[HL78XX_CEREG_TIMER_STR_LEN];
+};
+
+/**
+ * @brief Cached network information types.
+ */
+enum hl78xx_network_info_type {
+	/** Access Point Name */
+	HL78XX_NETWORK_INFO_APN,
+	/** Current Radio Access Technology */
+	HL78XX_NETWORK_INFO_CURRENT_RAT,
+	/** Network Operator name in long alphanumeric format */
+	HL78XX_NETWORK_INFO_NETWORK_OPERATOR_LONG_ALPHA,
+	/** Network Operator name in short alphanumeric format */
+	HL78XX_NETWORK_INFO_NETWORK_OPERATOR_SHORT_ALPHA,
+	/** Network Operator name in numeric format */
+	HL78XX_NETWORK_INFO_NETWORK_OPERATOR_NUMERIC,
+	/** Current operator format from +COPS */
+	HL78XX_NETWORK_INFO_OPERATOR_FORMAT,
+	/** Tracking area code from +CEREG */
+	HL78XX_NETWORK_INFO_TAC,
+	/** Mobile country code parsed from numeric operator */
+	HL78XX_NETWORK_INFO_MCC,
+	/** Mobile network code parsed from numeric operator */
+	HL78XX_NETWORK_INFO_MNC,
+	/** Cell ID from +CEREG */
+	HL78XX_NETWORK_INFO_CELL_ID,
+	/** PDP IP address. */
+	HL78XX_NETWORK_INFO_IP_ADDRESS,
+	/** Primary DNS address. */
+	HL78XX_NETWORK_INFO_DNS_PRIMARY,
+	/** Active band number from AT+KBND? decoded from the bitmap. */
+	HL78XX_NETWORK_INFO_ACTIVE_BAND,
+	/** Signal-to-Interference-plus-Noise Ratio from the last +KCELLMEAS URC. */
+	HL78XX_NETWORK_INFO_SINR,
+};
+
+/**
+ * @brief Cached network operator information.
+ */
+struct hl78xx_network_operator {
+	/** Operator is available. */
+	bool has_operator;
+	/** Operator name in the currently selected +COPS format. */
+	char operator[MDM_MODEL_LENGTH];
+	/** MCC is available. */
+	bool has_mcc;
+	/** Mobile country code. */
+	uint16_t mcc;
+	/** MNC is available. */
+	bool has_mnc;
+	/** Mobile network code. */
+	uint16_t mnc;
+	/** Current +COPS operator format. */
+	enum hl78xx_operator_format format;
+};
+
+/**
+ * @brief Cached network information.
+ */
+struct hl78xx_network_info {
+	/** Cached network operator information. */
+	struct hl78xx_network_operator operator;
+	/** IP address. */
+	char ip_address[HL78XX_NETWORK_ADDRESS_MAX_LEN];
+	/** Primary DNS server. */
+	char dns_primary[HL78XX_NETWORK_ADDRESS_MAX_LEN];
 };
 
 /**
@@ -1012,9 +1180,130 @@ int hl78xx_api_func_get_signal(const struct device *dev, const enum cellular_sig
  * @param size Size of the info buffer
  * @return 0 if successful, negative errno on failure
  */
-int hl78xx_api_func_get_modem_info_vendor(const struct device *dev,
-					  enum hl78xx_modem_info_type type, void *info,
-					  size_t size);
+int hl78xx_api_func_get_modem_info(const struct device *dev, enum hl78xx_modem_info_type type,
+				   void *info, size_t size);
+
+/**
+ * @brief Get standard (Zephyr cellular API) modem information from cache
+ *
+ * Reads identity fields cached by the driver during the init script.
+ * Does NOT issue any AT command and is safe to call from any context.
+ *
+ * @param dev Cellular network device instance
+ * @param type Zephyr cellular modem info type
+ * @param info Buffer to store the info string
+ * @param size Buffer size in bytes
+ * @return 0 on success, -ENOTSUP if type not handled, negative errno on failure
+ */
+int hl78xx_api_func_get_modem_info_standard(const struct device *dev,
+					    enum cellular_modem_info_type type, char *info,
+					    size_t size);
+
+/**
+ * @brief Get cached vendor-specific network information.
+ *
+ * Internal function to retrieve HL78xx-specific network information.
+ * Users should call hl78xx_get_network_info() instead.
+ *
+ * @param dev Cellular network device instance
+ * @param type Type of the network info to retrieve
+ * @param info Pointer to store the network info
+ * @param size Size of the info buffer
+ * @return 0 if successful, negative errno on failure
+ */
+int hl78xx_api_func_get_network_info(const struct device *dev, enum hl78xx_network_info_type type,
+				     void *info, size_t size);
+
+/**
+ * @brief Check whether the current RSRP meets the configured minimum threshold.
+ *
+ * Uses the driver's standard signal query path and compares the returned RSRP
+ * in dBm against CONFIG_MODEM_MIN_ALLOWED_SIGNAL_STRENGTH.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_api_func_get_rsrp_validity(const struct device *dev, bool *is_valid);
+
+/**
+ * @brief Check whether the current RSRQ meets the configured minimum threshold.
+ *
+ * Uses the driver's standard signal query path and compares the returned RSRQ
+ * in dB against CONFIG_MODEM_MIN_ALLOWED_SIGNAL_QUALITY.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_api_func_get_rsrq_validity(const struct device *dev, bool *is_valid);
+
+/**
+ * @brief Check whether the current SINR meets the configured minimum threshold.
+ *
+ * Uses the cached +KCELLMEAS-derived SINR value and compares it in dB against
+ * CONFIG_MODEM_MIN_ALLOWED_SINR.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @return 0 on success, negative errno on failure
+ */
+int hl78xx_api_func_get_sinr_validity(const struct device *dev, bool *is_valid);
+
+/**
+ * @brief Set the +COPS network operator format.
+ *
+ * @param dev Cellular network device instance
+ * @param format Desired operator format to set
+ * @return 0 if successful, negative errno on failure
+ */
+int hl78xx_api_func_set_network_operator_format(const struct device *dev,
+						enum hl78xx_operator_format format);
+
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+/**
+ * @brief Set a new Preferred RAT List through AT+KSELACQ.
+ *
+ * Sends `AT+KSELACQ=0,<rat1>,<rat2>,<rat3>` immediately, updates the driver's
+ * cached PRL values, and does not force an immediate modem restart.
+ *
+ * Duplicate RAT entries are allowed to bias the modem's search order. To clear
+ * the PRL and disable automatic RAT switching, pass rat1/rat2/rat3 as
+ * HL78XX_KSELACQ_RAT_CLEAR; the driver emits `AT+KSELACQ=0,0` for that case.
+ *
+ * @param dev Cellular network device instance
+ * @param kselacq_rats Raw `AT+KSELACQ` PRL entries to set
+ * @return 0 if successful, negative errno on failure
+ */
+int hl78xx_api_func_set_prl(const struct device *dev, const struct kselacq_syntax kselacq_rats);
+
+/**
+ * @brief Get the current Preferred RAT List.
+ *
+ * Retrieves the current raw `AT+KSELACQ` PRL values from the modem cache.
+ *
+ * @param dev Cellular network device instance
+ * @param kselacq_rats Pointer to store the current PRL entries
+ * @return 0 if successful, negative errno on failure
+ */
+int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kselacq_rats);
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
+/**
+ * @brief Register or clear a runtime band provider for the driver.
+ *
+ * When a provider is registered, hl78xx_band_cfg() may use its per-RAT band
+ * override instead of the default Kconfig bitmap. Passing NULL clears the
+ * provider.
+ *
+ * @param dev Cellular network device instance.
+ * @param provider Callback invoked to obtain a runtime band override.
+ * @param user_data Opaque context passed back to @p provider.
+ * @return 0 on success, negative errno on failure.
+ */
+int hl78xx_set_runtime_band_provider(const struct device *dev,
+				     hl78xx_runtime_band_provider_t provider,
+				     void *user_data);
 
 /**
  * @brief Send dynamic AT command (internal implementation)
@@ -1050,8 +1339,85 @@ static inline int hl78xx_get_modem_info(const struct device *dev,
 					const enum hl78xx_modem_info_type type, void *info,
 					size_t size)
 {
-	return hl78xx_api_func_get_modem_info_vendor(dev, type, info, size);
+	return hl78xx_api_func_get_modem_info(dev, type, info, size);
 }
+
+/**
+ * @brief Get cached network info for the device.
+ *
+ * @param dev Cellular network device instance
+ * @param type Type of the network info requested
+ * @param info Info destination buffer
+ * @param size Size of the destination buffer
+ *
+ * @retval 0 if successful.
+ * @retval -ENOTSUP if the type is not supported.
+ * @retval -ENODATA if the modem does not provide the requested info.
+ * @retval Negative errno-code from chat module otherwise.
+ */
+static inline int hl78xx_get_network_info(const struct device *dev,
+					  enum hl78xx_network_info_type type, void *info,
+					  size_t size)
+{
+	return hl78xx_api_func_get_network_info(dev, type, info, size);
+}
+
+/**
+ * @brief Check whether the current RSRP meets the configured threshold.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @retval 0 on success.
+ * @retval Negative errno-code on failure.
+ */
+static inline int hl78xx_get_rsrp_validity(const struct device *dev, bool *is_valid)
+{
+	return hl78xx_api_func_get_rsrp_validity(dev, is_valid);
+}
+
+/**
+ * @brief Check whether the current RSRQ meets the configured threshold.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @retval 0 on success.
+ * @retval Negative errno-code on failure.
+ */
+static inline int hl78xx_get_rsrq_validity(const struct device *dev, bool *is_valid)
+{
+	return hl78xx_api_func_get_rsrq_validity(dev, is_valid);
+}
+
+/**
+ * @brief Check whether the current SINR meets the configured threshold.
+ *
+ * @param dev Cellular network device instance
+ * @param is_valid Output flag set to true when the threshold is met
+ * @retval 0 on success.
+ * @retval Negative errno-code on failure.
+ */
+static inline int hl78xx_get_sinr_validity(const struct device *dev, bool *is_valid)
+{
+	return hl78xx_api_func_get_sinr_validity(dev, is_valid);
+}
+
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+/**
+ * @brief Set a new raw `AT+KSELACQ` Preferred RAT List.
+ *
+ * @param dev Pointer to the modem device instance.
+ * @param prl Preferred RAT List expressed as raw `AT+KSELACQ` values.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if the inputs are invalid.
+ * @retval Negative errno on modem command failure.
+ */
+static inline int hl78xx_set_prl(const struct device *dev, struct kselacq_syntax prl)
+{
+	return hl78xx_api_func_set_prl(dev, prl);
+}
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
 /**
  * @brief Set the modem phone functionality mode.
  *
@@ -1353,6 +1719,15 @@ int hl78xx_evt_monitor_unregister(struct hl78xx_evt_monitor_entry *mon);
  * @return Corresponding cellular_access_technology value
  */
 enum cellular_access_technology hl78xx_rat_to_access_tech(enum hl78xx_cell_rat_mode rat_mode);
+
+/**
+ * @brief Convert standard cellular access technology to HL78xx RAT mode.
+ *
+ * @param access_tech Standard cellular access technology.
+ * @return Corresponding HL78xx RAT mode.
+ */
+enum hl78xx_cell_rat_mode hl78xx_access_tech_to_rat(
+	enum cellular_access_technology access_tech);
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /**
  * @brief Start an AirVantage Device Management (DM) session

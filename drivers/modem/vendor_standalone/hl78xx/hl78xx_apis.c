@@ -101,6 +101,63 @@ int hl78xx_api_func_get_signal(const struct device *dev, const enum cellular_sig
 	return ret;
 }
 
+int hl78xx_api_func_get_rsrp_validity(const struct device *dev, bool *is_valid)
+{
+	int ret;
+	int16_t rsrp;
+
+	if ((dev == NULL) || (is_valid == NULL)) {
+		return -EINVAL;
+	}
+
+	ret = hl78xx_api_func_get_signal(dev, CELLULAR_SIGNAL_RSRP, &rsrp);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*is_valid = hl78xx_is_rsrp_value_valid(rsrp);
+
+	return 0;
+}
+
+int hl78xx_api_func_get_rsrq_validity(const struct device *dev, bool *is_valid)
+{
+	int ret;
+	int16_t rsrq;
+
+	if ((dev == NULL) || (is_valid == NULL)) {
+		return -EINVAL;
+	}
+
+	ret = hl78xx_api_func_get_signal(dev, CELLULAR_SIGNAL_RSRQ, &rsrq);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*is_valid = hl78xx_is_rsrq_value_valid(rsrq);
+
+	return 0;
+}
+
+int hl78xx_api_func_get_sinr_validity(const struct device *dev, bool *is_valid)
+{
+	int ret;
+	int16_t sinr;
+
+	if ((dev == NULL) || (is_valid == NULL)) {
+		return -EINVAL;
+	}
+
+	ret = hl78xx_api_func_get_network_info(dev, HL78XX_NETWORK_INFO_SINR, &sinr, sizeof(sinr));
+	if (ret < 0) {
+		return ret;
+	}
+
+	*is_valid = hl78xx_is_sinr_value_valid(sinr);
+
+	return 0;
+}
+
 /** Convert hl78xx RAT mode to cellular access technology */
 enum cellular_access_technology hl78xx_rat_to_access_tech(enum hl78xx_cell_rat_mode rat_mode)
 {
@@ -125,7 +182,27 @@ enum cellular_access_technology hl78xx_rat_to_access_tech(enum hl78xx_cell_rat_m
 #endif
 	case HL78XX_RAT_MODE_NONE:
 	default:
-		return -ENODATA;
+		return CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN;
+	}
+}
+
+enum hl78xx_cell_rat_mode hl78xx_access_tech_to_rat(enum cellular_access_technology access_tech)
+{
+	switch (access_tech) {
+	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN:
+		return HL78XX_RAT_CAT_M1;
+	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1:
+		return HL78XX_RAT_NB1;
+#ifdef CONFIG_MODEM_HL78XX_12
+	case CELLULAR_ACCESS_TECHNOLOGY_GSM:
+		return HL78XX_RAT_GSM;
+#ifdef CONFIG_MODEM_HL78XX_12_FW_R6
+	case CELLULAR_ACCESS_TECHNOLOGY_NG_RAN_SAT:
+		return HL78XX_RAT_NBNTN;
+#endif
+#endif
+	default:
+		return HL78XX_RAT_MODE_NONE;
 	}
 }
 
@@ -150,55 +227,305 @@ int hl78xx_api_func_get_registration_status(const struct device *dev,
 	return 0;
 }
 
-int hl78xx_api_func_get_modem_info_vendor(const struct device *dev,
-					  enum hl78xx_modem_info_type type, void *info, size_t size)
+int hl78xx_api_func_get_network_info(const struct device *dev, enum hl78xx_network_info_type type,
+				     void *info, size_t size)
 {
 	int ret = 0;
-	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
-	const char *network_operator = "AT+COPS?";
+	struct hl78xx_data *data;
+	const char *network_operator_cmd = "AT+COPS?";
 
-	if (info == NULL || size == 0) {
+	if ((dev == NULL) || (dev->data == NULL) || (info == NULL) || (size == 0U)) {
 		return -EINVAL;
 	}
-	/* copy identity under api lock to a local buffer then write to caller
-	 * prevents holding lock during the return/caller access
-	 */
-	k_mutex_lock(&data->api_lock, K_FOREVER);
+
+	data = (struct hl78xx_data *)dev->data;
+
 	switch (type) {
-	case HL78XX_MODEM_INFO_APN:
+	case HL78XX_NETWORK_INFO_APN:
+		k_mutex_lock(&data->api_lock, K_FOREVER);
 		if (data->status.apn.state != APN_STATE_CONFIGURED) {
 			ret = -ENODATA;
-			break;
+		} else {
+			safe_strncpy((char *)info, (const char *)data->identity.apn, size);
 		}
-		safe_strncpy(info, (const char *)data->identity.apn, size);
-		break;
+		k_mutex_unlock(&data->api_lock);
+		return ret;
 
-	case HL78XX_MODEM_INFO_CURRENT_RAT:
+	case HL78XX_NETWORK_INFO_CURRENT_RAT:
+		if (size < sizeof(enum hl78xx_cell_rat_mode)) {
+			return -EINVAL;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
 		*(enum hl78xx_cell_rat_mode *)info = data->status.registration.rat_mode;
-		break;
+		k_mutex_unlock(&data->api_lock);
+		return 0;
 
-	case HL78XX_MODEM_INFO_NETWORK_OPERATOR:
-		/* Network operator not currently tracked; return empty or implement tracking */
-		ret = hl78xx_send_cmd(data, network_operator, NULL, hl78xx_get_allow_match(),
+	case HL78XX_NETWORK_INFO_OPERATOR_FORMAT:
+		if (size < sizeof(enum hl78xx_operator_format)) {
+			return -EINVAL;
+		}
+
+		if (!data->status.network_info.operator.has_operator) {
+			ret = hl78xx_send_cmd(data, network_operator_cmd, NULL,
+					      hl78xx_get_allow_match(),
+					      hl78xx_get_allow_match_size());
+			if (ret < 0) {
+				LOG_ERR("Failed to refresh network operator: %d", ret);
+				return ret;
+			}
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (!data->status.network_info.operator.has_operator) {
+			ret = -ENODATA;
+		} else {
+			*(enum hl78xx_operator_format *)info =
+				data->status.network_info.operator.format;
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_NETWORK_OPERATOR_LONG_ALPHA:
+		if (!data->status.network_info.operator.has_operator ||
+		    data->status.network_info.operator.format !=
+			    HL78XX_OPERATOR_FORMAT_LONG_ALPHANUMERIC) {
+			ret = hl78xx_api_func_set_network_operator_format(
+				dev, HL78XX_OPERATOR_FORMAT_LONG_ALPHANUMERIC);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		ret = hl78xx_send_cmd(data, network_operator_cmd, NULL, hl78xx_get_allow_match(),
 				      hl78xx_get_allow_match_size());
 		if (ret < 0) {
-			LOG_ERR("Failed to get network operator");
+			LOG_ERR("Failed to refresh network operator: %d", ret);
+			return ret;
 		}
-		safe_strncpy(info, (const char *)data->status.network_operator.operator,
-			     MIN(size, sizeof(data->status.network_operator.operator)));
-		break;
-	case HL78XX_MODEM_INFO_SERIAL_NUMBER:
-		safe_strncpy(info, (const char *)data->identity.serial_number,
-			     MIN(size, sizeof(data->identity.serial_number)));
-		break;
-	case HL78XX_MODEM_INFO_CURRENT_BAUD_RATE:
-		*(uint32_t *)info = data->status.uart.current_baudrate;
-		break;
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (!data->status.network_info.operator.has_operator) {
+			ret = -ENODATA;
+		} else {
+			safe_strncpy((char *)info,
+				     (const char *)data->status.network_info.operator.operator,
+				     size);
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_NETWORK_OPERATOR_SHORT_ALPHA:
+		if (!data->status.network_info.operator.has_operator ||
+		    data->status.network_info.operator.format !=
+			    HL78XX_OPERATOR_FORMAT_SHORT_ALPHANUMERIC) {
+			ret = hl78xx_api_func_set_network_operator_format(
+				dev, HL78XX_OPERATOR_FORMAT_SHORT_ALPHANUMERIC);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		ret = hl78xx_send_cmd(data, network_operator_cmd, NULL, hl78xx_get_allow_match(),
+				      hl78xx_get_allow_match_size());
+		if (ret < 0) {
+			LOG_ERR("Failed to refresh network operator: %d", ret);
+			return ret;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (!data->status.network_info.operator.has_operator) {
+			ret = -ENODATA;
+		} else {
+			safe_strncpy((char *)info,
+				     (const char *)data->status.network_info.operator.operator,
+				     size);
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_NETWORK_OPERATOR_NUMERIC:
+		if (!data->status.network_info.operator.has_operator ||
+		    data->status.network_info.operator.format != HL78XX_OPERATOR_FORMAT_NUMERIC) {
+			ret = hl78xx_api_func_set_network_operator_format(
+				dev, HL78XX_OPERATOR_FORMAT_NUMERIC);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+
+		ret = hl78xx_send_cmd(data, network_operator_cmd, NULL, hl78xx_get_allow_match(),
+				      hl78xx_get_allow_match_size());
+		if (ret < 0) {
+			LOG_ERR("Failed to refresh network operator: %d", ret);
+			return ret;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (!data->status.network_info.operator.has_operator) {
+			ret = -ENODATA;
+		} else {
+			safe_strncpy((char *)info,
+				     (const char *)data->status.network_info.operator.operator,
+				     size);
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_TAC:
+		if (size < sizeof(uint32_t)) {
+			return -EINVAL;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (!data->status.cxreg.has_tac) {
+			ret = -ENODATA;
+		} else {
+			*(uint32_t *)info = data->status.cxreg.tac;
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_MCC:
+		if (size < sizeof(uint16_t)) {
+			return -EINVAL;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (!data->status.network_info.operator.has_mcc) {
+			ret = -ENODATA;
+		} else {
+			*(uint16_t *)info = data->status.network_info.operator.mcc;
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_MNC:
+		if (size < sizeof(uint16_t)) {
+			return -EINVAL;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (!data->status.network_info.operator.has_mnc) {
+			ret = -ENODATA;
+		} else {
+			*(uint16_t *)info = data->status.network_info.operator.mnc;
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_CELL_ID:
+		if (size < sizeof(uint32_t)) {
+			return -EINVAL;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (!data->status.cxreg.has_cell_id) {
+			ret = -ENODATA;
+		} else {
+			*(uint32_t *)info = data->status.cxreg.cell_id;
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_IP_ADDRESS:
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (data->status.network_info.ip_address[0] == '\0') {
+			ret = -ENODATA;
+		} else {
+			safe_strncpy((char *)info,
+				     (const char *)data->status.network_info.ip_address, size);
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_DNS_PRIMARY:
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (data->status.network_info.dns_primary[0] == '\0') {
+			ret = -ENODATA;
+		} else {
+			safe_strncpy((char *)info,
+				     (const char *)data->status.network_info.dns_primary, size);
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_ACTIVE_BAND:
+		if (size < sizeof(uint16_t)) {
+			return -EINVAL;
+		}
+#ifdef CONFIG_MODEM_HL78XX_12
+		if (data->status.registration.rat_mode == HL78XX_RAT_GSM) {
+			return -ENOTSUP;
+		}
+#endif /* CONFIG_MODEM_HL78XX_12 */
+		ret = hl78xx_send_cmd(data, "AT+KBND?", NULL, hl78xx_get_allow_match(),
+				      hl78xx_get_allow_match_size());
+		if (ret < 0) {
+			LOG_ERR("Failed to query active band: %d", ret);
+			return ret;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		ret = hl78xx_band_bitmap_to_number(
+			(const char *)data->status.active_band.bnd_bitmap);
+		if (ret > 0) {
+			*(uint16_t *)info = (uint16_t)ret;
+			ret = 0;
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
+	case HL78XX_NETWORK_INFO_SINR:
+		if (size < sizeof(int16_t)) {
+			return -EINVAL;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		if (!data->status.kcellmeas_bootstrap_done) {
+			ret = -ENODATA;
+		} else {
+			*(int16_t *)info = data->status.sinr;
+			ret = 0;
+		}
+		k_mutex_unlock(&data->api_lock);
+		return ret;
+
 	default:
-		break;
+		return -ENOTSUP;
 	}
-	k_mutex_unlock(&data->api_lock);
-	return ret;
+}
+
+int hl78xx_api_func_get_modem_info(const struct device *dev, enum hl78xx_modem_info_type type,
+				   void *info, size_t size)
+{
+	struct hl78xx_data *data;
+
+	if (dev == NULL || dev->data == NULL || info == NULL || size == 0U) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	switch (type) {
+	case HL78XX_MODEM_INFO_SERIAL_NUMBER:
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		safe_strncpy((char *)info, (const char *)data->identity.serial_number, size);
+		k_mutex_unlock(&data->api_lock);
+		return 0;
+
+	case HL78XX_MODEM_INFO_CURRENT_BAUD_RATE:
+		if (size < sizeof(uint32_t)) {
+			return -EINVAL;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		*(uint32_t *)info = data->status.uart.current_baudrate;
+		k_mutex_unlock(&data->api_lock);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
 }
 
 int hl78xx_api_func_get_modem_info_standard(const struct device *dev,
@@ -270,6 +597,84 @@ int hl78xx_api_func_set_apn(const struct device *dev, const char *apn)
 	data->status.apn.state = APN_STATE_REFRESH_REQUESTED;
 	k_mutex_unlock(&data->api_lock);
 	hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_OFF);
+	return 0;
+}
+
+int hl78xx_api_func_set_network_operator_format(const struct device *dev,
+						enum hl78xx_operator_format format)
+{
+	struct hl78xx_data *data;
+
+	if ((dev == NULL) || (dev->data == NULL)) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	if (format > HL78XX_OPERATOR_FORMAT_NUMERIC) {
+		return -EINVAL;
+	}
+
+	return hl78xx_set_network_operator_format(data, format);
+}
+
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+int hl78xx_api_func_set_prl(const struct device *dev, const struct kselacq_syntax kselacq_rats)
+{
+	struct hl78xx_data *data;
+	int ret;
+
+	if (dev == NULL || dev->data == NULL) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	ret = hl78xx_set_prl_internal(data, kselacq_rats);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return ret;
+}
+
+int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kselacq_rats)
+{
+	struct hl78xx_data *data;
+
+	if (dev == NULL || dev->data == NULL || kselacq_rats == NULL) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	*kselacq_rats = data->kselacq_data;
+	k_mutex_unlock(&data->api_lock);
+
+	return 0;
+}
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
+int hl78xx_set_runtime_band_provider(const struct device *dev,
+				     hl78xx_runtime_band_provider_t provider,
+				     void *user_data)
+{
+	struct hl78xx_data *data;
+
+	if ((dev == NULL) || (dev->data == NULL)) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	data->runtime_band_provider = provider;
+	data->runtime_band_provider_user_data = user_data;
+	k_mutex_unlock(&data->api_lock);
+
+	LOG_DBG("Runtime band provider %s", (provider != NULL) ? "registered" : "cleared");
+
 	return 0;
 }
 
