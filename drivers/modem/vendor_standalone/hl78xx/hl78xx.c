@@ -1057,6 +1057,33 @@ void hl78xx_on_kbndcfg(struct modem_chat *chat, char **argv, uint16_t argc, void
 	strncpy(data->status.kbndcfg[rat_id].bnd_bitmap, argv[2], kbnd_bitmap_size);
 	data->status.kbndcfg[rat_id].bnd_bitmap[kbnd_bitmap_size] = '\0';
 }
+
+void hl78xx_on_kbnd(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
+	uint8_t rat_id;
+	uint8_t bitmap_size;
+
+	if (argc < 3) {
+		return;
+	}
+
+	rat_id = ATOI(argv[1], 0, "rat");
+	bitmap_size = strlen(argv[2]);
+
+	if (bitmap_size >= MDM_BAND_HEX_STR_LEN) {
+		LOG_ERR("%d %s Unexpected active band bitmap length of %d", __LINE__, __func__,
+			bitmap_size);
+		return;
+	}
+	if (rat_id >= HL78XX_RAT_COUNT) {
+		return;
+	}
+
+	data->status.active_band.rat = rat_id;
+	strncpy(data->status.active_band.bnd_bitmap, argv[2], bitmap_size);
+	data->status.active_band.bnd_bitmap[bitmap_size] = '\0';
+}
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 
 void hl78xx_on_kntncfg(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
@@ -1298,11 +1325,169 @@ static void hl78xx_dynamic_cmd_feed_lpm_timers(struct hl78xx_data *data, uint16_
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 }
 
+static void hl78xx_dynamic_cmd_reset_terminal_result(struct hl78xx_data *data)
+{
+	if (data == NULL) {
+		return;
+	}
+
+	data->at_cmd_capture.terminal_result = HL78XX_AT_CMD_TERMINAL_RESULT_NONE;
+	data->at_cmd_capture.error_type = HL78XX_AT_CMD_ERROR_TYPE_NONE;
+	data->at_cmd_capture.error_code = 0;
+}
+
+static bool hl78xx_dynamic_cmd_match_equals(const struct modem_chat_match *match,
+					    const char *pattern)
+{
+	size_t pattern_len;
+
+	if ((match == NULL) || (match->match == NULL) || (pattern == NULL)) {
+		return false;
+	}
+
+	pattern_len = strlen(pattern);
+
+	if (match->match_size != pattern_len) {
+		return false;
+	}
+
+	return memcmp(match->match, pattern, pattern_len) == 0;
+}
+
+static void
+hl78xx_dynamic_cmd_set_terminal_result(struct hl78xx_data *data,
+				       enum hl78xx_at_cmd_terminal_result terminal_result,
+				       enum hl78xx_at_cmd_error_type error_type, int error_code)
+{
+	if (data == NULL) {
+		return;
+	}
+
+	data->at_cmd_capture.terminal_result = terminal_result;
+	data->at_cmd_capture.error_type = error_type;
+	data->at_cmd_capture.error_code = error_code;
+}
+
+static int hl78xx_dynamic_cmd_parse_error_code(char **argv, uint16_t argc, const char *desc)
+{
+	if ((argc > 1U) && (argv[1] != NULL) && (argv[1][0] != '\0')) {
+		return ATOI(argv[1], 0, desc);
+	}
+
+	return 0;
+}
+
+static void hl78xx_dynamic_cmd_on_ok(struct modem_chat *chat, char **argv, uint16_t argc,
+				     void *user_data)
+{
+	ARG_UNUSED(chat);
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
+
+	hl78xx_dynamic_cmd_set_terminal_result((struct hl78xx_data *)user_data,
+					       HL78XX_AT_CMD_TERMINAL_RESULT_OK,
+					       HL78XX_AT_CMD_ERROR_TYPE_NONE, 0);
+}
+
+static void hl78xx_dynamic_cmd_on_error(struct modem_chat *chat, char **argv, uint16_t argc,
+					void *user_data)
+{
+	ARG_UNUSED(chat);
+	ARG_UNUSED(argv);
+	ARG_UNUSED(argc);
+
+	hl78xx_dynamic_cmd_set_terminal_result((struct hl78xx_data *)user_data,
+					       HL78XX_AT_CMD_TERMINAL_RESULT_ERROR,
+					       HL78XX_AT_CMD_ERROR_TYPE_GENERIC, 0);
+}
+
+static void hl78xx_dynamic_cmd_on_cme_error(struct modem_chat *chat, char **argv, uint16_t argc,
+					    void *user_data)
+{
+	ARG_UNUSED(chat);
+
+	hl78xx_dynamic_cmd_set_terminal_result(
+		(struct hl78xx_data *)user_data, HL78XX_AT_CMD_TERMINAL_RESULT_ERROR,
+		HL78XX_AT_CMD_ERROR_TYPE_CME,
+		hl78xx_dynamic_cmd_parse_error_code(argv, argc, "cme_error"));
+}
+
+static void hl78xx_dynamic_cmd_on_cms_error(struct modem_chat *chat, char **argv, uint16_t argc,
+					    void *user_data)
+{
+	ARG_UNUSED(chat);
+
+	hl78xx_dynamic_cmd_set_terminal_result(
+		(struct hl78xx_data *)user_data, HL78XX_AT_CMD_TERMINAL_RESULT_ERROR,
+		HL78XX_AT_CMD_ERROR_TYPE_CMS,
+		hl78xx_dynamic_cmd_parse_error_code(argv, argc, "cms_error"));
+}
+
+static int hl78xx_dynamic_cmd_prepare_matches(struct hl78xx_data *data,
+					      const struct hl78xx_dynamic_cmd_request *req,
+					      const struct modem_chat_match **response_matches,
+					      uint16_t *matches_size)
+{
+	uint16_t normalized_count = 0U;
+
+	if ((data == NULL) || (req == NULL) || (response_matches == NULL) ||
+	    (matches_size == NULL)) {
+		return -EINVAL;
+	}
+
+	*response_matches = req->response_matches;
+	*matches_size = req->matches_size;
+
+	if ((req->response_matches == NULL) || (req->matches_size == 0U)) {
+		return 0;
+	}
+
+	for (uint16_t i = 0U; i < req->matches_size; i++) {
+		struct modem_chat_match match = req->response_matches[i];
+
+		if (normalized_count >= HL78XX_DYNAMIC_CMD_MAX_MATCHES) {
+			return -E2BIG;
+		}
+
+		if (hl78xx_dynamic_cmd_match_equals(&match, OK_STRING)) {
+			if (match.callback == NULL) {
+				match.callback = hl78xx_dynamic_cmd_on_ok;
+			}
+		} else if (hl78xx_dynamic_cmd_match_equals(&match, ERROR_STRING)) {
+			if (match.callback == NULL) {
+				match.callback = hl78xx_dynamic_cmd_on_error;
+			}
+		} else if (hl78xx_dynamic_cmd_match_equals(&match, NO_CARRIER_STRING)) {
+			if (match.callback == NULL) {
+				match.callback = hl78xx_dynamic_cmd_on_error;
+			}
+		} else if (hl78xx_dynamic_cmd_match_equals(&match, CME_ERROR_STRING)) {
+			if (match.callback == NULL) {
+				match.callback = hl78xx_dynamic_cmd_on_cme_error;
+			}
+		} else if (hl78xx_dynamic_cmd_match_equals(&match, CMS_ERROR_STRING)) {
+			if (match.callback == NULL) {
+				match.callback = hl78xx_dynamic_cmd_on_cms_error;
+			}
+		}
+
+		data->buffers.dynamic_matches[normalized_count++] = match;
+	}
+
+	*response_matches = data->buffers.dynamic_matches;
+	*matches_size = normalized_count;
+
+	return 0;
+}
+
 static int hl78xx_dynamic_cmd_prepare_script(struct hl78xx_data *data,
 					     const struct hl78xx_dynamic_cmd_request *req,
 					     bool copy_cmd)
 {
 	const uint8_t *request = req->cmd;
+	const struct modem_chat_match *response_matches = req->response_matches;
+	uint16_t matches_size = req->matches_size;
+	int ret;
 
 	if (copy_cmd) {
 		if (req->cmd_len >= sizeof(data->buffers.cmd_buffer)) {
@@ -1316,6 +1501,11 @@ static int hl78xx_dynamic_cmd_prepare_script(struct hl78xx_data *data,
 		request = data->buffers.cmd_buffer;
 	}
 
+	ret = hl78xx_dynamic_cmd_prepare_matches(data, req, &response_matches, &matches_size);
+	if (ret < 0) {
+		return ret;
+	}
+
 	modem_chat_script_chat_init(&data->dynamic_chat);
 	modem_chat_script_chat_set_timeout(&data->dynamic_chat, 0);
 
@@ -1323,8 +1513,8 @@ static int hl78xx_dynamic_cmd_prepare_script(struct hl78xx_data *data,
 		return -EINVAL;
 	}
 
-	if (modem_chat_script_chat_set_response_matches(&data->dynamic_chat, req->response_matches,
-							req->matches_size) < 0) {
+	if (modem_chat_script_chat_set_response_matches(&data->dynamic_chat, response_matches,
+							matches_size) < 0) {
 		return -EINVAL;
 	}
 
@@ -1352,24 +1542,35 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 {
 	int ret = 0;
 	int script_ret = 0;
+	k_timeout_t tx_lock_timeout =
+		run_async ? K_NO_WAIT
+			  : K_SECONDS(req->response_timeout > 0 ? req->response_timeout
+								: HL78XX_CMD_TIMEOUT_SHORT);
 
 	if (data == NULL || req == NULL || req->cmd == NULL) {
 		LOG_ERR("%d %s Invalid parameter", __LINE__, __func__);
 		errno = EINVAL;
-		return -1;
+		return -EINVAL;
 	}
 
 	if (!run_async) {
 		hl78xx_dynamic_cmd_feed_lpm_timers(data, req->response_timeout);
 	}
 
-	ret = k_mutex_lock(&data->tx_lock, K_NO_WAIT);
+	hl78xx_dynamic_cmd_reset_terminal_result(data);
+
+	ret = k_mutex_lock(&data->tx_lock, tx_lock_timeout);
+	if (ret == -EAGAIN) {
+		LOG_WRN("Timed out waiting %u s for tx_lock before sending %.*s",
+			HL78XX_CMD_TIMEOUT_SHORT, (int)req->cmd_len, req->cmd);
+		ret = -EBUSY;
+	}
 	if (ret < 0) {
 		if (req->user_cmd == false) {
 			errno = -ret;
 		}
 		LOG_DBG("Failed to acquire tx_lock for sending command: %d", ret);
-		return -1;
+		return ret;
 	}
 
 	ret = hl78xx_dynamic_cmd_prepare_script(data, req, run_async);
@@ -1379,13 +1580,17 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		if (req->user_cmd == false) {
 			errno = -ret;
 		}
-		return -1;
+		return ret;
 	}
 
 	script_ret = run_async ? modem_chat_run_script_async(&data->chat, &data->dynamic_script)
 			       : modem_chat_run_script(&data->chat, &data->dynamic_script);
 	if (script_ret < 0) {
-		LOG_ERR("%d %s Failed to run at command: %d", __LINE__, __func__, script_ret);
+		LOG_ERR("%d %s Failed to run %.*s, err:%d", __LINE__, __func__, req->cmd_len,
+			req->cmd, script_ret);
+		if (req->user_cmd == false) {
+			errno = -script_ret;
+		}
 	} else {
 		LOG_DBG("Chat script executed successfully.");
 	}
@@ -1395,7 +1600,15 @@ static int hl78xx_dynamic_cmd_send_impl(struct hl78xx_data *data,
 		if (req->user_cmd == false) {
 			errno = -ret;
 		}
-		return script_ret < 0 ? -1 : script_ret;
+		return script_ret < 0 ? script_ret : ret;
+	}
+
+	if (!run_async && script_ret == 0 &&
+	    data->at_cmd_capture.terminal_result == HL78XX_AT_CMD_TERMINAL_RESULT_ERROR) {
+		if (req->user_cmd == false) {
+			errno = EIO;
+		}
+		return -EIO;
 	}
 
 	return script_ret;
@@ -2504,8 +2717,7 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 #ifdef CONFIG_HL78XX_GNSS
 	/* Check and process any pending GNSS mode entry request */
 	if (hl78xx_gnss_is_pending(data)) {
-		const struct hl78xx_config *config =
-			data->dev->config;
+		const struct hl78xx_config *config = data->dev->config;
 
 		if (config->variant->carrier_on_gnss_pending &&
 		    config->variant->carrier_on_gnss_pending(data)) {

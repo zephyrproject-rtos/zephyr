@@ -497,6 +497,8 @@ struct modem_status {
 	int variant;
 	enum hl78xx_state state;
 	struct kband_syntax kbndcfg[HL78XX_RAT_COUNT];
+	/** Active band from AT+KBND? - rat and bitmap of the currently used band. */
+	struct kband_syntax active_band;
 	struct hl78xx_gprs_status gprs[MDM_MAX_PDP_CONTEXTS];
 	struct hl78xx_modem_boot_status boot;
 	struct hl78xx_phone_functionality_work phone_functionality;
@@ -550,6 +552,30 @@ struct modem_event_system {
 	struct k_mutex event_rb_lock;
 };
 
+enum hl78xx_at_cmd_terminal_result {
+	HL78XX_AT_CMD_TERMINAL_RESULT_NONE = 0,
+	HL78XX_AT_CMD_TERMINAL_RESULT_OK,
+	HL78XX_AT_CMD_TERMINAL_RESULT_ERROR,
+};
+
+enum hl78xx_at_cmd_error_type {
+	HL78XX_AT_CMD_ERROR_TYPE_NONE = 0,
+	HL78XX_AT_CMD_ERROR_TYPE_GENERIC,
+	HL78XX_AT_CMD_ERROR_TYPE_CME,
+	HL78XX_AT_CMD_ERROR_TYPE_CMS,
+};
+
+struct hl78xx_at_cmd_capture_ctx {
+	char *buf;
+	size_t len;
+	size_t used;
+	bool captured;
+	bool truncated;
+	enum hl78xx_at_cmd_terminal_result terminal_result;
+	enum hl78xx_at_cmd_error_type error_type;
+	int error_code;
+};
+
 struct hl78xx_data {
 	struct modem_pipe *uart_pipe;
 	struct modem_backend_uart uart_backend;
@@ -599,6 +625,9 @@ struct hl78xx_data {
 	const struct device *offload_dev;
 
 	struct kselacq_syntax kselacq_data;
+	hl78xx_runtime_band_provider_t runtime_band_provider;
+	void *runtime_band_provider_user_data;
+	struct hl78xx_at_cmd_capture_ctx at_cmd_capture;
 };
 
 struct hl78xx_config {
