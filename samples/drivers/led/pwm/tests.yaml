@@ -1,6 +1,9 @@
 sample:
   description: Demonstration of the PWM LED driver
   name: PWM LED sample
+common:
+  min_ram: 2
+  min_flash: 16
 tests:
   sample.drivers.led.led_pwm:
     filter: dt_compat_enabled("pwm-leds")

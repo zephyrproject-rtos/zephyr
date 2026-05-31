@@ -2,6 +2,8 @@ sample:
   description: minimal sample, the smallest possible Zephyr application
   name: minimal
 common:
+  min_ram: 2
+  min_flash: 16
   tags: footprint
   harness: console
   harness_config:
