@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 James Bennion-Pedley
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32v20x_30x-pinctrl.h>
+
+&pinctrl {
+	usart1_default: usart1_default {
+		group1 {
+			pinmux = <USART1_TX_PA9_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+
+		group2 {
+			pinmux = <USART1_RX_PA10_0>;
+			bias-pull-up;
+		};
+	};
+
+	mac_default: mac_default {
+		/* No pinmux needed for internal 100M PHY */
+	};
+
+	mdio_default: mdio_default {
+		/* No MDIO pinmux required for internal PHY */
+	};
+};
