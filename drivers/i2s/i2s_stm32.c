@@ -895,6 +895,8 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 
+	LL_I2S_Disable(cfg->i2s);
+
 	LL_I2S_DisableDMAReq_RX(cfg->i2s);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
 	LL_I2S_DisableIT_OVR(cfg->i2s);
@@ -910,14 +912,16 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 		stream->mem_block = NULL;
 	}
 
-	LL_I2S_Disable(cfg->i2s);
-
 	active_dma_rx_channel[stream->dma_channel] = NULL;
 }
 
 static void tx_stream_disable(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
+
+	/* Wait for TX queue to drain before disabling */
+	k_busy_wait(100);
+	LL_I2S_Disable(cfg->i2s);
 
 	LL_I2S_DisableDMAReq_TX(cfg->i2s);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
@@ -933,10 +937,6 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
 	}
-
-	/* Wait for TX queue to drain before disabling */
-	k_busy_wait(100);
-	LL_I2S_Disable(cfg->i2s);
 
 	active_dma_tx_channel[stream->dma_channel] = NULL;
 }
