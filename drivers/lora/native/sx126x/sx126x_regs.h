@@ -223,9 +223,9 @@
 #define SX126X_CMD_STATUS_EXEC_FAILURE      0x05
 #define SX126X_CMD_STATUS_CMD_TX_DONE       0x06
 
-/* Timeout Special Values (in units of 15.625 us) */
-#define SX126X_RX_TIMEOUT_CONTINUOUS        0x000000
-#define SX126X_RX_TIMEOUT_SINGLE            0xFFFFFF
+/* Timeout special values for SetRx/SetTx (see SX1261/2 datasheet 13.1.12) */
+#define SX126X_RX_TIMEOUT_SINGLE            0x000000
+#define SX126X_RX_TIMEOUT_CONTINUOUS        0xFFFFFF
 #define SX126X_TX_TIMEOUT_NONE              0x000000
 
 /* Convert milliseconds to timeout ticks */
