@@ -7269,7 +7269,7 @@ Xen Platform:
     - soc/xen/
     - boards/xen/
     - dts/bindings/xen/
-    - snippets/xen_dom0/
+    - snippets/xen-dom0/
   labels:
     - "area: Xen Platform"
 

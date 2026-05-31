@@ -1,9 +1,9 @@
-name: xen_dom0
+name: xen-dom0
 description: |
   Builds Zephyr as a Xen initial domain (Dom0) on compatible platforms.
 append:
-  EXTRA_DTC_OVERLAY_FILE: xen_dom0.overlay
-  EXTRA_CONF_FILE: xen_dom0.conf
+  EXTRA_DTC_OVERLAY_FILE: xen-dom0.overlay
+  EXTRA_CONF_FILE: xen-dom0.conf
 
 boards:
   qemu_cortex_a53/qemu_cortex_a53:
