@@ -355,32 +355,6 @@ void hl78xx_delegate_event(struct hl78xx_data *data, enum hl78xx_event evt)
 	k_work_submit_to_queue(&modem_workq, &data->events.event_dispatch_work);
 }
 
-static bool hl78xx_try_parse_cxreg_rat_mode(struct hl78xx_data *data,
-					    const struct hl78xx_config *config, char **argv,
-					    uint16_t argc, bool is_user_status_response,
-					    enum hl78xx_cell_rat_mode *rat_mode)
-{
-	int act_idx = is_user_status_response ? 5 : 4;
-	int act_value;
-
-	if (argc <= act_idx || strlen(argv[act_idx]) != 1) {
-		return false;
-	}
-
-	act_value = ATOI(argv[act_idx], -1, "act_value");
-	LOG_DBG("act_value: %d, argc: %d, argv[%d]: %s", act_value, argc, act_idx, argv[act_idx]);
-
-	if (!config->variant->cxreg_try_parse_rat_mode) {
-		return false;
-	}
-
-	if (!config->variant->cxreg_try_parse_rat_mode(data, act_value, rat_mode)) {
-		return false;
-	}
-
-	return true;
-}
-
 static void hl78xx_dispatch_rat_mode_update_if_needed(struct hl78xx_data *data,
 						      bool rat_mode_updated,
 						      enum hl78xx_cell_rat_mode rat_mode,
@@ -426,34 +400,37 @@ static void hl78xx_update_registration_flags_and_delegate(struct hl78xx_data *da
  * - unsolicited response handlers and chat-related parsers
  * -------------------------------------------------------------------------
  */
-/* +CEREG/+CREG: */
+/* +CEREG/+CREG:
+ * +CXREG: <stat>[,<tac>[...]]
+ */
 void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
-	const struct hl78xx_config *config = data->dev->config;
 	enum cellular_registration_status registration_status = 0;
 	struct hl78xx_evt event = {.type = HL78XX_LTE_REGISTRATION_STAT_UPDATE};
 	enum hl78xx_cell_rat_mode rat_mode = HL78XX_RAT_MODE_NONE;
 	struct hl78xx_evt rat_event = {.type = HL78XX_LTE_RAT_UPDATE};
-	bool is_user_status_response;
-	bool rat_mode_updated;
-	int status_idx;
+	bool is_urc_message;
+	bool rat_mode_updated = false;
+
+	ARG_UNUSED(chat);
 
 	if (argc < 2) {
 		return;
 	}
 
 	LOG_DBG("Received %s URC with argc: %d", argv[0], argc);
-	/* +CXREG: <stat>[,<tac>[...]] */
-	is_user_status_response = (argc > 2 && strlen(argv[1]) == 1 && strlen(argv[2]) == 1);
-	status_idx = is_user_status_response ? 2 : 1;
-	registration_status = ATOI(argv[status_idx], 0, "registration_status");
-	rat_mode_updated = hl78xx_try_parse_cxreg_rat_mode(data, config, argv, argc,
-							   is_user_status_response, &rat_mode);
 
-	if (rat_mode_updated) {
-		LOG_DBG("RAT mode parsed from %s: %d", is_user_status_response ? "response" : "URC",
-			rat_mode);
+	is_urc_message = (argc > 2 && strlen(argv[1]) == 1 && strlen(argv[2]) == 1);
+
+	hl78xx_parse_cereg_info(data, argv, argc, is_urc_message);
+	rat_mode_updated = data->status.cxreg.has_rat_mode;
+	rat_mode = data->status.cxreg.rat_mode;
+	registration_status = data->status.cxreg.reg_status;
+
+	if (!data->status.boot.init_sequence_completed) {
+		LOG_DBG("Ignoring CxREG while init sequence is incomplete");
+		return;
 	}
 
 	HL78XX_LOG_DBG("%s: %d", argv[0], registration_status);
@@ -497,8 +474,7 @@ void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 	if (data->status.boot.is_booted_previously == true &&
 	    module_status == (int)HL78XX_MODULE_READY) {
 #if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
-		const struct hl78xx_config *config =
-			data->dev->config;
+		const struct hl78xx_config *config = data->dev->config;
 
 		config->variant->on_ksup_lpm(data);
 #else
@@ -693,14 +669,14 @@ void hl78xx_on_kselacq(struct modem_chat *chat, char **argv, uint16_t argc, void
 	}
 	if (argc > 3) {
 		data->kselacq_data.mode = false;
-		data->kselacq_data.rat1 = ATOI(argv[1], 0, "rat1");
-		data->kselacq_data.rat2 = ATOI(argv[2], 0, "rat2");
-		data->kselacq_data.rat3 = ATOI(argv[3], 0, "rat3");
+		data->kselacq_data.rat1 = (enum hl78xx_kselacq_rat)ATOI(argv[1], 0, "rat1");
+		data->kselacq_data.rat2 = (enum hl78xx_kselacq_rat)ATOI(argv[2], 0, "rat2");
+		data->kselacq_data.rat3 = (enum hl78xx_kselacq_rat)ATOI(argv[3], 0, "rat3");
 	} else {
 		data->kselacq_data.mode = false;
-		data->kselacq_data.rat1 = 0;
-		data->kselacq_data.rat2 = 0;
-		data->kselacq_data.rat3 = 0;
+		data->kselacq_data.rat1 = HL78XX_KSELACQ_RAT_CLEAR;
+		data->kselacq_data.rat2 = HL78XX_KSELACQ_RAT_CLEAR;
+		data->kselacq_data.rat3 = HL78XX_KSELACQ_RAT_CLEAR;
 	}
 }
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
@@ -894,12 +870,39 @@ void hl78xx_on_cops(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
-	if (argc < 3) {
+	ARG_UNUSED(chat);
+
+	if (argc < 4) {
 		return;
 	}
-	safe_strncpy((char *)data->status.network_operator.operator, argv[3],
-		     sizeof(data->status.network_operator.operator));
-	data->status.network_operator.format = ATOI(argv[2], 0, "network_operator_format");
+
+	safe_strncpy((char *)data->status.network_info.operator.operator, argv[3],
+		     sizeof(data->status.network_info.operator.operator));
+	data->status.network_info.operator.has_mcc = false;
+	data->status.network_info.operator.has_mnc = false;
+	if (data->status.network_info.operator.operator[0] != '\0') {
+		data->status.network_info.operator.has_operator = true;
+		hl78xx_trim_surrounding_quotes((char *)data->status.network_info.operator.operator);
+	} else {
+		data->status.network_info.operator.has_operator = false;
+		data->status.network_info.operator.operator[0] = '\0';
+	}
+	data->status.network_info.operator.format = ATOI(argv[2], 0, "network_operator_format");
+	if (data->status.network_info.operator.format == HL78XX_OPERATOR_FORMAT_NUMERIC) {
+		if (hl78xx_parse_plmn(data->status.network_info.operator.operator,
+				      &data->status.network_info.operator.mcc,
+				      &data->status.network_info.operator.mnc)) {
+			data->status.network_info.operator.has_mcc = true;
+			data->status.network_info.operator.has_mnc = true;
+		} else {
+			data->status.network_info.operator.has_mcc = false;
+			data->status.network_info.operator.has_mnc = false;
+		}
+	}
+	LOG_DBG("Operator: %s, format: %d, mcc: %d, mnc: %d",
+		data->status.network_info.operator.operator,
+		data->status.network_info.operator.format, data->status.network_info.operator.mcc,
+		data->status.network_info.operator.mnc);
 }
 
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE

@@ -65,6 +65,16 @@
 #define MDM_BAND_HEX_STR_LEN      (MDM_BAND_BITMAP_LEN_BYTES * 2 + 1)
 
 #define MDM_KBND_BITMAP_MAX_ARRAY_SIZE 64
+#define HL78XX_DYNAMIC_CMD_MAX_MATCHES 12U
+
+#define EOF_PATTERN         "--EOF--Pattern--"
+#define TERMINATION_PATTERN "+++"
+#define CONNECT_STRING      "CONNECT"
+#define NO_CARRIER_STRING   "NO CARRIER"
+#define CME_ERROR_STRING    "+CME ERROR: "
+#define CMS_ERROR_STRING    "+CMS ERROR: "
+#define ERROR_STRING        "ERROR"
+#define OK_STRING           "OK"
 
 #define ADDRESS_FAMILY_IP         "IP"
 #define ADDRESS_FAMILY_IP4        "IPV4"
@@ -277,13 +287,6 @@ enum hl78xx_info_transfer_event {
 	EVENT_ALL_REGISTRATION_FAILED
 };
 
-struct kselacq_syntax {
-	bool mode;
-	enum hl78xx_cell_rat_mode rat1;
-	enum hl78xx_cell_rat_mode rat2;
-	enum hl78xx_cell_rat_mode rat3;
-};
-
 struct kband_syntax {
 	uint8_t rat;
 	/* Max 64 digits representation format is supported
@@ -378,6 +381,7 @@ struct modem_buffers {
 	uint8_t chat_rx[CONFIG_MODEM_HL78XX_CHAT_BUFFER_SIZES];
 	uint8_t cmd_buffer[CONFIG_MODEM_HL78XX_COMMAND_BUFFER_SIZE];
 	size_t cmd_len;
+	struct modem_chat_match dynamic_matches[HL78XX_DYNAMIC_CMD_MAX_MATCHES];
 	uint8_t *delimiter;
 	uint8_t *filter;
 	uint8_t *argv[MDM_CHAT_ARGV_BUFFER_SIZE];
@@ -402,11 +406,6 @@ struct hl78xx_phone_functionality_work {
 	enum hl78xx_phone_functionality functionality;
 	bool in_progress;
 };
-
-struct hl78xx_network_operator {
-	char operator[MDM_MODEL_LENGTH];
-	uint8_t format;
-};
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 
 struct ntn_rat_state {
@@ -418,6 +417,7 @@ struct ntn_rat_state {
 
 struct hl78xx_modem_boot_status {
 	bool is_booted_previously;
+	bool init_sequence_completed;
 	enum hl78xx_module_status status;
 };
 
@@ -458,6 +458,8 @@ struct hl78xx_modem_uart_status {
 };
 struct modem_status {
 	struct registration_status registration;
+	struct hl78xx_network_info network_info;
+	struct hl78xx_cxreg_status cxreg;
 	int16_t rssi;
 	uint8_t ksrep;
 	int16_t rsrp;
@@ -470,7 +472,6 @@ struct modem_status {
 	struct hl78xx_modem_boot_status boot;
 	struct hl78xx_phone_functionality_work phone_functionality;
 	struct apn_state apn;
-	struct hl78xx_network_operator network_operator;
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	struct hl78xx_wdsi_status wdsi;
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
@@ -755,16 +756,6 @@ struct hl78xx_variant_ops {
 	 *             (modem is awake, no LPM processing needed).
 	 */
 	void (*check_lpm_state)(struct hl78xx_data *data, bool *in_lpm, bool *early_return);
-
-	/**
-	 * @brief Parse +CxREG ACT value into RAT mode for variant-specific URC formats.
-	 *
-	 * @param act_value ACT value parsed from +CxREG payload.
-	 * @param[out] rat_mode Parsed RAT mode if handled.
-	 * @return true when ACT parsing is supported by this variant.
-	 */
-	bool (*cxreg_try_parse_rat_mode)(struct hl78xx_data *data, int act_value,
-					 enum hl78xx_cell_rat_mode *rat_mode);
 
 	/**
 	 * @brief Handle data-ready semantics when +CEREG/+CREG indicates registration.

@@ -128,11 +128,11 @@ static int hl78xx_hl7812_cfg_select_rat(struct hl78xx_data *data, const char **c
 static int hl78xx_hl7812_cfg_apply_rat_post_select(struct hl78xx_data *data,
 						   enum hl78xx_cell_rat_mode rat_request)
 {
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
+#if defined(CONFIG_MODEM_HL78XX_RAT_GSM) || defined(CONFIG_MODEM_HL78XX_AUTORAT)
 	if (rat_request == HL78XX_RAT_GSM) {
 		return hl78xx_run_lte_dis_gsm_en_reg_status_script(data);
 	}
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
+#endif /* CONFIG_MODEM_HL78XX_RAT_GSM || CONFIG_MODEM_HL78XX_AUTORAT */
 
 	return hl78xx_run_gsm_dis_lte_en_reg_status_script(data);
 }
@@ -438,10 +438,10 @@ static int hl78xx_hl7812_carrier_on_enter_lpm(struct hl78xx_data *data, bool *is
 	 * LPM restore sequencing in CARRIER_ON (CGCONTRDP/DNS path), but
 	 * do not drive these states from GPIO6 edges.
 	 */
-	LOG_DBG("eDRX event previous: %d, current: %d, is_lpm: %d", data->status.edrxev.previous,
-		data->status.edrxev.current, *is_lpm);
-	*is_lpm = *is_lpm || ((data->status.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_NONE &&
-			       data->status.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT));
+	LOG_DBG("eDRX event previous: %d, current: %d, is_lpm: %d",
+		data->status.lpm.edrxev.previous, data->status.lpm.edrxev.current, *is_lpm);
+	*is_lpm = *is_lpm || ((data->status.lpm.edrxev.previous == HL78XX_EDRX_EVENT_IDLE_NONE &&
+			       data->status.lpm.edrxev.current == HL78XX_EDRX_EVENT_IDLE_EXIT));
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 
 	return 0;
@@ -547,7 +547,6 @@ const struct hl78xx_variant_ops hl78xx_variant_ops_hl7812 = {
 	.on_registered_ready = NULL,
 	.on_kcellmeas_ready = hl78xx_hl7812_on_kcellmeas_ready,
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	.cxreg_try_parse_rat_mode = NULL,
 	.carrier_on_gnss_pending = hl78xx_hl7812_carrier_on_gnss_pending,
 	.on_gnss_mode_enter_lpm = hl78xx_hl7812_on_gnss_mode_enter_lpm,
 };

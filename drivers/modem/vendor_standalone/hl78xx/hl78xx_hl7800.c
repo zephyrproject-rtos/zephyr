@@ -101,24 +101,6 @@ static bool hl78xx_hl7800_on_gnss_mode_enter_lpm(struct hl78xx_data *data)
 #endif /* CONFIG_HL78XX_GNSS */
 }
 
-static bool hl78xx_hl7800_cxreg_try_parse_rat_mode(struct hl78xx_data *data, int act_value,
-						   enum hl78xx_cell_rat_mode *rat_mode)
-{
-	ARG_UNUSED(data);
-
-	switch (act_value) {
-	case 7:
-		*rat_mode = HL78XX_RAT_CAT_M1;
-		return true;
-	case 9:
-		*rat_mode = HL78XX_RAT_NB1;
-		return true;
-	default:
-		*rat_mode = HL78XX_RAT_MODE_NONE;
-		return true;
-	}
-}
-
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 
 /* Defined in hl78xx_sockets.c */
@@ -520,7 +502,6 @@ const struct hl78xx_variant_ops hl78xx_variant_ops_hl7800 = {
 	.on_registered_ready = NULL, /* HL7800 readiness gates on carrier_on_dns_complete */
 	.on_kcellmeas_ready = NULL,  /* HL7800 readiness gates on carrier_on_dns_complete */
 #endif                               /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	.cxreg_try_parse_rat_mode = hl78xx_hl7800_cxreg_try_parse_rat_mode,
 	.carrier_on_gnss_pending = hl78xx_hl7800_carrier_on_gnss_pending,
 	.on_gnss_mode_enter_lpm = hl78xx_hl7800_on_gnss_mode_enter_lpm,
 };

@@ -13,22 +13,30 @@
 
 #undef _POSIX_C_SOURCE
 #define _POSIX_C_SOURCE 200809L /* Required for strtok_r() */
+#include <errno.h>
+#include <ctype.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "hl78xx.h"
 #include "hl78xx_cfg.h"
 #include "hl78xx_chat.h"
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/timeutil.h>
 
 LOG_MODULE_DECLARE(hl78xx_dev, CONFIG_MODEM_LOG_LEVEL);
 
 #define ICCID_PREFIX_LEN            7
 #define IMSI_PREFIX_LEN             6
 #define MAX_BANDS                   32
+#define HL78XX_CTZEU_FIELD_MAX_LEN  8U
 #define MDM_APN_FULL_STRING_MAX_LEN 256
 
 /* Delay after AT+IPR command for new rate to take effect */
 #define BAUDRATE_SWITCH_DELAY_MS 2500
+
+static void set_band_bit(uint8_t *bitmap, uint16_t band_num);
 
 int hl78xx_enable_lte_coverage_urc(struct hl78xx_data *data, bool *modem_require_restart,
 				   uint16_t timeout_s)
@@ -64,6 +72,78 @@ int hl78xx_enable_lte_coverage_urc(struct hl78xx_data *data, bool *modem_require
 	return ret;
 }
 
+#ifdef CONFIG_MODEM_HL78XX_AUTORAT
+static bool hl78xx_prl_rat_is_valid(enum hl78xx_kselacq_rat rat)
+{
+#ifdef CONFIG_MODEM_HL78XX_12
+	return (rat >= HL78XX_KSELACQ_RAT_CLEAR) && (rat <= HL78XX_KSELACQ_RAT_GSM);
+#else
+	return (rat >= HL78XX_KSELACQ_RAT_CLEAR) && (rat <= HL78XX_KSELACQ_RAT_NB1);
+#endif
+}
+
+static bool hl78xx_prl_is_clear_request(const struct kselacq_syntax kselacq_rats)
+{
+	return (kselacq_rats.rat1 == HL78XX_KSELACQ_RAT_CLEAR) &&
+	       (kselacq_rats.rat2 == HL78XX_KSELACQ_RAT_CLEAR) &&
+	       (kselacq_rats.rat3 == HL78XX_KSELACQ_RAT_CLEAR);
+}
+
+static bool hl78xx_prl_write_is_valid(const struct kselacq_syntax kselacq_rats)
+{
+	if (!hl78xx_prl_rat_is_valid(kselacq_rats.rat1) ||
+	    !hl78xx_prl_rat_is_valid(kselacq_rats.rat2) ||
+	    !hl78xx_prl_rat_is_valid(kselacq_rats.rat3)) {
+		return false;
+	}
+
+	if (hl78xx_prl_is_clear_request(kselacq_rats)) {
+		return true;
+	}
+
+	return (kselacq_rats.rat1 != HL78XX_KSELACQ_RAT_CLEAR) &&
+	       (kselacq_rats.rat2 != HL78XX_KSELACQ_RAT_CLEAR) &&
+	       (kselacq_rats.rat3 != HL78XX_KSELACQ_RAT_CLEAR);
+}
+
+int hl78xx_set_prl_internal(struct hl78xx_data *data, const struct kselacq_syntax kselacq_rats)
+{
+	int ret;
+	char cmd[sizeof("AT+KSELACQ=0,255,255,255")] = {0};
+
+	if (data == NULL) {
+		return -EINVAL;
+	}
+
+	if (!hl78xx_prl_write_is_valid(kselacq_rats)) {
+		return -EINVAL;
+	}
+
+	if (hl78xx_prl_is_clear_request(kselacq_rats)) {
+		snprintk(cmd, sizeof(cmd), "AT+KSELACQ=0,0");
+	} else {
+		snprintk(cmd, sizeof(cmd), "AT+KSELACQ=0,%d,%d,%d", kselacq_rats.rat1,
+			 kselacq_rats.rat2, kselacq_rats.rat3);
+	}
+
+	ret = modem_dynamic_cmd_send(data, NULL, cmd, strlen(cmd), hl78xx_get_ok_match(),
+				     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
+	if (ret < 0) {
+		LOG_ERR("Failed to update PRL: %d", ret);
+		return ret;
+	}
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	data->kselacq_data.mode = false;
+	data->kselacq_data.rat1 = kselacq_rats.rat1;
+	data->kselacq_data.rat2 = kselacq_rats.rat2;
+	data->kselacq_data.rat3 = kselacq_rats.rat3;
+	k_mutex_unlock(&data->api_lock);
+
+	return 0;
+}
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
 int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		   enum hl78xx_cell_rat_mode *rat_request)
 {
@@ -73,8 +153,9 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 #if defined(CONFIG_MODEM_HL78XX_AUTORAT)
 	/* Check autorat status/configs */
 	if (IS_ENABLED(CONFIG_MODEM_HL78XX_AUTORAT_OVER_WRITE_PRL) ||
-	    (data->kselacq_data.rat1 == 0 && data->kselacq_data.rat2 == 0 &&
-	     data->kselacq_data.rat3 == 0)) {
+	    (data->kselacq_data.rat1 == HL78XX_KSELACQ_RAT_CLEAR &&
+	     data->kselacq_data.rat2 == HL78XX_KSELACQ_RAT_CLEAR &&
+	     data->kselacq_data.rat3 == HL78XX_KSELACQ_RAT_CLEAR)) {
 		char cmd_kselq[] = "AT+KSELACQ=0," CONFIG_MODEM_HL78XX_AUTORAT_PRL_PROFILES;
 
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_kselq, strlen(cmd_kselq),
@@ -88,13 +169,21 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	}
 
 	*rat_request = HL78XX_RAT_MODE_AUTO;
+
+	if (config->variant->cfg_apply_rat_post_select) {
+		ret = config->variant->cfg_apply_rat_post_select(data, data->status.registration.rat_mode);
+		if (ret < 0) {
+			goto error;
+		}
+	}
 #else
 	char const *cmd_ksrat_query = (const char *)KSRAT_QUERY;
 	char const *cmd_kselq_disable = (const char *)DISABLE_RAT_AUTO;
 	const char *cmd_set_rat = NULL;
 	/* Check if auto rat are disabled */
-	if (data->kselacq_data.rat1 != 0 && data->kselacq_data.rat2 != 0 &&
-	    data->kselacq_data.rat3 != 0) {
+	if (data->kselacq_data.rat1 != HL78XX_KSELACQ_RAT_CLEAR &&
+	    data->kselacq_data.rat2 != HL78XX_KSELACQ_RAT_CLEAR &&
+	    data->kselacq_data.rat3 != HL78XX_KSELACQ_RAT_CLEAR) {
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_kselq_disable,
 					     strlen(cmd_kselq_disable), hl78xx_get_ok_match(),
 					     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
@@ -296,8 +385,6 @@ error:
 	return ret;
 }
 
-#ifdef CONFIG_MODEM_HL78XX_RAT_GSM
-
 int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 {
 	int ret = 0;
@@ -319,8 +406,6 @@ int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 	}
 	return 0;
 }
-
-#endif /* CONFIG_MODEM_HL78XX_RAT_GSM */
 
 #if defined(CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID) || defined(CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI)
 /* Find APN from profile string based on associated number prefix */
@@ -698,11 +783,27 @@ void hl78xx_psmev_init(struct hl78xx_data *data)
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
+bool hl78xx_is_rsrp_value_valid(int16_t rsrp)
+{
+	return (rsrp >= CONFIG_MODEM_MIN_ALLOWED_SIGNAL_STRENGTH);
+}
+
+bool hl78xx_is_rsrq_value_valid(int16_t rsrq)
+{
+	return (rsrq >= CONFIG_MODEM_MIN_ALLOWED_SIGNAL_QUALITY);
+}
+
+bool hl78xx_is_sinr_value_valid(int16_t sinr)
+{
+	return (sinr >= CONFIG_MODEM_MIN_ALLOWED_SINR);
+}
+
 bool hl78xx_is_rsrp_valid(struct hl78xx_data *data)
 {
-	return (data->status.rsrp >= CONFIG_MODEM_MIN_ALLOWED_SIGNAL_STRENGTH);
+	return hl78xx_is_rsrp_value_valid(data->status.rsrp);
 }
-void set_band_bit(uint8_t *bitmap, uint16_t band_num)
+
+static void set_band_bit(uint8_t *bitmap, uint16_t band_num)
 {
 	uint16_t bit_pos;
 	uint16_t byte_index;
@@ -969,11 +1070,51 @@ const char *hl78xx_trim_leading_zeros(const char *hex_str)
 	return hex_str;
 }
 
-static void strip_quotes(char *str)
+int hl78xx_band_bitmap_to_number(const char *bmp)
 {
-	size_t len = strlen(str);
+	if (bmp == NULL || bmp[0] == '\0') {
+		return -ENODATA;
+	}
 
-	if (len >= 2 && str[0] == '"' && str[len - 1] == '"') {
+	int bmp_len = strlen(bmp);
+
+	for (int i = bmp_len - 1; i >= 0; i--) {
+		char c = bmp[i];
+		uint8_t nibble;
+
+		if (c >= '0' && c <= '9') {
+			nibble = c - '0';
+		} else if (c >= 'a' && c <= 'f') {
+			nibble = c - 'a' + 10;
+		} else if (c >= 'A' && c <= 'F') {
+			nibble = c - 'A' + 10;
+		} else {
+			continue;
+		}
+
+		if (nibble != 0) {
+			int chars_from_right = bmp_len - 1 - i;
+			int bit_in_nibble = find_lsb_set(nibble) - 1;
+			int bit_pos = chars_from_right * 4 + bit_in_nibble;
+
+			return bit_pos + 1;
+		}
+	}
+
+	return -ENODATA;
+}
+
+void hl78xx_trim_surrounding_quotes(char *str)
+{
+	size_t len;
+
+	if (str == NULL) {
+		return;
+	}
+
+	len = strlen(str);
+
+	if ((len >= 2U) && (str[0] == '"') && (str[len - 1] == '"')) {
 		/*  Shift string left by 1 and null-terminate earlier */
 		memmove(str, str + 1, len - 2);
 		str[len - 2] = '\0';
@@ -986,13 +1127,13 @@ void hl78xx_extract_essential_part_apn(const char *full_apn, char *essential_apn
 	size_t len;
 	const char *mnc_ptr;
 
-	if (full_apn == NULL || essential_apn == NULL || max_len == 0) {
+	if ((full_apn == NULL) || (essential_apn == NULL) || (max_len == 0)) {
 		return;
 	}
 	strncpy(apn_buf, full_apn, sizeof(apn_buf) - 1);
 	apn_buf[sizeof(apn_buf) - 1] = '\0';
 	/*  Remove surrounding quotes if any */
-	strip_quotes(apn_buf);
+	hl78xx_trim_surrounding_quotes(apn_buf);
 	mnc_ptr = strstr(apn_buf, ".mnc");
 	if (mnc_ptr != NULL) {
 		len = mnc_ptr - apn_buf;
@@ -1021,6 +1162,367 @@ int hl78xx_get_uart_config(struct hl78xx_data *data)
 	}
 	data->status.uart.current_baudrate = uart_cfg.baudrate;
 	return 0;
+}
+
+static bool hl78xx_parse_quoted_hex_field(const char *src, uint32_t *value)
+{
+	char buf[16];
+	char *endptr;
+	const char *parse_src = src;
+	size_t len;
+	unsigned long parsed;
+
+	if ((src == NULL) || (value == NULL)) {
+		return false;
+	}
+
+	len = strlen(src);
+	if ((len >= 2U) && (src[0] == '"') && (src[len - 1U] == '"')) {
+		len -= 2U;
+		if ((len == 0U) || (len >= sizeof(buf))) {
+			return false;
+		}
+		memcpy(buf, &src[1], len);
+		buf[len] = '\0';
+		parse_src = buf;
+	}
+
+	errno = 0;
+	parsed = strtoul(parse_src, &endptr, 16);
+	if ((errno != 0) || (endptr == parse_src) || (*endptr != '\0')) {
+		return false;
+	}
+
+	*value = (uint32_t)parsed;
+	return true;
+}
+
+static void hl78xx_ctzeu_normalize_value(char *str)
+{
+	char *start;
+	char *end;
+
+	if (str == NULL) {
+		return;
+	}
+
+	start = str;
+	while (isspace((unsigned char)*start)) {
+		start++;
+	}
+	if (start != str) {
+		memmove(str, start, strlen(start) + 1U);
+	}
+
+	hl78xx_trim_surrounding_quotes(str);
+
+	start = str;
+	while (isspace((unsigned char)*start)) {
+		start++;
+	}
+	if (start != str) {
+		memmove(str, start, strlen(start) + 1U);
+	}
+
+	end = str + strlen(str);
+	while ((end > str) && isspace((unsigned char)end[-1])) {
+		end--;
+	}
+	*end = '\0';
+}
+
+static int hl78xx_ctzeu_parse_numeric_arg(const char *src, int min_value, int max_value, int *value)
+{
+	char value_buf[HL78XX_CTZEU_FIELD_MAX_LEN];
+	char *endptr;
+	long parsed_value;
+
+	if ((src == NULL) || (value == NULL)) {
+		return -EINVAL;
+	}
+
+	if (strlen(src) >= sizeof(value_buf)) {
+		return -ENOSPC;
+	}
+
+	strcpy(value_buf, src);
+	hl78xx_ctzeu_normalize_value(value_buf);
+
+	parsed_value = strtol(value_buf, &endptr, 10);
+	if ((endptr == value_buf) || (*endptr != '\0')) {
+		return -EINVAL;
+	}
+
+	if ((parsed_value < min_value) || (parsed_value > max_value)) {
+		return -EINVAL;
+	}
+
+	*value = (int)parsed_value;
+
+	return 0;
+}
+
+static int hl78xx_ctzeu_extract_utime_value(char **argv, uint16_t argc, char *value,
+					    size_t value_size)
+{
+	size_t used;
+
+	if ((argv == NULL) || (value == NULL) || (value_size == 0U)) {
+		return -EINVAL;
+	}
+
+	if (argc < 4U) {
+		return -ENODATA;
+	}
+
+	used = 0U;
+	value[0] = '\0';
+
+	for (uint16_t i = 3U; i < argc; i++) {
+		int ret;
+
+		ret = snprintf(value + used, value_size - used, "%s%s", (used == 0U) ? "" : " ",
+			       argv[i]);
+		if ((ret < 0) || ((size_t)ret >= (value_size - used))) {
+			return -ENOSPC;
+		}
+
+		used += (size_t)ret;
+	}
+
+	hl78xx_ctzeu_normalize_value(value);
+
+	return 0;
+}
+
+static int hl78xx_ctzeu_parse_utime_value(const char *utime_value, int64_t *date_time_ms,
+					  struct tm *utc_time_out)
+{
+	struct tm utc_time = {0};
+	char value[HL78XX_CTZEU_UTIME_MAX_LEN];
+	unsigned int year;
+	unsigned int month;
+	unsigned int day;
+	unsigned int hour;
+	unsigned int minute;
+	unsigned int second;
+	char separator;
+	int parsed;
+
+	if ((utime_value == NULL) || (date_time_ms == NULL)) {
+		return -EINVAL;
+	}
+
+	if (strlen(utime_value) >= sizeof(value)) {
+		return -ENOSPC;
+	}
+
+	strcpy(value, utime_value);
+	hl78xx_ctzeu_normalize_value(value);
+
+	parsed = sscanf(value, "%u/%u/%u%c%u:%u:%u", &year, &month, &day, &separator, &hour,
+			&minute, &second);
+	if ((parsed != 7) || ((separator != ',') && !isspace((unsigned char)separator))) {
+		return -ENODATA;
+	}
+
+	utc_time.tm_year = (int)year - 1900;
+	utc_time.tm_mon = (int)month - 1;
+	utc_time.tm_mday = (int)day;
+	utc_time.tm_hour = (int)hour;
+	utc_time.tm_min = (int)minute;
+	utc_time.tm_sec = (int)second;
+
+	*date_time_ms = (int64_t)timeutil_timegm64(&utc_time) * 1000;
+	if (utc_time_out != NULL) {
+		*utc_time_out = utc_time;
+	}
+
+	return 0;
+}
+
+int hl78xx_ctzeu_parse_urc(char **argv, uint16_t argc, struct hl78xx_ctzeu_update *update)
+{
+	char utime_value[HL78XX_CTZEU_UTIME_MAX_LEN];
+	int err;
+
+	if ((argv == NULL) || (update == NULL)) {
+		return -EINVAL;
+	}
+
+	if (argc < 3U) {
+		return -ENODATA;
+	}
+
+	memset(update, 0, sizeof(*update));
+
+	err = hl78xx_ctzeu_parse_numeric_arg(argv[1], -48, 56, &update->tz);
+	if (err) {
+		return err;
+	}
+
+	err = hl78xx_ctzeu_parse_numeric_arg(argv[2], 0, 2, &update->dst);
+	if (err) {
+		return err;
+	}
+
+	err = hl78xx_ctzeu_extract_utime_value(argv, argc, utime_value, sizeof(utime_value));
+	if (err == -ENODATA) {
+		return 0;
+	}
+	if (err) {
+		return err;
+	}
+
+	err = hl78xx_ctzeu_parse_utime_value(utime_value, &update->date_time_ms, &update->utc_time);
+	if (err) {
+		return err;
+	}
+
+	update->has_utime = true;
+
+	return 0;
+}
+
+static bool hl78xx_copy_cereg_timer_field(const char *src, char *dst, size_t dst_size)
+{
+	if ((src == NULL) || (dst == NULL) || (dst_size == 0U)) {
+		return false;
+	}
+
+	if (strlen(src) >= dst_size) {
+		return false;
+	}
+
+	safe_strncpy(dst, src, dst_size);
+	return true;
+}
+
+void hl78xx_parse_cereg_info(struct hl78xx_data *data, char **argv, uint16_t argc, bool is_urc)
+{
+	struct hl78xx_cxreg_status *cxreg;
+	int status_idx;
+	int tac_idx;
+	int cell_idx;
+	int act_idx;
+	int cause_type_idx;
+	int reject_cause_idx;
+	int active_time_idx;
+	int tau_idx;
+	uint32_t value;
+
+	if ((argv == NULL) || (data == NULL) || (argc < 2U)) {
+		return;
+	}
+
+	cxreg = &data->status.cxreg;
+	cxreg->has_tac = false;
+	cxreg->has_cell_id = false;
+	cxreg->has_rat_mode = false;
+	cxreg->has_cause_type = false;
+	cxreg->has_reject_cause = false;
+	cxreg->has_active_time = false;
+	cxreg->active_time[0] = '\0';
+	cxreg->has_tau = false;
+	cxreg->tau[0] = '\0';
+
+	status_idx = is_urc ? 2 : 1;
+	tac_idx = status_idx + 1;
+	cell_idx = status_idx + 2;
+	act_idx = status_idx + 3;
+	cause_type_idx = status_idx + 4;
+	reject_cause_idx = status_idx + 5;
+	active_time_idx = status_idx + 6;
+	tau_idx = status_idx + 7;
+
+	if (argc > status_idx) {
+		cxreg->reg_status = ATOI(argv[status_idx], 0, "registration_status");
+	}
+
+	if ((argc > tac_idx) && (argv[tac_idx] != NULL) && (argv[tac_idx][0] != '\0') &&
+	    hl78xx_parse_quoted_hex_field(argv[tac_idx], &value)) {
+		cxreg->has_tac = true;
+		cxreg->tac = value;
+	}
+
+	if ((argc > cell_idx) && (argv[cell_idx] != NULL) && (argv[cell_idx][0] != '\0') &&
+	    hl78xx_parse_quoted_hex_field(argv[cell_idx], &value)) {
+		cxreg->has_cell_id = true;
+		cxreg->cell_id = value;
+	}
+
+	if ((argc > act_idx) && (argv[act_idx] != NULL) && (argv[act_idx][0] != '\0')) {
+		cxreg->has_rat_mode = true;
+		cxreg->rat_mode = hl78xx_access_tech_to_rat(ATOI(argv[act_idx], -1, "act_value"));
+	}
+
+	if ((argc > cause_type_idx) && (argv[cause_type_idx] != NULL) &&
+	    (argv[cause_type_idx][0] != '\0')) {
+		cxreg->cause_type = ATOI(argv[cause_type_idx], 0, "cereg_cause_type");
+		cxreg->has_cause_type = true;
+	}
+
+	if ((argc > reject_cause_idx) && (argv[reject_cause_idx] != NULL) &&
+	    (argv[reject_cause_idx][0] != '\0')) {
+		cxreg->reject_cause = ATOI(argv[reject_cause_idx], 0, "cereg_reject_cause");
+		cxreg->has_reject_cause = true;
+	}
+
+	if ((argc > active_time_idx) && (argv[active_time_idx] != NULL) &&
+	    (argv[active_time_idx][0] != '\0') &&
+	    hl78xx_copy_cereg_timer_field(argv[active_time_idx], cxreg->active_time,
+					  sizeof(cxreg->active_time))) {
+		cxreg->has_active_time = true;
+	}
+
+	if ((argc > tau_idx) && (argv[tau_idx] != NULL) && (argv[tau_idx][0] != '\0') &&
+	    hl78xx_copy_cereg_timer_field(argv[tau_idx], cxreg->tau, sizeof(cxreg->tau))) {
+		cxreg->has_tau = true;
+	}
+}
+
+bool hl78xx_parse_plmn(const char *operator, uint16_t *mcc, uint16_t *mnc)
+{
+	char digits[7] = {0};
+	size_t len = 0U;
+	size_t index;
+
+	if ((operator == NULL) || (mcc == NULL) || (mnc == NULL)) {
+		return false;
+	}
+
+	while ((*operator != '\0') && (len < (sizeof(digits) - 1U))) {
+		if ((*operator >= '0') && (*operator <= '9')) {
+			digits[len++] = *operator;
+		}
+		operator++;
+	}
+
+	if ((len != 5U) && (len != 6U)) {
+		return false;
+	}
+
+	*mcc = 0U;
+	for (index = 0U; index < 3U; index++) {
+		*mcc = (uint16_t)((*mcc * 10U) + (uint16_t)(digits[index] - '0'));
+	}
+
+	*mnc = 0U;
+	for (index = 3U; index < len; index++) {
+		*mnc = (uint16_t)((*mnc * 10U) + (uint16_t)(digits[index] - '0'));
+	}
+
+	LOG_DBG("Parsed PLMN: MCC=%u, MNC=%u", *mcc, *mnc);
+	return true;
+}
+
+int hl78xx_set_network_operator_format(struct hl78xx_data *data, enum hl78xx_operator_format format)
+{
+	char cmd[16] = {0};
+
+	snprintk(cmd, sizeof(cmd), "AT+COPS=3,%u", format);
+	return modem_dynamic_cmd_send(data, NULL, cmd, strlen(cmd), hl78xx_get_ok_match(),
+				      hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
 }
 
 #ifdef CONFIG_MODEM_HL78XX_AUTO_BAUDRATE
