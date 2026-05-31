@@ -7,5 +7,6 @@ config UART_CDNS
 	depends on DT_HAS_CDNS_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_CDNS_UART),pinctrl-0)
 	help
-	This option enables the serial driver for Cadence UART IP6528.
+	  This option enables the serial driver for Cadence UART IP6528.
