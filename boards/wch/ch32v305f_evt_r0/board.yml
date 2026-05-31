@@ -1,0 +1,6 @@
+board:
+  name: ch32v305f_evt_r0
+  full_name: WCH CH32V305F-EVT-R0
+  vendor: wch
+  socs:
+    - name: ch32v305
