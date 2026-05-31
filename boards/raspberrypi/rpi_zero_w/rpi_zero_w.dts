@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <broadcom/bcm2835.dtsi>
+
+/ {
+	model = "Raspberry Pi Zero W";
+	compatible = "raspberrypi,model-zero-w", "brcm,bcm2835";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "okay";
+};
