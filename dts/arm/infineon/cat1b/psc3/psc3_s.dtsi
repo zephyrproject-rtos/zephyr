@@ -206,7 +206,7 @@
 				reg-names = "m_can", "message_ram";
 				clk-dst = <0x405>;
 				status = "disabled";
-				bosch,mram-cfg = <0x0 15 15 8 8 0 8 8>;
+				bosch,mram-cfg = <0x0 15 15 16 0 0 8 8>;
 				interrupts = <99 4>, <100 4>;
 				interrupt-names = "int0", "int1";
 			};
@@ -217,7 +217,7 @@
 				reg-names = "m_can", "message_ram";
 				clk-dst = <0x406>;
 				status = "disabled";
-				bosch,mram-cfg = <0x800 15 15 8 8 0 8 8>;
+				bosch,mram-cfg = <0x800 15 15 16 0 0 8 8>;
 				interrupts = <101 4>, <102 4>;
 				interrupt-names = "int0", "int1";
 			};
