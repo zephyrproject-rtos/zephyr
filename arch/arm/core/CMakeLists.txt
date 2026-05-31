@@ -27,9 +27,10 @@ zephyr_library_sources_ifdef(CONFIG_ARM_ZIMAGE_HEADER header.S)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 zephyr_library_sources_ifdef(CONFIG_ARCH_STACKWALK stacktrace.c)
-# Cortex-A/R provides its own SMP/nested-capable irq_offload implementation
-# (see cortex_a_r/irq_offload.c).
-if(NOT (CONFIG_CPU_AARCH32_CORTEX_A OR CONFIG_CPU_AARCH32_CORTEX_R))
+# Cortex-A/R and ARMv6 use the SMP/nested-capable irq_offload implementation
+# in cortex_a_r/irq_offload.c.
+if(NOT (CONFIG_CPU_AARCH32_CORTEX_A OR CONFIG_CPU_AARCH32_CORTEX_R OR
+        CONFIG_CPU_AARCH32_ARMV6))
   zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 endif()
 
@@ -44,6 +45,7 @@ add_subdirectory_ifdef(CONFIG_ARM_MPU mpu)
 add_subdirectory_ifdef(CONFIG_ARM_AARCH32_MMU mmu)
 
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_ARM9 arm9)
+add_subdirectory_ifdef(CONFIG_CPU_AARCH32_ARMV6 armv6)
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_R cortex_a_r)
 add_subdirectory_ifdef(CONFIG_CPU_AARCH32_CORTEX_A cortex_a_r)
 

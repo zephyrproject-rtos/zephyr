@@ -19,7 +19,9 @@
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/barrier.h>
 #include <stdbool.h>
+#ifdef CONFIG_HAS_CMSIS_CORE
 #include <cmsis_core.h>
+#endif
 
 #ifdef CONFIG_USERSPACE
 static void setup_priv_stack(struct k_thread *thread)
