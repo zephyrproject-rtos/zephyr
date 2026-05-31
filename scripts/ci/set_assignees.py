@@ -91,8 +91,13 @@ Candidates are then filtered:
     are skipped.
 
 If the PR already has MAX_REVIEWERS (15) or more reviewers, the normal
-candidate list is discarded and only the maintainers of *all* matched areas
-are requested instead (a smaller, higher-signal set).
+candidate list is discarded.  Only the maintainers of the *primary*
+(highest-weight) area are used as fallback candidates.  This keeps the
+fallback small and high-signal, and avoids the original behaviour of
+requesting reviews from all area maintainers across all touched files
+(which could push a broad PR even further above the reviewer cap).
+The same author / existing-reviewer / self-removed / collaborator-status
+filters are applied to the fallback candidates.
 
 Otherwise the candidate list is capped at the remaining vacancy
 (MAX_REVIEWERS - existing reviewer count) before the review request is created.
@@ -447,11 +452,16 @@ def _pick_assignees(pr, area_counter: dict, all_maintainers: dict, num_files: in
     return assignees
 
 
-def _add_reviewers(gh, gh_repo, pr, args, collab: list, all_maintainers: dict):
+def _add_reviewers(gh, gh_repo, pr, args, collab: list, primary_maintainers: list):
     """Request reviews from eligible collaborators on *pr*.
 
     Skips the PR author, existing reviewers, non-collaborators, and users
     who previously removed themselves from the review request.
+
+    When the PR already has MAX_REVIEWERS or more reviewers, only
+    *primary_maintainers* (the maintainers of the highest-weight area) are
+    used as fallback candidates, keeping the fallback small and high-signal.
+    The same filters apply in both the normal and overflow paths.
     """
     existing_reviewers = set()
     for review in pr.get_reviews():
@@ -471,37 +481,40 @@ def _add_reviewers(gh, gh_repo, pr, args, collab: list, all_maintainers: dict):
 
     if len(existing_reviewers) >= MAX_REVIEWERS:
         logger.info(
-            "PR already has %d reviewer(s) (limit %d); adding area maintainers as reviewers instead",
-            len(existing_reviewers),
-            MAX_REVIEWERS,
+            "PR #%d already has %d reviewer(s) (limit %d); "
+            "restricting candidates to primary area maintainers",
+            pr.number, len(existing_reviewers), MAX_REVIEWERS,
         )
-        reviewers = list(all_maintainers.keys())
+        candidates = primary_maintainers
+        vacancy = None
     else:
+        candidates = collab
         vacancy = MAX_REVIEWERS - len(existing_reviewers)
-        reviewers = []
 
-        for collaborator in collab:
-            try:
-                gh_user = gh.get_user(collaborator)
-            except UnknownObjectException:
-                logger.warning("User '%s' not found; account may have been deleted", collaborator)
-                continue
+    reviewers = []
+    for collaborator in candidates:
+        try:
+            gh_user = gh.get_user(collaborator)
+        except UnknownObjectException:
+            logger.warning("User '%s' not found; account may have been deleted", collaborator)
+            continue
 
-            if pr.user == gh_user:
-                logger.debug("Skipping PR author '%s'", collaborator)
-                continue
-            if gh_user in existing_reviewers:
-                logger.debug("Skipping existing reviewer '%s'", collaborator)
-                continue
-            if not gh_repo.has_in_collaborators(gh_user):
-                logger.info("Skipping '%s': not a repository collaborator", collaborator)
-                continue
-            if gh_user in self_removed:
-                logger.info("Skipping '%s': previously self-removed from reviewers", collaborator)
-                continue
+        if pr.user == gh_user:
+            logger.debug("Skipping PR author '%s'", collaborator)
+            continue
+        if gh_user in existing_reviewers:
+            logger.debug("Skipping existing reviewer '%s'", collaborator)
+            continue
+        if not gh_repo.has_in_collaborators(gh_user):
+            logger.info("Skipping '%s': not a repository collaborator", collaborator)
+            continue
+        if gh_user in self_removed:
+            logger.info("Skipping '%s': previously self-removed from reviewers", collaborator)
+            continue
 
-            reviewers.append(collaborator)
+        reviewers.append(collaborator)
 
+    if vacancy is not None:
         reviewers = reviewers[:vacancy]
 
     if reviewers:
@@ -771,7 +784,12 @@ def process_pr(gh, args, maintainer_file, number: int):
 
     # Request reviews.
     if collab:
-        _add_reviewers(gh, gh_repo, pr, args, collab, all_maintainers)
+        primary_area = next(iter(area_counter), None)
+        primary_maintainers = (
+            maintainer_file.areas[primary_area.name].maintainers
+            if primary_area else []
+        )
+        _add_reviewers(gh, gh_repo, pr, args, collab, primary_maintainers)
 
     # Set assignees (only when none are set yet, unless doing a dry run).
     if assignees and (not pr.assignee or args.dry_run):
