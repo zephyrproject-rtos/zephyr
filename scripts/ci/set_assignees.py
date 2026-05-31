@@ -3,8 +3,18 @@
 # Copyright (c) 2022 Intel Corp.
 # SPDX-License-Identifier: Apache-2.0
 
+"""Assign reviewers, maintainers, and labels to new PRs based on MAINTAINERS.yml.
+
+Uses the GitHub API to:
+  - Add area-based labels to pull requests.
+  - Request reviews from relevant collaborators and maintainers.
+  - Assign maintainers to pull requests and issues.
+  - Process module PRs across all active west projects.
+"""
+
 import argparse
 import datetime
+import logging
 import os
 import sys
 import time
@@ -28,14 +38,25 @@ else:
     # Propagate this decision to child processes.
     os.environ['ZEPHYR_BASE'] = str(ZEPHYR_BASE)
 
+logger = logging.getLogger(__name__)
 
-def log(s):
-    if args.verbose > 0:
-        print(s, file=sys.stdout)
+# Maximum number of changed files to process; larger PRs are skipped.
+MAX_FILES = 500
+
+# Maximum number of reviewers on a PR before switching to maintainer-only strategy.
+MAX_REVIEWERS = 15
+
+# Maximum number of labels to apply; more than this is likely noise from over-broad matches.
+MAX_LABELS = 10
+
+# Courtesy sleep between consecutive GitHub API calls to avoid secondary rate limits.
+API_SLEEP_SECONDS = 1
+
+# Areas where assignee selection only fires when they are the sole area affected.
+META_AREAS = frozenset(['Release Notes', 'Documentation', 'Samples', 'Tests', 'Release'])
 
 
 def parse_args():
-    global args
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -85,12 +106,39 @@ def parse_args():
         help="Updated maintainer file to compare against current MAINTAINERS.yml",
     )
 
-    parser.add_argument("-v", "--verbose", action="count", default=0, help="Verbose Output")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Verbose output. Use -v for INFO, -vv for DEBUG.",
+    )
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
 
-def load_areas(filename: str):
+def setup_logging(verbose: int):
+    """Configure logging verbosity.
+
+    -v   -> INFO level (operational progress)
+    -vv  -> DEBUG level (per-file and per-area detail)
+    """
+    if verbose >= 2:
+        level = logging.DEBUG
+    elif verbose == 1:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+
+    logging.basicConfig(
+        format="%(levelname)s: %(message)s",
+        level=level,
+        stream=sys.stdout,
+    )
+
+
+def load_areas(filename: str) -> dict:
+    """Load MAINTAINERS YAML and return only areas that define file-matching patterns."""
     with open(filename) as f:
         doc = yaml.safe_load(f)
     return {
@@ -98,530 +146,550 @@ def load_areas(filename: str):
     }
 
 
-def process_manifest(old_manifest_file):
-    log("Processing manifest changes")
-    if not os.path.isfile("west.yml") or not os.path.isfile(old_manifest_file):
-        log("No west.yml found, skipping...")
+def process_manifest(old_manifest_file: str) -> list:
+    """Return area name strings for projects that changed between two west.yml files."""
+    logger.info("Processing manifest changes")
+
+    if not os.path.isfile("west.yml"):
+        logger.warning("west.yml not found; skipping manifest processing")
         return []
+    if not os.path.isfile(old_manifest_file):
+        logger.warning("Old manifest '%s' not found; skipping manifest processing", old_manifest_file)
+        return []
+
     old_manifest = Manifest.from_file(old_manifest_file)
     new_manifest = Manifest.from_file("west.yml")
-    old_projs = set((p.name, p.revision) for p in old_manifest.projects)
-    new_projs = set((p.name, p.revision) for p in new_manifest.projects)
-    # Removed projects
-    rprojs = set(filter(lambda p: p[0] not in list(p[0] for p in new_projs), old_projs - new_projs))
-    # Updated projects
-    uprojs = set(filter(lambda p: p[0] in list(p[0] for p in old_projs), new_projs - old_projs))
-    # Added projects
-    aprojs = new_projs - old_projs - uprojs
 
-    # All projs
-    projs = rprojs | uprojs | aprojs
-    projs_names = [name for name, rev in projs]
+    old_projs = {(p.name, p.revision) for p in old_manifest.projects}
+    new_projs = {(p.name, p.revision) for p in new_manifest.projects}
 
-    log(f"found modified projects: {projs_names}")
-    areas = []
-    for p in projs_names:
-        areas.append(f'West project: {p}')
+    old_names = {name for name, _ in old_projs}
+    new_names = {name for name, _ in new_projs}
 
-    log(f'manifest areas: {areas}')
+    # Projects whose name no longer appears in the new manifest.
+    removed = {(n, r) for n, r in old_projs if n not in new_names}
+    # Projects that exist in both manifests but with a different revision.
+    updated = {(n, r) for n, r in new_projs if n in old_names and (n, r) not in old_projs}
+    # Entirely new projects.
+    added = {(n, r) for n, r in new_projs if n not in old_names}
+
+    changed_names = sorted({n for n, _ in removed | updated | added})
+    logger.info("Modified west projects: %s", changed_names)
+
+    areas = [f"West project: {name}" for name in changed_names]
+    logger.debug("Manifest areas: %s", areas)
     return areas
 
 
-def set_or_empty(d, key):
+def set_or_empty(d: dict, key: str) -> set:
     return set(d.get(key, []) or [])
 
 
-def compare_areas(old, new, repo_fullname=None, token=None):
+def _diff_area_entry(old_entry: dict, new_entry: dict) -> list:
+    """Return human-readable change strings between two MAINTAINERS area entries."""
+    changes = []
+    fields = [
+        ("maintainers",   "Maintainers"),
+        ("collaborators", "Collaborators"),
+        ("labels",        "Labels"),
+        ("files",         "Files"),
+        ("files-regex",   "files-regex"),
+    ]
+    for key, label in fields:
+        added   = set_or_empty(new_entry, key) - set_or_empty(old_entry, key)
+        removed = set_or_empty(old_entry, key) - set_or_empty(new_entry, key)
+        if added:
+            changes.append(f"{label} added: {', '.join(sorted(added))}")
+        if removed:
+            changes.append(f"{label} removed: {', '.join(sorted(removed))}")
+
+    old_status = old_entry.get("status")
+    new_status = new_entry.get("status")
+    if old_status != new_status:
+        changes.append(f"Status changed: {old_status} -> {new_status}")
+
+    return changes
+
+
+def compare_areas(old: dict, new: dict) -> set:
+    """Compare two MAINTAINERS area dicts; return the set of added, removed, or changed names."""
     old_areas = set(old.keys())
     new_areas = set(new.keys())
 
-    changed_areas = set()
-    added_areas = new_areas - old_areas
+    added_areas   = new_areas - old_areas
     removed_areas = old_areas - new_areas
-    common_areas = old_areas & new_areas
+    common_areas  = old_areas & new_areas
 
-    print("=== Areas Added ===")
-    for area in sorted(added_areas):
-        print(f"+ {area}")
+    if added_areas:
+        logger.info("Areas added (%d):", len(added_areas))
+        for area in sorted(added_areas):
+            logger.info("  + %s", area)
 
-    print("\n=== Areas Removed ===")
-    for area in sorted(removed_areas):
-        print(f"- {area}")
+    if removed_areas:
+        logger.info("Areas removed (%d):", len(removed_areas))
+        for area in sorted(removed_areas):
+            logger.info("  - %s", area)
 
-    print("\n=== Area Changes ===")
+    changed_areas = set()
     for area in sorted(common_areas):
-        changes = []
-        old_entry = old[area]
-        new_entry = new[area]
-
-        # Compare maintainers
-        old_maint = set_or_empty(old_entry, "maintainers")
-        new_maint = set_or_empty(new_entry, "maintainers")
-        added_maint = new_maint - old_maint
-        removed_maint = old_maint - new_maint
-        if added_maint:
-            changes.append(f"  Maintainers added: {', '.join(sorted(added_maint))}")
-        if removed_maint:
-            changes.append(f"  Maintainers removed: {', '.join(sorted(removed_maint))}")
-
-        # Compare collaborators
-        old_collab = set_or_empty(old_entry, "collaborators")
-        new_collab = set_or_empty(new_entry, "collaborators")
-        added_collab = new_collab - old_collab
-        removed_collab = old_collab - new_collab
-        if added_collab:
-            changes.append(f"  Collaborators added: {', '.join(sorted(added_collab))}")
-        if removed_collab:
-            changes.append(f"  Collaborators removed: {', '.join(sorted(removed_collab))}")
-
-        # Compare status
-        old_status = old_entry.get("status")
-        new_status = new_entry.get("status")
-        if old_status != new_status:
-            changes.append(f"  Status changed: {old_status} -> {new_status}")
-
-        # Compare labels
-        old_labels = set_or_empty(old_entry, "labels")
-        new_labels = set_or_empty(new_entry, "labels")
-        added_labels = new_labels - old_labels
-        removed_labels = old_labels - new_labels
-        if added_labels:
-            changes.append(f"  Labels added: {', '.join(sorted(added_labels))}")
-        if removed_labels:
-            changes.append(f"  Labels removed: {', '.join(sorted(removed_labels))}")
-
-        # Compare files
-        old_files = set_or_empty(old_entry, "files")
-        new_files = set_or_empty(new_entry, "files")
-        added_files = new_files - old_files
-        removed_files = old_files - new_files
-        if added_files:
-            changes.append(f"  Files added: {', '.join(sorted(added_files))}")
-        if removed_files:
-            changes.append(f"  Files removed: {', '.join(sorted(removed_files))}")
-
-        # Compare files-regex
-        old_regex = set_or_empty(old_entry, "files-regex")
-        new_regex = set_or_empty(new_entry, "files-regex")
-        added_regex = new_regex - old_regex
-        removed_regex = old_regex - new_regex
-        if added_regex:
-            changes.append(f"  files-regex added: {', '.join(sorted(added_regex))}")
-        if removed_regex:
-            changes.append(f"  files-regex removed: {', '.join(sorted(removed_regex))}")
-
+        changes = _diff_area_entry(old[area], new[area])
         if changes:
             changed_areas.add(area)
-            print(f"area changed: {area}")
+            logger.info("Area changed: %s", area)
+            for change in changes:
+                logger.debug("  %s", change)
 
     return added_areas | removed_areas | changed_areas
 
 
-def process_pr(gh, maintainer_file, number):
-    gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
-    pr = gh_repo.get_pull(number)
+def _pick_assignees(pr, area_counter: dict, all_maintainers: dict, num_files: int):
+    """Select the best assignee list for *pr* from area and file-coverage data.
 
-    log(f"working on https://github.com/{args.org}/{args.repo}/pull/{pr.number} : {pr.title}")
-
-    labels = set()
-    area_counter = defaultdict(int)
-    found_maintainers = defaultdict(int)
-
-    num_files = 0
-    fn = list(pr.get_files())
-
-    # Check if PR currently has 'size: XS' label
-    current_labels = [label.name for label in pr.labels]
-    has_size_xs_label = 'size: XS' in current_labels
-
-    # Determine if PR qualifies for 'size: XS' label
-    qualifies_for_xs = pr.commits == 1 and (pr.additions <= 1 and pr.deletions <= 1)
-
-    if qualifies_for_xs:
-        labels = {'size: XS'}
-    elif has_size_xs_label and not qualifies_for_xs:
-        # Remove 'size: XS' label if PR no longer qualifies
-        log(
-            f"removing 'size: XS' label (commits: {pr.commits}, "
-            f"additions: {pr.additions}, deletions: {pr.deletions})..."
-        )
-        if not args.dry_run:
-            pr.remove_from_labels('size: XS')
-
-    if len(fn) > 500:
-        log(f"Too many files changed ({len(fn)}), skipping....")
-        return
-
-    # areas where assignment happens if only said areas are affected
-    meta_areas = ['Release Notes', 'Documentation', 'Samples', 'Tests', 'Release']
-
-    collab_per_path = set()
-    additional_reviews = set()
-    for changed_file in fn:
-        num_files += 1
-        log(f"file: {changed_file.filename}")
-
-        areas = []
-        if changed_file.filename in ['west.yml', 'submanifests/optional.yaml']:
-            if not args.updated_manifest:
-                log("No updated manifest, cannot process west.yml changes, skipping...")
-                continue
-            parsed_areas = process_manifest(old_manifest_file=args.updated_manifest)
-            for _area in parsed_areas:
-                area_match = maintainer_file.name2areas(_area)
-                if area_match:
-                    _area_obj = area_match[0]
-                    collabs_for_area = _area_obj.get_collaborators_for_path(changed_file.filename)
-                    collab_per_path.update(collabs_for_area)
-                    areas.extend(area_match)
-        elif changed_file.filename in ['MAINTAINERS.yml']:
-            areas = maintainer_file.path2areas(changed_file.filename)
-            if args.updated_maintainer_file:
-                log("cannot process MAINTAINERS.yml changes, skipping...")
-
-                old_areas = load_areas(args.updated_maintainer_file)
-                new_areas = load_areas('MAINTAINERS.yml')
-                changed_areas = compare_areas(old_areas, new_areas)
-                for _area in changed_areas:
-                    area_match = maintainer_file.name2areas(_area)
-                    if area_match:
-                        # get list of maintainers for changed area
-                        additional_reviews.update(maintainer_file.areas[_area].maintainers)
-                log(f"MAINTAINERS.yml changed, adding reviewrs: {additional_reviews}")
-        else:
-            areas = maintainer_file.path2areas(changed_file.filename)
-            for _area in areas:
-                collab_per_path.update(_area.get_collaborators_for_path(changed_file.filename))
-
-        log(f"  areas: {areas}")
-
-        if not areas:
-            continue
-
-        # instance of an area, for example a driver or a board, not APIs or subsys code.
-        is_instance = False
-        sorted_areas = sorted(areas, key=lambda x: 'Platform' in x.name, reverse=True)
-        for area in sorted_areas:
-            # do not count cmake file changes, i.e. when there are changes to
-            # instances of an area listed in both the subsystem and the
-            # platform implementing it
-            if 'CMakeLists.txt' in changed_file.filename or area.name in meta_areas:
-                c = 0
-            else:
-                c = 1 if not is_instance else 0
-
-            area_counter[area] += c
-            log(f"area counter: {area_counter}")
-            labels.update(area.labels)
-            # FIXME: Here we count the same file multiple times if it exists in
-            # multiple areas with same maintainer
-            for area_maintainer in area.maintainers:
-                found_maintainers[area_maintainer] += c
-
-            if 'Platform' in area.name:
-                is_instance = True
-
-            for _area in sorted_areas:
-                collab_per_path.update(_area.get_collaborators_for_path(changed_file.filename))
-
-    area_counter = dict(sorted(area_counter.items(), key=lambda item: item[1], reverse=True))
-    log(f"Area matches: {area_counter}")
-    log(f"labels: {labels}")
-
-    # Create a list of collaborators ordered by the area match
-    collab = list()
-    for area in area_counter:
-        collab += maintainer_file.areas[area.name].maintainers
-        collab += maintainer_file.areas[area.name].collaborators
-        collab += collab_per_path
-
-    collab = list(dict.fromkeys(collab))
-    # add more reviewers based on maintainer file changes.
-    collab += list(additional_reviews)
-    log(f"collab: {collab}")
-
-    _all_maintainers = dict(
-        sorted(found_maintainers.items(), key=lambda item: item[1], reverse=True)
-    )
-
-    log(f"Submitted by: {pr.user.login}")
-    log(f"candidate maintainers: {_all_maintainers}")
-
+    Iterates areas in descending file-change count.  Non-platform areas take
+    priority; platform (driver/board) areas are only used as a fallback.
+    Returns a list of login strings, or None if no suitable assignee is found.
+    """
     ranked_assignees = []
     assignees = None
 
-    # we start with areas with most files changed and pick the maintainer from the first one.
-    # if the first area is an implementation, i.e. driver or platform, we
-    # continue searching for any other areas involved
     for area, count in area_counter.items():
-        # if only meta area is affected, assign one of the maintainers of that area
-        if area.name in meta_areas and len(area_counter) == 1:
-            assignees = area.maintainers
-            break
-        # if no maintainers, skip
-        if count == 0 or len(area.maintainers) == 0:
+        if count == 0 or not area.maintainers:
             continue
-        # if there are maintainers, but no assignees yet, set them
-        if len(area.maintainers) > 0:
-            if pr.user.login in area.maintainers:
-                # If submitter = assignee, try to pick next area and assign
-                # someone else other than the submitter, otherwise when there
-                # are other maintainers for the area, assign them.
-                if len(area.maintainers) > 1:
-                    assignees = area.maintainers.copy()
-                    assignees.remove(pr.user.login)
-                else:
-                    continue
-            else:
-                assignees = area.maintainers
 
-        # found a non-platform area that was changed, pick assignee from this
-        # area and put them on top of the list, otherwise just append.
-        if 'Platform' not in area.name:
-            ranked_assignees.insert(0, area.maintainers)
-            break
+        if pr.user.login in area.maintainers:
+            # Author is a maintainer; try to assign someone else from the same area.
+            if len(area.maintainers) > 1:
+                candidates = area.maintainers.copy()
+                candidates.remove(pr.user.login)
+                assignees = candidates
+            else:
+                # Author is the sole maintainer; skip this area.
+                continue
         else:
-            ranked_assignees.append(area.maintainers)
+            assignees = area.maintainers
+
+        # FIXME: identify platform areas and other areas using some flag in the
+        # MAINTAINERS.yml data instead of relying on the name containing "Platform".
+        if 'platform' in area.name.lower():
+            logger.debug("Platform area '%s' with maintainers %s added as fallback for assignment", area.name, assignees)
+            ranked_assignees.append(assignees)
+        elif area.name not in META_AREAS:
+            logger.debug("Non-platform area '%s' with maintainers %s takes priority for assignment", area.name, assignees)
+            # Non-platform area: highest priority — insert at front and stop.
+            ranked_assignees.insert(0, assignees)
+            break
 
     if ranked_assignees:
         assignees = ranked_assignees[0]
 
     if assignees:
-        prop = (found_maintainers[assignees[0]] / num_files) * 100
-        log(f"Picked assignees: {assignees} ({prop:.2f}% ownership)")
-        log("+++++++++++++++++++++++++")
-    elif len(_all_maintainers) > 0:
-        # if we have maintainers found, but could not pick one based on area,
-        # then pick the one with most changes
-        assignees = [next(iter(_all_maintainers))]
+        coverage = (all_maintainers.get(assignees[0], 0) / num_files) * 100 if num_files else 0
+        logger.info("Picked assignees: %s (%.2f%% file coverage)", assignees, coverage)
+    elif all_maintainers:
+        # No area-based pick succeeded; fall back to the maintainer with most file changes.
+        assignees = [next(iter(all_maintainers))]
+        logger.info("Fallback assignee (highest file count): %s", assignees)
 
-    # Set labels
-    if labels:
-        if len(labels) < 10:
-            for label in labels:
-                log(f"adding label {label}...")
-                if not args.dry_run:
-                    pr.add_to_labels(label)
-        else:
-            log("Too many labels to be applied")
+    return assignees
 
-    if collab:
+
+def _add_reviewers(gh, gh_repo, pr, args, collab: list, all_maintainers: dict):
+    """Request reviews from eligible collaborators on *pr*.
+
+    Skips the PR author, existing reviewers, non-collaborators, and users
+    who previously removed themselves from the review request.
+    """
+    existing_reviewers = set()
+    for review in pr.get_reviews():
+        existing_reviewers.add(review.user)
+
+    # get_review_requests() returns (PaginatedList[NamedUser], PaginatedList[Team]).
+    review_users, _review_teams = pr.get_review_requests()
+    existing_reviewers.update(review_users)
+
+    logger.debug("Existing reviewers: %s", [u.login for u in existing_reviewers if hasattr(u, 'login')])
+
+    # Track users who removed themselves; do not re-add them.
+    self_removed = set()
+    for event in pr.get_issue_events():
+        if event.event == 'review_request_removed' and event.actor == event.requested_reviewer:
+            self_removed.add(event.actor)
+
+    if len(existing_reviewers) >= MAX_REVIEWERS:
+        logger.info(
+            "PR already has %d reviewer(s) (limit %d); adding area maintainers as reviewers instead",
+            len(existing_reviewers),
+            MAX_REVIEWERS,
+        )
+        reviewers = list(all_maintainers.keys())
+    else:
+        vacancy = MAX_REVIEWERS - len(existing_reviewers)
         reviewers = []
-        existing_reviewers = set()
-
-        revs = pr.get_reviews()
-        for review in revs:
-            existing_reviewers.add(review.user)
-
-        rl = pr.get_review_requests()
-        for page, r in enumerate(rl):
-            existing_reviewers |= set(r.get_page(page))
-
-        # check for reviewers that remove themselves from list of reviewer and
-        # do not attempt to add them again based on MAINTAINERS file.
-        self_removal = []
-        for event in pr.get_issue_events():
-            if event.event == 'review_request_removed' and event.actor == event.requested_reviewer:
-                self_removal.append(event.actor)
 
         for collaborator in collab:
             try:
                 gh_user = gh.get_user(collaborator)
-                if pr.user == gh_user or gh_user in existing_reviewers:
-                    continue
-                if not gh_repo.has_in_collaborators(gh_user):
-                    log(f"Skip '{collaborator}': not in collaborators")
-                    continue
-                if gh_user in self_removal:
-                    log(f"Skip '{collaborator}': self removed")
-                    continue
-                reviewers.append(collaborator)
-            except UnknownObjectException as e:
-                log(f"Can't get user '{collaborator}', account does not exist anymore? ({e})")
+            except UnknownObjectException:
+                logger.warning("User '%s' not found; account may have been deleted", collaborator)
+                continue
 
-        if len(existing_reviewers) < 15:
-            reviewer_vacancy = 15 - len(existing_reviewers)
-            reviewers = reviewers[:reviewer_vacancy]
-        else:
-            log(
-                "not adding reviewers because the existing reviewer count is greater than or "
-                "equal to 15. Adding maintainers of all areas as reviewers instead."
-            )
-            # FIXME: Here we could also add collaborators of the areas most
-            # affected, i.e. the one with the final assigne.
-            reviewers = list(_all_maintainers.keys())
+            if pr.user == gh_user:
+                logger.debug("Skipping PR author '%s'", collaborator)
+                continue
+            if gh_user in existing_reviewers:
+                logger.debug("Skipping existing reviewer '%s'", collaborator)
+                continue
+            if not gh_repo.has_in_collaborators(gh_user):
+                logger.info("Skipping '%s': not a repository collaborator", collaborator)
+                continue
+            if gh_user in self_removed:
+                logger.info("Skipping '%s': previously self-removed from reviewers", collaborator)
+                continue
 
-        if reviewers:
+            reviewers.append(collaborator)
+
+        reviewers = reviewers[:vacancy]
+
+    if reviewers:
+        logger.info("Requesting reviews from: %s", reviewers)
+        if not args.dry_run:
             try:
-                log(f"adding reviewers {reviewers}...")
-                if not args.dry_run:
-                    pr.create_review_request(reviewers=reviewers)
-            except GithubException:
-                log("can't add reviewer")
+                pr.create_review_request(reviewers=reviewers)
+            except GithubException as exc:
+                logger.error("Failed to add reviewers %s: %s", reviewers, exc)
 
-    ms = []
-    # assignees
-    if assignees and (not pr.assignee or args.dry_run):
+
+def _assign_maintainers(gh, pr, args, assignees: list):
+    """Add *assignees* (login strings) to *pr*, logging any unknown-user errors."""
+    users = []
+    for login in assignees:
         try:
-            for assignee in assignees:
-                u = gh.get_user(assignee)
-                ms.append(u)
-        except GithubException:
-            log("Error: Unknown user")
+            users.append(gh.get_user(login))
+        except GithubException as exc:
+            logger.error("Unknown user '%s': %s", login, exc)
 
-        for mm in ms:
-            log(f"Adding assignee {mm}...")
-            if not args.dry_run:
-                pr.add_to_assignees(mm)
+    for user in users:
+        logger.info("Adding assignee: %s", user.login)
+        if not args.dry_run:
+            pr.add_to_assignees(user)
+
+
+def process_pr(gh, args, maintainer_file, number: int):
+    gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
+    pr = gh_repo.get_pull(number)
+    pr_url = f"https://github.com/{args.org}/{args.repo}/pull/{pr.number}"
+
+    logger.info("Processing PR #%d: %s  (%s)", pr.number, pr.title, pr_url)
+
+    labels = set()
+    area_counter = defaultdict(int)
+    found_maintainers = defaultdict(int)
+    collab_per_path = set()
+    additional_reviews = set()
+
+    changed_files = list(pr.get_files())
+    num_files = len(changed_files)
+
+    if num_files > MAX_FILES:
+        logger.warning(
+            "PR #%d has %d changed files (limit %d); skipping",
+            pr.number, num_files, MAX_FILES,
+        )
+        return
+
+    # Handle the 'size: XS' label: single-commit PRs with at most one line changed,
+    # but only when no manifest file is among the changed files.  Manifest bumps
+    # (west.yml, submanifests/optional.yaml) are never trivial regardless of line count.
+    manifest_files = {'west.yml', 'submanifests/optional.yaml'}
+    touches_manifest = any(f.filename in manifest_files for f in changed_files)
+    current_label_names = {label.name for label in pr.labels}
+    qualifies_for_xs = (
+        pr.commits == 1
+        and pr.additions <= 1
+        and pr.deletions <= 1
+        and not touches_manifest
+    )
+
+    if qualifies_for_xs:
+        labels.add('size: XS')
+    elif 'size: XS' in current_label_names:
+        logger.info(
+            "Removing 'size: XS' label from PR #%d (commits=%d, +%d/-%d)",
+            pr.number, pr.commits, pr.additions, pr.deletions,
+        )
+        if not args.dry_run:
+            pr.remove_from_labels('size: XS')
+
+    for changed_file in changed_files:
+        filename = changed_file.filename
+        logger.debug("Processing file: %s", filename)
+
+        areas = []
+        if filename in ('west.yml', 'submanifests/optional.yaml'):
+            if not args.updated_manifest:
+                logger.debug(
+                    "No --updated-manifest provided; skipping manifest diff for %s", filename
+                )
+                continue
+            parsed_areas = process_manifest(old_manifest_file=args.updated_manifest)
+            for area_name in parsed_areas:
+                area_matches = maintainer_file.name2areas(area_name)
+                if area_matches:
+                    collab_per_path.update(area_matches[0].get_collaborators_for_path(filename))
+                    areas.extend(area_matches)
+
+        elif filename == 'MAINTAINERS.yml':
+            areas = maintainer_file.path2areas(filename)
+            if args.updated_maintainer_file:
+                old_areas = load_areas(args.updated_maintainer_file)
+                new_areas = load_areas('MAINTAINERS.yml')
+                changed_area_names = compare_areas(old_areas, new_areas)
+                for area_name in changed_area_names:
+                    area_matches = maintainer_file.name2areas(area_name)
+                    if area_matches:
+                        additional_reviews.update(maintainer_file.areas[area_name].maintainers)
+                logger.info(
+                    "MAINTAINERS.yml changed; adding extra reviewers: %s",
+                    sorted(additional_reviews),
+                )
+
+        else:
+            areas = maintainer_file.path2areas(filename)
+            for area in areas:
+                collab_per_path.update(area.get_collaborators_for_path(filename))
+
+        logger.debug("  areas for %s: %s", filename, [a.name for a in areas])
+
+        if not areas:
+            continue
+
+        # Sort so that Platform (driver/board) areas are processed first.  This
+        # sets is_instance=True early, preventing the same file from being
+        # counted again for the corresponding subsystem area.
+        sorted_areas = sorted(areas, key=lambda x: 'Platform' in x.name, reverse=True)
+        is_instance = False
+
+        for area in sorted_areas:
+            # CMakeLists.txt changes and meta-area files do not count toward
+            # the area weight used for assignee selection.
+            if 'CMakeLists.txt' in filename or area.name in META_AREAS:
+                count = 0
+            else:
+                # Once an instance (Platform) area has been seen, subsequent
+                # areas for this file score 0 to avoid double-counting.
+                count = 1 if not is_instance else 0
+
+            area_counter[area] += count
+            logger.debug("  area weight update: %s += %d", area.name, count)
+            labels.update(area.labels)
+
+            # NOTE: a file appearing in multiple areas with the same maintainer
+            # will over-count that maintainer's file coverage score.
+            for maintainer in area.maintainers:
+                found_maintainers[maintainer] += count
+
+            if 'Platform' in area.name:
+                is_instance = True
+
+        # Collect path-specific collaborators for all areas that matched this file.
+        for area in sorted_areas:
+            collab_per_path.update(area.get_collaborators_for_path(filename))
+
+    area_counter = dict(sorted(area_counter.items(), key=lambda item: item[1], reverse=True))
+    logger.info("Area weights: %s", {a.name: c for a, c in area_counter.items()})
+    logger.debug("Collected labels: %s", labels)
+
+    # Build the ordered collaborator/reviewer list by area priority.
+    collab = []
+    for area in area_counter:
+        collab += maintainer_file.areas[area.name].maintainers
+        collab += maintainer_file.areas[area.name].collaborators
+    collab += list(collab_per_path)
+    collab += list(additional_reviews)
+    # Deduplicate while preserving insertion order.
+    collab = list(dict.fromkeys(collab))
+    logger.debug("Reviewer candidates: %s", collab)
+
+    all_maintainers = dict(
+        sorted(found_maintainers.items(), key=lambda item: item[1], reverse=True)
+    )
+    logger.info("PR submitted by: %s", pr.user.login)
+    logger.info("Maintainer file-coverage scores: %s", all_maintainers)
+
+    assignees = _pick_assignees(pr, area_counter, all_maintainers, num_files)
+
+    # Apply labels.
+    if labels:
+        if len(labels) <= MAX_LABELS:
+            for label in labels:
+                logger.info("Adding label '%s'", label)
+                if not args.dry_run:
+                    pr.add_to_labels(label)
+        else:
+            logger.warning(
+                "Too many labels (%d) for PR #%d; skipping label assignment",
+                len(labels), pr.number,
+            )
+
+    # Request reviews.
+    if collab:
+        _add_reviewers(gh, gh_repo, pr, args, collab, all_maintainers)
+
+    # Set assignees (only when none are set yet, unless doing a dry run).
+    if assignees and (not pr.assignee or args.dry_run):
+        _assign_maintainers(gh, pr, args, assignees)
     else:
-        log("not setting assignee")
+        reason = "already has assignee" if pr.assignee else "no assignees found"
+        logger.info("Not setting assignee for PR #%d: %s", pr.number, reason)
 
-    time.sleep(1)
+    time.sleep(API_SLEEP_SECONDS)
 
 
-def process_issue(gh, maintainer_file, number):
+def process_issue(gh, args, maintainer_file, number: int):
     gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
     issue = gh_repo.get_issue(number)
 
-    log(f"Working on {issue.url}: {issue.title}")
+    logger.info("Processing issue #%d: %s  (%s)", issue.number, issue.title, issue.html_url)
 
     if issue.assignees:
-        print(f"Already assigned {issue.assignees}, bailing out")
+        logger.warning(
+            "Issue #%d already has assignees (%s); skipping",
+            issue.number,
+            [a.login for a in issue.assignees],
+        )
         return
 
+    # Build a mapping from sorted label-name tuples to maintainer sets.
     label_to_maintainer = defaultdict(set)
     for _, area in maintainer_file.areas.items():
         if not area.labels:
             continue
-
-        labels = set()
-        for label in area.labels:
-            labels.add(label.lower())
-        labels = tuple(sorted(labels))
-
+        label_tuple = tuple(sorted(label.lower() for label in area.labels))
         for maintainer in area.maintainers:
-            label_to_maintainer[labels].add(maintainer)
+            label_to_maintainer[label_tuple].add(maintainer)
 
-    # Add extra entries for areas with multiple labels so they match with just
-    # one label if it's specific enough.
-    for areas, maintainers in dict(label_to_maintainer).items():
-        for area in areas:
-            if tuple([area]) not in label_to_maintainer:
-                label_to_maintainer[tuple([area])] = maintainers
+    # Also allow matching on a single label when it is unambiguous enough.
+    for label_tuple, maintainers in dict(label_to_maintainer).items():
+        for label in label_tuple:
+            single = (label,)
+            if single not in label_to_maintainer:
+                label_to_maintainer[single] = maintainers
 
-    issue_labels = set()
+    valid_labels = []
     for label in issue.labels:
         label_name = label.name.lower()
-        if tuple([label_name]) not in label_to_maintainer:
-            print(f"Ignoring label: {label}")
-            continue
-        issue_labels.add(label_name)
-    issue_labels = tuple(sorted(issue_labels))
+        if (label_name,) not in label_to_maintainer:
+            logger.debug("Ignoring label '%s': no area match", label.name)
+        else:
+            valid_labels.append(label_name)
+    issue_labels = tuple(sorted(valid_labels))
 
-    print(f"Using labels: {issue_labels}")
+    logger.info("Matched labels: %s", issue_labels)
 
-    if issue_labels not in label_to_maintainer:
-        print("no match for the label set, not assigning")
+    if not issue_labels or issue_labels not in label_to_maintainer:
+        logger.warning(
+            "No matching label set found for issue #%d; not assigning", issue.number
+        )
         return
 
     for maintainer in label_to_maintainer[issue_labels]:
-        log(f"Adding {maintainer} to {issue.html_url}")
+        logger.info("Assigning '%s' to issue #%d (%s)", maintainer, issue.number, issue.html_url)
         if not args.dry_run:
             issue.add_to_assignees(maintainer)
 
 
-def process_modules(gh, maintainers_file):
+def process_modules(gh, args, maintainers_file):
     manifest = Manifest.from_file()
 
     repos = {}
     for project in manifest.get_projects([]):
-        if not manifest.is_active(project):
+        if not manifest.is_active(project) or isinstance(project, ManifestProject):
             continue
 
-        if isinstance(project, ManifestProject):
+        area_name = f"West project: {project.name}"
+        if area_name not in maintainers_file.areas:
+            logger.debug("No area defined for project '%s'; skipping", project.name)
             continue
 
-        area = f"West project: {project.name}"
-        if area not in maintainers_file.areas:
-            log(f"No area for: {area}")
+        area = maintainers_file.areas[area_name]
+        if not area.maintainers:
+            logger.info("No maintainers for project '%s'; skipping", project.name)
             continue
 
-        maintainers = maintainers_file.areas[area].maintainers
-        if not maintainers:
-            log(f"No maintainers for: {area}")
-            continue
+        logger.debug(
+            "Project '%s': maintainers=%s, collaborators=%s",
+            project.name, area.maintainers, area.collaborators,
+        )
+        repos[f"{args.org}/{project.name}"] = area
 
-        collaborators = maintainers_file.areas[area].collaborators
+    if not repos:
+        logger.warning("No active module repos with maintainers found in manifest")
+        return
 
-        log(f"Found {area}, maintainers={maintainers}, collaborators={collaborators}")
+    query = "is:open is:pr no:assignee " + " ".join(f"repo:{repo}" for repo in repos)
+    logger.info("Searching for unassigned module PRs with query: %s", query)
 
-        repo_name = f"{args.org}/{project.name}"
-        repos[repo_name] = maintainers_file.areas[area]
-
-    query = "is:open is:pr no:assignee"
-    if repos:
-        query += ' ' + ' '.join(f"repo:{repo}" for repo in repos)
-
-    issues = gh.search_issues(query=query)
-    for issue in issues:
+    for issue in gh.search_issues(query=query):
         pull = issue.as_pull_request()
 
         if pull.draft:
+            logger.debug("Skipping draft PR: %s", pull.html_url)
             continue
 
         if pull.assignees:
-            log(f"ERROR: {pull.html_url} should have no assignees, found {pull.assignees}")
+            logger.error(
+                "PR %s unexpectedly has assignees %s despite no:assignee filter",
+                pull.html_url, pull.assignees,
+            )
             continue
 
-        repo_name = f"{args.org}/{issue.repository.name}"
-        area = repos[repo_name]
+        area = repos[f"{args.org}/{issue.repository.name}"]
 
         for maintainer in area.maintainers:
-            log(f"Assigning {maintainer} to {pull.html_url}")
+            logger.info("Assigning '%s' to %s", maintainer, pull.html_url)
             if not args.dry_run:
                 pull.add_to_assignees(maintainer)
                 pull.create_review_request(maintainer)
 
         for collaborator in area.collaborators:
-            log(f"Adding {collaborator} to {pull.html_url}")
+            logger.info("Adding reviewer '%s' to %s", collaborator, pull.html_url)
             if not args.dry_run:
                 pull.create_review_request(collaborator)
 
 
 def main():
-    parse_args()
+    args = parse_args()
+    setup_logging(args.verbose)
 
-    token = os.environ.get('GITHUB_TOKEN', None)
+    token = os.environ.get('GITHUB_TOKEN')
     if not token:
         sys.exit(
-            'Github token not set in environment, please set the '
-            'GITHUB_TOKEN environment variable and retry.'
+            'GITHUB_TOKEN environment variable is not set. '
+            'Please set it and retry.'
         )
 
     gh = Github(auth=Auth.Token(token))
     maintainer_file = Maintainers(args.maintainer_file)
 
     if args.pull_request:
-        process_pr(gh, maintainer_file, args.pull_request)
+        process_pr(gh, args, maintainer_file, args.pull_request)
     elif args.issue:
-        process_issue(gh, maintainer_file, args.issue)
+        process_issue(gh, args, maintainer_file, args.issue)
     elif args.modules:
-        process_modules(gh, maintainer_file)
+        process_modules(gh, args, maintainer_file)
     else:
         if args.since:
             since = args.since
         else:
-            today = datetime.date.today()
-            since = today - datetime.timedelta(days=1)
+            since = datetime.date.today() - datetime.timedelta(days=1)
 
-        common_prs = (
+        query = (
             f'repo:{args.org}/{args.repo} is:open is:pr base:main '
             f'-is:draft no:assignee created:>{since}'
         )
-        pulls = gh.search_issues(query=f'{common_prs}')
-
-        for issue in pulls:
-            process_pr(gh, maintainer_file, issue.number)
+        logger.info("Searching for unassigned PRs with query: %s", query)
+        for issue in gh.search_issues(query=query):
+            process_pr(gh, args, maintainer_file, issue.number)
 
 
 if __name__ == "__main__":
