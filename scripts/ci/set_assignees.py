@@ -543,6 +543,10 @@ def process_pr(gh, args, maintainer_file, number: int):
 
     logger.info("Processing PR #%d: %s  (%s)", pr.number, pr.title, pr_url)
 
+    if pr.draft:
+        logger.info("PR #%d is a draft; skipping", pr.number)
+        return
+
     labels = set()
     area_counter = defaultdict(int)
     found_maintainers = defaultdict(int)
