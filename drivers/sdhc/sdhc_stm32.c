@@ -53,6 +53,8 @@ struct sdhc_stm32_data {
 	struct k_sem device_sync_sem;  /* Sync between device communication messages */
 	void *sdio_dma_buf;            /* DMA buffer for SDIO data transfer */
 	uint32_t total_transfer_bytes; /* number of bytes transferred */
+	sdhc_interrupt_cb_t sdio_cb;   /* SDIO card interrupt callback */
+	void *sdio_cb_user_data;       /* User data for SDIO card interrupt callback */
 };
 
 /*
@@ -625,6 +627,47 @@ static int sdhc_stm32_reset(const struct device *dev)
 	return res == HAL_OK ? 0 : -EIO;
 }
 
+static int sdhc_stm32_enable_interrupt(const struct device *dev, sdhc_interrupt_cb_t callback,
+				       int sources, void *user_data)
+{
+	struct sdhc_stm32_data *data = dev->data;
+	const struct sdhc_stm32_config *config = dev->config;
+
+	if (sources != SDHC_INT_SDIO) {
+		return -ENOTSUP;
+	}
+
+	if (callback == NULL) {
+		return -EINVAL;
+	}
+
+	data->sdio_cb = callback;
+	data->sdio_cb_user_data = user_data;
+
+	__HAL_SDIO_CLEAR_FLAG(config->hsd, SDMMC_FLAG_SDIOIT);
+	__HAL_SDIO_ENABLE_IT(config->hsd, SDMMC_IT_SDIOIT);
+
+	return 0;
+}
+
+static int sdhc_stm32_disable_interrupt(const struct device *dev, int sources)
+{
+	struct sdhc_stm32_data *data = dev->data;
+	const struct sdhc_stm32_config *config = dev->config;
+
+	if (sources != SDHC_INT_SDIO) {
+		return -ENOTSUP;
+	}
+
+	__HAL_SDIO_DISABLE_IT(config->hsd, SDMMC_IT_SDIOIT);
+	__HAL_SDIO_CLEAR_FLAG(config->hsd, SDMMC_FLAG_SDIOIT);
+
+	data->sdio_cb = NULL;
+	data->sdio_cb_user_data = NULL;
+
+	return 0;
+}
+
 static DEVICE_API(sdhc, sdhc_stm32_api) = {
 	.request = sdhc_stm32_request,
 	.set_io = sdhc_stm32_set_io,
@@ -632,6 +675,8 @@ static DEVICE_API(sdhc, sdhc_stm32_api) = {
 	.get_card_present = sdhc_stm32_get_card_present,
 	.card_busy = sdhc_stm32_card_busy,
 	.reset = sdhc_stm32_reset,
+	.enable_interrupt = sdhc_stm32_enable_interrupt,
+	.disable_interrupt = sdhc_stm32_disable_interrupt,
 };
 
 void sdhc_stm32_event_isr(const struct device *dev)
@@ -661,6 +706,12 @@ void sdhc_stm32_event_isr(const struct device *dev)
 	if (icr_clear_flag) {
 		LOG_ERR("SDMMC interrupt err flag raised: 0x%08X", icr_clear_flag);
 		config->hsd->Instance->ICR = icr_clear_flag;
+	}
+	if ((config->hsd->Instance->STA & SDMMC_STA_SDIOIT) != 0U) {
+		config->hsd->Instance->ICR = SDMMC_ICR_SDIOITC;
+		if (data->sdio_cb != NULL) {
+			data->sdio_cb(dev, SDHC_INT_SDIO, data->sdio_cb_user_data);
+		}
 	}
 
 	HAL_SDIO_IRQHandler(config->hsd);
