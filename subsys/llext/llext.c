@@ -129,6 +129,24 @@ int llext_iterate(int (*fn)(struct llext *ext, void *arg), void *arg)
 	return ret;
 }
 
+static int llext_sym_cmp(const char *a, const char *b)
+{
+#ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
+	const uintptr_t slid_a = (const uintptr_t)a;
+	const uintptr_t slid_b = (const uintptr_t)b;
+
+	if (slid_a < slid_b) {
+		return -1;
+	} else if (slid_a > slid_b) {
+		return 1;
+	} else {
+		return 0;
+	}
+#else
+	return strcmp(a, b);
+#endif
+}
+
 static const void *llext_bsearch_sym(const struct llext_symtable *sym_table, const char *sym_name)
 {
 	const struct llext_const_symbol *const_syms = NULL;
@@ -152,19 +170,12 @@ static const void *llext_bsearch_sym(const struct llext_symtable *sym_table, con
 		mid = left + (right - left) / 2U;
 
 		if (sym_table == NULL) {
-#ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
-			cmp = (const_syms[mid].slid < (uintptr_t)sym_name)   ? -1
-			      : (const_syms[mid].slid > (uintptr_t)sym_name) ? 1
-									     : 0;
-#else
-			cmp = strcmp(const_syms[mid].name, sym_name);
-#endif
+			cmp = llext_sym_cmp(const_syms[mid].name, sym_name);
 			if (cmp == 0) {
 				return const_syms[mid].addr;
 			}
 		} else {
 			cmp = strcmp(ext_syms[mid].name, sym_name);
-
 			if (cmp == 0) {
 				return ext_syms[mid].addr;
 			}
@@ -184,13 +195,6 @@ const void *llext_find_sym(const struct llext_symtable *sym_table, const char *s
 {
 	if (sym_table == NULL) {
 		/* Built-in symbol table */
-#ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
-		/*
-		 * The SLID export table is sorted at build time
-		 * by `scripts/build/llext_prepare_exptab.py`.
-		 */
-		return llext_bsearch_sym(NULL, sym_name);
-#else
 		static int ordering_state;
 		const struct llext_const_symbol *const_syms;
 		size_t sym_cnt;
@@ -199,12 +203,18 @@ const void *llext_find_sym(const struct llext_symtable *sym_table, const char *s
 			const_syms = STRUCT_SECTION_START(llext_const_symbol);
 			STRUCT_SECTION_COUNT(llext_const_symbol, &sym_cnt);
 			for (size_t i = 1; i < sym_cnt; i++) {
-				if (strcmp(const_syms[i - 1].name, const_syms[i].name) > 0) {
+				if (llext_sym_cmp(const_syms[i - 1].name, const_syms[i].name) > 0) {
 					ordering_state = -1;
 					break;
 				}
 			}
 			ordering_state = 1;
+
+#ifdef CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID
+			LOG_INF("Check SLID ordering state: %d", ordering_state);
+#else
+			LOG_INF("Check symbol name ordering state: %d", ordering_state);
+#endif
 		}
 
 		if (ordering_state == 1) {
@@ -212,11 +222,10 @@ const void *llext_find_sym(const struct llext_symtable *sym_table, const char *s
 		}
 
 		STRUCT_SECTION_FOREACH(llext_const_symbol, sym) {
-			if (strcmp(sym->name, sym_name) == 0) {
+			if (llext_sym_cmp(sym->name, sym_name) == 0) {
 				return sym->addr;
 			}
 		}
-#endif
 	} else {
 		return llext_bsearch_sym(sym_table, sym_name);
 	}
