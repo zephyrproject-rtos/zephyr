@@ -18,6 +18,7 @@ from unittest.mock import MagicMock, patch
 # Stub heavy third-party and project-local modules before the SUT is imported.
 # ---------------------------------------------------------------------------
 
+
 class _GithubException(Exception):
     pass
 
@@ -50,6 +51,7 @@ import set_assignees as sut  # noqa: E402, I001  (import after sys.modules manip
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 class _Area:
     """Lightweight hashable area stub accepted by _pick_assignees."""
@@ -89,6 +91,7 @@ def _make_args(dry_run=False):
 # ---------------------------------------------------------------------------
 # load_areas
 # ---------------------------------------------------------------------------
+
 
 class TestLoadAreas:
     def test_includes_area_with_files(self, tmp_path):
@@ -165,6 +168,7 @@ Area D:
 # set_or_empty
 # ---------------------------------------------------------------------------
 
+
 class TestSetOrEmpty:
     def test_key_present_with_list(self):
         assert sut.set_or_empty({"a": ["x", "y"]}, "a") == {"x", "y"}
@@ -182,6 +186,7 @@ class TestSetOrEmpty:
 # ---------------------------------------------------------------------------
 # _diff_area_entry
 # ---------------------------------------------------------------------------
+
 
 class TestDiffAreaEntry:
     def test_identical_entries_produce_no_changes(self):
@@ -240,6 +245,7 @@ class TestDiffAreaEntry:
 # compare_areas
 # ---------------------------------------------------------------------------
 
+
 class TestCompareAreas:
     def test_added_area_returned(self):
         old = {}
@@ -283,6 +289,7 @@ class TestCompareAreas:
 # ---------------------------------------------------------------------------
 # update_size_xs_label
 # ---------------------------------------------------------------------------
+
 
 class TestUpdateSizeXsLabel:
     def test_qualifies_adds_label(self):
@@ -362,6 +369,7 @@ class TestUpdateSizeXsLabel:
 # ---------------------------------------------------------------------------
 # _pick_assignees
 # ---------------------------------------------------------------------------
+
 
 class TestPickAssignees:
     def _pr(self, login="contributor"):
@@ -445,6 +453,7 @@ class TestPickAssignees:
 # ---------------------------------------------------------------------------
 # setup_logging
 # ---------------------------------------------------------------------------
+
 
 class TestSetupLogging:
     def test_verbose_0_sets_warning(self):
