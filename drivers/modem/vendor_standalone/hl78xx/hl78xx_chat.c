@@ -56,6 +56,7 @@ void hl78xx_on_rrc_status(struct modem_chat *chat, char **argv, uint16_t argc, v
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 void hl78xx_on_kcellmeas(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_socknotifydata(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+void hl78xx_on_ktcpstat(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_ktcpnotif(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 void hl78xx_on_cme_error(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
 /* Handler implemented to assign modem-provided udp socket ids */
@@ -574,16 +575,25 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_install_accept_script, hl78xx_fota_install_
  * definitions.
  */
 MODEM_CHAT_MATCHES_DEFINE(connect_matches, MODEM_CHAT_MATCH(CONNECT_STRING, "", NULL),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", hl78xx_on_cme_error),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", hl78xx_on_cme_error));
+			  MODEM_CHAT_MATCH(NO_CARRIER_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
 MODEM_CHAT_MATCHES_DEFINE(kudpind_allow_match,
 			  MODEM_CHAT_MATCH("+KUDP_IND: ", ",", hl78xx_on_kudpsocket_create),
-			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", hl78xx_on_cme_error),
-			  MODEM_CHAT_MATCH(ERROR_STRING, "", hl78xx_on_cme_error));
+			  MODEM_CHAT_MATCH(NO_CARRIER_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
+MODEM_CHAT_MATCHES_DEFINE(hl78xx_sockets_allow_matches, MODEM_CHAT_MATCH(OK_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(NO_CARRIER_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(CME_ERROR_STRING, "", NULL),
+			  MODEM_CHAT_MATCH(ERROR_STRING, "", NULL));
 MODEM_CHAT_MATCH_DEFINE(ktcpind_match, "+KTCP_IND: ", ",", hl78xx_on_ktcpind);
 MODEM_CHAT_MATCH_DEFINE(ktcpcfg_match, "+KTCPCFG: ", "", hl78xx_on_ktcpsocket_create);
 MODEM_CHAT_MATCH_DEFINE(cgdcontrdp_match, "+CGCONTRDP: ", ",", hl78xx_on_cgdcontrdp);
-MODEM_CHAT_MATCH_DEFINE(ktcp_state_match, "+KTCPSTAT: ", ",", NULL);
+MODEM_CHAT_MATCHES_DEFINE(ktcp_state_matches,
+			  MODEM_CHAT_MATCH_INITIALIZER("+KTCPSTAT: ", ",", hl78xx_on_ktcpstat,
+						       false, true),
+			  MODEM_CHAT_MATCH("OK", "", NULL));
 
 const struct modem_chat_match *hl78xx_get_connect_matches(void)
 {
@@ -597,12 +607,12 @@ size_t hl78xx_get_connect_matches_size(void)
 
 const struct modem_chat_match *hl78xx_get_sockets_allow_matches(void)
 {
-	return hl78xx_allow_match;
+	return hl78xx_sockets_allow_matches;
 }
 
 size_t hl78xx_get_sockets_allow_matches_size(void)
 {
-	return (size_t)ARRAY_SIZE(hl78xx_allow_match);
+	return (size_t)ARRAY_SIZE(hl78xx_sockets_allow_matches);
 }
 
 const struct modem_chat_match *hl78xx_get_kudpind_match(void)
@@ -630,9 +640,14 @@ const struct modem_chat_match *hl78xx_get_cgdcontrdp_match(void)
 	return &cgdcontrdp_match;
 }
 
-const struct modem_chat_match *hl78xx_get_ktcp_state_match(void)
+const struct modem_chat_match *hl78xx_get_ktcp_state_matches(void)
 {
-	return &ktcp_state_match;
+	return ktcp_state_matches;
+}
+
+size_t hl78xx_get_ktcp_state_matches_size(void)
+{
+	return (size_t)ARRAY_SIZE(ktcp_state_matches);
 }
 
 /* modem_init_chat is implemented in hl78xx.c so it can construct the
