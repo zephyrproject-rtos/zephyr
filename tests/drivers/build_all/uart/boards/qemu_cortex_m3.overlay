@@ -12,7 +12,6 @@
 		interrupts = <4 1>;
 		clock-frequency = <100000000>;
 		current-speed = <921600>;
-		bdiv = <4>;
 		parity = "none";
 	};
 };
