@@ -309,6 +309,14 @@ if(CONFIG_CYW955573M2IPA1_SM AND NOT CONFIG_AIROC_WIFI_CUSTOM)
   set(NVRAM_IMAGE_NAME ${hal_wifi_dir_resources}/nvram/COMPONENT_55572/COMPONENT_CYW955573M2IPA1/cyw955573m2ipa1_rev1.01.txt)
 endif()
 
+if(CONFIG_AIROC_WIFI_CUSTOM AND TARGET sysbuild_cache)
+  foreach(image_name FW_IMAGE_NAME CLM_IMAGE_NAME NVRAM_IMAGE_NAME)
+    if(NOT DEFINED ${image_name})
+      get_property(${image_name} TARGET sysbuild_cache PROPERTY ${image_name})
+    endif()
+  endforeach()
+endif()
+
 # set fw size
 file(SIZE ${FW_IMAGE_NAME} FW_IMAGE_SIZE)
 zephyr_compile_definitions(FW_IMAGE_NAME="${FW_IMAGE_NAME}")
