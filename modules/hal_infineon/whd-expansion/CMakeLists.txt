@@ -123,6 +123,12 @@ if(CONFIG_CYW43438 AND NOT CONFIG_AIROC_WIFI_CUSTOM)
   else()
     set(FW_IMAGE_NAME ${hal_blobs_dir}/firmware/COMPONENT_43438/43438A1.bin)
   endif()
+  if(CONFIG_AIROC_WLAN_MFG_FIRMWARE)
+    set(CLM_IMAGE_NAME ${hal_blobs_dir}/clm/COMPONENT_43438/COMPONENT_AW-CU427-P/43438A1-mfgtest.clm_blob)
+  else()
+    set(CLM_IMAGE_NAME ${hal_blobs_dir}/clm/COMPONENT_43438/COMPONENT_AW-CU427-P/43438A1.clm_blob)
+  endif()
+  set(NVRAM_IMAGE_NAME ${hal_wifi_dir_resources}/nvram/COMPONENT_43438/COMPONENT_AW-CU427-P/cyw943438_aw-cu427.txt)
 endif()
 
 # CYW43439 firmware
