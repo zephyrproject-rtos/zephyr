@@ -142,8 +142,9 @@ const struct modem_chat_match *hl78xx_get_kudpind_match(void);
 size_t hl78xx_get_kudpind_allow_matches_size(void);
 const struct modem_chat_match *hl78xx_get_ktcpind_match(void);
 const struct modem_chat_match *hl78xx_get_ktcpcfg_match(void);
+const struct modem_chat_match *hl78xx_get_ktcp_state_matches(void);
+size_t hl78xx_get_ktcp_state_matches_size(void);
 const struct modem_chat_match *hl78xx_get_cgdcontrdp_match(void);
-const struct modem_chat_match *hl78xx_get_ktcp_state_match(void);
 #ifdef CONFIG_HL78XX_GNSS
 /* GNSS-related chat matches used by the GNSS TU */
 const struct modem_chat_match *hl78xx_get_gnssnmea_match(void);
