@@ -110,15 +110,17 @@ extern "C" {
  *
  * @param name The monitor name.
  * @param _handler The monitor callback.
- * @param ... Optional monitor initial state (@c PAUSED or @c ACTIVE).
+ * @param ... Optional monitor initial state (@c HL78XX_MONITOR_ACTIVE or @c HL78XX_MONITOR_PAUSED).
  *	      The default initial state of a monitor is active.
  */
 #define HL78XX_EVT_MONITOR(name, _handler, ...)                                                    \
 	static STRUCT_SECTION_ITERABLE(hl78xx_evt_monitor_entry, name) = {                         \
 		.handler = _handler,                                                               \
 		.next = NULL,                                                                      \
-		.flags.direct = false,                                                             \
-		COND_CODE_1(__VA_ARGS__, (.flags.paused = __VA_ARGS__,), ()) }
+		.flags = {                                                                         \
+			.direct = false,                                                           \
+			.paused = HL78XX_MONITOR_INITIAL_PAUSED(__VA_ARGS__),                      \
+		}}
 
 /** Monitor any parsed unsolicited AT notification */
 #define HL78XX_AT_MONITOR_ANY NULL
@@ -916,6 +918,15 @@ typedef void (*hl78xx_evt_monitor_handler_t)(struct hl78xx_evt *notif,
 					     struct hl78xx_evt_monitor_entry *mon);
 
 /**
+ * @brief Event monitor release function type
+ *
+ * Called when an event monitor entry is released and no longer referenced.
+ *
+ * @param mon Pointer to the monitor entry being released
+ */
+typedef void (*hl78xx_evt_monitor_release_t)(struct hl78xx_evt_monitor_entry *mon);
+
+/**
  * @brief Event monitor entry structure
  *
  * Represents a registered event monitor with callback and state
@@ -923,8 +934,14 @@ typedef void (*hl78xx_evt_monitor_handler_t)(struct hl78xx_evt *notif,
 struct hl78xx_evt_monitor_entry {
 	/** Monitor callback function */
 	const hl78xx_evt_monitor_handler_t handler;
+	/** Optional callback invoked when the final runtime reference is dropped */
+	hl78xx_evt_monitor_release_t release;
 	/** Link for runtime list */
 	struct hl78xx_evt_monitor_entry *next;
+	/** Reference count for list membership and in-flight dispatch snapshots */
+	atomic_t refcnt;
+	/** Work item used to defer release callback execution */
+	struct k_work release_work;
 	/** Monitor flags */
 	struct {
 		/** Monitor is paused */
@@ -1279,23 +1296,43 @@ int hl78xx_at_monitor_unregister(struct hl78xx_at_monitor_entry *mon);
 int hl78xx_evt_notif_handler_set(hl78xx_evt_monitor_dispatcher_t handler);
 
 /**
- * @brief Register an event monitor to receive HL78xx modem event notifications
+ * @brief Register an event monitor.
  *
- * Adds a monitor to the list of registered event monitors. Once registered,
- * the monitor will receive all modem events unless paused.
+ * Adds a runtime monitor to the list of registered event monitors. The monitor
+ * entry must not already be registered and must not have outstanding runtime
+ * references from a previous registration.
  *
- * @param mon Pointer to the monitor entry to register
- * @return 0 on success, negative errno on failure
+ * Monitor entries should be zero-initialized before first registration.
+ *
+ * @param mon Pointer to the monitor entry to register.
+ *
+ * @return 0 on success.
+ * @return -EINVAL if @p mon is NULL.
+ * @return -EALREADY if @p mon is already registered.
+ * @return -EBUSY if @p mon still has outstanding runtime references.
+ * @return -ENOMEM if the maximum number of runtime monitors is reached.
  */
 int hl78xx_evt_monitor_register(struct hl78xx_evt_monitor_entry *mon);
 
 /**
- * @brief Unregister an event monitor from receiving HL78xx modem event notifications
+ * @brief Unregister an event monitor.
  *
- * Removes a monitor from the list of registered event monitors.
+ * Removes a runtime monitor from future dispatch snapshots. This function does
+ * not wait for callbacks that are already in progress or for snapshots that
+ * already captured the monitor entry.
  *
- * @param mon Pointer to the monitor entry to unregister
- * @return 0 on success, negative errno on failure
+ * If the monitor entry is dynamically allocated, the caller must not free or
+ * reuse it immediately after this function returns. Instead, provide a release
+ * callback in the monitor entry and free the entry from that callback. The
+ * release callback is invoked after the final runtime reference is dropped.
+ *
+ * This function may be called from a monitor callback.
+ *
+ * @param mon Pointer to the monitor entry to unregister.
+ *
+ * @return 0 on success.
+ * @return -EINVAL if @p mon is NULL.
+ * @return -ENOENT if @p mon is not registered.
  */
 int hl78xx_evt_monitor_unregister(struct hl78xx_evt_monitor_entry *mon);
 
