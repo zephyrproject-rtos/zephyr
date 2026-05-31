@@ -233,8 +233,14 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 
 	stream->dma_cfg.source_data_size = word_size_bytes;
 	stream->dma_cfg.dest_data_size = word_size_bytes;
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v1)
+	stream->dma_cfg.source_burst_length = 1;
+	stream->dma_cfg.dest_burst_length = 1;
+#else
 	stream->dma_cfg.source_burst_length = word_size_bytes;
 	stream->dma_cfg.dest_burst_length = word_size_bytes;
+#endif
 
 	/*
 	 * set I2S Data Format
