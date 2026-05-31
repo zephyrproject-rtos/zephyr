@@ -621,7 +621,7 @@ static DEVICE_API(bt_hci, h4_driver_api) = {
 		.rx_thread = &rx_thread_##inst, \
 		COND_CODE_1(DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios), \
 			(.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}), \
-			.reset_ms = DT_INST_PROP_OR(0, reset_assert_duration_ms, 0), \
+			.reset_ms = DT_INST_PROP_OR(inst, reset_assert_duration_ms, 0), \
 		), ()) \
 	}; \
 	static struct h4_data h4_data_##inst = { \
