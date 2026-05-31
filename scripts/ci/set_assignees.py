@@ -28,12 +28,26 @@ collected and applied to the PR, subject to a cap of MAX_LABELS (10).  If more
 than MAX_LABELS distinct labels would be applied, the entire label step is
 skipped to avoid polluting PRs that touch very broad cross-cutting areas.
 
-A special lightweight "size: XS" label is managed separately:
+A special lightweight "size: XS" label is managed by default:
   - Added when: the PR has exactly one commit AND at most one line added AND
     at most one line deleted AND does not touch any manifest file
     (west.yml, submanifests/optional.yaml).
   - Removed when: the PR already carries "size: XS" but no longer qualifies
     (e.g. after a rebase that added more commits or lines).
+
+When --size-labels is given, the full size label suite is managed instead
+of only "size: XS".  The suite maps total changed lines (additions +
+deletions) to one of five mutually exclusive labels:
+
+  size: XS  -- 1 commit, ≤1 line changed, no manifest file touched
+  size: S   -- ≤9 lines changed
+  size: M   -- ≤49 lines changed
+  size: L   -- ≤499 lines changed
+  size: XL  -- >499 lines changed
+
+Any existing size label that does not match the computed bucket is removed
+before the new label is applied, keeping exactly one size label on the PR
+at all times.
 
 Area weighting
 --------------
@@ -242,6 +256,16 @@ def parse_args():
         action="count",
         default=0,
         help="Verbose output. Use -v for INFO, -vv for DEBUG.",
+    )
+
+    parser.add_argument(
+        "--size-labels",
+        action="store_true",
+        default=False,
+        help=(
+            "Manage the full size label suite (size: XS/S/M/L/XL) instead of "
+            "only the default size: XS label."
+        ),
     )
 
     return parser.parse_args()
@@ -507,6 +531,17 @@ def _assign_maintainers(gh, pr, args, assignees: list):
 # Manifest files are never considered trivial regardless of line count.
 _MANIFEST_FILES = frozenset({'west.yml', 'submanifests/optional.yaml'})
 
+# All size labels managed by this script; used to remove stale buckets.
+_SIZE_LABELS = frozenset({'size: XS', 'size: S', 'size: M', 'size: L', 'size: XL'})
+
+# (max total lines changed inclusive, label name) in ascending order.
+# XS is handled separately by update_size_xs_label / update_size_labels.
+_SIZE_THRESHOLDS = (
+    (9,   'size: S'),
+    (49,  'size: M'),
+    (499, 'size: L'),
+)
+
 
 def update_size_xs_label(pr, args, changed_files: list, labels: set):
     """Add or remove the 'size: XS' label based on PR size and changed files.
@@ -534,6 +569,52 @@ def update_size_xs_label(pr, args, changed_files: list, labels: set):
         )
         if not args.dry_run:
             pr.remove_from_labels('size: XS')
+
+
+def update_size_labels(pr, args, changed_files: list, labels: set):
+    """Manage the full size label suite (XS/S/M/L/XL) on *pr*.
+
+    Computes the correct size bucket, removes any existing size labels that
+    belong to a different bucket, and queues the correct label for addition.
+    The XS bucket inherits the same stricter qualification rules as
+    update_size_xs_label (single commit, ≤1 line, no manifest files).
+    """
+    total_lines = pr.additions + pr.deletions
+    touches_manifest = any(f.filename in _MANIFEST_FILES for f in changed_files)
+
+    qualifies_for_xs = (
+        pr.commits == 1
+        and pr.additions <= 1
+        and pr.deletions <= 1
+        and not touches_manifest
+    )
+
+    if qualifies_for_xs:
+        correct_label = 'size: XS'
+    else:
+        correct_label = 'size: XL'
+        for max_lines, label in _SIZE_THRESHOLDS:
+            if total_lines <= max_lines:
+                correct_label = label
+                break
+
+    current_label_names = {lbl.name for lbl in pr.labels}
+    stale = _SIZE_LABELS & current_label_names - {correct_label}
+
+    for label in sorted(stale):
+        logger.info(
+            "Removing stale size label '%s' from PR #%d",
+            label, pr.number,
+        )
+        if not args.dry_run:
+            pr.remove_from_labels(label)
+
+    labels.add(correct_label)
+    logger.info(
+        "PR #%d size: %s (+%d/-%d, %d total line(s), %d commit(s))",
+        pr.number, correct_label, pr.additions, pr.deletions,
+        total_lines, pr.commits,
+    )
 
 
 def process_pr(gh, args, maintainer_file, number: int):
@@ -567,7 +648,10 @@ def process_pr(gh, args, maintainer_file, number: int):
         )
         return
 
-    update_size_xs_label(pr, args, changed_files, labels)
+    if args.size_labels:
+        update_size_labels(pr, args, changed_files, labels)
+    else:
+        update_size_xs_label(pr, args, changed_files, labels)
 
     for changed_file in changed_files:
         filename = changed_file.filename
