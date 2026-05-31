@@ -349,7 +349,7 @@
 			clocks = <&pcc NUMAKER_CANFD0_MODULE
 				  NUMAKER_CLK_CANFDSEL_CANFD0SEL_HCLK0
 				  NUMAKER_CLK_CANFDDIV_CANFD0DIV(1)>;
-			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			bosch,mram-cfg = <0x0 12 10 6 0 3 3 3>;
 			status = "disabled";
 		};
 
@@ -363,7 +363,7 @@
 			clocks = <&pcc NUMAKER_CANFD1_MODULE
 				  NUMAKER_CLK_CANFDSEL_CANFD1SEL_HCLK0
 				  NUMAKER_CLK_CANFDDIV_CANFD1DIV(1)>;
-			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			bosch,mram-cfg = <0x0 12 10 6 0 3 3 3>;
 			status = "disabled";
 		};
 
