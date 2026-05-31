@@ -751,13 +751,18 @@ def process_pr(gh, args, maintainer_file, number: int):
 
     assignees = _pick_assignees(pr, area_counter, all_maintainers, num_files)
 
-    # Apply labels.
+    # Apply labels — skip any that are already present, then add the rest in
+    # a single API call to avoid per-label timeline noise.
     if labels:
         if len(labels) <= MAX_LABELS:
-            for label in labels:
-                logger.info("Adding label '%s'", label)
+            current_label_names = {lbl.name for lbl in pr.labels}
+            new_labels = sorted(labels - current_label_names)
+            if new_labels:
+                logger.info("Adding labels: %s", new_labels)
                 if not args.dry_run:
-                    pr.add_to_labels(label)
+                    pr.add_to_labels(*new_labels)
+            else:
+                logger.info("All labels already present on PR #%d; skipping", pr.number)
         else:
             logger.warning(
                 "Too many labels (%d) for PR #%d; skipping label assignment",
