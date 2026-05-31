@@ -531,7 +531,7 @@
 				clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
 				interrupts = <180 0>, <181 0>, <186 0>;
 				interrupt-names = "int0", "int1", "calib";
-				bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+				bosch,mram-cfg = <0x0 28 8 6 0 0 3 3>;
 				status = "disabled";
 			};
 
@@ -542,7 +542,7 @@
 				clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
 				interrupts = <182 0>, <183 0>;
 				interrupt-names = "int0", "int1";
-				bosch,mram-cfg = <0xd54 28 8 3 3 0 3 3>;
+				bosch,mram-cfg = <0xd54 28 8 6 0 0 3 3>;
 				status = "disabled";
 			};
 
@@ -553,7 +553,7 @@
 				clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
 				interrupts = <184 0>, <185 0>;
 				interrupt-names = "int0", "int1";
-				bosch,mram-cfg = <0x1aa8 28 8 3 3 0 3 3>;
+				bosch,mram-cfg = <0x1aa8 28 8 6 0 0 3 3>;
 				status = "disabled";
 			};
 
