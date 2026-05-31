@@ -13,14 +13,19 @@
 	compatible = "raspberrypi,model-zero-w", "brcm,bcm2835";
 
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram0;
 	};
 };
 
-&uart0 {
+/* Console on the AUX mini-UART (GPIO 14/15, ALT5). PL011 is left on the
+ * Bluetooth modem; using the mini-UART avoids the disable-bt dance.
+ */
+&uart1 {
 	current-speed = <115200>;
+	pinctrl-0 = <&uart1_gpio14>;
+	pinctrl-names = "default";
 	status = "okay";
 };
 
