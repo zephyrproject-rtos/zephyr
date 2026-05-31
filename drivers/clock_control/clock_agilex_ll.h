@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CLOCKMANAGER_H
-#define CLOCKMANAGER_H
+#ifndef ZEPHYR_DRIVERS_CLOCK_CONTROL_CLOCK_AGILEX_LL_H
+#define ZEPHYR_DRIVERS_CLOCK_CONTROL_CLOCK_AGILEX_LL_H
 
 #include <socfpga_handoff.h>
 
@@ -123,4 +123,4 @@ uint32_t get_wdt_clk(void);
 uint32_t get_uart_clk(void);
 uint32_t get_mmc_clk(void);
 
-#endif
+#endif /* ZEPHYR_DRIVERS_CLOCK_CONTROL_CLOCK_AGILEX_LL_H */
