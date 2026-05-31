@@ -92,12 +92,13 @@ Candidates are then filtered:
 
 If the PR already has MAX_REVIEWERS (15) or more reviewers, the normal
 candidate list is discarded.  Only the maintainers of the *primary*
-(highest-weight) area are used as fallback candidates.  This keeps the
-fallback small and high-signal, and avoids the original behaviour of
-requesting reviews from all area maintainers across all touched files
-(which could push a broad PR even further above the reviewer cap).
-The same author / existing-reviewer / self-removed / collaborator-status
-filters are applied to the fallback candidates.
+(highest-weight) area are used as fallback candidates, plus any
+``additional_reviews`` users identified from manifest or MAINTAINERS.yml
+diff.  This keeps the fallback small and high-signal, and avoids the
+original behaviour of requesting reviews from all area maintainers across
+all touched files (which could push a broad PR even further above the
+reviewer cap).  The same author / existing-reviewer / self-removed /
+collaborator-status filters are applied to the fallback candidates.
 
 Otherwise the candidate list is capped at the remaining vacancy
 (MAX_REVIEWERS - existing reviewer count) before the review request is created.
@@ -452,15 +453,26 @@ def _pick_assignees(pr, area_counter: dict, all_maintainers: dict, num_files: in
     return assignees
 
 
-def _add_reviewers(gh, gh_repo, pr, args, collab: list, primary_maintainers: list):
+def _add_reviewers(
+    gh,
+    gh_repo,
+    pr,
+    args,
+    collab: list,
+    primary_maintainers: list,
+    extra_reviewers: frozenset = frozenset(),
+):
     """Request reviews from eligible collaborators on *pr*.
 
     Skips the PR author, existing reviewers, non-collaborators, and users
     who previously removed themselves from the review request.
 
     When the PR already has MAX_REVIEWERS or more reviewers, only
-    *primary_maintainers* (the maintainers of the highest-weight area) are
-    used as fallback candidates, keeping the fallback small and high-signal.
+    *primary_maintainers* (the maintainers of the highest-weight area) plus
+    *extra_reviewers* (e.g. maintainers of MAINTAINERS.yml-changed areas) are
+    used as fallback candidates.  This keeps the fallback small and
+    high-signal while ensuring that people specifically responsible for
+    changed areas are never silently dropped.
     The same filters apply in both the normal and overflow paths.
     """
     existing_reviewers = set()
@@ -485,10 +497,12 @@ def _add_reviewers(gh, gh_repo, pr, args, collab: list, primary_maintainers: lis
             "restricting candidates to primary area maintainers",
             pr.number, len(existing_reviewers), MAX_REVIEWERS,
         )
-        candidates = primary_maintainers
+        # Preserve extra_reviewers (e.g. MAINTAINERS.yml-change reviewers)
+        # even in the overflow path so they are never silently dropped.
+        candidates = list(dict.fromkeys(primary_maintainers + sorted(extra_reviewers)))
         vacancy = None
     else:
-        candidates = collab
+        candidates = collab  # extra_reviewers already included via process_pr
         vacancy = MAX_REVIEWERS - len(existing_reviewers)
 
     reviewers = []
@@ -783,13 +797,16 @@ def process_pr(gh, args, maintainer_file, number: int):
             )
 
     # Request reviews.
-    if collab:
+    if collab or additional_reviews:
         primary_area = next(iter(area_counter), None)
         primary_maintainers = (
             maintainer_file.areas[primary_area.name].maintainers
             if primary_area else []
         )
-        _add_reviewers(gh, gh_repo, pr, args, collab, primary_maintainers)
+        _add_reviewers(
+            gh, gh_repo, pr, args,
+            collab, primary_maintainers, frozenset(additional_reviews),
+        )
 
     # Set assignees (only when none are set yet, unless doing a dry run).
     if assignees and (not pr.assignee or args.dry_run):
