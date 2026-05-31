@@ -374,6 +374,38 @@ def _assign_maintainers(gh, pr, args, assignees: list):
             pr.add_to_assignees(user)
 
 
+# Manifest files are never considered trivial regardless of line count.
+_MANIFEST_FILES = frozenset({'west.yml', 'submanifests/optional.yaml'})
+
+
+def update_size_xs_label(pr, args, changed_files: list, labels: set):
+    """Add or remove the 'size: XS' label based on PR size and changed files.
+
+    A PR qualifies for 'size: XS' when all of the following are true:
+      - Exactly one commit.
+      - At most one line added and one line deleted.
+      - No manifest file (west.yml, submanifests/optional.yaml) is changed.
+    """
+    touches_manifest = any(f.filename in _MANIFEST_FILES for f in changed_files)
+    current_label_names = {label.name for label in pr.labels}
+    qualifies_for_xs = (
+        pr.commits == 1
+        and pr.additions <= 1
+        and pr.deletions <= 1
+        and not touches_manifest
+    )
+
+    if qualifies_for_xs:
+        labels.add('size: XS')
+    elif 'size: XS' in current_label_names:
+        logger.info(
+            "Removing 'size: XS' label from PR #%d (commits=%d, +%d/-%d)",
+            pr.number, pr.commits, pr.additions, pr.deletions,
+        )
+        if not args.dry_run:
+            pr.remove_from_labels('size: XS')
+
+
 def process_pr(gh, args, maintainer_file, number: int):
     gh_repo = gh.get_repo(f"{args.org}/{args.repo}")
     pr = gh_repo.get_pull(number)
@@ -397,28 +429,7 @@ def process_pr(gh, args, maintainer_file, number: int):
         )
         return
 
-    # Handle the 'size: XS' label: single-commit PRs with at most one line changed,
-    # but only when no manifest file is among the changed files.  Manifest bumps
-    # (west.yml, submanifests/optional.yaml) are never trivial regardless of line count.
-    manifest_files = {'west.yml', 'submanifests/optional.yaml'}
-    touches_manifest = any(f.filename in manifest_files for f in changed_files)
-    current_label_names = {label.name for label in pr.labels}
-    qualifies_for_xs = (
-        pr.commits == 1
-        and pr.additions <= 1
-        and pr.deletions <= 1
-        and not touches_manifest
-    )
-
-    if qualifies_for_xs:
-        labels.add('size: XS')
-    elif 'size: XS' in current_label_names:
-        logger.info(
-            "Removing 'size: XS' label from PR #%d (commits=%d, +%d/-%d)",
-            pr.number, pr.commits, pr.additions, pr.deletions,
-        )
-        if not args.dry_run:
-            pr.remove_from_labels('size: XS')
+    update_size_xs_label(pr, args, changed_files, labels)
 
     for changed_file in changed_files:
         filename = changed_file.filename
