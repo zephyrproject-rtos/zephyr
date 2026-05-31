@@ -1,0 +1,64 @@
+# ARMv6 (classic ARM11) platform configuration options
+
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config CPU_ARM1176JZF_S
+	bool
+	select ARMV6KZ
+	select CPU_AARCH32_ARMV6
+	help
+	  This option signifies the use of an ARM1176JZF-S CPU (ARMv6KZ),
+	  as found in the Broadcom BCM2835 (Raspberry Pi Zero / Zero W).
+
+config ARMV6KZ
+	bool
+	select ARMV6K
+	help
+	  ARMv6KZ: ARMv6K plus the Security Extensions (TrustZone, "Z").
+
+config ARMV6K
+	bool
+	select ARMV6
+	help
+	  ARMv6K: ARMv6 plus the multiprocessing/synchronization extensions
+	  (ldrex/strex byte/half/dword, clrex, wfe/sev, TPIDRURO).
+
+config ARMV6
+	bool
+	help
+	  This option signifies the use of a classic ARMv6 CPU.
+
+if ARMV6
+
+config ARMV6_EXCEPTION_STACK_SIZE
+	int "Undefined Instruction and Abort stack size (in bytes)"
+	default 256
+
+config ARMV6_FIQ_STACK_SIZE
+	int "FIQ stack size (in bytes)"
+	default 256
+
+config ARMV6_SVC_STACK_SIZE
+	int "SVC stack size (in bytes)"
+	default 512
+
+config ARMV6_SYS_STACK_SIZE
+	int "SYS mode stack size (in bytes)"
+	default 1024
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config DCACHE_LINE_SIZE
+	depends on CPU_HAS_DCACHE
+	default 32
+
+config ICACHE_LINE_SIZE
+	depends on CPU_HAS_ICACHE
+	default 32
+
+endif # ARMV6

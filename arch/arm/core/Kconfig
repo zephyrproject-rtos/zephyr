@@ -12,6 +12,22 @@ config CPU_AARCH32_ARM9
 	help
 	  This option signifies the use of a CPU of the ARM9 family.
 
+config CPU_AARCH32_ARMV6
+	bool
+	select CPU_ARMV6
+	select HAS_FLASH_LOAD_OFFSET
+	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
+	select ISA_ARM
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_MMU
+	help
+	  This option signifies the use of a classic ARMv6/ARMv6K CPU (ARM11),
+	  e.g. the ARM1176JZF-S in the BCM2835 (Raspberry Pi Zero / Zero W).
+	  ARM1176 is ARMv6K, so it provides ldrex/strex, TPIDRURO and srs/cps;
+	  it has no GIC (uses ARM_CUSTOM_INTERRUPT_CONTROLLER) and no
+	  architected timer.
+
 config CPU_CORTEX_M
 	bool
 	select CPU_CORTEX
@@ -371,6 +387,7 @@ config FP16_ARITHMETIC
 	  with MVE float or Cortex-A processors with NEON.
 
 rsource "arm9/Kconfig"
+rsource "armv6/Kconfig"
 rsource "cortex_m/Kconfig"
 rsource "cortex_a_r/Kconfig"
 
