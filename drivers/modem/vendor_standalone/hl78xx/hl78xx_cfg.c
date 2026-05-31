@@ -237,6 +237,84 @@ error:
 	return ret;
 }
 
+static bool hl78xx_get_runtime_band_override(struct hl78xx_data *data,
+					    enum hl78xx_cell_rat_mode rat,
+					    uint16_t *band)
+{
+	hl78xx_runtime_band_provider_t provider;
+	void *user_data;
+	uint16_t override_band = 0U;
+	bool has_override;
+
+	if ((data == NULL) || (band == NULL)) {
+		return false;
+	}
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	provider = data->runtime_band_provider;
+	user_data = data->runtime_band_provider_user_data;
+	k_mutex_unlock(&data->api_lock);
+
+	if (provider == NULL) {
+		return false;
+	}
+
+	has_override = provider(data->dev, rat, &override_band, user_data);
+	if (!has_override) {
+		return false;
+	}
+
+	if (override_band == 0U) {
+		LOG_WRN("Runtime band provider returned empty band for RAT %d", rat);
+		return false;
+	}
+
+	*band = override_band;
+	return true;
+}
+
+static int hl78xx_band_bitmap_from_single_band(uint16_t band_number, char *hex_bndcfg,
+					       size_t size_in_bytes)
+{
+	uint8_t bitmap[MDM_BAND_BITMAP_LEN_BYTES] = {0};
+
+	if ((hex_bndcfg == NULL) || (size_in_bytes < MDM_BAND_HEX_STR_LEN)) {
+		return -EINVAL;
+	}
+
+	if ((band_number == 0U) || (band_number > 256U)) {
+		return -EINVAL;
+	}
+
+	set_band_bit(bitmap, band_number);
+	hl78xx_bitmap_to_hex_string_trimmed(bitmap, hex_bndcfg, size_in_bytes);
+
+	return 0;
+}
+
+static int hl78xx_get_expected_band_config_for_rat(struct hl78xx_data *data,
+					   enum hl78xx_cell_rat_mode rat,
+					   char *hex_bndcfg,
+					   size_t size_in_bytes)
+{
+	uint16_t runtime_band = 0U;
+	int ret;
+
+	if ((data == NULL) || (hex_bndcfg == NULL)) {
+		return -EINVAL;
+	}
+
+	if (hl78xx_get_runtime_band_override(data, rat, &runtime_band)) {
+		ret = hl78xx_band_bitmap_from_single_band(runtime_band, hex_bndcfg, size_in_bytes);
+		if (ret == 0) {
+			LOG_DBG("Using runtime band %u for RAT %d", runtime_band, rat);
+		}
+		return ret;
+	}
+
+	return hl78xx_get_band_default_config_for_rat(rat, hex_bndcfg, size_in_bytes);
+}
+
 int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 		    enum hl78xx_cell_rat_mode rat_config_request)
 {
@@ -258,10 +336,10 @@ int hl78xx_band_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 #else
 	int rat = rat_config_request;
 #endif /* CONFIG_MODEM_HL78XX_AUTORAT */
-		ret = hl78xx_get_band_default_config_for_rat(rat, bnd_bitmap,
-							     ARRAY_SIZE(bnd_bitmap));
+		ret = hl78xx_get_expected_band_config_for_rat(data, rat, bnd_bitmap,
+						      ARRAY_SIZE(bnd_bitmap));
 		if (ret) {
-			LOG_ERR("%d %s error get band default config %d", __LINE__, __func__, ret);
+			LOG_ERR("%d %s error get expected band config %d", __LINE__, __func__, ret);
 			goto error;
 		}
 		modem_trimmed = hl78xx_trim_leading_zeros(data->status.kbndcfg[rat].bnd_bitmap);
