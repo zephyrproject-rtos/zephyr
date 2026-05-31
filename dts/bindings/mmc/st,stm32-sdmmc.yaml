@@ -4,6 +4,8 @@ compatible: "st,stm32-sdmmc"
 
 include: [mmc.yaml, pinctrl-device.yaml, reset-device.yaml]
 
+bus: sd
+
 properties:
   disk-name:
     type: string
