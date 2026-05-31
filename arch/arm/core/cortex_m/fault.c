@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  * Copyright (c) 2020 Nordic Semiconductor ASA.
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -822,6 +823,18 @@ static uint32_t fault_handle(struct arch_esf *esf, int fault, bool *recoverable)
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
+static inline bool secure_stack_has_additional_context(const struct arch_esf *secure_esf)
+{
+	const uint32_t *top_of_sec_stack = (const uint32_t *)secure_esf;
+
+#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+	return (*top_of_sec_stack == INTEGRITY_SIGNATURE_STD) ||
+	       (*top_of_sec_stack == INTEGRITY_SIGNATURE_EXT);
+#else
+	return *top_of_sec_stack == INTEGRITY_SIGNATURE;
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
+}
+
 #if (CONFIG_FAULT_DUMP == 2)
 /**
  * @brief Dump the Secure Stack information for an exception that
@@ -840,14 +853,10 @@ static void secure_stack_dump(const struct arch_esf *secure_esf)
 	 * In case of a Non-Secure function call the top of the
 	 * stack contains the return address to Secure state.
 	 */
-	uint32_t *top_of_sec_stack = (uint32_t *)secure_esf;
+	const uint32_t *top_of_sec_stack = (const uint32_t *)secure_esf;
 	uint32_t sec_ret_addr;
-#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
-	if ((*top_of_sec_stack == INTEGRITY_SIGNATURE_STD) ||
-	    (*top_of_sec_stack == INTEGRITY_SIGNATURE_EXT)) {
-#else
-	if (*top_of_sec_stack == INTEGRITY_SIGNATURE) {
-#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
+
+	if (secure_stack_has_additional_context(secure_esf)) {
 		/* Secure state interrupted by a Non-Secure exception.
 		 * The return address after the additional state
 		 * context, stacked by the Secure code upon
@@ -869,6 +878,22 @@ static void secure_stack_dump(const struct arch_esf *secure_esf)
 /* We do not dump the Secure stack information for lower dump levels. */
 #define SECURE_STACK_DUMP(esf)
 #endif /* CONFIG_FAULT_DUMP== 2 */
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+static inline struct arch_esf *skip_secure_stack_context(struct arch_esf *esf)
+{
+	uint32_t *top_of_sec_stack = (uint32_t *)esf;
+
+	if (!secure_stack_has_additional_context(esf)) {
+		PR_FAULT_INFO("  Missing Secure additional context integrity signature");
+		return NULL;
+	}
+
+	top_of_sec_stack += ADDITIONAL_STATE_CONTEXT_WORDS;
+
+	return (struct arch_esf *)top_of_sec_stack;
+}
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 /*
@@ -928,7 +953,7 @@ static inline struct arch_esf *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_
 
 		/* Handle the actual fault.
 		 * Extract the correct stack frame from the Non-Secure state
-		 * and supply it to the fault handing function.
+		 * and supply it to the fault handling function.
 		 */
 		if (exc_return & EXC_RETURN_MODE_THREAD) {
 			ptr_esf = (struct arch_esf *)__TZ_get_PSP_NS();
@@ -986,6 +1011,17 @@ static inline struct arch_esf *get_esf(uint32_t msp, uint32_t psp, uint32_t exc_
 			ptr_esf = (struct arch_esf *)msp;
 			*nested_exc = true;
 		}
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+		if ((exc_return & EXC_RETURN_CALLEE_STACK_Msk) == EXC_RETURN_CALLEE_STACK_SKIPPED) {
+			/* Only look for the integrity signature when EXC_RETURN
+			 * reports skipped callee stacking; otherwise, a normal
+			 * r0 value matching the signature could be skipped by
+			 * mistake.
+			 */
+			ptr_esf = skip_secure_stack_context(ptr_esf);
+		}
+#endif
 	}
 
 	return ptr_esf;
