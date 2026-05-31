@@ -64,7 +64,7 @@ class TwisterConfigParser:
         "skip": {"type": "bool", "default": False},
         "slow": {"type": "bool", "default": False},
         "timeout": {"type": "int", "default": 60},
-        "min_ram": {"type": "int", "default": 16},
+        "min_ram": {"type": "int", "default": 8},
         "modules": {"type": "list", "default": []},
         "depends_on": {"type": "set"},
         "min_flash": {"type": "int", "default": 32},
@@ -90,7 +90,7 @@ class TwisterConfigParser:
         "harness": {"type": "str", "default": "test"},
         "harness_config": {"type": "map", "default": {}},
         "seed": {"type": "int", "default": 0},
-        "sysbuild": {"type": "bool", "default": False}
+        "sysbuild": {"type": "bool", "default": False},
     }
 
     def __init__(self, filename: str, schema: dict[str, Any]) -> None:
