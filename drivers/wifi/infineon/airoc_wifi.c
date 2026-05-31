@@ -251,6 +251,32 @@ static uint8_t convert_whd_band_to_zephyr(whd_802_11_band_t band)
 	return zephyr_band;
 }
 
+static int airoc_update_mac_addr(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct airoc_wifi_data *data = dev->data;
+	whd_result_t ret;
+
+	if (airoc_sta_if == NULL) {
+		return -EAGAIN;
+	}
+
+	ret = whd_wifi_get_mac_address(airoc_sta_if, &airoc_sta_if->mac_addr);
+	if (ret != WHD_SUCCESS) {
+		return -EIO;
+	}
+
+	memcpy(&data->mac_addr, &airoc_sta_if->mac_addr, sizeof(airoc_sta_if->mac_addr));
+
+	if (net_if_set_link_addr(iface, data->mac_addr, sizeof(data->mac_addr),
+				 NET_LINK_ETHERNET)) {
+		LOG_ERR("Failed to set link addr");
+		return -EIO;
+	}
+
+	return 0;
+}
+
 static void parse_scan_result(whd_scan_result_t *p_whd_result, struct wifi_scan_result *p_zy_result)
 {
 	if (p_whd_result->SSID.length != 0) {
@@ -519,17 +545,8 @@ static void airoc_mgmt_init(struct net_if *iface)
 	data->iface = iface;
 	airoc_wifi_iface = iface;
 
-	/* Read WLAN MAC Address */
-	if (whd_wifi_get_mac_address(airoc_sta_if, &airoc_sta_if->mac_addr) != WHD_SUCCESS) {
-		LOG_ERR("Failed to get mac address");
-	} else {
-		(void)memcpy(&data->mac_addr, &airoc_sta_if->mac_addr,
-			     sizeof(airoc_sta_if->mac_addr));
-	}
-
-	/* Assign link local address. */
-	if (net_if_set_link_addr(iface, data->mac_addr, 6, NET_LINK_ETHERNET)) {
-		LOG_ERR("Failed to set link addr");
+	if (airoc_update_mac_addr(iface) == -EAGAIN) {
+		LOG_DBG("Deferring MAC address setup until WHD interface is ready");
 	}
 
 	/* Initialize Ethernet L2 stack */
@@ -964,6 +981,10 @@ static int airoc_init(const struct device *dev)
 		return -EAGAIN;
 	}
 	airoc_if = airoc_sta_if;
+
+	if (data->iface != NULL && airoc_update_mac_addr(data->iface) != 0) {
+		LOG_ERR("Failed to get mac address");
+	}
 
 	whd_ret = whd_management_set_event_handler(airoc_sta_if, sta_link_events,
 				link_events_handler, NULL, &sta_event_handler_index);
