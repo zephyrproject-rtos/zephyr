@@ -10,6 +10,7 @@ set(QEMU_FLAGS_${ARCH}
   -cpu ${QEMU_CPU_TYPE_${ARCH}}
   -machine raspi0
   -nographic
+  -icount shift=5,align=off,sleep=off
   )
 
 board_set_debugger_ifnset(qemu)
