@@ -1,0 +1,128 @@
+/*
+ * Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Broadcom BCM2835 SoC (Raspberry Pi 1 / Zero / Zero W), ARM1176JZF-S.
+ * Peripheral base 0x20000000. A single ARMC peripheral interrupt
+ * controller at 0x2000b200 -- no BCM2836 ARM-local intc, no architected
+ * timer (those arrived with the BCM2836 / Pi 2).
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/interrupt-controller/bcm2835-armctrl.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,arm1176jzf-s";
+			reg = <0>;
+		};
+	};
+
+	interrupt-parent = <&armctrl_intc>;
+
+	clocks {
+		clk_uart: clk-uart {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		/*
+		 * DRAM window the image links into. QEMU raspi0 (and a real
+		 * Pi in 32-bit mode) place the kernel at 0x8000; the low 32 KiB
+		 * holds the boot shim / atags.
+		 */
+		sram0: memory@8000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x8000 DT_SIZE_M(248)>;
+		};
+
+		armctrl_intc: interrupt-controller@2000b200 {
+			compatible = "brcm,bcm2835-armctrl-ic";
+			reg = <0x2000b200 0x200>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			status = "okay";
+		};
+
+		system_timer: timer@20003000 {
+			compatible = "brcm,bcm2835-system-timer";
+			reg = <0x20003000 0x1c>;
+			interrupts = <BCM2835_IRQ_TIMER3 IRQ_TYPE_LEVEL 0>;
+			status = "okay";
+		};
+
+		pinctrl: pin-controller@20200000 {
+			compatible = "brcm,bcm2711-pinctrl";
+			reg = <0x20200000 0xf4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio0: gpio@0 {
+				compatible = "brcm,bcm2711-gpio";
+				reg = <0>;
+				interrupts = <BCM2835_IRQ_GPIO0 IRQ_TYPE_LEVEL 0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <28>;
+				status = "okay";
+			};
+
+			gpio1: gpio@1c {
+				compatible = "brcm,bcm2711-gpio";
+				reg = <28>;
+				interrupts = <BCM2835_IRQ_GPIO1 IRQ_TYPE_LEVEL 0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <18>;
+				status = "disabled";
+			};
+		};
+
+		uart0: uart@20201000 {
+			compatible = "arm,pl011";
+			reg = <0x20201000 0x200>;
+			interrupts = <BCM2835_IRQ_UART IRQ_TYPE_LEVEL 0>;
+			interrupt-names = "uart0";
+			clocks = <&clk_uart>;
+			status = "disabled";
+		};
+
+		/*
+		 * AUX mini-UART (UART1). reg points at the mini-UART register
+		 * block (AUX base 0x20215000 + 0x40), matching the driver's
+		 * MU_* offsets. The driver does not touch AUX_ENABLES and trusts
+		 * the firmware-programmed baud, so config.txt must carry
+		 * enable_uart=1 (which enables the AUX block and the core-clock
+		 * lock the mini-UART baud divisor depends on).
+		 */
+		uart1: uart@20215040 {
+			compatible = "brcm,bcm2711-aux-uart";
+			reg = <0x20215040 0x40>;
+			clock-frequency = <DT_FREQ_M(250)>;
+			interrupts = <BCM2835_IRQ_AUX IRQ_TYPE_LEVEL 0>;
+			interrupt-names = "uart1";
+			status = "disabled";
+		};
+	};
+};
+
+#include <broadcom/bcm283x-pinctrl.dtsi>

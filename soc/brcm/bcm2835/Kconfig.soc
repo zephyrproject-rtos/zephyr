@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_BCM2835
+	bool
+
+config SOC
+	default "bcm2835" if SOC_BCM2835

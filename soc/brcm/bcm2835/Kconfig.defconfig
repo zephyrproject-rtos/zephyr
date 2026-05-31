@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_BCM2835
+
+config NUM_IRQS
+	# Flat IRQ space for the BCM2835 ARMC peripheral controller:
+	# 32..127 (banks basic/1/2). The 0..31 range is unused on BCM2835
+	# (no BCM2836 ARM-local intc).
+	default 128
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# BCM2835 free-running system timer ticks at 1 MHz.
+	default 1000000 if SYS_CLOCK_EXISTS
+
+endif
