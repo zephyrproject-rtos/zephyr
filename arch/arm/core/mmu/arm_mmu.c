@@ -128,6 +128,26 @@ static void invalidate_tlb_all(void)
 }
 
 /**
+ * @brief Cleans a modified page-table entry to RAM (ARM1176 only)
+ * On uniprocessor ARM1176 the hardware translation-table walk is not
+ * coherent with the L1 data cache, so a PTE written at run-time (e.g. via
+ * arch_mem_map / DEVICE_MMIO_MAP) sits in the D-cache where the walker
+ * cannot see it -- the new mapping silently does not take effect. Clean the
+ * cache line holding the entry to the point of coherency so the walker
+ * reads the updated value from RAM. No-op on other ARM cores, whose walks
+ * are coherent with the data cache. (c7,c10,1 = DCCMVAC, clean line by MVA.)
+ */
+static inline void arm_mmu_flush_pte(void *pte)
+{
+#if defined(CONFIG_CPU_AARCH32_ARMV6)
+	__asm__ volatile("mcr p15, 0, %0, c7, c10, 1" : : "r"(pte) : "memory");
+	barrier_dsync_fence_full();
+#else
+	ARG_UNUSED(pte);
+#endif
+}
+
+/**
  * @brief Returns a free level 2 page table
  * Initializes and returns the next free L2 page table whenever
  * a page is to be mapped in a 1 MB virtual address range that
@@ -322,10 +342,20 @@ static struct arm_mmu_perms_attrs arm_mmu_convert_attr_flags(uint32_t attrs)
 		perms_attrs.tex |= ARM_MMU_TEX2_CACHEABLE_MEMORY;
 		perms_attrs.domain = ARM_MMU_DOMAIN_OS;
 
-		/* For normal memory, shareability depends on the S bit */
+		/*
+		 * For normal memory, shareability depends on the S bit -- except on
+		 * uniprocessor ARM1176 (ARMv6, no Multiprocessing Extensions). There,
+		 * Shareable Normal memory is treated as Non-cacheable (so the whole
+		 * image runs uncached) AND has no global exclusive monitor, so STREX
+		 * to it never succeeds and LDREX/STREX atomic loops spin forever.
+		 * Leaving the S bit clear makes Normal memory cacheable and lets the
+		 * local exclusive monitor work. (Linux proc-v6 does the same for UP.)
+		 */
+#if !defined(CONFIG_CPU_AARCH32_ARMV6)
 		if (attrs & MATTR_SHARED) {
 			perms_attrs.shared = 1;
 		}
+#endif
 
 		if (attrs & MATTR_CACHE_OUTER_WB_WA) {
 			perms_attrs.tex |= ARM_MMU_TEX_CACHE_ATTRS_WB_WA;
@@ -668,6 +698,13 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 	l2_page_table->entries[l2_index].l2_page_4k.pa_base =
 		((pa >> ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_SHIFT) &
 		ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_MASK);
+
+	/* Make the updated L2 entry (and the L1 entry that may now reference a
+	 * freshly-assigned L2 table) visible to the non-coherent ARM1176 table
+	 * walker. Harmless no-op on other cores.
+	 */
+	arm_mmu_flush_pte(&l2_page_table->entries[l2_index]);
+	arm_mmu_flush_pte(&l1_page_table.entries[l1_index]);
 }
 
 /**
@@ -816,11 +853,17 @@ int z_arm_mmu_init(void)
 
 	/*
 	 * Set IRGN, RGN, S in TTBR0 based on the configuration of the
-	 * memory area the actual page tables are located in.
+	 * memory area the actual page tables are located in. On uniprocessor
+	 * ARM1176 keep the table walks Non-shareable to match the page-table
+	 * memory mapping (see the normal-memory handling above) -- a Shareable
+	 * walk is treated as Non-cacheable there and would not stay coherent
+	 * with the CPU's PTE writes in the (non-shared) inner D-cache.
 	 */
+#if !defined(CONFIG_CPU_AARCH32_ARMV6)
 	if (pt_attrs & MATTR_SHARED) {
 		reg_val |= ARM_MMU_TTBR_SHAREABLE_BIT;
 	}
+#endif
 
 	if (pt_attrs & MATTR_CACHE_OUTER_WB_WA) {
 		reg_val |= (ARM_MMU_TTBR_RGN_OUTER_WB_WA_CACHEABLE <<
@@ -856,6 +899,18 @@ int z_arm_mmu_init(void)
 	reg_val |= ARM_MMU_SCTLR_ICACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_DCACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_MMU_ENABLE_BIT;
+#if defined(CONFIG_CPU_AARCH32_ARMV6)
+	/*
+	 * Invalidate I+D caches before enabling them. ARM1176 powers up with
+	 * UNKNOWN cache contents and the reset path does not invalidate; once
+	 * Normal memory is cacheable (non-shared, above) stale power-up lines
+	 * would shadow the now-cacheable page tables and RAM with garbage,
+	 * faulting the first cached table walk. (c7,c7,0 = invalidate both
+	 * caches on ARMv6.)
+	 */
+	__asm__ volatile("mcr p15, 0, %0, c7, c7, 0" : : "r"(0) : "memory");
+	barrier_dsync_fence_full();
+#endif
 	__set_SCTLR(reg_val);
 
 	return 0;
