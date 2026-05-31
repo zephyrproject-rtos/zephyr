@@ -139,8 +139,9 @@
 /* PDP Context commands */
 #define DEACTIVATE_PDP_CONTEXT             "AT+CGACT=0"
 #define ACTIVATE_PDP_CONTEXT               "AT+CGACT=1"
-/* LTE coverage check command */
+/* Registration-ready cell queries */
 #define CHECK_LTE_COVERAGE_CMD             "AT+KCELLMEAS=1"
+#define CHECK_GSM_CELL_INFO_CMD            "AT+KCELL=0"
 #define WAKE_LTE_LAYER_CMD                 "AT%PINGCMD=0,\"8.8.8.8\",1"
 
 /**
@@ -234,6 +235,7 @@ enum hl78xx_event {
 	/* Explicit GNSS mode switching events */
 	MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED,
 	MODEM_HL78XX_EVENT_GNSS_MODE_EXIT_REQUESTED,
+	MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED,
 #endif /* CONFIG_HL78XX_GNSS */
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	MODEM_HL78XX_EVENT_DEVICE_ASLEEP,
@@ -253,6 +255,10 @@ enum hl78xx_event {
 	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_FAILED,
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 	MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT,
+#if defined(CONFIG_MODEM_HL78XX_AUTORAT) && defined(CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC)
+	/* RAT switched by AUTORAT; triggers reg-status URC reconfiguration. */
+	MODEM_HL78XX_EVENT_AUTORAT_RAT_CHANGED,
+#endif /* CONFIG_MODEM_HL78XX_AUTORAT && CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC */
 	MODEM_HL78XX_EVENT_COUNT
 };
 
@@ -426,6 +432,23 @@ struct hl78xx_gprs_status {
 	int8_t cid;
 };
 
+#ifdef CONFIG_MODEM_HL78XX_12
+struct hl78xx_gsm_kcell_status {
+	bool has_serving_cell;
+	bool has_timing_advance;
+	uint8_t cell_count;
+	uint8_t cell_type;
+	uint16_t arfcn;
+	uint8_t bsic;
+	char plmn[7];
+	uint16_t lac;
+	uint32_t cell_id;
+	uint8_t rssi_raw;
+	int16_t rssi_dbm;
+	uint8_t timing_advance;
+};
+#endif /* CONFIG_MODEM_HL78XX_12 */
+
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 /* WDSI FOTA states */
 enum hl78xx_wdsi_fota_states {
@@ -464,6 +487,10 @@ struct modem_status {
 	uint8_t ksrep;
 	int16_t rsrp;
 	int16_t rsrq;
+	int16_t sinr;
+#ifdef CONFIG_MODEM_HL78XX_12
+	struct hl78xx_gsm_kcell_status gsm_kcell;
+#endif /* CONFIG_MODEM_HL78XX_12 */
 	uint16_t script_fail_counter;
 	int variant;
 	enum hl78xx_state state;
@@ -501,6 +528,7 @@ struct modem_status {
 	bool rrc_idle;
 	uint16_t kcellmeas_timeout;
 	bool kcellmeas_bootstrap_done;
+	bool at_cmd_ready_sent;
 };
 
 struct modem_gpio_callbacks {
@@ -766,9 +794,9 @@ struct hl78xx_variant_ops {
 	void (*on_registered_ready)(struct hl78xx_data *data);
 
 	/**
-	 * @brief Handle data-ready semantics when +KCELLMEAS indicates valid signal.
+	 * @brief Handle data-ready semantics when a cell-readiness indication arrives.
 	 *
-	 * Some variants release socket communications on this signal,
+	 * Some variants release socket communications on +KCELLMEAS/+KCELL,
 	 * while others complete restore later in carrier-on processing.
 	 */
 	void (*on_kcellmeas_ready)(struct hl78xx_data *data);

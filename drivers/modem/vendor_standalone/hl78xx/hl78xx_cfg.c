@@ -53,7 +53,7 @@ int hl78xx_enable_lte_coverage_urc(struct hl78xx_data *data, bool *modem_require
 		*modem_require_restart |= false;
 		return 0;
 	}
-	if (IS_ENABLED(CONFIG_MODEM_HL78XX_LOW_POWER_MODE) && !IS_ENABLED(CONFIG_HL78XX_GNSS)) {
+	if (!IS_ENABLED(CONFIG_HL78XX_GNSS)) {
 		/* Additional configuration for low power mode with GNSS enabled */
 		snprintk(cmd, sizeof(cmd), "AT+KCELLMEAS=1,%d", timeout_s);
 	} else {

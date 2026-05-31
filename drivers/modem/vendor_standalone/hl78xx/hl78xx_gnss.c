@@ -1389,6 +1389,11 @@ static int hl78xx_gnss_init(const struct device *dev)
 
 int hl78xx_on_run_gnss_init_script_state_enter(struct hl78xx_data *data)
 {
+	struct gnss_nmea0183_match_data *match_data = data->gnss_dev->data;
+	struct hl78xx_gnss_data *gnss_data = match_data->gnss->data;
+
+	gnss_data->gnss_init_status = false;
+
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 #ifdef CONFIG_MODEM_HL78XX_PSM
 	LOG_DBG("PSMEV curr:%d prev:%d CFUN=%d", data->status.psmev.current,
@@ -1416,9 +1421,6 @@ int hl78xx_on_run_gnss_init_script_state_enter(struct hl78xx_data *data)
 #endif /* CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC */
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 #ifdef CONFIG_MODEM_HL78XX_EDRX
-	struct gnss_nmea0183_match_data *match_data = data->gnss_dev->data;
-	struct hl78xx_gnss_data *gnss_data = match_data->gnss->data;
-
 	/* In eDRX, run RRC check before GNSS.
 	 * HL7812: query immediately on GNSS init entry.
 	 * HL7800: wait for DEVICE_AWAKE (+KSUP) so chat path is ready.
@@ -1567,11 +1569,16 @@ void hl78xx_run_gnss_init_script_event_handler(struct hl78xx_data *data, enum hl
 		break;
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		if (data_gnss->gnss_init_status) {
+			LOG_DBG("GNSS init: SCRIPT_SUCCESS after GNSS config, ignoring");
+			break;
+		}
 		if (hl78xx_gnss_handle_script_success_rrc(data, data_gnss)) {
 			break;
 		}
 		LOG_DBG("GNSS init: SCRIPT_SUCCESS - configuring GNSS");
 		hl78xx_gnss_configure(data->gnss_dev);
+		data_gnss->gnss_init_status = true;
 		gnss_evt.content.status = true;
 		gnss_evt.type = HL78XX_GNSS_ENGINE_READY;
 		event_dispatcher_dispatch(&gnss_evt);
@@ -1803,6 +1810,13 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 					"phone functionality.");
 			}
 		}
+		break;
+
+	case MODEM_HL78XX_EVENT_LTE_RESTORE_REQUESTED:
+		LOG_INF("LTE_RESTORE_REQUESTED: entering RUN_INIT_SCRIPT on modem_workq");
+		gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
+		data_gnss->exit_to_lte_pending = false;
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
 		break;
 
 	case MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED:
