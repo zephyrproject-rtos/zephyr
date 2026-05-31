@@ -122,7 +122,8 @@
 			compatible = "xuantie,e907", "riscv";
 			reg = <0>;
 			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei",
+					       "xtheadba", "xtheadbb", "xtheadbs", "xtheadcmo";
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
