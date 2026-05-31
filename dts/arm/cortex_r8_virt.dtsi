@@ -39,7 +39,7 @@
 		};
 
 		uart0: uart@ff000000 {
-			compatible = "xlnx,xuartps";
+			compatible = "xlnx,xuartps", "cdns,uart";
 			reg = <0xff000000 0x4c>;
 			status = "disabled";
 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL

@@ -14,9 +14,6 @@ CONFIG_SERIAL=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# Enable serial port
-CONFIG_UART_XLNX_PS=y
-
 # This should be commented in order to test at EL1 S (EL1 Secure)
 CONFIG_ARMV8_A_NS=y
 
