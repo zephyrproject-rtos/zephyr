@@ -171,6 +171,7 @@
 enum hl78xx_state {
 	MODEM_HL78XX_STATE_IDLE = 0,
 	MODEM_HL78XX_STATE_RESET_PULSE,
+	MODEM_HL78XX_STATE_SOFT_RESET,
 	MODEM_HL78XX_STATE_POWER_ON_PULSE,
 	MODEM_HL78XX_STATE_AWAIT_POWER_ON,
 	MODEM_HL78XX_STATE_SET_BAUDRATE,
@@ -209,6 +210,7 @@ enum hl78xx_state {
 enum hl78xx_event {
 	MODEM_HL78XX_EVENT_RESUME = 0,
 	MODEM_HL78XX_EVENT_SUSPEND,
+	MODEM_HL78XX_EVENT_RESTART_REQUESTED,
 	MODEM_HL78XX_EVENT_SCRIPT_SUCCESS,
 	MODEM_HL78XX_EVENT_SCRIPT_FAILED,
 	MODEM_HL78XX_EVENT_SCRIPT_REQUIRE_RESTART,
@@ -498,6 +500,9 @@ struct modem_status {
 	struct hl78xx_gprs_status gprs[MDM_MAX_PDP_CONTEXTS];
 	struct hl78xx_modem_boot_status boot;
 	struct hl78xx_phone_functionality_work phone_functionality;
+	bool restart_requested;
+	enum hl78xx_modem_restart_mode restart_mode;
+	bool config_restart_pending;
 	struct apn_state apn;
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 	struct hl78xx_wdsi_status wdsi;
@@ -569,10 +574,13 @@ struct hl78xx_data {
 	struct k_work_delayable timeout_work;
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 	struct k_work_delayable hl78xx_pwr_dwn_work;
+	struct k_work_delayable power_down_shutdown_work;
 #endif
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	struct k_work_delayable hl78xx_edrx_idle_work;
+	struct k_work_delayable hl78xx_vgpio_debounce_work;
 	struct k_work_delayable hl78xx_gpio6_debounce_work;
+	bool hl78xx_vgpio_pending_state;
 	bool hl78xx_gpio6_pending_state;
 #endif
 	/* Track leftover socket data state previously stored as a TU-global.
@@ -624,6 +632,11 @@ struct hl78xx_config {
 static inline bool hl78xx_gpio_is_enabled(const struct gpio_dt_spec *gpio)
 {
 	return (gpio->port != NULL);
+}
+
+static inline bool hl78xx_is_config_restart_pending(const struct hl78xx_data *data)
+{
+	return (data != NULL) && data->status.config_restart_pending;
 }
 
 /* Forward-declare for variant ops */
@@ -691,6 +704,13 @@ struct hl78xx_variant_ops {
 	 * HL7812: Supplements +PSMEV URC; tracks eDRX/power-down.
 	 */
 	void (*gpio6_handler)(struct hl78xx_data *data, bool pin_state);
+
+	/**
+	 * @brief VGPIO debounce delay in milliseconds.
+	 *
+	 * Set to 0 to disable debounce and process VGPIO edges immediately.
+	 */
+	uint16_t vgpio_debounce_ms;
 
 	/**
 	 * @brief GPIO6 debounce delay in milliseconds.

@@ -1257,6 +1257,20 @@ config MODEM_HL78XX_POWER_DOWN_ACTIVE_TIME
 	  before powering it down.
 
 endif # MODEM_HL78XX_USE_ACTIVE_TIME_BASED_POWER_DOWN
+
+config MODEM_HL78XX_POWER_DOWN_CONFIRM_TIMEOUT_S
+	int "Graceful shutdown confirmation timeout in seconds"
+	default 15
+	range 5 60
+	help
+	  Time in seconds the driver waits for the application to call
+	  hl78xx_power_down_respond() after HL78XX_POWER_DOWN_UPDATE is
+	  dispatched with POWER_DOWN_EVENT_ENTER. Callers can use the
+	  immediate response to proceed with shutdown right away, or the
+	  reschedule response to extend this grace period from the current
+	  time. If the application does not respond within this window the
+	  driver proceeds with the modem shutdown unconditionally.
+
 endif # MODEM_HL78XX_POWER_DOWN
 
 if !MODEM_HL78XX_POWER_DOWN

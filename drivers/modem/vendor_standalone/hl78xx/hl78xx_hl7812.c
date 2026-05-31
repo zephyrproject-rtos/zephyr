@@ -29,6 +29,7 @@
 
 LOG_MODULE_DECLARE(hl78xx_dev, CONFIG_MODEM_LOG_LEVEL);
 
+#define HL7812_VGPIO_DEBOUNCE_MS 300
 #define HL7812_GPIO6_DEBOUNCE_MS 300
 
 static void hl78xx_hl7812_on_kstatev_urc(struct hl78xx_data *data, int state_value, int rat_mode)
@@ -196,6 +197,9 @@ static bool hl78xx_hl7812_on_gnss_mode_enter_lpm(struct hl78xx_data *data)
 
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 
+/* Defined in hl78xx_sockets.c */
+extern void hl78xx_invalidate_socket_contexts(struct hl78xx_data *data);
+
 /* -------------------------------------------------------------------------
  * GPIO6 handler
  * -------------------------------------------------------------------------
@@ -231,19 +235,44 @@ static void __maybe_unused hl78xx_hl7812_append_pending_event(struct hl78xx_evt 
 }
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN || CONFIG_MODEM_HL78XX_EDRX */
 
+static bool hl78xx_hl7812_gpio6_low_has_active_sleep_request(struct hl78xx_data *data)
+{
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+	if (data->status.lpm.power_down.is_power_down_requested) {
+		return true;
+	}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+
+#ifdef CONFIG_MODEM_HL78XX_EDRX
+	if (data->status.lpm.edrxev.is_requested) {
+		return true;
+	}
+#endif /* CONFIG_MODEM_HL78XX_EDRX */
+
+#ifdef CONFIG_MODEM_HL78XX_PSM
+	if (data->status.lpm.awaiting_psm_confirmation ||
+	    data->status.lpm.psmev.current == HL78XX_PSM_EVENT_ENTER) {
+		return true;
+	}
+#endif /* CONFIG_MODEM_HL78XX_PSM */
+
+	return false;
+}
+
 static void hl78xx_hl7812_gpio6_handle_low(struct hl78xx_data *data,
 					   struct hl78xx_evt *pending_evts,
 					   uint8_t *pending_evt_count)
 {
+	if (hl78xx_is_config_restart_pending(data)) {
+		LOG_DBG("GPIO6 LOW during config restart - ignoring low-power transition");
+		return;
+	}
+
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 	data->status.power_down.previous = data->status.power_down.current;
 	if (data->status.power_down.is_power_down_requested) {
 		data->status.power_down.current = POWER_DOWN_EVENT_ENTER;
-		if (data->status.power_down.current != data->status.power_down.previous) {
-			hl78xx_hl7812_append_pending_event(pending_evts, pending_evt_count,
-							   HL78XX_POWER_DOWN_UPDATE,
-							   data->status.power_down.current);
-		}
+		LOG_DBG("GPIO6 LOW: power-down confirmed (internal state updated)");
 	}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
@@ -262,9 +291,20 @@ static void hl78xx_hl7812_gpio6_handle_low(struct hl78xx_data *data,
 	}
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 
+	/* Notify application: raw GPIO6 LOW pin-state signal (unconditional). */
+	{
+		struct hl78xx_evt gpio6_evt = {.type = HL78XX_GPIO6_LOW};
+
+		event_dispatcher_dispatch(&gpio6_evt);
+	}
+
 	if (data->status.state != MODEM_HL78XX_STATE_SLEEP &&
 	    data->status.state != MODEM_HL78XX_STATE_IDLE) {
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEVICE_ASLEEP);
+		if (hl78xx_hl7812_gpio6_low_has_active_sleep_request(data)) {
+			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_DEVICE_ASLEEP);
+		} else {
+			LOG_DBG("GPIO6 LOW ignored for sleep: no active sleep request");
+		}
 	}
 }
 
@@ -276,12 +316,7 @@ static void hl78xx_hl7812_gpio6_handle_high(struct hl78xx_data *data,
 	data->status.power_down.previous = data->status.power_down.current;
 	if (data->status.power_down.is_power_down_requested) {
 		data->status.power_down.current = POWER_DOWN_EVENT_EXIT;
-		LOG_DBG("GPIO6 indicates wake, set power down event to EXIT");
-		if (data->status.power_down.current != data->status.power_down.previous) {
-			hl78xx_hl7812_append_pending_event(pending_evts, pending_evt_count,
-							   HL78XX_POWER_DOWN_UPDATE,
-							   data->status.power_down.current);
-		}
+		LOG_DBG("GPIO6 HIGH: modem waking from power-down (state updated)");
 	}
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 
@@ -299,6 +334,13 @@ static void hl78xx_hl7812_gpio6_handle_high(struct hl78xx_data *data,
 		}
 	}
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
+
+	/* Notify application: raw GPIO6 HIGH pin-state signal (unconditional). */
+	{
+		struct hl78xx_evt gpio6_evt = {.type = HL78XX_GPIO6_HIGH};
+
+		event_dispatcher_dispatch(&gpio6_evt);
+	}
 
 	/* HL7812 GPIO6 can pulse during deeper low-power transitions.
 	 * Do not treat GPIO6 HIGH as an authoritative wake signal.
@@ -336,9 +378,10 @@ static void hl78xx_hl7812_on_ksup_lpm(struct hl78xx_data *data)
 {
 	/* HL7812 does not use +KSUP for PSM/eDRX wake indication.
 	 * A +KSUP with MODULE_READY when already booted is always an
-	 * unexpected restart (e.g. firmware crash or watchdog).
+	 * unexpected restart (e.g. firmware crash or watchdog) / power cycle.
 	 */
-	LOG_DBG("Modem unexpected restart detected");
+	LOG_DBG("Modem restart detected");
+	hl78xx_invalidate_socket_contexts(data);
 	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_MDM_RESTART);
 }
 
@@ -540,6 +583,7 @@ const struct hl78xx_variant_ops hl78xx_variant_ops_hl7812 = {
 	.on_psmev_urc = hl78xx_hl7812_on_psmev_urc,
 	.on_rrc_status_urc = hl78xx_hl7812_on_rrc_status_urc,
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
+	.vgpio_debounce_ms = HL7812_VGPIO_DEBOUNCE_MS,
 	.gpio6_debounce_ms = HL7812_GPIO6_DEBOUNCE_MS,
 	.gpio6_handler = hl78xx_hl7812_gpio6_handler,
 	.on_ksup_lpm = hl78xx_hl7812_on_ksup_lpm,

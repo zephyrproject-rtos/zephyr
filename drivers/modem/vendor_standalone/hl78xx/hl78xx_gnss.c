@@ -860,6 +860,10 @@ void hl78xx_gnss_on_gnssev(struct modem_chat *chat, char **argv, uint16_t argc, 
 
 			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_GNSS_STOPPED);
 
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+			hl78xx_power_down_allow_feeding(data);
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+
 			gnss_evt.type = HL78XX_GNSS_EVENT_STOP;
 			gnss_evt.content.event_status = (enum hl78xx_event_status)event_value;
 		}
