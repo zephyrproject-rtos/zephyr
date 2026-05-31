@@ -29,7 +29,12 @@
 #include <zephyr/kernel/mm.h>
 #include <zephyr/sys/barrier.h>
 
+#if defined(CONFIG_CPU_AARCH32_ARMV6)
+/* ARM1176 is not a CMSIS target; provide the CP15 accessors it lacks. */
+#include "armv6_cp15.h"
+#else
 #include <cmsis_core.h>
+#endif
 
 #include <zephyr/arch/arm/mmu/arm_mmu.h>
 #include "arm_mmu_priv.h"
@@ -841,6 +846,19 @@ int z_arm_mmu_init(void)
 		}
 	}
 
+#ifdef CONFIG_CPU_AARCH32_ARMV6
+	/*
+	 * ARM1176 has no VBAR; reset.S copies the exception vector table to
+	 * 0x0 (low vectors, SCTLR.V=0). Map that page R+X so the first
+	 * exception taken after the MMU is enabled does not prefetch-abort.
+	 * Cacheable, but not shareable -- MATTR_SHARED on UP ARM1176 disables
+	 * caching and hangs LDREX/STREX.
+	 */
+	perms_attrs = arm_mmu_convert_attr_flags(MT_NORMAL | MATTR_CACHE_OUTER_WB_nWA |
+						 MATTR_CACHE_INNER_WB_nWA | MPERM_R | MPERM_X);
+	arm_mmu_l2_map_page(0x0U, 0x0U, perms_attrs);
+#endif
+
 	/* Clear TTBR1 */
 	__asm__ volatile("mcr p15, 0, %0, c2, c0, 1" : : "r"(reg_val));
 
@@ -895,7 +913,16 @@ int z_arm_mmu_init(void)
 
 	/* Enable the MMU and Cache in SCTLR */
 	reg_val  = __get_SCTLR();
+#if defined(CONFIG_CPU_AARCH32_ARMV6)
+	/*
+	 * ARM1176 has no AFE. XP selects the extended (subpage-disabled) page
+	 * table format, under which the AP[2:0] bits written by this driver
+	 * carry the same meaning as the ARMv7 AFE AP[2:1]+AF encoding.
+	 */
+	reg_val |= ARM_MMU_SCTLR_XP_BIT;
+#else
 	reg_val |= ARM_MMU_SCTLR_AFE_BIT;
+#endif
 	reg_val |= ARM_MMU_SCTLR_ICACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_DCACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_MMU_ENABLE_BIT;
