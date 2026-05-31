@@ -883,6 +883,12 @@ enum updatehub_response z_impl_updatehub_probe(void)
 			goto cleanup;
 		}
 
+		if (metadata_any_boards.objects[1].objects_len == 0) {
+			LOG_ERR("Inner object array of 'any metadata' is empty");
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
+			goto cleanup;
+		}
+
 		sha256size = strlen(
 			metadata_any_boards.objects[1].objects[0].objects.sha256sum) + 1;
 
@@ -913,6 +919,12 @@ enum updatehub_response z_impl_updatehub_probe(void)
 
 		if (metadata_some_boards.objects_len != 2) {
 			LOG_ERR("Object length of type 'some metadata' is incorrect");
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
+			goto cleanup;
+		}
+
+		if (metadata_some_boards.objects[1].objects_len == 0) {
+			LOG_ERR("Inner object array of 'some metadata' is empty");
 			ctx.code_status = UPDATEHUB_METADATA_ERROR;
 			goto cleanup;
 		}
