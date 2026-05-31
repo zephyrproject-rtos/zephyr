@@ -5,11 +5,141 @@
 
 """Assign reviewers, maintainers, and labels to new PRs based on MAINTAINERS.yml.
 
-Uses the GitHub API to:
-  - Add area-based labels to pull requests.
-  - Request reviews from relevant collaborators and maintainers.
-  - Assign maintainers to pull requests and issues.
-  - Process module PRs across all active west projects.
+Overview
+--------
+This script automates three housekeeping tasks on newly opened GitHub pull
+requests (and issues):
+
+  1. Apply area labels derived from MAINTAINERS.yml.
+  2. Request reviews from the relevant maintainers and collaborators.
+  3. Assign a primary maintainer as the PR assignee.
+
+It reads MAINTAINERS.yml (or a custom file via -M) to map file paths to named
+areas.  Each area carries a list of maintainers, collaborators, labels, and
+file/path patterns.  The script uses the PyGithub library to interact with the
+GitHub API and requires a personal access token in the GITHUB_TOKEN environment
+variable.
+
+Labeling strategy
+-----------------
+For every file changed in the PR, MAINTAINERS.yml is consulted to find the
+matching areas.  The union of all area labels across all matched areas is
+collected and applied to the PR, subject to a cap of MAX_LABELS (10).  If more
+than MAX_LABELS distinct labels would be applied, the entire label step is
+skipped to avoid polluting PRs that touch very broad cross-cutting areas.
+
+A special lightweight "size: XS" label is managed separately:
+  - Added when: the PR has exactly one commit AND at most one line added AND
+    at most one line deleted AND does not touch any manifest file
+    (west.yml, submanifests/optional.yaml).
+  - Removed when: the PR already carries "size: XS" but no longer qualifies
+    (e.g. after a rebase that added more commits or lines).
+
+Area weighting
+--------------
+Each changed file contributes a weight of 1 to the areas it belongs to, with
+two exceptions that contribute 0:
+
+  - CMakeLists.txt files: build-system boilerplate present in nearly every
+    directory, not a reliable signal for area ownership.
+  - Meta-areas (Documentation, Samples, Tests, Release Notes, Release): used
+    only for assignee selection when they are the *sole* area touched (see
+    below); not weighted for mixed PRs.
+
+Platform (driver/board) areas receive a weight of 1 for the first file that
+maps to them.  Subsequent files that also map to the *same* Platform area
+score 0 to avoid double-counting.  This is controlled by the is_instance flag:
+once a Platform area has been seen for a given file's sorted_areas list, all
+further areas for that file score 0.
+
+The resulting per-area weights drive both reviewer selection (ordered by
+weight) and assignee selection.
+
+Reviewer selection
+------------------
+The ordered reviewer candidate list is built as follows:
+
+  1. For each area in descending weight order: add the area's maintainers,
+     then its collaborators.
+  2. Append any path-specific collaborators returned by
+     get_collaborators_for_path() for each matched file.
+  3. Append any extra reviewers identified from MAINTAINERS.yml diff (see
+     Manifest / MAINTAINERS.yml change handling below).
+  4. Deduplicate while preserving insertion order.
+
+Candidates are then filtered:
+  - The PR author is skipped.
+  - Users who already submitted a review or are already on the review-request
+    list are skipped.
+  - Users who are not repository collaborators are skipped (GitHub requires
+    collaborator status to receive a review request).
+  - Users who previously self-removed themselves from the review request list
+    are skipped.
+
+If the PR already has MAX_REVIEWERS (15) or more reviewers, the normal
+candidate list is discarded and only the maintainers of *all* matched areas
+are requested instead (a smaller, higher-signal set).
+
+Otherwise the candidate list is capped at the remaining vacancy
+(MAX_REVIEWERS - existing reviewer count) before the review request is created.
+
+Assignee selection
+------------------
+Assignees are selected from area_counter (areas sorted by descending file
+weight) using the following priority rules:
+
+  1. If exactly one area is matched and it is a meta-area (Documentation,
+     Samples, Tests, Release Notes, Release), that area's maintainers are
+     assigned directly.  Meta-areas are not considered in mixed PRs.
+  2. Areas with a weight of 0 or no maintainers are skipped.
+  3. If the PR author is the area's only maintainer, the area is skipped
+     (to avoid self-assignment).  If the author is one of several maintainers,
+     they are excluded from the candidate list and the remaining maintainers
+     are used.
+  4. Non-platform areas (no "Platform" in the area name) take highest
+     priority: the first such area's maintainers are inserted at the front
+     of the ranked list, and the search stops.
+  5. Platform areas (drivers, boards) are appended as lower-priority
+     fallbacks.
+
+After iterating all areas, the first entry in the ranked list is chosen.
+If the ranking process yielded nothing (e.g. all areas had the author as sole
+maintainer), the maintainer with the highest cumulative file-weight score is
+used as a last resort.
+
+Assignees are only set when the PR currently has no assignee.
+
+Manifest / MAINTAINERS.yml change handling
+-------------------------------------------
+west.yml and submanifests/optional.yaml:
+  If --updated-manifest is provided, the old and new manifest files are
+  compared to find added, removed, and updated west projects.  Each changed
+  project is looked up in MAINTAINERS.yml under "West project: <name>" and
+  the corresponding collaborators are added to the reviewer candidate list.
+
+MAINTAINERS.yml:
+  If --updated-maintainer-file is provided, the old and new versions of
+  MAINTAINERS.yml are diffed field-by-field (maintainers, collaborators,
+  labels, files, files-regex, status).  Maintainers of every area that
+  changed are appended to the reviewer candidate list so that the people
+  responsible for each changed area are automatically notified.
+
+Issue assignment
+----------------
+When run with -I/--issue, the script matches the issue's GitHub labels against
+the area labels in MAINTAINERS.yml and assigns the maintainers of the matching
+area.  A single unambiguous label is sufficient for a match; multi-label areas
+require all their labels to be present.  If no match is found, or the issue
+already has assignees, the script exits without making changes.
+
+Module PR assignment
+--------------------
+When run with -m/--modules, the script reads the active west manifest,
+locates every active non-manifest project that has a "West project: <name>"
+entry in MAINTAINERS.yml with at least one maintainer, and searches GitHub for
+open, non-draft, unassigned PRs across all those repos.  Each PR is assigned
+to the project maintainers and review requests are created for both maintainers
+and collaborators.
 """
 
 import argparse
