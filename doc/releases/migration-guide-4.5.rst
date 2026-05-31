@@ -612,6 +612,11 @@ Mbed TLS
   as an alias to the latter for backward compatibility, but it will be removed in future
   releases.
 
+Snippets
+********
+
+* Rename ``xen_dom0`` to ``xen-dom0``.
+
 Architectures
 *************
 

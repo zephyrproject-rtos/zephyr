@@ -1,4 +1,4 @@
-.. _xen_dom0:
+.. _xen-dom0:
 
 Xen Dom0: universal snippet for XEN control domain
 ##################################################
@@ -25,19 +25,19 @@ For example:
 
 .. code-block:: console
 
-   west build -b qemu_cortex_a53 -S xen_dom0 samples/synchronization
+   west build -b qemu_cortex_a53 -S xen-dom0 samples/synchronization
 
 QEMU example with Xen
 ***********************
 
-Overlay for qemu_cortex_a53 board, that is present in :zephyr_file:`snippets/xen_dom0/boards/`
+Overlay for qemu_cortex_a53 board, that is present in :zephyr_file:`snippets/xen-dom0/boards/`
 directory of this snippet is QEMU Xen control domain example.
 
 To run such setup, you need to:
 
 * fetch and build Xen (e.g. RELEASE-4.17.0) for arm64 platform
 * take and compile sample device tree from :file:`example/` directory
-* build your Zephyr sample/application with ``xen_dom0`` snippet and start it as Xen control domain
+* build your Zephyr sample/application with ``xen-dom0`` snippet and start it as Xen control domain
 
 Important notice regarding device tree
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
