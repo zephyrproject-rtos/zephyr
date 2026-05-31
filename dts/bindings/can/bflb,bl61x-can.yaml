@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+title: Bouffalo Lab BL61x CAN (ISO11898) controller
+
+description: |
+  This is an NXP SJA1000 compatible PeliCAN core supporting classic CAN 2.0A/2.0B
+  (standard 11-bit and extended 29-bit identifiers). It does not support CAN FD.
+
+  CAN TX/RX are routed to GPIO pads through the UART signal multiplexer. In the
+  bflb pinctrl bindings this is the "can0" pin function (UART pad function at
+  signal-mux instance 2), which is available on every UART-capable pin.
+
+compatible: "bflb,bl61x-can"
+
+include: [can-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/pinctrl/bl618x-pinctrl.h>
+
+    &pinctrl {
+        can0_default: can0_default {
+            group1 {
+                pinmux = <GPIO16_CAN0_TX>,
+                         <GPIO17_CAN0_RX>;
+                bias-pull-up;
+                input-schmitt-enable;
+            };
+        };
+    };
+
+    &can0 {
+        status = "okay";
+
+        pinctrl-0 = <&can0_default>;
+        pinctrl-names = "default";
+
+        bitrate = <125000>;
+    };
