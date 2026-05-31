@@ -4134,6 +4134,12 @@ void k_work_queue_start(struct k_work_q *queue, struct k_thread *thread, k_threa
  */
 void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *cfg);
 
+/** @brief Run system work queue using calling thread
+ *
+ * This will run the work queue forever unless stopped by @ref k_work_queue_stop.
+ */
+void k_sys_work_q_run(void);
+
 /** @brief Access the thread that animates a work queue.
  *
  * This is necessary to grant a work queue thread access to things the work

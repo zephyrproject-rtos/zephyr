@@ -10,6 +10,17 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/ztest.h>
 
+#ifndef CONFIG_SYSTEM_WORKQUEUE_CREATE_THREAD
+static void custom_system_work_queue_entry(void *dummy1, void *dummy2, void *dummy3)
+{
+	k_sys_work_q_run();
+}
+
+static K_THREAD_DEFINE(custom_system_work_queue_thread, CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE,
+		       custom_system_work_queue_entry, NULL, NULL, NULL,
+		       CONFIG_SYSTEM_WORKQUEUE_PRIORITY, 0, 0);
+#endif
+
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 #define COOPHI_PRIORITY K_PRIO_COOP(0) /* = -4 */
 /* SYSTEM_WORKQUEUE_PRIORITY = -3 */

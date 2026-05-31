@@ -496,6 +496,18 @@ config WORKQUEUE_WORK_TIMEOUT
 	  logged.
 
 menu "System Work Queue Options"
+config SYSTEM_WORKQUEUE_CREATE_THREAD
+	bool "Creates a thread for the system work queue"
+	default y
+	help
+	  If enabled, the system work queue creates it's own thread during
+	  system initialization and starts processing work automatically.
+
+	  If disabled, the application has to call
+	  k_sys_work_q_start_on_current_thread on the thread it wants to use
+	  instead. This can be useful to reuse the main thread for the system
+	  work queue to save memory.
+
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
 	default 4096 if COVERAGE_GCOV || WIFI_NRF70
