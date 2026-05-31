@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "../partitions_2M_default.dtsi"
+#include "rp2350b.dtsi"
+
+/ {
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &qmi;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&flash0 {
+	status = "okay";
+	reg = <0x10000000 DT_SIZE_M(2)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
+};
