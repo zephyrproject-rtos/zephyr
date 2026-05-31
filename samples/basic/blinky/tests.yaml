@@ -1,5 +1,8 @@
 sample:
   name: Blinky Sample
+common:
+  min_ram: 2
+  min_flash: 16
 tests:
   sample.basic.blinky:
     tags:
