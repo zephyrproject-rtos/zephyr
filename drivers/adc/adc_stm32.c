@@ -229,6 +229,7 @@ struct stream {
 	uint8_t priority;
 	bool src_addr_increment;
 	bool dst_addr_increment;
+	uint8_t fifo_threshold;
 };
 #endif /* CONFIG_ADC_STM32_DMA */
 
@@ -350,11 +351,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 	blk_cfg->dest_address = (uint32_t)buffer;
 	blk_cfg->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 	blk_cfg->dest_reload_en = 0;
-
-	/* Manually set the FIFO threshold to 1/4 because the
-	 * dmamux DTS entry does not contain fifo threshold
-	 */
-	blk_cfg->fifo_mode_control = 0;
+	blk_cfg->fifo_mode_control = dma->fifo_threshold;
 
 	/* direction is given by the DT */
 	dma->dma_cfg.head_block = blk_cfg;
@@ -2253,6 +2250,8 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
 		.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(		\
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+		.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(			\
+			STM32_DMA_FEATURES(index, dir)),				\
 	}
 
 #else /* CONFIG_ADC_STM32_DMA */
