@@ -1,0 +1,309 @@
+/*
+ * Copyright (c) 2025 Conclusive Engineering Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/cc35xxe.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/dma/ti-cc35xx-dma.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2s/ti-cc35xx-i2s.h>
+#include "boosterpack_connector.dtsi"
+#include "lp_em_cc35x1-pinctrl.dtsi"
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	model = "TI CC35X1E LaunchPad";
+	compatible = "ti,launchpad-cc35x1e";
+
+	chosen {
+		zephyr,sram = &dmem_ns;
+		zephyr,flash = &extflash;
+		zephyr,itcm = &itcm_ns;
+		zephyr,dtcm = &dtcm_ns;
+		zephyr,code-partition = &dmem_ns;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+		zephyr,rtc = &rtc;
+		zephyr,entropy = &entropy;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		red_led: red_led {
+			gpios = <&gpios 34 GPIO_ACTIVE_HIGH>;
+			label = "RED USER LED";
+		};
+
+		blue_led: blue_led {
+			gpios = <&gpios 35 GPIO_ACTIVE_HIGH>;
+			label = "BLUE USER LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		green_pwm: pwm_led_0 {
+			pwms = <&pwm4 1 1000 PWM_POLARITY_NORMAL>;
+			label = "Green PWM LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		user_switch_1: user_sw_1 {
+			gpios = <&gpios 2 GPIO_ACTIVE_LOW>;
+			label = "User SW1";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		user_switch_2: user_sw_2 {
+			gpios = <&gpios 36 GPIO_ACTIVE_LOW>;
+			label = "User SW2";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		led0 = &red_led;
+		led1 = &blue_led;
+		pwm-led0 = &green_pwm;
+		ambient-temp0 = &tmp1075_temperature;
+		sw0 = &user_switch_1;
+		sw1 = &user_switch_2;
+		adc0 = &adc0;
+		dma0 = &dma;
+		rtc = &rtc;
+		sdhc0 = &sdhc;
+	};
+};
+
+&imem_ns {
+	status = "okay";
+};
+
+&dmem_shared {
+	status = "okay";
+};
+
+&dmem_ns {
+	status = "okay";
+};
+
+&itcm_ns {
+	status = "okay";
+};
+
+&dtcm_ns {
+	status = "okay";
+};
+
+&itcm {
+	status = "okay";
+};
+
+&dtcm {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
+
+&spi0 {
+	status = "disabled";
+	pinctrl-0 = <&spi0_master>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpios 26 GPIO_ACTIVE_LOW>;
+	dmas = <&dma 4 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_SPI_0)>,
+	       <&dma 5 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_SPI_0)>;
+	dma-names = "tx", "rx";
+};
+
+&spi1 {
+	status = "disabled";
+	pinctrl-0 = <&spi1_slave>;
+	pinctrl-names = "default";
+	dmas = <&dma 8 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_SPI_1)>,
+	       <&dma 9 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_SPI_1)>;
+	dma-names = "tx", "rx";
+};
+
+&flash0 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		vendor_image_partition: partition@0 {
+			label = "vendor-image";
+			reg = <0x0 0x2fb000>;
+		};
+	};
+};
+
+&flash1 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		wifi_fw_slot1_partition: partition@68000 {
+			label = "wifi-fw-1";
+			reg = <0x68000 0x72000>;
+		};
+
+		wifi_fw_slot2_partition: partition@da000 {
+			label = "wifi-fw-2";
+			reg = <0xda000 0x2b000>;
+		};
+	};
+};
+
+&flash2 {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* WiFi/BLE NVS: profiles, BLE security, connection policy */
+		/* 8 sectors = 32 KB with wear-leveling */
+		wifi_nvs_partition: partition@0 {
+			label = "wifi-nvs";
+			reg = <0x0 0x8000>;
+		};
+
+		storage_partition: partition@8000 {
+			label = "storage";
+			reg = <0x8000 0x23000>;
+		};
+	};
+};
+
+&i2c1 {
+	status = "disabled";
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+
+	tmp1075_temperature: tmp1075@48 {
+		compatible = "lm75";
+		friendly-name = "texas_temperature_tmp1075";
+		reg = <0x48>;
+	};
+
+	bma4xx_accelerometer: bma4xx@18 {
+		compatible = "bosch,bma4xx";
+		reg = <0x18>;
+	};
+};
+
+&adc0 {
+	status = "disabled";
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 6 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_ADC)>;
+	vref-internal-mv = <1400>;
+
+	channel@4 {
+		reg = <0x4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@5 {
+		reg = <0x5>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 0 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_UARTLIN_0)>,
+	       <&dma 1 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_UARTLIN_0)>;
+	dma-names = "rx", "tx";
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-0 = <&uart1_default>;
+	pinctrl-names = "default";
+	dmas = <&dma 2 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_UARTLIN_1)>,
+	       <&dma 3 CC35XX_DMA_SET_CONFIG(CC35xx_DMA_PERIPH_UARTLIN_1)>;
+	dma-names = "rx", "tx";
+};
+
+&timer1 {
+	clk-prescale = <0x1>;
+	status = "disabled";
+};
+
+&pwm4 {
+	pinctrl-0 = <&pwm4_default>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&hsm {
+	status = "okay";
+};
+
+&entropy {
+	status = "okay";
+};
+
+&crypto {
+	status = "okay";
+};
+
+&i2s0 {
+	status = "disabled";
+	pinctrl-0 = <&i2s_default>;
+	pinctrl-names = "default";
+	clock-source = <TI_CC35XX_I2S_CLK_SRC_SOC_PLL_CLK>;
+	pin-dir-sd0 = <TI_CC35XX_I2S_PIN_DIR_OUTPUT>;
+	pin-dir-sd1 = <TI_CC35XX_I2S_PIN_DIR_INPUT>;
+};
+
+&can0 {
+	status = "disabled";
+	pinctrl-0 = <&can_default>;
+	pinctrl-names = "default";
+};
+
+&sdhc {
+	status = "disabled";
+	pinctrl-0 = <&sdhc_mmc_default>;
+	pinctrl-names = "default";
+	max-bus-freq = <DT_FREQ_M(40)>;
+	power-delay-ms = <500>;
+	card-always-present;
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+	};
+};

@@ -23,6 +23,9 @@ family:
     - name: cc3235sf
   - name: cc35xxe
     socs:
+    - name: cc3500e
+    - name: cc3501e
+    - name: cc3550e
     - name: cc3551e
   - name: msp432p4xx
     socs:

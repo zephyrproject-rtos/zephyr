@@ -1,0 +1,33 @@
+identifier: lp_em_cc35x1/cc3551e
+name: TI SimpleLink CC3551E LaunchPad
+type: mcu
+arch: arm
+ram: 1024
+flash: 4096
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - spi
+  - uart
+  - drivers
+  - flash
+  - nvs
+  - pinctrl
+  - gpio
+  - serial
+  - entropy
+  - counter
+  - watchdog
+  - netif:wifi
+  - rtc
+  - adc
+  - pwm
+  - userspace
+  - dma
+  - i2s
+  - can
+  - disk
+testing:
+  default: true
+vendor: ti
