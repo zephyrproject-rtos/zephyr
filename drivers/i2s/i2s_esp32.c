@@ -874,7 +874,7 @@ static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
 	}
 
 #if SOC_GDMA_SUPPORTED
-	uint16_t chunk_len;
+	uint16_t chunk_len = 0;
 	void *src = NULL, *dst = NULL;
 
 #if I2S_ESP32_IS_DIR_EN(rx)
