@@ -648,7 +648,7 @@ struct ethernet_context {
 #endif
 
 #if defined(CONFIG_NET_DSA)
-	/** DSA port tpye */
+	/** DSA port type */
 	enum dsa_port_type dsa_port;
 
 	/** DSA switch context pointer */

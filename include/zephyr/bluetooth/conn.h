@@ -1716,8 +1716,8 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
  *  Use @ref BT_GAP_LE_PHY_NONE to indicate no preference.
  *  For possible PHY values see @ref bt_gap_le_phy.
  *
- *  @param pref_tx_phy  Preferred transmitter phy prarameters.
- *  @param pref_rx_phy  Preferred receiver phy prameters.
+ *  @param pref_tx_phy  Preferred transmitter phy parameters.
+ *  @param pref_rx_phy  Preferred receiver phy parameters.
  *
  *  @return Zero on success or (negative) error code on failure.
  */

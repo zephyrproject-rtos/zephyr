@@ -336,7 +336,7 @@ struct bt_aics_cb {
 	bt_aics_type_cb                  type;
 	/** The audio input status has changed */
 	bt_aics_status_cb                status;
-	/** The audio input decscription has changed */
+	/** The audio input description has changed */
 	bt_aics_description_cb           description;
 
 #if defined(CONFIG_BT_AICS_CLIENT) || defined(__DOXYGEN__)

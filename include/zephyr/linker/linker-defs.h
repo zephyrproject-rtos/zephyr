@@ -47,7 +47,7 @@
 #endif
 
 /* The GCC for Renesas RX processors adds leading underscores to C-symbols
- * by default. As a workaroud for symbols defined in linker scripts to be
+ * by default. As a workaround for symbols defined in linker scripts to be
  * available in C code, an alias with a leading underscore has to be provided.
  */
 #if defined(CONFIG_RX)

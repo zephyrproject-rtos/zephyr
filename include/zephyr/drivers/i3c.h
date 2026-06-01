@@ -1025,7 +1025,7 @@ struct i3c_device_desc {
 	/**
 	 * Device Flags
 	 *
-	 * BIT[0]: This shall be used as an optimization for bus initializtion if the
+	 * BIT[0]: This shall be used as an optimization for bus initialization if the
 	 * device supports SETAASA.
 	 * BIT[1]: This shall be used to indicate if the device is a I3C v1.0 device
 	 */

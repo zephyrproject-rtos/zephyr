@@ -573,7 +573,7 @@ struct http_client_ctx {
 	/** Flag indicating accept encoding is being processed. */
 	IF_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION, (bool accept_encoding_next: 1));
 
-	/** The next frame on the stream is expectd to be a continuation frame. */
+	/** The next frame on the stream is expected to be a continuation frame. */
 	bool expect_continuation : 1;
 /** @endcond */
 };

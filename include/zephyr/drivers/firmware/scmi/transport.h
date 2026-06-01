@@ -306,7 +306,7 @@ static inline bool scmi_transport_channel_is_free(const struct device *transport
 }
 
 /**
- * @brief Perfrom SCMI core initialization
+ * @brief Perform SCMI core initialization
  *
  * @param transport pointer to the device structure for
  * the transport layer
