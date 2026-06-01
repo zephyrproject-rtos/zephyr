@@ -446,14 +446,15 @@ int siwx91x_nwp_mode_switch(const struct device *dev, uint8_t oper_mode, bool hi
 	return 0;
 }
 
-int siwx91x_nwp_apply_power_profile(const struct device *dev)
+int siwx91x_nwp_apply_power_profile(const struct device *dev,
+				    const sl_wifi_performance_profile_v2_t *wifi_profile)
 {
 	struct siwx91x_nwp_data *data = dev->data;
-	sl_wifi_performance_profile_v2_t performance_profile = {
-		.profile = data->power_profile
+	sl_wifi_performance_profile_v2_t default_wifi_profile = {
+		.profile = data->power_profile,
 	};
 	sl_bt_performance_profile_t bt_performance_profile = {
-		.profile = data->power_profile
+		.profile = data->power_profile,
 	};
 	int ret;
 
@@ -462,6 +463,10 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev)
 		return 0;
 	}
 
+	/* WiseConnect zeros the BT half of its cached coex profile on every
+	 * sl_wifi_disconnect(). Re-seed it so the combined profile doesn't
+	 * resolve to HIGH_PERFORMANCE and silently drop the PS request.
+	 */
 	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
 		ret = sl_si91x_bt_set_performance_profile(&bt_performance_profile);
 		if (ret) {
@@ -470,7 +475,10 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev)
 		}
 	}
 
-	ret = sl_wifi_set_performance_profile_v2(&performance_profile);
+	if (!wifi_profile) {
+		wifi_profile = &default_wifi_profile;
+	}
+	ret = sl_wifi_set_performance_profile_v2(wifi_profile);
 	if (ret) {
 		return -EINVAL;
 	}
@@ -534,7 +542,7 @@ static int siwx91x_nwp_init(const struct device *dev)
 	 * bt_enable() is not called, you will never go in sleep.
 	 */
 	if (!IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-		ret = siwx91x_nwp_apply_power_profile(dev);
+		ret = siwx91x_nwp_apply_power_profile(dev, NULL);
 		if (ret) {
 			return -EINVAL;
 		}
