@@ -26,6 +26,8 @@
 #define CRYPTO_DEV_COMPAT bflb_sec_eng_aes
 #elif CONFIG_CRYPTO_INFINEON_MXCRYPTOLITE
 #define CRYPTO_DEV_COMPAT infineon_mxcryptolite_crypto
+#elif DT_HAS_COMPAT_STATUS_OKAY(lowrisc_opentitan_aes)
+#define CRYPTO_DEV_COMPAT lowrisc_opentitan_aes
 #else
 #error "You need to enable one crypto device"
 #endif
