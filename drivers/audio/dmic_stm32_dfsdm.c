@@ -842,6 +842,29 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev,
 #define DMIC_DFSDM_HW_CHANNEL(flt)                                             \
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(flt, DMIC_DFSDM_CHAN_IDX, ())
 
+#define DMIC_DFSDM_FILTER_HFILTER(flt)                                                             \
+	{                                                                                          \
+		.Instance = DMIC_DFSDM_FLT_REG_ADDR(flt),                                          \
+		.Init =                                                                            \
+			{                                                                          \
+				.InjectedParam =                                                   \
+					{                                                          \
+						.DmaMode = DISABLE,                                \
+						.ExtTrigger = DFSDM_FILTER_EXT_TRIG_TIM8_TRGO,     \
+						.ExtTriggerEdge =                                  \
+							DFSDM_FILTER_EXT_TRIG_BOTH_EDGES,          \
+						.ScanMode = DISABLE,                               \
+						.Trigger = DT_PROP(flt, filter0_sync),             \
+					},                                                         \
+				.RegularParam =                                                    \
+					{                                                          \
+						.DmaMode = DISABLE,                                \
+						.FastMode = ENABLE,                                \
+						.Trigger = DFSDM_FILTER_SW_TRIGGER,                \
+					},                                                         \
+			},                                                                         \
+	}
+
 #define DMIC_DFSDM_FILTERS_DEFINE(flt)                                         \
 	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(flt) == 1,                       \
 		     "One DFSDM channel child per filter (regular mode)");     \
@@ -873,23 +896,7 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev,
 	static struct dmic_stm32_dfsdm_filter_data                             \
 					dmic_stm32_dfsdm_filter_data_##flt = { \
 		.hchannels = hchannels_##flt,                                  \
-		.hfilter = {                                                   \
-			.Instance = DMIC_DFSDM_FLT_REG_ADDR(flt),              \
-			.Init = {                                              \
-				.InjectedParam = {                             \
-					.DmaMode = DISABLE,                    \
-					.ExtTrigger = DFSDM_FILTER_EXT_TRIG_TIM8_TRGO,         \
-					.ExtTriggerEdge = DFSDM_FILTER_EXT_TRIG_BOTH_EDGES,    \
-					.ScanMode = DISABLE,                   \
-					.Trigger = DT_PROP(flt, filter0_sync), \
-				},                                             \
-				.RegularParam = {                              \
-					.DmaMode = DISABLE,                    \
-					.FastMode = ENABLE,                    \
-					.Trigger = DFSDM_FILTER_SW_TRIGGER,    \
-				},                                             \
-			},                                                     \
-		},                                                             \
+		.hfilter = DMIC_DFSDM_FILTER_HFILTER(flt),                     \
 		.sincorder = DT_PROP(flt, filter_order),                       \
 		.rx_queue = &dmic_stm32_dfsdm_msgq_##flt,                      \
 	};                                                                     \
