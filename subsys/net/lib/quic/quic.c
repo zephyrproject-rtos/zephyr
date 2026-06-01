@@ -6357,10 +6357,25 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 				continue;
 			}
 
-			/* This segment is now in order, so deliver it */
+			/* This segment is now in order, so deliver it.
+			 * Do not truncate OOO segments: if it does not fit yet,
+			 * keep it queued and retry after more data is consumed.
+			 */
 			avail = buf->size - buf->tail;
-			copy  = MIN((size_t)seg->len, avail);
+			if ((size_t)seg->len > avail && buf->head > 0U) {
+				size_t unread = buf->tail - buf->head;
 
+				memmove(buf->data, &buf->data[buf->head], unread);
+				buf->tail = unread;
+				buf->head = 0U;
+				avail = buf->size - buf->tail;
+			}
+
+			if ((size_t)seg->len > avail) {
+				continue;
+			}
+
+			copy = (size_t)seg->len;
 			memcpy(&buf->data[buf->tail], seg->data, copy);
 			buf->tail += copy;
 
