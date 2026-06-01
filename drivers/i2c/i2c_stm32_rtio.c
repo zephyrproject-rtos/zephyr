@@ -8,6 +8,7 @@
 #include <soc.h>
 #include <stm32_ll_i2c.h>
 #include <stm32_ll_rcc.h>
+#include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/i2c.h>
@@ -269,6 +270,71 @@ static int i2c_stm32_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_I2C_STM32_V2_DMA
+
+#define I2C_DMA_INIT(index, dir)								\
+	.dir##_dma = {										\
+		.dev_dma = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),			\
+				(DEVICE_DT_GET(STM32_DMA_CTLR(index, dir))), (NULL)),		\
+		.dma_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),			\
+				(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1)),	\
+	},
+
+void i2c_stm32_dma_tx_cb(const struct device *dma_dev, void *user_data,
+			 uint32_t channel, int status)
+{
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(user_data);
+	ARG_UNUSED(channel);
+
+	/* log DMA TX error */
+	if (status != 0) {
+		LOG_ERR("DMA error %d", status);
+	}
+}
+
+void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
+			 uint32_t channel, int status)
+{
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(user_data);
+	ARG_UNUSED(channel);
+
+	/* log DMA RX error */
+	if (status != 0) {
+		LOG_ERR("DMA error %d", status);
+	}
+}
+
+#define I2C_DMA_DATA_INIT(index, dir, src, dest)						\
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, dir),						\
+		(.dma_##dir##_cfg = {								\
+			.dma_slot = STM32_DMA_SLOT(index, dir, slot),				\
+			.channel_direction = STM32_DMA_CONFIG_DIRECTION(			\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+			.cyclic =  STM32_DMA_CONFIG_CYCLIC(					\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+			.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+			.source_data_size = STM32_DMA_CONFIG_##src##_DATA_SIZE(			\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+			.dest_data_size = STM32_DMA_CONFIG_##dest##_DATA_SIZE(			\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+			/* single transfers (burst length = data size) */			\
+			.source_burst_length = STM32_DMA_CONFIG_##src##_DATA_SIZE(		\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+			.dest_burst_length = STM32_DMA_CONFIG_##dest##_DATA_SIZE(		\
+				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+			.dma_callback = i2c_stm32_dma_##dir##_cb,				\
+		},))
+
+#else /* CONFIG_I2C_STM32_V2_DMA */
+
+#define I2C_DMA_INIT(index, dir)
+#define I2C_DMA_DATA_INIT(index, dir, src, dest)
+
+#endif /* CONFIG_I2C_STM32_V2_DMA */
+
 #define I2C_STM32_INIT(index)									\
 	I2C_STM32_IRQ_HANDLER_DECL(index);							\
 												\
@@ -291,6 +357,8 @@ static int i2c_stm32_init(const struct device *dev)
 			   (.timings = (const struct i2c_config_timing *)i2c_timings_##index,	\
 			    .n_timings =							\
 			sizeof(i2c_timings_##index) / (sizeof(struct i2c_config_timing)),))	\
+		I2C_DMA_INIT(index, tx)								\
+		I2C_DMA_INIT(index, rx)								\
 	};											\
 												\
 	I2C_RTIO_DEFINE(CONCAT(_i2c, index, _stm32_rtio),					\
@@ -299,6 +367,8 @@ static int i2c_stm32_init(const struct device *dev)
 												\
 	static struct i2c_stm32_data i2c_stm32_dev_data_##index = {				\
 		.ctx = &CONCAT(_i2c, index, _stm32_rtio),					\
+		I2C_DMA_DATA_INIT(index, tx, MEMORY, PERIPHERAL)				\
+		I2C_DMA_DATA_INIT(index, rx, PERIPHERAL, MEMORY)				\
 	};											\
 												\
 	PM_DEVICE_DT_INST_DEFINE(index, i2c_stm32_pm_action);					\

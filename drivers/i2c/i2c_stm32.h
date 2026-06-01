@@ -80,6 +80,14 @@ struct i2c_stm32_data {
 	uint8_t *xfer_buf;
 	size_t xfer_len;
 	uint8_t xfer_flags;
+#ifdef CONFIG_I2C_STM32_V2_DMA
+	struct dma_config dma_tx_cfg;
+	struct dma_config dma_rx_cfg;
+	struct dma_block_config dma_blk_cfg;
+	uint8_t *dma_buf;
+	size_t dma_len;
+	bool dma_active;
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 #ifdef CONFIG_I2C_STM32_V1
 	size_t msg_len;
 	uint8_t is_restart;
