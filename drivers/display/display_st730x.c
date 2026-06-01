@@ -117,6 +117,8 @@ struct st730x_config {
 	uint8_t hpm_gate_waveform[ST730X_HPM_GATE_WAVEFORM_LEN];
 	uint8_t lpm_gate_waveform[ST730X_LPM_GATE_WAVEFORM_LEN];
 	bool color_inversion;
+	uint8_t te_mode;
+	uint32_t te_delay;
 	uint8_t *conversion_buf;
 	size_t conversion_buf_size;
 };
@@ -406,11 +408,17 @@ static int st730x_write(const struct device *dev, const uint16_t x, const uint16
 		return err;
 	}
 
+	mipi_desc.frame_incomplete = true;
+
 	while (desc->height > processed) {
 		i = st730x_convert(dev, buf, processed, desc);
 
 		if (i < 0) {
 			return i;
+		}
+
+		if (desc->height <= processed + i) {
+			mipi_desc.frame_incomplete = false;
 		}
 
 		mipi_desc.buf_size = i * desc->width / ST730X_PPB;
@@ -506,6 +514,14 @@ static int st730x_init(const struct device *dev)
 		return err;
 	}
 
+	if (config->te_mode != MIPI_DBI_TE_NO_EDGE) {
+		err = mipi_dbi_configure_te(config->mipi_dev, config->te_mode, config->te_delay);
+		if (err < 0) {
+			LOG_ERR("Failed to configure tearing effect! %d", err);
+			return err;
+		}
+	}
+
 	return 0;
 }
 
@@ -563,6 +579,8 @@ static const struct st730x_specific st7306_specifics = {
 		.lpm_gate_waveform = DT_PROP(node_id, lpm_gate_waveform),                          \
 		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
 		.specifics = specifics_ptr,                                                        \
+		.te_mode = MIPI_DBI_TE_MODE_DT(node_id, te_mode),                                  \
+		.te_delay = DT_PROP(node_id, te_delay),                                            \
 		.conversion_buf = conversion_buf##node_id,                                         \
 		.conversion_buf_size = sizeof(conversion_buf##node_id),                            \
 	};                                                                                         \
