@@ -1,0 +1,42 @@
+# SMI configuration options
+
+# Copyright (c) 2026 Bas van Loon
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# SMI options
+#
+menuconfig SMI
+	bool "Simple Management Interface (SMI) drivers"
+	help
+	  Enable SMI Driver Configuration
+
+if SMI
+
+config SMI_SHELL
+	bool "SMI Shell"
+	depends on SHELL
+	help
+	  Enable SMI Shell.
+
+	  The SMI shell currently supports scanning and device
+	  read/write.
+
+config SMI_GPIO
+	bool "GPIO bitbang SMI controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SMI_GPIO_ENABLED
+	help
+	  Enable software driven (bit banging) SMI support using GPIO pins
+
+config SMI_INIT_PRIORITY
+	int "Init priority"
+	default ETH_INIT_PRIORITY
+	help
+	  SMI device driver initialization priority.
+
+module = SMI
+module-str = smi
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SMI

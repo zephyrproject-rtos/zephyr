@@ -116,3 +116,4 @@ config ETH_NET_IF_NO_AUTO_START
 	  bring the interface up.
 
 source "drivers/ethernet/mdio/Kconfig"
+source "drivers/ethernet/smi/Kconfig"

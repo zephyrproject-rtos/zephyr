@@ -123,6 +123,7 @@ serial	Serial controller
 shi	SHI (Serial Host Interface)
 sip_svc	Service in Platform
 smbus	SMbus (System Management Bus)
+smi	SMI (Simple Management Interface)
 sound	Sound
 spi	SPI (Serial Peripheral Interface)
 sram	SRAM (Static Random Access Memory)

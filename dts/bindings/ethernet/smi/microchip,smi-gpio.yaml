@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Bas van Loon
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip SMI bitbang driver. This is a custom MDIO bitbang driver using GPIOs, used for
+  the SMI interface of Microchip KSZ8xxx ethernet switch.
+
+compatible: "microchip,smi-gpio"
+
+include: smi-controller.yaml
+
+properties:
+  smi-clock-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin for the SMI clock line
+
+  smi-data-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO pin for the SMI data line

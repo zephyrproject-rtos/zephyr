@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Bas van Loon
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for SMI controllers
+
+include: base.yaml
+
+bus: smi
