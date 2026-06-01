@@ -66,7 +66,11 @@ rtc_slow_len = RCT_SLOW_RAM_SIZE;
 
 /* Make sure new sections have consistent alignment between input and output sections */
 #undef SECTION_DATA_PROLOGUE
+#ifndef __LLD_LINKER_CMD__
 #define SECTION_DATA_PROLOGUE(name, options, align) name options : ALIGN_WITH_INPUT
+#else
+#define SECTION_DATA_PROLOGUE(name, options, align) name options : align
+#endif
 
 #undef SECTION_PROLOGUE
 #define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
@@ -317,6 +321,29 @@ SECTIONS
     /* Vectors go to IRAM */
     _init_start = ABSOLUTE(.);
     /* Vectors according to builds/RF-2015.2-win32/esp108_v1_2_s5_512int_2/config.html */
+#ifdef __LLD_LINKER_CMD__
+    . = _init_start + 0x0;
+    KEEP(*(.WindowVectors.text));
+    . = _init_start + 0x180;
+    KEEP(*(.Level2InterruptVector.text));
+    . = _init_start + 0x1c0;
+    KEEP(*(.Level3InterruptVector.text));
+    . = _init_start + 0x200;
+    KEEP(*(.Level4InterruptVector.text));
+    . = _init_start + 0x240;
+    KEEP(*(.Level5InterruptVector.text));
+    . = _init_start + 0x280;
+    KEEP(*(.DebugExceptionVector.text));
+    . = _init_start + 0x2c0;
+    KEEP(*(.NMIExceptionVector.text));
+    . = _init_start + 0x300;
+    KEEP(*(.KernelExceptionVector.text));
+    . = _init_start + 0x340;
+    KEEP(*(.UserExceptionVector.text));
+    . = _init_start + 0x3C0;
+    KEEP(*(.DoubleExceptionVector.text));
+    . = _init_start + 0x400;
+#else
     . = 0x0;
     KEEP(*(.WindowVectors.text));
     . = 0x180;
@@ -338,6 +365,7 @@ SECTIONS
     . = 0x3C0;
     KEEP(*(.DoubleExceptionVector.text));
     . = 0x400;
+#endif
     _invalid_pc_placeholder = ABSOLUTE(.);
     *(.*Vector.literal)
 
@@ -362,6 +390,9 @@ SECTIONS
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
+    *libatomic.a:*(.literal .text .literal.* .text.*)
+    *libclang_rt.builtins*.a:*(.literal .text .literal.* .text.*)
+    *libzephyr.a:atomic_stubs.*(.literal .text .literal.* .text.*)
     *libzephyr.a:cbprintf_packaged.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:windowspill_asm.*(.literal .text .literal.* .text.*)
@@ -860,6 +891,11 @@ SECTIONS
     __bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
+  .dbg_thread_info : ALIGN(4)
+  {
+    KEEP(*(".dbg_thread_info"));
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
   /* Provide total SRAM usage, including IRAM and DRAM */
   _image_ram_start = _init_start - IRAM_DRAM_OFFSET;
   #include <zephyr/linker/ram-end.ld>
@@ -998,15 +1034,19 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-bt.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
-  #include <zephyr/linker/thread-local-storage.ld>
   #include <snippets-sections.ld>
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  .flash.rodata_end : ALIGN(0x10)
+    .flash.rodata_pad : ALIGN(0x10)
   {
-    /* Enforce flash segment size alignment */
     LONG(0);
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
+
+  #include <zephyr/linker/thread-local-storage.ld>
+
+  .flash.rodata_end :
+  {
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -1114,6 +1154,11 @@ SECTIONS
     KEEP (*(.gnu.linkonce.xt.profile_files.*))
   }
 
+  #if defined(CONFIG_LLVM_USE_LLD) || defined(__LLD_LINKER_CMD__)
+  SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
+  SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
+  SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
+  #endif
 }
 
   /* --- XTENSA GLUE AND DEBUG END --- */

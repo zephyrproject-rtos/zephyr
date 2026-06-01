@@ -18,7 +18,7 @@ GTEXT(_isr_wrapper)
  * Must be aligned to 64 bytes (mtvec[31:6] << 6).
  */
 	.global  _vector_table
-	.section .exception_vectors.text
+	.section .exception_vectors.text, "ax"
 	.balign   0x40
 	.type     _vector_table, @function
 

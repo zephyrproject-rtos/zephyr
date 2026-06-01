@@ -23,7 +23,7 @@ GTEXT(_isr_wrapper)
 	 */
 
 	.global  _vector_table
-	.section .exception_vectors.text
+	.section .exception_vectors.text, "ax"
 	.balign   0x100
 	.type     _vector_table, @function
 

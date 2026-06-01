@@ -63,7 +63,11 @@ user_sram_size = (user_sram_end - user_sram_org);
 
 /* Make sure new sections have consistent alignment between input and output sections */
 #undef SECTION_DATA_PROLOGUE
+#ifndef __LLD_LINKER_CMD__
 #define SECTION_DATA_PROLOGUE(name, options, align) name options : ALIGN_WITH_INPUT
+#else
+#define SECTION_DATA_PROLOGUE(name, options, align) name options : align
+#endif
 
 #undef SECTION_PROLOGUE
 #define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
@@ -342,6 +346,9 @@ SECTIONS
     *libarch__common.a:(.literal .text .literal.* .text.*)
     *libkernel.a:(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
+    *libatomic.a:*(.literal .text .literal.* .text.*)
+    *libclang_rt.builtins*.a:*(.literal .text .literal.* .text.*)
+    *libzephyr.a:atomic_stubs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libdrivers__timer.a:esp32_sys_timer.*(.literal .text .literal.* .text.*)
@@ -839,6 +846,11 @@ SECTIONS
     _bss_end = ABSOLUTE(.);
   } GROUP_LINK_IN(RAMABLE_REGION)
 
+  .dbg_thread_info : ALIGN(4)
+  {
+    KEEP(*(".dbg_thread_info"));
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
   /* Provide total SRAM usage, including IRAM and DRAM */
   _image_ram_start = _iram_start;
 
@@ -928,18 +940,13 @@ SECTIONS
     . = ALIGN(CACHE_ALIGN);
   } GROUP_LINK_IN(ROMABLE_REGION)
 
-  /* Move drom0 after .text region to allow proper memory mapping. */
-  .flash_rodata_dummy (NOLOAD) :
-  {
-    . += ALIGN(_instruction_reserved_end - _instruction_reserved_start, CACHE_ALIGN);
-  } GROUP_LINK_IN(RODATA_REGION)
-
   /* Symbols used during the application memory mapping */
   _image_drom_start = LOADADDR(.flash.rodata);
   _image_drom_size = _image_rodata_end -  _image_rodata_start;
   _image_drom_vaddr = ADDR(.flash.rodata);
 
-  .flash.rodata : ALIGN(0x10)
+  .flash.rodata _instruction_reserved_end : ALIGN(0x10)
+
   {
     _rodata_reserved_start = ABSOLUTE(.);
     _image_rodata_start = ABSOLUTE(.);
@@ -1002,15 +1009,19 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
   #include <snippets-rom-sections.ld>
-  #include <zephyr/linker/thread-local-storage.ld>
   #include <snippets-sections.ld>
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  .flash.rodata_end : ALIGN(0x10)
+    .flash.rodata_pad : ALIGN(0x10)
   {
-    /* Enforce flash segment size alignment */
     LONG(0);
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
+
+  #include <zephyr/linker/thread-local-storage.ld>
+
+  .flash.rodata_end :
+  {
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -1091,4 +1102,10 @@ SECTIONS
     KEEP(*(.riscv.attributes))
     KEEP(*(.gnu.attributes))
     }
+
+  #if defined(CONFIG_LLVM_USE_LLD) || defined(__LLD_LINKER_CMD__)
+  SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
+  SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
+  SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
+  #endif
 }

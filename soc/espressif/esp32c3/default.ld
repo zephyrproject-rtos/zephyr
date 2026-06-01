@@ -53,7 +53,11 @@ rtc_iram_len = RCT_FAST_RAM_SIZE;
 
 /* Make sure new sections have consistent alignment between input and output sections */
 #undef SECTION_DATA_PROLOGUE
+#ifndef __LLD_LINKER_CMD__
 #define SECTION_DATA_PROLOGUE(name, options, align) name options : ALIGN_WITH_INPUT
+#else
+#define SECTION_DATA_PROLOGUE(name, options, align) name options : align
+#endif
 
 #undef SECTION_PROLOGUE
 #define SECTION_PROLOGUE SECTION_DATA_PROLOGUE
@@ -308,11 +312,14 @@ SECTIONS
     *libzephyr.a:hw_init.*(.literal .text .literal.* .text.*)
     *libzephyr.a:soc_random.*(.literal .text .literal.* .text.*)
 
-    *libarch__riscv__core.a:(.literal .text .literal.* .text.*)
-    *libarch__common.a:(.literal .text .literal.* .text.*)
-    *libkernel.a:(.literal .text .literal.* .text.*)
+    *libarch__riscv__core.a:*(.literal .text .literal.* .text.*)
+    *libarch__common.a:*(.literal .text .literal.* .text.*)
+    *libkernel.a:*(.literal .text .literal.* .text.*)
     *libzephyr.a:atomic_c.*(.literal .text .literal.* .text.*)
     *libgcc.a:lib2funcs.*(.literal .text .literal.* .text.*)
+    *libatomic.a:*(.literal .text .literal.* .text.*)
+    *libclang_rt.builtins*.a:*(.literal .text .literal.* .text.*)
+    *libzephyr.a:atomic_stubs.*(.literal .text .literal.* .text.*)
     *libdrivers__flash.a:flash_esp32.*(.literal .text .literal.* .text.*)
     *libzephyr.a:log_noos.*(.literal .text .literal.* .text.*)
     *libdrivers__timer.a:esp32c3_sys_timer.*(.literal .text .literal.* .text.*)
@@ -328,9 +335,9 @@ SECTIONS
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *libzephyr.a:sar_periph_ctrl_common.*(.literal .text .literal.* .text.*)
-    *libgcov.a:(.literal .text .literal.* .text.*)
-    *libphy.a:( .phyiram .phyiram.*)
-    *librtc.a:(.literal .text .literal.* .text.*)
+    *libgcov.a:*(.literal .text .literal.* .text.*)
+    *libphy.a:*( .phyiram .phyiram.*)
+    *librtc.a:*(.literal .text .literal.* .text.*)
 
     /* [mapping:hal] */
     *libzephyr.a:efuse_hal.*(.literal .text .literal.* .text.*)
@@ -415,9 +422,9 @@ SECTIONS
     *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
 
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
+    *libnet80211.a:*( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
+    *libpp.a:*( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
+    *libcoexist.a:*(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 
     /* [mapping:esp_wifi] */
     *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
@@ -430,8 +437,8 @@ SECTIONS
 #endif /* CONFIG_ESP32_WIFI_IRAM_OPT */
 
 #if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
-    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libnet80211.a:*( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libpp.a:*( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
     . = ALIGN(4) + 16;
@@ -631,7 +638,7 @@ SECTIONS
     *(.rodata.esp_restart_noos)
     *(.rodata.esp_system_reset_modules_on_exit)
 
-    *libphy.a:(.rodata .rodata.* .srodata .srodata.*)
+    *libphy.a:*(.rodata .rodata.* .srodata .srodata.*)
 
     . = ALIGN(4);
     #include <snippets-rwdata.ld>
@@ -642,7 +649,7 @@ SECTIONS
     . = ALIGN(4);
 
     _btdm_data_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.data .data.*)
+    *libbtdm_app.a:*(.data .data.*)
     . = ALIGN(4);
     _btdm_data_end = ABSOLUTE(.);
 
@@ -716,7 +723,7 @@ SECTIONS
 
     /*  bluetooth library requires this symbol to be defined */
     _btdm_bss_start = ABSOLUTE(.);
-    *libbtdm_app.a:(.bss .bss.* COMMON)
+    *libbtdm_app.a:*(.bss .bss.* COMMON)
     . = ALIGN (4);
     _btdm_bss_end = ABSOLUTE(.);
 
@@ -737,6 +744,11 @@ SECTIONS
     . = ALIGN (16);
     __bss_end = ABSOLUTE(.);
     _bss_end = ABSOLUTE(.);
+  } GROUP_LINK_IN(RAMABLE_REGION)
+
+  .dbg_thread_info : ALIGN(4)
+  {
+    KEEP(*(".dbg_thread_info"));
   } GROUP_LINK_IN(RAMABLE_REGION)
 
   /* Provide total SRAM usage, including IRAM and DRAM */
@@ -769,14 +781,14 @@ SECTIONS
     __rom_region_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
+    *libnet80211.a:*( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
+    *libpp.a:*( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
+    *libcoexist.a:*(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
 #endif /* CONFIG_ESP32_WIFI_IRAM_OPT */
 
 #if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
-    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libnet80211.a:*( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
+    *libpp.a:*( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
 #endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
 
     *(.literal .text .literal.* .text.*)
@@ -832,6 +844,8 @@ SECTIONS
 
   .flash.rodata : ALIGN(0x10)
   {
+    /* Enforce flash segment size alignment */
+    LONG(0);
     _rodata_reserved_start = ABSOLUTE(.);
     _image_rodata_start = ABSOLUTE(.);
 
@@ -890,15 +904,19 @@ SECTIONS
   #include <zephyr/linker/common-rom/common-rom-bt.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
   #include <zephyr/linker/common-rom/common-rom-misc.ld>
-  #include <zephyr/linker/thread-local-storage.ld>
   #include <snippets-sections.ld>
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  .flash.rodata_end : ALIGN(0x10)
+    .flash.rodata_pad : ALIGN(0x10)
   {
-    /* Enforce flash segment size alignment */
     LONG(0);
+  } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
+
+  #include <zephyr/linker/thread-local-storage.ld>
+
+  .flash.rodata_end :
+  {
     _rodata_reserved_end = ABSOLUTE(.);
     _image_rodata_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
@@ -917,4 +935,10 @@ SECTIONS
     KEEP(*(.riscv.attributes))
     KEEP(*(.gnu.attributes))
     }
+
+  #if defined(CONFIG_LLVM_USE_LLD) || defined(__LLD_LINKER_CMD__)
+  SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
+  SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
+  SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
+  #endif
 }

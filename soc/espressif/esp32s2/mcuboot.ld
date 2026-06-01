@@ -80,6 +80,29 @@ SECTIONS
     /* Vectors go to IRAM */
     _init_start = ABSOLUTE(.);
     /* Vectors according to builds/RF-2015.2-win32/esp108_v1_2_s5_512int_2/config.html */
+#ifdef __LLD_LINKER_CMD__
+    . = _init_start + 0x0;
+    KEEP(*(.WindowVectors.text));
+    . = _init_start + 0x180;
+    KEEP(*(.Level2InterruptVector.text));
+    . = _init_start + 0x1c0;
+    KEEP(*(.Level3InterruptVector.text));
+    . = _init_start + 0x200;
+    KEEP(*(.Level4InterruptVector.text));
+    . = _init_start + 0x240;
+    KEEP(*(.Level5InterruptVector.text));
+    . = _init_start + 0x280;
+    KEEP(*(.DebugExceptionVector.text));
+    . = _init_start + 0x2c0;
+    KEEP(*(.NMIExceptionVector.text));
+    . = _init_start + 0x300;
+    KEEP(*(.KernelExceptionVector.text));
+    . = _init_start + 0x340;
+    KEEP(*(.UserExceptionVector.text));
+    . = _init_start + 0x3C0;
+    KEEP(*(.DoubleExceptionVector.text));
+    . = _init_start + 0x400;
+#else
     . = 0x0;
     KEEP(*(.WindowVectors.text));
     . = 0x180;
@@ -101,6 +124,7 @@ SECTIONS
     . = 0x3C0;
     KEEP(*(.DoubleExceptionVector.text));
     . = 0x400;
+#endif
     _invalid_pc_placeholder = ABSOLUTE(.);
     *(.*Vector.literal)
 

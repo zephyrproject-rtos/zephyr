@@ -3,6 +3,7 @@
 
 choice LLVM_LINKER
 	prompt "LLVM Linker"
+	default LLVM_USE_LLD if SOC_FAMILY_ESPRESSIF_ESP32
 	default LLVM_USE_LD
 
 config LLVM_USE_LD
