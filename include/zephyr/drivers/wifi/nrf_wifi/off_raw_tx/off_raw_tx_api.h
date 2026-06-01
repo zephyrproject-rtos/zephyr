@@ -149,7 +149,7 @@ struct nrf_wifi_off_raw_tx_conf {
 	bool short_preamble;
 	/* Number of times a packet should be retried at each possible rate */
 	unsigned int num_retries;
-	/** Throughput mode for packet transmittion. Refer &enum nrf_wifi_off_raw_tx_tput_mode */
+	/** Throughput mode for packet transmission. Refer &enum nrf_wifi_off_raw_tx_tput_mode */
 	enum nrf_wifi_off_raw_tx_tput_mode tput_mode;
 	/* Rate at which packet needs to be transmitted. Refer &enum nrf_wifi_off_raw_tx_rate */
 	enum nrf_wifi_off_raw_tx_rate rate;

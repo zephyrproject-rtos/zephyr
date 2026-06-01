@@ -226,7 +226,7 @@ struct wifi_eap_cipher_config {
 	char *pairwise_cipher;
 	/** Group management cipher string. */
 	char *group_mgmt_cipher;
-	/** Used to confiure TLS features. */
+	/** Used to configure TLS features. */
 	char *tls_flags;
 };
 

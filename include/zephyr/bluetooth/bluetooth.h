@@ -2641,7 +2641,7 @@ int bt_le_filter_accept_list_clear(void);
  * channels are bad or unknown by setting the corresponding bit in the channel map to respectively
  * 0 or 1.
  *
- * @note The interval between two succesive calls to this function must be at least one second.
+ * @note The interval between two successive calls to this function must be at least one second.
  *
  * @param chan_map Channel map. 5 octets where each bit represents a channel. Only the lower 37 bits
  *        are valid.

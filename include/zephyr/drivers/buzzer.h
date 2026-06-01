@@ -111,7 +111,7 @@ __subsystem struct buzzer_driver_api {
  * wait for @p duration_ms to elapse. The buzzer keeps emitting the tone
  * for @p duration_ms, after which the driver silences it automatically.
  * Calling buzzer_tone() again while a previous tone is still playing
- * pre-empts it.
+ * preempts it.
  *
  * Passing @ref BUZZER_FREQ_REST silences the buzzer immediately.
  *

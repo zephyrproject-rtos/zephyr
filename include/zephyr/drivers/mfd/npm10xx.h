@@ -247,7 +247,7 @@ struct mfd_npm10xx_event_callback {
 	/** Intended for internal use by the driver. Do not use in application. */
 	sys_snode_t node;
 	/**
-	 * A set of events the callback is intrested in. May be constructed by a bitwise-OR of any
+	 * A set of events the callback is interested in. May be constructed by a bitwise-OR of any
 	 * number of the NPM10XX_EVENT_* macros.
 	 */
 	npm10xx_event_t event_mask;

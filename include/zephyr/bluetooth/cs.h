@@ -564,7 +564,7 @@ struct bt_le_cs_iq_sample bt_le_cs_parse_pct(const uint8_t pct[3]);
  * This command is used to enable all valid channels in a
  * given CS channel map
  *
- * @param channel_map  Chanel map
+ * @param channel_map  Channel map
  */
 void bt_le_cs_set_valid_chmap_bits(uint8_t channel_map[10]);
 

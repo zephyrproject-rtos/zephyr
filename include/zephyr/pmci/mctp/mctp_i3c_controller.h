@@ -56,7 +56,7 @@ int mctp_i3c_controller_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt
  *
  * This bus binding make use of IBI interrupt signaling from targets to signal their desire
  * to send a message. The binding specification (dsp0233 v1.0.1) offers alternative modes of
- * operaton such as polling or directly reading but these are not implemented.
+ * operation such as polling or directly reading but these are not implemented.
  *
  * @param _name Symbolic name of the bus binding variable
  * @param _node_id DeviceTree Node containing the configuration of this MCTP binding

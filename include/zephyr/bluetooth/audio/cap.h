@@ -990,7 +990,7 @@ int bt_cap_handover_unregister_cb(const struct bt_cap_handover_cb *cb);
  * @brief Hands over the sink streams in a unicast group to a broadcast source.
  *
  * All streams in the provided unicast group will be stopped and released. The sink streams will be
- * tranferred to a broadcast source, and the broadcast source information will be shared with
+ * transferred to a broadcast source, and the broadcast source information will be shared with
  * all accepters that are currently receiving audio. Any stream that is not in the streaming state
  * will only be released.
  *

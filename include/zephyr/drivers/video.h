@@ -881,7 +881,7 @@ int video_query_ctrl(struct video_ctrl_query *cq);
  *
  * Print all the information of a control including its name, type, flag, range,
  * menu (if any) and current value, i.e. by invoking the video_get_ctrl(), in a
- * human readble format.
+ * human readable format.
  *
  * @param cq Pointer to the control query struct.
  */
@@ -2026,7 +2026,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	X(VIDEO_PIX_FMT_NV42, __VA_ARGS__)
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2050,7 +2050,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV12 VIDEO_FOURCC('N', 'V', '1', '2')
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2074,7 +2074,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV21 VIDEO_FOURCC('N', 'V', '2', '1')
 
 /**
- * Chroma (U/V) are subsampled horizontaly
+ * Chroma (U/V) are subsampled horizontally
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2100,7 +2100,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV16 VIDEO_FOURCC('N', 'V', '1', '6')
 
 /**
- * Chroma (U/V) are subsampled horizontaly
+ * Chroma (U/V) are subsampled horizontally
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2189,7 +2189,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	X(VIDEO_PIX_FMT_YVU420, __VA_ARGS__)
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
@@ -2218,7 +2218,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_YUV420 VIDEO_FOURCC('Y', 'U', '1', '2')
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |

@@ -353,7 +353,7 @@ enum sd_switch_arg {
 /**
  * @brief SD switch group numbers
  *
- * SD CMD6 has multiple function groups it can check/set. These indicies are
+ * SD CMD6 has multiple function groups it can check/set. These indices are
  * used to determine which group CMD6 will interact with.
  */
 enum sd_group_num {

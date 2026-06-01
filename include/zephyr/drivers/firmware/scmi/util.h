@@ -200,7 +200,7 @@
  * Each SCMI protocol is identified by a struct scmi_protocol
  * placed in a linker section called scmi_protocol. Each protocol
  * driver is required to use this macro for "registration". Using
- * this macro directly is higly discouraged and users should opt
+ * this macro directly is highly discouraged and users should opt
  * for macros such as DT_SCMI_PROTOCOL_DEFINE_NODEV() or
  * DT_SCMI_PROTOCOL_DEFINE(), which also takes care of the static
  * channel declaration (if applicable).
