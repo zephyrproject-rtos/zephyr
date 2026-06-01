@@ -290,7 +290,7 @@ static void store_turbo_log0(uint16_t m_id, uint16_t id, uint64_t *ts, uint16_t 
 		.data = 0};
 	static const size_t wlen = sizeof(packet) / sizeof(uint32_t);
 
-	mpsc_pbuf_put_data(&demux.pbuf, (const uint32_t *)&packet, wlen);
+	(void)mpsc_pbuf_write_data(&demux.pbuf, (const uint32_t *)&packet, wlen, K_NO_WAIT);
 }
 
 static void store_turbo_log1(uint16_t m_id, uint16_t id, uint64_t *ts, uint32_t data)
@@ -307,7 +307,7 @@ static void store_turbo_log1(uint16_t m_id, uint16_t id, uint64_t *ts, uint32_t 
 		.data = data};
 	static const size_t wlen = sizeof(packet) / sizeof(uint32_t);
 
-	mpsc_pbuf_put_data(&demux.pbuf, (const uint32_t *)&packet, wlen);
+	(void)mpsc_pbuf_write_data(&demux.pbuf, (const uint32_t *)&packet, wlen, K_NO_WAIT);
 }
 
 static void store_tracepoint(uint16_t m_id, uint16_t id, uint64_t *ts, uint32_t *data)
@@ -322,7 +322,7 @@ static void store_tracepoint(uint16_t m_id, uint16_t id, uint64_t *ts, uint32_t 
 					       .data = data ? *data : 0};
 	static const size_t wlen = sizeof(packet) / sizeof(uint32_t);
 
-	mpsc_pbuf_put_data(&demux.pbuf, (const uint32_t *)&packet, wlen);
+	(void)mpsc_pbuf_write_data(&demux.pbuf, (const uint32_t *)&packet, wlen, K_NO_WAIT);
 }
 
 static void log_frontend_stmesp_demux_hw_event(uint64_t *ts, uint8_t data)
@@ -334,7 +334,7 @@ static void log_frontend_stmesp_demux_hw_event(uint64_t *ts, uint8_t data)
 					    .evt = data};
 	static const size_t wlen = sizeof(packet) / sizeof(uint32_t);
 
-	mpsc_pbuf_put_data(&demux.pbuf, (const uint32_t *)&packet, wlen);
+	(void)mpsc_pbuf_write_data(&demux.pbuf, (const uint32_t *)&packet, wlen, K_NO_WAIT);
 }
 
 /* Check if there are any active messages which are not completed for a significant
