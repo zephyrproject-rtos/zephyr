@@ -125,8 +125,10 @@ static int ms5637_convert_and_read(const struct device *dev, uint8_t conv_cmd, u
  *
  * Second order corrections are applied per datasheet flowchart.
  */
-static void ms5637_compensate(struct ms5637_data *data, uint32_t adc_temperature,
-			      uint32_t adc_pressure)
+void ms5637_compensate(const struct ms5637_calibration *cal,
+			      uint32_t adc_temperature,
+			      uint32_t adc_pressure,
+			      struct ms5637_reading *reading)
 {
 	int64_t dT;
 	int64_t OFF;
@@ -137,22 +139,22 @@ static void ms5637_compensate(struct ms5637_data *data, uint32_t adc_temperature
 	int64_t SENS2;
 
 	/* First order compensation */
-	dT = (int64_t)adc_temperature - ((int64_t)data->t_ref << 8);
-	data->temperature = (int32_t)(2000 + (dT * data->tempsens) / (1LL << 23));
-	OFF = ((int64_t)data->off_t1 << 17) + (dT * data->tco) / (1LL << 6);
-	SENS = ((int64_t)data->sens_t1 << 16) + (dT * data->tcs) / (1LL << 7);
+	dT = (int64_t)adc_temperature - ((int64_t)cal->t_ref << 8);
+	reading->temperature = (int32_t)(2000 + (dT * cal->tempsens) / (1LL << 23));
+	OFF = ((int64_t)cal->off_t1 << 17) + (dT * cal->tco) / (1LL << 6);
+	SENS = ((int64_t)cal->sens_t1 << 16) + (dT * cal->tcs) / (1LL << 7);
 
 	/* Second order compensation */
-	temp_sq = (int64_t)(data->temperature - 2000) * (int64_t)(data->temperature - 2000);
+	temp_sq = (int64_t)(reading->temperature - 2000) * (int64_t)(reading->temperature - 2000);
 
-	if (data->temperature < 2000) {
+	if (reading->temperature < 2000) {
 		T2 = (3LL * dT * dT) / (1LL << 33);
 		OFF2 = (61LL * temp_sq) / (1LL << 4);
 		SENS2 = (29LL * temp_sq) / (1LL << 4);
 
-		if (data->temperature < -1500) {
-			temp_sq = (int64_t)(data->temperature + 1500) *
-				  (int64_t)(data->temperature + 1500);
+		if (reading->temperature < -1500) {
+			temp_sq = (int64_t)(reading->temperature + 1500) *
+				  (int64_t)(reading->temperature + 1500);
 			OFF2 += 17LL * temp_sq;
 			SENS2 += 9LL * temp_sq;
 		}
@@ -165,8 +167,8 @@ static void ms5637_compensate(struct ms5637_data *data, uint32_t adc_temperature
 	OFF -= OFF2;
 	SENS -= SENS2;
 
-	data->temperature -= (int32_t)T2;
-	data->pressure =
+	reading->temperature -= (int32_t)T2;
+	reading->pressure =
 		(int32_t)((SENS * (int64_t)adc_pressure / (1LL << 21) - OFF) / (1LL << 15));
 }
 
@@ -196,7 +198,7 @@ static int ms5637_sample_fetch(const struct device *dev, enum sensor_channel cha
 		return ret;
 	}
 
-	ms5637_compensate(data, adc_temperature, adc_pressure);
+	ms5637_compensate(&data->cal, adc_temperature, adc_pressure, &data->reading);
 
 	return 0;
 }
@@ -210,11 +212,11 @@ static int ms5637_channel_get(const struct device *dev, enum sensor_channel chan
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		/* Compensated temperature is in centidegrees Celsius */
 		sensor_value_from_micro(val,
-					(int64_t)data->temperature * MS5637_MICRO_PER_CENTIDEG);
+				(int64_t)data->reading.temperature * MS5637_MICRO_PER_CENTIDEG);
 		break;
 	case SENSOR_CHAN_PRESS:
 		/* Compensated pressure is in Pa; channel unit is kPa */
-		sensor_value_from_milli(val, (int64_t)data->pressure);
+		sensor_value_from_milli(val, (int64_t)data->reading.pressure);
 		break;
 	default:
 		return -ENOTSUP;
@@ -343,15 +345,16 @@ static int ms5637_init(const struct device *dev)
 	}
 
 	/* Store calibration coefficients */
-	data->sens_t1 = prom[MS5637_PROM_C1_IDX];
-	data->off_t1 = prom[MS5637_PROM_C2_IDX];
-	data->tcs = prom[MS5637_PROM_C3_IDX];
-	data->tco = prom[MS5637_PROM_C4_IDX];
-	data->t_ref = prom[MS5637_PROM_C5_IDX];
-	data->tempsens = prom[MS5637_PROM_C6_IDX];
+	data->cal.sens_t1 = prom[MS5637_PROM_C1_IDX];
+	data->cal.off_t1 = prom[MS5637_PROM_C2_IDX];
+	data->cal.tcs = prom[MS5637_PROM_C3_IDX];
+	data->cal.tco = prom[MS5637_PROM_C4_IDX];
+	data->cal.t_ref = prom[MS5637_PROM_C5_IDX];
+	data->cal.tempsens = prom[MS5637_PROM_C6_IDX];
 
-	LOG_DBG("PROM: C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u", data->sens_t1, data->off_t1, data->tcs,
-		data->tco, data->t_ref, data->tempsens);
+	LOG_DBG("PROM: C1=%u C2=%u C3=%u C4=%u C5=%u C6=%u",
+		data->cal.sens_t1, data->cal.off_t1, data->cal.tcs,
+		data->cal.tco, data->cal.t_ref, data->cal.tempsens);
 
 	/* Set default oversampling from devicetree */
 	osr.val1 = cfg->osr_pressure;
@@ -366,6 +369,11 @@ static int ms5637_init(const struct device *dev)
 		return ret;
 	}
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+	data->dev = dev;
+	mpsc_init(&data->io_q);
+#endif
+
 	return 0;
 }
 
@@ -373,14 +381,32 @@ static DEVICE_API(sensor, ms5637_api) = {
 	.attr_set = ms5637_attr_set,
 	.sample_fetch = ms5637_sample_fetch,
 	.channel_get = ms5637_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = ms5637_submit,
+	.get_decoder = ms5637_get_decoder,
+#endif
 };
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+#define MS5637_RTIO_DEFINE(inst)                                                                   \
+	I2C_DT_IODEV_DEFINE(ms5637_iodev_##inst, DT_DRV_INST(inst));                               \
+	RTIO_DEFINE(ms5637_rtio_ctx_##inst, 16, 8)
+#define MS5637_ASYNC_CONFIG(inst)                                                                  \
+	.r         = &ms5637_rtio_ctx_##inst,                                                      \
+	.bus_iodev = &ms5637_iodev_##inst,
+#else
+#define MS5637_RTIO_DEFINE(inst)
+#define MS5637_ASYNC_CONFIG(inst)
+#endif
+
 #define MS5637_INIT(inst)                                                                          \
+	MS5637_RTIO_DEFINE(inst);                                                                  \
 	static struct ms5637_data ms5637_data_##inst;                                              \
 	static const struct ms5637_config ms5637_config_##inst = {                                 \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.osr_pressure = DT_INST_PROP(inst, osr_press),                                     \
 		.osr_temperature = DT_INST_PROP(inst, osr_temp),                                   \
+		MS5637_ASYNC_CONFIG(inst)                                                          \
 	};                                                                                         \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, ms5637_init, NULL, &ms5637_data_##inst,                 \
 				     &ms5637_config_##inst, POST_KERNEL,                           \
