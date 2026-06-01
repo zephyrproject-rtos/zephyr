@@ -48,9 +48,18 @@ struct mctp_binding_usb {
 	/** @endcond INTERNAL_HIDDEN */
 };
 
+/**
+ * @brief MCTP USB class instance configuration
+ *
+ * Holds the USB interface descriptor parameters and the associated MCTP
+ * bus binding for a single MCTP USB class instance.
+ */
 struct mctp_usb_class_inst {
+	/** MCTP subclass used in the USB interface descriptor */
 	uint8_t subclass;
+	/** MCTP protocol version used in the USB interface descriptor */
 	uint8_t mctp_protocol;
+	/** Pointer to the associated MCTP USB bus binding */
 	struct mctp_binding_usb *mctp_binding;
 };
 
