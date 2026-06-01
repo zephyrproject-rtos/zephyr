@@ -124,18 +124,20 @@ struct i2c_stm32_data {
 		uint8_t *buf;
 	} current;
 	bool is_configured;
-	bool smbalert_active;
-	enum i2c_stm32_mode mode;
-#ifdef CONFIG_SMBUS_STM32_SMBALERT
-	i2c_stm32_smbalert_cb_func_t smbalert_cb_func;
-	const struct device *smbalert_cb_dev;
-#endif /* CONFIG_SMBUS_STM32_SMBALERT */
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	struct dma_config dma_tx_cfg;
 	struct dma_config dma_rx_cfg;
 	struct dma_block_config dma_blk_cfg;
 #endif /* CONFIG_I2C_STM32_V2_DMA */
 #endif /* CONFIG_I2C_RTIO */
+
+	/* SMBus management */
+	enum i2c_stm32_mode mode;
+	bool smbalert_active;
+#ifdef CONFIG_SMBUS_STM32_SMBALERT
+	i2c_stm32_smbalert_cb_func_t smbalert_cb_func;
+	const struct device *smbalert_cb_dev;
+#endif /* CONFIG_SMBUS_STM32_SMBALERT */
 
 #ifdef CONFIG_I2C_TARGET
 	bool controller_active;

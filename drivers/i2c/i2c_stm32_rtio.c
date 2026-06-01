@@ -76,10 +76,19 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #endif
 
 	LL_I2C_Disable(i2c);
+
+#if defined(I2C_CR1_SMBUS) || defined(I2C_CR1_SMBDEN) || defined(I2C_CR1_SMBHEN)
+	i2c_stm32_set_smbus_mode(dev, data->mode);
+#endif
+
 	ret = i2c_stm32_configure_timing(dev, i2c_clock);
 	if (ret < 0) {
 		LOG_ERR("Failed configuring I2C timing");
 		return ret;
+	}
+
+	if (data->smbalert_active) {
+		LL_I2C_Enable(i2c);
 	}
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME

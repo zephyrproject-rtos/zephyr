@@ -9,7 +9,9 @@
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/i2c/stm32.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <stm32_ll_i2c.h>
 
 #ifdef CONFIG_I2C_STM32_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -216,3 +218,69 @@ restore:
 	return error;
 }
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+
+#ifdef CONFIG_SMBUS_STM32_SMBALERT
+void i2c_stm32_smbalert_set_callback(const struct device *dev, i2c_stm32_smbalert_cb_func_t func,
+				     const struct device *cb_dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+	data->smbalert_cb_func = func;
+	data->smbalert_cb_dev = cb_dev;
+}
+#endif /* CONFIG_SMBUS_STM32_SMBALERT */
+
+#if defined(I2C_CR1_SMBUS) || defined(I2C_CR1_SMBDEN) || defined(I2C_CR1_SMBHEN)
+void i2c_stm32_set_smbus_mode(const struct device *dev, enum i2c_stm32_mode mode)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+
+	data->mode = mode;
+
+	switch (mode) {
+	case I2CSTM32MODE_I2C:
+		LL_I2C_SetMode(i2c, LL_I2C_MODE_I2C);
+		return;
+#ifdef CONFIG_SMBUS_STM32
+	case I2CSTM32MODE_SMBUSHOST:
+		LL_I2C_SetMode(i2c, LL_I2C_MODE_SMBUS_HOST);
+		return;
+	case I2CSTM32MODE_SMBUSDEVICE:
+		LL_I2C_SetMode(i2c, LL_I2C_MODE_SMBUS_DEVICE);
+		return;
+	case I2CSTM32MODE_SMBUSDEVICEARP:
+		LL_I2C_SetMode(i2c, LL_I2C_MODE_SMBUS_DEVICE_ARP);
+		return;
+#endif
+	default:
+		LOG_ERR("%s: invalid mode %i", dev->name, mode);
+		return;
+	}
+}
+#endif
+
+#ifdef CONFIG_SMBUS_STM32
+void i2c_stm32_smbalert_enable(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+	const struct i2c_stm32_config *cfg = dev->config;
+
+	data->smbalert_active = true;
+	LL_I2C_EnableSMBusAlert(cfg->i2c);
+	LL_I2C_EnableIT_ERR(cfg->i2c);
+	LL_I2C_Enable(cfg->i2c);
+}
+
+void i2c_stm32_smbalert_disable(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+	const struct i2c_stm32_config *cfg = dev->config;
+
+	data->smbalert_active = false;
+	LL_I2C_DisableSMBusAlert(cfg->i2c);
+	LL_I2C_DisableIT_ERR(cfg->i2c);
+	LL_I2C_Disable(cfg->i2c);
+}
+#endif /* CONFIG_SMBUS_STM32 */

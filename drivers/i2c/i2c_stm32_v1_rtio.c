@@ -34,13 +34,17 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v1_rtio);
 static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	LL_I2C_DisableIT_TX(i2c);
 	LL_I2C_DisableIT_RX(i2c);
 	LL_I2C_DisableIT_EVT(i2c);
 	LL_I2C_DisableIT_BUF(i2c);
-	LL_I2C_DisableIT_ERR(i2c);
+
+	if (!data->smbalert_active) {
+		LL_I2C_DisableIT_ERR(i2c);
+	}
 }
 
 static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
@@ -75,16 +79,18 @@ static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 
 #if defined(CONFIG_I2C_TARGET)
 	data->controller_active = false;
-	if (data->target_attached) {
+	if (data->target_attached || data->smbalert_active) {
 		i2c_stm32_enable_transfer_interrupts(dev);
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
 		return;
 	}
 #endif
 
-	LL_I2C_Disable(i2c);
-	if (data->xfer_len == 0U) {
-		i2c_stm32_rtio_complete(dev, status);
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(i2c);
+		if (data->xfer_len == 0U) {
+			i2c_stm32_rtio_complete(dev, status);
+		}
 	}
 }
 
@@ -408,7 +414,10 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 	LL_I2C_ClearFlag_AF(i2c);
 	LL_I2C_ClearFlag_STOP(i2c);
 	LL_I2C_ClearFlag_ADDR(i2c);
-	LL_I2C_Disable(i2c);
+
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(i2c);
+	}
 
 	data->target_attached = false;
 
@@ -490,6 +499,16 @@ int i2c_stm32_error(const struct device *dev)
 #endif
 		goto error;
 	}
+
+#if defined(CONFIG_SMBUS_STM32_SMBALERT)
+	if (LL_I2C_IsActiveSMBusFlag_ALERT(i2c)) {
+		LL_I2C_ClearSMBusFlag_ALERT(i2c);
+		if (data->smbalert_cb_func != NULL) {
+			data->smbalert_cb_func(data->smbalert_cb_dev);
+		}
+		goto error;
+	}
+#endif
 
 	return 0;
 error:

@@ -150,6 +150,7 @@ static void dma_finish(const struct device *dev)
 static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	LL_I2C_DisableIT_TX(i2c);
@@ -157,7 +158,10 @@ static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 	LL_I2C_DisableIT_STOP(i2c);
 	LL_I2C_DisableIT_NACK(i2c);
 	LL_I2C_DisableIT_TC(i2c);
-	LL_I2C_DisableIT_ERR(i2c);
+
+	if (!data->smbalert_active) {
+		LL_I2C_DisableIT_ERR(i2c);
+	}
 }
 
 static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
@@ -174,8 +178,8 @@ static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
 static void i2c_stm32_controller_mode_end(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
-
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	dma_finish(dev);
@@ -188,16 +192,15 @@ static void i2c_stm32_controller_mode_end(const struct device *dev)
 	}
 
 #if defined(CONFIG_I2C_TARGET)
-	struct i2c_stm32_data *data = dev->data;
-
 	data->controller_active = false;
-	if (!data->target_attached) {
+	if (!data->target_attached && !data->smbalert_active) {
 		LL_I2C_Disable(i2c);
 	}
 #else
-	LL_I2C_Disable(i2c);
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(i2c);
+	}
 #endif
-
 }
 
 #if defined(CONFIG_I2C_TARGET)
@@ -442,7 +445,9 @@ int i2c_stm32_target_unregister(const struct device *dev,
 	LL_I2C_ClearFlag_STOP(i2c);
 	LL_I2C_ClearFlag_ADDR(i2c);
 
-	LL_I2C_Disable(i2c);
+	if (!data->smbalert_active) {
+		LL_I2C_Disable(i2c);
+	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (pm_device_wakeup_is_capable(dev)) {
@@ -617,6 +622,16 @@ int i2c_stm32_error(const struct device *dev)
 #if defined(CONFIG_I2C_TARGET)
 	if (data->target_attached && !data->controller_active) {
 		return ret;
+	}
+#endif
+
+#if defined(CONFIG_SMBUS_STM32_SMBALERT)
+	if (LL_I2C_IsActiveSMBusFlag_ALERT(i2c)) {
+		LL_I2C_ClearSMBusFlag_ALERT(i2c);
+		if (data->smbalert_cb_func != NULL) {
+			data->smbalert_cb_func(data->smbalert_cb_dev);
+		}
+		ret = -EIO;
 	}
 #endif
 
