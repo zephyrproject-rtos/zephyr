@@ -173,6 +173,10 @@ int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action);
 int i2c_stm32_suspend(const struct device *dev);
 #endif /* CONFIG_PM_DEVICE */
 
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+int i2c_stm32_recover_bus(const struct device *dev);
+#endif
+
 int i2c_stm32_error(const struct device *dev);
 void i2c_stm32_event(const struct device *dev);
 

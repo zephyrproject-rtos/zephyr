@@ -125,9 +125,22 @@ bool i2c_stm32_start(const struct device *dev)
 	case RTIO_OP_I2C_CONFIGURE:
 		res = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
 		return i2c_rtio_complete(data->ctx, res);
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+	case RTIO_OP_I2C_RECOVER:
+		res = i2c_stm32_recover_bus(dev);
+		return i2c_rtio_complete(data->ctx, res);
+#endif
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		return i2c_rtio_complete(data->ctx, -EINVAL);
+	}
+}
+
+/* Start RTIO operations until there are no more queued or an async operation is pending */
+static void i2c_stm32_start_next_async(const struct device *dev)
+{
+	while (i2c_stm32_start(dev)) {
+		;
 	}
 }
 
@@ -137,7 +150,7 @@ void i2c_stm32_rtio_complete(const struct device *dev, int status)
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_complete(ctx, status)) {
-		i2c_stm32_start(dev);
+		i2c_stm32_start_next_async(dev);
 	} else {
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 		(void)pm_device_runtime_put(dev);
@@ -226,16 +239,51 @@ static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *io
 			/* Prevent the clocks to be stopped during the i2c transaction */
 			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
-			i2c_stm32_start(dev);
+			i2c_stm32_start_next_async(dev);
 		}
 	}
 }
+
+#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
+static int i2c_rtio_stm32_recover_bus(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_rtio *const ctx = data->ctx;
+	struct rtio_iodev_sqe *head_before;
+	bool had_txn;
+	int err;
+
+	k_sem_take(&ctx->lock, K_FOREVER);
+
+	/* ISR may finish the xfer during nrfx recover; only complete if txn_head is unchanged. */
+	head_before = ctx->txn_head;
+	had_txn = (head_before != NULL);
+
+	err = i2c_stm32_recover_bus(dev);
+
+	if (had_txn && ctx->txn_head == head_before) {
+		i2c_stm32_rtio_complete(dev, err != 0 ? err : -ECONNABORTED);
+	}
+
+	k_sem_give(&ctx->lock);
+
+	/* No in-flight RTIO txn: run the RTIO recover SQE (shell / i2c_rtio_recover). */
+	if (err == 0 && !had_txn) {
+		err = i2c_rtio_recover(ctx);
+	}
+
+	return err;
+}
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
 static DEVICE_API(i2c, api_funcs) = {
 	.configure = i2c_stm32_configure,
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
 	.iodev_submit = i2c_stm32_submit,
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+	.recover_bus = i2c_rtio_stm32_recover_bus,
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 #if defined(CONFIG_I2C_TARGET)
 	.target_register = i2c_stm32_target_register,
 	.target_unregister = i2c_stm32_target_unregister,
@@ -374,6 +422,9 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 		I2C_STM32_IRQ_HANDLER_FUNCTION(index)						\
 		.bitrate = DT_INST_PROP(index, clock_frequency),				\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),					\
+		IF_ENABLED(CONFIG_I2C_STM32_BUS_RECOVERY,					\
+			   (.scl = GPIO_DT_SPEC_INST_GET_OR(index, scl_gpios, {0}),		\
+			    .sda = GPIO_DT_SPEC_INST_GET_OR(index, sda_gpios, {0}),))		\
 		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2),				\
 			   (.timings = (const struct i2c_config_timing *)i2c_timings_##index,	\
 			    .n_timings =							\
