@@ -17,6 +17,9 @@
 #include <zephyr/sys/byteorder.h>
 #include <soc.h>
 
+#include <stm32_backup_domain.h>
+#include <stm32_bitops.h>
+
 #include "crypto_stm32_priv.h"
 
 #define LOG_LEVEL CONFIG_CRYPTO_LOG_LEVEL
@@ -308,6 +311,34 @@ static int crypto_stm32_session_release(struct crypto_stm32_session *session)
 	return 0;
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_saes)
+static bool crypto_stm32_saes_bhk_is_available(void)
+{
+#if !defined(TAMP)
+	return false;
+#else
+	/* Since BHK is stored in tamper registers (TAMP_BKP0R to TAMP_BKP7R registers),
+	 * this key only available when the backup domain is enabled and the BHK content
+	 * has been loaded in these registers and these registers are locked.
+	 *
+	 * Since the XORK is derived from the BHK, it is expected that the XORK availability
+	 * is subject to the same conditions as the BHK.
+	 */
+	if (!stm32_backup_domain_is_enabled()) {
+		LOG_ERR("Backup domain access is not enabled");
+		return false;
+	}
+
+	if (stm32_reg_read_bits(&TAMP->SECCFGR, TAMP_SECCFGR_BHKLOCK) == 0) {
+		LOG_ERR("BHK registers are not locked, BHK key is not available");
+		return false;
+	}
+
+	return true;
+#endif /* TAMP */
+}
+#endif /* st_stm32_aes */
+
 int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 			       enum cipher_algo algo, enum cipher_mode mode, enum cipher_op op_type,
 			       struct crypto_stm32_session *session)
@@ -490,9 +521,18 @@ int crypto_stm32_session_setup(const struct device *dev, struct cipher_ctx *ctx,
 			session->config.KeySelect = CRYP_KEYSEL_HW;
 			break;
 		case STM32_xAES_KEY_SELECTION_BHK: /* BHK from SAES */
+			if (!crypto_stm32_saes_bhk_is_available()) {
+				return -ENOTSUP;
+			}
 			session->config.KeySelect = CRYP_KEYSEL_SW;
 			break;
 		case STM32_xAES_KEY_SELECTION_XORK: /* XORK from SAES */
+			/* Since the XORK is derived from the BHK, it is expected that the
+			 * XORK availability is subject to the same conditions as the BHK.
+			 */
+			if (!crypto_stm32_saes_bhk_is_available()) {
+				return -ENOTSUP;
+			}
 			session->config.KeySelect = CRYP_KEYSEL_HSW;
 			break;
 		case STM32_xAES_KEY_SELECTION_TEST: /* HW constant 256-bit key 0xA5...A5 */
