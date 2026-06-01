@@ -209,6 +209,27 @@ void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
 			    const union mpsc_pbuf_generic word,
 			    const void *data);
 
+/** @brief Write a packet into a buffer.
+ *
+ * Copy data into a buffer.
+ * Note that 2 bits of a first word is used by the buffer.
+ *
+ * @param buffer Buffer.
+ *
+ * @param data First word of data must contain MPSC_PBUF_HDR with valid bit set.
+ *
+ * @param wlen Packet size in words.
+ *
+ * @param timeout Timeout. If called from thread context it will pend for given
+ * timeout if packet cannot be written before dropping the oldest or returning.
+ *
+ * @return 0 if packet written successfully.
+ * @return -ENOMEM if packet cannot be written.
+ * @return -ETIMEDOUT if timeout occurs.
+ */
+int mpsc_pbuf_write_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
+			 size_t wlen, k_timeout_t timeout);
+
 /** @brief Put a packet into a buffer.
  *
  * Copy data into a buffer.
@@ -220,8 +241,12 @@ void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
  *
  * @param wlen Packet size in words.
  */
-void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer,
-			const uint32_t *data, size_t wlen);
+__deprecated static inline void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer,
+						   const uint32_t *data, size_t wlen)
+{
+	mpsc_pbuf_write_data(buffer, data, wlen, K_NO_WAIT);
+}
+
 
 /** @brief Claim the first pending packet.
  *
