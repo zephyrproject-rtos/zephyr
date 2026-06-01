@@ -32,6 +32,20 @@ family:
       cpuclusters:
       - name: cm33
       - name: cm7
+    - name: mimxrt1185
+      cpuclusters:
+      - name: cm33
+      - name: cm7
+    - name: mimxrt118c
+      cpuclusters:
+      - name: cm33
+      - name: cm7
+    - name: mimxrt1187
+      cpuclusters:
+      - name: cm33
+      - name: cm7
+    - name: mimxrt1182
+    - name: mimxrt1181
   - name: imxrt5xx
     socs:
     - name: mimxrt595s
@@ -75,6 +89,19 @@ runners:
         - mimxrt1186/cm33
         - mimxrt1186/cm7
       - qualifiers:
+        - mimxrt1185/cm33
+        - mimxrt1185/cm7
+      - qualifiers:
+        - mimxrt118c/cm33
+        - mimxrt118c/cm7
+      - qualifiers:
+        - mimxrt1187/cm33
+        - mimxrt1187/cm7
+      - qualifiers:
+        - mimxrt1182
+      - qualifiers:
+        - mimxrt1181
+      - qualifiers:
         - mimxrt1189/cm33
         - mimxrt1189/cm7
       - qualifiers:
@@ -105,6 +132,19 @@ runners:
       - qualifiers:
         - mimxrt1186/cm33
         - mimxrt1186/cm7
+      - qualifiers:
+        - mimxrt1185/cm33
+        - mimxrt1185/cm7
+      - qualifiers:
+        - mimxrt118c/cm33
+        - mimxrt118c/cm7
+      - qualifiers:
+        - mimxrt1187/cm33
+        - mimxrt1187/cm7
+      - qualifiers:
+        - mimxrt1182
+      - qualifiers:
+        - mimxrt1181
       - qualifiers:
         - mimxrt1189/cm33
         - mimxrt1189/cm7
