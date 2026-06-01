@@ -1,0 +1,58 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* I2C bus pins are exposed on the ST Morpho-64 connectors.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c2    PC12  CN10:26     PB4   CN10:28
+ *  i2c3    PC9   CN10:3      PC8   CN10:5
+ *
+ * For the test to pass, short pin PC12 to PC9 (CN10:26 to CN10:3)
+ * and PB4 to PC8 (CN10:28 to CN10:5).
+ *
+ * WARNING: on board revision B01, the silkscreen markings for
+ * the ST Morpho-64 connector CN10 are inverted for I2C3 pins:
+ * - pin PC9 (CN10:3) is marked as "PC8"
+ * - pin PC8 (CN10:5) is marked as "PC9"
+ * If using the silkscreen to determine pin names on this revision,
+ * pin PC12 must be shorted to the pin marked as "PC8" and pin PB4
+ * to the pin marked as "PC9" instead for proper operation.
+ */
+
+/ {
+	zephyr,user {
+		sda0-gpios = <&gpioc 12 0>;
+		scl0-gpios = <&gpiob 4 0>;
+		sda1-gpios = <&gpioc 9 0>;
+		scl1-gpios = <&gpioc 8 0>;
+	};
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb4 &i2c2_sda_pc12>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&i2c3 {
+	pinctrl-0 = <&i2c3_scl_pc8 &i2c3_sda_pc9>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};
