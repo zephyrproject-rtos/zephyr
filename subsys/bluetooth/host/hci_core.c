@@ -453,7 +453,8 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	 * syswq, then we cannot suspend and wait. We have to send the
 	 * command from the current context.
 	 */
-	if (!IS_ENABLED(CONFIG_BT_TX_PROCESSOR_THREAD) && k_current_get() == &k_sys_work_q.thread) {
+	if (!IS_ENABLED(CONFIG_BT_TX_PROCESSOR_THREAD) &&
+	    k_current_get() == k_sys_work_q.thread_id) {
 		/* drain the command queue until we get to send the command of interest. */
 		struct net_buf *cmd = NULL;
 
@@ -4673,7 +4674,7 @@ static void rx_work_handler(struct k_work *work)
 k_tid_t bt_testing_tx_tid_get(void)
 {
 	/* We now TX everything from the syswq */
-	return &k_sys_work_q.thread;
+	return k_sys_work_q.thread_id;
 }
 
 #if defined(CONFIG_BT_ISO)

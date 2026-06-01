@@ -843,13 +843,11 @@ void k_work_queue_run(struct k_work_q *queue, const struct k_work_queue_config *
 	work_queue_main(queue, NULL, NULL);
 }
 
-void k_work_queue_start(struct k_work_q *queue,
-			k_thread_stack_t *stack,
-			size_t stack_size,
-			int prio,
-			const struct k_work_queue_config *cfg)
+void k_work_queue_start(struct k_work_q *queue, struct k_thread *thread, k_thread_stack_t *stack,
+			size_t stack_size, int prio, const struct k_work_queue_config *cfg)
 {
 	__ASSERT_NO_MSG(queue);
+	__ASSERT_NO_MSG(thread);
 	__ASSERT_NO_MSG(stack);
 	__ASSERT_NO_MSG(!flag_test(&queue->flags, K_WORK_QUEUE_STARTED_BIT));
 
@@ -871,16 +869,15 @@ void k_work_queue_start(struct k_work_q *queue,
 	 */
 	flags_set(&queue->flags, flags);
 
-	(void)k_thread_create(&queue->thread, stack, stack_size,
-			      work_queue_main, queue, NULL, NULL,
-			      prio, 0, K_FOREVER);
+	(void)k_thread_create(thread, stack, stack_size, work_queue_main, queue, NULL, NULL, prio,
+			      0, K_FOREVER);
 
 	if ((cfg != NULL) && (cfg->name != NULL)) {
-		k_thread_name_set(&queue->thread, cfg->name);
+		k_thread_name_set(thread, cfg->name);
 	}
 
 	if ((cfg != NULL) && (cfg->essential)) {
-		queue->thread.base.user_options |= K_ESSENTIAL;
+		thread->base.user_options |= K_ESSENTIAL;
 	}
 
 #if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
@@ -891,8 +888,8 @@ void k_work_queue_start(struct k_work_q *queue,
 	}
 #endif /* defined(CONFIG_WORKQUEUE_WORK_TIMEOUT) */
 
-	k_thread_start(&queue->thread);
-	queue->thread_id = &queue->thread;
+	queue->thread_id = thread;
+	k_thread_start(thread);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, start, queue);
 }
@@ -955,7 +952,7 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, stop, queue, timeout);
 
-	if (z_is_thread_essential(&queue->thread)) {
+	if (z_is_thread_essential(queue->thread_id)) {
 		return -ENOTSUP;
 	}
 

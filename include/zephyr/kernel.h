@@ -4097,7 +4097,7 @@ bool k_work_cancel_sync(struct k_work *work, struct k_work_sync *sync);
  */
 void k_work_queue_init(struct k_work_q *queue);
 
-/** @brief Initialize a work queue.
+/** @brief Initialize a work queue on a new thread.
  *
  * This configures the work queue thread and starts it running.  The function
  * should not be re-invoked on a queue.
@@ -4105,6 +4105,9 @@ void k_work_queue_init(struct k_work_q *queue);
  * @param queue pointer to the queue structure. It must be initialized
  *        in zeroed/bss memory or with @ref k_work_queue_init before
  *        use.
+ *
+ * @param thread pointer to an unused thread structure. A new workqueue thread
+ *        will be created in it.
  *
  * @param stack pointer to the work thread stack area.
  *
@@ -4116,9 +4119,8 @@ void k_work_queue_init(struct k_work_q *queue);
  * NULL if not required, to use the defaults documented in
  * k_work_queue_config.
  */
-void k_work_queue_start(struct k_work_q *queue,
-			k_thread_stack_t *stack, size_t stack_size,
-			int prio, const struct k_work_queue_config *cfg);
+void k_work_queue_start(struct k_work_q *queue, struct k_thread *thread, k_thread_stack_t *stack,
+			size_t stack_size, int prio, const struct k_work_queue_config *cfg);
 
 /** @brief Run work queue using calling thread
  *
@@ -4760,9 +4762,6 @@ struct k_work_q {
 /**
  * @cond INTERNAL_HIDDEN
  */
-	/* The thread that animates the work. */
-	struct k_thread thread;
-
 	/* The thread ID that animates the work. This may be an external thread
 	 * if k_work_queue_run() is used.
 	 */

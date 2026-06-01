@@ -82,6 +82,7 @@ static uint32_t volatile last_handle_ms;
 
 static K_THREAD_STACK_DEFINE(coophi_stack, STACK_SIZE);
 static struct k_work_q coophi_queue;
+static struct k_thread coophi_queue_thread;
 static struct k_work_q not_start_queue;
 static atomic_t coophi_ctr;
 static inline int coophi_counter(void)
@@ -107,6 +108,7 @@ static inline int coop_counter(struct k_work_q *wq)
 
 static K_THREAD_STACK_DEFINE(preempt_stack, STACK_SIZE);
 static struct k_work_q preempt_queue;
+static struct k_thread preempt_queue_thread;
 static atomic_t preempt_ctr;
 static inline int preempt_counter(void)
 {
@@ -115,6 +117,7 @@ static inline int preempt_counter(void)
 
 static K_THREAD_STACK_DEFINE(invalid_test_stack, STACK_SIZE);
 static struct k_work_q invalid_test_queue;
+static struct k_thread invalid_test_queue_thread;
 
 static atomic_t system_ctr;
 static inline int system_counter(void)
@@ -239,12 +242,12 @@ static void test_queue_start(void)
 	};
 	k_work_queue_init(&preempt_queue);
 	zassert_equal(preempt_queue.flags, 0);
-	k_work_queue_start(&preempt_queue, preempt_stack, STACK_SIZE,
-			    PREEMPT_PRIORITY, &cfg);
+	k_work_queue_start(&preempt_queue, &preempt_queue_thread, preempt_stack, STACK_SIZE,
+			   PREEMPT_PRIORITY, &cfg);
 	zassert_equal(preempt_queue.flags, K_WORK_QUEUE_STARTED);
 
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-		const char *tn = k_thread_name_get(&preempt_queue.thread);
+		const char *tn = k_thread_name_get(preempt_queue.thread_id);
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);
@@ -253,12 +256,12 @@ static void test_queue_start(void)
 
 	cfg.name = NULL;
 	zassert_equal(invalid_test_queue.flags, 0);
-	k_work_queue_start(&invalid_test_queue, invalid_test_stack, STACK_SIZE,
-			    PREEMPT_PRIORITY, &cfg);
+	k_work_queue_start(&invalid_test_queue, &invalid_test_queue_thread, invalid_test_stack,
+			   STACK_SIZE, PREEMPT_PRIORITY, &cfg);
 	zassert_equal(invalid_test_queue.flags, K_WORK_QUEUE_STARTED);
 
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-		const char *tn = k_thread_name_get(&invalid_test_queue.thread);
+		const char *tn = k_thread_name_get(invalid_test_queue.thread_id);
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);
@@ -267,8 +270,8 @@ static void test_queue_start(void)
 
 	cfg.name = "wq.coophi";
 	cfg.no_yield = true;
-	k_work_queue_start(&coophi_queue, coophi_stack, STACK_SIZE,
-			    COOPHI_PRIORITY, &cfg);
+	k_work_queue_start(&coophi_queue, &coophi_queue_thread, coophi_stack, STACK_SIZE,
+			   COOPHI_PRIORITY, &cfg);
 	zassert_equal(coophi_queue.flags,
 		      K_WORK_QUEUE_STARTED | K_WORK_QUEUE_NO_YIELD, NULL);
 

@@ -18,6 +18,7 @@ static K_KERNEL_STACK_DEFINE(sys_work_q_stack,
 			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
 
 struct k_work_q k_sys_work_q;
+static struct k_thread k_sys_work_q_thread;
 
 static int k_sys_work_q_init(void)
 {
@@ -28,10 +29,9 @@ static int k_sys_work_q_init(void)
 		.work_timeout_ms = CONFIG_SYSTEM_WORKQUEUE_WORK_TIMEOUT_MS,
 	};
 
-	k_work_queue_start(&k_sys_work_q,
-			    sys_work_q_stack,
-			    K_KERNEL_STACK_SIZEOF(sys_work_q_stack),
-			    CONFIG_SYSTEM_WORKQUEUE_PRIORITY, &cfg);
+	k_work_queue_start(&k_sys_work_q, &k_sys_work_q_thread, sys_work_q_stack,
+			   K_KERNEL_STACK_SIZEOF(sys_work_q_stack),
+			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, &cfg);
 	return 0;
 }
 
