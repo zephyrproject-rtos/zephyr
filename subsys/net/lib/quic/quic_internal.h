@@ -833,6 +833,9 @@ struct quic_endpoint {
 		bool release_pending;
 	} recovery;
 
+	/** Serializes TX packet assembly on crypto.tx_buffer and tx_pn. */
+	struct k_mutex send_lock;
+
 	/** DPLPMTUD path state for this endpoint. */
 	struct {
 		/** Largest UDP payload size confirmed by ACK. */
