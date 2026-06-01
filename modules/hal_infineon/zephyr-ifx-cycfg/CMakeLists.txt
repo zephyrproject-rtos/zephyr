@@ -5,7 +5,7 @@
 
 if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 if(CONFIG_BUILD_WITH_TFM)
-  set(zephyr_ifx_cycfg_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/pse84/epc2/board/KIT_PSOCE84_EVK/shared/design/default/GeneratedSource)
+  set(zephyr_ifx_cycfg_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/pse84/epc2/board/shared/design/default/GeneratedSource)
 
   zephyr_include_directories(${zephyr_ifx_cycfg_dir})
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot.c)
