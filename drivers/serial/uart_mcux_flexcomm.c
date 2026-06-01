@@ -1183,7 +1183,9 @@ static void mcux_flexcomm_pm_prepare_wake(const struct device *dev,
 	 * potentially wake up the chip from this mode.
 	 */
 	if (pm_state_in_constraints(&config->lp_states, match)) {
-		clock_control_configure(config->clock_dev, config->lp_clock_subsys, NULL);
+		if (config->lp_clock_subsys != NULL) {
+			clock_control_configure(config->clock_dev, config->lp_clock_subsys, NULL);
+		}
 		data->old_brg = base->BRG;
 		data->old_osr = base->OSR;
 		base->OSR = 8;
@@ -1408,10 +1410,12 @@ static void serial_mcux_flexcomm_##n##_wakeup_cfg(void)				\
 		.wakeup_cfg = serial_mcux_flexcomm_##n##_wakeup_cfg,
 
 #define UART_MCUX_FLEXCOMM_LP_STATES_DEFINE(n)	\
-	PM_STATE_CONSTRAINTS_LIST_DEFINE(DT_DRV_INST(n), low_power_states);	\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, low_power_states),			\
+		(PM_STATE_CONSTRAINTS_LIST_DEFINE(DT_DRV_INST(n), low_power_states);))
 
 #define UART_MCUX_FLEXCOMM_LP_STATES_BIND(n)	\
-	.lp_states = PM_STATE_CONSTRAINTS_GET(DT_DRV_INST(n), low_power_states),\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(n, low_power_states),			\
+		(.lp_states = PM_STATE_CONSTRAINTS_GET(DT_DRV_INST(n), low_power_states),))
 
 #define UART_MCUX_FLEXCOMM_PM_HANDLES_DEFINE(n)					\
 static void serial_mcux_flexcomm_##n##_pm_entry(enum pm_state state, uint8_t substate) \
@@ -1434,8 +1438,9 @@ static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state, uint8_t subs
 			.report_substate = true,				\
 	},
 #define UART_MCUX_FLEXCOMM_LP_CLK_SUBSYS(n)					\
-	.lp_clock_subsys = (clock_control_subsys_t)				\
-				DT_INST_CLOCKS_CELL_BY_NAME(n, sleep, name),
+	IF_ENABLED(DT_INST_CLOCKS_HAS_NAME(n, sleep),				\
+		(.lp_clock_subsys = (clock_control_subsys_t)			\
+				DT_INST_CLOCKS_CELL_BY_NAME(n, sleep, name),))
 #else
 #define UART_MCUX_FLEXCOMM_WAKEUP_CFG_DEFINE(n)
 #define UART_MCUX_FLEXCOMM_WAKEUP_CFG_BIND(n)
