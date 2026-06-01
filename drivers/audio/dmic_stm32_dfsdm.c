@@ -22,19 +22,19 @@
 
 #define DT_DRV_COMPAT st_stm32_dfsdm
 
-#define DFSDM_MAX_FILTERS	4
-#define DFSDM_MAX_CHANNELS	8
+#define DFSDM_MAX_FILTERS  4
+#define DFSDM_MAX_CHANNELS 8
 
 /* Oversampling max values */
-#define DFSDM_MAX_INT_OVERSAMPLING	256
-#define DFSDM_MAX_FL_OVERSAMPLING	1024
+#define DFSDM_MAX_INT_OVERSAMPLING 256
+#define DFSDM_MAX_FL_OVERSAMPLING  1024
 
 /* Limit filter output resolution to 31 bits. (i.e. sample range is +/-2^30) */
-#define DFSDM_DATA_MAX	BIT(30)
+#define DFSDM_DATA_MAX BIT(30)
 
 /* Prescaler clock divider limits */
-#define DFSDM_CLKDIV_MIN	2
-#define DFSDM_CLKDIV_MAX	256
+#define DFSDM_CLKDIV_MIN 2
+#define DFSDM_CLKDIV_MAX 256
 
 /*
  * Data are output as two's complement data in a 24 bit field.
@@ -43,33 +43,33 @@
  * An extra bit is required to avoid wrap-around of the binary code for 2^(n-1)
  * So, the resolution of samples from filter is actually limited to 23 bits
  */
-#define DFSDM_DATA_RES	24
+#define DFSDM_DATA_RES 24
 
 LOG_MODULE_REGISTER(st_stm32_dfsdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 
 struct dmic_stm32_dfsdm_filter_osr {
-	uint16_t iosr;		/* Integrator oversampling */
-	uint16_t fosr;		/* Filter oversampling */
-	uint8_t rshift;		/* Output sample right shift (hardware shift) */
-	int8_t pcm_shift;	/* PCM scaling shift after the hardware shift */
-	uint64_t res;		/* Output sample resolution */
+	uint16_t iosr;    /* Integrator oversampling */
+	uint16_t fosr;    /* Filter oversampling */
+	uint8_t rshift;   /* Output sample right shift (hardware shift) */
+	int8_t pcm_shift; /* PCM scaling shift after the hardware shift */
+	uint64_t res;     /* Output sample resolution */
 };
 
 struct dmic_stm32_dfsdm_filter_data {
 	volatile enum dmic_state state;
-	DFSDM_Channel_HandleTypeDef *hchannels;	/* Active hardware channels */
+	DFSDM_Channel_HandleTypeDef *hchannels; /* Active hardware channels */
 	DFSDM_Filter_HandleTypeDef hfilter;
-	struct dmic_stm32_dfsdm_filter_osr osr[2];	/* 0: regular, 1: fast conversion mode */
+	struct dmic_stm32_dfsdm_filter_osr osr[2]; /* 0: regular, 1: fast conversion mode */
 	struct k_mem_slab *mem_slab;
 	void *buffer;
 	uint16_t buf_pos;
 	struct k_msgq *rx_queue;
-	uint8_t num_channels;	/* Number of active channels */
-	uint32_t chan_map;	/* Requested channel map by user */
+	uint8_t num_channels; /* Number of active channels */
+	uint32_t chan_map;    /* Requested channel map by user */
 	uint16_t block_size;
 	uint8_t sincorder;
 	uint8_t pcm_width;
-	int8_t pcm_shift;	/* PCM scaling shift for the active filter output */
+	int8_t pcm_shift; /* PCM scaling shift for the active filter output */
 };
 
 struct dmic_stm32_dfsdm_filter_cfg {
@@ -80,8 +80,8 @@ struct dmic_stm32_dfsdm_filter_cfg {
 };
 
 struct dmic_stm32_dfsdm_cfg {
-	const struct stm32_pclken pclken;	/* Peripheral clock */
-	const struct stm32_pclken aclken;	/* Audio clock */
+	const struct stm32_pclken pclken; /* Peripheral clock */
+	const struct stm32_pclken aclken; /* Audio clock */
 	const struct reset_dt_spec reset;
 };
 
@@ -165,8 +165,8 @@ void HAL_DFSDM_FilterRegConvCpltCallback(DFSDM_Filter_HandleTypeDef *hdfsdm_filt
 
 	/* Write sample into current buffer */
 	if (data->buf_pos + sample_size <= data->block_size) {
-		dmic_stm32_dfsdm_write_sample((uint8_t *)data->buffer + data->buf_pos,
-					      sample_size, sample);
+		dmic_stm32_dfsdm_write_sample((uint8_t *)data->buffer + data->buf_pos, sample_size,
+					      sample);
 		data->buf_pos += sample_size;
 	}
 
@@ -299,8 +299,8 @@ static int dmic_stm32_dfsdm_compute_osrs(struct dmic_stm32_dfsdm_filter_osr *osr
 	return 0;
 }
 
-static int dmic_stm32_dfsdm_get_all_osrs(const struct device *dev,
-					 unsigned int oversamp, uint8_t pcm_width)
+static int dmic_stm32_dfsdm_get_all_osrs(const struct device *dev, unsigned int oversamp,
+					 uint8_t pcm_width)
 {
 	struct dmic_stm32_dfsdm_filter_data *data = dev->data;
 	int ret = 0;
@@ -316,8 +316,7 @@ static int dmic_stm32_dfsdm_get_all_osrs(const struct device *dev,
 	}
 
 	/* Compute OSR for fast conversion mode */
-	ret = dmic_stm32_dfsdm_compute_osrs(&data->osr[1], data->sincorder, 1, oversamp,
-					    pcm_width);
+	ret = dmic_stm32_dfsdm_compute_osrs(&data->osr[1], data->sincorder, 1, oversamp, pcm_width);
 	if (ret < 0) {
 		LOG_ERR("Filter parameters not found for fast mode conversion: %d", ret);
 		return -EINVAL;
@@ -470,7 +469,7 @@ static int dmic_stm32_dfsdm_trigger(const struct device *dev, enum dmic_trigger 
 }
 
 static int dmic_stm32_dfsdm_read(const struct device *dev, uint8_t stream, void **buffer,
-			   size_t *size, int32_t timeout)
+				 size_t *size, int32_t timeout)
 {
 	struct dmic_stm32_dfsdm_filter_data *data = dev->data;
 	int ret;
@@ -478,8 +477,7 @@ static int dmic_stm32_dfsdm_read(const struct device *dev, uint8_t stream, void 
 	ARG_UNUSED(stream);
 
 	/* Check if we are in a state that can read */
-	if ((data->state != DMIC_STATE_CONFIGURED) &&
-	    (data->state != DMIC_STATE_ACTIVE) &&
+	if ((data->state != DMIC_STATE_CONFIGURED) && (data->state != DMIC_STATE_ACTIVE) &&
 	    (data->state != DMIC_STATE_PAUSED)) {
 		LOG_ERR("Device state is not valid for read");
 		return -EIO;
@@ -494,8 +492,8 @@ static int dmic_stm32_dfsdm_read(const struct device *dev, uint8_t stream, void 
 	return 0;
 }
 
-static int dmic_stm32_dfsdm_setup_channel(const struct device *dev, uint32_t div,
-					  uint8_t chan, enum pdm_lr lr)
+static int dmic_stm32_dfsdm_setup_channel(const struct device *dev, uint32_t div, uint8_t chan,
+					  enum pdm_lr lr)
 {
 	struct dmic_stm32_dfsdm_filter_data *data = dev->data;
 	DFSDM_Channel_HandleTypeDef *hchannel = data->hchannels;
@@ -551,8 +549,7 @@ static int dmic_stm32_dfsdm_setup_filter(const struct device *dev, uint8_t chan)
 	}
 
 	/* Configure regular channel, with continuous conversion for now */
-	hal_ret = HAL_DFSDM_FilterConfigRegChannel(hfilter,
-						   hw_chan_from_index(chan),
+	hal_ret = HAL_DFSDM_FilterConfigRegChannel(hfilter, hw_chan_from_index(chan),
 						   DFSDM_CONTINUOUS_CONV_ON);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("Failed to configure regular channel");
@@ -612,8 +609,7 @@ static int dmic_stm32_dfsdm_configure(const struct device *dev, struct dmic_cfg 
 	 * But in regular mode (only supported right now), only 1 channel
 	 * per filter can exist.  Verify user is not requesting more.
 	 */
-	if (channel->req_num_chan > DFSDM_MAX_CHANNELS ||
-	    channel->req_chan_map_hi != 0) {
+	if (channel->req_num_chan > DFSDM_MAX_CHANNELS || channel->req_chan_map_hi != 0) {
 		LOG_ERR("DMIC only supports 8 channels or less");
 		return -ENOTSUP;
 	}
@@ -660,8 +656,7 @@ static int dmic_stm32_dfsdm_configure(const struct device *dev, struct dmic_cfg 
 
 	/* Get Audio clock */
 	ret = clock_control_get_rate(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
-				     (clock_control_subsys_t)&parent_cfg->aclken,
-				     &bitclk_rate);
+				     (clock_control_subsys_t)&parent_cfg->aclken, &bitclk_rate);
 	if (ret < 0) {
 		return ret;
 	}
@@ -679,8 +674,8 @@ static int dmic_stm32_dfsdm_configure(const struct device *dev, struct dmic_cfg 
 	 * Take the min to get the fastest clock possible
 	 */
 	bitclk_rate /= min;
-	LOG_INF("bitclk_rate %d Hz, div %d, output clock %d Hz",
-		bitclk_rate * min, min, bitclk_rate);
+	LOG_INF("bitclk_rate %d Hz, div %d, output clock %d Hz", bitclk_rate * min, min,
+		bitclk_rate);
 
 	oversamp = DIV_ROUND_CLOSEST(bitclk_rate, stream->pcm_rate);
 	ret = dmic_stm32_dfsdm_get_all_osrs(dev, oversamp, stream->pcm_width);
@@ -789,8 +784,7 @@ static int dmic_stm32_dfsdm_deinit(const struct device *dev)
 	return ret;
 }
 
-static int dmic_stm32_dfsdm_pm_action(const struct device *dev,
-				      enum pm_device_action action)
+static int dmic_stm32_dfsdm_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
@@ -808,28 +802,33 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev,
 #define DMIC_DFSDM_CHAN_REG_ADDR(chan)                                                             \
 	(DFSDM_Channel_TypeDef *)(DT_REG_ADDR(DT_GPARENT(chan)) + DMIC_DFSDM_CHAN_IDX(chan) * 0x20)
 
-#define DMIC_DFSDM_CHAN_DEFINE(chan)                                           \
-	{                                                                      \
-		.Instance = DMIC_DFSDM_CHAN_REG_ADDR(chan),                    \
-		.Init = {                                                      \
-			.Awd = {                                               \
-				.FilterOrder = DFSDM_CHANNEL_FASTSINC_ORDER,   \
-				.Oversampling = 1,                             \
-			},                                                     \
-			.Input = {                                             \
-				.DataPacking = DFSDM_CHANNEL_STANDARD_MODE,    \
-				.Multiplexer = DFSDM_CHANNEL_EXTERNAL_INPUTS,  \
-			},                                                     \
-			.Offset = 0,                                           \
-			.OutputClock = {                                       \
-				.Activation = ENABLE,                          \
-				.Selection = DFSDM_CHANNEL_OUTPUT_CLOCK_AUDIO, \
-			},                                                     \
-			.SerialInterface = {                                   \
-				.SpiClock = DFSDM_CHANNEL_SPI_CLOCK_INTERNAL,  \
-				.Type = DFSDM_CHANNEL_SPI_RISING,              \
-			},                                                     \
-		},                                                             \
+#define DMIC_DFSDM_CHAN_DEFINE(chan)                                                               \
+	{                                                                                          \
+		.Instance = DMIC_DFSDM_CHAN_REG_ADDR(chan),                                        \
+		.Init =                                                                            \
+			{                                                                          \
+				.Awd =                                                             \
+					{                                                          \
+						.FilterOrder = DFSDM_CHANNEL_FASTSINC_ORDER,       \
+						.Oversampling = 1,                                 \
+					},                                                         \
+				.Input =                                                           \
+					{                                                          \
+						.DataPacking = DFSDM_CHANNEL_STANDARD_MODE,        \
+						.Multiplexer = DFSDM_CHANNEL_EXTERNAL_INPUTS,      \
+					},                                                         \
+				.Offset = 0,                                                       \
+				.OutputClock =                                                     \
+					{                                                          \
+						.Activation = ENABLE,                              \
+						.Selection = DFSDM_CHANNEL_OUTPUT_CLOCK_AUDIO,     \
+					},                                                         \
+				.SerialInterface =                                                 \
+					{                                                          \
+						.SpiClock = DFSDM_CHANNEL_SPI_CLOCK_INTERNAL,      \
+						.Type = DFSDM_CHANNEL_SPI_RISING,                  \
+					},                                                         \
+			},                                                                         \
 	},
 
 #define DMIC_DFSDM_FLT_REG_ADDR(flt)                                                               \
@@ -839,8 +838,7 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev,
  * Filters can only have one enabled channel child. The build assert in
  * DMIC_DFSDM_FILTERS_DEFINE() keeps this FOREACH expansion to a single value.
  */
-#define DMIC_DFSDM_HW_CHANNEL(flt)                                             \
-	DT_FOREACH_CHILD_STATUS_OKAY_SEP(flt, DMIC_DFSDM_CHAN_IDX, ())
+#define DMIC_DFSDM_HW_CHANNEL(flt) DT_FOREACH_CHILD_STATUS_OKAY_SEP(flt, DMIC_DFSDM_CHAN_IDX, ())
 
 #define DMIC_DFSDM_FILTER_HFILTER(flt)                                                             \
 	{                                                                                          \
@@ -865,60 +863,54 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev,
 			},                                                                         \
 	}
 
-#define DMIC_DFSDM_FILTERS_DEFINE(flt)                                         \
-	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(flt) == 1,                       \
-		     "One DFSDM channel child per filter (regular mode)");     \
-                                                                               \
-	PINCTRL_DT_DEFINE(flt);                                                \
-                                                                               \
-	K_MSGQ_DEFINE(dmic_stm32_dfsdm_msgq_##flt, sizeof(void *),             \
-		      CONFIG_DMIC_STM32_DFSDM_QUEUE_SIZE, 4);                  \
-                                                                               \
-	static DFSDM_Channel_HandleTypeDef hchannels_##flt[] = {               \
-		DT_FOREACH_CHILD(flt, DMIC_DFSDM_CHAN_DEFINE)                  \
-	};                                                                     \
-                                                                               \
-	static void dmic_stm32_dfsdm_irq_cfg_func_##flt(const struct device *dev)    \
-	{                                                                      \
-		IRQ_CONNECT(DT_IRQN(flt), DT_IRQ(flt, priority),               \
-			    dmic_stm32_dfsdm_isr, DEVICE_DT_GET(flt), 0);      \
-		irq_enable(DT_IRQN(flt));                                      \
-	}                                                                      \
-                                                                               \
-	static const struct dmic_stm32_dfsdm_filter_cfg                        \
-					dmic_stm32_dfsdm_filter_##flt = {      \
-		.irq_config_func = dmic_stm32_dfsdm_irq_cfg_func_##flt,        \
-		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(flt),                        \
-		.parent = DEVICE_DT_GET(DT_PARENT(flt)),                       \
-		.hw_channel = DMIC_DFSDM_HW_CHANNEL(flt),                      \
-	};                                                                     \
-                                                                               \
-	static struct dmic_stm32_dfsdm_filter_data                             \
-					dmic_stm32_dfsdm_filter_data_##flt = { \
-		.hchannels = hchannels_##flt,                                  \
-		.hfilter = DMIC_DFSDM_FILTER_HFILTER(flt),                     \
-		.sincorder = DT_PROP(flt, filter_order),                       \
-		.rx_queue = &dmic_stm32_dfsdm_msgq_##flt,                      \
-	};                                                                     \
-                                                                               \
-	DEVICE_DT_DEFINE(flt, dmic_stm32_dfsdm_filter_init, NULL,              \
-			 &dmic_stm32_dfsdm_filter_data_##flt,                  \
-			 &dmic_stm32_dfsdm_filter_##flt, POST_KERNEL,          \
-			 CONFIG_AUDIO_DMIC_INIT_PRIORITY,                      \
-			 &dmic_stm32_dfsdm_ops);
+#define DMIC_DFSDM_FILTERS_DEFINE(flt)                                                             \
+	BUILD_ASSERT(DT_CHILD_NUM_STATUS_OKAY(flt) == 1,                                           \
+		     "One DFSDM channel child per filter (regular mode)");                         \
+                                                                                                   \
+	PINCTRL_DT_DEFINE(flt);                                                                    \
+                                                                                                   \
+	K_MSGQ_DEFINE(dmic_stm32_dfsdm_msgq_##flt, sizeof(void *),                                 \
+		      CONFIG_DMIC_STM32_DFSDM_QUEUE_SIZE, 4);                                      \
+                                                                                                   \
+	static DFSDM_Channel_HandleTypeDef hchannels_##flt[] = {                                   \
+		DT_FOREACH_CHILD(flt, DMIC_DFSDM_CHAN_DEFINE)};                                    \
+                                                                                                   \
+	static void dmic_stm32_dfsdm_irq_cfg_func_##flt(const struct device *dev)                  \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQN(flt), DT_IRQ(flt, priority), dmic_stm32_dfsdm_isr,             \
+			    DEVICE_DT_GET(flt), 0);                                                \
+		irq_enable(DT_IRQN(flt));                                                          \
+	}                                                                                          \
+                                                                                                   \
+	static const struct dmic_stm32_dfsdm_filter_cfg dmic_stm32_dfsdm_filter_##flt = {          \
+		.irq_config_func = dmic_stm32_dfsdm_irq_cfg_func_##flt,                            \
+		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(flt),                                            \
+		.parent = DEVICE_DT_GET(DT_PARENT(flt)),                                           \
+		.hw_channel = DMIC_DFSDM_HW_CHANNEL(flt),                                          \
+	};                                                                                         \
+                                                                                                   \
+	static struct dmic_stm32_dfsdm_filter_data dmic_stm32_dfsdm_filter_data_##flt = {          \
+		.hchannels = hchannels_##flt,                                                      \
+		.hfilter = DMIC_DFSDM_FILTER_HFILTER(flt),                                         \
+		.sincorder = DT_PROP(flt, filter_order),                                           \
+		.rx_queue = &dmic_stm32_dfsdm_msgq_##flt,                                          \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_DEFINE(flt, dmic_stm32_dfsdm_filter_init, NULL,                                  \
+			 &dmic_stm32_dfsdm_filter_data_##flt, &dmic_stm32_dfsdm_filter_##flt,      \
+			 POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY, &dmic_stm32_dfsdm_ops);
 
-#define DFSDM_DEFINE(n)                                                        \
-	PM_DEVICE_DT_INST_DEFINE(n, dmic_stm32_dfsdm_pm_action);               \
-                                                                               \
-	static const struct dmic_stm32_dfsdm_cfg dmic_stm32_dfsdm_cfg_##n = {  \
-		.pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(n, pclk),           \
-		.aclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(n, aclk),           \
-		.reset = RESET_DT_SPEC_INST_GET(n),                            \
-	};                                                                     \
-                                                                               \
-	DEVICE_DT_INST_DEFINE(n, dmic_stm32_dfsdm_init, NULL, NULL,            \
-			      &dmic_stm32_dfsdm_cfg_##n, POST_KERNEL,          \
-			      CONFIG_AUDIO_DMIC_INIT_PRIORITY, NULL);          \
+#define DFSDM_DEFINE(n)                                                                            \
+	PM_DEVICE_DT_INST_DEFINE(n, dmic_stm32_dfsdm_pm_action);                                   \
+                                                                                                   \
+	static const struct dmic_stm32_dfsdm_cfg dmic_stm32_dfsdm_cfg_##n = {                      \
+		.pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(n, pclk),                               \
+		.aclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(n, aclk),                               \
+		.reset = RESET_DT_SPEC_INST_GET(n),                                                \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, dmic_stm32_dfsdm_init, NULL, NULL, &dmic_stm32_dfsdm_cfg_##n,     \
+			      POST_KERNEL, CONFIG_AUDIO_DMIC_INIT_PRIORITY, NULL);                 \
 	DT_INST_FOREACH_CHILD_STATUS_OKAY(n, DMIC_DFSDM_FILTERS_DEFINE)
 
 DT_INST_FOREACH_STATUS_OKAY(DFSDM_DEFINE)
