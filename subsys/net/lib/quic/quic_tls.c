@@ -4154,13 +4154,11 @@ static int quic_set_socket_dont_fragment(struct quic_endpoint *ep, int value)
 }
 
 /*
- * Send a QUIC packet using scatter-gather I/O
+ * Send a QUIC packet using scatter-gather I/O.
  *
- * Uses zsock_sendmsg() to avoid copying header and payload into
- * a single buffer. The header is built in a small stack buffer,
- * and the encrypted payload uses the endpoint's tx_buffer.
- * Encrypt and send ep->crypto.tx_buffer[0..plaintext_len).
- * Called by both quic_send_packet() and quic_send_packet_sg().
+ * Plaintext is assembled in ep->crypto.tx_buffer by the caller while
+ * holding ep->send_lock. Uses zsock_sendmsg() so the stack copies header
+ * and ciphertext into a net_pkt before this call returns.
  */
 static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 				       enum quic_secret_level level,
@@ -4454,12 +4452,19 @@ static int quic_send_packet(struct quic_endpoint *ep,
 			    const uint8_t *payload,
 			    size_t payload_len)
 {
+	int ret;
+
 	if (payload_len > sizeof(ep->crypto.tx_buffer)) {
 		return -ENOBUFS;
 	}
 
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
 	memcpy(ep->crypto.tx_buffer, payload, payload_len);
-	return quic_send_packet_from_txbuf(ep, level, payload_len, 0U, false, false);
+	ret = quic_send_packet_from_txbuf(ep, level, payload_len, 0U, false, false);
+
+	k_mutex_unlock(&ep->send_lock);
+
+	return ret;
 }
 
 /*
@@ -4473,7 +4478,7 @@ static int quic_send_prepared_frame(struct quic_endpoint *ep,
 	size_t total_frame_len = frame_header_len + data_len;
 	int ret;
 
-	ret = quic_send_packet(ep, level, ep->crypto.tx_buffer, total_frame_len);
+	ret = quic_send_packet_from_txbuf(ep, level, total_frame_len, 0U, false, false);
 	if (ret == -EAGAIN) {
 #if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
 		return quic_queue_deferred_crypto_payload(ep, level,
@@ -4499,6 +4504,7 @@ static int quic_tls_send_callback(void *user_data,
 	struct quic_endpoint *ep = user_data;
 	size_t frame_header_len;
 	uint8_t *dest;
+	int ret;
 
 	if (ep == NULL || data == NULL || len == 0) {
 		return -EINVAL;
@@ -4511,9 +4517,12 @@ static int quic_tls_send_callback(void *user_data,
 
 	NET_DBG("TLS send callback: level=%d, len=%zu", level, len);
 
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
+
 	/* Prepare frame header, get destination for TLS data */
 	dest = quic_prepare_crypto_frame(ep, level, len, &frame_header_len);
 	if (dest == NULL) {
+		k_mutex_unlock(&ep->send_lock);
 		return -ENOBUFS;
 	}
 
@@ -4521,7 +4530,11 @@ static int quic_tls_send_callback(void *user_data,
 	memcpy(dest, data, len);
 
 	/* Send */
-	return quic_send_prepared_frame(ep, level, frame_header_len, len);
+	ret = quic_send_prepared_frame(ep, level, frame_header_len, len);
+
+	k_mutex_unlock(&ep->send_lock);
+
+	return ret;
 }
 
 static void quic_tls_set_callbacks(struct quic_tls_context *ctx,

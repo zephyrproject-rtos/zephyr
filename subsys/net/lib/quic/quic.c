@@ -3645,7 +3645,7 @@ static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
 /*
  * Scatter-gather variant of quic_send_packet().
  * Accepts a small frame header and a separate data buffer,
- * assembling them into ep->crypto.tx_buffer internally.
+ * assembling them into ep->crypto.tx_buffer under ep->send_lock.
  * Avoids requiring a large frame[] on the caller's stack.
  */
 static int quic_send_packet_sg(struct quic_endpoint *ep,
@@ -3654,31 +3654,37 @@ static int quic_send_packet_sg(struct quic_endpoint *ep,
 			       const uint8_t *data, size_t data_len)
 {
 	size_t plaintext_len = hdr_len + data_len;
+	int ret;
 
 	if (plaintext_len > sizeof(ep->crypto.tx_buffer)) {
 		return -ENOBUFS;
 	}
 
-	/* Assemble plaintext directly into the encryption buffer.
-	 * This is safe: nothing else touches tx_buffer at this point.
-	 */
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
+
 	memcpy(ep->crypto.tx_buffer, hdr, hdr_len);
 	if (data_len > 0) {
 		memcpy(ep->crypto.tx_buffer + hdr_len, data, data_len);
 	}
 
-	/* Delegate to the internal _from_txbuf variant that skips the
-	 * redundant payload copy inside quic_send_packet().
-	 */
-	return quic_send_packet_from_txbuf(ep, level, plaintext_len, 0U, false, false);
+	ret = quic_send_packet_from_txbuf(ep, level, plaintext_len, 0U, false, false);
+
+	k_mutex_unlock(&ep->send_lock);
+
+	return ret;
 }
 
 static int quic_send_dplpmtud_probe(struct quic_endpoint *ep, uint16_t probe_size)
 {
-	ep->crypto.tx_buffer[0] = QUIC_FRAME_TYPE_PING;
+	int ret;
 
-	return quic_send_packet_from_txbuf(ep, QUIC_SECRET_LEVEL_APPLICATION, 1,
-					   probe_size, true, true);
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
+	ep->crypto.tx_buffer[0] = QUIC_FRAME_TYPE_PING;
+	ret = quic_send_packet_from_txbuf(ep, QUIC_SECRET_LEVEL_APPLICATION, 1,
+					  probe_size, true, true);
+	k_mutex_unlock(&ep->send_lock);
+
+	return ret;
 }
 
 static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep)
@@ -4502,6 +4508,7 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	quic_recovery_init(ep);
 
 	k_mutex_init(&ep->pending.lock);
+	k_mutex_init(&ep->send_lock);
 	k_sem_init(&ep->handshake.sem, 0, 1);
 
 	tls_init(ep);
