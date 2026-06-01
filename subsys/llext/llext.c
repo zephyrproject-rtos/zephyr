@@ -346,7 +346,17 @@ static int call_fn_table(struct llext *ext, bool is_init)
 	typedef void (*elf_void_fn_t)(void);
 
 	int fn_count = ret / sizeof(elf_void_fn_t);
-	elf_void_fn_t fn_table[fn_count];
+
+	if (fn_count == 0) {
+		return 0;
+	} else if (fn_count > CONFIG_LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES) {
+		LOG_ERR("%s function table too large: %d entries (max %d)",
+			is_init ? "Bringup" : "Teardown", fn_count,
+			CONFIG_LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES);
+		return -ENOEXEC;
+	}
+
+	elf_void_fn_t fn_table[CONFIG_LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES];
 
 	ret = llext_get_fn_table(ext, is_init, &fn_table, sizeof(fn_table));
 	if (ret < 0) {
