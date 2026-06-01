@@ -875,8 +875,8 @@ void soc_reset_hook(void)
 }
 #endif
 
-#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_CPU_CORTEX_M33)
-
+#if defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_IMXRT118X_SECOND_CORE_KICKOFF) && \
+	defined(CONFIG_CPU_CORTEX_M33)
 static int second_core_boot(void)
 {
 	/*

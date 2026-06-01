@@ -163,6 +163,15 @@ config SECOND_CORE_MCUX_REMOTE_DIR
 	  Sets the remote directory to include the output image header data
 	  from when launching a second core image
 
+config SOC_IMXRT118X_SECOND_CORE_KICKOFF
+	bool "Second core kickoff on the RT11xx series"
+	default y
+	depends on SECOND_CORE_MCUX && SOC_SERIES_IMXRT118X
+	help
+	  Indicates the second core will be started by the primary core at its system
+	  initialization. Otherwise, secondary core kickoff can be done independently
+	  at application level later.
+
 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 
 config PM_MCUX_GPC
