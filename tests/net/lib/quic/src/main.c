@@ -1050,6 +1050,78 @@ ZTEST(net_socket_quic, test_097_dplpmtud_probe_loss_retries_then_clamps)
 		     "A smaller candidate should still be probed");
 }
 
+static void init_test_tx_ack_stream(struct quic_stream *stream,
+				    struct quic_endpoint *ep)
+{
+	memset(stream, 0, sizeof(*stream));
+
+	stream->id = 4;
+	stream->ep = ep;
+	stream->bytes_acked = 0;
+	stream->bytes_sent = 1000;
+	stream->tx_buf.base_offset = 0;
+	stream->tx_buf.len = 1000;
+	stream->acked_ooo_count = 0;
+	k_poll_signal_init(&stream->send.signal);
+}
+
+ZTEST(net_socket_quic, test_098_tx_ack_ooo_coalesce_and_advance)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+
+	init_test_tx_ack_stream(&stream, ep);
+
+	quic_stream_advance_tx_acked_for_stream(&stream, 100, 200);
+	zassert_equal(stream.acked_ooo_count, 1U, NULL);
+	zassert_equal(stream.bytes_acked, 0U, NULL);
+
+	quic_stream_advance_tx_acked_for_stream(&stream, 200, 300);
+	zassert_equal(stream.acked_ooo_count, 1U,
+		      "Adjacent OOO ACK ranges must coalesce");
+	zassert_equal(stream.acked_ooo[0].offset, 100U, NULL);
+	zassert_equal(stream.acked_ooo[0].len, 200U, NULL);
+
+	quic_stream_advance_tx_acked_for_stream(&stream, 0, 100);
+	zassert_equal(stream.bytes_acked, 300U, NULL);
+	zassert_equal(stream.acked_ooo_count, 0U, NULL);
+	zassert_equal(stream.tx_buf.len, 700U, "ACKed TX data must be released");
+	zassert_equal(stream.tx_buf.base_offset, 300U, NULL);
+}
+
+ZTEST(net_socket_quic, test_099_tx_ack_ooo_queue_full_still_advances)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const uint64_t slot_size = 100U;
+	const int slot_count = CONFIG_QUIC_STREAM_OOO_SLOTS;
+
+	init_test_tx_ack_stream(&stream, ep);
+	stream.bytes_sent = (slot_count + 2U) * slot_size;
+	stream.tx_buf.len = stream.bytes_sent;
+
+	for (int i = 0; i < slot_count; i++) {
+		uint64_t start = ((i * 2U) + 1U) * slot_size;
+
+		quic_stream_advance_tx_acked_for_stream(&stream, start, start + slot_size);
+	}
+
+	zassert_equal(stream.acked_ooo_count, (uint8_t)slot_count,
+		      "Expected queue to be full of disjoint OOO ACK ranges");
+
+	quic_stream_advance_tx_acked_for_stream(&stream,
+						((slot_count * 2U) + 1U) * slot_size,
+						((slot_count * 2U) + 2U) * slot_size);
+	zassert_equal(stream.acked_ooo_count, (uint8_t)slot_count,
+		      "Queue-full OOO ACK must not abort processing");
+
+	quic_stream_advance_tx_acked_for_stream(&stream, 0, slot_size);
+	zassert_equal(stream.bytes_acked, slot_size * 2U,
+		      "In-order ACK must still advance contiguous frontier");
+	zassert_equal(stream.acked_ooo_count, (uint8_t)(slot_count - 1),
+		      "Bridged OOO ACK range must be consumed");
+}
+
 static void init_test_crypto_endpoint(struct quic_endpoint *ep,
 				      enum quic_secret_level level)
 {
