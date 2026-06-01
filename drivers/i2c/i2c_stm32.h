@@ -122,12 +122,17 @@ struct i2c_stm32_data {
 	i2c_stm32_smbalert_cb_func_t smbalert_cb_func;
 	const struct device *smbalert_cb_dev;
 #endif /* CONFIG_SMBUS_STM32_SMBALERT */
+#endif /* CONFIG_I2C_RTIO */
+
 #ifdef CONFIG_I2C_STM32_V2_DMA
 	struct dma_config dma_tx_cfg;
 	struct dma_config dma_rx_cfg;
 	struct dma_block_config dma_blk_cfg;
-#endif /* CONFIG_I2C_STM32_V2_DMA */
+#ifdef CONFIG_I2C_RTIO
+	uint8_t *dma_buf;	/* Base address of the Rx buffer fed by DMA */
+	size_t dma_len;		/* Byte size of the Rx buffer fed by DMA */
 #endif /* CONFIG_I2C_RTIO */
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 #ifdef CONFIG_I2C_TARGET
 	bool controller_active;
