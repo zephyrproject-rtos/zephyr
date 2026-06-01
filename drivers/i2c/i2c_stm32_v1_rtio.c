@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
@@ -83,8 +84,13 @@ static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 #endif
 
 	LL_I2C_Disable(i2c);
-	if ((data->xfer_len == 0U) && i2c_rtio_complete(ctx, status)) {
-		i2c_stm32_start(dev);
+	if (data->xfer_len == 0U) {
+		if (i2c_rtio_complete(ctx, status)) {
+			i2c_stm32_start(dev);
+		} else {
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			(void)pm_device_runtime_put(dev);
+		}
 	}
 }
 

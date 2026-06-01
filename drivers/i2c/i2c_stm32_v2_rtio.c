@@ -20,6 +20,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/util.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
@@ -347,7 +348,11 @@ int i2c_stm32_target_register(const struct device *dev,
 	}
 
 	/* Mark device as active */
-	(void)pm_device_runtime_get(dev);
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 #if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (pm_device_wakeup_is_capable(dev)) {
@@ -376,6 +381,9 @@ int i2c_stm32_target_register(const struct device *dev,
 		data->target2_cfg = config;
 
 		if (data->target2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			(void)pm_device_runtime_put(dev);
+
 			return -EINVAL;
 		}
 		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
@@ -445,6 +453,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 #endif /* !CONFIG_SOC_SERIES_STM32F7X */
 
 	/* Release the device */
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	(void)pm_device_runtime_put(dev);
 
 	data->target_attached = false;
@@ -576,6 +585,10 @@ skip_bytewise_xfer:
 			i2c_stm32_disable_transfer_interrupts(dev);
 			if (i2c_rtio_complete(ctx, ret)) {
 				i2c_stm32_start(dev);
+			} else {
+				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
+							 PM_ALL_SUBSTATES);
+				pm_device_runtime_put(dev);
 			}
 		}
 	}
@@ -618,6 +631,9 @@ int i2c_stm32_error(const struct device *dev)
 		i2c_stm32_controller_mode_end(dev);
 		if (i2c_rtio_complete(ctx, ret)) {
 			i2c_stm32_start(dev);
+		} else {
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			pm_device_runtime_put(dev);
 		}
 	}
 

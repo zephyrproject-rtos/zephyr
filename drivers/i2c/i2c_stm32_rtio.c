@@ -17,6 +17,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 
@@ -206,7 +207,14 @@ static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *io
 	iodev_sqe->sqe.iodev_flags |= RTIO_IODEV_I2C_RESTART;
 
 	if (i2c_rtio_submit(ctx, iodev_sqe)) {
-		i2c_stm32_start(dev);
+		if (pm_device_runtime_get(dev) < 0) {
+			(void)i2c_rtio_complete(ctx, -EINVAL);
+		} else {
+			/* Prevent the clocks to be stopped during the i2c transaction */
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+
+			i2c_stm32_start(dev);
+		}
 	}
 }
 
