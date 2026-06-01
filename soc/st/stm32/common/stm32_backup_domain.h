@@ -7,6 +7,8 @@
 #ifndef STM32_BACKUP_DOMAIN_H_
 #define STM32_BACKUP_DOMAIN_H_
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,9 +32,18 @@ void stm32_backup_domain_enable_access(void);
  * stm32_backup_domain_enable_access().
  */
 void stm32_backup_domain_disable_access(void);
+
+/**
+ * @brief Check if access to protected backup domain is currently enabled
+ */
+bool stm32_backup_domain_is_enabled(void);
 #else
 static inline void stm32_backup_domain_enable_access(void) { }
 static inline void stm32_backup_domain_disable_access(void) { }
+static inline bool stm32_backup_domain_is_enabled(void)
+{
+	return false;
+}
 #endif /* CONFIG_STM32_BACKUP_PROTECTION */
 
 /** @} */
