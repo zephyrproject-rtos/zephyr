@@ -16,10 +16,7 @@
 LOG_MODULE_REGISTER(ramdisk, CONFIG_RAMDISK_LOG_LEVEL);
 
 struct ram_disk_data {
-	struct disk_info info;
-	const size_t sector_size;
-	const size_t sector_count;
-	uint8_t *const buf;
+	struct disk_info *info;
 };
 
 struct ram_disk_config {
@@ -128,7 +125,8 @@ static int disk_ram_access_init(struct disk_info *disk)
 
 static int disk_ram_init(const struct device *dev)
 {
-	struct disk_info *info = dev->data;
+	struct ram_disk_data *data = dev->data;
+	struct disk_info *info = data->info;
 
 	info->dev = dev;
 
@@ -184,10 +182,14 @@ static const struct disk_operations ram_disk_ops = {
 		.ops = &ram_disk_ops,							\
 	};										\
 											\
+	static struct ram_disk_data ram_disk_data_##n = {				\
+		.info = &disk_info_##n,							\
+	};										\
+											\
 	RAMDISK_DEVICE_CONFIG_DEFINE(n);						\
 											\
 	DEVICE_DT_INST_DEFINE(n, disk_ram_init, NULL,					\
-			      &disk_info_##n, &disk_config_##n,				\
+			      &ram_disk_data_##n, &disk_config_##n,			\
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			      &ram_disk_ops);
 
