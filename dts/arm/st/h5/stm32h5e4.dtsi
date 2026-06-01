@@ -116,6 +116,15 @@
 			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};
+
+		jpeg: codec@5002b000 {
+			compatible = "st,stm32-jpeg";
+			reg = <0x5002b000 0x1000>;
+			interrupts = <135 0>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 23)>;
+			resets = <&rctl STM32_RESET(AHB1, 23)>;
+			status = "disabled";
+		};
 	};
 };
 
