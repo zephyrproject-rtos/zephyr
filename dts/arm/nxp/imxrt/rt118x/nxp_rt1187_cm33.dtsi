@@ -1,0 +1,13 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SOC DTS for MIMXRT1187 CM33 core */
+
+/*
+ * RT1187 shares the same package and peripheral set as RT1189, except it
+ * has no EtherCAT block (no ECAT node exists in the DTS yet).
+ */
+#include <nxp/imxrt/rt118x/nxp_rt118x_cm33.dtsi>

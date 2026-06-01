@@ -1,0 +1,14 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * RT118C-specific overrides for RT118x family.
+ *
+ * The RT118C shares the same package and pin layout as RT1186, but has
+ * no NETC (Ethernet controller/switch) block.
+ */
+
+/delete-node/ &netc;
