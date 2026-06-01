@@ -912,6 +912,11 @@ struct quic_stream_tx_buffer {
 	size_t   len;         /* bytes of unACKed data currently stored */
 };
 
+struct quic_stream_tx_ack_segment {
+	uint64_t offset;
+	uint32_t len;
+};
+
 struct quic_stream_state {
 	/** State machine context for this stream. Must be the first member.
 	 */
@@ -965,6 +970,10 @@ __net_socket struct quic_stream {
 
 	/** TX flow control, highest contiguously ACKed stream offset */
 	uint64_t bytes_acked;
+
+	/** ACKed TX ranges waiting for earlier gaps to be ACKed too. */
+	struct quic_stream_tx_ack_segment acked_ooo[CONFIG_QUIC_STREAM_OOO_SLOTS];
+	uint8_t acked_ooo_count;
 
 	/** TX flow control, remote_max_data when STREAM_DATA_BLOCKED was last sent */
 	uint64_t blocked_sent;
@@ -1291,6 +1300,9 @@ void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 void quic_dplpmtud_refresh_state(struct quic_endpoint *ep);
 void quic_dplpmtud_on_probe_acked(struct quic_endpoint *ep, uint16_t probe_size);
 void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep, uint16_t probe_size);
+void quic_stream_advance_tx_acked_for_stream(struct quic_stream *stream,
+					     uint64_t acked_start,
+					     uint64_t acked_end);
 int handle_crypto_frame(struct quic_endpoint *ep,
 			 enum quic_secret_level level,
 			 const uint8_t *data,

@@ -3616,37 +3616,176 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	k_mutex_unlock(&ep->recovery.lock);
 }
 
-static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
-					 uint64_t stream_id,
-					 uint64_t acked_end)
+static uint64_t quic_stream_tx_ack_seg_end(const struct quic_stream_tx_ack_segment *seg)
 {
-	struct quic_stream *stream = quic_find_stream_by_id(ep, stream_id);
+	return seg->offset + seg->len;
+}
+
+static bool quic_stream_tx_ack_mergeable(uint64_t start_a, uint64_t end_a,
+					 uint64_t start_b, uint64_t end_b)
+{
+	return start_a <= end_b && start_b <= end_a;
+}
+
+static void quic_stream_tx_ack_merge_into(struct quic_stream_tx_ack_segment *seg,
+					  uint64_t start, uint64_t end)
+{
+	uint64_t merged_start = MIN(seg->offset, start);
+	uint64_t merged_end = MAX(quic_stream_tx_ack_seg_end(seg), end);
+
+	seg->offset = merged_start;
+	seg->len = (uint32_t)(merged_end - merged_start);
+}
+
+static void quic_stream_tx_ack_remove(struct quic_stream *stream, int index)
+{
+	stream->acked_ooo[index] = stream->acked_ooo[stream->acked_ooo_count - 1];
+	stream->acked_ooo_count--;
+}
+
+static void quic_stream_tx_ack_compact(struct quic_stream *stream)
+{
+	bool progress = true;
+
+	while (progress) {
+		progress = false;
+
+		for (int i = 0; i < stream->acked_ooo_count; i++) {
+			uint64_t i_end = quic_stream_tx_ack_seg_end(&stream->acked_ooo[i]);
+
+			for (int j = i + 1; j < stream->acked_ooo_count; j++) {
+				struct quic_stream_tx_ack_segment *other =
+					&stream->acked_ooo[j];
+				uint64_t j_end = quic_stream_tx_ack_seg_end(other);
+
+				if (!quic_stream_tx_ack_mergeable(stream->acked_ooo[i].offset,
+								  i_end, other->offset, j_end)) {
+					continue;
+				}
+
+				quic_stream_tx_ack_merge_into(&stream->acked_ooo[i],
+							      other->offset, j_end);
+				quic_stream_tx_ack_remove(stream, j);
+				progress = true;
+				break;
+			}
+
+			if (progress) {
+				break;
+			}
+		}
+	}
+}
+
+static bool quic_stream_tx_ack_try_merge(struct quic_stream *stream,
+					 uint64_t start, uint64_t end)
+{
+	for (int i = 0; i < stream->acked_ooo_count; i++) {
+		struct quic_stream_tx_ack_segment *seg = &stream->acked_ooo[i];
+		uint64_t seg_end = quic_stream_tx_ack_seg_end(seg);
+
+		if (start >= seg->offset && end <= seg_end) {
+			return true;
+		}
+
+		if (quic_stream_tx_ack_mergeable(seg->offset, seg_end, start, end)) {
+			quic_stream_tx_ack_merge_into(seg, start, end);
+			quic_stream_tx_ack_compact(stream);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool quic_stream_tx_ack_store(struct quic_stream *stream,
+				     uint64_t start, uint64_t end)
+{
+	if (quic_stream_tx_ack_try_merge(stream, start, end)) {
+		return true;
+	}
+
+	quic_stream_tx_ack_compact(stream);
+
+	if (quic_stream_tx_ack_try_merge(stream, start, end)) {
+		return true;
+	}
+
+	if (stream->acked_ooo_count >= ARRAY_SIZE(stream->acked_ooo)) {
+		return false;
+	}
+
+	stream->acked_ooo[stream->acked_ooo_count].offset = start;
+	stream->acked_ooo[stream->acked_ooo_count].len = (uint32_t)(end - start);
+	stream->acked_ooo_count++;
+
+	quic_stream_tx_ack_compact(stream);
+
+	return true;
+}
+
+ZTESTABLE_STATIC void quic_stream_advance_tx_acked_for_stream(struct quic_stream *stream,
+							      uint64_t acked_start,
+							      uint64_t acked_end)
+{
 	struct quic_stream_tx_buffer *tx;
-	uint64_t new_base;
+	bool progress = true;
 	size_t advance;
 
 	if (stream == NULL) {
 		return;
 	}
 
-	/* Only advance if this ACK extends the contiguous frontier.
-	 * Out-of-order ACKs (acked_end <= bytes_acked) are ignored;
-	 * the data they cover stays in the buffer until the gap is filled.
-	 */
+	if (acked_end <= acked_start) {
+		return;
+	}
+
 	if (acked_end <= stream->bytes_acked) {
 		return;
 	}
 
-	stream->bytes_acked = acked_end;
+	if (acked_start > stream->bytes_acked) {
+		if (!quic_stream_tx_ack_store(stream, acked_start, acked_end)) {
+			NET_WARN("[ST:%p/%d] TX ACK OOO queue full for stream %" PRIu64
+				 " (offset=%" PRIu64 ", len=%" PRIu64 ")",
+				 stream, quic_get_by_stream(stream), stream->id,
+				 acked_start, acked_end - acked_start);
+		}
+	} else {
+		stream->bytes_acked = MAX(stream->bytes_acked, acked_end);
+	}
+
+	while (progress && stream->acked_ooo_count > 0U) {
+		progress = false;
+
+		for (int i = 0; i < stream->acked_ooo_count; i++) {
+			struct quic_stream_tx_ack_segment *seg = &stream->acked_ooo[i];
+			uint64_t seg_end = quic_stream_tx_ack_seg_end(seg);
+
+			if (seg_end <= stream->bytes_acked) {
+				quic_stream_tx_ack_remove(stream, i);
+				progress = true;
+				break;
+			}
+
+			if (seg->offset > stream->bytes_acked) {
+				continue;
+			}
+
+			stream->bytes_acked = seg_end;
+			quic_stream_tx_ack_remove(stream, i);
+			progress = true;
+			break;
+		}
+	}
 
 	tx = &stream->tx_buf;
-	new_base = stream->bytes_acked;
 
-	if (new_base <= tx->base_offset) {
+	if (stream->bytes_acked <= tx->base_offset) {
 		return; /* nothing new to release */
 	}
 
-	advance = (size_t)(new_base - tx->base_offset);
+	advance = (size_t)(stream->bytes_acked - tx->base_offset);
 	if (advance > tx->len) {
 		advance = tx->len; /* clamp, shouldn't happen */
 	}
@@ -3657,6 +3796,16 @@ static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
 
 	/* Signal that the stream is now writable (TX buffer has space) */
 	k_poll_signal_raise(&stream->send.signal, 0);
+}
+
+static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
+					 uint64_t stream_id,
+					 uint64_t acked_start,
+					 uint64_t acked_end)
+{
+	struct quic_stream *stream = quic_find_stream_by_id(ep, stream_id);
+
+	quic_stream_advance_tx_acked_for_stream(stream, acked_start, acked_end);
 }
 
 /*
@@ -4063,6 +4212,7 @@ static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 		if (info->has_stream_frame) {
 			quic_stream_advance_tx_acked(
 				ep, info->stream_id,
+				info->stream_offset,
 				info->stream_offset + info->stream_data_len);
 		}
 
@@ -5056,6 +5206,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	stream->remote_max_data = 16384;
 	stream->bytes_sent = 0;
 	stream->bytes_acked = 0;
+	stream->acked_ooo_count = 0;
 
 	/* RX flow control is initialized once the stream type is known. */
 	stream->local_max_data = 0;
@@ -6566,6 +6717,7 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 
 	stream->tx_buf.base_offset = 0;
 	stream->tx_buf.len = 0;
+	stream->acked_ooo_count = 0;
 
 	quic_stats_update_stream_opened();
 
