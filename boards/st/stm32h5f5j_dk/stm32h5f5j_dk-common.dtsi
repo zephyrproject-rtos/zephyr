@@ -325,3 +325,7 @@
 		status = "okay";
 	};
 };
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
+};
