@@ -1,6 +1,11 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# Includes the generic supply-gpios/vin-supply properties so they are available
+# on both the SPI and QSPI variants (the SPI variant also pulls power.yaml in
+# via spi-device.yaml; duplicate includes are harmless).
+include: [power.yaml]
+
 properties:
   iovdd-ctrl-gpios:
     type: phandle-array
@@ -13,6 +18,14 @@ properties:
     description: |
       Regulator controlling IO_VDD of the nRF70, either this or iovdd-ctrl-gpios
       needs to be set.
+
+  supply-power-up-delay-ms:
+    type: int
+    default: 6
+    description: |
+      Duration to wait after asserting supply-gpios before asserting BUCK_EN.
+      The nRF70 supply sequencing requires at least 6 ms between supplying
+      VBAT and asserting BUCK_EN.
 
   bucken-gpios:
     type: phandle-array
