@@ -186,6 +186,31 @@ static inline bool atomic_test_and_set_bit(atomic_t *target, int bit)
 }
 
 /**
+ * @brief Atomically set a bit to a given value and report if it was changed.
+ *
+ * Atomically set bit number @a bit of @a target to value @a val.
+ * The target may be a single atomic variable or an array of them.
+ *
+ * @note @atomic_api
+ *
+ * @param target Address of atomic variable or array.
+ * @param bit Bit number (starting from 0).
+ * @param val true for 1, false for 0.
+ *
+ * @return true if the bit was changed, false if it wasn't.
+ */
+static inline bool atomic_test_and_set_bit_to(atomic_t *target, int bit, bool val)
+{
+	atomic_val_t mask = ATOMIC_MASK(bit);
+
+	if (val) {
+		return (atomic_or(ATOMIC_ELEM(target, bit), mask) & mask) == 0;
+	}
+
+	return (atomic_and(ATOMIC_ELEM(target, bit), ~mask) & mask) != 0;
+}
+
+/**
  * @brief Atomically clear a bit.
  *
  * Atomically clear bit number @a bit of @a target.
