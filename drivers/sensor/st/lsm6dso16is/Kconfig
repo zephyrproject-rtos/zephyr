@@ -10,6 +10,7 @@ menuconfig LSM6DSO16IS
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO16IS),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSO16IS),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSO16IS),irq-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_LSM6DSO16IS
 	help

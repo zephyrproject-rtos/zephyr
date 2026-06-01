@@ -14,6 +14,10 @@ menuconfig LSM6DSV16X
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),i3c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV16X),spi) ||\
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LSM6DSV32X),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int1-gpios) || \
+		       $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV16X),int2-gpios) || \
+		       $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int1-gpios) || \
+		       $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LSM6DSV32X),int2-gpios)
 
 	select I2C_RTIO if I2C && SENSOR_ASYNC_API
 	select I3C_RTIO if I3C && SENSOR_ASYNC_API
