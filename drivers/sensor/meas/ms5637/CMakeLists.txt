@@ -7,3 +7,4 @@
 zephyr_library()
 
 zephyr_library_sources(ms5637.c)
+zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API ms5637_rtio.c)
