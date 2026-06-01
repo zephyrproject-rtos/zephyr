@@ -1368,6 +1368,7 @@ class ProjectBuilder(FilterBuilder):
 
         files_to_keep = self._get_binaries()
         files_to_keep.append(os.path.join('zephyr', 'runners.yaml'))
+        files_to_keep.append(os.path.join('zephyr', 'edt.pickle'))
 
         if self.instance.sysbuild and self.instance.domains:
             files_to_keep.append('domains.yaml')
@@ -1388,7 +1389,8 @@ class ProjectBuilder(FilterBuilder):
             os.path.join(domain, 'CMakeFiles', 'rules.ninja'),
             os.path.join(domain, 'Makefile'),
             os.path.join(domain, 'zephyr', '.config'),
-            os.path.join(domain, 'zephyr', 'runners.yaml')
+            os.path.join(domain, 'zephyr', 'runners.yaml'),
+            os.path.join(domain, 'zephyr', 'edt.pickle')
             ]
         return allow
 

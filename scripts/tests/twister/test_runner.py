@@ -1767,7 +1767,8 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
 
     pb.cleanup_artifacts.assert_called_once_with(
         [os.path.join('zephyr', 'file.bin'),
-         os.path.join('zephyr', 'runners.yaml')]
+         os.path.join('zephyr', 'runners.yaml'),
+         os.path.join('zephyr', 'edt.pickle')]
     )
     pb._sanitize_files.assert_called_once()
 
@@ -1806,6 +1807,7 @@ def test_projectbuilder_cleanup_device_testing_artifacts_sysbuild(
         [
             os.path.join('zephyr', 'file.bin'),
             os.path.join('zephyr', 'runners.yaml'),
+            os.path.join('zephyr', 'edt.pickle'),
             'domains.yaml',
             os.path.join('main', 'build.ninja'),
             os.path.join('main', 'CMakeCache.txt'),
@@ -1813,12 +1815,14 @@ def test_projectbuilder_cleanup_device_testing_artifacts_sysbuild(
             os.path.join('main', 'Makefile'),
             os.path.join('main', 'zephyr', '.config'),
             os.path.join('main', 'zephyr', 'runners.yaml'),
+            os.path.join('main', 'zephyr', 'edt.pickle'),
             os.path.join('ipc_radio', 'build.ninja'),
             os.path.join('ipc_radio', 'CMakeCache.txt'),
             os.path.join('ipc_radio', 'CMakeFiles', 'rules.ninja'),
             os.path.join('ipc_radio', 'Makefile'),
             os.path.join('ipc_radio', 'zephyr', '.config'),
             os.path.join('ipc_radio', 'zephyr', 'runners.yaml'),
+            os.path.join('ipc_radio', 'zephyr', 'edt.pickle'),
         ]
     )
     pb._sanitize_files.assert_called_once()
