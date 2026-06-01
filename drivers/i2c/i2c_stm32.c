@@ -112,7 +112,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
 		LOG_ERR("failure Enabling I2C clock");
-		return ret;
+		goto out;
 	}
 #endif
 
@@ -121,6 +121,9 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	i2c_stm32_set_smbus_mode(dev, data->mode);
 #endif
 	ret = i2c_stm32_configure_timing(dev, i2c_clock);
+	if (ret < 0) {
+		goto out;
+	}
 
 	if (data->smbalert_active) {
 		LL_I2C_Enable(i2c);
@@ -130,10 +133,11 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
 		LOG_ERR("failure disabling I2C clock");
-		return ret;
+		goto out;
 	}
 #endif
 
+out:
 	k_sem_give(&data->bus_mutex);
 
 	return ret;
