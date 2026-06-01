@@ -130,9 +130,9 @@
 		uart1: uart@fe215040 {
 			compatible = "brcm,bcm2711-aux-uart";
 			reg = <0xfe215040 0x40>;
-			clock-frequency = <DT_FREQ_M(500)>;
 			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clk_vpu>;
 			status = "disabled";
 		};
 
