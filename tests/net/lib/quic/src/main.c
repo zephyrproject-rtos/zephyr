@@ -2065,6 +2065,41 @@ static int wait_for_pollin(struct config *data, struct zsock_pollfd *pfd)
 	return -ECANCELED;
 }
 
+static int quic_test_send_all(int sock, const uint8_t *buf, size_t len)
+{
+	size_t sent = 0;
+
+	while (sent < len) {
+		ssize_t ret = zsock_send(sock, buf + sent, len - sent, 0);
+
+		if (ret > 0) {
+			sent += ret;
+			continue;
+		}
+
+		if (ret == 0) {
+			return -EIO;
+		}
+
+		if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			struct zsock_pollfd out = {
+				.fd = sock,
+				.events = ZSOCK_POLLOUT,
+			};
+
+			if (zsock_poll(&out, 1, POLL_TIMEOUT_MS) < 0) {
+				return -errno;
+			}
+
+			continue;
+		}
+
+		return -errno;
+	}
+
+	return 0;
+}
+
 static void server_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
@@ -2146,6 +2181,8 @@ static void server_thread(void *p1, void *p2, void *p3)
 	pfd.revents = 0;
 
 	while (true) {
+		bool send_failed = false;
+
 		ret = wait_for_pollin(data, &pfd);
 		if (ret == -ECANCELED) {
 			break;
@@ -2169,14 +2206,47 @@ static void server_thread(void *p1, void *p2, void *p3)
 			break;
 		}
 
-		ret = zsock_send(stream, buf, len, 0);
+		ret = quic_test_send_all(stream, buf, len);
 		if (ret < 0) {
-			data->error = -errno;
+			data->error = ret;
 			LOG_DBG("Stream send failed (%d)", data->error);
+			send_failed = true;
 			break;
+		}
+
+		if (send_failed) {
+			break;
+		}
+
+		/* socket poll is edge-triggered; drain any data already queued so
+		 * a short read does not leave tail bytes waiting without a new edge.
+		 */
+		while (true) {
+			len = zsock_recv(stream, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+			if (len == 0) {
+				goto done;
+			}
+
+			if (len < 0) {
+				if (errno != EAGAIN && errno != EWOULDBLOCK) {
+					data->error = -errno;
+					LOG_DBG("Stream recv failed (%d)", data->error);
+					goto done;
+				}
+
+				break;
+			}
+
+			ret = quic_test_send_all(stream, buf, len);
+			if (ret < 0) {
+				data->error = ret;
+				LOG_DBG("Stream send failed (%d)", data->error);
+				goto done;
+			}
 		}
 	}
 
+done:
 }
 
 static void quic_server_and_client_with_stats(const char *server, const char *client,
@@ -2846,11 +2916,11 @@ static void server_uni_thread(void *p1, void *p2, void *p3)
 			break;
 		}
 
-		ret = zsock_send(stream_send_sock, buf, len, 0);
+		ret = quic_test_send_all(stream_send_sock, buf, len);
 		if (ret < 0) {
-			data->error = -errno;
+			data->error = ret;
 			LOG_DBG("Stream send failed (%d)", data->error);
-			break;
+			goto out;
 		}
 
 		k_msleep(10);
