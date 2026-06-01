@@ -705,8 +705,9 @@ function(ExternalZephyrProject_Cmake)
   endforeach()
 
   get_target_property(config_content ${ZCMAKE_APPLICATION} CONFIG)
+  string(REPLACE "$<SEMICOLON>" ";" config_content "${config_content}")
   string(CONFIGURE "${config_content}" config_content)
-  file(WRITE ${dotconfigsysbuild} ${config_content})
+  file(WRITE ${dotconfigsysbuild} "${config_content}")
 
   string(REPLACE "${LIST_SEPARATOR}" "\\;" CMAKE_ARGS "${CMAKE_ARGS}")
   execute_process(
@@ -894,6 +895,7 @@ function(set_config_bool image setting value)
 endfunction()
 
 function(set_config_string image setting value)
+  string(REPLACE ";" "$<SEMICOLON>" value "${value}")
   set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=\"${value}\"\n")
 endfunction()
 
