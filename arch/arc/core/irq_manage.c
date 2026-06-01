@@ -52,7 +52,7 @@ void z_arc_firq_stack_set(void)
 		  CONFIG_ARC_FIRQ_STACK_SIZE;
 #endif
 
-/* the z_arc_firq_stack_set must be called when irq diasbled, as
+/* the z_arc_firq_stack_set must be called when irq disabled, as
  * it can be called not only in the init phase but also other places
  */
 	unsigned int key = arch_irq_lock();

@@ -74,7 +74,7 @@ void z_gdb_entry(struct arch_esf *esf, unsigned int exc_cause)
 
 	z_gdb_main_loop(&ctx);
 
-	/* The registers part of EXTRA_EXCEPTION_INFO are read-only - the excpetion return code
+	/* The registers part of EXTRA_EXCEPTION_INFO are read-only - the exception return code
 	 * does not restore them, thus we don't need to do so here
 	 */
 	esf->basic.r0 = ctx.registers[R0];

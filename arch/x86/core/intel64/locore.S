@@ -228,7 +228,7 @@ enter_code64:
 
 	/* On Intel processors, if GS is not zero and is being set to
 	 * zero, GS_BASE is also being set to zero. This would interfere
-	 * with the actual use of GS_BASE for usespace. To avoid accidentally
+	 * with the actual use of GS_BASE for userspace. To avoid accidentally
 	 * clearing GS_BASE, simply set GS to 0 at boot, so any subsequent
 	 * clearing of GS will not clear GS_BASE.
 	 */

@@ -81,7 +81,7 @@
 #include <zephyr/toolchain.h>
 
 /* Stack needs to aligned on 16-bytes as mentioned on Xtensa ISA.
- * So we pad _xtensa_irq_bsa_t to achieve that. The followings
+ * So we pad _xtensa_irq_bsa_t to achieve that. The following
  * are see how much space is taken depending on features enabled.
  */
 
