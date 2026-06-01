@@ -1,6 +1,7 @@
 # TMP112 temperature sensor configuration options
 
 # Copyright (c) 2016 Firmwave
+# Copyright (c) 2026 HARDWARIO a.s.
 # SPDX-License-Identifier: Apache-2.0
 
 config TMP112
@@ -11,6 +12,10 @@ config TMP112
 	help
 	  Enable the driver for Texas Instruments TMP112 High-Accuracy Digital
 	  Temperature Sensors.
+
+	  When the conversion-rate device-tree property is set to 0, the sensor
+	  stays in shutdown and a one-shot conversion is triggered on each
+	  sample_fetch call.
 
 	  The TMP102 is compatible with the TMP112 but is less accurate and has
 	  been successfully tested with this driver.
@@ -29,6 +34,7 @@ config TMP112_SAMPLING_FREQUENCY_RUNTIME
 	default y
 	help
 	  When set conversion rate can be set at runtime using sensor_attr_set
-	  with SENSOR_ATTR_SAMPLING_FREQUENCY
+	  with SENSOR_ATTR_SAMPLING_FREQUENCY. Setting the rate to 0 Hz at
+	  runtime puts the sensor into shutdown / one-shot mode.
 
 endif # TMP112

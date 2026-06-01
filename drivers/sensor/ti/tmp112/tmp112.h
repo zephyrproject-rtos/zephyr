@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020 Innoseis BV
+ * Copyright (c) 2026 HARDWARIO a.s.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +20,7 @@
 
 #define TMP112_REG_CONFIG   0x01
 #define TMP112_CONFIG_EM    BIT(4)
+#define TMP112_CONFIG_SD    BIT(8)
 
 #define TMP112_ALERT_EN_BIT     BIT(5)
 #define TMP112_CONV_RATE_SHIFT  6
@@ -51,9 +53,14 @@
 /* -55C */
 #define TMP112_TEMP_MIN_EM TMP112_TEMP_MIN
 
+/* One-shot conversion: typical 10 ms (datasheet 7.4.3) */
+#define TMP112_ONE_SHOT_INITIAL_WAIT_MS 5
+#define TMP112_ONE_SHOT_TIMEOUT_MS      50
+
 struct tmp112_data {
 	int16_t sample;
 	uint16_t config_reg;
+	bool one_shot;
 };
 
 struct tmp112_config {
