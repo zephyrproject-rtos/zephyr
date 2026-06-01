@@ -7,7 +7,6 @@ menuconfig WIFI_AIROC
 	depends on DT_HAS_INFINEON_AIROC_WIFI_ENABLED
 	default y
 	select THREAD_CUSTOM_DATA
-	select WIFI_OFFLOAD
 	select NET_L2_ETHERNET
 	select NET_L2_WIFI_MGMT
 	select GPIO
