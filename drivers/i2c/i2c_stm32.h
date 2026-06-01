@@ -80,40 +80,42 @@ struct i2c_stm32_data {
 	uint8_t *xfer_buf;
 	size_t xfer_len;
 	uint8_t xfer_flags;
-#ifdef CONFIG_I2C_STM32_V2_DMA
+  #ifdef CONFIG_I2C_STM32_V2_DMA
 	struct dma_config dma_tx_cfg;
 	struct dma_config dma_rx_cfg;
 	struct dma_block_config dma_blk_cfg;
 	uint8_t *dma_buf;
 	size_t dma_len;
 	bool dma_active;
-#endif /* CONFIG_I2C_STM32_V2_DMA */
-#ifdef CONFIG_I2C_STM32_V1
+  #endif /* CONFIG_I2C_STM32_V2_DMA */
+  #ifdef CONFIG_I2C_STM32_V1
 	size_t msg_len;
 	uint8_t is_restart;
 	uint16_t target_address;
-#else
+  #else
 	uint8_t burst_flags;
 	uint8_t burst_len;
-#endif /* CONFIG_I2C_STM32_V1 */
+  #endif /* CONFIG_I2C_STM32_V1 */
+
 #else /* CONFIG_I2C_RTIO */
-#ifdef CONFIG_I2C_STM32_INTERRUPT
+
+  #ifdef CONFIG_I2C_STM32_INTERRUPT
 	struct k_sem device_sync_sem;
-#endif /* CONFIG_I2C_STM32_INTERRUPT */
+  #endif /* CONFIG_I2C_STM32_INTERRUPT */
 	struct k_sem bus_mutex;
 	uint32_t dev_config;
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
+  #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 	/* Store the current timing structure set by runtime config */
 	struct i2c_config_timing current_timing;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2) */
-#ifdef CONFIG_I2C_STM32_V1
+  #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2) */
+  #ifdef CONFIG_I2C_STM32_V1
 	uint16_t target_address;
-#endif /* CONFIG_I2C_STM32_V1 */
+  #endif /* CONFIG_I2C_STM32_V1 */
 	struct {
-#ifdef CONFIG_I2C_STM32_V1
+  #ifdef CONFIG_I2C_STM32_V1
 		unsigned int is_restart;
 		unsigned int flags;
-#endif /* CONFIG_I2C_STM32_V1 */
+  #endif /* CONFIG_I2C_STM32_V1 */
 		unsigned int is_write;
 		unsigned int is_arlo;
 		unsigned int is_nack;
@@ -124,11 +126,11 @@ struct i2c_stm32_data {
 		uint8_t *buf;
 	} current;
 	bool is_configured;
-#ifdef CONFIG_I2C_STM32_V2_DMA
+  #ifdef CONFIG_I2C_STM32_V2_DMA
 	struct dma_config dma_tx_cfg;
 	struct dma_config dma_rx_cfg;
 	struct dma_block_config dma_blk_cfg;
-#endif /* CONFIG_I2C_STM32_V2_DMA */
+  #endif /* CONFIG_I2C_STM32_V2_DMA */
 #endif /* CONFIG_I2C_RTIO */
 
 	/* SMBus management */
@@ -143,9 +145,9 @@ struct i2c_stm32_data {
 	bool controller_active;
 	bool target_attached;
 	struct i2c_target_config *target_cfg;
-#ifdef CONFIG_I2C_STM32_V2
+  #ifdef CONFIG_I2C_STM32_V2
 	struct i2c_target_config *target2_cfg;
-#endif /* CONFIG_I2C_STM32_V2 */
+  #endif /* CONFIG_I2C_STM32_V2 */
 #endif /* CONFIG_I2C_TARGET */
 };
 
