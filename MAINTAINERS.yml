@@ -3647,6 +3647,7 @@ Logging:
     - nordic-krch
   collaborators:
     - dcpleung
+    - ldab
   files:
     - include/zephyr/logging/
     - include/zephyr/sys/mpsc_pbuf.h
