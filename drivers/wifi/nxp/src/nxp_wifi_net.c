@@ -916,8 +916,10 @@ void net_stop_dhcp_timer(void)
 static void stop_cb(void *ctx)
 {
 	interface_t *if_handle = (interface_t *)net_get_mlan_handle();
-
+#if defined(CONFIG_NET_DHCPV4)
 	net_dhcpv4_stop(if_handle->netif);
+#endif
+
 #ifdef CONFIG_NXP_WIFI_IPV6
 	if (!is_sta_ipv6_connected()) {
 		(void)net_if_dormant_on(if_handle->netif);
@@ -1055,6 +1057,7 @@ int net_configure_address(struct net_ip_config *addr, void *intrfc_handle)
 
 	switch (addr->ipv4.addr_type) {
 	case NET_ADDR_TYPE_STATIC:
+#if defined(CONFIG_NET_IPV4)
 		if (addr->ipv4.address != 0) {
 			NET_IPV4_ADDR_U32(if_handle->ipaddr) = addr->ipv4.address;
 			NET_IPV4_ADDR_U32(if_handle->nmask) = addr->ipv4.netmask;
@@ -1066,6 +1069,7 @@ int net_configure_address(struct net_ip_config *addr, void *intrfc_handle)
 							&if_handle->ipaddr.in_addr,
 							&if_handle->nmask.in_addr);
 		}
+#endif
 		break;
 	case NET_ADDR_TYPE_DHCP:
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
@@ -1122,11 +1126,16 @@ int net_configure_address(struct net_ip_config *addr, void *intrfc_handle)
 int net_get_if_addr(struct net_ip_config *addr, void *intrfc_handle)
 {
 	interface_t *if_handle = (interface_t *)intrfc_handle;
+
+#if defined(CONFIG_NET_IPV4)
 	struct net_if_ipv4 *ipv4 = if_handle->netif->config.ip.ipv4;
 
 	addr->ipv4.address = NET_IPV4_ADDR_U32(ipv4->unicast[0].ipv4.address);
 	addr->ipv4.netmask = ipv4->unicast[0].netmask.s_addr;
 	addr->ipv4.gw = ipv4->gw.s_addr;
+#else
+	ARG_UNUSED(if_handle);
+#endif
 
 #ifdef CONFIG_DNS_RESOLVER
 	struct dns_resolve_context *ctx;
@@ -1309,19 +1318,31 @@ static void net_clear_ipv6_ll_address(void *intrfc_handle)
 
 int net_get_if_ip_addr(uint32_t *ip, void *intrfc_handle)
 {
+#if defined(CONFIG_NET_IPV4)
 	interface_t *if_handle = (interface_t *)intrfc_handle;
 	struct net_if_ipv4 *ipv4 = if_handle->netif->config.ip.ipv4;
 
 	*ip = NET_IPV4_ADDR_U32(ipv4->unicast[0].ipv4.address);
+#else
+	ARG_UNUSED(intrfc_handle);
+	*ip = 0U;
+#endif
+
 	return WM_SUCCESS;
 }
 
 int net_get_if_ip_mask(uint32_t *nm, void *intrfc_handle)
 {
+#if defined(CONFIG_NET_IPV4)
 	interface_t *if_handle = (interface_t *)intrfc_handle;
 	struct net_if_ipv4 *ipv4 = if_handle->netif->config.ip.ipv4;
 
 	*nm = ipv4->unicast[0].netmask.s_addr;
+#else
+	ARG_UNUSED(intrfc_handle);
+	*nm = 0U;
+#endif
+
 	return WM_SUCCESS;
 }
 
