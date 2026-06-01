@@ -237,6 +237,16 @@ config LLEXT_VENEERS
 	  Disable only if all external symbol calls are known to be in range
 	  or if -mlong-calls is used.
 
+config LLEXT_MAX_INIT_FINI_FUNCTION_TABLE_ENTRIES
+	int "Maximum number of entries in init / fini function pointer table"
+	default 8
+	help
+	  A function pointer table is used to hold preinitialization /
+	  initialization function pointers during bringup and finalization
+	  function pointers during teardown. This option sets the maximum number
+	  of entries in that table. If the number of function pointers for
+	  bringup or teardown exceeds this value, bringup or teardown will fail.
+
 config LLEXT_EXPERIMENTAL
 	bool "LLEXT experimental functionality"
 	help
