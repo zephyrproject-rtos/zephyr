@@ -702,7 +702,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			 * confused when the "wrong" thread tries to
 			 * release the lock.
 			 */
-			z_spin_lock_set_owner(&_sched_spinlock);
+			z_spin_lock_transfer_owner(&_sched_spinlock);
 #endif /* CONFIG_SPIN_VALIDATE */
 
 			/* A queued (runnable) old/current thread
@@ -871,6 +871,17 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		if (dummify && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 #ifdef CONFIG_USE_SWITCH
 			_current->switch_handle = (void *)1;
+#endif
+#ifdef CONFIG_SPIN_VALIDATE
+			/* On arches where exceptions run as ISRs (e.g. Xtensa),
+			 * the dying thread's lock tracking is never cleared via the
+			 * normal abort path.  Reset it here before _thread_dummy
+			 * takes over.  Sentinel-gated so genuine bugs still assert.
+			 */
+			if (thread->base.swap_data ==
+			    (void *)&z_spinlock_abort_sentinel) {
+				z_spin_validate_reset(true);
+			}
 #endif
 			z_dummy_thread_init(&_thread_dummy);
 
