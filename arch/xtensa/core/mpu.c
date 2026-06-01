@@ -73,7 +73,7 @@ static struct k_spinlock xtensa_mpu_lock;
  *   XCHAL_MPU_ALIGN_BITS provided by the toolchain indicates
  *   that only bits of and left of this value are valid. This
  *   corresponds to the minimum segment size (MINSEGMENTSIZE)
- *   definied in the processor configuration.
+ *   defined in the processor configuration.
  */
 
 #ifndef CONFIG_XTENSA_MPU_ONLY_SOC_RANGES
@@ -515,7 +515,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 	/*
 	 * Need to keep track of the attributes of the memory region before
 	 * we start adding entries, as we will need to apply the same
-	 * attributes to the "ending address" entry to preseve the attributes
+	 * attributes to the "ending address" entry to preserve the attributes
 	 * of existing map.
 	 */
 	prev_entry = *entry_slot_e;

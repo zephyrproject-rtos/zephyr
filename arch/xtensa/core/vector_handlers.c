@@ -126,7 +126,7 @@ bool xtensa_is_frame_pointer_valid(_xtensa_irq_stack_frame_raw_t *frame)
 	}
 
 #ifdef CONFIG_USERSPACE
-	/* With usespace, we have privileged stack and normal thread stack within
+	/* With userspace, we have privileged stack and normal thread stack within
 	 * one stack object. So we need to further test whether the frame pointer
 	 * resides in the correct stack based on kernel/user mode.
 	 */

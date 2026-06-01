@@ -193,7 +193,7 @@ _exc_return_from_exc:
 	MOVR sp, ilink
 	rtie
 
-/* separated entry for trap which may be used by irq_offload, USERPSACE */
+/* separated entry for trap which may be used by irq_offload, USERSPACE */
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	/* get the id of trap_s */
 	LRR ilink, [_ARC_V2_ECR]
