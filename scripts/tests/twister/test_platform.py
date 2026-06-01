@@ -396,7 +396,7 @@ board:
             'type': 'native',
         },
         'p1e1/s1/v1': {
-            'aliases': ['p1e1/s1/v1'],
+            'aliases': ['p1e1/s1/v1', 'p1e1//v1'],
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base)
@@ -406,7 +406,7 @@ board:
             'type': 'native',
         },
         'p1e1/s1/v2': {
-            'aliases': ['p1e1/s1/v2'],
+            'aliases': ['p1e1/s1/v2', 'p1e1//v2'],
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base)
@@ -414,7 +414,7 @@ board:
             'type': 'native',
         },
         'p1e2/s1/v1': {
-            'aliases': ['p1e2/s1/v1'],
+            'aliases': ['p1e2/s1/v1', 'p1e2//v1'],
             # m0/boards/zephyr/p1/board.yml
             'vendor': 'zephyr',
             # m0/boards/zephyr/p1/twister.yaml (base)
@@ -431,13 +431,13 @@ board:
             'type': 'sim',
         },
         'p2/s1/v1': {
-            'aliases': ['p2/s1/v1'],
+            'aliases': ['p2/s1/v1', 'p2//v1'],
             # m0/boards/zephyr/p2/board.yml
             'vendor': 'zephyr',
             # m1/boards/zephyr/p2/p2_s1_v1.yaml
         },
         'p3@A/s2/c1': {
-            'aliases': ['p3@A/s2/c1', 'p3/s2/c1'],
+            'aliases': ['p3@A/s2/c1', 'p3/s2/c1', 'p3@A//c1', 'p3//c1'],
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
             # m0/boards/arm/p3/twister.yaml (base + variant)
@@ -447,7 +447,7 @@ board:
             'type': 'unit',
         },
         'p3@B/s2/c1': {
-            'aliases': ['p3@B/s2/c1'],
+            'aliases': ['p3@B/s2/c1', 'p3@B//c1'],
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
             # m0/boards/arm/p3/twister.yaml (base + variant)
@@ -457,7 +457,7 @@ board:
             'type': 'unit',
         },
         'p3@A/s2/c2': {
-            'aliases': ['p3@A/s2/c2', 'p3/s2/c2'],
+            'aliases': ['p3@A/s2/c2', 'p3/s2/c2', 'p3@A//c2', 'p3//c2'],
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
             # m0/boards/arm/p3/twister.yaml (base)
@@ -467,7 +467,7 @@ board:
             'type': 'unit',
         },
         'p3@B/s2/c2': {
-            'aliases': ['p3@B/s2/c2'],
+            'aliases': ['p3@B/s2/c2', 'p3@B//c2'],
             # m0/boards/arm/p3/board.yml
             'vendor': 'arm',
             # m0/boards/arm/p3/twister.yaml (base)

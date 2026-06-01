@@ -241,12 +241,21 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
                             if rev.name == board.revision_default:
                                 alias2target[f"{board.name}"] = target
                             alias2target[f"{board.name}@{rev.name}"] = target
+                        elif '/' in qual and len(board.socs) == 1:
+                            cluster = qual.partition('/')[2]
+                            alias2target[f"{board.name}@{rev.name}//{cluster}"] = target
+                            if rev.name == board.revision_default:
+                                alias2target[f"{board.name}//{cluster}"] = target
                     else:
                         target = f"{board.name}/{qual}"
                         alias2target[target] = target
                         if '/' not in qual and len(board.socs) == 1 \
                                 and rev.name == board.revision_default:
                             alias2target[f"{board.name}"] = target
+                        elif '/' in qual and len(board.socs) == 1 \
+                                and rev.name == board.revision_default:
+                            cluster = qual.partition('/')[2]
+                            alias2target[f"{board.name}//{cluster}"] = target
 
                     target2board[target] = board
             else:
@@ -254,6 +263,9 @@ def generate_platforms(board_roots, soc_roots, arch_roots):
                 alias2target[target] = target
                 if '/' not in qual and len(board.socs) == 1:
                     alias2target[board.name] = target
+                elif '/' in qual and len(board.socs) == 1:
+                    cluster = qual.partition('/')[2]
+                    alias2target[f"{board.name}//{cluster}"] = target
                 target2board[target] = board
 
     for board_dir, data in dir2data.items():
