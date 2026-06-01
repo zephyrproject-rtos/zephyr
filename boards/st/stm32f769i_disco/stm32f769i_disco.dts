@@ -327,3 +327,7 @@ zephyr_udc0: &usbotg_hs {
 zephyr_mipi_dsi: &mipi_dsi {};
 
 zephyr_lcd_controller: &ltdc {};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
+};
