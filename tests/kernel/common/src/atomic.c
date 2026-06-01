@@ -249,6 +249,24 @@ ZTEST_USER(atomic, test_atomic)
 		zassert_true(target == (orig | BIT(i)), "atomic_test_and_set_bit");
 	}
 
+	for (i = 0; i < ATOMIC_BITS; i++) {
+		orig = ATOMIC_WORD(0x0F0F0F0F0F0F0F0F, 0x0F0F0F0F);
+		target = orig;
+		zassert_true(atomic_test_and_set_bit_to(&target, i, false) ==
+				     (IS_BIT_SET(orig, i) != IS_BIT_SET(target, i)),
+			     "atomic_test_and_set_bit_to");
+		zassert_true(target == (orig & ~BIT(i)), "atomic_test_and_set_bit_to");
+	}
+
+	for (i = 0; i < ATOMIC_BITS; i++) {
+		orig = ATOMIC_WORD(0x0F0F0F0F0F0F0F0F, 0x0F0F0F0F);
+		target = orig;
+		zassert_true(atomic_test_and_set_bit_to(&target, i, true) ==
+				     (IS_BIT_SET(orig, i) != IS_BIT_SET(target, i)),
+			     "atomic_test_and_set_bit_to");
+		zassert_true(target == (orig | BIT(i)), "atomic_test_and_set_bit_to");
+	}
+
 	/* atomic_clear_bit() */
 	for (i = 0; i < ATOMIC_BITS; i++) {
 		orig = ATOMIC_WORD(0x0F0F0F0F0F0F0F0F, 0x0F0F0F0F);
