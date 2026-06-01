@@ -49,6 +49,21 @@ DEVICE_DT_GET(DT_PHANDLE(NRF7002_NODE, iovdd_regulator));
 static const struct gpio_dt_spec bucken_spec =
 GPIO_DT_SPEC_GET(NRF7002_NODE, bucken_gpios);
 
+#if DT_NODE_HAS_PROP(NRF7002_NODE, supply_gpios)
+#define NRF70_SUPPLY_GPIO 1
+static const struct gpio_dt_spec supply_spec = GPIO_DT_SPEC_GET(NRF7002_NODE, supply_gpios);
+#endif
+
+#if DT_NODE_HAS_PROP(NRF7002_NODE, vin_supply)
+#define NRF70_VIN_SUPPLY 1
+#include <zephyr/drivers/regulator.h>
+static const struct device *vin_supply = DEVICE_DT_GET(DT_PHANDLE(NRF7002_NODE, vin_supply));
+#endif
+
+#if defined(NRF70_VIN_SUPPLY) || defined(NRF70_SUPPLY_GPIO)
+#define NRF70_HAS_SUPPLY 1
+#endif
+
 char blk_name[][15] = { "SysBus",   "ExtSysBus",	   "PBus",	   "PKTRAM",
 			       "GRAM",	   "LMAC_ROM",	   "LMAC_RET_RAM", "LMAC_SRC_RAM",
 			       "UMAC_ROM", "UMAC_RET_RAM", "UMAC_SRC_RAM" };
@@ -212,6 +227,22 @@ static int rpu_gpio_config_early(void)
 		return -ENODEV;
 	}
 
+#ifdef NRF70_SUPPLY_GPIO
+	if (!device_is_ready(supply_spec.port)) {
+		LOG_ERR("supply GPIO %s is not ready", supply_spec.port->name);
+		return -ENODEV;
+	}
+
+	/* Configure supply as output in inactive state to prevent a floating
+	 * pin from accidentally powering the module.
+	 */
+	ret = gpio_pin_configure_dt(&supply_spec, GPIO_OUTPUT_INACTIVE);
+	if (ret) {
+		LOG_ERR("supply GPIO configuration failed...");
+		return ret;
+	}
+#endif
+
 	/* Configure BUCKEN as output in inactive (low) state to prevent
 	 * floating pin from accidentally powering the module.
 	 */
@@ -291,6 +322,19 @@ static int rpu_gpio_config(void)
 		return -ENODEV;
 	}
 
+#ifdef NRF70_SUPPLY_GPIO
+	if (!device_is_ready(supply_spec.port)) {
+		LOG_ERR("supply GPIO %s is not ready", supply_spec.port->name);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&supply_spec, GPIO_OUTPUT_INACTIVE);
+	if (ret) {
+		LOG_ERR("supply GPIO configuration failed...");
+		return ret;
+	}
+#endif
+
 	ret = gpio_pin_configure_dt(&bucken_spec, (GPIO_OUTPUT | NRF_GPIO_DRIVE_H0H1));
 	if (ret) {
 		LOG_ERR("BUCKEN GPIO configuration failed...");
@@ -329,17 +373,83 @@ static int rpu_gpio_remove(void)
 	}
 #endif
 
+#ifdef NRF70_SUPPLY_GPIO
+	ret = gpio_pin_configure_dt(&supply_spec, GPIO_DISCONNECTED);
+	if (ret) {
+		LOG_ERR("supply GPIO remove failed...");
+		return ret;
+	}
+#endif
+
 	LOG_DBG("GPIO remove done...\n");
 	return ret;
 }
+
+#ifdef NRF70_HAS_SUPPLY
+/* Enable the nRF70 device supply (VBAT). Per the power.yaml contract, when both
+ * a regulator (vin-supply) and a switch (supply-gpios) are present, the
+ * regulator is requested before the supply GPIO is driven active. A delay
+ * follows to satisfy the >= 6 ms supply-to-BUCKEN sequencing requirement.
+ */
+static int rpu_supply_on(void)
+{
+	int ret = 0;
+
+#ifdef NRF70_VIN_SUPPLY
+	ret = regulator_enable(vin_supply);
+	if (ret) {
+		LOG_ERR("vin-supply enable failed...");
+		return ret;
+	}
+#endif
+
+#ifdef NRF70_SUPPLY_GPIO
+	ret = gpio_pin_set_dt(&supply_spec, 1);
+	if (ret) {
+		LOG_ERR("supply GPIO set failed...");
+#ifdef NRF70_VIN_SUPPLY
+		regulator_disable(vin_supply);
+#endif
+		return ret;
+	}
+#endif
+
+	k_msleep(DT_PROP(NRF7002_NODE, supply_power_up_delay_ms));
+
+	return ret;
+}
+
+/* Disable the nRF70 device supply in reverse order: the supply GPIO is driven
+ * inactive before the regulator is released.
+ */
+static void rpu_supply_off(void)
+{
+#ifdef NRF70_SUPPLY_GPIO
+	gpio_pin_set_dt(&supply_spec, 0);
+#endif
+#ifdef NRF70_VIN_SUPPLY
+	regulator_disable(vin_supply);
+#endif
+}
+#endif /* NRF70_HAS_SUPPLY */
 
 static int rpu_pwron(void)
 {
 	int ret;
 
+#ifdef NRF70_HAS_SUPPLY
+	ret = rpu_supply_on();
+	if (ret) {
+		return ret;
+	}
+#endif
+
 	ret = gpio_pin_set_dt(&bucken_spec, 1);
 	if (ret) {
 		LOG_ERR("BUCKEN GPIO set failed...");
+#ifdef NRF70_HAS_SUPPLY
+		rpu_supply_off();
+#endif
 		return ret;
 	}
 	/* Settling time is 50us (H0) or 100us (L0) */
@@ -353,6 +463,9 @@ static int rpu_pwron(void)
 	if (ret) {
 		LOG_ERR("IOVDD enable failed...");
 		gpio_pin_set_dt(&bucken_spec, 0);
+#ifdef NRF70_HAS_SUPPLY
+		rpu_supply_off();
+#endif
 		return ret;
 	}
 	/* Settling time for IOVDD */
@@ -397,6 +510,10 @@ static int rpu_pwroff(void)
 		LOG_ERR("BUCKEN GPIO set failed...");
 		return ret;
 	}
+
+#ifdef NRF70_HAS_SUPPLY
+	rpu_supply_off();
+#endif
 
 	return ret;
 }
