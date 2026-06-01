@@ -9,7 +9,15 @@
 
 #define TIMEOUT_MS 500
 
+#if (CONFIG_MAIN_STACK_SIZE >= 4096) && \
+	(defined(CONFIG_USERSPACE) && (CONFIG_PRIVILEGED_STACK_SIZE >= 4096))
+/* If both stack sizes are large enough, we will need a bigger memory pool
+ * to allocate from.
+ */
+#define POOL_SIZE 30720
+#else
 #define POOL_SIZE 28672
+#endif
 
 #ifdef CONFIG_USERSPACE
 #define STACK_OBJ_SIZE K_THREAD_STACK_LEN(CONFIG_DYNAMIC_THREAD_STACK_SIZE)
