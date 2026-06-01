@@ -3,6 +3,10 @@ common:
     - stamp_c3
     - wio_terminal
     - xiao_esp32c3
+    - lp_em_cc2340r5
+    - lp_em_cc2340r53
+    - lp_em_cc2340r53_wcsp
+    - lp_em_cc2340r5moda
   tags:
     - drivers
     - uart
