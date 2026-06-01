@@ -4661,6 +4661,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 
 	memset(&stream->tx_buf, 0, sizeof(stream->tx_buf));
 	stream->tx_buf.base_offset = 0;
+	stream->sock = -1;
 
 	/* Initialize flow control with default values.
 	 * This should be updated when peer transport parameters are received.
@@ -5514,25 +5515,31 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 			k_fifo_put(&listen_ctx->incoming.stream_q, st);
 		} while (true);
 
-		/* Set the stream's socket as it was assigned to wrong context before */
-		zvfs_free_fd(stream->sock);
-		(void)sock_obj_core_dealloc(stream->sock);
+		/* Reparent only already-instantiated stream sockets.
+		 * Peer-created streams normally get their fd later in accept().
+		 */
+		if (stream->sock >= 0) {
+			zvfs_free_fd(stream->sock);
+			(void)sock_obj_core_dealloc(stream->sock);
 
-		stream->sock = zvfs_reserve_fd();
-		if (stream->sock < 0) {
-			NET_ERR("[EP:%p/%d] Failed to reserve fd for stream %p/%d: %d",
-				child_ep, quic_get_by_ep(child_ep),
-				stream, quic_get_by_stream(stream), stream->sock);
-			quic_stream_unref(stream);
-			break;
+			stream->sock = zvfs_reserve_fd();
+			if (stream->sock < 0) {
+				NET_ERR("[EP:%p/%d] Failed to reserve fd for stream %p/%d: %d",
+					child_ep, quic_get_by_ep(child_ep),
+					stream, quic_get_by_stream(stream),
+					stream->sock);
+				quic_stream_unref(stream);
+				break;
+			}
+
+			zvfs_finalize_typed_fd(stream->sock, stream,
+					       (const struct fd_op_vtable *)
+					       &quic_stream_fd_op_vtable,
+					       ZVFS_MODE_IFSOCK);
+
+			(void)sock_obj_core_alloc_find(child_ctx->sock, stream->sock,
+						       NET_SOCK_STREAM);
 		}
-
-		zvfs_finalize_typed_fd(stream->sock, stream,
-				       (const struct fd_op_vtable *)&quic_stream_fd_op_vtable,
-				       ZVFS_MODE_IFSOCK);
-
-		(void)sock_obj_core_alloc_find(child_ctx->sock, stream->sock,
-					       NET_SOCK_STREAM);
 
 		/* Queue for accept() call */
 		k_fifo_put(&child_ctx->incoming.stream_q, stream);

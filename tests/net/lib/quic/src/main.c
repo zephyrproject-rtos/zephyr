@@ -1943,6 +1943,7 @@ struct config {
 	int sock;             /* Server listening socket */
 	int connected_sock;   /* Server accepted connection socket */
 	int stream_recv_sock; /* Server accepted stream socket for receiving data */
+	int accept_delay_ms;  /* Delay before accepting a queued connection */
 	struct k_sem sem;
 	int error;
 	int counter;
@@ -2012,6 +2013,10 @@ static void server_thread(void *p1, void *p2, void *p3)
 		data->error = ret;
 		LOG_DBG("Poll error while waiting for client connection");
 		return;
+	}
+
+	if (data->accept_delay_ms > 0) {
+		k_msleep(data->accept_delay_ms);
 	}
 
 	connected_sock = zsock_accept(server_sock,
@@ -2095,6 +2100,7 @@ static void quic_server_and_client_with_stats(const char *server, const char *cl
 					      char *tx_buf, size_t tx_buf_len,
 					      char *rx_buf, size_t rx_buf_len,
 					      size_t batch_size,
+					      int accept_delay_ms,
 					      struct net_stats_quic *client_stats,
 					      struct net_stats_quic *server_stats)
 {
@@ -2159,6 +2165,7 @@ static void quic_server_and_client_with_stats(const char *server, const char *cl
 	data.error = 0;
 	data.connected_sock = -1;
 	data.stream_recv_sock = -1;
+	data.accept_delay_ms = accept_delay_ms;
 	data.test_done = false;
 
 	/* Start listening on the server socket in a separate thread */
@@ -2337,6 +2344,7 @@ static void quic_server_and_client(const char *server, const char *client,
 {
 	quic_server_and_client_with_stats(server, client, tx_buf, tx_buf_len,
 					  rx_buf, rx_buf_len, batch_size,
+					  0,
 					  NULL, NULL);
 }
 
@@ -2382,6 +2390,26 @@ ZTEST(net_socket_quic, test_310_quic_ipv4_server_and_client)
 	quic_server_and_client(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
 			       tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf),
 			       sizeof(tx_buf));
+}
+
+ZTEST(net_socket_quic, test_315_quic_ipv4_stream_before_accept)
+{
+	static uint8_t tx_buf[] = { 0x5a };
+	static uint8_t rx_buf[sizeof(tx_buf)];
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set loopback packet drop ratio (%d)", ret);
+
+	/* Regression: a peer-created stream may arrive before the server
+	 * application accepts the connection socket.
+	 */
+	quic_server_and_client_with_stats(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
+					  tx_buf, sizeof(tx_buf),
+					  rx_buf, sizeof(rx_buf),
+					  sizeof(tx_buf),
+					  200,
+					  NULL, NULL);
 }
 
 /* IPv4 UDP packet with QUIC Initial header (too short payload)
@@ -2830,6 +2858,7 @@ static void quic_server_and_client_uni(const char *server, const char *client,
 	data.error = 0;
 	data.stream_recv_sock = -1;
 	data.connected_sock = -1;
+	data.accept_delay_ms = 0;
 	data.test_done = false;
 
 	/* Start listening on the server socket in a separate thread */
@@ -3041,6 +3070,7 @@ static void quic_stream_type_roundtrip_uni(const char *server, const char *clien
 	data.error = 0;
 	data.stream_recv_sock = -1;
 	data.connected_sock = -1;
+	data.accept_delay_ms = 0;
 	data.test_done = false;
 
 	tid = k_thread_create(&server_thread_data, server_thread_stack,
@@ -3398,6 +3428,7 @@ static void quic_server_and_client_with_client_cert(const char *server,
 	cert_data.error = 0;
 	cert_data.connected_sock = -1;
 	cert_data.stream_recv_sock = -1;
+	cert_data.accept_delay_ms = 0;
 	cert_data.test_done = false;
 
 	/* Start server thread */
@@ -3574,6 +3605,7 @@ static void quic_server_and_client_with_server_cert(const char *server,
 	server_auth_data.error = 0;
 	server_auth_data.connected_sock = -1;
 	server_auth_data.stream_recv_sock = -1;
+	server_auth_data.accept_delay_ms = 0;
 	server_auth_data.test_done = false;
 
 	tid = k_thread_create(&server_auth_thread_data, server_auth_thread_stack,
@@ -3828,6 +3860,7 @@ ZTEST(net_socket_quic, test_470_connection_statistics_track_traffic)
 					  tx_buf, sizeof(tx_buf),
 					  rx_buf, sizeof(rx_buf),
 					  sizeof(tx_buf),
+					  0,
 					  &client_stats, &server_stats);
 	copy_quic_global_stats(&stats_after);
 #if defined(CONFIG_QUIC_STATS_HISTORY)
