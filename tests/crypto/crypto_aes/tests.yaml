@@ -25,4 +25,5 @@ tests:
       - cyw920829m2evk_02/cyw20829b0lkml
       - rtl87x2g_evb_a/rtl8762gku
       - rtl8752h_evb/rtl8752hjl
+      - opentitan_earlgrey
     tags: crypto
