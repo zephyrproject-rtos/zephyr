@@ -362,6 +362,23 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 				       size_t target_datagram_len,
 				       bool dont_fragment,
 				       bool dplpmtud_probe);
+static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
+					  enum quic_secret_level level,
+					  size_t payload_len,
+					  size_t target_datagram_len,
+					  bool dont_fragment,
+					  bool dplpmtud_probe,
+					  uint64_t *sent_pn_out);
+static int quic_send_packet_sg(struct quic_endpoint *ep,
+			       enum quic_secret_level level,
+			       const uint8_t *hdr, size_t hdr_len,
+			       const uint8_t *data, size_t data_len,
+			       uint64_t *sent_pn_out);
+static int quic_send_packet_with_pn(struct quic_endpoint *ep,
+				    enum quic_secret_level level,
+				    const uint8_t *payload,
+				    size_t payload_len,
+				    uint64_t *sent_pn_out);
 static int quic_send_packet(struct quic_endpoint *ep,
 			    enum quic_secret_level level,
 			    const uint8_t *payload,
@@ -3651,7 +3668,8 @@ static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
 static int quic_send_packet_sg(struct quic_endpoint *ep,
 			       enum quic_secret_level level,
 			       const uint8_t *hdr, size_t hdr_len,
-			       const uint8_t *data, size_t data_len)
+			       const uint8_t *data, size_t data_len,
+			       uint64_t *sent_pn_out)
 {
 	size_t plaintext_len = hdr_len + data_len;
 	int ret;
@@ -3667,7 +3685,8 @@ static int quic_send_packet_sg(struct quic_endpoint *ep,
 		memcpy(ep->crypto.tx_buffer + hdr_len, data, data_len);
 	}
 
-	ret = quic_send_packet_from_txbuf(ep, level, plaintext_len, 0U, false, false);
+	ret = quic_send_packet_from_txbuf_ex(ep, level, plaintext_len, 0U, false, false,
+					     sent_pn_out);
 
 	k_mutex_unlock(&ep->send_lock);
 
@@ -3760,16 +3779,16 @@ static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep)
 	}
 }
 
-static void quic_annotate_last_sent_stream(struct quic_endpoint *ep,
-					   enum quic_secret_level level,
-					   uint64_t stream_id,
-					   uint64_t stream_offset,
-					   uint16_t stream_data_len,
-					   bool stream_fin)
+static void quic_annotate_sent_stream(struct quic_endpoint *ep,
+				      enum quic_secret_level level,
+				      uint64_t pkt_num,
+				      uint64_t stream_id,
+				      uint64_t stream_offset,
+				      uint16_t stream_data_len,
+				      bool stream_fin)
 {
 	int pn_space = level_to_pn_space(level);
-	uint16_t last_idx;
-	struct quic_sent_pkt_info *info;
+	bool found = false;
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
@@ -3778,18 +3797,28 @@ static void quic_annotate_last_sent_stream(struct quic_endpoint *ep,
 		return;
 	}
 
-	last_idx = (ep->recovery.sent_pkts_idx[pn_space] +
-		    CONFIG_QUIC_SENT_PKT_HISTORY_SIZE - 1) %
-		CONFIG_QUIC_SENT_PKT_HISTORY_SIZE;
-	info = &ep->recovery.sent_pkts[pn_space][last_idx];
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[pn_space][i];
 
-	info->has_stream_frame  = true;
-	info->stream_id         = stream_id;
-	info->stream_offset     = stream_offset;
-	info->stream_data_len   = stream_data_len;
-	info->stream_fin        = stream_fin;
+		if (info->pkt_num != pkt_num) {
+			continue;
+		}
+
+		info->has_stream_frame = true;
+		info->stream_id = stream_id;
+		info->stream_offset = stream_offset;
+		info->stream_data_len = stream_data_len;
+		info->stream_fin = stream_fin;
+		found = true;
+		break;
+	}
 
 	k_mutex_unlock(&ep->recovery.lock);
+
+	if (!found) {
+		NET_DBG("[EP:%p/%d] Cannot annotate stream frame for pn=%" PRIu64,
+			ep, quic_get_by_ep(ep), pkt_num);
+	}
 }
 
 static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
@@ -3802,6 +3831,7 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	struct quic_stream *stream;
 	uint8_t frame_type;
 	size_t buf_off;
+	uint64_t sent_pn;
 	int ret;
 
 	stream = quic_find_stream_by_id(ep, lost->stream_id);
@@ -3850,11 +3880,13 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	/* Send: header from stack, payload directly from tx_buf */
 	ret = quic_send_packet_sg(ep, QUIC_SECRET_LEVEL_APPLICATION,
 				  hdr, hdr_len,
-				  &tx->data[buf_off], lost->stream_data_len);
+				  &tx->data[buf_off], lost->stream_data_len,
+				  &sent_pn);
 	if (ret == 0) {
-		quic_annotate_last_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
-					       lost->stream_id, lost->stream_offset,
-					       lost->stream_data_len, lost->stream_fin);
+		quic_annotate_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					  sent_pn, lost->stream_id,
+					  lost->stream_offset, lost->stream_data_len,
+					  lost->stream_fin);
 	}
 }
 
