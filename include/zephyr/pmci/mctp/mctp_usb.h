@@ -49,7 +49,7 @@ struct mctp_binding_usb {
 };
 
 struct mctp_usb_class_inst {
-	uint8_t sublcass;
+	uint8_t subclass;
 	uint8_t mctp_protocol;
 	struct mctp_binding_usb *mctp_binding;
 };
@@ -85,7 +85,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 	};											\
 												\
 	const STRUCT_SECTION_ITERABLE(mctp_usb_class_inst, mctp_usb_class_inst_##_name) = {	\
-		.sublcass = _subclass,								\
+		.subclass = _subclass,								\
 		.mctp_protocol = _protocol,							\
 		.mctp_binding = &_name,								\
 	};
