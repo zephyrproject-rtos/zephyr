@@ -75,6 +75,7 @@ static const whd_event_num_t ap_link_events[] = {WLC_E_DISASSOC_IND, WLC_E_DEAUT
 static uint16_t sta_event_handler_index = 0xFF;
 static void airoc_event_task(void);
 static struct airoc_wifi_data airoc_wifi_data = {0};
+static struct k_work_delayable airoc_ifup_work;
 
 #if defined(SPI_DATA_IRQ_SHARED)
 PINCTRL_DT_INST_DEFINE(0);
@@ -124,6 +125,17 @@ struct airoc_wifi_event_t {
 whd_interface_t airoc_wifi_get_whd_interface(void)
 {
 	return airoc_if;
+}
+
+static void airoc_ifup_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (airoc_wifi_iface == NULL) {
+		return;
+	}
+
+	(void)net_if_up(airoc_wifi_iface);
 }
 
 static void airoc_wifi_scan_cb_search(whd_scan_result_t **result_ptr, void *user_data,
@@ -580,9 +592,10 @@ static int airoc_mgmt_scan(const struct device *dev, struct wifi_scan_params *pa
 
 	data->scan_rslt_cb = cb;
 
-	/* Connect to the network */
-	if (whd_wifi_scan(airoc_sta_if, scan_type, WHD_BSS_TYPE_ANY, &(data->ssid), NULL, NULL,
-			  NULL, scan_callback, &(data->scan_result), data) != WHD_SUCCESS) {
+	whd_ssid_t *scan_ssid = data->ssid.length > 0U ? &(data->ssid) : NULL;
+
+	if (whd_wifi_scan(airoc_sta_if, scan_type, WHD_BSS_TYPE_ANY, scan_ssid, NULL, NULL, NULL,
+			  scan_callback, &(data->scan_result), data) != WHD_SUCCESS) {
 		LOG_ERR("Failed to start scan");
 		k_sem_give(&data->sema_common);
 		return -EAGAIN;
@@ -595,6 +608,59 @@ static int airoc_mgmt_scan(const struct device *dev, struct wifi_scan_params *pa
 static bool is_invalid_security(int security, uint8_t psk_length)
 {
 	return ((security == WIFI_SECURITY_TYPE_NONE) && (psk_length > 0));
+}
+
+static int airoc_join_with_fallbacks(const whd_ssid_t *ssid, whd_security_t security,
+				     const uint8_t *psk,
+				     uint8_t psk_length, bool allow_fallbacks)
+{
+	static const whd_security_t fallback_security_list[] = {
+		WHD_SECURITY_WPA3_WPA2_PSK,
+		WHD_SECURITY_WPA2_AES_PSK,
+		WHD_SECURITY_WPA2_WPA_AES_PSK,
+		WHD_SECURITY_WPA2_WPA_MIXED_PSK,
+		WHD_SECURITY_WPA_AES_PSK,
+	};
+	whd_security_t tried_security[ARRAY_SIZE(fallback_security_list) + 1];
+	size_t tried_count = 0U;
+	whd_result_t result;
+
+	if (!(allow_fallbacks && security == WHD_SECURITY_OPEN)) {
+		result = whd_wifi_join(airoc_sta_if, ssid, security, psk, psk_length);
+		if (result == WHD_SUCCESS) {
+			return 0;
+		}
+
+		if (!allow_fallbacks) {
+			return -EAGAIN;
+		}
+
+		tried_security[tried_count++] = security;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(fallback_security_list); ++i) {
+		bool already_tried = false;
+		whd_security_t candidate = fallback_security_list[i];
+
+		for (size_t j = 0; j < tried_count; ++j) {
+			if (tried_security[j] == candidate) {
+				already_tried = true;
+				break;
+			}
+		}
+
+		if (already_tried) {
+			continue;
+		}
+
+		result = whd_wifi_join(airoc_sta_if, ssid, candidate, psk, psk_length);
+		if (result == WHD_SUCCESS) {
+			return 0;
+		}
+		tried_security[tried_count++] = candidate;
+	}
+
+	return -EAGAIN;
 }
 
 static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_params *params)
@@ -642,11 +708,11 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 			ret = -EAGAIN;
 			goto error;
 		}
-	} else {
-		/* Fallback to user input */
-		if (tmp_result.security == WHD_SECURITY_UNKNOWN) {
-			usr_result.security = tmp_result.security;
-		}
+	}
+
+	/* Use scanned security when it is available. */
+	if (tmp_result.security != WHD_SECURITY_UNKNOWN) {
+		usr_result.security = tmp_result.security;
 	}
 
 	if (usr_result.security == WHD_SECURITY_UNKNOWN) {
@@ -655,9 +721,11 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 		goto error;
 	}
 
-	/* Connect to the network */
-	if (whd_wifi_join(airoc_sta_if, &usr_result.SSID, usr_result.security, params->psk,
-			  params->psk_length) != WHD_SUCCESS) {
+	/* Connect to the network. Some APs report ambiguous scan security; try a bounded
+	 * set of common personal-security variants when a passphrase is present.
+	 */
+	if (airoc_join_with_fallbacks(&usr_result.SSID, usr_result.security, params->psk,
+				      params->psk_length, params->psk_length > 0U) != 0) {
 		LOG_ERR("Failed to connect with network");
 
 		ret = -EAGAIN;
@@ -1004,6 +1072,9 @@ static int airoc_init(const struct device *dev)
 		LOG_ERR("k_sem_init(sema_scan) failure");
 		return ret;
 	}
+
+	k_work_init_delayable(&airoc_ifup_work, airoc_ifup_work_handler);
+	k_work_schedule(&airoc_ifup_work, K_MSEC(100));
 
 	return 0;
 }

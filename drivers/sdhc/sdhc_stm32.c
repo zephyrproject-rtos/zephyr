@@ -177,7 +177,7 @@ static int sdhc_stm32_sd_init(const struct device *dev)
 		return -EIO;
 	}
 
-	hsd->Init.ClockEdge = SDMMC_CLOCK_EDGE_FALLING;
+	hsd->Init.ClockEdge = SDMMC_CLOCK_EDGE_RISING;
 	hsd->Init.ClockPowerSave = SDMMC_CLOCK_POWER_SAVE_DISABLE;
 	hsd->Init.ClockDiv = config->clk_div;
 
