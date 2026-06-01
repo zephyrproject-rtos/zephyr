@@ -327,6 +327,7 @@ int bt_bap_unicast_client_connect(struct bt_bap_stream *stream)
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
@@ -358,6 +359,7 @@ int bt_bap_unicast_client_start(struct bt_bap_stream *stream)
 
 	return 0;
 }
+#endif /* defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) */
 
 int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 {
@@ -415,6 +417,7 @@ int bt_bap_unicast_client_disable(struct bt_bap_stream *stream)
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 {
 	struct bt_bap_unicast_client_cb *listener, *next;
@@ -487,6 +490,7 @@ int bt_bap_unicast_client_stop(struct bt_bap_stream *stream)
 
 	return 0;
 }
+#endif /* defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) */
 
 int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 {

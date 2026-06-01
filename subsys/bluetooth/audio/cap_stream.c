@@ -304,8 +304,10 @@ void bt_cap_stream_ops_register_bap(struct bt_cap_stream *cap_stream)
 			.config = unicast_client_cp_cb,
 			.qos = unicast_client_cp_cb,
 			.enable = unicast_client_cp_cb,
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 			.start = unicast_client_cp_cb,
 			.stop = unicast_client_cp_cb,
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 			.disable = unicast_client_cp_cb,
 			.metadata = unicast_client_cp_cb,
 			.release = unicast_client_cp_cb,

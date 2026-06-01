@@ -279,6 +279,7 @@ static void enable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rs
 	}
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 static void start_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		     enum bt_bap_ascs_reason reason)
 {
@@ -298,6 +299,7 @@ static void stop_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_
 		SET_FLAG(flag_operation_success);
 	}
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 static void disable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		       enum bt_bap_ascs_reason reason)
@@ -422,8 +424,10 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.config = config_cb,
 	.qos = qos_cb,
 	.enable = enable_cb,
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	.start = start_cb,
 	.stop = stop_cb,
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	.disable = disable_cb,
 	.metadata = metadata_cb,
 	.release = release_cb,
@@ -984,6 +988,7 @@ static void disable_streams(size_t stream_cnt)
 	}
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 static void stop_streams(size_t stream_cnt)
 {
 	UNSET_FLAG(flag_stream_disconnected);
@@ -1019,6 +1024,7 @@ static void stop_streams(size_t stream_cnt)
 
 	WAIT_FOR_FLAG(flag_stream_disconnected);
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 static void release_streams(size_t stream_cnt)
 {
@@ -1191,8 +1197,10 @@ static void test_main(void)
 		printk("Disabling streams\n");
 		disable_streams(stream_cnt);
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 		printk("Stopping streams\n");
 		stop_streams(stream_cnt);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 		printk("Releasing streams\n");
 		release_streams(stream_cnt);
