@@ -638,6 +638,7 @@ Bluetooth Host:
     - Thalley
     - cvinayak
     - HaavardRei
+    - alxelax
   files:
     - doc/services/connectivity/bluetooth/
     - include/zephyr/bluetooth/
