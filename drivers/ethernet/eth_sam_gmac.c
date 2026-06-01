@@ -142,12 +142,15 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #endif /* !CONFIG_NET_TEST */
 
 /* if GMAC_UR_MIM_RGMII (new for sama7g5) is defined, the media interface mode
- * supported are: mii, rmii and gmii. Otherwise mii and rmii are supported.
+ * supported are: mii, rmii and rgmii. Otherwise mii and rmii are supported.
+ * The enum indexes for mii, rmii, gmii, rgmii are 0 ~ 3. As the enum index for
+ * rgmii is 3, here defines SAM_GMAC_PHY_CONNECTION_TYPE_MAX to 3 when RGMII is
+ * supported.
  */
 #ifndef GMAC_UR_MIM_RGMII
 #define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 1
 #else
-#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 2
+#define SAM_GMAC_PHY_CONNECTION_TYPE_MAX 3
 #endif
 
 /* RX descriptors list */
@@ -995,7 +998,7 @@ static int gmac_init(Gmac *gmac, uint32_t gmac_ncfgr_val, const struct eth_sam_d
 		gmac->GMAC_UR = 0x0;
 		break;
 #ifdef GMAC_UR_MIM_RGMII
-	case 2: /* rgmii */
+	case 3: /* rgmii */
 		gmac->GMAC_UR = GMAC_UR_MIM_RGMII;
 		break;
 #endif
