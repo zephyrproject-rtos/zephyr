@@ -822,6 +822,7 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 {
 	uint8_t frame[32]; /* 1 type + max 8 stream_id + max 8 offset + max 2 len */
 	size_t frame_len = 0;
+	uint64_t sent_pn;
 	int ret;
 
 	if (stream->ep == NULL) {
@@ -859,8 +860,8 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 	}
 	frame_len += quic_get_varint_size(0ULL);
 
-	ret = quic_send_packet(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
-			       frame, frame_len);
+	ret = quic_send_packet_with_pn(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
+				       frame, frame_len, &sent_pn);
 	if (ret < 0) {
 		NET_DBG("[ST:%p/%d] Failed to send FIN for stream %" PRIu64 " : %d",
 			stream, quic_get_by_stream(stream), stream->id, ret);
@@ -868,9 +869,9 @@ static int quic_send_stream_fin(struct quic_stream *stream)
 	}
 
 	/* Annotate the packet for loss recovery / retransmission tracking */
-	quic_annotate_last_sent_stream(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
-				       stream->id, stream->bytes_sent,
-				       0 /* data_len */, true /* stream_fin */);
+	quic_annotate_sent_stream(stream->ep, QUIC_SECRET_LEVEL_APPLICATION,
+				  sent_pn, stream->id, stream->bytes_sent,
+				  0 /* data_len */, true /* stream_fin */);
 
 	NET_DBG("[ST:%p/%d] Sent FIN for stream %" PRIu64 " at offset %" PRIu64,
 		stream, quic_get_by_stream(stream), stream->id, stream->bytes_sent);
@@ -893,6 +894,7 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	size_t max_payload_size;
 	size_t frame_len = 0;
 	uint8_t frame_type;
+	uint64_t sent_pn;
 	int state;
 	int ret;
 
@@ -1054,7 +1056,8 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	frame_len += to_send;
 
 	/* Send the packet */
-	ret = quic_send_packet(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, frame_len);
+	ret = quic_send_packet_with_pn(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, frame_len,
+				       &sent_pn);
 	if (ret < 0) {
 		/* Roll back TX buffer on send failure */
 		tx->len -= to_send;
@@ -1071,9 +1074,9 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	/* Annotate the sent_pkt ring-buffer entry with stream frame info
 	 * so loss detection knows what to retransmit.
 	 */
-	quic_annotate_last_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
-				       stream->id, this_offset,
-				       (uint16_t)to_send, false);
+	quic_annotate_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION, sent_pn,
+				  stream->id, this_offset,
+				  (uint16_t)to_send, false);
 
 	NET_DBG("[ST:%p/%d] Sent %zd bytes, stream total=%" PRIu64 ", conn total=%" PRIu64,
 		stream, quic_get_by_stream(stream), to_send, stream->bytes_sent,

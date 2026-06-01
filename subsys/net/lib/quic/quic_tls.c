@@ -4005,6 +4005,11 @@ static int quic_send_packet(struct quic_endpoint *ep,
 			    enum quic_secret_level level,
 			    const uint8_t *payload,
 			    size_t payload_len);
+static int quic_send_packet_with_pn(struct quic_endpoint *ep,
+				    enum quic_secret_level level,
+				    const uint8_t *payload,
+				    size_t payload_len,
+				    uint64_t *sent_pn_out);
 
 #if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
 static struct quic_deferred_crypto_payload *
@@ -4160,12 +4165,13 @@ static int quic_set_socket_dont_fragment(struct quic_endpoint *ep, int value)
  * holding ep->send_lock. Uses zsock_sendmsg() so the stack copies header
  * and ciphertext into a net_pkt before this call returns.
  */
-static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
-				       enum quic_secret_level level,
-				       size_t payload_len,
-				       size_t target_datagram_len,
-				       bool dont_fragment,
-				       bool dplpmtud_probe)
+static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
+					  enum quic_secret_level level,
+					  size_t payload_len,
+					  size_t target_datagram_len,
+					  bool dont_fragment,
+					  bool dplpmtud_probe,
+					  uint64_t *sent_pn_out)
 {
 	struct quic_crypto_context *crypto_ctx;
 	uint8_t header[MAX_QUIC_HEADER_SIZE];
@@ -4409,6 +4415,9 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 
 	quic_recovery_on_packet_sent(ep, level, packet_number, total_len, ack_eliciting,
 				      dplpmtud_probe, dplpmtud_probe ? total_len : 0U);
+	if (sent_pn_out != NULL) {
+		*sent_pn_out = packet_number;
+	}
 
 	switch (level) {
 	case QUIC_SECRET_LEVEL_INITIAL:
@@ -4447,10 +4456,31 @@ out_restore:
 	return 0;
 }
 
+static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
+				       enum quic_secret_level level,
+				       size_t payload_len,
+				       size_t target_datagram_len,
+				       bool dont_fragment,
+				       bool dplpmtud_probe)
+{
+	return quic_send_packet_from_txbuf_ex(ep, level, payload_len,
+					      target_datagram_len, dont_fragment,
+					      dplpmtud_probe, NULL);
+}
+
 static int quic_send_packet(struct quic_endpoint *ep,
 			    enum quic_secret_level level,
 			    const uint8_t *payload,
 			    size_t payload_len)
+{
+	return quic_send_packet_with_pn(ep, level, payload, payload_len, NULL);
+}
+
+static int quic_send_packet_with_pn(struct quic_endpoint *ep,
+				    enum quic_secret_level level,
+				    const uint8_t *payload,
+				    size_t payload_len,
+				    uint64_t *sent_pn_out)
 {
 	int ret;
 
@@ -4460,7 +4490,9 @@ static int quic_send_packet(struct quic_endpoint *ep,
 
 	k_mutex_lock(&ep->send_lock, K_FOREVER);
 	memcpy(ep->crypto.tx_buffer, payload, payload_len);
-	ret = quic_send_packet_from_txbuf(ep, level, payload_len, 0U, false, false);
+
+	ret = quic_send_packet_from_txbuf_ex(ep, level, payload_len, 0U, false, false,
+					     sent_pn_out);
 
 	k_mutex_unlock(&ep->send_lock);
 
