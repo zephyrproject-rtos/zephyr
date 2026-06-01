@@ -246,10 +246,10 @@ static int max30101_init(const struct device *dev)
 	 * channel number (red/ir/green) to the fifo channel number (4 slots available).
 	 */
 	for (int fifo_chan = 0; fifo_chan < MAX30101_MAX_NUM_SLOTS; fifo_chan++) {
-		led_chan = (config->slot[fifo_chan] & MAX30101_SLOT_LED_MASK) - 1;
-		if (led_chan >= MAX30101_MAX_NUM_CHANNELS) {
+		if (config->slot[fifo_chan] == MAX30101_SLOT_DISABLED) {
 			continue;
 		}
+		led_chan = (config->slot[fifo_chan] & MAX30101_SLOT_LED_MASK) - 1;
 
 		for (int i = 0; i < MAX30101_MAX_NUM_SLOTS; i++) {
 			if (data->map[led_chan][i] == MAX30101_MAX_NUM_SLOTS) {

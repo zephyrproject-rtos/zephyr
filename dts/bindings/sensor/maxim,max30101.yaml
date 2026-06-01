@@ -19,3 +19,7 @@ properties:
       [1]: IR LED
       [2]: Green LED
       Default set to [0xff, 0xff, 0xff], activate any chosen LED channel.
+
+  led-slot:
+    min: 0
+    max: 3
