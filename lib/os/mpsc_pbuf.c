@@ -482,9 +482,10 @@ void mpsc_pbuf_put_word_ext(struct mpsc_pbuf_buffer *buffer,
 	} while (cont);
 }
 
-void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
-			size_t wlen)
+int mpsc_pbuf_write_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
+			 size_t wlen, k_timeout_t timeout)
 {
+	int ret = 0;
 	bool cont;
 	union mpsc_pbuf_generic *dropped_item = NULL;
 	uint32_t tmp_wr_idx_shift = 0;
@@ -518,10 +519,19 @@ void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
 		} else if (wrap) {
 			add_skip_item(buffer, free_wlen);
 			cont = true;
+		} else if (IS_ENABLED(CONFIG_MULTITHREADING) && !K_TIMEOUT_EQ(timeout, K_NO_WAIT) &&
+			   !k_is_in_isr() && arch_irq_unlocked(key.key)) {
+			k_spin_unlock(&buffer->lock, key);
+			ret = k_sem_take(&buffer->sem, timeout);
+			key = k_spin_lock(&buffer->lock);
+			cont = (ret == 0) ? true : false;
 		} else {
 			tmp_wr_idx_val = buffer->tmp_wr_idx;
 			cont = drop_item_locked(buffer, free_wlen,
 						 &dropped_item, &tmp_wr_idx_shift);
+			if (!cont) {
+				ret = -ENOMEM;
+			}
 		}
 
 		k_spin_unlock(&buffer->lock, key);
@@ -535,6 +545,8 @@ void mpsc_pbuf_put_data(struct mpsc_pbuf_buffer *buffer, const uint32_t *data,
 			dropped_item = NULL;
 		}
 	} while (cont);
+
+	return ret;
 }
 
 const union mpsc_pbuf_generic *mpsc_pbuf_claim(struct mpsc_pbuf_buffer *buffer)
