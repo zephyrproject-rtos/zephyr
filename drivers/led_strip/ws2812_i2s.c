@@ -79,6 +79,7 @@ static int ws2812_strip_update(const struct ws2812_i2s_cfg *cfg, void *mem_block
 	uint32_t *frame = mem_block;
 	uint32_t flush_time_us;
 	int ret;
+	int drop_ret;
 
 	/* Add a pre-data reset, so the first pixel isn't skipped by the strip. */
 	for (uint16_t i = 0; i < WS2812_I2S_PRE_DELAY_WORDS; i++) {
@@ -93,21 +94,61 @@ static int ws2812_strip_update(const struct ws2812_i2s_cfg *cfg, void *mem_block
 
 	/* Flush the buffer on the wire. */
 	ret = i2s_write(cfg->dev, mem_block, cfg->tx_buf_bytes);
+	switch (ret) {
+	case 0:
+		break;
+	case -EIO:
+		LOG_DBG("I2S write interface not READY/RUNNING: %d, attempt to retry", ret);
+
+		ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
+		if (ret == 0) {
+			ret = i2s_write(cfg->dev, mem_block, cfg->tx_buf_bytes);
+		}
+
+		if (ret < 0) {
+			LOG_ERR("Final I2S write error: %d", ret);
+		}
+
+		break;
+
+	default:
+		LOG_ERR("I2S write error: %d", ret);
+		break;
+	}
+
 	if (ret < 0) {
 		k_mem_slab_free(cfg->mem_slab, mem_block);
-		LOG_ERR("Failed to write data: %d", ret);
+		drop_ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+		if (drop_ret < 0) {
+			LOG_ERR("Failed to drop I2S TX: %d", drop_ret);
+		}
 		return ret;
 	}
 
 	ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_START);
 	if (ret < 0) {
-		LOG_ERR("Failed to trigger command %d on TX: %d", I2S_TRIGGER_START, ret);
+		LOG_ERR("I2S start error: %d", ret);
+		drop_ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+		if (drop_ret < 0) {
+			LOG_ERR("Failed to drop I2S TX: %d", drop_ret);
+		}
 		return ret;
 	}
 
 	ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_DRAIN);
-	if (ret < 0) {
-		LOG_ERR("Failed to trigger command %d on TX: %d", I2S_TRIGGER_DRAIN, ret);
+	switch (ret) {
+	case 0:
+		break;
+	case -EIO:
+		LOG_DBG("DRAIN returned -EIO (expected if DMA finished fast), resetting the bus");
+		i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
+		break;
+	default:
+		LOG_ERR("I2S drain error: %d", ret);
+		drop_ret = i2s_trigger(cfg->dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+		if (drop_ret < 0) {
+			LOG_ERR("Failed to drop I2S TX: %d", drop_ret);
+		}
 		return ret;
 	}
 
@@ -115,7 +156,7 @@ static int ws2812_strip_update(const struct ws2812_i2s_cfg *cfg, void *mem_block
 	flush_time_us = cfg->lrck_period * cfg->tx_buf_bytes / sizeof(uint32_t);
 	k_usleep(flush_time_us + cfg->extra_wait_time_us);
 
-	return ret;
+	return 0;
 }
 
 static int ws2812_strip_update_rgb(const struct device *dev, struct led_rgb *pixels,
