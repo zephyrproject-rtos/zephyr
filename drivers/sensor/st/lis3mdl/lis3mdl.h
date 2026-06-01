@@ -85,6 +85,8 @@
 #define LIS3MDL_INT_XYZ_EN              \
 	(LIS3MDL_INT_X_EN | LIS3MDL_INT_Y_EN | LIS3MDL_INT_Z_EN)
 
+#define LIS3MDL_I2C_BURST_READ		BIT(7)
+
 static const char * const lis3mdl_odr_strings[] = {
 	"0.625", "1.25", "2.5", "5", "10", "20",
 	"40", "80", "155", "300", "560", "1000"

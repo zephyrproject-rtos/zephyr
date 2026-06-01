@@ -33,7 +33,8 @@ int lis3mdl_trigger_set(const struct device *dev,
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
 	/* dummy read: re-trigger interrupt */
-	ret = i2c_burst_read_dt(&config->i2c, LIS3MDL_REG_SAMPLE_START,
+	ret = i2c_burst_read_dt(&config->i2c,
+				LIS3MDL_REG_SAMPLE_START | LIS3MDL_I2C_BURST_READ,
 				(uint8_t *)buf, 6);
 	if (ret != 0) {
 		return ret;

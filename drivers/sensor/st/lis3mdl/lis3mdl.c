@@ -70,8 +70,9 @@ int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_MAGN_XYZ);
 
 	/* fetch magnetometer sample */
-	if (i2c_burst_read_dt(&config->i2c, LIS3MDL_REG_SAMPLE_START,
-			      (uint8_t *)buf, 8) < 0) {
+	if (i2c_burst_read_dt(&config->i2c,
+			      LIS3MDL_REG_SAMPLE_START | LIS3MDL_I2C_BURST_READ,
+			      (uint8_t *)buf, 6) < 0) {
 		LOG_DBG("Failed to fetch magnetometer sample.");
 		return -EIO;
 	}
@@ -81,7 +82,8 @@ int lis3mdl_sample_fetch(const struct device *dev, enum sensor_channel chan)
 	 * the same read as magnetometer data, so do another
 	 * burst read to fetch the temperature sample
 	 */
-	if (i2c_burst_read_dt(&config->i2c, LIS3MDL_REG_SAMPLE_START + 6,
+	if (i2c_burst_read_dt(&config->i2c,
+			      (LIS3MDL_REG_SAMPLE_START + 6) | LIS3MDL_I2C_BURST_READ,
 			      (uint8_t *)(buf + 3), 2) < 0) {
 		LOG_DBG("Failed to fetch temperature sample.");
 		return -EIO;
