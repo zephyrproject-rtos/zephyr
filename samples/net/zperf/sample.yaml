@@ -43,6 +43,12 @@ tests:
       - stm32h573i_dk
     integration_platforms:
       - stm32h573i_dk
+  sample.net.zperf_st.otp_mac_addr:
+    build_only: true
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/stm32n6570_dk_stm32n657xx_sb_otp.overlay"
   sample.net.zperf_no_shell:
     harness: net
     extra_configs:
