@@ -72,13 +72,20 @@ boards : dict[board_name, BoardEntry]
                   "<compatible>": {
                     "description": str,
                     "title": str,
+                    "binding_path": str,
+                    "custom_binding": bool,
                     "locations": ["board" | "soc"],
                     "okay": bool,
-                    "dts_sources": [{"file": str, "line": int}]
+                    "dts_sources": [{"file": str, "line": int, "okay": bool}]
                   }
                 }
               }
             }
+          },
+          "runners": {
+            "runners": ["runner-a", ...],
+            "flash_runner": str,
+            "debug_runner": str
           }
         }
 
@@ -343,6 +350,61 @@ def gather_board_edts(twister_out_dir: Path) -> dict:
             logger.error("Error processing %s: %s", build_info_file, exc)
 
     return board_edts
+
+
+def gather_board_runners(twister_out_dir: Path) -> dict:
+    """Load runners.yaml for every board target from a twister output directory.
+
+    Args:
+        twister_out_dir: Root of the twister output tree.
+
+    Returns:
+        Nested dict ``{board_name: {board_target: runners_yaml_dict}}``.
+    """
+    board_runners: dict = {}
+
+    if not twister_out_dir.exists():
+        return board_runners
+
+    build_info_files = list(twister_out_dir.glob("*/**/build_info.yml"))
+
+    for build_info_file in build_info_files:
+        runners_file = None
+        for runners_path in RUNNERS_YAML_PATHS:
+            candidate = build_info_file.parent / runners_path
+            if candidate.exists():
+                runners_file = candidate
+                break
+
+        if runners_file is None:
+            continue
+
+        try:
+            with open(build_info_file) as fh:
+                build_info = yaml.safe_load(fh)
+                board_info = build_info.get("cmake", {}).get("board", {})
+                board_name = board_info.get("name")
+                qualifier = board_info.get("qualifiers", "")
+                revision = board_info.get("revision", "")
+
+            if not board_name:
+                continue
+
+            board_target = board_name
+            if revision:
+                board_target = f"{board_target}@{revision}"
+            if qualifier:
+                board_target = f"{board_target}/{qualifier}"
+
+            with open(runners_file) as fh:
+                runners_data = yaml.safe_load(fh)
+
+            board_runners.setdefault(board_name, {})[board_target] = runners_data
+
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Error processing %s: %s", runners_file, exc)
+
+    return board_runners
 
 
 # ---------------------------------------------------------------------------
@@ -637,16 +699,21 @@ def _node_location(node, board_name: str) -> str:
     return "soc"
 
 
-def build_catalog(board_edts: dict) -> dict:
+def build_catalog(board_edts: dict, board_runners: dict | None = None) -> dict:
     """Build the DTS catalog from harvested EDT objects.
 
     Args:
         board_edts: Nested dict ``{board_name: {board_target: edt_object}}``.
+        board_runners: Optional nested dict
+            ``{board_name: {board_target: runners_yaml_dict}}``.  When
+            provided, per-board runner information is embedded in the catalog.
 
     Returns:
         Dict with ``boards`` and ``compatibles`` top-level keys (see module
         docstring for the full schema).
     """
+    if board_runners is None:
+        board_runners = {}
     boards_db = {}
     compatibles_db = {}
 
@@ -670,6 +737,19 @@ def build_catalog(board_edts: dict) -> dict:
                 binding_type = _get_binding_type(binding_path)
                 compat = node.matching_compat
 
+                # Compute a workspace-relative binding path for consumers.
+                rel_binding_path = str(binding_path)
+                if binding_path.is_relative_to(ZEPHYR_BASE):
+                    rel_binding_path = str(binding_path.relative_to(ZEPHYR_BASE))
+                elif binding_path.is_relative_to(_WEST_TOPDIR):
+                    rel_binding_path = str(binding_path.relative_to(_WEST_TOPDIR))
+
+                # A binding is "custom" when it lives outside the Zephyr
+                # bindings tree (i.e. it comes from an out-of-tree module).
+                custom_binding = binding_type == "misc" and not binding_path.is_relative_to(
+                    ZEPHYR_BINDINGS
+                )
+
                 target_compatibles.add(compat)
 
                 # Build human-readable node source location.
@@ -678,8 +758,8 @@ def build_catalog(board_edts: dict) -> dict:
                 if filename and Path(filename).is_relative_to(ZEPHYR_BASE):
                     rel_filename = str(Path(filename).relative_to(ZEPHYR_BASE))
 
-                node_info = {"file": rel_filename, "line": node.lineno}
                 is_okay = node.status == "okay"
+                node_info = {"file": rel_filename, "line": node.lineno, "okay": is_okay}
 
                 # Accumulate per-compatible data inside the hardware map.
                 compat_entry = hardware.setdefault(binding_type, {}).get(compat)
@@ -687,6 +767,8 @@ def build_catalog(board_edts: dict) -> dict:
                     compat_entry = {
                         "description": _first_sentence(node.description),
                         "title": node.title or "",
+                        "binding_path": rel_binding_path,
+                        "custom_binding": custom_binding,
                         "locations": set(),
                         "okay": False,
                         "dts_sources": [],
@@ -718,6 +800,19 @@ def build_catalog(board_edts: dict) -> dict:
                 "compatibles": sorted(target_compatibles),
                 "hardware": hardware,
             }
+
+        # Embed runner info at the board level; all targets are assumed to
+        # share the same flash/debug runners so the first available target is
+        # used (matching the behaviour in the doc build).
+        runners_entry: dict = {}
+        if board_name in board_runners:
+            r = next(iter(board_runners[board_name].values()))
+            runners_entry = {
+                "runners": r.get("runners") or [],
+                "flash_runner": r.get("flash-runner") or "",
+                "debug_runner": r.get("debug-runner") or "",
+            }
+        board_entry["runners"] = runners_entry
 
         boards_db[board_name] = board_entry
 
@@ -849,8 +944,12 @@ def main(argv=None):
             board_edts = gather_board_edts(twister_outdir)
             logger.info("Loaded EDT data for %d boards", len(board_edts))
 
+            logger.info("Harvesting runners data from %s …", twister_outdir)
+            board_runners = gather_board_runners(twister_outdir)
+            logger.info("Loaded runners data for %d boards", len(board_runners))
+
             logger.info("Building DTS catalog …")
-            catalog = build_catalog(board_edts)
+            catalog = build_catalog(board_edts, board_runners)
             catalog["generated_at"] = timestamp
 
             output_path = Path(args.dts_db)
