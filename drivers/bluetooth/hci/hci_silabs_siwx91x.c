@@ -86,7 +86,7 @@ static int siwx91x_bt_setup(const struct device *dev, const struct bt_hci_setup_
 		return err;
 	}
 
-	err = siwx91x_nwp_apply_power_profile(hci_config->nwp_dev);
+	err = siwx91x_nwp_apply_power_profile(hci_config->nwp_dev, NULL);
 	if (err < 0) {
 		LOG_ERR("Failed to set power profile: %d", err);
 		return err;
