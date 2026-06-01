@@ -19,3 +19,10 @@ shields:
     supported_features:
       - bluetooth
       - wifi
+
+  - name: nxp_adapter_m2_2ll_wifi_bt
+    full_name: NXP FRDM M2 Adapter + Murata 2LL (IW610) WiFi/BT Shield
+    vendor: nxp
+    supported_features:
+      - bluetooth
+      - wifi
