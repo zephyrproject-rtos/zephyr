@@ -1,4 +1,5 @@
 # Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 description: ESP32 Ethernet
@@ -7,6 +8,7 @@ compatible: "espressif,esp32-eth"
 
 include:
   - name: ethernet-controller.yaml
+  - name: pinctrl-device.yaml
 
 properties:
   phy-handle:
@@ -16,3 +18,8 @@ properties:
     type: phandle-array
     description: |
       GPIO to output RMII Clock.
+
+  pinctrl-0:
+    description: |
+      RMII pin configuration, using the RMII_* macros from the SoC
+      pinctrl header to select the GPIO for each signal.
