@@ -434,6 +434,7 @@ static int sample_rtio_write_read_async(void)
 int main(void)
 {
 	int ret, n;
+	bool recover_supported = IS_ENABLED(CONFIG_I2C_BUS_RECOVERY);
 
 	for (n = 0; n < sizeof(sample_write_data); n++) {
 		sample_write_data[n] = (0xFF - n) % 0xFF;
@@ -450,13 +451,27 @@ int main(void)
 		return 0;
 	}
 
-	printk("%s %s\n", "standard_configure_and_recover", "running");
-	ret = sample_standard_configure_and_recover();
-	if (ret) {
-		printk("%s %s (%d)\n", "standard_configure_and_recover", "failed", ret);
-		return 0;
+	if (recover_supported) {
+		ret = i2c_recover_bus(sample_i2c_controller);
+		if (ret == -ENOSYS) {
+			printk("%s\n", "I2C bus recovery is not supported");
+			recover_supported = false;
+			ret = 0;
+		}
+		if (ret) {
+			printk("%s %s (%d)\n", "test recovery support", "failed", ret);
+			return 0;
+		}
 	}
 
+	if (recover_supported) {
+		printk("%s %s\n", "standard_configure_and_recover", "running");
+		ret = sample_standard_configure_and_recover();
+		if (ret) {
+			printk("%s %s (%d)\n", "standard_configure_and_recover", "failed", ret);
+			return 0;
+		}
+	}
 	sample_reset_buffers();
 
 	printk("%s %s\n", "standard_write_read", "running");
@@ -472,11 +487,13 @@ int main(void)
 		return 0;
 	}
 
-	printk("%s %s\n", "rtio_configure_recover", "running");
-	ret = sample_rtio_configure_and_recover();
-	if (ret) {
-		printk("%s %s (%d)\n", "rtio_configure_recover", "failed", ret);
-		return 0;
+	if (recover_supported) {
+		printk("%s %s\n", "rtio_configure_recover", "running");
+		ret = sample_rtio_configure_and_recover();
+		if (ret) {
+			printk("%s %s (%d)\n", "rtio_configure_recover", "failed", ret);
+			return 0;
+		}
 	}
 
 	sample_reset_buffers();
