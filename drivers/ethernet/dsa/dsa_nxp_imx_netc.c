@@ -198,15 +198,12 @@ static void dsa_netc_port_phylink_change(const struct device *phydev, struct phy
 	status_t result;
 
 	if (state->is_up) {
-		LOG_INF("DSA user port %d Link up", cfg->port_idx);
 		result = SWT_SetEthPortMII(&prv->swt_handle, cfg->port_idx,
 					   PHY_TO_NETC_SPEED(state->speed),
 					   PHY_TO_NETC_DUPLEX_MODE(state->speed));
 		if (result != kStatus_Success) {
 			LOG_ERR("DSA user port %d failed to set MAC up", cfg->port_idx);
 		}
-	} else {
-		LOG_INF("DSA user port %d Link down", cfg->port_idx);
 	}
 }
 
