@@ -884,7 +884,7 @@ static int adc_ad7124_channel_setup(const struct device *dev, const struct adc_c
 {
 	struct adc_ad7124_data *data = dev->data;
 	struct ad7124_current_source_config cs_config[2] = {0};
-	struct ad7124_channel_config new_cfg;
+	struct ad7124_channel_config new_cfg = {0};
 	int new_slot;
 	int ret;
 	int similar_channel_index;
