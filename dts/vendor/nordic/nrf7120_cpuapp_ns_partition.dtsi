@@ -8,8 +8,8 @@
 
 /*
  * Default SRAM planning when building for nRF7120 with ARM TrustZone-M support
- * - Lowest 256 kB SRAM allocated to Secure image (sram0_s).
- * - Upper 256 kB SRAM allocated to Non-Secure image (sram0_ns).
+ * - Lowest 128 kB SRAM allocated to Secure image (sram0_s).
+ * - Upper 384 kB SRAM allocated to Non-Secure image (sram0_ns).
  *
  * cpuapp_sram has 512 kB of volatile memory (SRAM).
  * This static layout needs to be the same with the upstream TF-M layout in the
@@ -21,16 +21,16 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Secure image memory */
-		reg = <0x0 DT_SIZE_K(256)>;
-		ranges = <0x0 0x0 DT_SIZE_K(256)>;
+		reg = <0x0 DT_SIZE_K(128)>;
+		ranges = <0x0 0x0 DT_SIZE_K(128)>;
 	};
 
-	sram0_ns: sram@40000 {
+	sram0_ns: sram@20000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Non-Secure image memory */
-		reg = <0x40000 DT_SIZE_K(256)>;
-		ranges = <0x0 0x40000 DT_SIZE_K(256)>;
+		reg = <0x20000 DT_SIZE_K(384)>;
+		ranges = <0x0 0x20000 DT_SIZE_K(384)>;
 	};
 };
 
