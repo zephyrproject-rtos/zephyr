@@ -108,6 +108,12 @@ config SILABS_SISDK_SLEEPTIMER
 	help
 	  Set if the Sleeptimer HAL module is used.
 
+config SILABS_SISDK_PSA_CRYPTO_DRIVER
+	bool "TF-PSA-Crypto driver with hardware acceleration"
+	help
+	  Set if the driver dispatch implementation with support for hardware
+	  accelerated crypto operations is used.
+
 # Radio
 
 config SILABS_SISDK_RAIL_PA_CURVE_HEADER
