@@ -1760,3 +1760,10 @@ test_i2c_adxl373: adxl373@e4 {
 	reg = <0xe4>;
 	int1-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_mlx90632: mlx90632@e5 {
+	compatible = "melexis,mlx90632";
+	reg = <0xe5>;
+	power-mode = "continuous";
+	refresh-rate = <2>;
+};
