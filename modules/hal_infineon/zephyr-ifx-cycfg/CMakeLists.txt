@@ -4,22 +4,23 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-if(CONFIG_BUILD_WITH_TFM OR CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
-  set(zephyr_ifx_pse84_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/pse84)
 
   if(CONFIG_BOARD_KIT_PSE84_EVAL)
-    set(zephyr_ifx_cycfg_dir ${zephyr_ifx_pse84_dir}/kit_pse84_eval)
+    set(zephyr_ifx_cycfg_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/pse84/kit_pse84_eval)
   elseif(CONFIG_BOARD_KIT_PSE84_AI)
-    set(zephyr_ifx_cycfg_dir ${zephyr_ifx_pse84_dir}/kit_pse84_ai)
+    set(zephyr_ifx_cycfg_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/pse84/kit_pse84_ai)
   else()
     message(FATAL_ERROR "No supported board selected.")
   endif()
 
   zephyr_include_directories(${zephyr_ifx_cycfg_dir})
-  zephyr_include_directories(${zephyr_ifx_pse84_dir}/device_headers)
+  zephyr_include_directories(${zephyr_ifx_cycfg_dir}/device_headers)
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot.c)
 
-  if(NOT CONFIG_BUILD_WITH_TFM)
+  if(CONFIG_BUILD_WITH_TFM)
+    zephyr_include_directories(${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/pse84/shared/device/include)
+  else()
+    set(zephyr_ifx_pse84_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/pse84)
     zephyr_include_directories(${zephyr_ifx_pse84_dir})
     zephyr_library_sources(${zephyr_ifx_pse84_dir}/ifx_cycfg_init.c)
 
@@ -28,12 +29,6 @@ if(CONFIG_BUILD_WITH_TFM OR CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
     endif()
 
   endif()
-
-  zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_cycfg_init.c)
-  if(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC AND NOT CONFIG_MFD_INFINEON_AUTANALOG)
-    zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_autanalog.c)
-  endif()
-endif()
 endif()
 
 if(CONFIG_SOC_SERIES_PSC3)
