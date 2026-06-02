@@ -24,7 +24,7 @@
 LOG_MODULE_REGISTER(mbox_rpi_pico, CONFIG_MBOX_LOG_LEVEL);
 
 #define MAILBOX_MBOX_SIZE sizeof(uint32_t)
-#define MAILBOX_DEV_NAME mbox0
+#define MAILBOX_DEV_NAME mbox
 
 struct rpi_pico_mailbox_data {
 	const struct device *dev;
