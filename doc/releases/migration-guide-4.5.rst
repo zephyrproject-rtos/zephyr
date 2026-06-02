@@ -361,6 +361,10 @@ SPI
   They are replaced by ``SPI_SILABS_SIWX91X_GSPI_DMA_DESCR_COUNT`` which allow to enable DMA and
   configure the descriptor count.
 
+* The ``fifo-enable`` property of :dtcompatible:`st,stm32h7-spi` has been removed.
+  FIFO is now always used in polling and interrupt mode to enhance performance. A new property
+  ``st,fifo-threshold`` can be used to configure the FIFO threshold (default = 1). (:github:`110265`)
+
 Stepper
 =======
 
