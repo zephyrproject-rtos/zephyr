@@ -1286,10 +1286,13 @@ function(zephyr_check_compiler_flag lang option check)
 endfunction()
 
 function(zephyr_check_compiler_flag_hardcoded lang option check exists)
+  if((CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang") AND ("${option}" STREQUAL "-mlongcalls"))
+    set(${check} 0 PARENT_SCOPE)
+    set(${exists} 1 PARENT_SCOPE)
   # Various flags that are not supported for CXX may not be testable
   # because they would produce a warning instead of an error during
   # the test.  Exclude them by toolchain-specific blocklist.
-  if((${lang} STREQUAL CXX) AND ("${option}" IN_LIST CXX_EXCLUDED_OPTIONS))
+  elseif((${lang} STREQUAL CXX) AND ("${option}" IN_LIST CXX_EXCLUDED_OPTIONS))
     set(${check} 0 PARENT_SCOPE)
     set(${exists} 1 PARENT_SCOPE)
   else()
