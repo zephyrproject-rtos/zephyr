@@ -903,20 +903,11 @@ static void carrier_on_off(struct k_work *work)
 	}
 }
 
-void net_eth_carrier_on(struct net_if *iface)
+void net_eth_carrier_set(struct net_if *iface, bool carrier_up)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 
-	if (!atomic_test_and_set_bit(&ctx->flags, ETH_CARRIER_UP)) {
-		k_work_submit(&ctx->carrier_work);
-	}
-}
-
-void net_eth_carrier_off(struct net_if *iface)
-{
-	struct ethernet_context *ctx = net_if_l2_data(iface);
-
-	if (atomic_test_and_clear_bit(&ctx->flags, ETH_CARRIER_UP)) {
+	if (atomic_test_and_set_bit_to(&ctx->flags, ETH_CARRIER_UP, carrier_up)) {
 		k_work_submit(&ctx->carrier_work);
 	}
 }
