@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright (c) Michele Tavecchio <tavecchiomichele03@gmail.com>
+# SPDX-FileCopyrightText: Copyright (c) Alessandro Sola <alessandrosola03@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Melexis MLX90632 Infrared Temperature Sensor. See datasheet at
+  https://www.melexis.com/en/documents/documentation/datasheets/datasheet-mlx90632
+
+compatible: "melexis,mlx90632"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+properties:
+  power-mode:
+    type: string
+    default: continuous
+    enum:
+      - continuous
+      - step
+      - sleeping-step
+    description: |
+      Measurement power mode. Continuous mode runs measurements automatically;
+      step mode waits for a conversion command, and sleeping-step mode sleeps
+      between measurements.
+
+  refresh-rate:
+    type: int
+    default: 2
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      EEPROM refresh-rate selection code, rather than a frequency in Hz.
+      In medical mode, codes 0 through 7 select 0.5, 1, 2, 4, 8, 16, 32 and 64 Hz.
+      In extended mode, they select approximately 0.16, 0.32, 0.65, 1.3, 2.6, 5,
+      10 and 20 Hz. The default selects 2 Hz in medical mode.
+
+  extended-mode:
+    type: boolean
+    description: |
+      Enable the extended temperature range measurement sequence and calculations.
+      If absent, the sensor uses the medical measurement sequence.
