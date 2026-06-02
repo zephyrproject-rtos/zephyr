@@ -1001,10 +1001,11 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 /** @} */
 
 /**
- * @name IPv4 level options (NET_IPPROTO_IP)
+ * @defgroup ipv4_socket_options Socket options for IPv4
+ * @ingroup bsd_sockets
  * @{
  */
-/* Socket options for IPPROTO_IP level */
+/* Socket options for NET_IPPROTO_IP level */
 /** Set or receive the Type-Of-Service value for an outgoing packet. */
 #define ZSOCK_IP_TOS 1
 
@@ -1057,7 +1058,8 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 /** @} */
 
 /**
- * @name IPv6 level options (NET_IPPROTO_IPV6)
+ * @defgroup ipv6_socket_options Socket options for IPv6
+ * @ingroup bsd_sockets
  * @{
  */
 /* Socket options for NET_IPPROTO_IPV6 level */
