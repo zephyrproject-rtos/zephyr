@@ -1405,8 +1405,6 @@ static void config_tcpc_irq(void)
 	}
 }
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0, "No compatible STM32 TCPC instance found");
-
 #define TCPC_DRIVER_INIT(inst)                                                                     \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	static struct tcpc_data drv_data_##inst;                                                   \
