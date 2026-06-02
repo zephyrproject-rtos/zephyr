@@ -58,6 +58,7 @@ LOG_MODULE_REGISTER(flash_flexspi_nand, CONFIG_FLASH_LOG_LEVEL);
 #define SPI_NAND_STATUS_ECC_SHIFT 4
 
 /* CONFIG register bits. */
+#define SPI_NAND_CFG_QE     BIT(0)
 #define SPI_NAND_CFG_ECC_EN BIT(4)
 #define SPI_NAND_CFG_OTP_EN BIT(6)
 
@@ -407,6 +408,25 @@ restore:
 		ret = ret_temp;
 	}
 	return ret;
+}
+
+static int flash_flexspi_nand_enable_quad(const struct device *dev)
+{
+	uint8_t cfg;
+	int ret;
+
+	ret = flash_flexspi_nand_read_reg(dev, SPI_NAND_REG_CONFIG, &cfg);
+	if (ret != 0) {
+		return ret;
+	}
+
+	if ((cfg & SPI_NAND_CFG_QE) != 0U) {
+		return 0;
+	}
+
+	cfg |= SPI_NAND_CFG_QE;
+
+	return flash_flexspi_nand_write_reg(dev, SPI_NAND_REG_CONFIG, cfg);
 }
 
 static int flash_flexspi_nand_enable_ecc(const struct device *dev)
@@ -892,6 +912,12 @@ static int flash_flexspi_nand_init(const struct device *dev)
 		return ret;
 	}
 	LOG_DBG("JEDEC ID (raw): %02X %02X %02X", id[0], id[1], id[2]);
+
+	ret = flash_flexspi_nand_enable_quad(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable quad I/O (%d)", ret);
+		return ret;
+	}
 
 	ret = flash_flexspi_nand_onfi_read(dev);
 	if (ret != 0) {

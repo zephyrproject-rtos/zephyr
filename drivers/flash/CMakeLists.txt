@@ -180,6 +180,11 @@ zephyr_library_include_directories_ifdef(
 )
 
 zephyr_library_include_directories_ifdef(
+  CONFIG_FLASH_MCUX_FLEXSPI_NAND
+  ${ZEPHYR_BASE}/drivers/memc
+)
+
+zephyr_library_include_directories_ifdef(
   CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G
   ${ZEPHYR_BASE}/drivers/memc
 )
