@@ -128,6 +128,11 @@ int cache_data_invd_all(void)
 	return 0;
 }
 
+int cache_data_flush_all(void)
+{
+	return cache_data_flush_range(0, UINT32_MAX);
+}
+
 int cache_data_flush_and_invd_all(void)
 {
 	return cache_data_flush_and_invd_range(0, UINT32_MAX);
