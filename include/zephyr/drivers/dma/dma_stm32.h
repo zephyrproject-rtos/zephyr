@@ -7,6 +7,9 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_STM32_H_
 #define ZEPHYR_INCLUDE_DRIVERS_DMA_STM32_H_
 
+#include <zephyr/devicetree.h>
+#include <zephyr/devicetree/dma.h>
+
 /* @brief linked_channel value to inform zephyr dma driver that
  * DMA channel will be handled by HAL
  */
