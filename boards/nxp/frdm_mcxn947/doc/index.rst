@@ -358,6 +358,31 @@ will print:
    LED state: OFF
    LED state: ON
 
+NAND Flash (Board Rework)
+*************************
+
+The FlexSPI PortA on FRDM-MCXN947 is pin-compatible with SPI NAND flash.
+A Macronix MX35LF1GE4AB (1 Gbit) can replace the W25Q64 NOR at U32 by
+board rework, providing 128 MB of NAND storage accessible via the FlexSPI
+controller.
+
+The ``mx35lf1ge4ab`` device tree node is present in the board DTS but disabled
+by default. Enable it with a devicetree overlay, and disable the NOR node
+since the two are mutually exclusive:
+
+.. code-block:: devicetree
+
+   &ext_flash_ctrl {
+       status = "disabled";
+   };
+
+   &mx35lf1ge4ab {
+       status = "okay";
+   };
+
+The :zephyr:code-sample:`littlefs` sample provides ready-made board files
+(``boards/frdm_mcxn947_nand.*``) that run LittleFS over Dhara FTL on this NAND.
+
 Troubleshooting
 ===============
 

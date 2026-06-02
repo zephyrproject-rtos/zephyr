@@ -313,6 +313,9 @@ void board_early_init_hook(void)
 	flexspi_clock_set_freq(MCUX_FLEXSPI_CLK,
 			       DT_PROP(DT_NODELABEL(ext_flash_ctrl), spi_max_frequency));
 	enable_cache64();
+#elif CONFIG_FLASH_MCUX_FLEXSPI_NAND
+	flexspi_clock_set_freq(MCUX_FLEXSPI_CLK,
+			       DT_PROP(DT_NODELABEL(mx35lf1ge4ab), spi_max_frequency));
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(smartdma))
