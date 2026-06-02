@@ -1021,6 +1021,9 @@ __net_socket struct quic_stream {
 		struct k_mutex data_available;
 	} cond;
 
+	/** Protects tx_buf, bytes_acked, and acked_ooo state. */
+	struct k_mutex tx_lock;
+
 	/** Receive buffer */
 	struct quic_stream_rx_buffer rx_buf;
 
@@ -1300,6 +1303,14 @@ void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 void quic_dplpmtud_refresh_state(struct quic_endpoint *ep);
 void quic_dplpmtud_on_probe_acked(struct quic_endpoint *ep, uint16_t probe_size);
 void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep, uint16_t probe_size);
+/**
+ * Advance the stream TX ACK frontier and compact @a tx_buf.
+ *
+ * Takes @a stream->tx_lock internally. Unit tests may call this directly.
+ * Test setup that touches @a tx_buf, @a bytes_acked, or @a acked_ooo must
+ * call k_mutex_init() on @a tx_lock, and must hold @a tx_lock when mutating
+ * those fields outside this helper and the normal send path.
+ */
 void quic_stream_advance_tx_acked_for_stream(struct quic_stream *stream,
 					     uint64_t acked_start,
 					     uint64_t acked_end);

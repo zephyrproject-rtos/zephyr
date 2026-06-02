@@ -649,7 +649,11 @@ static int quic_ctx_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 static bool quic_stream_can_send(struct quic_stream *stream)
 {
 	struct quic_endpoint *ep = stream->ep;
-	size_t tx_free = sizeof(stream->tx_buf.data) - stream->tx_buf.len;
+	size_t tx_free;
+
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	tx_free = sizeof(stream->tx_buf.data) - stream->tx_buf.len;
+	k_mutex_unlock(&stream->tx_lock);
 
 	/* Check TX retransmit buffer space. We need meaningful space, not just 1 byte */
 	if (tx_free < 64) {
@@ -981,14 +985,12 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	to_send = MIN(to_send, max_payload_size);
 
 	/* Also limit by TX retransmit buffer space */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
 	tx = &stream->tx_buf;
 	tx_free = sizeof(tx->data) - tx->len;
 
 	if (tx_free == 0) {
-		/* Buffer full, peer is not ACKing fast enough.
-		 * Caller should retry; the PTO timer will eventually
-		 * unblock things by retransmitting stalled data.
-		 */
+		k_mutex_unlock(&stream->tx_lock);
 		NET_DBG("[ST:%p/%d] TX retransmit buffer full on stream %" PRIu64,
 			stream, quic_get_by_stream(stream), stream->id);
 		return -EAGAIN;
@@ -998,15 +1000,12 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 		to_send = tx_free;
 	}
 
-	/* Record the stream offset before updating bytes_sent */
 	this_offset = stream->bytes_sent;
+	k_mutex_unlock(&stream->tx_lock);
 
-	/* Copy into retransmit buffer BEFORE sending.
-	 * If the send fails the data is still here; it will be
-	 * retransmitted by the PTO or loss detection.
-	 */
-	memcpy(&tx->data[tx->len], buf, to_send);
-	tx->len += to_send;
+	if (to_send == 0) {
+		return -EAGAIN;
+	}
 
 	if (to_send != buf_len) {
 		NET_DBG("[ST:%p/%d] Limiting send from %zd to %zd bytes due to flow control/buffer",
@@ -1055,12 +1054,33 @@ static ssize_t quic_stream_send(struct quic_stream *stream, const uint8_t *buf,
 	memcpy(&frame[frame_len], buf, to_send);
 	frame_len += to_send;
 
+	/* Copy into retransmit buffer before sending. If the send fails the
+	 * data stays here for PTO / loss detection retransmission.
+	 */
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	memcpy(&tx->data[tx->len], buf, to_send);
+	tx->len += to_send;
+	k_mutex_unlock(&stream->tx_lock);
+
 	/* Send the packet */
 	ret = quic_send_packet_with_pn(ep, QUIC_SECRET_LEVEL_APPLICATION, frame, frame_len,
 				       &sent_pn);
 	if (ret < 0) {
 		/* Roll back TX buffer on send failure */
-		tx->len -= to_send;
+		k_mutex_lock(&stream->tx_lock, K_FOREVER);
+		if (stream->bytes_sent == this_offset) {
+			size_t buf_off = (size_t)(this_offset - tx->base_offset);
+
+			if (buf_off < tx->len && buf_off + to_send <= tx->len) {
+				if (buf_off + to_send < tx->len) {
+					memmove(&tx->data[buf_off],
+						&tx->data[buf_off + to_send],
+						tx->len - buf_off - to_send);
+				}
+				tx->len -= to_send;
+			}
+		}
+		k_mutex_unlock(&stream->tx_lock);
 
 		NET_DBG("[ST:%p/%d] Failed to send STREAM frame: %d",
 			stream, quic_get_by_stream(stream), ret);
