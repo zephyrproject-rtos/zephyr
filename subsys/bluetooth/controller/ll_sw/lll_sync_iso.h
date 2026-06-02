@@ -44,6 +44,11 @@ struct lll_sync_iso {
 	};
 	uint8_t  next_chan_use;
 
+	/* Counter used by LLL abort of event when in unreserved time space to
+	 * provide near fair scheduling of overlapping multiple Sync ISO sets.
+	 */
+	uint8_t abort_count;
+
 	uint64_t payload_count:39;
 	uint64_t framing:1;
 	uint64_t enc:1;
@@ -120,6 +125,7 @@ void lll_sync_iso_prepare(void *param);
 void lll_sync_iso_flush(uint8_t handle, struct lll_sync_iso *lll);
 
 extern uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll);
+extern struct lll_sync_iso *ull_sync_iso_lll_is_valid_get(struct lll_sync_iso *lll);
 extern struct lll_sync_iso_stream *ull_sync_iso_lll_stream_get(uint16_t handle);
 extern void ll_iso_rx_put(memq_link_t *link, void *rx);
 extern void ll_rx_sched(void);
