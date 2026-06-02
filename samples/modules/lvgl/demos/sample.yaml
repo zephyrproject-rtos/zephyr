@@ -15,7 +15,9 @@ common:
     fixture: fixture_display
     type: one_line
     regex:
-      - "\\[\\w+ free bytes, \\w+ allocated bytes, overhead = \\w+ bytes | lvgl in malloc mode\\]"
+      - >-
+        (\d+ free bytes, \d+ allocated bytes, overhead = \d+
+        bytes \(\d+\.\d+%\)|lvgl in malloc mode)
 tests:
   sample.modules.lvgl.demo_music:
     platform_allow:
