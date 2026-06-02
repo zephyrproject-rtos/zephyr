@@ -40,14 +40,14 @@ static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link
 		if (result != kStatus_Success) {
 			LOG_ERR("Failed to set MAC up");
 		}
-		net_eth_carrier_on(data->iface);
 	} else {
 		result = EP_Down(&data->handle);
 		if (result != kStatus_Success) {
 			LOG_ERR("Failed to set MAC down");
 		}
-		net_eth_carrier_off(data->iface);
 	}
+
+	net_eth_carrier_set(data->iface, state->is_up);
 }
 
 static void netc_eth_iface_init(struct net_if *iface)

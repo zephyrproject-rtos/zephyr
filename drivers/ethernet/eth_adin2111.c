@@ -656,11 +656,7 @@ static inline void adin2111_port_on_phyint(const struct device *dev)
 		return;
 	}
 
-	if (state.is_up) {
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
-	}
+	net_eth_carrier_set(data->iface, state.is_up);
 }
 
 static void adin2111_offload_thread(void *p1, void *p2, void *p3)

@@ -62,11 +62,7 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 		return;
 	}
 
-	if (state->is_up) {
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
-	}
+	net_eth_carrier_set(data->iface, state->is_up);
 
 	/* handle link speed and duplex in MAC configuration register */
 	if (state->is_up) {

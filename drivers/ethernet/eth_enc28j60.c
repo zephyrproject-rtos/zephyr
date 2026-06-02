@@ -714,11 +714,8 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 			/* Clear link change interrupt flag by PHIR reg read */
 			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHIR, &phir);
 			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHSTAT2, &phstat2);
-			if (phstat2 & ENC28J60_BIT_PHSTAT2_LSTAT) {
-				net_eth_carrier_on(context->iface);
-			} else {
-				net_eth_carrier_off(context->iface);
-			}
+			net_eth_carrier_set(context->iface,
+					    (phstat2 & ENC28J60_BIT_PHSTAT2_LSTAT) != 0);
 		}
 
 		/* We cannot rely on the PKTIF flag because of errata 6. Call
