@@ -334,6 +334,44 @@ arduino_serial: &flexcomm2_lpuart2 {};
 			ranges;
 		};
 	};
+
+	/*
+	 * Macronix MX35LF1GE4AB SPI NAND — FlexSPI PortA CS0.
+	 * Drop-in replacement for W25Q64 NOR (board rework).
+	 * Mutually exclusive with ext_flash_ctrl: enable at most one.
+	 */
+	mx35lf1ge4ab: mx35lf1ge4ab@0 {
+		compatible = "nxp,imx-flexspi-nand";
+		reg = <0>;
+		status = "disabled";
+
+		/* MX35LF1GE4AB: 1 Gbit = 128 MiB; DT size is in bits */
+		size = <DT_SIZE_M(128 * 8)>;
+
+		spi-max-frequency = <DT_FREQ_M(104)>;
+		write-block-size = <2048>;
+		erase-block-size = <DT_SIZE_K(128)>;
+
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <2>;
+		column-space = <11>;
+		ahb-write-wait-unit = <2>;
+		ahb-write-wait-interval = <0>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			nand_storage: partition@0 {
+				label = "nand-storage";
+				reg = <0x0 DT_SIZE_M(128)>;
+			};
+		};
+	};
 };
 
 &dac0 {
