@@ -131,6 +131,19 @@ bool i2c_stm32_start(const struct device *dev)
 	}
 }
 
+void i2c_stm32_rtio_complete(const struct device *dev, int status)
+{
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_rtio *const ctx = data->ctx;
+
+	if (i2c_rtio_complete(ctx, status)) {
+		i2c_stm32_start(dev);
+	} else {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		(void)pm_device_runtime_put(dev);
+	}
+}
+
 static int i2c_stm32_configure(const struct device *dev,
 				uint32_t dev_config_raw)
 {

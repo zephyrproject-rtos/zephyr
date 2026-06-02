@@ -69,7 +69,6 @@ static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	i2c_stm32_disable_transfer_interrupts(dev);
@@ -85,12 +84,7 @@ static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 
 	LL_I2C_Disable(i2c);
 	if (data->xfer_len == 0U) {
-		if (i2c_rtio_complete(ctx, status)) {
-			i2c_stm32_start(dev);
-		} else {
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-			(void)pm_device_runtime_put(dev);
-		}
+		i2c_stm32_rtio_complete(dev, status);
 	}
 }
 

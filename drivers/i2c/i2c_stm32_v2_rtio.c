@@ -583,13 +583,7 @@ skip_bytewise_xfer:
 #endif
 
 			i2c_stm32_disable_transfer_interrupts(dev);
-			if (i2c_rtio_complete(ctx, ret)) {
-				i2c_stm32_start(dev);
-			} else {
-				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
-							 PM_ALL_SUBSTATES);
-				pm_device_runtime_put(dev);
-			}
+			i2c_stm32_rtio_complete(dev, ret);
 		}
 	}
 }
@@ -597,8 +591,7 @@ skip_bytewise_xfer:
 int i2c_stm32_error(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
+	__maybe_unused struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	int ret = 0;
 
@@ -629,12 +622,7 @@ int i2c_stm32_error(const struct device *dev)
 
 	if (ret) {
 		i2c_stm32_controller_mode_end(dev);
-		if (i2c_rtio_complete(ctx, ret)) {
-			i2c_stm32_start(dev);
-		} else {
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-			pm_device_runtime_put(dev);
-		}
+		i2c_stm32_rtio_complete(dev, ret);
 	}
 
 	return ret;
