@@ -1310,6 +1310,7 @@ static void ucpd_isr_init(const struct device *dev)
  */
 static int ucpd_init(const struct device *dev)
 {
+	const struct device *const rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct tcpc_config *const config = dev->config;
 	struct tcpc_data *data = dev->data;
 	uint32_t cfg1;
@@ -1322,14 +1323,13 @@ static int ucpd_init(const struct device *dev)
 		return ret;
 	}
 
-	/*
-	 * The UCPD port is disabled in the LL_UCPD_Init function
-	 *
-	 * NOTE: For proper Power Management operation, this function
-	 *       should not be used because it circumvents the zephyr
-	 *	 clock API. Instead, DTS clock settings and the zephyr
-	 *	 clock API should be used to enable clocks.
-	 */
+	ret = clock_control_on(rcc, (clock_control_subsys_t *)&config->pclken);
+	if (ret != 0) {
+		LOG_ERR("UCPD clock enable failed (%d)", ret);
+		return ret;
+	}
+
+	/* N.B.: The UCPD port is disabled in the LL_UCPD_Init function */
 	ret = LL_UCPD_Init(config->ucpd_port, (LL_UCPD_InitTypeDef *)&config->ucpd_params);
 
 	if (ret == SUCCESS) {
@@ -1411,6 +1411,7 @@ static void config_tcpc_irq(void)
 	static const struct tcpc_config drv_config_##inst = {                                      \
 		.ucpd_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
 		.ucpd_port = (UCPD_TypeDef *)DT_INST_REG_ADDR(inst),                               \
+		.pclken = STM32_DT_INST_CLOCKS(inst),                                              \
 		.ucpd_params.psc_ucpdclk =                                                         \
 			(ilog2(DT_INST_PROP(inst, psc_ucpdclk)) << UCPD_CFG1_PSC_UCPDCLK_Pos),     \
 		.ucpd_params.transwin = DT_INST_PROP(inst, transwin) - 1,                          \
