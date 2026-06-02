@@ -324,6 +324,19 @@ int ssh_channel_read_stderr(struct ssh_channel *channel, void *data, uint32_t le
 int ssh_channel_write_stderr(struct ssh_channel *channel, const void *data, uint32_t len);
 
 /**
+ * @brief Close an SSH channel.
+ *
+ * Send a channel close message to the peer and release the channel. On success,
+ * the channel handle must no longer be used. The associated channel callback
+ * (if any) receives a @ref SSH_CHANNEL_EVENT_CLOSED event.
+ *
+ * @param channel Pointer to the SSH channel.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int ssh_channel_close(struct ssh_channel *channel);
+
+/**
  * @typedef ssh_service_client_cb_t
  * @brief Callback used while iterating over SSH client connections
  *

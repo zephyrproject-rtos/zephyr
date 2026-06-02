@@ -885,6 +885,19 @@ static int process_user_request(struct ssh_transport *transport,
 
 		return ret;
 	}
+	case SSH_TRANSPORT_USER_REQUEST_CHANNEL_CLOSE: {
+		struct ssh_channel *channel = request->channel_close.channel;
+		int ret = 0;
+
+		if (channel->open && channel->remote_channel != UINT32_MAX) {
+			ret = ssh_connection_send_channel_close(transport,
+								channel->remote_channel);
+		}
+
+		ssh_connection_free_channel(channel);
+
+		return ret;
+	}
 #ifdef CONFIG_SSH_CLIENT
 	case SSH_TRANSPORT_USER_REQUEST_AUTHENTICATE:
 		if (!transport->encrypted || transport->authenticated) {
