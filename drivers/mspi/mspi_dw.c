@@ -51,6 +51,14 @@ struct mspi_dw_data {
 	uint32_t baudr;
 	uint32_t rx_sample_dly;
 
+	/* Software auto-CE-break. */
+	uint32_t mem_boundary;
+	uint16_t time_to_break;
+	uint32_t break_us;
+
+	/* Active sub-packet fed to start_next_packet(). */
+	struct mspi_xfer_packet sub_pkt;
+
 #if defined(CONFIG_MSPI_XIP)
 	uint32_t xip_freq;
 	struct xip_params xip_params_stored;
@@ -62,6 +70,7 @@ struct mspi_dw_data {
 	uint32_t dummy_bytes;
 	uint8_t bytes_to_discard;
 	uint8_t bytes_per_frame_exp;
+	enum mspi_endian endian;
 	bool standard_spi;
 	bool suspended;
 
@@ -245,6 +254,8 @@ static void async_packet_work_handler(struct k_work *work)
 				dev_data->packets_done + 1,
 				dev_data->xfer.num_packet);
 
+			dev_data->sub_pkt = dev_data->xfer.packets[dev_data->packets_done];
+
 			rc = start_next_packet(dev);
 			if (rc >= 0) {
 				return;
@@ -283,10 +294,12 @@ static void tx_data(const struct device *dev)
 
 	do {
 		if (bytes_per_frame_exp == 2) {
-			data = sys_get_be32(buf_pos);
+			data = (dev_data->endian == MSPI_XFER_BIG_ENDIAN) ? sys_get_be32(buf_pos)
+									  : sys_get_le32(buf_pos);
 			buf_pos += 4;
 		} else if (bytes_per_frame_exp == 1) {
-			data = sys_get_be16(buf_pos);
+			data = (dev_data->endian == MSPI_XFER_BIG_ENDIAN) ? sys_get_be16(buf_pos)
+									  : sys_get_le16(buf_pos);
 			buf_pos += 2;
 		} else {
 			data = *buf_pos;
@@ -392,10 +405,18 @@ static bool read_rx_fifo(const struct device *dev)
 			--bytes_to_discard;
 		} else {
 			if (bytes_per_frame_exp == 2) {
-				sys_put_be32(data, buf_pos);
+				if (dev_data->endian == MSPI_XFER_BIG_ENDIAN) {
+					sys_put_be32(data, buf_pos);
+				} else {
+					sys_put_le32(data, buf_pos);
+				}
 				buf_pos += 4;
 			} else if (bytes_per_frame_exp == 1) {
-				sys_put_be16(data, buf_pos);
+				if (dev_data->endian == MSPI_XFER_BIG_ENDIAN) {
+					sys_put_be16(data, buf_pos);
+				} else {
+					sys_put_le16(data, buf_pos);
+				}
 				buf_pos += 2;
 			} else {
 				*buf_pos = (uint8_t)data;
@@ -454,8 +475,7 @@ static void handle_end_of_packet(struct mspi_dw_data *dev_data)
 static void handle_fifos(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	const struct mspi_xfer_packet *packet = &dev_data->sub_pkt;
 	bool finished = false;
 
 	if (packet->dir == MSPI_TX) {
@@ -840,10 +860,7 @@ static int _api_dev_config(const struct device *dev,
 	struct mspi_dw_data *dev_data = dev->data;
 
 	if (param_mask & MSPI_DEVICE_CONFIG_ENDIAN) {
-		if (cfg->endian != MSPI_XFER_BIG_ENDIAN) {
-			LOG_ERR("Only big endian transfers are supported.");
-			return -ENOTSUP;
-		}
+		dev_data->endian = cfg->endian;
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_CE_POL) {
@@ -854,17 +871,15 @@ static int _api_dev_config(const struct device *dev,
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_MEM_BOUND) {
-		if (cfg->mem_boundary) {
-			LOG_ERR("Auto CE break is not supported.");
-			return -ENOTSUP;
+		if (cfg->mem_boundary && (cfg->mem_boundary & (cfg->mem_boundary - 1))) {
+			LOG_ERR("mem_boundary must be a power of two");
+			return -EINVAL;
 		}
+		dev_data->mem_boundary = cfg->mem_boundary;
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_BREAK_TIME) {
-		if (cfg->time_to_break) {
-			LOG_ERR("Auto CE break is not supported.");
-			return -ENOTSUP;
-		}
+		dev_data->time_to_break = cfg->time_to_break;
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_IO_MODE) {
@@ -993,6 +1008,16 @@ static int _api_dev_config(const struct device *dev,
 	/* Enable clock stretching. */
 	dev_data->spi_ctrlr0 |= SPI_CTRLR0_CLK_STRETCH_EN_BIT;
 
+	/* Precompute CE-break delay. */
+	if (dev_data->time_to_break && dev_data->baudr) {
+		uint32_t freq = dev_config->clock_frequency / dev_data->baudr;
+
+		dev_data->break_us =
+			DIV_ROUND_UP((uint64_t)dev_data->time_to_break * USEC_PER_SEC, freq);
+	} else {
+		dev_data->break_us = 0;
+	}
+
 	return 0;
 }
 
@@ -1092,8 +1117,7 @@ static int start_next_packet(const struct device *dev)
 {
 	const struct mspi_dw_config *dev_config = dev->config;
 	struct mspi_dw_data *dev_data = dev->data;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	const struct mspi_xfer_packet *packet = &dev_data->sub_pkt;
 	bool data_only_packet = dev_data->xfer.cmd_length == 0 &&
 				dev_data->xfer.addr_length == 0;
 	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
@@ -1133,6 +1157,19 @@ static int start_next_packet(const struct device *dev)
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 15);
 		} else {
 			dev_data->bytes_per_frame_exp = 0;
+			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 7);
+			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 7);
+		}
+
+		/* For little-endian with DFS=16, downgrade to DFS=8.
+		 * Vendor DMA byte-swap hardware operates at 32-bit
+		 * granularity and cannot correctly swap within 16-bit
+		 * frames.  With DFS=8 byte ordering is irrelevant.
+		 */
+		if (dev_data->endian == MSPI_XFER_LITTLE_ENDIAN &&
+		    dev_data->bytes_per_frame_exp == 1) {
+			dev_data->bytes_per_frame_exp = 0;
+			dev_data->ctrlr0 &= ~CTRLR0_DFS_MASK & ~CTRLR0_DFS32_MASK;
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS_MASK, 7);
 			dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_DFS32_MASK, 7);
 		}
@@ -1443,6 +1480,59 @@ static int start_next_packet(const struct device *dev)
 	return finalize_packet(dev, rc);
 }
 
+/**
+ * Run one user-visible packet, splitting at address-aligned mem_boundary
+ * if configured.
+ *
+ * For async transfers, mem_boundary splitting is not supported and is
+ * rejected before reaching this function.
+ */
+static int run_one_packet(const struct device *dev, const struct mspi_xfer_packet *src)
+{
+	struct mspi_dw_data *d = dev->data;
+	const uint32_t boundary = d->mem_boundary;
+	size_t done = 0;
+	int rc;
+
+	if (!boundary) {
+		d->sub_pkt = *src;
+		return start_next_packet(dev);
+	}
+
+	if (src->num_bytes == 0 || ((src->address & (boundary - 1)) + src->num_bytes) <= boundary) {
+		d->sub_pkt = *src;
+		return start_next_packet(dev);
+	}
+
+	while (done < src->num_bytes) {
+		uint32_t addr = src->address + done;
+		uint32_t page_off = addr & (boundary - 1);
+		size_t chunk = MIN((size_t)(src->num_bytes - done), (size_t)(boundary - page_off));
+
+		d->sub_pkt = (struct mspi_xfer_packet){
+			.dir = src->dir,
+			.cmd = src->cmd,
+			.address = addr,
+			.data_buf = &src->data_buf[done],
+			.num_bytes = chunk,
+			.cb_mask = (done + chunk >= src->num_bytes) ? src->cb_mask : 0,
+		};
+
+		rc = start_next_packet(dev);
+		if (rc < 0) {
+			return rc;
+		}
+
+		done += chunk;
+
+		if (d->break_us && done < src->num_bytes) {
+			k_busy_wait(d->break_us);
+		}
+	}
+
+	return 0;
+}
+
 static int finalize_packet(const struct device *dev, int rc)
 {
 	struct mspi_dw_data *dev_data = dev->data;
@@ -1536,18 +1626,22 @@ static int _api_transceive(const struct device *dev,
 
 	dev_data->xfer = *req;
 
-	/* For async, only the first packet is started here, next ones, if any,
-	 * are started by ISR.
+	/* For async, only the first packet is started here; next ones are started by ISR.
+	 * mem_boundary splitting is not supported for async transfers.
 	 */
 	if (req->async) {
+		if (dev_data->mem_boundary) {
+			LOG_ERR("Async transfers with mem_boundary not yet supported");
+			return -ENOTSUP;
+		}
 		dev_data->packets_done = 0;
+		dev_data->sub_pkt = req->packets[0];
 		return start_next_packet(dev);
 	}
 
-	for (dev_data->packets_done = 0;
-	     dev_data->packets_done < dev_data->xfer.num_packet;
+	for (dev_data->packets_done = 0; dev_data->packets_done < dev_data->xfer.num_packet;
 	     dev_data->packets_done++) {
-		rc = start_next_packet(dev);
+		rc = run_one_packet(dev, &req->packets[dev_data->packets_done]);
 		if (rc < 0) {
 			return rc;
 		}
@@ -1649,6 +1743,14 @@ static int api_timing_config(const struct device *dev,
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	struct mspi_dw_timing_cfg *config = cfg;
+
+	/* MSPI_TIMING_PARAM_DUMMY indicates that the caller has no
+	 * platform-specific timing parameters to configure. Accept
+	 * it as a no-op.
+	 */
+	if (param_mask == MSPI_TIMING_PARAM_DUMMY) {
+		return 0;
+	}
 
 	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
 		dev_data->rx_sample_dly = config->rx_sample_dly;
@@ -1899,6 +2001,8 @@ static int dev_init(const struct device *dev)
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
 	vendor_specific_init(dev);
+
+	dev_data->endian = MSPI_XFER_BIG_ENDIAN;
 
 	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_SSI_IS_MST_BIT,
 				       dev_config->op_mode == MSPI_OP_MODE_CONTROLLER);

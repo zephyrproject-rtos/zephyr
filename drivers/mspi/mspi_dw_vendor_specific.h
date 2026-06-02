@@ -215,8 +215,8 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	const struct mspi_dw_config *config = dev->config;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	const struct mspi_xfer_packet *packet = &dev_data->sub_pkt;
+
 	NRF_MSPI_Type *preg = (NRF_MSPI_Type *)config->wrapper_regs;
 
 	/* Use vendor-specific data from config - stores job and transfer lists */
@@ -243,12 +243,24 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 		joblist[job_idx++] = EVDMA_JOB(&packet->address, 4, EVDMA_PLAIN_DATA);
 	}
 
+	/*
+	 * EVDMA_BYTE_SWAP reverses bytes within a 32-bit AHB word, matching
+	 * PIO little-endian behaviour (sys_get/put_le32) for DFS=32 frames.
+	 * For DFS=8 and DFS=16, PLAIN_DATA is correct (DFS=16 LE is
+	 * downgraded to DFS=8 by mspi_dw.c before reaching here).
+	 * Cmd/addr always use PLAIN_DATA (big-endian framing by hardware).
+	 */
+	EVDMA_ATTR_Type data_attr =
+		(dev_data->endian == MSPI_XFER_LITTLE_ENDIAN && dev_data->bytes_per_frame_exp == 2)
+			? EVDMA_BYTE_SWAP
+			: EVDMA_PLAIN_DATA;
+
 	if (packet->dir == MSPI_TX) {
 		preg->CONFIG.RXTRANSFERLENGTH = 0;
 
 		if (packet->num_bytes > 0) {
-			joblist[job_idx++] = EVDMA_JOB(packet->data_buf, packet->num_bytes,
-						       EVDMA_PLAIN_DATA);
+			joblist[job_idx++] =
+				EVDMA_JOB(packet->data_buf, packet->num_bytes, data_attr);
 		}
 
 		/* Always terminate with null job */
@@ -267,16 +279,15 @@ static inline void vendor_specific_start_dma_xfer(const struct device *dev)
 			/* After command and address, setup RX job for data */
 			joblist[job_idx++] = EVDMA_NULL_JOB();
 			transfer_list->rx_job = &joblist[job_idx];
-			joblist[job_idx++] = EVDMA_JOB(packet->data_buf, packet->num_bytes,
-						       EVDMA_PLAIN_DATA);
-			joblist[job_idx]   = EVDMA_NULL_JOB();
+			joblist[job_idx++] =
+				EVDMA_JOB(packet->data_buf, packet->num_bytes, data_attr);
+			joblist[job_idx] = EVDMA_NULL_JOB();
 		} else {
 			/* Sending command or address while configured as target isn't supported */
 			preg->TMOD = MSPI_TMOD_TMOD_RXONLY;
 
 			transfer_list->rx_job = &joblist[0];
-			joblist[0] = EVDMA_JOB(packet->data_buf, packet->num_bytes,
-					       EVDMA_PLAIN_DATA);
+			joblist[0] = EVDMA_JOB(packet->data_buf, packet->num_bytes, data_attr);
 			joblist[1] = EVDMA_NULL_JOB();
 			transfer_list->tx_job = &joblist[1];
 		}
