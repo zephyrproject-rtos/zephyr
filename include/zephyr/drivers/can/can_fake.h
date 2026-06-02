@@ -14,6 +14,7 @@
 extern "C" {
 #endif
 
+
 DECLARE_FAKE_VALUE_FUNC(int, fake_can_start, const struct device *);
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_can_stop, const struct device *);
