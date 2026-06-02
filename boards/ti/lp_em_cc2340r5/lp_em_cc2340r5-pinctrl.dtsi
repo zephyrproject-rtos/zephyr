@@ -43,7 +43,7 @@
 	};
 
 	spi0_cs_default: spi0_cs_default {
-		pinmux = <6 DIO6_GPIO6>;
+		pinmux = <11 DIO11_SPI0_CSN>;
 		input-enable;
 		input-schmitt-enable;
 		bias-disable;
@@ -68,7 +68,7 @@
 		bias-disable;
 	};
 	spi0_cs_sleep: spi0_cs_sleep {
-		pinmux = <6 DIO6_GPIO6>;
+		pinmux = <11 DIO11_GPIO11>;
 		input-enable;
 		input-schmitt-enable;
 		bias-disable;

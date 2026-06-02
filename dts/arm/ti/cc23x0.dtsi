@@ -132,6 +132,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40030000 0x164>;
+			clock-id = <0x400>;
 			interrupts = <10 0>;
 			dmas = <&dma 0 0>, <&dma 1 1>;
 			dma-names = "tx", "rx";
