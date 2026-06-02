@@ -893,19 +893,21 @@ static int adc_ad7124_channel_setup(const struct device *dev, const struct adc_c
 		return ret;
 	}
 
-	/* AD7124 supports only 8 different configurations for 16 channels*/
-	new_slot = adc_ad7124_find_new_slot(dev);
+	/* AD7124 supports only 8 different configurations for 16 channels.
+	 * Reuse identical configurations instead of trying to assign a new one each time.
+	 */
+	similar_channel_index =
+		adc_ad7124_find_similar_configuration(dev, &new_cfg, cfg->channel_id);
 
-	if (new_slot == -1) {
-		similar_channel_index =
-			adc_ad7124_find_similar_configuration(dev, &new_cfg, cfg->channel_id);
-		if (similar_channel_index == -1) {
+	if (similar_channel_index == -1) {
+		new_slot = adc_ad7124_find_new_slot(dev);
+		if (new_slot == -1) {
 			return -EINVAL;
 		}
-		new_cfg.cfg_slot = data->channel_setup_cfg[similar_channel_index].cfg_slot;
-	} else {
 		new_cfg.cfg_slot = new_slot;
 		WRITE_BIT(data->setup_cfg_slots, new_slot, true);
+	} else {
+		new_cfg.cfg_slot = data->channel_setup_cfg[similar_channel_index].cfg_slot;
 	}
 
 	new_cfg.live_cfg = true;
