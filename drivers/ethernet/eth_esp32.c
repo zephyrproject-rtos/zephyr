@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Grant Ramsay <grant.ramsay@hotmail.com>
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,8 +59,17 @@ struct eth_esp32_dev_data {
 	struct k_thread rx_thread;
 };
 
+struct eth_esp32_config {
+	const struct pinctrl_dev_config *pcfg;
+};
+
 static const struct device *eth_esp32_phy_dev = DEVICE_DT_GET(
 		DT_INST_PHANDLE(0, phy_handle));
+
+PINCTRL_DT_INST_DEFINE(0);
+static const struct eth_esp32_config eth_esp32_config = {
+	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
+};
 
 static void eth_esp32_reset_desc_chain(struct eth_esp32_dev_data *dev_data)
 {
@@ -243,11 +253,11 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 }
 
 #if !DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-static void eth_esp32_iomux_rmii_clk_input(void)
+static void eth_esp32_iomux_rmii_clk_input(int gpio_num)
 {
-	const emac_iomux_info_t *pin = emac_rmii_iomux_pins.clki;
+	const emac_iomux_info_t *pin;
 
-	/* ESP32 EMAC uses dedicated IOMUX pins, not GPIO matrix */
+	pin = esp32_emac_iomux_find(emac_rmii_iomux_pins.clki, gpio_num);
 	if (pin != NULL) {
 		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
 		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
@@ -481,6 +491,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 int eth_esp32_initialize(const struct device *dev)
 {
 	struct eth_esp32_dev_data *const dev_data = dev->data;
+	const struct eth_esp32_config *const cfg = dev->config;
 	int res;
 
 	k_sem_init(&dev_data->int_sem, 0, 1);
@@ -527,9 +538,14 @@ int eth_esp32_initialize(const struct device *dev)
 						"rmii");
 
 	if (strcmp(phy_connection_type, "rmii") == 0) {
-		esp32_emac_iomux_init_rmii();
+		int rmii_clk_gpio = -1;
+
+		res = esp32_emac_iomux_init_rmii_pinctrl(cfg->pcfg, &rmii_clk_gpio);
+		if (res != 0) {
+			goto err;
+		}
 #if !DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-		eth_esp32_iomux_rmii_clk_input();
+		eth_esp32_iomux_rmii_clk_input(rmii_clk_gpio);
 		emac_hal_clock_enable_rmii_input(&dev_data->hal);
 #endif
 	} else if (strcmp(phy_connection_type, "mii") == 0) {
@@ -634,11 +650,5 @@ static struct eth_esp32_dev_data eth_esp32_dev = {
 	.dma = &eth_esp32_dma_data,
 };
 
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
-		    eth_esp32_initialize,
-		    NULL,
-		    &eth_esp32_dev,
-		    NULL,
-		    CONFIG_ETH_INIT_PRIORITY,
-		    &eth_esp32_api,
-		    NET_ETH_MTU);
+ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_esp32_initialize, NULL, &eth_esp32_dev, &eth_esp32_config,
+			      CONFIG_ETH_INIT_PRIORITY, &eth_esp32_api, NET_ETH_MTU);
