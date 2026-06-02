@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT nxp_cmc
+
 #include <stdint.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/logging/log.h>
@@ -11,9 +13,8 @@
 
 LOG_MODULE_REGISTER(hwinfo_cmc, CONFIG_HWINFO_LOG_LEVEL);
 
-#ifndef CMC0
-#define CMC0 CMC
-#endif
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
+	     "No nxp,cmc compatible device found");
 
 #ifdef CMC_SRS_VBAT_MASK
 #define CMC_RESET_MASK_POR (CMC_SRS_POR_MASK | CMC_SRS_VBAT_MASK)
@@ -116,7 +117,8 @@ static uint32_t hwinfo_mcux_cmc_xlate_reset_sources(uint32_t sources)
 
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
-	const uint32_t sources = CMC_GetStickySystemResetStatus(CMC0);
+	CMC_Type *base = (CMC_Type *)DT_INST_REG_ADDR(0);
+	const uint32_t sources = CMC_GetStickySystemResetStatus(base);
 
 	*cause = hwinfo_mcux_cmc_xlate_reset_sources(sources);
 
@@ -127,9 +129,10 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	const uint32_t sources = CMC_GetStickySystemResetStatus(CMC0);
+	CMC_Type *base = (CMC_Type *)DT_INST_REG_ADDR(0);
+	const uint32_t sources = CMC_GetStickySystemResetStatus(base);
 
-	CMC_ClearStickySystemResetStatus(CMC0, sources);
+	CMC_ClearStickySystemResetStatus(base, sources);
 
 	LOG_DBG("sources = 0x%08x", sources);
 
