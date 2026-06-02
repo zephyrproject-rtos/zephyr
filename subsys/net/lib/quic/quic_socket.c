@@ -10,7 +10,6 @@ static int quic_connection_init(struct quic_context *ctx,
 {
 	struct quic_endpoint *ep;
 	int ret;
-	size_t token_len;
 
 	k_mutex_lock(&endpoints_lock, K_FOREVER);
 
@@ -34,44 +33,34 @@ static int quic_connection_init(struct quic_context *ctx,
 						&net_sin(local_addr)->sin_addr));
 		}
 	} else {
-		ep = find_endpoint(remote_addr, local_addr, NULL, 0, NULL, 0);
+		/*
+		 * Always allocate a dedicated client endpoint per connection
+		 * context. Drop any orphaned client endpoints for this remote
+		 * first so we do not exhaust the endpoint pool or leave stale
+		 * UDP sockets behind from a prior failed client open.
+		 */
+		k_mutex_unlock(&endpoints_lock);
+		quic_release_orphan_client_endpoints(remote_addr);
+		k_mutex_lock(&endpoints_lock, K_FOREVER);
+
+		ep = alloc_endpoint(ctx, remote_addr, local_addr);
 		if (ep == NULL) {
-			ep = alloc_endpoint(ctx, remote_addr, local_addr);
-			if (ep == NULL) {
-				k_mutex_unlock(&endpoints_lock);
-				return -ENOMEM;
-			}
-
-			ep->is_server = false;
-			ctx->listen = NULL;
-			ctx->is_listening = false;
-
-			/* For client, generate random connection IDs:
-			 * - peer_cid: DCID sent to server (server's CID from client's perspective)
-			 * - my_cid: SCID we use to identify ourselves
-			 */
-			ep->peer_cid_len = 8;
-			sys_rand_get(ep->peer_cid, ep->peer_cid_len);
-
-			ep->my_cid_len = 8;
-			sys_rand_get(ep->my_cid, ep->my_cid_len);
-			ep->token.client_initial_dcid_len = ep->peer_cid_len;
-			memcpy(ep->token.client_initial_dcid, ep->peer_cid, ep->peer_cid_len);
-
-			token_len = quic_token_cache_take(remote_addr, ep->token.initial,
-							  sizeof(ep->token.initial));
-			if (token_len > 0U) {
-				ep->token.initial_len = token_len;
-				ep->token.initial_type = QUIC_TOKEN_NEW;
-			}
-
-			NET_DBG("[EP:%p/%d] Created new endpoint from %s to %s", ep,
-				quic_get_by_ep(ep), local_addr == NULL ? "ANY" :
-				net_sprint_addr(local_addr->sa_family,
-						&net_sin(local_addr)->sin_addr),
-				net_sprint_addr(remote_addr->sa_family,
-						&net_sin(remote_addr)->sin_addr));
+			k_mutex_unlock(&endpoints_lock);
+			return -ENOMEM;
 		}
+
+		ep->is_server = false;
+		ctx->listen = NULL;
+		ctx->is_listening = false;
+
+		quic_client_endpoint_init_cids(ep, remote_addr);
+
+		NET_DBG("[EP:%p/%d] Created new endpoint from %s to %s", ep,
+			quic_get_by_ep(ep), local_addr == NULL ? "ANY" :
+			net_sprint_addr(local_addr->sa_family,
+					&net_sin(local_addr)->sin_addr),
+			net_sprint_addr(remote_addr->sa_family,
+					&net_sin(remote_addr)->sin_addr));
 	}
 
 	ctx->stream_id_counter = 0ULL;
