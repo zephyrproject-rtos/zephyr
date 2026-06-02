@@ -405,6 +405,13 @@
 				irq-gpios = <&test_gpio 0 0>;
 			};
 
+			test_spi_adc124s021: adc124s021@1b {
+				compatible = "ti,adc124s021";
+				reg = <0x1b>;
+				spi-max-frequency = <1000000>;
+				#io-channel-cells = <1>;
+			};
+
 			test_spi_ad4170: ad4170@21 {
 				compatible = "adi,ad4170-adc";
 				reg = <0x21>;
