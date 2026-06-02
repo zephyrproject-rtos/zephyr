@@ -3730,18 +3730,20 @@ ZTESTABLE_STATIC void quic_stream_advance_tx_acked_for_stream(struct quic_stream
 {
 	struct quic_stream_tx_buffer *tx;
 	bool progress = true;
-	size_t advance;
+	size_t advance = 0U;
 
 	if (stream == NULL) {
 		return;
 	}
 
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+
 	if (acked_end <= acked_start) {
-		return;
+		goto unlock;
 	}
 
 	if (acked_end <= stream->bytes_acked) {
-		return;
+		goto unlock;
 	}
 
 	if (acked_start > stream->bytes_acked) {
@@ -3782,7 +3784,7 @@ ZTESTABLE_STATIC void quic_stream_advance_tx_acked_for_stream(struct quic_stream
 	tx = &stream->tx_buf;
 
 	if (stream->bytes_acked <= tx->base_offset) {
-		return; /* nothing new to release */
+		goto unlock;
 	}
 
 	advance = (size_t)(stream->bytes_acked - tx->base_offset);
@@ -3794,8 +3796,13 @@ ZTESTABLE_STATIC void quic_stream_advance_tx_acked_for_stream(struct quic_stream
 	tx->len -= advance;
 	tx->base_offset += advance;
 
-	/* Signal that the stream is now writable (TX buffer has space) */
-	k_poll_signal_raise(&stream->send.signal, 0);
+unlock:
+	k_mutex_unlock(&stream->tx_lock);
+
+	if (advance > 0U) {
+		/* Signal that the stream is now writable (TX buffer has space) */
+		k_poll_signal_raise(&stream->send.signal, 0);
+	}
 }
 
 static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
@@ -3975,11 +3982,13 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 {
 	/* Small fixed header, 1 + 8 + 8 + 8 bytes max */
 	uint8_t hdr[32];
+	uint8_t payload[CONFIG_QUIC_TX_BUFFER_SIZE];
 	size_t hdr_len = 0;
 	struct quic_stream_tx_buffer *tx;
 	struct quic_stream *stream;
 	uint8_t frame_type;
 	size_t buf_off;
+	uint16_t payload_len;
 	uint64_t sent_pn;
 	int ret;
 
@@ -3988,18 +3997,33 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 		return;
 	}
 
+	if (lost->stream_data_len > sizeof(payload)) {
+		NET_WARN("[EP:%p/%d] Lost frame too large to retransmit (%u)",
+			 ep, quic_get_by_ep(ep), lost->stream_data_len);
+		return;
+	}
+
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+
 	tx = &stream->tx_buf;
 
 	if (lost->stream_offset < tx->base_offset) {
+		k_mutex_unlock(&stream->tx_lock);
 		return; /* already ACKed */
 	}
 
 	buf_off = (size_t)(lost->stream_offset - tx->base_offset);
 	if (buf_off + lost->stream_data_len > tx->len) {
+		k_mutex_unlock(&stream->tx_lock);
 		NET_WARN("[EP:%p/%d] Lost frame not in TX buffer",
 			 ep, quic_get_by_ep(ep));
 		return;
 	}
+
+	payload_len = lost->stream_data_len;
+	memcpy(payload, &tx->data[buf_off], payload_len);
+
+	k_mutex_unlock(&stream->tx_lock);
 
 	/* Build STREAM frame header into the small stack buffer */
 	frame_type = QUIC_FRAME_TYPE_STREAM_BASE | 0x04 | 0x02;
@@ -4026,10 +4050,10 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	}
 	hdr_len += quic_get_varint_size(lost->stream_data_len);
 
-	/* Send: header from stack, payload directly from tx_buf */
+	/* Send: header from stack, payload copied under tx_lock above */
 	ret = quic_send_packet_sg(ep, QUIC_SECRET_LEVEL_APPLICATION,
 				  hdr, hdr_len,
-				  &tx->data[buf_off], lost->stream_data_len,
+				  payload, payload_len,
 				  &sent_pn);
 	if (ret == 0) {
 		quic_annotate_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
@@ -5183,6 +5207,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	 */
 	k_condvar_init(&stream->cond.recv);
 	k_mutex_init(&stream->cond.data_available);
+	k_mutex_init(&stream->tx_lock);
 
 	/* The event is used when waiting for data to be received with timeout */
 	k_poll_signal_init(&stream->recv.signal);
