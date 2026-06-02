@@ -197,6 +197,8 @@ stm32_lp_tick_source: &lptim1 {
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 };
 
 &i2c2 {
@@ -204,6 +206,8 @@ stm32_lp_tick_source: &lptim1 {
 	pinctrl-names = "default";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	scl-gpios = <&gpioh 4 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioh 5 GPIO_ACTIVE_HIGH>;
 
 	veml6030@10 {
 		compatible = "vishay,veml7700";
