@@ -3,4 +3,5 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_MLX90394 mlx90394)
+add_subdirectory_ifdef(CONFIG_MLX90632 mlx90632)
 # zephyr-keep-sorted-stop
