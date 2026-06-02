@@ -14,3 +14,14 @@ config CORTEX_M_SYSTICK
 	default n if GECKO_BURTC_TIMER
 
 endif
+
+if SOC_FAMILY_SILABS_S2 || SOC_FAMILY_SILABS_S3
+
+configdefault TF_PSA_CRYPTO_DISPATCH_DIR
+	default "${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/util/third_party/mbedtls/dispatch" \
+		if SILABS_SISDK_PSA_CRYPTO
+
+configdefault TF_PSA_CRYPTO_DRIVER_CONFIG_FILE
+	default "sl_psa_crypto_config_zephyr.h" if SILABS_SISDK_PSA_CRYPTO
+
+endif
