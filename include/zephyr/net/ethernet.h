@@ -1357,12 +1357,24 @@ static inline int net_eth_mac_load(const struct net_eth_mac_config *cfg, uint8_t
 	NET_ETH_MAC_DT_CONFIG_INIT(DT_DRV_INST(inst))
 
 /**
+ * @brief Inform ethernet L2 driver that ethernet carrier is detected or was lost.
+ * This happens when cable is connected or disconnected.
+ *
+ * @param iface Network interface
+ * @param carrier_up true if carrier is detected, false if carrier was lost
+ */
+void net_eth_carrier_set(struct net_if *iface, bool carrier_up);
+
+/**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.
  * This happens when cable is connected.
  *
  * @param iface Network interface
  */
-void net_eth_carrier_on(struct net_if *iface);
+static inline void net_eth_carrier_on(struct net_if *iface)
+{
+	net_eth_carrier_set(iface, true);
+}
 
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier was lost.
@@ -1370,7 +1382,10 @@ void net_eth_carrier_on(struct net_if *iface);
  *
  * @param iface Network interface
  */
-void net_eth_carrier_off(struct net_if *iface);
+static inline void net_eth_carrier_off(struct net_if *iface)
+{
+	net_eth_carrier_set(iface, false);
+}
 
 /**
  * @brief Set promiscuous mode either ON or OFF.
