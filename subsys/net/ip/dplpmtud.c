@@ -93,6 +93,20 @@ static uint16_t dplpmtud_header_overhead(net_sa_family_t family)
 	}
 }
 
+/* Convert an IP-layer MTU (PMTU cache) to a PLPMTU (UDP payload). Returns 0 if
+ * the path cannot carry even an empty UDP datagram.
+ */
+static uint16_t pmtu_to_plpmtu(net_sa_family_t family, uint16_t pmtu)
+{
+	uint16_t overhead = dplpmtud_header_overhead(family);
+
+	if (pmtu <= overhead) {
+		return 0U;
+	}
+
+	return pmtu - overhead;
+}
+
 /* Convert a PLPMTU (UDP payload) to an IP-layer MTU for the PMTU cache. */
 static uint16_t plpmtu_to_pmtu(net_sa_family_t family, uint16_t plpmtu)
 {
@@ -132,7 +146,7 @@ static void sync_pmtu_cache_from_validated(const struct net_dplpmtud_entry *entr
 {
 	struct net_sockaddr_storage dst;
 
-	if (!IS_ENABLED(CONFIG_NET_PMTU) || validated_plpmtu <= previous_validated) {
+	if (!IS_ENABLED(CONFIG_NET_PMTU) || validated_plpmtu == previous_validated) {
 		return;
 	}
 
@@ -735,14 +749,19 @@ out:
 
 void net_dplpmtud_note_blackhole(struct net_dplpmtud_entry *entry)
 {
+	uint16_t previous_validated;
+	uint16_t validated_plpmtu;
+
 	if (entry == NULL) {
 		return;
 	}
 
 	k_mutex_lock(&lock, K_FOREVER);
 
+	previous_validated = entry->validated_plpmtu;
 	entry->blackhole_count++;
 	entry->validated_plpmtu = MIN(entry->base_plpmtu, entry->max_plpmtu);
+	validated_plpmtu = entry->validated_plpmtu;
 	entry->search_low = entry->validated_plpmtu;
 	entry->search_high = entry->validated_plpmtu;
 	reset_probe_locked(entry);
@@ -750,6 +769,43 @@ void net_dplpmtud_note_blackhole(struct net_dplpmtud_entry *entry)
 	entry->last_update = k_uptime_get_32();
 
 	k_mutex_unlock(&lock);
+
+	sync_pmtu_cache_from_validated(entry, validated_plpmtu, previous_validated);
+}
+
+void net_dplpmtud_sync_from_pmtu(const struct net_sockaddr *dst, uint16_t pmtu)
+{
+	struct net_dplpmtud_entry *entry;
+	uint16_t plpmtu;
+
+	if (dst == NULL || !family_enabled(dst->sa_family)) {
+		return;
+	}
+
+	/* The PMTU cache stores the IP-layer MTU; DPLPMTUD works in PLPMTU
+	 * (UDP payload) units.
+	 */
+	plpmtu = pmtu_to_plpmtu(dst->sa_family, pmtu);
+
+	entry = net_dplpmtud_get_entry(dst);
+	if (entry == NULL) {
+		entry = net_dplpmtud_get_or_create_entry(dst);
+		if (entry == NULL) {
+			return;
+		}
+
+		net_dplpmtud_init_entry(entry, NET_DPLPMTUD_BASE_PLPMTU, plpmtu);
+		if (plpmtu < NET_DPLPMTUD_BASE_PLPMTU) {
+			net_dplpmtud_note_blackhole(entry);
+		}
+		return;
+	}
+
+	net_dplpmtud_set_max_plpmtu(entry, plpmtu);
+
+	if (plpmtu < NET_DPLPMTUD_BASE_PLPMTU) {
+		net_dplpmtud_note_blackhole(entry);
+	}
 }
 
 int net_dplpmtud_foreach(net_dplpmtud_cb_t cb, void *user_data)

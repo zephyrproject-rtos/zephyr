@@ -163,6 +163,18 @@ int net_dplpmtud_probe_lost(struct net_dplpmtud_entry *entry, uint16_t probe_siz
 void net_dplpmtud_note_blackhole(struct net_dplpmtud_entry *entry);
 
 /**
+ * @brief Apply a PMTU cache update to the matching DPLPMTUD entry.
+ *
+ * Called when the shared PMTU destination cache changes, for example after
+ * an ICMP PTB. When the new MTU is below the base PLPMTU, the path is
+ * treated as a black hole.
+ *
+ * @param dst Destination address
+ * @param pmtu New PMTU from the destination cache
+ */
+void net_dplpmtud_sync_from_pmtu(const struct net_sockaddr *dst, uint16_t pmtu);
+
+/**
  * @brief Traverse DPLPMTUD path state.
  *
  * @param cb Callback to invoke for each entry

@@ -150,6 +150,10 @@ int net_dplpmtud_on_path_probe_lost(struct net_dplpmtud_path *path,
 /**
  * @brief Report black-hole fallback for a path.
  *
+ * Resets the validated PLPMTU toward the base size, stops probing, and
+ * records the path in the error state. Transports may also call this when
+ * they detect a black hole without an ICMP PTB.
+ *
  * @param path Initialized path handle
  */
 void net_dplpmtud_note_path_blackhole(struct net_dplpmtud_path *path);

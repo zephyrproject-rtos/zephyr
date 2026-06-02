@@ -361,6 +361,49 @@ static void run_dplpmtud_loss_clamp_test(const struct net_sockaddr *dst, uint16_
 		     next_probe);
 }
 
+static void run_dplpmtud_blackhole_test(const struct net_sockaddr *dst, uint16_t pmtu)
+{
+	struct net_dplpmtud_path path;
+	const uint16_t blackhole_mtu = 1180U;
+	int mtu;
+	int probe;
+	int ret;
+
+	seed_dplpmtud_pmtu(dst, pmtu);
+
+	ret = net_dplpmtud_init_path(&path, dst, 0U);
+	zassert_ok(ret, "DPLPMTUD path init failed (%d)", ret);
+
+	/* PTB-style PMTU below the base PLPMTU must trigger black-hole handling. */
+	ret = net_pmtu_update_mtu(dst, blackhole_mtu);
+	zassert_true(ret >= 0, "PMTU update failed (%d)", ret);
+
+	mtu = net_dplpmtud_get_path_mtu(&path);
+	zassert_equal(mtu, blackhole_mtu - dplpmtud_overhead(dst),
+		      "Black-hole PMTU must cap validated PLPMTU (%d)", mtu);
+
+	mtu = net_pmtu_get_mtu(dst);
+	zassert_equal(mtu, blackhole_mtu, "PMTU cache must follow black-hole sync (%d)", mtu);
+
+	probe = net_dplpmtud_get_path_probe_size(&path);
+	zassert_equal(probe, 0, "Black-holed path must not schedule probes (%d)", probe);
+
+	seed_dplpmtud_pmtu(dst, pmtu);
+
+	ret = net_dplpmtud_init_path(&path, dst, 0U);
+	zassert_ok(ret, "DPLPMTUD path re-init failed (%d)", ret);
+
+	net_dplpmtud_note_path_blackhole(&path);
+
+	mtu = net_dplpmtud_get_path_mtu(&path);
+	zassert_equal(mtu, NET_DPLPMTUD_BASE_PLPMTU,
+		      "Explicit black-hole must fall back to base PLPMTU (%d)", mtu);
+
+	mtu = net_pmtu_get_mtu(dst);
+	zassert_equal(mtu, NET_DPLPMTUD_BASE_PLPMTU + dplpmtud_overhead(dst),
+		      "PMTU cache must follow explicit black-hole (%d)", mtu);
+}
+
 static void *test_setup(void)
 {
 	net_if_foreach(iface_cb, NULL);
@@ -1105,6 +1148,26 @@ ZTEST(net_pmtu_test_suite, test_pmtu_12_ipv6_dplpmtud_loss_clamp)
 
 	init_dest_v6(&dest_ipv6, &dest_ipv6_addr4);
 	run_dplpmtud_loss_clamp_test((struct net_sockaddr *)&dest_ipv6, 1650U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_13_ipv4_dplpmtud_blackhole)
+{
+	struct net_sockaddr_in dest_ipv4;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+
+	init_dest_v4(&dest_ipv4, &dest_ipv4_addr1);
+	run_dplpmtud_blackhole_test((struct net_sockaddr *)&dest_ipv4, 1450U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_13_ipv6_dplpmtud_blackhole)
+{
+	struct net_sockaddr_in6 dest_ipv6;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+
+	init_dest_v6(&dest_ipv6, &dest_ipv6_addr1);
+	run_dplpmtud_blackhole_test((struct net_sockaddr *)&dest_ipv6, 1650U);
 }
 
 ZTEST_SUITE(net_pmtu_test_suite, NULL, test_setup, NULL, NULL, NULL);
