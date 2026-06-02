@@ -2008,10 +2008,9 @@ static int nxp_wifi_ap_set_rts_threshold(const struct device *dev,
 static void nxp_wifi_sta_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	struct interface *intf = dev->data;
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 	intf->netif = iface;
 #ifdef CONFIG_WIFI_NM
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
@@ -2048,11 +2047,10 @@ static void nxp_wifi_sta_init(struct net_if *iface)
 static void nxp_wifi_uap_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	struct interface *intf = dev->data;
 	int ret;
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 	intf->netif = iface;
 
 #ifdef CONFIG_WIFI_NM

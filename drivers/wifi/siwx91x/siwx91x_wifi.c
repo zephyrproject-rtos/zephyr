@@ -364,11 +364,8 @@ static int siwx91x_set_config(const struct device *dev,
 
 static void siwx91x_ethernet_init(struct net_if *iface)
 {
-	struct ethernet_context *eth_ctx;
-
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
-		eth_ctx = net_if_l2_data(iface);
-		eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+		net_eth_set_if_type_wifi(iface);
 		ethernet_init(iface);
 	}
 }
