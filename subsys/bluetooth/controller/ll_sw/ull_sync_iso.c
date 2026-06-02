@@ -356,6 +356,31 @@ uint8_t ull_sync_iso_lll_index_get(struct lll_sync_iso *lll)
 	return ARRAY_INDEX(ll_sync_iso, HDR_LLL2ULL(lll));
 }
 
+struct ll_sync_iso_set *ull_sync_iso_is_valid_get(struct ll_sync_iso_set *sync_iso)
+{
+	if (((uint8_t *)sync_iso < (uint8_t *)ll_sync_iso) ||
+	    ((uint8_t *)sync_iso > ((uint8_t *)ll_sync_iso +
+			       (sizeof(struct ll_sync_iso_set) *
+				(CONFIG_BT_CTLR_SCAN_SYNC_ISO_SET - 1))))) {
+		return NULL;
+	}
+
+	return sync_iso;
+}
+
+struct lll_sync_iso *ull_sync_iso_lll_is_valid_get(struct lll_sync_iso *lll)
+{
+	struct ll_sync_iso_set *sync_iso;
+
+	sync_iso = HDR_LLL2ULL(lll);
+	sync_iso = ull_sync_iso_is_valid_get(sync_iso);
+	if (sync_iso) {
+		return &sync_iso->lll;
+	}
+
+	return NULL;
+}
+
 struct ll_sync_iso_set *ull_sync_iso_by_stream_get(uint16_t handle)
 {
 	if (handle >= CONFIG_BT_CTLR_SYNC_ISO_STREAM_COUNT) {
