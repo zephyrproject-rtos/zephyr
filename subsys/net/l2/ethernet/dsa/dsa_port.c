@@ -77,7 +77,7 @@ static void dsa_port_phylink_change(const struct device *phydev, struct phy_link
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 
 	if (dsa_switch_ctx->dapi->port_phylink_change != NULL) {
-		dsa_switch_ctx->dapi->port_phylink_change(phydev, state, (void *)dev);
+		dsa_switch_ctx->dapi->port_phylink_change(phydev, state, dev);
 	}
 
 	if (state->is_up) {
