@@ -15,9 +15,6 @@ config NUM_IRQS
 
 if SERIAL
 
-config UART_NS16550
-	default y
-
 config UART_NS16550_TI_K3
 	default y if SOC_SERIES_J721E_R5
 

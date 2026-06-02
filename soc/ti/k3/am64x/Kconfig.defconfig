@@ -17,9 +17,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 if SERIAL
 
-config UART_NS16550
-	default y
-
 config UART_NS16550_TI_K3
 	default y if SOC_SERIES_AM64X_M4
 	default y if SOC_SERIES_AM64X_R5
