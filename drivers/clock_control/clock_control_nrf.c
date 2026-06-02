@@ -599,8 +599,7 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		? NRF_CLOCK_LFCLK_XTAL
 		: CLOCK_CONTROL_NRF_K32SRC;
 	nrf_clock_lfclk_t type;
-	bool atomic_idle_wait;
-	int key;
+	bool can_sleep;
 
 	if ((mode == CLOCK_CONTROL_NRF_LF_START_AVAILABLE) &&
 	    (target_type == NRF_CLOCK_LFCLK_XTAL) &&
@@ -614,30 +613,11 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		return;
 	}
 
-	/* Use atomic idle to await LFCLKSTARTED event if the current context can't yield */
-	atomic_idle_wait = k_is_in_isr() ||
-			   k_is_pre_kernel() ||
-			   !IS_ENABLED(CONFIG_MULTITHREADING);
+	can_sleep = !k_is_in_isr() && !k_is_pre_kernel();
 
-	if (!atomic_idle_wait) {
-		nrf_clock_int_disable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
-	}
-
-	/* Silence spurious "key may be used uninitialized" warning */
-	key = 0;
+	nrf_clock_int_disable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 
 	while (true) {
-		if (atomic_idle_wait) {
-			/* Check the clock state and set new state in a critical section */
-			key = irq_lock();
-
-			/*
-			 * Clear the IRQ at the start of the critical section to ensure we will
-			 * wake the CPU if the IRQ triggers before we potentially enter CPU idle.
-			 */
-			NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
-		}
-
 		if (nrfx_clock_is_running(d, (void *)&type)) {
 			if (type == target_type) {
 				/* LFCLK is running stable with target source */
@@ -659,19 +639,12 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 			}
 		}
 
-		if (atomic_idle_wait) {
-			/* Implicitly functions like calling k_cpu_idle() + irq_unlock() */
-			k_cpu_atomic_idle(key);
-		} else {
+		if (can_sleep) {
 			k_msleep(1);
 		}
 	}
 
-	if (atomic_idle_wait) {
-		irq_unlock(key);
-	} else {
-		nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
-	}
+	nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 }
 
 void z_nrf_clock_control_lf_on(enum nrf_lfclk_start_mode start_mode)
