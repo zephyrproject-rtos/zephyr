@@ -275,3 +275,13 @@ int device_supported_foreach(const struct device *dev,
 }
 
 #endif /* CONFIG_DEVICE_DEPS */
+
+#ifdef CONFIG_ASSERT
+void z_device_api_check(const struct device *dev, const void *api_start, const void *api_end)
+{
+	__ASSERT(dev != NULL, "device is NULL");
+	__ASSERT((const uint8_t *)dev->api >= (const uint8_t *)api_start &&
+		 (const uint8_t *)dev->api <  (const uint8_t *)api_end,
+		 "device %s API class mismatch", dev->name);
+}
+#endif

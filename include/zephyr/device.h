@@ -1360,6 +1360,16 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
 /** @brief Linker symbol marking end of class section including child sections. */
 #define Z_DEVICE_API_EXT_END(_struct_type) CONCAT(_, _struct_type, _ext_end)
 
+#if defined(CONFIG_ASSERT)
+
+/**
+ * Runtime check used by DEVICE_API_GET. Keeping the assert in a single function
+ * avoids inlining two __ASSERT() expansions.
+ */
+void z_device_api_check(const struct device *dev, const void *api_start, const void *api_end);
+
+#endif
+
 /** @endcond */
 
 /**
@@ -1414,6 +1424,7 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
 			 (const uint8_t *)STRUCT_SECTION_START(Z_DEVICE_API_TYPE(_class)));        \
 	})
 
+#if defined(CONFIG_ASSERT) || defined(__DOXYGEN__)
 /**
  * @brief Expands to the pointer of a device's API for a given class.
  *
@@ -1424,10 +1435,16 @@ DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_DEVICE_DECLARE_INTERNAL)
  */
 #define DEVICE_API_GET(_class, _dev)                                                               \
 	({                                                                                         \
-		__ASSERT(_dev != NULL, "device is NULL");                                          \
-		__ASSERT(DEVICE_API_IS(_class, _dev), "device API is not %s", STRINGIFY(_class));  \
+		STRUCT_SECTION_START_EXTERN(Z_DEVICE_API_TYPE(_class));                            \
+		extern const uint8_t Z_DEVICE_API_EXT_END(Z_DEVICE_API_TYPE(_class))[];            \
+		z_device_api_check((_dev),                                                         \
+				   STRUCT_SECTION_START(Z_DEVICE_API_TYPE(_class)),                \
+				   Z_DEVICE_API_EXT_END(Z_DEVICE_API_TYPE(_class)));               \
 		Z_DEVICE_API_GET(_class, _dev);                                                    \
 	})
+#else
+#define DEVICE_API_GET(_class, _dev) Z_DEVICE_API_GET(_class, _dev)
+#endif
 
 #ifdef __cplusplus
 }
