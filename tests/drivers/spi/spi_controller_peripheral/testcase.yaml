@@ -18,6 +18,9 @@ common:
     - nrf54lm20dk/nrf54lm20b/cpuapp
     - nrf7120dk/nrf7120/cpuapp
     - lp_em_cc35x1/cc3551e
+    - lp_em_cc2745r10_q1/cc2745r10_q1
+    - lp_em_cc2745r10_q1/cc2755r10
+    - lp_em_cc2755p10
     - ophelia4ev/nrf54l15/cpuapp
 
 tests:
@@ -94,6 +97,9 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - lp_em_cc35x1/cc3551e
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2755p10
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.spis_fast:
@@ -112,6 +118,10 @@ tests:
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - nrf7120dk/nrf7120/cpuapp
       - lp_em_cc35x1/cc3551e
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2755p10
+      - lp_em_cc2755p20
       - ophelia4ev/nrf54l15/cpuapp
 
   drivers.spi.pm_runtime:
@@ -129,6 +139,8 @@ tests:
       - CONFIG_SOC_NRF_FORCE_CONSTLAT=y
       - CONFIG_POWER_DOMAIN=n
     extra_args: DTC_OVERLAY_FILE="boards/nrf54l15dk_nrf54l15_cpuapp_cross_domain.overlay"
+    vendor_allow:
+      - nordic
     platform_exclude:
       - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
