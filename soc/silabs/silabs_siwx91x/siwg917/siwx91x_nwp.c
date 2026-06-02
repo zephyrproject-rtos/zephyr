@@ -195,7 +195,10 @@ static void siwx91x_configure_sta_mode(sl_wifi_system_boot_configuration_t *boot
 		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_FEAT_SECURITY_PSK)) {
 			boot_config->feature_bit_map |= SL_SI91X_FEAT_SECURITY_PSK;
 		}
-		if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
+		if (!IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_ROAMING_USE_DEAUTH)) {
+			/* Setting this bit configures sending null data when roaming.
+			 * If it is unset, a deauth will be sent when roaming.
+			 */
 			boot_config->custom_feature_bit_map |=
 				SL_SI91X_CUSTOM_FEAT_ROAM_WITH_DEAUTH_OR_NULL_DATA;
 		}
