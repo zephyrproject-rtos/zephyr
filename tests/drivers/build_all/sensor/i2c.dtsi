@@ -1692,3 +1692,8 @@ test_i2c_ltc4286: ltc4286@da {
 	power-good-gpios = <&test_gpio 0 0>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_mlx90632: mlx90632@db {
+	compatible = "melexis,mlx90632";
+	reg = <0xdb>;
+};
