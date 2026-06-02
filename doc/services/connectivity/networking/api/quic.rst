@@ -258,9 +258,13 @@ Path MTU Discovery (DPLPMTUD)
 *****************************
 
 Zephyr's QUIC stack performs **Datagram Packetization Layer Path MTU Discovery**
-(DPLPMTUD) as described in :rfc:`9000` Section 14.3. The goal is to find the
-largest UDP payload size that can traverse the path without IP-layer
-fragmentation, then use that size for application data packets.
+(DPLPMTUD) as described in :rfc:`9000` Section 14.3. The RFC 8899 search state
+lives in the generic :ref:`net_dplpmtud` subsystem; QUIC supplies probe packets
+(PING plus padding), don't-fragment UDP sends, and ACK/loss confirmation through
+its recovery machinery.
+
+The goal is to find the largest UDP payload size that can traverse the path
+without IP-layer fragmentation, then use that size for application data packets.
 
 Behavior
 --------
@@ -296,9 +300,10 @@ machinery as stream data. On Probe Timeout (PTO), **in-flight stream frames are
 retransmitted first**; a DPLPMTUD probe is sent only when there is no stream
 data to retransmit (the same situation where a bare PING probe would be sent).
 
-There is currently no application-facing API to enable, disable, or tune
+There is currently no application-facing QUIC API to enable, disable, or tune
 DPLPMTUD. Probing begins automatically after handshake completion whenever a
-larger path MTU may be available.
+larger path MTU may be available. Transports implementing their own UDP protocols
+can reuse the same generic API documented in :ref:`net_dplpmtud`.
 
 
 Configure Options
