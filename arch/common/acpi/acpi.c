@@ -544,6 +544,7 @@ int acpi_device_mmio_get(struct acpi_dev *child_dev, struct acpi_mmio_resource *
 			reg_base[mmio_cnt].mmio = (uintptr_t)res->Data.FixedMemory32.Address;
 			reg_base[mmio_cnt++].length = res->Data.FixedMemory32.AddressLength;
 			break;
+
 		case ACPI_RESOURCE_TYPE_ADDRESS64:
 			reg_base[mmio_cnt].type = ACPI_RES_TYPE_MEM;
 			reg_base[mmio_cnt].mmio = (uintptr_t)res->Data.Address64.Address.Minimum;
@@ -952,6 +953,31 @@ ACPI_MADT_LOCAL_APIC *acpi_local_apic_get(int cpu_num)
 		if (lapic[idx].LapicFlags & ACPI_CPU_FLAGS_ENABLED) {
 			if (cpu_num == 0) {
 				return &lapic[idx];
+			}
+
+			cpu_num--;
+		}
+	}
+
+	return NULL;
+}
+
+ACPI_MADT_LOCAL_X2APIC *acpi_local_x2apic_get(int cpu_num)
+{
+	ACPI_MADT_LOCAL_X2APIC *x2apic;
+	int cpu_cnt;
+	int idx;
+
+	if (acpi_madt_entry_get(ACPI_MADT_TYPE_LOCAL_X2APIC, (ACPI_SUBTABLE_HEADER **)&x2apic,
+				&cpu_cnt)) {
+		/* No x2APIC entries in MADT. */
+		return NULL;
+	}
+
+	for (idx = 0; cpu_num >= 0 && idx < cpu_cnt; idx++) {
+		if (x2apic[idx].LapicFlags & ACPI_CPU_FLAGS_ENABLED) {
+			if (cpu_num == 0) {
+				return &x2apic[idx];
 			}
 
 			cpu_num--;
