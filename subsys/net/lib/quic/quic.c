@@ -5579,6 +5579,90 @@ static int quic_tls_secret_callback(void *user_data,
 	return 0;
 }
 
+static void quic_client_endpoint_init_cids(struct quic_endpoint *ep,
+					  const struct net_sockaddr *remote_addr)
+{
+	size_t token_len;
+
+	ep->peer_cid_len = 8;
+	sys_rand_get(ep->peer_cid, ep->peer_cid_len);
+
+	ep->my_cid_len = 8;
+	sys_rand_get(ep->my_cid, ep->my_cid_len);
+	ep->token.client_initial_dcid_len = ep->peer_cid_len;
+	memcpy(ep->token.client_initial_dcid, ep->peer_cid, ep->peer_cid_len);
+
+	token_len = quic_token_cache_take(remote_addr, ep->token.initial,
+					  sizeof(ep->token.initial));
+	if (token_len > 0U) {
+		ep->token.initial_len = token_len;
+		ep->token.initial_type = QUIC_TOKEN_NEW;
+	}
+}
+
+static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
+{
+	for (int i = 0; i < ARRAY_SIZE(contexts); i++) {
+		struct quic_endpoint *endp, *tmp;
+
+		if (!quic_context_is_used(&contexts[i])) {
+			continue;
+		}
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&contexts[i].endpoints, endp, tmp, node) {
+			if (endp == ep) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/*
+ * Drop client endpoints left behind when a connection context was closed
+ * without unlinking the endpoint (e.g. setsockopt failed before the endpoint
+ * was attached to the context list).
+ */
+static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
+{
+	struct quic_endpoint *orphans[CONFIG_QUIC_MAX_ENDPOINTS] = { 0 };
+	int orphan_count = 0;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+	k_mutex_lock(&endpoints_lock, K_FOREVER);
+
+	ARRAY_FOR_EACH(endpoints, i) {
+		struct quic_endpoint *ep = endpoints[i];
+		struct quic_endpoint *matched;
+
+		if (ep == NULL || atomic_get(&ep->refcount) == 0 || ep->is_server ||
+		    ep->sock < 0) {
+			continue;
+		}
+
+		matched = find_endpoint(remote_addr, NULL, NULL, 0, NULL, 0);
+		if (matched != ep) {
+			continue;
+		}
+
+		if (quic_endpoint_on_active_context(ep)) {
+			continue;
+		}
+
+		orphans[orphan_count++] = ep;
+	}
+
+	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
+
+	for (int i = 0; i < orphan_count; i++) {
+		while (atomic_get(&orphans[i]->refcount) > 0) {
+			quic_endpoint_unref(orphans[i]);
+		}
+	}
+}
+
 #include "quic_tls.c"
 #include "quic_socket.c"
 #include "quic_packet.c"
