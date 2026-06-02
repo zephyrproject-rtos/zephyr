@@ -244,10 +244,9 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	if (state->is_up) {
 		eth_stm32_set_mac_config(dev, state);
 		eth_stm32_hal_start(dev, dev_data->iface);
-		net_eth_carrier_on(dev_data->iface);
-	} else {
-		net_eth_carrier_off(dev_data->iface);
 	}
+
+	net_eth_carrier_set(dev_data->iface, state->is_up);
 }
 
 static void eth_iface_init(struct net_if *iface)

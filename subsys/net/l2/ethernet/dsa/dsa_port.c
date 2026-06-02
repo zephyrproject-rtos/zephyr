@@ -80,11 +80,7 @@ static void dsa_port_phylink_change(const struct device *phydev, struct phy_link
 		dsa_switch_ctx->dapi->port_phylink_change(phydev, state, dev);
 	}
 
-	if (state->is_up) {
-		net_eth_carrier_on(iface);
-	} else {
-		net_eth_carrier_off(iface);
-	}
+	net_eth_carrier_set(iface, state->is_up);
 }
 
 static void dsa_port_iface_init(struct net_if *iface)

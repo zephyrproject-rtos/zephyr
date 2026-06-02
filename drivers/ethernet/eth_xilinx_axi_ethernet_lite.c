@@ -175,14 +175,7 @@ static void axi_eth_lite_phy_link_state_changed(const struct device *phydev __un
 {
 	struct net_if *iface = (struct net_if *)user_data;
 
-	LOG_INF("Link state changed to: %s (speed %x)", state->is_up ? "up" : "down", state->speed);
-
-	/* inform the L2 driver whether we can handle packets now */
-	if (state->is_up) {
-		net_eth_carrier_on(iface);
-	} else {
-		net_eth_carrier_off(iface);
-	}
+	net_eth_carrier_set(iface, state->is_up);
 }
 
 static void axi_eth_lite_iface_init(struct net_if *iface)

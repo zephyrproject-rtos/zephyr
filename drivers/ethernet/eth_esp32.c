@@ -638,11 +638,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 {
 	struct net_if *iface = (struct net_if *)user_data;
 
-	if (state->is_up) {
-		net_eth_carrier_on(iface);
-	} else {
-		net_eth_carrier_off(iface);
-	}
+	net_eth_carrier_set(iface, state->is_up);
 }
 
 int eth_esp32_initialize(const struct device *dev)

@@ -459,11 +459,7 @@ static void phy_link_state_changed(const struct device *dev __unused, struct phy
 	struct net_if *iface = (struct net_if *)user_data;
 
 	/* inform the L2 driver about link event */
-	if (state->is_up) {
-		net_eth_carrier_on(iface);
-	} else {
-		net_eth_carrier_off(iface);
-	}
+	net_eth_carrier_set(iface, state->is_up);
 }
 
 static void xilinx_axienet_iface_init(struct net_if *iface)

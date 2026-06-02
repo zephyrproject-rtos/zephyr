@@ -547,11 +547,9 @@ static void phy_link_state_changed(const struct device *phy_dev,
 		}
 
 		REG_WRITE(MAC_CONF, reg_val);
-
-		net_eth_carrier_on(p->iface);
-	} else {
-		net_eth_carrier_off(p->iface);
 	}
+
+	net_eth_carrier_set(p->iface, state->is_up);
 }
 
 static const struct device *dwmac_get_phy(const struct device *dev, struct net_if *iface __unused)
