@@ -70,7 +70,6 @@ static int pmtu_entry_to_sockaddr(const struct net_pmtu_entry *entry,
 
 static void sync_dplpmtud_entry(const struct net_pmtu_entry *entry)
 {
-	struct net_dplpmtud_entry *dplpmtud_entry;
 	struct net_sockaddr_storage dst;
 	int ret;
 
@@ -85,19 +84,7 @@ static void sync_dplpmtud_entry(const struct net_pmtu_entry *entry)
 		return;
 	}
 
-	dplpmtud_entry = net_dplpmtud_get_entry(net_sad(&dst));
-	if (dplpmtud_entry == NULL) {
-		dplpmtud_entry = net_dplpmtud_get_or_create_entry(net_sad(&dst));
-		if (dplpmtud_entry == NULL) {
-			return;
-		}
-
-		net_dplpmtud_init_entry(dplpmtud_entry, NET_DPLPMTUD_BASE_PLPMTU,
-					entry->mtu);
-		return;
-	}
-
-	net_dplpmtud_set_max_plpmtu(dplpmtud_entry, entry->mtu);
+	net_dplpmtud_sync_from_pmtu(net_sad(&dst), entry->mtu);
 }
 
 static struct net_pmtu_entry *get_pmtu_entry(const struct net_sockaddr *dst)
