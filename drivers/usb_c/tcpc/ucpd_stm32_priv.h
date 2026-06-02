@@ -268,7 +268,10 @@ struct tcpc_config {
 	/* STM32 UCPD port */
 	UCPD_TypeDef *ucpd_port;
 	/* STM32 UCPD parameters */
-	LL_UCPD_InitTypeDef ucpd_params;
+	uint8_t ucpd_clk_prescaler;
+	uint8_t transition_window;
+	uint8_t interframe_gap;
+	uint8_t halfbit_clock_div;
 	/* STM32 UCPD dead battery support */
 	bool ucpd_dead_battery;
 };
