@@ -102,6 +102,11 @@ int cache_data_flush_and_invd_range(void *addr, size_t size)
 	return ret;
 }
 
+int cache_data_flush_all(void)
+{
+	return cache_data_flush_range(0, UINT32_MAX);
+}
+
 int cache_data_invd_all(void)
 {
 	K_SPINLOCK(&lock) {
