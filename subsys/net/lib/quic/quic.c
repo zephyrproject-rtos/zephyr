@@ -3914,23 +3914,25 @@ static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep)
 			return 0;
 		}
 
+		ret = net_dplpmtud_on_path_probe_sent(&ep->dplpmtud.path, probe_size);
+		if (ret < 0) {
+			ep->dplpmtud.probe_pending = false;
+			k_mutex_unlock(&ep->recovery.lock);
+			return ret;
+		}
+
+		quic_dplpmtud_begin_probe_locked(ep, probe_size);
 		k_mutex_unlock(&ep->recovery.lock);
 
 		ret = quic_send_dplpmtud_probe(ep, probe_size);
 		k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
 		if (ret == 0) {
-			ret = net_dplpmtud_on_path_probe_sent(&ep->dplpmtud.path, probe_size);
-			if (ret < 0) {
-				ep->dplpmtud.probe_pending = false;
-				k_mutex_unlock(&ep->recovery.lock);
-				return ret;
-			}
-
-			quic_dplpmtud_begin_probe_locked(ep, probe_size);
 			k_mutex_unlock(&ep->recovery.lock);
 			return 0;
 		}
+
+		quic_dplpmtud_on_probe_lost_locked(ep, probe_size);
 
 		if (ret == -EMSGSIZE) {
 			if (probe_size > QUIC_DPLPMTUD_BASE_PLPMTU) {
