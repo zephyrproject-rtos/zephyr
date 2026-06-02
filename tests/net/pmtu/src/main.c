@@ -40,6 +40,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_PMTU_LOG_LEVEL);
 #include "icmpv4.h"
 #include "ipv6.h"
 #include "ipv4.h"
+#include "dplpmtud_internal.h"
 #include "pmtu.h"
 
 #define NET_LOG_ENABLED 1
@@ -318,7 +319,8 @@ static void run_dplpmtud_low_pmtu_test(const struct net_sockaddr *dst, uint16_t 
 	zassert_ok(ret, "DPLPMTUD path init failed (%d)", ret);
 
 	mtu = net_dplpmtud_get_path_mtu(&path);
-	zassert_equal(mtu, pmtu, "Low PMTU ceiling was not preserved (%d)", mtu);
+	zassert_equal(mtu, pmtu - dplpmtud_overhead(dst),
+		      "Low PMTU ceiling was not preserved (%d)", mtu);
 
 	probe = net_dplpmtud_get_path_probe_size(&path);
 	zassert_equal(probe, 0, "Low PMTU path should not schedule probes (%d)", probe);
@@ -359,6 +361,41 @@ static void run_dplpmtud_loss_clamp_test(const struct net_sockaddr *dst, uint16_
 	zassert_true(retries < 8, "Probe size never clamped after repeated loss");
 	zassert_true(next_probe < probe, "Repeated loss did not reduce probe size (%d)",
 		     next_probe);
+}
+
+static void run_dplpmtud_getter_no_side_effect_test(const struct net_sockaddr *dst,
+						   const struct net_sockaddr *other_dst)
+{
+	struct net_dplpmtud_path path;
+	int ret;
+
+	memset(&path, 0, sizeof(path));
+
+	ret = net_dplpmtud_get_path_mtu(&path);
+	zassert_equal(ret, -ENOENT, "Getter on uninitialized path must fail (%d)", ret);
+
+	ret = net_dplpmtud_get_path_probe_size(&path);
+	zassert_equal(ret, -ENOENT, "Getter on uninitialized path must fail (%d)", ret);
+
+	zassert_is_null(net_dplpmtud_get_entry(other_dst),
+			"Unused destination must not have DPLPMTUD state yet");
+
+	seed_dplpmtud_pmtu(dst, 1450U);
+
+	ret = net_dplpmtud_init_path(&path, dst, 0U);
+	zassert_ok(ret, "DPLPMTUD path init failed (%d)", ret);
+
+	ret = net_dplpmtud_get_path_mtu(&path);
+	zassert_true(ret > 0, "Getter must read initialized path (%d)", ret);
+
+	ret = net_dplpmtud_get_path_probe_size(&path);
+	zassert_true(ret >= 0, "Getter must not fail on initialized path (%d)", ret);
+
+	ret = net_dplpmtud_get_path_mtu(&path);
+	zassert_true(ret > 0, "Repeated getter must keep working (%d)", ret);
+
+	zassert_is_null(net_dplpmtud_get_entry(other_dst),
+			"Getter must not create state for other destinations");
 }
 
 static void run_dplpmtud_blackhole_test(const struct net_sockaddr *dst, uint16_t pmtu)
@@ -1148,6 +1185,36 @@ ZTEST(net_pmtu_test_suite, test_pmtu_12_ipv6_dplpmtud_loss_clamp)
 
 	init_dest_v6(&dest_ipv6, &dest_ipv6_addr4);
 	run_dplpmtud_loss_clamp_test((struct net_sockaddr *)&dest_ipv6, 1650U);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_14_ipv4_dplpmtud_getter_no_side_effect)
+{
+	static const struct net_in_addr other_ipv4_addr = { { { 198, 51, 100, 99 } } };
+	struct net_sockaddr_in dest_ipv4;
+	struct net_sockaddr_in other_ipv4;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_PMTU_DPLPMTUD);
+
+	init_dest_v4(&dest_ipv4, &dest_ipv4_addr2);
+	init_dest_v4(&other_ipv4, &other_ipv4_addr);
+	run_dplpmtud_getter_no_side_effect_test((struct net_sockaddr *)&dest_ipv4,
+						(struct net_sockaddr *)&other_ipv4);
+}
+
+ZTEST(net_pmtu_test_suite, test_pmtu_14_ipv6_dplpmtud_getter_no_side_effect)
+{
+	static const struct net_in6_addr other_ipv6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0x01, 0,
+								     0, 0, 0, 0, 0, 0, 0, 0, 0,
+								     0x99 } } };
+	struct net_sockaddr_in6 dest_ipv6;
+	struct net_sockaddr_in6 other_ipv6;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_PMTU_DPLPMTUD);
+
+	init_dest_v6(&dest_ipv6, &dest_ipv6_addr2);
+	init_dest_v6(&other_ipv6, &other_ipv6_addr);
+	run_dplpmtud_getter_no_side_effect_test((struct net_sockaddr *)&dest_ipv6,
+						(struct net_sockaddr *)&other_ipv6);
 }
 
 ZTEST(net_pmtu_test_suite, test_pmtu_13_ipv4_dplpmtud_blackhole)

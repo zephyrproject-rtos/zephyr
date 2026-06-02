@@ -94,6 +94,9 @@ void net_dplpmtud_set_path_max_plpmtu(struct net_dplpmtud_path *path,
 /**
  * @brief Get the currently validated PLPMTU for a path.
  *
+ * The path must have been initialized with net_dplpmtud_init_path(). This
+ * call does not create per-destination DPLPMTUD state.
+ *
  * @param path Initialized path handle
  *
  * @return Validated PLPMTU on success, negative errno otherwise
@@ -102,6 +105,9 @@ int net_dplpmtud_get_path_mtu(struct net_dplpmtud_path *path);
 
 /**
  * @brief Get the next probe size a transport may transmit for a path.
+ *
+ * The path must have been initialized with net_dplpmtud_init_path(). This
+ * call does not create per-destination DPLPMTUD state.
  *
  * @param path Initialized path handle
  *

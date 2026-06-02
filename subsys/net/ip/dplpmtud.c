@@ -350,41 +350,55 @@ static struct net_dplpmtud_entry *get_free_entry_locked(void)
 	return entry;
 }
 
-static struct net_dplpmtud_entry *get_path_entry(struct net_dplpmtud_path *path,
-						 bool create)
+static void sync_entry_from_pmtu_cache(struct net_dplpmtud_entry *entry,
+				       const struct net_sockaddr *dst)
 {
-	struct net_dplpmtud_entry *entry;
 	int mtu;
 
-	if (path == NULL || !path->in_use ||
-	    !family_enabled(net_sad(&path->dst)->sa_family)) {
-		return NULL;
-	}
-
-	if (create) {
-		entry = net_dplpmtud_get_or_create_entry(net_sad(&path->dst));
-	} else {
-		entry = net_dplpmtud_get_entry(net_sad(&path->dst));
-	}
-
-	if (entry == NULL) {
-		return NULL;
-	}
-
-	mtu = net_pmtu_get_mtu(net_sad(&path->dst));
+	mtu = net_pmtu_get_mtu(dst);
 	if (mtu > 0) {
-		uint16_t pmtu = (uint16_t)mtu;
+		uint16_t plpmtu = pmtu_to_plpmtu(dst->sa_family, (uint16_t)mtu);
 
 		/* Raise the search ceiling when the PMTU cache reports a larger
 		 * path limit. Lower it only on PTB-style reductions below the
 		 * current validated PLPMTU, not when the cache mirrors a
 		 * DPLPMTUD write-back of the validated size.
 		 */
-		if (pmtu > entry->max_plpmtu) {
-			net_dplpmtud_set_max_plpmtu(entry, pmtu);
-		} else if (pmtu < entry->validated_plpmtu) {
-			net_dplpmtud_set_max_plpmtu(entry, pmtu);
+		if (plpmtu > entry->max_plpmtu) {
+			net_dplpmtud_set_max_plpmtu(entry, plpmtu);
+		} else if (plpmtu < entry->validated_plpmtu) {
+			net_dplpmtud_set_max_plpmtu(entry, plpmtu);
 		}
+	}
+}
+
+static struct net_dplpmtud_entry *lookup_path_entry(struct net_dplpmtud_path *path,
+						    bool create)
+{
+	if (path == NULL || !path->in_use ||
+	    !family_enabled(net_sad(&path->dst)->sa_family)) {
+		return NULL;
+	}
+
+	if (create) {
+		return net_dplpmtud_get_or_create_entry(net_sad(&path->dst));
+	}
+
+	return net_dplpmtud_get_entry(net_sad(&path->dst));
+}
+
+static struct net_dplpmtud_entry *get_path_entry(struct net_dplpmtud_path *path,
+						 bool create, bool sync_pmtu)
+{
+	struct net_dplpmtud_entry *entry;
+
+	entry = lookup_path_entry(path, create);
+	if (entry == NULL) {
+		return NULL;
+	}
+
+	if (sync_pmtu) {
+		sync_entry_from_pmtu_cache(entry, net_sad(&path->dst));
 	}
 
 	return entry;
@@ -407,7 +421,7 @@ int net_dplpmtud_init_path(struct net_dplpmtud_path *path,
 	path->max_plpmtu = normalize_path_max_plpmtu(max_plpmtu);
 	path->in_use = true;
 
-	if (get_path_entry(path, true) == NULL) {
+	if (get_path_entry(path, true, true) == NULL) {
 		memset(path, 0, sizeof(*path));
 		return -ENOMEM;
 	}
@@ -428,14 +442,18 @@ void net_dplpmtud_set_path_max_plpmtu(struct net_dplpmtud_path *path,
 int net_dplpmtud_get_path_mtu(struct net_dplpmtud_path *path)
 {
 	struct net_dplpmtud_entry *entry;
+	uint16_t mtu;
 
-	entry = get_path_entry(path, true);
+	entry = get_path_entry(path, false, false);
 	if (entry == NULL) {
 		return -ENOENT;
 	}
 
-	return get_path_limit(path, entry) < entry->validated_plpmtu ?
-		get_path_limit(path, entry) : entry->validated_plpmtu;
+	k_mutex_lock(&lock, K_FOREVER);
+	mtu = MIN(get_path_limit(path, entry), entry->validated_plpmtu);
+	k_mutex_unlock(&lock);
+
+	return mtu;
 }
 
 int net_dplpmtud_get_path_probe_size(struct net_dplpmtud_path *path)
@@ -443,30 +461,35 @@ int net_dplpmtud_get_path_probe_size(struct net_dplpmtud_path *path)
 	struct net_dplpmtud_entry *entry;
 	uint16_t path_limit;
 	uint16_t search_high;
+	int probe_size;
 
-	entry = get_path_entry(path, true);
+	entry = get_path_entry(path, false, false);
 	if (entry == NULL) {
 		return -ENOENT;
 	}
+
+	k_mutex_lock(&lock, K_FOREVER);
 
 	path_limit = get_path_limit(path, entry);
 
 	if (entry->probe_in_flight ||
 	    (entry->probe_size > entry->validated_plpmtu &&
 	     entry->probe_count > 0U)) {
-		if (entry->probe_size <= path_limit) {
-			return entry->probe_size;
+		probe_size = entry->probe_size <= path_limit ?
+			(int)entry->probe_size : 0;
+	} else {
+		search_high = MIN(entry->search_high, path_limit);
+		if (search_high <= entry->validated_plpmtu) {
+			probe_size = 0;
+		} else {
+			probe_size = (int)next_probe_size(entry->search_low,
+							  search_high);
 		}
-
-		return 0;
 	}
 
-	search_high = MIN(entry->search_high, path_limit);
-	if (search_high <= entry->validated_plpmtu) {
-		return 0;
-	}
+	k_mutex_unlock(&lock);
 
-	return next_probe_size(entry->search_low, search_high);
+	return probe_size;
 }
 
 int net_dplpmtud_on_path_probe_sent(struct net_dplpmtud_path *path,
@@ -474,7 +497,7 @@ int net_dplpmtud_on_path_probe_sent(struct net_dplpmtud_path *path,
 {
 	struct net_dplpmtud_entry *entry;
 
-	entry = get_path_entry(path, true);
+	entry = get_path_entry(path, true, true);
 	if (entry == NULL) {
 		return -ENOENT;
 	}
@@ -491,7 +514,7 @@ int net_dplpmtud_on_path_probe_acked(struct net_dplpmtud_path *path,
 {
 	struct net_dplpmtud_entry *entry;
 
-	entry = get_path_entry(path, false);
+	entry = get_path_entry(path, false, false);
 	if (entry == NULL) {
 		return -ENOENT;
 	}
@@ -504,7 +527,7 @@ int net_dplpmtud_on_path_probe_lost(struct net_dplpmtud_path *path,
 {
 	struct net_dplpmtud_entry *entry;
 
-	entry = get_path_entry(path, false);
+	entry = get_path_entry(path, false, false);
 	if (entry == NULL) {
 		return -ENOENT;
 	}
@@ -516,7 +539,7 @@ void net_dplpmtud_note_path_blackhole(struct net_dplpmtud_path *path)
 {
 	struct net_dplpmtud_entry *entry;
 
-	entry = get_path_entry(path, true);
+	entry = get_path_entry(path, false, false);
 	if (entry == NULL) {
 		return;
 	}
