@@ -36,9 +36,8 @@ config ARC_CONNECT
 config MP_MAX_NUM_CPUS
 	default 4
 
-config UART_NS16550_ACCESS_WORD_ONLY
+configdefault UART_NS16550_ACCESS_WORD_ONLY
 	default y
-	depends on UART_NS16550
 
 config ARC_HAS_ACCL_REGS
 	default y
