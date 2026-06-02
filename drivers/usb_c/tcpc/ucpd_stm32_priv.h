@@ -9,6 +9,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/usb_c/usbc_tcpc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <stm32_ll_ucpd.h>
@@ -262,6 +263,8 @@ struct alert_info {
 struct tcpc_config {
 	/* STM32 UCPC CC pin control */
 	const struct pinctrl_dev_config *ucpd_pcfg;
+	/* STM32 UCPD clock control */
+	const struct stm32_pclken pclken[1];
 	/* STM32 UCPD port */
 	UCPD_TypeDef *ucpd_port;
 	/* STM32 UCPD parameters */
