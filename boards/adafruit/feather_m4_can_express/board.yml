@@ -1,0 +1,6 @@
+board:
+  name: adafruit_feather_m4_can_express
+  full_name: Feather M4 CAN Express
+  vendor: adafruit
+  socs:
+    - name: same51j19a
