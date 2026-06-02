@@ -60,4 +60,22 @@ configdefault BT_LONG_WQ_STACK_SIZE
 	default 1600 if BT_ECC
 endif
 
+choice TF_PSA_CRYPTO_DISPATCH_IMPLEMENTATION
+	default TF_PSA_CRYPTO_DISPATCH_SILABS if $(dt_nodelabel_enabled,se)
+
+config TF_PSA_CRYPTO_DISPATCH_SILABS
+	bool "Driver dispatch implementation with Silicon Labs hardware acceleration"
+	select SILABS_SISDK_PSA_CRYPTO_DRIVER
+	help
+	  Use the driver dispatch implementation from the hal_silabs module,
+	  which adds hardware acceleration for Silicon Labs Series 2 devices.
+
+endchoice # TF_PSA_CRYPTO_DISPATCH_IMPLEMENTATION
+
+configdefault TF_PSA_CRYPTO_DISPATCH_DIR
+	default "${ZEPHYR_HAL_SILABS_MODULE_DIR}/simplicity_sdk/util/third_party/mbedtls/dispatch" if TF_PSA_CRYPTO_DISPATCH_SILABS
+
+configdefault TF_PSA_CRYPTO_DRIVER_CONFIG_FILE
+	default "sl_psa_crypto_config_zephyr.h" if TF_PSA_CRYPTO_DISPATCH_SILABS
+
 endif

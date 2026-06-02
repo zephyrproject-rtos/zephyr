@@ -386,6 +386,50 @@ zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE
   ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_entropy.c
 )
 
+if(CONFIG_SILABS_SISDK_PSA_CRYPTO_DRIVER)
+  zephyr_include_directories(
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/inc
+    ${SECURITY_DIR}/sl_component/sl_mbedtls_support/config
+    ${SECURITY_DIR}/sl_component/sl_mbedtls_support/inc
+  )
+  zephyr_library_sources(
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_psa_driver_common.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_psa_driver_ghash.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_psa_driver_init.c
+  )
+  zephyr_library_link_libraries(tfpsacrypto)
+  # Crypto drivers need access to internal TF-PSA-Crypto headers
+  zephyr_library_include_directories($<TARGET_PROPERTY:tfpsacrypto,INCLUDE_DIRECTORIES>)
+
+  # HSE
+  zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
+    ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_cipher.c
+    ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_hash.c
+    ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_key_derivation.c
+    ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_key_handling.c
+    ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_signature.c
+    ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_attestation.c
+
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_driver_aead.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_driver_builtin_keys.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_driver_cipher.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_driver_key_derivation.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_driver_key_management.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_driver_mac.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_driver_signature.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_opaque_driver_aead.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_opaque_driver_cipher.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_opaque_driver_mac.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_opaque_key_derivation.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_transparent_driver_aead.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_transparent_driver_cipher.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_transparent_driver_hash.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_transparent_driver_mac.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_transparent_key_derivation.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/sli_se_version_dependencies.c
+  )
+endif() # CONFIG_SILABS_SISDK_PSA_CRYPTO_DRIVER
+
 zephyr_library_sources(
   src/sl_interrupt_manager_shim.c
   src/sl_memory_manager_shim.c
