@@ -15,4 +15,6 @@ board:
     variants:
     - name: lm
   - name: ae350_a25
+    variants:
+    - name: smp
   - name: ae350_ax45
