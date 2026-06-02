@@ -580,6 +580,15 @@ do {                                                                    \
 	defined(CONFIG_MIPS) || defined(CONFIG_OPENRISC)
 
 /* No special prefixes necessary for constants in this arch AFAICT */
+#if defined(__clang__) && defined(CONFIG_XTENSA)
+#define GEN_ABSOLUTE_SYM(name, value)		\
+	__asm__ __volatile__(".globl\t" #name "\n\t.equ\t" #name \
+		",%0" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__ __volatile__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value)
+#else
 #define GEN_ABSOLUTE_SYM(name, value)		\
 	__asm__ __volatile__(".globl\t" #name "\n\t.equ\t" #name \
 		",%0"                              \
@@ -589,6 +598,7 @@ do {                                                                    \
 	__asm__ __volatile__(".globl\t" #name                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",%object")
+#endif /* defined(__clang__) && defined(CONFIG_XTENSA) */
 
 #elif defined(CONFIG_SPARC)
 #define GEN_ABSOLUTE_SYM(name, value)			\
