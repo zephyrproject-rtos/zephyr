@@ -5,7 +5,7 @@
 
 menuconfig ETH_E1000
 	bool "Intel(R) PRO/1000 Gigabit Ethernet driver"
-	default y
+	default y if !NET_QEMU_SLIP
 	depends on DT_HAS_INTEL_E1000_ENABLED
 	select PCIE
 	help
