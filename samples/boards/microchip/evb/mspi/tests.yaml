@@ -1,0 +1,16 @@
+sample:
+  name: MEC assy6941 QMSPI-LDMA MSPI sample
+tests:
+  sample.boards.microchip.evb.mspi.qmspi_ldma:
+    tags:
+      - mspi
+    platform_allow:
+      - mec_assy6941/mec1753_qlj
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "MEC_Assy6941 board MSPI sample"
+        - "Flash read back matches data written: PASS"
+        - "Program End"
