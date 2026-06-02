@@ -492,6 +492,23 @@ int net_dplpmtud_get_path_probe_size(struct net_dplpmtud_path *path)
 	return probe_size;
 }
 
+bool net_dplpmtud_path_probe_in_flight(struct net_dplpmtud_path *path)
+{
+	struct net_dplpmtud_entry *entry;
+	bool in_flight;
+
+	entry = lookup_path_entry(path, false);
+	if (entry == NULL) {
+		return false;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+	in_flight = entry->probe_in_flight;
+	k_mutex_unlock(&lock);
+
+	return in_flight;
+}
+
 int net_dplpmtud_on_path_probe_sent(struct net_dplpmtud_path *path,
 				    uint16_t probe_size)
 {

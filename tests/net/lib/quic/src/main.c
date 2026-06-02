@@ -997,10 +997,6 @@ static void note_test_probe_sent(struct quic_endpoint *ep, uint16_t probe_size)
 
 	ret = net_dplpmtud_on_path_probe_sent(&ep->dplpmtud.path, probe_size);
 	zassert_ok(ret, "Failed to report probe send (%d)", ret);
-
-	ep->dplpmtud.probe_in_flight = true;
-	ep->dplpmtud.probe_pending = false;
-	ep->dplpmtud.probe_size = probe_size;
 }
 
 ZTEST(net_socket_quic, test_095_dplpmtud_keeps_peer_cap_separate)
@@ -1016,7 +1012,7 @@ ZTEST(net_socket_quic, test_095_dplpmtud_keeps_peer_cap_separate)
 		      "Peer max UDP payload size must be stored separately");
 	zassert_equal(ep->max_tx_payload_size, QUIC_DPLPMTUD_BASE_PLPMTU,
 		      "TX payload size must stay at the validated base size");
-	zassert_true(ep->dplpmtud.probe_pending,
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0,
 		     "A larger payload should schedule probing");
 }
 
@@ -1034,7 +1030,7 @@ ZTEST(net_socket_quic, test_096_dplpmtud_probe_ack_raises_payload_limit)
 		      "ACKed probe must raise the validated payload size");
 	zassert_equal(ep->max_tx_payload_size, probe_size,
 		      "TX payload size must follow the validated probe size");
-	zassert_true(ep->dplpmtud.probe_pending,
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0,
 		     "A larger ceiling should keep probing enabled");
 }
 
@@ -1048,11 +1044,11 @@ ZTEST(net_socket_quic, test_097_dplpmtud_probe_loss_retries_then_clamps)
 
 	quic_dplpmtud_on_probe_lost(ep, probe_size);
 
-	zassert_false(ep->dplpmtud.probe_in_flight,
+	zassert_false(net_dplpmtud_path_probe_in_flight(&ep->dplpmtud.path),
 		      "Lost probe must leave the in-flight state");
-	zassert_true(ep->dplpmtud.probe_pending,
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0,
 		     "Lost probe below retry limit must be retried");
-	zassert_equal(ep->dplpmtud.probe_size, probe_size,
+	zassert_equal(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path), probe_size,
 		      "Retry must keep the same probe size");
 
 	note_test_probe_sent(ep, probe_size);
@@ -1060,9 +1056,9 @@ ZTEST(net_socket_quic, test_097_dplpmtud_probe_loss_retries_then_clamps)
 	note_test_probe_sent(ep, probe_size);
 	quic_dplpmtud_on_probe_lost(ep, probe_size);
 
-	zassert_true(ep->dplpmtud.probe_size < probe_size,
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) < probe_size,
 		     "Exhausted probe retries must clamp the next probe size");
-	zassert_true(ep->dplpmtud.probe_pending,
+	zassert_true(net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0,
 		     "A smaller candidate should still be probed");
 }
 

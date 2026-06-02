@@ -116,6 +116,18 @@ int net_dplpmtud_get_path_mtu(struct net_dplpmtud_path *path);
 int net_dplpmtud_get_path_probe_size(struct net_dplpmtud_path *path);
 
 /**
+ * @brief Check whether a probe is currently in flight for a path.
+ *
+ * The path must have been initialized with net_dplpmtud_init_path(). This
+ * call does not create per-destination DPLPMTUD state.
+ *
+ * @param path Initialized path handle
+ *
+ * @return true if a probe is in flight, false otherwise
+ */
+bool net_dplpmtud_path_probe_in_flight(struct net_dplpmtud_path *path);
+
+/**
  * @brief Report that a probe has been sent for a path.
  *
  * @param path Initialized path handle
