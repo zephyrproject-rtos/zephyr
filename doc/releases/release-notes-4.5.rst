@@ -244,6 +244,10 @@ New Boards
 
   * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
 
+* WCH
+
+  * :zephyr:board:`WCH CH32V103EVT <ch32v103evt>` (``ch32v103evt``)
+
 New Shields
 ***********
 
