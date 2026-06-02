@@ -123,6 +123,28 @@ config SILABS_SISDK_SLEEPTIMER
 	help
 	  Set if the Sleeptimer HAL module is used.
 
+config SILABS_SISDK_CRYPTO
+	bool "Crypto driver"
+	depends on DT_HAS_SILABS_SERIES3_CRYPTO_ENABLED
+	select CSPRNG_NEEDED
+	help
+	  Set if the crypto driver is used.
+
+config SILABS_SISDK_PSA_CRYPTO
+	bool "TF-PSA-Crypto driver with hardware acceleration"
+	depends on MBEDTLS_PSA_CRYPTO_C
+	default y if $(dt_nodelabel_enabled,symcrypto) || $(dt_nodelabel_enabled,se)
+	select SILABS_SISDK_SE
+	help
+	  Set if the driver dispatch implementation with support for hardware
+	  accelerated crypto operations is used.
+
+config SILABS_SISDK_PSA_CRYPTO_HOST
+	bool
+	depends on SILABS_SISDK_PSA_CRYPTO
+	default y if $(dt_nodelabel_enabled,symcrypto)
+	select SILABS_SISDK_CRYPTO
+
 # Radio
 
 config SILABS_SISDK_RAIL_PA_CURVE_HEADER
@@ -161,5 +183,6 @@ config SILABS_SISDK_PROTOCOL_CRYPTO
 	bool
 	depends on SOC_VENDOR_SILABS_HAS_RADIO
 	depends on $(dt_nodelabel_enabled,lpwaes) if SOC_FAMILY_SILABS_S3
+	select SILABS_SISDK_CRYPTO if SOC_FAMILY_SILABS_S3
 
 endmenu

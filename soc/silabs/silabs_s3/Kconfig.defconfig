@@ -77,4 +77,7 @@ configdefault SRAM_SW_ISR_TABLE
 configdefault CODE_DATA_RELOCATION_SRAM
 	default y
 
+configdefault FPU
+	default y if SILABS_SISDK_CRYPTO
+
 endif
