@@ -38,6 +38,11 @@ static int brcmfmac_initialization(struct brcmfmac_data *data)
 		LOG_INF("  -> matches BCM43430A1");
 	}
 
+	ret = brcmfmac_chip_ram_data(data);
+	if (ret != 0) {
+		return ret;
+	}
+
 	ret = brcmfmac_chip_pmu_setup(data);
 	if (ret != 0) {
 		return ret;
@@ -64,6 +69,49 @@ static int brcmfmac_initialization(struct brcmfmac_data *data)
 	}
 
 	return brcmfmac_chip_set_active(data);
+}
+
+static int brcmfmac_power_on(const struct device *dev)
+{
+#if DT_INST_NODE_HAS_PROP(0, wifi_reg_on_gpios)
+	int ret;
+	const struct brcmfmac_config *cfg = dev->config;
+
+	/* Check WIFI REG_ON gpio instance */
+	if (!device_is_ready(cfg->reg_on.port)) {
+		LOG_ERR("power_on: failed to configure reg_on %s pin %d",
+			cfg->reg_on.port->name, cfg->reg_on.pin);
+		return -EIO;
+	}
+
+	/* Configure wifi_reg_on as output  */
+	ret = gpio_pin_configure_dt(&cfg->reg_on, GPIO_OUTPUT);
+	if (ret) {
+		LOG_ERR("power_on: failed to configure reg_on %s pin %d, ret=%d",
+			cfg->reg_on.port->name, cfg->reg_on.pin, ret);
+		return ret;
+	}
+
+	ret = gpio_pin_set_dt(&cfg->reg_on, 0);
+	if (ret) {
+		return ret;
+	}
+
+	/* Allow CBUCK regulator to discharge */
+	k_msleep(10);
+
+	/* WIFI power on */
+	ret = gpio_pin_set_dt(&cfg->reg_on, 1);
+	if (ret) {
+		return ret;
+	}
+
+	k_msleep(250); /* TODO: Make constant */
+#else
+	(void)dev;
+#endif /* DT_INST_NODE_HAS_PROP(0, reg_on_gpios) */
+
+	return 0;
 }
 
 static int brcmfmac_probe_sdio(const struct device *dev)
@@ -109,10 +157,55 @@ static int brcmfmac_probe_sdio(const struct device *dev)
 	return 0;
 }
 
+static int brcmfmac_process_clm_blob(struct brcmfmac_data *data)
+{
+	const size_t chunk_size = 512;
+	struct brcmf_dload_data_le *hdr;
+	uint8_t buf[sizeof(*hdr) + chunk_size];
+	const uint8_t *current = brcmfmac_clm_blob;
+	size_t remaining = brcmfmac_clm_blob_len;
+
+	hdr = (struct brcmf_dload_data_le *)buf;
+	hdr->flag = (1 << 12) | 2; /* DL_BEGIN */
+	hdr->dload_type = 2;       /* DL_TYPE_CLM */
+	hdr->crc = 0;
+
+	while (remaining > 0) {
+		size_t transfer = chunk_size;
+		int ret;
+
+		if (remaining <= transfer) {
+			transfer = remaining;
+			hdr->flag |= 4; /* DL_END */
+		}
+
+		memcpy(hdr->data, current, transfer);
+		hdr->len = transfer;
+
+		LOG_DBG("sending clm chunk, len=%u", transfer);
+		ret = brcmfmac_bcdc_iovar_set(data, "clmload", buf, sizeof(*hdr) + transfer);
+		if (ret != 0) {
+			LOG_ERR("clm chunk download failed: %d", ret);
+			return ret;
+		}
+
+		current += transfer;
+		remaining -= transfer;
+		hdr->flag &= ~2u;
+	}
+
+	return 0;
+}
+
 static int brcmfmac_init(const struct device *dev)
 {
 	struct brcmfmac_data *data = dev->data;
 	int ret;
+
+	ret = brcmfmac_power_on(dev);
+	if (ret != 0) {
+		return ret;
+	}
 
 	ret = brcmfmac_probe_sdio(dev);
 	if (ret != 0) {
@@ -131,6 +224,26 @@ static int brcmfmac_init(const struct device *dev)
 	if (ret != 0) {
 		LOG_ERR("BCDC init failed: %d", ret);
 		return ret;
+	}
+
+	/*
+	 * CLM blob upload is required by chips whose firmware ships with no
+	 * built-in regulatory tables. Linux brcmfmac gates this on chip ID;
+	 * we mirror that gate so chips that don't need it (firmware refuses
+	 * the DL_TYPE_CLM iovar) don't fail init. Extend the list as new
+	 * chips are validated.
+	 */
+	bool needs_clm = (data->chip_id == 43430) ||         /* BCM43430A1 */
+			 (data->chip_id == 0xa9a6);          /* CYW43439   */
+	if (needs_clm) {
+		ret = brcmfmac_process_clm_blob(data);
+		if (ret != 0) {
+			LOG_ERR("CLM upload failed: %d", ret);
+			return ret;
+		}
+	} else {
+		LOG_DBG("CLM blob upload skipped for chip 0x%x rev %u",
+			data->chip_id, data->chip_rev);
 	}
 
 	int got = brcmfmac_bcdc_iovar_get(data, "cur_etheraddr",

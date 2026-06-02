@@ -59,6 +59,7 @@
 #define BCMA_CORE_PMU                   0x827
 #define BCMA_CORE_SDIO_DEV              0x829
 #define BCMA_CORE_ARM_CM3               0x82A
+#define BCMA_CORE_ARM_CR4               0x83E
 #define BCMA_CORE_GCI                   0x840
 
 /* SDIO core register offset within data base. */
@@ -92,6 +93,9 @@
 /* D11-specific IOCTL bits. */
 #define D11_BCMA_IOCTL_PHYCLOCKEN       0x0004
 #define D11_BCMA_IOCTL_PHYRESET         0x0008
+
+/* CR4-specific IOCTL bits. */
+#define ARMCR4_BCMA_IOCTL_CPUHALT       0x0020
 
 /* SOCRAM register offsets (within SOCRAM core base). */
 #define SOCRAM_BANKIDX_OFFSET           0x10
@@ -195,7 +199,7 @@ struct cdc_hdr {
 	uint16_t outlen;
 	uint16_t inlen;
 	uint32_t flags;
-	uint32_t status;
+	int32_t status;
 } __packed;
 
 /* BDC (Broadcom Data Codec) header sits between SDPCM and the L2 frame
@@ -257,6 +261,14 @@ struct brcmf_event_msg_be {
 #define BRCMF_E_STATUS_NO_NETWORKS 3
 #define BRCMF_E_STATUS_PARTIAL   8
 
+struct brcmf_dload_data_le {
+	uint16_t flag;
+	uint16_t dload_type;
+	uint32_t len;
+	uint32_t crc;
+	uint8_t data[];
+} __packed;
+
 /* === Escan IOVAR =========================================================
  *
  * iovar name "escan", value = struct brcmf_escan_params_le. Action=1 starts
@@ -283,7 +295,7 @@ struct brcmf_scan_params_le {
 	uint32_t passive_time;
 	uint32_t home_time;
 	uint32_t channel_num;
-	uint16_t channel_list[1];   /* zero-length variable array placeholder */
+	uint16_t channel_list[]; /* flexible: zero or more channels */
 } __packed;
 
 struct brcmf_escan_params_le {
@@ -404,6 +416,9 @@ struct brcmfmac_data {
 	uint8_t  chip_rev;
 	uint8_t  chip_type;
 
+	uint32_t ram_base;
+	uint32_t ram_size;
+
 	/* BCDC protocol state. */
 	bool f2_ready;
 	uint8_t sdpcm_txseq;     /* next outgoing SDPCM seq (8-bit wrap) */
@@ -467,6 +482,7 @@ int brcmfmac_sdio_nvram_upload(struct brcmfmac_data *data);
 
 /* === Chip initialization (brcmfmac_chip.c) === */
 int brcmfmac_chip_read_id(struct brcmfmac_data *data);
+int brcmfmac_chip_ram_data(struct brcmfmac_data *data);
 int brcmfmac_chip_pmu_setup(struct brcmfmac_data *data);
 int brcmfmac_chip_erom_scan(struct brcmfmac_data *data);
 const struct bcm_core *brcmfmac_chip_core_find(const struct brcmfmac_data *data,
@@ -542,5 +558,7 @@ extern const unsigned char brcmfmac_fw[];
 extern const unsigned int  brcmfmac_fw_len;
 extern const unsigned char brcmfmac_nvram[];
 extern const unsigned int  brcmfmac_nvram_len;
+extern const unsigned char brcmfmac_clm_blob[];
+extern const unsigned int  brcmfmac_clm_blob_len;
 
 #endif /* ZEPHYR_DRIVERS_WIFI_BRCMFMAC_PRIV_H_ */

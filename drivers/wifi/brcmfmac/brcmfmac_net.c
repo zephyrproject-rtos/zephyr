@@ -425,19 +425,22 @@ int brcmfmac_mgmt_scan(const struct device *dev, struct net_if *iface,
 	struct brcmf_escan_params_le esc;
 
 	memset(&esc, 0, sizeof(esc));
-	esc.version = BRCMF_SCAN_PARAMS_VERSION;
-	esc.action  = WL_ESCAN_ACTION_START;
-	esc.sync_id = 1;
+	/* All multi-byte fields in this struct are little-endian on the wire;
+	 * convert explicitly so the host CPU's endianness doesn't matter.
+	 */
+	esc.version = sys_cpu_to_le32(BRCMF_SCAN_PARAMS_VERSION);
+	esc.action  = sys_cpu_to_le16(WL_ESCAN_ACTION_START);
+	esc.sync_id = sys_cpu_to_le16(1);
 
-	esc.params_le.bss_type     = 2;             /* DOT11_BSSTYPE_ANY */
-	esc.params_le.scan_type    = 0;             /* active */
-	esc.params_le.nprobes      = (uint32_t)-1;  /* defaults */
-	esc.params_le.active_time  = (uint32_t)-1;
-	esc.params_le.passive_time = (uint32_t)-1;
-	esc.params_le.home_time    = (uint32_t)-1;
-	esc.params_le.channel_num  = 0;             /* all channels */
-	memset(esc.params_le.bssid, 0xFF, 6);       /* broadcast */
-	esc.params_le.ssid_le.SSID_len = 0;         /* broadcast SSID */
+	esc.params_le.bss_type     = 2;             /* DOT11_BSSTYPE_ANY (int8) */
+	esc.params_le.scan_type    = 0;             /* active (uint8) */
+	esc.params_le.nprobes      = sys_cpu_to_le32((uint32_t)-1);
+	esc.params_le.active_time  = sys_cpu_to_le32((uint32_t)-1);
+	esc.params_le.passive_time = sys_cpu_to_le32((uint32_t)-1);
+	esc.params_le.home_time    = sys_cpu_to_le32((uint32_t)-1);
+	esc.params_le.channel_num  = sys_cpu_to_le32(0); /* all channels */
+	memset(esc.params_le.bssid, 0xFF, 6);            /* broadcast */
+	esc.params_le.ssid_le.SSID_len = sys_cpu_to_le32(0); /* broadcast SSID */
 
 	/* Park the cb BEFORE firing the IOVAR so an event arriving fast
 	 * (which we've observed -- the chip can have queued frames) has

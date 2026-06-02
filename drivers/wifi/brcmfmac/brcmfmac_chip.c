@@ -347,6 +347,23 @@ int brcmfmac_chip_read_id(struct brcmfmac_data *data)
 	return 0;
 }
 
+int brcmfmac_chip_ram_data(struct brcmfmac_data *data)
+{
+	/* TODO: Read ram_size from core registers like in Linux. */
+	if (data->chip_id == 43430 || data->chip_id == 43439) {
+		data->ram_base = 0u;
+		data->ram_size = 0x80000u;
+	} else if (data->chip_id == 0x4345) {
+		data->ram_base = 0x198000u;
+		data->ram_size = 0xC8000u;
+	} else {
+		LOG_ERR("ram_data: don't know RAM addresses for this chip");
+		return -1;
+	}
+
+	return 0;
+}
+
 int brcmfmac_chip_pmu_setup(struct brcmfmac_data *data)
 {
 	int ret = sdio_write_byte(&data->backplane, SBSDIO_FUNC1_CHIPCLKCSR,
@@ -393,6 +410,45 @@ int brcmfmac_chip_pmu_setup(struct brcmfmac_data *data)
 	return 0;
 }
 
+static int brcmfmac_chip_ht_bringup(struct brcmfmac_data *data)
+{
+	int ret;
+	uint8_t clkcsr = 0;
+	int64_t t0 = k_uptime_get();
+
+	for (int i = 0; i < 500; i++) {
+		ret = sdio_read_byte(&data->backplane, SBSDIO_FUNC1_CHIPCLKCSR, &clkcsr);
+		if (ret != 0) {
+			LOG_ERR("ht_bringup: CHIPCLKCSR read failed: %d", ret);
+			return ret;
+		}
+		if (clkcsr & SBSDIO_HT_AVAIL) {
+			break;
+		}
+		k_msleep(1);
+	}
+	int64_t t_wait = k_uptime_get() - t0;
+
+	if (!(clkcsr & SBSDIO_HT_AVAIL)) {
+		LOG_ERR("ht_bringup: HT_AVAIL timeout (CHIPCLKCSR=0x%02x after %lld ms)",
+			clkcsr, (long long)t_wait);
+		return -ETIMEDOUT;
+	}
+	LOG_DBG("ht_bringup: HT_AVAIL after %lld ms (CHIPCLKCSR=0x%02x)",
+		(long long)t_wait, clkcsr);
+
+	uint32_t chipid;
+
+	ret = brcmfmac_sdio_backplane_read32(data, BRCMF_SI_ENUM_BASE, &chipid);
+	if (ret != 0) {
+		LOG_ERR("ht_bringup: post-boot chipid read failed: %d", ret);
+		return ret;
+	}
+	LOG_DBG("ht_bringup: post-boot chipid = 0x%08x (chip alive, fw running)",
+		chipid);
+	return 0;
+}
+
 /* === set_passive: prepare for firmware upload ==============================
  *
  * Mirrors Linux brcmf_chip_cm3_set_passive:
@@ -401,7 +457,7 @@ int brcmfmac_chip_pmu_setup(struct brcmfmac_data *data)
  *   3. reset SOCRAM (brings it out of POR to operational)
  *   4. disable bank-3 remap (BCM43430-specific quirk)
  */
-int brcmfmac_chip_set_passive(struct brcmfmac_data *data)
+static int brcmfmac_chip_cm3_set_passive(struct brcmfmac_data *data)
 {
 	const struct bcm_core *arm = brcmfmac_chip_core_find(data, BCMA_CORE_ARM_CM3);
 	const struct bcm_core *d11 = brcmfmac_chip_core_find(data, BCMA_CORE_80211);
@@ -439,9 +495,19 @@ int brcmfmac_chip_set_passive(struct brcmfmac_data *data)
 		return ret;
 	}
 
-	(void)brcmfmac_sdio_backplane_write32(data, sr->base + SOCRAM_BANKIDX_OFFSET, 3);
-	(void)brcmfmac_sdio_backplane_write32(data, sr->base + SOCRAM_BANKPDA_OFFSET, 0);
-	LOG_DBG("set_passive: bank-3 remap disabled");
+	/*
+	 * SOCRAM bank-3 remap disable. Linux brcmfmac applies this only to
+	 * BCM43430 and CYW43439 -- on other chips bank 3 is either not
+	 * present (BCM4329, BCM43236) or has a different PDA layout
+	 * (BCM43340, BCM4334) and the write would misconfigure RAM.
+	 */
+	if (data->chip_id == 43430 || data->chip_id == 0xa9a6) {
+		(void)brcmfmac_sdio_backplane_write32(data,
+				sr->base + SOCRAM_BANKIDX_OFFSET, 3);
+		(void)brcmfmac_sdio_backplane_write32(data,
+				sr->base + SOCRAM_BANKPDA_OFFSET, 0);
+		LOG_DBG("set_passive: bank-3 remap disabled");
+	}
 
 	if (!ai_iscoreup(data, sr->wrapbase)) {
 		LOG_ERR("set_passive: SOCRAM did not come up");
@@ -453,7 +519,7 @@ int brcmfmac_chip_set_passive(struct brcmfmac_data *data)
 
 /* === set_active: release ARM CM3 + confirm firmware boot =================== */
 
-int brcmfmac_chip_set_active(struct brcmfmac_data *data)
+static int brcmfmac_chip_cm3_set_active(struct brcmfmac_data *data)
 {
 	const struct bcm_core *sdio_dev = brcmfmac_chip_core_find(data, BCMA_CORE_SDIO_DEV);
 	const struct bcm_core *arm     = brcmfmac_chip_core_find(data, BCMA_CORE_ARM_CM3);
@@ -488,38 +554,98 @@ int brcmfmac_chip_set_active(struct brcmfmac_data *data)
 		return ret;
 	}
 
-	uint8_t clkcsr = 0;
-	int64_t t0 = k_uptime_get();
+	return brcmfmac_chip_ht_bringup(data);
+}
 
-	for (int i = 0; i < 500; i++) {
-		ret = sdio_read_byte(&data->backplane, SBSDIO_FUNC1_CHIPCLKCSR, &clkcsr);
-		if (ret != 0) {
-			LOG_ERR("set_active: CHIPCLKCSR read failed: %d", ret);
-			return ret;
-		}
-		if (clkcsr & SBSDIO_HT_AVAIL) {
-			break;
-		}
-		k_msleep(1);
+static int brcmfmac_chip_cr4_set_passive(struct brcmfmac_data *data)
+{
+	/* TODO: All D11 cores */
+	const struct bcm_core *arm = brcmfmac_chip_core_find(data, BCMA_CORE_ARM_CR4);
+	const struct bcm_core *d11 = brcmfmac_chip_core_find(data, BCMA_CORE_80211);
+	uint32_t v;
+	int ret;
+
+	if (arm == NULL || d11 == NULL) {
+		LOG_ERR("set_passive: missing core(s) arm=%p d11=%p", arm, d11);
+		return -ENODEV;
 	}
-	int64_t t_wait = k_uptime_get() - t0;
 
-	if (!(clkcsr & SBSDIO_HT_AVAIL)) {
-		LOG_ERR("set_active: HT_AVAIL timeout (CHIPCLKCSR=0x%02x after %lld ms)",
-			clkcsr, (long long)t_wait);
-		return -ETIMEDOUT;
-	}
-	LOG_DBG("set_active: HT_AVAIL after %lld ms (CHIPCLKCSR=0x%02x)",
-		(long long)t_wait, clkcsr);
-
-	uint32_t chipid;
-
-	ret = brcmfmac_sdio_backplane_read32(data, BRCMF_SI_ENUM_BASE, &chipid);
+	(void)brcmfmac_sdio_backplane_read32(data, arm->wrapbase + BCMA_IOCTL, &v);
+	v &= ARMCR4_BCMA_IOCTL_CPUHALT;
+	ret = ai_resetcore(data, arm->wrapbase, v,
+			   ARMCR4_BCMA_IOCTL_CPUHALT, ARMCR4_BCMA_IOCTL_CPUHALT);
 	if (ret != 0) {
-		LOG_ERR("set_active: post-boot chipid read failed: %d", ret);
+		LOG_ERR("set_passive: CR4 reset failed: %d", ret);
 		return ret;
 	}
-	LOG_DBG("set_active: post-boot chipid = 0x%08x (chip alive, fw running)",
-		chipid);
+
+	ret = ai_coredisable(data, d11->wrapbase, 0, 0);
+	if (ret != 0) {
+		LOG_ERR("set_passive: D11 disable failed: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int brcmfmac_chip_cr4_set_active(struct brcmfmac_data *data)
+{
+	const struct bcm_core *sdio_dev = brcmfmac_chip_core_find(data, BCMA_CORE_SDIO_DEV);
+	const struct bcm_core *arm = brcmfmac_chip_core_find(data, BCMA_CORE_ARM_CR4);
+
+	if (sdio_dev == NULL || arm == NULL) {
+		LOG_ERR("set_passive: missing core(s) sdio=%p arm=%p", sdio_dev, arm);
+		return -ENODEV;
+	}
+
+	LOG_DBG("set_active: clear SDIO core intstatus");
+	int ret = brcmfmac_sdio_backplane_write32(data,
+						  sdio_dev->base + SDPCMD_INTSTATUS,
+						  0xFFFFFFFFu);
+	if (ret != 0) {
+		LOG_ERR("set_active: intstatus clear failed: %d", ret);
+		return ret;
+	}
+
+	ret = ai_resetcore(data, arm->wrapbase, ARMCR4_BCMA_IOCTL_CPUHALT, 0, 0);
+	if (ret != 0) {
+		LOG_ERR("set_active: CR4 reset failed: %d", ret);
+		return ret;
+	}
+
+	return brcmfmac_chip_ht_bringup(data);
+}
+
+int brcmfmac_chip_set_passive(struct brcmfmac_data *data)
+{
+	const struct bcm_core *arm;
+
+	arm = brcmfmac_chip_core_find(data, BCMA_CORE_ARM_CM3);
+	if (arm != NULL) {
+		return brcmfmac_chip_cm3_set_passive(data);
+	}
+
+	arm = brcmfmac_chip_core_find(data, BCMA_CORE_ARM_CR4);
+	if (arm != NULL) {
+		return brcmfmac_chip_cr4_set_passive(data);
+	}
+
+	return 0;
+}
+
+int brcmfmac_chip_set_active(struct brcmfmac_data *data)
+{
+	const struct bcm_core *arm;
+
+	arm = brcmfmac_chip_core_find(data, BCMA_CORE_ARM_CM3);
+	if (arm != NULL) {
+		return brcmfmac_chip_cm3_set_active(data);
+	}
+
+	arm = brcmfmac_chip_core_find(data, BCMA_CORE_ARM_CR4);
+	if (arm != NULL) {
+		return brcmfmac_chip_cr4_set_active(data);
+	}
+
 	return 0;
 }

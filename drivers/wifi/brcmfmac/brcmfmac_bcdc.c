@@ -79,6 +79,72 @@ static atomic_t brcmf_isr_fires;
 static atomic_t brcmf_fcstate;		/* 0 = ok to send, 1 = chip xoff'd */
 static uint8_t  brcmf_flowcontrol;	/* last sw->flow byte seen */
 
+static const char *const brcmfmac_bcme[] = {
+	"BCME_OK",
+	"BCME_ERROR",
+	"BCME_BADARG",
+	"BCME_BADOPTION",
+	"BCME_NOTUP",
+	"BCME_NOTDOWN",
+	"BCME_NOTAP",
+	"BCME_NOTSTA",
+	"BCME_BADKEYIDX",
+	"BCME_RADIOOFF",
+	"BCME_NOTBANDLOCKED",
+	"BCME_NOCLK",
+	"BCME_BADRATESET",
+	"BCME_BADBAND",
+	"BCME_BUFTOOSHORT",
+	"BCME_BUFTOOLONG",
+	"BCME_BUSY",
+	"BCME_NOTASSOCIATED",
+	"BCME_BADSSIDLEN",
+	"BCME_OUTOFRANGECHAN",
+	"BCME_BADCHAN",
+	"BCME_BADADDR",
+	"BCME_NORESOURCE",
+	"BCME_UNSUPPORTED",
+	"BCME_BADLEN",
+	"BCME_NOTREADY",
+	"BCME_EPERM",
+	"BCME_NOMEM",
+	"BCME_ASSOCIATED",
+	"BCME_RANGE",
+	"BCME_NOTFOUND",
+	"BCME_WME_NOT_ENABLED",
+	"BCME_TSPEC_NOTFOUND",
+	"BCME_ACM_NOTSUPPORTED",
+	"BCME_NOT_WME_ASSOCIATION",
+	"BCME_SDIO_ERROR",
+	"BCME_DONGLE_DOWN",
+	"BCME_VERSION",
+	"BCME_TXFAIL",
+	"BCME_RXFAIL",
+	"BCME_NODEVICE",
+	"BCME_NMODE_DISABLED",
+	"BCME_NONRESIDENT",
+	"BCME_SCANREJECT",
+	"BCME_USAGE_ERROR",
+	"BCME_IOCTL_ERROR",
+	"BCME_SERIAL_PORT_ERR",
+	"BCME_DISABLED",
+	"BCME_DECERR",
+	"BCME_ENCERR",
+	"BCME_MICERR",
+	"BCME_REPLAY",
+	"BCME_IE_NOTFOUND",
+};
+
+static const char *brcmfmac_bcme_str(int error)
+{
+	error = -error;
+	if (error < 0 || error >= ARRAY_SIZE(brcmfmac_bcme)) {
+		return "unknown";
+	}
+
+	return brcmfmac_bcme[error];
+}
+
 static void brcmfmac_handle_ctrl(struct brcmfmac_data *data,
 				 struct cdc_hdr *rcdc, uint16_t outlen)
 {
@@ -91,8 +157,8 @@ static void brcmfmac_handle_ctrl(struct brcmfmac_data *data,
 	}
 
 	if (rcdc->flags & BCDC_FLAG_ERROR) {
-		LOG_WRN("rx ctrl: chip BCDC error (status=%u reqid=%u)",
-			rcdc->status, reqid);
+		LOG_WRN("rx ctrl: chip BCDC error (status=%s reqid=%u)",
+			brcmfmac_bcme_str(rcdc->status), reqid);
 		data->pending.status = -EIO;
 		data->pending.out_copied = 0;
 	} else {

@@ -5,7 +5,6 @@ menuconfig WIFI_BRCMFMAC
 	bool "Broadcom BCM43xxx SDIO Wi-Fi (brcmfmac)"
 	depends on DT_HAS_BRCM_BCM43XXX_SDIO_ENABLED
 	default y
-	select WIFI_OFFLOAD
 	select WIFI_USE_NATIVE_NETWORKING
 	select NET_L2_ETHERNET
 	select NET_L2_WIFI_MGMT
