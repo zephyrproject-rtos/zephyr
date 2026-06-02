@@ -298,7 +298,12 @@ const struct ptp_clock *ptp_clock_init(void)
 		return NULL;
 	}
 
-	ptp_clk.pollfd[0].fd = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
+	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
+	if (ret < 0) {
+		LOG_ERR("Failed to create event fd (err %d)", -errno);
+		return NULL;
+	}
+	ptp_clk.pollfd[0].fd = ret;
 	ptp_clk.pollfd[0].events = ZSOCK_POLLIN;
 
 	sys_slist_init(&ptp_clk.ports_list);
