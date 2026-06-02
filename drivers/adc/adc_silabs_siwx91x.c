@@ -10,6 +10,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/irq.h>
 
 #include "adc_context.h"
@@ -187,9 +189,16 @@ static int adc_siwx91x_read(const struct device *dev, const struct adc_sequence 
 		return -ENOTSUP;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	adc_context_lock(&data->ctx, false, NULL);
 	ret = adc_siwx91x_start_read(dev, sequence);
 	adc_context_release(&data->ctx, ret);
+
+	pm_device_runtime_put(dev);
 
 	return ret;
 }
@@ -230,47 +239,60 @@ static int adc_siwx91x_channel_setup(const struct device *dev,
 	return 0;
 }
 
+static int adc_siwx91x_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct adc_siwx91x_config *cfg = dev->config;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+		ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+		if (ret < 0 && ret != -EALREADY) {
+			return ret;
+		}
+
+		RSI_ADC_ClkDivfactor(AUX_ADC_DAC_COMP, 0, 4);
+
+		/* Set default analog reference voltage to 2.8 V from 3.2 V chip voltage */
+		RSI_AUX_RefVoltageConfig(2.8, 3.2);
+		/* If the calibration is already done, it only reapply the calibration */
+		RSI_ADC_Calibration();
+
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0 && ret != -ENOENT) {
+			return ret;
+		}
+
+		break;
+	case PM_DEVICE_ACTION_TURN_OFF:
+		ret = clock_control_off(cfg->clock_dev, cfg->clock_subsys);
+		if (ret < 0 && ret != -EALREADY) {
+			return ret;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int adc_siwx91x_init(const struct device *dev)
 {
 	const struct adc_siwx91x_config *cfg = dev->config;
 	struct adc_siwx91x_data *data = dev->data;
-	float chip_volt;
-	int ret;
-
-	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
-	if (ret) {
-		return ret;
-	}
-
-	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret) {
-		return ret;
-	}
-
-	RSI_ADC_ClkDivfactor(AUX_ADC_DAC_COMP, 0, 4);
-
-	/* Set default analog reference voltage to 2.8 V from 3.2 V chip voltage */
-	RSI_AUX_RefVoltageConfig(2.8, 3.2);
-
-	RSI_ADC_Calibration();
-
-	chip_volt = RSI_BOD_SoftTriggerGetBatteryStatus();
-	if (chip_volt < 2.4f) {
-		RSI_IPMU_HP_LDO_Enable();
-	}
-
-	ret = RSI_AUX_RefVoltageConfig(cfg->ref_voltage / 1000., chip_volt);
-	if (ret) {
-		return -EIO;
-	}
-
-	adc_context_unlock_unconditionally(&data->ctx);
 
 	cfg->irq_configure();
 
 	data->dev = dev;
 
-	return 0;
+	adc_context_unlock_unconditionally(&data->ctx);
+
+	return pm_device_driver_init(dev, adc_siwx91x_pm_action);
 }
 
 int16_t adc_siwx91x_read_data(const struct device *dev)
@@ -397,8 +419,9 @@ static void adc_siwx91x_isr(const struct device *dev)
 		.sampling_rate = DT_INST_PROP(inst, silabs_adc_sampling_rate),                     \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, adc_siwx91x_init, NULL, &adc_data_##inst, &adc_cfg_##inst,     \
-			      PRE_KERNEL_1, CONFIG_ADC_INIT_PRIORITY,                              \
-			      &adc_siwx91x_driver_api_##inst);
+	PM_DEVICE_DT_INST_DEFINE(inst, adc_siwx91x_pm_action);                                     \
+	DEVICE_DT_INST_DEFINE(inst, adc_siwx91x_init, PM_DEVICE_DT_INST_GET(inst),                 \
+			      &adc_data_##inst, &adc_cfg_##inst, PRE_KERNEL_1,                     \
+			      CONFIG_ADC_INIT_PRIORITY, &adc_siwx91x_driver_api_##inst);
 
 DT_INST_FOREACH_STATUS_OKAY(SIWX91X_ADC_INIT)
