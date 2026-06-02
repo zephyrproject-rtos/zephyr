@@ -2327,6 +2327,7 @@ Documentation Infrastructure:
   collaborators:
     - SeppoTakalo
     - zafersn
+    - wkhadgar
   files:
     - drivers/modem/
     - tests/drivers/build_all/modem/
@@ -3910,6 +3911,7 @@ Modem:
     - bjarki-andreasen
   collaborators:
     - SeppoTakalo
+    - wkhadgar
   files:
     - subsys/modem/
     - include/zephyr/modem/
