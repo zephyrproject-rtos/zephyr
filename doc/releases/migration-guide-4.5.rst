@@ -130,6 +130,11 @@ ADC
   replaced by encoded ``girqs`` (using ``MCHP_XEC_ECIA_GIRQ_ENC`` macros) and ``pcr-scr`` (int type)
   for encoded PCR register index and bit position (:github:`105658`).
 
+* The :kconfig:option:`CONFIG_LPADC_DO_OFFSET_CALIBRATION` option is now only meaningful when
+  :kconfig:option:`CONFIG_ADC_MCUX_LPADC` is enabled, and its ``default y`` is now scoped to that
+  condition. In-tree boards no longer enable it explicitly in their defconfigs since
+  the default already covers them.
+
 Audio Codec
 ===========
 

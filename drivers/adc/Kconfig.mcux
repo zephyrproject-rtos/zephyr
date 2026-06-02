@@ -108,6 +108,7 @@ if ADC_MCUX_LPADC
 
 config LPADC_DO_OFFSET_CALIBRATION
 	bool "Do offset calibration"
+	default y
 	help
 	  Do offset calibration
 
