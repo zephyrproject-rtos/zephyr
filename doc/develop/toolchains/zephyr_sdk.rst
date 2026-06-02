@@ -262,6 +262,31 @@ Zephyr SDK installation
             You must rerun the setup script if you relocate the Zephyr SDK bundle directory after
             the initial setup.
 
+.. _toolchain_zephyr_sdk_llvm:
+
+Using the SDK's Built-in LLVM/Clang (``zephyr/llvm``)
+*****************************************************
+
+If you have installed the Zephyr LLVM SDK bundle (or combined both the GNU and LLVM SDK
+bundles in the same installation directory), you can configure the build system to use the
+SDK's packaged Clang compiler by setting:
+
+* Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``zephyr/llvm``.
+
+For example:
+
+.. code-block:: console
+
+   west build -b esp32_devkitc -- -DZEPHYR_TOOLCHAIN_VARIANT=zephyr/llvm
+
+Setting ``ZEPHYR_TOOLCHAIN_VARIANT`` to the pattern ``<variant>/<compiler>``
+(e.g. ``zephyr/llvm``) is a built-in shorthand. The build system will automatically parse
+it, setting the toolchain variant to ``zephyr`` and the compiler variable
+``TOOLCHAIN_VARIANT_COMPILER`` to ``llvm``.
+
+This will compile and link your firmware using the ``clang`` and ``ld.lld`` binaries
+packaged directly within the Zephyr SDK.
+
 .. _Zephyr SDK Releases: https://github.com/zephyrproject-rtos/sdk-ng/tags
 .. _Zephyr SDK Version Compatibility Matrix: https://github.com/zephyrproject-rtos/sdk-ng/wiki/Zephyr-Version-Compatibility#zephyr-sdk-version-compatibility-matrix
 
