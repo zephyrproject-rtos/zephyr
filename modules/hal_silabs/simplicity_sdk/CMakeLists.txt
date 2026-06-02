@@ -81,17 +81,7 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
     ${radio_dir}/rail_lib/plugin/sl_rail_util_pa_tables/${device_prefix}xg${family_no}
   )
 
-  # sl_protocol_crypto
-  if(CONFIG_SILABS_SISDK_PROTOCOL_CRYPTO)
-    zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
-      ${security_dir}/sl_component/sl_protocol_crypto/src/sli_radioaes_management.c
-      ${security_dir}/sl_component/sl_protocol_crypto/src/sli_protocol_crypto_radioaes.c
-      ${security_dir}/sl_component/sli_crypto/src/sl_crypto_s2.c
-    )
-    zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
-      ${security_dir}/sl_component/sli_crypto/src/sl_crypto_s3.c
-      src/sl_sxsymcrypt_platform.c
-    )
+  if(CONFIG_SILABS_SISDK_CRYPTO)
     zephyr_include_directories_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
       ${crypto_dir}/sxsymcrypt/include
       ${crypto_dir}/sxsymcrypt/src/platform/silicon_labs
@@ -99,6 +89,19 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
     if(CONFIG_SOC_FAMILY_SILABS_S3)
       add_prebuilt_library(sxsymcrypt util/third_party/crypto_ip/libsxsymcrypt.a)
     endif()
+    zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S3
+      ${security_dir}/sl_component/sli_crypto/src/sl_crypto_s3.c
+      src/sl_sxsymcrypt_platform.c
+    )
+  endif()
+
+  # sl_protocol_crypto
+  if(CONFIG_SILABS_SISDK_PROTOCOL_CRYPTO)
+    zephyr_library_sources_ifdef(CONFIG_SOC_FAMILY_SILABS_S2
+      ${security_dir}/sl_component/sl_protocol_crypto/src/sli_radioaes_management.c
+      ${security_dir}/sl_component/sl_protocol_crypto/src/sli_protocol_crypto_radioaes.c
+      ${security_dir}/sl_component/sli_crypto/src/sl_crypto_s2.c
+    )
   endif()
 
   if(CONFIG_BT_SILABS_EFR32)
@@ -503,6 +506,67 @@ endif()
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE
   ${security_dir}/sl_component/se_manager/src/sl_se_manager_entropy.c
 )
+
+if(CONFIG_SILABS_SISDK_PSA_CRYPTO)
+  zephyr_include_directories(
+    ${security_dir}/sl_component/sl_psa_driver/inc
+    ${security_dir}/sl_component/sl_mbedtls_support/config
+    ${security_dir}/sl_component/sl_mbedtls_support/inc
+  )
+  zephyr_library_sources(
+    ${security_dir}/sl_component/sl_psa_driver/src/sli_psa_driver_common.c
+    ${security_dir}/sl_component/sl_psa_driver/src/sli_psa_driver_ghash.c
+    ${security_dir}/sl_component/sl_psa_driver/src/sli_psa_driver_init.c
+  )
+  zephyr_library_link_libraries(tfpsacrypto)
+  # Crypto drivers need access to internal TF-PSA-Crypto headers
+  zephyr_library_include_directories($<TARGET_PROPERTY:tfpsacrypto,INCLUDE_DIRECTORIES>)
+
+  # Hardware SE: Series 2 and Series 3
+  dt_nodelabel(se_path NODELABEL "se")
+  if(DEFINED se_path)
+    zephyr_library_sources(
+      ${security_dir}/sl_component/se_manager/src/sl_se_manager_cipher.c
+      ${security_dir}/sl_component/se_manager/src/sl_se_manager_hash.c
+      ${security_dir}/sl_component/se_manager/src/sl_se_manager_key_derivation.c
+      ${security_dir}/sl_component/se_manager/src/sl_se_manager_key_handling.c
+      ${security_dir}/sl_component/se_manager/src/sl_se_manager_signature.c
+      ${security_dir}/sl_component/se_manager/src/sl_se_manager_attestation.c
+
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_driver_aead.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_driver_builtin_keys.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_driver_cipher.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_driver_key_derivation.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_driver_key_management.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_driver_mac.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_driver_signature.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_opaque_driver_aead.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_opaque_driver_cipher.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_opaque_driver_mac.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_opaque_key_derivation.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_transparent_driver_aead.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_transparent_driver_cipher.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_transparent_driver_hash.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_transparent_driver_mac.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_transparent_key_derivation.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_se_version_dependencies.c
+    )
+  endif()
+
+  # Host Crypto: Series 3
+  dt_nodelabel(symcrypto_path NODELABEL "symcrypto")
+  if(DEFINED symcrypto_path)
+    zephyr_library_sources(
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_hostcrypto_driver_key_management.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_hostcrypto_opaque_driver.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_hostcrypto_transparent_driver_aead.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_hostcrypto_transparent_driver_cipher.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_hostcrypto_transparent_driver_hash.c
+      ${security_dir}/sl_component/sl_psa_driver/src/sli_hostcrypto_transparent_driver_mac.c
+      ${security_dir}/sl_component/sli_crypto/src/sli_crypto_ksu_manager.c
+    )
+  endif()
+endif() # CONFIG_SILABS_SISDK_PSA_CRYPTO
 
 zephyr_library_sources(
   src/sl_interrupt_manager_shim.c
