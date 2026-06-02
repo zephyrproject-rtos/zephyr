@@ -157,6 +157,7 @@ endif()
 
 zephyr_include_directories(
   config
+  inc
   ${DEVICE_DIR}/SiliconLabs/${SILABS_DEVICE_FAMILY}/Include
   ${COMMON_DIR}/config
   ${COMMON_DIR}/inc
@@ -369,9 +370,17 @@ zephyr_library_sources_ifdef(CONFIG_SILABS_SISDK_SE
 )
 
 zephyr_compile_definitions_ifdef(CONFIG_SILABS_SISDK_SE
+  SL_SE_MANAGER_THREADING
   SL_CODE_COMPONENT_SE_MANAGER=se_manager
   SL_CODE_COMPONENT_PSEC_OSAL=psec_osal
 )
+
+set(vse_device_families 22 27)
+if(CONFIG_SOC_FAMILY_SILABS_S2 AND NOT (SILABS_DEVICE_FAMILY_NUMBER IN_LIST vse_device_families))
+  zephyr_compile_definitions_ifdef(CONFIG_SILABS_SISDK_SE
+    SL_SE_MANAGER_YIELD_WHILE_WAITING_FOR_COMMAND_COMPLETION
+  )
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_ENTROPY_GECKO_SE
   ${SECURITY_DIR}/sl_component/se_manager/src/sl_se_manager_entropy.c
