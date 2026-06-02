@@ -169,7 +169,7 @@ out:
 	return entry;
 }
 
-static void update_pmtu_entry(struct net_pmtu_entry *entry, uint16_t mtu)
+static void update_pmtu_entry(struct net_pmtu_entry *entry, uint16_t mtu, bool sync_dplpmtud)
 {
 	bool changed = false;
 
@@ -180,7 +180,9 @@ static void update_pmtu_entry(struct net_pmtu_entry *entry, uint16_t mtu)
 
 	entry->last_update = k_uptime_get_32();
 
-	sync_dplpmtud_entry(entry);
+	if (sync_dplpmtud) {
+		sync_dplpmtud_entry(entry);
+	}
 
 	if (changed) {
 		struct net_if *iface;
@@ -303,7 +305,27 @@ int net_pmtu_update_mtu(const struct net_sockaddr *dst, uint16_t mtu)
 		old_mtu = entry->mtu;
 	}
 
-	update_pmtu_entry(entry, mtu);
+	update_pmtu_entry(entry, mtu, true);
+
+	return (int)old_mtu;
+}
+
+int net_pmtu_update_mtu_from_dplpmtud(const struct net_sockaddr *dst, uint16_t mtu)
+{
+	struct net_pmtu_entry *entry;
+	uint16_t old_mtu = 0U;
+	bool updated = false;
+
+	entry = add_entry(dst, &updated);
+	if (entry == NULL) {
+		return -ENOMEM;
+	}
+
+	if (updated) {
+		old_mtu = entry->mtu;
+	}
+
+	update_pmtu_entry(entry, mtu, false);
 
 	return (int)old_mtu;
 }
@@ -322,7 +344,7 @@ int net_pmtu_update_entry(struct net_pmtu_entry *entry, uint16_t mtu)
 
 	old_mtu = entry->mtu;
 
-	update_pmtu_entry(entry, mtu);
+	update_pmtu_entry(entry, mtu, true);
 
 	return (int)old_mtu;
 }

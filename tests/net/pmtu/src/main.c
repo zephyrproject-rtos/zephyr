@@ -221,6 +221,18 @@ static void seed_dplpmtud_pmtu(const struct net_sockaddr *dst, uint16_t mtu)
 	zassert_true(ret >= 0, "PMTU update failed (%d)", ret);
 }
 
+/* IP + UDP header overhead between the PLPMTU tracked by DPLPMTUD (UDP payload)
+ * and the IP-layer MTU stored in the shared PMTU destination cache.
+ */
+static uint16_t dplpmtud_overhead(const struct net_sockaddr *dst)
+{
+	if (dst->sa_family == NET_AF_INET6) {
+		return sizeof(struct net_ipv6_hdr) + sizeof(struct net_udp_hdr);
+	}
+
+	return sizeof(struct net_ipv4_hdr) + sizeof(struct net_udp_hdr);
+}
+
 static void run_dplpmtud_probe_lifecycle_test(const struct net_sockaddr *dst, uint16_t pmtu)
 {
 	struct net_dplpmtud_path path;
@@ -251,6 +263,10 @@ static void run_dplpmtud_probe_lifecycle_test(const struct net_sockaddr *dst, ui
 
 	mtu = net_dplpmtud_get_path_mtu(&path);
 	zassert_equal(mtu, probe, "ACKed probe did not raise path MTU (%d)", mtu);
+
+	mtu = net_pmtu_get_mtu(dst);
+	zassert_equal(mtu, probe + dplpmtud_overhead(dst),
+		      "PMTU cache must reflect ACKed probe (%d)", mtu);
 
 	next_probe = net_dplpmtud_get_path_probe_size(&path);
 	zassert_true(next_probe > probe,

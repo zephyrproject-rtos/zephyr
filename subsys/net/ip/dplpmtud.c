@@ -73,6 +73,78 @@ static inline uint16_t next_probe_size(uint16_t low, uint16_t high)
 	return low + DIV_ROUND_UP(delta, 2);
 }
 
+/* DPLPMTUD tracks the PLPMTU (the UDP payload size a transport can send),
+ * while the shared PMTU destination cache stores the IP-layer MTU and is also
+ * consumed by TCP and the fragmentation code. Convert between the two at the
+ * cache boundary using the per-family IP + UDP header overhead so we neither
+ * over-probe nor write payload-sized values into the cache.
+ */
+static uint16_t dplpmtud_header_overhead(net_sa_family_t family)
+{
+	switch (family) {
+	case NET_AF_INET:
+		return (uint16_t)(sizeof(struct net_ipv4_hdr) +
+				  sizeof(struct net_udp_hdr));
+	case NET_AF_INET6:
+		return (uint16_t)(sizeof(struct net_ipv6_hdr) +
+				  sizeof(struct net_udp_hdr));
+	default:
+		return 0U;
+	}
+}
+
+/* Convert a PLPMTU (UDP payload) to an IP-layer MTU for the PMTU cache. */
+static uint16_t plpmtu_to_pmtu(net_sa_family_t family, uint16_t plpmtu)
+{
+	uint16_t overhead = dplpmtud_header_overhead(family);
+
+	if ((uint32_t)plpmtu + overhead > UINT16_MAX) {
+		return UINT16_MAX;
+	}
+
+	return plpmtu + overhead;
+}
+
+static int dplpmtud_entry_to_sockaddr(const struct net_dplpmtud_entry *entry,
+				      struct net_sockaddr_storage *dst)
+{
+	struct net_sockaddr *sa = net_sad(dst);
+
+	memset(dst, 0, sizeof(*dst));
+
+	switch (entry->dst.family) {
+	case NET_AF_INET:
+		sa->sa_family = NET_AF_INET;
+		net_ipaddr_copy(&net_sin(sa)->sin_addr, &entry->dst.in_addr);
+		return 0;
+	case NET_AF_INET6:
+		sa->sa_family = NET_AF_INET6;
+		net_ipaddr_copy(&net_sin6(sa)->sin6_addr, &entry->dst.in6_addr);
+		return 0;
+	default:
+		return -EAFNOSUPPORT;
+	}
+}
+
+static void sync_pmtu_cache_from_validated(const struct net_dplpmtud_entry *entry,
+					   uint16_t validated_plpmtu,
+					   uint16_t previous_validated)
+{
+	struct net_sockaddr_storage dst;
+
+	if (!IS_ENABLED(CONFIG_NET_PMTU) || validated_plpmtu <= previous_validated) {
+		return;
+	}
+
+	if (dplpmtud_entry_to_sockaddr(entry, &dst) < 0) {
+		return;
+	}
+
+	(void)net_pmtu_update_mtu_from_dplpmtud(
+		net_sad(&dst),
+		plpmtu_to_pmtu(entry->dst.family, validated_plpmtu));
+}
+
 static bool entry_matches_dst(const struct net_dplpmtud_entry *entry,
 			      const struct net_sockaddr *dst)
 {
@@ -287,7 +359,18 @@ static struct net_dplpmtud_entry *get_path_entry(struct net_dplpmtud_path *path,
 
 	mtu = net_pmtu_get_mtu(net_sad(&path->dst));
 	if (mtu > 0) {
-		net_dplpmtud_set_max_plpmtu(entry, (uint16_t)mtu);
+		uint16_t pmtu = (uint16_t)mtu;
+
+		/* Raise the search ceiling when the PMTU cache reports a larger
+		 * path limit. Lower it only on PTB-style reductions below the
+		 * current validated PLPMTU, not when the cache mirrors a
+		 * DPLPMTUD write-back of the validated size.
+		 */
+		if (pmtu > entry->max_plpmtu) {
+			net_dplpmtud_set_max_plpmtu(entry, pmtu);
+		} else if (pmtu < entry->validated_plpmtu) {
+			net_dplpmtud_set_max_plpmtu(entry, pmtu);
+		}
 	}
 
 	return entry;
@@ -580,6 +663,8 @@ out:
 
 int net_dplpmtud_probe_acked(struct net_dplpmtud_entry *entry, uint16_t probe_size)
 {
+	uint16_t previous_validated;
+	uint16_t validated_plpmtu;
 	int ret = 0;
 
 	if (entry == NULL) {
@@ -593,11 +678,15 @@ int net_dplpmtud_probe_acked(struct net_dplpmtud_entry *entry, uint16_t probe_si
 		goto out;
 	}
 
-	entry->validated_plpmtu = MIN(probe_size, entry->max_plpmtu);
+	previous_validated = entry->validated_plpmtu;
+	validated_plpmtu = MIN(probe_size, entry->max_plpmtu);
+	entry->validated_plpmtu = validated_plpmtu;
 	entry->search_low = entry->validated_plpmtu;
 	reset_probe_locked(entry);
 	entry->last_update = k_uptime_get_32();
 	update_state_locked(entry);
+
+	sync_pmtu_cache_from_validated(entry, validated_plpmtu, previous_validated);
 
 out:
 	k_mutex_unlock(&lock);
