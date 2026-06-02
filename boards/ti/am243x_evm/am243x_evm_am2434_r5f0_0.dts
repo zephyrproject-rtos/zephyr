@@ -16,7 +16,6 @@
 
 	chosen {
 		zephyr,sram = &sram;
-		zephyr,sram1 = &atcm;
 		zephyr,console = &main_uart0;
 		zephyr,shell-uart = &main_uart0;
 		zephyr,ipc = &ipc0;
