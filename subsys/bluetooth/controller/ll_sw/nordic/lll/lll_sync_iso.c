@@ -46,6 +46,7 @@ static int init_reset(void);
 static int create_prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb(struct lll_prepare_param *p);
 static int prepare_cb_common(struct lll_prepare_param *p);
+static int create_is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_rx_estab(void *param);
@@ -100,7 +101,7 @@ void lll_sync_iso_create_prepare(void *param)
 	err = lll_hfclock_on();
 	LL_ASSERT_ERR(err >= 0);
 
-	err = lll_prepare(lll_is_abort_cb, abort_cb, create_prepare_cb, 0U,
+	err = lll_prepare(create_is_abort_cb, abort_cb, create_prepare_cb, 0U,
 			  param);
 	LL_ASSERT_ERR(err == 0 || err == -EINPROGRESS);
 }
@@ -349,6 +350,11 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 			lll->stream_curr += skipped_bis;
 			if (lll->stream_curr >= lll->stream_count) {
 				if (lll->trx_cnt == 0U) {
+					/* Increment abort count */
+					if (lll->abort_count < UINT8_MAX) {
+						lll->abort_count++;
+					}
+
 					radio_isr_set(lll_isr_early_abort, lll);
 				} else {
 					radio_tmr_start_save(lll->ticks_start);
@@ -749,11 +755,34 @@ static int resume_prepare_cb(struct lll_prepare_param *p)
 }
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
+static int create_is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
+{
+	if (next == NULL) {
+		return -EBUSY;
+	}
+
+	if (next != curr) {
+		struct lll_sync_iso *lll = curr;
+		struct lll_sync_iso *lll_next;
+
+		lll_next = ull_sync_iso_lll_is_valid_get(next);
+		if ((lll_next == NULL) || (lll_next->abort_count <= lll->abort_count)) {
+			return -EBUSY;
+		}
+	}
+
+	return -ECANCELED;
+}
+
 static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 {
 #if defined(CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER)
 	if (next == NULL) {
 		struct lll_sync_iso *lll = curr;
+
+		if (lll->abort_count != 0U) {
+			return -EBUSY;
+		}
 
 		/* This role was is the ready (next) event, it did not preempt current event; this
 		 * event can return 0 to preempt the current event as final decision. Or return
@@ -802,7 +831,12 @@ static int is_abort_cb(void *next, void *curr, lll_prepare_cb_t *resume_cb)
 		lll->is_lll_resume = 1U;
 
 		if (lll->bn_curr <= lll->bn) {
-			return -EINPROGRESS;
+			struct lll_sync_iso *lll_next;
+
+			lll_next = ull_sync_iso_lll_is_valid_get(next);
+			if ((lll_next == NULL) || (lll_next->abort_count <= lll->abort_count)) {
+				return -EINPROGRESS;
+			}
 		}
 
 		return -EAGAIN;
@@ -843,6 +877,11 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 #endif /* CONFIG_BT_CTLR_SYNC_ISO_SLOT_WINDOW_JITTER */
 
 		} else {
+			/* Increment abort count */
+			if (lll->abort_count < UINT8_MAX) {
+				lll->abort_count++;
+			}
+
 			radio_isr_set(isr_done, param);
 		}
 
@@ -889,6 +928,11 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 		if (lll->window_widening_prepare_us > lll->window_widening_max_us) {
 			lll->window_widening_prepare_us = lll->window_widening_max_us;
 		}
+	}
+
+	/* Increment abort count */
+	if (lll->abort_count < UINT8_MAX) {
+		lll->abort_count++;
 	}
 
 	/* Extra done event, to check sync lost */
@@ -971,6 +1015,12 @@ static void isr_rx_estab(void *param)
 		/* Reset window widening, as anchor point sync-ed */
 		lll->window_widening_event_us = 0U;
 		lll->window_size_event_us = 0U;
+
+		/* Reset LLL abort count as LLL event is gracefully done and
+		 * was not aborted by any other event when current event could
+		 * have been using unreserved time space.
+		 */
+		lll->abort_count = 0U;
 	}
 
 	lll_isr_cleanup(param);
@@ -2014,6 +2064,12 @@ static void isr_rx_done(void *param)
 		/* Reset window widening, as anchor point sync-ed */
 		lll->window_widening_event_us = 0U;
 		lll->window_size_event_us = 0U;
+
+		/* Reset LLL abort count as LLL event is gracefully done and
+		 * was not aborted by any other event when current event could
+		 * have been using unreserved time space.
+		 */
+		lll->abort_count = 0U;
 	}
 
 isr_done_cleanup:
