@@ -395,9 +395,6 @@ ZTESTABLE_STATIC void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep,
 static uint16_t quic_get_local_max_udp_payload_size(struct quic_endpoint *ep);
 static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep);
 static void quic_dplpmtud_update_limit_locked(struct quic_endpoint *ep);
-static uint16_t quic_dplpmtud_next_probe_size_locked(struct quic_endpoint *ep);
-static void quic_dplpmtud_begin_probe_locked(struct quic_endpoint *ep,
-					     uint16_t probe_size);
 static void quic_dplpmtud_on_probe_acked_locked(struct quic_endpoint *ep,
 						uint16_t probe_size);
 static void quic_dplpmtud_on_probe_lost_locked(struct quic_endpoint *ep,
@@ -3898,30 +3895,25 @@ static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep)
 
 		quic_dplpmtud_update_limit_locked(ep);
 
-		if (ep->dplpmtud.probe_in_flight || !ep->dplpmtud.probe_pending) {
+		if (net_dplpmtud_path_probe_in_flight(&ep->dplpmtud.path)) {
 			k_mutex_unlock(&ep->recovery.lock);
 			return 0;
 		}
 
-		probe_size = ep->dplpmtud.probe_size;
-		if (probe_size == 0U) {
-			probe_size = quic_dplpmtud_next_probe_size_locked(ep);
-		}
-
-		if (probe_size == 0U) {
-			ep->dplpmtud.probe_pending = false;
+		ret = net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path);
+		if (ret <= 0) {
+			/* 0 means no probe needed; a negative value is an error. */
 			k_mutex_unlock(&ep->recovery.lock);
 			return 0;
 		}
+		probe_size = (uint16_t)ret;
 
 		ret = net_dplpmtud_on_path_probe_sent(&ep->dplpmtud.path, probe_size);
 		if (ret < 0) {
-			ep->dplpmtud.probe_pending = false;
 			k_mutex_unlock(&ep->recovery.lock);
 			return ret;
 		}
 
-		quic_dplpmtud_begin_probe_locked(ep, probe_size);
 		k_mutex_unlock(&ep->recovery.lock);
 
 		ret = quic_send_dplpmtud_probe(ep, probe_size);
@@ -3940,13 +3932,9 @@ static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep)
 								 probe_size - 1U);
 			}
 
-			ep->dplpmtud.probe_size = 0U;
-			ep->dplpmtud.probe_in_flight = false;
 			quic_dplpmtud_update_limit_locked(ep);
-			retry_immediately = ep->dplpmtud.probe_pending;
-		} else {
-			ep->dplpmtud.probe_pending = true;
-			ep->dplpmtud.probe_size = probe_size;
+			retry_immediately =
+				net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0;
 		}
 
 		k_mutex_unlock(&ep->recovery.lock);
@@ -4493,6 +4481,7 @@ static int quic_pto_probe(struct quic_endpoint *ep)
 	struct quic_sent_pkt_info oldest = { 0 };
 	bool found = false;
 	bool probe_pending;
+	int probe_size;
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
@@ -4501,8 +4490,12 @@ static int quic_pto_probe(struct quic_endpoint *ep)
 		return -ESHUTDOWN;
 	}
 
-	if (ep->dplpmtud.probe_in_flight) {
-		quic_dplpmtud_on_probe_lost_locked(ep, ep->dplpmtud.probe_size);
+	if (net_dplpmtud_path_probe_in_flight(&ep->dplpmtud.path)) {
+		probe_size = net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path);
+
+		if (probe_size > 0) {
+			quic_dplpmtud_on_probe_lost_locked(ep, probe_size);
+		}
 	}
 
 	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
@@ -4519,7 +4512,9 @@ static int quic_pto_probe(struct quic_endpoint *ep)
 		}
 	}
 
-	probe_pending = ep->dplpmtud.probe_pending;
+	probe_pending = ep->dplpmtud.path.in_use &&
+			!net_dplpmtud_path_probe_in_flight(&ep->dplpmtud.path) &&
+			net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path) > 0;
 
 	k_mutex_unlock(&ep->recovery.lock);
 
@@ -4692,14 +4687,10 @@ static int quic_dplpmtud_sync_path_locked(struct quic_endpoint *ep)
 static void quic_dplpmtud_update_limit_locked(struct quic_endpoint *ep)
 {
 	int mtu;
-	int probe_size;
 	int ret;
 
 	ret = quic_dplpmtud_sync_path_locked(ep);
 	if (ret < 0) {
-		ep->dplpmtud.probe_pending = false;
-		ep->dplpmtud.probe_in_flight = false;
-		ep->dplpmtud.probe_size = 0U;
 		ep->max_tx_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
 		return;
 	}
@@ -4710,69 +4701,23 @@ static void quic_dplpmtud_update_limit_locked(struct quic_endpoint *ep)
 	}
 
 	ep->max_tx_payload_size = MAX(mtu, (int)QUIC_DPLPMTUD_BASE_PLPMTU);
-
-	if (ep->dplpmtud.probe_in_flight) {
-		ep->dplpmtud.probe_pending = false;
-		return;
-	}
-
-	probe_size = net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path);
-	if (probe_size <= 0 || !ep->handshake.completed) {
-		ep->dplpmtud.probe_pending = false;
-		ep->dplpmtud.probe_size = 0U;
-		return;
-	}
-
-	ep->dplpmtud.probe_pending = true;
-	ep->dplpmtud.probe_size = (uint16_t)probe_size;
-}
-
-static uint16_t quic_dplpmtud_next_probe_size_locked(struct quic_endpoint *ep)
-{
-	int probe_size;
-
-	probe_size = net_dplpmtud_get_path_probe_size(&ep->dplpmtud.path);
-	if (probe_size <= 0) {
-		return 0U;
-	}
-
-	return (uint16_t)probe_size;
-}
-
-static void quic_dplpmtud_begin_probe_locked(struct quic_endpoint *ep, uint16_t probe_size)
-{
-	ep->dplpmtud.probe_size = probe_size;
-	ep->dplpmtud.probe_in_flight = true;
-	ep->dplpmtud.probe_pending = false;
 }
 
 static void quic_dplpmtud_on_probe_acked_locked(struct quic_endpoint *ep, uint16_t probe_size)
 {
-	if (!ep->dplpmtud.probe_in_flight || ep->dplpmtud.probe_size != probe_size) {
-		return;
-	}
-
 	if (net_dplpmtud_on_path_probe_acked(&ep->dplpmtud.path, probe_size) < 0) {
 		return;
 	}
 
-	ep->dplpmtud.probe_in_flight = false;
-	ep->dplpmtud.probe_size = 0U;
 	quic_dplpmtud_update_limit_locked(ep);
 }
 
 static void quic_dplpmtud_on_probe_lost_locked(struct quic_endpoint *ep, uint16_t probe_size)
 {
-	if (!ep->dplpmtud.probe_in_flight || ep->dplpmtud.probe_size != probe_size) {
-		return;
-	}
-
 	if (net_dplpmtud_on_path_probe_lost(&ep->dplpmtud.path, probe_size) < 0) {
 		return;
 	}
 
-	ep->dplpmtud.probe_in_flight = false;
-	ep->dplpmtud.probe_size = 0U;
 	quic_dplpmtud_update_limit_locked(ep);
 }
 
@@ -4833,9 +4778,6 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->peer_params.parsed = false;
 
 	ep->dplpmtud.path.in_use = false;
-	ep->dplpmtud.probe_size = 0U;
-	ep->dplpmtud.probe_in_flight = false;
-	ep->dplpmtud.probe_pending = false;
 
 	quic_endpoint_init_idle_timeout(ep, QUIC_DEFAULT_IDLE_TIMEOUT_MS);
 	quic_endpoint_init_handshake_timeout(ep, QUIC_DEFAULT_HANDSHAKE_TIMEOUT_MS);

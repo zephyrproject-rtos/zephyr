@@ -836,19 +836,9 @@ struct quic_endpoint {
 	/** Serializes TX packet assembly on crypto.tx_buffer and tx_pn. */
 	struct k_mutex send_lock;
 
-	/** DPLPMTUD path state for this endpoint. */
+	/** DPLPMTUD path handle; probe state lives in the generic path cache. */
 	struct {
-		/** Transport-facing DPLPMTUD path handle. */
 		struct net_dplpmtud_path path;
-
-		/** Current in-flight or pending probe size. */
-		uint16_t probe_size;
-
-		/** A probe of probe_size is currently in flight. */
-		bool probe_in_flight;
-
-		/** The endpoint should send a new or repeated probe. */
-		bool probe_pending;
 	} dplpmtud;
 
 	/** Max TX payload size for this endpoint, based on path MTU discovery.
