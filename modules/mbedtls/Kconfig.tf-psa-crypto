@@ -18,6 +18,10 @@ config TF_PSA_CRYPTO_USER_CONFIG_FILE
 config TF_PSA_CRYPTO_USER_CONFIG
 	def_bool TF_PSA_CRYPTO_USER_CONFIG_FILE != ""
 
+config TF_PSA_CRYPTO_DISPATCH_DIR
+	string
+	default "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/dispatch"
+
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NIST curves optimization"
 	default y
