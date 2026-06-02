@@ -8,6 +8,16 @@ config TF_PSA_CRYPTO_CONFIG_FILE
 	  Specify the configuration header file to be used when building
 	  TF-PSA-Crypto. The default one can be tweaked with Kconfig.
 
+config TF_PSA_CRYPTO_DRIVER_CONFIG_FILE
+	string
+	help
+	  Optional driver configuration header to be included at the end of
+	  TF_PSA_CRYPTO_CONFIG_FILE. This file is intended to be used to supply
+	  configuration options needed by the driver dispatch interface.
+
+config TF_PSA_CRYPTO_DRIVER_CONFIG
+	def_bool TF_PSA_CRYPTO_DRIVER_CONFIG_FILE != ""
+
 config TF_PSA_CRYPTO_USER_CONFIG_FILE
 	string "User configuration file for TF-PSA-Crypto"
 	help
