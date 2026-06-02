@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) Michele Tavecchio <tavecchiomichele03@gmail.com>
+# SPDX-FileCopyrightText: Copyright (c) Alessandro Sola <alessandrosola03@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MLX90632
+	bool "MLX90632 Infrared Temperature Sensor"
+	default y
+	depends on DT_HAS_MELEXIS_MLX90632_ENABLED
+	select I2C
+	help
+	  Enable driver for MLX90632 infrared temperature sensor.
