@@ -159,6 +159,13 @@
 		#gpio-cells = <2>;
 		gpio-controller;
 		ngpios = <8>;
+
+		codec-sai3-sel-hog {
+			gpio-hog;
+			gpios = <7 GPIO_ACTIVE_LOW>;
+			output-low;
+			line-name = "CODEC_SLOT_SAI3_SEL";
+		};
 	};
 
 	audio_codec: wm8962@1a {
