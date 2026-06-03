@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 	soc {
 		flash0: flash@8000000 {
 			reg = <0x08000000 DT_SIZE_M(4)>;
+			ranges = <0x0 0x8000000 DT_SIZE_M(4)>;
 		};
 
 		sram0: memory@20000000 {
