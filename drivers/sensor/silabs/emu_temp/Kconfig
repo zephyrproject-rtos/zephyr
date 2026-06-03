@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Martin Moya
+# SPDX-License-Identifier: Apache-2.0
+
+config TEMP_SILABS_EMU
+	bool "Silicon Labs Series 2 EMU temperature sensor"
+	default y
+	depends on DT_HAS_SILABS_EMU_TEMP_ENABLED
+	select SILABS_SISDK_EMU
+	help
+	  Enable the internal die temperature sensor of the EMU on Silicon Labs
+	  Series 2 (EFR32/EFM32) devices, read via sl_hal_emu_get_temperature().
