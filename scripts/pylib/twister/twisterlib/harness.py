@@ -25,7 +25,7 @@ import yaml
 from pytest import ExitCode
 from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
-from twisterlib.error import BuildError, ConfigurationError, StatusAttributeError
+from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.handlers import DeviceHandler, Handler, terminate_process
 from twisterlib.harnessconfig import TWISTER_PYTEST_CONFIG_FILE, HarnessPytestConfig
 from twisterlib.reports import ReportStatus
@@ -1130,7 +1130,8 @@ class Bsim(Script):
 
         original_exe_path: str = os.path.join(self.instance.build_dir, 'zephyr', 'zephyr.exe')
         if not os.path.exists(original_exe_path):
-            raise BuildError('Cannot copy bsim exe - cannot find original executable.')
+            logger.warning('Cannot copy bsim exe - cannot find original executable.')
+            return
 
         bsim_out_path: str = os.getenv('BSIM_OUT_PATH', '')
         if not bsim_out_path:
