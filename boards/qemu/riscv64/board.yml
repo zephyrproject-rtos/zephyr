@@ -7,3 +7,4 @@ board:
       variants:
         - name: smp
         - name: smode
+        - name: smp_large

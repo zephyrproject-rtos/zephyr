@@ -6,6 +6,12 @@ common:
     - fvp_baser_aemv8r/fvp_aemv8r_aarch32/smp
     - fvp_baser_aemv8r/fvp_aemv8r_aarch64
     - fvp_baser_aemv8r/fvp_aemv8r_aarch64/smp
+    # smp_large places the kernel at 0x100000000 (SRAM >4 GB) while the
+    # CPU struct lives in DDR at 0x17330000.  User-mode fault recovery
+    # reads the kernel stack pointer from the CPU struct; with MPRV set
+    # after a syscall this DDR access is not covered by the U-mode PMP,
+    # causing a secondary fault.  Userspace is tested on qemu_riscv64/smp.
+    - qemu_riscv64/qemu_virt_riscv64/smp_large
 tests:
   testing.ztest.error_hook:
     filter: CONFIG_ARCH_HAS_USERSPACE

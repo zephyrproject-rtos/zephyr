@@ -1,0 +1,144 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+/* Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries. */
+
+/*
+ * QEMU virt RISC-V 64-bit SMP variant with SRAM placed at 0x1_00000000
+ * (above the 4 GB boundary) to exercise CONFIG_RISCV_CMODEL_LARGE and
+ * the la_abs macro in assembly code.
+ *
+ * QEMU virt maps all RAM as a single contiguous region starting at
+ * 0x80000000.  With -m 2064 the region spans 0x80000000-0x100FFFFFF,
+ * so 0x100000000 + 16 MB falls within the mapped range.  The Zephyr
+ * image (code + data) is placed entirely at 0x100000000; QEMU's ELF
+ * loader writes it there at boot.
+ *
+ * The root bus uses 64-bit addressing (#address-cells = <2>) so that
+ * ram0 can be expressed at 0x1_00000000.  The soc sub-bus retains
+ * 32-bit addressing for MMIO peripherals via an identity ranges entry.
+ *
+ * CONFIG_RISCV_CMODEL_LARGE is auto-selected by the Kconfig heuristic
+ * that checks dt_chosen_reg_addr_int(zephyr,sram) > 0xFFFFFFFF.
+ */
+
+/dts-v1/;
+#include <mem.h>
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	compatible = "riscv-virtio";
+	model = "riscv-virtio,qemu";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &ram0;
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			reg = <0>;
+			status = "okay";
+			compatible = "qemu,riscv-virt", "riscv";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c",
+					       "zicsr", "zifencei", "zicntr";
+
+			hlic0: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			reg = <1>;
+			status = "okay";
+			compatible = "qemu,riscv-virt", "riscv";
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c",
+					       "zicsr", "zifencei", "zicntr";
+
+			hlic1: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	/*
+	 * 16 MB at 0x1_00000000.  QEMU maps this address when started with
+	 * -m 2064 (2048 MB low + 16 MB overflow within the single contiguous
+	 * region 0x80000000-0x100FFFFFF).
+	 *
+	 * The dt_chosen_reg_addr_int check in arch/riscv/Kconfig sees an
+	 * address > 0xFFFFFFFF and auto-selects CONFIG_RISCV_CMODEL_LARGE.
+	 */
+	ram0: memory@100000000 {
+		device_type = "memory";
+		reg = <0x1 0x00000000 0x0 DT_SIZE_M(16)>;
+	};
+
+	/*
+	 * Small region at VIRT_DRAM (0x80000000) for the trampoline stub.
+	 * QEMU virt resets to 0x80000000; the stub jumps to 0x100000000.
+	 * zephyr,memory-region causes LINKER_DT_REGIONS() to emit a
+	 * TRAMPOLINE entry in the MEMORY { } block of the linker script.
+	 */
+	trampoline_mem: memory@80000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x0 0x80000000 0x0 0x1000>;
+		zephyr,memory-region = "TRAMPOLINE";
+		zephyr,memory-region-flags = "rx";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		plic: interrupt-controller@c000000 {
+			riscv,max-priority = <7>;
+			riscv,ndev = <1024>;
+			reg = <0x0c000000 0x04000000>;
+			interrupts-extended = <&hlic0 0x0b &hlic0 0x09
+					       &hlic1 0x0b &hlic1 0x09>;
+			interrupt-controller;
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+		};
+
+		clint: clint@2000000 {
+			compatible = "sifive,clint0";
+			reg = <0x2000000 0x10000>;
+			interrupts-extended = <&hlic0 0x03 &hlic0 0x07
+					       &hlic1 0x03 &hlic1 0x07>;
+		};
+
+		mtimer: timer@200bff8 {
+			compatible = "riscv,machine-timer";
+			interrupts-extended = <&hlic0 7 &hlic1 7>;
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+		};
+
+		uart0: uart@10000000 {
+			interrupts = <0x0a 1>;
+			interrupt-parent = <&plic>;
+			clock-frequency = <0x384000>;
+			reg = <0x10000000 0x100>;
+			compatible = "ns16550";
+			reg-shift = <0>;
+		};
+	};
+};
