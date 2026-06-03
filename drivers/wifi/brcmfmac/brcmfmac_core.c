@@ -28,12 +28,13 @@
 LOG_MODULE_REGISTER(brcmfmac, CONFIG_WIFI_LOG_LEVEL);
 
 /* WL_REG_ON pulse timing. The chip's CBUCK regulator needs a brief window
- * to fully discharge before re-power, then ~150 ms for the chip's clocks
- * to come up and the bootloader to reach a state where F0/F1 enumerate.
- * Matches the values WHD (Cypress's HAL) uses for the same family.
+ * to fully discharge before re-power, then ~250 ms for the chip's clocks
+ * to come up and the SDIO bootloader to reach a state where F0/F1
+ * enumerate. Values match the BCM43xxx/CYW43xxx Cypress BSP board
+ * bring-up sequences.
  */
-#define BRCMFMAC_REG_ON_LOW_DELAY_MS     20
-#define BRCMFMAC_REG_ON_HIGH_DELAY_MS    150
+#define BRCMFMAC_REG_ON_LOW_DELAY_MS     10
+#define BRCMFMAC_REG_ON_HIGH_DELAY_MS    250
 
 /* CLM blob upload chunking. Linux uses 1400 bytes/chunk; we cap at 512
  * because brcmfmac_bcdc_iovar_set caps the payload at 1024 bytes total
