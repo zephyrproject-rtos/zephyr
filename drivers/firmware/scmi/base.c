@@ -200,10 +200,6 @@ int scmi_base_get_revision_info(struct scmi_revision_info *rev)
 		return ret;
 	}
 
-	if (msgs.vendor_id.status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(msgs.vendor_id.status);
-	}
-
 	memcpy(rev->vendor_id, msgs.vendor_id.vendor_id, SCMI_SHORT_NAME_MAX_SIZE);
 
 	ret = scmi_base_subvendor_id_get(&msgs.subvendor_id);
@@ -211,19 +207,11 @@ int scmi_base_get_revision_info(struct scmi_revision_info *rev)
 		return ret;
 	}
 
-	if (msgs.subvendor_id.status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(msgs.subvendor_id.status);
-	}
-
 	memcpy(rev->sub_vendor_id, msgs.subvendor_id.subvendor_id, SCMI_SHORT_NAME_MAX_SIZE);
 
 	ret = scmi_base_implementation_version_get(&msgs.impl_ver);
 	if (ret) {
 		return ret;
-	}
-
-	if (msgs.impl_ver.status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(msgs.impl_ver.status);
 	}
 
 	LOG_DBG("scmi base revision info vendor '%s:%s' fw version 0x%x protocols:%d agents:%d",
@@ -256,10 +244,6 @@ int scmi_base_discover_agent(uint32_t agent_id, struct scmi_agent_info *agent_in
 	if (ret < 0) {
 		LOG_ERR("base proto discover agent failed (%d)", ret);
 		return ret;
-	}
-
-	if (reply_buffer.status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(reply_buffer.status);
 	}
 
 	agent_inf->agent_id = reply_buffer.agent_id;
@@ -303,10 +287,6 @@ int scmi_base_device_permission(uint32_t agent_id, uint32_t device_id, bool allo
 		return ret;
 	}
 
-	if (status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(status);
-	}
-
 	LOG_DBG("base  agent:%u device:%u permission set allow:%d done", agent_id, device_id,
 		allow);
 
@@ -341,10 +321,6 @@ int scmi_base_reset_agent_cfg(uint32_t agent_id, bool reset_perm)
 	if (ret < 0) {
 		LOG_ERR("base agent:%u reset cfg failed (%d)", agent_id, ret);
 		return ret;
-	}
-
-	if (status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(status);
 	}
 
 	LOG_DBG("base agent:%u reset cfg reset_perm:%d done", agent_id, reset_perm);

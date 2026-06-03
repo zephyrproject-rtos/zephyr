@@ -53,10 +53,6 @@ int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state)
 		return ret;
 	}
 
-	if (reply_buffer.status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(reply_buffer.status);
-	}
-
 	*power_state = reply_buffer.power_state;
 
 	return 0;
@@ -88,10 +84,5 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg)
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }

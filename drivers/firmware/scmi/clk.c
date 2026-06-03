@@ -82,10 +82,6 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 		return ret;
 	}
 
-	if (reply_buffer.status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(reply_buffer.status);
-	}
-
 	*rate = reply_buffer.rate[0];
 
 	return 0;
@@ -116,12 +112,7 @@ int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_conf
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t *parent_id)
@@ -151,10 +142,6 @@ int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 		return ret;
 	}
 
-	if (reply_buffer.status != SCMI_SUCCESS) {
-		return scmi_status_to_errno(reply_buffer.status);
-	}
-
 	*parent_id = reply_buffer.parent_id;
 
 	return 0;
@@ -181,12 +168,7 @@ int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_clock_config_set(struct scmi_protocol *proto,
@@ -225,12 +207,7 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
@@ -254,12 +231,7 @@ int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(attributes->status);
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
@@ -287,10 +259,6 @@ int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
 	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
-	}
-
-	if (reply_buffer.status < 0) {
-		return scmi_status_to_errno(reply_buffer.status);
 	}
 
 	*permissions = reply_buffer.permissions;

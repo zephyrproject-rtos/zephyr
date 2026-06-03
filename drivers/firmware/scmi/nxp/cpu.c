@@ -55,12 +55,7 @@ int scmi_nxp_cpu_sleep_mode_set(struct scmi_nxp_cpu_sleep_mode_config *cfg)
 	 */
 	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_nxp_cpu_pd_lpm_set(struct scmi_nxp_cpu_pd_lpm_config *cfg)
@@ -86,12 +81,7 @@ int scmi_nxp_cpu_pd_lpm_set(struct scmi_nxp_cpu_pd_lpm_config *cfg)
 
 	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_nxp_cpu_set_irq_mask(struct scmi_nxp_cpu_irq_mask_config *cfg)
@@ -117,12 +107,7 @@ int scmi_nxp_cpu_set_irq_mask(struct scmi_nxp_cpu_irq_mask_config *cfg)
 
 	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_nxp_cpu_reset_vector(struct scmi_nxp_cpu_vector_config *cfg)
@@ -148,12 +133,7 @@ int scmi_nxp_cpu_reset_vector(struct scmi_nxp_cpu_vector_config *cfg)
 
 	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg)
@@ -188,5 +168,5 @@ int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg)
 
 	*cfg = reply_buffer.data;
 
-	return scmi_status_to_errno(reply_buffer.status);
+	return 0;
 }

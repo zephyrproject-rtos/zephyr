@@ -66,10 +66,5 @@ int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg)
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }

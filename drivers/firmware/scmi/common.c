@@ -76,7 +76,7 @@ int scmi_protocol_get_version(struct scmi_protocol *proto, uint32_t *version)
 
 	*version = reply_buffer.version;
 
-	return scmi_status_to_errno(reply_buffer.status);
+	return 0;
 }
 
 int scmi_protocol_attributes_get(struct scmi_protocol *proto, uint32_t *attributes)
@@ -102,7 +102,7 @@ int scmi_protocol_attributes_get(struct scmi_protocol *proto, uint32_t *attribut
 
 	*attributes = reply_buffer.attributes;
 
-	return scmi_status_to_errno(reply_buffer.status);
+	return 0;
 }
 
 int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
@@ -132,7 +132,7 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
 
 	*attributes = reply_buffer.attributes;
 
-	return scmi_status_to_errno(reply_buffer.status);
+	return 0;
 }
 
 int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t version)
@@ -152,10 +152,5 @@ int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t versio
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }

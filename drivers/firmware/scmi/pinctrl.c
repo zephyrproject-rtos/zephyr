@@ -62,10 +62,5 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return scmi_status_to_errno(status);
+	return scmi_send_message(proto, &xfer);
 }
