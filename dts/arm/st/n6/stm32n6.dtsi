@@ -1483,6 +1483,8 @@
 					reg = <0x4>;
 					dmas = <&gpdma1 1 91
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+					#address-cells = <1>;
+					#size-cells = <0>;
 					status = "disabled";
 				};
 
@@ -1490,6 +1492,8 @@
 					reg = <0x24>;
 					dmas = <&gpdma1 0 92
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+					#address-cells = <1>;
+					#size-cells = <0>;
 					status = "disabled";
 				};
 			};

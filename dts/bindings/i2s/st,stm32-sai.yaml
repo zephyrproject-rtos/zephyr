@@ -5,7 +5,7 @@ description: STM32 SAI Block controller
 
 compatible: "st,stm32-sai"
 
-include: i2s-controller.yaml
+include: base.yaml
 
 properties:
   reg:
@@ -14,28 +14,28 @@ properties:
 child-binding:
   description: SAI Sub-Block instances linked to SAI Block Controller
 
+  include:
+    - name: pinctrl-device.yaml
+    - name: i2s-controller.yaml
+      property-blocklist: [compatible]
+
   properties:
     reg:
-      type: int
       required: true
 
     dmas:
-      type: phandle-array
       required: true
 
     dma-names:
-      type: string-array
       required: true
       description: |
         DMA channel name: "tx" or "rx", depending of expected device behavior.
       enum: [tx, rx]
 
     pinctrl-0:
-      type: phandles
       required: true
 
     pinctrl-names:
-      type: string-array
       required: true
 
     mclk-enable:
