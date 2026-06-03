@@ -176,19 +176,19 @@ static bool conn_track_new(struct net_pkt *pkt,
 	} else if (iphdr->proto == NET_IPPROTO_TCP) {
 		struct net_tcp_hdr *tcphdr = (struct net_tcp_hdr *)l4hdr;
 
-		in->tcp.src_port = UNALIGNED_GET(&tcphdr->src_port);
-		in->tcp.dst_port = UNALIGNED_GET(&tcphdr->dst_port);
-		out->tcp.src_port = UNALIGNED_GET(&tcphdr->dst_port);
-		out->tcp.dst_port = UNALIGNED_GET(&tcphdr->src_port);
+		in->tcp.src_port = tcphdr->src_port;
+		in->tcp.dst_port = tcphdr->dst_port;
+		out->tcp.src_port = tcphdr->dst_port;
+		out->tcp.dst_port = tcphdr->src_port;
 		in->proto = NET_IPPROTO_TCP;
 		out->proto = NET_IPPROTO_TCP;
 	} else if (iphdr->proto == NET_IPPROTO_UDP) {
 		struct net_udp_hdr *udphdr = (struct net_udp_hdr *)l4hdr;
 
-		in->udp.src_port = UNALIGNED_GET(&udphdr->src_port);
-		in->udp.dst_port = UNALIGNED_GET(&udphdr->dst_port);
-		out->udp.src_port = UNALIGNED_GET(&udphdr->dst_port);
-		out->udp.dst_port = UNALIGNED_GET(&udphdr->src_port);
+		in->udp.src_port = udphdr->src_port;
+		in->udp.dst_port = udphdr->dst_port;
+		out->udp.src_port = udphdr->dst_port;
+		out->udp.dst_port = udphdr->src_port;
 		in->proto = NET_IPPROTO_UDP;
 		out->proto = NET_IPPROTO_UDP;
 	} else {
