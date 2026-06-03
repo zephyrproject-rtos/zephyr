@@ -84,7 +84,6 @@ int i3c_addr_slots_init(const struct device *dev)
 	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
 	const struct i3c_driver_config *config = (const struct i3c_driver_config *)dev->config;
 	int i, ret = 0;
-	struct i3c_device_desc *i3c_dev;
 	struct i3c_i2c_device_desc *i2c_dev;
 
 	__ASSERT_NO_MSG(dev != NULL);
@@ -124,19 +123,12 @@ int i3c_addr_slots_init(const struct device *dev)
 	}
 
 	/*
-	 * If there is a static address for the I3C devices, check
-	 * if this address is free, and there is no other devices of
-	 * the same (pre-assigned) address on the bus.
+	 * I3C devices are not attached here -- i3c_bus_init() calls
+	 * rstdaa_all which would immediately detach them. Instead,
+	 * I3C devices are attached during the address assignment
+	 * phase (setdasa, setaasa, or entdaa) where address conflicts
+	 * are detected by i3c_attach_i3c_device().
 	 */
-	for (i = 0; i < config->dev_list.num_i3c; i++) {
-		i3c_dev = &config->dev_list.i3c[i];
-		ret = i3c_attach_i3c_device(i3c_dev);
-		if (ret != 0) {
-			/* Address slot is not free */
-			ret = -EINVAL;
-			goto out;
-		}
-	}
 
 out:
 	return ret;
