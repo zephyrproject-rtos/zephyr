@@ -817,6 +817,61 @@ static int cmd_partitions(const struct shell *sh, size_t argc, char *argv[])
 }
 #endif
 
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+static int cmd_is_bad(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *flash_dev;
+	int result;
+	uint32_t addr;
+	int status = FLASH_BLOCK_BAD;
+
+	result = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
+	if (result) {
+		return result;
+	}
+
+	result = flash_ex_op(flash_dev, FLASH_EX_OP_IS_BAD_BLOCK, (uintptr_t)&addr, &status);
+
+	if (result == -ENOTSUP) {
+		shell_error(sh, "Device does not support checking for bad blocks");
+	} else if (result != 0) {
+		shell_error(sh, "Error checking for bad block, code %d", result);
+	} else {
+		if (status == FLASH_BLOCK_BAD) {
+			shell_print(sh, "Bad block at 0x%x", addr);
+		} else {
+			shell_print(sh, "Good block at 0x%x", addr);
+		}
+	}
+
+	return result;
+}
+
+static int cmd_mark_bad(const struct shell *sh, size_t argc, char *argv[])
+{
+	const struct device *flash_dev;
+	int result;
+	uint32_t addr;
+
+	result = parse_helper(sh, &argc, &argv, &flash_dev, &addr);
+	if (result) {
+		return result;
+	}
+
+	result = flash_ex_op(flash_dev, FLASH_EX_OP_MARK_BAD_BLOCK, (uintptr_t)&addr, NULL);
+
+	if (result == -ENOTSUP) {
+		shell_error(sh, "Device does not support marking bad blocks");
+	} else if (result != 0) {
+		shell_error(sh, "Error marking bad block, code %d", result);
+	} else {
+		shell_print(sh, "Block at 0x%x marked as bad", addr);
+	}
+
+	return result;
+}
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
+
 static void device_name_get(size_t idx, struct shell_static_entry *entry);
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
@@ -862,6 +917,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 #define HELP_PARTITIONS SHELL_HELP("Get partitionsformation", "")
 	SHELL_CMD_ARG(partitions, &dsub_device_name, HELP_PARTITIONS, cmd_partitions, 0, 0),
 #endif
+
+#ifdef CONFIG_FLASH_EX_OP_ENABLED
+#define HELP_IS_BAD SHELL_HELP("Check if a block is bad", "[<device>] <address>")
+#define HELP_MARK_BAD SHELL_HELP("Mark a block as bad", "[<device>] <address>")
+
+	SHELL_CMD_ARG(is_bad, &dsub_device_name, HELP_IS_BAD, cmd_is_bad, 2, 1),
+	SHELL_CMD_ARG(mark_bad, &dsub_device_name, HELP_MARK_BAD, cmd_mark_bad, 2, 1),
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 
 #ifdef CONFIG_FLASH_SHELL_TEST_COMMANDS
 #define HELP_READ_TEST                                                                             \
