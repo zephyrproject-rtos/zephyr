@@ -866,10 +866,6 @@ static int i3c_bus_prepare_setdasa(const struct device *dev, const struct i3c_de
 		ret = i3c_bus_setdasa(desc, dynamic_addr);
 		if (ret != 0) {
 			LOG_ERR("SETDASA error on address 0x%x (%d)", desc->static_addr, ret);
-			/* SETDASA failed, detach it from the controller */
-			if (i3c_detach_i3c_device(desc) != 0) {
-				LOG_ERR("Failed to detach %s (%d)", desc->dev->name, ret);
-			}
 		}
 	}
 
@@ -968,6 +964,7 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 	struct i3c_driver_data *data = (struct i3c_driver_data *)desc->bus->data;
 	struct i3c_ccc_address dyn_addr;
 	int ret = 0;
+	int dret;
 
 	/* check if the addressed is free, if the requested DA is different from the SA */
 	if (desc->static_addr != dynamic_addr) {
@@ -999,6 +996,11 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 	ret = i3c_ccc_do_setdasa(desc, dyn_addr);
 	if (ret != 0) {
 		LOG_ERR("%s: %s: SETDASA error (%d)", desc->bus->name, desc->dev->name, ret);
+		dret = i3c_detach_i3c_device(desc);
+		if (dret != 0 && dret != -EALREADY) {
+			LOG_ERR("%s: %s: failed to detach after SETDASA failure",
+				desc->bus->name, desc->dev->name);
+		}
 		return ret;
 	}
 
