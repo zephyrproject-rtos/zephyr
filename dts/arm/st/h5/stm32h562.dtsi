@@ -158,14 +158,12 @@
 			status = "disabled";
 
 			sai2_a: sai2a@4 {
-				compatible = "st,stm32-sai-sub";
 				reg = <0x4>;
 				dmas = <&gpdma1 1 55 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				status = "disabled";
 			};
 
 			sai2_b: sai2b@24 {
-				compatible = "st,stm32-sai-sub";
 				reg = <0x24>;
 				dmas = <&gpdma1 0 56 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				status = "disabled";
