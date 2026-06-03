@@ -1922,6 +1922,33 @@ static int cdns_i3c_do_daa(const struct device *dev)
 
 					LOG_DBG("%s: PID 0x%012llx assigned dynamic address 0x%02x",
 						dev->name, pid, dyn_addr);
+
+					/* The Cadence I3C IP does not allow the
+					 * controller to assign a specific DA
+					 * during ENTDAA -- it picks the next
+					 * address from the pre-programmed RR
+					 * slots. If the DT requested a particular
+					 * init_dynamic_addr and the hardware
+					 * assigned a different one, issue SETNEWDA
+					 * to move the target to the preferred
+					 * address. This may fail if the preferred
+					 * address is already in use, in which case
+					 * the target keeps the ENTDAA-assigned DA.
+					 */
+					if (target->init_dynamic_addr != 0 &&
+					    target->init_dynamic_addr != dyn_addr) {
+						int sret = i3c_bus_setnewda(target,
+							target->init_dynamic_addr);
+
+						if (sret != 0) {
+							LOG_WRN("%s: SETNEWDA to 0x%02x "
+								"failed (%d), keeping "
+								"DA 0x%02x",
+								dev->name,
+								target->init_dynamic_addr,
+								sret, dyn_addr);
+						}
+					}
 				}
 				i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots,
 							target ? target->dynamic_addr : dyn_addr);
@@ -2445,7 +2472,7 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 		}
 	}
 
-	/* No active RR slot carries this dyn_addr — the address is stale
+	/* No active RR slot carries this dyn_addr -- the address is stale
 	 * (e.g. the desc was detached without RSTDAA, or DAA hasn't run
 	 * yet on this address). Fall back to allocating a fresh slot if
 	 * one is available; the caller will reprogram the DA via the
