@@ -917,11 +917,13 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 		 "Only one of GPIO_INT_LOW_0, GPIO_INT_HIGH_1 can be "
 		 "enabled for a level interrupt.");
 
+/** @cond INTERNAL_HIDDEN */
 #ifdef CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT
 #define GPIO_INT_ENABLE_DISABLE_ONLY_VALUE  GPIO_INT_ENABLE_DISABLE_ONLY
 #else
 #define GPIO_INT_ENABLE_DISABLE_ONLY_VALUE  0
 #endif /* CONFIG_GPIO_ENABLE_DISABLE_INTERRUPT */
+/** @endcond */
 
 	__ASSERT(((flags & GPIO_INT_ENABLE) == 0) ||
 			 ((flags & (GPIO_INT_LOW_0 | GPIO_INT_HIGH_1)) != 0) ||
