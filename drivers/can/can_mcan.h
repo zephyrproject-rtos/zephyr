@@ -654,8 +654,8 @@ enum can_mcan_psr_lec {
 		     "Maximum Extended filter elements exceeded");                                 \
 	BUILD_ASSERT(CAN_MCAN_DT_MRAM_RX_FIFO0_ELEMENTS(node_id) <= 64,                            \
 		     "Maximum Rx FIFO 0 elements exceeded");                                       \
-	BUILD_ASSERT(CAN_MCAN_DT_MRAM_RX_FIFO1_ELEMENTS(node_id) <= 64,                            \
-		     "Maximum Rx FIFO 1 elements exceeded");                                       \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_RX_FIFO1_ELEMENTS(node_id) == 0,                             \
+		     "Expect no Rx FIFO element: allocate all to Rx FIFO 0");                      \
 	BUILD_ASSERT(CAN_MCAN_DT_MRAM_RX_BUFFER_ELEMENTS(node_id) <= 64,                           \
 		     "Maximum Rx Buffer elements exceeded");                                       \
 	BUILD_ASSERT(CAN_MCAN_DT_MRAM_TX_EVENT_FIFO_ELEMENTS(node_id) <= 32,                       \
