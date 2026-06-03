@@ -58,7 +58,7 @@ static const struct device *eth_stm32_phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0,
 
 struct eth_stm32_hal_dev_data {
 	struct net_if *iface;
-	uint8_t mac_addr[6];
+	uint8_t mac_addr[NET_ETH_ADDR_LEN];
 	hal_eth_handle_t heth;
 	struct k_event rx_event;
 	struct k_sem tx_int_sem;
@@ -562,6 +562,7 @@ static int eth_initialize(const struct device *dev)
 		return ret;
 	}
 
+	BUILD_ASSERT(sizeof(config_eth.mac_addr) == sizeof(dev_data->mac_addr));
 	memcpy(config_eth.mac_addr, dev_data->mac_addr, sizeof(dev_data->mac_addr));
 
 	config_eth.media_interface = HAL_ETH_MEDIA_IF_RMII;
@@ -606,7 +607,8 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		HAL_ETH_GetConfig(heth, &eth_cfg);
-		memcpy(eth_cfg.mac_addr, dev_data->mac_addr, 6);
+		BUILD_ASSERT(sizeof(eth_cfg.mac_addr) == sizeof(dev_data->mac_addr));
+		memcpy(eth_cfg.mac_addr, dev_data->mac_addr, sizeof(dev_data->mac_addr));
 
 		if (HAL_ETH_SetConfig(heth, &eth_cfg) != HAL_OK) {
 			return -EIO;
