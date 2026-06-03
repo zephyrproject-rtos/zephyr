@@ -114,6 +114,11 @@ Libraries / Subsystems
     million, as used by gPTP and IEEE 1588, instead of a floating-point ratio, so rate
     corrections no longer need floating-point arithmetic.
 
+New Samples
+***********
+
+* :zephyr:code-sample:`tfm_secure_peripheral_st_secure_i2c`
+
 Devicetree
 **********
 
