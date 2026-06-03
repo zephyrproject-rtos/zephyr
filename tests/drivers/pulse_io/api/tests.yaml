@@ -1,0 +1,8 @@
+common:
+  tags: drivers pulse_io
+  filter: dt_nodelabel_enabled("pulse_io0")
+  integration_platforms:
+    - native_sim
+tests:
+  drivers.pulse_io.api:
+    harness: ztest
