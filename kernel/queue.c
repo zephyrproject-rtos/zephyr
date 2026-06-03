@@ -26,6 +26,7 @@ struct alloc_node {
 	void *data;
 };
 
+/* The queue must have its spinlock held before calling this function. */
 static void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 {
 	void *ret;
@@ -400,7 +401,10 @@ bool k_queue_unique_append(struct k_queue *queue, void *data)
 
 void *z_impl_k_queue_peek_head(struct k_queue *queue)
 {
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *ret = z_queue_node_peek(sys_sflist_peek_head(&queue->data_q), false);
+
+	k_spin_unlock(&queue->lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_queue, peek_head, queue, ret);
 
@@ -409,7 +413,10 @@ void *z_impl_k_queue_peek_head(struct k_queue *queue)
 
 void *z_impl_k_queue_peek_tail(struct k_queue *queue)
 {
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *ret = z_queue_node_peek(sys_sflist_peek_tail(&queue->data_q), false);
+
+	k_spin_unlock(&queue->lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_queue, peek_tail, queue, ret);
 
