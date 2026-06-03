@@ -140,8 +140,7 @@ static inline int z_impl_w1_change_bus_lock(const struct device *dev, bool lock)
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *
- * @retval        0 If successful.
- * @retval -errno Negative error code on error.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int w1_lock_bus(const struct device *dev)
 {
@@ -155,8 +154,7 @@ static inline int w1_lock_bus(const struct device *dev)
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *
- * @retval 0      If successful.
- * @retval -errno Negative error code on error.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int w1_unlock_bus(const struct device *dev)
 {
@@ -185,9 +183,9 @@ static inline int w1_unlock_bus(const struct device *dev)
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *
- * @retval 0      If no slaves answer with a present pulse.
- * @retval 1      If at least one slave answers with a present pulse.
- * @retval -errno Negative error code on error.
+ * @retval 0 No slaves answer with a present pulse.
+ * @retval 1 At least one slave answers with a present pulse.
+ * @return Negative errno value on failure.
  */
 __syscall int w1_reset_bus(const struct device *dev);
 
@@ -203,8 +201,7 @@ static inline int z_impl_w1_reset_bus(const struct device *dev)
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *
- * @retval rx_bit The read bit value on success.
- * @retval -errno Negative error code on error.
+ * @return The read bit value on success, negative errno value on failure.
  */
 __syscall int w1_read_bit(const struct device *dev);
 
@@ -221,8 +218,7 @@ static inline int z_impl_w1_read_bit(const struct device *dev)
  * @param[in] dev Pointer to the device structure for the driver instance.
  * @param bit     Transmitting bit value 1 or 0.
  *
- * @retval 0      If successful.
- * @retval -errno Negative error code on error.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int w1_write_bit(const struct device *dev, const bool bit);
 
@@ -238,8 +234,7 @@ static inline int z_impl_w1_write_bit(const struct device *dev, bool bit)
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *
- * @retval rx_byte The read byte value on success.
- * @retval -errno  Negative error code on error.
+ * @return The read byte value on success, negative errno value on failure.
  */
 __syscall int w1_read_byte(const struct device *dev);
 
@@ -256,8 +251,7 @@ static inline int z_impl_w1_read_byte(const struct device *dev)
  * @param[in] dev Pointer to the device structure for the driver instance.
  * @param byte    Transmitting byte.
  *
- * @retval 0      If successful.
- * @retval -errno Negative error code on error.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int w1_write_byte(const struct device *dev, uint8_t byte);
 
@@ -275,8 +269,7 @@ static inline int z_impl_w1_write_byte(const struct device *dev, uint8_t byte)
  * @param[out] buffer Pointer to receive buffer.
  * @param len         Length of receiving buffer (in bytes).
  *
- * @retval 0      If successful.
- * @retval -errno Negative error code on error.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int w1_read_block(const struct device *dev, uint8_t *buffer, size_t len);
 
@@ -287,8 +280,7 @@ __syscall int w1_read_block(const struct device *dev, uint8_t *buffer, size_t le
  * @param[in] buffer Pointer to transmitting buffer.
  * @param len        Length of transmitting buffer (in bytes).
  *
- * @retval 0      If successful.
- * @retval -errno Negative error code on error.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int w1_write_block(const struct device *dev,
 			     const uint8_t *buffer, size_t len);
@@ -298,8 +290,7 @@ __syscall int w1_write_block(const struct device *dev,
  *
  * @param[in] dev  Pointer to the device structure for the driver instance.
  *
- * @retval slave_count  Positive Number of connected 1-Wire slaves on success.
- * @retval -errno       Negative error code on error.
+ * @return Positive number of connected 1-Wire slaves on success, negative errno value on failure.
  */
 __syscall size_t w1_get_slave_count(const struct device *dev);
 
@@ -321,7 +312,7 @@ static inline size_t z_impl_w1_get_slave_count(const struct device *dev)
  * @param type     Enum specifying the setting type.
  * @param value    The new value for the passed settings type.
  *
- * @retval 0        If successful.
+ * @retval 0        On success.
  * @retval -ENOTSUP The master doesn't support the configuration of the supplied type.
  * @retval -EIO     General input / output error, failed to configure master devices.
  */
@@ -483,10 +474,8 @@ typedef void (*w1_search_callback_t)(struct w1_rom rom, void *user_data);
  * @param[in] dev  Pointer to the device structure for the driver instance.
  * @param[out] rom Pointer to the ROM structure.
  *
- * @retval 0       If successful.
- * @retval -ENODEV In case no slave responds to reset.
- * @retval -errno  Other negative error code in case of invalid crc and
- *         communication errors.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENODEV No slave responds to reset.
  */
 int w1_read_rom(const struct device *dev, struct w1_rom *rom);
 
@@ -506,9 +495,8 @@ int w1_read_rom(const struct device *dev, struct w1_rom *rom);
  * @param[in] dev    Pointer to the device structure for the driver instance.
  * @param[in] config Pointer to the slave specific 1-Wire config.
  *
- * @retval 0       If successful.
- * @retval -ENODEV In case no slave responds to reset.
- * @retval -errno  Other negative error code on error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENODEV No slave responds to reset.
  */
 int w1_match_rom(const struct device *dev, const struct w1_slave_config *config);
 
@@ -520,9 +508,8 @@ int w1_match_rom(const struct device *dev, const struct w1_slave_config *config)
  *
  * @param dev     Pointer to the device structure for the driver instance.
  *
- * @retval 0       If successful.
- * @retval -ENODEV In case no slave responds to reset.
- * @retval -errno  Other negative error code on error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENODEV No slave responds to reset.
  */
 int w1_resume_command(const struct device *dev);
 
@@ -537,9 +524,8 @@ int w1_resume_command(const struct device *dev);
  * @param[in] dev    Pointer to the device structure for the driver instance.
  * @param[in] config Pointer to the slave specific 1-Wire config.
  *
- * @retval 0       If successful.
- * @retval -ENODEV In case no slave responds to reset.
- * @retval -errno  Other negative error code on error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENODEV No slave responds to reset.
  */
 int w1_skip_rom(const struct device *dev, const struct w1_slave_config *config);
 
@@ -550,9 +536,8 @@ int w1_skip_rom(const struct device *dev, const struct w1_slave_config *config);
  * @param[in] dev    Pointer to the device structure for the driver instance.
  * @param[in] config Pointer to the slave specific 1-Wire config.
  *
- * @retval 0       If successful.
- * @retval -ENODEV In case no slave responds to reset.
- * @retval -errno  Other negative error code on error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENODEV No slave responds to reset.
  */
 int w1_reset_select(const struct device *dev, const struct w1_slave_config *config);
 
@@ -569,9 +554,8 @@ int w1_reset_select(const struct device *dev, const struct w1_slave_config *conf
  * @param[out] read_buf Pointer to storage for read data.
  * @param read_len      Number of bytes to read.
  *
- * @retval 0       If successful.
- * @retval -ENODEV In case no slave responds to reset.
- * @retval -errno  Other negative error code on error.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENODEV No slave responds to reset.
  */
 int w1_write_read(const struct device *dev, const struct w1_slave_config *config,
 		  const uint8_t *write_buf, size_t write_len,
@@ -598,8 +582,7 @@ int w1_write_read(const struct device *dev, const struct w1_slave_config *config
  * @param[in] user_data User data to pass to the application callback handler
  *                      function.
  *
- * @retval slave_count  Number of slaves found.
- * @retval -errno       Negative error code on error.
+ * @return Number of slaves found, negative errno value on failure.
  */
 __syscall int w1_search_bus(const struct device *dev, uint8_t command,
 			    uint8_t family, w1_search_callback_t callback,
@@ -617,8 +600,7 @@ __syscall int w1_search_bus(const struct device *dev, uint8_t command,
  * @param[in] user_data User data to pass to the application callback handler
  *                      function.
  *
- * @retval slave_count  Number of slaves found.
- * @retval -errno       Negative error code on error.
+ * @return Number of slaves found, negative errno value on failure.
  */
 static inline int w1_search_rom(const struct device *dev,
 				w1_search_callback_t callback, void *user_data)
@@ -639,8 +621,7 @@ static inline int w1_search_rom(const struct device *dev,
  * @param[in] user_data User data to pass to the application callback handler
  *                      function.
  *
- * @retval slave_count  Number of slaves found.
- * @retval -errno       Negative error code on error.
+ * @return Number of slaves found, negative errno value on failure.
  */
 static inline int w1_search_alarm(const struct device *dev,
 				  w1_search_callback_t callback, void *user_data)
@@ -654,7 +635,7 @@ static inline int w1_search_alarm(const struct device *dev,
  *
  * @param[in] rom Pointer to the ROM struct.
  *
- * @retval rom64 The ROM converted to an unsigned integer in  endianness.
+ * @return The ROM converted to an unsigned integer in host endianness.
  */
 static inline uint64_t w1_rom_to_uint64(const struct w1_rom *rom)
 {
@@ -682,7 +663,7 @@ static inline void w1_uint64_to_rom(const uint64_t rom64, struct w1_rom *rom)
  * @param[in] src Input bytes for the computation.
  * @param len     Length of the input in bytes.
  *
- * @retval crc The computed CRC8 value.
+ * @return The computed CRC8 value.
  */
 static inline uint8_t w1_crc8(const uint8_t *src, size_t len)
 {
@@ -702,7 +683,7 @@ static inline uint8_t w1_crc8(const uint8_t *src, size_t len)
  * @param[in] src Input bytes for the computation.
  * @param len     Length of the input in bytes.
  *
- * @retval crc The computed CRC16 value.
+ * @return The computed CRC16 value.
  */
 static inline uint16_t w1_crc16(const uint16_t seed, const uint8_t *src,
 				const size_t len)
