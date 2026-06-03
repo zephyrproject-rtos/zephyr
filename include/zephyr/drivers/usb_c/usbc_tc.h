@@ -383,9 +383,9 @@ enum tc_cc_pull {
  *	  Replaced by pd_power_role for SOP packets.
  */
 enum tc_cable_plug {
-	/* Message originated from a DFP or UFP */
+	/** Message originated from a DFP or UFP. */
 	PD_PLUG_FROM_DFP_UFP = 0,
-	/* Message originated from a Cable Plug or VPD */
+	/** Message originated from a Cable Plug or VPD. */
 	PD_PLUG_FROM_CABLE_VPD = 1
 };
 
