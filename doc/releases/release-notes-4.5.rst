@@ -194,6 +194,7 @@ New Samples
 
 * :zephyr:code-sample:`mctp_i2c_bus_host` (renamed from ``mctp_i2c_bus_owner``)
 * :zephyr:code-sample:`mctp_i3c_bus_host` (renamed from ``mctp_i3c_bus_owner``)
+* :zephyr:code-sample:`se_over_i2c`
 
 Libraries / Subsystems
 **********************

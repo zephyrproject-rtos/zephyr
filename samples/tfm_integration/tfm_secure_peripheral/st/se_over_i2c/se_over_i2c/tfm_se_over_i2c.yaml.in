@@ -1,0 +1,27 @@
+{
+  "psa_framework_version": 1.1,
+  "name": "TFM_SP_SE",
+  "type": "APPLICATION-ROT",
+  "priority": "NORMAL",
+  "model": "${SPM_BACKEND}",
+  "entry_point": "tfm_se_req_mngr_init",
+  "stack_size": "0x0800",
+  "services": [
+    {
+      "name": "TFM_SE_I2C_PROBE",
+      "sid": "0xFFFFF012",
+      "non_secure_clients": true,
+      "connection_based": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    },
+    {
+      "name": "TFM_SE_I2C_ECHO",
+      "sid": "0xFFFFF013",
+      "non_secure_clients": true,
+      "connection_based": true,
+      "version": 1,
+      "version_policy": "STRICT"
+    }
+  ]
+}
