@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+shields:
+  - name: qt7_pic32cm_jh01_cpro
+    full_name: QT7 XPLAINED PRO EXTENSION KIT for PIC32CM JH01 Curiosity Pro Evaluation Kit
+    vendor: microchip
+    supported_features:
+      - touch
+      - ptc
