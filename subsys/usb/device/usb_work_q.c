@@ -21,7 +21,7 @@ static int z_usb_work_q_init(void)
 			   z_usb_work_q_stack,
 			   K_KERNEL_STACK_SIZEOF(z_usb_work_q_stack),
 			   CONFIG_USB_WORKQUEUE_PRIORITY, NULL);
-	k_thread_name_set(&z_usb_work_q.thread, "usbworkq");
+	k_thread_name_set(z_usb_work_q.thread_id, "usbworkq");
 
 	return 0;
 }

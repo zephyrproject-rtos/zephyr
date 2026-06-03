@@ -66,7 +66,7 @@ ZTEST(workqueue_work_timeout, test_work)
 	 * Submitted items takes longer than TEST_WORK_TIMEOUT_MS, but each item takes
 	 * less time than TEST_WORK_DELAY so workqueue thread will not be aborted.
 	 */
-	zassert_equal(k_thread_join(&test_workq.thread, TEST_WORK_DELAY), -EAGAIN);
+	zassert_equal(k_thread_join(test_workq.thread_id, TEST_WORK_DELAY), -EAGAIN);
 
 	/* Submit single item which takes longer than TEST_WORK_TIMEOUT_MS */
 	zassert_equal(k_work_submit_to_queue(&test_workq, &test_work_blocking), 1);
@@ -75,7 +75,7 @@ ZTEST(workqueue_work_timeout, test_work)
 	 * Submitted item shall cause the work to time out and the workqueue thread be
 	 * aborted if CONFIG_WORKQUEUE_WORK_TIMEOUT is enabled.
 	 */
-	ret = k_thread_join(&test_workq.thread, TEST_WORK_BLOCKING_DELAY);
+	ret = k_thread_join(test_workq.thread_id, TEST_WORK_BLOCKING_DELAY);
 	if (IS_ENABLED(CONFIG_WORKQUEUE_WORK_TIMEOUT)) {
 		zassert_equal(ret, 0);
 	} else {

@@ -8358,7 +8358,7 @@ static void init_quic_recovery_service(void)
 				 K_HIGHEST_APPLICATION_THREAD_PRIO,
 				 K_LOWEST_APPLICATION_THREAD_PRIO),
 			   NULL);
-	k_thread_name_set(&quic_recovery_work_q.thread, "quic_recovery");
+	k_thread_name_set(quic_recovery_work_q.thread_id, "quic_recovery");
 }
 
 /**
