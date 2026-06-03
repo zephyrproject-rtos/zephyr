@@ -2324,6 +2324,7 @@ Documentation Infrastructure:
     - rerickson1
   collaborators:
     - SeppoTakalo
+    - zafersn
   files:
     - drivers/modem/
     - tests/drivers/build_all/modem/
