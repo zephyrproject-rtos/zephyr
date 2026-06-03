@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: mchp_QT7
+  description: Demonstrates the QT7 Addon board touch sensors using the PTC peripheral.
+
+common:
+  tags:
+    - input
+  build_only: true
+
+tests:
+  sample.shields.mchp_qt7:
+    platform_allow:
+      - pic32cm_jh01_cpro
+    extra_args:
+      - SHIELD=qt7_xplained_pro
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_LED=y
+      - CONFIG_INPUT=y
+      - CONFIG_INPUT_MCHP_TOUCH=y
+      - CONFIG_INPUT_MCHP_TOUCH_EN_BTTN_MODULE=y
+      - CONFIG_INPUT_MCHP_TOUCH_EN_FREQ_HOP=y
+      - CONFIG_INPUT_MCHP_TOUCH_EN_FREQ_AUTO_TUNE=y
+      - CONFIG_INPUT_MCHP_TOUCH_DATASTREAMER=y
+      - CONFIG_INPUT_MODE_SYNCHRONOUS=y
+      - CONFIG_INPUT_GPIO_KEYS=n
+      - CONFIG_INPUT_MCHP_TOUCH_EN_SCROLLER=y
