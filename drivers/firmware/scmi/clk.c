@@ -57,7 +57,7 @@ struct scmi_clock_get_permissions_reply {
 int scmi_clock_rate_get(struct scmi_protocol *proto,
 			uint32_t clk_id, uint32_t *rate)
 {
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int ret;
 	struct scmi_clock_rate_set_reply reply_buffer;
 
@@ -70,16 +70,14 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_RATE_GET,
-					SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(clk_id);
-	msg.content = &clk_id;
+	ret = scmi_xfer_init(proto, &xfer, CLOCK_RATE_GET,
+			     &clk_id, sizeof(clk_id),
+			     &reply_buffer, sizeof(reply_buffer));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -95,7 +93,7 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 
 int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_config *cfg)
 {
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int status, ret;
 
 	/* input validation */
@@ -112,15 +110,13 @@ int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_conf
 		return -ENOTSUP;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_RATE_SET, SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(*cfg);
-	msg.content = cfg;
+	ret = scmi_xfer_init(proto, &xfer, CLOCK_RATE_SET,
+			     cfg, sizeof(*cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -130,7 +126,7 @@ int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_conf
 
 int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t *parent_id)
 {
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int ret;
 	struct scmi_clock_parent_get_reply reply_buffer;
 
@@ -143,16 +139,14 @@ int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 		return -EINVAL;
 	}
 
-	msg.hdr =
-		SCMI_MESSAGE_HDR_MAKE(CLOCK_PARENT_GET, SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(clk_id);
-	msg.content = &clk_id;
+	ret = scmi_xfer_init(proto, &xfer, CLOCK_PARENT_GET,
+			     &clk_id, sizeof(clk_id),
+			     &reply_buffer, sizeof(reply_buffer));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -169,7 +163,7 @@ int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t parent_id)
 {
 	struct scmi_clock_parent_config cfg = {.clk_id = clk_id, .parent_id = parent_id};
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int status, ret;
 
 	/* input validation */
@@ -181,16 +175,13 @@ int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 		return -EINVAL;
 	}
 
-	msg.hdr =
-		SCMI_MESSAGE_HDR_MAKE(CLOCK_PARENT_SET, SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(cfg);
-	msg.content = &cfg;
+	ret = scmi_xfer_init(proto, &xfer, CLOCK_PARENT_SET,
+			     &cfg, sizeof(cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -201,7 +192,7 @@ int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 int scmi_clock_config_set(struct scmi_protocol *proto,
 			  struct scmi_clock_config *cfg)
 {
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int status, ret;
 
 	/* input validation */
@@ -228,16 +219,13 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_CONFIG_SET,
-					SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(*cfg);
-	msg.content = cfg;
+	ret = scmi_xfer_init(proto, &xfer, CLOCK_CONFIG_SET,
+			     cfg, sizeof(*cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -248,7 +236,7 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
 			  struct scmi_clock_attributes *attributes)
 {
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int ret;
 
 	if (!proto || !attributes) {
@@ -259,16 +247,14 @@ int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_ATTRIBUTES,
-					SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(clk_id);
-	msg.content = &clk_id;
+	ret = scmi_xfer_init(proto, &xfer, CLOCK_ATTRIBUTES,
+			     &clk_id, sizeof(clk_id),
+			     attributes, sizeof(*attributes));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(*attributes);
-	reply.content = attributes;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -280,7 +266,7 @@ int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
 			       uint32_t *permissions)
 {
 	struct scmi_clock_get_permissions_reply reply_buffer;
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int ret;
 
 	if (!proto || !permissions) {
@@ -291,16 +277,14 @@ int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_GET_PERMISSIONS,
-					SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(clk_id);
-	msg.content = &clk_id;
+	ret = scmi_xfer_init(proto, &xfer, CLOCK_GET_PERMISSIONS,
+			     &clk_id, sizeof(clk_id),
+			     &reply_buffer, sizeof(reply_buffer));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}

@@ -163,22 +163,12 @@ int scmi_status_to_errno(int scmi_status);
  * a given channel and wait for its reply
  *
  * @param proto pointer to SCMI protocol
- * @param msg pointer to SCMI message to send
- * @param reply pointer to SCMI message in which the reply is to be
- * written
+ * @param xfer Transfer handle
  *
  * @retval 0 if successful
  * @retval negative errno if failure
- * @param use_polling Specifies the communication mechanism used by the scmi
- * platform to interact with agents.
- * - true: Polling mode — the platform actively checks the message status
- *   to determine if it has been processed
- * - false: Interrupt mode — the platform relies on SCMI interrupts to
- *   detect when a message has been handled.
  */
-int scmi_send_message(struct scmi_protocol *proto,
-		      struct scmi_message *msg, struct scmi_message *reply,
-		      bool use_polling);
+int scmi_send_message(struct scmi_protocol *proto, struct scmi_xfer *xfer);
 
 /**
  * @brief Prepare for an SCMI transfer

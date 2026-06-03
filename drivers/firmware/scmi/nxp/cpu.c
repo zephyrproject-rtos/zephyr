@@ -32,9 +32,8 @@ struct scmi_nxp_cpu_info_get_reply {
 int scmi_nxp_cpu_sleep_mode_set(struct scmi_nxp_cpu_sleep_mode_config *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int status, ret;
-	bool use_polling;
 
 	/* input validation */
 	if (!proto || !cfg) {
@@ -45,21 +44,18 @@ int scmi_nxp_cpu_sleep_mode_set(struct scmi_nxp_cpu_sleep_mode_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_SLEEP_MODE_SET, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(*cfg);
-	msg.content = cfg;
-
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
+	ret = scmi_xfer_init(proto, &xfer, CPU_SLEEP_MODE_SET,
+			     cfg, sizeof(*cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* Set the PM-related scmi api to use poll mode to ensure that
 	 * the CPU is not woken up by unnecessary scmi interrupts
 	 */
-	use_polling = true;
+	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &msg, &reply, use_polling);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -70,9 +66,8 @@ int scmi_nxp_cpu_sleep_mode_set(struct scmi_nxp_cpu_sleep_mode_config *cfg)
 int scmi_nxp_cpu_pd_lpm_set(struct scmi_nxp_cpu_pd_lpm_config *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int status, ret;
-	bool use_polling;
 
 	/* input validation */
 	if (!proto || !cfg) {
@@ -83,18 +78,15 @@ int scmi_nxp_cpu_pd_lpm_set(struct scmi_nxp_cpu_pd_lpm_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_PD_LPM_CONFIG_SET, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(*cfg);
-	msg.content = cfg;
+	ret = scmi_xfer_init(proto, &xfer, CPU_PD_LPM_CONFIG_SET,
+			     cfg, sizeof(*cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
+	xfer.use_polling = true;
 
-	use_polling = true;
-
-	ret = scmi_send_message(proto, &msg, &reply, use_polling);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -105,7 +97,7 @@ int scmi_nxp_cpu_pd_lpm_set(struct scmi_nxp_cpu_pd_lpm_config *cfg)
 int scmi_nxp_cpu_set_irq_mask(struct scmi_nxp_cpu_irq_mask_config *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int status, ret;
 
 	/* input validation */
@@ -117,16 +109,15 @@ int scmi_nxp_cpu_set_irq_mask(struct scmi_nxp_cpu_irq_mask_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_IRQ_WAKE_SET, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(*cfg);
-	msg.content = cfg;
+	ret = scmi_xfer_init(proto, &xfer, CPU_IRQ_WAKE_SET,
+			     cfg, sizeof(*cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
+	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &msg, &reply, true);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -137,7 +128,7 @@ int scmi_nxp_cpu_set_irq_mask(struct scmi_nxp_cpu_irq_mask_config *cfg)
 int scmi_nxp_cpu_reset_vector(struct scmi_nxp_cpu_vector_config *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int status, ret;
 
 	/* input validation */
@@ -149,16 +140,15 @@ int scmi_nxp_cpu_reset_vector(struct scmi_nxp_cpu_vector_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_RESET_VECTOR_SET, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(*cfg);
-	msg.content = cfg;
+	ret = scmi_xfer_init(proto, &xfer, CPU_RESET_VECTOR_SET,
+			     cfg, sizeof(*cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
+	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &msg, &reply, true);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -169,7 +159,7 @@ int scmi_nxp_cpu_reset_vector(struct scmi_nxp_cpu_vector_config *cfg)
 int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_NXP_CPU_DOMAIN);
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	struct scmi_nxp_cpu_info_get_reply reply_buffer;
 	int ret;
 
@@ -182,16 +172,16 @@ int scmi_nxp_cpu_info_get(uint32_t cpu_id, struct scmi_nxp_cpu_info *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CPU_INFO_GET, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(uint32_t);
-	msg.content = &cpu_id;
+	ret = scmi_xfer_init(proto, &xfer, CPU_INFO_GET,
+			     &cpu_id, sizeof(cpu_id),
+			     &reply_buffer, sizeof(reply_buffer));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
+	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &msg, &reply, true);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}

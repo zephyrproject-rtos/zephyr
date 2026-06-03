@@ -99,8 +99,7 @@ static int scmi_core_wait_reply(struct scmi_protocol *proto, bool use_polling)
 	return 0;
 }
 
-int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
-		      struct scmi_message *reply, bool use_polling)
+int scmi_send_message(struct scmi_protocol *proto, struct scmi_xfer *xfer)
 {
 	int ret;
 
@@ -121,9 +120,9 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 	 *    and potentially even interrupts, based on the architecture.
 	 * Otherwise, use the caller's requested polling mode.
 	 */
-	use_polling = (IS_ENABLED(CONFIG_ARM_SCMI_POLLING_ONLY) ||
-		       proto->tx->polling_only ||
-		       k_is_pre_kernel()) ? true : use_polling;
+	xfer->use_polling = (IS_ENABLED(CONFIG_ARM_SCMI_POLLING_ONLY) ||
+			     proto->tx->polling_only ||
+			     k_is_pre_kernel()) ? true : xfer->use_polling;
 
 	if (!k_is_pre_kernel()) {
 		ret = k_mutex_lock(&proto->tx->lock, K_USEC(SCMI_CHAN_LOCK_TIMEOUT_USEC));
@@ -133,19 +132,20 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_message *msg,
 		}
 	}
 
-	ret = scmi_transport_send_message(proto->transport, proto->tx, msg, use_polling);
+	ret = scmi_transport_send_message(proto->transport, proto->tx,
+					  &xfer->tx, xfer->use_polling);
 	if (ret < 0) {
 		LOG_ERR("failed to send message at transport layer: %d", ret);
 		goto out_release_mutex;
 	}
 
-	ret = scmi_core_wait_reply(proto, use_polling);
+	ret = scmi_core_wait_reply(proto, xfer->use_polling);
 	if (ret < 0) {
 		LOG_ERR("failed to wait for message reply: %d", ret);
 		goto out_release_mutex;
 	}
 
-	ret = scmi_transport_read_message(proto->transport, proto->tx, reply);
+	ret = scmi_transport_read_message(proto->transport, proto->tx, &xfer->rx);
 	if (ret < 0) {
 		LOG_ERR("failed to read message reply: %d", ret);
 		goto out_release_mutex;

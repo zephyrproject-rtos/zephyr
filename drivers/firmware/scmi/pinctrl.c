@@ -24,7 +24,7 @@ enum scmi_pinctrl_message {
 int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 {
 	struct scmi_protocol *proto;
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	uint32_t config_num;
 	int32_t status, ret;
 
@@ -53,17 +53,16 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(PINCTRL_SETTINGS_CONFIGURE,
-					SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(*settings) -
-		(ARM_SCMI_PINCTRL_MAX_CONFIG_SIZE - config_num * 2) * 4;
-	msg.content = settings;
+	ret = scmi_xfer_init(proto, &xfer, PINCTRL_SETTINGS_CONFIGURE,
+			     settings,
+			     sizeof(*settings) -
+			     (ARM_SCMI_PINCTRL_MAX_CONFIG_SIZE - config_num * 2) * 4,
+			     &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}

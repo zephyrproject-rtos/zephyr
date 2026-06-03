@@ -85,7 +85,7 @@ struct scmi_msg_base_reset_agent_cfg_config {
 
 static int scmi_base_xfer_no_tx(uint8_t msg_id, void *rx_buf, size_t rx_len)
 {
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	struct scmi_protocol *proto;
 	int ret;
 
@@ -94,16 +94,13 @@ static int scmi_base_xfer_no_tx(uint8_t msg_id, void *rx_buf, size_t rx_len)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(msg_id,
-					SCMI_COMMAND, proto->id, 0x0);
-	msg.len = 0;
-	msg.content = NULL;
+	ret = scmi_xfer_init(proto, &xfer, msg_id,
+			     NULL, 0x0, rx_buf, rx_len);
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = rx_len;
-	reply.content = rx_buf;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		LOG_ERR("base xfer failed (%d)", ret);
 		return ret;
@@ -239,7 +236,7 @@ int scmi_base_get_revision_info(struct scmi_revision_info *rev)
 int scmi_base_discover_agent(uint32_t agent_id, struct scmi_agent_info *agent_inf)
 {
 	struct scmi_msg_base_discover_agent_reply reply_buffer;
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	struct scmi_protocol *proto;
 	int ret;
 
@@ -248,15 +245,14 @@ int scmi_base_discover_agent(uint32_t agent_id, struct scmi_agent_info *agent_in
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(DISCOVER_AGENT, SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(agent_id);
-	msg.content = &agent_id;
+	ret = scmi_xfer_init(proto, &xfer, DISCOVER_AGENT,
+			     &agent_id, sizeof(agent_id),
+			     &reply_buffer, sizeof(reply_buffer));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(struct scmi_msg_base_discover_agent_reply);
-	reply.content = &reply_buffer;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		LOG_ERR("base proto discover agent failed (%d)", ret);
 		return ret;
@@ -278,7 +274,7 @@ int scmi_base_device_permission(uint32_t agent_id, uint32_t device_id, bool allo
 {
 	struct scmi_msg_base_set_device_permissions_config cfg;
 	int32_t status;
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	struct scmi_protocol *proto;
 	int ret;
 
@@ -294,16 +290,13 @@ int scmi_base_device_permission(uint32_t agent_id, uint32_t device_id, bool allo
 	cfg.device_id = device_id;
 	cfg.flags = allow ? SCMI_BASE_DEVICE_ACCESS_ALLOW : 0;
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SET_DEVICE_PERMISSIONS, SCMI_COMMAND, proto->id,
-					0x0);
-	msg.len = sizeof(cfg);
-	msg.content = &cfg;
+	ret = scmi_xfer_init(proto, &xfer, SET_DEVICE_PERMISSIONS,
+			     &cfg, sizeof(cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		LOG_ERR("base agent:%u device:%u permission allow:%d failed (%d)", agent_id,
 			device_id, allow, ret);
@@ -324,7 +317,7 @@ int scmi_base_reset_agent_cfg(uint32_t agent_id, bool reset_perm)
 {
 	struct scmi_msg_base_reset_agent_cfg_config cfg;
 	int32_t status;
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	struct scmi_protocol *proto;
 	int ret;
 
@@ -338,16 +331,13 @@ int scmi_base_reset_agent_cfg(uint32_t agent_id, bool reset_perm)
 	cfg.agent_id = agent_id;
 	cfg.flags = reset_perm ? SCMI_BASE_AGENT_PERMISSIONS_RESET : 0;
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(RESET_AGENT_CONFIGURATION, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(cfg);
-	msg.content = &cfg;
+	ret = scmi_xfer_init(proto, &xfer, RESET_AGENT_CONFIGURATION,
+			     &cfg, sizeof(cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		LOG_ERR("base agent:%u reset cfg failed (%d)", agent_id, ret);
 		return ret;

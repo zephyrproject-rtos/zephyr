@@ -47,7 +47,7 @@ int scmi_system_protocol_version_negotiate(uint32_t version)
 int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_SYSTEM);
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int32_t status;
 	int ret;
 
@@ -60,16 +60,13 @@ int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg)
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(SYSTEM_POWER_STATE_SET, SCMI_COMMAND,
-					proto->id, 0x0);
-	msg.len = sizeof(*cfg);
-	msg.content = cfg;
+	ret = scmi_xfer_init(proto, &xfer, SYSTEM_POWER_STATE_SET,
+			     cfg, sizeof(*cfg), &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}

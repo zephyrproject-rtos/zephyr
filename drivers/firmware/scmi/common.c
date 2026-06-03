@@ -56,23 +56,20 @@ struct scmi_protocol_message_attributes_reply {
 int scmi_protocol_get_version(struct scmi_protocol *proto, uint32_t *version)
 {
 	struct scmi_protocol_version_reply reply_buffer;
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int ret;
 
 	if (!proto || !version) {
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(PROTOCOL_VERSION, SCMI_COMMAND,
-			proto->id, 0x0);
-	msg.len = 0;
-	msg.content = NULL;
+	ret = scmi_xfer_init(proto, &xfer, PROTOCOL_VERSION,
+			     NULL, 0x0, &reply_buffer, sizeof(reply_buffer));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -85,23 +82,20 @@ int scmi_protocol_get_version(struct scmi_protocol *proto, uint32_t *version)
 int scmi_protocol_attributes_get(struct scmi_protocol *proto, uint32_t *attributes)
 {
 	struct scmi_protocol_attributes_reply reply_buffer;
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int ret;
 
 	if (!proto || !attributes) {
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(PROTOCOL_ATTRIBUTES, SCMI_COMMAND,
-			proto->id, 0x0);
-	msg.len = 0;
-	msg.content = NULL;
+	ret = scmi_xfer_init(proto, &xfer, PROTOCOL_ATTRIBUTES,
+			     NULL, 0x0, &reply_buffer, sizeof(reply_buffer));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -115,23 +109,23 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
 					uint32_t message_id, uint32_t *attributes)
 {
 	struct scmi_protocol_message_attributes_reply reply_buffer;
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int ret;
 
 	if (!proto || !attributes) {
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(PROTOCOL_MESSAGE_ATTRIBUTES, SCMI_COMMAND,
-			proto->id, 0x0);
-	msg.len = sizeof(message_id);
-	msg.content = &message_id;
+	ret = scmi_xfer_init(proto, &xfer, PROTOCOL_MESSAGE_ATTRIBUTES,
+			     &message_id, sizeof(message_id),
+			     &reply_buffer, sizeof(reply_buffer));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(reply_buffer);
-	reply.content = &reply_buffer;
+	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &msg, &reply, true);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
@@ -143,7 +137,7 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
 
 int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t version)
 {
-	struct scmi_message msg, reply;
+	struct scmi_xfer xfer;
 	int32_t status;
 	int ret;
 
@@ -151,16 +145,14 @@ int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t versio
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(NEGOTIATE_PROTOCOL_VERSION, SCMI_COMMAND,
-			proto->id, 0x0);
-	msg.len = sizeof(version);
-	msg.content = &version;
+	ret = scmi_xfer_init(proto, &xfer, NEGOTIATE_PROTOCOL_VERSION,
+			     &version, sizeof(version),
+			     &status, sizeof(status));
+	if (ret < 0) {
+		return ret;
+	}
 
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(status);
-	reply.content = &status;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
+	ret = scmi_send_message(proto, &xfer);
 	if (ret < 0) {
 		return ret;
 	}
