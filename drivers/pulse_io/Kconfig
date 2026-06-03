@@ -1,0 +1,25 @@
+# Pulse IO subsystem
+#
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig PULSE_IO
+	bool "Pulse IO drivers"
+	help
+	  Enable support for the Pulse IO subsystem, a vendor-neutral
+	  abstraction for hardware that generates and captures timed
+	  digital edges on a GPIO line.
+
+if PULSE_IO
+
+module = PULSE_IO
+module-str = pulse_io
+source "subsys/logging/Kconfig.template.log_config"
+
+config PULSE_IO_INIT_PRIORITY
+	int "Pulse IO init priority"
+	default 80
+	help
+	  Device driver init priority for Pulse IO devices.
+
+endif # PULSE_IO

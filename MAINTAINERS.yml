@@ -2581,6 +2581,21 @@ Documentation Infrastructure:
   tests:
     - drivers.pinctrl
 
+"Drivers: Pulse IO":
+  status: maintained
+  maintainers:
+    - sylvioalves
+  files:
+    - drivers/pulse_io/
+    - dts/bindings/pulse-io/
+    - include/zephyr/drivers/pulse_io.h
+    - tests/drivers/pulse_io/
+    - doc/hardware/peripherals/pulse_io.rst
+  labels:
+    - "area: Pulse IO"
+  tests:
+    - drivers.pulse_io
+
 "Drivers: RTC":
   status: maintained
   maintainers:

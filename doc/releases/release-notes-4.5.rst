@@ -235,6 +235,12 @@ New APIs and options
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
 
+* Pulse IO
+
+  * Added the :ref:`Pulse IO <pulse_io_api>` subsystem, a vendor-neutral
+    API for hardware that generates and captures timed digital edges on a
+    GPIO line.
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
