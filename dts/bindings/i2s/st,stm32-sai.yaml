@@ -11,6 +11,16 @@ properties:
   reg:
     required: true
 
+  ranges:
+    type: array
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
 child-binding:
   description: SAI Sub-Block instances linked to SAI Block Controller
 

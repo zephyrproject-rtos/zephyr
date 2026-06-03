@@ -1006,14 +1006,12 @@ static DEVICE_API(i2s, i2s_stm32_sai_api) = {
 		.queue_drop = queue_drop,                                                          \
 	}
 
-#define SAI_SUB_REG_ADDR(node) (DT_REG_ADDR(DT_PARENT(node)) + DT_REG_ADDR(node))
-
 #define SAI_SUB_INIT(node)                                                                         \
 	PINCTRL_DT_DEFINE(node);                                                                   \
                                                                                                    \
 	static struct stm32_sai_sub_data sub_data_##node = {                                       \
 		.hsai = {                                                                          \
-			.Instance = (SAI_Block_TypeDef *)SAI_SUB_REG_ADDR(node),                   \
+			.Instance = (SAI_Block_TypeDef *)DT_REG_ADDR(node),                        \
 			.Init.OutputDrive = SAI_OUTPUTDRIVE_DISABLE,                               \
 			.Init.FIFOThreshold = SAI_FIFO_THRESHOLD(node),                            \
 			.Init.SynchroExt = SAI_SYNCEXT_DISABLE,                                    \
