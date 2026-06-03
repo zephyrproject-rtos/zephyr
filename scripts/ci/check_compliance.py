@@ -1492,14 +1492,17 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             cwd=GIT_TOP,
         )
 
+        self_folder = Path(__file__).resolve().parent
+
         if hasattr(self, 'UNDEF_KCONFIG_ALLOWLIST'):
             # Overridden at the class level
             undef_kconfig_allowlist = self.UNDEF_KCONFIG_ALLOWLIST
+            allowlist_hint = f"{type(self).__name__}.UNDEF_KCONFIG_ALLOWLIST"
         else:
             # Load from the text file
-            self_folder = Path(__file__).resolve().parent
             default_allowlist_file = self_folder / 'undef_kconfig_allowlist.txt'
             undef_kconfig_allowlist = get_set_from_file(str(default_allowlist_file))
+            allowlist_hint = str(default_allowlist_file)
 
         # Load extensions to UNDEF_KCONFIG_ALLOWLIST
         undef_kconfig_allowlist_extra = []
@@ -1508,7 +1511,6 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             undef_kconfig_allowlist_extra = get_set_from_file(path)
 
         # Load the per-file allowlist: files listed here are skipped entirely
-        self_folder = Path(__file__).resolve().parent
         default_files_allowlist_file = self_folder / 'undef_kconfig_files_allowlist.txt'
         undef_kconfig_files_allowlist = get_set_from_file(str(default_files_allowlist_file))
 
@@ -1555,7 +1557,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
 
         self.failure(f"""
 Found references to undefined Kconfig symbols. If any of these are false
-positives, then add them to {default_allowlist_file}.
+positives, then add them to {allowlist_hint}.
 
 If the reference is for a comment like /* CONFIG_FOO_* */ (or
 /* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
