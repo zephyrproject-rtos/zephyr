@@ -4563,6 +4563,7 @@ Networking:
     - rlubos
   collaborators:
     - BeckmaR
+    - M1cha
   files:
     - subsys/net/lib/mqtt_sn/
     - tests/net/lib/mqtt_sn*/
