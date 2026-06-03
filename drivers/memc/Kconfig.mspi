@@ -23,4 +23,11 @@ config MEMC_MSPI_APS_Z8
 	select MEMC_MSPI
 	select MSPI_AMBIQ_CONTROLLER if SOC_FAMILY_AMBIQ
 
+config MEMC_MSPI_IS66WV
+	bool "MSPI ISSI IS66WV pSRAM driver"
+	default y
+	depends on DT_HAS_IS66WV_ENABLED
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_IS66WV),mspi)
+	select MEMC_MSPI
+
 endmenu
