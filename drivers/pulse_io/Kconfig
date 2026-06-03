@@ -22,4 +22,13 @@ config PULSE_IO_INIT_PRIORITY
 	help
 	  Device driver init priority for Pulse IO devices.
 
+config PULSE_IO_LOOPBACK
+	bool "Software loopback Pulse IO backend"
+	default y
+	depends on DT_HAS_ZEPHYR_PULSE_IO_LOOPBACK_ENABLED
+	help
+	  Enable the software loopback Pulse IO backend. It loops
+	  transmitted symbols back on receive so the subsystem API can
+	  be tested without hardware.
+
 endif # PULSE_IO

@@ -7,3 +7,4 @@ zephyr_library()
 
 zephyr_library_sources(pulse_io_encoder.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE pulse_io_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_PULSE_IO_LOOPBACK pulse_io_loopback.c)
