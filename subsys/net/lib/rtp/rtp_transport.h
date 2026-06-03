@@ -65,4 +65,21 @@ int rtp_transport_socket_send(struct rtp_session *session, struct rtp_packet *rt
 			      uint8_t padding);
 #endif /* CONFIG_RTP_TRANSPORT_SOCKET */
 
+#ifdef CONFIG_RTP_TRANSPORT_NET_PKT
+
+int rtp_transport_net_pkt_init(struct rtp_session *session);
+
+int rtp_transport_net_pkt_start_rx(struct rtp_session *session);
+
+int rtp_transport_net_pkt_start_tx(struct rtp_session *session);
+
+int rtp_transport_net_pkt_stop_rx(struct rtp_session *session);
+
+int rtp_transport_net_pkt_stop_tx(struct rtp_session *session);
+
+int rtp_transport_net_pkt_send(struct rtp_session *session, struct rtp_packet *rtp_pkt,
+			       uint8_t padding);
+
+#endif /* CONFIG_RTP_TRANSPORT_NET_PKT */
+
 #endif /* ZEPHYR_INCLUDE_NET_RTP_TRANSPORT_H_ */
