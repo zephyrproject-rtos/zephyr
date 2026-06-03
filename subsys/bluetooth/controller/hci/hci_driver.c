@@ -276,7 +276,7 @@ static int bt_recv_prio(const struct device *dev, struct net_buf *buf)
 		}
 	}
 
-	return bt_hci_recv(dev, buf);
+	return bt_hci_recv_err(dev, buf);
 }
 
 static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
@@ -501,7 +501,7 @@ static void node_rx_recv(const struct device *dev)
 
 static int bt_recv(const struct device *dev, struct net_buf *buf)
 {
-	return bt_hci_recv(dev, buf);
+	return bt_hci_recv_err(dev, buf);
 }
 #endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
@@ -890,7 +890,10 @@ static int cmd_handle(const struct device *dev, struct net_buf *buf)
 		err = bt_recv(dev, evt);
 #endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
-		if ((err == 0) && (node_rx != NULL)) {
+		if (err != 0) {
+			LOG_ERR("bt_recv_failed: %d", err);
+			net_buf_unref(evt);
+		} else if (node_rx != NULL) {
 			LOG_DBG("RX node enqueue");
 			node_rx->hdr.user_meta = hci_get_class(node_rx);
 			k_fifo_put(&recv_fifo, node_rx);
@@ -915,6 +918,11 @@ static int acl_handle(const struct device *dev, struct net_buf *buf)
 #else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 		err = bt_recv(dev, evt);
 #endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
+		if (err != 0) {
+			LOG_ERR("Failed to send event: %d", err);
+			net_buf_unref(evt);
+		}
 	}
 
 	return err;
@@ -936,6 +944,11 @@ static int iso_handle(const struct device *dev, struct net_buf *buf)
 #else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 		err = bt_recv(dev, evt);
 #endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
+		if (err != 0) {
+			LOG_ERR("Failed to send event: %d", err);
+			net_buf_unref(evt);
+		}
 	}
 
 	return err;

@@ -200,13 +200,18 @@ __subsystem struct bt_hci_driver_api {
  * controller to the host. The buffer contains the raw HCI packet, including the
  * packet type prefix encoded in the H:4 format.
  *
+ * If the function returns 0 (success) the reference to @c buf was moved to the
+ * higher layer (e.g. host stack). On error, the caller (HCI driver) still owns
+ * the reference and is responsible for eventually calling @ref net_buf_unref
+ * on it.
+ *
  * @param dev  HCI device
  * @param buf  Buffer containing data received from the controller.
  *
  * @return 0 on success or negative POSIX error number on failure.
  * @return -ENOTCONN THe HCI transport is not open.
  */
-static inline int bt_hci_recv(const struct device *dev, struct net_buf *buf)
+static inline int bt_hci_recv_err(const struct device *dev, struct net_buf *buf)
 {
 	struct bt_hci_driver_data *data = dev->data;
 
@@ -216,6 +221,25 @@ static inline int bt_hci_recv(const struct device *dev, struct net_buf *buf)
 	}
 
 	return data->recv(dev, buf);
+}
+
+/**
+ * @brief Deliver an HCI packet from the driver.
+ *
+ * This function is the same as @ref bt_hci_recv_err except that it will internally handle
+ * error situations and always consume the buffer reference.
+ *
+ * @param dev  HCI device
+ * @param buf  Buffer containing data received from the controller.
+ */
+static inline void bt_hci_recv(const struct device *dev, struct net_buf *buf)
+{
+	int err;
+
+	err = bt_hci_recv_err(dev, buf);
+	if (err != 0) {
+		net_buf_unref(buf);
+	}
 }
 
 /**
