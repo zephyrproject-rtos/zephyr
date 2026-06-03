@@ -4,12 +4,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
 DT_CHOSEN_STDBY_TIMER := st,lptim-stdby-timer
-DT_STM32_LPTIM_PATH := $(dt_nodelabel_path,stm32_lp_tick_source)
+DT_CHOSEN_Z_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_Z_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_SYSTEM_TIMER))
+
+# Selecting an LPTIM as system timer by using the `stm32_lp_tick_source` nodelabel
+# is no longer supported since Zephyr v4.5; instead, the selection should be done
+# using the standard `zephyr,system-timer` chosen. Detect the old mechanism and
+# break build if found, with an hopefully helpful error message.
+$(error-if,$(dt_nodelabel_has_compat,stm32_lp_tick_source,$(DT_COMPAT_ST_STM32_LPTIM)),\
+Detected usage of deprecated nodelabel `stm32_lp_tick_source` to select system timer. \
+Please use the `$(DT_CHOSEN_Z_SYSTEM_TIMER)` chosen to select LPTIM instance instead.)
 
 menuconfig STM32_LPTIM_TIMER
 	bool "STM32 Low Power Timer [EXPERIMENTAL]"
 	default y
-	depends on $(dt_nodelabel_exists,stm32_lp_tick_source)
+	depends on $(dt_chosen_has_compat,$(DT_CHOSEN_Z_SYSTEM_TIMER),$(DT_COMPAT_ST_STM32_LPTIM))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_SYSTEM_TIMER))
 	depends on DT_HAS_ST_STM32_LPTIM_ENABLED
 	depends on CLOCK_CONTROL && PM
 	select RESET
@@ -24,13 +34,16 @@ if STM32_LPTIM_TIMER
 # Invisible symbols exposing the selected LPTIM source to Kconfig
 # NOTE: the values 2/3 correspond too STM32_SRC_LSE/STM32_SRC_LSI
 # defined in include/zephyr/dt-bindings/clock/stm32_common_clocks.h
+STM32_LPTIM_SYSTIMER_CLK_SRC := \
+	$(dt_node_ph_array_prop_int,$(DT_CHOSEN_Z_SYSTEM_TIMER_PATH),clocks,1,bus)
+
 config STM32_LPTIM_CLOCK_LSI
-	def_bool "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 3
+	def_bool $(STM32_LPTIM_SYSTIMER_CLK_SRC) = 3
 	help
 	  LSI used as LPTIM clock source
 
 config STM32_LPTIM_CLOCK_LSE
-	def_bool "$(dt_node_ph_array_prop_int,$(DT_STM32_LPTIM_PATH),clocks,1,bus)" = 2
+	def_bool $(STM32_LPTIM_SYSTIMER_CLK_SRC) = 2
 	help
 	  LSE used as LPTIM clock source
 
