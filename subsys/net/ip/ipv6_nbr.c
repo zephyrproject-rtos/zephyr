@@ -839,13 +839,15 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_in6_addr *nexthop = NULL;
-	struct net_if *iface = NULL;
+	struct net_if *iface;
 	struct net_ipv6_hdr *ip_hdr;
 	struct net_in6_addr dst_ip;
 	struct net_nbr *nbr;
 	int ret;
 
 	NET_ASSERT(pkt && pkt->buffer);
+
+	iface = net_pkt_iface(pkt);
 
 	ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!ip_hdr) {
@@ -877,12 +879,12 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 			mtu = ret;
 		} else {
 use_interface_mtu:
-			mtu = net_if_get_mtu(net_pkt_iface(pkt));
+			mtu = iface != NULL ? net_if_get_mtu(iface) : 0U;
 			mtu = MAX(NET_IPV6_MTU, mtu);
 		}
 
 		if (mtu < pkt_len) {
-			ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt),
+			ret = net_ipv6_send_fragmented_pkt(iface,
 							   pkt, pkt_len, mtu);
 			if (ret < 0) {
 				NET_DBG("Cannot fragment IPv6 pkt (%d)", ret);
@@ -919,10 +921,12 @@ use_interface_mtu:
 	    /* Workaround Linux bug, see:
 	     * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	     */
-	    net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_POINTOPOINT) ||
-	    net_if_flag_is_set(net_pkt_iface(pkt), NET_IF_IPV6_NO_ND)) {
+	    (iface != NULL && (net_if_flag_is_set(iface, NET_IF_POINTOPOINT) ||
+			       net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)))) {
 		return NET_OK;
 	}
+
+	iface = NULL;
 
 	if (net_if_ipv6_addr_onlink(&iface, &dst_ip)) {
 		nexthop = &dst_ip;
@@ -981,7 +985,7 @@ try_send:
 		entry = net_pmtu_get_entry((struct net_sockaddr *)&dst);
 		if (entry == NULL) {
 			ret = net_pmtu_update_mtu((struct net_sockaddr *)&dst,
-						  net_if_get_mtu(iface));
+						  iface != NULL ? net_if_get_mtu(iface) : 0U);
 			if (ret < 0) {
 				NET_DBG("Cannot update PMTU for %s (%d)",
 					net_sprint_ipv6_addr(&dst.sin6_addr),
