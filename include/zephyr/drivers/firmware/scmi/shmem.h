@@ -37,32 +37,31 @@ struct scmi_shmem_layout {
 };
 
 struct scmi_message;
+struct scmi_xfer;
 
 /**
  * @brief Write a message in the SHMEM area
  *
  * @param shmem pointer to shmem device
- * @param msg message to write
- * @param use_polling true if polling should be used, false otherwise
+ * @param xfer Transfer handle
  *
  * @retval 0 if successful
  * @retval negative errno if failure
  */
 int scmi_shmem_write_message(const struct device *shmem,
-			     struct scmi_message *msg,
-			     bool use_polling);
+			     struct scmi_xfer *xfer);
 
 /**
  * @brief Read a message from a SHMEM area
  *
  * @param shmem pointer to shmem device
- * @param msg message to write the data into
+ * @param xfer Transfer handle
  *
  * @retval 0 if successful
  * @retval negative errno if failure
  */
 int scmi_shmem_read_message(const struct device *shmem,
-			    struct scmi_message *msg);
+			    struct scmi_xfer *xfer);
 
 /**
  * @brief Update the channel flags

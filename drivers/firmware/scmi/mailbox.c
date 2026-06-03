@@ -23,15 +23,14 @@ static void scmi_mbox_cb(const struct device *mbox,
 
 static int scmi_mbox_send_message(const struct device *transport,
 				  struct scmi_channel *chan,
-				  struct scmi_message *msg,
-				  bool use_polling)
+				  struct scmi_xfer *xfer)
 {
 	struct scmi_mbox_channel *mbox_chan;
 	int ret;
 
 	mbox_chan = chan->data;
 
-	ret = scmi_shmem_write_message(mbox_chan->shmem, msg, use_polling);
+	ret = scmi_shmem_write_message(mbox_chan->shmem, xfer);
 	if (ret < 0) {
 		LOG_ERR("failed to write message to shmem: %d", ret);
 		return ret;
@@ -48,13 +47,13 @@ static int scmi_mbox_send_message(const struct device *transport,
 
 static int scmi_mbox_read_message(const struct device *transport,
 				  struct scmi_channel *chan,
-				  struct scmi_message *msg)
+				  struct scmi_xfer *xfer)
 {
 	struct scmi_mbox_channel *mbox_chan;
 
 	mbox_chan = chan->data;
 
-	return scmi_shmem_read_message(mbox_chan->shmem, msg);
+	return scmi_shmem_read_message(mbox_chan->shmem, xfer);
 }
 
 static bool scmi_mbox_channel_is_free(const struct device *transport,

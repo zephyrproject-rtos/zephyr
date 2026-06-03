@@ -25,7 +25,7 @@ struct scmi_smc_channel {
 };
 
 static int scmi_smc_send_message(const struct device *transport, struct scmi_channel *chan,
-				 struct scmi_message *msg, bool use_polling)
+				 struct scmi_xfer *xfer)
 {
 	struct scmi_smc_channel *smc_chan;
 	struct arm_smccc_res res;
@@ -33,7 +33,7 @@ static int scmi_smc_send_message(const struct device *transport, struct scmi_cha
 
 	smc_chan = chan->data;
 
-	ret = scmi_shmem_write_message(smc_chan->shmem, msg, use_polling);
+	ret = scmi_shmem_write_message(smc_chan->shmem, xfer);
 	if (ret < 0) {
 		LOG_ERR("failed to write message to shmem: %d", ret);
 		return ret;
@@ -52,13 +52,13 @@ static int scmi_smc_send_message(const struct device *transport, struct scmi_cha
 }
 
 static int scmi_smc_read_message(const struct device *transport, struct scmi_channel *chan,
-				 struct scmi_message *msg)
+				 struct scmi_xfer *xfer)
 {
 	struct scmi_smc_channel *smc_chan;
 
 	smc_chan = chan->data;
 
-	return scmi_shmem_read_message(smc_chan->shmem, msg);
+	return scmi_shmem_read_message(smc_chan->shmem, xfer);
 }
 
 static bool scmi_smc_channel_is_free(const struct device *transport, struct scmi_channel *chan)

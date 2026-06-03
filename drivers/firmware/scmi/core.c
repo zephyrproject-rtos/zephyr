@@ -132,8 +132,7 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_xfer *xfer)
 		}
 	}
 
-	ret = scmi_transport_send_message(proto->transport, proto->tx,
-					  &xfer->tx, xfer->use_polling);
+	ret = scmi_transport_send_message(proto->transport, proto->tx, xfer);
 	if (ret < 0) {
 		LOG_ERR("failed to send message at transport layer: %d", ret);
 		goto out_release_mutex;
@@ -145,7 +144,7 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_xfer *xfer)
 		goto out_release_mutex;
 	}
 
-	ret = scmi_transport_read_message(proto->transport, proto->tx, &xfer->rx);
+	ret = scmi_transport_read_message(proto->transport, proto->tx, xfer);
 	if (ret < 0) {
 		LOG_ERR("failed to read message reply: %d", ret);
 		goto out_release_mutex;

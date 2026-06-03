@@ -58,7 +58,7 @@ __weak int scmi_shmem_vendor_write_message(struct scmi_shmem_layout *layout)
 	return 0;
 }
 
-int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg)
+int scmi_shmem_read_message(const struct device *shmem, struct scmi_xfer *xfer)
 {
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
@@ -69,31 +69,31 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 	layout = (struct scmi_shmem_layout *)data->regmap;
 
 	/* some input validation first */
-	if (!msg) {
+	if (!xfer) {
 		return -EINVAL;
 	}
 
-	if (!msg->content && msg->len) {
+	if (!xfer->rx.content && xfer->rx.len) {
 		return -EINVAL;
 	}
 
-	if (cfg->size < (sizeof(*layout) + msg->len)) {
+	if (cfg->size < (sizeof(*layout) + xfer->rx.len)) {
 		LOG_ERR("message doesn't fit in shmem area");
 		return -EINVAL;
 	}
 
 	/* mismatch between expected reply size and actual size? */
-	if (msg->len != (layout->len - sizeof(layout->msg_hdr))) {
+	if (xfer->rx.len != (layout->len - sizeof(layout->msg_hdr))) {
 		LOG_ERR("bad message len. Expected 0x%x, got 0x%x",
-			msg->len,
+			xfer->rx.len,
 			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
 		return -EINVAL;
 	}
 
 	/* header match? */
-	if (layout->msg_hdr != msg->hdr) {
+	if (layout->msg_hdr != xfer->rx.hdr) {
 		LOG_ERR("bad message header. Expected 0x%x, got 0x%x",
-			msg->hdr, layout->msg_hdr);
+			xfer->rx.hdr, layout->msg_hdr);
 		return -EINVAL;
 	}
 
@@ -102,17 +102,15 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_message *msg
 		return -EINVAL;
 	}
 
-	if (msg->content) {
-		scmi_shmem_memcpy(POINTER_TO_UINT(msg->content),
-				  data->regmap + sizeof(*layout), msg->len);
+	if (xfer->rx.content) {
+		scmi_shmem_memcpy(POINTER_TO_UINT(xfer->rx.content),
+				  data->regmap + sizeof(*layout), xfer->rx.len);
 	}
 
 	return 0;
 }
 
-int scmi_shmem_write_message(const struct device *shmem,
-			     struct scmi_message *msg,
-			     bool use_polling)
+int scmi_shmem_write_message(const struct device *shmem, struct scmi_xfer *xfer)
 {
 	struct scmi_shmem_layout *layout;
 	struct scmi_shmem_data *data;
@@ -123,15 +121,15 @@ int scmi_shmem_write_message(const struct device *shmem,
 	layout = (struct scmi_shmem_layout *)data->regmap;
 
 	/* some input validation first */
-	if (!msg) {
+	if (!xfer) {
 		return -EINVAL;
 	}
 
-	if (!msg->content && msg->len) {
+	if (!xfer->tx.content && xfer->tx.len) {
 		return -EINVAL;
 	}
 
-	if (cfg->size < (sizeof(*layout) + msg->len)) {
+	if (cfg->size < (sizeof(*layout) + xfer->tx.len)) {
 		return -EINVAL;
 	}
 
@@ -139,19 +137,19 @@ int scmi_shmem_write_message(const struct device *shmem,
 		return -EBUSY;
 	}
 
-	layout->len = sizeof(layout->msg_hdr) + msg->len;
-	layout->msg_hdr = msg->hdr;
+	layout->len = sizeof(layout->msg_hdr) + xfer->tx.len;
+	layout->msg_hdr = xfer->tx.hdr;
 
-	if (msg->content) {
+	if (xfer->tx.content) {
 		scmi_shmem_memcpy(data->regmap + sizeof(*layout),
-				  POINTER_TO_UINT(msg->content), msg->len);
+				  POINTER_TO_UINT(xfer->tx.content), xfer->tx.len);
 	}
 
 	if (scmi_shmem_vendor_write_message(layout) < 0) {
 		return -EINVAL;
 	}
 
-	layout->chan_flags = !use_polling ? SCMI_SHMEM_CHAN_FLAG_IRQ_BIT : 0;
+	layout->chan_flags = !xfer->use_polling ? SCMI_SHMEM_CHAN_FLAG_IRQ_BIT : 0;
 
 	/* done, mark channel as busy and proceed */
 	layout->chan_status &= ~SCMI_SHMEM_CHAN_STATUS_BUSY_BIT;
