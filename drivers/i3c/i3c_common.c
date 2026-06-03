@@ -948,8 +948,8 @@ bool i3c_bus_has_sec_controller(const struct device *dev)
 #ifdef CONFIG_I3C_CONTROLLER
 int i3c_bus_rstdaa_all(const struct device *dev)
 {
-	struct i3c_driver_data *data = (struct i3c_driver_data *)dev->data;
 	struct i3c_device_desc *desc;
+	struct i3c_device_desc *desc_tmp;
 	int ret;
 
 	ret = i3c_ccc_do_rstdaa_all(dev);
@@ -959,18 +959,28 @@ int i3c_bus_rstdaa_all(const struct device *dev)
 	}
 
 	/* RSTDAA has cleared every target's dynamic address in hardware.
-	 * Sync software state: clear the cached dynamic_addr and return
-	 * each DA to the address-slot pool so it can be reassigned by
-	 * a subsequent DAA.
+	 * Sync software state: detach the desc (which uses the current
+	 * dynamic_addr to release the address slot), then clear the cached
+	 * dynamic_addr. Use the _safe iterator since detach removes the
+	 * node from the slist.
 	 */
+	I3C_BUS_FOR_EACH_I3CDEV_SAFE(dev, desc, desc_tmp) {
+		bool pooled = i3c_device_desc_in_pool(desc);
+		int dret;
 
-	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
-		if (desc->dynamic_addr != 0U) {
-			i3c_addr_slots_mark_free(&data->attached_dev.addr_slots,
-						 desc->dynamic_addr);
+		LOG_DBG("%s: Reset dynamic address for device %s", dev->name,
+			desc->dev->name);
+		dret = i3c_detach_i3c_device(desc);
+		if (dret != 0) {
+			LOG_ERR("%s: failed to detach %s (%d)", dev->name,
+				desc->dev->name, dret);
+		}
+		/* Pool-allocated descs are freed inside detach -- writing to
+		 * them afterwards would be use-after-free. Static descs
+		 * survive and need the DA cleared for the next ENTDAA.
+		 */
+		if (!pooled) {
 			desc->dynamic_addr = 0;
-			LOG_DBG("%s: Reset dynamic address for device %s",
-					dev->name, desc->dev->name);
 		}
 	}
 
