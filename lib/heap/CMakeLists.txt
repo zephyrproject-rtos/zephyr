@@ -19,6 +19,7 @@ zephyr_sources_ifdef(CONFIG_MULTI_HEAP multi_heap.c)
 zephyr_sources_ifdef(CONFIG_HEAP_LISTENER heap_listener.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_ARRAY_SIZE heap_array.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_SANITIZER_ASAN heap_sanitizer_asan.c)
+zephyr_sources_ifdef(CONFIG_SYS_HEAP_KASAN heap_kasan.c)
 
 if(CONFIG_SYS_HEAP_SANITIZER_ASAN)
   # The heap implementation owns the bytes it poisons (chunk headers,
@@ -37,4 +38,19 @@ if(CONFIG_SYS_HEAP_SANITIZER_ASAN)
     ${CMAKE_CURRENT_SOURCE_DIR}/heap_array.c
     TARGET_DIRECTORY zephyr
     APPEND PROPERTY COMPILE_OPTIONS -fno-sanitize=address)
+endif()
+
+if(CONFIG_SYS_HEAP_KASAN)
+  get_property(_heap_kasan_flags TARGET compiler PROPERTY heap_kasan)
+  if(NOT _heap_kasan_flags)
+    message(FATAL_ERROR
+      "CONFIG_SYS_HEAP_KASAN has only been supported with GCC and Clang")
+  endif()
+  get_property(_no_heap_kasan TARGET compiler PROPERTY no_heap_kasan)
+  set_property(SOURCE
+    ${CMAKE_CURRENT_SOURCE_DIR}/heap.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/heap_kasan.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/heap_validate.c
+    TARGET_DIRECTORY zephyr
+    APPEND PROPERTY COMPILE_OPTIONS "${_no_heap_kasan}")
 endif()
