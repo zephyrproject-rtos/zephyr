@@ -33,3 +33,20 @@ properties:
   nxp,rs485-de-active-low:
     type: boolean
     description: RTS polarity at RS485 mode.
+
+  nxp,disable-rx-dma-scatter:
+    type: boolean
+    description: |
+      Disable RX DMA destination scatter mode for this LPUART instance.
+
+      This can be used on platforms where the DMA backend misbehaves when
+      UART async RX combines cyclic mode with destination scatter enabled.
+
+  nxp,defer-rx-dma-reload:
+    type: boolean
+    description: |
+      Defer RX DMA reload until the completion callback for this LPUART
+      instance.
+
+      This can be used on platforms where reloading the next RX buffer
+      while the channel is busy is unreliable.
