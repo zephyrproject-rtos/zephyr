@@ -1398,7 +1398,6 @@ static int it82xx2_enable(const struct device *dev)
 	struct it82xx2_data *priv = udc_get_private(dev);
 
 	k_sem_init(&priv->suspended_sem, 0, 1);
-	k_work_init_delayable(&priv->suspended_work, suspended_handler);
 
 	atomic_clear_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
 
@@ -1569,6 +1568,8 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
 
 	/* Initializing WU (USB D+) */
 	it8xxx2_usb_dc_wuc_init(dev);
+
+	k_work_init_delayable(&priv->suspended_work, suspended_handler);
 
 	/* Connect USB interrupt */
 	irq_connect_dynamic(config->usb_irq, 0, it82xx2_usb_dc_isr, dev, 0);
