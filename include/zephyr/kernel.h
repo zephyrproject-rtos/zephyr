@@ -4801,7 +4801,7 @@ struct k_work_q {
  * @cond INTERNAL_HIDDEN
  */
 	/* The thread that animates the work. */
-	struct k_thread thread;
+	__deprecated struct k_thread thread;
 
 	/* The thread ID that animates the work. This may be an external thread
 	 * if k_work_queue_run() is used.
