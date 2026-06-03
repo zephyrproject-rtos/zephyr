@@ -32,14 +32,11 @@ extern "C" {
  * @{
  */
 
+/** @brief FPGA programming status. */
 enum FPGA_status {
-	/* Inactive is when the FPGA cannot accept the bitstream
-	 * and will not be programmed correctly
-	 */
+	/** FPGA cannot accept a bitstream and will not be programmed correctly. */
 	FPGA_STATUS_INACTIVE,
-	/* Active is when the FPGA can accept the bitstream and
-	 * can be programmed correctly
-	 */
+	/** FPGA can accept a bitstream and can be programmed correctly. */
 	FPGA_STATUS_ACTIVE
 };
 
@@ -200,6 +197,7 @@ static inline int fpga_on(const struct device *dev)
 	return api->on(dev);
 }
 
+/** Default string returned by fpga_get_info() when no info is available. */
 #define FPGA_GET_INFO_DEFAULT "n/a"
 
 /**
