@@ -450,6 +450,12 @@ New APIs and options
   * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT`
   * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT`
 
+* Pulse IO
+
+  * Added the :ref:`Pulse IO <pulse_io_api>` subsystem, a vendor-neutral
+    API for hardware that generates and captures timed digital edges on a
+    GPIO line.
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
