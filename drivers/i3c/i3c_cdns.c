@@ -1924,7 +1924,7 @@ static int cdns_i3c_do_daa(const struct device *dev)
 						dev->name, pid, dyn_addr);
 				}
 				i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots,
-							dyn_addr);
+							target ? target->dynamic_addr : dyn_addr);
 			}
 		}
 	} else {
@@ -2443,6 +2443,16 @@ static int cdns_i3c_master_get_rr_slot(const struct device *dev, uint8_t dyn_add
 				return rr_idx;
 			}
 		}
+	}
+
+	/* No active RR slot carries this dyn_addr — the address is stale
+	 * (e.g. the desc was detached without RSTDAA, or DAA hasn't run
+	 * yet on this address). Fall back to allocating a fresh slot if
+	 * one is available; the caller will reprogram the DA via the
+	 * normal DAA / SETDASA / SETNEWDA flow before the next transfer.
+	 */
+	if (data->free_rr_slots) {
+		return find_lsb_set(data->free_rr_slots) - 1;
 	}
 
 	return -EINVAL;
