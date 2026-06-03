@@ -1090,6 +1090,8 @@ int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 
 int i3c_bus_setaasa(const struct device *dev)
 {
+	const struct i3c_driver_config *config = dev->config;
+	const struct i3c_dev_list *dev_list = &config->dev_list;
 	struct i3c_device_desc *desc;
 	int ret;
 
@@ -1100,13 +1102,26 @@ int i3c_bus_setaasa(const struct device *dev)
 	}
 
 	/*
-	 * set all devices DA to SA if it is known that it supports SETAASA and doesn't currently
-	 * have a dynamic address
+	 * Set DA = SA for all devices that support SETAASA and don't
+	 * already have a DA.  Walk the static dev_list (not the slist)
+	 * because after rstdaa_all the slist may be empty.
 	 */
-	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+	for (int i = 0; i < dev_list->num_i3c; i++) {
+		desc = &dev_list->i3c[i];
 		if ((desc->flags & I3C_SUPPORTS_SETAASA) && (desc->dynamic_addr == 0) &&
 		    (desc->static_addr != 0)) {
 			desc->dynamic_addr = desc->static_addr;
+
+			LOG_DBG("%s: %s: attaching after SETAASA with DA 0x%02x",
+				dev->name, desc->dev->name, desc->dynamic_addr);
+			int aret = i3c_attach_i3c_device(desc);
+
+			if (aret != 0 && aret != -EALREADY) {
+				LOG_ERR("%s: %s: unable to attach after SETAASA (%d)",
+					dev->name, desc->dev->name, aret);
+				desc->dynamic_addr = 0;
+				continue;
+			}
 			LOG_DBG("%s: %s: SETAASA to 0x%02x", dev->name, desc->dev->name,
 				desc->dynamic_addr);
 		}
