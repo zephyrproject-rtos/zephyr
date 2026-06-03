@@ -1,0 +1,12 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	nxp,loopback;
+	nxp,disable-rx-dma-scatter;
+	nxp,defer-rx-dma-reload;
+};
