@@ -698,15 +698,8 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	struct net_pkt *orig_pkt = pkt;
 	int ret;
 
-	if (!api) {
-		ret = -ENOENT;
-		goto error;
-	}
-
-	if (!api->send) {
-		ret = -ENOTSUP;
-		goto error;
-	}
+	NET_ASSERT(api != NULL);
+	NET_ASSERT(api->send != NULL);
 
 	/* We are trying to send a packet that is from bridge interface,
 	 * so all the bits and pieces should be there (like Ethernet header etc)
@@ -824,9 +817,7 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *eth = dev->api;
 
-	if (!eth) {
-		return -ENOENT;
-	}
+	NET_ASSERT(eth != NULL);
 
 	if (!state) {
 		net_arp_clear_cache(iface);
@@ -879,9 +870,7 @@ static void carrier_on_off(struct k_work *work)
 						    carrier_work);
 	bool eth_carrier_up;
 
-	if (ctx->iface == NULL) {
-		return;
-	}
+	NET_ASSERT(ctx->iface != NULL);
 
 	eth_carrier_up = atomic_test_bit(&ctx->flags, ETH_CARRIER_UP);
 
@@ -926,9 +915,7 @@ const struct device *net_eth_get_phy(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->api;
 
-	if (!api) {
-		return NULL;
-	}
+	NET_ASSERT(api != NULL);
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return NULL;
@@ -947,9 +934,7 @@ const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->api;
 
-	if (!api) {
-		return NULL;
-	}
+	NET_ASSERT(api != NULL);
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return NULL;
