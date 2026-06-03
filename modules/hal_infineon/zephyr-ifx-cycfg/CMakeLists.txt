@@ -5,33 +5,28 @@
 
 if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 if(CONFIG_BUILD_WITH_TFM OR CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
-  set(zephyr_ifx_cycfg_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/pse84/epc2/board/shared/design/default/GeneratedSource)
+  set(zephyr_ifx_pse84_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/pse84)
+
+  if(CONFIG_BOARD_KIT_PSE84_EVAL)
+    set(zephyr_ifx_cycfg_dir ${zephyr_ifx_pse84_dir}/kit_pse84_eval)
+  elseif(CONFIG_BOARD_KIT_PSE84_AI)
+    set(zephyr_ifx_cycfg_dir ${zephyr_ifx_pse84_dir}/kit_pse84_ai)
+  else()
+    message(FATAL_ERROR "No supported board selected.")
+  endif()
 
   zephyr_include_directories(${zephyr_ifx_cycfg_dir})
+  zephyr_include_directories(${zephyr_ifx_pse84_dir}/device_headers)
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot.c)
 
-  zephyr_include_directories(${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/pse84/shared/device/include)
+  if(NOT CONFIG_BUILD_WITH_TFM)
+    zephyr_include_directories(${zephyr_ifx_pse84_dir})
+    zephyr_library_sources(${zephyr_ifx_pse84_dir}/ifx_cycfg_init.c)
 
-  set(zephyr_ifx_cy_dev_headers_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/kit_pse84_eval/device_headers)
-  zephyr_include_directories(${zephyr_ifx_cy_dev_headers_dir})
-else()
+    if(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC AND NOT CONFIG_MFD_INFINEON_AUTANALOG)
+      zephyr_library_sources(${zephyr_ifx_pse84_dir}/ifx_autanalog.c)
+    endif()
 
-  set(zephyr_ifx_cycfg_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/kit_pse84_eval)
-
-  zephyr_include_directories(${zephyr_ifx_cycfg_dir})
-  zephyr_include_directories(${zephyr_ifx_cycfg_dir}/device_headers)
-
-  # Select the correct external flash component configuration based on the
-  # compatible string of the flash node (i.e. "infineon,s25fs128s").
-  dt_comp_path(flash_s25fs128s_path COMPATIBLE "infineon,s25fs128s" INDEX 0)
-  dt_comp_path(flash_s25hs512t_path COMPATIBLE "infineon,s25hs512t" INDEX 0)
-
-  if(DEFINED flash_s25fs128s_path)
-    zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot_s25fs128s.c)
-  elseif(DEFINED flash_s25hs512t_path)
-    zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot_s25hs512t.c)
-  else()
-    message(FATAL_ERROR "No recognised external flash compatible found.")
   endif()
 
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_cycfg_init.c)
