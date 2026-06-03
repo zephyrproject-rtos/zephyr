@@ -27,7 +27,8 @@ to boot a remote core.
 .. note::
    It is recommended to use sample setups from
    :zephyr_file:`samples/sysbuild/hello_world/sample.yaml` using the
-   ``-T`` option.
+   ``-T`` option. This will ensure any additional settings (remote board, snippets, etc.)
+   are automatically applied.
 
 Here's an example to build and flash the sample for the
 :zephyr:board:`nrf54h20dk`, using application and radio cores:
