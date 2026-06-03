@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 ML!PA Consulting GmbH
  * Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,6 +120,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			lock-regions = <32>;
 
@@ -126,6 +128,9 @@
 				compatible = "soc-nv-flash";
 
 				write-block-size = <8>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 			};
 		};
 
