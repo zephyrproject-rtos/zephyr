@@ -181,7 +181,7 @@ struct i3c_device_desc *i3c_dev_list_find(const struct i3c_dev_list *dev_list,
 	for (i = 0; i < dev_list->num_i3c; i++) {
 		struct i3c_device_desc *desc = &dev_list->i3c[i];
 
-		if (desc->pid == id->pid) {
+		if ((desc->pid & GENMASK64(47, 0)) == (id->pid & GENMASK64(47, 0))) {
 			ret = desc;
 			break;
 		}
