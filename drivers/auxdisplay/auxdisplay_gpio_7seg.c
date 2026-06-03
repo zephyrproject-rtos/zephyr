@@ -34,6 +34,8 @@ struct auxdisplay_gpio_7seg_data {
 	uint32_t refresh_pos;
 	int16_t cursor_x;
 	int16_t cursor_y;
+	uint8_t *font;
+	size_t font_length;
 };
 
 struct auxdisplay_gpio_7seg_config {
@@ -62,6 +64,35 @@ static int auxdisplay_gpio_7seg_display_off(const struct device *dev)
 	struct auxdisplay_gpio_7seg_data *data = dev->data;
 
 	k_timer_stop(&data->timer);
+
+	return 0;
+}
+
+/**
+ * We can't use custom_character_set, as it is intended for single chars, not a whole "font" like for a 7seg.
+ */
+static int auxdisplay_gpio_7seg_set_charset(const struct device *dev, struct auxdisplay_custom_data *command)
+{
+	struct auxdisplay_gpio_7seg_data *data = dev->data;
+
+	if (command->len == 0 || command->data == NULL) {
+			return -EINVAL;
+	}
+	data->font = command->data;
+	data->font_length = command->len;
+	LOG_INF("custom set charset with length %d", command->len);
+
+	return 0;
+}
+
+static int auxdisplay_gpio_7seg_custom_command(const struct device *dev,
+					   struct auxdisplay_custom_data *command)
+{
+	if (command->options == 1) {
+		return auxdisplay_gpio_7seg_set_charset(dev, command);
+	} else {
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -147,11 +178,13 @@ static int auxdisplay_gpio_7seg_write(const struct device *dev, const uint8_t *c
 			break;
 		}
 
-		if (ch[i] >= '0' && ch[i] <= '9') {
-			cfg->buffer[cursor] = DIGITS[ch[i] - '0'];
-		} else if (ch[i] == '.') {
+		if (ch[i] == '.') {
 			/* Leading dot, leave the digit blank */
 			cfg->buffer[cursor] = DP;
+		} else if (data->font && (ch[i]-32) <= data->font_length) {
+			cfg->buffer[cursor] = data->font[ch[i]-32];
+		} else if (ch[i] >= '0' && ch[i] <= '9') {
+			cfg->buffer[cursor] = DIGITS[ch[i] - '0'];
 		} else {
 			cfg->buffer[cursor] = BLANK;
 		}
@@ -232,6 +265,7 @@ static DEVICE_API(auxdisplay, auxdisplay_gpio_7seg_api) = {
 	.capabilities_get = auxdisplay_gpio_7seg_capabilities_get,
 	.clear = auxdisplay_gpio_7seg_clear,
 	.write = auxdisplay_gpio_7seg_write,
+	.custom_command = auxdisplay_gpio_7seg_custom_command,
 };
 
 #define AUXDISPLAY_GPIO_7SEG_INST(n)                                                               \
