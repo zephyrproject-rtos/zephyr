@@ -63,4 +63,21 @@ config RTP_TRANSPORT_SOCKET_INIT_PRIO
 
 endif # RTP_TRANSPORT_SOCKET
 
+config RTP_TRANSPORT_NET_PKT
+	bool "RTP Transport Net Pkt"
+	help
+	  Select the net pkt transport implementation for RTP. This is the fastest implementation
+	  with the least amount of overhead
+
+if RTP_TRANSPORT_NET_PKT
+
+config RTP_LOCAL_PORT_BASE
+	int "RTP Local Port Base"
+	default 51000
+	range 1024 65535
+	help
+	  Base port from which the local rtp ports start, if no local port is defined by the user
+
+endif # RTP_TRANSPORT_NET_PKT
+
 endif # RTP

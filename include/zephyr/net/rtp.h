@@ -179,6 +179,13 @@ enum rtp_transport_type {
 	 */
 	RTP_TRANSPORT_SOCKET,
 #endif /* CONFIG_RTP_TRANSPORT_SOCKET */
+#ifdef CONFIG_RTP_TRANSPORT_NET_PKT
+	/** Low-level transport using Zephyr's internal net_pkt mechanism, bypassing the socket
+	 *  layer. Requires @kconfig{CONFIG_RTP_TRANSPORT_NET_PKT}. The session's @p local_port
+	 *  (set via @ref RTP_SESSION_DEFINE) is used as the UDP source port when transmitting.
+	 */
+	RTP_TRANSPORT_NET_PKT,
+#endif /* CONFIG_RTP_TRANSPORT_NET_PKT */
 
 	/** Shall not be used as a transport type.
 	 *  Indicator of maximum transport types possible.
@@ -205,6 +212,12 @@ struct rtp_transport {
 			int socket_tx_fd;
 		};
 #endif /* CONFIG_RTP_TRANSPORT_SOCKET */
+#ifdef CONFIG_RTP_TRANSPORT_NET_PKT
+		struct {
+			/** Network connection handle for RTP traffic. */
+			struct net_conn_handle *net_handle_rtp;
+		};
+#endif /* CONFIG_RTP_TRANSPORT_NET_PKT */
 	};
 };
 
@@ -262,7 +275,10 @@ struct rtp_session {
  * @ref rtp_session_start.
  *
  * @param _name       Name of the @ref rtp_session variable to define.
- * @param _local_port Local UDP port used when transmitting packets.
+ * @param _local_port Local UDP port used when transmitting packets. Set to 0
+ *                    to let the stack select a port automatically (see
+ *                    @kconfig{CONFIG_RTP_LOCAL_PORT_BASE}). Only used for
+ *                    RTP_TRANSPORT_NET_PKT.
  */
 #define RTP_SESSION_DEFINE(_name, _local_port)                                                     \
 	struct rtp_session _name = {.local_port = _local_port, RTP_SESSION_NAME(_name)}

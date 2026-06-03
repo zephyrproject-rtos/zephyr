@@ -22,6 +22,16 @@ const struct rtp_transport_interface interfaces[RTP_TRANSPORT_NUM] = {
 		.send = rtp_transport_socket_send,
 	},
 #endif /* CONFIG_RTP_TRANSPORT_SOCKET */
+#ifdef CONFIG_RTP_TRANSPORT_NET_PKT
+	{
+		.init = rtp_transport_net_pkt_init,
+		.start_rx = rtp_transport_net_pkt_start_rx,
+		.start_tx = rtp_transport_net_pkt_start_tx,
+		.stop_rx = rtp_transport_net_pkt_stop_rx,
+		.stop_tx = rtp_transport_net_pkt_stop_tx,
+		.send = rtp_transport_net_pkt_send,
+	},
+#endif /* CONFIG_RTP_TRANSPORT_NET_PKT */
 };
 
 int rtp_transport_init(struct rtp_session *session)
