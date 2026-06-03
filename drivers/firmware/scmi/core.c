@@ -240,3 +240,24 @@ int scmi_core_transport_init(const struct device *transport)
 
 	return scmi_core_protocol_setup(transport);
 }
+
+int scmi_xfer_init(struct scmi_protocol *proto,
+		   struct scmi_xfer *xfer, uint8_t msg_id,
+		   void *tx_buf, uint32_t tx_len,
+		   void *rx_buf, uint32_t rx_len)
+{
+	/* TODO: add token generation logic here whenever needed */
+	xfer->tx.hdr = SCMI_MESSAGE_HDR_MAKE(msg_id, SCMI_COMMAND, proto->id, 0x0);
+	xfer->tx.len = tx_len;
+	xfer->tx.content = tx_buf;
+
+	xfer->rx.hdr = xfer->tx.hdr;
+	xfer->rx.len = rx_len;
+	xfer->rx.content = rx_buf;
+
+	xfer->status = SCMI_SUCCESS;
+	/* can be overwritten by caller whenever necessary */
+	xfer->use_polling = false;
+
+	return 0;
+}

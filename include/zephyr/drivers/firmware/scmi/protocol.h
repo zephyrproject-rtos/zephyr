@@ -131,6 +131,23 @@ struct scmi_message {
 };
 
 /**
+ * @struct scmi_xfer
+ *
+ * Describes an SCMI transfer, which can be: a command followed by its synchronous reply,
+ * a notification, or a delayed reply.
+ */
+struct scmi_xfer {
+	/** Message to send (i.e. SCMI command) */
+	struct scmi_message tx;
+	/** Message to receive (i.e. reply or notification) */
+	struct scmi_message rx;
+	/** Reply status (not applicable if notification) */
+	int32_t status;
+	/** Poll for reply (only applicable to synchronous replies) */
+	bool use_polling;
+};
+
+/**
  * @brief Convert an SCMI status code to its Linux equivalent (if possible)
  *
  * @param scmi_status SCMI status code as shown in `enum scmi_status_code`
@@ -162,6 +179,26 @@ int scmi_status_to_errno(int scmi_status);
 int scmi_send_message(struct scmi_protocol *proto,
 		      struct scmi_message *msg, struct scmi_message *reply,
 		      bool use_polling);
+
+/**
+ * @brief Prepare for an SCMI transfer
+ *
+ * Initialize given SCMI transfer structure.
+ *
+ * @param proto Protocol handle
+ * @param xfer Transfer handle
+ * @param msg_id Message ID
+ * @param tx_buf TX buffer
+ * @param tx_len TX buffer length
+ * @param rx_buf RX buffer
+ * @param rx_len RX buffer length
+ *
+ * @return 0 on success, negative errno value on failure
+ */
+int scmi_xfer_init(struct scmi_protocol *proto,
+		   struct scmi_xfer *xfer, uint8_t msg_id,
+		   void *tx_buf, uint32_t tx_len,
+		   void *rx_buf, uint32_t rx_len);
 
 /**
  * @brief Get protocol version
