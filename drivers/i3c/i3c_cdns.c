@@ -1812,6 +1812,53 @@ static int cdns_i3c_do_ccc_cb(const struct device *dev, struct i3c_ccc_payload *
 }
 #endif
 
+static void cdns_i3c_daa_attach_known_target(const struct device *dev,
+					     struct i3c_device_desc *target,
+					     uint8_t rr_idx, uint8_t dyn_addr,
+					     uint8_t bcr, uint8_t dcr, uint64_t pid)
+{
+	struct cdns_i3c_data *data = dev->data;
+
+	/* If RSTDAA detached this desc, the slist no longer carries it.
+	 * Re-attach so the caller's desc continues to track this device
+	 * on the bus.
+	 */
+	target->dynamic_addr = dyn_addr;
+	target->bcr = bcr;
+	target->dcr = dcr;
+
+	int aret = i3c_attach_i3c_device(target);
+
+	if (aret != 0 && aret != -EALREADY) {
+		LOG_ERR("%s: attach for PID 0x%012llx failed: %d",
+			dev->name, pid, aret);
+	}
+
+	data->cdns_i3c_i2c_priv_data[rr_idx].id = rr_idx;
+	target->controller_priv = &(data->cdns_i3c_i2c_priv_data[rr_idx]);
+
+	LOG_DBG("%s: PID 0x%012llx assigned dynamic address 0x%02x",
+		dev->name, pid, dyn_addr);
+
+	/* The Cadence I3C IP does not allow the controller to assign a
+	 * specific DA during ENTDAA -- it picks the next address from the
+	 * pre-programmed RR slots. If the DT requested a particular
+	 * init_dynamic_addr and the hardware assigned a different one,
+	 * issue SETNEWDA to move the target to the preferred address.
+	 * This may fail if the preferred address is already in use, in
+	 * which case the target keeps the ENTDAA-assigned DA.
+	 */
+	if (target->init_dynamic_addr != 0 &&
+	    target->init_dynamic_addr != dyn_addr) {
+		int sret = i3c_bus_setnewda(target, target->init_dynamic_addr);
+
+		if (sret != 0) {
+			LOG_WRN("%s: SETNEWDA to 0x%02x failed (%d), keeping DA 0x%02x",
+				dev->name, target->init_dynamic_addr, sret, dyn_addr);
+		}
+	}
+}
+
 /**
  * @brief Perform Dynamic Address Assignment.
  *
@@ -1912,58 +1959,9 @@ static int cdns_i3c_do_daa(const struct device *dev)
 						"list, given DA 0x%02x",
 						dev->name, pid, dyn_addr);
 				} else {
-					/* If RSTDAA detached this desc, the slist
-					 * no longer carries it. Re-attach so the
-					 * caller's desc continues to track this
-					 * device on the bus. The DA we just got
-					 * from DAA is already free in the address
-					 * pool (RSTDAA freed it), so the attach
-					 * succeeds and re-marks it.
-					 */
-					target->dynamic_addr = dyn_addr;
-					target->bcr = bcr;
-					target->dcr = dcr;
-
-					int aret = i3c_attach_i3c_device(target);
-
-					if (aret != 0 && aret != -EALREADY) {
-						LOG_ERR("%s: attach for PID 0x%012llx failed: %d",
-							dev->name, pid, aret);
-					}
-
-					data->cdns_i3c_i2c_priv_data[rr_idx].id = rr_idx;
-					target->controller_priv =
-						&(data->cdns_i3c_i2c_priv_data[rr_idx]);
-
-					LOG_DBG("%s: PID 0x%012llx assigned dynamic address 0x%02x",
-						dev->name, pid, dyn_addr);
-
-					/* The Cadence I3C IP does not allow the
-					 * controller to assign a specific DA
-					 * during ENTDAA -- it picks the next
-					 * address from the pre-programmed RR
-					 * slots. If the DT requested a particular
-					 * init_dynamic_addr and the hardware
-					 * assigned a different one, issue SETNEWDA
-					 * to move the target to the preferred
-					 * address. This may fail if the preferred
-					 * address is already in use, in which case
-					 * the target keeps the ENTDAA-assigned DA.
-					 */
-					if (target->init_dynamic_addr != 0 &&
-					    target->init_dynamic_addr != dyn_addr) {
-						int sret = i3c_bus_setnewda(target,
-							target->init_dynamic_addr);
-
-						if (sret != 0) {
-							LOG_WRN("%s: SETNEWDA to 0x%02x "
-								"failed (%d), keeping "
-								"DA 0x%02x",
-								dev->name,
-								target->init_dynamic_addr,
-								sret, dyn_addr);
-						}
-					}
+					cdns_i3c_daa_attach_known_target(dev,
+						target, rr_idx, dyn_addr,
+						bcr, dcr, pid);
 				}
 				i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots,
 							target ? target->dynamic_addr : dyn_addr);
