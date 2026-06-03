@@ -939,7 +939,10 @@ struct eth_fake_context {
 	uint8_t mac_address[6];
 };
 
-static struct eth_fake_context eth_fake_data;
+static struct eth_fake_context eth_fake_data = {
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	.mac_address = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x00 },
+};
 static ZTEST_BMEM struct net_sockaddr_in6 udp_server_addr;
 
 /* The semaphore is there to wait the data to be received. */

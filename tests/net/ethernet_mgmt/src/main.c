@@ -25,11 +25,10 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 static struct net_if *default_iface;
 
-static const uint8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
-				       0x04,  0x05,  0x06 };
-
-static const uint8_t mac_addr_change[6] = { 0x01, 0x02, 0x03,
-					 0x04,  0x05,  0x07 };
+/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+static const uint8_t mac_addr_init[6] = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x00};
+/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+static const uint8_t mac_addr_change[6] = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x01};
 
 struct eth_fake_context {
 	struct net_if *iface;

@@ -149,7 +149,10 @@ struct eth_fake_context {
 	uint8_t mac_address[6];
 };
 
-static struct eth_fake_context eth_fake_data;
+static struct eth_fake_context eth_fake_data = {
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	.mac_address = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x00 }
+};
 
 static struct quic_endpoint *reset_test_ep(struct quic_endpoint *ep)
 {
