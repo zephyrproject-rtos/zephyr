@@ -2083,6 +2083,7 @@ Documentation Infrastructure:
     - TomasBarakNXP
     - anangl
     - Peterson-Brett
+    - mariopaja
   files:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/i2s/
