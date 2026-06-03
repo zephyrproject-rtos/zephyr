@@ -81,17 +81,21 @@ enum dma_addr_adj {
  * @brief DMA channel attributes
  */
 enum dma_channel_filter {
-	DMA_CHANNEL_NORMAL, /* normal DMA channel */
-	DMA_CHANNEL_PERIODIC, /* can be triggered by periodic sources */
+	DMA_CHANNEL_NORMAL,   /**< Normal DMA channel. */
+	DMA_CHANNEL_PERIODIC, /**< Channel that can be triggered by periodic sources. */
 };
 
 /**
  * @brief DMA attributes
  */
 enum dma_attribute_type {
+	/** Required alignment of buffer addresses, in bytes. */
 	DMA_ATTR_BUFFER_ADDRESS_ALIGNMENT,
+	/** Required alignment of buffer sizes, in bytes. */
 	DMA_ATTR_BUFFER_SIZE_ALIGNMENT,
+	/** Required alignment of memory-to-memory copies, in bytes. */
 	DMA_ATTR_COPY_ALIGNMENT,
+	/** Maximum number of blocks in a single transfer. */
 	DMA_ATTR_MAX_BLOCK_COUNT,
 };
 
