@@ -9,3 +9,13 @@ config HWINFO_SILABS_S2
 	select SILABS_SISDK_RMU
 	help
 	  Enable Silabs Series 2 hwinfo driver.
+
+config HWINFO_SILABS_S3
+	bool "Silabs Series 3 hwinfo"
+	default y
+	depends on SOC_FAMILY_SILABS_S3
+	select HWINFO_HAS_DRIVER
+	select SILABS_SISDK_EMU
+	select SILABS_SISDK_SYSTEM
+	help
+	  Enable Silabs Series 3 hwinfo driver.
