@@ -15,6 +15,7 @@
 #include <zephyr/zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
 
+#include <xtensa_exc.h>
 #include <xtensa_internal.h>
 #include <xtensa_stack.h>
 
@@ -661,25 +662,28 @@ void *xtensa_excint1_c(void *esf)
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
 
-		/* We need to distinguish between an ill in xtensa_arch_except,
-		 * e.g for k_panic, and any other ill. For exceptions caused by
-		 * xtensa_arch_except calls, we also need to pass the reason_p
-		 * to xtensa_fatal_error. Since the ARCH_EXCEPT frame is in the
-		 * BSA, the first arg reason_p is stored at the A2 offset.
-		 * We assign EXCCAUSE the unused, reserved code 63; this may be
-		 * problematic if the app or new boards also decide to repurpose
-		 * this code.
-		 *
-		 * Another intentionally ill is from xtensa_arch_kernel_oops.
-		 * Kernel OOPS has to be explicitly raised so we can simply
-		 * set the reason and continue.
+		/* We intentionally use "ill" (illegal instruction) as a trap for custom exceptions.
+		 * So we need to find out if the illegal instruction is legit.
 		 */
 		if (cause == EXCCAUSE_ILLEGAL) {
 			if (pc == (void *)&xtensa_arch_except_epc) {
-				cause = 63;
+				/* For exception caused by xtensa_arch_except(reason_p) call,
+				 * we also need to pass the reason_p to xtensa_fatal_error().
+				 * Since the ARCH_EXCEPT frame is in the BSA, the first arg
+				 * reason_p is stored at the saved A2 register.
+				 *
+				 * Here, we use the custom EXCCAUSE code
+				 * XTENSA_EXCCAUSE_CUSTOM_ZEPHYR_EXCEPTION to indicate
+				 * such condition.
+				 */
+				cause = XTENSA_EXCCAUSE_CUSTOM_ZEPHYR_EXCEPTION;
 				reason = bsa->a2;
 			} else if (pc == (void *)&xtensa_arch_kernel_oops_epc) {
-				cause = 64; /* kernel oops */
+				/* This intentional ill is from xtensa_arch_kernel_oops().
+				 * Kernel OOPS has to be explicitly raised so we can simply
+				 * set the reason and continue.
+				 */
+				cause = XTENSA_EXCCAUSE_CUSTOM_KERNEL_OOPS;
 				reason = K_ERR_KERNEL_OOPS;
 
 				/* A3 contains the second argument to
