@@ -19,6 +19,7 @@ include(CheckCXXCompilerFlag)
 # 1.3. generate_inc_*
 # 1.4. board_*
 # 1.5. Misc.
+# 1.6. Heap KASAN helpers
 # 2. Kconfig-aware extensions
 # 2.1 Misc
 # 3. CMake-generic extensions
@@ -2013,6 +2014,107 @@ function(zephyr_constants_library)
     add_dependencies(${lib_name} ${dep}_h)
   endforeach()
 endfunction()
+
+########################################################
+# 1.6. Heap KASAN helpers
+########################################################
+#
+# Heap KASAN is opt-in: instrument the code that uses sys_heap; must not be
+# applied to heap implementation sources.
+
+# Internal: full set of -fsanitize + -D macro-redirect flags for heap KASAN.
+macro(_zephyr_heap_kasan_flags VAR)
+  set(${VAR})
+  get_property(_heap_kasan_compiler_flags TARGET compiler PROPERTY heap_kasan)
+  list(APPEND ${VAR} ${_heap_kasan_compiler_flags})
+  # real calls instead of inlined __builtin_memcpy / __builtin_memset etc.
+  list(APPEND ${VAR}
+    -U_FORTIFY_SOURCE
+    -Dmemset=__asan_memset
+    -Dmemcpy=__asan_memcpy
+    -Dmemmove=__asan_memmove
+    -Dstrcpy=__asan_strcpy
+    -Dstrncpy=__asan_strncpy
+    -Dstrcat=__asan_strcat
+    -Dstrncat=__asan_strncat
+    -Dsprintf=__asan_sprintf
+    -Dsnprintf=__asan_snprintf
+    -Dvsprintf=__asan_vsprintf
+    -Dvsnprintf=__asan_vsnprintf
+  )
+  if(CONFIG_SYS_HEAP_KASAN_EXTENSIONS)
+    # POSIX/GNU feature macros so extension prototypes are visible after -D redirect.
+    list(APPEND ${VAR}
+      -D_POSIX_C_SOURCE=200809L
+      -D_GNU_SOURCE
+      -Dstrlcpy=__asan_strlcpy
+      -Dstrlcat=__asan_strlcat
+      -Dmemccpy=__asan_memccpy
+      -Dmempcpy=__asan_mempcpy
+      -Dstpcpy=__asan_stpcpy
+      -Dstpncpy=__asan_stpncpy
+      -Dfgets=__asan_fgets
+    )
+  endif()
+endmacro()
+
+# Internal: apply heap KASAN COMPILE_OPTIONS to each source file in _srcs.
+function(_zephyr_heap_kasan_apply_to_sources _target _srcs)
+  _zephyr_heap_kasan_flags(_flags)
+  foreach(_src IN LISTS _srcs)
+    set_property(SOURCE "${_src}"
+      TARGET_DIRECTORY ${_target}
+      APPEND PROPERTY COMPILE_OPTIONS ${_flags}
+    )
+  endforeach()
+endfunction()
+
+# Instrument all sources of <target> with heap KASAN compiler flags.
+# <target>: CMake target name (e.g. 'app').
+# Must be called after all sources have been added to the target.
+# Usage: zephyr_target_enable_heap_kasan(app)
+function(zephyr_target_enable_heap_kasan target)
+  if(NOT CONFIG_SYS_HEAP_KASAN)
+    return()
+  endif()
+  get_property(_srcs TARGET ${target} PROPERTY SOURCES)
+  _zephyr_heap_kasan_apply_to_sources(${target} "${_srcs}")
+endfunction()
+
+# Instrument sources under <dir> with heap KASAN compiler flags.
+# <dir>: directory to match, relative to CMAKE_CURRENT_SOURCE_DIR.
+# Must be called after all sources have been added to the target.
+# Usage: zephyr_heap_kasan_enable_directory(src)
+function(zephyr_heap_kasan_enable_directory dir)
+  if(NOT CONFIG_SYS_HEAP_KASAN)
+    return()
+  endif()
+
+  set(_target ${ZEPHYR_CURRENT_LIBRARY})
+
+  cmake_path(ABSOLUTE_PATH dir
+    BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    NORMALIZE OUTPUT_VARIABLE _abs_dir)
+
+  set(_matching)
+  get_property(_srcs TARGET ${_target} PROPERTY SOURCES)
+  foreach(_src IN LISTS _srcs)
+    cmake_path(ABSOLUTE_PATH _src
+      BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      NORMALIZE OUTPUT_VARIABLE _abs_src)
+    cmake_path(IS_PREFIX _abs_dir "${_abs_src}" NORMALIZE _under_dir)
+    if(_under_dir)
+      list(APPEND _matching "${_src}")
+    endif()
+  endforeach()
+
+  if(NOT _matching)
+    message(WARNING "heap_kasan_enable_directory: no sources matched under '${_abs_dir}'")
+  endif()
+
+  _zephyr_heap_kasan_apply_to_sources(${_target} "${_matching}")
+endfunction()
+
 
 ########################################################
 # 2. Kconfig-aware extensions
