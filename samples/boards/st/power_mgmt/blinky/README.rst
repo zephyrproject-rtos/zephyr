@@ -9,12 +9,14 @@ Overview
 This sample is a minimum application to demonstrate basic power management
 behavior in a basic blinking LED set up using the :ref:`GPIO API <gpio_api>` in
 low power context.
-Note that lptim instance selected for the low power timer is named **&stm32_lp_tick_source**
-When setting a prescaler to decrease the lptimer input clock frequency, the system can sleep
-for a longer  timeout value and the CONFIG_SYS_CLOCK_TICKS_PER_SEC is adjusted.
-For example, when clocking the  low power Timer with LSE clock at 32768Hz and adding a
-prescaler of <32>, then the kernel sleep period can reach 65536 * 32/32768 = 64 seconds
-CONFIG_SYS_CLOCK_TICKS_PER_SEC is set to 1024.
+
+The LPTIM instance used as system timer is chosen in Devicetree using the
+:ref:`standardized chosen <devicetree-zephyr-chosen-nodes>` ``zephyr,system-timer``.
+When setting a prescaler to decrease the LPTIM input clock frequency, the system can
+sleep for a longer timeout value and :kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`
+is adjusted. For example, when clocking the LPTIM with LSE clock at 32768Hz and adding
+a prescaler of <32>, then the kernel sleep period can reach 65536 * 32/32768 = 64 seconds,
+and :kconfig:option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC` is set to 1024.
 
 .. _stm32-pm-blinky-sample-requirements:
 
