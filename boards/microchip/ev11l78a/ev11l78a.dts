@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Meta Platforms, Inc. and its affiliates.
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -87,9 +88,9 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * The final 16 KiB is reserved for the application.
@@ -97,6 +98,7 @@
 		 * if enabled.
 		 */
 		storage_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <DT_SIZE_K(64-16) DT_SIZE_K(16)>;
 		};
