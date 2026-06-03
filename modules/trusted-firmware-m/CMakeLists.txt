@@ -77,6 +77,12 @@ if(CONFIG_BUILD_WITH_TFM)
 
     # Supply path to MCUboot for TF-M build
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_PATH=${ZEPHYR_MCUBOOT_MODULE_DIR})
+
+    # In debug builds MCUBoot's references undefined stderr, causing a BL2 link
+    # failure. So define stderr as an absolute linker symbol (NULL).
+    if(CONFIG_DEBUG)
+      list(APPEND TFM_CMAKE_ARGS "-DCMAKE_EXE_LINKER_FLAGS=-Wl,--defsym=stderr=0")
+    endif()
   else()
     list(APPEND TFM_CMAKE_ARGS -DBL2=FALSE)
   endif()
