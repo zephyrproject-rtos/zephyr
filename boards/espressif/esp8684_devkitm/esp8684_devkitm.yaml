@@ -16,4 +16,5 @@ supported:
   - pwm
   - spi
   - netif:wifi
+  - ble
 vendor: espressif

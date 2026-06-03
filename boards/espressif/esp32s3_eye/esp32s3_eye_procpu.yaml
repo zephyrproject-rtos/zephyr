@@ -20,4 +20,5 @@ supported:
   - crypto
   - retained_mem
   - netif:wifi
+  - ble
 vendor: espressif

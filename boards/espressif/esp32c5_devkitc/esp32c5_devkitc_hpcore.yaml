@@ -21,3 +21,5 @@ supported:
   - netif:wifi
   - crypto
   - retained_mem
+  - ble
+  - ieee802154

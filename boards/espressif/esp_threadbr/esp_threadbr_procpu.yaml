@@ -17,4 +17,5 @@ supported:
   - input
   - crypto
   - retained_mem
+  - ble
 vendor: espressif
