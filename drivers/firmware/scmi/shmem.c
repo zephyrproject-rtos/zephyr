@@ -102,6 +102,10 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_xfer *xfer)
 		return -EINVAL;
 	}
 
+	/* all replies (synchronous and delayed) start with the status */
+	scmi_shmem_memcpy(POINTER_TO_UINT(&xfer->status),
+			  data->regmap + sizeof(*layout), sizeof(xfer->status));
+
 	if (xfer->rx.content) {
 		scmi_shmem_memcpy(POINTER_TO_UINT(xfer->rx.content),
 				  data->regmap + sizeof(*layout), xfer->rx.len);

@@ -150,6 +150,11 @@ int scmi_send_message(struct scmi_protocol *proto, struct scmi_xfer *xfer)
 		goto out_release_mutex;
 	}
 
+	ret = scmi_status_to_errno(xfer->status);
+	if (ret < 0) {
+		LOG_ERR("reply has negative status: %d (%d)", ret, xfer->status);
+	}
+
 out_release_mutex:
 	if (!k_is_pre_kernel()) {
 		k_mutex_unlock(&proto->tx->lock);
