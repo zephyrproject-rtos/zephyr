@@ -205,6 +205,7 @@ function(dts_configuration_files)
       ${EXTRA_DTC_OVERLAY_FILE_AS_LIST}
     )
   endif()
+  build_info(devicetree files PATH ${dts_files})
 
   set(i 0)
   foreach(dts_file ${dts_files})
@@ -234,6 +235,7 @@ function(dts_configuration_files)
 
     set(DTS_ROOT_BINDINGS ${DTS_ROOT_BINDINGS} PARENT_SCOPE)
   endforeach()
+  build_info(devicetree bindings-dirs PATH ${DTS_ROOT_BINDINGS})
 
   # Cache the location of the root bindings so they can be used by
   # scripts which use the build directory.
@@ -261,6 +263,7 @@ function(dts_edt_pickle)
   else()
     set(dts_preprocessor ${CMAKE_C_COMPILER})
   endif()
+  build_info(devicetree include-dirs PATH ${DTS_ROOT_SYSTEM_INCLUDE_DIRS})
   zephyr_dt_preprocess(
     CPP ${dts_preprocessor}
     SOURCE_FILES ${dts_files}
@@ -427,12 +430,6 @@ function(dts_dtc)
   endif(DTC)
 endfunction()
 
-function(dts_build_info_output)
-  build_info(devicetree files PATH ${dts_files})
-  build_info(devicetree include-dirs PATH ${DTS_ROOT_SYSTEM_INCLUDE_DIRS})
-  build_info(devicetree bindings-dirs PATH ${CACHED_DTS_ROOT_BINDINGS})
-endfunction()
-
 macro(dts_init)
   dts_configuration_files()
   dts_edt_pickle()
@@ -440,5 +437,4 @@ macro(dts_init)
   dts_gen_driver_kconfig()
   dts_import()
   dts_dtc()
-  dts_build_info_output()
 endmacro()
