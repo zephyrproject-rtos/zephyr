@@ -303,7 +303,7 @@ struct uart_event {
 		struct uart_event_rx_buf rx_buf;
 		/** @brief #UART_RX_STOPPED event data. */
 		struct uart_event_rx_stop rx_stop;
-	} data;
+	} data; /**< Event data; the valid field depends on @ref type. */
 };
 
 /**
