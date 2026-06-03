@@ -1,0 +1,7 @@
+# Avnet ZedBoard configuration
+
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ZEDBOARD
+	select SOC_XC7Z020
