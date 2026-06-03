@@ -1,0 +1,30 @@
+common:
+  harness: net
+  tags:
+    - net
+    - rtp
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+
+sample:
+  description: Test RTP functionality
+  name: RTP sample app
+
+tests:
+  sample.net.rtp.sink_sockets:
+    extra_args: EXTRA_CONF_FILE="sink.conf"
+  sample.net.rtp.source_sockets:
+    extra_args: EXTRA_CONF_FILE="source.conf"
+  sample.net.rtp.sink_net_pkt:
+    extra_args: EXTRA_CONF_FILE="sink.conf;net_pkt.conf"
+  sample.net.rtp.source_net_pkt:
+    extra_args: EXTRA_CONF_FILE="source.conf;net_pkt.conf"
+  sample.net.rtp.sink_sockets_ipv6:
+    extra_args: EXTRA_CONF_FILE="sink.conf;ipv6.conf"
+  sample.net.rtp.source_sockets_ipv6:
+    extra_args: EXTRA_CONF_FILE="source.conf;ipv6.conf"
+  sample.net.rtp.sink_net_pkt_ipv6:
+    extra_args: EXTRA_CONF_FILE="sink.conf;net_pkt.conf;ipv6.conf"
+  sample.net.rtp.source_net_pkt_ipv6:
+    extra_args: EXTRA_CONF_FILE="source.conf;net_pkt.conf;ipv6.conf"
