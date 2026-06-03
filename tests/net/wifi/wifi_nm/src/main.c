@@ -47,13 +47,12 @@ static void wifi_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct wifi_drv_context *context = dev->data;
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
 	net_if_set_link_addr(iface, context->mac_addr,
 			     sizeof(context->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 
 	ethernet_init(iface);
 }
