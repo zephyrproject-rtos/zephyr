@@ -226,7 +226,7 @@ ZTEST(hci_uart, test_h2c_cmd_flow_control)
 			zassert_not_null(buf);
 			net_buf_add_mem(buf, hci_msg_rx_evt_cmd_complete,
 					sizeof(hci_msg_rx_evt_cmd_complete));
-			err = bt_hci_recv(dev, buf);
+			err = bt_hci_recv_err(dev, buf);
 			zassert_equal(err, 0, "bt_recv failed");
 		}
 	}
