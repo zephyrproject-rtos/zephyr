@@ -59,6 +59,19 @@
 			status = "disabled";
 		};
 
+		ptc: ptc@42005400 {
+			compatible = "microchip,ptc-controller-g1", "microchip,ptc-controller";
+			reg = <0x42005400 0x400>;
+			interrupts = <30 0>;
+			interrupt-names = "ptc-eoc";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_PTC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_PTC>;
+			clock-names = "mclk_ptc", "gclk_ptc";
+			def-ptc-cal-option = "CAL_AUTO_TUNE_NONE";
+			def-ptc-tau-target = "CAL_CHRG_5TAU";
+			status = "disabled";
+		};
+
 		tc5: tc@43000800 {
 			compatible = "microchip,tc-g1";
 			reg = <0x43000800 0x400>;
