@@ -1775,7 +1775,7 @@ class ProjectBuilder(FilterBuilder):
             if harness:
                 harness.instance = self.instance
                 harness.build()
-        except (ConfigurationError, BuildError) as error:
+        except ConfigurationError as error:
             self.instance.status = TwisterStatus.ERROR
             self.instance.reason = str(error)
             logger.error(self.instance.reason)
