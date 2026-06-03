@@ -76,6 +76,17 @@ struct zbus_channel_data {
 };
 
 /**
+ * @brief Check validity of message before publishing
+ *
+ * @param msg Message to check
+ * @param msg_size Size of @a msg in bytes
+ *
+ * @retval true Message is valid and should be published.
+ * @retval false Message is invalid and should not be published.
+ */
+typedef bool (*zbus_validator)(const void *msg, size_t msg_size);
+
+/**
  * @brief Type used to represent a channel.
  *
  * Every channel has a zbus_channel structure associated used to control the channel
@@ -107,10 +118,20 @@ struct zbus_channel {
 	 * validity before actually performing the publishing. No invalid messages can be
 	 * published. Every message is valid when this field is empty.
 	 */
-	bool (*validator)(const void *msg, size_t msg_size);
+	zbus_validator validator;
 
 	/** Mutable channel data struct. */
 	struct zbus_channel_data *data;
+};
+
+/**
+ * @brief Type used to represent a runtime channel.
+ */
+struct zbus_runtime_channel {
+	/** Refer to @ref zbus_channel */
+	struct zbus_channel channel;
+	/** Linked list node for iteration */
+	sys_snode_t _node;
 };
 
 /**
@@ -820,6 +841,89 @@ const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id);
 const struct zbus_channel *zbus_chan_from_name(const char *name);
 
 #endif
+
+#if defined(CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION) || defined(__DOXYGEN__)
+
+/**
+ * @brief Initialise a ZBus runtime channel structure
+ *
+ * @param chan Channel structure to initialise
+ * @param data Pointer to channel data, contents initialised by this function
+ * @param name Name to set for the channel
+ * @param id Unique numeric identifier to use for the channel, @ref ZBUS_CHAN_ID_INVALID if not
+ *           needed
+ * @param validator Publishing validator function
+ * @param message Message storage, must remain valid for lifetime of channel
+ * @param message_size Size of the message storage in bytes
+ * @param user_data Arbitrary user data associated with the channel
+ */
+static inline void zbus_runtime_channel_init(struct zbus_runtime_channel *chan,
+					     struct zbus_channel_data *data, const char *name,
+					     uint32_t id, zbus_validator validator, void *message,
+					     size_t message_size, void *user_data)
+{
+	__ASSERT(chan != NULL, "chan is required");
+	__ASSERT(data != NULL, "data is required");
+	__ASSERT(message != NULL, "message is required");
+	__ASSERT(message_size > 0, "message_size must be positive");
+#if defined(CONFIG_ZBUS_CHANNEL_NAME)
+	__ASSERT(name != NULL, "name is required");
+	chan->channel.name = name;
+#endif
+#if defined(CONFIG_ZBUS_CHANNEL_ID)
+	chan->channel.id = id;
+#endif
+	chan->channel.data = data;
+	chan->channel.message = message;
+	chan->channel.message_size = message_size;
+	chan->channel.validator = validator;
+	chan->channel.user_data = user_data;
+
+	memset(data, 0x00, sizeof(*data));
+#if defined(CONFIG_ZBUS_PRIORITY_BOOST)
+	data->highest_observer_priority = ZBUS_MIN_THREAD_PRIORITY;
+#endif
+	k_sem_init(&data->sem, 1, 1);
+}
+
+/**
+ * @brief Register a runtime channel with the ZBus infrastructure
+ *
+ * Cannot be called from the channel iteration functions
+ * @ref zbus_iterate_over_channels and
+ * @ref zbus_iterate_over_channels_with_user_data due to internal locking.
+ *
+ * @param chan Runtime channel to register
+ *
+ * @retval 0 On success
+ * @retval -EEXIST If channel ID already exists in ZBus
+ */
+int zbus_runtime_channel_register(struct zbus_runtime_channel *chan);
+
+/**
+ * @brief Unregister a runtime channel from the ZBus infrastructure
+ *
+ * Cannot be called from the channel iteration functions
+ * @ref zbus_iterate_over_channels and
+ * @ref zbus_iterate_over_channels_with_user_data due to internal locking.
+ *
+ * @param chan Runtime channel to unregister
+ *
+ * @retval 0 Channel was successfully unregistered
+ * @retval -ENODATA Channel was not previously registered
+ */
+int zbus_runtime_channel_unregister(struct zbus_runtime_channel *chan);
+
+#if defined(CONFIG_ZTEST)
+
+/**
+ * @brief Unregister all runtime channels at completion of test
+ */
+void zbus_runtime_channel_unregister_all(void);
+
+#endif /* CONFIG_ZTEST */
+
+#endif /* CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION */
 
 /**
  * @brief Get the reference for a channel message directly.
