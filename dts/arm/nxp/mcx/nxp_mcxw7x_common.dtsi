@@ -181,6 +181,11 @@
 		interrupts = <1 0>;
 	};
 
+	uid: uid@14810 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x14810 0x10>;
+	};
+
 	spc: system-modules@16000 {
 		compatible = "nxp,spc";
 		reg = <0x16000 0x1000>;

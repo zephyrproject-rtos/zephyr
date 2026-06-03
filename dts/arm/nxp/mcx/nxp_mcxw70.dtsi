@@ -541,6 +541,11 @@
 		interrupts = <18 0>;
 		clk-divider = <0x0>;
 	};
+
+	uid: uid@1f068 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x1f068 0x10>;
+	};
 };
 
 &pbridge2 {
