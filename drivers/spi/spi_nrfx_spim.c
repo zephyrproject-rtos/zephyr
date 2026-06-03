@@ -15,7 +15,11 @@ LOG_MODULE_DECLARE(spi_nrfx_spim);
 struct driver_data {
 	struct spi_nrfx_common_data common;
 	struct spi_context ctx;
+#if CONFIG_MULTITHREADING
 	struct k_sem wake_sem;
+#else
+	volatile bool wake_flag;
+#endif
 };
 
 struct driver_config {
@@ -83,7 +87,11 @@ static void spim_wake_handler(const struct device *dev)
 {
 	struct driver_data *dev_data = dev->data;
 
+#if CONFIG_MULTITHREADING
 	k_sem_give(&dev_data->wake_sem);
+#else
+	dev_data->wake_flag = true;
+#endif
 }
 
 static void spim_evt_handler(const struct device *dev, nrfx_spim_event_t *evt)
@@ -129,8 +137,20 @@ static int transceive(const struct device *dev,
 
 	dev_data->ctx.config = spi_cfg;
 
+#if CONFIG_MULTITHREADING
+	k_sem_reset(&dev_data->wake_sem);
+#else
+	dev_data->wake_flag = false;
+#endif
+
 	spi_nrfx_spim_common_wake_start(dev, spim_wake_handler);
+
+#if CONFIG_MULTITHREADING
 	k_sem_take(&dev_data->wake_sem, K_FOREVER);
+#else
+	while (dev_data->wake_flag == false) {
+	}
+#endif
 
 	spi_nrfx_spim_common_cs_set(dev, spi_cfg);
 	transfer_start(dev);
@@ -213,7 +233,9 @@ static int driver_init(const struct device *dev)
 		return ret;
 	}
 
+#if CONFIG_MULTITHREADING
 	k_sem_init(&dev_data->wake_sem, 0, 1);
+#endif
 
 	spi_context_unlock_unconditionally(&dev_data->ctx);
 
