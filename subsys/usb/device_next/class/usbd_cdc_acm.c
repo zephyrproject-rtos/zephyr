@@ -48,8 +48,209 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_RX_FIFO_BUSY		4
 #define CDC_ACM_TX_FIFO_BUSY		5
 
-struct cdc_acm_uart_fifo {
-	struct ring_buf *rb;
+#define CDC_ACM_TX_BUF_PARTITIONS 3
+
+struct cdc_acm_ring_buf_pool {
+	size_t get;
+	size_t put;
+	size_t size;
+	size_t alloc_end;
+	uint8_t *data;
+	bool is_full;
+	bool is_fully_allocated;
+};
+
+UDC_BUF_POOL_DEFINE(cdc_acm_ring_buf_pool_resource,
+		    CDC_ACM_TX_BUF_PARTITIONS * DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 0,
+		    sizeof(struct udc_buf_info), NULL);
+
+/*
+ * Returns the amount of continous space available for allocation.
+ */
+static size_t
+cdc_acm_ring_buf_pool_cont_alloc_space_get(const struct cdc_acm_ring_buf_pool *const pool)
+{
+	if (pool->alloc_end == pool->put) {
+		if (pool->is_fully_allocated) {
+			return 0;
+		} else {
+			return pool->size - pool->alloc_end;
+		}
+	}
+	if (pool->alloc_end < pool->put) {
+		return pool->put - pool->alloc_end;
+	}
+	return pool->size - pool->alloc_end;
+}
+
+/*
+ * Returns the amount of space left for put operations.
+ */
+static size_t cdc_acm_ring_buf_pool_space_get(const struct cdc_acm_ring_buf_pool *const pool)
+{
+	if (pool->put > pool->get) {
+		return pool->size - pool->put + pool->get;
+	}
+	if (pool->put == pool->get && !pool->is_full) {
+		return pool->size;
+	}
+	return pool->get - pool->put;
+}
+
+static bool cdc_acm_ring_buf_pool_is_empty(const struct cdc_acm_ring_buf_pool *const pool)
+{
+	return (pool->put == pool->get && !pool->is_full);
+}
+
+static struct net_buf *
+cdc_acm_ring_buf_pool_net_buf_alloc_common(const struct cdc_acm_ring_buf_pool *const pool,
+					   const uint8_t ep, const size_t size,
+					   const size_t data_size)
+{
+	struct udc_buf_info *bi;
+	if (size == 0) {
+		return NULL;
+	}
+	struct net_buf *ret = net_buf_alloc_with_data(
+		&cdc_acm_ring_buf_pool_resource, &pool->data[pool->alloc_end], size, K_NO_WAIT);
+
+	if (!ret) {
+		return NULL;
+	}
+	ret->len = data_size;
+
+	bi = udc_get_buf_info(ret);
+	bi->ep = ep;
+
+	return ret;
+}
+
+static struct net_buf *
+cdc_acm_ring_buf_pool_net_buf_alloc_zlp(const struct cdc_acm_ring_buf_pool *const pool,
+					const uint8_t ep)
+{
+	struct udc_buf_info *bi;
+	struct net_buf *ret = net_buf_alloc_with_data(&cdc_acm_ring_buf_pool_resource,
+						      &pool->data[pool->alloc_end], 0, K_NO_WAIT);
+
+	if (!ret) {
+		return NULL;
+	}
+	bi = udc_get_buf_info(ret);
+	bi->ep = ep;
+	return ret;
+}
+
+static struct net_buf *cdc_acm_ring_buf_pool_net_buf_alloc(struct cdc_acm_ring_buf_pool *const pool,
+							   const uint8_t ep)
+{
+	size_t free_space = cdc_acm_ring_buf_pool_cont_alloc_space_get(pool);
+	size_t aligned_space = ROUND_DOWN(free_space, pool->size / CDC_ACM_TX_BUF_PARTITIONS);
+	struct net_buf *ret;
+
+	ret = cdc_acm_ring_buf_pool_net_buf_alloc_common(pool, ep, aligned_space, aligned_space);
+	pool->alloc_end += aligned_space;
+	pool->alloc_end %= pool->size;
+	if (pool->alloc_end == pool->put) {
+		pool->is_fully_allocated = true;
+	}
+	return ret;
+}
+
+static struct net_buf *
+cdc_acm_ring_buf_pool_net_buf_alloc_leftover(struct cdc_acm_ring_buf_pool *const pool,
+					     const uint8_t ep)
+{
+	size_t free_space = cdc_acm_ring_buf_pool_cont_alloc_space_get(pool);
+	size_t aligned_space = ROUND_UP(free_space, pool->size / CDC_ACM_TX_BUF_PARTITIONS);
+	struct net_buf *ret;
+	size_t new_end = pool->alloc_end;
+
+	ret = cdc_acm_ring_buf_pool_net_buf_alloc_common(pool, ep, aligned_space, free_space);
+	new_end += aligned_space;
+	if (pool->alloc_end < pool->put && new_end > pool->put) {
+		pool->put = new_end;
+		pool->put %= pool->size;
+		if (pool->put == pool->get) {
+			pool->is_full = true;
+		}
+	}
+	pool->alloc_end = new_end % pool->size;
+	if (pool->alloc_end == pool->put) {
+		pool->is_fully_allocated = true;
+	}
+
+	return ret;
+}
+
+static void cdc_acm_ring_buf_pool_net_buf_free(struct cdc_acm_ring_buf_pool *const pool,
+					       struct net_buf *buf)
+{
+	pool->get += buf->size;
+	pool->get %= pool->size;
+
+	if (buf->size != 0) {
+		pool->is_full = false;
+	}
+	net_buf_unref(buf);
+}
+
+static size_t cdc_acm_ring_buf_pool_put(struct cdc_acm_ring_buf_pool *const pool,
+					const uint8_t *data, const size_t len)
+{
+	size_t ret = 0;
+
+	if (pool->is_full || len == 0) {
+		goto ring_buf_pool_put_ret;
+	}
+
+	if (pool->put < pool->get) {
+		ret = MIN(pool->get - pool->put, len);
+		memcpy(&pool->data[pool->put], data, ret);
+		pool->put += ret;
+	} else {
+		ret = MIN(len, pool->size - pool->put);
+		memcpy(&pool->data[pool->put], data, ret);
+		if (pool->put + ret < pool->size) {
+			pool->put += ret;
+			goto ring_buf_pool_put_update_full;
+		}
+		pool->put = MIN(pool->get, len - ret);
+		memcpy(pool->data, data + ret, pool->put);
+		ret += pool->put;
+	}
+ring_buf_pool_put_update_full:
+	if (ret) {
+		if (pool->put == pool->get) {
+			pool->is_full = true;
+		}
+		pool->is_fully_allocated = false;
+	}
+ring_buf_pool_put_ret:
+	return ret;
+}
+
+#define CDC_ACM_RING_BUF_POOL_DEFINE(name, len)                                                    \
+	static uint8_t USB_PRIV_BUFSECTION                                                         \
+		__aligned(USB_BUF_ALIGN) cdc_acm_ring_buf_pool_data_##name[len];                   \
+	static struct cdc_acm_ring_buf_pool name = {                                               \
+		.put = 0,                                                                          \
+		.get = 0,                                                                          \
+		.alloc_end = 0,                                                                    \
+		.size = len,                                                                       \
+		.data = cdc_acm_ring_buf_pool_data_##name,                                         \
+		.is_full = false,                                                                  \
+		.is_fully_allocated = true,                                                        \
+	};
+
+struct cdc_acm_tx_uart_fifo {
+	struct cdc_acm_ring_buf_pool *const rbp;
+	bool irq;
+	bool altered;
+};
+struct cdc_acm_rx_uart_fifo {
+	sys_slist_t *bufs;
+	uint8_t buf_count;
 	bool irq;
 	bool altered;
 };
@@ -116,10 +317,11 @@ struct cdc_acm_uart_data {
 	void *cb_data;
 	/* UART API IRQ callback work */
 	struct k_work irq_cb_work;
-	struct cdc_acm_uart_fifo rx_fifo;
-	struct cdc_acm_uart_fifo tx_fifo;
+	struct cdc_acm_rx_uart_fifo rx_fifo;
+	struct cdc_acm_tx_uart_fifo tx_fifo;
 	/* USBD CDC ACM TX fifo work */
 	struct k_work_delayable tx_fifo_work;
+	struct k_work_delayable tx_flush_work;
 	/* USBD CDC ACM RX fifo work */
 	struct k_work rx_fifo_work;
 	atomic_t state;
@@ -131,9 +333,9 @@ static void cdc_acm_irq_rx_enable(const struct device *dev);
 
 #if CONFIG_USBD_CDC_ACM_BUF_POOL
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
-		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-		    CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE,
-		    sizeof(struct udc_buf_info), NULL);
+		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) *
+			    (2 + CONFIG_USBD_CDC_ACM_RX_BUF_QUEUE_SIZE),
+		    CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE, sizeof(struct udc_buf_info), NULL);
 
 BUILD_ASSERT((CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE % USBD_MAX_BULK_MPS) == 0,
 	     "USBD_CDC_ACM_BUF_POOL_SIZE is not multiple of bulk endpoint MPS");
@@ -278,6 +480,7 @@ static size_t cdc_acm_get_bulk_mps(struct usbd_class_data *const c_data)
 static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 				struct net_buf *buf, int err)
 {
+	int ret = 0;
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
@@ -310,16 +513,17 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 
 	if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
 		/* RX transfer completion */
-		size_t done;
-
 		LOG_HEXDUMP_INF(buf->data, buf->len, "");
-		done = ring_buf_put(data->rx_fifo.rb, buf->data, buf->len);
-		if (done && data->cb) {
+
+		net_buf_slist_put(data->rx_fifo.bufs, buf);
+		data->rx_fifo.buf_count++;
+		if (data->cb) {
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
 
 		atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
 		cdc_acm_work_submit(&data->rx_fifo_work);
+		goto ep_buf_already_handled;
 	}
 
 	if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
@@ -329,12 +533,13 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		}
 
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
+		cdc_acm_ring_buf_pool_net_buf_free(data->tx_fifo.rbp, buf);
 
-		if (!ring_buf_is_empty(data->tx_fifo.rb)) {
+		if (cdc_acm_ring_buf_pool_cont_alloc_space_get(data->tx_fifo.rbp)) {
 			/* Queue pending TX data on IN endpoint */
 			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
-
+		goto ep_buf_already_handled;
 	}
 
 	if (bi->ep == cdc_acm_get_int_in(c_data)) {
@@ -342,7 +547,9 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 	}
 
 ep_request_error:
-	return usbd_ep_buf_free(uds_ctx, buf);
+	ret = usbd_ep_buf_free(uds_ctx, buf);
+ep_buf_already_handled:
+	return ret;
 }
 
 static void usbd_cdc_acm_update(struct usbd_class_data *const c_data,
@@ -369,7 +576,7 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 		cdc_acm_work_submit(&data->rx_fifo_work);
 	}
 
-	if (ring_buf_is_empty(data->tx_fifo.rb)) {
+	if (cdc_acm_ring_buf_pool_is_empty(data->tx_fifo.rbp)) {
 		if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
 			/* Raise TX ready interrupt */
 			cdc_acm_work_submit(&data->irq_cb_work);
@@ -629,6 +836,37 @@ static __maybe_unused int cdc_acm_send_notification(const struct device *dev,
 	return ret;
 }
 
+static bool cdc_acm_can_tx_handler_enqueue(struct cdc_acm_uart_data *const data)
+{
+	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
+		LOG_DBG("USB configuration is not enabled");
+		return false;
+	}
+
+	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
+		LOG_INF("USB support is suspended (FIXME: submit rwup)");
+		return false;
+	}
+
+	if (atomic_test_and_set_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
+		LOG_DBG("TX transfer already in progress");
+		return false;
+	}
+	return true;
+}
+
+static void cdc_acm_tx_ep_enqueue(struct cdc_acm_uart_data *const data,
+				  const struct usbd_class_data *const c_data, struct net_buf *buf)
+{
+	int ret;
+	ret = usbd_ep_enqueue(c_data, buf);
+	if (ret) {
+		LOG_ERR("Failed to enqueue");
+		cdc_acm_ring_buf_pool_net_buf_free(data->tx_fifo.rbp, buf);
+		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
+	}
+}
+
 /*
  * TX handler is triggered when the state of TX fifo has been altered.
  */
@@ -639,46 +877,66 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
 	struct net_buf *buf;
-	size_t len;
-	int ret;
+	int num_bufs = 0;
 
 	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
 	cfg = data->dev->config;
 	c_data = cfg->c_data;
 
-	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
-		LOG_DBG("USB configuration is not enabled");
+	if (!cdc_acm_can_tx_handler_enqueue(data)) {
 		return;
 	}
 
-	if (atomic_test_bit(&data->state, CDC_ACM_CLASS_SUSPENDED)) {
-		LOG_INF("USB support is suspended (FIXME: submit rwup)");
-		return;
-	}
+	while ((buf = cdc_acm_ring_buf_pool_net_buf_alloc(data->tx_fifo.rbp,
+							  cdc_acm_get_bulk_in(c_data))) != NULL) {
+		num_bufs++;
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
-		LOG_DBG("TX transfer already in progress");
-		return;
-	}
+		data->zlp_needed = buf->len != 0 && buf->len % cdc_acm_get_bulk_mps(c_data) == 0;
 
-	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_in(c_data));
-	if (buf == NULL) {
+		cdc_acm_tx_ep_enqueue(data, c_data, buf);
+	}
+	if (num_bufs == 0) {
+		if (data->zlp_needed) {
+			buf = cdc_acm_ring_buf_pool_net_buf_alloc_zlp(data->tx_fifo.rbp,
+								      cdc_acm_get_bulk_in(c_data));
+			cdc_acm_tx_ep_enqueue(data, c_data, buf);
+
+			data->zlp_needed = false;
+		}
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
-		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
+		cdc_acm_work_schedule(&data->tx_flush_work,
+				      K_MSEC(CONFIG_USBD_CDC_ACM_TX_FLUSH_TIMEOUT));
+		return;
+	}
+	k_work_cancel_delayable(&data->tx_flush_work);
+}
+
+static void cdc_acm_tx_flush_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct cdc_acm_uart_data *data;
+	const struct cdc_acm_uart_config *cfg;
+	struct usbd_class_data *c_data;
+	struct net_buf *buf;
+
+	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_flush_work);
+	cfg = data->dev->config;
+	c_data = cfg->c_data;
+
+	if (!cdc_acm_can_tx_handler_enqueue(data)) {
 		return;
 	}
 
-	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
-	net_buf_add(buf, len);
-
-	data->zlp_needed = len != 0 && len % cdc_acm_get_bulk_mps(c_data) == 0;
-
-	ret = usbd_ep_enqueue(c_data, buf);
-	if (ret) {
-		LOG_ERR("Failed to enqueue");
-		net_buf_unref(buf);
+	buf = cdc_acm_ring_buf_pool_net_buf_alloc_leftover(data->tx_fifo.rbp,
+							   cdc_acm_get_bulk_in(c_data));
+	if (buf == NULL || buf->size == 0) {
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
+		return;
 	}
+
+	data->zlp_needed = buf->len != 0 && buf->len % cdc_acm_get_bulk_mps(c_data) == 0;
+
+	cdc_acm_tx_ep_enqueue(data, c_data, buf);
 }
 
 /*
@@ -707,8 +965,8 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_data)) {
-		LOG_INF("RX buffer to small, throttle");
+	if (data->rx_fifo.buf_count == CONFIG_USBD_CDC_ACM_RX_BUF_QUEUE_SIZE) {
+		LOG_INF("RX buf queue full, throttle");
 		return;
 	}
 
@@ -739,7 +997,7 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
 
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED);
 
-	if (ring_buf_space_get(data->tx_fifo.rb)) {
+	if (cdc_acm_ring_buf_pool_space_get(data->tx_fifo.rbp)) {
 		LOG_INF("tx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -759,7 +1017,7 @@ static void cdc_acm_irq_rx_enable(const struct device *dev)
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED);
 
 	/* Permit buffer to be drained regardless of USB state */
-	if (!ring_buf_is_empty(data->rx_fifo.rb)) {
+	if (data->rx_fifo.buf_count != 0) {
 		LOG_INF("rx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -792,14 +1050,16 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 	}
 
 	key = k_spin_lock(&data->lock);
-	done = ring_buf_put(data->tx_fifo.rb, tx_data, len);
+
+	done = cdc_acm_ring_buf_pool_put(data->tx_fifo.rbp, tx_data, len);
+
 	k_spin_unlock(&data->lock, key);
 	if (done) {
 		data->tx_fifo.altered = true;
 	}
 
-	LOG_INF("UART dev %p, len %d, remaining space %u",
-		dev, len, ring_buf_space_get(data->tx_fifo.rb));
+	LOG_INF("UART dev %p, len %d, remaining space %u", dev, len,
+		cdc_acm_ring_buf_pool_space_get(data->tx_fifo.rbp));
 
 	return done;
 }
@@ -809,10 +1069,15 @@ static int cdc_acm_fifo_read(const struct device *dev,
 			     const int size)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
-	uint32_t len;
+	const struct udc_buf_info *bi;
+	const struct usbd_class_data *c_data;
+	struct net_buf_simple tmp;
+	uint32_t len = 0;
 
-	LOG_INF("UART dev %p size %d length %u",
-		dev, size, ring_buf_size_get(data->rx_fifo.rb));
+	net_buf_simple_init_with_data(&tmp, rx_data, size);
+	tmp.len = 0;
+
+	LOG_INF("UART dev %p size %d", dev, size);
 
 	if (!check_wq_ctx(dev)) {
 		LOG_WRN("Invoked by inappropriate context");
@@ -820,12 +1085,22 @@ static int cdc_acm_fifo_read(const struct device *dev,
 		return 0;
 	}
 
-	len = ring_buf_get(data->rx_fifo.rb, rx_data, size);
-	if (len) {
+	struct net_buf *head;
+	while (head = SYS_SLIST_PEEK_HEAD_CONTAINER(data->rx_fifo.bufs, head, node),
+	       head != NULL && tmp.len < tmp.size) {
+		len = MIN(net_buf_simple_tailroom(&tmp), head->len);
+		net_buf_simple_add_mem(&tmp, net_buf_pull_mem(head, len), len);
+
+		if (head->len == 0) {
+			sys_slist_remove(data->rx_fifo.bufs, NULL, &head->node);
+			data->rx_fifo.buf_count--;
+			bi = udc_get_buf_info(head);
+			c_data = bi->owner;
+			usbd_ep_buf_free(usbd_class_get_ctx(c_data), head);
+		}
 		data->rx_fifo.altered = true;
 	}
-
-	return len;
+	return tmp.len;
 }
 
 static int cdc_acm_irq_tx_ready(const struct device *dev)
@@ -834,7 +1109,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 
 	if (check_wq_ctx(dev)) {
 		if (data->tx_fifo.irq) {
-			return ring_buf_space_get(data->tx_fifo.rb);
+			return cdc_acm_ring_buf_pool_space_get(data->tx_fifo.rbp);
 		}
 	} else {
 		LOG_WRN("Invoked by inappropriate context");
@@ -887,15 +1162,14 @@ static void cdc_acm_irq_update(const struct device *dev)
 		return;
 	}
 
-	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
-	    !ring_buf_is_empty(data->rx_fifo.rb)) {
+	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) && data->rx_fifo.buf_count != 0) {
 		data->rx_fifo.irq = true;
 	} else {
 		data->rx_fifo.irq = false;
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_space_get(data->tx_fifo.rb)) {
+	    cdc_acm_ring_buf_pool_space_get(data->tx_fifo.rbp)) {
 		data->tx_fifo.irq = true;
 	} else {
 		data->tx_fifo.irq = false;
@@ -919,6 +1193,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	struct cdc_acm_uart_data *data;
 	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
+	size_t alloc_tailroom;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, irq_cb_work);
 	cfg = data->dev->config;
@@ -947,21 +1222,27 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	if (!atomic_test_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
 		if (data->tx_fifo.altered) {
 			LOG_DBG("tx fifo altered, submit work");
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+			alloc_tailroom =
+				cdc_acm_ring_buf_pool_cont_alloc_space_get(data->tx_fifo.rbp);
+			if (alloc_tailroom >= data->tx_fifo.rbp->size / CDC_ACM_TX_BUF_PARTITIONS) {
+				cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+			} else if (alloc_tailroom > 0) {
+				cdc_acm_work_schedule(&data->tx_flush_work,
+						      K_MSEC(CONFIG_USBD_CDC_ACM_TX_FLUSH_TIMEOUT));
+			}
 		} else if (data->zlp_needed) {
 			LOG_DBG("zlp needed, submit work");
 			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 		}
 	}
 
-	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
-	    !ring_buf_is_empty(data->rx_fifo.rb)) {
+	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) && data->rx_fifo.buf_count != 0) {
 		LOG_DBG("rx irq pending, submit irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_space_get(data->tx_fifo.rb)) {
+	    cdc_acm_ring_buf_pool_space_get(data->tx_fifo.rbp)) {
 		LOG_DBG("tx irq pending, submit irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -980,17 +1261,26 @@ static void cdc_acm_irq_callback_set(const struct device *dev,
 static int cdc_acm_poll_in(const struct device *dev, unsigned char *const c)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
-	uint32_t len;
+	struct udc_buf_info *bi;
+	struct usbd_class_data const *c_data;
 	int ret = -1;
 
-	if (ring_buf_is_empty(data->rx_fifo.rb)) {
+	if (data->rx_fifo.buf_count == 0) {
 		return ret;
 	}
 
-	len = ring_buf_get(data->rx_fifo.rb, c, 1);
-	if (len) {
+	struct net_buf *head = SYS_SLIST_PEEK_HEAD_CONTAINER(data->rx_fifo.bufs, head, node);
+	if (head->len > 0) {
+		*c = net_buf_pull_u8(head);
 		cdc_acm_work_submit(&data->rx_fifo_work);
 		ret = 0;
+	}
+	if (head->len == 0) {
+		sys_slist_remove(data->rx_fifo.bufs, NULL, &head->node);
+		data->rx_fifo.buf_count--;
+		bi = udc_get_buf_info(head);
+		c_data = bi->owner;
+		usbd_ep_buf_free(usbd_class_get_ctx(c_data), head);
 	}
 
 	return ret;
@@ -1004,7 +1294,7 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 
 	while (true) {
 		key = k_spin_lock(&data->lock);
-		wrote = ring_buf_put(data->tx_fifo.rb, &c, 1);
+		wrote = cdc_acm_ring_buf_pool_put(data->tx_fifo.rbp, &c, 1);
 		k_spin_unlock(&data->lock, key);
 
 		if (wrote == 1) {
@@ -1127,10 +1417,8 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
 
-	ring_buf_reset(data->tx_fifo.rb);
-	ring_buf_reset(data->rx_fifo.rb);
-
 	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
+	k_work_init_delayable(&data->tx_flush_work, cdc_acm_tx_flush_handler);
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
 	k_work_init(&data->irq_cb_work, cdc_acm_irq_cb_handler);
 
@@ -1356,13 +1644,15 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 	USBD_DESC_STRING_DEFINE(cdc_acm_if_desc_data_##n,			\
 				DT_INST_PROP(n, label),				\
 				USBD_DUT_STRING_INTERFACE);			\
-	))									\
-										\
-	RING_BUF_DECLARE(cdc_acm_rb_rx_##n, DT_INST_PROP(n, rx_fifo_size));	\
-	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
-										\
-	static const struct cdc_acm_uart_config uart_config_##n = {		\
-		.c_data = &cdc_acm_##n,						\
+	))                                         \
+	static sys_slist_t cdc_acm_uart_rx_list##n =                                               \
+		SYS_SLIST_STATIC_INIT(&cdc_acm_uart_rx_list##n);                                   \
+	CDC_ACM_RING_BUF_POOL_DEFINE(cdc_acm_rbp_tx_##n,                                           \
+				     ROUND_UP(DT_INST_PROP(n, tx_fifo_size),                       \
+					      CDC_ACM_TX_BUF_PARTITIONS *USBD_MAX_BULK_MPS));      \
+                                                                                                   \
+	static const struct cdc_acm_uart_config uart_config_##n = {                                \
+		.c_data = &cdc_acm_##n,                                                            \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, label), (			\
 		.if_desc_data = &cdc_acm_if_desc_data_##n,			\
 		))								\
@@ -1375,8 +1665,9 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 	static struct cdc_acm_uart_data uart_data_##n = {			\
 		.dev = DEVICE_DT_GET(DT_DRV_INST(n)),				\
 		.line_coding = CDC_ACM_DEFAULT_LINECODING,			\
-		.rx_fifo.rb = &cdc_acm_rb_rx_##n,				\
-		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
+		.rx_fifo.bufs = &cdc_acm_uart_rx_list##n,			\
+		.rx_fifo.buf_count = 0,						\
+		.tx_fifo.rbp = &cdc_acm_rbp_tx_##n,				\
 		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
 	};									\
