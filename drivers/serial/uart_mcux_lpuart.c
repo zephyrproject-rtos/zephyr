@@ -73,6 +73,8 @@ struct mcux_lpuart_config {
 	bool single_wire;
 	bool tx_invert;
 	bool rx_invert;
+	bool rx_dma_disable_scatter;
+	bool rx_dma_defer_reload;
 #ifdef CONFIG_UART_MCUX_LPUART_ISR_SUPPORT
 	void (*irq_config_func)(const struct device *dev);
 #endif
@@ -644,6 +646,7 @@ static int mcux_lpuart_rx_disable(const struct device *dev)
 static void prepare_rx_dma_block_config(const struct device *dev)
 {
 	struct mcux_lpuart_data *data = (struct mcux_lpuart_data *)dev->data;
+	const struct mcux_lpuart_config *config = dev->config;
 	LPUART_Type *lpuart = get_base(dev);
 	struct mcux_lpuart_rx_dma_params *rx_dma_params = &data->async.rx_dma_params;
 
@@ -657,7 +660,8 @@ static void prepare_rx_dma_block_config(const struct device *dev)
 	head_block_config->dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 	head_block_config->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 	head_block_config->block_size = rx_dma_params->buf_len;
-	head_block_config->dest_scatter_en = true;
+	head_block_config->dest_scatter_en =
+		!config->rx_dma_disable_scatter;
 }
 
 static int configure_and_start_rx_dma(
@@ -771,28 +775,30 @@ static void dma_callback(const struct device *dma_dev, void *callback_arg, uint3
 		data->async.next_rx_buffer = NULL;
 		data->async.next_rx_buffer_len = 0U;
 
-		/* A new buffer was available (and already loaded into the DMA engine on device
-		 * with eDMA)
+		/* A new buffer was available (and already loaded into the DMA engine
+		 * on device with eDMA).
 		 */
 		if (rx_dma_params->buf != NULL && rx_dma_params->buf_len > 0) {
 			/*
-			 * For MCXC 4-channel DMA we cannot preload the next buffer while busy.
-			 * Re-arm DMA here (DMA driver has cleared busy before invoking callback).
+			 * Re-arm DMA here when live reload is not allowed for this
+			 * instance. That keeps MCXC 4-channel DMA behavior and also
+			 * supports DT-selected deferred reload platforms.
 			 */
-			if (config->rx_dma_live_reload == false) {
+			if (config->rx_dma_live_reload == false ||
+			    config->rx_dma_defer_reload == true) {
 				ret = dma_reload(config->rx_dma_config.dma_dev,
 						 config->rx_dma_config.dma_channel,
 						 LPUART_GetDataRegisterAddress(lpuart),
 						 (uint32_t)rx_dma_params->buf,
 						 rx_dma_params->buf_len);
 				if (ret != 0) {
-					LOG_ERR("Failed to reload RX DMA (4ch) (%d)", ret);
+					LOG_ERR("Failed to reload RX DMA (%d)", ret);
 				}
 
 				ret = dma_start(config->rx_dma_config.dma_dev,
 						config->rx_dma_config.dma_channel);
 				if (ret != 0) {
-					LOG_ERR("Failed to start RX DMA (4ch) (%d)", ret);
+					LOG_ERR("Failed to start RX DMA (%d)", ret);
 				}
 			}
 
@@ -1003,12 +1009,14 @@ static int mcux_lpuart_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_t
 	data->async.next_rx_buffer_len = len;
 
 	/*
-	 * eDMA supports live reload/linked RX, so attempt to preload the next buffer.
+	 * eDMA normally supports live reload/linked RX, so attempt to preload
+	 * the next buffer unless this instance requests deferred reload.
 	 *
-	 * NXP MCXC 4-channel DMA (nxp,4ch-dma) rejects dma_reload() while busy.
-	 * For that controller, defer buffer programming to the DMA completion callback.
+	 * MCXC 4-channel DMA (nxp,4ch-dma) rejects dma_reload() while busy,
+	 * so that backend continues to reload from the completion callback.
 	 */
-	if (config->rx_dma_live_reload == true) {
+	if (config->rx_dma_live_reload == true &&
+	    config->rx_dma_defer_reload == false) {
 		ret = uart_mcux_lpuart_dma_replace_rx_buffer(dev);
 	}
 
@@ -1719,10 +1727,18 @@ static DEVICE_API(uart, mcux_lpuart_driver_api) = {
 #define RX_DMA_LIVE_RELOAD_CFG(n) \
 	.rx_dma_live_reload = COND_CODE_1(MCUX_LPUART_HAS_DMA(n), \
 		(!MCUX_LPUART_DMA_IS_4CH(n, rx)), (false))
+
+#define RX_DMA_DEFER_RELOAD_CFG(n) \
+	.rx_dma_defer_reload = DT_INST_PROP(n, nxp_defer_rx_dma_reload)
+
+#define RX_DMA_DISABLE_SCATTER_CFG(n) \
+	.rx_dma_disable_scatter = DT_INST_PROP(n, nxp_disable_rx_dma_scatter)
 #else
 #define RX_DMA_CONFIG(n)
 #define TX_DMA_CONFIG(n)
 #define RX_DMA_LIVE_RELOAD_CFG(n)
+#define RX_DMA_DEFER_RELOAD_CFG(n)
+#define RX_DMA_DISABLE_SCATTER_CFG(n)
 #endif /* LPUART_ASYNC_ENABLE */
 
 #define FLOW_CONTROL(n) \
@@ -1747,6 +1763,8 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 	.single_wire = DT_INST_PROP(n, single_wire),	                      \
 	.rx_invert = DT_INST_PROP(n, rx_invert),	                      \
 	.tx_invert = DT_INST_PROP(n, tx_invert),	                      \
+	RX_DMA_DEFER_RELOAD_CFG(n) \
+	RX_DMA_DISABLE_SCATTER_CFG(n) \
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                          \
 	MCUX_LPUART_IRQ_INIT(n) \
 	RX_DMA_CONFIG(n)        \
