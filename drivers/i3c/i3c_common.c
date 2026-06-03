@@ -991,7 +991,7 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 {
 	struct i3c_driver_data *data = (struct i3c_driver_data *)desc->bus->data;
 	struct i3c_ccc_address dyn_addr;
-	int ret;
+	int ret = 0;
 
 	/* check if the addressed is free, if the requested DA is different from the SA */
 	if (desc->static_addr != dynamic_addr) {
@@ -1000,6 +1000,18 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 				dynamic_addr);
 			return -EADDRNOTAVAIL;
 		}
+	}
+
+	/* Attach before sending the CCC so the controller has the
+	 * device if it was not already attached.
+	 */
+	LOG_DBG("%s: %s: attaching with SA 0x%02x for SETDASA",
+		desc->bus->name, desc->dev->name, desc->static_addr);
+	ret = i3c_attach_i3c_device(desc);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_ERR("%s: %s: unable to attach device (%d)", desc->bus->name,
+			desc->dev->name, ret);
+		return ret;
 	}
 
 	/*
@@ -1016,7 +1028,11 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 
 	/* update the target's dynamic address */
 	desc->dynamic_addr = dynamic_addr;
+
 	if (desc->dynamic_addr != desc->static_addr) {
+		LOG_DBG("%s: %s: reattaching from SA 0x%02x to DA 0x%02x",
+			desc->bus->name, desc->dev->name,
+			desc->static_addr, desc->dynamic_addr);
 		ret = i3c_reattach_i3c_device(desc, desc->static_addr);
 		if (ret < 0) {
 			LOG_ERR("%s: %s: unable to reattach device (%d)", desc->bus->name,
@@ -1024,9 +1040,10 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr)
 			return ret;
 		}
 	}
+
 	LOG_DBG("%s: %s: SETDASA to 0x%02x", desc->bus->name, desc->dev->name, desc->dynamic_addr);
 
-	return ret;
+	return 0;
 }
 
 int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr)
