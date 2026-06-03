@@ -556,7 +556,7 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
  * @param dev_config Bit-packed 32-bit value to the device runtime configuration
  * for the SMBus controller.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 __syscall int smbus_configure(const struct device *dev, uint32_t dev_config);
@@ -585,9 +585,9 @@ static inline int z_impl_smbus_configure(const struct device *dev,
  * @param dev_config Pointer to return bit-packed 32-bit value of
  * the SMBus controller configuration.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_get_config() is not implemented
+ * @retval -ENOSYS Function smbus_get_config() is not implemented
  * by the driver.
  */
 __syscall int smbus_get_config(const struct device *dev, uint32_t *dev_config);
@@ -611,9 +611,9 @@ static inline int z_impl_smbus_get_config(const struct device *dev,
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_smbalert_set_cb() is not implemented
+ * @retval -ENOSYS Function smbus_smbalert_set_cb() is not implemented
  * by the driver.
  */
 static inline int smbus_smbalert_set_cb(const struct device *dev,
@@ -635,9 +635,9 @@ static inline int smbus_smbalert_set_cb(const struct device *dev,
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_smbalert_remove_cb() is not implemented
+ * @retval -ENOSYS Function smbus_smbalert_remove_cb() is not implemented
  * by the driver.
  */
 __syscall int smbus_smbalert_remove_cb(const struct device *dev,
@@ -662,9 +662,9 @@ static inline int z_impl_smbus_smbalert_remove_cb(const struct device *dev,
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_host_notify_set_cb() is not implemented
+ * @retval -ENOSYS Function smbus_host_notify_set_cb() is not implemented
  * by the driver.
  */
 static inline int smbus_host_notify_set_cb(const struct device *dev,
@@ -686,9 +686,9 @@ static inline int smbus_host_notify_set_cb(const struct device *dev,
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_host_notify_remove_cb() is not implemented
+ * @retval -ENOSYS Function smbus_host_notify_remove_cb() is not implemented
  * by the driver.
  */
 __syscall int smbus_host_notify_remove_cb(const struct device *dev,
@@ -718,9 +718,9 @@ static inline int z_impl_smbus_host_notify_remove_cb(const struct device *dev,
  * @param addr Address of the SMBus peripheral device.
  * @param direction Direction Read or Write.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_quick() is not implemented
+ * @retval -ENOSYS Function smbus_quick() is not implemented
  * by the driver.
  */
 __syscall int smbus_quick(const struct device *dev, uint16_t addr,
@@ -753,9 +753,9 @@ static inline int z_impl_smbus_quick(const struct device *dev, uint16_t addr,
  * @param addr Address of the SMBus peripheral device.
  * @param byte Byte to be sent to the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_byte_write() is not implemented
+ * @retval -ENOSYS Function smbus_byte_write() is not implemented
  * by the driver.
  */
 __syscall int smbus_byte_write(const struct device *dev, uint16_t addr,
@@ -784,9 +784,9 @@ static inline int z_impl_smbus_byte_write(const struct device *dev,
  * @param addr Address of the SMBus peripheral device.
  * @param byte Byte received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_byte_read() is not implemented
+ * @retval -ENOSYS Function smbus_byte_read() is not implemented
  * by the driver.
  */
 __syscall int smbus_byte_read(const struct device *dev, uint16_t addr,
@@ -816,9 +816,9 @@ static inline int z_impl_smbus_byte_read(const struct device *dev,
  * @param cmd Command byte which is sent to peripheral device first.
  * @param byte Byte to be sent to the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_byte_data_write() is not implemented
+ * @retval -ENOSYS Function smbus_byte_data_write() is not implemented
  * by the driver.
  */
 __syscall int smbus_byte_data_write(const struct device *dev, uint16_t addr,
@@ -849,9 +849,9 @@ static inline int z_impl_smbus_byte_data_write(const struct device *dev,
  * @param cmd Command byte which is sent to peripheral device first.
  * @param byte Byte received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_byte_data_read() is not implemented
+ * @retval -ENOSYS Function smbus_byte_data_read() is not implemented
  * by the driver.
  */
 __syscall int smbus_byte_data_read(const struct device *dev, uint16_t addr,
@@ -882,9 +882,9 @@ static inline int z_impl_smbus_byte_data_read(const struct device *dev,
  * @param cmd Command byte which is sent to peripheral device first.
  * @param word Word (16-bit) to be sent to the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_word_data_write() is not implemented
+ * @retval -ENOSYS Function smbus_word_data_write() is not implemented
  * by the driver.
  */
 __syscall int smbus_word_data_write(const struct device *dev, uint16_t addr,
@@ -915,9 +915,9 @@ static inline int z_impl_smbus_word_data_write(const struct device *dev,
  * @param cmd Command byte which is sent to peripheral device first.
  * @param word Word (16-bit) received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_word_data_read() is not implemented
+ * @retval -ENOSYS Function smbus_word_data_read() is not implemented
  * by the driver.
  */
 __syscall int smbus_word_data_read(const struct device *dev, uint16_t addr,
@@ -950,9 +950,9 @@ static inline int z_impl_smbus_word_data_read(const struct device *dev,
  * @param send_word Word (16-bit) to be sent to the peripheral device.
  * @param recv_word Word (16-bit) received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_pcall() is not implemented
+ * @retval -ENOSYS Function smbus_pcall() is not implemented
  * by the driver.
  */
 __syscall int smbus_pcall(const struct device *dev, uint16_t addr,
@@ -984,9 +984,9 @@ static inline int z_impl_smbus_pcall(const struct device *dev,
  * @param count Size of the data block buffer. Maximum 32 bytes.
  * @param buf Data block buffer to be sent to the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_block_write() is not implemented
+ * @retval -ENOSYS Function smbus_block_write() is not implemented
  * by the driver.
  */
 __syscall int smbus_block_write(const struct device *dev, uint16_t addr,
@@ -1022,9 +1022,9 @@ static inline int z_impl_smbus_block_write(const struct device *dev,
  * @param count Size of the data peripheral sent. Maximum 32 bytes.
  * @param buf Data block buffer received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_block_read() is not implemented
+ * @retval -ENOSYS Function smbus_block_read() is not implemented
  * by the driver.
  */
 __syscall int smbus_block_read(const struct device *dev, uint16_t addr,
@@ -1059,9 +1059,9 @@ static inline int z_impl_smbus_block_read(const struct device *dev,
  * @param rcv_count Size of the data peripheral sent.
  * @param rcv_buf Data block buffer received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_block_pcall() is not implemented
+ * @retval -ENOSYS Function smbus_block_pcall() is not implemented
  * by the driver.
  */
 __syscall int smbus_block_pcall(const struct device *dev,
