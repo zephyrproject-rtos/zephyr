@@ -77,8 +77,6 @@ struct scmi_clock_rate_config {
  * @brief Describes the content of the CLOCK_ATTRIBUTES command reply
  */
 struct scmi_clock_attributes {
-	/** reply status */
-	int32_t status;
 	/** clock attributes */
 	uint32_t attributes;
 	/** clock name */

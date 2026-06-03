@@ -39,25 +39,21 @@ struct scmi_msg_base_attributes {
 
 /* BASE_DISCOVER_VENDOR */
 struct scmi_msg_base_vendor_id_reply {
-	int32_t status;
 	char vendor_id[SCMI_SHORT_NAME_MAX_SIZE];
 } __packed;
 
 /* BASE_DISCOVER_SUB_VENDOR */
 struct scmi_msg_base_subvendor_id_reply {
-	int32_t status;
 	char subvendor_id[SCMI_SHORT_NAME_MAX_SIZE];
 } __packed;
 
 /* BASE_DISCOVER_IMPLEMENTATION_VERSION */
 struct scmi_msg_base_impl_ver_reply {
-	int32_t status;
 	uint32_t impl_ver;
 } __packed;
 
 /* BASE_DISCOVER_AGENT */
 struct scmi_msg_base_discover_agent_reply {
-	int32_t status;
 	uint32_t agent_id;
 	char name[SCMI_SHORT_NAME_MAX_SIZE];
 } __packed;
@@ -257,7 +253,6 @@ int scmi_base_discover_agent(uint32_t agent_id, struct scmi_agent_info *agent_in
 int scmi_base_device_permission(uint32_t agent_id, uint32_t device_id, bool allow)
 {
 	struct scmi_msg_base_set_device_permissions_config cfg;
-	int32_t status;
 	struct scmi_xfer xfer;
 	struct scmi_protocol *proto;
 	int ret;
@@ -275,7 +270,7 @@ int scmi_base_device_permission(uint32_t agent_id, uint32_t device_id, bool allo
 	cfg.flags = allow ? SCMI_BASE_DEVICE_ACCESS_ALLOW : 0;
 
 	ret = scmi_xfer_init(proto, &xfer, SET_DEVICE_PERMISSIONS,
-			     &cfg, sizeof(cfg), &status, sizeof(status));
+			     &cfg, sizeof(cfg), NULL, 0x0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -296,7 +291,6 @@ int scmi_base_device_permission(uint32_t agent_id, uint32_t device_id, bool allo
 int scmi_base_reset_agent_cfg(uint32_t agent_id, bool reset_perm)
 {
 	struct scmi_msg_base_reset_agent_cfg_config cfg;
-	int32_t status;
 	struct scmi_xfer xfer;
 	struct scmi_protocol *proto;
 	int ret;
@@ -312,7 +306,7 @@ int scmi_base_reset_agent_cfg(uint32_t agent_id, bool reset_perm)
 	cfg.flags = reset_perm ? SCMI_BASE_AGENT_PERMISSIONS_RESET : 0;
 
 	ret = scmi_xfer_init(proto, &xfer, RESET_AGENT_CONFIGURATION,
-			     &cfg, sizeof(cfg), &status, sizeof(status));
+			     &cfg, sizeof(cfg), NULL, 0x0);
 	if (ret < 0) {
 		return ret;
 	}

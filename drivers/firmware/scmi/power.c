@@ -20,15 +20,9 @@ enum scmi_power_domain_message {
 	POWER_DOMAIN_GET = 0x8,
 };
 
-struct scmi_power_state_get_reply {
-	int32_t status;
-	uint32_t power_state;
-};
-
 int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_POWER_DOMAIN);
-	struct scmi_power_state_get_reply reply_buffer;
 	struct scmi_xfer xfer;
 	int ret;
 
@@ -43,26 +37,19 @@ int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state)
 
 	ret = scmi_xfer_init(proto, &xfer, POWER_STATE_GET,
 			     &domain_id, sizeof(domain_id),
-			     &reply_buffer, sizeof(reply_buffer));
+			     power_state, sizeof(*power_state));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	*power_state = reply_buffer.power_state;
-
-	return 0;
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_power_state_set(struct scmi_power_state_config *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_POWER_DOMAIN);
 	struct scmi_xfer xfer;
-	int status, ret;
+	int ret;
 
 	/* input validation */
 	if (!proto || !cfg) {
@@ -79,7 +66,7 @@ int scmi_power_state_set(struct scmi_power_state_config *cfg)
 	}
 
 	ret = scmi_xfer_init(proto, &xfer, POWER_STATE_SET,
-			     cfg, sizeof(*cfg), &status, sizeof(status));
+			     cfg, sizeof(*cfg), NULL, 0x0);
 	if (ret < 0) {
 		return ret;
 	}

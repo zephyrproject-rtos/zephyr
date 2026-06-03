@@ -26,7 +26,7 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 	struct scmi_protocol *proto;
 	struct scmi_xfer xfer;
 	uint32_t config_num;
-	int32_t status, ret;
+	int32_t ret;
 
 	proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_PINCTRL);
 
@@ -57,7 +57,7 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 			     settings,
 			     sizeof(*settings) -
 			     (ARM_SCMI_PINCTRL_MAX_CONFIG_SIZE - config_num * 2) * 4,
-			     &status, sizeof(status));
+			     NULL, 0x0);
 	if (ret < 0) {
 		return ret;
 	}

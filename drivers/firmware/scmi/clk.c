@@ -29,37 +29,17 @@ enum scmi_clock_message {
 	CLOCK_GET_PERMISSIONS = 0xf,
 };
 
-struct scmi_clock_attributes_reply {
-	int32_t status;
-	uint32_t attributes;
-};
-
-struct scmi_clock_rate_set_reply {
-	int32_t status;
-	uint32_t rate[2];
-};
-
-struct scmi_clock_parent_get_reply {
-	int32_t status;
-	uint32_t parent_id;
-};
-
 struct scmi_clock_parent_config {
 	uint32_t clk_id;
 	uint32_t parent_id;
-};
-
-struct scmi_clock_get_permissions_reply {
-	int32_t status;
-	uint32_t permissions;
 };
 
 int scmi_clock_rate_get(struct scmi_protocol *proto,
 			uint32_t clk_id, uint32_t *rate)
 {
 	struct scmi_xfer xfer;
+	uint64_t clk_rate;
 	int ret;
-	struct scmi_clock_rate_set_reply reply_buffer;
 
 	/* input validation */
 	if (!proto || !rate) {
@@ -72,7 +52,7 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 
 	ret = scmi_xfer_init(proto, &xfer, CLOCK_RATE_GET,
 			     &clk_id, sizeof(clk_id),
-			     &reply_buffer, sizeof(reply_buffer));
+			     &clk_rate, sizeof(clk_rate));
 	if (ret < 0) {
 		return ret;
 	}
@@ -82,7 +62,7 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 		return ret;
 	}
 
-	*rate = reply_buffer.rate[0];
+	*rate = (uint32_t)clk_rate;
 
 	return 0;
 }
@@ -90,7 +70,7 @@ int scmi_clock_rate_get(struct scmi_protocol *proto,
 int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_config *cfg)
 {
 	struct scmi_xfer xfer;
-	int status, ret;
+	int ret;
 
 	/* input validation */
 	if (!proto || !cfg) {
@@ -107,7 +87,7 @@ int scmi_clock_rate_set(struct scmi_protocol *proto, struct scmi_clock_rate_conf
 	}
 
 	ret = scmi_xfer_init(proto, &xfer, CLOCK_RATE_SET,
-			     cfg, sizeof(*cfg), &status, sizeof(status));
+			     cfg, sizeof(*cfg), NULL, 0x0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -119,7 +99,6 @@ int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 {
 	struct scmi_xfer xfer;
 	int ret;
-	struct scmi_clock_parent_get_reply reply_buffer;
 
 	/* input validation */
 	if (!proto || !parent_id) {
@@ -132,26 +111,19 @@ int scmi_clock_parent_get(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 
 	ret = scmi_xfer_init(proto, &xfer, CLOCK_PARENT_GET,
 			     &clk_id, sizeof(clk_id),
-			     &reply_buffer, sizeof(reply_buffer));
+			     parent_id, sizeof(*parent_id));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	*parent_id = reply_buffer.parent_id;
-
-	return 0;
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t parent_id)
 {
 	struct scmi_clock_parent_config cfg = {.clk_id = clk_id, .parent_id = parent_id};
 	struct scmi_xfer xfer;
-	int status, ret;
+	int ret;
 
 	/* input validation */
 	if (!proto) {
@@ -163,7 +135,7 @@ int scmi_clock_parent_set(struct scmi_protocol *proto, uint32_t clk_id, uint32_t
 	}
 
 	ret = scmi_xfer_init(proto, &xfer, CLOCK_PARENT_SET,
-			     &cfg, sizeof(cfg), &status, sizeof(status));
+			     &cfg, sizeof(cfg), NULL, 0x0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -175,7 +147,7 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 			  struct scmi_clock_config *cfg)
 {
 	struct scmi_xfer xfer;
-	int status, ret;
+	int ret;
 
 	/* input validation */
 	if (!proto || !cfg) {
@@ -202,7 +174,7 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 	}
 
 	ret = scmi_xfer_init(proto, &xfer, CLOCK_CONFIG_SET,
-			     cfg, sizeof(*cfg), &status, sizeof(status));
+			     cfg, sizeof(*cfg), NULL, 0x0);
 	if (ret < 0) {
 		return ret;
 	}
@@ -237,7 +209,6 @@ int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
 int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
 			       uint32_t *permissions)
 {
-	struct scmi_clock_get_permissions_reply reply_buffer;
 	struct scmi_xfer xfer;
 	int ret;
 
@@ -251,17 +222,10 @@ int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,
 
 	ret = scmi_xfer_init(proto, &xfer, CLOCK_GET_PERMISSIONS,
 			     &clk_id, sizeof(clk_id),
-			     &reply_buffer, sizeof(reply_buffer));
+			     permissions, sizeof(*permissions));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	*permissions = reply_buffer.permissions;
-
-	return 0;
+	return scmi_send_message(proto, &xfer);
 }

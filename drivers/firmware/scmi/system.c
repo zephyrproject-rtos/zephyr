@@ -48,7 +48,6 @@ int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg)
 {
 	struct scmi_protocol *proto = &SCMI_PROTOCOL_NAME(SCMI_PROTOCOL_SYSTEM);
 	struct scmi_xfer xfer;
-	int32_t status;
 	int ret;
 
 	/* input validation */
@@ -61,7 +60,7 @@ int scmi_system_power_state_set(struct scmi_system_power_state_config *cfg)
 	}
 
 	ret = scmi_xfer_init(proto, &xfer, SYSTEM_POWER_STATE_SET,
-			     cfg, sizeof(*cfg), &status, sizeof(status));
+			     cfg, sizeof(*cfg), NULL, 0x0);
 	if (ret < 0) {
 		return ret;
 	}

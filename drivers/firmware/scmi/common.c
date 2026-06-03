@@ -38,24 +38,8 @@ enum scmi_common_cmd {
 	NEGOTIATE_PROTOCOL_VERSION = 0x10,
 };
 
-struct scmi_protocol_version_reply {
-	int32_t status;
-	uint32_t version;
-};
-
-struct scmi_protocol_attributes_reply {
-	int32_t status;
-	uint32_t attributes;
-};
-
-struct scmi_protocol_message_attributes_reply {
-	int32_t status;
-	uint32_t attributes;
-};
-
 int scmi_protocol_get_version(struct scmi_protocol *proto, uint32_t *version)
 {
-	struct scmi_protocol_version_reply reply_buffer;
 	struct scmi_xfer xfer;
 	int ret;
 
@@ -64,24 +48,16 @@ int scmi_protocol_get_version(struct scmi_protocol *proto, uint32_t *version)
 	}
 
 	ret = scmi_xfer_init(proto, &xfer, PROTOCOL_VERSION,
-			     NULL, 0x0, &reply_buffer, sizeof(reply_buffer));
+			     NULL, 0x0, version, sizeof(*version));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	*version = reply_buffer.version;
-
-	return 0;
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_protocol_attributes_get(struct scmi_protocol *proto, uint32_t *attributes)
 {
-	struct scmi_protocol_attributes_reply reply_buffer;
 	struct scmi_xfer xfer;
 	int ret;
 
@@ -90,25 +66,17 @@ int scmi_protocol_attributes_get(struct scmi_protocol *proto, uint32_t *attribut
 	}
 
 	ret = scmi_xfer_init(proto, &xfer, PROTOCOL_ATTRIBUTES,
-			     NULL, 0x0, &reply_buffer, sizeof(reply_buffer));
+			     NULL, 0x0, attributes, sizeof(*attributes));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	*attributes = reply_buffer.attributes;
-
-	return 0;
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
 					uint32_t message_id, uint32_t *attributes)
 {
-	struct scmi_protocol_message_attributes_reply reply_buffer;
 	struct scmi_xfer xfer;
 	int ret;
 
@@ -118,27 +86,19 @@ int scmi_protocol_message_attributes_get(struct scmi_protocol *proto,
 
 	ret = scmi_xfer_init(proto, &xfer, PROTOCOL_MESSAGE_ATTRIBUTES,
 			     &message_id, sizeof(message_id),
-			     &reply_buffer, sizeof(reply_buffer));
+			     attributes, sizeof(*attributes));
 	if (ret < 0) {
 		return ret;
 	}
 
 	xfer.use_polling = true;
 
-	ret = scmi_send_message(proto, &xfer);
-	if (ret < 0) {
-		return ret;
-	}
-
-	*attributes = reply_buffer.attributes;
-
-	return 0;
+	return scmi_send_message(proto, &xfer);
 }
 
 int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t version)
 {
 	struct scmi_xfer xfer;
-	int32_t status;
 	int ret;
 
 	if (!proto) {
@@ -146,8 +106,7 @@ int scmi_protocol_version_negotiate(struct scmi_protocol *proto, uint32_t versio
 	}
 
 	ret = scmi_xfer_init(proto, &xfer, NEGOTIATE_PROTOCOL_VERSION,
-			     &version, sizeof(version),
-			     &status, sizeof(status));
+			     &version, sizeof(version), NULL, 0x0);
 	if (ret < 0) {
 		return ret;
 	}

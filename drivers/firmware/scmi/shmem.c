@@ -83,10 +83,10 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_xfer *xfer)
 	}
 
 	/* mismatch between expected reply size and actual size? */
-	if (xfer->rx.len != (layout->len - sizeof(layout->msg_hdr))) {
+	if (xfer->rx.len != (layout->len - sizeof(layout->msg_hdr) - sizeof(xfer->status))) {
 		LOG_ERR("bad message len. Expected 0x%x, got 0x%x",
 			xfer->rx.len,
-			(uint32_t)(layout->len - sizeof(layout->msg_hdr)));
+			(uint32_t)(layout->len - sizeof(layout->msg_hdr) - sizeof(xfer->status)));
 		return -EINVAL;
 	}
 
@@ -108,7 +108,8 @@ int scmi_shmem_read_message(const struct device *shmem, struct scmi_xfer *xfer)
 
 	if (xfer->rx.content) {
 		scmi_shmem_memcpy(POINTER_TO_UINT(xfer->rx.content),
-				  data->regmap + sizeof(*layout), xfer->rx.len);
+				  data->regmap + sizeof(*layout) + sizeof(xfer->status),
+				  xfer->rx.len);
 	}
 
 	return 0;
