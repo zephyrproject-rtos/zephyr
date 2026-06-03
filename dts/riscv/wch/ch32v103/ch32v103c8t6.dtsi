@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2026 Lucy Wong
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v103/ch32v103.dtsi>
+
+&gpioc {
+	gpio-reserved-ranges = <0 13>;
+	ngpios = <16>;
+};
+
+&gpiod {
+	gpio-reserved-ranges = <2 14>;
+	ngpios = <16>;
+};
+
+/ {
+	soc {
+		usart3: uart@40004800 {
+			compatible = "wch,usart";
+			reg = <0x40004800 0x20>;
+			clocks = <&rcc CH32V10X_CLOCK_USART3>;
+			interrupt-parent = <&pfic>;
+			interrupts = <55>;
+			status = "disabled";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "wch,spi";
+			reg = <0x40003800 0x24>;
+			clocks = <&rcc CH32V10X_CLOCK_SPI2>;
+			interrupt-parent = <&pfic>;
+			interrupts = <52>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		i2c2: i2c@40005800 {
+			compatible = "wch,i2c";
+			reg = <0x40005800 0x400>;
+			clocks = <&rcc CH32V10X_CLOCK_I2C2>;
+			interrupt-parent = <&pfic>;
+			interrupts = <49>, <50>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(20)>;
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(64)>;
+	ranges = <0x0 0x08000000 DT_SIZE_K(64)>;
+};
