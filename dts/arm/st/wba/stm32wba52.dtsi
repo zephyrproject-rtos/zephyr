@@ -6,6 +6,11 @@
 #include <st/wba/stm32wba.dtsi>
 
 / {
+	chosen {
+		zephyr,bt-hci = &bt_hci_wba;
+		zephyr,ieee802154 = &ieee802154;
+	};
+
 	soc {
 		compatible = "st,stm32wba52", "st,stm32wba", "simple-bus";
 
@@ -99,10 +104,18 @@
 	};
 
 	bt_hci_wba: bt_hci_wba {
+		compatible = "st,hci-stm32wba";
+		interrupt-parent = <&nvic>;
+		interrupt-names = "radio";
 		interrupts = <66 0>;
+		status = "okay";
 	};
 
 	ieee802154: ieee802154 {
+		compatible = "st,stm32wba-ieee802154";
+		interrupt-parent = <&nvic>;
+		interrupt-names = "radio";
 		interrupts = <66 0>;
+		status = "disabled";
 	};
 };
