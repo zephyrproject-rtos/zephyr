@@ -36,7 +36,7 @@ static void uart_isr(const struct device *dev, void *user_data)
 	uart_irq_update(dev);
 
 	if (uart_irq_rx_ready(dev) <= 0) {
-		break;
+		return;
 	}
 
 	while (true) {
