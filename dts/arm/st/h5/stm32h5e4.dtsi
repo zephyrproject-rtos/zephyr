@@ -113,7 +113,7 @@
 			/* common clock FDCAN 1 & 2 & 3 */
 			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
 				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
-			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0x6a0 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
 	};

@@ -592,7 +592,7 @@
 				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
 			interrupts = <152 0>, <153 0>;
 			interrupt-names = "int0", "int1";
-			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0x0 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
 
@@ -605,7 +605,7 @@
 				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
 			interrupts = <154 0>, <155 0>;
 			interrupt-names = "int0", "int1";
-			bosch,mram-cfg = <0x350 28 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0x350 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
 
