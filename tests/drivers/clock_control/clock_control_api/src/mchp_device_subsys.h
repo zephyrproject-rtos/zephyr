@@ -20,7 +20,7 @@
 static const struct device_subsys_data subsys_data[] = {
 #if defined CONFIG_SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
 	{.subsys = (void *)CLOCK_MCHP_MCLKPERIPH_ID_APBB_SERCOM3},
-	{.subsys = (void *)CLOCK_MCHP_GCLKPERIPH_ID_SERCOM4_CORE},
+	{.subsys = (void *)CLOCK_MCHP_GCLKPERIPH_ID_SERCOM3_CORE},
 	{
 		.subsys = (void *)CLOCK_MCHP_XOSC_ID_XOSC1,
 		.startup_us = XOSC_STARTUP_US,
