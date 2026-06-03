@@ -41,6 +41,17 @@ config WIFI_BRCMFMAC_NVRAM_FILE
 	  ${ZEPHYR_HAL_BROADCOM_MODULE_DIR}/zephyr/blobs/img/brcmfmac/.
 	  Encodes board-specific antenna, calibration and PA settings.
 
+config WIFI_BRCMFMAC_CLM_FILE
+	string "CLM blob file name (under hal_broadcom blobs)"
+	default ""
+	help
+	  Optional Country Locale Matrix blob under
+	  ${ZEPHYR_HAL_BROADCOM_MODULE_DIR}/zephyr/blobs/img/brcmfmac/.
+	  Required by chips whose firmware ships without built-in regulatory
+	  tables (e.g. BCM43458F); chips that have them (e.g. BCM43430A1)
+	  still accept the upload harmlessly. Leave empty to skip CLM upload
+	  entirely -- the driver links a zero-length blob in that case.
+
 config WIFI_BRCMFMAC_RX_THREAD_STACK_SIZE
 	int "RX thread stack size"
 	default 4096

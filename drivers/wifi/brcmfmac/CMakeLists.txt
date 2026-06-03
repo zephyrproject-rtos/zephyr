@@ -23,6 +23,7 @@ if(CONFIG_BUILD_ONLY_NO_BLOBS)
   # which is the expected failure mode for a no-blobs build.
   file(WRITE ${brcmfmac_gen_dir}/brcmfmac_fw.inc "")
   file(WRITE ${brcmfmac_gen_dir}/brcmfmac_nvram.inc "")
+  file(WRITE ${brcmfmac_gen_dir}/brcmfmac_clm_blob.inc "")
 else()
   # Pull the firmware and per-board NVRAM from hal_broadcom (fetched
   # via `west blobs fetch hal_broadcom`) and convert each into a
@@ -37,6 +38,17 @@ else()
   generate_inc_file_for_target(${ZEPHYR_CURRENT_LIBRARY}
     ${brcmfmac_blob_dir}/${CONFIG_WIFI_BRCMFMAC_NVRAM_FILE}
     ${brcmfmac_gen_dir}/brcmfmac_nvram.inc)
+
+  # CLM blob is optional: a board that needs it sets
+  # CONFIG_WIFI_BRCMFMAC_CLM_FILE in its defconfig; an unset/empty
+  # string links a zero-length array and the driver skips upload.
+  if(CONFIG_WIFI_BRCMFMAC_CLM_FILE STREQUAL "")
+    file(WRITE ${brcmfmac_gen_dir}/brcmfmac_clm_blob.inc "")
+  else()
+    generate_inc_file_for_target(${ZEPHYR_CURRENT_LIBRARY}
+      ${brcmfmac_blob_dir}/${CONFIG_WIFI_BRCMFMAC_CLM_FILE}
+      ${brcmfmac_gen_dir}/brcmfmac_clm_blob.inc)
+  endif()
 endif()
 
 endif()

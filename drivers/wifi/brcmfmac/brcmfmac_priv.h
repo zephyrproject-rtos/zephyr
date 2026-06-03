@@ -53,6 +53,15 @@
 #define CID_TYPE_MASK                   0xF0000000
 #define CID_TYPE_SHIFT                  28
 
+/* Broadcom/Cypress chipcommon[0] chip-ID values. The chip reports these
+ * as the low 16 bits of CHIPID; brcmfmac uses them to select chip-specific
+ * code paths (firmware blob, RAM layout, SOCRAM bank-3 quirk). Mirrors
+ * Linux brcm_hw_ids.h.
+ */
+#define BRCM_CC_43430_CHIP_ID           0xa9a6   /* BCM43430 / BCM43436 */
+#define BRCM_CC_43439_CHIP_ID           0xa9af   /* CYW43439 */
+#define BRCM_CC_4345_CHIP_ID            0x4345   /* BCM43458F */
+
 /* BCMA core IDs (subset; full list in Linux include/linux/bcma/bcma.h). */
 #define BCMA_CORE_INTERNAL_MEM          0x80E    /* SOCRAM */
 #define BCMA_CORE_80211                 0x812    /* D11 MAC */
@@ -260,6 +269,18 @@ struct brcmf_event_msg_be {
 #define BRCMF_E_STATUS_TIMEOUT   2
 #define BRCMF_E_STATUS_NO_NETWORKS 3
 #define BRCMF_E_STATUS_PARTIAL   8
+
+/* Flags for struct brcmf_dload_data_le (Linux brcmfmac/fwil_types.h
+ * enum brcmf_dload_data_flag). The chip expects DL_BEGIN on the first
+ * chunk and DL_END on the last; bit 12 (CRC-supplied) is set unconditionally
+ * since the header carries a (currently zero) CRC field.
+ */
+#define BRCMF_DL_BEGIN          (1u << 1)
+#define BRCMF_DL_END            (1u << 2)
+#define BRCMF_DL_CRC_IN_HDR     (1u << 12)
+
+/* dload_type values (Linux brcmfmac/fwil_types.h enum brcmf_dload_type). */
+#define BRCMF_DL_TYPE_CLM       2
 
 struct brcmf_dload_data_le {
 	uint16_t flag;

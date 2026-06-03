@@ -350,10 +350,11 @@ int brcmfmac_chip_read_id(struct brcmfmac_data *data)
 int brcmfmac_chip_ram_data(struct brcmfmac_data *data)
 {
 	/* TODO: Read ram_size from core registers like in Linux. */
-	if (data->chip_id == 43430 || data->chip_id == 43439) {
+	if (data->chip_id == BRCM_CC_43430_CHIP_ID ||
+	    data->chip_id == BRCM_CC_43439_CHIP_ID) {
 		data->ram_base = 0u;
 		data->ram_size = 0x80000u;
-	} else if (data->chip_id == 0x4345) {
+	} else if (data->chip_id == BRCM_CC_4345_CHIP_ID) {
 		data->ram_base = 0x198000u;
 		data->ram_size = 0xC8000u;
 	} else {
@@ -501,7 +502,8 @@ static int brcmfmac_chip_cm3_set_passive(struct brcmfmac_data *data)
 	 * present (BCM4329, BCM43236) or has a different PDA layout
 	 * (BCM43340, BCM4334) and the write would misconfigure RAM.
 	 */
-	if (data->chip_id == 43430 || data->chip_id == 0xa9a6) {
+	if (data->chip_id == BRCM_CC_43430_CHIP_ID ||
+	    data->chip_id == BRCM_CC_43439_CHIP_ID) {
 		(void)brcmfmac_sdio_backplane_write32(data,
 				sr->base + SOCRAM_BANKIDX_OFFSET, 3);
 		(void)brcmfmac_sdio_backplane_write32(data,

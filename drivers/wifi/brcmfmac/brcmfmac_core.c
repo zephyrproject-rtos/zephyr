@@ -27,6 +27,20 @@
 
 LOG_MODULE_REGISTER(brcmfmac, CONFIG_WIFI_LOG_LEVEL);
 
+/* WL_REG_ON pulse timing. The chip's CBUCK regulator needs a brief window
+ * to fully discharge before re-power, then ~150 ms for the chip's clocks
+ * to come up and the bootloader to reach a state where F0/F1 enumerate.
+ * Matches the values WHD (Cypress's HAL) uses for the same family.
+ */
+#define BRCMFMAC_REG_ON_LOW_DELAY_MS     20
+#define BRCMFMAC_REG_ON_HIGH_DELAY_MS    150
+
+/* CLM blob upload chunking. Linux uses 1400 bytes/chunk; we cap at 512
+ * because brcmfmac_bcdc_iovar_set caps the payload at 1024 bytes total
+ * and the dload header eats 12 of those.
+ */
+#define BRCMFMAC_CLM_CHUNK_SIZE          512
+
 static int brcmfmac_initialization(struct brcmfmac_data *data)
 {
 	int ret = brcmfmac_chip_read_id(data);
@@ -34,7 +48,7 @@ static int brcmfmac_initialization(struct brcmfmac_data *data)
 	if (ret != 0) {
 		return ret;
 	}
-	if (data->chip_id == 43430 && data->chip_rev == 1) {
+	if (data->chip_id == BRCM_CC_43430_CHIP_ID && data->chip_rev == 1) {
 		LOG_INF("  -> matches BCM43430A1");
 	}
 
@@ -98,7 +112,7 @@ static int brcmfmac_power_on(const struct device *dev)
 	}
 
 	/* Allow CBUCK regulator to discharge */
-	k_msleep(10);
+	k_msleep(BRCMFMAC_REG_ON_LOW_DELAY_MS);
 
 	/* WIFI power on */
 	ret = gpio_pin_set_dt(&cfg->reg_on, 1);
@@ -106,7 +120,7 @@ static int brcmfmac_power_on(const struct device *dev)
 		return ret;
 	}
 
-	k_msleep(250); /* TODO: Make constant */
+	k_msleep(BRCMFMAC_REG_ON_HIGH_DELAY_MS);
 #else
 	(void)dev;
 #endif /* DT_INST_NODE_HAS_PROP(0, reg_on_gpios) */
@@ -159,24 +173,23 @@ static int brcmfmac_probe_sdio(const struct device *dev)
 
 static int brcmfmac_process_clm_blob(struct brcmfmac_data *data)
 {
-	const size_t chunk_size = 512;
 	struct brcmf_dload_data_le *hdr;
-	uint8_t buf[sizeof(*hdr) + chunk_size];
+	uint8_t buf[sizeof(*hdr) + BRCMFMAC_CLM_CHUNK_SIZE];
 	const uint8_t *current = brcmfmac_clm_blob;
 	size_t remaining = brcmfmac_clm_blob_len;
 
 	hdr = (struct brcmf_dload_data_le *)buf;
-	hdr->flag = (1 << 12) | 2; /* DL_BEGIN */
-	hdr->dload_type = 2;       /* DL_TYPE_CLM */
+	hdr->flag = BRCMF_DL_CRC_IN_HDR | BRCMF_DL_BEGIN;
+	hdr->dload_type = BRCMF_DL_TYPE_CLM;
 	hdr->crc = 0;
 
 	while (remaining > 0) {
-		size_t transfer = chunk_size;
+		size_t transfer = BRCMFMAC_CLM_CHUNK_SIZE;
 		int ret;
 
 		if (remaining <= transfer) {
 			transfer = remaining;
-			hdr->flag |= 4; /* DL_END */
+			hdr->flag |= BRCMF_DL_END;
 		}
 
 		memcpy(hdr->data, current, transfer);
@@ -191,7 +204,7 @@ static int brcmfmac_process_clm_blob(struct brcmfmac_data *data)
 
 		current += transfer;
 		remaining -= transfer;
-		hdr->flag &= ~2u;
+		hdr->flag &= ~BRCMF_DL_BEGIN;
 	}
 
 	return 0;
@@ -227,23 +240,20 @@ static int brcmfmac_init(const struct device *dev)
 	}
 
 	/*
-	 * CLM blob upload is required by chips whose firmware ships with no
-	 * built-in regulatory tables. Linux brcmfmac gates this on chip ID;
-	 * we mirror that gate so chips that don't need it (firmware refuses
-	 * the DL_TYPE_CLM iovar) don't fail init. Extend the list as new
-	 * chips are validated.
+	 * CLM blob upload. Chips that ship without built-in regulatory tables
+	 * (e.g. BCM43458F) require this; chips that have them (e.g. BCM43430A1)
+	 * still accept the iovar harmlessly. We always attempt the upload when
+	 * a blob is configured in the build via CONFIG_WIFI_BRCMFMAC_CLM_FILE;
+	 * an unconfigured build links an empty array (len==0) and we skip.
 	 */
-	bool needs_clm = (data->chip_id == 43430) ||         /* BCM43430A1 */
-			 (data->chip_id == 0xa9a6);          /* CYW43439   */
-	if (needs_clm) {
+	if (brcmfmac_clm_blob_len > 0) {
 		ret = brcmfmac_process_clm_blob(data);
 		if (ret != 0) {
 			LOG_ERR("CLM upload failed: %d", ret);
 			return ret;
 		}
 	} else {
-		LOG_DBG("CLM blob upload skipped for chip 0x%x rev %u",
-			data->chip_id, data->chip_rev);
+		LOG_DBG("CLM blob upload skipped (no blob configured)");
 	}
 
 	int got = brcmfmac_bcdc_iovar_get(data, "cur_etheraddr",
