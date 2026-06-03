@@ -20,7 +20,7 @@
 		#clock-cells = <1>;
 
 		sercom4 {
-			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM4_CORE>;
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM3_CORE>;
 			gclkperiph-src = "gclk0";
 			gclkperiph-en = <1>;
 		};
