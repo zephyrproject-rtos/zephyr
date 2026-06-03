@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* DUT: uart2 (PA25 TX / PA26 RX), wired to FT232 on the bench.
+ * uart2 already has dmas/dma-names declared in amebag2.dtsi.
+ */
+
+&pinctrl {
+	status = "okay";
+};
+
+dut: &uart2 {
+	pinctrl-0 = <&uart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};
