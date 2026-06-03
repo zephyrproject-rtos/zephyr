@@ -1912,9 +1912,24 @@ static int cdns_i3c_do_daa(const struct device *dev)
 						"list, given DA 0x%02x",
 						dev->name, pid, dyn_addr);
 				} else {
+					/* If RSTDAA detached this desc, the slist
+					 * no longer carries it. Re-attach so the
+					 * caller's desc continues to track this
+					 * device on the bus. The DA we just got
+					 * from DAA is already free in the address
+					 * pool (RSTDAA freed it), so the attach
+					 * succeeds and re-marks it.
+					 */
 					target->dynamic_addr = dyn_addr;
 					target->bcr = bcr;
 					target->dcr = dcr;
+
+					int aret = i3c_attach_i3c_device(target);
+
+					if (aret != 0 && aret != -EALREADY) {
+						LOG_ERR("%s: attach for PID 0x%012llx failed: %d",
+							dev->name, pid, aret);
+					}
 
 					data->cdns_i3c_i2c_priv_data[rr_idx].id = rr_idx;
 					target->controller_priv =

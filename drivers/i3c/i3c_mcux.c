@@ -1266,6 +1266,12 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			target->bcr = rx_buf[6];
 			target->dcr = rx_buf[7];
 
+			int aret = i3c_attach_i3c_device(target);
+
+			if (aret != 0 && aret != -EALREADY) {
+				LOG_ERR("Failed to attach target");
+			}
+
 			/* Mark the address as I3C device */
 			i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, dyn_addr);
 

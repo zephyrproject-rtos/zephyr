@@ -236,6 +236,12 @@ static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 		target->dynamic_addr = dyn_addr;
 		target->bcr = daa_rx->bcr;
 		target->dcr = daa_rx->dcr;
+
+		int aret = i3c_attach_i3c_device(target);
+
+		if (aret != 0 && aret != -EALREADY) {
+			LOG_ERR("Failed to attach target");
+		}
 	}
 
 	/* Request index for this target */

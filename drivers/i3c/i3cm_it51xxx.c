@@ -1238,6 +1238,12 @@ static int it51xxx_daa_next_xfer(const struct device *dev)
 		target->dynamic_addr = dyn_addr;
 		target->bcr = data->dlm_data.rx_data[6];
 		target->dcr = data->dlm_data.rx_data[7];
+
+		int aret = i3c_attach_i3c_device(target);
+
+		if (aret != 0 && aret != -EALREADY) {
+			LOG_INST_ERR(cfg->log, "failed to attach target");
+		}
 	} else {
 		LOG_INST_INF(
 			cfg->log,
