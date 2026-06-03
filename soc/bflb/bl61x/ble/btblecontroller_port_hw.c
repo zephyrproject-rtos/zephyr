@@ -12,7 +12,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/drivers/hwinfo.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -186,7 +186,7 @@ uint8_t btblecontrolller_get_chip_version(void)
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 	uint32_t dev_info;
 
-	if (syscon_read_reg(efuse, EFUSE_DEV_INFO_OFFSET, &dev_info) < 0) {
+	if (otp_read(efuse, EFUSE_DEV_INFO_OFFSET, &dev_info, sizeof(uint32_t)) < 0) {
 		return 0;
 	}
 
