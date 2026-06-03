@@ -550,6 +550,13 @@ static void siwx91x_iface_init(struct net_if *iface)
 		return;
 	}
 
+	ret = sl_wifi_set_join_configuration(SL_WIFI_CLIENT_INTERFACE,
+					     SL_WIFI_JOIN_FEAT_PS_CMD_LISTEN_INTERVAL_VALID);
+	if (ret != SL_STATUS_OK) {
+		LOG_ERR("Failed to set join configuration: 0x%x", ret);
+		return;
+	}
+
 	ret = sl_wifi_get_mac_address(SL_WIFI_CLIENT_INTERFACE, &sidev->macaddr);
 	if (ret) {
 		LOG_ERR("sl_wifi_get_mac_address(): %#04x", ret);
