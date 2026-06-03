@@ -315,6 +315,9 @@ if(CONFIG_BUILD_WITH_TFM)
   # keep generating a couple of object files which are required to sign
   # images.
   list(APPEND TFM_CMAKE_ARGS -DTFM_CREATE_SIGNING_LAYOUT_OBJECTS=ON)
+  # Fix for CMake 4.2+ which defaults to SHORT (hashed) intermediate dir
+  # strategy, breaking signing_layout_ns.o path lookup in wrapper.py
+  list(APPEND TFM_CMAKE_ARGS -DCMAKE_INTERMEDIATE_DIR_STRATEGY=FULL)
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
