@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	pulse_io0: pulse_io {
+		compatible = "zephyr,pulse-io-loopback";
+		#pulse-io-cells = <1>;
+		num-channels = <4>;
+		status = "okay";
+	};
+};
