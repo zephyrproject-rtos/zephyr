@@ -196,3 +196,26 @@
 		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
 	};
 };
+
+&mspi01 {
+	status = "disabled";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+
+	is66wvs8m8f: memory@0 {
+		compatible = "is66wv";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>;
+		mspi-max-frequency = <DT_FREQ_M(104)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_3_BYTE";
+		rx-dummy = <6>;
+		tx-dummy = <0>;
+		read-command = <0xeb>;
+		write-command = <0x38>;
+		ce-break-config = <1024 4>;
+		status = "disabled";
+	};
+};
