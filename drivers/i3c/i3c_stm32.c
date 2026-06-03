@@ -1834,6 +1834,12 @@ static void i3c_stm32_event_isr_tx(const struct device *dev)
 			target->dynamic_addr = dyn_addr;
 			target->bcr = bcr;
 			target->dcr = dcr;
+
+			int aret = i3c_attach_i3c_device(target);
+
+			if (aret != 0 && aret != -EALREADY) {
+				LOG_ERR("Failed to attach target");
+			}
 		}
 
 		/* Mark the address as used */
