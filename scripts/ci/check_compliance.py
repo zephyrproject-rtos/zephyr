@@ -2975,6 +2975,13 @@ def _main(args):
     global COMMIT_RANGE
     COMMIT_RANGE = args.commits
 
+    # Populate the shared context so linter modules in compliance/ can access
+    # these values without reaching into sys.modules['__main__'] directly.
+    _ctx = sys.modules.get('_compliance_context')
+    if _ctx is not None:
+        _ctx.GIT_TOP = GIT_TOP
+        _ctx.COMMIT_RANGE = COMMIT_RANGE
+
     init_logs(args.loglevel)
 
     logger.info(f'Running tests on commit range {COMMIT_RANGE}')
@@ -3115,6 +3122,56 @@ def err(msg):
         cmd += ": "
     sys.exit(f"{cmd} error: {msg}")
 
+
+# Auto-load all compliance linter modules from the compliance/ sub-directory.
+# Each module is expected to define one or more ComplianceTest subclasses,
+# which are auto-discovered by the inheritors() walk used by the runner.
+#
+# This block must come after all built-in ComplianceTest subclasses are
+# defined so the linter modules can access ComplianceTest via
+# sys.modules['check_compliance'] / sys.modules['__main__'].
+def _load_compliance_linters():
+    import importlib.util
+
+    compliance_dir = Path(__file__).resolve().parent / 'compliance'
+
+    # Load the shared context module first so linter modules can import it.
+    context_path = compliance_dir / '_context.py'
+    if context_path.exists():
+        spec = importlib.util.spec_from_file_location('_compliance_context', context_path)
+        ctx_mod = importlib.util.module_from_spec(spec)
+        sys.modules['_compliance_context'] = ctx_mod
+        spec.loader.exec_module(ctx_mod)
+
+        # Populate static symbols — these are all defined at module level in
+        # check_compliance.py by the time this function runs, so they are safe
+        # to use at linter class-definition time (e.g. as class attributes).
+        _main_mod = sys.modules['__main__']
+        for _attr in (
+            'ComplianceTest',
+            'EndTest',
+            'get_files',
+            'get_shas',
+            'git',
+            'get_set_from_file',
+            'zephyr_doc_detail_builder',
+            'ZEPHYR_BASE',
+            'magic',
+        ):
+            setattr(ctx_mod, _attr, getattr(_main_mod, _attr))
+
+    for linter_path in sorted(compliance_dir.glob('*.py')):
+        if linter_path.name.startswith('_'):
+            continue
+        mod_name = f'_compliance_{linter_path.stem}'
+        spec = importlib.util.spec_from_file_location(mod_name, linter_path)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules[mod_name] = mod
+        spec.loader.exec_module(mod)
+
+
+_load_compliance_linters()
+del _load_compliance_linters
 
 if __name__ == "__main__":
     main(sys.argv[1:])

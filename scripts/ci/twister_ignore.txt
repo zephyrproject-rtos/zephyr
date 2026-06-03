@@ -38,6 +38,7 @@ doc/*
 scripts/ci/test_plan.py
 scripts/ci/twister_ignore.txt
 scripts/ci/check_compliance.py
+scripts/ci/compliance/*.py
 scripts/ci/errno.py
 scripts/ci/upload_test_results_es.py
 scripts/ci/what_changed.py
