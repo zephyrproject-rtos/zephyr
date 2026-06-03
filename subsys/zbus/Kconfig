@@ -33,6 +33,14 @@ config ZBUS_MSG_SUBSCRIBER
 	bool "Message subscribers will receive all messages in sequence."
 	select NET_BUF
 
+config ZBUS_RUNTIME_CHANNEL_REGISTRATION
+	bool "ZBus channels that are linked to the subsystem at runtime"
+	help
+	  Allow ZBus channels to be created and registered/unregistered at runtime via
+	  zbus_runtime_channel_register()/zbus_runtime_channel_unregister(), in addition to the
+	  channels defined statically with ZBUS_CHAN_DEFINE(). Useful for dynamically loaded
+	  modules (e.g. LLEXT) that wish to create channels at runtime.
+
 if ZBUS_MSG_SUBSCRIBER
 
 choice ZBUS_MSG_SUBSCRIBER_BUF_ALLOC

@@ -11,12 +11,22 @@
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/zbus/zbus.h>
+
+#include "zbus_private.h"
+
 LOG_MODULE_REGISTER(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
 #if defined(CONFIG_ZBUS_PRIORITY_BOOST)
 /* Available only when the priority boost is enabled */
 static struct k_spinlock _zbus_chan_slock;
 #endif /* CONFIG_ZBUS_PRIORITY_BOOST */
+
+#if defined(CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION)
+
+static struct k_spinlock runtime_channel_slock;
+static sys_slist_t runtime_channels;
+
+#endif /* CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION */
 
 static struct k_spinlock obs_slock;
 
@@ -104,6 +114,116 @@ int _zbus_init(void)
 }
 SYS_INIT(_zbus_init, APPLICATION, CONFIG_ZBUS_CHANNELS_SYS_INIT_PRIORITY);
 
+#if defined(CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION)
+
+static bool zbus_runtime_channel_already_registered(const struct zbus_runtime_channel *chan)
+{
+	struct zbus_runtime_channel *runtime_chan;
+
+#if defined(CONFIG_ZBUS_CHANNEL_ID)
+	STRUCT_SECTION_FOREACH(zbus_channel, static_chan) {
+		/* Check for duplicate channel IDs */
+		if ((chan->channel.id != ZBUS_CHAN_ID_INVALID) &&
+		    (static_chan->id == chan->channel.id)) {
+			return true;
+		}
+	}
+#endif /* CONFIG_ZBUS_CHANNEL_ID */
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&runtime_channels, runtime_chan, _node) {
+		if (runtime_chan == chan) {
+			return true;
+		}
+#if defined(CONFIG_ZBUS_CHANNEL_ID)
+		/* Check for duplicate channel IDs */
+		if ((chan->channel.id != ZBUS_CHAN_ID_INVALID) &&
+		    (runtime_chan->channel.id == chan->channel.id)) {
+			return true;
+		}
+#endif /* CONFIG_ZBUS_CHANNEL_ID */
+	}
+
+	return false;
+}
+
+int zbus_runtime_channel_register(struct zbus_runtime_channel *chan)
+{
+	int result = -EEXIST;
+
+	_ZBUS_ASSERT(chan != NULL, "chan is required");
+	_ZBUS_ASSERT(chan->channel.message != NULL, "chan->channel.message is required");
+	_ZBUS_ASSERT(chan->channel.data != NULL, "chan->channel.data is required");
+
+	K_SPINLOCK(&runtime_channel_slock) {
+		if (!zbus_runtime_channel_already_registered(chan)) {
+			sys_slist_append(&runtime_channels, &chan->_node);
+			result = 0;
+		}
+	}
+	return result;
+}
+
+int zbus_runtime_channel_unregister(struct zbus_runtime_channel *chan)
+{
+	int result = -ENODATA;
+
+	_ZBUS_ASSERT(chan != NULL, "chan is required");
+
+	K_SPINLOCK(&runtime_channel_slock) {
+		if (sys_slist_find_and_remove(&runtime_channels, &chan->_node)) {
+			result = 0;
+		}
+	}
+
+	return result;
+}
+
+bool zbus_runtime_iterate_over_channels(bool (*iterator_func)(const struct zbus_channel *chan))
+{
+	bool result = true;
+
+	K_SPINLOCK(&runtime_channel_slock) {
+		struct zbus_runtime_channel *runtime_chan;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&runtime_channels, runtime_chan, _node) {
+			if (!(*iterator_func)(&runtime_chan->channel)) {
+				result = false;
+				break;
+			}
+		}
+	}
+	return result;
+}
+
+bool zbus_runtime_iterate_over_channels_with_user_data(
+	bool (*iterator_func)(const struct zbus_channel *chan, void *user_data), void *user_data)
+{
+	bool result = true;
+
+	K_SPINLOCK(&runtime_channel_slock) {
+		struct zbus_runtime_channel *runtime_chan;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&runtime_channels, runtime_chan, _node) {
+			if (!(*iterator_func)(&runtime_chan->channel, user_data)) {
+				result = false;
+				break;
+			}
+		}
+	}
+	return result;
+}
+
+#if defined(CONFIG_ZTEST)
+
+void zbus_runtime_channel_unregister_all(void)
+{
+	sys_slist_init(&runtime_channels);
+}
+
+#endif /* CONFIG_ZTEST */
+
+#endif /* CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION */
+
 #if defined(CONFIG_ZBUS_ASYNC_LISTENER)
 void async_listener_work_handler(struct k_work *item)
 {
@@ -150,8 +270,25 @@ const struct zbus_channel *zbus_chan_from_id(uint32_t channel_id)
 			return chan;
 		}
 	}
+#if defined(CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION)
+	struct zbus_channel *found = NULL;
+
+	K_SPINLOCK(&runtime_channel_slock) {
+		struct zbus_runtime_channel *chan;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&runtime_channels, chan, _node) {
+			if (chan->channel.id == channel_id) {
+				/* Found matching channel */
+				found = &chan->channel;
+				break;
+			}
+		}
+	}
+	return found;
+#else
 	/* No matching channel exists */
 	return NULL;
+#endif /* CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION */
 }
 
 #endif /* CONFIG_ZBUS_CHANNEL_ID */
@@ -170,8 +307,25 @@ const struct zbus_channel *zbus_chan_from_name(const char *name)
 			return chan;
 		}
 	}
+#if defined(CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION)
+	struct zbus_channel *found = NULL;
+
+	K_SPINLOCK(&runtime_channel_slock) {
+		struct zbus_runtime_channel *chan;
+
+		SYS_SLIST_FOR_EACH_CONTAINER(&runtime_channels, chan, _node) {
+			if ((chan->channel.name != NULL) && strcmp(chan->channel.name, name) == 0) {
+				/* Found matching channel */
+				found = &chan->channel;
+				break;
+			}
+		}
+	}
+	return found;
+#else
 	/* No matching channel exists */
 	return NULL;
+#endif /* CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION */
 }
 
 #endif /* CONFIG_ZBUS_CHANNEL_NAME */
