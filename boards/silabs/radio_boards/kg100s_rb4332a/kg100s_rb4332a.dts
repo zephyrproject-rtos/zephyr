@@ -28,6 +28,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		lora0 = &lora0;
+		die-temp0 = &temp;
 	};
 
 	buttons {
@@ -85,6 +86,10 @@
 };
 
 &se {
+	status = "okay";
+};
+
+&temp {
 	status = "okay";
 };
 
