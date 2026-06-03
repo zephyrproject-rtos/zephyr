@@ -833,7 +833,6 @@ static int i3c_bus_prepare_setdasa(const struct device *dev, const struct i3c_de
 	/* Loop through the registered I3C devices */
 	for (i = 0; i < dev_list->num_i3c; i++) {
 		struct i3c_device_desc *desc = &dev_list->i3c[i];
-		struct i3c_driver_data *bus_data = (struct i3c_driver_data *)dev->data;
 		uint8_t dynamic_addr;
 
 		/*
@@ -855,21 +854,6 @@ static int i3c_bus_prepare_setdasa(const struct device *dev, const struct i3c_de
 		     desc->init_dynamic_addr == desc->static_addr)) {
 			*need_aasa = true;
 			continue;
-		}
-
-		/*
-		 * check that initial dynamic address is free before setting it
-		 * if configured
-		 */
-		if ((desc->init_dynamic_addr != 0) &&
-		    (desc->init_dynamic_addr != desc->static_addr)) {
-			if (!i3c_addr_slots_is_free(&bus_data->attached_dev.addr_slots,
-						    desc->init_dynamic_addr)) {
-				if (i3c_detach_i3c_device(desc) != 0) {
-					LOG_ERR("Failed to detach %s", desc->dev->name);
-				}
-				continue;
-			}
 		}
 
 		/*
