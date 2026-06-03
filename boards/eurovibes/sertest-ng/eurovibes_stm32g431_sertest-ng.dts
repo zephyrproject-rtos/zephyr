@@ -19,6 +19,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,canbus = &fdcan1;
+		zephyr,system-timer = &lptim1;
 	};
 
 	aliases {
@@ -193,7 +194,7 @@
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 };
 
-stm32_lp_tick_source: &lptim1 {
+&lptim1 {
 	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;

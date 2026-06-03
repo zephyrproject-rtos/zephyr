@@ -23,6 +23,7 @@
 		zephyr,flash-controller = &mx25r6435f;
 		zephyr,bt-c2h-uart = &usart1;
 		zephyr,bt-hci = &hci_spi;
+		zephyr,system-timer = &lptim1;
 	};
 
 	leds {
@@ -279,7 +280,7 @@
 	};
 };
 
-stm32_lp_tick_source: &lptim1 {
+&lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
