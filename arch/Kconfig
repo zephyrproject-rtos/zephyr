@@ -568,7 +568,7 @@ config DYNAMIC_INTERRUPTS
 
 config SHARED_INTERRUPTS
 	bool "Set this to enable support for shared interrupts"
-	depends on GEN_SW_ISR_TABLE
+	depends on GEN_SW_ISR_TABLE_ARRAY
 	select EXPERIMENTAL
 	help
 	  Set this to enable support for shared interrupts. Use this with
@@ -666,6 +666,7 @@ config GEN_SW_ISR_TABLE_ARRAY
 
 config GEN_SW_ISR_TABLE_SWITCH
 	bool "Generate a function with a switch-case"
+	depends on !DYNAMIC_INTERRUPTS
 	help
 	  Use a switch-case instead of an array.
 	  This helps to limit binary size when most of the IRQs are not used.
