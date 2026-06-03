@@ -243,6 +243,8 @@ manifest:
       revision: 2e9dbf14fa56e5907aefb07e8e75010ec5210946
       groups:
         - hal
+      submodules:
+        - path: lib/cyw43-driver
     - name: hal_sifli
       revision: 86fa0e9433fda1a760e0077c19b8407ecceea2f9
       path: modules/hal/sifli
