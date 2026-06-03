@@ -619,6 +619,10 @@ STM32
 
 * Renamed Kconfig option ``CONFIG_STM32_MEMMAP`` to :kconfig:option:`CONFIG_FLASH_STM32_NOR_MEMMAP`.
 
+* Using the ``stm32_lp_tick_source`` nodelabel to select an LPTIM as system timer is no longer supported
+  and will trigger a build error. Use the :ref:`generic chosen <devicetree-zephyr-chosen-nodes>`
+  ``zephyr,system-timer`` instead. (:github:`112999`)
+
 Syscon
 ======
 
