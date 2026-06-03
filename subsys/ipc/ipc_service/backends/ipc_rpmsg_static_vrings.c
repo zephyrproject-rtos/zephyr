@@ -339,7 +339,7 @@ static int mbox_init(const struct device *instance)
 		char name[THREAD_MAX_NAME_LEN];
 
 		snprintk(name, sizeof(name), "mbox_wq #%d", conf->id);
-		k_thread_name_set(&data->mbox_wq.thread, name);
+		k_thread_name_set(data->mbox_wq.thread_id, name);
 	}
 
 	k_work_init(&data->mbox_work, mbox_callback_process);

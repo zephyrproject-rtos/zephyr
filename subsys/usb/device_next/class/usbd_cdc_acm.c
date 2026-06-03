@@ -179,7 +179,7 @@ static int usbd_cdc_acm_init_wq(void)
 	k_work_queue_start(&cdc_acm_work_q, cdc_acm_stack,
 			   K_KERNEL_STACK_SIZEOF(cdc_acm_stack),
 			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
-	k_thread_name_set(&cdc_acm_work_q.thread, "cdc_acm_work_q");
+	k_thread_name_set(cdc_acm_work_q.thread_id, "cdc_acm_work_q");
 
 	return 0;
 }

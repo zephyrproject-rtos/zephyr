@@ -250,7 +250,7 @@ static void test_queue_start(void)
 	zassert_equal(preempt_queue.flags, K_WORK_QUEUE_STARTED);
 
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-		const char *tn = k_thread_name_get(&preempt_queue.thread);
+		const char *tn = k_thread_name_get(preempt_queue.thread_id);
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);
@@ -264,7 +264,7 @@ static void test_queue_start(void)
 	zassert_equal(invalid_test_queue.flags, K_WORK_QUEUE_STARTED);
 
 	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-		const char *tn = k_thread_name_get(&invalid_test_queue.thread);
+		const char *tn = k_thread_name_get(invalid_test_queue.thread_id);
 
 		zassert_true(tn != cfg.name);
 		zassert_true(tn != NULL);

@@ -955,8 +955,10 @@ int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, stop, queue, timeout);
 
-	if (z_is_thread_essential(&queue->thread)) {
-		return -ENOTSUP;
+	if (queue->thread_id) {
+		if (z_is_thread_essential(queue->thread_id)) {
+			return -ENOTSUP;
+		}
 	}
 
 	k_spinlock_key_t key = k_spin_lock(&lock);

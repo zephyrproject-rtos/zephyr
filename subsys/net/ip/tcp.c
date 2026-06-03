@@ -4940,6 +4940,6 @@ void net_tcp_init(void)
 		tcp_max_timeout_ms += tcp_max_timeout_ms >> 1;
 	}
 
-	k_thread_name_set(&tcp_work_q.thread, "tcp_work");
-	NET_DBG("Workq started. Thread ID: %p", &tcp_work_q.thread);
+	k_thread_name_set(tcp_work_q.thread_id, "tcp_work");
+	NET_DBG("Workq started. Thread ID: %p", tcp_work_q.thread_id);
 }
