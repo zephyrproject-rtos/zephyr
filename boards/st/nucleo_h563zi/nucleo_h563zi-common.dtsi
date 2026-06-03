@@ -12,6 +12,10 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
+	chosen {
+		zephyr,system-timer = &lptim4;
+	};
+
 	leds: leds {
 		compatible = "gpio-leds";
 
@@ -299,7 +303,7 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
-stm32_lp_tick_source: &lptim4 {
+&lptim4 {
 	clocks = <&rcc STM32_CLOCK(APB3, 13)>,
 		 <&rcc STM32_SRC_LSI LPTIM4_SEL(4)>;
 	status = "okay";
