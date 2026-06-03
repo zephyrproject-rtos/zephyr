@@ -81,17 +81,22 @@ static struct k_spinlock xtensa_mpu_lock;
  */
 static uint32_t find_memory_type(const uintptr_t start, const uintptr_t end)
 {
+	uint16_t type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
+
+	/* Need to go through the whole list as it is possible that later
+	 * entry in the array overrides previous entries, similar to how
+	 * we process the array at boot.
+	 */
 	for (unsigned int i = 0; i < xtensa_mpu_mem_type_ranges_num; i++) {
 		const struct xtensa_mpu_mem_type_region *region = &xtensa_mpu_mem_type_ranges[i];
 
 		if (IN_RANGE(start, region->start, region->end) &&
 		    IN_RANGE(end, region->start, region->end)) {
-			return (uint32_t)region->memory_type;
+			type = (uint32_t)region->memory_type;
 		}
 	}
 
-	__ASSERT(false, "Cannot find memory type for region 0x%lx - 0x%lx", start, end);
-	return CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
+	return type;
 }
 
 /**
