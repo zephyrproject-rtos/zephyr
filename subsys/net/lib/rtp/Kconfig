@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RTP
+	bool "Real-Time transport Protocol (RTP) [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	depends on NET_UDP
+	help
+	  Real-time Transport Protocol implementation based on RFC 3550
+
+if RTP
+
+module = RTP
+module-dep = NET_LOG
+module-str = Log level for RTP
+module-help = Enable logs for the RTP stack.
+source "subsys/net/Kconfig.template.log_config.net"
+
+config RTP_MAX_CSRC_COUNT
+	int "RTP Max CSRC Count"
+	default 0
+	range 0 15
+	help
+	  Set the maximum number of CSRC identifiers in an RTP header
+
+config RTP_MCAST_TTL
+	int "RTP Mcast TTL"
+	default 127
+	range 0 255
+	help
+	  Set the time-to-live for multicast RTP packets. For IPv6 sessions, this value
+	  is used as the multicast hop limit.
+
+config RTP_TRANSPORT_SOCKET
+	bool "RTP Transport Socket"
+	default y
+	select NET_SOCKETS
+	select NET_SOCKETS_SERVICE
+	help
+	  Select the socket transport implementation for RTP. This is the default option.
+
+if RTP_TRANSPORT_SOCKET
+
+config RTP_TRANSPORT_SOCKET_MAX_SESSIONS
+	int "RTP Transport Socket Max Sessions"
+	default 4
+	help
+	  Number of concurrent sessions the socket transport supports.
+	  One RX socket fd is consumed per active session
+
+config RTP_TRANSPORT_SOCKET_BUF_SIZE
+	int "RTP Transport Socket Buf Size"
+	default 1500
+	help
+	  Size of the send and receive socket buffer
+
+config RTP_TRANSPORT_SOCKET_INIT_PRIO
+	int "RTP Transport Socket Init Prio"
+	default 70
+	help
+	  Initialisation priority of the rtp socket stack. During initialisation, all socket file
+	  descriptors are set to -1.
+
+endif # RTP_TRANSPORT_SOCKET
+
+endif # RTP
