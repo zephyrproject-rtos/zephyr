@@ -47,6 +47,7 @@ struct psi5_frame {
 	/** Type of PSI5 frame */
 	enum psi5_frame_type type;
 
+	/** Frame payload. The valid member depends on @ref type. */
 	union {
 		/** Message data */
 		uint32_t data;
