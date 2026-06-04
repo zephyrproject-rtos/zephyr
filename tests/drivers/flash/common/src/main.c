@@ -479,10 +479,9 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
 		/* prepare for successful copy */
-		zassert_ok(flash_flatten(flash_dev, page_info.start_offset, page_info.size));
-		zassert_ok(flash_fill(flash_dev, 0xaa, page_info.start_offset, page_info.size));
-		zassert_ok(flash_flatten(flash_dev, page_info.start_offset + page_info.size,
-					 page_info.size));
+		zassert_ok(flash_flatten(src_dev, src_offset, (size_t)size));
+		zassert_ok(flash_fill(src_dev, 0xaa, src_offset, (size_t)size));
+		zassert_ok(flash_flatten(dst_dev, dst_offset, (size_t)size));
 	}
 
 	/* perform copy (if args are valid) */
