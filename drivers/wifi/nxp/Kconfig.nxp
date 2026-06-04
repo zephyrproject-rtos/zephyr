@@ -569,6 +569,7 @@ config NXP_WIFI_SCAN_WITH_RSSIFILTER
 config NXP_WIFI_MAX_AP_ENTRIES
 	int "Maximum scan entries"
 	range 1 30
+	default 5 if NXP_WIFI_SLIM
 	default 10
 	help
 	  This is the maximum number of entries in the
@@ -580,10 +581,10 @@ config NXP_WIFI_MAX_AP_ENTRIES
 	  only the highest signal strength APs in the list.
 
 config NXP_WIFI_SCAN_CHANNEL_GAP
-	int "Max scan channel gap"
-	default 1
+	bool "Scan channel gap enable"
+	default y if !NXP_WIFI_SLIM
 	help
-	  This option sets the max scan channel gap time between two scan commands.
+	  Enable scan channel gap.
 
 config NXP_WIFI_MAX_RESCAN_LIMIT
 	int "Max scan limit"
@@ -617,7 +618,7 @@ config NXP_WIFI_WMM_UAPSD
 
 config NXP_WIFI_ROAMING
 	bool "Wi-Fi Soft Roaming"
-	default y
+	default y if !NXP_WIFI_SLIM
 	select WIFI_NM_WPA_SUPPLICANT_ROAMING if WIFI_NM_WPA_SUPPLICANT
 	select WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING if WIFI_NM_WPA_SUPPLICANT
 	help
@@ -642,7 +643,7 @@ config NXP_WIFI_11V
 
 config NXP_WIFI_11R
 	bool "802.11R Support"
-	default y
+	default y if !NXP_WIFI_SLIM
 	depends on WIFI_NM_WPA_SUPPLICANT
 	help
 	  This option enables the use of 802.11r support.
@@ -707,7 +708,7 @@ config NXP_WIFI_SOFTAP_DHCP_SERVER
 
 config NXP_WIFI_UAP_STA_MAC_ADDR_FILTER
 	bool "Wi-Fi SoftAP clients allow/block list"
-	default y
+	default y if !NXP_WIFI_SLIM
 	help
 	  Allow/Block MAC addresses specified in the allowed list.
 
@@ -780,19 +781,19 @@ config NXP_WIFI_MULTI_BSSID_SUPPORT
 
 config NXP_WIFI_FRAG_THRESHOLD
 	bool "Set Fragment Threshold Support"
-	default y
+	default y if !NXP_WIFI_SLIM
 	help
 	  This option enables the set of fragment threshold support.
 
 config NXP_WIFI_FORCE_RTS
 	bool "Force RTS Support"
-	default y
+	default y if !NXP_WIFI_SLIM
 	help
 	  This option enables the set of force RTS support.
 
 config NXP_WIFI_TX_AMPDU_PROT_MODE
 	bool "TX AMPDU Protection Mode Support"
-	default y
+	default y if !NXP_WIFI_SLIM
 	help
 	  This option enables TX AMPDU protection mode support.
 
@@ -804,7 +805,7 @@ config NXP_WIFI_EXTERNAL_COEX_PTA
 
 config NXP_WIFI_TURBO_MODE
 	bool "Turbo Mode"
-	default y
+	default y if !NXP_WIFI_SLIM
 	depends on NXP_WIFI_WMM
 	depends on !NXP_88W8801
 	help
@@ -846,7 +847,7 @@ config NXP_WIFI_TX_PER_TRACK
 
 config NXP_WIFI_CSI
 	bool "CSI support"
-	default y
+	default y if !NXP_WIFI_SLIM
 	help
 	  This option enable/disable channel state information collection.
 
@@ -918,7 +919,7 @@ if NXP_RW610 || NXP_IW610
 
 config NXP_WIFI_NET_MONITOR
 	bool "Networking monitor"
-	default y
+	default y if !NXP_WIFI_SLIM
 	help
 	  This option is used to set/get network monitor configuration.
 
@@ -1113,7 +1114,7 @@ endif
 
 config NXP_WIFI_EU_CRYPTO
 	bool "Wi-Fi EU Crypto"
-	default y
+	default y if !NXP_WIFI_SLIM
 	depends on !NXP_88W8801
 	help
 	  This option enables Wi-Fi EU Crypto support in the Wi-Fi driver.
@@ -1186,6 +1187,18 @@ config NXP_WIFI_IND_OOB_RESET
 	  Add another Wi-Fi independent reset option by external GPIO.
 endif
 
+config NXP_WIFI_SLIM
+	bool "Wi-Fi SLIM feature"
+	help
+	  Enable SLIM feature for resource-constrained platforms. Disable
+	  some advanced Wi-Fi features to reduce memory and code size.
+	  When enabled, features with "default y" will be disabled by default.
+
+config NXP_WIFI_SLIM_DISABLE_DEBUG
+	bool "Wi-Fi SLIM disable debug logs"
+	help
+	  Disable Wi-Fi debug logs (error, warning) to reduce memory and code size.
+
 config NXP_WIFI_SMOKE_TESTS
 	bool "Smoke Tests"
 	select NET_SHELL
@@ -1253,7 +1266,7 @@ menu "Development and Debugging"
 
 config NXP_WIFI_ENABLE_ERROR_LOGS
 	bool "WiFi driver error logs control"
-	default y if WIFI_LOG_LEVEL_ERR || WIFI_LOG_LEVEL_DBG
+	default y if (WIFI_LOG_LEVEL_ERR || WIFI_LOG_LEVEL_DBG) && !NXP_WIFI_SLIM_DISABLE_DEBUG
 	help
 	  If you enable this, error messages will be printed in case of error
 	  conditions. This will increase the size of the image. It is strongly
@@ -1262,7 +1275,7 @@ config NXP_WIFI_ENABLE_ERROR_LOGS
 
 config NXP_WIFI_ENABLE_WARNING_LOGS
 	bool "WiFi driver warning logs control"
-	default y if WIFI_LOG_LEVEL_WRN || WIFI_LOG_LEVEL_DBG
+	default y if (WIFI_LOG_LEVEL_WRN || WIFI_LOG_LEVEL_DBG) && !NXP_WIFI_SLIM_DISABLE_DEBUG
 	help
 	  If you enable this, error messages will be printed in case of error
 	  conditions. This will increase the size of the image. It is strongly
