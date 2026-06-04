@@ -750,6 +750,12 @@ static void send_retry_backoff(void)
 	k_msleep(backoff_ms);
 }
 
+/*
+ * Positive retry sentinel: cannot collide with success (0) or an
+ * errno value propagated from the layers below.
+ */
+#define SEND_ATTEMPT_RETRY	1
+
 static int send_handle_attempt_result(const struct send_state *state,
 				      uint8_t attempt, int ret)
 {
@@ -774,7 +780,7 @@ static int send_handle_attempt_result(const struct send_state *state,
 		send_retry_backoff();
 	}
 
-	return -EAGAIN;
+	return SEND_ATTEMPT_RETRY;
 }
 
 static int send_one_attempt(struct lwan_ctx *ctx, struct send_state *state,
@@ -808,7 +814,7 @@ static int send_attempts(struct lwan_ctx *ctx, struct send_state *state)
 
 	for (uint8_t attempt = 0; attempt < state->tries; attempt++) {
 		ret = send_one_attempt(ctx, state, attempt);
-		if (ret != -EAGAIN) {
+		if (ret != SEND_ATTEMPT_RETRY) {
 			return ret;
 		}
 	}
