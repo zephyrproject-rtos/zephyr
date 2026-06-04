@@ -4,7 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
+
 / {
+	sdhci_ref_clk: sdhci-ref-clk {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(200)>;
+		#clock-cells = <0>;
+	};
+
 	soc: soc {
 		ocm: memory@fffc0000 {
 			compatible = "zephyr,memory-region";
@@ -283,6 +291,7 @@
 			compatible = "xlnx,versal-8.9a";
 			reg = <0xf1040000 0x10000>;
 			interrupts = <GIC_SPI 126 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&sdhci_ref_clk>;
 			status = "disabled";
 		};
 
@@ -290,6 +299,7 @@
 			compatible = "xlnx,versal-8.9a";
 			reg = <0xf1050000 0x10000>;
 			interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&sdhci_ref_clk>;
 			status = "disabled";
 		};
 	};
