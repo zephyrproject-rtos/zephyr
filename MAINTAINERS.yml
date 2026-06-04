@@ -4958,6 +4958,7 @@ RISCV arch:
     - maass-hamburg
     - lstnl
     - meijemac
+    - AFOliveira
   files:
     - arch/riscv/
     - boards/enjoydigital/litex_vexriscv/
