@@ -392,18 +392,20 @@ bool k_queue_remove(struct k_queue *queue, void *data)
 bool k_queue_unique_append(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, unique_append, queue);
+	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 
 	sys_sfnode_t *test;
 
 	SYS_SFLIST_FOR_EACH_NODE(&queue->data_q, test) {
 		if (test == (sys_sfnode_t *) data) {
+			k_spin_unlock(&queue->lock, key);
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, unique_append, queue, false);
 
 			return false;
 		}
 	}
 
-	k_queue_append(queue, data);
+	(void)queue_insert(queue, NULL, data, false, true, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, unique_append, queue, true);
 
