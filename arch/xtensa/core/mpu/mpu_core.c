@@ -255,16 +255,15 @@ static void sort_entries(struct xtensa_mpu_entry *entries, uint8_t first_enabled
 static bool consolidate_entries(struct xtensa_mpu_entry *entries, uint8_t *first_enabled_idx)
 {
 	uint8_t new_first = *first_enabled_idx;
-	uint8_t idx_0 = new_first;
-	uint8_t idx_1 = new_first + 1;
-	bool to_consolidate = false;
+	uint8_t idx_0 = *first_enabled_idx;
+	uint8_t idx_1 = idx_0 + 1;
+	bool has_consolidated = false;
 
 	/* For each a pair of entries... */
 	while (idx_1 < XTENSA_MPU_NUM_ENTRIES) {
 		struct xtensa_mpu_entry *entry_0 = &entries[idx_0];
 		struct xtensa_mpu_entry *entry_1 = &entries[idx_1];
-		bool mark_disable_0 = false;
-		bool mark_disable_1 = false;
+		struct xtensa_mpu_entry *entry_to_be_removed;
 
 		if (xtensa_mpu_entries_has_same_attributes(entry_0, entry_1)) {
 			/*
@@ -272,86 +271,56 @@ static bool consolidate_entries(struct xtensa_mpu_entry *entries, uint8_t *first
 			 * they can be consolidated into one by removing the higher indexed
 			 * one.
 			 */
-			mark_disable_1 = true;
+			entry_to_be_removed = entry_1;
 		} else if (xtensa_mpu_entries_has_same_address(entry_0, entry_1)) {
 			/*
 			 * If both entries have the same address, the higher index
 			 * one always override the lower one. So remove the lower indexed
 			 * one.
 			 */
-			mark_disable_0 = true;
+			entry_to_be_removed = entry_0;
+		} else {
+			/* Nothing to remove, So move on to next pair. */
+			idx_0 = idx_1;
+			idx_1++;
+
+			continue;
 		}
 
 		/*
-		 * Marking an entry as disabled here so it can be removed later.
-		 *
-		 * The MBZ field of the AS register is re-purposed to indicate that
-		 * this is an entry to be removed.
+		 * We now have an entry to remove.
 		 */
-		if (mark_disable_1) {
-			/* Remove the higher indexed entry. */
-			to_consolidate = true;
 
-			entry_1->as.p.mbz = 1U;
+		/* Zero out everything so it will bubble up in the map. */
+		entry_to_be_removed->as.raw = 0;
+		entry_to_be_removed->at.raw = 0;
 
-			/* Skip ahead for next comparison. */
-			idx_1++;
-			continue;
-		} else if (mark_disable_0) {
-			/* Remove the lower indexed entry. */
-			to_consolidate = true;
+		/* No access at all for both kernel and user modes. */
+		entry_to_be_removed->at.p.access_rights = XTENSA_MPU_ACCESS_P_NA_U_NA;
 
-			entry_0->as.p.mbz = 1U;
-		}
+		/* Use default memory type for disabled entries. */
+		entry_to_be_removed->at.p.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
 
-		idx_0 = idx_1;
-		idx_1++;
+		sort_entries(entries, new_first);
+
+		/* One fewer enabled entry. */
+		new_first++;
+
+		/* Restart from first enabled entry as there may be new opportunity to
+		 * further compact the map.
+		 */
+		idx_0 = new_first;
+		idx_1 = idx_0 + 1;
+
+		has_consolidated = true;
 	}
 
-	if (to_consolidate) {
-		uint8_t read_idx = XTENSA_MPU_NUM_ENTRIES - 1;
-		uint8_t write_idx = XTENSA_MPU_NUM_ENTRIES;
-
-		/* Go through the map from the end and copy enabled entries in place. */
-		while (read_idx >= new_first) {
-			struct xtensa_mpu_entry *entry_rd = &entries[read_idx];
-
-			if (entry_rd->as.p.mbz != 1U) {
-				struct xtensa_mpu_entry *entry_wr;
-
-				write_idx--;
-				entry_wr = &entries[write_idx];
-
-				*entry_wr = *entry_rd;
-				entry_wr->at.p.segment = write_idx;
-			}
-
-			read_idx--;
-		}
-
-		/* New first enabled entry is where the last written entry is. */
-		new_first = write_idx;
-
-		for (idx_0 = 0; idx_0 < new_first; idx_0++) {
-			struct xtensa_mpu_entry *e = &entries[idx_0];
-
-			/* Shortcut to zero out address and enabled bit. */
-			e->as.raw = 0U;
-
-			/* Segment value must correspond to the index. */
-			e->at.p.segment = idx_0;
-
-			/* No access at all for both kernel and user modes. */
-			e->at.p.access_rights =	XTENSA_MPU_ACCESS_P_NA_U_NA;
-
-			/* Use default memory type for disabled entries. */
-			e->at.p.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
-		}
-
+	/* Update the newly first enabled entry index if we have consolidated entries. */
+	if (has_consolidated) {
 		*first_enabled_idx = new_first;
 	}
 
-	return to_consolidate;
+	return has_consolidated;
 }
 
 /**
