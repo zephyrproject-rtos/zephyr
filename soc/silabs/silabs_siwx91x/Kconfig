@@ -100,6 +100,7 @@ config SIWX91X_FIRMWARE_UPGRADE_SHELL
 	bool "Shell command for firmware upgrade"
 	depends on SHELL
 	depends on NET_TCP
+	select SILABS_SHELL
 	select HTTP_CLIENT
 	select DNS_RESOLVER
 	select REBOOT
