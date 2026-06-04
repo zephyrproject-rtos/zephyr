@@ -168,6 +168,14 @@ ${MODULE_NAME_UPPER} is a restricted name for Zephyr modules as it is used for \
   endforeach()
 else()
 
+  message(WARNING
+    "west is not available and ZEPHYR_MODULES is not set.\n"
+    "No Zephyr modules will be loaded. If your project depends on modules "
+    "(e.g. hal_nordic, hostap, mbedtls), the build will likely fail or "
+    "produce a silently broken configuration. "
+    "Check that west is installed and 'west topdir' succeeds."
+  )
+
   file(WRITE ${kconfig_modules_file}
     "# No west and no Zephyr modules\n"
     )
