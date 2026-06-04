@@ -11,7 +11,7 @@
 #include <zephyr/fs/fs.h>
 #include <ff.h>
 
-#ifdef CONFIG_DISK_DRIVER_RAM
+#if defined(CONFIG_DISK_DRIVER_RAM) || defined(CONFIG_DISK_DRIVER_MEMC_RAM)
 #define DISK_NAME "RAM"
 #elif defined(CONFIG_DISK_DRIVER_FLASH)
 #define DISK_NAME DT_PROP(DT_NODELABEL(test_disk), disk_name)
