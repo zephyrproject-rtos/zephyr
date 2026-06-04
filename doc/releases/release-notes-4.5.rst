@@ -131,6 +131,12 @@ New APIs and options
     * :c:func:`bt_ascs_register`
     * :c:func:`bt_ascs_unregister`
 
+  * Mesh
+
+    * :c:struct:`bt_mesh_lpn_timing`
+    * :c:func:`bt_mesh_stat_lpn_timing_get`
+    * :c:func:`bt_mesh_stat_lpn_timing_reset`
+
 * Devicetree
 
   * :c:macro:`DT_IRQN_BY_NAME`
