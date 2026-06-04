@@ -51,12 +51,10 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - bl54l15_dvk/nrf54l15/cpuapp
-      - bl54l15u_dvk/nrf54l15/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - bl54l15_dvk/nrf54l15/cpuapp
-      - bl54l15u_dvk/nrf54l15/cpuapp
     extra_args:
       - hello_world_SNIPPET=nordic-flpr
   sample.sysbuild.hello_world.nrf54h20dk_cpuapp_cpuflpr:
