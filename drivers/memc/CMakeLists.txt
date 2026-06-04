@@ -15,6 +15,7 @@ zephyr_library_include_directories_ifdef(CONFIG_MEMC_MSPI ${ZEPHYR_BASE}/drivers
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_MEMC_BFLB_BL61X memc_bflb_bl61x.c)
+zephyr_library_sources_ifdef(CONFIG_MEMC_BFLB_BL808_PSRAM_UHS memc_bflb_bl808_psram_uhs.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_HIFIVE_UNMATCHED_DRAM sifive_ddr.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_MAX32_HPB memc_max32_hpb.c)
 zephyr_library_sources_ifdef(CONFIG_MEMC_MCUX_FLEXSPI memc_mcux_flexspi.c)
