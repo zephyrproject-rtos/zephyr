@@ -2458,8 +2458,6 @@ __syscall void *k_queue_get(struct k_queue *queue, k_timeout_t timeout);
  * data item is reserved for the kernel's use. Removing elements from k_queue
  * rely on sys_slist_find_and_remove which is not a constant time operation.
  *
- * @note @a timeout must be set to K_NO_WAIT if called from ISR.
- *
  * @isr_ok
  *
  * @param queue Address of the queue.
