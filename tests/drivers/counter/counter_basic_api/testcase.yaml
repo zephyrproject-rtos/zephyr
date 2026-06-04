@@ -9,6 +9,7 @@ tests:
       - nucleo_f302r8
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
     timeout: 600
   drivers.counter.basic_api.nrf_zli:
     tags:
@@ -109,10 +110,12 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
     timeout: 600
     extra_args:
       - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/microchip/sam_e54_xpro_tc0.overlay"
       - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE=boards/microchip/pic32cx_sg41_cult_tc0.overlay"
+      - FILE_SUFFIX=tc0
   drivers.counter.basic_api.mchp_rtc:
     tags:
       - drivers
