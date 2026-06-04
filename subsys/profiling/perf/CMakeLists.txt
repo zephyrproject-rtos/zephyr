@@ -2,7 +2,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-add_subdirectory(backends)
+if(CONFIG_PROFILING_PERF)
+  add_subdirectory(backends)
+endif()
 
 zephyr_library()
 
