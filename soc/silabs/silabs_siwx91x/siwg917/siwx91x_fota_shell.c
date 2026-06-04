@@ -330,11 +330,6 @@ static int cmd_fota(const struct shell *sh, size_t argc, char *argv[])
 	return ret;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(silabs_cmds,
-	SHELL_CMD_ARG(fota, NULL,
-		      SHELL_HELP("Upgrade Firmware Over-The-Air via HTTP(S)", "<URL>"),
-		      cmd_fota, 2, 0),
-	SHELL_SUBCMD_SET_END
-);
-
-SHELL_CMD_REGISTER(silabs, &silabs_cmds, "Silicon Labs specific commands", NULL);
+SHELL_SUBCMD_ADD((silabs), fota, NULL,
+		 SHELL_HELP("Upgrade Firmware Over-The-Air via HTTP(S)", "<URL>"),
+		 cmd_fota, 2, 0);
