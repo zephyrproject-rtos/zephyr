@@ -21,9 +21,6 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_24
 endchoice
 
-config LV_Z_COLOR_24_BGR_TO_RGB
-	default n
-
 config LV_Z_FULL_REFRESH
 	default y
 
