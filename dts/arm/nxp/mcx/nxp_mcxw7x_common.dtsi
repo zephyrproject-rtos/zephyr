@@ -578,6 +578,9 @@
 	crc: crc@23000 {
 		compatible = "nxp,crc";
 		reg = <0x23000 0x1000>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x8c, MCXW_CLK_IP_MUX_NONE,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
 	};
 };
