@@ -138,11 +138,26 @@ void lvgl_rounder_cb_mono(lv_event_t *e)
 		area->x1 = 0;
 		area->x2 = data->cap.x_resolution - 1;
 	} else {
-		area->x1 &= ~0x7;
-		area->x2 |= 0x7;
 		if (data->cap.screen_info & SCREEN_INFO_MONO_VTILED) {
 			area->y1 &= ~0x7;
 			area->y2 |= 0x7;
+#if CONFIG_LV_Z_AREA_X_ALIGNMENT_WIDTH != 1
+			__ASSERT(POPCOUNT(CONFIG_LV_Z_AREA_X_ALIGNMENT_WIDTH) == 1,
+				 "Invalid X alignment width");
+
+			area->x1 &= ~(CONFIG_LV_Z_AREA_X_ALIGNMENT_WIDTH - 1);
+			area->x2 |= (CONFIG_LV_Z_AREA_X_ALIGNMENT_WIDTH - 1);
+#endif
+		} else {
+			area->x1 &= ~0x7;
+			area->x2 |= 0x7;
+#if CONFIG_LV_Z_AREA_Y_ALIGNMENT_WIDTH != 1
+			__ASSERT(POPCOUNT(CONFIG_LV_Z_AREA_Y_ALIGNMENT_WIDTH) == 1,
+				 "Invalid Y alignment width");
+
+			area->y1 &= ~(CONFIG_LV_Z_AREA_Y_ALIGNMENT_WIDTH - 1);
+			area->y2 |= (CONFIG_LV_Z_AREA_Y_ALIGNMENT_WIDTH - 1);
+#endif
 		}
 	}
 }
