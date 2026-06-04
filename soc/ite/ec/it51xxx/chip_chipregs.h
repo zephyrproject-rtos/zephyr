@@ -209,6 +209,8 @@ struct gpio_it51xxx_regs {
 /* 0xF0: General Control 1 */
 #define IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN BIT(2)
 #define IT51XXX_GPIO_U1CTRL_SIN0_SOUT0_EN BIT(0)
+/* 0xF7: General Control 8 */
+#define IT51XXX_GPIO_PWRSW2EN1            BIT(4)
 /* 0xE6: General Control 21 */
 #define IT51XXX_GPIO_GPH1VS               BIT(1)
 #define IT51XXX_GPIO_GPH2VS               BIT(0)

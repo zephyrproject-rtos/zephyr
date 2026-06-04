@@ -164,6 +164,9 @@ void soc_prep_hook(void)
 	gpio_regs->GPIO_GCR1 |= IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN;
 #endif /* DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart2)) */
 
+	/* disable pwrsw wdt 2 by default */
+	gpio_regs->GPIO_GCR8 &= ~IT51XXX_GPIO_PWRSW2EN1;
+
 	/*
 	 * Disable this feature that can detect pre-define hardware target A, B, C through
 	 * I2C0, I2C1, I2C2 respectively. This is for debugging use, so it can be disabled
