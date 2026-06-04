@@ -19,6 +19,12 @@ tests:
     integration_platforms:
       - apollo3p_evb
       - apollo510_evb
+  sample.drivers.memc.nrf_mspi:
+    tags: mspi
+    filter: dt_alias_exists("psram0")
+    build_only: true
+    integration_platforms:
+      - nrf7120dk/nrf7120/cpuapp
   sample.drivers.memc.stm32_mspi:
     tags: mspi
     filter: dt_alias_exists("psram0")

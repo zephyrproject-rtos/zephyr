@@ -1,19 +1,23 @@
 .. zephyr:code-sample:: memc
    :name: Memory controller (MEMC) driver
 
-   Access memory-mapped external RAM
+   Access external RAM via memory-mapped or MEMC API
 
 Overview
 ********
 
-This sample can be used with any memory controller driver that
-memory maps external RAM. It is intended to demonstrate
-the ability to read and write from the memory mapped region.
+This sample can be used with any memory controller driver that manages
+external RAM. It demonstrates reading and writing external memory either
+through a memory-mapped (XIP) region or through the MEMC driver API
+for non-XIP devices.
 
-Note that the chosen region (set by ``sram-ext`` dt alias node) should not
-overlap with memory used for XIP or SRAM by the application, as the sample
-would overwrite this data
+For XIP devices, the chosen region (set by the ``sram-ext`` or ``psram0``
+devicetree alias) must not overlap with memory used for code execution or
+SRAM by the application, as the sample overwrites the entire region.
 
+For non-XIP devices, the MEMC driver must implement the read and write
+operations defined in ``<zephyr/drivers/memc.h>``. The driver handles
+bus transactions, locking, and device configuration internally.
 
 Building and Running
 ********************
