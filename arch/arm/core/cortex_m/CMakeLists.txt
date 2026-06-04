@@ -38,6 +38,9 @@ zephyr_library_sources_ifndef(CONFIG_USE_SWITCH exc_exit.c thread_abort.c swap_h
 
 zephyr_library_sources_ifndef(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER irq_init.c)
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.c)
+if(CONFIG_PROFILING_PERF AND CONFIG_PROFILING_PERF_BACKEND_ARM_CORTEX_M)
+  zephyr_library_sources(perf_sys_clock_isr.S)
+endif()
 zephyr_library_sources_ifdef(CONFIG_DEBUG_COREDUMP coredump.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE __aeabi_read_tp.S)
 zephyr_library_sources_ifdef(CONFIG_SEMIHOST semihost.c)
