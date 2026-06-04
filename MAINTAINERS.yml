@@ -1641,6 +1641,14 @@ Documentation Infrastructure:
     - include/zephyr/drivers/clock_control/
     - doc/hardware/peripherals/clock_control.rst
     - samples/drivers/clock_control_*/
+  file-groups:
+    - name: Clock control driver
+      defer-to-other-areas: true
+      files:
+        - drivers/clock_control/clock_control_*.c
+        - drivers/clock_control/Kconfig.*
+        - dts/bindings/clock/
+        - include/zephyr/dt-bindings/clock/
   labels:
     - "area: Clock control"
   tests:
