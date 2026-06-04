@@ -86,7 +86,7 @@ if(WEST_VERSION)
     execute_process(
       COMMAND ${WEST} topdir
       OUTPUT_VARIABLE WEST_TOPDIR
-      ERROR_QUIET
+      ERROR_VARIABLE west_topdir_err
       RESULT_VARIABLE west_topdir_result
       OUTPUT_STRIP_TRAILING_WHITESPACE
       WORKING_DIRECTORY ${ZEPHYR_BASE}
@@ -95,6 +95,16 @@ if(WEST_VERSION)
     if(west_topdir_result)
       # west topdir is undefined.
       # That's fine; west is optional, so could be custom Zephyr project.
+      # Print a warning so the user knows west was found but is not functional,
+      # which can cause cryptic Kconfig failures (e.g. 'depends on 0') if the
+      # project relies on west modules.
+      message(WARNING
+        "'west topdir' failed even though west ${WEST_VERSION} was found.\n"
+        "Zephyr modules will not be loaded — this will likely cause build errors.\n"
+        "Hint: a broken west installation (e.g. a missing dependency such as "
+        "colorama) can cause this. Run 'west topdir' manually to diagnose.\n"
+        "'west topdir' error output:\n${west_topdir_err}"
+      )
       set(WEST WEST-NOTFOUND CACHE INTERNAL "West")
     endif()
   endif()
