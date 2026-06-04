@@ -29,3 +29,11 @@
 &loguart {
 	status = "okay";
 };
+
+&wifi0 {
+	status = "okay";
+};
+
+&wifi1 {
+	status = "okay";
+};
