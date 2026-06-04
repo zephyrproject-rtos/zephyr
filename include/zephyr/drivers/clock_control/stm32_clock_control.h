@@ -7,8 +7,25 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Clock control definitions for STMicroelectronics STM32 devices.
+ *
+ * The symbols in this header are Devicetree-derived clock-configuration internals used by the
+ * STM32 clock driver; they are not part of the public application API.
+ * @ingroup clock_control_stm32
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_
+
+/**
+ * @defgroup clock_control_stm32 STMicroelectronics STM32
+ * @ingroup clock_control_interface_ext
+ * @{
+ */
+
 /** @cond INTERNAL_HIDDEN */
 
 #include <zephyr/drivers/clock_control.h>
@@ -963,4 +980,7 @@ int stm32wb0_register_lsi_update_callback(lsi_update_cb_t cb);
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 
 /** @endcond */
+
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_STM32_CLOCK_CONTROL_H_ */
