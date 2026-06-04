@@ -9,7 +9,7 @@ menuconfig ETH_STM32_HAL
 	default y
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select USE_STM32_HAL_ETH
-	select NOCACHE_MEMORY if (SOC_SERIES_STM32H7X && CPU_CORTEX_M7) || SOC_SERIES_STM32N6X
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select HWINFO
 	select PINCTRL
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET && !SOC_SERIES_STM32H5X
@@ -101,6 +101,20 @@ config ETH_STM32_HAL_TX_ASYNC
 	help
 	  Enable TX transmission asynchronous mode to enhance throughput
 	  performances.
+
+config ETH_STM32_HAL_RX_DESC_COUNT
+	int "Number of RX DMA descriptors"
+	depends on ETH_STM32_HAL_API_V2 && SOC_SERIES_STM32H5X
+	default 8 if PTP_CLOCK_STM32_HAL
+	default 4
+	range 4 64
+	help
+	  Number of Ethernet RX DMA descriptors used by the STM32H5 HAL
+	  Ethernet driver. This setting globally overrides STM32Cube's
+	  ETH_RX_DESC_CNT default for the complete build so the Zephyr driver and
+	  STM32Cube HAL use the same descriptor count. Hardware RX timestamping can
+	  use an additional context descriptor after the packet descriptor, so PTP
+	  configurations need a deeper RX descriptor ring than the STM32Cube default.
 
 if ETH_STM32_HAL2_API
 

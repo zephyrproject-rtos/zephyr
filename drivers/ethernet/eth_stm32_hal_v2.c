@@ -37,6 +37,12 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) <= 1,
 	     "Multiple Ethernet instances are not supported on this platform");
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_ethernet)
+#define STM32_ETH_RX_DESC_LIST(heth) ((heth)->RxDescList[(heth)->RxOpCH])
+#else
+#define STM32_ETH_RX_DESC_LIST(heth) ((heth)->RxDescList)
+#endif
+
 #ifdef ETH_STM32_HAL_CB_HAS_HETH
 #define ETH_STM32_HAL_GET_CB_DEVDATA(_heth) \
 	CONTAINER_OF(_heth, struct eth_stm32_hal_dev_data, heth)
@@ -431,9 +437,21 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	struct net_ptp_time timestamp;
 	ETH_TimeStampTypeDef ts_registers;
+	bool timestamp_valid = false;
+
 	/* Default to invalid value. */
 	timestamp.second = UINT64_MAX;
 	timestamp.nanosecond = UINT32_MAX;
+	ts_registers.TimeStampHigh = UINT32_MAX;
+	ts_registers.TimeStampLow = UINT32_MAX;
+
+	/* HAL_ETH_PTP_GetRxTimestamp() returns a cached timestamp without
+	 * indicating whether the current packet actually refreshed it. Poison the
+	 * cache before HAL_ETH_ReadData() so a missing timestamp is not mistaken
+	 * for a stale, valid hardware timestamp.
+	 */
+	STM32_ETH_RX_DESC_LIST(heth).TimeStamp.TimeStampHigh = UINT32_MAX;
+	STM32_ETH_RX_DESC_LIST(heth).TimeStamp.TimeStampLow = UINT32_MAX;
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
 	if (HAL_ETH_ReadData(heth, &appbuf) != HAL_OK) {
@@ -448,9 +466,11 @@ struct net_pkt *eth_stm32_rx(const struct device *dev)
 	}
 
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
-	if (HAL_ETH_PTP_GetRxTimestamp(heth, &ts_registers) == HAL_OK) {
+	if (HAL_ETH_PTP_GetRxTimestamp(heth, &ts_registers) == HAL_OK &&
+	    (ts_registers.TimeStampHigh != UINT32_MAX || ts_registers.TimeStampLow != UINT32_MAX)) {
 		timestamp.second = ts_registers.TimeStampHigh;
 		timestamp.nanosecond = ts_registers.TimeStampLow;
+		timestamp_valid = true;
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
@@ -487,7 +507,7 @@ release_desc:
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	pkt->timestamp.second = timestamp.second;
 	pkt->timestamp.nanosecond = timestamp.nanosecond;
-	if (timestamp.second != UINT64_MAX) {
+	if (timestamp_valid) {
 		net_pkt_set_rx_timestamping(pkt, true);
 	}
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
