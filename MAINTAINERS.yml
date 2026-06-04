@@ -89,6 +89,26 @@
 #           files-regex-exclude:
 #             - <regex pattern>
 #             - <regex pattern>
+#           defer-to-other-areas: true
+#
+#         defer-to-other-areas (optional, default false):
+#             When set to true on a file group, signals that the files in
+#             this group are not strictly maintained by this area alone.
+#             If another area also covers the same files without this flag,
+#             that other area's maintainer takes precedence as the PR
+#             assignee, and this area's maintainers are added as reviewers
+#             instead.  When no other area covers the files, this area is
+#             used for assignment as normal.
+#
+#             Typical use case: a subsystem area (e.g. Clock Control) owns
+#             generic driver infrastructure under drivers/clock_control/,
+#             but a platform area (e.g. a Nordic SoC area) also covers the
+#             platform-specific files in that directory.  The subsystem
+#             maintainer can add those platform-specific files to a
+#             file-group with defer-to-other-areas: true so that the
+#             platform maintainer becomes the assignee for PRs touching
+#             those files, while the subsystem maintainer is still
+#             notified as a reviewer.
 #
 #     description: >-
 #         Plain-English description. Describe what the system is about, from an

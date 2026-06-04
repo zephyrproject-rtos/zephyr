@@ -108,26 +108,41 @@ Assignee selection
 Assignees are selected from area_counter (areas sorted by descending file
 weight) using the following priority rules:
 
-  1. If exactly one area is matched and it is a meta-area (Documentation,
-     Samples, Tests, Release Notes, Release), that area's maintainers are
-     assigned directly.  Meta-areas are not considered in mixed PRs.
-  2. Areas with a weight of 0 or no maintainers are skipped.
-  3. If the PR author is the area's only maintainer, the area is skipped
+  1. Areas with a weight of 0 or no maintainers are skipped.
+  2. If the PR author is the area's only maintainer, the area is skipped
      (to avoid self-assignment).  If the author is one of several maintainers,
      they are excluded from the candidate list and the remaining maintainers
      are used.
-  4. Non-platform areas (no "Platform" in the area name) take highest
+  3. Non-platform areas (no "Platform" in the area name) take highest
      priority: the first such area's maintainers are inserted at the front
      of the ranked list, and the search stops.
-  5. Platform areas (drivers, boards) are appended as lower-priority
+  4. Platform areas (drivers, boards) are appended as lower-priority
      fallbacks.
+  5. Meta-areas (Documentation, Samples, Tests, Release Notes, Release)
+     are skipped in mixed PRs.
 
 After iterating all areas, the first entry in the ranked list is chosen.
 If the ranking process yielded nothing (e.g. all areas had the author as sole
 maintainer), the maintainer with the highest cumulative file-weight score is
 used as a last resort.
 
-Assignees are only set when the PR currently has no assignee.
+Deferred file-groups
+--------------------
+A file-group in MAINTAINERS.yml may carry ``defer-to-other-areas: true``.
+When a changed file is matched by both a deferred file-group area **and** a
+non-deferred area, the deferred area's maintainers are added to the reviewer
+request instead of being considered for the assignee role.  Only the
+non-deferred area's maintainers are candidates for assignment.
+
+If a file is matched *only* by deferred file-groups and no other area also
+claims it, the deferral has no effect: the area is used normally for
+both assignment and review.
+
+Typical use-case: the Clock Control subsystem marks platform-specific files
+(e.g. ``drivers/clock_control/nrf_*.c``) in a deferred file-group.  A Nordic
+platform area also lists those files without the defer flag.  When a PR
+touches those files the platform maintainer is assigned and the clock-control
+maintainer is added as a reviewer.
 
 Manifest / MAINTAINERS.yml change handling
 -------------------------------------------
@@ -680,6 +695,7 @@ def process_pr(gh, args, maintainer_file, number: int):
     found_maintainers = defaultdict(int)
     collab_per_path = set()
     additional_reviews = set()
+    deferred_reviewers = set()
 
     changed_files = list(pr.get_files())
     num_files = len(changed_files)
@@ -741,6 +757,24 @@ def process_pr(gh, args, maintainer_file, number: int):
         if not areas:
             continue
 
+        # Handle deferred file-groups: when a file is matched by both a
+        # deferred area (file-group with defer-to-other-areas: true) and a
+        # non-deferred area, the deferred area's maintainers become reviewers
+        # only and do not count toward assignee weighting for this file.
+        _deferred = [a for a in areas if a.is_deferred_for_path(filename)]
+        _non_deferred = [a for a in areas if not a.is_deferred_for_path(filename)]
+        if _deferred and _non_deferred:
+            for _area in _deferred:
+                deferred_reviewers.update(_area.maintainers)
+                logger.debug(
+                    "  area '%s' defers to other areas for '%s'; "
+                    "maintainers %s added as reviewers only",
+                    _area.name,
+                    filename,
+                    _area.maintainers,
+                )
+            areas = _non_deferred
+
         # Sort so that Platform (driver/board) areas are processed first.  This
         # sets is_instance=True early, preventing the same file from being
         # counted again for the corresponding subsystem area.
@@ -784,6 +818,7 @@ def process_pr(gh, args, maintainer_file, number: int):
         collab += maintainer_file.areas[area.name].collaborators
     collab += list(collab_per_path)
     collab += list(additional_reviews)
+    collab += sorted(deferred_reviewers)
     # Deduplicate while preserving insertion order.
     collab = list(dict.fromkeys(collab))
     logger.debug("Reviewer candidates: %s", collab)
