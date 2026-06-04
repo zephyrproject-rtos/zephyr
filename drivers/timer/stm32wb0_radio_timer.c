@@ -26,8 +26,33 @@ LOG_MODULE_REGISTER(radio_timer_driver);
 #define MULT64_THR_FREQ		806
 #define TIMER_WRAPPING_MARGIN	4096
 #define MAX_ALLOWED_DELAY	(UINT32_MAX - TIMER_WRAPPING_MARGIN)
-#define MIN_ALLOWED_DELAY	32
-#define TIMER_ROUNDING		8
+
+/* The CPU wakeup comparator only considers the 28 most significant bits of
+ * the compare value: matches happen on whole slow-clock periods (16 MTU).
+ * Deadlines are biased up by one slow-clock period so this truncation can
+ * never make the interrupt land before the requested tick boundary.
+ */
+#define WAKEUP_COMPARE_UNIT	16
+
+/* Never program a compare value closer than this to the live counter. The
+ * wakeup block runs in the slow-clock domain, so a compare value the counter
+ * passes before the write has taken effect is not matched until the counter
+ * fully wraps (2^32 MTU, about 2 hours 16 minutes at 32768 Hz).
+ */
+#define MIN_ALLOWED_DELAY	(4 * WAKEUP_COMPARE_UNIT)
+
+/* System time units (STU) per kernel tick. STU is the domain of
+ * HAL_RADIO_TIMER_GetCurrentSysTime() and announced_cycles.
+ */
+#define CYC_PER_TICK	(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
+/* Largest tick count we will program. Bounded by INT32_MAX (ticks and
+ * sys_clock_announce() are int32_t) so the value stays a positive int32_t, and
+ * the resulting STU span (MAX_TICKS * CYC_PER_TICK) still fits the 32-bit input
+ * of blue_unit_conversion(). The MTU result is additionally clamped to
+ * MAX_ALLOWED_DELAY below.
+ */
+#define MAX_TICKS	(INT32_MAX / CYC_PER_TICK)
 
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(clk_lsi), disabled),
 	     "LSI is not supported yet");
@@ -42,6 +67,8 @@ uint32_t blue_unit_conversion(uint32_t time, uint32_t period_freq, uint32_t thr)
 
 static uint64_t announced_cycles;
 static uint32_t last_cpu_wakeup_time;
+/* Ticks observed by the last sys_clock_elapsed(); reset to 0 at announce. */
+static uint32_t last_elapsed;
 
 static void radio_timer_error_isr(void *args)
 {
@@ -77,9 +104,16 @@ static void radio_timer_cpu_wkup_isr(void *args)
 	LL_RADIO_TIMER_IsActiveFlag_CPUWakeup(WAKEUP);
 
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* Read the current counter (not the scheduled wakeup time) and
+		 * floor to whole ticks, so any latency between the wakeup event
+		 * and this handler is folded into the announce. Advance
+		 * announced_cycles by the exact tick-aligned amount, preserving
+		 * the sub-tick remainder for the next announce.
+		 */
 		diff_cycles = HAL_RADIO_TIMER_GetCurrentSysTime() - announced_cycles;
-		dticks = (int32_t)k_cyc_to_ticks_near64(diff_cycles);
-		announced_cycles += k_ticks_to_cyc_near32(dticks);
+		dticks = (int32_t)(diff_cycles / CYC_PER_TICK);
+		announced_cycles += (uint64_t)dticks * CYC_PER_TICK;
+		last_elapsed = 0;
 		sys_clock_announce(dticks);
 	} else {
 		sys_clock_announce(1);
@@ -109,34 +143,56 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	if (ticks == K_TICKS_FOREVER) {
-		return;
-	}
-
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		uint32_t current_time, delay;
+		uint32_t current_time, delay, delta_stu;
+		uint64_t target, now_stu;
 		uint32_t key;
 
-		ticks = MAX(1, ticks);
-		delay = blue_unit_conversion(k_ticks_to_cyc_near32(ticks), calibration_data_freq1,
-					     MULT64_THR_FREQ);
-		if (delay > MAX_ALLOWED_DELAY) {
-			delay = MAX_ALLOWED_DELAY;
-		} else {
-			delay = MAX(MIN_ALLOWED_DELAY, delay);
-		}
+		/* K_TICKS_FOREVER parks the wakeup as far out as the hardware
+		 * allows (the deadline is capped by MAX_ALLOWED_DELAY below),
+		 * which also keeps the counter wrap-protected.
+		 */
+		ticks = (ticks == K_TICKS_FOREVER) ? (int32_t)MAX_TICKS
+						   : CLAMP(ticks, 1, (int32_t)MAX_TICKS);
+
 		key = irq_lock();
+
+		/* Absolute, tick-aligned deadline measured from the last
+		 * announce: announced_cycles is tick-aligned and last_elapsed is
+		 * the tick count already reported via sys_clock_elapsed(), so the
+		 * fire lands on the requested tick boundary regardless of the
+		 * sub-tick offset of the current counter. A target in the past
+		 * collapses to the minimum delay and is recovered by the handler
+		 * reading the live counter.
+		 */
+		target = announced_cycles +
+			 (uint64_t)(last_elapsed + (uint32_t)ticks) * CYC_PER_TICK;
+		now_stu = HAL_RADIO_TIMER_GetCurrentSysTime();
+		delta_stu = (target > now_stu) ? (uint32_t)(target - now_stu) : 0;
+
+		/* Bias the deadline one compare unit late so the truncated
+		 * compare never fires before the tick boundary: an early fire
+		 * would announce 0 ticks and force an immediate re-arm.
+		 */
+		delay = blue_unit_conversion(delta_stu, calibration_data_freq1, MULT64_THR_FREQ);
+		delay += WAKEUP_COMPARE_UNIT;
+		delay = CLAMP(delay, MIN_ALLOWED_DELAY, MAX_ALLOWED_DELAY);
 
 		/* Due to a hardware limitation, the radio timer wake-up time
 		 * must not be updated until at least 16 Machine Time Units
 		 * have elapsed since the interrupt was triggered; otherwise,
 		 * the next wake-up will only occur after the timer wraps around.
+		 *
+		 * This counter read must stay immediately before the compare
+		 * write: delay was computed against the (earlier) system time
+		 * read, so anchoring it to a later counter value can only move
+		 * the deadline later, never closer than MIN_ALLOWED_DELAY.
 		 */
 		do {
 			current_time = LL_RADIO_TIMER_GetAbsoluteTime(WAKEUP);
 		} while ((current_time - last_cpu_wakeup_time) < 16U);
 
-		LL_RADIO_TIMER_SetCPUWakeupTime(WAKEUP, current_time + delay + TIMER_ROUNDING);
+		LL_RADIO_TIMER_SetCPUWakeupTime(WAKEUP, current_time + delay);
 		LL_RADIO_TIMER_EnableCPUWakeupTimer(WAKEUP);
 		irq_unlock(key);
 	}
@@ -148,7 +204,13 @@ uint32_t sys_clock_elapsed(void)
 		return 0;
 	}
 
-	return k_cyc_to_ticks_near32(HAL_RADIO_TIMER_GetCurrentSysTime() - announced_cycles);
+	/* Number of whole ticks elapsed since the last announce (floor): a
+	 * partially-elapsed tick must not be reported, otherwise uptime runs
+	 * ahead and measured intervals come up short.
+	 */
+	last_elapsed = (uint32_t)((HAL_RADIO_TIMER_GetCurrentSysTime() - announced_cycles)
+				  / CYC_PER_TICK);
+	return last_elapsed;
 }
 
 uint32_t sys_clock_cycle_get_32(void)
