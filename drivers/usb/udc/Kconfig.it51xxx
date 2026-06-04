@@ -1,0 +1,43 @@
+# Copyright (c) 2026 ITE Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_IT51XXX
+	bool "IT51XXX USB device controller driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_USB_ENABLED
+	select IT51XXX_USB_SOF_CALIBRATION
+	help
+	  IT51XXX USB device controller driver.
+
+if UDC_IT51XXX
+
+config UDC_IT51XXX_CLEAR_READY_BIT_SUPPORTED
+	bool
+	default y if !SOC_IT51526AW && !SOC_IT51526BW
+	help
+	  Indicates whether the IT51XXX UDC IP supports firmware clearing of
+	  the ready bit. If not supported, the driver clears the enable bit
+	  instead when disabling or dequeuing endpoint.
+
+config UDC_IT51XXX_EVENT_COUNT
+	int "UDC IT51XXX event count"
+	range 4 64
+	default 8
+	help
+	  Maximum number of queued messages for SETUP, IN, OUT, and
+	  XFER events.
+
+config UDC_IT51XXX_STACK_SIZE
+	int "IT51XXX UDC driver internal thread stack size"
+	default 1024
+	help
+	  Size of the stack used in the driver for IT51XXX USBD ISR event
+	  handling.
+
+config UDC_IT51XXX_THREAD_PRIORITY
+	int "IT51XXX UDC driver internal thread priority"
+	default 8
+	help
+	  IT51XXX UDC driver internal thread priority.
+
+endif # UDC_IT51XXX

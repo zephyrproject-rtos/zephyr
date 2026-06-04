@@ -1444,5 +1444,18 @@
 			alarms-count = <2>;
 			status = "disabled";
 		};
+
+		zephyr_udc0: usb0: usbd@f02f00 {
+			compatible = "ite,it51xxx-usb";
+			interrupts-extended = <&intc IT51XXX_IRQ_USB IRQ_TYPE_LEVEL_HIGH>,
+					      <&intc IT51XXX_IRQ_WU65 IRQ_TYPE_LEVEL_HIGH>;
+			wucctrl = <&wuc_wu65>;
+			reg = <0x00f02f00 256>;
+			status = "disabled";
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <5>;
+			num-out-endpoints = <4>;
+			clocks = <&ecpm IT51XXX_ECPM_CGCTRL3R_OFF BIT(1)>;
+		};
 	};
 };
