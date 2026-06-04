@@ -129,11 +129,15 @@ static inline void z_vrfy_k_queue_cancel_wait(struct k_queue *queue)
 #include <zephyr/syscalls/k_queue_cancel_wait_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+/*
+ * Common code for inserting a node into the queue.
+ * The queue's spinlock must be held prior to entry.
+ * However, that same spinlock will be unlocked before it returns.
+ */
 static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
-			    bool alloc, bool is_append)
+			    bool alloc, bool is_append, k_spinlock_key_t key)
 {
 	struct k_thread *first_pending_thread;
-	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	int32_t result = 0;
 	bool resched = false;
 
@@ -187,7 +191,8 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, insert, queue);
 
-	(void)queue_insert(queue, prev, data, false, false);
+	(void)queue_insert(queue, prev, data, false, false,
+			   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, insert, queue);
 }
@@ -196,7 +201,8 @@ void k_queue_append(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, append, queue);
 
-	(void)queue_insert(queue, NULL, data, false, true);
+	(void)queue_insert(queue, NULL, data, false, true,
+			   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append, queue);
 }
@@ -205,7 +211,8 @@ void k_queue_prepend(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, prepend, queue);
 
-	(void)queue_insert(queue, NULL, data, false, false);
+	(void)queue_insert(queue, NULL, data, false, false,
+			   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, prepend, queue);
 }
@@ -214,7 +221,8 @@ int32_t z_impl_k_queue_alloc_append(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, alloc_append, queue);
 
-	int32_t ret = queue_insert(queue, NULL, data, true, true);
+	int32_t ret = queue_insert(queue, NULL, data, true, true,
+				   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, alloc_append, queue, ret);
 
@@ -235,7 +243,8 @@ int32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, alloc_prepend, queue);
 
-	int32_t ret = queue_insert(queue, NULL, data, true, false);
+	int32_t ret = queue_insert(queue, NULL, data, true, false,
+				   k_spin_lock(&queue->lock));
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, alloc_prepend, queue, ret);
 
