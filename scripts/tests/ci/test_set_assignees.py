@@ -54,13 +54,26 @@ import set_assignees as sut  # noqa: E402, I001  (import after sys.modules manip
 
 
 class _Area:
-    """Lightweight hashable area stub accepted by _pick_assignees."""
+    """Lightweight hashable area stub accepted by _pick_assignees and process_pr."""
 
     def __init__(self, name, maintainers=None, labels=None, collaborators=None):
         self.name = name
         self.maintainers = list(maintainers or [])
         self.labels = list(labels or [])
         self.collaborators = list(collaborators or [])
+
+    def is_deferred_for_path(self, path):
+        return False
+
+    def get_collaborators_for_path(self, path):
+        return self.collaborators
+
+
+class _DeferredArea(_Area):
+    """Area stub where is_deferred_for_path always returns True."""
+
+    def is_deferred_for_path(self, path):
+        return True
 
 
 def _make_area(name, maintainers=None, labels=None, collaborators=None):
@@ -476,3 +489,145 @@ class TestSetupLogging:
         with patch("logging.basicConfig") as mock_cfg:
             sut.setup_logging(3)
             assert mock_cfg.call_args.kwargs["level"] == logging.DEBUG
+
+
+# ---------------------------------------------------------------------------
+# Deferred file-groups  (process_pr integration)
+# ---------------------------------------------------------------------------
+
+
+def _make_process_pr_harness(areas_per_file, pr_user="someone"):
+    """Return (gh, args, maintainer_file, pr) ready for sut.process_pr().
+
+    *areas_per_file* maps filename strings to lists of _Area (or _DeferredArea)
+    instances.  All GitHub API calls are stubbed; dry_run is False so that
+    create_review_request and add_to_assignees are actually invoked.
+    """
+    pr = MagicMock()
+    pr.draft = False
+    pr.state = "open"
+    pr.commits = 1
+    pr.additions = 5
+    pr.deletions = 0
+    pr.number = 99
+    pr.labels = []
+    pr.user = SimpleNamespace(login=pr_user)
+    pr.assignee = None
+    pr.get_files.return_value = [SimpleNamespace(filename=fn) for fn in areas_per_file]
+    pr.get_reviews.return_value = []
+    pr.get_review_requests.return_value = ([], [])
+    pr.get_issue_events.return_value = []
+
+    mf = MagicMock()
+    mf.path2areas.side_effect = lambda p: areas_per_file.get(p, [])
+    mf.name2areas.return_value = []
+    mf.areas = {}
+    for fname_areas in areas_per_file.values():
+        for area in fname_areas:
+            mf.areas[area.name] = area
+
+    # Use MagicMock for user objects so they are hashable (required by
+    # _add_reviewers which stores them in a set).
+    user_cache = {}
+
+    def _get_user(login):
+        if login not in user_cache:
+            u = MagicMock()
+            u.login = login
+            user_cache[login] = u
+        return user_cache[login]
+
+    gh = MagicMock()
+    gh_repo = MagicMock()
+    gh.get_repo.return_value = gh_repo
+    gh.get_user.side_effect = _get_user
+    gh_repo.get_pull.return_value = pr
+    gh_repo.has_in_collaborators.return_value = True
+
+    args = SimpleNamespace(
+        org="testorg",
+        repo="testrepo",
+        dry_run=False,
+        updated_manifest=None,
+        updated_maintainer_file=None,
+        size_labels=False,
+    )
+    return gh, args, mf, pr
+
+
+def _reviewers_requested(pr):
+    """Collect all logins passed to pr.create_review_request across all calls."""
+    result = []
+    for call in pr.create_review_request.call_args_list:
+        reviewers = call.kwargs.get("reviewers", call.args[0] if call.args else [])
+        result.extend(reviewers)
+    return result
+
+
+def _assignees_set(pr):
+    """Collect all logins passed to pr.add_to_assignees across all calls."""
+    result = []
+    for call in pr.add_to_assignees.call_args_list:
+        if call.args:
+            result.append(call.args[0].login)
+    return result
+
+
+class TestDeferredFileGroups:
+    """Verify defer-to-other-areas file-group behaviour in process_pr."""
+
+    def test_deferred_maintainer_added_as_reviewer(self):
+        """Deferred area maintainer must appear in the review request."""
+        clock_area = _DeferredArea("Clock Control", maintainers=["clock_m"])
+        platform_area = _make_area("Platform: nrf52", maintainers=["platform_m"])
+        areas = {"drivers/clk/nrf.c": [clock_area, platform_area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "clock_m" in _reviewers_requested(pr)
+
+    def test_deferred_maintainer_not_set_as_assignee(self):
+        """When a non-deferred area covers the same file, the deferred area's
+        maintainer must not become the PR assignee."""
+        clock_area = _DeferredArea("Clock Control", maintainers=["clock_m"])
+        platform_area = _make_area("Platform: nrf52", maintainers=["platform_m"])
+        areas = {"drivers/clk/nrf.c": [clock_area, platform_area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "clock_m" not in _assignees_set(pr)
+
+    def test_non_deferred_maintainer_becomes_assignee(self):
+        """The non-deferred area's maintainer must be set as the assignee."""
+        clock_area = _DeferredArea("Clock Control", maintainers=["clock_m"])
+        platform_area = _make_area("Platform: nrf52", maintainers=["platform_m"])
+        areas = {"drivers/clk/nrf.c": [clock_area, platform_area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "platform_m" in _assignees_set(pr)
+
+    def test_exclusively_deferred_area_used_normally(self):
+        """When only a deferred area covers a file (no competing area),
+        the deferral flag has no effect and the maintainer is assigned."""
+        clock_area = _DeferredArea("Clock Control", maintainers=["clock_m"])
+        areas = {"drivers/clk/nrf.c": [clock_area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "clock_m" in _assignees_set(pr)
+
+    def test_non_deferred_area_unaffected(self):
+        """A normal (non-deferred) area without any competing deferred area
+        works exactly as before."""
+        subsys_area = _make_area("Networking", maintainers=["net_m"])
+        areas = {"subsys/net/foo.c": [subsys_area]}
+
+        gh, args, mf, pr = _make_process_pr_harness(areas)
+        sut.process_pr(gh, args, mf, 99)
+
+        assert "net_m" in _assignees_set(pr)
