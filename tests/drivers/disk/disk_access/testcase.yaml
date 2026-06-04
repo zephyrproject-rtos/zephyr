@@ -15,6 +15,11 @@ tests:
       - mimxrt1064_evk
   drivers.disk.ram:
     platform_allow: qemu_x86_64
+  drivers.disk.memc_ram:
+    build_only: true
+    filter: dt_compat_enabled("zephyr,memc-ram-disk") and CONFIG_DISK_DRIVER_MEMC_RAM
+    integration_platforms:
+      - nrf7120dk/nrf7120/cpuapp
   drivers.disk.nvme:
     extra_configs:
       - CONFIG_NVME=y

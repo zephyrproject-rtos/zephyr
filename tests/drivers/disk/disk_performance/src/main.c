@@ -20,6 +20,8 @@
 #define DISK_NAME "nvme0n0"
 #elif defined(CONFIG_DISK_DRIVER_FTL)
 #define DISK_NAME "NAND"
+#elif defined(CONFIG_DISK_DRIVER_MEMC_RAM)
+#define DISK_NAME "RAM"
 #else
 #error "No disk device defined, is your board supported?"
 #endif
