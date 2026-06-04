@@ -1379,8 +1379,7 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 
 	/* Destroy segmented SDU if it exists */
 	if (le_chan->_sdu) {
-		net_buf_unref(le_chan->_sdu);
-		le_chan->_sdu = NULL;
+		net_buf_drop(&le_chan->_sdu);
 		le_chan->_sdu_len = 0U;
 	}
 }
@@ -2392,8 +2391,7 @@ static void l2cap_chan_shutdown(struct bt_l2cap_chan *chan)
 
 	/* Destroy segmented SDU if it exists */
 	if (le_chan->_sdu) {
-		net_buf_unref(le_chan->_sdu);
-		le_chan->_sdu = NULL;
+		net_buf_drop(&le_chan->_sdu);
 		le_chan->_sdu_len = 0U;
 	}
 
@@ -2759,8 +2757,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 		if (chan->_sdu->user_data_size < sizeof(uint16_t)) {
 			LOG_ERR("SDU buffer user_data_size %u is too small",
 				chan->_sdu->user_data_size);
-			net_buf_unref(chan->_sdu);
-			chan->_sdu = NULL;
+			net_buf_drop(&chan->_sdu);
 			bt_l2cap_chan_disconnect(&chan->chan);
 			return;
 		}
@@ -2787,8 +2784,7 @@ static void l2cap_chan_le_recv(struct bt_l2cap_le_chan *chan,
 	owned_ref = net_buf_ref(buf);
 	err = chan->chan.ops->recv(&chan->chan, owned_ref);
 	if (err != -EINPROGRESS) {
-		net_buf_unref(owned_ref);
-		owned_ref = NULL;
+		net_buf_drop(&owned_ref);
 	}
 
 	if (err < 0) {
