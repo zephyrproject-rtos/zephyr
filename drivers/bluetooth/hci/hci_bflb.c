@@ -230,8 +230,7 @@ static int bt_bflb_send(const struct device *dev, struct net_buf *buf)
 		struct bt_hci_cmd_hdr *chdr;
 
 		if (buf->len < sizeof(*chdr)) {
-			ret = -EINVAL;
-			goto done;
+			return -EINVAL;
 		}
 
 		chdr = (struct bt_hci_cmd_hdr *)buf->data;
@@ -248,8 +247,7 @@ static int bt_bflb_send(const struct device *dev, struct net_buf *buf)
 		uint16_t connhdl_l2cf;
 
 		if (buf->len < sizeof(*acl)) {
-			ret = -EINVAL;
-			goto done;
+			return -EINVAL;
 		}
 
 		acl = (struct bt_hci_acl_hdr *)buf->data;
@@ -265,19 +263,17 @@ static int bt_bflb_send(const struct device *dev, struct net_buf *buf)
 		break;
 	}
 	default:
-		ret = -EINVAL;
-		goto done;
+		return -EINVAL;
 	}
 
 	ret = bt_onchiphci_send(pkt_type, dest_id, &pkt);
 	if (ret != 0) {
 		LOG_ERR("bt_onchiphci_send failed: %d", ret);
-		ret = (ret < 0) ? ret : -EIO;
+		return (ret < 0) ? ret : -EIO;
 	}
 
-done:
 	net_buf_unref(buf);
-	return ret;
+	return 0;
 }
 
 static int bt_bflb_open(const struct device *dev)
