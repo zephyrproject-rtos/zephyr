@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Renesas RX Clock Generator Circuit (CGC) header file
+ * @ingroup clock_control_renesas_rx
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_RENESAS_RX_CGC_H_
@@ -16,7 +17,8 @@
 #include <zephyr/dt-bindings/clock/rx_clock.h>
 
 /**
- * @name Clock source and divider helpers for Renesas RX devices.
+ * @defgroup clock_control_renesas_rx Renesas RX CGC
+ * @ingroup clock_control_interface_ext
  * @{
  */
 
