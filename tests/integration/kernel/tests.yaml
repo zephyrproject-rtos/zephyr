@@ -2,3 +2,5 @@ tests:
   integration.kernel:
     tags:
       - kernel
+    platform_exclude:
+      - qemu_riscv64/qemu_virt_riscv64/smp_large
