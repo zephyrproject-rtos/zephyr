@@ -278,6 +278,13 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION) || defined(CONFIG_FLASH_STM32_WRITE_PROTECT) || \
 	defined(CONFIG_FLASH_STM32_OPTION_BYTES) || defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
+uint32_t flash_stm32_option_bytes_read(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	return regs->OPTR;
+}
+
 int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
