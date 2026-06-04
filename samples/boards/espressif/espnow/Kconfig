@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Rapyuta Robotics
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "ESP-NOW Sample"
+
+menu "ESP-NOW Configuration"
+
+choice ESPNOW_ROLE
+	prompt "Device role"
+	default ESPNOW_ROLE_BIDIR
+	help
+	  SENDER:   transmits heartbeat beacons only.
+	  RECEIVER: listens only (no beacon thread).
+	  BIDIR:    transmits beacons AND receives -- loopback test with two devices.
+
+config ESPNOW_ROLE_SENDER
+	bool "Sender"
+
+config ESPNOW_ROLE_RECEIVER
+	bool "Receiver"
+
+config ESPNOW_ROLE_BIDIR
+	bool "Both (send + receive)"
+
+endchoice
+
+config ESPNOW_CHANNEL
+	int "Wi-Fi channel"
+	range 1 13
+	default 1
+	help
+	  Both devices must use the same channel.
+
+config ESPNOW_BEACON_INTERVAL_S
+	int "Beacon interval (seconds)"
+	range 1 60
+	default 5
+	depends on ESPNOW_ROLE_SENDER || ESPNOW_ROLE_BIDIR
+
+endmenu
+
+source "Kconfig.zephyr"
