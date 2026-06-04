@@ -209,7 +209,7 @@ __subsystem struct bt_hci_driver_api {
  * @param buf  Buffer containing data received from the controller.
  *
  * @return 0 on success or negative POSIX error number on failure.
- * @return -ENOTCONN THe HCI transport is not open.
+ * @retval -ENOTCONN The HCI transport is not open.
  */
 static inline int bt_hci_recv_err(const struct device *dev, struct net_buf *buf)
 {
@@ -256,7 +256,7 @@ static inline void bt_hci_recv(const struct device *dev, struct net_buf *buf)
  *             before bt_hci_open() returns.
  *
  * @return 0 on success or negative POSIX error number on failure.
- * @return -EALREADY THe HCI transport is already open.
+ * @retval -EALREADY The HCI transport is already open.
  */
 static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
 {
