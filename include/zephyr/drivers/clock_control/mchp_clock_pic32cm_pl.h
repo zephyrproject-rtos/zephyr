@@ -5,17 +5,24 @@
  */
 
 /**
- * @file mchp_clock_pic32cm_pl.h
- * @brief Clock control header file for Microchip pic32cm_pl family.
+ * @file
+ * @brief Clock control header file for the Microchip PIC32CM PL family.
  *
  * This file provides clock driver interface definitions and structures
- * for pic32cm_pl family
+ * for the PIC32CM PL family.
+ * @ingroup clock_control_mchp_pic32cm_pl
  */
 
 #ifndef INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CM_PL_H_
 #define INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CM_PL_H_
 
 #include <zephyr/dt-bindings/clock/mchp_pic32cm_pl_clock.h>
+
+/**
+ * @defgroup clock_control_mchp_pic32cm_pl Microchip PIC32CM PL
+ * @ingroup clock_control_mchp
+ * @{
+ */
 
 /** @brief OSCHF (high-frequency oscillator) subsystem configuration. */
 struct clock_mchp_subsys_oschf_config {
@@ -82,5 +89,7 @@ enum clock_mchp_gclkgen {
  * Used for setting a clock rate
  */
 typedef uint32_t *clock_mchp_rate_t;
+
+/** @} */
 
 #endif /* INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CM_PL_H_ */
