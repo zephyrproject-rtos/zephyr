@@ -2421,6 +2421,8 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail);
  * This routine adds a list of data items to @a queue in one operation.
  * The data items must be in a singly-linked list implemented using a
  * sys_slist_t object. Upon completion, the original list is empty.
+ * The caller is responsible for ensuring that @a list is not concurrently
+ * accessed by other threads or ISRs.
  *
  * @isr_ok
  *
