@@ -4211,6 +4211,7 @@ NXP Platforms (MPU):
     - iuliana-prodan
     - yangbolu1991
     - Zhiqiang-Hou
+    - ZhaoQiang-b45475
   files:
     - drivers/*/*imx*
     - include/zephyr/dt-bindings/rdc/
