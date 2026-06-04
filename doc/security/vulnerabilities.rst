@@ -2268,7 +2268,35 @@ This has been fixed in main for v4.4.0
 :cve:`2026-5066`
 ----------------
 
-Under embargo until 2026-06-01
+net: sockets: tls: Potential out-of-bounds write/read in socket_op_vtable::connect function
+
+A potential out-of-bounds write/read exists in the TLS socket connect path of the
+network sockets subsystem (``subsys/net/lib/sockets/sockets_tls.c``). When the TLS
+session cache is enabled, ``tls_session_store()`` and ``tls_session_restore()``
+``memcpy`` the caller-supplied address into a fixed-size buffer using the
+caller-controlled ``addrlen`` value without validating it against the destination
+size. Since ``struct net_sockaddr`` is an opaque type, an application can pass an
+``addrlen`` larger than ``sizeof(struct net_sockaddr)`` (for example 128 bytes into
+a 24-byte stack buffer), causing the ``memcpy`` to read and write past the end of
+the address memory used by the TLS session cache. This can lead to a crash and
+denial of service, and potentially to arbitrary code execution.
+
+- `Zephyr project bug tracker GHSA-wgrc-jrf6-24f3
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wgrc-jrf6-24f3>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 104871 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104871>`_
+
+- `PR 105044 fix for 4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/105044>`_
+
+- `PR 105043 fix for 4.2
+  <https://github.com/zephyrproject-rtos/zephyr/pull/105043>`_
+
+- `PR 105042 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/105042>`_
 
 :cve:`2026-5067`
 ----------------
