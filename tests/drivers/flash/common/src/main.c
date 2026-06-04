@@ -475,6 +475,7 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 				  const struct device *dst_dev, off_t dst_offset, off_t size,
 				  uint8_t *buf, size_t buf_size, int expected_result)
 {
+	off_t remaining = size;
 	int actual_result;
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
@@ -493,11 +494,16 @@ static void test_flash_copy_inner(const struct device *src_dev, off_t src_offset
 
 	if ((expected_result == 0) && (size != 0) && (src_offset != dst_offset)) {
 		/* verify a successful copy */
-		off_t copy_size = MIN(size, EXPECTED_SIZE);
+		while (remaining > 0) {
+			size_t read_size = MIN((size_t)remaining, buf_size);
 
-		zassert_ok(flash_read(flash_dev, TEST_AREA_OFFSET, expected, copy_size));
-		for (int i = 0; i < copy_size; i++) {
-			zassert_equal(buf[i], 0xaa, "incorrect data (%02x) at %d", buf[i], i);
+			zassert_ok(flash_read(dst_dev, dst_offset, buf, read_size));
+			for (size_t i = 0; i < read_size; i++) {
+				zassert_equal(buf[i], 0xaa, "incorrect data (%02x) at %zu", buf[i],
+					      (size_t)(size - remaining + i));
+			}
+			remaining -= (off_t)read_size;
+			dst_offset += (off_t)read_size;
 		}
 	}
 }
