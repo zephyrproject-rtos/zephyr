@@ -116,6 +116,17 @@
 			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};
+
+		ltdc: display-controller@40016c00 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016c00 0x1000>;
+			interrupts = <145 0>, <146 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB2, 27)>,
+				 <&rcc STM32_SRC_PLL3_R LTDC_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 27)>;
+			status = "disabled";
+		};
 	};
 };
 
