@@ -1,0 +1,96 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/adc/infineon-autanalog-sar.h>
+
+/ {
+	zephyr,user {
+		/* ADC channels: GPIO ch0, MUX ch0, FIR0, FIR1 */
+		io-channels = <&adc0 0>, <&adc0 8>, <&adc0 24>, <&adc0 25>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <0>;   /* P15.0 */
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_0>;
+	};
+
+	/* MUX channel: P15.0 via internal MUX routing.
+	 * Channel ID 8 = MUX channel index 0.
+	 */
+	channel@8 {
+		reg = <8>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_PIN_MUX_GPIO0>;
+		mux-buf-bypass;
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_1>;
+	};
+
+	/* FIR0 pseudo-channel */
+	channel@18 {
+		reg = <24>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_FIR_CH_GPIO0>;
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_2>;
+	};
+
+	/* FIR1 pseudo-channel */
+	channel@19 {
+		reg = <25>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 1)>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IFX_AUTANALOG_SAR_FIR_CH_GPIO0>;
+		fifo-sel = <IFX_AUTANALOG_SAR_FIFO_3>;
+	};
+
+	/* FIR filter 0: 4-tap moving average on GPIO channel 0 (P15.0).
+	 * Each coefficient is 0.25 in Q1.15 fixed-point (0x2000).
+	 */
+	fir-0 {
+		compatible = "infineon,autanalog-sar-fir";
+		coefficients = <0x2000 0x2000 0x2000 0x2000>;
+	};
+
+	fir-1 {
+		compatible = "infineon,autanalog-sar-fir";
+		/* Filter coefficients populated in app */
+	};
+
+	/* FIFO: 4 x 128-word buffers.
+	 * Buffer 0: raw GPIO ch0
+	 * Buffer 1: mux GPIO ch0
+	 * Buffer 2: FIR0
+	 * Buffer 3: FIR1
+	 */
+	fifo {
+		compatible = "infineon,autanalog-sar-fifo";
+		fifo-levels = <4 4 4 4>;
+	};
+};
+
+&gpio_prt15 {
+	status = "okay";
+};
