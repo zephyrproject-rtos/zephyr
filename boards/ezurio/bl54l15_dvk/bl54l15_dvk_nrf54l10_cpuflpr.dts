@@ -1,17 +1,17 @@
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
- * Copyright (c) 2025 Ezurio LLC
+ * Copyright (c) 2026 Ezurio LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
-#include <vendor/nordic/nrf54l15_cpuflpr.dtsi>
+#include <vendor/nordic/nrf54l10_cpuflpr.dtsi>
 #include "bl54l15_dvk_common.dtsi"
 
 / {
-	model = "Ezurio BL54L15 DVK nRF54L15 FLPR MCU";
-	compatible = "ezurio,bl54l15_dvk_nrf54l15-cpuflpr";
+	model = "Ezurio BL54L15 DVK nRF54L10 FLPR MCU";
+	compatible = "ezurio,bl54l15_dvk_nrf54l10-cpuflpr";
 
 	chosen {
 		zephyr,console = &uart20;
@@ -31,7 +31,7 @@
 		cpuflpr_code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-0";
-			reg = <0x0 DT_SIZE_K(96)>;
+			reg = <0x0 DT_SIZE_K(64)>;
 		};
 	};
 };
