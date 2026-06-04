@@ -207,7 +207,6 @@ static void rtl_rx_thread(void *p1, void *p2, void *p3)
 
 static int bt_hci_bee_send(const struct device *dev, struct net_buf *buf)
 {
-	int ret = 0;
 	T_RTL_BT_HCI_BUF hci_buf = {};
 	uint8_t packet_type = net_buf_pull_u8(buf);
 
@@ -219,35 +218,27 @@ static int bt_hci_bee_send(const struct device *dev, struct net_buf *buf)
 
 	default:
 		LOG_ERR("Unknown packet type: 0x%02x", packet_type);
-		ret = -EINVAL;
-		goto done;
+		return -EINVAL;
 	}
 
 	if (rtl_bt_hci_h2c_buf_alloc(&hci_buf, packet_type, buf->len) == false) {
-		ret = -EINVAL;
-		goto done;
+		return -EINVAL;
 	}
 
 	if (rtl_bt_hci_h2c_buf_add(&hci_buf, buf->data, buf->len) == false) {
 		rtl_bt_hci_h2c_buf_rel(hci_buf);
-		ret = -EINVAL;
-		goto done;
+		return -EINVAL;
 	}
 
 	if (rtl_bt_hci_send(hci_buf) == false) {
 		rtl_bt_hci_h2c_buf_rel(hci_buf);
-		ret = -EIO;
+		return -EIO;
 	}
 
-done:
+	LOG_DBG("Sent, type %d, len %u", packet_type, buf->len);
 	net_buf_unref(buf);
-	if (ret != 0) {
-		LOG_ERR("Error, type %d, len %u, ret %d", packet_type, buf->len, ret);
-	} else {
-		LOG_DBG("Sent, type %d, len %u", packet_type, buf->len);
-	}
 
-	return ret;
+	return 0;
 }
 
 static int bt_hci_bee_open(const struct device *dev)
