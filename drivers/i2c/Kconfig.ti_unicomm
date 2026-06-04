@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_TI_UNICOMM
+    bool "TI UNICOMM I2C Driver"
+    default y
+    depends on DT_HAS_TI_UNICOMM_I2C_ENABLED
+    help
+        Enable I2C on TI devices with the UNICOMM peripheral.
