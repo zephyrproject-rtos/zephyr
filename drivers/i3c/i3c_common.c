@@ -310,12 +310,8 @@ int i3c_detach_i3c_device(struct i3c_device_desc *target)
 	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
 	int status = 0;
 
-	if (!sys_slist_is_empty(&data->attached_dev.devices.i3c)) {
-		if (!sys_slist_find_and_remove(&data->attached_dev.devices.i3c, &target->node)) {
-			return -EINVAL;
-		}
-	} else {
-		return -EINVAL;
+	if (!sys_slist_find_and_remove(&data->attached_dev.devices.i3c, &target->node)) {
+		return -EALREADY;
 	}
 
 	if (api->detach_i3c_device != NULL) {
@@ -368,12 +364,8 @@ int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target)
 	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
 	int status = 0;
 
-	if (!sys_slist_is_empty(&data->attached_dev.devices.i2c)) {
-		if (!sys_slist_find_and_remove(&data->attached_dev.devices.i2c, &target->node)) {
-			return -EINVAL;
-		}
-	} else {
-		return -EINVAL;
+	if (!sys_slist_find_and_remove(&data->attached_dev.devices.i2c, &target->node)) {
+		return -EALREADY;
 	}
 
 	if (api->detach_i2c_device != NULL) {
