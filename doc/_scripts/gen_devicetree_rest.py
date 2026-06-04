@@ -908,6 +908,14 @@ def print_property_table(prop_specs, string_io, deprecated=False):
         elif prop_spec.max is not None:
             details += f'\n\nMaximum value: ``{format_value(prop_spec.max)}``'
 
+        if prop_spec.min_len is not None and prop_spec.max_len is not None:
+            details += (f'\n\nLength range: ``{format_value(prop_spec.min_len)}`` to '
+                        f'``{format_value(prop_spec.max_len)}``')
+        elif prop_spec.min_len is not None:
+            details += f'\n\nMinimum length: ``{format_value(prop_spec.min_len)}``'
+        elif prop_spec.max_len is not None:
+            details += f'\n\nMaximum length: ``{format_value(prop_spec.max_len)}``'
+
         if prop_spec.name in DETAILS_IN_IMPORTANT_PROPS:
             details += (f'\n\nSee {zref("dt-important-props")} for more '
                         'information.')
