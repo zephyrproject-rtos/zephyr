@@ -148,10 +148,7 @@ NET_BUF_POOL_DEFINE(h5_pool, SIGNAL_COUNT, SIG_BUF_SIZE, 0, NULL);
 
 static void h5_reset_rx(struct h5_data *h5)
 {
-	if (h5->rx_buf) {
-		net_buf_unref(h5->rx_buf);
-		h5->rx_buf = NULL;
-	}
+	net_buf_drop(&h5->rx_buf);
 
 	h5->rx_state = START;
 }
