@@ -142,4 +142,18 @@ config ESP_FLASH_ENCRYPTION
 	  The flash encryption configuration must be enabled on the bootloader and
 	  the flash write block size must be set to 32 bytes on Zephyr's device tree.
 
+config ESP32_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
+	int "Extra delay (in us) after flash power down sleep wakeup to wait flash ready"
+	default 2000 if SOC_SERIES_ESP32 || SOC_SERIES_ESP32S3
+	default 0
+	range 0 5000
+	help
+	  When the chip exits sleep, the CPU and the flash chip are powered on at
+	  the same time. The CPU runs ROM code (deep sleep) or RAM code (light
+	  sleep) first, then loads or executes code from flash. Some flash chips
+	  need extra time between power-on and the first read operation; without
+	  any delay this is about 900us. Set this to the flash datasheet tVSL
+	  minus 900us. Increase it if you see "flash read err, 1000" after deep
+	  sleep or an RTC_WDT/LP_WDT trigger after light sleep wakeup.
+
 endif # SOC_FAMILY_ESPRESSIF_ESP32

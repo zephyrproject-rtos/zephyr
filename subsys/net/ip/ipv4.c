@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/ipv4_nat.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
@@ -608,5 +609,9 @@ void net_ipv4_init(void)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
 		net_ipv4_acd_init();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_NAT)) {
+		net_ipv4_nat_init();
 	}
 }

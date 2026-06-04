@@ -1663,3 +1663,62 @@ ZTEST_F(zms, test_zms_mount_force)
 	zassert_equal(len, sizeof(test_data), "zms_read after recovery failed: %d", len);
 	zassert_equal(test_data, 0xDEADBEEF, "read data mismatch after recovery");
 }
+
+ZTEST_F(zms, test_zms_read_evil_ate)
+{
+	int err;
+	ssize_t len;
+	off_t ate_wra_off;
+	size_t ate_size;
+	size_t crc8_off;
+	uint8_t buffer[16] = {0};
+	uint8_t evil[16] = {
+		0x50, 0x01, 0x03, 0x00,
+		0x03, 0x00, 0x00, 0x00,
+		0x68, 0x65, 0x33, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+	};
+	struct zms_ate fake_ate;
+
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+	ztest_test_skip();
+#endif
+
+	/* Start with a clean slate. */
+	erase_test_partition();
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	len = zms_write(&fixture->fs, 2, evil, sizeof(evil));
+	zassert_equal(len, sizeof(evil), "zms_write(id=2) failed: %zd", len);
+
+	len = zms_write(&fixture->fs, 3, evil, sizeof(evil));
+	zassert_equal(len, sizeof(evil), "zms_write(id=3) failed: %zd", len);
+
+	err = zms_delete(&fixture->fs, 3);
+	zassert_equal(err, 0, "zms_delete(id=3) failed: %d", err);
+
+	/* Put a valid-looking stale ATE into the unwritten slot at fs->ate_wra. */
+	memset(&fake_ate, 0, sizeof(fake_ate));
+	fake_ate.id = 3;
+	fake_ate.len = 3;
+	fake_ate.cycle_cnt = fixture->fs.sector_cycle;
+	fake_ate.data[0] = 'h';
+	fake_ate.data[1] = 'e';
+	fake_ate.data[2] = '3';
+	ate_size = sizeof(struct zms_ate);
+	crc8_off = SIZEOF_FIELD(struct zms_ate, crc8);
+	fake_ate.crc8 = crc8_ccitt(0xff,
+				  (uint8_t *)&fake_ate + crc8_off,
+				  ate_size - crc8_off);
+
+	ate_wra_off = fixture->fs.offset +
+		      (fixture->fs.sector_size * SECTOR_NUM(fixture->fs.ate_wra)) +
+		      SECTOR_OFFSET(fixture->fs.ate_wra);
+	err = flash_write(fixture->fs.flash_device, ate_wra_off, &fake_ate, sizeof(fake_ate));
+	zassert_equal(err, 0, "flash_write(fake_ate) failed: %d", err);
+
+	len = zms_read(&fixture->fs, 3, buffer, sizeof(buffer));
+	zassert_equal(len, -ENOENT, "zms_read(id=3) should return -ENOENT, got %zd", len);
+}

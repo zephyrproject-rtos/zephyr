@@ -132,7 +132,11 @@ static int spi_esp32_gdma_config(const struct device *dev, uint8_t dir, uint8_t 
 		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 		dma_blk.source_address = (uint32_t)buf;
 	}
+#if SOC_AXI_GDMA_SUPPORTED
+	dma_cfg.dma_slot = SOC_GDMA_TRIG_PERIPH_SPI2 + cfg->dma_host;
+#else
 	dma_cfg.dma_slot = cfg->dma_host;
+#endif
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 	dma_blk.block_size = len;
@@ -259,7 +263,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	/* clean up and prepare SPI hal */
 	for (size_t i = 0; i < ARRAY_SIZE(hal->hw->data_buf); ++i) {
 #if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
-	defined(CONFIG_SOC_SERIES_ESP32H2)
+	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
 		hal->hw->data_buf[i].val = 0;
 #else
 		hal->hw->data_buf[i] = 0;
@@ -282,7 +286,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 #if defined(SOC_GDMA_SUPPORTED)
 	if (cfg->dma_enabled && hal_trans->rcv_buffer) {
-		/* setup DMA channels via DMA driver */
+		sys_cache_data_flush_and_invd_range(hal_trans->rcv_buffer, transfer_len_bytes);
 		err = spi_esp32_gdma_config(dev, SPI_DMA_RX, hal_trans->rcv_buffer,
 					    transfer_len_bytes);
 		if (err) {
@@ -291,6 +295,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	}
 
 	if (cfg->dma_enabled && hal_trans->send_buffer) {
+		sys_cache_data_flush_range(hal_trans->send_buffer, transfer_len_bytes);
 		err = spi_esp32_gdma_config(dev, SPI_DMA_TX, hal_trans->send_buffer,
 					    transfer_len_bytes);
 		if (err) {

@@ -50,6 +50,8 @@
   overflow: auto;
   border-radius: 8px;
   padding-right: 18px;
+  font-family: var(--monospace-font-family);
+  font-size: 12px;
 }
 
 .filter-form #family option:checked,
@@ -287,6 +289,112 @@ input:checked + .toggle-label .toggle-switch::before {
   font-size: 12px;
   font-weight: 100;
   color: var(--body-color);
+}
+
+/* Memory range sliders (noUiSlider, log-spaced bytes) */
+
+.memory-slider-form-group {
+  flex-basis: min(340px, 100%);
+  min-width: 260px;
+}
+
+.memory-slider-wrapper {
+  padding: 0px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -12px;
+}
+
+.memory-slider-value-label {
+  font-family: var(--monospace-font-family);
+  color: var(--body-color);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.memory-nouislider {
+  margin: 10px 6px 4px;
+  padding-bottom: 36px;
+}
+
+.memory-nouislider .noUi-target {
+  border: none;
+  border-radius: 6px;
+  box-shadow: none;
+  background: var(--input-background-color);
+}
+
+.memory-nouislider .noUi-connects {
+  border-radius: 6px;
+}
+
+.memory-nouislider .noUi-connect {
+  background: var(--admonition-note-title-background-color);
+}
+
+.memory-nouislider .noUi-horizontal {
+  height: 8px;
+}
+
+.memory-nouislider .noUi-horizontal .noUi-handle {
+  width: 22px;
+  height: 22px;
+  right: -11px;
+  top: -8px;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  background: var(--admonition-note-title-background-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+  cursor: grab;
+}
+
+.memory-nouislider .noUi-horizontal .noUi-handle:before,
+.memory-nouislider .noUi-horizontal .noUi-handle:after {
+  display: none;
+}
+
+.memory-nouislider .noUi-handle:focus {
+  outline: 2px solid var(--input-focus-border-color, #0a58ca);
+  outline-offset: 2px;
+}
+
+.memory-nouislider .noUi-handle:active {
+  cursor: grabbing;
+}
+
+.memory-nouislider .noUi-marker-normal,
+.memory-nouislider .noUi-marker-large {
+  background: var(--body-color);
+  opacity: 0.35;
+}
+
+.memory-nouislider .noUi-pips-horizontal {
+  height: 28px;
+  padding-top: 6px;
+}
+
+.memory-nouislider .noUi-value {
+  font-size: 10px;
+  color: var(--body-color);
+  opacity: 0.8;
+}
+
+.memory-nouislider .noUi-value-horizontal {
+  transform: translate(-50%, 100%);
+}
+
+.memory-slider-wrapper:has(.noUi-target[disabled]) .memory-slider-value-label {
+  opacity: 0.45;
+}
+
+.memory-nouislider .noUi-target[disabled] {
+  opacity: 0.45;
+}
+
+.memory-nouislider .noUi-target[disabled] .noUi-handle {
+  cursor: not-allowed;
 }
 
 @media (max-width: 1024px) {

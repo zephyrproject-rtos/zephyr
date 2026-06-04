@@ -509,6 +509,15 @@
 		array-with-signed-range = <(-50) 0 50>;
 	};
 
+	range-len-node {
+		compatible = "min-max-len";
+		array-with-min-len = <1 2>;
+		array-with-max-len = <1 2 3>;
+		array-with-range-len = <1 2 3>;
+		string-array-with-range-len = "foo", "bar";
+		uint8-array-with-range-len = [01 02 03];
+	};
+
 	//
 	// For testing 'enum:'
 	//

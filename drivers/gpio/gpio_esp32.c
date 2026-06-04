@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 /* arch_curr_cpu() is not available for riscv based chips */
 #define ESP32_CPU_ID()  0
 #elif defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                  \
-	defined(CONFIG_SOC_SERIES_ESP32H2)
+	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
 /* gpio structs in esp32c6/h2 are also different */
 #define out out.out_data_orig
 #define in in.in_data_next
@@ -335,7 +335,7 @@ static int gpio_esp32_port_get_raw(const struct device *port, uint32_t *value)
 		*value = cfg->gpio_dev->in;
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		*value = cfg->gpio_dev->in1.data;
+		*value = cfg->gpio_dev->in1.val;
 #endif
 	}
 
@@ -353,7 +353,7 @@ static int gpio_esp32_port_set_masked_raw(const struct device *port,
 		cfg->gpio_dev->out = (cfg->gpio_dev->out & ~mask) | (mask & value);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		cfg->gpio_dev->out1.data = (cfg->gpio_dev->out1.data & ~mask) | (mask & value);
+		cfg->gpio_dev->out1.val = (cfg->gpio_dev->out1.val & ~mask) | (mask & value);
 #endif
 	}
 
@@ -371,7 +371,7 @@ static int gpio_esp32_port_set_bits_raw(const struct device *port,
 		cfg->gpio_dev->out_w1ts = pins;
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		cfg->gpio_dev->out1_w1ts.data = pins;
+		cfg->gpio_dev->out1_w1ts.val = pins;
 #endif
 	}
 
@@ -387,7 +387,7 @@ static int gpio_esp32_port_clear_bits_raw(const struct device *port,
 		cfg->gpio_dev->out_w1tc = pins;
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		cfg->gpio_dev->out1_w1tc.data = pins;
+		cfg->gpio_dev->out1_w1tc.val = pins;
 #endif
 	}
 
@@ -404,7 +404,7 @@ static int gpio_esp32_port_toggle_bits(const struct device *port,
 		cfg->gpio_dev->out ^= pins;
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		cfg->gpio_dev->out1.data ^= pins;
+		cfg->gpio_dev->out1.val ^= pins;
 #endif
 	}
 
@@ -630,23 +630,17 @@ static DEVICE_API(gpio, gpio_esp32_driver_api) = {
 	.get_pending_int = gpio_esp32_get_pending_int
 };
 
-#define ESP_SOC_GPIO_INIT(_id)							\
-	static struct gpio_esp32_data gpio_data_##_id;				\
-	static struct gpio_esp32_config gpio_config_##_id = {			\
-		.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_INST(_id),		\
-		.gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0)),	\
-		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),	\
-		.gpio_port = _id	\
-	};									\
-	PM_DEVICE_DT_INST_DEFINE(_id, gpio_esp32_pm_action);			\
-	DEVICE_DT_DEFINE(DT_NODELABEL(gpio##_id),				\
-			&gpio_esp32_init,					\
-			PM_DEVICE_DT_INST_GET(_id),				\
-			&gpio_data_##_id,					\
-			&gpio_config_##_id,					\
-			PRE_KERNEL_1,						\
-			CONFIG_GPIO_INIT_PRIORITY,				\
-			&gpio_esp32_driver_api);
+#define ESP_SOC_GPIO_INIT(_id)                                                                     \
+	static struct gpio_esp32_data gpio_data_##_id;                                             \
+	static struct gpio_esp32_config gpio_config_##_id = {                                      \
+		.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_INST(_id),                                   \
+		.gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0)),                       \
+		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),                    \
+		.gpio_port = _id};                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(_id, gpio_esp32_pm_action);                                       \
+	DEVICE_DT_INST_DEFINE(_id, &gpio_esp32_init, PM_DEVICE_DT_INST_GET(_id), &gpio_data_##_id, \
+			      &gpio_config_##_id, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,         \
+			      &gpio_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP_SOC_GPIO_INIT);
 

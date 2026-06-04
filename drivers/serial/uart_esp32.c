@@ -41,10 +41,15 @@
 #include <esp32h2/rom/ets_sys.h>
 #include <esp32h2/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32h2_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <esp32p4/rom/ets_sys.h>
+#include <esp32p4/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32p4_clock.h>
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
+#include <zephyr/cache.h>
 #include <hal/uhci_ll.h>
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 #define UHCI0 UHCI
@@ -353,7 +358,15 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	uint32_t sclk_freq;
 	uint32_t inv_mask = 0;
 
+	/*
+	 * On P4, switching UART clock source (e.g. XTAL to PLL_F80M)
+	 * breaks the reg_update sync mechanism, causing uart_ll_update()
+	 * to spin forever. Keep the ROM-configured clock source (XTAL).
+	 * IDF also does not change UART clock source during driver init.
+	 */
+#if !CONFIG_SOC_SERIES_ESP32P4
 	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
+#endif
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
 	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
 	uart_hal_rxfifo_rst(&data->hal);
@@ -686,6 +699,9 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	}
 
 	/* Notify RX_RDY */
+	sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
+					    data->async.rx_counter - data->async.rx_offset);
+
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
 	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
@@ -919,6 +935,8 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	dma_cfg.head_block = &dma_blk;
 	dma_blk.block_size = len;
 	dma_blk.source_address = (uint32_t)buf;
+
+	sys_cache_data_flush_range((void *)buf, len);
 
 	err = dma_config(config->dma_dev, config->tx_dma_channel, &dma_cfg);
 	if (err) {

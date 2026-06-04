@@ -6,8 +6,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Memory bits manipulation functions in non-arch-specific C code */
-
 #ifndef ZEPHYR_INCLUDE_ARCH_COMMON_SYS_BITOPS_H_
 #define ZEPHYR_INCLUDE_ARCH_COMMON_SYS_BITOPS_H_
 
@@ -20,6 +18,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @cond INTERNAL_HIDDEN
+ * Memory bits manipulation functions in non-arch-specific C code.
+ */
 
 static ALWAYS_INLINE void sys_set_bit(mem_addr_t addr, unsigned int bit)
 {
@@ -120,6 +123,10 @@ static ALWAYS_INLINE
 
 	return ret;
 }
+
+/**
+ * @endcond
+ */
 
 #ifdef __cplusplus
 }

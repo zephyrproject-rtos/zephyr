@@ -11,7 +11,9 @@ properties:
   nchannels:
     type: int
     required: true
-    description: Number of emulated ADC channels. Should be in 1-32 range.
+    description: Number of emulated ADC channels.
+    min: 1
+    max: 32
 
   ref-internal-mv:
     type: int

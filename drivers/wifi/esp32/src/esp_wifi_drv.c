@@ -969,7 +969,19 @@ static int esp32_wifi_set_power_save(const struct device *dev __unused,
 				     struct wifi_ps_params *params)
 {
 	wifi_config_t config;
+	wifi_mode_t mode;
 	esp_err_t rc;
+
+	rc = esp_wifi_get_mode(&mode);
+	if (rc != ESP_OK) {
+		LOG_ERR("Failed to get Wi-Fi mode, error: %d", rc);
+		return -EIO;
+	}
+
+	if (mode == ESP32_WIFI_MODE_AP || mode == ESP32_WIFI_MODE_NULL) {
+		LOG_ERR("Power save not supported in current Wi-Fi mode: %d", mode);
+		return -ENOTSUP;
+	}
 
 	if (params->enabled == WIFI_PS_DISABLED) {
 		rc = esp_wifi_set_ps(WIFI_PS_NONE);

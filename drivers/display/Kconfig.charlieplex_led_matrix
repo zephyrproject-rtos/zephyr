@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Qualcomm Innovation Center, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DISPLAY_CHARLIEPLEX_LED_MATRIX
+	bool "Charlieplexed LED matrix display driver"
+	default y
+	depends on DT_HAS_CHARLIEPLEX_LED_MATRIX_ENABLED
+	select GPIO
+	select COUNTER
+	help
+	  Enable the display driver for a monochrome/grayscale LED matrix driven
+	  by charlieplexed GPIOs. N GPIO lines drive up to N*(N-1) LEDs; each
+	  pixel is lit by driving one line high and one low while the rest are
+	  high-impedance. A timer (counter device) ISR scans the pixels fast
+	  enough for persistence of vision. The GPIO bank, pixel-to-pin-pair
+	  map, refresh frequency and grayscale depth are configured in a
+	  "charlieplex-led-matrix" compatible devicetree node. Exposes the
+	  display API.
+
+if DISPLAY_CHARLIEPLEX_LED_MATRIX
+
+config DISPLAY_CHARLIEPLEX_LED_MATRIX_INIT_PRIORITY
+	int "Charlieplex LED matrix init priority"
+	default DISPLAY_INIT_PRIORITY
+	help
+	  Device initialization priority. Must be greater than GPIO and COUNTER
+	  init priorities so those devices are ready first.
+
+endif # DISPLAY_CHARLIEPLEX_LED_MATRIX
