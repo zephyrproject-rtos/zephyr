@@ -22,6 +22,11 @@
  * @version 1.0.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup clock_control_interface_ext Device-specific Clock Control API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <errno.h>
@@ -38,7 +43,7 @@ extern "C" {
 
 /* Clock control API */
 
-/* Used to select all subsystem of a clock controller */
+/** @brief Subsystem selector representing all subsystems of a clock controller. */
 #define CLOCK_CONTROL_SUBSYS_ALL	NULL
 
 /**
@@ -52,17 +57,18 @@ enum clock_control_status {
 };
 
 /**
- * clock_control_subsys_t is a type to identify a clock controller sub-system.
- * Such data pointed is opaque and relevant only to the clock controller
- * driver instance being used.
+ * @brief Opaque handle identifying a clock controller subsystem.
+ *
+ * The pointed-to data is opaque and only meaningful to the clock controller driver instance
+ * being used.
  */
 typedef void *clock_control_subsys_t;
 
 /**
- * clock_control_subsys_rate_t is a type to identify a clock
- * controller sub-system rate.  Such data pointed is opaque and
- * relevant only to set the clock controller rate of the driver
- * instance being used.
+ * @brief Opaque handle identifying the rate of a clock controller subsystem.
+ *
+ * The pointed-to data is opaque and only meaningful when setting the rate of the clock
+ * controller driver instance being used.
  */
 typedef void *clock_control_subsys_rate_t;
 
