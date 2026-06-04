@@ -11,3 +11,6 @@ common:
   depends_on: netif
 tests:
   net.ptp.msg_parse: {}
+  net.ptp.msg_parse.custom_peer_delay_max:
+    extra_configs:
+      - CONFIG_PTP_PEER_DELAY_MAX_NS=20000000
