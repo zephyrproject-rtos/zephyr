@@ -276,7 +276,8 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 	return rc;
 }
 
-#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
+#if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION) || defined(CONFIG_FLASH_STM32_WRITE_PROTECT) || \
+	defined(CONFIG_FLASH_STM32_OPTION_BYTES) || defined(CONFIG_FLASH_STM32_BLOCK_REGISTERS)
 int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask, uint32_t value)
 {
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
@@ -314,7 +315,9 @@ void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 	flash_stm32_option_bytes_write(dev, FLASH_OPTR_RDP_Msk,
 				       (uint32_t)level << FLASH_OPTR_RDP_Pos);
 }
-#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
+#endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION || CONFIG_FLASH_STM32_WRITE_PROTECT ||
+	* CONFIG_FLASH_STM32_OPTION_BYTES || CONFIG_FLASH_STM32_BLOCK_REGISTERS
+	*/
 
 void flash_stm32_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
