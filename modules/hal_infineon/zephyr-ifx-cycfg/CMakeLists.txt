@@ -12,11 +12,11 @@ if(CONFIG_BUILD_WITH_TFM)
 
   zephyr_include_directories(${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/pse84/shared/device/include)
 
-  set(zephyr_ifx_cy_dev_headers_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/kit_pse84_eval/device_headers)
+  set(zephyr_ifx_cy_dev_headers_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/soc_pse84/device_headers)
   zephyr_include_directories(${zephyr_ifx_cy_dev_headers_dir})
 else()
 
-  set(zephyr_ifx_cycfg_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/kit_pse84_eval)
+  set(zephyr_ifx_cycfg_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/zephyr-ifx-cycfg/soc_pse84)
 
   zephyr_include_directories(${zephyr_ifx_cycfg_dir})
   zephyr_include_directories(${zephyr_ifx_cycfg_dir}/device_headers)
@@ -25,11 +25,14 @@ else()
   # compatible string of the flash node (i.e. "infineon,s25fs128s").
   dt_comp_path(flash_s25fs128s_path COMPATIBLE "infineon,s25fs128s" INDEX 0)
   dt_comp_path(flash_s25hs512t_path COMPATIBLE "infineon,s25hs512t" INDEX 0)
+  dt_comp_path(flash_s28hs01gt_path COMPATIBLE "infineon,s28hs01gt" INDEX 0)
 
   if(DEFINED flash_s25fs128s_path)
     zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot_s25fs128s.c)
   elseif(DEFINED flash_s25hs512t_path)
     zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot_s25hs512t.c)
+  elseif(DEFINED flash_s28hs01gt_path)
+    zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot_s28hs01gt.c)
   else()
     message(FATAL_ERROR "No recognised external flash compatible found.")
   endif()
