@@ -453,6 +453,13 @@
 			interrupt-parent = <&clic>;
 		};
 
+		psram_uhs_ctrl: psram-uhs@3000f000 {
+			compatible = "bflb,bl808-psram-uhs-controller";
+			reg = <0x3000f000 DT_SIZE_K(4)>;
+			clocks = <&clocks BL808_CLKID_CLK_UHSPLL>;
+			status = "disabled";
+		};
+
 		/* All contiguous fast RAM for M0
 		 * It is kept tightly coupled by this CPU's internal cache
 		 */
@@ -500,6 +507,13 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x3f000000 DT_SIZE_K(32)>;
 			zephyr,memory-region = "MM_VRAM";
+		};
+
+		psram: memory@50000000 {
+			compatible = "bflb,bl808-psram-uhs", "zephyr,memory-region";
+			reg = <0x50000000 DT_SIZE_M(64)>;
+			zephyr,memory-region = "PSRAM";
+			page-size = <2048>;
 		};
 
 		mtimer: timer@e000bff8 {
