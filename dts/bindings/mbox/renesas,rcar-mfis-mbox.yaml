@@ -44,19 +44,19 @@ examples:
         interrupt-parent = <&gic>;
         interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_00 */
                      <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,  /* AP_01 */
-                     [...]
+                     /* ... */
                      <GIC_SPI 180 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* AP_63 */
                      <GIC_SPI 182 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_00 */
                      <GIC_SPI 183 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* SCP_01 */
-                     [...]
+                     /* ... */
                      <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>; /* SCP_11 */
         #mbox-cells = <1>;
       };
 
       /* Consumer using MFIS channel 64 (SCP_00) */
       scmi {
-        [...]
+        /* ... */
         mboxes = <&mfis 64>;
-        [...]
+        /* ... */
       };
     };
