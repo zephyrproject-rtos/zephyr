@@ -163,13 +163,14 @@ static inline uint32_t lpspi_set_delays(const struct device *dev,
 					uint32_t prescaled_clock)
 {
 	const struct lpspi_config *config = dev->config;
+	bool gpio_cs = spi_cs_is_gpio(spi_cfg);
 	uint32_t val = 0;
 
-	if (!spi_cs_is_gpio(spi_cfg)) {
+	if (!gpio_cs || config->pcs_sck_delay > 0 || config->sck_pcs_delay > 0) {
 		uint32_t lead_time_ns = config->pcs_sck_delay > 0 ?
-					config->pcs_sck_delay : spi_cfg->cs.setup_ns;
+					config->pcs_sck_delay : (gpio_cs ? 0 : spi_cfg->cs.setup_ns);
 		uint32_t lag_time_ns = config->sck_pcs_delay > 0 ?
-					config->sck_pcs_delay : spi_cfg->cs.hold_ns;
+					config->sck_pcs_delay : (gpio_cs ? 0 : spi_cfg->cs.hold_ns);
 
 		val |= LPSPI_CCR_PCSSCK(lpspi_calc_delay_scaler(lead_time_ns,
 								prescaled_clock, 1)) |
