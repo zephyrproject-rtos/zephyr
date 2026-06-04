@@ -2365,7 +2365,34 @@ This has been fixed in main for v4.4.0
 :cve:`2026-5589`
 ----------------
 
-Under embargo until 2026-06-03
+Bluetooth: Mesh: Out-of-bounds write caused by an integer underflow
+
+An integer underflow in ``bt_mesh_sol_recv()`` in the Bluetooth Mesh solicitation
+handling (``subsys/bluetooth/mesh/solicitation.c``) leads to an out-of-bounds write.
+When ``CONFIG_BT_MESH_OD_PRIV_PROXY_SRV`` is enabled, the function parses solicitation
+PDUs from raw BLE advertising payloads. The AD parsing loop reads an attacker-controlled
+length byte and computes ``reported_len - 3`` without checking that ``reported_len`` is
+at least 3. When the value is smaller, the signed subtraction yields a negative number
+that bypasses the length guard and is then implicitly converted to a very large
+``size_t``, advancing the buffer pointer far out of bounds so that subsequent reads
+dereference invalid memory. A nearby BLE device can trigger this with a non-connectable
+advertisement carrying a UUID16 AD structure and a crafted length byte, with no pairing
+or prior association required, potentially leading to denial of service or arbitrary
+code execution.
+
+- `Zephyr project bug tracker GHSA-4pm9-4v7f-x6gr
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-4pm9-4v7f-x6gr>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 105585 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/105585>`_
+
+- `PR 108334 fix for 4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108334>`_
+
+- `PR 108333 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108333>`_
 
 :cve:`2026-5590`
 ----------------
