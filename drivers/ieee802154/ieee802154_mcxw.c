@@ -93,9 +93,22 @@ static volatile uint32_t rx_on_when_idle = RX_ON_IDLE_STOP;
 /* keep RX open shortly after data poll when FP=1 and skip rf_abort while waiting for ACK */
 static uint64_t waiting_ack_until_us;
 
+/**
+ * @brief Current PHY hardware channel
+ *
+ * Tracks the actual channel configured in the PHY hardware.
+ * This may differ from mcxw_ctx.channel during temporary operations
+ * (energy scans, CSL RX slots).
+ *
+ * The main network channel is always stored in mcxw_ctx.channel.
+ */
+static uint8_t phy_channel = DEFAULT_CHANNEL;
+
 /* Private functions */
 static void rf_abort(void);
 static void rf_set_channel(uint8_t channel);
+static int rf_change_channel(uint8_t channel, bool temporary, bool restart_rx);
+static int rf_restore_main_channel(void);
 static void rf_set_tx_power(int8_t tx_power);
 static uint64_t rf_adjust_tstamp_from_phy(uint64_t ts);
 
@@ -141,6 +154,130 @@ WEAK void app_allow_device_to_sleep(void)
  */
 WEAK void app_disallow_device_to_slepp(void)
 {
+}
+
+/**
+ * @brief Low-level PHY channel configuration
+ *
+ * Directly configures the PHY hardware channel without any validation
+ * or context updates. This is a helper function that should not be
+ * called directly - use rf_change_channel() instead.
+ *
+ * @param channel Channel to set (11-26, not validated)
+ */
+static void rf_set_channel(uint8_t channel)
+{
+	macToPlmeMessage_t msg;
+
+	msg.msgType = gPlmeSetReq_c;
+	msg.msgData.setReq.PibAttribute = gPhyPibCurrentChannel_c;
+	msg.msgData.setReq.PibAttributeValue = (uint64_t)channel;
+
+	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
+}
+
+/**
+ * @brief Helper to restart RX if rx_on_when_idle is enabled
+ *
+ * @return 0 on success, error code otherwise
+ */
+static int rf_restart_rx_if_enabled(void)
+{
+	macToPlmeMessage_t msg;
+	phyStatus_t phy_status;
+
+	if (rx_on_when_idle != RX_ON_IDLE_START) {
+		return 0;  /* RX on idle not enabled, nothing to do */
+	}
+
+	msg.msgType = gPlmeSetReq_c;
+	msg.msgData.setReq.PibAttribute = gPhyPibRxOnWhenIdle;
+	msg.msgData.setReq.PibAttributeValue = (uint64_t)RX_ON_IDLE_START;
+
+	phy_status = MAC_PLME_SapHandler(&msg, ot_phy_ctx);
+	if (phy_status != gPhySuccess_c) {
+		LOG_ERR("Failed to restart RX: %d", phy_status);
+		return -EIO;
+	}
+
+	mcxw_ctx.state = RADIO_STATE_RECEIVE;
+	LOG_DBG("RX restarted");
+	return 0;
+}
+
+/**
+ * @brief Centralized channel change function
+ *
+ * This function handles ALL channel changes in the driver:
+ * - Permanent changes (network channel change)
+ * - Temporary changes (CSL RX slots, energy scan)
+ * - PHY/context synchronization
+ * - RX restart if necessary
+ *
+ * @param channel New channel (11-26)
+ * @param temporary true if temporary change (RX slot, energy scan)
+ *                  false if permanent change (network change)
+ * @param restart_rx true to restart RX after channel change
+ *
+ * @return 0 on success, error code otherwise
+ */
+static int rf_change_channel(uint8_t channel, bool temporary, bool restart_rx)
+{
+	if (channel < 11 || channel > 26) {
+		LOG_ERR("Invalid channel: %u", channel);
+		return -EINVAL;
+	}
+
+	LOG_DBG("Channel change: %u -> %u (temp=%d, restart_rx=%d, main=%u)",
+		phy_channel, channel, temporary, restart_rx, mcxw_ctx.channel);
+
+	/* Update main channel if permanent change */
+	if (!temporary) {
+		mcxw_ctx.channel = channel;
+		LOG_DBG("Main channel updated to %u", channel);
+	}
+
+	/* If PHY is already on the correct channel, just restart RX if needed */
+	if (phy_channel == channel) {
+		LOG_DBG("PHY already on channel %u", channel);
+		return restart_rx ? rf_restart_rx_if_enabled() : 0;
+	}
+
+	/* Stop current RX */
+	rf_abort();
+
+	/* Configure new channel in PHY using low-level helper */
+	rf_set_channel(channel);
+	phy_channel = channel;
+
+	LOG_DBG("PHY channel set to %u", channel);
+
+	/* Restart RX if requested */
+	return restart_rx ? rf_restart_rx_if_enabled() : 0;
+}
+
+/**
+ * @brief Restore main channel after temporary operation
+ *
+ * This function is called automatically after:
+ * - CSL RX slot on temporary channel
+ * - Energy scan
+ * - Any temporary operation that changed PHY channel
+ *
+ * @return 0 on success, error code otherwise
+ */
+static int rf_restore_main_channel(void)
+{
+	/* If PHY is on a different channel than main, restore it */
+	if (phy_channel != mcxw_ctx.channel) {
+		LOG_DBG("Restoring main channel %u (PHY was on %u)",
+			mcxw_ctx.channel, phy_channel);
+		return rf_change_channel(mcxw_ctx.channel, false,
+					 rx_on_when_idle == RX_ON_IDLE_START);
+	}
+
+	LOG_DBG("PHY already on main channel %u", mcxw_ctx.channel);
+	return 0;
 }
 
 static int read_mac_from_nvmem(const struct nvmem_cell *cell, uint8_t *mac_addr)
@@ -313,8 +450,8 @@ void mcxw_radio_receive(void)
 
 	mcxw_ctx.state = RADIO_STATE_RECEIVE;
 
-	rf_abort();
-	rf_set_channel(mcxw_ctx.channel);
+	/* Ensure PHY is on correct channel */
+	rf_change_channel(mcxw_ctx.channel, false, false);
 
 	/*
 	 * RX-on-idle management. CSL receiver is managed separately:
@@ -515,7 +652,8 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	mcxw_radio->tx_frame.sec_processed = net_pkt_ieee802154_frame_secured(pkt);
 	mcxw_radio->tx_frame.hdr_updated = net_pkt_ieee802154_mac_hdr_rdy(pkt);
 
-	rf_set_channel(mcxw_radio->channel);
+	/* Ensure PHY is on correct channel before TX */
+	rf_change_channel(mcxw_radio->channel, false, false);
 
 	msg->msgType = gPdDataReq_c;
 	msg->msgData.dataReq.psduLength = mcxw_radio->tx_frame.length;
@@ -776,7 +914,8 @@ static int mcxw_energy_scan(const struct device *dev, uint16_t duration,
 
 	rf_abort();
 
-	rf_set_channel(mcxw_radio->channel);
+	/* Use centralized channel function */
+	rf_change_channel(mcxw_radio->channel, false, false);
 
 	mcxw_radio->energy_scan_done = done_cb;
 
@@ -904,11 +1043,11 @@ static void mcxw_receive_at(uint8_t channel, uint32_t start, uint32_t duration)
 		set_csl_sample_time();
 	}
 
-	/* Use the channel provided by OT to avoid listening on the wrong channel */
+	/* Use centralized function for temporary channel change */
 	if (channel != mcxw_ctx.channel) {
-		LOG_DBG("RX_SLOT: switching channel %u -> %u", mcxw_ctx.channel, channel);
-		rf_set_channel(channel);
-		mcxw_ctx.channel = channel;
+		LOG_DBG("RX_SLOT: temporary channel %u (main=%u)",
+			channel, mcxw_ctx.channel);
+		rf_change_channel(channel, true, false);
 	}
 
 	start = rf_adjust_tstamp_from_app(start);
@@ -1060,17 +1199,6 @@ static void rf_abort(void)
 	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
 }
 
-static void rf_set_channel(uint8_t channel)
-{
-	macToPlmeMessage_t msg;
-
-	msg.msgType = gPlmeSetReq_c;
-	msg.msgData.setReq.PibAttribute = gPhyPibCurrentChannel_c;
-	msg.msgData.setReq.PibAttributeValue = (uint64_t)channel;
-
-	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
-}
-
 static int mcxw_cca(const struct device *dev)
 {
 	macToPlmeMessage_t msg;
@@ -1095,18 +1223,21 @@ static int mcxw_set_channel(const struct device *dev, uint16_t channel)
 {
 	struct mcxw_context *mcxw_radio = dev->data;
 
-	LOG_DBG("%u", channel);
+	LOG_DBG("Set channel: %u -> %u", mcxw_radio->channel, channel);
 
-	if (channel != mcxw_radio->channel) {
-
-		if (channel < 11 || channel > 26) {
-			return channel < 11 ? -ENOTSUP : -EINVAL;
-		}
-
-		mcxw_radio->channel = channel;
+	if (channel == mcxw_radio->channel) {
+		return 0;
 	}
 
-	return 0;
+	if (channel < 11 || channel > 26) {
+		return channel < 11 ? -ENOTSUP : -EINVAL;
+	}
+
+	/* Use centralized function */
+	/* Permanent change, restart RX if radio is active */
+	bool restart_rx = (mcxw_radio->state == RADIO_STATE_RECEIVE);
+
+	return rf_change_channel(channel, false, restart_rx);
 }
 
 static net_time_t mcxw_get_time_ns(const struct device *dev)
@@ -1336,6 +1467,9 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 			 * state
 			 */
 			mcxw_ctx.state = RADIO_STATE_SLEEP;
+
+			/* Restore main channel if on temporary channel */
+			rf_restore_main_channel();
 		}
 		break;
 	case gPlmeAbortInd_c:
@@ -1526,7 +1660,12 @@ static int mcxw_init(const struct device *dev)
 	mcxw_radio->energy_scan_done = NULL;
 
 	mcxw_radio->channel = DEFAULT_CHANNEL;
-	rf_set_channel(mcxw_radio->channel);
+
+	/* Initialize PHY channel tracking */
+	phy_channel = DEFAULT_CHANNEL;
+
+	/* Configure PHY to default channel using low-level helper */
+	rf_set_channel(DEFAULT_CHANNEL);
 
 	mcxw_radio->tx_frame.length = 0;
 	/* Make the psdu point to the space after macToPdDataMessage_t in the data buffer */
