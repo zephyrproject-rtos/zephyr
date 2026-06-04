@@ -413,14 +413,14 @@ static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __
 		return ret;
 	}
 
-	/* Enable RX */
-	ret = eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
+	/* Enable interrupts */
+	ret = eth_dm9051_spi_write_reg(dev, DM9051_IMR, imr);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Enable interrupts */
-	return eth_dm9051_spi_write_reg(dev, DM9051_IMR, imr);
+	/* Enable RX */
+	return eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
 }
 
 static int eth_dm9051_hw_stop(const struct device *dev, struct net_if *iface __unused)
