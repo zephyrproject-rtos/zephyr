@@ -5,7 +5,7 @@ description: TSC2007 touch panel controller
 
 compatible: "ti,tsc2007"
 
-include: [i2c-device.yaml, touchscreen-common.yaml]
+include: [i2c-device.yaml, touchscreen-common.yaml, touchscreen-common-calibration.yaml]
 
 properties:
   int-gpios:
@@ -14,26 +14,8 @@ properties:
       Interrupt GPIO. Used by the controller to signal touch data is
       available. Active low.
 
-  raw-x-min:
+  x-plate-ohms:
     type: int
     description: |
-      Signed raw X axis start for scaling the reported coordinates.
-      No effect if screen size is not set.
-
-  raw-y-min:
-    type: int
-    description: |
-      Signed raw Y axis start for scaling the reported coordinates.
-      No effect if screen size is not set.
-
-  raw-x-max:
-    type: int
-    description: |
-      Raw X axis end for scaling the reported coordinates.
-      No effect if screen size is not set.
-
-  raw-y-max:
-    type: int
-    description: |
-      Raw Y axis end for scaling the reported coordinates.
-      No effect if screen size is not set.
+      The resistance of the touchscreen X-plate in ohms specifies
+      the physical resistance of the X-direction plate on the touchscreen.

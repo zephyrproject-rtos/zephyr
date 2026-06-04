@@ -5,11 +5,12 @@
 
 #define DT_DRV_COMPAT ti_tsc2007
 
-#include <zephyr/kernel.h>
+#include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
 #include <zephyr/input/input_touch.h>
+#include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/sys/util.h>
 
@@ -70,10 +71,7 @@ struct tsc2007_config {
 	struct input_touchscreen_common_config common;
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec int_gpio;
-	int raw_x_min;
-	int raw_y_min;
-	uint32_t raw_x_max;
-	uint32_t raw_y_max;
+	uint16_t x_plate_ohms;
 };
 
 struct tsc2007_data {
@@ -118,43 +116,19 @@ static int tsc2007_powerdown(const struct device *dev)
 	return 0;
 }
 
-static void tsc2007_report_touch(const struct device *dev)
-{
-	const struct tsc2007_config *config = dev->config;
-	const struct input_touchscreen_common_config *common = &config->common;
-	struct tsc2007_data *data = dev->data;
-	uint32_t x = data->touch_x;
-	uint32_t y = data->touch_y;
-
-	if (common->screen_width > 0 && common->screen_height > 0) {
-		x = ((data->touch_x - config->raw_x_min) * common->screen_width) /
-		    (config->raw_x_max - config->raw_x_min);
-		y = ((data->touch_y - config->raw_y_min) * common->screen_height) /
-		    (config->raw_y_max - config->raw_y_min);
-
-		x = clamp(x, 0, common->screen_width - 1);
-		y = clamp(y, 0, common->screen_height - 1);
-	}
-
-	input_touchscreen_report_pos(dev, x, y, K_FOREVER);
-}
-
 static int tsc2007_read_adc(const struct device *dev, uint8_t cmd, uint32_t *value)
 {
 	const struct tsc2007_config *config = dev->config;
 	uint8_t rx[2];
 	int ret = 0;
 
-	if (!dev) {
-		return -EINVAL;
-	}
 	if (!value) {
 		return -EINVAL;
 	}
 
 	ret = i2c_write_read_dt(&config->bus, &cmd, 1, &rx[0], sizeof(rx));
 	if (ret < 0) {
-		return -EIO;
+		return ret;
 	}
 
 	/*
@@ -176,57 +150,63 @@ static int tsc2007_read_values(const struct device *dev, struct ts_event *touch)
 
 	if (ret < 0) {
 		LOG_ERR("Could not read y value (%d)", ret);
-		return -EIO;
+		return ret;
 	}
 
 	/* turn y- off; x+ on, then leave in lowpower */
 	ret = tsc2007_read_adc(dev, cmd_read_x, &touch->x);
 	if (ret < 0) {
 		LOG_ERR("Could not read x value (%d)", ret);
-		return -EIO;
+		return ret;
 	}
 
 	/* turn y+ off, x- on, we'll use formula #1 */
 	ret = tsc2007_read_adc(dev, cmd_read_z1, &touch->z1);
 	if (ret < 0) {
 		LOG_ERR("Could not read z1 values (%d)", ret);
-		return -EIO;
+		return ret;
 	}
 
 	ret = tsc2007_read_adc(dev, cmd_read_z2, &touch->z2);
 	if (ret < 0) {
 		LOG_ERR("Could not read z2 values (%d)", ret);
-		return -EIO;
+		return ret;
 	}
 
 	/* Prepare for next touch reading - power down ADC, enable PENIRQ */
 	ret = tsc2007_powerdown(dev);
 	if (ret < 0) {
-		LOG_ERR("Could not read power (%d)", ret);
-		return -EIO;
+		LOG_ERR("Could not prepare for touch readings (%d)", ret);
+		return ret;
 	}
 
 	return 0;
 }
 
-static uint32_t tsc2007_calculate_pressure(struct ts_event *touch)
+static int tsc2007_calculate_pressure(const struct device* dev,
+				      struct ts_event *touch,
+				      uint32_t *pressure)
 {
-	uint32_t ret = 0;
-
-	if (!touch) {
-		return;
+	if (touch == NULL || pressure == NULL) {
+		return -EINVAL;
 	}
+
+	int ret = 0;
+	uint32_t p = 0;
+
+	const struct tsc2007_config *config = dev->config;
 
 	if (touch->x == MAX_12BIT) {
 		touch->x = 0UL;
 	}
 
 	if (touch->x && touch->z1) {
-		ret = (uint32_t)touch->z2 - (uint32_t)touch->z1;
-		ret *= (uint32_t)touch->x;
-		ret *= 400UL;
-		ret /= (uint32_t)touch->z1;
-		ret = (ret + 2047UL) >> 12;
+		p = touch->z2 - touch->z1;
+		p *= touch->x;
+		p *= config->x_plate_ohms;
+		p /= touch->z1;
+		p = (p + 2047UL) >> 12;
+		*pressure = p;
 	}
 
 	return ret;
@@ -241,7 +221,7 @@ static void tsc2007_work_handler(struct k_work *work)
 	struct tsc2007_data *data = CONTAINER_OF(work, struct tsc2007_data, work.work);
 	const struct tsc2007_config *config = data->dev->config;
 	struct ts_event touch;
-	uint32_t pressure;
+	uint32_t pressure = 0;
 	int ret = 0;
 
 	/* Interrupt pin is set to GPIO_ACTIVE_LOW in the DTS file */
@@ -260,7 +240,11 @@ static void tsc2007_work_handler(struct k_work *work)
 	data->touch_x = touch.x;
 	data->touch_y = touch.y;
 
-	pressure = tsc2007_calculate_pressure(&touch);
+	ret = tsc2007_calculate_pressure(data->dev, &touch, &pressure);
+	if (ret < 0) {
+		LOG_ERR("pressure calculation %d", ret);
+		return;
+	}
 
 	if (pressure > MAX_12BIT) {
 		/*
@@ -272,7 +256,7 @@ static void tsc2007_work_handler(struct k_work *work)
 	}
 
 	if (pressure > 0) {
-		tsc2007_report_touch(data->dev);
+		input_touchscreen_report_pos_calibrated(data->dev, data->touch_x, data->touch_y);
 		if (!data->pendown) {
 			input_report_key(data->dev, INPUT_BTN_TOUCH, TOUCH_STATE_ACTIVE, true,
 					 K_FOREVER);
@@ -297,9 +281,6 @@ static void tsc2007_interrupt_handler(const struct device *dev, struct gpio_call
 	struct tsc2007_data *data = CONTAINER_OF(cb, struct tsc2007_data, int_gpio_cb);
 	const struct tsc2007_config *config = data->dev->config;
 
-	if (!dev) {
-		return;
-	}
 	if (!cb) {
 		return;
 	}
@@ -345,21 +326,19 @@ static int tsc2007_init(const struct device *dev)
 	struct tsc2007_data *data = dev->data;
 	int ret = 0;
 
-	if (!dev) {
-		return -EINVAL;
-	}
-
 	data->dev = dev;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
+		LOG_ERR("I2C bus device not ready");
+		//LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -ENODEV;
 	}
 
 	k_work_init_delayable(&data->work, tsc2007_work_handler);
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
+		LOG_ERR("GPIO device not ready");
+		//LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 
@@ -393,8 +372,17 @@ static int tsc2007_init(const struct device *dev)
 
 	k_msleep(2);
 
-	tsc2007_command_setup(dev);
-	tsc2007_powerdown(dev);
+	ret = tsc2007_command_setup(dev);
+	if (ret < 0) {
+		LOG_ERR("Could not write command setup (%d)", ret);
+		return ret;
+	}
+
+	ret = tsc2007_powerdown(dev);
+	if (ret < 0) {
+		LOG_ERR("Could not prepare for touch readings (%d)", ret);
+		return ret;
+	}
 
 	return 0;
 }
@@ -426,10 +414,7 @@ static int tsc2007_init(const struct device *dev)
 		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \
 		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),                               \
-		.raw_x_min = DT_INST_PROP_OR(index, raw_x_min, 0),                                 \
-		.raw_x_max = DT_INST_PROP_OR(index, raw_x_max, 4096),                              \
-		.raw_y_min = DT_INST_PROP_OR(index, raw_y_min, 0),                                 \
-		.raw_y_max = DT_INST_PROP_OR(index, raw_y_max, 4096),                              \
+		.x_plate_ohms = DT_INST_PROP_OR(index, x_plate_ohms, 400),                         \
 	};                                                                                         \
 	TSC2007_PM_NOTIFIER_FUNCS(index)                                                           \
 	static struct tsc2007_data tsc2007_data_##index;                                           \

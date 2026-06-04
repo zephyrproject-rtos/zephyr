@@ -7,6 +7,7 @@ config INPUT_TSC2007
 	depends on DT_HAS_TI_TSC2007_ENABLED
 	select I2C
 	select INPUT_TOUCH
+	select INPUT_TOUCHSCREEN_COMMON_CALIBRATION
 	depends on GPIO
 	help
 	  Enable driver for TSC2007 touch panel controller.

@@ -22,3 +22,24 @@ void input_touchscreen_report_pos(const struct device *dev,
 	input_report_abs(dev, reported_x_code, reported_x, false, timeout);
 	input_report_abs(dev, reported_y_code, reported_y, false, timeout);
 }
+
+#if defined(CONFIG_INPUT_TOUCHSCREEN_COMMON_CALIBRATION)
+void input_touchscreen_report_pos_calibrated(const struct device *dev,
+				   uint32_t x,
+				   uint32_t y)
+{
+	const struct input_touchscreen_common_config *cfg = dev->config;
+
+	if (cfg->screen_width > 0 && cfg->screen_height > 0) {
+		x = ((x - cfg->raw_x_min) * cfg->screen_width) /
+		    (cfg->raw_x_max - cfg->raw_x_min);
+		y = ((y - cfg->raw_y_min) * cfg->screen_height) /
+		    (cfg->raw_y_max - cfg->raw_y_min);
+
+		x = clamp(x, 0, cfg->screen_width - 1);
+		y = clamp(y, 0, cfg->screen_height - 1);
+	}
+
+	input_touchscreen_report_pos(dev, x, y, K_FOREVER);
+}
+#endif

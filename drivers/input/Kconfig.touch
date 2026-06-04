@@ -5,3 +5,9 @@ config INPUT_TOUCH
 	bool
 	help
 	  Enable library used for touchscreen drivers.
+
+config INPUT_TOUCHSCREEN_COMMON_CALIBRATION
+	bool "Enable touchscreen calibration support"
+	default n
+	help
+	  Enable raw coordinate calibration (raw_x_min/max, raw_y_min/max).

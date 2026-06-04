@@ -120,10 +120,6 @@ struct stmpe811_config {
 	uint8_t touch_detect_delay_us;
 	uint8_t touch_average_control;
 	uint8_t tracking_index;
-	int raw_x_min;
-	int raw_y_min;
-	uint16_t raw_x_max;
-	uint16_t raw_y_max;
 };
 
 struct stmpe811_data {
@@ -331,28 +327,6 @@ static int stmpe811_ts_get_data(const struct device *dev)
 	return 0;
 }
 
-static void stmpe811_report_touch(const struct device *dev)
-{
-	const struct stmpe811_config *config = dev->config;
-	const struct input_touchscreen_common_config *common = &config->common;
-	struct stmpe811_data *data = dev->data;
-	int x = data->touch_x;
-	int y = data->touch_y;
-
-	if (common->screen_width > 0 && common->screen_height > 0) {
-		x = (((int)data->touch_x - config->raw_x_min) * common->screen_width) /
-			(config->raw_x_max - config->raw_x_min);
-		y = (((int)data->touch_y - config->raw_y_min) * common->screen_height) /
-			(config->raw_y_max - config->raw_y_min);
-
-		x = clamp(x, 0, common->screen_width);
-		y = clamp(y, 0, common->screen_height);
-	}
-
-	input_touchscreen_report_pos(dev, x, y, K_FOREVER);
-	input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
-}
-
 static int stmpe811_process(const struct device *dev)
 {
 	const struct stmpe811_config *config = dev->config;
@@ -398,7 +372,8 @@ static int stmpe811_process(const struct device *dev)
 					return err;
 				}
 
-				stmpe811_report_touch(dev);
+				input_touchscreen_report_pos_calibrated(data->dev, data->touch_x, data->touch_y);
+				input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 			}
 		}
 	}
@@ -523,22 +498,12 @@ static int stmpe811_init(const struct device *dev)
 }
 
 #define STMPE811_DEFINE(index)                                                                     \
-	BUILD_ASSERT(DT_INST_PROP_OR(index, raw_x_max, 4096) >                                     \
-		     DT_INST_PROP_OR(index, raw_x_min, 0),                                         \
-		     "raw-x-max should be larger than raw-x-min");                                 \
-	BUILD_ASSERT(DT_INST_PROP_OR(index, raw_y_max, 4096) >                                     \
-		     DT_INST_PROP_OR(index, raw_y_min, 0),                                         \
-		     "raw-y-max should be larger than raw-y-min");                                 \
 	static const struct stmpe811_config stmpe811_config_##index = {                            \
 		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \
 		.bus = I2C_DT_SPEC_INST_GET(index),                                                \
 		.int_gpio = GPIO_DT_SPEC_INST_GET(index, int_gpios),                               \
 		.panel_driver_settling_time_us =                                                   \
 			DT_INST_ENUM_IDX(index, panel_driver_settling_time_us),                    \
-		.raw_x_min = DT_INST_PROP_OR(index, raw_x_min, 0),                                 \
-		.raw_y_min = DT_INST_PROP_OR(index, raw_y_min, 0),                                 \
-		.raw_x_max = DT_INST_PROP_OR(index, raw_x_max, 4096),                              \
-		.raw_y_max = DT_INST_PROP_OR(index, raw_y_max, 4096),                              \
 		.touch_detect_delay_us = DT_INST_ENUM_IDX(index, touch_detect_delay_us),           \
 		.touch_average_control = DT_INST_ENUM_IDX(index, touch_average_control),           \
 		.tracking_index = DT_INST_ENUM_IDX(index, tracking_index)};                        \

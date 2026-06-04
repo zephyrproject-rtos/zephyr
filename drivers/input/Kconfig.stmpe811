@@ -7,5 +7,6 @@ config INPUT_STMPE811
 	depends on DT_HAS_ST_STMPE811_ENABLED
 	select I2C
 	select INPUT_TOUCH
+	select INPUT_TOUCHSCREEN_COMMON_CALIBRATION
 	help
 	  Enable driver for STMPE811 touch panel.

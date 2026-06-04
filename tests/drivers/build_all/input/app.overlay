@@ -354,10 +354,7 @@
 				int-gpios = <&test_gpio 0 1>;
 				screen-width = <10>;
 				screen-height = <10>;
-				raw-x-min = <0>;
-				raw-y-min = <0>;
-				raw-x-max = <1>;
-				raw-y-max = <1>;
+				x-plate-ohms = <1>;
 			};
 		};
 

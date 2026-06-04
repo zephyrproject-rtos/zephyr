@@ -22,6 +22,7 @@
  */
 
 #include <zephyr/input/input.h>
+#include <zephyr/sys/util_macro.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +46,12 @@ struct input_touchscreen_common_config {
 	bool inverted_y;
 	/** X and Y axes are swapped */
 	bool swapped_x_y;
+#if defined(CONFIG_INPUT_TOUCHSCREEN_COMMON_CALIBRATION)
+	uint32_t raw_x_min;
+	uint32_t raw_x_max;
+	uint32_t raw_y_min;
+	uint32_t raw_y_max;
+#endif
 };
 
 /**
@@ -52,13 +59,19 @@ struct input_touchscreen_common_config {
  *
  * @param node_id The devicetree node identifier.
  */
-#define INPUT_TOUCH_DT_COMMON_CONFIG_INIT(node_id)			\
-	{								\
-		.screen_width = DT_PROP(node_id, screen_width),		\
-		.screen_height = DT_PROP(node_id, screen_height),	\
-		.inverted_x = DT_PROP(node_id, inverted_x),		\
-		.inverted_y = DT_PROP(node_id, inverted_y),		\
-		.swapped_x_y = DT_PROP(node_id, swapped_x_y)		\
+#define INPUT_TOUCH_DT_COMMON_CONFIG_INIT(node_id)				\
+	{									\
+		.screen_width = DT_PROP(node_id, screen_width),			\
+		.screen_height = DT_PROP(node_id, screen_height),		\
+		.inverted_x = DT_PROP(node_id, inverted_x),			\
+		.inverted_y = DT_PROP(node_id, inverted_y),			\
+		.swapped_x_y = DT_PROP(node_id, swapped_x_y),			\
+		IF_ENABLED(CONFIG_INPUT_TOUCHSCREEN_COMMON_CALIBRATION, (	\
+			.raw_x_min = DT_INST_PROP_OR(node_id, raw_x_min, 0),	\
+			.raw_x_max = DT_INST_PROP_OR(node_id, raw_x_max, 4095),	\
+			.raw_y_min = DT_INST_PROP_OR(node_id, raw_y_min, 0),	\
+			.raw_y_max = DT_INST_PROP_OR(node_id, raw_y_max, 4095),	\
+	     ))									\
 	}
 
 /**
@@ -89,6 +102,19 @@ struct input_touchscreen_common_config {
 void input_touchscreen_report_pos(const struct device *dev,
 		uint32_t x, uint32_t y,
 		k_timeout_t timeout);
+
+#if defined(CONFIG_INPUT_TOUCHSCREEN_COMMON_CALIBRATION)
+/**
+ * @brief Common utility for reporting calibrated touchscreen position events.
+ *
+ * @param dev Touchscreen controller
+ * @param x X coordinate as reported by the controller
+ * @param y Y coordinate as reported by the controller
+ */
+void input_touchscreen_report_pos_calibrated(const struct device *dev,
+				   uint32_t x,
+				   uint32_t y);
+#endif
 
 #ifdef __cplusplus
 }
