@@ -3205,6 +3205,11 @@ extern const struct rtio_iodev_api i3c_iodev_api;
 /**
  * @brief Copy the i3c_msgs into a set of RTIO requests
  *
+ * Each sqe carries a pointer to its originating struct i3c_msg in the sqe
+ * userdata. Drivers may write back msg->num_xfer and msg->err via this
+ * pointer at completion. The msgs array must remain valid until the
+ * transaction completes.
+ *
  * @kconfig_dep{CONFIG_I3C_RTIO}
  *
  * @param r RTIO context
@@ -3217,7 +3222,7 @@ extern const struct rtio_iodev_api i3c_iodev_api;
  */
 struct rtio_sqe *i3c_rtio_copy(struct rtio *r,
 			       struct rtio_iodev *iodev,
-			       const struct i3c_msg *msgs,
+			       struct i3c_msg *msgs,
 			       uint8_t num_msgs);
 
 #endif /* CONFIG_I3C_RTIO */
