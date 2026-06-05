@@ -1515,11 +1515,13 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	const struct usb_ep_descriptor *const stream_ep = stream_info->ep;
 	struct net_buf *buf;
 	struct uhc_transfer *xfer;
+	size_t rec_len =
+		USB_EP_DIR_IS_IN(stream_ep->bEndpointAddress) ? stream_info->ep_mps_mult : 0;
 	int ret;
 
 	LOG_DBG("Initiating transfer: ep=0x%02x, vbuf=%p", stream_ep->bEndpointAddress, vbuf);
 
-	xfer = usbh_xfer_alloc(host_data->udev, stream_ep->bEndpointAddress,
+	xfer = usbh_xfer_alloc(host_data->udev, stream_ep->bEndpointAddress, rec_len,
 			       stream_iso_req_cb, host_data);
 	if (xfer == NULL) {
 		LOG_ERR("Failed to allocate transfer");
