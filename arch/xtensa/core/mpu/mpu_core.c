@@ -557,27 +557,12 @@ out:
  *
  * @param map Pointer to foreground MPU map.
  */
-#ifdef CONFIG_USERSPACE
-/* With userspace enabled, the pointer to per memory domain MPU map is stashed
- * inside the thread struct. If we still only take struct xtensa_mpu_map as
- * argument, a wrapper function is needed. To avoid the cost associated with
- * calling that wrapper function, takes thread pointer directly as argument
- * when userspace is enabled. Not to mention that writing the map to hardware
- * is already a costly operation per context switch. So every little bit helps.
- */
-void xtensa_mpu_map_write(struct k_thread *thread)
-#else
-void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
-#endif
+static inline void mpu_map_write(struct xtensa_mpu_map *map)
 {
 	int entry;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&xtensa_mpu_lock);
-
-#ifdef CONFIG_USERSPACE
-	struct xtensa_mpu_map *map = thread->arch.mpu_map;
-#endif
 
 	/*
 	 * Clear MPU entries first, then write MPU entries in reverse order.
@@ -600,6 +585,20 @@ void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
 
 	k_spin_unlock(&xtensa_mpu_lock, key);
 }
+
+#ifdef CONFIG_USERSPACE
+/**
+ * Write the MPU map associated with the thread.
+ *
+ * @param thread Pointer to thread with MPU map.
+ */
+void xtensa_mpu_thread_map_write(struct k_thread *thread)
+{
+	struct xtensa_mpu_map *map = thread->arch.mpu_map;
+
+	mpu_map_write(map);
+}
+#endif /* CONFIG_USERSPACE */
 
 /**
  * Perform necessary steps to enable MPU.
@@ -654,14 +653,7 @@ void xtensa_mpu_init(void)
 	(void)consolidate_entries(xtensa_mpu_map_fg_kernel.entries, &first_enabled_idx);
 
 	/* Write the map into hardware. There is no turning back now. */
-#ifdef CONFIG_USERSPACE
-	struct k_thread dummy_map_thread;
-
-	dummy_map_thread.arch.mpu_map = &xtensa_mpu_map_fg_kernel;
-	xtensa_mpu_map_write(&dummy_map_thread);
-#else
-	xtensa_mpu_map_write(&xtensa_mpu_map_fg_kernel);
-#endif
+	mpu_map_write(&xtensa_mpu_map_fg_kernel);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -812,7 +804,7 @@ int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	 */
 	cur_thread = _current_cpu->current;
 	if (cur_thread->mem_domain_info.mem_domain == domain) {
-		xtensa_mpu_map_write(cur_thread);
+		xtensa_mpu_thread_map_write(cur_thread);
 	}
 
 out:
@@ -847,7 +839,7 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	cur_thread = _current_cpu->current;
 	if (((cur_thread->base.thread_state & _THREAD_DUMMY) != _THREAD_DUMMY) &&
 	    (cur_thread->mem_domain_info.mem_domain == domain)) {
-		xtensa_mpu_map_write(cur_thread);
+		xtensa_mpu_thread_map_write(cur_thread);
 	}
 
 out:
@@ -914,7 +906,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 	 * running thread.
 	 */
 	if (thread == _current_cpu->current) {
-		xtensa_mpu_map_write(thread);
+		xtensa_mpu_thread_map_write(thread);
 	}
 
 	return ret;
@@ -955,7 +947,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	ret = mpu_map_region_restore(&domain->arch.mpu_map,
 				     thread->stack_info.start, stack_end_addr);
 
-	xtensa_mpu_map_write(thread);
+	xtensa_mpu_thread_map_write(thread);
 
 out:
 	return ret;
