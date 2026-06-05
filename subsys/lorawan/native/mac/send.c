@@ -66,9 +66,6 @@ LOG_MODULE_DECLARE(lorawan_native_mac, CONFIG_LORAWAN_LOG_LEVEL);
 #define DIR_DOWNLINK		1
 #define MAX_FRAME_SIZE		256
 
-/* FOpts carries up to 15 bytes of MAC commands; capped by FCtrl[3:0]. */
-#define LWAN_MAX_FOPTS_LEN	15
-
 #define FCTRL_ADR		BIT(7)
 #define FCTRL_ACK		BIT(5)
 #define FCTRL_FPENDING		BIT(4)
@@ -721,6 +718,7 @@ static int send_validate_payload_size(struct lwan_ctx *ctx,
 				      const struct send_state *state)
 {
 	struct lwan_dr_params dr_params;
+	uint8_t max_payload;
 	int8_t tx_power;
 	int ret;
 
@@ -731,9 +729,11 @@ static int send_validate_payload_size(struct lwan_ctx *ctx,
 		return ret;
 	}
 
-	if (state->req->len > dr_params.max_payload) {
+	/* Pending MAC commands in FOpts eat into the payload budget */
+	max_payload = mac_cmd_next_payload_size(ctx, dr_params.max_payload);
+	if (state->req->len > max_payload) {
 		LOG_ERR("Payload too large for DR%u: %u > %u", state->dr_idx,
-			state->req->len, dr_params.max_payload);
+			state->req->len, max_payload);
 		return -EMSGSIZE;
 	}
 

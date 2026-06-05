@@ -22,6 +22,9 @@
 
 struct lwan_ctx;
 
+/* FOpts carries up to 15 bytes of MAC commands; capped by FCtrl[3:0]. */
+#define LWAN_MAX_FOPTS_LEN	15
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,6 +67,28 @@ enum lwan_mac_cmd {
  */
 size_t mac_cmd_build_ul_fopts(struct lwan_ctx *ctx,
 			      uint8_t *buf, size_t max_len);
+
+/**
+ * @brief Return the FOpts length expected for the next uplink frame.
+ *
+ * This is a side-effect-free counterpart to mac_cmd_build_ul_fopts().
+ * It lets callers account for MAC command overhead before building a
+ * frame.
+ *
+ * @param ctx Stack context.
+ * @return Number of FOpts bytes the next uplink would carry.
+ */
+size_t mac_cmd_next_ul_fopts_len(const struct lwan_ctx *ctx);
+
+/**
+ * @brief Return the next application payload capacity after FOpts overhead.
+ *
+ * @param ctx Stack context.
+ * @param max_payload Maximum application payload with no FOpts.
+ * @return Maximum application payload for the next uplink.
+ */
+uint8_t mac_cmd_next_payload_size(const struct lwan_ctx *ctx,
+				  uint8_t max_payload);
 
 /**
  * @brief Commit the FOpts snapshot recorded by the last build call.
