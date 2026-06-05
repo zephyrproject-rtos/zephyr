@@ -583,27 +583,12 @@ out:
  *
  * @param map Pointer to foreground MPU map.
  */
-#ifdef CONFIG_USERSPACE
-/* With userspace enabled, the pointer to per memory domain MPU map is stashed
- * inside the thread struct. If we still only take struct xtensa_mpu_map as
- * argument, a wrapper function is needed. To avoid the cost associated with
- * calling that wrapper function, takes thread pointer directly as argument
- * when userspace is enabled. Not to mention that writing the map to hardware
- * is already a costly operation per context switch. So every little bit helps.
- */
-void xtensa_mpu_map_write(struct k_thread *thread)
-#else
-void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
-#endif
+static inline void mpu_map_write(struct xtensa_mpu_map *map)
 {
 	int entry;
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&xtensa_mpu_lock);
-
-#ifdef CONFIG_USERSPACE
-	struct xtensa_mpu_map *map = thread->arch.mpu_map;
-#endif
 
 	/*
 	 * Clear MPU entries first, then write MPU entries in reverse order.
@@ -626,6 +611,20 @@ void xtensa_mpu_map_write(struct xtensa_mpu_map *map)
 
 	k_spin_unlock(&xtensa_mpu_lock, key);
 }
+
+#ifdef CONFIG_USERSPACE
+/**
+ * Write the MPU map associated with the thread.
+ *
+ * @param thread Pointer to thread with MPU map.
+ */
+void xtensa_mpu_map_write(struct k_thread *thread)
+{
+	struct xtensa_mpu_map *map = thread->arch.mpu_map;
+
+	mpu_map_write(map);
+}
+#endif /* CONFIG_USERSPACE */
 
 /**
  * Perform necessary steps to enable MPU.
@@ -686,7 +685,7 @@ void xtensa_mpu_init(void)
 	dummy_map_thread.arch.mpu_map = &xtensa_mpu_map_fg_kernel;
 	xtensa_mpu_map_write(&dummy_map_thread);
 #else
-	xtensa_mpu_map_write(&xtensa_mpu_map_fg_kernel);
+	mpu_map_write(&xtensa_mpu_map_fg_kernel);
 #endif
 }
 
