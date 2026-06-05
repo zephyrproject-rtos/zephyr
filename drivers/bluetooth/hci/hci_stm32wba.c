@@ -423,7 +423,7 @@ static int bt_hci_stm32wba_open(const struct device *dev)
 #endif
 	}
 
-	link_layer_register_isr(false);
+	link_layer_register_isr();
 
 	ret = bt_ble_ctlr_init();
 
@@ -577,7 +577,7 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_ENABLED) {
 			if (LL_PWR_IsActiveFlag_SB() == 1U) {
 				/* Restore NVIC configuration for radio */
-				link_layer_register_isr(true);
+				link_layer_register_isr();
 				ll_sys_dp_slp_exit();
 			}
 		}
