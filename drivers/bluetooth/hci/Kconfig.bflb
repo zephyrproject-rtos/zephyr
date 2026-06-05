@@ -37,9 +37,6 @@ config BT_BFLB_BL70X
 
 if BT_BFLB
 
-config BT_BUF_ACL_TX_COUNT
-	default 2
-
 config HEAP_MEM_POOL_ADD_SIZE_BFLB_BT
 	int
 	default 8192
@@ -120,6 +117,12 @@ config BFLB_BL70X_BLE_EM_16K
 	  Use 16KB exchange memory for BLE controller.
 	  Only needed for the m16s1 variant.
 
+# ACL packet count the selected variant reports in LE Read Buffer Size
+config BT_BUF_ACL_TX_COUNT
+	default 16 if BFLB_BL70X_BLE_M16S1
+	default 10 if BFLB_BL70X_BLE_M0S1T10
+	default 2
+
 endif # BT_BFLB_BL70X
 
 if BT_BFLB_BL60X
@@ -140,6 +143,11 @@ config BFLB_BL60X_BLE_M8S1
 	bool "m8s1: 8 central + 1 peripheral"
 
 endchoice
+
+# ACL packet count the selected variant reports in LE Read Buffer Size
+config BT_BUF_ACL_TX_COUNT
+	default 8 if BFLB_BL60X_BLE_M8S1
+	default 2
 
 endif # BT_BFLB_BL60X
 
@@ -253,6 +261,14 @@ config BFLB_BL70XL_BLE_EM_16K
 	  Use 16KB exchange memory for BLE controller.
 	  Only needed for the m8s1p variant (8 connections).
 
+# ACL packet count the selected variant reports in LE Read Buffer Size
+config BT_BUF_ACL_TX_COUNT
+	default 8 if BFLB_BL70XL_BLE_M8S1P
+	default 6 if BFLB_BL70XL_BLE_M0S4P || BFLB_BL70XL_BLE_M4S1P
+	default 5 if BFLB_BL70XL_BLE_M0S1RP
+	default 4 if BFLB_BL70XL_BLE_M0S2P || BFLB_BL70XL_BLE_M2S1P
+	default 2
+
 endif # BT_BFLB_BL70XL
 
 config BT_BFLB_BL61X
@@ -291,6 +307,11 @@ config BFLB_BL61X_BLE_1M2S1BREDR1
 	bool "ble1m2s1bredr1: peripheral + central + BR/EDR, 2 connections"
 
 endchoice
+
+# ACL packet count the selected variant reports in LE Read Buffer Size
+config BT_BUF_ACL_TX_COUNT
+	default 10 if BFLB_BL61X_BLE_1M10S1
+	default 4
 
 config BFLB_BL61X_BLE_EM_64K
 	bool "Use 64 KB exchange memory (required for BR/EDR)"
