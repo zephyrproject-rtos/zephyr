@@ -34,10 +34,21 @@ static void dummy_iface_init(struct net_if *iface)
 {
 	net_if_set_link_addr(iface, dummy_mac, sizeof(struct net_eth_addr),
 			     NET_LINK_ETHERNET);
+
+	ethernet_init(iface);
+}
+
+static int dummy_iface_send(const struct device *dev, struct net_pkt *pkt)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pkt);
+
+	return 0;
 }
 
 static struct ethernet_api dummy_iface_api = {
-	.iface_api.init = dummy_iface_init
+	.iface_api.init = dummy_iface_init,
+	.send = dummy_iface_send,
 };
 
 ETH_NET_DEVICE_INIT(dummy_iface_a, "dummy_a", NULL, NULL,
