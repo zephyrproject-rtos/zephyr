@@ -231,7 +231,11 @@ int i2c_stm32_target_register(const struct device *dev,
 	}
 
 	/* Mark device as active */
-	(void)pm_device_runtime_get(dev);
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR("i2c: PM runtime failure: %d", ret);
+		return ret;
+	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (pm_device_wakeup_is_capable(dev)) {

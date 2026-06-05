@@ -198,7 +198,11 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	k_sem_take(&data->bus_mutex, K_FOREVER);
 
 	/* Prevent driver from being suspended by PM until I2C transaction is complete */
-	(void)pm_device_runtime_get(dev);
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR("i2c: PM runtime failure: %d", ret);
+		goto out_sem;
+	}
 
 	/* Prevent the clocks to be stopped during the i2c transaction */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -224,6 +228,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 
 	(void)pm_device_runtime_put(dev);
 
+out_sem:
 	k_sem_give(&data->bus_mutex);
 
 	return ret;
