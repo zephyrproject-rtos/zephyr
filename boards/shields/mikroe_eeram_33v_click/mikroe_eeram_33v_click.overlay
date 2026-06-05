@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		eeprom-0 = &eeram;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	/*
+	 * SRAM data port (0x50).
+	 * A2:A1:A0 tied low -> base address 0x50.
+	 */
+	eeram: eeram@50 {
+		compatible = "microchip,47l16";
+		reg = <0x50>;
+		size = <2048>;
+		pagesize = <16>;
+		address-width = <16>;
+	};
+};
