@@ -48,8 +48,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	printk("Connected (err 0x%02X)\n", err);
 
 	if (err) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 		return;
 	}
 
@@ -58,8 +57,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 
 static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	printk("Disconnected, reason 0x%02X %s\n", reason, bt_hci_err_to_str(reason));
 }

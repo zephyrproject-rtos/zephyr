@@ -688,8 +688,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
 	       reason, bt_hci_err_to_str(reason));
 
-	bt_conn_unref(broadcast_assistant_conn);
-	broadcast_assistant_conn = NULL;
+	bt_conn_drop(&broadcast_assistant_conn);
 
 	k_sem_give(&sem_disconnected);
 }

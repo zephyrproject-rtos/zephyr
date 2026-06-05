@@ -64,8 +64,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	LOG_INF("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn),
 		reason);
 
-	bt_conn_unref(peer_conn);
-	peer_conn = NULL;
+	bt_conn_drop(&peer_conn);
 	k_sem_give(&sem_state_change);
 }
 
