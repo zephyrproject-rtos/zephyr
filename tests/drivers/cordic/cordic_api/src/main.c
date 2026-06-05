@@ -239,7 +239,7 @@ ZTEST(cordic_api, test_squareroot)
 /**
  * @brief Test CORDIC Natural Logarithm function
  */
-ZTEST(cordic_api, test_ln)
+ZTEST(cordic_api, test_naturallog)
 {
 	/* Input arguments */
 	const float x[] = {1.0f};
