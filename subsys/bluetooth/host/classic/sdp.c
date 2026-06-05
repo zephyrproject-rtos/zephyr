@@ -1758,10 +1758,7 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		sys_slist_remove(&session->reqs, NULL, &param->_node);
 		/* Invalidate cached param in context */
 		session->param = NULL;
-		if (session->rec_buf != NULL) {
-			net_buf_unref(session->rec_buf);
-			session->rec_buf = NULL;
-		}
+		net_buf_drop(&session->rec_buf);
 		/* Reset continuation state in current context */
 		(void)memset(&session->cstate, 0, sizeof(session->cstate));
 		/* Clear total length */
@@ -2700,10 +2697,7 @@ static void sdp_client_clean_after_disconnect(struct bt_sdp_client *session)
 	session->tid = 0U;
 	session->param = NULL;
 	memset(&session->cstate, 0, sizeof(session->cstate));
-	if (session->rec_buf) {
-		net_buf_unref(session->rec_buf);
-		session->rec_buf = NULL;
-	}
+	net_buf_drop(&session->rec_buf);
 	session->total_len = 0U;
 	session->recv_len = 0U;
 }
@@ -2741,10 +2735,7 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 		sys_slist_find_and_remove(&session->reqs, &param->_node);
 	}
 
-	if (session->rec_buf) {
-		net_buf_unref(session->rec_buf);
-		session->rec_buf = NULL;
-	}
+	net_buf_drop(&session->rec_buf);
 
 	sdp_client_clean_after_disconnect(session);
 }
