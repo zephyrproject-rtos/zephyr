@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,sram = &sram0;
+	};
+};
+
+&ieee802154 {
+	status = "okay";
+};
