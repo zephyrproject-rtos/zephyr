@@ -375,6 +375,12 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return ret;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR("i2c: PM runtime failure: %d", ret);
+		return ret;
+	}
+
 	data->target_cfg = config;
 
 	LL_I2C_Enable(i2c);
@@ -410,6 +416,8 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 	LL_I2C_ClearFlag_STOP(i2c);
 	LL_I2C_ClearFlag_ADDR(i2c);
 	LL_I2C_Disable(i2c);
+
+	(void)pm_device_runtime_put(dev);
 
 	data->target_attached = false;
 
