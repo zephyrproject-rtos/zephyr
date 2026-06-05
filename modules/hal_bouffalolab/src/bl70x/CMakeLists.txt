@@ -1,11 +1,26 @@
 # Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+if(CONFIG_BT_BFLB_BL70X OR CONFIG_IEEE802154_BFLB)
+  zephyr_include_directories(
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/rf)
+endif()
+
+if(CONFIG_IEEE802154_BFLB)
+  zephyr_include_directories(
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/lmac154)
+
+  if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+    zephyr_link_libraries(
+      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/liblmac154.a
+      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/libbl702_rf.a
+    )
+  endif()
+endif()
+
 if(CONFIG_BT_BFLB_BL70X)
   zephyr_include_directories(
     ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/ble)
-  zephyr_include_directories(
-    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/rf)
 
   # Select controller library based on Kconfig variant
   if(CONFIG_BFLB_BL70X_BLE_M0S1P)
