@@ -23,8 +23,7 @@ import zcmake
 
 # Explicit, flat name: avoids colliding with scripts/pylib/build_helpers/
 # domains.py (which grabs `logging.getLogger('build_helpers')` at import
-# time), and avoids the `west.*` namespace whose NullHandler would defeat
-# the hasHandlers() guard in forward_logging_to_west.
+# time).
 BUILD_HELPERS_LOGGER = 'zephyr_build_helpers'
 _logger = logging.getLogger(BUILD_HELPERS_LOGGER)
 
@@ -79,18 +78,51 @@ def forward_logging_to_west(command, logger_names):
 
     ``logger_names`` may be a single logger name or an iterable of names.
 
-    Safe to call more than once: handlers are not duplicated.
+    This simply adds a custom handler to each logger. If you forget to
+    forward to any West command, then Python's ``logging.lastResort``
+    should still print warnings and higher to stderr while discarding
+    lower priorities, see the
+    https://docs.python.org/3/library/logging.html HOWTO for details.
+
+    While not tested, you could in theory forward to different West
+    commands at the same time. Forwarding multiple times to the _same_
+    West command will print an error and be ignored.
     '''
     if isinstance(logger_names, str):
         logger_names = [logger_names]
     for name in logger_names:
         logger = logging.getLogger(name)
-        # Drop DEBUG records at the logger unless the user asked for them,
-        # so they don't reach attached handlers (ours or anyone else's).
-        logger.setLevel(1 if command.verbosity >= Verbosity.DBG else logging.INFO)
-        if not logger.hasHandlers():
-            # Only add a log handler if none has been added already.
-            logger.addHandler(WestLogHandler(command))
+        _fwd_logger(logger, command)
+
+
+def _fwd_logger(logger, west_cmd):
+
+    # Note logger.handlers are only the _directly_ attached handlers,
+    # ignoring propagation up
+    for handler in logger.handlers:
+        match handler:
+            case WestLogHandler():
+                prev_cmd = handler._command
+                hdlr_print = f"WestLogHandler({prev_cmd.name})"
+                if prev_cmd == west_cmd:
+                    west_cmd.err(
+                        f"logger('{logger.name}') was already forwarded to {hdlr_print}!"
+                    )
+                    return
+            case _:
+                hdlr_print = f"{handler}"
+
+        west_cmd.dbg(f"logger('{logger.name}') already had handler: {hdlr_print}")
+
+    # Drop DEBUG records at the logger unless the user asked for them,
+    # so they don't reach attached handlers (ours or anyone else's).
+    logger.setLevel(1 if west_cmd.verbosity >= Verbosity.DBG else logging.INFO)
+
+    logger.addHandler(WestLogHandler(west_cmd))
+    # Use immediately.  This starts with "logger %(name)s" thanks
+    # to WestLogHandler.__init__() above
+    logger.debug(f"forwarded to WestLogHandler({west_cmd.name}). propagate={logger.propagate}")
+
 
 # Domains.py must be imported from the pylib directory, since
 # twister also uses the implementation
