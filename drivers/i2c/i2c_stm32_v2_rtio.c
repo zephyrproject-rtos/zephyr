@@ -376,7 +376,6 @@ void i2c_stm32_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
 	I2C_TypeDef *i2c = cfg->i2c;
 	int ret = 0;
 
@@ -420,10 +419,8 @@ void i2c_stm32_event(const struct device *dev)
 		LL_I2C_DisableReloadMode(i2c);
 		i2c_stm32_controller_mode_end(dev);
 
-		if (i2c_rtio_complete(ctx, ret)) {
-			i2c_stm32_start(dev);
-			return;
-		}
+		i2c_stm32_rtio_complete(dev, ret);
+		return;
 	}
 
 	if (LL_I2C_IsActiveFlag_TC(i2c) ||
@@ -440,9 +437,7 @@ void i2c_stm32_event(const struct device *dev)
 			LL_I2C_GenerateStopCondition(i2c);
 		} else {
 			i2c_stm32_disable_transfer_interrupts(dev);
-			if (i2c_rtio_complete(ctx, ret)) {
-				i2c_stm32_start(dev);
-			}
+			i2c_stm32_rtio_complete(dev, ret);
 		}
 	}
 }
@@ -450,12 +445,11 @@ void i2c_stm32_event(const struct device *dev)
 int i2c_stm32_error(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
 	I2C_TypeDef *i2c = cfg->i2c;
 	int ret = 0;
 
 #if defined(CONFIG_I2C_TARGET)
+	struct i2c_stm32_data *data = dev->data;
 	i2c_target_error_cb_t error_cb = NULL;
 
 	if (data->target_attached && !data->controller_active &&
@@ -482,9 +476,7 @@ int i2c_stm32_error(const struct device *dev)
 
 	if (ret) {
 		i2c_stm32_controller_mode_end(dev);
-		if (i2c_rtio_complete(ctx, ret)) {
-			i2c_stm32_start(dev);
-		}
+		i2c_stm32_rtio_complete(dev, ret);
 	}
 
 	return ret;

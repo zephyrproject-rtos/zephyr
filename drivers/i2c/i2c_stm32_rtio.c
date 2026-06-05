@@ -91,7 +91,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	return ret;
 }
 
-bool i2c_stm32_start(const struct device *dev)
+static bool i2c_stm32_start(const struct device *dev)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *ctx = data->ctx;
@@ -126,6 +126,16 @@ bool i2c_stm32_start(const struct device *dev)
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		return i2c_rtio_complete(data->ctx, -EINVAL);
+	}
+}
+
+void i2c_stm32_rtio_complete(const struct device *dev, int status)
+{
+	struct i2c_stm32_data *data = dev->data;
+	struct i2c_rtio *const ctx = data->ctx;
+
+	if (i2c_rtio_complete(ctx, status)) {
+		i2c_stm32_start(dev);
 	}
 }
 
