@@ -802,6 +802,12 @@ Bluetooth Audio
     :zephyr:code-sample:`ble_peripheral_tmap_peripheral` have been moved from
     ``samples/bluetooth/`` to ``samples/bluetooth/audio``.
 
+* VOCS
+
+  * The VOCS client now requires automatic CCC (Client Characteristic Configuration) discovery.
+    :kconfig:option:`BT_VOCS_CLIENT` now depends on :kconfig:option:`BT_GATT_AUTO_DISCOVER_CCC`.
+    Applications using VOCS client must ensure that CCC auto-discovery support is enabled. (:github:`110607`)
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth Classic
