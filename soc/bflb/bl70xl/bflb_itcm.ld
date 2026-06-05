@@ -10,6 +10,7 @@
 *(.tcm_data .tcm_data.*)
 *(.pds_code .pds_code.*)
 
+#if defined(CONFIG_BT_BFLB_BL70XL)
 /*
  * BLE controller binary blob uses GP-relative addressing for its state data.
  * The blob is compiled with GP = _rom_data_run + 0x800 and a revision-specific
@@ -53,3 +54,5 @@ PROVIDE(bl_rtc_frequency     = __global_pointer$ - 580);
 PROVIDE(rf_get_rf_state_ptr  = __global_pointer$ - 320);
 PROVIDE(rf_set_tx_bypass_ptr = __global_pointer$ - 316);
 #endif
+
+#endif /* CONFIG_BT_BFLB_BL70XL */
