@@ -443,7 +443,7 @@ void i2c_stm32_set_smbus_mode(const struct device *dev, enum i2c_stm32_mode mode
 		return;
 	}
 }
-#endif
+#endif /* I2C_CR1_SMBUS || I2C_CR1_SMBDEN || I2C_CR1_SMBHEN */
 
 #ifdef CONFIG_SMBUS_STM32
 void i2c_stm32_smbalert_enable(const struct device *dev)
