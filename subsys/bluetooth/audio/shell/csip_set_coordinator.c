@@ -77,8 +77,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 	ARG_UNUSED(reason);
 
-	bt_conn_unref(conns[conn_index]);
-	conns[conn_index] = NULL;
+	bt_conn_drop(&conns[conn_index]);
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {

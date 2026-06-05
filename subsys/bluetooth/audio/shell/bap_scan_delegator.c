@@ -317,10 +317,7 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 	 */
 	if (util_memeq(recv_state, &(struct bt_bap_scan_delegator_recv_state){0},
 		       sizeof(*recv_state))) {
-		if (state->conn != NULL) {
-			bt_conn_unref(state->conn);
-			state->conn = NULL;
-		}
+		bt_conn_drop(&state->conn);
 
 		(void)memset(state, 0, sizeof(*state)); /* mark as unused */
 	}
@@ -455,10 +452,7 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 		}
 	}
 
-	if (state->conn != NULL) {
-		bt_conn_unref(state->conn);
-		state->conn = NULL;
-	}
+	bt_conn_drop(&state->conn);
 
 	k_work_cancel_delayable(&state->pa_timer);
 }
@@ -478,10 +472,7 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 		return;
 	}
 
-	if (state->conn != NULL) {
-		bt_conn_unref(state->conn);
-		state->conn = NULL;
-	}
+	bt_conn_drop(&state->conn);
 
 	state->pa_sync = NULL;
 
