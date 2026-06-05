@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Espressif Systems (Shanghai) CO LTD
+ * Copyright (c) 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 #include <hal/adc_oneshot_hal.h>
 #include <hal/adc_periph.h>
 #include <hal/adc_types.h>
+#include <soc/clk_tree_defs.h>
 #include <esp_adc/adc_cali.h>
 #include <esp_adc/adc_cali_scheme.h>
 
@@ -35,12 +36,22 @@ struct adc_esp32_data {
 	uint16_t meas_ref_internal;
 	uint16_t *buffer;
 #ifdef CONFIG_ADC_ESP32_DMA
+#include <hal/dma_types.h>
+
+#define ADC_ESP32_DMA_RX_DESC_COUNT                                                                \
+	((DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED -  \
+	  1U) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED +                                        \
+	 1U)
+
 	adc_hal_dma_ctx_t adc_hal_dma_ctx;
-	uint8_t *dma_buffer;
+	dma_descriptor_t dma_rx_desc[ADC_ESP32_DMA_RX_DESC_COUNT];
+	uint8_t dma_buffer[DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED];
 	struct k_sem dma_conv_wait_lock;
+	soc_module_clk_t digi_clk_src;
 #if !SOC_GDMA_SUPPORTED
 	struct intr_handle_data_t *irq_handle;
 #endif /* !SOC_GDMA_SUPPORTED */
+	bool digi_hw_active;
 #endif /* CONFIG_ADC_ESP32_DMA */
 };
 

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2025 Espressif Systems (Shanghai) CO LTD
+ * Copyright (c) 2025-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT espressif_esp32_adc
+
+#include <string.h>
 
 #include <esp_adc/adc_cali.h>
 #include <esp_clk_tree.h>
@@ -14,7 +16,15 @@
 
 #include "adc_esp32.h"
 
+#if SOC_GDMA_SUPPORTED || defined(CONFIG_SOC_SERIES_ESP32)
+#define ADC_ESP32_DMA_CAPTURE_FACTOR 2U
+#else
+#define ADC_ESP32_DMA_CAPTURE_FACTOR 1U
+#endif
+
 #include <zephyr/cache.h>
+#include <zephyr/sys/util.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32_dma, CONFIG_ADC_LOG_LEVEL);
 
@@ -55,6 +65,7 @@ static void IRAM_ATTR adc_esp32_dma_conv_done(const struct device *dma_dev, void
 					      uint32_t channel, int status)
 {
 	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(channel);
 	ARG_UNUSED(status);
 
 	const struct device *dev = user_data;
@@ -63,7 +74,7 @@ static void IRAM_ATTR adc_esp32_dma_conv_done(const struct device *dma_dev, void
 	k_sem_give(&data->dma_conv_wait_lock);
 }
 
-static int adc_esp32_dma_start(const struct device *dev, uint8_t *buf, size_t len)
+static int adc_esp32_dma_config_rx(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct adc_esp32_conf *conf = dev->config;
 	int err;
@@ -80,8 +91,17 @@ static int adc_esp32_dma_start(const struct device *dev, uint8_t *buf, size_t le
 	}
 
 	if (dma_status.busy) {
-		LOG_ERR("dma channel[%u] is busy!", (unsigned int)conf->dma_channel);
-		return -EBUSY;
+		for (int retry = 0; retry < 100 && dma_status.busy; retry++) {
+			k_busy_wait(10);
+			err = dma_get_status(conf->dma_dev, conf->dma_channel, &dma_status);
+			if (err != 0) {
+				return -EINVAL;
+			}
+		}
+		if (dma_status.busy) {
+			LOG_ERR("dma channel[%u] is busy!", (unsigned int)conf->dma_channel);
+			return -EBUSY;
+		}
 	}
 
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
@@ -96,6 +116,18 @@ static int adc_esp32_dma_start(const struct device *dev, uint8_t *buf, size_t le
 	err = dma_config(conf->dma_dev, conf->dma_channel, &dma_cfg);
 	if (err) {
 		LOG_ERR("Error configuring dma (%d)", err);
+	}
+
+	return err;
+}
+
+static int adc_esp32_dma_start(const struct device *dev, uint8_t *buf, size_t len)
+{
+	const struct adc_esp32_conf *conf = dev->config;
+	int err;
+
+	err = adc_esp32_dma_config_rx(dev, buf, len);
+	if (err != 0) {
 		return err;
 	}
 
@@ -154,41 +186,36 @@ static int adc_esp32_fill_digi_ctrlr_cfg(const struct device *dev, const struct 
 	const struct adc_esp32_conf *conf = dev->config;
 	struct adc_esp32_data *data = dev->data;
 
-	adc_digi_pattern_config_t *adc_digi_pattern_config = pattern_config;
-	uint32_t channel_mask = 1, channels_copy = seq->channels;
+	uint32_t channels_copy = seq->channels;
 
 	*pattern_len = 0;
 	*unit_attenuation = UNIT_ATTEN_UNINIT;
-	for (uint8_t channel_id = 0; channel_id < conf->channel_count; channel_id++) {
-		if (channels_copy & channel_mask) {
-			if (*unit_attenuation == UNIT_ATTEN_UNINIT) {
-				*unit_attenuation = data->attenuation[channel_id];
-			}
 
-			if (*unit_attenuation != data->attenuation[channel_id]) {
-				LOG_ERR("Channel[%u] attenuation different of unit[%u] attenuation",
-					(unsigned int)channel_id, (unsigned int)conf->unit);
-				return -EINVAL;
-			}
+	while (channels_copy != 0U) {
+		uint8_t channel_id = find_lsb_set(channels_copy) - 1U;
 
-			adc_digi_pattern_config->atten = data->attenuation[channel_id];
-			adc_digi_pattern_config->channel = channel_id;
-			adc_digi_pattern_config->unit = conf->unit;
-			adc_digi_pattern_config->bit_width = seq->resolution;
-			adc_digi_pattern_config++;
+		channels_copy &= ~BIT(channel_id);
 
-			*pattern_len += 1;
-			if (*pattern_len > SOC_ADC_PATT_LEN_MAX) {
-				LOG_ERR("Max pattern len is %d", SOC_ADC_PATT_LEN_MAX);
-				return -EINVAL;
-			}
-
-			channels_copy &= ~channel_mask;
-			if (!channels_copy) {
-				break;
-			}
+		if (*unit_attenuation == UNIT_ATTEN_UNINIT) {
+			*unit_attenuation = data->attenuation[channel_id];
+		} else if (*unit_attenuation != data->attenuation[channel_id]) {
+			LOG_ERR("Channel[%u] attenuation different of unit[%u] attenuation",
+				(unsigned int)channel_id, (unsigned int)conf->unit);
+			return -EINVAL;
 		}
-		channel_mask <<= 1;
+
+		pattern_config[*pattern_len] = (adc_digi_pattern_config_t){
+			.atten = data->attenuation[channel_id],
+			.channel = channel_id,
+			.unit = conf->unit,
+			.bit_width = seq->resolution,
+		};
+
+		*pattern_len += 1;
+		if (*pattern_len > SOC_ADC_PATT_LEN_MAX) {
+			LOG_ERR("Max pattern len is %d", SOC_ADC_PATT_LEN_MAX);
+			return -EINVAL;
+		}
 	}
 
 	soc_module_clk_t clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
@@ -211,20 +238,76 @@ static int adc_esp32_fill_digi_ctrlr_cfg(const struct device *dev, const struct 
 	return 0;
 }
 
+static uint32_t adc_esp32_dma_data_bytes(uint32_t dma_samples)
+{
+	return dma_samples * SOC_ADC_DIGI_DATA_BYTES_PER_CONV;
+}
+
+static int adc_esp32_dma_sample_freq_hz(const struct adc_sequence_options *options,
+					uint32_t *sample_freq_hz)
+{
+	*sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH;
+
+	if (options == NULL) {
+		return 0;
+	}
+
+	if (options->callback != NULL) {
+		return -ENOTSUP;
+	}
+
+	if (options->interval_us == 0U) {
+		return 0;
+	}
+
+	*sample_freq_hz = MHZ(1) / options->interval_us;
+	if ((*sample_freq_hz < SOC_ADC_SAMPLE_FREQ_THRES_LOW) ||
+	    (*sample_freq_hz > SOC_ADC_SAMPLE_FREQ_THRES_HIGH)) {
+		LOG_ERR("ADC sampling frequency out of range: %uHz", *sample_freq_hz);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static void adc_esp32_dma_sample_counts(uint32_t number_of_samplings, uint32_t pattern_len,
+					uint32_t *output_samples, uint32_t *dma_samples,
+					uint32_t *dma_data_bytes)
+{
+	*output_samples = number_of_samplings * pattern_len;
+	*dma_samples = *output_samples * ADC_ESP32_DMA_CAPTURE_FACTOR;
+	*dma_data_bytes = adc_esp32_dma_data_bytes(*dma_samples);
+}
+
+static void adc_esp32_dma_eof_ctx_config(struct adc_esp32_data *data, uint32_t sample_count)
+{
+	adc_hal_dma_config_t adc_hal_dma_config = {
+		.eof_desc_num = 1,
+		.eof_step = 1,
+		.eof_num = sample_count,
+	};
+
+	adc_hal_dma_ctx_config(&data->adc_hal_dma_ctx, &adc_hal_dma_config);
+}
+
 static int adc_esp32_digi_start(const struct device *dev,
 				adc_hal_digi_ctrlr_cfg_t *adc_hal_digi_ctrlr_cfg,
-				uint32_t number_of_adc_samples, uint32_t unit_attenuation,
+				uint32_t number_of_adc_dma_samples, uint32_t unit_attenuation,
 				uint32_t dma_buffer_size)
 {
 	const struct adc_esp32_conf *conf = dev->config;
 	struct adc_esp32_data *data = dev->data;
-	__maybe_unused int err = 0;
+#if !defined(CONFIG_SOC_SERIES_ESP32) || SOC_GDMA_SUPPORTED
+	int err;
+#endif
 
 	sar_periph_ctrl_adc_reset();
 	sar_periph_ctrl_adc_continuous_power_acquire();
 	adc_lock_acquire(conf->unit);
+	data->digi_hw_active = true;
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
+	adc_hal_calibration_init(conf->unit);
 	adc_set_hw_calibration_code(conf->unit, unit_attenuation);
 #endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
 
@@ -236,19 +319,35 @@ static int adc_esp32_digi_start(const struct device *dev,
 	}
 #endif /* SOC_ADC_ARBITER_SUPPORTED */
 
-	adc_hal_dma_config_t adc_hal_dma_config = {
-		.eof_desc_num = 1,
-		.eof_step = 1,
-		.eof_num = number_of_adc_samples,
-	};
+	data->digi_clk_src = adc_hal_digi_ctrlr_cfg->clk_src;
 
-	adc_hal_dma_ctx_config(&data->adc_hal_dma_ctx, &adc_hal_dma_config);
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+	err = esp_clk_tree_enable_src((soc_module_clk_t)adc_hal_digi_ctrlr_cfg->clk_src, true);
+	if (err != ESP_OK) {
+		goto digi_start_fail;
+	}
+#endif /* !CONFIG_SOC_SERIES_ESP32 */
+
+	adc_esp32_dma_eof_ctx_config(data, number_of_adc_dma_samples);
 	adc_hal_set_controller(conf->unit, ADC_HAL_CONTINUOUS_READ_MODE);
 	adc_hal_digi_init(&data->adc_hal_dma_ctx);
 	adc_hal_digi_controller_config(&data->adc_hal_dma_ctx, adc_hal_digi_ctrlr_cfg);
-
 	adc_hal_digi_enable(false);
 
+#if SOC_GDMA_SUPPORTED
+	err = adc_esp32_dma_stop(dev);
+	if (err != 0) {
+		goto digi_start_fail;
+	}
+
+	adc_hal_digi_connect(false);
+	adc_hal_digi_reset();
+
+	err = adc_esp32_dma_start(dev, data->dma_buffer, dma_buffer_size);
+	if (err != 0) {
+		goto digi_start_fail;
+	}
+#else
 #if defined(CONFIG_SOC_SERIES_ESP32)
 	i2s_dev_t *i2s_dev = I2S_LL_GET_HW(ADC_DMA_I2S_HOST);
 
@@ -268,10 +367,7 @@ static int adc_esp32_digi_start(const struct device *dev,
 #endif
 
 	adc_hal_digi_reset();
-
-#if !SOC_GDMA_SUPPORTED
 	adc_hal_digi_dma_link(&data->adc_hal_dma_ctx, data->dma_buffer);
-#endif
 
 #if defined(CONFIG_SOC_SERIES_ESP32)
 	i2s_ll_clear_intr_status(i2s_dev, ADC_DMA_INTR_MASK);
@@ -282,25 +378,52 @@ static int adc_esp32_digi_start(const struct device *dev,
 	spi_ll_clear_intr(spi_dev, ADC_DMA_INTR_MASK);
 	spi_ll_enable_intr(spi_dev, ADC_DMA_INTR_MASK);
 	spi_dma_ll_rx_start(spi_dev, 0, (lldesc_t *)data->adc_hal_dma_ctx.rx_desc);
-#elif SOC_GDMA_SUPPORTED
-	err = adc_esp32_dma_start(dev, data->dma_buffer, dma_buffer_size);
-	if (err) {
-		adc_lock_release(conf->unit);
-		sar_periph_ctrl_adc_continuous_power_release();
-		return err;
-	}
-#endif /* CONFIG_SOC_SERIES_ESP32 */
+#endif /* defined(CONFIG_SOC_SERIES_ESP32) */
+#endif /* SOC_GDMA_SUPPORTED */
 
 	adc_hal_digi_connect(true);
 	adc_hal_digi_enable(true);
 
 	return 0;
+
+#if !defined(CONFIG_SOC_SERIES_ESP32) || SOC_GDMA_SUPPORTED
+digi_start_fail:
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+	if (data->digi_clk_src != 0U) {
+		(void)esp_clk_tree_enable_src((soc_module_clk_t)data->digi_clk_src, false);
+		data->digi_clk_src = 0U;
+	}
+#endif /* !CONFIG_SOC_SERIES_ESP32 */
+	if (data->digi_hw_active) {
+		data->digi_hw_active = false;
+		adc_lock_release(conf->unit);
+		sar_periph_ctrl_adc_continuous_power_release();
+	}
+	return -EIO;
+#endif /* !defined(CONFIG_SOC_SERIES_ESP32) || SOC_GDMA_SUPPORTED */
 }
 
 static void adc_esp32_digi_stop(const struct device *dev)
 {
 	const struct adc_esp32_conf *conf = dev->config;
+	struct adc_esp32_data *data = dev->data;
 
+	if (!data->digi_hw_active) {
+		return;
+	}
+
+	data->digi_hw_active = false;
+
+	adc_hal_digi_enable(false);
+	adc_hal_digi_connect(false);
+
+#if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
+	adc_hal_digi_clr_eof();
+#endif
+
+#if SOC_GDMA_SUPPORTED
+	(void)adc_esp32_dma_stop(dev);
+#else
 #if defined(CONFIG_SOC_SERIES_ESP32)
 	i2s_dev_t *i2s_dev = I2S_LL_GET_HW(ADC_DMA_I2S_HOST);
 
@@ -314,33 +437,149 @@ static void adc_esp32_digi_stop(const struct device *dev)
 	spi_ll_clear_intr(spi_dev, ADC_DMA_INTR_MASK);
 	spi_dma_ll_rx_stop(spi_dev, 0);
 #endif /* CONFIG_SOC_SERIES_ESP32 */
-
-	adc_hal_digi_enable(false);
-	adc_hal_digi_connect(false);
-
-#if ADC_LL_WORKAROUND_CLEAR_EOF_COUNTER
-	adc_hal_digi_clr_eof();
-#endif
+#endif /* SOC_GDMA_SUPPORTED */
 
 	adc_hal_digi_deinit();
 	adc_lock_release(conf->unit);
 	sar_periph_ctrl_adc_continuous_power_release();
+
+#if !defined(CONFIG_SOC_SERIES_ESP32)
+	if (data->digi_clk_src != 0U) {
+		(void)esp_clk_tree_enable_src((soc_module_clk_t)data->digi_clk_src, false);
+		data->digi_clk_src = 0U;
+	}
+#endif /* !CONFIG_SOC_SERIES_ESP32 */
 }
 
-static void adc_esp32_fill_seq_buffer(const void *seq_buffer, const void *dma_buffer,
-				      uint32_t number_of_samples)
-{
-	uint16_t *sample = (uint16_t *)seq_buffer;
-	adc_digi_output_data_t *digi_data = (adc_digi_output_data_t *)dma_buffer;
-
-	for (uint32_t k = 0; k < number_of_samples; k++) {
 #if SOC_GDMA_SUPPORTED
-		*sample++ = (uint16_t)(digi_data++)->type2.data;
+static bool adc_esp32_digi_sample_parse(const adc_digi_output_data_t *digi_data, uint8_t *channel,
+					uint16_t *data)
+{
+	uint8_t ch = digi_data->type2.channel;
+
+#if SOC_ADC_PERIPH_NUM >= 2
+	adc_unit_t unit = digi_data->type2.unit ? ADC_UNIT_2 : ADC_UNIT_1;
+
+	if (unit == ADC_UNIT_2) {
+		ch -= ADC_LL_UNIT2_CHANNEL_SUBSTRATION;
+	}
+
+	if (ch >= SOC_ADC_CHANNEL_NUM(unit)) {
+		return false;
+	}
 #else
-		*sample++ = (uint16_t)(digi_data++)->type1.data;
+	if (ch >= SOC_ADC_CHANNEL_NUM(ADC_UNIT_1)) {
+		return false;
+	}
+#endif /* SOC_ADC_PERIPH_NUM >= 2 */
+
+	*channel = ch;
+	*data = (uint16_t)digi_data->type2.data;
+
+	return true;
+}
+
+static const adc_digi_output_data_t *adc_esp32_gdma_dma_sample(const void *dma_buffer, uint32_t idx)
+{
+	return (const adc_digi_output_data_t *)((const uint8_t *)dma_buffer +
+						(idx * SOC_ADC_DIGI_DATA_BYTES_PER_CONV));
+}
 #endif /* SOC_GDMA_SUPPORTED */
+
+#if !SOC_GDMA_SUPPORTED
+static void adc_esp32_fill_seq_buffer_type1(uint16_t *sample, const void *dma_buffer,
+					    uint32_t dma_sample_count, unsigned int repeats,
+					    uint32_t pattern_len,
+					    const adc_digi_pattern_config_t *pattern)
+{
+	uint32_t raw_samples =
+		adc_esp32_dma_data_bytes(dma_sample_count) / SOC_ADC_DIGI_RESULT_BYTES;
+	uint8_t round_counts[SOC_ADC_PATT_LEN_MAX] = {0};
+
+	for (uint32_t i = 0U; i < raw_samples; i++) {
+		const adc_digi_output_data_t *digi =
+			(const adc_digi_output_data_t *)((const uint8_t *)dma_buffer +
+							 (i * SOC_ADC_DIGI_RESULT_BYTES));
+		uint8_t ch = digi->type1.channel;
+
+		if (ch >= SOC_ADC_CHANNEL_NUM(ADC_UNIT_1)) {
+			continue;
+		}
+
+		for (uint32_t p = 0U; p < pattern_len; p++) {
+			if (pattern[p].channel != ch) {
+				continue;
+			}
+
+			unsigned int round = round_counts[p];
+
+			if (round < repeats) {
+				round_counts[p]++;
+				sample[(round * pattern_len) + p] = (uint16_t)digi->type1.data;
+			}
+			break;
+		}
 	}
 }
+#endif /* !SOC_GDMA_SUPPORTED */
+
+static void adc_esp32_fill_seq_buffer(const void *seq_buffer, const void *dma_buffer,
+				      uint32_t dma_sample_count, uint32_t output_sample_count,
+				      const adc_digi_pattern_config_t *pattern,
+				      uint32_t pattern_len)
+{
+	uint16_t *sample = (uint16_t *)seq_buffer;
+
+	if ((seq_buffer == NULL) || (dma_buffer == NULL) || (dma_sample_count == 0U) ||
+	    (output_sample_count == 0U) || (pattern == NULL) || (pattern_len == 0U) ||
+	    ((output_sample_count % pattern_len) != 0U)) {
+		return;
+	}
+
+	unsigned int repeats = output_sample_count / pattern_len;
+
+	memset(sample, 0, output_sample_count * sizeof(uint16_t));
+
+#if SOC_GDMA_SUPPORTED
+	uint32_t words_per_round = dma_sample_count / repeats;
+
+	for (unsigned int r = 0U; r < repeats; r++) {
+		uint32_t out_base = r * pattern_len;
+		uint32_t round_lo = r * words_per_round;
+		uint32_t round_hi = round_lo + words_per_round;
+
+		for (uint32_t p = 0U; p < pattern_len; p++) {
+			uint8_t want_ch = pattern[p].channel;
+
+			sample[out_base + p] = 0U;
+			for (uint32_t k = round_hi; k-- > round_lo;) {
+				uint8_t ch;
+				uint16_t val;
+				const adc_digi_output_data_t *digi =
+					adc_esp32_gdma_dma_sample(dma_buffer, k);
+
+				if (!adc_esp32_digi_sample_parse(digi, &ch, &val) ||
+				    (ch != want_ch)) {
+					continue;
+				}
+
+				sample[out_base + p] = val;
+				break;
+			}
+		}
+	}
+#else
+	adc_esp32_fill_seq_buffer_type1(sample, dma_buffer, dma_sample_count, repeats, pattern_len,
+					pattern);
+#endif /* SOC_GDMA_SUPPORTED */
+}
+
+#if !SOC_GDMA_SUPPORTED
+static int adc_esp32_dma_intr_set(struct adc_esp32_data *data, bool enable)
+{
+	return enable ? esp_intr_enable(data->irq_handle) : esp_intr_disable(data->irq_handle);
+}
+#endif /* !SOC_GDMA_SUPPORTED */
 
 static int adc_esp32_wait_for_dma_conv_done(const struct device *dev)
 {
@@ -355,34 +594,31 @@ static int adc_esp32_wait_for_dma_conv_done(const struct device *dev)
 	return err;
 }
 
-int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
+static int adc_esp32_dma_prep_read(const struct device *dev, const struct adc_sequence *seq,
+				   adc_hal_digi_ctrlr_cfg_t *adc_hal_digi_ctrlr_cfg,
+				   adc_digi_pattern_config_t *adc_digi_pattern_config,
+				   uint32_t *adc_pattern_len, uint32_t *unit_attenuation,
+				   uint32_t *number_of_adc_output_samples,
+				   uint32_t *number_of_adc_dma_samples,
+				   uint32_t *number_of_adc_dma_data_bytes)
 {
-	struct adc_esp32_data *data = dev->data;
-	int err = 0;
-	uint32_t adc_pattern_len, unit_attenuation;
-	adc_hal_digi_ctrlr_cfg_t adc_hal_digi_ctrlr_cfg;
-	adc_digi_pattern_config_t adc_digi_pattern_config[SOC_ADC_MAX_CHANNEL_NUM];
-
+	uint32_t sample_freq_hz;
+	uint32_t number_of_samplings = 1;
 	const struct adc_sequence_options *options = seq->options;
-	uint32_t sample_freq_hz = SOC_ADC_SAMPLE_FREQ_THRES_HIGH, number_of_samplings = 1;
+	int err;
 
-	if (options && options->callback) {
-		return -ENOTSUP;
-	}
-
-	if (options && options->interval_us) {
-		sample_freq_hz = MHZ(1) / options->interval_us;
-		if (sample_freq_hz < SOC_ADC_SAMPLE_FREQ_THRES_LOW ||
-		    sample_freq_hz > SOC_ADC_SAMPLE_FREQ_THRES_HIGH) {
-			LOG_ERR("ADC sampling frequency out of range: %uHz", sample_freq_hz);
-			return -EINVAL;
-		}
+	err = adc_esp32_dma_sample_freq_hz(options, &sample_freq_hz);
+	if (err != 0) {
+		return err;
 	}
 
 	err = adc_esp32_fill_digi_ctrlr_cfg(dev, seq, sample_freq_hz, adc_digi_pattern_config,
-					    &adc_hal_digi_ctrlr_cfg, &adc_pattern_len,
-					    &unit_attenuation);
-	if (err || adc_pattern_len == 0) {
+					    adc_hal_digi_ctrlr_cfg, adc_pattern_len,
+					    unit_attenuation);
+	if (err != 0) {
+		return err;
+	}
+	if (*adc_pattern_len == 0) {
 		return -EINVAL;
 	}
 
@@ -390,64 +626,97 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 		number_of_samplings = options->extra_samplings + 1;
 	}
 
-	if (seq->buffer_size < (number_of_samplings * sizeof(uint16_t))) {
+	adc_esp32_dma_sample_counts(number_of_samplings, *adc_pattern_len,
+				    number_of_adc_output_samples, number_of_adc_dma_samples,
+				    number_of_adc_dma_data_bytes);
+
+	if (seq->buffer_size < (*number_of_adc_output_samples * sizeof(uint16_t))) {
 		LOG_ERR("buffer size is not enough to store all samples!");
 		return -EINVAL;
 	}
 
-	uint32_t number_of_adc_samples = number_of_samplings * adc_pattern_len;
-	uint32_t number_of_adc_dma_data_bytes =
-		number_of_adc_samples * SOC_ADC_DIGI_DATA_BYTES_PER_CONV;
+	if (*number_of_adc_dma_data_bytes > ADC_DMA_BUFFER_SIZE) {
+		LOG_ERR("DMA buffer size insufficient (need %u, have %u)",
+			*number_of_adc_dma_data_bytes, ADC_DMA_BUFFER_SIZE);
+		return -ENOMEM;
+	}
 
-	if (number_of_adc_dma_data_bytes > ADC_DMA_BUFFER_SIZE) {
-		LOG_ERR("dma buffer size insufficient to store a complete sequence!");
-		return -EINVAL;
+	return 0;
+}
+
+int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
+{
+	struct adc_esp32_data *data = dev->data;
+	int err = 0;
+	uint32_t adc_pattern_len, unit_attenuation;
+	uint32_t number_of_adc_output_samples;
+	uint32_t number_of_adc_dma_samples;
+	uint32_t number_of_adc_dma_data_bytes;
+	adc_hal_digi_ctrlr_cfg_t adc_hal_digi_ctrlr_cfg;
+	adc_digi_pattern_config_t adc_digi_pattern_config[SOC_ADC_MAX_CHANNEL_NUM];
+
+	err = adc_esp32_dma_prep_read(dev, seq, &adc_hal_digi_ctrlr_cfg, adc_digi_pattern_config,
+				      &adc_pattern_len, &unit_attenuation,
+				      &number_of_adc_output_samples, &number_of_adc_dma_samples,
+				      &number_of_adc_dma_data_bytes);
+	if (err != 0) {
+		return err;
+	}
+
+	err = adc_esp32_digi_start(dev, &adc_hal_digi_ctrlr_cfg, number_of_adc_dma_samples,
+				   unit_attenuation, number_of_adc_dma_data_bytes);
+	if (err != 0) {
+		return err;
 	}
 
 #if !SOC_GDMA_SUPPORTED
-	err = esp_intr_enable(data->irq_handle);
-	if (err) {
+	err = adc_esp32_dma_intr_set(data, true);
+	if (err != 0) {
+		adc_esp32_digi_stop(dev);
 		return err;
 	}
 #endif /* !SOC_GDMA_SUPPORTED */
 
-	err = adc_esp32_digi_start(dev, &adc_hal_digi_ctrlr_cfg, number_of_adc_samples,
-				   unit_attenuation, number_of_adc_dma_data_bytes);
-	if (err) {
-		return err;
-	}
-
 	err = adc_esp32_wait_for_dma_conv_done(dev);
-	if (err) {
+	if (err != 0) {
+		adc_esp32_digi_stop(dev);
+
+#if !SOC_GDMA_SUPPORTED
+		(void)adc_esp32_dma_intr_set(data, false);
+#endif /* !SOC_GDMA_SUPPORTED */
+
 		return err;
 	}
 
 	adc_esp32_digi_stop(dev);
 
-#if SOC_GDMA_SUPPORTED
-	err = adc_esp32_dma_stop(dev);
-#else
-	err = esp_intr_disable(data->irq_handle);
-#endif /* SOC_GDMA_SUPPORTED */
-	if (err) {
+#if !SOC_GDMA_SUPPORTED
+	err = adc_esp32_dma_intr_set(data, false);
+	if (err != 0) {
 		return err;
 	}
+#endif /* !SOC_GDMA_SUPPORTED */
 
-	sys_cache_data_flush_and_invd_range(data->dma_buffer, ADC_DMA_BUFFER_SIZE);
-	adc_esp32_fill_seq_buffer(seq->buffer, data->dma_buffer, number_of_adc_samples);
+	sys_cache_data_flush_and_invd_range(data->dma_buffer, number_of_adc_dma_data_bytes);
+	adc_esp32_fill_seq_buffer(seq->buffer, data->dma_buffer, number_of_adc_dma_samples,
+				  number_of_adc_output_samples, adc_digi_pattern_config,
+				  adc_pattern_len);
 
 	return 0;
 }
 
 int adc_esp32_dma_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg)
 {
-	__maybe_unused const struct adc_esp32_conf *conf =
-		(const struct adc_esp32_conf *)dev->config;
+#if SOC_ADC_PERIPH_NUM >= 2
+	const struct adc_esp32_conf *conf = dev->config;
 
 	if (!SOC_ADC_DIG_SUPPORTED_UNIT(conf->unit)) {
 		LOG_ERR("ADC2 dma mode is no longer supported, please use ADC1!");
 		return -EINVAL;
 	}
+#else
+	ARG_UNUSED(cfg);
+#endif /* SOC_ADC_PERIPH_NUM >= 2 */
 
 	return 0;
 }
@@ -461,20 +730,12 @@ int adc_esp32_dma_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	data->adc_hal_dma_ctx.rx_desc = k_aligned_alloc(sizeof(uint32_t), sizeof(dma_descriptor_t));
-	if (!data->adc_hal_dma_ctx.rx_desc) {
-		LOG_ERR("rx_desc allocation failed!");
-		return -ENOMEM;
-	}
-	LOG_DBG("rx_desc = 0x%08X", (unsigned int)data->adc_hal_dma_ctx.rx_desc);
+	data->adc_hal_dma_ctx.rx_desc = data->dma_rx_desc;
 
-	data->dma_buffer = k_aligned_alloc(sizeof(uint32_t), ADC_DMA_BUFFER_SIZE);
-	if (!data->dma_buffer) {
-		LOG_ERR("dma buffer allocation failed!");
-		k_free(data->adc_hal_dma_ctx.rx_desc);
-		return -ENOMEM;
-	}
-	LOG_DBG("data->dma_buffer = 0x%08X", (unsigned int)data->dma_buffer);
+	LOG_DBG("rx_desc = 0x%08X (%u entries)", (unsigned int)data->adc_hal_dma_ctx.rx_desc,
+		ADC_ESP32_DMA_RX_DESC_COUNT);
+	LOG_DBG("data->dma_buffer = 0x%08X (%u bytes)", (unsigned int)data->dma_buffer,
+		ADC_DMA_BUFFER_SIZE);
 
 #ifdef CONFIG_SOC_SERIES_ESP32
 	periph_module_enable(PERIPH_I2S0_MODULE);
@@ -487,8 +748,6 @@ int adc_esp32_dma_init(const struct device *dev)
 				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
 	if (err != 0) {
 		LOG_ERR("Could not allocate interrupt (err %d)", err);
-		k_free(data->adc_hal_dma_ctx.rx_desc);
-		k_free(data->dma_buffer);
 		return err;
 	}
 #endif /* CONFIG_SOC_SERIES_ESP32 */
@@ -509,8 +768,6 @@ int adc_esp32_dma_init(const struct device *dev)
 				 adc_esp32_dma_intr_handler, (void *)dev, &(data->irq_handle));
 	if (err != 0) {
 		LOG_ERR("Could not allocate interrupt (err %d)", err);
-		k_free(data->adc_hal_dma_ctx.rx_desc);
-		k_free(data->dma_buffer);
 		return err;
 	}
 #endif /* CONFIG_SOC_SERIES_ESP32S2 */
@@ -518,6 +775,9 @@ int adc_esp32_dma_init(const struct device *dev)
 #if SOC_GDMA_SUPPORTED
 	adc_apb_periph_claim();
 #endif /* SOC_GDMA_SUPPORTED */
+
+	data->digi_clk_src = 0U;
+	data->digi_hw_active = false;
 
 	return 0;
 }
