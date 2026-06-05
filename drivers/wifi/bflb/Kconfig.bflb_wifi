@@ -13,6 +13,7 @@ menuconfig WIFI_BFLB
 	select WIFI_USE_NATIVE_NETWORKING
 	select HWINFO
 	select WIFI_NM_WPA_SUPPLICANT
+	select BFLB_PHYRF
 	select NET_SOCKETS
 	help
 	  Enable Bouffalo Lab WiFi driver using the MACSW blob.
