@@ -57,6 +57,14 @@ struct lwan_mac_state {
 	bool adr_enabled;
 	/* Current TX power index (0 = region max; set by LinkADRReq) */
 	uint8_t tx_power_idx;
+
+	/* UL: a LinkCheckReq is queued and should ride on the next uplink */
+	bool link_check_pending;
+	/* UL: snapshot recorded by mac_cmd_build_ul_fopts() so a successful
+	 * TX (commit) can drop the request while a failed TX (no commit)
+	 * leaves it queued for a retry
+	 */
+	bool ul_built_link_check_req;
 };
 
 struct lwan_ctx {

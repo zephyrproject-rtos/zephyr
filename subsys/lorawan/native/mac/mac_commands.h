@@ -9,9 +9,6 @@
  * frame header, not in FRMPayload.  This module owns the parse/emit
  * path: the frame builder asks it for pending uplink commands, the
  * frame parser hands it incoming downlink commands.
- *
- * At present the module is a skeleton: future commits populate
- * per-command handlers.
  */
 
 #ifndef SUBSYS_LORAWAN_NATIVE_MAC_MAC_COMMANDS_H_
@@ -29,8 +26,9 @@ extern "C" {
 /**
  * @brief Build the FOpts bytes for the next uplink frame.
  *
- * Called by the frame builder before each uplink.  Drains pending
- * MAC command state from @p ctx into @p buf.
+ * Called by the frame builder before each uplink.  Records a snapshot
+ * of what was emitted so mac_cmd_commit_ul_fopts() can drain the right
+ * state once the frame is actually on the wire.
  *
  * @param ctx Stack context.
  * @param buf Output buffer for FOpts bytes.
@@ -39,6 +37,18 @@ extern "C" {
  */
 size_t mac_cmd_build_ul_fopts(struct lwan_ctx *ctx,
 			      uint8_t *buf, size_t max_len);
+
+/**
+ * @brief Commit the FOpts snapshot recorded by the last build call.
+ *
+ * Called from the post-TX hook once the frame has been transmitted
+ * successfully.  Clears the pending state for the commands that
+ * actually went on the wire so they aren't re-emitted.  A failed TX
+ * skips the commit, leaving the pending flags set for the next attempt.
+ *
+ * @param ctx Stack context.
+ */
+void mac_cmd_commit_ul_fopts(struct lwan_ctx *ctx);
 
 #ifdef __cplusplus
 }

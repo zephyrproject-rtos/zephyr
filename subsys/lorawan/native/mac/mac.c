@@ -226,6 +226,14 @@ signal_result:
 	engine_signal_result(req, ret);
 }
 
+static void mac_do_link_check(struct lwan_ctx *ctx,
+			      const struct lwan_req *req)
+{
+	/* LinkCheckReq rides in the FOpts of the next uplink */
+	ctx->mac.link_check_pending = true;
+	engine_signal_result(req, 0);
+}
+
 void mac_process_req(struct lwan_ctx *ctx, const struct lwan_req *req)
 {
 	switch (req->type) {
@@ -246,6 +254,9 @@ void mac_process_req(struct lwan_ctx *ctx, const struct lwan_req *req)
 		break;
 	case LWAN_REQ_SET_CHANNELS_MASK:
 		mac_do_set_channels_mask(ctx, req);
+		break;
+	case LWAN_REQ_LINK_CHECK:
+		mac_do_link_check(ctx, req);
 		break;
 	default:
 		LOG_WRN("Unknown request type: %d", req->type);
