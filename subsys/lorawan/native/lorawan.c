@@ -367,7 +367,20 @@ int lorawan_device_time_get(uint32_t *gps_time)
 
 int lorawan_request_link_check(bool force_request)
 {
-	ARG_UNUSED(force_request);
+	struct lwan_link_check_req lc_req = {
+		.force_request = force_request,
+	};
+	struct lwan_req msg = LWAN_REQ(LWAN_REQ_LINK_CHECK, &lc_req);
 
-	return -ENOTSUP;
+	if (!atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_STARTED)) {
+		return -EPERM;
+	}
+
+	/* The forced empty uplink needs an established session */
+	if (force_request &&
+	    !atomic_test_bit(lwan_ctx.flags, LWAN_FLAG_JOINED)) {
+		return -ENETDOWN;
+	}
+
+	return engine_post_req_wait(&msg);
 }
