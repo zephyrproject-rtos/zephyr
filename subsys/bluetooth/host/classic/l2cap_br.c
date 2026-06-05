@@ -1508,8 +1508,7 @@ done:
 	if (br_chan->_pdu_remaining > amount) {
 		br_chan->_pdu_remaining -= amount;
 	} else {
-		net_buf_unref(br_chan->_pdu_buf);
-		br_chan->_pdu_buf = NULL;
+		net_buf_drop(&br_chan->_pdu_buf);
 		br_chan->_pdu_remaining = 0;
 		if (pdu && !pdu->len) {
 			br_chan->_sdu_total_len = 0;
@@ -5733,8 +5732,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 	if ((sar == BT_L2CAP_CONTROL_SAR_UNSEG) || (sar == BT_L2CAP_CONTROL_SAR_START)) {
 		if (br_chan->_sdu) {
 			LOG_ERR("Last SDU is not done");
-			net_buf_unref(br_chan->_sdu);
-			br_chan->_sdu = NULL;
+			net_buf_drop(&br_chan->_sdu);
 			bt_l2cap_chan_disconnect(&br_chan->chan);
 			return -ESHUTDOWN;
 		}
@@ -5764,8 +5762,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 
 	if ((br_chan->_sdu->len + seg->len) > br_chan->_sdu_len) {
 		LOG_ERR("SDU length mismatch");
-		net_buf_unref(br_chan->_sdu);
-		br_chan->_sdu = NULL;
+		net_buf_drop(&br_chan->_sdu);
 		bt_l2cap_chan_disconnect(&br_chan->chan);
 		return -ESHUTDOWN;
 	}
@@ -5775,8 +5772,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 				   l2cap_br_alloc_frag, br_chan);
 	if (len != seg->len) {
 		LOG_ERR("Unable to store SDU");
-		net_buf_unref(br_chan->_sdu);
-		br_chan->_sdu = NULL;
+		net_buf_drop(&br_chan->_sdu);
 		bt_l2cap_chan_disconnect(&br_chan->chan);
 		return -ESHUTDOWN;
 	}
@@ -5786,8 +5782,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 	if ((sar == BT_L2CAP_CONTROL_SAR_UNSEG) || (sar == BT_L2CAP_CONTROL_SAR_END)) {
 		if (br_chan->_sdu->len < br_chan->_sdu_len) {
 			LOG_ERR("SDU length mismatch");
-			net_buf_unref(br_chan->_sdu);
-			br_chan->_sdu = NULL;
+			net_buf_drop(&br_chan->_sdu);
 			bt_l2cap_chan_disconnect(&br_chan->chan);
 			return -ESHUTDOWN;
 		}
