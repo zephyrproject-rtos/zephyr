@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth Peripheral GATT Notify
+tests:
+  sample.bluetooth.peripheral_gatt_notify:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52_bsim
+    tags: bluetooth
+    integration_platforms:
+      - qemu_cortex_m3
