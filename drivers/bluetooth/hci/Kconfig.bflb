@@ -171,6 +171,7 @@ config BT_BFLB_BL70XL
 	select DYNAMIC_INTERRUPTS
 	select FPU_SHARING
 	select BFLB_BTBLE_PORT_OS_SHIM
+	select BFLB_PHYRF
 	help
 	  Bouffalo Lab BL70XL on-chip BLE controller HCI driver.
 	  Uses precompiled binary blobs from the hal_bouffalolab module.
