@@ -151,34 +151,42 @@
 
 		cpuapp_sram: memory@20000000 {
 			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(512)>;
+			reg = <0x20000000 DT_SIZE_K(1016)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x20000000 0x80000>;
-		};
+			ranges = <0x0 0x20000000 0xfe000>;
 
-		ram01_sram: memory@20080000 {
-			compatible = "mmio-sram";
-			reg = <0x20080000 DT_SIZE_K(256)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x20080000 0x40000>;
-		};
+			ram00_sram: memory@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(512)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(512)>;
+			};
 
-		ram02_sram: memory@200c0000 {
-			compatible = "mmio-sram";
-			reg = <0x200c0000 DT_SIZE_K(128)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x200c0000 0x20000>;
-		};
+			ram01_sram: memory@80000 {
+				compatible = "mmio-sram";
+				reg = <0x80000 DT_SIZE_K(256)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x80000 DT_SIZE_K(256)>;
+			};
 
-		ram03_sram: memory@200e0000 {
-			compatible = "mmio-sram";
-			reg = <0x200e0000 DT_SIZE_K(120)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x200e0000 0x1e000>;
+			ram02_sram: memory@c0000 {
+				compatible = "mmio-sram";
+				reg = <0xc0000 DT_SIZE_K(128)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0xc0000 DT_SIZE_K(128)>;
+			};
+
+			ram03_sram: memory@e0000 {
+				compatible = "mmio-sram";
+				reg = <0xe0000 DT_SIZE_K(120)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0xe0000 DT_SIZE_K(120)>;
+			};
 		};
 
 		/* Wi-Fi ROM regions */
