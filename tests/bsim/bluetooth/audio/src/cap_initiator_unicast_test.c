@@ -1545,8 +1545,7 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 			FAIL("Failed to disconnect conn[%zu]: %d\n", i, err);
 		}
 
-		bt_conn_unref(connected_conns[i]);
-		connected_conns[i] = NULL;
+		bt_conn_drop(&connected_conns[i]);
 	}
 
 	PASS("CAP initiator passed for %s with Sink Preset %s and Source Preset %s\n", param->name,

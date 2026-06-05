@@ -95,8 +95,7 @@ static void test_client(void)
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	__ASSERT_NO_MSG(!err);
 
-	bt_conn_unref(conn);
-	conn = NULL;
+	bt_conn_drop(&conn);
 
 	TEST_PASS("PASS");
 }
@@ -157,8 +156,7 @@ static void test_client_security_request(void)
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	__ASSERT_NO_MSG(!err);
 
-	bt_conn_unref(conn);
-	conn = NULL;
+	bt_conn_drop(&conn);
 
 	TEST_PASS("PASS");
 }

@@ -209,8 +209,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	LOG_DBG("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	start_scan();
 }
