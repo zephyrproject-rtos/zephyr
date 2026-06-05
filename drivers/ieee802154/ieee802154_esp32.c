@@ -69,9 +69,11 @@ static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx
 	uint8_t len;
 	int err;
 
+#ifndef CONFIG_IEEE802154_RAW_MODE
 	if (data->iface == NULL) {
 		return;
 	}
+#endif
 
 	/* The ESP-IDF HAL handles FCS already and drops frames with bad checksum. The checksum at
 	 * the end of a valid frame is replaced with RSSI and LQI values.
@@ -143,7 +145,7 @@ void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *fr
 		LOG_WRN("Invalid RX PHR length %u", phr_len);
 		goto done;
 	}
-ets_printf(".");
+
 	memcpy(msg.frame, frame, (size_t)phr_len + 1U);
 	msg.info = *frame_info;
 
