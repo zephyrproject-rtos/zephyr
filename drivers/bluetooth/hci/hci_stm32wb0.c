@@ -497,9 +497,6 @@ static int bt_hci_stm32wb0_open(const struct device *dev)
 #endif /* CONFIG_BT_EXT_ADV */
 
 	aci_adv_nwk_init();
-#if defined(CONFIG_PM_DEVICE)
-	aci_hal_set_radio_activity_mask(STM32_STATE_ALL_BITMASK);
-#endif /* CONFIG_PM_DEVICE */
 	k_work_init_delayable(&ble_stack_work, blestack_process);
 	k_work_schedule(&ble_stack_work, K_NO_WAIT);
 
