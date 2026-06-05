@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup subsys_cpu_freq_pstate
+ * @brief Header file for CPU frequency scaling performance state (P-state).
+ */
+
 #ifndef ZEPHYR_SUBSYS_CPU_FREQ_PSTATE_H_
 #define ZEPHYR_SUBSYS_CPU_FREQ_PSTATE_H_
 
