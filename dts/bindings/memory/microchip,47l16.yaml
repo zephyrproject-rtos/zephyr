@@ -1,0 +1,36 @@
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip 47L16 2KB I2C SRAM with EEPROM backup (EERAM).
+
+  The device provides 2048 bytes of SRAM accessible over I2C at address
+  0x50 (default, adjustable via A2:A1:A0). A second I2C address at 0x18
+  provides access to the control and status registers used to trigger
+  or configure the automatic EEPROM backup/restore.
+
+  SRAM writes are immediate with no page-crossing restrictions or write
+  delays. The driver uses the standard Zephyr EEPROM API.
+
+compatible: "microchip,47l16"
+
+include: [i2c-device.yaml]
+
+properties:
+  size:
+    type: int
+    required: true
+    description: Total SRAM size in bytes.
+
+  pagesize:
+    type: int
+    required: true
+    description: |
+      Nominal page size in bytes (for compatibility with EEPROM API).
+      Note: SRAM writes are not page-restricted.
+
+  address-width:
+    type: int
+    required: true
+    description: |
+      Number of address bits (8 or 16).

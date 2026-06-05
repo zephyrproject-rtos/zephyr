@@ -94,6 +94,7 @@ config EEPROM_AT2X_INIT_PRIORITY
 	  after I2C/SPI driver.
 
 source "drivers/eeprom/Kconfig.lpc11u6x"
+source "drivers/eeprom/Kconfig.microchip_47l16"
 source "drivers/eeprom/Kconfig.stm32"
 source "drivers/eeprom/Kconfig.eeprom_emu"
 source "drivers/eeprom/Kconfig.tmp11x"

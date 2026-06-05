@@ -1,0 +1,30 @@
+# Microchip 47L16 EERAM driver configuration
+# Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_MICROCHIP_47L16
+	bool "Microchip 47L16 I2C SRAM with EEPROM backup"
+	default y
+	depends on DT_HAS_MICROCHIP_47L16_ENABLED
+	select I2C
+	help
+	  Enable support for Microchip 47L16 2KB I2C SRAM with EEPROM
+	  backup (EERAM).
+
+	  The device provides 2048 bytes of SRAM accessible over I2C with
+	  immediate write capability (no write cycle delays). SRAM contents
+	  are automatically backed up to internal EEPROM on power loss for
+	  non-volatile storage.
+
+	  A second I2C address (0x18) provides access to control registers
+	  for manual backup/restore (not implemented).
+
+config EEPROM_MICROCHIP_47L16_INIT_PRIORITY
+	int "Microchip 47L16 EERAM init priority"
+	default 80
+	depends on EEPROM_MICROCHIP_47L16
+	help
+	  Microchip 47L16 EERAM driver device initialization priority.
+
+	  The EERAM is connected to I2C bus and must be initialized after
+	  the I2C driver.
