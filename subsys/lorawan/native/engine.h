@@ -54,6 +54,13 @@ struct lwan_set_channels_mask_req {
 	size_t channels_mask_size;
 };
 
+struct lwan_link_check_req {
+	/* true: trigger an empty uplink so the LinkCheckReq goes out now;
+	 * false: just queue the flag for the next regular uplink
+	 */
+	bool force_request;
+};
+
 enum lwan_req_type {
 	LWAN_REQ_JOIN,
 	LWAN_REQ_SEND,

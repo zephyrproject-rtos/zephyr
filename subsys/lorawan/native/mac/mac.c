@@ -229,9 +229,36 @@ signal_result:
 static void mac_do_link_check(struct lwan_ctx *ctx,
 			      const struct lwan_req *req)
 {
+	const struct lwan_link_check_req *lc_req = req->data;
+	struct lwan_send_req send_req;
+	struct lwan_req send_msg;
+
 	/* LinkCheckReq rides in the FOpts of the next uplink */
 	ctx->mac.link_check_pending = true;
-	engine_signal_result(req, 0);
+
+	if (!lc_req->force_request) {
+		engine_signal_result(req, 0);
+		return;
+	}
+
+	/* Trigger an empty unconfirmed uplink so the queued LinkCheckReq
+	 * goes out now rather than waiting for the next application send.
+	 * mac_do_send() signals the request itself.
+	 */
+	send_req = (struct lwan_send_req){
+		.data = NULL,
+		.len = 0,
+		.port = 0,
+		.type = LORAWAN_MSG_UNCONFIRMED,
+	};
+	send_msg = (struct lwan_req){
+		.type = LWAN_REQ_SEND,
+		.data = &send_req,
+		.done = req->done,
+		.result = req->result,
+	};
+
+	mac_do_send(ctx, &send_msg);
 }
 
 void mac_process_req(struct lwan_ctx *ctx, const struct lwan_req *req)
