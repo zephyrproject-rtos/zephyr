@@ -9,7 +9,7 @@ found on the `USB2CANFDV2 website`_.
 Hardware
 ********
 
-The USB2CANFDV1 is equipped with a STM32G431CB microcontroller and features a USB-C connector, a
+The USB2CANFDV2 is equipped with a STM32G431CB microcontroller and features a USB-C connector, a
 terminal block for connecting to the CAN bus, three LEDs, a ``BOOT0`` push-button, and a slide
 switch for enabling a 120 Ω CAN termination resistor.
 
@@ -21,7 +21,7 @@ Supported Features
 System Clock
 ============
 
-The STM32G0B1CBT6 PLL is driven by an external crystal oscillator (HSE) running at 16 MHz and
+The STM32G431CB PLL is driven by an external crystal oscillator (HSE) running at 16 MHz and
 configured to provide a system clock of 160 MHz. This allows generating a FDCAN1 core clock of 80
 MHz.
 
