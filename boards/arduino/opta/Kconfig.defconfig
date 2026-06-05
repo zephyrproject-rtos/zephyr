@@ -13,4 +13,12 @@ source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
 endif # BOARD_ARDUINO_OPTA_STM32H747XX_M7
 
+if WIFI_AIROC
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 20480
+
+endif # WIFI_AIROC
+
 endif # BOARD_ARDUINO_OPTA
