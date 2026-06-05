@@ -672,7 +672,7 @@ static void wm8904_configure_input(const struct device *dev)
 	wm8904_in_mute_config(dev, AUDIO_CHANNEL_ALL, false);
 }
 
-static const struct audio_codec_api wm8904_driver_api = {
+static DEVICE_API(audio_codec, wm8904_driver_api) = {
 	.configure = wm8904_configure,
 	.start_output = wm8904_start_output,
 	.stop_output = wm8904_stop_output,

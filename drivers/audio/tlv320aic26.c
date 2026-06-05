@@ -656,7 +656,7 @@ static int aic26_init(const struct device *dev)
 	return 0;
 }
 
-static const struct audio_codec_api aic26_api = {
+DEVICE_API(audio_codec, aic26_api) = {
 	.configure        = aic26_configure,
 	.start_output     = aic26_start_output,
 	.stop_output      = aic26_stop_output,
