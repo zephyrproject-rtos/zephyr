@@ -1175,12 +1175,10 @@ static bool bt_iso_acl_has_cis(const struct bt_conn *acl)
 
 void bt_iso_cleanup_acl(struct bt_conn *iso)
 {
-	struct bt_conn *acl = iso->iso.acl;
+	struct bt_conn *acl = bt_conn_take(&iso->iso.acl);
 	LOG_DBG("%p", iso);
 
 	if (acl != NULL) {
-		iso->iso.acl = NULL;
-
 		/* If we have removed the last ACL reference, trigger the deferred work to finalize
 		 * the ACL disconnection
 		 */
