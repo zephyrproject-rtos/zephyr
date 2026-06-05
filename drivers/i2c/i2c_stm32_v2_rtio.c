@@ -257,11 +257,12 @@ int i2c_stm32_target_register(const struct device *dev,
 
 		LOG_DBG("i2c: target #1 registered");
 	} else {
-		data->target2_cfg = config;
-
-		if (data->target2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		if (config->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			return -EINVAL;
 		}
+
+		data->target2_cfg = config;
+
 		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
 				      LL_I2C_OWNADDRESS2_NOMASK);
 		LL_I2C_EnableOwnAddress2(i2c);
