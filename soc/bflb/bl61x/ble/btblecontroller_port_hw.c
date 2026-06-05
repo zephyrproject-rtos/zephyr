@@ -198,6 +198,11 @@ void btblecontroller_sys_reset(void)
 	sys_reboot(0);
 }
 
+uint64_t bflb_mtimer_get_time_us(void)
+{
+	return k_cyc_to_us_floor64(k_cycle_get_64());
+}
+
 void btblecontroller_puts(const char *str)
 {
 	ARG_UNUSED(str);
