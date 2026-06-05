@@ -922,7 +922,7 @@ static int tls_tx(void *ctx, const unsigned char *buf, size_t len)
 	ssize_t sent;
 
 	sent = zsock_sendto(tls_ctx->sock, buf, len,
-			    0, NULL, 0);
+			    ZSOCK_MSG_DONTWAIT, NULL, 0);
 	if (sent < 0) {
 		if (errno == EAGAIN) {
 			return MBEDTLS_ERR_SSL_WANT_WRITE;
