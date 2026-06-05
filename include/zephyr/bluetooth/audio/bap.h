@@ -500,7 +500,7 @@ struct bt_bap_scan_delegator_cb {
 	 *                   the change was caused by it, otherwise NULL.
 	 * @param recv_state Pointer to the receive state that was updated.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	void (*recv_state_updated)(struct bt_conn *conn,
 				   const struct bt_bap_scan_delegator_recv_state *recv_state);
@@ -536,7 +536,7 @@ struct bt_bap_scan_delegator_cb {
 	 * @param recv_state  Pointer to the receive state that is being
 	 *                    requested for periodic advertising sync.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*pa_sync_term_req)(struct bt_conn *conn,
 				const struct bt_bap_scan_delegator_recv_state *recv_state);
@@ -672,8 +672,8 @@ struct bt_bap_ep_info {
  * @param ep   The audio stream endpoint object.
  * @param info The structure object to be filled with the info.
  *
- * @retval 0 in case of success
- * @retval -EINVAL if @p ep or @p info are NULL
+ * @retval 0 on success.
+ * @retval -EINVAL @p ep or @p info are NULL.
  */
 int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info);
 
@@ -689,7 +689,7 @@ int bt_bap_ep_get_info(const struct bt_bap_ep *ep, struct bt_bap_ep_info *info);
  *         - @p ep is NULL
  *         - @p ep is a broadcast endpoint
  *         - @p ep is a Unicast Server endpoint not yet configured by a remote client
- *         - @p ep is a Unicast Client endpoint not yet discovered on a remote server
+ *         - @p ep is a Unicast Client endpoint not yet discovered on a remote server.
  */
 struct bt_conn *bt_bap_ep_get_conn(const struct bt_bap_ep *ep);
 
@@ -929,7 +929,7 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream, struct bt_bap_strea
  * @param ep Remote Audio Endpoint being configured
  * @param codec_cfg Codec configuration
  *
- * @return Allocated Audio Stream object or NULL in case of error.
+ * @return Allocated Audio Stream object on success, or NULL on failure.
  */
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
 			 const struct bt_audio_codec_cfg *codec_cfg);
@@ -945,7 +945,7 @@ int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, str
  * @param stream Stream object being reconfigured
  * @param codec_cfg Codec configuration
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
 			   const struct bt_audio_codec_cfg *codec_cfg);
@@ -960,7 +960,7 @@ int bt_bap_stream_reconfig(struct bt_bap_stream *stream,
  * @param conn  Connection object
  * @param group Unicast group object
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group);
 
@@ -976,7 +976,7 @@ int bt_bap_stream_qos(struct bt_conn *conn, struct bt_bap_unicast_group *group);
  * @param meta Metadata
  * @param meta_len Metadata length
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len);
 
@@ -989,7 +989,7 @@ int bt_bap_stream_enable(struct bt_bap_stream *stream, const uint8_t meta[], siz
  * @param meta Metadata
  * @param meta_len Metadata length
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len);
 
@@ -1003,7 +1003,7 @@ int bt_bap_stream_metadata(struct bt_bap_stream *stream, const uint8_t meta[], s
  *
  * @param stream Stream object
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_stream_disable(struct bt_bap_stream *stream);
 
@@ -1022,13 +1022,13 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream);
  *
  * @param stream Stream object
  *
- * @retval 0 in case of success
- * @retval -EINVAL if the stream, endpoint, ISO channel or connection is NULL
- * @retval -EBADMSG if the stream or ISO channel is in an invalid state for connection
- * @retval -EOPNOTSUPP if the role of the stream is not @ref BT_CONN_ROLE_CENTRAL
- * @retval -EALREADY if the ISO channel is already connecting or connected
- * @retval -EBUSY if another ISO channel is connecting
- * @retval -ENOEXEC if otherwise rejected by the ISO layer
+ * @retval 0 on success.
+ * @retval -EINVAL The stream, endpoint, ISO channel or connection is NULL.
+ * @retval -EBADMSG The stream or ISO channel is in an invalid state for connection.
+ * @retval -EOPNOTSUPP The role of the stream is not @ref BT_CONN_ROLE_CENTRAL.
+ * @retval -EALREADY The ISO channel is already connecting or connected.
+ * @retval -EBUSY Another ISO channel is connecting.
+ * @retval -ENOEXEC Otherwise rejected by the ISO layer.
  */
 int bt_bap_stream_connect(struct bt_bap_stream *stream);
 
@@ -1052,7 +1052,7 @@ int bt_bap_stream_connect(struct bt_bap_stream *stream);
  *
  * @param stream Stream object
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_stream_start(struct bt_bap_stream *stream);
 
@@ -1067,17 +1067,16 @@ int bt_bap_stream_start(struct bt_bap_stream *stream);
  *
  * @param stream Stream object
  *
- * @retval 0 Success
- * @retval -EINVAL The @p stream does not have an endpoint or a connection, of the stream's
- *                 connection's role is not @p BT_CONN_ROLE_CENTRAL
- * @retval -EBADMSG The state of the @p stream endpoint is not @ref BT_BAP_EP_STATE_DISABLING
- * @retval -EALREADY The CIS state of the @p is not in a connected state, and thus is already
- *                   stopping
- * @retval -EBUSY The @p stream is busy with another operation
- * @retval -ENOTCONN The @p stream ACL connection is not connected
- * @retval -ENOMEM No memory to send request
- * @retval -ENOEXEC The request was rejected by GATT
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 on success.
+ * @retval -EINVAL The @p stream does not have an endpoint or a connection, or the stream's
+ *                 connection's role is not @p BT_CONN_ROLE_CENTRAL.
+ * @retval -EBADMSG The state of the @p stream endpoint is not @ref BT_BAP_EP_STATE_DISABLING.
+ * @retval -EALREADY The CIS state of the @p stream is not in a connected state, and thus is already
+ *                   stopping.
+ * @retval -EBUSY The @p stream is busy with another operation.
+ * @retval -ENOTCONN The @p stream ACL connection is not connected.
+ * @retval -ENOMEM No memory to send request.
+ * @retval -ENOEXEC The request was rejected by GATT.
  */
 int bt_bap_stream_stop(struct bt_bap_stream *stream);
 
@@ -1092,7 +1091,7 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream);
  *
  * @param stream Stream object
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_stream_release(struct bt_bap_stream *stream);
 
@@ -1108,7 +1107,7 @@ int bt_bap_stream_release(struct bt_bap_stream *stream);
  * @param seq_num  Packet Sequence number. This value shall be incremented for each call to this
  *                 function and at least once per SDU interval for a specific channel.
  *
- * @return Bytes sent in case of success or negative value in case of error.
+ * @return Bytes sent on success, negative errno value on failure.
  */
 int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, uint16_t seq_num);
 
@@ -1126,7 +1125,7 @@ int bt_bap_stream_send(struct bt_bap_stream *stream, struct net_buf *buf, uint16
  * @param ts       Timestamp of the SDU in microseconds (us). This value can be used to transmit
  *                 multiple SDUs in the same SDU interval in a CIG or BIG.
  *
- * @return Bytes sent in case of success or negative value in case of error.
+ * @return Bytes sent on success, negative errno value on failure.
  */
 int bt_bap_stream_send_ts(struct bt_bap_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			  uint32_t ts);
@@ -1144,10 +1143,10 @@ int bt_bap_stream_send_ts(struct bt_bap_stream *stream, struct net_buf *buf, uin
  * @param[in]  stream Stream object.
  * @param[out] info   Transmit info object.
  *
- * @retval 0 on success
- * @retval -EINVAL if the stream is invalid, if the stream is not configured for sending or if it is
- *         not connected with a isochronous stream
- * @retval Any return value from bt_iso_chan_get_tx_sync()
+ * @retval 0 on success.
+ * @retval -EINVAL The stream is invalid, the stream is not configured for sending, or it is
+ *         not connected with an isochronous stream.
+ * @return Any return value from bt_iso_chan_get_tx_sync().
  */
 int bt_bap_stream_get_tx_sync(struct bt_bap_stream *stream, struct bt_iso_tx_info *info);
 
@@ -1175,7 +1174,7 @@ struct bt_bap_unicast_server_cb {
 	 * @param[out] rsp       Object for the ASE operation response. Only used if the return
 	 *                       value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*config)(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
@@ -1195,7 +1194,7 @@ struct bt_bap_unicast_server_cb {
 	 * @param[out] rsp       Object for the ASE operation response. Only used if the return
 	 *                       value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*reconfig)(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
@@ -1212,7 +1211,7 @@ struct bt_bap_unicast_server_cb {
 	 * @param[out] rsp     Object for the ASE operation response. Only used if the return
 	 *                     value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*qos)(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp);
@@ -1228,7 +1227,7 @@ struct bt_bap_unicast_server_cb {
 	 * @param[out] rsp         Object for the ASE operation response. Only used if the return
 	 *                         value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*enable)(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 		      struct bt_bap_ascs_rsp *rsp);
@@ -1242,7 +1241,7 @@ struct bt_bap_unicast_server_cb {
 	 * @param[out] rsp    Object for the ASE operation response. Only used if the return
 	 *                    value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*start)(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp);
 
@@ -1257,7 +1256,7 @@ struct bt_bap_unicast_server_cb {
 	 * @param[out] rsp          Object for the ASE operation response. Only used if the return
 	 *                          value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*metadata)(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 			struct bt_bap_ascs_rsp *rsp);
@@ -1271,7 +1270,7 @@ struct bt_bap_unicast_server_cb {
 	 * @param[out] rsp    Object for the ASE operation response. Only used if the return
 	 *                    value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*disable)(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp);
 
@@ -1284,7 +1283,7 @@ struct bt_bap_unicast_server_cb {
 	 * @param[out] rsp    Object for the ASE operation response. Only used if the return
 	 *                    value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*stop)(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp);
 
@@ -1298,7 +1297,7 @@ struct bt_bap_unicast_server_cb {
 	 * @param[out] rsp    Object for the ASE operation response. Only used if the return
 	 *                    value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*release)(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp);
 };
@@ -1311,7 +1310,7 @@ struct bt_bap_unicast_server_cb {
  *
  * @param param  Registration parameters for ascs.
  *
- * @return 0 in case of success, negative error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param);
 
@@ -1327,7 +1326,7 @@ int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_p
  * Calling this function will issue an release operation on any ASE
  * in a non-idle state.
  *
- * @return 0 in case of success, negative error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_unicast_server_unregister(void);
 
@@ -1339,7 +1338,7 @@ int bt_bap_unicast_server_unregister(void);
  *
  * @param cb  Unicast server callback structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb);
 
@@ -1351,7 +1350,7 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
  *
  * @param cb  Unicast server callback structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *cb);
 
@@ -1374,7 +1373,7 @@ typedef bool (*bt_bap_ep_func_t)(struct bt_bap_ep *ep, void *user_data);
  * @param func Function to call for each endpoint.
  * @param user_data Data to pass to the callback function.
  *
- * @retval 0 Success
+ * @retval 0 on success.
  * @retval -ECANCELED Iteration was stopped by the callback function before complete.
  * @retval -EINVAL @p conn or @p func were NULL.
  */
@@ -1388,7 +1387,7 @@ int bt_bap_unicast_server_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func
  * @param codec_cfg Codec configuration
  * @param qos_pref Audio Stream Quality of Service Preference
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_unicast_server_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 				     const struct bt_audio_codec_cfg *codec_cfg,
@@ -1485,7 +1484,7 @@ struct bt_bap_unicast_group_param {
  * @param[in]  param          The unicast group create parameters.
  * @param[out] unicast_group  Pointer to the unicast group created.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
 				struct bt_bap_unicast_group **unicast_group);
@@ -1503,7 +1502,7 @@ int bt_bap_unicast_group_create(struct bt_bap_unicast_group_param *param,
  * @param unicast_group  Pointer to the unicast group created.
  * @param param          The unicast group reconfigure parameters.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 				  const struct bt_bap_unicast_group_param *param);
@@ -1525,7 +1524,7 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
  * @param params         Array of stream parameters with streams being added to the group.
  * @param num_param      Number of parameters in @p params.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
 				     struct bt_bap_unicast_group_stream_pair_param params[],
@@ -1539,7 +1538,7 @@ int bt_bap_unicast_group_add_streams(struct bt_bap_unicast_group *unicast_group,
  *
  * @param unicast_group  Pointer to the unicast group to delete
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_unicast_group_delete(struct bt_bap_unicast_group *unicast_group);
 
@@ -1561,7 +1560,7 @@ typedef bool (*bt_bap_unicast_group_foreach_stream_func_t)(struct bt_bap_stream 
  * @param func           The callback function
  * @param user_data      User specified data that sent to the callback function
  *
- * @retval 0 Success (even if no streams exists in the group).
+ * @retval 0 on success (even if no streams exists in the group).
  * @retval -ECANCELED Iteration was stopped by the callback function before complete.
  * @retval -EINVAL @p unicast_group or @p func were NULL.
  */
@@ -1594,8 +1593,8 @@ struct bt_bap_unicast_group_info {
  * @param unicast_group The unicast group object.
  * @param info          The structure object to be filled with the info.
  *
- * @retval 0 Success
- * @retval -EINVAL  @p unicast_group or @p info are NULL
+ * @retval 0 on success.
+ * @retval -EINVAL @p unicast_group or @p info are NULL.
  */
 int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_group,
 				  struct bt_bap_unicast_group_info *info);
@@ -1804,7 +1803,7 @@ struct bt_bap_unicast_client_cb {
  *
  * @param cb  Unicast client callback structure to register.
  *
- * @retval 0 Success
+ * @retval 0 on success.
  * @retval -EINVAL @p cb is NULL.
  * @retval -EEXIST @p cb is already registered.
  */
@@ -1815,8 +1814,8 @@ int bt_bap_unicast_client_register_cb(struct bt_bap_unicast_client_cb *cb);
  *
  * @param cb  Unicast client callback structure to unregister.
  *
- * @retval 0 Success
- * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered.
  */
 int bt_bap_unicast_client_unregister_cb(struct bt_bap_unicast_client_cb *cb);
 
@@ -1830,13 +1829,13 @@ int bt_bap_unicast_client_unregister_cb(struct bt_bap_unicast_client_cb *cb);
  *               requirements of the Basic Audio Profile.
  * @param dir    The type of remote endpoints and capabilities to discover.
  *
- * @retval 0 Success
+ * @retval 0 on success.
  * @retval -EINVAL @p conn is NULL, not a central connection or does not conform to security
  *                 requirements, or @p dir is invalid.
- * @retval -EBUSY Another operation is already in progress for this @p conn
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocate memory for the request
- * @retval -ENOEXEC Unexpected GATT error
+ * @retval -EBUSY Another operation is already in progress for this @p conn.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -ENOEXEC Unexpected GATT error.
  */
 int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir);
 
@@ -1878,8 +1877,7 @@ struct bt_bap_base_subgroup_bis {
  *
  * @param ad The periodic advertising data
  *
- * @retval NULL if the data does not contain a BASE
- * @retval Pointer to a bt_bap_base structure
+ * @return Pointer to a bt_bap_base structure, or NULL if the data does not contain a BASE.
  */
 const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad);
 
@@ -1888,8 +1886,8 @@ const struct bt_bap_base *bt_bap_base_get_base_from_ad(const struct bt_data *ad)
  *
  * @param base The BASE pointer
  *
- * @retval -EINVAL if arguments are invalid
- * @retval The size of the BASE
+ * @return The size of the BASE on success.
+ * @retval -EINVAL Arguments are invalid.
  */
 int bt_bap_base_get_size(const struct bt_bap_base *base);
 
@@ -1898,8 +1896,8 @@ int bt_bap_base_get_size(const struct bt_bap_base *base);
  *
  * @param base The BASE pointer
  *
- * @retval -EINVAL if arguments are invalid
- * @retval The 24-bit presentation delay value
+ * @return The 24-bit presentation delay value on success.
+ * @retval -EINVAL Arguments are invalid.
  */
 int bt_bap_base_get_pres_delay(const struct bt_bap_base *base);
 
@@ -1908,8 +1906,8 @@ int bt_bap_base_get_pres_delay(const struct bt_bap_base *base);
  *
  * @param base The BASE pointer
  *
- * @retval -EINVAL if arguments are invalid
- * @retval The 8-bit subgroup count value
+ * @return The 8-bit subgroup count value on success.
+ * @retval -EINVAL Arguments are invalid.
  */
 int bt_bap_base_get_subgroup_count(const struct bt_bap_base *base);
 
@@ -1919,8 +1917,8 @@ int bt_bap_base_get_subgroup_count(const struct bt_bap_base *base);
  * @param[in]  base        The BASE pointer
  * @param[out] bis_indexes 32-bit BIS index bitfield that will be populated
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL Arguments are invalid.
  */
 int bt_bap_base_get_bis_indexes(const struct bt_bap_base *base, uint32_t *bis_indexes);
 
@@ -1931,9 +1929,9 @@ int bt_bap_base_get_bis_indexes(const struct bt_bap_base *base, uint32_t *bis_in
  * @param func      Callback function. Return true to continue iterating, or false to stop.
  * @param user_data Userdata supplied to @p func
  *
- * @retval -EINVAL if arguments are invalid
- * @retval -ECANCELED if iterating over the subgroups stopped prematurely by @p func
- * @retval 0 if all subgroups were iterated
+ * @retval 0 All subgroups were iterated.
+ * @retval -EINVAL Arguments are invalid.
+ * @retval -ECANCELED Iterating over the subgroups stopped prematurely by @p func.
  */
 int bt_bap_base_foreach_subgroup(const struct bt_bap_base *base,
 				 bool (*func)(const struct bt_bap_base_subgroup *subgroup,
@@ -1946,8 +1944,8 @@ int bt_bap_base_foreach_subgroup(const struct bt_bap_base *base,
  * @param[in]  subgroup The subgroup pointer
  * @param[out] codec_id Pointer to the struct where the results are placed
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL Arguments are invalid.
  */
 int bt_bap_base_get_subgroup_codec_id(const struct bt_bap_base_subgroup *subgroup,
 				      struct bt_bap_base_codec_id *codec_id);
@@ -1958,8 +1956,8 @@ int bt_bap_base_get_subgroup_codec_id(const struct bt_bap_base_subgroup *subgrou
  * @param[in]  subgroup The subgroup pointer
  * @param[out] data     Pointer that will point to the resulting codec configuration data
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL Arguments are invalid.
  */
 int bt_bap_base_get_subgroup_codec_data(const struct bt_bap_base_subgroup *subgroup,
 					uint8_t **data);
@@ -1970,8 +1968,8 @@ int bt_bap_base_get_subgroup_codec_data(const struct bt_bap_base_subgroup *subgr
  * @param[in]  subgroup The subgroup pointer
  * @param[out] meta     Pointer that will point to the resulting codec metadata
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL Arguments are invalid.
  */
 int bt_bap_base_get_subgroup_codec_meta(const struct bt_bap_base_subgroup *subgroup,
 					uint8_t **meta);
@@ -1982,9 +1980,9 @@ int bt_bap_base_get_subgroup_codec_meta(const struct bt_bap_base_subgroup *subgr
  * @param[in]  subgroup  The subgroup pointer
  * @param[out] codec_cfg Pointer to the struct where the results are placed
  *
- * @retval -EINVAL if arguments are invalid
- * @retval -ENOMEM if the @p codec_cfg cannot store the @p subgroup codec data
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL Arguments are invalid.
+ * @retval -ENOMEM The @p codec_cfg cannot store the @p subgroup codec data.
  */
 int bt_bap_base_subgroup_codec_to_codec_cfg(const struct bt_bap_base_subgroup *subgroup,
 					    struct bt_audio_codec_cfg *codec_cfg);
@@ -1994,8 +1992,8 @@ int bt_bap_base_subgroup_codec_to_codec_cfg(const struct bt_bap_base_subgroup *s
  *
  * @param subgroup The subgroup pointer
  *
- * @retval -EINVAL if arguments are invalid
- * @retval The 8-bit BIS count value
+ * @return The 8-bit BIS count value on success.
+ * @retval -EINVAL Arguments are invalid.
  */
 int bt_bap_base_get_subgroup_bis_count(const struct bt_bap_base_subgroup *subgroup);
 
@@ -2005,8 +2003,8 @@ int bt_bap_base_get_subgroup_bis_count(const struct bt_bap_base_subgroup *subgro
  * @param[in]  subgroup    The subgroup pointer
  * @param[out] bis_indexes 32-bit BIS index bitfield that will be populated
  *
- * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL Arguments are invalid.
  */
 int bt_bap_base_subgroup_get_bis_indexes(const struct bt_bap_base_subgroup *subgroup,
 					 uint32_t *bis_indexes);
@@ -2018,9 +2016,9 @@ int bt_bap_base_subgroup_get_bis_indexes(const struct bt_bap_base_subgroup *subg
  * @param func      Callback function. Return true to continue iterating, or false to stop.
  * @param user_data Userdata supplied to @p func
  *
- * @retval -EINVAL if arguments are invalid
- * @retval -ECANCELED if iterating over the subgroups stopped prematurely by @p func
- * @retval 0 if all BIS were iterated
+ * @retval 0 All BIS were iterated.
+ * @retval -EINVAL Arguments are invalid.
+ * @retval -ECANCELED Iterating over the subgroups stopped prematurely by @p func.
  */
 int bt_bap_base_subgroup_foreach_bis(const struct bt_bap_base_subgroup *subgroup,
 				     bool (*func)(const struct bt_bap_base_subgroup_bis *bis,
@@ -2036,9 +2034,9 @@ int bt_bap_base_subgroup_foreach_bis(const struct bt_bap_base_subgroup *subgroup
  * @param[in]  bis       The BIS pointer
  * @param[out] codec_cfg Pointer to the struct where the results are placed
  *
- * @retval -EINVAL if arguments are invalid
- * @retval -ENOMEM if the @p codec_cfg cannot store the @p subgroup codec data
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL Arguments are invalid.
+ * @retval -ENOMEM The @p codec_cfg cannot store the @p subgroup codec data.
  */
 int bt_bap_base_subgroup_bis_codec_to_codec_cfg(const struct bt_bap_base_subgroup_bis *bis,
 						struct bt_audio_codec_cfg *codec_cfg);
@@ -2084,9 +2082,9 @@ struct bt_bap_broadcast_source_cb {
  *
  * @param cb Pointer to the callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EEXIST if @p cb is already registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EEXIST @p cb is already registered.
  */
 int bt_bap_broadcast_source_register_cb(struct bt_bap_broadcast_source_cb *cb);
 
@@ -2095,9 +2093,9 @@ int bt_bap_broadcast_source_register_cb(struct bt_bap_broadcast_source_cb *cb);
  *
  * @param cb Pointer to the callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -ENOENT if @p cb is not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -ENOENT @p cb is not registered.
  */
 int bt_bap_broadcast_source_unregister_cb(struct bt_bap_broadcast_source_cb *cb);
 
@@ -2210,7 +2208,7 @@ struct bt_bap_broadcast_source_param {
  * @param[in]  param       Pointer to parameters used to create the broadcast source.
  * @param[out] source      Pointer to the broadcast source created
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				   struct bt_bap_broadcast_source **source);
@@ -2232,7 +2230,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
  * @param source      Pointer to the broadcast source
  * @param param       Pointer to parameters used to reconfigure the broadcast source.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 				     struct bt_bap_broadcast_source_param *param);
@@ -2247,7 +2245,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
  * @param meta        Metadata.
  * @param meta_len    Length of metadata.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *source,
 					    const uint8_t meta[], size_t meta_len);
@@ -2261,7 +2259,7 @@ int bt_bap_broadcast_source_update_metadata(struct bt_bap_broadcast_source *sour
  * @param source      Pointer to the broadcast source
  * @param adv         Pointer to an extended advertising set with periodic advertising configured.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source,
 				  struct bt_le_ext_adv *adv);
@@ -2274,7 +2272,7 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source,
  *
  * @param source      Pointer to the broadcast source
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source);
 
@@ -2286,7 +2284,7 @@ int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source);
  *
  * @param source      Pointer to the broadcast source
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
 
@@ -2302,7 +2300,7 @@ int bt_bap_broadcast_source_delete(struct bt_bap_broadcast_source *source);
  * @param source        Pointer to the broadcast source.
  * @param base_buf      Pointer to a buffer where the BASE will be inserted.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_source_get_base(struct bt_bap_broadcast_source *source,
 				     struct net_buf_simple *base_buf);
@@ -2326,9 +2324,9 @@ typedef bool (*bt_bap_broadcast_source_foreach_stream_func_t)(struct bt_bap_stre
  * @param func           The callback function
  * @param user_data      User specified data that is sent to the callback function
  *
- * @retval 0          Success (even if no streams exists in the broadcast source).
+ * @retval 0 on success (even if no streams exists in the broadcast source).
  * @retval -ECANCELED The @p func returned false and stopped the iteration.
- * @retval -EINVAL    @p source or @p func were NULL.
+ * @retval -EINVAL @p source or @p func were NULL.
  */
 int bt_bap_broadcast_source_foreach_stream(struct bt_bap_broadcast_source *source,
 					   bt_bap_broadcast_source_foreach_stream_func_t func,
@@ -2402,9 +2400,9 @@ struct bt_bap_broadcast_sink_cb {
 
  * @param cb  Broadcast sink callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if @p cb was already registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EALREADY @p cb was already registered.
  */
 int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb);
 
@@ -2424,7 +2422,7 @@ int bt_bap_broadcast_sink_register_cb(struct bt_bap_broadcast_sink_cb *cb);
  * @param      broadcast_id  24-bit broadcast ID.
  * @param[out] sink          Pointer to the Broadcast Sink created.
  *
- * @return 0 in case of success or errno value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t broadcast_id,
 				 struct bt_bap_broadcast_sink **sink);
@@ -2446,7 +2444,7 @@ int bt_bap_broadcast_sink_create(struct bt_le_per_adv_sync *pa_sync, uint32_t br
  *                           The string "Broadcast Code" shall be
  *                           [42 72 6F 61 64 63 61 73 74 20 43 6F 64 65 00 00]
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t indexes_bitfield,
 			       struct bt_bap_stream *streams[],
@@ -2460,7 +2458,7 @@ int bt_bap_broadcast_sink_sync(struct bt_bap_broadcast_sink *sink, uint32_t inde
  *
  * @param sink      Pointer to the broadcast sink
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink);
 
@@ -2473,7 +2471,7 @@ int bt_bap_broadcast_sink_stop(struct bt_bap_broadcast_sink *sink);
  *
  * @param sink Pointer to the sink object to delete.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink);
 
@@ -2490,7 +2488,7 @@ int bt_bap_broadcast_sink_delete(struct bt_bap_broadcast_sink *sink);
  *
  * @param cb Pointer to the callback struct
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
 
@@ -2500,7 +2498,7 @@ int bt_bap_scan_delegator_register(struct bt_bap_scan_delegator_cb *cb);
  * Unregister the scan delegator and Broadcast Audio Scan Service (BASS)
  * dynamically at runtime.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_scan_delegator_unregister(void);
 
@@ -2513,7 +2511,7 @@ int bt_bap_scan_delegator_unregister(void);
  * @param src_id    The source id used to identify the receive state.
  * @param pa_state  The Periodic Advertising sync state to set.
  *
- * @return int    Error value. 0 on success, errno on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,
 				       enum bt_bap_pa_state pa_state);
@@ -2524,7 +2522,7 @@ int bt_bap_scan_delegator_set_pa_state(uint8_t src_id,
  * @param src_id         The source id used to identify the receive state.
  * @param bis_synced     Array of bitfields to set the BIS sync state for each
  *                       subgroup.
- * @return int           Error value. 0 on success, ERRNO on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_scan_delegator_set_bis_sync_state(uint8_t src_id,
 					     uint32_t bis_synced[BT_BAP_BASS_MAX_SUBGROUPS]);
@@ -2569,7 +2567,7 @@ struct bt_bap_scan_delegator_add_src_param {
  *
  * @param param The parameters for adding the new source
  *
- * @return int  errno on failure, or source ID on success.
+ * @return Source ID on success, negative errno value on failure.
  */
 int bt_bap_scan_delegator_add_src(const struct bt_bap_scan_delegator_add_src_param *param);
 
@@ -2607,7 +2605,7 @@ struct bt_bap_scan_delegator_mod_src_param {
  *
  * @param param The parameters for adding the new source
  *
- * @return int  errno on failure, or source ID on success.
+ * @return Source ID on success, negative errno value on failure.
  */
 int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_param *param);
 
@@ -2622,7 +2620,7 @@ int bt_bap_scan_delegator_mod_src(const struct bt_bap_scan_delegator_mod_src_par
  *
  * @param src_id The source ID to remove
  *
- * @return int   Error value. 0 on success, errno on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_bap_scan_delegator_rem_src(uint8_t src_id);
 
@@ -2633,8 +2631,8 @@ int bt_bap_scan_delegator_rem_src(uint8_t src_id);
  *
  * @retval true to stop iterating. If this is used in the context of
  *         bt_bap_scan_delegator_find_state(), the recv_state will be returned by
- *         bt_bap_scan_delegator_find_state()
- * @retval false to continue iterating
+ *         bt_bap_scan_delegator_find_state().
+ * @retval false to continue iterating.
  */
 typedef bool (*bt_bap_scan_delegator_state_func_t)(
 	const struct bt_bap_scan_delegator_recv_state *recv_state, void *user_data);
@@ -2654,7 +2652,7 @@ void bt_bap_scan_delegator_foreach_state(bt_bap_scan_delegator_state_func_t func
  * @param func      The compare callback function
  * @param user_data User specified data that sent to the callback function
  *
- * @return The first receive state where the @p func returned true, or NULL
+ * @return The first receive state where the @p func returned true, or NULL.
  */
 const struct bt_bap_scan_delegator_recv_state *bt_bap_scan_delegator_find_state(
 	bt_bap_scan_delegator_state_func_t func, void *user_data);
@@ -2783,12 +2781,12 @@ struct bt_bap_broadcast_assistant_cb {
  * @param conn  The ACL connection. The connection must already conform to the security requirements
  *              of the Basic Audio Profile.
  *
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL, does not conform to security requirements
- * @retval -EBUSY Another operation is already in progress for this @p conn
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocate memory for the request
- * @retval -ENOEXEC Unexpected GATT error
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL, does not conform to security requirements.
+ * @retval -EBUSY Another operation is already in progress for this @p conn.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -ENOEXEC Unexpected GATT error.
  */
 int bt_bap_broadcast_assistant_discover(struct bt_conn *conn);
 
@@ -2808,13 +2806,13 @@ int bt_bap_broadcast_assistant_discover(struct bt_conn *conn);
  * @param start_scan    Start scanning if true. If false, the application should
  *                      enable scan itself.
 
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL of if @p conn has not done discovery
- * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL or @p conn has not done discovery.
+ * @retval -EBUSY Another operation is already in progress for this @p conn.
  * @retval -EAGAIN Bluetooth has not been enabled.
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
- * @retval -ENOEXEC Unexpected scan or GATT error
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -ENOEXEC Unexpected scan or GATT error.
  */
 int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn,
 					  bool start_scan);
@@ -2824,13 +2822,13 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn,
  *
  * @param conn   Connection to the server.
 
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL of if @p conn has not done discovery
- * @retval -EBUSY Another operation is already in progress for this @p conn
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL or @p conn has not done discovery.
+ * @retval -EBUSY Another operation is already in progress for this @p conn.
  * @retval -EAGAIN Bluetooth has not been enabled.
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
- * @retval -ENOEXEC Unexpected scan or GATT error
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -ENOEXEC Unexpected scan or GATT error.
  */
 int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn);
 
@@ -2839,9 +2837,9 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn);
  *
  * @param cb	The callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if @p cb was already registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EALREADY @p cb was already registered.
  */
 int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb *cb);
 
@@ -2850,9 +2848,9 @@ int bt_bap_broadcast_assistant_register_cb(struct bt_bap_broadcast_assistant_cb 
  *
  * @param cb   The callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if @p cb was not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EALREADY @p cb was not registered.
  */
 int bt_bap_broadcast_assistant_unregister_cb(struct bt_bap_broadcast_assistant_cb *cb);
 
@@ -2895,12 +2893,12 @@ struct bt_bap_broadcast_assistant_add_src_param {
  * @param conn          Connection to the server.
  * @param param         Parameter struct.
  *
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or if @p param is invalid
- * @retval -EBUSY Another operation is already in progress for this @p conn
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
- * @retval -ENOEXEC Unexpected scan or GATT error
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL, @p conn has not done discovery, or @p param is invalid.
+ * @retval -EBUSY Another operation is already in progress for this @p conn.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -ENOEXEC Unexpected scan or GATT error.
  */
 int bt_bap_broadcast_assistant_add_src(
 	struct bt_conn *conn, const struct bt_bap_broadcast_assistant_add_src_param *param);
@@ -2933,12 +2931,12 @@ struct bt_bap_broadcast_assistant_mod_src_param {
  * @param conn          Connection to the server.
  * @param param         Parameter struct.
  *
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or if @p param is invalid
- * @retval -EBUSY Another operation is already in progress for this @p conn
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
- * @retval -ENOEXEC Unexpected scan or GATT error
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL, @p conn has not done discovery, or @p param is invalid.
+ * @retval -EBUSY Another operation is already in progress for this @p conn.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -ENOEXEC Unexpected scan or GATT error.
  */
 int bt_bap_broadcast_assistant_mod_src(
 	struct bt_conn *conn, const struct bt_bap_broadcast_assistant_mod_src_param *param);
@@ -2950,12 +2948,12 @@ int bt_bap_broadcast_assistant_mod_src(
  * @param src_id          Source ID of the receive state.
  * @param broadcast_code  The broadcast code.
  *
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or @p src_id is invalid
- * @retval -EBUSY Another operation is already in progress for this @p conn
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
- * @retval -ENOEXEC Unexpected scan or GATT error
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL or @p conn has not done discovery or @p src_id is invalid.
+ * @retval -EBUSY Another operation is already in progress for this @p conn.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -ENOEXEC Unexpected scan or GATT error.
  */
 int bt_bap_broadcast_assistant_set_broadcast_code(
 	struct bt_conn *conn, uint8_t src_id,
@@ -2967,12 +2965,12 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
  * @param conn            Connection to the server.
  * @param src_id          Source ID of the receive state.
  *
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or @p src_id is invalid
- * @retval -EBUSY Another operation is already in progress for this @p conn
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
- * @retval -ENOEXEC Unexpected scan or GATT error
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL or @p conn has not done discovery or @p src_id is invalid.
+ * @retval -EBUSY Another operation is already in progress for this @p conn.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -ENOEXEC Unexpected scan or GATT error.
  */
 int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id);
 
@@ -2983,12 +2981,12 @@ int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id);
  * @param idx      The index of the receive start (0 up to the value from
  *                 bt_bap_broadcast_assistant_discover_cb)
  *
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL or %p conn has not done discovery or @p src_id is invalid
- * @retval -EBUSY Another operation is already in progress for this @p conn
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
- * @retval -ENOEXEC Unexpected scan or GATT error
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL or @p conn has not done discovery or @p src_id is invalid.
+ * @retval -EBUSY Another operation is already in progress for this @p conn.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -ENOEXEC Unexpected scan or GATT error.
  */
 int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn, uint8_t idx);
 

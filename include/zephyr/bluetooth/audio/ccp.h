@@ -67,13 +67,13 @@ struct bt_ccp_call_control_server_bearer;
  * @param[in]  param   The parameters to initialize the bearer.
  * @param[out] bearer  Pointer to the initialized bearer.
  *
- * @retval 0 Success
- * @retval -EINVAL @p param contains invalid data
- * @retval -EALREADY @p param.gtbs is true and GTBS has already been registered
- * @retval -EAGAIN @p param.gtbs is false and GTBS has not been registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p param contains invalid data.
+ * @retval -EALREADY @p param.gtbs is true and GTBS has already been registered.
+ * @retval -EAGAIN @p param.gtbs is false and GTBS has not been registered.
  * @retval -ENOMEM @p param.gtbs is false and no more TBS can be registered (see
- *         @kconfig{CONFIG_BT_TBS_BEARER_COUNT})
- * @retval -ENOEXEC The service failed to be registered
+ *         @kconfig{CONFIG_BT_TBS_BEARER_COUNT}).
+ * @retval -ENOEXEC The service failed to be registered.
  */
 int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_param *param,
 					       struct bt_ccp_call_control_server_bearer **bearer);
@@ -89,10 +89,10 @@ int bt_ccp_call_control_server_register_bearer(const struct bt_tbs_register_para
  *
  * @param bearer The bearer to unregister.
  *
- * @retval 0 Success
- * @retval -EINVAL @p bearer is NULL
- * @retval -EALREADY The bearer is not registered
- * @retval -ENOEXEC The service failed to be unregistered
+ * @retval 0 on success.
+ * @retval -EINVAL @p bearer is NULL.
+ * @retval -EALREADY The bearer is not registered.
+ * @retval -ENOEXEC The service failed to be unregistered.
  */
 int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_server_bearer *bearer);
 
@@ -102,12 +102,12 @@ int bt_ccp_call_control_server_unregister_bearer(struct bt_ccp_call_control_serv
  * @param bearer  The bearer to set the name for.
  * @param name    The new bearer provider name.
  *
- * @retval 0 Success
+ * @retval 0 on success.
  * @retval -EINVAL @p bearer or @p name is NULL, or @p name is the empty string or @p name is larger
- *                 than @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH}
- * @retval -EFAULT @p bearer is not registered
- * @retval -EBUSY The TBS instance of @p bearer is busy
- * @retval -ENOEXEC The TBS instance of @p bearer returned unexpected error
+ *                 than @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH}.
+ * @retval -EFAULT @p bearer is not registered.
+ * @retval -EBUSY The TBS instance of @p bearer is busy.
+ * @retval -ENOEXEC The TBS instance of @p bearer returned unexpected error.
  */
 int bt_ccp_call_control_server_set_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, const char *name);
@@ -121,10 +121,10 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
  *                  @kconfig{CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH} + 1 to
  *                  ensure that the name always fits.
  *
- * @retval 0 Success
- * @retval -EINVAL @p bearer or @p name is NULL
- * @retval -EFAULT @p bearer is not registered
- * @retval -ENOMEM @p name_size is insufficient to hold the bearer name (including null terminator)
+ * @retval 0 on success.
+ * @retval -EINVAL @p bearer or @p name is NULL.
+ * @retval -EFAULT @p bearer is not registered.
+ * @retval -ENOMEM @p name_size is insufficient to hold the bearer name (including null terminator).
  */
 int bt_ccp_call_control_server_get_bearer_provider_name(
 	struct bt_ccp_call_control_server_bearer *bearer, char *name, size_t name_size);
@@ -136,9 +136,9 @@ int bt_ccp_call_control_server_get_bearer_provider_name(
  * @param[out] uci Pointer to a buffer of size @ref BT_TBS_MAX_UCI_SIZE that the bearer UCI will be
  *                 written to.
  *
- * @retval 0 Success
- * @retval -EINVAL @p bearer or @p uci is NULL
- * @retval -EFAULT @p bearer is not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p bearer or @p uci is NULL.
+ * @retval -EFAULT @p bearer is not registered.
  */
 int bt_ccp_call_control_server_get_bearer_uci(struct bt_ccp_call_control_server_bearer *bearer,
 					      char uci[BT_TBS_MAX_UCI_SIZE]);
@@ -261,12 +261,12 @@ struct bt_ccp_call_control_client_cb {
  * @param conn Connection to a remote server.
  * @param out_client Pointer to client instance on success
  *
- * @retval 0 Success
- * @retval -EINVAL @p conn or @p out_client is NULL
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
- * @retval -EBUSY Already doing discovery for @p conn
- * @retval -ENOEXEC Rejected by the GATT layer
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn or @p out_client is NULL.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -EBUSY Already doing discovery for @p conn.
+ * @retval -ENOEXEC Rejected by the GATT layer.
  */
 int bt_ccp_call_control_client_discover(struct bt_conn *conn,
 					struct bt_ccp_call_control_client **out_client);
@@ -276,9 +276,9 @@ int bt_ccp_call_control_client_discover(struct bt_conn *conn,
  *
  * @param cb The callback struct
  *
- * @retval 0 Success
- * @retval -EINVAL @p cb is NULL
- * @retval -EEXISTS @p cb is already registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EEXIST @p cb is already registered.
  */
 int bt_ccp_call_control_client_register_cb(struct bt_ccp_call_control_client_cb *cb);
 
@@ -287,9 +287,9 @@ int bt_ccp_call_control_client_register_cb(struct bt_ccp_call_control_client_cb 
  *
  * @param cb The callback struct
  *
- * @retval 0 Success
- * @retval -EINVAL @p cb is NULL
- * @retval -EALREADY @p cb is not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EALREADY @p cb is not registered.
  */
 int bt_ccp_call_control_client_unregister_cb(struct bt_ccp_call_control_client_cb *cb);
 
@@ -299,8 +299,8 @@ int bt_ccp_call_control_client_unregister_cb(struct bt_ccp_call_control_client_c
  * @param[in]  client  The client to get the bearers of.
  * @param[out] bearers The bearers struct that will be populated with the bearers of @p client.
 
- * @retval 0 Success
- * @retval -EINVAL @p client or @p bearers is NULL
+ * @retval 0 on success.
+ * @retval -EINVAL @p client or @p bearers is NULL.
  */
 int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *client,
 					   struct bt_ccp_call_control_client_bearers *bearers);
@@ -312,13 +312,13 @@ int bt_ccp_call_control_client_get_bearers(struct bt_ccp_call_control_client *cl
  *
  * @param bearer The bearer to read the name from
  *
- * @retval 0 Success
- * @retval -EINVAL @p bearer is NULL
- * @retval -EFAULT @p bearer has not been discovered
- * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
+ * @retval 0 on success.
+ * @retval -EINVAL @p bearer is NULL.
+ * @retval -EFAULT @p bearer has not been discovered.
+ * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer.
  * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
  * instance of @p bearer is busy.
- * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected.
  */
 int bt_ccp_call_control_client_read_bearer_provider_name(
 	struct bt_ccp_call_control_client_bearer *bearer);
@@ -330,13 +330,13 @@ int bt_ccp_call_control_client_read_bearer_provider_name(
  *
  * @param bearer The bearer to read the UCI from
  *
- * @retval 0 Success
- * @retval -EINVAL @p bearer is NULL
- * @retval -EFAULT @p bearer has not been discovered
- * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer
+ * @retval 0 on success.
+ * @retval -EINVAL @p bearer is NULL.
+ * @retval -EFAULT @p bearer has not been discovered.
+ * @retval -EEXIST A @ref bt_ccp_call_control_client could not be identified for @p bearer.
  * @retval -EBUSY The @ref bt_ccp_call_control_client identified by @p bearer is busy, or the TBS
  * instance of @p bearer is busy.
- * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected
+ * @retval -ENOTCONN The @ref bt_ccp_call_control_client identified by @p bearer is not connected.
  */
 int bt_ccp_call_control_client_read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer);
 /** @} */ /* End of group bt_ccp_call_control_client */

@@ -137,7 +137,7 @@ struct bt_vcp_included {
  *
  * @param[out] included Pointer to store the result in.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_included_get(struct bt_vcp_included *included);
 
@@ -149,7 +149,7 @@ int bt_vcp_vol_rend_included_get(struct bt_vcp_included *included);
  *
  * @param      param  Volume Control Service register parameters.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_register(struct bt_vcp_vol_rend_register_param *param);
 
@@ -201,49 +201,49 @@ struct bt_vcp_vol_rend_cb {
  *
  * @param volume_step  The volume step size (1-255).
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_set_step(uint8_t volume_step);
 
 /**
  * @brief Get the Volume Control Service volume state.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_get_state(void);
 
 /**
  * @brief Get the Volume Control Service flags.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_get_flags(void);
 
 /**
  * @brief Turn the volume down by one step on the server.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_vol_down(void);
 
 /**
  * @brief Turn the volume up by one step on the server.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_vol_up(void);
 
 /**
  * @brief Turn the volume down and unmute the server.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_unmute_vol_down(void);
 
 /**
  * @brief Turn the volume up and unmute the server.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_unmute_vol_up(void);
 
@@ -252,21 +252,21 @@ int bt_vcp_vol_rend_unmute_vol_up(void);
  *
  * @param volume The absolute volume to set.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_set_vol(uint8_t volume);
 
 /**
  * @brief Unmute the server.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_unmute(void);
 
 /**
  * @brief Mute the server.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_rend_mute(void);
 
@@ -419,9 +419,9 @@ struct bt_vcp_vol_ctlr_cb {
  *
  * @param cb   The callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if @p cb was already registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EALREADY @p cb was already registered.
  */
 int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb);
 
@@ -430,9 +430,9 @@ int bt_vcp_vol_ctlr_cb_register(struct bt_vcp_vol_ctlr_cb *cb);
  *
  * @param cb   The callback structure.
  *
- * @retval 0 on success
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if @p cb was not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EALREADY @p cb was not registered.
  */
 int bt_vcp_vol_ctlr_cb_unregister(struct bt_vcp_vol_ctlr_cb *cb);
 
@@ -450,7 +450,7 @@ int bt_vcp_vol_ctlr_cb_unregister(struct bt_vcp_vol_ctlr_cb *cb);
  * @param      conn      The connection to discover Volume Control Service for.
  * @param[out] vol_ctlr  Valid remote instance object on success.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_discover(struct bt_conn *conn,
 			     struct bt_vcp_vol_ctlr **vol_ctlr);
@@ -464,8 +464,8 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn,
  *
  * @param conn     Connection pointer.
  *
- * @retval Pointer to a Volume Control Profile Volume Controller instance
- * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ * @return Pointer to a Volume Control Profile Volume Controller instance,
+ *         or NULL if @p conn is NULL or if the connection has not done discovery yet.
  */
 struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn);
 
@@ -478,7 +478,7 @@ struct bt_vcp_vol_ctlr *bt_vcp_vol_ctlr_get_by_conn(const struct bt_conn *conn);
  * @param      vol_ctlr Volume Controller instance pointer.
  * @param[out] conn     Connection pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp_vol_ctlr *vol_ctlr,
 			     struct bt_conn **conn);
@@ -497,7 +497,7 @@ int bt_vcp_vol_ctlr_conn_get(const struct bt_vcp_vol_ctlr *vol_ctlr,
  * @param      vol_ctlr Volume Controller instance pointer.
  * @param[out] included Pointer to store the result in.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_included_get(struct bt_vcp_vol_ctlr *vol_ctlr,
 				 struct bt_vcp_included *included);
@@ -507,7 +507,7 @@ int bt_vcp_vol_ctlr_included_get(struct bt_vcp_vol_ctlr *vol_ctlr,
  *
  * @param vol_ctlr  Volume Controller instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_read_state(struct bt_vcp_vol_ctlr *vol_ctlr);
 
@@ -516,7 +516,7 @@ int bt_vcp_vol_ctlr_read_state(struct bt_vcp_vol_ctlr *vol_ctlr);
  *
  * @param vol_ctlr  Volume Controller instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_read_flags(struct bt_vcp_vol_ctlr *vol_ctlr);
 
@@ -525,7 +525,7 @@ int bt_vcp_vol_ctlr_read_flags(struct bt_vcp_vol_ctlr *vol_ctlr);
  *
  * @param vol_ctlr  Volume Controller instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_vol_down(struct bt_vcp_vol_ctlr *vol_ctlr);
 
@@ -534,7 +534,7 @@ int bt_vcp_vol_ctlr_vol_down(struct bt_vcp_vol_ctlr *vol_ctlr);
  *
  * @param vol_ctlr  Volume Controller instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_vol_up(struct bt_vcp_vol_ctlr *vol_ctlr);
 
@@ -543,7 +543,7 @@ int bt_vcp_vol_ctlr_vol_up(struct bt_vcp_vol_ctlr *vol_ctlr);
  *
  * @param vol_ctlr  Volume Controller instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_unmute_vol_down(struct bt_vcp_vol_ctlr *vol_ctlr);
 
@@ -552,7 +552,7 @@ int bt_vcp_vol_ctlr_unmute_vol_down(struct bt_vcp_vol_ctlr *vol_ctlr);
  *
  * @param vol_ctlr  Volume Controller instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_unmute_vol_up(struct bt_vcp_vol_ctlr *vol_ctlr);
 
@@ -562,7 +562,7 @@ int bt_vcp_vol_ctlr_unmute_vol_up(struct bt_vcp_vol_ctlr *vol_ctlr);
  * @param vol_ctlr  Volume Controller instance pointer.
  * @param volume    The absolute volume to set.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume);
 
@@ -571,7 +571,7 @@ int bt_vcp_vol_ctlr_set_vol(struct bt_vcp_vol_ctlr *vol_ctlr, uint8_t volume);
  *
  * @param vol_ctlr  Volume Controller instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_unmute(struct bt_vcp_vol_ctlr *vol_ctlr);
 
@@ -580,7 +580,7 @@ int bt_vcp_vol_ctlr_unmute(struct bt_vcp_vol_ctlr *vol_ctlr);
  *
  * @param vol_ctlr  Volume Controller instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vcp_vol_ctlr_mute(struct bt_vcp_vol_ctlr *vol_ctlr);
 

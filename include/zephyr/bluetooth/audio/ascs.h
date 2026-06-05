@@ -292,7 +292,7 @@ struct bt_ascs_cb {
 	 * @param[out] rsp       Object for the ASE operation response. Only used if the return
 	 *                       value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*config)(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
 		      const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
@@ -312,7 +312,7 @@ struct bt_ascs_cb {
 	 * @param[out] rsp       Object for the ASE operation response. Only used if the return
 	 *                       value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*reconfig)(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
@@ -329,7 +329,7 @@ struct bt_ascs_cb {
 	 * @param[out] rsp     Object for the ASE operation response. Only used if the return
 	 *                     value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*qos)(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp);
@@ -345,7 +345,7 @@ struct bt_ascs_cb {
 	 * @param[out] rsp         Object for the ASE operation response. Only used if the return
 	 *                         value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*enable)(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 		      struct bt_bap_ascs_rsp *rsp);
@@ -359,7 +359,7 @@ struct bt_ascs_cb {
 	 * @param[out] rsp    Object for the ASE operation response. Only used if the return
 	 *                    value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*start)(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp);
 
@@ -374,7 +374,7 @@ struct bt_ascs_cb {
 	 * @param[out] rsp          Object for the ASE operation response. Only used if the return
 	 *                          value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*metadata)(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 			struct bt_bap_ascs_rsp *rsp);
@@ -388,7 +388,7 @@ struct bt_ascs_cb {
 	 * @param[out] rsp    Object for the ASE operation response. Only used if the return
 	 *                    value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*disable)(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp);
 
@@ -401,7 +401,7 @@ struct bt_ascs_cb {
 	 * @param[out] rsp    Object for the ASE operation response. Only used if the return
 	 *                    value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*stop)(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp);
 
@@ -415,7 +415,7 @@ struct bt_ascs_cb {
 	 * @param[out] rsp    Object for the ASE operation response. Only used if the return
 	 *                    value is non-zero.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*release)(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp);
 };
@@ -450,7 +450,7 @@ struct bt_ascs_register_param {
  *
  * @param param Parameters for the service
  *
- * @retval 0 Success.
+ * @retval 0 on success.
  * @retval -EINVAL @p param is NULL or contains invalid values, or bt_gatt_service_register()
  *                failed.
  * @retval -EALREADY ASCS already registered.
@@ -464,8 +464,8 @@ int bt_ascs_register(const struct bt_ascs_register_param *param);
  *
  * This will release all streams and remove the service from the GATT database.
  *
- * @retval 0 Success.
- * @retval -ENOENT if bt_gatt_service_unregister() failed to unregister the service.
+ * @retval 0 on success.
+ * @retval -ENOENT bt_gatt_service_unregister() failed to unregister the service.
  * @retval -EALREADY ASCS already unregistered.
  */
 int bt_ascs_unregister(void);

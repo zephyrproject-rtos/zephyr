@@ -92,8 +92,8 @@ struct bt_pacs_register_param {
  * @param cap Capability found.
  * @param user_data Data given.
  *
- * @return true to continue to the next capability
- * @return false to stop the iteration
+ * @return true to continue to the next capability.
+ * @return false to stop the iteration.
  */
 typedef bool (*bt_pacs_cap_foreach_func_t)(const struct bt_pacs_cap *cap,
 					   void *user_data);
@@ -116,17 +116,17 @@ void bt_pacs_cap_foreach(enum bt_audio_dir dir,
  *
  * @param param PACS register parameters.
  *
- * @retval 0 Success
- * @retval -EINVAL @p param is NULL or bad combination of values in @p param
- * @retval -EALREADY Already registered
- * @retval -ENOEXEC Request was rejected by GATT
+ * @retval 0 on success.
+ * @retval -EINVAL @p param is NULL or bad combination of values in @p param.
+ * @retval -EALREADY Already registered.
+ * @retval -ENOEXEC Request was rejected by GATT.
  */
 int bt_pacs_register(const struct bt_pacs_register_param *param);
 
 /**
  * @brief Unregister the Published Audio Capability Service instance.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_pacs_unregister(void);
 
@@ -138,7 +138,7 @@ int bt_pacs_unregister(void);
  * @param dir Direction of the endpoint to register capability for.
  * @param cap Capability structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
 
@@ -150,7 +150,7 @@ int bt_pacs_cap_register(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
  * @param dir Direction of the endpoint to unregister capability for.
  * @param cap Capability structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
 
@@ -160,7 +160,7 @@ int bt_pacs_cap_unregister(enum bt_audio_dir dir, struct bt_pacs_cap *cap);
  * @param dir      Direction of the endpoints to change location for.
  * @param location The location to be set.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_pacs_set_location(enum bt_audio_dir dir,
 			 enum bt_audio_location location);
@@ -171,7 +171,7 @@ int bt_pacs_set_location(enum bt_audio_dir dir,
  * @param dir      Direction of the endpoints to change available contexts for.
  * @param contexts The contexts to be set.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_pacs_set_available_contexts(enum bt_audio_dir dir,
 				   enum bt_audio_context contexts);
@@ -198,7 +198,7 @@ enum bt_audio_context bt_pacs_get_available_contexts(enum bt_audio_dir dir);
  * @param dir      Direction of the endpoints to change available contexts for.
  * @param contexts The contexts to be set or NULL to reset to default.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_pacs_conn_set_available_contexts_for_conn(struct bt_conn *conn, enum bt_audio_dir dir,
 						 enum bt_audio_context *contexts);
@@ -214,7 +214,7 @@ int bt_pacs_conn_set_available_contexts_for_conn(struct bt_conn *conn, enum bt_a
  * @param dir      Direction of the endpoints to get contexts for.
  *
  * @return Bitmask of available contexts.
- * @retval BT_AUDIO_CONTEXT_TYPE_NONE if @p conn or @p dir are invalid
+ * @retval BT_AUDIO_CONTEXT_TYPE_NONE @p conn or @p dir are invalid.
  */
 enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *conn,
 							      enum bt_audio_dir dir);
@@ -225,7 +225,7 @@ enum bt_audio_context bt_pacs_get_available_contexts_for_conn(struct bt_conn *co
  * @param dir      Direction of the endpoints to change available contexts for.
  * @param contexts The contexts to be set.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_pacs_set_supported_contexts(enum bt_audio_dir dir,
 				   enum bt_audio_context contexts);

@@ -112,7 +112,7 @@ struct bt_vocs_discover_param {
 /**
  * @brief Get a free service instance of Volume Offset Control Service from the pool.
  *
- * @return Volume Offset Control Service instance in case of success or NULL in case of error.
+ * @return Volume Offset Control Service instance on success, or NULL on failure.
  */
 struct bt_vocs *bt_vocs_free_instance_get(void);
 
@@ -136,7 +136,7 @@ void *bt_vocs_svc_decl_get(struct bt_vocs *vocs);
  * @param vocs    Audio Input Control Service client instance pointer.
  * @param conn    Connection pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vocs_client_conn_get(const struct bt_vocs *vocs, struct bt_conn **conn);
 
@@ -146,7 +146,7 @@ int bt_vocs_client_conn_get(const struct bt_vocs *vocs, struct bt_conn **conn);
  * @param vocs      Volume Offset Control Service instance.
  * @param param     Volume Offset Control Service register parameters.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vocs_register(struct bt_vocs *vocs,
 		     const struct bt_vocs_register_param *param);
@@ -252,7 +252,7 @@ struct bt_vocs_cb {
  *
  * @param inst          Pointer to the Volume Offset Control Service instance.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_vocs_state_get(struct bt_vocs *inst);
 
@@ -262,7 +262,7 @@ int bt_vocs_state_get(struct bt_vocs *inst);
  * @param inst          Pointer to the Volume Offset Control Service instance.
  * @param offset        The offset to set (-255 to 255).
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_vocs_state_set(struct bt_vocs *inst, int16_t offset);
 
@@ -273,7 +273,7 @@ int bt_vocs_state_set(struct bt_vocs *inst, int16_t offset);
  *
  * @param inst          Pointer to the Volume Offset Control Service instance.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_vocs_location_get(struct bt_vocs *inst);
 
@@ -283,7 +283,7 @@ int bt_vocs_location_get(struct bt_vocs *inst);
  * @param inst          Pointer to the Volume Offset Control Service instance.
  * @param location      The location to set.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_vocs_location_set(struct bt_vocs *inst, uint32_t location);
 
@@ -294,7 +294,7 @@ int bt_vocs_location_set(struct bt_vocs *inst, uint32_t location);
  *
  * @param inst          Pointer to the Volume Offset Control Service instance.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_vocs_description_get(struct bt_vocs *inst);
 
@@ -304,7 +304,7 @@ int bt_vocs_description_get(struct bt_vocs *inst);
  * @param inst          Pointer to the Volume Offset Control Service instance.
  * @param description   The UTF-8 encoded string description to set.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_vocs_description_set(struct bt_vocs *inst, const char *description);
 
@@ -332,7 +332,7 @@ struct bt_vocs *bt_vocs_client_free_instance_get(void);
  * @param inst  Pointer to the Volume Offset Control Service client instance.
  * @param param Pointer to the parameters.
  *
- * @return 0 on success, errno on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *inst,
 		     const struct bt_vocs_discover_param *param);

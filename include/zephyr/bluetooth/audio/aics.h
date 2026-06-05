@@ -186,7 +186,7 @@ struct bt_aics_discover_param {
 /**
  * @brief Get a free instance of Audio Input Control Service from the pool.
  *
- * @return Audio Input Control Service instance in case of success or NULL in case of error.
+ * @return Audio Input Control Service instance on success, or NULL on failure.
  */
 struct bt_aics *bt_aics_free_instance_get(void);
 
@@ -210,7 +210,7 @@ void *bt_aics_svc_decl_get(struct bt_aics *aics);
  * @param aics    Audio Input Control Service client instance pointer.
  * @param conn    Connection pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_aics_client_conn_get(const struct bt_aics *aics, struct bt_conn **conn);
 
@@ -220,7 +220,7 @@ int bt_aics_client_conn_get(const struct bt_aics *aics, struct bt_conn **conn);
  * @param aics      Audio Input Control Service instance.
  * @param param     Audio Input Control Service register parameters.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_aics_register(struct bt_aics *aics, struct bt_aics_register_param *param);
 
@@ -366,7 +366,7 @@ struct bt_aics_cb {
  * @param inst      The instance pointer.
  * @param param     Pointer to the parameters.
  *
- * @return 0 on success, errno on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
 		     const struct bt_aics_discover_param *param);
@@ -379,7 +379,7 @@ int bt_aics_discover(struct bt_conn *conn, struct bt_aics *inst,
  *
  * @param inst         The instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_aics_deactivate(struct bt_aics *inst);
 
@@ -392,7 +392,7 @@ int bt_aics_deactivate(struct bt_aics *inst);
  *
  * @param inst         The instance pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_aics_activate(struct bt_aics *inst);
 
@@ -401,7 +401,7 @@ int bt_aics_activate(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_state_get(struct bt_aics *inst);
 
@@ -410,7 +410,7 @@ int bt_aics_state_get(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_gain_setting_get(struct bt_aics *inst);
 
@@ -419,7 +419,7 @@ int bt_aics_gain_setting_get(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_type_get(struct bt_aics *inst);
 
@@ -428,7 +428,7 @@ int bt_aics_type_get(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_status_get(struct bt_aics *inst);
 
@@ -440,7 +440,7 @@ int bt_aics_status_get(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_aics_disable_mute(struct bt_aics *inst);
 
@@ -449,7 +449,7 @@ int bt_aics_disable_mute(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_unmute(struct bt_aics *inst);
 
@@ -458,7 +458,7 @@ int bt_aics_unmute(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_mute(struct bt_aics *inst);
 
@@ -467,7 +467,7 @@ int bt_aics_mute(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_aics_gain_set_manual_only(struct bt_aics *inst);
 
@@ -479,7 +479,7 @@ int bt_aics_gain_set_manual_only(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_aics_gain_set_auto_only(struct bt_aics *inst);
 
@@ -488,7 +488,7 @@ int bt_aics_gain_set_auto_only(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_manual_gain_set(struct bt_aics *inst);
 
@@ -497,7 +497,7 @@ int bt_aics_manual_gain_set(struct bt_aics *inst);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_automatic_gain_set(struct bt_aics *inst);
 
@@ -508,7 +508,7 @@ int bt_aics_automatic_gain_set(struct bt_aics *inst);
  * @param gain          The gain to set (-128 to 127) in gain setting units
  *                      (see @ref bt_aics_gain_setting_cb).
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_gain_set(struct bt_aics *inst, int8_t gain);
 
@@ -517,7 +517,7 @@ int bt_aics_gain_set(struct bt_aics *inst, int8_t gain);
  *
  * @param inst          The instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_description_get(struct bt_aics *inst);
 
@@ -527,7 +527,7 @@ int bt_aics_description_get(struct bt_aics *inst);
  * @param inst          The instance pointer.
  * @param description   The description as an UTF-8 encoded string.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_aics_description_set(struct bt_aics *inst, const char *description);
 

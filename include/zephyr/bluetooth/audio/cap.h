@@ -75,7 +75,7 @@ struct bt_cap_unicast_group;
  * @param[out] svc_inst  Pointer to the registered Coordinated Set
  *                       Identification Service.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *param,
 			     struct bt_csip_set_member_svc_inst **svc_inst);
@@ -191,10 +191,10 @@ struct bt_cap_initiator_cb {
  *
  * @param conn Connection to a remote server.
  *
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
  */
 int bt_cap_initiator_unicast_discover(struct bt_conn *conn);
 
@@ -251,8 +251,8 @@ void bt_cap_stream_ops_register(struct bt_cap_stream *stream, struct bt_bap_stre
  * @param seq_num  Packet Sequence number. This value shall be incremented for each call to this
  *                 function and at least once per SDU interval for a specific channel.
  *
- * @retval -EINVAL if stream object is NULL
- * @retval Any return value from bt_bap_stream_send()
+ * @retval -EINVAL Stream object is NULL.
+ * @return Any return value from bt_bap_stream_send().
  */
 int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num);
 
@@ -270,8 +270,8 @@ int bt_cap_stream_send(struct bt_cap_stream *stream, struct net_buf *buf, uint16
  * @param ts       Timestamp of the SDU in microseconds (us). This value can be used to transmit
  *                 multiple SDUs in the same SDU interval in a CIG or BIG.
  *
- * @retval -EINVAL if stream object is NULL
- * @retval Any return value from bt_bap_stream_send()
+ * @retval -EINVAL Stream object is NULL.
+ * @return Any return value from bt_bap_stream_send().
  */
 int bt_cap_stream_send_ts(struct bt_cap_stream *stream, struct net_buf *buf, uint16_t seq_num,
 			  uint32_t ts);
@@ -286,8 +286,8 @@ int bt_cap_stream_send_ts(struct bt_cap_stream *stream, struct net_buf *buf, uin
  * @param[in]  stream Stream object.
  * @param[out] info   Transmit info object.
  *
- * @retval -EINVAL if stream object is NULL
- * @retval Any return value from bt_bap_stream_get_tx_sync()
+ * @retval -EINVAL Stream object is NULL.
+ * @return Any return value from bt_bap_stream_get_tx_sync().
  */
 int bt_cap_stream_get_tx_sync(struct bt_cap_stream *stream, struct bt_iso_tx_info *info);
 
@@ -374,7 +374,7 @@ struct bt_cap_unicast_group_param {
  * @param[in]  param          The unicast group create parameters.
  * @param[out] unicast_group  Pointer to the unicast group created.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
 				struct bt_cap_unicast_group **unicast_group);
@@ -392,7 +392,7 @@ int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
  * @param unicast_group  Pointer to the unicast group created.
  * @param param          The unicast group reconfigure parameters.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_unicast_group_reconfig(struct bt_cap_unicast_group *unicast_group,
 				  const struct bt_cap_unicast_group_param *param);
@@ -414,7 +414,7 @@ int bt_cap_unicast_group_reconfig(struct bt_cap_unicast_group *unicast_group,
  * @param params         Array of stream parameters with streams being added to the group.
  * @param num_param      Number of parameters in @p params.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
 				     const struct bt_cap_unicast_group_stream_pair_param params[],
@@ -428,7 +428,7 @@ int bt_cap_unicast_group_add_streams(struct bt_cap_unicast_group *unicast_group,
  *
  * @param unicast_group  Pointer to the unicast group to delete
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_unicast_group_delete(struct bt_cap_unicast_group *unicast_group);
 
@@ -450,7 +450,7 @@ typedef bool (*bt_cap_unicast_group_foreach_stream_func_t)(struct bt_cap_stream 
  * @param func           The callback function
  * @param user_data      User specified data that is sent to the callback function
  *
- * @retval 0 Success (even if no streams exists in the group).
+ * @retval 0 on success (even if no streams exists in the group).
  * @retval -ECANCELED The @p func returned false and stopped the iteration.
  * @retval -EINVAL @p unicast_group or @p func were NULL.
  */
@@ -470,8 +470,8 @@ struct bt_cap_unicast_group_info {
  * @param unicast_group The unicast group object.
  * @param info          The structure object to be filled with the info.
  *
- * @retval 0 Success
- * @retval -EINVAL  @p unicast_group or @p info are NULL
+ * @retval 0 on success.
+ * @retval -EINVAL @p unicast_group or @p info are NULL.
  */
 int bt_cap_unicast_group_get_info(const struct bt_cap_unicast_group *unicast_group,
 				  struct bt_cap_unicast_group_info *info);
@@ -560,7 +560,7 @@ struct bt_cap_unicast_audio_stop_param {
  *
  * @param cb   The callback structure. Shall remain static.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
 
@@ -569,8 +569,8 @@ int bt_cap_initiator_register_cb(const struct bt_cap_initiator_cb *cb);
  *
  * @param cb   The callback structure that was previously registered.
  *
- * @retval 0 Success
- * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered.
  */
 int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb);
 
@@ -587,10 +587,10 @@ int bt_cap_initiator_unregister_cb(const struct bt_cap_initiator_cb *cb);
  *
  * @param param Parameters to start the audio streams.
  *
- * @retval 0 on success
- * @retval -EBUSY if a CAP procedure is already in progress
- * @retval -EINVAL if any parameter is invalid
- * @retval -EALREADY All streams are already in the streaming state
+ * @retval 0 on success.
+ * @retval -EBUSY A CAP procedure is already in progress.
+ * @retval -EINVAL Any parameter is invalid.
+ * @retval -EALREADY All streams are already in the streaming state.
  */
 int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start_param *param);
 
@@ -605,7 +605,7 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
  *
  * @param param Update parameters.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param *param);
 
@@ -620,10 +620,10 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
  *
  * @param param Stop parameters.
  *
- * @return 0 on success
- * @retval -EBUSY if a CAP procedure is already in progress
- * @retval -EINVAL if any parameter is invalid
- * @retval -EALREADY if no state changes will occur
+ * @retval 0 on success.
+ * @retval -EBUSY A CAP procedure is already in progress.
+ * @retval -EINVAL Any parameter is invalid.
+ * @retval -EALREADY No state changes will occur.
  */
 int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_param *param);
 
@@ -647,8 +647,8 @@ int bt_cap_initiator_unicast_audio_stop(const struct bt_cap_unicast_audio_stop_p
  * The respective callbacks of the procedure will be called as part of this with the connection
  * pointer set to 0 and the err value set to -ECANCELED.
  *
- * @retval 0 on success
- * @retval -EALREADY if no procedure is active
+ * @retval 0 on success.
+ * @retval -EALREADY No procedure is active.
  */
 int bt_cap_initiator_unicast_audio_cancel(void);
 
@@ -764,12 +764,12 @@ struct bt_cap_initiator_broadcast_create_param {
  * @param[in]  param             Parameters to start the audio streams.
  * @param[out] broadcast_source  Pointer to the broadcast source created.
  *
- * @retval 0 Success
- * @retval -EINVAL @p param is invalid or @p broadcast_source is NULL
+ * @retval 0 on success.
+ * @retval -EINVAL @p param is invalid or @p broadcast_source is NULL.
  * @retval -ENOMEM Could not allocate more broadcast sources, subgroups or ISO streams, or the
  *         provided codec configuration data is too large when merging the BIS and subgroup
  *         configuration data.
- * @retval -ENOEXEC The broadcast source failed to be created for other reasons
+ * @retval -ENOEXEC The broadcast source failed to be created for other reasons.
  */
 int bt_cap_initiator_broadcast_audio_create(
 	const struct bt_cap_initiator_broadcast_create_param *param,
@@ -792,7 +792,7 @@ int bt_cap_initiator_broadcast_audio_create(
  * @param adv               Pointer to an extended advertising set with
  *                          periodic advertising configured.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast_source,
 					   struct bt_le_ext_adv *adv);
@@ -808,7 +808,7 @@ int bt_cap_initiator_broadcast_audio_start(struct bt_cap_broadcast_source *broad
  *                         of CCIDs as well as a non-0 context bitfield.
  * @param meta_len         The length of @p meta.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source,
 					    const uint8_t meta[], size_t meta_len);
@@ -823,7 +823,7 @@ int bt_cap_initiator_broadcast_audio_update(struct bt_cap_broadcast_source *broa
  * @param broadcast_source The broadcast source to stop. The audio streams
  *                         in this will be stopped and reset.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_source);
 
@@ -842,7 +842,7 @@ int bt_cap_initiator_broadcast_audio_stop(struct bt_cap_broadcast_source *broadc
  * @param broadcast_source The broadcast source to delete.
  *                         The @p broadcast_source will be invalidated.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcast_source);
 
@@ -859,7 +859,7 @@ int bt_cap_initiator_broadcast_audio_delete(struct bt_cap_broadcast_source *broa
  * @param broadcast_source  Pointer to the broadcast source.
  * @param base_buf          Pointer to a buffer where the BASE will be inserted.
  *
- * @return int		0 if on success, errno on error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_initiator_broadcast_get_base(struct bt_cap_broadcast_source *broadcast_source,
 					struct net_buf_simple *base_buf);
@@ -882,9 +882,9 @@ typedef bool (*bt_cap_initiator_broadcast_foreach_stream_func_t)(struct bt_cap_s
  * @param func              The callback function.
  * @param user_data         User specified data that is sent to the callback function.
  *
- * @retval 0          Success (even if no streams exists in the group).
+ * @retval 0 on success (even if no streams exists in the group).
  * @retval -ECANCELED The @p func returned false and stopped the iteration.
- * @retval -EINVAL    @p broadcast_source or @p func were NULL.
+ * @retval -EINVAL @p broadcast_source or @p func were NULL.
  */
 int bt_cap_initiator_broadcast_foreach_stream(struct bt_cap_broadcast_source *broadcast_source,
 					      bt_cap_initiator_broadcast_foreach_stream_func_t func,
@@ -972,7 +972,7 @@ struct bt_cap_handover_cb {
  *
  * @param cb   The callback structure. Shall remain static.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_handover_register_cb(const struct bt_cap_handover_cb *cb);
 
@@ -981,8 +981,8 @@ int bt_cap_handover_register_cb(const struct bt_cap_handover_cb *cb);
  *
  * @param cb   The callback structure that was previously registered.
  *
- * @retval 0 Success
- * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered.
  */
 int bt_cap_handover_unregister_cb(const struct bt_cap_handover_cb *cb);
 
@@ -1001,7 +1001,7 @@ int bt_cap_handover_unregister_cb(const struct bt_cap_handover_cb *cb);
  *
  * @param param The parameters for the handover.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_handover_unicast_to_broadcast(
 	const struct bt_cap_handover_unicast_to_broadcast_param *param);
@@ -1060,7 +1060,7 @@ struct bt_cap_handover_broadcast_to_unicast_param {
  *
  * @param[in]  param          The parameters for the handover.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_handover_broadcast_to_unicast(
 	const struct bt_cap_handover_broadcast_to_unicast_param *param);
@@ -1192,9 +1192,9 @@ struct bt_cap_commander_cb {
  *
  * @param cb   The callback structure. Shall remain static.
  *
- * @retval 0 Success
- * @retval -EINVAL @p cb is NULL
- * @retval -EALREADY Callbacks are already registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EALREADY Callbacks are already registered.
  */
 int bt_cap_commander_register_cb(const struct bt_cap_commander_cb *cb);
 
@@ -1203,8 +1203,8 @@ int bt_cap_commander_register_cb(const struct bt_cap_commander_cb *cb);
  *
  * @param cb   The callback structure that was previously registered.
  *
- * @retval 0 Success
- * @retval -EINVAL @p cb is NULL or @p cb was not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL or @p cb was not registered.
  */
 int bt_cap_commander_unregister_cb(const struct bt_cap_commander_cb *cb);
 
@@ -1220,11 +1220,11 @@ int bt_cap_commander_unregister_cb(const struct bt_cap_commander_cb *cb);
  *
  * @param conn Connection to a remote server.
  *
- * @retval 0 Success
- * @retval -EINVAL @p conn is NULL
- * @retval -ENOTCONN @p conn is not connected
- * @retval -ENOMEM Could not allocated memory for the request
- * @retval -EBUSY Already doing discovery for @p conn
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL.
+ * @retval -ENOTCONN @p conn is not connected.
+ * @retval -ENOMEM Could not allocate memory for the request.
+ * @retval -EBUSY Already doing discovery for @p conn.
  */
 int bt_cap_commander_discover(struct bt_conn *conn);
 
@@ -1248,8 +1248,8 @@ int bt_cap_commander_discover(struct bt_conn *conn);
  * The respective callbacks of the procedure will be called as part of this with the connection
  * pointer set to NULL and the err value set to -ECANCELED.
  *
- * @retval 0 on success
- * @retval -EALREADY if no procedure is active
+ * @retval 0 on success.
+ * @retval -EALREADY No procedure is active.
  */
 int bt_cap_commander_cancel(void);
 
@@ -1306,7 +1306,7 @@ struct bt_cap_commander_broadcast_reception_start_param {
  *
  * @param param The parameters to start the broadcast audio
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_commander_broadcast_reception_start(
 	const struct bt_cap_commander_broadcast_reception_start_param *param);
@@ -1341,7 +1341,7 @@ struct bt_cap_commander_broadcast_reception_stop_param {
  *
  * @param param The parameters to stop the broadcast audio
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_commander_broadcast_reception_stop(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param);
@@ -1385,7 +1385,7 @@ struct bt_cap_commander_distribute_broadcast_code_param {
  *
  * @param param The parameters for distributing the broadcast code
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_commander_distribute_broadcast_code(
 	const struct bt_cap_commander_distribute_broadcast_code_param *param);
@@ -1410,7 +1410,7 @@ struct bt_cap_commander_change_volume_param {
  *
  * @param param The parameters for the volume change
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_commander_change_volume(const struct bt_cap_commander_change_volume_param *param);
 
@@ -1447,7 +1447,7 @@ struct bt_cap_commander_change_volume_offset_param {
  *
  * @param param The parameters for the volume offset change
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_commander_change_volume_offset(
 	const struct bt_cap_commander_change_volume_offset_param *param);
@@ -1476,7 +1476,7 @@ struct bt_cap_commander_change_volume_mute_state_param {
  *
  * @param param The parameters for the volume mute state change
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_commander_change_volume_mute_state(
 	const struct bt_cap_commander_change_volume_mute_state_param *param);
@@ -1505,7 +1505,7 @@ struct bt_cap_commander_change_microphone_mute_state_param {
  *
  * @param param The parameters for the microphone mute state change
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_commander_change_microphone_mute_state(
 	const struct bt_cap_commander_change_microphone_mute_state_param *param);
@@ -1539,7 +1539,7 @@ struct bt_cap_commander_change_microphone_gain_setting_param {
  *
  * @param param The parameters for the microphone gain setting change
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_cap_commander_change_microphone_gain_setting(
 	const struct bt_cap_commander_change_microphone_gain_setting_param *param);

@@ -636,7 +636,7 @@ struct bt_mcc_cb {
  *
  * @param cb    Callbacks to be used
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_init(struct bt_mcc_cb *cb);
 
@@ -653,7 +653,7 @@ int bt_mcc_init(struct bt_mcc_cb *cb);
  * @param conn  Connection to the peer device
  * @param subscribe   Whether to subscribe to notifications
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe);
 
@@ -662,7 +662,7 @@ int bt_mcc_discover_mcs(struct bt_conn *conn, bool subscribe);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_player_name(struct bt_conn *conn);
 
@@ -671,7 +671,7 @@ int bt_mcc_read_player_name(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_icon_obj_id(struct bt_conn *conn);
 
@@ -680,7 +680,7 @@ int bt_mcc_read_icon_obj_id(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_icon_url(struct bt_conn *conn);
 
@@ -689,7 +689,7 @@ int bt_mcc_read_icon_url(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_track_title(struct bt_conn *conn);
 
@@ -698,7 +698,7 @@ int bt_mcc_read_track_title(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_track_duration(struct bt_conn *conn);
 
@@ -707,7 +707,7 @@ int bt_mcc_read_track_duration(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_track_position(struct bt_conn *conn);
 
@@ -717,7 +717,7 @@ int bt_mcc_read_track_position(struct bt_conn *conn);
  * @param conn  Connection to the peer device
  * @param pos   Track position
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_set_track_position(struct bt_conn *conn, int32_t pos);
 
@@ -726,7 +726,7 @@ int bt_mcc_set_track_position(struct bt_conn *conn, int32_t pos);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_playback_speed(struct bt_conn *conn);
 
@@ -736,7 +736,7 @@ int bt_mcc_read_playback_speed(struct bt_conn *conn);
  * @param conn  Connection to the peer device
  * @param speed Playback speed
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_set_playback_speed(struct bt_conn *conn, int8_t speed);
 
@@ -745,7 +745,7 @@ int bt_mcc_set_playback_speed(struct bt_conn *conn, int8_t speed);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_seeking_speed(struct bt_conn *conn);
 
@@ -754,7 +754,7 @@ int bt_mcc_read_seeking_speed(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_segments_obj_id(struct bt_conn *conn);
 
@@ -763,7 +763,7 @@ int bt_mcc_read_segments_obj_id(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_current_track_obj_id(struct bt_conn *conn);
 
@@ -775,7 +775,7 @@ int bt_mcc_read_current_track_obj_id(struct bt_conn *conn);
  * @param conn  Connection to the peer device
  * @param id    Object Transfer Service ID (UINT48) of the track to set as the current track
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t id);
 
@@ -784,7 +784,7 @@ int bt_mcc_set_current_track_obj_id(struct bt_conn *conn, uint64_t id);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_next_track_obj_id(struct bt_conn *conn);
 
@@ -796,7 +796,7 @@ int bt_mcc_read_next_track_obj_id(struct bt_conn *conn);
  * @param conn  Connection to the peer device
  * @param id   Object Transfer Service ID (UINT48) of the track to set as the next track
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t id);
 
@@ -805,7 +805,7 @@ int bt_mcc_set_next_track_obj_id(struct bt_conn *conn, uint64_t id);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_current_group_obj_id(struct bt_conn *conn);
 
@@ -817,7 +817,7 @@ int bt_mcc_read_current_group_obj_id(struct bt_conn *conn);
  * @param conn  Connection to the peer device
  * @param id   Object Transfer Service ID (UINT48) of the group to set as the current group
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t id);
 
@@ -826,7 +826,7 @@ int bt_mcc_set_current_group_obj_id(struct bt_conn *conn, uint64_t id);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn);
 
@@ -835,7 +835,7 @@ int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_playing_order(struct bt_conn *conn);
 
@@ -845,7 +845,7 @@ int bt_mcc_read_playing_order(struct bt_conn *conn);
  * @param conn  Connection to the peer device
  * @param order Playing order
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_set_playing_order(struct bt_conn *conn, uint8_t order);
 
@@ -854,7 +854,7 @@ int bt_mcc_set_playing_order(struct bt_conn *conn, uint8_t order);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_playing_orders_supported(struct bt_conn *conn);
 
@@ -863,7 +863,7 @@ int bt_mcc_read_playing_orders_supported(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_media_state(struct bt_conn *conn);
 
@@ -875,7 +875,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn);
  * @param conn  Connection to the peer device
  * @param cmd   The command to send
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd);
 
@@ -884,7 +884,7 @@ int bt_mcc_send_cmd(struct bt_conn *conn, const struct mpl_cmd *cmd);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_opcodes_supported(struct bt_conn *conn);
 
@@ -896,7 +896,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn);
  * @param conn   Connection to the peer device
  * @param search The search
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search);
 
@@ -905,7 +905,7 @@ int bt_mcc_send_search(struct bt_conn *conn, const struct mpl_search *search);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_search_results_obj_id(struct bt_conn *conn);
 
@@ -914,7 +914,7 @@ int bt_mcc_read_search_results_obj_id(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_read_content_control_id(struct bt_conn *conn);
 
@@ -923,7 +923,7 @@ int bt_mcc_read_content_control_id(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_otc_read_object_metadata(struct bt_conn *conn);
 
@@ -932,7 +932,7 @@ int bt_mcc_otc_read_object_metadata(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_otc_read_icon_object(struct bt_conn *conn);
 
@@ -941,7 +941,7 @@ int bt_mcc_otc_read_icon_object(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_otc_read_track_segments_object(struct bt_conn *conn);
 
@@ -950,7 +950,7 @@ int bt_mcc_otc_read_track_segments_object(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_otc_read_current_track_object(struct bt_conn *conn);
 
@@ -959,7 +959,7 @@ int bt_mcc_otc_read_current_track_object(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_otc_read_next_track_object(struct bt_conn *conn);
 
@@ -968,7 +968,7 @@ int bt_mcc_otc_read_next_track_object(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_otc_read_current_group_object(struct bt_conn *conn);
 
@@ -977,7 +977,7 @@ int bt_mcc_otc_read_current_group_object(struct bt_conn *conn);
  *
  * @param conn  Connection to the peer device
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_mcc_otc_read_parent_group_object(struct bt_conn *conn);
 

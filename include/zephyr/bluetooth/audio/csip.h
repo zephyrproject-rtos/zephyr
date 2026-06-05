@@ -217,7 +217,7 @@ void *bt_csip_set_member_svc_decl_get(const struct bt_csip_set_member_svc_inst *
  * @param[out] svc_inst  Pointer to the registered Coordinated Set
  *                       Identification Service.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *param,
 				struct bt_csip_set_member_svc_inst **svc_inst);
@@ -229,7 +229,7 @@ int bt_csip_set_member_register(const struct bt_csip_set_member_register_param *
  *
  * @param svc_inst  Pointer to the registered Coordinated Set Identification Service.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_csip_set_member_unregister(struct bt_csip_set_member_svc_inst *svc_inst);
 
@@ -266,7 +266,7 @@ int bt_csip_set_member_sirk(struct bt_csip_set_member_svc_inst *svc_inst,
  * @retval -EINVAL @p svc_inst is NULL, @p size is less than 1, @p rank is less than 1 or higher
  *                 than @p size for a lockable @p svc_inst.
  * @retval -EALREADY @p size is already set.
- * @retval 0 Success.
+ * @retval 0 on success.
  */
 int bt_csip_set_member_set_size_and_rank(struct bt_csip_set_member_svc_inst *svc_inst, uint8_t size,
 					 uint8_t rank);
@@ -323,7 +323,7 @@ struct bt_csip_set_member_set_info {
  * @param info Pointer to a struct to store the information in.
  *
  * @retval -EINVAL @p svc_inst or @p info is NULL.
- * @retval 0 Success.
+ * @retval 0 on success.
  */
 int bt_csip_set_member_get_info(const struct bt_csip_set_member_svc_inst *svc_inst,
 				struct bt_csip_set_member_set_info *info);
@@ -336,7 +336,7 @@ int bt_csip_set_member_get_info(const struct bt_csip_set_member_svc_inst *svc_in
  * @param svc_inst  Pointer to the Coordinated Set Identification Service.
  * @param rsi       Pointer to the 6-octet newly generated RSI data in little-endian.
  *
- * @return int		0 if on success, errno on error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *svc_inst,
 				    uint8_t rsi[BT_CSIP_RSI_SIZE]);
@@ -352,7 +352,7 @@ int bt_csip_set_member_generate_rsi(const struct bt_csip_set_member_svc_inst *sv
  *                  (release) and will force release the lock, regardless of who
  *                  took the lock.
  *
- * @return 0 on success, GATT error on error.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_csip_set_member_lock(struct bt_csip_set_member_svc_inst *svc_inst,
 			    bool lock, bool force);
@@ -425,7 +425,7 @@ typedef void (*bt_csip_set_coordinator_discover_cb)(
  *
  * @param conn Pointer to remote device to perform discovery on.
  *
- * @return int Return 0 on success, or an errno value on error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_csip_set_coordinator_discover(struct bt_conn *conn);
 
@@ -438,8 +438,8 @@ int bt_csip_set_coordinator_discover(struct bt_conn *conn);
  *
  * @param conn     Connection pointer.
  *
- * @retval Pointer to a Coordinated Set Identification Profile Set Coordinator instance
- * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ * @return Pointer to a Coordinated Set Identification Profile Set Coordinator instance,
+ *         or NULL if @p conn is NULL or if the connection has not done discovery yet.
  */
 struct bt_csip_set_coordinator_set_member *
 bt_csip_set_coordinator_set_member_by_conn(const struct bt_conn *conn);
@@ -460,7 +460,7 @@ typedef void (*bt_csip_set_coordinator_lock_set_cb)(int err);
  *                changed.
  * @param locked  Whether the lock is locked or release.
  *
- * @return int Return 0 on success, or an errno value on error.
+ * @return 0 on success, negative errno value on failure.
  */
 typedef void (*bt_csip_set_coordinator_lock_changed_cb)(
 	struct bt_csip_set_coordinator_csis_inst *inst, bool locked);
@@ -545,7 +545,7 @@ struct bt_csip_set_coordinator_cb {
  * @param sirk The SIRK of the set to check against
  * @param data The advertising data
  *
- * @return true if the advertising data indicates a set member, false otherwise
+ * @return true if the advertising data indicates a set member, false otherwise.
  */
 bool bt_csip_set_coordinator_is_set_member(const uint8_t sirk[BT_CSIP_SIRK_SIZE],
 					   struct bt_data *data);
@@ -555,7 +555,7 @@ bool bt_csip_set_coordinator_is_set_member(const uint8_t sirk[BT_CSIP_SIRK_SIZE]
  *
  * @param cb   Pointer to the callback structure.
  *
- * @return Return 0 on success, or an errno value on error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_csip_set_coordinator_register_cb(struct bt_csip_set_coordinator_cb *cb);
 
@@ -618,7 +618,7 @@ int bt_csip_set_coordinator_ordered_access(
  * @param set_info  Pointer to the a specific set_info struct, as a member may
  *                  be part of multiple sets.
  *
- * @return Return 0 on success, or an errno value on error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_csip_set_coordinator_lock(const struct bt_csip_set_coordinator_set_member **members,
 				 uint8_t count,
@@ -636,7 +636,7 @@ int bt_csip_set_coordinator_lock(const struct bt_csip_set_coordinator_set_member
  * @param set_info  Pointer to the a specific set_info struct, as a member may
  *                  be part of multiple sets.
  *
- * @return Return 0 on success, or an errno value on error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_member **members,
 				    uint8_t count,

@@ -104,7 +104,7 @@ struct bt_micp_included {
  *
  * @param param Pointer to an initialization structure.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param);
 
@@ -118,7 +118,7 @@ int bt_micp_mic_dev_register(struct bt_micp_mic_dev_register_param *param);
  *
  * @param included Pointer to store the result in.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_micp_mic_dev_included_get(struct bt_micp_included *included);
 
@@ -143,14 +143,14 @@ struct bt_micp_mic_dev_cb {
 /**
  * @brief Unmute the Microphone Device.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_micp_mic_dev_unmute(void);
 
 /**
  * @brief Mute the Microphone Device.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_micp_mic_dev_mute(void);
 
@@ -159,14 +159,14 @@ int bt_micp_mic_dev_mute(void);
  *
  * Can be reenabled by called @ref bt_micp_mic_dev_mute or @ref bt_micp_mic_dev_unmute.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_micp_mic_dev_mute_disable(void);
 
 /**
  * @brief Read the mute state on the Microphone Device.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_micp_mic_dev_mute_get(void);
 
@@ -240,7 +240,7 @@ struct bt_micp_mic_ctlr_cb {
  * @param      mic_ctlr Microphone Controller instance pointer.
  * @param[out] included Pointer to store the result in.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_micp_mic_ctlr_included_get(struct bt_micp_mic_ctlr *mic_ctlr,
 				  struct bt_micp_included *included);
@@ -253,7 +253,7 @@ int bt_micp_mic_ctlr_included_get(struct bt_micp_mic_ctlr *mic_ctlr,
  * @param mic_ctlr    Microphone Controller instance pointer.
  * @param conn        Connection pointer.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr,
 			      struct bt_conn **conn);
@@ -267,8 +267,8 @@ int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr,
  *
  * @param conn     Connection pointer.
  *
- * @retval Pointer to a Microphone Control Profile Microphone Controller instance
- * @retval NULL if @p conn is NULL or if the connection has not done discovery yet
+ * @return Pointer to a Microphone Control Profile Microphone Controller instance,
+ *         or NULL if @p conn is NULL or if the connection has not done discovery yet.
  */
 struct bt_micp_mic_ctlr *bt_micp_mic_ctlr_get_by_conn(const struct bt_conn *conn);
 
@@ -283,7 +283,7 @@ struct bt_micp_mic_ctlr *bt_micp_mic_ctlr_get_by_conn(const struct bt_conn *conn
  * @param conn          The connection to initialize the profile for.
  * @param[out] mic_ctlr Valid remote instance object on success.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_micp_mic_ctlr_discover(struct bt_conn *conn,
 			      struct bt_micp_mic_ctlr **mic_ctlr);
@@ -293,7 +293,7 @@ int bt_micp_mic_ctlr_discover(struct bt_conn *conn,
  *
  * @param mic_ctlr  Microphone Controller instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_micp_mic_ctlr_unmute(struct bt_micp_mic_ctlr *mic_ctlr);
 
@@ -302,7 +302,7 @@ int bt_micp_mic_ctlr_unmute(struct bt_micp_mic_ctlr *mic_ctlr);
  *
  * @param mic_ctlr  Microphone Controller instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_micp_mic_ctlr_mute(struct bt_micp_mic_ctlr *mic_ctlr);
 
@@ -311,7 +311,7 @@ int bt_micp_mic_ctlr_mute(struct bt_micp_mic_ctlr *mic_ctlr);
  *
  * @param mic_ctlr  Microphone Controller instance pointer.
  *
- * @return 0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_micp_mic_ctlr_mute_get(struct bt_micp_mic_ctlr *mic_ctlr);
 
@@ -322,7 +322,7 @@ int bt_micp_mic_ctlr_mute_get(struct bt_micp_mic_ctlr *mic_ctlr);
  *
  * @param cb    The callback structure.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_micp_mic_ctlr_cb_register(struct bt_micp_mic_ctlr_cb *cb);
 #ifdef __cplusplus

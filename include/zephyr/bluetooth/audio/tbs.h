@@ -243,7 +243,7 @@ typedef void (*bt_tbs_call_change_cb)(struct bt_conn *conn,
  *
  * @param conn         The connection used.
  *
- * @return true if authorized, false otherwise
+ * @return true if authorized, false otherwise.
  */
 typedef bool (*bt_tbs_authorize_cb)(struct bt_conn *conn);
 
@@ -274,8 +274,7 @@ struct bt_tbs_cb {
  *
  * @param call_index    The index of the call that will be accepted.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_accept(uint8_t call_index);
 
@@ -284,8 +283,7 @@ int bt_tbs_accept(uint8_t call_index);
  *
  * @param call_index    The index of the call that will be held.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_hold(uint8_t call_index);
 
@@ -294,8 +292,7 @@ int bt_tbs_hold(uint8_t call_index);
  *
  * @param call_index    The index of the call that will be retrieved.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_retrieve(uint8_t call_index);
 
@@ -304,8 +301,7 @@ int bt_tbs_retrieve(uint8_t call_index);
  *
  * @param call_index    The index of the call that will be terminated.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_terminate(uint8_t call_index);
 
@@ -317,8 +313,7 @@ int bt_tbs_terminate(uint8_t call_index);
  * @param[out] call_index    Pointer to a value where the new call_index will be
  *                           stored.
  *
- * @return int          A call index on success (positive value),
- *                      errno value on fail.
+ * @return A call index on success (positive value), negative errno value on failure.
  */
 int bt_tbs_originate(uint8_t bearer_index, char *uri, uint8_t *call_index);
 
@@ -328,8 +323,7 @@ int bt_tbs_originate(uint8_t bearer_index, char *uri, uint8_t *call_index);
  * @param call_index_cnt   The number of call indexes to join
  * @param call_indexes     Array of call indexes to join.
  *
- * @return int             BT_TBS_RESULT_CODE_* if positive or 0,
- *                         errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_join(uint8_t call_index_cnt, uint8_t *call_indexes);
 
@@ -338,8 +332,7 @@ int bt_tbs_join(uint8_t call_index_cnt, uint8_t *call_indexes);
  *
  * @param call_index    The index of the call that was answered.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_remote_answer(uint8_t call_index);
 
@@ -348,8 +341,7 @@ int bt_tbs_remote_answer(uint8_t call_index);
  *
  * @param call_index    The index of the call that was held.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_remote_hold(uint8_t call_index);
 
@@ -358,8 +350,7 @@ int bt_tbs_remote_hold(uint8_t call_index);
  *
  * @param call_index    The index of the call that was retrieved.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_remote_retrieve(uint8_t call_index);
 
@@ -368,8 +359,7 @@ int bt_tbs_remote_retrieve(uint8_t call_index);
  *
  * @param call_index    The index of the call that was terminated.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_remote_terminate(uint8_t call_index);
 
@@ -381,8 +371,7 @@ int bt_tbs_remote_terminate(uint8_t call_index);
  * @param from            The URI of the remote caller.
  * @param friendly_name   The  friendly name of the remote caller.
  *
- * @return int            New call index if positive or 0,
- *                        errno value if negative.
+ * @return New call index on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
 			   const char *from, const char *friendly_name);
@@ -394,8 +383,7 @@ int bt_tbs_remote_incoming(uint8_t bearer_index, const char *to,
  *                      for GTBS.
  * @param name          The new bearer provider name.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name);
 
@@ -406,8 +394,7 @@ int bt_tbs_set_bearer_provider_name(uint8_t bearer_index, const char *name);
  *                       for GTBS.
  * @param new_technology The new bearer technology.
  *
- * @return int           BT_TBS_RESULT_CODE_* if positive or 0,
- *                       errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_set_bearer_technology(uint8_t bearer_index, enum bt_bearer_tech new_technology);
 
@@ -418,8 +405,7 @@ int bt_tbs_set_bearer_technology(uint8_t bearer_index, enum bt_bearer_tech new_t
  *                            BT_TBS_GTBS_INDEX for GTBS.
  * @param new_signal_strength The new signal strength.
  *
- * @return int                BT_TBS_RESULT_CODE_* if positive or 0,
- *                            errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_set_signal_strength(uint8_t bearer_index,
 			       uint8_t new_signal_strength);
@@ -431,8 +417,7 @@ int bt_tbs_set_signal_strength(uint8_t bearer_index,
  *                      for GTBS.
  * @param status_flags  The new feature and status value.
  *
- * @return int          BT_TBS_RESULT_CODE_* if positive or 0,
- *                      errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_set_status_flags(uint8_t bearer_index, uint16_t status_flags);
 
@@ -442,7 +427,7 @@ int bt_tbs_set_status_flags(uint8_t bearer_index, uint16_t status_flags);
  * @param bearer_index  The index of the Telephone Bearer.
  * @param uri_scheme_list Comma-separated list of URI prefixes (e.g. "skype,tel").
  *
- * @return BT_TBS_RESULT_CODE_* if positive or 0, errno value if negative.
+ * @return BT_TBS_RESULT_CODE_* value on success (0 or positive), negative errno value on failure.
  */
 int bt_tbs_set_uri_scheme_list(uint8_t bearer_index, const char *uri_scheme_list);
 /**
@@ -511,13 +496,13 @@ struct bt_tbs_register_param {
  *
  * @param param The parameters to initialize the bearer.
 
- * @retval index The bearer index if return value is >= 0
- * @retval -EINVAL @p param contains invalid data
- * @retval -EALREADY @p param.gtbs is true and GTBS has already been registered
- * @retval -EAGAIN @p param.gtbs is false and GTBS has not been registered
+ * @return The bearer index on success (>= 0), or one of the error codes below.
+ * @retval -EINVAL @p param contains invalid data.
+ * @retval -EALREADY @p param.gtbs is true and GTBS has already been registered.
+ * @retval -EAGAIN @p param.gtbs is false and GTBS has not been registered.
  * @retval -ENOMEM @p param.gtbs is false and no more TBS can be registered (see
- *         @kconfig{CONFIG_BT_TBS_BEARER_COUNT})
- * @retval -ENOEXEC The service failed to be registered
+ *         @kconfig{CONFIG_BT_TBS_BEARER_COUNT}).
+ * @retval -ENOEXEC The service failed to be registered.
  */
 int bt_tbs_register_bearer(const struct bt_tbs_register_param *param);
 
@@ -532,12 +517,12 @@ int bt_tbs_register_bearer(const struct bt_tbs_register_param *param);
  *
  * @param bearer_index The index of the bearer to unregister.
  *
- * @retval 0 Success
- * @retval -EINVAL @p bearer_index is invalid
- * @retval -EALREADY The bearer identified by @p bearer_index is not registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p bearer_index is invalid.
+ * @retval -EALREADY The bearer identified by @p bearer_index is not registered.
  * @retval -EAGAIN The bearer identified by @p bearer_index is GTBS and there are TBS instances
  *                 registered.
- * @retval -ENOEXEC The service failed to be unregistered
+ * @retval -ENOEXEC The service failed to be unregistered.
  */
 int bt_tbs_unregister_bearer(uint8_t bearer_index);
 
@@ -781,7 +766,7 @@ struct bt_tbs_client_cb {
  *
  * @param conn          The connection to discover TBS for.
  *
- * @return int          0 on success, GATT error value on fail.
+ * @return 0 on success, or a GATT error code on failure.
  */
 int bt_tbs_client_discover(struct bt_conn *conn);
 
@@ -792,7 +777,7 @@ int bt_tbs_client_discover(struct bt_conn *conn);
  * @param inst_index    The index of the TBS instance.
  * @param uri           The Null-terminated URI string.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_tbs_client_set_outgoing_uri(struct bt_conn *conn, uint8_t inst_index,
 				   const char *uri);
@@ -804,7 +789,7 @@ int bt_tbs_client_set_outgoing_uri(struct bt_conn *conn, uint8_t inst_index,
  * @param inst_index    The index of the TBS instance.
  * @param interval      The interval to write (0-255 seconds).
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_SET_BEARER_SIGNAL_INTERVAL} must be set
  * for this function to be effective.
@@ -820,7 +805,7 @@ int bt_tbs_client_set_signal_strength_interval(struct bt_conn *conn,
  * @param inst_index    The index of the TBS instance.
  * @param uri           The URI of the callee.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_ORIGINATE_CALL} must be set
  * for this function to be effective.
@@ -835,7 +820,7 @@ int bt_tbs_client_originate_call(struct bt_conn *conn, uint8_t inst_index,
  * @param inst_index    The index of the TBS instance.
  * @param call_index    The call index to terminate.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_TERMINATE_CALL} must be set
  * for this function to be effective.
@@ -850,7 +835,7 @@ int bt_tbs_client_terminate_call(struct bt_conn *conn, uint8_t inst_index,
  * @param inst_index    The index of the TBS instance.
  * @param call_index    The call index to place on hold.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_HOLD_CALL} must be set
  * for this function to be effective.
@@ -865,7 +850,7 @@ int bt_tbs_client_hold_call(struct bt_conn *conn, uint8_t inst_index,
  * @param inst_index    The index of the TBS instance.
  * @param call_index    The call index to accept.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_ACCEPT_CALL} must be set
  * for this function to be effective.
@@ -880,7 +865,7 @@ int bt_tbs_client_accept_call(struct bt_conn *conn, uint8_t inst_index,
  * @param inst_index    The index of the TBS instance.
  * @param call_index    The call index to retrieve.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_RETRIEVE_CALL} must be set
  * for this function to be effective.
@@ -896,7 +881,7 @@ int bt_tbs_client_retrieve_call(struct bt_conn *conn, uint8_t inst_index,
  * @param call_indexes  Array of call indexes.
  * @param count         Number of call indexes in the call_indexes array.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_JOIN_CALLS} must be set
  * for this function to be effective.
@@ -910,7 +895,7 @@ int bt_tbs_client_join_calls(struct bt_conn *conn, uint8_t inst_index,
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME} must be set
  * for this function to be effective.
@@ -924,7 +909,7 @@ int bt_tbs_client_read_bearer_provider_name(struct bt_conn *conn,
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_BEARER_UCI} must be set
  * for this function to be effective.
@@ -937,7 +922,7 @@ int bt_tbs_client_read_bearer_uci(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY} must be set
  * for this function to be effective.
@@ -950,7 +935,7 @@ int bt_tbs_client_read_technology(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return int          0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST} must be set
  * for this function to be effective.
@@ -963,7 +948,7 @@ int bt_tbs_client_read_uri_list(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_BEARER_SIGNAL_STRENGTH} must be set
  * for this function to be effective.
@@ -977,7 +962,7 @@ int bt_tbs_client_read_signal_strength(struct bt_conn *conn,
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_READ_BEARER_SIGNAL_INTERVAL} must be set
  * for this function to be effective.
@@ -991,7 +976,7 @@ int bt_tbs_client_read_signal_interval(struct bt_conn *conn,
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_BEARER_LIST_CURRENT_CALLS} must be set
  * for this function to be effective.
@@ -1004,7 +989,7 @@ int bt_tbs_client_read_current_calls(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_CCID} must be set
  * for this function to be effective.
@@ -1017,7 +1002,7 @@ int bt_tbs_client_read_ccid(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_INCOMING_URI} must be set
  * for this function to be effective.
@@ -1030,7 +1015,7 @@ int bt_tbs_client_read_call_uri(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_STATUS_FLAGS} must be set
  * for this function to be effective.
@@ -1043,7 +1028,7 @@ int bt_tbs_client_read_status_flags(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_tbs_client_read_call_state(struct bt_conn *conn, uint8_t inst_index);
 
@@ -1053,7 +1038,7 @@ int bt_tbs_client_read_call_state(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_INCOMING_CALL} must be set
  * for this function to be effective.
@@ -1066,7 +1051,7 @@ int bt_tbs_client_read_remote_uri(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_CALL_FRIENDLY_NAME} must be set
  * for this function to be effective.
@@ -1079,7 +1064,7 @@ int bt_tbs_client_read_friendly_name(struct bt_conn *conn, uint8_t inst_index);
  * @param conn          The connection to the TBS server.
  * @param inst_index    The index of the TBS instance.
  *
- * @return              int 0 on success, errno value on fail.
+ * @return 0 on success, negative errno value on failure.
  *
  * @note @kconfig{CONFIG_BT_TBS_CLIENT_OPTIONAL_OPCODES} must be set
  * for this function to be effective.
@@ -1092,9 +1077,9 @@ int bt_tbs_client_read_optional_opcodes(struct bt_conn *conn,
  *
  * @param cbs Pointer to the callback structure.
  *
- * @retval 0 Success
- * @retval -EINVAL @p cbs is NULL
- * @retval -EEXIST @p cbs is already registered
+ * @retval 0 on success.
+ * @retval -EINVAL @p cbs is NULL.
+ * @retval -EEXIST @p cbs is already registered.
  */
 int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs);
 
