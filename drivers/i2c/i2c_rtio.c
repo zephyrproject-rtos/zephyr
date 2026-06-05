@@ -267,3 +267,105 @@ out:
 	k_sem_give(&ctx->lock);
 	return res;
 }
+
+#ifdef CONFIG_I2C_CALLBACK
+/*
+ * Allocate a callback closure slot. Lock-free via atomic_test_and_set_bit;
+ * safe from any context. Returns NULL when the pool is exhausted.
+ */
+static struct i2c_rtio_cb_slot *i2c_rtio_cb_slot_alloc(struct i2c_rtio *ctx)
+{
+	for (uint32_t i = 0; i < ARRAY_SIZE(ctx->cb_slots); i++) {
+		if (!atomic_test_and_set_bit(ctx->cb_slot_used, i)) {
+			struct i2c_rtio_cb_slot *slot = &ctx->cb_slots[i];
+
+			slot->ctx = ctx;
+			return slot;
+		}
+	}
+
+	return NULL;
+}
+
+static void i2c_rtio_cb_slot_free(struct i2c_rtio_cb_slot *slot)
+{
+	struct i2c_rtio *ctx = slot->ctx;
+	uint32_t i = slot - &ctx->cb_slots[0];
+
+	atomic_clear_bit(ctx->cb_slot_used, i);
+}
+
+/*
+ * Trampoline invoked by RTIO_OP_CALLBACK after the chained transaction
+ * completes. last_result carries the transfer status. Releases ctx->lock
+ * (which the helper held to keep ctx->dt_spec.addr stable for the driver)
+ * before invoking the user callback.
+ */
+static void i2c_rtio_cb_trampoline(struct rtio *r, const struct rtio_sqe *sqe, int last_result,
+				   void *arg0)
+{
+	struct i2c_rtio_cb_slot *slot = arg0;
+	struct i2c_rtio *ctx = slot->ctx;
+	i2c_callback_t cb = slot->cb;
+	void *userdata = slot->userdata;
+	const struct device *dev = slot->dev;
+
+	ARG_UNUSED(r);
+	ARG_UNUSED(sqe);
+
+	i2c_rtio_cb_slot_free(slot);
+	k_sem_give(&ctx->lock);
+
+	cb(dev, last_result, userdata);
+}
+
+int i2c_rtio_transfer_cb(struct i2c_rtio *ctx, const struct device *dev, struct i2c_msg *msgs,
+			 uint8_t num_msgs, uint16_t addr, i2c_callback_t cb, void *userdata)
+{
+	struct rtio_iodev *iodev = &ctx->iodev;
+	struct rtio *const r = ctx->r;
+	struct rtio_sqe *last_msg_sqe;
+	struct rtio_sqe *cb_sqe;
+	struct i2c_rtio_cb_slot *slot;
+
+	__ASSERT_NO_MSG(num_msgs > 0);
+	__ASSERT_NO_MSG(cb != NULL);
+
+	slot = i2c_rtio_cb_slot_alloc(ctx);
+	if (slot == NULL) {
+		return -ENOMEM;
+	}
+
+	k_sem_take(&ctx->lock, K_FOREVER);
+
+	ctx->dt_spec.addr = addr;
+
+	last_msg_sqe = i2c_rtio_copy(r, iodev, msgs, num_msgs);
+	if (last_msg_sqe == NULL) {
+		k_sem_give(&ctx->lock);
+		i2c_rtio_cb_slot_free(slot);
+		return -ENOMEM;
+	}
+
+	cb_sqe = rtio_sqe_acquire(r);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(r);
+		k_sem_give(&ctx->lock);
+		i2c_rtio_cb_slot_free(slot);
+		return -ENOMEM;
+	}
+
+	slot->cb = cb;
+	slot->userdata = userdata;
+	slot->dev = dev;
+
+	rtio_sqe_prep_callback(cb_sqe, i2c_rtio_cb_trampoline, slot, NULL);
+	cb_sqe->flags |= RTIO_SQE_NO_RESPONSE;
+
+	last_msg_sqe->flags |= RTIO_SQE_CHAINED;
+
+	rtio_submit(r, 0);
+
+	return 0;
+}
+#endif /* CONFIG_I2C_CALLBACK */
