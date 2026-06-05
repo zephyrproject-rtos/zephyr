@@ -664,6 +664,7 @@ static void send_post_tx(struct lwan_ctx *ctx, void *user_data)
 
 	tx_ctx->tx_done = true;
 	ctx->pending &= ~LWAN_PENDING_ACK;
+	mac_cmd_commit_ul_fopts(ctx);
 }
 
 static uint32_t send_rx1_delay_ms(const struct lwan_session *sess)
