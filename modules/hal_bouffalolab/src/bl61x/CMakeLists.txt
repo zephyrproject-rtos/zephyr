@@ -40,9 +40,6 @@ if(CONFIG_WIFI_BFLB)
 endif()
 
 if((CONFIG_BT_BFLB_BL61X OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
-  # phyrf is shared between BLE and WiFi
-  zephyr_link_libraries(${BLOBS_DIR}/libbl616_phyrf.a)
-
   if(CONFIG_BT_BFLB_BL61X)
     zephyr_link_libraries(${BLOBS_DIR}/${BLE_VARIANT_LIB})
   endif()
@@ -58,4 +55,22 @@ if((CONFIG_BT_BFLB_BL61X OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLOBS
     )
   endif()
 
+endif()
+
+if(CONFIG_IEEE802154_BFLB)
+  zephyr_include_directories(
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/lmac154)
+
+  if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+    zephyr_link_libraries(-fno-lto)
+
+    zephyr_link_libraries(
+      ${BLOBS_DIR}/liblmac154_bl616.a
+    )
+  endif()
+endif()
+
+# phyrf is shared between BLE, WiFi and IEEE 802.15.4.
+if(CONFIG_BFLB_PHYRF AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+  zephyr_link_libraries(${BLOBS_DIR}/libbl616_phyrf.a)
 endif()
