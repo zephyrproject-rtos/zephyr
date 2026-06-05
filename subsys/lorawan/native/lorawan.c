@@ -270,23 +270,26 @@ void lorawan_get_payload_sizes(uint8_t *max_next_payload_size,
 {
 	struct lwan_dr_params dr_params;
 	int8_t power;
-	uint8_t payload;
+	uint8_t max_next_payload;
+	uint8_t max_payload;
 
 	if (lwan_ctx.region != NULL &&
 	    lwan_ctx.region->get_tx_params((uint8_t)lwan_ctx.current_dr,
 					    lwan_ctx.mac.tx_power_idx,
 					    &dr_params, &power) == 0) {
-		payload = dr_params.max_payload;
+		max_payload = dr_params.max_payload;
 	} else {
-		payload = LWAN_DEFAULT_MAX_PAYLOAD;
+		max_payload = LWAN_DEFAULT_MAX_PAYLOAD;
 	}
 
+	max_next_payload = mac_cmd_next_payload_size(&lwan_ctx, max_payload);
+
 	if (max_next_payload_size != NULL) {
-		*max_next_payload_size = payload;
+		*max_next_payload_size = max_next_payload;
 	}
 
 	if (max_payload_size != NULL) {
-		*max_payload_size = payload;
+		*max_payload_size = max_payload;
 	}
 }
 

@@ -129,6 +129,30 @@ void mac_cmd_process_dl_fopts(struct lwan_ctx *ctx,
 	}
 }
 
+size_t mac_cmd_next_ul_fopts_len(const struct lwan_ctx *ctx)
+{
+	size_t pos = 0;
+
+	if (ctx->mac.link_check_pending &&
+	    pos + MAC_CMD_LINK_CHECK_REQ_LEN <= LWAN_MAX_FOPTS_LEN) {
+		pos += MAC_CMD_LINK_CHECK_REQ_LEN;
+	}
+
+	return pos;
+}
+
+uint8_t mac_cmd_next_payload_size(const struct lwan_ctx *ctx,
+				  uint8_t max_payload)
+{
+	size_t fopts_len = mac_cmd_next_ul_fopts_len(ctx);
+
+	if (fopts_len >= max_payload) {
+		return 0;
+	}
+
+	return (uint8_t)(max_payload - fopts_len);
+}
+
 size_t mac_cmd_build_ul_fopts(struct lwan_ctx *ctx,
 			      uint8_t *buf, size_t max_len)
 {
