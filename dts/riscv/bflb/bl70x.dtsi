@@ -242,6 +242,14 @@
 			size = <128>;
 		};
 
+		ieee802154: ieee802154 {
+			compatible = "bflb,ieee802154";
+			interrupts = <64 1>, <63 1>, <65 1>;
+			interrupt-names = "m154", "m154-req-ack", "m154-aes";
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
 		cache: cache@40009000 {
 			reg = <0x40009000 DT_SIZE_K(4)>;
 			compatible = "bflb,l1c";
