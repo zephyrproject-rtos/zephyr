@@ -13,7 +13,7 @@
 			reg = <0x40004400 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART2>;
 			interrupt-parent = <&pfic>;
-			interrupts = <54>;
+			interrupts = <54 WCH_PFIC_PRIORITY(1, 3)>;
 			status = "disabled";
 		};
 	};

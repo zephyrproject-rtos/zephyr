@@ -6,4 +6,38 @@ config WCH_PFIC
 	default y
 	depends on DT_HAS_WCH_PFIC_ENABLED
 	help
-	  Interrupt controller for WCH PFIC.
+	  Driver for the WCH PFIC found on QingKe RISC-V cores.
+
+if WCH_PFIC
+
+config WCH_PFIC_HPE
+	bool "Enable QingKe Hardware Prologue/Epilogue (HPE)"
+	default n
+	help
+	  Enable the Hardware Prologue/Epilogue (HPE) feature of the
+	  QingKe PFIC.
+
+	  When enabled, the hardware automatically saves mepc, mstatus,
+	  ra, t0, and a0-a7 to a dedicated hardware FIFO on ISR entry
+	  and restores them on mret.  This reduces ISR latency on
+	  compatible cores.
+
+	  Not yet supported.  Enabling this option requires additional
+	  changes to _isr_wrapper (arch/riscv/core/isr.S).
+
+config WCH_PFIC_NESTING
+	bool "Enable QingKe interrupt preemption nesting"
+	default y
+	help
+	  Enable MIE-based interrupt preemption nesting for QingKe PFIC.
+
+	  When enabled, _isr_wrapper re-enables mstatus.MIE after the
+	  full context save and interrupt-stack switch, allowing a
+	  higher-priority interrupt to preempt the current ISR.  MIE
+	  is cleared before context restore.
+
+	  Priority values are configured via the WCH_PFIC_PRIORITY
+	  macro in Device Tree and written to PFIC->IPRIOR[] at init
+	  time.
+
+endif # WCH_PFIC

@@ -25,7 +25,7 @@
 			reg = <0x40004400 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART2>;
 			interrupt-parent = <&pfic>;
-			interrupts = <54>;
+			interrupts = <54 WCH_PFIC_PRIORITY(1, 3)>;
 			status = "disabled";
 		};
 
@@ -34,7 +34,7 @@
 			reg = <0x40004800 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART3>;
 			interrupt-parent = <&pfic>;
-			interrupts = <55>;
+			interrupts = <55 WCH_PFIC_PRIORITY(1, 3)>;
 			status = "disabled";
 		};
 
@@ -43,7 +43,7 @@
 			reg = <0x40003800 0x24>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_SPI2>;
 			interrupt-parent = <&pfic>;
-			interrupts = <52>;
+			interrupts = <52 WCH_PFIC_PRIORITY(1, 3)>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -54,7 +54,8 @@
 			reg = <0x40005800 0x400>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_I2C2>;
 			interrupt-parent = <&pfic>;
-			interrupts = <49>, <50>;
+			interrupts = <49 WCH_PFIC_PRIORITY(1, 3)>,
+						 <50 WCH_PFIC_PRIORITY(1, 3)>;
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;

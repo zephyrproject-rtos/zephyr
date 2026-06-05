@@ -27,6 +27,7 @@ SECTION_FUNC(vectors, ivt)
 	.endr
 
 SECTION_FUNC(vectors, __start)
-	li 	a0, 0xf
+	la	a0, ivt
+	ori	a0, a0, 3
 	csrw	mtvec, a0
 	j	__initialize

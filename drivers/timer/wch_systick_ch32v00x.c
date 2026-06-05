@@ -50,7 +50,8 @@ uint32_t sys_clock_elapsed(void)
 
 static int ch32v00x_systick_init(void)
 {
-	IRQ_CONNECT(DT_INST_IRQN(0), 0, ch32v00x_systick_irq, NULL, 0);
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
+		    ch32v00x_systick_irq, NULL, 0);
 
 	SYSTICK->SR = 0;
 	SYSTICK->CMP = CYCLES_PER_TICK;

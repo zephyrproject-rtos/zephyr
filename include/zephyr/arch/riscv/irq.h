@@ -59,13 +59,14 @@ extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
 
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
-	defined(CONFIG_RISCV_HAS_AIA)
+	defined(CONFIG_RISCV_HAS_AIA) || defined(CONFIG_WCH_PFIC)
 extern void z_riscv_irq_priority_set(unsigned int irq,
 				     unsigned int prio,
 				     uint32_t flags);
 #else
 #define z_riscv_irq_priority_set(i, p, f) /* Nothing */
-#endif /* CONFIG_RISCV_HAS_PLIC || CONFIG_RISCV_HAS_CLIC */
+#endif /* CONFIG_RISCV_HAS_PLIC || CONFIG_RISCV_HAS_CLIC ||
+	* CONFIG_RISCV_HAS_AIA || CONFIG_WCH_PFIC */
 
 #ifdef CONFIG_RISCV_HAS_CLIC
 extern void z_riscv_irq_vector_set(unsigned int irq);

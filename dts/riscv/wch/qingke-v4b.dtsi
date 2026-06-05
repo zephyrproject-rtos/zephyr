@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/interrupt-controller/wch-pfic.h>
+
 / {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -39,7 +41,7 @@
 		pfic: interrupt-controller@e000e000 {
 			compatible = "wch,pfic";
 			#address-cells = <0>;
-			#interrupt-cells = <1>;
+			#interrupt-cells = <2>;
 			interrupt-controller;
 			reg = <0xe000e000 0x10>;
 			status = "okay";
@@ -50,7 +52,7 @@
 			reg = <0xe000f000 0x10>;
 			status = "okay";
 			interrupt-parent = <&pfic>;
-			interrupts = <12>;
+			interrupts = <12 WCH_PFIC_PRIORITY(1, 3)>;
 		};
 	};
 };

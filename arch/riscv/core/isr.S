@@ -716,6 +716,20 @@ is_interrupt:
 
 on_irq_stack:
 
+#ifdef CONFIG_WCH_PFIC_NESTING
+	/*
+	 * Context is fully saved and the interrupt stack is active.
+	 * Re-enable MIE so a higher-priority interrupt from the PFIC
+	 * can preempt this ISR.  MIE will be cleared automatically by
+	 * the hardware on the next trap entry.
+	 *
+	 * PFIC priority values written via WCH_PFIC_PRIORITY() in DTS
+	 * control which IRQ wins arbitration:
+	 *   bit[7]=0 (group 0) can preempt bit[7]=1 (group 1).
+	 */
+	csrs RV_STATUS, STATUS_IE
+#endif /* CONFIG_WCH_PFIC_NESTING */
+
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	call __soc_handle_all_irqs
 #else
@@ -764,6 +778,16 @@ on_irq_stack:
 #endif
 
 #endif
+
+#ifdef CONFIG_WCH_PFIC_NESTING
+	/*
+	 * Disable MIE before restoring the exception frame.
+	 * We must not be preempted during the register-restore
+	 * sequence, as the restore is not atomic and a nested
+	 * interrupt at this point would corrupt the saved state.
+	 */
+	csrc RV_STATUS, STATUS_IE
+#endif /* CONFIG_WCH_PFIC_NESTING */
 
 irq_done:
 	/* Decrement _current_cpu->nested */
