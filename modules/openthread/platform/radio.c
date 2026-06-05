@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/net/ieee802154_radio.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_time.h>
@@ -38,6 +39,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, CONFIG_OPENTHREAD_PLATFORM_LOG_LEVEL);
 #include <openthread/message.h>
 
 #include "platform-zephyr.h"
+
+#if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_ieee802154)
+#include <esp_ieee802154.h>
+#endif
 
 #if defined(CONFIG_OPENTHREAD_NAT64_TRANSLATOR)
 #include <openthread/nat64.h>
@@ -964,6 +969,19 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 	enum ieee802154_hw_caps radio_caps;
 	ARG_UNUSED(aInstance);
 
+#if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_ieee802154)
+	if (esp_ieee802154_get_state() == ESP_IEEE802154_RADIO_RECEIVE) {
+		ret_rssi = esp_ieee802154_get_recent_rssi();
+
+		if (ret_rssi == OT_RADIO_RSSI_INVALID) {
+			return OT_RADIO_RSSI_INVALID;
+		}
+
+		return ret_rssi;
+	}
+
+	return OT_RADIO_RSSI_INVALID;
+#else
 	radio_caps = radio_api->get_capabilities(radio_dev);
 
 	if (!(radio_caps & IEEE802154_HW_ENERGY_SCAN)) {
@@ -988,6 +1006,7 @@ int8_t otPlatRadioGetRssi(otInstance *aInstance)
 	}
 
 	return ret_rssi;
+#endif
 }
 
 otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
