@@ -540,5 +540,15 @@
 			zephyr,memory-region = "PSRAM";
 			status = "disabled";
 		};
+
+		ieee802154: ieee802154 {
+			compatible = "bflb,ieee802154";
+			interrupts = <64 1>, <63 1>, <65 1>;
+			interrupt-names = "m154", "m154-req-ack", "m154-aes";
+			interrupt-parent = <&clic>;
+			pwr-table-zigbee = <13>;
+			pwr-offset-bz = <16 16 16 16 16>;
+			status = "disabled";
+		};
 	};
 };
