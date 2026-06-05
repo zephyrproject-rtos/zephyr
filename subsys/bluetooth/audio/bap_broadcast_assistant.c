@@ -962,8 +962,7 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 			}
 		}
 
-		bt_conn_unref(conn);
-		inst->conn = NULL;
+		bt_conn_drop(&inst->conn);
 	}
 
 	/* The subscribe parameters must remain instact so they can get cleaned up by GATT */

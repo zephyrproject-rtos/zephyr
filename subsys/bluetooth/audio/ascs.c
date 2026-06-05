@@ -187,8 +187,7 @@ static void ase_free(struct bt_ascs_ase *ase)
 		bt_bap_iso_unbind_ep(ase->ep.iso, &ase->ep);
 	}
 
-	bt_conn_unref(ase->conn);
-	ase->conn = NULL;
+	bt_conn_drop(&ase->conn);
 
 	(void)k_work_cancel_delayable(&ase->disconnect_work);
 	(void)k_work_cancel_delayable(&ase->state_transition_work);

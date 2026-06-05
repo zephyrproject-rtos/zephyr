@@ -861,12 +861,7 @@ static void vcp_vol_ctlr_reset(struct bt_vcp_vol_ctlr *vol_ctlr)
 
 	memset(&vol_ctlr->discover_params, 0, sizeof(vol_ctlr->discover_params));
 
-	if (vol_ctlr->conn != NULL) {
-		struct bt_conn *conn = vol_ctlr->conn;
-
-		bt_conn_unref(conn);
-		vol_ctlr->conn = NULL;
-	}
+	bt_conn_drop(&vol_ctlr->conn);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

@@ -276,8 +276,7 @@ static void client_free(struct has_client *client)
 		client->context = NULL;
 	}
 
-	bt_conn_unref(client->conn);
-	client->conn = NULL;
+	bt_conn_drop(&client->conn);
 }
 
 static struct has_client *client_alloc(struct bt_conn *conn)
