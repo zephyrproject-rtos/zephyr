@@ -49,6 +49,10 @@ struct ieee802154_esp32_data {
 	 * It shall be NULL if energy scan is not in progress.
 	 */
 	energy_scan_done_cb_t energy_scan_done;
+
+	/* Software energy scan state. */
+	struct k_work_delayable ed_scan_work;
+	int8_t ed_scan_max_rssi;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_ESP32_H_ */

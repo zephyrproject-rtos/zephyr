@@ -47,6 +47,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <esp_mac.h>
 
 #define IEEE802154_ESP32_TX_TIMEOUT_MS (100)
+#define IEEE802154_ESP32_RSSI_INVALID 127
 
 struct ieee802154_esp32_rx_msg {
 	/* PHR at [0], PSDU bytes follow (length per PHR, max IEEE802154_MAX_PHY_PACKET_SIZE). */
@@ -55,6 +56,49 @@ struct ieee802154_esp32_rx_msg {
 };
 
 static struct ieee802154_esp32_data esp32_data;
+
+static bool esp32_rssi_is_valid(int8_t rssi)
+{
+	return rssi != IEEE802154_ESP32_RSSI_INVALID;
+}
+
+static void esp32_ed_scan_update_max(int8_t rssi)
+{
+	if (!esp32_rssi_is_valid(rssi)) {
+		return;
+	}
+
+	if (esp32_data.ed_scan_max_rssi == INT8_MIN ||
+	    rssi > esp32_data.ed_scan_max_rssi) {
+		esp32_data.ed_scan_max_rssi = rssi;
+	}
+}
+
+static void esp32_ed_scan_finish(void)
+{
+	energy_scan_done_cb_t callback = esp32_data.energy_scan_done;
+	int16_t max_ed;
+
+	if (callback == NULL) {
+		return;
+	}
+
+	esp32_data.energy_scan_done = NULL;
+
+	max_ed = (esp32_data.ed_scan_max_rssi == INT8_MIN) ?
+		 IEEE802154_ESP32_RSSI_INVALID : esp32_data.ed_scan_max_rssi;
+
+	callback(net_if_get_device(esp32_data.iface), max_ed);
+
+	(void)esp_ieee802154_receive();
+}
+
+static void esp32_ed_scan_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	esp32_ed_scan_finish();
+}
 
 K_MSGQ_DEFINE(ieee802154_esp32_rx_msgq, sizeof(struct ieee802154_esp32_rx_msg),
 	      CONFIG_IEEE802154_ESP32_RX_BUFFER_SIZE, 4);
@@ -148,6 +192,11 @@ void esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_info_t *fr
 
 	memcpy(msg.frame, frame, (size_t)phr_len + 1U);
 	msg.info = *frame_info;
+
+	if (esp32_data.energy_scan_done != NULL) {
+		esp32_ed_scan_update_max(frame_info->rssi);
+		goto done;
+	}
 
 	if (k_msgq_put(&ieee802154_esp32_rx_msgq, &msg, K_NO_WAIT) != 0) {
 		LOG_WRN("RX queue full, dropping frame");
@@ -437,38 +486,37 @@ static int esp32_stop(const struct device *dev)
 /* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
 void IRAM_ATTR esp_ieee802154_energy_detect_done(int8_t power)
 {
-	energy_scan_done_cb_t callback;
-	const struct device *dev;
-
-	if (esp32_data.energy_scan_done == NULL) {
-		return;
-	}
-
-	callback = esp32_data.energy_scan_done;
-	esp32_data.energy_scan_done = NULL;
-	dev = net_if_get_device(esp32_data.iface);
-	callback(dev, power);
+	ARG_UNUSED(power);
 }
 
 static int esp32_ed_scan(const struct device *dev, uint16_t duration, energy_scan_done_cb_t done_cb)
 {
 	ARG_UNUSED(dev);
 
-	int err = 0;
-
-	if (esp32_data.energy_scan_done == NULL) {
-		esp32_data.energy_scan_done = done_cb;
-
-		/* The duration of energy detection, in symbol unit (16 us) */
-		if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBOL) != 0) {
-			esp32_data.energy_scan_done = NULL;
-			err = -EBUSY;
-		}
-	} else {
-		err = -EALREADY;
+	if (esp32_data.energy_scan_done != NULL) {
+		return -EALREADY;
 	}
 
-	return err;
+	if (duration == 0U) {
+		return -EINVAL;
+	}
+
+	esp32_data.energy_scan_done = done_cb;
+	esp32_data.ed_scan_max_rssi = INT8_MIN;
+
+	/*
+	 * Hardware ED returns the channel noise floor and does not track the
+	 * per-packet RSSI used by active scan. Keep RX enabled and track the
+	 * maximum frame RSSI observed during the scan window.
+	 */
+	if (esp_ieee802154_receive() != 0) {
+		esp32_data.energy_scan_done = NULL;
+		return -EBUSY;
+	}
+
+	(void)k_work_schedule(&esp32_data.ed_scan_work, K_MSEC(duration));
+
+	return 0;
 }
 
 static int esp32_configure(const struct device *dev, enum ieee802154_config_type type,
@@ -512,6 +560,7 @@ static int esp32_init(const struct device *dev)
 
 	k_sem_init(&data->cca_wait, 0, 1);
 	k_sem_init(&data->tx_wait, 0, 1);
+	k_work_init_delayable(&data->ed_scan_work, esp32_ed_scan_work_handler);
 
 	if (esp_ieee802154_enable() != 0) {
 		LOG_ERR("IEEE 802154 enabling failed!");
