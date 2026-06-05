@@ -230,6 +230,7 @@ manifest:
     - name: hal_realtek
       path: modules/hal/realtek
       revision: 9a4caf9846d6f0ceb6b38f971a771b1325c1e4b9
+      west-commands: west/west-commands.yml
       groups:
         - hal
     - name: hal_renesas
