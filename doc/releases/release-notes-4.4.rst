@@ -26,6 +26,26 @@
 
 .. _zephyr_4.4:
 
+.. _zephyr_4.4.1:
+
+Zephyr 4.4.1
+############
+
+Security Vulnerability Related
+******************************
+
+* :cve:`2026-7656` Under embargo until 2026-06-25
+
+* :cve:`2026-8718` Under embargo until 2026-08-08
+
+* :cve:`2026-9263` Under embargo until 2026-08-28
+
+* :cve:`2026-10666` Under embargo until 2026-07-12
+
+* :cve:`2026-10673` Under embargo until 2026-07-15
+
+.. _zephyr_4.4.0:
+
 Zephyr 4.4.0
 ############
 
