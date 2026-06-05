@@ -114,10 +114,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason %u)\n", reason);
-	if (default_conn) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
-	}
+	bt_conn_drop(&default_conn);
 	channel_connected = false;
 	start_scan();
 }
