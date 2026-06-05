@@ -184,8 +184,7 @@ static void gatt_connected(struct bt_conn *conn, uint8_t conn_err)
 	if (conn_err) {
 		LOG_ERR("Failed to connect GATT Services(%u)", conn_err);
 
-		bt_conn_unref(server->conn);
-		server->conn = NULL;
+		bt_conn_drop(&server->conn);
 
 		(void)bt_mesh_scan_enable();
 
