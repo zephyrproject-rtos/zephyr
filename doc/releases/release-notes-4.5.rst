@@ -83,6 +83,11 @@ Removed APIs and options
 Deprecated APIs and options
 ===========================
 
+* Audio Codec
+
+  * The :c:struct:`audio_codec_api` struct has been deprecated. Audio codec drivers are now
+    expected to use the :c:macro:`DEVICE_API` macro to declare their driver API.
+
 * :abbr:`DMIC (Digital Microphone Interface)`
 
   * The :c:struct:`_dmic_ops` struct has been deprecated. DMIC drivers are now expected to use the
