@@ -109,11 +109,11 @@ extern void z_arm_interrupt_init(void);
  * The interrupt will run even if irq_lock() is active. Be careful!
  *
  * This also applies when system power management keeps interrupts locked across
- * resume (currently selected by CONFIG_PM_STATE_SET_IRQ_LOCKED): because such an
- * interrupt runs above the interrupt-lock level, it may be dispatched before PM
- * resume bookkeeping and SoC/device hardware restore have completed, so it must
- * be PM-wake-safe and must not depend on PM-restored clocks, power, or
- * peripherals.
+ * PM resume (currently selected by CONFIG_PM_STATE_SET_IRQ_LOCKED): because such
+ * an interrupt runs above the interrupt-lock level, it is outside the
+ * locked-resume ordering. It must be PM-wake-safe, or the interrupt source must
+ * be masked or disabled while the system state does not allow the ISR to
+ * execute.
  */
 #define IRQ_ZERO_LATENCY	BIT(0)
 
