@@ -1071,8 +1071,7 @@ static void test_gmap_ugg_unicast_ac(const struct gmap_unicast_ac_param *param)
 			FAIL("Failed to disconnect conn[%zu]: %d\n", i, err);
 		}
 
-		bt_conn_unref(connected_conns[i]);
-		connected_conns[i] = NULL;
+		bt_conn_drop(&connected_conns[i]);
 	}
 
 	deinit();
