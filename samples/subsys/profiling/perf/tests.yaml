@@ -9,8 +9,9 @@ tests:
       - profiling
     extra_configs:
       - CONFIG_PROFILING_PERF_BUFFER_SIZE=128
-    filter: CONFIG_RISCV or CONFIG_X86
+    filter: CONFIG_RISCV or CONFIG_X86 or (CONFIG_CPU_CORTEX_M and CONFIG_CORTEX_M_SYSTICK)
     integration_platforms:
+      - qemu_cortex_m3
       - qemu_riscv64
       - qemu_riscv32
       - qemu_x86_64
