@@ -496,5 +496,4 @@ ZTEST(cordic_api, test_harctangent)
 }
 */
 
-
 ZTEST_SUITE(cordic_api, NULL, cordic_setup, NULL, NULL, NULL);
