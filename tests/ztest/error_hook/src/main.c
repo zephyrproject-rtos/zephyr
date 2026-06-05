@@ -18,8 +18,6 @@ static struct k_thread tdata;
 
 static ZTEST_BMEM int case_type;
 
-/* A semaphore using inside irq_offload */
-extern struct k_sem offload_sem;
 
 /* test case type */
 enum {
@@ -156,7 +154,7 @@ static void release_offload_sem(void)
 	/* Semaphore used inside irq_offload needs to be
 	 * released after an assert or a fault has happened.
 	 */
-	k_sem_give(&offload_sem);
+	irq_offload_sem_give();
 }
 
 /* This is the fatal error hook that allows you to do actions after

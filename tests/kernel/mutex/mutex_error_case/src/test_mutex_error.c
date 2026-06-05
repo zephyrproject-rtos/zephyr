@@ -33,8 +33,6 @@ enum {
 	NOT_DEFINE
 } neg_case;
 
-/* This is a semaphore using inside irq_offload */
-extern struct k_sem offload_sem;
 
 /* A call back function which is hooked in default assert handler. */
 void ztest_post_fatal_error_hook(unsigned int reason,

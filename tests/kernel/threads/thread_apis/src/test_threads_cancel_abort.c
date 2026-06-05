@@ -184,7 +184,6 @@ static void entry_abort_isr(void *p1, void *p2, void *p3)
 	ztest_test_fail();
 }
 
-extern struct k_sem offload_sem;
 
 /**
  * @ingroup kernel_thread_tests
@@ -223,7 +222,7 @@ ZTEST(threads_lifecycle, test_abort_from_isr)
 	 * offload_sem which might be held when thread aborts itself in ISR
 	 * context, it will cause irq_offload cannot be used again.
 	 */
-	k_sem_give(&offload_sem);
+	irq_offload_sem_give();
 }
 
 /* use for sync thread start */
