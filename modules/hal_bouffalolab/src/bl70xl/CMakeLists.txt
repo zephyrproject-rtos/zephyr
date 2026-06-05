@@ -1,11 +1,31 @@
 # Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+if(CONFIG_BT_BFLB_BL70XL OR CONFIG_IEEE802154_BFLB)
+  zephyr_include_directories(
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/rf)
+endif()
+
+if(CONFIG_IEEE802154_BFLB)
+  zephyr_include_directories(
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/lmac154)
+
+  if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+    if(CONFIG_BFLB_BL70XL_REV_A1)
+      set(BL70XL_ROM_LIB libbl702l_rom_a1.a)
+    else()
+      set(BL70XL_ROM_LIB libbl702l_rom_a0.a)
+    endif()
+    zephyr_link_libraries(
+      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/liblmac154_bl702l.a
+      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/${BL70XL_ROM_LIB}
+    )
+  endif()
+endif()
+
 if(CONFIG_BT_BFLB_BL70XL)
   zephyr_include_directories(
     ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/ble)
-  zephyr_include_directories(
-    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/rf)
 
   # Select controller library and per-variant parameters
   if(CONFIG_BFLB_BL70XL_BLE_M0S1P)
@@ -36,8 +56,13 @@ if(CONFIG_BT_BFLB_BL70XL)
     endif()
     zephyr_link_libraries(
       ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/${BLE_VARIANT_LIB}
-      ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/libbl702l_rf.a
       ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/${BL70XL_ROM_LIB}
     )
   endif()
+endif()
+
+# The PHY/RF blob is shared between BLE and IEEE 802.15.4.
+if(CONFIG_BFLB_PHYRF AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+  zephyr_link_libraries(
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${SOC_SERIES}/libbl702l_rf.a)
 endif()
