@@ -428,74 +428,75 @@ ZTEST(cordic_api, test_hyperbolic_sine)
 /**
  * @brief Test CORDIC Arctangent function
  */
-/*
 ZTEST(cordic_api, test_arctangent)
 {
-	const float args1[] = {128.0f}; // x
-	const float exp_res1[] = {1.562942f}; // atan(x)
+	/* Input arguments */
+	const float x[] = {1.0f};
+	const int args[1] = {F32_TO_Q31(x[0])};
+	int res[1];
+	const size_t args_len = ARRAY_SIZE(args);
+	const size_t res_len = ARRAY_SIZE(res);
 
-	// A test for q31_t format
-	cordic_run_config_t run_cfg = {
-		.dev = DEVICE_DT_GET(CORDIC_NODE),
-		.config = {
-			.function = CORDIC_FUNC_ARCTANGENT,
-			.precision = CORDIC_PRECISION_15,
-			.in_width = CORDIC_DATA_WIDTH_32BIT,
-			.out_width = CORDIC_DATA_WIDTH_32BIT,
-		},
-		.args1 = args1,
-		.args2 = NULL,
-		.exp_res1 = exp_res1,
-		.exp_res2 = NULL,
-		.size = ARRAY_SIZE(args1),
-		.tolerance = TOLERANCE_F32,
-		.fn1_str = "atan(x)",
-		.fn2_str = NULL,
+	struct cordic_config config = {
+		.function = CORDIC_FUNC_ARCTANGENT,
+		.precision = CORDIC_PRECISION_10,
+		.in_width = CORDIC_DATA_WIDTH_32BIT,
+		.out_width = CORDIC_DATA_WIDTH_32BIT,
 	};
-	run_function_test(&run_cfg);
+	const struct device *const dev = DEVICE_DT_GET(CORDIC_NODE);
 
-	// A test for q15_t format
-	run_cfg.config.in_width = CORDIC_DATA_WIDTH_16BIT;
-	run_cfg.config.out_width = CORDIC_DATA_WIDTH_16BIT;
-	run_function_test(&run_cfg);
+	/* Q31 format */
+	int ret = cordic_configure(dev, &config);
+	zassert_equal(ret, 0, "CORDIC configure failed: %d", ret);
+
+	ret = cordic_compute(dev, args, res, args_len, res_len);
+	zassert_equal(ret, 0, "cordic_compute failed: %d", ret);
+
+	/* Q15 format */
+	config.in_width = CORDIC_DATA_WIDTH_16BIT;
+	config.out_width = CORDIC_DATA_WIDTH_16BIT;
+	ret = cordic_configure(dev, &config);
+	zassert_equal(ret, 0, "CORDIC configure failed: %d", ret);
+
+	ret = cordic_compute(dev, args, res, args_len, res_len);
+	zassert_equal(ret, 0, "cordic_compute failed: %d", ret);
 }
-*/
 
 /**
  * @brief Test CORDIC Hyperbolic Arctangent function
  */
-/*
-ZTEST(cordic_api, test_harctangent)
+ZTEST(cordic_api, test_hyperbolic_arctangent)
 {
-	const float args1[] = {0.0f, 0.5f, 0.9f};
-	const float args2[] = {0.0f, 0.0f, 0.0f};
-	const float exp_res1[] = {0.0f, 0.5493061f, 1.4722193f};
+	/* Input arguments */
+	const float x[] = {1.0f};
+	const int args[1] = {F32_TO_Q31(x[0])};
+	int res[1];
+	const size_t args_len = ARRAY_SIZE(args);
+	const size_t res_len = ARRAY_SIZE(res);
 
-	// A test for q31_t format
-	cordic_run_config_t run_cfg = {
-		.dev = DEVICE_DT_GET(CORDIC_NODE),
-		.config = {
-			.function = CORDIC_FUNC_HARCTANGENT,
-			.precision = CORDIC_PRECISION_10,
-			.in_width = CORDIC_DATA_WIDTH_32BIT,
-			.out_width = CORDIC_DATA_WIDTH_32BIT,
-		},
-		.args1 = args1,
-		.args2 = args2,
-		.exp_res1 = exp_res1,
-		.exp_res2 = NULL,
-		.size = ARRAY_SIZE(args1),
-		.tolerance = TOLERANCE_F32,
-		.fn1_str = "atanh(x)",
-		.fn2_str = NULL,
+	struct cordic_config config = {
+		.function = CORDIC_FUNC_HARCTANGENT,
+		.precision = CORDIC_PRECISION_10,
+		.in_width = CORDIC_DATA_WIDTH_32BIT,
+		.out_width = CORDIC_DATA_WIDTH_32BIT,
 	};
-	run_function_test(&run_cfg);
+	const struct device *const dev = DEVICE_DT_GET(CORDIC_NODE);
 
-	// A test for q15_t format
-	run_cfg.config.in_width = CORDIC_DATA_WIDTH_16BIT;
-	run_cfg.config.out_width = CORDIC_DATA_WIDTH_16BIT;
-	run_function_test(&run_cfg);
+	/* Q31 format */
+	int ret = cordic_configure(dev, &config);
+	zassert_equal(ret, 0, "CORDIC configure failed: %d", ret);
+
+	ret = cordic_compute(dev, args, res, args_len, res_len);
+	zassert_equal(ret, 0, "cordic_compute failed: %d", ret);
+
+	/* Q15 format */
+	config.in_width = CORDIC_DATA_WIDTH_16BIT;
+	config.out_width = CORDIC_DATA_WIDTH_16BIT;
+	ret = cordic_configure(dev, &config);
+	zassert_equal(ret, 0, "CORDIC configure failed: %d", ret);
+
+	ret = cordic_compute(dev, args, res, args_len, res_len);
+	zassert_equal(ret, 0, "cordic_compute failed: %d", ret);
 }
-*/
 
 ZTEST_SUITE(cordic_api, NULL, cordic_setup, NULL, NULL, NULL);
