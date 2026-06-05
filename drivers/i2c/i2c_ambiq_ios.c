@@ -24,14 +24,11 @@ LOG_MODULE_REGISTER(i2c_ambiq_ios, CONFIG_I2C_LOG_LEVEL);
 #define IOS_ADDR_INTERVAL 1
 #endif
 
-#define AMBIQ_I2C_IOS_FIFO_BASE   0x30
-#define AMBIQ_I2C_IOS_FIFO_END    0x100
-#define AMBIQ_I2C_IOS_FIFO_LENGTH (AMBIQ_I2C_IOS_FIFO_END - AMBIQ_I2C_IOS_FIFO_BASE)
-
 struct ambiq_i2c_ios_config {
 	const struct pinctrl_dev_config *pcfg;
 	uint32_t inst_idx;
 	uint8_t fifo_thr;
+	uint32_t fifo_base;
 	void (*irq_cfg)(void);
 	void (*acc_irq_cfg)(void);
 	bool has_acc_irq;
@@ -42,7 +39,7 @@ struct ambiq_i2c_ios_data {
 	struct i2c_target_config *tgt;
 	bool enabled;
 	uint8_t sram_buf[1023];
-#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 	bool pm_active;
 #endif
 
@@ -66,7 +63,6 @@ static void i2c_ambiq_ios_reset_read_state(struct ambiq_i2c_ios_data *data)
 	data->read_active = false;
 }
 
-#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
 static void i2c_ambiq_ios_feed_fifo(const struct device *dev)
 {
 	struct ambiq_i2c_ios_data *data = dev->data;
@@ -84,12 +80,13 @@ static void i2c_ambiq_ios_feed_fifo(const struct device *dev)
 	data->rd_pos += wrote;
 	am_hal_ios_control(data->i2c_ios_handle, AM_HAL_IOS_REQ_FIFO_UPDATE_CTR, NULL);
 }
-#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 
-static void i2c_ambiq_ios_handle_genad(struct ambiq_i2c_ios_data *data)
+static void i2c_ambiq_ios_handle_genad(const struct device *dev)
 {
+	const struct ambiq_i2c_ios_config *config = dev->config;
+	struct ambiq_i2c_ios_data *data = dev->data;
 	uint32_t gadata = 0;
-	uint32_t fifo_ptr = AMBIQ_I2C_IOS_FIFO_BASE;
+	uint32_t fifo_ptr = config->fifo_base;
 
 	if (am_hal_ios_control(data->i2c_ios_handle, AM_HAL_IOS_REQ_READ_GADATA, &gadata) ==
 	    AM_HAL_STATUS_SUCCESS) {
@@ -108,13 +105,18 @@ static void i2c_ambiq_ios_isr(const struct device *dev)
 	am_hal_ios_interrupt_status_get(data->i2c_ios_handle, true, &status);
 
 	if (status & AM_HAL_IOS_INT_GENAD) {
-		i2c_ambiq_ios_handle_genad(data);
+		i2c_ambiq_ios_handle_genad(dev);
 		am_hal_ios_interrupt_clear(data->i2c_ios_handle, AM_HAL_IOS_INT_GENAD);
 	}
 
 	if (status & AM_HAL_IOS_INT_FSIZE) {
 		const struct i2c_target_callbacks *cb = data->tgt ? data->tgt->callbacks : NULL;
 		bool byte_mode = cb && (cb->read_requested || cb->read_processed);
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+		bool buf_mode = cb && cb->buf_read_requested;
+#else
+		bool buf_mode = false;
+#endif
 
 		if (byte_mode) {
 			/* first byte read_requested */
@@ -146,9 +148,8 @@ static void i2c_ambiq_ios_isr(const struct device *dev)
 					}
 				}
 			}
-		}
+		} else if (buf_mode) {
 #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
-		if (!byte_mode && cb && cb->buf_read_requested) {
 			if (data->rd_pos == data->rd_len) {
 				uint8_t *ptr = NULL;
 				uint32_t len = 0;
@@ -161,8 +162,8 @@ static void i2c_ambiq_ios_isr(const struct device *dev)
 				}
 			}
 			i2c_ambiq_ios_feed_fifo(dev);
+#endif /* CONFIG_I2C_TARGET_BUFFER_MODE */
 		}
-#endif
 		am_hal_ios_interrupt_clear(data->i2c_ios_handle, AM_HAL_IOS_INT_FSIZE);
 	}
 	am_hal_ios_interrupt_clear(data->i2c_ios_handle,
@@ -223,10 +224,11 @@ static void i2c_ambiq_ios_acc_isr(const struct device *dev)
 			if (cb->stop) {
 				(void)cb->stop(data->tgt);
 			}
-		}
 #ifdef CONFIG_I2C_TARGET_BUFFER_MODE
-		if (!has_byte_cbs && cb->buf_write_received) {
+		} else if (cb->buf_write_received) {
 			cb->buf_write_received(data->tgt, (uint8_t *)&data->lram_ptr[1], len);
+		}
+#else
 		}
 #endif
 		data->lram_ptr[0] = 0;
@@ -291,7 +293,7 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 	am_hal_ios_config_t ios = {0};
 	uint32_t acc_mask = AM_HAL_IOS_ACCESS_INT_00;
 	int ret;
-#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 	bool pm_got = false;
 #endif
 
@@ -299,7 +301,7 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 		return -EBUSY;
 	}
 
-#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
 		return ret;
@@ -313,10 +315,21 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 		goto err_pm_put;
 	}
 
+	uint32_t fifo_end;
+
+	/* Determine FIFO end based on inst_idx */
+	if (config->inst_idx == 0) {
+		/* IOSLAVE (inst_idx == 0) */
+		fifo_end = AM_HAL_IOS_FIFO_MAX_SIZE;
+	} else {
+		/* IOSLAVEFD (inst_idx > 0) */
+		fifo_end = AM_HAL_IOSFD_FIFO_MAX_SIZE;
+	}
+
 	ios.ui32InterfaceSelect = AM_HAL_IOS_USE_I2C | AM_HAL_IOS_I2C_ADDRESS(tcfg->address << 1);
-	ios.ui32ROBase = AMBIQ_I2C_IOS_FIFO_BASE;
-	ios.ui32FIFOBase = AMBIQ_I2C_IOS_FIFO_BASE;
-	ios.ui32RAMBase = AMBIQ_I2C_IOS_FIFO_END;
+	ios.ui32ROBase = config->fifo_base;
+	ios.ui32FIFOBase = config->fifo_base;
+	ios.ui32RAMBase = fifo_end;
 	/* FIFO Threshold - set to half the size */
 	ios.ui32FIFOThreshold = config->fifo_thr;
 	ios.pui8SRAMBuffer = data->sram_buf;
@@ -345,7 +358,7 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 
 	data->tgt = tcfg;
 	data->enabled = true;
-#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 	data->pm_active = pm_got;
 #endif
 
@@ -367,7 +380,7 @@ static int i2c_ambiq_ios_target_register(const struct device *dev, struct i2c_ta
 	return 0;
 
 err_pm_put:
-#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 	if (pm_got) {
 		(void)pm_device_runtime_put(dev);
 	}
@@ -389,7 +402,7 @@ static int i2c_ambiq_ios_target_unregister(const struct device *dev, struct i2c_
 	am_hal_ios_control(data->i2c_ios_handle, AM_HAL_IOS_REQ_ACC_INTDIS, &acc_mask);
 	am_hal_ios_control(data->i2c_ios_handle, AM_HAL_IOS_REQ_FIFO_BUF_CLR, NULL);
 	am_hal_ios_disable(data->i2c_ios_handle);
-#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 	if (data->pm_active) {
 		(void)pm_device_runtime_put(dev);
 		data->pm_active = false;
@@ -424,12 +437,20 @@ static int i2c_ambiq_ios_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-	/* Set LRAM pointer and size based on SOC type and inst_idx */
-	/* others use IOSLAVE */
-	extern volatile uint8_t * const am_hal_ios_pui8LRAM;
+	/* Set LRAM pointer based on inst_idx */
+	if (config->inst_idx == 0) {
+		/* IOSLAVE */
+		extern volatile uint8_t * const am_hal_ios_pui8LRAM;
 
-	data->lram_ptr = am_hal_ios_pui8LRAM;
-	data->lram_size = AM_HAL_IOS_FIFO_MAX_SIZE;
+		data->lram_ptr = am_hal_ios_pui8LRAM;
+		data->lram_size = AM_HAL_IOS_FIFO_MAX_SIZE;
+	} else {
+		/* IOSLAVEFD */
+		extern volatile uint8_t * const am_hal_iosfd1_pui8LRAM;
+
+		data->lram_ptr = am_hal_iosfd1_pui8LRAM;
+		data->lram_size = AM_HAL_IOSFD_FIFO_MAX_SIZE;
+	}
 
 	config->irq_cfg();
 	if (config->has_acc_irq && config->acc_irq_cfg) {
@@ -440,7 +461,7 @@ static int i2c_ambiq_ios_init(const struct device *dev)
 	data->tgt = NULL;
 	data->rd_ptr = NULL;
 	data->rd_len = data->rd_pos = 0;
-#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 	data->pm_active = false;
 #endif
 	return 0;
@@ -480,8 +501,9 @@ static DEVICE_API(i2c, i2c_ambiq_ios_api) = {
 	AMBIQ_I2C_IOS_ACC_IRQ_CFG(n)                                                       \
 	static const struct ambiq_i2c_ios_config cfg_##n = {                               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                     \
-		.inst_idx = (DT_REG_ADDR(DT_INST_PARENT(n)) - IOSLAVE_BASE) / IOS_ADDR_INTERVAL,\
+		.inst_idx = (DT_REG_ADDR(DT_INST_PARENT(n)) - IOSLAVE_BASE) / IOS_ADDR_INTERVAL, \
 		.fifo_thr = DT_INST_PROP_OR(n, fifo_threshold, 16),                            \
+		.fifo_base = DT_INST_PROP_OR(n, fifo_base, 32),                                \
 		.irq_cfg = i2c_ambiq_ios_irq_cfg_##n,                                          \
 		.acc_irq_cfg = COND_CODE_1(DT_IRQ_HAS_IDX(DT_INST_PARENT(n), 1),               \
 		     (i2c_ambiq_ios_acc_irq_cfg_##n), (NULL)),                                 \

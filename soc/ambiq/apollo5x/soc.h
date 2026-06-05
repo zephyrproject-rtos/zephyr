@@ -11,4 +11,14 @@
 
 bool buf_in_nocache(uintptr_t buf, size_t len_bytes);
 
+/* Return true if the buffer intersects the DTCM address range. */
+static inline bool ambiq_buf_in_dtcm(uintptr_t buf, size_t len_bytes)
+{
+	if (buf == 0U || len_bytes == 0U) {
+		return false;
+	}
+	return ((buf <= (DTCM_BASEADDR + DTCM_MAX_SIZE - 1U)) &&
+		((buf + len_bytes - 1U) >= DTCM_BASEADDR));
+}
+
 #endif /* __SOC_H__ */

@@ -13,6 +13,7 @@
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/cache.h>
+#include <zephyr/sys/atomic.h>
 
 #ifdef CONFIG_I2C_AMBIQ_BUS_RECOVERY
 #include <zephyr/drivers/gpio.h>
@@ -29,6 +30,12 @@ LOG_MODULE_REGISTER(ambiq_i2c, CONFIG_I2C_LOG_LEVEL);
 #include "i2c-priv.h"
 
 #include <soc.h>
+
+enum i2c_ambiq_pm_policy_flag {
+	I2C_AMBIQ_PM_POLICY_STATE_FLAG,
+	I2C_AMBIQ_PM_POLICY_CMDQ_FLAG,
+	I2C_AMBIQ_PM_POLICY_FLAG_COUNT,
+};
 
 struct i2c_ambiq_config {
 #ifdef CONFIG_I2C_AMBIQ_BUS_RECOVERY
@@ -48,38 +55,84 @@ typedef void (*i2c_ambiq_callback_t)(const struct device *dev, int result, void 
 struct i2c_ambiq_data {
 	am_hal_iom_config_t iom_cfg;
 	void *iom_handler;
-	struct k_sem bus_sem;
+	struct k_mutex dev_lock;
 	struct k_sem transfer_sem;
 	i2c_ambiq_callback_t callback;
 	void *callback_data;
 	uint32_t transfer_status;
-	bool pm_policy_state_on;
+	ATOMIC_DEFINE(pm_policy_flag, I2C_AMBIQ_PM_POLICY_FLAG_COUNT);
 	bool dma_mode;
+	bool need_pm_lock;
 };
 
-static void i2c_ambiq_pm_policy_state_lock_get(const struct device *dev)
+/* Map Ambiq HAL status codes to negative errno codes */
+static int i2c_ambiq_hal_status_to_errno(uint32_t hal_status)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct i2c_ambiq_data *data = dev->data;
+	switch (hal_status) {
+	case AM_HAL_STATUS_SUCCESS:
+		return 0;
+	case AM_HAL_STATUS_FAIL:
+		return -EIO;
+	case AM_HAL_STATUS_INVALID_HANDLE:
+		return -EINVAL;
+	case AM_HAL_STATUS_IN_USE:
+		return -EBUSY;
+	case AM_HAL_STATUS_INVALID_ARG:
+		return -EINVAL;
+	case AM_HAL_STATUS_INVALID_OPERATION:
+		return -EPERM;
+	case AM_HAL_STATUS_OUT_OF_RANGE:
+		return -ERANGE;
+	case AM_HAL_STATUS_TIMEOUT:
+		return -ETIMEDOUT;
+	case AM_HAL_STATUS_MEM_ERR:
+	case AM_HAL_STATUS_HW_ERR:
+		return -EIO;
+	case AM_HAL_IOM_ERR_INVALID_OPER:
+		return -EPERM;
+	case AM_HAL_IOM_ERR_I2C_ARB:
+		/* Transient on Apollo5 I2C after display/DISP rail activity; caller may retry */
+		return -EAGAIN;
+	case AM_HAL_IOM_ERR_I2C_NAK:
+		return -ENXIO;
+	default:
+		LOG_ERR("Unknown Ambiq HAL error code: 0x%x", hal_status);
+		return -EIO;
+	}
+}
 
-		if (!data->pm_policy_state_on) {
-			data->pm_policy_state_on = true;
+static void i2c_ambiq_pm_policy_state_lock_get(const struct device *dev, struct i2c_msg *msgs,
+					       uint8_t num_msgs)
+{
+	struct i2c_ambiq_data *data = dev->data;
+
+	if (data->dma_mode &&
+	    !atomic_test_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_STATE_FLAG)) {
+		bool need_lock = false;
+
+		if (atomic_test_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_CMDQ_FLAG)) {
+			need_lock = true;
+		} else {
+			for (int i = 0; i < num_msgs && !need_lock; i++) {
+				if (msgs[i].buf && msgs[i].len) {
+					need_lock = ambiq_buf_in_dtcm((uintptr_t)msgs[i].buf,
+								      msgs[i].len);
+				}
+			}
+		}
+		if (need_lock) {
+			atomic_set_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_STATE_FLAG);
 			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-			pm_device_runtime_get(dev);
 		}
 	}
 }
 
 static void i2c_ambiq_pm_policy_state_lock_put(const struct device *dev)
 {
-	if (IS_ENABLED(CONFIG_PM)) {
-		struct i2c_ambiq_data *data = dev->data;
+	struct i2c_ambiq_data *data = dev->data;
 
-		if (data->pm_policy_state_on) {
-			data->pm_policy_state_on = false;
-			pm_device_runtime_put(dev);
-			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-		}
+	if (atomic_test_and_clear_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_STATE_FLAG)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 }
 
@@ -91,7 +144,8 @@ static void i2c_ambiq_callback(void *callback_ctxt, uint32_t status)
 	if (data->callback) {
 		data->callback(dev, status, data->callback_data);
 	}
-	data->transfer_status = status;
+	/* Convert HAL status to errno for consistent error handling */
+	data->transfer_status = i2c_ambiq_hal_status_to_errno(status);
 }
 
 static void i2c_ambiq_isr(const struct device *dev)
@@ -106,7 +160,7 @@ static void i2c_ambiq_isr(const struct device *dev)
 }
 
 static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *hdr_msg,
-			   struct i2c_msg *data_msg, uint16_t addr)
+			  struct i2c_msg *data_msg, uint16_t addr)
 {
 	struct i2c_ambiq_data *data = dev->data;
 
@@ -132,6 +186,12 @@ static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *hdr_msg,
 	}
 
 	if (data->dma_mode) {
+#if CONFIG_I2C_AMBIQ_HANDLE_CACHE
+		if (!buf_in_nocache((uintptr_t)trans.pui32RxBuffer, trans.ui32NumBytes)) {
+			/* Flush Dcache before DMA read to ensure coherency */
+			sys_cache_data_flush_range((void *)trans.pui32RxBuffer, trans.ui32NumBytes);
+		}
+#endif /* CONFIG_I2C_AMBIQ_HANDLE_CACHE */
 		data->transfer_status = -EFAULT;
 		ret = am_hal_iom_nonblocking_transfer(data->iom_handler, &trans, i2c_ambiq_callback,
 						      (void *)dev);
@@ -152,10 +212,11 @@ static int i2c_ambiq_read(const struct device *dev, struct i2c_msg *hdr_msg,
 #endif /* CONFIG_I2C_AMBIQ_HANDLE_CACHE */
 		ret = data->transfer_status;
 	} else {
-		ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
+		ret = i2c_ambiq_hal_status_to_errno(
+			am_hal_iom_blocking_transfer(data->iom_handler, &trans));
 	}
 
-	return (ret != AM_HAL_STATUS_SUCCESS) ? -EIO : 0;
+	return ret;
 }
 
 static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *hdr_msg,
@@ -206,19 +267,24 @@ static int i2c_ambiq_write(const struct device *dev, struct i2c_msg *hdr_msg,
 		}
 		ret = data->transfer_status;
 	} else {
-		ret = am_hal_iom_blocking_transfer(data->iom_handler, &trans);
+		ret = i2c_ambiq_hal_status_to_errno(
+			am_hal_iom_blocking_transfer(data->iom_handler, &trans));
 	}
 
-	return (ret != AM_HAL_STATUS_SUCCESS) ? -EIO : 0;
+	return ret;
 }
 
 static int i2c_ambiq_configure(const struct device *dev, uint32_t dev_config)
 {
 	struct i2c_ambiq_data *data = dev->data;
+	int ret = 0;
 
 	if (!(I2C_MODE_CONTROLLER & dev_config)) {
 		return -EINVAL;
 	}
+
+	/* Lock device for configuration - use mutex for priority inheritance */
+	k_mutex_lock(&data->dev_lock, K_SECONDS(1));
 
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
@@ -231,12 +297,16 @@ static int i2c_ambiq_configure(const struct device *dev, uint32_t dev_config)
 		data->iom_cfg.ui32ClockFreq = AM_HAL_IOM_1MHZ;
 		break;
 	default:
-		return -EINVAL;
+		ret = -EINVAL;
+		goto config_end;
 	}
 
-	am_hal_iom_configure(data->iom_handler, &data->iom_cfg);
+	ret = i2c_ambiq_hal_status_to_errno(
+		am_hal_iom_configure(data->iom_handler, &data->iom_cfg));
 
-	return 0;
+config_end:
+	k_mutex_unlock(&data->dev_lock);
+	return ret;
 }
 
 static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, uint8_t num_msgs,
@@ -245,10 +315,16 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	struct i2c_ambiq_data *data = dev->data;
 	int ret = 0;
 
-	i2c_ambiq_pm_policy_state_lock_get(dev);
+	if (!num_msgs) {
+		return 0;
+	}
 
-	/* Send out messages */
-	k_sem_take(&data->bus_sem, K_FOREVER);
+	/* Prevent driver from being suspended by PM until I2C transaction is complete */
+	(void)pm_device_runtime_get(dev);
+
+	i2c_ambiq_pm_policy_state_lock_get(dev, msgs, num_msgs);
+
+	k_mutex_lock(&data->dev_lock, K_SECONDS(1));
 
 	for (int i = 0; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
@@ -265,14 +341,21 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 		}
 
 		if (ret != 0) {
-			LOG_ERR("i2c transfer failed: %d", ret);
+			if (ret == -EAGAIN) {
+				/* AM_HAL_IOM_ERR_I2C_ARB: often transient; callers may retry */
+				LOG_DBG("i2c transfer: %d (retryable)", ret);
+			} else {
+				LOG_ERR("i2c transfer failed: %d", ret);
+			}
 			break;
 		}
 	}
 
-	k_sem_give(&data->bus_sem);
+	k_mutex_unlock(&data->dev_lock);
 
 	i2c_ambiq_pm_policy_state_lock_put(dev);
+
+	(void)pm_device_runtime_put(dev);
 
 	return ret;
 }
@@ -324,7 +407,8 @@ static int i2c_ambiq_recover_bus(const struct device *dev)
 		return -EIO;
 	}
 
-	k_sem_take(&data->bus_sem, K_FOREVER);
+	/* Lock device for bus recovery - use mutex for priority inheritance */
+	k_mutex_lock(&data->dev_lock, K_SECONDS(1));
 
 	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
 	if (error != 0) {
@@ -355,7 +439,7 @@ static int i2c_ambiq_recover_bus(const struct device *dev)
 restore:
 	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 
-	k_sem_give(&data->bus_sem);
+	k_mutex_unlock(&data->dev_lock);
 
 	return error;
 }
@@ -373,9 +457,20 @@ static int i2c_ambiq_init(const struct device *dev)
 		return -ENXIO;
 	}
 
-	ret = am_hal_iom_power_ctrl(data->iom_handler, AM_HAL_SYSCTRL_WAKE, false);
+	/* One-time compute: whether cmdq buffer lies in DTCM */
+	if (ambiq_buf_in_dtcm((uintptr_t)data->iom_cfg.pNBTxnBuf,
+			      (size_t)data->iom_cfg.ui32NBTxnBufLength)) {
+		atomic_set_bit(data->pm_policy_flag, I2C_AMBIQ_PM_POLICY_CMDQ_FLAG);
+	}
 
-	ret |= i2c_ambiq_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
+	ret = i2c_ambiq_hal_status_to_errno(
+		am_hal_iom_power_ctrl(data->iom_handler, AM_HAL_SYSCTRL_WAKE, false));
+	if (ret < 0) {
+		LOG_ERR("Fail to power on I2C\n");
+		goto end;
+	}
+
+	ret = i2c_ambiq_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
 	if (ret < 0) {
 		LOG_ERR("Fail to config I2C\n");
 		goto end;
@@ -450,13 +545,10 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 		return -ENOTSUP;
 	}
 
-	ret = am_hal_iom_power_ctrl(data->iom_handler, status, true);
+	ret = i2c_ambiq_hal_status_to_errno(
+		am_hal_iom_power_ctrl(data->iom_handler, status, true));
 
-	if (ret != AM_HAL_STATUS_SUCCESS) {
-		return -EPERM;
-	} else {
-		return 0;
-	}
+	return ret;
 }
 #endif /* CONFIG_PM_DEVICE */
 
@@ -490,7 +582,7 @@ static int i2c_ambiq_pm_action(const struct device *dev, enum pm_device_action a
 				COND_CODE_1(DT_PROP(DT_INST_PARENT(n), dma_mode),              \
 					(DT_INST_PROP_OR(n, cmdq_buffer_size, 1024)), (0))),  \
 		.dma_mode = DT_PROP(DT_INST_PARENT(n), dma_mode),     \
-		.bus_sem = Z_SEM_INITIALIZER(i2c_ambiq_data##n.bus_sem, 1, 1),                     \
+		.dev_lock = Z_MUTEX_INITIALIZER(i2c_ambiq_data##n.dev_lock),                       \
 		.transfer_sem = Z_SEM_INITIALIZER(i2c_ambiq_data##n.transfer_sem, 0, 1),           \
 	};                                                                                         \
 	static const struct i2c_ambiq_config i2c_ambiq_config##n = {                               \
