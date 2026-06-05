@@ -104,3 +104,15 @@ tests:
     harness: ztest
     harness_config:
       fixture: pwm_loopback
+
+  drivers.pwm.loopback.lp_em_cc2755p20:
+    tags:
+      - pwm
+      - drivers
+    platform_allow:
+      - lp_em_cc2755p20
+    extra_configs:
+      - CONFIG_PWM_CAPTURE=y
+    harness: ztest
+    harness_config:
+      fixture: pwm_loopback

@@ -2,10 +2,6 @@ tests:
   # Test scenario for devices with internal loopback or separate TX/RX devices
   drivers.i2s.speed:
     depends_on: i2s
-    platform_exclude:
-      - lp_em_cc2745r10_q1/cc2745r10_q1
-      - lp_em_cc2745r10_q1/cc2755r10
-      - lp_em_cc2755p10
     tags:
       - drivers
       - i2s
@@ -15,6 +11,10 @@ tests:
       - mimxrt1060_evk/mimxrt1062/qspi
       - mimxrt1180_evk/mimxrt1189/cm33
       - mimxrt1180_evk/mimxrt1189/cm7
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2755p10
+      - lp_em_cc2755p20
   drivers.i2s.speed.gpio_loopback:
     depends_on:
       - i2s

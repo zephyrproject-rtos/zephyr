@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* DIO12 (led0) has a hardware pull-up on this board; remap to DIO16 */
+&led0 {
+	gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
+};
