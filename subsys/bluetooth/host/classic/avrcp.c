@@ -527,10 +527,7 @@ static void avrcp_disconnected(struct bt_avctp *session)
 	memset(&ct->ct_notify, 0, sizeof(ct->ct_notify));
 	memset(&tg->tg_notify, 0, sizeof(tg->tg_notify));
 
-	if (avrcp->acl_conn != NULL) {
-		bt_conn_unref(avrcp->acl_conn);
-		avrcp->acl_conn = NULL;
-	}
+	bt_conn_drop(&avrcp->acl_conn);
 }
 
 static struct net_buf *avrcp_create_unit_pdu(struct bt_avrcp *avrcp, uint8_t ctype_or_rsp)
