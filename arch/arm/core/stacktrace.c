@@ -1,5 +1,7 @@
 /*
  * Copyright (C) 2025 Synaptics Incorporated
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
  * Author: Jisheng Zhang <jszhang@kernel.org>
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -452,6 +454,17 @@ static bool unwind_one_frame(struct unwind_control_block *ucb)
 	return true;
 }
 
+static uint32_t esf_stack_pointer(const struct arch_esf *esf)
+{
+#if defined(CONFIG_CPU_CORTEX_M)
+	if ((esf->extra_info.exc_return & EXC_RETURN_SPSEL_Msk) == EXC_RETURN_SPSEL_MAIN) {
+		return esf->extra_info.msp;
+	}
+#endif
+
+	return esf->extra_info.callee->psp;
+}
+
 static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
 			    const struct arch_esf *esf)
 {
@@ -463,7 +476,12 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
 	}
 
 	ucb.vrs[7] = esf->extra_info.callee->v4;
-	ucb.vrs[13] = esf->extra_info.callee->psp + sizeof(esf->basic);
+	ucb.vrs[13] = esf_stack_pointer(esf) + sizeof(esf->basic);
+#if defined(CONFIG_CPU_CORTEX_M)
+	if ((esf->basic.xpsr & BIT(9)) != 0) {
+		ucb.vrs[13] += sizeof(uint32_t);
+	}
+#endif
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	if ((esf->extra_info.exc_return & EXC_RETURN_STACK_FRAME_TYPE_Msk) ==
 	    EXC_RETURN_STACK_FRAME_TYPE_EXTENDED) {
