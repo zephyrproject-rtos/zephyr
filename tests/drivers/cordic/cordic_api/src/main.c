@@ -276,78 +276,78 @@ ZTEST(cordic_api, test_naturallog)
 /**
  * @brief Test CORDIC Cosine function
  */
-/*
 ZTEST(cordic_api, test_cosine)
 {
-	const float args1[] = {PI_F32/2.0f, PI_F32, PI_F32/4.0f}; // x - angle in radians
-	const float args2[] = {0.25f, 0.5f, 0.1f}; // y - modulus
-	const float exp_res1[] = {0.0f, -0.5f, 0.0707107f}; // y * cos(x)
-	const float exp_res2[] = {0.25f, 0.0f, 0.0707107f}; // y * sin(x)
+	/* Input arguments */
+	const float x[] = {1.0f};
+	const float y[] = {0.5f};
+	const int args[2] = {F32_TO_Q31(x[0]), F32_TO_Q31(y[0])};
+	int res[2];
+	const size_t args_len = ARRAY_SIZE(args);
+	const size_t res_len = ARRAY_SIZE(res);
 
-	// A test for q31_t format
-	cordic_run_config_t run_cfg = {
-		.dev = DEVICE_DT_GET(CORDIC_NODE),
-		.config = {
-			.function = CORDIC_FUNC_COSINE,
-			.precision = CORDIC_PRECISION_10,
-			.in_width = CORDIC_DATA_WIDTH_32BIT,
-			.out_width = CORDIC_DATA_WIDTH_32BIT,
-		},
-		.args1 = args1,
-		.args2 = args2,
-		.exp_res1 = exp_res1,
-		.exp_res2 = exp_res2,
-		.size = ARRAY_SIZE(args1),
-		.tolerance = TOLERANCE_F32,
-		.fn1_str = "y * cos(x)",
-		.fn2_str = "y * sin(x)",
+	struct cordic_config config = {
+		.function = CORDIC_FUNC_COSINE,
+		.precision = CORDIC_PRECISION_10,
+		.in_width = CORDIC_DATA_WIDTH_32BIT,
+		.out_width = CORDIC_DATA_WIDTH_32BIT,
 	};
-	run_function_test(&run_cfg);
+	const struct device *const dev = DEVICE_DT_GET(CORDIC_NODE);
 
-	// A test for q15_t format
-	run_cfg.config.in_width = CORDIC_DATA_WIDTH_16BIT;
-	run_cfg.config.out_width = CORDIC_DATA_WIDTH_16BIT;
-	run_function_test(&run_cfg);
+	/* Q31 format */
+	int ret = cordic_configure(dev, &config);
+	zassert_equal(ret, 0, "CORDIC configure failed: %d", ret);
+
+	ret = cordic_compute(dev, args, res, args_len, res_len);
+	zassert_equal(ret, 0, "cordic_compute failed: %d", ret);
+
+	/* Q15 format */
+	config.in_width = CORDIC_DATA_WIDTH_16BIT;
+	config.out_width = CORDIC_DATA_WIDTH_16BIT;
+	ret = cordic_configure(dev, &config);
+	zassert_equal(ret, 0, "CORDIC configure failed: %d", ret);
+
+	ret = cordic_compute(dev, args, res, args_len, res_len);
+	zassert_equal(ret, 0, "cordic_compute failed: %d", ret);
 }
-*/
 
 /**
  * @brief Test CORDIC Sine function
  */
-/*
 ZTEST(cordic_api, test_sine)
 {
-	const float args1[] = {PI_F32/2.0f, PI_F32, PI_F32/4.0f}; // x - angle in radians
-	const float args2[] = {0.25f, 0.5f, 0.1f}; // y - modulus
-	const float exp_res1[] = {0.25f, 0.0f, 0.0707107f}; // y * sin(x)
-	const float exp_res2[] = {0.0f, -0.5f, 0.0707107f}; // y * cos(x)
+	/* Input arguments */
+	const float x[] = {1.0f};
+	const float y[] = {0.5f};
+	const int args[2] = {F32_TO_Q31(x[0]), F32_TO_Q31(y[0])};
+	int res[2];
+	const size_t args_len = ARRAY_SIZE(args);
+	const size_t res_len = ARRAY_SIZE(res);
 
-	// A test for q31_t format
-	cordic_run_config_t run_cfg = {
-		.dev = DEVICE_DT_GET(CORDIC_NODE),
-		.config = {
-			.function = CORDIC_FUNC_SINE,
-			.precision = CORDIC_PRECISION_10,
-			.in_width = CORDIC_DATA_WIDTH_32BIT,
-			.out_width = CORDIC_DATA_WIDTH_32BIT,
-		},
-		.args1 = args1,
-		.args2 = args2,
-		.exp_res1 = exp_res1,
-		.exp_res2 = exp_res2,
-		.size = ARRAY_SIZE(args1),
-		.tolerance = TOLERANCE_F32,
-		.fn1_str = "y * sin(x)",
-		.fn2_str = "y * cos(x)",
+	struct cordic_config config = {
+		.function = CORDIC_FUNC_SINE,
+		.precision = CORDIC_PRECISION_10,
+		.in_width = CORDIC_DATA_WIDTH_32BIT,
+		.out_width = CORDIC_DATA_WIDTH_32BIT,
 	};
-	run_function_test(&run_cfg);
+	const struct device *const dev = DEVICE_DT_GET(CORDIC_NODE);
 
-	// A test for q15_t format
-	run_cfg.config.in_width = CORDIC_DATA_WIDTH_16BIT;
-	run_cfg.config.out_width = CORDIC_DATA_WIDTH_16BIT;
-	run_function_test(&run_cfg);
+	/* Q31 format */
+	int ret = cordic_configure(dev, &config);
+	zassert_equal(ret, 0, "CORDIC configure failed: %d", ret);
+
+	ret = cordic_compute(dev, args, res, args_len, res_len);
+	zassert_equal(ret, 0, "cordic_compute failed: %d", ret);
+
+	/* Q15 format */
+	config.in_width = CORDIC_DATA_WIDTH_16BIT;
+	config.out_width = CORDIC_DATA_WIDTH_16BIT;
+	ret = cordic_configure(dev, &config);
+	zassert_equal(ret, 0, "CORDIC configure failed: %d", ret);
+
+	ret = cordic_compute(dev, args, res, args_len, res_len);
+	zassert_equal(ret, 0, "cordic_compute failed: %d", ret);
 }
-*/
 
 /**
  * @brief Test CORDIC Hyperbolic Cosine function
