@@ -449,6 +449,36 @@ static int mac_dispatch_dl_payload(struct lwan_ctx *ctx,
 	return 0;
 }
 
+/* Port-0 FRMPayload is the long-form MAC command container, not application
+ * data.  Decrypt with the network key and run it through the same parser as
+ * FOpts; it is never delivered to the application.
+ */
+static int mac_process_dl_mac_payload(struct lwan_ctx *ctx,
+				      const struct dl_frame_info *frame_info,
+				      const struct dl_payload_info *payload,
+				      const uint8_t *rx_buf)
+{
+	uint8_t mac_payload[MAX_RX_BUF_SIZE];
+	int ret;
+
+	if (payload->len == 0) {
+		return 0;
+	}
+
+	ret = mac_decrypt_dl_payload(&ctx->session, frame_info, payload,
+				     rx_buf, mac_payload);
+	if (ret != 0) {
+		return ret;
+	}
+
+	LOG_DBG("Port-0 MAC commands: len=%zu fcnt=%u",
+		payload->len, frame_info->fcnt_down);
+
+	mac_cmd_process_dl_fopts(ctx, mac_payload, payload->len);
+
+	return 0;
+}
+
 static int mac_process_dl_payload(struct lwan_ctx *ctx,
 				  const uint8_t *rx_buf, size_t rx_len,
 				  const struct dl_frame_info *frame_info,
@@ -457,8 +487,11 @@ static int mac_process_dl_payload(struct lwan_ctx *ctx,
 	struct dl_payload_info payload;
 
 	if (!mac_get_dl_payload_info(rx_buf, rx_len, frame_info->fopts_len,
-				     &payload)) {
-		/* No FPort/FRMPayload: only an ACK or a queued answer */
+				     &payload) ||
+	    payload.port == 0) {
+		/* No app payload to deliver: a bare ACK/answer frame, or
+		 * port-0 MAC commands (already parsed). Notify only.
+		 */
 		mac_dispatch_dl_notify(ctx, frame_info, rssi, snr);
 		return 0;
 	}
@@ -605,7 +638,9 @@ static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 {
 	const struct pkt_data_hdr *hdr = (const struct pkt_data_hdr *)rx_buf;
 	struct lwan_session *sess = &ctx->session;
+	struct dl_payload_info payload;
 	struct dl_frame_info frame_info;
+	bool has_payload;
 	int ret;
 
 	*ack_received = false;
@@ -626,8 +661,27 @@ static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 		return ret;
 	}
 
+	has_payload = mac_get_dl_payload_info(rx_buf, rx_len,
+					      frame_info.fopts_len, &payload);
+
+	/* FPort 0 carries MAC commands in its FRMPayload; per the spec that
+	 * form cannot be combined with FOpts MAC commands in the same frame.
+	 */
+	if (frame_info.fopts_len > 0 && has_payload && payload.port == 0) {
+		LOG_WRN("Downlink with both FOpts and FPort=0");
+		return -EBADMSG;
+	}
+
 	mac_cmd_process_dl_fopts(ctx, &rx_buf[sizeof(struct pkt_data_hdr)],
 				 frame_info.fopts_len);
+
+	if (has_payload && payload.port == 0) {
+		ret = mac_process_dl_mac_payload(ctx, &frame_info, &payload,
+						 rx_buf);
+		if (ret != 0) {
+			return ret;
+		}
+	}
 
 	mac_apply_dl_fctrl(ctx, hdr, &frame_info);
 	sess->fcnt_down = frame_info.fcnt_down;
