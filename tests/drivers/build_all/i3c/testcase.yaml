@@ -9,6 +9,11 @@ tests:
     platform_allow: qemu_cortex_m3
     tags: i3c_cdns i3c_dw
     extra_args: "CONFIG_I3C_DUAL_ROLE=y CONFIG_I3C_RTIO=y"
+  drivers.i3c.build.cadence_rtio_native:
+    # exercises the Cadence native RTIO submit path
+    platform_allow: qemu_cortex_m3
+    tags: i3c_cdns
+    extra_args: "CONFIG_I3C_DUAL_ROLE=y CONFIG_I3C_RTIO=y CONFIG_I3C_CADENCE_RTIO=y"
   drivers.i3c.build.controller_role_only:
     # will cover drivers without in-tree boards
     platform_allow: qemu_cortex_m3
