@@ -1175,8 +1175,6 @@ void xtensa_user_stack_perms(struct k_thread *thread)
 				 XTENSA_MPU_ACCESS_P_RW_U_RW,
 				 NULL);
 
-	xtensa_mpu_map_write(thread);
-
 	/* Probably this fails due to no more available slots in MPU map. */
 	ARG_UNUSED(ret);
 	__ASSERT_NO_MSG(ret == 0);
