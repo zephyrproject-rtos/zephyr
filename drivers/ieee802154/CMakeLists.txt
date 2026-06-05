@@ -18,6 +18,7 @@ endif() # CONFIG_BUILD_ONLY_NO_BLOBS
 zephyr_library()
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_BFLB ieee802154_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_CC1200 ieee802154_cc1200.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_CC13XX_CC26XX ieee802154_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ ieee802154_cc13xx_cc26xx_subg.c)

@@ -1,0 +1,30 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bouffalo Lab IEEE 802.15.4 node
+
+compatible: "bflb,ieee802154"
+
+include: base.yaml
+
+properties:
+  interrupts:
+    required: true
+    description: |
+      IEEE 802.15.4 MAC interrupts.
+      Three entries required: "m154" (MAC), "m154-req-ack" (ACK request)
+      and "m154-aes" (AES engine).
+
+  interrupt-names:
+    required: true
+
+  pwr-table-zigbee:
+    type: int
+    description: Zigbee TX power target in dBm (0-15 dBm range).
+
+  pwr-offset-bz:
+    type: array
+    description: |
+      Per-channel BLE/Zigbee TX power offset.
+      Encoding: 16 = 0 dBm, step 0.25 dBm.
+      5 entries.
