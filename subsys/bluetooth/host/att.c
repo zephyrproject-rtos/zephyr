@@ -4010,10 +4010,7 @@ void bt_att_req_free(struct bt_att_req *req)
 {
 	LOG_DBG("req %p", req);
 
-	if (req->buf) {
-		net_buf_unref(req->buf);
-		req->buf = NULL;
-	}
+	net_buf_drop(&req->buf);
 
 	k_mem_slab_free(&req_slab, (void *)req);
 }
