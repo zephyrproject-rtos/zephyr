@@ -36,7 +36,7 @@
  * @param selector Selects what is being configured (see SCMI_PINCTRL_SELECTOR_*)
  */
 #define SCMI_PINCTRL_CONFIG_ATTRIBUTES(fid_valid, cfg_num, selector)	\
-	(SCMI_FIELD_MAKE(fid_valid, BIT(1), 10) |			\
+	(SCMI_FIELD_MAKE(fid_valid, BIT(0), 10) |			\
 	 SCMI_FIELD_MAKE(cfg_num, GENMASK(7, 0), 2) |			\
 	 SCMI_FIELD_MAKE(selector, GENMASK(1, 0), 0))
 
