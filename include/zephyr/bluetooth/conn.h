@@ -1034,6 +1034,16 @@ static inline struct bt_conn *__must_check bt_conn_take(struct bt_conn **orig)
 	return (struct bt_conn *)atomic_ptr_clear((atomic_ptr_t *)orig);
 }
 
+/** @brief Drop a connection reference and clear the pointer.
+ *
+ *  This performs an atomic exchange on @p orig, setting it to NULL and
+ *  unreferencing the previous value if it was not NULL.
+ *
+ *  @param orig Pointer to the connection pointer to drop (must not be NULL).
+ *              On return, @p *orig is set to NULL.
+ */
+void bt_conn_drop(struct bt_conn **orig);
+
 /** @brief Iterate through all bt_conn objects.
  *
  * Iterates through all bt_conn objects that are alive in the Host allocator.
