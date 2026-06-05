@@ -108,6 +108,7 @@ struct dl_work_ctx {
 	int8_t snr;
 	uint8_t len;
 	uint8_t data[MAX_RX_BUF_SIZE];
+	bool notify_downlink;
 };
 
 struct send_tx_ctx {
@@ -153,6 +154,13 @@ static void dl_work_handler(struct k_work *work)
 	struct dl_work_ctx *wctx =
 		CONTAINER_OF(work, struct dl_work_ctx, work);
 	struct lorawan_downlink_cb *cb;
+
+	mac_cmd_deliver_link_check_ans(wctx->ctx);
+
+	if (!wctx->notify_downlink) {
+		k_sem_give(&dl_work_sem);
+		return;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&wctx->ctx->dl_callbacks, cb, node) {
 		if (cb->port == LW_RECV_PORT_ANY || cb->port == wctx->port) {
@@ -347,12 +355,39 @@ static void mac_dispatch_downlink(struct lwan_ctx *ctx, uint8_t port,
 	dl_work_ctx.rssi = rssi;
 	dl_work_ctx.snr = snr;
 	dl_work_ctx.len = len;
+	dl_work_ctx.notify_downlink = true;
 
 	if (data != NULL && len > 0) {
 		memcpy(dl_work_ctx.data, data, len);
 	}
 
 	k_work_submit(&dl_work_ctx.work);
+}
+
+static void mac_dispatch_mac_delivery(struct lwan_ctx *ctx)
+{
+	if (k_sem_take(&dl_work_sem, K_NO_WAIT) != 0) {
+		LOG_WRN("MAC notification dispatch busy, dropping");
+		return;
+	}
+
+	dl_work_ctx.ctx = ctx;
+	dl_work_ctx.notify_downlink = false;
+
+	k_work_submit(&dl_work_ctx.work);
+}
+
+/* Dispatch payload-less notifications so callbacks run on the workqueue. */
+static void mac_dispatch_dl_notify(struct lwan_ctx *ctx,
+				   const struct dl_frame_info *frame_info,
+				   int16_t rssi, int8_t snr)
+{
+	if (frame_info->ack_received) {
+		mac_dispatch_downlink(ctx, 0, frame_info->flags, rssi, snr,
+				      NULL, 0);
+	} else if (mac_cmd_has_pending_delivery(ctx)) {
+		mac_dispatch_mac_delivery(ctx);
+	}
 }
 
 static bool mac_get_dl_payload_info(const uint8_t *rx_buf, size_t rx_len,
@@ -426,11 +461,8 @@ static int mac_process_dl_payload(struct lwan_ctx *ctx,
 
 	if (!mac_get_dl_payload_info(rx_buf, rx_len, frame_info->fopts_len,
 				     &payload)) {
-		if (frame_info->ack_received) {
-			mac_dispatch_downlink(ctx, 0, frame_info->flags,
-					      rssi, snr,
-					      NULL, 0);
-		}
+		/* No FPort/FRMPayload: only an ACK or a queued answer */
+		mac_dispatch_dl_notify(ctx, frame_info, rssi, snr);
 		return 0;
 	}
 
@@ -541,14 +573,6 @@ static int mac_read_dl_frame_info(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 	return mac_validate_dl_fopts_len(rx_len, frame_info->fopts_len);
 }
 
-static void mac_log_ignored_dl_fopts(uint8_t fopts_len)
-{
-	if (fopts_len > 0) {
-		LOG_WRN("Downlink MAC commands not supported; ignoring %u byte(s)",
-			fopts_len);
-	}
-}
-
 static int mac_validate_dl_replay(struct lwan_session *sess,
 				  uint32_t fcnt_down)
 {
@@ -600,12 +624,13 @@ static int mac_parse_downlink(struct lwan_ctx *ctx, const uint8_t *rx_buf,
 		return ret;
 	}
 
-	mac_log_ignored_dl_fopts(frame_info.fopts_len);
-
 	ret = mac_validate_dl_replay(sess, frame_info.fcnt_down);
 	if (ret != 0) {
 		return ret;
 	}
+
+	mac_cmd_process_dl_fopts(ctx, &rx_buf[sizeof(struct pkt_data_hdr)],
+				 frame_info.fopts_len);
 
 	mac_apply_dl_fctrl(ctx, hdr, &frame_info);
 	sess->fcnt_down = frame_info.fcnt_down;

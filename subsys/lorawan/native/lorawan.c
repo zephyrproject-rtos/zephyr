@@ -12,6 +12,7 @@
 #include "engine.h"
 #include "radio.h"
 #include "crypto/crypto.h"
+#include "mac/mac_commands.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(lorawan_native, CONFIG_LORAWAN_LOG_LEVEL);
@@ -344,7 +345,7 @@ void lorawan_register_dr_changed_callback(lorawan_dr_changed_cb_t cb)
 
 void lorawan_register_link_check_ans_callback(lorawan_link_check_ans_cb_t cb)
 {
-	ARG_UNUSED(cb);
+	mac_cmd_set_link_check_cb(cb);
 }
 
 int lorawan_request_device_time(bool force_request)

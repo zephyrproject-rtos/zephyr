@@ -65,6 +65,13 @@ struct lwan_mac_state {
 	 * leaves it queued for a retry
 	 */
 	bool ul_built_link_check_req;
+
+	/* DL: most-recent LinkCheckAns payload awaiting delivery to the
+	 * registered application callback on the system workqueue
+	 */
+	bool link_check_ans_valid;
+	uint8_t link_check_margin;
+	uint8_t link_check_gw_cnt;
 };
 
 struct lwan_ctx {
