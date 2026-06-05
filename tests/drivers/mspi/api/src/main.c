@@ -44,6 +44,7 @@ struct mspi_cfg hardware_cfg = {
 	.num_periph               = DT_CHILD_NUM(MSPI_BUS_NODE),
 	.max_freq                 = DT_PROP(MSPI_BUS_NODE, clock_frequency),
 	.re_init                  = true,
+	.sw_multi_periph = DT_PROP_OR(MSPI_BUS_NODE, software_multiperipheral, false),
 };
 #endif
 
