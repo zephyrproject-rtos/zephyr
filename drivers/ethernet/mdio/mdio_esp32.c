@@ -20,7 +20,8 @@
 #include <soc/rtc.h>
 #include <soc/gpio_periph.h>
 #include <soc/io_mux_reg.h>
-#include <clk_ctrl_os.h>
+#include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 
 #include "../eth_esp32_priv.h"
 
@@ -98,15 +99,11 @@ static int emac_config_apll_clock(void)
 {
 	uint32_t expt_freq = MHZ(50);
 	uint32_t real_freq = 0;
-	esp_err_t ret = periph_rtc_apll_freq_set(expt_freq, &real_freq);
+	esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expt_freq, &real_freq);
 
 	if (ret == ESP_ERR_INVALID_ARG) {
 		LOG_ERR("Set APLL clock coefficients failed");
 		return -EIO;
-	}
-
-	if (ret == ESP_ERR_INVALID_STATE) {
-		LOG_INF("APLL is occupied already, it is working at %d Hz", real_freq);
 	}
 
 	/* If the difference of real APLL frequency
@@ -187,7 +184,7 @@ static int mdio_esp32_initialize(const struct device *dev)
 	}
 
 	emac_hal_clock_enable_rmii_output(&dev_data->hal);
-	periph_rtc_apll_acquire();
+	esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true);
 	res = emac_config_apll_clock();
 	if (res != 0) {
 		goto err;
