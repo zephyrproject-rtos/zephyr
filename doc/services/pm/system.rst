@@ -144,22 +144,9 @@ before they can opt in to the kernel-owned ordering guarantee.
 
 .. note::
 
-   The ordering guarantee above applies only to interrupts that
-   :c:func:`arch_irq_lock` can mask. On architectures where that lock is a
-   priority threshold rather than a global disable -- notably the BASEPRI lock on
-   Cortex-M Mainline -- zero-latency interrupts (``IRQ_ZERO_LATENCY``) are
-   configured above the lock level and may be dispatched during the resume
-   window, including the post-wake back half of :c:func:`pm_state_set` and before
-   device resume and :c:func:`pm_state_exit_post_ops` have restored hardware.
-   This is by design: declaring an interrupt ``IRQ_ZERO_LATENCY`` is the author's
-   assertion that the handler is PM-wake-safe and may run in a half-restored
-   system; it is intentionally outside the locked-resume ordering, not an
-   unhandled gap. Consistent with this, zero-latency ISRs must not use
-   :c:macro:`ISR_DIRECT_PM` or call into the kernel. On Cortex-M Mainline the
-   architecture low-power entry hook (``arch_pm_state_set_prepare()``) briefly
-   masks even zero-latency interrupts with PRIMASK across the low-power
-   instruction when the SoC uses it, and ``arch_pm_state_set_finish()`` releases
-   that mask before PM resume bookkeeping runs.
+    The ordering guarantee above applies only to interrupts that
+    :c:func:`arch_irq_lock` can mask. Zero-latency interrupts are outside this
+    ordering. See :ref:`zlis`.
 
 
 Power States

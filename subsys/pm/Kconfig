@@ -64,12 +64,8 @@ config PM_STATE_SET_IRQ_LOCKED
 	  PM implementations are migrated, this option will become the default and
 	  be removed.
 
-	  This guarantee covers only interrupts that arch_irq_lock() can mask. On
-	  Cortex-M Mainline that lock is a BASEPRI threshold, so zero-latency
-	  interrupts (IRQ_ZERO_LATENCY) run above it and may be dispatched during the
-	  resume window -- including the post-wake back half of pm_state_set()
-	  itself -- before device resume and pm_state_exit_post_ops() complete. Such
-	  zero-latency ISRs must be PM-wake-safe; this is by design, not a gap.
+	  This guarantee covers only interrupts that arch_irq_lock() can mask. See
+	  the zero-latency interrupt documentation for IRQ_ZERO_LATENCY behavior.
 
 rsource "policy/Kconfig"
 
