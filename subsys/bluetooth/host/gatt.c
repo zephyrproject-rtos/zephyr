@@ -2346,10 +2346,7 @@ static void cleanup_notify(struct bt_conn *conn)
 {
 	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
 
-	if (*buf) {
-		net_buf_unref(*buf);
-		*buf = NULL;
-	}
+	net_buf_drop(buf);
 }
 
 static void gatt_add_nfy_to_buf(struct net_buf *buf,
