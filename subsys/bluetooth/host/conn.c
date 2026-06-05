@@ -1522,6 +1522,15 @@ void bt_conn_unref(struct bt_conn *conn)
 #endif /* CONFIG_BT_CONN */
 }
 
+void bt_conn_drop(struct bt_conn **orig)
+{
+	struct bt_conn *conn = bt_conn_take(orig);
+
+	if (conn != NULL) {
+		bt_conn_unref(conn);
+	}
+}
+
 uint8_t bt_conn_index(const struct bt_conn *conn)
 {
 	ptrdiff_t index = 0;
