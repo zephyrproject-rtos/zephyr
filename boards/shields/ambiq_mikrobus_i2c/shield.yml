@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+shields:
+  - name: ambiq_mikrobus_i2c
+    full_name: Ambiq mikroBUS I2C Adapter
+    vendor: ambiq
+    supported_features:
+      - i2c

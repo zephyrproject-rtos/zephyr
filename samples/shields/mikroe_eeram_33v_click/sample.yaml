@@ -1,4 +1,4 @@
-sample:
+﻿sample:
   name: EERAM 3.3V Click Sample
 tests:
   sample.shields.mikroe_eeram_33v_click:

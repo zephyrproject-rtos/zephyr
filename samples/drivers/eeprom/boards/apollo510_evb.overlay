@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		eeprom-0 = &sim_eeprom0;
+	};
+
+	sim_eeprom0: eeprom-simulator-0 {
+		compatible = "zephyr,sim-eeprom";
+		size = <DT_SIZE_K(4)>;
+	};
+};

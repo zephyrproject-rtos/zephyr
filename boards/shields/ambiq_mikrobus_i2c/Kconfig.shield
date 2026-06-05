@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_AMBIQ_MIKROBUS_I2C
+	def_bool $(shields_list_contains,ambiq_mikrobus_i2c)

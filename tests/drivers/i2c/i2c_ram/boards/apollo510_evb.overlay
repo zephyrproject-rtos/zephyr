@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * apollo510_evb: IOM1 -> mikroBUS I2C (SCL=GP8, SDA=GP9).
+ * EERAM 3.3V Click (Microchip 47L16) at address 0x50.
+ * Requires ambiq_mikrobus_i2c + mikroe_eeram_33v_click shields.
+ */
+
+/ {
+	aliases {
+		i2c-ram = &mikrobus_i2c;
+	};
+};
