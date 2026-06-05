@@ -27,6 +27,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
@@ -1014,6 +1015,24 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn);
  *  @param conn Connection object.
  */
 void bt_conn_unref(struct bt_conn *conn);
+
+/** @brief Take ownership of a connection pointer, setting the original to NULL.
+ *
+ *  This performs an atomic exchange on @p orig, setting it to NULL and
+ *  returning the previous value. The reference count is not modified; the
+ *  reference held by @p orig is transferred to the caller, who must
+ *  eventually release it with bt_conn_unref().
+ *
+ *  @param orig Pointer to the connection pointer to transfer (must not be
+ *              NULL). On return, @p *orig is set to NULL.
+ *
+ *  @return The connection originally pointed to by @p orig, which may be
+ *          NULL.
+ */
+static inline struct bt_conn *__must_check bt_conn_take(struct bt_conn **orig)
+{
+	return (struct bt_conn *)atomic_ptr_clear((atomic_ptr_t *)orig);
+}
 
 /** @brief Iterate through all bt_conn objects.
  *
