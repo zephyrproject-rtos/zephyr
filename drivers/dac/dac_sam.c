@@ -136,7 +136,11 @@ static int dac_sam_write_value(const struct device *dev, uint8_t channel,
 	k_sem_take(&dev_data->dac_channel.sem, K_FOREVER);
 
 	/* Select the channel */
+#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAM4E)
 	dac->DACC_MR = DACC_MR_USER_SEL(channel) | DACC_MR_ONE;
+#else
+	dac->DACC_MR = DACC_MR_USER_SEL(channel);
+#endif
 
 	/* Trigger conversion */
 	dac->DACC_CDR = DACC_CDR_DATA(value);
