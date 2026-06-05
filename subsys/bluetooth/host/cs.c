@@ -106,8 +106,7 @@ static void free_reassembly_buf(struct net_buf **buf)
 		LOG_WRN("The buffer was not in the list");
 	}
 
-	net_buf_unref(*buf);
-	*buf = NULL;
+	net_buf_drop(buf);
 }
 
 /** @brief Gets the reassembly buffer identified by the connection handle
