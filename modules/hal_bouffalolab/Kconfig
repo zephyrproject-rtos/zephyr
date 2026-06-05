@@ -34,6 +34,13 @@ config BFLB_WL80211_SHIM
 	  Provides the wl80211_supplicant_* entry points and OS abstractions
 	  that the MACSW blob requires. Selected by the BL61x WiFi driver.
 
+config BFLB_PHYRF
+	bool
+	help
+	  Link the shared PHY/RF binary blob of the SoC being built
+	  (e.g. libbl616_phyrf.a on BL61x). Selected by the Bouffalo Lab
+	  BLE, WiFi and IEEE 802.15.4 drivers.
+
 config BFLB_SHIM_HEAP_SIZE
 	int "BLE shim heap size"
 	default 8192
