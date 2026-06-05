@@ -49,6 +49,13 @@
 #define SCMI_PINCTRL_ATTRIBUTES_CONFIG_NUM(attributes)\
 	(((attributes) & GENMASK(9, 2)) >> 2)
 
+/**
+ * Extract the fid_valid value (1 if the function ID field is valid, 0 otherwise)
+ * from an attributes word
+ */
+#define SCMI_PINCTRL_ATTRIBUTES_FID_VALID(attributes)\
+	FIELD_GET(BIT(10), attributes)
+
 /** Version of the SCMI pin control protocol supported by this driver */
 #define SCMI_PIN_CONTROL_PROTOCOL_SUPPORTED_VERSION	0x10000
 
