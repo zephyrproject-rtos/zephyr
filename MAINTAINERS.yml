@@ -6593,6 +6593,7 @@ West:
     - axelnxp
     - zejiang0jason
     - Holt-Sun
+    - lucien-nxp
   files:
     - modules/hal_nxp/
   labels:
