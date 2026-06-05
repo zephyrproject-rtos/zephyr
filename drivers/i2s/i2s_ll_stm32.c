@@ -606,7 +606,7 @@ static void dma_tx_callback(const struct device *dma_dev, void *arg,
 	const struct i2s_stm32_cfg *cfg = dev->config;
 	struct i2s_stm32_data *const dev_data = dev->data;
 	struct stream *stream = &dev_data->tx;
-	size_t mem_block_size;
+	size_t mem_block_size = 0;
 	int ret;
 
 	if (status < 0) {
