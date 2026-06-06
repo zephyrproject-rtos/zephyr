@@ -192,6 +192,7 @@ static int netc_eth_rx(const struct device *dev)
 		}
 #endif
 		netc_eth_pkt_get_timestamp(pkt, ptp_dev, attr.timestamp);
+		net_pkt_set_rx_timestamping(pkt, true);
 	}
 #endif
 	/* Send to upper layer */

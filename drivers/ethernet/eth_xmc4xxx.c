@@ -623,6 +623,7 @@ static struct net_pkt *eth_xmc4xxx_rx_pkt(const struct device *dev)
 						.nanosecond = dma_desc->time_stamp_nanoseconds};
 
 					net_pkt_set_timestamp(pkt, &timestamp);
+					net_pkt_set_rx_timestamping(pkt, true);
 					net_pkt_set_priority(pkt, NET_PRIORITY_CA);
 				}
 			}

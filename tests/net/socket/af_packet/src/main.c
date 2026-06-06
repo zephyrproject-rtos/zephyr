@@ -107,6 +107,7 @@ static struct net_ptp_time test_rx_timestamp = {
 	.second = 1234,
 	.nanosecond = 567890123,
 };
+static bool test_rx_timestamp_marked = true;
 
 static uint8_t lladdr1[] = { 0x02, 0x01, 0x01, 0x01, 0x01, 0x01 };
 static uint8_t lladdr2[] = { 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 };
@@ -149,7 +150,7 @@ static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
 
 	net_pkt_set_iface(recv_pkt, target_iface);
 	net_pkt_set_timestamp(recv_pkt, &test_rx_timestamp);
-	net_pkt_set_rx_timestamping(recv_pkt, true);
+	net_pkt_set_rx_timestamping(recv_pkt, test_rx_timestamp_marked);
 
 	k_sleep(K_MSEC(10)); /* Let the receiver run */
 
@@ -853,7 +854,8 @@ static void test_recv_common(int sock_type, int proto, bool success)
 	}
 }
 
-static void test_recvmsg_timestamping_common(size_t cmsgbuf_len, bool expect_trunc)
+static void test_recvmsg_timestamping_common(size_t cmsgbuf_len, bool expect_timestamp,
+					     bool expect_trunc)
 {
 	struct net_sockaddr_ll ll_dst;
 	struct net_iovec io_vector = {
@@ -900,6 +902,15 @@ static void test_recvmsg_timestamping_common(size_t cmsgbuf_len, bool expect_tru
 	zassert_not_equal(ret, -1, "Failed to receive packet (%d)", errno);
 	zassert_equal(ret, pkt_len, "Invalid data size received (%d, expected %d)", ret, pkt_len);
 	zassert_mem_equal(rx_buf, tx_buf + offset, pkt_len, "Invalid payload received");
+
+	if (!expect_timestamp) {
+		zassert_false(msg.msg_flags & ZSOCK_MSG_CTRUNC,
+			      "Control data should not have been truncated");
+		zassert_equal(msg.msg_controllen, 0, "Unexpected control data length %zu",
+			      msg.msg_controllen);
+		zassert_is_null(NET_CMSG_FIRSTHDR(&msg), "Unexpected control header");
+		return;
+	}
 
 	if (expect_trunc) {
 		zassert_true(msg.msg_flags & ZSOCK_MSG_CTRUNC,
@@ -1033,12 +1044,20 @@ ZTEST(socket_packet, test_dgram_sock_recv_proto_wildcard)
 
 ZTEST(socket_packet, test_dgram_sock_recvmsg_timestamping)
 {
-	test_recvmsg_timestamping_common(NET_CMSG_SPACE(sizeof(struct net_ptp_time)), false);
+	test_recvmsg_timestamping_common(NET_CMSG_SPACE(sizeof(struct net_ptp_time)), true, false);
 }
 
 ZTEST(socket_packet, test_dgram_sock_recvmsg_timestamping_truncated_control)
 {
-	test_recvmsg_timestamping_common(NET_CMSG_SPACE(sizeof(struct net_ptp_time)) - 1, true);
+	test_recvmsg_timestamping_common(NET_CMSG_SPACE(sizeof(struct net_ptp_time)) - 1,
+					 true, true);
+}
+
+ZTEST(socket_packet, test_dgram_sock_recvmsg_timestamping_unmarked)
+{
+	test_rx_timestamp_marked = false;
+	test_recvmsg_timestamping_common(NET_CMSG_SPACE(sizeof(struct net_ptp_time)), false, false);
+	test_rx_timestamp_marked = true;
 }
 
 ZTEST(socket_packet, test_dgram_sock_recvfrom_proto_wildcard)

@@ -595,6 +595,7 @@ static inline void timestamp_rx_pkt(Gmac *gmac, struct gptp_hdr *hdr,
 	}
 
 	net_pkt_set_timestamp(pkt, &timestamp);
+	net_pkt_set_rx_timestamping(pkt, true);
 }
 
 #endif
