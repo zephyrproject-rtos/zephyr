@@ -18,10 +18,18 @@ jobs:
       cancel-in-progress: true
     runs-on: ubuntu-22.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
+    permissions:
+      issues: read # to check if associated issue exists for backport and post comments
+      pull-requests: write # to comment on pull requests
 
     steps:
       - name: Check out source code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts/release/list_backports.py
+            scripts/requirements-actions.txt
 
       - name: Install Python dependencies
         run: |
@@ -36,4 +44,5 @@ jobs:
             -o ${{ github.event.repository.owner.login }} \
             -r ${{ github.event.repository.name }} \
             -b ${{ github.event.pull_request.base.ref }} \
-            -p ${{ github.event.pull_request.number }}
+            -p ${{ github.event.pull_request.number }} \
+            --check
