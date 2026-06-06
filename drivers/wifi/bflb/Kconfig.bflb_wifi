@@ -5,7 +5,7 @@
 menuconfig WIFI_BFLB
 	bool "Bouffalo Lab WiFi driver"
 	default y
-	depends on DT_HAS_BFLB_BL61X_WIFI_ENABLED
+	depends on DT_HAS_BFLB_BL61X_WIFI_ENABLED || DT_HAS_BFLB_BL60X_WIFI_ENABLED
 	depends on ZEPHYR_MBEDTLS_MODULE
 	select NET_L2_WIFI_MGMT
 	select NET_L2_ETHERNET
@@ -13,9 +13,9 @@ menuconfig WIFI_BFLB
 	select WIFI_USE_NATIVE_NETWORKING
 	select HWINFO
 	select WIFI_NM_WPA_SUPPLICANT
-	select WIFI_NM_WPA_SUPPLICANT_WEP
-	select WIFI_NM_WPA_SUPPLICANT_AP
-	select BFLB_WL80211_SHIM
+	select WIFI_NM_WPA_SUPPLICANT_WEP if DT_HAS_BFLB_BL61X_WIFI_ENABLED
+	select WIFI_NM_WPA_SUPPLICANT_AP if DT_HAS_BFLB_BL61X_WIFI_ENABLED
+	select BFLB_WL80211_SHIM if DT_HAS_BFLB_BL61X_WIFI_ENABLED
 	select NET_SOCKETS
 	help
 	  Enable Bouffalo Lab WiFi driver using the MACSW blob.
@@ -23,6 +23,7 @@ menuconfig WIFI_BFLB
 if WIFI_BFLB
 
 rsource "bl61x/Kconfig"
+rsource "wifi4/Kconfig"
 
 config HEAP_MEM_POOL_ADD_SIZE_WIFI_BFLB
 	int

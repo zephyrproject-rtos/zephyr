@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if DT_HAS_BFLB_BL60X_WIFI_ENABLED
+
+config BFLB_WIFI_WIFI4
+	def_bool y
+	select BFLB_BL602_OS_SHIM
+	# The bl_ops_funcs OS shim maps the blob's event groups onto k_event
+	# and attaches the blob's IRQ handlers at runtime.
+	select EVENTS
+	select DYNAMIC_INTERRUPTS
+	# CRC32 backs the blob's beacon integrity stream.
+	select CRC
+	# BL60x only: SW CCMP (PSA) for the data-TX encrypt workaround.
+	select MBEDTLS_PSA_CRYPTO_C if DT_HAS_BFLB_BL60X_WIFI_ENABLED
+	select PSA_WANT_KEY_TYPE_AES if DT_HAS_BFLB_BL60X_WIFI_ENABLED
+	select PSA_WANT_ALG_CCM if DT_HAS_BFLB_BL60X_WIFI_ENABLED
+	help
+	  Common support for the wifi4 MACSW firmware blob driver
+	  (BL60x).
+
+config BFLB_WIFI_FW_TASK_STACK_SIZE
+	int "WiFi firmware task stack size"
+	default 16384
+	help
+	  Stack size for the wifi4 firmware scheduler thread.  The blob's
+	  kernel queues and event handlers all run there.
+
+config BFLB_WIFI_FW_TASK_PRIORITY
+	int "WiFi firmware task priority"
+	default 5
+	help
+	  Preemptible thread priority of the firmware scheduler loop.
+
+config BFLB_WIFI_RX_RING_CNT
+	int "RX staging ring slots"
+	default 8
+	help
+	  Number of 1600-byte staging slots between the firmware RX
+	  callback and the net_pkt allocation work queue.
+
+config BFLB_WIFI_SCAN_AP_MAX
+	int "Scan result cache entries"
+	default 32
+	help
+	  Number of access points kept in the scan result cache.
+
+endif # DT_HAS_BFLB_BL60X_WIFI_ENABLED
