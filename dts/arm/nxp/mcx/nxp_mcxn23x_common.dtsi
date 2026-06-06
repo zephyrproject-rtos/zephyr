@@ -38,10 +38,22 @@
 			cpu-frequency-level = "high";
 		};
 
+		pstate_3: pstate-3 {
+			compatible = "nxp,mcxn-pstate";
+			load-threshold = <55>;
+			cpu-frequency-level = "medium-3";
+		};
+
+		pstate_4: pstate-4 {
+			compatible = "nxp,mcxn-pstate";
+			load-threshold = <45>;
+			cpu-frequency-level = "medium-2";
+		};
+
 		pstate_1: pstate-1 {
 			compatible = "nxp,mcxn-pstate";
 			load-threshold = <30>;
-			cpu-frequency-level = "medium";
+			cpu-frequency-level = "medium-1";
 		};
 
 		pstate_2: pstate-2 {

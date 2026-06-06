@@ -18,8 +18,12 @@
 LOG_MODULE_REGISTER(mcxn_cpu_freq, CONFIG_CPU_FREQ_LOG_LEVEL);
 
 static int mcxn_set_cpu_frequency_to_150mhz(void);
+static int mcxn_set_cpu_frequency_to_144mhz(void);
+static int mcxn_set_cpu_frequency_to_100mhz(void);
 static int mcxn_set_cpu_frequency_to_48mhz(void);
 static int mcxn_set_cpu_frequency_to_12mhz(void);
+
+#define MCXN_FIRC_VALID_TIMEOUT 1000000U
 
 static ALWAYS_INLINE void mcxn_update_system_timer_hz(uint32_t new_hz)
 {
@@ -33,11 +37,50 @@ static ALWAYS_INLINE void mcxn_update_system_timer_hz(uint32_t new_hz)
 #endif
 }
 
+static int mcxn_setup_frohf_clocking(uint32_t frequency_hz)
+{
+	uint32_t range;
+
+	if (frequency_hz == 48000000U) {
+		range = 0U;
+	} else if (frequency_hz == 144000000U) {
+		range = 1U;
+	} else {
+		return -EINVAL;
+	}
+
+	SCG0->FIRCCSR &= ~SCG_FIRCCSR_LK_MASK;
+	SCG0->FIRCCSR &= ~SCG_FIRCCSR_FIRCEN_MASK;
+
+	for (uint32_t timeout = MCXN_FIRC_VALID_TIMEOUT;
+	     (SCG0->FIRCCSR & SCG_FIRCCSR_FIRCVLD_MASK) != 0U; timeout--) {
+		if (timeout == 0U) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	SCG0->FIRCCFG = SCG_FIRCCFG_RANGE(range);
+	SCG0->FIRCCSR |= SCG_FIRCCSR_FIRC_SCLK_PERIPH_EN_MASK |
+			  SCG_FIRCCSR_FIRC_FCLK_PERIPH_EN_MASK |
+			  SCG_FIRCCSR_FIRCEN_MASK;
+
+	for (uint32_t timeout = MCXN_FIRC_VALID_TIMEOUT;
+	     (SCG0->FIRCCSR & SCG_FIRCCSR_FIRCVLD_MASK) == 0U; timeout--) {
+		if (timeout == 0U) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	return 0;
+}
+
 /* MCXN frequency levels. */
 typedef enum {
-	MCXN_FREQ_LOW  = 0U,
-	MCXN_FREQ_MED  = 1U,
-	MCXN_FREQ_HIGH = 2U,
+	MCXN_FREQ_LOW = 0U,
+	MCXN_FREQ_MEDIUM_1 = 1U,
+	MCXN_FREQ_MEDIUM_2 = 2U,
+	MCXN_FREQ_MEDIUM_3 = 3U,
+	MCXN_FREQ_HIGH = 4U,
 } mcxn_freq_level_t;
 
 /* Map level index to CPU frequency and apply function. */
@@ -47,13 +90,15 @@ struct mcxn_level_entry {
 };
 
 static const struct mcxn_level_entry mcxn_levels[] = {
-	[MCXN_FREQ_LOW]  = { .hz = 12000000U,  .apply = mcxn_set_cpu_frequency_to_12mhz },
-	[MCXN_FREQ_MED]  = { .hz = 48000000U,  .apply = mcxn_set_cpu_frequency_to_48mhz },
+	[MCXN_FREQ_LOW] = { .hz = 12000000U,  .apply = mcxn_set_cpu_frequency_to_12mhz },
+	[MCXN_FREQ_MEDIUM_1] = { .hz = 48000000U,  .apply = mcxn_set_cpu_frequency_to_48mhz },
+	[MCXN_FREQ_MEDIUM_2] = { .hz = 100000000U, .apply = mcxn_set_cpu_frequency_to_100mhz },
+	[MCXN_FREQ_MEDIUM_3] = { .hz = 144000000U, .apply = mcxn_set_cpu_frequency_to_144mhz },
 	[MCXN_FREQ_HIGH] = { .hz = 150000000U, .apply = mcxn_set_cpu_frequency_to_150mhz },
 };
 
 /* MCXN SoC specific P-state configuration. Each P-state node in
- * the devicetree provides a CPU frequency mode (low/medium/high),
+ * the devicetree provides a CPU frequency mode,
  * which we map to a concrete CPU frequency at runtime.
  */
 struct mcxn_pstate_cfg {
@@ -103,6 +148,8 @@ int cpu_freq_pstate_set(const struct pstate *state)
 
 static int mcxn_set_cpu_frequency_to_150mhz(void)
 {
+	int ret;
+
 	/* Switch to FRO 12M first to ensure we can change the clock setting */
 	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
 
@@ -130,6 +177,12 @@ static int mcxn_set_cpu_frequency_to_150mhz(void)
 	};
 	SPC_SetSRAMOperateVoltage(SPC0, &sram_cfg);
 
+	ret = mcxn_setup_frohf_clocking(48000000U);
+	if (ret != 0) {
+		return ret;
+	}
+	CLOCK_SetClkDiv(kCLOCK_DivFrohfClk, 1U);
+
 	/*!< Set up PLL0 to 150MHz */
 	const pll_setup_t pll0_cfg = {
 		.pllctrl = SCG_APLLCTRL_SOURCE(1U) | SCG_APLLCTRL_SELI(27U) |
@@ -152,6 +205,8 @@ static int mcxn_set_cpu_frequency_to_150mhz(void)
 
 static int mcxn_set_cpu_frequency_to_48mhz(void)
 {
+	int ret;
+
 	/* Switch to FRO 12M first to ensure we can change the clock setting */
 	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
 
@@ -180,10 +235,121 @@ static int mcxn_set_cpu_frequency_to_48mhz(void)
 	SPC_SetSRAMOperateVoltage(SPC0, &sram_cfg);
 
 	/* Attach FROHF (48MHz) to MainClock, set clock divider to 1 */
-	CLOCK_SetupFROHFClocking(48000000U);
+	ret = mcxn_setup_frohf_clocking(48000000U);
+	if (ret != 0) {
+		return ret;
+	}
 	CLOCK_AttachClk(kFRO_HF_to_MAIN_CLK);
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
+	CLOCK_SetClkDiv(kCLOCK_DivFrohfClk, 1U);
 	mcxn_update_system_timer_hz(48000000U);
+
+	return 0;
+}
+
+static int mcxn_set_cpu_frequency_to_144mhz(void)
+{
+	int ret;
+
+	CLOCK_EnableClock(kCLOCK_Scg);
+
+	/* Switch to FRO 12M first to ensure we can change the clock setting */
+	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
+
+	/* Set the DCDC VDD regulator to 1.2 V voltage level */
+	spc_active_mode_dcdc_option_t dcdc_cfg = {
+		.DCDCVoltage	 = kSPC_DCDC_OverdriveVoltage,
+		.DCDCDriveStrength = kSPC_DCDC_NormalDriveStrength,
+	};
+	SPC_SetActiveModeDCDCRegulatorConfig(SPC0, &dcdc_cfg);
+
+	/* Set the LDO_CORE VDD regulator to 1.2 V voltage level */
+	spc_active_mode_core_ldo_option_t ldo_cfg = {
+		.CoreLDOVoltage	 = kSPC_CoreLDO_OverDriveVoltage,
+		.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength,
+	};
+	SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldo_cfg);
+
+	/* Configure Flash wait-states to support 1.2V voltage level and 144MHz frequency */;
+	FMU0->FCTRL = (FMU0->FCTRL & ~((uint32_t)FMU_FCTRL_RWSC_MASK)) | (FMU_FCTRL_RWSC(0x3U));
+
+	/* Specifies the 1.2V operating voltage for the SRAM's read/write timing margin */
+	spc_sram_voltage_config_t sram_cfg = {
+		.operateVoltage	 = kSPC_sramOperateAt1P2V,
+		.requestVoltageUpdate = true,
+	};
+	SPC_SetSRAMOperateVoltage(SPC0, &sram_cfg);
+
+	/* Attach FROHF (144MHz) to MainClock, set clock divider to 1 */
+	ret = mcxn_setup_frohf_clocking(144000000U);
+	if (ret != 0) {
+		return ret;
+	}
+	CLOCK_AttachClk(kFRO_HF_to_MAIN_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
+	CLOCK_SetClkDiv(kCLOCK_DivFrohfClk, 3U);
+	mcxn_update_system_timer_hz(144000000U);
+
+	return 0;
+}
+
+static int mcxn_set_cpu_frequency_to_100mhz(void)
+{
+	int ret;
+
+	CLOCK_EnableClock(kCLOCK_Scg);
+
+	/* Switch to FRO 12M first to ensure we can change the clock setting */
+	CLOCK_AttachClk(kFRO12M_to_MAIN_CLK);
+
+	/* Set the DCDC VDD regulator to 1.1 V voltage level */
+	spc_active_mode_dcdc_option_t dcdc_cfg = {
+		.DCDCVoltage	 = kSPC_DCDC_NormalVoltage,
+		.DCDCDriveStrength = kSPC_DCDC_NormalDriveStrength,
+	};
+	SPC_SetActiveModeDCDCRegulatorConfig(SPC0, &dcdc_cfg);
+
+	/* Set the LDO_CORE VDD regulator to 1.1 V voltage level */
+	spc_active_mode_core_ldo_option_t ldo_cfg = {
+		.CoreLDOVoltage	 = kSPC_CoreLDO_NormalVoltage,
+		.CoreLDODriveStrength = kSPC_CoreLDO_NormalDriveStrength,
+	};
+	SPC_SetActiveModeCoreLDORegulatorConfig(SPC0, &ldo_cfg);
+
+	/* Configure Flash wait-states to support 1.1V voltage level and 100MHz frequency */;
+	FMU0->FCTRL = (FMU0->FCTRL & ~((uint32_t)FMU_FCTRL_RWSC_MASK)) | (FMU_FCTRL_RWSC(0x2U));
+
+	/* Specifies the 1.1V operating voltage for the SRAM's read/write timing margin */
+	spc_sram_voltage_config_t sram_cfg = {
+		.operateVoltage	 = kSPC_sramOperateAt1P1V,
+		.requestVoltageUpdate = true,
+	};
+	SPC_SetSRAMOperateVoltage(SPC0, &sram_cfg);
+
+	ret = mcxn_setup_frohf_clocking(48000000U);
+	if (ret != 0) {
+		return ret;
+	}
+	CLOCK_SetClkDiv(kCLOCK_DivFrohfClk, 1U);
+
+	/* Set up PLL1 to 100MHz from the 24MHz external clock */
+	CLOCK_SetupExtClocking(24000000U);
+	CLOCK_SetSysOscMonitorMode(kSCG_SysOscMonitorDisable);
+	const pll_setup_t pll1_cfg = {
+		.pllctrl = SCG_SPLLCTRL_SOURCE(0U) | SCG_SPLLCTRL_SELI(53U) |
+			SCG_SPLLCTRL_SELP(26U),
+		.pllndiv = SCG_SPLLNDIV_NDIV(6U),
+		.pllpdiv = SCG_SPLLPDIV_PDIV(2U),
+		.pllmdiv = SCG_SPLLMDIV_MDIV(100U),
+		.pllRate = 100000000U
+	};
+	CLOCK_SetPLL1Freq(&pll1_cfg);
+	CLOCK_SetPll1MonitorMode(kSCG_Pll1MonitorDisable);
+
+	/* Attach PLL1 (100MHz) to MainClock, set clock divider to 1 */
+	CLOCK_AttachClk(kPLL1_to_MAIN_CLK);
+	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
+	mcxn_update_system_timer_hz(100000000U);
 
 	return 0;
 }

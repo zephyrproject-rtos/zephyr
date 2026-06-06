@@ -15,7 +15,9 @@ properties:
     type: string
     enum:
       - low
-      - medium
+      - medium-1
+      - medium-2
+      - medium-3
       - high
     description: |
       CPU frequency level associated with this performance state. The frequency
