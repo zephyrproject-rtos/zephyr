@@ -13,18 +13,18 @@
 
 #include "soc_misc.h"
 
-#if defined(CONFIG_SOC_SERIES_MEC15XX) || defined(CONFIG_SOC_SERIES_MEC172X)
+#if defined(CONFIG_SOC_SERIES_MEC15XX)
 #define XEC_ESPI_TAF_REG_BASE DT_REG_ADDR(DT_NODELABEL(espi_saf0))
 #else
 #define XEC_ESPI_TAF_REG_BASE DT_REG_ADDR(DT_NODELABEL(espi_taf0))
 #endif
+
 #define XEC_ESPI_TAF_FC_MISC_OFS    0x38u
+#define XEC_ESPI_TAF_FC_MISC_EN_POS 12
 
 /* EC Subsystem */
 #define XEC_ECS_FEAT1_OFS              0x68U
 #define XEC_ECS_FEAT1_CORE_CLK_48M_POS 19
-
-#define XEC_ESPI_TAF_FC_MISC_EN_POS 12
 
 int soc_taf_enabled(void)
 {
