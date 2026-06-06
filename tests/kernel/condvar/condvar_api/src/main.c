@@ -29,7 +29,6 @@ K_MUTEX_DEFINE(test_mutex);
 
 ZTEST_BMEM int woken;
 ZTEST_BMEM int timeout;
-ZTEST_BMEM int index[TOTAL_THREADS_WAITING];
 ZTEST_BMEM int count;
 
 struct k_condvar multiple_condvar[TOTAL_THREADS_WAITING];
@@ -358,7 +357,7 @@ void condvar_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int time_val = *(int *)p1;
-	int idx = *(int *)p2;
+	int idx = POINTER_TO_INT(p2);
 
 	k_condvar_init(&multiple_condvar[idx]);
 
@@ -376,7 +375,7 @@ void condvar_multiple_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int woken_num = *(int *)p1;
-	int idx = *(int *)p2;
+	int idx = POINTER_TO_INT(p2);
 
 	zassert_true(woken_num > 0, "invalid woken number");
 
@@ -405,22 +404,18 @@ ZTEST_USER(condvar_tests, test_multiple_condvar_wait_wake)
 	timeout = K_TICKS_FOREVER;
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		index[i] = i;
-
-		k_thread_create(&multiple_tid[i], multiple_stack[i],
-				STACK_SIZE, condvar_multiple_wait_wake_task,
-				&timeout, &index[i], NULL, PRIO_WAIT,
-				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		k_thread_create(&multiple_tid[i], multiple_stack[i], STACK_SIZE,
+				condvar_multiple_wait_wake_task, &timeout, INT_TO_POINTER(i), NULL,
+				PRIO_WAIT, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* giving time for the other threads to execute */
 	k_msleep(10);
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i],
-				STACK_SIZE, condvar_multiple_wake_task,
-				&woken, &index[i], NULL, PRIO_WAKE,
-				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i], STACK_SIZE,
+				condvar_multiple_wake_task, &woken, INT_TO_POINTER(i), NULL,
+				PRIO_WAKE, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* giving time for the other threads to execute */
@@ -692,5 +687,45 @@ static void *condvar_tests_setup(void)
 /**
  * @}
  */
+
+
+/**
+ * @brief Verify k_condvar_wait relocks the mutex on timeout.
+ *
+ * Per the contract documented in kernel/condvar.c, k_condvar_wait()
+ * must always return with the mutex held by the calling thread, even
+ * when the wait times out (matching POSIX semantics for
+ * pthread_cond_timedwait). This test confirms the mutex is held
+ * after a timeout — if the fix in kernel/condvar.c regresses,
+ * k_mutex_unlock() below would fail with -EPERM (mutex not locked
+ * by the calling thread).
+ *
+ * Inspired by the pthread test added in zephyrproject-rtos/zephyr#105986.
+ */
+ZTEST(condvar_tests, test_condvar_wait_timeout_relocks_mutex)
+{
+	struct k_condvar local_cv;
+	struct k_mutex local_mtx;
+	int ret;
+
+	zassert_ok(k_condvar_init(&local_cv));
+	zassert_ok(k_mutex_init(&local_mtx));
+
+	/* Acquire the mutex before waiting. */
+	zassert_ok(k_mutex_lock(&local_mtx, K_FOREVER));
+
+	/* No waker, so this must time out. */
+	ret = k_condvar_wait(&local_cv, &local_mtx, K_MSEC(10));
+	zassert_equal(ret, -EAGAIN,
+		      "expected -EAGAIN on timeout, got %d", ret);
+
+	/*
+	 * The kernel contract requires the mutex to be locked on return.
+	 * k_mutex_unlock() returns -EPERM if the mutex is not locked
+	 * by the calling thread — that would mean the fix regressed.
+	 */
+	zassert_ok(k_mutex_unlock(&local_mtx),
+		   "mutex not held after k_condvar_wait timeout");
+}
 
 ZTEST_SUITE(condvar_tests, NULL, condvar_tests_setup, NULL, NULL, NULL);

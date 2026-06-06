@@ -11,9 +11,7 @@
 #include <hal/spi_ll.h>
 #include <esp_attr.h>
 #include <esp_clk_tree.h>
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
-#include <esp_cache.h>
-#endif
+#include <zephyr/cache.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
@@ -31,6 +29,17 @@ LOG_MODULE_REGISTER(esp32_spi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/pm/policy.h>
 #include "spi_context.h"
 #include "spi_esp32_spim.h"
+
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_SPI_SUPPORT_SLEEP_RETENTION
+#define SPI_SLEEP_RETENTION_ENABLED 1
+#else
+#define SPI_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if SPI_SLEEP_RETENTION_ENABLED
+#include <soc/spi_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
 
 #if defined(CONFIG_SOC_SERIES_ESP32S2) && defined(CONFIG_ADC_ESP32_DMA) &&                         \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi3)) && DT_PROP(DT_NODELABEL(spi3), dma_enabled)
@@ -123,7 +132,11 @@ static int spi_esp32_gdma_config(const struct device *dev, uint8_t dir, uint8_t 
 		dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
 		dma_blk.source_address = (uint32_t)buf;
 	}
+#if SOC_AXI_GDMA_SUPPORTED
+	dma_cfg.dma_slot = SOC_GDMA_TRIG_PERIPH_SPI2 + cfg->dma_host;
+#else
 	dma_cfg.dma_slot = cfg->dma_host;
+#endif
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 	dma_blk.block_size = len;
@@ -250,7 +263,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	/* clean up and prepare SPI hal */
 	for (size_t i = 0; i < ARRAY_SIZE(hal->hw->data_buf); ++i) {
 #if defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                    \
-	defined(CONFIG_SOC_SERIES_ESP32H2)
+	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
 		hal->hw->data_buf[i].val = 0;
 #else
 		hal->hw->data_buf[i] = 0;
@@ -273,7 +286,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 
 #if defined(SOC_GDMA_SUPPORTED)
 	if (cfg->dma_enabled && hal_trans->rcv_buffer) {
-		/* setup DMA channels via DMA driver */
+		sys_cache_data_flush_and_invd_range(hal_trans->rcv_buffer, transfer_len_bytes);
 		err = spi_esp32_gdma_config(dev, SPI_DMA_RX, hal_trans->rcv_buffer,
 					    transfer_len_bytes);
 		if (err) {
@@ -282,6 +295,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	}
 
 	if (cfg->dma_enabled && hal_trans->send_buffer) {
+		sys_cache_data_flush_range(hal_trans->send_buffer, transfer_len_bytes);
 		err = spi_esp32_gdma_config(dev, SPI_DMA_TX, hal_trans->send_buffer,
 					    transfer_len_bytes);
 		if (err) {
@@ -371,13 +385,11 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	if (cfg->dma_enabled) {
 		if (hal_trans->rcv_buffer) {
 			dma_stop(cfg->dma_dev, cfg->dma_rx_ch);
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
-			/* Invalidate cache for RX buffer - S3/S2 have data cache that
-			 * needs to be invalidated after DMA writes to memory
+			/* Invalidate cache for the RX buffer so the CPU reads fresh
+			 * data the DMA just wrote to memory. No-op when CACHE_MANAGEMENT
+			 * is disabled.
 			 */
-			esp_cache_msync(hal_trans->rcv_buffer, transfer_len_bytes,
-					ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-#endif
+			sys_cache_data_invd_range(hal_trans->rcv_buffer, transfer_len_bytes);
 		}
 		if (hal_trans->send_buffer) {
 			dma_stop(cfg->dma_dev, cfg->dma_tx_ch);
@@ -453,6 +465,40 @@ static int spi_esp32_init_dma(const struct device *dev)
 	return 0;
 }
 
+#if SPI_SLEEP_RETENTION_ENABLED
+static esp_err_t spi_esp32_create_sleep_retention_cb(void *arg)
+{
+	const struct device *dev = arg;
+	const struct spi_esp32_config *cfg = dev->config;
+	unsigned int idx = cfg->dma_host;
+
+	return sleep_retention_entries_create(
+		spi_reg_retention_info[idx].entry_array, spi_reg_retention_info[idx].array_size,
+		REGDMA_LINK_PRI_GPSPI, spi_reg_retention_info[idx].module_id);
+}
+
+static void spi_esp32_sleep_retention_init(const struct device *dev)
+{
+	const struct spi_esp32_config *cfg = dev->config;
+	unsigned int idx = cfg->dma_host;
+
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = spi_esp32_create_sleep_retention_cb,
+				   .arg = (void *)dev}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+
+	esp_err_t err =
+		sleep_retention_module_init(spi_reg_retention_info[idx].module_id, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(spi_reg_retention_info[idx].module_id);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("SPI sleep retention init failed (%d)", err);
+	}
+}
+#endif /* SPI_SLEEP_RETENTION_ENABLED */
+
 static int spi_esp32_init(const struct device *dev)
 {
 	int err;
@@ -525,6 +571,10 @@ static int spi_esp32_init(const struct device *dev)
 	}
 
 	spi_context_unlock_unconditionally(&data->ctx);
+
+#if SPI_SLEEP_RETENTION_ENABLED
+	spi_esp32_sleep_retention_init(dev);
+#endif
 
 	return 0;
 }

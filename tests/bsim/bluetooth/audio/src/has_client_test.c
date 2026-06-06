@@ -284,9 +284,9 @@ static void test_main(void)
 	PASS("HAS main PASS\n");
 }
 
-#define FEATURES_SUB_NTF        BIT(0)
-#define ACTIVE_INDEX_SUB_NTF    BIT(1)
-#define PRESET_CHANGED_SUB_NTF  BIT(2)
+#define FEATURES_SUB_NTF        BIT(0U)
+#define ACTIVE_INDEX_SUB_NTF    BIT(1U)
+#define PRESET_CHANGED_SUB_NTF  BIT(2U)
 #define SUB_NTF_ALL		(FEATURES_SUB_NTF | ACTIVE_INDEX_SUB_NTF | PRESET_CHANGED_SUB_NTF)
 
 CREATE_FLAG(flag_features_discovered);
@@ -411,7 +411,7 @@ static uint8_t notify_handler(struct bt_conn *conn, struct bt_gatt_subscribe_par
 
 	if (notify_received_mask == SUB_NTF_ALL) {
 		SET_FLAG(flag_all_notifications_received);
-		notify_received_mask = 0;
+		notify_received_mask = 0U;
 	}
 
 	return BT_GATT_ITER_CONTINUE;
@@ -679,7 +679,7 @@ static void test_gatt_client(void)
 	bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
-	notify_received_mask = 0;
+	notify_received_mask = 0U;
 	UNSET_FLAG(flag_all_notifications_received);
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);

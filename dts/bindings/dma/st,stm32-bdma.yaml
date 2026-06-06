@@ -57,7 +57,7 @@ description: |
   using dmamux2
 
     &adc3 {
-       dmas = < &dmamux2 0 17 0x2C80 >;
+       dmas = <&dmamux2 0 17 0x2C80>;
        dma-names = "dmamux";
     };
 

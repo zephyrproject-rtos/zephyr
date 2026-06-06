@@ -48,6 +48,22 @@ config PM_CUSTOM_TICKS_HOOK
 
 	  If unsure, say N.
 
+config PM_STATE_SET_IRQ_LOCKED
+	bool
+	help
+	  Select this option when the SoC PM state implementation keeps interrupts
+	  locked throughout pm_state_set() and pm_state_exit_post_ops().
+
+	  This lets the architecture manage low-power entry interrupt state when
+	  needed, such as allowing wake events without dispatching ISRs before PM
+	  resume bookkeeping. Legacy implementations that still unmask interrupts
+	  from pm_state_set() or pm_state_exit_post_ops() should not select this
+	  option until they are migrated.
+
+	  This option exists to support incremental migration. Once all in-tree SoC
+	  PM implementations are migrated, this option will become the default and
+	  be removed.
+
 rsource "policy/Kconfig"
 
 if PM

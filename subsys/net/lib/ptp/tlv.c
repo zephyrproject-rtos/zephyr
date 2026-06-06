@@ -17,10 +17,9 @@ LOG_MODULE_REGISTER(ptp_tlv, CONFIG_PTP_LOG_LEVEL);
 #define TLV_PROFILE_ID_LEN (6)
 #define TLV_ADDR_LEN_MAX (16)
 
-K_MEM_SLAB_DEFINE_STATIC(tlv_slab,
-			 sizeof(struct ptp_tlv_container),
-			 2 * CONFIG_PTP_MSG_POLL_SIZE,
-			 8);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(tlv_slab,
+			      struct ptp_tlv_container,
+			      2 * CONFIG_PTP_MSG_POLL_SIZE);
 
 static inline void tlv_ntohs(void *ptr)
 {

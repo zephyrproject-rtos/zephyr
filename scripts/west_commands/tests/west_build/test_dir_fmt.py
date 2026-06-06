@@ -2,13 +2,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import configparser
 import copy
 import os
 from argparse import Namespace
 from pathlib import Path
 
 import pytest
+from conftest import _FakeConfig
 
 from build import Build
 
@@ -18,8 +18,6 @@ TEST_CWD_RELATIVE_TO_ROOT = TEST_CWD.relative_to(ROOT)
 
 
 def setup_test_build(monkeypatch, test_args=None):
-    # mock configparser read method to keep tests independent from actual configs
-    monkeypatch.setattr(configparser.ConfigParser, 'read', lambda self, filenames: None)
     # mock os.makedirs to be independent from actual filesystem
     monkeypatch.setattr('os.makedirs', lambda *a, **kw: None)
     # mock west_topdir so that tests run independent from user machine
@@ -32,6 +30,8 @@ def setup_test_build(monkeypatch, test_args=None):
 
     # set up Build
     b = Build()
+    # default to an empty fake config; individual tests can override
+    b.config = _FakeConfig()
 
     # apply test args
     b.args = copy.copy(DEFAULT_TEST_ARGS)
@@ -161,16 +161,10 @@ def test_dir_fmt(monkeypatch, test_case):
     # extract data from the test case
     config_build, test_args, expected = test_case
 
-    # apply given config_build
-    config = configparser.ConfigParser()
-    config.add_section("build")
-    for k, v in config_build.items():
-        config.set('build', k, v)
-    monkeypatch.setattr("build_helpers.config", config)
-    monkeypatch.setattr("build.config", config)
-
     # set up and run _setup_build_dir
     b = setup_test_build(monkeypatch, test_args)
+    # apply given config_build (keys are stored under 'build.<key>')
+    b.config = _FakeConfig({f'build.{k}': v for k, v in config_build.items()})
     b._setup_build_dir()
 
     # check for expected build-dir

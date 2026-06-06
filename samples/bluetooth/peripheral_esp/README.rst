@@ -20,4 +20,14 @@ Requirements
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/peripheral_esp
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, use a Bluetooth scanner app (e.g. nRF Connect) to connect to the device
+and subscribe to the temperature sensor characteristics to receive notifications when
+the temperature values change. The service also exposes a read-only humidity characteristic.

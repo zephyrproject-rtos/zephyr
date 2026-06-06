@@ -63,9 +63,9 @@ static const struct bt_bap_scan_delegator_recv_state *req_recv_state;
 static uint8_t recv_state_broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
 
 #define SUPPORTED_CHAN_COUNTS          BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2)
-#define SUPPORTED_MIN_OCTETS_PER_FRAME 30
-#define SUPPORTED_MAX_OCTETS_PER_FRAME 155
-#define SUPPORTED_MAX_FRAMES_PER_SDU   1
+#define SUPPORTED_MIN_OCTETS_PER_FRAME 30U
+#define SUPPORTED_MAX_OCTETS_PER_FRAME 155U
+#define SUPPORTED_MAX_FRAMES_PER_SDU   1U
 
 /* We support 1 or 2 channels, so the maximum SDU size we support will be 2 times the maximum frame
  * size per frame we support
@@ -152,7 +152,7 @@ static bool valid_base_subgroup(const struct bt_bap_base_subgroup *subgroup)
 		return false;
 	}
 
-	if (chan_cnt == 0 || (BIT(chan_cnt - 1) & SUPPORTED_CHAN_COUNTS) == 0) {
+	if (chan_cnt == 0U || (BIT(chan_cnt - 1U) & SUPPORTED_CHAN_COUNTS) == 0U) {
 		printk("Unsupported channel count: %u\n", chan_cnt);
 
 		return false;
@@ -254,7 +254,7 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 		return;
 	}
 
-	if (requested_bis_sync == 0) {
+	if (requested_bis_sync == 0U) {
 		bis_index_bitfield = base_bis_index_bitfield & bis_index_mask;
 	} else {
 		if ((requested_bis_sync & base_bis_index_bitfield) != requested_bis_sync) {
@@ -532,7 +532,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 		return;
 	}
 
-	if (chan_cnt == 0 || (BIT(chan_cnt - 1) & SUPPORTED_CHAN_COUNTS) == 0) {
+	if (chan_cnt == 0U || (BIT(chan_cnt - 1U) & SUPPORTED_CHAN_COUNTS) == 0U) {
 		FAIL("Unsupported channel count: %u\n", chan_cnt);
 
 		return;
@@ -839,7 +839,7 @@ static void test_broadcast_sync_inval(void)
 		return;
 	}
 
-	bis_index = 0;
+	bis_index = 0U;
 	err = bt_bap_broadcast_sink_sync(g_sink, bis_index, streams, NULL);
 	if (err == 0) {
 		FAIL("bt_bap_broadcast_sink_sync did not fail with invalid BIS indexes: 0x%08X\n",

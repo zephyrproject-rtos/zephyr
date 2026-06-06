@@ -1,5 +1,4 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
-# Copyright 2025 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,11 +8,12 @@ This provides parsing of domains yaml file and creation of objects of the
 Domain class.
 '''
 
+import logging
+import os
 from dataclasses import dataclass
 
-import yaml
 import pykwalify.core
-import logging
+import yaml
 
 DOMAINS_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
@@ -88,10 +88,30 @@ class Domains:
             with open(domains_file, 'r') as f:
                 domains_yaml = f.read()
         except FileNotFoundError:
-            logger.critical(f'domains.yaml file not found: {domains_file}')
+            logger.critical(
+                f'domains.yaml file not found: {domains_file}'
+            )
             exit(1)
 
-        return Domains.from_yaml(domains_yaml)
+        domains = Domains.from_yaml(domains_yaml)
+
+        # If the stored build_dir differs from the file's actual
+        # directory, the artifacts were moved - rebase all paths
+        # to the actual location.
+        base_dir = os.path.dirname(os.path.abspath(domains_file))
+        if domains._build_dir != base_dir:
+            logger.warning(
+                f"Rebasing domain build directories from "
+                f"'{domains._build_dir}' to '{base_dir}'"
+            )
+            old_base_dir = domains._build_dir
+            domains._build_dir = base_dir
+            for domain in domains._domains.values():
+                domain.build_dir = domain.build_dir.replace(
+                    old_base_dir, base_dir, 1
+                )
+
+        return domains
 
     @staticmethod
     def from_yaml(domains_yaml):

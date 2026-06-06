@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT bflb_bl61x_psram
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/bflb_bl61x_clock.h>
 #include <zephyr/logging/log.h>
@@ -192,7 +192,7 @@ static int memc_bflb_bl61x_init_psram(const struct device *dev)
 	uint32_t tmp;
 	volatile int wait_ack = PSRAM_CONFIG_WAIT;
 
-	err = syscon_read_reg(efuse, EFUSE_PSRAM_TRIM_OFFSET, &psram_trim);
+	err = otp_read(efuse, EFUSE_PSRAM_TRIM_OFFSET, &psram_trim, sizeof(uint32_t));
 	if (err < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
@@ -309,7 +309,7 @@ static int memc_bflb_bl61x_init(const struct device *dev)
 	int err;
 	uint32_t psram_size, flash_size;
 
-	err = syscon_read_reg(efuse, EFUSE_DEV_INFOS_OFFSET, &dev_infos);
+	err = otp_read(efuse, EFUSE_DEV_INFOS_OFFSET, &dev_infos, sizeof(uint32_t));
 	if (err < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;

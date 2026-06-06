@@ -35,3 +35,7 @@ CONFIG_NRF_GRTC_START_SYSCOUNTER=y
 
 # Disable TFM BL2 since it is not supported
 CONFIG_TFM_BL2=n
+
+# Support for silence logging is not supported at the moment
+# Tracked by: NCSDK-31930
+CONFIG_TFM_LOG_LEVEL_SILENCE=n

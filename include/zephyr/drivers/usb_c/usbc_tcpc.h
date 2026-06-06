@@ -112,6 +112,7 @@ struct tcpc_chip_info {
 	/** Firmware version number */
 	uint64_t fw_version_number;
 
+	/** Minimum required firmware version, as a string or a number. */
 	union {
 		/** Minimum Required firmware version string */
 		uint8_t min_req_fw_version_string[8];

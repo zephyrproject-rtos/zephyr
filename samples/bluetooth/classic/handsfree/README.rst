@@ -15,19 +15,20 @@ Requirements
 * BlueZ running on the host, or
 * A board with Bluetooth BR/EDR (Classic) support
 
-Building
-********
+Building and Running
+********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/classic/handsfree
+   :board: mimxrt1170_evk@B/mimxrt1176/cm7
+   :goals: build flash
+   :compact:
 
-Running
-*******
+After flashing, the device works as a Hands-Free unit. After the Bluetooth Host stack is
+initialized, connectable and discoverable modes will be automatically enabled. The peer device AG
+(Audio Gateway) can discover and connect to the device.
 
-The application works a Hands-Free uint. After the Bluetooth Host stack is initialized, the
-connectable and discoverable will be automatically enabled. The peer device AG (Audio Gateway) can
-discover and connect to the device.
-
-When the SCO connect is established, the application will initialize the codec and pcm interface
+When the SCO connection is established, the application will initialize the codec and pcm interface
 for voice streaming if the codec and pcm configurations are available.
 
 The HFP application requires the following optional configuration options:
@@ -35,6 +36,8 @@ The codec depends on the devicetree alias named ``i2s-codec-rx`` and ``i2s-codec
 The PCM interface depends on the devicetree alias named ``pcm-rxtx``, or ``pcm-tx`` and ``pcm-rx``.
 
 This sample has been tested on :zephyr:board:`mimxrt1170_evk@B/mimxrt1176/cm7 <mimxrt1170_evk>`.
+
+See :zephyr:code-sample-category:`bluetooth` samples for details.
 
 
 .. graphviz::

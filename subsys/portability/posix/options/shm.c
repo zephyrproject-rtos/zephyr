@@ -19,6 +19,7 @@
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/hash_function.h>
+#include <zephyr/sys/minmax.h>
 
 #define _page_size COND_CODE_1(CONFIG_MMU, (CONFIG_MMU_PAGE_SIZE), (CONFIG_POSIX_PAGE_SIZE))
 

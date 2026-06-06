@@ -185,6 +185,7 @@ function(sysbuild_cache)
                      ${${SB_CACHE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
     )
   endif()
+  file(REMOVE ${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp)
 
 endfunction()
 
@@ -593,10 +594,6 @@ function(ExternalZephyrVariantProject_Add)
   set(${ZBUILD_APPLICATION}_KCONFIG_VARIANT_SOURCE
       ${CMAKE_BINARY_DIR}/${ZBUILD_SOURCE_APP}/zephyr/.config
       CACHE INTERNAL "Application config file" FORCE
-  )
-
-  set(${ZBUILD_APPLICATION}_KCONFIG_TARGETS "KCONFIG_TARGETS-NOTFOUND"
-      CACHE INTERNAL "Disable Kconfig targets" FORCE
   )
 
   set(${ZBUILD_APPLICATION}_SNIPPET ${ZBUILD_SNIPPET}

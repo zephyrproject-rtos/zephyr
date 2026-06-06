@@ -242,6 +242,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				regulator = <&vregusb>;
+				status = "disabled";
 
 				usbhs: usbhs@20000 {
 					compatible = "nordic,nrf-usbhs-nrf54l", "snps,dwc2";
@@ -252,6 +253,12 @@
 					ghwcfg1 = <0x0>;
 					ghwcfg2 = <0x22affc52>;
 					ghwcfg4 = <0x3e10aa60>;
+					status = "disabled";
+				};
+
+				usbhs_bc12: usbhs_bc12 {
+					compatible = "nordic,nrf-usbhs-bc12";
+					charging-mode = "BC12_TYPE_NONE";
 					status = "disabled";
 				};
 			};
@@ -547,6 +554,7 @@
 				reg = <0xd2000 0x1000>;
 				interrupts = <210 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			pwm21: pwm@d3000 {
@@ -555,6 +563,7 @@
 				reg = <0xd3000 0x1000>;
 				interrupts = <211 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			pwm22: pwm@d4000 {
@@ -563,6 +572,7 @@
 				reg = <0xd4000 0x1000>;
 				interrupts = <212 NRF_DEFAULT_IRQ_PRIORITY>;
 				#pwm-cells = <3>;
+				idleout-supported;
 			};
 
 			adc: adc@d5000 {
@@ -575,7 +585,7 @@
 			};
 
 			nfct: nfct@d6000 {
-				compatible = "nordic,nrf-nfct";
+				compatible = "nordic,nrf-nfct-v2";
 				reg = <0xd6000 0x1000>;
 				interrupts = <214 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";

@@ -380,7 +380,8 @@ static uint8_t btp_cap_unicast_audio_start(const void *cmd, uint16_t cmd_len,
 				continue;
 			}
 
-			stream_param = &stream_params[stream_count++];
+			stream_param = &stream_params[stream_count];
+			stream_count++;
 			stream_param->stream = stream_unicast_to_cap(u_stream);
 			stream_param->codec_cfg = &u_stream->codec_cfg;
 			stream_param->member.member = bt_conn_lookup_addr_le(BT_ID_DEFAULT,
@@ -506,7 +507,8 @@ static uint8_t btp_cap_unicast_audio_stop(const void *cmd, uint16_t cmd_len,
 				continue;
 			}
 
-			streams[stream_cnt++] = stream_unicast_to_cap(u_stream);
+			streams[stream_cnt] = stream_unicast_to_cap(u_stream);
+			stream_cnt++;
 		}
 	}
 

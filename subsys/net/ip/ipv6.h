@@ -279,10 +279,10 @@ void net_ipv6_nbr_unlock(void);
  */
 #if defined(CONFIG_NET_IPV6_NBR_CACHE) && defined(CONFIG_NET_NATIVE_IPV6)
 struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
-				    struct net_in6_addr *addr);
+				    const struct net_in6_addr *addr);
 #else
 static inline struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
-						  struct net_in6_addr *addr)
+						  const struct net_in6_addr *addr)
 {
 	return NULL;
 }

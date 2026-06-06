@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT atmel_sam0_usb
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
+#include <zephyr/sys/minmax.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_sam0);
 

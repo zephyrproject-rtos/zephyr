@@ -7,7 +7,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <zephyr/irq.h>
 #include <zephyr/irq_offload.h>

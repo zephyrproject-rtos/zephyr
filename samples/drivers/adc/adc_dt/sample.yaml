@@ -60,6 +60,7 @@ tests:
       - raytac_an54lq_db_15/nrf54l15/cpuapp
       - mck_ra4t1
       - fpb_ra8e1
+      - raytac_an54lv_db_15/nrf54l15/cpuapp
     integration_platforms:
       - nucleo_l073rz
       - nrf52840dk/nrf52840
@@ -79,3 +80,14 @@ tests:
       - apard32690/max32690/m4
     integration_platforms:
       - apard32690/max32690/m4
+  sample.drivers.adc.adc_dt.adi_lsmspg:
+    extra_args:
+      - SHIELD=adi_lsmspg
+    depends_on:
+      - feather_spi
+    platform_allow:
+      - max32690fthr/max32690/m4
+      - max32655fthr/max32655/m4
+      - adafruit_feather_rp2040/rp2040
+    integration_platforms:
+      - max32690fthr/max32690/m4

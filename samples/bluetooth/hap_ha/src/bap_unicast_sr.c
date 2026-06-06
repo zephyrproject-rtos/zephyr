@@ -14,6 +14,7 @@
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -31,6 +32,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "hap_ha.h"
 
@@ -71,8 +73,10 @@ static uint16_t get_and_incr_seq_num(const struct bt_bap_stream *stream)
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	while (len != 0U) {
+		printk("%02x", *ptr);
+		ptr++;
+		len--;
 	}
 }
 
@@ -157,6 +161,8 @@ static void audio_timer_timeout(struct k_work *work)
 	struct net_buf *buf;
 	static size_t len_to_send = 1U;
 
+	ARG_UNUSED(work);
+
 	if (!data_initialized) {
 		/* TODO: Actually encode some audio data */
 		for (size_t i = 0U; i < ARRAY_SIZE(buf_data); i++) {
@@ -233,7 +239,8 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 	printk("ASE Codec Config stream %p\n", *stream);
 
 	if (dir == BT_AUDIO_DIR_SOURCE) {
-		source_streams[configured_source_stream_count++].stream = *stream;
+		source_streams[configured_source_stream_count].stream = *stream;
+		configured_source_stream_count++;
 	}
 
 	*pref = qos_pref;
@@ -245,6 +252,9 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 			const struct bt_audio_codec_cfg *codec_cfg,
 			struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(dir);
+	ARG_UNUSED(pref);
+
 	printk("ASE Codec Reconfig: stream %p\n", stream);
 
 	print_codec_cfg(codec_cfg);
@@ -258,6 +268,8 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("QoS: stream %p qos %p\n", stream, qos);
 
 	print_qos(qos);
@@ -268,6 +280,9 @@ static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qo
 static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
 		      struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(meta);
+	ARG_UNUSED(rsp);
+
 	printk("Enable: stream %p meta_len %zu\n", stream, meta_len);
 
 	return 0;
@@ -275,6 +290,8 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 
 static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("Start: stream %p\n", stream);
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
@@ -320,6 +337,8 @@ static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("Disable: stream %p\n", stream);
 
 	return 0;
@@ -327,6 +346,8 @@ static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 
 static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("Stop: stream %p\n", stream);
 
 	return 0;
@@ -334,6 +355,8 @@ static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 
 static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	ARG_UNUSED(rsp);
+
 	printk("Release: stream %p\n", stream);
 	return 0;
 }
@@ -358,6 +381,8 @@ static const struct bt_bap_unicast_server_cb unicast_server_cb = {
 static void stream_recv(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 			struct net_buf *buf)
 {
+	ARG_UNUSED(info);
+
 	printk("Incoming audio on stream %p len %u\n", stream, buf->len);
 }
 

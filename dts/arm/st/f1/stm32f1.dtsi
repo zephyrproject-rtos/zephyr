@@ -395,6 +395,7 @@
 			interrupts = <41 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 28)>;
 			prescaler = <32768>;
+			alrm-exti-line = <17>;
 			status = "disabled";
 		};
 

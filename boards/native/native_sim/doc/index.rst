@@ -701,6 +701,25 @@ and ``libfuse3-dev:i386`` for 32-bit builds, and ``libfuse3-dev`` for 64-bit bui
 Similarly ``libfuse-dev:i386`` and ``libfuse-dev`` provide the 32 and 64-bit FUSE v2 library
 and headers.
 
+.. _native_mount_fs:
+
+Host filesystem mount
+*********************
+
+Enabling :kconfig:option:`CONFIG_FILE_SYSTEM_NATIVE_MOUNT` allows mounting a path from the host
+filesystem into Zephyr's filesystem hierarchy. This allows Zephyr to access, and modify, host files
+and folders like any other embedded mount point.
+
+To mount a host directory, pass the ``-volume`` option to the executable on the command line:
+
+.. code-block:: console
+
+   $ zephyr.exe -volume=/host/dir:/zephyr/dir
+
+The option follows Docker volume mount syntax: ``HOST-DIR:ZEPHYR-DIR[:ro]``. An optional ``:ro``
+suffix mounts the volume as read-only. The option can be provided multiple times to mount several
+host directories.
+
 .. _native_sim_peripherals_c_compat:
 
 Peripherals and backends C library compatibility
@@ -722,6 +741,7 @@ host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
      EEPROM, EEPROM emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, All
      Ethernet, :ref:`Eth native_tap <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_TAP`, All
      Flash, :ref:`Flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, All
+     File System, :ref:`Host filesystem mount <native_mount_fs>`, :kconfig:option:`CONFIG_FILE_SYSTEM_NATIVE_MOUNT`, All
      FUSE, :ref:`Host based filesystem access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
      GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
      GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All

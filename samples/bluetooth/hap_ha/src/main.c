@@ -53,6 +53,9 @@ static struct bt_le_ext_adv *ext_adv;
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(reason);
+
 	/* Restart advertising after disconnection */
 	k_work_schedule(&adv_work, K_SECONDS(1));
 }
@@ -98,6 +101,8 @@ static const struct bt_le_ext_adv_cb adv_cb = {
 static void adv_work_handler(struct k_work *work)
 {
 	int err;
+
+	ARG_UNUSED(work);
 
 	if (ext_adv == NULL) {
 		/* Create a connectable advertising set */

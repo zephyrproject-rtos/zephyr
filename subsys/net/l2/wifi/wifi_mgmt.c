@@ -369,6 +369,24 @@ const char *wifi_conn_status_txt(enum wifi_conn_status status)
 	}
 }
 
+const char *wifi_disconn_reason_txt(enum wifi_disconn_reason reason)
+{
+	switch (reason) {
+	case WIFI_REASON_DISCONN_SUCCESS:
+		return "Success";
+	case WIFI_REASON_DISCONN_UNSPECIFIED:
+		return "Unspecified";
+	case WIFI_REASON_DISCONN_USER_REQUEST:
+		return "User request";
+	case WIFI_REASON_DISCONN_AP_LEAVING:
+		return "AP leaving";
+	case WIFI_REASON_DISCONN_INACTIVITY:
+		return "Inactivity";
+	default:
+		return "UNKNOWN";
+	}
+}
+
 static const struct wifi_mgmt_ops *const get_wifi_api(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);

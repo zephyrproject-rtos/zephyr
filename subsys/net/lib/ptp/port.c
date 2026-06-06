@@ -38,10 +38,8 @@ static struct k_mem_slab foreign_tts_slab;
 BUILD_ASSERT(CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE >= 5 * CONFIG_PTP_NUM_PORTS,
 	     "PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE is smaller than expected!");
 
-K_MEM_SLAB_DEFINE_STATIC(foreign_tts_slab,
-			 sizeof(struct ptp_foreign_tt_clock),
-			 CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE,
-			 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(foreign_tts_slab, struct ptp_foreign_tt_clock,
+			      CONFIG_PTP_FOREIGN_TIME_TRANSMITTER_RECORD_SIZE);
 #endif
 
 char str_port_id[] = "FF:FF:FF:FF:FF:FF:FF:FF-FFFF";
@@ -1064,7 +1062,7 @@ int port_state_update(struct ptp_port *port, enum ptp_port_event event, bool tt_
 	return 0;
 }
 
-static void port_link_monitor(struct net_mgmt_event_callback *cb,
+static __maybe_unused void port_link_monitor(struct net_mgmt_event_callback *cb,
 			      uint64_t mgmt_event,
 			      struct net_if *iface)
 {

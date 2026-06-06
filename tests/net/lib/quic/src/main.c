@@ -149,7 +149,10 @@ struct eth_fake_context {
 	uint8_t mac_address[6];
 };
 
-static struct eth_fake_context eth_fake_data;
+static struct eth_fake_context eth_fake_data = {
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	.mac_address = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x00 }
+};
 
 static struct quic_endpoint *reset_test_ep(struct quic_endpoint *ep)
 {
@@ -338,6 +341,8 @@ static void before(void *arg)
 	struct test_config *cfg = arg;
 	int ret;
 
+	quic_token_cache_clear();
+
 	ret = zsock_inet_pton(NET_AF_INET, LOCAL_ADDR_IPV4, &local_addr_ipv4.sin_addr);
 	zassert_equal(ret, 1, "Invalid local IPv4 address");
 
@@ -458,6 +463,8 @@ static void after(void *arg)
 		test_failure = true;
 	}
 
+	quic_token_cache_clear();
+
 	cfg->stream_count = 0;
 	cfg->endpoint_count = 0;
 	cfg->connection_count = 0;
@@ -547,23 +554,6 @@ static int max_quic_closed_context_id(const struct quic_closed_stats_snapshot *s
 	return max_id;
 }
 
-static uint16_t quic_sockaddr_port(const struct net_sockaddr_storage *addr)
-{
-	if (addr == NULL) {
-		return 0U;
-	}
-
-	if (addr->ss_family == NET_AF_INET6) {
-		return net_ntohs(net_sin6(net_sad(addr))->sin6_port);
-	}
-
-	if (addr->ss_family == NET_AF_INET) {
-		return net_ntohs(net_sin(net_sad(addr))->sin_port);
-	}
-
-	return 0U;
-}
-
 static size_t count_new_quic_closed_contexts(const struct quic_closed_stats_snapshot *snapshot,
 					     int baseline_id)
 {
@@ -584,6 +574,8 @@ static const struct quic_closed_context_stats *find_new_quic_closed_context_stat
 {
 	for (size_t i = 0; i < snapshot->count; i++) {
 		const struct quic_closed_context_stats *stats = &snapshot->entries[i];
+		uint16_t port;
+		int ret;
 
 		if (stats->id <= baseline_id) {
 			continue;
@@ -593,11 +585,13 @@ static const struct quic_closed_context_stats *find_new_quic_closed_context_stat
 			continue;
 		}
 
-		if (quic_sockaddr_port(&stats->local_addr) != local_port) {
+		ret = net_port_get(net_sad(&stats->local_addr), &port);
+		if (ret == 0 && port != local_port) {
 			continue;
 		}
 
-		if (quic_sockaddr_port(&stats->remote_addr) != remote_port) {
+		ret = net_port_get(net_sad(&stats->remote_addr), &port);
+		if (ret == 0 && port != remote_port) {
 			continue;
 		}
 
@@ -638,6 +632,48 @@ static void assert_quic_stats_no_errors(const struct net_stats_quic *stats, cons
 	zassert_equal(stats->drop_rx, 0, "%s drop_rx", who);
 	zassert_equal(stats->drop_tx, 0, "%s drop_tx", who);
 	zassert_equal(stats->alloc_failed, 0, "%s alloc_failed", who);
+}
+
+static size_t append_cid_transport_param(uint8_t *buf, size_t buf_len,
+					 uint64_t param_id,
+					 const uint8_t *cid, size_t cid_len)
+{
+	size_t pos = 0;
+	int ret;
+
+	ret = quic_put_varint(&buf[pos], buf_len - pos, param_id);
+	zassert_true(ret > 0, "Failed to encode transport param id %" PRIu64, param_id);
+	pos += ret;
+
+	ret = quic_put_varint(&buf[pos], buf_len - pos, cid_len);
+	zassert_true(ret > 0, "Failed to encode transport param len %zu", cid_len);
+	pos += ret;
+
+	zassert_true(pos + cid_len <= buf_len,
+		     "Transport param buffer too small (%zu > %zu)", pos + cid_len, buf_len);
+	memcpy(&buf[pos], cid, cid_len);
+	pos += cid_len;
+
+	return pos;
+}
+
+static void build_test_retry_info(struct quic_long_header_info *info,
+				  uint8_t *packet,
+				  const uint8_t *src_conn_id,
+				  uint8_t src_conn_id_len,
+				  const uint8_t *token,
+				  size_t token_len)
+{
+	memset(info, 0, sizeof(*info));
+	memset(packet, 0, QUIC_AEAD_TAG_LEN);
+
+	info->packet = packet;
+	info->ptype = QUIC_PACKET_TYPE_RETRY;
+	info->src_conn_id = src_conn_id;
+	info->src_conn_id_len = src_conn_id_len;
+	info->token = token;
+	info->token_len = token_len;
+	info->total_len = QUIC_AEAD_TAG_LEN;
 }
 
 /* Test 010: Basic connection open/close */
@@ -1910,6 +1946,7 @@ struct config {
 	int sock;             /* Server listening socket */
 	int connected_sock;   /* Server accepted connection socket */
 	int stream_recv_sock; /* Server accepted stream socket for receiving data */
+	int accept_delay_ms;  /* Delay before accepting a queued connection */
 	struct k_sem sem;
 	int error;
 	int counter;
@@ -1979,6 +2016,10 @@ static void server_thread(void *p1, void *p2, void *p3)
 		data->error = ret;
 		LOG_DBG("Poll error while waiting for client connection");
 		return;
+	}
+
+	if (data->accept_delay_ms > 0) {
+		k_msleep(data->accept_delay_ms);
 	}
 
 	connected_sock = zsock_accept(server_sock,
@@ -2062,6 +2103,7 @@ static void quic_server_and_client_with_stats(const char *server, const char *cl
 					      char *tx_buf, size_t tx_buf_len,
 					      char *rx_buf, size_t rx_buf_len,
 					      size_t batch_size,
+					      int accept_delay_ms,
 					      struct net_stats_quic *client_stats,
 					      struct net_stats_quic *server_stats)
 {
@@ -2126,6 +2168,7 @@ static void quic_server_and_client_with_stats(const char *server, const char *cl
 	data.error = 0;
 	data.connected_sock = -1;
 	data.stream_recv_sock = -1;
+	data.accept_delay_ms = accept_delay_ms;
 	data.test_done = false;
 
 	/* Start listening on the server socket in a separate thread */
@@ -2304,6 +2347,7 @@ static void quic_server_and_client(const char *server, const char *client,
 {
 	quic_server_and_client_with_stats(server, client, tx_buf, tx_buf_len,
 					  rx_buf, rx_buf_len, batch_size,
+					  0,
 					  NULL, NULL);
 }
 
@@ -2349,6 +2393,26 @@ ZTEST(net_socket_quic, test_310_quic_ipv4_server_and_client)
 	quic_server_and_client(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
 			       tx_buf, sizeof(tx_buf), rx_buf, sizeof(rx_buf),
 			       sizeof(tx_buf));
+}
+
+ZTEST(net_socket_quic, test_315_quic_ipv4_stream_before_accept)
+{
+	static uint8_t tx_buf[] = { 0x5a };
+	static uint8_t rx_buf[sizeof(tx_buf)];
+	int ret;
+
+	ret = loopback_set_packet_drop_ratio(0.0);
+	zassert_ok(ret, "Failed to set loopback packet drop ratio (%d)", ret);
+
+	/* Regression: a peer-created stream may arrive before the server
+	 * application accepts the connection socket.
+	 */
+	quic_server_and_client_with_stats(LOCAL_ADDR_IPV4_STR, REMOTE_ADDR_IPV4_STR,
+					  tx_buf, sizeof(tx_buf),
+					  rx_buf, sizeof(rx_buf),
+					  sizeof(tx_buf),
+					  200,
+					  NULL, NULL);
 }
 
 /* IPv4 UDP packet with QUIC Initial header (too short payload)
@@ -2486,15 +2550,19 @@ ZTEST(net_socket_quic, test_330_quic_initial_dcid_too_short)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 	struct net_sockaddr_in src_addr = { 0 };
+	/* Initial long header with a deliberately too-short 7-byte DCID. */
 	uint8_t packet[] = {
-		0xc0,
-		0x00, 0x00, 0x00, 0x01,
-		0x07, 0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57,
-		0x08, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-		0x00,
-		0x01,
-		0x00,
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x01,       /* Version 1 */
+		0x07, 0x83, 0x94, 0xc8, 0xf0, /* DCID len=7, DCID bytes */
+		0x3e, 0x51, 0x57,
+		0x08, 0x10, 0x11, 0x12, 0x13, /* SCID len=8, SCID bytes */
+		0x14, 0x15, 0x16, 0x17,
+		0x00,                         /* Token length = 0 */
+		0x01,                         /* Payload length = 1 (PN only) */
+		0x00,                         /* Packet number = 0 */
 	};
+	struct quic_long_header_info info;
 	int ret;
 
 	src_addr.sin_family = NET_AF_INET;
@@ -2503,22 +2571,34 @@ ZTEST(net_socket_quic, test_330_quic_initial_dcid_too_short)
 
 	ep->local_addr.ss_family = NET_AF_INET;
 
+	ret = quic_parse_long_header(&info, packet, sizeof(packet));
+	zassert_ok(ret, "Long header parse failed (%d)", ret);
+
 	ret = process_long_header(ep, (struct net_sockaddr *)&src_addr,
-				  sizeof(src_addr), packet,
-				  1, 0, sizeof(packet), sizeof(packet) - 1, 1200);
+				  sizeof(src_addr), &info, 1200);
 	zassert_equal(ret, -EINVAL, "Expected too-short DCID to be rejected (%d)", ret);
 }
 
 ZTEST(net_socket_quic, test_335_quic_vn_ignores_initial_dcid_check)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_long_header_info info;
 	struct net_sockaddr_in src_addr = { 0 };
+	/*
+	 * Initial-shaped long header with Version Negotiation version 0. The
+	 * parser still needs the Initial fields below so version handling runs
+	 * before the too-short DCID check.
+	 */
 	uint8_t packet[] = {
-		0xc0,
-		0x00, 0x00, 0x00, 0x00,
-		0x07, 0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57,
-		0x08, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-		0x00,
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x00,       /* Version Negotiation version */
+		0x07, 0x83, 0x94, 0xc8, 0xf0, /* DCID len=7, DCID bytes */
+		0x3e, 0x51, 0x57,
+		0x08, 0x10, 0x11, 0x12, 0x13, /* SCID len=8, SCID bytes */
+		0x14, 0x15, 0x16, 0x17,
+		0x00,                         /* Token length = 0 */
+		0x01,                         /* Payload length = 1 (PN only) */
+		0x00,                         /* Packet number = 0 */
 	};
 	int ret;
 
@@ -2528,9 +2608,11 @@ ZTEST(net_socket_quic, test_335_quic_vn_ignores_initial_dcid_check)
 
 	ep->local_addr.ss_family = NET_AF_INET;
 
+	ret = quic_parse_long_header(&info, packet, sizeof(packet));
+	zassert_ok(ret, "Long header parse failed (%d)", ret);
+
 	ret = process_long_header(ep, (struct net_sockaddr *)&src_addr,
-				  sizeof(src_addr), packet,
-				  0, 0, sizeof(packet), 0, 1200);
+				  sizeof(src_addr), &info, 1200);
 	zassert_equal(ret, 1,
 		      "Expected Version Negotiation packet to be ignored (%d)", ret);
 }
@@ -2538,13 +2620,22 @@ ZTEST(net_socket_quic, test_335_quic_vn_ignores_initial_dcid_check)
 ZTEST(net_socket_quic, test_336_quic_unsupported_version_before_initial_validation)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_long_header_info info;
 	struct net_sockaddr_in src_addr = { 0 };
+	/*
+	 * Initial-shaped long header with an unsupported version. The remaining
+	 * bytes mirror the minimal Initial layout the parser expects.
+	 */
 	uint8_t packet[] = {
-		0xc0,
-		0x00, 0x00, 0x00, 0x02,
-		0x07, 0x83, 0x94, 0xc8, 0xf0, 0x3e, 0x51, 0x57,
-		0x08, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
-		0x00,
+		0xc0,                         /* Long header, Initial packet */
+		0x00, 0x00, 0x00, 0x02,       /* Unsupported QUIC version */
+		0x07, 0x83, 0x94, 0xc8, 0xf0, /* DCID len=7, DCID bytes */
+		0x3e, 0x51, 0x57,
+		0x08, 0x10, 0x11, 0x12, 0x13, /* SCID len=8, SCID bytes */
+		0x14, 0x15, 0x16, 0x17,
+		0x00,                         /* Token length = 0 */
+		0x01,                         /* Payload length = 1 (PN only) */
+		0x00,                         /* Packet number = 0 */
 	};
 	int ret;
 
@@ -2554,9 +2645,11 @@ ZTEST(net_socket_quic, test_336_quic_unsupported_version_before_initial_validati
 
 	ep->local_addr.ss_family = NET_AF_INET;
 
+	ret = quic_parse_long_header(&info, packet, sizeof(packet));
+	zassert_ok(ret, "Long header parse failed (%d)", ret);
+
 	ret = process_long_header(ep, (struct net_sockaddr *)&src_addr,
-				  sizeof(src_addr), packet,
-				  0, 0, sizeof(packet), 0, 1200);
+				  sizeof(src_addr), &info, 1200);
 	zassert_equal(ret, 1,
 		      "Expected unsupported version path before Initial validation (%d)",
 		      ret);
@@ -2768,6 +2861,7 @@ static void quic_server_and_client_uni(const char *server, const char *client,
 	data.error = 0;
 	data.stream_recv_sock = -1;
 	data.connected_sock = -1;
+	data.accept_delay_ms = 0;
 	data.test_done = false;
 
 	/* Start listening on the server socket in a separate thread */
@@ -2979,6 +3073,7 @@ static void quic_stream_type_roundtrip_uni(const char *server, const char *clien
 	data.error = 0;
 	data.stream_recv_sock = -1;
 	data.connected_sock = -1;
+	data.accept_delay_ms = 0;
 	data.test_done = false;
 
 	tid = k_thread_create(&server_thread_data, server_thread_stack,
@@ -3336,6 +3431,7 @@ static void quic_server_and_client_with_client_cert(const char *server,
 	cert_data.error = 0;
 	cert_data.connected_sock = -1;
 	cert_data.stream_recv_sock = -1;
+	cert_data.accept_delay_ms = 0;
 	cert_data.test_done = false;
 
 	/* Start server thread */
@@ -3512,6 +3608,7 @@ static void quic_server_and_client_with_server_cert(const char *server,
 	server_auth_data.error = 0;
 	server_auth_data.connected_sock = -1;
 	server_auth_data.stream_recv_sock = -1;
+	server_auth_data.accept_delay_ms = 0;
 	server_auth_data.test_done = false;
 
 	tid = k_thread_create(&server_auth_thread_data, server_auth_thread_stack,
@@ -3766,6 +3863,7 @@ ZTEST(net_socket_quic, test_470_connection_statistics_track_traffic)
 					  tx_buf, sizeof(tx_buf),
 					  rx_buf, sizeof(rx_buf),
 					  sizeof(tx_buf),
+					  0,
 					  &client_stats, &server_stats);
 	copy_quic_global_stats(&stats_after);
 #if defined(CONFIG_QUIC_STATS_HISTORY)
@@ -3813,6 +3911,271 @@ ZTEST(net_socket_quic, test_470_connection_statistics_track_traffic)
 	zassert_true(closed_server->stats.valid_rx > 0U, "Closed server valid_rx missing");
 	assert_quic_stats_no_errors(&closed_server->stats, "closed server");
 #endif
+}
+
+ZTEST(net_socket_quic, test_480_retry_token_round_trip)
+{
+	static const uint8_t orig_dcid[] = {
+		0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x11, 0x22,
+	};
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4444),
+	};
+	struct net_sockaddr_in other_addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4445),
+	};
+	struct quic_token_validation validation;
+	uint8_t token[CONFIG_QUIC_TOKEN_MAX_LEN];
+	size_t token_len;
+	int ret;
+
+	ret = net_addr_pton(NET_AF_INET, REMOTE_ADDR_IPV4, &addr.sin_addr);
+	zassert_equal(ret, 0, "Failed to parse token address (%d)", ret);
+
+	ret = net_addr_pton(NET_AF_INET, LOCAL_ADDR_IPV4, &other_addr.sin_addr);
+	zassert_equal(ret, 0, "Failed to parse alternate token address (%d)", ret);
+
+	ret = quic_build_address_token(QUIC_TOKEN_RETRY,
+				       (struct net_sockaddr *)&addr,
+				       orig_dcid, sizeof(orig_dcid),
+				       token, sizeof(token), &token_len);
+	zassert_ok(ret, "Failed to build Retry token (%d)", ret);
+
+	ret = quic_validate_address_token((struct net_sockaddr *)&addr,
+					  token, token_len, &validation);
+	zassert_ok(ret, "Failed to validate Retry token (%d)", ret);
+	zassert_equal(validation.type, QUIC_TOKEN_RETRY, "Unexpected token type %d",
+		      validation.type);
+	zassert_equal(validation.orig_dcid_len, sizeof(orig_dcid),
+		      "Unexpected original DCID len %u", validation.orig_dcid_len);
+	zassert_mem_equal(validation.orig_dcid, orig_dcid, sizeof(orig_dcid),
+			  "Original DCID mismatch");
+
+	ret = quic_validate_address_token((struct net_sockaddr *)&other_addr,
+					  token, token_len, &validation);
+	zassert_equal(ret, -EADDRNOTAVAIL,
+		      "Token must be bound to client address (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_490_new_token_cache_round_trip)
+{
+	struct net_sockaddr_in addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(4545),
+	};
+	uint8_t token[] = { 0x01, 0x23, 0x45, 0x67, 0x89 };
+	uint8_t out[sizeof(token)] = { 0 };
+	size_t len;
+	int ret;
+
+	ret = net_addr_pton(NET_AF_INET, REMOTE_ADDR_IPV4, &addr.sin_addr);
+	zassert_equal(ret, 0, "Failed to parse token cache address (%d)", ret);
+
+	quic_token_cache_store((struct net_sockaddr *)&addr, token, sizeof(token));
+
+	len = quic_token_cache_take((struct net_sockaddr *)&addr, out, sizeof(out));
+	zassert_equal(len, sizeof(token), "Unexpected cached token length %zu", len);
+	zassert_mem_equal(out, token, sizeof(token), "Cached token mismatch");
+
+	len = quic_token_cache_take((struct net_sockaddr *)&addr, out, sizeof(out));
+	zassert_equal(len, 0U, "Token cache entry must be consumed after reuse");
+}
+
+ZTEST(net_socket_quic, test_495_new_token_cache_replaces_oldest_entry)
+{
+	struct net_sockaddr_in addrs[CONFIG_QUIC_TOKEN_CACHE_SIZE + 1];
+	uint8_t tokens[CONFIG_QUIC_TOKEN_CACHE_SIZE + 1][3];
+	uint8_t out[3] = { 0 };
+	size_t len;
+	int ret;
+
+	if (CONFIG_QUIC_TOKEN_CACHE_SIZE == 0U) {
+		ztest_test_skip();
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(addrs); i++) {
+		addrs[i].sin_family = NET_AF_INET;
+		addrs[i].sin_port = net_htons(4500 + i);
+
+		ret = net_addr_pton(NET_AF_INET, REMOTE_ADDR_IPV4, &addrs[i].sin_addr);
+		zassert_equal(ret, 0, "Failed to parse token cache address (%d)", ret);
+
+		tokens[i][0] = (uint8_t)i;
+		tokens[i][1] = (uint8_t)(i + 1U);
+		tokens[i][2] = (uint8_t)(i + 2U);
+	}
+
+	for (size_t i = 0; i < CONFIG_QUIC_TOKEN_CACHE_SIZE; i++) {
+		quic_token_cache_store((struct net_sockaddr *)&addrs[i],
+				       tokens[i], sizeof(tokens[i]));
+	}
+
+	quic_token_cache_store((struct net_sockaddr *)&addrs[CONFIG_QUIC_TOKEN_CACHE_SIZE],
+			       tokens[CONFIG_QUIC_TOKEN_CACHE_SIZE],
+			       sizeof(tokens[CONFIG_QUIC_TOKEN_CACHE_SIZE]));
+
+	len = quic_token_cache_take((struct net_sockaddr *)&addrs[0], out, sizeof(out));
+	zassert_equal(len, 0U, "Oldest token cache entry must be replaced when cache is full");
+
+	for (size_t i = 1; i < CONFIG_QUIC_TOKEN_CACHE_SIZE; i++) {
+		memset(out, 0, sizeof(out));
+		len = quic_token_cache_take((struct net_sockaddr *)&addrs[i], out, sizeof(out));
+		zassert_equal(len, sizeof(tokens[i]), "Unexpected cached token length %zu", len);
+		zassert_mem_equal(out, tokens[i], sizeof(tokens[i]),
+				  "Cached token mismatch for peer %zu", i);
+	}
+
+	memset(out, 0, sizeof(out));
+	len = quic_token_cache_take((struct net_sockaddr *)&addrs[CONFIG_QUIC_TOKEN_CACHE_SIZE],
+				    out, sizeof(out));
+	zassert_equal(len, sizeof(tokens[CONFIG_QUIC_TOKEN_CACHE_SIZE]),
+		      "Replacement token was not stored for new peer");
+	zassert_mem_equal(out, tokens[CONFIG_QUIC_TOKEN_CACHE_SIZE],
+			  sizeof(tokens[CONFIG_QUIC_TOKEN_CACHE_SIZE]),
+			  "Replacement token mismatch for new peer");
+}
+
+ZTEST(net_socket_quic, test_500_transport_params_validate_retry_ids)
+{
+	static const uint8_t original_dcid[] = {
+		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	};
+	static const uint8_t initial_scid[] = {
+		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+	};
+	static const uint8_t retry_scid[] = {
+		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
+	};
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	size_t pos = 0;
+	int ret;
+
+	ep->is_server = false;
+	ep->crypto.tls.is_initialized = true;
+	ep->token.client_initial_dcid_len = sizeof(original_dcid);
+	memcpy(ep->token.client_initial_dcid, original_dcid, sizeof(original_dcid));
+	ep->peer_cid_len = sizeof(initial_scid);
+	memcpy(ep->peer_cid, initial_scid, sizeof(initial_scid));
+	ep->token.retry_seen = true;
+	ep->token.retry_source_cid_len = sizeof(retry_scid);
+	memcpy(ep->token.retry_source_cid, retry_scid, sizeof(retry_scid));
+
+	pos += append_cid_transport_param(&ep->crypto.tls.peer_tp[pos],
+					  sizeof(ep->crypto.tls.peer_tp) - pos,
+					  QUIC_ORIGINAL_DESTINATION_CONNECTION_ID,
+					  original_dcid, sizeof(original_dcid));
+	pos += append_cid_transport_param(&ep->crypto.tls.peer_tp[pos],
+					  sizeof(ep->crypto.tls.peer_tp) - pos,
+					  QUIC_INITIAL_SOURCE_CONNECTION_ID,
+					  initial_scid, sizeof(initial_scid));
+	pos += append_cid_transport_param(&ep->crypto.tls.peer_tp[pos],
+					  sizeof(ep->crypto.tls.peer_tp) - pos,
+					  QUIC_RETRY_SOURCE_CONNECTION_ID,
+					  retry_scid, sizeof(retry_scid));
+	ep->crypto.tls.peer_tp_len = pos;
+
+	ret = parse_peer_transport_params(ep);
+	zassert_ok(ret, "Expected matching retry transport parameters (%d)", ret);
+
+	ep->peer_params.parsed = false;
+	ep->crypto.tls.peer_tp[pos - 1] ^= 0x01;
+
+	ret = parse_peer_transport_params(ep);
+	zassert_equal(ret, -EINVAL,
+		      "Mismatching retry transport parameters must fail (%d)", ret);
+}
+
+ZTEST(net_socket_quic, test_505_client_retry_rejects_duplicate_without_mutation)
+{
+	static const uint8_t initial_scid[] = {
+		0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
+	};
+	static const uint8_t retry_scid[] = {
+		0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38,
+	};
+	static const uint8_t initial_token[] = { 0xa1, 0xa2 };
+	static const uint8_t new_retry_token[] = { 0xb1, 0xb2, 0xb3 };
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_long_header_info info;
+	uint8_t packet[QUIC_AEAD_TAG_LEN];
+	int ret;
+
+	ep->is_server = false;
+	ep->crypto.tls.state = QUIC_TLS_STATE_WAIT_SERVER_HELLO;
+	ep->crypto.tls.client_hello_prepared = true;
+	ep->crypto.initial.initialized = true;
+	ep->token.retry_seen = true;
+	ep->token.initial_type = QUIC_TOKEN_NEW;
+	ep->token.initial_len = sizeof(initial_token);
+	memcpy(ep->token.initial, initial_token, sizeof(initial_token));
+	ep->peer_cid_len = sizeof(initial_scid);
+	memcpy(ep->peer_cid, initial_scid, sizeof(initial_scid));
+
+	build_test_retry_info(&info, packet, retry_scid, sizeof(retry_scid),
+			      new_retry_token, sizeof(new_retry_token));
+
+	ret = quic_client_handle_retry(ep, &info);
+	zassert_equal(ret, -EPROTO,
+		      "Duplicate Retry must be rejected before mutation (%d)", ret);
+	zassert_true(ep->crypto.initial.initialized,
+		     "Duplicate Retry must not discard Initial crypto");
+	zassert_true(ep->token.retry_seen,
+		     "Duplicate Retry must preserve existing retry_seen state");
+	zassert_equal(ep->token.initial_len, sizeof(initial_token),
+		      "Duplicate Retry must preserve existing token length");
+	zassert_mem_equal(ep->token.initial, initial_token, sizeof(initial_token),
+			  "Duplicate Retry must preserve existing token bytes");
+	zassert_equal(ep->peer_cid_len, sizeof(initial_scid),
+		      "Duplicate Retry must preserve peer CID length");
+	zassert_mem_equal(ep->peer_cid, initial_scid, sizeof(initial_scid),
+			  "Duplicate Retry must preserve peer CID");
+}
+
+ZTEST(net_socket_quic, test_510_client_retry_rejects_late_retry_without_mutation)
+{
+	static const uint8_t initial_scid[] = {
+		0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48,
+	};
+	static const uint8_t new_retry_scid[] = {
+		0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58,
+	};
+	static const uint8_t initial_token[] = { 0xc1, 0xc2 };
+	static const uint8_t new_retry_token[] = { 0xd1, 0xd2, 0xd3 };
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	struct quic_long_header_info info;
+	uint8_t packet[QUIC_AEAD_TAG_LEN];
+	int ret;
+
+	ep->is_server = false;
+	ep->crypto.tls.state = QUIC_TLS_STATE_CONNECTED;
+	ep->crypto.tls.client_hello_prepared = true;
+	ep->crypto.initial.initialized = true;
+	ep->token.initial_type = QUIC_TOKEN_NEW;
+	ep->token.initial_len = sizeof(initial_token);
+	memcpy(ep->token.initial, initial_token, sizeof(initial_token));
+	ep->peer_cid_len = sizeof(initial_scid);
+	memcpy(ep->peer_cid, initial_scid, sizeof(initial_scid));
+
+	build_test_retry_info(&info, packet, new_retry_scid, sizeof(new_retry_scid),
+			      new_retry_token, sizeof(new_retry_token));
+
+	ret = quic_client_handle_retry(ep, &info);
+	zassert_equal(ret, -EPROTO,
+		      "Late Retry must be rejected before mutation (%d)", ret);
+	zassert_true(ep->crypto.initial.initialized,
+		     "Late Retry must not discard Initial crypto");
+	zassert_false(ep->token.retry_seen,
+		      "Late Retry must not mark retry_seen");
+	zassert_equal(ep->token.initial_len, sizeof(initial_token),
+		      "Late Retry must preserve existing token length");
+	zassert_mem_equal(ep->token.initial, initial_token, sizeof(initial_token),
+			  "Late Retry must preserve existing token bytes");
+	zassert_equal(ep->peer_cid_len, sizeof(initial_scid),
+		      "Late Retry must preserve peer CID length");
+	zassert_mem_equal(ep->peer_cid, initial_scid, sizeof(initial_scid),
+			  "Late Retry must preserve peer CID");
 }
 
 ZTEST_SUITE(net_socket_quic, NULL, setup, before, after, NULL);

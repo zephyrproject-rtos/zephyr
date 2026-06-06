@@ -10,4 +10,5 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
       - sam_e54_xpro

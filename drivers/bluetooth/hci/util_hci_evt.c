@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>

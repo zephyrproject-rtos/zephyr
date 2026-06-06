@@ -186,6 +186,15 @@ static int mcux_lpc_ctimer_set_top_value(const struct device *dev,
 	return 0;
 }
 
+static int mcux_lpc_ctimer_reset(const struct device *dev)
+{
+	const struct mcux_lpc_ctimer_config *config = dev->config;
+
+	CTIMER_Reset(config->base);
+
+	return 0;
+}
+
 static uint32_t mcux_lpc_ctimer_get_pending_int(const struct device *dev)
 {
 	const struct mcux_lpc_ctimer_config *config = dev->config;
@@ -307,6 +316,7 @@ static int mcux_lpc_ctimer_init(const struct device *dev)
 static DEVICE_API(counter, mcux_ctimer_driver_api) = {
 	.start = mcux_lpc_ctimer_start,
 	.stop = mcux_lpc_ctimer_stop,
+	.reset = mcux_lpc_ctimer_reset,
 	.get_value = mcux_lpc_ctimer_get_value,
 	.set_alarm = mcux_lpc_ctimer_set_alarm,
 	.cancel_alarm = mcux_lpc_ctimer_cancel_alarm,

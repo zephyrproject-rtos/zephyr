@@ -108,7 +108,7 @@ Instead of simple jump to a return address stored in the tip of thread's stack
 (with subsequent interrupt enable) ARCv2 core additionally automatically
 restores some registers from stack. Most important ones are
 PC ("Program Counter") which holds address of the next instruction to execute
-and STATUS32 which holds imortant flags including global interrupt enable,
+and STATUS32 which holds important flags including global interrupt enable,
 zero, carry etc.
 
 To make things worse depending on ARC core configuration and run-time setup
@@ -143,7 +143,7 @@ I.e. we'll go much deeper down the stack over needed return address, read
 some value from unexpected location in stack and will try to jump there.
 Nobody knows were we end-up then.
 
-To work-around that problem we need to mimic existance of IRQ stack frame
+To work-around that problem we need to mimic existence of IRQ stack frame
 of which we really only need return address obviously to return where we
 need to. For that we just shift SP so that it points sizeof(_irq_stack_frame)
 above like that:
@@ -202,7 +202,7 @@ will be corrupted.
 SECTION_FUNC(TEXT, _rirq_enter)
 
 /* the ISR will be handled in separate interrupt stack,
- * so stack checking must be diabled, or exception will
+ * so stack checking must be disabled, or exception will
  * be caused
  */
 	_disable_stack_checking r2

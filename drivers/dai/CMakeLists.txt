@@ -2,6 +2,7 @@
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_DAI_AMD_SDW amd/sdw)
+add_subdirectory_ifdef(CONFIG_DAI_AMD_TDM amd/tdm)
 add_subdirectory_ifdef(CONFIG_DAI_INTEL_ALH intel/alh)
 add_subdirectory_ifdef(CONFIG_DAI_INTEL_DMIC intel/dmic)
 add_subdirectory_ifdef(CONFIG_DAI_INTEL_HDA intel/hda)

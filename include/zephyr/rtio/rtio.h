@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2022 Intel Corporation
- * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,6 @@
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/mem_blocks.h>

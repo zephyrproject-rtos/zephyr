@@ -400,6 +400,9 @@ struct bt_pbap_pce {
 	/** @brief Callback operations structure. */
 	struct bt_pbap_pce_cb *cb;
 
+	/** @internal Underlying GOEP transport instance */
+	struct bt_goep_transport _goep_transport;
+
 	/** @internal GOEP (Generic Object Exchange Profile) instance. */
 	struct bt_goep _goep;
 
@@ -768,6 +771,9 @@ struct bt_pbap_pse_l2cap {
 struct bt_pbap_pse {
 	/** @brief Callback operations structure. */
 	struct bt_pbap_pse_cb *cb;
+
+	/** @internal Underlying GOEP transport instance */
+	struct bt_goep_transport _goep_transport;
 
 	/** @internal GOEP (Generic Object Exchange Profile) instance. */
 	struct bt_goep _goep;

@@ -11,7 +11,7 @@ ZTEST_USER_F(net_socketpair, test_close_one_end_and_write_to_the_other)
 
 	for (size_t i = 0; i < 2; ++i) {
 		res = zsock_close(fixture->sv[i]);
-		zassert_equal(res, 0, "close(fixture->sv[%u]) failed: %d", i, errno);
+		zassert_equal(res, 0, "close(fixture->sv[%zu]) failed: %d", i, errno);
 		fixture->sv[i] = -1;
 
 		res = zsock_send(fixture->sv[(!i) & 1], "x", 1, 0);
@@ -20,7 +20,7 @@ ZTEST_USER_F(net_socketpair, test_close_one_end_and_write_to_the_other)
 			errno);
 
 		res = zsock_close(fixture->sv[(!i) & 1]);
-		zassert_equal(res, 0, "close(fixture->sv[%u]) failed: %d", i, errno);
+		zassert_equal(res, 0, "close(fixture->sv[%zu]) failed: %d", i, errno);
 		fixture->sv[(!i) & 1] = -1;
 
 		res = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, fixture->sv);
@@ -44,7 +44,7 @@ ZTEST_USER_F(net_socketpair, test_close_one_end_and_read_from_the_other)
 		zassert_equal(res, 2, "write() failed to write 2 bytes");
 
 		res = zsock_close(fixture->sv[i]);
-		zassert_equal(res, 0, "close(fixture->sv[%u]) failed: %d", i, errno);
+		zassert_equal(res, 0, "close(fixture->sv[%zu]) failed: %d", i, errno);
 		fixture->sv[i] = -1;
 
 		memset(xx, 0, sizeof(xx));
@@ -57,7 +57,7 @@ ZTEST_USER_F(net_socketpair, test_close_one_end_and_read_from_the_other)
 		zassert_equal(res, 0, "expected read() to succeed but read 0 bytes");
 
 		res = zsock_close(fixture->sv[(!i) & 1]);
-		zassert_equal(res, 0, "close(fixture->sv[%u]) failed: %d", i, errno);
+		zassert_equal(res, 0, "close(fixture->sv[%zu]) failed: %d", i, errno);
 		fixture->sv[(!i) & 1] = -1;
 
 		res = zsock_socketpair(NET_AF_UNIX, NET_SOCK_STREAM, 0, fixture->sv);

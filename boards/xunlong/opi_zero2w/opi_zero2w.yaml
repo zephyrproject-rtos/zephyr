@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: opi_zero2w
+name: Xunlong Orange Pi Zero 2W
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+vendor: xunlong
+ram: 1024

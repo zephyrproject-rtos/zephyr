@@ -460,7 +460,7 @@ static void gptp_md_pdelay_req_timeout(struct k_timer *timer)
 	struct gptp_pdelay_req_state *state;
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		state = &GPTP_PORT_STATE(port)->pdelay_req;
 		if (timer == &state->pdelay_timer) {
 			state->pdelay_timer_expired = true;
@@ -495,7 +495,7 @@ static void gptp_md_follow_up_receipt_timeout(struct k_timer *timer)
 	struct gptp_sync_rcv_state *state;
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		state = &GPTP_PORT_STATE(port)->sync_rcv;
 		if (timer == &state->follow_up_discard_timer) {
 			NET_WARN("No %s received after %s message",
@@ -577,7 +577,7 @@ void gptp_md_init_state_machine(void)
 {
 	int port;
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		gptp_md_init_pdelay_req_state_machine(port);
 		gptp_md_init_pdelay_resp_state_machine(port);
 		gptp_md_init_sync_rcv_state_machine(port);

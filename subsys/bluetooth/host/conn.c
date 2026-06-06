@@ -477,8 +477,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	}
 
 	/* L2CAP frame complete. */
-	buf = conn->rx;
-	conn->rx = NULL;
+	buf = net_buf_take(&conn->rx);
 
 	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
 	if (bt_conn_is_br(conn)) {
@@ -1880,6 +1879,21 @@ void bt_conn_br_role_changed(struct bt_conn *conn, uint8_t status)
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
 		if (cb->br.role_changed) {
 			cb->br.role_changed(conn, status);
+		}
+	}
+}
+
+void bt_conn_br_packet_type_changed(struct bt_conn *conn, uint8_t status, uint16_t packet_type)
+{
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+		if (callback->br.packet_type_changed != NULL) {
+			callback->br.packet_type_changed(conn, status, packet_type);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->br.packet_type_changed != NULL) {
+			cb->br.packet_type_changed(conn, status, packet_type);
 		}
 	}
 }

@@ -244,7 +244,7 @@ The following modems are already supported in
 * SIMCom SIM7080, A76xx
 * u-blox SARA-R4, SARA-R5, LARA-R6
 * Sierra Wireless HL7800
-* Telit ME910G1, ME310G1, LE910C1 Thread-x
+* Telit ME910G1, ME310G1, LE910C1 Thread-x, LEx10Q1
 * Nordic Semiconductor nRF91 SLM
 * Sequans GM02S
 
@@ -374,6 +374,14 @@ runtime power management is enabled.
 When data is to be sent or received on any DLCI channel, the CMUX module
 will exit the idle state and wakes the modem up by sending flag characters
 until it receives a flag character from the modem.
+
+For modems that drive sleep and wake from a hardware line outside CMUX
+rather than via the in-band protocol, the ``cmux-no-powersave-handshake``
+property opts out of the handshake on both halves. On entry CMUX skips
+the PSC frame exchange and transitions directly to power save. On exit
+CMUX skips the flag-character exchange and transitions directly to
+connected once the pipe is re-opened. The next outgoing frame
+re-synchronises framing on its own.
 
 Some modems allow UART to be powered down only when the DTR (Data Terminal Ready)
 signal is de-asserted. In this case, a UART device with DTR support can be used

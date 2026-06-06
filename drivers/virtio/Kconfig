@@ -27,4 +27,10 @@ config VIRTIO_MMIO
 	help
 	  Enable options for VIRTIO over MMIO
 
+config HEAP_MEM_POOL_ADD_SIZE_VIRTIO
+	int "Heap memory pool size for VIRTIO"
+	default 32768
+	help
+	  Set the size of the heap memory pool for VIRTIO.
+
 endif # VIRTIO

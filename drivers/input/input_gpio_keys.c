@@ -17,6 +17,15 @@
 
 LOG_MODULE_REGISTER(gpio_keys, CONFIG_INPUT_LOG_LEVEL);
 
+/* Values for property `zephyr,suspend-action` */
+#define SUSPEND_ACTION_NONE			0
+#define SUSPEND_ACTION_DISCONNECT_WITH_PUPD	1
+#define SUSPEND_ACTION_FULL_DISCONNECT		2
+
+/* Helper to convert the DT property to an appropriate value */
+#define DRV_INST_SUSPEND_ACTION(i)                                                                 \
+	CONCAT(SUSPEND_ACTION_, DT_INST_STRING_UPPER_TOKEN(i, zephyr_suspend_action))
+
 struct gpio_keys_callback {
 	struct gpio_callback gpio_cb;
 	int8_t pin_state;
@@ -42,8 +51,8 @@ struct gpio_keys_config {
 	const struct gpio_keys_pin_config *pin_cfg;
 	struct gpio_keys_pin_data *pin_data;
 	k_work_handler_t handler;
+	uint8_t suspend_action;
 	bool polling_mode;
-	bool no_disconnect;
 };
 
 struct gpio_keys_data {
@@ -239,12 +248,36 @@ static int gpio_keys_pm_action(const struct device *dev,
 				}
 			}
 
-			if (!cfg->no_disconnect) {
-				ret = gpio_pin_configure_dt(gpio, GPIO_DISCONNECTED);
-				if (ret != 0) {
-					LOG_ERR("Pin %d configuration failed: %d", i, ret);
-					return ret;
-				}
+			if (cfg->suspend_action == SUSPEND_ACTION_NONE) {
+				continue;
+			}
+
+			const uint32_t flags = GPIO_DISCONNECTED | gpio->dt_flags;
+			uint32_t inhibit;
+
+			if (cfg->suspend_action == SUSPEND_ACTION_FULL_DISCONNECT) {
+				/*
+				 * Inhibit flags GPIO_PULL_DOWN/GPIO_PULL_UP from Devicetree.
+				 *
+				 * The state of pins is unimportant while driver is suspended;
+				 * don't keep the pull-down/pull-up resistor enabled. This is
+				 * also required with some GPIO controllers which don't allow
+				 * enabling pull-down/pull-up in GPIO_DISCONNECTED state.
+				 */
+				inhibit = GPIO_PULL_DOWN | GPIO_PULL_UP;
+			} else {
+				/*
+				 * DISCONNECT_WITH_PUPD:
+				 * Don't inhibit any flag, like the previous implementation
+				 * which called gpio_pin_configure_dt() directly instead.
+				 */
+				inhibit = 0U;
+			}
+
+			ret = gpio_pin_configure(gpio->port, gpio->pin, flags & ~inhibit);
+			if (ret != 0) {
+				LOG_ERR("Pin %d configuration failed: %d", i, ret);
+				return ret;
 			}
 		}
 
@@ -255,7 +288,8 @@ static int gpio_keys_pm_action(const struct device *dev,
 		for (int i = 0; i < cfg->num_keys; i++) {
 			const struct gpio_dt_spec *gpio = &cfg->pin_cfg[i].spec;
 
-			if (!cfg->no_disconnect) {
+
+			if (cfg->suspend_action != SUSPEND_ACTION_NONE) {
 				ret = gpio_pin_configure_dt(gpio, GPIO_INPUT);
 				if (ret != 0) {
 					LOG_ERR("Pin %d configuration failed: %d", i, ret);
@@ -310,7 +344,7 @@ static int gpio_keys_pm_action(const struct device *dev,
 		.handler = COND_CODE_1(DT_INST_PROP(i, polling_mode),                              \
 				       (gpio_keys_poll_pins), (gpio_keys_change_deferred)),        \
 		.polling_mode = DT_INST_PROP(i, polling_mode),                                     \
-		.no_disconnect = DT_INST_PROP(i, no_disconnect),                                   \
+		.suspend_action = DRV_INST_SUSPEND_ACTION(i),                                      \
 	};                                                                                         \
 												   \
 	static struct gpio_keys_data gpio_keys_data_##i;                                           \

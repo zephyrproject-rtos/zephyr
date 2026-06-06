@@ -10,6 +10,7 @@ config SOC_SERIES_ESP32S3
 	select PINCTRL
 	select HAS_ESPRESSIF_HAL
 	select CPU_HAS_FPU
+	select CPU_HAS_DCACHE
 	select HAS_PM
 	select HAS_POWEROFF
 
@@ -170,5 +171,7 @@ config MAC_BB_PD
 	  2KB (Bluetooth only) or 5.3KB (Wi-Fi + Bluetooth).
 
 endmenu  # Cache config
+
+rsource "Kconfig.caps"
 
 endif # SOC_SERIES_ESP32S3

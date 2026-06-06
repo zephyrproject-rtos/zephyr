@@ -14,6 +14,9 @@
 
 #include <zephyr/drivers/interrupt_controller/riscv_clic.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
+#if defined(CONFIG_RISCV_HAS_AIA)
+#include <zephyr/drivers/interrupt_controller/riscv_aia.h>
+#endif
 
 #if defined(CONFIG_RISCV_HAS_CLIC)
 
@@ -52,11 +55,18 @@ void arch_irq_enable(unsigned int irq)
 {
 	uint32_t ie;
 
-#if defined(CONFIG_RISCV_HAS_PLIC)
+#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_AIA)
 	unsigned int level = irq_get_level(irq);
+#endif
 
+#if defined(CONFIG_RISCV_HAS_PLIC)
 	if (level == 2) {
 		riscv_plic_irq_enable(irq);
+		return;
+	}
+#elif defined(CONFIG_RISCV_HAS_AIA)
+	if (level == 2) {
+		riscv_aia_irq_enable(irq);
 		return;
 	}
 #endif
@@ -76,11 +86,18 @@ void arch_irq_disable(unsigned int irq)
 {
 	uint32_t ie;
 
-#if defined(CONFIG_RISCV_HAS_PLIC)
+#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_AIA)
 	unsigned int level = irq_get_level(irq);
+#endif
 
+#if defined(CONFIG_RISCV_HAS_PLIC)
 	if (level == 2) {
 		riscv_plic_irq_disable(irq);
+		return;
+	}
+#elif defined(CONFIG_RISCV_HAS_AIA)
+	if (level == 2) {
+		riscv_aia_irq_disable(irq);
 		return;
 	}
 #endif
@@ -100,11 +117,17 @@ int arch_irq_is_enabled(unsigned int irq)
 {
 	uint32_t ie;
 
-#if defined(CONFIG_RISCV_HAS_PLIC)
+#if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_AIA)
 	unsigned int level = irq_get_level(irq);
+#endif
 
+#if defined(CONFIG_RISCV_HAS_PLIC)
 	if (level == 2) {
 		return riscv_plic_irq_is_enabled(irq);
+	}
+#elif defined(CONFIG_RISCV_HAS_AIA)
+	if (level == 2) {
+		return riscv_aia_irq_is_enabled(irq);
 	}
 #endif
 
@@ -126,7 +149,24 @@ void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flag
 		riscv_plic_set_priority(irq, prio);
 	}
 }
+#elif defined(CONFIG_RISCV_HAS_AIA)
+void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+	unsigned int level = irq_get_level(irq);
+
+	if (level != 2) {
+		return;
+	}
+
+	if (flags != 0) {
+		riscv_aia_config_source(irq, flags);
+	}
+
+	/* AIA priority is handled via IMSIC EITHRESHOLD or EIID ordering */
+	riscv_aia_set_priority(irq, prio);
+}
 #endif /* CONFIG_RISCV_HAS_PLIC */
+
 #endif /* CONFIG_RISCV_HAS_CLIC */
 
 #if defined(CONFIG_RISCV_SOC_INTERRUPT_INIT)

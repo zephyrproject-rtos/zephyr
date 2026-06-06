@@ -33,7 +33,7 @@ static void uart_sedi_cb(struct device *port);
 		IRQ_CONNECT(DT_INST_IRQN(n),			       \
 			    DT_INST_IRQ(n, priority), uart_sedi_isr,   \
 			    DEVICE_DT_GET(DT_NODELABEL(uart##n)),      \
-			    DT_INST_IRQ(n, sense));		       \
+			    DT_INST_IRQ(n, flags));		       \
 		irq_enable(DT_INST_IRQN(n));			       \
 	}
 #else /*CONFIG_UART_INTERRUPT_DRIVEN */
@@ -454,7 +454,7 @@ static int uart_sedi_irq_is_pending(const struct device *dev)
 	return sedi_uart_is_irq_pending(instance);
 }
 
-static int uart_sedi_irq_update(const struct device *dev)
+static void uart_sedi_irq_update(const struct device *dev)
 {
 	sedi_uart_t instance = GET_CONTROLLER_INSTANCE(dev);
 
@@ -463,8 +463,6 @@ static int uart_sedi_irq_update(const struct device *dev)
 	sedi_uart_update_irq_cache(instance);
 
 	pm_device_runtime_put(dev);
-
-	return 1;
 }
 
 static void uart_sedi_irq_callback_set(const struct device *dev,

@@ -954,17 +954,13 @@ static int rv3028_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	err = rv3028_update_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_WADA,
-				 RV3028_CONTROL1_WADA);
+	err = rv3028_write_reg8(dev, RV3028_REG_CONTROL1, RV3028_CONTROL1_WADA);
 	if (err) {
 		return -ENODEV;
 	}
 
-	/* Disable the alarms */
-	err = rv3028_update_reg8(dev,
-				 RV3028_REG_CONTROL2,
-				 RV3028_CONTROL2_AIE | RV3028_CONTROL2_UIE,
-				 0);
+	/* Disable interrupts and use 24 hour mode */
+	err = rv3028_write_reg8(dev, RV3028_REG_CONTROL2, 0);
 	if (err) {
 		return -ENODEV;
 	}

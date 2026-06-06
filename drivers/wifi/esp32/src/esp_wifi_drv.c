@@ -110,9 +110,12 @@ static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pk
 {
 	struct esp32_wifi_runtime *data = esp32_wifi_data_get(net_pkt_iface(pkt));
 	const int pkt_len = net_pkt_get_len(pkt);
-	esp_interface_t ifx = data->state == ESP32_AP_CONNECTED ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
+	bool ap_running = (data->state == ESP32_AP_STARTED || data->state == ESP32_AP_CONNECTED ||
+			   data->state == ESP32_AP_DISCONNECTED);
+	bool sta_connected = (data->state == ESP32_STA_CONNECTED);
+	esp_interface_t ifx = ap_running ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
 
-	if (data->state != ESP32_STA_CONNECTED && data->state != ESP32_AP_CONNECTED) {
+	if (!sta_connected && !ap_running) {
 		return -EIO;
 	}
 
@@ -296,7 +299,8 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 {
 	ARG_UNUSED(event_data);
 	esp32_data.state = ESP32_STA_CONNECTED;
-#if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
+	net_if_dormant_off(esp32_wifi_iface);
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
 	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, WIFI_STATUS_CONN_SUCCESS);
@@ -309,7 +313,8 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 	struct wifi_status result;
 
 	if (esp32_data.state == ESP32_STA_CONNECTED) {
-#if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
+		net_if_dormant_on(esp32_wifi_iface);
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 		net_dhcpv4_stop(esp32_wifi_iface);
 #endif
 		switch (event->reason) {
@@ -448,11 +453,10 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	switch (event_id) {
 	case WIFI_EVENT_STA_START:
 		esp32_data.state = ESP32_STA_STARTED;
-		net_eth_carrier_on(esp32_wifi_iface);
 		break;
 	case WIFI_EVENT_STA_STOP:
 		esp32_data.state = ESP32_STA_STOPPED;
-		net_eth_carrier_off(esp32_wifi_iface);
+		net_if_dormant_on(esp32_wifi_iface);
 		break;
 	case WIFI_EVENT_STA_CONNECTED:
 		esp_wifi_handle_sta_connect_event(event_data);
@@ -465,12 +469,12 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		break;
 	case WIFI_EVENT_AP_START:
 		ap_data->state = ESP32_AP_STARTED;
-		net_eth_carrier_on(iface_ap);
+		net_if_dormant_off(iface_ap);
 		wifi_mgmt_raise_ap_enable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STOP:
 		ap_data->state = ESP32_AP_STOPPED;
-		net_eth_carrier_off(iface_ap);
+		net_if_dormant_on(iface_ap);
 		wifi_mgmt_raise_ap_disable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STACONNECTED:
@@ -562,6 +566,15 @@ static int esp32_wifi_connect(const struct device *dev __unused,
 		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
 		wifi_config.sta.password[params->psk_length] = '\0';
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+		wifi_config.sta.pmf_cfg.capable = true;
+		wifi_config.sta.pmf_cfg.required = false;
+		data->status.security = WIFI_AUTH_WPA2_PSK;
+		break;
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
+		wifi_config.sta.password[params->psk_length] = '\0';
+		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+		wifi_config.sta.pmf_cfg.capable = true;
 		wifi_config.sta.pmf_cfg.required = false;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		break;
@@ -724,8 +737,23 @@ static int esp32_wifi_ap_enable(const struct device *dev __unused, struct net_if
 		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);
 		wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
+		wifi_config.ap.pmf_cfg.capable = true;
 		wifi_config.ap.pmf_cfg.required = false;
 		break;
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+#if defined(CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT)
+		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);
+		wifi_config.ap.authmode = WIFI_AUTH_WPA2_WPA3_PSK;
+		data->status.security = WIFI_AUTH_WPA2_WPA3_PSK;
+		wifi_config.ap.pmf_cfg.capable = true;
+		wifi_config.ap.pmf_cfg.required = false;
+		wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		break;
+#else
+		LOG_ERR("WPA2/WPA3 transition mode not supported for AP. Enable "
+			"CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT");
+		return -EINVAL;
+#endif /* CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT */
 	case WIFI_SECURITY_TYPE_SAE:
 	case WIFI_SECURITY_TYPE_SAE_H2E:
 	case WIFI_SECURITY_TYPE_SAE_AUTO:
@@ -941,7 +969,19 @@ static int esp32_wifi_set_power_save(const struct device *dev __unused,
 				     struct wifi_ps_params *params)
 {
 	wifi_config_t config;
+	wifi_mode_t mode;
 	esp_err_t rc;
+
+	rc = esp_wifi_get_mode(&mode);
+	if (rc != ESP_OK) {
+		LOG_ERR("Failed to get Wi-Fi mode, error: %d", rc);
+		return -EIO;
+	}
+
+	if (mode == ESP32_WIFI_MODE_AP || mode == ESP32_WIFI_MODE_NULL) {
+		LOG_ERR("Power save not supported in current Wi-Fi mode: %d", mode);
+		return -ENOTSUP;
+	}
 
 	if (params->enabled == WIFI_PS_DISABLED) {
 		rc = esp_wifi_set_ps(WIFI_PS_NONE);
@@ -982,10 +1022,9 @@ static void esp32_wifi_init(struct net_if *iface)
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 	struct wifi_nm_instance *nm = wifi_nm_get_instance("esp32_wifi_nm");
 #endif
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	uint8_t *mac_addr;
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 	if (iface == esp32_wifi_iface_ap) {
@@ -1011,7 +1050,7 @@ static void esp32_wifi_init(struct net_if *iface)
 	net_if_set_link_addr(iface, mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
-	net_if_carrier_off(iface);
+	net_if_dormant_on(iface);
 }
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
@@ -1056,7 +1095,6 @@ static int esp32_wifi_dev_init(const struct device *dev)
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
 	esp_err_t ret = esp_wifi_init(&config);
-	esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
 
 	if (ret == ESP_ERR_NO_MEM) {
 		LOG_ERR("Not enough memory to initialize Wi-Fi.");
@@ -1066,7 +1104,14 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		LOG_ERR("Unable to initialize the Wi-Fi: %d", ret);
 		return -EIO;
 	}
-	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
+
+	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
+	if (ret != ESP_OK) {
+		LOG_ERR("Fail to set Wi-Fi mode: %d", ret);
+		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_WIFI_STA_AUTO_DHCPV4)) {
 		net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
 		net_mgmt_add_event_callback(&esp32_dhcp_cb);
 	}

@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESP32_SOC_PM_SUPPORT_CPU_PD
+	bool
+	default y
+
+config ESP32_SOC_PM_SUPPORT_TOP_PD
+	bool
+	default y
+
+config ESP32_SOC_PAU_SUPPORTED
+	bool
+	default y
+
+config ESP32_SOC_PM_CPU_RETENTION_BY_SW
+	bool
+	default y
+
+config ESP32_SOC_FLASH_SUPPORTED
+	bool
+	default y
+
+config ESP32_SOC_PM_SUPPORT_VDDSDIO_PD
+	bool
+	default y

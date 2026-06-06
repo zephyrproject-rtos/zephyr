@@ -10,15 +10,87 @@ building Zephyr applications needed by multiple commands.
 See build.py for the build command itself.
 '''
 
+import logging
 import os
 import sys
 from pathlib import Path
 
-from west import log
-from west.configuration import config
-from west.util import escapes_directory
+from west.commands import Verbosity
+from west.configuration import Configuration
+from west.util import WestNotFound, escapes_directory, west_topdir
 
 import zcmake
+
+# Explicit, flat name: avoids colliding with scripts/pylib/build_helpers/
+# domains.py (which grabs `logging.getLogger('build_helpers')` at import
+# time), and avoids the `west.*` namespace whose NullHandler would defeat
+# the hasHandlers() guard in forward_logging_to_west.
+BUILD_HELPERS_LOGGER = 'zephyr_build_helpers'
+_logger = logging.getLogger(BUILD_HELPERS_LOGGER)
+
+
+class WestLogFormatter(logging.Formatter):
+
+    def __init__(self):
+        # Match the format used by west's own LogFormatter
+        # (west/app/main.py) so bridged records render identically to
+        # records emitted by west itself.
+        super().__init__(fmt='%(name)s: %(levelname)s: %(message)s')
+
+
+class WestLogHandler(logging.Handler):
+    '''Forwards Python logging records to a WestCommand's logging methods.
+
+    Module-level ``logging`` calls bypass west's verbosity controls and
+    colorized output. Routing them through the command's ``inf``/``wrn``/
+    ``err``/``dbg`` methods keeps formatting consistent and makes records
+    obey ``west -v`` / ``west -vv``.
+
+    Not provided by west itself, but could land in the future,
+    see https://github.com/zephyrproject-rtos/west/issues/952
+    '''
+
+    def __init__(self, command, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._command = command
+        self.setFormatter(WestLogFormatter())
+
+    def emit(self, record):
+        fmt = self.format(record)
+        lvl = record.levelno
+        if lvl > logging.CRITICAL:
+            self._command.die(fmt)
+        elif lvl >= logging.ERROR:
+            self._command.err(fmt)
+        elif lvl >= logging.WARNING:
+            self._command.wrn(fmt)
+        elif lvl >= logging.INFO:
+            self._command.inf(fmt)
+        elif lvl >= logging.DEBUG:
+            self._command.dbg(fmt)
+        else:
+            self._command.dbg(fmt, level=Verbosity.DBG_EXTREME)
+
+
+def forward_logging_to_west(command, logger_names):
+    '''Forward records from the given Python loggers to ``command``'s
+    logging methods, so module-level debug output is visible under
+    ``west -v`` / ``west -vv``.
+
+    ``logger_names`` may be a single logger name or an iterable of names.
+
+    Safe to call more than once: handlers are not duplicated.
+    '''
+    if isinstance(logger_names, str):
+        logger_names = [logger_names]
+    for name in logger_names:
+        logger = logging.getLogger(name)
+        # Drop DEBUG records at the logger unless the user asked for them,
+        # so they don't reach attached handlers (ours or anyone else's).
+        logger.setLevel(1 if command.verbosity >= Verbosity.DBG else logging.INFO)
+        if not logger.hasHandlers():
+            # Only add a log handler if none has been added already.
+            logger.addHandler(WestLogHandler(command))
 
 # Domains.py must be imported from the pylib directory, since
 # twister also uses the implementation
@@ -83,7 +155,7 @@ def _resolve_build_dir(fmt, guess, cwd, **kwargs):
                     return str(curr)
     return str(b)
 
-def find_build_dir(dir, guess=False, **kwargs):
+def find_build_dir(dir, guess=False, *, config=None, **kwargs):
     '''Heuristic for finding a build directory.
     If `dir` is specified, this directory is returned as the build directory.
     Otherwise, the default build directory is determined according to the
@@ -94,13 +166,22 @@ def find_build_dir(dir, guess=False, **kwargs):
     3. Resolved `build.dir-fmt` configuration option, no matter if it is an
        already existing build directory.
     4. DEFAULT_BUILD_DIR
+
+    `config` is a west.configuration.Configuration object. When None, one is
+    instantiated from the current west workspace; if we are not inside a
+    workspace, `build.dir-fmt` lookup is skipped.
     '''
 
     build_dir = dir
     cwd = os.getcwd()
-    dir_fmt = config.get('build', 'dir-fmt', fallback=None)
+    if config is None:
+        try:
+            config = Configuration(topdir=west_topdir())
+        except WestNotFound:
+            config = None
+    dir_fmt = config.get('build.dir-fmt', default=None) if config is not None else None
     if dir_fmt:
-        log.dbg(f'config dir-fmt: {dir_fmt}', level=log.VERBOSE_EXTREME)
+        _logger.debug('config dir-fmt: %s', dir_fmt)
         dir_fmt = _resolve_build_dir(dir_fmt, guess, cwd, **kwargs)
     if not build_dir and is_zephyr_build(dir_fmt):
         build_dir = dir_fmt
@@ -110,7 +191,7 @@ def find_build_dir(dir, guess=False, **kwargs):
         build_dir = dir_fmt
     if not build_dir:
         build_dir = DEFAULT_BUILD_DIR
-    log.dbg(f'build dir: {build_dir}', level=log.VERBOSE_EXTREME)
+    _logger.debug('build dir: %s', build_dir)
     return os.path.abspath(build_dir)
 
 def is_zephyr_build(path):
@@ -136,12 +217,10 @@ def is_zephyr_build(path):
         cache = {}
 
     if 'ZEPHYR_BASE' in cache or 'ZEPHYR_TOOLCHAIN_VARIANT' in cache:
-        log.dbg(f'{path} is a zephyr build directory',
-                level=log.VERBOSE_EXTREME)
+        _logger.debug('%s is a zephyr build directory', path)
         return True
 
-    log.dbg(f'{path} is NOT a valid zephyr build directory',
-            level=log.VERBOSE_EXTREME)
+    _logger.debug('%s is NOT a valid zephyr build directory', path)
     return False
 
 

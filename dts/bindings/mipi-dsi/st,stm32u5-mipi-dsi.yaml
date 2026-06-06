@@ -28,49 +28,26 @@ properties:
   phy-freq-range:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
-      - 0x2
-      - 0x3
-      - 0x4
-      - 0x5
-      - 0x6
-      - 0x7
-      - 0x8
+    min: 0x0
+    max: 0x8
     description: |
       D-PHY PLL input frequency range. This is used to select the appropriate
-      frequency range for the D-PHY PLL operation.
-      0x0 : DSI_DPHY_FRANGE_80MHZ_100MHZ
-      0x1 : DSI_DPHY_FRANGE_100MHZ_120MHZ
-      0x2 : DSI_DPHY_FRANGE_120MHZ_160MHZ
-      0x3 : DSI_DPHY_FRANGE_160MHZ_200MHZ
-      0x4 : DSI_DPHY_FRANGE_200MHZ_240MHZ
-      0x5 : DSI_DPHY_FRANGE_240MHZ_320MHZ
-      0x6 : DSI_DPHY_FRANGE_320MHZ_390MHZ
-      0x7 : DSI_DPHY_FRANGE_390MHZ_450MHZ
-      0x8 : DSI_DPHY_FRANGE_450MHZ_510MHZ
+      frequency range for the D-PHY PLL operation:
+        0x0 : Frequency range 80~100 MHz
+        0x1 : Frequency range 100~120 MHz
+        0x2 : Frequency range 120~160 MHz
+        0x3 : Frequency range 160~200 MHz
+        0x4 : Frequency range 200~240 MHz
+        0x5 : Frequency range 240~320 MHz
+        0x6 : Frequency range 320~390 MHz
+        0x7 : Frequency range 390~450 MHz
+        0x8 : Frequency range 450~510 MHz
 
   phy-low-power-offset:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
-      - 0x2
-      - 0x3
-      - 0x4
-      - 0x5
-      - 0x6
-      - 0x7
-      - 0x8
-      - 0x9
-      - 0xA
-      - 0xB
-      - 0xC
-      - 0xD
-      - 0xE
-      - 0xF
+    min: 0x0
+    max: 0xF
     description: |
       D-PHY low power offset configuration specific to STM32U5 series.
         0x0 : PHY_LP_OFFSSET_0_CLKP        (0 CLKP)
@@ -93,40 +70,33 @@ properties:
   pll-vco-range:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
+    min: 0x0
+    max: 0x1
     description: |
-      PLL VCO frequency range configuration for STM32U5 D-PHY.
-        0x0 : DSI_DPHY_VCO_FRANGE_500MHZ_800MHZ
-        0x1 : DSI_DPHY_VCO_FRANGE_800MHZ_1GHZ
+      PLL VCO frequency range configuration for STM32U5 D-PHY:
+        0x0 : Frequency range 500~800 MHz
+        0x1 : Frequency range 800~1000 MHz
 
   pll-charge-pump:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
-      - 0x2
-      - 0x3
+    min: 0x0
+    max: 0x3
     description: |
-      PLL charge pump configuration for STM32U5 D-PHY.
-      Valid values:
-        0x0 : DSI_PLL_CHARGE_PUMP_2000HZ_4400HZ
-        0x1 : DSI_PLL_CHARGE_PUMP_4400HZ_14100HZ
-        0x0 : DSI_PLL_CHARGE_PUMP_14100HZ_30900HZ
-        0x3 : DSI_PLL_CHARGE_PUMP_30900HZ_45700HZ
-        0x2 : DSI_PLL_CHARGE_PUMP_45700HZ_50000HZ
+     PLL charge pump configuration for STM32U5 D-PHY.
+     The correct value depends on the PLL charge pump frequency:
+       0x0 : Frequency in range 2.0~4.4 MHz or 14.1~30.9 MHz
+       0x1 : Frequency in range 4.4~14.1 MHz
+       0x2 : Frequency in range 45.7~50 MHz
+       0x3 : Frequency in range 30.9~45.7 MHz
 
   pll-tuning:
     required: true
     type: int
-    enum:
-      - 0x0
-      - 0x1
-      - 0x2
+    min: 0x0
+    max: 0x2
     description: |
       PLL tuning parameter (loop filter) for STM32U5 D-PHY.
-        0x0 : DSI_PLL_LOOP_FILTER_2000HZ_4400HZ
-        0x1 : DSI_PLL_LOOP_FILTER_4400HZ_30900HZ
-        0x2 : DSI_PLL_LOOP_FILTER_30900HZ_50000HZ
+        0x0 : Frequency range 2000~4400 Hz
+        0x1 : Frequency range 4400~30900 Hz
+        0x2 : Frequency range 30900~50000 Hz

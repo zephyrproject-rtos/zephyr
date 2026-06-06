@@ -305,6 +305,12 @@
 		status = "disabled";
 	};
 
+	crc: crc@95000 {
+		compatible = "nxp,lpc-crc";
+		reg = <0x95000 0x1000>;
+		status = "disabled";
+	};
+
 	flexcomm6: flexcomm@97000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x97000 0x1000>;
@@ -330,7 +336,7 @@
 		interrupt-names = "int0", "int1";
 		clocks = <&syscon MCUX_MCAN_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 7)>;
-		bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+		bosch,mram-cfg = <0x0 15 15 16 0 0 15 15>;
 		status = "disabled";
 	};
 

@@ -120,7 +120,7 @@ struct espi_emul {
 };
 
 /** Definition of the eSPI controller emulator API */
-struct emul_espi_driver_api {
+__subsystem struct emul_espi_driver_api {
 	/* The struct espi_driver_api has to be first in
 	 * struct emul_espi_driver_api to make pointer casting working
 	 */
@@ -129,6 +129,10 @@ struct emul_espi_driver_api {
 	emul_trigger_event trigger_event;
 	emul_find_emul find_emul;
 };
+
+/** @cond INTERNAL_HIDDEN */
+DEVICE_API_EXTENDS(emul_espi, espi, espi_api);
+/** @endcond */
 
 /**
  * Register an emulated device on the controller

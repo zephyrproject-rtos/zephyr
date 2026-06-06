@@ -22,7 +22,25 @@ from collections.abc import Iterable
 from itertools import takewhile
 from pathlib import Path, PurePath
 
-import magic
+try:
+    import magic
+except ImportError:
+    if sys.platform != 'win32':
+        raise
+    # python-magic-bin bundles libmagic.dll under <magic_pkg>/libmagic/, but
+    # python-magic's loader.py (ahupp/python-magic@0fb1922d) only searches
+    # PATH and cwd — that subdirectory was never added. Prepend it to PATH so
+    # ctypes.util.find_library() can resolve the DLL.
+    # See: https://github.com/zephyrproject-rtos/zephyr/issues/101181
+    #      https://github.com/ahupp/python-magic/pull/294 (upstream fix pending)
+    from importlib.util import find_spec
+
+    spec = find_spec('magic')
+    if spec and spec.origin:
+        dll_dir = Path(spec.origin).parent / 'libmagic'
+        if dll_dir.is_dir():
+            os.environ['PATH'] = str(dll_dir) + os.pathsep + os.environ.get('PATH', '')
+    import magic
 import unidiff
 import yaml
 from dotenv import load_dotenv
@@ -1474,14 +1492,17 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             cwd=GIT_TOP,
         )
 
+        self_folder = Path(__file__).resolve().parent
+
         if hasattr(self, 'UNDEF_KCONFIG_ALLOWLIST'):
             # Overridden at the class level
             undef_kconfig_allowlist = self.UNDEF_KCONFIG_ALLOWLIST
+            allowlist_hint = f"{type(self).__name__}.UNDEF_KCONFIG_ALLOWLIST"
         else:
             # Load from the text file
-            self_folder = Path(__file__).resolve().parent
             default_allowlist_file = self_folder / 'undef_kconfig_allowlist.txt'
             undef_kconfig_allowlist = get_set_from_file(str(default_allowlist_file))
+            allowlist_hint = str(default_allowlist_file)
 
         # Load extensions to UNDEF_KCONFIG_ALLOWLIST
         undef_kconfig_allowlist_extra = []
@@ -1489,9 +1510,22 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             logging.info(f"Loading extra UNDEF_KCONFIG_ALLOWLIST values from {path}")
             undef_kconfig_allowlist_extra = get_set_from_file(path)
 
+        # Load the per-file allowlist: files listed here are skipped entirely
+        default_files_allowlist_file = self_folder / 'undef_kconfig_files_allowlist.txt'
+        undef_kconfig_files_allowlist = get_set_from_file(str(default_files_allowlist_file))
+
+        # Load extensions to the per-file allowlist via environment variable
+        if path := os.environ.get("UNDEF_KCONFIG_FILES_ALLOWLIST_FILE", None):
+            logging.info(f"Loading extra file allowlist entries from {path}")
+            undef_kconfig_files_allowlist |= get_set_from_file(path)
+
         # splitlines() supports various line terminators
         for grep_line in grep_stdout.splitlines():
             path, lineno, line = grep_line.split("\0")
+
+            # Skip files whose CONFIG_ references are explicitly allowlisted
+            if path in undef_kconfig_files_allowlist:
+                continue
 
             # Extract symbol references (might be more than one) within the
             # line
@@ -1523,7 +1557,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
 
         self.failure(f"""
 Found references to undefined Kconfig symbols. If any of these are false
-positives, then add them to {default_allowlist_file}.
+positives, then add them to {allowlist_hint}.
 
 If the reference is for a comment like /* CONFIG_FOO_* */ (or
 /* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
@@ -2591,6 +2625,140 @@ class DeviceMmioCheck(ComplianceTest):
                         "storing raw DT_REG_ADDR() in the config struct."
                     ),
                 )
+
+
+def added_lines(fname):
+    """Return the set of line numbers that were added in COMMIT_RANGE.
+
+    Parses ``git diff -U0`` hunk headers to determine which lines are new.
+    Useful for compliance checks that should only flag newly introduced code.
+    """
+    hunk_re = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
+    added = set()
+    diff_output = git('diff', '-U0', '--no-ext-diff', COMMIT_RANGE, '--', fname)
+    for line in diff_output.splitlines():
+        m = hunk_re.match(line)
+        if m:
+            start = int(m.group(1))
+            count = int(m.group(2)) if m.group(2) is not None else 1
+            added.update(range(start, start + count))
+    return added
+
+
+class MmuRegionsCheck(ComplianceTest):
+    """
+    Check that mmu_regions.c files do not add new static MMU region entries.
+
+    Only lines added in the current changeset are checked, so pre-existing
+    entries do not block unrelated changes to the same file.
+
+    Device MMIO regions should use the device MMIO API (DEVICE_MMIO_ROM /
+    DEVICE_MMIO_MAP). Memory regions (DRAM, SRAM) should use the
+    zephyr,memory-attr devicetree property instead of static mmu_regions.c
+    entries.
+
+    On arm64 the GIC register banks are mapped by the arch core (see
+    arch/arm64/core/mmu.c), so GIC entries there are redundant and are
+    flagged as well. The GICv3 ITS is a separate node, but it is mapped by
+    its own driver through the device MMIO API, so ITS entries are redundant
+    too. On aarch32 the GIC still has to be mapped in mmu_regions.c, so GIC
+    entries are left untouched there.
+    """
+
+    name = "MmuRegionsCheck"
+    doc = zephyr_doc_detail_builder("/hardware/peripherals/index.html")
+
+    COMPAT_FOREACH_RE = re.compile(r'MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY\s*\(')
+    FLAT_ENTRY_RE = re.compile(r'MMU_REGION_FLAT_ENTRY\s*\(')
+    GIC_RE = re.compile(
+        r'"(?:[Gg][Ii][Cc][^"]*|[Ii][Tt][Ss])|'
+        r'DT_NODELABEL\s*\(\s*(?:gic(?:\b|_)|its\b)|'
+        r'arm_gic|gic[-_]v3[-_]its'
+    )
+    DEVICE_ATTR_RE = re.compile(r'MT_DEVICE|DEVICE_ATTR')
+    # arm64 maps the GIC in the arch core; aarch32 still needs it in the SoC.
+    ARM64_MMU_INCLUDE_RE = re.compile(r'arch/arm64/arm_mmu\.h')
+
+    DESC_COMPAT_ENTRY = (
+        "Driver compat MMU region entry. Use the device MMIO API "
+        "(DEVICE_MMIO_ROM / DEVICE_MMIO_MAP) instead of mapping "
+        "driver peripherals through mmu_regions.c."
+    )
+    DESC_DEVICE_ENTRY = (
+        "Non-GIC device MMU region entry. Drivers should use the "
+        "device MMIO API (DEVICE_MMIO_ROM / DEVICE_MMIO_MAP) instead "
+        "of static MMU region entries. If this is SoC infrastructure "
+        "without a struct device (e.g. clock control, IOMUXC), "
+        "document the reason in a comment."
+    )
+    DESC_MEMORY_ENTRY = (
+        "Non-GIC memory MMU region entry. Use the zephyr,memory-attr "
+        "devicetree property to describe memory regions instead of "
+        "static mmu_regions.c entries."
+    )
+    DESC_GIC_ENTRY = (
+        "Redundant GIC/ITS MMU region entry. On arm64 the GIC register banks "
+        "are mapped automatically by the arch core (arch/arm64/core/mmu.c), "
+        "and GICv3 ITS nodes are mapped by their own driver through the "
+        "device MMIO API, so this entry is no longer needed and should be "
+        "removed."
+    )
+
+    @staticmethod
+    def _extract_entry(text, start):
+        """Extract the full macro invocation starting at 'start'."""
+        depth = 0
+        for i in range(start, len(text)):
+            if text[i] == '(':
+                depth += 1
+            elif text[i] == ')':
+                depth -= 1
+                if depth == 0:
+                    return text[start : i + 1]
+        return text[start:]
+
+    def _report(self, fname, text, match, desc):
+        """Emit a formatted failure for a match in text."""
+        line_no = text[: match.start()].count('\n') + 1
+        self.fmtd_failure('warning', 'MmuRegionsCheck', fname, line=line_no, desc=desc)
+
+    def _check_file(self, fname, text, added_set):
+        """Check a single mmu_regions file for redundant entries on added lines."""
+        # On arm64 the GIC is mapped by the arch core, so GIC entries are
+        # redundant there. aarch32 still maps it in the SoC, so leave those.
+        gic_mapped_by_arch = bool(self.ARM64_MMU_INCLUDE_RE.search(text))
+
+        for m in self.COMPAT_FOREACH_RE.finditer(text):
+            line_no = text[: m.start()].count('\n') + 1
+            if line_no in added_set:
+                self._report(fname, text, m, self.DESC_COMPAT_ENTRY)
+
+        for m in self.FLAT_ENTRY_RE.finditer(text):
+            entry = self._extract_entry(text, m.start())
+            line_no = text[: m.start()].count('\n') + 1
+            if line_no not in added_set:
+                continue
+            if self.GIC_RE.search(entry):
+                if gic_mapped_by_arch:
+                    self._report(fname, text, m, self.DESC_GIC_ENTRY)
+                continue
+            if self.DEVICE_ATTR_RE.search(entry):
+                self._report(fname, text, m, self.DESC_DEVICE_ENTRY)
+            else:
+                self._report(fname, text, m, self.DESC_MEMORY_ENTRY)
+
+    def run(self):
+        for fname in get_files(filter='d'):
+            if not (fname.endswith('mmu_regions.c') or fname.endswith('arm_mmu_regions.c')):
+                continue
+
+            added_set = added_lines(fname)
+            if not added_set:
+                continue
+
+            path = GIT_TOP / fname
+            text = path.read_text(encoding='utf-8', errors='ignore')
+            self._check_file(fname, text, added_set)
 
 
 class TextEncoding(ComplianceTest):

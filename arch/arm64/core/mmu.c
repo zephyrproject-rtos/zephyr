@@ -35,6 +35,11 @@ static uint64_t xlat_tables[CONFIG_MAX_XLAT_TABLES * Ln_XLAT_NUM_ENTRIES]
 static int xlat_use_count[CONFIG_MAX_XLAT_TABLES];
 static struct k_spinlock xlat_lock;
 
+static unsigned int xlat_used_count;
+static unsigned int xlat_peak_count;
+
+#define XLAT_LOW_WATER_THRESHOLD	((CONFIG_MAX_XLAT_TABLES * 7) / 8)
+
 /* Usage count value range */
 #define XLAT_PTE_COUNT_MASK	GENMASK(15, 0)
 #define XLAT_REF_COUNT_UNIT	BIT(16)
@@ -50,6 +55,18 @@ static uint64_t *new_table(void)
 		if (xlat_use_count[i] == 0) {
 			table = &xlat_tables[i * Ln_XLAT_NUM_ENTRIES];
 			xlat_use_count[i] = XLAT_REF_COUNT_UNIT;
+			xlat_used_count++;
+			if (xlat_used_count > xlat_peak_count) {
+				xlat_peak_count = xlat_used_count;
+#ifdef CONFIG_ARM64_MMU_REPORT_XLAT_TABLES_USAGE
+				LOG_INF("xlat tables: peak %u of %d allocated",
+					xlat_used_count, CONFIG_MAX_XLAT_TABLES);
+#endif
+				if (xlat_used_count == XLAT_LOW_WATER_THRESHOLD) {
+					LOG_WRN("xlat tables low: %u of %d in use",
+						xlat_used_count, CONFIG_MAX_XLAT_TABLES);
+				}
+			}
 			MMU_DEBUG("allocating table [%d]%p\n", i, table);
 			return table;
 		}
@@ -95,6 +112,9 @@ static int table_usage(uint64_t *table, int adjustment)
 		 "table PTE count overflow");
 
 	xlat_use_count[i] = new_count;
+	if (prev_count != 0 && new_count == 0) {
+		xlat_used_count--;
+	}
 	return new_count;
 }
 
@@ -889,6 +909,37 @@ static const struct arm_mmu_region mmu_dt_regions[] = {
 
 DT_FOREACH_STATUS_OKAY(zephyr_memory_region, ARM64_MMU_VALIDATE_DT_REGION)
 
+/*
+ * The GIC is accessed through flat physical addresses by the interrupt
+ * controller driver (see GIC_DIST_BASE & friends) during early boot, before
+ * any driver gets a chance to map it through the device MMIO API. Its register
+ * banks must therefore already be present in the page tables the moment the MMU
+ * is enabled. Map every reg bank of the GIC node here so that individual SoCs
+ * no longer have to repeat these entries in their own mmu_regions.c.
+ *
+ * The banks are mapped as privileged-only (no EL0 access) device memory in the
+ * default secure state. This is the only sensible configuration: the GIC is
+ * managed exclusively by the kernel and is never accessed from user mode. It
+ * supersedes the per-SoC GIC entries that used to exist.
+ *
+ * Note this only covers the GIC node's own reg banks. A separate node such as
+ * the GICv3 ITS (arm,gic-v3-its) is intentionally not included here: the ITS
+ * driver maps that node through device_map(), so SoCs should not add static
+ * ITS entries.
+ */
+#define GIC_MMU_REGION_ENTRY_BY_IDX(idx, node_id)				\
+	MMU_REGION_FLAT_ENTRY("GIC",						\
+			      DT_REG_ADDR_BY_IDX(node_id, idx),			\
+			      DT_REG_SIZE_BY_IDX(node_id, idx),			\
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE)
+
+static const struct arm_mmu_region mmu_gic_regions[] = {
+#if DT_HAS_COMPAT_STATUS_OKAY(arm_gic)
+	LISTIFY(DT_NUM_REGS(DT_INST(0, arm_gic)),
+		GIC_MMU_REGION_ENTRY_BY_IDX, (,), DT_INST(0, arm_gic))
+#endif
+};
+
 static inline void max_region_bounds(const struct arm_mmu_region *regions,
 				     size_t count,
 				     uintptr_t *max_va, uintptr_t *max_pa)
@@ -923,6 +974,8 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 			  &max_va, &max_pa);
 	max_region_bounds(mmu_dt_regions, ARRAY_SIZE(mmu_dt_regions),
 			  &max_va, &max_pa);
+	max_region_bounds(mmu_gic_regions, ARRAY_SIZE(mmu_gic_regions),
+			  &max_va, &max_pa);
 
 	__ASSERT(max_va <= (1ULL << CONFIG_ARM64_VA_BITS),
 		 "Maximum VA not supported\n");
@@ -943,6 +996,8 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 			mmu_config.num_regions, MT_NO_OVERWRITE);
 	map_mmu_regions(ptables, mmu_dt_regions,
 			ARRAY_SIZE(mmu_dt_regions), MT_NO_OVERWRITE);
+	map_mmu_regions(ptables, mmu_gic_regions,
+			ARRAY_SIZE(mmu_gic_regions), MT_NO_OVERWRITE);
 
 	invalidate_tlb_all();
 }

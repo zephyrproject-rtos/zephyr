@@ -39,6 +39,8 @@
 #error "Library does not support the specified device."
 #endif
 
+#include "pic32cz_ca.h"
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* SOC_MICROCHIP_PIC32CZ_CA90_SOC_H_ */

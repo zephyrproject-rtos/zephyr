@@ -9,6 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 
 LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 
@@ -110,6 +111,20 @@ LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 #define RESET_VBUSSTATUS_HIBERNATE BIT(0)
 #define RESET_VBUSSTATUS_STANDBY   BIT(1)
 
+/* TIMER register offsets */
+#define NPM10_TIMER_TASKS  0xD6U
+#define TIMER_TASKS_START  BIT(0)
+#define TIMER_TASKS_STOP   BIT(1)
+#define NPM10_TIMER_CONFIG 0xD7U
+#define TIMER_CONFIG_WKUP  0x03U
+#define NPM10_TIMER_TARGET 0xD8U
+#define NPM10_TIMER_STATUS 0xDBU
+#define TIMER_STATUS_BUSY  BIT(0)
+
+/* Timer value calculations */
+#define NPM10_TIMER_MAX_VALUE 0xFFFFFFU
+#define NPM10_TIMER_VALUE(ms) ((ms) * 8 / 125 - 1)
+
 struct mfd_npm10xx_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec host_int_gpio;
@@ -198,17 +213,11 @@ int mfd_npm10xx_hibernate(const struct device *dev, enum mfd_npm10xx_hibernate_m
 			  k_timeout_t time)
 {
 	const struct mfd_npm10xx_config *config = dev->config;
-	int ret;
-
-	if (!K_TIMEOUT_EQ(time, K_FOREVER)) {
-		LOG_ERR("Timed hibernation not supported yet");
-		return -ENOTSUP;
-	}
+	int ret = 0;
 
 	switch (mode) {
 	case NPM10XX_HIBERNATE_VBAT:
-		return i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_TASKS,
-					     RESET_TASKS_HIBERNATEVBAT);
+		break;
 
 	case NPM10XX_HIBERNATE_VBUS_WAIT:
 		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_RESET_VBUSCONFIG,
@@ -231,7 +240,26 @@ int mfd_npm10xx_hibernate(const struct device *dev, enum mfd_npm10xx_hibernate_m
 		return ret;
 	}
 
-	return i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_TASKS, RESET_TASKS_HIBERNATEVBUS);
+	if (!K_TIMEOUT_EQ(time, K_FOREVER)) {
+		ret = mfd_npm10xx_timer_set(dev, time);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_TIMER_CONFIG, TIMER_CONFIG_WKUP);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = mfd_npm10xx_timer_start(dev);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_TASKS,
+				     mode == NPM10XX_HIBERNATE_VBAT ? RESET_TASKS_HIBERNATEVBAT
+								    : RESET_TASKS_HIBERNATEVBUS);
 }
 
 int mfd_npm10xx_standby(const struct device *dev, enum mfd_npm10xx_standby_op operation)
@@ -357,6 +385,65 @@ unlock_n_return:
 	return ret;
 }
 
+int mfd_npm10xx_timer_set(const struct device *dev, k_timeout_t timeout)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+	uint32_t t_value;
+	uint8_t buf[3];
+	bool busy;
+	int ret;
+
+	t_value = NPM10_TIMER_VALUE(k_ticks_to_ms_near32(timeout.ticks));
+	if (t_value > NPM10_TIMER_MAX_VALUE) {
+		LOG_ERR("Timer value out of range [16ms,~72h]");
+		return -EINVAL;
+	}
+
+	ret = mfd_npm10xx_timer_status_get(dev, &busy);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (busy) {
+		LOG_ERR("Timer is busy");
+		return -EBUSY;
+	}
+
+	sys_put_be24(t_value, buf);
+
+	return i2c_burst_write_dt(&config->i2c, NPM10_TIMER_TARGET, buf, sizeof(buf));
+}
+
+int mfd_npm10xx_timer_start(const struct device *dev)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+
+	return i2c_reg_write_byte_dt(&config->i2c, NPM10_TIMER_TASKS, TIMER_TASKS_START);
+}
+
+int mfd_npm10xx_timer_stop(const struct device *dev)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+
+	return i2c_reg_write_byte_dt(&config->i2c, NPM10_TIMER_TASKS, TIMER_TASKS_STOP);
+}
+
+int mfd_npm10xx_timer_status_get(const struct device *dev, bool *busy)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+	uint8_t reg;
+	int ret;
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, NPM10_TIMER_STATUS, &reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*busy = !!(reg & TIMER_STATUS_BUSY);
+
+	return 0;
+}
+
 static int mfd_npm10xx_init(const struct device *dev)
 {
 	const struct mfd_npm10xx_config *config = dev->config;
@@ -368,6 +455,12 @@ static int mfd_npm10xx_init(const struct device *dev)
 	if (!i2c_is_ready_dt(&config->i2c)) {
 		LOG_ERR("I2C bus is not ready");
 		return -ENODEV;
+	}
+
+	/* Stop boot monitor in case it's active */
+	ret = mfd_npm10xx_timer_stop(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	data->mfd = dev;

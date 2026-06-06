@@ -23,9 +23,9 @@
  *
  * This checks if the physical address (@p virt) is within
  * permissible range, e.g. between
- * :kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` and
- * (:kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` +
- *  :kconfig:option:`CONFIG_SRAM_SIZE`).
+ * :c:macro:`DT_CHOSEN_SRAM_ADDR` and
+ * (:c:macro:`DT_CHOSEN_SRAM_ADDR` +
+ *  :c:macro:`DT_CHOSEN_SRAM_SIZE`).
  *
  * @note Only used if
  * :kconfig:option:`CONFIG_KERNEL_VM_USE_CUSTOM_MEM_RANGE_CHECK`

@@ -53,7 +53,7 @@ static int cmd_net_qbv(const struct shell *sh, size_t argc, char **argv)
 	shell_print(sh, "  1. net qbv enable 1 on");
 	shell_print(sh, "  2. net qbv set_config 1 200 0 0 10000000 0 2");
 	shell_print(sh, "  3. net qbv set_gc 1 0 0x1 5000000");
-	shell_print(sh, "  4. net qbv set_gc 1 0 0x2 5000000");
+	shell_print(sh, "  4. net qbv set_gc 1 1 0x2 5000000");
 #else
 	shell_print(sh, "Set %s to enable %s support.\n", "CONFIG_NET_QBV", "qbv");
 #endif

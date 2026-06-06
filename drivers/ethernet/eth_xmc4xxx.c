@@ -132,8 +132,8 @@ struct eth_xmc4xxx_tx_frame {
 	uint16_t head_index;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(tx_frame_slab, sizeof(struct eth_xmc4xxx_tx_frame),
-			 CONFIG_ETH_XMC4XXX_TX_FRAME_POOL_SIZE, 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(tx_frame_slab, struct eth_xmc4xxx_tx_frame,
+			      CONFIG_ETH_XMC4XXX_TX_FRAME_POOL_SIZE);
 
 static XMC_ETH_MAC_DMA_DESC_t __aligned(4) tx_dma_desc[NUM_TX_DMA_DESCRIPTORS];
 static XMC_ETH_MAC_DMA_DESC_t __aligned(4) rx_dma_desc[NUM_RX_DMA_DESCRIPTORS];

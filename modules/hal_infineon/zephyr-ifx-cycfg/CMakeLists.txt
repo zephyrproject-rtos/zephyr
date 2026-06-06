@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -20,7 +20,20 @@ else()
 
   zephyr_include_directories(${zephyr_ifx_cycfg_dir})
   zephyr_include_directories(${zephyr_ifx_cycfg_dir}/device_headers)
-  zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot.c)
+
+  # Select the correct external flash component configuration based on the
+  # compatible string of the flash node (i.e. "infineon,s25fs128s").
+  dt_comp_path(flash_s25fs128s_path COMPATIBLE "infineon,s25fs128s" INDEX 0)
+  dt_comp_path(flash_s25hs512t_path COMPATIBLE "infineon,s25hs512t" INDEX 0)
+
+  if(DEFINED flash_s25fs128s_path)
+    zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot_s25fs128s.c)
+  elseif(DEFINED flash_s25hs512t_path)
+    zephyr_library_sources(${zephyr_ifx_cycfg_dir}/cycfg_qspi_memslot_s25hs512t.c)
+  else()
+    message(FATAL_ERROR "No recognised external flash compatible found.")
+  endif()
+
   zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_cycfg_init.c)
   if(CONFIG_USE_INFINEON_AUTANALOG_SAR_ADC AND NOT CONFIG_MFD_INFINEON_AUTANALOG)
     zephyr_library_sources(${zephyr_ifx_cycfg_dir}/ifx_autanalog.c)

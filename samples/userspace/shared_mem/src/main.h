@@ -9,7 +9,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ * Copyright (c) 2024-2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 
 LOG_MODULE_REGISTER(virtio, CONFIG_VIRTIO_LOG_LEVEL);
@@ -42,7 +43,9 @@ int virtq_create(struct virtq *v, size_t size)
 	size_t used_ring_size = 8 * size + 6;
 	size_t shared_size =
 		descriptor_table_size + available_ring_size + used_ring_pad + used_ring_size;
-	size_t v_size = shared_size + sizeof(struct virtq_receive_callback_entry) * size;
+	size_t recv_cbs_pad = WB_UP(shared_size) - shared_size;
+	size_t recv_cbs_size = recv_cbs_pad + sizeof(struct virtq_receive_callback_entry) * size;
+	size_t v_size = shared_size + recv_cbs_size;
 
 	uint8_t *v_area = k_aligned_alloc(16, v_size);
 
@@ -55,7 +58,8 @@ int virtq_create(struct virtq *v, size_t size)
 	v->desc = (struct virtq_desc *)v_area;
 	v->avail = (struct virtq_avail *)((uint8_t *)v->desc + descriptor_table_size);
 	v->used = (struct virtq_used *)((uint8_t *)v->avail + available_ring_size + used_ring_pad);
-	v->recv_cbs = (struct virtq_receive_callback_entry *)((uint8_t *)v->used + used_ring_size);
+	v->recv_cbs = (struct virtq_receive_callback_entry *)((uint8_t *)v->used + used_ring_size +
+							      recv_cbs_pad);
 
 	/*
 	 * At the beginning of the descriptor table, the available ring and the used ring have to be

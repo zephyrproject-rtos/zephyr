@@ -34,10 +34,17 @@ tests:
       - mcxw23_evk
       - frdm_mcxw23
       - frdm_mcxa153
+      - frdm_mcxe247
       - frdm_mcxa156
       - frdm_mcxa266
       - frdm_mcxa346
       - frdm_mcxa366
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - frdm_mcxc242
+      - frdm_mcxc444
     tags: pm
     integration_platforms:
       - mec15xxevb_assy6853

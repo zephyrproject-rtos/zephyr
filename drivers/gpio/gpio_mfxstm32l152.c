@@ -40,6 +40,7 @@ LOG_MODULE_REGISTER(mfxstm32l152);
 #define REG_GPIO_IRQ_TYPE       0x50 /* GPIO irq type */
 #define REG_GPIO_IRQ_ACK        0x54 /* GPIO irq ack */
 #define REG_GPIO_DIR            0x60 /* GPIO direction control */
+#define REG_GPIO_TYPE           0x64 /* GPIO type control (PU/PD enable control) */
 #define REG_GPIO_PUPD           0x68 /* GPIO pull-up/pull-down control */
 #define REG_GPIO_SET            0x6c /* GPIO set control */
 #define REG_GPIO_CLR            0x70 /* GPIO clear control */
@@ -58,8 +59,14 @@ struct mfxstm32l152_drv_cfg {
 
 /** Cache of the pins configuration */
 struct mfxstm32l152_pins_state {
+	/* The following fields have 1 bit per pin */
+	/** 0b0 = INPUT, 0b1 = OUTPUT */
 	uint32_t direction;
+	/** 0b0 = no PU/PD, 0b1 = enable PU/PD */
+	uint32_t type;
+	/** 0b0 = Pull-Down, 0b1 = Pull-Up */
 	uint32_t pupd;
+	uint32_t toggle_edge;
 	uint32_t irq_enabled;
 };
 
@@ -208,6 +215,7 @@ static void mfxstm32l152_handle_interrupt(const struct device *dev)
 {
 	struct mfxstm32l152_drv_data *drv_data = dev->data;
 	uint32_t irq_status;
+	uint32_t toggle_irqs;
 	int ret;
 
 	k_sem_take(&drv_data->lock, K_FOREVER);
@@ -235,6 +243,26 @@ static void mfxstm32l152_handle_interrupt(const struct device *dev)
 	if (ret != 0) {
 		k_sem_give(&drv_data->lock);
 		return;
+	}
+
+	/* Check if EDGE toggle is necessary */
+	toggle_irqs = irq_status & drv_data->pins_state.toggle_edge;
+	if (toggle_irqs != 0) {
+		uint32_t type;
+
+		ret = read_port_regs(dev, REG_GPIO_IRQ_TYPE, &type);
+		if (ret != 0) {
+			k_sem_give(&drv_data->lock);
+			return;
+		}
+
+		type ^= toggle_irqs;
+
+		ret = write_port_regs(dev, REG_GPIO_IRQ_TYPE, type);
+		if (ret != 0) {
+			k_sem_give(&drv_data->lock);
+			return;
+		}
 	}
 
 	k_sem_give(&drv_data->lock);
@@ -280,8 +308,8 @@ static int set_pin_dir_mode(const struct device *dev, gpio_pin_t pin, gpio_flags
 		(struct mfxstm32l152_drv_data *const)dev->data;
 	uint32_t *dir_cache = &drvdata->pins_state.direction;
 	uint32_t *mode_cache = &drvdata->pins_state.pupd;
-	bool need_update = false;
-	uint32_t dir, mode;
+	uint32_t *type_cache = &drvdata->pins_state.type;
+	uint32_t dir, mode, type;
 	int ret = 0;
 
 	/* In case of configure in output mode first set initial state */
@@ -300,14 +328,14 @@ static int set_pin_dir_mode(const struct device *dev, gpio_pin_t pin, gpio_flags
 	}
 
 	/* Configure direction */
-	if ((flags & GPIO_OUTPUT) && ((*mode_cache & BIT(pin)) == 0)) {
-		dir = *dir_cache | BIT(pin);
-		need_update = true;
-	} else if ((flags & GPIO_INPUT) && ((*mode_cache & BIT(pin)) != 0)) {
-		dir = *dir_cache & ~BIT(pin);
-		need_update = true;
+	dir = *dir_cache;
+	if ((flags & GPIO_OUTPUT) != 0U) {
+		dir |= BIT(pin);
+	} else if ((flags & GPIO_INPUT) != 0U) {
+		dir &= ~BIT(pin);
 	}
-	if (need_update) {
+
+	if (dir != *dir_cache) {
 		ret = write_port_regs(dev, REG_GPIO_DIR, dir);
 		if (ret != 0) {
 			goto out;
@@ -316,22 +344,37 @@ static int set_pin_dir_mode(const struct device *dev, gpio_pin_t pin, gpio_flags
 	}
 
 	/* In case of input mode, configure PullUp/ PullDown */
-	need_update = false;
 	if ((flags & GPIO_INPUT) != 0U) {
-		if ((flags & GPIO_PULL_UP) && ((*mode_cache & BIT(pin)) == 0)) {
-			mode = *mode_cache | BIT(pin);
-			need_update = true;
-		} else if ((flags & GPIO_PULL_DOWN) && ((*mode_cache & BIT(pin)) != 0)) {
-			mode = *mode_cache & ~BIT(pin);
-			need_update = true;
+		mode = *mode_cache;
+		type = *type_cache;
+		if ((flags & (GPIO_PULL_UP | GPIO_PULL_DOWN)) != 0U) {
+			type |= BIT(pin);
+
+			if ((flags & GPIO_PULL_UP) != 0U) {
+				mode |= BIT(pin);
+			} else if ((flags & GPIO_PULL_DOWN) != 0U) {
+				mode &= ~BIT(pin);
+			}
+		} else {
+			type &= ~BIT(pin);
+			mode |= BIT(pin);
 		}
-	}
-	if (need_update) {
-		ret = write_port_regs(dev, REG_GPIO_PUPD, mode);
-		if (ret != 0) {
-			goto out;
+
+		if (type != *type_cache) {
+			ret = write_port_regs(dev, REG_GPIO_TYPE, type);
+			if (ret != 0) {
+				goto out;
+			}
+			*type_cache = type;
 		}
-		*mode_cache = mode;
+
+		if (mode != *mode_cache) {
+			ret = write_port_regs(dev, REG_GPIO_PUPD, mode);
+			if (ret != 0) {
+				goto out;
+			}
+			*mode_cache = mode;
+		}
 	}
 
 out:
@@ -481,11 +524,33 @@ static int mfxstm32l152_pin_interrupt_configure(const struct device *dev, gpio_p
 		return ret;
 	}
 
-	/* We cannot handle BOTH edge so if BOTH is asked, we set it as HIGH */
-	if (trig == GPIO_INT_TRIG_HIGH || trig == GPIO_INT_TRIG_BOTH) {
-		irq_type |= BIT(pin);
+	/* BOTH edge is not natively supported, hence the driver will toggle
+	 * the edge every time an IRQ is generated
+	 */
+	if (trig == GPIO_INT_TRIG_BOTH) {
+		uint32_t state;
+
+		drv_data->pins_state.toggle_edge |= BIT(pin);
+
+		/* Read first the current state to set proper edge */
+		ret = read_port_regs(dev, REG_GPIO_STATE, &state);
+		if (ret != 0) {
+			k_sem_give(&drv_data->lock);
+			return ret;
+		}
+
+		if (state & BIT(pin)) {
+			irq_type &= ~BIT(pin);
+		} else {
+			irq_type |= BIT(pin);
+		}
 	} else {
-		irq_type &= ~BIT(pin);
+		drv_data->pins_state.toggle_edge &= ~BIT(pin);
+		if (trig == GPIO_INT_TRIG_HIGH) {
+			irq_type |= BIT(pin);
+		} else {
+			irq_type &= ~BIT(pin);
+		}
 	}
 
 	ret = write_port_regs(dev, REG_GPIO_IRQ_TYPE, irq_type);
@@ -546,6 +611,12 @@ static int mfxstm32l152_init(const struct device *dev)
 	ret = read_port_regs(dev, REG_GPIO_DIR, &drvdata->pins_state.direction);
 	if (ret != 0) {
 		LOG_ERR("%s: Unable to read initial directions", dev->name);
+		return ret;
+	}
+
+	ret = read_port_regs(dev, REG_GPIO_TYPE, &drvdata->pins_state.type);
+	if (ret != 0) {
+		LOG_ERR("%s: Unable to read initial type", dev->name);
 		return ret;
 	}
 

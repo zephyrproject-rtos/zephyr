@@ -15,8 +15,10 @@ properties:
 
   clock-prescaler:
     type: int
+    min: 1
+    max: 1023
     required: true
-    description: Clock divider for the input clock. Valid range is [1, 1023].
+    description: Clock divider for the input clock.
 
   message-objects:
     type: int

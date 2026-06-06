@@ -58,10 +58,18 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define PHY_RT_RTL8211F_RESET_HOLD_TIME_MS 10
 
+enum rt_rtl8211f_rgmii_delay {
+	RT_RTL8211F_RGMII_DELAY_NONE,
+	RT_RTL8211F_RGMII_DELAY_ID,
+	RT_RTL8211F_RGMII_DELAY_RXID,
+	RT_RTL8211F_RGMII_DELAY_TXID,
+};
+
 struct rt_rtl8211f_config {
 	uint8_t addr;
 	const struct device *mdio_dev;
 	enum phy_link_speed default_speeds;
+	enum rt_rtl8211f_rgmii_delay rgmii_delay;
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
@@ -176,6 +184,63 @@ finalize_reset:
 	} while (reg_val != REALTEK_OUI_MSB);
 
 	return 0;
+}
+
+static int phy_rt_rtl8211f_cfg_rgmii_delay(const struct device *dev)
+{
+	const struct rt_rtl8211f_config *config = dev->config;
+	uint32_t reg_val;
+	int ret;
+
+	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
+				    PHY_RT_RTL8211F_PAGE_MIICR_ADDR);
+	if (ret < 0) {
+		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+		return ret;
+	}
+
+	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_MIICR1_REG, &reg_val);
+	if (ret < 0) {
+		LOG_ERR("Error reading phy (%d) mii control register1", config->addr);
+		goto restore_page;
+	}
+
+	reg_val &= ~PHY_RT_RTL8211F_MIICR1_TXDLY_MASK;
+	if (config->rgmii_delay == RT_RTL8211F_RGMII_DELAY_ID ||
+	    config->rgmii_delay == RT_RTL8211F_RGMII_DELAY_TXID) {
+		reg_val |= PHY_RT_RTL8211F_MIICR1_TXDLY_MASK;
+	}
+
+	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_MIICR1_REG, reg_val);
+	if (ret < 0) {
+		LOG_ERR("Error writing phy (%d) mii control register1", config->addr);
+		goto restore_page;
+	}
+
+	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_MIICR2_REG, &reg_val);
+	if (ret < 0) {
+		LOG_ERR("Error reading phy (%d) mii control register2", config->addr);
+		goto restore_page;
+	}
+
+	reg_val &= ~PHY_RT_RTL8211F_MIICR2_RXDLY_MASK;
+	if (config->rgmii_delay == RT_RTL8211F_RGMII_DELAY_ID ||
+	    config->rgmii_delay == RT_RTL8211F_RGMII_DELAY_RXID) {
+		reg_val |= PHY_RT_RTL8211F_MIICR2_RXDLY_MASK;
+	}
+
+	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_MIICR2_REG, reg_val);
+	if (ret < 0) {
+		LOG_ERR("Error writing phy (%d) mii control register2", config->addr);
+	}
+
+restore_page:
+	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
+	if (ret < 0) {
+		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+	}
+
+	return ret;
 }
 
 static int phy_rt_rtl8211f_restart_autonegotiation(const struct device *dev)
@@ -442,7 +507,9 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 {
 	const struct rt_rtl8211f_config *config = dev->config;
 	struct rt_rtl8211f_data *data = dev->data;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	uint32_t reg_val;
+#endif
 	int ret;
 
 	data->dev = dev;
@@ -469,44 +536,8 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Set RGMII Tx/Rx Delay. */
-	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
-					PHY_RT_RTL8211F_PAGE_MIICR_ADDR);
+	ret = phy_rt_rtl8211f_cfg_rgmii_delay(dev);
 	if (ret) {
-		LOG_ERR("Error writing phy (%d) page select register", config->addr);
-		return ret;
-	}
-
-	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_MIICR1_REG, &reg_val);
-	if (ret) {
-		LOG_ERR("Error reading phy (%d) mii control register1", config->addr);
-		return ret;
-	}
-
-	reg_val |= PHY_RT_RTL8211F_MIICR1_TXDLY_MASK;
-	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_MIICR1_REG, reg_val);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) mii control register1", config->addr);
-		return ret;
-	}
-
-	ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_MIICR2_REG, &reg_val);
-	if (ret) {
-		LOG_ERR("Error reading phy (%d) mii control register2", config->addr);
-		return ret;
-	}
-
-	reg_val |= PHY_RT_RTL8211F_MIICR2_RXDLY_MASK;
-	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_MIICR2_REG, reg_val);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) mii control register2", config->addr);
-		return ret;
-	}
-
-	/* Restore to default page 0 */
-	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) page select register", config->addr);
 		return ret;
 	}
 
@@ -631,6 +662,7 @@ static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 		.addr = DT_INST_REG_ADDR(n),					\
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
 		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),		\
+		.rgmii_delay = DT_INST_ENUM_IDX(n, realtek_rgmii_delay),		\
 		RESET_GPIO(n)							\
 		INTERRUPT_GPIO(n)						\
 	};									\

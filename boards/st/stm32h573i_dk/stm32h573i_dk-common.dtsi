@@ -400,6 +400,10 @@ zephyr_udc0: &usb {
 	status = "okay";
 };
 
+&vddcore {
+	status = "okay";
+};
+
 &crc {
 	status = "okay";
 };

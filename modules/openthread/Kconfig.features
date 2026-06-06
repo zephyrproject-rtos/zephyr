@@ -106,7 +106,7 @@ config OPENTHREAD_COMMISSIONER
 	help
 	  Enable commissioner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
-	  mbedTLS heap than the default value. A minimum recommended value of
+	  Mbed TLS heap than the default value. A minimum recommended value of
 	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
 config OPENTHREAD_CSL_DEBUG
@@ -221,7 +221,7 @@ config OPENTHREAD_JOINER
 	help
 	  Enable joiner capability in OpenThread stack. Note, that DTLS
 	  handshake used in the commissioning procedure requires a larger
-	  mbedTLS heap than the default value. A minimum recommended value of
+	  Mbed TLS heap than the default value. A minimum recommended value of
 	  CONFIG_MBEDTLS_HEAP_SIZE for the commissioning is 10KB.
 
 config OPENTHREAD_COMMISSIONER_JOINER

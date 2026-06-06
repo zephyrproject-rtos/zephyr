@@ -35,8 +35,7 @@ struct timer_obj {
 	uint32_t status;
 };
 
-K_MEM_SLAB_DEFINE(posix_timer_slab, sizeof(struct timer_obj), CONFIG_POSIX_TIMER_MAX,
-		  __alignof__(struct timer_obj));
+K_MEM_SLAB_DEFINE_TYPE(posix_timer_slab, struct timer_obj, CONFIG_POSIX_TIMER_MAX);
 
 static void zephyr_timer_wrapper(struct k_timer *ztimer)
 {

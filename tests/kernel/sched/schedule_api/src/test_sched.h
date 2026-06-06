@@ -56,4 +56,16 @@ void test_k_thread_priority_set_upgrade(void);
 void test_k_wakeup_init_null(void);
 void test_slice_perthread(void);
 
+/* Tick-domain uptime delta: returns ticks since *reftime, updates
+ * *reftime. Delta fits in uint32_t for slice-scale measurements.
+ */
+static inline uint32_t ticks_delta(uint64_t *reftime)
+{
+	uint64_t now = k_uptime_ticks();
+	uint32_t delta = now - *reftime;
+
+	*reftime = now;
+	return delta;
+}
+
 #endif /* __TEST_SCHED_H__ */

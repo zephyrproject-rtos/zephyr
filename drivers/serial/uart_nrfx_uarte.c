@@ -8,6 +8,7 @@
  * @brief Driver for Nordic Semiconductor nRF UARTE
  */
 
+#include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
@@ -262,6 +263,10 @@ struct uarte_nrfx_data {
 #endif
 #ifdef UARTE_ANY_ASYNC
 	struct uarte_async_cb *async;
+#endif
+#ifdef CONFIG_UART_NRFX_UARTE_HFXO_ON_ACTIVE
+	struct onoff_client hfxo_client;
+	struct k_sem hfxo_ready;
 #endif
 	atomic_val_t poll_out_lock;
 	atomic_t flags;
@@ -2847,12 +2852,6 @@ static int uarte_nrfx_irq_is_pending(const struct device *dev)
 		 uarte_nrfx_irq_rx_ready(dev)));
 }
 
-/** Interrupt driven interrupt update function */
-static int uarte_nrfx_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 /** Set the callback function */
 static void uarte_nrfx_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
@@ -2894,7 +2893,6 @@ static DEVICE_API(uart, uart_nrfx_uarte_driver_api) = {
 	.irq_err_enable		= uarte_nrfx_irq_err_enable,
 	.irq_err_disable	= uarte_nrfx_irq_err_disable,
 	.irq_is_pending		= uarte_nrfx_irq_is_pending,
-	.irq_update		= uarte_nrfx_irq_update,
 	.irq_callback_set	= uarte_nrfx_irq_callback_set,
 #endif /* UARTE_INTERRUPT_DRIVEN */
 };
@@ -2962,9 +2960,39 @@ static void wait_for_tx_stopped(const struct device *dev)
 	}
 }
 
+#ifdef CONFIG_UART_NRFX_UARTE_HFXO_ON_ACTIVE
+static void uarte_hfxo_active(struct onoff_manager *mgr,
+		    struct onoff_client *cli,
+		    uint32_t state,
+		    int res)
+{
+	struct uarte_nrfx_data *data = CONTAINER_OF(cli, struct uarte_nrfx_data, hfxo_client);
+
+	k_sem_give(&data->hfxo_ready);
+}
+#endif
+
 static void uarte_pm_resume(const struct device *dev)
 {
 	const struct uarte_nrfx_config *cfg = dev->config;
+
+#ifdef CONFIG_UART_NRFX_UARTE_HFXO_ON_ACTIVE
+	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+	struct uarte_nrfx_data *data = dev->data;
+	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
+	int err;
+
+	k_sem_reset(&data->hfxo_ready);
+	sys_notify_init_callback(&data->hfxo_client.notify, uarte_hfxo_active);
+	err = onoff_request(mgr, &data->hfxo_client);
+	__ASSERT_NO_MSG(err >= 0);
+
+	/* Don't wait for the HFXO if in an ISR or pre-kernel context */
+	if (!isr_mode) {
+		err = k_sem_take(&data->hfxo_ready, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
+	}
+#endif
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || !LOW_POWER_ENABLED(cfg)) {
 		uarte_periph_enable(dev);
@@ -2976,6 +3004,7 @@ static int uarte_pm_suspend(const struct device *dev)
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	const struct uarte_nrfx_config *cfg = dev->config;
 	struct uarte_nrfx_data *data = dev->data;
+	int err;
 
 	(void)data;
 
@@ -3036,7 +3065,18 @@ static int uarte_pm_suspend(const struct device *dev)
 	}
 
 	nrf_uarte_disable(uarte);
-	return pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+	err = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+
+#ifdef CONFIG_UART_NRFX_UARTE_HFXO_ON_ACTIVE
+	struct onoff_manager *mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+	int onoff_err;
+
+	sys_notify_init_callback(&data->hfxo_client.notify, uarte_hfxo_active);
+	onoff_err = onoff_cancel_or_release(mgr, &data->hfxo_client);
+	__ASSERT_NO_MSG(onoff_err >= 0);
+#endif
+
+	return err;
 }
 
 static int uarte_nrfx_pm_action(const struct device *dev, enum pm_device_action action)
@@ -3106,8 +3146,9 @@ static int uarte_tx_path_init(const struct device *dev)
 static int uarte_instance_init(const struct device *dev,
 			       uint8_t interrupts_active)
 {
-	int err;
+	__maybe_unused struct uarte_nrfx_data *data = dev->data;
 	const struct uarte_nrfx_config *cfg = dev->config;
+	int err;
 
 #if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
 	/* For simulation the DT provided peripheral address needs to be corrected */
@@ -3137,9 +3178,11 @@ static int uarte_instance_init(const struct device *dev,
 	nrf_uarte_configure(uarte, &cfg->hw_config);
 #endif
 
-#ifdef UARTE_ANY_ASYNC
-	struct uarte_nrfx_data *data = dev->data;
+#ifdef CONFIG_UART_NRFX_UARTE_HFXO_ON_ACTIVE
+	k_sem_init(&data->hfxo_ready, 0, 1);
+#endif
 
+#ifdef UARTE_ANY_ASYNC
 	if (data->async) {
 		err = uarte_async_init(dev);
 		if (err < 0) {
@@ -3163,7 +3206,10 @@ static int uarte_instance_deinit(const struct device *dev)
 }
 #endif
 
-#define UARTE_TIMER_REG(idx) (NRF_TIMER_Type *)DT_REG_ADDR(DT_PHANDLE(UARTE(idx), timer))
+#define UARTE_TIMER_REG(node) (NRF_TIMER_Type *)DT_REG_ADDR(node)
+
+#define UARTE_TIMER_NODE(idx) \
+	DT_NODELABEL(NRFX_CONCAT(timer, CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER))
 
 #define UARTE_TIMER_IRQN(idx) DT_IRQN(DT_PHANDLE(UARTE(idx), timer))
 
@@ -3171,10 +3217,10 @@ static int uarte_instance_deinit(const struct device *dev)
 
 #define UARTE_COUNT_BYTES_WITH_TIMER_COMMON_CONFIG(idx)						\
 	.timer_regs = COND_CODE_1(UARTE_HAS_PROP(idx, timer),					\
-		(UARTE_TIMER_REG(idx)),								\
+		(UARTE_TIMER_REG(DT_PHANDLE(UARTE(idx), timer))),				\
 		(COND_CODE_1(CONFIG_UART_##idx##_NRF_HW_ASYNC,					\
-			     (NRFX_CONCAT(NRF_TIMER, CONFIG_UART_##idx##_NRF_HW_ASYNC_TIMER)),	\
-			      (NULL)))),							\
+			     (UARTE_TIMER_REG(UARTE_TIMER_NODE(idx))),				\
+			     (NULL)))),								\
 	.uarte_irqn = DT_IRQN(UARTE(idx)),
 
 

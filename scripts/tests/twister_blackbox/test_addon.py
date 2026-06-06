@@ -16,8 +16,7 @@ import shutil
 import subprocess
 import sys
 
-# pylint: disable=no-name-in-module
-from conftest import ZEPHYR_BASE, TEST_DATA, sample_filename_mock, suite_filename_mock
+from conftest import ZEPHYR_BASE, TEST_DATA, test_filename_mock
 from twisterlib.testplan import TestPlan
 
 
@@ -43,7 +42,7 @@ class TestAddon:
         ],
         ids=['no sanitiser', 'ubsan']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_enable_ubsan(self, out_path, ubsan_flags, expected_exit_value):
         test_platforms = ['native_sim']
         test_path = os.path.join(TEST_DATA, 'tests', 'san', 'ubsan')
@@ -70,7 +69,7 @@ class TestAddon:
         ],
         ids=['no sanitiser', 'lsan']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_enable_lsan(self, out_path, lsan_flags, expected_exit_value):
         test_platforms = ['native_sim']
         test_path = os.path.join(TEST_DATA, 'tests', 'san', 'lsan')
@@ -103,7 +102,7 @@ class TestAddon:
             'asan'
         ]
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_enable_asan(self, capfd, out_path, asan_flags, expected_exit_value, expect_asan):
         test_platforms = ['native_sim']
         test_path = os.path.join(TEST_DATA, 'tests', 'san', 'asan')
@@ -127,7 +126,7 @@ class TestAddon:
         asan_template = r'^==\d+==ERROR:\s+AddressSanitizer:'
         assert expect_asan == bool(re.search(asan_template, err, re.MULTILINE))
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_extra_test_args(self, capfd, out_path):
         test_platforms = ['native_sim']
         test_path = os.path.join(TEST_DATA, 'tests', 'params', 'dummy')
@@ -158,7 +157,7 @@ class TestAddon:
         ]
         assert all([testname in err for testname in expected_test_names])
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_extra_args(self, caplog, out_path):
         test_platforms = ['qemu_x86', 'intel_adl_crb']
         path = os.path.join(TEST_DATA, 'tests', 'dummy', 'agnostic', 'group2')
@@ -209,7 +208,7 @@ class TestAddon:
         ids=['installed, but not allowed', 'installed, allowed',
              'not installed, not allowed', 'not installed, but allowed']
     )
-    @mock.patch.object(TestPlan, 'SAMPLE_FILENAME', sample_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_allow_installed_plugin(self, caplog, out_path, allow_flags, do_install,
                                     expected_exit_value, expected_logs):
         environment_twister_module = importlib.import_module('twisterlib.environment')
@@ -293,7 +292,7 @@ class TestAddon:
 
         assert all([log in caplog.text for log in expected_logs])
 
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_pytest_args(self, out_path):
         test_platforms = ['native_sim']
         test_path = os.path.join(TEST_DATA, 'tests', 'pytest')
@@ -322,7 +321,7 @@ class TestAddon:
         ],
         ids=['no valgrind', 'valgrind']
     )
-    @mock.patch.object(TestPlan, 'TESTSUITE_FILENAME', suite_filename_mock)
+    @mock.patch.object(TestPlan, 'TEST_DEFINITION_FILENAME', test_filename_mock)
     def test_enable_valgrind(self, capfd, out_path, valgrind_flags, expected_exit_value):
         test_platforms = ['native_sim']
         test_path = os.path.join(TEST_DATA, 'tests', 'san', 'val')

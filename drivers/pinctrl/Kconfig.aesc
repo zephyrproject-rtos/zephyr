@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_AESC
+	bool "Aesc Silicon pinctrl driver"
+	default y
+	depends on DT_HAS_AESC_PINCTRL_ENABLED
+	help
+	  Enable pin controller driver for Aesc Silicon SoCs.

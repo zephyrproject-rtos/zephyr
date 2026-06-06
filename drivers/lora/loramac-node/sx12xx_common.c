@@ -411,6 +411,10 @@ int sx12xx_lora_config(const struct device *dev,
 				  crc, false, 0, config->iq_inverted, true);
 	}
 
+	if (config->sync_word) {
+		/* Radio_s API doesn't expose SYNC word functionality */
+		LOG_WRN_ONCE("loramac-node doesn't support custom SYNC words");
+	}
 	Radio.SetPublicNetwork(config->public_network);
 
 	modem_release(&dev_data);

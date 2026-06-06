@@ -155,7 +155,13 @@ static void uart_emul_device_isr(const struct device *dev, void *user_data)
 {
 	struct uart_emul_device_fixture *fixture = user_data;
 
-	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
+	while (true) {
+		uart_irq_update(dev);
+
+		if (uart_irq_is_pending(dev) <= 0) {
+			break;
+		}
+
 		if (uart_irq_tx_ready(fixture->dev)) {
 			uart_emul_device_isr_handle_tx_ready(fixture);
 		}

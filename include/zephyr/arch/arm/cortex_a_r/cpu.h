@@ -91,18 +91,21 @@
 #define ICC_SRE_ELx_DIB_BIT	BIT(2)
 #define ICC_SRE_ELx_EN_BIT	BIT(3) /**< ICC SRE Enable */
 
-/* MPIDR mask to extract Aff0, Aff1, and Aff2 */
-#define MPIDR_AFFLVL_MASK (0xffffff)
+/* MPIDR */
+#define MPIDR_AFFLVL_MASK	(0xffU)
 
 #define MPIDR_AFF0_SHIFT	(0)
 #define MPIDR_AFF1_SHIFT	(8)
 #define MPIDR_AFF2_SHIFT	(16)
 
+/** Mask for extracting Aff0, Aff1, and Aff2 fields from MPIDR */
+#define MPIDR_AFF_MASK		GENMASK(23, 0)
+
 #define MPIDR_AFFLVL(mpidr, aff_level) \
 		(((mpidr) >> MPIDR_AFF##aff_level##_SHIFT) & MPIDR_AFFLVL_MASK)
 
 #define GET_MPIDR()		read_sysreg(mpidr)
-#define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
+#define MPIDR_TO_CORE(mpidr)	((mpidr) & MPIDR_AFF_MASK)
 
 /* ICC SGI macros */
 #define SGIR_TGT_MASK		(0xffff)

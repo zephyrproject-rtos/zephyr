@@ -2022,7 +2022,12 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		switch (optname) {
 		case ZSOCK_TCP_NODELAY:
 			ret = net_tcp_get_option(ctx, TCP_OPT_NODELAY, optval, optlen);
-			return ret;
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
 
 		case ZSOCK_TCP_KEEPIDLE:
 			__fallthrough;
@@ -2653,7 +2658,12 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case ZSOCK_TCP_NODELAY:
 			ret = net_tcp_set_option(ctx,
 						 TCP_OPT_NODELAY, optval, optlen);
-			return ret;
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
 
 		case ZSOCK_TCP_KEEPIDLE:
 			__fallthrough;

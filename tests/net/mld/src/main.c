@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include "icmpv6.h"
 #include "ipv6.h"
-#include "route.h"
+#include "route_ipv6.h"
 
 #define THREAD_SLEEP 50 /* ms */
 #define MLD_REPORT_ADDR_COUNT 8
@@ -74,7 +74,8 @@ static struct net_in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 static struct net_in6_addr mcast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-static struct net_in6_addr *exp_mcast_group;
+static struct net_in6_addr exp_mcast_group_storage;
+static const struct net_in6_addr *exp_mcast_group;
 static struct net_if *net_iface;
 static bool is_group_joined;
 static bool is_group_left;
@@ -240,13 +241,27 @@ static void test_iface_carrier_off_on(void)
 static void group_joined(struct net_mgmt_event_callback *cb,
 			 uint64_t nm_event, struct net_if *iface)
 {
+	const struct net_in6_addr *group = cb->info;
+
+	ARG_UNUSED(iface);
+
 	if (nm_event != NET_EVENT_IPV6_MCAST_JOIN) {
 		/* Spurious callback. */
 		return;
 	}
 
-	if (exp_mcast_group == NULL ||
-	    net_ipv6_addr_cmp(exp_mcast_group, cb->info)) {
+	if (exp_mcast_group == NULL) {
+		is_group_joined = true;
+
+		k_sem_give(&wait_joined);
+		return;
+	}
+
+	if (group == NULL || cb->info_length != sizeof(*group)) {
+		return;
+	}
+
+	if (net_ipv6_addr_cmp(exp_mcast_group, group)) {
 		is_group_joined = true;
 
 		k_sem_give(&wait_joined);
@@ -256,13 +271,27 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 static void group_left(struct net_mgmt_event_callback *cb,
 		       uint64_t nm_event, struct net_if *iface)
 {
+	const struct net_in6_addr *group = cb->info;
+
+	ARG_UNUSED(iface);
+
 	if (nm_event != NET_EVENT_IPV6_MCAST_LEAVE) {
 		/* Spurious callback. */
 		return;
 	}
 
-	if (exp_mcast_group == NULL ||
-	    net_ipv6_addr_cmp(exp_mcast_group, cb->info)) {
+	if (exp_mcast_group == NULL) {
+		is_group_left = true;
+
+		k_sem_give(&wait_left);
+		return;
+	}
+
+	if (group == NULL || cb->info_length != sizeof(*group)) {
+		return;
+	}
+
+	if (net_ipv6_addr_cmp(exp_mcast_group, group)) {
 		is_group_left = true;
 
 		k_sem_give(&wait_left);
@@ -669,7 +698,8 @@ static void verify_allnodes_on_iface_event(void (*action)(void))
 	k_sem_reset(&wait_joined);
 
 	is_group_joined = false;
-	exp_mcast_group = &addr;
+	exp_mcast_group_storage = addr;
+	exp_mcast_group = &exp_mcast_group_storage;
 	report_handler = &handler;
 
 	action();
@@ -732,7 +762,8 @@ static void verify_solicit_node_on_iface_event(void (*action)(void))
 	k_sem_reset(&wait_joined);
 
 	is_group_joined = false;
-	exp_mcast_group = &addr;
+	exp_mcast_group_storage = addr;
+	exp_mcast_group = &exp_mcast_group_storage;
 	report_handler = &handler;
 
 	action();
@@ -855,7 +886,8 @@ static void add_mcast_route_and_verify(struct net_if *iface, struct net_in6_addr
 {
 	k_sem_reset(&wait_data);
 
-	zassert_not_null(net_route_mcast_add(iface, addr, 128), "Failed to add multicast route");
+	zassert_not_null(net_route_ipv6_mcast_add(iface, addr, 128),
+			 "Failed to add multicast route");
 
 	k_msleep(THREAD_SLEEP);
 
@@ -871,14 +903,14 @@ static void add_mcast_route_and_verify(struct net_if *iface, struct net_in6_addr
 static void del_mcast_route_and_verify(struct net_if *iface, struct net_in6_addr *addr,
 				       struct mld_report_info *info)
 {
-	struct net_route_entry_mcast *entry;
+	struct net_route_ipv6_entry_mcast *entry;
 
 	k_sem_reset(&wait_data);
 
-	entry = net_route_mcast_lookup(addr);
+	entry = net_route_ipv6_mcast_lookup(addr);
 
 	zassert_not_null(entry, "Could not find the multicast route entry");
-	zassert_true(net_route_mcast_del(entry), "Failed to delete a route");
+	zassert_true(net_route_ipv6_mcast_del(entry), "Failed to delete a route");
 
 	k_msleep(THREAD_SLEEP);
 
@@ -924,7 +956,7 @@ static void verify_mcast_routes_in_mld(struct mld_report_info *info)
 
 	k_sem_reset(&wait_data);
 
-	zassert_not_null(net_route_mcast_add(null_iface, &site_local_mcast_addr_cafe, 128),
+	zassert_not_null(net_route_ipv6_mcast_add(null_iface, &site_local_mcast_addr_cafe, 128),
 			 "Failed to add multicast route");
 
 	k_msleep(THREAD_SLEEP);
@@ -957,7 +989,8 @@ static void verify_mcast_routes_in_mld(struct mld_report_info *info)
 	 */
 	k_sem_reset(&wait_data);
 
-	zassert_true(net_route_mcast_del(net_route_mcast_lookup(&site_local_mcast_addr_cafe)),
+	zassert_true(net_route_ipv6_mcast_del(
+			net_route_ipv6_mcast_lookup(&site_local_mcast_addr_cafe)),
 		     "Failed to cleanup route to ff05::cafe");
 
 	k_msleep(THREAD_SLEEP);
@@ -1001,8 +1034,10 @@ ZTEST(net_mld_test_suite, test_mcast_routes_in_mld)
 	zassert_equal(info.records_count, get_mcast_addr_count(iface),
 		      "Different number of reported addresses");
 
-	/* 2. If CONFIG_NET_MCAST_ROUTE_MLD_REPORTS is enabled check that funtionality works */
-	if (IS_ENABLED(CONFIG_NET_MCAST_ROUTE_MLD_REPORTS)) {
+	/* 2. If CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS is enabled check that
+	 * funtionality works
+	 */
+	if (IS_ENABLED(CONFIG_NET_IPV6_MCAST_ROUTE_MLD_REPORTS)) {
 		verify_mcast_routes_in_mld(&info);
 	}
 

@@ -23,7 +23,7 @@ BUILD_ASSERT(PATH_MAX >= MAX_FILE_NAME, "PATH_MAX is less than MAX_FILE_NAME");
 static struct fs_dirent fdirent;
 static struct dirent pdirent;
 
-K_MEM_SLAB_DEFINE_STATIC(dir_desc_slab, sizeof(struct fs_dir_t), CONFIG_POSIX_OPEN_MAX, 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(dir_desc_slab, struct fs_dir_t, CONFIG_POSIX_OPEN_MAX);
 
 /**
  * @brief Open a directory stream.

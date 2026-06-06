@@ -1,5 +1,5 @@
 /*
- * Copyright 2021,2024-2025 NXP
+ * Copyright 2021,2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -329,6 +329,19 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 			return -EINVAL;
 		}
 		break;
+#elif defined(CONFIG_SOC_MIMX9352_M33)
+	case IMX_CCM_LPIT_CLK:
+		switch (instance) {
+		case 0:
+			clock_root = kCLOCK_Root_BusAon;
+			break;
+		case 1:
+			clock_root = kCLOCK_Root_BusWakeup;
+			break;
+		default:
+			return -EINVAL;
+		}
+		break;
 #endif
 #endif
 #ifdef CONFIG_ADC_MCUX_LPADC
@@ -365,6 +378,17 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 	case IMX_CCM_KPP_CLK:
 		clock_root = kCLOCK_CpuClk;
 		break;
+#endif
+
+#ifdef CONFIG_COUNTER_MCUX_SYSCTR
+#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_SYSCTR_BASE_CLK:
+		*rate = MHZ(24);
+		return 0;
+	case IMX_CCM_SYSCTR_SLOW_CLK:
+		*rate = 32768U;
+		return 0;
+#endif
 #endif
 
 	default:

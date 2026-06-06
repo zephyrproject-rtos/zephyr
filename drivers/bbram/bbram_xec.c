@@ -14,6 +14,11 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bbram, CONFIG_BBRAM_LOG_LEVEL);
 
+/* VBAT reg bank, offset 0x00 Power-Fail and Reset Status */
+#define XEC_VBR_PFR_SR_OFS            0
+/* VBAT reset is detected. R/W1C */
+#define XEC_VBR_PFR_SR_VB_RST_STS_POS 7
+
 /** Device config */
 struct bbram_xec_config {
 	/** BBRAM base address */
@@ -24,11 +29,11 @@ struct bbram_xec_config {
 
 static int bbram_xec_check_invalid(const struct device *dev)
 {
-	struct vbatr_regs *const regs = (struct vbatr_regs *)(DT_REG_ADDR_BY_NAME(
-					DT_NODELABEL(pcr), vbatr));
+	mem_addr_t vbatr_base = (DT_REG_ADDR_BY_NAME(DT_NODELABEL(pcr), vbatr));
+	mem_addr_t pfrs_addr = vbatr_base + XEC_VBR_PFR_SR_OFS;
 
-	if (regs->PFRS & BIT(MCHP_VBATR_PFRS_VBAT_RST_POS)) {
-		regs->PFRS |= BIT(MCHP_VBATR_PFRS_VBAT_RST_POS);
+	if (sys_test_bit(pfrs_addr, XEC_VBR_PFR_SR_VB_RST_STS_POS)) {
+		sys_set_bits(pfrs_addr, BIT(XEC_VBR_PFR_SR_VB_RST_STS_POS));
 		LOG_ERR("VBAT power rail failure");
 		return -EFAULT;
 	}

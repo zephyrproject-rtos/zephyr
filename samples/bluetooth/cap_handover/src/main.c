@@ -167,6 +167,8 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 
 static void stream_sent_cb(struct bt_bap_stream *stream)
 {
+	ARG_UNUSED(stream);
+
 	/* Triggered every time we have sent an HCI data packet to the controller */
 
 	if ((total_tx_iso_packet_count % 100U) == 0U) {
@@ -213,6 +215,8 @@ bap_broadcast_assistant_recv_state_cb(struct bt_conn *conn, int err,
 
 static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, uint8_t src_id)
 {
+	ARG_UNUSED(conn);
+
 	if (src_id == peer.src_id) {
 		LOG_DBG("Receive state removed");
 		peer.bis_sync = 0U;
@@ -225,6 +229,8 @@ static void bap_broadcast_assistant_recv_state_removed_cb(struct bt_conn *conn, 
 static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 						uint8_t recv_state_count)
 {
+	ARG_UNUSED(conn);
+
 	if (err == 0) {
 		LOG_DBG("BASS discover done with %u recv states", recv_state_count);
 	} else {
@@ -246,6 +252,8 @@ static bool log_codec_cb(struct bt_data *data, void *user_data)
 
 static void log_codec(const struct bt_audio_codec_cap *codec_cap, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(dir);
+
 	LOG_INF("codec id 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cap->id, codec_cap->cid,
 		codec_cap->vid, codec_cap->data_len);
 
@@ -271,6 +279,9 @@ static void add_remote_sink(struct bt_bap_ep *ep)
 
 static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	if (err != 0) {
 		LOG_ERR("Discovering sinks failed: %d", err);
 	} else {
@@ -283,11 +294,16 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			  const struct bt_audio_codec_cap *codec_cap)
 {
+	ARG_UNUSED(conn);
+
 	log_codec(codec_cap, dir);
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	add_remote_sink(ep);
 }
 
@@ -391,6 +407,9 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 				      const struct bt_csip_set_coordinator_set_member *member,
 				      const struct bt_csip_set_coordinator_csis_inst *csis_inst)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(member);
+
 	if (err != 0) {
 		LOG_ERR("CAS discovery completed with error: %d", err);
 
@@ -529,11 +548,16 @@ static int unicast_audio_start(void)
 
 static void broadcast_stopped_cb(struct bt_cap_broadcast_source *source, uint8_t reason)
 {
+	ARG_UNUSED(source);
+	ARG_UNUSED(reason);
+
 	k_sem_give(&sem_broadcast_stopped);
 }
 
 static void att_mtu_updated_cb(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+
 	LOG_INF("MTU exchanged: %u/%u", tx, rx);
 	k_sem_give(&sem_mtu_exchanged);
 }
@@ -697,6 +721,9 @@ static int scan_and_connect(void)
 
 static void exchange_cb(struct bt_conn *conn, uint8_t err, struct bt_gatt_exchange_params *params)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(params);
+
 	if (err == BT_ATT_ERR_SUCCESS) {
 		LOG_INF("MTU exchange done");
 		k_sem_give(&sem_proc);

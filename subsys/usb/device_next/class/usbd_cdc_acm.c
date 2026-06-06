@@ -132,7 +132,11 @@ static void cdc_acm_irq_rx_enable(const struct device *dev);
 #if CONFIG_USBD_CDC_ACM_BUF_POOL
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
 		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
+		    CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE,
+		    sizeof(struct udc_buf_info), NULL);
+
+BUILD_ASSERT((CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE % USBD_MAX_BULK_MPS) == 0,
+	     "USBD_CDC_ACM_BUF_POOL_SIZE is not multiple of bulk endpoint MPS");
 
 static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
 					 const uint8_t ep)
@@ -564,6 +568,7 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
+	desc->if0_cm.bDataInterface = desc->if1.bInterfaceNumber;
 
 	if (cfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(uds_ctx, cfg->if_desc_data)) {
@@ -703,7 +708,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	}
 
 	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_data)) {
-		LOG_INF("RX buffer to small, throttle");
+		LOG_INF("RX buffer too small, throttle");
 		return;
 	}
 
@@ -872,14 +877,14 @@ static int cdc_acm_irq_is_pending(const struct device *dev)
 	return 0;
 }
 
-static int cdc_acm_irq_update(const struct device *dev)
+static void cdc_acm_irq_update(const struct device *dev)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (!check_wq_ctx(dev)) {
 		LOG_WRN("Invoked by inappropriate context");
 		__ASSERT_NO_MSG(false);
-		return 0;
+		return;
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
@@ -895,8 +900,6 @@ static int cdc_acm_irq_update(const struct device *dev)
 	} else {
 		data->tx_fifo.irq = false;
 	}
-
-	return 1;
 }
 
 /*

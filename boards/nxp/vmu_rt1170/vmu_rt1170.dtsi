@@ -99,6 +99,10 @@
 	status = "okay";
 };
 
+&edma0 {
+	status = "okay";
+};
+
 &enet1g {
 	pinctrl-0 = <&pinmux_enet1g>;
 	pinctrl-names = "default";
@@ -162,21 +166,29 @@
 };
 
 &lpspi1 {
+	dmas = <&edma0 0 36>, <&edma0 1 37>;
+	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
 };
 
 &lpspi2 {
+	dmas = <&edma0 2 38>, <&edma0 3 39>;
+	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi2>;
 	pinctrl-names = "default";
 };
 
 &lpspi3 {
+	dmas = <&edma0 4 40>, <&edma0 5 41>;
+	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi3>;
 	pinctrl-names = "default";
 };
 
 &lpspi6 {
+	dmas = <&edma0 6 46>, <&edma0 7 47>;
+	dma-names = "rx", "tx";
 	pinctrl-0 = <&pinmux_lpspi6>;
 	pinctrl-names = "default";
 };
@@ -222,31 +234,40 @@
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <2>; /* FLASH_MCUX_FLEXSPI_MX25UM51345G_OPI_DTR set */
 
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
 			partitions {
-				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+
+				ranges;
 
 				/*
 				 * Partition sizes must be aligned
 				 * to the flash memory sector size of 4KB.
 				 */
 				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
 				};
 
 				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(3)>;
 				};
 
 				slot1_partition: partition@320000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-1";
 					reg = <0x00320000 DT_SIZE_M(3)>;
 				};
 
 				storage_partition: partition@620000 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0x00620000 (DT_SIZE_M(58) - DT_SIZE_K(128))>;
 				};

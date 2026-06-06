@@ -10,9 +10,12 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/drivers/i3c.h>
 
 enum bmp581_bus_type {
 	BMP581_BUS_TYPE_I2C,
+	BMP581_BUS_TYPE_SPI,
+	BMP581_BUS_TYPE_I3C,
 };
 
 struct bmp581_bus {
@@ -20,6 +23,12 @@ struct bmp581_bus {
 		struct rtio *ctx;
 		struct rtio_iodev *iodev;
 		enum bmp581_bus_type type;
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(bosch_bmp581, i3c)
+		struct {
+			struct i3c_device_desc *desc;
+			const struct i3c_device_id id;
+		} i3c;
+#endif
 	} rtio;
 };
 

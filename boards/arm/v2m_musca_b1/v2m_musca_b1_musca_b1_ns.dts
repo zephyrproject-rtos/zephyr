@@ -12,8 +12,6 @@
 
 / {
 	compatible = "arm,v2m-musca";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	aliases {};
 
@@ -87,7 +85,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x40000000 0x10000000>;
 
-			#include "v2m_musca_b1-common.dtsi"
+#include "v2m_musca_b1-common.dtsi"
 		};
 	};
 };

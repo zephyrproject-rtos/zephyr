@@ -118,10 +118,13 @@ tests:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: sam_e54_xpro
+    platform_allow:
+      - sam_e54_xpro
+      - pic32cx_sg61_cult
     timeout: 600
     extra_args:
-      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_rtc.overlay"
+      - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/microchip/sam_e54_xpro_rtc.overlay"
+      - platform:pic32cx_sg61_cult/pic32cx1025sg61128:"DTC_OVERLAY_FILE=boards/microchip/pic32cx_sg61_cult_rtc.overlay"
   drivers.counter.basic_api.no_blobs:
     tags:
       - drivers

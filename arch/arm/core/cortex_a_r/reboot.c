@@ -44,7 +44,7 @@ TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_NONNULL)
 void __weak relocate_vector_table(void)
 {
 #if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) ||                                     \
-	!defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
+	!defined(CONFIG_XIP) && (DT_CHOSEN_SRAM_ADDR != 0)
 	write_sctlr(read_sctlr() & ~HIVECS);
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 	(void)arch_early_memcpy(VECTOR_ADDRESS, _vector_start, vector_size);

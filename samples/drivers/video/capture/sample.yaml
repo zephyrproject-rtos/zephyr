@@ -1,7 +1,7 @@
 sample:
   name: Video capture
 tests:
-  sample.video.capture:
+  sample.drivers.video.capture:
     tags:
       - video
       - shield
@@ -40,7 +40,7 @@ tests:
     integration_platforms:
       - mimxrt1064_evk/mimxrt1064
       - mimxrt1170_evk/mimxrt1176/cm7
-  sample.video.capture.shell:
+  sample.drivers.video.capture.shell:
     tags:
       - video
       - samples

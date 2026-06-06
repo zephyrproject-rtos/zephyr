@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Trackunit Corporation
+ * Copyright (c) 2025 Alif Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,17 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
+#include <zephyr/device.h>
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/sys/mpsc_lockfree.h>
+#include <zephyr/kernel.h>
+
+#define IMU_BOSCH_BMI323_REG_CHIP_ID    (0x00)
+
+#define IMU_BOSCH_DIE_TEMP_OFFSET_MICRO_DEG_CELSIUS (23000000LL)
+#define IMU_BOSCH_DIE_TEMP_MICRO_DEG_CELSIUS_LSB    (1953L)
 
 #define IMU_BOSCH_BMI323_REG_ACC_DATA_X (0x03)
 #define IMU_BOSCH_BMI323_REG_ACC_DATA_Y (0x04)
@@ -192,5 +204,95 @@ struct bosch_bmi323_bus {
 	const void *context;
 	const struct bosch_bmi323_bus_api *api;
 };
+
+enum bmi323_bus_type {
+	BMI323_BUS_SPI = 0,
+	BMI323_BUS_I2C,
+};
+
+struct bosch_bmi323_data {
+	struct k_mutex lock;
+
+	struct sensor_value acc_samples[3];
+	struct sensor_value gyro_samples[3];
+	struct sensor_value temperature;
+
+	bool acc_samples_valid;
+	bool gyro_samples_valid;
+	bool temperature_valid;
+
+	uint32_t acc_full_scale;
+	uint32_t gyro_full_scale;
+
+	struct gpio_callback gpio_callback;
+	const struct sensor_trigger *trigger;
+	sensor_trigger_handler_t trigger_handler;
+	struct k_work callback_work;
+	const struct device *dev;
+
+	enum bmi323_bus_type async_bus_type;
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+	struct rtio *r;
+	struct rtio_iodev *bus_iodev;
+	struct rtio_iodev_sqe *pending_sqe;
+	struct k_spinlock mpsc_lock;
+	/*
+	 * Staging buffer layout:
+	 *   [0]            : data register address
+	 *   [1..off]       : bus dummy bytes (1 for SPI, 2 for I2C)
+	 *   [1+off..14+off]: 14 bytes sensor data (accel XYZ, gyro XYZ, temp)
+	 * Worst case: 1 + 2 + 14 = 17 bytes.
+	 * Must remain valid until the completion callback fires.
+	 */
+	uint8_t raw_buffer[17];
+
+	struct mpsc io_q;
+#endif
+};
+
+/* Raw sensor readings (not sensor_value) - in micro units
+ * Defined outside CONFIG_SENSOR_ASYNC_API as it's used by sample_fetch_impl
+ * for both sync and async code paths.
+ */
+struct bmi323_reading {
+	int16_t accel_x;
+	int16_t accel_y;
+	int16_t accel_z;
+	int16_t gyro_x;
+	int16_t gyro_y;
+	int16_t gyro_z;
+	int16_t temperature;
+};
+
+/* RTIO support structures */
+#ifdef CONFIG_SENSOR_ASYNC_API
+
+/* Decoder header with timestamp */
+struct bmi323_decoder_header {
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+struct bmi323_encoded_data {
+	struct bmi323_decoder_header header;
+	bool has_accel;
+	bool has_gyro;
+	bool has_temp;
+	uint16_t accel_range;
+	uint16_t gyro_range;
+	struct bmi323_reading reading;
+} __attribute__((__packed__));
+
+/* Q31 conversion constants */
+#define BMI323_ACCEL_SHIFT  10  /* Q21.10 for acceleration (m/s^2) */
+#define BMI323_GYRO_SHIFT   10  /* Q21.10 for gyro (rad/s) */
+#define BMI323_TEMP_SHIFT   10  /* Q21.10 for temperature */
+
+/* Function declarations for async API */
+void bmi323_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+int bmi323_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+
+#endif /* CONFIG_SENSOR_ASYNC_API */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BMI323_BMI323_H_ */

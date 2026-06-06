@@ -205,7 +205,7 @@ static inline struct netmidi2_session *netmidi2_match_session(struct netmidi2_ep
 	for (size_t i = 0; i < CONFIG_NETMIDI2_HOST_MAX_CLIENTS; i++) {
 		if (ep->peers[i].addr_len == peer_addr_len &&
 		    memcmp(&ep->peers[i].addr, peer_addr, peer_addr_len) == 0) {
-			LOG_DBG("Found matching client session %d", i);
+			LOG_DBG("Found matching client session %zu", i);
 			return &ep->peers[i];
 		}
 	}
@@ -243,7 +243,7 @@ static inline struct netmidi2_session *netmidi2_try_alloc_session(struct netmidi
 			sess->addr_len = peer_addr_len;
 			sess->ep = ep;
 			memcpy(&sess->addr, peer_addr, peer_addr_len);
-			SESS_LOG_INF(sess, "new client session (%d)", i);
+			SESS_LOG_INF(sess, "new client session (%zu)", i);
 			return sess;
 		}
 	}

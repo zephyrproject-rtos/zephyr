@@ -15,6 +15,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESPRESSIF_ESP32C2_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESPRESSIF_ESP32C2_PINCTRL_H_
 
+#include "esp-pinctrl-common.h"
+#include "esp32c2-gpio-sigmap.h"
+
 /**
  * @addtogroup espressif_pinctrl Espressif pin control helpers
  * @ingroup devicetree-pinctrl
@@ -30,9 +33,7 @@
  * mapped to `GPIO1`.
  *
  * @code{.dts}
- * #include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
  * #include <zephyr/dt-bindings/pinctrl/esp32c2-pinctrl.h>
- * #include <zephyr/dt-bindings/pinctrl/esp32c2-gpio-sigmap.h>
  *
  * &pinctrl {
  *     uart0_default: uart0_default {

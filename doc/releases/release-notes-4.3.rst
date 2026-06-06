@@ -1117,7 +1117,7 @@ New Drivers
    * :dtcompatible:`nxp,vbat`
    * :dtcompatible:`renesas,ra-battery-backup`
    * :dtcompatible:`sifli,sf32lb-aon`
-   * :dtcompatible:`sifli,sf32lb-pmuc`
+   * :dtcompatible:`sifli,sf32lb52x-pmuc`
 
 * Power domain
 

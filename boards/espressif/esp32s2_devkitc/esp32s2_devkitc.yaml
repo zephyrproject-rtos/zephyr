@@ -18,7 +18,6 @@ supported:
   - counter
   - entropy
   - input
-  - can
   - dma
   - crypto
   - retained_mem

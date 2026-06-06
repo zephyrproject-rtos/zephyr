@@ -86,7 +86,7 @@ static void test_main(void)
 	printk("Waiting to be subscribed\n");
 
 	while (!is_peer_subscribed(default_conn)) {
-		(void)k_sleep(K_MSEC(10));
+		(void)k_sleep(K_MSEC(10U));
 	}
 	printk("Subscribed\n");
 

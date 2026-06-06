@@ -51,8 +51,8 @@ struct mac_tx_params {
 	/* Delay from TX-done to RX1 open, in ms */
 	uint32_t rx1_delay_ms;
 
-	/* Called after TX, before RX windows; used to bump FCntUp (may be NULL) */
-	void (*post_tx)(struct lwan_ctx *ctx);
+	/* Called after TX, before RX windows (may be NULL) */
+	void (*post_tx)(struct lwan_ctx *ctx, void *user_data);
 
 	/* Called on each RX frame; MAC_RX_DONE to accept, MAC_RX_CONTINUE to keep going */
 	enum mac_rx_result (*rx_handler)(struct lwan_ctx *ctx,
@@ -65,8 +65,8 @@ struct mac_tx_params {
 };
 
 int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params);
-void mac_do_join(struct lwan_ctx *ctx, const struct lwan_join_req *req);
-void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req);
+void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req);
+void mac_do_send(struct lwan_ctx *ctx, const struct lwan_req *req);
 
 #ifdef __cplusplus
 }

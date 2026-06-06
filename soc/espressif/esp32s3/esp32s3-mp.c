@@ -7,7 +7,6 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 

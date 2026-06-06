@@ -4,17 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup regulator_npm1100
+ * @brief Header file for nPM1100 Devicetree helpers.
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_NPM1100_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_NPM1100_H_
 
 /**
- * @defgroup regulator_npm1100 NPM1100 Devicetree helpers.
- * @ingroup regulator_interface
+ * @defgroup regulator_npm1100 nPM1100 Devicetree helpers
+ * @brief Nordic nPM1100 PMIC regulator driver Devicetree helpers
+ * @ingroup devicetree-regulator
  * @{
  */
 
 /**
- * @name NPM1100 Regulator modes
+ * @name nPM1100 regulator modes
  * @{
  */
 /** Automatic mode */

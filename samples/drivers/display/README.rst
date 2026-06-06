@@ -137,7 +137,7 @@ black to white.
 
    .. tab:: Grayscale
 
-      On displays using an 8-bit luminance format (for example :c:enumerator:`PIXEL_FORMAT_L_8`),
+      On displays using a multi-bit luminance format (for example :c:enumerator:`PIXEL_FORMAT_L_8`),
       each corner is a different grey level; the bottom-left patch still animates from black to
       white. Other multi-bit monochrome formats behave similarly (different greys per corner).
 

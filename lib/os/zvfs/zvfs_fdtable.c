@@ -26,7 +26,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/fs/fs.h>
 
-K_MEM_SLAB_DEFINE(file_desc_slab, sizeof(struct fs_file_t), ZVFS_OPEN_SIZE, 4);
+K_MEM_SLAB_DEFINE_TYPE(file_desc_slab, struct fs_file_t, ZVFS_OPEN_SIZE);
 
 struct fd_entry {
 	void *obj;
@@ -587,7 +587,7 @@ static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 
 static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 {
-#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
+#if defined(CONFIG_PICOLIBC) || defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_ARCMWDT_LIBC)
 	return z_impl_zephyr_write_stdout(buffer, count);
 #else
 	return 0;

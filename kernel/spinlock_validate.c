@@ -7,12 +7,14 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/llext/symbol.h>
 
+#define SPIN_CPU_ID_MASK (sizeof(void *) - 1)
+
 bool z_spin_lock_valid(struct k_spinlock *l)
 {
 	uintptr_t thread_cpu = l->thread_cpu;
 
 	if (thread_cpu != 0U) {
-		if ((thread_cpu & 3U) == _current_cpu->id) {
+		if ((thread_cpu & SPIN_CPU_ID_MASK) == _current_cpu->id) {
 			return false;
 		}
 	}

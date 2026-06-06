@@ -5,7 +5,7 @@ description: Telit LE910C1tx Modem
 
 compatible: "telit,le910c1tx"
 
-include: uart-device.yaml
+include: zephyr,cellular-modem-device.yaml
 
 properties:
   mdm-power-gpios:

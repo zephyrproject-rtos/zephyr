@@ -109,14 +109,34 @@ case, the operation is split into three stages:
 Concurrency
 ===========
 
-The ring buffer APIs do not provide any concurrency control.
+The ring buffer APIs do not provide any internal concurrency control.
 Depending on usage (particularly with respect to number of concurrent
 readers/writers) applications may need to protect the ring buffer with
 mutexes and/or use semaphores to notify consumers that there is data to
 read.
 
-For the trivial case of one producer and one consumer, concurrency
-control shouldn't be needed.
+A single producer and a single consumer running in separate execution
+contexts (for example two threads, or one thread and one ISR) may use
+the same ring buffer concurrently without additional locking. The
+producer side only updates the ``put`` indices and the consumer side
+only updates the ``get`` indices, so the two sides never write the
+same fields. This holds for both the copying APIs
+(:c:func:`ring_buf_put` / :c:func:`ring_buf_get`) and the zero-copy
+"claim" APIs (:c:func:`ring_buf_put_claim` /
+:c:func:`ring_buf_put_finish` and :c:func:`ring_buf_get_claim` /
+:c:func:`ring_buf_get_finish`).
+
+When the producer and consumer run on different CPUs (SMP), the
+application must still ensure that data writes are visible before the
+index update that publishes them. In practice this happens for free
+when the producer and consumer use a kernel synchronization primitive
+to coordinate (for example a :c:struct:`k_sem` signaled by the
+producer and waited on by the consumer), since those primitives
+include the necessary memory barriers.
+
+Any use case with more than one concurrent producer, or more than one
+concurrent consumer, must serialize those accesses externally
+(for example with a mutex or by disabling preemption).
 
 Internal Operation
 ==================

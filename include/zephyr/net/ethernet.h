@@ -639,16 +639,16 @@ struct ethernet_context {
 	 */
 	enum net_l2_flags ethernet_l2_flags;
 
-#if defined(CONFIG_NET_L2_PTP)
-	/** The PTP port number for this network device. We need to store the
+#if defined(CONFIG_NET_GPTP)
+	/** The gPTP port number for this network device. We need to store the
 	 * port number here so that we do not need to fetch it for every
-	 * incoming PTP packet.
+	 * incoming gPTP packet.
 	 */
-	int port;
+	uint16_t gptp_port;
 #endif
 
 #if defined(CONFIG_NET_DSA)
-	/** DSA port tpye */
+	/** DSA port type */
 	enum dsa_port_type dsa_port;
 
 	/** DSA switch context pointer */
@@ -1447,40 +1447,6 @@ static inline const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 __syscall const struct device *net_eth_get_ptp_clock_by_index(int index);
 
 /**
- * @brief Return PTP port number attached to this interface.
- *
- * @param iface Network interface
- *
- * @return Port number, no such port if < 0
- */
-#if defined(CONFIG_NET_L2_PTP)
-int net_eth_get_ptp_port(struct net_if *iface);
-#else
-static inline int net_eth_get_ptp_port(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
-
-	return -ENODEV;
-}
-#endif /* CONFIG_NET_L2_PTP */
-
-/**
- * @brief Set PTP port number attached to this interface.
- *
- * @param iface Network interface
- * @param port Port number to set
- */
-#if defined(CONFIG_NET_L2_PTP)
-void net_eth_set_ptp_port(struct net_if *iface, int port);
-#else
-static inline void net_eth_set_ptp_port(struct net_if *iface, int port)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(port);
-}
-#endif /* CONFIG_NET_L2_PTP */
-
-/**
  * @brief Check if the Ethernet L2 network interface can perform Wi-Fi.
  *
  * @param iface Pointer to network interface
@@ -1507,6 +1473,18 @@ static inline bool net_eth_type_is_ethernet(struct net_if *iface)
 	const struct ethernet_context *ctx = (struct ethernet_context *)net_if_l2_data(iface);
 
 	return ctx->eth_if_type == L2_ETH_IF_TYPE_ETHERNET;
+}
+
+/**
+ * @brief Set the Ethernet interface type to Wi-Fi.
+ *
+ * @param iface Network interface
+ */
+static inline void net_eth_set_if_type_wifi(struct net_if *iface)
+{
+	struct ethernet_context *ctx = (struct ethernet_context *)net_if_l2_data(iface);
+
+	ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 }
 
 /**

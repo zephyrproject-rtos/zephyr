@@ -167,7 +167,11 @@ struct reset_dt_spec {
 #define RESET_DT_SPEC_INST_GET_OR(inst, default_value)			\
 	RESET_DT_SPEC_INST_GET_BY_IDX_OR(inst, 0, default_value)
 
-/** @cond INTERNAL_HIDDEN */
+/**
+ * @def_driverbackendgroup{Reset Controller,reset_controller_interface}
+ * @ingroup reset_controller_interface
+ * @{
+ */
 
 /**
  * API template to get the reset status of the device.
@@ -198,16 +202,20 @@ typedef int (*reset_api_line_deassert)(const struct device *dev, uint32_t id);
 typedef int (*reset_api_line_toggle)(const struct device *dev, uint32_t id);
 
 /**
- * @brief Reset Controller driver API
+ * @driver_ops{Reset Controller}
  */
 __subsystem struct reset_driver_api {
+	/** @driver_ops_optional @copybrief reset_api_status */
 	reset_api_status status;
+	/** @driver_ops_optional @copybrief reset_api_line_assert */
 	reset_api_line_assert line_assert;
+	/** @driver_ops_optional @copybrief reset_api_line_deassert */
 	reset_api_line_deassert line_deassert;
+	/** @driver_ops_optional @copybrief reset_api_line_toggle */
 	reset_api_line_toggle line_toggle;
 };
 
-/** @endcond */
+/** @} */
 
 /**
  * @brief Get the reset status

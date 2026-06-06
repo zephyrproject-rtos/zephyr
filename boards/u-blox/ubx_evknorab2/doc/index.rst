@@ -40,7 +40,7 @@ to be built using sysbuild to include the ``vpr_launcher`` image for the
 application core.
 
 Enter the following command to compile ``hello_world`` for the FLPR core::
- west build -p -b ubx_evknorab2/nrf54l15/cpuflpr --sysbuild
+ west build -p -b ubx_evknorab2/nrf54l15/cpuflpr samples/hello_world --sysbuild
 
 Flashing
 ========

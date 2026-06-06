@@ -1,0 +1,7 @@
+identifier: pico_ultra
+name: Luckfox Pico Ultra
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+vendor: luckfox

@@ -29,6 +29,7 @@
 		led0 = &led0;
 		sw0 = &button_0;
 		watchdog0 = &wdt0;
+		sdhc0 = &sdhc0;
 	};
 
 	leds {
@@ -122,4 +123,16 @@
 
 &bt_hci_bflb {
 	status = "okay";
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdh_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };

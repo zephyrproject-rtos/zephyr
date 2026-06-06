@@ -251,7 +251,6 @@ static int seesaw_gamepad_init(const struct device *dev)
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.polling_interval_ms = DT_INST_PROP(inst, polling_interval_ms),                    \
 	};                                                                                         \
-	BUILD_ASSERT(DT_INST_PROP(inst, polling_interval_ms) > 8);                                 \
                                                                                                    \
 	static struct seesaw_gamepad_data seesaw_data_##inst;                                      \
 	DEVICE_DT_INST_DEFINE(inst, &seesaw_gamepad_init, NULL, &seesaw_data_##inst,               \

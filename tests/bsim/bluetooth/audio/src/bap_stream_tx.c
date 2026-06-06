@@ -97,7 +97,7 @@ static void tx_thread_func(void *arg1, void *arg2, void *arg3)
 
 		if (err != 0) {
 			/* In case of any errors, retry with a delay */
-			k_sleep(K_MSEC(10));
+			k_sleep(K_MSEC(10U));
 		}
 	}
 }

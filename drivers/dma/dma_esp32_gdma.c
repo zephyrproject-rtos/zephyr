@@ -15,9 +15,7 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <hal/gdma_ll.h>
 #include <hal/dma_types.h>
 #include <hal/gdma_types.h>
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
-#include <esp_cache.h>
-#endif
+#include <zephyr/cache.h>
 
 #include <soc.h>
 #include <esp_memory_utils.h>
@@ -29,7 +27,33 @@ LOG_MODULE_REGISTER(dma_esp32_gdma, CONFIG_DMA_LOG_LEVEL);
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/pm/policy.h>
 
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
+#define GDMA_SLEEP_RETENTION_ENABLED 1
+#else
+#define GDMA_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if GDMA_SLEEP_RETENTION_ENABLED
+#include <hal/gdma_periph.h>
+#include <esp_private/sleep_retention.h>
+
+static esp_err_t gdma_create_sleep_retention_cb(void *arg)
+{
+	const gdma_chx_reg_ctx_link_t *ctx = (const gdma_chx_reg_ctx_link_t *)arg;
+
+	return sleep_retention_entries_create(ctx->link_list, ctx->link_num,
+					      REGDMA_LINK_PRI_GDMA, ctx->module_id);
+}
+#endif
+
 #define DMA_MAX_CHANNEL GDMA_LL_PAIRS_PER_INST
+
+/*
+ * On some SoCs (ESP32-C2, ESP32-C3) RX and TX of a channel pair share a
+ * single interrupt source. Detect this from DT by comparing the number of
+ * interrupts against the number of channel pairs.
+ */
+#define DMA_ESP32_SHARED_IRQ (DT_NUM_IRQS(DT_DRV_INST(0)) == DT_INST_PROP(0, dma_channels) / 2)
 
 static int get_m2m_periph_id(void)
 {
@@ -155,7 +179,7 @@ static void IRAM_ATTR dma_esp32_isr_handle_tx(const struct device *dev,
 	}
 }
 
-#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
+#if DMA_ESP32_SHARED_IRQ
 static void IRAM_ATTR dma_esp32_isr_handle(const struct device *dev, uint8_t rx_id, uint8_t tx_id)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
@@ -257,13 +281,10 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_SOC_SERIES_ESP32S3) || defined(CONFIG_SOC_SERIES_ESP32S2)
-	/* Write back cache to ensure DMA descriptor is visible to GDMA hardware.
-	 * ESP32-S3/S2 have data cache that may hold stale descriptor values.
+	/* Write back cache so the GDMA hardware sees fresh descriptor values.
+	 * No-op when CACHE_MANAGEMENT is disabled (SoCs without a data cache).
 	 */
-	esp_cache_msync(dma_channel->desc_list, sizeof(dma_channel->desc_list),
-			ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-#endif
+	sys_cache_data_flush_range(dma_channel->desc_list, sizeof(dma_channel->desc_list));
 
 	return 0;
 }
@@ -613,7 +634,7 @@ static int dma_esp32_configure_irq(const struct device *dev)
 	uint32_t status_mask;
 
 	for (uint8_t i = 0; i < config->irq_size; i++) {
-#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
+#if DMA_ESP32_SHARED_IRQ
 		status_reg = gdma_ll_rx_get_interrupt_status_reg(data->hal.dev, i);
 		status_mask = (GDMA_LL_RX_EVENT_MASK | GDMA_LL_TX_EVENT_MASK);
 #else
@@ -683,6 +704,25 @@ static int dma_esp32_init(const struct device *dev)
 	gdma_ahb_hal_init(&data->hal, &hal_config);
 	gdma_ll_force_enable_reg_clock(data->hal.dev, true);
 
+#if GDMA_SLEEP_RETENTION_ENABLED
+	for (uint8_t pair = 0; pair < GDMA_LL_PAIRS_PER_INST; pair++) {
+		const gdma_chx_reg_ctx_link_t *ctx =
+			&gdma_chx_regs_retention[hal_config.group_id][pair];
+		sleep_retention_module_init_param_t init_param = {
+			.cbs = {.create = {.handle = gdma_create_sleep_retention_cb,
+					   .arg = (void *)ctx}},
+		};
+		esp_err_t err = sleep_retention_module_init(ctx->module_id, &init_param);
+
+		if (err == ESP_OK) {
+			err = sleep_retention_module_allocate(ctx->module_id);
+		}
+		if (err != ESP_OK) {
+			LOG_WRN("Failed to init GDMA sleep retention for pair %d", pair);
+		}
+	}
+#endif
+
 	return 0;
 }
 
@@ -694,7 +734,7 @@ static DEVICE_API(dma, dma_esp32_api) = {
 	.reload = dma_esp32_reload,
 };
 
-#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
+#if DMA_ESP32_SHARED_IRQ
 
 #define DMA_ESP32_DEFINE_IRQ_HANDLER(channel)                                                      \
 	__attribute__((unused)) static void IRAM_ATTR dma_esp32_isr_##channel(                     \
@@ -734,7 +774,7 @@ static DEVICE_API(dma, dma_esp32_api) = {
 
 #endif
 
-#if defined(GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT)
+#if DMA_ESP32_SHARED_IRQ
 #define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel
 #else
 #define ESP32_DMA_HANDLER(channel) dma_esp32_isr_##channel##_rx, dma_esp32_isr_##channel##_tx

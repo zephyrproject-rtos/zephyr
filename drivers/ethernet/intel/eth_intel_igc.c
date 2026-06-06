@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(eth_intel_igc, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/sys/crc.h>
 #include "../eth.h"
 #include "eth_intel_igc_priv.h"
+#include "eth_intel_plat.h"
 
 #define DT_DRV_COMPAT intel_igc_mac
 
@@ -637,7 +638,7 @@ static int eth_intel_igc_tx_data(const struct device *dev, struct net_pkt *pkt)
 		queue = cfg->num_queues - 1;
 	}
 
-	for (struct net_buf *frag = pkt->frags; frag; frag = frag->frags) {
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		/* Hold the Header fragment until transmit clean done */
 		if (frag == pkt->frags) {
 			net_pkt_frag_ref(frag);

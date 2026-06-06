@@ -33,14 +33,15 @@ static void uart_isr(const struct device *dev, void *user_data)
 
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
-		if (!uart_irq_rx_ready(dev)) {
-			continue;
-		}
+	uart_irq_update(dev);
 
+	if (uart_irq_rx_ready(dev) <= 0) {
+		break;
+	}
+
+	while (true) {
 		rx = uart_fifo_read(dev, &byte, 1);
-		if (rx < 0) {
-			uart_irq_rx_disable(dev);
+		if (rx <= 0) {
 			return;
 		}
 

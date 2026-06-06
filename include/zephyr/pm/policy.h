@@ -174,8 +174,8 @@ void pm_policy_state_constraints_put(struct pm_state_constraints *constraints);
  * @param substate_id Power substate ID. Use PM_ALL_SUBSTATES to affect all the
  *		      substates in the given power state.
  *
- * @retval true if power state lock is active.
- * @retval false if power state lock is not active.
+ * @retval true Power state lock is active.
+ * @retval false Power state lock is not active.
  */
 bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
 
@@ -188,8 +188,8 @@ bool pm_policy_state_lock_is_active(enum pm_state state, uint8_t substate_id);
  * @param substate_id Power substate ID. Use PM_ALL_SUBSTATES to affect all the
  *		      substates in the given power state.
  *
- * @retval true if power state is active.
- * @retval false if power state is not active.
+ * @retval true Power state is available.
+ * @retval false Power state is unavailable.
  */
 bool pm_policy_state_is_available(enum pm_state state, uint8_t substate_id);
 
@@ -199,8 +199,8 @@ bool pm_policy_state_is_available(enum pm_state state, uint8_t substate_id);
  * Function allows to quickly check if any power state is available and exit
  * suspend operation early.
  *
- * @retval true if any power state is active.
- * @retval false if all power states are unavailable.
+ * @retval true Any power state is available.
+ * @retval false All power states are unavailable.
  */
 bool pm_policy_state_any_active(void);
 
@@ -267,9 +267,9 @@ void pm_policy_event_unregister(struct pm_policy_event *evt);
  * - If the earliest event is due now or already in the past, returns 0.
  * - If no events are registered, returns -1.
  *
- * @retval >0 If next registered event is in the future
- * @retval 0 If next registered event is now or in the past
- * @retval -1 Otherwise
+ * @return Positive number of ticks if the next registered event is in the future.
+ * @retval 0 The next registered event is now or in the past.
+ * @retval -1 No events are registered.
  */
 int64_t pm_policy_next_event_ticks(void);
 
@@ -283,9 +283,9 @@ int64_t pm_policy_next_event_ticks(void);
  *
  * @kconfig_dep{CONFIG_PM_CUSTOM_TICKS_HOOK}
  *
- * @retval >0 If next custom event is in the future
- * @retval 0 If next custom event is now or in the past
- * @retval -1 If there is no custom event pending
+ * @return Positive number of ticks if the next custom event is in the future.
+ * @retval 0 The next custom event is now or in the past.
+ * @retval -1 No custom event is pending.
  */
 int64_t pm_policy_next_custom_ticks(void);
 #endif /* CONFIG_PM_CUSTOM_TICKS_HOOK */
@@ -386,8 +386,8 @@ void pm_policy_device_power_lock_put(const struct device *dev);
  * @param state The state to check on whether it disables the device.
  * @param substate_id The substate to check on whether it disables the device.
  *
- * @retval true if the state disables the device
- * @retval false if the state does not disable the device
+ * @retval true The state disables the device.
+ * @retval false The state does not disable the device.
  */
 bool pm_policy_device_is_disabling_state(const struct device *dev,
 					 enum pm_state state, uint8_t substate_id);

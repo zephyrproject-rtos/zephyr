@@ -22,6 +22,7 @@
 
 	aliases {
 		led0 = &ld1;
+		rtc = &counter_rtc0;
 	};
 
 	cpus {
@@ -120,4 +121,12 @@
 		#gpio-cells = <2>;
 		ngpios = <24>;
 	};
+};
+
+&main_rtc0 {
+	status = "okay";
+};
+
+&counter_rtc0 {
+	status = "okay";
 };

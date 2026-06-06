@@ -90,14 +90,14 @@ config PTP_NUM_PORTS
 
 choice PTP_NETWORKING_PROTOCOL
 	prompt "PTP Networking Protocol used by PTP Stack"
-	default PTP_UDP_IPv4_PROTOCOL
+	default PTP_UDP_IPV4_PROTOCOL
 
-config PTP_UDP_IPv4_PROTOCOL
+config PTP_UDP_IPV4_PROTOCOL
 	bool "UDP with IPv4"
 	depends on NET_IPV4
 	select NET_IPV4_IGMP
 
-config PTP_UDP_IPv6_PROTOCOL
+config PTP_UDP_IPV6_PROTOCOL
 	bool "UDP with IPv6"
 	depends on NET_IPV6
 	select NET_IPV6_MLD

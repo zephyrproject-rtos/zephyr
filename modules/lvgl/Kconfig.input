@@ -34,6 +34,7 @@ config LV_Z_POINTER_INPUT
 
 config LV_Z_POINTER_INPUT_MSGQ_COUNT
 	int "Input pointer queue message count"
+	default INPUT_QUEUE_MAX_MSGS if INPUT_MODE_THREAD
 	default 10
 	depends on LV_Z_POINTER_INPUT
 	help

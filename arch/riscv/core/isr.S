@@ -268,6 +268,21 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	 * Notably QEMU when a CSR instruction is involved.
 	 */
 	bnez t2, 1f
+#ifdef CONFIG_RISCV_NO_MTVAL_ON_FP_TRAP_UNALIGNED
+	/* The CPU may not be capable of loading an unaligned instruction with lw,
+	 * but would've been capable of executing it.
+	 */
+	/* Check if instruction is word-aligned */
+	andi t2, t0, 3
+	beqz t2, 2f
+	/* Instruction is not aligned, fetch each halfword separately and concat into instruction */
+	lhu t2, 2(t0)
+	slli t2, t2, 16
+	lhu t1, 0(t0)
+	or t2, t2, t1
+	j 1f
+2:
+#endif
 	lw t2, 0(t0)		/* t0 = RV_EPC */
 1:
 #endif

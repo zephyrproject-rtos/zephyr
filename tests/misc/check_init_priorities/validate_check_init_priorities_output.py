@@ -5,6 +5,7 @@
 
 """Validate the output of check_init_priorities against a test reference."""
 
+import re
 import sys
 
 REFERENCE_OUTPUT = [
@@ -18,10 +19,10 @@ REFERENCE_OUTPUT = [
 REFERENCE_OUTPUT_INITLEVELS = [
         "EARLY",
         "PRE_KERNEL_1",
-        "__init___device_dts_ord_32: init_fn_0(__device_dts_ord_32)",
-        "__init___device_dts_ord_33: init_fn_1(__device_dts_ord_33)",
-        "__init___device_dts_ord_34: NULL(__device_dts_ord_34)",
-        "__init___device_dts_ord_35: NULL(__device_dts_ord_35)",
+        "__init___device_dts_ord_<ord>: init_fn_0(__device_dts_ord_<ord>)",
+        "__init___device_dts_ord_<ord>: init_fn_1(__device_dts_ord_<ord>)",
+        "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
+        "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
         "__init_posix_arch_console_init: posix_arch_console_init(NULL)",
         "PRE_KERNEL_2",
         "__init_sys_clock_driver_init: sys_clock_driver_init(NULL)",
@@ -35,13 +36,23 @@ if len(sys.argv) != 3:
     print(f"usage: {sys.argv[0]} FILE_PATH FILE_PATH_INITLEVELS")
     sys.exit(1)
 
-def check_file(file_name, expect):
+
+def normalize_initlevel_output(line):
+    line = re.sub(r"__init___device_dts_ord_[0-9]+", "__init___device_dts_ord_<ord>", line)
+    line = re.sub(r"__device_dts_ord_[0-9]+", "__device_dts_ord_<ord>", line)
+    return line
+
+
+def check_file(file_name, expect, normalize=None):
     output = []
     with open(file_name, "r") as file:
         for line in file:
             if line.startswith("INFO: check_init_priorities"):
                 continue
-            output.append(line.strip())
+            line = line.strip()
+            if normalize is not None:
+                line = normalize(line)
+            output.append(line)
 
     if sorted(expect) != sorted(output):
         print(f"Mismatched otuput from {file_name}")
@@ -55,7 +66,7 @@ def check_file(file_name, expect):
         sys.exit(1)
 
 check_file(sys.argv[1], REFERENCE_OUTPUT)
-check_file(sys.argv[2], REFERENCE_OUTPUT_INITLEVELS)
+check_file(sys.argv[2], REFERENCE_OUTPUT_INITLEVELS, normalize_initlevel_output)
 
 print("TEST PASSED")
 sys.exit(0)

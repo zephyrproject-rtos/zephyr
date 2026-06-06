@@ -18,6 +18,7 @@
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,uart-pipe = &flexcomm0;
 		zephyr,flash-controller = &iap;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -141,6 +142,9 @@
 	#size-cells = <0>;
 	pinctrl-0 = <&pinmux_flexcomm1_i2c>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpio0 14 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 
 	fxls8974: fxls8974@19 {
 		compatible = "nxp,fxls8974";
@@ -189,6 +193,10 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 

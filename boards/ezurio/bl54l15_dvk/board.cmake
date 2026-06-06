@@ -11,10 +11,6 @@ elseif(CONFIG_SOC_NRF54L10_CPUFLPR)
   board_runner_args(jlink "--device=RISC-V" "--speed=4000" "-if SW" "--tool-opt=-jlinkscriptfile ${JLINKSCRIPTFILE}")
 endif()
 
-if(CONFIG_BOARD_BL54L15_DVK_NRF54L10_CPUAPP_NS OR CONFIG_BOARD_BL54L15_DVK_NRF54L15_CPUAPP_NS)
-  set(TFM_PUBLIC_KEY_FORMAT "full")
-endif()
-
 if(CONFIG_TFM_FLASH_MERGED_BINARY)
   set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
 endif()

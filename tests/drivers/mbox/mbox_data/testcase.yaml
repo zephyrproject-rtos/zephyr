@@ -4,7 +4,7 @@ common:
     - mbox
   filter: dt_compat_enabled("vnd,mbox-consumer")
 tests:
-  drivers.mbox_data:
+  drivers.mbox.mbox_data:
     sysbuild: true
     integration_platforms:
       - mimxrt1170_evk/mimxrt1176/cm7
@@ -14,7 +14,7 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
-  drivers.mbox_data.single_cpu:
+  drivers.mbox.mbox_data.single_cpu:
     platform_allow:
       - s32z2xxdc2/s32z270/rtu0
       - s32z2xxdc2/s32z270/rtu1

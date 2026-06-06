@@ -16,6 +16,12 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	tsen: tsen {
+		compatible = "bflb,tsen";
+		io-channels = <&adc0 0>;
+		status = "disabled";
+	};
+
 	clocks {
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
@@ -64,23 +70,23 @@
 		clk_aupll: clk-aupll {
 			#clock-cells = <1>;
 			compatible = "bflb,pll";
-			clocks = <&clk_rc32m>;
+			clocks = <&clk_crystal>;
 			top-frequency = <BL808_AUPLL_TOP_FREQ>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		clk_cpupll: clk-cpupll {
 			#clock-cells = <1>;
 			compatible = "bflb,pll";
 			clocks = <&clk_crystal>;
-			top-frequency = <BL808_CPUPLL_TOP_FREQ>;
-			status = "disabled";
+			top-frequency = <DT_FREQ_M(320)>;
+			status = "okay";
 		};
 
 		clk_root: clk-root {
 			#clock-cells = <0>;
 			compatible = "bflb,root-clk";
-			clocks = <&clk_wifipll BL808_WIFIPLL_ID_DIV1>;
+			clocks = <&clk_cpupll BL808_CPUPLL_ID_DIV1>;
 			divider = <1>;
 			status = "okay";
 		};
@@ -192,7 +198,7 @@
 			clocks = <&clk_rc32m>, <&clk_crystal>,
 				 <&clk_wifipll BL808_WIFIPLL_ID_DIV1>,
 				 <&clk_aupll BL808_AUPLL_ID_DIV1>,
-				 <&clk_cpupll BL808_CPUPLL_ID_400M>,
+				 <&clk_cpupll BL808_CPUPLL_ID_DIV1>,
 				 <&clk_root>, <&clk_bclk>, <&clk_flash>,
 				 <&clk_rc32k>, <&clk_xtal32k>, <&clk_f32k>,
 				 <&clk_mm>;
@@ -213,12 +219,6 @@
 			#size-cells = <0>;
 			interrupts = <41 1>;
 			interrupt-parent = <&clic>;
-			status = "disabled";
-		};
-
-		tsen: tsen {
-			compatible = "bflb,tsen";
-			io-channels = <&adc0 0>;
 			status = "disabled";
 		};
 
@@ -415,6 +415,15 @@
 			reg = <0x20056000 0x1000>;
 			status = "okay";
 			size = <512>;
+		};
+
+		sdhc0: sdhc@20060000 {
+			compatible = "bflb,sdhc";
+			reg = <0x20060000 0x200>;
+			status = "disabled";
+
+			interrupts = <33 1>;
+			interrupt-parent = <&clic>;
 		};
 
 		itcm: memory@62020000 {

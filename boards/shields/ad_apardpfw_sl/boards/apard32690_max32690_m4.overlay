@@ -67,16 +67,14 @@
 	};
 };
 
-&spi3 {
-	adin1110@0 {
+&adin1110 {
+	status = "disabled";
+
+	mdio {
 		status = "disabled";
 
-		mdio {
+		ethernet-phy@1 {
 			status = "disabled";
-
-			ethernet-phy@1 {
-				status = "disabled";
-			};
 		};
 	};
 };

@@ -78,6 +78,9 @@ static const struct device *const devices[] = {
 	DEVS_FOR_DT_COMPAT(nxp_tpm_timer)
 #endif
 	DEVS_FOR_DT_COMPAT(renesas_smartbond_timer)
+#ifdef CONFIG_COUNTER_MCUX_SYSCTR
+	DEVS_FOR_DT_COMPAT(nxp_sysctr)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_CTIMER
 	DEVS_FOR_DT_COMPAT(nxp_lpc_ctimer)
 #endif

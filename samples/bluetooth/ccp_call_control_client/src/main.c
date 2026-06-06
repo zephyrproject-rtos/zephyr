@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -26,6 +27,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 LOG_MODULE_REGISTER(ccp_call_control_client, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -42,7 +44,13 @@ static K_SEM_DEFINE(sem_ccp_action_completed, 0U, 1U);
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
-	LOG_INF("Connected: %s", bt_conn_dst_str(conn));
+	if (err != BT_HCI_ERR_SUCCESS) {
+		LOG_INF("Failed to connect: %u", err);
+		bt_conn_unref(peer_conn);
+		peer_conn = NULL;
+	} else {
+		LOG_INF("Connected: %s", bt_conn_dst_str(conn));
+	}
 
 	k_sem_give(&sem_conn_state_change);
 }
@@ -65,6 +73,9 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 static void security_changed_cb(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(level);
+
 	if (err == 0) {
 		k_sem_give(&sem_security_updated);
 	} else {
@@ -169,6 +180,10 @@ static int scan_and_connect(void)
 		return err;
 	}
 
+	if (peer_conn == NULL) {
+		return -ENOTCONN;
+	}
+
 	err = bt_conn_set_security(peer_conn, BT_SECURITY_L2);
 	if (err != 0) {
 		LOG_ERR("failed to set security (err %d)", err);
@@ -190,6 +205,9 @@ static void ccp_call_control_client_discover_cb(struct bt_ccp_call_control_clien
 						struct bt_ccp_call_control_client_bearers *bearers,
 						void *user_data)
 {
+	ARG_UNUSED(client);
+	ARG_UNUSED(user_data);
+
 	if (err != 0) {
 		LOG_ERR("Discovery failed: %d", err);
 		return;
@@ -208,6 +226,8 @@ static void ccp_call_control_client_read_bearer_provider_name_cb(
 	struct bt_ccp_call_control_client_bearer *bearer, int err, const char *name,
 	void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	if (err != 0) {
 		LOG_ERR("Failed to read bearer %p provider name: %d\n", (void *)bearer, err);
 		return;

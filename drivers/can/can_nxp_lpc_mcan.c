@@ -6,7 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
@@ -98,12 +98,12 @@ static int nxp_lpc_mcan_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(nxp_lpc_config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERR_DEVICE_NOT_READY(nxp_lpc_config->clock_dev);
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(nxp_lpc_config->reset.dev)) {
-		LOG_ERR("Reset device not ready");
+		LOG_ERR_DEVICE_NOT_READY(nxp_lpc_config->reset.dev);
 		return -ENODEV;
 	}
 

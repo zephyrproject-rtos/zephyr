@@ -52,6 +52,30 @@ extern "C" {
 
 struct net_context;
 
+/**
+ * @brief Iterate over all fragments in a network packet.
+ *
+ * @details Traverses the fragment chain of a @ref net_pkt buffer.
+ *
+ * @param _pkt Pointer to the head @ref net_pkt buffer whose fragment
+ *             chain is to be traversed.
+ * @param _var Name of the iterator variable. The macro declares
+ *             this variable internally as <tt>struct net_buf *</tt>
+ *             and updates it on each iteration.
+ *
+ * @note Iteration starts from the first fragment buffer <tt>(_pkt)->frags</tt>;
+ *
+ * Example usage:
+ * @code{.c}
+ * NET_PKT_FRAG_FOR_EACH(pkt, frag) {
+ *     do_something(frag->data, frag->len);
+ * }
+ * @endcode
+ */
+#define NET_PKT_FRAG_FOR_EACH(_pkt, _var) \
+	for (struct net_buf *_var = (_pkt)->frags; _var != NULL; \
+	     _var = _var->frags)
+
 /** @cond INTERNAL_HIDDEN */
 
 #if defined(CONFIG_NET_PKT_ALLOC_STATS)
@@ -123,7 +147,7 @@ struct net_pkt {
 	/** Allow placing the packet into sys_slist_t */
 	sys_snode_t next;
 #endif
-#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
@@ -207,7 +231,7 @@ struct net_pkt {
 				  * Used only if defined (CONFIG_NET_L2_PTP)
 				  */
 	uint8_t forwarding : 1;	 /* Are we forwarding this pkt
-				  * Used only if defined(CONFIG_NET_ROUTE)
+				  * Used only if defined(CONFIG_NET_IPV6_ROUTE)
 				  */
 	uint8_t family : 3;	 /* Address family, see net_ip.h */
 
@@ -272,6 +296,14 @@ struct net_pkt {
 		uint16_t ipv6_ext_len; /* length of extension headers */
 #endif
 	};
+
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	/* IPv4 address that should be resolved at L2 for transmission.
+	 * Routed packets use this to steer link-layer resolution towards the
+	 * next on-link IPv4 address.
+	 */
+	struct net_in_addr ipv4_ll_resolve_addr;
+#endif /* CONFIG_NET_IPV4_ROUTE */
 
 #if defined(CONFIG_NET_IP_FRAGMENT)
 	union {
@@ -364,6 +396,9 @@ struct net_pkt {
 	/* Path MTU needed for this destination address */
 	uint8_t ipv4_pmtu : 1;
 #endif /* CONFIG_NET_IPV4_PMTU */
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	uint8_t ipv4_ll_resolve_addr_set : 1;
+#endif /* CONFIG_NET_IPV4_ROUTE */
 
 	/* @endcond */
 };
@@ -410,7 +445,7 @@ static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 
 static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	return pkt->orig_iface;
 #else
 	return pkt->iface;
@@ -420,7 +455,7 @@ static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 					  struct net_if *iface)
 {
-#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	pkt->orig_iface = iface;
 #else
 	ARG_UNUSED(pkt);
@@ -876,6 +911,38 @@ static inline void net_pkt_set_ipv4_pmtu(struct net_pkt *pkt, bool value)
 	ARG_UNUSED(value);
 }
 #endif /* CONFIG_NET_IPV4_PMTU */
+
+#if defined(CONFIG_NET_IPV4_ROUTE)
+static inline const struct net_in_addr *net_pkt_ipv4_ll_resolve_addr(struct net_pkt *pkt)
+{
+	return pkt->ipv4_ll_resolve_addr_set ? &pkt->ipv4_ll_resolve_addr : NULL;
+}
+
+static inline void net_pkt_set_ipv4_ll_resolve_addr(struct net_pkt *pkt,
+						    const struct net_in_addr *addr)
+{
+	if (addr != NULL) {
+		net_ipaddr_copy(&pkt->ipv4_ll_resolve_addr, addr);
+		pkt->ipv4_ll_resolve_addr_set = 1U;
+	} else {
+		pkt->ipv4_ll_resolve_addr_set = 0U;
+	}
+}
+#else
+static inline const struct net_in_addr *net_pkt_ipv4_ll_resolve_addr(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return NULL;
+}
+
+static inline void net_pkt_set_ipv4_ll_resolve_addr(struct net_pkt *pkt,
+						    const struct net_in_addr *addr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(addr);
+}
+#endif /* CONFIG_NET_IPV4_ROUTE */
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
 static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)
@@ -1585,7 +1652,7 @@ static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
  * @param count Number of net_pkt in this slab.
  */
 #define NET_PKT_SLAB_DEFINE(name, count)				\
-	K_MEM_SLAB_DEFINE(name, sizeof(struct net_pkt), count, 4);      \
+	K_MEM_SLAB_DEFINE_TYPE(name, struct net_pkt, count);		\
 	NET_PKT_ALLOC_STATS_DEFINE(pkt_alloc_stats_##name, name)
 
 /** @cond INTERNAL_HIDDEN */

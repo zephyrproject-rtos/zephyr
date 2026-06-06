@@ -512,9 +512,8 @@ static void airoc_mgmt_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct airoc_wifi_data *data = dev->data;
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 	data->iface = iface;
 	airoc_wifi_iface = iface;
 
@@ -663,9 +662,9 @@ error:
 	} else {
 		net_if_dormant_off(iface);
 		data->is_sta_connected = true;
-#if defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 		net_dhcpv4_restart(iface);
-#endif /* defined(CONFIG_NET_DHCPV4) */
+#endif /* defined(CONFIG_WIFI_STA_AUTO_DHCPV4) */
 	}
 
 	wifi_mgmt_raise_connect_result_event(iface, ret);

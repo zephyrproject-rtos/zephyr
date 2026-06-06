@@ -33,26 +33,59 @@ jobs:
 
           pr-opened-message: >
             Hello @${{ github.event.pull_request.user.login }}, and thank you very much for your
-            first pull request to the Zephyr project!
+            first Pull Request (PR) to the Zephyr Project!
 
-            Our Continuous Integration pipeline will execute a series of checks on your Pull Request
-            commit messages and code, and you are expected to address any failures by updating the PR.
-            Please take a look at [our commit message guidelines](https://docs.zephyrproject.org/latest/contribute/guidelines.html#commit-message-guidelines)
-            to find out how to format your commit messages, and at [our contribution workflow](https://docs.zephyrproject.org/latest/contribute/guidelines.html#contribution-workflow)
-            to understand how to update your Pull Request.
-            If you haven't already, please make sure to review the project's [Contributor
-            Expectations](https://docs.zephyrproject.org/latest/contribute/contributor_expectations.html)
-            and update (by amending and force-pushing the commits) your pull request if necessary.
 
-            If you are stuck or need help please join us on [Discord](https://chat.zephyrproject.org/)
-            and ask your question there. Additionally, you can [escalate the review](https://docs.zephyrproject.org/latest/contribute/contributor_expectations.html#pr-technical-escalation)
-            when applicable. 😊
+            All PRs must pass our Continuous Integration (CI) pipeline before merging.
+            When the pipeline run for your PR completes, you are expected to investigate the
+            results, fix any errors, and update your PR for a fresh round of review.
+
+
+            Since this is your first contribution, a project community member must manually
+            approve your CI run (this helps us avoid abuse of our CI system). A bot should assign
+            some reviewers who can start the run for you soon.
+
+
+            As a heads-up, you will probably have to update your PR to fix CI issues
+            and address review feedback in order to get it ready for merge.
+            Some key rules for updating your PR are:
+
+            - **do** amend problematic commits on your computer and force push the fixed commits into your PR branch on GitHub
+
+            - **don't** push new commits just to fix problems in existing PR commits (amend your commits instead)
+
+            - **don't** close your PR and open an updated one unless reviewers specifically request it (force push to your branch instead)
+
+            - **do** rebase your PR branch onto our main branch and force push to this PR to resolve merge conflicts
+
+            - **don't** merge our main branch into your PR branch to fix merge conflicts
+
+
+            Also, see:
+
+            - [Contribution Guidelines](https://docs.zephyrproject.org/latest/contribute/guidelines.html) for details on how contributing to Zephyr works
+
+            - [Contributor Expectations](https://docs.zephyrproject.org/latest/contribute/contributor_expectations.html) to learn what our community expects from you
+
+            - [Reviewer Expectations](https://docs.zephyrproject.org/latest/contribute/reviewer_expectations.html) to learn what you can expect from community members who review this PR
+
+
+            If you are stuck or need help, you can join us on
+            [Discord](https://chat.zephyrproject.org/) and ask questions; many community members
+            try to help new contributors there 😊. Try to pick a Discord channel that is
+            associated with the technical details of your request. If you're not sure,
+            use the #general channel.
 
           pr-merged-message: >
             Hi @${{ github.event.pull_request.user.login }}!
 
+
             Congratulations on getting your very first Zephyr pull request merged 🎉🥳. This is a
             fantastic achievement, and we're thrilled to have you as part of our community!
+
+
+            Now that your first PR is merged, CI will run automatically on subsequent PRs that you
+            send from the same GitHub account.
 
 
             To celebrate this milestone and showcase your contribution, we'd love to award you the

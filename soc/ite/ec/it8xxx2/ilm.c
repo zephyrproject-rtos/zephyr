@@ -43,7 +43,6 @@ extern uint8_t __ilm_ram_end[];
 BUILD_ASSERT((ILM_BLOCK_SIZE & (ILM_BLOCK_SIZE - 1)) == 0, "ILM_BLOCK_SIZE must be a power of two");
 
 #define FLASH_BASE CONFIG_FLASH_BASE_ADDRESS
-#define RAM_BASE   CONFIG_SRAM_BASE_ADDRESS
 
 #define ILM_NODE DT_NODELABEL(ilm)
 
@@ -77,7 +76,7 @@ static bool __maybe_unused is_block_aligned(const void *const p)
 static int it8xxx2_configure_ilm_block(const struct ilm_config *const config, void *ram_addr,
 				       const void *flash_addr, const size_t copy_sz)
 {
-	if ((uintptr_t)ram_addr < RAM_BASE) {
+	if ((uintptr_t)ram_addr < DT_CHOSEN_SRAM_ADDR) {
 		return -EFAULT; /* Not in RAM */
 	}
 
@@ -85,7 +84,7 @@ static int it8xxx2_configure_ilm_block(const struct ilm_config *const config, vo
 	/* Since IT51XXX only supports one 4KB ILM block (SCAR0), set dirmap_index to 0 directly. */
 	const int dirmap_index = 0;
 #else
-	const int dirmap_index = ((uintptr_t)ram_addr - RAM_BASE) / ILM_BLOCK_SIZE;
+	const int dirmap_index = ((uintptr_t)ram_addr - DT_CHOSEN_SRAM_ADDR) / ILM_BLOCK_SIZE;
 #endif
 	if (dirmap_index >= ARRAY_SIZE(config->scar_regs)) {
 		return -EFAULT; /* Past the end of RAM */

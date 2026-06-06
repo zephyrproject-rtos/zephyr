@@ -620,6 +620,7 @@ void i2c_stm32_event(const struct device *dev)
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *regs = cfg->i2c;
 	uint32_t isr = stm32_reg_read(&regs->ISR);
+	const uint32_t cr1 = stm32_reg_read(&regs->CR1);
 
 #if defined(CONFIG_I2C_TARGET)
 	if (i2c_stm32_target_preempt_controller_event(dev, isr) == true) {
@@ -648,7 +649,7 @@ void i2c_stm32_event(const struct device *dev)
 		data->current.len--;
 		data->current.buf++;
 
-	} else if ((isr & I2C_ISR_TCR) != 0U) {
+	} else if (((isr & I2C_ISR_TCR) != 0U) && ((cr1 & I2C_CR1_TCIE) != 0U)) {
 		/* Transfer complete with reload flag set means more data shall be transferred
 		 * in same direction (No RESTART or STOP)
 		 */
@@ -697,7 +698,7 @@ void i2c_stm32_event(const struct device *dev)
 		data->current.len--;
 		data->current.buf++;
 
-	} else if ((isr & I2C_ISR_TC) != 0U) {
+	} else if (((isr & I2C_ISR_TC) != 0U) && ((cr1 & I2C_CR1_TCIE) != 0U)) {
 		/* Transfer Complete, (I2C_ISR_TC is set) no reload this time so either do
 		 * stop now or restart in thread
 		 */
@@ -711,8 +712,8 @@ void i2c_stm32_event(const struct device *dev)
 			goto irq_xfer_completed;
 		}
 	} else {
-		/* Should not happen */
-		__ASSERT_NO_MSG(0);
+		/* Should not happen unless interrupt is shared */
+		__ASSERT_NO_MSG(IS_ENABLED(CONFIG_SHARED_INTERRUPTS));
 	}
 
 	/* Make a dummy read from ISR to ensure we don't return before

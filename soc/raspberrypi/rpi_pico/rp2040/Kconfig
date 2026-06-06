@@ -18,9 +18,12 @@ config SOC_SERIES_RP2040
 
 if SOC_SERIES_RP2040
 
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+
 config RP2_REQUIRES_SECOND_STAGE_BOOT
 	bool
-	default y if FLASH_LOAD_OFFSET = 0x100
+	default y if FLASH_USES_MAPPED_PARTITION && $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)) = 0x10000100
+	default y if !FLASH_USES_MAPPED_PARTITION && FLASH_LOAD_OFFSET = 0x100
 
 # Flash type used by the SoC. The board should select the one used.
 

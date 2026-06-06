@@ -30,6 +30,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #define NAME_LEN                          30U
@@ -157,6 +158,8 @@ static bool base_store(struct bt_data *data, void *user_data)
 	int base_subgroup_count;
 	int err;
 
+	ARG_UNUSED(user_data);
+
 	/* Base is NULL if the data does not contain a valid BASE */
 	if (base == NULL) {
 		return true;
@@ -200,6 +203,9 @@ static void pa_recv(struct bt_le_per_adv_sync *sync,
 			 const struct bt_le_per_adv_sync_recv_info *info,
 			 struct net_buf_simple *buf)
 {
+	ARG_UNUSED(sync);
+	ARG_UNUSED(info);
+
 	bt_data_parse(buf, base_store, NULL);
 }
 
@@ -494,6 +500,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 				enum bt_security_err err)
 {
+	ARG_UNUSED(conn);
+
 	if (err == 0) {
 		printk("Security level changed: %u\n", level);
 		k_sem_give(&sem_security_updated);
@@ -505,6 +513,8 @@ static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 						uint8_t recv_state_count)
 {
+	ARG_UNUSED(conn);
+
 	if (err == 0) {
 		printk("BASS discover done with %u recv states\n",
 		       recv_state_count);
@@ -517,6 +527,8 @@ static void bap_broadcast_assistant_discover_cb(struct bt_conn *conn, int err,
 
 static void bap_broadcast_assistant_add_src_cb(struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(conn);
+
 	if (err == 0) {
 		printk("BASS add source successful\n");
 	} else {
@@ -528,6 +540,8 @@ static void
 bap_broadcast_assistant_recv_state_read_cb(struct bt_conn *conn, int err,
 					   const struct bt_bap_scan_delegator_recv_state *state)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		printk("BASS recv state read failed (%d)\n", err);
 		return;
@@ -553,6 +567,8 @@ bap_broadcast_assistant_recv_state_read_cb(struct bt_conn *conn, int err,
 static void pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 			      struct bt_le_per_adv_sync_synced_info *info)
 {
+	ARG_UNUSED(info);
+
 	if (sync == pa_sync) {
 		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n", sync,
 		       selected_broadcast_id);

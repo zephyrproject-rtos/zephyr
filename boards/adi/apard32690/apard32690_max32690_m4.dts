@@ -7,6 +7,8 @@
 /dts-v1/;
 
 #include <adi/max32/max32690-m4.dtsi>
+
+#include "apard32690_max32690.dtsi"
 #include <adi/max32/max32690-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/gpio/arduino-mega-header.h>
@@ -22,25 +24,8 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		blue_led: blue_led {
-			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
-			label = "LED1";
-		};
-
-		red_led: red_led {
-			gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
-			label = "LED2";
-		};
-
-		green_led: green_led {
-			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
-			label = "LED3";
-		};
+		zephyr,code-partition = &slot0_partition;
+		zephyr,code-rv32-partition = &rv32_slot0;
 	};
 
 	buttons {

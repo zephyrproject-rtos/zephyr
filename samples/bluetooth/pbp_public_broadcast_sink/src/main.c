@@ -27,6 +27,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
@@ -105,6 +106,10 @@ static void stream_recv_cb(struct bt_bap_stream *stream,
 			   struct net_buf *buf)
 {
 	static uint32_t recv_cnt;
+
+	ARG_UNUSED(stream);
+	ARG_UNUSED(info);
+	ARG_UNUSED(buf);
 
 	recv_cnt++;
 	if ((recv_cnt % 20U) == 0U) {
@@ -244,6 +249,8 @@ static bool pa_decode_base(struct bt_data *data, void *user_data)
 	uint32_t base_bis_index_bitfield = 0U;
 	int err;
 
+	ARG_UNUSED(user_data);
+
 	/* Base is NULL if the data does not contain a valid BASE */
 	if (base == NULL) {
 		return true;
@@ -264,17 +271,27 @@ static void broadcast_pa_recv(struct bt_le_per_adv_sync *sync,
 			      const struct bt_le_per_adv_sync_recv_info *info,
 			      struct net_buf_simple *buf)
 {
+	ARG_UNUSED(sync);
+	ARG_UNUSED(info);
+
 	bt_data_parse(buf, pa_decode_base, NULL);
 }
 
 static void syncable_cb(struct bt_bap_broadcast_sink *sink, const struct bt_iso_biginfo *biginfo)
 {
+	ARG_UNUSED(sink);
+	ARG_UNUSED(biginfo);
+
 	k_sem_give(&sem_syncable);
 }
 
 static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap_base *base,
 			 size_t base_size)
 {
+	ARG_UNUSED(sink);
+	ARG_UNUSED(base);
+	ARG_UNUSED(base_size);
+
 	k_sem_give(&sem_base_received);
 }
 
@@ -286,6 +303,8 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 static void broadcast_pa_synced(struct bt_le_per_adv_sync *sync,
 				struct bt_le_per_adv_sync_synced_info *info)
 {
+	ARG_UNUSED(info);
+
 	if (sync == bcast_pa_sync) {
 		printk("PA sync %p synced for broadcast sink with broadcast ID 0x%06X\n",
 			sync, bcast_id);

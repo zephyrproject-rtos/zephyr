@@ -6,7 +6,6 @@
 
 #include <zephyr/debug/symtab.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/linker/linker-defs.h>
 #include <kernel_internal.h>
 #include <zephyr/logging/log.h>

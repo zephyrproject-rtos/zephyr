@@ -7,7 +7,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/printk.h>
 #include <inttypes.h>
 #include <zephyr/logging/log_ctrl.h>

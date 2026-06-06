@@ -19,7 +19,7 @@
 #include "common.h"
 
 #ifdef CONFIG_BT_MICP_MIC_CTLR
-#define AICS_DESC_SIZE 64
+#define AICS_DESC_SIZE 64U
 
 extern enum bst_result_t bst_result;
 
@@ -445,7 +445,7 @@ static void test_main(void)
 	printk("mic_ctlr mute state received\n");
 
 	printk("Muting mic_ctlr\n");
-	expected_mute = 1;
+	expected_mute = 1U;
 	g_write_complete = g_cb = false;
 	err = bt_micp_mic_ctlr_mute(mic_ctlr);
 	if (err != 0) {
@@ -456,7 +456,7 @@ static void test_main(void)
 	printk("mic_ctlr muted\n");
 
 	printk("Unmuting mic_ctlr\n");
-	expected_mute = 0;
+	expected_mute = 0U;
 	g_write_complete = g_cb = false;
 	err = bt_micp_mic_ctlr_unmute(mic_ctlr);
 	if (err != 0) {
@@ -466,7 +466,7 @@ static void test_main(void)
 	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
 	printk("mic_ctlr unmuted\n");
 
-	if (CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST > 0 && g_aics_count > 0) {
+	if (CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST > 0 && g_aics_count > 0U) {
 		if (test_aics()) {
 			return;
 		}

@@ -66,10 +66,6 @@ LOG_MODULE_REGISTER(bt_driver);
 	be transmitted across this HCI link
 #endif /* CONFIG_BT_L2CAP_TX_MTU > MAX_MTU */
 
-struct bt_spi_data {
-	bt_hci_recv_t recv;
-};
-
 static uint8_t __noinit rxmsg[SPI_MAX_MSG_LEN];
 static uint8_t __noinit txmsg[SPI_MAX_MSG_LEN];
 
@@ -241,7 +237,6 @@ static struct net_buf *bt_spi_rx_buf_construct(uint8_t *msg)
 static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct bt_spi_data *hci = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -294,7 +289,7 @@ static void bt_spi_rx_thread(void *p1, void *p2, void *p3)
 		buf = bt_spi_rx_buf_construct(rxmsg);
 		if (buf) {
 			/* Handle the received HCI data */
-			hci->recv(dev, buf);
+			bt_hci_recv(dev, buf);
 		}
 	}
 }
@@ -357,9 +352,8 @@ static int bt_spi_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_spi_open(const struct device *dev)
 {
-	struct bt_spi_data *hci = dev->data;
 	int err;
 
 	/* Configure RST pin and hold Bluetooth LE in Reset */
@@ -385,8 +379,6 @@ static int bt_spi_open(const struct device *dev, bt_hci_recv_t recv)
 	if (err) {
 		return err;
 	}
-
-	hci->recv = recv;
 
 	/* Take Bluetooth LE out of reset */
 	k_sleep(K_MSEC(DT_INST_PROP_OR(0, reset_assert_duration_ms, 0)));
@@ -438,9 +430,11 @@ static int bt_spi_init(const struct device *dev)
 }
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct bt_spi_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, NULL, \
+	static const struct bt_hci_driver_config hci_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, bt_spi_init, NULL, &hci_data_##inst, &hci_config_##inst, \
 			      POST_KERNEL, CONFIG_BT_SPI_INIT_PRIORITY, &drv)
 
 /* Only one instance supported right now */

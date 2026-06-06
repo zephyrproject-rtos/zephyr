@@ -17,7 +17,7 @@
  * needs to happen both in the flash_layout.h and in this file at the same time.
  */
 &cpuapp_sram {
-	sram0_s: image_s@0 {
+	sram0_s: sram@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Secure image memory */
@@ -25,7 +25,7 @@
 		ranges = <0x0 0x0 DT_SIZE_K(256)>;
 	};
 
-	sram0_ns: image_ns@40000 {
+	sram0_ns: sram@40000 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		/* Non-Secure image memory */
@@ -92,5 +92,39 @@
 			label = "storage";
 			reg = <0x00015d000 DT_SIZE_K(32)>;
 		};
+
+		/*
+		 * Reserved for Wi-Fi LMAC ROM patch.
+		 * Temporary FPGA/bring-up placement.
+		 */
+		wifi_lmac_patch_partition: partition@2e0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x002e0000 DT_SIZE_K(4)>;
+		};
+
+		/*
+		 * Reserved for Wi-Fi UMAC ROM patch.
+		 * Temporary FPGA/bring-up placement.
+		 */
+		wifi_umac_patch_partition: partition@2f0000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x002f0000 DT_SIZE_K(4)>;
+		};
+	};
+};
+
+/ {
+	nordic-tz-secure {
+		compatible = "nordic,tz-secure";
+		code-partitions = <&slot0_s_partition>;
+		data-partitions = <&tfm_ps_partition>,
+				  <&tfm_its_partition>,
+				  <&tfm_otp_partition>;
+	};
+
+	nordic-tz-nonsecure {
+		compatible = "nordic,tz-nonsecure";
+		code-partitions = <&slot0_ns_partition>;
+		data-partitions = <&storage_partition>;
 	};
 };

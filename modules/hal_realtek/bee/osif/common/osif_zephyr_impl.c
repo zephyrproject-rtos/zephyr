@@ -205,8 +205,7 @@ bool os_sched_is_start_zephyr(void)
 /************************************************************
  * TASK / THREAD MANAGEMENT
  ************************************************************/
-K_MEM_SLAB_DEFINE(osif_task_slab, sizeof(struct osif_task), CONFIG_REALTEK_BEE_OSIF_TASK_MAX_COUNT,
-		  4);
+K_MEM_SLAB_DEFINE_TYPE(osif_task_slab, struct osif_task, CONFIG_REALTEK_BEE_OSIF_TASK_MAX_COUNT);
 
 bool os_task_create_zephyr(void **handle_ptr, const char *name, void (*routine)(void *),
 			   void *param, uint16_t stack_size, uint16_t priority)
@@ -553,7 +552,7 @@ void os_unlock_zephyr(uint32_t flags)
 /************************************************************
  * SEMAPHORE & MUTEX
  ************************************************************/
-K_MEM_SLAB_DEFINE(osif_sem_slab, sizeof(struct k_sem), CONFIG_REALTEK_BEE_OSIF_SEM_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE_TYPE(osif_sem_slab, struct k_sem, CONFIG_REALTEK_BEE_OSIF_SEM_MAX_COUNT);
 
 bool os_sem_create_zephyr(void **handle_ptr, const char *name, uint32_t init_count,
 			  uint32_t max_count)
@@ -607,8 +606,7 @@ bool os_sem_give_zephyr(void *handle)
 	return true;
 }
 
-K_MEM_SLAB_DEFINE(osif_mutex_slab, sizeof(struct k_mutex), CONFIG_REALTEK_BEE_OSIF_MUTEX_MAX_COUNT,
-		  4);
+K_MEM_SLAB_DEFINE_TYPE(osif_mutex_slab, struct k_mutex, CONFIG_REALTEK_BEE_OSIF_MUTEX_MAX_COUNT);
 
 bool os_mutex_create_zephyr(void **handle_ptr)
 {
@@ -654,7 +652,7 @@ bool os_mutex_give_zephyr(void *handle)
 /************************************************************
  * MESSAGE QUEUE
  ************************************************************/
-K_MEM_SLAB_DEFINE(osif_msgq_slab, sizeof(struct k_msgq), CONFIG_REALTEK_BEE_OSIF_MSGQ_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE_TYPE(osif_msgq_slab, struct k_msgq, CONFIG_REALTEK_BEE_OSIF_MSGQ_MAX_COUNT);
 
 bool os_msg_queue_create_intern_zephyr(void **handle_ptr, const char *name, uint32_t msg_num,
 				       uint32_t msg_size, const char *func, uint32_t line)

@@ -11,6 +11,7 @@
 #include <time.h>
 
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 
 uint32_t timespec_to_timeoutms(int clock_id, const struct timespec *abstime)

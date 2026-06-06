@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define USBIP_PORT		3240
+#define USBIP_PORT		CONFIG_USBIP_SERVICE_PORT
 #define USBIP_VERSION		0x0111U
 
 /* Retrieve the list of exported devices command code */

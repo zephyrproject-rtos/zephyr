@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 CONFIG_GPIO=y
-CONFIG_USE_DT_CODE_PARTITION=y
 
 # Execute from SRAM
 CONFIG_XIP=n

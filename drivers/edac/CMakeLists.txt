@@ -9,5 +9,6 @@ zephyr_library_sources_ifdef(CONFIG_EDAC_SHELL shell.c)
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_EDAC_IBECC edac_ibecc.c)
 zephyr_library_sources_ifdef(CONFIG_EDAC_NXP_ERM edac_mcux_erm.c)
+zephyr_library_sources_ifdef(CONFIG_EDAC_NXP_MECC edac_mcux_mecc.c)
 zephyr_library_sources_ifdef(CONFIG_EDAC_SYNOPSYS edac_synopsys.c)
 # zephyr-keep-sorted-stop

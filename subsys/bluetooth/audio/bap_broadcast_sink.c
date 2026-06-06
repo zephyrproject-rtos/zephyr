@@ -14,13 +14,14 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
-#include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/gap.h>
-#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
+#include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
+#include <zephyr/bluetooth/gap.h>
+#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -40,8 +41,8 @@
 #include "../host/iso_internal.h"
 
 #include "audio_internal.h"
-#include "bap_iso.h"
 #include "bap_endpoint.h"
+#include "bap_iso.h"
 #include "pacs_internal.h"
 
 LOG_MODULE_REGISTER(bt_bap_broadcast_sink, CONFIG_BT_BAP_BROADCAST_SINK_LOG_LEVEL);
@@ -524,7 +525,8 @@ static bool base_subgroup_meta_cb(const struct bt_bap_base_subgroup *subgroup, v
 		return false;
 	}
 
-	subgroup_param = &mod_src_param.subgroups[mod_src_param.num_subgroups++];
+	subgroup_param = &mod_src_param.subgroups[mod_src_param.num_subgroups];
+	mod_src_param.num_subgroups++;
 	subgroup_param->metadata_len = (uint8_t)ret;
 	memcpy(subgroup_param->metadata, meta, subgroup_param->metadata_len);
 
@@ -757,11 +759,15 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 			 struct bt_le_per_adv_sync_synced_info *info)
 {
 	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
+	int err;
 
 	ARG_UNUSED(info);
 
 	if (sink != NULL) {
-		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_SYNCED);
+		err = bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_SYNCED);
+		if (err != 0) {
+			LOG_WRN("Failed to set PA state: %d", err);
+		}
 	}
 }
 
@@ -769,11 +775,16 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 		       const struct bt_le_per_adv_sync_term_info *info)
 {
 	struct bt_bap_broadcast_sink *sink = broadcast_sink_get_by_pa(sync);
+	int err;
 
 	ARG_UNUSED(info);
 
 	if (sink != NULL) {
-		bt_bap_scan_delegator_set_pa_state(sink->bass_src_id, BT_BAP_PA_STATE_NOT_SYNCED);
+		err = bt_bap_scan_delegator_set_pa_state(sink->bass_src_id,
+							 BT_BAP_PA_STATE_NOT_SYNCED);
+		if (err != 0) {
+			LOG_WRN("Failed to set PA state: %d", err);
+		}
 		sink->pa_sync = NULL;
 		sink->base_size = 0U;
 	}

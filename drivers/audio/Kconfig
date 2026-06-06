@@ -37,6 +37,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
 source "drivers/audio/Kconfig.aw88298"
+source "drivers/audio/Kconfig.codec_dummy"
 source "drivers/audio/Kconfig.cs43l22"
 source "drivers/audio/Kconfig.da7212"
 source "drivers/audio/Kconfig.max98091"
@@ -44,6 +45,7 @@ source "drivers/audio/Kconfig.pcm1681"
 source "drivers/audio/Kconfig.sf32lb"
 source "drivers/audio/Kconfig.tas2563"
 source "drivers/audio/Kconfig.tas6422dac"
+source "drivers/audio/Kconfig.tlv320aic26"
 source "drivers/audio/Kconfig.tlv320aic3110"
 source "drivers/audio/Kconfig.tlv320dac"
 source "drivers/audio/Kconfig.wm8904"
@@ -76,6 +78,7 @@ source "drivers/audio/Kconfig.dmic_mcux"
 source "drivers/audio/Kconfig.dmic_mpxxdtyy"
 source "drivers/audio/Kconfig.dmic_nxp_micfil"
 source "drivers/audio/Kconfig.dmic_pdm_nrfx"
+source "drivers/audio/Kconfig.dmic_stm32_dfsdm"
 # zephyr-keep-sorted-stop
 
 endif # AUDIO_DMIC

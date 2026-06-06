@@ -49,10 +49,10 @@ menuconfig BUILD_WITH_TFM
 	depends on TFM_BOARD != ""
 	depends on ARM_TRUSTZONE_M
 	select BUILD_OUTPUT_HEX
-	select PSA_CRYPTO_CLIENT
 	imply INIT_ARCH_HW_AT_BOOT
 	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
 	imply MBEDTLS if !TFM_USE_NS_APP
+	imply PSA_CRYPTO if !TFM_USE_NS_APP
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionally generate a TF-M image for the Secure Execution
@@ -322,6 +322,20 @@ config TFM_KEY_FILE_NS
 	  The path and filename for the .pem file containing the private key
 	  that should be used by the BL2 bootloader when signing non-secure
 	  firmware images.
+
+choice TFM_PUBLIC_KEY_FORMAT
+	prompt "Public key storing format in BL2"
+	default TFM_PUBLIC_KEY_FORMAT_FULL
+
+config TFM_PUBLIC_KEY_FORMAT_FULL
+	prompt "Full"
+	bool
+
+config TFM_PUBLIC_KEY_FORMAT_HASH
+	prompt "Hash"
+	bool
+
+endchoice
 
 config TFM_MCUBOOT_IMAGE_NUMBER
 	int "Granularity of FW updates of TFM and app"

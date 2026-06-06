@@ -72,11 +72,9 @@ struct mqtt_sn_gateway {
 	size_t addr_len;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(publishes, sizeof(struct mqtt_sn_publish), CONFIG_MQTT_SN_LIB_MAX_PUBLISH,
-			 4);
-K_MEM_SLAB_DEFINE_STATIC(topics, sizeof(struct mqtt_sn_topic), CONFIG_MQTT_SN_LIB_MAX_TOPICS, 4);
-K_MEM_SLAB_DEFINE_STATIC(gateways, sizeof(struct mqtt_sn_gateway), CONFIG_MQTT_SN_LIB_MAX_GATEWAYS,
-			 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(publishes, struct mqtt_sn_publish, CONFIG_MQTT_SN_LIB_MAX_PUBLISH);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(topics, struct mqtt_sn_topic, CONFIG_MQTT_SN_LIB_MAX_TOPICS);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(gateways, struct mqtt_sn_gateway, CONFIG_MQTT_SN_LIB_MAX_GATEWAYS);
 
 enum mqtt_sn_client_state {
 	MQTT_SN_CLIENT_DISCONNECTED,
@@ -372,7 +370,7 @@ static struct mqtt_sn_gateway *mqtt_sn_gw_create(uint8_t gw_id, short duration,
 		return NULL;
 	}
 
-	__ASSERT(gw_addr.size <= CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE,
+	__ASSERT(gw_addr.size <= sizeof(gw->addr),
 		 "Gateway address is larger than allowed by CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE");
 
 	memset(gw, 0, sizeof(*gw));
@@ -1888,7 +1886,7 @@ int mqtt_sn_input(struct mqtt_sn_client *client)
 {
 	ssize_t next_frame_size;
 	uint8_t addr[CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE];
-	struct mqtt_sn_data rx_addr = {.data = addr, .size = CONFIG_MQTT_SN_LIB_MAX_ADDR_SIZE};
+	struct mqtt_sn_data rx_addr = {.data = addr, .size = sizeof(addr)};
 	int err;
 
 	if (!client || !client->transport || !client->transport->recvfrom) {

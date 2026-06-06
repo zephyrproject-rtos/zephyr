@@ -72,6 +72,12 @@ static struct k_sem wait_data2;
 static uint16_t current_dns_id;
 static struct dns_addrinfo addrinfo;
 
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+static uint8_t send_count;
+static uint8_t callback_count;
+static struct k_work multi_server_response_work;
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
 #define EXPECTED_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #else
@@ -98,6 +104,10 @@ static void init_test_private_data(void)
 	}
 }
 #endif /* CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT */
+
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+static void multi_server_response_handler(struct k_work *work);
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
 
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
@@ -152,8 +162,6 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 
 	if (!timeout_query) {
 		struct net_if_test *data = dev->data;
-		struct dns_resolve_context *ctx;
-		int slot;
 
 		if (net_if_get_by_iface(net_pkt_iface(pkt)) != data->idx) {
 			DBG("Invalid interface %d index, expecting %d\n",
@@ -161,35 +169,44 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 			test_failed = true;
 		}
 
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+		/* Defer response until all dns_write() calls complete.
+		 * Each dns_write() re-arms the query timer before sendto(),
+		 * so responding synchronously here would orphan the timer
+		 * on an already-freed slot, corrupting the kernel timeout
+		 * queue when the next test reinitializes it.
+		 */
+		send_count++;
+		k_work_submit(&multi_server_response_work);
+#else
+		struct dns_resolve_context *ctx;
+		int slot;
+
 		ctx = dns_resolve_get_default();
 
 		slot = get_slot_by_id(ctx, current_dns_id);
 		if (slot < 0) {
 			DBG("Skipping this query dns id %u\n", current_dns_id);
-			goto out;
+		} else {
+			k_work_cancel_delayable(&ctx->queries[slot].timer);
+
+			DBG("Calling cb %p with user data %p\n",
+			    ctx->queries[slot].cb,
+			    ctx->queries[slot].user_data);
+
+			ctx->queries[slot].cb(DNS_EAI_INPROGRESS,
+					      &addrinfo,
+					      ctx->queries[slot].user_data);
+			ctx->queries[slot].cb(DNS_EAI_ALLDONE,
+					      NULL,
+					      ctx->queries[slot].user_data);
+
+			ctx->queries[slot].cb = NULL;
 		}
-
-		/* We need to cancel the query manually so that we
-		 * will not get a timeout.
-		 */
-		k_work_cancel_delayable(&ctx->queries[slot].timer);
-
-		DBG("Calling cb %p with user data %p\n",
-		    ctx->queries[slot].cb,
-		    ctx->queries[slot].user_data);
-
-		ctx->queries[slot].cb(DNS_EAI_INPROGRESS,
-				      &addrinfo,
-				      ctx->queries[slot].user_data);
-		ctx->queries[slot].cb(DNS_EAI_ALLDONE,
-				      NULL,
-				      ctx->queries[slot].user_data);
-
-		ctx->queries[slot].cb = NULL;
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
 	}
 
-out:
-	return 0;
+return 0;
 }
 
 struct net_if_test net_iface1_data;
@@ -276,6 +293,10 @@ static void *test_init(void)
 	/* Initialize test data for private RR tests */
 	init_test_private_data();
 #endif
+
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+	k_work_init(&multi_server_response_work, multi_server_response_handler);
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
 
 	net_if_up(iface1);
 
@@ -1330,5 +1351,155 @@ ZTEST(dns_resolve, test_dns_query_private_rr_timeout)
 }
 
 #endif /* CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT */
+
+#if defined(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS)
+
+void dns_result_multi_server_cb(enum dns_resolve_status status,
+				struct dns_addrinfo *info,
+				void *user_data)
+{
+	struct expected_status *expected = user_data;
+
+	if (status != expected->status1 && status != expected->status2) {
+		DBG("Result status %d\n", status);
+		DBG("Expected status1 %d\n", expected->status1);
+		DBG("Expected status2 %d\n", expected->status2);
+		DBG("Caller %s\n", expected->caller);
+
+		zassert_true(false, "Invalid status");
+	}
+
+	callback_count++;
+
+	k_sem_give(&wait_data2);
+}
+
+static void multi_server_response_handler(struct k_work *work)
+{
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int slot;
+
+	slot = get_slot_by_id(ctx, current_dns_id);
+	if (slot < 0) {
+		DBG("Response work: slot already released for dns id %u\n",
+		    current_dns_id);
+		return;
+	}
+
+	DBG("Response work: processing first response for dns id %u\n",
+	    current_dns_id);
+
+	/* Now safe to cancel — no further dns_write will reschedule it */
+	k_work_cancel_delayable(&ctx->queries[slot].timer);
+
+	ctx->queries[slot].cb(DNS_EAI_INPROGRESS,
+			      &addrinfo,
+			      ctx->queries[slot].user_data);
+	ctx->queries[slot].cb(DNS_EAI_ALLDONE,
+			      NULL,
+			      ctx->queries[slot].user_data);
+
+	ctx->queries[slot].cb = NULL;
+}
+
+ZTEST(dns_resolve, test_dns_query_all_servers_ipv4)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	timeout_query = false;
+	send_count = 0;
+	callback_count = 0;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_multi_server_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	DBG("Multi-server Query id %u\n", current_dns_id);
+
+	k_yield(); /* mandatory so that net_if send func gets to run */
+
+	/* First response wins: expect exactly 2 callbacks (INPROGRESS + ALLDONE) */
+	for (int i = 0; i < 2; i++) {
+		if (k_sem_take(&wait_data2, WAIT_TIME)) {
+			zassert_true(false, "Timeout waiting for callback %d", i + 1);
+		}
+	}
+
+	DBG("Total sends: %u, Total callbacks: %u\n",
+	    send_count, callback_count);
+
+	/* Query must have been sent to every server */
+	zassert_equal(send_count, EXPECTED_SERVER_COUNT,
+		      "Query should be sent to all %d servers, got %u",
+		      EXPECTED_SERVER_COUNT, send_count);
+
+	/* But only the first response is processed */
+	zassert_equal(callback_count, 2,
+		      "First response wins: expected 2 callbacks (INPROGRESS + ALLDONE), got %u",
+		      callback_count);
+
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_all_servers_ipv6)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6);
+
+	timeout_query = false;
+	send_count = 0;
+	callback_count = 0;
+
+	ret = dns_get_addr_info(NAME6,
+				DNS_QUERY_TYPE_AAAA,
+				&current_dns_id,
+				dns_result_multi_server_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv6 query");
+
+	DBG("Multi-server Query id %u\n", current_dns_id);
+
+	k_yield(); /* mandatory so that net_if send func gets to run */
+
+	/* First response wins: expect exactly 2 callbacks (INPROGRESS + ALLDONE) */
+	for (int i = 0; i < 2; i++) {
+		if (k_sem_take(&wait_data2, WAIT_TIME)) {
+			zassert_true(false, "Timeout waiting for callback %d", i + 1);
+		}
+	}
+
+	DBG("Total sends: %u, Total callbacks: %u\n",
+	    send_count, callback_count);
+
+	/* Query must have been sent to every server */
+	zassert_equal(send_count, EXPECTED_SERVER_COUNT,
+		      "Query should be sent to all %d servers, got %u",
+		      EXPECTED_SERVER_COUNT, send_count);
+
+	/* But only the first response is processed */
+	zassert_equal(callback_count, 2,
+		      "First response wins: expected 2 callbacks (INPROGRESS + ALLDONE), got %u",
+		      callback_count);
+
+	verify_cancelled();
+}
+
+#endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);

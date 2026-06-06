@@ -8,7 +8,6 @@
 #include <zephyr/arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>

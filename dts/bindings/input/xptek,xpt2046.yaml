@@ -16,11 +16,13 @@ properties:
     type: int
     required: true
     description: horizontal resolution of screen
+    min: 1
 
   touchscreen-size-y:
     type: int
     required: true
     description: vertical resolution of screen
+    min: 1
 
   min-x:
     type: int
@@ -46,8 +48,10 @@ properties:
     type: int
     description: Z value threshold to trigger a touch
     default: 100
+    min: 11
 
   reads:
     type: int
     description: How many reads per touch to average the value
     default: 1
+    min: 1

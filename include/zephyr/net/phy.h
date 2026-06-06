@@ -122,45 +122,6 @@ struct phy_plca_cfg {
 };
 
 /**
- * @brief      Write PHY PLCA configuration
- *
- * This routine provides a generic interface to configure PHY PLCA settings.
- *
- * @param[in]  dev       PHY device structure
- * @param[in]  plca_cfg  Pointer to plca configuration structure
- *
- * @retval 0 If successful.
- * @retval -EIO If communication with PHY failed.
- */
-int genphy_get_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg);
-
-/**
- * @brief      Read PHY PLCA configuration
- *
- * This routine provides a generic interface to get PHY PLCA settings.
- *
- * @param[in]  dev       PHY device structure
- * @param      plca_cfg  Pointer to plca configuration structure
- *
- * @retval 0 If successful.
- * @retval -EIO If communication with PHY failed.
- */
-int genphy_set_plca_cfg(const struct device *dev, struct phy_plca_cfg *plca_cfg);
-
-/**
- * @brief      Read PHY PLCA status
- *
- * This routine provides a generic interface to get PHY PLCA status.
- *
- * @param[in]  dev          PHY device structure
- * @param      plca_status  Pointer to plca status
- *
- * @retval 0 If successful.
- * @retval -EIO If communication with PHY failed.
- */
-int genphy_get_plca_sts(const struct device *dev, bool *plca_status);
-
-/**
  * @typedef phy_callback_t
  * @brief Define the callback function signature for
  * `phy_link_callback_set()` function.

@@ -327,7 +327,9 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 			return -ENOMEM;
 		}
 
-		memcpy(decoded_sdu.left_frames[decoded_sdu.left_frames_cnt++], frame, frame_size);
+		(void)memcpy(decoded_sdu.left_frames[decoded_sdu.left_frames_cnt], frame,
+			     frame_size);
+		decoded_sdu.left_frames_cnt++;
 	} else if (is_right) {
 		if (decoded_sdu.right_frames_cnt >= ARRAY_SIZE(decoded_sdu.right_frames)) {
 			LOG_WRN("Could not add more right frames");
@@ -335,7 +337,9 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 			return -ENOMEM;
 		}
 
-		memcpy(decoded_sdu.right_frames[decoded_sdu.right_frames_cnt++], frame, frame_size);
+		(void)memcpy(decoded_sdu.right_frames[decoded_sdu.right_frames_cnt], frame,
+			     frame_size);
+		decoded_sdu.right_frames_cnt++;
 	} else if (is_mono) {
 		/* Use left as mono*/
 		if (decoded_sdu.mono_frames_cnt >= ARRAY_SIZE(decoded_sdu.left_frames)) {
@@ -344,7 +348,9 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 			return -ENOMEM;
 		}
 
-		memcpy(decoded_sdu.left_frames[decoded_sdu.mono_frames_cnt++], frame, frame_size);
+		(void)memcpy(decoded_sdu.left_frames[decoded_sdu.mono_frames_cnt], frame,
+			     frame_size);
+		decoded_sdu.mono_frames_cnt++;
 	} else {
 		/* Unsupported channel */
 		LOG_DBG("Unsupported channel %d", chan_allocation);

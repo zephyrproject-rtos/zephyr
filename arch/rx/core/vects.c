@@ -67,7 +67,7 @@ static ALWAYS_INLINE void REGISTER_RESTORE_EXIT(void)
 		"RTE\n");
 }
 
-/* Privileged instruction execption */
+/* Privileged instruction exception */
 static void __ISR__ INT_Excep_SuperVisorInst(void)
 {
 	REGISTER_SAVE();

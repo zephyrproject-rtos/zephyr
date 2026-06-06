@@ -15,6 +15,7 @@
 #include <zephyr/drivers/flash.h>
 #include <string.h>
 #include <nrfx_nvmc.h>
+#include <soc_secure.h>
 
 #include "soc_flash_nrf.h"
 
@@ -164,6 +165,10 @@ static int flash_nrf_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 #endif
+
+	if (soc_secure_flash_range_is_secure((uintptr_t)addr, len)) {
+		return soc_secure_mem_read(data, (void *)addr, len);
+	}
 
 	nrf_nvmc_buffer_read(data, (uint32_t)addr, len);
 

@@ -26,6 +26,8 @@ void *nsi_host_calloc(unsigned long nmemb, unsigned long size);
 int nsi_host_close(int fd);
 /* void nsi_host_exit (int status); Use nsi_exit() instead */
 void nsi_host_free(void *ptr);
+int nsi_host_fsync(int fd);
+int nsi_host_ftruncate(int fd, long long length);
 char *nsi_host_getcwd(char *buf, unsigned long size);
 char *nsi_host_getenv(const char *name);
 int nsi_host_isatty(int fd);

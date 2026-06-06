@@ -47,7 +47,7 @@
 #endif
 
 /* The GCC for Renesas RX processors adds leading underscores to C-symbols
- * by default. As a workaroud for symbols defined in linker scripts to be
+ * by default. As a workaround for symbols defined in linker scripts to be
  * available in C code, an alias with a leading underscore has to be provided.
  */
 #if defined(CONFIG_RX)
@@ -278,6 +278,14 @@ extern char z_user_stacks_start[];
 extern char z_user_stacks_end[];
 extern char z_kobject_data_begin[];
 #endif /* CONFIG_USERSPACE */
+
+#if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
+/* Stack canary is prepended to the TLS block; these symbols define its extent. */
+extern char __stack_chk_start[];
+extern char __stack_chk_end[];
+extern char __stack_chk_size[];
+extern char __stack_chk_align[];
+#endif /* CONFIG_STACK_CANARIES_TLS_PREPEND */
 
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 extern char __tdata_start[];

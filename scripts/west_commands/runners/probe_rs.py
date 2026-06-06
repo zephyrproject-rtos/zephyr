@@ -177,7 +177,7 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
             # debugserver mode
             self.logger.info(f'probe-rs GDB server running on port {self.gdb_port}')
 
-        self.check_call([self.probe_rs, 'gdb']
+        self.check_call_ignore_sigint([self.probe_rs, 'gdb']
                         + self.args + debug_args)
 
     def do_attach(self, **kwargs):

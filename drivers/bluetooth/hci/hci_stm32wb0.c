@@ -60,23 +60,6 @@ static uint32_t __noinit dyn_alloc_a[BLE_DYN_ALLOC_SIZE >> 2];
 static uint8_t buffer_out_mem[MAX_EVENT_SIZE];
 static struct k_work_delayable ble_stack_work;
 
-#if defined(CONFIG_PM_DEVICE)
-/* ST Proprietary extended event */
-#define STM32_HCI_EXT_EVT				0x82
-#define ACI_HAL_END_OF_RADIO_ACTIVITY_VSEVT_CODE	0x0004
-#define STM32_STATE_ALL_BITMASK				0xFFFF
-#define STM32_STATE_IDLE				0x00
-
-struct bt_hci_ext_evt_hdr {
-	uint8_t type;
-	uint8_t evt;
-	uint16_t len;
-	uint16_t vs_code;
-	uint8_t last_state;
-	uint8_t next_state;
-} __packed;
-#endif /* CONFIG_PM_DEVICE */
-
 static struct net_buf *get_rx(uint8_t *msg);
 static PKA_HandleTypeDef hpka;
 
@@ -84,39 +67,10 @@ static PKA_HandleTypeDef hpka;
 static uint32_t __noinit aci_adv_nwk_buffer[CFG_BLE_ADV_NWK_BUFFER_SIZE >> 2];
 #endif /* CONFIG_BT_EXT_ADV */
 
-struct hci_data {
-	bt_hci_recv_t recv;
-};
-
 /* Dummy implementation */
 int BLEPLAT_NvmGet(void)
 {
 	return 0;
-}
-
-/* Inform Zephyr PM about wakeup event from radio */
-static void register_radio_event(uint32_t time, bool unregister)
-{
-	int64_t value_ms, ticks;
-	static struct pm_policy_event radio_evt;
-	static bool first_time = true;
-
-	if (unregister) {
-		if (!first_time) {
-			first_time = true;
-			pm_policy_event_unregister(&radio_evt);
-		}
-	} else {
-		value_ms = HAL_RADIO_TIMER_DiffSysTimeMs(HAL_RADIO_TIMER_GetFutureSysTime64(time),
-							 HAL_RADIO_TIMER_GetCurrentSysTime());
-		ticks = k_ms_to_ticks_floor64(value_ms) + k_uptime_ticks();
-		if (first_time) {
-			pm_policy_event_register(&radio_evt, ticks);
-			first_time = false;
-		} else {
-			pm_policy_event_update(&radio_evt, ticks);
-		}
-	}
 }
 
 uint8_t BLEPLAT_SetRadioTimerValue(uint32_t Time, uint8_t EventType, uint8_t CalReq)
@@ -124,9 +78,6 @@ uint8_t BLEPLAT_SetRadioTimerValue(uint32_t Time, uint8_t EventType, uint8_t Cal
 	uint8_t retval;
 
 	retval = HAL_RADIO_TIMER_SetRadioTimerValue(Time, EventType, CalReq);
-	if (IS_ENABLED(CONFIG_PM_DEVICE) && !retval) {
-		register_radio_event(Time, false);
-	}
 	return retval;
 }
 
@@ -243,27 +194,14 @@ void send_event(uint8_t *buffer_out, uint16_t buffer_out_length, int8_t overflow
 	ARG_UNUSED(overflow_index);
 
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct hci_data *hci = dev->data;
 	struct net_buf *buf;
-
-#if defined(CONFIG_PM_DEVICE)
-	struct bt_hci_ext_evt_hdr *vs_evt = (struct bt_hci_ext_evt_hdr *)(buffer_out);
-
-	if ((vs_evt->type == STM32_HCI_EXT_EVT) && (vs_evt->evt == BT_HCI_EVT_VENDOR)) {
-		if ((vs_evt->vs_code == ACI_HAL_END_OF_RADIO_ACTIVITY_VSEVT_CODE) &&
-		    (vs_evt->next_state == STM32_STATE_IDLE)) {
-			register_radio_event(0, true);
-		}
-		return;
-	}
-#endif /* CONFIG_PM_DEVICE */
 
 	/* Construct net_buf from event data */
 	buf = get_rx(buffer_out);
 	if (buf) {
 		/* Handle the received HCI data */
 		LOG_DBG("New event %p len %u type %u", buf, buf->len, buf->data[0]);
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	} else {
 		LOG_ERR("Buf is null");
 	}
@@ -506,9 +444,8 @@ static int bt_hci_stm32wb0_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_hci_stm32wb0_open(const struct device *dev)
 {
-	struct hci_data *data = dev->data;
 	RADIO_HandleTypeDef hradio = {0};
 	BLE_STACK_InitTypeDef BLE_STACK_InitParams = {
 		.BLEStartRamAddress = (uint8_t *)dyn_alloc_a,
@@ -560,10 +497,6 @@ static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
 #endif /* CONFIG_BT_EXT_ADV */
 
 	aci_adv_nwk_init();
-#if defined(CONFIG_PM_DEVICE)
-	aci_hal_set_radio_activity_mask(STM32_STATE_ALL_BITMASK);
-#endif /* CONFIG_PM_DEVICE */
-	data->recv = recv;
 	k_work_init_delayable(&ble_stack_work, blestack_process);
 	k_work_schedule(&ble_stack_work, K_NO_WAIT);
 
@@ -577,10 +510,13 @@ static DEVICE_API(bt_hci, drv) = {
 
 #define HCI_DEVICE_INIT(inst) \
 	PM_DEVICE_DT_INST_DEFINE(inst, ble_pm_action); \
-	static struct hci_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst, NULL, \
-				POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static const struct bt_hci_driver_config hci_config_##inst =                               \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst,           \
+			      &hci_config_##inst, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      &drv)
 
 /* Only one instance supported */
 HCI_DEVICE_INIT(0)

@@ -72,6 +72,12 @@ tests:
       - native_sim
   sample.shell.shell_module.robot:
     harness: robot
+    arch_exclude:
+      - xtensa
+    platform_exclude:
+      - qemu_rx/r5f562n8
+    extra_configs:
+      - arch:posix:CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
     harness_config:
       robot_testsuite: shell_module.robot
   sample.shell.shell_module.remote:

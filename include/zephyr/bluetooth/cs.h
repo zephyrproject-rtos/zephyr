@@ -73,8 +73,8 @@ struct bt_le_cs_set_default_settings_param {
 	/** Antenna identifier to be used for CS_SYNC packets by the local controller.
 	 */
 	enum bt_le_cs_sync_antenna_selection_opt cs_sync_antenna_selection;
-	/** Maximum output power (Effective Isotropic Radiated Power) to be used
-	 *  for all CS transmissions.
+	/** Maximum output power (Effective Isotropic Radiated Power) in dBm,
+	 *  to be used for all CS transmissions.
 	 *
 	 *  Value range is @ref BT_HCI_OP_LE_CS_MIN_MAX_TX_POWER to
 	 *  @ref BT_HCI_OP_LE_CS_MAX_MAX_TX_POWER.
@@ -278,7 +278,7 @@ struct bt_le_cs_test_param {
 	 *  A value of 0 means that this parameter is ignored.
 	 */
 	uint8_t max_num_subevents;
-	/** Desired TX power level for the CS procedure.
+	/** Desired TX power level for the CS procedure, in dBm.
 	 *
 	 *  Value range is @ref BT_HCI_OP_LE_CS_MIN_MAX_TX_POWER to
 	 *  @ref BT_HCI_OP_LE_CS_MAX_MAX_TX_POWER.
@@ -564,7 +564,7 @@ struct bt_le_cs_iq_sample bt_le_cs_parse_pct(const uint8_t pct[3]);
  * This command is used to enable all valid channels in a
  * given CS channel map
  *
- * @param channel_map  Chanel map
+ * @param channel_map  Channel map
  */
 void bt_le_cs_set_valid_chmap_bits(uint8_t channel_map[10]);
 

@@ -609,7 +609,7 @@ def test_pytest_run(tmp_path, caplog):
     test_obj.configure(instance)
 
     # Act
-    test_obj.pytest_run(timeout)
+    test_obj.run(timeout)
     # Assert
     assert test_obj.status == TwisterStatus.FAIL
     assert exp_out in caplog.text

@@ -47,7 +47,8 @@ def catch_system_exit_exception(func):
                 return exc.code
             if exc.code is None:
                 return 0
-            # if exc.code is not int/None consider it is not zero
+            # if exc.code is non-numeric, log it as a string and exit with error
+            logging.getLogger("twister").error(str(exc.code))
             return 1
 
     return _inner

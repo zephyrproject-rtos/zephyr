@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 {
    getpwuid() libC issue
    Memcheck:Leak
@@ -46,4 +48,11 @@
    match-leak-kinds: possible
    fun:malloc
    fun:lvgl_allocate_rendering_buffers
+}
+{
+   hash-map realloc as free
+   Memcheck:ReallocZero
+   fun:realloc
+   fun:sys_hashmap_*
+   ...
 }

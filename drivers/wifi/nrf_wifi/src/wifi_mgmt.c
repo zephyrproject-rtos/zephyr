@@ -9,6 +9,7 @@
  * for the Zephyr OS.
  */
 
+#include <stddef.h>
 #include <stdlib.h>
 
 #include <zephyr/kernel.h>
@@ -383,12 +384,36 @@ void nrf_wifi_event_proc_get_power_save_info(void *vif_ctx,
 					     unsigned int event_len)
 {
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
+	size_t twt_bytes;
+	size_t required_len;
 
 	if (!vif_ctx || !ps_info) {
 		return;
 	}
 
 	vif_ctx_zep = vif_ctx;
+
+	if (!vif_ctx_zep->ps_info) {
+		LOG_ERR("%s: caller ps_config pointer is NULL", __func__);
+		return;
+	}
+
+	if (ps_info->num_twt_flows > WIFI_MAX_TWT_FLOWS) {
+		LOG_ERR("%s: num_twt_flows %u exceeds WIFI_MAX_TWT_FLOWS",
+			__func__, ps_info->num_twt_flows);
+		return;
+	}
+
+	twt_bytes = (size_t)ps_info->num_twt_flows *
+		    sizeof(struct nrf_wifi_umac_config_twt_info);
+	required_len = offsetof(struct nrf_wifi_umac_event_power_save_info, twt_flow_info) +
+		       twt_bytes;
+
+	if ((size_t)event_len < required_len) {
+		LOG_ERR("%s: event_len %u < required %zu (num_twt_flows %u)",
+			__func__, event_len, required_len, ps_info->num_twt_flows);
+		return;
+	}
 
 	vif_ctx_zep->ps_info->ps_params.mode = ps_info->ps_mode;
 	vif_ctx_zep->ps_info->ps_params.enabled = ps_info->enabled;

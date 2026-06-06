@@ -670,12 +670,26 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		if (ts) {
 			struct bt_hci_iso_sdu_ts_hdr *ts_hdr;
 
+			if (buf->len < sizeof(*ts_hdr)) {
+				LOG_ERR("Unexpected ISO buffer size %u (< %zu)", buf->len,
+					sizeof(*ts_hdr));
+				net_buf_unref(buf);
+				return;
+			}
+
 			ts_hdr = net_buf_pull_mem(buf, sizeof(*ts_hdr));
 			iso_info(buf)->ts = sys_le32_to_cpu(ts_hdr->ts);
 
 			hdr = &ts_hdr->sdu;
 			iso_info(buf)->flags |= BT_ISO_FLAGS_TS;
 		} else {
+			if (buf->len < sizeof(*hdr)) {
+				LOG_ERR("Unexpected ISO buffer size %u (< %zu)", buf->len,
+					sizeof(*hdr));
+				net_buf_unref(buf);
+				return;
+			}
+
 			hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 			/* TODO: Generate a timestamp? */
 			iso_info(buf)->ts = 0x00000000;

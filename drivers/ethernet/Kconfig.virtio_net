@@ -11,7 +11,8 @@ if ETH_VIRTIO_NET
 
 config ETH_NIC_MODEL
 	string
-	default "virtio"
+	default "virtio-net-device" if VIRTIO_MMIO
+	default "virtio-net-pci" if VIRTIO_PCI
 	help
 	  Tells QEMU what network model to use. This value is given as
 	  a parameter to the -nic QEMU command line option.

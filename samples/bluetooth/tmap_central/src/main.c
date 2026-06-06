@@ -26,6 +26,7 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "tmap_central.h"
@@ -40,6 +41,8 @@ static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+
 	printk("MTU exchanged: %u/%u\n", tx, rx);
 	k_sem_give(&sem_mtu_exchanged);
 }
@@ -50,6 +53,8 @@ static struct bt_gatt_cb gatt_callbacks = {
 
 void tmap_discovery_complete(enum bt_tmap_role role, struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(role);
+
 	if (conn != default_conn) {
 		return;
 	}
@@ -123,6 +128,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 				enum bt_security_err err)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(level);
+
 	if (err == 0) {
 		printk("Security changed: %u\n", err);
 		k_sem_give(&sem_security_updated);

@@ -34,13 +34,14 @@ LOG_MODULE_REGISTER(bt_driver);
 #define DT_DRV_COMPAT zephyr_bt_hci_uart
 
 struct h4_data {
+	/* bt_hci_driver_data must be first */
+	struct bt_hci_driver_data common;
+
 	struct {
 		uint8_t type;
 		struct net_buf *buf;
 		struct k_fifo fifo;
 	} tx;
-
-	bt_hci_recv_t recv;
 
 	struct {
 		struct net_buf *buf;
@@ -67,6 +68,9 @@ struct h4_data {
 };
 
 struct h4_config {
+	/* bt_hci_driver_config must be first */
+	struct bt_hci_driver_config common;
+
 	const struct device *uart;
 	k_thread_stack_t *rx_thread_stack;
 	size_t rx_thread_stack_size;
@@ -270,8 +274,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 		while (buf != NULL) {
 			uart_irq_rx_enable(cfg->uart);
 
-			LOG_DBG("Calling bt_recv(%p)", buf);
-			h4->recv(dev, buf);
+			LOG_DBG("Calling bt_hci_recv(%p)", buf);
+			bt_hci_recv(dev, buf);
 
 			/* Give other threads a chance to run if the ISR
 			 * is receiving data so fast that rx.fifo never
@@ -471,7 +475,13 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 {
 	struct device *dev = user_data;
 
-	while (uart_irq_update(uart) && uart_irq_is_pending(uart)) {
+	while (true) {
+		uart_irq_update(uart);
+
+		if (uart_irq_is_pending(uart) <= 0) {
+			break;
+		}
+
 		if (uart_irq_tx_ready(uart)) {
 			process_tx(dev);
 		}
@@ -507,7 +517,7 @@ int __weak bt_hci_transport_setup(const struct device *uart)
 	return 0;
 }
 
-static int h4_open(const struct device *dev, bt_hci_recv_t recv)
+static int h4_open(const struct device *dev)
 {
 	const struct h4_config *cfg = dev->config;
 	struct h4_data *h4 = dev->data;
@@ -523,8 +533,6 @@ static int h4_open(const struct device *dev, bt_hci_recv_t recv)
 	if (ret < 0) {
 		return -EIO;
 	}
-
-	h4->recv = recv;
 
 	uart_irq_callback_user_data_set(cfg->uart, bt_uart_isr, (void *)dev);
 
@@ -557,7 +565,6 @@ int __weak bt_hci_transport_teardown(const struct device *dev)
 static int h4_close(const struct device *dev)
 {
 	const struct h4_config *cfg = dev->config;
-	struct h4_data *h4 = dev->data;
 	int err;
 
 	LOG_DBG("");
@@ -572,8 +579,6 @@ static int h4_close(const struct device *dev)
 
 	/* Abort RX thread */
 	k_thread_abort(cfg->rx_thread);
-
-	h4->recv = NULL;
 
 	return 0;
 }
@@ -609,13 +614,14 @@ static DEVICE_API(bt_hci, h4_driver_api) = {
 	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE); \
 	static struct k_thread rx_thread_##inst; \
 	static const struct h4_config h4_config_##inst = { \
+		.common = BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst), \
 		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
 		.rx_thread_stack = rx_thread_stack_##inst, \
 		.rx_thread_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst), \
 		.rx_thread = &rx_thread_##inst, \
 		COND_CODE_1(DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios), \
 			(.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}), \
-			.reset_ms = DT_INST_PROP_OR(0, reset_assert_duration_ms, 0), \
+			.reset_ms = DT_INST_PROP_OR(inst, reset_assert_duration_ms, 0), \
 		), ()) \
 	}; \
 	static struct h4_data h4_data_##inst = { \

@@ -84,7 +84,6 @@ void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 static void ot_l2_state_changed_handler(uint32_t flags, void *context)
 {
 	struct openthread_context *ot_context = context;
-	struct openthread_state_changed_cb *entry, *next;
 
 #if defined(CONFIG_OPENTHREAD_INTERFACE_EARLY_UP)
 	bool is_up = otIp6IsEnabled(openthread_get_default_instance());
@@ -140,12 +139,6 @@ static void ot_l2_state_changed_handler(uint32_t flags, void *context)
 	}
 
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ot_context->state_change_cbs, entry, next, node) {
-		if (entry->state_changed_cb != NULL) {
-			entry->state_changed_cb(flags, ot_context, entry->user_data);
-		}
-	}
 }
 
 static void ot_receive_handler(otMessage *message, void *context)
@@ -356,10 +349,6 @@ static int openthread_l2_init(struct net_if *iface)
 		openthread_border_router_init(ot_l2_context);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
-		/* To keep backward compatibility use the additional state change callback list from
-		 * the ot l2 context and register the callback to the openthread module.
-		 */
-		sys_slist_init(&ot_l2_context->state_change_cbs);
 		openthread_state_changed_callback_register(&ot_l2_state_changed_cb);
 	}
 
@@ -424,78 +413,6 @@ struct openthread_context *openthread_get_default_context(void)
 
 exit:
 	return ot_context;
-}
-
-/* Keep deprecated functions and forward them to the OpenThread platform module */
-int openthread_start(struct openthread_context *ot_context)
-{
-	ARG_UNUSED(ot_context);
-
-	return openthread_run();
-}
-
-void openthread_api_mutex_lock(struct openthread_context *ot_context)
-{
-	/* The mutex is managed internally by the OpenThread module */
-	ARG_UNUSED(ot_context);
-
-	openthread_mutex_lock();
-}
-
-int openthread_api_mutex_try_lock(struct openthread_context *ot_context)
-{
-	/* The mutex is managed internally by the OpenThread module */
-	ARG_UNUSED(ot_context);
-
-	return openthread_mutex_try_lock();
-}
-
-void openthread_api_mutex_unlock(struct openthread_context *ot_context)
-{
-	/* The mutex is managed internally by the OpenThread module */
-	ARG_UNUSED(ot_context);
-
-	openthread_mutex_unlock();
-}
-
-/* Keep deprecated state change callback registration functions to keep backward compatibility.
- * The callbacks that are registered using these functions are run by the OpenThread module
- * as one of the platform callback. However, they will be not supported in the future after
- * deprecation period, so it is recommended to switch to
- * openthread_state_change_callback_register() instead.
- */
-int openthread_state_changed_cb_register(struct openthread_context *ot_context,
-					 struct openthread_state_changed_cb *cb)
-{
-	CHECKIF(cb == NULL || cb->state_changed_cb == NULL) {
-		return -EINVAL;
-	}
-
-	openthread_mutex_lock();
-	sys_slist_append(&ot_context->state_change_cbs, &cb->node);
-	openthread_mutex_unlock();
-
-	return 0;
-}
-
-int openthread_state_changed_cb_unregister(struct openthread_context *ot_context,
-					   struct openthread_state_changed_cb *cb)
-{
-	bool removed;
-
-	CHECKIF(cb == NULL) {
-		return -EINVAL;
-	}
-
-	openthread_mutex_lock();
-	removed = sys_slist_find_and_remove(&ot_context->state_change_cbs, &cb->node);
-	openthread_mutex_unlock();
-
-	if (!removed) {
-		return -EALREADY;
-	}
-
-	return 0;
 }
 
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send, openthread_enable, openthread_flags);

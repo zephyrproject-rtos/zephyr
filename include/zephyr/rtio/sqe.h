@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2022 Intel Corporation
- * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -660,6 +660,34 @@ static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 #define rtio_sqe_prep_delay(sqe, timeout, userdata) \
 	BUILD_ASSERT(false, "CONFIG_RTIO_OP_DELAY not enabled")
 #endif
+
+/** @brief Prepare an i2c configure op submission */
+static inline void rtio_sqe_prep_i2c_configure(struct rtio_sqe *sqe,
+					       const struct rtio_iodev *iodev,
+					       int8_t prio,
+					       uint32_t dev_config,
+					       void *userdata)
+{
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_I2C_CONFIGURE;
+	sqe->prio = prio;
+	sqe->iodev = iodev;
+	sqe->i2c_config = dev_config;
+	sqe->userdata = userdata;
+}
+
+/** @brief Prepare an i2c recover op submission */
+static inline void rtio_sqe_prep_i2c_recover(struct rtio_sqe *sqe,
+					     const struct rtio_iodev *iodev,
+					     int8_t prio,
+					     void *userdata)
+{
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_I2C_RECOVER;
+	sqe->prio = prio;
+	sqe->iodev = iodev;
+	sqe->userdata = userdata;
+}
 
 /**
  * @brief Get the next sqe in the transaction

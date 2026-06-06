@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: t_deck@plus/esp32s3/procpu
+name: LilyGO T-Deck Plus PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - i2s
+  - spi
+  - counter
+  - watchdog
+  - entropy
+  - dma
+  - input
+  - video
+  - display
+  - lora
+  - gnss
+  - fuel_gauge
+vendor: lilygo

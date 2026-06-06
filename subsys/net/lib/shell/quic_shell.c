@@ -12,6 +12,8 @@ LOG_MODULE_DECLARE(net_shell);
 
 #include "net_shell_private.h"
 
+#include <inttypes.h>
+
 #if defined(CONFIG_QUIC_SHELL)
 
 #include <zephyr/net/quic.h>
@@ -84,7 +86,7 @@ static void quic_stream_cb(struct quic_stream *stream, void *user_data)
 	if (stream->id == QUIC_STREAM_ID_UNASSIGNED) {
 		snprintk(id_str, sizeof(id_str), "<waiting connection>");
 	} else {
-		snprintk(id_str, sizeof(id_str), "%llu", stream->id);
+		snprintk(id_str, sizeof(id_str), "%" PRIu64, stream->id);
 	}
 
 	PR("[%2d]     %d    %-2d   %-2d   %-4d  %-4s  %s\t %s\n",
@@ -166,7 +168,7 @@ static void quic_context_stream_cb(struct quic_stream *stream, void *user_data)
 	if (stream->id == QUIC_STREAM_ID_UNASSIGNED) {
 		snprintk(id_str, sizeof(id_str), "<waiting connection>");
 	} else {
-		snprintk(id_str, sizeof(id_str), "%llu", stream->id);
+		snprintk(id_str, sizeof(id_str), "%" PRIu64, stream->id);
 	}
 
 	PR("          [%2d]  %d    %-4d  %-4s  %s\t %s\n",
@@ -299,18 +301,18 @@ static uint64_t quic_shell_uptime_ms(void)
 	return uptime_ms > 0 ? (uint64_t)uptime_ms : 0U;
 }
 
-static bool quic_addr_is_unspecified(const struct net_sockaddr_storage *addr)
+static bool quic_addr_is_unspecified(const struct net_sockaddr *addr)
 {
 	if (addr == NULL) {
 		return true;
 	}
 
-	if (addr->ss_family == NET_AF_INET) {
-		return net_ipv4_is_addr_unspecified(&net_sin(net_sad(addr))->sin_addr);
+	if (addr->sa_family == NET_AF_INET) {
+		return net_ipv4_is_addr_unspecified(&net_sin(addr)->sin_addr);
 	}
 
-	if (addr->ss_family == NET_AF_INET6) {
-		return net_ipv6_is_addr_unspecified(&net_sin6(net_sad(addr))->sin6_addr);
+	if (addr->sa_family == NET_AF_INET6) {
+		return net_ipv6_is_addr_unspecified(&net_sin6(addr)->sin6_addr);
 	}
 
 	return true;
@@ -332,7 +334,7 @@ static void quic_resolve_local_addr(const struct net_sockaddr_storage *local,
 
 	memcpy(resolved, local, sizeof(*resolved));
 
-	if (!quic_addr_is_unspecified(local) || remote == NULL) {
+	if (!quic_addr_is_unspecified(net_sad(local)) || remote == NULL) {
 		return;
 	}
 

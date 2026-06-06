@@ -9,17 +9,18 @@
 #include <zephyr/arch/xtensa/cache.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/cache.h>
+#include <zephyr/devicetree.h>
 
 bool sys_mm_is_phys_addr_in_range(uintptr_t phys)
 {
 	bool valid;
 	uintptr_t cached = (uintptr_t)sys_cache_cached_ptr_get((void *)phys);
 
-	valid = ((phys >= CONFIG_SRAM_BASE_ADDRESS) &&
-		 (phys < (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL))));
+	valid = ((phys >= DT_CHOSEN_SRAM_ADDR) &&
+		 (phys < (DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE)));
 
-	valid |= ((cached >= CONFIG_SRAM_BASE_ADDRESS) &&
-		  (cached < (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL))));
+	valid |= ((cached >= DT_CHOSEN_SRAM_ADDR) &&
+		  (cached < (DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE)));
 
 	return valid;
 }

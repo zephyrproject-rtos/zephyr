@@ -36,3 +36,36 @@
 	status = "okay";
 	clock-frequency = <5000000>;
 };
+
+&qspi {
+	status = "okay";
+	clock-frequency = <124987511>;
+
+	flash@0 {
+		compatible = "jedec,spi-nor";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x0>;
+		spi-max-frequency = <166000000>;
+		jedec-id = [20 bb 20];
+		sfdp-bfp = [e5 20 fb ff ff ff ff 1f 29 eb 27 6b 27 3b 27 bb
+			    ff ff ff ff ff ff 27 bb ff ff 29 eb 0c 20 10 d8
+			    00 00 00 00 35 8a 01 00 82 a3 03 da 6c c1 04 2e
+			    7a 75 7a 75 fb bd d5 5c 08 0f 82 ff 81 bd 35 36];
+		size = <0x20000000>;
+	};
+
+	flash@1 {
+		compatible = "jedec,spi-nor";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x1>;
+		spi-max-frequency = <166000000>;
+		jedec-id = [20 bb 20];
+		sfdp-bfp = [e5 20 fb ff ff ff ff 1f 29 eb 27 6b 27 3b 27 bb
+			    ff ff ff ff ff ff 27 bb ff ff 29 eb 0c 20 10 d8
+			    00 00 00 00 35 8a 01 00 82 a3 03 da 6c c1 04 2e
+			    7a 75 7a 75 fb bd d5 5c 08 0f 82 ff 81 bd 35 36];
+		size = <0x20000000>;
+	};
+};

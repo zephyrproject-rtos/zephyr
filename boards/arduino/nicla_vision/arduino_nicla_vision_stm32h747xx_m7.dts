@@ -25,6 +25,7 @@
 	aliases {
 		led0 = &red_led;
 		led1 = &green_led;
+		dmic-dev = &dmic_dev;
 	};
 
 	otghs_ulpi_phy: otghs_ulpis_phy {
@@ -54,6 +55,16 @@
 	div-p = <2>;
 	div-q = <4>;
 	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <5>;
+	mul-n = <96>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <10>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -267,4 +278,19 @@ zephyr_udc0: &usbotg_hs {
 
 &dmamux1 {
 	status = "okay";
+};
+
+&dfsdm {
+	status = "okay";
+};
+
+dmic_dev: &pdm0 {
+	pinctrl-0 = <&dfsdm1_ckout_pd10
+		     &dfsdm1_datin2_pe7>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	channel@2 {
+		reg = <2>;
+	};
 };

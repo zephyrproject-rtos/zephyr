@@ -275,6 +275,12 @@
 		status = "disabled";
 	};
 
+	crc: crc@120000 {
+		compatible = "nxp,lpc-crc";
+		reg = <0x120000 0x1000>;
+		status = "disabled";
+	};
+
 	flexcomm4: flexcomm@122000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x122000 0x1000>;

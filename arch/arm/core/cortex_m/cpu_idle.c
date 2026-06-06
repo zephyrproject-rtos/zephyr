@@ -150,3 +150,36 @@ void arch_cpu_atomic_idle(unsigned int key)
 #endif
 }
 #endif
+
+#if defined(CONFIG_PM) && defined(CONFIG_PM_STATE_SET_IRQ_LOCKED) && \
+	defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+unsigned int arch_pm_state_set_prepare(void)
+{
+	unsigned int key;
+
+	/*
+	 * The idle thread already holds the PM-core IRQ lock here. Save the
+	 * current BASEPRI value before clearing it. BASEPRI inhibits WFI from
+	 * observing the wake event, so use PRIMASK to keep regular IRQ handlers
+	 * from running while the low-power instruction waits for the event.
+	 * ARMv6-M and ARMv8-M Baseline lack BASEPRI and already use PRIMASK
+	 * as the IRQ lock, so no extra PM entry hook is needed there.
+	 */
+	key = __get_BASEPRI();
+	__ASSERT(key != 0U, "PM state entry requires IRQs locked");
+
+	__disable_irq();
+	__set_BASEPRI(0);
+	__DSB();
+	__ISB();
+
+	return key;
+}
+
+void arch_pm_state_set_finish(unsigned int key)
+{
+	arch_irq_unlock(key);
+	__enable_irq();
+	__ISB();
+}
+#endif

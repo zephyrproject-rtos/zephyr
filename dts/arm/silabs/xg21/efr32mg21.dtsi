@@ -5,3 +5,10 @@
  */
 
 #include <silabs/xg21/efr32xg21.dtsi>
+
+&radio {
+	ieee802154: ieee802154 {
+		compatible = "silabs,efr32-ieee802154";
+		status = "disabled";
+	};
+};

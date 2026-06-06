@@ -14,10 +14,10 @@
 		};
 	};
 
-	sercom1_i2c_default: sercom1_i2c_default {
+	sercom3_i2c_default: sercom3_i2c_default {
 		group1 {
-			pinmux = <PA16C_SERCOM1_PAD0>,
-				 <PA17C_SERCOM1_PAD1>;
+			pinmux = <PA22C_SERCOM3_PAD0>,
+				 <PA23C_SERCOM3_PAD1>;
 		};
 	};
 
@@ -38,6 +38,19 @@
 		group1 {
 			pinmux = <PB6B_ADC1_AIN8>, /* EXT3 pin 3 */
 				 <PB9B_ADC1_AIN5>; /* EXT3 pin 4 and J803 pin 1 */
+		};
+	};
+
+	tcc2_pwm_default: tcc2_pwm_default {
+		group1 {
+			pinmux = <PC5F_TCC2_WO1>;
+		};
+	};
+
+	tc5_pwm_default: tc5_pwm_default {
+		group1 {
+			pinmux = <PA4F_TC5_WO0>,
+				 <PA5F_TC5_WO1>;
 		};
 	};
 };

@@ -1476,7 +1476,7 @@ struct bt_le_ext_adv_info {
 	/** Local identity handle. */
 	uint8_t                    id;
 
-	/** Currently selected Transmit Power (dBM). */
+	/** Currently selected Transmit Power in dBm. Range: -127 to +20. */
 	int8_t                     tx_power;
 
 	/** Advertising Set ID */
@@ -1512,7 +1512,9 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
  * and will be called for any discovered LE device.
  *
  * @param addr Advertiser LE address and type.
- * @param rssi Strength of advertiser signal.
+ * @param rssi Strength of advertiser signal in dBm. Range: -127 to +20.
+ *             May be set to @ref BT_GAP_RSSI_INVALID when the value is not
+ *             available.
  * @param adv_type Type of advertising response from advertiser.
  *                 Uses the @ref bt_gap_adv_type values.
  * @param buf Buffer containing advertiser data.
@@ -1724,10 +1726,18 @@ struct bt_le_per_adv_sync_recv_info {
 	/** Advertising Set Identifier, valid range @ref BT_GAP_SID_MIN to @ref BT_GAP_SID_MAX. */
 	uint8_t sid;
 
-	/** The TX power of the advertisement. */
+	/** @brief The TX power of the advertisement in dBm.
+	 *
+	 *  Range: -127 to +20. May be set to @ref BT_GAP_TX_POWER_INVALID when the
+	 *  value is not available.
+	 */
 	int8_t tx_power;
 
-	/** The RSSI of the advertisement excluding any CTE. */
+	/** @brief The RSSI of the advertisement (excluding any CTE), in dBm.
+	 *
+	 *  Range: -127 to +20. May be set to @ref BT_GAP_RSSI_INVALID when the value
+	 *  is not available.
+	 */
 	int8_t rssi;
 
 	/** The Constant Tone Extension (CTE) of the advertisement (@ref bt_df_cte_type) */
@@ -2364,10 +2374,18 @@ struct bt_le_scan_recv_info {
 	/** Advertising Set Identifier, valid range @ref BT_GAP_SID_MIN to @ref BT_GAP_SID_MAX. */
 	uint8_t sid;
 
-	/** Strength of advertiser signal. */
+	/** @brief Strength of advertiser signal in dBm.
+	 *
+	 *  Range: -127 to +20. May be set to @ref BT_GAP_RSSI_INVALID when the value
+	 *  is not available.
+	 */
 	int8_t rssi;
 
-	/** Transmit power of the advertiser. */
+	/** @brief Transmit power of the advertiser in dBm.
+	 *
+	 *  Range: -127 to +20. May be set to @ref BT_GAP_TX_POWER_INVALID when the
+	 *  value is not available.
+	 */
 	int8_t tx_power;
 
 	/**
@@ -2641,7 +2659,7 @@ int bt_le_filter_accept_list_clear(void);
  * channels are bad or unknown by setting the corresponding bit in the channel map to respectively
  * 0 or 1.
  *
- * @note The interval between two succesive calls to this function must be at least one second.
+ * @note The interval between two successive calls to this function must be at least one second.
  *
  * @param chan_map Channel map. 5 octets where each bit represents a channel. Only the lower 37 bits
  *        are valid.

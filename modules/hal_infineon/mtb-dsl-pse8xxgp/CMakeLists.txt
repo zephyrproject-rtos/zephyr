@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -120,6 +120,7 @@ if(CONFIG_BUILD_WITH_TFM)
 
   set(tfm_ifx_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/platform/ext/target/infineon/common)
 
+  zephyr_include_directories(${tfm_ifx_dir}/device/include)
   zephyr_include_directories(${tfm_ifx_dir}/interface/include)
   zephyr_library_sources(${tfm_ifx_dir}/interface/src/ifx_mtb_srf.c)
 

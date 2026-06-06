@@ -57,7 +57,7 @@
 	};
 
 	soc {
-		#include "mec172x_common.dtsi"
+#include "mec172x_common.dtsi"
 	};
 };
 

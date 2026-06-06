@@ -14,7 +14,8 @@ Zephyr provides an HTTP server library, which allows to register HTTP services
 and HTTP resources associated with those services. The server creates a listening
 socket for every registered service, and handles incoming client connections.
 It's possible to communicate over a plain TCP socket (HTTP) or a TLS socket (HTTPS).
-Both, HTTP/1.1 (RFC 2616) and HTTP/2 (RFC 9113) protocol versions are supported.
+HTTP/1.1 (:rfc:`2616`), HTTP/2 (:rfc:`9113`) and HTTP/3 (:rfc:`9114`) protocol
+versions are supported.
 
 The server operation is generally transparent for the application, running in a
 background thread. The application can control the server activity with

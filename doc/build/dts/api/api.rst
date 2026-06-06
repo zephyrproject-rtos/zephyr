@@ -269,12 +269,13 @@ controllers, and properties related to them.
 
 .. _devicetree-flash-api:
 
-Fixed flash partitions
-======================
+Fixed and mapped flash partitions
+=================================
 
 These conveniences may be used for the special-purpose ``fixed-partitions``
-compatible used to encode information about flash memory partitions in the
-device tree. See See :dtcompatible:`fixed-partition` for more details.
+and ``zephyr,mapped-partition`` compatibles used to encode information about
+flash memory partitions in the device tree. See :dtcompatible:`fixed-partitions`
+and :dtcompatible:`zephyr,mapped-partition` for more details.
 
 .. doxygengroup:: devicetree-fixed-partition
 
@@ -500,7 +501,7 @@ device.
        singleton system function.
    * - zephyr,system-timer-companion
      - Selects the device used to keep time while the primary system timer is
-       inactive in low-power states
+       inactive in low-power states. It must implement the :ref:`counter_api` API.
    * - zephyr,tracing-uart
      - Sets UART device used by tracing subsystem
    * - zephyr,uart-mcumgr

@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ARDUCAM_MEGA
+	def_bool $(shields_list_contains,arducam_mega)
+
+config SHIELD_ARDUCAM_MEGA_ARDUINO
+	def_bool $(shields_list_contains,arducam_mega_arduino)
+
+config SHIELD_ARDUCAM_MEGA_MIKROBUS
+	def_bool $(shields_list_contains,arducam_mega_mikrobus)
+
+config SHIELD_ARDUCAM_MEGA_XIAO
+	def_bool $(shields_list_contains,arducam_mega_xiao)

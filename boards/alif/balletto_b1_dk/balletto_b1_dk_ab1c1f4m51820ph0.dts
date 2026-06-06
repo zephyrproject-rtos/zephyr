@@ -10,8 +10,6 @@
 
 / {
 	compatible = "alif,balletto-b1-dk-ab1c1f4m51820ph0";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	chosen {
 		zephyr,flash = &mram;

@@ -3,35 +3,35 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#define DT_DRV_COMPAT silabs_gpdma
 #include <zephyr/irq.h>
 #include <zephyr/sys/mem_blocks.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include "rsi_gpdma.h"
 #include "rsi_rom_gpdma.h"
 
-#define DT_DRV_COMPAT                silabs_gpdma
-#define GPDMA_DESC_MAX_TRANSFER_SIZE 4096
-#define GPDMA_MAX_CHANNEL_FIFO_SIZE  64
-#define GPDMA_MAX_PRIORITY           3
-#define GPDMA_MIN_PRIORITY           0
+#define SIWX91X_GPDMA_MAX_XFER_COUNT      4096
+#define SIWX91X_GPDMA_MAX_FIFO_SIZE         64
+#define SIWX91X_GPDMA_MAX_PRIORITY           3
+#define SIWX91X_GPDMA_MIN_PRIORITY           0
 
-LOG_MODULE_REGISTER(si91x_gpdma, CONFIG_DMA_LOG_LEVEL);
+LOG_MODULE_REGISTER(siwx91x_gpdma, CONFIG_DMA_LOG_LEVEL);
 
-enum gpdma_xfer_dir {
+enum siwx91x_gpdma_xfer_dir {
 	SIWX91X_TRANSFER_MEM_TO_MEM = 0,
 	SIWX91X_TRANSFER_MEM_TO_PER = 1,
 	SIWX91X_TRANSFER_PER_TO_MEM = 2,
 	SIWX91X_TRANSFER_DIR_INVALID = 4,
 };
 
-enum gpdma_data_width {
+enum siwx91x_gpdma_data_width {
 	SIWX91X_DATA_WIDTH_8 = 0,
 	SIWX91X_DATA_WIDTH_16 = 1,
 	SIWX91X_DATA_WIDTH_32 = 2,
@@ -42,7 +42,7 @@ struct siwx91x_gpdma_channel_info {
 	dma_callback_t cb;
 	void *cb_data;
 	RSI_GPDMA_DESC_T *desc;
-	enum gpdma_xfer_dir xfer_direction;
+	uint32_t xfer_direction;
 	bool channel_active;
 };
 
@@ -65,10 +65,14 @@ struct siwx19x_gpdma_data {
 
 static bool siwx91x_gpdma_is_priority_valid(uint32_t channel_priority)
 {
-	return (channel_priority >= GPDMA_MIN_PRIORITY && channel_priority <= GPDMA_MAX_PRIORITY);
+	if (channel_priority < SIWX91X_GPDMA_MIN_PRIORITY ||
+	    channel_priority > SIWX91X_GPDMA_MAX_PRIORITY) {
+		return false;
+	}
+	return true;
 }
 
-static enum gpdma_xfer_dir siwx91x_gpdma_xfer_dir(uint32_t dir)
+static enum siwx91x_gpdma_xfer_dir siwx91x_gpdma_xfer_dir(uint32_t dir)
 {
 	switch (dir) {
 	case MEMORY_TO_MEMORY:
@@ -82,7 +86,7 @@ static enum gpdma_xfer_dir siwx91x_gpdma_xfer_dir(uint32_t dir)
 	}
 }
 
-static enum gpdma_data_width siwx91x_gpdma_data_size(uint32_t data_size)
+static enum siwx91x_gpdma_data_width siwx91x_gpdma_data_size(uint32_t data_size)
 {
 	switch (data_size) {
 	case 1:
@@ -122,81 +126,103 @@ static int siwx91x_gpdma_ahb_blen(uint8_t blen)
 static void siwx91x_gpdma_free_desc(sys_mem_blocks_t *mem_block, RSI_GPDMA_DESC_T *block)
 {
 	RSI_GPDMA_DESC_T *cur_desc = block;
-	uint32_t *next_desc = NULL;
+	RSI_GPDMA_DESC_T *next_desc;
 
-	do {
-		next_desc = cur_desc->pNextLink;
+	while (cur_desc) {
+		next_desc = (RSI_GPDMA_DESC_T *)cur_desc->pNextLink;
 		sys_mem_blocks_free(mem_block, 1, (void **)&cur_desc);
-		cur_desc = (RSI_GPDMA_DESC_T *)next_desc;
-	} while (next_desc != NULL);
+		cur_desc = next_desc;
+	}
 }
 
-static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
-				     const struct dma_config *config,
-				     const RSI_GPDMA_DESC_T *xfer_cfg, uint32_t channel)
+static int siwx91x_gpdma_count_hw_desc(const struct dma_config *config, int operation_width)
 {
-	int operation_width = config->source_data_size * config->source_burst_length;
 	const struct dma_block_config *block = config->head_block;
-	RSI_GPDMA_DESC_T *desc, *prev = NULL;
+	int total = 0;
+
+	for (int i = 0; i < config->block_count; i++) {
+		/* DMA_ADDR_ADJ_NO_CHANGE consumes 1 descriptor */
+		if (block->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE &&
+		    config->channel_direction == PERIPHERAL_TO_MEMORY) {
+			total += 1;
+		} else {
+			total += DIV_ROUND_UP(block->block_size,
+					      SIWX91X_GPDMA_MAX_XFER_COUNT - operation_width);
+		}
+		block = block->next_block;
+	}
+
+	return total;
+}
+
+static RSI_GPDMA_DESC_T *siwx91x_gpdma_block_config(struct siwx19x_gpdma_data *data,
+						    RSI_GPDMA_DESC_T *xfer_cfg,
+						    const struct dma_block_config *block,
+						    int operation_width,
+						    uint32_t channel_direction)
+{
+	uint32_t src_addr = block->source_address;
+	uint32_t dst_addr = block->dest_address;
+	uint32_t remaining = block->block_size;
+	RSI_GPDMA_DESC_T *desc;
+	RSI_GPDMA_DESC_T *head = NULL;
+	RSI_GPDMA_DESC_T *prev = NULL;
 	k_spinlock_key_t key;
 	int ret;
 
-	for (int i = 0; i < config->block_count; i++) {
-		if (!IS_ALIGNED(block->source_address, config->source_burst_length) ||
-		    !IS_ALIGNED(block->dest_address, config->dest_burst_length) ||
-		    !IS_ALIGNED(block->block_size, operation_width)) {
-			LOG_ERR("Buffer not aligned");
-			goto free_desc;
+	/* HACK: GPDMA does not support DMA_ADDR_ADJ_NO_CHANGE with a memory buffer.
+	 * This configuration is mainly used by SPI to ignore the received bytes.
+	 * The hack below disables the data transfer (reduces the length to one byte).
+	 * Fortunately, SPI only watches DMA Tx termination so the early termination of
+	 * the DMA Rx won't hurt.
+	 */
+	if (block->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE &&
+	    channel_direction == PERIPHERAL_TO_MEMORY) {
+		if (block->next_block &&
+		    block->next_block->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
+			/* It is not possible to receive a real buffer after the hack above */
+			LOG_ERR("Buffer interleaving is not supported");
+			return NULL;
 		}
-		if (block->block_size >= GPDMA_DESC_MAX_TRANSFER_SIZE) {
-			LOG_ERR("Buffer too large (%d bytes)", block->block_size);
-			goto free_desc;
-		}
+		remaining = 1;
+	}
+
+	do {
+		uint32_t chunk = MIN(remaining, SIWX91X_GPDMA_MAX_XFER_COUNT - operation_width);
 
 		key = k_spin_lock(&data->desc_pool_lock);
 		ret = sys_mem_blocks_alloc(data->desc_pool, 1, (void **)&desc);
 		k_spin_unlock(&data->desc_pool_lock, key);
 		if (ret) {
-			goto free_desc;
+			goto fail;
 		}
 
 		memset(desc, 0, 32);
-		ret = RSI_GPDMA_BuildDescriptors(&data->hal_ctx, (RSI_GPDMA_DESC_T *)xfer_cfg,
-						 desc, NULL);
-		if (ret) {
-			goto free_desc;
+		if (prev) {
+			prev->pNextLink = (void *)desc;
+		} else if (!head) {
+			head = desc;
+		} else {
+			__ASSERT(0, "Corrupted state");
 		}
-		desc->src = (void *)block->source_address;
-		desc->dest = (void *)block->dest_address;
-		desc->chnlCtrlConfig.transSize = block->block_size;
+		prev = desc;
+
+		ret = RSI_GPDMA_BuildDescriptors(&data->hal_ctx, xfer_cfg, desc, NULL);
+		if (ret) {
+			goto fail;
+		}
+		desc->src = (void *)src_addr;
+		desc->dest = (void *)dst_addr;
+		desc->chnlCtrlConfig.transSize = chunk;
 		if (block->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 			desc->chnlCtrlConfig.dstFifoMode = 1;
-			/* HACK: GPDMA does not support DMA_ADDR_ADJ_NO_CHANGE with a memory buffer.
-			 * This configuration is mainly used by SPI to ignore the received bytes.
-			 * The hack below disable the data transfer (in fact it reduce the length to
-			 * one byte). Fortunately, SPI only watch DMA Tx termination so the
-			 * early termination of the DMA Rx won't hurt.
-			 */
-			if (config->channel_direction == PERIPHERAL_TO_MEMORY) {
-				desc->chnlCtrlConfig.transSize = 1;
-				if (block->next_block &&
-				    block->next_block->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
-					/* ... however, it is not possible to receive a real buffer
-					 * after the hack described above
-					 */
-					LOG_ERR("Buffer interleaving is not supported");
-					goto free_desc;
-				}
-			}
 		}
 		if (block->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
 			desc->chnlCtrlConfig.srcFifoMode = 1;
-			/* HACK: GPDMA does not support DMA_ADDR_ADJ_NO_CHANGE with a memory buffer.
-			 * So, instead of transferring the real data, we fill the peripheral with 0s
-			 * or 1s. It should be sufficient for most of the SPI usages. We hope the
-			 * users won't need any values other than 0x00 of 0xFF.
+			/* HACK: GPDMA does not support DMA_ADDR_ADJ_NO_CHANGE with a
+			 * memory buffer. Fill the peripheral with 0x00 or 0xFF instead.
 			 */
-			if (config->channel_direction == MEMORY_TO_PERIPHERAL) {
+			if (channel_direction == MEMORY_TO_PERIPHERAL) {
 				desc->miscChnlCtrlConfig.memoryFillEn = 1;
 				if (*(uint8_t *)block->source_address == 0xFF) {
 					desc->miscChnlCtrlConfig.memoryOneFill = 1;
@@ -204,35 +230,83 @@ static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
 					desc->miscChnlCtrlConfig.memoryOneFill = 0;
 				} else {
 					LOG_ERR("Only 0xFF and 0x00 are supported as input");
-					goto free_desc;
+					goto fail;
 				}
 			}
 		}
 
+		remaining -= chunk;
+		if (block->source_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			src_addr += chunk;
+		}
+		if (block->dest_addr_adj == DMA_ADDR_ADJ_INCREMENT) {
+			dst_addr += chunk;
+		}
+	} while (remaining > 0);
+
+	return head;
+
+fail:
+	key = k_spin_lock(&data->desc_pool_lock);
+	siwx91x_gpdma_free_desc(data->desc_pool, head);
+	k_spin_unlock(&data->desc_pool_lock, key);
+
+	return NULL;
+}
+
+static int siwx91x_gpdma_desc_config(struct siwx19x_gpdma_data *data,
+				     const struct dma_config *config,
+				     RSI_GPDMA_DESC_T *xfer_cfg, uint32_t channel)
+{
+	int operation_width = config->source_data_size * config->source_burst_length;
+	const struct dma_block_config *block = config->head_block;
+	RSI_GPDMA_DESC_T *prev = NULL;
+	RSI_GPDMA_DESC_T *head;
+	k_spinlock_key_t key;
+	int ret;
+
+	data->chan_info[channel].desc = NULL;
+	for (int i = 0; i < config->block_count; i++) {
+		if (!IS_ALIGNED(block->source_address, config->source_burst_length) ||
+		    !IS_ALIGNED(block->dest_address, config->dest_burst_length) ||
+		    !IS_ALIGNED(block->block_size, operation_width)) {
+			LOG_ERR("Buffer not aligned");
+			goto fail;
+		}
+
+		head = siwx91x_gpdma_block_config(data, xfer_cfg, block, operation_width,
+						  config->channel_direction);
+		if (!head) {
+			goto fail;
+		}
 
 		if (prev) {
-			prev->pNextLink = (void *)desc;
+			prev->pNextLink = (void *)head;
+		} else if (!data->chan_info[channel].desc) {
+			data->chan_info[channel].desc = head;
 		} else {
-			data->chan_info[channel].desc = desc;
+			__ASSERT(0, "Corrupted state");
 		}
-		prev = desc;
+		prev = head;
+		while (prev->pNextLink) {
+			prev = (RSI_GPDMA_DESC_T *)prev->pNextLink;
+		}
 		block = block->next_block;
 	}
 
-	if (block != NULL) {
-		/* next_block address for last block must be null */
-		goto free_desc;
+	if (block) {
+		goto fail;
 	}
 
 	ret = RSI_GPDMA_SetupChannelTransfer(&data->hal_ctx, channel,
 					     data->chan_info[channel].desc);
 	if (ret) {
-		goto free_desc;
+		goto fail;
 	}
 
 	return 0;
 
-free_desc:
+fail:
 	key = k_spin_lock(&data->desc_pool_lock);
 	siwx91x_gpdma_free_desc(data->desc_pool, data->chan_info[channel].desc);
 	k_spin_unlock(&data->desc_pool_lock, key);
@@ -243,6 +317,7 @@ static int siwx91x_gpdma_xfer_configure(const struct device *dev, const struct d
 					uint32_t channel)
 {
 	struct siwx19x_gpdma_data *data = dev->data;
+	int operation_width = config->source_data_size * config->source_burst_length;
 	RSI_GPDMA_DESC_T xfer_cfg = {};
 	int ret;
 
@@ -263,11 +338,9 @@ static int siwx91x_gpdma_xfer_configure(const struct device *dev, const struct d
 		return -EINVAL;
 	}
 
-	if (config->source_data_size * config->source_burst_length >= GPDMA_MAX_CHANNEL_FIFO_SIZE) {
-		LOG_ERR("FIFO overflow detected: data_size × burst_length = %d >= %d (maximum "
-			"allowed)",
-			config->source_data_size * config->source_burst_length,
-			GPDMA_MAX_CHANNEL_FIFO_SIZE);
+	if (operation_width >= SIWX91X_GPDMA_MAX_FIFO_SIZE) {
+		LOG_ERR("Maximum fifo size reached: data_size × burst_length = %d >= %d",
+			operation_width, SIWX91X_GPDMA_MAX_FIFO_SIZE);
 		return -EINVAL;
 	}
 
@@ -278,7 +351,7 @@ static int siwx91x_gpdma_xfer_configure(const struct device *dev, const struct d
 
 	xfer_cfg.chnlCtrlConfig.destDataWidth = xfer_cfg.chnlCtrlConfig.srcDataWidth;
 
-	if (config->block_count == 1) {
+	if (siwx91x_gpdma_count_hw_desc(config, operation_width) == 1) {
 		xfer_cfg.chnlCtrlConfig.linkListOn = 0;
 		data->reload_compatible = 1;
 	} else {
@@ -384,9 +457,9 @@ static int siwx91x_gpdma_reload(const struct device *dev, uint32_t channel, uint
 		return -EINVAL;
 	}
 
-	if (size > (GPDMA_DESC_MAX_TRANSFER_SIZE - data_size)) {
+	if (size > SIWX91X_GPDMA_MAX_XFER_COUNT - data_size) {
 		LOG_ERR("Maximum xfer size should be <= %d",
-			GPDMA_DESC_MAX_TRANSFER_SIZE - data_size);
+			SIWX91X_GPDMA_MAX_XFER_COUNT - data_size);
 		return -EINVAL;
 	}
 
@@ -592,7 +665,7 @@ static DEVICE_API(dma, siwx91x_gpdma_api) = {
 	static ATOMIC_DEFINE(siwx91x_gdma_atomic_##inst,                                           \
 			     DT_INST_PROP(inst, silabs_dma_channel_count));                        \
 	SYS_MEM_BLOCKS_DEFINE_STATIC(siwx91x_gpdma_desc_pool_##inst, 32,                           \
-				     CONFIG_GPDMA_SILABS_SIWX91X_DESCRIPTOR_COUNT, 32);            \
+				     CONFIG_DMA_SILABS_SIWX91X_GPDMA_DESCR_COUNT, 32);             \
 	static struct siwx91x_gpdma_channel_info                                                   \
 		siwx91x_gpdma_chan_info_##inst[DT_INST_PROP(inst, silabs_dma_channel_count)];      \
 	static struct siwx19x_gpdma_data siwx91x_gpdma_data_##inst = {                             \

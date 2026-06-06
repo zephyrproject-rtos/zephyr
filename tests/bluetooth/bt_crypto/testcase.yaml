@@ -11,7 +11,7 @@ tests:
       - native_sim
     tags: bluetooth
   bluetooth.bt_crypto.psa:
-    filter: CONFIG_PSA_CRYPTO_CLIENT
+    filter: CONFIG_PSA_CRYPTO
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     platform_allow:

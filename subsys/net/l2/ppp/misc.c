@@ -8,6 +8,7 @@
 LOG_MODULE_DECLARE(net_l2_ppp, CONFIG_NET_L2_PPP_LOG_LEVEL);
 
 #include <zephyr/net/net_core.h>
+#include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 
 #include <zephyr/net/ppp.h>
@@ -49,13 +50,20 @@ static void validate_phase_transition(enum ppp_phase current,
 		[PPP_ESTABLISH] = 1 << PPP_DEAD |
 				1 << PPP_AUTH |
 				1 << PPP_TERMINATE,
-		[PPP_AUTH] = 1 << PPP_TERMINATE |
+		[PPP_AUTH] = 1 << PPP_DEAD |
+				1 << PPP_ESTABLISH |
+				1 << PPP_TERMINATE |
 				1 << PPP_NETWORK,
-		[PPP_NETWORK] = 1 << PPP_TERMINATE |
+		[PPP_NETWORK] = 1 << PPP_DEAD |
+				1 << PPP_ESTABLISH |
+				1 << PPP_TERMINATE |
 				1 << PPP_RUNNING,
-		[PPP_RUNNING] = 1 << PPP_TERMINATE |
+		[PPP_RUNNING] = 1 << PPP_DEAD |
+				1 << PPP_ESTABLISH |
+				1 << PPP_TERMINATE |
 				1 << PPP_NETWORK,
-		[PPP_TERMINATE] = 1 << PPP_DEAD,
+		[PPP_TERMINATE] = 1 << PPP_DEAD |
+				1 << PPP_ESTABLISH,
 	};
 
 	if (!(valid_transitions[current] & 1 << new)) {

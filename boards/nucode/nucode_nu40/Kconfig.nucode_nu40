@@ -1,0 +1,7 @@
+# NUCODE NU40 board configuration
+
+# Copyright (c) 2026 NUCODE Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCODE_NU40
+	select SOC_NRF52840_QIAA

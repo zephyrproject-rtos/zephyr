@@ -40,10 +40,13 @@ union net_mgmt_events {
 #endif /* CONFIG_NET_L2_WIFI_MGMT */
 #if defined(CONFIG_NET_IPV6)
 	struct net_event_ipv6_prefix ipv6_prefix;
-#if defined(CONFIG_NET_IPV6_MLD)
+#if defined(CONFIG_NET_IPV6_ROUTE)
 	struct net_event_ipv6_route ipv6_route;
-#endif /* CONFIG_NET_IPV6_MLD */
+#endif /* CONFIG_NET_IPV6_ROUTE */
 #endif /* CONFIG_NET_IPV6 */
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	struct net_event_ipv4_route ipv4_route;
+#endif /* CONFIG_NET_IPV4_ROUTE */
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
 	struct net_event_l4_hostname hostname;
 #endif /* CONFIG_NET_HOSTNAME_ENABLE */

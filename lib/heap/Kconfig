@@ -168,10 +168,14 @@ module = SYS_HEAP
 module-str = sys_heap
 source "subsys/logging/Kconfig.template.log_config"
 
+DT_CHOSEN_Z_SRAM = zephyr,sram
+DT_SRAM_SIZE = $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
+
 choice
 	prompt "Supported heap sizes"
 	depends on !64BIT
-	default SYS_HEAP_SMALL_ONLY if (SRAM_SIZE <= 256)
+	default SYS_HEAP_SMALL_ONLY if ((SRAM_DEPRECATED_KCONFIG_SET && SRAM_SIZE <= 256) || \
+		(!SRAM_DEPRECATED_KCONFIG_SET && $(DT_SRAM_SIZE) <= 256))
 	default SYS_HEAP_AUTO
 	help
 	  Heaps using reduced-size chunk headers can accommodate so called

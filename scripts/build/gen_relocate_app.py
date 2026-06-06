@@ -178,7 +178,6 @@ SOURCE_CODE_INCLUDES = """
 /* Auto generated code. Do not modify.*/
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/common/init.h>
 """
@@ -191,7 +190,7 @@ extern char __{mem}_{kind}_reloc_size[];
 
 
 DATA_COPY_FUNCTION = """
-void data_copy_xip_relocation(void)
+FUNC_NO_STACK_PROTECTOR void data_copy_xip_relocation(void)
 {{
 {0}
 }}

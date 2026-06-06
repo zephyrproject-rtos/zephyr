@@ -346,6 +346,8 @@ static void base_recv_cb(struct bt_bap_broadcast_sink *sink, const struct bt_bap
 {
 	int err;
 
+	ARG_UNUSED(base_size);
+
 	if (base_received) {
 		return;
 	}
@@ -413,6 +415,8 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 
 static void pa_timer_handler(struct k_work *work)
 {
+	ARG_UNUSED(work);
+
 	if (req_recv_state != NULL) {
 		enum bt_bap_pa_state pa_state;
 
@@ -475,6 +479,8 @@ static int pa_sync_past(struct bt_conn *conn, uint16_t pa_interval)
 static void recv_state_updated_cb(struct bt_conn *conn,
 				  const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
+	ARG_UNUSED(conn);
+
 	printk("Receive state updated, pa sync state: %u, encrypt_state %u\n",
 	       recv_state->pa_sync_state, recv_state->encrypt_state);
 
@@ -533,6 +539,8 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 {
 	int err;
 
+	ARG_UNUSED(conn);
+
 	printk("PA sync termination req, pa sync state: %u\n", recv_state->pa_sync_state);
 
 	for (uint8_t i = 0U; i < recv_state->num_subgroups; i++) {
@@ -556,6 +564,8 @@ static void broadcast_code_cb(struct bt_conn *conn,
 			      const struct bt_bap_scan_delegator_recv_state *recv_state,
 			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
+	ARG_UNUSED(conn);
+
 	printk("Broadcast code received for %p\n", recv_state);
 
 	req_recv_state = recv_state;
@@ -573,6 +583,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 	bool bis_sync_req_no_pref = true;
 	uint8_t subgroup_sync_req_cnt = 0U;
 	uint32_t bis_sync_req_bitfield = 0U;
+
+	ARG_UNUSED(conn);
 
 	(void)memset(requested_bis_sync, 0, sizeof(requested_bis_sync));
 

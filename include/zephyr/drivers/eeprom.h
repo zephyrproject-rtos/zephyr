@@ -36,9 +36,9 @@ extern "C" {
 #endif
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal driver use only, skip these in public documentation.
+ * @def_driverbackendgroup{EEPROM,eeprom_interface}
+ * @ingroup eeprom_interface
+ * @{
  */
 
 /**
@@ -62,13 +62,19 @@ typedef int (*eeprom_api_write)(const struct device *dev, off_t offset,
  */
 typedef size_t (*eeprom_api_size)(const struct device *dev);
 
+/**
+ * @driver_ops{EEPROM}
+ */
 __subsystem struct eeprom_driver_api {
+	/** @driver_ops_mandatory @copybrief eeprom_read */
 	eeprom_api_read read;
+	/** @driver_ops_mandatory @copybrief eeprom_write */
 	eeprom_api_write write;
+	/** @driver_ops_mandatory @copybrief eeprom_get_size */
 	eeprom_api_size size;
 };
 
-/** @endcond */
+/** @} */
 
 /**
  *  @brief Read data from EEPROM

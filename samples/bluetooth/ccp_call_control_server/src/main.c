@@ -23,6 +23,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 LOG_MODULE_REGISTER(ccp_call_control_server, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -46,6 +47,8 @@ static K_SEM_DEFINE(sem_state_change, 0U, 1U);
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
+	ARG_UNUSED(err);
+
 	LOG_INF("Connected: %s", bt_conn_dst_str(conn));
 
 	peer_conn = bt_conn_ref(conn);
@@ -158,7 +161,7 @@ static int init_ccp_call_control_server(void)
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = BT_TBS_FEATURE_HOLD,
+		.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD,
 	};
 	int err;
 
@@ -190,7 +193,7 @@ static int init_ccp_call_control_server(void)
 			.authorization_required = false,
 			/* Set different technologies per bearer */
 			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
-			.supported_features = BT_TBS_FEATURE_HOLD,
+			.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);

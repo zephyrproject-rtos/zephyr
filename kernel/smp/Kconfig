@@ -6,7 +6,6 @@ menu "SMP Options"
 config SMP
 	bool "Symmetric multiprocessing support"
 	depends on USE_SWITCH
-	depends on !ATOMIC_OPERATIONS_C
 	help
 	  When true, kernel will be built with SMP support, allowing
 	  more than one CPU to schedule Zephyr tasks at a time.
@@ -82,12 +81,6 @@ config SCHED_CPU_MASK
 	  implemented, this involves an inherent O(N) scaling in the number of
 	  idle-but-runnable threads, and thus works only with the simple
 	  scheduler (as SCALABLE and MULTIQ would see no benefit).
-
-	  Note that this setting does not technically depend on SMP and is
-	  implemented without it for testing purposes, but for obvious reasons
-	  makes sense as an application API only where there is more than one
-	  CPU.  With one CPU, it's just a higher overhead version of
-	  k_thread_start/stop().
 
 config SCHED_CPU_MASK_PIN_ONLY
 	bool "CPU mask variant with single-CPU pinning only"

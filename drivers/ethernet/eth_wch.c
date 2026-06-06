@@ -468,10 +468,10 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	 * config. The speed can change without receiving a link down
 	 * callback before.
 	 */
-	eth_wch_stop(dev);
+	eth_wch_stop(dev, data->iface);
 	if (state->is_up) {
 		set_mac_config(dev, state);
-		eth_wch_start(dev);
+		eth_wch_start(dev, data->iface);
 		net_eth_carrier_on(data->iface);
 	} else {
 		net_eth_carrier_off(data->iface);

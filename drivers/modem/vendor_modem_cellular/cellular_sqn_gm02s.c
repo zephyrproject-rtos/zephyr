@@ -10,6 +10,8 @@
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
+MODEM_CHAT_MATCHES_DEFINE(sqn_gm02s_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	sqn_gm02s_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
@@ -39,6 +41,25 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(sqn_gm02s_periodic_chat_script_cmds,
 MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script, sqn_gm02s_periodic_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 4);
 
+static const struct modem_cellular_vendor_config sqn_gm02s_vendor = {
+	/* clang-format off */
+	.scripts = {
+		.init = &sqn_gm02s_init_chat_script,
+		.dial = &sqn_gm02s_dial_chat_script,
+		.periodic = &sqn_gm02s_periodic_chat_script,
+	},
+	.unsol_matches = {
+		.matches = sqn_gm02s_unsol,
+		.size = ARRAY_SIZE(sqn_gm02s_unsol),
+	},
+	/* clang-format on */
+	.power_pulse_duration_ms = 1500,
+	.reset_pulse_duration_ms = 100,
+	.startup_time_ms = 2000,
+	.shutdown_time_ms = 5000,
+	.force_autostart = true,
+};
+
 #define MODEM_CELLULAR_DEVICE_SQN_GM02S(inst)                                                      \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 98, 1500, 64);   \
                                                                                                    \
@@ -50,8 +71,6 @@ MODEM_CHAT_SCRIPT_DEFINE(sqn_gm02s_periodic_chat_script, sqn_gm02s_periodic_chat
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, 1500, 100, 2000, 5000, true, NULL,                    \
-				       &sqn_gm02s_init_chat_script, &sqn_gm02s_dial_chat_script,   \
-				       &sqn_gm02s_periodic_chat_script, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &sqn_gm02s_vendor)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_SQN_GM02S)

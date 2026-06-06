@@ -735,6 +735,7 @@ struct espi_reg {
 #define NPCX_ESPISTS_PMSGRX              21
 #define NPCX_ESPISTS_BMBURSTERR          22
 #define NPCX_ESPISTS_BMBURSTDONE         23
+#define NPCX_STATUS_IMG_VWIRE_AVAIL      6
 #define NPCX_VWSWIRQ_IRQ_NUM             FIELD(0, 7)
 #define NPCX_VWSWIRQ_IRQ_LVL             7
 #define NPCX_VWSWIRQ_INDEX               FIELD(8, 7)
@@ -1059,6 +1060,8 @@ struct kbc_reg {
 #define NPCX_HICTRL_PMIOCIE              5
 #define NPCX_HICTRL_PMICIE               6
 #define NPCX_HICTRL_FW_OBF               7
+#define NPCX_HIIRQC_IRQ1B                0
+#define NPCX_HIIRQC_IRQ12B               1
 #define NPCX_HIKMST_OBF                  0
 #define NPCX_HIKMST_IBF                  1
 #define NPCX_HIKMST_F0                   2

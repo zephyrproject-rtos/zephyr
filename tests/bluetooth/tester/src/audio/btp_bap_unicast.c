@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -1079,7 +1080,8 @@ static void unicast_client_endpoint_cb(struct bt_conn *conn, enum bt_audio_dir d
 			return;
 		}
 
-		u_conn->end_points[u_conn->end_points_count++] = ep;
+		u_conn->end_points[u_conn->end_points_count] = ep;
+		u_conn->end_points_count++;
 		btp_send_ase_found_ev(conn, ep);
 
 		return;

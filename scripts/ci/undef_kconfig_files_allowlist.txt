@@ -1,0 +1,7 @@
+# List of files whose CONFIG_ references are excluded from the undefined Kconfig
+# symbol check. Add one file path per line (relative to the repository root).
+# Lines starting with '#' are ignored, as is any content after '#'.
+#
+# Use this for files that intentionally reference symbols that are not
+# defined in the main Kconfig tree, e.g. out-of-tree module documentation or
+# generated files that are only used with specific configurations.

@@ -12,9 +12,6 @@
 	model = "TQ H503A board";
 	compatible = "embedsky,tq-h503a";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;

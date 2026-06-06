@@ -2526,7 +2526,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	}
 
 	/* Take the original command buffer reference. */
-	buf = atomic_ptr_clear((atomic_ptr_t *)&bt_dev.sent_cmd);
+	buf = net_buf_take(&bt_dev.sent_cmd);
 
 	if (!buf) {
 		LOG_ERR("No command sent for cmd complete 0x%04x", opcode);
@@ -3136,6 +3136,8 @@ static const struct event_handler normal_events[] = {
 		      sizeof(struct bt_hci_evt_remote_ext_features)),
 	EVENT_HANDLER(BT_HCI_EVT_ROLE_CHANGE, bt_hci_role_change,
 		      sizeof(struct bt_hci_evt_role_change)),
+	EVENT_HANDLER(BT_HCI_EVT_CONN_PKT_TYPE_CHANGED, bt_hci_conn_pkt_type_changed,
+		      sizeof(struct bt_hci_evt_conn_pkt_type_changed)),
 #if defined(CONFIG_BT_POWER_MODE_CONTROL)
 	EVENT_HANDLER(BT_HCI_EVT_MODE_CHANGE, bt_hci_link_mode_change,
 		      sizeof(struct bt_hci_evt_mode_change)),
@@ -4007,6 +4009,7 @@ static int set_event_mask(void)
 		mask |= BT_EVT_MASK_REMOTE_NAME_REQ_COMPLETE;
 		mask |= BT_EVT_MASK_REMOTE_FEATURES;
 		mask |= BT_EVT_MASK_ROLE_CHANGE;
+		mask |= BT_EVT_MASK_CONN_PKT_TYPE_CHANGED;
 #ifdef CONFIG_BT_POWER_MODE_CONTROL
 		mask |= BT_EVT_MASK_MODE_CHANGE;
 #endif /* CONFIG_BT_POWER_MODE_CONTROL */
@@ -4046,9 +4049,9 @@ static int set_event_mask(void)
 
 const char *bt_hci_get_ver_str(uint8_t core_version)
 {
-	const char * const str[] = {
+	static const char * const str[] = {
 		"1.0b", "1.1", "1.2", "2.0", "2.1", "3.0", "4.0", "4.1", "4.2",
-		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0", "6.1", "6.2"
+		"5.0", "5.1", "5.2", "5.3", "5.4", "6.0", "6.1", "6.2", "6.3"
 	};
 
 	if (core_version < ARRAY_SIZE(str)) {
@@ -4537,12 +4540,11 @@ static int bt_recv_unsafe(struct net_buf *buf)
 #endif /* CONFIG_BT_ISO */
 	default:
 		LOG_ERR("Invalid buf type %u", type);
-		net_buf_unref(buf);
 		return -EINVAL;
 	}
 }
 
-int bt_hci_recv(const struct device *dev, struct net_buf *buf)
+static int bt_recv(const struct device *dev, struct net_buf *buf)
 {
 	ARG_UNUSED(dev);
 	int err;
@@ -4737,7 +4739,7 @@ int bt_enable(bt_ready_cb_t cb)
 	k_thread_name_set(&bt_workq.thread, "BT RX WQ");
 #endif
 
-	err = bt_hci_open(bt_dev.hci, bt_hci_recv);
+	err = bt_hci_open(bt_dev.hci, bt_recv);
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
 		return err;

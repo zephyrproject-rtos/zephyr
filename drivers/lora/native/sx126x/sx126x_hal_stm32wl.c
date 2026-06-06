@@ -136,7 +136,7 @@ int sx126x_hal_configure_tx_params(const struct device *dev, int8_t power,
 		}
 
 		if (max_power == 15) {
-			ret = sx126x_hal_set_pa_config(dev, 0x07, 0x00, 0x01, 0x01);
+			ret = sx126x_hal_set_pa_config(dev, 0x06, 0x00, 0x01, 0x01);
 			tx_power = 14 - (max_power - tx_power);
 		} else if (max_power == 10) {
 			ret = sx126x_hal_set_pa_config(dev, 0x01, 0x00, 0x01, 0x01);

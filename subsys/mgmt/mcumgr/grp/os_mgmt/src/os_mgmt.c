@@ -9,7 +9,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <zephyr/debug/object_tracing.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>

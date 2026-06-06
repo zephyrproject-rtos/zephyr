@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/irq.h>
@@ -16,11 +17,28 @@
 #include <esp_private/esp_clk.h>
 #include <esp_private/systimer.h>
 #include <hal/gpio_hal.h>
+#include <driver/rtc_io.h>
+#include <soc/gpio_periph.h>
+
+#if SOC_PAU_SUPPORTED
+#include <esp_private/sleep_clock.h>
+#endif
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <hal/pmu_ll.h>
+#include <hal/pmu_types.h>
+extern esp_err_t sleep_clock_icg_startup_init(void);
+#endif
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
+#include <esp_private/sleep_cpu.h>
+#endif
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+#include <esp_private/sleep_sys_periph.h>
+#endif
 
 #include <power.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
+LOG_MODULE_REGISTER(soc_pm, CONFIG_SOC_LOG_LEVEL);
 
 #define MIN_RESIDENCY_SLEEP_US DT_PROP(DT_NODELABEL(light_sleep), min_residency_us)
 #define WAKEUP_MARGIN_US       200
@@ -96,9 +114,17 @@ static bool rtc_wakeup_enable(enum pm_state state, bool enable)
 
 void esp32_sleep_gpio_hold_config(uint8_t gpio_num, bool enable)
 {
-	if (gpio_num >= SOC_GPIO_PIN_COUNT ||
-	    !(SOC_GPIO_VALID_OUTPUT_GPIO_MASK & (1ULL << gpio_num))) {
-		/* Skip pins that are not output capable */
+	if (gpio_num >= SOC_GPIO_PIN_COUNT) {
+		return;
+	}
+
+	bool is_rtc_io = rtc_gpio_is_valid_gpio(gpio_num);
+	bool is_digital_hold = !is_rtc_io && (GPIO_HOLD_MASK[gpio_num] != 0);
+
+	if (!is_rtc_io && !is_digital_hold) {
+		if (enable) {
+			LOG_WRN("GPIO %d does not support sleep-hold-en flag", gpio_num);
+		}
 		return;
 	}
 
@@ -117,12 +143,18 @@ void esp32_sleep_gpio_prepare(void)
 			continue;
 		}
 
-		bool held_before = gpio_hal_is_digital_io_hold(&gpio_hal, gpio);
-
-		if (held_before) {
-			gpio_was_held |= (1ULL << gpio);
+		if (rtc_gpio_is_valid_gpio(gpio)) {
+#if SOC_RTCIO_HOLD_SUPPORTED
+			/* RTC IO: no is_held query available; always enable hold */
+			rtc_gpio_hold_en(gpio);
+#endif
 		} else {
-			gpio_hal_hold_en(&gpio_hal, gpio);
+			/* Digital IO: preserve application-set holds */
+			if (gpio_hal_is_digital_io_hold(&gpio_hal, gpio)) {
+				gpio_was_held |= (1ULL << gpio);
+			} else {
+				gpio_hal_hold_en(&gpio_hal, gpio);
+			}
 		}
 	}
 }
@@ -138,11 +170,18 @@ void esp32_sleep_gpio_restore(void)
 		/* After sleep, check which pins are currently in hold mode but were not
 		 * before sleep (pins originally held by the application). This allows us
 		 * to release hold only for the pins that were held by the sleep code.
+		 * Note: RTC IO pins with sleep-hold-en are always held and released during
+		 * sleep cycles. To keep a pin held independently across sleep, use a
+		 * digital IO pad instead.
 		 */
-		bool held_now = gpio_hal_is_digital_io_hold(&gpio_hal, gpio);
-
-		if (held_now && !(gpio_was_held & (1ULL << gpio))) {
-			gpio_hal_hold_dis(&gpio_hal, gpio);
+		if (rtc_gpio_is_valid_gpio(gpio)) {
+#if SOC_RTCIO_HOLD_SUPPORTED
+			rtc_gpio_hold_dis(gpio);
+#endif
+		} else {
+			if (!(gpio_was_held & (1ULL << gpio))) {
+				gpio_hal_hold_dis(&gpio_hal, gpio);
+			}
 		}
 	}
 
@@ -254,3 +293,50 @@ uint64_t esp32_lptim_hook_get_freq(void)
 	return LACT_TICKS_PER_US * 1000000ULL;
 #endif
 }
+
+/* Sleep retention initialization */
+
+#if SOC_PAU_SUPPORTED
+static int sleep_retention_init(void)
+{
+	esp_err_t err;
+	int ret = 0;
+
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	/* pmu_init() turns on all LP clocks; narrow it to FOSC (RC_SLOW) only. */
+	pmu_ll_lp_set_clk_power(&PMU, PMU_MODE_LP_ACTIVE, BIT(30));
+
+	err = sleep_clock_icg_startup_init();
+	if (err != ESP_OK) {
+		LOG_ERR("sleep_clock_icg_startup_init failed (%d)", err);
+		ret = err;
+	}
+#endif
+
+	err = sleep_clock_startup_init();
+	if (err != ESP_OK) {
+		LOG_ERR("sleep_clock_startup_init failed (%d)", err);
+		ret = err;
+	}
+
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP)
+	err = sleep_cpu_configure(true);
+	if (err != ESP_OK) {
+		LOG_ERR("sleep_cpu_configure failed (%d)", err);
+		ret = err;
+	}
+#endif
+
+#if defined(CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+	err = sleep_sys_periph_startup_init();
+	if (err != ESP_OK) {
+		LOG_ERR("sleep_sys_periph_startup_init failed (%d)", err);
+		ret = err;
+	}
+#endif
+
+	return ret;
+}
+
+SYS_INIT(sleep_retention_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* SOC_PAU_SUPPORTED */

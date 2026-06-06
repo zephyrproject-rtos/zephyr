@@ -198,7 +198,7 @@ config ASSERT_LEVEL
 config SPIN_VALIDATE
 	bool "Spinlock validation"
 	depends on MULTITHREADING
-	depends on MP_MAX_NUM_CPUS <= 4
+	depends on MP_MAX_NUM_CPUS <= 4 || (64BIT && MP_MAX_NUM_CPUS <= 8)
 	default y if !FLASH || FLASH_SIZE > 32
 	help
 	  There's a spinlock validation framework available when asserts are
@@ -363,7 +363,7 @@ config CS_TRACE_DEFMT
 
 config CPU_LOAD
 	select TRACING
-	depends on CPU_CORTEX_M || RISCV || CPU_CORTEX_A
+	depends on CPU_CORTEX_M || RISCV || CPU_CORTEX_A || XTENSA
 	depends on !SMP
 	bool "CPU load measurement"
 

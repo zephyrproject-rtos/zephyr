@@ -420,6 +420,20 @@ config MAX_XLAT_TABLES
 	  platform and how much granularity is required while assigning
 	  attributes to these memory regions.
 
+config ARM64_MMU_REPORT_XLAT_TABLES_USAGE
+	bool "Trace translation table allocations"
+	depends on LOG
+	help
+	  Log a message every time the number of allocated translation tables
+	  reaches a new high-water mark. Useful for tuning
+	  CONFIG_MAX_XLAT_TABLES: the last "peak N of M allocated" line seen
+	  during a representative run is the lower bound on the value MAX
+	  must take to avoid a "too small" panic on that workload.
+
+	  Independently, a single LOG_WRN is always emitted (no Kconfig
+	  needed) the first time the pool drops below 12.5 % free, as a
+	  safety net before exhaustion.
+
 endif # ARM_MMU
 
 config ARM64_DCACHE_ALL_OPS

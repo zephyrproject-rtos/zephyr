@@ -218,7 +218,7 @@ static int eth_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-static int eth_nxp_s32_start(const struct device *dev
+static int eth_nxp_s32_start(const struct device *dev,
 			     struct net_if *iface __unused)
 {
 	const struct eth_nxp_s32_config *cfg = dev->config;
@@ -233,7 +233,7 @@ static int eth_nxp_s32_start(const struct device *dev
 	return 0;
 }
 
-static int eth_nxp_s32_stop(const struct device *dev
+static int eth_nxp_s32_stop(const struct device *dev,
 			    struct net_if *iface __unused)
 {
 	const struct eth_nxp_s32_config *cfg = dev->config;

@@ -44,19 +44,31 @@ int mctp_i2c_gpio_target_write_received(struct i2c_target_config *config, uint8_
 		break;
 	case MCTP_I2C_GPIO_RX_MSG_LEN_ADDR:
 		b->rxtx = true;
-		b->rx_pkt = mctp_pktbuf_alloc(&b->binding, (size_t)val);
+		b->rx_exp_len = val;
 		/* Reset state machine to wait for next register */
 		b->reg_addr = MCTP_I2C_GPIO_INVALID_ADDR;
 		break;
 	case MCTP_I2C_GPIO_RX_MSG_ADDR:
-		b->rxtx = true;
-		b->rx_pkt->data[b->rx_idx] = val;
-		b->rx_idx += 1;
+		if (b->rx_pkt == NULL) {
+			b->rx_pkt = mctp_pktbuf_alloc(&b->binding, (size_t)b->rx_exp_len);
+			if (b->rx_pkt == NULL) {
+				LOG_ERR("Failed to allocate packet buffer");
+				ret = -ENOMEM;
+				break;
+			}
+		}
 
 		/* buffer full */
 		if (b->rx_idx >= b->rx_pkt->size) {
 			ret = -ENOMEM;
+			LOG_ERR("Received byte %d when packet buffer is full", val);
+			break;
 		}
+
+		b->rxtx = true;
+		b->rx_pkt->data[b->rx_idx] = val;
+		b->rx_idx += 1;
+
 		break;
 	default:
 		LOG_ERR("Write when reg_addr is %d", b->reg_addr);
@@ -144,6 +156,7 @@ int mctp_i2c_gpio_target_stop(struct i2c_target_config *config)
 			mctp_bus_rx(&b->binding, b->rx_pkt);
 			mctp_pktbuf_free(b->rx_pkt);
 			b->rx_pkt = NULL;
+			b->rx_exp_len = 0;
 			break;
 		case MCTP_I2C_GPIO_RX_MSG_LEN_ADDR:
 		case MCTP_I2C_GPIO_TX_MSG_LEN_ADDR:

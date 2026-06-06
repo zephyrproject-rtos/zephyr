@@ -821,7 +821,7 @@ void test_ipv4_mapped_to_ipv6_server(void)
 	/* Note that we should get IPv6 address here (mapped from IPv4) */
 	zassert_equal(addr.sa_family, NET_AF_INET6, "wrong family");
 	zassert_equal(addrlen, sizeof(struct net_sockaddr_in6),
-		      "wrong addrlen (%d, expecting %d)", addrlen,
+		      "wrong addrlen (%d, expecting %zu)", addrlen,
 		      sizeof(struct net_sockaddr_in6));
 	zassert_mem_equal(&mapped.sin6_addr, &net_sin6(&addr)->sin6_addr,
 			  sizeof(struct net_in6_addr),

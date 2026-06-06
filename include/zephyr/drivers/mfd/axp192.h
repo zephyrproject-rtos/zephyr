@@ -70,10 +70,9 @@ enum axp192_gpio_func {
  * @param client_dev client device the gpio is used in
  * @param gpio GPIO to be configured (0..5)
  * @param func Function to be configured (see @ref axp192_gpio_func for details)
- * @retval 0 on success
- * @retval -EINVAL if an invalid GPIO number is passed
- * @retval -ENOTSUP if the requested function is not supported by the given
- * @retval -errno in case of any bus error
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL An invalid GPIO number was passed.
+ * @retval -ENOTSUP The requested function is not supported by the given GPIO.
  */
 int mfd_axp192_gpio_func_ctrl(const struct device *dev, const struct device *client_dev,
 			      uint8_t gpio, enum axp192_gpio_func func);
@@ -84,9 +83,8 @@ int mfd_axp192_gpio_func_ctrl(const struct device *dev, const struct device *cli
  * @param dev axp192 mfd device
  * @param gpio GPIO to read configuration from
  * @param func Pointer to store current function configuration in.
- * @return 0 on success
- * @retval -EINVAL if an invalid GPIO number is passed
- * @retval -errno in case of any bus error
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL An invalid GPIO number was passed.
  */
 int mfd_axp192_gpio_func_get(const struct device *dev, uint8_t gpio, enum axp192_gpio_func *func);
 
@@ -97,10 +95,9 @@ int mfd_axp192_gpio_func_get(const struct device *dev, uint8_t gpio, enum axp192
  * @param dev axp192 mfd device
  * @param gpio GPIO to control pull-downs
  * @param enable true to enable, false to disable pull-down
- * @retval 0 on success
- * @retval -EINVAL if an invalid argument is given (e.g. invalid GPIO number)
- * @retval -ENOTSUP if pull-down is not supported by the givenn GPIO
- * @retval -errno in case of any bus error
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL An invalid argument was given (e.g. invalid GPIO number).
+ * @retval -ENOTSUP Pull-down is not supported by the given GPIO.
  */
 int mfd_axp192_gpio_pd_ctrl(const struct device *dev, uint8_t gpio, bool enable);
 
@@ -111,9 +108,9 @@ int mfd_axp192_gpio_pd_ctrl(const struct device *dev, uint8_t gpio, bool enable)
  * @param gpio GPIO to control pull-downs
  * @param enabled Pointer to current pull-down configuration (true: pull-down
  * enabled/ false: pull-down disabled)
- * @retval -EINVAL if an invalid argument is given (e.g. invalid GPIO number)
- * @retval -ENOTSUP if pull-down is not supported by the givenn GPIO
- * @retval -errno in case of any bus error
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL An invalid argument was given (e.g. invalid GPIO number).
+ * @retval -ENOTSUP Pull-down is not supported by the given GPIO.
  */
 int mfd_axp192_gpio_pd_get(const struct device *dev, uint8_t gpio, bool *enabled);
 
@@ -122,8 +119,7 @@ int mfd_axp192_gpio_pd_get(const struct device *dev, uint8_t gpio, bool *enabled
  *
  * @param dev axp192 mfd device
  * @param value Pointer to port value
- * @retval 0 on success
- * @retval -errno in case of any bus error
+ * @return 0 on success, negative errno value on failure.
  */
 int mfd_axp192_gpio_read_port(const struct device *dev, uint8_t *value);
 
@@ -133,8 +129,7 @@ int mfd_axp192_gpio_read_port(const struct device *dev, uint8_t *value);
  * @param dev axp192 mfd device
  * @param value port value
  * @param mask pin mask within the port
- * @retval 0 on success
- * @retval -errno in case of any bus error
+ * @return 0 on success, negative errno value on failure.
  */
 int mfd_axp192_gpio_write_port(const struct device *dev, uint8_t value, uint8_t mask);
 

@@ -66,7 +66,7 @@ def _yaml_validate(data, schema):
 
 def yaml_load_verify(filename, schema):
     """
-    Safely load a testcase/sample yaml document and validate it
+    Safely load a test definition document and validate it
     against the YAML schema, returning in case of success the YAML data.
 
     :param str filename: name of the file to load and process

@@ -560,7 +560,7 @@ static void mcc_otc_obj_metadata_cb(struct bt_conn *conn, int err)
 		return;
 	}
 
-	bt_shell_print("Reading object metadata succeeded\n");
+	bt_shell_print("Reading object metadata succeeded");
 }
 
 static void mcc_icon_object_read_cb(struct bt_conn *conn, int err,

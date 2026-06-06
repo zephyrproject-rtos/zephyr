@@ -11,8 +11,8 @@ config DMA_XILINX_AXI_DMA
 	  DMA driver for Xilinx AXI DMAs, usually found on FPGAs.
 
 
-config DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
-	bool "Disable data cache while accessing Scatter-Gather Descriptors."
+config DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY
+	bool "Manually flush/invalidate data cache around DMA descriptors and buffers"
 	depends on DMA_XILINX_AXI_DMA
 	depends on CACHE_MANAGEMENT
 	depends on DCACHE
@@ -23,6 +23,24 @@ config DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
 		This allows the DMA to be used on architectures that do not provide
 		coherency for DMA accesses. If you are unsure whether you need this feature,
 		you should select n here.
+
+# Deprecated alias for DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY.
+# The original symbol name suggested the option only affected scatter-gather
+# descriptors, but it actually also gates buffer flush/invalidate. Keep this
+# entry around so that out-of-tree users get a deprecation warning instead of
+# silently losing the behavior.
+config DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+	bool "[DEPRECATED] Use DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY instead"
+	depends on DMA_XILINX_AXI_DMA
+	depends on CACHE_MANAGEMENT
+	depends on DCACHE
+	select DEPRECATED
+	select DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY
+	help
+		Deprecated. This option has been renamed to
+		DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY because it controls
+		cache maintenance for both descriptors and buffers, not only
+		scatter-gather descriptors.
 
 config DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_TX
 	int "Number of transfer descriptors allocated for transmission (TX)."

@@ -72,20 +72,23 @@ out:
 static void dsa_port_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct dsa_port_config *cfg = (struct dsa_port_config *)dev->config;
+	const struct dsa_port_config *cfg = dev->config;
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	char name[INTERFACE_NAME_LEN];
+	uint8_t mac_addr[6] = {0};
+	int ret;
 
 	/* Set interface name */
 	snprintk(name, sizeof(name), "swp%d", cfg->port_idx);
 	net_if_set_name(iface, name);
 
-	/* Use random mac address if could */
-	if (cfg->use_random_mac_addr && dsa_switch_ctx->dapi->port_generate_random_mac != NULL) {
-		dsa_switch_ctx->dapi->port_generate_random_mac(cfg->mac_addr);
+	ret = net_eth_mac_load(&cfg->mcfg, mac_addr);
+	if (ret >= 0) {
+		/* only set MAC address if successfully loaded, this way we won't overwrite a valid
+		 * MAC address, that might be already set by the dsa switch.
+		 */
+		net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
 	}
-
-	net_if_set_link_addr(iface, cfg->mac_addr, sizeof(cfg->mac_addr), NET_LINK_ETHERNET);
 
 	if (cfg->ethernet_connection != NULL) {
 		/* DSA CPU port used only for DSA management */

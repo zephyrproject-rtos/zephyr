@@ -60,13 +60,13 @@ uart2: &scb2 {
 	status = "okay";
 	current-speed = <115200>;
 
-	clocks = <&peri0_group1_16bit_0>;
+	clocks = <&peri0_group1_16bit_1>;
 
 	pinctrl-0 = <&p6_7_scb2_uart_tx &p6_5_scb2_uart_rx>;
 	pinctrl-names = "default";
 };
 
-&peri0_group1_16bit_0 {
+&peri0_group1_16bit_1 {
 	status = "okay";
 	clock-div = <1>;
 };
@@ -90,7 +90,7 @@ i2c0: &scb0 {
 
 &peri0_group1_16bit_3 {
 	status = "okay";
-	clock-div = <1000>;
+	clock-div = <62>;
 };
 
 &gpio_prt0 {

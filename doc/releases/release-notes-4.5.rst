@@ -41,6 +41,12 @@ The following sections provide detailed lists of changes by component.
 Security Vulnerability Related
 ******************************
 
+The following CVEs are addressed by this release:
+
+* :cve:`2026-8718` Under embargo until 2026-08-08
+
+* :cve:`2026-9263` Under embargo until 2026-06-28
+
 API Changes
 ***********
 
@@ -49,6 +55,30 @@ API Changes
 
 Removed APIs and options
 ========================
+
+* Networking
+
+    * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
+    * ``CONFIG_NET_SOCKETS_POLL_MAX``
+    * ``net_ipv6_set_hop_limit()``
+    * ``net_if_ipv4_get_netmask()``
+    * ``net_if_ipv4_set_netmask()``
+    * ``net_if_ipv4_set_netmask_by_index()``
+    * ``openthread_state_changed_cb_register()``
+    * ``openthread_state_changed_cb_unregister()``
+    * ``openthread_start()``
+    * ``openthread_api_mutex_lock()``
+    * ``openthread_api_mutex_try_lock()``
+    * ``openthread_api_mutex_unlock()``
+    * ``struct openthread_state_changed_cb``
+    * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
+
+* Random
+
+    * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
+    * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION``
+
+* West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
 
 Deprecated APIs and options
 ===========================
@@ -62,6 +92,17 @@ Deprecated APIs and options
 
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
     to be consistent with the existing sync/async naming convention.
+
+* Nordic
+
+  * The internal SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM`` and
+    ``NRF_PLATFORM_LUMOS`` have been deprecated. Use specific SOC_SERIES_* Kconfig options instead.
+
+  * The sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR`` has
+    been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
+
+  * The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
+    have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
 
 * Ring buffer
 
@@ -77,14 +118,53 @@ New APIs and options
   like you need to add more details, add them in the API documentation code
   instead.
 
-.. zephyr-keep-sorted-start re(^\* \w)
+.. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
 * Audio
 
   * :c:member:`pcm_stream_cfg.gain_db`
 
-* :c:func:`lora_recv_duty_cycle_async`
+* Bluetooth
+
+  * Audio
+
+    * :c:func:`bt_ascs_register`
+    * :c:func:`bt_ascs_unregister`
+
+  * Mesh
+
+    * :c:struct:`bt_mesh_lpn_timing`
+    * :c:func:`bt_mesh_stat_lpn_timing_get`
+    * :c:func:`bt_mesh_stat_lpn_timing_reset`
+
+* Devicetree
+
+  * :c:macro:`DT_IRQN_BY_NAME`
+  * :c:macro:`DT_INST_IRQN_BY_NAME`
+
+* Haptics
+
+  * :c:enumerator:`haptics_monitor`
+  * :c:enumerator:`haptics_monitor_type`
+  * :c:enumerator:`haptics_source`
+  * :c:union:`haptics_config`
+  * :c:func:`haptics_calibrate`
+  * :c:func:`haptics_monitor_get`
+  * :c:func:`haptics_monitor_set`
+  * :c:func:`haptics_select_source`
+  * :c:func:`haptics_set_level`
+  * :c:func:`haptics_stream_samples`
+
+* LoRa
+
+  * :c:func:`lora_recv_duty_cycle`
+  * :c:func:`lora_recv_duty_cycle_async`
+
 * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
+
+* Network
+
+  * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
 
 .. zephyr-keep-sorted-stop
 
@@ -96,6 +176,14 @@ New Boards
   it visible to people who might be looking at the working draft of the release notes. However, note
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
+
+* Arduino
+
+  * :zephyr:board:`Arduino Nesso N1 <arduino_nesso_n1>` (``arduino_nesso_n1``)
+
+* Seeed
+
+  * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
 
 New Shields
 ***********
@@ -111,6 +199,11 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* GPIO
+
+  * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
+    (:dtcompatible:`diodes,pi4ioe5v6408`).
+
 New Samples
 ***********
 
@@ -124,15 +217,39 @@ New Samples
 Libraries / Subsystems
 **********************
 
+* DFU
+
+  * Added :kconfig:option:`CONFIG_IMG_CUSTOM_SECTOR_SIZE` to allow MCUboot to use a different
+    sector size for reducing the swap-using-offset status area size.
+
 * LoRa / LoRaWAN
 
   * Added a native LoRaWAN backend
     (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) that implements
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
+  * :c:member:`lora_modem_config.sync_word`
+
+Devicetree
+**********
+
+  * :c:macro:`DT_NODELABEL_C_TOKEN`
+  * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
+
+
+* TF-M
+
+  * TF-M was updated from version 2.2.2 to version 2.3.0. Release notes can be
+    found at:
+    https://trustedfirmware-m.readthedocs.io/en/tf-mv2.3.0/releases/2.3.0.html
 
 Other notable changes
 *********************
+
+* Wi-Fi
+
+  * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
+    certificates (DES-encrypted private keys). Use ``rsa2k_no_des`` instead.
 
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write

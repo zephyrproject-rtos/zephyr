@@ -55,6 +55,10 @@
 			interrupts = <44 0>;
 		};
 
+		aes: aes@420c0000 {
+			interrupts = <52 0>;
+		};
+
 		rng: rng@420c0800 {
 			interrupts = <53 0>;
 		};
@@ -81,7 +85,9 @@
 	};
 
 	bt_hci_wba: bt_hci_wba {
+		interrupt-parent = <&nvic>;
 		interrupts = <60 0>;
+		interrupt-names = "radio";
 	};
 
 	ieee802154: ieee802154 {

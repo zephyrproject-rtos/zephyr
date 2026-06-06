@@ -5,7 +5,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/kernel_structs.h>
 #include <inttypes.h>
 #include <xtensa/config/specreg.h>
 #include <xtensa_backtrace.h>

@@ -40,8 +40,12 @@
 #define ROM_END_OFFSET 0
 #endif
 
-#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION) && defined(CONFIG_XIP)
+#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
+#if defined(CONFIG_XIP)
 #define ROM_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+#else
+#define ROM_ADDR RAM_ADDR
+#endif
 #define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
 #else
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
@@ -57,9 +61,13 @@
 #endif
 #endif /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) */
 
-#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
-#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#define RAM_ADDR DT_CHOSEN_SRAM_ADDR
+#define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
+
+#if defined(CONFIG_CUSTOM_SECTION_ALIGN)
+_region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
+#else
 /* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
  * to make linker section alignment comply with MPU granularity.
  */
@@ -71,8 +79,9 @@ _region_min_align = CONFIG_MMU_PAGE_SIZE;
 /* If building without MPU/MMU support, use default 4-byte alignment. */
 _region_min_align = 4;
 #endif
+#endif
 
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && !defined(CONFIG_CUSTOM_SECTION_ALIGN)
   #define MPU_ALIGN(region_size) \
     . = ALIGN(_region_min_align); \
     . = ALIGN(1 << LOG2CEIL(region_size))

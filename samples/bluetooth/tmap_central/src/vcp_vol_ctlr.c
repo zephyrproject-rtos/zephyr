@@ -15,12 +15,17 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 static struct bt_vcp_vol_ctlr *vcp_vol_ctlr;
 
 static void vcs_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 			    uint8_t vocs_count, uint8_t aics_count)
 {
+	ARG_UNUSED(vol_ctlr);
+	ARG_UNUSED(vocs_count);
+	ARG_UNUSED(aics_count);
+
 	if (err != 0) {
 		printk("VCP: Service could not be discovered (%d)\n", err);
 		return;
@@ -29,6 +34,8 @@ static void vcs_discover_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 
 static void vcs_write_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 {
+	ARG_UNUSED(vol_ctlr);
+
 	if (err != 0) {
 		printk("VCP: Write failed (%d)\n", err);
 		return;
@@ -38,6 +45,8 @@ static void vcs_write_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err)
 static void vcs_state_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 			 uint8_t volume, uint8_t mute)
 {
+	ARG_UNUSED(vol_ctlr);
+
 	if (err != 0) {
 		printk("VCP: state cb err (%d)", err);
 		return;
@@ -49,6 +58,8 @@ static void vcs_state_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 static void vcs_flags_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int err,
 			 uint8_t flags)
 {
+	ARG_UNUSED(vol_ctlr);
+
 	if (err != 0) {
 		printk("VCP: flags cb err (%d)", err);
 		return;

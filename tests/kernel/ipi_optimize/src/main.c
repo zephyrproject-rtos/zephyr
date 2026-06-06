@@ -9,7 +9,6 @@
 #include <zephyr/kernel.h>
 #include <ksched.h>
 #include <ipi.h>
-#include <zephyr/kernel_structs.h>
 
 #define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
 

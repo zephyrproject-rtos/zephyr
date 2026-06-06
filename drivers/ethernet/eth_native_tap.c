@@ -69,7 +69,7 @@ struct eth_context {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
 #endif
-#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
+#if defined(CONFIG_PTP_CLOCK_NATIVE)
 	const struct device *ptp_clock;
 #endif
 };
@@ -82,19 +82,31 @@ static const char *ipv4_nm_cmd_opt;
 static const char *ipv4_gw_cmd_opt;
 #endif
 
-static void update_pkt_timestamp(struct net_pkt *pkt)
+#if defined(CONFIG_PTP_CLOCK_NATIVE)
+static void update_pkt_timestamp(struct eth_context *ctx, struct net_pkt *pkt)
 {
 	struct net_ptp_time timestamp = {
 		.second = UINT64_MAX,
 		.nanosecond = UINT32_MAX,
 	};
 
-	if (eth_clock_gettime(&timestamp.second, &timestamp.nanosecond) < 0) {
-		LOG_DBG("Failed to retrieve packet timestamp");
+	if (ctx->ptp_clock == NULL) {
+		return;
+	}
+
+	if (ptp_clock_get(ctx->ptp_clock, &timestamp) < 0) {
+		LOG_DBG("Failed to retrieve PTP clock timestamp");
 	}
 
 	net_pkt_set_timestamp(pkt, &timestamp);
 }
+#else
+static void update_pkt_timestamp(struct eth_context *ctx, struct net_pkt *pkt)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(pkt);
+}
+#endif
 
 static inline bool queue_tx_timestamp(struct net_pkt *pkt)
 {
@@ -226,7 +238,7 @@ static int eth_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Native TAP can only provide an approximate host-side TX timestamp. */
-	update_pkt_timestamp(pkt);
+	update_pkt_timestamp(ctx, pkt);
 	bool timestamp_queued = update_gptp(net_pkt_iface(pkt), pkt, true);
 
 	if (!timestamp_queued && net_pkt_is_tx_timestamping(pkt)) {
@@ -278,7 +290,7 @@ static int read_data(struct eth_context *ctx, int fd)
 		return status;
 	}
 
-	update_pkt_timestamp(pkt);
+	update_pkt_timestamp(ctx, pkt);
 	(void)update_gptp(iface, pkt, false);
 
 	if (net_recv_data(iface, pkt) < 0) {
@@ -444,7 +456,7 @@ static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device
 #if defined(CONFIG_ETH_NATIVE_TAP_VLAN_TAG_STRIP)
 		| ETHERNET_HW_VLAN_TAG_STRIP
 #endif
-#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
+#if defined(CONFIG_PTP_CLOCK_NATIVE)
 		| ETHERNET_PTP
 #endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
@@ -456,7 +468,7 @@ static enum ethernet_hw_caps eth_native_tap_get_capabilities(const struct device
 		;
 }
 
-#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
+#if defined(CONFIG_PTP_CLOCK_NATIVE)
 static const struct device *eth_get_ptp_clock(const struct device *dev,
 					      struct net_if *iface __unused)
 {
@@ -522,7 +534,7 @@ static const struct ethernet_api eth_if_api = {
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	.get_stats = get_stats,
 #endif
-#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
+#if defined(CONFIG_PTP_CLOCK_NATIVE)
 	.get_ptp_clock = eth_get_ptp_clock,
 #endif
 };
@@ -533,6 +545,9 @@ static const struct ethernet_api eth_if_api = {
 		.rx_thread = &rx_thread_data_##x,			     \
 		.rx_stack = rx_thread_stack_##x,			     \
 		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##x), \
+		IF_ENABLED(CONFIG_PTP_CLOCK_NATIVE, (			     \
+		.ptp_clock = DEVICE_DT_GET_ANY(zephyr_native_ptp_clock),     \
+		))							     \
 	}
 
 LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
@@ -547,102 +562,11 @@ LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
 
 LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_ETH_DEVICE, (;), _);
 
-#if defined(CONFIG_ETH_NATIVE_TAP_PTP_CLOCK)
-
 #if defined(CONFIG_NET_GPTP)
 BUILD_ASSERT(								\
 	CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT == CONFIG_NET_GPTP_NUM_PORTS, \
 	"Number of network interfaces must match gPTP port count");
 #endif
-
-struct ptp_context {
-	struct eth_context *eth_context;
-};
-
-#define DEFINE_PTP_DEV_DATA(x, _) \
-	static struct ptp_context ptp_context_##x
-
-LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_PTP_DEV_DATA, (;), _);
-
-static int ptp_clock_set_native_tap(const struct device *clk, struct net_ptp_time *tm)
-{
-	ARG_UNUSED(clk);
-	ARG_UNUSED(tm);
-
-	/* We cannot set the host device time so this function
-	 * does nothing.
-	 */
-
-	return 0;
-}
-
-static int ptp_clock_get_native_tap(const struct device *clk, struct net_ptp_time *tm)
-{
-	ARG_UNUSED(clk);
-
-	return eth_clock_gettime(&tm->second, &tm->nanosecond);
-}
-
-static int ptp_clock_adjust_native_tap(const struct device *clk, int increment)
-{
-	ARG_UNUSED(clk);
-	ARG_UNUSED(increment);
-
-	/* We cannot adjust the host device time so this function
-	 * does nothing.
-	 */
-
-	return 0;
-}
-
-static int ptp_clock_rate_adjust_native_tap(const struct device *clk, double ratio)
-{
-	ARG_UNUSED(clk);
-	ARG_UNUSED(ratio);
-
-	/* We cannot adjust the host device time so this function
-	 * does nothing.
-	 */
-
-	return 0;
-}
-
-static DEVICE_API(ptp_clock, api) = {
-	.set = ptp_clock_set_native_tap,
-	.get = ptp_clock_get_native_tap,
-	.adjust = ptp_clock_adjust_native_tap,
-	.rate_adjust = ptp_clock_rate_adjust_native_tap,
-};
-
-#define PTP_INIT_FUNC(x, _)						\
-	static int ptp_init_##x(const struct device *port)			\
-	{								\
-		const struct device *const eth_dev = DEVICE_GET(eth_native_tap_##x); \
-		struct eth_context *context = eth_dev->data;	\
-		struct ptp_context *ptp_context = port->data;	\
-									\
-		context->ptp_clock = port;				\
-		ptp_context->eth_context = context;			\
-									\
-		return 0;						\
-	}
-
-LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, PTP_INIT_FUNC, (), _)
-
-#define DEFINE_PTP_DEVICE(x, _)						\
-	DEVICE_DEFINE(eth_native_tap_ptp_clock_##x,			\
-			    PTP_CLOCK_NAME "_" #x,			\
-			    ptp_init_##x,				\
-			    NULL,					\
-			    &ptp_context_##x,				\
-			    NULL,					\
-			    POST_KERNEL,				\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &api)
-
-LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_PTP_DEVICE, (;), _);
-
-#endif /* CONFIG_ETH_NATIVE_TAP_PTP_CLOCK */
 
 static void add_native_tap_options(void)
 {

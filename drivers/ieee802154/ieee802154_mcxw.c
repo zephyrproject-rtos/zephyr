@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/nvmem.h>
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <zephyr/net/openthread.h>
@@ -69,10 +70,16 @@ static uint16_t rf_compute_csl_phase(uint32_t aTimeUs);
 #define stop_csl_receiver()
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
-/* Hardware parameters partition and offsets */
-#define HW_PARAMS_PARTITION_ID PARTITION_ID(hw_params_partition)
+/* Hardware parameters nvmem */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(hw_params), okay)
+#define DT_HW_PARAMS         DT_NODELABEL(hw_params)
+#define EUI64_CELL           ieee802154_eui64
+static const struct nvmem_cell eui64_cell = NVMEM_CELL_GET_BY_NAME(DT_HW_PARAMS, EUI64_CELL);
 #define MAC_ADDRESS_OFFSET     0x00
 #define MAC_ADDRESS_LEN        8
+#else
+#error "Node hw_params is disabled"
+#endif
 
 /* ACK guard window (µs) to avoid aborting RX just when waiting for ACK */
 #ifndef ACK_GUARD_US
@@ -136,30 +143,31 @@ WEAK void app_disallow_device_to_slepp(void)
 {
 }
 
-static const struct flash_area *open_hw_params_partition(void)
+static int read_mac_from_nvmem(const struct nvmem_cell *cell, uint8_t *mac_addr)
 {
-	const struct flash_area *fa = NULL;
-	int ret = flash_area_open(HW_PARAMS_PARTITION_ID, &fa);
+	int ret = nvmem_cell_read(cell, mac_addr, MAC_ADDRESS_OFFSET, MAC_ADDRESS_LEN);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to open the HW parameters flash partition: %d", ret);
-		return NULL;
-	}
-
-	return fa;
-}
-
-static int read_mac_from_flash(const struct flash_area *fa, uint8_t *mac_addr)
-{
-	int ret = flash_area_read(fa, MAC_ADDRESS_OFFSET, mac_addr, MAC_ADDRESS_LEN);
-
-	if (ret != 0) {
-		LOG_ERR("Failed to read MAC from the HW parameters flash: %d", ret);
+		LOG_ERR("Failed to read MAC from the HW parameters NVMEM: %d", ret);
 		return ret;
 	}
 
 	LOG_HEXDUMP_INF(mac_addr, MAC_ADDRESS_LEN,
-			"Loaded MAC address from the HW parameters flash:");
+			"Loaded MAC address from the HW parameters NVMEM:");
+	return 0;
+}
+
+static int save_mac_to_nvmem(const struct nvmem_cell *cell, const uint8_t *mac_addr)
+{
+	int ret = nvmem_cell_write(cell, mac_addr, MAC_ADDRESS_OFFSET, MAC_ADDRESS_LEN);
+
+	if (ret != 0) {
+		LOG_ERR("Failed to write MAC address to HW parameters NVMEM: %d", ret);
+		return ret;
+	}
+
+	LOG_HEXDUMP_INF(mac_addr, MAC_ADDRESS_LEN,
+			"MAC address saved to the HW parameters NVMEM successfully:");
 	return 0;
 }
 
@@ -192,29 +200,8 @@ static void generate_new_mac_address(uint8_t *mac_addr)
 	sys_rand_get(&mac_addr[3], MAC_ADDRESS_LEN - 3);
 }
 
-static int save_mac_to_flash(const struct flash_area *fa, const uint8_t *mac_addr)
-{
-	int ret = flash_area_erase(fa, MAC_ADDRESS_OFFSET, fa->fa_size);
-
-	if (ret != 0) {
-		LOG_ERR("Failed to erase HW parameters flash area: %d", ret);
-		return ret;
-	}
-
-	ret = flash_area_write(fa, MAC_ADDRESS_OFFSET, mac_addr, MAC_ADDRESS_LEN);
-	if (ret != 0) {
-		LOG_ERR("Failed to write MAC address to HW parameters flash: %d", ret);
-		return ret;
-	}
-
-	LOG_HEXDUMP_INF(mac_addr, MAC_ADDRESS_LEN,
-			"MAC address saved to the HW parameters flash successfully:");
-	return 0;
-}
-
 void mcxw_get_eui64(uint8_t *eui64)
 {
-	const struct flash_area *fa = NULL;
 	bool force_regenerate = false;
 
 	__ASSERT_NO_MSG(eui64);
@@ -222,20 +209,14 @@ void mcxw_get_eui64(uint8_t *eui64)
 	/* Initialize g_eui64 to ensure clean state */
 	memset(g_eui64, 0, MAC_ADDRESS_LEN);
 
-	/* Open HW parameters flash partition */
-	fa = open_hw_params_partition();
-	if (fa == NULL) {
+	/* Try to read MAC address from NVMEM */
+	if (read_mac_from_nvmem(&eui64_cell, g_eui64) != 0) {
 		force_regenerate = true;
 	} else {
-		/* Try to read MAC address from flash */
-		if (read_mac_from_flash(fa, g_eui64) != 0) {
+		/* Check if loaded MAC is valid */
+		if (!is_mac_address_valid(g_eui64)) {
+			LOG_INF("Invalid MAC address detected, will regenerate");
 			force_regenerate = true;
-		} else {
-			/* Check if loaded MAC is valid */
-			if (!is_mac_address_valid(g_eui64)) {
-				LOG_INF("Invalid MAC address detected, will regenerate");
-				force_regenerate = true;
-			}
 		}
 	}
 
@@ -244,15 +225,8 @@ void mcxw_get_eui64(uint8_t *eui64)
 		LOG_INF("Generating new MAC address");
 		generate_new_mac_address(g_eui64);
 
-		/* Save to flash if possible */
-		if (fa != NULL) {
-			save_mac_to_flash(fa, g_eui64);
-		}
-	}
-
-	/* Close partition and provide the address */
-	if (fa != NULL) {
-		flash_area_close(fa);
+		/* Save to NVMEM if possible */
+		save_mac_to_nvmem(&eui64_cell, g_eui64);
 	}
 
 	/* Always provide a valid address */

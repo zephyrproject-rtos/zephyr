@@ -53,8 +53,7 @@ struct lc3_data {
 	bool do_plc;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(lc3_data_slab, sizeof(struct lc3_data), CONFIG_BT_ISO_RX_BUF_COUNT,
-			 __alignof__(struct lc3_data));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(lc3_data_slab, struct lc3_data, CONFIG_BT_ISO_RX_BUF_COUNT);
 
 static int16_t lc3_rx_buf[LC3_MAX_NUM_SAMPLES_MONO];
 static K_FIFO_DEFINE(lc3_in_fifo);
@@ -200,6 +199,9 @@ static int usb_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 
 static int codec_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 {
+	ARG_UNUSED(stream);
+	ARG_UNUSED(ts);
+
 	/* Codec output is mono: only the primary (channel 0) is forwarded.
 	 * Any additional channels are intentionally ignored.
 	 */
@@ -279,6 +281,10 @@ static void do_lc3_decode(struct lc3_data *data)
 
 static void lc3_decoder_thread_func(void *arg1, void *arg2, void *arg3)
 {
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
 	while (true) {
 		struct lc3_data *data = k_fifo_get(&lc3_in_fifo, K_FOREVER);
 		struct stream_rx *stream = data->stream;

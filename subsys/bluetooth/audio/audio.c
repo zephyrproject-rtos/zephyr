@@ -15,11 +15,12 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
-#include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -58,7 +59,8 @@ int bt_audio_data_parse(const uint8_t ltv[], size_t size,
 
 		i++; /* Increment as we have parsed the len field */
 
-		data.type = ltv[i++];
+		data.type = ltv[i];
+		i++;
 		data.data_len = len - sizeof(data.type);
 
 		if (data.data_len > 0) {

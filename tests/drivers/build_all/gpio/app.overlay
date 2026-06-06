@@ -31,6 +31,16 @@
 			status = "okay";
 		};
 
+		test_gpio_mmio_latch: gpio@feed0000 {
+			compatible = "gpio-mmio-latch";
+			gpio-controller;
+			reg = <0xfeed0000 0x4>;
+			#gpio-cells = <0x2>;
+			ngpios = <8>;
+			initial-output = <0x5a>;
+			status = "okay";
+		};
+
 		test_i2c: i2c@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -178,6 +188,18 @@
 				gpio-controller;
 			};
 
+			test_i2c_m5pm1: pmic@6e {
+				compatible = "m5stack,m5pm1";
+				reg = <0x6e>;
+
+				test_i2c_m5pm1_gpio: gpio {
+					compatible = "m5stack,m5pm1-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <5>;
+				};
+			};
+
 			mfd-nct38xx@9 {
 				compatible = "nuvoton,nct38xx";
 				reg = <0x09>;
@@ -258,6 +280,15 @@
 				ngpios = <24>;
 				int-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 0 0>;
+			};
+
+			test_i2c_pi4ioe5v6408: pi4ioe5v6408@43 {
+				compatible = "diodes,pi4ioe5v6408";
+				reg = <0x43>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				int-gpios = <&test_gpio 0 0>;
 			};
 
 			test_i2c_axp192: axp192@d {
@@ -458,6 +489,17 @@
 					gpio-controller;
 					#gpio-cells = <2>;
 					ngpios = <5>;
+				};
+			};
+
+			test_i2c_npm1012: pmic@1f {
+				reg = <0x1f>;
+
+				npm1012_gpio: gpio-controller {
+					compatible = "nordic,npm10xx-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <3>;
 				};
 			};
 		};

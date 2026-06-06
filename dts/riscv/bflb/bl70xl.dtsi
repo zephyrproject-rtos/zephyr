@@ -20,6 +20,17 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	tsen: tsen {
+		compatible = "bflb,tsen";
+		io-channels = <&adc0 0>;
+		status = "disabled";
+	};
+
+	bt_hci_bflb: bt-hci {
+		compatible = "bflb,bt-hci";
+		status = "disabled";
+	};
+
 	clocks {
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
@@ -222,12 +233,6 @@
 			interrupt-parent = <&clic>;
 		};
 
-		tsen: tsen {
-			compatible = "bflb,tsen";
-			io-channels = <&adc0 0>;
-			status = "disabled";
-		};
-
 		sec_eng_trng: trng@40004000 {
 			compatible = "bflb,sec-eng-trng";
 			reg = <0x40004000 0x400>;
@@ -364,11 +369,6 @@
 		reg_aon: regulator-aon@4000f000 {
 			compatible = "bflb,aon-regulator";
 			reg = <0x4000f000 0x1000>;
-		};
-
-		bt_hci_bflb: bt-hci {
-			compatible = "bflb,bt-hci";
-			status = "disabled";
 		};
 	};
 };

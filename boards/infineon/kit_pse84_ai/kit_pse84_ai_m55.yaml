@@ -24,7 +24,9 @@ supported:
   - pwm
   - spi
   - uart
+  - usbd
   - rtc
   - watchdog
+  - wifi
   - comparator
   - dmic

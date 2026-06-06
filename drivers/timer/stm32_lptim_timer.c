@@ -504,10 +504,10 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)(ret);
 }
 
-/* Wait for the IER register of the stm32U5 ready, after any bit write operation */
+/* Wait for the IER register to be ready, after any bit write operation */
 void stm32_lptim_wait_ready(void)
 {
-#ifdef CONFIG_SOC_SERIES_STM32U5X
+#if defined(LL_LPTIM_ISR_DIEROK)
 	while (LL_LPTIM_IsActiveFlag_DIEROK(LPTIM) == 0) {
 	}
 	LL_LPTIM_ClearFlag_DIEROK(LPTIM);

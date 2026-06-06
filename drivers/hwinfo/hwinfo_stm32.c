@@ -53,13 +53,14 @@ struct stm32_uid {
 	uint32_t id[STM32_NUM_UID_WORDS];
 };
 
-static void ll_hwinfo_force_clear_reset_flags(void)
+static void ll_rcc_clear_reset_flags(void)
 {
-#ifdef CONFIG_STM32_HAL2
+#ifdef CONFIG_SOC_SERIES_STM32C5X
 	LL_RCC_ForceClearResetFlags();
-#else /* CONFIG_STM32_HAL2 */
+	LL_RCC_ReleaseClearResetFlags();
+#else /* CONFIG_SOC_SERIES_STM32C5X */
 	LL_RCC_ClearResetFlags();
-#endif /* CONFIG_STM32_HAL2 */
+#endif /* CONFIG_SOC_SERIES_STM32C5X */
 }
 
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
@@ -246,7 +247,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	ll_hwinfo_force_clear_reset_flags();
+	ll_rcc_clear_reset_flags();
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && defined(CORE_CM4)
 	LL_PWR_ClearFlag_CPU2();

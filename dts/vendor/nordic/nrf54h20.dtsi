@@ -283,6 +283,14 @@
 				write-block-size = <16>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+
+				mram10: mram-bank@0 {
+					reg = <0 DT_SIZE_K(1024)>;
+				};
+
+				mram11: mram-bank@100000 {
+					reg = <DT_SIZE_K(1024) DT_SIZE_K(1024)>;
+				};
 			};
 		};
 
@@ -686,6 +694,7 @@
 				clock-frequency = <DT_FREQ_M(400)>;
 				packet-data-limit = <65536>;
 				fifo-depth = <32>;
+				memmap-write-support;
 				status = "disabled";
 			};
 
@@ -765,7 +774,7 @@
 				interrupts = <216 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&canpll>, <&hsfll120>;
 				clock-names = "auxpll", "hsfll";
-				bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
+				bosch,mram-cfg = <0x0 28 8 6 0 0 1 1>;
 				status = "disabled";
 			};
 
@@ -875,6 +884,7 @@
 				reg = <0x8ef000 0x1000>;
 				status = "disabled";
 				channels = <8>;
+				offset = <16>;
 			};
 
 			cpuppr_vpr: vpr@908000 {

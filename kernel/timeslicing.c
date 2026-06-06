@@ -79,11 +79,18 @@ void z_time_slice_reset(struct k_thread *thread)
 	int slice_size = z_time_slice_size(thread);
 
 	z_abort_timeout(&slice_timeouts[cpu]);
-	slice_expired[cpu] = false;
 	if (slice_size != 0) {
+		/* When invoked because the slicer just fired (this CPU or
+		 * via IPI from another), we're at a tick edge but past the
+		 * announce window, so subtract 1 to cancel z_add_timeout()'s
+		 * "+1" round-up and land at exactly slice_size ticks.
+		 */
+		int delay = slice_expired[cpu] ? slice_size - 1 : slice_size;
+
 		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
-			      K_TICKS(slice_size));
+			      K_TICKS(delay));
 	}
+	slice_expired[cpu] = false;
 }
 
 static ALWAYS_INLINE bool thread_defines_time_slice_size(struct k_thread *thread)
@@ -155,8 +162,25 @@ void z_time_slice(void)
 #endif
 		if (!z_is_thread_prevented_from_running(curr)) {
 			move_current_to_end_of_prio_q();
+			/* If the rotation kept curr at the front (no other
+			 * runnable thread of equal-or-higher priority is
+			 * waiting), no swap will happen and we must rearm
+			 * here. Otherwise the dispatch path will rearm for
+			 * the new thread with slice_expired still set,
+			 * picking up the tick-aligned delay.
+			 */
+#ifdef CONFIG_SMP
+			struct k_thread *next = runq_best();
+
+			if (next == NULL || z_is_idle_thread_object(next)) {
+				z_time_slice_reset(curr);
+			}
+#else
+			if (_kernel.ready_q.cache == curr) {
+				z_time_slice_reset(curr);
+			}
+#endif
 		}
-		z_time_slice_reset(curr);
 	}
 	k_spin_unlock(&_sched_spinlock, key);
 }

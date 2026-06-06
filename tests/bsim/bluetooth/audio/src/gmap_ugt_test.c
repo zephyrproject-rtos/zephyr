@@ -12,6 +12,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -21,6 +22,7 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/gmap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/printk.h>
@@ -41,7 +43,7 @@ extern enum bst_result_t bst_result;
 #define LOCATION (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
 #define GMAP_UGG_DEV_ID 0 /* GMAP UGG shall be ID 0 for these tests */
 
-static uint8_t csis_rank = 1;
+static uint8_t csis_rank = 1U;
 
 static struct bt_audio_codec_cap codec_cap =
 	BT_AUDIO_CODEC_CAP_LC3(BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
@@ -50,7 +52,7 @@ static struct bt_audio_codec_cap codec_cap =
 static const struct bt_bap_qos_cfg_pref unicast_qos_pref =
 	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0U, 60U, 10000U, 60000U, 10000U, 60000U);
 
-#define UNICAST_CHANNEL_COUNT_1 BIT(0)
+#define UNICAST_CHANNEL_COUNT_1 BIT(0U)
 
 static struct audio_test_stream
 	unicast_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
@@ -138,7 +140,7 @@ static struct bt_csip_set_member_svc_inst *csip_set_member;
 
 static struct bt_bap_stream *unicast_stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream =
 			bap_stream_from_audio_test_stream(&unicast_streams[i]);
 
@@ -555,11 +557,12 @@ static void test_main(void)
 
 static void test_args(int argc, char *argv[])
 {
-	for (size_t argn = 0; argn < argc; argn++) {
+	for (size_t argn = 0U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "rank") == 0) {
-			csis_rank = strtoul(argv[++argn], NULL, 10);
+			argn++;
+			csis_rank = strtoul(argv[argn], NULL, 10);
 		} else {
 			FAIL("Invalid arg: %s\n", arg);
 		}

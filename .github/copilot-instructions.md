@@ -20,6 +20,9 @@ contributions to the Zephyr RTOS repository.
   SPDX-License-Identifier: Apache-2.0
   ```
 
+  The copyright statement may refer to the individual or organization who authored the contribution
+  but "Copyright The Zephyr Project Contributors" is always the preferred form.
+
 - External code under a license other than Apache 2.0 requires TSC + governing board
   approval before integration.
 
@@ -63,6 +66,7 @@ with these Zephyr-specific rules:
   single-line blocks.
 - Use `/* */` for comments; `//` is not allowed.
 - Use `/** */` for Doxygen API documentation.
+- Avoid ASCII decoration or ASCII rulers delimiters in comments
 - No binary literals (`0b...`).
 - No non-ASCII symbols in code (no emojis under any circumstances).
 - Capitalize correctly in comments: `UART` not `uart`, `CMake` not `cmake`.
@@ -161,6 +165,7 @@ Every commit message must follow this format:
 
 [Commit message body]
 
+Assisted-by: [Agent Name]:[Model Version]
 Signed-off-by: Your Full Name <your.email@example.com>
 ```
 

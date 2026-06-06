@@ -54,6 +54,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <errno.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/net/socket.h>
 
@@ -892,8 +893,8 @@ static int sm_send_registration(bool send_obj_support_data,
 {
 	struct lwm2m_message *msg;
 	int ret;
-	char binding[CLIENT_BINDING_LEN];
-	char queue[CLIENT_QUEUE_LEN];
+	char binding[CLIENT_BINDING_LEN] = { 0 };
+	char queue[CLIENT_QUEUE_LEN] = { 0 };
 
 	msg = rd_get_message();
 	if (!msg) {

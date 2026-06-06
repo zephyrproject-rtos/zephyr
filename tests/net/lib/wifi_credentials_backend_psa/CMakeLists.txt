@@ -19,8 +19,8 @@ target_sources(app
 
 zephyr_include_directories(${ZEPHYR_BASE}/subsys/testsuite/include)
 zephyr_include_directories(${ZEPHYR_BASE}/subsys/net/lib/wifi_credentials/)
-zephyr_include_directories(${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/interface/include/)
-zephyr_include_directories(${ZEPHYR_MBEDTLS_3_6_MODULE_DIR}/include/)
+zephyr_include_directories(${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/include)
+zephyr_include_directories(${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include)
 
 target_compile_options(app
   PRIVATE

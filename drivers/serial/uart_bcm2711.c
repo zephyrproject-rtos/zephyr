@@ -160,13 +160,11 @@ static int uart_bcm2711_poll_in(const struct device *dev, unsigned char *c)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
 
-	while (!bcm2711_mu_lowlevel_can_getc(uart_data->uart_addr)) {
-		;
+	if (!bcm2711_mu_lowlevel_can_getc(uart_data->uart_addr)) {
+		return -1;
 	}
 
-	/* got a character */
 	*c = sys_read32(uart_data->uart_addr + BCM2711_MU_IO) & 0xFF;
-
 	return 0;
 }
 
@@ -201,18 +199,28 @@ static int uart_bcm2711_fifo_read(const struct device *dev, uint8_t *rx_data,
 	return num_rx;
 }
 
+/*
+ * IER is a read/write register and the TX/RX enable bits live side
+ * by side in it; toggling one bit must not disturb the other (or
+ * any of the upper IER bits, which on the BCM283x mini-UART include
+ * the FIFO-clear shortcuts). Use read-modify-write so each helper
+ * only touches the bit it owns.
+ */
 static void uart_bcm2711_irq_tx_enable(const struct device *dev)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
+	uint32_t ier = sys_read32(uart_data->uart_addr + BCM2711_MU_IER);
 
-	sys_write32(BCM2711_MU_IER_TX_INTERRUPT, uart_data->uart_addr + BCM2711_MU_IER);
+	sys_write32(ier | BCM2711_MU_IER_TX_INTERRUPT,
+		    uart_data->uart_addr + BCM2711_MU_IER);
 }
 
 static void uart_bcm2711_irq_tx_disable(const struct device *dev)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
+	uint32_t ier = sys_read32(uart_data->uart_addr + BCM2711_MU_IER);
 
-	sys_write32((uint32_t)(~BCM2711_MU_IER_TX_INTERRUPT),
+	sys_write32(ier & ~BCM2711_MU_IER_TX_INTERRUPT,
 		    uart_data->uart_addr + BCM2711_MU_IER);
 }
 
@@ -226,15 +234,18 @@ static int uart_bcm2711_irq_tx_ready(const struct device *dev)
 static void uart_bcm2711_irq_rx_enable(const struct device *dev)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
+	uint32_t ier = sys_read32(uart_data->uart_addr + BCM2711_MU_IER);
 
-	sys_write32(BCM2711_MU_IER_RX_INTERRUPT, uart_data->uart_addr + BCM2711_MU_IER);
+	sys_write32(ier | BCM2711_MU_IER_RX_INTERRUPT,
+		    uart_data->uart_addr + BCM2711_MU_IER);
 }
 
 static void uart_bcm2711_irq_rx_disable(const struct device *dev)
 {
 	struct bcm2711_uart_data *uart_data = dev->data;
+	uint32_t ier = sys_read32(uart_data->uart_addr + BCM2711_MU_IER);
 
-	sys_write32((uint32_t)(~BCM2711_MU_IER_RX_INTERRUPT),
+	sys_write32(ier & ~BCM2711_MU_IER_RX_INTERRUPT,
 		    uart_data->uart_addr + BCM2711_MU_IER);
 }
 
@@ -251,11 +262,6 @@ static int uart_bcm2711_irq_is_pending(const struct device *dev)
 
 	return bcm2711_mu_lowlevel_can_getc(uart_data->uart_addr) ||
 		bcm2711_mu_lowlevel_can_putc(uart_data->uart_addr);
-}
-
-static int uart_bcm2711_irq_update(const struct device *dev)
-{
-	return 1;
 }
 
 static void uart_bcm2711_irq_callback_set(const struct device *dev,
@@ -302,7 +308,6 @@ static DEVICE_API(uart, uart_bcm2711_driver_api) = {
 	.irq_rx_disable   = uart_bcm2711_irq_rx_disable,
 	.irq_rx_ready	  = uart_bcm2711_irq_rx_ready,
 	.irq_is_pending   = uart_bcm2711_irq_is_pending,
-	.irq_update		  = uart_bcm2711_irq_update,
 	.irq_callback_set = uart_bcm2711_irq_callback_set,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 

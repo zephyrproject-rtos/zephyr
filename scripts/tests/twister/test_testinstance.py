@@ -78,17 +78,18 @@ def test_check_build_or_run(
     _, r = expected
     assert run == r
 
-    with mock.patch('os.name', 'nt'):
-        # path to QEMU binary is not in QEMU_BIN_PATH environment variable
+    # existing QEMU_BIN_PATH
+    with mock.patch('os.environ', {'QEMU_BIN_PATH': '/tmp'}), \
+         mock.patch('os.path.exists', return_value=True):
+        run = testinstance.check_runnable(env.options, env.hwm)
+        _, r = expected
+        assert run == r
+
+    # non-existing QEMU_BIN_PATH
+    with mock.patch('os.environ', {'QEMU_BIN_PATH': '/invalid'}), \
+         mock.patch('os.path.exists', return_value=False):
         run = testinstance.check_runnable(env.options, env.hwm)
         assert not run
-
-        # mock path to QEMU binary in QEMU_BIN_PATH environment variable
-        with mock.patch('os.environ', {'QEMU_BIN_PATH': ''}):
-            run = testinstance.check_runnable(env.options, env.hwm)
-            _, r = expected
-            assert run == r
-
 
 TESTDATA_PART_2 = [
     (True, True, True, ["demo_board_2/unit_testing"], "native",
@@ -169,14 +170,17 @@ TESTDATA_PART_3 = [
     (
         '(dt_compat_enabled("st,stm32-flash-controller") or' \
         ' dt_compat_enabled("st,stm32h7-flash-controller")) and' \
-        ' dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")',
+        ' (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") or' \
+        '  dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))',
         ['dts']
     ),
     (
         '((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE) and' \
-        ' dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")) or' \
+        ' (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") or' \
+        '  dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))) or' \
         ' (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE and' \
-        ' dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions"))',
+        '  (dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions") or' \
+        '   dt_label_compat_enabled("slot1_ns_partition", "zephyr,mapped-partition")))',
         ['dts', 'kconfig']
     ),
     (

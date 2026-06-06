@@ -128,19 +128,6 @@ void ppp_link_terminated(struct ppp_context *ctx)
 	NET_DBG("[%p] Link terminated", ctx);
 }
 
-void ppp_link_down(struct ppp_context *ctx)
-{
-	k_sem_give(&ctx->wait_ppp_link_down);
-
-	if (ctx->phase == PPP_DEAD) {
-		return;
-	}
-
-	ppp_network_all_down(ctx);
-
-	ppp_change_phase(ctx, PPP_DEAD);
-}
-
 void ppp_link_needed(struct ppp_context *ctx)
 {
 	/* TODO: Try to create link if needed. */

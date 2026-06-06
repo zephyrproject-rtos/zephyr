@@ -776,26 +776,25 @@
 			status = "disabled";
 		};
 
-		sai1_a: sai1@40015404 {
+		sai1: sai1@40015400 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40015404 0x20>;
+			reg = <0x40015400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
-			dmas = <&dma1 1 108 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					     STM32_DMA_16BITS)>;
 			status = "disabled";
-		};
 
-		sai1_b: sai1@40015424 {
-			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015424 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
-			dmas = <&dma1 2 109 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					     STM32_DMA_16BITS)>;
-			status = "disabled";
+			sai1_a: sai1a@4 {
+				reg = <0x4>;
+				dmas = <&dma1 1 108 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				status = "disabled";
+			};
+
+			sai1_b: sai1b@24 {
+				reg = <0x24>;
+				dmas = <&dma1 2 109 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				status = "disabled";
+			};
 		};
 
 		opamp1: opamp1@40010300 {
@@ -854,6 +853,24 @@
 			reg = <0x40010204 0x4>;
 			interrupts = <64 0>;
 			st,exti-line = <22>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			status = "disabled";
+		};
+
+		comp3: comparator@40010208 {
+			compatible = "st,stm32g4-comp", "st,stm32-comp";
+			reg = <0x40010208 0x4>;
+			interrupts = <64 0>;
+			st,exti-line = <29>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			status = "disabled";
+		};
+
+		comp4: comparator@4001020c {
+			compatible = "st,stm32g4-comp", "st,stm32-comp";
+			reg = <0x4001020c 0x4>;
+			interrupts = <65 0>;
+			st,exti-line = <30>;
 			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
 			status = "disabled";
 		};

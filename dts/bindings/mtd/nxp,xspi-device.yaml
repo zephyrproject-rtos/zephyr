@@ -25,6 +25,12 @@ properties:
     enum: [1, 2, 3, 5, 9]
     description: Sample clock source.
 
+  write-block-size:
+    type: int
+    default: 4
+    description: |
+      Minimal write alignment and size in bytes.
+
   enable-dqs-latency:
     type: boolean
     description: Enable DQS latency.

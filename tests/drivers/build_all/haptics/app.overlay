@@ -26,7 +26,7 @@
 			status = "okay";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 
-			#include "i2c.dtsi"
+#include "i2c.dtsi"
 		};
 
 		test_spi: spi@33334444 {
@@ -41,9 +41,11 @@
 			cs-gpios = <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
-			#include "spi.dtsi"
+#include "spi.dtsi"
 		};
 	};
 };

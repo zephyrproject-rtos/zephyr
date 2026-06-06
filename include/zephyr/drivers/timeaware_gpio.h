@@ -37,33 +37,38 @@ extern "C" {
  * @brief Event polarity
  */
 enum tgpio_pin_polarity {
-	TGPIO_RISING_EDGE = 0,
-	TGPIO_FALLING_EDGE,
-	TGPIO_TOGGLE_EDGE,
+	TGPIO_RISING_EDGE = 0, /**< Rising edge */
+	TGPIO_FALLING_EDGE,    /**< Falling edge */
+	TGPIO_TOGGLE_EDGE,     /**< Toggle edge */
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * TGPIO driver API definition and system call entry points
- *
- * (Internal use only.)
+ * @def_driverbackendgroup{Time-aware GPIO,tgpio_interface}
+ * @ingroup tgpio_interface
+ * @{
  */
 
+/**
+ * @driver_ops{Time-aware GPIO}
+ */
 __subsystem struct tgpio_driver_api {
+	/** @driver_ops_mandatory @copybrief tgpio_pin_disable */
 	int (*pin_disable)(const struct device *dev, uint32_t pin);
+	/** @driver_ops_mandatory @copybrief tgpio_port_get_time */
 	int (*get_time)(const struct device *dev, uint64_t *current_time);
+	/** @driver_ops_mandatory @copybrief tgpio_port_get_cycles_per_second */
 	int (*cyc_per_sec)(const struct device *dev, uint32_t *cycles);
+	/** @driver_ops_mandatory @copybrief tgpio_pin_periodic_output */
 	int (*set_perout)(const struct device *dev, uint32_t pin, uint64_t start_time,
 			  uint64_t repeat_interval, bool periodic_enable);
+	/** @driver_ops_mandatory @copybrief tgpio_pin_config_ext_timestamp */
 	int (*config_ext_ts)(const struct device *dev, uint32_t pin, uint32_t event_polarity);
+	/** @driver_ops_mandatory @copybrief tgpio_pin_read_ts_ec */
 	int (*read_ts_ec)(const struct device *dev, uint32_t pin, uint64_t *timestamp,
 			  uint64_t *event_count);
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /**
  * @brief Get time from ART timer

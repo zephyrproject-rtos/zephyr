@@ -17,8 +17,8 @@ static K_MUTEX_DEFINE(fdb_lock);
 static size_t fdb_count;
 
 /* Memory pool for FDB entries */
-K_MEM_SLAB_DEFINE_STATIC(fdb_slab, sizeof(struct eth_bridge_fdb_entry),
-	CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES, 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(fdb_slab, struct eth_bridge_fdb_entry,
+			      CONFIG_NET_ETHERNET_BRIDGE_FDB_MAX_ENTRIES);
 
 int eth_bridge_fdb_add(struct net_eth_addr *mac, struct net_if *iface)
 {

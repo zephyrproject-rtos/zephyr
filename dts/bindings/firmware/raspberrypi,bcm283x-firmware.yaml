@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Firmware Interface
+
+compatible: "raspberrypi,bcm283x-firmware"
+
+include: [base.yaml]
+
+properties:
+  mboxes:
+    required: true
+    description: Phandle to the Broadcom BCM2711 Mailbox controller.
+
+  mbox-names:
+    required: true
+    description: Mailbox channel specifier names.
+
+  shared-memory:
+    required: true
+    type: phandle

@@ -119,6 +119,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		watchdog0 = &wdt;
+		pwm-0 = &pwm0;
 	};
 };
 

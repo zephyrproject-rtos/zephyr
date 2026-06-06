@@ -179,7 +179,7 @@ static inline void arm_m_exc_tail(void)
 	 * normally called from context switch at the end, but will
 	 * toss an exception, which we can't allow (without hardship)
 	 * on the path from here to interrupt exit.  It will mess up
-	 * our bookeeping around EXC_RETURN, so do it early.
+	 * our bookkeeping around EXC_RETURN, so do it early.
 	 */
 	void z_check_stack_sentinel(void);
 	void *isr_lr = (void *)*arm_m_exc_lr_ptr;

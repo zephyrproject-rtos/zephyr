@@ -38,6 +38,87 @@ static const char conflict_response[] = "HTTP/1.1 409 Conflict\r\n\r\n";
 static const char final_chunk[] = "0\r\n\r\n";
 static const char *crlf = &final_chunk[3];
 
+#define ALT_SVC_HEADER_TEMPLATE "Alt-Svc: h3=\":%u\"; ma=%d\r\n"
+#define ALT_SVC_HEADER_FINAL_TEMPLATE ALT_SVC_HEADER_TEMPLATE "\r\n"
+#define ALT_SVC_HEADER_BUFFER_SIZE \
+	sizeof("Alt-Svc: h3=\":65535\"; ma=-2147483648\r\n\r\n")
+
+#if defined(CONFIG_HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS)
+#define HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS CONFIG_HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS
+#else
+#define HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS 0
+#endif
+
+static bool http1_should_send_alt_svc(const struct http_client_ctx *client)
+{
+	enum http_h3_alt_svc_policy policy;
+	const struct http_service_desc *svc = client->service;
+
+	if (!IS_ENABLED(CONFIG_HTTP_SERVER_VERSION_3)) {
+		return false;
+	}
+
+	if (svc == NULL || svc->port == NULL || svc->fd_h3 == NULL || *svc->fd_h3 < 0) {
+		return false;
+	}
+
+	policy = svc->config == NULL ? HTTP_H3_ALT_SVC_DEFAULT :
+				       svc->config->h3_alt_svc_policy;
+
+	switch (policy) {
+	case HTTP_H3_ALT_SVC_ENABLE:
+		return true;
+	case HTTP_H3_ALT_SVC_DISABLE:
+		return false;
+	case HTTP_H3_ALT_SVC_DEFAULT:
+	default:
+		return IS_ENABLED(CONFIG_HTTP_SERVER_TO_H3_UPGRADE);
+	}
+}
+
+static int http1_send_alt_svc_header(struct http_client_ctx *client, bool end_headers)
+{
+	char alt_svc[ALT_SVC_HEADER_BUFFER_SIZE];
+	int len;
+
+	if (!http1_should_send_alt_svc(client)) {
+		return 0;
+	}
+
+	len = snprintk(alt_svc, sizeof(alt_svc),
+		       end_headers ? ALT_SVC_HEADER_FINAL_TEMPLATE :
+				     ALT_SVC_HEADER_TEMPLATE,
+		       *client->service->port,
+		       HTTP_SERVER_TO_H3_UPGRADE_MAX_AGE_SECS);
+	if (len < 0 || len >= sizeof(alt_svc)) {
+		LOG_ERR("Failed to format Alt-Svc header");
+		return -ENOMEM;
+	}
+
+	return http_server_sendall(client, alt_svc, len);
+}
+
+static int http1_send_response_with_alt_svc(struct http_client_ctx *client,
+					    const char *response, size_t len)
+{
+	int ret;
+
+	if (!http1_should_send_alt_svc(client)) {
+		return http_server_sendall(client, response, len);
+	}
+
+	if (len < 2U) {
+		return -EINVAL;
+	}
+
+	ret = http_server_sendall(client, response, len - 2U);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return http1_send_alt_svc_header(client, true);
+}
+
 static bool is_client_http10(const struct http_client_ctx *client)
 {
 	return ((client->parser.http_major == 1) && (client->parser.http_minor == 0));
@@ -165,7 +246,7 @@ static int handle_http1_static_resource(
 			 len);
 	}
 
-	ret = http_server_sendall(client, http_response, strlen(http_response));
+	ret = http1_send_response_with_alt_svc(client, http_response, strlen(http_response));
 	if (ret < 0) {
 		return ret;
 	}
@@ -282,6 +363,11 @@ static int http1_send_headers(struct http_client_ctx *client, enum http_status s
 				  strnlen(http_response, sizeof(http_response) - 1));
 	if (ret < 0) {
 		LOG_DBG("Failed to send HTTP headers part 1");
+		return ret;
+	}
+
+	ret = http1_send_alt_svc_header(client, false);
+	if (ret < 0) {
 		return ret;
 	}
 
@@ -636,7 +722,8 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 		len = snprintk(http_response, sizeof(http_response), RESPONSE_TEMPLATE_STATIC_FS,
 			       file_size, content_type, "", "");
 	}
-	ret = http_server_sendall(client, http_response, len);
+
+	ret = http1_send_response_with_alt_svc(client, http_response, len);
 	if (ret < 0) {
 		goto close;
 	}
@@ -809,6 +896,9 @@ static int on_header_field(struct http_parser *parser, const char *at,
 				ctx->has_upgrade_header = true;
 			} else if (strcasecmp(ctx->header_buffer, "Sec-WebSocket-Key") == 0) {
 				ctx->websocket_sec_key_next = true;
+			} else if (strcasecmp(ctx->header_buffer,
+					     "Sec-WebSocket-Protocol") == 0) {
+				ctx->websocket_sec_protocol_next = true;
 			}
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
 			else if (strcasecmp(ctx->header_buffer, "Accept-Encoding") == 0) {
@@ -905,6 +995,40 @@ static int on_header_value(struct http_parser *parser,
 #endif
 				ctx->websocket_sec_key_next = false;
 			}
+
+			if (ctx->websocket_sec_protocol_next) {
+#if defined(CONFIG_WEBSOCKET)
+				/* Select the first subprotocol in the
+				 * client's comma-separated list. Per RFC
+				 * 6455 the server picks one of the listed
+				 * subprotocols and echoes it back; if the
+				 * client list overflows our buffer, drop
+				 * the header rather than truncate to a
+				 * partial token.
+				 */
+				const char *comma = memchr(ctx->header_buffer,
+							   ',', offset);
+				size_t token_len = comma ?
+					(size_t)(comma - (char *)ctx->header_buffer) :
+					offset;
+
+				while (token_len > 0 &&
+				       (ctx->header_buffer[token_len - 1] == ' ' ||
+					ctx->header_buffer[token_len - 1] == '\t')) {
+					token_len--;
+				}
+
+				if (token_len >= sizeof(ctx->ws_sec_protocol)) {
+					LOG_WRN("Sec-WebSocket-Protocol token too long, ignoring");
+					ctx->ws_sec_protocol[0] = '\0';
+				} else {
+					memcpy(ctx->ws_sec_protocol,
+					       ctx->header_buffer, token_len);
+					ctx->ws_sec_protocol[token_len] = '\0';
+				}
+#endif
+				ctx->websocket_sec_protocol_next = false;
+			}
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
 			if (ctx->accept_encoding_next) {
 				http_compression_parse_accept_encoding(ctx->header_buffer, offset,
@@ -926,6 +1050,7 @@ static int on_headers_complete(struct http_parser *parser)
 						   struct http_client_ctx,
 						   parser);
 
+	http_server_remove_dot_segments(ctx->url_buffer);
 	ctx->parser_state = HTTP1_RECEIVED_HEADER_STATE;
 
 	return 0;

@@ -805,6 +805,9 @@ enum wifi_disconn_reason {
 	WIFI_REASON_DISCONN_INACTIVITY,
 };
 
+/** Helper function to get user-friendly disconnect reason name. */
+const char *wifi_disconn_reason_txt(enum wifi_disconn_reason reason);
+
 /** @brief Wi-Fi AP mode result codes. To be overlaid on top of \ref wifi_status
  * in the AP mode enable or disable result event for detailed status.
  */
@@ -2011,7 +2014,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
 	 * @param iface Network interface to use for the WPS operation
-	 * @param params wps operarion parameters
+	 * @param params wps operation parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
@@ -2171,7 +2174,7 @@ void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface, int status)
  *
  * @param iface Network interface
  * @param inbuf Input buffer of neighbor reports
- * @param buf_len Lenghth of input buffer
+ * @param buf_len Length of input buffer
  */
 void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface,
 					     char *inbuf, size_t buf_len);

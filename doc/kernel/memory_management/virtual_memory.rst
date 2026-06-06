@@ -121,7 +121,7 @@ below.
 
   * If it is enabled, which means all physical memory are mapped in virtual
     memory address space, and it is the same as
-    (:kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` + :kconfig:option:`CONFIG_SRAM_SIZE`).
+    (:c:macro:`DT_CHOSEN_SRAM_ADDR` + :c:macro:`DT_CHOSEN_SRAM_SIZE`).
 
   * If it is disabled, ``K_MEM_VM_FREE_START`` is the same ``K_MEM_KERNEL_VIRT_END`` which
     is the end of the kernel image.

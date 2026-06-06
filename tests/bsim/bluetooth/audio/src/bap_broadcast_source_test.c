@@ -36,9 +36,9 @@
 #include "common.h"
 
 #define SUPPORTED_CHAN_COUNTS          BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2)
-#define SUPPORTED_MIN_OCTETS_PER_FRAME 30
-#define SUPPORTED_MAX_OCTETS_PER_FRAME 155
-#define SUPPORTED_MAX_FRAMES_PER_SDU   1
+#define SUPPORTED_MIN_OCTETS_PER_FRAME 30U
+#define SUPPORTED_MAX_OCTETS_PER_FRAME 155U
+#define SUPPORTED_MAX_FRAMES_PER_SDU   1U
 
 #if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 CREATE_FLAG(flag_source_started);
@@ -130,7 +130,7 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 		return;
 	}
 
-	if (chan_cnt == 0 || (BIT(chan_cnt - 1) & SUPPORTED_CHAN_COUNTS) == 0) {
+	if (chan_cnt == 0U || (BIT(chan_cnt - 1U) & SUPPORTED_CHAN_COUNTS) == 0U) {
 		FAIL("Unsupported channel count: %u\n", chan_cnt);
 
 		return;
@@ -286,7 +286,7 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source, bool 
 	(void)memset(broadcast_source_streams, 0,
 		     sizeof(broadcast_source_streams));
 
-	for (size_t i = 0; i < stream_cnt; i++) {
+	for (size_t i = 0U; i < stream_cnt; i++) {
 		stream_params[i].stream =
 			bap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		bt_bap_stream_cb_register(stream_params[i].stream,
@@ -401,7 +401,7 @@ static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *sourc
 	struct bt_data per_ad;
 	int err;
 
-	for (size_t i = 0; i < stream_cnt; i++) {
+	for (size_t i = 0U; i < stream_cnt; i++) {
 		stream_params[i].stream =
 			bap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		stream_params[i].data_len = ARRAY_SIZE(bis_codec_data);
@@ -733,11 +733,12 @@ static void test_main_encrypted(void)
 
 static void test_args(int argc, char *argv[])
 {
-	for (size_t argn = 0; argn < argc; argn++) {
+	for (size_t argn = 0U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "subgroup_cnt") == 0) {
-			arg = argv[++argn];
+			argn++;
+			arg = argv[argn];
 			subgroup_cnt_arg = strtoul(arg, NULL, 10);
 
 			if (!IN_RANGE(subgroup_cnt_arg, 1,
@@ -745,7 +746,8 @@ static void test_args(int argc, char *argv[])
 				FAIL("Invalid number of subgroups: %lu\n", subgroup_cnt_arg);
 			}
 		} else if (strcmp(arg, "streams_per_subgroup_cnt") == 0) {
-			arg = argv[++argn];
+			argn++;
+			arg = argv[argn];
 			streams_per_subgroup_cnt_arg = strtoul(arg, NULL, 10);
 
 			if (!IN_RANGE(streams_per_subgroup_cnt_arg, 1,

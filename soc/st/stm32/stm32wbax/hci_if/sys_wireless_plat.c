@@ -32,15 +32,25 @@ struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken *pclken;
 };
 
+const struct device *get_rng_device(void)
+{
+	if (rng_dev == NULL) {
+		rng_dev = entropy_get_default_device();
+
+		if (!device_is_ready(rng_dev)) {
+			LOG_ERR("error: random device not ready");
+			rng_dev = NULL;
+		}
+	}
+	return rng_dev;
+}
+
 #if defined(CONFIG_BT_STM32WBA)
 void BLEPLAT_Init(void)
 {
 	BPKA_Reset();
 
-	rng_dev = entropy_get_default_device();
-	if (!device_is_ready(rng_dev)) {
-		LOG_ERR("error: random device not ready");
-	}
+	get_rng_device();
 }
 
 int BLEPLAT_AesCcmCrypt(uint8_t mode,
@@ -116,27 +126,31 @@ void Error_Handler(void)
 
 void enable_rng_clock(bool enable)
 {
-	const struct entropy_stm32_rng_dev_cfg *dev_cfg = rng_dev->config;
-	struct entropy_stm32_rng_dev_data *dev_data = rng_dev->data;
-	struct stm32_pclken *rng_pclken;
-	const struct device *rcc;
-	unsigned int key;
+	get_rng_device();
 
-	rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	rng_pclken = (clock_control_subsys_t)&dev_cfg->pclken[0];
+	if (rng_dev != NULL) {
+		const struct entropy_stm32_rng_dev_cfg *dev_cfg = rng_dev->config;
+		struct entropy_stm32_rng_dev_data *dev_data = rng_dev->data;
+		struct stm32_pclken *rng_pclken;
+		const struct device *rcc;
+		unsigned int key;
 
-	key = irq_lock();
+		rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+		rng_pclken = (clock_control_subsys_t)&dev_cfg->pclken[0];
 
-	/* Enable/Disable RNG clock only if not in use */
-	if (!LL_RNG_IsEnabled((RNG_TypeDef *)dev_data->rng)) {
-		if (enable) {
-			clock_control_on(rcc, rng_pclken);
-		} else {
-			clock_control_off(rcc, rng_pclken);
+		key = irq_lock();
+
+		/* Enable/Disable RNG clock only if not in use */
+		if (!LL_RNG_IsEnabled((RNG_TypeDef *)dev_data->rng)) {
+			if (enable) {
+				clock_control_on(rcc, rng_pclken);
+			} else {
+				clock_control_off(rcc, rng_pclken);
+			}
 		}
-	}
 
-	irq_unlock(key);
+		irq_unlock(key);
+	}
 }
 
 /* PKA IP requires RNG clock to be enabled

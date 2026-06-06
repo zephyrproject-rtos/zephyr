@@ -134,7 +134,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 		param->pa_sync ? BT_BAP_PA_STATE_SYNCED : BT_BAP_PA_STATE_NOT_SYNCED;
 	state.num_subgroups = inst->num_subgroups = param->num_subgroups;
 
-	for (size_t i = 0; i < param->num_subgroups; i++) {
+	for (size_t i = 0U; i < param->num_subgroups; i++) {
 		state.subgroups[i].bis_sync = inst->subgroups[i].bis_sync =
 			param->subgroups[i].bis_sync;
 	}
@@ -174,7 +174,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 
 	state.num_subgroups = param->num_subgroups;
 	inst->num_subgroups = param->num_subgroups;
-	for (size_t i = 0; i < param->num_subgroups; i++) {
+	for (size_t i = 0U; i < param->num_subgroups; i++) {
 		state.subgroups[i].bis_sync = param->subgroups[i].bis_sync;
 		inst->subgroups[i].bis_sync = param->subgroups[i].bis_sync;
 	}

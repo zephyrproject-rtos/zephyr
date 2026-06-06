@@ -24,3 +24,8 @@ properties:
   reset-gpios:
     type: phandle-array
     description: RESETn pin
+
+  spi-frequency:
+    type: int
+    description: |
+      Desired SPI clock frequency, in Hz.

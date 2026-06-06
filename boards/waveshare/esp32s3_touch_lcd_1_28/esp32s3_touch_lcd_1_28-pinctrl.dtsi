@@ -4,8 +4,6 @@
  */
 
 #include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
-#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
-#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
 
 &pinctrl {
 	i2c1_default: i2c1_default {

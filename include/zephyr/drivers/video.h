@@ -881,7 +881,7 @@ int video_query_ctrl(struct video_ctrl_query *cq);
  *
  * Print all the information of a control including its name, type, flag, range,
  * menu (if any) and current value, i.e. by invoking the video_get_ctrl(), in a
- * human readble format.
+ * human readable format.
  *
  * @param cq Pointer to the control query struct.
  */
@@ -2026,7 +2026,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	X(VIDEO_PIX_FMT_NV42, __VA_ARGS__)
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2050,7 +2050,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV12 VIDEO_FOURCC('N', 'V', '1', '2')
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2074,7 +2074,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV21 VIDEO_FOURCC('N', 'V', '2', '1')
 
 /**
- * Chroma (U/V) are subsampled horizontaly
+ * Chroma (U/V) are subsampled horizontally
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2100,7 +2100,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_NV16 VIDEO_FOURCC('N', 'V', '1', '6')
 
 /**
- * Chroma (U/V) are subsampled horizontaly
+ * Chroma (U/V) are subsampled horizontally
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | ...
@@ -2189,7 +2189,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 	X(VIDEO_PIX_FMT_YVU420, __VA_ARGS__)
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
@@ -2218,7 +2218,7 @@ int video_transfer_buffer(const struct device *src, const struct device *sink,
 #define VIDEO_PIX_FMT_YUV420 VIDEO_FOURCC('Y', 'U', '1', '2')
 
 /**
- * Chroma (U/V) are subsampled horizontaly and vertically
+ * Chroma (U/V) are subsampled horizontally and vertically
  *
  * @code{.unparsed}
  * | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy | Yyyyyyyy |
@@ -2518,6 +2518,57 @@ static inline unsigned int video_bits_per_pixel(uint32_t pixfmt)
 #define VIDEO_MIPI_CSI2_DT_RAW12                0x2c
 /** Raw sensor data with 14 bits per pixel */
 #define VIDEO_MIPI_CSI2_DT_RAW14                0x2d
+
+/**
+ * @brief Map pixel formats to their MIPI data type equivalent
+ *
+ * Only the formats that were an exact match are mapped to equivalent MIPI data types.
+ * A driver might want to handle the non-standard types before calling this function.
+ *
+ * Mind that while most receivers store @ref VIDEO_MIPI_CSI2_DT_YUV422_8 as YUYV, it is effectively
+ * the UYVY format being sent over MIPI lanes.
+ *
+ * @param pixfmt Pixel format to convert
+ * @retval the matching MIPI data type if found
+ * @retval VIDEO_MIPI_CSI2_DT_NULL when the format has no known MIPI data type equivalent
+ */
+static inline uint8_t video_mipi_data_type(uint32_t pixfmt)
+{
+	switch (pixfmt) {
+	case VIDEO_PIX_FMT_GREY:
+	case VIDEO_PIX_FMT_SBGGR8:
+	case VIDEO_PIX_FMT_SGBRG8:
+	case VIDEO_PIX_FMT_SGRBG8:
+	case VIDEO_PIX_FMT_SRGGB8:
+		return VIDEO_MIPI_CSI2_DT_RAW8;
+	case VIDEO_PIX_FMT_Y10P:
+	case VIDEO_PIX_FMT_SBGGR10P:
+	case VIDEO_PIX_FMT_SGBRG10P:
+	case VIDEO_PIX_FMT_SGRBG10P:
+	case VIDEO_PIX_FMT_SRGGB10P:
+		return VIDEO_MIPI_CSI2_DT_RAW10;
+	case VIDEO_PIX_FMT_Y12P:
+	case VIDEO_PIX_FMT_SBGGR12P:
+	case VIDEO_PIX_FMT_SGBRG12P:
+	case VIDEO_PIX_FMT_SGRBG12P:
+	case VIDEO_PIX_FMT_SRGGB12P:
+		return VIDEO_MIPI_CSI2_DT_RAW12;
+	case VIDEO_PIX_FMT_Y14P:
+	case VIDEO_PIX_FMT_SBGGR14P:
+	case VIDEO_PIX_FMT_SGBRG14P:
+	case VIDEO_PIX_FMT_SGRBG14P:
+	case VIDEO_PIX_FMT_SRGGB14P:
+		return VIDEO_MIPI_CSI2_DT_RAW14;
+	case VIDEO_PIX_FMT_UYVY:
+		return VIDEO_MIPI_CSI2_DT_YUV422_8;
+	case VIDEO_PIX_FMT_RGB565:
+		return VIDEO_MIPI_CSI2_DT_RGB565;
+	case VIDEO_PIX_FMT_RGB24:
+		return VIDEO_MIPI_CSI2_DT_RGB888;
+	default:
+		return VIDEO_MIPI_CSI2_DT_NULL;
+	}
+}
 
 /**
  * @brief User-defined data type generator macro

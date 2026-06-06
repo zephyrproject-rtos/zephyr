@@ -15,9 +15,6 @@
 	model = "Digilent Zybo board";
 	compatible = "digilent,zynq-zybo", "xlnx,zynq-7000";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart1;

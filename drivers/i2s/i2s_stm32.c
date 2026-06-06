@@ -155,6 +155,7 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	struct i2s_stm32_data *const dev_data = dev->data;
 	/* For words greater than 16-bit the channel length is considered 32-bit */
 	const uint32_t channel_length = i2s_cfg->word_size > 16U ? 32U : 16U;
+	const uint32_t word_size_bytes = channel_length / 8;
 	/*
 	 * comply with the i2s_config driver remark:
 	 * When I2S data format is selected parameter channels is ignored,
@@ -229,6 +230,11 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	} else {
 		LL_I2S_DisableMasterClock(cfg->i2s);
 	}
+
+	stream->dma_cfg.source_data_size = word_size_bytes;
+	stream->dma_cfg.dest_data_size = word_size_bytes;
+	stream->dma_cfg.source_burst_length = word_size_bytes;
+	stream->dma_cfg.dest_burst_length = word_size_bytes;
 
 	/*
 	 * set I2S Data Format

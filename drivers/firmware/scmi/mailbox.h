@@ -13,7 +13,7 @@
 #include <zephyr/drivers/mbox.h>
 #include <zephyr/kernel.h>
 
-#define DT_DRV_COMPAT arm_scmi
+#define DT_DRV_COMPAT DT_SCMI_TRANSPORT_COMPATIBLE
 
 /* get a `struct device` for a protocol's shared memory area */
 #define _SCMI_MBOX_SHMEM_BY_IDX(node_id, idx)					\

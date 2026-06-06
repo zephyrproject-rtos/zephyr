@@ -24,14 +24,13 @@ target_sources(app PRIVATE
 
   # UUT files
   uut/bap_unicast_client.c
-  uut/bap_unicast_server.c
+  uut/ascs.c
 
   # Stack source file
   ${ZEPHYR_BASE}/subsys/bluetooth/audio/ascs.c
   ${ZEPHYR_BASE}/subsys/bluetooth/audio/audio.c
   ${ZEPHYR_BASE}/subsys/bluetooth/audio/bap_iso.c
   ${ZEPHYR_BASE}/subsys/bluetooth/audio/bap_stream.c
-  ${ZEPHYR_BASE}/subsys/bluetooth/audio/bap_unicast_server.c
   ${ZEPHYR_BASE}/subsys/bluetooth/common/bt_str.c
   ${ZEPHYR_BASE}/subsys/bluetooth/host/uuid.c
   ${ZEPHYR_BASE}/lib/uuid/uuid.c

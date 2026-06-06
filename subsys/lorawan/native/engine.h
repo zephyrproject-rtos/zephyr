@@ -37,26 +37,54 @@ struct lwan_send_req {
 	enum lorawan_message_type type;
 };
 
+struct lwan_set_datarate_req {
+	enum lorawan_datarate dr;
+};
+
+struct lwan_enable_adr_req {
+	bool enable;
+};
+
+struct lwan_set_conf_msg_tries_req {
+	uint8_t tries;
+};
+
+struct lwan_set_channels_mask_req {
+	const uint16_t *channels_mask;
+	size_t channels_mask_size;
+};
+
 enum lwan_req_type {
 	LWAN_REQ_JOIN,
 	LWAN_REQ_SEND,
+	LWAN_REQ_SET_DATARATE,
+	LWAN_REQ_ENABLE_ADR,
+	LWAN_REQ_SET_CONF_MSG_TRIES,
+	LWAN_REQ_SET_CHANNELS_MASK,
 };
 
 struct lwan_req {
-	/* Request type (join or send) */
+	/* Request type */
 	enum lwan_req_type type;
-	/* Pointer to lwan_join_req or lwan_send_req */
+	/* Pointer to request payload for @p type */
 	void *data;
+	/* Caller-owned completion for synchronous requests */
+	struct k_sem *done;
+	/* Caller-owned result storage */
+	int *result;
 };
 
-void engine_init(struct lwan_ctx *ctx);
-int engine_post_req(const struct lwan_req *req);
-int engine_wait_join_result(void);
-int engine_wait_send_result(void);
+#define LWAN_REQ(_type, _data) \
+	((struct lwan_req){ \
+		.type = (_type), \
+		.data = (_data), \
+	})
 
-/* Called by mac_do_join / mac_do_send to unblock the waiting caller */
-void engine_signal_join_result(int result);
-void engine_signal_send_result(int result);
+void engine_init(struct lwan_ctx *ctx);
+int engine_post_req_wait(struct lwan_req *req);
+
+/* Called by MAC handlers to unblock the waiting caller. */
+void engine_signal_result(const struct lwan_req *req, int result);
 
 #ifdef __cplusplus
 }

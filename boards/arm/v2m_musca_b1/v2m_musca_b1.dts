@@ -10,8 +10,6 @@
 
 / {
 	compatible = "arm,v2m-musca";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	aliases {
 		led0 = &green_led;
@@ -90,7 +88,7 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
 
-			#include "v2m_musca_b1-common.dtsi"
+#include "v2m_musca_b1-common.dtsi"
 		};
 	};
 };

@@ -12,7 +12,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/reboot.h>
 #include <zephyr/drivers/hwinfo.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -35,14 +35,6 @@
 
 /* Bits per software reset register bank (CFG0/CFG1/CFG2) */
 #define SWRST_BITS_PER_REG 32U
-
-/* eFuse register offsets for RC32M trim */
-#define EFUSE_RC32M_TRIM_EN_OFFSET   0x78U
-#define EFUSE_RC32M_TRIM_CODE_OFFSET 0x7CU
-#define EFUSE_RC32M_TRIM_EN_BIT      1U
-#define EFUSE_RC32M_TRIM_PARITY_BIT  0U
-#define EFUSE_RC32M_TRIM_CODE_POS    4U
-#define EFUSE_RC32M_TRIM_CODE_MSK    0xFFU
 
 /* eFuse register offset for device info */
 #define EFUSE_DEV_INFO_OFFSET 0x1CU
@@ -184,55 +176,9 @@ void btblecontroller_software_pds_reset(void)
 	glb_ahb_mcu_software_reset(GLB_AHB_MCU_SW_PDS);
 }
 
-/*
- * btblecontroller_pds_trim_rc32m — Trim RC32M oscillator via PDS registers
- *
- * Matches SDK's PDS_Trim_RC32M() sequence:
- * 1. Read trim code from efuse (en @ 0x78 bit1, value @ 0x7C bits[11:4])
- * 2. Validate parity
- * 3. Enable ext code in CTRL0, write code to CTRL2, select ext code
- */
 void btblecontroller_pds_trim_rc32m(void)
 {
-	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
-	uint32_t ef_en, ef_code;
-	uint8_t en, parity, code;
-	uint32_t tmp;
-
-	if (syscon_read_reg(efuse, EFUSE_RC32M_TRIM_EN_OFFSET, &ef_en) < 0 ||
-	    syscon_read_reg(efuse, EFUSE_RC32M_TRIM_CODE_OFFSET, &ef_code) < 0) {
-		return;
-	}
-
-	en = (ef_en >> EFUSE_RC32M_TRIM_EN_BIT) & 1U;
-	parity = (ef_en >> EFUSE_RC32M_TRIM_PARITY_BIT) & 1U;
-	code = (ef_code >> EFUSE_RC32M_TRIM_CODE_POS) & EFUSE_RC32M_TRIM_CODE_MSK;
-
-	if (en == 0U) {
-		return;
-	}
-
-	if ((__builtin_popcount(code) & 1U) != parity) {
-		return;
-	}
-
-	/* Enable ext code in CTRL0 */
-	tmp = sys_read32(PDS_BASE + PDS_RC32M_CTRL0_OFFSET);
-	tmp |= PDS_RC32M_EXT_CODE_EN_MSK;
-	sys_write32(tmp, PDS_BASE + PDS_RC32M_CTRL0_OFFSET);
-	k_busy_wait(2);
-
-	/* Write trim code to CTRL2 */
-	tmp = sys_read32(PDS_BASE + PDS_RC32M_CTRL2_OFFSET);
-	tmp &= PDS_RC32M_CODE_FR_EXT2_UMSK;
-	tmp |= ((uint32_t)code << PDS_RC32M_CODE_FR_EXT2_POS);
-	sys_write32(tmp, PDS_BASE + PDS_RC32M_CTRL2_OFFSET);
-
-	/* Select ext code */
-	tmp = sys_read32(PDS_BASE + PDS_RC32M_CTRL2_OFFSET);
-	tmp |= PDS_RC32M_EXT_CODE_SEL_MSK;
-	sys_write32(tmp, PDS_BASE + PDS_RC32M_CTRL2_OFFSET);
-	k_busy_wait(1);
+	/* Stub */
 }
 
 uint8_t btblecontrolller_get_chip_version(void)
@@ -240,7 +186,7 @@ uint8_t btblecontrolller_get_chip_version(void)
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 	uint32_t dev_info;
 
-	if (syscon_read_reg(efuse, EFUSE_DEV_INFO_OFFSET, &dev_info) < 0) {
+	if (otp_read(efuse, EFUSE_DEV_INFO_OFFSET, &dev_info, sizeof(uint32_t)) < 0) {
 		return 0;
 	}
 

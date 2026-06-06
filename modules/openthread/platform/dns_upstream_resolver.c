@@ -45,8 +45,8 @@ struct query_context {
 	int originated_query_id;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(query_slab, sizeof(struct query_context),
-			 CONFIG_DNS_NUM_CONCUR_QUERIES, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(query_slab, struct query_context,
+			      CONFIG_DNS_NUM_CONCUR_QUERIES);
 
 void otPlatDnsStartUpstreamQuery(otInstance *aInstance, otPlatDnsUpstreamQuery *aTxn,
 				 const otMessage *aQuery)

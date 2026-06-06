@@ -28,7 +28,7 @@ The following diagram describes system power management:
        compound=true
        node [height=1.2 style=rounded]
 
-       lock [label="Lock interruptions"]
+       lock [label="Lock interrupts"]
        config_pm [label="CONFIG_PM" shape=diamond style="rounded,dashed"]
        forced_state [label="state forced ?", shape=diamond style="rounded,dashed"]
        config_system_managed_device_pm [label="CONFIG_PM_DEVICE" shape=diamond style="rounded,dashed"]
@@ -36,37 +36,111 @@ The following diagram describes system power management:
        pm_policy [label="Check policy manager\nfor a power state "]
        pm_suspend_devices [label="Suspend\ndevices"]
        pm_resume_devices [label="Resume\ndevices"]
-       pm_state_set [label="Change power state\n(SoC API)" style="rounded,bold"]
-       pm_system_resume [label="Finish wake-up\n(SoC API)\n(restore interruptions)" style="rounded,bold"]
+       pm_state_set [label="Enter power state\n(SoC API)" style="rounded,bold"]
+       pm_system_resume [label="Resume bookkeeping\n(post ops, notify, clock)" style="rounded,bold"]
+       unlock_irq [label="Unlock interrupts"]
+       handle_interrupts [label="Handle interrupts\nand schedule threads"]
        k_cpu_idle [label="k_cpu_idle()"]
 
-       subgraph cluster_0 {
-              style=invisible;
-              lock -> config_pm
+       subgraph cluster_idle {
+           style=dashed
+           label = "idle()"
+
+           lock -> config_pm
+           config_pm -> k_cpu_idle [label="no"]
+           k_cpu_idle -> unlock_irq
        }
 
-       subgraph cluster_1 {
-                style=dashed
-                label = "pm_system_suspend()"
+       subgraph cluster_pm_system_suspend {
+           style=dashed
+           label = "pm_system_suspend()"
 
-                forced_state -> config_system_managed_device_pm [label="yes"]
-                forced_state -> pm_policy [label="no"]
-                pm_policy -> config_system_managed_device_pm
-                config_system_managed_device_pm -> pm_state_set:e [label="no"]
-                config_system_managed_device_pm -> pm_suspend_devices [label="yes"]
-                pm_suspend_devices -> pm_state_set
-                pm_state_set -> config_system_managed_device_pm2
-                config_system_managed_device_pm2 -> pm_resume_devices [label="yes"]
-                config_system_managed_device_pm2 -> pm_system_resume [label="no"]
-                pm_resume_devices -> pm_system_resume
-        }
+           forced_state -> config_system_managed_device_pm [label="yes"]
+           forced_state -> pm_policy [label="no"]
+           pm_policy -> config_system_managed_device_pm
+           config_system_managed_device_pm -> pm_state_set [label="no"]
+           config_system_managed_device_pm -> pm_suspend_devices [label="yes"]
+           pm_suspend_devices -> pm_state_set
+           pm_state_set -> config_system_managed_device_pm2
+           config_system_managed_device_pm2 -> pm_resume_devices [label="yes"]
+           config_system_managed_device_pm2 -> pm_system_resume [label="no"]
+           pm_resume_devices -> pm_system_resume
+       }
 
-        {rankdir=LR k_cpu_idle; forced_state}
-        pm_policy -> k_cpu_idle [label="PM_STATE_ACTIVE\n(no power state meet requirements)"]
-        config_pm -> k_cpu_idle [label="no"]
-        config_pm -> forced_state [label="yes" lhead="cluster_1"]
-        pm_system_resume:e -> lock:e [constraint=false lhed="cluster_0"]
+       {rankdir=LR k_cpu_idle; forced_state}
+       config_pm -> forced_state [label="yes"]
+       pm_policy -> k_cpu_idle [label="PM_STATE_ACTIVE\n(no power state meets requirements)"]
+       pm_system_resume -> unlock_irq [constraint=false]
+       unlock_irq -> handle_interrupts
+       handle_interrupts -> lock:n [label="no runnable thread"]
    }
+
+The idle thread locks interrupts before calling :c:func:`pm_system_suspend`
+and keeps ownership of the original architecture interrupt key. If the PM
+subsystem enters a low-power state, PM resume bookkeeping runs with interrupts
+still locked after any system-managed devices have been resumed, including
+:c:func:`pm_state_exit_post_ops`, PM exit notifications, and system clock
+idle-exit accounting. After that bookkeeping is complete and
+:c:func:`pm_system_suspend` returns, the idle thread restores the original
+interrupt key.
+
+Architectures and SoCs that opt in to the ``CONFIG_PM_STATE_SET_IRQ_LOCKED``
+contract use the architecture hooks immediately around the low-power instruction
+so that it can still observe a wake event without dispatching the wake-source ISR
+first. In that mode, :c:func:`pm_state_set` and
+:c:func:`pm_state_exit_post_ops` must be used for SoC-specific hardware work
+only, not as final interrupt unmask points.
+
+When this contract is enabled, the interrupt ownership sequence is:
+
+.. mermaid::
+   :caption: System PM interrupt restore ownership
+   :alt: Sequence diagram showing idle locking interrupts, PM entering the SoC
+       power state, architecture PM state hooks allowing wake without ISR
+       dispatch, PM resume bookkeeping, and idle unlocking interrupts.
+
+   sequenceDiagram
+        participant Workers as Other threads
+        participant Idle as idle()<br/>(idle thread context)
+        participant PM as pm_system_suspend()
+        participant SoC as pm_state_set()<br/>(SoC hook)
+        participant HW as Hardware
+
+        loop Idle cycle
+            Note over Workers: Thread enters SLEEP/PENDING state<br/>e.g. k_sleep() / k_sem_take()
+            alt Runnable thread(s) remaining
+                Workers-->>Workers: Schedule another thread
+            else No runnable thread remaining
+                Workers-->>Idle: Switch to idle thread
+            end
+            Idle->>Idle: Lock interrupts
+            Note left of Idle: Interrupts are locked<br/>during PM sequence
+            Idle->>PM: Suspend idle CPU
+            PM->>PM: Suspend devices<br/>(if applicable)
+            PM->>PM: Set idle timeout
+            PM->>PM: Notify PM state entry
+            PM->>SoC: Enter power state
+            SoC->>SoC: SoC-specific pre-entry operations
+            SoC->>SoC: Run arch PM prepare hook
+            SoC->>HW: Trigger low-power state entry
+            HW-->>SoC: Wake-up event occurs
+            SoC->>SoC: Run arch PM finish hook
+            SoC->>SoC: SoC-specific post-wakeup operations
+            SoC-->>PM: Power state exit complete
+            PM->>PM: Resume devices<br/>(if applicable)
+            PM->>PM: Run post ops, notify exit, clock idle exit
+            PM-->>Idle: Resume complete
+            Idle->>Idle: Unlock interrupts
+            HW-->>Idle: Pending interrupts are handled
+            Idle-->>Workers: Idle thread yields<br/>or is preempted
+            Note over Workers: Non-idle thread starts executing
+        end
+
+SoC implementations that use this contract must not unmask interrupts from
+:c:func:`pm_state_set` or :c:func:`pm_state_exit_post_ops`. Legacy
+implementations that still call ``irq_unlock(0)``, ``arch_irq_unlock(0)``,
+``__enable_irq()``, or equivalent operations from those hooks must be migrated
+before they can opt in to the kernel-owned ordering guarantee.
 
 
 Power States

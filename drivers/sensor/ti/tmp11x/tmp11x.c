@@ -217,9 +217,6 @@ static int tmp11x_sample_fetch(const struct device *dev, enum sensor_channel cha
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
-	/* clear sensor values */
-	drv_data->sample = 0U;
-
 	/* Make sure that a data is available */
 	rc = tmp11x_reg_read(dev, TMP11X_REG_CFGR, &cfg_reg);
 	if (rc < 0) {

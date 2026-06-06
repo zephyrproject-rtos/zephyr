@@ -17,10 +17,13 @@
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 
 static bool tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  const char *caller_id)
 {
+	ARG_UNUSED(conn);
+
 	printk("CCP: Placing call to remote with id %u to %s\n",
 	       call_index, caller_id);
 	return true;
@@ -28,6 +31,8 @@ static bool tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index,
 
 static void tbs_terminate_call_cb(struct bt_conn *conn, uint8_t call_index, uint8_t reason)
 {
+	ARG_UNUSED(conn);
+
 	printk("CCP: Call terminated for id %u with reason %u\n",
 	       call_index, reason);
 }
@@ -53,7 +58,7 @@ int ccp_call_control_server_init(void)
 		.gtbs = true,
 		.authorization_required = false,
 		.technology = BT_BEARER_TECH_3G,
-		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
+		.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN,
 	};
 
 	err = bt_tbs_register_bearer(&gtbs_param);

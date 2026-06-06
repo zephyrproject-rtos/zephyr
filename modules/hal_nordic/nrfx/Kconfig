@@ -7,6 +7,9 @@ config HAS_NRFX
 menu "nrfx drivers"
 	depends on HAS_NRFX
 
+config NRF_DONT_USE_STABLE_BSP
+	bool
+
 rsource "Kconfig.logging"
 
 config NRFX_ADC
@@ -170,7 +173,7 @@ config NRFX_LPCOMP
 
 config NRFX_MRAMC
 	bool "MRAMC driver"
-	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_MRAMC))
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_MRAMC)) || $(dt_has_compat,$(DT_COMPAT_NORDIC_MRAM))
 
 config NRFX_NFCT
 	bool "NFCT driver"

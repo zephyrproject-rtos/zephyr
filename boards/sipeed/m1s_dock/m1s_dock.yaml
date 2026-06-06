@@ -26,3 +26,4 @@ supported:
   - counter
   - entropy
   - crypto
+  - sdhc

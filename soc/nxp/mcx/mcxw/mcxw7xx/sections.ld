@@ -34,3 +34,14 @@
     . = DT_REG_SIZE(DT_NODELABEL(SHARED_MEM_LABEL));
 } > SHARED_MEM_REGION
 #endif
+
+#ifdef CONFIG_SOC_MCXW70AC
+/* For MCXW70 the bootrom doesn't accept images that don't have the main stack in the main RAM bank.
+ * Since the image for the shell (openthread) app is larger the 64K (first bank) it pushes the stack
+ * in the second bank. We therefore force the stack at the beginning.
+ */
+.main_stack (NOLOAD) : ALIGN(4)
+{
+    *(".noinit.*zephyr/kernel/init.c*")
+} > RAM
+#endif

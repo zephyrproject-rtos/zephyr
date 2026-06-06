@@ -18,9 +18,10 @@
 	shell_fprintf(sh, SHELL_ERROR, fmt, ##__VA_ARGS__)
 
 /* Assumption: our devices have less than 64MB of memory */
-#define RESERVED_MEM_MAP (CONFIG_SRAM_BASE_ADDRESS + 0x4000000)
+#define RESERVED_MEM_MAP (DT_CHOSEN_SRAM_ADDR + 0x4000000)
+#define RAM_MEM DT_CHOSEN_SRAM_ADDR
+
 #define FLASH_MEM         CONFIG_FLASH_BASE_ADDRESS
-#define RAM_MEM           CONFIG_SRAM_BASE_ADDRESS
 
 /* MPU test command help texts */
 #define READ_CMD_HELP  "Read from a reserved address in the memory map"

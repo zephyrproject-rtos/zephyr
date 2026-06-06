@@ -10,8 +10,7 @@ SocketCAN on Native Simulator Snippet (socketcan-native-sim)
 Overview
 ********
 
-This snippet allows to configure Controller Area Network (CAN) samples with Linux SocketCAN support
-on :zephyr:board:`native_sim`.
+This snippet enables Linux SocketCAN support on :zephyr:board:`native_sim`.
 
 By default, the native simulator expects a SocketCAN network device called ``zcan0`` (specified in
 :zephyr_file:`boards/native/native_sim/native_sim.dts`). This name can be added as an alternative

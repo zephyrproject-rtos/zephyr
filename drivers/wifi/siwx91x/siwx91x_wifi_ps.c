@@ -12,7 +12,7 @@
 
 #include "sl_wifi_constants.h"
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 enum {
 	REQUEST_TWT = 0,
@@ -41,10 +41,11 @@ static int siwx91x_get_connected_ap_beacon_interval_ms(void)
 
 int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 {
+	const struct device *wifi_dev = net_if_get_device(sidev->iface);
+	const struct siwx91x_config *cfg = wifi_dev->config;
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_performance_profile_v2_t sl_ps_profile;
 	int beacon_interval;
-	int ret;
 
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
 		LOG_ERR("Wi-Fi not in station mode");
@@ -93,8 +94,7 @@ int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 	}
 
 out:
-	ret = sl_wifi_set_performance_profile_v2(&sl_ps_profile);
-	return ret ? -EIO : 0;
+	return siwx91x_nwp_apply_power_profile(cfg->nwp_dev, &sl_ps_profile);
 }
 
 int siwx91x_set_power_save(const struct device *dev,
@@ -237,6 +237,8 @@ static int siwx91x_set_twt_setup(struct wifi_twt_params *params)
 {
 	int twt_req_type = siwx91x_convert_z_sl_twt_req_type(params->setup_cmd);
 	sl_wifi_twt_request_t twt_req = {
+		/* Any Tx outside the TWT Service Period is restricted */
+		.restrict_tx_outside_tsp = 1,
 		.twt_retry_interval = 5,
 		.wake_duration_unit = 0,
 		.wake_int_mantissa = params->setup.twt_mantissa,

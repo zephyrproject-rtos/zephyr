@@ -6,7 +6,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
@@ -728,14 +728,14 @@ static int tcan4x5x_init(const struct device *dev)
 	k_sem_init(&tcan_data->int_sem, 1, 1);
 
 	if (!spi_is_ready_dt(&tcan_config->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(tcan_config->spi.bus);
 		return -ENODEV;
 	}
 
 #if TCAN4X5X_RST_GPIO_SUPPORT
 	if (tcan_config->rst_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&tcan_config->rst_gpio)) {
-			LOG_ERR("RST GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(tcan_config->rst_gpio.port);
 			return -ENODEV;
 		}
 
@@ -750,7 +750,7 @@ static int tcan4x5x_init(const struct device *dev)
 #if TCAN4X5X_NWKRQ_GPIO_SUPPORT
 	if (tcan_config->nwkrq_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&tcan_config->nwkrq_gpio)) {
-			LOG_ERR("nWKRQ GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(tcan_config->nwkrq_gpio.port);
 			return -ENODEV;
 		}
 
@@ -765,7 +765,7 @@ static int tcan4x5x_init(const struct device *dev)
 #if TCAN4X5X_WAKE_GPIO_SUPPORT
 	if (tcan_config->wake_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&tcan_config->wake_gpio)) {
-			LOG_ERR("WAKE GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(tcan_config->wake_gpio.port);
 			return -ENODEV;
 		}
 
@@ -778,7 +778,7 @@ static int tcan4x5x_init(const struct device *dev)
 #endif /* TCAN4X5X_WAKE_GPIO_SUPPORT */
 
 	if (!gpio_is_ready_dt(&tcan_config->int_gpio)) {
-		LOG_ERR("nINT GPIO not ready");
+		LOG_ERR_DEVICE_NOT_READY(tcan_config->int_gpio.port);
 		return -ENODEV;
 	}
 

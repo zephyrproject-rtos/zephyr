@@ -25,6 +25,7 @@
 		zephyr,flash-controller = &mx66uw1g45g;
 		zephyr,flash = &ext_flash;
 		zephyr,code-partition = &slot0_partition;
+		mcuboot,image-ram = &axisram1;
 	};
 
 	aliases {

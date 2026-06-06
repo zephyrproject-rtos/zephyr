@@ -18,9 +18,10 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/gmap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/gmap.h>
+#include <zephyr/bluetooth/audio/gmap_lc3_preset.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -31,9 +32,9 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include "audio.h"
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
-#include "audio.h"
 
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)

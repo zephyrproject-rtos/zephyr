@@ -192,7 +192,13 @@ static void tx_isr(void)
 
 static void int_driven_callback(const struct device *dev, void *user_data)
 {
-	while (uart_irq_is_pending(uart_dev)) {
+	while (true) {
+		uart_irq_update(uart_dev);
+
+		if (uart_irq_is_pending(uart_dev) <= 0) {
+			break;
+		}
+
 		if (uart_irq_rx_ready(uart_dev)) {
 			rx_isr();
 		}

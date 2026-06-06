@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * @file
+ * @brief Header-file for min-heap data structure
+ * @ingroup min_heap_apis
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_MIN_HEAP_H_
 #define ZEPHYR_INCLUDE_SYS_MIN_HEAP_H_
 
@@ -15,9 +21,13 @@ extern "C" {
 #endif
 
 /**
- * @brief min_heap
- * @defgroup min_heap_apis Min-Heap service
+ * @defgroup min_heap_apis Min-heap
  * @ingroup datastructure_apis
+ * @brief Min-heap implementation
+ *
+ * A min-heap is a binary tree-based data structure in which the smallest element is always at the
+ * root. It supports efficient insertion and removal of the minimum element in O(log n) time.
+ *
  * @{
  */
 

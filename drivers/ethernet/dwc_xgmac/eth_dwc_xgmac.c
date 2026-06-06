@@ -1394,7 +1394,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	(void)net_pkt_ref(pkt);
 	LOG_DBG("%s: %p packet referenced for tx", dev->name, pkt);
 	tdes3_fd_flg = XGMAC_TDES3_FD;
-	for (struct net_buf *frag = pkt->frags; frag; frag = frag->frags) {
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		ret = k_sem_take(&context.descmeta->free_tx_descs_sem, K_MSEC(1));
 		if (ret != 0) {
 			LOG_DBG("%s: enough free tx descriptors are not available", dev->name);

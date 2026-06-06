@@ -21,6 +21,18 @@ extern "C" {
  *
  * @brief Simple ring buffer implementation.
  *
+ * @note
+ * The ring buffer APIs do not provide internal locking. A single producer
+ * and a single consumer running in separate execution contexts (for
+ * example two threads, or one thread and one ISR) may use the same ring
+ * buffer concurrently without additional synchronization: the producer
+ * side only updates the put indices and the consumer side only updates
+ * the get indices. Use cases with multiple producers or multiple
+ * consumers must serialize those accesses externally. On SMP systems the
+ * producer and consumer must additionally ensure proper memory ordering
+ * (typically by using a kernel synchronization primitive such as
+ * @ref k_sem to signal data availability).
+ *
  * @{
  */
 

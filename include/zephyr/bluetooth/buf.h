@@ -244,35 +244,6 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
  */
 struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeout);
 
-/** Set the buffer type. The type is encoded as an H:4 byte prefix as part of
- *  the payload itself.
- *
- *  @param buf   Bluetooth buffer
- *  @param type  The BT_* type to set the buffer to
- */
-static inline void __deprecated bt_buf_set_type(struct net_buf *buf, enum bt_buf_type type)
-{
-	__ASSERT_NO_MSG(net_buf_headroom(buf) >= 1);
-	net_buf_push_u8(buf, bt_buf_type_to_h4(type));
-}
-
-
-/** Get the buffer type. This pulls the H:4 byte prefix from the payload, which means
- *  that the call can be done only once per buffer.
- *
- *  @param buf   Bluetooth buffer
- *
- *  @return The BT_* type to of the buffer
- */
-static inline enum bt_buf_type __deprecated bt_buf_get_type(struct net_buf *buf)
-{
-	/* We have to assume the direction since the H:4 type doesn't tell us
-	 * if the buffer is incoming or outgoing. The common use case of this API is for outgoing
-	 * buffers, so we assume that.
-	 */
-	return bt_buf_type_from_h4(net_buf_pull_u8(buf), BT_BUF_OUT);
-}
-
 /**
  * @}
  */
