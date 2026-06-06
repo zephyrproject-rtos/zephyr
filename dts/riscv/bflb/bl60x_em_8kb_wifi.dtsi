@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * BL60x 8 KB EM + WiFi DT snippet.
+ *
+ * The top 8 KB of RAM (0x4204a000) is reserved for BLE exchange memory
+ * (hardware-mapped via GLB_EM_SEL, set in soc_prep_hook when BT is
+ * enabled) and WIFI_RAM covers the 32 KB below it at the vendor ram_wifi
+ * origin 0x42042000, where the WiFi MAC HW DMA descriptor pools
+ * (SHAREDRAM/SHAREDRAMIPC, currently ~26 KB) live.
+ *
+ * all_ram and sram0 are scaled down so the linker enforces the WIFI_RAM
+ * boundary; Zephyr's automatic .bss/.data placement stays in sram0's
+ * lower portion as long as RAM usage is below 136 KB.
+ */
+
+&sram0 {
+	reg = <0xc000 DT_SIZE_K(136)>;
+	ranges = <0x0 0xc000 DT_SIZE_K(136)>;
+};
+
+&all_ram {
+	reg = <0x42014000 DT_SIZE_K(184)>;
+	ranges = <0x0 0x42014000 DT_SIZE_K(184)>;
+};
+
+/ {
+	soc {
+		wifi_ram: memory@42042000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x42042000 DT_SIZE_K(32)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x42042000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "WIFI_RAM";
+		};
+	};
+};
