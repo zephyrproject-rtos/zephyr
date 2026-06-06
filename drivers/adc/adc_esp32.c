@@ -14,6 +14,8 @@
 
 #include <zephyr/drivers/gpio.h>
 
+#include <zephyr/sys/util.h>
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
 
@@ -101,70 +103,73 @@ static void atten_to_gain(adc_atten_t atten, uint32_t *val_mv)
 
 #endif /* CONFIG_ADC_ESP32_DMA */
 
-static int adc_esp32_read(const struct device *dev, const struct adc_sequence *seq)
+static int adc_esp32_validate_sequence(const struct device *dev, const struct adc_sequence *seq)
 {
-	struct adc_esp32_data *data = dev->data;
-
-	uint8_t channel_id = find_lsb_set(seq->channels) - 1;
-
-	if (seq->buffer_size < 2) {
-		LOG_ERR("Sequence buffer space too low '%d'", seq->buffer_size);
-		return -ENOMEM;
-	}
-
-#ifndef CONFIG_ADC_ESP32_DMA
-	if (seq->channels > BIT(channel_id)) {
-		LOG_ERR("Multi-channel readings not supported");
-		return -ENOTSUP;
-	}
-
-	if (seq->options && seq->options->extra_samplings) {
-		LOG_ERR("Extra samplings not supported");
-		return -ENOTSUP;
-	}
-
-	if (seq->options && seq->options->interval_us) {
-		LOG_ERR("Interval between samplings not supported");
-		return -ENOTSUP;
-	}
-#endif /* CONFIG_ADC_ESP32_DMA */
+	const struct adc_esp32_conf *conf = dev->config;
 
 	if (!VALID_RESOLUTION(seq->resolution)) {
-		LOG_ERR("unsupported resolution (%d)", seq->resolution);
+		LOG_ERR("Unsupported resolution (%d)", seq->resolution);
 		return -ENOTSUP;
 	}
 
 	if (seq->calibrate) {
-		/* TODO: Does this mean actual Vref measurement on selected GPIO ?*/
-		LOG_ERR("calibration is not supported");
+		LOG_ERR("Calibration is not supported");
 		return -ENOTSUP;
 	}
 
-	data->resolution[channel_id] = seq->resolution;
+	if (seq->oversampling != 0U) {
+		LOG_ERR("Oversampling is not supported");
+		return -ENOTSUP;
+	}
 
-#ifdef CONFIG_ADC_ESP32_DMA
-	int err = adc_esp32_dma_read(dev, seq);
+	if (seq->channels == 0U) {
+		return -EINVAL;
+	}
 
-	if (err < 0) {
+	uint32_t chans = seq->channels;
+
+	while (chans) {
+		uint8_t ch = find_lsb_set(chans) - 1;
+
+		if (ch >= conf->channel_count) {
+			LOG_ERR("Unsupported channel in mask");
+			return -EINVAL;
+		}
+		chans &= ~BIT(ch);
+	}
+
+	return 0;
+}
+
+#ifndef CONFIG_ADC_ESP32_DMA
+
+static int adc_esp32_validate_oneshot_sequence(const struct device *dev,
+					       const struct adc_sequence *seq)
+{
+	int err = adc_esp32_validate_sequence(dev, seq);
+
+	if (err != 0) {
 		return err;
 	}
-#else
+
+	size_t channels = POPCOUNT(seq->channels);
+	size_t sampling_count = 1U + (seq->options != NULL ? seq->options->extra_samplings : 0U);
+
+	if (seq->buffer_size < (channels * sampling_count * sizeof(uint16_t))) {
+		LOG_ERR("Sequence buffer space too low '%zu'", seq->buffer_size);
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+static uint16_t adc_esp32_oneshot_convert_channel(struct adc_esp32_data *data,
+						  const struct adc_sequence *seq,
+						  uint8_t channel_id)
+{
 	uint32_t acq_raw;
 
-	if (seq->channels > BIT(channel_id)) {
-		LOG_ERR("Multi-channel readings not supported");
-		return -ENOTSUP;
-	}
-
-	if (seq->options && seq->options->extra_samplings) {
-		LOG_ERR("Extra samplings not supported");
-		return -ENOTSUP;
-	}
-
-	if (seq->options && seq->options->interval_us) {
-		LOG_ERR("Interval between samplings not supported");
-		return -ENOTSUP;
-	}
+	data->resolution[channel_id] = seq->resolution;
 
 	adc_oneshot_hal_setup(&data->hal, channel_id);
 
@@ -175,7 +180,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	adc_oneshot_hal_convert(&data->hal, &acq_raw);
 
 	if (data->cal_handle[channel_id]) {
-		if (data->meas_ref_internal > 0) {
+		if (data->meas_ref_internal > 0U) {
 			uint32_t acq_mv;
 
 			adc_cali_raw_to_voltage(data->cal_handle[channel_id], acq_raw, &acq_mv);
@@ -190,9 +195,8 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 			}
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
-			/* Fit according to selected attenuation */
 			atten_to_gain(data->attenuation[channel_id], &acq_mv);
-			acq_raw = acq_mv * ((1 << data->resolution[channel_id]) - 1) /
+			acq_raw = acq_mv * ((1U << data->resolution[channel_id]) - 1U) /
 				  data->meas_ref_internal;
 		} else {
 			LOG_WRN("ADC reading is uncompensated");
@@ -201,23 +205,161 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		LOG_WRN("ADC reading is uncompensated");
 	}
 
-	/* Store result */
-	data->buffer = (uint16_t *)seq->buffer;
-	data->buffer[0] = acq_raw;
+	return (uint16_t)acq_raw;
+}
+
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
+{
+	struct adc_esp32_data *data = CONTAINER_OF(ctx, struct adc_esp32_data, ctx);
+
+	if (repeat_sampling) {
+		data->seq_buf = data->repeat_buf;
+	} else {
+		data->seq_buf += POPCOUNT(ctx->sequence.channels);
+	}
+}
+
+static void adc_context_start_sampling(struct adc_context *ctx)
+{
+	struct adc_esp32_data *data = CONTAINER_OF(ctx, struct adc_esp32_data, ctx);
+	const struct adc_sequence *seq = &ctx->sequence;
+	uint32_t chan_mask = seq->channels;
+	uint16_t *out = data->seq_buf;
+
+	while (chan_mask != 0U) {
+		uint8_t channel_id = find_lsb_set(chan_mask) - 1;
+
+		*out++ = adc_esp32_oneshot_convert_channel(data, seq, channel_id);
+
+		chan_mask &= ~BIT(channel_id);
+	}
+
+	adc_context_on_sampling_done(ctx, data->dev);
+}
+
+static int adc_esp32_start_read(const struct device *dev, const struct adc_sequence *sequence)
+{
+	struct adc_esp32_data *data = dev->data;
+	int error;
+
+	data->seq_buf = sequence->buffer;
+	data->repeat_buf = sequence->buffer;
+
+	adc_context_start_read(&data->ctx, sequence);
+
+	error = adc_context_wait_for_completion(&data->ctx);
+
+	return error;
+}
+
+#else /* CONFIG_ADC_ESP32_DMA */
+
+static void __maybe_unused adc_context_update_buffer_pointer(struct adc_context *ctx,
+							     bool repeat_sampling)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(repeat_sampling);
+}
+
+static void __maybe_unused adc_context_start_sampling(struct adc_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
+static void __maybe_unused adc_context_enable_timer(struct adc_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
+static void __maybe_unused adc_context_disable_timer(struct adc_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
 #endif /* CONFIG_ADC_ESP32_DMA */
 
-	return 0;
+static int adc_esp32_read(const struct device *dev, const struct adc_sequence *seq)
+{
+	struct adc_esp32_data *data = dev->data;
+	int err;
+
+#ifdef CONFIG_ADC_ESP32_DMA
+	err = adc_esp32_validate_sequence(dev, seq);
+#else
+	err = adc_esp32_validate_oneshot_sequence(dev, seq);
+#endif /* CONFIG_ADC_ESP32_DMA */
+	if (err != 0) {
+		return err;
+	}
+
+	adc_context_lock(&data->ctx, false, NULL);
+#ifdef CONFIG_ADC_ESP32_DMA
+	err = adc_esp32_dma_finish_read(dev, seq);
+#else
+	err = adc_esp32_start_read(dev, seq);
+#endif /* CONFIG_ADC_ESP32_DMA */
+	adc_context_release(&data->ctx, err);
+
+	return err;
 }
 
 #ifdef CONFIG_ADC_ASYNC
+
+#if defined(CONFIG_ADC_ESP32_DMA)
+static void adc_esp32_ctx_copy_sequence_for_dma_async(struct adc_context *ctx,
+						      const struct adc_sequence *sequence)
+{
+	ctx->sequence = *sequence;
+	ctx->status = 0;
+	ctx->sampling_index = 0U;
+
+	if (sequence->options != NULL) {
+		ctx->options = *sequence->options;
+		ctx->sequence.options = &ctx->options;
+	} else {
+		ctx->sequence.options = NULL;
+	}
+}
+#endif /* CONFIG_ADC_ESP32_DMA */
+
 static int adc_esp32_read_async(const struct device *dev, const struct adc_sequence *sequence,
 				struct k_poll_signal *async)
 {
-	(void)(dev);
-	(void)(sequence);
-	(void)(async);
+	struct adc_esp32_data *data = dev->data;
+	int err;
 
-	return -ENOTSUP;
+#ifdef CONFIG_ADC_ESP32_DMA
+	err = adc_esp32_validate_sequence(dev, sequence);
+	if (err != 0) {
+		return err;
+	}
+
+	adc_context_lock(&data->ctx, true, async);
+
+	adc_esp32_ctx_copy_sequence_for_dma_async(&data->ctx, sequence);
+
+	err = adc_esp32_dma_async_submit(dev);
+	if (err != 0) {
+		LOG_ERR("ADC DMA async submit failed (%d)", err);
+		adc_context_complete(&data->ctx, err);
+		return err;
+	}
+
+	adc_context_release(&data->ctx, 0);
+
+	return 0;
+#else
+	err = adc_esp32_validate_oneshot_sequence(dev, sequence);
+	if (err != 0) {
+		return err;
+	}
+
+	adc_context_lock(&data->ctx, true, async);
+	err = adc_esp32_start_read(dev, sequence);
+	adc_context_release(&data->ctx, err);
+
+	return err;
+#endif /* CONFIG_ADC_ESP32_DMA */
 }
 #endif /* CONFIG_ADC_ASYNC */
 
@@ -347,6 +489,7 @@ static int adc_esp32_init(const struct device *dev)
 	const struct adc_esp32_conf *conf = (struct adc_esp32_conf *)dev->config;
 	uint32_t clock_src_hz;
 
+	data->dev = dev;
 
 #if SOC_ADC_DIG_CTRL_SUPPORTED && (!SOC_ADC_RTC_CTRL_SUPPORTED || CONFIG_ADC_ESP32_DMA)
 	if (!device_is_ready(conf->clock_dev)) {
@@ -394,6 +537,8 @@ static int adc_esp32_init(const struct device *dev)
 
 	adc_hw_calibration(conf->unit);
 
+	adc_context_unlock_unconditionally(&data->ctx);
+
 	return 0;
 }
 
@@ -413,6 +558,12 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 #else
 #define ADC_ESP32_CONF_INIT(n)
 #endif /* defined(SOC_GDMA_SUPPORTED) && SOC_GDMA_SUPPORTED */
+
+#ifndef CONFIG_ADC_ESP32_DMA
+#define ADC_ESP32_CTX_TIMER_INIT(inst) ADC_CONTEXT_INIT_TIMER(adc_esp32_data_##inst, ctx),
+#else
+#define ADC_ESP32_CTX_TIMER_INIT(inst)
+#endif
 
 #define ADC_ESP32_CHECK_CHANNEL_REF(chan)                                                          \
 	BUILD_ASSERT(DT_ENUM_HAS_VALUE(chan, zephyr_reference, adc_ref_internal),                  \
@@ -435,6 +586,8 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 			{                                                                          \
 				.dev = (adc_oneshot_soc_handle_t)DT_INST_REG_ADDR(inst),           \
 			},                                                                         \
+		ADC_ESP32_CTX_TIMER_INIT(inst) ADC_CONTEXT_INIT_LOCK(adc_esp32_data_##inst, ctx),  \
+		ADC_CONTEXT_INIT_SYNC(adc_esp32_data_##inst, ctx),                                 \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, adc_esp32_init, NULL, &adc_esp32_data_##inst,                  \

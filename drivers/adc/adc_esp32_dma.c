@@ -59,6 +59,31 @@ LOG_MODULE_REGISTER(adc_esp32_dma, CONFIG_ADC_LOG_LEVEL);
 #define ADC_DMA_INTR_MASK SPI_LL_INTR_IN_SUC_EOF
 #endif
 
+/*
+ * adc_context.h forward-declares driver callbacks referenced from static inline helpers.
+ * This file only uses adc_context_* lock/complete paths; SAR samples are DMA-driven.
+ */
+static void adc_context_start_sampling(struct adc_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
+static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat_sampling)
+{
+	ARG_UNUSED(ctx);
+	ARG_UNUSED(repeat_sampling);
+}
+
+static void adc_context_enable_timer(struct adc_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
+static void adc_context_disable_timer(struct adc_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+
 #if SOC_GDMA_SUPPORTED
 
 static void IRAM_ATTR adc_esp32_dma_conv_done(const struct device *dma_dev, void *user_data,
@@ -705,6 +730,60 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 	return 0;
 }
 
+int adc_esp32_dma_execute_read(const struct device *dev, const struct adc_sequence *seq)
+{
+	struct adc_esp32_data *data = dev->data;
+	uint32_t chans = seq->channels;
+
+	while (chans != 0U) {
+		uint8_t ch = find_lsb_set(chans) - 1;
+
+		data->resolution[ch] = seq->resolution;
+		chans &= ~BIT(ch);
+	}
+
+	return adc_esp32_dma_read(dev, seq);
+}
+
+#if defined(CONFIG_ADC_ASYNC)
+
+static void adc_esp32_dma_async_work_fn(struct k_work *work)
+{
+	struct adc_esp32_data *data = CONTAINER_OF(work, struct adc_esp32_data, dma_async_work);
+	const struct device *dev = data->dev;
+	int err;
+
+	err = adc_esp32_dma_execute_read(dev, &data->ctx.sequence);
+	adc_context_complete(&data->ctx, err);
+}
+
+int adc_esp32_dma_async_submit(const struct device *dev)
+{
+	struct adc_esp32_data *data = dev->data;
+	int ret = k_work_submit(&data->dma_async_work);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_ADC_ASYNC */
+
+int adc_esp32_dma_finish_read(const struct device *dev, const struct adc_sequence *seq)
+{
+	struct adc_esp32_data *data = dev->data;
+	int err;
+
+	data->ctx.status = 0;
+	err = adc_esp32_dma_execute_read(dev, seq);
+
+	adc_context_complete(&data->ctx, err);
+
+	return adc_context_wait_for_completion(&data->ctx);
+}
+
 int adc_esp32_dma_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg)
 {
 #if SOC_ADC_PERIPH_NUM >= 2
@@ -778,6 +857,10 @@ int adc_esp32_dma_init(const struct device *dev)
 
 	data->digi_clk_src = 0U;
 	data->digi_hw_active = false;
+
+#if defined(CONFIG_ADC_ASYNC)
+	k_work_init(&data->dma_async_work, adc_esp32_dma_async_work_fn);
+#endif /* CONFIG_ADC_ASYNC */
 
 	return 0;
 }

@@ -16,6 +16,12 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/clock_control.h>
 
+#ifndef CONFIG_ADC_ESP32_DMA
+#define ADC_CONTEXT_USES_KERNEL_TIMER
+#endif
+
+#include "adc_context.h"
+
 struct adc_esp32_conf {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
@@ -34,7 +40,10 @@ struct adc_esp32_data {
 	uint8_t resolution[SOC_ADC_MAX_CHANNEL_NUM];
 	adc_cali_handle_t cal_handle[SOC_ADC_MAX_CHANNEL_NUM];
 	uint16_t meas_ref_internal;
-	uint16_t *buffer;
+	struct adc_context ctx;
+	const struct device *dev;
+	uint16_t *seq_buf;
+	uint16_t *repeat_buf;
 #ifdef CONFIG_ADC_ESP32_DMA
 #include <hal/dma_types.h>
 
@@ -51,11 +60,20 @@ struct adc_esp32_data {
 #if !SOC_GDMA_SUPPORTED
 	struct intr_handle_data_t *irq_handle;
 #endif /* !SOC_GDMA_SUPPORTED */
+#if defined(CONFIG_ADC_ASYNC)
+	struct k_work dma_async_work;
+#endif /* CONFIG_ADC_ASYNC */
 	bool digi_hw_active;
 #endif /* CONFIG_ADC_ESP32_DMA */
 };
 
 int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq);
+
+int adc_esp32_dma_execute_read(const struct device *dev, const struct adc_sequence *seq);
+
+int adc_esp32_dma_finish_read(const struct device *dev, const struct adc_sequence *seq);
+
+int adc_esp32_dma_async_submit(const struct device *dev);
 
 int adc_esp32_dma_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg);
 
