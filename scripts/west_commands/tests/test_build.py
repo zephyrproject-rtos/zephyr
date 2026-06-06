@@ -173,6 +173,7 @@ def test_cmake_args(monkeypatch, test_case):
             previous_position = current_position
 
     monkeypatch.setattr('build.run_cmake', run_cmake_mock)
+    monkeypatch.setattr('build.west_topdir', lambda start=None, fall_back=True: '/west/topdir')
     monkeypatch.setattr(b, '_banner', lambda _: True)
 
     # --- Trigger CMake run ---
