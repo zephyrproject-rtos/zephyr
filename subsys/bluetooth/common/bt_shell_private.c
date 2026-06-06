@@ -7,11 +7,16 @@
 
 /*
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
+
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/shell/shell_backend.h>
+
 #include "bt_shell_private.h"
 
 static void wall_vfprintf(enum shell_vt100_color color, const char *fmt, va_list args)
@@ -86,4 +91,32 @@ void bt_shell_fprintf_error(const char *fmt, ...)
 	va_start(args, fmt);
 	wall_vfprintf(SHELL_ERROR, fmt, args);
 	va_end(args);
+}
+
+int bt_shell_strtoaddr_le(size_t argc, char *argv[], size_t start, bt_addr_le_t *addr)
+{
+	int err;
+
+	if (start >= argc) {
+		return -EINVAL;
+	}
+
+	/* Try the new prefix-based format first; it consumes a single argv
+	 * slot and ignores the type argument when the prefix is present.
+	 */
+	err = bt_addr_le_from_str(argv[start], "", addr);
+	if (err == 0) {
+		return 1;
+	}
+
+	if (start + 1 >= argc) {
+		return err;
+	}
+
+	err = bt_addr_le_from_str(argv[start], argv[start + 1], addr);
+	if (err != 0) {
+		return err;
+	}
+
+	return 2;
 }
