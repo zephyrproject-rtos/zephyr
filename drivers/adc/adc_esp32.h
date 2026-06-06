@@ -20,6 +20,10 @@
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #endif
 
+#if defined(CONFIG_ADC_ESP32_DMA) && defined(CONFIG_ADC_ESP32_STREAM)
+struct rtio_iodev_sqe;
+#endif
+
 #include "adc_context.h"
 
 struct adc_esp32_conf {
@@ -48,13 +52,13 @@ struct adc_esp32_data {
 #include <hal/dma_types.h>
 
 #define ADC_ESP32_DMA_RX_DESC_COUNT                                                                \
-	((DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED -  \
-	  1U) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED +                                        \
+	((CONFIG_ADC_ESP32_DMA_BUFFER_SIZE + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1U) /     \
+		 DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED +                                       \
 	 1U)
 
 	adc_hal_dma_ctx_t adc_hal_dma_ctx;
 	dma_descriptor_t dma_rx_desc[ADC_ESP32_DMA_RX_DESC_COUNT];
-	uint8_t dma_buffer[DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED];
+	uint8_t dma_buffer[CONFIG_ADC_ESP32_DMA_BUFFER_SIZE];
 	struct k_sem dma_conv_wait_lock;
 	soc_module_clk_t digi_clk_src;
 #if !SOC_GDMA_SUPPORTED
@@ -63,6 +67,23 @@ struct adc_esp32_data {
 #if defined(CONFIG_ADC_ASYNC)
 	struct k_work dma_async_work;
 #endif /* CONFIG_ADC_ASYNC */
+#if defined(CONFIG_ADC_ESP32_STREAM)
+	struct k_work stream_done_work;
+	struct k_work stream_start_work;
+	struct k_work stream_rtio_work;
+	struct k_work_delayable stream_resubmit_dwork;
+	struct rtio_iodev_sqe *stream_rtio_sqe;
+	struct rtio_iodev_sqe *stream_iodev_sqe;
+	struct rtio_iodev_sqe *stream_resubmit_sqe;
+	int stream_rtio_err;
+	struct adc_sequence stream_seq_snap;
+	struct adc_sequence_options stream_seq_opt_snap;
+	adc_hal_digi_ctrlr_cfg_t stream_digi_cfg;
+	adc_digi_pattern_config_t stream_pattern[SOC_ADC_MAX_CHANNEL_NUM];
+	uint32_t stream_num_adc_output_samples;
+	uint32_t stream_num_adc_dma_samples;
+	bool dma_notify_via_work;
+#endif /* CONFIG_ADC_ESP32_STREAM */
 	bool digi_hw_active;
 #endif /* CONFIG_ADC_ESP32_DMA */
 };
@@ -74,6 +95,27 @@ int adc_esp32_dma_execute_read(const struct device *dev, const struct adc_sequen
 int adc_esp32_dma_finish_read(const struct device *dev, const struct adc_sequence *seq);
 
 int adc_esp32_dma_async_submit(const struct device *dev);
+
+#if defined(CONFIG_ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED)
+void adc_esp32_dma_calibrate_samples(struct adc_esp32_data *data, uint16_t *samples,
+				     const adc_digi_pattern_config_t *pattern, uint32_t pattern_len,
+				     unsigned int repeats, uint8_t resolution);
+#endif /* CONFIG_ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED */
+
+#if defined(CONFIG_ADC_ESP32_STREAM)
+int adc_esp32_dma_stream_validate(const struct device *dev, const struct adc_sequence *seq);
+
+int adc_esp32_dma_stream_start(const struct device *dev);
+
+int adc_esp32_dma_stream_queue_start(const struct device *dev);
+
+int adc_esp32_stream_arm(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+#if defined(CONFIG_ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED)
+void adc_esp32_stream_calibrate_frame(struct adc_esp32_data *data);
+#endif /* CONFIG_ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED */
+
+#endif /* CONFIG_ADC_ESP32_STREAM */
 
 int adc_esp32_dma_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg);
 

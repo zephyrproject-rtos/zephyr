@@ -28,6 +28,33 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32_dma, CONFIG_ADC_LOG_LEVEL);
 
+#if defined(CONFIG_ADC_ESP32_STREAM)
+#include <zephyr/rtio/rtio.h>
+
+K_THREAD_STACK_DEFINE(adc_esp32_stream_rtio_wq_stack, CONFIG_ADC_ESP32_STREAM_RTIO_WQ_STACK_SIZE);
+static struct k_work_q adc_esp32_stream_rtio_wq;
+static bool adc_esp32_stream_rtio_wq_started;
+
+static void adc_esp32_stream_rtio_wq_init(void)
+{
+	if (adc_esp32_stream_rtio_wq_started) {
+		return;
+	}
+
+	(void)k_work_queue_start(&adc_esp32_stream_rtio_wq, adc_esp32_stream_rtio_wq_stack,
+				 K_THREAD_STACK_SIZEOF(adc_esp32_stream_rtio_wq_stack),
+				 CONFIG_ADC_ESP32_STREAM_RTIO_WQ_PRIORITY, NULL);
+	adc_esp32_stream_rtio_wq_started = true;
+}
+
+static void adc_esp32_stream_dma_done_work_fn(struct k_work *work);
+static void adc_esp32_stream_start_work_fn(struct k_work *work);
+static void adc_esp32_stream_rtio_work_fn(struct k_work *work);
+static void adc_esp32_stream_resubmit_work_fn(struct k_work *work);
+
+#define ADC_ESP32_STREAM_RESUBMIT_RETRY_MS 2
+#endif
+
 #if SOC_GDMA_SUPPORTED
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
@@ -47,7 +74,7 @@ LOG_MODULE_REGISTER(adc_esp32_dma, CONFIG_ADC_LOG_LEVEL);
 #define ADC_DMA_SPI_HOST SPI3_HOST
 #endif /* SOC_GDMA_SUPPORTED */
 
-#define ADC_DMA_BUFFER_SIZE        DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
+#define ADC_DMA_BUFFER_SIZE        CONFIG_ADC_ESP32_DMA_BUFFER_SIZE
 #define ADC_DMA_MAX_CONV_DONE_TIME 1000
 
 #define UNIT_ATTEN_UNINIT UINT32_MAX
@@ -95,6 +122,13 @@ static void IRAM_ATTR adc_esp32_dma_conv_done(const struct device *dma_dev, void
 
 	const struct device *dev = user_data;
 	struct adc_esp32_data *data = dev->data;
+
+#ifdef CONFIG_ADC_ESP32_STREAM
+	if (data->dma_notify_via_work) {
+		(void)k_work_submit(&data->stream_done_work);
+		return;
+	}
+#endif /* CONFIG_ADC_ESP32_STREAM */
 
 	k_sem_give(&data->dma_conv_wait_lock);
 }
@@ -190,11 +224,23 @@ static IRAM_ATTR void adc_esp32_dma_intr_handler(void *arg)
 
 	if (i2s_ll_get_intr_status(i2s_dev) & ADC_DMA_INTR_MASK) {
 		i2s_ll_clear_intr_status(i2s_dev, ADC_DMA_INTR_MASK);
+#ifdef CONFIG_ADC_ESP32_STREAM
+		if (data->dma_notify_via_work) {
+			(void)k_work_submit(&data->stream_done_work);
+			return;
+		}
+#endif /* CONFIG_ADC_ESP32_STREAM */
 		k_sem_give(&data->dma_conv_wait_lock);
 	}
 #elif defined(CONFIG_SOC_SERIES_ESP32S2)
 	if (spi_ll_get_intr(SPI_LL_GET_HW(SPI3_HOST), ADC_DMA_INTR_MASK)) {
 		spi_ll_clear_intr(SPI_LL_GET_HW(SPI3_HOST), ADC_DMA_INTR_MASK);
+#ifdef CONFIG_ADC_ESP32_STREAM
+		if (data->dma_notify_via_work) {
+			(void)k_work_submit(&data->stream_done_work);
+			return;
+		}
+#endif /* CONFIG_ADC_ESP32_STREAM */
 		k_sem_give(&data->dma_conv_wait_lock);
 	}
 #endif /* defined(CONFIG_SOC_SERIES_ESP32) */
@@ -303,6 +349,62 @@ static void adc_esp32_dma_sample_counts(uint32_t number_of_samplings, uint32_t p
 	*dma_samples = *output_samples * ADC_ESP32_DMA_CAPTURE_FACTOR;
 	*dma_data_bytes = adc_esp32_dma_data_bytes(*dma_samples);
 }
+
+#ifdef CONFIG_ADC_ESP32_STREAM
+int adc_esp32_dma_stream_validate(const struct device *dev, const struct adc_sequence *seq)
+{
+	int err = 0;
+	uint32_t adc_pattern_len;
+	uint32_t unit_attenuation;
+	adc_hal_digi_ctrlr_cfg_t adc_hal_digi_ctrlr_cfg_placeholder;
+	adc_digi_pattern_config_t adc_digi_pattern_config[SOC_ADC_MAX_CHANNEL_NUM];
+	const struct adc_sequence_options *options = seq->options;
+	uint32_t sample_freq_hz;
+	uint32_t number_of_samplings = 1U;
+
+#if SOC_ADC_PERIPH_NUM >= 2
+	const struct adc_esp32_conf *conf = dev->config;
+
+	if (!SOC_ADC_DIG_SUPPORTED_UNIT(conf->unit)) {
+		LOG_ERR("ADC2 dma mode is no longer supported, please use ADC1!");
+		return -EINVAL;
+	}
+#endif /* SOC_ADC_PERIPH_NUM >= 2 */
+
+	err = adc_esp32_dma_sample_freq_hz(options, &sample_freq_hz);
+	if (err != 0) {
+		return err;
+	}
+
+	err = adc_esp32_fill_digi_ctrlr_cfg(dev, seq, sample_freq_hz, adc_digi_pattern_config,
+					    &adc_hal_digi_ctrlr_cfg_placeholder, &adc_pattern_len,
+					    &unit_attenuation);
+
+	if ((err != 0) || (adc_pattern_len == 0)) {
+		return err != 0 ? err : -EINVAL;
+	}
+
+	if (options != NULL) {
+		number_of_samplings = options->extra_samplings + 1U;
+	}
+
+	uint32_t number_of_adc_output_samples;
+	uint32_t number_of_adc_dma_samples;
+	uint32_t number_of_adc_dma_data_bytes;
+
+	adc_esp32_dma_sample_counts(number_of_samplings, adc_pattern_len,
+				    &number_of_adc_output_samples, &number_of_adc_dma_samples,
+				    &number_of_adc_dma_data_bytes);
+
+	if (number_of_adc_dma_data_bytes > ADC_DMA_BUFFER_SIZE) {
+		LOG_ERR("DMA buffer size insufficient (need %u, have %u)",
+			number_of_adc_dma_data_bytes, ADC_DMA_BUFFER_SIZE);
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_ADC_ESP32_STREAM */
 
 static void adc_esp32_dma_eof_ctx_config(struct adc_esp32_data *data, uint32_t sample_count)
 {
@@ -726,9 +828,203 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 	adc_esp32_fill_seq_buffer(seq->buffer, data->dma_buffer, number_of_adc_dma_samples,
 				  number_of_adc_output_samples, adc_digi_pattern_config,
 				  adc_pattern_len);
+#if defined(CONFIG_ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED)
+	adc_esp32_dma_calibrate_samples(data, seq->buffer, adc_digi_pattern_config, adc_pattern_len,
+					number_of_adc_output_samples / adc_pattern_len,
+					seq->resolution);
+#endif /* CONFIG_ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED */
 
 	return 0;
 }
+
+#if defined(CONFIG_ADC_ESP32_STREAM)
+
+/*
+ * Pause the ADC between stream frames: same teardown as oneshot DMA reads so the
+ * next adc_esp32_digi_start() can re-acquire SAR power and locks cleanly.
+ */
+static int adc_esp32_stream_hw_stop_and_pack(struct adc_esp32_data *data, const struct device *dev)
+{
+	uint32_t dma_bytes = adc_esp32_dma_data_bytes(data->stream_num_adc_dma_samples);
+
+	adc_esp32_digi_stop(dev);
+
+	sys_cache_data_flush_and_invd_range(data->dma_buffer, dma_bytes);
+	adc_esp32_fill_seq_buffer(data->stream_seq_snap.buffer, data->dma_buffer,
+				  data->stream_num_adc_dma_samples,
+				  data->stream_num_adc_output_samples, data->stream_pattern,
+				  data->stream_digi_cfg.adc_pattern_len);
+#if defined(CONFIG_ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED)
+	adc_esp32_stream_calibrate_frame(data);
+#endif /* CONFIG_ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED */
+	return 0;
+}
+
+static void adc_esp32_stream_rtio_work_fn(struct k_work *work)
+{
+	struct adc_esp32_data *data = CONTAINER_OF(work, struct adc_esp32_data, stream_rtio_work);
+	struct rtio_iodev_sqe *sqe = data->stream_rtio_sqe;
+	int err = data->stream_rtio_err;
+
+	data->stream_rtio_sqe = NULL;
+
+	if (sqe == NULL) {
+		return;
+	}
+
+	if (err != 0) {
+		rtio_iodev_sqe_err(sqe, err);
+		return;
+	}
+
+	/*
+	 * Deliver the CQE before allocating the next mempool buffer. The default
+	 * multishot path in rtio_iodev_sqe_ok() resubmits first and can exhaust
+	 * the pool while the application still holds prior buffers.
+	 */
+	rtio_cqe_submit(sqe->r, 0, sqe->sqe.userdata, rtio_cqe_compute_flags(sqe));
+
+	if (FIELD_GET(RTIO_SQE_MEMPOOL_BUFFER, sqe->sqe.flags) == 1 && sqe->sqe.op == RTIO_OP_RX) {
+		sqe->sqe.rx.buf = NULL;
+		sqe->sqe.rx.buf_len = 0;
+	}
+
+	data->stream_resubmit_sqe = sqe;
+	(void)k_work_cancel_delayable(&data->stream_resubmit_dwork);
+	(void)k_work_schedule_for_queue(&adc_esp32_stream_rtio_wq, &data->stream_resubmit_dwork,
+					K_NO_WAIT);
+}
+
+static void adc_esp32_stream_resubmit_work_fn(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct adc_esp32_data *data =
+		CONTAINER_OF(dwork, struct adc_esp32_data, stream_resubmit_dwork);
+	const struct device *dev = data->dev;
+	struct rtio_iodev_sqe *sqe = data->stream_resubmit_sqe;
+	int err;
+
+	if (sqe == NULL) {
+		return;
+	}
+
+	err = adc_esp32_stream_arm(dev, sqe);
+	if (err == -ENOMEM) {
+		(void)k_work_schedule_for_queue(&adc_esp32_stream_rtio_wq,
+						&data->stream_resubmit_dwork,
+						K_MSEC(ADC_ESP32_STREAM_RESUBMIT_RETRY_MS));
+		return;
+	}
+
+	data->stream_resubmit_sqe = NULL;
+
+	if (err < 0) {
+		(void)k_work_cancel_delayable(&data->stream_resubmit_dwork);
+		LOG_ERR("stream resubmit failed (%d)", err);
+		rtio_iodev_sqe_err(sqe, err);
+	}
+}
+
+static void adc_esp32_stream_dma_done_work_fn(struct k_work *work)
+{
+	struct adc_esp32_data *data = CONTAINER_OF(work, struct adc_esp32_data, stream_done_work);
+	const struct device *dev = data->dev;
+	struct rtio_iodev_sqe *sqe = data->stream_iodev_sqe;
+	int err;
+
+	err = adc_esp32_stream_hw_stop_and_pack(data, dev);
+	data->dma_notify_via_work = false;
+	data->stream_iodev_sqe = NULL;
+
+	if (sqe == NULL) {
+		return;
+	}
+
+	if (err != 0) {
+		rtio_iodev_sqe_err(sqe, err);
+		return;
+	}
+
+	data->stream_rtio_sqe = sqe;
+	data->stream_rtio_err = 0;
+	(void)k_work_submit_to_queue(&adc_esp32_stream_rtio_wq, &data->stream_rtio_work);
+}
+
+static void adc_esp32_stream_start_work_fn(struct k_work *work)
+{
+	struct adc_esp32_data *data = CONTAINER_OF(work, struct adc_esp32_data, stream_start_work);
+	const struct device *dev = data->dev;
+	struct rtio_iodev_sqe *sqe = data->stream_iodev_sqe;
+	int err;
+
+	err = adc_esp32_dma_stream_start(dev);
+	if (err != 0) {
+		data->dma_notify_via_work = false;
+		data->stream_iodev_sqe = NULL;
+		adc_context_release(&data->ctx, err);
+		LOG_ERR("stream hw start failed (%d)", err);
+		if (sqe != NULL) {
+			rtio_iodev_sqe_err(sqe, err);
+		}
+		return;
+	}
+
+	adc_context_release(&data->ctx, 0);
+}
+
+int adc_esp32_dma_stream_queue_start(const struct device *dev)
+{
+	struct adc_esp32_data *data = dev->data;
+
+	adc_esp32_stream_rtio_wq_init();
+	return k_work_submit_to_queue(&adc_esp32_stream_rtio_wq, &data->stream_start_work);
+}
+
+int adc_esp32_dma_stream_start(const struct device *dev)
+{
+	struct adc_esp32_data *data = dev->data;
+	const struct adc_sequence *seq = &data->stream_seq_snap;
+	int err;
+	uint32_t adc_pattern_len, unit_attenuation;
+	uint32_t number_of_adc_output_samples;
+	uint32_t number_of_adc_dma_samples;
+	uint32_t number_of_adc_dma_data_bytes;
+
+	err = adc_esp32_dma_prep_read(dev, seq, &data->stream_digi_cfg, data->stream_pattern,
+				      &adc_pattern_len, &unit_attenuation,
+				      &number_of_adc_output_samples, &number_of_adc_dma_samples,
+				      &number_of_adc_dma_data_bytes);
+	if (err != 0) {
+		return err;
+	}
+
+	data->stream_num_adc_output_samples = number_of_adc_output_samples;
+	data->stream_num_adc_dma_samples = number_of_adc_dma_samples;
+
+	(void)k_sem_reset(&data->dma_conv_wait_lock);
+	sys_cache_data_flush_and_invd_range(data->dma_buffer, number_of_adc_dma_data_bytes);
+
+	err = adc_esp32_digi_start(dev, &data->stream_digi_cfg, number_of_adc_dma_samples,
+				   unit_attenuation, number_of_adc_dma_data_bytes);
+	if (err != 0) {
+		LOG_ERR("digi_start failed (%d)", err);
+		return err;
+	}
+
+#if !SOC_GDMA_SUPPORTED
+	err = adc_esp32_dma_intr_set(data, true);
+	if (err != 0) {
+		adc_esp32_digi_stop(dev);
+		return err;
+	}
+#endif /* !SOC_GDMA_SUPPORTED */
+
+	data->dma_notify_via_work = true;
+
+	return 0;
+}
+
+#endif /* CONFIG_ADC_ESP32_STREAM */
 
 int adc_esp32_dma_execute_read(const struct device *dev, const struct adc_sequence *seq)
 {
@@ -787,7 +1083,7 @@ int adc_esp32_dma_finish_read(const struct device *dev, const struct adc_sequenc
 int adc_esp32_dma_channel_setup(const struct device *dev, const struct adc_channel_cfg *cfg)
 {
 #if SOC_ADC_PERIPH_NUM >= 2
-	const struct adc_esp32_conf *conf = dev->config;
+	__maybe_unused const struct adc_esp32_conf *conf = dev->config;
 
 	if (!SOC_ADC_DIG_SUPPORTED_UNIT(conf->unit)) {
 		LOG_ERR("ADC2 dma mode is no longer supported, please use ADC1!");
@@ -861,6 +1157,20 @@ int adc_esp32_dma_init(const struct device *dev)
 #if defined(CONFIG_ADC_ASYNC)
 	k_work_init(&data->dma_async_work, adc_esp32_dma_async_work_fn);
 #endif /* CONFIG_ADC_ASYNC */
+
+#if defined(CONFIG_ADC_ESP32_STREAM)
+	adc_esp32_stream_rtio_wq_init();
+	k_work_init(&data->stream_done_work, adc_esp32_stream_dma_done_work_fn);
+	k_work_init(&data->stream_start_work, adc_esp32_stream_start_work_fn);
+	k_work_init(&data->stream_rtio_work, adc_esp32_stream_rtio_work_fn);
+	k_work_init_delayable(&data->stream_resubmit_dwork, adc_esp32_stream_resubmit_work_fn);
+	data->dma_notify_via_work = false;
+	data->stream_iodev_sqe = NULL;
+	data->stream_rtio_sqe = NULL;
+	data->stream_resubmit_sqe = NULL;
+	data->stream_num_adc_output_samples = 0U;
+	data->stream_num_adc_dma_samples = 0U;
+#endif /* CONFIG_ADC_ESP32_STREAM */
 
 	return 0;
 }

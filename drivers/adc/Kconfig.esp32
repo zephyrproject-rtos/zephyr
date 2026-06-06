@@ -1,4 +1,5 @@
 # Copyright (c) 2022 Wolter HV <wolterhv@gmx.de>
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -16,5 +17,79 @@ config ADC_ESP32_DMA
 	select DMA if DT_HAS_ESPRESSIF_ESP32_GDMA_ENABLED
 	help
 	  Enable the ADC DMA mode
+
+config ADC_ESP32_DMA_BUFFER_SIZE
+	int "ESP32 ADC DMA capture buffer size (bytes)"
+	depends on ADC_ESP32_DMA
+	default 8192 if ADC_ESP32_STREAM
+	default 4092
+	range 4092 32768
+	help
+	  Internal DMA buffer for ADC continuous captures. Must be large enough
+	  for the largest sequence:
+	  (1 + extra_samplings) x channels x capture_factor x bytes_per_conv.
+	  Values above 4092 use multiple linked DMA descriptors.
+
+choice ADC_ESP32_DMA_DECODE
+	prompt "DMA sample decoding"
+	depends on ADC_ESP32_DMA
+	default ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED
+	help
+	  How DMA captures are packed for adc_read/adc_read_async and adc_stream.
+
+config ADC_ESP32_DMA_DECODE_COUNTS
+	bool "Raw ADC counts with no calibration and no voltage conversion"
+	help
+	  Store raw ADC counts in the application buffer. The stream decoder
+	  passes counts through as q31 values without calibration, channel
+	  attenuation scaling, or internal reference conversion.
+
+config ADC_ESP32_DMA_DECODE_VOLTAGE_LINEAR
+	bool "Linear pin voltage with attenuation scaling, but no calibration"
+	help
+	  Store raw ADC counts in the application buffer. The stream decoder
+	  scales the internal reference by the channel attenuation before
+	  converting to q31 voltage. adc_read applications use
+	  adc_raw_to_millivolts_dt() with the channel gain from devicetree.
+
+config ADC_ESP32_DMA_DECODE_VOLTAGE_CALIBRATED
+	bool "Calibrated pin voltage with calibration and attenuation scaling"
+	help
+	  Convert each raw sample to calibrated pin voltage when the DMA buffer
+	  is packed using adc_cali_raw_to_voltage, then normalize counts the
+	  same way as oneshot reads. The stream decoder scales the internal
+	  reference by channel attenuation before converting to q31 voltage.
+
+endchoice
+
+config ADC_ESP32_STREAM
+	bool "ESP32 ADC RTIO streaming (adc_stream)"
+	depends on ADC_STREAM
+	select ADC_ESP32_DMA
+	default y
+	help
+	  Enable adc_stream()/RTIO submissions using DMA bursts. Each multishot
+	  iteration completes one SAR pattern cycle (hardware schedule of selected
+	  channels).
+
+if ADC_ESP32_STREAM
+
+config ADC_ESP32_STREAM_RTIO_WQ_STACK_SIZE
+	int "ESP32 ADC stream RTIO workqueue stack size"
+	default 8192
+	range 1024 32768
+	help
+	  Stack size for the dedicated workqueue that completes RTIO stream
+	  frames.
+
+config ADC_ESP32_STREAM_RTIO_WQ_PRIORITY
+	int "ESP32 ADC stream RTIO workqueue priority"
+	default -1
+	range -256 -1
+	help
+	  Thread priority for the stream RTIO workqueue. Must be a cooperative
+	  priority in the range -NUM_COOP_PRIORITIES through -1.
+
+endif # ADC_ESP32_STREAM
 
 endif
