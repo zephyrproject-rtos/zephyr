@@ -22,11 +22,17 @@ jobs:
     runs-on: ubuntu-24.04
     if: github.repository == 'zephyrproject-rtos/zephyr'
     permissions:
-      issues: read # to check if associated issue exists for backport
+      issues: read # to check if associated issue exists for backport and post comments
+      pull-requests: write # to comment on pull requests
 
     steps:
       - name: Check out source code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 1
+          sparse-checkout: |
+            scripts/release/list_backports.py
+            scripts/requirements-actions.txt
 
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -47,4 +53,5 @@ jobs:
           -o ${{ github.event.repository.owner.login }} \
           -r ${{ github.event.repository.name }} \
           -b ${{ github.event.pull_request.base.ref }} \
-          -p ${{ github.event.pull_request.number }}
+          -p ${{ github.event.pull_request.number }} \
+          --check
