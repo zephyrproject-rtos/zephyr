@@ -28,7 +28,7 @@
 #include "../../../drivers/video/video_ctrls.h"
 #include "../../../drivers/video/video_device.h"
 
-LOG_MODULE_REGISTER(usbh_uvc, CONFIG_USBH_UVC_LOG_LEVEL);
+LOG_MODULE_REGISTER(usbh_uvc, CONFIG_USBH_VIDEO_LOG_LEVEL);
 
 #define UVC_FRAME_ID_INVALID                  0xFF
 #define UVC_PAYLOAD_HEADER_MIN_SIZE           11
