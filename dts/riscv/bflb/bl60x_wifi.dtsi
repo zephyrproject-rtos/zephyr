@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * BL60x WiFi DT snippet.
+ *
+ * Enables the WiFi MAC and carves the top 40 KB of RAM out as WIFI_RAM
+ * (the vendor ram_wifi at 0x42042000, holding the MAC HW DMA descriptor
+ * pools).  all_ram is scaled down to the remaining 184 KB so the linker
+ * enforces the boundary.
+ */
+
+&sram0 {
+	reg = <0xc000 DT_SIZE_K(136)>;
+	ranges = <0x0 0xc000 DT_SIZE_K(136)>;
+};
+
+&all_ram {
+	reg = <0x42014000 DT_SIZE_K(184)>;
+	ranges = <0x0 0x42014000 DT_SIZE_K(184)>;
+};
+
+&wifi_ram {
+	status = "okay";
+};
+
+&wifi0 {
+	status = "okay";
+};
