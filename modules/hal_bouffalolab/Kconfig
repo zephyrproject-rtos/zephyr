@@ -34,6 +34,14 @@ config BFLB_WL80211_SHIM
 	  Provides the wl80211_supplicant_* entry points and OS abstractions
 	  that the MACSW blob requires. Selected by the BL61x WiFi driver.
 
+config BFLB_BL602_OS_SHIM
+	bool
+	help
+	  Zephyr port of the bl_ops_funcs OS abstraction table the BL602
+	  wifi4 firmware blob uses for all RTOS primitives (heap, mutex,
+	  semaphore, task, timer, IRQ, message queue, event group).
+	  Selected by the BL60x WiFi driver.
+
 config BFLB_SHIM_HEAP_SIZE
 	int "BLE shim heap size"
 	default 8192
