@@ -454,5 +454,18 @@
 				status = "disabled";
 			};
 		};
+
+		wifi0: wifi@44000000 {
+			compatible = "bflb,wifi4";
+			reg = <0x44000000 0x1000>;
+			interrupts = <70 1>, <79 1>, <21 1>, <22 1>;
+			interrupt-names = "wifi", "wifi-ipc", "rf-top0", "rf-top1";
+			interrupt-parent = <&clic>;
+			status = "disabled";
+
+			pwr-table-11b = <20 20 20 18>;
+			pwr-table-11g = <18 18 18 18 18 18 14 14>;
+			pwr-table-11n = <18 18 18 18 18 16 14 14>;
+		};
 	};
 };
