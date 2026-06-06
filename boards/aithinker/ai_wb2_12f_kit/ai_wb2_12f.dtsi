@@ -6,6 +6,7 @@
 
 #include <bflb/bl602.dtsi>
 #include <bflb/bl60x_em_8kb.dtsi>
+#include <bflb/bl60x_wifi.dtsi>
 #include "ai_wb2_12f-pinctrl.dtsi"
 
 / {

@@ -15,4 +15,5 @@ zephyr_library()
 zephyr_library_link_libraries(hostap)
 
 # SoC-specific driver sources.
-add_subdirectory(bl61x)
+add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL61X bl61x)
+add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL60X bl60x)

@@ -5,7 +5,7 @@
 menuconfig WIFI_BFLB
 	bool "Bouffalo Lab WiFi driver"
 	default y
-	depends on DT_HAS_BFLB_BL61X_WIFI_ENABLED
+	depends on DT_HAS_BFLB_BL61X_WIFI_ENABLED || DT_HAS_BFLB_BL60X_WIFI_ENABLED
 	depends on ZEPHYR_MBEDTLS_MODULE
 	select NET_L2_WIFI_MGMT
 	select NET_L2_ETHERNET
@@ -13,19 +13,30 @@ menuconfig WIFI_BFLB
 	select WIFI_USE_NATIVE_NETWORKING
 	select HWINFO
 	select WIFI_NM_WPA_SUPPLICANT
-	select WIFI_NM_WPA_SUPPLICANT_WEP
-	select WIFI_NM_WPA_SUPPLICANT_AP
-	select BFLB_WL80211_SHIM
+	select WIFI_NM_WPA_SUPPLICANT_WEP if DT_HAS_BFLB_BL61X_WIFI_ENABLED
+	select WIFI_NM_WPA_SUPPLICANT_AP if DT_HAS_BFLB_BL61X_WIFI_ENABLED
+	select BFLB_WL80211_SHIM if DT_HAS_BFLB_BL61X_WIFI_ENABLED
+	select BFLB_BL602_OS_SHIM if DT_HAS_BFLB_BL60X_WIFI_ENABLED
 	select NET_SOCKETS
+	# BL60x: SW CCMP for the data-TX encrypt workaround, CRC32 for the
+	# blob's beacon integrity stream, dynamic IRQs for the blob's
+	# irq_attach OS hook.
+	select DYNAMIC_INTERRUPTS if DT_HAS_BFLB_BL60X_WIFI_ENABLED
+	select CRC if DT_HAS_BFLB_BL60X_WIFI_ENABLED
+	select MBEDTLS_PSA_CRYPTO_C if DT_HAS_BFLB_BL60X_WIFI_ENABLED
+	select PSA_WANT_KEY_TYPE_AES if DT_HAS_BFLB_BL60X_WIFI_ENABLED
+	select PSA_WANT_ALG_CCM if DT_HAS_BFLB_BL60X_WIFI_ENABLED
 	help
 	  Enable Bouffalo Lab WiFi driver using the MACSW blob.
 
 if WIFI_BFLB
 
 rsource "bl61x/Kconfig"
+rsource "bl60x/Kconfig"
 
 config HEAP_MEM_POOL_ADD_SIZE_WIFI_BFLB
 	int
+	default 8192 if DT_HAS_BFLB_BL60X_WIFI_ENABLED
 	default 4096
 
 config NET_MGMT_EVENT_STACK_SIZE
