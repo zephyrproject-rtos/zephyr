@@ -33,8 +33,9 @@ subscribe to all notifications.
    discover          : Discover BASS on the server
    scan_start        : Start scanning for broadcasters
    scan_stop         : Stop scanning for BISs
-   add_src           : Add a source <address: XX:XX:XX:XX:XX:XX> <type:
-                        public/random> <adv_sid> <sync_pa> <broadcast_id>
+   add_src           : Add a source {<address: P:XX:XX:XX:XX:XX:XX or
+                        R:XX:XX:XX:XX:XX:XX> | <address: XX:XX:XX:XX:XX:XX>
+                        <type: (public|random)>} <adv_sid> <sync_pa> <broadcast_id>
                         [<sync_bis>] [<pa_interval>] [<metadata>]
    add_broadcast_id  : Add a source by broadcast ID <broadcast_id> <sync_pa>
                         [<sync_bis>] [<metadata>]
@@ -59,7 +60,7 @@ Setup
 
    uart:~$ bt init
    uart:~$ bap init
-   uart:~$ bt connect xx:xx:xx:xx:xx:xx public
+   uart:~$ bt connect P:xx:xx:xx:xx:xx:xx
 
 When connected
 ==============
@@ -78,15 +79,15 @@ Start scanning for periodic advertisements for a server:
    BASS discover done with 1 recv states
    uart:~$ bap_broadcast_assistant scan_start true
    BASS scan start successful
-   Found broadcaster with ID 0x05BD38 and addr 1E:4D:0A:AA:6E:49 (random) and sid 0x00
+   Found broadcaster with ID 0x05BD38 and addr R:1E:4D:0A:AA:6E:49 and sid 0x00
 
 Adding a source to the receive state with add_src:
 --------------------------------------------------
 
 .. code-block:: console
 
-   uart:~$ bap_broadcast_assistant add_src 11:22:33:44:55:66 public 5 1 1
-   BASS recv state: src_id 0, addr 11:22:33:44:55:66 (public), sid 5, sync_state 1, encrypt_state 000000000000000000000000000000000
+   uart:~$ bap_broadcast_assistant add_src P:11:22:33:44:55:66 5 1 1
+   BASS recv state: src_id 0, addr P:11:22:33:44:55:66, sid 5, sync_state 1, encrypt_state 000000000000000000000000000000000
         [0]: BIS sync 0, metadata_len 0
 
 
@@ -96,14 +97,14 @@ Adding a source to the receive state with add_broadcast_id (recommended):
 .. code-block:: console
 
    uart:~$ bap_broadcast_assistant add_broadcast_id 0x05BD38 true
-   [DEVICE]: 1E:4D:0A:AA:6E:49 (random), AD evt type 5, RSSI -28 Broadcast Audio Source C:0 S:0 D:0 SR:0 E:1 Prim: LE 1M, Secn: LE 2M, Interval: 0x03c0 (1200000 us), SID: 0x0
-   Found BAP broadcast source with address 1E:4D:0A:AA:6E:49 (random) and ID 0x05BD38
-   BASS recv state: src_id 0, addr 1E:4D:0A:AA:6E:49 (random), sid 0, sync_state 0, encrypt_state 0
+   [DEVICE]: R:1E:4D:0A:AA:6E:49, AD evt type 5, RSSI -28 Broadcast Audio Source C:0 S:0 D:0 SR:0 E:1 Prim: LE 1M, Secn: LE 2M, Interval: 0x03c0 (1200000 us), SID: 0x0
+   Found BAP broadcast source with address R:1E:4D:0A:AA:6E:49 and ID 0x05BD38
+   BASS recv state: src_id 0, addr R:1E:4D:0A:AA:6E:49, sid 0, sync_state 0, encrypt_state 0
          [0]: BIS sync 0x0000, metadata_len 0
    BASS add source successful
-   BASS recv state: src_id 0, addr 1E:4D:0A:AA:6E:49 (random), sid 0, sync_state 2, encrypt_state 0
+   BASS recv state: src_id 0, addr R:1E:4D:0A:AA:6E:49, sid 0, sync_state 2, encrypt_state 0
          [0]: BIS sync 0x0000, metadata_len 0
-   BASS recv state: src_id 0, addr 1E:4D:0A:AA:6E:49 (random), sid 0, sync_state 2, encrypt_state 0
+   BASS recv state: src_id 0, addr R:1E:4D:0A:AA:6E:49, sid 0, sync_state 2, encrypt_state 0
          [0]: BIS sync 0x0000, metadata_len 4
                   Metadata length 2, type 2, data: 0100
 
@@ -115,7 +116,7 @@ Modifying a receive state:
 
    uart:~$ bap_broadcast_assistant mod_src 0 true 0x03c0 0x02
    BASS modify source successful
-   BASS recv state: src_id 0, addr 1E:4D:0A:AA:6E:49 (random), sid 0, sync_state 2, encrypt_state 0
+   BASS recv state: src_id 0, addr R:1E:4D:0A:AA:6E:49, sid 0, sync_state 2, encrypt_state 0
          [0]: BIS sync 0x0001, metadata_len 4
                   Metadata length 2, type 2, data: 0100
 
