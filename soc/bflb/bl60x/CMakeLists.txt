@@ -12,3 +12,16 @@ if(CONFIG_BT_BFLB_BL60X)
   zephyr_sources(bflb_rf.c)
   zephyr_sources(bflb_platform_shim.c)
 endif()
+
+if(CONFIG_WIFI_BFLB)
+  zephyr_include_directories(
+    ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES}/wifi
+    ${ZEPHYR_BASE}/drivers/wifi/bflb/wifi4
+  )
+  zephyr_sources(
+    wifi/bflb_wifi_platform.c
+    wifi/bflb_wifi_ipc.c
+  )
+
+  zephyr_linker_sources(SECTIONS wifi/bflb_wifi_sections.ld)
+endif()
