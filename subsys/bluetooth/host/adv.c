@@ -2241,7 +2241,8 @@ void bt_hci_le_scan_req_received(struct net_buf *buf)
 	evt = (void *)buf->data;
 	adv = bt_hci_adv_lookup_handle(evt->handle);
 
-	LOG_DBG("handle %u peer %s", evt->handle, bt_addr_le_str(&evt->addr));
+	LOG_DBG("handle %u peer %s%s", evt->handle, bt_addr_le_str(&evt->addr),
+		bt_addr_le_is_resolved(&evt->addr) ? " (resolved)" : "");
 
 	if (!adv) {
 		LOG_ERR("No valid adv");
