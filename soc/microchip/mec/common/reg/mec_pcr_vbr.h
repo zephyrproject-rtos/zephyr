@@ -54,6 +54,12 @@
 #define XEC_CC_SYS_RST_OFS        0x18u
 #define XEC_CC_SYS_RST_ASSERT_POS 8
 
+/* Turbo clock MEC172x only */
+#ifdef CONFIG_SOC_SERIES_MEC172X
+#define XEC_CC_TURBO_CLK_OFS    0x1cu
+#define XEC_CC_TURBO_CLK_EN_POS 2
+#endif
+
 /* Privilege/Protection Lock */
 #define XEC_CC_PP_LOCK_OFS    0x24u
 #define XEC_CC_PP_LOCK_EN_POS 0
