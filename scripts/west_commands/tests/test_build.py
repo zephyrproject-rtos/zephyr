@@ -196,6 +196,7 @@ def test_test_item_updates_source_dir(tmp_path, monkeypatch):
     )
 
     b = Build()
+    b.config = _FakeConfig()
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
     subparser = parser.add_subparsers()
