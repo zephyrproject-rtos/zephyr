@@ -14,7 +14,7 @@ static const bt_addr_le_t example_addr = {
 	.a = { { 0x66, 0x55, 0x44, 0x33, 0x22, 0x11 } },
 };
 
-ZTEST(bt_addr_le_to_str, test_public_uses_p_prefix)
+static ZTEST(bt_addr_le_to_str, test_public_uses_p_prefix)
 {
 	bt_addr_le_t a = example_addr;
 	char str[BT_ADDR_LE_STR_LEN];
@@ -25,7 +25,7 @@ ZTEST(bt_addr_le_to_str, test_public_uses_p_prefix)
 	zassert_str_equal(str, "P:11:22:33:44:55:66");
 }
 
-ZTEST(bt_addr_le_to_str, test_random_uses_r_prefix)
+static ZTEST(bt_addr_le_to_str, test_random_uses_r_prefix)
 {
 	bt_addr_le_t a = example_addr;
 	char str[BT_ADDR_LE_STR_LEN];
@@ -36,7 +36,7 @@ ZTEST(bt_addr_le_to_str, test_random_uses_r_prefix)
 	zassert_str_equal(str, "R:11:22:33:44:55:66");
 }
 
-ZTEST(bt_addr_le_to_str, test_public_id_masks_to_public_prefix)
+static ZTEST(bt_addr_le_to_str, test_public_id_masks_to_public_prefix)
 {
 	/* BT_ADDR_LE_PUBLIC_ID (0x02) is the identity-address marker derived from a
 	 * public on-air address; the base type is still public, so it must print as P:.
@@ -50,7 +50,7 @@ ZTEST(bt_addr_le_to_str, test_public_id_masks_to_public_prefix)
 	zassert_str_equal(str, "P:11:22:33:44:55:66");
 }
 
-ZTEST(bt_addr_le_to_str, test_random_id_masks_to_random_prefix)
+static ZTEST(bt_addr_le_to_str, test_random_id_masks_to_random_prefix)
 {
 	bt_addr_le_t a = example_addr;
 	char str[BT_ADDR_LE_STR_LEN];
@@ -61,7 +61,7 @@ ZTEST(bt_addr_le_to_str, test_random_id_masks_to_random_prefix)
 	zassert_str_equal(str, "R:11:22:33:44:55:66");
 }
 
-ZTEST(bt_addr_le_to_str, test_hci_resolved_random_masks_to_random_prefix)
+static ZTEST(bt_addr_le_to_str, test_hci_resolved_random_masks_to_random_prefix)
 {
 	/* HCI events use bit 1 of Address_Type to indicate the Controller resolved an
 	 * RPA. bt_addr_le_to_str() must mask that bit away so the public API string
@@ -77,7 +77,7 @@ ZTEST(bt_addr_le_to_str, test_hci_resolved_random_masks_to_random_prefix)
 	zassert_str_equal(str, "R:11:22:33:44:55:66");
 }
 
-ZTEST(bt_addr_le_to_str, test_hci_resolved_public_masks_to_public_prefix)
+static ZTEST(bt_addr_le_to_str, test_hci_resolved_public_masks_to_public_prefix)
 {
 	bt_addr_le_t a = example_addr;
 	char str[BT_ADDR_LE_STR_LEN];
@@ -88,7 +88,7 @@ ZTEST(bt_addr_le_to_str, test_hci_resolved_public_masks_to_public_prefix)
 	zassert_str_equal(str, "P:11:22:33:44:55:66");
 }
 
-ZTEST(bt_addr_le_to_str, test_byte_order_is_big_endian_display)
+static ZTEST(bt_addr_le_to_str, test_byte_order_is_big_endian_display)
 {
 	/* a.val is stored little-endian (on-air order) but the string is rendered
 	 * with the most significant byte first.
@@ -103,7 +103,7 @@ ZTEST(bt_addr_le_to_str, test_byte_order_is_big_endian_display)
 	zassert_str_equal(str, "P:01:02:03:04:05:06");
 }
 
-ZTEST(bt_addr_le_to_str, test_recommended_buffer_is_large_enough)
+static ZTEST(bt_addr_le_to_str, test_recommended_buffer_is_large_enough)
 {
 	bt_addr_le_t a = {
 		.type = BT_ADDR_LE_RANDOM,
@@ -121,7 +121,7 @@ ZTEST(bt_addr_le_to_str, test_recommended_buffer_is_large_enough)
 		     BT_ADDR_LE_STR_LEN, written);
 }
 
-ZTEST(bt_addr_le_to_str, test_anonymous_still_produces_valid_prefix)
+static ZTEST(bt_addr_le_to_str, test_anonymous_still_produces_valid_prefix)
 {
 	/* BT_ADDR_LE_ANONYMOUS (0xff) has bit 0 set, so it must mask to R: rather
 	 * than producing an invalid prefix. This is a corner case but exercises
