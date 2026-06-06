@@ -79,6 +79,7 @@ struct net_if *dsa_tag_netc_recv(struct net_if *iface, struct net_pkt *pkt)
 			/* Fill timestamp */
 			pkt->timestamp.nanosecond = ts % NSEC_PER_SEC;
 			pkt->timestamp.second = ts / NSEC_PER_SEC;
+			net_pkt_set_rx_timestamping(pkt, true);
 #endif
 			break;
 		case NETC_SWITCH_TAG_SUBTYPE_TO_HOST_TX_TS:
