@@ -138,7 +138,7 @@ static int print_adc_stream(const struct device *adc, struct rtio_iodev *local_i
 int main(void)
 {
 	int ret;
-	struct adc_sequence sequence;
+	struct adc_sequence sequence = {0};
 	struct adc_read_config *read_cfg = iodev.data;
 
 	read_cfg->sequence = &sequence;
