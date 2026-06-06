@@ -1,0 +1,43 @@
+# Copyright (c) 2026, Xsight Labs
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ARM MHUv2 (Message Handling Unit v2) mailbox controller.
+
+  Provides doorbell signalling between processors.
+
+compatible: "arm,mhuv2"
+
+include: [base.yaml, mailbox-controller.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Two register regions: PBX (Postbox) sender registers and MBX
+      (Mailbox) receiver registers.
+
+  reg-names:
+    required: true
+    description: |
+      Must contain "send" and "recv", identifying the PBX and MBX
+      register regions, respectively.
+
+  interrupts:
+    required: true
+    description: Single interrupt for the receive side.
+
+mbox-cells:
+  - channel
+
+examples:
+  - |
+    mhu0: mbox@10000000 {
+        compatible = "arm,mhuv2";
+        reg = <0x10000000 0x10000>,
+              <0x10010000 0x10000>;
+        reg-names = "send", "recv";
+        interrupts = <34 0>;
+        #mbox-cells = <1>;
+    };
