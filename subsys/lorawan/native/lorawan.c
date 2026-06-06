@@ -189,6 +189,11 @@ int lorawan_send(uint8_t port, uint8_t *data, uint8_t len,
 		return -EINVAL;
 	}
 
+	/* FPort 0 is reserved for MAC commands */
+	if (port == 0 && len > 0) {
+		return -EINVAL;
+	}
+
 	if (len > LWAN_MAX_APP_PAYLOAD) {
 		return -EMSGSIZE;
 	}
