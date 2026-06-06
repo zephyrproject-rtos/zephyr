@@ -288,6 +288,27 @@ config BT_HCI_ERR_TO_STR
 	  codes represented as strings.
 	  See bt_hci_err_to_str() for more details.
 
+config BT_ADDR_LE_LEGACY_STRING_OUTPUT
+	bool "Emit LE addresses in the legacy string format [DEPRECATED]"
+	select DEPRECATED
+	help
+	  Restore the pre-prefix string format produced by bt_addr_le_to_str(),
+	  i.e. "XX:XX:XX:XX:XX:XX (public)" / "(random)" / "(public-id)" /
+	  "(random-id)" / "(0xNN)" instead of the prefix-based
+	  "P:XX:XX:XX:XX:XX:XX" / "R:XX:XX:XX:XX:XX:XX" form.
+
+	  Enable this option only as a temporary compatibility shim for
+	  out-of-tree code or test harnesses that parse log output or shell
+	  output looking for the old format. Enabling this option also
+	  restores the legacy BT_ADDR_LE_STR_LEN value of 30 bytes so that
+	  callers using stack buffers of the recommended size are unaffected.
+
+	  Input parsing of the legacy "<addr> <type>" two-token form by
+	  bt_addr_le_from_str() is permanently retained and is not affected
+	  by this option.
+
+	  This option is scheduled for removal after two Zephyr releases.
+
 config BT_MONITOR
 	bool
 	select LOG_OUTPUT

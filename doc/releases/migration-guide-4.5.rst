@@ -906,6 +906,13 @@ Bluetooth Host
   print a separate ``(resolved)`` annotation using the existing
   ``bt_addr_le_is_resolved()`` helper so the information is not lost.
 
+  As a temporary compatibility shim, the legacy output format can be
+  restored by enabling :kconfig:option:`CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT`
+  (marked deprecated). Enabling it also restores the previous
+  :c:macro:`BT_ADDR_LE_STR_LEN` value of ``30``. The option is scheduled
+  for removal after two Zephyr releases; users that rely on the legacy
+  format are expected to use the option as a migration aid only.
+
 Bluetooth HCI
 =============
 

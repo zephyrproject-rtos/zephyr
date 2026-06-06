@@ -12,3 +12,19 @@ tests:
       - addr
     integration_platforms:
       - native_sim
+  bluetooth.addr.legacy_string_output:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+    extra_configs:
+      - CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT=y
+      - CONFIG_WARN_DEPRECATED=n
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - qemu_cortex_m3
+    tags:
+      - bluetooth
+      - addr
+    integration_platforms:
+      - native_sim
