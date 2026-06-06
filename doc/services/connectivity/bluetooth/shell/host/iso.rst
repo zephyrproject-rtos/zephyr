@@ -108,12 +108,12 @@ Setting up sync receiver
    uart:~$ bt init
    Bluetooth initialized
    uart:~$ bt scan on
-   [DEVICE]: 42:0F:7A:40:AE:21 (random), AD evt type 5, RSSI -27  C:0 S:0 D:0 SR:0 E:1 Prim: LE 1M, Secn: LE 2M, Interval: 0x0780 (2400000 us), SID: 0x0
-   uart:~$ bt per-adv-sync-create 42:0F:7A:40:AE:21 (random) 0
+   [DEVICE]: R:42:0F:7A:40:AE:21, AD evt type 5, RSSI -27  C:0 S:0 D:0 SR:0 E:1 Prim: LE 1M, Secn: LE 2M, Interval: 0x0780 (2400000 us), SID: 0x0
+   uart:~$ bt per-adv-sync-create R:42:0F:7A:40:AE:21 0
    Per adv sync pending
-   PER_ADV_SYNC[0]: [DEVICE]: 42:0F:7A:40:AE:21 (random) synced, Interval 0x0780 (2400000 us), PHY LE 2M, SD 0x0000, PAST peer not present
-   PER_ADV_SYNC[0]: [DEVICE]: 42:0F:7A:40:AE:21 (random), tx_power 127, RSSI -28, CTE 0, data length 0
-   BIG_INFO PER_ADV_SYNC[0]: [DEVICE]: 42:0F:7A:40:AE:21 (random), sid 0x00, num_bis 1, nse 0x04, interval 0x0008 (10000 us), bn 0x01, pto 0x01, irc 0x03, max_pdu 0x00f7, sdu_interval 0x2710, max_sdu 0x00f7, phy LE 2M, framing 0x00, not encrypted
+   PER_ADV_SYNC[0]: [DEVICE]: R:42:0F:7A:40:AE:21 synced, Interval 0x0780 (2400000 us), PHY LE 2M, SD 0x0000, PAST peer not present
+   PER_ADV_SYNC[0]: [DEVICE]: R:42:0F:7A:40:AE:21, tx_power 127, RSSI -28, CTE 0, data length 0
+   BIG_INFO PER_ADV_SYNC[0]: [DEVICE]: R:42:0F:7A:40:AE:21, sid 0x00, num_bis 1, nse 0x04, interval 0x0008 (10000 us), bn 0x01, pto 0x01, irc 0x03, max_pdu 0x00f7, sdu_interval 0x2710, max_sdu 0x00f7, phy LE 2M, framing 0x00, not encrypted
    uart:~$ iso sync-big 1
    BIG syncing
    ISO Channel 0x200008c0 connected

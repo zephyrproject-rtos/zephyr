@@ -178,7 +178,7 @@ ID before syncing to the BIG.
    uart:~$ bap init
    uart:~$ bap create_broadcast_sink 0xEF6716
    No PA sync available, starting scanning for broadcast_id
-   Found broadcaster with ID 0xEF6716 and addr 03:47:95:75:C0:08 (random) and sid 0x00
+   Found broadcaster with ID 0xEF6716 and addr R:03:47:95:75:C0:08 and sid 0x00
    Attempting to PA sync to the broadcaster
    PA synced to broadcast with broadcast ID 0xEF6716
    Attempting to sync to the BIG
@@ -230,8 +230,8 @@ advertising with the provided broadcast name before syncing to the BIG.
    uart:~$ bap init
    uart:~$ bap create_sink_by_name "Test Broadcast"
    Starting scanning for broadcast_name
-   Found matched broadcast name 'Test Broadcast' with address 03:47:95:75:C0:08 (random)
-   Found broadcaster with ID 0xEF6716 and addr 03:47:95:75:C0:08 (random) and sid 0x00
+   Found matched broadcast name 'Test Broadcast' with address R:03:47:95:75:C0:08
+   Found broadcaster with ID 0xEF6716 and addr R:03:47:95:75:C0:08 and sid 0x00
    Attempting to PA sync to the broadcaster
    PA synced to broadcast with broadcast ID 0xEF6716
    Attempting to create the sink

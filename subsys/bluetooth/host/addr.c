@@ -90,6 +90,25 @@ int bt_addr_le_from_str(const char *str, const char *type, bt_addr_le_t *addr)
 {
 	int err;
 
+	/* Check if the string uses the new prefix format (P:... or R:...) */
+	if (str != NULL && strlen(str) > 2 && str[1] == ':' &&
+	    (str[0] == 'P' || str[0] == 'p' || str[0] == 'R' || str[0] == 'r')) {
+		/* New format: P:XX:XX:XX:XX:XX:XX or R:XX:XX:XX:XX:XX:XX */
+		err = bt_addr_from_str(&str[2], &addr->a);
+		if (err < 0) {
+			return err;
+		}
+
+		if (str[0] == 'P' || str[0] == 'p') {
+			addr->type = BT_ADDR_LE_PUBLIC;
+		} else {
+			addr->type = BT_ADDR_LE_RANDOM;
+		}
+
+		return 0;
+	}
+
+	/* Fall back to old format: XX:XX:XX:XX:XX:XX with separate type */
 	err = bt_addr_from_str(str, &addr->a);
 	if (err < 0) {
 		return err;
