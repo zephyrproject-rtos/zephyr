@@ -1,6 +1,7 @@
 # I2C configuration options
 
 # Copyright (c) 2015 Intel Corporation
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 #
@@ -258,13 +259,22 @@ config I2C_MCUX_LPI2C
 	  Enable the mcux LPI2C driver.
 
 config I2C_MCUX_LPI2C_BUS_RECOVERY
-	bool "Bus recovery support"
+	bool "MCUX LPI2C GPIO bus recovery"
 	default y if I2C_BUS_RECOVERY
 	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPI2C),recover-bus-on-init,True)
-	depends on I2C_MCUX_LPI2C && PINCTRL
+	depends on I2C_MCUX_LPI2C && PINCTRL && GPIO
 	select I2C_BITBANG
 	help
-	  Enable LPI2C driver bus recovery support via GPIO bitbanging.
+	  Enable GPIO-based physical I2C bus recovery for the MCUX LPI2C
+	  driver. This temporarily switches SCL and SDA into GPIO mode and
+	  uses bitbanging to attempt to free a physically stuck bus.
+
+config I2C_MCUX_LPI2C_SESSION_RECOVERY
+	bool "MCUX LPI2C controller session recovery"
+	depends on I2C_MCUX_LPI2C
+	help
+	  Expose controller/session recovery through the I2C recover_bus API
+	  without requiring GPIO-based physical bus recovery.
 
 config I2C_IMX
 	bool "i.MX I2C driver"
