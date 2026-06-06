@@ -7,7 +7,7 @@
 /dts-v1/;
 
 #include <bflb/bl602.dtsi>
-#include <bflb/bl60x_em_8kb.dtsi>
+#include <bflb/bl60x_em_8kb_wifi.dtsi>
 #include "pinecone-pinctrl.dtsi"
 
 / {
@@ -156,5 +156,9 @@
 };
 
 &bt_hci_bflb {
+	status = "okay";
+};
+
+&wifi0 {
 	status = "okay";
 };
