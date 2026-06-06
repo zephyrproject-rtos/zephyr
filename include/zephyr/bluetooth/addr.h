@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <zephyr/autoconf.h>
 #include <zephyr/sys/printk.h>
 
 #ifdef __cplusplus
@@ -220,9 +221,16 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
  *
  *  @details The recommended length guarantee the output of address
  *  conversion will not lose valuable information about address being
- *  processed. Format: "P:XX:XX:XX:XX:XX:XX" or "R:XX:XX:XX:XX:XX:XX"
+ *  processed. The default format is "P:XX:XX:XX:XX:XX:XX" or
+ *  "R:XX:XX:XX:XX:XX:XX". If @kconfig{CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT}
+ *  is enabled the legacy format "XX:XX:XX:XX:XX:XX (type)" is used and the
+ *  recommended buffer size grows accordingly.
  */
+#ifdef CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT
+#define BT_ADDR_LE_STR_LEN 30
+#else
 #define BT_ADDR_LE_STR_LEN 20
+#endif
 
 /** @brief Converts binary Bluetooth address to string.
  *
@@ -251,6 +259,11 @@ static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
  *  the output uses the base address type (0x00 for public, 0x01 for random).
  *  Any additional bits should be handled separately by the caller.
  *
+ *  If @kconfig{CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT} is enabled the legacy
+ *  format "XX:XX:XX:XX:XX:XX (public|random|public-id|random-id|0xNN)" is
+ *  produced instead. That option is deprecated and provided only as a
+ *  temporary compatibility shim.
+ *
  *  @param addr Address of buffer containing binary LE Bluetooth address.
  *  @param str Address of user buffer with enough room to store
  *  formatted string containing binary LE address.
@@ -262,7 +275,31 @@ static inline int bt_addr_to_str(const bt_addr_t *addr, char *str, size_t len)
 static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 				    size_t len)
 {
-	/* Mask to base address type (0x00 or 0x01) to handle HCI extended types */
+#ifdef CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT
+	char type[10];
+
+	switch (addr->type) {
+	case BT_ADDR_LE_PUBLIC:
+		strcpy(type, "public");
+		break;
+	case BT_ADDR_LE_RANDOM:
+		strcpy(type, "random");
+		break;
+	case BT_ADDR_LE_PUBLIC_ID:
+		strcpy(type, "public-id");
+		break;
+	case BT_ADDR_LE_RANDOM_ID:
+		strcpy(type, "random-id");
+		break;
+	default:
+		snprintk(type, sizeof(type), "0x%02x", addr->type);
+		break;
+	}
+
+	return snprintk(str, len, "%02X:%02X:%02X:%02X:%02X:%02X (%s)",
+			addr->a.val[5], addr->a.val[4], addr->a.val[3],
+			addr->a.val[2], addr->a.val[1], addr->a.val[0], type);
+#else
 	uint8_t base_type = addr->type & 0x01U;
 	char type_char = (base_type == BT_ADDR_LE_PUBLIC) ? 'P' : 'R';
 
@@ -270,6 +307,7 @@ static inline int bt_addr_le_to_str(const bt_addr_le_t *addr, char *str,
 			type_char,
 			addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			addr->a.val[2], addr->a.val[1], addr->a.val[0]);
+#endif /* CONFIG_BT_ADDR_LE_LEGACY_STRING_OUTPUT */
 }
 
 /** @cond INTERNAL_HIDDEN */
