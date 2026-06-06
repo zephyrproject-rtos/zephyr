@@ -14,6 +14,8 @@
 #include <zephyr/drivers/video-controls.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 #include "video_common.h"
 #include "video_ctrls.h"
@@ -391,16 +393,35 @@ static int imx335_set_stream(const struct device *dev, bool enable, enum video_b
 	struct imx335_data *drv_data = dev->data;
 	int ret;
 
+	if (enable) {
+		ret = pm_device_runtime_get(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to resume device for streaming");
+			return ret;
+		}
+	}
+
 	ret = video_write_cci_reg(&cfg->i2c, IMX335_STANDBY,
 				  enable ? IMX335_STANDBY_OPERATING : IMX335_STANDBY_STANDBY);
 	if (ret < 0) {
 		LOG_ERR("Failed to set standby register\n");
+		if (enable) {
+			pm_device_runtime_put(dev);
+		}
 		return ret;
 	}
 
 	drv_data->enabled = enable;
 
 	k_sleep(K_USEC(20));
+
+	if (!enable) {
+		ret = pm_device_runtime_put(dev);
+		if (ret < 0) {
+			LOG_ERR("Failed to release PM runtime reference");
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -748,6 +769,94 @@ static int imx335_init_controls(const struct device *dev)
 				   imx335_test_pattern_menu);
 }
 
+static int imx335_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct imx335_config *cfg = dev->config;
+	struct imx335_data *drv_data = dev->data;
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME: {
+		/* Save streaming state so it can be restored after sensor reinitialization.*/
+		bool was_streaming = drv_data->enabled;
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+		if (cfg->reset_gpio.port != NULL) {
+			ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+			if (ret < 0) {
+				return ret;
+			}
+
+			k_sleep(K_NSEC(500)); /* Tlow */
+
+			gpio_pin_set_dt(&cfg->reset_gpio, 0);
+
+			k_sleep(K_USEC(601)); /* T4 */
+		}
+#endif
+		ret = video_write_cci_multiregs(&cfg->i2c, imx335_init_params,
+						ARRAY_SIZE(imx335_init_params));
+		if (ret < 0) {
+			LOG_ERR("Unable to initialize the sensor");
+			return ret;
+		}
+
+		ret = video_write_cci_multiregs16(&cfg->i2c, imx335_fixed_regs,
+						  ARRAY_SIZE(imx335_fixed_regs));
+		if (ret < 0) {
+			LOG_ERR("Unable to write fixed registers");
+			return ret;
+		}
+
+		/* Temporarily clear streaming state to reapply the format. */
+		drv_data->enabled = false;
+		ret = imx335_set_fmt(dev, &drv_data->fmt);
+		if (ret < 0) {
+			LOG_ERR("Unable to apply format");
+			return ret;
+		}
+
+		/* TODO - Only 10bit - 2 data lanes mode is supported for now */
+		ret = video_write_cci_multiregs(&cfg->i2c, imx335_mode_2l_10b,
+						ARRAY_SIZE(imx335_mode_2l_10b));
+		if (ret < 0) {
+			LOG_ERR("Unable to set lane mode");
+			return ret;
+		}
+
+		ret = imx335_set_input_clk(dev, cfg->input_clk);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* Resume frame output if streaming was active before suspend. */
+		if (was_streaming) {
+			ret = video_write_cci_reg(&cfg->i2c, IMX335_STANDBY,
+						  IMX335_STANDBY_OPERATING);
+			if (ret < 0) {
+				LOG_ERR("Failed to restore streaming after resume");
+				return ret;
+			}
+			k_sleep(K_USEC(20));
+			drv_data->enabled = true;
+		}
+
+		return 0;
+	}
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+		if (cfg->reset_gpio.port != NULL) {
+			return gpio_pin_set_dt(&cfg->reset_gpio, 1);
+		}
+#endif
+		return video_write_cci_reg(&cfg->i2c, IMX335_STANDBY, IMX335_STANDBY_STANDBY);
+
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int imx335_init(const struct device *dev)
 {
 	const struct imx335_config *cfg = dev->config;
@@ -766,58 +875,13 @@ static int imx335_init(const struct device *dev)
 				cfg->reset_gpio.port->name);
 			return -ENODEV;
 		}
-
-		/* Power up sequence */
-		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
-		if (ret < 0) {
-			return ret;
-		}
-
-		k_sleep(K_NSEC(500)); /* Tlow */
-
-		gpio_pin_set_dt(&cfg->reset_gpio, 0);
-
-		k_sleep(K_USEC(600)); /* T4 */
 	}
 #endif
 
-	/* Initialize register values */
-	ret = video_write_cci_multiregs(&cfg->i2c, imx335_init_params,
-					ARRAY_SIZE(imx335_init_params));
-	if (ret < 0) {
-		LOG_ERR("Unable to initialize the sensor");
-		return ret;
-	}
-
-	/* Apply the fixed value registers */
-	ret = video_write_cci_multiregs16(&cfg->i2c, imx335_fixed_regs,
-					  ARRAY_SIZE(imx335_fixed_regs));
-	if (ret < 0) {
-		LOG_ERR("Unable to initialize the sensor");
-		return ret;
-	}
-
-	ret = imx335_set_fmt(dev, &drv_data->fmt);
-	if (ret < 0) {
-		LOG_ERR("Unable to apply format");
-		return ret;
-	}
-
-	/* TODO - Only 10bit - 2 data lanes mode is supported for the time being */
-	ret = video_write_cci_multiregs(&cfg->i2c, imx335_mode_2l_10b,
-					ARRAY_SIZE(imx335_mode_2l_10b));
-	if (ret < 0) {
-		LOG_ERR("Unable to initialize the sensor");
-		return ret;
-	}
-
-	ret = imx335_set_input_clk(dev, cfg->input_clk);
-	if (ret < 0) {
-		LOG_ERR("Unable to configure INCK");
-		return ret;
-	}
+	pm_device_runtime_enable(dev);
 
 	return imx335_init_controls(dev);
+
 }
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
@@ -842,7 +906,10 @@ static int imx335_init(const struct device *dev)
 		.input_clk = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),		\
 	};											\
 												\
-	DEVICE_DT_INST_DEFINE(n, &imx335_init, NULL, &imx335_data_##n, &imx335_cfg_##n,		\
+	PM_DEVICE_DT_INST_DEFINE(n, imx335_pm_action);						\
+												\
+	DEVICE_DT_INST_DEFINE(n, &imx335_init, PM_DEVICE_DT_INST_GET(n),			\
+			      &imx335_data_##n, &imx335_cfg_##n,				\
 			      POST_KERNEL, CONFIG_VIDEO_INIT_PRIORITY, &imx335_driver_api);	\
 												\
 	VIDEO_DEVICE_DEFINE(imx335_##n, DEVICE_DT_INST_GET(n), NULL);
