@@ -85,7 +85,9 @@ static int cmd_hrs_simulate(const struct shell *sh,
 #endif /* CONFIG_BT_HRS */
 
 #define HELP_NONE "[none]"
-#define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
+#define HELP_ADDR_LE                                                                              \
+	"{<address: P:XX:XX:XX:XX:XX:XX or R:XX:XX:XX:XX:XX:XX> | "                              \
+	"<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>}"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(hrs_cmds,
 #if defined(CONFIG_BT_HRS)
