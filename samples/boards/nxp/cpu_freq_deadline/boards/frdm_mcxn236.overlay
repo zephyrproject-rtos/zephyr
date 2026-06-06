@@ -1,0 +1,28 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	rti_markers: race-to-idle-markers {
+		compatible = "gpio-leds";
+
+		rti_work_marker: work-marker {
+			gpios = <&gpio5 3 GPIO_ACTIVE_HIGH>; /* GPIO5_3 */
+			label = "Race-to-idle work marker";
+		};
+	};
+};
+
+&gpio5 {
+	status = "okay";
+};
+
+&lptmr0 {
+	status = "okay";
+	clock-frequency = <16384>;
+	timer-mode-sel = <0>;
+};
