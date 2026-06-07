@@ -182,12 +182,6 @@
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "SIM117",   # https://docs.astral.sh/ruff/rules/multiple-with-statements
 ]
-"./scripts/dump_bugs_pickle.py" = [
-    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
-    "SIM110",   # https://docs.astral.sh/ruff/rules/reimplemented-builtin
-    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
-]
 "./scripts/footprint/fpdiff.py" = [
     "B023",     # https://docs.astral.sh/ruff/rules/function-uses-loop-variable
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -282,10 +276,6 @@
     "UP024",    # https://docs.astral.sh/ruff/rules/os-error-alias
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
     "UP036",    # https://docs.astral.sh/ruff/rules/outdated-version-block
-]
-"./scripts/make_bugs_pickle.py" = [
-    "UP006",    # https://docs.astral.sh/ruff/rules/non-pep585-annotation
-    "UP035",    # https://docs.astral.sh/ruff/rules/deprecated-import
 ]
 "./scripts/net/enumerate_http_status.py" = [
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -881,7 +871,6 @@ exclude = [
     "./scripts/dts/python-devicetree/src/devicetree/grutils.py",
     "./scripts/dts/python-devicetree/tests/test_dtlib.py",
     "./scripts/dts/python-devicetree/tests/test_edtlib.py",
-    "./scripts/dump_bugs_pickle.py",
     "./scripts/footprint/fpdiff.py",
     "./scripts/footprint/pack_as_twister.py",
     "./scripts/footprint/track.py",
@@ -901,7 +890,6 @@ exclude = [
     "./scripts/list_boards.py",
     "./scripts/list_hardware.py",
     "./scripts/list_shields.py",
-    "./scripts/make_bugs_pickle.py",
     "./scripts/net/enumerate_http_status.py",
     "./scripts/profiling/stackcollapse.py",
     "./scripts/pylib/build_helpers/domains.py",
