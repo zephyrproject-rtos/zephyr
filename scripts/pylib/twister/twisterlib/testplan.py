@@ -962,8 +962,29 @@ class TestPlan:
         logger.info("Building initial testsuite list...")
         build_list_start = time.time()
 
+        # When testing on a device, skip the testsuites whose image cannot be
+        # communicated with over the selected transport. A serial PTY script can
+        # use any transport, so it is not filtered.
+        transport_filter = None
+        if self.options.device_testing:
+            if self.options.device_rtt:
+                # The image must have its console or shell on RTT.
+                transport_filter = "(CONFIG_RTT_CONSOLE or CONFIG_SHELL_BACKEND_RTT)"
+            elif self.options.device_serial or self.options.hardware_map:
+                # The image must have its console or shell on UART, or neither on
+                # RTT, as output can also reach the serial port in other ways.
+                transport_filter = (
+                    "(CONFIG_UART_CONSOLE or CONFIG_SHELL_BACKEND_SERIAL"
+                    " or not (CONFIG_RTT_CONSOLE or CONFIG_SHELL_BACKEND_RTT))"
+                )
+
         keyed_tests = {}
         for _, ts in self.testsuites.items():
+            if transport_filter is not None:
+                ts.filter = (
+                    f"({ts.filter}) and {transport_filter}" if ts.filter else transport_filter
+                )
+
             if ts.integration_platforms:
                 _integration_platforms = list(
                     filter(lambda item: item.name in ts.integration_platforms, self.platforms)

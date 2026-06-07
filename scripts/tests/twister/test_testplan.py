@@ -14,6 +14,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+from expr_parser import parse
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.quarantine import Quarantine
@@ -262,6 +263,78 @@ def test_apply_filters_part3(class_testplan, all_testsuites_dict, platforms_list
 
     filtered_instances = list(filter(lambda item:  item.status == TwisterStatus.FILTER, class_testplan.instances.values()))
     assert not filtered_instances
+
+
+TESTDATA_TRANSPORT = [
+    (False, False, None, {}, True),
+    (True, False, None, {'CONFIG_UART_CONSOLE': 'y'}, True),
+    (True, False, None, {'CONFIG_SHELL_BACKEND_SERIAL': 'y'}, True),
+    (True, False, None, {'CONFIG_RTT_CONSOLE': 'y'}, False),
+    (True, False, None, {'CONFIG_SHELL_BACKEND_RTT': 'y'}, False),
+    (True, False, None, {'CONFIG_UART_CONSOLE': 'y', 'CONFIG_RTT_CONSOLE': 'y'}, True),
+    (True, True, None, {'CONFIG_RTT_CONSOLE': 'y'}, True),
+    (True, True, None, {'CONFIG_SHELL_BACKEND_RTT': 'y'}, True),
+    (True, True, None, {'CONFIG_UART_CONSOLE': 'y'}, False),
+    (True, True, None, {'CONFIG_SHELL_BACKEND_SERIAL': 'y'}, False),
+    (True, True, None, {'CONFIG_UART_CONSOLE': 'y', 'CONFIG_RTT_CONSOLE': 'y'}, True),
+    (True, False, None, {}, True),
+    (True, False, None, {'CONFIG_RTT_CONSOLE': 'y', 'CONFIG_SHELL_BACKEND_SERIAL': 'y'}, True),
+    (True, False, 'script.py', {'CONFIG_RTT_CONSOLE': 'y'}, True),
+]
+
+
+@pytest.mark.parametrize(
+    'device_testing, device_rtt, device_serial_pty, kconfig, expected',
+    TESTDATA_TRANSPORT,
+    ids=[
+        'no device testing',
+        'serial, uart console',
+        'serial, serial shell',
+        'serial, rtt console',
+        'serial, rtt shell',
+        'serial, uart and rtt console',
+        'rtt, rtt console',
+        'rtt, rtt shell',
+        'rtt, uart console',
+        'rtt, serial shell',
+        'rtt, uart and rtt console',
+        'serial, no uart or rtt console',
+        'serial, rtt console and serial shell',
+        'serial pty, rtt console',
+    ]
+)
+def test_apply_filters_device_transport(class_testplan, all_testsuites_dict, platforms_list,
+                                        device_testing, device_rtt, device_serial_pty,
+                                        kconfig, expected):
+    """ Testing apply_filters function of TestPlan class in Twister
+    Device testing adds a filter that requires the image to communicate over
+    the selected transport, while keeping the testsuite's own filter.
+    """
+    class_testplan.platforms = platforms_list
+    class_testplan.platform_names = [p.name for p in platforms_list]
+    class_testplan.testsuites = all_testsuites_dict
+    class_testplan.options.device_testing = device_testing
+    class_testplan.options.device_rtt = device_rtt
+    class_testplan.options.device_serial_pty = device_serial_pty
+    # --device-serial and --device-serial-pty are mutually exclusive.
+    if device_testing and not device_rtt and not device_serial_pty:
+        class_testplan.options.device_serial = ['/dev/ttyACM0']
+
+    for ts in class_testplan.testsuites.values():
+        ts.filter = 'CONFIG_FOO'
+
+    class_testplan.apply_filters()
+
+    for ts in class_testplan.testsuites.values():
+        # The transport filter is added once per testsuite, not once per platform.
+        assert ts.filter.count('CONFIG_FOO') == 1
+        assert ts.filter.count('CONFIG_RTT_CONSOLE') <= 1
+
+        # expected variable tells us whether is expected that the testsuite filter
+        # evaluates to true for that image, i.e. whether the test would run (True) or be
+        # filtered out at runtime (False).
+        assert bool(parse(ts.filter, {'CONFIG_FOO': 'y', **kconfig}, None)) == expected
+        assert not parse(ts.filter, kconfig, None)
 
 
 # Regression guard for #33247 / #32835: a testsuite with integration_platforms
