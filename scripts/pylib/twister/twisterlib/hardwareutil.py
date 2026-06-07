@@ -19,11 +19,18 @@ logger = logging.getLogger('twister')
 class HardwareReservationManager:
     """Manages hardware reservations for test execution."""
 
-    def __init__(self, hwm: HardwareMap, platform: str, harness_config: HarnessConfig):
+    def __init__(
+        self,
+        hwm: HardwareMap,
+        platform: str,
+        harness_config: HarnessConfig,
+        use_rtt: bool = False,
+    ):
         self.hwm = hwm
         self.platform = platform
         self.harness_config = harness_config
         self.reserved_duts: list[DUT] = []
+        self.use_rtt = use_rtt
 
     def reserve_duts(self) -> None:
         """Reserve devices for the test instance."""
@@ -109,7 +116,9 @@ class HardwareReservationManager:
         """Get a list of DUTs that match the specified device and fixture criteria."""
         matched_duts: list[DUT] = []
         for d in self.hwm.duts:
-            if d.platform != platform or (d.serial is None and d.serial_pty is None):
+            if d.platform != platform or (
+                d.serial is None and d.serial_pty is None and self.use_rtt is None
+            ):
                 continue
             if fixture and not all(f in (f.split(sep=':')[0] for f in d.fixtures) for f in fixture):
                 continue
