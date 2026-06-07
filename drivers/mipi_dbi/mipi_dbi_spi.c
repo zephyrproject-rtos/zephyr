@@ -82,6 +82,28 @@ struct mipi_dbi_spi_data {
 	uint16_t spi_byte;
 };
 
+static int mipi_dbi_spi_configure_cs_gpio(const struct mipi_dbi_config *dbi_config)
+{
+	int ret = 0;
+
+	if (!spi_cs_is_gpio(&dbi_config->config)) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&dbi_config->config.cs.gpio)) {
+		LOG_ERR("SPI CS GPIO is not ready");
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&dbi_config->config.cs.gpio,
+				    GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Could not configure SPI CS GPIO (%d)", ret);
+	}
+
+	return ret;
+}
+
 #if MIPI_DBI_SPI_TE_REQUIRED
 
 static void mipi_dbi_spi_te_cb(const struct device *dev,
@@ -304,6 +326,11 @@ static int mipi_dbi_spi_write_helper(const struct device *dev,
 	ret = k_mutex_lock(&data->lock, K_FOREVER);
 	if (ret < 0) {
 		return ret;
+	}
+
+	ret = mipi_dbi_spi_configure_cs_gpio(dbi_config);
+	if (ret < 0) {
+		goto out;
 	}
 
 	if (dbi_config->mode == MIPI_DBI_MODE_SPI_3WIRE &&
