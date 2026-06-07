@@ -1105,7 +1105,6 @@ Continuous Integration:
     - .github/
     - scripts/requirements-*
     - scripts/ci/
-    - scripts/make_bugs_pickle.py
     - .checkpatch.conf
     - scripts/gitlint/
     - scripts/ci/set_assignees.py
@@ -5140,7 +5139,6 @@ Release:
     - nashif
   files:
     - VERSION
-    - scripts/dump_bugs_pickle.py
     - SDK_VERSION
     - LICENSE
     - LICENSES/
