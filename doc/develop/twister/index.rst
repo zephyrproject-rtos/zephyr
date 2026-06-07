@@ -574,6 +574,11 @@ sysbuild: <True|False> (default False)
     not supported with this option. Usage of unsupported options will result
     in tests requiring sysbuild support being skipped.
 
+use_rtt: <True|False> (default False)
+    If true the test scenario is marked to be only used with the RTT support.
+    Twister will only run this test scenario, if the ``--device-rtt`` flag was
+    to it.
+
 harness: <string>
     A harness keyword in the ``testcase.yaml`` file identifies a Twister
     harness needed to run a test successfully. A harness is a feature of
@@ -1284,6 +1289,27 @@ In this case you can run twister with the following options:
 The script is user-defined and handles delivering the messages which can be
 used by twister to determine the test execution status.
 
+To support devices that communicate via RTT, use the ``--device-rtt`` option.
+Twister will connect to the device with ``west rtt`` command and capture the log
+messages. In this case you can run twister with the following options:
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         scripts/twister --device-testing --device-rtt \
+         -p nrf7002dk/nrf5340/cpuapp \
+         -T samples/subsys/testsuite/pytest/shell \
+         -s sample.pytest.rtt
+
+   .. group-tab:: Windows
+
+      .. note::
+
+         Not supported on Windows OS
+
 The ``--device-flash-timeout`` option allows to set explicit timeout on the
 device flash operation, for example when device flashing takes significantly
 large time.
@@ -1468,6 +1494,55 @@ work. It is equivalent to following west and twister commands.
   and generate a correct hardware map automatically. You have to edit it
   manually according to above example. This is because the serial port
   of the PTY is not fixed and being allocated in the system at runtime.
+
+RTT support using the hardware map is also possible. To do that only
+``--device-rtt`` flag is needed. For example, the same hardware map file can be
+used both for serial or RTT transport.
+
+.. code-block:: yaml
+
+   - connected: true
+     id: 001050795550
+     platform: nrf7002dk/nrf5340/cpuapp
+     product: J-Link
+     runner: nrfutil
+     serial: /dev/ttyACM1
+
+Below command showcases the specific configuration of the
+``samples/subsys/testsuite/pytest/shell`` which uses RTT as shell output.
+
+.. tabs::
+
+   .. group-tab:: Linux
+
+      .. code-block:: bash
+
+         ./scripts/twister --device-testing --device-rtt \
+         --hardware-map map.yml -T samples/subsys/testsuite/pytest/shell \
+         --test sample.pytest.rtt
+
+   .. group-tab:: Windows
+
+      .. code-block:: bat
+
+         python .\scripts\twister --device-testing --device-rtt ^
+         --hardware-map map.yml -T samples\subsys\testsuite\pytest\shell ^
+         --test sample.pytest.rtt
+
+If a different runner should be used for RTT connection than for flashing,
+specify ``rtt_runner`` field. If a different runner is not needed, then
+``rtt_runner`` can be omitted.
+
+.. _west_rtt_limitation:
+
+.. note::
+
+  It is currently not possible to test multiple devices that use RTT in
+  parallel. ``west rtt`` command will always try to open the same port
+  number for RTT telnet connection, so running this command while
+  another one is executing doesn't work. Thus whenever multiple devices
+  are given to Twister via multiple ``--platform`` flags or via
+  ``--hardware-map``, the number of concurrent jobs is set to 1.
 
 If west is not available or does not know how to flash your system, a custom
 flash command can be specified using the ``flash-command`` flag. The script is
@@ -1685,6 +1760,11 @@ test can interact with all devices.
 
 An example multi-DUT test can be found at
 :zephyr_file:`tests/subsys/testsuite/multidut`.
+
+.. note::
+
+   Related to the above :ref:`west rtt limitation <west_rtt_limitation>` when Multi-DUTs test
+   scenarios are used, only the main DUT can use RTT, all others can only use UART.
 
 Quarantine
 ----------

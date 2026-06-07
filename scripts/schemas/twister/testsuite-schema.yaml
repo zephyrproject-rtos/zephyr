@@ -227,6 +227,8 @@ $defs:
         type: boolean
       sysbuild:
         type: boolean
+      use_rtt:
+        type: boolean
     additionalProperties: false
 
 type: object

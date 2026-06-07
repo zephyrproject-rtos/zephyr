@@ -293,6 +293,12 @@ class TestInstance:
         if skip_slow:
             return False
 
+        # Don't run tests that expect rtt transport if --device-rtt flag wasn't given
+        # and vice-versa.
+        use_rtt = getattr(self.testsuite, 'use_rtt', False)
+        if use_rtt != bool(options.device_rtt):
+            return False
+
         target_ready = bool(self.testsuite.type == "unit" or \
                             self.platform.type == "native" or \
                             self.testsuite.harness == "ctest" or \
@@ -315,7 +321,8 @@ class TestInstance:
         if testsuite_runnable := self.testsuite.harness in SUPPORTED_HARNESSES:
             if device_testing:
                 testsuite_runnable = HardwareReservationManager(
-                    hardware_map, self.platform.name, self.testsuite.harness_config).is_runnable()
+                    hardware_map, self.platform.name, self.testsuite.harness_config,
+                    options.device_rtt).is_runnable()
 
             elif fixture := self.testsuite.harness_config.fixture:
                 # if we have a fixture that is also being supplied on the

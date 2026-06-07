@@ -2851,6 +2851,7 @@ def test_twisterrunner_run(
     tr.update_counting_before_pipeline = mock.Mock()
     tr.execute = mock.Mock()
     tr.show_brief = mock.Mock()
+    tr.env.hwm.duts = []
 
     gnumakejobserver_mock = mock.Mock()
     gnumakejobserver_mock().name='GNUMakeJobServer'
