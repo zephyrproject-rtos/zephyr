@@ -92,7 +92,8 @@ class DUT(HardwareData):
             self._failures.value += value
 
     def __repr__(self):
-        return f"<{self.platform} ({self.product}) on {self.serial}>"
+        comm_type = "RTT" if self.use_rtt else self.serial
+        return f"<{self.platform} ({self.product}) on {comm_type}>"
 
 
 class HardwareMap:
@@ -175,7 +176,8 @@ class HardwareMap:
                 self.add_device(self.options.device_serial[0],
                                 self.options.platform[0],
                                 self.options.pre_script,
-                                False,
+                                is_pty=False,
+                                uses_rtt=False,
                                 baud=self.options.device_serial_baud,
                                 flash_timeout=self.options.device_flash_timeout,
                                 flash_with_test=self.options.device_flash_with_test,
@@ -186,16 +188,30 @@ class HardwareMap:
                         self.add_device(serial,
                                         platform=None,
                                         pre_script=None,
-                                        is_pty=False)
+                                        is_pty=False,
+                                        uses_rtt=False)
 
             elif self.options.device_serial_pty:
                 self.add_device(self.options.device_serial_pty,
                                 self.options.platform[0],
                                 self.options.pre_script,
-                                True,
+                                is_pty=True,
+                                uses_rtt=False,
                                 flash_timeout=self.options.device_flash_timeout,
                                 flash_with_test=self.options.device_flash_with_test,
                                 flash_before=self.options.flash_before,
+                                )
+            elif self.options.device_rtt:
+                # RTT always requires flashing before connecting to work properly.
+                self.add_device(self.options.device_serial_pty,
+                                self.options.platform[0],
+                                self.options.pre_script,
+                                is_pty=False,
+                                uses_rtt=True,
+                                rtt_runner=self.options.rtt_runner,
+                                flash_timeout=self.options.device_flash_timeout,
+                                flash_with_test=self.options.device_flash_with_test,
+                                flash_before=True,
                                 )
 
             # the fixtures given by twister command explicitly should be assigned to each DUT
@@ -222,6 +238,8 @@ class HardwareMap:
         platform,
         pre_script,
         is_pty,
+        uses_rtt,
+        rtt_runner=None,
         baud=None,
         flash_timeout=60,
         flash_with_test=False,
@@ -229,6 +247,8 @@ class HardwareMap:
     ):
         device = DUT(
             platform=platform,
+            use_rtt=uses_rtt,
+            rtt_runner=rtt_runner,
             connected=True,
             pre_script=pre_script,
             serial_baud=baud,
@@ -271,12 +291,14 @@ class HardwareMap:
             runner = dut.get('runner')
             base_params = dut.get('base_params')
             runner_params = dut.get('runner_params')
+            rtt_runner = dut.get('rtt_runner')
             serial = dut.get('serial')
             serial_baud = dut.get('serial_baud', None) or dut.get('baud', None)
             product = dut.get('product')
             fixtures = dut.get('fixtures', [])
             run_with_fixture_only = dut.get('run_with_fixture_only', False)
-            connected = dut.get('connected') and ((serial or serial_pty) is not None)
+            connected = dut.get('connected') and ((serial or serial_pty or
+                                                   self.options.device_rtt) is not None)
             west_flash_cmd = dut.get('west_flash_cmd', "")
             if not connected:
                 continue
@@ -286,6 +308,7 @@ class HardwareMap:
                               runner=runner,
                               base_params=base_params,
                               runner_params=runner_params,
+                              rtt_runner=rtt_runner,
                               id=id,
                               probe_id=probe_id,
                               serial_pty=serial_pty,
@@ -478,7 +501,7 @@ class HardwareMap:
             to_show = self.duts
 
         if not header:
-            header = ["Platform", "ID", "Serial device"]
+            header = ["Platform", "ID", "Communication type"]
         for p in to_show:
             platform = p.platform
             connected = p.connected
@@ -486,6 +509,13 @@ class HardwareMap:
                 continue
 
             if not connected_only or connected:
-                table.append([platform, p.id, p.serial])
+                if self.options.device_rtt:
+                    comm_type = "RTT"
+                elif p.serial_pty:
+                    comm_type = "PTY"
+                else:
+                    comm_type = f"Serial: {p.serial}"
+
+                table.append([platform, p.id, comm_type])
 
         print(tabulate(table, headers=header, tablefmt="github"))
