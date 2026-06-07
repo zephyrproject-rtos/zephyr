@@ -1,0 +1,30 @@
+common:
+  tags: osal
+tests:
+  osal.api:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
+  osal.api.smp:
+    # Real multi-core SMP target so the cross-CPU spinlock / critical-section
+    # contention tests actually run (native_sim is single-CPU only).
+    extra_args:
+      - CONFIG_SCHED_CPU_MASK=y
+    platform_allow:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    integration_platforms:
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+  osal.api.static_alloc:
+    extra_args:
+      - CONFIG_OSAL_DYNAMIC_ALLOC=n
+      - CONFIG_OSAL_MAX_THREADS=8
+      - CONFIG_OSAL_MAX_OBJECTS=16
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

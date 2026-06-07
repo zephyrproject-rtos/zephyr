@@ -1,0 +1,67 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config OSAL
+	bool "Zephyr OS abstraction layer [EXPERIMENTAL]"
+	depends on MULTITHREADING
+	select EXPERIMENTAL
+	select EVENTS
+	help
+	  Shared translation of a generic OS abstraction (mutex, semaphore,
+	  message queue, thread, heap, time and software timer) onto Zephyr
+	  kernel APIs. An adapter selects this and maps its own RTOS API onto
+	  the osal_* primitives instead of re-implementing the same k_*
+	  boilerplate.
+
+	  This is selected by a consumer's Kconfig; it is not meant to be
+	  enabled directly by applications.
+
+if OSAL
+
+config OSAL_DYNAMIC_ALLOC
+	bool "Allocate control blocks from the heap"
+	default y
+	select DYNAMIC_THREAD
+	select DYNAMIC_THREAD_ALLOC
+	select THREAD_STACK_INFO
+	help
+	  Allocate control blocks (mutex, semaphore, queue, ...) and thread
+	  stacks from the system heap with k_malloc / k_thread_stack_alloc.
+
+	  Disable to use fixed-size static pools instead, for environments
+	  that create OSAL objects before the heap is available or that
+	  forbid dynamic allocation. Pool sizes are then bounded by the
+	  OSAL_MAX_* options below.
+
+if !OSAL_DYNAMIC_ALLOC
+
+config OSAL_MAX_OBJECTS
+	int "Maximum control blocks per object type (static pools)"
+	default 8
+	help
+	  Size of the fixed pool for each control-block type (mutex,
+	  semaphore, queue, event, timer, fifo, mempool). Allocation beyond
+	  this count fails. Only used when OSAL_DYNAMIC_ALLOC is disabled.
+
+config OSAL_MAX_THREADS
+	int "Maximum OSAL-managed threads (static pools)"
+	default 4
+	help
+	  Size of the fixed thread and stack pool. Only used when
+	  OSAL_DYNAMIC_ALLOC is disabled.
+
+config OSAL_THREAD_STACK_SIZE
+	int "Static thread stack size (bytes)"
+	default 2048
+	help
+	  Stack size for each statically pooled OSAL thread. The stack size
+	  requested at osal_thread_create() must not exceed this. Only used
+	  when OSAL_DYNAMIC_ALLOC is disabled.
+
+endif # !OSAL_DYNAMIC_ALLOC
+
+module = OSAL
+module-str = osal
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # OSAL
