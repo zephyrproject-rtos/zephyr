@@ -636,6 +636,10 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 			} else if (event_msg.event == EVENT_UNPROT_DISASSOC) {
 				os_free((char *)data->unprot_disassoc.sa);
 				os_free((char *)data->unprot_disassoc.da);
+			} else if (event_msg.event == EVENT_EXTERNAL_AUTH) {
+				os_free((char *)data->external_auth.bssid);
+				os_free((char *)data->external_auth.ssid);
+				os_free((char *)data->external_auth.mld_addr);
 			}
 
 			os_free(event_msg.data);
