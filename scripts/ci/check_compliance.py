@@ -2134,7 +2134,8 @@ class ImageSize(ComplianceTest):
 
             if size > limit:
                 self.failure(
-                    f"Image file too large: {file} reduce size to less than {limit >> 10}kB"
+                    f"Image file too large: {file} reduce size to less than {limit >> 10}kB.\n"
+                    "See https://docs.zephyrproject.org/latest/contribute/documentation/guidelines.html#recommended-image-formats-based-on-content"
                 )
 
 
