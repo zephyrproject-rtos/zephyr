@@ -327,6 +327,10 @@ static int mcux_lpi2c_leave_master_session_locked(const struct device *dev)
 	return mcux_lpi2c_restore_steady_state_locked(dev);
 }
 
+#if CONFIG_I2C_MCUX_LPI2C_GPIO_BUS_RECOVERY
+static int mcux_lpi2c_recover_bus_locked(const struct device *dev);
+#endif
+
 static int mcux_lpi2c_recover_locked(const struct device *dev, bool restore_target)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
