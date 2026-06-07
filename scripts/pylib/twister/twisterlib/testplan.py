@@ -744,6 +744,9 @@ class TestPlan:
                     if ts.get("run_id"):
                         instance.run_id = ts.get("run_id")
 
+                    if ts.get("extra_configs"):
+                        instance.testsuite.extra_configs = ts.get("extra_configs")
+
                     instance.run = instance.check_runnable(
                         self.options,
                         self.hwm
