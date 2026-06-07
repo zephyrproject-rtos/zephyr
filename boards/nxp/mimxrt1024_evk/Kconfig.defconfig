@@ -15,6 +15,10 @@ config I2C_MCUX_LPI2C_BUS_RECOVERY
 	default y
 	depends on I2C_MCUX_LPI2C && PINCTRL
 
+config I2C_MCUX_LPI2C_GPIO_BUS_RECOVERY
+	default y
+	depends on I2C_MCUX_LPI2C && PINCTRL && GPIO
+
 configdefault NET_L2_ETHERNET
 	default y
 
