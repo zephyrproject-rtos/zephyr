@@ -29,6 +29,7 @@ OS Services
    net_buf/index.rst
    modem/index.rst
    notify.rst
+   osal/index.rst
    pm/index.rst
    portability/index.rst
    poweroff.rst

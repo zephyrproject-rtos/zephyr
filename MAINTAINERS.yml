@@ -4732,6 +4732,20 @@ Nuvoton Numicro Numaker Platforms:
   labels:
     - "platform: Nuvoton Numicro Numaker"
 
+OS Abstraction Layer:
+  status: maintained
+  maintainers:
+    - sylvioalves
+  files:
+    - subsys/osal/
+    - include/zephyr/osal/
+    - tests/subsys/osal/
+    - doc/services/osal/
+  labels:
+    - "area: OSAL"
+  tests:
+    - osal.api
+
 OSDP:
   status: maintained
   maintainers:
