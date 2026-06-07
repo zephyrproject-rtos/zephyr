@@ -229,6 +229,7 @@ def test_if_hardware_adapter_uses_serial_pty(
 
     monkeypatch.setattr('twister_harness.device.device_connection.pty.openpty', lambda: (123, 456))
     monkeypatch.setattr('twister_harness.device.device_connection.os.ttyname', lambda x: f'/pty/ttytest/{x}')
+    monkeypatch.setattr('twister_harness.device.device_connection.terminate_process', lambda x: None)
 
     serial_mock = mock.Mock()
     serial_mock.port = '/pty/ttytest/456'
@@ -237,7 +238,7 @@ def test_if_hardware_adapter_uses_serial_pty(
     device._reader_started.set()
     device.connect()
     assert device.connections[0]._serial_connection.port == '/pty/ttytest/456'  # type: ignore[union-attr]
-    assert device.connections[0]._serial_pty_proc
+    assert device.connections[0]._proc
     patched_popen.assert_called_with(
         ['script.py'],
         stdout=123,
@@ -246,7 +247,7 @@ def test_if_hardware_adapter_uses_serial_pty(
     )
 
     device.disconnect()
-    assert not device.connections[0]._serial_pty_proc
+    assert not device.connections[0]._proc
 
 
 def test_if_hardware_adapter_properly_send_data_to_subprocess(

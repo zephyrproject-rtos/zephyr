@@ -60,10 +60,8 @@ class Shell:
         full_output_timeout: float | None = None,
     ) -> list[str]:
         """
-        Send shell command to a device and return response. Passed command
-        is extended by double enter sings - first one to execute this command
-        on a device, second one to receive next prompt what is a signal that
-        execution was finished. Method returns printout of the executed command.
+        Send shell command to a device and return response. execution was finished.
+        Method returns printout of the executed command.
 
         :param get_full_output: If True, after the shell prompt is seen, keep
             reading lines until ``full_output_timeout`` elapses (wall clock).
@@ -74,18 +72,26 @@ class Shell:
             omitted, ``timeout`` (or :attr:`base_timeout`) is used.
         """
         timeout = timeout or self.base_timeout
-        command_ext = f'{command}\n\n'
+        command_ext = f'{command}\n'
         regex_prompt = re.escape(self.prompt)
         regex_command = f'.*{re.escape(command)}'
+
+        # Execute command
         self._device.clear_buffer()
         self._device.write(command_ext.encode())
         lines: list[str] = []
-        # wait for device command print - it should be done immediately after sending command to device
+        # wait for device command print - it should be done immediately after sending
+        # command to device.
         lines.extend(
             self._device.readlines_until(
                 regex=regex_command, timeout=1.0, print_output=print_output
             )
         )
+
+        # Send single enter to get next prompt after command execution, as it signals
+        # that execution finished.
+        self._device.write(b"\n")
+
         # wait for device command execution
         lines.extend(
             self._device.readlines_until(
