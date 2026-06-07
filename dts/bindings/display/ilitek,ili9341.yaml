@@ -18,78 +18,104 @@ properties:
   ifmode:
     type: uint8-array
     default: [0x40]
+    min-len: 1
+    max-len: 1
     description:
       RGB interface signal control (IFMOD) register value.
 
   ifctl:
     type: uint8-array
     default: [0x01, 0x00, 0x00]
+    min-len: 3
+    max-len: 3
     description:
       Interface control (IFCTL) register value.
 
   pwctrla:
     type: uint8-array
     default: [0x39, 0x2c, 0x00, 0x34, 0x02]
+    min-len: 5
+    max-len: 5
     description:
       Power control A (PWCTRLA) register value.
 
   pwctrlb:
     type: uint8-array
     default: [0x00, 0x8b, 0x30]
+    min-len: 3
+    max-len: 3
     description:
       Power control B (PWCTRLB) register value.
 
   pwseqctrl:
     type: uint8-array
     default: [0x55, 0x01, 0x23, 0x01]
+    min-len: 4
+    max-len: 4
     description:
       Power on sequence control (PWSEQCTRL) register value.
 
   timctrla:
     type: uint8-array
     default: [0x84, 0x11, 0x7a]
+    min-len: 3
+    max-len: 3
     description:
       Driver timing control A (TIMCTRLA) register value.
 
   timctrlb:
     type: uint8-array
     default: [0x00, 0x00]
+    min-len: 2
+    max-len: 2
     description:
       Driver timing control B (TIMCTRLB) register value.
 
   pumpratioctrl:
     type: uint8-array
     default: [0x10]
+    min-len: 1
+    max-len: 1
     description:
       Pump ratio control (PUMPRATIOCTRL) register value.
 
   enable3g:
     type: uint8-array
     default: [0x02]
+    min-len: 1
+    max-len: 1
     description:
       Enable 3G (ENABLE3G) register value.
 
   etmod:
     type: uint8-array
     default: [0x06]
+    min-len: 1
+    max-len: 1
     description:
       Entry Mode Set (ETMOD) register value.
 
   gamset:
     type: uint8-array
     default: [0x01]
+    min-len: 1
+    max-len: 1
     description:
       Gamma set (GAMSET) register value.
 
   frmctr1:
     type: uint8-array
     default: [0x00, 0x1b]
+    min-len: 2
+    max-len: 2
     description:
       Frame rate control (in normal mode / full colors) (FRMCTR1) register value.
 
   disctrl:
     type: uint8-array
     default: [0x0a, 0x82, 0x27, 0x04]
+    min-len: 4
+    max-len: 4
     description:
       Display function control (DISCTRL) register value. Note that changing
       default SS bit value (0) may interfere with display rotation.
@@ -97,24 +123,32 @@ properties:
   pwctrl1:
     type: uint8-array
     default: [0x21]
+    min-len: 1
+    max-len: 1
     description:
       Power control 1 (PWCTRL1) register values.
 
   pwctrl2:
     type: uint8-array
     default: [0x10]
+    min-len: 1
+    max-len: 1
     description:
       Power control 2 (PWCTRL2) register values.
 
   vmctrl1:
     type: uint8-array
     default: [0x31, 0x3c]
+    min-len: 2
+    max-len: 2
     description:
       VCOM control 1 (VMCTRL1) register values.
 
   vmctrl2:
     type: uint8-array
     default: [0xc0]
+    min-len: 1
+    max-len: 1
     description:
       VCOM control 2 (VMCTRL2) register values.
 
@@ -137,6 +171,8 @@ properties:
       0x0e,
       0x0c
     ]
+    min-len: 15
+    max-len: 15
     description:
       Positive gamma correction (PGAMCTRL) register values.
 
@@ -159,5 +195,7 @@ properties:
       0x37,
       0x0f
     ]
+    min-len: 15
+    max-len: 15
     description:
       Negative gamma correction (NGAMCTRL) register values.
