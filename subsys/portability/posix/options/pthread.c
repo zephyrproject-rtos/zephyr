@@ -1005,6 +1005,26 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
 	return ret;
 }
 
+/*
+ * pthread_once() state machine. A once-control is statically initialized to
+ * PTHREAD_ONCE_INIT, which is {0}, so the "not yet run" state must be 0.
+ */
+enum {
+	PTHREAD_ONCE_NOT_DONE = 0,
+	PTHREAD_ONCE_IN_PROGRESS,
+	PTHREAD_ONCE_DONE,
+};
+
+static void once_init_cancel(void *arg)
+{
+	struct pthread_once *const _once = arg;
+
+	/* POSIX: if init_func() is cancelled, once_control must reset as if
+	 * pthread_once() was never called, so the next caller runs init_func().
+	 */
+	(void)atomic_set(&_once->state, PTHREAD_ONCE_NOT_DONE);
+}
+
 /**
  * @brief Dynamic package initialization
  *
@@ -1012,27 +1032,36 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
  */
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
-	int ret = EINVAL;
-	bool run_init_func = false;
 	struct pthread_once *const _once = (struct pthread_once *)once;
 
 	if (init_func == NULL) {
 		return EINVAL;
 	}
 
-	SYS_SEM_LOCK(&pthread_pool_lock) {
-		if (!_once->flag) {
-			run_init_func = true;
-			_once->flag = true;
+	__ASSERT(atomic_get(&_once->state) <= PTHREAD_ONCE_DONE,
+		 "pthread_once_t is uninitialized or corrupt");
+
+	for (;;) {
+		if (atomic_cas(&_once->state, PTHREAD_ONCE_NOT_DONE, PTHREAD_ONCE_IN_PROGRESS)) {
+			pthread_cleanup_push(once_init_cancel, _once);
+			init_func();
+			pthread_cleanup_pop(0);
+			(void)atomic_set(&_once->state, PTHREAD_ONCE_DONE);
+			return 0;
 		}
-		ret = 0;
+
+		if (atomic_get(&_once->state) == PTHREAD_ONCE_DONE) {
+			return 0;
+		}
+
+		/* Another thread is running init_func(); yield and retry.
+		 * If that thread was cancelled, state resets to NOT_DONE and
+		 * the next CAS attempt above will take over as the new winner.
+		 */
+		k_yield();
 	}
 
-	if (ret == 0 && run_init_func) {
-		init_func();
-	}
-
-	return ret;
+	CODE_UNREACHABLE;
 }
 
 /**
