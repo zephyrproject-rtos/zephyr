@@ -1210,6 +1210,7 @@ static inline int z_impl_can_stop(const struct device *dev)
  * @retval 0 on success.
  * @retval -EBUSY CAN controller is not in stopped state.
  * @retval -EIO General input/output error, failed to configure device.
+ * @retval -ENOTSUP Unsupported operation mode requested.
  */
 __syscall int can_set_mode(const struct device *dev, can_mode_t mode);
 
