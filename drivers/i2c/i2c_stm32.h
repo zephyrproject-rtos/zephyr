@@ -80,6 +80,9 @@ struct i2c_stm32_data {
 	uint8_t *xfer_buf;
 	size_t xfer_len;
 	uint8_t xfer_flags;
+#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
+	struct k_work recovery_work;
+#endif
 #ifdef CONFIG_I2C_STM32_V1
 	size_t msg_len;
 	uint8_t is_restart;
