@@ -51,3 +51,8 @@ config I2S_TEST_DATA_FORMAT_LJF
 
 config I2S_TEST_DATA_FORMAT_RJF
 	bool "Right justified data format"
+
+config I2S_TI_CC35XX
+	bool
+	help
+	  Hidden symbol to indicate TI CC35XX I2S driver is enabled.

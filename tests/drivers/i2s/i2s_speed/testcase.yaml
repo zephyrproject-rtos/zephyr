@@ -1,6 +1,10 @@
 tests:
+  # Test scenario for devices with internal loopback or separate TX/RX devices
   drivers.i2s.speed:
     depends_on: i2s
+    platform_exclude:
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2755p10/cc2755p10
     tags:
       - drivers
       - i2s

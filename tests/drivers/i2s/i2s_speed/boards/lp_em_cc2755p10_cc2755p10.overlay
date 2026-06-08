@@ -1,0 +1,62 @@
+/*
+ * I2S speed test overlay for lp_em_cc2755p10
+ *
+ * DIR_BOTH loopback test configuration:
+ *   DIO16 = MCLK  (optional master clock)
+ *   DIO17 = SCLK  (BCLK — bit clock)
+ *   DIO18 = WS    (WCLK — word/frame clock)
+ *   DIO19 = SD0   (TX data output)
+ *   DIO20 = SD1   (RX data input)
+ *
+ * GPIO loopback wiring: connect DIO19 (SD0) → DIO20 (SD1)
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s0;
+	};
+};
+
+&pinctrl {
+	i2s0_mclk_default: i2s0_mclk_default {
+		pinmux = <16 DIO16_I2S0_MCLK>;
+		bias-disable;
+	};
+
+	i2s0_sclk_default: i2s0_sclk_default {
+		pinmux = <17 DIO17_I2S0_SCLK>;
+		bias-disable;
+		input-enable;
+	};
+
+	i2s0_ws_default: i2s0_ws_default {
+		pinmux = <18 DIO18_I2S0_WS>;
+		bias-disable;
+		input-enable;
+	};
+
+	i2s0_sd0_default: i2s0_sd0_default {
+		pinmux = <19 DIO19_I2S0_SD0>;
+		bias-disable;
+		input-enable;
+	};
+
+	i2s0_sd1_default: i2s0_sd1_default {
+		pinmux = <20 DIO20_I2S0_SD1>;
+		bias-disable;
+		input-enable;
+	};
+};
+
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_mclk_default &i2s0_sclk_default
+		     &i2s0_ws_default &i2s0_sd0_default &i2s0_sd1_default>;
+	pinctrl-names = "default";
+
+	/* AFOSC for 44 kHz sample rate (i2s_speed uses FRAME_CLK_FREQ = 44000)
+	 * 44 kHz family formula: afosc = 44000 × 2048 = 90,112,000 Hz (90.112 MHz)
+	 * This allows exact division: 90,112,000 / 2048 = 44000 Hz
+	 */
+	afosc-freq = <90112000>;
+};

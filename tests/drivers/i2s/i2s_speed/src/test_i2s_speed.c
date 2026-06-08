@@ -503,13 +503,24 @@ static void i2s_dir_both_transfer_short(uint32_t frame_clk_freq)
 	ret = i2s_trigger(dev_i2s_rxtx, I2S_DIR_BOTH, I2S_TRIGGER_START);
 	zassert_equal(ret, 0, "RX/TX START trigger failed\n");
 
+#ifdef CONFIG_I2S_TI_CC27XX
+	/* CC27XX: Read at least 1 buffer before DRAIN to ensure synchronization.
+	 * DRAIN stops RX after current block, not after all queued TX blocks.
+	 */
+	ret = i2s_read(dev_i2s_rxtx, &rx_block[0], &rx_size);
+	zassert_equal(ret, 0);
+	zassert_equal(rx_size, BLOCK_SIZE);
+#endif
+
 	/* All data written, drain TX queue and stop both streams. */
 	ret = i2s_trigger(dev_i2s_rxtx, I2S_DIR_BOTH, I2S_TRIGGER_DRAIN);
 	zassert_equal(ret, 0, "RX/TX DRAIN trigger failed");
 
+#ifndef CONFIG_I2S_TI_CC27XX
 	ret = i2s_read(dev_i2s_rxtx, &rx_block[0], &rx_size);
 	zassert_equal(ret, 0);
 	zassert_equal(rx_size, BLOCK_SIZE);
+#endif
 
 	ret = i2s_read(dev_i2s_rxtx, &rx_block[1], &rx_size);
 	zassert_equal(ret, 0);
