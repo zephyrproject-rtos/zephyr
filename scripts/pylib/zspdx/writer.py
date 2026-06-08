@@ -1,6 +1,12 @@
 # Copyright (c) 2020, 2021 The Linux Foundation
 #
 # SPDX-License-Identifier: Apache-2.0
+#
+# DEPRECATED: This module contains SPDX 2.x-specific writer functions that are
+# being phased out in favor of the format-agnostic serializer in
+# zspdx.serializers.spdx2. These functions are kept for backward compatibility
+# during migration but should not be used in new code. Use
+# zspdx.serializers.spdx2.SPDX2Serializer instead.
 
 import logging
 import re
