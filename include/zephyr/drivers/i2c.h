@@ -558,7 +558,7 @@ static inline bool i2c_is_stop_op(const struct i2c_msg *msg)
  * @return true if the I2C message includes a restart
  * @return false if the I2C message includes a restart
  */
-static inline bool i2c_is_reset_op(const struct i2c_msg *msg)
+static inline bool i2c_is_restart_op(const struct i2c_msg *msg)
 {
 	return (msg->flags & I2C_MSG_RESTART) == I2C_MSG_RESTART;
 }
