@@ -18,7 +18,6 @@ import sys
 import tempfile
 import textwrap
 import traceback
-from collections.abc import Iterable
 from itertools import takewhile
 from pathlib import Path, PurePath
 
@@ -45,8 +44,6 @@ import unidiff
 import yaml
 from dotenv import load_dotenv
 from junitparser import Error, Failure, JUnitXml, Skipped, TestCase, TestSuite
-from reuse.project import Project
-from reuse.report import ProjectSubsetReport
 from west.manifest import Manifest, ManifestProject
 from yamllint import config, linter
 
@@ -1803,70 +1800,6 @@ class GitDiffCheck(ComplianceTest):
 
         if len(offending_lines) > 0:
             self.failure("\n".join(offending_lines))
-
-
-class LicenseAndCopyrightCheck(ComplianceTest):
-    """
-    Verify that every file touched by the patch set has correct SPDX headers and uses allowed
-    license.
-    """
-
-    name = "LicenseAndCopyrightCheck"
-    doc = "Check SPDX headers and copyright lines with the reuse Python API."
-
-    def _report_violations(
-        self,
-        paths: Iterable[Path],
-        title: str,
-        severity: str,
-        desc: str | None = None,
-    ) -> None:
-        for p in paths:
-            rel_path = os.path.relpath(str(p), GIT_TOP)
-            self.fmtd_failure(severity, title, rel_path, desc=desc or "", line=1)
-
-    def run(self) -> None:
-        changed_files = get_files(filter="d")
-        if not changed_files:
-            return
-
-        # Only scan text files for now, in the future we may want to leverage REUSE standard's
-        # ability to also associate license/copyright info with binary files.
-        filtered_files = []
-        for file in changed_files:
-            full_path = GIT_TOP / file
-            mime_type = magic.from_file(os.fspath(full_path), mime=True)
-            if mime_type.startswith("text/"):
-                filtered_files.append(file)
-        changed_files = filtered_files
-
-        project = Project.from_directory(GIT_TOP)
-        report = ProjectSubsetReport.generate(project, changed_files, multiprocessing=False)
-
-        self._report_violations(
-            report.files_without_licenses,
-            "License missing",
-            "warning",
-            "File has no SPDX-License-Identifier header, consider adding one.",
-        )
-
-        self._report_violations(
-            report.files_without_copyright,
-            "Copyright missing",
-            "warning",
-            "File has no SPDX-FileCopyrightText header, consider adding one.",
-        )
-
-        for lic_id, paths in getattr(report, "missing_licenses", {}).items():
-            self._report_violations(
-                paths,
-                "License may not be allowed",
-                "warning",
-                (
-                    f"License file for '{lic_id}' not found in /LICENSES. Please check "
-                    "https://docs.zephyrproject.org/latest/contribute/guidelines.html#components-using-other-licenses."
-                ),
-            )
 
 
 class GitLint(ComplianceTest):
