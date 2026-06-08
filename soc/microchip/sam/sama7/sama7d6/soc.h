@@ -27,6 +27,12 @@
   #error Library does not support the specified device
 #endif
 
+/*
+ * override the register definitions in DFP (Device Family Pack) for reuse the
+ * current drivers with minimum changes.
+ */
+#include "dfp_override.h"
+
 #endif /* _ASMLANGUAGE */
 
 /* number of clocks registered */
