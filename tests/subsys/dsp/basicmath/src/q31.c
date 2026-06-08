@@ -14,7 +14,11 @@
 #include "q31.pat"
 
 #define SNR_ERROR_THRESH	((float32_t)100)
+#if CONFIG_DSP_BACKEND_POWERQUAD_SUPPORT_Q31
+#define ABS_ERROR_THRESH_Q31	((q31_t)(1 << 8))
+#else
 #define ABS_ERROR_THRESH_Q31	((q31_t)4)
+#endif
 #define ABS_ERROR_THRESH_Q63	((q63_t)(1 << 17))
 
 static void test_zdsp_add_q31(const DSP_DATA q31_t *input1, const DSP_DATA q31_t *input2,
