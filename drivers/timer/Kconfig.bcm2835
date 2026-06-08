@@ -1,0 +1,11 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+config BCM2835_SYSTEM_TIMER
+	bool "Broadcom BCM2835 system timer"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_SYSTEM_TIMER_ENABLED
+	select TICKLESS_CAPABLE
+	help
+	  System clock driver for the Broadcom BCM2835 free-running system
+	  timer, using compare channel 3 for the kernel tick.

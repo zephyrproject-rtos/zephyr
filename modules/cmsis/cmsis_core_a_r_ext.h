@@ -56,6 +56,27 @@
 #define FSR_FS_SYNC_PARITY_ERROR				(25)
 #define FSR_FS_SYNC_PARITY_ERROR_TRANSLATION_TABLE_1ST_LEVEL	(28)
 #define FSR_FS_SYNC_PARITY_ERROR_TRANSLATION_TABLE_2ND_LEVEL	(30)
+#elif defined(CONFIG_ARMV6_ARM1176)
+/*
+ * ARM1176 uses the ARMv6 short-descriptor fault status encodings.
+ * Not all ARMv7 short-descriptor statuses exist on ARMv6, but the
+ * translation, permission, domain, and abort encodings below are the
+ * ones Zephyr can presently observe on this target.
+ */
+#define FSR_FS_BACKGROUND_FAULT		(0)
+#define FSR_FS_ALIGNMENT_FAULT		(1)
+#define FSR_FS_DEBUG_EVENT		(2)
+#define FSR_FS_TRANSLATION_FAULT	(5)
+#define FSR_FS_TRANSLATION_FAULT_2ND_LEVEL	(7)
+#define FSR_FS_SYNC_EXTERNAL_ABORT	(8)
+#define FSR_FS_DOMAIN_FAULT_1ST_LEVEL	(9)
+#define FSR_FS_DOMAIN_FAULT_2ND_LEVEL	(11)
+#define FSR_FS_PERMISSION_FAULT		(13)
+#define FSR_FS_PERMISSION_FAULT_2ND_LEVEL	(15)
+#define FSR_FS_TLB_CONFLICT_ABORT	(16)
+#define FSR_FS_ASYNC_EXTERNAL_ABORT	(22)
+#define FSR_FS_ASYNC_PARITY_ERROR	(24)
+#define FSR_FS_SYNC_PARITY_ERROR	(25)
 #else
 #define FSR_FS_BACKGROUND_FAULT		(0)
 #define FSR_FS_ALIGNMENT_FAULT		(1)

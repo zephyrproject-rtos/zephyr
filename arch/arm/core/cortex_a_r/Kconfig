@@ -7,11 +7,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # NOTE: We have the specific core implementations first and outside of the
-# if CPU_AARCH32_CORTEX_A / if CPU_AARCH32_CORTEX_R block so that SoCs can
-# select which core they are using without having to select all the options
-# related to that core. Everything else is captured inside the if
-# CPU_AARCH32_CORTEX_A / if CPU_AARCH32_CORTEX_R blocks so they are not
-# exposed if one selects a different ARM Cortex Family (Cortex-M).
+# if CPU_AARCH32_CORTEX_A / if CPU_AARCH32_CORTEX_R / if CPU_AARCH32_ARM11
+# blocks so that SoCs can select which core they are using without having to
+# select all the options related to that core. Everything else is captured
+# inside the respective if blocks so they are not exposed if one selects a
+# different ARM family (e.g. Cortex-M).
 
 config CPU_CORTEX_A7
 	bool
@@ -21,6 +21,22 @@ config CPU_CORTEX_A7
 	select CPU_HAS_DCACHE
 	help
 	  This option signifies the use of a Cortex-A7 CPU.
+
+config CPU_ARM1176JZF_S
+	bool
+	select CPU_AARCH32_ARM11
+	select ARMV6_ARM1176
+	select ISA_ARM
+	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	help
+	  This option signifies the use of an ARM1176JZF-S CPU.
+
+config ARMV6_ARM1176
+	bool
+	help
+	  This option signifies the use of an ARM1176-class ARMv6 CPU.
 
 config CPU_CORTEX_A9
 	bool
@@ -79,6 +95,37 @@ config ICACHE_LINE_SIZE
 	default 32
 
 endif # CPU_AARCH32_CORTEX_A
+
+if CPU_AARCH32_ARM11
+
+config ARMV7_EXCEPTION_STACK_SIZE
+	default 256
+
+config ARMV7_FIQ_STACK_SIZE
+	default 256
+
+config ARMV7_SVC_STACK_SIZE
+	default 512
+
+config ARMV7_SYS_STACK_SIZE
+	default 1024
+
+config RUNTIME_NMI
+	default y
+
+config GEN_ISR_TABLES
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config DCACHE_LINE_SIZE
+	default 32
+
+config ICACHE_LINE_SIZE
+	default 32
+
+endif # CPU_AARCH32_ARM11
 
 config CPU_CORTEX_R4
 	bool

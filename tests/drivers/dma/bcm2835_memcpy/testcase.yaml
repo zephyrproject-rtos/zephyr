@@ -1,0 +1,8 @@
+tests:
+  drivers.dma.bcm2835_memcpy:
+    platform_allow:
+      - rpi_zero_w
+    tags:
+      - dma
+      - rpi
+    filter: dt_compat_enabled("brcm,bcm2835-dma")

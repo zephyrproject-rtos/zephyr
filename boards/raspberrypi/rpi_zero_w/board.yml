@@ -1,0 +1,6 @@
+board:
+  name: rpi_zero_w
+  full_name: Raspberry Pi Zero W
+  vendor: raspberrypi
+  socs:
+  - name: bcm2835

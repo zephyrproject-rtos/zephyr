@@ -1,0 +1,29 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: Broadcom BCM2835 DMA controller
+
+compatible: "brcm,bcm2835-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  brcm,dma-channel-mask:
+    type: int
+    required: true
+    description: Bit mask of DMA channels available to the ARM.
+
+  "#dma-cells":
+    const: 1
+
+dma-cells:
+  - channel

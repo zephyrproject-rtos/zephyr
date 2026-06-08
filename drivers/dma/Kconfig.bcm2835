@@ -1,0 +1,16 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_BCM2835
+	bool "BCM2835 DMA controller driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_DMA_ENABLED
+	help
+	  Enable the Broadcom BCM2835 DMA controller driver.
+
+config DMA_BCM2835_MAX_CHANNELS
+	int "Maximum BCM2835 DMA channels"
+	default 15
+	depends on DMA_BCM2835
+	help
+	  Maximum number of BCM2835 DMA channels represented by the driver.

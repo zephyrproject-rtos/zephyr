@@ -1,0 +1,22 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+description: BCM2835 GPIO
+
+compatible: "brcm,bcm2835-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

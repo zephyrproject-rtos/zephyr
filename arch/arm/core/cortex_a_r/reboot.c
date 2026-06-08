@@ -27,6 +27,17 @@ static inline void relocate_vector_table(void)
 	barrier_isync_fence_full();
 }
 
+#elif defined(CONFIG_ARMV6_ARM1176)
+
+#define VECTOR_ADDRESS ((uintptr_t)_vector_start)
+
+static inline void relocate_vector_table(void)
+{
+	__set_SCTLR(__get_SCTLR() & ~HIVECS);
+	__set_VBAR(VECTOR_ADDRESS & VBAR_MASK);
+	barrier_isync_fence_full();
+}
+
 #else
 
 /*

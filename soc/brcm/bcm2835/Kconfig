@@ -1,0 +1,10 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_BCM2835
+	select ARM
+	select CPU_ARM1176JZF_S
+	select ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select BCM2835_ARMCTRL_INTC
+	select SYS_CLOCK_EXISTS
+	select BCM2835_SYSTEM_TIMER

@@ -28,6 +28,7 @@ static inline void timestamp_serialize(void)
 #elif defined(CONFIG_CPU_CORTEX_M) || \
 	defined(CONFIG_CPU_AARCH32_CORTEX_R) || \
 	defined(CONFIG_CPU_AARCH32_CORTEX_A) || \
+	defined(CONFIG_CPU_AARCH32_ARM11) || \
 	defined(CONFIG_CPU_CORTEX_A) || \
 	defined(CONFIG_CPU_AARCH64_CORTEX_R)
 static inline void timestamp_serialize(void)

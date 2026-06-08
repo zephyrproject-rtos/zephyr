@@ -58,6 +58,20 @@ static struct arm_mmu_l2_page_table_status
 /* Available L2 tables count & next free index for an L2 table request */
 static uint32_t arm_mmu_l2_tables_free = CONFIG_ARM_MMU_NUM_L2_TABLES;
 static uint32_t arm_mmu_l2_next_free_table;
+#if defined(CONFIG_CPU_AARCH32_ARM11) && defined(CONFIG_USERSPACE)
+static struct k_mem_domain *active_mem_domain;
+#endif
+
+#if defined(CONFIG_ARMV6_ARM1176)
+/*
+ * ARM1176 is a uniprocessor ARMv6 core without the ARMv7 MP extensions.
+ * Keep writable normal memory non-shareable; other AArch32 MMU targets keep
+ * the existing shareable mappings.
+ */
+#define Z_ARM_MMU_WRITABLE_NORMAL_MEM_SHARE_ATTR 0
+#else
+#define Z_ARM_MMU_WRITABLE_NORMAL_MEM_SHARE_ATTR MATTR_SHARED
+#endif
 
 /*
  * Static definition of all code & data memory regions of the
@@ -65,6 +79,24 @@ static uint32_t arm_mmu_l2_next_free_table;
  * processed upon MMU initialization.
  */
 static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
+#if defined(CONFIG_CPU_AARCH32_ARM11)
+	/*
+	 * The shared Cortex-A/R linker script keeps the exception vectors in
+	 * rom_start, before __text_region_start. Map this page explicitly since
+	 * the code/data ranges below do not cover the VBAR target.
+	 */
+	{ .name  = "zephyr_vectors",
+	  .start = (uint32_t)_vector_start,
+	  .end   = (uint32_t)_vector_end,
+	  .attrs = MT_NORMAL | MATTR_SHARED |
+#if defined(CONFIG_GDBSTUB)
+		   MPERM_R | MPERM_X | MPERM_W |
+#else
+		   MPERM_R | MPERM_X |
+#endif
+		   MATTR_CACHE_OUTER_WB_nWA | MATTR_CACHE_INNER_WB_nWA},
+#endif /* CONFIG_CPU_AARCH32_ARM11 */
+
 	/*
 	 * Mark the zephyr execution regions (data, bss, noinit, etc.)
 	 * cacheable, read / write and non-executable
@@ -72,7 +104,7 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 	{ .name  = "zephyr_data",
 	  .start = (uint32_t)_image_ram_start,
 	  .end   = (uint32_t)_image_ram_end,
-	  .attrs = MT_NORMAL | MATTR_SHARED |
+	  .attrs = MT_NORMAL | Z_ARM_MMU_WRITABLE_NORMAL_MEM_SHARE_ATTR |
 		   MPERM_R | MPERM_W |
 		   MATTR_CACHE_OUTER_WB_WA | MATTR_CACHE_INNER_WB_WA},
 
@@ -112,6 +144,65 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 
 static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 				struct arm_mmu_perms_attrs perms_attrs);
+static void invalidate_tlb_all(void);
+static struct arm_mmu_perms_attrs arm_mmu_convert_attr_flags(uint32_t attrs);
+#ifdef CONFIG_ARMV6_ARM1176
+static void z_arm1176_sync_page_table_updates(void);
+#endif
+
+#if defined(CONFIG_CPU_AARCH32_ARM11) && defined(CONFIG_USERSPACE)
+void arm_core_mpu_disable(void)
+{
+	__set_SCTLR(__get_SCTLR() & ~SCTLR_M_Msk);
+}
+
+void z_arm_mmu_remap_user_region(void *addr, size_t size, k_mem_partition_attr_t attr)
+{
+	uint32_t va = (uint32_t)addr;
+	uint32_t rem_size = (uint32_t)size;
+	struct arm_mmu_perms_attrs perms_attrs;
+	int key;
+
+	if (size == 0) {
+		return;
+	}
+
+	perms_attrs = arm_mmu_convert_attr_flags(attr);
+	key = arch_irq_lock();
+
+	rem_size = ROUND_UP((va & (CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE - 1)) + size,
+			    CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE);
+	va &= ~(CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE - 1);
+
+	while (rem_size > 0) {
+		arm_mmu_l2_map_page(va, va, perms_attrs);
+		rem_size -= CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE;
+		va += CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE;
+	}
+
+	arch_irq_unlock(key);
+
+#ifdef CONFIG_ARMV6_ARM1176
+	z_arm1176_sync_page_table_updates();
+#endif
+	invalidate_tlb_all();
+}
+#endif /* CONFIG_CPU_AARCH32_ARM11 && CONFIG_USERSPACE */
+
+#ifdef CONFIG_ARMV6_ARM1176
+static void z_arm1176_sync_page_table_updates(void)
+{
+	/*
+	 * After remapping zephyr_data as normal cached non-shareable memory, the
+	 * page tables themselves also live in cached RAM. Push descriptor writes
+	 * out before invalidating the TLB so the ARM1176 page-table walker sees
+	 * the updated entries.
+	 */
+	__asm__ volatile("mcr p15, 0, %0, c7, c14, 0" : : "r"(0) : "memory");
+	__asm__ volatile("mcr p15, 0, %0, c7, c10, 4" : : "r"(0) : "memory");
+	barrier_isync_fence_full();
+}
+#endif
 
 /**
  * @brief Invalidates the TLB
@@ -511,6 +602,10 @@ static void arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 
 	reg_val = __get_SCTLR();
 	__set_SCTLR(reg_val & (~ARM_MMU_SCTLR_MMU_ENABLE_BIT));
+#ifdef CONFIG_ARMV6_ARM1176
+	/* ISB required after SCTLR change (ARM ARM: context-changing instruction). */
+	barrier_isync_fence_full();
+#endif
 
 	/*
 	 * Clear the entire L1 PTE & re-configure it as a L2 PT reference
@@ -537,6 +632,10 @@ static void arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 
 	invalidate_tlb_all();
 	__set_SCTLR(reg_val);
+#ifdef CONFIG_ARMV6_ARM1176
+	/* ISB required after re-enabling MMU via SCTLR (ARM ARM requirement). */
+	barrier_isync_fence_full();
+#endif
 
 	arch_irq_unlock(lock_key);
 }
@@ -804,6 +903,18 @@ int z_arm_mmu_init(void)
 		}
 	}
 
+#if defined(CONFIG_CPU_AARCH32_ARM11) && defined(CONFIG_USERSPACE)
+	z_arm_mmu_remap_user_region(__text_region_start,
+				    (size_t)((uintptr_t)__text_region_end -
+					     (uintptr_t)__text_region_start),
+				    K_MEM_PARTITION_P_RX_U_RX);
+	z_arm_mmu_remap_user_region(__rodata_region_start,
+				    (size_t)((uintptr_t)__rodata_region_end -
+					     (uintptr_t)__rodata_region_start),
+				    K_MEM_PARTITION_P_RO_U_RO);
+
+#endif /* CONFIG_CPU_AARCH32_ARM11 && CONFIG_USERSPACE */
+
 	/* Clear TTBR1 */
 	__asm__ volatile("mcr p15, 0, %0, c2, c0, 1" : : "r"(reg_val));
 
@@ -815,9 +926,17 @@ int z_arm_mmu_init(void)
 	reg_val = ((uint32_t)&l1_page_table.entries[0] & ~0x3FFF);
 
 	/*
-	 * Set IRGN, RGN, S in TTBR0 based on the configuration of the
-	 * memory area the actual page tables are located in.
+	 * Configure TTBR0 cacheability bits based on the attributes of the
+	 * memory area the page tables reside in.
 	 */
+#ifdef CONFIG_ARMV6_ARM1176
+	if (pt_attrs &
+	    (MATTR_CACHE_OUTER_WB_WA | MATTR_CACHE_OUTER_WT_nWA |
+	     MATTR_CACHE_OUTER_WB_nWA | MATTR_CACHE_INNER_WB_WA |
+	     MATTR_CACHE_INNER_WT_nWA | MATTR_CACHE_INNER_WB_nWA)) {
+		reg_val |= ARM_MMU_TTBR_CACHEABLE_BIT_NON_MP_ONLY;
+	}
+#else
 	if (pt_attrs & MATTR_SHARED) {
 		reg_val |= ARM_MMU_TTBR_SHAREABLE_BIT;
 	}
@@ -841,6 +960,7 @@ int z_arm_mmu_init(void)
 		reg_val |= ARM_MMU_TTBR_IRGN0_BIT_MP_EXT_ONLY;
 		reg_val |= ARM_MMU_TTBR_IRGN1_BIT_MP_EXT_ONLY;
 	}
+#endif
 
 	__set_TTBR0(reg_val);
 
@@ -852,14 +972,235 @@ int z_arm_mmu_init(void)
 
 	/* Enable the MMU and Cache in SCTLR */
 	reg_val  = __get_SCTLR();
+#ifdef CONFIG_ARMV6_ARM1176
+	/*
+	 * Invalidate I-cache and D-cache before enabling them.
+	 *   c7,c5,0  = Invalidate entire I-cache
+	 *   c7,c14,0 = Clean+invalidate entire D-cache
+	 * Use direct MCR instead of CMSIS L1C_Invalidate*() because those
+	 * helpers call __DSB()/__ISB() which emit the ARMv7-only 'dsb'/'isb'
+	 * mnemonics, rejected by the assembler with -mcpu=arm1176jzf-s.
+	 * Follow with a write-buffer drain (DSB) per Linux arch/arm/mm/proc-v6.S.
+	 */
+	__asm__ volatile("mcr p15, 0, %0, c7, c5, 0"  : : "r"(0) : "memory");
+	__asm__ volatile("mcr p15, 0, %0, c7, c14, 0" : : "r"(0) : "memory");
+	__asm__ volatile("mcr p15, 0, %0, c7, c10, 4" : : "r"(0) : "memory");
+	reg_val |= ARM_MMU_SCTLR_XP_BIT;
+#else
 	reg_val |= ARM_MMU_SCTLR_AFE_BIT;
+#endif
 	reg_val |= ARM_MMU_SCTLR_ICACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_DCACHE_ENABLE_BIT;
 	reg_val |= ARM_MMU_SCTLR_MMU_ENABLE_BIT;
 	__set_SCTLR(reg_val);
+#ifdef CONFIG_ARMV6_ARM1176
+	/*
+	 * ARM Architecture Reference Manual requires an ISB after writing
+	 * SCTLR to enable the MMU, to ensure subsequent instructions are
+	 * fetched and decoded using the new translation state.
+	 * Linux implements this in __turn_mmu_on (head.S) via instr_sync
+	 * + a read of the ID register to force pipeline flush.
+	 */
+	barrier_isync_fence_full();
+#endif
 
 	return 0;
 }
+
+#if defined(CONFIG_CPU_AARCH32_ARM11) && defined(CONFIG_USERSPACE)
+static bool arm_mmu_l1_section_user_ok(uint32_t l1_index, int write)
+{
+	union arm_mmu_l1_page_table_entry *entry = &l1_page_table.entries[l1_index];
+	bool user = ((entry->l1_section_1m.acc_perms10 >> 1) & ARM_MMU_PERMS_AP1_ENABLE_PL0) != 0;
+	bool writable = entry->l1_section_1m.acc_perms2 == 0;
+
+	return user && (!write || writable);
+}
+
+static bool arm_mmu_l2_page_user_ok(uint32_t l1_index, uint32_t l2_index, int write)
+{
+	struct arm_mmu_l2_page_table *l2_page_table;
+	union arm_mmu_l2_page_table_entry *entry;
+	bool user;
+	bool writable;
+
+	l2_page_table = (struct arm_mmu_l2_page_table *)
+		((l1_page_table.entries[l1_index].word &
+		  (ARM_MMU_PT_L2_ADDR_MASK << ARM_MMU_PT_L2_ADDR_SHIFT)));
+	entry = &l2_page_table->entries[l2_index];
+
+	if ((entry->undefined.id & ARM_MMU_PTE_ID_SMALL_PAGE) != ARM_MMU_PTE_ID_SMALL_PAGE) {
+		return false;
+	}
+
+	user = ((entry->l2_page_4k.acc_perms10 >> 1) & ARM_MMU_PERMS_AP1_ENABLE_PL0) != 0;
+	writable = entry->l2_page_4k.acc_perms2 == 0;
+
+	return user && (!write || writable);
+}
+
+static bool arm_mmu_page_user_ok(uintptr_t addr, int write)
+{
+	uint32_t l1_index = ((uint32_t)addr >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) &
+			    ARM_MMU_PTE_L1_INDEX_MASK;
+	uint32_t l2_index = ((uint32_t)addr >> ARM_MMU_PTE_L2_INDEX_PA_SHIFT) &
+			    ARM_MMU_PTE_L2_INDEX_MASK;
+
+	if (l1_page_table.entries[l1_index].undefined.id == ARM_MMU_PTE_ID_SECTION) {
+		return arm_mmu_l1_section_user_ok(l1_index, write);
+	}
+
+	if (l1_page_table.entries[l1_index].undefined.id == ARM_MMU_PTE_ID_L2_PT) {
+		return arm_mmu_l2_page_user_ok(l1_index, l2_index, write);
+	}
+
+	return false;
+}
+
+int arch_mem_domain_max_partitions_get(void)
+{
+	return CONFIG_MAX_DOMAIN_PARTITIONS;
+}
+
+void z_arm_mmu_apply_mem_domain(struct k_mem_domain *domain)
+{
+	int i;
+
+	if (domain == NULL) {
+		return;
+	}
+
+	if (active_mem_domain != NULL) {
+		for (i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+			struct k_mem_partition *partition = &active_mem_domain->partitions[i];
+
+			if (partition->size == 0U) {
+				continue;
+			}
+
+			z_arm_mmu_remap_user_region((void *)partition->start,
+						    partition->size,
+						    K_MEM_PARTITION_P_RW_U_NA);
+		}
+	}
+
+	if ((uintptr_t)_app_smem_size != 0) {
+		z_arm_mmu_remap_user_region(_app_smem_start, (size_t)_app_smem_size,
+					    K_MEM_PARTITION_P_RW_U_NA);
+	}
+
+	for (i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+		struct k_mem_partition *partition = &domain->partitions[i];
+
+		if (partition->size == 0U) {
+			continue;
+		}
+
+		z_arm_mmu_remap_user_region((void *)partition->start,
+					    partition->size,
+					    partition->attr);
+	}
+
+	active_mem_domain = domain;
+}
+
+static bool arm_mmu_mem_domain_is_active(struct k_mem_domain *domain)
+{
+	return !k_is_pre_kernel() && (_current != NULL) &&
+	       (_current->mem_domain_info.mem_domain == domain);
+}
+
+static bool arm_mmu_mem_partition_is_aligned(struct k_mem_partition *partition)
+{
+	return IS_ALIGNED(partition->start, CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE) &&
+	       IS_ALIGNED(partition->size, CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE);
+}
+
+int arch_mem_domain_thread_add(struct k_thread *thread)
+{
+	if (!k_is_pre_kernel() && (_current != NULL) &&
+	    ((thread == _current) ||
+	     (thread->mem_domain_info.mem_domain == _current->mem_domain_info.mem_domain))) {
+		z_arm_mmu_apply_mem_domain(thread->mem_domain_info.mem_domain);
+	}
+
+	return 0;
+}
+
+int arch_mem_domain_thread_remove(struct k_thread *thread)
+{
+	if (((thread->base.user_options & K_USER) != 0U) &&
+	    ((thread->base.thread_state & _THREAD_DEAD) != 0U)) {
+		z_arm_mmu_remap_user_region((void *)thread->stack_info.start,
+					    thread->stack_info.size,
+					    K_MEM_PARTITION_P_RW_U_NA);
+	}
+
+	return 0;
+}
+
+int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partition_id)
+{
+	struct k_mem_partition *partition = &domain->partitions[partition_id];
+
+	if (!arm_mmu_mem_partition_is_aligned(partition)) {
+		return -EINVAL;
+	}
+
+	if (arm_mmu_mem_domain_is_active(domain) && (partition->size != 0U)) {
+		z_arm_mmu_remap_user_region((void *)partition->start,
+					    partition->size,
+					    partition->attr);
+	}
+
+	return 0;
+}
+
+int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t partition_id)
+{
+	struct k_mem_partition *partition = &domain->partitions[partition_id];
+
+	if (arm_mmu_mem_domain_is_active(domain) && (partition->size != 0U)) {
+		z_arm_mmu_remap_user_region((void *)partition->start,
+					    partition->size,
+					    K_MEM_PARTITION_P_RW_U_NA);
+	}
+
+	return 0;
+}
+
+int arch_buffer_validate(const void *addr, size_t size, int write)
+{
+	uintptr_t start = (uintptr_t)addr;
+	uintptr_t end;
+	uintptr_t page;
+	int key;
+	int rc = 0;
+
+	if (size == 0) {
+		return 0;
+	}
+
+	if (start + size - 1 < start) {
+		return -EPERM;
+	}
+
+	end = start + size - 1;
+
+	key = arch_irq_lock();
+	for (page = start & ~(CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE - 1);
+	     page <= end;
+	     page += CONFIG_ARM_MMU_REGION_MIN_ALIGN_AND_SIZE) {
+		if (!arm_mmu_page_user_ok(page, write)) {
+			rc = -EPERM;
+			break;
+		}
+	}
+	arch_irq_unlock(key);
+
+	return rc;
+}
+#endif /* CONFIG_CPU_AARCH32_ARM11 && CONFIG_USERSPACE */
 
 /**
  * @brief ARMv7-specific implementation of memory mapping at run-time
@@ -899,7 +1240,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 		break;
 	case K_MEM_CACHE_WB:
 		conv_flags |= MT_NORMAL;
-		conv_flags |= MATTR_SHARED;
+		conv_flags |= Z_ARM_MMU_WRITABLE_NORMAL_MEM_SHARE_ATTR;
 		if (flags & K_MEM_PERM_RW) {
 			conv_flags |= MATTR_CACHE_OUTER_WB_WA;
 			conv_flags |= MATTR_CACHE_INNER_WB_WA;
@@ -910,7 +1251,7 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 		break;
 	case K_MEM_CACHE_WT:
 		conv_flags |= MT_NORMAL;
-		conv_flags |= MATTR_SHARED;
+		conv_flags |= Z_ARM_MMU_WRITABLE_NORMAL_MEM_SHARE_ATTR;
 		conv_flags |= MATTR_CACHE_OUTER_WT_nWA;
 		conv_flags |= MATTR_CACHE_INNER_WT_nWA;
 		break;
@@ -922,6 +1263,9 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	}
 	if (flags & K_MEM_PERM_EXEC) {
 		conv_flags |= MPERM_X;
+	}
+	if (IS_ENABLED(CONFIG_CPU_AARCH32_ARM11) && (flags & K_MEM_PERM_USER)) {
+		conv_flags |= MPERM_UNPRIVILEGED;
 	}
 
 	perms_attrs = arm_mmu_convert_attr_flags(conv_flags);
@@ -961,6 +1305,9 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		LOG_ERR("__arch_mem_map() returned %d", ret);
 		k_panic();
 	} else {
+#ifdef CONFIG_ARMV6_ARM1176
+		z_arm1176_sync_page_table_updates();
+#endif
 		invalidate_tlb_all();
 	}
 }
@@ -1020,6 +1367,9 @@ void arch_mem_unmap(void *addr, size_t size)
 	if (ret) {
 		LOG_ERR("__arch_mem_unmap() returned %d", ret);
 	} else {
+#ifdef CONFIG_ARMV6_ARM1176
+		z_arm1176_sync_page_table_updates();
+#endif
 		invalidate_tlb_all();
 	}
 }

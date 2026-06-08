@@ -1,0 +1,16 @@
+description: Broadcom BCM2835 ARM interrupt controller
+
+compatible: "brcm,bcm2835-armctrl-ic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    type: array
+    required: true
+
+  "#interrupt-cells":
+    const: 1
+
+interrupt-cells:
+  - irq

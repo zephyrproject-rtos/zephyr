@@ -1,0 +1,9 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_BCM2835
+	bool "BCM2835 GPIO driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_GPIO_ENABLED
+	help
+	  Enable BCM2835 GPIO driver.

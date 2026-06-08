@@ -1,0 +1,12 @@
+# Copyright (c) 2026
+# SPDX-License-Identifier: Apache-2.0
+
+config BCM2835_ARMCTRL_INTC
+	bool "Broadcom BCM2835 ARMCTRL interrupt controller"
+	default y
+	depends on ARM
+	depends on ARM_CUSTOM_INTERRUPT_CONTROLLER
+	depends on DT_HAS_BRCM_BCM2835_ARMCTRL_IC_ENABLED
+	help
+	  Enable support for the Broadcom BCM2835 ARM interrupt controller
+	  used on Raspberry Pi 1 / Zero class boards.

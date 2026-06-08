@@ -14,11 +14,12 @@ config ARM_AARCH32_MMU
 	select THREAD_STACK_INFO
 	select ARCH_HAS_EXECUTABLE_PAGE_BIT
 	help
-	  The current CPU has either an ARMv5 or ARMv7 Memory Management Unit.
+	  The current CPU has an ARMv5, ARMv6, or ARMv7 Memory Management Unit.
 
 choice ARM_AARCH32_MMU_TYPE
 	prompt "MMU Type"
 	default ARM_AARCH32_MMU_VMSA_V5 if CPU_AARCH32_ARM9
+	default ARM_AARCH32_MMU_VMSA_V6 if ARMV6_ARM1176
 	default ARM_AARCH32_MMU_VMSA_V7 if CPU_AARCH32_CORTEX_A
 
 config ARM_AARCH32_MMU_VMSA_V5
@@ -26,6 +27,13 @@ config ARM_AARCH32_MMU_VMSA_V5
 	select ARM_AARCH32_MMU
 	help
 	  The current CPU has an ARMv5 Memory Management Unit.
+
+config ARM_AARCH32_MMU_VMSA_V6
+	bool "ARMv6 MMU Support"
+	select ARM_AARCH32_MMU
+	help
+	  The current CPU has an ARMv6 short-descriptor MMU, such as the
+	  ARM1176JZF-S.
 
 config ARM_AARCH32_MMU_VMSA_V7
 	bool "ARMv7 Cortex-A MMU Support"

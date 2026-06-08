@@ -55,7 +55,7 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 	 * Note that this step must be done after all relevant state is
 	 * saved.
 	 */
-	dsb
+	data_sync_barrier
 	str r1, [r1, #___thread_t_switch_handle_OFFSET]
 
 #if defined(CONFIG_THREAD_LOCAL_STORAGE)

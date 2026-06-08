@@ -1,0 +1,130 @@
+/*
+ * Copyright (c) 2026
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,arm1176jzf-s";
+			reg = <0>;
+		};
+	};
+
+	interrupt-parent = <&intc>;
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/*
+		 * Firmware typically loads the Pi 1 / Zero 32-bit kernel image at
+		 * 0x8000. Keep the initial Zephyr SRAM window anchored there for
+		 * the eventual board port.
+		 */
+		sram0: memory@8000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+			reg = <0x00008000 0x03ff8000>;
+		};
+
+		pinctrl: pin-controller@20200000 {
+			compatible = "brcm,bcm2835-pinctrl";
+			reg = <0x20200000 0xb4>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio0: gpio@0 {
+				compatible = "brcm,bcm2835-gpio";
+				reg = <0>;
+				interrupt-parent = <&intc>;
+				interrupts = <49>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <28>;
+				status = "disabled";
+			};
+
+			/*
+			 * Expose the upper GPIO bank first because the Pi Zero W ACT LED
+			 * lives on GPIO47. This keeps initial GPIO enablement minimal while
+			 * still allowing real-hardware LED validation with blinky.
+			 */
+			gpio2: gpio@2e {
+				compatible = "brcm,bcm2835-gpio";
+				reg = <46>;
+				interrupt-parent = <&intc>;
+				interrupts = <50>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <8>;
+				status = "disabled";
+			};
+		};
+
+		system_timer: timer@20003000 {
+			compatible = "brcm,bcm2835-system-timer";
+			reg = <0x20003000 0x1c>;
+			interrupts = <3>;
+			clock-frequency = <1000000>;
+			status = "disabled";
+		};
+
+		intc: interrupt-controller@2000b000 {
+			compatible = "brcm,bcm2835-armctrl-ic";
+			reg = <0x2000b000 0x224>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			status = "okay";
+		};
+
+		dma: dma-controller@20007000 {
+			compatible = "brcm,bcm2835-dma";
+			reg = <0x20007000 0xf00>;
+			interrupts = <16>, <17>, <18>, <19>, <20>, <21>,
+				     <22>, <23>, <24>, <25>, <26>,
+				     <27>, <27>, <27>, <27>;
+			dma-channels = <15>;
+			#dma-cells = <1>;
+			brcm,dma-channel-mask = <0x7f35>;
+			status = "okay";
+		};
+
+		uart0_clk: uart0-clk {
+			compatible = "fixed-clock";
+			clock-frequency = <48000000>;
+			#clock-cells = <0>;
+		};
+
+		uart0: uart@20201000 {
+			compatible = "arm,pl011";
+			reg = <0x20201000 0x200>;
+			interrupt-parent = <&intc>;
+			interrupts = <57>;
+			interrupt-names = "uart0";
+			clocks = <&uart0_clk>;
+			status = "disabled";
+		};
+
+		uart1: uart@20215040 {
+			compatible = "brcm,bcm2835-aux-uart",
+				     "brcm,bcm2711-aux-uart";
+			reg = <0x20215040 0x40>;
+			interrupt-parent = <&intc>;
+			interrupts = <29>;
+			/*
+			 * Raspberry Pi mini-UART baud generation depends on the
+			 * VPU/core clock. On Pi Zero W the default firmware
+			 * core_freq is 400 MHz, so describe that here to make
+			 * the default serial console baud match real hardware.
+			 */
+			clock-frequency = <400000000>;
+			status = "disabled";
+		};
+	};
+};
