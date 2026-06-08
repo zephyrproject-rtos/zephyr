@@ -320,7 +320,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
 	/* TODO: for passive scanning use complete_and_disable */
-	radio_switch_complete_and_tx(phy_aux, 0, phy_aux, 1);
+	radio_switch_complete_and_tx(phy_aux, PHY_FLAGS_S2, phy_aux, PHY_FLAGS_S8);
 
 	/* TODO: skip filtering if AdvA was already found in previous PDU */
 
@@ -524,7 +524,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
 	/* TODO: for passive scanning use complete_and_disable */
-	radio_switch_complete_and_tx(lll_aux->phy, 0, lll_aux->phy, 1);
+	radio_switch_complete_and_tx(lll_aux->phy, PHY_FLAGS_S2, lll_aux->phy, PHY_FLAGS_S8);
 
 	/* TODO: skip filtering if AdvA was already found in previous PDU */
 
