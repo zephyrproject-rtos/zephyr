@@ -17,8 +17,8 @@ from zspdx.sbom import SBOMConfig, makeSPDX, setupCmakeQuery  # noqa: E402
 from zspdx.version import SPDX_VERSION_2_3, SUPPORTED_SPDX_VERSIONS, parse  # noqa: E402
 
 SPDX_DESCRIPTION = """\
-This command creates an SPDX 2.2 or 2.3 tag-value bill of materials
-following the completion of a Zephyr build.
+This command creates an SPDX bill of materials following the completion
+of a Zephyr build.
 
 Prior to the build, an empty file must be created at
 BUILDDIR/.cmake/api/v1/query/codemodel-v2 in order to enable
