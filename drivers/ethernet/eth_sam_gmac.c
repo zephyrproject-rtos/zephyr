@@ -107,7 +107,7 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM0_MCK_FREQ_HZ
 #elif CONFIG_SOC_FAMILY_ATMEL_SAM
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM_MCK_FREQ_HZ
-#elif defined(CONFIG_SOC_SERIES_SAMA7G5)
+#elif defined(CONFIG_SOC_SERIES_SAMA7G5) || defined(CONFIG_SOC_SERIES_SAMA7D6)
 #define MCK_FREQ_HZ	MHZ(125)
 #else
 #error Unsupported SoC family
@@ -371,12 +371,19 @@ static void mac_addr_set(Gmac *gmac, uint8_t index,
 {
 	__ASSERT(index < 4, "index has to be in the range 0..3");
 
+#if defined(CONFIG_SOC_SERIES_SAMA7D6)
+	uint32_t offset = (GMAC_SAB2_REG_OFST - GMAC_SAB1_REG_OFST) * index;
+
+	sys_write32(sys_get_le32(mac_addr), (mm_reg_t)gmac + GMAC_SAB1_REG_OFST + offset);
+	sys_write32(sys_get_le16(&mac_addr[4]), (mm_reg_t)gmac + GMAC_SAT1_REG_OFST + offset);
+#else
 	gmac->GMAC_SA[index].GMAC_SAB =   (mac_addr[3] << 24)
 					| (mac_addr[2] << 16)
 					| (mac_addr[1] <<  8)
 					| (mac_addr[0]);
 	gmac->GMAC_SA[index].GMAC_SAT =   (mac_addr[5] <<  8)
 					| (mac_addr[4]);
+#endif
 }
 
 /*
@@ -1648,7 +1655,7 @@ static int eth_initialize(const struct device *dev)
 	/* Enable GMAC module's clock */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&cfg->clock_cfg);
-#elif defined(CONFIG_SOC_SERIES_SAMA7G5)
+#elif defined(CONFIG_SOC_SERIES_SAMA7G5) || defined(CONFIG_SOC_SERIES_SAMA7D6)
 #else
 	/* Enable MCLK clock on GMAC */
 	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
@@ -1714,7 +1721,7 @@ static void eth_iface_init(struct net_if *iface)
 		  GMAC_NCFGR_MTIHEN  /* Multicast Hash Enable */
 		| GMAC_NCFGR_LFERD   /* Length Field Error Frame Discard */
 		| GMAC_NCFGR_RFCS    /* Remove Frame Check Sequence */
-#if defined(CONFIG_SOC_SERIES_SAMA7G5)
+#if defined(CONFIG_SOC_SERIES_SAMA7G5) || defined(CONFIG_SOC_SERIES_SAMA7D6)
 		| GMAC_NCFGR_DBW(1)  /* Data Bus Width. Must always be written to ‘1’ */
 #endif
 #ifdef CONFIG_NET_VLAN
