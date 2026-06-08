@@ -633,7 +633,12 @@ static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 	uint64_t phc_now_ns;
 	uint64_t ingress_phc_delta;
 
-	ptp_clock_get(ptp_clk.phc, &current);
+	ret = ptp_clock_get(ptp_clk.phc, &current);
+	if (ret < 0) {
+		LOG_WRN("Failed to read PHC time (err %d)", ret);
+		return;
+	}
+
 	phc_now_ns = clock_ptp_time_to_ns(&current);
 	ingress_phc_delta = clock_abs_delta_u64(ingress, phc_now_ns);
 
@@ -678,7 +683,11 @@ static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 			current.nanosecond,
 			clock_abs_delta_u64(ptp_clk.timestamp.t2, phc_now_ns));
 
-		ptp_clock_get(ptp_clk.phc, &current);
+		ret = ptp_clock_get(ptp_clk.phc, &current);
+		if (ret < 0) {
+			LOG_WRN("Failed to read PHC time for clock step (err %d)", ret);
+			return;
+		}
 
 		current.second = (uint64_t)(current.second - (offset / NSEC_PER_SEC));
 		dest_nsec = (int32_t)(current.nanosecond - (offset % NSEC_PER_SEC));
