@@ -3030,6 +3030,8 @@ def _main(args):
             test.run()
         except EndTest:
             pass
+        except KeyboardInterrupt:
+            raise
         except BaseException:
             test.failure(f"An exception occurred in {test.name}:\n{traceback.format_exc()}")
 
