@@ -108,7 +108,7 @@ static void bcm2711_i2c_segment_len(struct bcm2711_i2c_data *data, uint32_t *seg
 
 	for (uint8_t i = data->cur_msg; i < data->num_msgs; i++) {
 		*segment_len += data->msgs[i].len;
-		if (i + 1 < data->num_msgs && i2c_is_reset_op(&data->msgs[i + 1])) {
+		if (i + 1 < data->num_msgs && i2c_is_restart_op(&data->msgs[i + 1])) {
 			*last_segment = false;
 			break;
 		}
@@ -125,7 +125,7 @@ static void bcm2711_i2c_send(const struct device *dev)
 		msg = &data->msgs[data->cur_msg];
 		if (data->tx_bytes >= msg->len) {
 			if (data->cur_msg + 1 < data->num_msgs &&
-			    !i2c_is_reset_op(&data->msgs[data->cur_msg + 1])) {
+			    !i2c_is_restart_op(&data->msgs[data->cur_msg + 1])) {
 				data->cur_msg++;
 				data->tx_bytes = 0;
 				continue;
@@ -258,7 +258,7 @@ static void bcm2711_i2c_isr(const struct device *dev)
 
 		if (data->tx_bytes >= data->msgs[data->cur_msg].len) {
 			if (data->cur_msg + 1 < data->num_msgs &&
-			    i2c_is_reset_op(&data->msgs[data->cur_msg + 1])) {
+			    i2c_is_restart_op(&data->msgs[data->cur_msg + 1])) {
 				data->cur_msg++;
 				data->tx_bytes = 0;
 				bcm2711_i2c_transaction(dev, false);
