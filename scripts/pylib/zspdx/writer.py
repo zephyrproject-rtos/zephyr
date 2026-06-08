@@ -18,9 +18,11 @@ CPE23TYPE_REGEX = (
 )
 PURL_REGEX = r"^pkg:.+(\/.+)?\/.+(@.+)?(\?.+)?(#.+)?$"
 
+
 def _normalize_spdx_name(name):
     # Replace "_" by "-" since it's not allowed in spdx ID
     return name.replace("_", "-")
+
 
 # Output tag-value SPDX 2.3 content for the given Relationship object.
 # Arguments:
@@ -31,6 +33,7 @@ def writeRelationshipSPDX(f, rln):
         f"Relationship: {_normalize_spdx_name(rln.refA)} {rln.rlnType} "
         f"{_normalize_spdx_name(rln.refB)}\n"
     )
+
 
 # Output tag-value SPDX 2.3 content for the given File object.
 # Arguments:
@@ -61,6 +64,7 @@ FileChecksum: SHA1: {bf.sha1}
             writeRelationshipSPDX(f, rln)
         f.write("\n")
 
+
 def generateDowloadUrl(url, revision):
     # Only git is supported
     # walker.py only parse revision if it's from git repositiory
@@ -69,18 +73,19 @@ def generateDowloadUrl(url, revision):
 
     return f'git+{url}@{revision}'
 
+
 # Output tag-value SPDX content for the given Package object.
 # Arguments:
 #   1) f: file handle for SPDX document
 #   2) pkg: Package object being described
 #   3) spdx_version: SPDX specification version
 def writePackageSPDX(f, pkg, spdx_version=SPDX_VERSION_2_3):
-    #update package meta data based on provided CPE reference
+    # update package meta data based on provided CPE reference
     for ref in pkg.cfg.externalReferences:
         if re.fullmatch(CPE23TYPE_REGEX, ref):
-            metadata = ref.split(':',6)
-            #metadata should now be array like:
-            #[cpe,2.3,a,arm,mbed_tls,3.5.1,*:*:*:*:*:*:*]
+            metadata = ref.split(':', 6)
+            # metadata should now be array like:
+            # [cpe,2.3,a,arm,mbed_tls,3.5.1,*:*:*:*:*:*:*]
             pkg.cfg.supplier = metadata[3]
             pkg.cfg.name = metadata[4]
             pkg.cfg.version = metadata[5]
@@ -144,7 +149,7 @@ PackageCopyrightText: {pkg.cfg.copyrightText}
     # write package files, if any
     if len(pkg.files) > 0:
         bfs = list(pkg.files.values())
-        bfs.sort(key = lambda x: x.relpath)
+        bfs.sort(key=lambda x: x.relpath)
         for bf in bfs:
             writeFileSPDX(f, bf)
 
@@ -165,6 +170,7 @@ LicenseComment: Corresponds to the license ID `{lic}` detected in an SPDX-Licens
 
 
 # REUSE-IgnoreEnd
+
 
 # Output tag-value SPDX content for the given Document object.
 # Arguments:
@@ -187,7 +193,7 @@ Created: {datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
     # write any external document references
     if len(doc.externalDocuments) > 0:
         extDocs = list(doc.externalDocuments)
-        extDocs.sort(key = lambda x: x.cfg.docRefID)
+        extDocs.sort(key=lambda x: x.cfg.docRefID)
         for extDoc in extDocs:
             f.write(
                 f"ExternalDocumentRef: {extDoc.cfg.docRefID} {extDoc.cfg.namespace} "
@@ -209,6 +215,7 @@ Created: {datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")}
     if len(doc.customLicenseIDs) > 0:
         for lic in sorted(list(doc.customLicenseIDs)):
             writeOtherLicenseSPDX(f, lic)
+
 
 # Open SPDX document file for writing, write the document, and calculate
 # its hash for other referring documents to use.

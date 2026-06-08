@@ -6,7 +6,6 @@ from enum import Enum
 
 
 class Codemodel:
-
     def __init__(self):
         super().__init__()
 
@@ -17,9 +16,9 @@ class Codemodel:
     def __repr__(self):
         return f"Codemodel: source {self.paths_source}, build {self.paths_build}"
 
+
 # A member of the codemodel configurations array
 class Config:
-
     def __init__(self):
         super().__init__()
 
@@ -34,9 +33,9 @@ class Config:
         else:
             return f"Config: {self.name}"
 
+
 # A member of the configuration.directories array
 class ConfigDir:
-
     def __init__(self):
         super().__init__()
 
@@ -58,9 +57,9 @@ class ConfigDir:
     def __repr__(self):
         return f"ConfigDir: source {self.source}, build {self.build}"
 
+
 # A member of the configuration.projects array
 class ConfigProject:
-
     def __init__(self):
         super().__init__()
 
@@ -79,9 +78,9 @@ class ConfigProject:
     def __repr__(self):
         return f"ConfigProject: {self.name}"
 
+
 # A member of the configuration.configTargets array
 class ConfigTarget:
-
     def __init__(self):
         super().__init__()
 
@@ -101,6 +100,7 @@ class ConfigTarget:
     def __repr__(self):
         return f"ConfigTarget: {self.name}"
 
+
 # The available values for Target.type
 class TargetType(Enum):
     UNKNOWN = 0
@@ -111,9 +111,9 @@ class TargetType(Enum):
     OBJECT_LIBRARY = 5
     UTILITY = 6
 
+
 # A member of the target.install_destinations array
 class TargetInstallDestination:
-
     def __init__(self):
         super().__init__()
 
@@ -123,10 +123,10 @@ class TargetInstallDestination:
     def __repr__(self):
         return f"TargetInstallDestination: {self.path}"
 
+
 # A member of the target.link_commandFragments and
 # archive_commandFragments array
 class TargetCommandFragment:
-
     def __init__(self):
         super().__init__()
 
@@ -136,9 +136,9 @@ class TargetCommandFragment:
     def __repr__(self):
         return f"TargetCommandFragment: {self.fragment}"
 
+
 # A member of the target.dependencies array
 class TargetDependency:
-
     def __init__(self):
         super().__init__()
 
@@ -148,9 +148,9 @@ class TargetDependency:
     def __repr__(self):
         return f"TargetDependency: {self.id}"
 
+
 # A member of the target.sources array
 class TargetSource:
-
     def __init__(self):
         super().__init__()
 
@@ -167,9 +167,9 @@ class TargetSource:
     def __repr__(self):
         return f"TargetSource: {self.path}"
 
+
 # A member of the target.sourceGroups array
 class TargetSourceGroup:
-
     def __init__(self):
         super().__init__()
 
@@ -182,9 +182,9 @@ class TargetSourceGroup:
     def __repr__(self):
         return f"TargetSourceGroup: {self.name}"
 
+
 # A member of the target.compileGroups.includes array
 class TargetCompileGroupInclude:
-
     def __init__(self):
         super().__init__()
 
@@ -195,9 +195,9 @@ class TargetCompileGroupInclude:
     def __repr__(self):
         return f"TargetCompileGroupInclude: {self.path}"
 
+
 # A member of the target.compileGroups.precompileHeaders array
 class TargetCompileGroupPrecompileHeader:
-
     def __init__(self):
         super().__init__()
 
@@ -207,9 +207,9 @@ class TargetCompileGroupPrecompileHeader:
     def __repr__(self):
         return f"TargetCompileGroupPrecompileHeader: {self.header}"
 
+
 # A member of the target.compileGroups.defines array
 class TargetCompileGroupDefine:
-
     def __init__(self):
         super().__init__()
 
@@ -219,9 +219,9 @@ class TargetCompileGroupDefine:
     def __repr__(self):
         return f"TargetCompileGroupDefine: {self.define}"
 
+
 # A member of the target.compileGroups array
 class TargetCompileGroup:
-
     def __init__(self):
         super().__init__()
 
@@ -239,9 +239,9 @@ class TargetCompileGroup:
     def __repr__(self):
         return f"TargetCompileGroup: {self.sources}"
 
+
 # A member of the target.backtraceGraph_nodes array
 class TargetBacktraceGraphNode:
-
     def __init__(self):
         super().__init__()
 
@@ -253,10 +253,10 @@ class TargetBacktraceGraphNode:
     def __repr__(self):
         return f"TargetBacktraceGraphNode: {self.command}"
 
+
 # Actual data in config.target.target, loaded from
 # config.target.jsonFile
 class Target:
-
     def __init__(self):
         super().__init__()
 
