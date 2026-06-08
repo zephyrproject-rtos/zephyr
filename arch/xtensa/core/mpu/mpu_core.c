@@ -1052,9 +1052,25 @@ void xtensa_user_stack_perms(struct k_thread *thread)
 				 XTENSA_MPU_ACCESS_P_RW_U_RW,
 				 NULL);
 
-	/* Probably this fails due to no more available slots in MPU map. */
-	ARG_UNUSED(ret);
-	__ASSERT_NO_MSG(ret == 0);
+	/*
+	 * Probably this fails due to no more available slots in MPU map.
+	 * We cannot proceed with this thread as memory access permissions
+	 * would be all wrong. So we do a kernel OOPS here.
+	 *
+	 * Note that we cannot use ASSERT at this point as we are running in
+	 * the privilege stack and yet the thread USER flag enabled. Any access
+	 * to the runtime built assertion string will fail arch_buffer_validate(),
+	 * resulting in cryptic error messages.
+	 *
+	 * Another note is that we use arch_syscall_oops() directly instead of
+	 * K_OOPS() because K_OOPS() passes _current->syscall_frame to
+	 * arch_syscall_oops() but we are not sure if ->syscall_frame has been
+	 * setup correctly (or rather, cleared when we are here). Just to be safe
+	 * so we call arch_syscall_oops(NULL) directly here.
+	 */
+	if (ret != 0) {
+		arch_syscall_oops(NULL);
+	}
 }
 
 #endif /* CONFIG_USERSPACE */
