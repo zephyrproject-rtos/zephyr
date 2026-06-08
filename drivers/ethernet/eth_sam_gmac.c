@@ -107,7 +107,7 @@ static inline void dcache_clean(uint32_t addr, uint32_t size)
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM0_MCK_FREQ_HZ
 #elif CONFIG_SOC_FAMILY_ATMEL_SAM
 #define MCK_FREQ_HZ	SOC_ATMEL_SAM_MCK_FREQ_HZ
-#elif defined(CONFIG_SOC_SAMA7G54)
+#elif defined(CONFIG_SOC_SERIES_SAMA7G5)
 #define MCK_FREQ_HZ	MHZ(125)
 #else
 #error Unsupported SoC family
@@ -1648,7 +1648,7 @@ static int eth_initialize(const struct device *dev)
 	/* Enable GMAC module's clock */
 	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
 			       (clock_control_subsys_t)&cfg->clock_cfg);
-#elif defined(CONFIG_SOC_SAMA7G54)
+#elif defined(CONFIG_SOC_SERIES_SAMA7G5)
 #else
 	/* Enable MCLK clock on GMAC */
 	MCLK->AHBMASK.reg |= MCLK_AHBMASK_GMAC;
@@ -1714,7 +1714,7 @@ static void eth_iface_init(struct net_if *iface)
 		  GMAC_NCFGR_MTIHEN  /* Multicast Hash Enable */
 		| GMAC_NCFGR_LFERD   /* Length Field Error Frame Discard */
 		| GMAC_NCFGR_RFCS    /* Remove Frame Check Sequence */
-#ifdef CONFIG_SOC_SAMA7G54
+#if defined(CONFIG_SOC_SERIES_SAMA7G5)
 		| GMAC_NCFGR_DBW(1)  /* Data Bus Width. Must always be written to ‘1’ */
 #endif
 #ifdef CONFIG_NET_VLAN

@@ -31,7 +31,7 @@
 #define GMAC_QUEUE_NUM                  DT_INST_PROP(0, num_queues)
 #define GMAC_PRIORITY_QUEUE_NUM         (GMAC_QUEUE_NUM - 1)
 #if (GMAC_PRIORITY_QUEUE_NUM >= 1)
-#ifdef CONFIG_SOC_SAMA7G54
+#if defined(CONFIG_SOC_SERIES_SAMA7G5)
 /* Do not check the queue numbers due to they are different for GMAC0 (6) and GMAC1 (2) */
 #else
 BUILD_ASSERT(ARRAY_SIZE(GMAC->GMAC_TBQBAPQ) + 1 == GMAC_QUEUE_NUM,

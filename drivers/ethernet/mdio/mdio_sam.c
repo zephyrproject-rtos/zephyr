@@ -134,7 +134,7 @@ static int mdio_sam_initialize(const struct device *dev)
 #ifdef CONFIG_SOC_FAMILY_ATMEL_SAM
 	/* Enable GMAC module's clock */
 	(void) clock_control_on(SAM_DT_PMC_CONTROLLER, (clock_control_subsys_t) &cfg->clock_cfg);
-#elif defined(CONFIG_SOC_SAMA7G54)
+#elif defined(CONFIG_SOC_SERIES_SAMA7G5)
 	/* Already configured, do nothing here */
 #else
 	/* Enable MCLK clock on GMAC */
