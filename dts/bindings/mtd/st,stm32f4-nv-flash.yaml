@@ -14,7 +14,6 @@ properties:
       - 2
       - 4
       - 8
-    default: 1
     description: |
       Number of bytes used in write operations. Default value is based on the
       reset value of Flash Control Register (FLASH_CR).

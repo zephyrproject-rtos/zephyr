@@ -24,7 +24,6 @@ properties:
       Charge voltage regulation target applied at initialization.
       Range: 3.856-4.624V (32 mV steps, values are rounded down to the nearest step).
       Default value is 4.208V, matching the device default reset configuration.
-    default: 4208000
 
 examples:
   - |
