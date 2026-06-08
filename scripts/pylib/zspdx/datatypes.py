@@ -1,6 +1,12 @@
 # Copyright (c) 2021 The Linux Foundation
 #
 # SPDX-License-Identifier: Apache-2.0
+#
+# DEPRECATED: This module contains SPDX 2.x-specific data structures that are
+# being phased out in favor of the format-agnostic model in zspdx.model.
+# These classes are kept for backward compatibility during migration but should
+# not be used in new code. Use zspdx.model.SBOMData, SBOMComponent, SBOMFile,
+# and SBOMRelationship instead.
 
 from dataclasses import dataclass, field
 from enum import Enum
@@ -9,6 +15,7 @@ from typing import Optional
 
 # DocumentConfig contains settings used to configure how the SPDX Document
 # should be built.
+# DEPRECATED: Use format-agnostic model instead.
 @dataclass(eq=True)
 class DocumentConfig:
     # name of document
