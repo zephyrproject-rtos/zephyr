@@ -22,7 +22,7 @@ if(CONFIG_FPU)
     set(FORCE_FP_HARDABI TRUE)
   endif()
 
-  if    (CONFIG_FP_HARDABI OR FORCE_FP_HARDABI)
+  if(CONFIG_FP_HARDABI OR FORCE_FP_HARDABI)
     list(APPEND ARM_C_FLAGS   -mfloat-abi=hard)
   elseif(CONFIG_FP_SOFTABI)
     list(APPEND ARM_C_FLAGS   -mfloat-abi=softfp)
