@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config RADIO_CAL
+	bool "Radio RF calibration data persistence"
+	depends on SETTINGS
+	depends on SETTINGS_NVS || SETTINGS_ZMS || SETTINGS_FCB || SETTINGS_FILE
+	help
+	  Persist radio RF calibration data across reboots through the settings
+	  subsystem. Radios that cache their calibration in host flash can use
+	  this to skip a full RF calibration on warm boots and only run a
+	  partial one, which improves the reliability of the first connection
+	  after a cold boot or reflash. With this disabled, a full calibration
+	  is performed on every boot. The same calibration typically serves
+	  Wi-Fi, Bluetooth and 802.15.4, so this facility is protocol-neutral.
+
+	  The data is stored under the "radio_cal" settings subtree, on whatever
+	  storage backend the settings subsystem is configured to use.
+
+if RADIO_CAL
+
+module = RADIO_CAL
+module-str = Radio calibration
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # RADIO_CAL
