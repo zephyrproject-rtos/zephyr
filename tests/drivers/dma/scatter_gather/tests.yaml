@@ -30,3 +30,18 @@ tests:
       - intel_adsp/cavs25
       - native_sim
       - native_sim/native/64
+  drivers.dma.ifx_axidmac.scatter_gather:
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0") and CONFIG_DMA_INFINEON_MDMA
+    extra_args: DTC_OVERLAY_FILE="boards/pse8x_axi.overlay"
+    extra_configs:
+      - CONFIG_NOCACHE_MEMORY=y
+      - CONFIG_DMA_INFINEON_MDMA_DESCRIPTOR_COUNT=4
+    platform_allow:
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
