@@ -20,6 +20,17 @@ common:
     - ophelia4ev/nrf54l15/cpuapp
 
 tests:
+  drivers.spi.spi_esp32:
+    extra_configs:
+      - CONFIG_TESTED_SPI_MODE=0
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32s2_saola
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32p4_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu
+
   drivers.spi.spi_mode0:
     extra_configs:
       - CONFIG_TESTED_SPI_MODE=0
