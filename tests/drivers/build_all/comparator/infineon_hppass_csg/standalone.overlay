@@ -1,0 +1,53 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Build coverage for the HPPASS CSG comparator in standalone (DAC-less)
+ * mode.  Each slice selects an external analog input (AIN_NA) as the
+ * negative input, so the comparator driver builds without the paired
+ * in-slice DAC or CONFIG_DAC.  The CSG MFD parent is enabled by the board
+ * dtsi; this overlay only retargets the comparator inputs and disables the
+ * unused DAC slices.
+ */
+
+&comp0 {
+	negative-input = "ain-na";
+};
+
+&comp1 {
+	negative-input = "ain-na";
+};
+
+&comp2 {
+	negative-input = "ain-na";
+};
+
+&comp3 {
+	negative-input = "ain-na";
+};
+
+&comp4 {
+	negative-input = "ain-na";
+};
+
+&dac0 {
+	status = "disabled";
+};
+
+&dac1 {
+	status = "disabled";
+};
+
+&dac2 {
+	status = "disabled";
+};
+
+&dac3 {
+	status = "disabled";
+};
+
+&dac4 {
+	status = "disabled";
+};
