@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * BTP tester overlay for TI LPF3 devices (CC2340Rx, CC2745R10, CC2755P10)
+ *
+ * LPF3 devices have a single UART (uart0), which must be dedicated to
+ * BTP (uart-pipe). Any console or shell output on this UART will corrupt
+ * the binary protocol stream. Console output is disabled via the
+ * companion .conf file; do not assign zephyr,console or zephyr,shell-uart
+ * here.
+ */
+
+/ {
+	chosen {
+		zephyr,uart-pipe = &uart0;
+		/delete-property/ zephyr,console;
+		/delete-property/ zephyr,shell-uart;
+	};
+};
