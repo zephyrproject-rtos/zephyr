@@ -11,7 +11,9 @@ endif()
 list(APPEND ARM_C_FLAGS -mabi=aapcs)
 
 if(CONFIG_FPU)
-  list(APPEND ARM_C_FLAGS   -mfpu=${GCC_M_FPU})
+  if(NOT "${GCC_M_FPU}" STREQUAL "auto")
+    list(APPEND ARM_C_FLAGS   -mfpu=${GCC_M_FPU})
+  endif()
 
   if(CONFIG_DCLS AND NOT CONFIG_FP_HARDABI)
     # If the processor is equipped with VFP and configured in DCLS topology,
