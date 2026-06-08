@@ -754,7 +754,7 @@
 
 		fdcan1: can@4000a400 {
 			compatible = "st,stm32-fdcan";
-			reg = <0x4000a400 0x400>, <0x400ac000 0x350>;
+			reg = <0x4000a400 0x400>, <0x4000ac00 0x350>;
 			reg-names = "m_can", "message_ram";
 			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>;
 			interrupts = <47 0>, <48 0>;
