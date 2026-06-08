@@ -24,6 +24,7 @@ tests:
       - stm32h5f5j_dk
       - stm32h7b3i_dk
       - stm32l562e_dk
+      - stm32h735g_disco
     integration_platforms:
       - native_sim
       - apollo3p_evb
@@ -41,6 +42,7 @@ tests:
   drivers.mspi.flash.stm32.memmap:
     platform_allow:
       - stm32h573i_dk
+      - stm32h735g_disco
       - stm32h5f5j_dk
       - stm32h7b3i_dk
       - stm32l562e_dk
