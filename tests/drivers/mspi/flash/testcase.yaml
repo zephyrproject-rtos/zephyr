@@ -7,21 +7,29 @@ common:
     - mspi
     - flash
   harness: ztest
-
+  filter: dt_compat_enabled("zephyr,mspi-emul-flash")
+    or dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
+    or dt_compat_enabled("mspi-atxp032") or dt_compat_enabled("mspi-is25xX0xx")
 tests:
   drivers.mspi.flash:
-    filter: dt_compat_enabled("zephyr,mspi-emul-flash")
-      or dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
-      or dt_compat_enabled("mspi-atxp032") or dt_compat_enabled("mspi-is25xX0xx")
     platform_allow:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
       - nrf7120dk/nrf7120/cpuapp
+      - b_u585i_iot02a
+      - stm32h573i_dk
     integration_platforms:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
+  drivers.mspi.flash.memmap:
+    platform_allow:
+      - stm32h573i_dk
+    integration_platforms:
+      - b_u585i_iot02a
+    extra_configs:
+      - CONFIG_MSPI_XIP=y
   drivers.mspi.flash.xip_read:
     filter: dt_compat_enabled("mspi-is25xX0xx")
     platform_allow:

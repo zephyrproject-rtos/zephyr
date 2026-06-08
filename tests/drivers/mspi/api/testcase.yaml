@@ -25,3 +25,13 @@ tests:
       - apollo510_evb
     extra_configs:
       - CONFIG_MSPI_AMBIQ_CONTROLLER=y
+  drivers.mspi.api.stm32:
+    tags:
+      - drivers
+      - mspi
+      - api
+    filter: dt_compat_enabled("st,stm32-ospi-controller")
+            or dt_compat_enabled("st,stm32-xspi-controller")
+    harness: ztest
+    platform_allow:
+      - stm32h573i_dk
