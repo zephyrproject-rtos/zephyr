@@ -1961,6 +1961,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 }
 #endif /* CONFIG_PM_DEVICE */
 
+#ifdef CONFIG_MSPI_DMA
 #define DMA_CHANNEL_CONFIG(node, dir) DT_DMAS_CELL_BY_NAME(node, dir, channel_config)
 
 #define XSPI_DMA_CHANNEL_INIT(node, dir, dir_cap, src_dev, dest_dev)                              \
@@ -1984,6 +1985,9 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 			(XSPI_DMA_CHANNEL_INIT(node, dir, DIR, src, dest)),                       \
 			(NULL))                                                                   \
 	},
+#else
+#define XSPI_DMA_CHANNEL(node, dir, DIR, src, dest)
+#endif /* CONFIG_MSPI_DMA */
 
 /* MSPI control config */
 #define MSPI_CONFIG(index)                                                                        \
