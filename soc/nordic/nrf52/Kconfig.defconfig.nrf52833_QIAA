@@ -8,4 +8,7 @@ if SOC_NRF52833_QIAA
 config NUM_IRQS
 	default 48
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x621e937a"
+
 endif # SOC_NRF52833_QIAA
