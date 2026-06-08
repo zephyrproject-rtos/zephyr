@@ -70,6 +70,7 @@ config LV_Z_MEMORY_POOL_ZEPHYR_REGION_NAME
 config LV_Z_VDB_SIZE
 	int "Rendering buffer size"
 	default 100 if LV_Z_FULL_REFRESH
+	default 100 if LV_Z_DIRECT_RENDERING
 	default 10
 	range 1 100
 	help
@@ -81,13 +82,43 @@ config LV_Z_DOUBLE_VDB
 	help
 	  Use two buffers to render and flush data in parallel
 
-config LV_Z_FULL_REFRESH
-	bool "Force full refresh mode"
+choice LV_Z_RENDERING_MODE
+	prompt "Rendering Mode"
+	default LV_Z_PARTIAL_REFRESH
 	help
-	  Force full refresh of display on update. When combined with
-	  LV_Z_VDB_SIZE, this setting can improve performance for display
-	  controllers that require a framebuffer to be present in system memory,
-	  since the controller can render the LVGL framebuffer directly
+	  Select the rendering mode for LVGL.
+
+config LV_Z_PARTIAL_REFRESH
+	bool "Partial Refresh Mode"
+	help
+	  Use the buffer(s) to render to the display using buffers smaller
+	  than the size of the display. Use of buffers at least 1/10 display
+	  size is recommended. In the Flush Callback, the rendered images
+	  need to be copied to the given area of the display. In this mode
+	  if a button is pressed, only the button's area will be redrawn.
+
+config LV_Z_DIRECT_RENDERING
+	bool "Direct Rendering Mode"
+	help
+	  The buffer size(s) must match the size of the display. LVGL will
+	  render into the correct location of the buffer. Using this method,
+	  the buffer(s) always contain the whole display image. If two buffers
+	  are used, the rendered areas are automatically copied to the other
+	  buffer after flushing. This mode can benefit from the performance
+	  gained by use zero copying (available also for LV_Z_FULL_REFRESH)
+	  and partial redraws (same as for LV_Z_PARTIAL_REFRESH).
+
+config LV_Z_FULL_REFRESH
+	bool "Force Full Refresh Mode"
+	help
+	  Force full refresh of the display on update. LVGL will always redraw
+	  the whole screen even if only 1 pixel has been changed
+	  When combined with LV_Z_VDB_SIZE, this setting can improve
+	  performance for display controllers that require a framebuffer
+	  to be present in system memory, since the controller can render
+	  the LVGL framebuffer directly.
+
+endchoice
 
 config LV_Z_VDB_ALIGN
 	int "Rending buffer alignment"
