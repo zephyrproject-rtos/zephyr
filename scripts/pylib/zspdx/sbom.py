@@ -110,6 +110,12 @@ def makeSPDX(cfg):
 
         serializer = SPDX2Serializer(sbom_graph, cfg.spdxVersion)
         return serializer.serialize(cfg.spdxDir)
+    elif cfg.spdxVersion.major == 3:
+        # Use SPDX 3.0 serializer
+        from zspdx.serializers.spdx3 import SPDX3Serializer
+
+        serializer = SPDX3Serializer(sbom_graph, cfg.spdxVersion)
+        return serializer.serialize(cfg.spdxDir)
     else:
         _logger.error("Unsupported SPDX version: %s", cfg.spdxVersion)
         return False

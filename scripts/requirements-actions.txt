@@ -338,6 +338,8 @@ colorama==0.4.6 \
     # via
     #   awscli
     #   click
+    #   halo
+    #   log-symbols
     #   pylint
     #   pytest
     #   tox
@@ -444,6 +446,14 @@ gitpython==3.1.50 \
     --hash=sha256:80da2d12504d52e1f998772dc5baf6e553f8d2fcfe1fcc226c9d9a2ee3372dcc \
     --hash=sha256:d352abe2908d07355014abdd21ddf798c2a961469239afec4962e9da884858f9
     # via -r requirements-actions.in
+halo==0.0.31 \
+    --hash=sha256:5350488fb7d2aa7c31a1344120cee67a872901ce8858f60da7946cef96c208ab \
+    --hash=sha256:7b67a3521ee91d53b7152d4ee3452811e1d2a6321975137762eb3d70063cc9d6
+    # via spdx3-validate
+html5rdf==1.2.1 \
+    --hash=sha256:1f519121bc366af3e485310dc8041d2e86e5173c1a320fac3dc9d2604069b83e \
+    --hash=sha256:ace9b420ce52995bb4f05e7425eedf19e433c981dfe7a831ab391e2fa2e1a195
+    # via rdflib
 idna==3.18 \
     --hash=sha256:7f952cbe720b688055e3f87de14f5c3e5fdaa8bc3928985c4077ca689de849a2 \
     --hash=sha256:ffb385a7e039654cef1ab9ef32c6fafe283c0c0467bba1d9029738ce4a14a848
@@ -571,7 +581,9 @@ jmespath==1.1.0 \
 jsonschema==4.26.0 \
     --hash=sha256:0c26707e2efad8aa1bfc5b7ce170f3fccc2e4918ff85989ba9ffa9facb2be326 \
     --hash=sha256:d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce
-    # via -r requirements-actions.in
+    # via
+    #   -r requirements-actions.in
+    #   spdx3-validate
 jsonschema-specifications==2025.9.1 \
     --hash=sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe \
     --hash=sha256:b540987f239e745613c7a9176f3edb72b832a4ac465cf02712288397832b5e8d
@@ -681,6 +693,10 @@ license-expression==30.4.4 \
     # via
     #   reuse
     #   spdx-tools
+log-symbols==0.0.14 \
+    --hash=sha256:4952106ff8b605ab7d5081dd2c7e6ca7374584eff7086f499c06edd1ce56dcca \
+    --hash=sha256:cf0bbc6fe1a8e53f0d174a716bc625c4f87043cc21eb55dd8a740cfe22680556
+    # via halo
 lxml==6.1.1 \
     --hash=sha256:05a82eb6e1530a64f26225b55cbd178113bd0b5af1c2b625f25e5296742c26d2 \
     --hash=sha256:07a4a68e286ee7a1ed7dfb8af83e615757c0ccfe9f18c6b4ea6771388d9ba8c9 \
@@ -966,11 +982,16 @@ natsort==8.4.0 \
     --hash=sha256:45312c4a0e5507593da193dedd04abb1469253b601ecaf63445ad80f0a1ea581 \
     --hash=sha256:4732914fb471f56b5cce04d7bae6f164a592c7712e1c85f9ef585e197299521c
     # via -r requirements-actions.in
+owlrl==7.1.4 \
+    --hash=sha256:60bd4067e346b9111f0a2924565afe97ac6595b98b2bbe953928b5113971daf7 \
+    --hash=sha256:e78b46020169783345636da93a467d318f18700c483184dd15e885850cf64775
+    # via pyshacl
 packaging==26.2 \
     --hash=sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e \
     --hash=sha256:ff452ff5a3e828ce110190feff1178bb1f2ea2281fa2075aadb987c2fb221661
     # via
     #   pyproject-api
+    #   pyshacl
     #   pytest
     #   python-can
     #   tox
@@ -1005,6 +1026,10 @@ polib==1.2.0 \
     --hash=sha256:1c77ee1b81feb31df9bca258cbc58db1bbb32d10214b173882452c73af06d62d \
     --hash=sha256:f3ef94aefed6e183e342a8a269ae1fc4742ba193186ad76f175938621dbfc26b
     # via sphinx-lint
+prettytable==3.17.0 \
+    --hash=sha256:59f2590776527f3c9e8cf9fe7b66dd215837cca96a9c39567414cbc632e8ddb0 \
+    --hash=sha256:aad69b294ddbe3e1f95ef8886a060ed1666a0b83018bbf56295f6f226c43d287
+    # via pyshacl
 psutil==7.2.2 \
     --hash=sha256:0746f5f8d406af344fd547f1c8daa5f5c33dbc293bb8d6a16d80b4bb88f59372 \
     --hash=sha256:076a2d2f923fd4821644f5ba89f059523da90dc9014e85f8e45a5774ca5bc6f9 \
@@ -1103,6 +1128,10 @@ pyserial==3.5 \
     --hash=sha256:3c77e014170dfffbd816e6ffc205e9842efb10be9f58ec16d3e8675b4925cddb \
     --hash=sha256:c4451db6ba391ca6ca299fb3ec7bae67a5c55dde170964c7a14ceefec02f2cf0
     # via -r requirements-actions.in
+pyshacl==0.31.0 \
+    --hash=sha256:327950875a5bb0d1a15c246a8a272b2dbf6bc9b96e28cfa8fdbfa4d73aadc0ba \
+    --hash=sha256:5cae2184401d956b67deebb00e3c78ab7052784741a730e52e309e33c8a0b9a5
+    # via spdx3-validate
 pytest==9.0.3 \
     --hash=sha256:2c5efc453d45394fdd706ade797c0a81091eccd1d6e4bccfcd476e2b8e0ab5d9 \
     --hash=sha256:b86ada508af81d19edeb213c681b1d48246c1a91d304c6c81a427674c17eb91c
@@ -1227,7 +1256,11 @@ pyyaml==6.0.3 \
 rdflib==7.6.0 \
     --hash=sha256:30c0a3ebf4c0e09215f066be7246794b6492e054e782d7ac2a34c9f70a15e0dd \
     --hash=sha256:6c831288d5e4a5a7ece85d0ccde9877d512a3d0f02d7c06455d00d6d0ea379df
-    # via spdx-tools
+    # via
+    #   owlrl
+    #   pyshacl
+    #   spdx-tools
+    #   spdx3-validate
 referencing==0.37.0 \
     --hash=sha256:381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231 \
     --hash=sha256:44aefc3142c5b842538163acb373e24cce6632bd54bdb01b21ad5863489f50d8
@@ -1540,7 +1573,9 @@ sh==2.2.6 ; sys_platform != 'win32' \
 six==1.17.0 \
     --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274 \
     --hash=sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81
-    # via python-dateutil
+    # via
+    #   halo
+    #   python-dateutil
 smmap==5.0.3 \
     --hash=sha256:4d9debb8b99007ae47165abc08670bd74cb74b5227dda7f643eccc4e9eb5642c \
     --hash=sha256:c106e05d5a61449cf6ba9a1e650227ecfb141590d2a98412103ff35d89fc7b2f
@@ -1549,14 +1584,26 @@ spdx-tools==0.8.5 \
     --hash=sha256:7c2d5865941be9d2e898f5b084e8d5422dd298dc5a29320ddb198fec304f59c4 \
     --hash=sha256:be600beb2f762f0116025e05490d399e724f668bef84025a7c421bb266688bdb
     # via -r requirements-actions.in
+spdx3-validate==0.0.5 \
+    --hash=sha256:47d37ec4051eb61ef630aca984a4349ded1ddb403172b7e8652e0eb200522780 \
+    --hash=sha256:4981de9f84246465cb03b9e41a61097180a494963a3bc3465fc79d7f76782f55
+    # via -r requirements-actions.in
 sphinx-lint==1.0.2 \
     --hash=sha256:4e7fc12f44f750b0006eaad237d7db9b1d8aba92adda9c838af891654b371d35 \
     --hash=sha256:edcd0fa4d916386c5a3ef7ef0f5136f0bb4a15feefc83c1068ba15bc16eec652
     # via -r requirements-actions.in
+spinners==0.0.24 \
+    --hash=sha256:1eb6aeb4781d72ab42ed8a01dcf20f3002bf50740d7154d12fb8c9769bf9e27f \
+    --hash=sha256:2fa30d0b72c9650ad12bbe031c9943b8d441e41b4f5602b0ec977a19f3290e98
+    # via halo
 tabulate==0.10.0 \
     --hash=sha256:e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d \
     --hash=sha256:f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3
     # via -r requirements-actions.in
+termcolor==3.3.0 \
+    --hash=sha256:348871ca648ec6a9a983a13ab626c0acce02f515b9e1983332b17af7979521c5 \
+    --hash=sha256:cf642efadaf0a8ebbbf4bc7a31cec2f9b5f21a9f726f4ccbb08192c9c26f43a5
+    # via halo
 tomli-w==1.2.0 \
     --hash=sha256:188306098d013b691fcadc011abd66727d3c414c571bb01b1a174ba8c983cf90 \
     --hash=sha256:2dd14fac5a47c27be9cd4c976af5a12d87fb1f0b4512f81d69cce3b35ae25021
@@ -1613,6 +1660,10 @@ virtualenv==21.4.2 \
     --hash=sha256:38e6ee0a555615c0ea9da2ac7e9998fe8dc3b911dd33ad8eaad2020957653b0c \
     --hash=sha256:854210ca524a1a4d0d744734f4acbc721c3ffe163b85bbf5d56d14d5ae2f0fae
     # via tox
+wcwidth==0.8.1 \
+    --hash=sha256:f453740b1e4a4f3291faa37944c555d71056c4da08d59809b307ef4feba695c8 \
+    --hash=sha256:faf5b4a5366a72dc49cad48cdf21f52bdf63bdda995178e483ba247ff79089b9
+    # via prettytable
 west==1.5.0 \
     --hash=sha256:7088fe0e9afe0719ebee95c51c529149f7bcfc919d83a8206d35fa9c683ed0a5 \
     --hash=sha256:f71411d11ed9ed00847405c6a83600374c2e0cf8676ed5af5d8b572f92c4765a
