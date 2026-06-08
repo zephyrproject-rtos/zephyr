@@ -57,6 +57,7 @@ atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval,
 			atomic_val_t newval)
 {
 	atomic_val_t mem_val;
+	uint32_t v = newval;
 
 	/* Read from address and mark it for exclusive access. */
 	__asm__ volatile("l32ex %0, %1" : "=r"(mem_val) : "r"(addr));
@@ -64,13 +65,13 @@ atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval,
 	if (mem_val == oldval) {
 		uint32_t result;
 
-		__asm__ volatile("s32ex %1, %2; getex %0" : "=r"(result) : "r"(newval), "r"(addr));
+		__asm__ volatile("s32ex %1, %2; getex %0" : "=r"(result), "+r"(v) : "r"(addr));
 
 		/* If GETEX returns store successful, we return the old value.
 		 * Otherwise, we must return some other value to signal that
 		 * the store failed to function caller.
 		 */
-		return (result == 1U) ? oldval : ~oldval;
+		return (result == 1U) ? oldval : newval;
 	}
 
 	/* Since *addr != oldval, we skip writing to memory and
@@ -78,7 +79,7 @@ atomic_val_t xtensa_cas(atomic_t *addr, atomic_val_t oldval,
 	 */
 	__asm__("clrex");
 
-	return mem_val;
+	return newval;
 }
 
 #elif XCHAL_HAVE_S32C1I
