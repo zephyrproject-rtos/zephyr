@@ -55,6 +55,7 @@ LOG_MODULE_REGISTER(mfd_infineon_hppass_csg, CONFIG_MFD_LOG_LEVEL);
 #define IFX_HPPASS_CSG_NUM_SLICES DT_INST_PROP(0, infineon_num_slices)
 
 struct ifx_csg_data {
+	struct k_spinlock lock;
 	ifx_hppass_csg_cmp_cb_t slice_cb[IFX_HPPASS_CSG_NUM_SLICES];
 	void *slice_user[IFX_HPPASS_CSG_NUM_SLICES];
 	ifx_hppass_csg_combined_cmp_cb_t combined_cb;
@@ -105,15 +106,16 @@ static void ifx_hppass_csg_cmp_isr(const struct device *dev)
 } /* ifx_hppass_csg_cmp_isr() */
 
 /*
- * Replace the per-slice comparator callback under irq_lock so the ISR
- * always observes a consistent cb/user_data pair.  Pass @p cb as NULL to
- * clear.  CMP_INTR_MASK ownership stays with the comparator child driver.
+ * Replace the per-slice comparator callback under the CSG spinlock so the
+ * ISR always observes a consistent cb/user_data pair.  Pass @p cb as NULL
+ * to clear.  This only swaps the callback pair; arming the slice's
+ * interrupt is separate (ifx_hppass_csg_set_cmp_intr_mask()).
  */
 int ifx_hppass_csg_register_cmp_cb(const struct device *dev, uint8_t slice,
 				   ifx_hppass_csg_cmp_cb_t cb, void *user_data)
 {
 	struct ifx_csg_data *data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
 	if ((dev == NULL) || (slice >= IFX_HPPASS_CSG_NUM_SLICES)) {
 		return -EINVAL;
@@ -121,16 +123,16 @@ int ifx_hppass_csg_register_cmp_cb(const struct device *dev, uint8_t slice,
 
 	data = dev->data;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->slice_cb[slice] = cb;
 	data->slice_user[slice] = user_data;
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 } /* ifx_hppass_csg_register_cmp_cb() */
 
 /*
- * Replace the combined-comparator callback under irq_lock.  This
+ * Replace the combined-comparator callback under the CSG spinlock.  This
  * callback fires first in the ISR with a bitmask of every slice that
  * tripped, intended for the lowest-latency safety/fault path (e.g. PWM
  * trip on motor over-current).  Pass @p cb as NULL to clear.
@@ -140,7 +142,7 @@ int ifx_hppass_csg_register_combined_cmp_cb(const struct device *dev,
 					    void *user_data)
 {
 	struct ifx_csg_data *data;
-	unsigned int key;
+	k_spinlock_key_t key;
 
 	if (dev == NULL) {
 		return -EINVAL;
@@ -148,13 +150,78 @@ int ifx_hppass_csg_register_combined_cmp_cb(const struct device *dev,
 
 	data = dev->data;
 
-	key = irq_lock();
+	key = k_spin_lock(&data->lock);
 	data->combined_cb = cb;
 	data->combined_user = user_data;
-	irq_unlock(key);
+	k_spin_unlock(&data->lock, key);
 
 	return 0;
 } /* ifx_hppass_csg_register_combined_cmp_cb() */
+
+/*
+ * Serialize comparator child drivers against one another and against the
+ * combined comparator ISR.  The CSG-wide CMP_INTR / CMP_INTR_MASK registers
+ * and the per-slice callback pairs are all updated inside this section.
+ */
+k_spinlock_key_t ifx_hppass_csg_cmp_lock(const struct device *dev)
+{
+	struct ifx_csg_data *data = dev->data;
+
+	return k_spin_lock(&data->lock);
+} /* ifx_hppass_csg_cmp_lock() */
+
+void ifx_hppass_csg_cmp_unlock(const struct device *dev, k_spinlock_key_t key)
+{
+	struct ifx_csg_data *data = dev->data;
+
+	k_spin_unlock(&data->lock, key);
+} /* ifx_hppass_csg_cmp_unlock() */
+
+/*
+ * Set or clear one slice's bit in the CSG-wide CMP_INTR_MASK.  Shared
+ * across slices, so the CSG spinlock must be held (ifx_hppass_csg_cmp_lock())
+ * across the read-modify-write.
+ */
+int ifx_hppass_csg_set_cmp_intr_mask(const struct device *dev, uint8_t slice,
+				     bool enable)
+{
+	const struct ifx_csg_config *cfg;
+	uint32_t mask;
+
+	if ((dev == NULL) || (slice >= IFX_HPPASS_CSG_NUM_SLICES)) {
+		return -EINVAL;
+	}
+
+	cfg = dev->config;
+
+	mask = sys_read32(cfg->base + IFX_HPPASS_CSG_CMP_INTR_MASK);
+	if (enable) {
+		mask |= BIT(slice);
+	} else {
+		mask &= ~BIT(slice);
+	}
+	sys_write32(mask, cfg->base + IFX_HPPASS_CSG_CMP_INTR_MASK);
+
+	return 0;
+} /* ifx_hppass_csg_set_cmp_intr_mask() */
+
+/*
+ * Clear one slice's latched comparator interrupt.  CMP_INTR is
+ * write-1-to-clear, so only the slice's bit is affected.
+ */
+int ifx_hppass_csg_clear_cmp_intr(const struct device *dev, uint8_t slice)
+{
+	const struct ifx_csg_config *cfg;
+
+	if ((dev == NULL) || (slice >= IFX_HPPASS_CSG_NUM_SLICES)) {
+		return -EINVAL;
+	}
+
+	cfg = dev->config;
+	sys_write32(BIT(slice), cfg->base + IFX_HPPASS_CSG_CMP_INTR);
+
+	return 0;
+} /* ifx_hppass_csg_clear_cmp_intr() */
 
 /*
  * Forward a CSG slice's DAC output onto the SAR ADC AROUTE MUX0
