@@ -7,12 +7,11 @@ common:
     - mspi
     - flash
   harness: ztest
-
+  filter: dt_compat_enabled("zephyr,mspi-emul-flash")
+    or dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,mspi-nor")
+    or dt_compat_enabled("mspi-atxp032") or dt_compat_enabled("mspi-is25xX0xx")
 tests:
   drivers.mspi.flash:
-    filter: dt_compat_enabled("zephyr,emul-flash")
-      or dt_compat_enabled("jedec,spi-nor") or dt_compat_enabled("jedec,nor")
-      or dt_compat_enabled("atxp032") or dt_compat_enabled("is25xX0xx")
     platform_allow:
       - native_sim
       - apollo3p_evb
@@ -22,6 +21,30 @@ tests:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
+  drivers.mspi.flash.stm32:
+    platform_allow:
+      - stm32h573i_dk
+    integration_platforms:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_MSPI_DMA=n
+      - CONFIG_MSPI_MEMMAP=n
+  drivers.mspi.flash.stm32.dma:
+    platform_allow:
+      - stm32h573i_dk
+    integration_platforms:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_MSPI_DMA=y
+      - CONFIG_MSPI_MEMMAP=n
+  drivers.mspi.flash.stm32.memmap:
+    platform_allow:
+      - stm32h573i_dk
+    integration_platforms:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_MSPI_DMA=n
+      - CONFIG_MSPI_MEMMAP=y
   drivers.mspi.flash.xip_read:
     filter: dt_compat_enabled("is25xX0xx")
     platform_allow:
