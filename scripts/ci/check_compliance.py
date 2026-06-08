@@ -43,7 +43,6 @@ import yaml
 from dotenv import load_dotenv
 from junitparser import Error, Failure, JUnitXml, Skipped, TestCase, TestSuite
 from west.manifest import Manifest, ManifestProject
-from yamllint import config, linter
 
 try:
     from yaml import CSafeLoader as SafeLoader
@@ -2052,37 +2051,6 @@ class ZephyrModuleFile(ComplianceTest):
             if os.path.exists(file):
                 self.failure("A zephyr module file has been added to the Zephyr repository")
                 break
-
-
-class YAMLLint(ComplianceTest):
-    """
-    YAMLLint
-    """
-
-    name = "YAMLLint"
-    doc = "Check YAML files with YAMLLint."
-
-    def run(self):
-        config_file = ZEPHYR_BASE / ".yamllint"
-
-        for file in get_files(filter="d"):
-            if Path(file).suffix not in ['.yaml', '.yml']:
-                continue
-
-            yaml_config = config.YamlLintConfig(file=config_file)
-
-            if file.startswith(".github/"):
-                # Tweak few rules for workflow files.
-                yaml_config.rules["line-length"] = False
-                yaml_config.rules["truthy"]["allowed-values"].extend(['on', 'off'])
-            elif file == ".codecov.yml":
-                yaml_config.rules["truthy"]["allowed-values"].extend(['yes', 'no'])
-
-            with open(file) as fp:
-                for p in linter.run(fp, yaml_config):
-                    self.fmtd_failure(
-                        'warning', f'YAMLLint ({p.rule})', file, p.line, col=p.column, desc=p.desc
-                    )
 
 
 class SphinxLint(ComplianceTest):

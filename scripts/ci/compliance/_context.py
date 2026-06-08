@@ -1,5 +1,6 @@
 # Copyright (c) 2018,2020 Intel Corporation
 # Copyright (c) 2022 Nordic Semiconductor ASA
+# Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 # Shared API for compliance linter modules loaded from the compliance/
