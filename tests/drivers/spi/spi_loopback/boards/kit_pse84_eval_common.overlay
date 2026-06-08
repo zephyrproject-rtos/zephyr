@@ -55,3 +55,10 @@ spi1: &scb10 {
 &dma0 {
 	status = "okay";
 };
+
+/ {
+	zephyr,user {
+		mosi-gpios = <&gpio_prt16 1 GPIO_ACTIVE_HIGH>;
+		miso-gpios = <&gpio_prt16 2 GPIO_ACTIVE_HIGH>;
+	};
+};
