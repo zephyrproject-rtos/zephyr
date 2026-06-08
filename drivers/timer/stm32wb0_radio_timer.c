@@ -15,7 +15,7 @@
 #include "stm32wb0x_hal_radio_timer.h"
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(radio_timer_driver);
+LOG_MODULE_REGISTER(radio_timer_driver, CONFIG_KERNEL_LOG_LEVEL);
 
 /* Max HS startup time expressed in system time (1953 us / 2.4414 us) */
 #define MAX_HS_STARTUP_TIME	DT_PROP(DT_NODELABEL(radio_timer), max_hs_startup_time)
