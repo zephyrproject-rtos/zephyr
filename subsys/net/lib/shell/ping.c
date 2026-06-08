@@ -45,6 +45,9 @@ static struct ping_context {
 } ping_ctx;
 
 static void ping_done(struct ping_context *ctx);
+static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t sequence,
+						 uint16_t bytes, const char *src, const char *dst,
+						 uint8_t ttl);
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
@@ -58,8 +61,6 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 					      struct net_icmpv6_echo_req);
 	struct net_ipv6_hdr *ip_hdr = hdr->ipv6;
 	struct net_icmpv6_echo_req *icmp_echo;
-	uint32_t cycles;
-	char time_buf[16] = { 0 };
 
 	icmp_echo = (struct net_icmpv6_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
@@ -76,45 +77,11 @@ static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
 		return NET_DROP;
 	}
 
-	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
-		if (net_pkt_read_be32(pkt, &cycles)) {
-			return NET_DROP;
-		}
-
-		cycles = k_cycle_get_32() - cycles;
-
-		snprintf(time_buf, sizeof(time_buf),
-#ifdef CONFIG_FPU
-			 "time=%.2f ms",
-			 (double)((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
-#else
-			 "time=%d ms",
-			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
-#endif
-			);
-	}
-
-	PR_SHELL(ping_ctx.sh, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
-#ifdef CONFIG_IEEE802154
-		 "rssi=%d "
-#endif
-		 "%s\n",
-		 net_ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
-								NET_ICMPH_LEN,
-		 net_sprint_ipv6_addr(&ip_hdr->src),
-		 net_sprint_ipv6_addr(&ip_hdr->dst),
-		 net_ntohs(icmp_echo->sequence),
-		 ip_hdr->hop_limit,
-#ifdef CONFIG_IEEE802154
-		 net_pkt_ieee802154_rssi_dbm(pkt),
-#endif
-		 time_buf);
-
-	if (net_ntohs(icmp_echo->sequence) == ping_ctx.count) {
-		ping_done(&ping_ctx);
-	}
-
-	return NET_OK;
+	return handle_echo_reply_common(pkt, net_ntohs(icmp_echo->sequence),
+					net_ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
+						NET_ICMPH_LEN,
+					net_sprint_ipv6_addr(&ip_hdr->src),
+					net_sprint_ipv6_addr(&ip_hdr->dst), ip_hdr->hop_limit);
 }
 #else
 static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
@@ -144,9 +111,7 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
 					      struct net_icmpv4_echo_req);
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
-	uint32_t cycles;
 	struct net_icmpv4_echo_req *icmp_echo;
-	char time_buf[16] = { 0 };
 
 	icmp_echo = (struct net_icmpv4_echo_req *)net_pkt_get_data(pkt,
 								&icmp_access);
@@ -163,46 +128,16 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 		return NET_DROP;
 	}
 
-	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
-		if (net_pkt_read_be32(pkt, &cycles)) {
-			return NET_DROP;
-		}
-
-		cycles = k_cycle_get_32() - cycles;
-
-		snprintf(time_buf, sizeof(time_buf),
-#ifdef CONFIG_FPU
-			 "time=%.2f ms",
-			 (double)((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
-#else
-			 "time=%d ms",
-			 ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
-#endif
-			);
-	}
-
-	PR_SHELL(ping_ctx.sh, "%d bytes from %s to %s: icmp_seq=%d ttl=%d "
-		 "%s\n",
-		 net_ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
-								NET_ICMPH_LEN,
-		 net_sprint_ipv4_addr(&ip_hdr->src),
-		 net_sprint_ipv4_addr(&ip_hdr->dst),
-		 net_ntohs(icmp_echo->sequence),
-		 ip_hdr->ttl,
-		 time_buf);
-
-	if (net_ntohs(icmp_echo->sequence) == ping_ctx.count) {
-		ping_done(&ping_ctx);
-	}
-
-	return NET_OK;
+	return handle_echo_reply_common(pkt, net_ntohs(icmp_echo->sequence),
+					net_ntohs(ip_hdr->len) - net_pkt_ipv6_ext_len(pkt) -
+						NET_ICMPH_LEN,
+					net_sprint_ipv4_addr(&ip_hdr->src),
+					net_sprint_ipv4_addr(&ip_hdr->dst), ip_hdr->ttl);
 }
 #else
-static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
-					       struct net_pkt *pkt,
+static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx, struct net_pkt *pkt,
 					       struct net_icmp_ip_hdr *hdr,
-					       struct net_icmp_hdr *icmp_hdr,
-					       void *user_data)
+					       struct net_icmp_hdr *icmp_hdr, void *user_data)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(pkt);
@@ -213,6 +148,61 @@ static enum net_verdict handle_ipv4_echo_reply(struct net_icmp_ctx *ctx,
 	return NET_CONTINUE;
 }
 #endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+
+/** Calculating the round-trip time and printing the result.
+ *
+ * @param pkt The packet containing the echo reply
+ * @param sequence Sequence number
+ * @param bytes Ping data length
+ * @param src Source address
+ * @param dst Destination address
+ * @param ttl Time-to-live
+ * @retval NET_OK on success
+ * @retval NET_DROP on failure
+ */
+static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t sequence,
+						 uint16_t bytes, const char *src, const char *dst,
+						 uint8_t ttl)
+{
+	uint32_t cycles = 0;
+	char time_buf[16] = {0};
+
+	if (net_pkt_remaining_data(pkt) >= sizeof(uint32_t)) {
+		if (net_pkt_read_be32(pkt, &cycles)) {
+			return NET_DROP;
+		}
+
+		cycles = k_cycle_get_32() - cycles;
+		snprintf(time_buf, sizeof(time_buf),
+#ifdef CONFIG_FPU
+			 "time=%.2f ms", (double)((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
+#else
+			 "time=%d ms", ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
+#endif
+		);
+	}
+
+	PR_SHELL(ping_ctx.sh,
+		 "%d bytes from %s to %s: icmp_seq=%u ttl=%u "
+#ifdef CONFIG_IEEE802154
+		 "rssi=%d "
+#endif
+		 "%s\n",
+		 bytes, src, dst, sequence, ttl,
+#ifdef CONFIG_IEEE802154
+		 net_pkt_ieee802154_rssi_dbm(pkt),
+#endif
+		 time_buf);
+
+	if (sequence == ping_ctx.count) {
+		ping_done(&ping_ctx);
+	}
+
+	return NET_OK;
+}
+#endif
 
 static int parse_arg(size_t *i, size_t argc, char *argv[])
 {
