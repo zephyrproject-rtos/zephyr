@@ -321,7 +321,7 @@ manifest:
       revision: fb00b383072518c918e2258b0916c996f2d4eebe
       path: modules/lib/loramac-node
     - name: lvgl
-      revision: 85aa60d18b3d5e5588d7b247abf90198f07c8a63
+      revision: bbedf2656086a93a8468a1c98168a6b36631ce9a
       path: modules/lib/gui/lvgl
     - name: mbedtls
       revision: 554163f6f7b2ec71fed9b423e81f2217a8615d29
