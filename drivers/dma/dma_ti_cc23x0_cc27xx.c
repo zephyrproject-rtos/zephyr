@@ -9,6 +9,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dma_cc23x0_cc27xx, CONFIG_DMA_LOG_LEVEL);
 
+#include <zephyr/arch/arm/cortex_m/memory_map.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/irq.h>
@@ -25,37 +26,46 @@ LOG_MODULE_REGISTER(dma_cc23x0_cc27xx, CONFIG_DMA_LOG_LEVEL);
 #include <inc/hw_types.h>
 
 /*
- * For CC23XX Channels 0 to 5 are DCH channels assigned to peripherals.
- * Channels 6 and 7 are ECH channels with no specific assignment.
- * For CC27XX Channels 0 to 7 are DCH channels assigned to peripherals.
- * Channels 8 to 11 are ECH channels with no specific assignment.
+ * DCH (Dedicated Channel) channels have a fixed connection to a specific
+ * peripheral's µDMA interface. Only the peripherals listed in the EVTSVT
+ * DMACH*SEL register for that channel can trigger it (IPID field, 4-bit).
+ *
+ * ECH (Event Channel) channels connect to the generic event fabric. Any event
+ * publisher in the system can trigger them (PUBID field, 7-bit).
+ *
+ * Both channel types can be triggered in software via DMA.SOFTREQ
+ * with no event source configured.
+ *
+ * Both channel types support any transfer direction (M2M, M2P, P2M). The
+ * direction is determined by how the source/destination addresses are set up.
+ *
+ * For CC23XX: DCH channels 0-5, ECH channels 6-7.
+ * For CC27XX: DCH channels 0-7, ECH channels 8-11.
  */
 
 #if CONFIG_SOC_SERIES_CC27XX
-	#define DMA_CC23X0_CC27XX_PERIPH_CH_MAX  7
-	#define DMA_CC23X0_CC27XX_ECH_CH_MIN     8
-	#define DMA_CC23X0_CC27XX_ECH_CH_MAX     11
+#define DMA_CC23X0_CC27XX_PERIPH_CH_MAX 7
+#define DMA_CC23X0_CC27XX_ECH_CH_MIN    8
+#define DMA_CC23X0_CC27XX_ECH_CH_MAX    11
+#define DMA_CC23X0_CC27XX_EVT_PUB_MIN   0x2
+#define DMA_CC23X0_CC27XX_EVT_PUB_MAX   0x4C
 #elif CONFIG_SOC_SERIES_CC23X0
-	#define DMA_CC23X0_CC27XX_PERIPH_CH_MAX  5
-	#define DMA_CC23X0_CC27XX_ECH_CH_MIN     6
-	#define DMA_CC23X0_CC27XX_ECH_CH_MAX     7
+#define DMA_CC23X0_CC27XX_PERIPH_CH_MAX 5
+#define DMA_CC23X0_CC27XX_ECH_CH_MIN    6
+#define DMA_CC23X0_CC27XX_ECH_CH_MAX    7
+#define DMA_CC23X0_CC27XX_EVT_PUB_MIN   0x2
+#define DMA_CC23X0_CC27XX_EVT_PUB_MAX   0x39
 #endif
 
 #define DMA_CC23X0_CC27XX_IS_ECH_CH(ch) ((ch) >= DMA_CC23X0_CC27XX_ECH_CH_MIN)
+#define DMA_CC23X0_CC27XX_NUM_CHANNELS  (DMA_CC23X0_CC27XX_ECH_CH_MAX + 1)
 
 /*
- * In basic mode, the DMA controller performs transfers as long as there are more items
- * to transfer, and a transfer request is present. This mode is used with peripherals that
- * assert a DMA request signal whenever the peripheral is ready for a data transfer.
- * Auto mode is similar to basic mode, except that when a transfer request is received,
- * the transfer completes, even if the DMA request is removed. This mode is suitable for
- * software-triggered transfers.
- *
- * Other DMA modes are currently not supported.
+ * Only valid for DCH channels (0-5 on CC23X0, 0-7 on CC27XX). On CC27XX, the
+ * EVTSVT registers for ECH channels 8-11 are not sequential (CH10 and CH11
+ * precede CH8 and CH9 in the address map), so this formula must not be used
+ * for ECH channels.
  */
-#define DMA_CC23X0_CC27XX_MODE(ch)                                                                 \
-	(DMA_CC23X0_CC27XX_IS_ECH_CH(ch) ? UDMA_MODE_AUTO : UDMA_MODE_BASIC)
-
 #define DMA_CC23X0_CC27XX_CHXSEL_REG(ch)                                                           \
 	HWREG(EVTSVT_BASE + EVTSVT_O_DMACH0SEL + sizeof(uint32_t) * (ch))
 
@@ -63,16 +73,43 @@ LOG_MODULE_REGISTER(dma_cc23x0_cc27xx, CONFIG_DMA_LOG_LEVEL);
 #define DMA_CC23X0_CC27XX_ALL_CH_MASK GENMASK(DMA_CC23X0_CC27XX_ECH_CH_MAX, 0)
 #endif
 
+static const uint32_t dma_cc23X0_cc27xx_evtsvt_offsets[] = {
+#if CONFIG_SOC_SERIES_CC23X0 || CONFIG_SOC_SERIES_CC27XX
+	EVTSVT_O_DMACH0SEL, EVTSVT_O_DMACH1SEL, EVTSVT_O_DMACH2SEL,  EVTSVT_O_DMACH3SEL,
+	EVTSVT_O_DMACH4SEL, EVTSVT_O_DMACH5SEL, EVTSVT_O_DMACH6SEL,  EVTSVT_O_DMACH7SEL,
+#endif
+#if CONFIG_SOC_SERIES_CC27XX
+	EVTSVT_O_DMACH8SEL, EVTSVT_O_DMACH9SEL, EVTSVT_O_DMACH10SEL, EVTSVT_O_DMACH11SEL,
+#endif
+};
+
+/* Valid values for the source_handshake field */
+#define HW_TRIGGERED_TRANSFER 0
+#define SW_TRIGGERED_TRANSFER 1
+
+#define DMA_CC23X0_CC27XX_IS_PERIPH_ADDR(addr)                                                     \
+	(((uintptr_t)(addr) >= 0x40000000) && ((uintptr_t)(addr) <= 0x4BFFFFFF))
+
+static uint32_t dma_cc23x0_cc27xx_get_evtsvt_offset(uint32_t channel)
+{
+	return dma_cc23X0_cc27xx_evtsvt_offsets[channel];
+}
+
 struct dma_cc23x0_cc27xx_channel {
 	uint8_t data_size;
+	uint8_t mode;
+	bool trigger;
 	dma_callback_t cb;
 	void *user_data;
 };
 
-/* Alternate Control table entries are currently not supported */
 struct dma_cc23x0_cc27xx_data {
-	__aligned(1024) uDMAControlTableEntry desc[UDMA_NUM_CHANNELS];
-	struct dma_cc23x0_cc27xx_channel channels[UDMA_NUM_CHANNELS];
+	/* dma_context must be the first member for dma_request_channel() */
+	struct dma_context ctx;
+
+	ATOMIC_DEFINE(channels_atomic, DMA_CC23X0_CC27XX_NUM_CHANNELS);
+	__aligned(512) uDMAControlTableEntry desc[UDMA_ALT_SELECT + DMA_CC23X0_CC27XX_NUM_CHANNELS];
+	struct dma_cc23x0_cc27xx_channel channels[DMA_CC23X0_CC27XX_NUM_CHANNELS];
 };
 
 static inline void dma_cc23x0_pm_policy_state_lock_get(void)
@@ -102,8 +139,8 @@ static void dma_cc23x0_cc27xx_isr(const struct device *dev)
 
 	done_flags = uDMAIntStatus();
 
-	for (i = 0; i < UDMA_NUM_CHANNELS; i++) {
-		if ((done_flags & BIT(i)) && !DMA_CC23X0_CC27XX_IS_ECH_CH(i)) {
+	for (i = 0; i < DMA_CC23X0_CC27XX_NUM_CHANNELS; i++) {
+		if ((done_flags & BIT(i))) {
 			LOG_DBG("DMA transfer completed on channel %d", i);
 
 			ch_data = &data->channels[i];
@@ -111,7 +148,7 @@ static void dma_cc23x0_cc27xx_isr(const struct device *dev)
 				ch_data->cb(dev, ch_data->user_data, i, DMA_STATUS_COMPLETE);
 			}
 
-			uDMAClearInt(done_flags & BIT(i));
+			uDMAClearInt(BIT(i));
 		}
 
 		LOG_DBG("DMA transfer completed on channel %u", i);
@@ -126,7 +163,8 @@ static void dma_cc23x0_cc27xx_isr(const struct device *dev)
 }
 
 static uint32_t dma_cc23x0_cc27xx_set_addr_adj(uint32_t *control, uint16_t addr_adj,
-				uint32_t inc_flags, uint32_t no_inc_flags, uint32_t inc_mask)
+					       uint32_t inc_flags, uint32_t no_inc_flags,
+					       uint32_t inc_mask)
 {
 	*control = *control & ~inc_mask;
 	switch (addr_adj) {
@@ -157,14 +195,31 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 	uint32_t burst_len;
 	int ret;
 
-	if (channel >= UDMA_NUM_CHANNELS) {
-		LOG_ERR("Invalid channel (%u)", channel);
+	if (channel >= DMA_CC23X0_CC27XX_NUM_CHANNELS) {
+		LOG_ERR("Invalid channel");
 		return -EINVAL;
 	}
 
-	if (config->dma_slot > EVTSVT_IPID_MAX_VAL) {
-		LOG_ERR("Invalid trigger");
-		return -EINVAL;
+	/*
+	 * DCH channels accept an IPID (4-bit peripheral trigger ID).
+	 * ECH channels accept a PUBID in [EVT_PUB_MIN, EVT_PUB_MAX].
+	 */
+	if (config->source_handshake == HW_TRIGGERED_TRANSFER) {
+		if (DMA_CC23X0_CC27XX_IS_ECH_CH(channel)) {
+			if (config->dma_slot < DMA_CC23X0_CC27XX_EVT_PUB_MIN ||
+			    config->dma_slot > DMA_CC23X0_CC27XX_EVT_PUB_MAX) {
+				LOG_ERR("Channel %d: invalid PUBID %d (valid %d-%d)", channel,
+					config->dma_slot, DMA_CC23X0_CC27XX_EVT_PUB_MIN,
+					DMA_CC23X0_CC27XX_EVT_PUB_MAX);
+				return -EINVAL;
+			}
+		} else {
+			if (config->dma_slot > EVTSVT_IPID_MAX_VAL) {
+				LOG_ERR("Channel %d: invalid IPID %d (max %d)", channel,
+					config->dma_slot, EVTSVT_IPID_MAX_VAL);
+				return -EINVAL;
+			}
+		}
 	}
 
 	if (config->block_count > 1) {
@@ -220,14 +275,14 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 	}
 
 	ret = dma_cc23x0_cc27xx_set_addr_adj(&control, block->source_addr_adj, src_inc_flags,
-						UDMA_SRC_INC_NONE, UDMA_SRC_INC_M);
+					     UDMA_SRC_INC_NONE, UDMA_SRC_INC_M);
 	if (ret) {
 		LOG_ERR("Invalid source address adjustment type (%u)", block->source_addr_adj);
 		return ret;
 	}
 
 	ret = dma_cc23x0_cc27xx_set_addr_adj(&control, block->dest_addr_adj, dst_inc_flags,
-						UDMA_DST_INC_NONE, UDMA_DST_INC_M);
+					     UDMA_DST_INC_NONE, UDMA_DST_INC_M);
 	if (ret) {
 		LOG_ERR("Invalid dest address adjustment type (%u)", block->dest_addr_adj);
 		return ret;
@@ -238,7 +293,6 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 		LOG_ERR("Invalid block size (must be in range %d to %d)", data_size,
 			data_size * UDMA_XFER_SIZE_MAX);
 		return -EINVAL;
-
 	}
 
 	burst_len = config->source_burst_length / data_size;
@@ -251,13 +305,19 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 	} else if ((burst_len <= UDMA_XFER_SIZE_MAX) && IS_POWER_OF_TWO(burst_len)) {
 		control |= LOG2(burst_len) << UDMA_ARB_S;
 	} else {
-		LOG_ERR("Computed burst length must be a power of 2 between %d and %d)",
-				 data_size, data_size * UDMA_XFER_SIZE_MAX);
+		LOG_ERR("Computed burst length must be a power of 2 between %d and %d)", data_size,
+			data_size * UDMA_XFER_SIZE_MAX);
 		return -EINVAL;
 	}
 
 	ch_data = &data->channels[channel];
 	ch_data->data_size = data_size;
+
+	/* Interpret source chaining as auto mode */
+	ch_data->mode = config->source_chaining_en ? UDMA_MODE_AUTO : UDMA_MODE_BASIC;
+
+	/* Interpret source handshake as hardware or software triggered transfers */
+	ch_data->trigger = config->source_handshake;
 	ch_data->cb = config->dma_callback;
 	ch_data->user_data = config->user_data;
 
@@ -265,19 +325,18 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 
-	if (DMA_CC23X0_CC27XX_IS_ECH_CH(channel)) {
-		LOG_ERR("ECH channels are not supported");
-		return -ENOTSUP;
+	if (ch_data->trigger == SW_TRIGGERED_TRANSFER) {
+		uDMAEnableSwEventInt(BIT(channel));
 	} else {
-		/* Select peripheral */
-		LOG_DBG("Using DCH Channel %d with trigger %d", channel, config->dma_slot);
-		EVTSVTConfigureDma(EVTSVT_O_DMACH0SEL + sizeof(uint32_t) * (channel),
-							config->dma_slot);
+		uint32_t evtsvt_ch = dma_cc23x0_cc27xx_get_evtsvt_offset(channel);
+
+		LOG_DBG("Channel %d: configuring EVTSVT trigger %d", channel, config->dma_slot);
+		EVTSVTConfigureDma(evtsvt_ch, config->dma_slot);
 	}
+
 	uDMASetChannelControl(&data->desc[channel], control);
-	uDMASetChannelTransfer(&data->desc[channel], DMA_CC23X0_CC27XX_MODE(channel),
-			(void *)block->source_address, (void *)block->dest_address,
-			xfer_size);
+	uDMASetChannelTransfer(&data->desc[channel], ch_data->mode, (void *)block->source_address,
+			       (void *)block->dest_address, xfer_size);
 
 #ifdef CONFIG_PM_DEVICE
 	pm_device_state_get(dev, &pm_state);
@@ -297,6 +356,8 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 
 		ch_data->dma_cfg.dma_slot = config->dma_slot;
 		ch_data->dma_cfg.channel_direction = config->channel_direction;
+		ch_data->dma_cfg.source_handshake = config->source_handshake;
+		ch_data->dma_cfg.dest_handshake = config->dest_handshake;
 		ch_data->dma_cfg.block_count = config->block_count;
 		ch_data->dma_cfg.head_block = &ch_data->dma_blk_cfg;
 		ch_data->dma_cfg.source_data_size = config->source_data_size;
@@ -319,12 +380,6 @@ static int dma_cc23x0_cc27xx_config(const struct device *dev, uint32_t channel,
 
 static int dma_cc23x0_cc27xx_stop(const struct device *dev, uint32_t channel)
 {
-
-	if (DMA_CC23X0_CC27XX_IS_ECH_CH(channel)) {
-		LOG_ERR("ECH channels are not supported");
-		return -ENOTSUP;
-	}
-
 	uDMADisableChannel(BIT(channel));
 
 	return 0;
@@ -337,17 +392,12 @@ static int dma_cc23x0_cc27xx_reload(const struct device *dev, uint32_t channel, 
 	struct dma_cc23x0_cc27xx_channel *ch_data = &data->channels[channel];
 	uint32_t xfer_size = size / ch_data->data_size;
 
-	if (DMA_CC23X0_CC27XX_IS_ECH_CH(channel)) {
-		LOG_ERR("ECH channels are not supported");
-		return -ENOTSUP;
-	}
-
 	if (uDMAIsChannelEnabled(BIT(channel))) {
 		return -EBUSY;
 	}
 
-	uDMASetChannelTransfer(&data->desc[channel], DMA_CC23X0_CC27XX_MODE(channel), (void *)src,
-			       (void *)dst, xfer_size);
+	uDMASetChannelTransfer(&data->desc[channel], ch_data->mode, (void *)src, (void *)dst,
+			       xfer_size);
 
 #ifdef CONFIG_PM_DEVICE
 	/* Save context */
@@ -364,47 +414,28 @@ static int dma_cc23x0_cc27xx_reload(const struct device *dev, uint32_t channel, 
 static int dma_cc23x0_cc27xx_get_status(const struct device *dev, uint32_t channel,
 					struct dma_status *stat)
 {
-	uint8_t ch_sel;
+	struct dma_cc23x0_cc27xx_data *data = dev->data;
 
-	if (DMA_CC23X0_CC27XX_IS_ECH_CH(channel)) {
-		LOG_ERR("ECH channels are not supported");
-		return -ENOTSUP;
-	}
+	const volatile uDMAControlTableEntry *desc;
 
-	if (channel >= UDMA_NUM_CHANNELS || !stat) {
+	bool isSrcPeriph;
+
+	bool isDstPeriph;
+
+	if (channel >= DMA_CC23X0_CC27XX_NUM_CHANNELS || !stat) {
 		return -EINVAL;
 	}
 
-	ch_sel = DMA_CC23X0_CC27XX_CHXSEL_REG(channel) & EVTSVT_IPID_MAX_VAL;
-	switch (ch_sel) {
-	case EVTSVT_DMA_TRIG_UART0RXTRG:
-	case EVTSVT_DMA_TRIG_SPI0RXTRG:
-	case EVTSVT_DMA_TRIG_LAESTRGB:
-		stat->dir = PERIPHERAL_TO_MEMORY;
-		break;
-	case EVTSVT_DMA_TRIG_LAESTRGA:
-	case EVTSVT_DMA_TRIG_ADC0TRG:
-	case EVTSVT_DMA_TRIG_SPI0TXTRG:
-	case EVTSVT_DMA_TRIG_UART0TXTRG:
+	desc = &data->desc[channel];
+	isSrcPeriph = DMA_CC23X0_CC27XX_IS_PERIPH_ADDR(desc->pSrcEndAddr);
+	isDstPeriph = DMA_CC23X0_CC27XX_IS_PERIPH_ADDR(desc->pDstEndAddr);
+
+	if (!isSrcPeriph && isDstPeriph) {
 		stat->dir = MEMORY_TO_PERIPHERAL;
-		break;
-	#if CONFIG_SOC_SERIES_CC27XX
-	case EVTSVT_DMA_TRIG_UART1RXTRG:
-	case EVTSVT_DMA_TRIG_SPI1RXTRG:
-	case EVTSVT_DMA_TRIG_CANTRGB:
+	} else if (isSrcPeriph && !isDstPeriph) {
 		stat->dir = PERIPHERAL_TO_MEMORY;
-		break;
-	case EVTSVT_DMA_TRIG_UART1TXTRG:
-	case EVTSVT_DMA_TRIG_SPI1TXTRG:
-	case EVTSVT_DMA_TRIG_CANTRGA:
-		stat->dir = MEMORY_TO_PERIPHERAL;
-		break;
-	case EVTSVT_DMA_TRIG_LRFDTRG:
+	} else {
 		stat->dir = MEMORY_TO_MEMORY;
-	#endif
-	default:
-		stat->dir = MEMORY_TO_MEMORY;
-		break;
 	}
 
 	return 0;
@@ -412,11 +443,8 @@ static int dma_cc23x0_cc27xx_get_status(const struct device *dev, uint32_t chann
 
 static int dma_cc23x0_cc27xx_start(const struct device *dev, uint32_t channel)
 {
-
-	if (DMA_CC23X0_CC27XX_IS_ECH_CH(channel)) {
-		LOG_ERR("ECH channels are not supported");
-		return -ENOTSUP;
-	}
+	struct dma_cc23x0_cc27xx_data *data = dev->data;
+	struct dma_cc23x0_cc27xx_channel *ch_data = &data->channels[channel];
 
 	if (uDMAIsChannelEnabled(BIT(channel))) {
 		return -EBUSY;
@@ -425,16 +453,26 @@ static int dma_cc23x0_cc27xx_start(const struct device *dev, uint32_t channel)
 	uDMAEnable();
 	uDMAEnableChannel(BIT(channel));
 
-	struct dma_status status;
-
-	if (dma_cc23x0_cc27xx_get_status(dev, channel, &status) >= 0) {
-		LOG_DBG("Channel %d has direction %d", channel, status.dir);
-		if (status.dir == MEMORY_TO_MEMORY) {
-			uDMARequestChannel(BIT(channel));
-		}
+	if (ch_data->trigger == SW_TRIGGERED_TRANSFER) {
+		LOG_DBG("Starting SW triggered transfer on channel %d", channel);
+		uDMARequestChannel(BIT(channel));
 	}
 
 	return 0;
+}
+
+static bool dma_cc23x0_cc27xx_chan_filter(const struct device *dev, int channel, void *filter_param)
+{
+	uint32_t filter;
+
+	/* NULL means no filter, take any channel */
+	if (!filter_param) {
+		return true;
+	}
+
+	filter = *((uint32_t *)filter_param);
+
+	return (filter & BIT(channel));
 }
 
 static int dma_cc23x0_cc27xx_enable(struct dma_cc23x0_cc27xx_data *data)
@@ -527,7 +565,13 @@ static int dma_cc23x0_cc27xx_pm_action(const struct device *dev, enum pm_device_
 
 #endif /* CONFIG_PM_DEVICE */
 
-static struct dma_cc23x0_cc27xx_data cc23x0_data;
+static struct dma_cc23x0_cc27xx_data cc23x0_data = {
+	.ctx = {
+			.magic = DMA_MAGIC,
+			.dma_channels = DMA_CC23X0_CC27XX_NUM_CHANNELS,
+			.atomic = cc23x0_data.channels_atomic,
+		},
+};
 
 static const struct dma_driver_api dma_cc23x0_cc27xx_api = {
 	.config = dma_cc23x0_cc27xx_config,
@@ -535,6 +579,7 @@ static const struct dma_driver_api dma_cc23x0_cc27xx_api = {
 	.stop = dma_cc23x0_cc27xx_stop,
 	.reload = dma_cc23x0_cc27xx_reload,
 	.get_status = dma_cc23x0_cc27xx_get_status,
+	.chan_filter = dma_cc23x0_cc27xx_chan_filter,
 };
 
 PM_DEVICE_DT_INST_DEFINE(0, dma_cc23x0_cc27xx_pm_action);

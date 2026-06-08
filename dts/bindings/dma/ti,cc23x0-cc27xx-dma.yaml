@@ -1,7 +1,20 @@
 # Copyright (c) 2024 BayLibre, SAS
 # SPDX-License-Identifier: Apache-2.0
 
-description: TI CC23X0_CC27XX DMA controller
+description: |
+  TI CC23X0_CC27XX uDMA controller
+
+  channel: Select channel for data transmitting. Channels are either
+    Dedicated uDMA channels (DCH) for peripherals or Event Publisher Channels
+    (ECH) that can be connected to any EVTSVT publishers.
+
+  slot: For ECH channels, the slot should be an EVTSVT event publisher ID.
+    For DCH channels, it should be an EVTSVT IP ID.
+
+  In the driver, setting the source_chaning_en enables the uDMA auto mode, and
+  deselecting enables basic mode. Setting source_handshake selects software
+  triggered transfers and deselecting it enables hardware triggered transfers.
+
 
 compatible: "ti,cc23x0-cc27xx-dma"
 
