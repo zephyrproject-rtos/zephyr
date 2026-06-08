@@ -1,0 +1,120 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI CC27XX I2S controller
+
+  The I2S peripheral on CC27XX devices supports:
+  - Controller and Target modes
+  - Dual-phase (I2S, Left/Right Justified) and single-phase (DSP) formats
+  - 8-24 bits per word
+  - Up to 8 channels per data line (SD0/SD1)
+  - Built-in DMA for data transfer
+  - Configurable clock dividers (MCLK, BCLK, WCLK)
+  - Sample stamping for synchronization
+
+compatible: "ti,cc27xx-i2s"
+
+include: [i2s-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pin-dir-sd0:
+    type: int
+    default: 0x02
+    description: |
+      SD0 (Serial Data 0) audio interface pin direction configuration.
+
+      The I2S interface has two bidirectional serial data pins (SD0 and SD1)
+      that can be independently configured as input (RX), output (TX), or
+      disabled. This allows flexible board design where the same physical pins
+      can be assigned different roles based on the audio codec wiring.
+
+      Typical configurations:
+      - Full-duplex audio: SD0 = OUTPUT (TX to codec), SD1 = INPUT (RX from codec)
+      - TX only (playback): SD0 = OUTPUT, SD1 = DISABLED
+      - RX only (recording): SD0 = DISABLED, SD1 = INPUT
+      - Loopback testing: SD0 = OUTPUT, SD1 = INPUT (with external wire connection)
+
+      If not specified, defaults to TI_CC27XX_I2S_PIN_DIR_OUT (0x02) which
+      configures SD0 as output for transmit to audio codec.
+
+      Values (from dt-bindings/i2s/ti-cc27xx-i2s.h):
+        TI_CC27XX_I2S_PIN_DIR_DISABLED = 0x00
+          Pin is not used by I2S peripheral. Use this to save power when only
+          one direction is needed (e.g., playback-only or record-only).
+
+        TI_CC27XX_I2S_PIN_DIR_IN = 0x01
+          Pin configured as input (RX - receive audio data from codec).
+          Used when SoC is recording audio from external codec/microphone.
+
+        TI_CC27XX_I2S_PIN_DIR_OUT = 0x02 (default)
+          Pin configured as output (TX - transmit audio data to codec).
+          Used when SoC is playing audio to external codec/speaker.
+
+      Hardware note: The actual pin muxing (which physical GPIO pin is used
+      for SD0) is configured separately in the pinctrl devicetree node.
+      This property only controls the data direction of the I2S peripheral
+      once the pin is muxed to I2S function.
+
+  pin-dir-sd1:
+    type: int
+    default: 0x01
+    description: |
+      SD1 (Serial Data 1) audio interface pin direction configuration.
+
+      Same as pin-dir-sd0 but for the second serial data pin. The I2S module
+      has two independent serial data pins (SD0 and SD1) to support full-duplex
+      operation where both transmit and receive can occur simultaneously.
+
+      If not specified, defaults to TI_CC27XX_I2S_PIN_DIR_IN (0x01) which
+      configures SD1 as input for receive from audio codec. This default
+      pairs with SD0's default (output) for typical full-duplex operation.
+
+      Values: Same as pin-dir-sd0 (see above for detailed descriptions)
+        0x00 = TI_CC27XX_I2S_PIN_DIR_DISABLED - Pin not used
+        0x01 = TI_CC27XX_I2S_PIN_DIR_IN - Input (RX from codec) - default for SD1
+        0x02 = TI_CC27XX_I2S_PIN_DIR_OUT - Output (TX to codec)
+
+      For all constants see dt-bindings/i2s/ti-cc27xx-i2s.h
+
+  startup-delay:
+    type: int
+    default: 2
+    description: Number of WS cycles to wait before the first transfer.
+
+  afclk-source:
+    type: int
+    default: 0x02
+    description: |
+      Audio frequency clock (AFCLK) source selection.
+      0x00 = CLKREF (Crystal Oscillator: 48 MHz reference clock)
+      0x01 = CLKHF (System Clock: 96 MHz HFXT)
+      0x02 = CLKAF (AFOSC - Audio Frequency Oscillator: 80/90.3168/98.304 MHz) - default
+             Provides zero sample rate error for standard audio rates.
+
+      For all options see dt-bindings/i2s/ti-cc27xx-i2s.h
+
+  afosc-freq:
+    type: int
+    default: 98304000
+    description: |
+      AFOSC frequency in Hz. Only used when afclk-source is 1 (CLKAF).
+      Valid values:
+        80000000 (80 MHz)
+        90316800 (90.3168 MHz - for 22.05/44.1 kHz sample rates)
+        98304000 (98.304 MHz - for 8/16/24/32/48 kHz sample rates)
+
+  cclk-divider:
+    type: int
+    default: 40
+    description: |
+      Frequency divider for the CCLK (MCLK) signal.
+      CCLK = AFCLK / cclk-divider.
+      Must be >= 2 (hardware limitation: divider of 1 is not allowed).
+      Value must be between 2 and 1024 (inclusive).

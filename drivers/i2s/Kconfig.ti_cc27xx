@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config I2S_TI_CC27XX
+	bool "TI CC27XX I2S driver"
+	default y
+	depends on DT_HAS_TI_CC27XX_I2S_ENABLED
+	select PINCTRL
+	help
+	  Enable I2S driver for TI CC27XX SoCs.
+
+	  The CC27XX I2S peripheral supports:
+	  - Controller and Target modes
+	  - Dual-phase (I2S, LJF, RJF) and single-phase (DSP) formats
+	  - 8-24 bits per word
+	  - Up to 8 channels per data line
+	  - Built-in DMA for data transfer
+	  - Configurable clock dividers
+
+if I2S_TI_CC27XX
+
+config I2S_TI_CC27XX_TXQ_SIZE
+	int "Max number of messages on TX queue"
+	default 16
+
+config I2S_TI_CC27XX_RXQ_SIZE
+	int "Max number of messages on RX queue"
+	default 16
+
+endif # I2S_TI_CC27XX
