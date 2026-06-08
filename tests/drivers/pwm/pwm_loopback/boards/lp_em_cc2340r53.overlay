@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * PWM loopback test overlay for lp_em_cc2340r53 (CC23x0 family).
+ *
+ * Output:  pwm0 channel 0 -> LGPT0 ch0 -> DIO8 (T0_C0N) -> BoosterPack pin 36
+ * Capture: pwm5 channel 2 -> LGPT1 ch2 -> DIO6 (T1_C2)  -> BoosterPack pin 38
+ *
+ * Wire BoosterPack pin 36 <-> pin 38 to close the loopback.
+ *
+ * LGPT0 is not enabled in the board DTS; it is enabled here.
+ * Prescaler 127 -> effective clock = 48 MHz / (127 + 1) = 375 kHz.
+ * Max period (16-bit) = 65535 / 375 kHz ~= 174 ms (covers the 100 ms test signal).
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwm0 0 PWM_SEC(1) PWM_POLARITY_NORMAL>,
+		       <&pwm5 2 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&lgpt0 {
+	status = "okay";
+	clk-prescale = <127>;
+};
+
+&lgpt1 {
+	clk-prescale = <127>;
+};
+
+/* LGPT0 ch0: PWM output on DIO8 (T0_C0N) */
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};
+
+/* LGPT1 ch2: PWM capture input on DIO6 (T1_C2) */
+&pwm5 {
+	status = "okay";
+	pinctrl-0 = <&pwm5_capture>;
+	pinctrl-names = "default";
+};

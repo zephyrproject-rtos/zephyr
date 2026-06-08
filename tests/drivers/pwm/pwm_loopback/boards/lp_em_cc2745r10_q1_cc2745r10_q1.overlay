@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * PWM loopback test overlay for lp_em_cc2745r10_q1/cc2745r10_q1.
+ *
+ * Output:  pwm3  LGPT1 ch0  DIO15 (T1_C0N)  ─┐  wire together
+ * Capture: pwm0  LGPT0 ch0  DIO0  (T0_C0)   ─┘
+ *
+ * lgpt0 and lgpt1 are not enabled in the board DTS; they are enabled here.
+ * Prescaler 127 → effective clock = 48 MHz / (127 + 1) = 375 kHz.
+ * Max period (16-bit) = 65535 / 375 kHz ≈ 174 ms (covers the 100 ms test signal).
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwm3 0 PWM_SEC(1) PWM_POLARITY_NORMAL>,
+		       <&pwm0 0 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+	};
+};
+
+/* LGPT1 for PWM output */
+&lgpt1 {
+	status = "okay";
+	clk-prescale = <127>;
+};
+
+/* LGPT1 ch0: PWM output on DIO15 (T1_C0N) */
+&pwm3 {
+	status = "okay";
+	pinctrl-0 = <&pwm3_default>;
+	pinctrl-names = "default";
+};
+
+/* LGPT0 for PWM capture */
+&lgpt0 {
+	status = "okay";
+	clk-prescale = <127>;
+};
+
+/* LGPT0 ch0: PWM capture input on DIO0 (T0_C0) */
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_capture>;
+	pinctrl-names = "default";
+};

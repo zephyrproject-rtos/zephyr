@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * PWM loopback test overlay for lp_em_cc2755p10.
+ *
+ * Output:  pwm9  LGPT3 ch1  DIO28 (T3_C0N)  --+  wire together
+ * Capture: pwm0  LGPT0 ch0  DIO0 (T0_C0)   --+
+ *
+ * Wire BoosterPack pin 10 <-> pin 40 to close the loopback.
+ *
+ * Pins DIO16-20 (I2S0), DIO12/15/16 (SPI1), DIO3-7 (SPI0) are avoided.
+ * DIO9 (BP34) and DIO0 (BP40) are free of peripheral conflicts.
+ *
+ * lgpt0 and lgpt2 are not enabled in the board DTS; they are enabled here.
+ * Prescaler 127 -> effective clock = 48 MHz / (127 + 1) = 375 kHz.
+ * Max period (16-bit) = 65535 / 375 kHz ~= 174 ms (covers the 100 ms test signal).
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwm9 0 PWM_SEC(1) PWM_POLARITY_NORMAL>,
+		       <&pwm0 0 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+	};
+};
+
+/* LGPT3 for PWM output */
+&lgpt3 {
+	status = "okay";
+	clk-prescale = <127>;
+};
+
+/* LGPT3 ch0: PWM output on DIO28 (T3_C0N) */
+&pwm9 {
+	status = "okay";
+	pinctrl-0 = <&pwm9_default>;
+	pinctrl-names = "default";
+};
+
+/* LGPT0 for PWM capture */
+&lgpt0 {
+	status = "okay";
+	clk-prescale = <127>;
+};
+
+/* LGPT0 ch0: PWM capture input on DIO0 (T0_C0) */
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_capture>;
+	pinctrl-names = "default";
+};

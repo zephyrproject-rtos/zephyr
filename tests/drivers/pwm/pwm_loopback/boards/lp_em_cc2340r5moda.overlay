@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * PWM loopback test overlay for lp_em_cc2340r5moda (CC23x0 module).
+ *
+ * Output:  pwm0 channel 0 -> LGPT0 ch0 -> DIO8  (T0_C0N) -> BoosterPack pin 40
+ * Capture: pwm5 channel 2 -> LGPT1 ch2 -> DIO16 (T1_C2)  -> BoosterPack pin 34
+ *
+ * Wire BoosterPack pin 40 <-> pin 34 to close the loopback.
+ *
+ * Note: DIO8 is shared with I2C0_SDA in the board pinctrl. The loopback test
+ * does not enable I2C0, so DIO8 is free for PWM output.
+ *
+ * Prescaler 127 -> effective clock = 48 MHz / (127 + 1) = 375 kHz.
+ * Max period (16-bit) = 65535 / 375 kHz ~= 174 ms (covers the 100 ms test signal).
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	pwm_loopback_0 {
+		compatible = "test-pwm-loopback";
+		pwms = <&pwm0 0 PWM_SEC(1) PWM_POLARITY_NORMAL>,
+		       <&pwm5 2 PWM_SEC(1) PWM_POLARITY_NORMAL>;
+	};
+};
+
+&lgpt0 {
+	clk-prescale = <127>;
+};
+
+&lgpt1 {
+	clk-prescale = <127>;
+};
+
+/* LGPT0 ch0: PWM output on DIO8 (T0_C0N) */
+&pwm0 {
+	status = "okay";
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};
+
+/* LGPT1 ch2: PWM capture input on DIO16 (T1_C2) */
+&pwm5 {
+	status = "okay";
+	pinctrl-0 = <&pwm5_capture>;
+	pinctrl-names = "default";
+};

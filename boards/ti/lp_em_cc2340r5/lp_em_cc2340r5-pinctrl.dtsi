@@ -148,6 +148,13 @@
 		bias-disable;
 	};
 
+	/* LGPT1 ch2 capture input (DIO6, T1_C2 PFUNC3) - BoosterPack pin 38 */
+	pwm5_capture: lgpt1_chan2_capture {
+		pinmux = <6 DIO6_T1_C2>;
+		bias-disable;
+		input-enable;
+	};
+
 	/* LGPT2 - PWM */
 	pwm6_default: lgpt2_chan0_default {
 		pinmux = <15 DIO15_T2_C0N>;
