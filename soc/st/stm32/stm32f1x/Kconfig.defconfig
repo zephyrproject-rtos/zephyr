@@ -19,4 +19,7 @@ config COUNTER
 
 endif # PM
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x5ee21072" if SOC_STM32F103XE
+
 endif # SOC_SERIES_STM32F1X

@@ -29,4 +29,7 @@ config LV_DRAW_DMA2D_HAL_INCLUDE
 
 endif # LVGL
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x6db66082"
+
 endif # SOC_SERIES_STM32H7X
