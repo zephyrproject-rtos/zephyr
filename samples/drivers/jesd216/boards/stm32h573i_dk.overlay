@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Reading the SFDP and its Magic requires SINGLE/STR config. (see #97979) */
+&mx25lm51245 {
+	mspi-io-mode = "MSPI_IO_MODE_SINGLE";
+	mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+};
