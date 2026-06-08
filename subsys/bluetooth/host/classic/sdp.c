@@ -3490,7 +3490,7 @@ static int sdp_attr_parse(struct net_buf_simple *buf,
 	}
 
 	/* The following is a data ele sequence, so recursively parse */
-	if ((buf->len > 0) && sdp_attr_is_seq(buf->data[0])) {
+	if (sdp_attr_is_seq(type) && (buf->len > 0) && sdp_attr_is_seq(buf->data[0])) {
 		LOG_DBG("Recursively parse");
 
 		return sdp_attr_parse(buf, func, user_data, nest_level + 1);
