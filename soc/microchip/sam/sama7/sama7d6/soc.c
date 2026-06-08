@@ -87,4 +87,26 @@ void soc_early_init_hook(void)
 
 	/* Enable generic clock for MCANx, frequency MCK1 / (4 + 1) = 40MHz */
 	FOR_EACH_IDX(MCAN_CLK_INIT_DEFN, (), 0, 1, 2, 3, 4)
+
+	/* config ETHPLL to 625 MHz, 24 * (0x19 + 1 + 0x2aaab / 2^22) = 625 */
+	if (DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_gmac)) {
+		PMC_REGS->PMC_PLL_UPDT = PMC_PLL_UPDT_ID(PLL_ID_ETHPLL);
+		PMC_REGS->PMC_PLL_CTRL1 = PMC_PLL_CTRL1_MUL(0x19) |
+					  PMC_PLL_CTRL1_FRACR(0x2aaab);
+		PMC_REGS->PMC_PLL_UPDT |= PMC_PLL_UPDT_UPDATE_Msk;
+		PMC_REGS->PMC_PLL_CTRL0 = PMC_PLL_CTRL0_ENLOCK_Msk |
+					  PMC_PLL_CTRL0_ENPLLCK_Msk |
+					  PMC_PLL_CTRL0_ENPLL_Msk;
+		PMC_REGS->PMC_PLL_UPDT |= PMC_PLL_UPDT_UPDATE_Msk;
+		while ((PMC_REGS->PMC_PLL_ISR0 & BIT(PLL_ID_ETHPLL)) == 0) {
+		}
+	}
+
+	/* Enable generic clock for GMAC0, frequency ETHPLL / (4 + 1) = 125MHz */
+	if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gmac0))) {
+		PMC_REGS->PMC_PCR = PMC_PCR_PID(ID_GMAC0);
+		PMC_REGS->PMC_PCR = PMC_PCR_CMD_Msk | PMC_PCR_GCLKEN_Msk | PMC_PCR_EN_Msk |
+				    PMC_PCR_GCLKDIV(4) |
+				    PMC_PCR_GCLKCSS_ETHPLL | PMC_PCR_PID(ID_GMAC0);
+	}
 }
