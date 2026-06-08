@@ -23,6 +23,7 @@
 
 	chosen {
 		zephyr,edac = &erm0;
+		zephyr,system-timer-companion = &lptmr0;
 		zephyr,crc = &crc;
 	};
 
