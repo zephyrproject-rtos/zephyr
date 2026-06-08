@@ -1,0 +1,18 @@
+tests:
+  net.wifi.interop:
+    harness: pytest
+    slow: true
+    timeout: 300
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness_config:
+      pytest_dut_scope: module
+      pytest_root:
+        - "pytest/test_wifi.py"
+    tags:
+      - net
+      - wifi
+      - pytest
+      - shell
