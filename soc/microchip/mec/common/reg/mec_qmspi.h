@@ -11,7 +11,11 @@
 #include <stddef.h>
 #include <zephyr/sys/util.h>
 
+/* Max CS of 2 is only for SHD_SPI port. PVT and INTERNAL only implement one CS */
 #define XEC_QSPI_MAX_CS 2
+
+#define XEC_QSPI_FREQ_MAX MHZ(96)
+#define XEC_QSPI_FREQ_MIN ((XEC_QSPI_FREQ_MAX) / 0x10000U)
 
 /* Mode register */
 #define XEC_QSPI_MODE_OFS             0
@@ -34,8 +38,11 @@
 #define XEC_QSPI_MODE_CK_DIV_SET(d)   FIELD_PREP(XEC_QSPI_MODE_CK_DIV_MSK, (d))
 #define XEC_QSPI_MODE_CK_DIV_GET(r)   FIELD_GET(XEC_QSPI_MODE_CK_DIV_MSK, (r))
 
-/* CPOL, CPHA_SDI, and CPHA_SDO bit mask */
-#define XEC_QSPI_MODE_CP_MSK 0x700u
+/* Access CPOL, CPHA_SDI, and CPHA_SDO as a single field */
+#define XEC_QSPI_MODE_CP_POS    8
+#define XEC_QSPI_MODE_CP_MSK    0x700u
+#define XEC_QSPI_MODE_CP_SET(m) FIELD_PREP(XEC_QSPI_CP_MSK, (m))
+#define XEC_QSPI_MODE_CP_GET(r) FIELD_GET(XEC_QSPI_CP_MSK, (r))
 
 /* Control register */
 #define XEC_QSPI_CR_OFS            4u
@@ -54,28 +61,30 @@
 #define XEC_QSPI_CR_TXM_ONES       3u
 #define XEC_QSPI_CR_TXM_SET(tm)    FIELD_PREP(XEC_QSPI_CR_TXM_MSK, (tm))
 #define XEC_QSPI_CR_TXM_GET(r)     FIELD_GET(XEC_QSPI_CR_TXM_MSK, (r))
+
+/* TX and RX DMA field values
+ * 0 is DMA disabled
+ * If central DMA is used value is interpreted as the unit size or
+ * width of central DMA write to QMSPI TX FIFO or read from QMSPI RX FIFO
+ * (1, 2, or 4 bytes).
+ * If Local-DMA is used value is interpreted as the Local-DMA channel.
+ * QMSPI has three TX Local-DMA channels and three RX Local-DMA channels.
+ */
+#define XEC_QSPI_CR_DMA_DIS  0
+#define XEC_QSPI_CR_DMAC_U1B 1u
+#define XEC_QSPI_CR_DMAC_U2B 2u
+#define XEC_QSPI_CR_DMAC_U4B 3u
+#define XEC_QSPI_CR_LDMA_CH0 1u
+#define XEC_QSPI_CR_LDMA_CH1 2u
+#define XEC_QSPI_CR_LDMA_CH2 3u
+
 #define XEC_QSPI_CR_TXDMA_POS      4
 #define XEC_QSPI_CR_TXDMA_MSK      GENMASK(5, 4)
-#define XEC_QSPI_CR_TXDMA_DIS      0
-#define XEC_QSPI_CR_TXDMA_CD1B     1u
-#define XEC_QSPI_CR_TXDMA_CD2B     2u
-#define XEC_QSPI_CR_TXDMA_CD4B     4u
-#define XEC_QSPI_CR_TXDMA_TLDCH0   1u
-#define XEC_QSPI_CR_TXDMA_TLDCH1   2u
-#define XEC_QSPI_CR_TXDMA_TLDCH2   3u
 #define XEC_QSPI_CR_TXDMA_SET(m)   FIELD_PREP(XEC_QSPI_CR_TXDMA_MSK, (m))
 #define XEC_QSPI_CR_TXDMA_GET(r)   FIELD_GET(XEC_QSPI_CR_TXDMA_MSK, (r))
-#define XEC_QSPI_CR_RX_EN_POS      6
+#define XEC_QSPI_CR_RX_EN_POS      6 /* enable RX */
 #define XEC_QSPI_CR_RXDMA_POS      7
 #define XEC_QSPI_CR_RXDMA_MSK      GENMASK(8, 7)
-#define XEC_QSPI_CR_RXDMA_DIS      0
-#define XEC_QSPI_CR_RXDMA_CD1B     1u
-#define XEC_QSPI_CR_RXDMA_CD2B     2u
-#define XEC_QSPI_CR_RXDMA_CD4B     3u
-#define XEC_QSPI_CR_RXDMA_DIS      0
-#define XEC_QSPI_CR_RXDMA_RLDCH0   1u
-#define XEC_QSPI_CR_RXDMA_RLDCH1   2u
-#define XEC_QSPI_CR_RXDMA_RLDCH2   3u
 #define XEC_QSPI_CR_RXDMA_SET(m)   FIELD_PREP(XEC_QSPI_CR_RXDMA_MSK, (m))
 #define XEC_QSPI_CR_RXDMA_GET(r)   FIELD_GET(XEC_QSPI_CR_RXDMA_MSK, (r))
 #define XEC_QSPI_CR_CLOSE_EN_POS   9
@@ -249,10 +258,16 @@
 #define XEC_QSPI_TAPS_CR2_OFS 0xd8u
 
 /* Local DMA RX enable descriptor bit map register */
-#define XEC_QSPI_LDMA_RX_EN_OFS 0x100u
+#define XEC_QSPI_LDMA_RX_EN_OFS 0x100U
+
+/* alternate name */
+#define XEC_QSPI_LDMA_RX_DBM_OFS 0x100U
 
 /* Local DMA TX enable descriptor bit map register */
-#define XEC_QSPI_LDMA_TX_EN_OFS 0x104u
+#define XEC_QSPI_LDMA_TX_EN_OFS 0x104U
+
+/* alternate name */
+#define XEC_QSPI_LDMA_TX_DBM_OFS 0x104U
 
 /* Local DMA channels: first 3 are HW dedicated to RX, second 3 are HW dedicated to TX */
 #define XEC_QSPI_LDMA_RX_CH0  0

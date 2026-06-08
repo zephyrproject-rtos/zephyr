@@ -534,8 +534,8 @@ static void qspi_ldma_init(const struct device *dev)
 
 #define ULDMA_DESCR0                                                                               \
 	(XEC_QSPI_CR_IFM_SET(XEC_QSPI_CR_IFM_FD) | XEC_QSPI_CR_TXM_SET(XEC_QSPI_CR_TXM_DATA) |     \
-	 XEC_QSPI_CR_TXDMA_SET(XEC_QSPI_CR_TXDMA_TLDCH0) | BIT(XEC_QSPI_CR_RX_EN_POS) |            \
-	 XEC_QSPI_CR_RXDMA_SET(XEC_QSPI_CR_RXDMA_RLDCH0) | BIT(XEC_QSPI_DR_LD_POS))
+	 XEC_QSPI_CR_TXDMA_SET(XEC_QSPI_CR_LDMA_CH0) | BIT(XEC_QSPI_CR_RX_EN_POS) |                \
+	 XEC_QSPI_CR_RXDMA_SET(XEC_QSPI_CR_LDMA_CH0) | BIT(XEC_QSPI_DR_LD_POS))
 
 #define ULDMA_IEN                                                                                  \
 	(BIT(XEC_QSPI_IER_XFR_DONE_POS) | BIT(XEC_QSPI_IER_TXB_ERR_POS) |                          \
