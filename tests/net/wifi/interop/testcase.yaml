@@ -1,0 +1,22 @@
+tests:
+  net.wifi.interop:
+    harness: pytest
+    slow: true
+    timeout: 300
+    # The driver compiles third-party hostap sources that trip -Wpedantic
+    # (variadic macros, zero-size arrays), so do not treat warnings as errors.
+    extra_args:
+      - CONFIG_COMPILER_WARNINGS_AS_ERRORS=n
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness_config:
+      pytest_dut_scope: module
+      pytest_root:
+        - "pytest/test_wifi.py"
+    tags:
+      - net
+      - wifi
+      - pytest
+      - shell
