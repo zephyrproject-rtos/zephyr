@@ -12,16 +12,19 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(i3c, CONFIG_I3C_LOG_LEVEL);
 
-/* Statically allocated array of IBI work item nodes */
-static struct i3c_ibi_work i3c_ibi_work_nodes[CONFIG_I3C_IBI_WORKQUEUE_LENGTH];
-
 static K_KERNEL_STACK_DEFINE(i3c_ibi_work_q_stack,
 			     CONFIG_I3C_IBI_WORKQUEUE_STACK_SIZE);
 
 /* IBI workqueue */
 static struct k_work_q i3c_ibi_work_q;
 
-static sys_slist_t i3c_ibi_work_nodes_free;
+/* Memory slab for IBI work item allocation (ISR-safe) */
+K_MEM_SLAB_DEFINE_STATIC(i3c_ibi_work_slab,
+				sizeof(struct i3c_ibi_work),
+				CONFIG_I3C_IBI_WORKQUEUE_LENGTH,
+				sizeof(void *));
+
+static void i3c_ibi_work_handler(struct k_work *work);
 
 static inline int ibi_work_submit(struct i3c_ibi_work *ibi_node)
 {
@@ -30,43 +33,35 @@ static inline int ibi_work_submit(struct i3c_ibi_work *ibi_node)
 
 int i3c_ibi_work_enqueue(struct i3c_ibi_work *ibi_work)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
-		ret = -ENOMEM;
-		goto out;
+	ret = k_mem_slab_alloc(&i3c_ibi_work_slab, (void **)&ibi_node, K_NO_WAIT);
+	if (ret < 0) {
+		return -ENOMEM;
 	}
 
-	ibi_node = (struct i3c_ibi_work *)node;
-
 	(void)memcpy(ibi_node, ibi_work, sizeof(*ibi_node));
+	k_work_init(&ibi_node->work, i3c_ibi_work_handler);
 
 	ret = ibi_work_submit(ibi_node);
 	if (ret >= 0) {
 		ret = 0;
 	}
 
-out:
 	return ret;
 }
 
 int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target,
 				    uint8_t *payload, size_t payload_len)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
-		ret = -ENOMEM;
-		goto out;
+	ret = k_mem_slab_alloc(&i3c_ibi_work_slab, (void **)&ibi_node, K_NO_WAIT);
+	if (ret < 0) {
+		return -ENOMEM;
 	}
-
-	ibi_node = (struct i3c_ibi_work *)node;
 
 	ibi_node->type = I3C_IBI_TARGET_INTR;
 	ibi_node->target = target;
@@ -77,93 +72,85 @@ int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target,
 			     payload, payload_len);
 	}
 
+	k_work_init(&ibi_node->work, i3c_ibi_work_handler);
+
 	ret = ibi_work_submit(ibi_node);
 	if (ret >= 0) {
 		ret = 0;
 	}
 
-out:
 	return ret;
 }
 
 int i3c_ibi_work_enqueue_controller_request(struct i3c_device_desc *target)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
-		ret = -ENOMEM;
-		goto out;
+	ret = k_mem_slab_alloc(&i3c_ibi_work_slab, (void **)&ibi_node, K_NO_WAIT);
+	if (ret < 0) {
+		return -ENOMEM;
 	}
-
-	ibi_node = (struct i3c_ibi_work *)node;
 
 	ibi_node->type = I3C_IBI_CONTROLLER_ROLE_REQUEST;
 	ibi_node->target = target;
+
+	k_work_init(&ibi_node->work, i3c_ibi_work_handler);
 
 	ret = ibi_work_submit(ibi_node);
 	if (ret >= 0) {
 		ret = 0;
 	}
 
-out:
 	return ret;
 }
 
 int i3c_ibi_work_enqueue_hotjoin(const struct device *dev)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
-		ret = -ENOMEM;
-		goto out;
+	ret = k_mem_slab_alloc(&i3c_ibi_work_slab, (void **)&ibi_node, K_NO_WAIT);
+	if (ret < 0) {
+		return -ENOMEM;
 	}
-
-	ibi_node = (struct i3c_ibi_work *)node;
 
 	ibi_node->type = I3C_IBI_HOTJOIN;
 	ibi_node->controller = dev;
 	ibi_node->payload.payload_len = 0;
+
+	k_work_init(&ibi_node->work, i3c_ibi_work_handler);
 
 	ret = ibi_work_submit(ibi_node);
 	if (ret >= 0) {
 		ret = 0;
 	}
 
-out:
 	return ret;
 }
 
 int i3c_ibi_work_enqueue_cb(const struct device *dev,
 			    k_work_handler_t work_cb)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
-		ret = -ENOMEM;
-		goto out;
+	ret = k_mem_slab_alloc(&i3c_ibi_work_slab, (void **)&ibi_node, K_NO_WAIT);
+	if (ret < 0) {
+		return -ENOMEM;
 	}
-
-	ibi_node = (struct i3c_ibi_work *)node;
 
 	ibi_node->type = I3C_IBI_WORKQUEUE_CB;
 	ibi_node->controller = dev;
 	ibi_node->work_cb = work_cb;
+
+	k_work_init(&ibi_node->work, i3c_ibi_work_handler);
 
 	ret = ibi_work_submit(ibi_node);
 	if (ret >= 0) {
 		ret = 0;
 	}
 
-out:
 	return ret;
 }
 
@@ -245,8 +232,8 @@ static void i3c_ibi_work_handler(struct k_work *work)
 			LOG_ERR("Error re-adding IBI work %p", ibi_node);
 		}
 	} else {
-		/* Add the now processed node back to the free list */
-		sys_slist_append(&i3c_ibi_work_nodes_free, (sys_snode_t *)ibi_node);
+		/* Add the now processed node back to the free pool */
+		k_mem_slab_free(&i3c_ibi_work_slab, ibi_node);
 	}
 }
 
@@ -256,16 +243,6 @@ static int i3c_ibi_work_q_init(void)
 		.name = "i3c_ibi_workq",
 		.no_yield = true,
 	};
-
-	/* Init the linked list of work item nodes */
-	sys_slist_init(&i3c_ibi_work_nodes_free);
-
-	for (int i = 0; i < ARRAY_SIZE(i3c_ibi_work_nodes); i++) {
-		i3c_ibi_work_nodes[i].work.handler = i3c_ibi_work_handler;
-
-		sys_slist_append(&i3c_ibi_work_nodes_free,
-				 (sys_snode_t *)&i3c_ibi_work_nodes[i]);
-	}
 
 	/* Start the workqueue */
 	k_work_queue_start(&i3c_ibi_work_q, i3c_ibi_work_q_stack,

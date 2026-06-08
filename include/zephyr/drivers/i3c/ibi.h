@@ -18,7 +18,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/slist.h>
 
 #ifndef CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE
 #define CONFIG_I3C_IBI_MAX_PAYLOAD_SIZE 0
@@ -87,8 +86,6 @@ struct i3c_ibi_payload {
  * @brief Node about a queued IBI.
  */
 struct i3c_ibi_work {
-	sys_snode_t node;
-
 	/**
 	 * k_work struct.
 	 */
