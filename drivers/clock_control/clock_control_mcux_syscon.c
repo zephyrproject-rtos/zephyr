@@ -419,6 +419,12 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_powerquad)
+	if ((uint32_t)sub_system == MCUX_POWERQUAD_CLK) {
+		CLOCK_EnableClock(kCLOCK_PowerQuad);
+	}
+#endif
+
 	return 0;
 }
 
