@@ -18,6 +18,23 @@ tests:
     integration_platforms:
       - qemu_x86
     tags: bluetooth
+  sample.bluetooth.peripheral.ti_lpf3.coex_3wire_cc23xx:
+    harness: bluetooth
+    platform_allow:
+      - lp_em_cc2340r5
+      - lp_em_cc2340r53
+    extra_args: EXTRA_DTC_OVERLAY_FILE=boards/cc23xx_coex_3wire.overlay
+    extra_configs:
+      - CONFIG_RCL_COEX=y
+    tags: bluetooth
+  sample.bluetooth.peripheral.ti_lpf3.coex_3wire_cc27xx:
+    harness: bluetooth
+    platform_allow:
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+    extra_args: EXTRA_DTC_OVERLAY_FILE=boards/cc27xx_coex_3wire.overlay
+    extra_configs:
+      - CONFIG_RCL_COEX=y
+    tags: bluetooth
   sample.bluetooth.peripheral.x_nucleo_idb05a1_shield:
     harness: bluetooth
     platform_allow: nucleo_l4r5zi

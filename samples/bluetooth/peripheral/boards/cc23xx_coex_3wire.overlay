@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/cc23x0-pinctrl.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&pinctrl {
+	coex_request_default: coex_request_default {
+		pinmux = <1 DIO1_LRFD7>;	/* REQUEST - output using LRFD7 */
+	};
+
+	coex_priority_default: coex_priority_default {
+		pinmux = <5 DIO5_LRFD6>;	/* PRIORITY - output using LRFD6 */
+	};
+
+	coex_grant_default: coex_grant_default {
+		pinmux = <6 DIO6_LRFD2>;	/* GRANT - input using LRFD2 */
+		input-enable;
+		bias-pull-up;
+	};
+
+	coex_request_sleep: coex_request_sleep {
+		pinmux = <1 DIO1_GPIO1>;
+	};
+
+	coex_priority_sleep: coex_priority_sleep {
+		pinmux = <5 DIO5_GPIO5>;
+	};
+
+	coex_grant_sleep: coex_grant_sleep {
+		pinmux = <6 DIO6_GPIO6>;
+		input-enable;
+		bias-pull-up;
+	};
+};
+
+/ {
+	ti_rcl_coex: rcl_coex {
+		compatible = "ti,rcl-coex-three-wire";
+		status = "okay";
+
+		pinctrl-0 = <&coex_request_default &coex_priority_default &coex_grant_default>;
+		pinctrl-1 = <&coex_request_sleep &coex_priority_sleep &coex_grant_sleep>;
+		pinctrl-names = "default", "sleep";
+
+		request-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		priority-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+		grant-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+
+		t1-us = <120>;  /* Time between REQUEST and RF activity (90-150 µs) */
+		t2-us = <20>;   /* Priority indication time (15-20 µs) */
+	};
+};

@@ -41,3 +41,20 @@ tests:
     platform_allow:
       - qemu_cortex_m3
     build_only: true
+  sample.bluetooth.central.ti_lpf3.coex_3wire_cc23xx:
+    harness: bluetooth
+    platform_allow:
+      - lp_em_cc2340r5
+      - lp_em_cc2340r53
+    extra_args: EXTRA_DTC_OVERLAY_FILE=boards/cc23xx_coex_3wire.overlay
+    extra_configs:
+      - CONFIG_RCL_COEX=y
+    tags: bluetooth
+  sample.bluetooth.central.ti_lpf3.coex_3wire_cc27xx:
+    harness: bluetooth
+    platform_allow:
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+    extra_args: EXTRA_DTC_OVERLAY_FILE=boards/cc27xx_coex_3wire.overlay
+    extra_configs:
+      - CONFIG_RCL_COEX=y
+    tags: bluetooth
