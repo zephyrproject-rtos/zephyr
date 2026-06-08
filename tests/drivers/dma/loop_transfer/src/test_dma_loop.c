@@ -155,7 +155,7 @@ static int test_loop(const struct device *dma)
 
 	if (transfer_count < TRANSFER_LOOPS) {
 		transfer_count = TRANSFER_LOOPS;
-		TC_PRINT("ERROR: unfinished transfer\n");
+		TC_PRINT("ERROR: unfinished transfer, count %d\n",transfer_count);
 		if (dma_stop(dma, chan_id)) {
 			TC_PRINT("ERROR: transfer stop\n");
 		}

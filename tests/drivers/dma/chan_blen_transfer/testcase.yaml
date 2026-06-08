@@ -8,6 +8,14 @@ tests:
     integration_platforms:
       - native_sim
       - native_sim/native/64
+    platform_allow:
+      - lp_em_cc2340r5
+      - lp_em_cc2340r53
+      - lp_em_cc2340r53_wcsp
+      - lp_em_cc2340r5moda
+      - lp_em_cc2745r10_q1/cc2745r10_q1
+      - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2755p10
     filter: dt_nodelabel_enabled("tst_dma0")
   drivers.dma.chan_blen_transfer.low_footprint:
     tags:
