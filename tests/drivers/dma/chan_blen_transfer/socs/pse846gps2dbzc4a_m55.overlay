@@ -5,16 +5,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&dma0 {
-	status = "okay";
-};
-
-&dma1 {
-	status = "okay";
-};
-
-/ {
-	zephyr,user {
-		dma-test-devs = <&dma0>, <&dma1>;
-	};
-};
+#include "pse8x_ahb.overlay"

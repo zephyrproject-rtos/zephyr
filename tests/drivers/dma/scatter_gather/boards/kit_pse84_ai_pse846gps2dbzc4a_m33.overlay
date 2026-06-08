@@ -5,6 +5,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-tst_dma0: &dma0 {
-	status = "okay";
-};
+#include "pse8x_ahb.overlay"
