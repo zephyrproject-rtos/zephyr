@@ -1792,7 +1792,7 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 			return -EIO;
 		}
 
-		if ((data->status_flags & SPI_STM32_DMA_DONE_FLAG) != 0U) {
+		if ((data->status_flags & SPI_STM32_DMA_DONE_FLAG) == SPI_STM32_DMA_DONE_FLAG) {
 			return 0;
 		}
 	}
