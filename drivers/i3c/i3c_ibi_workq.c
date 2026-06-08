@@ -23,24 +23,42 @@ static struct k_work_q i3c_ibi_work_q;
 
 static sys_slist_t i3c_ibi_work_nodes_free;
 
+/* Spinlock protecting i3c_ibi_work_nodes_free list access from ISR and thread contexts */
+static struct k_spinlock ibi_work_lock;
+
 static inline int ibi_work_submit(struct i3c_ibi_work *ibi_node)
 {
 	return k_work_submit_to_queue(&i3c_ibi_work_q, &ibi_node->work);
 }
 
+static struct i3c_ibi_work *ibi_work_alloc(void)
+{
+	k_spinlock_key_t key = k_spin_lock(&ibi_work_lock);
+	sys_snode_t *node = sys_slist_get(&i3c_ibi_work_nodes_free);
+
+	k_spin_unlock(&ibi_work_lock, key);
+
+	return (struct i3c_ibi_work *)node;
+}
+
+static void ibi_work_free(struct i3c_ibi_work *ibi_node)
+{
+	k_spinlock_key_t key = k_spin_lock(&ibi_work_lock);
+
+	sys_slist_append(&i3c_ibi_work_nodes_free, (sys_snode_t *)ibi_node);
+	k_spin_unlock(&ibi_work_lock, key);
+}
+
 int i3c_ibi_work_enqueue(struct i3c_ibi_work *ibi_work)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
+	ibi_node = ibi_work_alloc();
+	if (ibi_node == NULL) {
 		ret = -ENOMEM;
 		goto out;
 	}
-
-	ibi_node = (struct i3c_ibi_work *)node;
 
 	(void)memcpy(ibi_node, ibi_work, sizeof(*ibi_node));
 
@@ -56,17 +74,14 @@ out:
 int i3c_ibi_work_enqueue_target_irq(struct i3c_device_desc *target,
 				    uint8_t *payload, size_t payload_len)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
+	ibi_node = ibi_work_alloc();
+	if (ibi_node == NULL) {
 		ret = -ENOMEM;
 		goto out;
 	}
-
-	ibi_node = (struct i3c_ibi_work *)node;
 
 	ibi_node->type = I3C_IBI_TARGET_INTR;
 	ibi_node->target = target;
@@ -88,17 +103,14 @@ out:
 
 int i3c_ibi_work_enqueue_controller_request(struct i3c_device_desc *target)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
+	ibi_node = ibi_work_alloc();
+	if (ibi_node == NULL) {
 		ret = -ENOMEM;
 		goto out;
 	}
-
-	ibi_node = (struct i3c_ibi_work *)node;
 
 	ibi_node->type = I3C_IBI_CONTROLLER_ROLE_REQUEST;
 	ibi_node->target = target;
@@ -114,17 +126,14 @@ out:
 
 int i3c_ibi_work_enqueue_hotjoin(const struct device *dev)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
+	ibi_node = ibi_work_alloc();
+	if (ibi_node == NULL) {
 		ret = -ENOMEM;
 		goto out;
 	}
-
-	ibi_node = (struct i3c_ibi_work *)node;
 
 	ibi_node->type = I3C_IBI_HOTJOIN;
 	ibi_node->controller = dev;
@@ -142,17 +151,14 @@ out:
 int i3c_ibi_work_enqueue_cb(const struct device *dev,
 			    k_work_handler_t work_cb)
 {
-	sys_snode_t *node;
 	struct i3c_ibi_work *ibi_node;
 	int ret;
 
-	node = sys_slist_get(&i3c_ibi_work_nodes_free);
-	if (node == NULL) {
+	ibi_node = ibi_work_alloc();
+	if (ibi_node == NULL) {
 		ret = -ENOMEM;
 		goto out;
 	}
-
-	ibi_node = (struct i3c_ibi_work *)node;
 
 	ibi_node->type = I3C_IBI_WORKQUEUE_CB;
 	ibi_node->controller = dev;
@@ -246,7 +252,7 @@ static void i3c_ibi_work_handler(struct k_work *work)
 		}
 	} else {
 		/* Add the now processed node back to the free list */
-		sys_slist_append(&i3c_ibi_work_nodes_free, (sys_snode_t *)ibi_node);
+		ibi_work_free(ibi_node);
 	}
 }
 
