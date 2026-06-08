@@ -510,6 +510,7 @@ static inline void *usbd_class_get_private(const struct usbd_class_data *const c
 	))								\
 	static STRUCT_SECTION_ITERABLE(usbd_context, device_name) = {	\
 		.name = STRINGIFY(device_name),				\
+		.mutex = Z_MUTEX_INITIALIZER(device_name.mutex),	\
 		.dev = udc_dev,						\
 		.fs_desc = &fs_desc_##device_name,			\
 		IF_ENABLED(USBD_SUPPORTS_HIGH_SPEED, (			\
