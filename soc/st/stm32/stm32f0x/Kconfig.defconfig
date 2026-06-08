@@ -140,4 +140,7 @@ configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,usart8)
 	default y if $(dt_nodelabel_enabled,usart7) && $(dt_nodelabel_enabled,usart8)
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x647824b6"
+
 endif # SOC_SERIES_STM32F0X

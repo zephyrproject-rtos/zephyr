@@ -16,4 +16,7 @@ configdefault SHARED_INTERRUPTS
 	# USART4 - USART5 : IRQn 14
 	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5)
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x202e3a91"
+
 endif # SOC_SERIES_STM32L0X

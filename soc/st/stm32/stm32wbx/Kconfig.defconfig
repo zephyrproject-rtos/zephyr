@@ -12,4 +12,7 @@ configdefault SHARED_INTERRUPTS
 config BT_USER_PHY_UPDATE
 	default y if BT
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x70d16653"
+
 endif # SOC_SERIES_STM32WBX
