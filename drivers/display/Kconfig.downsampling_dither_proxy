@@ -1,0 +1,9 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+config DOWNSAMPLING_DITHER_PROXY
+	bool "Downsampling dithering display driver"
+	default y
+	depends on DT_HAS_ZEPHYR_DOWNSAMPLING_DITHER_PROXY_ENABLED
+	help
+	  Enable mock display driver proxying a display for dithering.

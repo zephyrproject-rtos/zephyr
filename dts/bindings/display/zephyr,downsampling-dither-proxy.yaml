@@ -1,0 +1,55 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+title: Display proxy for downsampled dithering
+
+description: |
+  Provide a mock display exposing the desired downsampling resolution and input format to APIs
+  that consume display peripherals.
+
+compatible: "zephyr,downsampling-dither-proxy"
+
+include: display-controller.yaml
+
+properties:
+  display-device:
+    type: phandle
+    required: true
+    description: |
+      The real display this proxies.
+
+  pixel-format:
+    type: int
+    required: true
+    enum:
+      - 1 # PANEL_PIXEL_FORMAT_RGB_888
+      - 16 # PANEL_PIXEL_FORMAT_RGB_565
+      - 64 # PANEL_PIXEL_FORMAT_L_8
+    description: |
+      The pixel format exposed.
+
+  target-pixel-format:
+    type: int
+    required: true
+    enum:
+      - 2 # PANEL_PIXEL_FORMAT_MONO01
+      - 4 # PANEL_PIXEL_FORMAT_MONO10
+    description: |
+      The pixel format to convert to.
+
+  algorithm:
+    type: string
+    default: "NONE"
+    enum:
+      - "NONE"
+      - "MINIMAL_ERROR"
+      - "MINIMAL_ERROR_DISTRIBUTED"
+    description: |
+      The algorithm used to dither the buffers.
+      - NONE: Simply copy and scale data without dithering
+      - MINIMAL_ERROR: Naive but fastest error-propagation dithering, it is sensible to
+          spatial specificities of the displays but often more appropriate for small displays.
+      - MINIMAL_ERROR_DISTRIBUTED: Pull error from neighboring pixels similarly to
+        atkinson dithering to reduce spatial artefacts.
+
+      By default, do not do any dithering.
