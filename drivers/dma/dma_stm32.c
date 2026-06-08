@@ -279,9 +279,9 @@ static int dma_stm32_disable_stream(DMA_TypeDef *dma, uint32_t id)
 	return 0;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
-					     uint32_t id,
-					     struct dma_config *config)
+static int dma_stm32_configure(const struct device *dev,
+			       uint32_t id,
+			       struct dma_config *config)
 {
 	const struct dma_stm32_config *dev_config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
@@ -548,9 +548,9 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	return ret;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
-					  uint32_t src, uint32_t dst,
-					  size_t size)
+static int dma_stm32_reload(const struct device *dev, uint32_t id,
+			    uint32_t src, uint32_t dst,
+			    size_t size)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -599,7 +599,7 @@ DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
 	return 0;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_start(const struct device *dev, uint32_t id)
+static int dma_stm32_start(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -628,7 +628,7 @@ DMA_STM32_EXPORT_API int dma_stm32_start(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
+static int dma_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -699,7 +699,7 @@ static int dma_stm32_init(const struct device *dev)
 	return 0;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_get_status(const struct device *dev,
+static int dma_stm32_get_status(const struct device *dev,
 				uint32_t id, struct dma_status *stat)
 {
 	const struct dma_stm32_config *config = dev->config;
