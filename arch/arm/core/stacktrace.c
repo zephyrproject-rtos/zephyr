@@ -452,26 +452,115 @@ static bool unwind_one_frame(struct unwind_control_block *ucb)
 	return true;
 }
 
+static bool seed_from_esf(struct unwind_control_block *ucb, const struct arch_esf *esf)
+{
+	if (esf == NULL || esf->extra_info.callee == NULL) {
+		return false;
+	}
+
+	ucb->vrs[7] = esf->extra_info.callee->v4;
+	ucb->vrs[13] = esf->extra_info.callee->psp + sizeof(esf->basic);
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
+	if ((esf->extra_info.exc_return & EXC_RETURN_STACK_FRAME_TYPE_Msk) ==
+	    EXC_RETURN_STACK_FRAME_TYPE_EXTENDED) {
+		ucb->vrs[13] += sizeof(esf->fpu);
+	}
+#endif
+
+	ucb->vrs[14] = esf->basic.lr;
+	ucb->vrs[15] = esf->basic.pc;
+
+	return true;
+}
+
+static bool __noinline seed_from_current(struct unwind_control_block *ucb)
+{
+	uint32_t fp;
+	uint32_t sp;
+	uint32_t lr;
+	uint32_t pc;
+
+	__asm__ volatile(
+		"mov %0, r7\n"
+		"mov %1, sp\n"
+		"mov %2, lr\n"
+		"mov %3, pc\n"
+		: "=r" (fp), "=r" (sp), "=r" (lr), "=r" (pc)
+		:
+		: "memory");
+
+	ucb->vrs[7] = fp;
+	ucb->vrs[13] = sp;
+	ucb->vrs[14] = lr;
+	ucb->vrs[15] = pc;
+
+	return true;
+}
+
+static bool seed_from_thread(struct unwind_control_block *ucb, const struct k_thread *thread)
+{
+	const _callee_saved_t *csf;
+	const struct __basic_sf *basic;
+
+	if (thread == NULL) {
+		return false;
+	}
+
+	csf = &thread->callee_saved;
+	if (csf->psp == 0U) {
+		return false;
+	}
+
+	basic = (const struct __basic_sf *)csf->psp;
+
+	ucb->vrs[4] = csf->v1;
+	ucb->vrs[5] = csf->v2;
+	ucb->vrs[6] = csf->v3;
+	ucb->vrs[7] = csf->v4;
+	ucb->vrs[8] = csf->v5;
+	ucb->vrs[9] = csf->v6;
+	ucb->vrs[10] = csf->v7;
+	ucb->vrs[11] = csf->v8;
+	ucb->vrs[13] = csf->psp + sizeof(*basic);
+
+#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING) && defined(CONFIG_ARM_STORE_EXC_RETURN)
+	if ((thread->arch.mode_exc_return & EXC_RETURN_STACK_FRAME_TYPE_Msk) ==
+	    EXC_RETURN_STACK_FRAME_TYPE_EXTENDED) {
+		ucb->vrs[13] += sizeof(struct __fpu_sf);
+	}
+ #endif
+
+	/*
+	 * The saved thread entry state starts from the hardware basic frame at
+	 * csf->psp. Seed PC from that frame and leave LR empty: there is no
+	 * independent saved LR in _callee_saved_t for this initial unwind state,
+	 * and a zero LR makes the EHABI fallback stop instead of inventing a
+	 * caller if the first unwind rule does not restore PC.
+	 */
+	ucb->vrs[14] = 0U;
+	ucb->vrs[15] = (basic->lr != 0U) ? basic->lr : basic->pc;
+
+	return true;
+}
+
 static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
-			    const struct arch_esf *esf)
+			    const struct arch_esf *esf, const struct k_thread *thread)
 {
 	struct unwind_control_block ucb = {};
 	int i;
 
-	if (esf == NULL || esf->extra_info.callee == NULL) {
+	if (esf != NULL) {
+		if (!seed_from_esf(&ucb, esf)) {
+			return;
+		}
+	} else if (thread == _current) {
+		if (!seed_from_current(&ucb)) {
+			return;
+		}
+	} else if (!seed_from_thread(&ucb, thread)) {
 		return;
 	}
-
-	ucb.vrs[7] = esf->extra_info.callee->v4;
-	ucb.vrs[13] = esf->extra_info.callee->psp + sizeof(esf->basic);
-#if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
-	if ((esf->extra_info.exc_return & EXC_RETURN_STACK_FRAME_TYPE_Msk) ==
-	    EXC_RETURN_STACK_FRAME_TYPE_EXTENDED) {
-		ucb.vrs[13] += sizeof(esf->fpu);
-	}
-#endif
-	ucb.vrs[14] = esf->basic.lr;
-	ucb.vrs[15] = esf->basic.pc;
 
 	for (i = 0; i < CONFIG_ARCH_STACKWALK_MAX_FRAMES; i++) {
 		if (!cb(cookie, ucb.vrs[15])) {
@@ -486,9 +575,11 @@ static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
 void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf)
 {
-	ARG_UNUSED(thread);
+	if (thread == NULL) {
+		thread = _current;
+	}
 
-	walk_stackframe(callback_fn, cookie, esf);
+	walk_stackframe(callback_fn, cookie, esf, thread);
 }
 
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
@@ -513,7 +604,7 @@ void z_arm_unwind_stack(const struct arch_esf *esf)
 	int i = 0;
 
 	EXCEPTION_DUMP("call trace:");
-	walk_stackframe(print_trace_address, &i, esf);
+	walk_stackframe(print_trace_address, &i, esf, NULL);
 	EXCEPTION_DUMP("");
 }
 #endif /* CONFIG_EXCEPTION_STACK_TRACE */
