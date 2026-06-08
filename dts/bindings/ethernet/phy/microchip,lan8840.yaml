@@ -1,0 +1,8 @@
+# Copyright (C) 2026 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip LAN8840 Ethernet PHY device
+
+compatible: "microchip,lan8840"
+
+include: microchip,ksz9131.yaml
