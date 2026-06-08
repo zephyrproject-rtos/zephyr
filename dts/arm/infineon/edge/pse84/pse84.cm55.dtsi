@@ -375,6 +375,13 @@
 	interrupts = <119 4>;
 };
 
+&axidmac {
+	interrupts = <76 4>, /* CH0 */
+		     <77 4>, /* CH1 */
+		     <78 4>, /* CH2 */
+		     <79 4>; /* CH3 */
+};
+
 &dma0 {
 	interrupts = <60 4>, /* CH0 */
 		     <61 4>, /* CH1 */

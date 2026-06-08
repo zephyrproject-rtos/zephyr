@@ -1227,6 +1227,18 @@
 			};
 		};
 
+		axidmac: axidmac@441a0000 {
+			#dma-cells = <1>;
+			compatible = "infineon,mdma";
+			reg = <0x441a0000 0x1800>;
+			dma-channels = <4>;
+			interrupts = <98 4>,  /* CH0 */
+				     <99 4>,  /* CH1 */
+				     <100 4>, /* CH2 */
+				     <101 4>; /* CH3 */
+			status = "disabled";
+		};
+
 		dma0: dw@42270000 {
 			#dma-cells = <1>;
 			compatible = "infineon,dma";
