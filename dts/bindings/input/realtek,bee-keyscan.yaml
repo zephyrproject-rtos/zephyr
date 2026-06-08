@@ -31,14 +31,12 @@ properties:
 
   row-size:
     required: true
-    default: 2
     description: |
       Actual row size of the external keyscan matrix.
       Hardware supports up to 12 rows.
 
   col-size:
     required: true
-    default: 2
     description: |
       Actual column size of the external keyscan matrix.
       Hardware supports up to 20 columns.
