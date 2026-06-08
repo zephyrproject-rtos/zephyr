@@ -35,3 +35,4 @@ tests:
     harness: ztest
     platform_allow:
       - stm32h573i_dk
+      - b_u585i_iot02a
