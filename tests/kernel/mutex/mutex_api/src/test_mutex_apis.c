@@ -214,19 +214,23 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 	k_mutex_init(&tmutex);
 	tmutex_test_lock(&tmutex, tThread_entry_lock_forever);
 	k_thread_abort(&tdata);
+	k_mutex_unlock(&tmutex);
 
 	/**TESTPOINT: test K_MUTEX_DEFINE mutex*/
 	tmutex_test_lock(&kmutex, tThread_entry_lock_forever);
 	k_thread_abort(&tdata);
+	k_mutex_unlock(&kmutex);
 }
 
 ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
 	tmutex_test_lock(&tmutex, tThread_entry_lock_no_wait);
+	k_mutex_unlock(&tmutex);
 
 	/**TESTPOINT: test K_MUTEX_DEFINE mutex*/
 	tmutex_test_lock(&kmutex, tThread_entry_lock_no_wait);
+	k_mutex_unlock(&kmutex);
 }
 
 ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)

@@ -407,6 +407,14 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 			k_free(dyn);
 			return NULL;
 		}
+#ifdef CONFIG_ASSERT
+		/* Zero-initialize so mutex->magic starts at 0.
+		 * Without this, heap garbage could equal K_MUTEX_MAGIC and cause
+		 * the sentinel check in k_mutex_lock/unlock to silently miss an
+		 * uninitialized mutex.
+		 */
+		(void)memset(dyn->data, 0, obj_size_get(otype) + size);
+#endif /* CONFIG_ASSERT */
 		dyn->kobj.name = dyn->data;
 	}
 
