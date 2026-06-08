@@ -1042,6 +1042,64 @@ ZTEST(spi_loopback, test_spi_transceive_cb)
 	/* Verify loopback data */
 	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE, buffer_print_tx, buffer_print_rx);
 }
+
+/* Exercise device_deinit() against a transfer that is still in flight. A single
+ * large buffer is big enough that the driver runs it through the DMA channels
+ * instead of the FIFO, so on drivers that refuse a busy teardown this also
+ * exercises the DMA channel-state busy check in the deinit path. Drivers may
+ * either refuse with -EBUSY or tear the bus down; both are handled below.
+ */
+ZTEST(spi_loopback, test_spi_deinit_busy)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	const struct device *dev = spec->bus;
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1,
+							      large_buffer_tx, BUF3_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1,
+							      large_buffer_rx, BUF3_SIZE);
+	int ret;
+
+	memset(large_buffer_rx, 0, sizeof(large_buffer_rx));
+
+	k_sem_give(&start_async);
+
+	ret = spi_transceive_signal(spec->bus, &spec->config, &tx, &rx, &async_sig);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("Skipping ASYNC deinit test\n");
+		return;
+	}
+	zassert_false(ret, "SPI transceive failed, code %d", ret);
+
+	/* Whether device_deinit() refuses to tear the bus down while a transfer
+	 * is in flight is driver-defined: this driver returns -EBUSY, while others
+	 * tear the bus down and return 0 (or a PM result). Accept the driver's
+	 * choice; only the -EBUSY path exercises the busy guard under test.
+	 */
+	ret = device_deinit(dev);
+	if (ret == -ENOTSUP) {
+		TC_PRINT("  device deinit not supported\n");
+		k_sem_take(&caller, K_FOREVER);
+		return;
+	}
+
+	/* Let the in-flight transfer unwind before touching the device again. */
+	k_sem_take(&caller, K_FOREVER);
+
+	if (ret == -EBUSY) {
+		/* Bus left intact: the transfer ran to completion, so it is idle
+		 * now and deinit must succeed and the device must re-init.
+		 */
+		zassert_false(result, "SPI async transceive failed, result %d", result);
+		zassert_ok(device_deinit(dev));
+		zassert_ok(device_init(dev));
+	} else {
+		/* Bus torn down mid-transfer: the device is already deinitialised,
+		 * so just bring it back up.
+		 */
+		zassert_ok(ret, "device_deinit returned unexpected error %d", ret);
+		zassert_ok(device_init(dev));
+	}
+}
 #endif
 
 ZTEST(spi_extra_api_features, test_spi_lock_release)
