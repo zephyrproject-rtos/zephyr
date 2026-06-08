@@ -21,3 +21,17 @@ tests:
       - sam_e54_xpro
       - pic32cm_jh01_cpro
       - pic32cm_pl10_cnano
+  drivers.dma.ifx_axidmac.chan_blen_transfer:
+    tags:
+      - dma
+    depends_on:
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0") and CONFIG_DMA_INFINEON_MDMA
+    extra_args: DTC_OVERLAY_FILE="boards/pse8x_axi.overlay"
+    extra_configs:
+      - CONFIG_NOCACHE_MEMORY=y
+    platform_allow:
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
