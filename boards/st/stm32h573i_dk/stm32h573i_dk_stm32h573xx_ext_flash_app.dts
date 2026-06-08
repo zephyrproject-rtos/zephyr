@@ -39,6 +39,11 @@
 	};
 };
 
+&ext_flash_ctrl {
+	/* permission = 0 for Rd/Wr */
+	memmap-config = <1 0 DT_SIZE_M(64) 0>;
+};
+
 &ext_flash {
 	partitions {
 		#address-cells = <1>;
