@@ -1350,6 +1350,13 @@
 		status = "disabled";
 	};
 
+	powerquad: powerquad@bf000 {
+		compatible = "nxp,powerquad";
+		reg = <0xbf000 0x1000>;
+		clocks = <&syscon MCUX_POWERQUAD_CLK>;
+		status = "disabled";
+	};
+
 	tsi0: tsi@50000 {
 		compatible = "nxp,tsi-input";
 		reg = <0x50000 0x1000>;
