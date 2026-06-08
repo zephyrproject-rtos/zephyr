@@ -1340,6 +1340,13 @@
 		clocks = <&syscon MCUX_CRC_CLK>;
 		status = "disabled";
 	};
+
+	powerquad: powerquad@bf000 {
+		compatible = "nxp,powerquad";
+		reg = <0xbf000 0x1000>;
+		clocks = <&syscon MCUX_POWERQUAD_CLK>;
+		status = "disabled";
+	};
 };
 
 &systick {

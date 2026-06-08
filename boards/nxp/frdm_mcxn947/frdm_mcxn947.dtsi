@@ -448,6 +448,10 @@ dvp_20pin_interface: &video_sdma {};
 	status = "okay";
 };
 
+&powerquad {
+	status = "okay";
+};
+
 &otpc {
 	status = "okay";
 };

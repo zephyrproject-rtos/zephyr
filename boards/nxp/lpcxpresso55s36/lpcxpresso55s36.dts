@@ -238,6 +238,10 @@ zephyr_udc0: &usbfs {
 	status = "okay";
 };
 
+&powerquad {
+	status = "okay";
+};
+
 &ctimer0 {
 	status = "okay";
 };

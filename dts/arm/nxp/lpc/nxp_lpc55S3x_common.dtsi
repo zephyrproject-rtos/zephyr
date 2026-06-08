@@ -647,6 +647,13 @@
 		status = "disabled";
 		clk-divider = <1>;
 	};
+
+	powerquad: powerquad@a6000 {
+		compatible = "nxp,powerquad";
+		reg = <0xa6000 0x1000>;
+		clocks = <&syscon MCUX_POWERQUAD_CLK>;
+		status = "disabled";
+	};
 };
 
 &nvic {
