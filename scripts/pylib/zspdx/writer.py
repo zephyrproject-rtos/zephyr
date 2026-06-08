@@ -148,6 +148,10 @@ PackageCopyrightText: {pkg.cfg.copyrightText}
         for bf in bfs:
             writeFileSPDX(f, bf)
 
+
+# REUSE-IgnoreStart
+
+
 # Output tag-value SPDX 2.3 content for a custom license.
 # Arguments:
 #   1) f: file handle for SPDX document
@@ -158,6 +162,9 @@ ExtractedText: {lic}
 LicenseName: {lic}
 LicenseComment: Corresponds to the license ID `{lic}` detected in an SPDX-License-Identifier: tag.
 """)
+
+
+# REUSE-IgnoreEnd
 
 # Output tag-value SPDX content for the given Document object.
 # Arguments:
