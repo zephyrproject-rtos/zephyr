@@ -16,6 +16,13 @@
 		zephyr,flash-controller = &flash;
 		zephyr,code-partition = &slot0_partition;
 	};
+
+	ext_mem: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "EXTMEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
 };
 
 &flash0 {
@@ -52,7 +59,19 @@
 	};
 };
 
-&ext_flash {
+&mx25lm51245 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x90000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x90000000 */
+
+	ext_flash: ext-flash@0 {
+		compatible = "soc-nv-flash";
+		reg = <0x0 DT_SIZE_M(64)>;
+		write-block-size = <1>;
+		erase-block-size = <DT_SIZE_K(4)>;
+	};
+
 	partitions {
 		compatible = "fixed-partitions";
 		#address-cells = <1>;

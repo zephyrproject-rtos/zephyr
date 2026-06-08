@@ -341,6 +341,9 @@
 };
 
 &xspi1 {
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	st,csbound = <0>;
+
 	pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
 		     &octospi1_io2_pc2 &octospi1_io3_pd13
 		     &octospi1_io4_ph2 &octospi1_io5_ph3
@@ -349,28 +352,25 @@
 		     &octospi1_dqs_pb2>;
 	pinctrl-names = "default";
 
+	dmas = <&gpdma1 4 57 STM32_DMA_PERIPH_TX
+		&gpdma1 5 57 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+
 	status = "okay";
 
-	ext_flash_ctrl: xspi-flash-controller@0 {
-		compatible = "st,stm32-xspi-nor";
+	mx25lm51245: ospi-nor-flash@0 {
+		compatible = "mxicy,mx25u", "jedec,mspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
-		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <XSPI_OCTO_MODE>;
-		data-rate = <XSPI_DTR_TRANSFER>;
-		four-byte-opcodes;
-		status = "okay";
-
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x90000000 */
-
-		ext_flash: mx25lm51245: ext-flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_M(64)>;
-			write-block-size = <1>;
-			erase-block-size = <DT_SIZE_K(4)>;
-		};
+		read-command = <0xee11>;
+		write-command = <0x12ed>;
+		rx-dummy = <20>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+		mspi-hardware-ce-num = <0>;
+		command-length = "INSTR_2_BYTE";
+		jedec-id = [c2 85 3a];
 	};
 };
 

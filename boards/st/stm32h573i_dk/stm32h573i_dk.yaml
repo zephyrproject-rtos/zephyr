@@ -21,7 +21,7 @@ supported:
   - gpio
   - i2c
   - netif:eth
-  - octospi
+  - mspi
   - pwm
   - rtc
   - spi
