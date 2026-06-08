@@ -1015,6 +1015,12 @@ static int insert_pktinfo(struct msghdr *msg, int level, int type,
 		return -EINVAL;
 	}
 
+	/* Ensure the full element fits at the selected location, not just a header. */
+	if (cmsg_space > (size_t)((uint8_t *)msg->msg_control + msg->msg_controllen -
+				  (uint8_t *)cmsg)) {
+		return -ENOMEM;
+	}
+
 	cmsg->cmsg_len = CMSG_LEN(pktinfo_len);
 	cmsg->cmsg_level = level;
 	cmsg->cmsg_type = type;
