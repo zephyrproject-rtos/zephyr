@@ -138,3 +138,4 @@ else()
 endif()
 
 zephyr_sources_ifdef(CONFIG_ESP32_LCD_CAM esp_lcd_cam.c)
+zephyr_sources_ifdef(CONFIG_RADIO_CAL esp_phy_cal_nvs.c)
