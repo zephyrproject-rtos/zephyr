@@ -113,7 +113,21 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 		LOG_ERR("Current thread: %p (%s)", thread, thread_name_get(thread));
 	}
 
+	/*
+	 * Must use preprocessor guard, not if (IS_ENABLED(...)): the arch hook
+	 * prototypes exist only when CONFIG_DEBUG_COREDUMP_FATAL_UNLOCK_IRQS is
+	 * set (kernel_arch_interface.h). IS_ENABLED still parses both branches,
+	 * which breaks builds when the option is off (implicit declaration).
+	 */
+#ifdef CONFIG_DEBUG_COREDUMP_FATAL_UNLOCK_IRQS
+	unsigned int coredump_irq_cookie;
+
+	arch_coredump_fatal_irq_unlock(key, &coredump_irq_cookie);
 	coredump(reason, esf, thread);
+	key = arch_coredump_fatal_irq_lock(&coredump_irq_cookie);
+#else
+	coredump(reason, esf, thread);
+#endif
 
 	k_sys_fatal_error_handler(reason, esf);
 
