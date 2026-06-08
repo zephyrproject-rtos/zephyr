@@ -176,6 +176,10 @@ int i2c_stm32_suspend(const struct device *dev);
 int i2c_stm32_pm_get(const struct device *dev);
 void i2c_stm32_pm_put(const struct device *dev);
 
+#if CONFIG_I2C_STM32_BUS_RECOVERY
+int i2c_stm32_recover_bus(const struct device *dev);
+#endif
+
 int i2c_stm32_error(const struct device *dev);
 void i2c_stm32_event(const struct device *dev);
 
