@@ -1469,8 +1469,11 @@ function(zephyr_linker_sources location)
       message(FATAL_ERROR "zephyr_linker_sources() was called on a directory")
     endif()
 
-    # Find the relative path to the linker file from the include folder.
-    file(RELATIVE_PATH relpath ${ZEPHYR_BASE}/include ${path})
+    # Find the relative path to the linker file from the snippets folder, which
+    # is searched first for double-quoted includes when preprocessing snippets
+    # files. This ensures the intended file is included while avoiding absolute
+    # paths for reproducibility.
+    file(RELATIVE_PATH relpath ${snippet_base} ${path})
 
     # Create strings to be written into the file
     set (include_str "/* Sort key: \"${SORT_KEY}\" */#include \"${relpath}\"")
