@@ -44,6 +44,19 @@ struct gpio_rcar_data {
 #define IOINTSEL 0x00   /* General IO/Interrupt Switching Register */
 #define INOUTSEL 0x04   /* General Input/Output Switching Register */
 #define OUTDT    0x08   /* General Output Register */
+#ifdef CONFIG_SOC_SERIES_RCAR_GEN5
+#define INDT     0x1c   /* General Input Register */
+#define INTDT    0x80   /* Interrupt Display Register */
+#define INTCLR   0x84   /* Interrupt Clear Register */
+#define INTMSK   0x88   /* Interrupt Mask Register */
+#define MSKCLR   0x8c   /* Interrupt Mask Clear Register */
+#define POSNEG   0x90   /* Positive/Negative Logic Select Register */
+#define EDGLEVEL 0x94   /* Edge/level Select Register */
+#define FILONOFF 0x98   /* Chattering Prevention On/Off Register */
+#define OUTDTSEL 0x0c   /* Output Data Select Register */
+#define BOTHEDGE 0xbc   /* One Edge/Both Edge Select Register */
+#define INEN     0x18   /* General Input Enable Register */
+#else
 #define INDT     0x0c   /* General Input Register */
 #define INTDT    0x10   /* Interrupt Display Register */
 #define INTCLR   0x14   /* Interrupt Clear Register */
@@ -55,6 +68,7 @@ struct gpio_rcar_data {
 #define OUTDTSEL 0x40   /* Output Data Select Register */
 #define BOTHEDGE 0x4c   /* One Edge/Both Edge Select Register */
 #define INEN     0x50	/* General Input Enable Register */
+#endif /* CONFIG_SOC_SERIES_RCAR_GEN5 */
 
 static inline uint32_t gpio_rcar_read(const struct device *dev, uint32_t offs)
 {
@@ -109,8 +123,8 @@ static void gpio_rcar_config_general_input_output_mode(
 	/* Configure positive logic in POSNEG */
 	gpio_rcar_modify_bit(dev, POSNEG, gpio, false);
 
-	/* Select "Input Enable/Disable" in INEN for Gen4 SoCs */
-#ifdef CONFIG_SOC_SERIES_RCAR_GEN4
+	/* Select "Input Enable/Disable" in INEN for Gen4 and Gen5 SoCs */
+#if defined(CONFIG_SOC_SERIES_RCAR_GEN4) || defined(CONFIG_SOC_SERIES_RCAR_GEN5)
 	gpio_rcar_modify_bit(dev, INEN, gpio, !output);
 #endif
 
@@ -231,8 +245,8 @@ static int gpio_rcar_pin_interrupt_configure(const struct device *dev,
 		gpio_rcar_modify_bit(dev, BOTHEDGE, pin, true);
 	}
 
-	/* Select "Input Enable" in INEN for Gen4 SoCs */
-#ifdef CONFIG_SOC_SERIES_RCAR_GEN4
+	/* Select "Input Enable" in INEN for Gen4 and Gen5 SoCs */
+#if defined(CONFIG_SOC_SERIES_RCAR_GEN4) || defined(CONFIG_SOC_SERIES_RCAR_GEN5)
 	gpio_rcar_modify_bit(dev, INEN, pin, true);
 #endif
 
