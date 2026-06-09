@@ -246,6 +246,11 @@ Ethernet
   can remove any calls to :c:func:`net_eth_carrier_on` or :c:func:`net_eth_carrier_off` from it.
   (:github:`109671`)
 
+* The MAC address of ethernet interfaces is now checked for validity, when bringing the interface up
+  with :c:func:`net_if_up`. If the MAC address is invalid, the interface will fail to come up and an
+  error will be logged. This check is done before the ``start`` function of the
+  :c:struct:`ethernet_api` is called. This also applies to native wifi drivers. (:github:`110435`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
