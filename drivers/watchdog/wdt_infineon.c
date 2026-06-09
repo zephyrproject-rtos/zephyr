@@ -28,7 +28,7 @@ typedef struct {
 	uint32_t round_threshold_ms;
 } wdt_ignore_bits_data_t;
 
-#if defined(CY_IP_MXS40SRSS) || defined(CY_IP_MXS40SSRSS)
+#if defined(CY_IP_MXS40SRSS) || defined(CY_IP_MXS40SSRSS) || defined(CY_IP_MXS22SRSS)
 #define ifx_wdt_lock()   Cy_WDT_Lock()
 #define ifx_wdt_unlock() Cy_WDT_Unlock()
 #else
@@ -230,7 +230,17 @@ struct ifx_cat1_wdt_data {
 static struct ifx_cat1_wdt_data wdt_data;
 
 #if !defined(CY_IP_S8SRSSLT)
+#if defined(SRSS_NUM_WDT_A_BITS)
+/* On the MXS40SSRSS / MXS22SRSS "A"-type WDT the matchBits field directly
+ * controls the trigger period (period = 2 * 2^matchBits counts). PDL derives
+ * the match position from (SRSS_NUM_WDT_A_BITS - 1) for any counter width - the
+ * top match bit cannot be programmed - so compute it from (MATCH_BITS - 1)
+ * generically rather than special-casing a single width.
+ */
+#define IFX_DETERMINE_MATCH_BITS(bits)      (((IFX_WDT_MATCH_BITS) - 1) - (bits))
+#else
 #define IFX_DETERMINE_MATCH_BITS(bits)      ((IFX_WDT_MAX_IGNORE_BITS) - (bits))
+#endif
 #define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2UL << IFX_DETERMINE_MATCH_BITS(bits))
 #endif
 
@@ -255,7 +265,12 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 	ARG_UNUSED(dev_data);
 
 	uint32_t wrap_count_for_ignore_bits = (IFX_GET_COUNT_FROM_MATCH_BITS(ignore_bits));
-	uint32_t timeout_count = ((timeout_ms * CY_SYSCLK_ILO_FREQ) / 1000UL);
+	/* Promote to 64-bit for the multiply: on the 32-bit MXS40SSRSS WDT
+	 * timeout_ms can reach hundreds of millions, and timeout_ms * ILO_FREQ
+	 * overflows a uint32_t well before the /1000 brings it back in range.
+	 */
+	uint32_t timeout_count =
+		(uint32_t)(((uint64_t)timeout_ms * CY_SYSCLK_ILO_FREQ) / 1000ULL);
 	/* handle multiple possible wraps of WDT counter */
 	timeout_count = ((timeout_count + Cy_WDT_GetCount()) % wrap_count_for_ignore_bits);
 	return timeout_count;
@@ -365,9 +380,11 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 	Cy_WDT_SetIgnoreBits(dev_data->wdt_ignore_bits);
 #endif
 
-#if defined(COMPONENT_CAT1) && (CY_WDT_DRV_VERSION_MAJOR > 1) && (CY_WDT_DRV_VERSION_MINOR > 6)
-	/* Reset counter every time
-	 * Large current counts in WDT can cause problems on some boards
+#if (defined(COMPONENT_CAT1) && (CY_WDT_DRV_VERSION_MAJOR > 1) && (CY_WDT_DRV_VERSION_MINOR > 6)) \
+	|| defined(CY_IP_MXS40SSRSS) || defined(CY_IP_MXS22SRSS)
+	/* Reset counter every time. Large current counts in WDT can cause the
+	 * computed match to land arbitrarily close to the current count and
+	 * trigger an immediate reset when the WDT is enabled.
 	 */
 	Cy_WDT_ResetCounter();
 	/* Twice, as reading back after 1 reset gives same value as before single reset */
