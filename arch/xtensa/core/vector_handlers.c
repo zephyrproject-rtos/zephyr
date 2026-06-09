@@ -504,28 +504,38 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 		return return_to(interrupted_stack);                                               \
 	}
 
-#if MAX_INTR_LEVEL >= 2
+#if MAX_INTR_LEVEL >= 2 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 2)
 DEF_INT_C_HANDLER(2)
 #endif
 
-#if MAX_INTR_LEVEL >= 3
+#if MAX_INTR_LEVEL >= 3 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 3)
 DEF_INT_C_HANDLER(3)
 #endif
 
-#if MAX_INTR_LEVEL >= 4
+#if MAX_INTR_LEVEL >= 4 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 4)
 DEF_INT_C_HANDLER(4)
 #endif
 
-#if MAX_INTR_LEVEL >= 5
+#if MAX_INTR_LEVEL >= 5 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 5)
 DEF_INT_C_HANDLER(5)
 #endif
 
-#if MAX_INTR_LEVEL >= 6
+#if MAX_INTR_LEVEL >= 6 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 6)
 DEF_INT_C_HANDLER(6)
 #endif
 
-#if MAX_INTR_LEVEL >= 7
+#if MAX_INTR_LEVEL >= 7 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 7)
 DEF_INT_C_HANDLER(7)
+#endif
+
+#if XCHAL_HAVE_NMI
+__unused void *xtensa_nmi_c(void *interrupted_stack)
+{
+	usage_stop();
+	_sw_isr_table[XCHAL_NMI_INTERRUPT].isr(
+		_sw_isr_table[XCHAL_NMI_INTERRUPT].arg);
+	return return_to(interrupted_stack);
+}
 #endif
 
 static inline DEF_INT_C_HANDLER(1)
