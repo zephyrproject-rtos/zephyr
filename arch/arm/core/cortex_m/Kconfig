@@ -195,6 +195,7 @@ config ARMV6_M_ARMV8_M_BASELINE
 	select ATOMIC_OPERATIONS_BUILTIN if ARMV8_M_BASELINE
 	select ATOMIC_OPERATIONS_C if !ARMV8_M_BASELINE
 	select ISA_THUMB2
+	select ARCH_HAS_LLEXT_VENEERS
 	help
 	  This option signifies the use of an ARMv6-M processor
 	  implementation, or the use of an ARMv8-M processor
