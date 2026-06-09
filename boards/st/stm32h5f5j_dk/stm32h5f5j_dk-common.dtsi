@@ -7,7 +7,6 @@
 #include <st/h5/stm32h5f5Xj.dtsi>
 #include <st/h5/stm32h5f5ljhxq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
-#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
@@ -19,11 +18,10 @@
 	compatible = "st,stm32h5f5j-dk";
 
 	chosen {
-		zephyr,canbus = &fdcan1;
 		zephyr,console = &usart2;
-		zephyr,display = &ltdc;
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram1;
+		zephyr,canbus = &fdcan1;
 	};
 
 	leds {
@@ -105,16 +103,6 @@
 	div-p = <2>;
 	div-q = <2>;
 	div-r = <2>;
-	clocks = <&clk_hse>;
-	status = "okay";
-};
-
-&pll2 {
-	div-m = <40>;
-	mul-n = <129>;
-	div-p = <2>;
-	div-q = <2>;
-	div-r = <16>;
 	clocks = <&clk_hse>;
 	status = "okay";
 };
@@ -336,45 +324,4 @@
 		st,csbound = <10>;
 		status = "okay";
 	};
-};
-
-&ltdc {
-	clocks = <&rcc STM32_CLOCK(APB2, 27)>,
-		 <&rcc STM32_SRC_PLL2_R LTDC_SEL(1)>;
-	pinctrl-0 = <&ltdc_r0_pi5 &ltdc_r1_pj8 &ltdc_r2_pd0 &ltdc_r3_pb2
-		     &ltdc_r4_pd9 &ltdc_r5_pd8 &ltdc_r6_pd11 &ltdc_r7_ph9
-		     &ltdc_g0_pk15 &ltdc_g1_pe3 &ltdc_g2_pj4 &ltdc_g3_pe4
-		     &ltdc_g4_pb10 &ltdc_g5_pf14 &ltdc_g6_pj15 &ltdc_g7_pb7
-		     &ltdc_b0_pk11 &ltdc_b1_pi11 &ltdc_b2_pk13 &ltdc_b3_pk12
-		     &ltdc_b4_pd3 &ltdc_b5_pe11 &ltdc_b6_pf13 &ltdc_b7_pd4
-		     &ltdc_de_pf6 &ltdc_clk_pj9 &ltdc_hsync_pb3 &ltdc_vsync_pj11>;
-	pinctrl-names = "default";
-	disp-on-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
-	bl-ctrl-gpios = <&gpiof 8 GPIO_ACTIVE_HIGH>;
-
-	width = <480>;
-	height = <272>;
-	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
-
-	ext-sdram = <&psram>;
-
-	status = "okay";
-
-	display-timings {
-		compatible = "zephyr,panel-timing";
-		de-active = <0>;
-		pixelclk-active = <0>;
-		hsync-active = <0>;
-		vsync-active = <0>;
-		hsync-len = <4>;
-		vsync-len = <4>;
-		hback-porch = <43>;
-		vback-porch = <7>;
-		hfront-porch = <0>;
-		vfront-porch = <8>;
-	};
-
-	def-back-color-red = <0xff>;
-	def-back-color-green = <0xff>;
-	def-back-color-blue = <0xff>;
 };
