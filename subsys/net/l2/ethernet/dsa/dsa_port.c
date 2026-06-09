@@ -85,6 +85,8 @@ static void dsa_port_phylink_change(const struct device *phydev, struct phy_link
 
 static void dsa_port_iface_init(struct net_if *iface)
 {
+	static unsigned int dsa_iface_idx;
+
 	const struct device *dev = net_if_get_device(iface);
 	const struct dsa_port_config *cfg = dev->config;
 	char name[INTERFACE_NAME_LEN];
@@ -92,7 +94,8 @@ static void dsa_port_iface_init(struct net_if *iface)
 	int ret;
 
 	/* Set interface name */
-	snprintk(name, sizeof(name), "swp%d", cfg->port_idx);
+	snprintk(name, sizeof(name), "swp%u", dsa_iface_idx);
+	dsa_iface_idx++;
 	net_if_set_name(iface, name);
 
 	ret = net_eth_mac_load(&cfg->mcfg, mac_addr);
