@@ -4,6 +4,21 @@
 
 if SOC_SERIES_MCXW7XX
 
+# Enable Zephyr cache management for the MCM-controlled LPCAC code cache.
+# The LPCAC is enabled out of reset; this exposes the cache management API
+# (backed by cache_nxp_mcm_lpcac) so consumers such as the flash driver can
+# invalidate the code cache through the standard sys_cache_* interface.
+config CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+# LPCAC uses a 256-byte per-line, write-through organization (RM LPCAC chapter).
+config ICACHE_LINE_SIZE
+	default 256
+
 config NUM_IRQS
 	default 112 if SOC_MCXW70AC
 	default 77 if SOC_MCXW727C
