@@ -1,0 +1,49 @@
+name: ST STM32H573I Discovery Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 256
+supported:
+  - adc
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - can
+  - counter
+  - crc
+  - dac
+  - dma
+  - entropy
+  - gpio
+  - i2c
+  - netif:eth
+  - octospi
+  - pwm
+  - rtc
+  - spi
+  - uart
+  - usb_device
+  - usbd
+  - watchdog
+vendor: st
+variants:
+  stm32h573i_dk/stm32h573xx:
+    twister: true
+    flash: 2048
+  stm32h573i_dk/stm32h573xx/ext_flash_app:
+    sysbuild: true
+    flash: 32767 # size in kB of 1 app slot minus MCUboot header size (1KB)
+    testing:
+      ignore_tags:
+        - arch
+        - arm
+        - clib
+        - cpp
+        - kernel
+        - posix
+        - cmsis-dsp
+  stm32h573i_dk/stm32h573xx/ns:
+    ram: 192
+    flash: 575 # size in kB of 1 app slot minus MCUboot header size (1KB)
