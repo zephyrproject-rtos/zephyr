@@ -18,6 +18,11 @@
 		reg-names = "debug_messages";
 		reg = <0x44043000 0xfe0>;
 		status = "disabled";
+
+		k3_clks: clock-controller {
+			compatible = "ti,k2g-sci-clk";
+			#clock-cells = <2>;
+		};
 	};
 
 	secure_proxy_main: mailbox0@4d000000 {
@@ -127,6 +132,8 @@
 	main_uart0: uart@2800000 {
 		compatible = "ns16550";
 		reg = <0x02800000 0x200>;
+		power-domains = <&uart0_pd>;
+		clocks = <&k3_clks 146 0>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -135,6 +142,8 @@
 	main_uart1: uart@2810000 {
 		compatible = "ns16550";
 		reg = <0x02810000 0x200>;
+		power-domains = <&uart1_pd>;
+		clocks = <&k3_clks 152 0>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -143,6 +152,8 @@
 	main_uart2: uart@2820000 {
 		compatible = "ns16550";
 		reg = <0x02820000 0x200>;
+		power-domains = <&uart2_pd>;
+		clocks = <&k3_clks 153 0>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -151,6 +162,8 @@
 	main_uart3: uart@2830000 {
 		compatible = "ns16550";
 		reg = <0x02830000 0x200>;
+		power-domains = <&uart3_pd>;
+		clocks = <&k3_clks 154 0>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -159,6 +172,8 @@
 	main_uart4: uart@2840000 {
 		compatible = "ns16550";
 		reg = <0x02840000 0x200>;
+		power-domains = <&uart4_pd>;
+		clocks = <&k3_clks 155 0>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -167,6 +182,8 @@
 	main_uart5: uart@2850000 {
 		compatible = "ns16550";
 		reg = <0x02850000 0x200>;
+		power-domains = <&uart5_pd>;
+		clocks = <&k3_clks 156 0>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -175,6 +192,8 @@
 	main_uart6: uart@2860000 {
 		compatible = "ns16550";
 		reg = <0x02860000 0x200>;
+		power-domains = <&uart6_pd>;
+		clocks = <&k3_clks 158 0>;
 		clock-frequency = <DT_FREQ_M(48)>;
 		reg-shift = <2>;
 		status = "disabled";
@@ -183,6 +202,8 @@
 	main_i2c0: i2c0@20000000 {
 		compatible = "ti,omap-i2c";
 		reg = <0x20000000 0x100>;
+		power-domains = <&i2c0_pd>;
+		clocks = <&k3_clks 102 0>;
 		clock-frequency = <DT_FREQ_K(100)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -192,6 +213,8 @@
 	main_i2c1: i2c0@20010000 {
 		compatible = "ti,omap-i2c";
 		reg = <0x20010000 0x100>;
+		power-domains = <&i2c1_pd>;
+		clocks = <&k3_clks 103 0>;
 		clock-frequency = <DT_FREQ_K(100)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -201,6 +224,8 @@
 	main_i2c2: i2c0@20020000 {
 		compatible = "ti,omap-i2c";
 		reg = <0x20020000 0x100>;
+		power-domains = <&i2c2_pd>;
+		clocks = <&k3_clks 104 0>;
 		clock-frequency = <DT_FREQ_K(100)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -210,6 +235,8 @@
 	main_i2c3: i2c0@20030000 {
 		compatible = "ti,omap-i2c";
 		reg = <0x20030000 0x100>;
+		power-domains = <&i2c3_pd>;
+		clocks = <&k3_clks 105 0>;
 		clock-frequency = <DT_FREQ_K(100)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -365,6 +392,8 @@
 	main_mcspi0: spi@20100000 {
 		compatible = "ti,omap-mcspi";
 		reg = <0x20100000 0x400>;
+		power-domains = <&mcspi0_pd>;
+		clocks = <&k3_clks 141 0>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
@@ -375,6 +404,8 @@
 	main_mcspi1: spi@20110000 {
 		compatible = "ti,omap-mcspi";
 		reg = <0x20110000 0x400>;
+		power-domains = <&mcspi1_pd>;
+		clocks = <&k3_clks 142 0>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
@@ -385,6 +416,8 @@
 	main_mcspi2: spi@20120000 {
 		compatible = "ti,omap-mcspi";
 		reg = <0x20120000 0x400>;
+		power-domains = <&mcspi2_pd>;
+		clocks = <&k3_clks 143 0>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
@@ -395,6 +428,8 @@
 	main_mcspi3: spi@20130000 {
 		compatible = "ti,omap-mcspi";
 		reg = <0x20130000 0x400>;
+		power-domains = <&mcspi3_pd>;
+		clocks = <&k3_clks 144 0>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
@@ -405,6 +440,8 @@
 	main_mcspi4: spi@20140000 {
 		compatible = "ti,omap-mcspi";
 		reg = <0x20140000 0x400>;
+		power-domains = <&mcspi4_pd>;
+		clocks = <&k3_clks 145 0>;
 		clock-frequency = <DT_FREQ_M(50)>;
 		ti,spi-num-cs = <4>;
 		#address-cells = <1>;
@@ -415,6 +452,7 @@
 	main_adc0: adc@28001000 {
 		compatible = "ti,am335x-adc";
 		reg = <0x28001000 DT_SIZE_K(1)>;
+		power-domains = <&adc0_pd>;
 		status = "disabled";
 		#io-channel-cells = <1>;
 		#address-cells = <1>;

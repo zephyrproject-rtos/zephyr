@@ -66,7 +66,9 @@ static struct tisci_xfer *tisci_setup_one_xfer(const struct device *dev, uint16_
 {
 	struct tisci_data *data = dev->data;
 
-	k_sem_take(&data->data_sem, K_FOREVER);
+	if (!k_is_pre_kernel()) {
+		k_sem_take(&data->data_sem, K_FOREVER);
+	}
 
 	const struct tisci_config *config = dev->config;
 	struct tisci_xfer *xfer = &data->xfer;
@@ -75,7 +77,9 @@ static struct tisci_xfer *tisci_setup_one_xfer(const struct device *dev, uint16_
 	if (rx_message_size > config->max_msg_size || tx_message_size > config->max_msg_size ||
 	    (rx_message_size > 0 && rx_message_size < sizeof(*hdr)) ||
 	    tx_message_size < sizeof(*hdr)) {
-		k_sem_give(&data->data_sem);
+		if (!k_is_pre_kernel()) {
+			k_sem_give(&data->data_sem);
+		}
 		return NULL;
 	}
 
@@ -104,7 +108,9 @@ static void callback(const struct device *dev, mbox_channel_id_t channel_id, voi
 {
 	struct rx_msg *msg = user_data;
 
-	k_sem_give(msg->response_ready_sem);
+	if (!k_is_pre_kernel()) {
+		k_sem_give(msg->response_ready_sem);
+	}
 }
 
 static bool tisci_is_response_ack(void *r)
@@ -123,24 +129,27 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 	struct tisci_data *data = dev->data;
 	const struct tisci_config *config = dev->config;
 	struct tisci_msg_hdr *hdr;
+	int ret = 0;
 
 	if (!xfer->rx_message.buf) {
 		LOG_ERR("No response buffer provided");
-		k_sem_give(&data->data_sem);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto release_sem;
 	}
 
-	if (k_sem_take(data->rx_message.response_ready_sem, K_MSEC(config->max_rx_timeout_ms)) !=
-	    0) {
-		LOG_ERR("Timeout waiting for response");
-		k_sem_give(&data->data_sem);
-		return -ETIMEDOUT;
+	if (!k_is_pre_kernel()) {
+		if (k_sem_take(data->rx_message.response_ready_sem,
+			       K_MSEC(config->max_rx_timeout_ms)) != 0) {
+			LOG_ERR("Timeout waiting for response");
+			ret = -ETIMEDOUT;
+			goto release_sem;
+		}
 	}
 
 	if (xfer->rx_message.size > config->max_msg_size) {
 		LOG_ERR("rx_message.size [ %d ] > max_msg_size\n", xfer->rx_message.size);
-		k_sem_give(&data->data_sem);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto release_sem;
 	}
 
 	if (config->is_secure) {
@@ -151,8 +160,8 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 	if (data->rx_message.size < xfer->rx_message.size) {
 		LOG_ERR("rx_message.size [ %zu ] < xfer->rx_message.size [ %zu ]\n",
 			data->rx_message.size, xfer->rx_message.size);
-		k_sem_give(&data->data_sem);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto release_sem;
 	}
 
 	if (config->is_secure) {
@@ -169,12 +178,15 @@ static int tisci_get_response(const struct device *dev, struct tisci_xfer *xfer)
 	/* Sanity check for message response */
 	if (hdr->seq != data->seq) {
 		LOG_ERR("HDR seq != data seq [%d != %d]\n", hdr->seq, data->seq);
-		k_sem_give(&data->data_sem);
-		return -EINVAL;
+		ret = -EINVAL;
+		goto release_sem;
 	}
 
-	k_sem_give(&data->data_sem);
-	return 0;
+release_sem:
+	if (!k_is_pre_kernel()) {
+		k_sem_give(&data->data_sem);
+	}
+	return ret;
 }
 
 static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
@@ -199,8 +211,8 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 		if (msg->size + sizeof(struct tisci_secure_msg_hdr) > MAILBOX_MBOX_SIZE) {
 			LOG_ERR("Message too large for secure mailbox (%zu + %zu > %d)\n",
 				msg->size, sizeof(struct tisci_secure_msg_hdr), MAILBOX_MBOX_SIZE);
-			k_sem_give(&data->data_sem);
-			return -EMSGSIZE;
+			ret = -EMSGSIZE;
+			goto release_sem;
 		}
 
 		/* Prepare secure header */
@@ -217,31 +229,40 @@ static int tisci_do_xfer(const struct device *dev, struct tisci_xfer *xfer)
 		msg = &secure_msg;
 	}
 
-	ret = mbox_send_dt(&config->mbox_tx, msg);
+	if (k_is_pre_kernel()) {
+		ret = mbox_send_then_poll_rx_dt(&config->mbox_rx, &config->mbox_tx, msg);
+	} else {
+		ret = mbox_send_dt(&config->mbox_tx, msg);
+	}
+
 	if (ret < 0) {
-		LOG_ERR("Could not send on %s path\n",
-			config->is_secure ? "secure" : "non-secure");
-		k_sem_give(&data->data_sem);
-		return ret;
+		LOG_ERR("Could not send on %s path\n", config->is_secure ? "secure" : "non-secure");
+		goto release_sem;
 	}
 
 	/* Get response if requested */
 	if (xfer->rx_message.size) {
 		ret = tisci_get_response(dev, xfer);
 		if (ret) {
-			return ret;
+			goto release_sem;
 		}
 		if (!tisci_is_response_ack(xfer->rx_message.buf)) {
 			LOG_ERR("TISCI Response in NACK\n");
-			k_sem_give(&data->data_sem);
-			return -ENODEV;
+			ret = -ENODEV;
+			goto release_sem;
 		}
 	} else {
 		/* No response requested, release semaphore */
-		k_sem_give(&data->data_sem);
+		goto release_sem;
 	}
 
 	return 0;
+
+release_sem:
+	if (!k_is_pre_kernel()) {
+		k_sem_give(&data->data_sem);
+	}
+	return ret;
 }
 
 /* Clock Management Functions */
