@@ -155,7 +155,7 @@ static int sy1xx_mac_set_promiscuous_mode(const struct device *dev, bool promisc
 	return 0;
 }
 
-static int sy1xx_mac_set_mac_addr(const struct device *dev)
+static void sy1xx_mac_set_mac_addr(const struct device *dev)
 {
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
@@ -173,16 +173,6 @@ static int sy1xx_mac_set_mac_addr(const struct device *dev)
 	v_high = sys_read32(cfg->ctrl_addr + SY1XX_MAC_ADDRESS_HIGH_REG);
 	v_high |= (v_high & 0xffff0000) | sys_get_le16(&data->mac_addr[4]);
 	sys_write32(v_high, cfg->ctrl_addr + SY1XX_MAC_ADDRESS_HIGH_REG);
-
-	/* Register Ethernet MAC Address with the upper layer */
-	ret = net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
-				   NET_LINK_ETHERNET);
-	if (ret) {
-		LOG_ERR("%s failed to set link address", dev->name);
-		return ret;
-	}
-
-	return 0;
 }
 
 static int sy1xx_mac_start(const struct device *dev, struct net_if *iface __unused)
@@ -308,6 +298,9 @@ static void sy1xx_mac_iface_init(struct net_if *iface)
 
 	(void)net_eth_mac_load(&cfg->mcfg, data->mac_addr);
 
+	(void)net_if_set_link_addr(data->iface, data->mac_addr, sizeof(data->mac_addr),
+				   NET_LINK_ETHERNET);
+
 	ethernet_init(iface);
 
 	net_if_carrier_off(iface);
@@ -348,7 +341,7 @@ static int sy1xx_mac_set_config(const struct device *dev,
 
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		memcpy(data->mac_addr, config->mac_address.addr, sizeof(data->mac_addr));
-		ret = sy1xx_mac_set_mac_addr(dev);
+		sy1xx_mac_set_mac_addr(dev);
 		break;
 	default:
 		return -ENOTSUP;
