@@ -21,6 +21,8 @@ properties:
       Initial fix-rate GNSS modem will be operating on. May be adjusted at
       run-time through GNSS APIs. Must be greater than 50-ms.
       Default is power-on setting.
+    min: 50
+    max: 65535
 
   reset-gpios:
     type: phandle-array
