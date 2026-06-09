@@ -6,7 +6,7 @@ EU Cyber Resilience Act (CRA)
 .. warning::
    This document is for informational purposes only and does not constitute legal advice.
    Consult with your legal counsel for compliance guidance specific to your situation.
-   You can consult European Union accredited lab (`List of Notified Body for CRA`_) who can
+   You can consult European Union accredited laboratories (see `List of Notified Bodies for CRA`_) that can
    help you.
 
 Overview
@@ -19,10 +19,10 @@ It entered into force on December 10, 2024.
 .. admonition:: Key Dates
    :class: important
 
-   * **June 11, 2026**: Assessment bodies operational, Market surveillance authorities defined
+   * **June 11, 2026**: Assessment bodies operational; market surveillance authorities defined
    * **September 11, 2026**: Manufacturers must report exploited vulnerabilities and severe incidents
-   * **December 11, 2027**: Full regulation applies on product placed on the market from that date
-   or placed on the market before and with substantial modifications after this date.
+   * **December 11, 2027**: Full regulation applies to products placed on the market from that date,
+     or placed on the market before that date and substantially modified afterwards.
 
 This page explains how the CRA relates both to manufacturers using Zephyr in commercial products,
 and to the Zephyr Project itself in its role as an open-source software steward.
@@ -42,17 +42,21 @@ Does the CRA apply to my product?
 The CRA applies if you place a product with digital elements (PDE) on the EU market for commercial
 purposes. This includes hardware devices with embedded software, and standalone software products.
 
-A product with digital element is an hardware and/or software which is connected to another device
-or a network. The scope of the product includes the remote data processing solution (RDPS), meaning
-a software not part of the product, but which is required to run the product. For example, it can be
-a mobile phone app or a cloud service.
+A product with a digital element is hardware and/or software that is connected to another device or
+network. The scope of the product includes the remote data processing solution (RDPS): software not
+part of the product but required for it to function (for example, a mobile phone app or a cloud
+service).
 
-CRA applies to end products or components which are placed on the market to European Union. Placing a
-product in the EU market meaning sell or give for free a product for the first time in EU market. It
-counts for every individual unit of a product series. The development or design date is not relevant.
 
-Several market exception are defined in the law (medical, automotive, avionics, military, spare parts),
-there are strict rules about these exceptions, please refer to the CRA law. (`Article 2`_)
+The CRA applies to end products or components that are placed on the market in the European Union.
+"Placing on the market" means selling or providing a product free of charge for the first time in
+the EU. It applies to every individual unit of a product series; development or design dates are
+not relevant.
+
+
+Several market exceptions are defined in the law (medical, automotive, avionics, military, spare
+parts). These exceptions have strict conditions; refer to the CRA text (`Article 2`_).
+
 
 Which category does my product belong to?
 =========================================
@@ -134,13 +138,15 @@ standards.
 
   * - Category
     - Conformity Assessment Procedure
-    - Notify Body involvement?
+    - Notified Body involvement?
   * - Default
     - Module A (Self-assessment by the manufacturer) or Module B + Module C, or Module H.
     - Not Mandatory for Module A.
   * - Important Class I
-    - Module A **ONLY IF** harmonized standards, cited to European Union Official Journal, are fully applied.
-      Otherwise: Module B + Module C, or Module H.
+    - Module A **ONLY IF** harmonized standards cited in the Official Journal of the European Union
+      are fully applied. Otherwise: Module B + Module C, or Module H.
+    - Module A **ONLY IF** harmonized standards cited in the Official Journal of the European Union
+      are fully applied. Otherwise: Module B + Module C, or Module H.
     - Not Mandatory for Module A.
   * - Important Class II
     - Module B + Module C, or Module H. (Self-assessment is **NOT** allowed).
@@ -179,10 +185,11 @@ elements.
   like Zephyr).
 
 **Vulnerability handling**
-  Handle vulnerabilities every time a product is placed on the EU market.
+  Handle vulnerabilities each time a product is placed on the EU market.
   Monitor vulnerabilities during the support period (lifetime or 5 years minimum).
-  Vulnerabily handling means identify hw and sw vulnerabilities (with SBOM), do a risk assessment of the
-  vulnerability to your product, and if risk can't be accepted, provide a SW update to solve the vulnerability.
+  Vulnerability handling means identifying hardware and software vulnerabilities (for example, via
+  an SBOM), performing a risk assessment for your product, and providing a software update when the
+  risk cannot be accepted.
 
 **Incident reporting**
   Report actively exploited vulnerabilities affecting your product, as well as severe incidents affecting
@@ -399,16 +406,17 @@ Relevant existing standards:
 ETSI and CEN/CENELC are developing harmonized standards in response to the `CRA Standardisation Request (M/606)
 <https://ec.europa.eu/growth/tools-databases/enorm/mandate/606_en>`_.
 
-CRA Horizontal stanards developped by CEN/CENELEC :
+CRA horizontal standards developed by CEN/CENELEC:
+
 * EN40000-1-1 : Vocabulary definition
 * EN40000-1-2 : Quality process for the development of Secure by Design product. It includes risk
-assessment, sourcing due diligence, development, test, validation, manufacturing, de-commissioning...
+  assessment, sourcing due diligence, development, test, validation, manufacturing, de-commissioning...
 * EN40000-1-3 : Vulnerability handling process
 * EN40000-1-4 : Security controls : technical solutions to reduce cybersecurity risk. This is based on
-hEN18031-x standard developped for the CE RED Delegated Act.
+  the hEN18031-x standard developed for the CE RED Delegated Act.
 
 Presentation of early draft of EN40000-1-4 is available on CEN/CENELEC website: `Security Controls
-<https://www.cencenelec.eu/news-events/events/2026/2026-03-05-cra-standards-unlocked-deep-dive-session-security-controls-generic-security-requirements/>_`
+<https://www.cencenelec.eu/news-events/events/2026/2026-03-05-cra-standards-unlocked-deep-dive-session-security-controls-generic-security-requirements/>`_.
 
 
 ETSI Public draft standards
@@ -422,9 +430,8 @@ include product-specific requirements for:
 For the complete list of draft standards and participation in public consultations, see the
 `ETSI Cyber Resilience Act Portal <https://docbox.etsi.org/cyber/CYBER/Open>`_.
 
-* Once harmonized all the standard could be freely accessible for EU, EFTA and UK citizens here:
-`Harmonized standard <https://harmonized.standards.eu/>_`
-
+* Once harmonized, these standards could be freely accessible to EU, EFTA, and UK citizens via
+  `Harmonized standards <https://harmonized.standards.eu/>`_.
 
 Educational resources
 =====================
@@ -484,4 +491,5 @@ Zephyr-specific resources
 
 .. _`Zephyr Vulnerability Alert Registry`: https://www.zephyrproject.org/vulnerability-registry/
 
-.. _`List of Notified Body for CRA`: https://webgate.ec.europa.eu/single-market-compliance-space/notified-bodies/free-search?filter=notificationStatus:1,legislation:167953
+.. _`List of Notified Bodies for CRA`: https://webgate.ec.europa.eu/single-market-compliance-space/notified-bodies/free-search?filter=notificationStatus:1,legislation:167953
+
