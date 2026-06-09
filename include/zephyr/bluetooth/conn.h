@@ -1010,7 +1010,9 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn);
 
 /** @brief Decrement a connection's reference count.
  *
- *  Decrement the reference count of a connection object.
+ *  Decrement the reference count of a connection object. Unless the pointer variable is
+ *  immediately going out of scope, it's recommended to use @ref bt_conn_drop instead, which
+ *  will also set the pointer to NULL to prevent accidental reuse.
  *
  *  @param conn Connection object.
  */
