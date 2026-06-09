@@ -35,3 +35,7 @@
 &systick {
 	status = "okay";
 };
+
+&lptmr0 {
+	status = "okay";
+};
