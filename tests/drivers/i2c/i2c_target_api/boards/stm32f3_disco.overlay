@@ -4,7 +4,7 @@
  *
  *  Bus        SDA               SCL
  *          Pin   Hdr         Pin   Hdr
- *  i2c1    PB7  P2:21        PB6  P2:22
+ *  i2c1    PB7  P2:22        PB6  P2:21
  *  i2c2    PA10 P2:43        PA9  P2:44
  *
  * Short Pin PB7 to PA10, and PB6 to PA9, for the test to pass.

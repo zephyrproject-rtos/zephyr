@@ -1,5 +1,15 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 
+/* I2C bus pins are exposed on the ST P2 connector.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c1    PB9  P2:3         PB8  P2:4
+ *  i2c2    PB11 P1:31        PB10 P1:30
+ *
+ * Short Pin PB9 to PB11, and PB8 to PB10, for the test to pass.
+ */
+
 #define IC2_TEST_0_DMA_TX <&dma1 2 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>
 #define IC2_TEST_0_DMA_RX <&dma1 3 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>
 
