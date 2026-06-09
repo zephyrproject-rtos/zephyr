@@ -824,6 +824,52 @@ class ZephyrBinaryRunner(abc.ABC):
                 raise ValueError('Required devicetree chosen node `zephyr,sram` is not set')
             return sram_node.regs[0].addr
 
+    @staticmethod
+    def normalize_chip(name: str) -> str:
+        '''Normalize a chip name for case- and dash-insensitive matching.'''
+        return name.lower().replace('-', '')
+
+    @staticmethod
+    def resolve_port_by_chip(detect_func, target, logger, priority_vids=None):
+        '''Probe serial ports and return the first one whose connected chip
+        matches the normalized target name.
+
+        :param detect_func: callable taking a port device path and returning
+                             the chip name reported by that port, or None if
+                             no chip could be identified. It is responsible
+                             for opening and closing the port.
+        :param target:      normalized chip name to match against.
+        :param logger:      logger for progress and diagnostics.
+        :param priority_vids: optional list of USB VIDs whose ports are
+                             probed first, to avoid resetting unrelated
+                             serial adapters.
+
+        Returns the matching port device path, or None when no match is
+        found.'''
+        try:
+            import serial.tools.list_ports
+        except ImportError as err:
+            logger.debug(f'port matching unavailable: {err}')
+            return None
+
+        priority_vids = priority_vids or []
+        ports = sorted(serial.tools.list_ports.comports(),
+                       key=lambda p: (p.vid not in priority_vids, p.device))
+
+        for info in ports:
+            port = info.device
+            try:
+                name = detect_func(port)
+            except Exception as err:
+                logger.debug(f'{port}: skipped ({err})')
+                continue
+            if name is not None and ZephyrBinaryRunner.normalize_chip(name) == target:
+                logger.info(f'Auto-selected {port} for {target}')
+                return port
+
+        logger.debug(f'no port with a {target} chip found')
+        return None
+
     def run(self, command: str, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver', 'attach').
 

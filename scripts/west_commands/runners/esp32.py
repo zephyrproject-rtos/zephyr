@@ -93,6 +93,41 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         except FileNotFoundError:
             return 'esp32'
 
+    @staticmethod
+    def _detect_chip_name(port):
+        '''Connect to port and return the chip name esptool reports.'''
+        from esptool import detect_chip
+        esp = None
+        try:
+            esp = detect_chip(port, connect_attempts=2)
+            return esp.CHIP_NAME
+        finally:
+            if esp is not None and esp._port:
+                esp._port.close()
+
+    def _resolve_port_by_soc(self):
+        '''Probe serial ports and return the first one whose connected chip
+        matches CONFIG_SOC. Returns None to let esptool auto-detect when no
+        matching port is found.'''
+        try:
+            import esptool  # noqa: F401
+        except ImportError as err:
+            self.logger.debug(f'SoC port matching unavailable: {err}')
+            return None
+
+        # Native Espressif USB devices use VID 0x303A; probe them first.
+        ESPRESSIF_VID = 0x303A
+        port = self.resolve_port_by_chip(
+            self._detect_chip_name,
+            self.normalize_chip(self._get_soc_name()),
+            self.logger,
+            priority_vids=[ESPRESSIF_VID])
+        if port is None:
+            self.logger.warning(
+                f'No port with a {self._get_soc_name()} chip found; '
+                'falling back to esptool auto-detection')
+        return port
+
     def _append_flash_opts(self, cmd_flash):
         if self.no_progress:
             cmd_flash.append('-p')
@@ -119,6 +154,9 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def do_run(self, command, **kwargs):
 
         cmd_flash = ['esptool']
+
+        if self.device is None:
+            self.device = self._resolve_port_by_soc()
 
         if self.device is not None:
             cmd_flash.extend(['--port', self.device])
