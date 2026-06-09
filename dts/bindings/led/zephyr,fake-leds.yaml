@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding provides a fake LED controller for use as either a stub or a mock in Zephyr
+    testing.
+
+compatible: "zephyr,fake-leds"
+
+include: led-controller.yaml
+
+examples:
+  - |
+    fake_leds: fake-leds {
+      compatible = "zephyr,fake-leds";
+
+      fake_led: fake-led {
+        label = "Fake LED";
+      };
+
+      fake_red_led: fake-red-led {
+        label = "Fake Red LED";
+        color-mapping = <LED_COLOR_ID_RED>;
+      };
+
+      fake_green_led: fake-green-led {
+        label = "Fake Green LED";
+        color-mapping = <LED_COLOR_ID_GREEN>;
+      };
+
+      fake_blue_led: fake-blue-led {
+        label = "Fake Blue LED";
+        color-mapping = <LED_COLOR_ID_BLUE>;
+      };
+
+      fake_rgb_led: fake-rgb-led {
+        label = "Fake RGB LED";
+        color-mapping = <LED_COLOR_ID_RED>,
+                        <LED_COLOR_ID_GREEN>,
+                        <LED_COLOR_ID_BLUE>;
+      };
+    };
