@@ -7,7 +7,17 @@ menuconfig WIFI_NATIVE_SIM
 	bool "Simple WiFi driver for native-sim board"
 	default y
 	depends on ARCH_POSIX
+	# 32-bit native_sim only (not native_sim/native/64), for two reasons:
+	#  - the driver links the host 32-bit libnl (i686-linux-gnu), which only
+	#    links into a 32-bit image; and
+	#  - the hostap sources it pulls in use "%d" for size_t in several printf
+	#    calls, which warns (and fails under warnings-as-errors) on 64-bit.
+	depends on !64BIT
 	depends on WIFI_NM_WPA_SUPPLICANT
+	# Opt-in: the driver is only built when a "zephyr,native-sim-wifi" node is
+	# present in the devicetree (add one via an overlay to enable it). The MAC
+	# address and the host interface name come from that node.
+	depends on DT_HAS_ZEPHYR_NATIVE_SIM_WIFI_ENABLED
 	select NET_L2_WIFI_MGMT
 	select WIFI_USE_NATIVE_NETWORKING
 	select NET_INTERFACE_NAME
@@ -16,41 +26,6 @@ menuconfig WIFI_NATIVE_SIM
 	  for simple verification of the hostap APIs etc.
 
 if WIFI_NATIVE_SIM
-
-config WIFI_NATIVE_SIM_INTERFACE_COUNT
-	int "Number of network interfaces created"
-	default 1
-	range 1 32
-	help
-	  By default only one network interface is created. It is possible
-	  to create multiple interfaces if needed.
-
-config WIFI_NATIVE_SIM_DRV_NAME
-	string "Wi-Fi driver name"
-	default "zwifi"
-	help
-	  This option sets the driver name and the name of the network interface
-	  in your host system. If there are multiple network interfaces defined,
-	  then this value is used as a prefix and the interface names will be
-	  like zwifi0, zwifi1, etc.
-
-config WIFI_NATIVE_SIM_RANDOM_MAC
-	bool "Random MAC address"
-	depends on ENTROPY_GENERATOR
-	default y
-	help
-	  Generate a random MAC address dynamically.
-
-config WIFI_NATIVE_SIM_MAC_ADDR
-	string "MAC address for the interface"
-	default ""
-	depends on !WIFI_NATIVE_SIM_RANDOM_MAC
-	help
-	  Specify a MAC address for the wifi interface in the form of
-	  six hex 8-bit chars separated by colons (e.g.:
-	  aa:33:cc:22:e2:c0).  The default is an empty string, which
-	  means the code will make 00:00:5E:00:53:XX, where XX will be
-	  random.
 
 config WIFI_NATIVE_SIM_RX_WAIT_TIME
 	int "Wifi RX timeout (ms)"

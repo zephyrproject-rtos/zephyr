@@ -6,7 +6,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/net_ip.h>
 #include <zephyr/logging/log.h>
+
+#include <cmdline.h>
+#include <posix_native_task.h>
 
 LOG_MODULE_DECLARE(wifi_native_sim, CONFIG_WIFI_LOG_LEVEL);
 
@@ -20,6 +24,12 @@ LOG_MODULE_DECLARE(wifi_native_sim, CONFIG_WIFI_LOG_LEVEL);
 #define NET_BUF_TIMEOUT K_MSEC(100)
 
 static bool extra_debug; /* set to true to hex dump the sent pkt */
+
+/* Command-line overrides for the devicetree defaults (like the native TAP
+ * ethernet driver): --wifi-if=<name> and --wifi-mac-addr=<mac>.
+ */
+static const char *if_name_cmd_opt;
+static const char *mac_addr_cmd_opt;
 
 static struct net_linkaddr *wifi_get_mac(struct wifi_context *ctx)
 {
@@ -279,41 +289,36 @@ void wifi_if_init(struct net_if *iface)
 
 	ctx->if_index = net_if_get_by_iface(iface);
 
-#if defined(CONFIG_WIFI_NATIVE_SIM_RANDOM_MAC)
-	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
-	gen_random_mac(ctx->mac_addr, 0x00, 0x00, 0x5E);
-
-	ctx->mac_addr[3] = 0x00;
-	ctx->mac_addr[4] = 0x53;
-
-	/* The TUN/TAP setup script will by default set the MAC address of host
-	 * interface to 00:00:5E:00:53:FF so do not allow that.
+	/* A --wifi-if=<name> command-line option overrides the devicetree
+	 * host-interface property.
 	 */
-	if (ctx->mac_addr[5] == 0xff) {
-		ctx->mac_addr[5] = 0x01;
+	if (if_name_cmd_opt != NULL) {
+		ctx->if_name_host = if_name_cmd_opt;
 	}
-#else
-	/* Difficult to configure MAC addresses any sane way if we have more
-	 * than one network interface.
-	 */
-	BUILD_ASSERT(CONFIG_WIFI_NATIVE_SIM_INTERFACE_COUNT == 1,
-		     "Cannot have static MAC if interface count > 1");
 
-	if (CONFIG_WIFI_NATIVE_SIM_MAC_ADDR[0] != 0) {
+	/* Fallback MAC: a --wifi-mac-addr=<mac> command-line option wins, else the
+	 * devicetree default (a random one, or the static "local-mac-address"
+	 * already copied into ctx->mac_addr by the device definition). It is
+	 * overridden below with the host interface MAC.
+	 */
+	if (mac_addr_cmd_opt != NULL) {
 		if (net_bytes_from_str(ctx->mac_addr, sizeof(ctx->mac_addr),
-				       CONFIG_WIFI_NATIVE_SIM_MAC_ADDR) < 0) {
-			LOG_ERR("Invalid MAC address %s",
-				CONFIG_WIFI_NATIVE_SIM_MAC_ADDR);
+				       mac_addr_cmd_opt) < 0) {
+			LOG_ERR("Invalid MAC address %s", mac_addr_cmd_opt);
 		}
-	}
-#endif
+	} else if (ctx->random_mac) {
+		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+		gen_random_mac(ctx->mac_addr, 0x00, 0x00, 0x5E);
 
-	/* If we have only one network interface, then use the name
-	 * defined in the Kconfig directly. This way there is no need to
-	 * change the documentation etc. and break things.
-	 */
-	if (CONFIG_WIFI_NATIVE_SIM_INTERFACE_COUNT == 1) {
-		ctx->if_name_host = CONFIG_WIFI_NATIVE_SIM_DRV_NAME;
+		ctx->mac_addr[3] = 0x00;
+		ctx->mac_addr[4] = 0x53;
+
+		/* The TUN/TAP setup script will by default set the MAC address of
+		 * the host interface to 00:00:5E:00:53:FF so do not allow that.
+		 */
+		if (ctx->mac_addr[5] == 0xff) {
+			ctx->mac_addr[5] = 0x01;
+		}
 	}
 
 	LOG_DBG("Interface %p using \"%s\"", iface, ctx->if_name_host);
@@ -465,3 +470,30 @@ int wifi_if_send(const struct device *dev, struct net_pkt *pkt)
 
 	return ret < 0 ? ret : 0;
 }
+
+static void add_native_sim_wifi_options(void)
+{
+	static struct args_struct_t wifi_options[] = {
+		{
+			.is_mandatory = false,
+			.option = "wifi-if",
+			.name = "name",
+			.type = 's',
+			.dest = (void *)&if_name_cmd_opt,
+			.descript = "Name of the host Wi-Fi interface to use",
+		},
+		{
+			.is_mandatory = false,
+			.option = "wifi-mac-addr",
+			.name = "mac",
+			.type = 's',
+			.dest = (void *)&mac_addr_cmd_opt,
+			.descript = "MAC address for the Wi-Fi interface",
+		},
+		ARG_TABLE_ENDMARKER,
+	};
+
+	native_add_command_line_opts(wifi_options);
+}
+
+NATIVE_TASK(add_native_sim_wifi_options, PRE_BOOT_1, 10);
