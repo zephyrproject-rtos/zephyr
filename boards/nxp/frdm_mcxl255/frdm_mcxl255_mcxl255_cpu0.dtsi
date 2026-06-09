@@ -168,3 +168,7 @@
 &mbox_a {
 	status = "okay";
 };
+
+&aon_lptmr0 {
+	status = "okay";
+};
