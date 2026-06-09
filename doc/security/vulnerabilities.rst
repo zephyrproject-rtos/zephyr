@@ -2326,7 +2326,27 @@ This has been fixed in main for v4.4.0
 :cve:`2026-5068`
 ----------------
 
-Under embargo until 2026-05-21
+Bluetooth: L2CAP LE CoC: remote out-of-bounds write via segmentation counter
+stored in net_buf user_data
+
+A remote, unauthenticated BLE peer can trigger a 2-byte out-of-bounds write in
+the Bluetooth host during L2CAP LE CoC SDU reassembly. When the application
+enables segmentation (via ``chan_ops.alloc_buf``) and the chosen RX pool has a
+``user_data_size`` smaller than 2 bytes, the segmentation counter stored in the
+``net_buf`` user_data area is written out of bounds in
+``l2cap_chan_le_recv_seg`` (``subsys/bluetooth/host/l2cap.c``). This can lead to
+heap corruption and a fatal error.
+
+- `Zephyr project bug tracker GHSA-qrcq-hxwj-mqxm
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-qrcq-hxwj-mqxm>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 104913 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104913>`_
+
+- `PR 108335 fix for 4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108335>`_
 
 :cve:`2026-5071`
 ----------------
