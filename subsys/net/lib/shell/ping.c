@@ -42,6 +42,14 @@ static struct ping_context {
 	uint16_t payload_size;
 	uint8_t tos;
 	int priority;
+	struct ping_stats {
+		uint64_t cycle_sum;
+		uint32_t pkt_sent;
+		uint32_t pkt_recv;
+		uint32_t rtt_count;
+		uint32_t rtt_min;
+		uint32_t rtt_max;
+	} stats;
 } ping_ctx;
 
 static void ping_done(struct ping_context *ctx);
@@ -56,6 +64,51 @@ static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t s
 #define PING_PRI_MSEC             "%u"
 #define PING_CYCLES_MSEC(_cycles) ((uint32_t)k_cyc_to_ns_floor64(_cycles) / 1000000)
 #endif
+
+/** Print the ping statistics.
+ *
+ * @param ctx The ping context
+ */
+static void stats_print(struct ping_context *ctx)
+{
+	uint_fast8_t pkt_loss_percent = 100;
+
+	PR_SHELL(ctx->sh, "--- ping statistics ---\n");
+
+	if (ctx->stats.pkt_sent > 0) {
+		if (ctx->stats.pkt_recv < ctx->stats.pkt_sent) {
+			pkt_loss_percent = (ctx->stats.pkt_sent - ctx->stats.pkt_recv) * 100 /
+					   ctx->stats.pkt_sent;
+		} else {
+			pkt_loss_percent = 0;
+		}
+	}
+	PR_SHELL(ctx->sh, "%u packets transmitted, %u received, %u%% packet loss\n",
+		 ctx->stats.pkt_sent, ctx->stats.pkt_recv, pkt_loss_percent);
+
+	if (ctx->stats.rtt_count > 0) {
+		/* rtt = round-trip-time */
+		PR_SHELL(ctx->sh,
+			 "rtt min/avg/max = " PING_PRI_MSEC "/" PING_PRI_MSEC "/" PING_PRI_MSEC
+			 " ms\n",
+			 PING_CYCLES_MSEC(ctx->stats.rtt_min),
+			 PING_CYCLES_MSEC(ctx->stats.cycle_sum / ctx->stats.rtt_count),
+			 PING_CYCLES_MSEC(ctx->stats.rtt_max));
+	}
+}
+
+/** Update ping statistics.
+ *
+ * @param ctx The ping context.
+ * @param cycles The round-trip time in ticks.
+ */
+static void stats_update(struct ping_context *ctx, uint32_t cycles)
+{
+	ctx->stats.rtt_count++;
+	ctx->stats.cycle_sum += cycles;
+	ctx->stats.rtt_min = MIN(ctx->stats.rtt_min, cycles);
+	ctx->stats.rtt_max = MAX(ctx->stats.rtt_max, cycles);
+}
 
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
@@ -185,7 +238,9 @@ static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t s
 		cycles = k_cycle_get_32() - cycles;
 		snprintf(time_buf, sizeof(time_buf), "time=" PING_PRI_MSEC " ms",
 				 PING_CYCLES_MSEC(cycles));
+		stats_update(&ping_ctx, cycles);
 	}
+	ping_ctx.stats.pkt_recv++;
 
 	PR_SHELL(ping_ctx.sh,
 		 "%d bytes from %s to %s: icmp_seq=%u ttl=%u "
@@ -242,6 +297,7 @@ static void ping_cleanup(struct ping_context *ctx)
 {
 	(void)net_icmp_cleanup_ctx(&ctx->icmp);
 	shell_set_bypass(ctx->sh, NULL, NULL);
+	stats_print(ctx);
 }
 
 static void ping_done(struct ping_context *ctx)
@@ -276,6 +332,8 @@ static void ping_work(struct k_work *work)
 		k_work_reschedule(&ctx->work, K_SECONDS(2));
 	}
 
+	ctx->stats.pkt_sent++;
+
 	params.identifier = ctx->identifier;
 	params.sequence = ctx->sequence;
 	params.tc_tos = ctx->tos;
@@ -290,6 +348,7 @@ static void ping_work(struct k_work *work)
 						 ctx);
 	if (ret != 0) {
 		PR_WARNING("Failed to send ping, err: %d\n", ret);
+		ctx->stats.pkt_sent--;
 		ping_done(ctx);
 		return;
 	}
@@ -475,6 +534,7 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	ping_ctx.priority = priority;
 	ping_ctx.tos = tos;
 	ping_ctx.payload_size = payload_size;
+	ping_ctx.stats = (struct ping_stats){.rtt_min = UINT32_MAX};
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_addr_pton(NET_AF_INET6, host, &ping_ctx.addr6.sin6_addr) == 0) {
