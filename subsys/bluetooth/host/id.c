@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017-2025 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright (c) 2026 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2061,12 +2062,11 @@ int bt_br_oob_get_local(struct bt_br_oob *oob)
 }
 #endif /* CONFIG_BT_CLASSIC */
 
-int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
+int bt_le_generate_and_get_rpa(uint8_t id, bt_addr_le_t *addr)
 {
 	struct bt_le_ext_adv *adv = NULL;
-	int err;
 
-	if (oob == NULL) {
+	if (addr == NULL) {
 		return -EINVAL;
 	}
 
@@ -2083,8 +2083,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-	    !(adv && adv->id == id &&
-	      atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
+	    !(adv && adv->id == id && atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
 	      atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
 	      bt_dev.id_addr[id].type == BT_ADDR_LE_RANDOM)) {
 		if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
@@ -2102,8 +2101,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 			}
 		}
 
-		if (adv &&
-		    atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
+		if (adv && atomic_test_bit(adv->flags, BT_ADV_ENABLED) &&
 		    atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY) &&
 		    (bt_dev.id_addr[id].type == BT_ADDR_LE_RANDOM)) {
 			/* Cannot set a new RPA address while advertising with
@@ -2113,9 +2111,7 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 			return -EINVAL;
 		}
 
-		if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
-		    CONFIG_BT_ID_MAX > 1 &&
-		    id != BT_ID_DEFAULT &&
+		if (IS_ENABLED(CONFIG_BT_OBSERVER) && CONFIG_BT_ID_MAX > 1 && id != BT_ID_DEFAULT &&
 		    (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) ||
 		     atomic_test_bit(bt_dev.flags, BT_DEV_INITIATING))) {
 			/* Cannot switch identity of scanner or initiator */
@@ -2124,9 +2120,25 @@ int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
 
 		le_force_rpa_timeout();
 
-		bt_addr_le_copy_addr(&oob->addr, &bt_dev.random_addr, BT_ADDR_LE_RANDOM);
+		bt_addr_le_copy_addr(addr, &bt_dev.random_addr, BT_ADDR_LE_RANDOM);
 	} else {
-		bt_addr_le_copy(&oob->addr, &bt_dev.id_addr[id]);
+		bt_addr_le_copy(addr, &bt_dev.id_addr[id]);
+	}
+
+	return 0;
+}
+
+int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob)
+{
+	int err;
+
+	if (oob == NULL) {
+		return -EINVAL;
+	}
+
+	err = bt_le_generate_and_get_rpa(id, &oob->addr);
+	if (err) {
+		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP)) {

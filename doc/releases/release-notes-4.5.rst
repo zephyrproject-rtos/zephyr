@@ -131,6 +131,10 @@ New APIs and options
     * :c:func:`bt_ascs_register`
     * :c:func:`bt_ascs_unregister`
 
+  * Host
+
+    * :c:func:`bt_le_generate_and_get_rpa`
+
   * Mesh
 
     * :c:struct:`bt_mesh_lpn_timing`

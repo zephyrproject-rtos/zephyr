@@ -6,6 +6,7 @@
 /*
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
+ * Copyright (c) 2026 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -2763,6 +2764,37 @@ struct bt_le_oob {
  *         protocol error or negative (POSIX) in case of stack internal error.
  */
 int bt_le_oob_get_local(uint8_t id, struct bt_le_oob *oob);
+
+/**
+ * @brief Generate a new RPA and return the local LE address.
+ *
+ * Returns the address the local device is currently using for the given
+ * identity. If privacy @kconfig{CONFIG_BT_PRIVACY} is enabled this will result
+ * in generating a new Resolvable Private Address (RPA) that is valid for
+ * @kconfig{CONFIG_BT_RPA_TIMEOUT} seconds. If privacy is not enabled the
+ * identity address of the given identity is returned.
+ *
+ * Unlike @ref bt_le_oob_get_local, this function does not generate LE Secure
+ * Connections OOB pairing data, so it does not block on P-256 (ECC) key
+ * generation.
+ *
+ * @note The same RPA refresh restrictions as @ref bt_le_oob_get_local apply.
+ *
+ * @note Under @kconfig{CONFIG_BT_PRIVACY}, the legacy advertiser, scanner,
+ *       and initiator share one device-wide random address. The identity
+ *       used to generate the RPA is decided by host state, not by @p id:
+ *       - If a legacy advertiser is running and uses an RPA (i.e. not
+ *         @ref BT_LE_ADV_OPT_USE_IDENTITY), its identity is used (the
+ *         advertiser is briefly disabled while the address is updated).
+ *       - Otherwise @ref BT_ID_DEFAULT is used.
+ *
+ * @param[in]  id   Local identity handle (typically @ref BT_ID_DEFAULT). Corresponds to the
+ *                  identity address this function will be called for.
+ * @param[out] addr Destination to store the local LE address.
+ *
+ * @return Zero on success or (negative) error code otherwise.
+ */
+int bt_le_generate_and_get_rpa(uint8_t id, bt_addr_le_t *addr);
 
 /**
  * @brief Get local LE Out of Band (OOB) information.
