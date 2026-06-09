@@ -131,10 +131,10 @@ bool i2c_stm32_start(const struct device *dev)
 					   sqe->tx.buf_len, dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
 		res = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
-		return i2c_rtio_complete(data->ctx, res);
+		return i2c_rtio_complete(ctx, res);
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-		return i2c_rtio_complete(data->ctx, -EINVAL);
+		return i2c_rtio_complete(ctx, -EINVAL);
 	}
 }
 
