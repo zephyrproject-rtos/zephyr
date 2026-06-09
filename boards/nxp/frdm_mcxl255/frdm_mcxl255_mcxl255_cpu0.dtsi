@@ -28,6 +28,8 @@
 		sw1 = &user_button_3;
 		rtc = &rtc;
 		watchdog0 = &wwdt0;
+		spi-0 = &lpspi0;
+		spi-1 = &lpspi1;
 	};
 
 	leds {
@@ -97,6 +99,18 @@
 	status = "disabled";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_aon_lpuart0>;
+	pinctrl-names = "default";
+};
+
+&lpspi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi0>;
+	pinctrl-names = "default";
+};
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
 };
 

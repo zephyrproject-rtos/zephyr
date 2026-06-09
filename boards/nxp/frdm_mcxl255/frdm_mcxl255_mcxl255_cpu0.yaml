@@ -13,6 +13,7 @@ toolchain:
 supported:
   - uart
   - gpio
+  - spi
   - rtc
   - crc
   - watchdog
