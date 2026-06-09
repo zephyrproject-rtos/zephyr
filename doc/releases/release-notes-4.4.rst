@@ -31,6 +31,8 @@
 Zephyr 4.4.1
 ############
 
+This is a bugfix release for Zephyr 4.4.0.
+
 Security Vulnerability Related
 ******************************
 
@@ -43,6 +45,94 @@ Security Vulnerability Related
 * :cve:`2026-10666` Under embargo until 2026-07-12
 
 * :cve:`2026-10673` Under embargo until 2026-07-15
+
+Issues fixed
+************
+
+The following issues are addressed by this release:
+
+* :github:`99054` - ARM64: Wrong register is being saved in coredump, causing corrupted backtrace show in gdb
+* :github:`100542` - soc/espressif/esp32s3: undefined reference to 'log_const_soc' when CONFIG_PM=y
+* :github:`104000` - display_check: ASSERTION FAIL / kernel panic in test_display_by_capture on mimxrt700_evk (mimxrt798s/cm33_cpu0, co5300@0)
+* :github:`104480` - ``samples/subsys/usb/console`` hangs when opened with picocom on blackpill_f411ce (STM32F411, Zephyr 4.3.99)
+* :github:`104900` - Bluetooth LE host qualification for 4.4 release
+* :github:`105265` - menuconfig fails on Windows when using multiple shields
+* :github:`105317` - mcumgr: os grp: mpstat incorrect cbor layout
+* :github:`105521` - Drivers: display: ili9xxx driver color order problem
+* :github:`106150` - net: all NXP platform dhcp_client does not work
+* :github:`106580` - spi mchp g1 driver configuration issues
+* :github:`106850` - sensor ism6hg256x returns wrong values via the shell
+* :github:`106872` - ethernet: dwmac: no multicast packets are received
+* :github:`106906` - Fix CSI data overflow issue
+* :github:`106971` - hardfault on boot with samples/hello_world for old flash dts layout NXP platforms
+* :github:`106984` - Regression in net/ethernet.h: C++ build failure (invalid cast from const void \*)
+* :github:`106991` - net: tcp: use-after-free in net_tcp_foreach() causes bus fault
+* :github:`107061` - settings: runtime: ``settings_runtime_set`` crashes when ``h_set`` is NULL
+* :github:`107067` - Sensor:Driver:ST: lsm6dsvxxxx - IRQ pin goes high before GPIO IRQ is set
+* :github:`107081` - McuMgr fs_mgmt_file_upload handler does not check partial writes to filesystem
+* :github:`107105` - Sensor:Driver:ST: lsm6dsvxxxx - setting the SFLP changes the ODR for mag and accel
+* :github:`107201` - drivers: ethernet: esp32: DMA buffer processing skips some buffers if multiple ready
+* :github:`107302` - Secure Storage not enabling ``PSA_CRYPTO``
+* :github:`107355` - stm32: H7RS: backup access for reading some RTC registers
+* :github:`107388` - mcxw7x ieee driver / OT samples: DUT can not attach to network when SED/SSED
+* :github:`107398` - OpenThread Border Router cannot forward inbound multicast packets on ethernet
+* :github:`107412` - mcause: 2, Illegal instruction on ESP32-C3 when using localtime_r with tzset()
+* :github:`107422` - ESP32S3 PSRAM is not working properly: only work in octal+40M
+* :github:`107442` - samples/drivers/adc/adc_dt prints garbage data on ADCs with <= 16-bit buffer
+* :github:`107540` - esp32c5_devkitc psram size
+* :github:`107585` - soc: st: stm32h7x: NUM_IRQS computed too small since Zephyr 4.4, causing build failure
+* :github:`107589` - net: dns: Forward all DNS packets if callback is installed still not functional
+* :github:`107594` - mgmt: mcumgr: grp: img_mgmt: Non-progressive erase in swap using offset mode erases out of bounds
+* :github:`107621` - Flashing MAX32 devices with OpenOCD picks first connected device and ignores ``--serial`` option
+* :github:`107627` - STM32 F4 with external USB PHY fails to build
+* :github:`107632` - MAX32 SPI driver race condition leads to timed out transceive transactions
+* :github:`107675` - stm32: nucleo-wba65ri 'ns' variant fails to boot
+* :github:`107773` - Stepper: adi_tmc: Build fails with unresolved function read_actual_position()
+* :github:`107809` - BusFault in mcumgr_serial_process_frag() when net_buf allocation fails
+* :github:`107814` - samples: net: HTTP server configuration is broken
+* :github:`107900` - net: ipv6: Neighbor Discovery packets validation is incorrect
+* :github:`107908` - Fix missing ESP32-C5 uart test coverage
+* :github:`107920` - net: icmp: assert triggered sending icmp echo response with CONFIG_NET_STATISTICS=y
+* :github:`107938` - drivers: sdhc: sam_hsmci: Initialize variables
+* :github:`108004` - drivers: entropy: stm32: bad locking sequence
+* :github:`108035` - STM32WBAx : Thread GRL tests failure due to 15.4 driver issue
+* :github:`108258` - mapped-partition linker fails with non-XIP boot
+* :github:`108267` - STM32 TF-M regression.sh script corrupted after 'west flash'
+* :github:`108285` - PM issues regarding STM32WB09 in Zephyr v4.4.0
+* :github:`108391` - flash_shell does not consider erase command size argument
+* :github:`108466` - net: sockets: tls: ``addr`` may be used uninitialized
+* :github:`108559` - IP address parsing issue
+* :github:`108631` - tests/lib/devicetree/api_ext fails to build for some targets
+* :github:`108633` - IRK is not sent to controller when extended advertisement enabled but started via bt_le_adv_start
+* :github:`108636` - tests/subsys/zbus/proxy_agent/ipc_backend fails for nrf5340bsim//cpunet
+* :github:`108680` - drivers.flash.common.test_storage_partition fails for nrf54l15bsim/nrf54l15/cpuapp
+* :github:`108681` - Broken link in release note of Zephyr 4.4
+* :github:`108737` - Update MCUboot to v2.4.0 release
+* :github:`108785` - Bluetooth: ESP32-S3 + iOS: HCI 0x3D MIC failure on every reconnect after LE SC pair
+* :github:`108835` - adin2111: Communication gets stuck after high bandwidth transfer
+* :github:`108846` - Validate DNS rdata length in dns_unpack_answer
+* :github:`108848` - wifi: nrf70: Missing bounds check on TWT event buffer
+* :github:`108915` - modem: cmux: user pipe flow control stuck
+* :github:`108963` - net: lwm2m: URI string may be unterminated in FW pull mode
+* :github:`109053` - native_sim: FUSE files are opened write-only
+* :github:`109188` - drivers: ethernet: esp32: unused driver static function when ref_clk_output_gpios is not used
+* :github:`109257` - xtensa: mpu: fix arch_buffer_validate() if overflow
+* :github:`109325` - soc: esp32: abort() while using sleep-hold-en flag
+* :github:`109497` - OpenThread Border Router - Incorrect computation of IPV6 packet checksum
+* :github:`109515` - MAX32 USB support broken for some transfer types on Zephyr 4.4
+* :github:`109577` - esp32: gpio: gpio overflow due to BIT operation
+* :github:`109620` - Bluetooth: Controller: Fix OOB read in ISOAL
+* :github:`109625` - net: sockets/tls: validate buffer in peer_connection_id_value_get
+* :github:`109652` - drivers: mcux_flexcomm: missing init_common() on PM_DEVICE_ACTION_RESUME and SUSPEND for I2C, UART, I2S, SPI
+* :github:`109759` - drivers: can: mcux: flexcan: Fix off-by-one error in MB IRQ handling
+* :github:`109848` - Usage fault due to unaligned access in BLE Mesh on MCXW23
+* :github:`109857` - posix: mqueue: fix integer overflow in mq_open() buffer allocation
+* :github:`109860` - ESP32 PSRAM may abort() when cache invalidate is called
+* :github:`109869` - Espressif's esptool may fail depending on elf segment alignment
+* :github:`109899` - STM32 ADC differential channel issue
+* :github:`110019` - pm: esp32: GPIO_INT_WAKEUP flag usage with CONFIG_INPUT
+* :github:`110032` - fs: ext2: validate directory entry structure before traversal #108226
+* :github:`110079` - Backport 108049 [arm64: Fix clang unused warnings in mmu.c] to v4.4-branch
 
 .. _zephyr_4.4.0:
 
