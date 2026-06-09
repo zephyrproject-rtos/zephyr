@@ -13,4 +13,11 @@
 				 <PC7D_SERCOM1_PAD3>;
 		};
 	};
+
+	sercom0_i2c_default: sercom0_i2c_default {
+		group1 {
+			pinmux = <PC0D_SERCOM0_PAD0>,
+				 <PC1D_SERCOM0_PAD1>;
+		};
+	};
 };
