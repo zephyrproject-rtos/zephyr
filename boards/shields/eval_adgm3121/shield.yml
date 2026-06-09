@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: eval_adgm3121
+  full_name: Analog Devices EVAL-ADGM3121 DPDT MEMS RF Switch Shield
+  vendor: adi
+  supported_features:
+    - gpio
