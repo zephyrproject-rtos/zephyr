@@ -1,0 +1,16 @@
+#
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Bluetooth: Periodic Advertising Synchronization Connection"
+
+config SAMPLE_PERIODIC_SYNC_CONN_PEER_NAME
+	string "Periodic advertising connection peer name"
+	default "PAwR conn sample"
+	help
+	  Device name advertised by the peer that this sample synchronizes
+	  to after the initial regular connection.
+
+source "Kconfig.zephyr"
