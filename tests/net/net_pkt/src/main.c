@@ -20,7 +20,7 @@
 
 static uint8_t mac_addr[sizeof(struct net_eth_addr)];
 static struct net_if *eth_if;
-static uint8_t small_buffer[512];
+static uint8_t small_buffer[CONFIG_NET_BUF_DATA_SIZE * 2 + 3];
 
 /************************\
  * FAKE ETHERNET DEVICE *
