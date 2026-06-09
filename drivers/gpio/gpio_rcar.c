@@ -14,6 +14,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/renesas_rcar_generic.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -31,6 +32,7 @@ struct gpio_rcar_cfg {
 	init_func_t init_func;
 	const struct device *clock_dev;
 	rcar_generic_clk_t mod_clk;
+	const struct pinctrl_dev_config *pcfg;
 };
 
 struct gpio_rcar_data {
@@ -255,6 +257,11 @@ static int gpio_rcar_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if ((ret != 0) && (ret != -ENOENT)) {
+		return ret;
+	}
+
 	ret = clock_control_on(config->clock_dev, RCAR_CLOCK_SUBSYS(config->mod_clk));
 
 	if (ret < 0) {
@@ -288,13 +295,15 @@ static DEVICE_API(gpio, gpio_rcar_driver_api) = {
 
 /* Device Instantiation */
 #define GPIO_RCAR_INIT(n)					      \
+	PINCTRL_DT_INST_DEFINE(n);				      \
 	static void gpio_rcar_##n##_init(const struct device *dev);   \
 	static const struct gpio_rcar_cfg gpio_rcar_cfg_##n = {	      \
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)), \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),	      \
 		.init_func = gpio_rcar_##n##_init,		      \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),   \
-		.mod_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 0)      \
+		.mod_clk = RCAR_DT_INST_CLOCKS_CELL_BY_IDX(n, 0),     \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n)	      \
 	};							      \
 	static struct gpio_rcar_data gpio_rcar_data_##n;	      \
 								      \
