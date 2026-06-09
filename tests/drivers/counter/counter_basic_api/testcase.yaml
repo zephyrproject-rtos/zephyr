@@ -63,6 +63,15 @@ tests:
     timeout: 600
     extra_configs:
       - CONFIG_COUNTER_MCUX_LPTMR_ALARM=y
+  drivers.counter.basic_api.mcux_wake_timer_alarm:
+    tags:
+      - drivers
+      - counter
+    filter: dt_compat_enabled("nxp,wake-timer")
+    depends_on: counter
+    timeout: 600
+    extra_configs:
+      - CONFIG_COUNTER_MCUX_WAKE_TIMER_ALARM=y
   drivers.counter.basic_api.mchp_tcc1:
     tags:
       - drivers
