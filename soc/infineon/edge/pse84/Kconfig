@@ -22,6 +22,11 @@ config SOC_SERIES_PSE84_M33
 	select CPU_HAS_ARM_SAU
 	select ARM_TRUSTZONE_M
 	select ARCH_HAS_TRUSTED_EXECUTION
+	# soc_early_init_hook() in soc_pse84_m33_s.c calls Cy_WDT_Unlock()/Lock()
+	# (out-of-line in cy_wdt.c) only in the secure M33 image; pull the PDL WDT
+	# sources in for that image so it links. The non-secure M33 and CM55
+	# images do not run that hook and do not need the WDT sources.
+	select USE_INFINEON_WDT if TRUSTED_EXECUTION_SECURE
 
 config SOC_SERIES_PSE84_M55
 	select CPU_CORTEX_M55
