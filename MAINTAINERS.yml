@@ -5322,17 +5322,41 @@ STM32 Platforms:
     - samples/boards/st/
   files-exclude:
     - boards/st/*wb*/
+    - boards/st/stm32mp*/
     - drivers/bluetooth/hci/*stm32*.c
+    - drivers/clock_control/clock_stm32_ll_mp*.c
     - drivers/ieee802154/*stm32*.c
+    - soc/st/stm32/stm32mp*/
     - soc/st/stm32/stm32wb*/
   labels:
     - "platform: STM32"
   description: >-
-    STM32 SOCs, dts files and related drivers. ST development boards.
+    STM32 SOCs, dts files and related drivers. ST MCU development boards.
   tests:
     - sample.boards.stm32
 
-STM32 Wireless Platforms:
+STM32 Platforms (MPU):
+  status: maintained
+  maintainers:
+    - erwango
+    - arnopo
+  collaborators:
+    - avolmat-st
+    - etienne-lms
+    - juickar
+  files:
+    - boards/st/stm32mp*/
+    - dts/arm/st/mp*/
+    - drivers/clock_control/clock_stm32_ll_mp*.c
+    - include/zephyr/dt-bindings/clock/stm32mp*_clock.h
+    - include/zephyr/dt-bindings/reset/stm32mp*_reset.h
+    - soc/st/stm32/stm32mp*/
+  labels:
+    - "platform: STM32"
+  description: >-
+    STM32MP1, STM32MP13 and STM32MP2 SOCs, dts files and development boards.
+
+STM32 Platforms (Wireless):
   status: maintained
   maintainers:
     - erwango
