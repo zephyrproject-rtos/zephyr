@@ -121,6 +121,22 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_GateLPUART1);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c0))
+	/* Switch PERIPH_GROUP0 to FRO12M for LPI2C0 */
+	CLOCK_AttachClk(kFRO12M_to_PERIPH_GROUP0);
+	/* Set PERIPH_GROUP0 clock divider to value 1 */
+	CLOCK_SetClockDiv(kCLOCK_DivPeriphGroup0, 1u);
+	CLOCK_EnableClock(kCLOCK_GatePERIPH_GROUP0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c1))
+	/* Switch PERIPH_GROUP1 to FRO12M for LPI2C1 */
+	CLOCK_AttachClk(kFRO12M_to_PERIPH_GROUP1);
+	/* Set PERIPH_GROUP1 clock divider to value 1 */
+	CLOCK_SetClockDiv(kCLOCK_DivPeriphGroup1, 1u);
+	CLOCK_EnableClock(kCLOCK_GatePERIPH_GROUP1);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(aon_lpuart0))
 	CLOCK_AttachClk(kFROdiv1_to_AON_COM);
 	CLOCK_SetClockDiv(kCLOCK_DIVAonCMP, 1U);
