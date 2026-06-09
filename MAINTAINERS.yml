@@ -5447,7 +5447,7 @@ STM32 Platforms (Wireless):
   files:
     - boards/shields/x_nucleo_bnrg2a1/
     - boards/shields/x_nucleo_idb05a1/
-    - boards/shields/x_nucleo_wb05kn1/
+    - boards/shields/x_nucleo_wb*/
     - boards/st/*wb*/
     - drivers/bluetooth/hci/*stm32*.c
     - drivers/bluetooth/hci/hci_spi_st.c
