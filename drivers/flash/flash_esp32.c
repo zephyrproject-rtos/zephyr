@@ -710,6 +710,17 @@ static const struct flash_parameters *flash_esp32_get_parameters(const struct de
 
 static int flash_esp32_init(const struct device *dev)
 {
+#ifndef CONFIG_MCUBOOT
+	/*
+	 * Switch the main flash chip to OS-aware functions now that the
+	 * scheduler is running. These were left as the no-OS (cache-suspend)
+	 * functions during early boot in esp_flash_config(), because the
+	 * OS-aware path can guard flash access with a mutex. MCUboot runs
+	 * single-threaded and keeps the no-OS functions.
+	 */
+	esp_flash_app_init();
+#endif
+
 #ifdef CONFIG_MULTITHREADING
 	struct flash_esp32_dev_data *const data = dev->data;
 
