@@ -76,6 +76,20 @@ static void systeminit_enable_peri(void)
 
 void soc_early_init_hook(void)
 {
+	/* The ROM hands control to the application with the WDT armed and a
+	 * short match value, which would reset the SoC before any POST_KERNEL
+	 * driver (including the WDT driver) can disable it. Quiesce the WDT
+	 * here, in the earliest available SoC hook, so subsequent boot stages
+	 * run reliably. A later wdt_setup() call re-enables the IP cleanly.
+	 * WDT_LOCK[31:30] is locked out of reset on PSE84 (TRM 15.1.90), so
+	 * Cy_WDT_Unlock() / Cy_WDT_Lock() must bracket every WDT register
+	 * write here.
+	 */
+	Cy_WDT_Unlock();
+	Cy_WDT_Disable();
+	Cy_WDT_MaskInterrupt();
+	Cy_WDT_Lock();
+
 	systeminit_enable_clocks();
 	systeminit_enable_peri();
 
