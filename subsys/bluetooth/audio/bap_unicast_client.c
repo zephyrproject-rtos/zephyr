@@ -2024,7 +2024,7 @@ static int unicast_client_add_qos(struct bt_bap_ep *ep, struct net_buf_simple *b
 	sys_put_le24(qos->interval, req->interval);
 	req->framing = qos->framing;
 	req->phy = qos->phy;
-	req->sdu = qos->sdu;
+	req->sdu = sys_cpu_to_le16(qos->sdu);
 	req->rtn = qos->rtn;
 	req->latency = sys_cpu_to_le16(qos->latency);
 	sys_put_le24(qos->pd, req->pd);
