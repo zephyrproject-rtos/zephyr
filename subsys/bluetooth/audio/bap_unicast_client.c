@@ -984,13 +984,18 @@ static bool unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_sim
 	ep->receiver_ready = false;
 
 	if (buf->len < sizeof(*qos)) {
-		LOG_ERR("QoS status too short");
+		LOG_DBG("QoS status too short");
 		return false;
 	}
 
 	stream = ep->stream;
 	if (stream == NULL) {
-		LOG_ERR("No stream active for endpoint");
+		LOG_DBG("No stream active for endpoint");
+		return false;
+	}
+
+	if (stream->group == NULL) {
+		LOG_DBG("Stream %p is not configured to a group", stream);
 		return false;
 	}
 
