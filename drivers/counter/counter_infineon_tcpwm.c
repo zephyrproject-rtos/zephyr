@@ -243,25 +243,13 @@ static int ifx_tcpwm_counter_set_top_value(const struct device *dev,
 
 	struct ifx_tcpwm_counter_data *const data = dev->data;
 	const struct ifx_tcpwm_counter_config *const config = dev->config;
+	int ret = 0;
 
-	data->top_value_cfg_counter = *cfg;
-
-	/* Check new top value limit */
 	if (cfg->ticks > config->counter_info.max_top_value) {
 		return -ENOTSUP;
 	}
 
-	/* Checks if new period value is not less then old period value */
-	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
-		data->value = 0u;
-	} else {
-		/* timer_configure resets timer counter register to value
-		 * defined in config structure 'data->value', so update
-		 * counter value with current value of counter (read by
-		 * Cy_TCPWM_Counter_GetCounter function).
-		 */
-		data->value = Cy_TCPWM_Counter_GetCounter(config->reg_base, config->index);
-	}
+	data->top_value_cfg_counter = *cfg;
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	Cy_TCPWM_Counter_SetPeriod(config->reg_base, config->index, cfg->ticks);
@@ -269,16 +257,32 @@ static int ifx_tcpwm_counter_set_top_value(const struct device *dev,
 	Cy_TCPWM_Block_SetPeriod(config->reg_base, config->index, cfg->ticks);
 #endif
 
-	/* Register an top_value terminal count event callback handler if
-	 * callback is not NULL.
-	 */
+	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		data->value = 0u;
+		Cy_TCPWM_Counter_SetCounter(config->reg_base, config->index, 0u);
+	} else {
+		uint32_t current =
+			Cy_TCPWM_Counter_GetCounter(config->reg_base, config->index);
+
+		if (current >= cfg->ticks) {
+			if (cfg->flags & COUNTER_TOP_CFG_RESET_WHEN_LATE) {
+				data->value = 0u;
+				Cy_TCPWM_Counter_SetCounter(config->reg_base,
+							    config->index, 0u);
+			}
+			ret = -ETIME;
+		} else {
+			data->value = current;
+		}
+	}
+
 	if (cfg->callback != NULL) {
 		counter_enable_event(dev, COUNTER_IRQ_TERMINAL_COUNT, true);
 	} else {
 		counter_enable_event(dev, COUNTER_IRQ_TERMINAL_COUNT, false);
 	}
 
-	return 0;
+	return ret;
 }
 
 static uint32_t ifx_tcpwm_counter_get_top_value(const struct device *dev)
