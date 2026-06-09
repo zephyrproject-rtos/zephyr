@@ -538,6 +538,7 @@
 
 		watchdog0: watchdog@4240c000 {
 			compatible = "infineon,watchdog";
+			infineon,wdt-lock;
 			reg = <0x4240c000 0x180>;
 			interrupts = <54 4>;
 			status = "disabled";

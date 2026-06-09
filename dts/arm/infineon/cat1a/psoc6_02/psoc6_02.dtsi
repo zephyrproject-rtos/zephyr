@@ -357,6 +357,7 @@
 
 		watchdog0: watchdog@40260180 {
 			compatible = "infineon,watchdog";
+			infineon,wdt-lock;
 			reg = <0x40260180 0xc>;
 			interrupts = <22 6>;
 			status = "disabled";

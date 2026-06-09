@@ -151,6 +151,7 @@
 
 		watchdog0: watchdog@4020c000 {
 			compatible = "infineon,watchdog";
+			infineon,wdt-lock;
 			reg = <0x4020c000 0x10>;
 			interrupts = <15 4>;
 			status = "disabled";
