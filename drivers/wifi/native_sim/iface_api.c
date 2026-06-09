@@ -279,41 +279,23 @@ void wifi_if_init(struct net_if *iface)
 
 	ctx->if_index = net_if_get_by_iface(iface);
 
-#if defined(CONFIG_WIFI_NATIVE_SIM_RANDOM_MAC)
-	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
-	gen_random_mac(ctx->mac_addr, 0x00, 0x00, 0x5E);
-
-	ctx->mac_addr[3] = 0x00;
-	ctx->mac_addr[4] = 0x53;
-
-	/* The TUN/TAP setup script will by default set the MAC address of host
-	 * interface to 00:00:5E:00:53:FF so do not allow that.
+	/* Fallback MAC from devicetree: either a random one or the static
+	 * "local-mac-address" already copied into ctx->mac_addr by the device
+	 * definition. It is overridden below with the host interface MAC.
 	 */
-	if (ctx->mac_addr[5] == 0xff) {
-		ctx->mac_addr[5] = 0x01;
-	}
-#else
-	/* Difficult to configure MAC addresses any sane way if we have more
-	 * than one network interface.
-	 */
-	BUILD_ASSERT(CONFIG_WIFI_NATIVE_SIM_INTERFACE_COUNT == 1,
-		     "Cannot have static MAC if interface count > 1");
+	if (ctx->random_mac) {
+		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+		gen_random_mac(ctx->mac_addr, 0x00, 0x00, 0x5E);
 
-	if (CONFIG_WIFI_NATIVE_SIM_MAC_ADDR[0] != 0) {
-		if (net_bytes_from_str(ctx->mac_addr, sizeof(ctx->mac_addr),
-				       CONFIG_WIFI_NATIVE_SIM_MAC_ADDR) < 0) {
-			LOG_ERR("Invalid MAC address %s",
-				CONFIG_WIFI_NATIVE_SIM_MAC_ADDR);
+		ctx->mac_addr[3] = 0x00;
+		ctx->mac_addr[4] = 0x53;
+
+		/* The TUN/TAP setup script will by default set the MAC address of
+		 * the host interface to 00:00:5E:00:53:FF so do not allow that.
+		 */
+		if (ctx->mac_addr[5] == 0xff) {
+			ctx->mac_addr[5] = 0x01;
 		}
-	}
-#endif
-
-	/* If we have only one network interface, then use the name
-	 * defined in the Kconfig directly. This way there is no need to
-	 * change the documentation etc. and break things.
-	 */
-	if (CONFIG_WIFI_NATIVE_SIM_INTERFACE_COUNT == 1) {
-		ctx->if_name_host = CONFIG_WIFI_NATIVE_SIM_DRV_NAME;
 	}
 
 	LOG_DBG("Interface %p using \"%s\"", iface, ctx->if_name_host);

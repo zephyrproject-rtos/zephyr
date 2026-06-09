@@ -516,14 +516,11 @@ static void sleep_msec(int msec)
 }
 
 void *host_wifi_drv_init(void *context, const char *iface_name, size_t stack_size,
-			 const char *config_file, const char *debug_file_path,
-			 int wpa_debug_level)
+			 const char *debug_file_path, int wpa_debug_level)
 {
 	static struct api_ctx args;
 	pthread_attr_t attr;
 	int ret, max_wait;
-
-	ARG_UNUSED(config_file);
 
 	memset(&args, 0, sizeof(args));
 	args.zephyr_wpa_ctx = context;

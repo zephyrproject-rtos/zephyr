@@ -21,8 +21,7 @@ int eth_promisc_mode(const char *if_name, bool enable);
 
 /* Interface to the host-compiled nl80211 driver adapter. */
 void *host_wifi_drv_init(void *ctx, const char *iface_name, size_t stack_size,
-			 const char *config_file, const char *debug_file,
-			 int wpa_debug_level);
+			 const char *debug_file, int wpa_debug_level);
 void host_wifi_drv_deinit(void *priv);
 int host_wifi_drv_get_event_fd(void *priv);
 int host_wifi_drv_get_wiphy(void *priv, void **bands, int *count);

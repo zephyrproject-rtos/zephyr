@@ -50,7 +50,6 @@ void *wifi_drv_init(void *supp_drv_if_ctx, const char *iface_name,
 	if (!started) {
 		ctx->host_context = host_wifi_drv_init(ctx->supplicant_drv_ctx,
 						       ctx->if_name_host, 0,
-						       CONFIG_WIFI_NATIVE_SIM_SUPPLICANT_CONF_FILE,
 						       CONFIG_WIFI_NATIVE_SIM_SUPPLICANT_LOG_FILE,
 						       CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL);
 		if (ctx->host_context == NULL) {
