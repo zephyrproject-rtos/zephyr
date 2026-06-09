@@ -624,6 +624,7 @@ config GEN_SW_ISR_TABLE
 choice GEN_SW_ISR_TABLE_TYPE
 	prompt "Allows to chose how ISR table is implemented"
 	depends on GEN_SW_ISR_TABLE
+	default GEN_SW_ISR_TABLE_SWITCH if NRFX_CLIC
 	default GEN_SW_ISR_TABLE_ARRAY
 	help
 	  CONFIG_GEN_SW_ISR_TABLE_ARRAY is a default option.
