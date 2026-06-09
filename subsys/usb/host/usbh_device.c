@@ -10,6 +10,7 @@
 #include "usbh_ch9.h"
 #include "usbh_class.h"
 #include "usbh_class_api.h"
+#include "usbh_desc.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_dev, CONFIG_USBH_LOG_LEVEL);
@@ -130,8 +131,18 @@ static void assign_ep_desc_ptr(struct usb_device *const udev,
 {
 	uint8_t idx = USB_EP_GET_IDX(ep) & 0xF;
 
-	if (USB_EP_DIR_IS_IN(ep)) {
-		udev->ep_in[idx].desc = ptr;
+	/* Control endpoints only need one `struct usb_host_ep`.
+	 * If both directions are needed for some vendors controllers, this needs to be improved.
+	 */
+	if (USB_EP_DIR_IS_IN(ep) || (idx == 0)) {
+		if (idx == 0) {
+			uint16_t mps = ptr != NULL ?
+					((struct usb_ep_descriptor *)ptr)->wMaxPacketSize : 0;
+
+			udev->ep_in[idx].control_mps = mps;
+		} else {
+			udev->ep_in[idx].desc = ptr;
+		}
 	} else {
 		udev->ep_out[idx].desc = ptr;
 	}
@@ -141,6 +152,10 @@ static int handle_ep_op(struct usb_device *const udev,
 			const enum ep_op op, const uint8_t ep,
 			struct usb_ep_descriptor *const ep_desc)
 {
+	struct usbh_context *const uhs_ctx = udev->ctx;
+	const void *old_desc_prt;
+	int err;
+
 	switch (op) {
 	case EP_OP_TEST:
 		break;
@@ -149,14 +164,67 @@ static int handle_ep_op(struct usb_device *const udev,
 			return -ENOTSUP;
 		}
 
-		assign_ep_desc_ptr(udev, ep_desc->bEndpointAddress, ep_desc);
+		old_desc_prt = usbh_desc_get_endpoint(udev, ep);
+		assign_ep_desc_ptr(udev, ep, ep_desc);
+
+		err = uhc_ep_enable(uhs_ctx->dev, udev, ep);
+		if (err != 0) {
+			assign_ep_desc_ptr(udev, ep, (void *const)old_desc_prt);
+			return err;
+		}
 		break;
 	case EP_OP_DOWN:
+		err = uhc_ep_disable(uhs_ctx->dev, udev, ep);
+		if (err != 0) {
+			return err;
+		}
+
 		assign_ep_desc_ptr(udev, ep, NULL);
 		break;
 	}
 
 	return 0;
+}
+
+
+static int enable_control_ep(struct usb_device *const udev)
+{
+	int err;
+	struct usb_ep_descriptor ep_desc;
+
+	ep_desc.wMaxPacketSize = udev->dev_desc.bMaxPacketSize0;
+
+	err = handle_ep_op(udev, EP_OP_UP, 0, &ep_desc);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
+}
+
+static int disable_control_ep(struct usb_device *const udev)
+{
+	int err;
+
+	err = handle_ep_op(udev, EP_OP_DOWN, 0, NULL);
+	if (err != 0) {
+		return err;
+	}
+
+	return 0;
+}
+
+static void disable_all_eps(struct usb_device *const udev)
+{
+	k_mutex_lock(&udev->mutex, K_FOREVER);
+
+	(void)disable_control_ep(udev);
+	for (uint8_t i = 1; i < ARRAY_SIZE(udev->ep_out); i++) {
+		(void)handle_ep_op(udev, EP_OP_DOWN, USB_EP_DIR_OUT | i, NULL);
+		(void)handle_ep_op(udev, EP_OP_DOWN, USB_EP_DIR_IN | i, NULL);
+	}
+
+	k_mutex_unlock(&udev->mutex);
 }
 
 static int device_interface_modify(struct usb_device *const udev,
@@ -211,6 +279,24 @@ static int device_interface_modify(struct usb_device *const udev,
 	return found_iface ? 0 : -ENODATA;
 }
 
+int usbh_device_default_interface_init(struct usb_device *const udev,
+				       const uint8_t iface)
+{
+	int err;
+
+	err = k_mutex_lock(&udev->mutex, K_NO_WAIT);
+	if (err) {
+		LOG_ERR("Failed to lock USB device");
+		return err;
+	}
+
+	err = device_interface_modify(udev, EP_OP_UP, iface, 0);
+
+	k_mutex_unlock(&udev->mutex);
+
+	return err;
+}
+
 int usbh_device_interface_set(struct usb_device *const udev,
 			      const uint8_t iface, const uint8_t alt,
 			      const bool dry)
@@ -254,14 +340,14 @@ int usbh_device_interface_set(struct usb_device *const udev,
 	/* Shutdown current interface alternate */
 	err = device_interface_modify(udev, EP_OP_DOWN, iface, cur_alt);
 	if (err) {
-		LOG_ERR("Failed to shutdown interface %u alternate %u", iface, alt);
+		LOG_ERR("Failed to shutdown interface %u alternate %u", iface, cur_alt);
 		goto error;
 	}
 
 	/* Setup new interface alternate */
 	err = device_interface_modify(udev, EP_OP_UP, iface, alt);
 	if (err) {
-		LOG_ERR("Failed to setup interface %u alternate %u", iface, cur_alt);
+		LOG_ERR("Failed to setup interface %u alternate %u", iface, alt);
 		goto error;
 	}
 
@@ -345,6 +431,8 @@ static int parse_configuration_descriptor(struct usb_device *const udev)
 
 static void reset_configuration(struct usb_device *const udev)
 {
+	disable_all_eps(udev);
+
 	/* Reset all endpoint pointers */
 	memset(udev->ep_in, 0, sizeof(udev->ep_in));
 	memset(udev->ep_out, 0, sizeof(udev->ep_out));
@@ -507,6 +595,7 @@ void usbh_device_connect(struct usbh_context *const ctx,
 			ctx->root = NULL;
 		}
 
+		(void)disable_all_eps(udev);
 		usbh_device_free(udev);
 		return;
 	}
@@ -522,6 +611,7 @@ void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
 		ctx->root = NULL;
 	}
 
+	(void)disable_all_eps(udev);
 	usbh_device_free(udev);
 
 	LOG_DBG("Device removed");
@@ -548,7 +638,7 @@ int usbh_device_init(struct usb_device *const udev)
 		err = uhc_bus_reset(uhs_ctx->dev);
 		if (err) {
 			LOG_ERR("Failed to signal bus reset");
-			return err;
+			goto error;
 		}
 	}
 
@@ -557,6 +647,12 @@ int usbh_device_init(struct usb_device *const udev)
 	 * device descriptor is read.
 	 */
 	udev->dev_desc.bMaxPacketSize0 = 8;
+	err = enable_control_ep(udev);
+	if (err != 0) {
+		LOG_ERR("Failed to enable control endpoint");
+		goto error;
+	}
+
 	err = usbh_req_desc_dev(udev, 8, &udev->dev_desc);
 	if (err) {
 		LOG_ERR("Failed to read device descriptor");
@@ -566,6 +662,20 @@ int usbh_device_init(struct usb_device *const udev)
 	err = validate_device_mps0(udev);
 	if (err) {
 		goto error;
+	}
+
+	if (udev->dev_desc.bMaxPacketSize0 != 8) {
+		err = disable_control_ep(udev);
+		if (err != 0) {
+			LOG_ERR("Failed to disable control endpoint");
+			goto error;
+		}
+
+		err = enable_control_ep(udev);
+		if (err != 0) {
+			LOG_ERR("Failed to re-enable control endpoint");
+			goto error;
+		}
 	}
 
 	err = usbh_req_desc_dev(udev, sizeof(udev->dev_desc), &udev->dev_desc);

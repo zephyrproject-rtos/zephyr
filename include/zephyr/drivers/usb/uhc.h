@@ -64,8 +64,19 @@ struct usb_host_interface {
 };
 
 struct usb_host_ep {
-	/** Pointer to the endpoint descriptor */
-	struct usb_ep_descriptor *desc;
+	/** Endpoint specific info */
+	union {
+		/** Pointer to the endpoint descriptor */
+		struct usb_ep_descriptor *desc;
+		/** Control endpoint maximum packet size */
+		uint16_t control_mps;
+	};
+	/** Pointer to USB device */
+	struct usb_device *udev;
+	/** Opaque controller endpoint handle, NULL if not used */
+	void *controller_ep;
+	/** Endpoint is enabled */
+	uint32_t enabled : 1;
 };
 
 /**
@@ -126,12 +137,6 @@ struct uhc_transfer {
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */
 	uint8_t ep;
-	/** Endpoint type */
-	uint8_t type;
-	/** Maximum packet size */
-	uint16_t mps;
-	/** Interval, used for periodic transfers only */
-	uint16_t interval;
 	/** Start frame, used for periodic transfers only */
 	uint16_t start_frame;
 	/** Flag marks request buffer is queued */
@@ -195,6 +200,7 @@ struct uhc_event {
 	sys_snode_t node;
 	/** Event type */
 	enum uhc_event_type type;
+	/** Event type specific info */
 	union {
 		/** Event status value, if any */
 		int status;
@@ -307,6 +313,8 @@ struct uhc_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
+	int (*ep_enable)(const struct device *dev, struct usb_host_ep *hep);
+	int (*ep_disable)(const struct device *dev, struct usb_host_ep *hep);
 	int (*ep_enqueue)(const struct device *dev,
 			  struct uhc_transfer *const xfer);
 	int (*ep_dequeue)(const struct device *dev,
@@ -499,6 +507,32 @@ struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
  * @param[in] buf    Pointer to UHC request buffer
  */
 void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
+
+/**
+ * @brief Enable host endpoint at controller level
+ *
+ * Prepare controller resources for an endpoint.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_ep_enable(const struct device *dev, struct usb_device *const udev, uint8_t ep);
+
+/**
+ * @brief Disable host endpoint at controller level
+ *
+ * Release controller resources for an endpoint.
+ *
+ * @param[in] dev    Pointer to device struct of the driver instance
+ * @param[in] udev   Pointer to USB device
+ * @param[in] ep     Endpoint address
+ *
+ * @return 0 on success, all other values should be treated as error.
+ */
+int uhc_ep_disable(const struct device *dev, struct usb_device *const udev, uint8_t ep);
 
 /**
  * @brief Queue USB host controller transfer

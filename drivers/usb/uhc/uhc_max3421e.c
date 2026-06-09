@@ -817,6 +817,22 @@ static int max3421e_dequeue(const struct device *dev,
 	return 0;
 }
 
+static int max3421e_ep_enable(const struct device *dev, struct usb_host_ep *hep)
+{
+	(void)dev;
+	(void)hep;
+
+	return 0;
+}
+
+static int max3421e_ep_disable(const struct device *dev, struct usb_host_ep *hep)
+{
+	(void)dev;
+	(void)hep;
+
+	return 0;
+}
+
 static int max3421e_reset(const struct device *dev)
 {
 	const struct max3421e_config *config = dev->config;
@@ -1119,6 +1135,8 @@ static const struct uhc_api max3421e_uhc_api = {
 	.bus_suspend = max3421e_bus_suspend,
 	.bus_resume = max3421e_bus_resume,
 
+	.ep_enable = max3421e_ep_enable,
+	.ep_disable = max3421e_ep_disable,
 	.ep_enqueue = max3421e_enqueue,
 	.ep_dequeue = max3421e_dequeue,
 };
