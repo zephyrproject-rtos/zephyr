@@ -15,6 +15,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_fake_leds: fake-leds {
+			compatible = "zephyr,fake-leds";
+
+			fake_led: fake-led {
+				label = "Fake LED";
+			};
+		};
+
 		test_dac: dac@dac0dac0 {
 			compatible = "vnd,dac";
 			reg = <0xdac0dac0 0x1000>;
