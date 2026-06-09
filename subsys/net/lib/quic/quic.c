@@ -2762,6 +2762,24 @@ static int quic_stream_ref(struct quic_stream *stream)
 	return ref + 1;
 }
 
+/* Take a reference only if the stream is still alive (refcount > 0). Unlike
+ * quic_stream_ref(), this never resurrects a stream whose refcount has already
+ * dropped to 0 (i.e. is being freed). Returns true if a reference was taken.
+ */
+static bool quic_stream_ref_if_used(struct quic_stream *stream)
+{
+	atomic_val_t ref;
+
+	do {
+		ref = atomic_get(&stream->refcount);
+		if (ref == 0) {
+			return false;
+		}
+	} while (!atomic_cas(&stream->refcount, ref, ref + 1));
+
+	return true;
+}
+
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
 static int quic_stream_unref_debug(struct quic_stream *stream, const char *caller, int line)
 #define quic_stream_unref(stream) quic_stream_unref_debug(stream, __func__, __LINE__)
@@ -4087,11 +4105,12 @@ static bool pkt_num_in_ack_ranges(uint64_t pkt_num,
 	return false;
 }
 
-static void quic_detect_lost_packets_locked(struct quic_endpoint *ep,
+static bool quic_detect_lost_packets_locked(struct quic_endpoint *ep,
 					    int pn_space,
 					    uint64_t largest_ack)
 {
 	int64_t  now_ms = k_uptime_get();
+	bool lost_any = false;
 
 	/* RFC 9002 Section 6.1.2: time threshold in milliseconds.
 	 * loss_delay = max(K_TIME_THRESHOLD * SRTT, GRANULARITY)
@@ -4136,6 +4155,7 @@ static void quic_detect_lost_packets_locked(struct quic_endpoint *ep,
 
 		ep->recovery.bytes_in_flight -= info->sent_bytes;
 		info->in_flight = false;
+		lost_any = true;
 
 		if (info->dplpmtud_probe) {
 			quic_dplpmtud_on_probe_lost_locked(ep, info->dplpmtud_probe_size);
@@ -4145,6 +4165,8 @@ static void quic_detect_lost_packets_locked(struct quic_endpoint *ep,
 			info->retransmit_pending = true;
 		}
 	}
+
+	return lost_any;
 }
 
 static bool quic_recovery_take_pending_retransmit(struct quic_endpoint *ep,
@@ -4180,6 +4202,78 @@ static bool quic_recovery_take_pending_retransmit(struct quic_endpoint *ep,
 	return found;
 }
 
+/* Re-advertise the current connection- and stream-level flow-control limits.
+ *
+ * RFC 9000 Section 13.3: MAX_DATA / MAX_STREAM_DATA carry the most recent limit,
+ * so when a packet that may have carried one is lost the current value must be
+ * re-sent. Unlike STREAM frames these control frames are not tracked for
+ * retransmission, so without this a single lost limit update can permanently
+ * stall a flow-control-blocked peer (it has already sent STREAM_DATA_BLOCKED for
+ * the stale limit and will not repeat it).
+ *
+ * Streams are snapshotted under contexts_lock and the updates are sent with the
+ * lock released, matching handle_stream_data_blocked_frame().
+ */
+
+static struct quic_stream *quic_readvertise_snapshot[ARRAY_SIZE(streams)];
+static K_MUTEX_DEFINE(quic_readvertise_lock);
+
+static void quic_readvertise_flow_control(struct quic_endpoint *ep)
+{
+	size_t count = 0;
+	struct quic_context *ctx;
+	struct quic_stream *stream, *tmp;
+
+	(void)quic_send_max_data(ep);
+
+	ctx = quic_find_context(ep);
+	if (ctx == NULL) {
+		return;
+	}
+
+	k_mutex_lock(&quic_readvertise_lock, K_FOREVER);
+
+	/* ctx->streams can be mutated concurrently by stream alloc/free and endpoint
+	 * teardown logic, so hold both locks while walking it. Lock order is
+	 * contexts_lock -> streams_lock, matching quic_context_stream_foreach().
+	 * Pin each snapshotted stream with a reference so it cannot be freed and
+	 * its pool slot reused while the locks are dropped for sending; the
+	 * matching unref is taken after the send below.
+	 */
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+	k_mutex_lock(&streams_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ctx->streams, stream, tmp, node) {
+		if (count >= ARRAY_SIZE(quic_readvertise_snapshot)) {
+			break;
+		}
+
+		if (stream->ep != ep) {
+			continue;
+		}
+
+		/* Only pin live streams; skip any whose refcount already hit
+		 * zero (being freed). Every stream placed in the snapshot has
+		 * exactly one reference taken here, released after the send.
+		 */
+		if (!quic_stream_ref_if_used(stream)) {
+			continue;
+		}
+
+		quic_readvertise_snapshot[count++] = stream;
+	}
+
+	k_mutex_unlock(&streams_lock);
+	k_mutex_unlock(&contexts_lock);
+
+	for (size_t i = 0; i < count; i++) {
+		(void)quic_send_max_stream_data(ep, quic_readvertise_snapshot[i]);
+		(void)quic_stream_unref(quic_readvertise_snapshot[i]);
+	}
+
+	k_mutex_unlock(&quic_readvertise_lock);
+}
+
 static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 					  enum quic_secret_level level,
 					  const struct quic_ack_range *ranges,
@@ -4192,6 +4286,7 @@ static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 	int64_t largest_sent_time = 0;
 	uint64_t largest_ack;
 	struct quic_sent_pkt_info lost;
+	bool readvertise_fc = false;
 
 	if (range_count <= 0) {
 		return;
@@ -4307,7 +4402,7 @@ static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 	}
 
 	/* Run loss detection after processing the ACK */
-	quic_detect_lost_packets_locked(ep, pn_space, largest_ack);
+	readvertise_fc = quic_detect_lost_packets_locked(ep, pn_space, largest_ack);
 
 	/* Reset PTO timer aspackets are moving */
 	ep->recovery.pto_count = 0;
@@ -4316,6 +4411,14 @@ static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 
 	while (quic_recovery_take_pending_retransmit(ep, &lost)) {
 		quic_retransmit_stream_frame(ep, &lost);
+	}
+
+	/* A lost packet may have carried a MAX_DATA / MAX_STREAM_DATA update;
+	 * re-advertise the current limits so a flow-control-blocked peer does
+	 * not deadlock waiting for an update that is never retransmitted.
+	 */
+	if (readvertise_fc) {
+		quic_readvertise_flow_control(ep);
 	}
 
 	(void)quic_dplpmtud_maybe_probe(ep);
