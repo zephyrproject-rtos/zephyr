@@ -93,6 +93,10 @@
 	status = "okay";
 };
 
+&waketimer0 {
+	status = "okay";
+};
+
 &gpio1 {
 	status = "okay";
 };
