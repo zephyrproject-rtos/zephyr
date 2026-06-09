@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-import hashlib
 import logging
 import os
 import re
@@ -16,15 +15,15 @@ from .util import getHashes
 _logger = logging.getLogger(__name__)
 
 
-# ScannerConfig contains settings used to configure how the SPDX
-# Document scanning should occur.
+# ScannerConfig contains settings used to configure how the SBOM
+# scanning should occur.
 @dataclass(eq=True)
 class ScannerConfig:
-    # when assembling a Package's data, should we auto-conclude the
-    # Package's license, based on the licenses of its Files?
-    shouldConcludePackageLicense: bool = True
+    # when assembling a Component's data, should we auto-conclude the
+    # Component's license, based on the licenses of its Files?
+    shouldConcludeComponentLicense: bool = True
 
-    # when assembling a Package's Files' data, should we auto-conclude
+    # when assembling a Component's Files' data, should we auto-conclude
     # each File's license, based on its detected license(s)?
     shouldConcludeFileLicenses: bool = True
 
@@ -32,11 +31,11 @@ class ScannerConfig:
     # defaults to 20
     numLinesScanned: int = 20
 
-    # should we calculate SHA256 hashes for each Package's Files?
+    # should we calculate SHA256 hashes for each Component's Files?
     # note that SHA1 hashes are mandatory, per SPDX 2.3
     doSHA256: bool = True
 
-    # should we calculate MD5 hashes for each Package's Files?
+    # should we calculate MD5 hashes for each Component's Files?
     doMD5: bool = False
 
 
@@ -101,52 +100,33 @@ def splitExpression(expression):
     return sorted(e4)
 
 
-def calculateVerificationCode(pkg):
-    """
-    Calculate the SPDX Package Verification Code for all files in the package.
-
-    Arguments:
-        - pkg: Package
-    Returns: verification code as string
-    """
-    hashes = []
-    for f in pkg.files.values():
-        hashes.append(f.sha1)
-    hashes.sort()
-    filelist = "".join(hashes)
-
-    hSHA1 = hashlib.sha1(usedforsecurity=False)
-    hSHA1.update(filelist.encode('utf-8'))
-    return hSHA1.hexdigest()
-
-
-def checkLicenseValid(lic, doc):
+def checkLicenseValid(lic, sbom_graph):
     """
     Check whether this license ID is a valid SPDX license ID, and add it
-    to the custom license IDs set for this Document if it isn't.
+    to the custom license IDs set for this SBOM if it isn't.
 
     Arguments:
         - lic: detected license ID
-        - doc: Document
+        - sbom_graph: SBOMGraph
     """
     if lic not in LICENSES:
-        doc.customLicenseIDs.add(lic)
+        sbom_graph.custom_license_ids.add(lic)
 
 
-def getPackageLicenses(pkg):
+def getComponentLicenses(component):
     """
     Extract lists of all concluded and infoInFile licenses seen.
 
     Arguments:
-        - pkg: Package
+        - component: SBOMComponent
     Returns: sorted list of concluded license exprs,
              sorted list of infoInFile ID's
     """
     licsConcluded = set()
     licsFromFiles = set()
-    for f in pkg.files.values():
-        licsConcluded.add(f.concludedLicense)
-        for licInfo in f.licenseInfoInFile:
+    for f in component.files.values():
+        licsConcluded.add(f.concluded_license)
+        for licInfo in f.license_info_in_file:
             licsFromFiles.add(licInfo)
     return sorted(list(licsConcluded)), sorted(list(licsFromFiles))
 
@@ -205,52 +185,64 @@ def getCopyrightInfo(filePath):
         return []
 
 
-def scanDocument(cfg, doc):
+def scanSBOMGraph(cfg, sbom_graph):
     """
-    Scan for licenses and calculate hashes for all Files and Packages
-    in this Document.
+    Scan for licenses and calculate hashes for all Files and Components
+    in this SBOM graph.
 
     Arguments:
         - cfg: ScannerConfig
-        - doc: Document
+        - sbom_graph: SBOMGraph
     """
-    for pkg in doc.pkgs.values():
-        _logger.info("scanning files in package %s in document %s", pkg.cfg.name, doc.cfg.name)
+    for component in sbom_graph.components.values():
+        _logger.info("scanning files in component %s", component.name)
 
-        # first, gather File data for this package
-        for f in pkg.files.values():
-            # set relpath based on package's relativeBaseDir
-            f.relpath = os.path.relpath(f.abspath, pkg.cfg.relativeBaseDir)
+        # first, gather File data for this component
+        for f in component.files.values():
+            # set relpath based on component's base_dir
+            f.relative_path = os.path.relpath(f.path, component.base_dir)
 
             # get hashes for file
-            hashes = getHashes(f.abspath)
+            hashes = getHashes(f.path)
             if not hashes:
-                _logger.warning("unable to get hashes for file %s; skipping", f.abspath)
+                _logger.warning("unable to get hashes for file %s; skipping", f.path)
                 continue
             hSHA1, hSHA256, hMD5 = hashes
-            f.sha1 = hSHA1
+            f.hashes["SHA1"] = hSHA1
             if cfg.doSHA256:
-                f.sha256 = hSHA256
+                f.hashes["SHA256"] = hSHA256
             if cfg.doMD5:
-                f.md5 = hMD5
+                f.hashes["MD5"] = hMD5
 
             # get licenses for file
-            expression = getExpressionData(f.abspath, cfg.numLinesScanned)
+            expression = getExpressionData(f.path, cfg.numLinesScanned)
             if expression:
                 if cfg.shouldConcludeFileLicenses:
-                    f.concludedLicense = expression
-                f.licenseInfoInFile = splitExpression(expression)
+                    f.concluded_license = expression
+                f.license_info_in_file = splitExpression(expression)
 
-            if copyrights := getCopyrightInfo(f.abspath):
-                f.copyrightText = "<text>\n" + "\n".join(copyrights) + "\n</text>"
+            if copyrights := getCopyrightInfo(f.path):
+                f.copyright_text = "<text>\n" + "\n".join(copyrights) + "\n</text>"
 
-            # check if any custom license IDs should be flagged for document
-            for lic in f.licenseInfoInFile:
-                checkLicenseValid(lic, doc)
+            # check if any custom license IDs should be flagged for SBOM
+            for lic in f.license_info_in_file:
+                checkLicenseValid(lic, sbom_graph)
 
-        # now, assemble the Package data
-        licsConcluded, licsFromFiles = getPackageLicenses(pkg)
-        if cfg.shouldConcludePackageLicense:
-            pkg.concludedLicense = normalizeExpression(licsConcluded)
-        pkg.licenseInfoFromFiles = licsFromFiles
-        pkg.verificationCode = calculateVerificationCode(pkg)
+        # now, assemble the Component data
+        licsConcluded, licsFromFiles = getComponentLicenses(component)
+        if cfg.shouldConcludeComponentLicense:
+            component.concluded_license = normalizeExpression(licsConcluded)
+        component.license_info_from_files = licsFromFiles
+
+
+# Backward compatibility alias (deprecated)
+def scanDocument(cfg, doc):
+    """
+    Deprecated: Use scanSBOMGraph instead.
+    This function is kept for backward compatibility during migration.
+    """
+    # This would need to convert Document to SBOMGraph, but since we're
+    # migrating away from Document, this should not be called in new code.
+    raise NotImplementedError(
+        "scanDocument is deprecated. Use scanSBOMGraph with SBOMGraph instead."
+    )
