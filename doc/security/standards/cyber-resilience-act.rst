@@ -392,11 +392,22 @@ Standards and Technical Specifications
 
 Relevant existing standards:
 
-* `ETSI EN 303 645 <https://www.etsi.org/deliver/etsi_en/303600_303699/303645/>`_ - Cyber Security
-  for Consumer Internet of Things: Baseline Requirements
+ETSI and CEN/CENELC are developing harmonized standards in response to the `CRA Standardisation Request (M/606)
+<https://ec.europa.eu/growth/tools-databases/enorm/mandate/606_en>`_.
 
-ETSI is developing harmonized standards in response to the `CRA Standardisation Request (M/606)
-<https://ec.europa.eu/growth/tools-databases/enorm/mandate/606_en>`_. Public draft standards
+CRA Horizontal stanards developped by CEN/CENELEC :
+* EN40000-1-1 : Vocabulary definition
+* EN40000-1-2 : Quality process for the development of Secure by Design product. It includes risk
+assessment, sourcing due diligence, development, test, validation, manufacturing, de-commissioning...
+* EN40000-1-3 : Vulnerability handling process
+* EN40000-1-4 : Security controls : technical solutions to reduce cybersecurity risk. This is based on
+hEN18031-x standard developped for the CE RED Delegated Act.
+
+Presentation of early draft of EN40000-1-4 is available on CEN/CENELEC website: `Security Controls
+<https://www.cencenelec.eu/news-events/events/2026/2026-03-05-cra-standards-unlocked-deep-dive-session-security-controls-generic-security-requirements/>_`
+
+
+ETSI Public draft standards
 include product-specific requirements for:
 
 * Operating Systems (prEN 304 626)
@@ -406,6 +417,10 @@ include product-specific requirements for:
 
 For the complete list of draft standards and participation in public consultations, see the
 `ETSI Cyber Resilience Act Portal <https://docbox.etsi.org/cyber/CYBER/Open>`_.
+
+* Once harmonized all the standard could be freely accessible for EU, EFTA and UK citizens here:
+`Harmonized standard <https://harmonized.standards.eu/>_`
+
 
 Educational resources
 =====================
