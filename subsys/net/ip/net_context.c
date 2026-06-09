@@ -2455,6 +2455,7 @@ static int context_sendto(struct net_context *context,
 	const struct net_msghdr *msghdr = NULL;
 	struct net_if *iface = NULL;
 	struct net_pkt *pkt = NULL;
+	struct net_sockaddr_in mapped;
 	net_sa_family_t family;
 	size_t tmp_len;
 	int ret;
@@ -2564,7 +2565,6 @@ static int context_sendto(struct net_context *context,
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		const struct net_sockaddr_in *addr4 = (const struct net_sockaddr_in *)dst_addr;
-		struct net_sockaddr_in mapped;
 
 		if (msghdr) {
 			addr4 = msghdr->msg_name;
