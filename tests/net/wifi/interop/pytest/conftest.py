@@ -50,8 +50,9 @@ def pytest_addoption(parser):
         '--wifi-iface',
         action='store',
         default='zwifi',
-        help='Host STA interface the native_sim driver binds to. Must match '
-        'CONFIG_WIFI_NATIVE_SIM_DRV_NAME (default "zwifi").',
+        help='Host STA interface the native_sim driver binds to. Must match the '
+        '"host-interface" property of the zephyr,native-sim-wifi DT node '
+        '(default "zwifi").',
     )
     parser.addoption(
         '--no-setcap',
