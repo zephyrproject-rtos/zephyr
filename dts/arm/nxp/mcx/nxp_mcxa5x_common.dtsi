@@ -513,6 +513,13 @@
 		resolution = <32>;
 	};
 
+	waketimer0: wake-timer@ae000 {
+		compatible = "nxp,wake-timer";
+		reg = <0xae000 0x1000>;
+		interrupts = <58 0>;
+		status = "disabled";
+	};
+
 	i3c0: i3c@2000 {
 		compatible = "nxp,mcux-i3c";
 		reg = <0x2000 0x1000>;
