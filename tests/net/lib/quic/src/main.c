@@ -2592,14 +2592,14 @@ static void server_thread(void *p1, void *p2, void *p3)
 		while (true) {
 			len = zsock_recv(stream, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
 			if (len == 0) {
-				goto done;
+				return;
 			}
 
 			if (len < 0) {
 				if (errno != EAGAIN && errno != EWOULDBLOCK) {
 					data->error = -errno;
 					LOG_DBG("Stream recv failed (%d)", data->error);
-					goto done;
+					return;
 				}
 
 				break;
@@ -2609,12 +2609,10 @@ static void server_thread(void *p1, void *p2, void *p3)
 			if (ret < 0) {
 				data->error = ret;
 				LOG_DBG("Stream send failed (%d)", data->error);
-				goto done;
+				return;
 			}
 		}
 	}
-
-done:
 }
 
 static void quic_server_and_client_with_stats(const char *server, const char *client,
