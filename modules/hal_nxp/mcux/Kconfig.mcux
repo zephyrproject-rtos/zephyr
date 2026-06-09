@@ -185,6 +185,12 @@ config MCUX_SYSINIT_KEEP_WATCHDOG
 	  watchdog driver manages it. Otherwise CMSIS disables it at boot,
 	  which is its default behavior.
 
+config HAS_MCUX_MCM_LPCAC
+	bool
+	help
+	  Set if the MCM-controlled LPCAC code cache module is present on the
+	  SoC (LPCAC enable/disable/clear handled through MCM CPCR2).
+
 config HAS_NXP_MONOLITHIC_NBU
 	bool
 	help
