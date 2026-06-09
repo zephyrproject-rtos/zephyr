@@ -134,14 +134,14 @@ standards.
 
   * - Category
     - Conformity Assessment Procedure
-    - Third-Party Audit?
+    - Notify Body involvement?
   * - Default
-    - Module A (Internal Control). Self-assessment by the manufacturer.
-    - No
+    - Module A (Self-assessment by the manufacturer) or Module B + Module C, or Module H.
+    - Not Mandatory for Module A.
   * - Important Class I
-    - Module A **ONLY IF** harmonized standards are fully applied. Otherwise: Module B + Module C,
-      or Module H.
-    - Yes, if standards not fully used
+    - Module A **ONLY IF** harmonized standards, cited to European Union Official Journal, are fully applied.
+      Otherwise: Module B + Module C, or Module H.
+    - Not Mandatory for Module A.
   * - Important Class II
     - Module B + Module C, or Module H. (Self-assessment is **NOT** allowed).
     - Yes (Mandatory)
@@ -179,12 +179,14 @@ elements.
   like Zephyr).
 
 **Vulnerability handling**
-  Handle vulnerabilities for at least 5 years (support period), including receiving reports and
-  applying updates.
+  Handle vulnerabilities every time a product is placed on the EU market.
+  Monitor vulnerabilities during the support period (lifetime or 5 years minimum).
+  Vulnerabily handling means identify hw and sw vulnerabilities (with SBOM), do a risk assessment of the
+  vulnerability to your product, and if risk can't be accepted, provide a SW update to solve the vulnerability.
 
 **Incident reporting**
-  Report actively exploited vulnerabilities affecting Zephyr, as well as severe incidents affecting
-  the project's infrastructure.
+  Report actively exploited vulnerabilities affecting your product, as well as severe incidents affecting
+  the project's infrastructure. This obligation continues after the end of the support period.
 
 **Technical documentation**
   Create documentation per `Article 31`_ and `Annex VII`_.
