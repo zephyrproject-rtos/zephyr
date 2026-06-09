@@ -112,12 +112,21 @@ bool i2c_stm32_start(const struct device *dev)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
+		if (sqe->rx.buf_len == 0) {
+			return i2c_rtio_complete(ctx, 0);
+		}
 		return i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf,
 					   sqe->rx.buf_len, dt_spec->addr);
 	case RTIO_OP_TINY_TX:
+		if (sqe->tiny_tx.buf_len == 0) {
+			return i2c_rtio_complete(ctx, 0);
+		}
 		return i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf,
 					   sqe->tiny_tx.buf_len, dt_spec->addr);
 	case RTIO_OP_TX:
+		if (sqe->tx.buf_len == 0) {
+			return i2c_rtio_complete(ctx, 0);
+		}
 		return i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf,
 					   sqe->tx.buf_len, dt_spec->addr);
 	case RTIO_OP_I2C_CONFIGURE:
