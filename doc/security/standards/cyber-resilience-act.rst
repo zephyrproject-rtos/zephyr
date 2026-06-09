@@ -41,6 +41,16 @@ Does the CRA apply to my product?
 The CRA applies if you place a product with digital elements (PDE) on the EU market for commercial
 purposes. This includes hardware devices with embedded software, and standalone software products.
 
+A product with digital element is an hardware and/or software which is connected to another device
+or a network. The scope of the product includes the remote data processing solution (RDPS), meaning
+a software not part of the product, but which is required to run the product. For example, it can be
+a mobile phone app or a cloud service.
+
+CRA applies to end products or components which are sold to European Union and EFTA market.
+
+Several market exception are defined in the law (medical, automotive, avionics, military, spare parts),
+there are strict rules about these exceptions, please refer to the CRA law.
+
 Which category does my product belong to?
 =========================================
 
