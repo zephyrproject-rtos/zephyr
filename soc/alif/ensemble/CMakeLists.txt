@@ -9,4 +9,9 @@ if(CONFIG_SOC_FAMILY_ENSEMBLE_RTSS)
   add_subdirectory(rtss)
 endif()
 
+# Cluster-specific code for Cortex-A32 APSS cores
+if(CONFIG_SOC_FAMILY_ENSEMBLE_APSS)
+  add_subdirectory(apss)
+endif()
+
 add_subdirectory(${SOC_SERIES})
