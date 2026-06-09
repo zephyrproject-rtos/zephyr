@@ -8,6 +8,7 @@
 #include <microchip/pic32c/pic32cz_ca/pic32cz_ca80/pic32cz8110ca80208.dtsi>
 #include "pic32cz_ca80_cult-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	model = "PIC32CZ CA80 Curiosity Ultra";
@@ -183,5 +184,17 @@
 };
 
 &dmac {
+	status = "okay";
+};
+
+&sercom0 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom0_i2c_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 0 0x05>, <&dmac 1 0x06>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
