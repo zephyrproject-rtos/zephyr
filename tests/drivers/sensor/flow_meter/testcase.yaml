@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Nicolas Belin <nbelin@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.flow_meter:
+    tags:
+      - drivers
+      - sensor
+      - subsys
+    platform_allow:
+      - native_sim
