@@ -1138,12 +1138,11 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 				size_t existing)
 {
 	net_sa_family_t family = net_pkt_family(pkt);
-	size_t max_len;
+	struct net_if *iface = net_pkt_iface(pkt);
+	size_t max_len = 0;
 
-	if (net_pkt_iface(pkt)) {
-		max_len = net_if_get_mtu(net_pkt_iface(pkt));
-	} else {
-		max_len = 0;
+	if (iface != NULL) {
+		max_len = net_if_get_mtu(iface);
 	}
 
 	/* Family vs iface MTU */
@@ -1165,8 +1164,7 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 		max_len = MAX(max_len, NET_IPV4_MTU);
 	} else { /* family == NET_AF_UNSPEC */
 #if defined (CONFIG_NET_L2_ETHERNET)
-		if (net_if_l2(net_pkt_iface(pkt)) ==
-		    &NET_L2_GET_NAME(ETHERNET)) {
+		if ((iface != NULL) && (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET))) {
 			max_len += NET_ETH_MAX_HDR_SIZE;
 		} else
 #endif /* CONFIG_NET_L2_ETHERNET */
