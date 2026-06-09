@@ -46,6 +46,7 @@ config BT_VOCS_CLIENT_MAX_INSTANCE_COUNT
 
 config BT_VOCS_CLIENT
 	bool # hidden
+	depends on BT_GATT_AUTO_DISCOVER_CCC
 	default y if BT_VOCS_CLIENT_MAX_INSTANCE_COUNT > 0
 	help
 	  This hidden option enables support for Volume Offset Control Service.

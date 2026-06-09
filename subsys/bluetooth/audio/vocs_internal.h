@@ -72,6 +72,11 @@ struct bt_vocs_client {
 	struct bt_gatt_read_params read_params;
 	struct bt_vocs_cb *cb;
 	struct bt_gatt_discover_params discover_params;
+#if defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC)
+	struct bt_gatt_discover_params ccc_disc_params;
+#endif /* CONFIG_BT_GATT_AUTO_DISCOVER_CCC */
+	char output_desc[BT_VOCS_MAX_DESC_SIZE];
+	uint16_t output_offset;
 	struct bt_conn *conn;
 
 	ATOMIC_DEFINE(flags, BT_VOCS_CLIENT_FLAG_NUM_FLAGS);
