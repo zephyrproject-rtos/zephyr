@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/dt-bindings/clock/adi_max32_clock.h>
+
 / {
 	no_clock: no-clock {
 		/* Dummy clock for invalid or reserved mux inputs. */
@@ -76,7 +78,7 @@
 		reg = <0x8 0x1>;
 		offset = <0x10>;
 		frequency = <DT_FREQ_M(32)>;
-		enum = <0x2>;
+		enable = <ADI_MAX32_CLK_SRC_EN_ERFO>;
 	};
 
 	clk_mgmt_ertco: ertco@8 {
@@ -85,7 +87,7 @@
 		reg = <0x8 0x1>;
 		offset = <0x11>;
 		frequency = <32768>;
-		enum = <0x6>;
+		enable = <ADI_MAX32_CLK_SRC_EN_ERTCO>;
 	};
 
 	clk_mgmt_ipo: ipo@8 {
@@ -94,7 +96,7 @@
 		reg = <0x8 0x1>;
 		offset = <0x12>;
 		frequency = <DT_FREQ_M(50)>;
-		enum = <0x0>;
+		enable = <ADI_MAX32_CLK_SRC_EN_IPO>;
 	};
 
 	clk_mgmt_ibro: ibro@8 {
@@ -103,7 +105,7 @@
 		reg = <0x8 0x1>;
 		offset = <0x14>;
 		frequency = <7372800>;
-		enum = <0x5>;
+		enable = <ADI_MAX32_CLK_SRC_EN_IBRO>;
 	};
 
 	mux_sysclk_sel: mux@8 {

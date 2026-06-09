@@ -14,7 +14,7 @@ struct max32_clock_source_config {
 	uint8_t enable_offset;
 	uint32_t frequency;
 	volatile uint32_t *reg;
-	uint8_t enum_val;
+	uint8_t enable_val;
 };
 
 static int max32_clock_source_configure(const struct clk *clk_hw, const void *data)
@@ -23,9 +23,9 @@ static int max32_clock_source_configure(const struct clk *clk_hw, const void *da
 	bool ungate = (bool)data;
 
 	if (ungate) {
-		MXC_SYS_ClockSourceEnable(config->enum_val);
+		MXC_SYS_ClockSourceEnable(config->enable_val);
 	} else {
-		MXC_SYS_ClockSourceDisable(config->enum_val);
+		MXC_SYS_ClockSourceDisable(config->enable_val);
 	}
 
 	return 0;
@@ -86,7 +86,7 @@ const struct clock_management_root_api max32_clock_source_api = {
 		.frequency = DT_INST_PROP(inst, frequency), \
 		.reg = (volatile uint32_t *)DT_INST_REG_ADDR(inst), \
 		.enable_offset = (uint8_t)DT_INST_PROP(inst, offset), \
-		.enum_val = DT_INST_PROP(inst, enum), \
+		.enable_val = DT_INST_PROP(inst, enable), \
 	}; \
 	\
 	ROOT_CLOCK_DT_INST_DEFINE(inst, \

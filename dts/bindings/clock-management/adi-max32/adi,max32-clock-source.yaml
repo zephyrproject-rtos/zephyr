@@ -29,11 +29,11 @@ properties:
     description: |
       Frequency this clock source provides, in Hz.
 
-  enum:
+  enable:
     type: int
     required: true
     description: |
-      Enum value of the clock source as defined by the MAX32 HAL.
+      Enable value of the clock source as defined by the MAX32 HAL.
 
   "#clock-cells":
     const: 1
