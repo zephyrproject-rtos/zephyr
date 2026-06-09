@@ -15,7 +15,6 @@ supported:
   - can
   - counter
   - dac
-  - display
   - dma
   - entropy
   - gpio
