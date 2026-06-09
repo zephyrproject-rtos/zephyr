@@ -905,6 +905,15 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif /* defined(FSL_FEATURE_SOC_LPI2C_COUNT) */
 #endif /* defined(CONFIG_I2C_MCUX_LPI2C) */
 
+#if (defined(CONFIG_I2C_MCUX_LPI2C) && defined(CONFIG_SOC_FAMILY_MCXL))
+	case MCUX_LPI2C0_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(0);
+		break;
+	case MCUX_LPI2C1_CLK:
+		*rate = CLOCK_GetLpi2cClkFreq(1);
+		break;
+#endif /* defined(CONFIG_I2C_MCUX_LPI2C) && defined(CONFIG_SOC_FAMILY_MCXL) */
+
 #if defined(CONFIG_DT_HAS_NXP_XSPI_ENABLED)
 	case MCUX_XSPI0_CLK:
 		*rate = CLOCK_GetXspiClkFreq(0);
