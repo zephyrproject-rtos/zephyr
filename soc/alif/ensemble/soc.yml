@@ -22,5 +22,6 @@ family:
         socs:
           - name: ae822fa0e5597ls0
             cpuclusters:
+              - name: apss
               - name: rtss_he
               - name: rtss_hp
