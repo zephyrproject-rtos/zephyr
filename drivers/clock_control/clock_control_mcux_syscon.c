@@ -926,6 +926,15 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif /* defined(CONFIG_SPI_NXP_LPSPI) */
 
+#if (defined(CONFIG_SPI_NXP_LPSPI) && defined(CONFIG_SOC_FAMILY_MCXL))
+	case MCUX_LPSPI0_CLK:
+		*rate = CLOCK_GetLpspiClkFreq(0);
+		break;
+	case MCUX_LPSPI1_CLK:
+		*rate = CLOCK_GetLpspiClkFreq(1);
+		break;
+#endif /* defined(CONFIG_SPI_NXP_LPSPI) && defined(CONFIG_SOC_FAMILY_MCXL) */
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
 	case MCUX_MICFIL_CLK:
 		*rate = CLOCK_GetMicfilClkFreq();
