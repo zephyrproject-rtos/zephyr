@@ -16,4 +16,5 @@ supported:
   - mbox
   - rtc
   - input
+  - counter
 vendor: nxp
