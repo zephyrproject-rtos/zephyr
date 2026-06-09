@@ -960,9 +960,10 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 			.wNdbOutAlignment = sys_cpu_to_le16(CDC_NCM_ALIGNMENT),
 			.wNtbOutMaxDatagrams = sys_cpu_to_le16(CDC_NCM_RECV_MAX_DATAGRAMS_PER_NTB),
 		};
+		const uint16_t len = MIN(sizeof(ntb_params), setup->wLength);
 
 		LOG_DBG("GET_NTB_PARAMETERS");
-		net_buf_add_mem(buf, &ntb_params, sizeof(ntb_params));
+		net_buf_add_mem(buf, &ntb_params, len);
 		break;
 	}
 
@@ -972,9 +973,10 @@ static int usbd_cdc_ncm_cth(struct usbd_class_data *const c_data,
 			.wNtbInMaxDatagrams = sys_cpu_to_le16(CDC_NCM_SEND_MAX_DATAGRAMS_PER_NTB),
 			.wReserved = sys_cpu_to_le16(0),
 		};
+		const uint16_t len = MIN(sizeof(input_size), setup->wLength);
 
 		LOG_DBG("GET_NTB_INPUT_SIZE");
-		net_buf_add_mem(buf, &input_size, sizeof(input_size));
+		net_buf_add_mem(buf, &input_size, len);
 		break;
 	}
 
