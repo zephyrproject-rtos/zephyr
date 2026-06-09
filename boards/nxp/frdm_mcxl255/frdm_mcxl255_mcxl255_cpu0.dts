@@ -12,3 +12,7 @@
 	model = "NXP FRDM_MCXL255 board";
 	compatible = "nxp,mcxl255", "nxp,mcx";
 };
+
+&aon_lpcmp0 {
+	status = "okay";
+};

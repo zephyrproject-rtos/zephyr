@@ -15,4 +15,5 @@ supported:
   - gpio
   - rtc
   - crc
+  - comparator
 vendor: nxp
