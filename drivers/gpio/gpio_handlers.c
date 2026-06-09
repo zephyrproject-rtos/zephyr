@@ -21,7 +21,7 @@ static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
 					     gpio_pin_t pin,
 					     gpio_flags_t *flags)
 {
-	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_get_config));
+	K_OOPS(K_SYSCALL_OBJ(port, K_OBJ_DRIVER_GPIO));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(flags, sizeof(gpio_flags_t)));
 
 	return z_impl_gpio_pin_get_config(port, pin, flags);
@@ -164,15 +164,14 @@ static inline int z_vrfy_gpio_pin_interrupt_configure(const struct device *port,
 						      gpio_pin_t pin,
 						      gpio_flags_t flags)
 {
-	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_interrupt_configure));
+	K_OOPS(K_SYSCALL_OBJ(port, K_OBJ_DRIVER_GPIO));
 	return z_impl_gpio_pin_interrupt_configure(port, pin, flags);
 }
 #include <zephyr/syscalls/gpio_pin_interrupt_configure_mrsh.c>
 
 static inline int z_vrfy_gpio_get_pending_int(const struct device *dev)
 {
-	K_OOPS(K_SYSCALL_DRIVER_GPIO(dev, get_pending_int));
-
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_GPIO));
 	return z_impl_gpio_get_pending_int(dev);
 }
 #include <zephyr/syscalls/gpio_get_pending_int_mrsh.c>
@@ -182,7 +181,7 @@ static inline int z_vrfy_gpio_port_get_direction(const struct device *dev, gpio_
 						 gpio_port_pins_t *inputs,
 						 gpio_port_pins_t *outputs)
 {
-	K_OOPS(K_SYSCALL_DRIVER_GPIO(dev, port_get_direction));
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_GPIO));
 
 	if (inputs != NULL) {
 		K_OOPS(K_SYSCALL_MEMORY_WRITE(inputs, sizeof(gpio_port_pins_t)));
