@@ -126,3 +126,7 @@
 &aon_kpp0 {
 	interrupts = <148 0>;
 };
+
+&aon_lptmr0 {
+	interrupts = <155 0>;
+};
