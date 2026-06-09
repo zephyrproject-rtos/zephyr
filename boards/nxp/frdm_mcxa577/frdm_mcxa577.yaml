@@ -27,4 +27,5 @@ supported:
   - netif:eth
   - edac
   - can
+  - dac
 vendor: nxp
