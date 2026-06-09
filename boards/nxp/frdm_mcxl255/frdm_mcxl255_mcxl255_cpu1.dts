@@ -53,3 +53,7 @@
 &mbox_b {
 	status = "okay";
 };
+
+&aon_lptmr0 {
+	status = "okay";
+};
