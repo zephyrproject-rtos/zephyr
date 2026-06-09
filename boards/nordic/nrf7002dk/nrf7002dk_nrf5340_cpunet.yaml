@@ -11,3 +11,4 @@ supported:
   - gpio
   - watchdog
 vendor: nordic
+sysbuild: true

@@ -11,3 +11,4 @@ supported:
   - watchdog
   - gpio
 vendor: panasonic
+sysbuild: true
