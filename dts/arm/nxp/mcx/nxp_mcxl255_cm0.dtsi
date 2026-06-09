@@ -47,3 +47,18 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+&aon_peripheral {
+	lptmr0: lptmr@88000 {
+		compatible = "nxp,lptmr";
+		reg = <0x88000 0x1000>;
+		interrupts = <28 0>;
+		clock-frequency = <16000>;
+		clk-source = <1>;
+		prescale-glitch-filter = <0>;
+		prescale-glitch-filter-bypass;
+		timer-mode-sel = <0>;
+		resolution = <32>;
+		status = "disabled";
+	};
+};
