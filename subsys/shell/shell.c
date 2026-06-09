@@ -1829,10 +1829,13 @@ static void kill_handler(const struct shell *sh)
 	CODE_UNREACHABLE;
 }
 
-void shell_thread(void *shell_handle, void *, void *)
+void shell_thread(void *shell_handle, void *p2, void *p3)
 {
 	struct shell *sh = shell_handle;
 	int err;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	if (IS_ENABLED(CONFIG_SHELL_AUTOSTART)) {
 		/* Enable shell and print prompt. */
