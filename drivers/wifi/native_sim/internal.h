@@ -42,6 +42,7 @@ struct wifi_context {
 	bool promisc_mode;
 	bool scan_in_progress;
 	bool external_scan;
+	bool random_mac; /* generate a random fallback MAC (from devicetree) */
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats_eth;

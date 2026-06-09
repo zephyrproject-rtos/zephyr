@@ -33,9 +33,10 @@ option is documented at the end.
 
 ### Interface name
 
-The driver binds to the host interface named `CONFIG_WIFI_NATIVE_SIM_DRV_NAME`,
-i.e. **`zwifi`**. The host STA interface must have this exact name, which is what
-the net-tools wrapper `zwifi.sh` (`-i zwifi`) creates.
+The driver is enabled by the `zephyr,native-sim-wifi` devicetree node in
+`boards/native_sim.overlay`, whose `host-interface` property names the host
+interface it binds to — here **`zwifi`**. The host STA interface must have this
+exact name, which is what the net-tools wrapper `zwifi.sh` (`-i zwifi`) creates.
 
 ## Running (host setup - default)
 

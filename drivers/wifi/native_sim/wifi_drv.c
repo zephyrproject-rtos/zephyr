@@ -10,6 +10,8 @@
  *        with the data.
  */
 
+#define DT_DRV_COMPAT zephyr_native_sim_wifi
+
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/logging/log.h>
@@ -78,29 +80,28 @@ static const struct net_wifi_mgmt_offload wifi_if_api = {
 	.wifi_drv_ops = &wifi_drv_ops,
 };
 
-#define DEFINE_RX_THREAD(x, _)						\
-	K_KERNEL_STACK_DEFINE(rx_thread_stack_##x,			\
-			      CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);\
-	static struct k_thread rx_thread_data_##x
+#define DEFINE_RX_THREAD(inst)						\
+	K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst,			\
+			      CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);	\
+	static struct k_thread rx_thread_data_##inst;
 
-LISTIFY(CONFIG_WIFI_NATIVE_SIM_INTERFACE_COUNT, DEFINE_RX_THREAD, (;), _);
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_RX_THREAD)
 
-#define DEFINE_WIFI_DEV_DATA(x, _)					     \
-	static struct wifi_context wifi_context_data_##x = {		     \
-		.if_name_host = CONFIG_WIFI_NATIVE_SIM_DRV_NAME #x,	     \
-		.rx_thread = &rx_thread_data_##x,			     \
-		.rx_stack = rx_thread_stack_##x,			     \
-		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##x), \
-	}
+#define DEFINE_WIFI_DEVICE(inst)					     \
+	static struct wifi_context wifi_context_data_##inst = {		     \
+		.if_name_host = DT_INST_PROP(inst, host_interface),	     \
+		.random_mac = DT_INST_PROP(inst, zephyr_random_mac_address), \
+		.mac_addr = DT_INST_PROP_OR(inst, local_mac_address, {0}),   \
+		.rx_thread = &rx_thread_data_##inst,			     \
+		.rx_stack = rx_thread_stack_##inst,			     \
+		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst), \
+	};								     \
+									     \
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst,				     \
+				      NULL, NULL,			     \
+				      &wifi_context_data_##inst, NULL,	     \
+				      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,   \
+				      &wifi_if_api,			     \
+				      NET_ETH_MTU);
 
-LISTIFY(CONFIG_WIFI_NATIVE_SIM_INTERFACE_COUNT, DEFINE_WIFI_DEV_DATA, (;), _);
-
-#define DEFINE_WIFI_DEVICE(x, _)					\
-	ETH_NET_DEVICE_INIT(wifi_native_sim_##x,			\
-			    CONFIG_WIFI_NATIVE_SIM_DRV_NAME #x,		\
-			    NULL, NULL, &wifi_context_data_##x, NULL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &wifi_if_api,				\
-			    NET_ETH_MTU)
-
-LISTIFY(CONFIG_WIFI_NATIVE_SIM_INTERFACE_COUNT, DEFINE_WIFI_DEVICE, (;), _);
+DT_INST_FOREACH_STATUS_OKAY(DEFINE_WIFI_DEVICE)
