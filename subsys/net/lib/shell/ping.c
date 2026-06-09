@@ -49,6 +49,14 @@ static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t s
 						 uint16_t bytes, const char *src, const char *dst,
 						 uint8_t ttl);
 
+#ifdef CONFIG_FPU
+#define PING_PRI_MSEC             "%.2f"
+#define PING_CYCLES_MSEC(_cycles) ((double)((uint32_t)k_cyc_to_ns_floor64(_cycles) / 1e6f))
+#else
+#define PING_PRI_MSEC             "%u"
+#define PING_CYCLES_MSEC(_cycles) ((uint32_t)k_cyc_to_ns_floor64(_cycles) / 1000000)
+#endif
+
 #if defined(CONFIG_NET_NATIVE_IPV6)
 
 static enum net_verdict handle_ipv6_echo_reply(struct net_icmp_ctx *ctx,
@@ -175,13 +183,8 @@ static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t s
 		}
 
 		cycles = k_cycle_get_32() - cycles;
-		snprintf(time_buf, sizeof(time_buf),
-#ifdef CONFIG_FPU
-			 "time=%.2f ms", (double)((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000.f)
-#else
-			 "time=%d ms", ((uint32_t)k_cyc_to_ns_floor64(cycles) / 1000000)
-#endif
-		);
+		snprintf(time_buf, sizeof(time_buf), "time=" PING_PRI_MSEC " ms",
+				 PING_CYCLES_MSEC(cycles));
 	}
 
 	PR_SHELL(ping_ctx.sh,
