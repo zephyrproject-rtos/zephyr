@@ -492,6 +492,13 @@
 			status = "disabled";
 		};
 
+		waketimer0: wake-timer@400ae000 {
+			compatible = "nxp,wake-timer";
+			reg = <0x400ae000 0x1000>;
+			interrupts = <58 0>;
+			status = "disabled";
+		};
+
 		temp0: temp0 {
 			compatible = "nxp,lpadc-temp40";
 			status = "disabled";
