@@ -59,6 +59,8 @@
 
 #include "wifi_drv_priv.h"
 
+struct host_cmd;
+
 struct api_ctx {
 	/* Opaque Zephyr supplicant interface context (passed back so the event
 	 * thread knows which interface to deliver to). Not dereferenced here.
@@ -80,6 +82,24 @@ struct api_ctx {
 	/* Event pipe: [0] host write end (eloop thread), [1] Zephyr read end. */
 	int event_fd[2];
 
+	/* Command handoff for the connect-path MLME commands (authenticate,
+	 * associate, deauthenticate). Those use bss->nl_connect, which is also
+	 * serviced by the eloop thread, so issuing send_and_recv on them from the
+	 * Zephyr thread races the eloop reading the same socket: the eloop can
+	 * consume the command's ACK, leaving send_and_recv spinning on NLE_AGAIN
+	 * ("Try again") forever. We instead run these on the eloop thread itself.
+	 * The Zephyr caller publishes a request in pending_cmd, wakes the eloop via
+	 * cmd_fd, and blocks on cmd_done_fd until the eloop has run it.
+	 * cmd_fd: [0] Zephyr write end, [1] eloop read end (registered with eloop).
+	 * cmd_done_fd: [0] eloop write end, [1] Zephyr read end.
+	 * Scan and other commands use global->nl (not eloop-serviced) and stay on
+	 * the Zephyr thread to avoid perturbing scan timing.
+	 */
+	int cmd_fd[2];
+	int cmd_done_fd[2];
+	struct host_cmd *pending_cmd;
+	pthread_mutex_t cmd_lock;
+
 	bool handler_started : 1;
 	bool handler_failed : 1;
 };
@@ -89,6 +109,72 @@ struct api_ctx {
  * pointer too for the global event path.
  */
 static struct api_ctx *the_ctx;
+
+/*
+ * Command handoff to the eloop thread (used only for the bss->nl_connect MLME
+ * commands). The request is a thunk plus an opaque argument pointer; the
+ * argument is passed by pointer (no serialization) and stays valid because the
+ * caller blocks in run_on_eloop() until the eloop thread has run the thunk.
+ */
+struct host_cmd {
+	int (*fn)(struct api_ctx *ctx, void *arg);
+	void *arg;
+	int ret;
+};
+
+/* Runs on the eloop thread when the Zephyr thread wakes us via cmd_fd. */
+static void cmd_handler(int sock, void *eloop_ctx, void *sock_ctx)
+{
+	struct api_ctx *ctx = eloop_ctx;
+	struct host_cmd *cmd;
+	uint8_t b;
+
+	ARG_UNUSED(sock_ctx);
+
+	while (read(sock, &b, 1) < 0 && errno == EINTR) {
+	}
+
+	cmd = ctx->pending_cmd;
+	if (cmd == NULL) {
+		return;
+	}
+
+	/* The actual nl80211 send_and_recv runs here, on the thread that owns the
+	 * netlink sockets, so there is no concurrent reader to steal the ACK.
+	 */
+	cmd->ret = cmd->fn(ctx, cmd->arg);
+
+	(void)write(ctx->cmd_done_fd[0], &b, 1);
+}
+
+/* Called on the Zephyr supplicant thread to execute a driver op on the eloop
+ * thread and wait for its result.
+ */
+static int run_on_eloop(struct api_ctx *ctx, int (*fn)(struct api_ctx *, void *),
+			void *arg)
+{
+	struct host_cmd cmd = {.fn = fn, .arg = arg, .ret = 0};
+	uint8_t b = 0;
+
+	/* If somehow invoked from the eloop thread itself, run inline to avoid
+	 * deadlocking on the handoff.
+	 */
+	if (pthread_equal(pthread_self(), ctx->thread_id)) {
+		return fn(ctx, arg);
+	}
+
+	pthread_mutex_lock(&ctx->cmd_lock);
+	ctx->pending_cmd = &cmd;
+
+	(void)write(ctx->cmd_fd[0], &b, 1);
+	while (read(ctx->cmd_done_fd[1], &b, 1) < 0 && errno == EINTR) {
+	}
+
+	ctx->pending_cmd = NULL;
+	pthread_mutex_unlock(&ctx->cmd_lock);
+
+	return cmd.ret;
+}
 
 /*
  * Event forwarding: the nl80211 driver calls wpa_supplicant_event() from the
@@ -367,10 +453,21 @@ static void *host_handler(void *args)
 					   WPA_DRIVER_FLAGS2_CONTROL_PORT_TX_STATUS);
 	}
 
+	/* Register the command socket so the connect-path MLME commands can be run
+	 * here, on the thread that owns the netlink sockets. Must be done on the
+	 * eloop thread (eloop is not thread-safe) before eloop_run().
+	 */
+	if (eloop_register_read_sock(ctx->cmd_fd[1], cmd_handler, ctx, NULL)) {
+		nsi_print_trace("%s: failed to register command socket\n", __func__);
+		goto out;
+	}
+
 	ctx->handler_started = true;
 
 	/* Pump driver (netlink) events until terminated. */
 	eloop_run();
+
+	eloop_unregister_read_sock(ctx->cmd_fd[1]);
 
 	if (ctx->drv->deinit) {
 		ctx->drv->deinit(ctx->drv_priv);
@@ -386,6 +483,24 @@ out:
 	}
 
 	pthread_exit(&ctx->thread_ret);
+}
+
+static void close_fd(int *fd)
+{
+	if (*fd >= 0) {
+		close(*fd);
+		*fd = -1;
+	}
+}
+
+static void close_fds(struct api_ctx *ctx)
+{
+	close_fd(&ctx->event_fd[0]);
+	close_fd(&ctx->event_fd[1]);
+	close_fd(&ctx->cmd_fd[0]);
+	close_fd(&ctx->cmd_fd[1]);
+	close_fd(&ctx->cmd_done_fd[0]);
+	close_fd(&ctx->cmd_done_fd[1]);
 }
 
 static void sleep_msec(int msec)
@@ -418,6 +533,10 @@ void *host_wifi_drv_init(void *context, const char *iface_name, size_t stack_siz
 	args.drv = &wpa_driver_nl80211_ops;
 	args.event_fd[0] = -1;
 	args.event_fd[1] = -1;
+	args.cmd_fd[0] = -1;
+	args.cmd_fd[1] = -1;
+	args.cmd_done_fd[0] = -1;
+	args.cmd_done_fd[1] = -1;
 	the_ctx = &args;
 
 	if (socketpair(AF_UNIX, SOCK_DGRAM, 0, args.event_fd) < 0) {
@@ -430,6 +549,18 @@ void *host_wifi_drv_init(void *context, const char *iface_name, size_t stack_siz
 	 */
 	(void)fcntl(args.event_fd[0], F_SETFL, O_NONBLOCK);
 	(void)fcntl(args.event_fd[1], F_SETFL, O_NONBLOCK);
+
+	/* Command request/done pipes (left blocking: run_on_eloop() blocks on the
+	 * done end, handing the host CPU to the eloop thread).
+	 */
+	if (socketpair(AF_UNIX, SOCK_DGRAM, 0, args.cmd_fd) < 0 ||
+	    socketpair(AF_UNIX, SOCK_DGRAM, 0, args.cmd_done_fd) < 0) {
+		nsi_print_trace("%s: socketpair: %s\n", __func__, strerror(errno));
+		close_fds(&args);
+		return NULL;
+	}
+
+	pthread_mutex_init(&args.cmd_lock, NULL);
 
 	ret = pthread_attr_init(&attr);
 	if (ret < 0) {
@@ -498,12 +629,8 @@ void host_wifi_drv_deinit(void *priv)
 				strerror(ret), -ret);
 	}
 
-	if (ctx->event_fd[0] >= 0) {
-		close(ctx->event_fd[0]);
-	}
-	if (ctx->event_fd[1] >= 0) {
-		close(ctx->event_fd[1]);
-	}
+	close_fds(ctx);
+	pthread_mutex_destroy(&ctx->cmd_lock);
 
 	the_ctx = NULL;
 }
@@ -713,27 +840,52 @@ int host_wifi_drv_scan_abort(void *priv)
 	return ctx->drv->abort_scan(ctx->drv_priv, 0);
 }
 
+static int cmd_associate(struct api_ctx *ctx, void *arg)
+{
+	return ctx->drv->associate(ctx->drv_priv, arg);
+}
+
 int host_wifi_drv_associate(void *priv, void *param)
 {
 	struct api_ctx *ctx = priv;
-	struct wpa_driver_associate_params *assoc = param;
 
 	if (ctx->drv->associate == NULL) {
 		return -ENOTSUP;
 	}
 
-	return ctx->drv->associate(ctx->drv_priv, assoc);
+	/* Uses bss->nl_connect: run on the eloop thread to avoid the ACK race. */
+	return run_on_eloop(ctx, cmd_associate, param);
+}
+
+struct deauth_args {
+	const u8 *addr;
+	u16 reason_code;
+};
+
+static int cmd_deauthenticate(struct api_ctx *ctx, void *arg)
+{
+	struct deauth_args *a = arg;
+
+	return ctx->drv->deauthenticate(ctx->drv_priv, a->addr, a->reason_code);
 }
 
 int host_wifi_drv_deauthenticate(void *priv, const char *addr, unsigned short reason_code)
 {
 	struct api_ctx *ctx = priv;
+	struct deauth_args a = {.addr = (const u8 *)addr, .reason_code = reason_code};
 
 	if (ctx->drv->deauthenticate == NULL) {
 		return -ENOTSUP;
 	}
 
-	return ctx->drv->deauthenticate(ctx->drv_priv, (const u8 *)addr, reason_code);
+	/* Uses bss->nl_connect: run on the eloop thread to avoid the ACK race. */
+	return run_on_eloop(ctx, cmd_deauthenticate, &a);
+}
+
+static int cmd_authenticate(struct api_ctx *ctx, void *arg)
+{
+	return ctx->drv->authenticate(ctx->drv_priv,
+				      (struct wpa_driver_auth_params *)arg);
 }
 
 int host_wifi_drv_authenticate(void *priv, void *params, void *curr_bss)
@@ -746,8 +898,8 @@ int host_wifi_drv_authenticate(void *priv, void *params, void *curr_bss)
 		return -ENOTSUP;
 	}
 
-	return ctx->drv->authenticate(ctx->drv_priv,
-				      (struct wpa_driver_auth_params *)params);
+	/* Uses bss->nl_connect: run on the eloop thread to avoid the ACK race. */
+	return run_on_eloop(ctx, cmd_authenticate, params);
 }
 
 int host_wifi_drv_set_key(void *priv, const unsigned char *ifname, unsigned int alg,
