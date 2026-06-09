@@ -2301,7 +2301,27 @@ This has been fixed in main for v4.4.0
 :cve:`2026-5067`
 ----------------
 
-Under embargo until 2026-05-23
+Out-of-bounds read/write in HTTP WebSocket upgrade via non-null-terminated
+Sec-WebSocket-Key
+
+A remote, unauthenticated attacker can trigger memory corruption in Zephyr's
+HTTP server WebSocket upgrade path by sending a crafted ``Sec-WebSocket-Key``
+header that is copied without guaranteed NUL termination and then passed to
+``strlen()``. This can cause out-of-bounds read and out-of-bounds write on
+stack memory, leading to a crash (denial of service) and potentially code
+execution. The path is reachable when ``CONFIG_HTTP_SERVER_WEBSOCKET`` is
+enabled.
+
+- `Zephyr project bug tracker GHSA-wgr4-9pwq-94vj
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-wgr4-9pwq-94vj>`_
+
+This has been fixed in main for v4.4.0
+
+- `PR 104740 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/104740>`_
+
+- `PR 107927 fix for 4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107927>`_
 
 :cve:`2026-5068`
 ----------------
