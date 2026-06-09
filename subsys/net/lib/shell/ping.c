@@ -41,6 +41,7 @@ static struct ping_context {
 	uint32_t sequence;
 	uint16_t payload_size;
 	uint8_t tos;
+	bool quiet;
 	int priority;
 	struct ping_stats {
 		uint64_t cycle_sum;
@@ -236,23 +237,27 @@ static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t s
 		}
 
 		cycles = k_cycle_get_32() - cycles;
-		snprintf(time_buf, sizeof(time_buf), "time=" PING_PRI_MSEC " ms",
+		if (!ping_ctx.quiet) {
+			snprintf(time_buf, sizeof(time_buf), "time=" PING_PRI_MSEC " ms",
 				 PING_CYCLES_MSEC(cycles));
+		}
 		stats_update(&ping_ctx, cycles);
 	}
 	ping_ctx.stats.pkt_recv++;
 
-	PR_SHELL(ping_ctx.sh,
-		 "%d bytes from %s to %s: icmp_seq=%u ttl=%u "
+	if (!ping_ctx.quiet) {
+		PR_SHELL(ping_ctx.sh,
+			 "%d bytes from %s to %s: icmp_seq=%u ttl=%u "
 #ifdef CONFIG_IEEE802154
-		 "rssi=%d "
+			 "rssi=%d "
 #endif
-		 "%s\n",
-		 bytes, src, dst, sequence, ttl,
+			 "%s\n",
+			 bytes, src, dst, sequence, ttl,
 #ifdef CONFIG_IEEE802154
-		 net_pkt_ieee802154_rssi_dbm(pkt),
+			 net_pkt_ieee802154_rssi_dbm(pkt),
 #endif
-		 time_buf);
+			 time_buf);
+	}
 
 	if (sequence == ping_ctx.count) {
 		ping_done(&ping_ctx);
@@ -321,7 +326,9 @@ static void ping_work(struct k_work *work)
 	ctx->sequence++;
 
 	if (ctx->sequence > ctx->count) {
-		PR_INFO("Ping timeout\n");
+		if (!ctx->quiet) {
+			PR_INFO("Ping timeout\n");
+		}
 		ping_done(ctx);
 		return;
 	}
@@ -451,6 +458,7 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	int tos = 0;
 	int payload_size = 4;
 	int priority = -1;
+	bool quiet = false;
 	int ret;
 
 	for (size_t i = 1; i < argc; ++i) {
@@ -513,6 +521,10 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 
 			break;
 
+		case 'q':
+			quiet = true;
+			break;
+
 		default:
 			PR_WARNING("Unrecognized argument: %s\n", argv[i]);
 			return -ENOEXEC;
@@ -535,6 +547,7 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 	ping_ctx.tos = tos;
 	ping_ctx.payload_size = payload_size;
 	ping_ctx.stats = (struct ping_stats){.rtt_min = UINT32_MAX};
+	ping_ctx.quiet = quiet;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_addr_pton(NET_AF_INET6, host, &ping_ctx.addr6.sin6_addr) == 0) {
@@ -572,14 +585,14 @@ static int cmd_net_ping(const struct shell *sh, size_t argc, char *argv[])
 #endif
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	net_cmd_ping,
 	SHELL_CMD(ping, NULL,
 		  SHELL_HELP("Send ICMPv4 or ICMPv6 Echo-Request to a network host",
-			     "[-c count] [-i interval ms] [-I <iface index>]\n"
-			     "[-Q tos] [-s payload size] [-p priority] <host>"),
+			     "[-c <count>] [-i <interval ms>] [-I <iface index>]\n"
+			     "[-Q <tos>] [-s <payload size>] [-p <priority>] [-q] <host>"),
 		  cmd_net_ping),
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 SHELL_SUBCMD_ADD((net), ping, &net_cmd_ping,
 		 "Ping a network host.",
