@@ -3,5 +3,10 @@
 
 zephyr_include_directories(.)
 zephyr_include_directories(../common)
-add_subdirectory(common)
+
+# Cluster-specific code for Cortex-M55 RTSS cores
+if(CONFIG_SOC_FAMILY_ENSEMBLE_RTSS)
+  add_subdirectory(rtss)
+endif()
+
 add_subdirectory(${SOC_SERIES})
