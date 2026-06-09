@@ -153,6 +153,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_MCUX_LPTMR
 	DT_FOREACH_STATUS_OKAY(nxp_lptmr, DEVICE_DT_GET_AND_COMMA_IF_NOT_SYSTEM_TIMER)
 #endif
+#ifdef CONFIG_COUNTER_MCUX_WAKE_TIMER
+	DEVS_FOR_DT_COMPAT(nxp_wake_timer)
+#endif
 #ifdef CONFIG_COUNTER_MCUX_LPIT
 	DEVS_FOR_DT_COMPAT(nxp_lpit_channel)
 #endif
