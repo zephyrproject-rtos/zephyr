@@ -47,10 +47,12 @@ or a network. The scope of the product includes the remote data processing solut
 a software not part of the product, but which is required to run the product. For example, it can be
 a mobile phone app or a cloud service.
 
-CRA applies to end products or components which are sold to European Union and EFTA market.
+CRA applies to end products or components which are placed on the market to European Union. Placing a
+product in the EU market meaning sell or give for free a product for the first time in EU market. It
+counts for every individual unit of a product series. The development or design date is not relevant.
 
 Several market exception are defined in the law (medical, automotive, avionics, military, spare parts),
-there are strict rules about these exceptions, please refer to the CRA law.
+there are strict rules about these exceptions, please refer to the CRA law. (`Article 2`_)
 
 Which category does my product belong to?
 =========================================
@@ -452,6 +454,7 @@ Zephyr-specific resources
 
 .. _`Recital 18`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#rct_18
 
+.. _`Article 2`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_2
 .. _`Article 3`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_3
 .. _`Article 7`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_7
 .. _`Article 13`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202402847#art_13
