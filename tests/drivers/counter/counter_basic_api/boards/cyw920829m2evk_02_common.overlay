@@ -7,16 +7,16 @@
 
 #include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
 
-&tcpwm0_0 {
+&tcpwm0_1 {
 	status = "okay";
 
-	counter0_0 {
+	counter0_1 {
 		status = "okay";
-		clocks = <&peri0_group4_16bit_0>;
+		clocks = <&peri0_group1_16bit_0>;
 	};
 };
 
-&peri0_group4_16bit_0 {
+&peri0_group1_16bit_0 {
 	status = "okay";
-	clock-div = <9600>;
+	clock-div = <9599>;
 };
