@@ -3994,6 +3994,18 @@ static void quic_annotate_sent_stream(struct quic_endpoint *ep,
 	}
 }
 
+/* Scratch buffer for stream-frame retransmission. The lost payload is copied
+ * out of the stream TX buffer under tx_lock, then sent from here. It is kept in
+ * .bss (not on the stack) because it is up to CONFIG_QUIC_TX_BUFFER_SIZE bytes;
+ * quic_retransmit_lock serializes the two threads that can retransmit (the
+ * socket-service thread on ACK-driven loss and the recovery work queue on PTO).
+ * The payload must be copied and tx_lock released before sending: the send
+ * records the packet under recovery.lock, while the ACK path takes recovery.lock
+ * then tx_lock, so holding tx_lock across the send would invert that order.
+ */
+static uint8_t quic_retransmit_payload[CONFIG_QUIC_TX_BUFFER_SIZE];
+static K_MUTEX_DEFINE(quic_retransmit_lock);
+
 static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 					 const struct quic_sent_pkt_info *lost)
 {
@@ -4014,23 +4026,35 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 		return;
 	}
 
+	if (lost->stream_data_len > sizeof(quic_retransmit_payload)) {
+		NET_WARN("[EP:%p/%d] Lost frame too large to retransmit (%u)",
+			 ep, quic_get_by_ep(ep), lost->stream_data_len);
+		return;
+	}
+
 	level = quic_stream_send_level(ep);
 	tx = &stream->tx_buf;
 
+	k_mutex_lock(&quic_retransmit_lock, K_FOREVER);
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+
 	if (lost->stream_offset < tx->base_offset) {
 		k_mutex_unlock(&stream->tx_lock);
+		k_mutex_unlock(&quic_retransmit_lock);
 		return; /* already ACKed */
 	}
 
 	buf_off = (size_t)(lost->stream_offset - tx->base_offset);
 	if (buf_off + lost->stream_data_len > tx->len) {
 		k_mutex_unlock(&stream->tx_lock);
+		k_mutex_unlock(&quic_retransmit_lock);
 		NET_WARN("[EP:%p/%d] Lost frame not in TX buffer",
 			 ep, quic_get_by_ep(ep));
 		return;
 	}
 
 	payload_len = lost->stream_data_len;
+	memcpy(quic_retransmit_payload, &tx->data[buf_off], payload_len);
 
 	k_mutex_unlock(&stream->tx_lock);
 
@@ -4043,25 +4067,27 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 
 	ret = quic_put_len(&hdr[hdr_len], sizeof(hdr) - hdr_len, lost->stream_id);
 	if (ret != 0) {
-		return;
+		goto unlock;
 	}
 	hdr_len += quic_get_varint_size(lost->stream_id);
 
 	ret = quic_put_len(&hdr[hdr_len], sizeof(hdr) - hdr_len, lost->stream_offset);
 	if (ret != 0) {
-		return;
+		goto unlock;
 	}
 	hdr_len += quic_get_varint_size(lost->stream_offset);
 
 	ret = quic_put_len(&hdr[hdr_len], sizeof(hdr) - hdr_len, lost->stream_data_len);
 	if (ret != 0) {
-		return;
+		goto unlock;
 	}
 	hdr_len += quic_get_varint_size(lost->stream_data_len);
 
-	/* Send: header from stack, payload directly from tx_buf */
+	/* Send: header from stack, payload from the scratch buffer copied under
+	 * tx_lock above.
+	 */
 	ret = quic_send_packet_sg(ep, level, hdr, hdr_len,
-				  &tx->data[buf_off], lost->stream_data_len,
+				  quic_retransmit_payload, payload_len,
 				  &sent_pn);
 	if (ret == 0) {
 		quic_annotate_sent_stream(ep, level, sent_pn,
@@ -4070,6 +4096,9 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 					  lost->stream_data_len,
 					  lost->stream_fin);
 	}
+
+unlock:
+	k_mutex_unlock(&quic_retransmit_lock);
 }
 
 /* Maximum number of ACK ranges we track from a single ACK frame.
