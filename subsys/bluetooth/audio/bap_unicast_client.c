@@ -3328,7 +3328,7 @@ int bt_bap_unicast_client_qos(struct bt_conn *conn, struct bt_bap_unicast_group 
 		}
 
 		if (ep->iso->chan.iso == NULL) {
-			LOG_DBG("stream->ep->iso->chan.iso == NULL is NULL");
+			LOG_DBG("stream->ep->iso->chan.iso is NULL");
 			return -EINVAL;
 		}
 
