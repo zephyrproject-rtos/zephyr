@@ -19,9 +19,10 @@ It entered into force on December 10, 2024.
 .. admonition:: Key Dates
    :class: important
 
-   * **June 11, 2026**: Assessment bodies operational
-   * **September 11, 2026**: Manufacturers must report vulnerabilities and incidents
-   * **December 11, 2027**: Full regulation applies
+   * **June 11, 2026**: Assessment bodies operational, Market surveillance authorities defined
+   * **September 11, 2026**: Manufacturers must report exploited vulnerabilities and severe incidents
+   * **December 11, 2027**: Full regulation applies on product placed on the market from that date
+   or placed on the market before and with substantial modifications after this date.
 
 This page explains how the CRA relates both to manufacturers using Zephyr in commercial products,
 and to the Zephyr Project itself in its role as an open-source software steward.
@@ -73,24 +74,24 @@ with fewer documentation and assurance requirements.
      - - Wi-Fi smart bulb or switch (e.g., running Matter over Thread/Wi-Fi).
        - Wearable activity tracker or smartwatch for personal wellness.
        - Bluetooth LE audio accessory or wireless sensor tag.
+       - Temperature sensor connected to a CAN bus.
    * - Important (Class I)
      - Higher-risk products, often consumer-facing, performing security- or access-relevant
        functions.
      - - Smart door lock or access control reader for residential use.
-       - Smart home hub or router managing network traffic.
+       - Router managing network traffic.
        - Connected alarm system or security sensor.
+       - Micro-controllers with AVA_VAN.1 protection level.
    * - Important (Class II)
      - Higher-risk products used in enterprise/industrial/infra contexts or with privileged network
        roles.
-     - - Industrial Programmable Logic Controller (PLC) or robot controller.
-       - Micro-controllers with Secure Enclave/TEEs used for device identity.
-       - Industrial IoT gateway performing edge processing.
+     - - Micro-controllers with AVA_VAN.2 or AVA_VAN.3 protection level.
    * - Critical
      - Products whose compromise could severely impact critical infrastructure or essential
        services.
-     - - Smart electricity meter or water meter with remote shut-off.
+     - - Smart meter gateways.
        - Hardware Security Module (HSM) or smartcard firmware.
-       - Safety-critical sensors used in energy or transport grids.
+
 
 .. admonition:: Core Functionality vs. Integration
    :class: important
