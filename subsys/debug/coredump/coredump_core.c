@@ -16,6 +16,9 @@
 extern struct coredump_backend_api coredump_backend_logging;
 static struct coredump_backend_api
 	*backend_api = &coredump_backend_logging;
+#elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING_UDP)
+extern struct coredump_backend_api coredump_backend_logging_udp;
+static struct coredump_backend_api *backend_api = &coredump_backend_logging_udp;
 #elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_FLASH_PARTITION)
 extern struct coredump_backend_api coredump_backend_flash_partition;
 static struct coredump_backend_api
