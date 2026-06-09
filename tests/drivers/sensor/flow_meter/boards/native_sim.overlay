@@ -1,0 +1,24 @@
+/* Copyright (c) 2026 Nicolas Belin <nbelin@baylibre.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	flow_meter_0: flow_meter {
+		compatible = "zephyr,flow-meter";
+		/* gpio0 pin 0: pulse input driven by test code via gpio_emul */
+		pulse-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		/* No power-gpios in the test — the property is optional. */
+		/* 1000 µL/pulse = 1 mL/pulse: 1000 pulses = 1 liter. */
+		pulses-per-liter = <1000>;
+		status = "okay";
+	};
+
+	flow_meter_1: flow_meter_pwr {
+		compatible = "zephyr,flow-meter";
+		pulse-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		/* Second instance exercises the optional power-gpios path. */
+		power-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		pulses-per-liter = <1000>;
+		status = "okay";
+	};
+};
