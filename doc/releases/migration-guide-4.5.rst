@@ -336,11 +336,10 @@ Interrupt Controllers
 NXP
 ===
 
-* :kconfig:option:`CONFIG_MCUX_LPTMR_TIMER` no longer defaults to ``y`` based on the
-  ``/chosen/zephyr,system-timer`` chosen node being compatible with
-  :dtcompatible:`nxp,lptmr`. Out-of-tree SoCs and boards that rely on the LPTMR
-  as the system timer must now explicitly default the symbol in their
-  ``Kconfig.defconfig`` (for example ``default y if PM``).
+* :kconfig:option:`CONFIG_MCUX_LPTMR_TIMER` now defaults to ``y`` when the
+  ``/chosen/zephyr,system-timer`` chosen node is enabled and compatible with
+  :dtcompatible:`nxp,lptmr`. Boards that do not use LPTMR as the system timer
+  must not select an LPTMR node in ``/chosen/zephyr,system-timer``.
 
 * Kinetis KE1xF no longer requires a board overlay to designate the system
   timer when :kconfig:option:`CONFIG_PM` is enabled. The SoC DTSI now sets the
