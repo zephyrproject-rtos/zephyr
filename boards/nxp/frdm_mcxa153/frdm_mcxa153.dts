@@ -132,6 +132,10 @@
 	status = "okay";
 };
 
+&waketimer0 {
+	status = "okay";
+};
+
 &eim0 {
 	status = "okay";
 };
