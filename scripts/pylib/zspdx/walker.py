@@ -519,10 +519,10 @@ class Walker:
         # walk through target's sources
         for src in cfgTarget.target.sources:
             _logger.debug(f"    - add pending source file and relationship for {src.path}")
-            # get absolute path if we don't have it
+            # get absolute, normalized path if we don't have it
             srcAbspath = src.path
             if not os.path.isabs(src.path):
-                srcAbspath = os.path.join(self.cm.paths_source, src.path)
+                srcAbspath = os.path.normpath(os.path.join(self.cm.paths_source, src.path))
 
             # check whether it even exists
             if not (os.path.exists(srcAbspath) and os.path.isfile(srcAbspath)):
@@ -532,8 +532,10 @@ class Walker:
                 )
                 continue
 
-            # add it to pending source files queue
-            self.pendingSources.append(srcAbspath)
+            # add it to pending source files queue, remembering the build
+            # target that referenced it (used to assign generated/build-dir
+            # files to the correct build component)
+            self.pendingSources.append((srcAbspath, component))
 
             # create relationship data: build file GENERATED_FROM source file
             self.pendingRelationships.append(
@@ -552,8 +554,9 @@ class Walker:
         targetIncludesList = list(targetIncludesSet)
         targetIncludesList.sort()
         for inc in targetIncludesList:
-            # add it to pending source files queue
-            self.pendingSources.append(inc)
+            # add it to pending source files queue, remembering the build
+            # target that referenced it
+            self.pendingSources.append((inc, component))
 
             # create relationship data: build file GENERATED_FROM include file
             self.pendingRelationships.append(("file", bf.path, "file", inc, "GENERATED_FROM"))
@@ -642,14 +645,14 @@ class Walker:
     def walkPendingSources(self):
         _logger.debug("walking pending sources")
 
-        for srcAbspath in self.pendingSources:
+        for srcAbspath, collecting_component in self.pendingSources:
             # check whether we've already seen it
             if srcAbspath in self.sbom_graph.files:
                 _logger.debug(f"  - {srcAbspath}: already seen")
                 continue
 
             # not yet assigned; figure out which component should own it
-            owning_component = self.findOwningComponent(srcAbspath)
+            owning_component = self.findOwningComponent(srcAbspath, collecting_component)
             if not owning_component:
                 _logger.debug(
                     f"  - {srcAbspath}: can't determine which component should own; skipping"
@@ -660,37 +663,45 @@ class Walker:
             self.sbom_graph.add_file(SBOMFile(path=srcAbspath), owning_component)
 
     # figure out which Component should own the given file based on path
-    def findOwningComponent(self, srcAbspath):
+    def _is_within(self, src_abspath, base_dir):
+        """True if src_abspath lives under base_dir (same common ancestor)."""
+        if not base_dir:
+            return False
+        try:
+            return os.path.commonpath([src_abspath, base_dir]) == base_dir
+        except ValueError:
+            # Paths don't share a common ancestor (e.g. different drives)
+            return False
+
+    def findOwningComponent(self, srcAbspath, collecting_component=None):
+        # Generated files live under the build directory. Every build-target
+        # component shares the build directory as its base_dir, so a plain path
+        # search cannot tell them apart and would assign every such file to whichever
+        # build target happens to be first (e.g. "app"). Prefer the build target that
+        # actually referenced this file as a source.
+        if (
+            collecting_component is not None
+            and collecting_component.name in self.component_build_targets
+            and self._is_within(srcAbspath, collecting_component.base_dir)
+        ):
+            return collecting_component
+
         # Check build targets first (most specific)
         for component in self.component_build_targets.values():
-            try:
-                if os.path.commonpath([srcAbspath, component.base_dir]) == component.base_dir:
-                    return component
-            except ValueError:
-                # Paths don't share a common ancestor
-                continue
+            if self._is_within(srcAbspath, component.base_dir):
+                return component
 
         # Check SDK
-        if self.cfg.includeSDK and self.component_sdk:
-            try:
-                if (
-                    os.path.commonpath([srcAbspath, self.component_sdk.base_dir])
-                    == self.component_sdk.base_dir
-                ):
-                    return self.component_sdk
-            except ValueError:
-                pass
+        if (
+            self.cfg.includeSDK
+            and self.component_sdk
+            and self._is_within(srcAbspath, self.component_sdk.base_dir)
+        ):
+            return self.component_sdk
 
         # Check app
-        if self.component_app:
-            try:
-                if (
-                    os.path.commonpath([srcAbspath, self.component_app.base_dir])
-                    == self.component_app.base_dir
-                ):
-                    return self.component_app
-            except ValueError:
-                pass
+        if self.component_app and self._is_within(srcAbspath, self.component_app.base_dir):
+            return self.component_app
 
         # Check zephyr sources and module sources. A module path is nested under
         # the zephyr west topdir, so prefer the deepest matching base_dir to attribute
@@ -701,15 +712,7 @@ class Walker:
 
         best_match = None
         for component in zephyr_candidates:
-            if not component.base_dir:
-                continue
-            try:
-                is_owner = (
-                    os.path.commonpath([srcAbspath, component.base_dir]) == component.base_dir
-                )
-            except ValueError:
-                continue
-            if is_owner and (
+            if self._is_within(srcAbspath, component.base_dir) and (
                 best_match is None or len(component.base_dir) > len(best_match.base_dir)
             ):
                 best_match = component

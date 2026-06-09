@@ -333,6 +333,21 @@ class TestBuildDocument:
         ext_refs = build_doc.creation_info.external_document_refs
         assert len(ext_refs) > 0, "build.spdx: no external document references found"
 
+    def test_app_package_excludes_generated_files(self, build_doc):
+        """Build-tree generated files must not land in the app package (only libapp.a)."""
+        app_pkg = find_package_by_name(build_doc, "app")
+        assert app_pkg is not None, "build.spdx: app package not found"
+        contained = {
+            str(r.related_spdx_element_id)
+            for r in get_relationships_for_element(
+                build_doc, app_pkg.spdx_id, RelationshipType.CONTAINS
+            )
+        }
+        app_files = [f.name for f in build_doc.files if f.spdx_id in contained]
+        assert app_files == [FILE_LIBAPP_A], (
+            f"build.spdx: app package should contain only {FILE_LIBAPP_A}, got {app_files}"
+        )
+
 
 class TestModulesDocument:
     """Tests for modules-deps.spdx document validation."""
