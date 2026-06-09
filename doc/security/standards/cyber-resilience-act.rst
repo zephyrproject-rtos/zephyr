@@ -6,6 +6,8 @@ EU Cyber Resilience Act (CRA)
 .. warning::
    This document is for informational purposes only and does not constitute legal advice.
    Consult with your legal counsel for compliance guidance specific to your situation.
+   You can consult European Union accredited lab (`List of Notified Body for CRA`_) who can
+   help you.
 
 Overview
 ********
@@ -450,3 +452,5 @@ Zephyr-specific resources
 .. _`Implementing Regulation (EU) 2025/2392`: https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32025R2392
 
 .. _`Zephyr Vulnerability Alert Registry`: https://www.zephyrproject.org/vulnerability-registry/
+
+.. _`List of Notified Body for CRA`: https://webgate.ec.europa.eu/single-market-compliance-space/notified-bodies/free-search?filter=notificationStatus:1,legislation:167953
