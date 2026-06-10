@@ -3,7 +3,7 @@
 
 # keep first
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-if(CONFIG_STM32_MEMMAP)
+if(CONFIG_FLASH_STM32_NOR_MEMMAP)
 board_runner_args(stm32cubeprogrammer "--extload=MX66LM1G45G_STM32U5G9J-DK2.stldr")
 endif()
 
