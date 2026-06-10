@@ -80,9 +80,7 @@ static struct k_mutex *get_posix_mutex(pthread_mutex_t mu)
 
 struct k_mutex *to_posix_mutex(pthread_mutex_t *mu)
 {
-	int err;
 	size_t bit;
-	struct k_mutex *m;
 
 	if (*mu != PTHREAD_MUTEX_INITIALIZER) {
 		return get_posix_mutex(*mu);
@@ -97,13 +95,7 @@ struct k_mutex *to_posix_mutex(pthread_mutex_t *mu)
 	/* Record the associated posix_mutex in mu and mark as initialized */
 	*mu = mark_pthread_obj_initialized(bit);
 
-	/* Initialize the posix_mutex */
-	m = &posix_mutex_pool[bit];
-
-	err = k_mutex_init(m);
-	__ASSERT_NO_MSG(err == 0);
-
-	return m;
+	return &posix_mutex_pool[bit];
 }
 
 static int acquire_mutex(pthread_mutex_t *mu, k_timeout_t timeout)
@@ -303,9 +295,19 @@ int pthread_mutex_destroy(pthread_mutex_t *mu)
 		return EINVAL;
 	}
 
+	if (m->owner != NULL) {
+		/* Destroying a locked mutex is undefined behavior in POSIX */
+		return EBUSY;
+	}
+
+	err = k_mutex_init(m);
+	__ASSERT_NO_MSG(err == 0);
+
 	bit = to_posix_mutex_idx(*mu);
 	err = sys_bitarray_free(&posix_mutex_bitarray, 1, bit);
 	__ASSERT_NO_MSG(err == 0);
+
+	*mu = PTHREAD_MUTEX_INITIALIZER;
 
 	LOG_DBG("Destroyed mutex %p", m);
 
