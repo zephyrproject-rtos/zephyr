@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+title: Generic cluster group
+
+description: |
+  An optional node to put multiple clusters of the same type in, e.g. all
+  Cortex-R clusters, if there are also Cortex-M clusters. In such cases the reg
+  property of this node needs to match the SoC specific enum that identifies the
+  cluster type for the struct core_identification
+
+compatible: "amp-cluster-group"
+
+include: base.yaml

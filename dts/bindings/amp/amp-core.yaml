@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+title: Generic CPU core
+
+description: |
+  A single CPU core
+
+include: base.yaml
+
+properties:
+  self-cpu:
+    type: boolean
+    required: false
+    description: |
+      Set this, if this is the core the currently built Zephyr firmware will run
+      on. As of now this doesn't do anything.
+
+  stop-on-init:
+    type: boolean
+    description: |
+      Add this property in case the driver should ensure the core is powered off
+      during startup.
