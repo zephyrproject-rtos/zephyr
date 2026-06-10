@@ -1,0 +1,23 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/amp/ti-k3-amp.h>
+
+&dmsc {
+	status = "okay";
+};
+
+&secure_proxy_main {
+	status = "okay";
+};
+
+&r5fss_1_0 {
+	status = "okay";
+	config-set-flags = <(CORTEX_R_INVASIVE_DBG_BIT | CORTEX_R_NON_INVASIVE_DBG_BIT | CORTEX_R_ATCM_AT_ZERO_BIT | CORTEX_R_ATCM_ENABLE_BIT | CORTEX_R_BTCM_ENABLE_BIT)>;
+	config-clear-flags = <(CORTEX_R_THUMB_EXCEPTION_HANDLING_BIT | CORTEX_R_NON_MASKABLE_FAST_INTERRUPT_BIT | CORTEX_R_DISABLE_MEMORY_INIT_BIT | CORTEX_R_USE_SINGLECORE | CORTEX_X_IGNORE_BOOTVECTOR)>;
+	boot-vec = <0x0>;
+};
+
