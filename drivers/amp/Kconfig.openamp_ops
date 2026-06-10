@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# AMP options
+#
+menuconfig AMP_OPENAMP_OPS
+	bool "Provide OpenAMP operations"
+
+if AMP_OPENAMP_OPS
+
+module = AMP_OPENAMP_OPS
+module-str = AMP_OPENAMP_OPS
+source "subsys/logging/Kconfig.template.log_config"
+
+config AMP_OPENAMP_OPS_PROVIDE_REMOTEPROC
+	bool "Provide a OpenAMP remoteproc_ops struct that use the Zephyr API"
+	depends on OPENAMP
+	default n
+
+# All storage_ops are to be used from remoteproc_load which needs remoteproc_ops
+if AMP_OPENAMP_OPS_PROVIDE_REMOTEPROC
+
+config AMP_OPENAMP_OPS_PROVIDE_STORAGE_OPS_LOCK_TIMEOUT
+	int "Maximum amount to wait to acquire the Mutex for global storage option data (ms)"
+	default 1000
+	help
+	  The memory operations require a small amount of global data that is
+	  protected by a mutex. It is acquired in open and released in close. This
+	  options says how long it is allowed to wait to wait to acquire it in open
+	  in milliseconds
+
+config AMP_OPENAMP_OPS_PROVIDE_STORAGE_OPS_MEMCPY
+	bool "Provide a OpenAMP storage_ops struct that uses memcpy for an ELF in addressable memory"
+	default n
+
+endif # AMP_OPENAMP_OPS_PROVIDE_REMOTEPROC
+
+config HEAP_MEM_POOL_ADD_SIZE_AMPO_PENAMP_OPS
+	int "Heap memory pool size for provided OpenAMP operations"
+	default 2048
+	depends on AMP_OPENAMP_OPS_PROVIDE_STORAGE_OPS_MEMCPY
+	help
+	  Used inside of upstream OpenAMP to hold data while parsing ELF files
+
+# zephyr-keep-sorted-start
+source "drivers/amp/Kconfig.ti_k3"
+# zephyr-keep-sorted-stop
+
+endif # AMP

@@ -29,6 +29,8 @@ config AMP_IDENTIFICATION_INCLUDES_CLUSTER_TYPE
 	bool "AMP core identificaiton includes a cluster type"
 	default n
 
+source "drivers/amp/Kconfig.openamp_ops"
+
 # zephyr-keep-sorted-start
 source "drivers/amp/Kconfig.ti_k3"
 # zephyr-keep-sorted-stop
