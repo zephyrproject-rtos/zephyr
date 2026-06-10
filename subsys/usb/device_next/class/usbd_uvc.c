@@ -1087,7 +1087,12 @@ static int uvc_control_to_dev(struct usbd_class_data *const c_data,
 		goto end;
 	}
 
-	if (setup->wLength && (buf == NULL)) {
+	if (setup->wLength == 0) {
+		err = -ENOTSUP;
+		goto end;
+	}
+
+	if (buf == NULL) {
 		/* Data OUT can be received */
 		return 0;
 	}
