@@ -21,6 +21,7 @@ config CRC_DRIVER_NXP_LPC
 	default y
 	select CRC_DRIVER_HAS_CRC16
 	select CRC_DRIVER_HAS_CRC16_CCITT
+	select CRC_DRIVER_HAS_CRC16_ITU_T
 	select CRC_DRIVER_HAS_CRC32_IEEE
 	help
 	  Enable the LPC CRC driver implementation for NXP microcontrollers
