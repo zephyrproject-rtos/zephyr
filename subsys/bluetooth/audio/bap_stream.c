@@ -1541,6 +1541,7 @@ int bt_bap_stream_disable(struct bt_bap_stream *stream)
 
 int bt_bap_stream_release(struct bt_bap_stream *stream)
 {
+	const struct bt_bap_ep *ep;
 	struct bt_conn *conn;
 	uint8_t role;
 	int err;
@@ -1553,7 +1554,13 @@ int bt_bap_stream_release(struct bt_bap_stream *stream)
 	}
 
 	conn = stream->conn;
-	if (!bap_stream_valid_ase_op(conn, stream->ep, BT_ASCS_RELEASE_OP)) {
+	ep = stream->ep;
+
+	/* If ep->state == BT_BAP_EP_STATE_IDLE, then the stream and/or ASE will be reset even if it
+	 * is not a valid ASCS transition
+	 */
+	if (ep->state != BT_BAP_EP_STATE_IDLE &&
+	    !bap_stream_valid_ase_op(conn, ep, BT_ASCS_RELEASE_OP)) {
 		return -EBADMSG;
 	}
 
