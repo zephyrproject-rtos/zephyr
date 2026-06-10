@@ -421,7 +421,7 @@ static DEVICE_API(gpio, mcux_igpio_driver_api) = {
 									\
 		DEVICE_MMIO_NAMED_MAP(dev, igpio_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP); \
 									\
-		return 0;						\
+		return gpio_common_init(dev);				\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_IGPIO_INIT)

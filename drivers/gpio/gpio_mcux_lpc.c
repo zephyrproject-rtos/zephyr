@@ -521,7 +521,7 @@ static DEVICE_API(gpio, gpio_mcux_lpc_driver_api) = {
 		gpio_mcux_lpc_init(dev);						\
 		GPIO_MCUX_LPC_MODULE_IRQ(n);						\
 											\
-		return 0;								\
+		return gpio_common_init(dev);						\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_MCUX_LPC)

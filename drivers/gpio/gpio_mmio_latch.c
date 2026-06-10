@@ -193,7 +193,7 @@ static int mmio_latch_gpio_init(const struct device *dev)
 	mmio_latch_gpio_hw_write(cfg, initial_value);
 	data->shadow = initial_value;
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, mmio_latch_gpio_driver_api) = {

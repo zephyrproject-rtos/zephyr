@@ -194,7 +194,7 @@ static int gpio_init(const struct device *dev)
 	/* Configure GPIO device */
 	cfg->cfg_func();
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static int gpio_altera_pin_interrupt_configure(const struct device *dev,

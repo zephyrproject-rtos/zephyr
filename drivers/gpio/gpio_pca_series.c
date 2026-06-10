@@ -1943,10 +1943,12 @@ out:
 out_bus:
 	if (ret) {
 		LOG_ERR("%s init failed: %d", dev->name, ret);
-	} else {
-		LOG_INF("%s init ok", dev->name);
+		return ret;
 	}
-	return ret;
+
+	LOG_INF("%s init ok", dev->name);
+
+	return gpio_common_init(dev);
 }
 
 /**

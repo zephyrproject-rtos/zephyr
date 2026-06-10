@@ -369,7 +369,7 @@ static int pcf857x_init(const struct device *dev)
 		}
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 /** Realizes the functions of gpio.h for pcf857x*/

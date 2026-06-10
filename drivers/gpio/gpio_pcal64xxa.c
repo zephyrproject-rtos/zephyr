@@ -1085,7 +1085,7 @@ int pcal64xxa_init(const struct device *dev)
 	/* Device configured, unlock it so that it can be used. */
 	k_sem_give(&drv_data->lock);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define PCAL64XXA_INIT_INT_GPIO_FIELDS(idx)                                                        \

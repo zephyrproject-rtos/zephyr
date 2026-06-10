@@ -561,7 +561,7 @@ static DEVICE_API(gpio, gpio_nxp_siul2_driver_api) = {
 	static struct gpio_nxp_siul2_data gpio_nxp_siul2_data_##n;		\
 	static int gpio_nxp_siul2_init_##n(const struct device *dev)		\
 	{									\
-		return 0;							\
+		return gpio_common_init(dev);					\
 	}									\
 	DEVICE_DT_INST_DEFINE(n,						\
 			gpio_nxp_siul2_init_##n,				\

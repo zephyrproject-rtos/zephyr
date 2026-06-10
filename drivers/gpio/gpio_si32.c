@@ -178,7 +178,7 @@ static int gpio_si32_init(const struct device *dev)
 		SI32_PBSTD_A_disable_pullup_resistors(config->base);
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_DEVICE_INIT(inst)                                                                     \

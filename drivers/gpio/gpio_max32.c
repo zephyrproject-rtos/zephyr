@@ -239,7 +239,7 @@ static int gpio_max32_init(const struct device *dev)
 		}
 	}
 
-	return ret;
+	return gpio_common_init(dev);
 }
 
 #define MAX32_GPIO_INIT(_num)                                                                      \

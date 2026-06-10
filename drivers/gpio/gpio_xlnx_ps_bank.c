@@ -442,7 +442,7 @@ static int gpio_xlnx_ps_bank_init(const struct device *dev)
 	sys_write32(~0x0, GPIO_XLNX_PS_BANK_INT_DIS_REG);  /* Disable all interrupts */
 	sys_write32(~0x0, GPIO_XLNX_PS_BANK_INT_STAT_REG); /* Clear all interrupts */
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 /* MIO / EMIO bank device definition macros */

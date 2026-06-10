@@ -426,7 +426,7 @@ DEVICE_DT_INST_DEFINE(idx, \
 static int gpio_gecko_port##idx##_init(const struct device *dev) \
 { \
 	gpio_gecko_add_port(&gpio_gecko_common_data, dev); \
-	return 0; \
+	return gpio_common_init(dev); \
 }
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_INIT)

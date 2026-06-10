@@ -361,7 +361,7 @@ static int gpio_rt1718s_port_init(const struct device *dev)
 
 	k_sem_init(&data->lock, 1, 1);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 /* RT1718S GPIO port driver must be initialized after RT1718S chip driver */

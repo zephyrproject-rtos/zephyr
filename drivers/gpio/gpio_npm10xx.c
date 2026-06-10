@@ -128,7 +128,7 @@ int gpio_npm10xx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_npm10xx_api) = {

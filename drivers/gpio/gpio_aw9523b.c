@@ -480,7 +480,7 @@ end_hw_reset:
 		}
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_AW9523B_DEFINE(inst)                                                                  \

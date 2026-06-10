@@ -597,9 +597,10 @@ static void gpio_esp32_isr(void *param);
 static int gpio_esp32_init(const struct device *dev)
 {
 	static bool isr_connected;
+	int ret;
 
 	if (!isr_connected) {
-		int ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
+		ret = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
 			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)) |
 			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags)) |
 				ESP_INTR_FLAG_IRAM,
@@ -615,7 +616,12 @@ static int gpio_esp32_init(const struct device *dev)
 		isr_connected = true;
 	}
 
-	return pm_device_driver_init(dev, gpio_esp32_pm_action);
+	ret = pm_device_driver_init(dev, gpio_esp32_pm_action);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_esp32_driver_api) = {

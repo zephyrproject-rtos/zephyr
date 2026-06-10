@@ -254,7 +254,7 @@ static int gpio_aesc_init(const struct device *dev)
 
 	cfg->irq_config(dev);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_aesc_driver_api) = {

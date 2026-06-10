@@ -280,6 +280,12 @@ static int stmpe1600_init(const struct device *dev)
 	ret = read_reg16(dev->config, REG_GPDR_LSB, &drvdata->GPDR);
 	if (ret != 0) {
 		LOG_ERR("STMPE1600[0x%02X]: Unable to read GPDR", config->i2c.addr);
+		return ret;
+	}
+
+	ret = gpio_common_init(dev);
+	if (ret != 0) {
+		LOG_ERR("STMPE1600[0x%02X]: gpio_common_init failed: %d", config->i2c.addr, ret);
 	}
 
 	return ret;

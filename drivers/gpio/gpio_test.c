@@ -63,6 +63,11 @@ static int vnd_gpio_port_toggle_bits(const struct device *port,
 	return -ENOTSUP;
 }
 
+static int vnd_gpio_port_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+
 static DEVICE_API(gpio, vnd_gpio_api) = {
 	.pin_configure = vnd_gpio_pin_configure,
 	.port_get_raw = vnd_gpio_port_get_raw,
@@ -72,16 +77,15 @@ static DEVICE_API(gpio, vnd_gpio_api) = {
 	.port_toggle_bits = vnd_gpio_port_toggle_bits,
 };
 
-#define VND_GPIO_INIT(n)						\
-	static const struct vnd_gpio_config vnd_gpio_config_##n = {	\
-		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
-	};								\
-									\
-	static struct vnd_gpio_data vnd_gpio_data_##n;			\
-									\
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &vnd_gpio_data_##n,	\
-			      &vnd_gpio_config_##n, POST_KERNEL,	\
-			      CONFIG_GPIO_INIT_PRIORITY,		\
+#define VND_GPIO_INIT(n)                                                                           \
+	static const struct vnd_gpio_config vnd_gpio_config_##n = {                                \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
+	};                                                                                         \
+                                                                                                   \
+	static struct vnd_gpio_data vnd_gpio_data_##n;                                             \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, vnd_gpio_port_init, NULL, &vnd_gpio_data_##n,                     \
+			      &vnd_gpio_config_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,        \
 			      &vnd_gpio_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VND_GPIO_INIT)

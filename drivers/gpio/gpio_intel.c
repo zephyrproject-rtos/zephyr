@@ -682,7 +682,7 @@ static int gpio_intel_dts_init(const struct device *dev)
 		sys_bitfield_clear_bit(regs(dev) + REG_MISCCFG,
 				       MISCCFG_IRQ_ROUTE_POS);
 	}
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_INIT_FN_DEFINE(n)                                                                     \

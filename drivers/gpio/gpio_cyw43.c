@@ -136,7 +136,7 @@ static int gpio_cyw43_init(const struct device *dev)
 	struct gpio_cyw43_data *data = dev->data;
 
 	k_mutex_init(&data->lock);
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_CYW43_DEFINE(inst)                                                                    \

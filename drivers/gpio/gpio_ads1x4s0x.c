@@ -115,7 +115,7 @@ static int gpio_ads1x4s0x_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_ads1x4s0x_api) = {

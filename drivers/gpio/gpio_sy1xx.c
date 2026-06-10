@@ -45,7 +45,7 @@ static int sy1xx_gpio_driver_port_toggle_bits(const struct device *dev, gpio_por
 
 static int sy1xx_gpio_driver_init(const struct device *dev)
 {
-	return 0;
+	return gpio_common_init(dev);
 }
 
 int sy1xx_gpio_driver_configure(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)

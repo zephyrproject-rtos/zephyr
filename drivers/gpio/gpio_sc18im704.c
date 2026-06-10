@@ -248,7 +248,7 @@ static int gpio_sc18im_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_sc18im_driver_api) = {

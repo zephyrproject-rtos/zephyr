@@ -461,7 +461,7 @@ int gpio_bflb_init(const struct device *dev)
 	gpio_bflb_reset_all_pins_irq(dev);
 	gpio_bflb_init_parent(dev);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static void gpio_bflb_isr(const struct gpio_bflb_bl61x_parent_config *p_cfg)
