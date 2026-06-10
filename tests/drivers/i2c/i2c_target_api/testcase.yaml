@@ -30,9 +30,12 @@ tests:
       - nucleo_f401re
       - nucleo_f429zi
       - nucleo_h503rb
+      - nucleo_h563zi
       - nucleo_h753zi
       - nucleo_l073rz
       - nucleo_l152re
+      - nucleo_l476rg
+      - nucleo_n657x0_q/stm32n657xx/sb
       - nucleo_u083rc
       - nucleo_u385rg_q
       - nucleo_wba55cg
