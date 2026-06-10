@@ -54,6 +54,12 @@
 				#clock-cells = <1>;
 			};
 
+			scmi_reset: protocol@16 {
+				compatible = "arm,scmi-reset";
+				reg = <0x16>;
+				#reset-cells = <1>;
+			};
+
 			scmi_pinctrl: protocol@19 {
 				compatible = "arm,scmi-pinctrl";
 				reg = <0x19>;
