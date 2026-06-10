@@ -7,9 +7,10 @@
 #include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/ztest.h>
+
+#include "trigger_src.h"
 
 #define NUM_OF_CONTINUOUS_CAPTURES CONFIG_NUM_OF_CONTINUOUS_CAPTURES
 #define CAPTURE_TOLERANCE_US       CONFIG_COUNTER_CAPTURE_TOLERANCE_US
@@ -19,23 +20,13 @@
 	DT_PROP_LEN(DT_NODELABEL(counter_loopback_0), test_counter_captures)
 
 /* clang-format off */
-static const struct gpio_dt_spec capture_tester_gpios[] = {
-	DT_FOREACH_PROP_ELEM_SEP(
-		DT_PATH(zephyr_user),
-		capture_tester_gpios,
-		GPIO_DT_SPEC_GET_BY_IDX, (,))
-};
-
-static const struct counter_capture_dt_spec capture_dt_specs[] = {
+const struct counter_capture_dt_spec capture_dt_specs[] = {
 	DT_FOREACH_PROP_ELEM_SEP(
 		DT_NODELABEL(counter_loopback_0),
 		test_counter_captures,
 		COUNTER_CAPTURE_DT_SPEC_GET_BY_IDX, (,))
 };
 /* clang-format on */
-
-BUILD_ASSERT(ARRAY_SIZE(capture_dt_specs) == ARRAY_SIZE(capture_tester_gpios),
-	     "capture_dt_specs and capture_tester_gpios size mismatch");
 
 K_SEM_DEFINE(capture_sem, 0, 1);
 
@@ -67,17 +58,17 @@ static int counter_capture_test_edge(size_t idx, int trigger_level)
 {
 	int ret;
 
-	if (gpio_pin_get_dt(&capture_tester_gpios[idx]) == trigger_level) {
-		ret = gpio_pin_set_dt(&capture_tester_gpios[idx], !trigger_level);
-		zassert_ok(ret, "idx %zu: failed to set GPIO to settle state", idx);
+	if (trigger_src_get(idx) == trigger_level) {
+		ret = trigger_src_set(idx, !trigger_level);
+		zassert_ok(ret, "idx %zu: failed to set trigger source to settle state", idx);
 		k_msleep(2);
 	}
 
 	ret = counter_get_value(capture_dt_specs[idx].dev, &capture_ctx.expected_ticks);
 	zassert_ok(ret, "idx %zu: failed to get counter value", idx);
 
-	ret = gpio_pin_set_dt(&capture_tester_gpios[idx], trigger_level);
-	zassert_ok(ret, "idx %zu: failed to trigger GPIO", idx);
+	ret = trigger_src_set(idx, trigger_level);
+	zassert_ok(ret, "idx %zu: failed to drive trigger source", idx);
 
 	ret = k_sem_take(&capture_sem, K_MSEC(100));
 	if (ret != 0) {
@@ -88,9 +79,9 @@ static int counter_capture_test_edge(size_t idx, int trigger_level)
 		     "idx %zu: capture timestamp outside tolerance (%d us)",
 		     idx, CAPTURE_TOLERANCE_US);
 
-	ret = gpio_pin_get_dt(&capture_tester_gpios[idx]);
+	ret = trigger_src_get(idx);
 	zassert_equal(ret, trigger_level,
-		      "idx %zu: GPIO pin state does not match expected value of %d: %d",
+		      "idx %zu: trigger source state does not match expected value of %d: %d",
 		      idx, trigger_level, ret);
 
 	return 0;
@@ -227,7 +218,7 @@ static void run_both_edges_continuous(size_t idx)
 	zassert_ok(counter_enable_capture(spec->dev, spec->chan_id),
 		   "idx %zu channel %u: failed to enable capture", idx, spec->chan_id);
 
-	int first_edge = (gpio_pin_get_dt(&capture_tester_gpios[idx]) == EDGE_FALLING)
+	int first_edge = (trigger_src_get(idx) == EDGE_FALLING)
 				 ? EDGE_RISING
 				 : EDGE_FALLING;
 
@@ -262,7 +253,7 @@ static void run_both_edges_single(size_t idx)
 	zassert_ok(counter_enable_capture(spec->dev, spec->chan_id),
 		   "idx %zu channel %u: failed to enable capture", idx, spec->chan_id);
 
-	int first_edge = (gpio_pin_get_dt(&capture_tester_gpios[idx]) == EDGE_FALLING)
+	int first_edge = (trigger_src_get(idx) == EDGE_FALLING)
 				 ? EDGE_RISING
 				 : EDGE_FALLING;
 
@@ -363,12 +354,8 @@ static void *counter_setup(void)
 		zassert_true(device_is_ready(spec->dev),
 			     "idx %zu channel %u: counter device is not ready", idx, spec->chan_id);
 
-		zassert_true(gpio_is_ready_dt(&capture_tester_gpios[idx]),
-			     "idx %zu channel %u: capture tester GPIO device is not ready", idx,
-			     spec->chan_id);
-
-		ret = gpio_pin_configure_dt(&capture_tester_gpios[idx], GPIO_OUTPUT_LOW);
-		zassert_ok(ret, "idx %zu channel %u: failed to configure GPIO pin", idx,
+		ret = trigger_src_setup(idx);
+		zassert_ok(ret, "idx %zu channel %u: failed to set up trigger source", idx,
 			   spec->chan_id);
 	}
 
