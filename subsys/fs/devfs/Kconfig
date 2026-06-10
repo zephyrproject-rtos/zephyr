@@ -1,0 +1,21 @@
+#Copyright (c) 2024 BayLibre SAS
+
+#SPDX-License-Identifier: Apache-2.0
+
+config DEVFS
+	bool "Device Filesystem"
+	help
+	  Enable support of Device Filesystem.
+
+if DEVFS
+
+config DEVFS_FILE_NUM_MAX
+	int "maximum number of files supported by devfs"
+	default 256
+	range 1 512
+
+module = DEVFS
+module-str = devfs
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ZMS

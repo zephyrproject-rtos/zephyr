@@ -945,3 +945,23 @@ int fs_unregister(int type, const struct fs_file_system_t *fs)
 	LOG_DBG("fs unregister %d: %d", type, rc);
 	return rc;
 }
+
+int fs_ioctl(struct fs_file_t *zfp, unsigned int request, va_list args)
+{
+	int rc = -ENOTSUP;
+
+	if (zfp->mp == NULL) {
+		return -EBADF;
+	}
+
+	CHECKIF(zfp->mp->fs->ioctl == NULL) {
+		return -ENOTSUP;
+	}
+
+	rc = zfp->mp->fs->ioctl(zfp, request, args);
+	if (rc < 0) {
+		LOG_ERR("file ioctl error (%d)", rc);
+	}
+
+	return rc;
+}

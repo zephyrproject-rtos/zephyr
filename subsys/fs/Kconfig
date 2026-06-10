@@ -168,5 +168,6 @@ rsource "virtiofs/Kconfig"
 endif # FILE_SYSTEM_LIB_LINK
 
 rsource "fcb/Kconfig"
+rsource "devfs/Kconfig"
 
 endmenu
