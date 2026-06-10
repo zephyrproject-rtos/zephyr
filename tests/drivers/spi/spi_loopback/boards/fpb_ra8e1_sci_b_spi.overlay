@@ -21,6 +21,8 @@
 	pinctrl-names = "default";
 
 	spi {
+		rx-dtc;
+		tx-dtc;
 		status = "okay";
 
 		slow@0 {
