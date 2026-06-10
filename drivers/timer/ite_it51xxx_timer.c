@@ -193,7 +193,7 @@ static void free_run_timer_overflow_isr(const void *unused)
 	/* TODO: to increment 32-bit "top half" here for software 64-bit timer emulation. */
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 

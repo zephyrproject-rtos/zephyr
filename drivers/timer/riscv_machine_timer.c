@@ -123,7 +123,7 @@ static void timer_isr(const void *arg)
 	sys_clock_announce_locked(dticks, key);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 

@@ -163,7 +163,7 @@ static void sysctr_timer_isr(const void *arg)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	uint64_t next_cycle;
 	uint64_t now;
@@ -191,10 +191,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	if (ticks == K_TICKS_FOREVER) {
 		next_cycle = last_cycle + MAX_CYCLES;
 	} else {
-		/* Per sys_clock API: treat any other negative value as "fire ASAP". */
-		if (ticks < 0) {
-			ticks = 0;
-		}
 		/*
 		 * Compute elapsed ticks from the most recent announce locally
 		 * instead of relying on a cached value from sys_clock_elapsed(),

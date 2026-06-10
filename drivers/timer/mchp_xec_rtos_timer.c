@@ -182,7 +182,7 @@ static uint32_t last_announcement; /* last time we called sys_clock_announce() *
  * Writing a new value to preload only takes effect once the count
  * register reaches 0.
  */
-void sys_clock_set_timeout(int32_t n, bool idle)
+void sys_clock_set_timeout(uint32_t n, bool idle)
 {
 	ARG_UNUSED(idle);
 

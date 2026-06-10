@@ -256,7 +256,7 @@ static void timer_int_handler(const void *unused)
 
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	/* If the kernel allows us to miss tick announcements in idle,
 	 * then shut off the counter. (Note: we can assume if idle==true

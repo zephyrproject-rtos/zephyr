@@ -66,7 +66,7 @@ static void lptimer_interrupt_handler(void *handler_arg, cyhal_lptimer_event_t e
 	sys_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? delta_ticks : (delta_ticks > 0));
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -85,7 +85,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	/* passing ticks==1 means "announce the next tick", ticks value of zero (or even negative)
+	/* passing ticks==1 means "announce the next tick", ticks value of zero
 	 * is legal and treated identically: it simply indicates the kernel would like the next
 	 * tick announcement as soon as possible.
 	 */

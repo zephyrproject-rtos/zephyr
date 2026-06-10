@@ -315,7 +315,7 @@ __attribute__((interrupt("IRQ"))) void sys_clock_isr(void)
 }
 ARCH_ISR_DIAG_ON
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 

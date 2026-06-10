@@ -258,7 +258,7 @@ static uint32_t npcx_itim_evt_elapsed_cyc32(void)
 #endif /* CONFIG_PM */
 
 /* System timer api functions */
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 

@@ -199,7 +199,7 @@ static void lptimer_set_delay(uint32_t delay)
 	Cy_MCWDT_SetInterruptMask(reg_addr, CY_MCWDT_CTR1);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	uint64_t current_cycles;
 	uint32_t cycles_per_tick;
@@ -222,7 +222,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	/* Configure and Enable the LPTIMER events */
 	lptimer_enable_event(true);
 
-	/* passing ticks==1 means "announce the next tick", ticks value of zero (or even negative)
+	/* passing ticks==1 means "announce the next tick", ticks value of zero
 	 * is legal and treated identically: it simply indicates the kernel would like the next
 	 * tick announcement as soon as possible.
 	 */
