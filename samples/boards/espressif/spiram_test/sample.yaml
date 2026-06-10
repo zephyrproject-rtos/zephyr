@@ -12,9 +12,18 @@ tests:
   sample.boards.esp32.spiram:
     platform_allow: esp32_devkitc/esp32/procpu
     tags: esp32
+  sample.boards.esp32s2.spiram:
+    platform_allow: esp32s2_devkitc
+    tags: esp32s2
   sample.boards.esp32s3.spiram:
     platform_allow: esp32s3_devkitc/esp32s3/procpu
     tags: esp32s3
+  sample.boards.esp32c5.spiram:
+    platform_allow: esp32c5_devkitc/esp32c5/hpcore
+    tags: esp32c5
+  sample.boards.esp32p4.spiram:
+    platform_allow: esp32p4_function_ev_board/esp32p4/hpcore
+    tags: esp32p4
   sample.boards.esp32s3.spiram.octal_80m:
     platform_allow: esp32s3_devkitc/esp32s3/procpu
     tags: esp32s3
