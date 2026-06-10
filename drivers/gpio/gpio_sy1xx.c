@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(sy1xx_gpio, CONFIG_GPIO_LOG_LEVEL);
 #define SY1XX_GPIO_CLR_OFFS     0x20
 
 struct sy1xx_gpio_config {
+	struct gpio_driver_config common;
 	/* Base address for GPIO port*/
 	uint32_t port_base_addr;
 	/* configuration base address for the pad config */
@@ -163,11 +164,16 @@ static DEVICE_API(gpio, sy1xx_gpio_driver_api) = {
 #define SY1XX_GPIO_INIT(n)                                                                         \
                                                                                                    \
 	static const struct sy1xx_gpio_config sy1xx_gpio_##n##_config = {                          \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
 		.port_base_addr = (uint32_t)DT_INST_REG_ADDR_BY_IDX(n, 0),                         \
 		.pad_cfg_offs = (uint32_t)DT_INST_PROP(n, pad_cfg),                                \
-		.pin_mask = (uint32_t)GPIO_PORT_PIN_MASK_FROM_DT_INST(n)};                         \
+		.pin_mask = (uint32_t)GPIO_PORT_PIN_MASK_FROM_DT_INST(n),                          \
+	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, sy1xx_gpio_driver_init, NULL, NULL, &sy1xx_gpio_##n##_config,     \
-			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &sy1xx_gpio_driver_api);
+	static struct gpio_driver_data sy1xx_gpio_##n##_data;                                      \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(n, sy1xx_gpio_driver_init, NULL, &sy1xx_gpio_##n##_data,             \
+			      &sy1xx_gpio_##n##_config, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,   \
+			      &sy1xx_gpio_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SY1XX_GPIO_INIT)
