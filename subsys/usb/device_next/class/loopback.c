@@ -236,6 +236,11 @@ static int lb_control_to_dev(struct usbd_class_data *c_data,
 		return 0;
 	}
 
+	if (setup->wLength == 0) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
 	if (setup->bRequest == LB_VENDOR_REQ_OUT) {
 		LOG_WRN("Host-to-Device, wLength %u | %zu", setup->wLength,
 			MIN(sizeof(lb_buf), buf->len));

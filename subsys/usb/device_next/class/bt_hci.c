@@ -454,6 +454,12 @@ static int bt_hci_ctd(struct usbd_class_data *const c_data,
 		return 0;
 	}
 
+	if (setup->wLength == 0) {
+		errno = -ENOTSUP;
+
+		return 0;
+	}
+
 	LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x",
 		setup->bmRequestType, setup->bRequest);
 
