@@ -34,4 +34,8 @@
 #include <zephyr/drivers/clock_control/mchp_clock_pic32cz_ca.h>
 #endif /* CONFIG_CLOCK_CONTROL_MCHP_PIC32CZ_CA */
 
+#if CONFIG_CLOCK_CONTROL_MCHP_PIC32CK_SG_GC
+#include <zephyr/drivers/clock_control/mchp_clock_pic32ck_sg_gc.h>
+#endif /* CONFIG_CLOCK_CONTROL_MCHP_PIC32CK_SG_GC */
+
 #endif /* INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_CONTROL_H_ */
