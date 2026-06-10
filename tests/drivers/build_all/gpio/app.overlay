@@ -514,6 +514,15 @@
 					ngpios = <8>;
 				};
 			};
+
+			test_i2c_tca9554: tca9554@21 {
+				status = "okay";
+				compatible = "ti,tca9554";
+				reg = <0x21>;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				gpio-controller;
+			};
 		};
 
 		nct3807_alert_1 {
