@@ -1997,6 +1997,7 @@ Documentation Infrastructure:
   status: odd fixes
   collaborators:
     - henrikbrixandersen
+    - dnltz
   files:
     - doc/hardware/peripherals/gpio.rst
     - drivers/gpio/
