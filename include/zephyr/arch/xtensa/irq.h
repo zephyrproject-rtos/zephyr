@@ -283,7 +283,12 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 {
 	unsigned int ps;
 
-	__asm__ volatile("rsr.ps %0" : "=r" (ps));
+	/*
+	 * Force an 'rsync' before reading PS. This ensures that we get the
+	 * current value of PS and not a stale value.
+	 */
+
+	__asm__ volatile("rsync; rsr.ps %0" : "=r" (ps));
 	return (ps & 0xf) == 0; /* INTLEVEL field */
 }
 
