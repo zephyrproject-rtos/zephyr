@@ -9,6 +9,8 @@ common:
   platform_key:
     - arch
     - simulation
+  toolchain_exclude:
+    - zephyr/llvm
 tests:
   libraries.libc.c11_threads.minimal:
     tags: minimal_libc
