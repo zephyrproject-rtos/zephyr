@@ -11,10 +11,9 @@
 
 / {
 	clocks {
-		/* The pll scheme is similar to stm32u5 */
 		pll3: pll3 {
 			#clock-cells = <0>;
-			compatible = "st,stm32u5-pll-clock";
+			compatible = "st,stm32h5-pll-clock";
 			status = "disabled";
 		};
 	};
