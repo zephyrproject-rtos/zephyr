@@ -102,6 +102,22 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+
+			ifr0: flash@1000000 {
+				compatible = "nxp,mcxw-ifr";
+				write-block-size = <16>;
+				erase-block-size = <DT_SIZE_K(8)>;
+				reg = <0x1000000 DT_SIZE_K(32)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* nvmem-layout: hw_params uses sector 1 (User Sector) */
+				ieee802154_eui64_ifr0: ieee802154-eui64@1002000 {
+					reg = <0x1002000 0x8>;
+					#nvmem-cell-cells = <0>;
+					status = "disabled";
+				};
+			};
 		};
 
 		stcm: sram@30000000 {
@@ -187,6 +203,12 @@
 
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
+	};
+
+	hw_params: hw-params {
+		compatible = "nxp,mcxw-hw-params";
+		nvmem-cells = <&ieee802154_eui64_ifr0>;
+		nvmem-cell-names = "ieee802154_eui64";
 	};
 };
 
