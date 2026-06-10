@@ -139,6 +139,43 @@ static int dai_alh_config_set(const struct device *dev, const struct dai_config 
 	}
 }
 
+static int dai_alh_get_properties_copy(const struct device *dev,
+				       enum dai_dir dir, int stream_id,
+				       struct dai_properties *prop)
+{
+	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
+	struct dai_intel_alh_pdata *alh = dai_get_drvdata(dp);
+	uint32_t offset = dir == DAI_DIR_PLAYBACK ?
+		ALH_TXDA_OFFSET : ALH_RXDA_OFFSET;
+
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	if (stream_id < 0 || (size_t)stream_id >= ARRAY_SIZE(alh_handshake_map)) {
+		LOG_ERR("invalid stream_id %d", stream_id);
+		return -ENOENT;
+	}
+
+	/*
+	 * Fill the caller-provided object directly. When invoked through
+	 * dai_get_properties_copy() the destination is the (private) memory of
+	 * the calling thread, so no shared scratch object is touched and
+	 * concurrent queries from separate TX/RX threads cannot race.
+	 */
+	prop->fifo_address = dai_base(dp) + offset + ALH_STREAM_OFFSET * stream_id;
+	prop->fifo_depth = ALH_GPDMA_BURST_LENGTH;
+	prop->dma_hs_id = alh_handshake_map[stream_id];
+	prop->reg_init_delay = 0;
+	prop->stream_id = alh->params.stream_id;
+
+	LOG_DBG("dai_index %u", dp->index);
+	LOG_DBG("fifo %u", prop->fifo_address);
+	LOG_DBG("handshake %u", prop->dma_hs_id);
+
+	return 0;
+}
+
 static const struct dai_properties *dai_alh_get_properties(const struct device *dev,
 							   enum dai_dir dir, int stream_id)
 {
@@ -146,43 +183,12 @@ static const struct dai_properties *dai_alh_get_properties(const struct device *
 	struct dai_intel_alh_pdata *alh = dai_get_drvdata(dp);
 	int array_index = ALH_ARRAY_INDEX(dir);
 	struct dai_properties *prop = &alh->props[array_index];
-	uint32_t offset = dir == DAI_DIR_PLAYBACK ?
-		ALH_TXDA_OFFSET : ALH_RXDA_OFFSET;
 
-	if (stream_id < 0 || (size_t)stream_id >= ARRAY_SIZE(alh_handshake_map)) {
-		LOG_ERR("invalid stream_id %d", stream_id);
+	if (dai_alh_get_properties_copy(dev, dir, stream_id, prop) < 0) {
 		return NULL;
 	}
 
-	prop->fifo_address = dai_base(dp) + offset + ALH_STREAM_OFFSET * stream_id;
-	prop->fifo_depth = ALH_GPDMA_BURST_LENGTH;
-	prop->dma_hs_id = alh_handshake_map[stream_id];
-	prop->stream_id = alh->params.stream_id;
-
-	LOG_DBG("dai_index %u", dp->index);
-	LOG_DBG("fifo %u", prop->fifo_address);
-	LOG_DBG("handshake %u", prop->dma_hs_id);
-
 	return prop;
-}
-
-static int dai_alh_get_properties_copy(const struct device *dev,
-				       enum dai_dir dir, int stream_id,
-				       struct dai_properties *prop)
-{
-	const struct dai_properties *kernel_prop = dai_alh_get_properties(dev, dir, stream_id);
-
-	if (!prop) {
-		return -EINVAL;
-	}
-
-	if (!kernel_prop) {
-		return -ENOENT;
-	}
-
-	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
-
-	return 0;
 }
 
 static int dai_alh_probe(const struct device *dev)
