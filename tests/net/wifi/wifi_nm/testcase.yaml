@@ -10,6 +10,7 @@ tests:
       - wifi
       - net
     platform_exclude:
+      - native_sim/native/64 # hostap supplicant has 64-bit -Wformat warnings
       - rd_rw612_bga/rw612/ethernet # Requires binary blobs to build
       - frdm_rw612 # Requires binary blobs to build
       - arduino_giga_r1/stm32h747xx/m7 # Requires binary blobs to build
