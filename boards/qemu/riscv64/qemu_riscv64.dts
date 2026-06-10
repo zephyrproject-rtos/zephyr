@@ -13,6 +13,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &ram0;
 		zephyr,display = &ramfb0;
+		zephyr,touch = &virtio_input0;
 	};
 
 	fwcfg0: fw-cfg@10100000 {
@@ -44,4 +45,14 @@
 
 &uart0 {
 	status = "okay";
+};
+
+&virtio_mmio3 {
+	status = "okay";
+
+	virtio_input0: virtio-input {
+		compatible = "virtio,input";
+		display = <&ramfb0>;
+		status = "okay";
+	};
 };
