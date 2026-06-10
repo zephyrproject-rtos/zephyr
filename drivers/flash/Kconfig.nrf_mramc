@@ -18,6 +18,19 @@ config SOC_FLASH_NRF_MRAMC
 	help
 	  Enables Nordic Semiconductor flash driver for MRAMC in direct write mode.
 
+config NRF_MRAMC_REGION_ADDRESS_RESOLUTION
+	hex
+	default 0x400
+	help
+	  MRAMC's region protection address resolution.
+	  Applies to region with configurable start address.
+
+config NRF_MRAMC_REGION_SIZE_UNIT
+	hex
+	default 0x400
+	help
+	  Base unit for the size of MRAMC's region protection.
+
 config SOC_FLASH_NRF_MRAMC_FLUSH_CACHE
 	bool "Invalidate MRAM cache after erase operations"
 	default y
