@@ -216,6 +216,11 @@ static size_t obj_align_get(enum k_objects otype)
 		ret = __alignof(struct dyn_obj);
 #endif /* ARCH_DYNAMIC_OBJ_K_THREAD_ALIGNMENT */
 		break;
+#ifdef CONFIG_KERNEL_COHERENCE
+	case K_OBJ_SEM:
+	case K_OBJ_MUTEX:
+		return CONFIG_DCACHE_LINE_SIZE;
+#endif
 	default:
 		ret = __alignof(struct dyn_obj);
 		break;
