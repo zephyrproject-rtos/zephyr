@@ -71,4 +71,21 @@
 			status = "okay";
 		};
 	};
+
+	virtio_input_pci: virtio-input-pci {
+		compatible = "virtio,pci";
+
+		vendor-id = <0x1af4>;
+		device-id = <0x1052>;
+
+		interrupts = <0xb 0x0 0x0>;
+		interrupt-parent = <&intc>;
+
+		status = "okay";
+
+		device {
+			compatible = "virtio,input";
+			status = "okay";
+		};
+	};
 };
