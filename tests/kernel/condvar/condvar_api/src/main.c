@@ -623,7 +623,6 @@ void _condvar_usecase(long multi)
 	count = 0;
 
 	/* Reinit mutex to prevent affection from previous testcases */
-	k_mutex_unlock(&test_mutex);
 	k_mutex_init(&test_mutex);
 
 	k_thread_create(&multiple_tid[0], multiple_stack[0], STACK_SIZE, watch_count,
