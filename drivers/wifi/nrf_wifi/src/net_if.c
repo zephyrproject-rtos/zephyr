@@ -599,49 +599,31 @@ BUILD_ASSERT(sizeof(CONFIG_WIFI_FIXED_MAC_ADDRESS) - 1 == ((WIFI_MAC_ADDR_LEN * 
 
 enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep)
 {
-	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
-	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx = NULL;
-	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	int ret;
-
-	if (!vif_ctx_zep) {
-		LOG_ERR("%s: vif_ctx_zep is NULL",
-			__func__);
-		goto out;
-	}
-
-	ret = k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
-	if (ret != 0) {
-		LOG_ERR("%s: Failed to lock vif_lock", __func__);
-		goto out;
-	}
+	struct nrf_wifi_fmac_dev_ctx *fmac_dev_ctx;
+	struct nrf_wifi_ctx_zep *rpu_ctx_zep;
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
-	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
-		LOG_DBG("%s: rpu_ctx_zep or rpu_ctx is NULL",
-			__func__);
-		goto unlock;
-	}
+
+	__ASSERT_NO_MSG(rpu_ctx_zep != NULL);
 
 	fmac_dev_ctx = rpu_ctx_zep->rpu_ctx;
+
+	__ASSERT_NO_MSG(fmac_dev_ctx != NULL);
 
 #ifdef CONFIG_WIFI_FIXED_MAC_ADDRESS_ENABLED
 	char fixed_mac_addr[WIFI_MAC_ADDR_LEN];
 
-	ret = net_bytes_from_str(fixed_mac_addr,
-			WIFI_MAC_ADDR_LEN,
+	if (net_bytes_from_str(fixed_mac_addr, WIFI_MAC_ADDR_LEN, CONFIG_WIFI_FIXED_MAC_ADDRESS) <
+	    0) {
+		LOG_ERR("%s: Failed to parse MAC address: %s", __func__,
 			CONFIG_WIFI_FIXED_MAC_ADDRESS);
-	if (ret < 0) {
-		LOG_ERR("%s: Failed to parse MAC address: %s",
-			__func__,
-			CONFIG_WIFI_FIXED_MAC_ADDRESS);
-		goto unlock;
+		return NRF_WIFI_STATUS_FAIL;
 	}
 
 	memcpy(vif_ctx_zep->mac_addr.addr,
 		fixed_mac_addr,
 		WIFI_MAC_ADDR_LEN);
-#elif CONFIG_WIFI_RANDOM_MAC_ADDRESS
+#elif defined(CONFIG_WIFI_RANDOM_MAC_ADDRESS)
 	char random_mac_addr[WIFI_MAC_ADDR_LEN];
 
 	sys_rand_get(random_mac_addr, WIFI_MAC_ADDR_LEN);
@@ -650,33 +632,20 @@ enum nrf_wifi_status nrf_wifi_get_mac_addr(struct nrf_wifi_vif_ctx_zep *vif_ctx_
 	memcpy(vif_ctx_zep->mac_addr.addr,
 		random_mac_addr,
 		WIFI_MAC_ADDR_LEN);
-#elif CONFIG_WIFI_OTP_MAC_ADDRESS
+#elif defined(CONFIG_WIFI_OTP_MAC_ADDRESS)
+	enum nrf_wifi_status status;
+
 	status = nrf_wifi_fmac_otp_mac_addr_get(fmac_dev_ctx,
 				vif_ctx_zep->vif_idx,
 				vif_ctx_zep->mac_addr.addr);
 	if (status != NRF_WIFI_STATUS_SUCCESS) {
 		LOG_ERR("%s: Fetching of MAC address from OTP failed",
 			__func__);
-		goto unlock;
+		return NRF_WIFI_STATUS_FAIL;
 	}
 #endif
 
-	if (!nrf_wifi_utils_is_mac_addr_valid(vif_ctx_zep->mac_addr.addr)) {
-		LOG_ERR("%s: Invalid MAC address: %s",
-			__func__,
-			net_sprint_ll_addr(vif_ctx_zep->mac_addr.addr,
-					WIFI_MAC_ADDR_LEN));
-		status = NRF_WIFI_STATUS_FAIL;
-		memset(vif_ctx_zep->mac_addr.addr,
-			0,
-			WIFI_MAC_ADDR_LEN);
-		goto unlock;
-	}
-	status = NRF_WIFI_STATUS_SUCCESS;
-unlock:
-	k_mutex_unlock(&vif_ctx_zep->vif_lock);
-out:
-	return status;
+	return NRF_WIFI_STATUS_SUCCESS;
 }
 
 void nrf_wifi_if_init_zep(struct net_if *iface)
@@ -717,6 +686,11 @@ void nrf_wifi_if_init_zep(struct net_if *iface)
 
 	vif_ctx_zep->zep_net_if_ctx = iface;
 	vif_ctx_zep->zep_dev_ctx = dev;
+
+	if (nrf_wifi_get_mac_addr(vif_ctx_zep) == NRF_WIFI_STATUS_SUCCESS) {
+		net_if_set_link_addr(iface, vif_ctx_zep->mac_addr.addr, WIFI_MAC_ADDR_LEN,
+				     NET_LINK_ETHERNET);
+	}
 
 	net_eth_set_if_type_wifi(iface);
 	ethernet_init(iface);
@@ -772,7 +746,6 @@ int nrf_wifi_if_start_zep(const struct device *dev, struct net_if *iface)
 	struct nrf_wifi_umac_chg_vif_state_info vif_info;
 	struct nrf_wifi_umac_add_vif_info add_vif_info;
 	char *mac_addr = NULL;
-	unsigned int mac_addr_len = 0;
 	int ret = -1;
 	bool fmac_dev_added = false;
 
@@ -857,27 +830,7 @@ int nrf_wifi_if_start_zep(const struct device *dev, struct net_if *iface)
 	k_mutex_init(&vif_ctx_zep->vif_lock);
 	vif_ctx_zep->if_type = add_vif_info.iftype;
 
-	/* Check if user has provided a valid MAC address, if not
-	 * fetch it from OTP.
-	 */
 	mac_addr = net_if_get_link_addr(iface)->addr;
-	mac_addr_len = net_if_get_link_addr(iface)->len;
-
-	if (!nrf_wifi_utils_is_mac_addr_valid(mac_addr)) {
-		status = nrf_wifi_get_mac_addr(vif_ctx_zep);
-		if (status != NRF_WIFI_STATUS_SUCCESS) {
-			LOG_ERR("%s: Failed to get MAC address",
-				__func__);
-			ret = -EIO;
-			goto del_vif;
-		}
-		net_if_set_link_addr(iface,
-					vif_ctx_zep->mac_addr.addr,
-					WIFI_MAC_ADDR_LEN,
-					NET_LINK_ETHERNET);
-		mac_addr = vif_ctx_zep->mac_addr.addr;
-		mac_addr_len = WIFI_MAC_ADDR_LEN;
-	}
 
 	status = nrf_wifi_sys_fmac_set_vif_macaddr(rpu_ctx_zep->rpu_ctx,
 					       vif_ctx_zep->vif_idx,
