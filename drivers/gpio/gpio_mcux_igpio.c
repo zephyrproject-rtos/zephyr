@@ -396,10 +396,7 @@ static DEVICE_API(gpio, mcux_igpio_driver_api) = {
 									\
 	static const struct mcux_igpio_config mcux_igpio_##n##_config = {\
 		DEVICE_MMIO_NAMED_ROM_INIT(igpio_mmio, DT_DRV_INST(n)),	\
-		.common = {						\
-			.port_pin_mask = GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(\
-				n, DT_INST_PROP(n, ngpios)),\
-		},							\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
 		MCUX_IGPIO_PIN_INIT(n)					\
 	};								\
 									\
