@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(tlv320dac310x);
 struct codec_driver_config {
 	struct i2c_dt_spec bus;
 	struct gpio_dt_spec reset_gpio;
+	uint8_t speaker_gain;
 };
 
 struct codec_driver_data {
@@ -35,6 +36,7 @@ struct codec_driver_data {
 static struct codec_driver_config codec_device_config = {
 	.bus		= I2C_DT_SPEC_INST_GET(0),
 	.reset_gpio	= GPIO_DT_SPEC_INST_GET(0, reset_gpios),
+	.speaker_gain	= DT_INST_PROP(0, speaker_gain),
 };
 
 static struct codec_driver_data codec_device_data;
@@ -51,7 +53,7 @@ static void codec_configure_filters(const struct device *dev,
 				   audio_dai_cfg_t *cfg);
 static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg);
 static void codec_configure_output(const struct device *dev);
-static int codec_set_output_volume(const struct device *dev, int vol);
+static int codec_set_output_volume(const struct device *dev, int vol, audio_channel_t channel);
 
 #if (LOG_LEVEL >= LOG_LEVEL_DEBUG)
 static void codec_read_all_regs(const struct device *dev);
@@ -131,16 +133,66 @@ static void codec_stop_output(const struct device *dev)
 	codec_write_reg(dev, DATA_PATH_SETUP_ADDR, DAC_LR_POWERDN_DEFAULT);
 }
 
-static void codec_mute_output(const struct device *dev)
+static void codec_mute_output(const struct device *dev, audio_channel_t channel)
 {
-	/* mute DAC channels */
-	codec_write_reg(dev, VOL_CTRL_ADDR, VOL_CTRL_MUTE_DEFAULT);
+	uint8_t val;
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_HEADPHONE_LEFT)) {
+		codec_write_reg(dev, HPL_DRV_GAIN_CTRL_ADDR, HPX_DRV_MUTE);
+	}
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_HEADPHONE_RIGHT)) {
+		codec_write_reg(dev, HPR_DRV_GAIN_CTRL_ADDR, HPX_DRV_MUTE);
+	}
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_FRONT_LEFT) ||
+	    (channel == AUDIO_CHANNEL_REAR_LEFT) ||
+	    (channel == AUDIO_CHANNEL_SIDE_LEFT)) {
+		codec_read_reg(dev, SPKL_DRV_ADDR, &val);
+		codec_write_reg(dev, SPKL_DRV_ADDR, val & ~SPEAKER_DRV_UNMUTE);
+	}
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_FRONT_RIGHT) ||
+	    (channel == AUDIO_CHANNEL_REAR_RIGHT) ||
+	    (channel == AUDIO_CHANNEL_SIDE_RIGHT)) {
+		codec_read_reg(dev, SPKR_DRV_ADDR, &val);
+		codec_write_reg(dev, SPKR_DRV_ADDR, val & ~SPEAKER_DRV_UNMUTE);
+	}
 }
 
-static void codec_unmute_output(const struct device *dev)
+static void codec_unmute_output(const struct device *dev, audio_channel_t channel)
 {
-	/* unmute DAC channels */
-	codec_write_reg(dev, VOL_CTRL_ADDR, VOL_CTRL_UNMUTE_DEFAULT);
+	uint8_t val;
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_HEADPHONE_LEFT)) {
+		codec_write_reg(dev, HPL_DRV_GAIN_CTRL_ADDR, HPX_DRV_UNMUTE);
+	}
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_HEADPHONE_RIGHT)) {
+		codec_write_reg(dev, HPR_DRV_GAIN_CTRL_ADDR, HPX_DRV_UNMUTE);
+	}
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_FRONT_LEFT) ||
+	    (channel == AUDIO_CHANNEL_REAR_LEFT) ||
+	    (channel == AUDIO_CHANNEL_SIDE_LEFT)) {
+		codec_read_reg(dev, SPKL_DRV_ADDR, &val);
+		codec_write_reg(dev, SPKL_DRV_ADDR, val | SPEAKER_DRV_UNMUTE);
+	}
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_FRONT_RIGHT) ||
+	    (channel == AUDIO_CHANNEL_REAR_RIGHT) ||
+	    (channel == AUDIO_CHANNEL_SIDE_RIGHT)) {
+		codec_read_reg(dev, SPKR_DRV_ADDR, &val);
+		codec_write_reg(dev, SPKR_DRV_ADDR, val | SPEAKER_DRV_UNMUTE);
+	}
 }
 
 static int codec_set_property(const struct device *dev,
@@ -148,22 +200,22 @@ static int codec_set_property(const struct device *dev,
 			      audio_channel_t channel,
 			      audio_property_value_t val)
 {
-	/* individual channel control not currently supported */
-	if (channel != AUDIO_CHANNEL_ALL) {
-		LOG_ERR("channel %u invalid. must be AUDIO_CHANNEL_ALL",
-			channel);
-		return -EINVAL;
+	if ((channel == AUDIO_CHANNEL_LFE) ||
+	    (channel == AUDIO_CHANNEL_FRONT_CENTER) ||
+	    (channel == AUDIO_CHANNEL_REAR_CENTER)) {
+		LOG_ERR("channel %u not supported", channel);
+		return -ENOTSUP;
 	}
 
 	switch (property) {
 	case AUDIO_PROPERTY_OUTPUT_VOLUME:
-		return codec_set_output_volume(dev, val.vol);
+		return codec_set_output_volume(dev, val.vol, channel);
 
 	case AUDIO_PROPERTY_OUTPUT_MUTE:
 		if (val.mute) {
-			codec_mute_output(dev);
+			codec_mute_output(dev, channel);
 		} else {
-			codec_unmute_output(dev);
+			codec_unmute_output(dev, channel);
 		}
 		return 0;
 
@@ -398,6 +450,7 @@ static enum osr_multiple codec_get_osr_multiple(audio_dai_cfg_t *cfg)
 
 static void codec_configure_output(const struct device *dev)
 {
+	const struct codec_driver_config *const dev_cfg = dev->config;
 	uint8_t val;
 
 	/*
@@ -427,10 +480,8 @@ static void codec_configure_output(const struct device *dev)
 	codec_write_reg(dev, OUTPUT_ROUTING_ADDR, val);
 
 	/* enable volume control on Headphone out */
-	codec_write_reg(dev, HPL_ANA_VOL_CTRL_ADDR,
-			HPX_ANA_VOL(HPX_ANA_VOL_DEFAULT));
-	codec_write_reg(dev, HPR_ANA_VOL_CTRL_ADDR,
-			HPX_ANA_VOL(HPX_ANA_VOL_DEFAULT));
+	codec_write_reg(dev, HPL_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(HPX_ANA_VOL_DEFAULT));
+	codec_write_reg(dev, HPR_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(HPX_ANA_VOL_DEFAULT));
 
 	/* set headphone outputs as line-out */
 	codec_write_reg(dev, HEADPHONE_DRV_CTRL_ADDR, HEADPHONE_DRV_LINEOUT);
@@ -443,9 +494,41 @@ static void codec_configure_output(const struct device *dev)
 	codec_read_reg(dev, HEADPHONE_DRV_ADDR, &val);
 	val |= HEADPHONE_DRV_POWERUP | HEADPHONE_DRV_RESERVED;
 	codec_write_reg(dev, HEADPHONE_DRV_ADDR, val);
+
+	/* set speaker default volume */
+	codec_write_reg(dev, SPKL_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(SPK_ANA_VOL_DEFAULT));
+	codec_write_reg(dev, SPKR_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(SPK_ANA_VOL_DEFAULT));
+
+	/* enable speaker */
+	codec_read_reg(dev, SPEAKER_AMP_ADDR, &val);
+	val |= SPEAKER_AMP_POWER;
+	codec_write_reg(dev, SPEAKER_AMP_ADDR, val);
+
+	/* unmute speaker and apply gain */
+	switch (dev_cfg->speaker_gain) {
+	case 6:
+		val = SPEAKER_DRV_GAIN_6DB;
+		break;
+	case 12:
+		val = SPEAKER_DRV_GAIN_12DB;
+		break;
+	case 18:
+		val = SPEAKER_DRV_GAIN_18DB;
+		break;
+	case 24:
+		val = SPEAKER_DRV_GAIN_24DB;
+		break;
+	default:
+		LOG_ERR("Invalid speaker gain: %u dB. Using 6 dB", dev_cfg->speaker_gain);
+		val = SPEAKER_DRV_GAIN_6DB;
+		break;
+	}
+	val |= SPEAKER_DRV_UNMUTE;
+	codec_write_reg(dev, SPKL_DRV_ADDR, val);
+	codec_write_reg(dev, SPKR_DRV_ADDR, val);
 }
 
-static int codec_set_output_volume(const struct device *dev, int vol)
+static int codec_set_output_volume(const struct device *dev, int vol, audio_channel_t channel)
 {
 	uint8_t vol_val;
 	int vol_index;
@@ -478,8 +561,30 @@ static int codec_set_output_volume(const struct device *dev, int vol)
 		vol_val = (uint8_t)vol;
 	}
 
-	codec_write_reg(dev, HPL_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(vol_val));
-	codec_write_reg(dev, HPR_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(vol_val));
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_HEADPHONE_LEFT)) {
+		codec_write_reg(dev, HPL_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(vol_val));
+	}
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_HEADPHONE_RIGHT)) {
+		codec_write_reg(dev, HPR_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(vol_val));
+	}
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_FRONT_LEFT) ||
+	    (channel == AUDIO_CHANNEL_REAR_LEFT) ||
+	    (channel == AUDIO_CHANNEL_SIDE_LEFT)) {
+		codec_write_reg(dev, SPKL_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(vol_val));
+	}
+
+	if ((channel == AUDIO_CHANNEL_ALL) ||
+	    (channel == AUDIO_CHANNEL_FRONT_RIGHT) ||
+	    (channel == AUDIO_CHANNEL_REAR_RIGHT) ||
+	    (channel == AUDIO_CHANNEL_SIDE_RIGHT)) {
+		codec_write_reg(dev, SPKR_ANA_VOL_CTRL_ADDR, HPX_ANA_VOL(vol_val));
+	}
+
 	return 0;
 }
 
