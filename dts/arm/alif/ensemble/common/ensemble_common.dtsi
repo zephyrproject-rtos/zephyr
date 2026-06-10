@@ -9,6 +9,13 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/clock/alif-ensemble-clocks.h>
 
+/*
+ * Interrupt routing for the peripherals defined here is intentionally kept
+ * out of this file. The same peripheral is reached via an NVIC (RTSS) or a
+ * GIC (APSS) cluster depending on the SoC and core, so the routing lives in
+ * the controller-specific ensemble_common_{nvic,gic}_irq.dtsi files.
+ */
+
 / {
 	clocks {
 		syst_aclk: axi-clk {
@@ -67,7 +74,6 @@
 			compatible = "ns16550";
 			reg = <0x49018000 0x1000>;
 			clocks = <&clockctrl ALIF_UART0_SYST_PCLK>;
-			interrupts = <124 0>;
 			reg-shift = <2>;
 			current-speed = <115200>;
 			status = "disabled";
@@ -77,7 +83,6 @@
 			compatible = "ns16550";
 			reg = <0x49019000 0x1000>;
 			clocks = <&clockctrl ALIF_UART1_SYST_PCLK>;
-			interrupts = <125 0>;
 			reg-shift = <2>;
 			current-speed = <115200>;
 			status = "disabled";
@@ -87,7 +92,6 @@
 			compatible = "ns16550";
 			reg = <0x4901a000 0x1000>;
 			clocks = <&clockctrl ALIF_UART2_SYST_PCLK>;
-			interrupts = <126 0>;
 			reg-shift = <2>;
 			current-speed = <115200>;
 			status = "disabled";
@@ -97,7 +101,6 @@
 			compatible = "ns16550";
 			reg = <0x4901b000 0x1000>;
 			clocks = <&clockctrl ALIF_UART3_SYST_PCLK>;
-			interrupts = <127 0>;
 			reg-shift = <2>;
 			current-speed = <115200>;
 			status = "disabled";
@@ -107,7 +110,6 @@
 			compatible = "ns16550";
 			reg = <0x4901c000 0x1000>;
 			clocks = <&clockctrl ALIF_UART4_SYST_PCLK>;
-			interrupts = <128 0>;
 			reg-shift = <2>;
 			current-speed = <115200>;
 			status = "disabled";
@@ -117,7 +119,6 @@
 			compatible = "ns16550";
 			reg = <0x4901d000 0x1000>;
 			clocks = <&clockctrl ALIF_UART5_SYST_PCLK>;
-			interrupts = <129 0>;
 			reg-shift = <2>;
 			current-speed = <115200>;
 			status = "disabled";

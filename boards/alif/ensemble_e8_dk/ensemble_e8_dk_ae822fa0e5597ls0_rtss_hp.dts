@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <alif/ensemble/ae822fa0e5597ls0.dtsi>
+#include <alif/ensemble/ae822fa0e5597ls0_nvic_irq.dtsi>
 #include <alif/ensemble/common/ensemble_rtss_hp.dtsi>
 #include "ensemble_e8_dk-pinctrl.dtsi"
 
