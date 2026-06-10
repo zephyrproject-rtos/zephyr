@@ -116,32 +116,6 @@ The following code has the same effect as the code segment above.
 
     K_MUTEX_DEFINE(my_mutex);
 
-For dynamic allocation without :kconfig:option:`CONFIG_USERSPACE`, a mutex
-can be allocated with :c:func:`k_malloc` and initialized with
-:c:func:`k_mutex_init`:
-
-.. code-block:: c
-
-    struct k_mutex *my_mutex = k_malloc(sizeof(*my_mutex));
-    k_mutex_init(my_mutex);
-
-When :kconfig:option:`CONFIG_USERSPACE` is enabled and the mutex needs to be
-accessible to user-mode threads, use :c:func:`k_object_alloc` instead of
-:c:func:`k_malloc`. :c:func:`k_malloc` does not register the object in the
-kernel object table, making it inaccessible to user-mode threads.
-:c:func:`k_object_alloc` allocates and registers the object in one step:
-
-.. code-block:: c
-
-    struct k_mutex *my_mutex = k_object_alloc(K_OBJ_MUTEX);
-    k_mutex_init(my_mutex);
-
-.. warning::
-   A mutex **must** be initialized with :c:func:`k_mutex_init` or
-   :c:macro:`K_MUTEX_DEFINE` before use. Locking or unlocking an
-   uninitialized mutex is a programming error and will trigger an
-   assertion failure when :kconfig:option:`CONFIG_ASSERT` is enabled.
-
 Locking a Mutex
 ===============
 

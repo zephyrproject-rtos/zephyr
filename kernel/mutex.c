@@ -53,26 +53,10 @@ static struct k_obj_type obj_type_mutex;
 
 int z_impl_k_mutex_init(struct k_mutex *mutex)
 {
-#ifdef CONFIG_ASSERT
-	/*
-	 * Assert re-init is safe: magic match means previously initialized;
-	 * owner == NULL means not currently held, so re-init is allowed.
-	 */
-	__ASSERT(mutex->magic != K_MUTEX_MAGIC || mutex->owner == NULL,
-		 "re-init of held mutex %p (owner=%p), called from thread: %p (%s)",
-		 mutex, mutex->owner,
-		 k_current_get(),
-		 (k_thread_name_get(k_current_get()) != NULL ?
-		  k_thread_name_get(k_current_get()) : "<unnamed>"));
-#endif
-
 	mutex->owner = NULL;
 	mutex->lock_count = 0U;
 
 	z_waitq_init(&mutex->wait_q);
-#ifdef CONFIG_ASSERT
-	mutex->magic = K_MUTEX_MAGIC;
-#endif
 
 	k_object_init(mutex);
 
@@ -130,14 +114,6 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
-
-#ifdef CONFIG_ASSERT
-	__ASSERT(mutex->magic == K_MUTEX_MAGIC,
-		 "k_mutex %p locked before initialized, current thread: %p (%s)",
-		 mutex, k_current_get(),
-		 (k_thread_name_get(k_current_get()) != NULL ?
-		  k_thread_name_get(k_current_get()) : "<unnamed>"));
-#endif
 
 	key = k_spin_lock(&lock);
 
@@ -257,14 +233,6 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, unlock, mutex);
-
-#ifdef CONFIG_ASSERT
-	__ASSERT(mutex->magic == K_MUTEX_MAGIC,
-		 "k_mutex %p unlocked before initialized, current thread: %p (%s)",
-		 mutex, k_current_get(),
-		 (k_thread_name_get(k_current_get()) != NULL ?
-		  k_thread_name_get(k_current_get()) : "<unnamed>"));
-#endif
 
 	CHECKIF(mutex->owner == NULL) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, unlock, mutex, -EINVAL);
