@@ -2525,8 +2525,8 @@ static const struct dai_properties *dai_ssp_get_properties(const struct device *
 	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
 	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 	struct dai_intel_ssp_plat_data *ssp_plat_data = dai_get_plat_data(dp);
-	struct dai_properties *prop = &ssp->props;
 	int array_index = SSP_ARRAY_INDEX(dir);
+	struct dai_properties *prop = &ssp->props[array_index];
 
 	prop->fifo_address = ssp_plat_data->fifo[array_index].offset;
 	prop->dma_hs_id = ssp_plat_data->fifo[array_index].handshake;
