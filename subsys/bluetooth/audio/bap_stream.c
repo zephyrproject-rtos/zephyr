@@ -878,7 +878,6 @@ static bool bap_stream_valid_ase_op(const struct bt_conn *conn, const struct bt_
 	} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER) && role == BT_CONN_ROLE_PERIPHERAL) {
 		valid_op = bap_stream_valid_server_ase_op(ep_dir, ep_state, ase_op);
 	} else {
-		__ASSERT(false, "Invalid conn role %u", role);
 		valid_op = false;
 	}
 
