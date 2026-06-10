@@ -6,6 +6,12 @@ if SOC_FAMILY_ESPRESSIF_ESP32
 config ESPTOOLPY_OCT_FLASH
 	bool "Use Octal Flash"
 	depends on SOC_SERIES_ESP32S3
+	default y if SPIRAM_MODE_OCT
+	help
+	  Octal PSRAM modules are paired with octal flash. Enable octal flash
+	  by default in this case so its MSPI timing is tuned (DTR sample mode).
+	  Without it the flash falls back to untuned STR timing and can corrupt
+	  at high speeds. Disable manually if the board uses quad flash.
 
 config ESPTOOLPY_FLASH_MODE_AUTO_DETECT
 	depends on SOC_SERIES_ESP32S3
