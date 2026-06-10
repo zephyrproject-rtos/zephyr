@@ -329,7 +329,7 @@ int gpio_bflb_init(const struct device *dev)
 
 	cfg->irq_config_func(dev);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static void gpio_bflb_isr(const struct device *dev)

@@ -237,7 +237,7 @@ static int gpio_rpi_bcm283x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 BUILD_ASSERT(CONFIG_GPIO_RASPBERRYPI_BCM283X_INIT_PRIORITY >

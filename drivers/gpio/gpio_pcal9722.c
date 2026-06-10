@@ -442,9 +442,10 @@ static int gpio_pcal9722_init(const struct device *dev)
 out:
 	if (rc) {
 		LOG_ERR("%s failed to initialize: %d", dev->name, rc);
+		return rc;
 	}
 
-	return rc;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, api_table) = {

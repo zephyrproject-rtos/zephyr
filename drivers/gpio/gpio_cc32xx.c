@@ -243,8 +243,6 @@ static DEVICE_API(gpio, api_funcs) = {
 #define GPIO_CC32XX_INIT_FUNC(n)					     \
 	static int gpio_cc32xx_a##n##_init(const struct device *dev)		     \
 	{								     \
-		ARG_UNUSED(dev);					     \
-									     \
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),	     \
 			gpio_cc32xx_port_isr, DEVICE_DT_INST_GET(n),         \
 			0);						     \
@@ -252,7 +250,7 @@ static DEVICE_API(gpio, api_funcs) = {
 		MAP_IntPendClear(DT_INST_IRQN(n) + 16);			     \
 		irq_enable(DT_INST_IRQN(n));				     \
 									     \
-		return 0;						     \
+		return gpio_common_init(dev);				     \
 	}
 
 #define GPIO_CC32XX_DEVICE_INIT(n)					     \

@@ -651,7 +651,12 @@ static int gpio_nrfx_init(const struct device *port)
 #endif /* CONFIG_GPIO_NRFX_INTERRUPT */
 
 pm_init:
-	return pm_device_driver_init(port, gpio_nrfx_pm_hook);
+	err = pm_device_driver_init(port, gpio_nrfx_pm_hook);
+	if (err < 0) {
+		return err;
+	}
+
+	return gpio_common_init(port);
 }
 
 static DEVICE_API(gpio, gpio_nrfx_drv_api_funcs) = {

@@ -402,7 +402,7 @@ static int pi4ioe5v6408_init(const struct device *dev)
 			      K_MSEC(CONFIG_GPIO_PI4IOE5V6408_POLL_PERIOD_MS));
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, pi4ioe5v6408_api) = {

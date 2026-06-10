@@ -256,7 +256,7 @@ static DEVICE_API(gpio, gpio_numicro_driver_api) = {
 			    gpio_numicro_isr,				\
 			    DEVICE_DT_INST_GET(n), 0);			\
 		irq_enable(DT_INST_IRQN(n));				\
-		return 0;						\
+		return gpio_common_init(dev);				\
 	}								\
 									\
 	static struct gpio_numicro_data gpio_numicro_port##n##_data;	\

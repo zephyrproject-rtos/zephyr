@@ -363,7 +363,7 @@ static int gpio_xlnx_axi_init(const struct device *dev)
 		config->irq_config_func(dev);
 	}
 #endif
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_xlnx_axi_driver_api) = {
@@ -400,6 +400,7 @@ static DEVICE_API(gpio, gpio_xlnx_axi_driver_api) = {
 			{                                                                          \
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(                   \
 					DT_INST_PROP_OR(n, xlnx_gpio2_width, MAX_GPIOS)),          \
+				GPIO_HOGS_COND_INIT_GPIO_CTLR(DT_INST_CHILD(n, gpio2))             \
 			},                                                                         \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.channel = 1,                                                                      \
@@ -430,6 +431,7 @@ static DEVICE_API(gpio, gpio_xlnx_axi_driver_api) = {
 			{                                                                          \
 				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(                   \
 					DT_INST_PROP_OR(n, xlnx_gpio_width, MAX_GPIOS)),           \
+				GPIO_HOGS_COND_INIT_GPIO_CTLR(DT_DRV_INST(n))                      \
 			},                                                                         \
 		.base = DT_INST_REG_ADDR(n),                                                       \
 		.channel = 0,                                                                      \

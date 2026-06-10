@@ -283,7 +283,10 @@ static DEVICE_API(gpio, gpio_sam0_api) = {
 #endif
 };
 
-static int gpio_sam0_init(const struct device *dev) { return 0; }
+static int gpio_sam0_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
 
 /* Port A */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(porta))

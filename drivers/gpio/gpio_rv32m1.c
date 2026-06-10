@@ -283,7 +283,9 @@ static int gpio_rv32m1_init(const struct device *dev)
 		}
 	}
 
-	return config->irq_config_func(dev);
+	config->irq_config_func(dev);
+
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_rv32m1_driver_api) = {
@@ -305,7 +307,7 @@ static DEVICE_API(gpio, gpio_rv32m1_driver_api) = {
 	UTIL_AND(DT_INST_NODE_HAS_PROP(n, clocks), DT_INST_CLOCKS_CELL(n, name))
 
 #define GPIO_RV32M1_INIT(n) \
-	static int gpio_rv32m1_##n##_init(const struct device *dev);	\
+	static void gpio_rv32m1_##n##_init(const struct device *dev);	\
 									\
 	static const struct gpio_rv32m1_config gpio_rv32m1_##n##_config = {\
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),			\
@@ -329,7 +331,7 @@ static DEVICE_API(gpio, gpio_rv32m1_driver_api) = {
 			    CONFIG_GPIO_INIT_PRIORITY,			\
 			    &gpio_rv32m1_driver_api);			\
 									\
-	static int gpio_rv32m1_##n##_init(const struct device *dev)	\
+	static void gpio_rv32m1_##n##_init(const struct device *dev)	\
 	{								\
 		IRQ_CONNECT(DT_INST_IRQN(n),				\
 			    0,						\
@@ -337,8 +339,6 @@ static DEVICE_API(gpio, gpio_rv32m1_driver_api) = {
 			    DEVICE_DT_INST_GET(n), 0);			\
 									\
 		irq_enable(DT_INST_IRQN(0));				\
-									\
-		return 0;						\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_RV32M1_INIT)

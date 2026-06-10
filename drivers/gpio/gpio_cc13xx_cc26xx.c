@@ -262,7 +262,7 @@ static int gpio_cc13xx_cc26xx_init(const struct device *dev)
 		continue;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #ifdef CONFIG_GPIO_GET_DIRECTION

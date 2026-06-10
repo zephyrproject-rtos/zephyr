@@ -600,10 +600,9 @@ static void gpio_esp32_isr(void *param);
 static int gpio_esp32_init(const struct device *dev)
 {
 	static bool isr_connected;
+	int ret;
 
 	if (!isr_connected) {
-		int ret;
-
 #if defined(CONFIG_SOC_SERIES_ESP32H2) && defined(CONFIG_COMPARATOR_ESP32_ANA_CMPR)
 		/*
 		 * On ESP32-H2, the analog comparator (ana_cmpr) unit shares this
@@ -637,7 +636,12 @@ static int gpio_esp32_init(const struct device *dev)
 		isr_connected = true;
 	}
 
-	return pm_device_driver_init(dev, gpio_esp32_pm_action);
+	ret = pm_device_driver_init(dev, gpio_esp32_pm_action);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_esp32_driver_api) = {

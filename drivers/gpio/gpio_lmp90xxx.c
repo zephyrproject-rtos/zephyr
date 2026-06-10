@@ -132,7 +132,7 @@ static int gpio_lmp90xxx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_lmp90xxx_api) = {

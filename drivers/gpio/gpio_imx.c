@@ -311,7 +311,7 @@ static DEVICE_API(gpio, imx_gpio_driver_api) = {
 									\
 		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));		\
 									\
-		return 0;						\
+		return gpio_common_init(port);				\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_IMX_INIT)

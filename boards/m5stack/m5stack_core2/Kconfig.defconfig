@@ -8,9 +8,6 @@ if BOARD_M5STACK_CORE2_ESP32_PROCPU
 config KERNEL_MEM_POOL
 	default y
 
-config GPIO_HOGS_INIT_PRIORITY
-	default 70
-
 config MFD_INIT_PRIORITY
 	default 70
 

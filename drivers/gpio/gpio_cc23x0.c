@@ -276,7 +276,7 @@ static int gpio_cc23x0_init(const struct device *dev)
 
 	irq_enable(DT_INST_IRQN(0));
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_cc23x0_driver_api) = {

@@ -549,7 +549,8 @@ static int tca6424a_init(const struct device *dev)
 	}
 
 	LOG_DBG("%s init ok", dev->name);
-	return ret;
+
+	return gpio_common_init(dev);
 }
 
 #define TCA6424A_INST(idx)                                                                         \

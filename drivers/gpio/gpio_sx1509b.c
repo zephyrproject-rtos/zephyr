@@ -621,6 +621,11 @@ out:
 		LOG_INF("%s init ok", dev->name);
 	}
 	k_sem_give(&drv_data->lock);
+
+	if (rc == 0) {
+		rc = gpio_common_init(dev);
+	}
+
 	return rc;
 }
 

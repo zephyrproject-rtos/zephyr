@@ -63,6 +63,59 @@ extern "C" {
 #define GPIO_PORT_PIN_MASK_FROM_DT_INST(inst)			\
 	GPIO_PORT_PIN_MASK_FROM_DT_NODE(DT_DRV_INST(inst))
 
+/** @cond INTERNAL_HIDDEN */
+
+/* Static initializer for a struct gpio_hog_dt_spec */
+#define GPIO_HOG_DT_SPEC_GET_BY_IDX(idx, node_id)                                                  \
+	{                                                                                          \
+		.pin = DT_GPIO_HOG_PIN_BY_IDX(node_id, idx),                                       \
+		.flags = DT_GPIO_HOG_FLAGS_BY_IDX(node_id, idx) |                                  \
+			 COND_CODE_1(DT_PROP(node_id, input), (GPIO_INPUT),			   \
+				     (COND_CODE_1(DT_PROP(node_id, output_low),			   \
+						 (GPIO_OUTPUT_INACTIVE),			   \
+						 (COND_CODE_1(DT_PROP(node_id, output_high),	   \
+							     (GPIO_OUTPUT_ACTIVE), (0)))))),       \
+	}
+
+/* Expands to 1 if node_id is a GPIO hog, empty otherwise */
+#define GPIO_HOGS_NODE_IS_GPIO_HOG(node_id) IF_ENABLED(DT_PROP_OR(node_id, gpio_hog, 0), 1)
+
+/* Expands to 1 if GPIO controller node_id has GPIO hog children, 0 otherwise */
+#define GPIO_HOGS_GPIO_CTLR_HAS_HOGS(node_id)                                                      \
+	COND_CODE_0(IS_EMPTY(DT_FOREACH_CHILD_STATUS_OKAY(node_id, GPIO_HOGS_NODE_IS_GPIO_HOG)),   \
+	(1), (0))
+
+/* Called for GPIO hog dts nodes */
+#define GPIO_HOGS_INIT_GPIO_HOGS(node_id)                                                          \
+	LISTIFY(DT_NUM_GPIO_HOGS(node_id), GPIO_HOG_DT_SPEC_GET_BY_IDX, (,), node_id),
+
+/* Called for GPIO controller dts node children */
+#define GPIO_HOGS_COND_INIT_GPIO_HOGS(node_id)                                                     \
+	IF_ENABLED(DT_PROP_OR(node_id, gpio_hog, 0), (GPIO_HOGS_INIT_GPIO_HOGS(node_id)))
+
+/* Called for each GPIO controller dts node which has GPIO hog children */
+#define GPIO_HOGS_INIT_GPIO_CTLR(node_id)                                                          \
+	.gpio_hogs = {                                                                             \
+		.specs = (const struct gpio_hog_dt_spec[]){DT_FOREACH_CHILD_STATUS_OKAY(           \
+			node_id, GPIO_HOGS_COND_INIT_GPIO_HOGS)},                                  \
+		.num_specs = DT_FOREACH_CHILD_STATUS_OKAY_SEP(node_id, DT_NUM_GPIO_HOGS, (+)),     \
+	},
+
+#if defined(CONFIG_GPIO_HOGS) || defined(__DOXYGEN__)
+/**
+ * @brief Make a struct gpio_hogs initializer from a node identifier
+ *
+ * @param node_id GPIO controller node identifier.
+ * @return a struct gpio_hogs initializer
+ */
+#define GPIO_HOGS_COND_INIT_GPIO_CTLR(node_id)			\
+	IF_ENABLED(GPIO_HOGS_GPIO_CTLR_HAS_HOGS(node_id),	\
+		   (GPIO_HOGS_INIT_GPIO_CTLR(node_id)))
+#else
+#define GPIO_HOGS_COND_INIT_GPIO_CTLR(node_id)
+#endif /* CONFIG_GPIO_HOGS */
+
+/** @endcond */
 
 /**
  * @brief Make a struct gpio_driver_config initializer from a node identifier
@@ -73,6 +126,7 @@ extern "C" {
 #define GPIO_COMMON_CONFIG_FROM_DT_NODE(node_id)                           \
 	{                                                                  \
 		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(node_id), \
+		GPIO_HOGS_COND_INIT_GPIO_CTLR(node_id)                     \
 	}
 
 /**
@@ -140,6 +194,39 @@ static inline void gpio_fire_callbacks(sys_slist_t *list,
 			sys_port_trace_gpio_fire_callback(port, cb);
 		}
 	}
+}
+
+/**
+ * @brief Initialize GPIO hogs for a given device
+ *
+ * This function is called by GPIO drivers to initialize GPIO hogs defined in
+ * devicetree for the device. It is expected to be called from gpio_common_init().
+ *
+ * @kconfig_dep{CONFIG_GPIO_HOGS}
+ *
+ * @param dev GPIO device for which to initialize hogs
+ * @return 0 if successful, or a negative error code if initialization failed
+ */
+int gpio_hogs_init(const struct device *dev);
+
+/**
+ * @brief Common GPIO initialization function
+ *
+ * This function is intended to be called by GPIO drivers at the end of their
+ * initialization function. It performs common initialization tasks, such as
+ * initializing GPIO hogs if enabled.
+ *
+ * @param dev Pointer to the GPIO device being initialized.
+ * @return 0 on success, negative errno otherwise.
+ */
+static inline int gpio_common_init(const struct device *dev)
+{
+#ifdef CONFIG_GPIO_HOGS
+	return gpio_hogs_init(dev);
+#else
+	ARG_UNUSED(dev);
+	return 0;
+#endif
 }
 
 #ifdef __cplusplus

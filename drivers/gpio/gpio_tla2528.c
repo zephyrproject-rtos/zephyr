@@ -257,7 +257,7 @@ static int tla2528_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_tla2528_api) = {

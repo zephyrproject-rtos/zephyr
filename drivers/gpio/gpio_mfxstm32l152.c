@@ -678,9 +678,13 @@ static int mfxstm32l152_init(const struct device *dev)
 		}
 
 		ret = write_reg(dev, REG_SYS_IRQ_MODE, int_pin);
+		if (ret != 0) {
+			LOG_ERR("%s init failed: %d", dev->name, ret);
+			return ret;
+		}
 	}
 
-	return ret;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, mfxstm32l152_drv_api) = {

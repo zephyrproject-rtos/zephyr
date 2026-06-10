@@ -511,7 +511,7 @@ static int gpio_dw_initialize(const struct device *port)
 		config->config_func(port);
 	}
 
-	return 0;
+	return gpio_common_init(port);
 }
 
 /* Bindings to the platform */

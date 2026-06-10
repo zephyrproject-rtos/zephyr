@@ -427,7 +427,7 @@ static DEVICE_API(gpio, mcux_igpio_driver_api) = {
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 1),			\
 			   (MCUX_IGPIO_IRQ_INIT(n, 1);))		\
 									\
-		return 0;						\
+		return gpio_common_init(dev);				\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_IGPIO_INIT)

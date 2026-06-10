@@ -501,6 +501,11 @@ static DEVICE_API(gpio, gpio_ite_driver_api) = {
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
+static int gpio_ite_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+
 #define GPIO_ITE_DEV_CFG_DATA(inst)                                                                \
 	BUILD_ASSERT(DT_INST_PROP(inst, ngpios) <= IT515XX_GPIO_MAX_PINS,                          \
 		     "The maximum number of pins per port is 8.");                                 \
@@ -521,7 +526,8 @@ static DEVICE_API(gpio, gpio_ite_driver_api) = {
 		.has_volt_sel = DT_INST_PROP_OR(inst, has_volt_sel, {0}),                          \
 		.num_pins = DT_INST_PROP(inst, ngpios),                                            \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &gpio_ite_data_##inst, &gpio_ite_cfg_##inst,       \
-			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_ite_driver_api);
+	DEVICE_DT_INST_DEFINE(inst, gpio_ite_init, NULL, &gpio_ite_data_##inst,                    \
+			      &gpio_ite_cfg_##inst, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,       \
+			      &gpio_ite_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_ITE_DEV_CFG_DATA)

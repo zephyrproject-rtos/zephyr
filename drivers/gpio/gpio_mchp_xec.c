@@ -529,13 +529,13 @@ static DEVICE_API(gpio, gpio_xec_driver_api) = {
 	{                                                                                          \
 		const struct gpio_xec_devcfg *devcfg = dev->config;                                \
 		if (!(DT_INST_IRQ_HAS_CELL(i, irq))) {                                             \
-			return 0;                                                                  \
+			return gpio_common_init(dev);                                              \
 		}                                                                                  \
 		soc_ecia_girq_aggr_ctrl(devcfg->girq, 1u);                                         \
 		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), gpio_xec_port_isr,          \
 			    DEVICE_DT_INST_GET(i), 0u);                                            \
 		irq_enable(DT_INST_IRQN(i));                                                       \
-		return 0;                                                                          \
+		return gpio_common_init(dev);                                                      \
 	}                                                                                          \
 	static struct gpio_xec_data gpio_xec_port_data##i;                                         \
 	static const struct gpio_xec_devcfg gpio_xec_dcfg##i = {                                   \

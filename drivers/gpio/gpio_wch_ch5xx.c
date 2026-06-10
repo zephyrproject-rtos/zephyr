@@ -244,14 +244,22 @@ static DEVICE_API(gpio, gpio_ch5xx_driver_api) = {
 		IRQ_CONNECT(DT_INST_IRQN(idx), DT_INST_IRQ(idx, priority), gpio_ch5xx_isr,         \
 			    DEVICE_DT_INST_GET(idx), 0);                                           \
 		irq_enable(DT_INST_IRQN(idx));                                                     \
-		return 0;                                                                          \
+												   \
+		return gpio_common_init(dev);                                                      \
 	}
+
+#define GPIO_CH5XX_IRQ_INIT_PTR(idx) gpio_ch5xx_##idx##_irq_init
 #else
 #define GPIO_CH5XX_IRQ_INIT(idx)
+
+static int gpio_ch5xx_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+
+#define GPIO_CH5XX_IRQ_INIT_PTR(idx) gpio_ch5xx_init
 #endif
 
-#define GPIO_CH5XX_IRQ_INIT_PTR(idx)                                                               \
-	COND_CODE_1(CONFIG_GPIO_WCH_CH5XX_INTERRUPTS, (gpio_ch5xx_##idx##_irq_init), (NULL))
 #define GPIO_CH5XX_INIT(idx)                                                                       \
 	static const struct gpio_ch5xx_config gpio_ch5xx_##idx##_config = {                        \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \

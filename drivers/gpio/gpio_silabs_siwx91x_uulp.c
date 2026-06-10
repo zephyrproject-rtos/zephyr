@@ -233,7 +233,7 @@ static DEVICE_API(gpio, gpio_siwx91x_uulp_api) = {
 		IRQ_CONNECT(DT_INST_IRQ(idx, irq), DT_INST_IRQ(idx, priority),                     \
 			    gpio_siwx91x_uulp_isr, DEVICE_DT_GET(DT_DRV_INST(idx)), 0);            \
 		irq_enable(DT_INST_IRQ(idx, irq));                                                 \
-		return 0;                                                                          \
+		return gpio_common_init(dev);                                                      \
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(idx, gpio_siwx91x_init_uulp_##idx, NULL,                             \
 			      &gpio_siwx91x_port_data##idx, &gpio_siwx91x_port_config##idx,        \

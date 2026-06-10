@@ -5,9 +5,6 @@
 
 if BOARD_M5STICKC_PLUS_ESP32_PROCPU
 
-config GPIO_HOGS_INIT_PRIORITY
-	default 70
-
 config MFD_INIT_PRIORITY
 	default 70
 

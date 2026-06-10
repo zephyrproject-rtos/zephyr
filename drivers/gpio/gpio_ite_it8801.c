@@ -437,7 +437,7 @@ static int gpio_it8801_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_IT8801_DEVICE_INST(inst)                                                              \
