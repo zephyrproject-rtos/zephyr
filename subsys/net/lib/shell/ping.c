@@ -12,6 +12,7 @@ LOG_MODULE_DECLARE(net_shell);
 #include <stdio.h>
 #include <zephyr/random/random.h>
 #include <zephyr/net/icmp.h>
+#include <zephyr/net/net_linkaddr.h>
 
 #include "net_shell_private.h"
 
@@ -246,17 +247,19 @@ static enum net_verdict handle_echo_reply_common(struct net_pkt *pkt, uint16_t s
 	ping_ctx.stats.pkt_recv++;
 
 	if (!ping_ctx.quiet) {
-		PR_SHELL(ping_ctx.sh,
-			 "%d bytes from %s to %s: icmp_seq=%u ttl=%u "
 #ifdef CONFIG_IEEE802154
-			 "rssi=%d "
+		char rssi_buf[16] = {0};
+		struct net_linkaddr *link_addr = net_if_get_link_addr(pkt->iface);
+
+		if (link_addr && link_addr->type == NET_LINK_IEEE802154) {
+			snprintf(rssi_buf, sizeof(rssi_buf), "rssi=%d ",
+				 net_pkt_ieee802154_rssi_dbm(pkt));
+		}
+#else
+		const char rssi_buf[1] = {0};
 #endif
-			 "%s\n",
-			 bytes, src, dst, sequence, ttl,
-#ifdef CONFIG_IEEE802154
-			 net_pkt_ieee802154_rssi_dbm(pkt),
-#endif
-			 time_buf);
+		PR_SHELL(ping_ctx.sh, "%d bytes from %s to %s: icmp_seq=%u ttl=%u %s%s\n", bytes,
+			 src, dst, sequence, ttl, rssi_buf, time_buf);
 	}
 
 	if (sequence == ping_ctx.count) {
