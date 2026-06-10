@@ -6,11 +6,9 @@
 
 if SOC_MIMX8MQ6_M4
 
+rsource "../../common/Kconfig.defconfig.nvic"
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 266000000
-
-config NUM_IRQS
-	# must be >= the highest interrupt number used
-	default 127
 
 endif # SOC_MIMX8MQ6_M4
