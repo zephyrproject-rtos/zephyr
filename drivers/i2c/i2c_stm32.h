@@ -144,6 +144,10 @@ struct i2c_stm32_data {
 #endif /* CONFIG_I2C_TARGET */
 };
 
+extern const struct i2c_driver_api i2c_stm32_driver_api;
+
+int i2c_stm32_init(const struct device *dev);
+
 #ifdef CONFIG_I2C_RTIO
 int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
 			uint16_t i2c_addr);
