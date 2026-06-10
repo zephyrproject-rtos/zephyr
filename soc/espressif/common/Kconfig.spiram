@@ -19,7 +19,7 @@ menu "SPI RAM config"
 
 config ESP_SPIRAM_HEAP_SIZE
 	int "Size of SPIRAM heap"
-	default 262134 if SYS_HEAP_SMALL_ONLY
+	default 262128 if SYS_HEAP_SMALL_ONLY
 	default 1048576 if !SYS_HEAP_SMALL_ONLY
 	help
 	  Specify size of SPIRAM heap.
