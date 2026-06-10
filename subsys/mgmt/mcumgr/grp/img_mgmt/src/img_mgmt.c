@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018-2021 mcumgr authors
  * Copyright (c) 2022-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +14,7 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/storage/flash_map.h>
-#include <zephyr/dfu/mcuboot.h>
+#include <zephyr/dfu/dfu_boot.h>
 
 #include <zcbor_common.h>
 #include <zcbor_decode.h>
@@ -59,9 +60,6 @@
 		PARTITION_ADDRESS(label) + PARTITION_SIZE(label) >                     \
 			(CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET))
 #endif
-
-BUILD_ASSERT(sizeof(struct image_header) == IMAGE_HEADER_SIZE,
-	     "struct image_header not required size");
 
 #if CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER >= 2
 #if PARTITION_EXISTS(slot0_ns_partition) &&			\
@@ -208,31 +206,6 @@ static bool img_mgmt_slot_max_size(size_t *area_sizes, zcbor_state_t *zse)
 }
 #endif
 
-/**
- * Finds the TLVs in the specified image slot, if any.
- */
-static int img_mgmt_find_tlvs(int slot, size_t *start_off, size_t *end_off, uint16_t magic)
-{
-	struct image_tlv_info tlv_info;
-	int rc;
-
-	rc = img_mgmt_read(slot, *start_off, &tlv_info, sizeof(tlv_info));
-	if (rc != 0) {
-		/* Read error. */
-		return rc;
-	}
-
-	if (tlv_info.it_magic != magic) {
-		/* No TLVs. */
-		return IMG_MGMT_ERR_NO_TLVS;
-	}
-
-	*start_off += sizeof(tlv_info);
-	*end_off = *start_off + tlv_info.it_tlv_tot;
-
-	return IMG_MGMT_ERR_OK;
-}
-
 int img_mgmt_active_slot(int image)
 {
 	int slot = 0;
@@ -269,109 +242,59 @@ int img_mgmt_active_image(void)
 {
 	return ACTIVE_IMAGE_IS;
 }
-
 /*
  * Reads the version and build hash from the specified image slot.
  */
 int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash, uint32_t *flags)
 {
-	struct image_header hdr;
-	struct image_tlv tlv;
-	size_t data_off;
-	size_t data_end;
-	bool hash_found;
+	struct dfu_boot_img_info info;
 	uint8_t erased_val;
-	uint32_t erased_val_32;
 	int rc;
 
-	rc = img_mgmt_erased_val(image_slot, &erased_val);
+	rc = dfu_boot_get_erased_val(image_slot, &erased_val);
 	if (rc != 0) {
 		return IMG_MGMT_ERR_FLASH_CONFIG_QUERY_FAIL;
-	}
-
-	rc = img_mgmt_read(image_slot,
-			   boot_get_image_start_offset(img_mgmt_flash_area_id(image_slot)),
-			   &hdr, sizeof(hdr));
-
-	if (rc != 0) {
-		return rc;
 	}
 
 	if (ver != NULL) {
 		memset(ver, erased_val, sizeof(*ver));
 	}
-	erased_val_32 = ERASED_VAL_32(erased_val);
-	if (hdr.ih_magic == IMAGE_MAGIC) {
-		if (ver != NULL) {
-			memcpy(ver, &hdr.ih_ver, sizeof(*ver));
-		}
-	} else if (hdr.ih_magic == erased_val_32) {
-		return IMG_MGMT_ERR_NO_IMAGE;
-	} else {
-		return IMG_MGMT_ERR_INVALID_IMAGE_HEADER_MAGIC;
-	}
 
-	if (flags != NULL) {
-		*flags = hdr.ih_flags;
-	}
-
-	/* Read the image's TLVs. We first try to find the protected TLVs, if the protected
-	 * TLV does not exist, we try to find non-protected TLV which also contains the hash
-	 * TLV. All images are required to have a hash TLV.  If the hash is missing, the image
-	 * is considered invalid.
-	 */
-	data_off = hdr.ih_hdr_size + hdr.ih_img_size +
-		   boot_get_image_start_offset(img_mgmt_flash_area_id(image_slot));
-
-	rc = img_mgmt_find_tlvs(image_slot, &data_off, &data_end, IMAGE_TLV_PROT_INFO_MAGIC);
-	if (!rc) {
-		/* The data offset should start after the header bytes after the end of
-		 * the protected TLV, if one exists.
-		 */
-		data_off = data_end - sizeof(struct image_tlv_info);
-	}
-
-	rc = img_mgmt_find_tlvs(image_slot, &data_off, &data_end, IMAGE_TLV_INFO_MAGIC);
+	rc = dfu_boot_read_img_info(image_slot, &info);
 	if (rc != 0) {
-		return IMG_MGMT_ERR_NO_TLVS;
-	}
-
-	hash_found = false;
-	while (data_off + sizeof(tlv) <= data_end) {
-		rc = img_mgmt_read(image_slot, data_off, &tlv, sizeof(tlv));
-		if (rc != 0) {
-			return rc;
-		}
-		if (tlv.it_type == 0xff && tlv.it_len == 0xffff) {
+		/* Map DFU error codes to IMG_MGMT error codes */
+		if (rc == -ENOENT) {
+			return IMG_MGMT_ERR_NO_IMAGE;
+		} else if (rc == -EINVAL) {
 			return IMG_MGMT_ERR_INVALID_TLV;
+		} else if (rc == -EIO) {
+			return IMG_MGMT_ERR_FLASH_READ_FAILED;
 		}
-		if (tlv.it_type != IMAGE_TLV_SHA || tlv.it_len != IMAGE_SHA_LEN) {
-			/* Non-hash TLV.  Skip it. */
-			data_off += sizeof(tlv) + tlv.it_len;
-			continue;
-		}
-
-		if (hash_found) {
-			/* More than one hash. */
-			return IMG_MGMT_ERR_TLV_MULTIPLE_HASHES_FOUND;
-		}
-		hash_found = true;
-
-		data_off += sizeof(tlv);
-		if (hash != NULL) {
-			if (data_off + IMAGE_SHA_LEN > data_end) {
-				return IMG_MGMT_ERR_TLV_INVALID_SIZE;
-			}
-			rc = img_mgmt_read(image_slot, data_off, hash, IMAGE_SHA_LEN);
-			if (rc != 0) {
-				return rc;
-			}
-		}
-		data_off += IMAGE_SHA_LEN;
+		return rc;
 	}
 
-	if (!hash_found) {
-		return IMG_MGMT_ERR_HASH_NOT_FOUND;
+	if (!info.valid) {
+		return IMG_MGMT_ERR_NO_IMAGE;
+	}
+
+	/* Copy version information */
+	if (ver != NULL) {
+		BUILD_ASSERT(sizeof(struct image_version) == sizeof(struct dfu_boot_img_version),
+			"image_version must match dfu_boot_img_version size");
+		memcpy(ver, &info.version, sizeof(*ver));
+	}
+
+	/* Copy hash */
+	if (hash != NULL) {
+		if (info.hash_len == 0) {
+			return IMG_MGMT_ERR_HASH_NOT_FOUND;
+		}
+		memcpy(hash, info.hash, MIN(info.hash_len, DFU_BOOT_IMG_SHA_LEN));
+	}
+
+	/* Copy flags */
+	if (flags != NULL) {
+		*flags = info.flags;
 	}
 
 	return 0;
@@ -384,10 +307,9 @@ int img_mgmt_read_info(int image_slot, struct image_version *ver, uint8_t *hash,
 int
 img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash)
 {
-	int i;
 	struct image_version ver;
 
-	for (i = 0; i < SLOTS_PER_IMAGE * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (int i = 0; i < SLOTS_PER_IMAGE * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, &ver, hash, NULL) != 0) {
 			continue;
 		}
@@ -405,14 +327,13 @@ img_mgmt_find_by_ver(struct image_version *find, uint8_t *hash)
 int
 img_mgmt_find_by_hash(uint8_t *find, struct image_version *ver)
 {
-	int i;
-	uint8_t hash[IMAGE_SHA_LEN];
+	uint8_t hash[DFU_BOOT_IMG_SHA_LEN];
 
-	for (i = 0; i < SLOTS_PER_IMAGE * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
+	for (int i = 0; i < SLOTS_PER_IMAGE * CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER; i++) {
 		if (img_mgmt_read_info(i, ver, hash, NULL) != 0) {
 			continue;
 		}
-		if (!memcmp(hash, find, IMAGE_SHA_LEN)) {
+		if (!memcmp(hash, find, DFU_BOOT_IMG_SHA_LEN)) {
 			return i;
 		}
 	}
@@ -530,7 +451,7 @@ static int img_mgmt_slot_info(struct smp_streamer *ctxt)
 
 	while (i < CONFIG_MCUMGR_GRP_IMG_UPDATABLE_IMAGE_NUMBER * SLOTS_PER_IMAGE) {
 		const struct flash_area *fa;
-		int area_id = img_mgmt_flash_area_id(i);
+		int area_id = dfu_boot_get_flash_area_id(i);
 
 		if ((i % SLOTS_PER_IMAGE) == 0) {
 			memset(area_sizes, 0, sizeof(area_sizes));
@@ -722,7 +643,7 @@ img_mgmt_upload_good_rsp(struct smp_streamer *ctxt)
 static int
 img_mgmt_upload_log(bool is_first, bool is_last, int status)
 {
-	uint8_t hash[IMAGE_SHA_LEN];
+	uint8_t hash[DFU_BOOT_IMG_SHA_LEN];
 	const uint8_t *hashp;
 	int rc;
 
