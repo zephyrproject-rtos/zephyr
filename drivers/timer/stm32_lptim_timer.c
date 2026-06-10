@@ -369,10 +369,13 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	}
 
 	/*
-	 * When CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = y, ticks equals to -1
-	 * is treated as a lptim off ; never waking up ; lptim not clocked anymore
+	 * The kernel has no pending timeout, which it signals with
+	 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle the LPTIM can be
+	 * turned off entirely (never waking up, not clocked anymore).
+	 * Without sloppy idle we fall through and schedule the (capped)
+	 * timeout so the uptime tick count stays correct.
 	 */
-	if (ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 		return;
 	}

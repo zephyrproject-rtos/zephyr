@@ -210,14 +210,14 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	/* Disable event timer */
 	ext_timer_disable(EVENT_TIMER);
 
-	if (ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		/*
-		 * If kernel doesn't have a timeout:
-		 * 1.CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = y (no future timer interrupts are expected),
-		 *   kernel pass K_TICKS_FOREVER (0xFFFF FFFF FFFF FFFF), we handle this case in
-		 *   here.
-		 * 2.CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE = n (schedule timeout as far into the future
-		 *   as possible), kernel pass INT_MAX (0x7FFF FFFF), we handle it in later else {}.
+		 * The kernel has no pending timeout, which it signals with
+		 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle no future
+		 * timer interrupt is required, so leave the event timer
+		 * disabled and stop waking up. Without sloppy idle we fall
+		 * through and still schedule the (capped) timeout so the
+		 * uptime tick count stays correct.
 		 */
 		k_spin_unlock(&lock, key);
 		return;

@@ -23,8 +23,18 @@
 extern "C" {
 #endif
 
-#define SYS_CLOCK_MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
-			    ? K_TICKS_FOREVER : INT_MAX)
+/*
+ * Maximum number of ticks the kernel will ever ask a timer driver to wait
+ * before the next sys_clock_announce(). It is half of the unsigned tick
+ * range so that the elapsed-tick count the driver eventually announces is
+ * guaranteed to fit in the (unsigned) sys_clock_announce() argument. The
+ * other half is left as slack to absorb a late announce (e.g. interrupt
+ * latency, or a timeout that fires slightly past its deadline) without
+ * overflowing that argument. The kernel caps the value passed to
+ * sys_clock_set_timeout() to this, so a driver need not clamp against the
+ * announce range and only has to honour its own cycle-count limits.
+ */
+#define SYS_CLOCK_MAX_WAIT (UINT32_MAX / 2)
 
 /**
  * @brief System Clock APIs
