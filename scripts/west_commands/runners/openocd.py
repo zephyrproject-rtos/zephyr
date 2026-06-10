@@ -131,7 +131,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.gdb_init = gdb_init
         self.load_arg = ['-ex', 'load'] if load else []
         self.target_handle = target_handle
-        self.log_file = log_file if log_file else str(Path(self.cfg.build_dir, 'openocd.log'))
+        self.log_file = log_file if log_file else Path(self.cfg.build_dir, 'openocd.log').as_posix()
         self.rtt_port = rtt_port
         self.rtt_server = rtt_server
 
