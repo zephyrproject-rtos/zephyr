@@ -481,31 +481,6 @@ static DEVICE_API(gpio, gpio_nxp_siul2_driver_api) = {
 #endif
 };
 
-/* Calculate the port pin mask based on ngpios and gpio-reserved-ranges node
- * properties. Multiple reserved ranges are not supported.
- *
- * For example, for the following gpio node definition:
- *
- *	gpioo: gpio@40521716 {
- *              ...
- *		ngpios = <14>;
- *		gpio-reserved-ranges = <0 10>;
- *	};
- *
- * the generated mask will be will be 0x3C00.
- */
-#define GPIO_NXP_SIUL2_RESERVED_PIN_MASK(n)					\
-	(GENMASK(DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 0) +		\
-			DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 1) - 1,	\
-		 DT_INST_PROP_BY_IDX(n, gpio_reserved_ranges, 0)		\
-	))
-
-#define GPIO_NXP_SIUL2_PORT_PIN_MASK(n)						\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, gpio_reserved_ranges),		\
-		(GPIO_PORT_PIN_MASK_FROM_DT_INST(n)				\
-			& ~(GPIO_NXP_SIUL2_RESERVED_PIN_MASK(n))),		\
-		(GPIO_PORT_PIN_MASK_FROM_DT_INST(n)))
-
 #ifdef CONFIG_NXP_SIUL2_EIRQ
 #define GPIO_NXP_SIUL2_EIRQ_NODE(n)						\
 	DT_INST_PHANDLE(n, interrupt_parent)
@@ -577,9 +552,7 @@ static DEVICE_API(gpio, gpio_nxp_siul2_driver_api) = {
 	GPIO_NXP_SIUL2_SET_EIRQ_INFO(n)						\
 	GPIO_NXP_SIUL2_SET_WKPU_INFO(n)						\
 	static const struct gpio_nxp_siul2_config gpio_nxp_siul2_config_##n = {	\
-		.common = {							\
-			.port_pin_mask = GPIO_NXP_SIUL2_PORT_PIN_MASK(n),	\
-		},								\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),			\
 		.gpio_base = DT_INST_REG_ADDR_BY_NAME(n, pgpdo),		\
 		.port_base = DT_INST_REG_ADDR_BY_NAME(n, mscr),			\
 		GPIO_NXP_SIUL2_GET_EIRQ_INFO(n)					\
