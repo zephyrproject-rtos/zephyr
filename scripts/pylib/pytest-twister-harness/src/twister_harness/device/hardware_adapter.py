@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import logging
+import shlex
 import subprocess
 import time
 from pathlib import Path
@@ -190,7 +191,7 @@ class HardwareAdapter(DeviceAdapter):
     @staticmethod
     def _run_custom_script(script_path: str | Path, timeout: float) -> None:
         with subprocess.Popen(
-            str(script_path), stderr=subprocess.PIPE, stdout=subprocess.PIPE
+            shlex.split(str(script_path)), stderr=subprocess.PIPE, stdout=subprocess.PIPE
         ) as proc:
             try:
                 stdout, stderr = proc.communicate(timeout=timeout)

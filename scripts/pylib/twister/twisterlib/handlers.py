@@ -521,8 +521,10 @@ class DeviceHandler(Handler):
                     break
 
     @staticmethod
-    def run_custom_script(script, timeout):
-        with subprocess.Popen(script, stderr=subprocess.PIPE, stdout=subprocess.PIPE) as proc:
+    def run_custom_script(script_path: str | Path, timeout: float):
+        with subprocess.Popen(
+            shlex.split(str(script_path)), stderr=subprocess.PIPE, stdout=subprocess.PIPE
+        ) as proc:
             try:
                 stdout, stderr = proc.communicate(timeout=timeout)
                 logger.debug(stdout.decode())
@@ -532,7 +534,7 @@ class DeviceHandler(Handler):
             except subprocess.TimeoutExpired:
                 proc.kill()
                 proc.communicate()
-                logger.error(f"{script} timed out")
+                logger.error(f"{script_path} timed out")
 
     def _create_flash_command(self, hardware):
         flash_command = next(csv.reader([self.options.flash_command]))
