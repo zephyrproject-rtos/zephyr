@@ -16,7 +16,7 @@
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
 
-#include "../eth_dwmac_priv.h"
+#include "../dwc_mac/eth_dwmac_priv.h"
 
 LOG_MODULE_REGISTER(snps_dwmac_mdio, CONFIG_MDIO_LOG_LEVEL);
 

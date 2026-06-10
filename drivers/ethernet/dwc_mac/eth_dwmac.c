@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ethernet/eth_stats.h>
 
 #include "eth_dwmac_priv.h"
-#include "eth.h"
+#include "../eth.h"
 
 
 /*
