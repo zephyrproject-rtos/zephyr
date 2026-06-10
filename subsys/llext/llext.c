@@ -209,13 +209,17 @@ const void *llext_find_sym(const struct llext_symtable *sym_table, const char *s
 		if (ordering_state == 0) {
 			const_syms = STRUCT_SECTION_START(llext_const_symbol);
 			STRUCT_SECTION_COUNT(llext_const_symbol, &sym_cnt);
+			/* Assume the table is sorted; downgrade to a linear scan as
+			 * soon as an out-of-order pair is found. The assignment must
+			 * not happen after the loop, or it would clobber the result.
+			 */
+			ordering_state = 1;
 			for (size_t i = 1; i < sym_cnt; i++) {
 				if (strcmp(const_syms[i - 1].name, const_syms[i].name) > 0) {
 					ordering_state = -1;
 					break;
 				}
 			}
-			ordering_state = 1;
 		}
 
 		if (ordering_state == 1) {
