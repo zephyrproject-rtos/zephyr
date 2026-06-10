@@ -34,6 +34,12 @@ if(CONFIG_USB_DEVICE_DRIVER OR CONFIG_UDC_DRIVER OR CONFIG_UHC_DRIVER OR CONFIG_
   set(CONFIG_USE_component_osa_zephyr ON)
 endif()
 
+if(CONFIG_SD_DEV_RW6XX_SDIO)
+  set(CONFIG_MCUX_COMPONENT_component.sdio_dev ON)
+  set(CONFIG_USE_component_osa_zephyr ON)
+  zephyr_compile_definitions(OSA_USED=1U)
+endif()
+
 if(CONFIG_NXP_RF_IMU)
   if(CONFIG_SOC_SERIES_RW6XX)
     set(CONFIG_MCUX_COMPONENT_driver.imu ON)
@@ -96,6 +102,10 @@ add_subdirectory(${MCUX_SDK_NG_DIR}/components/rpmsg
 
 add_subdirectory(${MCUX_SDK_NG_DIR}/components/imu_adapter
   ${CMAKE_CURRENT_BINARY_DIR}/imu_adapter
+  )
+
+add_subdirectory(${MCUX_SDK_NG_DIR}/components/sdio_dev
+  ${CMAKE_CURRENT_BINARY_DIR}/sdio_dev
   )
 
 if(${MCUX_DEVICE} MATCHES "RW61")

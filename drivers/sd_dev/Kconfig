@@ -1,0 +1,16 @@
+
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SD_DEV_DRIVERS
+    bool "SD Device Drivers"
+    default y
+    depends on SD_DEV
+    help
+      Enable SDIO/MMC device-side driver implementations.
+
+if SD_DEV_DRIVERS
+
+source "drivers/sd_dev/rw6xx/Kconfig"
+
+endif # SD_DEV_DRIVERS
+

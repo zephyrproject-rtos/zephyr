@@ -883,6 +883,9 @@ enum sdio_io_dir {
 
 #define SDIO_FBR_BASE(n) ((n) * 0x100) /*!< Get function base register addr */
 
+#define SDIO_FBR_CODE 0x00 /*!< SDIO function base register: standard function code */
+#define SDIO_FBR_EXT_CODE 0x01 /*!< SDIO function base register: extended function code */
+#define SDIO_FBR_POWER_SELECT 0x02 /*!< SDIO function base register: power selection */
 #define SDIO_FBR_CIS 0x09 /*!< SDIO function base register CIS pointer */
 #define SDIO_FBR_CSA 0x0C /*!< SDIO function base register CSA pointer */
 #define SDIO_FBR_BLK_SIZE 0x10 /*!< SDIO function base register block size */

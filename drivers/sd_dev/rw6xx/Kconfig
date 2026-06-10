@@ -1,0 +1,9 @@
+
+# SPDX-License-Identifier: Apache-2.0
+
+config SD_DEV_RW6XX_SDIO
+    bool "NXP RW6xx SDIO Device HAL"
+    depends on SD_DEV
+    select SDIO_STACK
+    help
+      Enable SDIO Device-side HAL for NXP RW6xx.

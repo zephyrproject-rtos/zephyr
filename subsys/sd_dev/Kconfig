@@ -1,0 +1,65 @@
+
+# SPDX-License-Identifier: Apache-2.0
+#
+# SD/SDIO/MMC device framework (device-side)
+#
+
+menuconfig SD_DEV
+    bool "SD Device Framework (SDIO/MMC device-side)"
+    help
+      Enable the SD device-side framework including:
+        * SDIO device-side protocol model
+        * MMC optional protocol model
+        * RX FIFO per SDIO function
+        * Core runtime worker threads
+        * Optional PM state machine
+      This framework is used for SDIO-Slave and MMC-Slave style devices.
+
+if SD_DEV
+
+config SDIO_DEV
+    bool "Enable SDIO device protocol stack"
+    default y
+    help
+      Enable SDIO device-side support. This includes:
+        - struct sdio_func / struct sdio_dev
+        - block size / bus width setters
+        - per-function RX FIFO
+        - rx_handler (provided by HAL) and set_rx_handler (provided by subsys)
+        - RX worker threads dispatching data
+
+config SDMMC_DEV
+    bool "Enable MMC device protocol stack"
+    default n
+    help
+      Enable MMC device-side protocol support.
+      Currently only has basic placeholders.
+
+config SDIO_DEV_MAX_FUNCS
+    int "Maximum SDIO functions supported"
+    default 3
+    range 1 7
+    help
+      The number of SDIO functions your device implements.
+      E.g. FN0 + FN1 + FN2 = 3.
+
+config SDEV_PKT_POOL_SIZE
+    int "SDEV packet pool size"
+    default 16
+    help
+      Number of packets in the pool.
+
+config SDEV_PKT_BUF_SIZE
+    int "SDEV packet buffer size"
+    default 4096
+    help
+      Size of each packet buffer in bytes.
+
+config SDEV_DMA_ALIGN
+    int "SDEV DMA alignment"
+    default 32
+    help
+      DMA alignment size (typically cache line size).
+
+endif # SD_DEV
+

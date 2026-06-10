@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP RW6xx SDIO Device Controller
+
+compatible: "nxp,rw6xx-sdio-device"
+
+include:
+  - base.yaml
+  - pinctrl-device.yaml
+
+properties:
+  reg:
+    type: array
+    required: true
+    description: SDIO device register window
+
+  num-funcs:
+    type: int
+    required: true
+    enum: [1, 2, 3, 4, 5, 6, 7]
+    description: Number of SDIO functions supported
+
+  vendor-id:
+    type: int
+    default: 0x0000
+    description: SDIO vendor ID
+
+  device-id:
+    type: int
+    default: 0x0000
+    description: SDIO device ID
+
+  card-type:
+    type: int
+    required: true
+    enum: [0, 1, 2]
+    description: SD card type
