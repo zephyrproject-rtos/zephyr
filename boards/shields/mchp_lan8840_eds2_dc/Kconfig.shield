@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MCHP_LAN8840_EDS2_DC
+	def_bool $(shields_list_contains,mchp_lan8840_eds2_dc)
