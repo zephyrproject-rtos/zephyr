@@ -9,6 +9,8 @@
  */
 
 &pmod1_spi {
+	rx-dtc;
+	tx-dtc;
 	status = "okay";
 
 	slow@0 {
