@@ -1,0 +1,99 @@
+{
+    "vendor_primary_sbl": true,
+    "ti_wsoc_primary_container": true,
+    "ti_wsoc_bl2_primary_container": true,
+    "nvs_enable": true,
+    "vendor_alternate_image": true,
+    "vendor_sbl_alternate_image": true,
+    "ti_bl_alternate_image": true,
+    "ti_wsoc_alternate_image": true,
+    "ti_wsoc_bl2_alternate_image": true,
+    "region_0": {
+        "mem_region_0_start_phy_address": 1069056,
+        "mem_region_0_end_phy_address": 4194303,
+        "region0_boot": false,
+        "region0_main_code": true,
+        "region0_nvs": false,
+        "region0_wsoc_code": false,
+        "region0_alternate_code": false
+    },
+    "region_1": {
+        "mem_region_1_start_phy_address": 0,
+        "mem_region_1_end_phy_address": 1069055,
+        "region1_boot": true,
+        "region1_main_code": false,
+        "region1_nvs": true,
+        "region1_wsoc_code": true,
+        "region1_alternate_code": false
+    },
+    "region_2": {
+        "mem_region_2_start_phy_address": 0,
+        "mem_region_2_end_phy_address": 0,
+        "region2_boot": false,
+        "region2_main_code": false,
+        "region2_nvs": false,
+        "region2_wsoc_code": false,
+        "region2_alternate_code": true
+    },
+    "region_3": {
+        "mem_region_3_start_phy_address": 0,
+        "mem_region_3_end_phy_address": 0,
+        "region3_boot": false,
+        "region3_main_code": false,
+        "region3_nvs": false,
+        "region3_wsoc_code": false,
+        "region3_alternate_code": false
+    },
+    "boot_region_conf": {
+        "boot_region_size": 0,
+        "boot_region_flash_disco_param_start_address": 0,
+        "boot_region_primary_ti_bl_start_phy_address": 12284,
+        "boot_region_primary_ti_bl_magic": 0,
+        "boot_region_primary_ti_bl_major": 0,
+        "boot_region_primary_ti_bl_minor": 0,
+        "boot_region_sec_ti_bl_start_phy_address": 430076,
+        "boot_region_sec_ti_bl_magic": 0,
+        "boot_region_sec_ti_bl_major": 0,
+        "boot_region_sec_ti_bl_minor": 0
+    },
+    "main_code_region_conf": {
+        "main_code_region_vendor_image_start_phy_address": 1073148,
+        "main_code_region_vendor_image_magic": 0,
+        "main_code_region_vendor_image_major": 0,
+        "main_code_region_vendor_image_minor": 0,
+        "main_code_region_sbl_start_phy_address": 0,
+        "main_code_region_sbl_magic": 0,
+        "main_code_region_sbl_major": 0,
+        "main_code_region_sbl_minor": 0
+    },
+    "alt_code_region_conf": {
+        "alt_code_region_vendor_image_start_phy_address": 4194304,
+        "alt_code_region_vendor_image_magic": 0,
+        "alt_code_region_vendor_image_major": 0,
+        "alt_code_region_vendor_image_minor": 0,
+        "alt_code_region_sbl_start_phy_address": 0,
+        "alt_code_region_sbl_magic": 0,
+        "alt_code_region_sbl_major": 0,
+        "alt_code_region_sbl_minor": 0
+    },
+    "nvs_code_region_conf": {
+        "nvs_start_phy_address": 892928,
+        "nvs_region_size": 176128,
+        "nvs_region_primary_wsoc_start_phy_address": 430076,
+        "nvs_region_primary_wsoc_magic": 0,
+        "nvs_region_primary_wsoc_major": 0,
+        "nvs_region_primary_wsoc_minor": 0,
+        "nvs_region_sec_wsoc_start_phy_address": 897020,
+        "nvs_region_sec_wsoc_magic": 0,
+        "nvs_region_sec_wsoc_major": 0,
+        "nvs_region_sec_wsoc_minor": 0,
+        "nvs_region_primary_wsoc_bl2_start_phy_address": 0,
+        "nvs_region_primary_wsoc_bl2_magic": 0,
+        "nvs_region_primary_wsoc_bl2_major": 0,
+        "nvs_region_primary_wsoc_bl2_minor": 0,
+        "nvs_region_sec_wsoc_bl2_start_phy_address": 0,
+        "nvs_region_sec_wsoc_bl2_magic": 0,
+        "nvs_region_sec_wsoc_bl2_major": 0,
+        "nvs_region_sec_wsoc_bl2_minor": 0
+    }
+}
