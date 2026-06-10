@@ -2453,6 +2453,11 @@ static int usbh_uvc_removed(struct usbh_class_data *const c_data)
 		k_fifo_put(&host_data->fifo_out, vbuf);
 	}
 
+	if (IS_ENABLED(CONFIG_POLL) && host_data->sig != NULL) {
+		LOG_DBG("Raising VIDEO_BUF_ABORTED signal");
+		k_poll_signal_raise(host_data->sig, VIDEO_BUF_ABORTED);
+	}
+
 	k_mutex_unlock(&host_data->lock);
 
 	host_data->current_vbuf = NULL;
