@@ -2609,6 +2609,7 @@ class RiskClassifierStrategy(SelectionStrategy):
             ".jpg",
             ".svg",
             ".gif",
+            ".webp",
         }
     )
 
