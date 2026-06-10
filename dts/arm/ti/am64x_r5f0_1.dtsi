@@ -27,3 +27,7 @@
 		     <0 67 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
 };
+
+&r5fss_0_1 {
+	self-cpu;
+};

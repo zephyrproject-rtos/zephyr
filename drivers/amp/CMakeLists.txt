@@ -9,3 +9,8 @@ zephyr_library()
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_USERSPACE amp_handlers.c)
 # zephyr-keep-sorted-stop
+
+# AMP driver implementations
+# zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_AMP_TI_K3 amp_ti_k3.c)
+# zephyr-keep-sorted-stop
