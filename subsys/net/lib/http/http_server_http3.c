@@ -261,7 +261,11 @@ static bool h3_stream_received_early_data(struct http_client_ctx *client)
 	if (zsock_getsockopt(client->fd, ZSOCK_SOL_QUIC,
 			     ZSOCK_QUIC_SO_STREAM_EARLY_DATA,
 			     &early_data, &optlen) < 0) {
-		return false;
+		/* Fail closed: if the early-data status cannot be determined,
+		 * treat the request as early data so replay protection (425
+		 * Too Early for non-idempotent methods) is not skipped.
+		 */
+		return true;
 	}
 
 	if (optlen == sizeof(int) && early_data != 0) {
