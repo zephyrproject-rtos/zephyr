@@ -2519,15 +2519,28 @@ static int dai_ssp_config_set(const struct device *dev, const struct dai_config 
 	return ret;
 }
 
-static const struct dai_properties *dai_ssp_get_properties(const struct device *dev,
-							   enum dai_dir dir, int stream_id)
+static int dai_ssp_get_properties_copy(const struct device *dev,
+				       enum dai_dir dir, int stream_id,
+				       struct dai_properties *prop)
 {
 	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
-	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
 	struct dai_intel_ssp_plat_data *ssp_plat_data = dai_get_plat_data(dp);
 	int array_index = SSP_ARRAY_INDEX(dir);
-	struct dai_properties *prop = &ssp->props[array_index];
 
+	if (!prop) {
+		return -EINVAL;
+	}
+
+	/* reset unused fields */
+	prop->fifo_depth = 0;
+	prop->stream_id = 0;
+
+	/*
+	 * Fill the caller-provided object directly. When invoked through
+	 * dai_get_properties_copy() the destination is the (private) memory of
+	 * the calling thread, so no shared scratch object is touched and
+	 * concurrent queries from separate TX/RX threads cannot race.
+	 */
 	prop->fifo_address = ssp_plat_data->fifo[array_index].offset;
 	prop->dma_hs_id = ssp_plat_data->fifo[array_index].handshake;
 
@@ -2540,26 +2553,22 @@ static const struct dai_properties *dai_ssp_get_properties(const struct device *
 	LOG_INF("SSP%u: fifo %u, handshake %u, init delay %u", dp->dai_index, prop->fifo_address,
 		prop->dma_hs_id, prop->reg_init_delay);
 
-	return prop;
+	return 0;
 }
 
-static int dai_ssp_get_properties_copy(const struct device *dev,
-				       enum dai_dir dir, int stream_id,
-				       struct dai_properties *prop)
+static const struct dai_properties *dai_ssp_get_properties(const struct device *dev,
+							   enum dai_dir dir, int stream_id)
 {
-	const struct dai_properties *kernel_prop = dai_ssp_get_properties(dev, dir, stream_id);
+	struct dai_intel_ssp *dp = (struct dai_intel_ssp *)dev->data;
+	struct dai_intel_ssp_pdata *ssp = dai_get_drvdata(dp);
+	int array_index = SSP_ARRAY_INDEX(dir);
+	struct dai_properties *prop = &ssp->props[array_index];
 
-	if (!prop) {
-		return -EINVAL;
+	if (dai_ssp_get_properties_copy(dev, dir, stream_id, prop) < 0) {
+		return NULL;
 	}
 
-	if (!kernel_prop) {
-		return -ENOENT;
-	}
-
-	memcpy(prop, kernel_prop, sizeof(*kernel_prop));
-
-	return 0;
+	return prop;
 }
 
 static void ssp_acquire_ip(struct dai_intel_ssp *dp)
