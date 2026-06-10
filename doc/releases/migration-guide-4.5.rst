@@ -571,6 +571,8 @@ STM32
 * STM32MP13 SoC DTSI ethernet: rename labels from ``mac:`` and ``mdio:`` to ``mac0:`` and
   ``mdio0:``. The goal is to distinguish the 2 Ethernet controllers available. (:github:`108574`)
 
+* Renamed Kconfig option ``CONFIG_STM32_MEMMAP`` to :kconfig:option:`CONFIG_FLASH_STM32_NOR_MEMMAP`.
+
 Syscon
 ======
 
