@@ -173,6 +173,7 @@ New APIs and options
 
     * :c:func:`bt_conn_take`
     * :c:func:`bt_conn_drop`
+    * :c:func:`bt_le_per_adv_update_did`
 
   * Mesh
 
