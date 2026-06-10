@@ -6,9 +6,7 @@
 
 if SOC_SERIES_KV5X
 
-config NUM_IRQS
-	# must be >= the highest interrupt number used
-	default 121
+rsource "../../common/Kconfig.defconfig.nvic"
 
 config GPIO
 	default y
