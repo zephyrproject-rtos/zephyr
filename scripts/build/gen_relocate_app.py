@@ -56,6 +56,14 @@ from elftools.elf.sections import SymbolTableSection
 
 MemoryRegion = NewType('MemoryRegion', str)
 
+LLEXT_HEAP_SECTIONS = (
+    ".llext_heap",
+    ".llext_ext_heap",
+    ".llext_data_heap",
+    ".llext_instr_heap",
+    ".llext_metadata_heap",
+)
+
 
 class SectionKind(Enum):
     TEXT = "text"
@@ -86,7 +94,7 @@ class SectionKind(Enum):
             return cls.DATA
         elif ".bss." in name:
             return cls.BSS
-        elif ".noinit." in name:
+        elif ".noinit." in name or name in LLEXT_HEAP_SECTIONS:
             return cls.NOINIT
         elif ".literal." in name:
             return cls.LITERAL
