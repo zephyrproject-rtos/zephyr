@@ -379,6 +379,11 @@ static int usbd_hid_ctd(struct usbd_class_data *const c_data,
 	const struct device *dev = usbd_class_get_private(c_data);
 	int ret = 0;
 
+	if (setup->bRequest == USB_HID_SET_REPORT && setup->wLength == 0) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
 	switch (setup->bRequest) {
 	case USB_HID_SET_IDLE:
 		ret = handle_set_idle(dev, setup);
