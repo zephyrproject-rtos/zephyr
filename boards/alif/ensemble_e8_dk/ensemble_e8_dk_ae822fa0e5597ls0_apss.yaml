@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ensemble_e8_dk/ae822fa0e5597ls0/apss
+name: Alif Ensemble E8 DevKit AE822FA0E5597LS0 APSS
+type: mcu
+arch: arm
+vendor: alif
+toolchain:
+  - zephyr
