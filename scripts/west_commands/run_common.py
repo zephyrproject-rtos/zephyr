@@ -313,6 +313,9 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
         if len(entry.boards) == 0:
             del used_cmds[i]
 
+    # Set up runner logging to delegate to the WestCommand logging methods.
+    forward_logging_to_west(command, 'runners')
+
     prev_runner = None
     for d in domains:
         prev_runner = do_run_common_image(command, user_args, user_runner_args, used_cmds,
@@ -341,9 +344,6 @@ def do_run_common_image(command, user_args, user_runner_args, used_cmds,
     runner_cls = use_runner_cls(command, board, user_args, runners_yaml,
                                 cache)
     runner_name = runner_cls.name()
-
-    # Set up runner logging to delegate to the WestCommand logging methods.
-    forward_logging_to_west(command, 'runners')
 
     # If the user passed -- to force the parent argument parser to stop
     # parsing, it will show up here, and needs to be filtered out.
