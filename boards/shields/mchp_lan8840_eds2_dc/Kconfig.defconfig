@@ -1,0 +1,9 @@
+# Copyright (C) 2026 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_MCHP_LAN8840_EDS2_DC
+
+configdefault EEPROM
+	default y
+
+endif # SHIELD_MCHP_LAN8840_EDS2_DC

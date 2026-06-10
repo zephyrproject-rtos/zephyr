@@ -224,6 +224,27 @@ Note that boards with several mikroBUS™ connectors might define for
 example ``mikrobus_2_spi``.
 
 
+MCHP SODIMM
+-----------
+
+Development boards from Microchip Microprocessors often use the MCHP SODIMM
+shield interface for expanding GMAC interfaces.
+
+.. figure:: ../../../boards/shields/mchp_lan8840_eds2_dc/doc/lan8840_eds2_dc.webp
+   :align: center
+   :width: 256px
+   :alt: LAN8840-EDS2-DC
+
+   LAN8840-EDS2-DC, an example of a Microchip SODIMM shield
+
+Relevant devicetree node labels:
+
+- ``mchp_sodimm_header``
+- ``mchp_sodimm_i2c``
+- ``mchp_sodimm_gmac``
+- ``mchp_sodimm_gmac_mdio``
+
+
 Pico
 ----
 
