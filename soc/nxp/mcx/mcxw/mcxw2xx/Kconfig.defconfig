@@ -4,6 +4,8 @@
 
 if SOC_SERIES_MCXW2XX
 
+rsource "../../../common/Kconfig.defconfig.nvic"
+
 # MCXW23 uses SYSTICK timer as the kernel timer by default.
 # OS timer is reserved to replace SYSTICK during low power events for system wakeup.
 # This dual-timer approach maintains accurate connectivity timing while enabling
@@ -14,9 +16,6 @@ configdefault MCUX_OS_TIMER
 choice SYSTEM_TIMER_LPM_COMPANION
 	default SYSTEM_TIMER_LPM_COMPANION_HOOKS
 endchoice
-
-config NUM_IRQS
-	default 61
 
 DT_SYSCLK_PATH := $(dt_nodelabel_path,sysclk)
 

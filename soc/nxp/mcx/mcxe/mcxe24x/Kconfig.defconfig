@@ -3,6 +3,8 @@
 
 if SOC_SERIES_MCXE24X
 
+rsource "../../../common/Kconfig.defconfig.nvic"
+
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_IS_NXP_LPTMR := \
@@ -21,9 +23,6 @@ configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 
 configdefault SYS_CLOCK_TICKS_PER_SEC
 	default 1000 if MCUX_LPTMR_TIMER
-
-configdefault NUM_IRQS
-	default 146
 
 configdefault CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y

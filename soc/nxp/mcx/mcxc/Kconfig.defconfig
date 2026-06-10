@@ -6,6 +6,8 @@ DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM
 
 if SOC_FAMILY_MCXC
 
+rsource "../../common/Kconfig.defconfig.nvic"
+
 configdefault MCUX_LPTMR_TIMER
 	default y if PM && $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
 
@@ -22,9 +24,6 @@ choice PM_PREWAKEUP_CONV_MODE
 endchoice # PM_PREWAKEUP_CONV_MODE
 
 endif # PM && MCUX_LPTMR_TIMER
-
-configdefault NUM_IRQS
-	default 32
 
 configdefault SYS_CLOCK_TICKS_PER_SEC
 	default 1024 if MCUX_LPTMR_TIMER
