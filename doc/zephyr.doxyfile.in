@@ -319,6 +319,12 @@ ALIASES               += "driver_ops{1}=\brief \htmlonly <span class=\"mlabel\">
 ALIASES               += "driver_ops_mandatory=\htmlonly<span class=\"op-badge op-req\" title=\"This operation MUST be implemented by the driver.\">REQ</span>\endhtmlonly"
 ALIASES               += "driver_ops_optional=\htmlonly<span class=\"op-badge op-opt\" title=\"This operation MAY optionally be implemented by the driver.\">OPT</span>\endhtmlonly"
 
+# Aliases to reference POSIX and POSIX-adjacent compatibility API documentation.
+ALIASES               += "posix_func{1}=\see \htmlonly<a href=\"https://pubs.opengroup.org/onlinepubs/9699919799/functions/\1.html\">\1()</a>\endhtmlonly in The Open Group Base Specifications Issue 7, 2018 edition."
+ALIASES               += "posix_header{1}=\see \htmlonly<a href=\"https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/\1.html\">\1</a>\endhtmlonly in The Open Group Base Specifications Issue 7, 2018 edition."
+ALIASES               += "opengroup{3}=\see \htmlonly<a href=\"https://pubs.opengroup.org/onlinepubs/\1/\2\">\3</a>\endhtmlonly in The Open Group Base Specifications."
+ALIASES               += "compat_api{1}=\note \1 is a compatibility interface, not a POSIX API."
+
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
 # instance, some of the names that are used will be different. The list of all

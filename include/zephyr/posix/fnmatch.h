@@ -30,26 +30,78 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *    @(#)fnmatch.h    8.1 (Berkeley) 6/2/93
+ */
+
+/**
+ * @file
+ * @brief Filename-matching types.
+ * @ingroup posix
+ *
+ * Provides fnmatch() for matching strings against shell-style wildcard
+ * patterns as used in filename globbing.
+ *
+ * @posix_header{fnmatch.h}
  */
 
 #ifndef ZEPHYR_INCLUDE_POSIX_FNMATCH_H_
 #define ZEPHYR_INCLUDE_POSIX_FNMATCH_H_
 
+/**
+ * @brief The string does not match the specified pattern.
+ */
 #define FNM_NOMATCH 1 /* Match failed. */
+
+/**
+ * @brief Function not implemented.
+ */
 #define FNM_NOSYS   2 /* Function not implemented. */
+
+/**
+ * @brief Out of resources.
+ */
 #define FNM_NORES   3 /* Out of resources */
 
+/**
+ * @brief Treat backslash as an ordinary character rather than an escape character.
+ */
 #define FNM_NOESCAPE	0x01 /* Disable backslash escaping. */
+
+/**
+ * @brief Slash in string only matches slash in pattern.
+ */
 #define FNM_PATHNAME	0x02 /* Slash must be matched by slash. */
+
+/**
+ * @brief Leading period in string must be exactly matched by period in pattern.
+ */
 #define FNM_PERIOD	0x04 /* Period must be matched by period. */
+
+/**
+ * @brief Match the pattern case-insensitively.
+ */
 #define FNM_CASEFOLD	0x08 /* Pattern is matched case-insensitive */
+
+/**
+ * @brief Ignore a trailing slash and following characters after a match.
+ */
 #define FNM_LEADING_DIR 0x10 /* Ignore /<tail> after Imatch. */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief Match a filename or path against a shell-style pattern.
+ *
+ * The first argument is the shell pattern (which may use '?', '*', and
+ * bracket expressions), the second is the string to test against it, and
+ * the third is a combination of @c FNM_* flags (or 0 for default matching).
+ *
+ * @return 0 if the string matches the pattern, @c FNM_NOMATCH if it does not,
+ *         or another non-zero value on error.
+ *
+ * @posix_func{fnmatch}
+ */
 int fnmatch(const char *, const char *, int);
 
 #ifdef __cplusplus

@@ -18,6 +18,18 @@
 @{
 @}
 
+@defgroup posix POSIX APIs
+@brief POSIX APIs
+@ingroup os_services
+@{
+@}
+
+@defgroup posix_extensions POSIX compatibility APIs
+@brief Compatibility APIs provided from the POSIX include tree.
+@ingroup os_services
+@{
+@}
+
 @defgroup io_interfaces Device Drivers
 @brief Interfaces to interact with various hardware peripherals.
 @details A collection of hardware-agnostic interfaces used to implement and interact with device
