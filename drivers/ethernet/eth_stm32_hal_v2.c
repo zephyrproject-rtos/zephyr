@@ -93,8 +93,6 @@ void HAL_ETH_RxLinkCallback(STM32_ETH_ARGS(ETH_HandleTypeDef *heth, void **pStar
 /* Called by HAL_ETH_ReleaseTxPacket */
 void HAL_ETH_TxFreeCallback(STM32_ETH_ARGS(ETH_HandleTypeDef *heth, uint32_t *buff))
 {
-	__ASSERT_NO_MSG(buff != NULL);
-
 	/* buff is the user context in tx_config.pData */
 	struct eth_stm32_tx_context *ctx = (struct eth_stm32_tx_context *)buff;
 	struct eth_stm32_tx_buffer_header *buffer_header =
@@ -162,9 +160,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	bool timestamped_frame;
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
 
-	__ASSERT_NO_MSG(pkt != NULL);
-	__ASSERT_NO_MSG(pkt->frags != NULL);
-
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
 		LOG_ERR("PKT too big");
@@ -176,7 +171,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 		if (ctx == NULL) {
 			k_sem_take(&dev_data->tx_int_sem, K_MSEC(ETH_DMA_TX_TIMEOUT_MS));
 			hal_ret = HAL_ETH_ReleaseTxPacket(heth);
-			__ASSERT_NO_MSG(hal_ret == HAL_OK);
 		}
 	}
 	buf_header = &dma_tx_buffer_header[ctx->first_tx_buffer_index];
@@ -265,9 +259,6 @@ int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 #if defined(CONFIG_PTP_CLOCK_STM32_HAL)
 	bool timestamped_frame;
 #endif /* CONFIG_PTP_CLOCK_STM32_HAL */
-
-	__ASSERT_NO_MSG(pkt != NULL);
-	__ASSERT_NO_MSG(pkt->frags != NULL);
 
 	total_len = net_pkt_get_len(pkt);
 	if (total_len > (ETH_STM32_TX_BUF_SIZE * ETH_TXBUFNB)) {
@@ -473,15 +464,10 @@ out:
 
 void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth_handle)
 {
-	__ASSERT_NO_MSG(heth_handle != NULL);
-
 	struct eth_stm32_hal_dev_data *dev_data =
 		CONTAINER_OF(heth_handle, struct eth_stm32_hal_dev_data, heth);
 
-	__ASSERT_NO_MSG(dev_data != NULL);
-
 	k_sem_give(&dev_data->tx_int_sem);
-
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
@@ -531,8 +517,6 @@ void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 	 * logging errors will only increase traffic issues
 	 */
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-	__ASSERT_NO_MSG(heth != NULL);
-
 	uint32_t dma_error;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_ethernet)
 	uint32_t mac_error;
@@ -657,12 +641,7 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 	HAL_StatusTypeDef hal_ret;
 	ETH_MACConfigTypeDef mac_config = {0};
 
-	hal_ret = HAL_ETH_GetMACConfig(heth, &mac_config);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_GetMACConfig failed: %d", hal_ret);
-		__ASSERT_NO_MSG(0);
-		return;
-	}
+	HAL_ETH_GetMACConfig(heth, &mac_config);
 
 	mac_config.DuplexMode =
 		PHY_LINK_IS_FULL_DUPLEX(state->speed) ? ETH_FULLDUPLEX_MODE : ETH_HALFDUPLEX_MODE;
@@ -684,18 +663,13 @@ void eth_stm32_set_mac_config(const struct device *dev, struct phy_link_state *s
 	mac_config.SourceAddrControl = ETH_SOURCEADDRESS_DISABLE;
 
 	hal_ret = HAL_ETH_SetMACConfig(heth, &mac_config);
-	if (hal_ret != HAL_OK) {
-		LOG_ERR("HAL_ETH_SetMACConfig failed: %d", hal_ret);
-		__ASSERT_NO_MSG(0);
-	}
+	__ASSERT_NO_MSG(hal_ret == HAL_OK);
 }
 
 void eth_stm32_setup_mac_filter(ETH_HandleTypeDef *heth)
 {
 	ETH_MACFilterConfigTypeDef MACFilterConf;
 	HAL_StatusTypeDef __maybe_unused hal_ret;
-
-	__ASSERT_NO_MSG(heth != NULL);
 
 	hal_ret = HAL_ETH_GetMACFilterConfig(heth, &MACFilterConf);
 	__ASSERT_NO_MSG(hal_ret == HAL_OK);

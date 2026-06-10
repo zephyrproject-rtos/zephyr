@@ -98,12 +98,8 @@ static void eth_isr(const struct device *dev)
 
 void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth_handle)
 {
-	__ASSERT_NO_MSG(heth_handle != NULL);
-
 	struct eth_stm32_hal_dev_data *dev_data =
 		CONTAINER_OF(heth_handle, struct eth_stm32_hal_dev_data, heth);
-
-	__ASSERT_NO_MSG(dev_data != NULL);
 
 	k_sem_give(&dev_data->rx_int_sem);
 }
@@ -279,7 +275,6 @@ static void eth_iface_init(struct net_if *iface)
 	}
 
 	/* Now that the iface is setup, we are safe to enable IRQs. */
-	__ASSERT_NO_MSG(cfg->config_func != NULL);
 	cfg->config_func();
 
 	/* Start interruption-poll thread */

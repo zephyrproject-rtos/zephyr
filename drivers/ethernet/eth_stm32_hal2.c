@@ -86,7 +86,6 @@ hal_status_t tx_channel_callback(hal_eth_handle_t *heth, uint32_t channel, void 
 	ARG_UNUSED(channel);
 	ARG_UNUSED(addr);
 
-	__ASSERT_NO_MSG(heth != NULL);
 	struct eth_stm32_hal_dev_data *dev_data =
 		CONTAINER_OF(heth, struct eth_stm32_hal_dev_data, heth);
 
@@ -114,7 +113,6 @@ hal_status_t rx_channel_callback(hal_eth_handle_t *h_eth, uint32_t channel, void
 	ARG_UNUSED(channel);
 	ARG_UNUSED(addr);
 
-	__ASSERT_NO_MSG(h_eth != NULL);
 	struct eth_stm32_hal_dev_data *dev_data =
 		CONTAINER_OF(h_eth, struct eth_stm32_hal_dev_data, heth);
 
@@ -259,9 +257,6 @@ static int eth_stm32_tx(const struct device *dev, struct net_pkt *pkt)
 	uint32_t output_channel_mask = 0;
 	size_t total_len = 0;
 
-	__ASSERT_NO_MSG(pkt != NULL);
-	__ASSERT_NO_MSG(pkt->frags != NULL);
-
 	/* Build TX buffer chain directly from net_buf fragments */
 	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		if (frag->len == 0U) {
@@ -341,7 +336,6 @@ static void eth_iface_init(struct net_if *iface)
 		LOG_ERR("PHY device not ready");
 	}
 
-	__ASSERT_NO_MSG(cfg->config_func != NULL);
 	cfg->config_func();
 
 	k_thread_create(&dev_data->rx_thread, dev_data->rx_thread_stack,
