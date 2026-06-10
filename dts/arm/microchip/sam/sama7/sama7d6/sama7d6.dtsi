@@ -248,6 +248,33 @@
 			};
 		};
 
+		ethernet@e161c000 {
+			compatible = "microchip,sam-ethernet-controller";
+			reg = <0xe161c000 0x4000>;
+			clocks = <&pmc PMC_TYPE_GCK 47>;
+
+			gmac1: ethernet {
+				compatible = "atmel,sam-gmac";
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 151 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 152 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 153 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 154 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 155 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-names = "gmac", "q1", "q2", "q3", "q4", "q5";
+				num-queues = <6>;
+				status = "disabled";
+			};
+
+			gmac1_mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+
 		pit64b0: timer@e1800000 {
 			compatible = "microchip,sam-pit64b", "microchip,sam9x60-pit64b";
 			reg = <0xe1800000 0x4000>;
