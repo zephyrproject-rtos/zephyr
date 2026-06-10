@@ -1,0 +1,9 @@
+# Copyright 2026 Hiyajomaho Num9
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RK3506
+	bool
+	select SOC_SERIES_RK35
+
+config SOC
+	default "rk3506" if SOC_RK3506

@@ -1,0 +1,5 @@
+# Copyright 2026 Hiyajomaho Num9
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_OK3506B_S12
+	select SOC_RK3506

@@ -264,6 +264,7 @@ firefly	Firefly
 flysky	FlySky
 fobe	FoBE Studio
 focaltech	FocalTech Systems Co.,Ltd
+forlinx	Forlinx Embedded Technology Co., Ltd.
 framework	Framework Computer, Inc.
 franzininho	Franzininho
 frida	Shenzhen Frida LCD Co., Ltd.
