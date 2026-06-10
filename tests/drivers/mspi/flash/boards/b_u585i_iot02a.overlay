@@ -11,8 +11,8 @@
 };
 
 &mx25lm51245 {
-	/* permission = 1 for Rd only */
-	xip-config = <1 0 DT_SIZE_M(64) 1>;
+	/* permission = 0 for Rd/Wr */
+	xip-config = <1 0 DT_SIZE_M(64) 0>;
 
 	#address-cells = <1>;
 	#size-cells = <1>;
