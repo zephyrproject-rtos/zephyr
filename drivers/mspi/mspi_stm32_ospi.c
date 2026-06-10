@@ -280,33 +280,74 @@ static int mspi_stm32_ospi_memmap_on(const struct device *controller)
 	return 0;
 }
 
-static int mspi_stm32_ospi_memmap_read(const struct device *dev,
-				       const struct mspi_xfer_packet *packet)
+static int mspi_stm32_ospi_abort_memmap_if_enabled(const struct device *dev)
 {
-	struct mspi_stm32_data *dev_data = dev->data;
 	int ret = 0;
+
+	if (mspi_stm32_ospi_is_memorymap(dev)) {
+		ret = mspi_stm32_ospi_memmap_off(dev);
+		if (ret != 0) {
+			LOG_ERR("Failed to abort memory-mapped mode.");
+			return ret;
+		}
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Reads/Writes in memory mapped mode.
+ *
+ */
+static int read_write_in_memory_map_mode(const struct device *dev,
+					const struct mspi_xfer_packet *packet)
+{
+	int ret;
+	struct mspi_stm32_data *dev_data = dev->data;
+
+	if (packet->data_buf == NULL) {
+		LOG_ERR("data buf is null : 0x%x", packet->cmd);
+		return -EIO;
+	}
 
 	if (!mspi_stm32_ospi_is_memorymap(dev)) {
 		ret = mspi_stm32_ospi_memmap_on(dev);
 		if (ret != 0) {
-			LOG_ERR("Failed to set memory-mapped before read");
+			LOG_ERR("Failed to set memory mapped");
 			return ret;
 		}
-		k_usleep(50);
 	}
+
+	uintptr_t mmap_addr = dev_data->memmap_base_addr + packet->address;
+
 #ifdef CONFIG_DCACHE
-	uint32_t addr = dev_data->memmap_base_addr + packet->address;
 	uint32_t size = packet->num_bytes;
 
-	__ASSERT_NO_MSG(IS_ALIGNED(addr, CONFIG_DCACHE_LINE_SIZE) &&
-			IS_ALIGNED(size, CONFIG_DCACHE_LINE_SIZE));
+	/* Align addr on DCACHE line, not size */
+	__ASSERT_NO_MSG(IS_ALIGNED(mmap_addr, CONFIG_DCACHE_LINE_SIZE));
 
-	sys_cache_data_invd_range((void *)addr, size);
+	sys_cache_data_invd_range((void *)mmap_addr, size);
 #endif
-	memcpy(packet->data_buf, (uint8_t *)dev_data->memmap_base_addr + packet->address,
-	       packet->num_bytes);
+	if (packet->dir == MSPI_RX) {
+		LOG_INF("Memory-mapped read from 0x%08lx, len %u", mmap_addr, packet->num_bytes);
+		memcpy(packet->data_buf, (void *)mmap_addr, packet->num_bytes);
+		k_sleep(K_MSEC(1));
+		return 0;
+	}
+	/* MSPI_TX */
+	if (!dev_data->xip_cfg.permission) {
+		LOG_INF("Memory-mapped write from 0x%08lx, len %u", mmap_addr, packet->num_bytes);
+		memcpy((void *)mmap_addr, packet->data_buf, packet->num_bytes);
+		k_sleep(K_MSEC(1));
+		return 0;
+	}
 
-	return ret;
+	ret = mspi_stm32_ospi_abort_memmap_if_enabled(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return -EPROTONOSUPPORT;
 }
 
 static int mspi_stm32_ospi_abort_memmap(const struct device *dev)
@@ -328,21 +369,30 @@ static int mspi_stm32_ospi_abort_memmap(const struct device *dev)
 static int mspi_stm32_ospi_access(const struct device *dev, const struct mspi_xfer_packet *packet,
 				  uint8_t access_mode)
 {
-
-	struct mspi_stm32_data *dev_data = dev->data;
-
 	HAL_StatusTypeDef hal_ret;
+	struct mspi_stm32_data *dev_data = dev->data;
 	int ret;
 
-	if (dev_data->xip_cfg.enable && packet->dir == MSPI_RX) {
-		return mspi_stm32_ospi_memmap_read(dev, packet);
+	if (dev_data->xip_cfg.enable) {
+		if ((packet->cmd == MSPI_NOR_CMD_WREN) || (packet->cmd == MSPI_NOR_OCMD_WREN) ||
+		    (packet->cmd == MSPI_NOR_CMD_SE_4B) || (packet->cmd == MSPI_NOR_OCMD_SE) ||
+		    (packet->cmd == MSPI_NOR_CMD_SE)) {
+
+			ret = mspi_stm32_ospi_abort_memmap_if_enabled(dev);
+
+			if (ret != 0) {
+				return ret;
+			}
+			goto indirect;
+		}
+
+		if (read_write_in_memory_map_mode(dev, packet) == -EPROTONOSUPPORT) {
+			goto indirect;
+		}
+		return 0;
 	}
 
-	ret = mspi_stm32_ospi_abort_memmap(dev);
-	if (ret != 0) {
-		return ret;
-	}
-
+indirect:
 	(void)pm_device_runtime_get(dev);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
@@ -1221,6 +1271,8 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 #else
 	dev_data->hmspi.ospi.Init.DelayBlockBypass = HAL_OSPI_DELAY_BLOCK_USED;
 #endif /* MSPI_STM32_DLYB_BYPASSED */
+	dev_data->hmspi.ospi.Init.MemoryType = HAL_OSPI_MEMTYPE_MACRONIX;
+	dev_data->hmspi.ospi.Init.DeviceSize = find_lsb_set(dev_cfg->flash_size) - 1;
 
 	/* Enable DHQC for high frequencies >= 100MHZ */
 	if (dev_cfg->mspicfg.max_freq > 100000000U) {
