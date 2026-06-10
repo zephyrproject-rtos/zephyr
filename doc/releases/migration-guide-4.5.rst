@@ -651,6 +651,9 @@ Networking
   keys. Use ``samples/net/wifi/test_certs/rsa2k_no_des`` instead, or set
   :envvar:`WIFI_TEST_CERTS_DIR` to another AES-encrypted certificate directory.
 
+* ``net_if_config_get`` was removed as it was a duplicate of :c:func:`net_if_get_config`.
+  (:github:`110930`)
+
 
 Ethernet
 ========
