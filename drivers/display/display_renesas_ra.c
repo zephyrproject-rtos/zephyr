@@ -54,9 +54,6 @@ static void renesas_ra_callback_adapter(display_callback_args_t *p_args)
 	struct display_ra_data *data = dev->data;
 
 	if (p_args->event == DISPLAY_EVENT_LINE_DETECTION) {
-		if (data->front_buf != data->pend_buf) {
-			data->front_buf = data->pend_buf;
-		}
 
 		k_sem_give(&data->frame_buf_sem);
 	}
@@ -118,8 +115,6 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 #endif /* CONFIG_RENESAS_RA_GLCDC_FB_NUM == 0 */
 	}
 
-	k_sem_reset(&data->frame_buf_sem);
-
 	if (data->front_buf != l_pend_buf) {
 		data->pend_buf = l_pend_buf;
 
@@ -144,7 +139,9 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 	}
 
 	if (vsync_wait) {
+		k_sem_reset(&data->frame_buf_sem);
 		k_sem_take(&data->frame_buf_sem, K_FOREVER);
+		data->front_buf = data->pend_buf;
 	}
 
 	return 0;
