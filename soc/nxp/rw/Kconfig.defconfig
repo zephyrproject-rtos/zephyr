@@ -3,12 +3,11 @@
 
 if SOC_SERIES_RW6XX
 
+rsource "../common/Kconfig.defconfig.nvic"
+
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT
 	default 0x1300 if NXP_RW6XX_BOOT_HEADER
-
-config NUM_IRQS
-	default 129
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 1000000 if MCUX_OS_TIMER
