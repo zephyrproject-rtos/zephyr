@@ -342,6 +342,9 @@ typedef int (*dma_api_get_status)(const struct device *dev, uint32_t channel,
 
 typedef int (*dma_api_get_attribute)(const struct device *dev, uint32_t type, uint32_t *value);
 
+typedef int (*dma_api_get_channel_attribute)(const struct device *dev, uint32_t channel,
+					     uint32_t type, uint32_t *value);
+
 /**
  * @brief channel filter function call
  *
@@ -379,6 +382,7 @@ __subsystem struct dma_driver_api {
 	dma_api_resume resume;
 	dma_api_get_status get_status;
 	dma_api_get_attribute get_attribute;
+	dma_api_get_channel_attribute get_channel_attribute;
 	dma_api_chan_filter chan_filter;
 	dma_api_chan_release chan_release;
 };
@@ -675,6 +679,42 @@ static inline int dma_get_status(const struct device *dev, uint32_t channel,
 static inline int dma_get_attribute(const struct device *dev, uint32_t type, uint32_t *value)
 {
 	const struct dma_driver_api *api = DEVICE_API_GET(dma, dev);
+
+	if (api->get_attribute) {
+		return api->get_attribute(dev, type, value);
+	}
+
+	return -ENOSYS;
+}
+
+/**
+ * @brief get attribute of a dma channel
+ *
+ * Helper for channel-specific DMA attribute queries. Drivers that implement the
+ * get_channel_attribute callback are used directly.
+ * If that callback is not present, this wrapper falls back to the get_attribute callback
+ * for global queries.
+ * Implementations must check the validity of the channel and type passed in and
+ * return -EINVAL if either is invalid or -ENOSYS if not supported.
+ *
+ * @isr_ok
+ *
+ * @param dev     Pointer to the device structure for the driver instance.
+ * @param channel Numeric identification of the channel.
+ * @param type    Numeric identification of the attribute
+ * @param value   A non-NULL pointer to the variable where the read value is to be placed
+ *
+ * @retval >=0 non-negative if successful.
+ * @retval <0 Negative errno code if failure.
+ */
+static inline int dma_get_channel_attribute(const struct device *dev, uint32_t channel,
+					    uint32_t type, uint32_t *value)
+{
+	const struct dma_driver_api *api = DEVICE_API_GET(dma, dev);
+
+	if (api->get_channel_attribute) {
+		return api->get_channel_attribute(dev, channel, type, value);
+	}
 
 	if (api->get_attribute) {
 		return api->get_attribute(dev, type, value);
