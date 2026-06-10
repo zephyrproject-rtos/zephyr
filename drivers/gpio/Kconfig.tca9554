@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_TCA9554
+	bool "Texas Instruments TCA9554 IO-Expander"
+	default y
+	depends on DT_HAS_TI_TCA9554_ENABLED
+	depends on I2C
+	help
+	  Enable the driver implementation for the TCA9554
+
+config GPIO_TCA9554_INIT_PRIO
+	int "Init priority"
+	default 70
+	depends on GPIO_TCA9554
+	help
+	  Device driver initialization priority.
