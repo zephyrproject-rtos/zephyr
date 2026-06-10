@@ -120,19 +120,52 @@ static uint32_t elapsed(void)
 	       (IS_ENABLED(CONFIG_SMP) ? announce_remaining : 0);
 }
 
-static int32_t next_timeout(int32_t ticks_elapsed)
+static uint32_t next_timeout(uint32_t ticks_elapsed)
 {
 	struct _timeout *to = first();
-	int32_t ret;
+	uint32_t dticks;
 
-	if ((to == NULL) ||
-	    ((int64_t)(to->dticks - ticks_elapsed) > (int64_t)INT_MAX)) {
-		ret = SYS_CLOCK_MAX_WAIT;
-	} else {
-		ret = max(0, to->dticks - ticks_elapsed);
+	/*
+	 * sys_clock_announce() reports the ticks elapsed since the previous
+	 * announce, so the gap between two announces must not exceed
+	 * SYS_CLOCK_MAX_WAIT for the announced count to fit. The budget left
+	 * from now on is SYS_CLOCK_MAX_WAIT - ticks_elapsed; if it is already
+	 * spent ask for an announce right away.
+	 */
+	if (ticks_elapsed >= SYS_CLOCK_MAX_WAIT) {
+		return 0;
 	}
 
-	return ret;
+	/*
+	 * With nothing pending under sloppy idle, report SYS_CLOCK_MAX_WAIT
+	 * verbatim (not the budget): it is the "no deadline" value a driver
+	 * looks for to stop the clock entirely, and a skewed uptime is
+	 * acceptable. Without sloppy idle the uptime must stay correct, so
+	 * respect the budget and keep waking up.
+	 */
+	if (to == NULL) {
+		if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE)) {
+			return SYS_CLOCK_MAX_WAIT;
+		}
+		return SYS_CLOCK_MAX_WAIT - ticks_elapsed;
+	}
+
+	/*
+	 * A timeout further out than can be scheduled in one step: wait nearly
+	 * the whole budget, but stop one short of SYS_CLOCK_MAX_WAIT so it is
+	 * never mistaken for the "no deadline" value above (which would drop
+	 * the timeout under sloppy idle); an intermediate announce re-evaluates.
+	 * Testing to->dticks (which may be 64-bit) against the cap also keeps
+	 * the remaining arithmetic in 32 bits.
+	 */
+	if (to->dticks >= SYS_CLOCK_MAX_WAIT) {
+		return SYS_CLOCK_MAX_WAIT - 1 - ticks_elapsed;
+	}
+
+	/* Otherwise wait until the timeout, relative to now (0 if due). */
+	dticks = (uint32_t)to->dticks;
+
+	return (dticks > ticks_elapsed) ? (dticks - ticks_elapsed) : 0;
 }
 
 k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t timeout)
@@ -311,7 +344,16 @@ int32_t z_get_next_timeout_expiry(void)
 	int32_t ret = (int32_t) K_TICKS_FOREVER;
 
 	K_SPINLOCK(&timeout_lock) {
-		ret = next_timeout(elapsed());
+		uint32_t t = next_timeout(elapsed());
+
+		/*
+		 * next_timeout() is unsigned; only fold it into the signed
+		 * result when it fits, otherwise leave the K_TICKS_FOREVER
+		 * default.
+		 */
+		if (t <= INT32_MAX) {
+			ret = (int32_t)t;
+		}
 	}
 	return ret;
 }
