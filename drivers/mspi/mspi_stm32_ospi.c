@@ -1245,7 +1245,7 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	ospi_mgr_cfg.IOHighPort = dev_cfg->ospim_io_high_port;
 
 	if (dev_data->hmspi.ospi.Instance != OCTOSPI1 &&
-		dev_data->hmspi.ospi.Instance != OCTOSPI2){
+		dev_data->hmspi.ospi.Instance != OCTOSPI2) {
 		LOG_ERR("Unknown OSPI Instance");
 		ret = -EINVAL;
 		goto end;
