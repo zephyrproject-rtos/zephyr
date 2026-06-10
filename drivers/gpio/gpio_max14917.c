@@ -337,6 +337,7 @@ static DEVICE_API(gpio, gpio_max14917_api) = {
 
 #define GPIO_MAX14917_DEVICE(id)                                                                   \
 	static const struct max14917_config max14917_##id##_cfg = {                                \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),                                     \
 		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),            \
 		.vddok_gpio = GPIO_DT_SPEC_INST_GET(id, vddok_gpios),                              \
 		.ready_gpio = GPIO_DT_SPEC_INST_GET(id, ready_gpios),                              \
