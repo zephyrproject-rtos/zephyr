@@ -19,9 +19,21 @@ config SPI_B_INTERRUPT
 	help
 	  Enable Interrupt support for the SPI B Driver of RA family.
 
+config SPI_B_DMAC
+	bool "RA MCU SPI DMAC Support"
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA8_SPI_B),dmas)
+	select SPI_B_INTERRUPT
+	select USE_RA_FSP_DMA
+	help
+	  Enable DMAC (Direct Memory Access Controller) support for the SPI B Driver
+	  of RA8 family. Uses the FSP transfer module (g_transfer_on_dmac) to perform
+	  SPI data transfers.
+
 config SPI_B_RA_DTC
 	bool "RA MCU SPI DTC Support"
-	default y
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA8_SPI_B),rx-dtc,True) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA8_SPI_B),tx-dtc,True)
+	select SPI_B_INTERRUPT
 	select USE_RA_FSP_DTC
 	help
 	  Enable the SPI DTC mode for SPI instances
