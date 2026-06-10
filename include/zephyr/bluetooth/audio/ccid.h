@@ -46,8 +46,8 @@ extern "C" {
  *
  * Requires that @kconfig{CONFIG_BT_CONN} is enabled.
  *
- * @retval ccid 8-bit unsigned CCID value on success
- * @retval -ENOMEM No more CCIDs can be allocated
+ * @return 8-bit unsigned CCID value on success.
+ * @retval -ENOMEM No more CCIDs can be allocated.
  */
 int bt_ccid_alloc_value(void);
 
@@ -60,8 +60,7 @@ int bt_ccid_alloc_value(void);
  *
  * @param ccid The CCID to search for
  *
- * @retval NULL None was found
- * @retval attr Pointer to a GATT attribute
+ * @return Pointer to a GATT attribute, or NULL if no such attribute was found.
  */
 const struct bt_gatt_attr *bt_ccid_find_attr(uint8_t ccid);
 

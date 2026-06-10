@@ -225,7 +225,7 @@ struct bt_has_client_cb {
  *
  * @param cb The callback structure.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_client_cb_register(const struct bt_has_client_cb *cb);
 
@@ -238,7 +238,7 @@ int bt_has_client_cb_register(const struct bt_has_client_cb *cb);
  *
  * @param conn Bluetooth connection object.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_client_discover(struct bt_conn *conn);
 
@@ -251,7 +251,7 @@ int bt_has_client_discover(struct bt_conn *conn);
  * @param[in] has Pointer to the Hearing Access Service object.
  * @param[out] conn Connection object.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_client_conn_get(const struct bt_has *has, struct bt_conn **conn);
 
@@ -266,7 +266,7 @@ int bt_has_client_conn_get(const struct bt_has *has, struct bt_conn **conn);
  * @param index The index to start with.
  * @param max_count Maximum number of presets to read.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_client_presets_read(struct bt_has *has, uint8_t index, uint8_t max_count);
 
@@ -280,7 +280,7 @@ int bt_has_client_presets_read(struct bt_has *has, uint8_t index, uint8_t max_co
  * @param index Preset index to activate.
  * @param sync Request active preset synchronization in set.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_client_preset_set(struct bt_has *has, uint8_t index, bool sync);
 
@@ -293,7 +293,7 @@ int bt_has_client_preset_set(struct bt_has *has, uint8_t index, bool sync);
  * @param has Pointer to the Hearing Access Service object.
  * @param sync Request active preset synchronization in set.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_client_preset_next(struct bt_has *has, bool sync);
 
@@ -306,7 +306,7 @@ int bt_has_client_preset_next(struct bt_has *has, bool sync);
  * @param has Pointer to the Hearing Access Service object.
  * @param sync Request active preset synchronization in set.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_client_preset_prev(struct bt_has *has, bool sync);
 
@@ -322,9 +322,9 @@ struct bt_has_preset_ops {
 	 * @param sync Whether the server must relay this change to the other member of the
 	 *             Binaural Hearing Aid Set.
 	 *
-	 * @return 0 in case of success or negative value in case of error.
-	 * @return -EBUSY if operation cannot be performed at the time.
-	 * @return -EINPROGRESS in case where user has to confirm once the requested preset
+	 * @return 0 on success, negative errno value on failure.
+	 * @retval -EBUSY Operation cannot be performed at the time.
+	 * @retval -EINPROGRESS User has to confirm once the requested preset
 	 *                      becomes active by calling @ref bt_has_preset_active_set.
 	 */
 	int (*select)(uint8_t index, bool sync);
@@ -375,7 +375,7 @@ struct bt_has_preset_register_param {
  *
  * @param features     Hearing Access Service register parameters.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_register(const struct bt_has_features_param *features);
 
@@ -387,7 +387,7 @@ int bt_has_register(const struct bt_has_features_param *features);
  *
  * @param param Preset registration parameter.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_preset_register(const struct bt_has_preset_register_param *param);
 
@@ -398,7 +398,7 @@ int bt_has_preset_register(const struct bt_has_preset_register_param *param);
  *
  * @param index The index of preset that's being requested to unregister.
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_preset_unregister(uint8_t index);
 
@@ -410,7 +410,7 @@ int bt_has_preset_unregister(uint8_t index);
  *
  * @param index The index of preset that's became available.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_preset_available(uint8_t index);
 
@@ -422,7 +422,7 @@ int bt_has_preset_available(uint8_t index);
  *
  * @param index The index of preset that's became unavailable.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_preset_unavailable(uint8_t index);
 
@@ -450,7 +450,7 @@ typedef bool (*bt_has_preset_func_t)(uint8_t index, enum bt_has_properties prope
  * @param func Callback function.
  * @param user_data Data to pass to the callback.
  *
- * @retval 0 Success
+ * @retval 0 on success.
  * @retval -ECANCELED Iteration was stopped by the callback function before complete.
  * @retval -EINVAL @p func was NULL.
  */
@@ -464,7 +464,7 @@ int bt_has_preset_foreach(uint8_t index, bt_has_preset_func_t func, void *user_d
  *
  * @param index Preset index.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_preset_active_set(uint8_t index);
 
@@ -482,7 +482,7 @@ uint8_t bt_has_preset_active_get(void);
  *
  * Used by server to deactivate currently active preset.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int bt_has_preset_active_clear(void)
 {
@@ -497,7 +497,7 @@ static inline int bt_has_preset_active_clear(void)
  * @param index The index of the preset to change the name of.
  * @param name Name to write.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_preset_name_change(uint8_t index, const char *name);
 
@@ -508,7 +508,7 @@ int bt_has_preset_name_change(uint8_t index, const char *name);
  *
  * @param features The features to be set.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_has_features_set(const struct bt_has_features_param *features);
 

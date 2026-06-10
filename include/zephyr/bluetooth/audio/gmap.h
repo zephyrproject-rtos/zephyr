@@ -184,9 +184,9 @@ struct bt_gmap_cb {
  *
  * @param cb The callback structure.
  *
- * @retval -EINVAL if @p cb is NULL
- * @retval -EALREADY if callbacks have already be registered
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL @p cb is NULL.
+ * @retval -EALREADY Callbacks have already been registered.
  */
 int bt_gmap_cb_register(const struct bt_gmap_cb *cb);
 
@@ -199,10 +199,10 @@ int bt_gmap_cb_register(const struct bt_gmap_cb *cb);
  *
  * @param conn Bluetooth connection object.
  *
- * @retval -EINVAL if @p conn is NULL
- * @retval -EBUSY if discovery is already in progress for @p conn
- * @retval -ENOEXEC if discovery failed to initiate
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL @p conn is NULL.
+ * @retval -EBUSY Discovery is already in progress for @p conn.
+ * @retval -ENOEXEC Discovery failed to initiate.
  */
 int bt_gmap_discover(struct bt_conn *conn);
 
@@ -213,9 +213,9 @@ int bt_gmap_discover(struct bt_conn *conn);
  * @param features Features of the roles. If a role is not in the @p role parameter, then the
  *                 feature value for that role is simply ignored.
  *
- * @retval -EINVAL on invalid arguments
- * @retval -ENOEXEC on service register failure
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -EINVAL Invalid arguments.
+ * @retval -ENOEXEC Service register failure.
  */
 int bt_gmap_register(enum bt_gmap_role role, struct bt_gmap_feat features);
 
@@ -230,12 +230,12 @@ int bt_gmap_register(enum bt_gmap_role role, struct bt_gmap_feat features);
  * @param features Features of the roles. If a role is not in the @p role parameter, then the
  *                 feature value for that role is simply ignored.
  *
- * @retval -ENOEXEC if the service has not yet been registered
- * @retval -EINVAL on invalid arguments
- * @retval -EALREADY if the @p role and @p features are the same as existing ones
- * @retval -ENOENT on service unregister failure
- * @retval -ECANCELED on service re-register failure
- * @retval 0 on success
+ * @retval 0 on success.
+ * @retval -ENOEXEC The service has not yet been registered.
+ * @retval -EINVAL Invalid arguments.
+ * @retval -EALREADY The @p role and @p features are the same as existing ones.
+ * @retval -ENOENT Service unregister failure.
+ * @retval -ECANCELED Service re-register failure.
  */
 int bt_gmap_set_role(enum bt_gmap_role role, struct bt_gmap_feat features);
 
