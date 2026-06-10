@@ -3729,6 +3729,11 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 
 	LOG_DBG("stream %p", stream);
 
+	if (ep->state == BT_BAP_EP_STATE_IDLE) {
+		bt_bap_stream_reset(stream);
+		return 0;
+	}
+
 	if (stream->conn == NULL) {
 		LOG_DBG("Stream %p does not have a connection", stream);
 
@@ -3745,14 +3750,9 @@ int bt_bap_unicast_client_release(struct bt_bap_stream *stream)
 	req->num_ases = 0x01U;
 	len = buf->len;
 
-	/* Only attempt to release if not IDLE already */
-	if (stream->ep->state == BT_BAP_EP_STATE_IDLE) {
-		bt_bap_stream_reset(stream);
-	} else {
-		err = unicast_client_ep_release(ep, buf);
-		if (err != 0) {
-			return err;
-		}
+	err = unicast_client_ep_release(ep, buf);
+	if (err != 0) {
+		return err;
 	}
 
 	/* Check if anything needs to be send */
