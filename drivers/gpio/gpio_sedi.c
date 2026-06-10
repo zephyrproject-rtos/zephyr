@@ -324,7 +324,7 @@ static int gpio_sedi_init(const struct device *dev)
 	};							       \
 	static const struct gpio_sedi_config gpio##n##_config = {      \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(n)),                  \
-		.common = { 0xFFFFFFFF },			       \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),	       \
 		.device = DT_INST_PROP(n, peripheral_id),              \
 		.pin_nums = DT_INST_PROP(n, ngpios),                   \
 		.irq_config = gpio_sedi_irq_config_##n,	               \
