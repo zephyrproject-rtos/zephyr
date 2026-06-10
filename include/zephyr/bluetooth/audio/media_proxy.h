@@ -847,7 +847,7 @@ struct media_proxy_ctrl_cbs {
  *
  * @param ctrl_cbs   Callbacks to the controller
  *
- * @return 0 if success, errno on failure
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs);
 
@@ -866,7 +866,7 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs);
  *
  * @param conn   The connection to do discovery for
  *
- * @return 0 if success, errno on failure
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_discover_player(struct bt_conn *conn);
 
@@ -875,7 +875,7 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_player_name(struct media_player *player);
 
@@ -892,7 +892,7 @@ int media_proxy_ctrl_get_player_name(struct media_player *player);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_icon_id(struct media_player *player);
 
@@ -910,7 +910,7 @@ int media_proxy_ctrl_get_icon_url(struct media_player *player);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_track_title(struct media_player *player);
 
@@ -922,7 +922,7 @@ int media_proxy_ctrl_get_track_title(struct media_player *player);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_track_duration(struct media_player *player);
 
@@ -935,7 +935,7 @@ int media_proxy_ctrl_get_track_duration(struct media_player *player);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_track_position(struct media_player *player);
 
@@ -951,7 +951,7 @@ int media_proxy_ctrl_get_track_position(struct media_player *player);
  * @param player     Media player instance pointer
  * @param position   The track position to set
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_set_track_position(struct media_player *player, int32_t position);
 
@@ -970,7 +970,7 @@ int media_proxy_ctrl_set_track_position(struct media_player *player, int32_t pos
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_playback_speed(struct media_player *player);
 
@@ -991,7 +991,7 @@ int media_proxy_ctrl_get_playback_speed(struct media_player *player);
  * @param player   Media player instance pointer
  * @param speed    The playback speed parameter to set
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_set_playback_speed(struct media_player *player, int8_t speed);
 
@@ -1009,7 +1009,7 @@ int media_proxy_ctrl_set_playback_speed(struct media_player *player, int8_t spee
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_seeking_speed(struct media_player *player);
 
@@ -1026,7 +1026,7 @@ int media_proxy_ctrl_get_seeking_speed(struct media_player *player);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_track_segments_id(struct media_player *player);
 
@@ -1043,7 +1043,7 @@ int media_proxy_ctrl_get_track_segments_id(struct media_player *player);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_current_track_id(struct media_player *player);
 
@@ -1058,7 +1058,7 @@ int media_proxy_ctrl_get_current_track_id(struct media_player *player);
  * @param player   Media player instance pointer
  * @param id       The ID of a track object
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t id);
 
@@ -1072,7 +1072,7 @@ int media_proxy_ctrl_set_current_track_id(struct media_player *player, uint64_t 
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_next_track_id(struct media_player *player);
 
@@ -1086,7 +1086,7 @@ int media_proxy_ctrl_get_next_track_id(struct media_player *player);
  * @param player   Media player instance pointer
  * @param id       The ID of a track object
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id);
 
@@ -1105,7 +1105,7 @@ int media_proxy_ctrl_set_next_track_id(struct media_player *player, uint64_t id)
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_parent_group_id(struct media_player *player);
 
@@ -1122,7 +1122,7 @@ int media_proxy_ctrl_get_parent_group_id(struct media_player *player);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_current_group_id(struct media_player *player);
 
@@ -1137,7 +1137,7 @@ int media_proxy_ctrl_get_current_group_id(struct media_player *player);
  * @param player   Media player instance pointer
  * @param id       The ID of a group object
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t id);
 
@@ -1146,7 +1146,7 @@ int media_proxy_ctrl_set_current_group_id(struct media_player *player, uint64_t 
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_playing_order(struct media_player *player);
 
@@ -1158,7 +1158,7 @@ int media_proxy_ctrl_get_playing_order(struct media_player *player);
  * @param player   Media player instance pointer
  * @param order    The playing order to set
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_set_playing_order(struct media_player *player, uint8_t order);
 
@@ -1170,7 +1170,7 @@ int media_proxy_ctrl_set_playing_order(struct media_player *player, uint8_t orde
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player);
 
@@ -1181,7 +1181,7 @@ int media_proxy_ctrl_get_playing_orders_supported(struct media_player *player);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_media_state(struct media_player *player);
 
@@ -1196,7 +1196,7 @@ int media_proxy_ctrl_get_media_state(struct media_player *player);
  * @param player      Media player instance pointer
  * @param command     The command to send
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_send_command(struct media_player *player, const struct mpl_cmd *command);
 
@@ -1208,7 +1208,7 @@ int media_proxy_ctrl_send_command(struct media_player *player, const struct mpl_
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_commands_supported(struct media_player *player);
 
@@ -1229,7 +1229,7 @@ int media_proxy_ctrl_get_commands_supported(struct media_player *player);
  * @param player   Media player instance pointer
  * @param search   The search to write
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_send_search(struct media_player *player, const struct mpl_search *search);
 
@@ -1247,7 +1247,7 @@ int media_proxy_ctrl_send_search(struct media_player *player, const struct mpl_s
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_ctrl_get_search_results_id(struct media_player *player);
 
@@ -1260,7 +1260,7 @@ int media_proxy_ctrl_get_search_results_id(struct media_player *player);
  *
  * @param player   Media player instance pointer
  *
- * @return 0 if success, errno on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 uint8_t media_proxy_ctrl_get_content_ctrl_id(struct media_player *player);
 
@@ -1274,7 +1274,7 @@ struct media_proxy_pl_calls {
 	/**
 	 * @brief Read Media Player Name
 	 *
-	 * @return The name of the media player
+	 * @return The name of the media player.
 	 */
 	const char *(*get_player_name)(void);
 
@@ -1287,7 +1287,7 @@ struct media_proxy_pl_calls {
 	 * See the Media Control Service spec v1.0 sections 3.2 and
 	 * 4.1 for a description of the Icon Object.
 	 *
-	 * @return The Icon Object ID
+	 * @return The Icon Object ID.
 	 */
 	uint64_t (*get_icon_id)(void);
 
@@ -1296,14 +1296,14 @@ struct media_proxy_pl_calls {
 	 *
 	 * Get a URL to the media player's icon.
 	 *
-	 * @return The URL of the Icon
+	 * @return The URL of the Icon.
 	 */
 	const char *(*get_icon_url)(void);
 
 	/**
 	 * @brief Read Track Title
 	 *
-	 * @return The title of the current track
+	 * @return The title of the current track.
 	 */
 	const char *(*get_track_title)(void);
 
@@ -1313,7 +1313,7 @@ struct media_proxy_pl_calls {
 	 * The duration of a track is measured in hundredths of a
 	 * second.
 	 *
-	 * @return The duration of the current track
+	 * @return The duration of the current track.
 	 */
 	int32_t (*get_track_duration)(void);
 
@@ -1324,7 +1324,7 @@ struct media_proxy_pl_calls {
 	 * measured in hundredths of a second from the beginning of
 	 * the track
 	 *
-	 * @return The position of the player in the current track
+	 * @return The position of the player in the current track.
 	 */
 	int32_t (*get_track_position)(void);
 
@@ -1354,7 +1354,7 @@ struct media_proxy_pl_calls {
 	 * 127 corresponds to playback at almost four times the normal
 	 * speed.
 	 *
-	 * @return The playback speed parameter
+	 * @return The playback speed parameter.
 	 */
 	int8_t (*get_playback_speed)(void);
 
@@ -1388,7 +1388,7 @@ struct media_proxy_pl_calls {
 	 * The seeking speed is not settable - a non-zero seeking speed
 	 * is the result of "fast rewind" of "fast forward" commands.
 	 *
-	 * @return The seeking speed factor
+	 * @return The seeking speed factor.
 	 */
 	int8_t (*get_seeking_speed)(void);
 
@@ -1401,7 +1401,7 @@ struct media_proxy_pl_calls {
 	 * See the Media Control Service spec v1.0 sections 3.10 and
 	 * 4.2 for a description of the Track Segments Object.
 	 *
-	 * @return Current The Track Segments Object ID
+	 * @return The Current Track Segments Object ID.
 	 */
 	uint64_t (*get_track_segments_id)(void);
 
@@ -1414,7 +1414,7 @@ struct media_proxy_pl_calls {
 	 * See the Media Control Service spec v1.0 sections 3.11 and
 	 * 4.3 for a description of the Current Track Object.
 	 *
-	 * @return The Current Track Object ID
+	 * @return The Current Track Object ID.
 	 */
 	uint64_t (*get_current_track_id)(void);
 
@@ -1434,7 +1434,7 @@ struct media_proxy_pl_calls {
 	 * Get an ID (48 bit) that can be used to retrieve the Next
 	 * Track Object from an Object Transfer Service
 	 *
-	 * @return The Next Track Object ID
+	 * @return The Next Track Object ID.
 	 */
 	uint64_t (*get_next_track_id)(void);
 
@@ -1458,7 +1458,7 @@ struct media_proxy_pl_calls {
 	 * See the Media Control Service spec v1.0 sections 3.14 and
 	 * 4.4 for a description of the Current Track Object.
 	 *
-	 * @return The Current Group Object ID
+	 * @return The Current Group Object ID.
 	 */
 	uint64_t (*get_parent_group_id)(void);
 
@@ -1471,7 +1471,7 @@ struct media_proxy_pl_calls {
 	 * See the Media Control Service spec v1.0 sections 3.14 and
 	 * 4.4 for a description of the Current Group Object.
 	 *
-	 * @return The Current Group Object ID
+	 * @return The Current Group Object ID.
 	 */
 	uint64_t (*get_current_group_id)(void);
 
@@ -1509,7 +1509,7 @@ struct media_proxy_pl_calls {
 	 * playing orders.
 	 * See the MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_* defines.
 	 *
-	 * @return The media player's supported playing orders
+	 * @return The media player's supported playing orders.
 	 */
 	uint16_t (*get_playing_orders_supported)(void);
 
@@ -1519,7 +1519,7 @@ struct media_proxy_pl_calls {
 	 * Read the media player's state
 	 * See the MEDIA_PROXY_MEDIA_STATE_* defines.
 	 *
-	 * @return The media player's state
+	 * @return The media player's state.
 	 */
 	uint8_t (*get_media_state)(void);
 
@@ -1541,7 +1541,7 @@ struct media_proxy_pl_calls {
 	 * command opcodes.
 	 * See the MEDIA_PROXY_OP_SUP_* defines.
 	 *
-	 * @return The media player's supported command opcodes
+	 * @return The media player's supported command opcodes.
 	 */
 	uint32_t (*get_commands_supported)(void);
 
@@ -1566,7 +1566,7 @@ struct media_proxy_pl_calls {
 	 * The search results object only exists if a successful
 	 * search operation has been done.
 	 *
-	 * @return The Search Results Object ID
+	 * @return The Search Results Object ID.
 	 */
 	uint64_t (*get_search_results_id)(void);
 
@@ -1577,7 +1577,7 @@ struct media_proxy_pl_calls {
 	 * on a device, and links it to the corresponding audio
 	 * stream.
 	 *
-	 * @return The content control ID for the media player
+	 * @return The content control ID for the media player.
 	 */
 	uint8_t (*get_content_ctrl_id)(void);
 };
@@ -1593,7 +1593,7 @@ struct media_proxy_pl_calls {
  *
  * @param pl_calls	Function pointers to the media player's calls
  *
- * @return 0 if success, errno on failure
+ * @return 0 on success, negative errno value on failure.
  */
 int media_proxy_pl_register(struct media_proxy_pl_calls *pl_calls);
 

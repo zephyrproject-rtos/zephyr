@@ -99,7 +99,7 @@ struct bt_tmap_cb {
  *
  * @param role TMAP role(s) of the device (one or multiple).
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_tmap_register(enum bt_tmap_role role);
 
@@ -109,7 +109,7 @@ int bt_tmap_register(enum bt_tmap_role role);
  * @param conn     Pointer to the connection.
  * @param tmap_cb  Pointer to struct of TMAP callbacks.
  *
- * @return 0 on success or negative error value on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int bt_tmap_discover(struct bt_conn *conn, const struct bt_tmap_cb *tmap_cb);
 
