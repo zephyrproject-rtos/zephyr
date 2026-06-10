@@ -57,9 +57,9 @@
 #define BL61X_AUPLL_TOP_FREQ	(DT_FREQ_M(320))
 
 /** Overclocked PLL example 1, standard voltages can be used */
-#define BL61X_WIFIPLL_TOP_FREQ_OC1	(DT_FREQ_M(480))
+#define BL61X_TOP_FREQ_OC1	(DT_FREQ_M(480))
 
 /** Overclocked PLL example 2, increased voltages (1.25v) must be used */
-#define BL61X_WIFIPLL_TOP_FREQ_OC2	(DT_FREQ_M(640))
+#define BL61X_TOP_FREQ_OC2	(DT_FREQ_M(640))
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_BFLB_BL61X_CLOCK_H_ */

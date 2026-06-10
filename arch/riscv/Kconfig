@@ -566,6 +566,9 @@ config TEST_EXTRA_STACK_SIZE
 	default 4096 if CPP_EXCEPTIONS
 	default 1536
 
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096 if 64BIT
+
 config CMSIS_THREAD_MAX_STACK_SIZE
 	default 1024 if 64BIT
 
@@ -618,6 +621,17 @@ config RISCV_NO_MTVAL_ON_FP_TRAP
 	  When this option is enabled, the mtval content cannot be relied upon
 	  to contain the faulting FP instruction, requiring alternative methods
 	  to handle FP exceptions.
+
+if RISCV_NO_MTVAL_ON_FP_TRAP
+
+config RISCV_NO_MTVAL_ON_FP_TRAP_UNALIGNED
+	bool
+	help
+	  Fetch the faulting FP instruction halfword-by-halfword when mepc is not
+	  4-byte aligned. Avoids an unaligned-load exception in the
+	  no-MTVAL FP trap handler.
+
+endif
 
 RISCV_PRIV_MODES_PROP := riscv,privilege-modes
 

@@ -343,7 +343,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 	net_ipv6_addr_copy_raw(dst_ip.s6_addr, hdr->dst);
 
 	/* Check if the packet can be routed */
-	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
 		found = net_route_ipv6_get_info(NULL, &dst_ip, &route, &nexthop);
 	} else {
 		found = net_route_ipv6_get_info(net_pkt_iface(pkt), &dst_ip,
@@ -353,7 +353,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 	if (found) {
 		int ret;
 
-		if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
 		    (net_ipv6_is_ll_addr(&src_ip) ||
 		     net_ipv6_is_ll_addr(&dst_ip))) {
 			/* RFC 4291 ch 2.5.6 */
@@ -371,7 +371,7 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 			net_pkt_set_iface(pkt, route->iface);
 		}
 
-		if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
 		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt) &&
 		    !net_if_flag_is_set(net_pkt_orig_iface(pkt), NET_IF_IPV6_NO_ND)) {
 			/* If the route interface to destination is
@@ -383,6 +383,13 @@ static enum net_verdict ipv6_route_packet(struct net_pkt *pkt,
 				net_pkt_iface(pkt));
 
 			add_route(net_pkt_orig_iface(pkt), &src_ip, 128);
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
+		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
+			net_pkt_set_forwarding(pkt, true);
+		} else {
+			net_pkt_set_forwarding(pkt, false);
 		}
 
 		ret = net_route_ipv6_packet(pkt, nexthop);
@@ -575,7 +582,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 		 * source means that duplicate address has been detected.
 		 * This check is done later on if routing features are enabled.
 		 */
-		if (!IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
+		if (!IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
 		    !IS_ENABLED(CONFIG_NET_IPV6_ROUTE_MCAST) &&
 		    is_src_non_tentative_itself(hdr->src)) {
 			NET_DBG("DROP: src addr is %s", "mine");
@@ -638,7 +645,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 		 * cross interface boundary, then drop the packet.
 		 * RFC 4291 ch 2.5.6
 		 */
-		if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING) &&
+		if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
 		    net_ipv6_is_ll_addr_raw(hdr->src) &&
 		    !net_if_ipv6_addr_lookup_by_iface_raw(pkt_iface, hdr->dst)) {
 			ipv6_no_route_info(pkt, hdr->src, hdr->dst);
@@ -647,7 +654,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt)
 		}
 	}
 
-	if ((IS_ENABLED(CONFIG_NET_IPV6_ROUTING) ||
+	if ((IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) ||
 	     IS_ENABLED(CONFIG_NET_IPV6_ROUTE_MCAST)) &&
 	    !net_pkt_is_loopback(pkt) && is_src_non_tentative_itself(hdr->src)) {
 		NET_DBG("DROP: src addr is %s", "mine");

@@ -608,18 +608,18 @@ int bt_avrcp_cover_art_ct_l2cap_connect(struct bt_avrcp_ct *ct,
 		return -ENOTCONN;
 	}
 
-	bt_conn_unref(conn);
-
 	index = bt_conn_index(conn);
 
 	if (index >= ARRAY_SIZE(avrcp_cover_art_ct)) {
 		LOG_ERR("Conn index out of bounds");
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
 	avrcp_cover_art_ct[index].bip.ops = &ct_bip_transport_ops;
 
 	err = bt_bip_l2cap_connect(conn, &avrcp_cover_art_ct[index].bip, psm);
+	bt_conn_unref(conn);
 	if (err != 0) {
 		LOG_ERR("Failed to connect AVRCP Cover Art L2CAP channel (err %d)", err);
 		return err;

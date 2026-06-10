@@ -55,28 +55,12 @@ def get_additional_node_kwargs(node: Node) -> dict[str, Any]:
     return additional_kwargs
 
 
-class Family(enum.Enum):
-    """Families of SoCs supported by this script"""
-
-    SERIES_NRF54HX = "nrf54h"
-    SERIES_NRF92X = "nrf92"
-    SERIES_UNKNOWN = "unknown"
-
-    @classmethod
-    def family(cls, soc):
-        if soc.startswith("nrf54h") and len(soc) == 8:
-            return cls.SERIES_NRF54HX
-        elif soc.startswith("nrf92") and len(soc) == 7:
-            return cls.SERIES_NRF92X
-        else:
-            return cls.SERIES_UNKNOWN
-
-
 class Soc(enum.Enum):
     """Names of SoCs supported by this script"""
 
     NRF54H20 = "nrf54h20"
     NRF9280 = "nrf9280"
+    NRF9251 = "nrf9251"
     UNKNOWN = "unknown"
 
     @classmethod
@@ -85,6 +69,8 @@ class Soc(enum.Enum):
             return cls.NRF54H20
         elif soc.startswith("nrf9280") and len(soc) == 7:
             return cls.NRF9280
+        elif soc.startswith("nrf9251") and len(soc) == 7:
+            return cls.NRF9251
         else:
             return cls.UNKNOWN
 
@@ -151,7 +137,7 @@ def main() -> None:
     args = parse_args()
     dt = pickle.load(args.in_edt_pickle)
     processor = dt_processor_id(dt)
-    lookup_tables = lookup_tables_get(Soc.soc(args.soc), Family.family(args.soc))
+    lookup_tables = lookup_tables_get(Soc.soc(args.soc))
     builder = PeriphconfBuilder(dt, lookup_tables, lock_value=args.lock)
 
     # Application local peripherals
@@ -185,7 +171,7 @@ def main() -> None:
     args.out_periphconf_source.write(generated_source)
 
 
-def lookup_tables_get(soc: Soc, family: Family) -> SocLookupTables:
+def lookup_tables_get(soc: Soc) -> SocLookupTables:
     if soc == Soc.NRF54H20:
         ctrlsel_lookup = {
             # CAN120
@@ -485,7 +471,79 @@ def lookup_tables_get(soc: Soc, family: Family) -> SocLookupTables:
                 NrfPsel(fun=NrfFun.TPIU_DATA3, port=7, pin=7): Ctrlsel.TND,
             },
         }
-    elif family == Family.SERIES_NRF92X:
+    elif soc == Soc.NRF9251:
+        ctrlsel_lookup = {
+            # (High Speed peripherals using Ctrlsel=3)
+            # SPIM120/SPIS120/UART120
+            0x5F8E_6000: {
+                # SPIS120 P5 Mappings
+                NrfPsel(fun=NrfFun.SPIS_SCK, port=5, pin=1): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.SPIS_MOSI, port=5, pin=4): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.SPIS_MISO, port=5, pin=2): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.SPIS_CSN, port=5, pin=5): Ctrlsel.SERIAL0,
+                # UART120 P5 Mappings
+                NrfPsel(fun=NrfFun.UART_CTS, port=5, pin=4): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.UART_RTS, port=5, pin=5): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.UART_RX, port=5, pin=3): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.UART_TX, port=5, pin=2): Ctrlsel.SERIAL0,
+                # SPIM120 P5 Mappings
+                NrfPsel(fun=NrfFun.SPIM_SCK, port=5, pin=1): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.SPIM_MOSI, port=5, pin=2): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.SPIM_MISO, port=5, pin=4): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.SPIM_CSN, port=5, pin=5): Ctrlsel.SERIAL0,
+            },
+            # VPR121 (FLPR)
+            0x5F8D_4000: {
+                # P2
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=0): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=1): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=2): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=3): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=5): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=6): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=8): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=9): Ctrlsel.VPR_GRC,
+                # P5
+                NrfPsel(fun=NrfFun.IGNORE, port=5, pin=0): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=5, pin=1): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=5, pin=2): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=5, pin=3): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=5, pin=4): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=5, pin=5): Ctrlsel.VPR_GRC,
+            },
+            # VPR130 (PPR)
+            0x5F90_8000: {
+                # P0
+                NrfPsel(fun=NrfFun.IGNORE, port=0, pin=0): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=0, pin=1): Ctrlsel.VPR_GRC,
+                # P1
+                NrfPsel(fun=NrfFun.IGNORE, port=1, pin=6): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=1, pin=7): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=1, pin=10): Ctrlsel.VPR_GRC,
+                NrfPsel(fun=NrfFun.IGNORE, port=1, pin=11): Ctrlsel.VPR_GRC,
+            },
+            # MIPIRFFE
+            0x5F99_B000: {
+                # P2
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=2): Ctrlsel.SERIAL0,
+                NrfPsel(fun=NrfFun.IGNORE, port=2, pin=3): Ctrlsel.SERIAL0,
+            },
+            # GRTC CLKOUT
+            0x5F99_C000: {
+                # P1
+                NrfPsel(fun=NrfFun.GRTC_CLKOUT_FAST, port=1, pin=0): Ctrlsel.CAN_TDM_SERIAL2,
+                NrfPsel(fun=NrfFun.GRTC_CLKOUT_FAST, port=2, pin=1): Ctrlsel.CAN_TDM_SERIAL2,
+            },
+            # Coresight (TPIU) – TDD
+            0xBF04_0000: {
+                NrfPsel(fun=NrfFun.TPIU_CLOCK, port=5, pin=1): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA0, port=5, pin=2): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA1, port=5, pin=3): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA2, port=5, pin=4): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA3, port=5, pin=5): Ctrlsel.TND,
+            },
+        }
+    elif soc == Soc.NRF9280:
         ctrlsel_lookup = {
             # PWM120
             0x5F8E_4000: {
@@ -567,6 +625,14 @@ def lookup_tables_get(soc: Soc, family: Family) -> SocLookupTables:
                 NrfPsel(fun=NrfFun.UART_RTS, port=9, pin=1): Ctrlsel.SERIAL0,
                 NrfPsel(fun=NrfFun.UART_RX, port=9, pin=4): Ctrlsel.SERIAL0,
                 NrfPsel(fun=NrfFun.UART_TX, port=9, pin=3): Ctrlsel.SERIAL0,
+            },
+            # Coresight (TPIU) – TDD
+            0xBF04_0000: {
+                NrfPsel(fun=NrfFun.TPIU_CLOCK, port=8, pin=4): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA0, port=8, pin=0): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA1, port=8, pin=1): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA2, port=8, pin=2): Ctrlsel.TND,
+                NrfPsel(fun=NrfFun.TPIU_DATA3, port=8, pin=3): Ctrlsel.TND,
             },
         }
     else:

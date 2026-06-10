@@ -101,7 +101,7 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 		reason = K_ERR_ARM_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT;
 		EXCEPTION_DUMP("Unsupported Exclusive Access Fault @ 0x%08x", addr);
 		break;
-#elif defined(CONFIG_ARMV7_A)
+#elif defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
 	case FSR_FS_PERMISSION_FAULT_2ND_LEVEL:
 		reason = K_ERR_ARM_PERMISSION_FAULT_2ND_LEVEL;
 		EXCEPTION_DUMP("2nd Level Permission Fault @ 0x%08x", addr);

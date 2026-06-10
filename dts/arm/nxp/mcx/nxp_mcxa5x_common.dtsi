@@ -199,7 +199,6 @@
 		clocks = <&syscon MCUX_LPUART0_CLK>;
 		/* DMA channels 0 and 1, muxed to LPUART RX and TX */
 		dmas = <&edma0 0 21>, <&edma0 1 22>;
-		dma-names = "rx", "tx";
 	};
 
 	lpuart1: lpuart@a0000 {
@@ -485,7 +484,7 @@
 	};
 
 	flexcan0: can@cc000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0xcc000 0x4000>;
 		interrupts = <19 0>;
 		interrupt-names = "common";
@@ -495,7 +494,7 @@
 	};
 
 	flexcan1: can@d0000 {
-		compatible = "nxp,flexcan";
+		compatible = "nxp,flexcan-fd", "nxp,flexcan";
 		reg = <0xd0000 0x4000>;
 		interrupts = <20 0>;
 		interrupt-names = "common";
@@ -748,6 +747,37 @@
 	cmc: system-modules@c6000 {
 		compatible = "nxp,cmc";
 		reg = <0xc6000 0x1000>;
+	};
+
+	eim0: eim@400c7000 {
+		compatible = "nxp,eim";
+		status = "disabled";
+		reg = <0x400c7000 0x1000>;
+		resets = <&reset NXP_SYSCON_RESET(0, 15)>;
+
+		eim0_channel0: channel0 {
+			channel-id = <0>;
+			erm-channel-id = <0>;
+			size = <DT_SIZE_K(64)>;
+			start-address = <0x20000000>;
+			ecc-enable = <0x1>;
+			status = "disabled";
+		};
+	};
+
+	erm0: erm@400c8000 {
+		compatible = "nxp,erm";
+		status = "disabled";
+		reg = <0x400c8000 0x1000>;
+		resets = <&reset NXP_SYSCON_RESET(0, 16)>;
+		interrupts = <10 0>, <11 0>;
+		channels = <0 1>;
+	};
+
+	crc: crc@c5000 {
+		compatible = "nxp,crc";
+		reg = <0xc5000 0x1000>;
+		status = "disabled";
 	};
 };
 

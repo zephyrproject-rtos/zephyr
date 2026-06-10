@@ -64,6 +64,10 @@
 #define RAM_ADDR DT_CHOSEN_SRAM_ADDR
 #define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
+
+#if defined(CONFIG_CUSTOM_SECTION_ALIGN)
+_region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
+#else
 /* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
  * to make linker section alignment comply with MPU granularity.
  */
@@ -75,8 +79,9 @@ _region_min_align = CONFIG_MMU_PAGE_SIZE;
 /* If building without MPU/MMU support, use default 4-byte alignment. */
 _region_min_align = 4;
 #endif
+#endif
 
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && !defined(CONFIG_CUSTOM_SECTION_ALIGN)
   #define MPU_ALIGN(region_size) \
     . = ALIGN(_region_min_align); \
     . = ALIGN(1 << LOG2CEIL(region_size))
@@ -132,6 +137,14 @@ SECTIONS
 
     SECTION_PROLOGUE(rom_start,,)
     {
+#if !defined(CONFIG_XIP) && !defined(CONFIG_ROMSTART_RELOCATION_ROM)
+        /* Start of boot-mapped kernel image. Placed before rom_start contents
+         * so that the vector table page is included in the mapped + pinned range
+         * tracked by z_mem_manage_init(), preventing it from being added to
+         * the free page list.
+         */
+        z_mapped_start = .;
+#endif
 
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...). This typically contains the vector
@@ -151,7 +164,10 @@ SECTIONS
     {
         . = ALIGN(_region_min_align);
         __text_region_start = .;
-#ifndef CONFIG_XIP
+#if !defined(CONFIG_XIP) && defined(CONFIG_ROMSTART_RELOCATION_ROM)
+        /* rom_start is in a separate memory region; the vector table is not
+         * in SRAM, so z_mapped_start can begin at .text.
+         */
         z_mapped_start = .;
 #endif
 

@@ -12,11 +12,13 @@ supported:
   - uart
   - gpio
   - counter
+  - watchdog
   - bluetooth
   - i2c
   - pwm
   - entropy
   - dma
+  - spi
 testing:
   ignore_tags:
     - pm

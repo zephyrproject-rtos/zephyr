@@ -1,0 +1,14 @@
+# Standalone modem driver configuration options
+
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/modem/vendor_standalone/Kconfig.hl7800"
+source "drivers/modem/vendor_standalone/Kconfig.quectel-bg9x"
+source "drivers/modem/vendor_standalone/Kconfig.st87mxx"
+source "drivers/modem/vendor_standalone/Kconfig.ublox-sara-r4"
+source "drivers/modem/vendor_standalone/Kconfig.wncm14a2a"
+source "drivers/modem/vendor_standalone/hl78xx/Kconfig.hl78xx"
+source "drivers/modem/vendor_standalone/simcom/Kconfig"
+# zephyr-keep-sorted-stop

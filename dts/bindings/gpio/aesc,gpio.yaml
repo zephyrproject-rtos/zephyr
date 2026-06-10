@@ -13,7 +13,7 @@ description: |
 
 compatible: "aesc,gpio"
 
-include: [gpio-controller.yaml, base.yaml]
+include: [gpio-controller.yaml, pinctrl-device.yaml, base.yaml]
 
 properties:
   reg:

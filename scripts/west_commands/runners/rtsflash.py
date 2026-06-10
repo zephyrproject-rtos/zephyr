@@ -8,10 +8,15 @@ import subprocess
 import sys
 import time
 
-import usb.core
-import usb.util
-
 from runners.core import RunnerCaps, ZephyrBinaryRunner
+
+try:
+    import usb.core
+    import usb.util
+
+    MISSING_REQUIREMENTS = False
+except ImportError:
+    MISSING_REQUIREMENTS = True
 
 RTS_STANDARD_REQUEST = 0x0
 
@@ -136,6 +141,9 @@ class RtsflashBinaryRunner(ZephyrBinaryRunner):
         return self.list_pattern in output
 
     def do_run(self, command, **kwargs):
+        if MISSING_REQUIREMENTS:
+            raise RuntimeError("pyusb not found; install with 'pip install pyusb'")
+
         if not self.dev_id:
             raise RuntimeError(
                 'Please specify a USB VID:PID with the -i/--dev-id or --pid command-line switch.'

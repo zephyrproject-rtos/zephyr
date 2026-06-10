@@ -736,8 +736,27 @@ Recommended image formats based on content
 * **Screenshots**: WebP or PNG.
 * **Diagrams**: Consider using Graphviz for simple diagrams (see
   `dedicated section <graphviz_diagrams>`_ below. If using an external tool, SVG is preferred.
-* **Photos** (ex. boards): WebP. Use transparency if possible/available.
+* **Photos** (ex. boards): WebP, no larger than 600 px on the largest dimension.
+  Whenever the subject can be isolated from its background (typically the case for board photos),
+  save the image with a transparent background so it blends in with both light and dark
+  documentation themes.
 
+  You can convert an existing image to a properly sized WebP using `cwebp`_ or `ImageMagick`_. For
+  example::
+
+     # Using cwebp (resize width to 600 px, height auto, ~80% quality).
+     # For a portrait image, use "-resize 0 600" to cap the height instead.
+     cwebp -resize 600 0 board_name.png -o board_name.webp
+
+     # Using ImageMagick
+     magick board_name.png -resize 600x600 -quality 80 board_name.webp
+
+  When the source already has a transparent background (e.g. a PNG with an alpha channel), both
+  tools preserve transparency in the resulting WebP. The ``-resize 600 0`` / ``600x600`` arguments
+  only scale the image down, preserving its aspect ratio.
+
+.. _cwebp: https://developers.google.com/speed/webp/download
+.. _ImageMagick: https://imagemagick.org/
 
 .. _graphviz_diagrams:
 

@@ -15,7 +15,7 @@
  * @brief Control block for a CMSIS-RTOSv2 thread.
  *
  * Application can use manual user-defined allocation for RTOS objects by supplying a pointer to
- * thread control block. Control block is initiazed within `osThreadNew()`.
+ * thread control block. Control block is initialized within `osThreadNew()`.
  */
 struct cmsis_rtos_thread_cb {
 	sys_dnode_t node;
@@ -30,7 +30,7 @@ struct cmsis_rtos_thread_cb {
  * @brief Control block for a CMSIS-RTOSv2 timer.
  *
  * Application can use manual user-defined allocation for RTOS objects by supplying a pointer to
- * timer control block. Control block is initiazed within `osTimerNew()`.
+ * timer control block. Control block is initialized within `osTimerNew()`.
  */
 struct cmsis_rtos_timer_cb {
 	struct k_timer z_timer;
@@ -46,7 +46,7 @@ struct cmsis_rtos_timer_cb {
  * @brief Control block for a CMSIS-RTOSv2 mutex.
  *
  * Application can use manual user-defined allocation for RTOS objects by supplying a pointer to
- * mutex control block. Control block is initiazed within `osMutexNew()`.
+ * mutex control block. Control block is initialized within `osMutexNew()`.
  */
 struct cmsis_rtos_mutex_cb {
 	struct k_mutex z_mutex;
@@ -59,7 +59,7 @@ struct cmsis_rtos_mutex_cb {
  * @brief Control block for a CMSIS-RTOSv2 semaphore.
  *
  * Application can use manual user-defined allocation for RTOS objects by supplying a pointer to
- * semaphore control block. Control block is initiazed within `osSemaphoreNew()`.
+ * semaphore control block. Control block is initialized within `osSemaphoreNew()`.
  */
 struct cmsis_rtos_semaphore_cb {
 	struct k_sem z_semaphore;
@@ -71,7 +71,7 @@ struct cmsis_rtos_semaphore_cb {
  * @brief Control block for a CMSIS-RTOSv2 memory pool.
  *
  * Application can use manual user-defined allocation for RTOS objects by supplying a pointer to
- * memory pool control block. Control block is initiazed within `osMemoryPoolNew()`.
+ * memory pool control block. Control block is initialized within `osMemoryPoolNew()`.
  */
 struct cmsis_rtos_mempool_cb {
 	struct k_mem_slab z_mslab;
@@ -85,7 +85,7 @@ struct cmsis_rtos_mempool_cb {
  * @brief Control block for a CMSIS-RTOSv2 message queue.
  *
  * Application can use manual user-defined allocation for RTOS objects by supplying a pointer to
- * message queue control block. Control block is initiazed within `osMessageQueueNew()`.
+ * message queue control block. Control block is initialized within `osMessageQueueNew()`.
  */
 struct cmsis_rtos_msgq_cb {
 	struct k_msgq z_msgq;
@@ -99,7 +99,7 @@ struct cmsis_rtos_msgq_cb {
  * @brief Control block for a CMSIS-RTOSv2 event flag.
  *
  * Application can use manual user-defined allocation for RTOS objects by supplying a pointer to
- * event flag control block. Control block is initiazed within `osEventFlagsNew()`.
+ * event flag control block. Control block is initialized within `osEventFlagsNew()`.
  */
 struct cmsis_rtos_event_cb {
 	struct k_event z_event;

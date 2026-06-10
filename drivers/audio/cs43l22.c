@@ -250,7 +250,7 @@ static int cs43l22_set_property(const struct device *dev, audio_property_t prope
 
 }
 
-static const struct audio_codec_api cs43l22_api = {
+static DEVICE_API(audio_codec, cs43l22_api) = {
 	.configure = cs43l22_configure,
 	.start_output = cs43l22_start_output,
 	.stop_output = cs43l22_stop_output,

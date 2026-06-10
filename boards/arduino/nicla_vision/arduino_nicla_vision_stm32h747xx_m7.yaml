@@ -12,4 +12,5 @@ supported:
   - spi
   - i2c
   - usbd
+  - dmic
 vendor: arduino

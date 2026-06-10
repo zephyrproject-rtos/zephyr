@@ -104,30 +104,34 @@ arduino_serial: &lpuart2 {
 	status = "okay";
 
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Partition sizes must be aligned
 		 * to the flash memory sector size of 4KB.
 		 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
 
 		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(1924)>;
 		};
 
 		slot1_partition: partition@201000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00201000 DT_SIZE_K(1924)>;
 		};
 
 		storage_partition: partition@3e2000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x003e2000 DT_SIZE_K(120)>;
 		};

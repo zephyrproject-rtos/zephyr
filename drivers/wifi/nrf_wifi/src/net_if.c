@@ -684,7 +684,6 @@ void nrf_wifi_if_init_zep(struct net_if *iface)
 	const struct device *dev = NULL;
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = NULL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
 	if (!iface) {
 		LOG_ERR("%s: Invalid parameters",
@@ -719,7 +718,7 @@ void nrf_wifi_if_init_zep(struct net_if *iface)
 	vif_ctx_zep->zep_net_if_ctx = iface;
 	vif_ctx_zep->zep_dev_ctx = dev;
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 	ethernet_init(iface);
 	net_eth_carrier_on(iface);
 	net_if_dormant_on(iface);

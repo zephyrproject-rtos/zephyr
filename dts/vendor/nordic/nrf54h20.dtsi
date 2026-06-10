@@ -694,6 +694,7 @@
 				clock-frequency = <DT_FREQ_M(400)>;
 				packet-data-limit = <65536>;
 				fifo-depth = <32>;
+				memmap-write-support;
 				status = "disabled";
 			};
 
@@ -773,7 +774,7 @@
 				interrupts = <216 NRF_DEFAULT_IRQ_PRIORITY>;
 				clocks = <&canpll>, <&hsfll120>;
 				clock-names = "auxpll", "hsfll";
-				bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
+				bosch,mram-cfg = <0x0 28 8 6 0 0 1 1>;
 				status = "disabled";
 			};
 

@@ -15,8 +15,14 @@
 #include <zephyr/arch/arch_interface.h>
 #include <zephyr/sw_isr_table.h>
 #include "intc_acp.h"
+#ifdef CONFIG_SOC_ACP_7_0
 #include <acp70_chip_offsets.h>
 #include <acp70_chip_reg.h>
+#endif
+#ifdef CONFIG_SOC_ACP_7_X
+#include <acp7x_chip_offsets.h>
+#include <acp7x_chip_reg.h>
+#endif
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(acp_intc, CONFIG_INTC_AMD_ACP_LOG_LEVEL);

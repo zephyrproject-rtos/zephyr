@@ -39,6 +39,8 @@ tests:
     platform_allow: xg29_rb4412a
   drivers.adc.stm32.build:
     platform_allow: disco_l475_iot1
+    extra_configs:
+      - CONFIG_GPIO=y # needed by some ADC drivers
   drivers.adc.xec.build:
     platform_allow: mec15xxevb_assy6853
   drivers.adc.realtek.rts5912.build:

@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/sys/atomic.h>
 
 BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS == 2, "Invalid number of cpus");
 
@@ -28,6 +29,7 @@ BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS == 2, "Invalid number of cpus");
 
 
 static enum pm_state state_testing[2];
+static atomic_t exit_post_ops_cpus;
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -55,10 +57,9 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
-	/* pm_system_suspend is entered with irq locked
-	 * unlock irq before leave pm_system_suspend
-	 */
-	irq_unlock(0);
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "PM exit post ops ran with interrupts enabled");
+	atomic_set_bit(&exit_post_ops_cpus, _current_cpu->id);
 }
 
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
@@ -115,6 +116,7 @@ const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int ticks)
  */
 ZTEST(pm_multicore, test_power_idle)
 {
+	atomic_set(&exit_post_ops_cpus, 0);
 
 	for (uint8_t i = 0U; i < NUM_OF_ITERATIONS; i++) {
 		k_sleep(ACTIVE_TIMEOUT);
@@ -125,6 +127,11 @@ ZTEST(pm_multicore, test_power_idle)
 
 		k_sleep(STANDBY_TIMEOUT);
 	}
+
+	zassert_true(atomic_test_bit(&exit_post_ops_cpus, 0),
+		     "CPU 0 never ran PM exit post ops");
+	zassert_true(atomic_test_bit(&exit_post_ops_cpus, 1),
+		     "CPU 1 never ran PM exit post ops");
 }
 
 ZTEST_SUITE(pm_multicore, NULL, NULL, NULL, NULL, NULL);

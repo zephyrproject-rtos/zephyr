@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/conn.h>
@@ -28,14 +29,120 @@ LOG_MODULE_REGISTER(bt_bap_unicast_server, CONFIG_BT_BAP_UNICAST_SERVER_LOG_LEVE
 
 static const struct bt_bap_unicast_server_cb *unicast_server_cb;
 
+static int ascs_config_cb(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_audio_dir dir,
+			  const struct bt_audio_codec_cfg *codec_cfg, struct bt_bap_stream **stream,
+			  struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+{
+	if (unicast_server_cb != NULL && unicast_server_cb->config != NULL) {
+		return unicast_server_cb->config(conn, ep, dir, codec_cfg, stream, pref, rsp);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+
+static int ascs_reconfig_cb(struct bt_bap_stream *stream, enum bt_audio_dir dir,
+			    const struct bt_audio_codec_cfg *codec_cfg,
+			    struct bt_bap_qos_cfg_pref *const pref, struct bt_bap_ascs_rsp *rsp)
+{
+	if (unicast_server_cb != NULL && unicast_server_cb->reconfig != NULL) {
+		return unicast_server_cb->reconfig(stream, dir, codec_cfg, pref, rsp);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+
+static int ascs_qos_cb(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
+		       struct bt_bap_ascs_rsp *rsp)
+{
+	if (unicast_server_cb != NULL && unicast_server_cb->qos != NULL) {
+		return unicast_server_cb->qos(stream, qos, rsp);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+
+static int ascs_enable_cb(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+			  struct bt_bap_ascs_rsp *rsp)
+{
+	if (unicast_server_cb != NULL && unicast_server_cb->enable != NULL) {
+		return unicast_server_cb->enable(stream, meta, meta_len, rsp);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+
+static int ascs_start_cb(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
+{
+	if (unicast_server_cb != NULL && unicast_server_cb->start != NULL) {
+		return unicast_server_cb->start(stream, rsp);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+
+static int ascs_metadata_cb(struct bt_bap_stream *stream, const uint8_t meta[], size_t meta_len,
+			    struct bt_bap_ascs_rsp *rsp)
+{
+	if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
+		return unicast_server_cb->metadata(stream, meta, meta_len, rsp);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+
+static int ascs_disable_cb(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
+{
+	if (unicast_server_cb != NULL && unicast_server_cb->disable != NULL) {
+		return unicast_server_cb->disable(stream, rsp);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+
+static int ascs_stop_cb(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
+{
+	if (unicast_server_cb != NULL && unicast_server_cb->stop != NULL) {
+		return unicast_server_cb->stop(stream, rsp);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+
+static int ascs_release_cb(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
+{
+	if (unicast_server_cb != NULL && unicast_server_cb->release != NULL) {
+		return unicast_server_cb->release(stream, rsp);
+	} else {
+		return -EOPNOTSUPP;
+	}
+}
+
 int bt_bap_unicast_server_register(const struct bt_bap_unicast_server_register_param *param)
 {
+	static struct bt_ascs_cb ascs_cb = {
+		.config = ascs_config_cb,
+		.reconfig = ascs_reconfig_cb,
+		.qos = ascs_qos_cb,
+		.enable = ascs_enable_cb,
+		.start = ascs_start_cb,
+		.metadata = ascs_metadata_cb,
+		.disable = ascs_disable_cb,
+		.stop = ascs_stop_cb,
+		.release = ascs_release_cb,
+	};
+
 	if (param == NULL) {
 		LOG_DBG("param is NULL");
 		return -EINVAL;
 	}
 
-	return bt_ascs_register(param->snk_cnt, param->src_cnt);
+	struct bt_ascs_register_param ascs_param = {
+		.snk_cnt = param->snk_cnt,
+		.src_cnt = param->src_cnt,
+		.cb = &ascs_cb,
+	};
+
+	return bt_ascs_register(&ascs_param);
 }
 
 int bt_bap_unicast_server_unregister(void)
@@ -50,8 +157,6 @@ int bt_bap_unicast_server_unregister(void)
 
 int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 {
-	int err;
-
 	if (cb == NULL) {
 		LOG_DBG("cb is NULL");
 		return -EINVAL;
@@ -60,11 +165,6 @@ int bt_bap_unicast_server_register_cb(const struct bt_bap_unicast_server_cb *cb)
 	if (unicast_server_cb != NULL) {
 		LOG_DBG("callback structure already registered");
 		return -EALREADY;
-	}
-
-	err = bt_ascs_init(cb);
-	if (err != 0) {
-		return err;
 	}
 
 	unicast_server_cb = cb;
@@ -89,7 +189,6 @@ int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *c
 		return -EINVAL;
 	}
 
-	bt_ascs_cleanup();
 	unicast_server_cb = NULL;
 
 	return 0;
@@ -98,115 +197,27 @@ int bt_bap_unicast_server_unregister_cb(const struct bt_bap_unicast_server_cb *c
 int bt_bap_unicast_server_reconfig(struct bt_bap_stream *stream,
 				   const struct bt_audio_codec_cfg *codec_cfg)
 {
-	struct bt_bap_ep *ep;
-	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
-						     BT_BAP_ASCS_REASON_NONE);
-	int err;
-
-	ep = stream->ep;
-
-	if (!bt_ascs_has_ep(ep)) {
-		LOG_DBG("ep %p not in ASCS", ep);
-		return -EINVAL;
-	}
-
-	if (unicast_server_cb != NULL &&
-		unicast_server_cb->reconfig != NULL) {
-		err = unicast_server_cb->reconfig(stream, ep->dir, codec_cfg, &ep->qos_pref, &rsp);
-	} else {
-		err = -ENOTSUP;
-	}
-
-	if (err != 0) {
-		return err;
-	}
-
-	(void)memcpy(&ep->codec_cfg, codec_cfg, sizeof(*codec_cfg));
-
-	return ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
+	return bt_ascs_reconfig_ase(stream->ep, codec_cfg);
 }
 
 int bt_bap_unicast_server_start(struct bt_bap_stream *stream)
 {
-	struct bt_bap_ep *ep = stream->ep;
-
-	if (!bt_ascs_has_ep(ep)) {
-		LOG_DBG("ep %p not in ASCS", ep);
-		return -EINVAL;
-	}
-
-	if (ep->dir != BT_AUDIO_DIR_SINK) {
-		LOG_DBG("Invalid operation for stream %p with dir %u",
-			stream, ep->dir);
-
-		return -EINVAL;
-	}
-
-	/* If ISO is connected to go streaming state,
-	 * else wait for ISO to be connected
-	 */
-	if (ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
-		return ascs_ep_set_state(ep, BT_BAP_EP_STATE_STREAMING);
-	}
-
-	ep->receiver_ready = true;
-
-	return 0;
+	return bt_ascs_start_ase(stream->ep);
 }
 
 int bt_bap_unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t meta[],
 				   size_t meta_len)
 {
-	struct bt_bap_ep *ep;
-	struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS,
-						     BT_BAP_ASCS_REASON_NONE);
-	int err;
-
-	ep = stream->ep;
-	if (!bt_ascs_has_ep(ep)) {
-		LOG_DBG("ep %p not in ASCS", ep);
-		return -EINVAL;
-	}
-
-	if (meta_len > sizeof(ep->codec_cfg.meta)) {
-		return -ENOMEM;
-	}
-
-	if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
-		err = unicast_server_cb->metadata(stream, meta, meta_len, &rsp);
-	} else {
-		err = -ENOTSUP;
-	}
-
-
-	if (err != 0) {
-		LOG_ERR("Metadata failed: err %d, code %u, reason %u", err, rsp.code, rsp.reason);
-		return err;
-	}
-
-	(void)memcpy(ep->codec_cfg.meta, meta, meta_len);
-
-	/* Set the state to the same state to trigger the notifications */
-	return ascs_ep_set_state(ep, ep->state);
+	return bt_ascs_metadata_ase(stream->ep, meta, meta_len);
 }
 
 int bt_bap_unicast_server_disable(struct bt_bap_stream *stream)
 {
-	if (!bt_ascs_has_ep(stream->ep)) {
-		LOG_DBG("ep %p not in ASCS", stream->ep);
-		return -EINVAL;
-	}
-
 	return bt_ascs_disable_ase(stream->ep);
 }
 
 int bt_bap_unicast_server_release(struct bt_bap_stream *stream)
 {
-	if (!bt_ascs_has_ep(stream->ep)) {
-		LOG_DBG("ep %p not in ASCS", stream->ep);
-		return -EINVAL;
-	}
-
 	return bt_ascs_release_ase(stream->ep);
 }
 

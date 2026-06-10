@@ -12,7 +12,6 @@
 #include <string.h>
 
 #include <zephyr/settings/settings.h>
-#include <zephyr/devicetree/fixed-partitions.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/flash.h>
 
@@ -46,6 +45,14 @@ static uint32_t val32;
 static const volatile __attribute__((section(".rodata")))
 __aligned(FLASH_WRITE_BLOCK_SIZE)
 uint8_t prepared_mark[FLASH_WRITE_BLOCK_SIZE] = {ERASED_VAL};
+
+#if DT_NODE_HAS_COMPAT(CODE_PARTITION_NODE, zephyr_mapped_partition)
+#define PREPARED_MARK_OFFSET ((uintptr_t)&prepared_mark - \
+			      DT_REG_ADDR(DT_MEM_FROM_MAPPED_PARTITION(CODE_PARTITION_NODE)))
+#else
+#define PREPARED_MARK_OFFSET ((uintptr_t)&prepared_mark)
+#endif
+
 #else
 #error "Test not prepared to run from flash with no write-block-size property in DTS"
 #endif
@@ -125,7 +132,7 @@ void test_prepare_storage(void)
 
 		(void)memset(new_val, (~ERASED_VAL) & 0xFF,
 			     FLASH_WRITE_BLOCK_SIZE);
-		err = flash_write(dev, (off_t)&prepared_mark, &new_val,
+		err = flash_write(dev, PREPARED_MARK_OFFSET, &new_val,
 				  sizeof(new_val));
 		zassert_true(err == 0, "can't write prepared_mark");
 	}

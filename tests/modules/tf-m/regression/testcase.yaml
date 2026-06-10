@@ -4,7 +4,7 @@ common:
     - mcuboot
   modules:
     - tf-m-tests
-  filter: CONFIG_BUILD_WITH_TFM
+  filter: CONFIG_BUILD_WITH_TFM and not CONFIG_TFM_LOG_LEVEL_SILENCE
   integration_platforms:
     - mps2/an521/cpu0/ns
   harness: console
@@ -21,7 +21,7 @@ common:
       - "Test suite 'Platform Service Non-Secure interface tests.*' has.*PASSED"
 
 tests:
-  tf-m.regression.ipc.lvl1:
+  tfm.regression.ipc.lvl1:
     platform_exclude:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
     extra_args:
@@ -29,15 +29,16 @@ tests:
       - CONFIG_TFM_ISOLATION_LEVEL=1
     timeout: 200
 
-  tf-m.regression.ipc.lvl2:
+  tfm.regression.ipc.lvl2:
     extra_args:
       - CONFIG_TFM_IPC=y
       - CONFIG_TFM_ISOLATION_LEVEL=2
     timeout: 200
 
-  tf-m.regression.sfn:
+  tfm.regression.sfn:
     platform_exclude:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+    filter: CONFIG_TFM_PROFILE_TYPE_SMALL or CONFIG_TFM_PROFILE_TYPE_NOT_SET
     extra_args:
       - CONFIG_TFM_SFN=y
       - CONFIG_TFM_ISOLATION_LEVEL=1

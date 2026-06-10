@@ -85,5 +85,9 @@
     document.getElementById('searchAll').addEventListener('input', makeSearchHandler(allTree));
     document.getElementById('searchRam').addEventListener('input', makeSearchHandler(ramTree));
     document.getElementById('searchRom').addEventListener('input', makeSearchHandler(romTree));
+    for (const [tabId, report] of Object.entries(regionReports || {})) {
+      let tree = initTree(`${tabId}Tree`, report);
+      document.getElementById(`search_${tabId}`).addEventListener('input', makeSearchHandler(tree));
+    }
   });
 })();

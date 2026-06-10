@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,8 +35,8 @@ struct nxp_enet_mdio_data {
  * This function is used for both read and write operations
  * in order to wait for the completion of an MDIO transaction.
  * It returns -ETIMEDOUT if timeout occurs as specified in DT,
- * otherwise returns 0 if EIR MII bit is set indicting completed
- * operation, otherwise -EIO.
+ * -EWOULDBLOCK if called from ISR context where blocking is
+ * not possible, or 0 on success.
  */
 static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 {
@@ -54,7 +54,11 @@ static int nxp_enet_mdio_wait_xfer(const struct device *dev)
 	}
 
 	/* Wait for the MDIO transaction to finish or time out */
-	k_sem_take(&data->mdio_sem, K_USEC(CONFIG_MDIO_NXP_ENET_TIMEOUT));
+	int result = k_sem_take(&data->mdio_sem, K_USEC(CONFIG_MDIO_NXP_ENET_TIMEOUT));
+
+	if (result == -EAGAIN) {
+		return -ETIMEDOUT;
+	}
 
 	return 0;
 }
@@ -73,6 +77,9 @@ static int mdio_transfer(const struct device *dev, uint8_t prtad, uint8_t regad,
 	 * prepare to wait for it to be set once this transfer is done
 	 */
 	data->base->EIR = ENET_EIR_MII_MASK;
+
+	/* Reset semaphore to discard any stale k_sem_give from a previous timed-out transfer */
+	k_sem_reset(&data->mdio_sem);
 
 	/*
 	 * Write MDIO frame to MII management register which will

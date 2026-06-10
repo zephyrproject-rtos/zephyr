@@ -91,7 +91,7 @@ struct intel_adsp_ipc_data {
 	/** General driver lock. */
 	struct k_spinlock lock;
 
-	/** Pending TX acknowlegement. */
+	/** Pending TX acknowledgment. */
 	bool tx_ack_pending;
 
 	/** Pointer to endpoint configuration. */

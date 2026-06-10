@@ -1680,7 +1680,7 @@ static int cmd_appidx(const struct shell *sh, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_BT_MESH_STATISTIC)
-static int cmd_stat_get(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_adv_stat_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct bt_mesh_statistic st;
 
@@ -1700,12 +1700,42 @@ static int cmd_stat_get(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
-static int cmd_stat_clear(const struct shell *sh, size_t argc, char *argv[])
+static int cmd_adv_stat_clear(const struct shell *sh, size_t argc, char *argv[])
 {
 	bt_mesh_stat_reset();
 
 	return 0;
 }
+
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+static int cmd_lpn_stat_get(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct bt_mesh_lpn_timing timing;
+
+	bt_mesh_stat_lpn_timing_get(&timing);
+
+	shell_print(sh, "LPN timing parameters:");
+	shell_print(sh, "ReceiveDelay:  %d us", timing.recv_delay_us);
+	shell_print(sh, "ReceiveDelay (min): %d us", timing.recv_delay_min_us);
+	shell_print(sh, "ReceiveDelay (max): %d us", timing.recv_delay_max_us);
+	shell_print(sh, "ReceiveWindow: %d us", timing.recv_win_us);
+	shell_print(sh, "ReceiveWindow (min): %d us", timing.recv_win_min_us);
+	shell_print(sh, "ReceiveWindow (max): %d us", timing.recv_win_max_us);
+	shell_print(sh, "ReceiveWindow (expected): %d us", timing.recv_win_expected_us);
+	shell_print(sh, "Poll-response cycles: %d", timing.cnt);
+	shell_print(sh, "Failed poll-response cycles: %d", timing.cnt_failed);
+
+	return 0;
+}
+
+static int cmd_lpn_stat_clear(const struct shell *sh, size_t argc, char *argv[])
+{
+	bt_mesh_stat_lpn_timing_reset();
+
+	return 0;
+}
+#endif /* CONFIG_BT_MESH_LOW_POWER */
+
 #endif
 
 #if defined(CONFIG_BT_MESH_SHELL_CDB)
@@ -1838,8 +1868,12 @@ SHELL_STATIC_SUBCMD_SET_CREATE(target_cmds,
 
 #if defined(CONFIG_BT_MESH_STATISTIC)
 SHELL_STATIC_SUBCMD_SET_CREATE(stat_cmds,
-	SHELL_CMD_ARG(get, NULL, NULL, cmd_stat_get, 1, 0),
-	SHELL_CMD_ARG(clear, NULL, NULL, cmd_stat_clear, 1, 0),
+	SHELL_CMD_ARG(adv_get, NULL, NULL, cmd_adv_stat_get, 1, 0),
+	SHELL_CMD_ARG(adv_clear, NULL, NULL, cmd_adv_stat_clear, 1, 0),
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+	SHELL_CMD_ARG(lpn_get, NULL, NULL, cmd_lpn_stat_get, 1, 0),
+	SHELL_CMD_ARG(lpn_clear, NULL, NULL, cmd_lpn_stat_clear, 1, 0),
+#endif
 	SHELL_SUBCMD_SET_END);
 #endif
 

@@ -715,7 +715,7 @@ zephyr_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
 )
 
 if(NOT CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE)
-  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
 endif()
 
 if(CONFIG_SAE_PWE_EARLY_EXIT)

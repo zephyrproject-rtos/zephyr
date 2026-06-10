@@ -24,6 +24,8 @@
 		zephyr,canbus = &flexcan0;
 		zephyr,code-cpu1-partition = &slot1_partition;
 		zephyr,system-timer-companion = &lptmr0;
+		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -152,11 +154,12 @@
 	status = "okay";
 
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		storage_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0 DT_SIZE_M(8)>;
 		};
@@ -262,5 +265,37 @@ zephyr_udc0: &usb1 {
 };
 
 &flexpwm0_pwm2 {
+	status = "okay";
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&eim0_channel2 {
+	status = "okay";
+};
+
+&eim0_channel3 {
+	status = "okay";
+};
+
+&eim0_channel4 {
+	status = "okay";
+};
+
+&eim0_channel5 {
+	status = "okay";
+};
+
+&eim0_channel6 {
+	status = "okay";
+};
+
+&erm0 {
 	status = "okay";
 };

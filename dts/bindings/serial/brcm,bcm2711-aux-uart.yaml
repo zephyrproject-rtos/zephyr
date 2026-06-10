@@ -1,4 +1,4 @@
-description: BCM2711 UART
+description: Broadcom BCM2711 UART
 
 compatible: "brcm,bcm2711-aux-uart"
 
@@ -11,5 +11,5 @@ properties:
   interrupts:
     required: true
 
-  clock-frequency:
+  clocks:
     required: true

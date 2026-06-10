@@ -22,9 +22,6 @@
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 
-	dmas = <&gpdma 0 11>, <&gpdma 1 10>;
-	dma-names = "tx", "rx";
-
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
@@ -36,8 +33,4 @@
 		reg = <1>;
 		spi-max-frequency = <10000000>;
 	};
-};
-
-&gpdma {
-	status = "okay";
 };

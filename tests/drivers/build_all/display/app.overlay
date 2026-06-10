@@ -166,6 +166,9 @@
 				mux-ratio = <0>;
 				phase-length = <0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				grayscale-table = [34 38 3a 40 48 50 58 60 68 70 78 80 96 a0 aa];
+				grayscale-enhancement-lg;
+				external-vsl;
 			};
 
 			test_mipi_dbi_st75256: st75256@a {
@@ -452,7 +455,7 @@
 						  ARGB8888(196, 50,  58,  255) /* 0x03 = Red */
 						  PANEL_COLOR_PALETTE_NULL /* 0x04 = Unused */
 						  ARGB8888(40,  85,  180, 255) /* 0x05 = Blue */
-						  ARGB8888(60,  140, 75,  255) /* 0x06 = Green */ >;
+						  ARGB8888(60,  140, 75,  255) /* 0x06 = Green */>;
 				};
 			};
 		};

@@ -36,10 +36,10 @@ extern "C" {
  */
 #if defined(CONFIG_NET_NATIVE)
 struct net_route_entry *net_route_ipv4_lookup(struct net_if *iface,
-					      struct net_in_addr *dst);
+					      const struct net_in_addr *dst);
 #else
 static inline struct net_route_entry *net_route_ipv4_lookup(struct net_if *iface,
-							    struct net_in_addr *dst)
+							    const struct net_in_addr *dst)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(dst);
@@ -133,7 +133,7 @@ int net_route_ipv4_foreach(net_route_cb_t cb, void *user_data);
  * @return True if there is a route to the destination, False otherwise
  */
 bool net_route_ipv4_get_info(struct net_if *iface,
-			     struct net_in_addr *dst,
+			     const struct net_in_addr *dst,
 			     struct net_route_entry **route,
 			     struct net_in_addr **nexthop);
 
@@ -145,7 +145,7 @@ bool net_route_ipv4_get_info(struct net_if *iface,
  *
  * @return 0 if there was no error, <0 if the packet could not be sent.
  */
-int net_route_ipv4_packet(struct net_pkt *pkt, struct net_in_addr *nexthop);
+int net_route_ipv4_packet(struct net_pkt *pkt, const struct net_in_addr *nexthop);
 
 /**
  * @brief Send the network packet to network via the given interface.

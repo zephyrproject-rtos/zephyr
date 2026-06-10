@@ -27,5 +27,6 @@ supported:
   - usbd
   - rtc
   - watchdog
+  - wifi
   - comparator
   - dmic

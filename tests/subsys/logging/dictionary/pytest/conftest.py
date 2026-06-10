@@ -9,8 +9,14 @@ import pytest
 
 def pytest_addoption(parser):
     parser.addoption('--fpu', action="store_true")
+    parser.addoption('--bin', action="store_true")
 
 
 @pytest.fixture()
 def is_fpu_build(request):
     return request.config.getoption('--fpu')
+
+
+@pytest.fixture()
+def is_bin_build(request):
+    return request.config.getoption('--bin')

@@ -2071,6 +2071,78 @@
 			/omit-if-no-ref/ p20_7_can1_tx: p20_7_can1_tx {
 				pinmux = <DT_CAT1_PINMUX(20, 7, HSIOM_SEL_ACT_4)>;
 			};
+
+			/omit-if-no-ref/ p1_0_smif0_data0: p1_0_smif0_data0 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF0_PORT0, 0, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p1_1_smif0_data1: p1_1_smif0_data1 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF0_PORT0, 1, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p1_2_smif0_data2: p1_2_smif0_data2 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF0_PORT0, 2, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p1_3_smif0_data3: p1_3_smif0_data3 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF0_PORT0, 3, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p1_4_smif0_data4: p1_4_smif0_data4 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF0_PORT0, 4, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p1_5_smif0_data5: p1_5_smif0_data5 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF0_PORT0, 5, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p1_6_smif0_data6: p1_6_smif0_data6 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF0_PORT0, 6, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p1_7_smif0_data7: p1_7_smif0_data7 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF0_PORT0, 7, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p5_0_smif0_select0: p5_0_smif0_select0 {
+				pinmux = <DT_CAT1_PINMUX(5, 0, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p2_0_smif0_select1: p2_0_smif0_select1 {
+				pinmux = <DT_CAT1_PINMUX(2, 0, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p6_7_smif0_select2: p6_7_smif0_select2 {
+				pinmux = <DT_CAT1_PINMUX(6, 7, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p7_0_smif0_select3: p7_0_smif0_select3 {
+				pinmux = <DT_CAT1_PINMUX(7, 0, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+				input-enable;
+			};
 		};
 	};
 };

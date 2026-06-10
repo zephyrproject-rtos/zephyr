@@ -111,6 +111,15 @@
 	status = "okay";
 };
 
+&pllsai {
+	div-m = <25>;
+	mul-n = <429>;
+	div-q = <2>;
+	post-div-q = <19>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(216)>;
@@ -142,6 +151,8 @@ arduino_serial: &usart6 {};
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -149,6 +160,8 @@ arduino_serial: &usart6 {};
 qsh_030_i2c: &i2c4 {
 	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pb7>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -273,6 +286,21 @@ qsh_030_i2c: &i2c4 {
 					    STM32_FMC_SDRAM_RPIPE_0>;
 			st,sdram-timing = <2 6 4 6 2 2 2>;
 		};
+	};
+};
+
+&dfsdm {
+	status = "okay";
+};
+
+&pdm0 {
+	pinctrl-0 = <&dfsdm1_ckout_pd3
+		     &dfsdm1_datin1_pc3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	channel@1 {
+		reg = <1>;
 	};
 };
 

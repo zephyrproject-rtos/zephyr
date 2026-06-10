@@ -57,6 +57,19 @@ static inline void virtio_mmio_write32(const struct device *dev, uint32_t offset
 	barrier_dmem_fence_full();
 }
 
+static void virtio_mmio_write_addr64(const struct device *dev, uint32_t offset_low,
+				     uint32_t offset_high, void *addr)
+{
+	uintptr_t phys_addr = k_mem_phys_addr(addr);
+
+	virtio_mmio_write32(dev, offset_low, phys_addr & UINT32_MAX);
+#ifdef CONFIG_64BIT
+	virtio_mmio_write32(dev, offset_high, phys_addr >> 32);
+#else
+	virtio_mmio_write32(dev, offset_high, 0);
+#endif /* CONFIG_64BIT */
+}
+
 static void virtio_mmio_isr(const struct device *dev)
 {
 	struct virtio_mmio_data *data = dev->data;
@@ -180,18 +193,12 @@ static int virtio_mmio_set_virtqueue(const struct device *dev, uint16_t virtqueu
 	}
 
 	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_SIZE, virtqueue->num);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_DESC_LOW,
-			    k_mem_phys_addr(virtqueue->desc) & UINT32_MAX);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_DESC_HIGH,
-			    k_mem_phys_addr(virtqueue->desc) >> 32);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_AVAIL_LOW,
-			    k_mem_phys_addr(virtqueue->avail) & UINT32_MAX);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_AVAIL_HIGH,
-			    k_mem_phys_addr(virtqueue->avail) >> 32);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_USED_LOW,
-			    k_mem_phys_addr(virtqueue->used) & UINT32_MAX);
-	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_USED_HIGH,
-			    k_mem_phys_addr(virtqueue->used) >> 32);
+	virtio_mmio_write_addr64(dev, VIRTIO_MMIO_QUEUE_DESC_LOW, VIRTIO_MMIO_QUEUE_DESC_HIGH,
+				 virtqueue->desc);
+	virtio_mmio_write_addr64(dev, VIRTIO_MMIO_QUEUE_AVAIL_LOW, VIRTIO_MMIO_QUEUE_AVAIL_HIGH,
+				 virtqueue->avail);
+	virtio_mmio_write_addr64(dev, VIRTIO_MMIO_QUEUE_USED_LOW, VIRTIO_MMIO_QUEUE_USED_HIGH,
+				 virtqueue->used);
 
 	virtio_mmio_write32(dev, VIRTIO_MMIO_QUEUE_READY, 1);
 

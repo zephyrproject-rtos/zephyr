@@ -181,11 +181,11 @@ extern "C" {
  *
  *     clk1: clock-controller@... {
  *             compatible = "vnd,clock";
- *             #clock-cells = < 2 >;
+ *             #clock-cells = <2>;
  *     };
  *
  *     n: node {
- *             clocks = < &clk1 10 20 >, < &clk1 30 40 >;
+ *             clocks = <&clk1 10 20>, <&clk1 30 40>;
  *     };
  *
  * Bindings fragment for the vnd,clock compatible:
@@ -215,11 +215,11 @@ extern "C" {
  *
  *     clk1: clock-controller@... {
  *             compatible = "vnd,clock";
- *             #clock-cells = < 2 >;
+ *             #clock-cells = <2>;
  *     };
  *
  *     n: node {
- *             clocks = < &clk1 10 20 >, < &clk1 30 40 >;
+ *             clocks = <&clk1 10 20>, <&clk1 30 40>;
  *             clock-names = "alpha", "beta";
  *     };
  *

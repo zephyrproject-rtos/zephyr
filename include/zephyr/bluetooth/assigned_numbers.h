@@ -1120,7 +1120,7 @@ enum bt_audio_codec_cfg_type {
 	BT_AUDIO_CODEC_CFG_FRAME_BLKS_PER_SDU = 0x05,
 };
 
-/** Codec configuration sampling freqency */
+/** Codec configuration sampling frequency */
 enum bt_audio_codec_cfg_freq {
 	/** 8 Khz codec sampling frequency */
 	BT_AUDIO_CODEC_CFG_FREQ_8KHZ = 0x01,

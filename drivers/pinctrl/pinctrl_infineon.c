@@ -17,6 +17,31 @@
 #define GPIO_PORT_OR_NULL(node_id)                                                                 \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), ((GPIO_PRT_Type *)DT_REG_ADDR(node_id)), (NULL))
 
+/* On PSE84, the SMIF flash data/clock pins are routed through dedicated
+ * GPIO ports inside the SMIF blocks rather than regular IOSS GPIO ports.
+ * PDL's Cy_GPIO_Pin_*FastInit detects these base
+ * addresses (CY_GPIO_IS_SMIF_GPIO) and dispatches HSIOM/CFG writes to the
+ * SMIF GPIO sub-block, so they can be driven by the standard pinctrl
+ * path.
+ *
+ * Slots IFX_SMIF{0,1}_PORT{0,1,2} in gpio_ports[] hold the SMIF port
+ * bases on PSE84 and are absent on other SoCs (slots are unreferenced
+ * there).
+ */
+#if defined(CONFIG_SOC_SERIES_PSE84)
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+
+#define IFX_PINCTRL_SMIF_PORT_ENTRIES                                                          \
+	[IFX_SMIF0_PORT0] = (GPIO_PRT_Type *)SMIF_INST0_PRT0,                                  \
+	[IFX_SMIF0_PORT1] = (GPIO_PRT_Type *)SMIF_INST0_PRT1,                                  \
+	[IFX_SMIF0_PORT2] = (GPIO_PRT_Type *)SMIF_INST0_PRT2,                                  \
+	[IFX_SMIF1_PORT0] = (GPIO_PRT_Type *)SMIF_INST1_PRT0,                                  \
+	[IFX_SMIF1_PORT1] = (GPIO_PRT_Type *)SMIF_INST1_PRT1,                                  \
+	[IFX_SMIF1_PORT2] = (GPIO_PRT_Type *)SMIF_INST1_PRT2,
+#else
+#define IFX_PINCTRL_SMIF_PORT_ENTRIES
+#endif
+
 /* @brief Array containing pointers to each GPIO port.
  *
  * Entries will be NULL if the GPIO port is not enabled.
@@ -32,7 +57,9 @@ static GPIO_PRT_Type *const gpio_ports[] = {
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt14)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt15)),
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt16)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt17)),
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt18)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt19)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt20)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt21))};
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt20)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt21)),
+	IFX_PINCTRL_SMIF_PORT_ENTRIES
+};
 
 /* @brief This function returns gpio drive mode, according to.
  * bias and drive mode params defined in pinctrl node.

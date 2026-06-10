@@ -188,7 +188,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 35>;
 			divider = <6>;
-			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
+			bosch,mram-cfg = <0x0 28 8 6 0 0 1 1>;
 			status = "disabled";
 		};
 
@@ -200,7 +200,7 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 37>;
 			divider = <6>;
-			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
+			bosch,mram-cfg = <0x0 28 8 6 0 0 1 1>;
 			status = "disabled";
 		};
 

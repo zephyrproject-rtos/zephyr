@@ -18,6 +18,10 @@
 
 LOG_MODULE_REGISTER(flash_mcux_xspi);
 
+#ifdef CONFIG_FLASH_MCUX_XSPI_WRITE_BUFFER
+static uint8_t flash_xspi_write_buf[SPI_NOR_PAGE_SIZE];
+#endif
+
 #define FLASH_MCUX_XSPI_LUT_ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0][0]))
 
 #define FLASH_BUSY_STATUS_OFFSET 0
@@ -245,13 +249,24 @@ static int flash_mcux_xspi_write(const struct device *dev, off_t offset, const v
 	uint32_t key = 0;
 	int ret = 0;
 
+#if !defined(CONFIG_FLASH_MCUX_XSPI_WRITE_BUFFER)
+	/* Without write buffer, offset and len must be 4-byte aligned.
+	 * XSPI IP TX FIFO only transfers full 32-bit words, and a
+	 * non-4-aligned offset causes the page boundary split to
+	 * produce non-4-aligned chunk sizes.
+	 */
+	if ((len & 3U) || (offset & 3U)) {
+		return -EINVAL;
+	}
+#endif
+
 	if (memc_xspi_is_running_xip(xspi_dev)) {
 		key = irq_lock();
 		memc_xspi_wait_bus_idle(xspi_dev);
 	}
 
 	while (len > 0) {
-		write_size = MIN(len, SPI_NOR_PAGE_SIZE);
+		write_size = MIN(len, SPI_NOR_PAGE_SIZE - (offset % SPI_NOR_PAGE_SIZE));
 
 		ret = flash_mcux_xspi_write_enable(dev, 0, true);
 		if (ret < 0) {
@@ -262,8 +277,25 @@ static int flash_mcux_xspi_write(const struct device *dev, off_t offset, const v
 		flashXfer.cmdType = kXSPI_Write;
 		flashXfer.seqIndex = FLASH_CMD_PAGEPROGRAM_OCTAL;
 		flashXfer.targetGroup = kXSPI_TargetGroup0;
+#ifdef CONFIG_FLASH_MCUX_XSPI_WRITE_BUFFER
+		/*
+		 * Copy to RAM buffer to prevent faults when source
+		 * data resides in flash, and pad to 4-byte boundary
+		 * because XSPI IP TX FIFO only transfers full words.
+		 */
+		size_t aligned_size = ROUND_UP(write_size, 4);
+
+		memcpy(flash_xspi_write_buf, p_data, write_size);
+		if (aligned_size != write_size) {
+			memset(flash_xspi_write_buf + write_size, 0xFF,
+			       aligned_size - write_size);
+		}
+		flashXfer.data = (uint32_t *)flash_xspi_write_buf;
+		flashXfer.dataSize = aligned_size;
+#else
 		flashXfer.data = (uint32_t *)p_data;
 		flashXfer.dataSize = write_size;
+#endif
 		flashXfer.lockArbitration = false;
 
 		ret = memc_mcux_xspi_transfer(xspi_dev, &flashXfer);
@@ -540,7 +572,7 @@ static DEVICE_API(flash, flash_mcux_xspi_api) = {
 		.xspi_dev = DEVICE_DT_GET(DT_INST_BUS(n)),	\
 		.dev_name = DT_INST_PROP(n, device_name),	\
 		.flash_param = {	\
-				.write_block_size = 1,	\
+				.write_block_size = DT_INST_PROP(n, write_block_size),	\
 				.erase_value = 0xFF,	\
 				.caps = {	\
 						.no_explicit_erase = false,	\

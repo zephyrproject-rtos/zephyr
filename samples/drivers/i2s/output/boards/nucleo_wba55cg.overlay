@@ -25,6 +25,10 @@
 	status = "okay";
 };
 
+&sai1 {
+	status = "okay";
+};
+
 /* SAI MCLK conflicts with SPI SCK */
 /* SAI FS conflicts with LPUART TX */
 &sai1_b {

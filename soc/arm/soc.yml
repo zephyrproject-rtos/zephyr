@@ -34,6 +34,7 @@ family:
     - name: v8a
     - name: v9a
     - name: a320
+    - name: v8a_aarch32
   - name: fvp_aemv8r
     socs:
     - name: fvp_aemv8r_aarch64

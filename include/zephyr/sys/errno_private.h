@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Internal accessor for the errno value.
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_ERRNO_PRIVATE_H_
 #define ZEPHYR_INCLUDE_SYS_ERRNO_PRIVATE_H_
 

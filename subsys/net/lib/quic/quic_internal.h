@@ -137,6 +137,12 @@ struct quic_sent_pkt_info {
 	/** True if loss detection queued this frame for retransmission */
 	bool retransmit_pending;
 
+	/** True if this packet is a DPLPMTUD probe. */
+	bool dplpmtud_probe;
+
+	/** UDP payload size targeted by this DPLPMTUD probe. */
+	uint16_t dplpmtud_probe_size;
+
 	/* Stream frame carried by this packet (for retransmission).
 	 * Only valid when has_stream_frame is true.
 	 * One STREAM frame per packet is assumed, which matches the
@@ -275,6 +281,10 @@ struct quic_token_validation {
 	uint8_t orig_dcid_len;
 };
 
+/* RFC 8899 DPLPMTUD for QUIC uses 1200-byte UDP payloads as the base size. */
+#define QUIC_DPLPMTUD_BASE_PLPMTU                1200U
+#define QUIC_DPLPMTUD_MAX_PROBE_RETRIES          3U
+
 /** A list of secure tags that TLS context should use. */
 struct sec_tag_list {
 	/** An array of secure tags referencing TLS credentials. */
@@ -313,7 +323,7 @@ struct quic_tls_context {
 		/** Select which credentials to use with TLS. */
 		struct sec_tag_list sec_tag_list;
 
-		/** 0-terminated list of allowed ciphersuites (mbedTLS format).
+		/** 0-terminated list of allowed ciphersuites (Mbed TLS format).
 		 * TODO: this is not used for anything yet
 		 */
 		int ciphersuites[CONFIG_QUIC_TLS_MAX_CIPHERSUITES + 1];
@@ -404,13 +414,13 @@ struct quic_tls_context {
 
 #if defined(CONFIG_MBEDTLS)
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
-	/** mbedTLS structure for CA chain. */
+	/** Mbed TLS structure for CA chain. */
 	mbedtls_x509_crt ca_chain;
 
-	/** mbedTLS structure for own certificate. */
+	/** Mbed TLS structure for own certificate. */
 	mbedtls_x509_crt own_cert;
 
-	/** mbedTLS structure for own private key. */
+	/** Mbed TLS structure for own private key. */
 	mbedtls_pk_context priv_key;
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 #endif /* CONFIG_MBEDTLS */
@@ -732,6 +742,7 @@ struct quic_endpoint {
 		uint64_t initial_max_streams_bidi;
 		uint64_t initial_max_streams_uni;
 		uint64_t max_idle_timeout;
+		uint16_t max_udp_payload_size;
 		uint64_t max_streams_bidi;
 		uint64_t max_streams_uni;
 		bool parsed;
@@ -822,6 +833,36 @@ struct quic_endpoint {
 		bool release_pending;
 	} recovery;
 
+	/** Serializes TX packet assembly on crypto.tx_buffer and tx_pn. */
+	struct k_mutex send_lock;
+
+	/** DPLPMTUD path state for this endpoint. */
+	struct {
+		/** Largest UDP payload size confirmed by ACK. */
+		uint16_t validated_payload_size;
+
+		/** Local receive/transmit ceiling derived from socket/interface MTU. */
+		uint16_t local_max_payload_size;
+
+		/** Binary-search lower bound for the next probe. */
+		uint16_t search_low;
+
+		/** Binary-search upper bound for the next probe. */
+		uint16_t search_high;
+
+		/** Current in-flight or pending probe size. */
+		uint16_t probe_size;
+
+		/** Number of probe transmissions attempted at probe_size. */
+		uint8_t probe_attempts;
+
+		/** A probe of probe_size is currently in flight. */
+		bool probe_in_flight;
+
+		/** The endpoint should send a new or repeated probe. */
+		bool probe_pending;
+	} dplpmtud;
+
 	/** Max TX payload size for this endpoint, based on path MTU discovery.
 	 * Initialized to a default value and updated based on peer's
 	 * transport parameters and any Path MTU Discovery we perform.
@@ -869,6 +910,11 @@ struct quic_stream_tx_buffer {
 	uint8_t  data[CONFIG_QUIC_STREAM_TX_BUFFER_SIZE];
 	uint64_t base_offset; /* stream offset of data[0] */
 	size_t   len;         /* bytes of unACKed data currently stored */
+};
+
+struct quic_stream_tx_ack_segment {
+	uint64_t offset;
+	uint32_t len;
 };
 
 struct quic_stream_state {
@@ -925,6 +971,10 @@ __net_socket struct quic_stream {
 	/** TX flow control, highest contiguously ACKed stream offset */
 	uint64_t bytes_acked;
 
+	/** ACKed TX ranges waiting for earlier gaps to be ACKed too. */
+	struct quic_stream_tx_ack_segment acked_ooo[CONFIG_QUIC_STREAM_OOO_SLOTS];
+	uint8_t acked_ooo_count;
+
 	/** TX flow control, remote_max_data when STREAM_DATA_BLOCKED was last sent */
 	uint64_t blocked_sent;
 
@@ -970,6 +1020,9 @@ __net_socket struct quic_stream {
 		/** Mutex used by condition variable */
 		struct k_mutex data_available;
 	} cond;
+
+	/** Protects tx_buf, bytes_acked, and acked_ooo state. */
+	struct k_mutex tx_lock;
 
 	/** Receive buffer */
 	struct quic_stream_rx_buffer rx_buf;
@@ -1244,7 +1297,23 @@ void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 				  enum quic_secret_level level,
 				  uint64_t pkt_num,
 				  size_t sent_bytes,
-				  bool ack_eliciting);
+				  bool ack_eliciting,
+				  bool dplpmtud_probe,
+				  uint16_t dplpmtud_probe_size);
+void quic_dplpmtud_refresh_state(struct quic_endpoint *ep);
+void quic_dplpmtud_on_probe_acked(struct quic_endpoint *ep, uint16_t probe_size);
+void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep, uint16_t probe_size);
+/**
+ * Advance the stream TX ACK frontier and compact @a tx_buf.
+ *
+ * Takes @a stream->tx_lock internally. Unit tests may call this directly.
+ * Test setup that touches @a tx_buf, @a bytes_acked, or @a acked_ooo must
+ * call k_mutex_init() on @a tx_lock, and must hold @a tx_lock when mutating
+ * those fields outside this helper and the normal send path.
+ */
+void quic_stream_advance_tx_acked_for_stream(struct quic_stream *stream,
+					     uint64_t acked_start,
+					     uint64_t acked_end);
 int handle_crypto_frame(struct quic_endpoint *ep,
 			 enum quic_secret_level level,
 			 const uint8_t *data,

@@ -14,6 +14,7 @@
 
 #include "adc_esp32.h"
 
+#include <zephyr/cache.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32_dma, CONFIG_ADC_LOG_LEVEL);
 
@@ -432,6 +433,7 @@ int adc_esp32_dma_read(const struct device *dev, const struct adc_sequence *seq)
 		return err;
 	}
 
+	sys_cache_data_flush_and_invd_range(data->dma_buffer, ADC_DMA_BUFFER_SIZE);
 	adc_esp32_fill_seq_buffer(seq->buffer, data->dma_buffer, number_of_adc_samples);
 
 	return 0;

@@ -8,7 +8,33 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_USBC_PD_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_USBC_PD_H_
 
-/* Power delivery Power Data Object definitions */
+/**
+ * @file
+ * @brief USB Power Delivery Power Data Object (PDO) definitions
+ * @ingroup usb_power_delivery
+ */
+
+/**
+ * @defgroup usb_power_delivery_pdo USB Power Delivery Power Data Objects
+ * @ingroup usb_power_delivery
+ *
+ * @brief Macros for building USB Power Delivery Power Data Objects (PDOs)
+ *
+ * Helper macros used to build the 32-bit Power Data Objects (PDOs) exchanged during USB Power
+ * Delivery Source/Sink capability negotiation, as defined by the USB Power Delivery specification.
+ * They are primarily intended to be used from devicetree to describe the capabilities of a USB-C
+ * port, for example:
+ *
+ * @code{.dts}
+ *     source-pdos = <PDO_FIXED(5000, 100, PDO_FIXED_DUAL_ROLE)>;
+ * @endcode
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
+/* Power Delivery Power Data Object type field */
 #define PDO_TYPE_FIXED		0
 #define PDO_TYPE_BATT		1
 #define PDO_TYPE_VAR		2
@@ -23,24 +49,44 @@
 #define PDO_CURR_MASK		0x3ff
 #define PDO_PWR_MASK		0x3ff
 
-#define PDO_FIXED_DUAL_ROLE	(1 << 29) /* Power role swap supported */
-#define PDO_FIXED_SUSPEND	(1 << 28) /* USB Suspend supported (Source) */
-#define PDO_FIXED_HIGHER_CAP	(1 << 28) /* Requires more than vSafe5V (Sink) */
-#define PDO_FIXED_EXTPOWER	(1 << 27) /* Externally powered */
-#define PDO_FIXED_USB_COMM	(1 << 26) /* USB communications capable */
-#define PDO_FIXED_DATA_SWAP	(1 << 25) /* Data role swap supported */
+/** @endcond */
+
+/**
+ * @name Fixed Supply PDO capability flags
+ * @{
+ */
+#define PDO_FIXED_DUAL_ROLE	(1 << 29) /**< Power role swap supported */
+#define PDO_FIXED_SUSPEND	(1 << 28) /**< USB Suspend supported (Source) */
+#define PDO_FIXED_HIGHER_CAP	(1 << 28) /**< Requires more than vSafe5V (Sink) */
+#define PDO_FIXED_EXTPOWER	(1 << 27) /**< Externally powered */
+#define PDO_FIXED_USB_COMM	(1 << 26) /**< USB communications capable */
+#define PDO_FIXED_DATA_SWAP	(1 << 25) /**< Data role swap supported */
+/** @} */
+
+/** @cond INTERNAL_HIDDEN */
 #define PDO_FIXED_VOLT_SHIFT	10	/* 50mV units */
 #define PDO_FIXED_CURR_SHIFT	0	/* 10mA units */
 
 #define PDO_FIXED_VOLT(mv)	((((mv) / 50) & PDO_VOLT_MASK) << PDO_FIXED_VOLT_SHIFT)
 #define PDO_FIXED_CURR(ma)	((((ma) / 10) & PDO_CURR_MASK) << PDO_FIXED_CURR_SHIFT)
+/** @endcond */
 
+/**
+ * @brief Build a Fixed Supply PDO
+ *
+ * @param mv Output voltage in millivolts
+ * @param ma Maximum output current in milliamps
+ * @param flags Bitwise OR of the @c PDO_FIXED_* capability flags
+ * @return 32-bit Fixed Supply PDO
+ */
 #define PDO_FIXED(mv, ma, flags)			\
 	(PDO_TYPE(PDO_TYPE_FIXED) | (flags) |		\
 	 PDO_FIXED_VOLT(mv) | PDO_FIXED_CURR(ma))
 
-#define VSAFE5V 5000 /* mv units */
+/** vSafe5V, the default 5V supply, in millivolts */
+#define VSAFE5V 5000
 
+/** @cond INTERNAL_HIDDEN */
 #define PDO_BATT_MAX_VOLT_SHIFT	20	/* 50mV units */
 #define PDO_BATT_MIN_VOLT_SHIFT	10	/* 50mV units */
 #define PDO_BATT_MAX_PWR_SHIFT	0	/* 250mW units */
@@ -48,11 +94,21 @@
 #define PDO_BATT_MIN_VOLT(mv) ((((mv) / 50) & PDO_VOLT_MASK) << PDO_BATT_MIN_VOLT_SHIFT)
 #define PDO_BATT_MAX_VOLT(mv) ((((mv) / 50) & PDO_VOLT_MASK) << PDO_BATT_MAX_VOLT_SHIFT)
 #define PDO_BATT_MAX_POWER(mw) ((((mw) / 250) & PDO_PWR_MASK) << PDO_BATT_MAX_PWR_SHIFT)
+/** @endcond */
 
+/**
+ * @brief Build a Battery Supply PDO
+ *
+ * @param min_mv Minimum voltage in millivolts
+ * @param max_mv Maximum voltage in millivolts
+ * @param max_mw Maximum power in milliwatts
+ * @return 32-bit Battery Supply PDO
+ */
 #define PDO_BATT(min_mv, max_mv, max_mw)			\
 	(PDO_TYPE(PDO_TYPE_BATT) | PDO_BATT_MIN_VOLT(min_mv) |	\
 	 PDO_BATT_MAX_VOLT(max_mv) | PDO_BATT_MAX_POWER(max_mw))
 
+/** @cond INTERNAL_HIDDEN */
 #define PDO_VAR_MAX_VOLT_SHIFT	20	/* 50mV units */
 #define PDO_VAR_MIN_VOLT_SHIFT	10	/* 50mV units */
 #define PDO_VAR_MAX_CURR_SHIFT	0	/* 10mA units */
@@ -60,11 +116,21 @@
 #define PDO_VAR_MIN_VOLT(mv) ((((mv) / 50) & PDO_VOLT_MASK) << PDO_VAR_MIN_VOLT_SHIFT)
 #define PDO_VAR_MAX_VOLT(mv) ((((mv) / 50) & PDO_VOLT_MASK) << PDO_VAR_MAX_VOLT_SHIFT)
 #define PDO_VAR_MAX_CURR(ma) ((((ma) / 10) & PDO_CURR_MASK) << PDO_VAR_MAX_CURR_SHIFT)
+/** @endcond */
 
+/**
+ * @brief Build a Variable Supply (non-Battery) PDO
+ *
+ * @param min_mv Minimum voltage in millivolts
+ * @param max_mv Maximum voltage in millivolts
+ * @param max_ma Maximum current in milliamps
+ * @return 32-bit Variable Supply PDO
+ */
 #define PDO_VAR(min_mv, max_mv, max_ma)				\
 	(PDO_TYPE(PDO_TYPE_VAR) | PDO_VAR_MIN_VOLT(min_mv) |	\
 	 PDO_VAR_MAX_VOLT(max_mv) | PDO_VAR_MAX_CURR(max_ma))
 
+/** @cond INTERNAL_HIDDEN */
 #define APDO_TYPE_PPS		0
 
 #define PDO_APDO_TYPE_SHIFT	28	/* Only valid value currently is 0x0 - PPS */
@@ -85,10 +151,23 @@
 	((((mv) / 100) & PDO_PPS_APDO_VOLT_MASK) << PDO_PPS_APDO_MAX_VOLT_SHIFT)
 #define PDO_PPS_APDO_MAX_CURR(ma)	\
 	((((ma) / 50) & PDO_PPS_APDO_CURR_MASK) << PDO_PPS_APDO_MAX_CURR_SHIFT)
+/** @endcond */
 
+/**
+ * @brief Build a Programmable Power Supply (PPS) Augmented PDO
+ *
+ * @param min_mv Minimum voltage in millivolts
+ * @param max_mv Maximum voltage in millivolts
+ * @param max_ma Maximum current in milliamps
+ * @return 32-bit PPS APDO
+ */
 #define PDO_PPS_APDO(min_mv, max_mv, max_ma)					\
 	(PDO_TYPE(PDO_TYPE_APDO) | PDO_APDO_TYPE(APDO_TYPE_PPS) |		\
 	 PDO_PPS_APDO_MIN_VOLT(min_mv) | PDO_PPS_APDO_MAX_VOLT(max_mv) |	\
 	 PDO_PPS_APDO_MAX_CURR(max_ma))
+
+/**
+ * @}
+ */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_USBC_PD_H_ */

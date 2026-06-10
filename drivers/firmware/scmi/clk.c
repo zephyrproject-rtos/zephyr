@@ -54,6 +54,19 @@ struct scmi_clock_get_permissions_reply {
 	uint32_t permissions;
 };
 
+struct scmi_clock_attributes_v2 {
+	int32_t status;
+	uint32_t attributes;
+	uint8_t clock_name[SCMI_CLK_NAME_LEN];
+} __packed;
+
+struct scmi_clock_attributes_v3 {
+	int32_t status;
+	uint32_t attributes;
+	uint8_t clock_name[SCMI_CLK_NAME_LEN];
+	uint32_t clock_enable_delay;
+} __packed;
+
 int scmi_clock_rate_get(struct scmi_protocol *proto,
 			uint32_t clk_id, uint32_t *rate)
 {
@@ -245,12 +258,72 @@ int scmi_clock_config_set(struct scmi_protocol *proto,
 	return scmi_status_to_errno(status);
 }
 
-int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
-			  struct scmi_clock_attributes *attributes)
+static int scmi_clock_attributes_v2(struct scmi_protocol *proto, uint32_t clk_id,
+				    struct scmi_clock_attributes *attributes)
 {
+	struct scmi_clock_attributes_v2 v2;
 	struct scmi_message msg, reply;
 	int ret;
 
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_ATTRIBUTES, SCMI_COMMAND, proto->id, 0x0);
+	msg.len = sizeof(clk_id);
+	msg.content = &clk_id;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(v2);
+	reply.content = &v2;
+
+	ret = scmi_send_message(proto, &msg, &reply, false);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (v2.status != SCMI_SUCCESS) {
+		return scmi_status_to_errno(v2.status);
+	}
+	/* clock_enable_delay only available in protocol v3.0+ */
+	attributes->clock_enable_delay = 0;
+	attributes->attributes = v2.attributes;
+	memcpy(attributes->clock_name, v2.clock_name, SCMI_CLK_NAME_LEN);
+
+	return 0;
+}
+
+static int scmi_clock_attributes_v3(struct scmi_protocol *proto, uint32_t clk_id,
+				    struct scmi_clock_attributes *attributes)
+{
+	struct scmi_clock_attributes_v3 v3;
+	struct scmi_message msg, reply;
+	int ret;
+
+	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_ATTRIBUTES,
+					SCMI_COMMAND, proto->id, 0x0);
+	msg.len = sizeof(clk_id);
+	msg.content = &clk_id;
+
+	reply.hdr = msg.hdr;
+	reply.len = sizeof(v3);
+	reply.content = &v3;
+
+	ret = scmi_send_message(proto, &msg, &reply, false);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (v3.status != SCMI_SUCCESS) {
+		return scmi_status_to_errno(v3.status);
+	}
+
+	attributes->attributes = v3.attributes;
+	attributes->clock_enable_delay = v3.clock_enable_delay;
+	memcpy(attributes->clock_name, v3.clock_name, SCMI_CLK_NAME_LEN);
+
+	return 0;
+}
+
+int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
+			  struct scmi_clock_attributes *attributes)
+{
 	if (!proto || !attributes) {
 		return -EINVAL;
 	}
@@ -259,21 +332,11 @@ int scmi_clock_attributes(struct scmi_protocol *proto, uint32_t clk_id,
 		return -EINVAL;
 	}
 
-	msg.hdr = SCMI_MESSAGE_HDR_MAKE(CLOCK_ATTRIBUTES,
-					SCMI_COMMAND, proto->id, 0x0);
-	msg.len = sizeof(clk_id);
-	msg.content = &clk_id;
-
-	reply.hdr = msg.hdr;
-	reply.len = sizeof(*attributes);
-	reply.content = attributes;
-
-	ret = scmi_send_message(proto, &msg, &reply, false);
-	if (ret < 0) {
-		return ret;
+	if (SCMI_PROTO_VER_MAJOR(proto->version) >= 3) {
+		return scmi_clock_attributes_v3(proto, clk_id, attributes);
+	} else {
+		return scmi_clock_attributes_v2(proto, clk_id, attributes);
 	}
-
-	return scmi_status_to_errno(attributes->status);
 }
 
 int scmi_clock_get_permissions(struct scmi_protocol *proto, uint32_t clk_id,

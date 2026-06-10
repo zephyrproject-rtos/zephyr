@@ -27,4 +27,6 @@ config MAC_BB_PD
 	  by a small amount but increases RAM use by approximately 4 KB(Wi-Fi only),
 	  2 KB(Bluetooth only) or 5.3 KB(Wi-Fi + Bluetooth).
 
+rsource "Kconfig.caps"
+
 endif # SOC_SERIES_ESP32C2

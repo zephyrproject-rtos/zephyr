@@ -185,8 +185,7 @@ static void l2cap_allowlist_remove(struct bt_conn *conn, uint8_t reason)
 
 	for (i = 0; i < ARRAY_SIZE(l2cap_allowlist); i++) {
 		if (l2cap_allowlist[i] == conn) {
-			bt_conn_unref(l2cap_allowlist[i]);
-			l2cap_allowlist[i] = NULL;
+			bt_conn_drop(&l2cap_allowlist[i]);
 		}
 	}
 }

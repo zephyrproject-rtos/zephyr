@@ -4,5 +4,5 @@ common:
     - drivers
     - mbox
 tests:
-  drivers.build_all.mbox:
+  drivers.mbox.build:
     platform_allow: rpi_pico2/rp2350a/m33

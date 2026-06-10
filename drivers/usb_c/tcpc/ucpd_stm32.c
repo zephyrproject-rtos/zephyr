@@ -376,9 +376,9 @@ static void dead_battery(const struct device *dev, bool en)
 	update_stm32g0x_cc_line(config->ucpd_port);
 #else
 	if (en) {
-		stm32_reg_clear_bits(&PWR->CR3, PWR_CR3_UCPD_DBDIS);
+		LL_PWR_EnableUCPDDeadBattery();
 	} else {
-		stm32_reg_set_bits(&PWR->CR3, PWR_CR3_UCPD_DBDIS);
+		LL_PWR_DisableUCPDDeadBattery();
 	}
 #endif
 	data->dead_battery_active = en;
@@ -1310,6 +1310,7 @@ static void ucpd_isr_init(const struct device *dev)
  */
 static int ucpd_init(const struct device *dev)
 {
+	const struct device *const rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 	const struct tcpc_config *const config = dev->config;
 	struct tcpc_data *data = dev->data;
 	uint32_t cfg1;
@@ -1322,48 +1323,48 @@ static int ucpd_init(const struct device *dev)
 		return ret;
 	}
 
-	/*
-	 * The UCPD port is disabled in the LL_UCPD_Init function
-	 *
-	 * NOTE: For proper Power Management operation, this function
-	 *       should not be used because it circumvents the zephyr
-	 *	 clock API. Instead, DTS clock settings and the zephyr
-	 *	 clock API should be used to enable clocks.
-	 */
-	ret = LL_UCPD_Init(config->ucpd_port, (LL_UCPD_InitTypeDef *)&config->ucpd_params);
-
-	if (ret == SUCCESS) {
-		/* Init Rp to USB */
-		data->rp = TC_RP_USB;
-
-		/*
-		 * Set RXORDSETEN field to control which types of ordered sets the PD
-		 * receiver must receive.
-		 */
-		cfg1 = stm32_reg_read(&config->ucpd_port->CFG1);
-		cfg1 |= LL_UCPD_ORDERSET_SOP | LL_UCPD_ORDERSET_SOP1 | LL_UCPD_ORDERSET_SOP2 |
-			LL_UCPD_ORDERSET_HARDRST;
-		stm32_reg_write(&config->ucpd_port->CFG1, cfg1);
-
-		/* Enable UCPD port */
-		LL_UCPD_Enable(config->ucpd_port);
-
-		/* Enable Dead Battery Support */
-		if (config->ucpd_dead_battery) {
-			dead_battery(dev, true);
-		} else {
-			/*
-			 * Some devices have dead battery enabled by default
-			 * after power up, so disable it
-			 */
-			dead_battery(dev, false);
-		}
-
-		/* Initialize the isr */
-		ucpd_isr_init(dev);
-	} else {
-		return -EIO;
+	ret = clock_control_on(rcc, (clock_control_subsys_t *)&config->pclken);
+	if (ret != 0) {
+		LOG_ERR("UCPD clock enable failed (%d)", ret);
+		return ret;
 	}
+
+	/* Disable the UCPD port before configuration */
+	LL_UCPD_Disable(config->ucpd_port);
+	LL_UCPD_SetPSCClk(config->ucpd_port,
+		config->ucpd_clk_prescaler << UCPD_CFG1_PSC_UCPDCLK_Pos);
+	LL_UCPD_SetTransWin(config->ucpd_port, config->transition_window);
+	LL_UCPD_SetIfrGap(config->ucpd_port, config->interframe_gap);
+	LL_UCPD_SetHbitClockDiv(config->ucpd_port, config->halfbit_clock_div);
+
+	/* Init Rp to USB */
+	data->rp = TC_RP_USB;
+
+	/*
+	 * Set RXORDSETEN field to control which types of ordered sets the PD
+	 * receiver must receive.
+	 */
+	cfg1 = stm32_reg_read(&config->ucpd_port->CFG1);
+	cfg1 |= LL_UCPD_ORDERSET_SOP | LL_UCPD_ORDERSET_SOP1 | LL_UCPD_ORDERSET_SOP2 |
+		LL_UCPD_ORDERSET_HARDRST;
+	stm32_reg_write(&config->ucpd_port->CFG1, cfg1);
+
+	/* Enable UCPD port */
+	LL_UCPD_Enable(config->ucpd_port);
+
+	/* Enable Dead Battery Support */
+	if (config->ucpd_dead_battery) {
+		dead_battery(dev, true);
+	} else {
+		/*
+		 * Some devices have dead battery enabled by default
+		 * after power up, so disable it
+		 */
+		dead_battery(dev, false);
+	}
+
+	/* Initialize the isr */
+	ucpd_isr_init(dev);
 
 	return 0;
 }
@@ -1405,18 +1406,17 @@ static void config_tcpc_irq(void)
 	}
 }
 
-BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 0, "No compatible STM32 TCPC instance found");
-
 #define TCPC_DRIVER_INIT(inst)                                                                     \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	static struct tcpc_data drv_data_##inst;                                                   \
 	static const struct tcpc_config drv_config_##inst = {                                      \
 		.ucpd_pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                 \
 		.ucpd_port = (UCPD_TypeDef *)DT_INST_REG_ADDR(inst),                               \
-		.ucpd_params.psc_ucpdclk = ilog2(DT_INST_PROP(inst, psc_ucpdclk)),                 \
-		.ucpd_params.transwin = DT_INST_PROP(inst, transwin) - 1,                          \
-		.ucpd_params.IfrGap = DT_INST_PROP(inst, ifrgap) - 1,                              \
-		.ucpd_params.HbitClockDiv = DT_INST_PROP(inst, hbitclkdiv) - 1,                    \
+		.pclken = STM32_DT_INST_CLOCKS(inst),                                              \
+		.ucpd_clk_prescaler = ilog2(DT_INST_PROP(inst, psc_ucpdclk)),                      \
+		.transition_window = DT_INST_PROP(inst, transwin) - 1,                             \
+		.interframe_gap = DT_INST_PROP(inst, ifrgap) - 1,                                  \
+		.halfbit_clock_div = DT_INST_PROP(inst, hbitclkdiv) - 1,                           \
 		.ucpd_dead_battery = DT_INST_PROP(inst, dead_battery),                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, &ucpd_init, NULL, &drv_data_##inst, &drv_config_##inst,        \

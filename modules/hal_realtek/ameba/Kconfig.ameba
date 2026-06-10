@@ -3,6 +3,7 @@
 
 config REALTEK_AMEBA_OS_WRAPPER
 	bool "Realtek Ameba OS Wrapper Layer"
+	default y
 	depends on SOC_FAMILY_REALTEK_AMEBA
 	help
 	  Enable the Realtek Ameba OS wrapper abstraction layer.

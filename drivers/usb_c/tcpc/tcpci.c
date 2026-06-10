@@ -504,14 +504,14 @@ int tcpci_tcpm_transmit_data(const struct i2c_dt_spec *bus, struct pd_msg *msg,
 	int cnt = 4 * msg->header.number_of_data_objects;
 
 	/* If not SOP* transmission, just write to the transmit register */
-	if (msg->header.message_type >= NUM_SOP_STAR_TYPES) {
+	if (msg->type >= NUM_SOP_STAR_TYPES) {
 		/*
 		 * Per TCPCI spec, do not specify retry (although the TCPC
 		 * should ignore retry field for these 3 types).
 		 */
 		return tcpci_write_reg8(
 			bus, TCPC_REG_TRANSMIT,
-			TCPC_REG_TRANSMIT_SET_WITHOUT_RETRY(msg->header.message_type));
+			TCPC_REG_TRANSMIT_SET_WITHOUT_RETRY(msg->type));
 	}
 
 	/* Avoid missing messages without data objects (e.g., PD control msg). */

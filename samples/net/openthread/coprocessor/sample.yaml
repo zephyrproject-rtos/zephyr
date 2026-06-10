@@ -28,7 +28,7 @@ tests:
     extra_args:
       - EXTRA_CONF_FILE=overlay-usb-nrf-br.conf
       - DTC_OVERLAY_FILE="usb.overlay"
-  sample.openthread.coprocessor.rcp:
+  sample.net.openthread.coprocessor.rcp:
     build_only: true
     platform_allow:
       - nrf52840dk/nrf52840

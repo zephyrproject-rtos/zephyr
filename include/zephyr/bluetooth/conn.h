@@ -27,6 +27,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
@@ -1009,11 +1010,41 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn);
 
 /** @brief Decrement a connection's reference count.
  *
- *  Decrement the reference count of a connection object.
+ *  Decrement the reference count of a connection object. Unless the pointer variable is
+ *  immediately going out of scope, it's recommended to use @ref bt_conn_drop instead, which
+ *  will also set the pointer to NULL to prevent accidental reuse.
  *
  *  @param conn Connection object.
  */
 void bt_conn_unref(struct bt_conn *conn);
+
+/** @brief Take ownership of a connection pointer, setting the original to NULL.
+ *
+ *  This performs an atomic exchange on @p orig, setting it to NULL and
+ *  returning the previous value. The reference count is not modified; the
+ *  reference held by @p orig is transferred to the caller, who must
+ *  eventually release it with bt_conn_unref().
+ *
+ *  @param orig Pointer to the connection pointer to transfer (must not be
+ *              NULL). On return, @p *orig is set to NULL.
+ *
+ *  @return The connection originally pointed to by @p orig, which may be
+ *          NULL.
+ */
+static inline struct bt_conn *__must_check bt_conn_take(struct bt_conn **orig)
+{
+	return (struct bt_conn *)atomic_ptr_clear((atomic_ptr_t *)orig);
+}
+
+/** @brief Drop a connection reference and clear the pointer.
+ *
+ *  This performs an atomic exchange on @p orig, setting it to NULL and
+ *  unreferencing the previous value if it was not NULL.
+ *
+ *  @param orig Pointer to the connection pointer to drop (must not be NULL).
+ *              On return, @p *orig is set to NULL.
+ */
+void bt_conn_drop(struct bt_conn **orig);
 
 /** @brief Iterate through all bt_conn objects.
  *
@@ -1285,10 +1316,20 @@ struct bt_conn_le_tx_power {
 	/** Input: 1M, 2M, Coded S2 or Coded S8 */
 	uint8_t phy;
 
-	/** Output: current transmit power level */
+	/** @brief Output: current transmit power level in dBm.
+	 *
+	 *  Range depends on which HCI command is used:
+	 *  - -30 to +20 when @p phy is 0 (HCI_Read_Transmit_Power_Level)
+	 *  - -127 to +20 when @p phy is non-zero (HCI_LE_Enhanced_Read_Transmit_Power_Level)
+	 */
 	int8_t current_level;
 
-	/** Output: maximum transmit power level */
+	/** @brief Output: maximum transmit power level in dBm.
+	 *
+	 *  Range depends on which HCI command is used:
+	 *  - -30 to +20 when @p phy is 0 (HCI_Read_Transmit_Power_Level)
+	 *  - -127 to +20 when @p phy is non-zero (HCI_LE_Enhanced_Read_Transmit_Power_Level)
+	 */
 	int8_t max_level;
 };
 
@@ -1716,8 +1757,8 @@ int bt_conn_le_phy_update(struct bt_conn *conn,
  *  Use @ref BT_GAP_LE_PHY_NONE to indicate no preference.
  *  For possible PHY values see @ref bt_gap_le_phy.
  *
- *  @param pref_tx_phy  Preferred transmitter phy prarameters.
- *  @param pref_rx_phy  Preferred receiver phy prameters.
+ *  @param pref_tx_phy  Preferred transmitter phy parameters.
+ *  @param pref_rx_phy  Preferred receiver phy parameters.
  *
  *  @return Zero on success or (negative) error code on failure.
  */

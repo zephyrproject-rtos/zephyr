@@ -81,7 +81,7 @@ volatile struct boot_params arm_cpu_boot_params = {
 const uint32_t cpu_node_list[] = {
 	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))};
 
-/* cpu_map saves the maping of core id and mpid */
+/* cpu_map saves the mapping of core id and mpid */
 static uint32_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
 	[0 ... (CONFIG_MP_MAX_NUM_CPUS - 1)] = INV_MPID
 };

@@ -110,3 +110,16 @@ properties:
       two adjacent pixel drivers to each physical pixel. By setting this to 2,
       the driver will repeat each pixel. The default disables this functionality,
       as it only applies to very specific display models.
+
+  grayscale-enhancement-lg:
+    type: boolean
+    description: Enable low-value grayscale enhancement.
+
+  external-vsl:
+    type: boolean
+    description: Use external VSL.
+
+  grayscale-table:
+    type: uint8-array
+    description: 15 elements array defines gamma settings for each brightness levels.
+      8-bits wide, 0 to 180 dclks.

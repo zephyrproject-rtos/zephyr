@@ -2,5 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 name: rtt-tracing
+description: Enables SEGGER SystemView RTT support with the tracing subsystem.
 append:
   EXTRA_CONF_FILE: rtt-tracing.conf

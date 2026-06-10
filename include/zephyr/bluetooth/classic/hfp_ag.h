@@ -373,13 +373,13 @@ struct bt_hfp_ag_cb {
 	/** Audio connection request callback
 	 *
 	 *  If this callback is provided it will be called whenever the
-	 *  audio conenction request is triggered by HF.
+	 *  audio connection request is triggered by HF.
 	 *  When AT+BCC AT command received, it means the procedure of
 	 *  establishment of audio connection is triggered by HF.
 	 *  If the callback is provided by application, AG needs to
 	 *  start the codec connection procedure by calling
 	 *  function `bt_hfp_ag_audio_connect` in application layer.
-	 *  Or, the codec conenction procedure will be started with
+	 *  Or, the codec connection procedure will be started with
 	 *  default codec id `BT_HFP_AG_CODEC_CVSD`.
 	 *
 	 *  @param ag HFP AG object.
@@ -737,13 +737,13 @@ int bt_hfp_ag_set_operator(struct bt_hfp_ag *ag, uint8_t mode, char *name);
 
 /** @brief Create audio connection
  *
- *  Create audio conenction by HFP AG. There are two setups included,
+ *  Create audio connection by HFP AG. There are two setups included,
  *  Codec connection and audio connection.
  *  The codec connection will be established firstly if the codec
  *  negotiation are supported by both side. If the passed codec id
  *  is not same as the last codec connection, the codec connection
  *  procedure will be triggered.
- *  After the codec conenction is established, the audio conenction
+ *  After the codec connection is established, the audio connection
  *  will be started.
  *  The passed codec id could be one of BT_HFP_AG_CODEC_XXX. If the
  *  codec negotiation feature is supported by both side, the codec id

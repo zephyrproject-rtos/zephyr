@@ -3,7 +3,7 @@ sample:
     with Zephyr including a resource table.
   name: OpenAMP with resource table example integration
 tests:
-  sample.subsys.ipc.openamp_rs_table:
+  sample.ipc.openamp_rs_table:
     build_only: true
     platform_allow:
       - stm32mp157c_dk2

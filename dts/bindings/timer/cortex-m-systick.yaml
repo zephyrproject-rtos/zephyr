@@ -15,3 +15,25 @@ properties:
       SysTick Control and Status Register (CSR) selects the clock source.
       If this property is present, the external reference clock is selected.
       If absent, the processor/core clock is selected.
+
+  zephyr,min-timeout-cycles:
+    type: int
+    description: |
+      Minimum SysTick timeout, in SysTick cycles. This is the smallest value the
+      SysTick driver will program into the timer LOAD register. It determines the
+      kernel's minimum available timing granularity (resolution) in conjunction
+      with the clock frequency (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC).
+
+      When specified, the minimum timing granularity is
+      (<value> cycles / CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) seconds.
+      Otherwise, the default is MAX(1024, CYC_PER_TICK / 16) cycles, where
+      CYC_PER_TICK = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
+      CONFIG_SYS_CLOCK_TICKS_PER_SEC.
+
+      For example, if CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768 and
+      CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000, CYC_PER_TICK equals 32 cycles.
+      In this case, the default MIN_DELAY is MAX(1024, 32/16) = 1024 cycles,
+      which corresponds to ~31.25 ms. This might be too coarse for many use
+      cases. Setting this property to 32 (zephyr,min-timeout-cycles = <32>;)
+      results in a minimum timing granularity of (32 / 32768) seconds (~1 ms)
+      instead.

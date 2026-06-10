@@ -45,7 +45,7 @@ int scmi_pinctrl_settings_configure(struct scmi_pinctrl_settings *settings)
 
 	config_num = SCMI_PINCTRL_ATTRIBUTES_CONFIG_NUM(settings->attributes);
 
-	if (!config_num) {
+	if (config_num == 0U && SCMI_PINCTRL_ATTRIBUTES_FID_VALID(settings->attributes) == 0U) {
 		return -EINVAL;
 	}
 

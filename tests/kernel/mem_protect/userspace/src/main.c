@@ -9,7 +9,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/kernel_structs.h>
 #include <string.h>
 #include <stdlib.h>
 #include <zephyr/app_memory/app_memdomain.h>

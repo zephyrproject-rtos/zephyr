@@ -261,11 +261,9 @@ enum net_if_flag {
 	/** Interface is in promiscuous mode */
 	NET_IF_PROMISC,
 
-	/** Do not start the interface immediately after initialization.
+	/** Do not bring the interface immediately up after initialization.
 	 * This requires that either the device driver or some other entity
 	 * will need to manually take the interface up when needed.
-	 * For example for Ethernet this will happen when the driver calls
-	 * the net_eth_carrier_on() function.
 	 */
 	NET_IF_NO_AUTO_START,
 

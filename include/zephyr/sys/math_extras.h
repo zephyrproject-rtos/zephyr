@@ -5,6 +5,12 @@
  */
 
 /**
+ * @file
+ * @brief Extra arithmetic and bit-manipulation functions.
+ * @ingroup math_extras
+ */
+
+/**
  * @brief Extra arithmetic and bit manipulation functions.
  * @defgroup math_extras Math extras
  * @ingroup utilities

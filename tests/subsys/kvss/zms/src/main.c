@@ -23,6 +23,11 @@
 #define TEST_ZMS_AREA_DEV    DEVICE_DT_GET(DT_MTD_FROM_PARTITION(DT_NODELABEL(TEST_ZMS_AREA)))
 #define TEST_DATA_ID         1
 #define TEST_SECTOR_COUNT    5U
+#if defined(CONFIG_ZMS_LOOKUP_CACHE_MANUAL)
+#define TEST_ZMS_LOOKUP_CACHE_SIZE 64
+#elif defined(CONFIG_ZMS_LOOKUP_CACHE)
+#define TEST_ZMS_LOOKUP_CACHE_SIZE CONFIG_ZMS_LOOKUP_CACHE_SIZE
+#endif
 
 static const struct device *const flash_dev = TEST_ZMS_AREA_DEV;
 
@@ -888,8 +893,15 @@ static size_t num_matching_cache_entries(uint64_t addr, bool compare_sector_only
 {
 	size_t num = 0;
 	uint64_t mask = compare_sector_only ? ADDR_SECT_MASK : UINT64_MAX;
+	size_t cache_size;
 
-	for (int i = 0; i < CONFIG_ZMS_LOOKUP_CACHE_SIZE; i++) {
+#if defined(CONFIG_ZMS_LOOKUP_CACHE_MANUAL)
+	cache_size = fs->lookup_cache_size;
+#else
+	cache_size = TEST_ZMS_LOOKUP_CACHE_SIZE;
+#endif
+
+	for (size_t i = 0; i < cache_size; i++) {
 		if ((fs->lookup_cache[i] & mask) == addr) {
 			num++;
 		}
@@ -900,26 +912,49 @@ static size_t num_matching_cache_entries(uint64_t addr, bool compare_sector_only
 
 static size_t num_occupied_cache_entries(struct zms_fs *fs)
 {
-	return CONFIG_ZMS_LOOKUP_CACHE_SIZE -
+#if defined(CONFIG_ZMS_LOOKUP_CACHE_MANUAL)
+	return fs->lookup_cache_size -
 	       num_matching_cache_entries(ZMS_LOOKUP_CACHE_NO_ADDR, false, fs);
+#else
+	return TEST_ZMS_LOOKUP_CACHE_SIZE -
+	       num_matching_cache_entries(ZMS_LOOKUP_CACHE_NO_ADDR, false, fs);
+#endif
+}
+#endif
+
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+static int setup_lookup_cache(struct zms_fs *fs)
+{
+#if defined(CONFIG_ZMS_LOOKUP_CACHE_MANUAL)
+	static uint64_t cache_buffer[TEST_ZMS_LOOKUP_CACHE_SIZE];
+
+	return zms_set_lookup_cache(fs, cache_buffer, ARRAY_SIZE(cache_buffer));
+#else
+	return 0;
+#endif
 }
 #endif
 
 /*
- * Test that ZMS lookup cache is properly rebuilt on zms_mount(), or initialized
- * to ZMS_LOOKUP_CACHE_NO_ADDR if the store is empty.
+ * Test that manual lookup cache is properly initialized when a buffer is provided,
+ * updated after writes, and rebuilt on zms_mount() when the store is non-empty.
  */
-ZTEST_F(zms, test_zms_cache_init)
+ZTEST_F(zms, test_zms_manual_cache)
 {
-#ifdef CONFIG_ZMS_LOOKUP_CACHE
+#ifdef CONFIG_ZMS_LOOKUP_CACHE_MANUAL
 	int err;
 	size_t num;
 	uint64_t ate_addr;
 	uint8_t data = 0;
+	static uint64_t cache_buffer[TEST_ZMS_LOOKUP_CACHE_SIZE];
 
 	/* Test cache initialization when the store is empty */
 
 	fixture->fs.sector_count = 3;
+
+	err = zms_set_lookup_cache(&fixture->fs, cache_buffer, ARRAY_SIZE(cache_buffer));
+	zassert_true(err == 0, "zms_set_lookup_cache call failure: %d", err);
+
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
@@ -940,7 +975,91 @@ ZTEST_F(zms, test_zms_cache_init)
 
 	/* Test cache initialization when the store is non-empty */
 
-	memset(fixture->fs.lookup_cache, 0xAA, sizeof(fixture->fs.lookup_cache));
+	memset(fixture->fs.lookup_cache, 0xAA,
+	       TEST_ZMS_LOOKUP_CACHE_SIZE * sizeof(uint64_t));
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 1, "uninitialized cache after restart");
+
+	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
+	zassert_equal(num, 1, "invalid cache entry after restart");
+
+	err = zms_set_lookup_cache(&fixture->fs, cache_buffer, ARRAY_SIZE(cache_buffer));
+	zassert_equal(err, -EBUSY, "zms_set_lookup_cache should fail after mount: %d", err);
+#else
+	ztest_test_skip();
+#endif
+}
+
+/*
+ * Test that manual lookup cache is disabled when zms_set_lookup_cache() is not called.
+ * The cache pointer should remain NULL and operations should still work correctly.
+ */
+ZTEST_F(zms, test_zms_manual_cache_disabled)
+{
+#ifdef CONFIG_ZMS_LOOKUP_CACHE_MANUAL
+	int err;
+	uint8_t data = 0;
+
+	fixture->fs.sector_count = 3;
+	fixture->fs.lookup_cache = NULL;
+	fixture->fs.lookup_cache_size = 0;
+
+	/* Do not call zms_set_lookup_cache() - cache should be disabled */
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	err = zms_write(&fixture->fs, 1, &data, sizeof(data));
+	zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+
+	zassert_true(fixture->fs.lookup_cache == NULL, "cache should be disabled");
+#else
+	ztest_test_skip();
+#endif
+}
+
+/*
+ * Test that ZMS lookup cache is properly rebuilt on zms_mount(), or initialized
+ * to ZMS_LOOKUP_CACHE_NO_ADDR if the store is empty.
+ */
+ZTEST_F(zms, test_zms_cache_init)
+{
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+	int err;
+	size_t num;
+	uint64_t ate_addr;
+	uint8_t data = 0;
+
+	/* Test cache initialization when the store is empty */
+
+	fixture->fs.sector_count = 3;
+	err = setup_lookup_cache(&fixture->fs);
+	zassert_true(err == 0, "setup_lookup_cache call failure: %d", err);
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 0, "uninitialized cache");
+
+	/* Test cache update after zms_write() */
+
+	ate_addr = fixture->fs.ate_wra;
+	err = zms_write(&fixture->fs, 1, &data, sizeof(data));
+	zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
+
+	num = num_occupied_cache_entries(&fixture->fs);
+	zassert_equal(num, 1, "cache not updated after write");
+
+	num = num_matching_cache_entries(ate_addr, false, &fixture->fs);
+	zassert_equal(num, 1, "invalid cache entry after write");
+
+	/* Test cache initialization when the store is non-empty */
+
+	memset(fixture->fs.lookup_cache, 0xAA,
+	       TEST_ZMS_LOOKUP_CACHE_SIZE * sizeof(uint64_t));
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
@@ -965,27 +1084,29 @@ ZTEST_F(zms, test_zms_cache_collision)
 	uint16_t data;
 
 	fixture->fs.sector_count = 4;
+	err = setup_lookup_cache(&fixture->fs);
+	zassert_true(err == 0, "setup_lookup_cache call failure: %d", err);
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
-	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+	for (int id = 0; id < TEST_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
 		data = id;
 		err = zms_write(&fixture->fs, id, &data, sizeof(data));
 		zassert_equal(err, sizeof(data), "zms_write call failure: %d", err);
 	}
 
-	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+	for (int id = 0; id < TEST_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
 		err = zms_read(&fixture->fs, id, &data, sizeof(data));
 		zassert_equal(err, sizeof(data), "zms_read call failure: %d", err);
 		zassert_equal(data, id, "incorrect data read");
 	}
 
-	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+	for (int id = 0; id < TEST_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
 		err = zms_delete(&fixture->fs, id);
 		zassert_equal(0, err, "zms_delete failed: %d", err);
 	}
 
-	for (int id = 0; id < CONFIG_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
+	for (int id = 0; id < TEST_ZMS_LOOKUP_CACHE_SIZE + 1; id++) {
 		err = zms_read(&fixture->fs, id, &data, sizeof(data));
 		zassert_equal(-ENOENT, err, "zms_delete failed: %d", err);
 	}
@@ -1005,6 +1126,8 @@ ZTEST_F(zms, test_zms_cache_gc)
 	uint16_t data = 0;
 
 	fixture->fs.sector_count = 3;
+	err = setup_lookup_cache(&fixture->fs);
+	zassert_true(err == 0, "setup_lookup_cache call failure: %d", err);
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
@@ -1051,18 +1174,20 @@ ZTEST_F(zms, test_zms_cache_gc)
 ZTEST_F(zms, test_zms_cache_hash_quality)
 {
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
-	const size_t MIN_CACHE_OCCUPANCY = CONFIG_ZMS_LOOKUP_CACHE_SIZE * 6 / 10;
+	const size_t MIN_CACHE_OCCUPANCY = TEST_ZMS_LOOKUP_CACHE_SIZE * 6 / 10;
 	int err;
 	size_t num;
 	uint32_t id;
 	uint16_t data;
 
+	err = setup_lookup_cache(&fixture->fs);
+	zassert_true(err == 0, "setup_lookup_cache call failure: %d", err);
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
-	/* Write ZMS IDs from 0 to CONFIG_ZMS_LOOKUP_CACHE_SIZE - 1 */
+	/* Write ZMS IDs from 0 to TEST_ZMS_LOOKUP_CACHE_SIZE - 1 */
 
-	for (int i = 0; i < CONFIG_ZMS_LOOKUP_CACHE_SIZE; i++) {
+	for (int i = 0; i < TEST_ZMS_LOOKUP_CACHE_SIZE; i++) {
 		id = i;
 		data = 0;
 
@@ -1074,7 +1199,7 @@ ZTEST_F(zms, test_zms_cache_hash_quality)
 
 	num = num_occupied_cache_entries(&fixture->fs);
 	TC_PRINT("Cache occupancy: %u\n", (unsigned int)num);
-	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, CONFIG_ZMS_LOOKUP_CACHE_SIZE,
+	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, TEST_ZMS_LOOKUP_CACHE_SIZE,
 				  "too low cache occupancy - poor hash quality");
 
 	err = zms_clear(&fixture->fs);
@@ -1083,9 +1208,9 @@ ZTEST_F(zms, test_zms_cache_hash_quality)
 	err = zms_mount(&fixture->fs);
 	zassert_true(err == 0, "zms_mount call failure: %d", err);
 
-	/* Write CONFIG_ZMS_LOOKUP_CACHE_SIZE ZMS IDs that form the following series: 0, 4, 8... */
+	/* Write TEST_ZMS_LOOKUP_CACHE_SIZE ZMS IDs that form the following series: 0, 4, 8... */
 
-	for (int i = 0; i < CONFIG_ZMS_LOOKUP_CACHE_SIZE; i++) {
+	for (int i = 0; i < TEST_ZMS_LOOKUP_CACHE_SIZE; i++) {
 		id = i * 4;
 		data = 0;
 
@@ -1097,7 +1222,7 @@ ZTEST_F(zms, test_zms_cache_hash_quality)
 
 	num = num_occupied_cache_entries(&fixture->fs);
 	TC_PRINT("Cache occupancy: %u\n", (unsigned int)num);
-	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, CONFIG_ZMS_LOOKUP_CACHE_SIZE,
+	zassert_between_inclusive(num, MIN_CACHE_OCCUPANCY, TEST_ZMS_LOOKUP_CACHE_SIZE,
 				  "too low cache occupancy - poor hash quality");
 #else
 	ztest_test_skip();
@@ -1662,4 +1787,63 @@ ZTEST_F(zms, test_zms_mount_force)
 	len = zms_read(&fixture->fs, 1, &test_data, sizeof(test_data));
 	zassert_equal(len, sizeof(test_data), "zms_read after recovery failed: %d", len);
 	zassert_equal(test_data, 0xDEADBEEF, "read data mismatch after recovery");
+}
+
+ZTEST_F(zms, test_zms_read_evil_ate)
+{
+	int err;
+	ssize_t len;
+	off_t ate_wra_off;
+	size_t ate_size;
+	size_t crc8_off;
+	uint8_t buffer[16] = {0};
+	uint8_t evil[16] = {
+		0x50, 0x01, 0x03, 0x00,
+		0x03, 0x00, 0x00, 0x00,
+		0x68, 0x65, 0x33, 0x00,
+		0x00, 0x00, 0x00, 0x00,
+	};
+	struct zms_ate fake_ate;
+
+#ifdef CONFIG_ZMS_LOOKUP_CACHE
+	ztest_test_skip();
+#endif
+
+	/* Start with a clean slate. */
+	erase_test_partition();
+
+	err = zms_mount(&fixture->fs);
+	zassert_true(err == 0, "zms_mount call failure: %d", err);
+
+	len = zms_write(&fixture->fs, 2, evil, sizeof(evil));
+	zassert_equal(len, sizeof(evil), "zms_write(id=2) failed: %zd", len);
+
+	len = zms_write(&fixture->fs, 3, evil, sizeof(evil));
+	zassert_equal(len, sizeof(evil), "zms_write(id=3) failed: %zd", len);
+
+	err = zms_delete(&fixture->fs, 3);
+	zassert_equal(err, 0, "zms_delete(id=3) failed: %d", err);
+
+	/* Put a valid-looking stale ATE into the unwritten slot at fs->ate_wra. */
+	memset(&fake_ate, 0, sizeof(fake_ate));
+	fake_ate.id = 3;
+	fake_ate.len = 3;
+	fake_ate.cycle_cnt = fixture->fs.sector_cycle;
+	fake_ate.data[0] = 'h';
+	fake_ate.data[1] = 'e';
+	fake_ate.data[2] = '3';
+	ate_size = sizeof(struct zms_ate);
+	crc8_off = SIZEOF_FIELD(struct zms_ate, crc8);
+	fake_ate.crc8 = crc8_ccitt(0xff,
+				  (uint8_t *)&fake_ate + crc8_off,
+				  ate_size - crc8_off);
+
+	ate_wra_off = fixture->fs.offset +
+		      (fixture->fs.sector_size * SECTOR_NUM(fixture->fs.ate_wra)) +
+		      SECTOR_OFFSET(fixture->fs.ate_wra);
+	err = flash_write(fixture->fs.flash_device, ate_wra_off, &fake_ate, sizeof(fake_ate));
+	zassert_equal(err, 0, "flash_write(fake_ate) failed: %d", err);
+
+	len = zms_read(&fixture->fs, 3, buffer, sizeof(buffer));
+	zassert_equal(len, -ENOENT, "zms_read(id=3) should return -ENOENT, got %zd", len);
 }

@@ -21,8 +21,3 @@
 		};
 	};
 };
-
-&gpio0 {
-	/* Configure device as wakeup source */
-	wakeup-source;
-};

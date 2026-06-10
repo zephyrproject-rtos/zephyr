@@ -1,0 +1,23 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: M5Stack M5PM1 PMIC (Power Management Integrated Circuit)
+
+compatible: "m5stack,m5pm1"
+
+include: i2c-device.yaml
+
+bus: m5pm1
+
+properties:
+  reg:
+    required: true
+
+  idle-sleep-timeout-seconds:
+    type: int
+    default: 0
+    min: 0
+    max: 15
+    description: |
+      I2C idle-sleep timeout in seconds. After this many seconds of I2C inactivity the PMIC enters
+      low-power sleep. 0 (default) disables idle-sleep.

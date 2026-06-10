@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Memory management helpers.
+ * @ingroup memory_management
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_MEM_MANAGE_H
 #define ZEPHYR_INCLUDE_SYS_MEM_MANAGE_H
 

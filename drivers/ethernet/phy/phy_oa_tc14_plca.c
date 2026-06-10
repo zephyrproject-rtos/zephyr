@@ -8,6 +8,8 @@
 #include <zephyr/net/phy.h>
 #include <errno.h>
 
+#include "phy_oa_tc14_plca.h"
+
 /* Open Alliance TC14 (10BASE-T1S) PLCA registers */
 #define MDIO_OATC14_PLCA_IDVER  0xca00 /* PLCA ID and version */
 #define MDIO_OATC14_PLCA_CTRL0  0xca01 /* PLCA Control register 0 */

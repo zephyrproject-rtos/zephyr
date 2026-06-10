@@ -710,12 +710,7 @@ static void vocs_client_reset(struct bt_vocs_client *inst)
 	inst->control_handle = 0;
 	inst->desc_handle = 0;
 
-	if (inst->conn != NULL) {
-		struct bt_conn *conn = inst->conn;
-
-		bt_conn_unref(conn);
-		inst->conn = NULL;
-	}
+	bt_conn_drop(&inst->conn);
 }
 
 int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *vocs,

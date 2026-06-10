@@ -227,6 +227,44 @@
 	};
 };
 
+&dfsdm {
+	pdm4: filter@4 {
+		compatible = "st,stm32-dfsdm-dmic";
+		reg = <4>;
+		interrupts = <64 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	pdm5: filter@5 {
+		compatible = "st,stm32-dfsdm-dmic";
+		reg = <5>;
+		interrupts = <65 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	pdm6: filter@6 {
+		compatible = "st,stm32-dfsdm-dmic";
+		reg = <6>;
+		interrupts = <66 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	pdm7: filter@7 {
+		compatible = "st,stm32-dfsdm-dmic";
+		reg = <7>;
+		interrupts = <67 0>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+};
+
 &mac {
 	memory-regions = <&sram3>;
 };

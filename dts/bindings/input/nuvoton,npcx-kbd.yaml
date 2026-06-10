@@ -32,6 +32,10 @@ properties:
 
   row-size:
     required: true
+    min: 1
+    max: 8
 
   col-size:
     required: true
+    min: 1
+    max: 18

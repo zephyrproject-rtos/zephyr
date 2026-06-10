@@ -36,6 +36,7 @@
 		zephyr,console = &flexcomm0_lpuart0;
 		zephyr,shell-uart = &flexcomm0_lpuart0;
 		zephyr,display = &lcdif;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -381,38 +382,47 @@ nxp_8080_touch_panel_i2c: &flexcomm8_lpi2c8 {};
 		sample-clk-source = <3>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges = <0x0 0x38000000 DT_SIZE_M(64)>;
 
-		ext_flash: flash@38000000 {
+		ext_flash: flash@0 {
 			compatible = "soc-nv-flash";
-			reg = <0x38000000 DT_SIZE_M(64)>;
+			reg = <0x0 DT_SIZE_M(64)>;
 			erase-block-size = <DT_SIZE_K(4)>;
-			write-block-size = <2>;
+			write-block-size = <4>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			partitions {
-				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 
 				/*
 				 * Partition sizes must be aligned
 				 * to the flash memory sector size of 4KB.
 				 */
 				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
 				};
 
 				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(7)>;
 				};
 
 				slot1_partition: partition@720000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-1";
 					reg = <0x00720000 DT_SIZE_M(7)>;
 				};
 
 				storage_partition: partition@e20000 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 				};
@@ -536,5 +546,9 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 
 &sema420 {
 	domain-id = <0>;
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

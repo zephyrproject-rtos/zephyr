@@ -25,4 +25,5 @@ supported:
   - rtc
   - i2c
   - i3c
+  - tcpc
 vendor: st

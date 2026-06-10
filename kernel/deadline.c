@@ -63,11 +63,18 @@ void z_impl_k_thread_absolute_deadline_set(k_tid_t tid, int deadline)
 
 void z_impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
-	deadline = clamp(deadline, 0, INT_MAX);
+	/*
+	 * Clamp the relative deadline to INT32_MAX / 2 (2^30 cycles) to
+	 * satisfy the scheduler comparator's half-modulus invariant.
+	 * This leaves a 2^30-cycle margin of tolerance for scheduler
+	 * execution skew before priority inversion can occur.
+	 */
+	deadline = clamp(deadline, 0, INT32_MAX / 2);
 
-	int32_t newdl = k_cycle_get_32() + deadline;
+	/* Use uint32_t arithmetic to avoid implementation-defined signed conversion. */
+	uint32_t newdl = k_cycle_get_32() + (uint32_t)deadline;
 
-	z_impl_k_thread_absolute_deadline_set(tid, newdl);
+	z_impl_k_thread_absolute_deadline_set(tid, (int)newdl);
 }
 
 #ifdef CONFIG_USERSPACE

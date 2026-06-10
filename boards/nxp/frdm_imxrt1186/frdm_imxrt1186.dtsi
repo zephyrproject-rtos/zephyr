@@ -138,6 +138,19 @@
 	pinctrl-names = "default";
 };
 
+&i3c2 {
+	pinctrl-0 = <&pinmux_i3c2>;
+	pinctrl-names = "default";
+};
+
+/*
+ * I3C2 shares GPIO_AD_18/19 with LPI2C3 (board EEPROM). lpi2c3 is enabled by
+ * default; overlays that need i3c2 must disable lpi2c3 and eeprom0.
+ */
+p3t1755dp_ard_i3c_interface: &i3c2 {};
+
+p3t1755dp_ard_i2c_interface: &lpi2c3 {};
+
 &systick {
 	status = "okay";
 };
@@ -176,31 +189,39 @@
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
 
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
 			partitions {
-				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 
 				/*
 				 * Partition sizes must be aligned
 				 * to the flash memory sector size of 4KB.
 				 */
 				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
 				};
 
 				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(7)>;
 				};
 
 				slot1_partition: partition@720000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-1";
 					reg = <0x00720000 DT_SIZE_M(7)>;
 				};
 
 				storage_partition: partition@e20000 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 				};

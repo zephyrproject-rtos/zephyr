@@ -13,17 +13,14 @@ config SPI_SILABS_SIWX91X_GSPI
 
 if SPI_SILABS_SIWX91X_GSPI
 
-config SPI_SILABS_SIWX91X_GSPI_DMA
-	bool "DMA Support"
-	select DMA
+config SPI_SILABS_SIWX91X_GSPI_DMA_DESCR_COUNT
+	int "Maxmimum number of DMA descriptor (per channel)"
+	default 3 if DMA
+	default 0
 	help
-	  Enable DMA support for SIWX91X MCU GSPI driver.
+	  One descriptor is needed for every SPI buffer in the transaction plus one
+	  for padding.
 
-config SPI_SILABS_SIWX91X_GSPI_DMA_MAX_BLOCKS
-	int "Maximum DMA transfer block per channel for a transaction."
-	depends on SPI_SILABS_SIWX91X_GSPI_DMA
-	default 16
-	help
-	  One block is needed for every chunk found in the SPI transaction and every 1024 bytes
+	  Set to 0 to disable support for DMA.
 
-endif # SPI_SILABS_SIWX91X_GSPI
+endif

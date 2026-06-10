@@ -60,4 +60,96 @@ configdefault BT_LONG_WQ_STACK_SIZE
 	default 1600 if BT_ECC
 endif
 
+configdefault SILABS_SISDK_RAIL_MULTIPROTOCOL
+	default y if BT_SILABS_EFR32 && IEEE802154_SILABS_EFR32
+
+if NET_L2_PHY_IEEE802154
+configdefault NET_PKT_RX_COUNT
+	default 16
+
+configdefault NET_PKT_TX_COUNT
+	default 16
+
+configdefault NET_BUF_RX_COUNT
+	default 64
+
+configdefault NET_BUF_TX_COUNT
+	default 64
+
+endif
+
+if OPENTHREAD
+choice OPENTHREAD_IMPLEMENTATION
+	default OPENTHREAD_SOURCES
+endchoice
+
+choice OPENTHREAD_STACK_VERSION
+	default OPENTHREAD_THREAD_VERSION_1_4
+endchoice
+
+configdefault OPENTHREAD_MANUAL_START
+	default y
+
+configdefault OPENTHREAD_RADIO_WORKQUEUE_STACK_SIZE
+	default 2048
+
+configdefault OPENTHREAD_MAC_SOFTWARE_CSMA_BACKOFF_ENABLE
+	default n
+
+configdefault OPENTHREAD_MIN_RECEIVE_ON_AFTER
+	default 0
+
+configdefault OPENTHREAD_MAC_SOFTWARE_TX_SECURITY_ENABLE
+	default n
+
+configdefault OPENTHREAD_IP6_MAX_EXT_MCAST_ADDRS
+	default 4
+
+configdefault OPENTHREAD_DNS_CLIENT
+	default y
+
+configdefault OPENTHREAD_DUA
+	default y
+
+configdefault OPENTHREAD_EXTERNAL_HEAP
+	default y
+
+configdefault OPENTHREAD_LINK_METRICS_INITIATOR
+	default y
+
+configdefault OPENTHREAD_LINK_METRICS_SUBJECT
+	default y
+
+configdefault OPENTHREAD_MAC_BEACON_PAYLOAD_PARSING
+	default y
+
+configdefault OPENTHREAD_MLR
+	default y
+
+configdefault OPENTHREAD_MULTIPLE_INSTANCE_NUM
+	default 2
+
+configdefault OPENTHREAD_NETDIAG_CLIENT
+	default y
+
+configdefault OPENTHREAD_PING_SENDER
+	default y
+
+configdefault OPENTHREAD_SLAAC
+	default y
+
+configdefault OPENTHREAD_SRP_CLIENT
+	default y
+
+configdefault OPENTHREAD_UPTIME
+	default y if OPENTHREAD_FTD || OPENTHREAD_MTD
+
+if OPENTHREAD_COMMISSIONER
+configdefault MBEDTLS_HEAP_SIZE
+	default 16384
+
+endif
+
+endif
+
 endif

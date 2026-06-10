@@ -613,7 +613,14 @@ static int drv2605_init(const struct device *dev)
 	return 0;
 }
 
+static int drv2605_select_source(const struct device *dev, const enum haptics_source src,
+				 const union haptics_config *const cfg)
+{
+	return -ENOTSUP;
+}
+
 static DEVICE_API(haptics, drv2605_driver_api) = {
+	.select_source = &drv2605_select_source,
 	.start_output = &drv2605_start_output,
 	.stop_output = &drv2605_stop_output,
 };

@@ -1,0 +1,7 @@
+shield:
+  name: adi_lsmspg
+  full_name: Analog Devices Low-Speed Mixed-Signal Playground
+  vendor: adi
+  supported_features:
+    - adc
+    - dac

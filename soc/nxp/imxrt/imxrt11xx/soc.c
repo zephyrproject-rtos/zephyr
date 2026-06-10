@@ -312,6 +312,22 @@ __weak void clock_init(void)
 	}
 
 	/* Module clock root configurations. */
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+	/*
+	 * MICFIL/PDM clocking on RT11xx:
+	 * - MIC root clock (kCLOCK_Root_Mic) feeds PDM_CLK_ROOT
+	 * - MIC root mux=Audio PLL OUT, div=16 gives 24.576MHz when Audio PLL=393.216MHz
+	 *
+	 * Note: This only selects/divides the root. The Audio PLL must be configured
+	 * to 393.216MHz elsewhere if you need an exact 24.576MHz root.
+	 */
+	rootCfg.mux = kCLOCK_MIC_ClockRoot_MuxAudioPllOut; /* mux=6 */
+	rootCfg.div = 16; /* div=16 */
+	CLOCK_SetRootClock(kCLOCK_Root_Mic, &rootCfg);
+
+#endif
+
 	/* Configure M7 using ARM_PLL_CLK */
 #if defined(CONFIG_SOC_MIMXRT1176_CM7) || defined(CONFIG_SOC_MIMXRT1166_CM7)
 	rootCfg.mux = kCLOCK_M7_ClockRoot_MuxArmPllOut;

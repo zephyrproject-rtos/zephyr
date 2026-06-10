@@ -64,6 +64,10 @@ struct mcxw_clock_control_config {
 
 	/* System clock source selection */
 	uint8_t sys_clk_src;
+#if DT_INST_NODE_HAS_PROP(0, sys_clk_div_plat)
+	/* System clock divider for platform clock (MCXW70 only) */
+	uint8_t sys_clk_div_plat;
+#endif
 	/* System clock divider for slow clock */
 	uint8_t sys_clk_div_slow;
 	/* System clock divider for bus clock */
@@ -283,7 +287,11 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 
 	/* Switch to safe clock source (SIRC) before reconfiguring FIRC */
 	scg_sys_clk_config_t sys_clk_safe_config_source = {
+#if DT_INST_NODE_HAS_PROP(0, sys_clk_div_plat)
+		.divPlat = (uint32_t)kSCG_SysClkDivBy1,
+#endif
 		.divSlow = (uint32_t)kSCG_SysClkDivBy4,
+		.divBus = (uint32_t)kSCG_SysClkDivBy1,
 		.divCore = (uint32_t)kSCG_SysClkDivBy1,
 		.src = (uint32_t)kSCG_SysClkSrcSirc,
 	};
@@ -343,6 +351,9 @@ static int nxp_mcxw_clock_control_init(const struct device *dev)
 
 	/* Configure system clock with user-defined settings */
 	scg_sys_clk_config_t sys_clk_config = {
+#if DT_INST_NODE_HAS_PROP(0, sys_clk_div_plat)
+		.divPlat = (config->sys_clk_div_plat - 1),
+#endif
 		.divSlow = (config->sys_clk_div_slow - 1),
 		.divBus = (config->sys_clk_div_bus - 1),
 		.divCore = (config->sys_clk_div_core - 1),
@@ -405,6 +416,9 @@ static struct mcxw_clock_control_config config = {
 	.firc_range = DT_INST_PROP(0, firc_range),
 	.enable_sirc_in_lp_mode = DT_INST_PROP(0, enable_sirc_in_lp_mode),
 	.sys_clk_src = DT_INST_PROP(0, sys_clk_src),
+#if DT_INST_NODE_HAS_PROP(0, sys_clk_div_plat)
+	.sys_clk_div_plat = DT_INST_PROP(0, sys_clk_div_plat),
+#endif
 	.sys_clk_div_bus = DT_INST_PROP(0, sys_clk_div_bus),
 	.sys_clk_div_slow = DT_INST_PROP(0, sys_clk_div_slow),
 	.sys_clk_div_core = DT_INST_PROP(0, sys_clk_div_core),

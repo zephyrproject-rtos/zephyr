@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/drivers/cache.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/math_extras.h>
@@ -23,32 +24,7 @@ LOG_MODULE_REGISTER(cache_stm32, CONFIG_CACHE_LOG_LEVEL);
 
 #ifdef CONFIG_DCACHE
 
-void cache_data_enable(void)
-{
-	LL_DCACHE_Enable(DCACHE1);
-#if defined(DCACHE2)
-	LL_DCACHE_Enable(DCACHE2);
-#endif
-}
-
-void cache_data_disable(void)
-{
-	cache_data_flush_all();
-
-	while (LL_DCACHE_IsActiveFlag_BUSYCMD(DCACHE1)) {
-	}
-
-	LL_DCACHE_Disable(DCACHE1);
-	LL_DCACHE_ClearFlag_BSYEND(DCACHE1);
-
-#if defined(DCACHE2)
-	while (LL_DCACHE_IsActiveFlag_BUSYCMD(DCACHE2)) {
-	}
-
-	LL_DCACHE_Disable(DCACHE2);
-	LL_DCACHE_ClearFlag_BSYEND(DCACHE2);
-#endif
-}
+static struct k_spinlock lock;
 
 static int cache_data_manage_range(void *addr, size_t size, uint32_t command)
 {
@@ -74,22 +50,56 @@ static int cache_data_manage_range(void *addr, size_t size, uint32_t command)
 	LL_DCACHE_SetCommand(DCACHE2, command);
 	LL_DCACHE_StartCommand(DCACHE2);
 #endif
+
+	while (LL_DCACHE_IsActiveFlag_BUSYCMD(DCACHE1)) {
+	}
+
+	/* Clear CMDEND to avoid an extra interrupt if somebody enables them. */
+	LL_DCACHE_ClearFlag_CMDEND(DCACHE1);
+
+#if defined(DCACHE2)
+	while (LL_DCACHE_IsActiveFlag_BUSYCMD(DCACHE2)) {
+	}
+
+	/* Clear CMDEND to avoid an extra interrupt if somebody enables them. */
+	LL_DCACHE_ClearFlag_CMDEND(DCACHE2);
+#endif
+
 	return 0;
 }
 
 int cache_data_flush_range(void *addr, size_t size)
 {
-	return cache_data_manage_range(addr, size, LL_DCACHE_COMMAND_CLEAN_BY_ADDR);
+	int ret = 0;
+
+	K_SPINLOCK(&lock) {
+		ret = cache_data_manage_range(addr, size, LL_DCACHE_COMMAND_CLEAN_BY_ADDR);
+	}
+
+	return ret;
 }
 
 int cache_data_invd_range(void *addr, size_t size)
 {
-	return cache_data_manage_range(addr, size, LL_DCACHE_COMMAND_INVALIDATE_BY_ADDR);
+	int ret = 0;
+
+	K_SPINLOCK(&lock) {
+		ret = cache_data_manage_range(addr, size, LL_DCACHE_COMMAND_INVALIDATE_BY_ADDR);
+	}
+
+	return ret;
 }
 
 int cache_data_flush_and_invd_range(void *addr, size_t size)
 {
-	return cache_data_manage_range(addr, size, LL_DCACHE_COMMAND_CLEAN_INVALIDATE_BY_ADDR);
+	int ret = 0;
+
+	K_SPINLOCK(&lock) {
+		ret = cache_data_manage_range(addr, size,
+					      LL_DCACHE_COMMAND_CLEAN_INVALIDATE_BY_ADDR);
+	}
+
+	return ret;
 }
 
 int cache_data_flush_all(void)
@@ -99,16 +109,61 @@ int cache_data_flush_all(void)
 
 int cache_data_invd_all(void)
 {
-	LL_DCACHE_Invalidate(DCACHE1);
+	K_SPINLOCK(&lock) {
+		LL_DCACHE_Invalidate(DCACHE1);
 #if defined(DCACHE2)
-	LL_DCACHE_Invalidate(DCACHE2);
+		LL_DCACHE_Invalidate(DCACHE2);
 #endif
+
+		while (LL_DCACHE_IsActiveFlag_BUSY(DCACHE1)) {
+		}
+
+		/* Clear BSYEND to avoid an extra interrupt if somebody enables them. */
+		LL_DCACHE_ClearFlag_BSYEND(DCACHE1);
+
+#if defined(DCACHE2)
+		while (LL_DCACHE_IsActiveFlag_BUSY(DCACHE2)) {
+		}
+
+		/* Clear BSYEND to avoid an extra interrupt if somebody enables them. */
+		LL_DCACHE_ClearFlag_BSYEND(DCACHE2);
+#endif
+	}
+
 	return 0;
 }
 
 int cache_data_flush_and_invd_all(void)
 {
 	return cache_data_flush_and_invd_range(0, UINT32_MAX);
+}
+
+void cache_data_enable(void)
+{
+	K_SPINLOCK(&lock) {
+		LL_DCACHE_Enable(DCACHE1);
+#if defined(DCACHE2)
+		LL_DCACHE_Enable(DCACHE2);
+#endif
+	}
+}
+
+void cache_data_disable(void)
+{
+	K_SPINLOCK(&lock) {
+		/* Flush entire D$ before disabling */
+		(void)cache_data_manage_range(0, UINT32_MAX, LL_DCACHE_COMMAND_CLEAN_BY_ADDR);
+
+		LL_DCACHE_Disable(DCACHE1);
+		while (LL_DCACHE_IsEnabled(DCACHE1)) {
+		}
+
+#if defined(DCACHE2)
+		LL_DCACHE_Disable(DCACHE2);
+		while (LL_DCACHE_IsEnabled(DCACHE2)) {
+		}
+#endif
+	}
 }
 
 #endif /* CONFIG_DCACHE */

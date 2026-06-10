@@ -41,10 +41,15 @@
 #include <esp32h2/rom/ets_sys.h>
 #include <esp32h2/rom/gpio.h>
 #include <zephyr/dt-bindings/clock/esp32h2_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <esp32p4/rom/ets_sys.h>
+#include <esp32p4/rom/gpio.h>
+#include <zephyr/dt-bindings/clock/esp32p4_clock.h>
 #endif
 #ifdef CONFIG_UART_ASYNC_API
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
+#include <zephyr/cache.h>
 #include <hal/uhci_ll.h>
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 #define UHCI0 UHCI
@@ -73,6 +78,17 @@
 #include <errno.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
+
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_UART_SUPPORT_SLEEP_RETENTION
+#define UART_SLEEP_RETENTION_ENABLED 1
+#else
+#define UART_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if UART_SLEEP_RETENTION_ENABLED
+#include <hal/uart_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(uart_esp32, CONFIG_UART_LOG_LEVEL);
@@ -342,7 +358,15 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	uint32_t sclk_freq;
 	uint32_t inv_mask = 0;
 
+	/*
+	 * On P4, switching UART clock source (e.g. XTAL to PLL_F80M)
+	 * breaks the reg_update sync mechanism, causing uart_ll_update()
+	 * to spin forever. Keep the ROM-configured clock source (XTAL).
+	 * IDF also does not change UART clock source during driver init.
+	 */
+#if !CONFIG_SOC_SERIES_ESP32P4
 	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
+#endif
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
 	uart_hal_set_txfifo_empty_thr(&data->hal, UART_TX_FIFO_THRESH);
 	uart_hal_rxfifo_rst(&data->hal);
@@ -675,6 +699,9 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	}
 
 	/* Notify RX_RDY */
+	sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
+					    data->async.rx_counter - data->async.rx_offset);
+
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
 	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
@@ -909,6 +936,8 @@ static int uart_esp32_async_tx(const struct device *dev, const uint8_t *buf, siz
 	dma_blk.block_size = len;
 	dma_blk.source_address = (uint32_t)buf;
 
+	sys_cache_data_flush_range((void *)buf, len);
+
 	err = dma_config(config->dma_dev, config->tx_dma_channel, &dma_cfg);
 	if (err) {
 		LOG_ERR("Error configuring Tx DMA (%d)", err);
@@ -1103,6 +1132,40 @@ unlock:
 
 #endif /* CONFIG_UART_ASYNC_API */
 
+#if UART_SLEEP_RETENTION_ENABLED
+static esp_err_t uart_create_sleep_retention_cb(void *arg)
+{
+	int port = (int)(uintptr_t)arg;
+	sleep_retention_module_t module = uart_reg_retention_info[port].module;
+
+	return sleep_retention_entries_create(uart_reg_retention_info[port].regdma_entry_array,
+					      uart_reg_retention_info[port].array_size,
+					      REGDMA_LINK_PRI_UART, module);
+}
+
+static void uart_esp32_sleep_retention_init(int port)
+{
+	if (port == CONFIG_ESP_CONSOLE_UART_NUM) {
+		return;
+	}
+
+	sleep_retention_module_t module = uart_reg_retention_info[port].module;
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = uart_create_sleep_retention_cb,
+				   .arg = (void *)(uintptr_t)port}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)};
+
+	esp_err_t err = sleep_retention_module_init(module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("UART%d sleep retention init failed (%d)", port, err);
+	}
+}
+#endif
+
 static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct uart_esp32_config *config = dev->config;
@@ -1120,6 +1183,12 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 			LOG_ERR("Failed to configure UART pins (%d)", ret);
 			return ret;
 		}
+
+#if UART_SLEEP_RETENTION_ENABLED
+		struct uart_esp32_data *data = dev->data;
+
+		uart_esp32_sleep_retention_init(uart_hal_get_port_num(&data->hal));
+#endif
 		break;
 
 	case PM_DEVICE_ACTION_TURN_OFF:

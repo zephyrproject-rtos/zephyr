@@ -167,6 +167,16 @@ config FLASH_MCUX_XSPI
 	help
 	  Enable the mcux xspi flash driver.
 
+config FLASH_MCUX_XSPI_WRITE_BUFFER
+	bool "MCUX XSPI write with RAM buffer"
+	default n
+	depends on FLASH_MCUX_XSPI
+	help
+	  Copy the data to a RAM buffer before writing it to the flash.
+	  This prevents faults when the data to write would be located
+	  on the flash itself, and pads the transfer size to 4-byte
+	  alignment for the XSPI IP Tx limitation.
+
 # MCUX C40 internal flash driver
 config SOC_FLASH_MCUX_C40
 	bool "MCUX C40 flash driver"

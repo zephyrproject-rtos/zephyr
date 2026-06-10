@@ -2008,7 +2008,7 @@ ZTEST(coap, test_response_matching)
 		struct coap_packet response_pkt = { 0 };
 		struct net_sockaddr from = { 0 };
 		struct coap_reply *match;
-		uint8_t data[64];
+		uint8_t data[64] = { 0 };
 		int ret;
 
 		ret = coap_packet_init(&response_pkt, data, sizeof(data), COAP_VERSION_1,
@@ -2021,11 +2021,11 @@ ZTEST(coap, test_response_matching)
 		if (response->match != NULL) {
 			zassert_not_null(match, "Did not found a response match when expected");
 			zassert_equal_ptr(response->match, match,
-					  "Wrong response match, test %d match %d",
+					  "Wrong response match, test %td match %td",
 					  response - test_responses, match - matches);
 		} else {
 			zassert_is_null(match,
-					"Found unexpected response match, test %d match %d",
+					"Found unexpected response match, test %td match %td",
 					response - test_responses, match - matches);
 		}
 	}

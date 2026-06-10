@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
-# Add some Mbed TLS' internal folders where there are files included from
-# "psa_crypto_driver_wrappers.h" in "src/its/transform/aead.c".
-if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD)
+
+if(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD AND CONFIG_TF_PSA_CRYPTO_BUILTIN)
+  zephyr_library_link_libraries(tfpsacrypto)
+  # Inherit tfpsacrypto's private include directories for access to psa_crypto_driver_wrappers.h.
   zephyr_library_include_directories($<TARGET_PROPERTY:tfpsacrypto,INCLUDE_DIRECTORIES>)
 endif()
 

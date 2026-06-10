@@ -122,10 +122,7 @@ static void avctp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("chan %p session %p", chan, session);
 	session->br_chan.chan.conn = NULL;
 
-	if (session->reassembly_buf != NULL) {
-		net_buf_unref(session->reassembly_buf);
-		session->reassembly_buf = NULL;
-	}
+	net_buf_drop(&session->reassembly_buf);
 
 	k_sem_take(&avctp_lock, K_FOREVER);
 	bt_avctp_clear_tx(session);
@@ -446,8 +443,7 @@ static int avctp_recv_fragmented(struct bt_avctp *avctp, struct net_buf *buf)
 
 		if (avctp->reassembly_buf != NULL) {
 			LOG_WRN("Interleaving fragments not allowed (tid=%u, cr=%u)", tid, cr);
-			net_buf_unref(avctp->reassembly_buf);
-			avctp->reassembly_buf = NULL;
+			net_buf_drop(&avctp->reassembly_buf);
 		}
 
 		if (avctp->rx_pool == NULL) {
@@ -521,8 +517,7 @@ static int avctp_recv_fragmented(struct bt_avctp *avctp, struct net_buf *buf)
 
 			dispatch_avctp_packet(avctp, avctp->reassembly_buf, hdr_common,
 					      sys_be16_to_cpu(hdr_reassembly->pid));
-			net_buf_unref(avctp->reassembly_buf);
-			avctp->reassembly_buf = NULL;
+			net_buf_drop(&avctp->reassembly_buf);
 			return 0;
 		}
 		return 0;
@@ -531,10 +526,7 @@ static int avctp_recv_fragmented(struct bt_avctp *avctp, struct net_buf *buf)
 	LOG_WRN("No matching START packet found for tid=%u, cr=%u", tid, cr);
 
 failed:
-	if (avctp->reassembly_buf != NULL) {
-		net_buf_unref(avctp->reassembly_buf);
-		avctp->reassembly_buf = NULL;
-	}
+	net_buf_drop(&avctp->reassembly_buf);
 	return 0; /* Need keep L2CAP up */
 }
 
@@ -563,8 +555,7 @@ static int avctp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	if (session->reassembly_buf != NULL) {
 		LOG_WRN("AVCTP: aborting in-progress reassembly due to SINGLE pkt");
-		net_buf_unref(session->reassembly_buf);
-		session->reassembly_buf = NULL;
+		net_buf_drop(&session->reassembly_buf);
 	}
 
 	if (buf->len < BT_AVCTP_HDR_SIZE_SINGLE) {

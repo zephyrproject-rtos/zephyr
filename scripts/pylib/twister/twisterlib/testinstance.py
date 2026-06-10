@@ -17,6 +17,7 @@ import re
 from enum import Enum
 
 from twisterlib.constants import (
+    PYTEST_HARNESSES,
     SUPPORTED_HARNESSES,
     SUPPORTED_SIMS,
     SUPPORTED_SIMS_IN_PYTEST,
@@ -271,13 +272,16 @@ class TestInstance:
         simulation = options.sim_name
 
         simulator = self.platform.simulator_by_name(simulation)
-        if os.name == 'nt' and simulator:
+        if os.name == 'nt' and simulator and simulator.name not in ('na', 'qemu'):
             # running on simulators is currently supported only for QEMU on Windows
-            if simulator.name not in ('na', 'qemu'):
-                return False
+            return False
 
-            # check presence of QEMU on Windows
-            if simulator.name == 'qemu' and 'QEMU_BIN_PATH' not in os.environ:
+        # QEMU_BIN_PATH is optional and acts as an override.
+        # Validate it only when explicitly provided.
+        if simulator and simulator.name == 'qemu':
+            qemu_bin_path = os.environ.get('QEMU_BIN_PATH')
+
+            if qemu_bin_path is not None and not os.path.exists(qemu_bin_path):
                 return False
 
         # we asked for build-only on the command line
@@ -297,7 +301,7 @@ class TestInstance:
                             device_testing)
 
         # check if test is runnable in pytest
-        if self.testsuite.harness in ['pytest', 'shell', 'power', 'display_capture']:
+        if self.testsuite.harness in PYTEST_HARNESSES:
             target_ready = bool(
                 filter == 'runnable' or simulator and simulator.name in SUPPORTED_SIMS_IN_PYTEST
             )
@@ -457,8 +461,12 @@ class TestInstance:
     def update_reserved_duts_with_required_applications(self):
         if len(self.reserved_duts) < len(self.testsuite.harness_config.required_devices) + 1:
             raise TwisterException("Not enough DUTs reserved for the required devices.")
+        if not self.testsuite.build:
+            self.reserved_duts[0].build_dir = self.required_build_dirs[0]
         for id, req_dev in enumerate(self.testsuite.harness_config.required_devices):
             if not (req_dev.application or req_dev.platform):
+                if not self.testsuite.build:
+                    self.reserved_duts[id + 1].build_dir = self.required_build_dirs[0]
                 # if neither application nor platform is specified, use the same application
                 continue
             if platform_name := req_dev.platform:

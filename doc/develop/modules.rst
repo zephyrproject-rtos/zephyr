@@ -594,7 +594,7 @@ be monitored for your module. The supported formats are:
        - <an-other-module-related-cpe>
        - <module-related-purl>
 
-A real life example for ``mbedTLS`` module could look like this:
+A real life example for Mbed TLS module could look like this:
 
 .. code-block:: yaml
 

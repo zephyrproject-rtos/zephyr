@@ -508,8 +508,6 @@ static int input_crsf_init(const struct device *dev)
 }
 
 #define INPUT_CHANNEL_CHECK(input_channel_id)                                                      \
-	BUILD_ASSERT(IN_RANGE(DT_PROP(input_channel_id, channel), 1, 16),                          \
-		     "invalid channel number");                                                    \
 	BUILD_ASSERT(DT_PROP(input_channel_id, type) == INPUT_EV_ABS ||                            \
 			     DT_PROP(input_channel_id, type) == INPUT_EV_KEY ||                    \
 			     DT_PROP(input_channel_id, type) == INPUT_EV_MSC,                      \

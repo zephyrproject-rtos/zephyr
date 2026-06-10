@@ -46,8 +46,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
 	if (err != BT_HCI_ERR_SUCCESS) {
 		LOG_INF("Failed to connect: %u", err);
-		bt_conn_unref(peer_conn);
-		peer_conn = NULL;
+		bt_conn_drop(&peer_conn);
 	} else {
 		LOG_INF("Connected: %s", bt_conn_dst_str(conn));
 	}
@@ -64,8 +63,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 	LOG_INF("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn),
 		reason);
 
-	bt_conn_unref(peer_conn);
-	peer_conn = NULL;
+	bt_conn_drop(&peer_conn);
 	call_control_client = NULL;
 	memset(&client_bearers, 0, sizeof(client_bearers));
 	k_sem_give(&sem_conn_state_change);

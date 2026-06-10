@@ -23,8 +23,7 @@
 #include <psa/crypto.h>
 #endif
 
-#if defined(CONFIG_MBEDTLS_ENABLE_HEAP) && \
-	defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
+#if defined(CONFIG_MBEDTLS_ENABLE_HEAP)
 #include <mbedtls/memory_buffer_alloc.h>
 
 #ifdef CONFIG_MBEDTLS_HEAP_CUSTOM_SECTION
@@ -40,7 +39,7 @@ static void init_heap(void)
 }
 #else
 #define init_heap(...)
-#endif /* CONFIG_MBEDTLS_ENABLE_HEAP && MBEDTLS_MEMORY_BUFFER_ALLOC_C */
+#endif /* CONFIG_MBEDTLS_ENABLE_HEAP */
 
 static int _mbedtls_init(void)
 {

@@ -23,6 +23,8 @@
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32H2)
 #include <zephyr/dt-bindings/clock/esp32h2_clock.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <zephyr/dt-bindings/clock/esp32p4_clock.h>
 #endif /* CONFIG_SOC_SERIES_ESP32xx */
 
 #define ESP32_CLOCK_CONTROL_SUBSYS_CPU 50

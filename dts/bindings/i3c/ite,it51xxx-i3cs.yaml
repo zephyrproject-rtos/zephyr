@@ -61,3 +61,11 @@ properties:
     description: |
       Device Characteristics Register, used for bus enumeration with ENTDAA.
       (default: 0x00)
+
+  disable-read-abort:
+    type: boolean
+    description: |
+      Disable 100us read abort mechanism. The i3cs supports the 100us read-abort
+      approach described in the section 5.1.2.3 of i3c specification v1.1.1.
+      Enabling this property disables the read-abort mechanism.
+      (default: false)

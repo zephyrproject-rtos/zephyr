@@ -216,6 +216,21 @@
 /** @} */
 
 /**
+ * @brief Property tag descriptor for a multi-tag firmware transaction.
+ *
+ * Groups a single tag, its associated value buffer, and the buffer size
+ * into one entry for use with rpi_fw_transfer_list().
+ */
+struct rpi_fw_tag_list {
+	/** One of the RPI_FW_TAG_* defines. */
+	uint32_t tag;
+	/** Value buffer (in/out). Updated with firmware response. */
+	void *data;
+	/** Byte size of @p data. */
+	uint32_t size;
+};
+
+/**
  * @brief Send a property tag to the VideoCore firmware.
  *
  * Wraps @p data in a ViedoCore mailbox envelope and submits
@@ -232,5 +247,25 @@
  * @retval -ETIMEDOUT Firmware did not respond within 100 miliseconds.
  */
 int rpi_fw_transfer(const struct device *dev, uint32_t tag, void *data, uint32_t data_size);
+
+/**
+ * @brief Send a list of property tags to the VideoCore firmware in one transaction.
+ *
+ * Packs all entries from @p tag_list into a single VideoCore mailbox envelope
+ * and submits them atomically to the VPU over the mailbox property channel.
+ * All tag value buffers are updated in-place with the firmware response.
+ * Blocks until the VPU responds or a 100 millisecond timeout elapses.
+ *
+ * @param dev       Firmware device from DEVICE_DT_GET_ANY(raspberrypi_bcm283x_firmware).
+ * @param tag_list  Array of tag descriptors to send. Each entry's @c data
+ *                  buffer is updated with the corresponding firmware response.
+ * @param num_lists Number of entries in @p tag_list.
+ *
+ * @retval 0          Success.
+ * @retval -EINVAL    Firmware returned an error status for one or more tags.
+ * @retval -ETIMEDOUT Firmware did not respond within 100 milliseconds.
+ */
+int rpi_fw_transfer_list(const struct device *dev, struct rpi_fw_tag_list *tag_list,
+			 uint16_t num_lists);
 
 #endif /* ZEPHYR_DRIVERS_FIRMWARE_RPI_FW_RPI_FW_H_ */

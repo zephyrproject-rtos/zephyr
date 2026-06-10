@@ -11,4 +11,9 @@
 		compatible = "silabs,bt-hci-efr32";
 		status = "disabled";
 	};
+
+	ieee802154: ieee802154 {
+		compatible = "silabs,efr32-ieee802154";
+		status = "disabled";
+	};
 };

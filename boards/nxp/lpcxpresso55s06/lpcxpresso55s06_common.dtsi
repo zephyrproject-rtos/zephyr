@@ -20,6 +20,7 @@
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &iap;
 		zephyr,canbus = &can0;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -177,5 +178,9 @@
 };
 
 &gint1 {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

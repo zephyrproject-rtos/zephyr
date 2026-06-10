@@ -31,10 +31,6 @@ LOG_MODULE_REGISTER(psoc6_bless);
 
 #define DT_DRV_COMPAT infineon_bless_hci
 
-struct psoc6_bless_data {
-	bt_hci_recv_t recv;
-};
-
 #define BLE_LOCK_TMOUT_MS       (1000)
 #define BLE_THREAD_SEM_TMOUT_MS (1000)
 
@@ -98,7 +94,6 @@ static void psoc6_bless_isr_handler(const struct device *dev)
 static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct psoc6_bless_data *hci = dev->data;
 	cy_stc_ble_hci_tx_packet_info_t *hci_rx = NULL;
 	struct net_buf *buf = NULL;
 	size_t buf_tailroom = 0;
@@ -138,15 +133,12 @@ static void psoc6_bless_events_handler(uint32_t eventCode, void *eventParam)
 		return;
 	}
 	net_buf_add_mem(buf, hci_rx->data, hci_rx->dataLength);
-	hci->recv(dev, buf);
+	bt_hci_recv(dev, buf);
 }
 
-static int psoc6_bless_open(const struct device *dev, bt_hci_recv_t recv)
+static int psoc6_bless_open(const struct device *dev)
 {
-	struct psoc6_bless_data *hci = dev->data;
 	k_tid_t tid;
-
-	hci->recv = recv;
 
 	tid = k_thread_create(&psoc6_bless_rx_thread_data, psoc6_bless_rx_thread_stack,
 			      K_KERNEL_STACK_SIZEOF(psoc6_bless_rx_thread_stack),
@@ -257,10 +249,13 @@ static DEVICE_API(bt_hci, drv) = {
 };
 
 #define PSOC6_BLESS_DEVICE_INIT(inst) \
-	static struct psoc6_bless_data psoc6_bless_data_##inst = { \
+	static struct bt_hci_driver_data psoc6_bless_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, psoc6_bless_hci_init, NULL, &psoc6_bless_data_##inst, NULL, \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static const struct bt_hci_driver_config psoc6_bless_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, psoc6_bless_hci_init, NULL, &psoc6_bless_data_##inst, \
+			      &psoc6_bless_config_##inst, POST_KERNEL, \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */
 PSOC6_BLESS_DEVICE_INIT(0)

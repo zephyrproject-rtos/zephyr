@@ -132,3 +132,10 @@ bool sl_rail_is_multi_timer_running(sl_rail_handle_t rail_handle,
 {
 	return false;
 }
+
+#if defined(CONFIG_IEEE802154_SILABS_EFR32)
+void sl_openthread_init(void)
+{
+	/* Stub for the OpenThread PAL blob; declared in ieee802154_silabs_efr32.h. */
+}
+#endif

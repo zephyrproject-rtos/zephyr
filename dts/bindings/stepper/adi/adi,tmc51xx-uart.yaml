@@ -25,7 +25,8 @@ properties:
     type: int
     description: |
         UART device address for TMC51XX in UART mode.
-        Valid range: 0 - 253
+    min: 0
+    max: 253
 
 examples:
   - |

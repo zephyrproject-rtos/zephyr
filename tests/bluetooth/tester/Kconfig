@@ -15,6 +15,15 @@ config BTTESTER_BTP_CMD_THREAD_STACK_SIZE
 	help
 	  Stack size in byte used by the BTP CMD thread.
 
+config BTTESTER_L2CAP_DATA_POOL_COUNT
+	int "L2CAP Service data pool count"
+	depends on BT_CLASSIC
+	depends on BT_L2CAP_RET_FC
+	default BT_L2CAP_MAX_WINDOW_SIZE
+	range BT_L2CAP_MAX_WINDOW_SIZE 255
+	help
+	  Data pool count of L2CAP service.
+
 endmenu
 
 source "Kconfig.zephyr"

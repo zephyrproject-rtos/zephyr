@@ -184,10 +184,10 @@ static int i2s_esp32_start_dma(const struct device *dev, enum i2s_dir dir);
 static void i2s_esp32_rx_stop_transfer(const struct device *dev);
 
 #if SOC_GDMA_SUPPORTED
-static void i2s_esp32_rx_callback(const struct device *dma_dev, void *arg, uint32_t channel,
-				  int status)
+static void IRAM_ATTR i2s_esp32_rx_callback(const struct device *dma_dev, void *arg,
+					    uint32_t channel, int status)
 #else
-static void i2s_esp32_rx_callback(void *arg, int status)
+static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 #endif /* SOC_GDMA_SUPPORTED */
 {
 	const struct device *dev = (const struct device *)arg;
@@ -315,7 +315,12 @@ static void IRAM_ATTR i2s_esp32_rx_handler(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
 	const i2s_hal_context_t *hal = &(dev_cfg->hal);
-	uint32_t status = i2s_hal_get_intr_status(hal);
+	uint32_t status =
+		i2s_hal_get_intr_status(hal) & (I2S_LL_RX_EVENT_MASK | I2S_LL_EVENT_RX_DSCR_ERR);
+
+	if (status == 0) {
+		return;
+	}
 
 	i2s_hal_clear_intr_status(hal, status);
 	if (status & I2S_LL_EVENT_RX_EOF) {
@@ -365,7 +370,7 @@ static int i2s_esp32_rx_start_transfer(const struct device *dev)
 	return 0;
 }
 
-static void i2s_esp32_rx_stop_transfer(const struct device *dev)
+static void IRAM_ATTR i2s_esp32_rx_stop_transfer(const struct device *dev)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->rx;
@@ -394,7 +399,7 @@ static void i2s_esp32_rx_stop_transfer(const struct device *dev)
 
 static void i2s_esp32_tx_stop_transfer(const struct device *dev);
 
-void i2s_esp32_tx_compl_transfer(struct k_timer *timer)
+void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 {
 	struct i2s_esp32_data *dev_data =
 		CONTAINER_OF(timer, struct i2s_esp32_data, tx_deferred_transfer_timer);
@@ -444,10 +449,10 @@ tx_disable:
 }
 
 #if SOC_GDMA_SUPPORTED
-static void i2s_esp32_tx_callback(const struct device *dma_dev, void *arg, uint32_t channel,
-				  int status)
+static void IRAM_ATTR i2s_esp32_tx_callback(const struct device *dma_dev, void *arg,
+					    uint32_t channel, int status)
 #else
-static void i2s_esp32_tx_callback(void *arg, int status)
+static void IRAM_ATTR i2s_esp32_tx_callback(void *arg, int status)
 #endif /* SOC_GDMA_SUPPORTED */
 {
 	const struct device *dev = (const struct device *)arg;
@@ -513,7 +518,12 @@ static void IRAM_ATTR i2s_esp32_tx_handler(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct i2s_esp32_cfg *const dev_cfg = dev->config;
 	const i2s_hal_context_t *hal = &(dev_cfg->hal);
-	uint32_t status = i2s_hal_get_intr_status(hal);
+	uint32_t status =
+		i2s_hal_get_intr_status(hal) & (I2S_LL_TX_EVENT_MASK | I2S_LL_EVENT_TX_DSCR_ERR);
+
+	if (status == 0) {
+		return;
+	}
 
 	i2s_hal_clear_intr_status(hal, status);
 	if (status & I2S_LL_EVENT_TX_EOF) {
@@ -563,7 +573,7 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 	return 0;
 }
 
-static void i2s_esp32_tx_stop_transfer(const struct device *dev)
+static void IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
@@ -678,8 +688,8 @@ static bool i2s_esp32_try_stop_transfer(const struct device *dev, enum i2s_dir d
 	return at_least_one_dir_with_pending_transfer;
 }
 
-int i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
-			 const struct i2s_esp32_stream *stream)
+int IRAM_ATTR i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
+				   const struct i2s_esp32_stream *stream)
 {
 	uint32_t mem_block = (uint32_t)stream->data->mem_block;
 	uint32_t mem_block_size = stream->data->mem_block_len;
@@ -854,7 +864,7 @@ unlock:
 	return err;
 }
 
-static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
+static int IRAM_ATTR i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream;
@@ -874,7 +884,7 @@ static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
 	}
 
 #if SOC_GDMA_SUPPORTED
-	uint16_t chunk_len;
+	uint16_t chunk_len = 0;
 	void *src = NULL, *dst = NULL;
 
 #if I2S_ESP32_IS_DIR_EN(rx)
@@ -910,7 +920,6 @@ static int i2s_esp32_restart_dma(const struct device *dev, enum i2s_dir dir)
 
 #if I2S_ESP32_IS_DIR_EN(rx)
 	if (dir == I2S_DIR_RX) {
-		i2s_ll_rx_reset_fifo(hal->dev);
 		i2s_ll_rx_set_eof_num(hal->dev, chunk_len);
 	}
 #endif /* I2S_ESP32_IS_DIR_EN(rx) */

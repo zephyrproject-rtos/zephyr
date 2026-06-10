@@ -9,16 +9,19 @@
 &is25lp064 {
 	partitions {
 		large_partition: partition@400000 {
+			compatible = "zephyr,mapped-partition";
 			label = "large";
 			reg = <0x00400000 DT_SIZE_M(3)>;
 		};
 
 		medium_partition: partition@700000 {
+			compatible = "zephyr,mapped-partition";
 			label = "medium";
 			reg = <0x00700000 DT_SIZE_K(960)>;
 		};
 
 		small_partition: partition@7f0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "small";
 			reg = <0x007f0000 DT_SIZE_K(64)>;
 		};

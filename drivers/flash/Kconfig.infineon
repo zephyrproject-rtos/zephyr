@@ -45,3 +45,15 @@ config INFINEON_CAT1_QSPI_FLASH
 	select FLASH_HAS_EXPLICIT_ERASE
 	help
 	  Enable the QSPI Flash driver for Infineon CAT1 family.
+
+config FLASH_INFINEON_SMIF_HW_INIT
+	bool "Initialize SMIF hardware in the flash driver"
+	depends on INFINEON_CAT1_QSPI_FLASH
+	depends on SOC_SERIES_PSE84
+	help
+	  Enable full SMIF hardware initialization (pins, clocks, peripheral
+	  groups, and SMIF peripheral) in the flash driver init function.
+	  This is required when the first application boots from internal
+	  RRAM and the ROM extended boot has not configured SMIF.
+	  When disabled, the driver assumes SMIF is already initialized
+	  (e.g., by the ROM when booting from external flash).

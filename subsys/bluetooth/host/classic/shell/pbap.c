@@ -242,8 +242,7 @@ static int cmd_release_buf(const struct shell *sh, size_t argc, char **argv)
 		return -EINVAL;
 	}
 
-	net_buf_unref(g_pbap_app->tx_buf);
-	g_pbap_app->tx_buf = NULL;
+	net_buf_drop(&g_pbap_app->tx_buf);
 
 	return 0;
 }
@@ -1173,8 +1172,7 @@ static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 
 failed:
-	net_buf_unref(g_pbap_app->tx_buf);
-	g_pbap_app->tx_buf = NULL;
+	net_buf_drop(&g_pbap_app->tx_buf);
 	return err;
 }
 
@@ -1330,9 +1328,8 @@ static int pbap_pce_pull(char *type, char *name, bool srmp)
 	tlv_count = 0;
 	return 0;
 failed:
-	net_buf_unref(g_pbap_app->tx_buf);
+	net_buf_drop(&g_pbap_app->tx_buf);
 	tlv_count = 0;
-	g_pbap_app->tx_buf = NULL;
 	return err;
 }
 
@@ -1427,8 +1424,7 @@ static int cmd_set_phone_book(const struct shell *sh, size_t argc, char **argv)
 	g_pbap_app->tx_buf = NULL;
 	return 0;
 failed:
-	net_buf_unref(g_pbap_app->tx_buf);
-	g_pbap_app->tx_buf = NULL;
+	net_buf_drop(&g_pbap_app->tx_buf);
 	return err;
 }
 
@@ -2111,9 +2107,8 @@ static int pbap_pull_rsp(const struct shell *sh, size_t argc, char *argv[], cons
 	tlv_count = 0;
 	return err;
 failed:
-	net_buf_unref(g_pbap_app->tx_buf);
+	net_buf_drop(&g_pbap_app->tx_buf);
 	tlv_count = 0;
-	g_pbap_app->tx_buf = NULL;
 	return err;
 }
 

@@ -41,7 +41,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		__DSB();
 		__ISB();
 		__WFI();
-		irq_unlock(0);
 		break;
 
 	case PM_STATE_SUSPEND_TO_IDLE:
@@ -73,8 +72,6 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		if (SMC->PMCTRL & SMC_PMCTRL_STOPA_MASK) {
 			LOG_DBG("stop aborted");
 		}
-
-		irq_unlock(0);
 		break;
 
 	default:
@@ -85,13 +82,13 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
+	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
+	/* Defensive cleanup only; the idle path owns the final IRQ restore. */
 	if ((SCB->SCR & SCB_SCR_SLEEPDEEP_Msk) == SCB_SCR_SLEEPDEEP_Msk) {
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 	}
-
-	irq_unlock(0);
 }
 
 static int mcxc_pm_init(void)

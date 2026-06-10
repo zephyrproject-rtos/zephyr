@@ -22,18 +22,6 @@
 extern "C" {
 #endif
 
-#define TI_HDC302X_STATUS_REG_BIT_ALERT         0x8000
-#define TI_HDC302X_STATUS_REG_BIT_HEATER_ON     0x2000
-#define TI_HDC302X_STATUS_REG_BIT_RH_ALERT      0x0800
-#define TI_HDC302X_STATUS_REG_BIT_TEMP_ALERT    0x0400
-#define TI_HDC302X_STATUS_REG_BIT_RH_HIGH_ALERT 0x0200
-#define TI_HDC302X_STATUS_REG_BIT_RH_LOW_ALERT  0x0100
-
-#define TI_HDC302X_STATUS_REG_BIT_TEMP_HIGH_ALERT 0x0080
-#define TI_HDC302X_STATUS_REG_BIT_TEMP_LOW_ALERT  0x0040
-#define TI_HDC302X_STATUS_REG_BIT_RESET_DETECTED  0x0010
-#define TI_HDC302X_STATUS_REG_BIT_CRC_FAILED      0x0001
-
 enum sensor_attribute_hdc302x {
 	/* Sensor low power Mode
 	 * Rather than set this value directly, can only be set to operate in one of four modes:

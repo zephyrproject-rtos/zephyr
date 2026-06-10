@@ -615,7 +615,7 @@ config BT_DID
 	  This option enables the DID profile
 
 if BT_DID
-config BT_DEVICE_VEDNOR_ID
+config BT_DEVICE_VENDOR_ID
 	hex "Bluetooth Device Vendor ID"
 	range 0x0000 $(UINT16_MAX)
 	default 0x0000

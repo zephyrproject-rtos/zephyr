@@ -130,6 +130,7 @@ static int ambiq_rtc_set_time(const struct device *dev, const struct rtc_time *t
 	rtc_time_to_ambiq_time_set(timeptr, &ambiq_time);
 
 	if (test_for_rollover(&ambiq_time)) {
+		k_spin_unlock(&data->lock, key);
 		return -EINVAL;
 	}
 

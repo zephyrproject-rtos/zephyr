@@ -20,10 +20,14 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE i2c_handlers.c)
 
 add_subdirectory_ifdef(CONFIG_I2C_TARGET target)
 
+zephyr_library_include_directories_ifdef(CONFIG_I2C_AMEBA ${ZEPHYR_BASE}/drivers/dma)
+
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_I2C_AMBIQ i2c_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_AMBIQ_IOS i2c_ambiq_ios.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_AMEBA i2c_ameba.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_ANDES_ATCIIC100 i2c_andes_atciic100.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_BCM2711 i2c_bcm2711.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_BEE i2c_bee.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_BFLB i2c_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CADENCE i2c_cdns.c)

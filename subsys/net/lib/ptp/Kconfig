@@ -78,6 +78,31 @@ config PTP_CLOCK_TYPE
 	default 0x02 if PTP_TRANSPARENT_P2P_CLOCK
 	default 0x03 if PTP_TRANSPARENT_E2E_CLOCK
 
+choice
+	prompt "PTP Delay Mechanism"
+	default PTP_DELAY_MECHANISM_E2E
+	help
+	  Select the delay mechanism used to measure propagation delay.
+
+config PTP_DELAY_MECHANISM_E2E
+	bool "End-to-End (E2E)"
+	help
+	  Measure delay between the timeReceiver and timeTransmitter using
+	  Delay_Req and Delay_Resp messages.
+
+config PTP_DELAY_MECHANISM_P2P
+	bool "Peer-to-Peer (P2P)"
+	help
+	  Measure delay between adjacent ports using Pdelay_Req,
+	  Pdelay_Resp, and Pdelay_Resp_Follow_Up messages.
+
+endchoice
+
+config PTP_DELAY_MECHANISM
+	hex
+	default 0x01 if PTP_DELAY_MECHANISM_E2E
+	default 0x02 if PTP_DELAY_MECHANISM_P2P
+
 config PTP_NUM_PORTS
 	int "Number of PTP Ports"
 	default 1 if PTP_ORDINARY_CLOCK
@@ -252,10 +277,20 @@ config PTP_SYNC_LOG_INTERVAL
 config PTP_MIN_PDELAY_REQ_LOG_INTERVAL
 	int "PDelay Req interval in Log2 base"
 	default 0
-	range 0 5
+	range -7 5
 	help
 	  Specifies minimum permitted mean time interval between successive Pdelay_Req messages.
 	  The value is the converted to nanoseconds as follow: nanoseconds = (10^9) * 2^(value)
+
+config PTP_PEER_DELAY_MAX_NS
+	int "Maximum accepted peer delay in nanoseconds"
+	default 10000000
+	range 1 1000000000
+	help
+	  Maximum peer propagation delay accepted as a valid Pdelay measurement.
+	  Samples above this value are treated as invalid timestamp data and do not
+	  update meanLinkDelay. Adjust this sanity threshold to the expected network
+	  topology and PTP profile; it is not a clock-accuracy requirement.
 
 config PTP_DISABLED_PRESENT
 	bool

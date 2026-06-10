@@ -9,9 +9,11 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/usb_c/usbc_tcpc.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <stm32_ll_ucpd.h>
+#include <stm32_ll_pwr.h>
 
 /**
  * @brief The packet type(SOP*) consists of 2-bytes
@@ -261,10 +263,15 @@ struct alert_info {
 struct tcpc_config {
 	/* STM32 UCPC CC pin control */
 	const struct pinctrl_dev_config *ucpd_pcfg;
+	/* STM32 UCPD clock control */
+	const struct stm32_pclken pclken[1];
 	/* STM32 UCPD port */
 	UCPD_TypeDef *ucpd_port;
 	/* STM32 UCPD parameters */
-	LL_UCPD_InitTypeDef ucpd_params;
+	uint8_t ucpd_clk_prescaler;
+	uint8_t transition_window;
+	uint8_t interframe_gap;
+	uint8_t halfbit_clock_div;
 	/* STM32 UCPD dead battery support */
 	bool ucpd_dead_battery;
 };

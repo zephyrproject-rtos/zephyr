@@ -23,4 +23,5 @@ source "drivers/sensor/ti/tmp112/Kconfig"
 source "drivers/sensor/ti/tmp114/Kconfig"
 source "drivers/sensor/ti/tmp11x/Kconfig"
 source "drivers/sensor/ti/tmp435/Kconfig"
+source "drivers/sensor/ti/tmp451/Kconfig"
 # zephyr-keep-sorted-stop

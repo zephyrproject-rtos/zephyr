@@ -850,6 +850,14 @@ int bt_l2cap_br_send_cb(struct bt_conn *conn, uint16_t cid, struct net_buf *buf,
 
 	LOG_DBG("chan %p buf %p len %u", br_chan, buf, buf->len);
 
+	if (net_buf_headroom(buf) < BT_L2CAP_CHAN_SEND_RESERVE) {
+		/* Call `net_buf_reserve(buf, BT_L2CAP_CHAN_SEND_RESERVE)`
+		 * when allocating buffers intended for bt_l2cap_chan_send().
+		 */
+		LOG_ERR("Not enough headroom in buf %p", buf);
+		return -EINVAL;
+	}
+
 #if defined(CONFIG_BT_L2CAP_RET_FC)
 	if (br_chan->tx.mode == BT_L2CAP_BR_LINK_MODE_BASIC) {
 		hdr = net_buf_push(buf, sizeof(*hdr));
@@ -1190,12 +1198,17 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P) &&
 		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P_CHANGED)) ||
 		    (atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY) &&
-		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED)) ||
-		    atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME)) {
+		     atomic_test_bit(br_chan->flags, L2CAP_FLAG_LOCAL_BUSY_CHANGED))) {
 			alloc = true;
 		}
 
 		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RECV_FRAME_P) &&
+		    !l2cap_br_send_i_frame(br_chan, pdu)) {
+			alloc = true;
+		}
+
+		/* Only send the S-frame if there is no any I-frames to be sent. */
+		if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME) &&
 		    !l2cap_br_send_i_frame(br_chan, pdu)) {
 			alloc = true;
 		}
@@ -1219,8 +1232,6 @@ static struct net_buf *l2cap_br_ret_fc_data_pull(struct bt_conn *conn, size_t am
 				LOG_WRN("Cannot sending S-frame on %p", br_chan);
 				return NULL;
 			}
-
-			atomic_clear_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME);
 
 			if (BT_L2CAP_RT_FC_SDU_TAIL_SIZE(br_chan)) {
 				uint16_t fcs =
@@ -1484,6 +1495,9 @@ send_i_frame:
 	}
 
 done:
+	/* Clear S frame flag if any frame sent */
+	atomic_clear_bit(br_chan->flags, L2CAP_FLAG_SEND_S_FRAME);
+
 	/* This is used by `conn.c` to figure out if the PDU is done sending. */
 	*length = br_chan->_pdu_remaining;
 
@@ -1494,8 +1508,7 @@ done:
 	if (br_chan->_pdu_remaining > amount) {
 		br_chan->_pdu_remaining -= amount;
 	} else {
-		net_buf_unref(br_chan->_pdu_buf);
-		br_chan->_pdu_buf = NULL;
+		net_buf_drop(&br_chan->_pdu_buf);
 		br_chan->_pdu_remaining = 0;
 		if (pdu && !pdu->len) {
 			br_chan->_sdu_total_len = 0;
@@ -3675,7 +3688,7 @@ static void l2cap_br_conf_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	struct bt_l2cap_br_chan *br_chan;
 	int err;
 
-	if (buf->len < sizeof(*rsp)) {
+	if (len < sizeof(*rsp)) {
 		LOG_ERR("Too small L2CAP conf rsp packet size");
 		return;
 	}
@@ -4459,7 +4472,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	uint16_t flags, dcid, opt_len, hint, result = BT_L2CAP_CONF_SUCCESS;
 	struct net_buf *rsp_buf;
 
-	if (buf->len < sizeof(*req)) {
+	if (len < sizeof(*req)) {
 		LOG_ERR("Too small L2CAP conf req packet size");
 		return;
 	}
@@ -5719,8 +5732,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 	if ((sar == BT_L2CAP_CONTROL_SAR_UNSEG) || (sar == BT_L2CAP_CONTROL_SAR_START)) {
 		if (br_chan->_sdu) {
 			LOG_ERR("Last SDU is not done");
-			net_buf_unref(br_chan->_sdu);
-			br_chan->_sdu = NULL;
+			net_buf_drop(&br_chan->_sdu);
 			bt_l2cap_chan_disconnect(&br_chan->chan);
 			return -ESHUTDOWN;
 		}
@@ -5750,8 +5762,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 
 	if ((br_chan->_sdu->len + seg->len) > br_chan->_sdu_len) {
 		LOG_ERR("SDU length mismatch");
-		net_buf_unref(br_chan->_sdu);
-		br_chan->_sdu = NULL;
+		net_buf_drop(&br_chan->_sdu);
 		bt_l2cap_chan_disconnect(&br_chan->chan);
 		return -ESHUTDOWN;
 	}
@@ -5761,8 +5772,7 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 				   l2cap_br_alloc_frag, br_chan);
 	if (len != seg->len) {
 		LOG_ERR("Unable to store SDU");
-		net_buf_unref(br_chan->_sdu);
-		br_chan->_sdu = NULL;
+		net_buf_drop(&br_chan->_sdu);
 		bt_l2cap_chan_disconnect(&br_chan->chan);
 		return -ESHUTDOWN;
 	}
@@ -5772,14 +5782,12 @@ static int bt_l2cap_br_recv_seg(struct bt_l2cap_br_chan *br_chan, struct net_buf
 	if ((sar == BT_L2CAP_CONTROL_SAR_UNSEG) || (sar == BT_L2CAP_CONTROL_SAR_END)) {
 		if (br_chan->_sdu->len < br_chan->_sdu_len) {
 			LOG_ERR("SDU length mismatch");
-			net_buf_unref(br_chan->_sdu);
-			br_chan->_sdu = NULL;
+			net_buf_drop(&br_chan->_sdu);
 			bt_l2cap_chan_disconnect(&br_chan->chan);
 			return -ESHUTDOWN;
 		}
 
-		buf = br_chan->_sdu;
-		br_chan->_sdu = NULL;
+		buf = net_buf_take(&br_chan->_sdu);
 		br_chan->_sdu_len = 0;
 
 		/* Receiving complete SDU, notify channel and reset SDU buf */

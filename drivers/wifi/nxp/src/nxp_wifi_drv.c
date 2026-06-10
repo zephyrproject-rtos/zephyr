@@ -80,7 +80,7 @@ extern const rtos_wpa_supp_dev_ops wpa_supp_ops;
 extern int is_hs_handshake_done;
 extern int wlan_host_sleep_state;
 extern bool skip_hs_handshake;
-extern void wlan_hs_hanshake_cfg(bool skip);
+extern void wlan_hs_handshake_cfg(bool skip);
 #endif
 
 static int nxp_wifi_recv(struct net_if *iface, struct net_pkt *pkt);
@@ -2008,10 +2008,9 @@ static int nxp_wifi_ap_set_rts_threshold(const struct device *dev,
 static void nxp_wifi_sta_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	struct interface *intf = dev->data;
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 	intf->netif = iface;
 #ifdef CONFIG_WIFI_NM
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
@@ -2048,11 +2047,10 @@ static void nxp_wifi_sta_init(struct net_if *iface)
 static void nxp_wifi_uap_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	struct interface *intf = dev->data;
 	int ret;
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 	intf->netif = iface;
 
 #ifdef CONFIG_WIFI_NM
@@ -2324,6 +2322,10 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 
 	switch (pm_action) {
 	case PM_DEVICE_ACTION_SUSPEND:
+		if (wlan_is_stopped() && wlan_host_sleep_state && !wakelock_isheld()) {
+			return ret;
+		}
+
 		if (!wlan_host_sleep_state || !wlan_is_started() || wakelock_isheld()
 #ifdef CONFIG_NXP_WIFI_WMM_UAPSD
 		    || wlan_is_wmm_uapsd_enabled()
@@ -2352,6 +2354,17 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 		}
 		break;
 	case PM_DEVICE_ACTION_RESUME:
+		if (wlan_is_stopped() != 0 && wlan_host_sleep_state != 0) {
+			ret = wlan_hs_send_event(HOST_SLEEP_HANDSHAKE_SKIP, NULL);
+			if (ret != 0) {
+				return -EFAULT;
+			}
+
+			if (wlan_host_sleep_state == HOST_SLEEP_ONESHOT) {
+				wlan_host_sleep_state = HOST_SLEEP_DISABLE;
+			}
+			return ret;
+		}
 		/*
 		 * Cancel host sleep in firmware and dump wakekup source.
 		 * If sleep state is periodic, start timer to keep host in full power state for 5s.
@@ -2366,17 +2379,17 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 				if (ret != 0) {
 					return -EFAULT;
 				}
-				wlan_hs_hanshake_cfg(false);
+				wlan_hs_handshake_cfg(false);
 			} else {
 				LOG_DBG("Wakeup by other sources");
-				wlan_hs_hanshake_cfg(true);
+				wlan_hs_handshake_cfg(true);
 			}
 #ifdef CONFIG_NXP_RW610
 			device_pm_dump_wakeup_source();
 #endif
 			if (wlan_host_sleep_state == HOST_SLEEP_ONESHOT) {
 				wlan_host_sleep_state = HOST_SLEEP_DISABLE;
-				wlan_hs_hanshake_cfg(false);
+				wlan_hs_handshake_cfg(false);
 			}
 #ifndef CONFIG_BT
 			if (skip_hs_handshake == true &&

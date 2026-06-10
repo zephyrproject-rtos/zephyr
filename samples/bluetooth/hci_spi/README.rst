@@ -27,9 +27,14 @@ See :zephyr_file:`boards/nrf51dk_nrf51822.overlay
 <samples/bluetooth/hci_spi/boards/nrf51dk_nrf51822.overlay>` in this sample
 directory for an example overlay for the :zephyr:board:`nrf51dk` board.
 
-You can then build this application and flash it onto your board in
-the usual way; see :ref:`boards` for board-specific building and
-flashing information.
+Build and flash the sample as follows, replacing ``<board>`` with your target
+board (e.g. :zephyr:board:`nrf51dk` using the ``nrf51dk/nrf51822`` target):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/hci_spi
+   :board: <board>
+   :goals: build flash
+   :compact:
 
 You will also need a separate chip acting as BT HCI SPI master. This
 application is compatible with the HCI SPI master driver provided by

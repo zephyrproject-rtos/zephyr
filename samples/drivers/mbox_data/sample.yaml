@@ -4,7 +4,7 @@ common:
   sysbuild: true
   tags: mbox
 tests:
-  sample.drivers.mbox_data.real_hw:
+  sample.drivers.mbox.mbox_data.real_hw:
     filter: dt_compat_enabled("vnd,mbox-consumer")
     integration_platforms:
       - mimxrt1160_evk/mimxrt1166/cm7

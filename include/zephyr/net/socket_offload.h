@@ -47,7 +47,7 @@ void socket_offload_dns_register(const struct socket_dns_offload *ops);
  * @param ops A pointer to the offloaded socket DNS API interface.
  *
  * @retval 0 On success
- * @retval -EINVAL Offloaded DNS API was not regsitered.
+ * @retval -EINVAL Offloaded DNS API was not registered.
  */
 int socket_offload_dns_deregister(const struct socket_dns_offload *ops);
 

@@ -7,7 +7,7 @@
  *
  */
 
-#define DT_DRV_COMPAT andestech_qspi_nor_xip
+#define DT_DRV_COMPAT andestech_qspi_nor
 
 #include <andes_csr.h>
 #include <errno.h>

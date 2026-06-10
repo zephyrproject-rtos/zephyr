@@ -20,6 +20,7 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -107,4 +108,8 @@
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+};
+
+&crc {
+	status = "okay";
 };

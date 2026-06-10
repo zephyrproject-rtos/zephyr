@@ -745,7 +745,7 @@ extern "C" {
  * @return The results of expanding the macro on each argument, all pasted
  *         together
  */
-#define MACRO_MAP_CAT(...) MACRO_MAP_CAT_(__VA_ARGS__)
+#define MACRO_MAP_CAT(...) Z_MACRO_MAP_CAT_(__VA_ARGS__)
 
 /**
  * @brief Mapping macro that pastes a fixed number of results together
@@ -760,7 +760,7 @@ extern "C" {
  * @return The results of expanding the macro on each argument, all pasted
  *         together
  */
-#define MACRO_MAP_CAT_N(N, ...) MACRO_MAP_CAT_N_(N, __VA_ARGS__)
+#define MACRO_MAP_CAT_N(N, ...) Z_MACRO_MAP_CAT_N_(N, __VA_ARGS__)
 
 /**
  * @}

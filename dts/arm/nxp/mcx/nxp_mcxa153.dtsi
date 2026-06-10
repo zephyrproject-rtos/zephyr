@@ -238,6 +238,12 @@
 			nxp,kinetis-port = <&portd>;
 		};
 
+		inputmux0: inputmux@40001000 {
+			compatible = "nxp,inputmux";
+			reg = <0x40001000 0x1000>;
+			#inputmux-cells = <2>;
+		};
+
 		i3c0: i3c@40002000 {
 			compatible = "nxp,mcux-i3c";
 			reg = <0x40002000 0x1000>;
@@ -461,6 +467,12 @@
 		vbat: system-modules@40093000 {
 			compatible = "nxp,vbat";
 			reg = <0x40093000 0x1000>;
+		};
+
+		crc: crc@4008a000 {
+			compatible = "nxp,crc";
+			reg = <0x4008a000 0x1000>;
+			status = "disabled";
 		};
 	};
 };

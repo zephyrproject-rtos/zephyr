@@ -67,6 +67,32 @@ config FLASH_HAS_NO_EXPLICIT_ERASE
 	  When your driver sets this option you also need to set
 	  no_explicit_erase capability in your drivers flash_parameters.
 
+config FLASH_FILL_GENERIC_IMPLEMENTATION
+	bool "Include generic flash_fill() loop-based fallback"
+	default y
+	help
+	  Compile in the generic write-loop fallback used by flash_fill()
+	  when a driver does not implement its own api->fill callback.
+	  When all flash drivers enabled in the build provide api->fill
+	  (i.e. all select FLASH_HAS_DRIVER_FILL), this option can be
+	  disabled to save CONFIG_FLASH_FILL_BUFFER_SIZE bytes of stack
+	  and the loop dispatch code in z_impl_flash_fill(). With this
+	  disabled, flash_fill() returns -ENOTSUP for any device whose
+	  driver does not provide api->fill, so verify the build before
+	  turning it off.
+
+config FLASH_HAS_DRIVER_FILL
+	bool
+	help
+	  This option is selected by flash drivers that provide an
+	  optimized api->fill callback (driver-level memset-like fill,
+	  see flash_api_fill in include/zephyr/drivers/flash.h). When no
+	  enabled driver selects this option, the api->fill dispatch in
+	  flash_fill() and the corresponding field in struct
+	  flash_driver_api are compiled out so the generic write-loop
+	  fallback is the only path retained, saving a function pointer
+	  per driver instance and dispatch code.
+
 config FLASH_HAS_PAGE_LAYOUT
 	bool
 	help
@@ -167,6 +193,7 @@ config FLASH_INIT_PRIORITY
 # zephyr-keep-sorted-start
 source "drivers/flash/Kconfig.adi_max32_spixf"
 source "drivers/flash/Kconfig.ambiq"
+source "drivers/flash/Kconfig.ameba"
 source "drivers/flash/Kconfig.andes"
 source "drivers/flash/Kconfig.at25xv021a"
 source "drivers/flash/Kconfig.at45"

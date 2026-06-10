@@ -513,8 +513,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		LOG_INF("Failed to connect to %s: %u %s", bt_conn_dst_str(conn),
 			err, bt_hci_err_to_str(err));
 
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 		return;
 	} else if (role == ROLE_PERIPHERAL) {
 		default_conn = bt_conn_ref(conn);
@@ -530,8 +529,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	LOG_INF("Disconnected: %s, reason 0x%02x %s", bt_conn_dst_str(conn),
 		reason, bt_hci_err_to_str(reason));
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 	k_sem_give(&sem_disconnected);
 }
 

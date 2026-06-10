@@ -247,7 +247,7 @@ ZTEST(lwm2m_registry, test_temp_sensor)
 	uint8_t u8_buf = 0;
 	time_t time_buf = 0;
 	double dbl_buf = 0;
-	char char_buf[10];
+	char char_buf[10] = { 0 };
 
 	uint8_t u8_getbuf = 0;
 	time_t time_getbuf = 0;

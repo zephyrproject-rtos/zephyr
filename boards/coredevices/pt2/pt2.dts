@@ -17,9 +17,6 @@
 	model = "Core Devices Pebble Time 2";
 	compatible = "coredevices,pt2";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,flash = &gd25q256e;
 		zephyr,flash-controller = &mpi2;

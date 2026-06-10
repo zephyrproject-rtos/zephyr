@@ -19,6 +19,7 @@ import tqdm
 import zcmake
 from pathlib import Path
 
+from build_helpers import forward_logging_to_west
 from west.commands import WestCommand
 
 
@@ -678,6 +679,9 @@ class Sdk(WestCommand):
             self.inf()
 
     def do_run(self, args, user_args):
+        # Forward debug output from the zcmake module logger so it is
+        # visible under "west -v" / "west -vv".
+        forward_logging_to_west(self, 'zcmake')
         self.dbg("args: ", args)
         if args.subcommand == "install":
             self.install_sdk(args, user_args)

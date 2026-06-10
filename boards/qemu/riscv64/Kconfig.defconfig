@@ -12,4 +12,28 @@ config HAS_COVERAGE_SUPPORT
 config QEMU_ICOUNT_SHIFT
 	default 6 if QEMU_ICOUNT
 
+configdefault NET_L2_ETHERNET
+	default y
+
+configdefault NET_QEMU_DEVICE_EXTRA_ARGS
+	default "bus=virtio-mmio-bus.0"
+
+configdefault NET_TX_STACK_SIZE
+	default 8192
+
+configdefault NET_RX_STACK_SIZE
+	default 8192
+
+configdefault NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+configdefault TEST_RANDOM_GENERATOR
+	default y if NETWORKING
+
 endif # BOARD_QEMU_RISCV64

@@ -12,6 +12,10 @@ menuconfig LIS2DUX12
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUXS12),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUX12),spi) || \
 		      $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2DUXS12),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DUX12),int1-gpios) || \
+		       $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DUX12),int2-gpios) || \
+		       $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DUXS12),int1-gpios) || \
+		       $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DUXS12),int2-gpios)
 
 	select I2C_RTIO if I2C && SENSOR_ASYNC_API
 	select SPI_RTIO if SPI && SENSOR_ASYNC_API

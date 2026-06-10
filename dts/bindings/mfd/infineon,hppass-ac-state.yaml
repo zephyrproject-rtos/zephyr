@@ -1,0 +1,225 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon HPPASS Autonomous Controller (AC) State Transition Table entry.
+
+  Each node with this compatible represents one state in the AC State Transition
+  Table (STT).  The node is referenced by phandle from the parent HPPASS
+  device's ac-states property, which determines the state's index in the table.
+
+  This binding covers all STT fields: AC core, GPIO output, CSG (×5 slices),
+  SAR, and SAR MUX (×4 channels).  All properties default to 0, so only the
+  fields relevant to a particular state need to be specified.
+
+  Use constants from <dt-bindings/mfd/infineon-hppass.h> for condition,
+  action, GPIO output, and SAR group mask values.
+
+compatible: "infineon,hppass-ac-state"
+
+properties:
+  # --- AC core fields ---
+
+  ac-condition:
+    type: int
+    default: 0
+    description: |
+      AC condition code. Use IFX_HPPASS_AC_COND_* constants
+      from <dt-bindings/mfd/infineon-hppass.h>.
+      Default: FALSE (0).
+
+  ac-action:
+    type: int
+    default: 0
+    description: |
+      AC action code. Use IFX_HPPASS_AC_ACTION_* constants
+      from <dt-bindings/mfd/infineon-hppass.h>.
+      Default: STOP (0).
+
+  branch-state-idx:
+    type: int
+    default: 0
+    description: |
+      Branch target state index (0-15) within the ac-states list.
+      Used when the action is BRANCH_IF_TRUE or BRANCH_IF_FALSE.
+
+  ac-interrupt:
+    type: int
+    default: 0
+    description: |
+      Interrupt/trigger flag (0 or 1).
+      When set to 1, a pulse trigger or CPU interrupt is generated
+      on entering this state (or after the wait condition is met for
+      WAIT_FOR actions).
+
+  ac-count:
+    type: int
+    default: 0
+    description: |
+      Timer/counter value (1-4096).
+      For WAIT_FOR actions this is an interval timer.
+      For BRANCH_IF_* actions this is a loop counter.
+      A value of 0 disables the timer/counter for this state.
+
+  # --- GPIO output fields ---
+
+  gpio-out-unlock:
+    type: int
+    default: 0
+    description: |
+      GPIO output unlock flag (0 or 1).
+      When 1, GPIO output mask is applied in this state.
+
+  gpio-out-msk:
+    type: int
+    default: 0
+    description: |
+      GPIO output mask. Use IFX_HPPASS_GPIO_OUT_* constants
+      from <dt-bindings/mfd/infineon-hppass.h>.
+      Can be OR'd for multiple outputs (e.g., GPIO_OUT_0 | GPIO_OUT_1).
+
+  # --- CSG fields (5 slices) ---
+
+  csg0-unlock:
+    type: int
+    default: 0
+    description: CSG slice 0 unlock flag (0 or 1).
+
+  csg0-enable:
+    type: int
+    default: 0
+    description: CSG slice 0 enable flag (0 or 1). Requires csg0-unlock = 1.
+
+  csg0-dac-trig:
+    type: int
+    default: 0
+    description: CSG slice 0 DAC start/update trigger flag (0 or 1).
+
+  csg1-unlock:
+    type: int
+    default: 0
+    description: CSG slice 1 unlock flag (0 or 1).
+
+  csg1-enable:
+    type: int
+    default: 0
+    description: CSG slice 1 enable flag (0 or 1). Requires csg1-unlock = 1.
+
+  csg1-dac-trig:
+    type: int
+    default: 0
+    description: CSG slice 1 DAC start/update trigger flag (0 or 1).
+
+  csg2-unlock:
+    type: int
+    default: 0
+    description: CSG slice 2 unlock flag (0 or 1).
+
+  csg2-enable:
+    type: int
+    default: 0
+    description: CSG slice 2 enable flag (0 or 1). Requires csg2-unlock = 1.
+
+  csg2-dac-trig:
+    type: int
+    default: 0
+    description: CSG slice 2 DAC start/update trigger flag (0 or 1).
+
+  csg3-unlock:
+    type: int
+    default: 0
+    description: CSG slice 3 unlock flag (0 or 1).
+
+  csg3-enable:
+    type: int
+    default: 0
+    description: CSG slice 3 enable flag (0 or 1). Requires csg3-unlock = 1.
+
+  csg3-dac-trig:
+    type: int
+    default: 0
+    description: CSG slice 3 DAC start/update trigger flag (0 or 1).
+
+  csg4-unlock:
+    type: int
+    default: 0
+    description: CSG slice 4 unlock flag (0 or 1).
+
+  csg4-enable:
+    type: int
+    default: 0
+    description: CSG slice 4 enable flag (0 or 1). Requires csg4-unlock = 1.
+
+  csg4-dac-trig:
+    type: int
+    default: 0
+    description: CSG slice 4 DAC start/update trigger flag (0 or 1).
+
+  # --- SAR fields ---
+
+  sar-unlock:
+    type: int
+    default: 0
+    description: |
+      SAR unlock flag (0 or 1).
+      When 1, SAR enable state is applied in this state.
+
+  sar-enable:
+    type: int
+    default: 0
+    description: |
+      SAR enable flag (0 or 1). Requires sar-unlock = 1.
+      Normally used with WAIT_FOR + BLOCK_READY condition.
+
+  sar-grp-msk:
+    type: int
+    default: 0
+    description: |
+      SAR sequencer group trigger mask. Use IFX_HPPASS_SAR_GRP_* constants
+      from <dt-bindings/mfd/infineon-hppass.h>.
+      Can be OR'd for multiple groups. Effective when SAR is enabled
+      and SAR group trigger source is set to AC.
+
+  # --- SAR MUX fields (4 muxed samplers) ---
+
+  sar-mux0-unlock:
+    type: int
+    default: 0
+    description: SAR mux sampler 0 unlock flag (0 or 1).
+
+  sar-mux0-chan-idx:
+    type: int
+    default: 0
+    description: SAR mux sampler 0 channel selection (0-3).
+
+  sar-mux1-unlock:
+    type: int
+    default: 0
+    description: SAR mux sampler 1 unlock flag (0 or 1).
+
+  sar-mux1-chan-idx:
+    type: int
+    default: 0
+    description: SAR mux sampler 1 channel selection (0-3).
+
+  sar-mux2-unlock:
+    type: int
+    default: 0
+    description: SAR mux sampler 2 unlock flag (0 or 1).
+
+  sar-mux2-chan-idx:
+    type: int
+    default: 0
+    description: SAR mux sampler 2 channel selection (0-3).
+
+  sar-mux3-unlock:
+    type: int
+    default: 0
+    description: SAR mux sampler 3 unlock flag (0 or 1).
+
+  sar-mux3-chan-idx:
+    type: int
+    default: 0
+    description: SAR mux sampler 3 channel selection (0-3).

@@ -232,7 +232,7 @@ endif # OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
 config OPENTHREAD_MBEDTLS_LIB_NAME
 	string "mbedtls lib name"
-	default "mbedTLS"
+	default "mbedtls_iface"
 	help
 	  This option allows to specify one or more mbedtls library files to be
 	  linked with OpenThread. Separate multiple values with space " ".
@@ -426,7 +426,7 @@ menu "OpenThread Border Router"
 
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER
 	bool "Adds support for Border Router functionality"
-	select NET_IPV6_ROUTING
+	select NET_IPV6_FORWARDING
 	help
 	  Enable support for Border Router using Openthread's implementation.
 

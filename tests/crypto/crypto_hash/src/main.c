@@ -31,7 +31,7 @@
 #error "You need to enable one crypto device"
 #endif
 
-/* Following test are part of mbedTLS */
+/* Following tests are part of Mbed TLS */
 
 uint8_t test1[] = {};
 uint8_t test2[] = {0xbd};

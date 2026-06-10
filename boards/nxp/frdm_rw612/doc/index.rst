@@ -17,8 +17,28 @@ operation in a space- and cost-efficient wireless MCU requiring only a single 3.
 Hardware
 ********
 
-- 260 MHz ARM Cortex-M33, tri-radio cores for Wifi 6 + BLE 5.3 + 802.15.4
+- 260 MHz ARM Cortex-M33, tri-radio cores for Wi-Fi 6 + BLE 5.3 + 802.15.4
 - 1.2 MB on-chip SRAM
+- External Quad SPI NOR flash (64 MB) over FlexSPI
+- USB Type-C connector (J10) for power, UART console, and debug
+- 10/100 Mbps Ethernet
+- Integrated Wi-Fi 6 (802.11ax) radio
+- Integrated Bluetooth Low Energy 5.3 radio
+- Integrated 802.15.4 radio (for Zigbee/Thread)
+- Arduino Uno R3 compatible headers
+- mikroBUS header
+- On-board MCU-Link debugger (CMSIS-DAP / J-Link)
+- Single 3.3 V power supply
+
+For more information about the RW612 SoC and FRDM-RW612 board, see:
+
+- `RW612 SoC Website`_
+- `RW612 Datasheet`_
+- `RW612 Reference Manual`_
+- `FRDM-RW612 Website`_
+- `FRDM-RW612 User Guide`_
+- `FRDM-RW612 Board User Manual`_
+- `FRDM-RW612 Schematics`_
 
 Supported Features
 ==================
@@ -181,8 +201,23 @@ After this change, the ENET will stop functioning on the board.
 
 .. include:: ../../common/board-footer.rst.inc
 
-Resources
-*********
-
-.. _RW612 Website:
+.. _RW612 SoC Website:
    https://www.nxp.com/products/wireless-connectivity/wi-fi-plus-bluetooth-plus-802-15-4/wireless-mcu-with-integrated-tri-radiobr1x1-wi-fi-6-plus-bluetooth-low-energy-5-3-802-15-4:RW612
+
+.. _RW612 Datasheet:
+   https://www.nxp.com/docs/en/data-sheet/RW612.pdf
+
+.. _RW612 Reference Manual:
+   https://www.nxp.com/webapp/Download?colCode=RM00278
+
+.. _FRDM-RW612 Website:
+   https://www.nxp.com/design/design-center/development-boards/general-purpose-mcus/freedom-development-board-for-rw612-wireless-mcu:FRDM-RW612
+
+.. _FRDM-RW612 User Guide:
+   https://www.nxp.com/document/guide/getting-started-with-frdm-rw612:GS-FRDM-RW612
+
+.. _FRDM-RW612 Board User Manual:
+   https://www.nxp.com/webapp/Download?colCode=UM12160
+
+.. _FRDM-RW612 Schematics:
+   https://www.nxp.com/webapp/Download?colCode=FRDM-RW612-SCH

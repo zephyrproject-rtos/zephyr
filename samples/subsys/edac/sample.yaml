@@ -10,8 +10,19 @@ common:
       - "EDAC shell application initialized"
 
 tests:
-  sample.subsys.edac:
+  sample.drivers.edac:
     platform_allow: intel_ehl_crb
     integration_platforms:
       - intel_ehl_crb
     tags: edac
+  sample.drivers.edac.nxp_sram_noecc:
+    extra_args: EXTRA_DTC_OVERLAY_FILE="sram_noecc.overlay"
+    depends_on: edac
+    platform_allow:
+      - frdm_mcxa153
+      - frdm_mcxa156
+      - frdm_mcxa266
+      - frdm_mcxa344
+      - frdm_mcxa346
+      - frdm_mcxa366
+      - frdm_mcxa577

@@ -8,7 +8,6 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/arc/v2/mpu/arc_core_mpu.h>
-#include <zephyr/kernel_structs.h>
 
 /*
  * @brief Configure MPU for the thread

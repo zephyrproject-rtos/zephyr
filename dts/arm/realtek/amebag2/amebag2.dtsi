@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/amebag2_clock.h>
 #include <zephyr/dt-bindings/dma/ameba_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -55,9 +56,32 @@
 			reg = <0x20006040 0x49fc0>;
 		};
 
+		wifi0: wifi@40000000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40000000 0x40000>;
+			status = "disabled";
+		};
+
+		wifi1: wifi@40040000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40040000 0x40000>;
+			status = "disabled";
+		};
+
+		sdhc0: sdhc@40114000 {
+			compatible = "realtek,ameba-sdhost";
+			reg = <0x40114000 0xd00>;
+			clocks = <&rcc AMEBA_SDH_CLK>;
+			interrupts = <58 0>;
+			max-bus-freq = <52000000>;
+			min-bus-freq = <400000>;
+			status = "disabled";
+		};
+
 		spic: flash-controller@4011d000 {
 			compatible = "realtek,ameba-flash-controller";
 			reg = <0x4011d000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -135,6 +159,46 @@
 			interrupts = <27 0>;
 			status = "disabled";
 		};
+
+		trng: trng@41001000 {
+			compatible = "realtek,ameba-trng";
+			reg = <0x41001000 0x200>;
+			clocks = <&rcc AMEBA_TRNG_CLK>;
+			status = "disabled";
+		};
+
+		i2c0: i2c0@41008000 {
+			compatible = "realtek,ameba-i2c";
+			reg = <0x41008000 0x100>;
+			interrupts = <28 0>;
+			clocks = <&rcc AMEBA_I2C0_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			dmas = <&dma 2 17 0>,
+			       <&dma 3 16 0>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		i2c1: i2c1@41009000 {
+			compatible = "realtek,ameba-i2c";
+			reg = <0x41009000 0x100>;
+			interrupts = <29 0>;
+			clocks = <&rcc AMEBA_I2C1_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			dmas = <&dma 2 19 0>,
+			       <&dma 3 18 0>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+	};
+
+	bt: bt {
+		compatible = "realtek,ameba-bt-hci";
+		status = "disabled";
 	};
 };
 

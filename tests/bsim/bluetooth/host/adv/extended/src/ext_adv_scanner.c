@@ -26,8 +26,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err != BT_HCI_ERR_SUCCESS) {
 		TEST_FAIL("Failed to connect to %s: %u", bt_conn_dst_str(conn), err);
-		bt_conn_unref(g_conn);
-		g_conn = NULL;
+		bt_conn_drop(&g_conn);
 		return;
 	}
 
@@ -39,8 +38,7 @@ static void free_conn_object_work_fn(struct k_work *work)
 {
 	ARG_UNUSED(work);
 
-	bt_conn_unref(g_conn);
-	g_conn = NULL;
+	bt_conn_drop(&g_conn);
 }
 
 static K_WORK_DELAYABLE_DEFINE(free_conn_object_work, free_conn_object_work_fn);

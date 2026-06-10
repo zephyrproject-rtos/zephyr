@@ -2650,9 +2650,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 #ifdef CONFIG_PM
 #define STM32_UART_PM_WAKEUP(index)						\
 	.wakeup_source = DT_INST_PROP(index, wakeup_source),			\
-	.wakeup_line = COND_CODE_1(DT_INST_NODE_HAS_PROP(index, wakeup_line),	\
-			(DT_INST_PROP(index, wakeup_line)),			\
-			(STM32_WAKEUP_LINE_NONE)),
+	.wakeup_line = DT_INST_PROP_OR(index, wakeup_line, STM32_WAKEUP_LINE_NONE),
 #else
 #define STM32_UART_PM_WAKEUP(index) /* Not used */
 #endif

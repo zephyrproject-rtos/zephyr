@@ -12,6 +12,7 @@
 #define DT_DRV_COMPAT infineon_autanalog_sar_adc
 
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
+#include <zephyr/dt-bindings/adc/infineon-autanalog-sar.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -29,6 +30,9 @@ LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
 #define ADC_AUTANALOG_SAR_RESOLUTION             12
 
 #define IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS           32
+#define IFX_AUTANALOG_SAR_MAX_GPIO_CHANNELS          8
+#define IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS           16
+#define IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET         8
 #define IFX_AUTANALOG_SAR_NUM_SEQUENCERS             1
 #define IFX_AUTANALOG_SAR_NUM_ENABLED_CHANNELS(inst) DT_NUM_CHILDREN(DT_DRV_INST(inst))
 
@@ -36,22 +40,32 @@ LOG_MODULE_REGISTER(ifx_autanalog_sar_adc, CONFIG_ADC_LOG_LEVEL);
 
 #define IFX_AUTANALOG_HF_CLK_SRC 9
 
-/* Reference Voltage Source definitions from Device Tree Bindings */
-enum ifx_autanalog_sar_vref_source {
-	IFX_AUTANALOG_SAR_VREF_VDDA = 0,
-	IFX_AUTANALOG_SAR_VREF_EXT = 1,
-	IFX_AUTANALOG_SAR_VREF_VBGR = 2,
-	IFX_AUTANALOG_SAR_VREF_VDDA_BY_2 = 3,
-	IFX_AUTANALOG_SAR_VREF_PRB_OUT0 = 4,
-	IFX_AUTANALOG_SAR_VREF_PRB_OUT1 = 5,
+/* clang-format off */
+
+/* Helpers to split a combined channel bitmask into GPIO and MUX parts */
+#define IFX_GPIO_CHANNELS_MASK(channels) ((channels) & 0xFFu)
+#define IFX_MUX_CHANNELS_MASK(channels)                                                        \
+	(((channels) >> IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET) & 0xFFFFu)
+
+/* clang-format on */
+struct ifx_autanalog_sar_channel_dt_config {
+	uint8_t channel_id;
+	bool mux_buf_bypass;
 };
 
 struct ifx_autanalog_sar_adc_config {
 	void (*irq_func)(void);
 	const struct device *mfd;
-	enum ifx_autanalog_sar_vref_source vref_source;
+	uint8_t vref_source;
 	bool linear_cal;
 	bool offset_cal;
+	uint8_t pos_buf_pwr;
+	uint8_t neg_buf_pwr;
+	uint8_t acc_mode;
+	bool shift_mode;
+	bool fifo_chan_id;
+	uint8_t num_dt_channels;
+	const struct ifx_autanalog_sar_channel_dt_config *dt_channels;
 };
 
 struct ifx_autanalog_sar_adc_channel_config {
@@ -59,6 +73,8 @@ struct ifx_autanalog_sar_adc_channel_config {
 	 * configured in HW.
 	 */
 	uint8_t sample_time_idx;
+	/* Whether the MUX input buffer should be bypassed for this channel */
+	bool mux_buf_bypass;
 };
 
 struct ifx_autanalog_sar_adc_data {
@@ -82,9 +98,13 @@ struct ifx_autanalog_sar_adc_data {
 
 	/* PDL structures to initialize the High Speed ADC */
 	cy_stc_autanalog_sar_hs_chan_t
-		pdl_adc_hs_channel_cfg_obj_arr[IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS];
+		pdl_adc_hs_channel_cfg_obj_arr[IFX_AUTANALOG_SAR_MAX_GPIO_CHANNELS];
 	cy_stc_autanalog_sar_sta_hs_t pdl_adc_hs_static_obj;
 	cy_stc_autanalog_sar_seq_tab_hs_t pdl_adc_seq_hs_cfg_obj[IFX_AUTANALOG_SAR_NUM_SEQUENCERS];
+
+	/* PDL structures for MUX channels */
+	cy_stc_autanalog_sar_mux_chan_t
+		pdl_adc_mux_channel_cfg_obj_arr[IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS];
 };
 
 /**
@@ -131,29 +151,28 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 	data->pdl_adc_top_static_obj = (cy_stc_autanalog_sar_sta_t){
 		.lpStaCfg = NULL, /* This driver implementation only implements HS mode.*/
 		.hsStaCfg = &data->pdl_adc_hs_static_obj,
-		.posBufPwr = CY_AUTANALOG_SAR_BUF_PWR_OFF,
-		.negBufPwr = CY_AUTANALOG_SAR_BUF_PWR_OFF,
+		.posBufPwr = (cy_en_autanalog_sar_buf_pwr_t)cfg->pos_buf_pwr,
+		.negBufPwr = (cy_en_autanalog_sar_buf_pwr_t)cfg->neg_buf_pwr,
 		/* Note:  This setting chooses "accumulate and dump" vs. "interleaved" for channels
 		 * where averaging is enabled.  The selection for "accumulate" vs. "accumulate and
 		 * divide" is tracked by adc->average_is_accumulate and is applied in the hardware
 		 * on a per-channel basis.
 		 */
-		.accMode = CY_AUTANALOG_SAR_ACC_DISABLED,
+		.accMode = (cy_en_autanalog_sar_acc_mode_t)cfg->acc_mode,
 		.startupCal = (cfg->offset_cal ? CY_AUTANALOG_SAR_CAL_OFFSET
 					       : CY_AUTANALOG_SAR_CAL_DISABLED) |
 			      (cfg->linear_cal ? CY_AUTANALOG_SAR_CAL_LINEARITY
 					       : CY_AUTANALOG_SAR_CAL_DISABLED),
-		.chanID = false, /* We don't use the FIFO features */
-		/* When accShift is set for a channel, shift back down to 12 bits */
-		.shiftMode = false,
-		.intMuxChan = {NULL}, /* We don't expose mux channels */
+		.chanID = cfg->fifo_chan_id,
+		.shiftMode = cfg->shift_mode,
+		.intMuxChan = {NULL}, /* MUX channels configured during channel setup */
 		.limitCond = {NULL},  /* We don't expose the range detection */
-		.muxResultMask = 0u,  /* We don't expose mux channels */
+		.muxResultMask = 0u,  /* MUX result mask updated during channel setup */
 		.firResultMask = 0u,  /* We don't expose FIR functionality */
 	};
 
 	data->pdl_adc_hs_static_obj = (cy_stc_autanalog_sar_sta_hs_t){
-		.hsVref = cfg->vref_source,
+		.hsVref = (cy_en_autanalog_sar_vref_t)cfg->vref_source,
 		.hsSampleTime = {
 				0,
 				0,
@@ -173,32 +192,6 @@ static void ifx_init_pdl_structs(struct ifx_autanalog_sar_adc_data *data,
 			},
 		.hsGpioResultMask = 0,
 	};
-
-	/* Map the vref_source from the device tree to the PDL enum */
-	switch (cfg->vref_source) {
-	case IFX_AUTANALOG_SAR_VREF_VDDA:
-		data->pdl_adc_hs_static_obj.hsVref = CY_AUTANALOG_SAR_VREF_VDDA;
-		break;
-	case IFX_AUTANALOG_SAR_VREF_EXT:
-		data->pdl_adc_hs_static_obj.hsVref = CY_AUTANALOG_SAR_VREF_EXT;
-		break;
-	case IFX_AUTANALOG_SAR_VREF_VDDA_BY_2:
-		data->pdl_adc_hs_static_obj.hsVref = CY_AUTANALOG_SAR_VREF_VDDA_BY_2;
-		break;
-	case IFX_AUTANALOG_SAR_VREF_VBGR:
-		data->pdl_adc_hs_static_obj.hsVref = CY_AUTANALOG_SAR_VREF_VBGR;
-		break;
-	case IFX_AUTANALOG_SAR_VREF_PRB_OUT0:
-		data->pdl_adc_hs_static_obj.hsVref = CY_AUTANALOG_SAR_VREF_PRB_OUT0;
-		break;
-	case IFX_AUTANALOG_SAR_VREF_PRB_OUT1:
-		data->pdl_adc_hs_static_obj.hsVref = CY_AUTANALOG_SAR_VREF_PRB_OUT1;
-		break;
-	default:
-		LOG_ERR("Unsupported VREF source, using VDDA");
-		data->pdl_adc_hs_static_obj.hsVref = CY_AUTANALOG_SAR_VREF_VDDA;
-		break;
-	}
 } /* ifx_init_pdl_struct() */
 
 /**
@@ -219,10 +212,19 @@ static void ifx_autanalog_sar_get_results(uint32_t channels,
 		return;
 	}
 
-	for (size_t i = 0; i < IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS; i++) {
-		if ((channels & (1 << i)) != 0) {
+	/* Read GPIO channel results (channels 0-7) */
+	for (size_t i = 0; i < IFX_AUTANALOG_SAR_MAX_GPIO_CHANNELS; i++) {
+		if ((channels & BIT(i)) != 0) {
 			*data->conversion_buffer++ =
 				Cy_AutAnalog_SAR_ReadResult(0, CY_AUTANALOG_SAR_INPUT_GPIO, i);
+		}
+	}
+
+	/* Read MUX channel results (channels 8-23 map to MUX channels 0-15) */
+	for (size_t i = 0; i < IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS; i++) {
+		if ((channels & BIT(i + IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET)) != 0) {
+			*data->conversion_buffer++ =
+				Cy_AutAnalog_SAR_ReadResult(0, CY_AUTANALOG_SAR_INPUT_MUX, i);
 		}
 	}
 } /* ifx_autanalog_sar_get_results() */
@@ -242,25 +244,32 @@ static int ifx_build_hs_sequencer_entry(uint32_t channels, struct ifx_autanalog_
 {
 	uint8_t timer_index = IFX_AUTANALOG_SAR_SAMPLETIME_COUNT;
 	cy_stc_autanalog_sar_seq_tab_hs_t *seq_entry = &data->pdl_adc_seq_hs_cfg_obj[0];
+	uint8_t gpio_channels = IFX_GPIO_CHANNELS_MASK(channels);
+	uint16_t mux_channels = IFX_MUX_CHANNELS_MASK(channels);
+	uint8_t mux_mode = CY_AUTANALOG_SAR_CHAN_CFG_MUX_DISABLED;
+	uint8_t mux0_sel = CY_AUTANALOG_SAR_CHAN_CFG_MUX0;
+	uint8_t mux1_sel = CY_AUTANALOG_SAR_CHAN_CFG_MUX0;
 
 	/* Verify that all channels in the sequence have the same acquisition time and the sample
 	 * time is configured in hardware.
 	 */
 	for (uint8_t i = 0; i < IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS; i++) {
-		if ((channels & (1 << i)) != 0) {
-			if (data->autanalog_channel_cfg[i].sample_time_idx >=
-			    IFX_AUTANALOG_SAR_SAMPLETIME_COUNT) {
-				LOG_ERR("Invalid sample time index for channel %d", i);
-				return -EINVAL;
-			}
+		if ((channels & BIT(i)) == 0) {
+			continue;
+		}
 
-			if (timer_index == IFX_AUTANALOG_SAR_SAMPLETIME_COUNT) {
-				timer_index = data->autanalog_channel_cfg[i].sample_time_idx;
-			} else if (timer_index != data->autanalog_channel_cfg[i].sample_time_idx) {
-				LOG_ERR("All channels in a sequence must have the same sample "
-					"time");
-				return -EINVAL;
-			}
+		if (data->autanalog_channel_cfg[i].sample_time_idx >=
+		    IFX_AUTANALOG_SAR_SAMPLETIME_COUNT) {
+			LOG_ERR("Invalid sample time index for channel %d", i);
+			return -EINVAL;
+		}
+
+		if (timer_index == IFX_AUTANALOG_SAR_SAMPLETIME_COUNT) {
+			timer_index = data->autanalog_channel_cfg[i].sample_time_idx;
+		} else if (timer_index != data->autanalog_channel_cfg[i].sample_time_idx) {
+			LOG_ERR("All channels in a sequence must have the same sample "
+				"time");
+			return -EINVAL;
 		}
 	}
 
@@ -269,11 +278,51 @@ static int ifx_build_hs_sequencer_entry(uint32_t channels, struct ifx_autanalog_
 		return -EINVAL;
 	}
 
+	/* Determine MUX mode based on which MUX channels are requested.
+	 * Hardware supports sampling MUX channel 0 only, MUX channel 1 only,
+	 * both MUX channels simultaneously, or pseudo-differential mode.
+	 * This driver currently supports single-ended MUX sampling only.
+	 */
+	if (mux_channels != 0) {
+		uint8_t mux_count = 0;
+		uint8_t first_mux = 0xFF;
+		uint8_t second_mux = 0xFF;
+
+		for (uint8_t i = 0; i < IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS; i++) {
+			if ((mux_channels & BIT(i)) == 0) {
+				continue;
+			}
+
+			mux_count++;
+			if (first_mux == 0xFF) {
+				first_mux = i;
+			} else if (second_mux == 0xFF) {
+				second_mux = i;
+			} else {
+				/* Both MUX slots already assigned */
+			}
+		}
+
+		if (mux_count > 2) {
+			LOG_ERR("At most 2 MUX channels can be sampled per sequencer entry");
+			return -EINVAL;
+		}
+
+		if (mux_count == 1) {
+			mux_mode = CY_AUTANALOG_SAR_CHAN_CFG_MUX0_SINGLE_ENDED;
+			mux0_sel = first_mux;
+		} else {
+			mux_mode = CY_AUTANALOG_SAR_CHAN_CFG_MUX0_MUX1_SINGLE_ENDED;
+			mux0_sel = first_mux;
+			mux1_sel = second_mux;
+		}
+	}
+
 	seq_entry->sampleTime = (cy_en_autanalog_sar_sample_time_t)timer_index;
-	seq_entry->chanEn = channels;
-	seq_entry->muxMode = CY_AUTANALOG_SAR_CHAN_CFG_MUX_DISABLED;
-	seq_entry->mux0Sel = CY_AUTANALOG_SAR_CHAN_CFG_MUX0;
-	seq_entry->mux1Sel = CY_AUTANALOG_SAR_CHAN_CFG_MUX0;
+	seq_entry->chanEn = gpio_channels;
+	seq_entry->muxMode = mux_mode;
+	seq_entry->mux0Sel = mux0_sel;
+	seq_entry->mux1Sel = mux1_sel;
 	seq_entry->sampleTimeEn = true;
 	seq_entry->accEn = false;
 	seq_entry->accCount = CY_AUTANALOG_SAR_ACC_CNT2;
@@ -332,16 +381,37 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	}
 
 	ifx_autanalog_start_autonomous_control(cfg->mfd);
-	Cy_AutAnalog_SAR_ClearHSchanResultStatus(0, sequence->channels);
-	Cy_AutAnalog_FwTrigger(CY_AUTANALOG_FW_TRIGGER0);
+
+	{
+		uint8_t gpio_ch = IFX_GPIO_CHANNELS_MASK(sequence->channels);
+		uint16_t mux_ch = IFX_MUX_CHANNELS_MASK(sequence->channels);
+
+		if (gpio_ch != 0) {
+			Cy_AutAnalog_SAR_ClearHSchanResultStatus(0, gpio_ch);
+		}
+		if (mux_ch != 0) {
+			Cy_AutAnalog_SAR_ClearMuxChanResultStatus(0, mux_ch);
+		}
+	}
 
 #if defined(CONFIG_ADC_ASYNC)
 	if (!data->ctx.asynchronous) {
 #endif
 		/* Wait for conversion to complete */
-		do {
-			result_status = Cy_AutAnalog_SAR_GetHSchanResultStatus(0);
-		} while ((result_status & sequence->channels) != sequence->channels);
+		{
+			uint8_t gpio_ch = IFX_GPIO_CHANNELS_MASK(sequence->channels);
+			uint16_t mux_ch = IFX_MUX_CHANNELS_MASK(sequence->channels);
+			bool gpio_done, mux_done;
+
+			do {
+				gpio_done = (gpio_ch == 0) ||
+					    ((Cy_AutAnalog_SAR_GetHSchanResultStatus(0) &
+					      gpio_ch) == gpio_ch);
+				mux_done = (mux_ch == 0) ||
+					   ((Cy_AutAnalog_SAR_GetMuxChanResultStatus(0) & mux_ch) ==
+					    mux_ch);
+			} while (!gpio_done || !mux_done);
+		}
 
 		ifx_autanalog_sar_get_results(sequence->channels, data);
 		adc_context_on_sampling_done(&data->ctx, data->dev);
@@ -426,13 +496,22 @@ static void ifx_autanalog_sar_adc_isr(const struct device *dev)
 #if defined(CONFIG_ADC_ASYNC)
 	struct ifx_autanalog_sar_adc_data *data = dev->data;
 	const struct adc_sequence *sequence = &data->ctx.sequence;
-	uint32_t result_status;
 
 	if (data->ctx.asynchronous) {
-		result_status = Cy_AutAnalog_SAR_GetHSchanResultStatus(0);
+		uint8_t gpio_ch = IFX_GPIO_CHANNELS_MASK(sequence->channels);
+		uint16_t mux_ch = IFX_MUX_CHANNELS_MASK(sequence->channels);
+		bool gpio_done = (gpio_ch == 0) ||
+				 ((Cy_AutAnalog_SAR_GetHSchanResultStatus(0) & gpio_ch) == gpio_ch);
+		bool mux_done = (mux_ch == 0) ||
+				((Cy_AutAnalog_SAR_GetMuxChanResultStatus(0) & mux_ch) == mux_ch);
 
-		if ((result_status & sequence->channels) == sequence->channels) {
-			Cy_AutAnalog_SAR_ClearHSchanResultStatus(0, sequence->channels);
+		if (gpio_done && mux_done) {
+			if (gpio_ch != 0) {
+				Cy_AutAnalog_SAR_ClearHSchanResultStatus(0, gpio_ch);
+			}
+			if (mux_ch != 0) {
+				Cy_AutAnalog_SAR_ClearMuxChanResultStatus(0, mux_ch);
+			}
 			ifx_autanalog_sar_get_results(sequence->channels, data);
 			adc_context_on_sampling_done(&data->ctx, data->dev);
 		} else {
@@ -542,22 +621,115 @@ static int ifx_autanalog_sar_adc_read_async(const struct device *dev,
  *
  * @return 0 on success, negative error code on failure
  */
+static int ifx_autanalog_sar_setup_gpio_channel(struct ifx_autanalog_sar_adc_data *data,
+						const struct adc_channel_cfg *channel_cfg,
+						uint8_t sample_time_idx)
+{
+	cy_stc_autanalog_sar_hs_chan_t *pdl_channel;
+	uint8_t hw_channel = channel_cfg->channel_id;
+
+	if (hw_channel >= IFX_AUTANALOG_SAR_MAX_GPIO_CHANNELS) {
+		LOG_ERR("GPIO channel ID %d out of range (max %d)", hw_channel,
+			IFX_AUTANALOG_SAR_MAX_GPIO_CHANNELS - 1);
+		return -EINVAL;
+	}
+
+	if (channel_cfg->input_positive >= PASS_SAR_SAR_GPIO_CHANNELS) {
+		LOG_ERR("Invalid ADC input pin for GPIO channel %d: %d", hw_channel,
+			channel_cfg->input_positive);
+		return -EINVAL;
+	}
+
+	pdl_channel = &data->pdl_adc_hs_channel_cfg_obj_arr[hw_channel];
+	data->pdl_adc_hs_static_obj.hsGpioChan[hw_channel] = pdl_channel;
+
+	pdl_channel->posPin = channel_cfg->input_positive;
+	pdl_channel->hsDiffEn = false;
+	pdl_channel->sign = false;
+	pdl_channel->posCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
+	pdl_channel->negPin = CY_AUTANALOG_SAR_PIN_GPIO0;
+	pdl_channel->accShift = false;
+	pdl_channel->negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
+	pdl_channel->hsLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
+	pdl_channel->fifoSel = CY_AUTANALOG_FIFO_DISABLED;
+
+	data->pdl_adc_hs_static_obj.hsGpioResultMask |= BIT(hw_channel);
+	data->autanalog_channel_cfg[channel_cfg->channel_id].sample_time_idx = sample_time_idx;
+	if (Cy_AutAnalog_SAR_LoadStaticConfig(0, &data->pdl_adc_top_static_obj) !=
+	    CY_AUTANALOG_SUCCESS) {
+		data->pdl_adc_hs_static_obj.hsGpioChan[hw_channel] = NULL;
+		data->pdl_adc_hs_static_obj.hsGpioResultMask &= ~BIT(hw_channel);
+		LOG_ERR("Failed to configure GPIO ADC Channel %d", hw_channel);
+		return -EIO;
+	}
+
+	data->enabled_channels |= BIT(channel_cfg->channel_id);
+	return 0;
+}
+
+static int ifx_autanalog_sar_setup_mux_channel(struct ifx_autanalog_sar_adc_data *data,
+					       const struct adc_channel_cfg *channel_cfg,
+					       uint8_t sample_time_idx)
+{
+	cy_stc_autanalog_sar_mux_chan_t *pdl_mux_channel;
+	uint8_t mux_idx;
+
+	if (channel_cfg->channel_id < IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET) {
+		LOG_ERR("MUX channel ID must be >= %d", IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET);
+		return -EINVAL;
+	}
+
+	mux_idx = channel_cfg->channel_id - IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET;
+	if (mux_idx >= IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS) {
+		LOG_ERR("MUX channel index %d out of range (max %d)", mux_idx,
+			IFX_AUTANALOG_SAR_MAX_MUX_CHANNELS - 1);
+		return -EINVAL;
+	}
+
+	pdl_mux_channel = &data->pdl_adc_mux_channel_cfg_obj_arr[mux_idx];
+	data->pdl_adc_top_static_obj.intMuxChan[mux_idx] = pdl_mux_channel;
+
+	pdl_mux_channel->posPin = (cy_en_autanalog_sar_pin_mux_t)channel_cfg->input_positive;
+	pdl_mux_channel->sign = false;
+	pdl_mux_channel->posCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
+	pdl_mux_channel->negPin = (cy_en_autanalog_sar_pin_mux_t)channel_cfg->input_negative;
+	pdl_mux_channel->buffBypass =
+		data->autanalog_channel_cfg[channel_cfg->channel_id].mux_buf_bypass;
+	pdl_mux_channel->accShift = false;
+	pdl_mux_channel->negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
+	pdl_mux_channel->muxLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
+	pdl_mux_channel->fifoSel = CY_AUTANALOG_FIFO_DISABLED;
+
+	data->pdl_adc_top_static_obj.muxResultMask |= BIT(mux_idx);
+	data->autanalog_channel_cfg[channel_cfg->channel_id].sample_time_idx = sample_time_idx;
+	if (Cy_AutAnalog_SAR_LoadStaticConfig(0, &data->pdl_adc_top_static_obj) !=
+	    CY_AUTANALOG_SUCCESS) {
+		data->pdl_adc_top_static_obj.intMuxChan[mux_idx] = NULL;
+		data->pdl_adc_top_static_obj.muxResultMask &= ~BIT(mux_idx);
+		LOG_ERR("Failed to configure MUX ADC Channel %d (mux idx %d)",
+			channel_cfg->channel_id, mux_idx);
+		return -EIO;
+	}
+
+	data->enabled_channels |= BIT(channel_cfg->channel_id);
+	return 0;
+}
+
 static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 					       const struct adc_channel_cfg *channel_cfg)
 {
 	struct ifx_autanalog_sar_adc_data *data = dev->data;
-	struct ifx_autanalog_sar_adc_channel_config *channel_zephyr_cfg =
-		&data->autanalog_channel_cfg[channel_cfg->channel_id];
-	cy_stc_autanalog_sar_hs_chan_t *pdl_channel =
-		&data->pdl_adc_hs_channel_cfg_obj_arr[channel_cfg->channel_id];
-	data->pdl_adc_hs_static_obj.hsGpioChan[channel_cfg->channel_id] = pdl_channel;
 	uint8_t sample_time_idx;
 	uint16_t timer_clock_cycles;
+	bool is_mux_channel;
 
 	if (channel_cfg->channel_id >= IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS) {
 		LOG_ERR("Invalid channel ID: %d", channel_cfg->channel_id);
 		return -EINVAL;
 	}
+
+	/* Determine if this is a MUX channel based on channel_id range */
+	is_mux_channel = (channel_cfg->channel_id >= IFX_AUTANALOG_SAR_MUX_CHANNEL_OFFSET);
 
 	if (channel_cfg->differential) {
 		LOG_ERR("Differential channels not supported");
@@ -577,15 +749,6 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 	    channel_cfg->reference != ADC_REF_EXTERNAL0 &&
 	    channel_cfg->reference != ADC_REF_VDD_1_2) {
 		LOG_ERR("Reference setting not supported.");
-		return -EINVAL;
-	}
-
-	/* This driver implementation only supports direct GPIO channel inputs and not the
-	 * MUXed inputs
-	 */
-	if (channel_cfg->input_positive >= PASS_SAR_SAR_GPIO_CHANNELS) {
-		LOG_ERR("Invalid ADC input pin for channel %d: %d", channel_cfg->channel_id,
-			channel_cfg->input_positive);
 		return -EINVAL;
 	}
 
@@ -611,32 +774,11 @@ static int ifx_autanalog_sar_adc_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	channel_zephyr_cfg->sample_time_idx = sample_time_idx;
-
-	pdl_channel->posPin = channel_cfg->input_positive;
-	pdl_channel->hsDiffEn = false;
-	pdl_channel->sign = false;
-	pdl_channel->posCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-	pdl_channel->negPin = CY_AUTANALOG_SAR_PIN_GPIO0;
-	pdl_channel->accShift = false;
-	pdl_channel->negCoeff = CY_AUTANALOG_SAR_CH_COEFF_DISABLED;
-	pdl_channel->hsLimit = CY_AUTANALOG_SAR_LIMIT_STATUS_DISABLED;
-	pdl_channel->fifoSel = CY_AUTANALOG_FIFO_DISABLED;
-
-	data->pdl_adc_hs_static_obj.hsGpioResultMask |= (1 << channel_cfg->channel_id);
-
-	if (Cy_AutAnalog_SAR_LoadStaticConfig(0, &data->pdl_adc_top_static_obj) !=
-	    CY_AUTANALOG_SUCCESS) {
-		data->pdl_adc_hs_static_obj.hsGpioChan[channel_cfg->channel_id] = NULL;
-		data->pdl_adc_hs_static_obj.hsGpioResultMask &= ~(1 << channel_cfg->channel_id);
-		LOG_ERR("Failed to configure ADC Channel %d", channel_cfg->channel_id);
-
-		return -EIO;
+	if (is_mux_channel) {
+		return ifx_autanalog_sar_setup_mux_channel(data, channel_cfg, sample_time_idx);
 	}
 
-	data->enabled_channels |= BIT(channel_cfg->channel_id);
-
-	return 0;
+	return ifx_autanalog_sar_setup_gpio_channel(data, channel_cfg, sample_time_idx);
 } /* ifx_autanalog_sar_adc_channel_setup() */
 
 /**
@@ -660,10 +802,23 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	memset(data->autanalog_channel_cfg, 0xFF, sizeof(data->autanalog_channel_cfg));
+	for (uint8_t i = 0; i < ARRAY_SIZE(data->autanalog_channel_cfg); i++) {
+		data->autanalog_channel_cfg[i].sample_time_idx = 0xFF;
+		data->autanalog_channel_cfg[i].mux_buf_bypass = false;
+	}
 
 	data->dev = dev;
 	data->enabled_channels = 0;
+
+	/* Pre-populate per-channel DT settings that are not carried in adc_channel_cfg. */
+	for (uint8_t i = 0; i < cfg->num_dt_channels; i++) {
+		uint8_t ch = cfg->dt_channels[i].channel_id;
+
+		if (ch < IFX_AUTANALOG_SAR_MAX_NUM_CHANNELS) {
+			data->autanalog_channel_cfg[ch].mux_buf_bypass =
+				cfg->dt_channels[i].mux_buf_bypass;
+		}
+	}
 
 	/* Initialize the pdl data structures based on the device tree configuration, then
 	 * use Infineon PDL APIs to initialize the ADC.
@@ -706,16 +861,39 @@ static int ifx_autanalog_sar_adc_init(const struct device *dev)
 	};
 #endif /* CONFIG_ADC_ASYNC */
 
+/* Per-channel DT config: extract channel_id and DT-only channel settings. */
+#define IFX_CHAN_DT_CFG_ENTRY(child_node_id)                                                       \
+	COND_CODE_1(DT_NODE_HAS_PROP(child_node_id, reg),                                         \
+		({                                                                                 \
+			.channel_id = (uint8_t)DT_REG_ADDR(child_node_id),                         \
+			.mux_buf_bypass = DT_PROP_OR(child_node_id, mux_buf_bypass, 0),            \
+		},), ())
+
+#define IFX_CHAN_DT_CFG_ARRAY(n)                                                                   \
+	static const struct ifx_autanalog_sar_channel_dt_config ifx_sar_chan_dt_cfg_##n[] = {      \
+		DT_INST_FOREACH_CHILD_STATUS_OKAY(n, IFX_CHAN_DT_CFG_ENTRY)}
+
 /* Device Instantiation */
 #define IFX_AUTANALOG_SAR_ADC_INIT(n)                                                              \
 	ADC_IFX_AUTANALOG_SAR_DRIVER_API(n);                                                       \
 	static void ifx_autanalog_sar_adc_config_func_##n(void);                                   \
+	/* Per-channel DT config array */                                                          \
+	IFX_CHAN_DT_CFG_ARRAY(n);                                                                  \
+	static void ifx_autanalog_sar_adc_config_func_##n(void);                                   \
 	static const struct ifx_autanalog_sar_adc_config ifx_autanalog_sar_adc_config_##n = {      \
 		.irq_func = ifx_autanalog_sar_adc_config_func_##n,                                 \
 		.mfd = DEVICE_DT_GET(DT_INST_PARENT(n)),                                           \
-		.vref_source = DT_INST_ENUM_IDX(n, vref_source),                                   \
+		.vref_source = DT_INST_PROP(n, vref_source),                                       \
 		.linear_cal = DT_INST_PROP(n, linear_cal),                                         \
-		.offset_cal = DT_INST_PROP(n, offset_cal)};                                        \
+		.offset_cal = DT_INST_PROP(n, offset_cal),                                         \
+		.pos_buf_pwr = DT_INST_PROP(n, pos_buf_pwr),                                       \
+		.neg_buf_pwr = DT_INST_PROP(n, neg_buf_pwr),                                       \
+		.acc_mode = DT_INST_PROP(n, acc_mode),                                             \
+		.shift_mode = DT_INST_PROP(n, shift_mode),                                         \
+		.fifo_chan_id = DT_INST_PROP(n, fifo_chan_id),                                     \
+		.num_dt_channels = ARRAY_SIZE(ifx_sar_chan_dt_cfg_##n),                            \
+		.dt_channels = ifx_sar_chan_dt_cfg_##n,                                            \
+	};                                                                                         \
 	static struct ifx_autanalog_sar_adc_data ifx_autanalog_sar_adc_data_##n = {                \
 		ADC_CONTEXT_INIT_LOCK(ifx_autanalog_sar_adc_data_##n, ctx),                        \
 		ADC_CONTEXT_INIT_TIMER(ifx_autanalog_sar_adc_data_##n, ctx),                       \

@@ -15,6 +15,8 @@
 
 #include <zephyr/toolchain.h>
 
+/** @cond INTERNAL_HIDDEN */
+
 /*
  * Force the use of portable C code (no builtins) by defining
  * PORTABLE_MISC_MATH_EXTRAS before including <misc/math_extras.h>.
@@ -314,3 +316,5 @@ static inline void i128_multiply_i64_i64(int64_t a, int64_t b, int128_t *result)
 #endif /* __has_type_128 */
 
 #undef use_builtin
+
+/** @endcond */

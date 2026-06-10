@@ -32,11 +32,6 @@
 	};
 };
 
-&gpio0 {
-	/* Configure device as wakeup source */
-	wakeup-source;
-};
-
 &rtc_slow_ram {
 	/* Shrink rtc_slow_ram size to avoid overlap with retained memory region:
 	 * 8KB - 256 = 0x1f00

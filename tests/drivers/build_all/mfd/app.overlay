@@ -48,6 +48,11 @@
 				compatible = "nordic,npm10xx";
 				reg = <0x0>;
 			};
+
+			test_i2c_m5pm1: pmic@6e {
+				compatible = "m5stack,m5pm1";
+				reg = <0x6e>;
+			};
 		};
 
 		test_uart: uart@55556666 {

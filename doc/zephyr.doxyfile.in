@@ -305,6 +305,7 @@ ALIASES                = "kconfig{1}=\c \1" \
 ALIASES               += "def_driverbackendgroup{2}=\defgroup \2_backend \1 Driver Backend API ^^\
                                                     \brief This group contains the API type definitions, callback signatures, and other helpers required to implement a \1 driver. ^^\
                                                     \ingroup \2"
+ALIASES               += "in_driverbackendgroup{1}=\ingroup \1_backend"
 ALIASES               += "driver_ops{1}=\brief \htmlonly <span class=\"mlabel\">Driver Operations</span> \endhtmlonly \1 driver operations \
                                         \details This is the driver API structure any \1 driver needs to define. \
                                                  It contains function pointers to the operations the driver implements, \
@@ -1038,7 +1039,6 @@ WARN_LOGFILE           =
 INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/doc/_doxygen/groups.dox \
                          @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
-                         @ZEPHYR_BASE@/include/zephyr/arch/cache.h \
                          @ZEPHYR_BASE@/include/zephyr/sys/atomic.h \
                          @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/lib/libc/minimal/include/ \
@@ -1107,6 +1107,17 @@ RECURSIVE              = YES
 
 EXCLUDE                = @ZEPHYR_BASE@/include/zephyr/portability/cmsis_os.h \
                          @ZEPHYR_BASE@/include/zephyr/portability/cmsis_os2.h \
+                         @ZEPHYR_BASE@/include/zephyr/arch/arc/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/arm/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/arm64/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/mips/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/openrisc/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/posix/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/riscv/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/rx/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/sparc/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/x86/ \
+                         @ZEPHYR_BASE@/include/zephyr/arch/xtensa/ \
                          @ZEPHYR_BASE@/include/zephyr/toolchain/ \
                          @ZEPHYR_BASE@/include/zephyr/drivers/wifi/nrf_wifi
 

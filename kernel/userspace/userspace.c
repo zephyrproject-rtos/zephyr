@@ -9,7 +9,6 @@
 #include <string.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/rb.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/sys_io.h>
 #include <ksched.h>
 #include <zephyr/syscall.h>
@@ -94,6 +93,9 @@ const char *otype_to_str(enum k_objects otype)
 	 */
 	case K_OBJ_ANY:
 		ret = "generic";
+		break;
+	case K_OBJ_DRIVER_ANY:
+		ret = "generic driver";
 		break;
 #include <zephyr/otype-to-str.h>
 	default:
@@ -273,12 +275,17 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 	int i;
 	int idx;
 	int base;
+	bool ret = false;
+	k_spinlock_key_t key;
 
 	base = 0;
+	key = k_spin_lock(&lists_lock);
 	for (i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		idx = find_lsb_set(_thread_idx_map[i]);
 
 		if (idx != 0) {
+			struct dyn_obj *obj, *next;
+
 			*tidx = base + (idx - 1);
 
 			/* Clear the bit. We already know the array index,
@@ -287,16 +294,22 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 			_thread_idx_map[i] &= ~(BIT(idx - 1));
 
 			/* Clear permission from all objects */
-			k_object_wordlist_foreach(clear_perms_cb,
-						   (void *)*tidx);
 
-			return true;
+			z_object_gperf_wordlist_foreach(clear_perms_cb, (void *)*tidx);
+
+			SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&obj_list, obj, next, dobj_list) {
+				clear_perms_cb(&obj->kobj, (void *)*tidx);
+			}
+
+			ret = true;
+			break;
 		}
 
 		base += 8;
 	}
 
-	return false;
+	k_spin_unlock(&lists_lock, key);
+	return ret;
 }
 
 /**
@@ -843,9 +856,16 @@ void k_object_access_all_grant(const void *object)
 int k_object_validate(struct k_object *ko, enum k_objects otype,
 		       enum _obj_init_check init)
 {
-	if (unlikely((ko == NULL) ||
-		((otype != K_OBJ_ANY) && (ko->type != otype)))) {
+	if (unlikely(ko == NULL)) {
 		return -EBADF;
+	}
+
+	if (unlikely((otype != K_OBJ_ANY) && (otype != ko->type))) {
+		if ((otype != K_OBJ_DRIVER_ANY) ||
+		    (ko->type < K_OBJ_DRIVER_FIRST) ||
+		    (ko->type > K_OBJ_DRIVER_LAST)) {
+			return -EBADF;
+		}
 	}
 
 	/* Manipulation of any kernel objects by a user thread requires that

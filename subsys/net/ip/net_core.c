@@ -582,7 +582,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("prio %d iface %p pkt %p len %zu", net_pkt_priority(pkt),
 		iface, pkt, net_pkt_get_len(pkt));
 
-	if (IS_ENABLED(CONFIG_NET_IPV6_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_PKT_ORIG_IFACE)) {
 		net_pkt_set_orig_iface(pkt, iface);
 	}
 

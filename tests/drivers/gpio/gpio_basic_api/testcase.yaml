@@ -2,6 +2,7 @@ common:
   tags:
     - drivers
     - gpio
+    - userspace
   depends_on: gpio
   harness: ztest
   harness_config:

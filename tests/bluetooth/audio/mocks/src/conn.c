@@ -45,6 +45,14 @@ void bt_conn_unref(struct bt_conn *conn)
 	ARG_UNUSED(conn);
 }
 
+void bt_conn_drop(struct bt_conn **orig)
+{
+	struct bt_conn *conn = *orig;
+
+	*orig = NULL;
+	bt_conn_unref(conn);
+}
+
 int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
 {
 	if (cb == NULL) {

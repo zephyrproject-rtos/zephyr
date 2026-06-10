@@ -78,8 +78,8 @@
 
 &pll {
 	div-m = <12>;
-	mul-n = <200>;
-	div-p = <2>;
+	mul-n = <300>;
+	div-p = <1>;
 	div-q = <2>;
 	div-r = <2>;
 	div-s = <2>;
@@ -103,9 +103,9 @@
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(200)>;
+	clock-frequency = <DT_FREQ_M(600)>;
 	dcpre = <1>;
-	hpre = <1>;
+	hpre = <2>;
 	ppre1 = <2>;
 	ppre2 = <2>;
 	ppre4 = <2>;
@@ -166,6 +166,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };

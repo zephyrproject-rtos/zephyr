@@ -48,7 +48,7 @@
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_M(12)>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		clk_hxt: clk-hxt {
@@ -64,7 +64,7 @@
 			status = "disabled";
 		};
 
-		clk_lirc: clk-licr {
+		clk_lirc: clk-lirc {
 			#clock-cells = <0>;
 			compatible = "fixed-clock";
 			clock-frequency = <DT_FREQ_K(10)>;
@@ -199,56 +199,80 @@
 		uart0: serial@40070000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40070000 0x1000>;
+			interrupts = <36 0>;
 			resets = <&rst NUMICRO_UART0_RST>;
+			clocks = <&pcc NUMICRO_UART0_MODULE NUMICRO_CLK_CLKSEL1_UART0SEL_HIRC
+				  NUMICRO_CLK_CLKDIV0_UART0(1)>;
 			status = "disabled";
 		};
 
 		uart1: serial@40071000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40071000 0x1000>;
+			interrupts = <37 0>;
 			resets = <&rst NUMICRO_UART1_RST>;
+			clocks = <&pcc NUMICRO_UART1_MODULE NUMICRO_CLK_CLKSEL1_UART1SEL_HIRC
+				  NUMICRO_CLK_CLKDIV0_UART1(1)>;
 			status = "disabled";
 		};
 
 		uart2: serial@40072000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40072000 0x1000>;
+			interrupts = <48 0>;
 			resets = <&rst NUMICRO_UART2_RST>;
+			clocks = <&pcc NUMICRO_UART2_MODULE NUMICRO_CLK_CLKSEL3_UART2SEL_HIRC
+				  NUMICRO_CLK_CLKDIV4_UART2(1)>;
 			status = "disabled";
 		};
 
 		uart3: serial@40073000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40073000 0x1000>;
+			interrupts = <49 0>;
 			resets = <&rst NUMICRO_UART3_RST>;
+			clocks = <&pcc NUMICRO_UART3_MODULE NUMICRO_CLK_CLKSEL3_UART3SEL_HIRC
+				  NUMICRO_CLK_CLKDIV4_UART3(1)>;
 			status = "disabled";
 		};
 
 		uart4: serial@40074000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40074000 0x1000>;
+			interrupts = <74 0>;
 			resets = <&rst NUMICRO_UART4_RST>;
+			clocks = <&pcc NUMICRO_UART4_MODULE NUMICRO_CLK_CLKSEL3_UART4SEL_HIRC
+				  NUMICRO_CLK_CLKDIV4_UART4(1)>;
 			status = "disabled";
 		};
 
 		uart5: serial@40075000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40075000 0x1000>;
+			interrupts = <75 0>;
 			resets = <&rst NUMICRO_UART5_RST>;
+			clocks = <&pcc NUMICRO_UART5_MODULE NUMICRO_CLK_CLKSEL3_UART5SEL_HIRC
+				  NUMICRO_CLK_CLKDIV4_UART5(1)>;
 			status = "disabled";
 		};
 
 		uart6: serial@40076000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40076000 0x1000>;
+			interrupts = <102 0>;
 			resets = <&rst NUMICRO_UART6_RST>;
+			clocks = <&pcc NUMICRO_UART6_MODULE NUMICRO_CLK_CLKSEL3_UART6SEL_HIRC
+				  NUMICRO_CLK_CLKDIV4_UART6(1)>;
 			status = "disabled";
 		};
 
 		uart7: serial@40077000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40077000 0x1000>;
+			interrupts = <103 0>;
 			resets = <&rst NUMICRO_UART7_RST>;
+			clocks = <&pcc NUMICRO_UART7_MODULE NUMICRO_CLK_CLKSEL3_UART7SEL_HIRC
+				  NUMICRO_CLK_CLKDIV4_UART7(1)>;
 			status = "disabled";
 		};
 

@@ -3763,10 +3763,11 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 		if (strlen(cmd_handlers[index].cmd) > len) {
 			continue;
 		}
-		if (strncmp((char *)data, cmd_handlers[index].cmd,
-				 strlen(cmd_handlers[index].cmd)) != 0) {
+
+		if (memcmp(data, cmd_handlers[index].cmd, strlen(cmd_handlers[index].cmd)) != 0) {
 			continue;
 		}
+
 		if (NULL != cmd_handlers[index].handler) {
 			(void)net_buf_pull(buf, strlen(cmd_handlers[index].cmd));
 			err = cmd_handlers[index].handler(ag, buf);

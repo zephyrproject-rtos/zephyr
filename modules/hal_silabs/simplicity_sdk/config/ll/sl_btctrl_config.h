@@ -36,7 +36,10 @@
 #define SL_CATALOG_BLUETOOTH_FEATURE_CIS_PRESENT
 #endif
 
-#ifdef CONFIG_BT_CONN
+/* The following dependency on PER_ADV_SYNC_RSP is due to the link layer
+ * always reserving a connection when attempting sync with response.
+ */
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 #define SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_PRESENT
 #endif
 
@@ -69,7 +72,7 @@
 
 #ifdef CONFIG_BT_PER_ADV_RSP
 #define SL_CATALOG_BLUETOOTH_FEATURE_PAWR_ADVERTISER_PRESENT
-#ifdef CONFIG_BT_CONN
+#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_PER_ADV_SYNC_RSP)
 #define SL_CATALOG_BLUETOOTH_FEATURE_CONNECTION_PAWR_SCHEDULING_PRESENT
 #endif
 #endif

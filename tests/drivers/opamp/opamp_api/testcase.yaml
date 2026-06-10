@@ -13,3 +13,7 @@ tests:
   drivers.opamp.api.stm32:
     depends_on: opamp
     filter: dt_compat_enabled("st,stm32-opamp")
+
+  drivers.opamp.api.infineon_ctb:
+    depends_on: opamp
+    filter: dt_compat_enabled("infineon,autanalog-ctb-opamp")

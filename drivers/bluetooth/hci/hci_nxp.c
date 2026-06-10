@@ -34,10 +34,6 @@
 
 #define DT_DRV_COMPAT nxp_hci_ble
 
-struct bt_nxp_data {
-	bt_hci_recv_t recv;
-};
-
 struct hci_data {
 	uint8_t packetType;
 	uint8_t *data;
@@ -473,7 +469,6 @@ static struct net_buf *bt_acl_recv(uint8_t *data, size_t len)
 static void process_rx(uint8_t packetType, uint8_t *data, uint16_t len)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct bt_nxp_data *hci = dev->data;
 	struct net_buf *buf;
 
 	switch (packetType) {
@@ -492,7 +487,7 @@ static void process_rx(uint8_t packetType, uint8_t *data, uint16_t len)
 
 	if (buf) {
 		/* Provide the buffer to the host */
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	}
 }
 
@@ -562,7 +557,6 @@ static void bt_nxp_send_vs_cmd_complete(const struct device *dev, uint16_t opcod
 {
 	struct net_buf *buf;
 	uint8_t *pckt;
-	struct bt_nxp_data *hci = dev->data;
 
 	buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_NO_WAIT);
 	if (buf == NULL) {
@@ -585,7 +579,7 @@ static void bt_nxp_send_vs_cmd_complete(const struct device *dev, uint16_t opcod
 	sys_put_le16(opcode, &pckt[3U]);
 	pckt[5U] = status;
 
-	hci->recv(dev, buf);
+	bt_hci_recv(dev, buf);
 }
 
 static int bt_nxp_process_tx_power_cmd(const uint8_t *params, uint8_t params_len)
@@ -707,9 +701,8 @@ static int bt_nxp_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static int bt_nxp_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_nxp_open(const struct device *dev)
 {
-	struct bt_nxp_data *hci = dev->data;
 	int ret = 0;
 
 	do {
@@ -730,8 +723,6 @@ static int bt_nxp_open(const struct device *dev, bt_hci_recv_t recv)
 			LOG_ERR("HCI open failed");
 			break;
 		}
-
-		hci->recv = recv;
 	} while (false);
 
 	return ret;
@@ -792,12 +783,7 @@ int bt_nxp_setup(const struct device *dev, const struct bt_hci_setup_params *par
 
 static int bt_nxp_close(const struct device *dev)
 {
-	struct bt_nxp_data *hci = dev->data;
-	int ret = 0;
-
-	hci->recv = NULL;
-
-	return ret;
+	return 0;
 }
 
 static DEVICE_API(bt_hci, drv) = {
@@ -827,9 +813,11 @@ static int bt_nxp_init(const struct device *dev)
 }
 
 #define HCI_DEVICE_INIT(inst)                                                                      \
-	static struct bt_nxp_data hci_data_##inst = {};                                            \
-	DEVICE_DT_INST_DEFINE(inst, bt_nxp_init, NULL, &hci_data_##inst, NULL, POST_KERNEL,        \
-			      CONFIG_BT_HCI_INIT_PRIORITY, &drv)
+	static struct bt_hci_driver_data hci_data_##inst = {};                                     \
+	static const struct bt_hci_driver_config hci_config_##inst =                               \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, bt_nxp_init, NULL, &hci_data_##inst, &hci_config_##inst,       \
+			      POST_KERNEL, CONFIG_BT_HCI_INIT_PRIORITY, &drv)
 
 /* Only one instance supported right now */
 HCI_DEVICE_INIT(0)

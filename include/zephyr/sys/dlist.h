@@ -6,6 +6,9 @@
 
 /**
  * @file
+ * @brief Header file for the doubly-linked list API.
+ * @ingroup doubly-linked-list_apis
+ *
  * @defgroup doubly-linked-list_apis Doubly-linked list
  * @ingroup datastructure_apis
  *

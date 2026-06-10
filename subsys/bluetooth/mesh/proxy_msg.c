@@ -344,12 +344,9 @@ void bt_mesh_proxy_role_cleanup(struct bt_mesh_proxy_role *role)
 	 * there's no active connection.
 	 */
 	(void)k_work_cancel_delayable(&role->sar_timer);
-	bt_conn_unref(role->conn);
-	role->conn = NULL;
+	bt_conn_drop(&role->conn);
 
 	conn_count--;
-
-	bt_mesh_adv_gatt_update();
 }
 
 bool bt_mesh_proxy_has_avail_conn(void)

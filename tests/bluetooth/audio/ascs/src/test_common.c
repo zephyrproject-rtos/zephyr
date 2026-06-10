@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Codecoup
+ * Copyright (c) 2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +10,7 @@
 #include <stdint.h>
 
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
@@ -26,7 +28,8 @@
 #include <zephyr/ztest_assert.h>
 #include <sys/types.h>
 
-#include "bap_unicast_server.h"
+#include "ascs.h"
+#include "audio/ascs_internal.h"
 #include "bap_stream.h"
 #include "conn.h"
 #include "gatt.h"
@@ -37,7 +40,7 @@
 
 void test_mocks_init(void)
 {
-	mock_bap_unicast_server_init();
+	mock_ascs_init();
 	mock_bt_iso_init();
 	mock_bt_pacs_init();
 	mock_bap_stream_init();
@@ -46,7 +49,7 @@ void test_mocks_init(void)
 
 void test_mocks_cleanup(void)
 {
-	mock_bap_unicast_server_cleanup();
+	mock_ascs_cleanup();
 	mock_bt_iso_cleanup();
 	mock_bt_pacs_cleanup();
 	mock_bap_stream_cleanup();
@@ -142,12 +145,12 @@ static struct bt_bap_stream *stream_allocated;
 static const struct bt_bap_qos_cfg_pref qos_pref =
 	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0x02U, 10U, 40000U, 40000U, 40000U, 40000U);
 
-static int unicast_server_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
-						enum bt_audio_dir dir,
-						const struct bt_audio_codec_cfg *codec_cfg,
-						struct bt_bap_stream **stream,
-						struct bt_bap_qos_cfg_pref *const pref,
-						struct bt_bap_ascs_rsp *rsp)
+static int ascs_cb_config_custom_fake(struct bt_conn *conn, const struct bt_bap_ep *ep,
+				      enum bt_audio_dir dir,
+				      const struct bt_audio_codec_cfg *codec_cfg,
+				      struct bt_bap_stream **stream,
+				      struct bt_bap_qos_cfg_pref *const pref,
+				      struct bt_bap_ascs_rsp *rsp)
 {
 	ARG_UNUSED(conn);
 	ARG_UNUSED(ep);
@@ -182,7 +185,7 @@ void test_ase_control_client_config_codec(struct bt_conn *conn, uint8_t ase_id,
 	ssize_t ret;
 
 	stream_allocated = stream;
-	mock_bap_unicast_server_cb_config_fake.custom_fake = unicast_server_cb_config_custom_fake;
+	mock_ascs_cb_config_fake.custom_fake = ascs_cb_config_custom_fake;
 
 	ret = attr->write(conn, attr, (void *)buf, sizeof(buf), 0, 0);
 	zassert_false(ret < 0, "cp_attr->write returned unexpected (err 0x%02x)",
@@ -364,8 +367,8 @@ void test_preamble_state_streaming(struct bt_conn *conn, uint8_t ase_id,
 	if (source) {
 		test_ase_control_client_receiver_start_ready(conn, ase_id);
 	} else {
-		err = bt_bap_stream_start(stream);
-		zassert_equal(0, err, "bt_bap_stream_start err %d", err);
+		err = bt_ascs_start_ase(stream->ep);
+		zassert_equal(0, err, "bt_ascs_start_ase err %d", err);
 	}
 
 	test_drain_syswq(); /* Ensure that state transitions are completed */
@@ -399,11 +402,11 @@ void test_preamble_state_releasing(struct bt_conn *conn, uint8_t ase_id,
 	test_ase_control_client_release(conn, ase_id);
 
 	/* Reset the mocks especially the function call count */
-	mock_bap_unicast_server_cleanup();
+	mock_ascs_cleanup();
 	mock_bt_iso_cleanup();
 	mock_bap_stream_cleanup();
 	mock_bt_gatt_cleanup();
-	mock_bap_unicast_server_init();
+	mock_ascs_init();
 	mock_bt_iso_init();
 	mock_bap_stream_init();
 	mock_bt_gatt_init();

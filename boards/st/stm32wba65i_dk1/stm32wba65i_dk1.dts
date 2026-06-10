@@ -77,11 +77,8 @@
 	aliases {
 		led0 = &green_led_1;
 		led1 = &red_led_2;
+		die-temp0 = &die_temp;
 	};
-};
-
-&clk_lsi {
-	status = "okay";
 };
 
 &clk_lse {
@@ -89,8 +86,13 @@
 };
 
 &clk_hse {
-	hse-div2;
 	status = "okay";
+
+	/*
+	 * Disable HSE trim applied by Clock Control.
+	 * Board-specific init will apply trim from OTP.
+	 */
+	/delete-property/ hse-trimming;
 };
 
 &clk_hsi {
@@ -99,9 +101,9 @@
 
 &rcc {
 	clocks = <&clk_hse>;
-	clock-frequency = <DT_FREQ_M(16)>;
+	clock-frequency = <DT_FREQ_M(32)>; /* Lowest value to manage radio events */
 	ahb-prescaler = <1>;
-	ahb5-prescaler = <2>;
+	ahb5-prescaler = <1>;
 	apb1-prescaler = <1>;
 	apb2-prescaler = <2>;
 	apb7-prescaler = <1>;
@@ -142,6 +144,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb2 &i2c1_sda_pb1>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -165,6 +169,10 @@
 	};
 };
 
+&die_temp {
+	status = "okay";
+};
+
 stm32_lp_tick_source: &lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB7, 11)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
@@ -172,6 +180,19 @@ stm32_lp_tick_source: &lptim1 {
 };
 
 &rng {
+	status = "okay";
+};
+
+&bt_hci_wba {
+	/* Use HASH IRQn as Radio SW IRQ (HASH peripheral must not be enabled!) */
+	interrupts = <66 0>, <61 14>;
+	interrupt-names = "radio", "radio-sw-low";
+};
+
+&ieee802154 {
+	/* Use HASH IRQn as Radio SW IRQ (HASH peripheral must not be enabled!) */
+	interrupts = <66 0>, <61 14>;
+	interrupt-names = "radio", "radio-sw-low";
 	status = "okay";
 };
 

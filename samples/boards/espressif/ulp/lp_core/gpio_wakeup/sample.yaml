@@ -1,7 +1,7 @@
 sample:
   name: ESP32-C6 LP Core GPIO Wakeup Sample
 tests:
-  sample.boards.espressif.ulp.lp_core.gpio_wakeup:
+  sample.boards.esp32.ulp.lp_core.gpio_wakeup:
     platform_allow:
       - esp32c6_devkitc/esp32c6/hpcore
     tags:

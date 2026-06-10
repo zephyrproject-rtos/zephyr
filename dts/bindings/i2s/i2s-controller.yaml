@@ -9,8 +9,6 @@ bus: i2s
 
 properties:
   "#address-cells":
-    required: true
     const: 1
   "#size-cells":
-    required: true
     const: 0

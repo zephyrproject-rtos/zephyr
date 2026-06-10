@@ -20,6 +20,8 @@
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-1 = <&analog_pb6 &analog_pb7>;
 	pinctrl-names = "default", "sleep";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 
 	cs40l50_0: cs40l50@34 {
 		compatible = "cirrus,cs40l50";

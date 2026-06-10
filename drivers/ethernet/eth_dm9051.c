@@ -23,8 +23,15 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/net/phy.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/util.h>
 
 #include "eth.h"
+
+/* DM9051 adds 4-byte CRC to each frame in internal SRAM */
+#define ETH_DM9051_CRC_SIZE		4
+
+/* Minimum Ethernet frame size (64 bytes including CRC) */
+#define ETH_DM9051_MIN_FRAME_SIZE	64
 
 /* DM9051 Product ID */
 #define DM9051_ID			0x9051
@@ -95,6 +102,8 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #define DM9051_RCR_DIS_LONG		BIT(5)
 /* DIS_CRC - Discard CRC Error Packet */
 #define DM9051_RCR_DIS_CRC		BIT(4)
+/* ALL - Receive All Multicast */
+#define DM9051_RCR_ALL			BIT(3)
 /* PRMSC - Promiscuous Mode */
 #define DM9051_RCR_PRMSC		BIT(1)
 /* RXEN - RX Enable */
@@ -119,7 +128,7 @@ LOG_MODULE_REGISTER(eth_dm9051, CONFIG_ETHERNET_LOG_LEVEL);
 #define DM9051_EPAR_PHY_ADR_SHIFT	6
 
 /* 0x16 + 7 */
-/* Bit 7 = Enable all broadcast packets */
+/* Bit 7 = Enable broadcast packets */
 #define DM9051_MAR_7_BCAST_EN		0x80
 
 /* 0x1F */
@@ -174,8 +183,8 @@ struct eth_dm9051_config {
 
 struct eth_dm9051_data {
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_DM9051_RX_THREAD_STACK_SIZE);
-	uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE];
-	uint8_t rx_buf[NET_ETH_MAX_FRAME_SIZE];
+	uint8_t tx_buf[NET_ETH_MAX_FRAME_SIZE + ETH_DM9051_CRC_SIZE];
+	uint8_t rx_buf[NET_ETH_MAX_FRAME_SIZE + ETH_DM9051_CRC_SIZE];
 	struct gpio_callback gpio_cb;
 	struct phy_link_state state;
 	struct k_thread rx_thread;
@@ -361,28 +370,26 @@ static int eth_dm9051_nsr_poll(const struct device *dev, k_timeout_t timeout)
 static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __unused)
 {
 	const uint8_t imr = DM9051_IMR_PRI | DM9051_IMR_PTI | DM9051_IMR_LNKCHGI | DM9051_IMR_PAR;
-	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_DIS_CRC | DM9051_RCR_DIS_LONG;
+	const uint8_t rcr = DM9051_RCR_RXEN | DM9051_RCR_ALL |
+			    DM9051_RCR_DIS_CRC | DM9051_RCR_DIS_LONG;
 	const struct eth_dm9051_config *config = dev->config;
-	uint8_t gpr;
 	int ret;
 
-	ret = eth_dm9051_spi_read_reg(dev, DM9051_GPR, &gpr);
+	/*
+	 * GPR bit 0 is Write-Only (WO per DM9051A spec), reading returns
+	 * undefined values. Always explicitly power up the PHY to ensure it
+	 * is enabled regardless of any prior state.
+	 */
+	ret = eth_dm9051_spi_write_reg(dev, DM9051_GPR, DM9051_GPR_PHY_ON);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (gpr & DM9051_GPR_PHY_OFF) {
-		/*
-		 * If this bit is updated from ‘1’ to ‘0’, the whole MAC
-		 * and PHY Registers can not be accessed within 1 ms.
-		 */
-		ret = eth_dm9051_spi_write_reg(dev, DM9051_GPR, DM9051_GPR_PHY_ON);
-		if (ret < 0) {
-			return ret;
-		}
-
-		k_msleep(1);
-	}
+	/*
+	 * Per DM9051A spec: if GPR bit 0 is updated from '1' to '0', the
+	 * whole MAC and PHY registers cannot be accessed within 1 ms.
+	 */
+	k_msleep(1);
 
 	/* Software Reset and Auto-Clear after 10 us */
 	ret = eth_dm9051_spi_write_reg(dev, DM9051_NCR, DM9051_NCR_RST);
@@ -400,20 +407,20 @@ static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __
 		return ret;
 	}
 
-	/* Enable all broadcast packets */
+	/* Enable broadcast packets */
 	ret = eth_dm9051_spi_write_reg(dev, DM9051_MAR + 7, DM9051_MAR_7_BCAST_EN);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Enable RX */
-	ret = eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
+	/* Enable interrupts */
+	ret = eth_dm9051_spi_write_reg(dev, DM9051_IMR, imr);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Enable interrupts */
-	return eth_dm9051_spi_write_reg(dev, DM9051_IMR, imr);
+	/* Enable RX */
+	return eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
 }
 
 static int eth_dm9051_hw_stop(const struct device *dev, struct net_if *iface __unused)
@@ -508,43 +515,54 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 	ret = eth_dm9051_spi_read_mem(data->dev, DM9051_MRCMD, (void *)&rxhdr,
 				      sizeof(rxhdr));
 	if (ret < 0) {
+		LOG_ERR("%s: Failed to read RX header (err %d)", dev->name, ret);
 		return NULL;
 	}
 
 	rx_len = sys_get_le16(rxhdr.len);
 
 	/* Check for RX errors */
-	if ((rxhdr.status & ~DM9051_RSR_MF) > 0 || (rx_len > NET_ETH_MAX_FRAME_SIZE)) {
+	if ((rxhdr.status & ~DM9051_RSR_MF) > 0 ||
+	    !IN_RANGE(rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf))) {
 		if ((rxhdr.status & ~DM9051_RSR_MF) > 0) {
 			LOG_DBG("%s: RX status error: %02x", dev->name, rxhdr.status);
 		}
 
-		if (rx_len > NET_ETH_MAX_FRAME_SIZE) {
-			LOG_DBG("%s: RX length too large: %u > %u", dev->name,
-				rx_len, NET_ETH_MAX_FRAME_SIZE);
+		if (!IN_RANGE(rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf))) {
+			LOG_DBG("%s: RX length out of range: %u (min: %u, max: %zu)",
+				dev->name, rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf));
 		}
 
-		(void)eth_dm9051_hw_start(dev, data->iface);
+		ret = eth_dm9051_hw_start(dev, data->iface);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
+		}
 		return NULL;
 	}
 
 	/* Alloc RX net_pkt and subtract 4 from RX length to discard CRC */
-	pkt = net_pkt_rx_alloc_with_buffer(data->iface, rx_len - 4, NET_AF_UNSPEC, 0,
+	pkt = net_pkt_rx_alloc_with_buffer(data->iface,
+					   rx_len - ETH_DM9051_CRC_SIZE,
+					   NET_AF_UNSPEC, 0,
 					   K_MSEC(CONFIG_ETH_DM9051_TIMEOUT));
 	if (!pkt) {
 		/* Discard received data */
-		(void)eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, NULL, rx_len);
+		ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, NULL, rx_len);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to discard RX data (err %d)", dev->name, ret);
+		}
 		return NULL;
 	}
 
 	/* Read RX data from RX SRAM */
 	ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, data->rx_buf, rx_len);
 	if (ret < 0) {
+		LOG_ERR("%s: Failed to read RX data (err %d)", dev->name, ret);
 		goto out_net_pkt_unref;
 	}
 
 	/* Write RX data to net_pkt */
-	ret = net_pkt_write(pkt, data->rx_buf, rx_len - 4);
+	ret = net_pkt_write(pkt, data->rx_buf, rx_len - ETH_DM9051_CRC_SIZE);
 	if (ret < 0) {
 		goto out_net_pkt_unref;
 	}
@@ -569,6 +587,7 @@ static int eth_dm9051_rx(const struct device *dev)
 		/* Read RX flag */
 		ret = eth_dm9051_spi_read_mem(data->dev, DM9051_MRCMDX, (void *)&flag, 2);
 		if (ret < 0) {
+			LOG_ERR("%s: Failed to read RX flag (err %d)", dev->name, ret);
 			goto out_update_errors_rx;
 		}
 
@@ -612,19 +631,22 @@ out_spi_unlock:
 	return ret;
 }
 
-static void eth_dm9051_update_link_status(const struct device *dev)
+static int eth_dm9051_update_link_status(const struct device *dev)
 {
 	struct eth_dm9051_data *data = dev->data;
 	enum phy_link_speed speed;
 	uint8_t nsr;
 	uint8_t ncr;
+	int ret;
 
-	if (eth_dm9051_spi_read_reg(dev, DM9051_NSR, &nsr) < 0) {
-		return;
+	ret = eth_dm9051_spi_read_reg(dev, DM9051_NSR, &nsr);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (eth_dm9051_spi_read_reg(dev, DM9051_NCR, &ncr) < 0) {
-		return;
+	ret = eth_dm9051_spi_read_reg(dev, DM9051_NCR, &ncr);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if ((nsr & DM9051_NSR_LINKST) > 0) {
@@ -656,6 +678,8 @@ static void eth_dm9051_update_link_status(const struct device *dev)
 			net_eth_carrier_off(data->iface);
 		}
 	}
+
+	return 0;
 }
 
 static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
@@ -666,6 +690,7 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 	struct eth_dm9051_data *data;
 	struct device *dev;
 	uint8_t isr = 0;
+	int ret;
 
 	dev = p1;
 	data = dev->data;
@@ -673,8 +698,19 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&data->int_event, K_FOREVER);
 
-		(void)eth_dm9051_spi_read_reg(dev, DM9051_ISR, &isr);
-		(void)eth_dm9051_spi_write_reg(dev, DM9051_ISR, isr);
+		ret = eth_dm9051_spi_read_reg(dev, DM9051_ISR, &isr);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to read ISR (err %d)", dev->name, ret);
+			eth_stats_update_errors_rx(data->iface);
+			continue;
+		}
+
+		ret = eth_dm9051_spi_write_reg(dev, DM9051_ISR, isr);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to write ISR (err %d)", dev->name, ret);
+			eth_stats_update_errors_rx(data->iface);
+			continue;
+		}
 
 		if ((isr & DM9051_ISR_PT) > 0) {
 			k_sem_give(&data->tx_done);
@@ -682,12 +718,19 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 		}
 
 		if ((isr & DM9051_ISR_PR) > 0) {
-			(void)eth_dm9051_rx(dev);
+			ret = eth_dm9051_rx(dev);
+			if (ret < 0) {
+				LOG_ERR("%s: RX failed (err %d)", dev->name, ret);
+			}
 			LOG_DBG("%s: Packet Received", dev->name);
 		}
 
 		if ((isr & DM9051_ISR_LNKCHG) > 0) {
-			eth_dm9051_update_link_status(dev);
+			ret = eth_dm9051_update_link_status(dev);
+			if (ret < 0) {
+				LOG_ERR("%s: Link status update failed (err %d)", dev->name, ret);
+				eth_stats_update_errors_rx(data->iface);
+			}
 			LOG_DBG("%s: Link changed", dev->name);
 		}
 	}

@@ -529,7 +529,7 @@ int mdm_sim7080_import_dtls_psk(const char *psk_name, sim7080_tls_cert_read_func
  * Configure the certificates that should be used by the socket for tls.
  *
  * @param fd The socket file descriptor.
- * @param root_ca The NULL terminated root certificat name.
+ * @param root_ca The NULL terminated root certificate name.
  * @param client_cert The NULL terminated client certificate name. May be NULL.
  * @return 0 on success. Otherwise a negative error code.
  *
@@ -541,7 +541,7 @@ int mdm_sim7080_configure_tls_certs(int fd, const char *root_ca, const char *cli
  * Configure the passkey table used by dtls.
  *
  * @param fd The socket file descriptor.
- * @param root_ca The NULL terminated passkey talbe name
+ * @param root_ca The NULL terminated passkey table name
  * @return 0 on success. Otherwise a negative error code.
  *
  * @note This function needs tp be called before calling zsock_connect.

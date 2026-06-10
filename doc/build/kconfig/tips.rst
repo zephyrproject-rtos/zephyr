@@ -248,14 +248,14 @@ FPU could be defined as follows:
    ...
 
    config SOC_FOO
-   	bool "FOO SoC"
-   	select CPU_HAS_FPU
+       bool
+       select CPU_HAS_FPU
 
    ...
 
    config SOC_BAR
-   	bool "BAR SoC"
-   	select CPU_HAS_FPU
+       bool
+       select CPU_HAS_FPU
 
 This makes it possible for other symbols to check for FPU support in a generic
 way, without having to look for particular architectures:
@@ -338,7 +338,9 @@ conditionally includes the file :file:`Kconfig.other`:
 .. code-block:: kconfig
 
    if DEP
+
    source "Kconfig.other"
+
    endif
 
 In reality, there are no conditional includes in Kconfig. ``if`` has no special
@@ -907,8 +909,8 @@ to turn it off:
 .. code-block:: kconfig
 
    config SOC_FOO
-   	bool "FOO SoC"
-   	imply USB_KEYBOARD
+       bool
+       imply USB_KEYBOARD
 
    ...
 

@@ -2,7 +2,7 @@ sample:
   description: mec172xevb_assy6906 QMSPI-LDMA testing
   name: mec172xevb_assy9606 test
 tests:
-  sample.board.mec172xevb_assy6906.qmspi_ldma:
+  sample.boards.mec172xevb_assy6906.qmspi_ldma:
     harness: spi
     platform_allow: mec172xevb_assy6906
     tags: spi

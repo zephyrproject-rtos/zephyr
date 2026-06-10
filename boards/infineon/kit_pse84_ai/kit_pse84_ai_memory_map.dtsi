@@ -73,32 +73,37 @@
 	 * - Lowest 1MB reserved for Storage
 	 * - 2MB for each of the cores(cm33_s, cm33 and cm55)
 	 */
-	flash_controller: flash_controller@40250000 {
+	flash_controller: flash_controller@44460000 {
 		compatible = "infineon,qspi-flash";
-		reg = <0x40250000 0x10000>;
+		reg = <0x44460000 0x20000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
+
+		pinctrl-0 = <&p1_0_smif0_data0 &p1_1_smif0_data1
+			     &p1_2_smif0_data2 &p1_3_smif0_data3
+			     &p2_0_smif0_select1>;
+		pinctrl-names = "default";
 
 		/* CBUS non-secure view of external flash.
 		 * Used as zephyr,flash for NS builds.
 		 * The base address is 0x08000000.
 		 */
 		flash0: flash0@8000000 {
-			compatible = "soc-nv-flash";
+			compatible = "soc-nv-flash", "infineon,s25hs512t";
 			reg = <0x08000000 DT_SIZE_M(64)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x08000000 DT_SIZE_M(64)>;
 			write-block-size = <256>;
-			erase-block-size = <65536>;
+			erase-block-size = <DT_SIZE_K(256)>;
 
 			partitions {
 				#address-cells = <1>;
 				#size-cells = <1>;
 				ranges;
 
-				storage: storage@0 {
+				storage_partition: storage@0 {
 					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0 DT_SIZE_M(1)>;

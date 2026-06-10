@@ -349,7 +349,7 @@ The allowlist of devices is configured using the devicetree, for example::
 
       i2c-dump-allowlist {
           compatible = "zephyr,i2c-dump-allowlist";
-          devices = < &display0 >, < &sensor3 >;
+          devices = <&display0>, <&sensor3>;
       };
   };
 

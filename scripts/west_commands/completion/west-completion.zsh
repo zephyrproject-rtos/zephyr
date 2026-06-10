@@ -28,6 +28,7 @@ _west_cmds() {
   'completion[display shell completion scripts]'
   'boards[display information about supported boards]'
   'shields[display information about supported shields]'
+  'snippets[display information about supported snippets]'
   'build[compile a Zephyr application]'
   'sign[sign a Zephyr binary for bootloader chain-loading]'
   'flash[flash and run a binary on a board]'
@@ -129,6 +130,11 @@ _get_west_shields() {
 
   _describe 'shields' _west_shields
 }
+
+_get_west_snippets() {
+  _describe 'snippets' $(__west_x snippets --format='{name}')
+}
+
 __west_tilde() {
     local cur=${words[CURRENT]}
 
@@ -309,6 +315,16 @@ _west_shields() {
   _arguments -S $opts
 }
 
+_west_snippets() {
+  local -a opts=(
+  {-f,--format}'[format string]:format string:'
+  {-n,--name}'[name regex]:regex:'
+  '*--snippet-root[Add a snippet root]:snippet root:_directories'
+  )
+
+  _arguments -S $opts
+}
+
 _west_build() {
   local -a opts=(
   '(-b --board)'{-b,--board}'[board to build for]:board:_get_west_boards'
@@ -324,7 +340,7 @@ _west_build() {
   {-o,--build-opt}'[options to pass to build tool (make or ninja)]:tool opt:'
   '(-n --just-print --dry-run --recon)'{-n,--just-print,--dry-run,--recon}"[just print build commands, don't run them]"
   '(-p --pristine)'{-p,--pristine}'[pristine build setting]:pristine:(auto always never)'
-  '(-S --snippet)'{-S,--snippet}'[apply a snippet]:snippet:'
+  '(-S --snippet)'{-S,--snippet}'[apply a snippet]:snippet:_get_west_snippets'
   '--shield[shield to build for]:shield:_get_west_shields'
   )
   _arguments -S $opts \

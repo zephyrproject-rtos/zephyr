@@ -20,6 +20,7 @@
  * implemented) Hazard3 cores.
  */
 #include "rpi_pico2.dtsi"
+#include "../common/rpi_pico-led.dtsi"
 
 /* Partitioning for the RP2350A-M33 board using 4M flash.
  */

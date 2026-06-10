@@ -97,6 +97,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa9 &i2c2_sda_pa8>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 

@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		grove = &grove_header;
+	};
+
+	grove_header: grove-header {
+		compatible = "grove-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 4 0>, /* SCL/RXD/A/IN: GROVE_I */
+			   <1 0 &gpio0 5 0>; /* SDA/TXD/B/OUT: GROVE_O */
+	};
+};

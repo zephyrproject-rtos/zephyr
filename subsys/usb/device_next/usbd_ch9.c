@@ -1125,6 +1125,7 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 			  struct net_buf *const buf, int err)
 {
 	struct usb_setup_packet *setup = usbd_get_setup_pkt(uds_ctx);
+	struct net_buf *next_buf = NULL;
 	struct udc_buf_info *bi;
 	int ret = 0;
 
@@ -1153,8 +1154,6 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 	}
 
 	if ((bi->setup || bi->data) && bi->ep == USB_CONTROL_EP_OUT) {
-		struct net_buf *next_buf;
-
 		if (bi->setup) {
 			if (ctrl_xfer_get_setup(uds_ctx, buf)) {
 				LOG_ERR("Malformed setup packet");
@@ -1170,22 +1169,10 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 				goto ctrl_xfer_stall;
 			}
 
-			if (reqtype_is_to_device(setup) && setup->wLength) {
-				next_buf = udc_ctrl_data_alloc(uds_ctx->dev, USB_CONTROL_EP_OUT,
-							       setup->wLength);
-				if (next_buf == NULL) {
-					err = -ENOMEM;
-					goto ctrl_xfer_stall;
-				}
-				ret = usbd_ep_ctrl_enqueue(uds_ctx, next_buf);
-				return ret;
-			}
-
-			if (setup->wLength) {
+			if (reqtype_is_to_host(setup) && setup->wLength) {
 				/* Stack is supposed to allocate buffer */
 				next_buf = usbd_ep_ctrl_data_in_alloc(uds_ctx, setup->wLength);
 				if (next_buf == NULL) {
-					err = -ENOMEM;
 					goto ctrl_xfer_stall;
 				}
 			}
@@ -1213,6 +1200,21 @@ int usbd_handle_ctrl_xfer(struct usbd_context *const uds_ctx,
 			 * Free data stage and linked status stage buffer.
 			 */
 			goto ctrl_xfer_stall;
+		}
+
+		if (bi->setup && reqtype_is_to_device(setup) && setup->wLength) {
+			/*
+			 * Handler indicated that Data OUT should be received.
+			 * Allocate and enqueue buffer.
+			 */
+			next_buf = udc_ctrl_data_alloc(uds_ctx->dev, USB_CONTROL_EP_OUT,
+						       setup->wLength);
+			if (next_buf == NULL) {
+				goto ctrl_xfer_stall;
+			}
+
+			ret = usbd_ep_ctrl_enqueue(uds_ctx, next_buf);
+			return ret;
 		}
 
 		if (setup->wLength == 0) {
@@ -1269,13 +1271,14 @@ ctrl_xfer_stall:
 	 * Halt only the endpoint over which the host expects
 	 * data or status stage. This facilitates the work of the drivers.
 	 *
-	 * In the case there is -ENOMEM for data OUT stage halt
-	 * control OUT endpoint.
+	 * If data OUT should not be received, either due to SETUP data not
+	 * passing handler sanity checks or due to -ENOMEM, halt control OUT
+	 * endpoint.
 	 */
 	if (reqtype_is_to_host(setup)) {
 		ret = udc_ep_set_halt(uds_ctx->dev, USB_CONTROL_EP_IN);
 	} else if (setup->wLength) {
-		uint8_t ep = (err == -ENOMEM) ? USB_CONTROL_EP_OUT : USB_CONTROL_EP_IN;
+		uint8_t ep = (next_buf == NULL) ? USB_CONTROL_EP_OUT : USB_CONTROL_EP_IN;
 
 		ret = udc_ep_set_halt(uds_ctx->dev, ep);
 	} else {

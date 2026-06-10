@@ -20,3 +20,4 @@ properties:
     description: |
       Interval between consecutive polls in milliseconds.
       Defaults to 16 ms (~60 Hz).
+    min: 9

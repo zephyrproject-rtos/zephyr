@@ -1068,6 +1068,54 @@ static int interface_attach(struct net_if *iface, struct net_if *lower_iface)
 	return 0;
 }
 
+static int wg_validate_allowed_ip_tx(struct wg_iface_context *ctx,
+				     struct wg_peer *peer,
+				     struct net_pkt *pkt)
+{
+	size_t pkt_len = net_pkt_get_len(pkt);
+
+	if (pkt_len == 0U) {
+		return 0;
+	}
+
+	if (net_pkt_family(pkt) == NET_AF_INET6) {
+		if (pkt_len < sizeof(struct net_ipv6_hdr)) {
+			vpn_stats_update_invalid_packet_len(ctx);
+			return -EINVAL;
+		}
+
+		if (wg_peer_is_allowed_ip(peer, NET_AF_INET6,
+					  NET_IPV6_HDR(pkt)->dst)) {
+			return 0;
+		}
+
+		NET_DBG("Destination %s not found in allowed list",
+			net_sprint_ipv6_addr((const struct in6_addr *)
+					     NET_IPV6_HDR(pkt)->dst));
+	} else if (net_pkt_family(pkt) == NET_AF_INET) {
+		if (pkt_len < sizeof(struct net_ipv4_hdr)) {
+			vpn_stats_update_invalid_packet_len(ctx);
+			return -EINVAL;
+		}
+
+		if (wg_peer_is_allowed_ip(peer, NET_AF_INET,
+					  NET_IPV4_HDR(pkt)->dst)) {
+			return 0;
+		}
+
+		NET_DBG("Destination %s not found in allowed list",
+			net_sprint_ipv4_addr((const struct in_addr *)
+					     NET_IPV4_HDR(pkt)->dst));
+	} else {
+		vpn_stats_update_invalid_ip_family(ctx);
+		return -EAFNOSUPPORT;
+	}
+
+	vpn_stats_update_denied_ip(ctx);
+
+	return -ENETUNREACH;
+}
+
 static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct wg_iface_context *ctx = net_if_get_device(iface)->data;
@@ -1111,19 +1159,24 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 		}
 
 		NET_DBG("Peer %d found for iface %d", peer->id, net_if_get_by_iface(iface));
+	}
 
-		/* If the peer is not yet active, then we need to start the
-		 * handshake with the peer.
-		 */
-		if (peer->last_tx == 0) {
-			peer->send_handshake = true;
-			memcpy(&peer->endpoint, &peer->cfg_endpoint, sizeof(peer->endpoint));
-			start_handshake(ctx, peer);
+	ret = wg_validate_allowed_ip_tx(ctx, peer, pkt);
+	if (ret < 0) {
+		return ret;
+	}
 
-			peer->last_tx = sys_clock_tick_get_32();
+	/* If the peer is not yet active, then we need to start the
+	 * handshake with the peer.
+	 */
+	if (peer->last_tx == 0) {
+		peer->send_handshake = true;
+		memcpy(&peer->endpoint, &peer->cfg_endpoint, sizeof(peer->endpoint));
+		start_handshake(ctx, peer);
 
-			return -EAGAIN;
-		}
+		peer->last_tx = sys_clock_tick_get_32();
+
+		return -EAGAIN;
 	}
 
 	keypair = &peer->session.keypair.current;

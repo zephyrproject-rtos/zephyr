@@ -188,6 +188,7 @@
 			channel = <0>;
 			reg = <0x4009f000 0x100>;
 			clocks = <&pclkb MSTPB 9>;
+			max-bitrate-supported = <I2C_BITRATE_FAST_PLUS>;
 			status = "disabled";
 		};
 

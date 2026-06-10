@@ -67,10 +67,6 @@ static PKA_HandleTypeDef hpka;
 static uint32_t __noinit aci_adv_nwk_buffer[CFG_BLE_ADV_NWK_BUFFER_SIZE >> 2];
 #endif /* CONFIG_BT_EXT_ADV */
 
-struct hci_data {
-	bt_hci_recv_t recv;
-};
-
 /* Dummy implementation */
 int BLEPLAT_NvmGet(void)
 {
@@ -198,7 +194,6 @@ void send_event(uint8_t *buffer_out, uint16_t buffer_out_length, int8_t overflow
 	ARG_UNUSED(overflow_index);
 
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct hci_data *hci = dev->data;
 	struct net_buf *buf;
 
 	/* Construct net_buf from event data */
@@ -206,7 +201,7 @@ void send_event(uint8_t *buffer_out, uint16_t buffer_out_length, int8_t overflow
 	if (buf) {
 		/* Handle the received HCI data */
 		LOG_DBG("New event %p len %u type %u", buf, buf->len, buf->data[0]);
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	} else {
 		LOG_ERR("Buf is null");
 	}
@@ -449,9 +444,8 @@ static int bt_hci_stm32wb0_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_hci_stm32wb0_open(const struct device *dev)
 {
-	struct hci_data *data = dev->data;
 	RADIO_HandleTypeDef hradio = {0};
 	BLE_STACK_InitTypeDef BLE_STACK_InitParams = {
 		.BLEStartRamAddress = (uint8_t *)dyn_alloc_a,
@@ -503,7 +497,6 @@ static int bt_hci_stm32wb0_open(const struct device *dev, bt_hci_recv_t recv)
 #endif /* CONFIG_BT_EXT_ADV */
 
 	aci_adv_nwk_init();
-	data->recv = recv;
 	k_work_init_delayable(&ble_stack_work, blestack_process);
 	k_work_schedule(&ble_stack_work, K_NO_WAIT);
 
@@ -517,10 +510,13 @@ static DEVICE_API(bt_hci, drv) = {
 
 #define HCI_DEVICE_INIT(inst) \
 	PM_DEVICE_DT_INST_DEFINE(inst, ble_pm_action); \
-	static struct hci_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst, NULL, \
-				POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static const struct bt_hci_driver_config hci_config_##inst =                               \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst), &hci_data_##inst,           \
+			      &hci_config_##inst, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, \
+			      &drv)
 
 /* Only one instance supported */
 HCI_DEVICE_INIT(0)

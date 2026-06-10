@@ -562,8 +562,6 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 	config.frameSync.frameSyncPolarity = kSAI_PolarityActiveLow;
 #if defined(FSL_FEATURE_SAI_HAS_BIT_CLOCK_SWAP) && FSL_FEATURE_SAI_HAS_BIT_CLOCK_SWAP
 	config.bitClock.bclkSrcSwap = true;
-#else
-	config.bitClock.bclkSrcSwap = false;
 #endif
 	/* format */
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {

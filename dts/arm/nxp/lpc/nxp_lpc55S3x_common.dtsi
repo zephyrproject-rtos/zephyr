@@ -422,7 +422,7 @@
 		interrupt-names = "int0", "int1";
 		clocks = <&syscon MCUX_MCAN_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(1, 7)>;
-		bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+		bosch,mram-cfg = <0x0 15 15 16 0 0 15 15>;
 		status = "disabled";
 	};
 
@@ -566,6 +566,12 @@
 		nxp,current-compensation-en;
 		nxp,internal-voltage-regulator-en;
 		nxp,chop-oscillator-en;
+	};
+
+	crc: crc@95000 {
+		compatible = "nxp,crc";
+		reg = <0x95000 0x1000>;
+		status = "disabled";
 	};
 };
 

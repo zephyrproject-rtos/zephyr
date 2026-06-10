@@ -3,11 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import json
+import logging
 import os
 
-from west import log
-
 from . import cmakefileapi
+
+_logger = logging.getLogger(__name__)
 
 
 def parseReply(replyIndexPath):
@@ -21,27 +22,28 @@ def parseReply(replyIndexPath):
             # get reply object
             reply_dict = js.get("reply", {})
             if reply_dict == {}:
-                log.err('no "reply" field found in index file')
+                _logger.error('no "reply" field found in index file')
                 return None
             # get codemodel object
             cm_dict = reply_dict.get("codemodel-v2", {})
             if cm_dict == {}:
-                log.err('no "codemodel-v2" field found in "reply" object in index file')
+                _logger.error('no "codemodel-v2" field found in "reply" object in index file')
                 return None
             # and get codemodel filename
             jsonFile = cm_dict.get("jsonFile", "")
             if jsonFile == "":
-                log.err('no "jsonFile" field found in "codemodel-v2" object in index file')
+                _logger.error('no "jsonFile" field found in "codemodel-v2" object in index file')
                 return None
 
             return parseCodemodel(replyDir, jsonFile)
 
-    except OSError as e:
-        log.err(f"Error loading {replyIndexPath}: {str(e)}")
+    except OSError:
+        _logger.exception("Error loading %s", replyIndexPath)
         return None
-    except json.decoder.JSONDecodeError as e:
-        log.err(f"Error parsing JSON in {replyIndexPath}: {str(e)}")
+    except json.decoder.JSONDecodeError:
+        _logger.exception("Error parsing JSON in %s", replyIndexPath)
         return None
+
 
 def parseCodemodel(replyDir, codemodelFile):
     codemodelPath = os.path.join(replyDir, codemodelFile)
@@ -55,18 +57,27 @@ def parseCodemodel(replyDir, codemodelFile):
             # for correctness, check kind and version
             kind = js.get("kind", "")
             if kind != "codemodel":
-                log.err('Error loading CMake API reply: expected "kind":"codemodel" '
-                        f'in {codemodelPath}, got {kind}')
+                _logger.error(
+                    'Error loading CMake API reply: expected "kind":"codemodel" in %s, got %s',
+                    codemodelPath,
+                    kind,
+                )
                 return None
             version = js.get("version", {})
             versionMajor = version.get("major", -1)
             if versionMajor != 2:
                 if versionMajor == -1:
-                    log.err("Error loading CMake API reply: expected major version 2 "
-                            f"in {codemodelPath}, no version found")
+                    _logger.error(
+                        "Error loading CMake API reply: expected major version 2 in %s, "
+                        "no version found",
+                        codemodelPath,
+                    )
                     return None
-                log.err("Error loading CMake API reply: expected major version 2 "
-                        f"in {codemodelPath}, got {versionMajor}")
+                _logger.error(
+                    "Error loading CMake API reply: expected major version 2 in %s, got %d",
+                    codemodelPath,
+                    versionMajor,
+                )
                 return None
 
             # get paths
@@ -86,12 +97,13 @@ def parseCodemodel(replyDir, codemodelFile):
 
             return cm
 
-    except OSError as e:
-        log.err(f"Error loading {codemodelPath}: {str(e)}")
+    except OSError:
+        _logger.exception("Error loading %s", codemodelPath)
         return None
-    except json.decoder.JSONDecodeError as e:
-        log.err(f"Error parsing JSON in {codemodelPath}: {str(e)}")
+    except json.decoder.JSONDecodeError:
+        _logger.exception("Error parsing JSON in %s", codemodelPath)
         return None
+
 
 def parseConfig(cfg_dict, replyDir):
     cfg = cmakefileapi.Config()
@@ -145,6 +157,7 @@ def parseConfig(cfg_dict, replyDir):
 
     return cfg
 
+
 def parseTarget(targetPath):
     try:
         with open(targetPath) as targetFile:
@@ -187,12 +200,13 @@ def parseTarget(targetPath):
 
             return target
 
-    except OSError as e:
-        log.err(f"Error loading {targetPath}: {str(e)}")
+    except OSError:
+        _logger.exception("Error loading %s", targetPath)
         return None
-    except json.decoder.JSONDecodeError as e:
-        log.err(f"Error parsing JSON in {targetPath}: {str(e)}")
+    except json.decoder.JSONDecodeError:
+        _logger.exception("Error parsing JSON in %s", targetPath)
         return None
+
 
 def parseTargetType(targetType):
     return {
@@ -203,6 +217,7 @@ def parseTargetType(targetType):
         "OBJECT_LIBRARY": cmakefileapi.TargetType.OBJECT_LIBRARY,
         "UTILITY": cmakefileapi.TargetType.UTILITY,
     }.get(targetType, cmakefileapi.TargetType.UNKNOWN)
+
 
 def parseTargetInstall(target, js):
     install_dict = js.get("install", {})
@@ -217,6 +232,7 @@ def parseTargetInstall(target, js):
         dest.path = destination_dict.get("path", "")
         dest.backtrace = destination_dict.get("backtrace", -1)
         target.install_destinations.append(dest)
+
 
 def parseTargetLink(target, js):
     link_dict = js.get("link", {})
@@ -234,6 +250,7 @@ def parseTargetLink(target, js):
         fragment.role = fragment_dict.get("role", "")
         target.link_commandFragments.append(fragment)
 
+
 def parseTargetArchive(target, js):
     archive_dict = js.get("archive", {})
     if archive_dict == {}:
@@ -247,6 +264,7 @@ def parseTargetArchive(target, js):
         fragment.role = fragment_dict.get("role", "")
         target.archive_commandFragments.append(fragment)
 
+
 def parseTargetDependencies(target, js):
     dependencies_arr = js.get("dependencies", [])
     for dependency_dict in dependencies_arr:
@@ -254,6 +272,7 @@ def parseTargetDependencies(target, js):
         dep.id = dependency_dict.get("id", "")
         dep.backtrace = dependency_dict.get("backtrace", -1)
         target.dependencies.append(dep)
+
 
 def parseTargetSources(target, js):
     sources_arr = js.get("sources", [])
@@ -266,6 +285,7 @@ def parseTargetSources(target, js):
         src.backtrace = source_dict.get("backtrace", -1)
         target.sources.append(src)
 
+
 def parseTargetSourceGroups(target, js):
     sourceGroups_arr = js.get("sourceGroups", [])
     for sourceGroup_dict in sourceGroups_arr:
@@ -273,6 +293,7 @@ def parseTargetSourceGroups(target, js):
         srcgrp.name = sourceGroup_dict.get("name", "")
         srcgrp.sourceIndexes = sourceGroup_dict.get("sourceIndexes", [])
         target.sourceGroups.append(srcgrp)
+
 
 def parseTargetCompileGroups(target, js):
     compileGroups_arr = js.get("compileGroups", [])
@@ -312,6 +333,7 @@ def parseTargetCompileGroups(target, js):
 
         target.compileGroups.append(cmpgrp)
 
+
 def parseTargetBacktraceGraph(target, js):
     backtraceGraph_dict = js.get("backtraceGraph", {})
     if backtraceGraph_dict == {}:
@@ -328,11 +350,13 @@ def parseTargetBacktraceGraph(target, js):
         node.parent = node_dict.get("parent", -1)
         target.backtraceGraph_nodes.append(node)
 
+
 # Create direct pointers for all Configs in Codemodel
 # takes: Codemodel
 def linkCodemodel(cm):
     for cfg in cm.configurations:
         linkConfig(cfg)
+
 
 # Create direct pointers for all contents of Config
 # takes: Config
@@ -343,6 +367,7 @@ def linkConfig(cfg):
         linkConfigProject(cfg, cfgPrj)
     for cfgTarget in cfg.configTargets:
         linkConfigTarget(cfg, cfgTarget)
+
 
 # Create direct pointers for ConfigDir indices
 # takes: Config and ConfigDir
@@ -365,6 +390,7 @@ def linkConfigDir(cfg, cfgDir):
     for targetIndex in cfgDir.targetIndexes:
         cfgDir.targets.append(cfg.configTargets[targetIndex])
 
+
 # Create direct pointers for ConfigProject indices
 # takes: Config and ConfigProject
 def linkConfigProject(cfg, cfgPrj):
@@ -384,6 +410,7 @@ def linkConfigProject(cfg, cfgPrj):
     cfgPrj.targets = []
     for targetIndex in cfgPrj.targetIndexes:
         cfgPrj.targets.append(cfg.configTargets[targetIndex])
+
 
 # Create direct pointers for ConfigTarget indices
 # takes: Config and ConfigTarget
@@ -406,6 +433,7 @@ def linkConfigTarget(cfg, cfgTarget):
     for tcg in cfgTarget.target.compileGroups:
         linkTargetCompileGroup(cfgTarget.target, tcg)
 
+
 # Create direct pointers for TargetSource indices
 # takes: Target and TargetSource
 def linkTargetSource(target, targetSrc):
@@ -419,12 +447,14 @@ def linkTargetSource(target, targetSrc):
     else:
         targetSrc.sourceGroup = target.sourceGroups[targetSrc.sourceGroupIndex]
 
+
 # Create direct pointers for TargetSourceGroup indices
 # takes: Target and TargetSourceGroup
 def linkTargetSourceGroup(target, targetSrcGrp):
     targetSrcGrp.sources = []
     for srcIndex in targetSrcGrp.sourceIndexes:
         targetSrcGrp.sources.append(target.sources[srcIndex])
+
 
 # Create direct pointers for TargetCompileGroup indices
 # takes: Target and TargetCompileGroup

@@ -4,45 +4,103 @@ common:
     - drivers
     - can
 tests:
-  drivers.can.build_all.mcp2515:
-    depends_on:
-      - arduino_spi
-      - arduino_gpio
-    extra_args: SHIELD=dfrobot_can_bus_v2_0
-    platform_allow: frdm_k64f
-  drivers.can.build_all.mcp2515.mikrobus:
-    extra_args: SHIELD=mikroe_mcp25625_click
-    platform_allow: lpcxpresso55s28
-  drivers.can.build_all.mcp2515.xiao:
-    depends_on:
-      - xiao_spi
-      - xiao_gpio
-    extra_args:
-      - SHIELD=seeed_xiao_can
-      # Avoiding hidden Kconfig warnings, as the Zephyr console on the XIAO
-      # serial interface was disabled by the shield due to signal conflicts
-      # on SPI CS (RX) and INT (TX).
-      - CONFIG_SERIAL=n
-      - CONFIG_CONSOLE=n
-      - CONFIG_UART_CONSOLE=n
-      - CONFIG_UART_INTERRUPT_DRIVEN=n
+  # One test definition per CAN controller driver, listed in alphanumeric order.
+  # Typically only one board needed per test definition, unless driver handles multiple IP variants.
+  drivers.can.build_all.esp32_twai:
     platform_allow:
-      - seeeduino_xiao
-      - xiao_ble
-      - xiao_rp2040
-  drivers.can.build_all.tcan4x5x:
-    depends_on:
-      - arduino_spi
-      - arduino_gpio
-    extra_args: SHIELD=tcan4550evm
-    platform_allow: frdm_k64f
-  drivers.can.build_all.tcan4x5x.mikrobus:
-    extra_args: SHIELD=mikroe_can_fd_6_click
-    platform_allow: mikroe_stm32_m4_clicker
-  drivers.can.build_all.mcp251xfd:
-    extra_args: SHIELD=mikroe_mcp2518fd_click
-    platform_allow: lpcxpresso55s28
-  drivers.can.build_all.native_linux:
+      - olimex_esp32_evb/esp32/procpu
+  drivers.can.build_all.fake:
+    extra_configs:
+      - CONFIG_CAN_LOOPBACK=n
+    extra_dtc_overlay_files:
+      - fake.overlay
     platform_allow:
       - native_sim
       - native_sim/native/64
+  drivers.can.build_all.infineon:
+    platform_allow:
+      - kit_psc3m5_evk
+  drivers.can.build_all.kvaser_pci:
+    platform_allow:
+      - qemu_x86
+  drivers.can.build_all.loopback:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+  drivers.can.build_all.max32:
+    platform_allow:
+      - max32662evkit
+  drivers.can.build_all.mcp2515:
+    extra_configs:
+      - CONFIG_CAN_MCUX_FLEXCAN=n
+    extra_args:
+      - SHIELD=dfrobot_can_bus_v2_0
+    platform_allow:
+      - frdm_k64f
+  drivers.can.build_all.mcp251xfd:
+    extra_configs:
+      - CONFIG_CAN_NXP_LPC_MCAN=n
+    extra_args:
+      - SHIELD=mikroe_mcp2518fd_click
+    platform_allow:
+      - lpcxpresso55s28
+  drivers.can.build_all.mcux_flexcan:
+    platform_allow:
+      - twr_ke18f
+  drivers.can.build_all.msp0_canfd:
+    platform_allow:
+      - lp_mspm0g3507
+  drivers.can.build_all.native_linux:
+    extra_configs:
+      - CONFIG_CAN_LOOPBACK=n
+    extra_args:
+      - SNIPPET=socketcan-native-sim
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+  drivers.can.build_all.nrf:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+  drivers.can.build_all.numaker:
+    platform_allow:
+      - numaker_m55m1
+  drivers.can.build_all.nxp_lpc_mcan:
+    platform_allow:
+      - lpcxpresso55s36
+  drivers.can.build_all.nxp_s32_canxl:
+    platform_allow:
+      - s32z2xxdc2/s32z270/rtu0
+  drivers.can.build_all.rcar:
+    platform_allow:
+      - rcar_h3ulcb/r8a77951/r7
+  drivers.can.build_all.renesas_ra:
+    platform_allow:
+      - aik_ra8d1
+  drivers.can.build_all.renesas_rz_canfd:
+    platform_allow:
+      - rzg3s_smarc/r9a08g045s33gbg/cm33
+  drivers.can.build_all.sam0:
+    platform_allow:
+      - samc21n_xpro
+  drivers.can.build_all.sam:
+    platform_allow:
+      - sam_e70_xplained/same70q21b
+  drivers.can.build_all.stm32_bxcan:
+    platform_allow:
+      - stm32f3_disco
+  drivers.can.build_all.stm32_fdcan:
+    platform_allow:
+      - nucleo_g474re
+  drivers.can.build_all.stm32h7_fdcan:
+    platform_allow:
+      - nucleo_h723zg
+  drivers.can.build_all.tcan4x5x:
+    extra_configs:
+      - CONFIG_CAN_MCUX_FLEXCAN=n
+    extra_args:
+      - SHIELD=tcan4550evm
+    platform_allow:
+      - frdm_k64f
+  drivers.can.build_all.xmc4xxx:
+    platform_allow:
+      - xmc47_relax_kit

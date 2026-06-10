@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "../../raspberrypi/rpi_4b/rpi_4b.dts"
+
+/ {
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&uart0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart0_gpio14>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&uart1 {
+	status = "disabled";
+};

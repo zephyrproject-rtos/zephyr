@@ -245,7 +245,8 @@ properties:
       If value is present and self-calibration is enabled, this value will overwrite values
       calculated during self-calibration.
       Please refer to RM0440 Rev 9, pp. 789/2140 for more details.
-      NOTE: Acceptable range is 0x00 to 0x1f.
+    min: 0
+    max: 0x1f
 
   st,nmos-trimming-value:
     type: int
@@ -255,4 +256,5 @@ properties:
       If value is present and self-calibration is enabled, this value will overwrite values
       calculated during self-calibration.
       Please refer to RM0440 Rev 9, pp. 789/2140 for more details.
-      NOTE: Acceptable range is 0x00 to 0x1f.
+    min: 0
+    max: 0x1f

@@ -159,6 +159,8 @@
 &i2c1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_scl_pd12 &i2c1_sda_pe8>;
+	scl-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioe 8 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 
 	mcp23017: pinctrl@21 {
@@ -173,12 +175,16 @@
 &i2c4 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c4_scl_pe15 &i2c4_sda_pb9>;
+	scl-gpios = <&gpioe 15 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
 csi_i2c: &i2c5 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c5_scl_pd1 &i2c5_sda_ph6>;
+	scl-gpios = <&gpiod 1 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioh 6 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 
 	mipid02: bridge@14 {

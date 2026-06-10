@@ -39,6 +39,8 @@ properties:
       CPI resolution for the sensor, range from 200 to 3200, rounded down to
       the closest supported value in increments of 200. This can also be
       changed in runtime using the pmw3610_set_resolution() API.
+    min: 200
+    max: 3200
 
   invert-x:
     type: boolean

@@ -94,10 +94,6 @@ static int i2c_gecko_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	I2C_TransferReturn_TypeDef ret = -EIO;
 	uint32_t timeout = 300000U;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	k_sem_take(&data->bus_lock, K_FOREVER);
 
 	seq.addr = addr << 1;

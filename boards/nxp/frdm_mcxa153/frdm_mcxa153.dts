@@ -37,6 +37,7 @@
 		zephyr,shell-uart = &lpuart0;
 		zephyr,edac = &erm0;
 		zephyr,system-timer-companion = &lptmr0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -276,5 +277,9 @@ zephyr_udc0: &usb {
 };
 
 &wwdt0 {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

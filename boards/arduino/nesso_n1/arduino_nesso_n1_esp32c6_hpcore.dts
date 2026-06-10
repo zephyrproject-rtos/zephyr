@@ -34,7 +34,7 @@
 		watchdog0 = &wdt0;
 		accel0 = &bmi270;
 		lora0 = &lora;
-		buzzer = &buzzer;
+		buzzer0 = &buzzer;
 		ir = &ir_tx;
 		sw0 = &key1;
 		sw1 = &key2;
@@ -43,15 +43,15 @@
 	leds {
 		compatible = "gpio-leds";
 
-		buzzer: buzzer {
-			gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
-			label = "Buzzer";
-		};
-
 		ir_tx: ir_tx {
 			gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
 			label = "IR transmitter";
 		};
+	};
+
+	buzzer: buzzer {
+		compatible = "gpio-buzzer";
+		gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
 	};
 
 	keys {

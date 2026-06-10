@@ -13,7 +13,7 @@ Overview
 ********
 
 To allow simulating nRF54LM20 SOCs, a Zephyr target board is provided: the
-``nrf54lm20bsim/nrf54lm20/cpuapp``.
+``nrf54lm20bsim/nrf54lm20a/cpuapp``.
 
 This uses `BabbleSim`_ to simulate the radio activity, and the
 :ref:`POSIX architecture<Posix arch>` and the `native simulator`_ to
@@ -21,7 +21,7 @@ run applications natively on the development system. This has the benefit of
 providing native code execution performance and easy debugging using
 native tools, but inherits :ref:`its limitations <posix_arch_limitations>`.
 
-Just like for the nrf54lm20dk target, the nrf54lm20bsim/nrf54lm20/cpuapp build target provides
+Just like for the nrf54lm20dk target, the nrf54lm20bsim/nrf54lm20a/cpuapp build target provides
 support for the application core, on the simulated nRF54LM20 SOC.
 
 .. note::

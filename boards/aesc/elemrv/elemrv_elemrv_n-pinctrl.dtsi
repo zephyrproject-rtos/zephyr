@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Aesc Silicon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/aesc-pinctrl.h>
+
+&pinctrl {
+	/* GPIO0 */
+	gpio0_pin0_default: gpio0_pin0_default {
+		pinmux = <0 AESC_PINMUX_MUX0>;
+	};
+
+	/* UART0 */
+	uart0_tx_default: uart0_tx_default {
+		pinmux = <14 AESC_PINMUX_MUX0>;
+	};
+
+	uart0_rx_default: uart0_rx_default {
+		pinmux = <15 AESC_PINMUX_MUX0>;
+	};
+
+	uart0_cts_default: uart0_cts_default {
+		pinmux = <16 AESC_PINMUX_MUX0>;
+	};
+
+	uart0_rts_default: uart0_rts_default {
+		pinmux = <17 AESC_PINMUX_MUX0>;
+	};
+};

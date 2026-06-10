@@ -34,6 +34,7 @@ struct cap_initiator_test_unicast_group_fixture {
 	struct bt_cap_unicast_group_param *group_param;
 	struct bt_cap_unicast_group *unicast_group;
 	struct bt_bap_qos_cfg *qos_cfg;
+	void *cap_streams;
 };
 
 static void *cap_initiator_test_unicast_group_setup(void)
@@ -88,6 +89,7 @@ static void cap_initiator_test_unicast_group_before(void *f)
 		pair_cnt = str_cnt / 2U;
 	}
 
+	fixture->cap_streams = cap_streams;
 	fixture->group_param->packing = BT_ISO_PACKING_SEQUENTIAL;
 	fixture->group_param->params_count = pair_cnt;
 	fixture->group_param->params = pair_params;
@@ -109,7 +111,7 @@ static void cap_initiator_test_unicast_group_after(void *f)
 
 	group_param = fixture->group_param;
 
-	free(group_param->params[0].rx_param->stream);
+	free(fixture->cap_streams);
 	free(group_param->params[0].rx_param);
 	free(group_param->params);
 	free(group_param);

@@ -89,13 +89,13 @@ int tmcm_rs485_send_command(const struct device *rs485, const struct tmcm_rs485_
 		} while (err == -1 && !sys_timepoint_expired(end));
 
 		if (err == -1) {
-			LOG_ERR("Timeout waiting for echo byte %d", i);
+			LOG_ERR("Timeout waiting for echo byte %zu", i);
 			rs485_de_set(de_gpio, 0);
 			return -EAGAIN;
 		}
 
 		if (echo != write_buffer[i]) {
-			LOG_ERR("Echo mismatch byte %d: got 0x%02X expected 0x%02X", i, echo,
+			LOG_ERR("Echo mismatch byte %zu: got 0x%02X expected 0x%02X", i, echo,
 				write_buffer[i]);
 			rs485_de_set(de_gpio, 0);
 			return -EIO;
@@ -116,11 +116,11 @@ int tmcm_rs485_send_command(const struct device *rs485, const struct tmcm_rs485_
 		} while (err == -1 && !sys_timepoint_expired(end));
 
 		if (err == -1) {
-			LOG_ERR("Timeout waiting for reply byte %d", i);
+			LOG_ERR("Timeout waiting for reply byte %zu", i);
 			return -EAGAIN;
 		}
 		if (err < 0) {
-			LOG_ERR("Error %d receiving byte %d", err, i);
+			LOG_ERR("Error %d receiving byte %zu", err, i);
 			return -EIO;
 		}
 	}

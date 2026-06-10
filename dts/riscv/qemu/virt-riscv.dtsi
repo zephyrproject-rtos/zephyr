@@ -165,6 +165,70 @@
 		compatible = "simple-bus";
 		ranges;
 
+		virtio_mmio0: virtio_mmio@10001000 {
+			compatible = "virtio,mmio";
+			reg = <0x10001000 0x1000>;
+			interrupts = <0x01 1>;
+			interrupt-parent = <&plic>;
+			status = "disabled";
+		};
+
+		virtio_mmio1: virtio_mmio@10002000 {
+			compatible = "virtio,mmio";
+			reg = <0x10002000 0x1000>;
+			interrupts = <0x02 1>;
+			interrupt-parent = <&plic>;
+			status = "disabled";
+		};
+
+		virtio_mmio2: virtio_mmio@10003000 {
+			compatible = "virtio,mmio";
+			reg = <0x10003000 0x1000>;
+			interrupts = <0x03 1>;
+			interrupt-parent = <&plic>;
+			status = "disabled";
+		};
+
+		virtio_mmio3: virtio_mmio@10004000 {
+			compatible = "virtio,mmio";
+			reg = <0x10004000 0x1000>;
+			interrupts = <0x04 1>;
+			interrupt-parent = <&plic>;
+			status = "disabled";
+		};
+
+		virtio_mmio4: virtio_mmio@10005000 {
+			compatible = "virtio,mmio";
+			reg = <0x10005000 0x1000>;
+			interrupts = <0x05 1>;
+			interrupt-parent = <&plic>;
+			status = "disabled";
+		};
+
+		virtio_mmio5: virtio_mmio@10006000 {
+			compatible = "virtio,mmio";
+			reg = <0x10006000 0x1000>;
+			interrupts = <0x06 1>;
+			interrupt-parent = <&plic>;
+			status = "disabled";
+		};
+
+		virtio_mmio6: virtio_mmio@10007000 {
+			compatible = "virtio,mmio";
+			reg = <0x10007000 0x1000>;
+			interrupts = <0x07 1>;
+			interrupt-parent = <&plic>;
+			status = "disabled";
+		};
+
+		virtio_mmio7: virtio_mmio@10008000 {
+			compatible = "virtio,mmio";
+			reg = <0x10008000 0x1000>;
+			interrupts = <0x08 1>;
+			interrupt-parent = <&plic>;
+			status = "disabled";
+		};
+
 		plic: interrupt-controller@c000000 {
 			riscv,max-priority = <7>;
 			riscv,ndev = <1024>;

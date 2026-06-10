@@ -13,6 +13,7 @@
 /* List of fakes used by this unit tester */
 #define CONN_FFF_FAKES_LIST(FAKE)                                                                  \
 	FAKE(bt_conn_unref)                                                                        \
+	FAKE(bt_conn_drop)                                                                         \
 	FAKE(bt_conn_lookup_handle)                                                                \
 	FAKE(bt_conn_notify_remote_cs_capabilities)                                                \
 	FAKE(bt_conn_notify_cs_config_created)                                                     \
@@ -23,6 +24,7 @@
 	FAKE(bt_conn_notify_remote_cs_fae_table)
 
 DECLARE_FAKE_VOID_FUNC(bt_conn_unref, struct bt_conn *);
+DECLARE_FAKE_VOID_FUNC(bt_conn_drop, struct bt_conn **);
 DECLARE_FAKE_VALUE_FUNC(struct bt_conn *, bt_conn_lookup_handle, uint16_t, enum bt_conn_type);
 DECLARE_FAKE_VOID_FUNC(bt_conn_notify_remote_cs_capabilities, struct bt_conn *,
 		       uint8_t, struct bt_conn_le_cs_capabilities *);

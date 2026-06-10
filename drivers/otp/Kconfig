@@ -19,6 +19,7 @@ module-str = otp
 source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
+source "drivers/otp/Kconfig.bflb"
 source "drivers/otp/Kconfig.emu"
 source "drivers/otp/Kconfig.mcux_ocotp"
 source "drivers/otp/Kconfig.nxp_rt7xx_ocotp"

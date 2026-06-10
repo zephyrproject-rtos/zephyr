@@ -36,8 +36,15 @@ static inline bool pipe_empty(struct k_pipe *pipe)
 	return ring_buf_is_empty(&pipe->buf);
 }
 
+struct pipe_buf_spec {
+	uint8_t * const data;
+	const size_t len;
+	size_t used;
+};
+
 static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe, k_spinlock_key_t *key,
-		    k_timepoint_t time_limit, bool *need_resched)
+		    k_timepoint_t time_limit, bool *need_resched,
+		    struct pipe_buf_spec *buf_spec)
 {
 	k_timeout_t timeout = sys_timepoint_timeout(time_limit);
 	int rc;
@@ -45,6 +52,8 @@ static int wait_for(_wait_q_t *waitq, struct k_pipe *pipe, k_spinlock_key_t *key
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		return -EAGAIN;
 	}
+
+	_current->base.swap_data = buf_spec;
 
 	pipe->waiting++;
 	*need_resched = false;
@@ -85,12 +94,6 @@ void z_impl_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size
 #endif /* CONFIG_OBJ_CORE_PIPE */
 	SYS_PORT_TRACING_OBJ_INIT(k_pipe, pipe, buffer, buffer_size);
 }
-
-struct pipe_buf_spec {
-	uint8_t * const data;
-	const size_t len;
-	size_t used;
-};
 
 static size_t copy_to_pending_readers(struct k_pipe *pipe, bool *need_resched,
 				      const uint8_t *data, size_t len)
@@ -201,7 +204,7 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 			break;
 		}
 
-		rc = wait_for(&pipe->space, pipe, &key, end, &need_resched);
+		rc = wait_for(&pipe->space, pipe, &key, end, &need_resched, NULL);
 		if (rc != 0) {
 			if (rc == -EAGAIN) {
 				rc = written ? written : -EAGAIN;
@@ -251,10 +254,7 @@ int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout
 			break;
 		}
 
-		/* provide our "direct copy" info to potential writers */
-		_current->base.swap_data = &buf;
-
-		rc = wait_for(&pipe->data, pipe, &key, end, &need_resched);
+		rc = wait_for(&pipe->data, pipe, &key, end, &need_resched, &buf);
 		if (rc != 0) {
 			if (rc == -EAGAIN) {
 				rc = buf.used ? buf.used : -EAGAIN;

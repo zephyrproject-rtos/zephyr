@@ -94,4 +94,38 @@ config SIWX91X_FIRMWARE_UPGRADE
 	  For more information, visit:
 	  https://docs.silabs.com/wiseconnect/latest/wiseconnect-api-reference-guide-si91x-driver/si91-x-firmware-update-from-host-functions#sl-si91x-fwup-load
 
+if SIWX91X_FIRMWARE_UPGRADE
+
+config SIWX91X_FIRMWARE_UPGRADE_SHELL
+	bool "Shell command for firmware upgrade"
+	depends on SHELL
+	depends on NET_TCP
+	select SILABS_SHELL
+	select HTTP_CLIENT
+	select DNS_RESOLVER
+	select REBOOT
+	default y
+	help
+	  Adds an "silabs fota <URL>" shell command that downloads a firmware image
+	  over HTTP or HTTPS and flash it. Wi-Fi must already be connected before
+	  issuing the command. The device reboots automatically when the upgrade
+	  completes.
+
+	  To get support for HTTPS, user has to enable support for TLS. Usually,
+	  overlays files provided by http_client (samples/net/sockets/http_client/overlay-tls.conf)
+	  should work.
+
+endif
+
+config SIWX91X_VERSION_SHELL
+	bool "Shell command for NWP firmware version"
+	depends on SILABS_SIWX91X_NWP
+	depends on SHELL
+	select SILABS_SHELL
+	default y
+	help
+	  Adds a "silabs nwp_version [-c]" shell command that prints the NWP
+	  firmware version. With -c, verifies that it matches the expected
+	  version and returns an error if it does not.
+
 endif # SOC_FAMILY_SILABS_SIWX91X

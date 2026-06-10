@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BUZZER
+	bool "Buzzer drivers [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Include buzzer drivers in the system configuration.
+
+if BUZZER
+
+module = BUZZER
+module-str = buzzer
+source "subsys/logging/Kconfig.template.log_config"
+
+config BUZZER_INIT_PRIORITY
+	int "Buzzer initialization priority"
+	default 90
+	help
+	  System initialization priority for buzzer drivers.
+
+rsource "Kconfig.gpio"
+rsource "Kconfig.pwm"
+
+endif # BUZZER

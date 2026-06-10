@@ -1939,7 +1939,14 @@ error_pm:
 	return ret;
 }
 
+static int cs40l5x_select_source(const struct device *dev, const enum haptics_source src,
+				 const union haptics_config *const cfg)
+{
+	return -ENOTSUP;
+}
+
 static DEVICE_API(haptics, cs40l5x_driver_api) = {
+	.select_source = &cs40l5x_select_source,
 	.start_output = &cs40l5x_start_output,
 	.stop_output = &cs40l5x_stop_output,
 	.register_error_callback = &cs40l5x_register_error_callback,

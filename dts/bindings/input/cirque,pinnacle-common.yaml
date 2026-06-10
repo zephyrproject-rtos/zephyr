@@ -43,6 +43,8 @@ properties:
       it detected. An application can count these packets in order to detect
       taps. When set to 0, no empty packets are sent. Supported values from 0
       to 255.
+    min: 0
+    max: 255
 
   sleep-mode-enable:
     type: boolean
@@ -91,11 +93,13 @@ properties:
     type: int
     default: 1024
     description: Resolution for the X axis.
+    min: 1
 
   scaling-y-resolution:
     type: int
     default: 1024
     description: Resolution for the Y axis.
+    min: 1
 
   invert-x:
     type: boolean

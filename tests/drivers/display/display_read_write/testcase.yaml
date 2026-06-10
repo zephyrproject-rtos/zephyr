@@ -14,118 +14,124 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ARGB_8888=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_argb_8888.overlay
   drivers.display.read_write.sdl.xrgb8888:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_XRGB_8888=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_xrgb_8888.overlay
   drivers.display.read_write.sdl.al88:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_AL_88=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_al_88.overlay
   drivers.display.read_write.sdl.rgb888:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_888=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_rgb_888.overlay
   drivers.display.read_write.sdl.mono01.vtiled.msbfirst:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono01.overlay
   drivers.display.read_write.sdl.mono10.vtiled.msbfirst:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono10.overlay
   drivers.display.read_write.sdl.mono01.htiled.msbfirst:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono01.overlay
     extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
       - CONFIG_SDL_DISPLAY_MONO_VTILED=n
   drivers.display.read_write.sdl.mono10.htiled.msbfirst:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono10.overlay
     extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
       - CONFIG_SDL_DISPLAY_MONO_VTILED=n
   drivers.display.read_write.sdl.mono01.vtiled.lsbfirst:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono01.overlay
     extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
   drivers.display.read_write.sdl.mono10.vtiled.lsbfirst:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono10.overlay
     extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
   drivers.display.read_write.sdl.mono01.htiled.lsbfirst:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono01.overlay
     extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO01=y
       - CONFIG_SDL_DISPLAY_MONO_VTILED=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
   drivers.display.read_write.sdl.mono10.htiled.lsbfirst:
     platform_allow:
       - native_sim
       - native_sim/native/64
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono10.overlay
     extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_MONO10=y
       - CONFIG_SDL_DISPLAY_MONO_VTILED=n
       - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
   drivers.display.read_write.sdl.rgb565:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_rgb_565.overlay
   drivers.display.read_write.sdl.rgb565x:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGB_565X=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_rgb_565x.overlay
   drivers.display.read_write.sdl.bgr888:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGR_888=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_bgr_888.overlay
   drivers.display.read_write.sdl.abgr8888:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_ABGR_8888=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_abgr_8888.overlay
   drivers.display.read_write.sdl.rgba8888:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_RGBA_8888=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_rgba_8888.overlay
   drivers.display.read_write.sdl.bgra8888:
     platform_allow:
       - native_sim
       - native_sim/native/64
-    extra_configs:
-      - CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_BGRA_8888=y
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_bgra_8888.overlay
   drivers.display.read_write.ili9340:
     tags:
       - shield

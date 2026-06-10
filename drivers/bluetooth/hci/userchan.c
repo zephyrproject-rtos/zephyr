@@ -35,8 +35,9 @@ LOG_MODULE_REGISTER(bt_driver);
 #define DT_DRV_COMPAT zephyr_bt_hci_userchan
 
 struct uc_data {
+	/* bt_hci_driver_data must be first */
+	struct bt_hci_driver_data common;
 	int           fd;
-	bt_hci_recv_t recv;
 };
 
 static K_KERNEL_STACK_DEFINE(rx_thread_stack,
@@ -331,9 +332,9 @@ static void rx_thread(void *p1, void *p2, void *p3)
 
 			net_buf_add_mem(buf, buf_add, buf_add_len);
 
-			LOG_DBG("Calling bt_recv(%p)", buf);
+			LOG_DBG("Calling bt_hci_recv(%p)", buf);
 
-			uc->recv(dev, buf);
+			bt_hci_recv(dev, buf);
 		}
 
 		k_yield();
@@ -359,7 +360,7 @@ static int uc_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static int uc_open(const struct device *dev, bt_hci_recv_t recv)
+static int uc_open(const struct device *dev)
 {
 	struct uc_data *uc = dev->data;
 
@@ -380,8 +381,6 @@ static int uc_open(const struct device *dev, bt_hci_recv_t recv)
 	if (uc->fd < 0) {
 		return -nsi_errno_from_mid(-uc->fd);
 	}
-
-	uc->recv = recv;
 
 	LOG_DBG("User Channel opened as fd %d", uc->fd);
 
@@ -438,7 +437,9 @@ static int uc_init(const struct device *dev)
 	static struct uc_data uc_data_##inst = { \
 		.fd = -1, \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, uc_init, NULL, &uc_data_##inst, NULL, \
+	static const struct bt_hci_driver_config uc_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, uc_init, NULL, &uc_data_##inst, &uc_config_##inst, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uc_drv_api)
 
 DT_INST_FOREACH_STATUS_OKAY(UC_DEVICE_INIT)

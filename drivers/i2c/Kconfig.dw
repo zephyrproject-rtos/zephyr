@@ -6,6 +6,7 @@ menuconfig I2C_DW
 	default y
 	depends on DT_HAS_SNPS_DESIGNWARE_I2C_ENABLED
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_I2C),pinctrl-0)
+	depends on !$(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_I2C),clocks) || CLOCK_CONTROL
 	help
 	  Enable the Design Ware I2C driver
 

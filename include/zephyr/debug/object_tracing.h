@@ -8,7 +8,6 @@
 #define ZEPHYR_INCLUDE_THREAD_MONITOR_H_
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 
 /**
  * @brief Head element of the thread monitor list.

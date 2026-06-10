@@ -5,7 +5,7 @@ common:
   tags:
     - display
 tests:
-  sample.subsys.display.color_palette:
+  sample.display.color_palette:
     filter: dt_compat_enabled("zephyr,panel-color-palette") and
             dt_chosen_enabled("zephyr,display")
     harness: none

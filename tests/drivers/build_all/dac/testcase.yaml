@@ -17,3 +17,5 @@ tests:
     platform_allow: samd21_xpro
   drivers.dac.stm32.build:
     platform_allow: nucleo_f091rc
+    extra_configs:
+      - CONFIG_GPIO=y # needed by some DAC drivers

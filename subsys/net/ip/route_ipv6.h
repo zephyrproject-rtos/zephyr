@@ -35,10 +35,10 @@ extern "C" {
  */
 #if defined(CONFIG_NET_NATIVE)
 struct net_route_entry *net_route_ipv6_lookup(struct net_if *iface,
-					      struct net_in6_addr *dst);
+					      const struct net_in6_addr *dst);
 #else
 static inline struct net_route_entry *net_route_ipv6_lookup(struct net_if *iface,
-							    struct net_in6_addr *dst)
+							    const struct net_in6_addr *dst)
 {
 	ARG_UNUSED(iface);
 	ARG_UNUSED(dst);
@@ -264,7 +264,7 @@ bool net_route_ipv6_mcast_iface_del(struct net_route_ipv6_entry_mcast *entry,
  * @return True if there is a route to the destination, False otherwise
  */
 bool net_route_ipv6_get_info(struct net_if *iface,
-			     struct net_in6_addr *dst,
+			     const struct net_in6_addr *dst,
 			     struct net_route_entry **route,
 			     struct net_in6_addr **nexthop);
 
@@ -276,7 +276,7 @@ bool net_route_ipv6_get_info(struct net_if *iface,
  *
  * @return 0 if there was no error, <0 if the packet could not be sent.
  */
-int net_route_ipv6_packet(struct net_pkt *pkt, struct net_in6_addr *nexthop);
+int net_route_ipv6_packet(struct net_pkt *pkt, const struct net_in6_addr *nexthop);
 
 /**
  * @brief Send the network packet to network via the given interface.

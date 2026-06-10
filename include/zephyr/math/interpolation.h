@@ -32,10 +32,10 @@ extern "C" {
  * @note Result rounding occurs away from 0, e.g:
  *       1.5 -> 2, -5.5 -> -6
  *
- * @param x_axis Ascending list of X co-ordinates for @a y_axis data points
- * @param y_axis Y co-ordinates for each X data point
+ * @param x_axis Ascending list of X coordinates for @a y_axis data points
+ * @param y_axis Y coordinates for each X data point
  * @param len Length of the @a x_axis and @a y_axis arrays
- * @param x X co-ordinate to lookup
+ * @param x X coordinate to lookup
  *
  * @retval y_axis[0] if x < x_axis[0]
  * @retval y_axis[len - 1] if x > x_axis[len - 1]

@@ -308,13 +308,6 @@ static void uart_renesas_ra_sau_irq_err_disable(const struct device *dev)
 	cfg->regs->SCR[cfg->rx_channel] &= ~R_SAU0_SCR_EOC_Msk;
 }
 
-static int uart_renesas_ra_sau_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 1;
-}
-
 static int uart_renesas_ra_sau_irq_is_pending(const struct device *dev)
 {
 	const struct uart_renesas_ra_sau_config *cfg = dev->config;
@@ -418,7 +411,6 @@ static DEVICE_API(uart, uart_renesas_ra_sau_driver_api) = {
 	.irq_err_enable = uart_renesas_ra_sau_irq_err_enable,
 	.irq_err_disable = uart_renesas_ra_sau_irq_err_disable,
 	.irq_is_pending = uart_renesas_ra_sau_irq_is_pending,
-	.irq_update = uart_renesas_ra_sau_irq_update,
 	.irq_callback_set = uart_renesas_ra_sau_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };

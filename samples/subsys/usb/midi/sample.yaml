@@ -1,7 +1,7 @@
 sample:
   name: USB MIDI 2.0 device class sample
 tests:
-  sample.usb_device_next.midi:
+  sample.usb.usb_device_next.midi:
     depends_on: usbd
     tags: usb
     harness: console

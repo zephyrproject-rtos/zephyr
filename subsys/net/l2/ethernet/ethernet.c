@@ -698,15 +698,8 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	struct net_pkt *orig_pkt = pkt;
 	int ret;
 
-	if (!api) {
-		ret = -ENOENT;
-		goto error;
-	}
-
-	if (!api->send) {
-		ret = -ENOTSUP;
-		goto error;
-	}
+	NET_ASSERT(api != NULL);
+	NET_ASSERT(api->send != NULL);
 
 	/* We are trying to send a packet that is from bridge interface,
 	 * so all the bits and pieces should be there (like Ethernet header etc)
@@ -823,10 +816,9 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *eth = dev->api;
+	struct net_linkaddr *mac_addr;
 
-	if (!eth) {
-		return -ENOENT;
-	}
+	NET_ASSERT(eth != NULL);
 
 	if (!state) {
 		net_arp_clear_cache(iface);
@@ -834,10 +826,20 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 		if (eth->stop) {
 			return eth->stop(dev, iface);
 		}
-	} else {
-		if (eth->start) {
-			return eth->start(dev, iface);
-		}
+
+		return 0;
+	}
+
+	mac_addr = net_if_get_link_addr(iface);
+
+	if ((mac_addr->len != NET_ETH_ADDR_LEN) ||
+	    !net_eth_is_addr_valid((struct net_eth_addr *)mac_addr->addr)) {
+		NET_ERR("Invalid MAC address for iface %d (%p)", net_if_get_by_iface(iface), iface);
+		return -EINVAL;
+	}
+
+	if (eth->start) {
+		return eth->start(dev, iface);
 	}
 
 	return 0;
@@ -879,9 +881,7 @@ static void carrier_on_off(struct k_work *work)
 						    carrier_work);
 	bool eth_carrier_up;
 
-	if (ctx->iface == NULL) {
-		return;
-	}
+	NET_ASSERT(ctx->iface != NULL);
 
 	eth_carrier_up = atomic_test_bit(&ctx->flags, ETH_CARRIER_UP);
 
@@ -926,9 +926,7 @@ const struct device *net_eth_get_phy(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->api;
 
-	if (!api) {
-		return NULL;
-	}
+	NET_ASSERT(api != NULL);
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return NULL;
@@ -947,9 +945,7 @@ const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->api;
 
-	if (!api) {
-		return NULL;
-	}
+	NET_ASSERT(api != NULL);
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return NULL;

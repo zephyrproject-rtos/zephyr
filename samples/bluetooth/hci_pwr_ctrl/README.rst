@@ -32,4 +32,10 @@ Requirements
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/hci_pwr_ctrl
+   :board: <board>
+   :goals: build flash
+   :compact:

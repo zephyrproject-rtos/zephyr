@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT st_stm32_spi
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(spi_stm32);
+LOG_MODULE_REGISTER(spi_stm32, CONFIG_SPI_LOG_LEVEL);
 
 #include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>

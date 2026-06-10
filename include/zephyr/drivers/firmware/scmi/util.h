@@ -30,7 +30,7 @@
  * name. This is done by concatenating the scmi_protocol_
  * construct with the given protocol ID.
  *
- * @param proto protocol ID in decimal format
+ * @param proto Protocol ID in decimal format
  *
  * @return protocol name
  */
@@ -58,7 +58,7 @@
  * a compatible string matching the current transport's definition
  * (DT_SCMI_TRANSPORT_COMPATIBLE).
  *
- * @param node_id protocol node identifier
+ * @param node_id Protocol node identifier
  * @return 1 if the node is the base transport node, 0 otherwise.
  */
 #define DT_SCMI_TRANSPORT_PROTO_IS_BASE(node_id) \
@@ -71,7 +71,7 @@
  * Base protocol requires special handling since it shares
  * the same DT node with the transport.
  *
- * @param node_id protocol node identifier
+ * @param node_id Protocol node identifier
  * @return protocol ID
  */
 #define DT_SCMI_TRANSPORT_PROTOCOL_ID(node_id)					\
@@ -91,8 +91,8 @@
  * version of this macro based on the devicetree properties
  * that indicate the presence of a dedicated channel.
  *
- * @param node_id protocol node identifier
- * @idx channel index. Should be 0 for TX channels and 1 for
+ * @param node_id Protocol node identifier
+ * @param idx channel index. Should be 0 for TX channels and 1 for
  * RX channels
  */
 #define DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, idx)\
@@ -103,26 +103,30 @@
  * For SMC transport, all protocols share the base channel.
  * Return 0, to make all protocols fall back to base channel.
  *
- * @param node_id protocol node identifier
- * @idx channel index
+ * @param node_id Protocol node identifier
+ * @param idx channel index
  */
 #define DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, idx) 0
 #else
 #error "Transport with static channels needs to define HAS_CHAN macro"
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+/* builds the symbol name of the static channel for a (proto, idx) pair */
 #define SCMI_TRANSPORT_CHAN_NAME(proto, idx) CONCAT(scmi_channel_, proto, _, idx)
+/** @endcond */
 
-/**
- * @brief Declare a TX SCMI channel
+/** @cond INTERNAL_HIDDEN */
+
+/*
+ * Declare a TX SCMI channel.
  *
  * Given a node_id for a protocol, this macro declares the SCMI
  * TX channel statically bound to said protocol via the "extern"
  * qualifier. This is useful when the transport layer driver
  * supports static channels since all channel structures are
- * defined inside the transport layer driver.
- *
- * @param node_id protocol node identifier
+ * defined inside the transport layer driver. Internal helper used
+ * by DT_SCMI_TRANSPORT_CHANNELS_DECLARE(); not meant to be used directly.
  */
 #define DT_SCMI_TRANSPORT_TX_CHAN_DECLARE(node_id)				\
 	COND_CODE_1(DT_SCMI_TRANSPORT_PROTO_HAS_CHAN(node_id, 0),		\
@@ -131,6 +135,7 @@
 			DT_SCMI_TRANSPORT_PROTOCOL_ID(node_id), 0);),		\
 		    (extern struct scmi_channel					\
 		     SCMI_TRANSPORT_CHAN_NAME(SCMI_PROTOCOL_BASE, 0);))		\
+/** @endcond */
 
 /**
  * @brief Declare SCMI TX/RX channels
@@ -165,9 +170,9 @@
  * reference to an SCMI TX channel statically bound to said
  * protocol.
  *
- * @param node_id protocol node identifier
+ * @param node_id Protocol node identifier
  *
- * @return reference to the struct scmi_channel of the TX channel
+ * @return Reference to the struct scmi_channel of the TX channel
  * bound to the protocol identifier by node_id
  */
 #define DT_SCMI_TRANSPORT_TX_CHAN(node_id)					\
@@ -183,10 +188,11 @@
  * This should be used by the transport layer driver to statically
  * define SCMI channels for the protocols.
  *
- * @param node_id protocol node identifier
+ * @param node_id Protocol node identifier
  * @param idx channel index. Should be 0 for TX channels and 1
  * for RX channels
- * @param proto protocol ID in decimal format
+ * @param proto Protocol ID in decimal format
+ * @param pdata Pointer to the channel's private data
  */
 #define DT_SCMI_TRANSPORT_CHAN_DEFINE(node_id, idx, proto, pdata)		\
 	struct scmi_channel SCMI_TRANSPORT_CHAN_NAME(proto, idx) =		\
@@ -194,20 +200,23 @@
 		.data = pdata,							\
 	}
 
-/**
- * @brief Define an SCMI protocol's data
+/** @cond INTERNAL_HIDDEN */
+
+/*
+ * Define an SCMI protocol's data.
  *
  * Each SCMI protocol is identified by a struct scmi_protocol
  * placed in a linker section called scmi_protocol. Each protocol
  * driver is required to use this macro for "registration". Using
- * this macro directly is higly discouraged and users should opt
+ * this macro directly is highly discouraged and users should opt
  * for macros such as DT_SCMI_PROTOCOL_DEFINE_NODEV() or
  * DT_SCMI_PROTOCOL_DEFINE(), which also takes care of the static
  * channel declaration (if applicable).
  *
- * @param node_id protocol node identifier
- * @param proto protocol ID in decimal format
- * @param pdata protocol private data
+ * node_id     - protocol node identifier
+ * proto       - protocol ID in decimal format
+ * pdata       - protocol private data
+ * version_val - protocol version supported by the driver
  */
 #define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata, version_val)	\
 	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =	\
@@ -217,17 +226,22 @@
 		.data = pdata,							\
 		.version = version_val						\
 	}
+/** @endcond */
 
 #else /* CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS */
 
+/** @cond INTERNAL_HIDDEN */
+/* no-op variant used when the transport does not support static channels */
 #define DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)
 
+/* variant used when the transport does not support static channels */
 #define DT_SCMI_PROTOCOL_DATA_DEFINE(node_id, proto, pdata)			\
 	STRUCT_SECTION_ITERABLE(scmi_protocol, SCMI_PROTOCOL_NAME(proto)) =	\
 	{									\
 		.id = proto,							\
 		.data = pdata,							\
 	}
+/** @endcond */
 
 #endif /* CONFIG_ARM_SCMI_TRANSPORT_HAS_STATIC_CHANNELS */
 
@@ -251,26 +265,28 @@
  * @brief Define an SCMI protocol
  *
  * This macro performs three important functions:
- *	1) It defines a `struct scmi_protocol`, which is
- *	needed by all protocol drivers to work with the SCMI API.
  *
- *	2) It declares the static channels bound to the protocol.
- *	This is only applicable if the transport layer driver
- *	supports static channels.
+ * 1. It defines a `struct scmi_protocol`, which is
+ *    needed by all protocol drivers to work with the SCMI API.
  *
- *	3) It creates a `struct device` a sets the `data` field
- *	to the newly defined `struct scmi_protocol`. This is
- *	needed because the protocol driver needs to work with the
- *	SCMI API **and** the subsystem API.
+ * 2. It declares the static channels bound to the protocol.
+ *    This is only applicable if the transport layer driver
+ *    supports static channels.
  *
- * @param node_id protocol node identifier
- * @param init_fn pointer to protocol's initialization function
- * @param api pointer to protocol's subsystem API
- * @param pm pointer to the protocol's power management resources
- * @param data pointer to protocol's private data
- * @param config pointer to protocol's private constant data
- * @param level protocol initialization level
- * @param prio protocol's priority within its initialization level
+ * 3. It creates a `struct device` a sets the `data` field
+ *    to the newly defined `struct scmi_protocol`. This is
+ *    needed because the protocol driver needs to work with the
+ *    SCMI API **and** the subsystem API.
+ *
+ * @param node_id Protocol node identifier
+ * @param init_fn Pointer to protocol's initialization function
+ * @param api Pointer to protocol's subsystem API
+ * @param pm Pointer to the protocol's power management resources
+ * @param data Pointer to protocol's private data
+ * @param config Pointer to protocol's private constant data
+ * @param level Protocol initialization level
+ * @param prio Protocol's priority within its initialization level
+ * @param version_val Protocol version supported by the driver
  */
 #define DT_SCMI_PROTOCOL_DEFINE(node_id, init_fn, pm, data, config,		\
 				level, prio, api, version_val)			\
@@ -287,14 +303,15 @@
  * @brief Just like DT_SCMI_PROTOCOL_DEFINE(), but uses an instance
  * of a `DT_DRV_COMPAT` compatible instead of a node identifier
  *
- * @param inst instance number
- * @param init_fn pointer to protocol's initialization function
- * @param api pointer to protocol's subsystem API
- * @param pm pointer to the protocol's power management resources
- * @param data pointer to protocol's private data
- * @param config pointer to protocol's private constant data
- * @param level protocol initialization level
- * @param prio protocol's priority within its initialization level
+ * @param inst Instance number
+ * @param init_fn Pointer to protocol's initialization function
+ * @param api Pointer to protocol's subsystem API
+ * @param pm Pointer to the protocol's power management resources
+ * @param data Pointer to protocol's private data
+ * @param config Pointer to protocol's private constant data
+ * @param level Protocol initialization level
+ * @param prio Protocol's priority within its initialization level
+ * @param version Protocol version supported by the driver
  */
 #define DT_INST_SCMI_PROTOCOL_DEFINE(inst, init_fn, pm, data, config,		\
 				     level, prio, api, version)			\
@@ -309,8 +326,9 @@
  * initialization. This is useful for protocols that are not really
  * part of a subsystem with an API (e.g: pinctrl).
  *
- * @param node_id protocol node identifier
- * @param data protocol private data
+ * @param node_id Protocol node identifier
+ * @param data Protocol private data
+ * @param version Protocol version supported by the driver
  */
 #define DT_SCMI_PROTOCOL_DEFINE_NODEV(node_id, data, version)			\
 	DT_SCMI_TRANSPORT_CHANNELS_DECLARE(node_id)				\
@@ -326,9 +344,11 @@
  * This comes in handy when building said parameters/
  * return values.
  *
- * @param x value to encode
- * @param mask value to perform bitwise-and with `x`
- * @param shift value to left-shift masked `x`
+ * @param x Value to encode
+ * @param mask Value to perform bitwise-and with `x`
+ * @param shift Value to left-shift masked `x`
+ *
+ * @return the encoded message field
  */
 #define SCMI_FIELD_MAKE(x, mask, shift)\
 	(((uint32_t)(x) & (mask)) << (shift))
@@ -341,16 +361,16 @@
  * might be used to build protocol and static channel
  * names.
  */
-#define SCMI_PROTOCOL_BASE 16
-#define SCMI_PROTOCOL_POWER_DOMAIN 17
-#define SCMI_PROTOCOL_SYSTEM 18
-#define SCMI_PROTOCOL_PERF 19
-#define SCMI_PROTOCOL_CLOCK 20
-#define SCMI_PROTOCOL_SENSOR 21
-#define SCMI_PROTOCOL_RESET_DOMAIN 22
-#define SCMI_PROTOCOL_VOLTAGE_DOMAIN 23
-#define SCMI_PROTOCOL_PCAP_MONITOR 24
-#define SCMI_PROTOCOL_PINCTRL 25
+#define SCMI_PROTOCOL_BASE 16           /**< Base protocol */
+#define SCMI_PROTOCOL_POWER_DOMAIN 17   /**< Power domain management protocol */
+#define SCMI_PROTOCOL_SYSTEM 18         /**< System power management protocol */
+#define SCMI_PROTOCOL_PERF 19           /**< Performance domain management protocol */
+#define SCMI_PROTOCOL_CLOCK 20          /**< Clock management protocol */
+#define SCMI_PROTOCOL_SENSOR 21         /**< Sensor management protocol */
+#define SCMI_PROTOCOL_RESET_DOMAIN 22   /**< Reset domain management protocol */
+#define SCMI_PROTOCOL_VOLTAGE_DOMAIN 23 /**< Voltage domain management protocol */
+#define SCMI_PROTOCOL_PCAP_MONITOR 24   /**< Power capping and monitoring protocol */
+#define SCMI_PROTOCOL_PINCTRL 25        /**< Pin control protocol */
 
 /**
  * @}

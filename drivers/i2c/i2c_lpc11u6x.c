@@ -79,10 +79,6 @@ static int lpc11u6x_i2c_transfer(const struct device *dev,
 	struct lpc11u6x_i2c_data *data = dev->data;
 	int ret = 0;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	k_mutex_lock(&data->mutex, K_FOREVER);
 
 	data->transfer.msgs = msgs;

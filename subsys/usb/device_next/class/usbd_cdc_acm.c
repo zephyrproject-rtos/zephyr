@@ -537,12 +537,22 @@ static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 			return 0;
 		}
 
+		if (buf == NULL) {
+			/* Data OUT can be received */
+			return 0;
+		}
+
 		memcpy(&data->line_coding, buf->data, len);
 		cdc_acm_update_uart_cfg(data);
 		usbd_msg_pub_device(uds_ctx, USBD_MSG_CDC_ACM_LINE_CODING, dev);
 		return 0;
 
 	case SET_CONTROL_LINE_STATE:
+		if (setup->wLength != 0) {
+			errno = -ENOTSUP;
+			return 0;
+		}
+
 		data->line_state = setup->wValue;
 		cdc_acm_update_linestate(data);
 		usbd_msg_pub_device(uds_ctx, USBD_MSG_CDC_ACM_CONTROL_LINE_STATE, dev);
@@ -708,7 +718,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	}
 
 	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_data)) {
-		LOG_INF("RX buffer to small, throttle");
+		LOG_INF("RX buffer too small, throttle");
 		return;
 	}
 

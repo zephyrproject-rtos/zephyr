@@ -9,8 +9,8 @@ menuconfig DMA_AMD_ACP_SDW
 	help
 	  Enable support for AMD Audio Co-Processor (ACP) SoundWire DMA driver.
 	  This driver provides DMA functionality for SoundWire interface transfers
-	  in AMD ACP 7.0 audio subsystem, enabling audio streaming over SoundWire
-	  bus for connected audio peripherals and codecs.
+	  in AMD ACP 7.0 and ACP 7.X audio subsystems, enabling audio streaming
+	  over SoundWire bus for connected audio peripherals and codecs.
 
 if DMA_AMD_ACP_SDW
 

@@ -648,7 +648,7 @@ struct ethernet_context {
 #endif
 
 #if defined(CONFIG_NET_DSA)
-	/** DSA port tpye */
+	/** DSA port type */
 	enum dsa_port_type dsa_port;
 
 	/** DSA switch context pointer */
@@ -872,9 +872,9 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
 	if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
-		caps |= ETHERNET_DSA_CONDUIT_PORT;
+		caps = ETHERNET_DSA_CONDUIT_PORT;
 	} else if (eth_ctx->dsa_port == DSA_USER_PORT) {
-		caps |= ETHERNET_DSA_USER_PORT;
+		caps = ETHERNET_DSA_USER_PORT;
 	}
 #endif
 	if (api == NULL || api->get_capabilities == NULL) {
@@ -1473,6 +1473,18 @@ static inline bool net_eth_type_is_ethernet(struct net_if *iface)
 	const struct ethernet_context *ctx = (struct ethernet_context *)net_if_l2_data(iface);
 
 	return ctx->eth_if_type == L2_ETH_IF_TYPE_ETHERNET;
+}
+
+/**
+ * @brief Set the Ethernet interface type to Wi-Fi.
+ *
+ * @param iface Network interface
+ */
+static inline void net_eth_set_if_type_wifi(struct net_if *iface)
+{
+	struct ethernet_context *ctx = (struct ethernet_context *)net_if_l2_data(iface);
+
+	ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 }
 
 /**

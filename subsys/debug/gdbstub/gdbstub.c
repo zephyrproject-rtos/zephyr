@@ -254,6 +254,13 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 		(*len)++;
 	}
 
+	if (*len >= (buf_len - 1)) {
+		LOG_DBG("Packet too large. Got %u but only has %u", *len, (buf_len - 1));
+		/* NACK packet */
+		z_gdb_putchar('-');
+		return -2;
+	}
+
 	buf[*len] = '\0';
 
 	/* Get checksum now */
@@ -276,11 +283,7 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 	/* ACK packet */
 	z_gdb_putchar('+');
 
-	if (*len >= (buf_len - 1)) {
-		return -2;
-	} else {
-		return 0;
-	}
+	return 0;
 }
 
 /* Read memory byte-by-byte */

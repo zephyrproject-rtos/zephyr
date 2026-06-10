@@ -128,6 +128,20 @@ config FUSE_LIBRARY_V3
 
 endchoice
 
+config FILE_SYSTEM_NATIVE_MOUNT
+	bool "Mount Native Simulator host FS to Zephyr"
+	depends on ARCH_POSIX
+	select NATIVE_USE_NSI_FCNTL
+	help
+	  Mount a path in the host file system in Zephyr. This allows Zephyr to access, and modify,
+	  host files and folders, like any other embedded mount point.
+
+	  Pass to the executable in the command line:
+
+	    -volume=/host/dir:/dir
+
+	  to mount host system /host/dir be mounted in Zephyr in /dir.
+
 endif # FILE_SYSTEM
 
 if FILE_SYSTEM_LIB_LINK

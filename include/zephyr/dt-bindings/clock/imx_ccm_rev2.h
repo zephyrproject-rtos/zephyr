@@ -104,6 +104,9 @@
 #define IMX_CCM_SAI3_CLK               0x1102UL
 #define IMX_CCM_SAI4_CLK               0x1103UL
 
+/* PDM */
+#define IMX_CCM_PDM_CLK                0x1110UL /*!< PDM/MICFIL clock identifier */
+
 /* ENET */
 #define IMX_CCM_ENET_CLK               0x1200UL
 #define IMX_CCM_ENET_PLL               0x1201UL

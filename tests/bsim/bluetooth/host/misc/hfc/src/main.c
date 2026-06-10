@@ -330,9 +330,8 @@ static void entrypoint_dut(void)
 			bt_conn_unref(s->conn);
 
 			/* release the ref we took when starting the scanner */
-			bt_conn_unref(s->conn);
+			bt_conn_drop(&s->conn);
 
-			s->conn = NULL;
 			s->conn = connect_and_subscribe();
 		}
 	}
@@ -388,8 +387,7 @@ static void entrypoint_peer(void)
 		LOG_INF("disconnect");
 		err = disconnect(conn);
 		TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
-		bt_conn_unref(conn);
-		conn = NULL;
+		bt_conn_drop(&conn);
 	}
 }
 

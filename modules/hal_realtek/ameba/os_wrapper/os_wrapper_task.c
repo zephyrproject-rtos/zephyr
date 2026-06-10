@@ -124,19 +124,19 @@ int rtos_task_delete(rtos_task_t p_handle)
 	bool is_self_delete = (p_free == NULL) || (p_curr == p_free);
 
 	if (is_self_delete) {
+		struct rtos_task_delete_context *ctx = NULL;
 #if (K_HEAP_MEM_POOL_SIZE > 0)
-		struct rtos_task_delete_context *ctx =
-			k_malloc(sizeof(struct rtos_task_delete_context));
-
+		ctx = k_malloc(sizeof(struct rtos_task_delete_context));
+#else
+		LOG_ERR("k_malloc not support.");
+#endif
 		if (ctx) {
 			ctx->thread = p_curr;
 			ctx->stack = (void *)p_curr->stack_info.start;
 			k_work_init(&ctx->work, deferred_task_delete_handler);
 			k_work_submit(&ctx->work);
 		}
-#else
-		LOG_ERR("k_malloc not support.");
-#endif
+
 		k_sleep(K_FOREVER);
 		CODE_UNREACHABLE;
 	} else {

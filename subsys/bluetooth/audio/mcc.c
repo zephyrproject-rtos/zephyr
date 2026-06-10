@@ -1336,8 +1336,7 @@ static int reset_mcs_inst(struct mcs_instance_t *mcs_inst)
 #endif /* CONFIG_BT_MCC_OTS */
 		}
 
-		bt_conn_unref(conn);
-		mcs_inst->conn = NULL;
+		bt_conn_drop(&mcs_inst->conn);
 	}
 
 	(void)memset(mcs_inst, 0, offsetof(struct mcs_instance_t, player_name_sub_params));
@@ -1578,7 +1577,7 @@ static void subscribe_mcs_char_func(struct bt_conn *conn, uint8_t err,
 	LOG_DBG("Subscribed: value handle: %d, ccc handle: %d",
 	       params->value_handle, params->ccc_handle);
 
-	if (params->value_handle == 0) {
+	if (params->value == 0) {
 		/* Unsubscribing, ignore */
 		return;
 	}

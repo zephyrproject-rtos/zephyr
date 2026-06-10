@@ -22,6 +22,7 @@
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/pipelink.h>
 #include <zephyr/modem/ppp.h>
+#include <zephyr/sys/atomic.h>
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -99,6 +100,7 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_MODEM_READY,
 	MODEM_CELLULAR_EVENT_APN_SET,
 	MODEM_CELLULAR_EVENT_RING,
+	MODEM_CELLULAR_EVENT_PERIODIC_KICK,
 };
 
 struct modem_cellular_event_cb {
@@ -142,6 +144,7 @@ struct modem_cellular_data {
 	enum cellular_registration_status registration_status_gsm;
 	enum cellular_registration_status registration_status_gprs;
 	enum cellular_registration_status registration_status_lte;
+	enum cellular_access_technology access_tech;
 	uint8_t rssi;
 	uint8_t rsrp;
 	uint8_t rsrq;
@@ -178,6 +181,11 @@ struct modem_cellular_data {
 
 	/* Ring interrupt */
 	struct gpio_callback ring_gpio_cb;
+
+	/** Set when the periodic chat script is paused. */
+	atomic_t periodic_paused;
+	/** Set when a TIMEOUT is swallowed while paused; cleared on KICK. */
+	bool periodic_timeout_skipped;
 };
 
 struct modem_cellular_user_pipe {
@@ -242,6 +250,7 @@ struct modem_cellular_config {
 	bool reset_on_recovery;
 	bool cmux_enable_runtime_power_save;
 	bool cmux_close_pipe_on_power_save;
+	bool cmux_no_powersave_handshake;
 	bool use_default_pdp_context;
 	bool use_default_apn;
 	k_timeout_t cmux_idle_timeout;
@@ -424,6 +433,8 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
 			DT_INST_PROP_OR(inst, cmux_enable_runtime_power_save, 0),                  \
 		.cmux_close_pipe_on_power_save =                                                   \
 			DT_INST_PROP_OR(inst, cmux_close_pipe_on_power_save, 0),                   \
+		.cmux_no_powersave_handshake =                                                     \
+			DT_INST_PROP_OR(inst, cmux_no_powersave_handshake, 0),                     \
 		.use_default_pdp_context = DT_INST_PROP_OR(inst, zephyr_use_default_pdp_ctx, 0),   \
 		.use_default_apn = DT_INST_PROP_OR(inst, zephyr_use_default_apn, 0),               \
 		.cmux_idle_timeout = K_MSEC(DT_INST_PROP_OR(inst, cmux_idle_timeout_ms, 0)),       \
@@ -440,10 +451,52 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
 
 /** @} */
 
+/** @endcond */
+
+/**
+ * @addtogroup modem_cellular
+ * @{
+ */
+
+/**
+ * @brief Pause the cellular_modem driver's periodic chat script.
+ *
+ * Scheduled periodic-script runs are suppressed until
+ * cellular_modem_resume_periodic_script() is called. An in-flight script
+ * invocation at the time of this call is allowed to complete; suppression
+ * takes effect from the next scheduled run.
+ *
+ * @param dev Cellular device instance backed by the cellular_modem driver
+ *
+ * @retval 0         Success
+ * @retval -ENOTSUP  Device has no periodic chat script configured
+ * @retval -EINVAL   Periodic script is already paused
+ *
+ * @see cellular_modem_resume_periodic_script
+ */
+int cellular_modem_pause_periodic_script(const struct device *dev);
+
+/**
+ * @brief Resume the cellular_modem driver's periodic chat script.
+ *
+ * Re-enables the periodic script. If at least one scheduled run was
+ * skipped while paused, the script fires immediately; otherwise the
+ * periodic timer restarts at the configured interval.
+ *
+ * @param dev Cellular device instance backed by the cellular_modem driver
+ *
+ * @retval 0         Success
+ * @retval -ENOTSUP  Device has no periodic chat script configured
+ * @retval -EINVAL   Periodic script is not currently paused
+ *
+ * @see cellular_modem_pause_periodic_script
+ */
+int cellular_modem_resume_periodic_script(const struct device *dev);
+
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
-
-/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CELLULAR_INTERNAL_H_ */

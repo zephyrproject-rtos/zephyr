@@ -1,0 +1,472 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon HPPASS (High Performance Programmable Analog Sub-System)
+  Multi-Function Device.
+
+  The HPPASS subsystem contains multiple analog peripherals (SAR ADC, CSG)
+  coordinated by an Autonomous Controller (AC) state machine.  This MFD
+  device manages the shared resources: subsystem initialisation, AC lifecycle,
+  STT management, and the combined MCPASS interrupt (AC state + error
+  conditions).
+
+  Individual peripherals (SAR ADC, CSG) are represented as child nodes of this device
+  and own their individual interrupt lines.
+
+compatible: "infineon,hppass-analog"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: |
+      Combined MCPASS interrupt (AC state transitions and error conditions).
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+  # --- AC / STT configuration ---
+
+  ac-states:
+    type: phandles
+    description: |
+      Ordered list of AC state node phandles for advanced mode.  When present,
+      the driver uses these nodes to build the full State Transition Table.
+      Each referenced node must have compatible "infineon,hppass-ac-state".
+
+      When omitted, the driver uses a built-in 2-state startup sequence
+      (basic mode) and automatically populates SAR/CSG fields based on
+      child node status.
+
+  ac-gpio-out-en-msk:
+    type: int
+    default: 0
+    description: |
+      AC GPIO output enable mask. Use IFX_HPPASS_GPIO_OUT_* constants
+      from <dt-bindings/mfd/infineon-hppass.h>.
+      Enables GPIO outputs for AC state machine control.
+
+  # --- Startup configuration ---
+
+  startup-clk-div:
+    type: int
+    default: 1
+    description: |
+      Startup clock divider (1-256).
+      Divides the HPPASS clock for the startup sequencer.
+
+  startup-0-count:
+    type: int
+    default: 0
+    description: Startup phase 0 count in HPPASS clock cycles (0-255). Actual is count + 1.
+
+  startup-0-sar:
+    type: int
+    default: 0
+    description: Startup phase 0 SAR enable flag (0 or 1).
+
+  startup-0-csg-chan:
+    type: int
+    default: 0
+    description: Startup phase 0 CSG channel enable flag (0 or 1).
+
+  startup-0-csg-slice:
+    type: int
+    default: 0
+    description: Startup phase 0 CSG slice enable flag (0 or 1).
+
+  startup-0-csg-ready:
+    type: int
+    default: 0
+    description: Startup phase 0 CSG auto-zero/comparator gate enable flag (0 or 1).
+
+  startup-1-count:
+    type: int
+    default: 0
+    description: Startup phase 1 count in HPPASS clock cycles (0-255).
+
+  startup-1-sar:
+    type: int
+    default: 0
+    description: Startup phase 1 SAR enable flag (0 or 1).
+
+  startup-1-csg-chan:
+    type: int
+    default: 0
+    description: Startup phase 1 CSG channel enable flag (0 or 1).
+
+  startup-1-csg-slice:
+    type: int
+    default: 0
+    description: Startup phase 1 CSG slice enable flag (0 or 1).
+
+  startup-1-csg-ready:
+    type: int
+    default: 0
+    description: Startup phase 1 CSG auto-zero/comparator gate enable flag (0 or 1).
+
+  startup-2-count:
+    type: int
+    default: 0
+    description: Startup phase 2 count in HPPASS clock cycles (0-255).
+
+  startup-2-sar:
+    type: int
+    default: 0
+    description: Startup phase 2 SAR enable flag (0 or 1).
+
+  startup-2-csg-chan:
+    type: int
+    default: 0
+    description: Startup phase 2 CSG channel enable flag (0 or 1).
+
+  startup-2-csg-slice:
+    type: int
+    default: 0
+    description: Startup phase 2 CSG slice enable flag (0 or 1).
+
+  startup-2-csg-ready:
+    type: int
+    default: 0
+    description: Startup phase 2 CSG auto-zero/comparator gate enable flag (0 or 1).
+
+  startup-3-count:
+    type: int
+    default: 0
+    description: Startup phase 3 count in HPPASS clock cycles (0-255).
+
+  startup-3-sar:
+    type: int
+    default: 0
+    description: Startup phase 3 SAR enable flag (0 or 1).
+
+  startup-3-csg-chan:
+    type: int
+    default: 0
+    description: Startup phase 3 CSG channel enable flag (0 or 1).
+
+  startup-3-csg-slice:
+    type: int
+    default: 0
+    description: Startup phase 3 CSG slice enable flag (0 or 1).
+
+  startup-3-csg-ready:
+    type: int
+    default: 0
+    description: Startup phase 3 CSG auto-zero/comparator gate enable flag (0 or 1).
+
+  # --- Trigger input configuration (8 triggers) ---
+
+  trig-in-0-type:
+    type: int
+    default: 0
+    description: |
+      Trigger input 0 type. Use IFX_HPPASS_TR_* constants.
+      Default: DISABLED (0).
+
+  trig-in-0-hw-mode:
+    type: int
+    default: 0
+    description: |
+      Trigger input 0 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+      Only effective when trig-in-0-type is HW_A or HW_B.
+
+  trig-in-1-type:
+    type: int
+    default: 0
+    description: Trigger input 1 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-1-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 1 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-2-type:
+    type: int
+    default: 0
+    description: Trigger input 2 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-2-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 2 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-3-type:
+    type: int
+    default: 0
+    description: Trigger input 3 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-3-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 3 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-4-type:
+    type: int
+    default: 0
+    description: Trigger input 4 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-4-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 4 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-5-type:
+    type: int
+    default: 0
+    description: Trigger input 5 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-5-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 5 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-6-type:
+    type: int
+    default: 0
+    description: Trigger input 6 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-6-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 6 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  trig-in-7-type:
+    type: int
+    default: 0
+    description: Trigger input 7 type. Use IFX_HPPASS_TR_* constants.
+
+  trig-in-7-hw-mode:
+    type: int
+    default: 0
+    description: Trigger input 7 HW mode. Use IFX_HPPASS_TR_HW_* constants.
+
+  # --- Trigger output pulse configuration (8 triggers) ---
+
+  trig-pulse-0:
+    type: int
+    default: 0
+    description: |
+      Trigger output 0 pulse source. Use IFX_HPPASS_TR_OUT_* constants.
+      Default: DISABLED (0).
+
+  trig-pulse-1:
+    type: int
+    default: 0
+    description: Trigger output 1 pulse source. Use IFX_HPPASS_TR_OUT_* constants.
+
+  trig-pulse-2:
+    type: int
+    default: 0
+    description: Trigger output 2 pulse source. Use IFX_HPPASS_TR_OUT_* constants.
+
+  trig-pulse-3:
+    type: int
+    default: 0
+    description: Trigger output 3 pulse source. Use IFX_HPPASS_TR_OUT_* constants.
+
+  trig-pulse-4:
+    type: int
+    default: 0
+    description: Trigger output 4 pulse source. Use IFX_HPPASS_TR_OUT_* constants.
+
+  trig-pulse-5:
+    type: int
+    default: 0
+    description: Trigger output 5 pulse source. Use IFX_HPPASS_TR_OUT_* constants.
+
+  trig-pulse-6:
+    type: int
+    default: 0
+    description: Trigger output 6 pulse source. Use IFX_HPPASS_TR_OUT_* constants.
+
+  trig-pulse-7:
+    type: int
+    default: 0
+    description: Trigger output 7 pulse source. Use IFX_HPPASS_TR_OUT_* constants.
+
+  # --- Trigger output level configuration (8 triggers) ---
+
+  trig-level-0-sync-bypass:
+    type: int
+    default: 0
+    description: Trigger output level 0 sync bypass flag (0 or 1).
+
+  trig-level-0-comp-msk:
+    type: int
+    default: 0
+    description: Trigger output level 0 CSG comparator mask (5 bits, one per CSG slice).
+
+  trig-level-0-limit-msk:
+    type: int
+    default: 0
+    description: Trigger output level 0 SAR limit detector mask (8 bits).
+
+  trig-level-1-sync-bypass:
+    type: int
+    default: 0
+    description: Trigger output level 1 sync bypass flag (0 or 1).
+
+  trig-level-1-comp-msk:
+    type: int
+    default: 0
+    description: Trigger output level 1 CSG comparator mask.
+
+  trig-level-1-limit-msk:
+    type: int
+    default: 0
+    description: Trigger output level 1 SAR limit detector mask.
+
+  trig-level-2-sync-bypass:
+    type: int
+    default: 0
+    description: Trigger output level 2 sync bypass flag (0 or 1).
+
+  trig-level-2-comp-msk:
+    type: int
+    default: 0
+    description: Trigger output level 2 CSG comparator mask.
+
+  trig-level-2-limit-msk:
+    type: int
+    default: 0
+    description: Trigger output level 2 SAR limit detector mask.
+
+  trig-level-3-sync-bypass:
+    type: int
+    default: 0
+    description: Trigger output level 3 sync bypass flag (0 or 1).
+
+  trig-level-3-comp-msk:
+    type: int
+    default: 0
+    description: Trigger output level 3 CSG comparator mask.
+
+  trig-level-3-limit-msk:
+    type: int
+    default: 0
+    description: Trigger output level 3 SAR limit detector mask.
+
+  trig-level-4-sync-bypass:
+    type: int
+    default: 0
+    description: Trigger output level 4 sync bypass flag (0 or 1).
+
+  trig-level-4-comp-msk:
+    type: int
+    default: 0
+    description: Trigger output level 4 CSG comparator mask.
+
+  trig-level-4-limit-msk:
+    type: int
+    default: 0
+    description: Trigger output level 4 SAR limit detector mask.
+
+  trig-level-5-sync-bypass:
+    type: int
+    default: 0
+    description: Trigger output level 5 sync bypass flag (0 or 1).
+
+  trig-level-5-comp-msk:
+    type: int
+    default: 0
+    description: Trigger output level 5 CSG comparator mask.
+
+  trig-level-5-limit-msk:
+    type: int
+    default: 0
+    description: Trigger output level 5 SAR limit detector mask.
+
+  trig-level-6-sync-bypass:
+    type: int
+    default: 0
+    description: Trigger output level 6 sync bypass flag (0 or 1).
+
+  trig-level-6-comp-msk:
+    type: int
+    default: 0
+    description: Trigger output level 6 CSG comparator mask.
+
+  trig-level-6-limit-msk:
+    type: int
+    default: 0
+    description: Trigger output level 6 SAR limit detector mask.
+
+  trig-level-7-sync-bypass:
+    type: int
+    default: 0
+    description: Trigger output level 7 sync bypass flag (0 or 1).
+
+  trig-level-7-comp-msk:
+    type: int
+    default: 0
+    description: Trigger output level 7 CSG comparator mask.
+
+  trig-level-7-limit-msk:
+    type: int
+    default: 0
+    description: Trigger output level 7 SAR limit detector mask.
+
+examples:
+  - |
+    #include <dt-bindings/mfd/infineon-hppass.h>
+
+    /* Basic mode: no ac-states property.
+     * Driver auto-generates 2-state SAR startup sequence.
+     */
+    &hppass_analog0 {
+        status = "okay";
+        /* SAR child auto-detected, no AC config needed */
+    };
+
+  - |
+    #include <dt-bindings/mfd/infineon-hppass.h>
+
+    /*
+     * Advanced mode: custom 3-state sequence.
+     * State 0: Wait for blocks ready, enable SAR
+     * State 1: Trigger SAR group 0, wait for done, loop to 1
+     * State 2: Stop
+     */
+
+    / {
+        hppass_state0: hppass-ac-state-0 {
+            compatible = "infineon,hppass-ac-state";
+            ac-condition = <IFX_HPPASS_AC_COND_BLOCK_READY>;
+            ac-action = <IFX_HPPASS_AC_ACTION_WAIT_FOR>;
+            sar-unlock = <1>;
+            sar-enable = <1>;
+        };
+
+        hppass_state1: hppass-ac-state-1 {
+            compatible = "infineon,hppass-ac-state";
+            ac-condition = <IFX_HPPASS_AC_COND_SAR_GROUP_0_DONE>;
+            ac-action = <IFX_HPPASS_AC_ACTION_WAIT_FOR>;
+            branch-state-idx = <1>;
+            sar-unlock = <1>;
+            sar-enable = <1>;
+            sar-grp-msk = <IFX_HPPASS_SAR_GRP_0>;
+        };
+
+        hppass_state2: hppass-ac-state-2 {
+            compatible = "infineon,hppass-ac-state";
+            ac-condition = <IFX_HPPASS_AC_COND_FALSE>;
+            ac-action = <IFX_HPPASS_AC_ACTION_STOP>;
+        };
+    };
+
+    &hppass_analog0 {
+        ac-states = <&hppass_state0 &hppass_state1 &hppass_state2>;
+        startup-clk-div = <4>;
+        trig-in-0-type = <IFX_HPPASS_TR_FW_PULSE>;
+    };

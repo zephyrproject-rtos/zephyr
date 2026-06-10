@@ -822,3 +822,7 @@
 &dac_global {
 	has-output-amplifier;
 };
+
+&iic1 {
+	max-bitrate-supported = <I2C_BITRATE_FAST_PLUS>;
+};

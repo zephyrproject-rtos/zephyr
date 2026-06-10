@@ -24,6 +24,7 @@
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,canbus = &can0;
 		zephyr,flash-controller = &iap;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -227,4 +228,8 @@ zephyr_udc0: &usbfs {
 	status = "okay";
 	pinctrl-0 = <&pinmux_hscmp0>;
 	pinctrl-names = "default";
+};
+
+&crc {
+	status = "okay";
 };

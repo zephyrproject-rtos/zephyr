@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/toolchain.h>
 
 static struct k_object *validate_kernel_object(const void *obj,
@@ -18,10 +17,7 @@ static struct k_object *validate_kernel_object(const void *obj,
 
 	ko = k_object_find(obj);
 
-	/* This can be any kernel object and it doesn't have to be
-	 * initialized
-	 */
-	ret = k_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_ANY);
+	ret = k_object_validate(ko, otype, init);
 	if (ret != 0) {
 #ifdef CONFIG_LOG
 		k_object_dump_error(ret, obj, ko, otype);

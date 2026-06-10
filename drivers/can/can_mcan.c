@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/can/transceiver.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -1120,8 +1120,8 @@ int can_mcan_add_rx_filter_std(const struct device *dev, can_rx_callback_t callb
 		return -ENOSPC;
 	}
 
-	/* TODO proper fifo balancing */
-	filter_element.sfec = filter_id & 0x01 ? CAN_MCAN_XFEC_FIFO1 : CAN_MCAN_XFEC_FIFO0;
+	/* Always use FIFO0 to ensure frames are delivered to callbacks in the order received */
+	filter_element.sfec = CAN_MCAN_XFEC_FIFO0;
 
 	err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_STD_FILTER] +
 				  filter_id * sizeof(struct can_mcan_std_filter),
@@ -1171,8 +1171,8 @@ static int can_mcan_add_rx_filter_ext(const struct device *dev, can_rx_callback_
 		return -ENOSPC;
 	}
 
-	/* TODO proper fifo balancing */
-	filter_element.efec = filter_id & 0x01 ? CAN_MCAN_XFEC_FIFO1 : CAN_MCAN_XFEC_FIFO0;
+	/* Always use FIFO0 to ensure frames are delivered to callbacks in the order received */
+	filter_element.efec = CAN_MCAN_XFEC_FIFO0;
 
 	err = can_mcan_write_mram(dev, config->mram_offsets[CAN_MCAN_MRAM_CFG_EXT_FILTER] +
 				  filter_id * sizeof(struct can_mcan_ext_filter),
@@ -1422,7 +1422,7 @@ int can_mcan_init(const struct device *dev)
 	k_sem_init(&data->tx_sem, cbs->num_tx, cbs->num_tx);
 
 	if (config->common.phy != NULL && !device_is_ready(config->common.phy)) {
-		LOG_ERR("CAN transceiver not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->common.phy);
 		return -ENODEV;
 	}
 

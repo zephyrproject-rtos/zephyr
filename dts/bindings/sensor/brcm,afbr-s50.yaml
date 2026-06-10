@@ -59,6 +59,7 @@ properties:
       Specify the default output data rate expressed in samples per second (Hz).
       Default configuration used from all sample-codes provided by vendor.
       Please note the range is limited with Dual Frequency Mode enabled (up to 100 Hz).
+    min: 1
 
   spi-mosi-gpios:
     type: phandle-array

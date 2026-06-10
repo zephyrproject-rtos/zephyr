@@ -304,8 +304,9 @@ static int select_join_channel_wait(struct lwan_ctx *ctx, uint32_t *freq,
 	return ret;
 }
 
-void mac_do_join(struct lwan_ctx *ctx, const struct lwan_join_req *req)
+void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req)
 {
+	const struct lwan_join_req *join_req = req->data;
 	struct mac_tx_params tx_params;
 	struct join_rx_ctx jctx;
 	uint8_t tx_frame[sizeof(struct pkt_join_request)];
@@ -315,9 +316,9 @@ void mac_do_join(struct lwan_ctx *ctx, const struct lwan_join_req *req)
 	int ret;
 
 	/* Import NwkKey into PSA — plaintext is not stored */
-	jctx.nwk_cmac = lwan_crypto_import_cmac_key(req->nwk_key);
-	jctx.nwk_ecb = lwan_crypto_import_ecb_key(req->nwk_key);
-	jctx.dev_nonce = req->dev_nonce;
+	jctx.nwk_cmac = lwan_crypto_import_cmac_key(join_req->nwk_key);
+	jctx.nwk_ecb = lwan_crypto_import_ecb_key(join_req->nwk_key);
+	jctx.dev_nonce = join_req->dev_nonce;
 
 	if (jctx.nwk_cmac == 0 || jctx.nwk_ecb == 0) {
 		LOG_ERR("Failed to import NwkKey");
@@ -325,7 +326,7 @@ void mac_do_join(struct lwan_ctx *ctx, const struct lwan_join_req *req)
 		goto done;
 	}
 
-	ret = mac_build_join_request(req, jctx.nwk_cmac,
+	ret = mac_build_join_request(join_req, jctx.nwk_cmac,
 				     tx_frame, &tx_frame_len);
 	if (ret != 0) {
 		goto done;
@@ -360,5 +361,5 @@ void mac_do_join(struct lwan_ctx *ctx, const struct lwan_join_req *req)
 done:
 	psa_destroy_key(jctx.nwk_cmac);
 	psa_destroy_key(jctx.nwk_ecb);
-	engine_signal_join_result(ret);
+	engine_signal_result(req, ret);
 }

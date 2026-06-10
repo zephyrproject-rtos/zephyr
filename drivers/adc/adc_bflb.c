@@ -9,7 +9,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/drivers/adc.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_bflb, CONFIG_ADC_LOG_LEVEL);
@@ -498,7 +498,7 @@ static int adc_bflb_calibrate_efuse(const struct device *dev)
 	int ret;
 	uint32_t trim;
 
-	ret = syscon_read_reg(efuse, 0x78, &trim);
+	ret = otp_read(efuse, 0x78, &trim, sizeof(uint32_t));
 	if (ret < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", ret);
 		return -EINVAL;
@@ -526,7 +526,7 @@ static int adc_bflb_calibrate_efuse(const struct device *dev)
 	int ret;
 	uint32_t trim;
 
-	ret = syscon_read_reg(efuse, 0xF0, &trim);
+	ret = otp_read(efuse, 0xF0, &trim, sizeof(uint32_t));
 	if (ret < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", ret);
 		return -EINVAL;

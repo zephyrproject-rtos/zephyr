@@ -21,10 +21,6 @@
 #include "shci.h"
 #include "shci_tl.h"
 
-struct hci_data {
-	bt_hci_recv_t recv;
-};
-
 static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_DRV_INST(0));
 
 #define POOL_SIZE (CFG_TLBLE_EVT_QUEUE_LENGTH * 4 * \
@@ -245,7 +241,6 @@ void TM_EvtReceivedCb(TL_EvtPacket_t *hcievt)
 static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct hci_data *hci = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -335,7 +330,7 @@ static void bt_ipm_rx_thread(void *p1, void *p2, void *p3)
 
 		TL_MM_EvtDone(hcievt);
 
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 end_loop:
 		k_sem_give(&ipm_busy);
 	}
@@ -616,9 +611,8 @@ static int c2_reset(void)
 	return 0;
 }
 
-static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_ipm_open(const struct device *dev)
 {
-	struct hci_data *hci = dev->data;
 	int err;
 
 	if (!c2_started_flag) {
@@ -639,8 +633,6 @@ static int bt_ipm_open(const struct device *dev, bt_hci_recv_t recv)
 			bt_ipm_rx_thread, (void *)dev, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO),
 			0, K_NO_WAIT);
-
-	hci->recv = recv;
 
 	LOG_DBG("IPM Channel Open Completed");
 
@@ -668,7 +660,6 @@ static int bt_ipm_setup(const struct device *dev, const struct bt_hci_setup_para
 #ifdef CONFIG_BT_HCI_HOST
 static int bt_ipm_close(const struct device *dev)
 {
-	struct hci_data *hci = dev->data;
 	int err;
 
 	err = bt_hci_cmd_send_sync(ACI_HAL_STACK_RESET, NULL, NULL);
@@ -684,8 +675,6 @@ static int bt_ipm_close(const struct device *dev)
 	c2_started_flag = false;
 
 	k_thread_abort(&ipm_rx_thread_data);
-
-	hci->recv = NULL;
 
 	LOG_DBG("IPM Channel Close Completed");
 
@@ -717,9 +706,11 @@ static int _bt_ipm_init(const struct device *dev)
 }
 
 #define HCI_DEVICE_INIT(inst) \
-	static struct hci_data hci_data_##inst = { \
+	static struct bt_hci_driver_data hci_data_##inst = { \
 	}; \
-	DEVICE_DT_INST_DEFINE(inst, _bt_ipm_init, NULL, &hci_data_##inst, NULL, \
+	static const struct bt_hci_driver_config hci_config_##inst = \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, _bt_ipm_init, NULL, &hci_data_##inst, &hci_config_##inst, \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported right now */

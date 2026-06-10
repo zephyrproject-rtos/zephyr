@@ -17,10 +17,6 @@
 #define nbu_handler RF_IMU0_IRQHandler
 #endif
 
-#undef NXP_ENABLE_WAKEUP_SIGNAL
-void mcxw7xx_set_wakeup(int32_t irqn);
-#define NXP_ENABLE_WAKEUP_SIGNAL(irqn) mcxw7xx_set_wakeup(irqn)
-
 #if CONFIG_PM
 void nxp_mcxw7x_power_init(void);
 #else

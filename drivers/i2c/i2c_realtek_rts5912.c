@@ -123,6 +123,59 @@ static inline int i2c_rts5912_reset_sda_stuck(const struct device *dev)
 	return ret;
 }
 
+static int i2c_rts5912_check_bus(const struct device *dev)
+{
+	struct i2c_rts5912_config const *config = dev->config;
+
+	/* DW configure data */
+	struct device const *dw_i2c_dev = config->dw_i2c_dev;
+	const struct i2c_dw_rom_config *const rom = dw_i2c_dev->config;
+	struct i2c_dw_dev_config *bus = dw_i2c_dev->data;
+	uint32_t reg_base = get_regs(dw_i2c_dev);
+
+	int ret = 0;
+	gpio_flags_t flags;
+	int scl_level, sda_level;
+	int gpio_ret;
+
+	LOG_DBG("BUS check");
+	flags = GPIO_INPUT | RTS5912_GPIO_SCHEN;
+
+	if (test_bit_con_master_mode(reg_base)) {
+		gpio_pin_configure_dt(&config->scl_gpios, flags);
+		gpio_pin_configure_dt(&config->sda_gpios, flags);
+
+		k_busy_wait(1);
+
+		scl_level = gpio_pin_get_dt(&config->scl_gpios);
+		sda_level = gpio_pin_get_dt(&config->sda_gpios);
+
+		if (scl_level < 0 || sda_level < 0) {
+			ret = (scl_level < 0) ? scl_level : sda_level;
+			goto restore_pins;
+		}
+
+		if (!scl_level || !sda_level) {
+			bus->i2c_stat_not_ready = I2C_DW_MAGIC_KEY;
+			bus->not_ready_cnt = 0;
+		}
+
+restore_pins:
+		gpio_ret = pinctrl_apply_state(rom->pcfg, PINCTRL_STATE_DEFAULT);
+		if (gpio_ret < 0) {
+			return gpio_ret;
+		}
+	}
+
+	if (bus->i2c_stat_not_ready == I2C_DW_MAGIC_KEY) {
+		ret = -EBUSY;
+	}
+
+	LOG_DBG("%s ret %d dev_addr %x", __func__, ret, reg_base);
+
+	return ret;
+}
+
 static int i2c_rts5912_recover_bus(const struct device *dev)
 {
 	struct i2c_rts5912_config const *config = dev->config;
@@ -230,6 +283,7 @@ static int i2c_rts5912_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 	i2c_dw_register_recover_bus_cb(config->dw_i2c_dev, i2c_rts5912_recover_bus, dev);
+	i2c_dw_register_check_bus_cb(config->dw_i2c_dev, i2c_rts5912_check_bus, dev);
 
 	if (!device_is_ready(config->clk_dev)) {
 		LOG_ERR("clock source not ready");

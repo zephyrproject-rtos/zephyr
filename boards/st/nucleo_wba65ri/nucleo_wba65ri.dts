@@ -140,6 +140,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb2 &i2c1_sda_pb1>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };

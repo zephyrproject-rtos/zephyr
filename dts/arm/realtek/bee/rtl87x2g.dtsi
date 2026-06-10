@@ -125,9 +125,12 @@
 				erase-block-size = <4096>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				/* reg and ranges are specified in the SoC-variant dtsi
+				 * (e.g., rtl8762gkh_gku.dtsi).
+				 */
 
 				partitions {
-					compatible = "fixed-partitions";
+					ranges;
 					#address-cells = <1>;
 					#size-cells = <1>;
 
@@ -135,41 +138,55 @@
 					 * Do not use.
 					 */
 					reserved: partition@0 {
+						compatible = "zephyr,mapped-partition";
 						label = "reserved-image";
 						reg = <0x0 DT_SIZE_K(4)>;
 					};
 
 					config_file: partition@1000 {
+						compatible = "zephyr,mapped-partition";
 						label = "config-file-image";
 						reg = <0x1000 DT_SIZE_K(4)>;
 					};
 
 					boot_patch_0: partition@2000 {
+						compatible = "zephyr,mapped-partition";
 						label = "boot-patch-0-image";
 						reg = <0x2000 DT_SIZE_K(32)>;
 					};
 
 					boot_patch_1: partition@a000 {
+						compatible = "zephyr,mapped-partition";
 						label = "boot-patch-1-image";
 						reg = <0xa000 DT_SIZE_K(32)>;
 					};
 
 					ota_header: partition@12000 {
+						compatible = "zephyr,mapped-partition";
 						label = "ota-header-image";
 						reg = <0x12000 DT_SIZE_K(4)>;
 					};
 
 					system_patch: partition@13000 {
+						compatible = "zephyr,mapped-partition";
 						label = "system-patch-image";
 						reg = <0x13000 DT_SIZE_K(32)>;
 					};
 
 					stack_patch: partition@1b000 {
+						compatible = "zephyr,mapped-partition";
 						label = "stack-patch-image";
 						reg = <0x1b000 DT_SIZE_K(72)>;
 					};
 				};
 			};
+		};
+
+		core_wdt: watchdog@40006000 {
+			compatible = "realtek,bee-core-wdt";
+			reg = <0x40006000 0x10>;
+			interrupts = <1 0>;
+			status = "disabled";
 		};
 
 		cctl: clock-controller@40002300 {
@@ -529,6 +546,37 @@
 			#dma-cells = <3>;
 			status = "disabled";
 		};
+
+		spi0: spi@40013000 {
+			compatible = "realtek,bee-spi";
+			reg = <0x40013000 0xf0>;
+			interrupts = <41 0>;
+			clocks = <&cctl APB_CLK(SPI0)>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi0_slave: spi_slave@40013800 {
+			compatible = "realtek,bee-spi";
+			reg = <0x40013800 0xf0>;
+			interrupts = <43 0>;
+			clocks = <&cctl APB_CLK(SPI0_SLAVE)>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			is-slave;
+		};
+
+		spi1: spi@40013400 {
+			compatible = "realtek,bee-spi";
+			reg = <0x40013400 0xf0>;
+			interrupts = <42 0>;
+			clocks = <&cctl APB_CLK(SPI1)>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
 
@@ -538,4 +586,6 @@
 
 &systick {
 	external-clock-source;
+	/* zephyr,min-timeout-cycles: 32 cycles @ 32kHz = 1ms (1 tick) */
+	zephyr,min-timeout-cycles = <32>;
 };

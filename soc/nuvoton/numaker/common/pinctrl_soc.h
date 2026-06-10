@@ -12,9 +12,15 @@
 
 #define PORT_INDEX(pinmux)    (((pinmux)&0xF0000000) >> 28)
 #define PIN_INDEX(pinmux)     (((pinmux)&0x0F000000) >> 24)
+#if defined(CONFIG_SOC_SERIES_M031X)
+#define MFP_CFG(pinmux)       (((pinmux)&0x000000FF) << ((PIN_INDEX(pinmux) % 8) * 4))
+#define NU_MFP_POS(pinindex)  ((pinindex % 8) * 4)
+#define NU_MFP_MASK(pinindex) (0xf << NU_MFP_POS(pinindex))
+#else
 #define MFP_CFG(pinmux)       (((pinmux)&0x000000FF) << ((PIN_INDEX(pinmux) % 4) * 8))
 #define NU_MFP_POS(pinindex)  ((pinindex % 4) * 8)
 #define NU_MFP_MASK(pinindex) (0x1f << NU_MFP_POS(pinindex))
+#endif
 
 #ifdef __cplusplus
 extern "C" {

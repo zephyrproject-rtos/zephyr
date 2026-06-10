@@ -175,25 +175,25 @@ Here is an example for defining a I3C controller in device tree:
    i3c0: i3c@10000 {
            compatible = "vendor,i3c";
 
-           #address-cells = < 0x3 >;
-           #size-cells = < 0x0 >;
+           #address-cells = <0x3>;
+           #size-cells = <0x0>;
 
-           reg = < 0x10000 0x1000 >;
-           interrupts = < 0x1F 0x0 >;
+           reg = <0x10000 0x1000>;
+           interrupts = <0x1F 0x0>;
 
-           pinctrl-0 = < &pinmux-i3c >;
+           pinctrl-0 = <&pinmux-i3c>;
            pinctrl-names = "default";
 
-           i2c-scl-hz = < 400000 >;
+           i2c-scl-hz = <400000>;
 
-           i3c-scl-hz = < 12000000 >;
+           i3c-scl-hz = <12000000>;
 
            status = "okay";
 
            i3c-dev0: i3c-dev0@420000ABCD12345678 {
                    compatible = "vendor,i3c-dev";
 
-                   reg = < 0x42 0xABCD 0x12345678 >;
+                   reg = <0x42 0xABCD 0x12345678>;
 
                    status = "okay";
            };
@@ -201,7 +201,7 @@ Here is an example for defining a I3C controller in device tree:
            i2c-dev0: i2c-dev0@380000000000000050 {
                    compatible = "vendor-i2c-dev";
 
-                   reg = < 0x38 0x0 0x50 >;
+                   reg = <0x38 0x0 0x50>;
 
                    status = "okay";
            };
@@ -335,7 +335,7 @@ adding an intermediate node in the device tree:
            i2c-dev0: i2c-dev0@420000000000000050 {
                    compatible = "vendor-i2c-dev";
 
-                   reg = < 0x42 0x0 0x50 >;
+                   reg = <0x42 0x0 0x50>;
 
                    status = "okay";
            };

@@ -170,7 +170,7 @@ typedef void *ocpp_session_handle_t;
  *        to unblock the ocpp protocol stack/lib.
  *
  * @param[in] reason for callback invoked.
- * @param[in] io reffered corresponding to reason.
+ * @param[in] io referred corresponding to reason.
  * @param[in] user_data passed on ocpp_init.
  *
  * @return 0 or a negative error code (errno.h)

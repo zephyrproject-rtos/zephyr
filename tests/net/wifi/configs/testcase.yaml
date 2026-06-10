@@ -9,16 +9,16 @@ common:
   platform_allow:
     - native_sim
 tests:
-  wifi.build.crypto_alt:
+  net.wifi.build.crypto_alt:
     extra_configs: []
-  wifi.build.crypto_none:
+  net.wifi.build.crypto_none:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE=y
-  wifi.build.crypto_psa:
+  net.wifi.build.crypto_psa:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_MBEDTLS_PSA=y
-  wifi.build.crypto_enterprise:
+  net.wifi.build.crypto_enterprise:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
       - CONFIG_MBEDTLS_SSL_PROTO_TLS1_2=y
@@ -35,53 +35,53 @@ tests:
       - CONFIG_EAP_IKEV2=y
       - CONFIG_EAP_SIM=y
       - CONFIG_EAP_AKA=y
-  wifi.build.wpa3:
+  net.wifi.build.wpa3:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT=y
       - CONFIG_MBEDTLS_SSL_PROTO_TLS1_2=y
-  wifi.build.ap:
+  net.wifi.build.ap:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_AP=y
-  wifi.build.wps:
+  net.wifi.build.wps:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_EAPOL=y
-  wifi.build.p2p:
+  net.wifi.build.p2p:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P=y
-  wifi.build.hostapd_ap:
+  net.wifi.build.hostapd_ap:
     extra_configs:
       - CONFIG_WIFI_NM_HOSTAPD_AP=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
-  wifi.build.hostapd_ap_enterprise:
+  net.wifi.build.hostapd_ap_enterprise:
     extra_configs:
       - CONFIG_WIFI_NM_HOSTAPD_AP=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE=y
       - CONFIG_WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE=y
-  wifi.build.hostapd_wps:
+  net.wifi.build.hostapd_wps:
     extra_configs:
       - CONFIG_WIFI_NM_HOSTAPD_AP=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
       - CONFIG_WIFI_NM_HOSTAPD_WPS=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_WPS=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_EAPOL=y
-  wifi.build.hostapd_dpp:
+  net.wifi.build.hostapd_dpp:
     extra_configs:
       - CONFIG_WIFI_NM_HOSTAPD_AP=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON=n
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP=y
-  wifi.build.roaming:
+  net.wifi.build.roaming:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING=y
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING=y
-  wifi.build.dpp:
+  net.wifi.build.dpp:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP=y
-  wifi.build.disable_advanced_feat:
+  net.wifi.build.disable_advanced_feat:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_ADVANCED_FEATURES=n
-  wifi.build.enterprise_runtime:
+  net.wifi.build.enterprise_runtime:
     extra_configs:
       - CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES=y
     extra_args:

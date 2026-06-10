@@ -56,19 +56,39 @@ enum usbc_ppc_event {
 
 typedef void (*usbc_ppc_event_cb_t)(const struct device *dev, void *data, enum usbc_ppc_event ev);
 
-/** Structure with pointers to the functions implemented by driver */
+/**
+ * @def_driverbackendgroup{USB Type-C Power Path Controller,usb_type_c_power_path_controller}
+ * @ingroup usb_type_c_power_path_controller
+ * @{
+ */
+
+/**
+ * @driver_ops{USB Type-C Power Path Controller}
+ */
 __subsystem struct usbc_ppc_driver_api {
+	/** @driver_ops_optional @copybrief ppc_is_dead_battery_mode */
 	int (*is_dead_battery_mode)(const struct device *dev);
+	/** @driver_ops_optional @copybrief ppc_exit_dead_battery_mode */
 	int (*exit_dead_battery_mode)(const struct device *dev);
+	/** @driver_ops_optional @copybrief ppc_is_vbus_source */
 	int (*is_vbus_source)(const struct device *dev);
+	/** @driver_ops_optional @copybrief ppc_is_vbus_sink */
 	int (*is_vbus_sink)(const struct device *dev);
+	/** @driver_ops_optional @copybrief ppc_set_snk_ctrl */
 	int (*set_snk_ctrl)(const struct device *dev, bool enable);
+	/** @driver_ops_optional @copybrief ppc_set_src_ctrl */
 	int (*set_src_ctrl)(const struct device *dev, bool enable);
+	/** @driver_ops_optional @copybrief ppc_set_vbus_discharge */
 	int (*set_vbus_discharge)(const struct device *dev, bool enable);
+	/** @driver_ops_optional @copybrief ppc_is_vbus_present */
 	int (*is_vbus_present)(const struct device *dev);
+	/** @driver_ops_optional @copybrief ppc_set_event_handler */
 	int (*set_event_handler)(const struct device *dev, usbc_ppc_event_cb_t handler, void *data);
+	/** @driver_ops_optional @copybrief ppc_dump_regs */
 	int (*dump_regs)(const struct device *dev);
 };
+
+/** @} */
 
 /*
  * API functions

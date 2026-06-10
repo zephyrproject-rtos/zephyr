@@ -53,7 +53,7 @@ enum pac194x_sensor_attr_refresh_mode {
 
 /** Refresh commands for PAC194x/PAC195x */
 enum pac194x_sensor_attr_force_refresh_cmd {
-	/** Refresh only a singe PAC device. */
+	/** Refresh only a single PAC device. */
 	PAC194X_SENSOR_ATTR_FORCE_REFRESH_CMD_SINGLE = 0,
 	/** Refresh all PACs on the I2C bus at once. */
 	PAC194X_SENSOR_ATTR_FORCE_REFRESH_CMD_ALL,

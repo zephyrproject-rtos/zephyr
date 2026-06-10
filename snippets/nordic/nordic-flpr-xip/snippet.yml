@@ -1,4 +1,7 @@
 name: nordic-flpr-xip
+description: |
+  Boots Nordic FLPR (Fast Lightweight Peripheral Processor) from application
+  core, executing in place from RRAM.
 append:
   EXTRA_DTC_OVERLAY_FILE: nordic-flpr-xip.overlay
 
@@ -6,6 +9,9 @@ boards:
   /.*/nrf54l15/cpuapp/:
     append:
       EXTRA_DTC_OVERLAY_FILE: soc/nrf54l15_cpuapp.overlay
+  /bl54l15_dvk/nrf54l15/cpuapp/:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/bl54l15_dvk_nrf54l15_cpuapp.overlay
   /.*/nrf54h20/cpuapp/:
     append:
       EXTRA_DTC_OVERLAY_FILE: soc/nrf54h20_cpuapp.overlay

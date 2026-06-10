@@ -56,9 +56,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	printk("Disconnected: %s (reason 0x%02x)\n", bt_conn_dst_str(conn), reason);
 
-	bt_conn_unref(g_conn);
+	bt_conn_drop(&g_conn);
 
-	g_conn = NULL;
 	UNSET_FLAG(flag_is_connected);
 }
 

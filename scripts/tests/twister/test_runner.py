@@ -1767,7 +1767,8 @@ def test_projectbuilder_cleanup_device_testing_artifacts(
 
     pb.cleanup_artifacts.assert_called_once_with(
         [os.path.join('zephyr', 'file.bin'),
-         os.path.join('zephyr', 'runners.yaml')]
+         os.path.join('zephyr', 'runners.yaml'),
+         os.path.join('zephyr', 'edt.pickle')]
     )
     pb._sanitize_files.assert_called_once()
 
@@ -1806,6 +1807,7 @@ def test_projectbuilder_cleanup_device_testing_artifacts_sysbuild(
         [
             os.path.join('zephyr', 'file.bin'),
             os.path.join('zephyr', 'runners.yaml'),
+            os.path.join('zephyr', 'edt.pickle'),
             'domains.yaml',
             os.path.join('main', 'build.ninja'),
             os.path.join('main', 'CMakeCache.txt'),
@@ -1813,12 +1815,14 @@ def test_projectbuilder_cleanup_device_testing_artifacts_sysbuild(
             os.path.join('main', 'Makefile'),
             os.path.join('main', 'zephyr', '.config'),
             os.path.join('main', 'zephyr', 'runners.yaml'),
+            os.path.join('main', 'zephyr', 'edt.pickle'),
             os.path.join('ipc_radio', 'build.ninja'),
             os.path.join('ipc_radio', 'CMakeCache.txt'),
             os.path.join('ipc_radio', 'CMakeFiles', 'rules.ninja'),
             os.path.join('ipc_radio', 'Makefile'),
             os.path.join('ipc_radio', 'zephyr', '.config'),
             os.path.join('ipc_radio', 'zephyr', 'runners.yaml'),
+            os.path.join('ipc_radio', 'zephyr', 'edt.pickle'),
         ]
     )
     pb._sanitize_files.assert_called_once()
@@ -2798,42 +2802,47 @@ def test_twisterrunner_show_brief(caplog):
 
 
 TESTDATA_18 = [
-    (False, False, False, [{'op': 'cmake', 'test': mock.ANY}]),
-    (False, False, True, [{'op': 'filter', 'test': mock.ANY},
+    (False, False, False, True, [{'op': 'cmake', 'test': mock.ANY}]),
+    (False, False, True, True, [{'op': 'filter', 'test': mock.ANY},
                           {'op': 'cmake', 'test': mock.ANY}]),
-    (False, True, True, [{'op': 'run', 'test': mock.ANY},
+    (False, True, True, True, [{'op': 'run', 'test': mock.ANY},
                          {'op': 'run', 'test': mock.ANY}]),
-    (False, True, False, [{'op': 'run', 'test': mock.ANY}]),
-    (True, True, False, [{'op': 'cmake', 'test': mock.ANY}]),
-    (True, True, True, [{'op': 'filter', 'test': mock.ANY},
+    (False, True, False, True, [{'op': 'run', 'test': mock.ANY}]),
+    (True, True, False, True, [{'op': 'cmake', 'test': mock.ANY}]),
+    (True, True, True, True, [{'op': 'filter', 'test': mock.ANY},
                         {'op': 'cmake', 'test': mock.ANY}]),
-    (True, False, True, [{'op': 'filter', 'test': mock.ANY},
+    (True, False, True, True, [{'op': 'filter', 'test': mock.ANY},
                          {'op': 'cmake', 'test': mock.ANY}]),
-    (True, False, False, [{'op': 'cmake', 'test': mock.ANY}]),
+    (True, False, False, True, [{'op': 'cmake', 'test': mock.ANY}]),
+    (False, False, False, False, [{'op': 'run', 'test': mock.ANY}]),
 ]
 
 @pytest.mark.parametrize(
-    'build_only, test_only, retry_build_errors, expected_pipeline_elements',
+    'build_only, test_only, retry_build_errors, build, expected_pipeline_elements',
     TESTDATA_18,
     ids=['none', 'retry', 'test+retry', 'test', 'build+test',
-         'build+test+retry', 'build+retry', 'build']
+         'build+test+retry', 'build+retry', 'build', 'no_self_build']
 )
 def test_twisterrunner_add_tasks_to_queue(
+    tmp_path,
     build_only,
     test_only,
     retry_build_errors,
+    build,
     expected_pipeline_elements
 ):
     def mock_get_cmake_filter_stages(filter, keys):
         return [filter]
 
     instances = {
-        'dummy1': mock.Mock(run=True, retries=0, status=TwisterStatus.PASS, build_dir="/tmp"),
-        'dummy2': mock.Mock(run=True, retries=0, status=TwisterStatus.SKIP, build_dir="/tmp"),
-        'dummy3': mock.Mock(run=True, retries=0, status=TwisterStatus.FILTER, build_dir="/tmp"),
-        'dummy4': mock.Mock(run=True, retries=0, status=TwisterStatus.ERROR, build_dir="/tmp"),
-        'dummy5': mock.Mock(run=True, retries=0, status=TwisterStatus.FAIL, build_dir="/tmp")
+        'dummy1': mock.Mock(run=True, retries=0, status=TwisterStatus.PASS, build_dir=tmp_path),
+        'dummy2': mock.Mock(run=True, retries=0, status=TwisterStatus.SKIP, build_dir=tmp_path),
+        'dummy3': mock.Mock(run=True, retries=0, status=TwisterStatus.FILTER, build_dir=tmp_path),
+        'dummy4': mock.Mock(run=True, retries=0, status=TwisterStatus.ERROR, build_dir=tmp_path),
+        'dummy5': mock.Mock(run=True, retries=0, status=TwisterStatus.FAIL, build_dir=tmp_path)
     }
+    for instance in instances.values():
+        instance.testsuite.build = build
     instances['dummy4'].testsuite.filter = 'some'
     instances['dummy5'].testsuite.filter = 'full'
     suites = [mock.Mock(), mock.Mock()]

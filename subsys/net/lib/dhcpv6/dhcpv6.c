@@ -69,7 +69,7 @@ const char *net_dhcpv6_state_name(enum net_dhcpv6_state state)
 		"bound",
 	};
 
-	__ASSERT_NO_MSG(state >= 0 && state < sizeof(name));
+	__ASSERT_NO_MSG(state >= 0 && state < ARRAY_SIZE(name));
 	return name[state];
 }
 

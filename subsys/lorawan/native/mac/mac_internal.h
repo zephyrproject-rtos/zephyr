@@ -65,8 +65,8 @@ struct mac_tx_params {
 };
 
 int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params);
-void mac_do_join(struct lwan_ctx *ctx, const struct lwan_join_req *req);
-void mac_do_send(struct lwan_ctx *ctx, const struct lwan_send_req *req);
+void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req);
+void mac_do_send(struct lwan_ctx *ctx, const struct lwan_req *req);
 
 #ifdef __cplusplus
 }

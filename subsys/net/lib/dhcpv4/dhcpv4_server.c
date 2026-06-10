@@ -8,6 +8,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/net_ip.h>
@@ -34,6 +35,7 @@ LOG_MODULE_REGISTER(net_dhcpv4_server, CONFIG_NET_DHCPV4_SERVER_LOG_LEVEL);
 #define DHCPV4_OPTIONS_ROUTER_SIZE 6
 #define DHCPV4_OPTIONS_DNS_SERVER_SIZE 6
 #define DHCPV4_OPTIONS_CLIENT_ID_MIN_SIZE 2
+#define DHCPV4_OPTIONS_CAPTIVE_PORTAL_MAX_URI_LEN UINT8_MAX
 
 #define ADDRESS_RESERVED_TIMEOUT K_SECONDS(30)
 #define ADDRESS_PROBE_TIMEOUT K_MSEC(CONFIG_NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT)
@@ -441,6 +443,59 @@ static uint8_t *dhcpv4_encode_dns_server_option(uint8_t *buf, size_t *buflen)
 	return buf + DHCPV4_OPTIONS_DNS_SERVER_SIZE;
 }
 
+#if defined(CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL)
+static uint8_t *dhcpv4_encode_captive_portal_uri_option(uint8_t *buf, size_t *buflen,
+							struct dhcpv4_server_ctx *ctx)
+{
+	const char *uri = CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL_URI;
+	char auto_uri[NET_IPV4_ADDR_LEN + sizeof("http://") + sizeof("/generate_204")];
+	size_t uri_len;
+
+	if (buf == NULL) {
+		return NULL;
+	}
+
+	if (uri[0] == '\0') {
+		char addr_str[NET_IPV4_ADDR_LEN];
+
+		if (net_addr_ntop(NET_AF_INET, &ctx->server_addr, addr_str,
+				  sizeof(addr_str)) == NULL) {
+			LOG_ERR("Cannot format server address for captive portal URI");
+			return buf;
+		}
+
+		/* RFC 8910 SHOULD NOT use an IP literal; empty override for SoftAP only. */
+		if (snprintk(auto_uri, sizeof(auto_uri), "http://%s/generate_204", addr_str) >=
+		    (int)sizeof(auto_uri)) {
+			LOG_ERR("Captive portal auto-URI overflow");
+			return buf;
+		}
+
+		uri = auto_uri;
+	}
+
+	uri_len = strlen(uri);
+
+	if (uri_len > DHCPV4_OPTIONS_CAPTIVE_PORTAL_MAX_URI_LEN) {
+		LOG_ERR("Captive portal URI length %zu exceeds %u", uri_len,
+			DHCPV4_OPTIONS_CAPTIVE_PORTAL_MAX_URI_LEN);
+		return buf;
+	}
+
+	if (*buflen < 2U + uri_len) {
+		return buf;
+	}
+
+	buf[0] = DHCPV4_OPTIONS_CAPTIVE_PORTAL;
+	buf[1] = (uint8_t)uri_len;
+	memcpy(&buf[2], uri, uri_len);
+
+	*buflen -= 2U + uri_len;
+
+	return buf + 2U + uri_len;
+}
+#endif /* CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL */
+
 static uint8_t *dhcpv4_encode_end_option(uint8_t *buf, size_t *buflen)
 {
 	if (buf == NULL || *buflen < 1) {
@@ -556,6 +611,12 @@ static uint8_t *dhcpv4_encode_requested_params(
 				goto out;
 			}
 			break;
+
+#if defined(CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL)
+		case DHCPV4_OPTIONS_CAPTIVE_PORTAL:
+			buf = dhcpv4_encode_captive_portal_uri_option(buf, buflen, ctx);
+			break;
+#endif /* CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL */
 		/* Others - just ignore. */
 		default:
 			break;

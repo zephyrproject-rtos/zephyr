@@ -19,7 +19,6 @@
 
 #include <zephyr/toolchain.h> /* compiler specific configurations */
 
-#include <zephyr/kernel_structs.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/kernel.h>

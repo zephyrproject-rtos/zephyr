@@ -9,7 +9,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/toolchain.h>
 #include <string.h>

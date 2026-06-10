@@ -15,11 +15,18 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
+typedef void (*riscv_aplic_irq_config_func_t)(void);
+
 struct aplic_cfg {
 	uintptr_t base;
 	uint32_t num_sources;
 #ifdef CONFIG_RISCV_APLIC_MSI
 	uint32_t imsic_addr;
+#endif
+#ifdef CONFIG_RISCV_APLIC_DIRECT
+	uint32_t max_prio;
+	riscv_aplic_irq_config_func_t irq_config_func;
+	const struct _isr_table_entry *isr_table;
 #endif
 };
 

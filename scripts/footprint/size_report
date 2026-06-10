@@ -169,6 +169,18 @@ def get_symbols(elf, addr_ranges):
                 if get_symbol_size(sym) == 0:
                     continue
 
+                # Skip symbols not bound to a loadable section (ELF SHN_*
+                # reserved indices, System V ABI ch.4 "Symbol Table"):
+                #   SHN_UNDEF  (0x0000) - external symbol resolved at link time
+                #   SHN_ABS    (0xfff1) - absolute value, no section backing
+                #   SHN_COMMON (0xfff2) - pre-link COMMON block; in the final
+                #                         ELF it is already assigned to .bss
+                # All three report a non-zero st_size but represent no actual
+                # bytes in ROM or RAM, so including them inflates the tree.
+                # Ref: https://refspecs.linuxfoundation.org/elf/gabi4+/ch4.symtab.html
+                if sym['st_shndx'] in ('SHN_ABS', 'SHN_UNDEF', 'SHN_COMMON'):
+                    continue
+
                 # TLS sections (e.g. .tdata/.tbss) use addresses as TLS offsets
                 # and can overlap normal VMA ranges. Don't classify based on
                 # address ranges for TLS.
@@ -218,9 +230,10 @@ def get_symbols(elf, addr_ranges):
                     all_syms[sym.name].append(entry(sym, loc, ram_sym['name'] if ram_sym else rom_sym['name']))
                 else:
                     bound = is_symbol_in_ranges(sym, unassigned_addr_ranges)
-                    if sym.name not in unassigned_syms:
-                        unassigned_syms[sym.name] = list()
-                    unassigned_syms[sym.name].append(entry(sym, ["unassigned"], bound['name'] if bound else None))
+                    if bound is not None:
+                        if sym.name not in unassigned_syms:
+                            unassigned_syms[sym.name] = list()
+                        unassigned_syms[sym.name].append(entry(sym, ["unassigned"], bound['name']))
 
     ret = {'rom': rom_syms,
            'ram': ram_syms,
@@ -260,10 +273,21 @@ def get_section_ranges(elf):
     if args.verbose:
         print(f'INFO: XIP={xip}')
 
+    if args.filter_address_range:
+        filt_start, filt_len = args.filter_address_range
+        filt_end = filt_start + filt_len
+    else:
+        filt_start = filt_end = None
+
     for section in elf.iter_sections():
         size = section['sh_size']
         sec_start = section['sh_addr']
         sec_end = sec_start + (size - 1 if size else 0)
+
+        if filt_start is not None:
+            if sec_end < filt_start or sec_start >= filt_end:
+                continue
+
         bound = {'start': sec_start, 'end': sec_end, 'name': section.name}
         is_assigned = False
         flags = section['sh_flags']
@@ -482,6 +506,8 @@ def mark_address_aliases(symbol_dict, processed):
 
     mapped_symbols = mapped_symbols.union(already_mapped_syms)
     unmapped_symbols = unmapped_symbols.difference(already_mapped_syms)
+    for ums in already_mapped_syms:
+        del symbol_dict[ums]
 
     processed['mapped_symbols'] = mapped_symbols
     processed['mapped_addr'] = mapped_addresses
@@ -855,7 +881,7 @@ def generate_any_tree(symbol_dict, total_size, path_prefix):
     # symbols associated with them.
     node_hidden_syms = TreeNode('(hidden)', "(hidden)", parent=root)
     node_no_paths._size = sum_node_children_size(node_no_paths)
-    node_hidden_syms._size = root._size - sum_node_children_size(root)
+    node_hidden_syms._size = max(0, root._size - sum_node_children_size(root))
 
     return root
 
@@ -930,6 +956,11 @@ def parse_args():
     parser.add_argument("--json", help='Store results in the given JSON file ' + \
                                        '(a "{target}" string in the filename will ' + \
                                        'be replaced by "ram", "rom", or "all").')
+    parser.add_argument("--filter-address-range",
+                        nargs=2,
+                        type=lambda x: int(x, 0),
+                        metavar=("START", "LENGTH"),
+                        help="Only include symbols in address range [START, START+LENGTH)")
     args = parser.parse_args()
 
 

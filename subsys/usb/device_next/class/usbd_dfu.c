@@ -590,6 +590,11 @@ static int runtime_mode_control_to_dev(struct usbd_class_data *const c_data,
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
 
+	if (setup->wLength) {
+		errno = -ENOTSUP;
+		return 0;
+	}
+
 	errno = dfu_set_next_state(c_data, setup);
 
 	if (errno == 0) {
@@ -712,6 +717,16 @@ static int dfu_mode_control_to_dev(struct usbd_class_data *const c_data,
 				   const struct net_buf *const buf)
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
+
+	if (setup->wLength && (buf == NULL)) {
+		if (setup->bRequest == USB_DFU_REQ_DNLOAD) {
+			/* Data OUT can be received */
+			return 0;
+		}
+
+		errno = -ENOTSUP;
+		return 0;
+	}
 
 	errno = dfu_set_next_state(c_data, setup);
 

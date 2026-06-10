@@ -759,11 +759,22 @@ required_applications: <list of required applications> (default empty)
     to access build artifacts from other applications.
 
     Each required application entry supports:
-    - ``name``: Test scenario identifier (required)
-    - ``platform``: Target platform (optional, defaults to current test's platform)
 
-    Required applications must be available in the source tree (specified with ``-T``
-    and/or ``-s`` options). When reusing build directories (e.g., with ``--no-clean``),
+    - ``application``: Test scenario identifier (required)
+    - ``name``: Deprecated alias for ``application`` (still accepted for backward
+      compatibility, but ``application`` should be used in new configurations)
+    - ``platform``: Target platform (optional, defaults to current test's platform)
+    - ``path``: Directory path where Twister should search for the application
+      (optional). Can be an absolute path or a path relative to the directory
+      containing the test's YAML file. Environment variables are expanded.
+      If not specified, Twister searches in the same directory as the referring
+      test's YAML file.
+
+    Required applications are automatically discovered and built by Twister.
+    If a required application is not already loaded, Twister searches for it
+    in the directory specified by ``path`` or, if ``path`` is not set, in the
+    same directory as the referring test's YAML file.
+    When reusing build directories (e.g., with ``--no-clean``),
     Twister can find required applications in the current build directory.
 
     How it works:
@@ -774,23 +785,54 @@ required_applications: <list of required applications> (default empty)
     - For pytest harness, build directories are passed via ``--required-build`` arguments
       and accessible through the ``required_build_dirs`` fixture
 
+    When combined with ``build: false``, the current test scenario
+    skips its own build step entirely and uses the first required
+    application's build artifacts as its image. This is useful for
+    scenarios that serve purely as test harnesses for an image built
+    elsewhere.
+
     Example configuration:
 
     .. code-block:: yaml
 
         tests:
+          # Requires two applications, second one from a different path and with a fixed platform
           sample.required_app_demo:
             harness: pytest
             required_applications:
-              - name: sample.shared_app
-              - name: sample.basic.helloworld
+              - application: sample.shared_app
+              - application: other.app
+                path: ../other_app
                 platform: native_sim
+          # No self build, use the first required application as the test image
+          sample.no_self_build:
+            build: false
+            harness: pytest
+            required_applications:
+              - application: sample.basic.helloworld
+                path: $ZEPHYR_BASE/samples/hello_world
           sample.shared_app:
             build_only: true
 
-    Limitations: Not supported with the ``--runtime-artifact-cleanup`` option,
-    as build artifacts of required applications must be retained for use
-    by the main test application.
+    Limitations:
+
+    - Not supported with ``--runtime-artifact-cleanup``, as build artifacts of
+      required applications must be retained for use by the main test application.
+    - Not supported with ``--subset``: a required application and the test
+      depending on it may be assigned to different subsets, making build
+      artifacts unavailable at test execution time.
+
+build: <True|False> (default True)
+    If false, the test scenario skips its own build step and uses the build
+    artifacts from the first entry in ``required_applications`` as its image.
+    This is useful for scenarios that serve purely as a test harness for an
+    image built by another scenario.
+
+    Constraints:
+
+    - ``required_applications`` must be non-empty.
+    - Supported harnesses: pytest-based (e.g. ``pytest``, ``shell``) and ``bsim``.
+    - QEMU platforms are not supported.
 
 expect_reboot: <True|False> (default False)
     Notify twister that the test scenario is expected to reboot while executing.
@@ -1083,8 +1125,14 @@ required_devices: <list of required device entries> (default empty)
         directory to the reserved DUT before flashing.
         If not specified, the same application as the main DUT is used.
 
-        It uses same mechanism as :ref:`required_applications <required_applications>`,
-        so the application must be available in the source tree.
+        It uses same mechanism as :ref:`required_applications <required_applications>`.
+
+    path: <string> (optional)
+        Directory path where Twister should search for the application
+        specified in ``application``. Can be an absolute path or a path
+        relative to the directory containing the test's YAML file.
+        Environment variables are expanded. If not specified, Twister
+        searches in the same directory as the referring test's YAML file.
 
     fixture: <list of fixture names> (optional, defaults to empty)
         List of fixture names that must be present on the reserved device.
@@ -1237,7 +1285,7 @@ Robot
 =====
 
 The ``robot`` harness is used to execute Robot Framework test suites
-in the Renode simulation framework.
+in simulation target (Qemu, Native Simulator, Renode).
 
 robot_testsuite: <robot file path> (default empty)
     Specify one or more paths to a file containing a Robot Framework test suite to be run.
@@ -1552,7 +1600,7 @@ is build-only and the scanner references it via ``required_applications``:
         extra_args:
           CONF_FILE=prj_scanner.conf
         required_applications:
-          - name: bluetooth.host.adv.extended.advertiser
+          - application: bluetooth.host.adv.extended.advertiser
 
 .. _twister_shell_harness:
 
@@ -2369,10 +2417,13 @@ details.
 
 Robot Framework Tests
 *********************
-Zephyr supports `Robot Framework <https://robotframework.org/>`_ as one of solutions for automated testing.
+Zephyr supports `Robot Framework <https://robotframework.org/>`_ as one of solutions for
+automated testing.
 
-Robot files allow you to express interactive test scenarios in human-readable text format and execute them in simulation or against hardware.
-At this moment Zephyr integration supports running Robot tests in the `Renode <https://renode.io/>`_ simulation framework.
+Robot files allow you to express interactive test scenarios in human-readable text format
+and execute them in simulation or against hardware.
+At this moment Zephyr integration supports running Robot tests in the
+`Renode <https://renode.io/>`_ simulation framework, QEMU and Native Simulator.
 
 To execute a Robot test suite with twister, run the following command:
 
@@ -2408,4 +2459,4 @@ To run a single testsuite instead of a whole group of test you can run:
 
 .. code-block:: bash
 
-   $ twister -p qemu_riscv32 -s tests/kernel/interrupt/arch.shared_interrupt
+   $ west twister -p qemu_riscv32 -s arch.shared_interrupt

@@ -504,7 +504,7 @@ uint32_t z_vrfy_log_filter_set(struct log_backend const *const backend,
 		"Setting per-backend filters from user mode is not supported"));
 	K_OOPS(K_SYSCALL_VERIFY_MSG(domain_id == Z_LOG_LOCAL_DOMAIN_ID,
 		"Invalid log domain_id"));
-	K_OOPS(K_SYSCALL_VERIFY_MSG(src_id < (int16_t)log_src_cnt_get(domain_id),
+	K_OOPS(K_SYSCALL_VERIFY_MSG((uint32_t)src_id < log_src_cnt_get(domain_id),
 		"Invalid log source id"));
 	K_OOPS(K_SYSCALL_VERIFY_MSG(
 		(level <= LOG_LEVEL_DBG),

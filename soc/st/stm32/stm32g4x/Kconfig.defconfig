@@ -5,10 +5,23 @@
 
 if SOC_SERIES_STM32G4X
 
+configdefault SHARED_IRQ_MAX_NUM_CLIENTS
+	# COMP1/2/3 or COMP4/5/6 instances are all enabled
+	default 3 if $(dt_nodelabel_enabled,comp1) && $(dt_nodelabel_enabled,comp2) && $(dt_nodelabel_enabled,comp3)
+	default 3 if $(dt_nodelabel_enabled,comp4) && $(dt_nodelabel_enabled,comp5) && $(dt_nodelabel_enabled,comp6)
+
 configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers15)
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers16)
 	default y if $(dt_nodelabel_enabled,timers1) && $(dt_nodelabel_enabled,timers17)
+	# COMP1 - COMP2 - COMP3 : irq 64
+	default y if $(dt_nodelabel_enabled,comp1) && $(dt_nodelabel_enabled,comp2)
+	default y if $(dt_nodelabel_enabled,comp1) && $(dt_nodelabel_enabled,comp3)
+	default y if $(dt_nodelabel_enabled,comp2) && $(dt_nodelabel_enabled,comp3)
+	# COMP4 - COMP5 - COMP6 : irq 65
+	default y if $(dt_nodelabel_enabled,comp4) && $(dt_nodelabel_enabled,comp5)
+	default y if $(dt_nodelabel_enabled,comp4) && $(dt_nodelabel_enabled,comp6)
+	default y if $(dt_nodelabel_enabled,comp5) && $(dt_nodelabel_enabled,comp6)
 
 if PM
 config PM_DEVICE

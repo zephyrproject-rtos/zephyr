@@ -533,7 +533,7 @@ int bt_hfp_hf_register(struct bt_hfp_hf_cb *cb);
  *  the HFP HF object is allocated and it will be returned via the parameter
  *  `hf` if the parameter `hf` is not a NULL pointer.
  *
- *  When service level conenction is established, the registered callback
+ *  When service level connection is established, the registered callback
  *  `connected` will be triggered to notify the application that the service
  *  level connection establishment procedure is done. And the HFP HF object
  *  is valid at this time. It means after the function is called without
@@ -755,7 +755,7 @@ int bt_hfp_hf_redial(struct bt_hfp_hf *hf);
 
 /** @brief Handsfree HF setup audio connection
  *
- *  Setup audio conenction by sending AT+BCC if the Codec Negotiation is supported by both side.
+ *  Setup audio connection by sending AT+BCC if the Codec Negotiation is supported by both side.
  *  Or, initialize the SCO audio connection directly.
  *
  *  @param hf HFP HF object.

@@ -21,7 +21,22 @@ LOG_MODULE_REGISTER(leds_group_multicolor, CONFIG_LED_LOG_LEVEL);
 struct leds_group_multicolor_config {
 	uint8_t num_leds;
 	const struct led_dt_spec *led;
+	const struct led_info led_info;
 };
+
+static int leds_group_multicolor_get_info(const struct device *dev, uint32_t led,
+					  const struct led_info **info)
+{
+	const struct leds_group_multicolor_config *config = dev->config;
+
+	if (led != 0) {
+		return -EINVAL;
+	}
+
+	*info = &config->led_info;
+
+	return 0;
+}
 
 static int leds_group_multicolor_set_color(const struct device *dev, uint32_t led,
 					   uint8_t num_colors, const uint8_t *color)
@@ -38,7 +53,7 @@ static int leds_group_multicolor_set_color(const struct device *dev, uint32_t le
 	for (uint8_t i = 0; i < num_colors; i++) {
 		int err;
 
-		err = led_set_brightness_dt(&config->led[i], color[i]);
+		err = led_set_brightness_dt(&config->led[i], color[i] * LED_BRIGHTNESS_MAX / 255U);
 		if (err) {
 			return err;
 		}
@@ -64,11 +79,22 @@ static int leds_group_multicolor_init(const struct device *dev)
 }
 
 static DEVICE_API(led, leds_group_multicolor_api) = {
+	.get_info = leds_group_multicolor_get_info,
 	.set_color = leds_group_multicolor_set_color,
 };
 
 #define LED_DT_SPEC_GET_BY_PHANDLE_IDX(node_id, prop, idx)			\
 	LED_DT_SPEC_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))
+
+#define LED_INFO(inst)								\
+	{									\
+		.label = DT_INST_PROP_OR(inst, label, NULL),			\
+		.num_colors = DT_INST_PROP_LEN_OR(inst, color_mapping, 0),	\
+		.color_mapping = COND_CODE_1(					\
+			DT_INST_NODE_HAS_PROP(inst, color_mapping),		\
+			(color_mapping_##inst),					\
+			(NULL)),						\
+	}
 
 #define LEDS_GROUP_MULTICOLOR_DEVICE(inst)					\
 										\
@@ -80,10 +106,15 @@ static DEVICE_API(led, leds_group_multicolor_api) = {
 			inst, leds, LED_DT_SPEC_GET_BY_PHANDLE_IDX, (,))	\
 	};									\
 										\
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, color_mapping),			\
+		(static const uint8_t color_mapping_##inst[] =			\
+			DT_INST_PROP(inst, color_mapping)));			\
+										\
 	static const struct leds_group_multicolor_config			\
 				leds_group_multicolor_config_##inst = {		\
 		.num_leds	= ARRAY_SIZE(led_group_multicolor_##inst),	\
 		.led		= led_group_multicolor_##inst,			\
+		.led_info	= LED_INFO(inst),				\
 	};									\
 										\
 	DEVICE_DT_INST_DEFINE(inst, &leds_group_multicolor_init, NULL,		\

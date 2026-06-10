@@ -18,17 +18,16 @@ Refer to the :ref:`shield_porting_guide` for more information on how to port a s
    * Use the form below to filter the list of supported boards and shields. If a field is left
      empty, it will not be used in the filtering process.
 
-   * Filtering by name and vendor is available for both boards and shields. The rest of the fields
-     apply only to boards.
+   * Filtering by name, vendor, and supported hardware capabilities is available for both boards and
+     shields. The rest of the fields apply only to boards.
 
    * A board/shield must meet **all** criteria selected across different fields. For example, if you
      select both a vendor and an architecture, only boards that match both will be displayed. Within
      a single field, selecting multiple options (such as two architectures) will show boards
      matching **either** option.
 
-   * The list of supported hardware features for each board is automatically generated using
-     information from the Devicetree. It may not be reflecting the full list of supported features
-     since some of them may not be enabled by default.
+   * When filtering by available RAM and/or Flash, a board will be included in the results if it has
+     at least one board target that meets the specified criteria.
 
    * Can't find your exact board? Don't worry! If a similar board with the same or a closely related
      MCU exists, you can use it as a :ref:`starting point <create-your-board-directory>` for adding

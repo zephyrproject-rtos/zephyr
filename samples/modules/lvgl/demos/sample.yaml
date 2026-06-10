@@ -6,13 +6,6 @@ common:
     - lvgl
   harness: console
   filter: dt_chosen_enabled("zephyr,display")
-  extra_args:
-    - platform:mimxrt1060_evk:SHIELD=rk043fn66hs_ctg
-    - platform:mimxrt1170_evk/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
-    - platform:mimxrt595_evk/mimxrt595s/cm33:SHIELD=rk055hdmipi4ma0
-    - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=g1120b0mipi
-    - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=zc143ac72mipi
-    - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=rk055hdmipi4ma0
   tags:
     - samples
     - display
@@ -22,34 +15,85 @@ common:
     fixture: fixture_display
     type: one_line
     regex:
-      - "\\[\\w+ free bytes, \\w+ allocated bytes, overhead = \\w+ bytes | lvgl in malloc mode\\]"
+      - >-
+        (\d+ free bytes, \d+ allocated bytes, overhead = \d+
+        bytes \(\d+\.\d+%\)|lvgl in malloc mode)
 tests:
   sample.modules.lvgl.demo_music:
+    platform_allow:
+      - native_sim
     extra_configs:
       - CONFIG_LV_Z_DEMO_MUSIC=y
   sample.modules.lvgl.demo_benchmark:
+    platform_allow:
+      - native_sim
     extra_configs:
       - CONFIG_LV_Z_DEMO_BENCHMARK=y
       - CONFIG_LV_USE_DEMO_WIDGETS=y
   sample.modules.lvgl.demo_stress:
+    platform_allow:
+      - native_sim
     extra_configs:
       - CONFIG_LV_Z_DEMO_STRESS=y
   sample.modules.lvgl.demo_widgets:
+    platform_allow:
+      - native_sim
     extra_configs:
       - CONFIG_LV_Z_DEMO_WIDGETS=y
   sample.modules.lvgl.demo_keypad_encoder:
+    platform_allow:
+      - native_sim
     extra_configs:
       - CONFIG_LV_Z_DEMO_KEYPAD_AND_ENCODER=y
   sample.modules.lvgl.demo_render:
+    platform_allow:
+      - native_sim
     extra_configs:
       - CONFIG_LV_Z_DEMO_RENDER=y
   sample.modules.lvgl.demo_benchmark.lvgl_auto:
+    platform_allow:
+      - native_sim
     extra_configs:
       - CONFIG_LV_Z_DEMO_BENCHMARK=y
       - CONFIG_LV_USE_DEMO_WIDGETS=y
       - CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE=y
       - CONFIG_LV_Z_LVGL_WORKQUEUE_STACK_SIZE=8192
       - CONFIG_LV_Z_LVGL_WORKQUEUE_PRIORITY=0
+  sample.modules.lvgl.demos.dithering:
+    filter: CONFIG_DISPLAY_COLOR_DITHER_SUPPORTED
+    platform_allow:
+      - reterminal_e1002/esp32s3/procpu
+  sample.modules.lvgl.demos.rk043fn66hs_ctg:
+    platform_allow: mimxrt1060_evk/mimxrt1062/qspi
+    extra_args: SHIELD=rk043fn66hs_ctg
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+    tags:
+      - shield
+  sample.modules.lvgl.demos.rk055hdmipi4ma0:
+    platform_allow:
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    extra_args: SHIELD=rk055hdmipi4ma0
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+    tags:
+      - shield
+  sample.modules.lvgl.demos.g1120b0mipi:
+    platform_allow: mimxrt700_evk/mimxrt798s/cm33_cpu0
+    extra_args: SHIELD=g1120b0mipi
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+    tags:
+      - shield
+  sample.modules.lvgl.demos.zc143ac72mipi:
+    platform_allow: mimxrt700_evk/mimxrt798s/cm33_cpu0
+    extra_args: SHIELD=zc143ac72mipi
+    extra_configs:
+      - CONFIG_LV_Z_DEMO_BENCHMARK=y
+    tags:
+      - shield
   sample.modules.lvgl.demos.st_b_lcd40_dsi1_mb1166:
     filter: dt_compat_enabled("orisetech,otm8009a")
     platform_allow: stm32h747i_disco/stm32h747xx/m7

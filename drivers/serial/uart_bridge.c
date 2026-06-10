@@ -238,9 +238,6 @@ static int uart_bridge_init(const struct device *dev)
 }
 
 #define UART_BRIDGE_INIT(n)							\
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, peers) == 2,				\
-		     "uart-bridge peers property must have exactly 2 members");	\
-										\
 	static const struct uart_bridge_config uart_bridge_cfg_##n = {		\
 		.peer_dev = {DT_INST_FOREACH_PROP_ELEM_SEP(			\
 			n, peers, DEVICE_DT_GET_BY_IDX, (,))},			\

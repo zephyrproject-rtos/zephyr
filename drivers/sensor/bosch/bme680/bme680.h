@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2018 Bosch Sensortec GmbH
  * Copyright (c) 2022, Leonard Pollak
+ * Copyright (c) 2025 Alif Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +14,12 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#ifdef CONFIG_SENSOR_ASYNC_API
+#include <zephyr/sys/mpsc_lockfree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/rtio/rtio.h>
+#endif
 
 #define DT_DRV_COMPAT bosch_bme680
 
@@ -50,9 +57,28 @@ extern const struct bme680_bus_io bme680_bus_io_spi;
 extern const struct bme680_bus_io bme680_bus_io_i2c;
 #endif
 
+/*
+ * Raw field-0 data registers as they appear in the sensor.
+ * Registers 0x1F-0x2B (13 bytes).
+ */
+struct bme_data_regs  {
+	uint8_t pressure[3];
+	uint8_t temperature[3];
+	uint8_t humidity[2];
+	uint8_t padding[3];
+	uint8_t gas[2];
+} __packed;
+
+#define BME680_FIELD0_DATA_LEN  sizeof(struct bme_data_regs)
+
 struct bme680_config {
 	union bme680_bus bus;
 	const struct bme680_bus_io *bus_io;
+#ifdef CONFIG_SENSOR_ASYNC_API
+	struct rtio *r;
+	struct rtio_iodev *bus_iodev;
+	bool is_spi;
+#endif
 };
 
 #define BME680_CHIP_ID                  0x61
@@ -215,6 +241,67 @@ struct bme680_data {
 #if BME680_BUS_SPI
 	uint8_t mem_page;
 #endif
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+	struct rtio_iodev_sqe *pending_sqe;
+	const struct device *dev;
+	/*
+	 * Write staging buffers — must remain valid until the SQE fires.
+	 * wr_buf: [reg, val] for the CTRL_MEAS tiny-write.
+	 * rd_reg_buf: [reg] for the FIELD0 address-phase tiny-write.
+	 * raw_buf: raw field-0 payload (+1 byte for SPI dummy-read).
+	 */
+	uint8_t wr_buf[2];
+	uint8_t rd_reg_buf[1];
+	uint8_t raw_buf[BME680_FIELD0_DATA_LEN + 1];
+
+	/* Serialize concurrent submits (bmi323 pattern) */
+	struct k_spinlock mpsc_lock;
+	struct mpsc io_q;
+#endif
 };
+
+/* Raw compensated reading values (not sensor_value) */
+struct bme680_reading {
+	int32_t comp_temp;
+	uint32_t comp_press;
+	uint32_t comp_humidity;
+	uint32_t comp_gas;
+};
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+
+/* RTIO encoded data structures - following BME280 pattern */
+struct bme680_decoder_header {
+	uint64_t timestamp;
+} __attribute__((__packed__));
+
+struct bme680_encoded_data {
+	struct bme680_decoder_header header;
+	struct {
+		uint8_t has_temp : 1;
+		uint8_t has_press : 1;
+		uint8_t has_humidity : 1;
+		uint8_t has_gas : 1;
+	} __attribute__((__packed__));
+	struct bme680_reading reading;
+};
+
+/* Q31 conversion constants (similar to BME280) */
+#define BME680_TEMP_SHIFT     10  /* Q21.10 for temperature */
+#define BME680_PRESS_SHIFT    8   /* Q24.8 for pressure */
+#define BME680_HUM_SHIFT      10  /* Q22.10 for humidity */
+#define BME680_GAS_SHIFT      20  /* Q11.20 for gas resistance, up to ~1M ohms */
+
+/* Function declarations */
+int bme680_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
+
+void bme680_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
+void bme680_compensate_raw(const struct device *dev,
+			   const struct bme_data_regs  *regs,
+			   struct bme680_reading *reading);
 
 #endif /* __ZEPHYR_DRIVERS_SENSOR_BME680_H__ */

@@ -1,7 +1,7 @@
 sample:
   name: UUID
 tests:
-  sample.subsys.uuid:
+  sample.uuid:
     tags: uuid
     platform_allow:
       - qemu_x86

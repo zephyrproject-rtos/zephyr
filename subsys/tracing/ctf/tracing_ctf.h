@@ -8,7 +8,6 @@
 #define _TRACE_CTF_H
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/init.h>
 
 #ifdef __cplusplus

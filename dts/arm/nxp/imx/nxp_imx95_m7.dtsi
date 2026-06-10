@@ -219,6 +219,24 @@
 			status = "disabled";
 		};
 
+		edma1: dma@44000000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x44000000 0x4000>;
+			#dma-cells = <2>;
+			nxp,version = <4>;
+			dma-channels = <32>;
+			dma-requests = <32>;
+			interrupts = <96 0>, <97 0>, <98 0>, <99 0>,
+				     <100 0>, <101 0>, <102 0>, <103 0>,
+				     <104 0>, <105 0>, <106 0>, <107 0>,
+				     <108 0>, <109 0>, <110 0>, <111 0>,
+				     <112 0>, <113 0>, <114 0>, <115 0>,
+				     <116 0>, <117 0>, <118 0>, <119 0>,
+				     <120 0>, <121 0>, <122 0>, <123 0>,
+				     <124 0>, <125 0>, <126 0>;
+			status = "disabled";
+		};
+
 		edma2: dma@42000000 {
 			compatible = "nxp,mcux-edma";
 			reg = <0x42000000 0x4000>;
@@ -227,9 +245,28 @@
 			dma-channels = <64>;
 			dma-requests = <92>;
 			no-error-irq;
-			interrupts = <128 0>, <129 0>, <143 0>;
+			interrupts = <128 0>, <129 0>, <130 0>, <131 0>, <132 0>, <133 0>,
+				     <134 0>, <135 0>, <136 0>, <137 0>, <138 0>, <139 0>,
+				     <140 0>, <141 0>, <142 0>, <143 0>, <144 0>, <145 0>,
+				     <146 0>, <147 0>, <148 0>, <149 0>, <150 0>, <151 0>,
+				     <152 0>, <153 0>, <154 0>, <155 0>, <156 0>, <157 0>,
+				     <158 0>, <159 0>;
 			channels-shared-irq-mask = <0x00000003 0x00000000 0x0000000c 0x00000000
-						    0x00000030 0x00000000>;
+						    0x00000030 0x00000000 0x000000c0 0x00000000
+						    0x00000300 0x00000000 0x00000c00 0x00000000
+						    0x00003000 0x00000000 0x0000c000 0x00000000
+						    0x00030000 0x00000000 0x000c0000 0x00000000
+						    0x00300000 0x00000000 0x00c00000 0x00000000
+						    0x03000000 0x00000000 0x0c000000 0x00000000
+						    0x30000000 0x00000000 0xc0000000 0x00000000
+						    0x00000000 0x00000003 0x00000000 0x0000000c
+						    0x00000000 0x00000030 0x00000000 0x000000c0
+						    0x00000000 0x00000300 0x00000000 0x00000c00
+						    0x00000000 0x00003000 0x00000000 0x0000c000
+						    0x00000000 0x00030000 0x00000000 0x000c0000
+						    0x00000000 0x00300000 0x00000000 0x00c00000
+						    0x00000000 0x03000000 0x00000000 0x0c000000
+						    0x00000000 0x30000000 0x00000000 0xc0000000>;
 			status = "disabled";
 		};
 
@@ -425,6 +462,19 @@
 			mclk-is-output;
 			dmas = <&edma2 4 60>, <&edma2 5 61>;
 			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		sai3_2: sai@42650000 {
+			compatible = "nxp,mcux-i2s";
+			reg = <0x42650000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX95_CLK_SAI3>;
+			interrupts = <170 0>;
+			nxp,tx-channel = <1>;
+			dmas = <&edma2 4 60>, <&edma2 5 61>;
+			dma-names = "tx", "rx";
+			nxp,tx-dma-channel = <4>;
+			nxp,rx-dma-channel = <5>;
 			status = "disabled";
 		};
 
@@ -640,6 +690,68 @@
 			prescale-glitch-filter-bypass;
 			resolution = <32>;
 			status = "disabled";
+		};
+
+		lpit1: timer@442f0000 {
+			compatible = "nxp,lpit";
+			reg = <0x442f0000 0x1000>;
+			interrupts = <15 0>;
+			clocks = <&scmi_clk IMX95_CLK_BUSAON>;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			lpit1_channel0: lpit-channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+			};
+
+			lpit1_channel1: lpit-channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+			};
+
+			lpit1_channel2: lpit-channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+			};
+
+			lpit1_channel3: lpit-channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+			};
+		};
+
+		lpit2: timer@424c0000 {
+			compatible = "nxp,lpit";
+			reg = <0x424c0000 0x1000>;
+			interrupts = <60 0>;
+			clocks = <&scmi_clk IMX95_CLK_BUSWAKEUP>;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			lpit2_channel0: lpit-channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+			};
+
+			lpit2_channel1: lpit-channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+			};
+
+			lpit2_channel2: lpit-channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+			};
+
+			lpit2_channel3: lpit-channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+			};
 		};
 
 		i3c1: i3c@44330000 {
@@ -954,6 +1066,23 @@
 			interrupts = <201 0>;
 			#io-channel-cells = <1>;
 			clocks = <&scmi_clk IMX95_CLK_ADC>;
+			status = "disabled";
+		};
+
+		/* WDOG clocks:
+		 * 0 - ipg_clk  : IMX95_CLK_BUSWAKEUP
+		 * 1 - lpo_clk  : IMX95_CLK_32K
+		 * 2 - int_clk  : IMX95_CLK_BUSWAKEUP
+		 * 3 - ext_clk  : IMX95_CLK_24M
+		 */
+		wdog5: watchdog@424b0000 {
+			compatible = "nxp,wdog32";
+			reg = <0x424b0000 0x1000>;
+			interrupts = <79 0>;
+			clocks = <&scmi_clk IMX95_CLK_32K>;
+			clock-names = "clksrc1";
+			clk-source = <1>;
+			clk-divider = <1>;
 			status = "disabled";
 		};
 	};

@@ -44,7 +44,7 @@ static void zzz_entry(void *p1, void *p2, void *p3)
 	k_sleep(K_FOREVER);
 }
 
-static K_THREAD_DEFINE(zzz_thread, 256 + CONFIG_TEST_EXTRA_STACK_SIZE,
+static K_THREAD_DEFINE(zzz_thread, 512 + CONFIG_TEST_EXTRA_STACK_SIZE,
 		       zzz_entry, NULL, NULL, NULL, 0, 0, 0);
 
 void *test_mem_domain_setup(void)

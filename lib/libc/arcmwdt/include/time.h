@@ -8,6 +8,7 @@
 #define LIB_LIBC_ARCMWDT_INCLUDE_TIME_H_
 
 #include_next <time.h>
+#include <sys/types.h>
 
 #include <zephyr/posix/posix_time.h>
 

@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Carlo Caione <ccaione@baylibre.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BUZZER_GPIO
+	bool "GPIO-driven active buzzer"
+	default y
+	depends on DT_HAS_GPIO_BUZZER_ENABLED
+	select GPIO
+	help
+	  Enable the GPIO backend for active buzzers (those with a
+	  built-in oscillator). The driver only controls on/off; the
+	  buzzer's resonance frequency is fixed by hardware.

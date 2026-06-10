@@ -426,7 +426,7 @@
 #define TCPC_REG_DEV_CAP_1_ALL_SOP_STAR_MSGS_SUPPORTED     BIT(4)
 /** Bit for source vconn - if set, TCPC is capable of switching the vconn source */
 #define TCPC_REG_DEV_CAP_1_SOURCE_VCONN                    BIT(3)
-/** Bit for sink vbus - if set, TCPC is capable of controling the sink path to the system load */
+/** Bit for sink vbus - if set, TCPC is capable of controlling the sink path to the system load */
 #define TCPC_REG_DEV_CAP_1_SINK_VBUS                       BIT(2)
 /**
  * Bit for source high voltage vbus.

@@ -11,11 +11,24 @@ static inline int z_vrfy_mbox_send(const struct device *dev,
 				   mbox_channel_id_t channel_id,
 				   const struct mbox_msg *msg)
 {
-	K_OOPS(K_SYSCALL_DRIVER_MBOX(dev, send));
-	K_OOPS(K_SYSCALL_MEMORY_READ(msg, sizeof(struct mbox_msg)));
-	K_OOPS(K_SYSCALL_MEMORY_READ(msg->data, msg->size));
+	struct mbox_msg msg_copy;
 
-	return z_impl_mbox_send(dev, channel_id, msg);
+	K_OOPS(K_SYSCALL_DRIVER_MBOX(dev, send));
+
+	if (msg == NULL) {
+		/* Signalling mode: NULL msg is valid per the API contract */
+		return z_impl_mbox_send(dev, channel_id, NULL);
+	}
+
+	/* Copy the userspace struct into a kernel-stack snapshot before
+	 * validating the nested data pointer, preventing a TOCTOU race where
+	 * a concurrent thread could replace msg->data with a supervisor address
+	 * after the access check.
+	 */
+	K_OOPS(k_usermode_from_copy(&msg_copy, msg, sizeof(msg_copy)));
+	K_OOPS(K_SYSCALL_MEMORY_READ(msg_copy.data, msg_copy.size));
+
+	return z_impl_mbox_send(dev, channel_id, &msg_copy);
 }
 #include <zephyr/syscalls/mbox_send_mrsh.c>
 

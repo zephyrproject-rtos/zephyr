@@ -398,7 +398,7 @@ In general, :file:`plank_<qualifiers>.dts` should look like this:
            leds {
                    compatible = "gpio-leds";
                    led0: led_0 {
-                           gpios = < /* GPIO your LED is hooked up to */ >;
+                           gpios = </* GPIO your LED is hooked up to */>;
                            label = "LED 0";
                    };
                    /* ... other LEDs ... */

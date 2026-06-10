@@ -891,6 +891,20 @@ static int usbd_cdc_ncm_ctd(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
 			    const struct net_buf *const buf)
 {
+	if (setup->wLength && (buf == NULL)) {
+		if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
+		    setup->bRequest == SET_NTB_INPUT_SIZE &&
+		    (setup->wLength == 4 || setup->wLength == 8)) {
+			/* Data OUT can be received */
+			return 0;
+		}
+
+		LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x wLength %u unsupported",
+			setup->bmRequestType, setup->bRequest, setup->wLength);
+		errno = -ENOTSUP;
+		return 0;
+	}
+
 	if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE) {
 		if (setup->bRequest == SET_ETHERNET_PACKET_FILTER) {
 			LOG_DBG("bRequest 0x%02x (%s) not implemented",

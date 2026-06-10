@@ -32,7 +32,25 @@ static int zms_ate_valid_different_sector(struct zms_fs *fs, const struct zms_at
 
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 
-static inline size_t zms_lookup_cache_pos(zms_id_t id)
+static inline size_t zms_lookup_cache_size(struct zms_fs *fs __unused)
+{
+#if CONFIG_ZMS_LOOKUP_CACHE_MANUAL
+	return fs->lookup_cache_size;
+#else
+	return CONFIG_ZMS_LOOKUP_CACHE_SIZE;
+#endif
+}
+
+static inline bool zms_lookup_cache_available(struct zms_fs *fs __unused)
+{
+#if CONFIG_ZMS_LOOKUP_CACHE_MANUAL
+	return fs->lookup_cache != NULL;
+#else
+	return true;
+#endif
+}
+
+static inline size_t zms_lookup_cache_pos(struct zms_fs *fs __unused, zms_id_t id)
 {
 #ifdef CONFIG_ZMS_LOOKUP_CACHE_FOR_SETTINGS
 	/*
@@ -81,7 +99,38 @@ static inline size_t zms_lookup_cache_pos(zms_id_t id)
 	hash ^= hash >> 16;
 #endif /* CONFIG_ZMS_LOOKUP_CACHE_FOR_SETTINGS */
 
-	return hash % CONFIG_ZMS_LOOKUP_CACHE_SIZE;
+	return hash % zms_lookup_cache_size(fs);
+}
+
+static inline uint64_t zms_lookup_cache_addr(struct zms_fs *fs, zms_id_t id)
+{
+	if (!zms_lookup_cache_available(fs)) {
+		return fs->ate_wra;
+	}
+
+	return fs->lookup_cache[zms_lookup_cache_pos(fs, id)];
+}
+
+static inline void zms_lookup_cache_update(struct zms_fs *fs, zms_id_t id, uint64_t addr)
+{
+	if (zms_lookup_cache_available(fs)) {
+		fs->lookup_cache[zms_lookup_cache_pos(fs, id)] = addr;
+	}
+}
+
+static void zms_lookup_cache_fill(struct zms_fs *fs, uint64_t addr)
+{
+	uint64_t *cache_entry;
+	uint64_t *cache_end;
+
+	if (!zms_lookup_cache_available(fs)) {
+		return;
+	}
+
+	cache_end = &fs->lookup_cache[zms_lookup_cache_size(fs)];
+	for (cache_entry = fs->lookup_cache; cache_entry < cache_end; ++cache_entry) {
+		*cache_entry = addr;
+	}
 }
 
 static int zms_lookup_cache_rebuild(struct zms_fs *fs)
@@ -94,7 +143,10 @@ static int zms_lookup_cache_rebuild(struct zms_fs *fs)
 	uint8_t current_cycle;
 	struct zms_ate ate;
 
-	memset(fs->lookup_cache, 0xff, sizeof(fs->lookup_cache));
+	if (!zms_lookup_cache_available(fs)) {
+		return 0;
+	}
+	memset(fs->lookup_cache, 0xff, zms_lookup_cache_size(fs) * sizeof(uint64_t));
 	addr = fs->ate_wra;
 
 	while (true) {
@@ -106,7 +158,7 @@ static int zms_lookup_cache_rebuild(struct zms_fs *fs)
 			return rc;
 		}
 
-		cache_entry = &fs->lookup_cache[zms_lookup_cache_pos(ate.id)];
+		cache_entry = &fs->lookup_cache[zms_lookup_cache_pos(fs, ate.id)];
 
 		if (ate.id != ZMS_HEAD_ID && *cache_entry == ZMS_LOOKUP_CACHE_NO_ADDR) {
 			/* read the ate cycle only when we change the sector
@@ -138,8 +190,14 @@ static int zms_lookup_cache_rebuild(struct zms_fs *fs)
 
 static void zms_lookup_cache_invalidate(struct zms_fs *fs, uint32_t sector)
 {
-	uint64_t *cache_entry = fs->lookup_cache;
-	uint64_t *const cache_end = &fs->lookup_cache[CONFIG_ZMS_LOOKUP_CACHE_SIZE];
+	uint64_t *cache_entry;
+	uint64_t *cache_end;
+
+	if (!zms_lookup_cache_available(fs)) {
+		return;
+	}
+	cache_entry = fs->lookup_cache;
+	cache_end = &fs->lookup_cache[zms_lookup_cache_size(fs)];
 
 	for (; cache_entry < cache_end; ++cache_entry) {
 		if (SECTOR_NUM(*cache_entry) == sector) {
@@ -255,7 +313,7 @@ static int zms_flash_ate_wrt(struct zms_fs *fs, const struct zms_ate *entry)
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
 	/* ZMS_HEAD_ID is a special-purpose identifier. Exclude it from the cache */
 	if (entry->id != ZMS_HEAD_ID) {
-		fs->lookup_cache[zms_lookup_cache_pos(entry->id)] = fs->ate_wra;
+		zms_lookup_cache_update(fs, entry->id, fs->ate_wra);
 	}
 #endif
 	fs->ate_wra -= zms_al_size(fs, sizeof(struct zms_ate));
@@ -1004,6 +1062,18 @@ static int zms_find_ate_with_id(struct zms_fs *fs, zms_id_t id, uint64_t start_a
 	uint8_t current_cycle;
 
 	wlk_addr = start_addr;
+	if (wlk_addr == fs->ate_wra) {
+		/* fs->ate_wra points to the next write slot, not to a valid ATE. */
+		rc = zms_compute_prev_addr(fs, &wlk_addr);
+		if (rc) {
+			return rc;
+		}
+
+		if (wlk_addr == end_addr) {
+			*ate_addr = end_addr;
+			return 0;
+		}
+	}
 
 	do {
 		wlk_prev_addr = wlk_addr;
@@ -1119,7 +1189,7 @@ static int zms_gc(struct zms_fs *fs)
 		}
 
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
-		wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(gc_ate.id)];
+		wlk_addr = zms_lookup_cache_addr(fs, gc_ate.id);
 
 		if (wlk_addr == ZMS_LOOKUP_CACHE_NO_ADDR) {
 			wlk_addr = fs->ate_wra;
@@ -1514,9 +1584,7 @@ static int zms_init(struct zms_fs *fs)
 		 * So, temporarily, we set the lookup cache to the end of the fs.
 		 * The cache will be rebuilt afterwards
 		 **/
-		for (i = 0; i < CONFIG_ZMS_LOOKUP_CACHE_SIZE; i++) {
-			fs->lookup_cache[i] = fs->ate_wra;
-		}
+		zms_lookup_cache_fill(fs, fs->ate_wra);
 #endif
 		rc = zms_gc(fs);
 		goto end;
@@ -1538,6 +1606,23 @@ end:
 
 	return rc;
 }
+
+#if CONFIG_ZMS_LOOKUP_CACHE_MANUAL
+int zms_set_lookup_cache(struct zms_fs *fs, uint64_t *buffer, size_t size)
+{
+	if (!fs || !buffer || !size) {
+		return -EINVAL;
+	}
+	if (fs->ready) {
+		return -EBUSY;
+	}
+
+	fs->lookup_cache = buffer;
+	fs->lookup_cache_size = size;
+
+	return 0;
+}
+#endif
 
 static int zms_mount_internal(struct zms_fs *fs, bool wipe_on_failure)
 {
@@ -1596,7 +1681,6 @@ static int zms_mount_internal(struct zms_fs *fs, bool wipe_on_failure)
 		LOG_ERR("Configuration error - sector count below minimum requirement (2)");
 		return -EINVAL;
 	}
-
 	rc = zms_init(fs);
 
 	if (rc && wipe_on_failure) {
@@ -1664,7 +1748,7 @@ ssize_t zms_write(struct zms_fs *fs, zms_id_t id, const void *data, size_t len)
 
 	/* find latest entry with same id */
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
-	wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
+	wlk_addr = zms_lookup_cache_addr(fs, id);
 
 	if (wlk_addr == ZMS_LOOKUP_CACHE_NO_ADDR) {
 		if (len > 0) {
@@ -1812,7 +1896,7 @@ ssize_t zms_read_hist(struct zms_fs *fs, zms_id_t id, void *data, size_t len, ui
 	cnt_his = 0U;
 
 #ifdef CONFIG_ZMS_LOOKUP_CACHE
-	wlk_addr = fs->lookup_cache[zms_lookup_cache_pos(id)];
+	wlk_addr = zms_lookup_cache_addr(fs, id);
 
 	if (wlk_addr == ZMS_LOOKUP_CACHE_NO_ADDR) {
 		rc = -ENOENT;

@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(gpio_esp32, CONFIG_LOG_DEFAULT_LEVEL);
 /* arch_curr_cpu() is not available for riscv based chips */
 #define ESP32_CPU_ID()  0
 #elif defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                  \
-	defined(CONFIG_SOC_SERIES_ESP32H2)
+	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
 /* gpio structs in esp32c6/h2 are also different */
 #define out out.out_data_orig
 #define in in.in_data_next
@@ -108,7 +108,7 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 	bool gpio_pull;
 	bool rtcio_pull;
 	bool rtcio_wakeup;
-#if CONFIG_PM
+#if CONFIG_PM || CONFIG_POWEROFF
 	bool wakeup_disable = false;
 #endif
 	int ret = 0;
@@ -256,50 +256,45 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 
 	if (flags & GPIO_INPUT) {
 		gpio_ll_input_enable(&GPIO, io_pin);
-#if CONFIG_PM
-		if (pm_device_wakeup_is_capable(dev)) {
-			if (flags & GPIO_INT_WAKEUP) {
-				if (esp_sleep_is_valid_wakeup_gpio(io_pin)) {
-					int polarity = (flags & GPIO_ACTIVE_LOW) ? 0 : 1;
-					int err;
+#if CONFIG_PM || CONFIG_POWEROFF
+		if (flags & GPIO_INT_WAKEUP) {
+			if (esp_sleep_is_valid_wakeup_gpio(io_pin)) {
+				int polarity = (flags & GPIO_ACTIVE_LOW) ? 0 : 1;
+				int err;
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
-					err = esp_sleep_enable_ext1_wakeup_io(
-						BIT64(io_pin), polarity);
+				err = esp_sleep_enable_ext1_wakeup_io(BIT64(io_pin), polarity);
 
-					if (err == ESP_ERR_NOT_ALLOWED) {
-						LOG_WRN("Pin %d wakeup polarity conflicts "
-							"with other EXT1 pins",
-							io_pin);
-					} else if (err != 0) {
-						LOG_WRN("Pin %d: EXT1 wakeup config "
-							"failed (%d)",
-							io_pin, err);
-					}
-#elif SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
-					err = esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(
-						BIT64(io_pin), polarity);
-
-					if (err != 0) {
-						LOG_WRN("Pin %d: GPIO wakeup config "
-							"failed (%d)",
-							io_pin, err);
-					}
-#endif
-				} else {
-					LOG_WRN("Pin %d is not wakeup capable", io_pin);
+				if (err == ESP_ERR_NOT_ALLOWED) {
+					LOG_WRN("Pin %d wakeup polarity conflicts "
+						"with other EXT1 pins",
+						io_pin);
+				} else if (err != 0) {
+					LOG_WRN("Pin %d: EXT1 wakeup config "
+						"failed (%d)",
+						io_pin, err);
 				}
+#elif SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
+				err = esp_sleep_enable_gpio_wakeup_on_hp_periph_powerdown(
+					BIT64(io_pin), polarity);
+
+				if (err != 0) {
+					LOG_WRN("Pin %d: GPIO wakeup config "
+						"failed (%d)",
+						io_pin, err);
+				}
+#endif
 			} else {
-				wakeup_disable = true;
+				LOG_WRN("Pin %d is not wakeup capable", io_pin);
 			}
+		} else {
+			wakeup_disable = true;
 		}
 #endif
 	} else {
 		if (!(flags & ESP32_GPIO_PIN_IN_EN)) {
 			gpio_ll_input_disable(&GPIO, io_pin);
-#if CONFIG_PM
-			if (pm_device_wakeup_is_capable(dev)) {
-				wakeup_disable = true;
-			}
+#if CONFIG_PM || CONFIG_POWEROFF
+			wakeup_disable = true;
 #endif
 		}
 	}
@@ -309,13 +304,17 @@ static int IRAM_ATTR gpio_esp32_config(const struct device *dev,
 
 	/* Enable pin pad state hold while in low power mode */
 	esp32_sleep_gpio_hold_config(io_pin, hold_en);
+#endif
 
+#if CONFIG_PM || CONFIG_POWEROFF
 	if (wakeup_disable) {
 		/* Account for pin reconfig with GPIO_INT_WAKEUP
 		 * disabled, or pin direction change.
 		 */
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
-		esp_sleep_disable_ext1_wakeup_io(BIT64(io_pin));
+		if (esp_sleep_is_valid_wakeup_gpio(io_pin)) {
+			esp_sleep_disable_ext1_wakeup_io(BIT64(io_pin));
+		}
 #elif SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 		/* No API to disable for now */
 #endif
@@ -336,7 +335,7 @@ static int gpio_esp32_port_get_raw(const struct device *port, uint32_t *value)
 		*value = cfg->gpio_dev->in;
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		*value = cfg->gpio_dev->in1.data;
+		*value = cfg->gpio_dev->in1.val;
 #endif
 	}
 
@@ -354,7 +353,7 @@ static int gpio_esp32_port_set_masked_raw(const struct device *port,
 		cfg->gpio_dev->out = (cfg->gpio_dev->out & ~mask) | (mask & value);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		cfg->gpio_dev->out1.data = (cfg->gpio_dev->out1.data & ~mask) | (mask & value);
+		cfg->gpio_dev->out1.val = (cfg->gpio_dev->out1.val & ~mask) | (mask & value);
 #endif
 	}
 
@@ -372,7 +371,7 @@ static int gpio_esp32_port_set_bits_raw(const struct device *port,
 		cfg->gpio_dev->out_w1ts = pins;
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		cfg->gpio_dev->out1_w1ts.data = pins;
+		cfg->gpio_dev->out1_w1ts.val = pins;
 #endif
 	}
 
@@ -388,7 +387,7 @@ static int gpio_esp32_port_clear_bits_raw(const struct device *port,
 		cfg->gpio_dev->out_w1tc = pins;
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		cfg->gpio_dev->out1_w1tc.data = pins;
+		cfg->gpio_dev->out1_w1tc.val = pins;
 #endif
 	}
 
@@ -405,7 +404,7 @@ static int gpio_esp32_port_toggle_bits(const struct device *port,
 		cfg->gpio_dev->out ^= pins;
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 	} else {
-		cfg->gpio_dev->out1.data ^= pins;
+		cfg->gpio_dev->out1.val ^= pins;
 #endif
 	}
 
@@ -454,6 +453,12 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port,
 {
 	const struct gpio_esp32_config *const cfg = port->config;
 	uint32_t io_pin = (uint32_t) pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
+
+	/* Wakeup is configured in gpio_esp32_config(); strip the bit so
+	 * convert_int_type() only sees edge/level trigger bits.
+	 */
+	trig &= ~GPIO_INT_WAKEUP;
+
 	int intr_trig_mode = convert_int_type(mode, trig);
 	uint32_t key;
 
@@ -625,23 +630,17 @@ static DEVICE_API(gpio, gpio_esp32_driver_api) = {
 	.get_pending_int = gpio_esp32_get_pending_int
 };
 
-#define ESP_SOC_GPIO_INIT(_id)							\
-	static struct gpio_esp32_data gpio_data_##_id;				\
-	static struct gpio_esp32_config gpio_config_##_id = {			\
-		.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_INST(_id),		\
-		.gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0)),	\
-		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),	\
-		.gpio_port = _id	\
-	};									\
-	PM_DEVICE_DT_INST_DEFINE(_id, gpio_esp32_pm_action);			\
-	DEVICE_DT_DEFINE(DT_NODELABEL(gpio##_id),				\
-			&gpio_esp32_init,					\
-			PM_DEVICE_DT_INST_GET(_id),				\
-			&gpio_data_##_id,					\
-			&gpio_config_##_id,					\
-			PRE_KERNEL_1,						\
-			CONFIG_GPIO_INIT_PRIORITY,				\
-			&gpio_esp32_driver_api);
+#define ESP_SOC_GPIO_INIT(_id)                                                                     \
+	static struct gpio_esp32_data gpio_data_##_id;                                             \
+	static struct gpio_esp32_config gpio_config_##_id = {                                      \
+		.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_INST(_id),                                   \
+		.gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0)),                       \
+		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),                    \
+		.gpio_port = _id};                                                                 \
+	PM_DEVICE_DT_INST_DEFINE(_id, gpio_esp32_pm_action);                                       \
+	DEVICE_DT_INST_DEFINE(_id, &gpio_esp32_init, PM_DEVICE_DT_INST_GET(_id), &gpio_data_##_id, \
+			      &gpio_config_##_id, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,         \
+			      &gpio_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP_SOC_GPIO_INIT);
 

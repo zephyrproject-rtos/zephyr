@@ -15,6 +15,8 @@
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa9 &i2c2_sda_pa10>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 

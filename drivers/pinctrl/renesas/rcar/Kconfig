@@ -4,7 +4,7 @@
 config PINCTRL_RCAR_PFC
 	bool "Pin controller driver for Renesas RCar SoC"
 	default y
-	depends on DT_HAS_RENESAS_RCAR_PFC_ENABLED
+	depends on DT_HAS_RENESAS_RCAR_PFC_ENABLED || DT_HAS_RENESAS_RCAR_PFC_X5H_ENABLED
 	help
 	  Enable pin controller driver for Renesas RCar SoC
 
@@ -12,3 +12,14 @@ config PINCTRL_RCAR_VOLTAGE_CONTROL
 	bool "Voltage control functionality of Renesas R-Car PFC driver"
 	default y if SOC_SERIES_RCAR_GEN3
 	depends on PINCTRL_RCAR_PFC
+
+config PINCTRL_RCAR_SCMI
+	bool "SCMI functionality of Renesas R-Car PFC driver"
+	default y
+	depends on PINCTRL_RCAR_PFC
+	depends on ARM_SCMI_PINCTRL_HELPERS
+	help
+	  Perform pin configuration operations through SCMI (System Control
+	  and Management Interface) pinctrl protocol. The entity which acts
+	  as SCMI server to provide this service is a dedicated SCP (System
+	  Control Processor) firmware.

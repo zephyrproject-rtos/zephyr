@@ -79,7 +79,7 @@ int tmc_uart_write_register(const struct device *uart, uint8_t device_addr,
 	for (size_t i = 0; i < ADI_TMC_UART_DATAGRAM_SIZE; i++) {
 		err = tmc_uart_send_byte_with_echo(uart, buffer[i]);
 		if (err) {
-			LOG_ERR("Failed to send byte %d: 0x%02X", i, buffer[i]);
+			LOG_ERR("Failed to send byte %zu: 0x%02X", i, buffer[i]);
 			return err;
 		}
 	}
@@ -116,7 +116,7 @@ int tmc_uart_read_register(const struct device *uart, uint8_t device_addr, uint8
 	for (size_t i = 0; i < ADI_TMC_UART_READ_REQ_DATAGRAM_SIZE; i++) {
 		err = tmc_uart_send_byte_with_echo(uart, write_buffer[i]);
 		if (err) {
-			LOG_ERR("Failed to send byte %d: 0x%02X", i, write_buffer[i]);
+			LOG_ERR("Failed to send byte %zu: 0x%02X", i, write_buffer[i]);
 			return -EIO;
 		}
 	}
@@ -133,12 +133,12 @@ int tmc_uart_read_register(const struct device *uart, uint8_t device_addr, uint8
 		} while (err == -1 && !sys_timepoint_expired(end));
 
 		if (err == -1) {
-			LOG_ERR("Timeout waiting for byte %d for register 0x%x", i,
+			LOG_ERR("Timeout waiting for byte %zu for register 0x%x", i,
 				register_address);
 			return -EAGAIN;
 		}
 		if (err < 0) {
-			LOG_ERR("Error %d receiving byte %d for register 0x%x", err, i,
+			LOG_ERR("Error %d receiving byte %zu for register 0x%x", err, i,
 				register_address);
 			return -EIO;
 		}

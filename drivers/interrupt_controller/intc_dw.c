@@ -139,12 +139,17 @@ static const struct irq_next_level_api dw_ictl_apis = {
 	.intr_get_line_state = dw_ictl_intr_get_line_state,
 };
 
+/* Fall back to 0 when the parent interrupt controller has no "flags" cell */
+#define INTC_DW_IRQ_FLAGS0(inst) 0
+#define INTC_DW_IRQ_FLAGS1(inst) DT_INST_IRQ(inst, flags)
+#define INTC_DW_IRQ_FLAGS(inst)  _CONCAT(INTC_DW_IRQ_FLAGS, DT_INST_IRQ_HAS_CELL(inst, flags))(inst)
+
 #define INTC_DW_DEVICE_INIT(inst)                                                                  \
                                                                                                    \
 	static void dw_ictl_config_irq_##inst(void)                                                \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), dw_ictl_isr,          \
-			    DEVICE_DT_INST_GET(inst), DT_INST_IRQ(inst, sense));                   \
+			    DEVICE_DT_INST_GET(inst), INTC_DW_IRQ_FLAGS(inst));                    \
 		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}                                                                                          \
 	IRQ_PARENT_ENTRY_DEFINE(intc_dw##inst, DEVICE_DT_INST_GET(inst), DT_INST_IRQN(inst),       \

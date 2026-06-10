@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/spinlock.h>
 #include <kswap.h>
 #include <zephyr/internal/syscall_handler.h>

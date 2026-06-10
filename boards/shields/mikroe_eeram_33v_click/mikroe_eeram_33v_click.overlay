@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2026 Ambiq Micro Inc. <www.ambiq.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		eeprom-0 = &eeram;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	/*
+	 * Microchip 47L16 2KB EERAM. The SRAM data port (I2C address
+	 * 0x50, with A2:A1:A0 tied low) is compatible with the Atmel
+	 * AT24 EEPROM programming model, so the generic eeprom_at2x
+	 * driver is used. SRAM writes are immediate, so timeout is 0.
+	 */
+	eeram: eeprom@50 {
+		compatible = "microchip,47l16", "atmel,at24";
+		reg = <0x50>;
+		size = <2048>;
+		pagesize = <16>;
+		address-width = <16>;
+		timeout = <0>;
+	};
+};

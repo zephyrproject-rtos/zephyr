@@ -27,7 +27,7 @@
 #define out_w1ts out_w1ts.val
 #define out_w1tc out_w1tc.val
 #elif defined(CONFIG_SOC_SERIES_ESP32C5) || defined(CONFIG_SOC_SERIES_ESP32C6) ||                  \
-	defined(CONFIG_SOC_SERIES_ESP32H2)
+	defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
 /* gpio structs in esp32c6/h2 are also different */
 #define out out.out_data_orig
 #define in in.in_data_next
@@ -229,29 +229,25 @@ static int esp32_pin_configure(const uint32_t pin_mux, const uint32_t pin_cfg)
 	}
 
 	if (flags & ESP32_PIN_OUT_HIGH_FLAG) {
-		if (ESP32_PORT_IDX(pin_num) == 0) {
-			gpio_dev_t *const gpio_dev =
-				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
+		gpio_dev_t *const gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
+
+		if (pin_num < 32) {
 			gpio_dev->out_w1ts = BIT(pin_num);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 		} else {
-			gpio_dev_t *const gpio_dev =
-				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));
-			gpio_dev->out1_w1ts.data = BIT(pin_num - 32);
+			gpio_dev->out1_w1ts.val = BIT(pin_num - 32);
 #endif
 		}
 	}
 
 	if (flags & ESP32_PIN_OUT_LOW_FLAG) {
-		if (ESP32_PORT_IDX(pin_num) == 0) {
-			gpio_dev_t *const gpio_dev =
-				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
+		gpio_dev_t *const gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0));
+
+		if (pin_num < 32) {
 			gpio_dev->out_w1tc = BIT(pin_num);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
 		} else {
-			gpio_dev_t *const gpio_dev =
-				(gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio1));
-			gpio_dev->out1_w1tc.data = BIT(pin_num - 32);
+			gpio_dev->out1_w1tc.val = BIT(pin_num - 32);
 #endif
 		}
 	}

@@ -335,7 +335,7 @@ _swap_page_table_\@:
 	/* Since accessing A4-A11 may trigger window overflows so
 	 * we need to setup A0 and A1 correctly before putting
 	 * the function arguments for the next two callx4 into
-	 * A6, A10 and A11. So stach the "context handle" into
+	 * A6, A10 and A11. So stash the "context handle" into
 	 * ZSR_EPC, which is usable for now similar to ZSR_EPS.
 	 */
 	wsr.ZSR_EPC a1
@@ -472,9 +472,9 @@ _excint_skip_ps_save_to_thread:
 
 #if XCHAL_HAVE_THREADPTR && defined(CONFIG_USERSPACE)
 	/* Clear up the threadptr because it is used
-	 * to check if a thread is runnig on user mode. Since
+	 * to check if a thread is running on user mode. Since
 	 * we are in a interruption we don't want the system
-	 * thinking it is possbly running in user mode.
+	 * thinking it is possibly running in user mode.
 	 */
 	movi.n a0, 0
 	wur.THREADPTR a0

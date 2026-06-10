@@ -117,6 +117,45 @@ properties:
       SAR entry state index (0-31).
       Selects the SAR sequencer entry point for this AC state.
 
+  # --- PRB fields (programmable reference block) ---
+
+  prb-unlock:
+    type: int
+    default: 0
+    description: |
+      PRB unlock flag (0 or 1).
+      When 1, PRB Vref fields below take effect in this state.
+
+  prb-vref0-fw:
+    type: int
+    default: 0
+    description: |
+      PRB Vref0 firmware control flag (0 or 1).
+      When 0, the PRB output is determined by prb-vref0-tap below.
+      When 1, the PRB output is determined by the tap in the static config.
+
+  prb-vref0-tap:
+    type: int
+    default: 0
+    description: |
+      PRB Vref0 tap selector (0-15).
+      Selects the resistive divider tap for Vref0 in this state.
+
+  prb-vref1-fw:
+    type: int
+    default: 0
+    description: |
+      PRB Vref1 firmware control flag (0 or 1).
+      When 0, the PRB output is determined by prb-vref1-tap below.
+      When 1, the PRB output is determined by the tap in the static config.
+
+  prb-vref1-tap:
+    type: int
+    default: 0
+    description: |
+      PRB Vref1 tap selector (0-15).
+      Selects the resistive divider tap for Vref1 in this state.
+
   # --- CTB0 fields (op-amp / comparator block 0) ---
 
   ctb0-unlock:

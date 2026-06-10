@@ -375,6 +375,14 @@ When data is to be sent or received on any DLCI channel, the CMUX module
 will exit the idle state and wakes the modem up by sending flag characters
 until it receives a flag character from the modem.
 
+For modems that drive sleep and wake from a hardware line outside CMUX
+rather than via the in-band protocol, the ``cmux-no-powersave-handshake``
+property opts out of the handshake on both halves. On entry CMUX skips
+the PSC frame exchange and transitions directly to power save. On exit
+CMUX skips the flag-character exchange and transitions directly to
+connected once the pipe is re-opened. The next outgoing frame
+re-synchronises framing on its own.
+
 Some modems allow UART to be powered down only when the DTR (Data Terminal Ready)
 signal is de-asserted. In this case, a UART device with DTR support can be used
 with the CMUX module to control the DTR signal based on the power state of the UART.

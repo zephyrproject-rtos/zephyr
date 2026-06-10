@@ -55,6 +55,7 @@ struct sent_frame {
 	/** Type of SENT frame */
 	enum sent_frame_type type;
 
+	/** Frame payload. The valid member depends on @ref type. */
 	union {
 		/**
 		 * @brief Serial message

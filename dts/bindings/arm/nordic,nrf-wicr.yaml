@@ -1,0 +1,47 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic WICR (Wi-Fi Information Configuration Registers)
+
+compatible: "nordic,nrf-wicr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  firmware-lmacinitpc:
+    type: phandle
+    description: |
+      Phandle to boot address for LMAC processor.
+
+  firmware-umacinitpc:
+    type: phandle
+    description: |
+      Phandle to boot address for UMAC processor.
+
+  firmware-lmacrompatchaddr:
+    type: phandle
+    description: |
+      Phandle to address in MRAM for LMAC ROM patch.
+
+  firmware-umacrompatchaddr:
+    type: phandle
+    description: |
+      Phandle to address in MRAM for UMAC ROM patch.
+
+  ipcconfig-commandmbox:
+    type: phandle
+    description: |
+      Phandle to shared-memory region used as command mailbox.
+
+  ipcconfig-eventmbox:
+    type: phandle
+    description: |
+      Phandle to shared-memory region used as event mailbox.
+
+  ipcconfig-sparembox:
+    type: phandle
+    description: |
+      Phandle to shared-memory region used as spare mailbox.

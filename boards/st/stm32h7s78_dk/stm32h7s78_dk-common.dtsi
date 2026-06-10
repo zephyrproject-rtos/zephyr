@@ -124,8 +124,8 @@
 
 &pll {
 	div-m = <12>;
-	mul-n = <250>;
-	div-p = <2>;
+	mul-n = <300>;
+	div-p = <1>;
 	div-q = <2>;
 	div-r = <2>;
 	div-s = <2>;
@@ -144,9 +144,9 @@
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(250)>;
+	clock-frequency = <DT_FREQ_M(600)>;
 	dcpre = <1>;
-	hpre = <1>;
+	hpre = <2>;
 	ppre1 = <2>;
 	ppre2 = <2>;
 	ppre4 = <2>;
@@ -241,6 +241,8 @@
 st_cam_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	/*
 	 * Make sure FDCAN and i2c1 are not enabled at the same time
 	 * because they share the pb9 pin

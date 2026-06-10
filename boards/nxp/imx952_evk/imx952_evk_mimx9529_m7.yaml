@@ -1,0 +1,21 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: imx952_evk/mimx9529/m7
+name: NXP i.MX952 EVK
+type: mcu
+arch: arm
+ram: 256
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+testing:
+  binaries:
+    - flash.bin
+vendor: nxp

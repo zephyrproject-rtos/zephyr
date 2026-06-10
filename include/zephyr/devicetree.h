@@ -197,6 +197,57 @@
 #define DT_NODELABEL(label) DT_CAT(DT_N_NODELABEL_, label)
 
 /**
+ * @brief Get the C symbolic name of a node identifier by index
+ *
+ * Example devicetree fragment:
+ *
+ * @code{.dts}
+ *     n1: node-1 {
+ *             foo = <&n2 &n3>;
+ *     };
+ *
+ *     n2: n2_1: node-2 { ... };
+ *     n3: &n2:  node-3 { ... };
+ * @endcode
+ *
+ * Above, `foo` has type phandles and has two elements:
+ *
+ * - index 0 has phandle `&n2`, which is `node-2`'s phandle
+ * - index 1 has phandle `&n3`, which is `node-3`'s phandle
+ *
+ * Example usage:
+ *
+ * @code{.c}
+ *     #define N1 DT_NODELABEL(n1)
+ *
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 0), 0) // n2
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 0), 1) // n2_1
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 1), 0) // n2
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 1), 1) // n2_1
+ *     DT_NODELABEL_C_TOKEN_BY_IDX(DT_PHANDLE_BY_IDX(N1, foo, 1), 2) // n3
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @param idx index into @p node_id
+ * @return C symbolic name of the node for the given index
+ * @note The @p idx retrieves node labels in left-to-right order, as shown
+ *       in the example.
+ */
+#define DT_NODELABEL_C_TOKEN_BY_IDX(node_id, idx) \
+	DT_CAT5(DT_N_NODELABEL_, node_id, _IDX_, idx, _C_TOKEN)
+
+/**
+ * @brief Get the C symbolic name for a node identifier
+ *
+ * This is equivalent to DT_NODELABEL_C_TOKEN_BY_IDX(node_id, 0).
+ *
+ * @param node_id node identifier
+ * @return C symbolic name of the node
+ */
+#define DT_NODELABEL_C_TOKEN(node_id) \
+	DT_NODELABEL_C_TOKEN_BY_IDX(node_id, 0)
+
+/**
  * @brief Get a node identifier from /aliases
  *
  * This macro's argument is a property of the `/aliases` node. It
@@ -2862,7 +2913,7 @@
  *
  * @code{.dts}
  *     my-serial: serial@abcd1234 {
- *             interrupts = < 33 0 >, < 34 1 >;
+ *             interrupts = <33 0>, <34 1>;
  *     };
  * @endcode
  *
@@ -3073,6 +3124,29 @@
 #define DT_MULTI_LEVEL_IRQN_INTERNAL(node_id, idx)                                                 \
 	DT_IRQN_LVL_INTERNAL(node_id, idx, DT_IRQ_LEVEL(node_id))
 
+
+/* DT helper macro to encode a node's IRQN to level 1 according to the multi-level scheme */
+#define DT_IRQN_NAME_L1_INTERNAL(node_id, name) DT_IRQ_BY_NAME(node_id, name, irq)
+/* DT helper macro to encode a node's IRQN to level 2 according to the multi-level scheme */
+#define DT_IRQN_NAME_L2_INTERNAL(node_id, name)                                                    \
+	(IRQ_TO_L2(DT_IRQN_NAME_L1_INTERNAL(node_id, name)) |                                      \
+	 DT_IRQ(DT_IRQ_INTC_BY_NAME(node_id, name), irq))
+/* DT helper macro to encode a node's IRQN to level 3 according to the multi-level scheme */
+#define DT_IRQN_NAME_L3_INTERNAL(node_id, name)                                                    \
+	(IRQ_TO_L3(DT_IRQN_NAME_L1_INTERNAL(node_id, name)) |                                      \
+	 IRQ_TO_L2(DT_IRQ(DT_IRQ_INTC_BY_NAME(node_id, name), irq)) |                              \
+	 DT_IRQ(DT_IRQ_INTC(DT_IRQ_INTC_BY_NAME(node_id, name)), irq))
+/* DT helper macro for the macros above */
+#define DT_IRQN_NAME_LVL_INTERNAL(node_id, name, level)                                            \
+	 DT_CAT3(DT_IRQN_NAME_L, level, _INTERNAL)(node_id, name)
+
+/**
+ * DT helper macro to encode a node's interrupt number according to the Zephyr's multi-level scheme
+ * See doc/kernel/services/interrupts.rst for details
+ */
+#define DT_MULTI_LEVEL_IRQN_NAME_INTERNAL(node_id, name)                                           \
+	DT_IRQN_NAME_LVL_INTERNAL(node_id, name, DT_IRQ_LEVEL(node_id))
+
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3089,6 +3163,19 @@
 	COND_CODE_1(IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS),                                     \
 		    (DT_MULTI_LEVEL_IRQN_INTERNAL(node_id, idx)),                                  \
 		    (DT_IRQ_BY_IDX(node_id, idx, irq)))
+
+/**
+ * @brief Get the node's Zephyr interrupt number by name
+ * If @kconfig{CONFIG_MULTI_LEVEL_INTERRUPTS} is enabled, the interrupt number by name will be
+ * multi-level encoded
+ * @param node_id node identifier
+ * @param name lowercase-and-underscores interrupt specifier name
+ * @return the Zephyr interrupt number
+ */
+#define DT_IRQN_BY_NAME(node_id, name)                                                             \
+	COND_CODE_1(IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS),                                     \
+		    (DT_MULTI_LEVEL_IRQN_NAME_INTERNAL(node_id, name)),                            \
+		    (DT_IRQ_BY_NAME(node_id, name, irq)))
 
 /**
  * @brief Get a node's (only) irq number
@@ -4178,7 +4265,7 @@
  * @code{.dts}
  *     i2c@deadbeef {
  *             status = "okay";
- *             clock-frequency = < 100000 >;
+ *             clock-frequency = <100000>;
  *
  *             i2c_device: accelerometer@12 {
  *                     ...
@@ -5125,6 +5212,15 @@
  * @return the interrupt number for the node's idx-th interrupt
  */
 #define DT_INST_IRQN_BY_IDX(inst, idx) DT_IRQN_BY_IDX(DT_DRV_INST(inst), idx)
+
+/**
+ * @brief Get a `DT_DRV_COMPAT` irq number by name
+ * @param inst instance number
+ * @param name lowercase-and-underscores interrupt specifier name
+ * @return interrupt number at the specifier given by the index
+ */
+#define DT_INST_IRQN_BY_NAME(inst, name) \
+	DT_IRQN_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
  * @brief Get a `DT_DRV_COMPAT`'s bus node identifier

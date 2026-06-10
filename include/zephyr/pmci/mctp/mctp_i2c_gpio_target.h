@@ -29,6 +29,7 @@ struct mctp_binding_i2c_gpio_target {
 	uint8_t reg_addr;
 	bool rxtx;
 	uint8_t rx_idx;
+	uint8_t rx_exp_len;
 	struct mctp_pktbuf *rx_pkt;
 	struct k_sem *tx_lock;
 	struct k_sem *tx_complete;

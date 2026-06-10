@@ -272,7 +272,7 @@
 			clocks = <&pcc NUMAKER_CANFD0_MODULE
 				  NUMAKER_CLK_CLKSEL0_CANFD0SEL_HCLK
 				  NUMAKER_CLK_CLKDIV1_CANFD0(1)>;
-			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			bosch,mram-cfg = <0x0 12 10 6 0 3 3 3>;
 			status = "disabled";
 		};
 
@@ -286,7 +286,7 @@
 			clocks = <&pcc NUMAKER_CANFD1_MODULE
 				  NUMAKER_CLK_CLKSEL0_CANFD1SEL_HCLK
 				  NUMAKER_CLK_CLKDIV1_CANFD1(1)>;
-			bosch,mram-cfg = <0x0 12 10 3 3 3 3 3>;
+			bosch,mram-cfg = <0x0 12 10 6 0 3 3 3>;
 			status = "disabled";
 		};
 
@@ -398,6 +398,28 @@
 			interrupts = <51 0>;
 			resets = <&rst NUMAKER_SPI1_RST>;
 			clocks = <&pcc NUMAKER_SPI1_MODULE NUMAKER_CLK_CLKSEL2_SPI1SEL_HIRC 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uspi0: spi@400d0000 {
+			compatible = "nuvoton,numaker-usci-spi";
+			reg = <0x400d0000 0x1000>;
+			interrupts = <76 0>;
+			resets = <&rst NUMAKER_USCI0_RST>;
+			clocks = <&pcc NUMAKER_USCI0_MODULE 0 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uspi1: spi@400d1000 {
+			compatible = "nuvoton,numaker-usci-spi";
+			reg = <0x400d1000 0x1000>;
+			interrupts = <77 0>;
+			resets = <&rst NUMAKER_USCI1_RST>;
+			clocks = <&pcc NUMAKER_USCI1_MODULE 0 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";

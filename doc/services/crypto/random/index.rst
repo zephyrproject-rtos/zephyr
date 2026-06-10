@@ -170,20 +170,6 @@ Available generators:
 
     This option provides **no cryptographic security**. Use only for testing.
 
-CTR-DRBG Personalization
-------------------------
-
-:kconfig:option:`CONFIG_CS_CTR_DRBG_PERSONALIZATION`
- A personalization string used during CTR-DRBG initialization. This string
- is mixed with the entropy source during seeding to make the DRBG state
- as unique as possible.
-
- Consider customizing this value for your application to add additional
- uniqueness to the DRBG initialization.
-
-Helper Configuration Options
-============================
-
 Devicetree Configuration
 ************************
 

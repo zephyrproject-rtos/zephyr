@@ -621,6 +621,8 @@ static inline void enet_qos_mtl_config_init(enet_qos_t *base)
 static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qos_mac_data *data,
 					    uint32_t clk_rate)
 {
+	uint32_t mac_configuration;
+
 	/* Set MAC address */
 	base->MAC_ADDRESS0_HIGH =
 		ENET_QOS_REG_PREP(MAC_ADDRESS0_HIGH, ADDRHI,
@@ -645,17 +647,21 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qo
 					(clk_rate / USEC_PER_SEC) - 1);
 #endif
 
-	base->MAC_CONFIGURATION |=
+	mac_configuration = base->MAC_CONFIGURATION;
+	mac_configuration |=
 		/* For 10/100 Mbps operation */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, PS, 0b1) |
-		/* Full duplex mode, adjust duplex in phy callback if needed */
-		ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1) |
-		/* 100 Mbps mode, adjust link speed in phy callback if needed */
-		ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1) |
 		/* Strip CRC from Type packets before handing frames to the stack */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, CST, 0b1) |
 		/* Don't talk unless no one else is talking */
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, ECRSFD, 0b1);
+	mac_configuration &= ~(
+		/* Half duplex mode, adjust duplex in phy callback if needed */
+		ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1) |
+		/* 10 Mbps mode, adjust link speed in phy callback if needed */
+		ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1)
+	);
+	base->MAC_CONFIGURATION = mac_configuration;
 
 #ifdef ENET_MAC_RXQ_CTRL_RXQ0EN
 	/* Enable the MAC RX channel 0 */

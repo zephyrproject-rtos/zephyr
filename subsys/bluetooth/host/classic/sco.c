@@ -398,10 +398,7 @@ void bt_sco_cleanup_acl(struct bt_conn *sco)
 {
 	LOG_DBG("%p", sco);
 
-	if (sco->sco.acl) {
-		bt_conn_unref(sco->sco.acl);
-		sco->sco.acl = NULL;
-	}
+	bt_conn_drop(&sco->sco.acl);
 }
 
 static int sco_setup_sync_conn(struct bt_conn *sco_conn)

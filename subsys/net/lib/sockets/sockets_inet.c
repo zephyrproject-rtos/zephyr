@@ -2115,6 +2115,21 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
+		case ZSOCK_IP_DONTFRAG:
+			if (IS_ENABLED(CONFIG_NET_IPV4)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_DONT_FRAGMENT,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case ZSOCK_IP_LOCAL_PORT_RANGE:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)) {
 				ret = net_context_get_option(ctx,
@@ -2150,6 +2165,21 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case ZSOCK_IPV6_MTU:
 			if (IS_ENABLED(CONFIG_NET_IPV6)) {
 				ret = net_context_get_option(ctx, NET_OPT_MTU,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case ZSOCK_IPV6_DONTFRAG:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_DONT_FRAGMENT,
 							     optval, optlen);
 				if (ret < 0) {
 					errno  = -ret;
@@ -2765,6 +2795,21 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 
+		case ZSOCK_IP_DONTFRAG:
+			if (IS_ENABLED(CONFIG_NET_IPV4)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_DONT_FRAGMENT,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case ZSOCK_IP_ADD_MEMBERSHIP:
 			if (IS_ENABLED(CONFIG_NET_IPV4)) {
 				return ipv4_multicast_group(ctx, optval,
@@ -2816,6 +2861,21 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case ZSOCK_IPV6_MTU:
 			if (IS_ENABLED(CONFIG_NET_IPV6)) {
 				ret = net_context_set_option(ctx, NET_OPT_MTU,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case ZSOCK_IPV6_DONTFRAG:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_DONT_FRAGMENT,
 							     optval, optlen);
 				if (ret < 0) {
 					errno  = -ret;

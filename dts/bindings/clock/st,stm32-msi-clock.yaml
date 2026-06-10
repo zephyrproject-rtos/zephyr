@@ -13,20 +13,21 @@ properties:
     type: int
     default: 6
     description: |
-      MSI clock ranges
-    enum:
-      - 0 # range 0 around 100 kHz
-      - 1 # range 1 around 200 kHz
-      - 2 # range 2 around 400 kHz
-      - 3 # range 3 around 800 kHz
-      - 4 # range 4 around 1 MHz
-      - 5 # range 5 around 2 MHz
-      - 6 # range 6 around 4 MHz (reset value)
-      - 7 # range 7 around 8 MHz
-      - 8 # range 8 around 16 MHz
-      - 9 # range 9 around 24 MHz
-      - 10 # range 10 around 32 MHz
-      - 11 # range 11 around 48 MHz
+      MSI clock ranges:
+      0: around 100 kHz
+      1: around 200 kHz
+      2: around 400 kHz
+      3: around 800 kHz
+      4: around 1 MHz
+      5: around 2 MHz
+      6: around 4 MHz (reset value)
+      7: around 8 MHz
+      8: around 16 MHz
+      9: around 24 MHz
+      10: around 32 MHz
+      11: around 48 MHz
+    min: 0
+    max: 11
 
   msi-pll-mode:
     type: boolean

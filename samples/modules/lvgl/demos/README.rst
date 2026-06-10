@@ -35,14 +35,8 @@ Note that other input devices types are not demonstrated in these demos, namely 
 Building and Running
 ********************
 
-Example building for :zephyr:board:`mimxrt1060_evk`:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/modules/lvgl/demos
-   :board: mimxrt1060_evk
-   :goals: build flash
-
-These demos can be built for simulated display environment as follows:
+These demos can be built for simulated display environment as follows. Replace ``native_sim`` with
+your board name to build for a real board.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/modules/lvgl/demos

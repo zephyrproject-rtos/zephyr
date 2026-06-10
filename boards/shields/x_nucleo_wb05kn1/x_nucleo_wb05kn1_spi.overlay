@@ -26,6 +26,7 @@
 		spi-hold-cs;
 		spi-max-frequency = <DT_FREQ_M(8)>; /* the maximum supported SPI speed */
 		reset-assert-duration-ms = <6>;
+		reset-event;
 		status = "okay";
 	};
 };

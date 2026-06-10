@@ -39,4 +39,25 @@ if(NOT CONFIG_PICOLIBC_USE_MODULE)
     zephyr_link_libraries(-DPICOLIBC_INTEGER_PRINTF_SCANF)
   endif()
 
+  # When not using GCC, specs files are not available to translate the
+  # -DPICOLIBC_*_PRINTF_SCANF flags into --defsym directives. Pass the
+  # --defsym flags directly so the linker resolves vfprintf/vfscanf to
+  # the correct picolibc variant (minimal, integer, long-long, etc.).
+  get_target_property(specs compiler specs)
+  if(NOT specs)
+    if(CONFIG_PICOLIBC_IO_FLOAT)
+      zephyr_link_libraries(PROPERTY defsym vfprintf=__d_vfprintf)
+      zephyr_link_libraries(PROPERTY defsym vfscanf=__d_vfscanf)
+    elseif(CONFIG_PICOLIBC_IO_MINIMAL)
+      zephyr_link_libraries(PROPERTY defsym vfprintf=__m_vfprintf)
+      zephyr_link_libraries(PROPERTY defsym vfscanf=__m_vfscanf)
+    elseif(CONFIG_PICOLIBC_IO_LONG_LONG)
+      zephyr_link_libraries(PROPERTY defsym vfprintf=__l_vfprintf)
+      zephyr_link_libraries(PROPERTY defsym vfscanf=__l_vfscanf)
+    else()
+      zephyr_link_libraries(PROPERTY defsym vfprintf=__i_vfprintf)
+      zephyr_link_libraries(PROPERTY defsym vfscanf=__i_vfscanf)
+    endif()
+  endif()
+
 endif()

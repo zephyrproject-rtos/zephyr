@@ -1,6 +1,6 @@
 /* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors */
-/*
- * Copyright (c) 2026 AMD
+/**
+ * SPDX-FileCopyrightText: Copyright (c) 2026 AMD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -117,6 +117,31 @@
 			compatible = "amd,acp-sdw-dai";
 			status = "okay";
 			dai-index = <69>;
+		};
+
+		acp_tdm_dma: acp-tdm-dma {
+			compatible = "amd,acp-tdm-dma";
+			dma-channels = <6>;
+			#dma-cells = <3>;
+			status = "okay";
+		};
+
+		tdm_dai0: tdm-dai0 {
+			compatible = "amd,tdm-dai";
+			status = "okay";
+			dai-index = <0>;
+		};
+
+		tdm_dai1: tdm-dai1 {
+			compatible = "amd,tdm-dai";
+			status = "okay";
+			dai-index = <1>;
+		};
+
+		tdm_dai2: tdm-dai2 {
+			compatible = "amd,tdm-dai";
+			status = "okay";
+			dai-index = <2>;
 		};
 	};
 };

@@ -967,6 +967,12 @@ struct adc_decoder_api {
 };
 
 /**
+ * @def_driverbackendgroup{ADC,adc_interface}
+ * @ingroup adc_interface
+ * @{
+ */
+
+/**
  * @brief Type definition of ADC API function for configuring a channel.
  * See adc_channel_setup() for argument descriptions.
  */
@@ -1005,22 +1011,41 @@ typedef int (*adc_api_read_async)(const struct device *dev,
 				  struct k_poll_signal *async);
 
 /**
- * @brief ADC driver API
- *
- * This is the mandatory API any ADC driver needs to expose.
+ * @driver_ops{ADC}
  */
 __subsystem struct adc_driver_api {
+	/** @driver_ops_mandatory @copybrief adc_channel_setup */
 	adc_api_channel_setup channel_setup;
+	/** @driver_ops_mandatory @copybrief adc_read */
 	adc_api_read          read;
-#ifdef CONFIG_ADC_ASYNC
+#if defined(CONFIG_ADC_ASYNC) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_mandatory @copybrief adc_read_async
+	 * @kconfig_dep{CONFIG_ADC_ASYNC}
+	 */
 	adc_api_read_async    read_async;
 #endif
-#ifdef CONFIG_ADC_STREAM
+#if defined(CONFIG_ADC_STREAM) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_mandatory Submit a stream request.
+	 * @kconfig_dep{CONFIG_ADC_STREAM}
+	 */
 	adc_api_submit    submit;
+	/**
+	 * @driver_ops_optional @copybrief adc_get_decoder
+	 * @kconfig_dep{CONFIG_ADC_STREAM}
+	 */
 	adc_api_get_decoder get_decoder;
 #endif
-	uint16_t ref_internal;	/* mV */
+	/**
+	 * @driver_ops_mandatory Internal reference voltage, in millivolts.
+	 *
+	 * Set to 0 if internal reference is not supported.
+	 */
+	uint16_t ref_internal;
 };
+
+/** @} */
 
 /**
  * @brief Configure an ADC channel.

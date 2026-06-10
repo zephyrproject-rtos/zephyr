@@ -8,6 +8,7 @@ menuconfig HTS221
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_HTS221),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_HTS221),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_HTS221),drdy-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_HTS221
 	help

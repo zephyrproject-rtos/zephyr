@@ -254,7 +254,7 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 		}
 		ret = usbd_ep_enqueue(c_data, ctx->usb_rx_buf);
 		if (ret) {
-			net_buf_unref(ctx->usb_rx_buf);
+			net_buf_drop(&ctx->usb_rx_buf);
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 			LOG_ERR("Failed to enqueue EP OUT: %d", ret);
 			return 0;
@@ -334,7 +334,7 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 		ret = usbd_ep_enqueue(c_data, ctx->usb_rx_buf);
 		if (ret) {
 			LOG_ERR("Failed to enqueue EP OUT: %d", ret);
-			net_buf_unref(ctx->usb_rx_buf);
+			net_buf_drop(&ctx->usb_rx_buf);
 			k_work_schedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
@@ -390,7 +390,7 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	if (ret) {
 		ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
 		LOG_ERR("Failed to enqueue EP OUT: %d", ret);
-		net_buf_unref(ctx->usb_rx_buf);
+		net_buf_drop(&ctx->usb_rx_buf);
 		return;
 	}
 	ctx->state = USB_EC_HOST_CMD_STATE_READY_TO_RX;

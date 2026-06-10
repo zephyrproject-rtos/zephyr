@@ -11,29 +11,12 @@
 
 / {
 	compatible = "alif,ensemble-e8-dk-ae612fa0e5597ls0-rtss-he";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	chosen {
 		zephyr,flash = &mram;
 		zephyr,sram = &dtcm;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
-		zephyr,code-partition = &slot0_partition;
-	};
-};
-
-&mram {
-	partitions {
-		compatible = "fixed-partitions";
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges;
-
-		slot0_partition: partition@0 {
-			label = "image-0";
-			reg = <0x0 DT_SIZE_K(5632)>;
-		};
 	};
 };
 

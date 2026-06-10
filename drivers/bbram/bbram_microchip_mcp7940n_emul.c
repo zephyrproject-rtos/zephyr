@@ -90,7 +90,7 @@ static int mcp7940n_emul_transfer_i2c(const struct emul *target, struct i2c_msg 
 		if (regn >= MICROCHIP_MCP7940N_SRAM_OFFSET &&
 		    regn + msgs->len - 1 <=
 			    MICROCHIP_MCP7940N_SRAM_OFFSET + MICROCHIP_MCP7940N_SRAM_SIZE) {
-			for (int i = 0; i < msgs->len; ++i) {
+			for (int i = 0; i < msgs->len - 1; ++i) {
 				data->data[regn + i - MICROCHIP_MCP7940N_SRAM_OFFSET] =
 					msgs->buf[1 + i];
 			}

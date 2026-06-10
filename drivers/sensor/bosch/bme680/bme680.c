@@ -1,9 +1,3 @@
-/* bme680.c - Driver for Bosch Sensortec's BME680 temperature, pressure,
- * humidity and gas sensor
- *
- * https://www.bosch-sensortec.com/bst/products/all_products/bme680
- */
-
 /*
  * Copyright (c) 2018 Bosch Sensortec GmbH
  * Copyright (c) 2022, Leonard Pollak
@@ -23,14 +17,6 @@
 #include "bme680.h"
 
 LOG_MODULE_REGISTER(bme680, CONFIG_SENSOR_LOG_LEVEL);
-
-struct bme_data_regs {
-	uint8_t pressure[3];
-	uint8_t temperature[3];
-	uint8_t humidity[2];
-	uint8_t padding[3];
-	uint8_t gas[2];
-} __packed;
 
 #if BME680_BUS_SPI
 static inline bool bme680_is_on_spi(const struct device *dev)
@@ -215,19 +201,18 @@ static uint8_t bme680_calc_gas_wait(uint16_t dur)
 	return durval;
 }
 
-static int bme680_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int bme680_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	struct bme680_data *data = dev->data;
-	struct bme_data_regs data_regs;
-	uint8_t gas_range;
-	uint32_t adc_temp, adc_press;
-	uint16_t adc_hum, adc_gas_res;
+	struct bme_data_regs  data_regs;
 	uint8_t status;
 	int cnt = 0;
 	int ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+
+	if (chan != SENSOR_CHAN_ALL) {
+		return -ENOTSUP;
+	}
 
 	/* Trigger the measurement */
 	ret = bme680_reg_write(dev, BME680_REG_CTRL_MEAS, BME680_CTRL_MEAS_VAL);
@@ -251,23 +236,48 @@ static int bme680_sample_fetch(const struct device *dev,
 	} while (!(status & BME680_MSK_NEW_DATA));
 	LOG_DBG("New data after %d ms", cnt);
 
-	ret = bme680_reg_read(dev, BME680_REG_FIELD0, &data_regs, sizeof(data_regs));
+	ret = bme680_reg_read(dev, BME680_REG_FIELD0, (uint8_t *)&data_regs,
+			      sizeof(data_regs));
 	if (ret < 0) {
 		return ret;
 	}
 
-	adc_press = sys_get_be24(data_regs.pressure) >> 4;
-	adc_temp = sys_get_be24(data_regs.temperature) >> 4;
-	adc_hum = sys_get_be16(data_regs.humidity);
-	adc_gas_res = sys_get_be16(data_regs.gas) >> 6;
-	data->heatr_stab = data_regs.gas[1] & BME680_MSK_HEATR_STAB;
-	gas_range = data_regs.gas[1] & BME680_MSK_GAS_RANGE;
+	bme680_compensate_raw(dev, &data_regs, NULL);
+
+	return 0;
+}
+
+void bme680_compensate_raw(const struct device *dev,
+			   const struct bme_data_regs  *regs,
+			   struct bme680_reading *reading)
+{
+	struct bme680_data *data = dev->data;
+	uint32_t adc_temp, adc_press;
+	uint16_t adc_hum, adc_gas_res;
+	uint8_t gas_range;
+
+	adc_press   = sys_get_be24(regs->pressure) >> 4;
+	adc_temp    = sys_get_be24(regs->temperature) >> 4;
+	adc_hum     = sys_get_be16(regs->humidity);
+	adc_gas_res = sys_get_be16(regs->gas) >> 6;
+	data->heatr_stab = regs->gas[1] & BME680_MSK_HEATR_STAB;
+	gas_range   = regs->gas[1] & BME680_MSK_GAS_RANGE;
+
+	LOG_DBG("Raw ADC: temp=%u press=%u hum=%u gas=%u range=%u",
+		adc_temp, adc_press, adc_hum, adc_gas_res, gas_range);
 
 	bme680_calc_temp(data, adc_temp);
 	bme680_calc_press(data, adc_press);
 	bme680_calc_humidity(data, adc_hum);
 	bme680_calc_gas_resistance(data, gas_range, adc_gas_res);
-	return 0;
+
+	if (reading != NULL) {
+
+		reading->comp_temp     = data->calc_temp;
+		reading->comp_press    = data->calc_press;
+		reading->comp_humidity = data->calc_humidity;
+		reading->comp_gas      = data->calc_gas_resistance;
+	}
 }
 
 static int bme680_channel_get(const struct device *dev,
@@ -469,6 +479,9 @@ static int bme680_pm_control(const struct device *dev, enum pm_device_action act
 
 static int bme680_init(const struct device *dev)
 {
+#if BME680_BUS_SPI || defined(CONFIG_SENSOR_ASYNC_API)
+	struct bme680_data *data = dev->data;
+#endif
 	int err;
 
 	err = bme680_bus_check(dev);
@@ -477,35 +490,73 @@ static int bme680_init(const struct device *dev)
 		return err;
 	}
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+	data->dev = dev;
+	mpsc_init(&data->io_q);
+#endif
+
 	return pm_device_driver_init(dev, bme680_pm_control);
 }
 
 static DEVICE_API(sensor, bme680_api_funcs) = {
 	.sample_fetch = bme680_sample_fetch,
 	.channel_get = bme680_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.submit = bme680_submit,
+	.get_decoder = bme680_get_decoder,
+#endif
 };
 
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+/* Per-instance SPI iodev + RTIO context. */
+#define BME680_RTIO_DEFINE_SPI(inst)					       \
+	SPI_DT_IODEV_DEFINE(bme680_iodev_##inst, DT_DRV_INST(inst),	       \
+			    BME680_SPI_OPERATION);			       \
+	RTIO_DEFINE(bme680_rtio_ctx_##inst, 8, 8);
+
+/* Per-instance I2C iodev + RTIO context. */
+#define BME680_RTIO_DEFINE_I2C(inst)					       \
+	I2C_DT_IODEV_DEFINE(bme680_iodev_##inst, DT_DRV_INST(inst));	       \
+	RTIO_DEFINE(bme680_rtio_ctx_##inst, 8, 8);
+
+#define BME680_RTIO_DEFINE(inst)					       \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi),				       \
+		    (BME680_RTIO_DEFINE_SPI(inst)),			       \
+		    (BME680_RTIO_DEFINE_I2C(inst)))
+
+#define BME680_ASYNC_CONFIG(inst)					       \
+	.r	   = &bme680_rtio_ctx_##inst,				       \
+	.bus_iodev = &bme680_iodev_##inst,				       \
+	.is_spi	   = DT_INST_ON_BUS(inst, spi),
+#else
+#define BME680_RTIO_DEFINE(inst)
+#define BME680_ASYNC_CONFIG(inst)
+#endif /* CONFIG_SENSOR_ASYNC_API */
+
 /* Initializes a struct bme680_config for an instance on a SPI bus. */
-#define BME680_CONFIG_SPI(inst)				\
-	{						\
-		.bus.spi = SPI_DT_SPEC_INST_GET(	\
-			inst, BME680_SPI_OPERATION),	\
-		.bus_io = &bme680_bus_io_spi,		\
+#define BME680_CONFIG_SPI(inst)						       \
+	{								       \
+		.bus.spi = SPI_DT_SPEC_INST_GET(			       \
+			inst, BME680_SPI_OPERATION),			       \
+		.bus_io = &bme680_bus_io_spi,				       \
+		BME680_ASYNC_CONFIG(inst)        \
 	}
 
 /* Initializes a struct bme680_config for an instance on an I2C bus. */
-#define BME680_CONFIG_I2C(inst)			       \
-	{					       \
-		.bus.i2c = I2C_DT_SPEC_INST_GET(inst), \
-		.bus_io = &bme680_bus_io_i2c,	       \
+#define BME680_CONFIG_I2C(inst)						       \
+	{								       \
+		.bus.i2c = I2C_DT_SPEC_INST_GET(inst),			       \
+		.bus_io = &bme680_bus_io_i2c,				       \
+		BME680_ASYNC_CONFIG(inst)        \
 	}
-
 /*
  * Main instantiation macro, which selects the correct bus-specific
  * instantiation macros for the instance.
  */
 #define BME680_DEFINE(inst)						\
 	static struct bme680_data bme680_data_##inst;			\
+	BME680_RTIO_DEFINE(inst)                    \
 	static const struct bme680_config bme680_config_##inst =	\
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
 			    (BME680_CONFIG_SPI(inst)),			\

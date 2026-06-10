@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(dmic_sample);
 #define BLOCK_COUNT      4
 K_MEM_SLAB_DEFINE_STATIC(mem_slab, MAX_BLOCK_SIZE, BLOCK_COUNT, 4);
 
+static uint8_t capture_storage[BLOCK_COUNT * MAX_BLOCK_SIZE * 2];
+
 static int do_pdm_transfer(const struct device *dmic_dev,
 			   struct dmic_cfg *cfg,
 			   size_t block_count)
@@ -62,6 +64,11 @@ static int do_pdm_transfer(const struct device *dmic_dev,
 
 		LOG_INF("%d - got buffer %p of %u bytes", i, buffer, size);
 
+		if (size <= sizeof(capture_storage)) {
+			memcpy(capture_storage + i * size, buffer, size);
+		} else {
+			LOG_WRN_ONCE("capture_storage overflow");
+		}
 		k_mem_slab_free(&mem_slab, buffer);
 	}
 

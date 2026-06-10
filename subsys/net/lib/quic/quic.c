@@ -358,7 +358,27 @@ static int quic_send_stream_data_blocked(struct quic_endpoint *ep,
 static void quic_pto_work_handler(struct k_work *work);
 static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 				       enum quic_secret_level level,
-				       size_t payload_len);
+				       size_t payload_len,
+				       size_t target_datagram_len,
+				       bool dont_fragment,
+				       bool dplpmtud_probe);
+static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
+					  enum quic_secret_level level,
+					  size_t payload_len,
+					  size_t target_datagram_len,
+					  bool dont_fragment,
+					  bool dplpmtud_probe,
+					  uint64_t *sent_pn_out);
+static int quic_send_packet_sg(struct quic_endpoint *ep,
+			       enum quic_secret_level level,
+			       const uint8_t *hdr, size_t hdr_len,
+			       const uint8_t *data, size_t data_len,
+			       uint64_t *sent_pn_out);
+static int quic_send_packet_with_pn(struct quic_endpoint *ep,
+				    enum quic_secret_level level,
+				    const uint8_t *payload,
+				    size_t payload_len,
+				    uint64_t *sent_pn_out);
 static int quic_send_packet(struct quic_endpoint *ep,
 			    enum quic_secret_level level,
 			    const uint8_t *payload,
@@ -367,6 +387,21 @@ static int quic_send_stop_sending(struct quic_endpoint *ep,
 				  uint64_t stream_id,
 				  uint64_t error_code);
 int quic_flush_deferred_crypto(struct quic_endpoint *ep);
+ZTESTABLE_STATIC void quic_dplpmtud_refresh_state(struct quic_endpoint *ep);
+ZTESTABLE_STATIC void quic_dplpmtud_on_probe_acked(struct quic_endpoint *ep,
+						   uint16_t probe_size);
+ZTESTABLE_STATIC void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep,
+						  uint16_t probe_size);
+static uint16_t quic_get_local_max_udp_payload_size(struct quic_endpoint *ep);
+static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep);
+static void quic_dplpmtud_update_limit_locked(struct quic_endpoint *ep);
+static uint16_t quic_dplpmtud_next_probe_size_locked(struct quic_endpoint *ep);
+static void quic_dplpmtud_begin_probe_locked(struct quic_endpoint *ep,
+					     uint16_t probe_size);
+static void quic_dplpmtud_on_probe_acked_locked(struct quic_endpoint *ep,
+						uint16_t probe_size);
+static void quic_dplpmtud_on_probe_lost_locked(struct quic_endpoint *ep,
+					       uint16_t probe_size);
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 static struct net_stats_quic *quic_stats_get_for_ep(struct quic_endpoint *ep)
@@ -3513,6 +3548,8 @@ ZTESTABLE_STATIC void quic_recovery_init(struct quic_endpoint *ep)
 		for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
 			ep->recovery.sent_pkts[pn_space][i].in_flight = false;
 			ep->recovery.sent_pkts[pn_space][i].retransmit_pending = false;
+			ep->recovery.sent_pkts[pn_space][i].dplpmtud_probe = false;
+			ep->recovery.sent_pkts[pn_space][i].dplpmtud_probe_size = 0U;
 			ep->recovery.sent_pkts[pn_space][i].has_stream_frame = false;
 		}
 	}
@@ -3527,7 +3564,9 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 						   enum quic_secret_level level,
 						   uint64_t pkt_num,
 						   size_t sent_bytes,
-						   bool ack_eliciting)
+						   bool ack_eliciting,
+						   bool dplpmtud_probe,
+						   uint16_t dplpmtud_probe_size)
 {
 	int pn_space = level_to_pn_space(level);
 	uint16_t idx;
@@ -3555,6 +3594,8 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	info->ack_eliciting = ack_eliciting;
 	info->in_flight = ack_eliciting; /* Only ack-eliciting packets count */
 	info->retransmit_pending = false;
+	info->dplpmtud_probe = dplpmtud_probe;
+	info->dplpmtud_probe_size = dplpmtud_probe_size;
 	info->has_stream_frame  = false;
 
 	/* Update bytes in flight */
@@ -3575,37 +3616,178 @@ ZTESTABLE_STATIC void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
 	k_mutex_unlock(&ep->recovery.lock);
 }
 
-static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
-					 uint64_t stream_id,
-					 uint64_t acked_end)
+static uint64_t quic_stream_tx_ack_seg_end(const struct quic_stream_tx_ack_segment *seg)
 {
-	struct quic_stream *stream = quic_find_stream_by_id(ep, stream_id);
+	return seg->offset + seg->len;
+}
+
+static bool quic_stream_tx_ack_mergeable(uint64_t start_a, uint64_t end_a,
+					 uint64_t start_b, uint64_t end_b)
+{
+	return start_a <= end_b && start_b <= end_a;
+}
+
+static void quic_stream_tx_ack_merge_into(struct quic_stream_tx_ack_segment *seg,
+					  uint64_t start, uint64_t end)
+{
+	uint64_t merged_start = MIN(seg->offset, start);
+	uint64_t merged_end = MAX(quic_stream_tx_ack_seg_end(seg), end);
+
+	seg->offset = merged_start;
+	seg->len = (uint32_t)(merged_end - merged_start);
+}
+
+static void quic_stream_tx_ack_remove(struct quic_stream *stream, int index)
+{
+	stream->acked_ooo[index] = stream->acked_ooo[stream->acked_ooo_count - 1];
+	stream->acked_ooo_count--;
+}
+
+static void quic_stream_tx_ack_compact(struct quic_stream *stream)
+{
+	bool progress = true;
+
+	while (progress) {
+		progress = false;
+
+		for (int i = 0; i < stream->acked_ooo_count; i++) {
+			uint64_t i_end = quic_stream_tx_ack_seg_end(&stream->acked_ooo[i]);
+
+			for (int j = i + 1; j < stream->acked_ooo_count; j++) {
+				struct quic_stream_tx_ack_segment *other =
+					&stream->acked_ooo[j];
+				uint64_t j_end = quic_stream_tx_ack_seg_end(other);
+
+				if (!quic_stream_tx_ack_mergeable(stream->acked_ooo[i].offset,
+								  i_end, other->offset, j_end)) {
+					continue;
+				}
+
+				quic_stream_tx_ack_merge_into(&stream->acked_ooo[i],
+							      other->offset, j_end);
+				quic_stream_tx_ack_remove(stream, j);
+				progress = true;
+				break;
+			}
+
+			if (progress) {
+				break;
+			}
+		}
+	}
+}
+
+static bool quic_stream_tx_ack_try_merge(struct quic_stream *stream,
+					 uint64_t start, uint64_t end)
+{
+	for (int i = 0; i < stream->acked_ooo_count; i++) {
+		struct quic_stream_tx_ack_segment *seg = &stream->acked_ooo[i];
+		uint64_t seg_end = quic_stream_tx_ack_seg_end(seg);
+
+		if (start >= seg->offset && end <= seg_end) {
+			return true;
+		}
+
+		if (quic_stream_tx_ack_mergeable(seg->offset, seg_end, start, end)) {
+			quic_stream_tx_ack_merge_into(seg, start, end);
+			quic_stream_tx_ack_compact(stream);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool quic_stream_tx_ack_store(struct quic_stream *stream,
+				     uint64_t start, uint64_t end)
+{
+	if (quic_stream_tx_ack_try_merge(stream, start, end)) {
+		return true;
+	}
+
+	quic_stream_tx_ack_compact(stream);
+
+	if (quic_stream_tx_ack_try_merge(stream, start, end)) {
+		return true;
+	}
+
+	if (stream->acked_ooo_count >= ARRAY_SIZE(stream->acked_ooo)) {
+		return false;
+	}
+
+	stream->acked_ooo[stream->acked_ooo_count].offset = start;
+	stream->acked_ooo[stream->acked_ooo_count].len = (uint32_t)(end - start);
+	stream->acked_ooo_count++;
+
+	quic_stream_tx_ack_compact(stream);
+
+	return true;
+}
+
+ZTESTABLE_STATIC void quic_stream_advance_tx_acked_for_stream(struct quic_stream *stream,
+							      uint64_t acked_start,
+							      uint64_t acked_end)
+{
 	struct quic_stream_tx_buffer *tx;
-	uint64_t new_base;
-	size_t advance;
+	bool progress = true;
+	size_t advance = 0U;
 
 	if (stream == NULL) {
 		return;
 	}
 
-	/* Only advance if this ACK extends the contiguous frontier.
-	 * Out-of-order ACKs (acked_end <= bytes_acked) are ignored;
-	 * the data they cover stays in the buffer until the gap is filled.
-	 */
-	if (acked_end <= stream->bytes_acked) {
-		return;
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+
+	if (acked_end <= acked_start) {
+		goto unlock;
 	}
 
-	stream->bytes_acked = acked_end;
+	if (acked_end <= stream->bytes_acked) {
+		goto unlock;
+	}
+
+	if (acked_start > stream->bytes_acked) {
+		if (!quic_stream_tx_ack_store(stream, acked_start, acked_end)) {
+			NET_WARN("[ST:%p/%d] TX ACK OOO queue full for stream %" PRIu64
+				 " (offset=%" PRIu64 ", len=%" PRIu64 ")",
+				 stream, quic_get_by_stream(stream), stream->id,
+				 acked_start, acked_end - acked_start);
+		}
+	} else {
+		stream->bytes_acked = MAX(stream->bytes_acked, acked_end);
+	}
+
+	while (progress && stream->acked_ooo_count > 0U) {
+		progress = false;
+
+		for (int i = 0; i < stream->acked_ooo_count; i++) {
+			struct quic_stream_tx_ack_segment *seg = &stream->acked_ooo[i];
+			uint64_t seg_end = quic_stream_tx_ack_seg_end(seg);
+
+			if (seg_end <= stream->bytes_acked) {
+				quic_stream_tx_ack_remove(stream, i);
+				progress = true;
+				break;
+			}
+
+			if (seg->offset > stream->bytes_acked) {
+				continue;
+			}
+
+			stream->bytes_acked = seg_end;
+			quic_stream_tx_ack_remove(stream, i);
+			progress = true;
+			break;
+		}
+	}
 
 	tx = &stream->tx_buf;
-	new_base = stream->bytes_acked;
 
-	if (new_base <= tx->base_offset) {
-		return; /* nothing new to release */
+	if (stream->bytes_acked <= tx->base_offset) {
+		goto unlock;
 	}
 
-	advance = (size_t)(new_base - tx->base_offset);
+	advance = (size_t)(stream->bytes_acked - tx->base_offset);
 	if (advance > tx->len) {
 		advance = tx->len; /* clamp, shouldn't happen */
 	}
@@ -3614,51 +3796,155 @@ static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
 	tx->len -= advance;
 	tx->base_offset += advance;
 
-	/* Signal that the stream is now writable (TX buffer has space) */
-	k_poll_signal_raise(&stream->send.signal, 0);
+unlock:
+	k_mutex_unlock(&stream->tx_lock);
+
+	if (advance > 0U) {
+		/* Signal that the stream is now writable (TX buffer has space) */
+		k_poll_signal_raise(&stream->send.signal, 0);
+	}
+}
+
+static void quic_stream_advance_tx_acked(struct quic_endpoint *ep,
+					 uint64_t stream_id,
+					 uint64_t acked_start,
+					 uint64_t acked_end)
+{
+	struct quic_stream *stream = quic_find_stream_by_id(ep, stream_id);
+
+	quic_stream_advance_tx_acked_for_stream(stream, acked_start, acked_end);
 }
 
 /*
  * Scatter-gather variant of quic_send_packet().
  * Accepts a small frame header and a separate data buffer,
- * assembling them into ep->crypto.tx_buffer internally.
+ * assembling them into ep->crypto.tx_buffer under ep->send_lock.
  * Avoids requiring a large frame[] on the caller's stack.
  */
 static int quic_send_packet_sg(struct quic_endpoint *ep,
 			       enum quic_secret_level level,
 			       const uint8_t *hdr, size_t hdr_len,
-			       const uint8_t *data, size_t data_len)
+			       const uint8_t *data, size_t data_len,
+			       uint64_t *sent_pn_out)
 {
 	size_t plaintext_len = hdr_len + data_len;
+	int ret;
 
 	if (plaintext_len > sizeof(ep->crypto.tx_buffer)) {
 		return -ENOBUFS;
 	}
 
-	/* Assemble plaintext directly into the encryption buffer.
-	 * This is safe: nothing else touches tx_buffer at this point.
-	 */
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
+
 	memcpy(ep->crypto.tx_buffer, hdr, hdr_len);
 	if (data_len > 0) {
 		memcpy(ep->crypto.tx_buffer + hdr_len, data, data_len);
 	}
 
-	/* Delegate to the internal _from_txbuf variant that skips the
-	 * redundant payload copy inside quic_send_packet().
-	 */
-	return quic_send_packet_from_txbuf(ep, level, plaintext_len);
+	ret = quic_send_packet_from_txbuf_ex(ep, level, plaintext_len, 0U, false, false,
+					     sent_pn_out);
+
+	k_mutex_unlock(&ep->send_lock);
+
+	return ret;
 }
 
-static void quic_annotate_last_sent_stream(struct quic_endpoint *ep,
-					   enum quic_secret_level level,
-					   uint64_t stream_id,
-					   uint64_t stream_offset,
-					   uint16_t stream_data_len,
-					   bool stream_fin)
+static int quic_send_dplpmtud_probe(struct quic_endpoint *ep, uint16_t probe_size)
+{
+	int ret;
+
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
+	ep->crypto.tx_buffer[0] = QUIC_FRAME_TYPE_PING;
+	ret = quic_send_packet_from_txbuf(ep, QUIC_SECRET_LEVEL_APPLICATION, 1,
+					  probe_size, true, true);
+	k_mutex_unlock(&ep->send_lock);
+
+	return ret;
+}
+
+static int quic_dplpmtud_maybe_probe(struct quic_endpoint *ep)
+{
+	uint16_t probe_size;
+	bool retry_immediately;
+	int ret;
+
+	for (;;) {
+		retry_immediately = false;
+
+		k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+		if (ep->recovery.closing || !ep->handshake.completed) {
+			k_mutex_unlock(&ep->recovery.lock);
+			return 0;
+		}
+
+		ep->dplpmtud.local_max_payload_size = quic_get_local_max_udp_payload_size(ep);
+		quic_dplpmtud_update_limit_locked(ep);
+
+		if (ep->dplpmtud.probe_in_flight || !ep->dplpmtud.probe_pending) {
+			k_mutex_unlock(&ep->recovery.lock);
+			return 0;
+		}
+
+		probe_size = ep->dplpmtud.probe_size;
+		if (probe_size == 0U) {
+			probe_size = quic_dplpmtud_next_probe_size_locked(ep);
+		}
+
+		if (probe_size == 0U) {
+			ep->dplpmtud.probe_pending = false;
+			k_mutex_unlock(&ep->recovery.lock);
+			return 0;
+		}
+
+		quic_dplpmtud_begin_probe_locked(ep, probe_size);
+		k_mutex_unlock(&ep->recovery.lock);
+
+		ret = quic_send_dplpmtud_probe(ep, probe_size);
+		if (ret == 0) {
+			return 0;
+		}
+
+		k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+
+		if (ep->dplpmtud.probe_attempts > 0U) {
+			ep->dplpmtud.probe_attempts--;
+		}
+
+		ep->dplpmtud.probe_in_flight = false;
+
+		if (ret == -EMSGSIZE) {
+			if (probe_size > 0U) {
+				ep->dplpmtud.search_high = probe_size - 1U;
+			}
+
+			ep->dplpmtud.probe_size = 0U;
+			quic_dplpmtud_update_limit_locked(ep);
+			retry_immediately = ep->dplpmtud.probe_pending;
+		} else {
+			ep->dplpmtud.probe_pending = true;
+		}
+
+		k_mutex_unlock(&ep->recovery.lock);
+
+		if (!retry_immediately) {
+			NET_DBG("[EP:%p/%d] DPLPMTUD probe %u could not be sent (%d)",
+				ep, quic_get_by_ep(ep), probe_size, ret);
+			return 0;
+		}
+	}
+}
+
+static void quic_annotate_sent_stream(struct quic_endpoint *ep,
+				      enum quic_secret_level level,
+				      uint64_t pkt_num,
+				      uint64_t stream_id,
+				      uint64_t stream_offset,
+				      uint16_t stream_data_len,
+				      bool stream_fin)
 {
 	int pn_space = level_to_pn_space(level);
-	uint16_t last_idx;
-	struct quic_sent_pkt_info *info;
+	bool found = false;
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
@@ -3667,18 +3953,28 @@ static void quic_annotate_last_sent_stream(struct quic_endpoint *ep,
 		return;
 	}
 
-	last_idx = (ep->recovery.sent_pkts_idx[pn_space] +
-		    CONFIG_QUIC_SENT_PKT_HISTORY_SIZE - 1) %
-		CONFIG_QUIC_SENT_PKT_HISTORY_SIZE;
-	info = &ep->recovery.sent_pkts[pn_space][last_idx];
+	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
+		struct quic_sent_pkt_info *info = &ep->recovery.sent_pkts[pn_space][i];
 
-	info->has_stream_frame  = true;
-	info->stream_id         = stream_id;
-	info->stream_offset     = stream_offset;
-	info->stream_data_len   = stream_data_len;
-	info->stream_fin        = stream_fin;
+		if (info->pkt_num != pkt_num) {
+			continue;
+		}
+
+		info->has_stream_frame = true;
+		info->stream_id = stream_id;
+		info->stream_offset = stream_offset;
+		info->stream_data_len = stream_data_len;
+		info->stream_fin = stream_fin;
+		found = true;
+		break;
+	}
 
 	k_mutex_unlock(&ep->recovery.lock);
+
+	if (!found) {
+		NET_DBG("[EP:%p/%d] Cannot annotate stream frame for pn=%" PRIu64,
+			ep, quic_get_by_ep(ep), pkt_num);
+	}
 }
 
 static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
@@ -3686,11 +3982,14 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 {
 	/* Small fixed header, 1 + 8 + 8 + 8 bytes max */
 	uint8_t hdr[32];
+	uint8_t payload[CONFIG_QUIC_TX_BUFFER_SIZE];
 	size_t hdr_len = 0;
 	struct quic_stream_tx_buffer *tx;
 	struct quic_stream *stream;
 	uint8_t frame_type;
 	size_t buf_off;
+	uint16_t payload_len;
+	uint64_t sent_pn;
 	int ret;
 
 	stream = quic_find_stream_by_id(ep, lost->stream_id);
@@ -3698,18 +3997,33 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 		return;
 	}
 
+	if (lost->stream_data_len > sizeof(payload)) {
+		NET_WARN("[EP:%p/%d] Lost frame too large to retransmit (%u)",
+			 ep, quic_get_by_ep(ep), lost->stream_data_len);
+		return;
+	}
+
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+
 	tx = &stream->tx_buf;
 
 	if (lost->stream_offset < tx->base_offset) {
+		k_mutex_unlock(&stream->tx_lock);
 		return; /* already ACKed */
 	}
 
 	buf_off = (size_t)(lost->stream_offset - tx->base_offset);
 	if (buf_off + lost->stream_data_len > tx->len) {
+		k_mutex_unlock(&stream->tx_lock);
 		NET_WARN("[EP:%p/%d] Lost frame not in TX buffer",
 			 ep, quic_get_by_ep(ep));
 		return;
 	}
+
+	payload_len = lost->stream_data_len;
+	memcpy(payload, &tx->data[buf_off], payload_len);
+
+	k_mutex_unlock(&stream->tx_lock);
 
 	/* Build STREAM frame header into the small stack buffer */
 	frame_type = QUIC_FRAME_TYPE_STREAM_BASE | 0x04 | 0x02;
@@ -3736,14 +4050,16 @@ static void quic_retransmit_stream_frame(struct quic_endpoint *ep,
 	}
 	hdr_len += quic_get_varint_size(lost->stream_data_len);
 
-	/* Send: header from stack, payload directly from tx_buf */
+	/* Send: header from stack, payload copied under tx_lock above */
 	ret = quic_send_packet_sg(ep, QUIC_SECRET_LEVEL_APPLICATION,
 				  hdr, hdr_len,
-				  &tx->data[buf_off], lost->stream_data_len);
+				  payload, payload_len,
+				  &sent_pn);
 	if (ret == 0) {
-		quic_annotate_last_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
-					       lost->stream_id, lost->stream_offset,
-					       lost->stream_data_len, lost->stream_fin);
+		quic_annotate_sent_stream(ep, QUIC_SECRET_LEVEL_APPLICATION,
+					  sent_pn, lost->stream_id,
+					  lost->stream_offset, lost->stream_data_len,
+					  lost->stream_fin);
 	}
 }
 
@@ -3820,6 +4136,10 @@ static void quic_detect_lost_packets_locked(struct quic_endpoint *ep,
 
 		ep->recovery.bytes_in_flight -= info->sent_bytes;
 		info->in_flight = false;
+
+		if (info->dplpmtud_probe) {
+			quic_dplpmtud_on_probe_lost_locked(ep, info->dplpmtud_probe_size);
+		}
 
 		if (info->has_stream_frame) {
 			info->retransmit_pending = true;
@@ -3908,10 +4228,15 @@ static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 		ep->recovery.bytes_in_flight -= info->sent_bytes;
 		info->in_flight = false;
 
+		if (info->dplpmtud_probe) {
+			quic_dplpmtud_on_probe_acked_locked(ep, info->dplpmtud_probe_size);
+		}
+
 		/* Release ACKed data from TX buffer */
 		if (info->has_stream_frame) {
 			quic_stream_advance_tx_acked(
 				ep, info->stream_id,
+				info->stream_offset,
 				info->stream_offset + info->stream_data_len);
 		}
 
@@ -3992,6 +4317,8 @@ static void quic_recovery_on_ack_received(struct quic_endpoint *ep,
 	while (quic_recovery_take_pending_retransmit(ep, &lost)) {
 		quic_retransmit_stream_frame(ep, &lost);
 	}
+
+	(void)quic_dplpmtud_maybe_probe(ep);
 }
 
 /* RFC 9002 specifies minimum PTO count of 3 */
@@ -4056,12 +4383,17 @@ static int quic_pto_probe(struct quic_endpoint *ep)
 	int pn_space = level_to_pn_space(QUIC_SECRET_LEVEL_APPLICATION);
 	struct quic_sent_pkt_info oldest = { 0 };
 	bool found = false;
+	bool probe_pending;
 
 	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
 
 	if (ep->recovery.closing) {
 		k_mutex_unlock(&ep->recovery.lock);
 		return -ESHUTDOWN;
+	}
+
+	if (ep->dplpmtud.probe_in_flight) {
+		quic_dplpmtud_on_probe_lost_locked(ep, ep->dplpmtud.probe_size);
 	}
 
 	for (int i = 0; i < CONFIG_QUIC_SENT_PKT_HISTORY_SIZE; i++) {
@@ -4078,6 +4410,8 @@ static int quic_pto_probe(struct quic_endpoint *ep)
 		}
 	}
 
+	probe_pending = ep->dplpmtud.probe_pending;
+
 	k_mutex_unlock(&ep->recovery.lock);
 
 	if (found) {
@@ -4085,10 +4419,20 @@ static int quic_pto_probe(struct quic_endpoint *ep)
 			ep, quic_get_by_ep(ep), oldest.pkt_num);
 		quic_retransmit_stream_frame(ep, &oldest);
 		return 0;
-	} else {
-		/* No stream frame to retransmit, send a PING to keep the
-		 * connection alive and elicit an ACK.
-		 */
+	}
+
+	/* RFC 9002 Section 6.2.4: only send a probe when there is no in-flight
+	 * stream data to retransmit. Prefer a DPLPMTUD probe over a bare PING
+	 * when path MTU discovery is pending.
+	 */
+	if (probe_pending) {
+		return quic_dplpmtud_maybe_probe(ep);
+	}
+
+	/* No stream frame to retransmit, send a PING to keep the
+	 * connection alive and elicit an ACK.
+	 */
+	{
 		uint8_t ping = QUIC_FRAME_TYPE_PING;
 
 		NET_DBG("[EP:%p/%d] PTO: sending PING probe", ep, quic_get_by_ep(ep));
@@ -4171,6 +4515,158 @@ static void quic_endpoint_handshake_complete(struct quic_endpoint *ep)
 #define QUIC_DEFAULT_IDLE_TIMEOUT_MS (30 * MSEC_PER_SEC)  /* Default 30s idle timeout */
 #define QUIC_DEFAULT_HANDSHAKE_TIMEOUT_MS (30 * MSEC_PER_SEC)  /* Default 30s handshake timeout */
 
+static uint16_t quic_clamp_udp_payload_size(uint64_t value)
+{
+	return (uint16_t)MIN(value, (uint64_t)UINT16_MAX);
+}
+
+static uint16_t quic_peer_max_udp_payload_size(const struct quic_endpoint *ep)
+{
+	if (ep->peer_params.max_udp_payload_size < QUIC_DPLPMTUD_BASE_PLPMTU) {
+		return UINT16_MAX;
+	}
+
+	return ep->peer_params.max_udp_payload_size;
+}
+
+static uint16_t quic_dplpmtud_target_payload_size_locked(struct quic_endpoint *ep)
+{
+	uint16_t target = ep->dplpmtud.local_max_payload_size;
+	uint16_t peer_limit = quic_peer_max_udp_payload_size(ep);
+
+	if (target == 0U) {
+		target = QUIC_DPLPMTUD_BASE_PLPMTU;
+	}
+
+	target = MIN(target, peer_limit);
+
+	return MAX(target, QUIC_DPLPMTUD_BASE_PLPMTU);
+}
+
+static void quic_dplpmtud_update_limit_locked(struct quic_endpoint *ep)
+{
+	uint16_t target = quic_dplpmtud_target_payload_size_locked(ep);
+
+	if (ep->dplpmtud.validated_payload_size < QUIC_DPLPMTUD_BASE_PLPMTU) {
+		ep->dplpmtud.validated_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+	}
+
+	if (ep->dplpmtud.validated_payload_size > target) {
+		ep->dplpmtud.validated_payload_size = target;
+	}
+
+	if (ep->dplpmtud.search_low < ep->dplpmtud.validated_payload_size) {
+		ep->dplpmtud.search_low = ep->dplpmtud.validated_payload_size;
+	}
+
+	if (ep->dplpmtud.search_high == 0U || ep->dplpmtud.search_high > target) {
+		ep->dplpmtud.search_high = target;
+	}
+
+	if (ep->dplpmtud.search_high < ep->dplpmtud.validated_payload_size) {
+		ep->dplpmtud.search_high = ep->dplpmtud.validated_payload_size;
+	}
+
+	if (ep->dplpmtud.probe_in_flight &&
+	    ep->dplpmtud.probe_size > ep->dplpmtud.search_high) {
+		ep->dplpmtud.probe_in_flight = false;
+		ep->dplpmtud.probe_size = 0U;
+		ep->dplpmtud.probe_attempts = 0U;
+	}
+
+	if (!ep->dplpmtud.probe_in_flight) {
+		ep->dplpmtud.probe_pending =
+			ep->handshake.completed &&
+			ep->dplpmtud.search_high > ep->dplpmtud.validated_payload_size;
+	}
+
+	ep->max_tx_payload_size = MIN(ep->dplpmtud.validated_payload_size, target);
+}
+
+static uint16_t quic_dplpmtud_next_probe_size_locked(struct quic_endpoint *ep)
+{
+	uint16_t low = MAX(ep->dplpmtud.search_low, ep->dplpmtud.validated_payload_size);
+	uint16_t high = ep->dplpmtud.search_high;
+	uint16_t delta;
+
+	if (high <= low) {
+		return 0U;
+	}
+
+	delta = high - low;
+
+	return low + DIV_ROUND_UP(delta, 2);
+}
+
+static void quic_dplpmtud_begin_probe_locked(struct quic_endpoint *ep, uint16_t probe_size)
+{
+	ep->dplpmtud.probe_size = probe_size;
+	ep->dplpmtud.probe_attempts++;
+	ep->dplpmtud.probe_in_flight = true;
+	ep->dplpmtud.probe_pending = false;
+}
+
+static void quic_dplpmtud_on_probe_acked_locked(struct quic_endpoint *ep, uint16_t probe_size)
+{
+	if (!ep->dplpmtud.probe_in_flight || ep->dplpmtud.probe_size != probe_size) {
+		return;
+	}
+
+	ep->dplpmtud.validated_payload_size =
+		MAX(ep->dplpmtud.validated_payload_size, probe_size);
+	ep->dplpmtud.search_low = ep->dplpmtud.validated_payload_size;
+	ep->dplpmtud.probe_in_flight = false;
+	ep->dplpmtud.probe_size = 0U;
+	ep->dplpmtud.probe_attempts = 0U;
+	quic_dplpmtud_update_limit_locked(ep);
+}
+
+static void quic_dplpmtud_on_probe_lost_locked(struct quic_endpoint *ep, uint16_t probe_size)
+{
+	if (!ep->dplpmtud.probe_in_flight || ep->dplpmtud.probe_size != probe_size) {
+		return;
+	}
+
+	ep->dplpmtud.probe_in_flight = false;
+
+	if (ep->dplpmtud.probe_attempts < QUIC_DPLPMTUD_MAX_PROBE_RETRIES) {
+		ep->dplpmtud.probe_pending = true;
+		quic_dplpmtud_update_limit_locked(ep);
+		return;
+	}
+
+	if (probe_size > 0U) {
+		ep->dplpmtud.search_high = probe_size - 1U;
+	}
+
+	ep->dplpmtud.probe_size = 0U;
+	ep->dplpmtud.probe_attempts = 0U;
+	quic_dplpmtud_update_limit_locked(ep);
+}
+
+__maybe_unused ZTESTABLE_STATIC void quic_dplpmtud_refresh_state(struct quic_endpoint *ep)
+{
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+	quic_dplpmtud_update_limit_locked(ep);
+	k_mutex_unlock(&ep->recovery.lock);
+}
+
+__maybe_unused ZTESTABLE_STATIC void quic_dplpmtud_on_probe_acked(struct quic_endpoint *ep,
+								  uint16_t probe_size)
+{
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+	quic_dplpmtud_on_probe_acked_locked(ep, probe_size);
+	k_mutex_unlock(&ep->recovery.lock);
+}
+
+__maybe_unused ZTESTABLE_STATIC void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep,
+								 uint16_t probe_size)
+{
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+	quic_dplpmtud_on_probe_lost_locked(ep, probe_size);
+	k_mutex_unlock(&ep->recovery.lock);
+}
+
 static void quic_endpoint_init(struct quic_endpoint *ep)
 {
 	ep->sock = -1;
@@ -4183,8 +4679,10 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	memset(ep->peer_orig_dcid, 0, sizeof(ep->peer_orig_dcid));
 	memset(&ep->token, 0, sizeof(ep->token));
 
-	/* Default max UDP payload size per RFC 9000 when PMTUD is not performed */
-	ep->max_tx_payload_size = 1200;
+	/* Start from QUIC's required 1200-byte UDP payload until probing
+	 * validates a larger path size.
+	 */
+	ep->max_tx_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
 
 	/* Initialize flow control with default values.
 	 * These will be updated when peer transport params are parsed.
@@ -4199,16 +4697,70 @@ static void quic_endpoint_init(struct quic_endpoint *ep)
 	ep->rx_sl.max_uni = CONFIG_QUIC_INITIAL_MAX_STREAMS_UNI;
 	ep->rx_sl.open_bidi = 0;
 	ep->rx_sl.open_uni = 0;
+	ep->peer_params.max_udp_payload_size = UINT16_MAX;
 	ep->peer_params.parsed = false;
+
+	ep->dplpmtud.validated_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+	ep->dplpmtud.local_max_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+	ep->dplpmtud.search_low = QUIC_DPLPMTUD_BASE_PLPMTU;
+	ep->dplpmtud.search_high = 0U;
+	ep->dplpmtud.probe_size = 0U;
+	ep->dplpmtud.probe_attempts = 0U;
+	ep->dplpmtud.probe_in_flight = false;
+	ep->dplpmtud.probe_pending = false;
 
 	quic_endpoint_init_idle_timeout(ep, QUIC_DEFAULT_IDLE_TIMEOUT_MS);
 	quic_endpoint_init_handshake_timeout(ep, QUIC_DEFAULT_HANDSHAKE_TIMEOUT_MS);
 	quic_recovery_init(ep);
 
 	k_mutex_init(&ep->pending.lock);
+	k_mutex_init(&ep->send_lock);
 	k_sem_init(&ep->handshake.sem, 0, 1);
 
 	tls_init(ep);
+}
+
+static uint16_t quic_get_local_max_udp_payload_size(struct quic_endpoint *ep)
+{
+	struct net_if *iface;
+	int mtu = 0;
+	int ret;
+	net_socklen_t optlen = sizeof(mtu);
+
+	if (ep->sock >= 0) {
+		if (ep->remote_addr.ss_family == NET_AF_INET) {
+			ret = zsock_getsockopt(ep->sock, NET_IPPROTO_IP, ZSOCK_IP_MTU,
+					       &mtu, &optlen);
+		} else {
+			ret = zsock_getsockopt(ep->sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_MTU,
+					       &mtu, &optlen);
+		}
+
+		if (ret == 0 && mtu > 0) {
+			goto have_mtu;
+		}
+	}
+
+	iface = net_if_select_src_iface((struct net_sockaddr *)&ep->remote_addr);
+	if (iface != NULL) {
+		mtu = net_if_get_mtu(iface);
+	} else if (ep->remote_addr.ss_family == NET_AF_INET6) {
+		mtu = NET_IPV6_MTU;
+	} else {
+		mtu = QUIC_DPLPMTUD_BASE_PLPMTU +
+		      sizeof(struct net_ipv4_hdr) + sizeof(struct net_udp_hdr);
+	}
+
+have_mtu:
+	if (ep->remote_addr.ss_family == NET_AF_INET6) {
+		return MAX((int)QUIC_DPLPMTUD_BASE_PLPMTU,
+			   mtu - (int)sizeof(struct net_ipv6_hdr) -
+			   (int)sizeof(struct net_udp_hdr));
+	}
+
+	return MAX((int)QUIC_DPLPMTUD_BASE_PLPMTU,
+		   mtu - (int)sizeof(struct net_ipv4_hdr) -
+		   (int)sizeof(struct net_udp_hdr));
 }
 
 #if defined(CONFIG_QUIC_LOG_LEVEL_DBG)
@@ -4399,6 +4951,10 @@ static struct quic_endpoint *quic_endpoint_create(struct quic_endpoint *ep,
 		new_ep->peer_params.initial_max_streams_uni =
 			ep->peer_params.initial_max_streams_uni;
 		new_ep->peer_params.max_idle_timeout = ep->peer_params.max_idle_timeout;
+		new_ep->peer_params.max_udp_payload_size =
+			ep->peer_params.max_udp_payload_size;
+		new_ep->peer_params.parsed = ep->peer_params.parsed;
+		new_ep->dplpmtud = ep->dplpmtud;
 		new_ep->max_tx_payload_size = ep->max_tx_payload_size;
 		new_ep->rx_sl.max_bidi = ep->rx_sl.max_bidi;
 		new_ep->rx_sl.max_uni = ep->rx_sl.max_uni;
@@ -4543,6 +5099,11 @@ static int endpoint_socket_create(struct quic_endpoint *ep)
 		goto close_fail;
 	}
 
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+	ep->dplpmtud.local_max_payload_size = quic_get_local_max_udp_payload_size(ep);
+	quic_dplpmtud_update_limit_locked(ep);
+	k_mutex_unlock(&ep->recovery.lock);
+
 	if (ep->local_addr.ss_family == NET_AF_INET) {
 		NET_DBG("[EP:%p/%d] %s socket service handler for IPv%d",
 			ep, quic_get_by_ep(ep), "Registering", 4);
@@ -4646,6 +5207,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	 */
 	k_condvar_init(&stream->cond.recv);
 	k_mutex_init(&stream->cond.data_available);
+	k_mutex_init(&stream->tx_lock);
 
 	/* The event is used when waiting for data to be received with timeout */
 	k_poll_signal_init(&stream->recv.signal);
@@ -4661,6 +5223,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 
 	memset(&stream->tx_buf, 0, sizeof(stream->tx_buf));
 	stream->tx_buf.base_offset = 0;
+	stream->sock = -1;
 
 	/* Initialize flow control with default values.
 	 * This should be updated when peer transport parameters are received.
@@ -4668,6 +5231,7 @@ static struct quic_stream *quic_stream_init(struct quic_stream *stream)
 	stream->remote_max_data = 16384;
 	stream->bytes_sent = 0;
 	stream->bytes_acked = 0;
+	stream->acked_ooo_count = 0;
 
 	/* RX flow control is initialized once the stream type is known. */
 	stream->local_max_data = 0;
@@ -5013,6 +5577,90 @@ static int quic_tls_secret_callback(void *user_data,
 	NET_DBG("Crypto context for level %d initialized successfully", level);
 
 	return 0;
+}
+
+static void quic_client_endpoint_init_cids(struct quic_endpoint *ep,
+					  const struct net_sockaddr *remote_addr)
+{
+	size_t token_len;
+
+	ep->peer_cid_len = 8;
+	sys_rand_get(ep->peer_cid, ep->peer_cid_len);
+
+	ep->my_cid_len = 8;
+	sys_rand_get(ep->my_cid, ep->my_cid_len);
+	ep->token.client_initial_dcid_len = ep->peer_cid_len;
+	memcpy(ep->token.client_initial_dcid, ep->peer_cid, ep->peer_cid_len);
+
+	token_len = quic_token_cache_take(remote_addr, ep->token.initial,
+					  sizeof(ep->token.initial));
+	if (token_len > 0U) {
+		ep->token.initial_len = token_len;
+		ep->token.initial_type = QUIC_TOKEN_NEW;
+	}
+}
+
+static bool quic_endpoint_on_active_context(const struct quic_endpoint *ep)
+{
+	for (int i = 0; i < ARRAY_SIZE(contexts); i++) {
+		struct quic_endpoint *endp, *tmp;
+
+		if (!quic_context_is_used(&contexts[i])) {
+			continue;
+		}
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&contexts[i].endpoints, endp, tmp, node) {
+			if (endp == ep) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/*
+ * Drop client endpoints left behind when a connection context was closed
+ * without unlinking the endpoint (e.g. setsockopt failed before the endpoint
+ * was attached to the context list).
+ */
+static void quic_release_orphan_client_endpoints(const struct net_sockaddr *remote_addr)
+{
+	struct quic_endpoint *orphans[CONFIG_QUIC_MAX_ENDPOINTS] = { 0 };
+	int orphan_count = 0;
+
+	k_mutex_lock(&contexts_lock, K_FOREVER);
+	k_mutex_lock(&endpoints_lock, K_FOREVER);
+
+	ARRAY_FOR_EACH(endpoints, i) {
+		struct quic_endpoint *ep = endpoints[i];
+		struct quic_endpoint *matched;
+
+		if (ep == NULL || atomic_get(&ep->refcount) == 0 || ep->is_server ||
+		    ep->sock < 0) {
+			continue;
+		}
+
+		matched = find_endpoint(remote_addr, NULL, NULL, 0, NULL, 0);
+		if (matched != ep) {
+			continue;
+		}
+
+		if (quic_endpoint_on_active_context(ep)) {
+			continue;
+		}
+
+		orphans[orphan_count++] = ep;
+	}
+
+	k_mutex_unlock(&endpoints_lock);
+	k_mutex_unlock(&contexts_lock);
+
+	for (int i = 0; i < orphan_count; i++) {
+		while (atomic_get(&orphans[i]->refcount) > 0) {
+			quic_endpoint_unref(orphans[i]);
+		}
+	}
 }
 
 #include "quic_tls.c"
@@ -5401,13 +6049,11 @@ ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
 			break;
 		case QUIC_MAX_UDP_PAYLOAD_SIZE:
 			if (value >= 1200) {
-				/* Cap at our local estimated MTU limits (e.g. 1452)
-				 * or 1200 if PMTUD not supported
-				 */
-				ep->max_tx_payload_size = 1200;
+				ep->peer_params.max_udp_payload_size =
+					quic_clamp_udp_payload_size(value);
 			}
-			NET_DBG("  max_udp_payload_size: %" PRIu64 " (eff TX %u)",
-				value, ep->max_tx_payload_size);
+			NET_DBG("  max_udp_payload_size: %" PRIu64 " (peer cap %u)",
+				value, ep->peer_params.max_udp_payload_size);
 			break;
 		default:
 			NET_DBG("  param 0x%02" PRIx64 ": %" PRIu64 " (len=%" PRIu64 ")",
@@ -5430,6 +6076,10 @@ ZTESTABLE_STATIC int parse_peer_transport_params(struct quic_endpoint *ep)
 	}
 
 	ep->peer_params.parsed = true;
+
+	k_mutex_lock(&ep->recovery.lock, K_FOREVER);
+	quic_dplpmtud_update_limit_locked(ep);
+	k_mutex_unlock(&ep->recovery.lock);
 
 	return 0;
 }
@@ -5514,25 +6164,31 @@ static void quic_connection_accept_enqueue(struct quic_endpoint *child_ep)
 			k_fifo_put(&listen_ctx->incoming.stream_q, st);
 		} while (true);
 
-		/* Set the stream's socket as it was assigned to wrong context before */
-		zvfs_free_fd(stream->sock);
-		(void)sock_obj_core_dealloc(stream->sock);
+		/* Reparent only already-instantiated stream sockets.
+		 * Peer-created streams normally get their fd later in accept().
+		 */
+		if (stream->sock >= 0) {
+			zvfs_free_fd(stream->sock);
+			(void)sock_obj_core_dealloc(stream->sock);
 
-		stream->sock = zvfs_reserve_fd();
-		if (stream->sock < 0) {
-			NET_ERR("[EP:%p/%d] Failed to reserve fd for stream %p/%d: %d",
-				child_ep, quic_get_by_ep(child_ep),
-				stream, quic_get_by_stream(stream), stream->sock);
-			quic_stream_unref(stream);
-			break;
+			stream->sock = zvfs_reserve_fd();
+			if (stream->sock < 0) {
+				NET_ERR("[EP:%p/%d] Failed to reserve fd for stream %p/%d: %d",
+					child_ep, quic_get_by_ep(child_ep),
+					stream, quic_get_by_stream(stream),
+					stream->sock);
+				quic_stream_unref(stream);
+				break;
+			}
+
+			zvfs_finalize_typed_fd(stream->sock, stream,
+					       (const struct fd_op_vtable *)
+					       &quic_stream_fd_op_vtable,
+					       ZVFS_MODE_IFSOCK);
+
+			(void)sock_obj_core_alloc_find(child_ctx->sock, stream->sock,
+						       NET_SOCK_STREAM);
 		}
-
-		zvfs_finalize_typed_fd(stream->sock, stream,
-				       (const struct fd_op_vtable *)&quic_stream_fd_op_vtable,
-				       ZVFS_MODE_IFSOCK);
-
-		(void)sock_obj_core_alloc_find(child_ctx->sock, stream->sock,
-					       NET_SOCK_STREAM);
 
 		/* Queue for accept() call */
 		k_fifo_put(&child_ctx->incoming.stream_q, stream);
@@ -5612,6 +6268,7 @@ static int quic_handshake_complete(struct quic_endpoint *ep)
 	quic_recovery_discard_pn_space(ep, level_to_pn_space(QUIC_SECRET_LEVEL_HANDSHAKE));
 
 	quic_endpoint_handshake_complete(ep);
+	(void)quic_dplpmtud_maybe_probe(ep);
 
 	NET_DBG("[EP:%p/%d] QUIC handshake complete", ep, quic_get_by_ep(ep));
 
@@ -5992,10 +6649,25 @@ ZTESTABLE_STATIC int quic_stream_receive_data(struct quic_stream *stream,
 				continue;
 			}
 
-			/* This segment is now in order, so deliver it */
+			/* This segment is now in order, so deliver it.
+			 * Do not truncate OOO segments: if it does not fit yet,
+			 * keep it queued and retry after more data is consumed.
+			 */
 			avail = buf->size - buf->tail;
-			copy  = MIN((size_t)seg->len, avail);
+			if ((size_t)seg->len > avail && buf->head > 0U) {
+				size_t unread = buf->tail - buf->head;
 
+				memmove(buf->data, &buf->data[buf->head], unread);
+				buf->tail = unread;
+				buf->head = 0U;
+				avail = buf->size - buf->tail;
+			}
+
+			if ((size_t)seg->len > avail) {
+				continue;
+			}
+
+			copy = (size_t)seg->len;
 			memcpy(&buf->data[buf->tail], seg->data, copy);
 			buf->tail += copy;
 
@@ -6154,6 +6826,7 @@ static struct quic_stream *quic_create_stream_from_peer(struct quic_context *ctx
 
 	stream->tx_buf.base_offset = 0;
 	stream->tx_buf.len = 0;
+	stream->acked_ooo_count = 0;
 
 	quic_stats_update_stream_opened();
 

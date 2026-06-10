@@ -133,4 +133,8 @@ config THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL
 	  will show the longest frame during that interval.  This enables observation
 	  of what long frames come after the initial startup of a thread.
 
+config THREAD_ANALYZER_PRINT_THREAD_PRIORITY
+	bool "Print each thread's priority"
+	help
+	  Option to include each thread's priority in the printed output.
 endif # THREAD_ANALYZER

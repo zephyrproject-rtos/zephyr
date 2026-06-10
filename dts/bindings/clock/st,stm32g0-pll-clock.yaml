@@ -35,30 +35,35 @@ properties:
     required: true
     description: |
         Division factor for PLL input clock
-        Valid range: 1 - 8
+    min: 1
+    max: 8
 
   mul-n:
     type: int
     required: true
     description: |
         Main PLL multiplication factor for VCO
-        Valid range: 8 - 86
+    min: 8
+    max: 86
 
   div-p:
     type: int
     description: |
         PLL division factor for PLL P output
-        Valid range: 2 - 32
+    min: 2
+    max: 32
 
   div-q:
     type: int
     description: |
         PLL division factor for PLL Q output
-        Valid range: 2 - 8
+    min: 2
+    max: 8
 
   div-r:
     type: int
     required: true
     description: |
         PLL division factor for PLLCLK (system clock)
-        Valid range: 2 - 8
+    min: 2
+    max: 8

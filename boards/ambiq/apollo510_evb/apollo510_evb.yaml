@@ -12,6 +12,7 @@ supported:
   - adc
   - watchdog
   - counter
+  - crc
   - gpio
   - spi
   - i2c

@@ -57,6 +57,6 @@ examples:
                  <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
         interrupts = <19 0>, <21 0>, <63 0>;
         interrupt-names = "int0", "int1", "calib";
-        bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+        bosch,mram-cfg = <0x0 28 8 6 0 0 3 3>;
         status = okay";
       };

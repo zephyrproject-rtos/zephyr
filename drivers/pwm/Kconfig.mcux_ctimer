@@ -1,4 +1,5 @@
 # (c) Meta Platforms, Inc. and affiliates.
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config PWM_MCUX_CTIMER
@@ -6,5 +7,6 @@ config PWM_MCUX_CTIMER
 	default y
 	depends on DT_HAS_NXP_CTIMER_PWM_ENABLED
 	select PINCTRL
+	select NXP_INPUTMUX if PWM_CAPTURE
 	help
 	  Enable ctimer based pwm driver.

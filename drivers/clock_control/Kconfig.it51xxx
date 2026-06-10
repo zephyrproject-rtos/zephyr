@@ -14,4 +14,10 @@ config IT51XXX_PLL_SEQUENCE_PRIORITY
 	int
 	default 1
 
+config IT51XXX_USB_SOF_CALIBRATION
+	bool
+	help
+	  This option enables SOF calibration to improve the accuracy
+	  of the USB clock.
+
 endif # CLOCK_CONTROL_IT51XXX

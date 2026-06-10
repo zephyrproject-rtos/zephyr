@@ -31,6 +31,7 @@
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
 		zephyr,bt-c2h-uart = &lpuart0;
+		zephyr,crc = &crc;
 	};
 
 	user_led {
@@ -192,6 +193,9 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+	recover-bus-on-init;
 
 	accelerometer: accelerometer@19 {
 		status = "okay";
@@ -201,5 +205,9 @@
 };
 
 &rtc {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

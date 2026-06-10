@@ -201,6 +201,7 @@ config BT_BUF_EVT_DISCARDABLE_SIZE
 	default $(UINT8_MAX) if BT_CLASSIC
 	# Le Advertising Report event
 	default 43 if !BT_EXT_ADV
+	default 58 if BT_EXT_ADV && BT_MESH
 	default BT_BUF_EVT_RX_SIZE if BT_EXT_ADV
 	help
 	  Maximum support discardable HCI event size of buffers in the separate

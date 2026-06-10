@@ -7,7 +7,7 @@
 from runners.core import MissingProgram, RunnerCaps, ZephyrBinaryRunner
 
 DEFAULT_PORT = '/dev/ttyUSB0'
-DEFAULT_SPEED = '115200'
+DEFAULT_SPEED = '2000000'
 DEFAULT_CHIP = 'bl602'
 DEFAULT_EXECUTABLE = "bflb-mcu-tool-uart"
 

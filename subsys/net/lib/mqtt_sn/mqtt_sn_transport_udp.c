@@ -83,6 +83,10 @@ static int tp_udp_init(struct mqtt_sn_transport *transport)
 	int optval;
 	struct net_if *iface;
 
+	if (udp->sock >= 0) {
+		return -EALREADY;
+	}
+
 	udp->sock = zsock_socket(udp->bcaddr.sa_family, NET_SOCK_DGRAM, 0);
 	if (udp->sock < 0) {
 		return -errno;
@@ -200,7 +204,10 @@ static void tp_udp_deinit(struct mqtt_sn_transport *transport)
 {
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 
-	zsock_close(udp->sock);
+	if (udp->sock >= 0) {
+		zsock_close(udp->sock);
+		udp->sock = -1;
+	}
 }
 
 static int tp_udp_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, const void *dest_addr,
@@ -302,7 +309,7 @@ int mqtt_sn_transport_udp_init(struct mqtt_sn_transport_udp *udp, struct net_soc
 					     .poll = tp_udp_poll,
 					     .recvfrom = tp_udp_recvfrom};
 
-	udp->sock = 0;
+	udp->sock = -1;
 
 	memcpy(&udp->bcaddr, bcaddr, addrlen);
 	udp->bcaddrlen = addrlen;

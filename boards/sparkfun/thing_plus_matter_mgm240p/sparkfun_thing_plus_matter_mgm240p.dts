@@ -23,8 +23,10 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;
 		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
+		zephyr,openthread-counter = &protimer;
 	};
 
 	aliases {
@@ -298,5 +300,14 @@ zephyr_i2c: &i2c0 {
 };
 
 &bt_hci_silabs {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+	hfxo = <&hfxo>;
+};
+
+&protimer {
 	status = "okay";
 };

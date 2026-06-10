@@ -18,11 +18,21 @@
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
 
 #include <infineon_kconfig.h>
 #include "mtb_serial_memory.h"
 #include "cy_device_headers.h"
+
+#ifdef CONFIG_FLASH_INFINEON_SMIF_HW_INIT
+PINCTRL_DT_INST_DEFINE(0);
+static const struct pinctrl_dev_config *ifx_serial_memory_pcfg =
+	PINCTRL_DT_INST_DEV_CONFIG_GET(0);
+#endif /* CONFIG_FLASH_INFINEON_SMIF_HW_INIT */
+
+/* SMIF core register block for this driver instance. */
+#define IFX_SERIAL_MEMORY_SMIF ((SMIF_Type *)DT_INST_REG_ADDR(0))
 
 LOG_MODULE_REGISTER(flash_infineon, CONFIG_FLASH_LOG_LEVEL);
 
@@ -44,10 +54,6 @@ static uint32_t smif1_crypto_input2;
 static uint32_t smif1_crypto_input3;
 #endif /* CONFIG_SOC_SERIES_PSE84 */
 #endif /* CONFIG_PM */
-
-#if defined(CY_DEVICE_PSE84)
-#define SMIF0_CORE0 SMIF0_CORE
-#endif /* defined(CY_DEVICE_PSE84) */
 
 const mtb_hal_hf_clock_t flash_clock_ref = {
 	.inst_num = 3U,
@@ -239,19 +245,96 @@ cy_stc_syspm_callback_t flash_deep_sleep = {&ifx_serial_memory_flash_pm_callback
 					    0};
 #endif /* CONFIG_PM */
 
+#ifdef CONFIG_FLASH_INFINEON_SMIF_HW_INIT
+static const cy_stc_smif_config_t CYBSP_SMIF_CORE_0_XSPI_FLASH_config = {
+	.mode = (uint32_t)CY_SMIF_NORMAL,
+	.deselectDelay = 7,
+	.blockEvent = (uint32_t)CY_SMIF_BUS_ERROR,
+	.inputFrequencyMHz = 200,
+	.enable_internal_dll = false,
+	.dll_divider_value = CY_SMIF_DLL_DIVIDE_BY_2,
+	.rx_capture_mode = CY_SMIF_SEL_NORMAL_SPI,
+	.mdl_tap = CY_SMIF_MDL_8_TAP_DELAY,
+	.device0_sdl_tap = CY_SMIF_SDL_8_TAP_DELAY,
+	.device1_sdl_tap = CY_SMIF_SDL_8_TAP_DELAY,
+	.device2_sdl_tap = CY_SMIF_SDL_8_TAP_DELAY,
+	.device3_sdl_tap = CY_SMIF_SDL_8_TAP_DELAY,
+	.tx_sdr_extra = CY_SMIF_TX_TWO_PERIOD_AHEAD,
+};
+
+/* Initialize SMIF pins and the SMIF peripheral itself.
+ * This is only needed when booting from internal RRAM (e.g. MCUboot), where
+ * the ROM extended boot has not configured the SMIF subsystem.
+ *
+ * SMIF data pins live on the dedicated SMIF GPIO port and the chip
+ * select pin is on a standard IOSS GPIO port. Both are described in DT
+ * (flash_controller pinctrl-0) and configured here through the Zephyr
+ * pinctrl driver; PDL's Cy_GPIO_Pin_*FastInit transparently dispatches to
+ * the SMIF GPIO sub-block when given the AUX port base.
+ */
+static int ifx_serial_memory_hw_init(void)
+{
+	cy_en_smif_status_t smif_status;
+	int ret;
+
+	/* Configure SMIF data and chip select pins via DT pinctrl */
+	ret = pinctrl_apply_state(ifx_serial_memory_pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("SMIF pinctrl apply failed: %d", ret);
+		return ret;
+	}
+
+	/* Reset and reinitialize SMIF peripheral */
+	Cy_SMIF_Disable(IFX_SERIAL_MEMORY_SMIF);
+	Cy_SMIF_DeInit(IFX_SERIAL_MEMORY_SMIF);
+	Cy_SMIF_MemDeInit(IFX_SERIAL_MEMORY_SMIF);
+	Cy_SMIF_Reset_Memory(IFX_SERIAL_MEMORY_SMIF, smif0BlockConfig.memConfig[0]->slaveSelect);
+
+	smif_status = Cy_SMIF_Init(IFX_SERIAL_MEMORY_SMIF, &CYBSP_SMIF_CORE_0_XSPI_FLASH_config,
+				   TIMEOUT_1_MS, &smif_mem_context.smif_context);
+	if (smif_status != CY_SMIF_SUCCESS) {
+		return -EIO;
+	}
+
+	Cy_SMIF_SetDataSelect(IFX_SERIAL_MEMORY_SMIF, smif0BlockConfig.memConfig[0]->slaveSelect,
+			      smif0BlockConfig.memConfig[0]->dataSelect);
+	Cy_SMIF_Enable(IFX_SERIAL_MEMORY_SMIF, &smif_mem_context.smif_context);
+
+	return 0;
+}
+#endif /* CONFIG_FLASH_INFINEON_SMIF_HW_INIT */
+
 static int ifx_serial_memory_flash_init(const struct device *dev)
 {
 	struct ifx_serial_memory_flash_data *data = dev->data;
 
 	cy_rslt_t result;
 
+#ifdef CONFIG_FLASH_INFINEON_SMIF_HW_INIT
+	int ret = ifx_serial_memory_hw_init();
+
+	if (ret) {
+		LOG_ERR("SMIF HW init failed: %d", ret);
+		return ret;
+	}
+#endif
+
 	/* Set-up serial memory. */
 	result = mtb_serial_memory_setup(&serial_memory_obj, MTB_SERIAL_MEMORY_CHIP_SELECT_1,
-					 SMIF0_CORE0, &CYBSP_SMIF_CORE_0_XSPI_FLASH_hal_clock,
+					 IFX_SERIAL_MEMORY_SMIF,
+					 &CYBSP_SMIF_CORE_0_XSPI_FLASH_hal_clock,
 					 &smif_mem_context, &smif_mem_info, &smif0BlockConfig);
 	if (result != CY_RSLT_SUCCESS) {
 		LOG_ERR("serial memory setup failed (QSPI) : 0x%x", result);
+		return -EIO;
 	}
+
+#if defined(CONFIG_MCUBOOT)
+	/* Enable XIP/memory-mapped mode so apps can execute from external flash
+	 * after MCUboot jumps to them.
+	 */
+	Cy_SMIF_SetMode(IFX_SERIAL_MEMORY_SMIF, CY_SMIF_MEMORY);
+#endif
 
 	k_sem_init(&data->sem, 1, 1);
 
@@ -259,7 +342,7 @@ static int ifx_serial_memory_flash_init(const struct device *dev)
 	Cy_SysPm_RegisterCallback(&flash_deep_sleep);
 #endif /* CONFIG_PM */
 
-	return result;
+	return 0;
 }
 
 static DEVICE_API(flash, ifx_serial_memory_flash_driver_api) = {
@@ -276,7 +359,8 @@ static struct ifx_serial_memory_flash_data flash_data;
 
 static const struct ifx_serial_memory_flash_config flash_config = {
 	.base_addr = DT_REG_ADDR(SOC_NV_FLASH_NODE),
-	.max_addr = DT_REG_ADDR(SOC_NV_FLASH_NODE) + DT_REG_SIZE(SOC_NV_FLASH_NODE)};
+	.max_addr = DT_REG_ADDR(SOC_NV_FLASH_NODE) + DT_REG_SIZE(SOC_NV_FLASH_NODE),
+};
 
 DEVICE_DT_INST_DEFINE(0, ifx_serial_memory_flash_init, NULL, &flash_data, &flash_config,
 		      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY, &ifx_serial_memory_flash_driver_api);

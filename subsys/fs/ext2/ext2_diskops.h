@@ -214,9 +214,8 @@ int ext2_free_inode(struct ext2_data *fs, uint32_t ino, bool directory);
 /**
  * @brief Allocate directory entry filled with data from disk directory entry.
  *
- * NOTE: This function never fails.
- *
- * Returns structure allocated on direntry_heap.
+ * @retval structure allocated on direntry_heap.
+ * @retval NULL in case of failure.
  */
 struct ext2_direntry *ext2_fetch_direntry(struct ext2_disk_direntry *disk_de);
 

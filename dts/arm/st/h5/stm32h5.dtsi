@@ -615,7 +615,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-channels = <8>;
 			dma-requests = <140>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
@@ -627,7 +626,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			dma-channels = <8>;
 			dma-requests = <140>;
-			dma-offset = <8>;
 			status = "disabled";
 		};
 
@@ -690,6 +688,14 @@
 			phys = <&usb_fs_phy>;
 			clocks = <&rcc STM32_CLOCK(APB2, 24)>,
 				 <&rcc STM32_SRC_HSI48 USB_SEL(3)>;
+			status = "disabled";
+		};
+
+		ucpd1: ucpd@4000dc00 {
+			compatible = "st,stm32-ucpd";
+			reg = <0x4000dc00 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
+			interrupts = <76 0>;
 			status = "disabled";
 		};
 

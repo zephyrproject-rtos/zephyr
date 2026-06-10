@@ -904,6 +904,12 @@ static void http_server_h3_before(void *fixture)
 {
 	ARG_UNUSED(fixture);
 
+	/* If a previous test failed in before(), after() is skipped. */
+	if (client_conn_fd >= 0) {
+		(void)quic_connection_close(client_conn_fd);
+		client_conn_fd = -1;
+	}
+
 	memset(dynamic_payload, 0, sizeof(dynamic_payload));
 	dynamic_bytes_received = 0;
 	dynamic_more_seen = false;

@@ -1531,6 +1531,7 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 	.trig_enabled = true,						\
 	.int1_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int1_gpios, { 0 }),	\
 	.int2_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int2_gpios, { 0 }),	\
+	.int_mode = DT_INST_PROP(inst, int_gpio_config),		\
 	.drdy_pulsed = DT_INST_PROP(inst, drdy_pulsed),                 \
 	.drdy_pin = DT_INST_PROP(inst, drdy_pin)
 #else

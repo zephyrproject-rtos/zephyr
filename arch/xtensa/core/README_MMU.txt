@@ -197,7 +197,7 @@ initialization algorithm is therefore:
 
 Note: there is a different variant of the Xtensa MMU architecture
 where the way 5/6 pages are immutable, and specify a set of
-unchangable mappings from the final 384M of memory to the bottom and
+unchangeable mappings from the final 384M of memory to the bottom and
 top of physical memory.  The intent here would (presumably) be that
 these would be used by the kernel for all physical memory and that the
 remaining memory space would be used for virtual mappings.  This

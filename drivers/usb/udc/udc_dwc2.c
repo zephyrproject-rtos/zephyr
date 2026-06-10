@@ -42,6 +42,8 @@ enum dwc2_drv_event_type {
 	DWC2_DRV_EVT_HIBERNATION_EXIT_BUS_RESET,
 	/* Core should exit hibernation due to host resume */
 	DWC2_DRV_EVT_HIBERNATION_EXIT_HOST_RESUME,
+	/* Driver thread should disable core and cease all register accesses */
+	DWC2_DRV_EVT_DISABLE,
 };
 
 /* Minimum RX FIFO size in 32-bit words considering the largest used OUT packet
@@ -2018,6 +2020,12 @@ static int udc_dwc2_enable(const struct device *dev)
 
 	err = udc_dwc2_init_controller(dev);
 	if (err) {
+		int ret = dwc2_quirk_disable(dev);
+
+		if (ret != 0) {
+			LOG_ERR("Quirk disable failed %d", ret);
+		}
+
 		return err;
 	}
 
@@ -2038,7 +2046,7 @@ static int udc_dwc2_enable(const struct device *dev)
 	return 0;
 }
 
-static int udc_dwc2_disable(const struct device *dev)
+static int dwc2_handle_disable(const struct device *dev)
 {
 	const struct udc_dwc2_config *const config = dev->config;
 	struct udc_ep_config *cfg_out = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
@@ -2061,7 +2069,6 @@ static int udc_dwc2_disable(const struct device *dev)
 	}
 
 	config->irq_disable_func(dev);
-	cancel_hibernation_request(priv);
 
 	if (priv->hibernated) {
 		dwc2_exit_hibernation(dev, false, true);
@@ -2092,6 +2099,27 @@ static int udc_dwc2_disable(const struct device *dev)
 	}
 
 	return 0;
+}
+
+static int udc_dwc2_disable(const struct device *dev)
+{
+	struct udc_dwc2_data *const priv = udc_get_private(dev);
+	struct udc_data *data = dev->data;
+
+	/* Avoid context switch immediately after posting event */
+	k_sched_lock();
+
+	/* Inform driver thread that we want to disable */
+	k_event_post(&priv->drv_evt, BIT(DWC2_DRV_EVT_DISABLE));
+
+	/* Wait for driver thread to disable core, UDC mutex was acquired via
+	 * api->lock() called in udc_disable().
+	 */
+	k_condvar_wait(&priv->core_disabled, &data->mutex, K_FOREVER);
+
+	k_sched_unlock();
+
+	return priv->disable_status;
 }
 
 static int udc_dwc2_init(const struct device *dev)
@@ -2134,6 +2162,7 @@ static int dwc2_driver_preinit(const struct device *dev)
 
 	k_mutex_init(&data->mutex);
 
+	k_condvar_init(&priv->core_disabled);
 	k_event_init(&priv->drv_evt);
 	atomic_clear(&priv->xfer_new);
 	atomic_clear(&priv->xfer_finished);
@@ -3166,6 +3195,20 @@ static ALWAYS_INLINE void dwc2_thread_handler(void *const arg)
 
 	if (evt & BIT(DWC2_DRV_EVT_ENUM_DONE)) {
 		k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_ENUM_DONE));
+	}
+
+	if (evt & BIT(DWC2_DRV_EVT_DISABLE)) {
+		priv->disable_status = dwc2_handle_disable(dev);
+
+		if (priv->disable_status == 0) {
+			/* Driver is disabled, cease all register accesses */
+			k_event_clear(&priv->drv_evt, UINT32_MAX);
+		} else {
+			k_event_clear(&priv->drv_evt, BIT(DWC2_DRV_EVT_DISABLE));
+		}
+
+		/* Notify requestors that core is now disabled */
+		k_condvar_broadcast(&priv->core_disabled);
 	}
 
 	udc_unlock_internal(dev);

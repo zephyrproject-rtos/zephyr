@@ -905,8 +905,7 @@ static inline void eth_xmc4xxx_free_rx_bufs(const struct device *dev)
 
 	for (int i = 0; i < NUM_RX_DMA_DESCRIPTORS; i++) {
 		if (dev_data->rx_frag_list[i]) {
-			net_buf_unref(dev_data->rx_frag_list[i]);
-			dev_data->rx_frag_list[i] = NULL;
+			net_buf_drop(&dev_data->rx_frag_list[i]);
 		}
 	}
 }

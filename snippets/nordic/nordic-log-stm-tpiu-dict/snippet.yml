@@ -1,4 +1,7 @@
 name: nordic-log-stm-tpiu-dict
+description: |
+  Enables dictionary-based logging to Coresight STM stimulus ports via TPIU,
+  captured with nrfutil trace.
 append:
   EXTRA_CONF_FILE: log_stm_dict.conf
 boards:

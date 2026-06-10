@@ -558,7 +558,8 @@
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32_msi_clock, okay) || \
-	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32l0_msi_clock, okay)
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32l0_msi_clock, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msi), st_stm32n6_msi_clock, okay)
 #define STM32_MSI_ENABLED	1
 #define STM32_MSI_RANGE		DT_PROP(DT_NODELABEL(clk_msi), msi_range)
 #endif

@@ -21,6 +21,6 @@ const struct pfc_drive_reg *pfc_rcar_get_drive_regs(void);
  * @return 0 if the register index is found, negative
  * errno otherwise.
  */
-int pfc_rcar_get_reg_index(uint8_t pin, uint8_t *reg_index);
+int pfc_rcar_get_reg_index(uint16_t pin, uint8_t *reg_index);
 
 #endif /* ZEPHYR_DRIVERS_PINCTRL_PFC_RCAR_H_ */

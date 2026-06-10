@@ -17,7 +17,7 @@
 #include "sl_si91x_socket.h"
 #include "sl_si91x_socket_utility.h"
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 BUILD_ASSERT(SLI_NUMBER_OF_SOCKETS < sizeof(uint32_t) * 8);
 BUILD_ASSERT(SLI_NUMBER_OF_SOCKETS < SIZEOF_FIELD(sl_si91x_fdset_t, __fds_bits) * 8);

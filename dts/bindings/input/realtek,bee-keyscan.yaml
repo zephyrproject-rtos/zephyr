@@ -35,6 +35,8 @@ properties:
     description: |
       Actual row size of the external keyscan matrix.
       Hardware supports up to 12 rows.
+    min: 1
+    max: 12
 
   col-size:
     required: true
@@ -42,6 +44,8 @@ properties:
     description: |
       Actual column size of the external keyscan matrix.
       Hardware supports up to 20 columns.
+    min: 1
+    max: 20
 
   scan-div:
     type: int
@@ -50,7 +54,8 @@ properties:
       Clock divider for the Keyscan scanning clock.
       Formula: scan_clock = source_clock / (scan-div + 1).
       Assuming the source_clock is 5MHz, the default value 1 results in a 2.5MHz scan_clock.
-      Maximum value: 65535.
+    min: 0
+    max: 65535
 
   delay-div:
     type: int
@@ -59,12 +64,13 @@ properties:
       Clock divider for the Keyscan delay clock (used for debounce, poll interval and release).
       Formula: delay_clock = scan_clock / (delay-div + 1).
       With the default 2.5MHz scan_clock, the default value 49 results in a 50kHz delay_clock.
-      Maximum value: 255.
       poll-period-us and release-time-us each depend on the delay_clock period
       (T_delay = 1 / delay_clock), and each has its own maximum of 512 ticks.
       With the default 50kHz delay_clock (20us period), all three properties have:
         - Resolution: 20us
         - Range: 0 to 10240us
+    min: 0
+    max: 255
 
   poll-period-us:
     description: |

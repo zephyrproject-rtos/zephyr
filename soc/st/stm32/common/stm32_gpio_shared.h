@@ -29,9 +29,7 @@
  * STM32 GPIO port configuration block and data block structures
  */
 struct gpio_stm32_config {
-#if defined(CONFIG_GPIO_STM32)
 	struct gpio_driver_config common;
-#endif /* CONFIG_GPIO_STM32 */
 
 	/* GPIO port base address */
 	void *base;
@@ -44,9 +42,9 @@ struct gpio_stm32_config {
 };
 
 struct gpio_stm32_data {
-#if defined(CONFIG_GPIO_STM32)
 	struct gpio_driver_data common;
 
+#if defined(CONFIG_GPIO_STM32)
 	/*
 	 * Keeps track of pins which are used as GPIOs
 	 * and need the GPIO port clock to remain enabled.

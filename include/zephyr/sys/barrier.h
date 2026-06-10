@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Memory barrier operations.
+ * @ingroup barrier_apis
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_BARRIER_H_
 #define ZEPHYR_INCLUDE_SYS_BARRIER_H_
 

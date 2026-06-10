@@ -37,3 +37,9 @@ family:
   - name: esp32h2
     socs:
     - name: esp32h2
+  - name: esp32p4
+    socs:
+    - name: esp32p4
+      cpuclusters:
+      - name: hpcore
+      - name: lpcore

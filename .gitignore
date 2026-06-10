@@ -111,6 +111,7 @@ KconfigHWMv2.txt
 KeepSorted.txt
 LicenseAndCopyrightCheck.txt
 MaintainersFormat.txt
+MmuRegionsCheck.txt
 ModulesMaintainers.txt
 Nits.txt
 Pylint.txt

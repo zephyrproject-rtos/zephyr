@@ -141,7 +141,7 @@ static int i2c_stm32_configure(const struct device *dev,
 #define OPERATION(msg)	((msg)->flags & I2C_MSG_RW_MASK)
 
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
-				   uint8_t num_msgs, uint16_t addr)
+			      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *const ctx = data->ctx;

@@ -493,7 +493,7 @@ static void i2c_handle_error(const struct device *dev, int error_status)
 /* Validates I2C message array and sets RESTART flags */
 static int i2c_validate_msgs(struct i2c_msg *msgs, uint8_t num_msgs)
 {
-	if ((msgs == NULL) || (num_msgs == 0)) {
+	if (msgs == NULL) {
 		return -EINVAL;
 	}
 

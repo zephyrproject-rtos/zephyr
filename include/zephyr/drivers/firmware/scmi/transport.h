@@ -50,10 +50,10 @@ typedef void (*scmi_channel_cb)(struct scmi_channel *chan);
  * channels is represented by a `struct scmi_channel`.
  */
 struct scmi_channel {
-	/** channel private data */
+	/** Channel private data */
 	void *data;
 	/**
-	 * callback function. This is meant to be set by
+	 * Callback function. This is meant to be set by
 	 * the SCMI core and should be called by the SCMI
 	 * transport layer driver whenever a reply has
 	 * been received.
@@ -61,7 +61,7 @@ struct scmi_channel {
 	scmi_channel_cb cb;
 	/** @cond INTERNAL_HIDDEN */
 	/**
-	 * channel lock. This is meant to be initialized
+	 * Channel lock. This is meant to be initialized
 	 * and used only by the SCMI core to assure that
 	 * only one protocol can send/receive messages
 	 * through a channel at a given moment.
@@ -69,7 +69,7 @@ struct scmi_channel {
 	struct k_mutex lock;
 
 	/**
-	 * binary semaphore. This is meant to be initialized
+	 * Binary semaphore. This is meant to be initialized
 	 * and used only by the SCMI core. Its purpose is to
 	 * signal that a reply has been received.
 	 */
@@ -79,7 +79,7 @@ struct scmi_channel {
 	bool ready;
 	/** @endcond */
 	/**
-	 * indicates if the channel requires polling-only operation.
+	 * Indicates if the channel requires polling-only operation.
 	 * When set to true, the channel cannot use interrupt-based
 	 * messaging and must always poll for responses.
 	 */
@@ -104,8 +104,7 @@ struct scmi_transport_api {
 	 *
 	 * @param transport transport device
 	 *
-	 * @retval 0 is successful
-	 * @retval <0 negative errno code if failure
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*init)(const struct device *transport);
 
@@ -123,8 +122,7 @@ struct scmi_transport_api {
 	 * @param msg message to send
 	 * @param use_polling true if polling should be enabled, false otherwise
 	 *
-	 * @retval 0 if successful
-	 * @retval <0 negative errno code if failure
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*send_message)(const struct device *transport,
 			    struct scmi_channel *chan,
@@ -141,8 +139,7 @@ struct scmi_transport_api {
 	 * @param chan channel to prepare
 	 * @param tx true if channel is TX, false if channel is RX
 	 *
-	 * @retval 0 if successful
-	 * @retval <0 negative errno code if failure
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*setup_chan)(const struct device *transport,
 			  struct scmi_channel *chan,
@@ -158,8 +155,7 @@ struct scmi_transport_api {
 	 * @param chan channel used to receive the message
 	 * @param msg message to receive
 	 *
-	 * @retval 0 if successful
-	 * @retval <0 negative errno code if failure
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	int (*read_message)(const struct device *transport,
 			    struct scmi_channel *chan,
@@ -176,8 +172,7 @@ struct scmi_transport_api {
 	 * @param transport device
 	 * @param chan TX channel to query
 	 *
-	 * @retval 0 if successful
-	 * @retval <0 negative errno code if failure
+	 * @return 0 on success, negative errno value on failure.
 	 */
 	bool (*channel_is_free)(const struct device *transport,
 				struct scmi_channel *chan);
@@ -306,13 +301,11 @@ static inline bool scmi_transport_channel_is_free(const struct device *transport
 }
 
 /**
- * @brief Perfrom SCMI core initialization
+ * @brief Perform SCMI core initialization
  *
- * @param transport pointer to the device structure for
- * the transport layer
+ * @param transport Pointer to the device structure for the transport layer
  *
- * @retval 0 if successful
- * @retval negative errno code if failure
+ * @return 0 on success, negative errno value on failure.
  */
 int scmi_core_transport_init(const struct device *transport);
 

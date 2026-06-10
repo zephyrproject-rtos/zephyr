@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(eth_intel_igc, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/sys/crc.h>
 #include "../eth.h"
 #include "eth_intel_igc_priv.h"
+#include "eth_intel_plat.h"
 
 #define DT_DRV_COMPAT intel_igc_mac
 

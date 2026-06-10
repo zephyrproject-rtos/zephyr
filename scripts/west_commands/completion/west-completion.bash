@@ -400,6 +400,11 @@ __set_comp_west_shields()
 	__set_comp "$(__west_x shields "$@")"
 }
 
+__set_comp_west_snippets()
+{
+	__set_comp "$(__west_x snippets --format={name} "$@")"
+}
+
 __comp_west_west()
 {
 	case "$prev" in
@@ -723,6 +728,37 @@ __comp_west_shields()
 	esac
 }
 
+__comp_west_snippets()
+{
+	local other_opts="
+		--format -f
+		--name -n
+	"
+
+	local dir_opts="
+		--snippet-root
+	"
+
+	all_opts="$dir_opts $other_opts"
+
+	case "$prev" in
+		$(__west_to_extglob "$other_opts") )
+			# We don't know how to autocomplete these.
+			return
+			;;
+		$(__west_to_extglob "$dir_opts") )
+			__set_comp_dirs
+			return
+			;;
+	esac
+
+	case "$cur" in
+		-*)
+			__set_comp $all_opts
+			;;
+	esac
+}
+
 __comp_west_build()
 {
 	local bool_opts="
@@ -761,6 +797,10 @@ __comp_west_build()
 			;;
 		--shield)
 			__set_comp_west_shields
+			return
+			;;
+		--snippet|-S)
+			__set_comp_west_snippets
 			return
 			;;
 		--pristine|-p)
@@ -1226,6 +1266,7 @@ __comp_west()
 		completion
 		boards
 		shields
+		snippets
 		build
 		twister
 		sign

@@ -8,4 +8,5 @@ tests:
       - serial
       - uart
     filter: dt_chosen_enabled("zephyr,shell-uart") and CONFIG_SOC_FAMILY_STM32
+            and not CONFIG_DT_HAS_ZEPHYR_CDC_ACM_UART_ENABLED
     harness: keyboard

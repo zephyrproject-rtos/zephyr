@@ -5,5 +5,15 @@
 
 mainmenu "OpenThread Border Router sample application"
 
+config OTBR_WEB_SERVER
+	bool "Enable HTTP web server and REST API"
+	help
+	  Manage OpenThread Border Router with web interface.
+
+module = OTBR
+module-str = OpenThread Border Router
+module-help = Enables logging for OpenThread Border Router sample
+source "subsys/logging/Kconfig.template.log_config"
+
 source "samples/net/common/Kconfig"
 source "Kconfig.zephyr"

@@ -56,6 +56,8 @@
 #define APLIC_GENMSI         0x3000
 /** @brief Target registers base offset */
 #define APLIC_TARGET_BASE    0x3004
+/** @brief Interrupt Domain Control (IDC) region base offset */
+#define APLIC_IDC_BASE       0x4000
 /** @} */
 
 /**
@@ -156,6 +158,66 @@
 #define APLIC_GENMSI_MMSI_MODE     BIT(11)
 /** @brief External Interrupt Identity field mask (11-bit, bits 10:0) */
 #define APLIC_GENMSI_EIID_MASK     0x7FF
+/** @} */
+
+/**
+ * @name APLIC IDC Register Offsets
+ * Register offsets for registers within the IDC structure when DM enabled.
+ * One IDC per Hart.
+ * @{
+ */
+/** @brief WARL register to specify interrupt delivery (0=disabled, 1=enabled) */
+#define APLIC_IDC_IDELIVERY_OFFSET  0x0
+/** @brief WARL register for testing (1=interrupt asserted by force) */
+#define APLIC_IDC_IFORCE_OFFSET     0x4
+/** @brief WLRL register indicating the minimum priority for an interrupt to be signaled */
+#define APLIC_IDC_ITHRESHOLD_OFFSET 0x8
+/** @brief Read-only register indicating the current highest-priority interrupt pending */
+#define APLIC_IDC_TOPI_OFFSET       0x18
+/** @brief Read-only register identical to TOPI, with the affect of clearing the pending bit */
+#define APLIC_IDC_CLAIMI_OFFSET     0x1C
+/** @brief Per AIA spec, each IDC structure is 32 bytes */
+#define APLIC_IDC_STRUCT_SIZE       0x20
+/** @} */
+
+/**
+ * @name APLIC idelivery Register Fields
+ * Bit definitions for the APLIC ithreshold configuration register.
+ * @{
+ */
+/** @brief idelivery enable bit in idelivery register within IDC */
+#define APLIC_IDC_IDELIVERY_ENABLE BIT(0)
+/** @} */
+
+/**
+ * @name APLIC iforce Register Fields
+ * Bit definitions for the APLIC idelivery configuration register.
+ * @{
+ */
+/** @brief iforce default value (1=set interrupt pending. Spurious if TOPI is 0) */
+#define APLIC_IDC_IFORCE_SET 1
+/** @} */
+
+/**
+ * @name APLIC ithreshold Register Fields
+ * Bit definitions for the APLIC idelivery configuration register.
+ * @{
+ */
+/** @brief ithreshold default value (0=all enabled sources can signal) */
+#define APLIC_IDC_ITHRESHOLD 0
+/** @} */
+
+/**
+ * @name APLIC TOPI / CLAIMI Register Fields
+ * Bit definitions for the APLIC idelivery configuration register.
+ * @{
+ */
+/** @brief Lower 8 bits of TOPI/CLAIMI represent interrupt priority */
+#define APLIC_IPRIO_MASK               0xFF
+/** @brief Base offset into register's interrupt identity field */
+#define APLIC_INTERRUPT_IDENTITY_SHIFT 16
+/** @brief Bits 25:16 of TOPI/CLAIMI represent interrupt source number */
+#define APLIC_INTERRUPT_IDENTITY_MASK  (BIT_MASK(10) << APLIC_INTERRUPT_IDENTITY_SHIFT)
 /** @} */
 
 /**
@@ -304,5 +366,62 @@ static inline void riscv_aplic_msi_inject_genmsi(uint32_t hart, uint32_t eiid)
 	riscv_aplic_msi_inject_software_interrupt(riscv_aplic_get_dev(), eiid, hart, 0);
 }
 #endif /* CONFIG_RISCV_APLIC_MSI */
+
+#if defined(CONFIG_RISCV_APLIC_DIRECT) || defined(__DOXYGEN__)
+/**
+ * @brief Calculate idelivery register offset for a given CPU
+ *
+ * @param cpu CPU index
+ * @return Base register offset for the CPU's idelivery register in IDC structure
+ */
+static inline uint32_t aplic_idelivery_off(unsigned int cpu)
+{
+	return APLIC_IDC_BASE + (cpu * APLIC_IDC_STRUCT_SIZE) + APLIC_IDC_IDELIVERY_OFFSET;
+}
+
+/**
+ * @brief Calculate ithreshold register offset for a given CPU
+ *
+ * @param cpu CPU index
+ * @return Base register offset for the CPU's ithreshold register in IDC structure
+ */
+static inline uint32_t aplic_ithreshold_off(unsigned int cpu)
+{
+	return APLIC_IDC_BASE + (cpu * APLIC_IDC_STRUCT_SIZE) + APLIC_IDC_ITHRESHOLD_OFFSET;
+}
+
+/**
+ * @brief Calculate iforce register offset for a given CPU
+ *
+ * @param cpu CPU index
+ * @return Base register offset for the CPU's iforce register in IDC structure
+ */
+static inline uint32_t aplic_iforce_off(unsigned int cpu)
+{
+	return APLIC_IDC_BASE + (cpu * APLIC_IDC_STRUCT_SIZE) + APLIC_IDC_IFORCE_OFFSET;
+}
+
+/**
+ * @brief Calculate topi register offset for a given CPU
+ *
+ * @param cpu CPU index
+ * @return Base register offset for the CPU's topi register in IDC structure
+ */
+static inline uint32_t aplic_topi_off(unsigned int cpu)
+{
+	return APLIC_IDC_BASE + (cpu * APLIC_IDC_STRUCT_SIZE) + APLIC_IDC_TOPI_OFFSET;
+}
+
+/**
+ * @brief Calculate claimi register offset for a given CPU
+ *
+ * @param cpu CPU index
+ * @return Base register offset for the CPU's claimi register in IDC structure
+ */
+static inline uint32_t aplic_claimi_off(unsigned int cpu)
+{
+	return APLIC_IDC_BASE + (cpu * APLIC_IDC_STRUCT_SIZE) + APLIC_IDC_CLAIMI_OFFSET;
+}
+#endif /* CONFIG_RISCV_APLIC_DIRECT */
 
 #endif

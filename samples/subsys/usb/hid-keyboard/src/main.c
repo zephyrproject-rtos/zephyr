@@ -86,6 +86,27 @@ static int kb_get_report(const struct device *dev,
 	return 0;
 }
 
+static int kb_verify_set_report(const struct device *dev, const uint8_t type,
+				const uint8_t id, const uint16_t len)
+{
+	if (type != HID_REPORT_TYPE_OUTPUT) {
+		LOG_WRN("Unsupported report type");
+		return -ENOTSUP;
+	}
+
+	if (id != 0) {
+		LOG_ERR("Unsupported report id %d", id);
+		return -ENOTSUP;
+	}
+
+	if (len != 1) {
+		LOG_WRN("Unsupported report length %d", len);
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int kb_set_report(const struct device *dev,
 			 const uint8_t type, const uint8_t id, const uint16_t len,
 			 const uint8_t *const buf)
@@ -136,6 +157,7 @@ static void kb_output_report(const struct device *dev, const uint16_t len,
 struct hid_device_ops kb_ops = {
 	.iface_ready = kb_iface_ready,
 	.get_report = kb_get_report,
+	.verify_set_report = kb_verify_set_report,
 	.set_report = kb_set_report,
 	.set_idle = kb_set_idle,
 	.get_idle = kb_get_idle,

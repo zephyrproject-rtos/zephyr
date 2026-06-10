@@ -561,7 +561,7 @@ int spi_nrfx_spim_common_configure(const struct device *dev, const struct spi_co
 
 	spim_cfg.ss_pin = NRF_SPIM_PIN_NOT_CONNECTED;
 	spim_cfg.orc = dev_config->orc;
-	spim_cfg.frequency = resolve_freq(spi_cfg->frequency);
+	spim_cfg.frequency = MIN(resolve_freq(spi_cfg->frequency), dev_config->max_freq);
 	spim_cfg.mode = mode_from_op(spi_cfg->operation);
 	spim_cfg.bit_order = bit_order_from_op(spi_cfg->operation);
 #if NRF_SPIM_HAS_DCX

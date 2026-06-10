@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(zephyr_build_path ${APPLICATION_BINARY_DIR}/zephyr)
-get_property(CCACHE GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
 
 target_link_options(native_simulator INTERFACE
   "-T ${ZEPHYR_BASE}/boards/native/common/natsim_linker_script.ld")
@@ -17,6 +16,8 @@ if(CONFIG_NATIVE_SIMULATOR_STATIC_LINKING)
   target_link_options(native_simulator INTERFACE "-static")
 endif()
 
+list(JOIN CMAKE_C_COMPILER_LAUNCHER " " launcher)
+
 if("${LINKER}" STREQUAL "lld")
   target_link_options(native_simulator INTERFACE "-fuse-ld=lld")
 endif()
@@ -26,7 +27,7 @@ set(nsi_config_content
   "NSI_AR:=${CMAKE_AR}"
   "NSI_BUILD_OPTIONS:=$<JOIN:$<TARGET_PROPERTY:native_simulator,INTERFACE_COMPILE_OPTIONS>,\ >"
   "NSI_BUILD_PATH:=${zephyr_build_path}/NSI"
-  "NSI_CC:=${CCACHE} ${CMAKE_C_COMPILER}"
+  "NSI_CC:=$<$<BOOL:${launcher}>:${launcher} >${CMAKE_C_COMPILER}"
   "NSI_OBJCOPY:=${CMAKE_OBJCOPY}"
   "NSI_EMBEDDED_CPU_SW:=${zephyr_build_path}/${KERNEL_ELF_NAME} ${CONFIG_NATIVE_SIMULATOR_EXTRA_IMAGE_PATHS}"
   "NSI_EXE:=${zephyr_build_path}/${KERNEL_EXE_NAME}"

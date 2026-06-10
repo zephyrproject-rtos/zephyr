@@ -31,10 +31,8 @@ properties:
     required: true
     description: |
         PLL output division
-    enum:
-      - 2
-      - 3
-      - 4
+    min: 2
+    max: 4
 
   mul:
     type: int

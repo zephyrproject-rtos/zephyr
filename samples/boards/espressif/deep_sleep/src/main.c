@@ -6,7 +6,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/retained_mem.h>
-#include <zephyr/pm/device.h>
 #include <zephyr/sys/poweroff.h>
 #include <esp_sleep.h>
 
@@ -33,17 +32,6 @@ static esp_sleep_wakeup_cause_t get_wakeup_cause(void)
 		return ESP_SLEEP_WAKEUP_UNDEFINED;
 	}
 	return (esp_sleep_wakeup_cause_t)__builtin_ctz(causes);
-}
-
-void dev_enable_wakeup(const struct device *dev)
-{
-	if (!device_is_ready(dev)) {
-		printk("%s: device not ready\n", dev->name);
-	}
-
-	if (!pm_device_wakeup_enable(dev, true)) {
-		printk("%s: could not enable wakeup source\n", dev->name);
-	}
 }
 
 static void print_counter(__maybe_unused esp_sleep_wakeup_cause_t sleep_wakeup_cause)
@@ -115,12 +103,6 @@ static void print_counter(__maybe_unused esp_sleep_wakeup_cause_t sleep_wakeup_c
 
 int main(void)
 {
-	for (int i = 0; i < ARRAY_SIZE(wake_gpios); i++) {
-		const struct device *dev_gpio = wake_gpios[i].port;
-
-		dev_enable_wakeup(dev_gpio);
-	}
-
 	esp_sleep_wakeup_cause_t sleep_wakeup_cause = get_wakeup_cause();
 
 	print_counter(sleep_wakeup_cause);

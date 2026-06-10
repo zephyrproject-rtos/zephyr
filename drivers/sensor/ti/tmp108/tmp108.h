@@ -20,6 +20,15 @@
 #define TI_TMP108_REG_LOW_LIMIT		0x02   /** Low alert set register */
 #define TI_TMP108_REG_HIGH_LIMIT	0x03   /** High alert set register */
 
+/** a tmp108 mask for the over temp alert bit in the status word*/
+#define TMP108_OVER_TEMP_MASK 0x1000U
+
+/** a tmp108 mask for the under temp alert bit in the status word*/
+#define TMP108_UNDER_TEMP_MASK  0x0800U
+
+/** a as6212 mask for the over temp alert bit in the status word*/
+#define A6212_ALERT_TEMP_MASK   0x0020U
+
 #define AMS_AS6212_CONF                                                                            \
 	{.CONF_CR0 = 0x0040,                                                                       \
 	 .CONF_CR1 = 0x0080,                                                                       \

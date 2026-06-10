@@ -19,7 +19,9 @@
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -27,10 +29,10 @@
 #include <zephyr/bluetooth/audio/gmap.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/audio/pacs.h>
-#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
@@ -43,18 +45,18 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
+#include "audio.h"
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
-#include "audio.h"
 
 /* Determines if we can initiate streaming */
 #define IS_BAP_INITIATOR                                                                           \
@@ -348,7 +350,7 @@ static int init_lc3_encoder(struct shell_stream *sh_stream)
 				  IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) ? USB_SAMPLE_RATE : 0,
 				  &sh_stream->tx.lc3_encoder_mem);
 	if (sh_stream->tx.lc3_encoder == NULL) {
-		bt_shell_error("Failed to setup LC3 encoder - wrong parameters?\n");
+		bt_shell_error("Failed to setup LC3 encoder - wrong parameters?");
 		return -EINVAL;
 	}
 
@@ -737,7 +739,7 @@ static bool meta_data_func_cb(struct bt_data *data, void *user_data)
 	struct bt_bap_ascs_rsp *rsp = (struct bt_bap_ascs_rsp *)user_data;
 
 	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->type)) {
-		printk("Invalid metadata type %u or length %u\n", data->type, data->data_len);
+		bt_shell_print("Invalid metadata type %u or length %u", data->type, data->data_len);
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data->type);
 		return false;
 	}
@@ -971,7 +973,7 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("dir %u loc %X\n", dir, loc);
+	bt_shell_print("dir %u loc %X", dir, loc);
 }
 
 static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
@@ -979,7 +981,7 @@ static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context sn
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("Supported snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+	bt_shell_print("Supported snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
 static void available_contexts_cb(struct bt_conn *conn,
@@ -988,7 +990,7 @@ static void available_contexts_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("Available snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
+	bt_shell_print("Available snk ctx %u src ctx %u", snk_ctx, src_ctx);
 }
 
 static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
@@ -2605,7 +2607,7 @@ static int init_lc3_decoder(struct shell_stream *sh_stream)
 				  IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) ? USB_SAMPLE_RATE : 0,
 				  &sh_stream->rx.lc3_decoder_mem);
 	if (sh_stream->rx.lc3_decoder == NULL) {
-		bt_shell_error("Failed to setup LC3 decoder - wrong parameters?\n");
+		bt_shell_error("Failed to setup LC3 decoder - wrong parameters?");
 		return -EINVAL;
 	}
 
@@ -2889,7 +2891,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 	struct bt_bap_ep_info info = {0};
 	int ret;
 
-	printk("Stream %p started\n", bap_stream);
+	bt_shell_print("Stream %p started", bap_stream);
 
 	ret = bt_bap_ep_get_info(bap_stream->ep, &info);
 	if (ret != 0) {
@@ -3132,7 +3134,7 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	struct shell_stream *sh_stream = shell_stream_from_bap_stream(stream);
 
-	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+	bt_shell_print("Stream %p stopped with reason 0x%02X", stream, reason);
 
 	clear_stream_data(sh_stream);
 }
@@ -3143,14 +3145,14 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 {
 	ARG_UNUSED(pref);
 
-	bt_shell_print("Stream %p configured\n", stream);
+	bt_shell_print("Stream %p configured", stream);
 }
 
 static void stream_released_cb(struct bt_bap_stream *stream)
 {
 	struct shell_stream *sh_stream = shell_stream_from_bap_stream(stream);
 
-	bt_shell_print("Stream %p released\n", stream);
+	bt_shell_print("Stream %p released", stream);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 	if (default_unicast_group.bap_group != NULL && !default_unicast_group.is_cap) {
@@ -3176,7 +3178,7 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 		if (group_can_be_deleted) {
 			int err;
 
-			bt_shell_print("All streams released, deleting group\n");
+			bt_shell_print("All streams released, deleting group");
 
 			err = bt_bap_unicast_group_delete(default_unicast_group.bap_group);
 
@@ -3311,7 +3313,7 @@ static int cmd_create_broadcast(const struct shell *sh, size_t argc,
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
 	if (err != 0) {
-		bt_shell_error("Unable to generate broadcast ID: %d\n", err);
+		bt_shell_error("Unable to generate broadcast ID: %d", err);
 
 		return -ENOEXEC;
 	}
@@ -3368,7 +3370,7 @@ static int cmd_start_broadcast(const struct shell *sh, size_t argc,
 
 	err = bt_le_ext_adv_get_info(adv, &adv_info);
 	if (err != 0) {
-		shell_error(sh, "Failed to get adv info: %d\n", err);
+		shell_error(sh, "Failed to get adv info: %d", err);
 		return -ENOEXEC;
 	}
 
@@ -4192,7 +4194,7 @@ static bool print_ase_info(struct bt_bap_ep *ep, void *user_data)
 
 	err = bt_bap_ep_get_info(ep, &info);
 	if (err == 0) {
-		printk("ASE info: id %u state %u dir %u\n", info.id, info.state, info.dir);
+		bt_shell_print("ASE info: id %u state %u dir %u", info.id, info.state, info.dir);
 	}
 
 	return true;
@@ -4480,7 +4482,7 @@ size_t audio_pa_data_add(struct bt_data *data_array, const size_t data_array_siz
 
 		err = bt_bap_broadcast_source_get_base(default_source.bap_source, &base_buf);
 		if (err != 0) {
-			bt_shell_error("Unable to get BASE: %d\n", err);
+			bt_shell_error("Unable to get BASE: %d", err);
 
 			return 0U;
 		}

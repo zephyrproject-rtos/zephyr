@@ -8,7 +8,7 @@ set(ptp_port_src ${ZEPHYR_BASE}/subsys/net/lib/ptp/port.c)
 
 set_source_files_properties(${ptp_port_src} PROPERTIES
   COMPILE_DEFINITIONS
-  "net_if_register_timestamp_cb=fake_net_if_register_timestamp_cb;net_if_unregister_timestamp_cb=fake_net_if_unregister_timestamp_cb;net_eth_get_ptp_clock=fake_net_eth_get_ptp_clock;ptp_clock_get=fake_ptp_clock_get;net_if_oper_state=fake_net_if_oper_state"
+  "net_if_register_timestamp_cb=fake_net_if_register_timestamp_cb;net_if_unregister_timestamp_cb=fake_net_if_unregister_timestamp_cb;net_eth_get_ptp_clock=fake_net_eth_get_ptp_clock;ptp_clock_get=fake_ptp_clock_get;net_if_oper_state=fake_net_if_oper_state;z_impl_sys_rand_get=fake_z_impl_sys_rand_get"
 )
 
 target_sources(app PRIVATE

@@ -18,7 +18,7 @@ The shield features:
 - Capacitive touch panel (CTP)
 - LED backlight with GPIO control
 
-.. figure:: mb1835_front.webp
+.. figure:: st_lcd_dsi_mb1835.webp
    :alt: MB1835 Display shield front image
    :align: center
 

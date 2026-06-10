@@ -18,6 +18,16 @@ tests:
     platform_allow:
       - frdm_rw612
       - rd_rw612_bga
+  sample.net.openthread.border_router.rw612_openthread_rcp_host_webserver:
+    build_only: true
+    extra_args:
+      # Disabling monolithic since CI environment doesn't use blobs
+      - CONFIG_NXP_MONOLITHIC_NBU=n
+      - CONFIG_NXP_MONOLITHIC_WIFI=n
+      - EXTRA_CONF_FILE="overlay-ot-rcp-host-wifi-nxp.conf overlay-webserver.conf"
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
   sample.net.openthread.border_router.esp_rcp_host_wifi:
     build_only: true
     extra_args:

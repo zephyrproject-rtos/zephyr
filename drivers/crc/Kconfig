@@ -21,6 +21,7 @@ config CRC_DRIVER_INIT_PRIORITY
 	  CRC driver device initialization priority.
 
 # zephyr-keep-sorted-start
+source "drivers/crc/Kconfig.ambiq"
 source "drivers/crc/Kconfig.nxp"
 source "drivers/crc/Kconfig.renesas_ra"
 source "drivers/crc/Kconfig.sf32lb"

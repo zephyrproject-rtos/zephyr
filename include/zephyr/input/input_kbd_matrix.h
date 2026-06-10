@@ -354,6 +354,19 @@ bool input_kbd_matrix_ghosting(const struct device *dev);
  */
 void input_kbd_matrix_update_state(const struct device *dev);
 
+/**
+ * @brief Returns true if the matrix is considered active.
+ *
+ * Returns true if the matrix is considered active, that is if either a key is
+ * pressed or waiting to be debounced or released.
+ *
+ * @param dev Keyboard matrix device instance.
+ *
+ * @retval true  The matrix is a active.
+ * @retval false The matrix is idle, all keys have been released.
+ */
+bool input_kbd_matrix_active(const struct device *dev);
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_ */

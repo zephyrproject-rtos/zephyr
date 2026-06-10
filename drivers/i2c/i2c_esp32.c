@@ -30,6 +30,12 @@ LOG_MODULE_REGISTER(i2c_esp32, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 
+#if defined(CONFIG_I2C_TARGET) && SOC_I2C_SUPPORT_SLAVE && SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
+#define I2C_ESP32_TARGET_ENABLED 1
+#else
+#define I2C_ESP32_TARGET_ENABLED 0
+#endif
+
 #define I2C_FILTER_CYC_NUM_DEF 7	/* Number of apb cycles filtered by default */
 #define I2C_CLR_BUS_SCL_NUM 9		/* Number of SCL clocks to restore SDA signal */
 #define I2C_CLR_BUS_HALF_PERIOD_US 5	/* Period of SCL clock to restore SDA signal */
@@ -68,6 +74,21 @@ struct i2c_esp32_data {
 	uint32_t dev_config;
 	int cmd_idx;
 	int irq_line;
+#if I2C_ESP32_TARGET_ENABLED
+	struct i2c_target_config *target_cfg;
+	bool target_attached;
+	bool target_reading;
+	bool target_writing;
+	bool target_in_master_xfer;
+#if defined(CONFIG_I2C_TARGET_BUFFER_MODE)
+	bool target_buf_mode;
+	uint32_t target_rx_len;
+	uint8_t target_rx_buf[CONFIG_I2C_ESP32_TARGET_BUF];
+	const uint8_t *target_tx_buf;
+	uint32_t target_tx_len;
+	uint32_t target_tx_idx;
+#endif
+#endif
 };
 
 typedef void (*irq_connect_cb)(void);
@@ -606,6 +627,11 @@ static int IRAM_ATTR i2c_esp32_write_msg(const struct device *dev,
 	return 0;
 }
 
+#if I2C_ESP32_TARGET_ENABLED
+static void i2c_esp32_target_pause(const struct device *dev);
+static void i2c_esp32_target_resume(const struct device *dev);
+#endif
+
 static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg *msgs,
 					uint8_t num_msgs, uint16_t addr)
 {
@@ -613,10 +639,6 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 	struct i2c_msg *current, *next;
 	uint32_t timeout = I2C_TRANSFER_TIMEOUT_MSEC * USEC_PER_MSEC;
 	int ret = 0;
-
-	if (!num_msgs) {
-		return 0;
-	}
 
 	while (i2c_ll_is_bus_busy(data->hal.dev)) {
 		k_busy_wait(1);
@@ -659,6 +681,14 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 
 	k_sem_take(&data->transfer_sem, K_FOREVER);
 
+#if I2C_ESP32_TARGET_ENABLED
+	bool was_target = data->target_attached;
+
+	if (was_target) {
+		i2c_esp32_target_pause(dev);
+	}
+#endif
+
 	/* Mask out unused address bits, and make room for R/W bit */
 	addr &= BIT_MASK(data->dev_config & I2C_ADDR_10_BITS ? 10 : 7);
 	addr <<= 1;
@@ -688,16 +718,269 @@ static int IRAM_ATTR i2c_esp32_transfer(const struct device *dev, struct i2c_msg
 		}
 	}
 
+#if I2C_ESP32_TARGET_ENABLED
+	if (was_target) {
+		i2c_esp32_target_resume(dev);
+	}
+#endif
+
 	k_sem_give(&data->transfer_sem);
 
 	return ret;
 }
+
+#if I2C_ESP32_TARGET_ENABLED
+
+static void i2c_esp32_target_setup(const struct device *dev)
+{
+	struct i2c_esp32_data *data = dev->data;
+	struct i2c_target_config *cfg = data->target_cfg;
+	bool addr10 = (cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0;
+
+	i2c_ll_disable_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
+	i2c_ll_clear_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
+
+	i2c_hal_slave_init(&data->hal);
+	i2c_ll_enable_fifo_mode(data->hal.dev, true);
+	i2c_ll_set_slave_addr(data->hal.dev, cfg->address, addr10);
+	i2c_ll_set_rxfifo_full_thr(data->hal.dev, I2C_LL_FIFO_LEN / 2);
+	i2c_ll_set_txfifo_empty_thr(data->hal.dev, I2C_LL_FIFO_LEN / 2);
+	i2c_ll_set_tout(data->hal.dev, I2C_LL_MAX_TIMEOUT);
+	i2c_ll_set_sda_timing(data->hal.dev, 10, 10);
+
+	i2c_ll_slave_set_stretch_protect_num(data->hal.dev, I2C_LL_STRETCH_PROTECT_TIME);
+	i2c_ll_slave_enable_scl_stretch(data->hal.dev, true);
+	i2c_ll_slave_clear_stretch(data->hal.dev);
+	i2c_ll_enable_intr_mask(data->hal.dev, I2C_LL_SLAVE_RX_EVENT_INTR);
+	i2c_ll_update(data->hal.dev);
+}
+
+static void i2c_esp32_target_teardown(const struct device *dev)
+{
+	struct i2c_esp32_data *data = dev->data;
+
+	i2c_ll_slave_enable_scl_stretch(data->hal.dev, false);
+	i2c_ll_slave_disable_rx_it(data->hal.dev);
+	i2c_ll_slave_disable_tx_it(data->hal.dev);
+	i2c_ll_disable_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
+	i2c_ll_clear_intr_mask(data->hal.dev, I2C_LL_INTR_MASK);
+}
+
+static void i2c_esp32_target_pause(const struct device *dev)
+{
+	const struct i2c_esp32_config *config = dev->config;
+	struct i2c_esp32_data *data = dev->data;
+
+	data->target_in_master_xfer = true;
+	i2c_esp32_target_teardown(dev);
+	i2c_hal_master_init(&data->hal);
+	i2c_esp32_configure_data_mode(dev);
+	i2c_esp32_configure_bitrate(dev, config->bitrate);
+}
+
+static void i2c_esp32_target_resume(const struct device *dev)
+{
+	struct i2c_esp32_data *data = dev->data;
+
+	i2c_esp32_target_setup(dev);
+	data->target_reading = false;
+	data->target_writing = false;
+	data->target_in_master_xfer = false;
+}
+
+static inline void IRAM_ATTR i2c_esp32_target_drain_rx(const struct device *dev)
+{
+	struct i2c_esp32_data *data = dev->data;
+	const struct i2c_target_callbacks *cb = data->target_cfg->callbacks;
+	uint32_t cnt = 0;
+	uint8_t byte;
+
+	i2c_ll_get_rxfifo_cnt(data->hal.dev, &cnt);
+	while (cnt--) {
+		bool first = !data->target_writing;
+
+		i2c_ll_read_rxfifo(data->hal.dev, &byte, 1);
+		data->target_writing = true;
+#if defined(CONFIG_I2C_TARGET_BUFFER_MODE)
+		if (data->target_buf_mode) {
+			if (data->target_rx_len < CONFIG_I2C_ESP32_TARGET_BUF) {
+				data->target_rx_buf[data->target_rx_len++] = byte;
+			}
+			continue;
+		}
+#endif
+		if (first && cb->write_requested) {
+			cb->write_requested(data->target_cfg);
+		}
+		if (cb->write_received) {
+			cb->write_received(data->target_cfg, byte);
+		}
+	}
+}
+
+static inline void IRAM_ATTR i2c_esp32_target_flush_rx_buf(const struct device *dev)
+{
+#if defined(CONFIG_I2C_TARGET_BUFFER_MODE)
+	struct i2c_esp32_data *data = dev->data;
+	const struct i2c_target_callbacks *cb = data->target_cfg->callbacks;
+
+	if (!data->target_buf_mode || data->target_rx_len == 0) {
+		return;
+	}
+	if (cb->buf_write_received) {
+		cb->buf_write_received(data->target_cfg, data->target_rx_buf, data->target_rx_len);
+	}
+	data->target_rx_len = 0;
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+#if defined(CONFIG_I2C_TARGET_BUFFER_MODE)
+static inline void IRAM_ATTR i2c_esp32_target_push_one_buf(const struct device *dev)
+{
+	struct i2c_esp32_data *data = dev->data;
+	const struct i2c_target_callbacks *cb = data->target_cfg->callbacks;
+	uint8_t byte = 0xff;
+
+	if (!data->target_reading) {
+		uint8_t *ptr = NULL;
+		uint32_t len = 0;
+
+		data->target_reading = true;
+		data->target_tx_buf = NULL;
+		data->target_tx_len = 0;
+		data->target_tx_idx = 0;
+		if (cb->buf_read_requested &&
+		    cb->buf_read_requested(data->target_cfg, &ptr, &len) == 0) {
+			data->target_tx_buf = ptr;
+			data->target_tx_len = len;
+		}
+	}
+	if (data->target_tx_buf && data->target_tx_idx < data->target_tx_len) {
+		byte = data->target_tx_buf[data->target_tx_idx++];
+	}
+	i2c_ll_write_txfifo(data->hal.dev, &byte, 1);
+}
+#endif
+
+static inline void IRAM_ATTR i2c_esp32_target_push_one_byte(const struct device *dev)
+{
+	struct i2c_esp32_data *data = dev->data;
+	const struct i2c_target_callbacks *cb = data->target_cfg->callbacks;
+	uint8_t byte = 0xff;
+
+	if (!data->target_reading) {
+		data->target_reading = true;
+		if (cb->read_requested) {
+			cb->read_requested(data->target_cfg, &byte);
+		}
+	} else if (cb->read_processed) {
+		cb->read_processed(data->target_cfg, &byte);
+	}
+	i2c_ll_write_txfifo(data->hal.dev, &byte, 1);
+}
+
+static inline void IRAM_ATTR i2c_esp32_target_push_one(const struct device *dev)
+{
+#if defined(CONFIG_I2C_TARGET_BUFFER_MODE)
+	struct i2c_esp32_data *data = dev->data;
+
+	if (data->target_buf_mode) {
+		i2c_esp32_target_push_one_buf(dev);
+		return;
+	}
+#endif
+	i2c_esp32_target_push_one_byte(dev);
+}
+
+static inline void IRAM_ATTR i2c_esp32_target_end_xaction(const struct device *dev)
+{
+	struct i2c_esp32_data *data = dev->data;
+	const struct i2c_target_callbacks *cb = data->target_cfg->callbacks;
+
+	i2c_esp32_target_drain_rx(dev);
+	i2c_esp32_target_flush_rx_buf(dev);
+	if (cb->stop) {
+		cb->stop(data->target_cfg);
+	}
+	data->target_reading = false;
+	data->target_writing = false;
+}
+
+static void IRAM_ATTR i2c_esp32_target_isr(const struct device *dev)
+{
+	struct i2c_esp32_data *data = dev->data;
+	const struct i2c_target_callbacks *cb = data->target_cfg->callbacks;
+	uint32_t int_mask = data->hal.dev->int_status.val;
+
+	i2c_ll_clear_intr_mask(data->hal.dev, int_mask);
+
+	if ((int_mask & I2C_ARBITRATION_LOST_INT_ST_M) && cb->error) {
+		cb->error(data->target_cfg, I2C_ERROR_ARBITRATION);
+	}
+	if ((int_mask & I2C_TIME_OUT_INT_ST_M) && cb->error) {
+		cb->error(data->target_cfg, I2C_ERROR_TIMEOUT);
+	}
+
+	if (int_mask & I2C_RXFIFO_WM_INT_ST_M) {
+		i2c_esp32_target_drain_rx(dev);
+	}
+
+	if (int_mask & I2C_SLAVE_STRETCH_INT_ST_M) {
+		i2c_slave_stretch_cause_t cause;
+
+		i2c_ll_slave_get_stretch_cause(data->hal.dev, &cause);
+
+		if (cause == I2C_SLAVE_STRETCH_CAUSE_ADDRESS_MATCH) {
+			i2c_slave_read_write_status_t rw =
+				i2c_ll_slave_get_read_write_status(data->hal.dev);
+			uint32_t rx_pending = 0;
+
+			/* Repeated-start does not fire TRANS_COMPLETE on every
+			 * SoC, so drain bytes from the preceding write phase.
+			 */
+			i2c_ll_get_rxfifo_cnt(data->hal.dev, &rx_pending);
+			if (rx_pending) {
+				i2c_esp32_target_end_xaction(dev);
+			}
+
+			if (rw == I2C_SLAVE_READ_BY_MASTER) {
+				data->target_reading = false;
+				i2c_ll_txfifo_rst(data->hal.dev);
+				i2c_esp32_target_push_one(dev);
+			} else {
+				data->target_writing = false;
+			}
+		} else if (cause == I2C_SLAVE_STRETCH_CAUSE_TX_EMPTY) {
+			i2c_esp32_target_push_one(dev);
+		} else if (cause == I2C_SLAVE_STRETCH_CAUSE_RX_FULL) {
+			i2c_esp32_target_drain_rx(dev);
+		}
+		i2c_ll_slave_clear_stretch(data->hal.dev);
+	}
+
+	if (int_mask & I2C_TRANS_COMPLETE_INT_ST_M) {
+		i2c_ll_slave_disable_tx_it(data->hal.dev);
+		i2c_esp32_target_end_xaction(dev);
+		i2c_ll_txfifo_rst(data->hal.dev);
+		i2c_ll_rxfifo_rst(data->hal.dev);
+	}
+}
+#endif
 
 static void IRAM_ATTR i2c_esp32_isr(void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct i2c_esp32_data *data = (struct i2c_esp32_data *const)(dev)->data;
 	i2c_intr_event_t evt_type = I2C_INTR_EVENT_ERR;
+
+#if I2C_ESP32_TARGET_ENABLED
+	if (data->target_attached && !data->target_in_master_xfer) {
+		i2c_esp32_target_isr(dev);
+		return;
+	}
+#endif
 
 	if (data->status == I2C_STATUS_WRITE) {
 		i2c_hal_master_handle_tx_event(&data->hal, &evt_type);
@@ -718,11 +1001,87 @@ static void IRAM_ATTR i2c_esp32_isr(void *arg)
 	k_sem_give(&data->cmd_sem);
 }
 
+#if I2C_ESP32_TARGET_ENABLED
+static int i2c_esp32_target_register(const struct device *dev, struct i2c_target_config *cfg)
+{
+	struct i2c_esp32_data *data = dev->data;
+
+	if (!cfg) {
+		return -EINVAL;
+	}
+	if (data->target_attached) {
+		return -EBUSY;
+	}
+
+	k_sem_take(&data->transfer_sem, K_FOREVER);
+
+	data->target_cfg = cfg;
+	data->target_reading = false;
+	data->target_writing = false;
+#if defined(CONFIG_I2C_TARGET_BUFFER_MODE)
+	data->target_buf_mode = (cfg->callbacks->buf_write_received != NULL) ||
+				(cfg->callbacks->buf_read_requested != NULL);
+	data->target_rx_len = 0;
+	data->target_tx_buf = NULL;
+	data->target_tx_len = 0;
+	data->target_tx_idx = 0;
+#endif
+
+	i2c_esp32_target_setup(dev);
+
+	data->target_attached = true;
+	data->dev_config = 0;
+
+	k_sem_give(&data->transfer_sem);
+
+	return 0;
+}
+
+static int i2c_esp32_target_unregister(const struct device *dev, struct i2c_target_config *cfg)
+{
+	struct i2c_esp32_data *data = dev->data;
+
+	if (!data->target_attached) {
+		return -EINVAL;
+	}
+	if (cfg != data->target_cfg) {
+		return -EINVAL;
+	}
+
+	k_sem_take(&data->transfer_sem, K_FOREVER);
+
+	i2c_esp32_target_teardown(dev);
+
+	data->target_attached = false;
+	data->target_cfg = NULL;
+	data->target_reading = false;
+	data->target_writing = false;
+#if defined(CONFIG_I2C_TARGET_BUFFER_MODE)
+	data->target_buf_mode = false;
+	data->target_rx_len = 0;
+	data->target_tx_buf = NULL;
+	data->target_tx_len = 0;
+	data->target_tx_idx = 0;
+#endif
+
+	i2c_hal_master_init(&data->hal);
+	i2c_esp32_configure_data_mode(dev);
+
+	k_sem_give(&data->transfer_sem);
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(i2c, i2c_esp32_driver_api) = {
 	.configure = i2c_esp32_configure,
 	.get_config = i2c_esp32_get_config,
 	.transfer = i2c_esp32_transfer,
 	.recover_bus = i2c_esp32_recover,
+#if I2C_ESP32_TARGET_ENABLED
+	.target_register = i2c_esp32_target_register,
+	.target_unregister = i2c_esp32_target_unregister,
+#endif
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif

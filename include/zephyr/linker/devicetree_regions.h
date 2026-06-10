@@ -160,7 +160,7 @@
  * @code{.dts}
  *    test_sram: sram@20010000 {
  *        compatible = "zephyr,memory-region", "mmio-sram";
- *        reg = < 0x20010000 0x1000 >;
+ *        reg = <0x20010000 0x1000>;
  *        zephyr,memory-region = "FOOBAR";
  *        zephyr,memory-region-flags = "rw";
  *    };
@@ -190,7 +190,7 @@
  * @code{.dts}
  *    test_sram: sram@20010000 {
  *        compatible = "zephyr,memory-region", "mmio-sram";
- *        reg = < 0x20010000 0x1000 >;
+ *        reg = <0x20010000 0x1000>;
  *        zephyr,memory-region = "FOOBAR";
  *    };
  * @endcode

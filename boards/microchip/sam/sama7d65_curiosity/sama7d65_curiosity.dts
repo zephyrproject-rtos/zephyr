@@ -7,6 +7,8 @@
 
 /dts-v1/;
 #include <common/freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
 #include <dt-bindings/sam/sama7d6/sama7d65/sama7d65-pinctrl.h>
 #include <microchip/sam/sama7/sama7d6/sama7d65.dtsi>
@@ -17,6 +19,8 @@
 
 	aliases {
 		eeprom-0 = &eeprom0;
+		led0 = &led_blue;
+		sw0 = &button_user;
 	};
 
 	chosen {
@@ -39,6 +43,37 @@
 	ddram: ddram@60000000 {
 		compatible = "ddram";
 		reg = <0x60000000 DT_SIZE_M(1024)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		status = "okay";
+
+		led_red: red {
+			label = "red";
+			gpios = <&piob 17 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_green: green {
+			label = "green";
+			gpios = <&piob 15 GPIO_ACTIVE_HIGH>;
+		};
+
+		led_blue: blue {
+			label = "blue";
+			gpios = <&pioa 21 GPIO_ACTIVE_HIGH>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		status = "okay";
+
+		button_user: button_sw2 {
+			label = "PB_USER";
+			gpios = <&pioc 10 GPIO_ACTIVE_LOW>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 };
 

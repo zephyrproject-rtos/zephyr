@@ -220,6 +220,8 @@
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 
 	gt911: touchscreen@5d {
 		compatible = "goodix,gt911";

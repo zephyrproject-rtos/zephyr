@@ -8,6 +8,7 @@ menuconfig LIS2MDL
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2MDL),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LIS2MDL),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2MDL),irq-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_LIS2MDL
 	help

@@ -70,23 +70,23 @@
 		clk_aupll: clk-aupll {
 			#clock-cells = <1>;
 			compatible = "bflb,pll";
-			clocks = <&clk_rc32m>;
+			clocks = <&clk_crystal>;
 			top-frequency = <BL808_AUPLL_TOP_FREQ>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		clk_cpupll: clk-cpupll {
 			#clock-cells = <1>;
 			compatible = "bflb,pll";
 			clocks = <&clk_crystal>;
-			top-frequency = <BL808_CPUPLL_TOP_FREQ>;
-			status = "disabled";
+			top-frequency = <DT_FREQ_M(320)>;
+			status = "okay";
 		};
 
 		clk_root: clk-root {
 			#clock-cells = <0>;
 			compatible = "bflb,root-clk";
-			clocks = <&clk_wifipll BL808_WIFIPLL_ID_DIV1>;
+			clocks = <&clk_cpupll BL808_CPUPLL_ID_DIV1>;
 			divider = <1>;
 			status = "okay";
 		};
@@ -130,7 +130,8 @@
 			compatible = "xuantie,e907", "riscv";
 			reg = <0>;
 			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei",
+					       "xtheadba", "xtheadbb", "xtheadbs", "xtheadcmo";
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
@@ -198,7 +199,7 @@
 			clocks = <&clk_rc32m>, <&clk_crystal>,
 				 <&clk_wifipll BL808_WIFIPLL_ID_DIV1>,
 				 <&clk_aupll BL808_AUPLL_ID_DIV1>,
-				 <&clk_cpupll BL808_CPUPLL_ID_400M>,
+				 <&clk_cpupll BL808_CPUPLL_ID_DIV1>,
 				 <&clk_root>, <&clk_bclk>, <&clk_flash>,
 				 <&clk_rc32k>, <&clk_xtal32k>, <&clk_f32k>,
 				 <&clk_mm>;

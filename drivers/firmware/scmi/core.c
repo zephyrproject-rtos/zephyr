@@ -183,17 +183,20 @@ static int scmi_core_protocol_negotiate(struct scmi_protocol *proto)
 		return ret;
 	}
 
-	if (platform_version > agent_version) {
-		ret = scmi_protocol_version_negotiate(proto, agent_version);
-		if (ret < 0) {
-			LOG_WRN("Protocol 0x%X: Negotiation failed (%d). "
-				"Platform v0x%08x does not support downgrade to agent v0x%08x",
-				proto->id, ret, platform_version, agent_version);
-		}
+	if (platform_version <= agent_version) {
+		proto->version = platform_version;
+		return 0;
 	}
 
-	LOG_INF("Using protocol 0x%X: agent version 0x%08x, platform version 0x%08x",
-			proto->id, agent_version, platform_version);
+	ret = scmi_protocol_version_negotiate(proto, agent_version);
+	if (ret == 0) {
+		LOG_INF("protocol 0x%x: successfully negotiated to version 0x%x", proto->id,
+			agent_version);
+		return 0;
+	}
+
+	LOG_WRN("protocol 0x%x: compatibility with platform version 0x%x NOT assured", proto->id,
+		platform_version);
 
 	return 0;
 }
@@ -224,6 +227,7 @@ static int scmi_core_protocol_setup(const struct device *transport)
 			return ret;
 		}
 
+		LOG_INF("initialized protocol 0x%x version 0x%x", it->id, it->version);
 	}
 
 	return 0;

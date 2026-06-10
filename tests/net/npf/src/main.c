@@ -130,12 +130,35 @@ static struct net_pkt *build_test_ip_pkt(void *src, void *dst,
  * Declare some fake interfaces and test their filter conditions.
  */
 
+static void eth_fake_iface_init(struct net_if *iface)
+{
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	uint8_t mac_addr[6] = {0x00, 0x00, 0x5E, 0x00, 0x53, sys_rand8_get()};
+
+	net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
+
+	ethernet_init(iface);
+}
+
+static int eth_fake_send(const struct device *dev, struct net_pkt *pkt)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static struct ethernet_api eth_fake_api_funcs = {
+	.iface_api.init = eth_fake_iface_init,
+	.send = eth_fake_send,
+};
+
 ETH_NET_DEVICE_INIT(dummy_iface_a, "dummy_a", NULL, NULL,
 		    NULL, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    NULL, NET_ETH_MTU);
+		    &eth_fake_api_funcs, NET_ETH_MTU);
 ETH_NET_DEVICE_INIT(dummy_iface_b, "dummy_b", NULL, NULL,
 		    NULL, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    NULL, NET_ETH_MTU);
+		    &eth_fake_api_funcs, NET_ETH_MTU);
 #define dummy_iface_a NET_IF_GET(dummy_iface_a, 0)
 #define dummy_iface_b NET_IF_GET(dummy_iface_b, 0)
 

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config CLOCK_CONTROL_SILABS_SIWX91X
-	bool "SiWx91x clock control driver"
+	bool "Silabs SiWx91x clock control driver"
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_CLOCK_ENABLED
 	help

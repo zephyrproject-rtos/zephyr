@@ -115,8 +115,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 	/* client->conn may be NULL */
 	if (client->conn == conn) {
-		bt_conn_unref(client->conn);
-		client->conn = NULL;
+		bt_conn_drop(&client->conn);
 
 		memset(client->bearers, 0, sizeof(client->bearers));
 	}

@@ -909,6 +909,37 @@ static const struct arm_mmu_region mmu_dt_regions[] = {
 
 DT_FOREACH_STATUS_OKAY(zephyr_memory_region, ARM64_MMU_VALIDATE_DT_REGION)
 
+/*
+ * The GIC is accessed through flat physical addresses by the interrupt
+ * controller driver (see GIC_DIST_BASE & friends) during early boot, before
+ * any driver gets a chance to map it through the device MMIO API. Its register
+ * banks must therefore already be present in the page tables the moment the MMU
+ * is enabled. Map every reg bank of the GIC node here so that individual SoCs
+ * no longer have to repeat these entries in their own mmu_regions.c.
+ *
+ * The banks are mapped as privileged-only (no EL0 access) device memory in the
+ * default secure state. This is the only sensible configuration: the GIC is
+ * managed exclusively by the kernel and is never accessed from user mode. It
+ * supersedes the per-SoC GIC entries that used to exist.
+ *
+ * Note this only covers the GIC node's own reg banks. A separate node such as
+ * the GICv3 ITS (arm,gic-v3-its) is intentionally not included here: the ITS
+ * driver maps that node through device_map(), so SoCs should not add static
+ * ITS entries.
+ */
+#define GIC_MMU_REGION_ENTRY_BY_IDX(idx, node_id)				\
+	MMU_REGION_FLAT_ENTRY("GIC",						\
+			      DT_REG_ADDR_BY_IDX(node_id, idx),			\
+			      DT_REG_SIZE_BY_IDX(node_id, idx),			\
+			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_DEFAULT_SECURE_STATE)
+
+static const struct arm_mmu_region mmu_gic_regions[] = {
+#if DT_HAS_COMPAT_STATUS_OKAY(arm_gic)
+	LISTIFY(DT_NUM_REGS(DT_INST(0, arm_gic)),
+		GIC_MMU_REGION_ENTRY_BY_IDX, (,), DT_INST(0, arm_gic))
+#endif
+};
+
 static inline void max_region_bounds(const struct arm_mmu_region *regions,
 				     size_t count,
 				     uintptr_t *max_va, uintptr_t *max_pa)
@@ -943,6 +974,8 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 			  &max_va, &max_pa);
 	max_region_bounds(mmu_dt_regions, ARRAY_SIZE(mmu_dt_regions),
 			  &max_va, &max_pa);
+	max_region_bounds(mmu_gic_regions, ARRAY_SIZE(mmu_gic_regions),
+			  &max_va, &max_pa);
 
 	__ASSERT(max_va <= (1ULL << CONFIG_ARM64_VA_BITS),
 		 "Maximum VA not supported\n");
@@ -963,6 +996,8 @@ static void setup_page_tables(struct arm_mmu_ptables *ptables)
 			mmu_config.num_regions, MT_NO_OVERWRITE);
 	map_mmu_regions(ptables, mmu_dt_regions,
 			ARRAY_SIZE(mmu_dt_regions), MT_NO_OVERWRITE);
+	map_mmu_regions(ptables, mmu_gic_regions,
+			ARRAY_SIZE(mmu_gic_regions), MT_NO_OVERWRITE);
 
 	invalidate_tlb_all();
 }

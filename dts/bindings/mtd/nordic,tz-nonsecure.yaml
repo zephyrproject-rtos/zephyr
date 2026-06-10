@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Tags non-secure flash partitions in an ARM TrustZone-M layout on
+  Nordic SoCs.
+
+compatible: "nordic,tz-nonsecure"
+
+include: base.yaml
+
+properties:
+  code-partitions:
+    type: phandles
+    required: true
+    description: |
+      Phandles to "zephyr,mapped-partition" nodes holding non-secure
+      image slots.
+
+  data-partitions:
+    type: phandles
+    description: |
+      Phandles to "zephyr,mapped-partition" nodes holding non-secure
+      data (storage / settings / ZMS, etc.).

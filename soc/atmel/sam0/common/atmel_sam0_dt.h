@@ -227,11 +227,11 @@
  *
  *     clk1: clock-controller@... {
  *             compatible = "vnd,clock";
- *             #atmel,assigned-clock-cells = < 2 >;
+ *             #atmel,assigned-clock-cells = <2>;
  *     };
  *
  *     n: node {
- *             atmel,assigned-clocks = < &clk1 10 20 >, < &clk1 30 40 >;
+ *             atmel,assigned-clocks = <&clk1 10 20>, <&clk1 30 40>;
  *     };
  *
  * Bindings fragment for the vnd,clock compatible:
@@ -261,11 +261,11 @@
  *
  *     clk1: clock-controller@... {
  *             compatible = "vnd,clock";
- *             #atmel,assigned-clock-cells = < 2 >;
+ *             #atmel,assigned-clock-cells = <2>;
  *     };
  *
  *     n: node {
- *             atmel,assigned-clocks = < &clk1 10 20 >, < &clk1 30 40 >;
+ *             atmel,assigned-clocks = <&clk1 10 20>, <&clk1 30 40>;
  *             clock-names = "alpha", "beta";
  *     };
  *

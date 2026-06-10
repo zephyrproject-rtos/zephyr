@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/imx/nxp_imx952_m7.dtsi>
+#include "imx952_evk-pinctrl.dtsi"
+#include <dt-bindings/mipi_dsi/mipi_dsi.h>
+
+/ {
+	model = "NXP i.MX952 EVK board";
+	compatible = "nxp,imx952_evk";
+
+	chosen {
+		/* TCM */
+		zephyr,flash = &itcm;
+		zephyr,sram = &dtcm;
+
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+	};
+};
+
+&lpuart3 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
+};

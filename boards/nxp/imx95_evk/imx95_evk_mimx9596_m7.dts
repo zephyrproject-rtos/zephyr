@@ -14,6 +14,12 @@
 	model = "NXP i.MX95 EVK board";
 	compatible = "nxp,imx95_evk";
 
+	aliases {
+		watchdog0 = &wdog5;
+		i2s-codec-tx = &sai3_2;
+		i2s-tx = &sai3_2;
+	};
+
 	chosen {
 		/* TCM */
 		zephyr,flash = &itcm;
@@ -22,6 +28,16 @@
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
+		zephyr,canbus = &flexcan1;
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "nxp,tja1463", "can-transceiver-gpio";
+		enable-gpios = <&gpio_can 6 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpio_can 5 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+		status = "okay";
 	};
 };
 
@@ -47,6 +63,13 @@
 };
 
 &enetc_ptp_clock {
+	status = "okay";
+};
+
+&flexcan1 {
+	pinctrl-0 = <&flexcan1_default>;
+	pinctrl-names = "default";
+	phys = <&can_phy1>;
 	status = "okay";
 };
 
@@ -76,31 +99,39 @@
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <2>;
 
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
 			partitions {
-				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 
 				/*
 				 * Partition sizes must be aligned
 				 * to the flash memory sector size of 4KB.
 				 */
 				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
 				};
 
 				slot0_partition: partition@20000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(7)>;
 				};
 
 				slot1_partition: partition@720000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-1";
 					reg = <0x00720000 DT_SIZE_M(7)>;
 				};
 
 				storage_partition: partition@e20000 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
 				};
@@ -115,10 +146,64 @@
 	status = "okay";
 };
 
+&lpi2c4 {
+	pinctrl-0 = <&lpi2c4_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	gpio_exp1: gpio-exp@21 {
+		compatible = "nxp,pcal6408";
+		reg = <0x21>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <8>;
+
+		codec-sai3-sel-hog {
+			gpio-hog;
+			gpios = <7 GPIO_ACTIVE_LOW>;
+			output-low;
+			line-name = "CODEC_SLOT_SAI3_SEL";
+		};
+	};
+
+	audio_codec: wm8962@1a {
+		compatible = "wolfson,wm8962";
+		reg = <0x1a>;
+		clock-source = "MCLK";
+		clocks = <&scmi_clk IMX95_CLK_SAI3>;
+		clock-names = "mclk";
+	};
+};
+
 &lpi2c5 {
 	pinctrl-0 = <&lpi2c5_default>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&lpi2c6 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&lpi2c6_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	gpio_can: pcal6416@21 {
+		compatible = "nxp,pcal6416";
+		reg = <0x21>;
+		#gpio-cells = <2>;
+		gpio-controller;
+		ngpios = <16>;
+		status = "okay";
+
+		/* Set PDM_CAN_SEL as active high to select CAN1 */
+		can_sel_hog {
+			gpio-hog;
+			gpios = <10 GPIO_ACTIVE_HIGH>;
+			output-high;
+		};
+	};
 };
 
 &lpi2c7 {
@@ -152,6 +237,13 @@
 	pinctrl-names = "default";
 };
 
+&sai3_2 {
+	mclk-output;
+	pinctrl-0 = <&sai3_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &tpm2 {
 	pinctrl-0 = <&tpm2_default>;
 	pinctrl-names = "default";
@@ -159,6 +251,10 @@
 };
 
 &lptmr1 {
+	status = "okay";
+};
+
+&edma1 {
 	status = "okay";
 };
 
@@ -191,3 +287,7 @@ zephyr_dpu: &dpu {};
 zephyr_mipi_dsi: &mipi_dsi {};
 
 display_i2c: &lpi2c2 {};
+
+&wdog5 {
+	status = "okay";
+};

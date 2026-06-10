@@ -382,9 +382,9 @@ ZTEST(http_client, test_http1_client_post_payload_cb)
 	zassert_true(ctx.final, "No final event received");
 	zassert_equal(ctx.status, 200, "Unexpected HTTP status code");
 	zassert_equal(dynamic_len, LOREM_IPSUM_SHORT_STRLEN,
-		      "Invalid payload length uploaded %d", dynamic_len);
+		      "Invalid payload length uploaded %zu", dynamic_len);
 	zassert_mem_equal(dynamic_buf, LOREM_IPSUM_SHORT, dynamic_len,
-			  "Invalid payload uploaded %d", dynamic_len);
+			  "Invalid payload uploaded %zu", dynamic_len);
 }
 
 static void client_tests_before(void *fixture)
@@ -465,7 +465,7 @@ static const char chunked_te_response[] =
 	"0\r\n"
 	"\r\n";
 
-static K_THREAD_STACK_DEFINE(chunked_srv_stack, 1024);
+static K_THREAD_STACK_DEFINE(chunked_srv_stack, 1024 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread chunked_srv_thread;
 static K_SEM_DEFINE(chunked_srv_ready, 0, 1);
 

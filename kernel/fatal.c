@@ -7,7 +7,6 @@
 #include <zephyr/kernel.h>
 
 #include <kernel_internal.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/logging/log_ctrl.h>

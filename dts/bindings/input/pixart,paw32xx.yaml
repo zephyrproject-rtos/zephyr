@@ -33,6 +33,8 @@ properties:
     description: |
       CPI resolution for the sensor. This can also be changed in runtime using
       the paw32xx_set_resolution() API.
+    min: 608
+    max: 4826
 
   invert-x:
     type: boolean

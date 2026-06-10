@@ -22,6 +22,12 @@
 	status = "okay";
 };
 
+&sai1 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+		 <&rcc STM32_SRC_PLL2_P SAI1_SEL(1)>;
+};
+
 &sai1_b {
 	pinctrl-0 = <&sai1_mclk_b_pf7 &sai1_sd_b_pe3
 		     &sai1_fs_b_pf9 &sai1_sck_b_pf8>;

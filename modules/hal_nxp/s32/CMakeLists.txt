@@ -57,17 +57,31 @@ if(CONFIG_HAS_MCUX)
   zephyr_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/s32/mcux/devices/${MCUX_DEVICE})
   zephyr_include_directories(${ZEPHYR_CURRENT_MODULE_DIR}/s32/mcux/devices/${MCUX_DEVICE}/drivers)
 
-  zephyr_linker_sources(RWDATA
-    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
-  )
-  zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
-    RAMFUNC_SECTION
-    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
-  )
-  zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
-    NOCACHE_SECTION
-    ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/nocache.ld
-  )
+  if(CONFIG_MCUX_DATA_QUICK_ACCESS_SRAM)
+    zephyr_linker_sources(RWDATA
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
+    )
+  elseif(CONFIG_MCUX_DATA_QUICK_ACCESS_DTCM)
+    zephyr_linker_sources(DTCM_SECTION
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_data.ld
+    )
+  endif()
+
+  if(CONFIG_MCUX_CODE_QUICK_ACCESS_RAMFUNC)
+    zephyr_linker_sources(RAMFUNC_SECTION
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
+    )
+  elseif(CONFIG_MCUX_CODE_QUICK_ACCESS_ITCM)
+    zephyr_linker_sources(ITCM_SECTION
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/quick_access_code.ld
+    )
+  endif()
+
+  if(CONFIG_MCUX_NONCACHEABLE_NOCACHE)
+    zephyr_linker_sources(NOCACHE_SECTION
+      ${ZEPHYR_CURRENT_MODULE_DIR}/mcux/nocache.ld
+    )
+  endif()
 
   # Load MCUX SDK NG code.
   include(../mcux/mcux-sdk-ng/basic.cmake)

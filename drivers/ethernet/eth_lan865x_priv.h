@@ -76,4 +76,16 @@ struct lan865x_data {
 	k_tid_t tid_int;
 };
 
+int eth_lan865x_mdio_c22_read(const struct device *dev, uint8_t prtad, uint8_t regad,
+			      uint16_t *data);
+
+int eth_lan865x_mdio_c22_write(const struct device *dev, uint8_t prtad, uint8_t regad,
+			       uint16_t data);
+
+int eth_lan865x_mdio_c45_read(const struct device *dev, uint8_t prtad, uint8_t devad,
+			      uint16_t regad, uint16_t *data);
+
+int eth_lan865x_mdio_c45_write(const struct device *dev, uint8_t prtad, uint8_t devad,
+			       uint16_t regad, uint16_t data);
+
 #endif /* ETH_LAN865X_PRIV_H__ */

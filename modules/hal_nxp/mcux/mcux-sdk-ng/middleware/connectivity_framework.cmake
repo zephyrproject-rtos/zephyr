@@ -8,6 +8,10 @@ if(CONFIG_SOC_SERIES_RW6XX)
         set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.coex ON)
         set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.rw61x ON)
 
+        if(CONFIG_NXP_IEEE802154_MAC)
+            set(CONFIG_MCUX_COMPONENT_middleware.wireless.framework.platform.zb ON)
+        endif()
+
         zephyr_compile_definitions(
             gPlatformDisableVendorSpecificInit=1U
             gPlatformUseTimerManager_d=0

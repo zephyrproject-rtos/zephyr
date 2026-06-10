@@ -427,6 +427,13 @@ static int usbd_cdc_ecm_ctd(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
 			    const struct net_buf *const buf)
 {
+	if (setup->wLength) {
+		LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x wLength %u unsupported",
+			setup->bmRequestType, setup->bRequest, setup->wLength);
+		errno = -ENOTSUP;
+		return 0;
+	}
+
 	if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
 	    setup->bRequest == SET_ETHERNET_PACKET_FILTER) {
 		LOG_INF("bRequest 0x%02x (SetPacketFilter) not implemented",

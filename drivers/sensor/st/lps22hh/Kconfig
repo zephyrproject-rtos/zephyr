@@ -11,6 +11,7 @@ menuconfig LPS22HH
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),i2c)
 	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),i3c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_LPS22HH),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LPS22HH),drdy-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_LPS22HH
 	help

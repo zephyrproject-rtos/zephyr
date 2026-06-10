@@ -1,0 +1,69 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if SPI_NOR
+
+config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 4096 if MCUBOOT || BOOTLOADER_MCUBOOT
+
+endif # SPI_NOR
+
+if BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS
+
+config BOARD_NRF93M1DK
+	select USE_DT_CODE_PARTITION if BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS
+
+# By default, if we build for a Non-Secure version of the board,
+# enable building with TF-M as the Secure Execution Environment.
+config BUILD_WITH_TFM
+	default y
+
+# If building with TF-M, disable UART in TF-M to avoid conflicts with
+# the UART used by the modem
+if BUILD_WITH_TFM
+
+config TFM_SECURE_UART
+	default n
+
+config TFM_LOG_LEVEL_SILENCE
+	default y
+
+endif # BUILD_WITH_TFM
+
+endif # BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS
+
+if BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS || BOARD_NRF93M1DK_NRF54L15_CPUAPP
+
+# Configure default init priority:
+# 1. I2C (CONFIG_I2C_INIT_PRIORITY, default 50)
+# 2. NPM13xx MFD (CONFIG_MFD_INIT_PRIORITY, default 80)
+# 3. NPM13xx charger (CONFIG_SENSOR_INIT_PRIORITY, default 90)
+# 4. Power domain GPIO (CONFIG_POWER_DOMAIN_GPIO_INIT_PRIORITY, default was 75)
+# 5. Cellular modem (CONFIG_MODEM_CELLULAR_INIT_PRIORITY, default was 79)
+#
+# The order of 3, 4 and 5 is critical to ensure that the Vbus current limit
+# is set before the modem is initialized.
+
+config POWER_DOMAIN_GPIO_INIT_PRIORITY
+	default 92
+
+config MODEM_CELLULAR_INIT_PRIORITY
+	default 93
+
+if !MCUBOOT
+
+config REGULATOR
+	default y
+
+config SENSOR
+	default y
+
+config POWER_DOMAIN
+	default y
+
+endif # !MCUBOOT
+
+endif # BOARD_NRF93M1DK_NRF54L15_CPUAPP_NS || BOARD_NRF93M1DK_NRF54L15_CPUAPP

@@ -309,12 +309,11 @@ static int cmd_demo_readline(const struct shell *sh, size_t argc, char **argv)
 	uint8_t input_buf[256];
 	int ret;
 
-	shell_fprintf_normal(sh, "Input: ");
-
 	if (argc == 2 && strcmp(argv[1], "obscured") == 0) {
 		shell_obscure_set(sh, true);
 	}
 
+	shell_readline_prompt_set(sh, "Input: ");
 	ret = shell_readline(sh, input_buf, sizeof(input_buf), K_SECONDS(10));
 	shell_obscure_set(sh, false);
 

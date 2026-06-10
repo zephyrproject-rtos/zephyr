@@ -682,12 +682,7 @@ static void aics_client_reset(struct bt_aics *inst)
 	atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_DESC_WRITABLE);
 	atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_CP_RETRIED);
 
-	if (inst->cli.conn != NULL) {
-		struct bt_conn *conn = inst->cli.conn;
-
-		bt_conn_unref(conn);
-		inst->cli.conn = NULL;
-	}
+	bt_conn_drop(&inst->cli.conn);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

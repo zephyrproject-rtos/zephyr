@@ -156,7 +156,7 @@ struct net_buf *bt_buf_get_evt(uint8_t evt, bool discardable, k_timeout_t timeou
 	return bt_buf_get_rx(BT_BUF_EVT, timeout);
 }
 
-int bt_hci_recv(const struct device *dev, struct net_buf *buf)
+static int bt_recv(const struct device *dev, struct net_buf *buf)
 {
 	uint8_t type = buf->data[0];
 
@@ -200,7 +200,7 @@ int bt_enable_raw(struct k_fifo *rx_queue)
 
 	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_HCI_BUS, BT_ADDR_ANY, BT_HCI_NAME);
 
-	err = bt_hci_open(bt_dev.hci, bt_hci_recv);
+	err = bt_hci_open(bt_dev.hci, bt_recv);
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
 		return err;

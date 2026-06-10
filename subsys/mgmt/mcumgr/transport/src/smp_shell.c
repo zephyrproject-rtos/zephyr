@@ -73,8 +73,7 @@ static void smp_shell_input_timeout_handler(struct k_timer *timer)
 
 	if (data->buf) {
 		net_buf_reset(data->buf);
-		net_buf_unref(data->buf);
-		data->buf = NULL;
+		net_buf_drop(&data->buf);
 	}
 }
 

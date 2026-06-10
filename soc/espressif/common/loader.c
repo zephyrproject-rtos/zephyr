@@ -6,6 +6,7 @@
 
 #include <soc.h>
 #include <hal/mmu_hal.h>
+#include <hal/mmu_ll.h>
 #include <hal/mmu_types.h>
 #include <hal/cache_types.h>
 #include <hal/cache_ll.h>
@@ -37,6 +38,10 @@
 #include <soc/lp_apm0_reg.h>
 #include <soc/pcr_reg.h>
 #endif
+
+#if CONFIG_SOC_SERIES_ESP32P4
+#include <soc/hp_sys_clkrst_reg.h>
+#endif /* CONFIG_SOC_SERIES_ESP32P4 */
 
 #include <esp_flash_internal.h>
 #include <bootloader_flash.h>
@@ -132,6 +137,12 @@ void map_rom_segments(int core, struct rom_segments *map)
 	unsigned int segments = 0;
 	unsigned int ram_segments = 0;
 
+	if (esp_rom_flash_read(offset, &bootloader_image_hdr, sizeof(esp_image_header_t), true) !=
+	    0) {
+		ESP_EARLY_LOGE(TAG, "Failed to read image header at %x", offset);
+		abort();
+	}
+
 	offset += sizeof(esp_image_header_t);
 
 	while (segments++ < ESP_IMAGE_MAX_SEGMENTS) {
@@ -155,10 +166,10 @@ void map_rom_segments(int core, struct rom_segments *map)
 
 		if (segment_hdr.load_addr) {
 			ESP_EARLY_LOGI(TAG, "%s\t: lma=%08xh vma=%08xh size=%05xh (%6d)",
-				       IS_DRAM(segment_hdr)       ? "DRAM"
+				       segment_hdr.load_addr == map->drom_map_addr ? "DROM"
+				       : segment_hdr.load_addr == map->irom_map_addr ? "IROM"
+				       : IS_DRAM(segment_hdr)     ? "DRAM"
 				       : IS_IRAM(segment_hdr)     ? "IRAM"
-				       : IS_IROM(segment_hdr)     ? "IROM"
-				       : IS_DROM(segment_hdr)     ? "DROM"
 				       : IS_RTC_IRAM(segment_hdr) ? "RTC_IRAM"
 				       : IS_RTC_DRAM(segment_hdr) ? "RTC_DRAM"
 				       : IS_RTC_DATA(segment_hdr) ? "RTC_DATA"
@@ -207,6 +218,11 @@ void map_rom_segments(int core, struct rom_segments *map)
 #if CONFIG_SOC_SERIES_ESP32
 	Cache_Read_Disable(core);
 	Cache_Flush(core);
+#elif defined(CONFIG_SOC_SERIES_ESP32P4)
+	/* Only disable the L2 (external memory) cache for MMU remapping;
+	 * L1 is internal and does not need to be disabled.
+	 */
+	cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #else
 	cache_hal_disable(1, CACHE_TYPE_ALL);
 #endif /* CONFIG_SOC_SERIES_ESP32 */
@@ -215,7 +231,16 @@ void map_rom_segments(int core, struct rom_segments *map)
 	 * so the new app only has the mappings it creates.
 	 */
 	if (core == 0) {
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+		/*
+		 * P4 has separate MMU for flash (SPI_MEM_C) and PSRAM (SPI_MEM_S).
+		 * Only unmap flash MMU here. PSRAM MMU is not initialized yet
+		 * and accessing its registers without full PSRAM init hangs the CPU.
+		 */
+		mmu_ll_unmap_all(MMU_LL_FLASH_MMU_ID);
+#else
 		mmu_hal_unmap_all();
+#endif
 	}
 
 #if CONFIG_SOC_SERIES_ESP32
@@ -264,11 +289,23 @@ void map_rom_segments(int core, struct rom_segments *map)
 #if CONFIG_SOC_SERIES_ESP32
 	/* Application will need to do Cache_Flush(1) and Cache_Read_Enable(1) */
 	Cache_Read_Enable(core);
+#elif defined(CONFIG_SOC_SERIES_ESP32P4)
+	/*
+	 * Invalidate L1+L2 cache for the IROM/DROM range before re-enabling.
+	 * Required after MMU remap because the ROM bootloader may have left
+	 * stale lines in L1 D-cache for these virtual addresses.
+	 */
+	cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+				 app_drom_vaddr_align, map->drom_size);
+	cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+				 app_irom_vaddr_align, map->irom_size);
+	cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #else
 	cache_hal_enable(1, CACHE_TYPE_ALL);
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
-#if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2)
+#if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2) &&                    \
+	!defined(CONFIG_SOC_SERIES_ESP32P4)
 	/* Configure the Cache MMU size for instruction and rodata in flash. */
 	uint32_t cache_mmu_irom_size =
 		((map->irom_size + CONFIG_MMU_PAGE_SIZE - 1) / CONFIG_MMU_PAGE_SIZE) *

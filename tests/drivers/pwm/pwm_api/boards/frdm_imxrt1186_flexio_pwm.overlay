@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &flexio2_pwm;
+	};
+};
+
+&pinctrl {
+	pinmux_flexio2_pwm: pinmux_flexio2_pwm {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_12_flexio2_d12>; /* Arduino D8 */
+			drive-strength = "normal";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&flexio2 {
+	status = "okay";
+
+	flexio2_pwm: flexio2_pwm {
+		compatible = "nxp,flexio-pwm";
+		#pwm-cells = <3>;
+		status = "okay";
+		pinctrl-0 = <&pinmux_flexio2_pwm>;
+		pinctrl-names = "default";
+
+		pwm_0 {
+			pin-id = <12>;
+			prescaler = <1>;
+		};
+	};
+};

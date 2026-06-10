@@ -25,7 +25,7 @@
 typedef void (*irq_config_func_t)(const struct device *port);
 
 #ifdef CONFIG_I2C_STM32_V2
-/*  Private I2C_MSG_* flags for STM32 I2C */
+/* Private I2C_MSG_* flags for STM32 I2C */
 #define I2C_MSG_STM32_USE_RELOAD_MODE	BIT(7)
 #endif
 

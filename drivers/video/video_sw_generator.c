@@ -13,6 +13,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <inttypes.h>
 
 #include "video_ctrls.h"
 #include "video_device.h"
@@ -92,6 +93,7 @@ static const struct video_format_cap fmts[] = {
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGRBG8),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SBGGR8),
 	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGBRG8),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_GREY),
 	{
 		.pixelformat = VIDEO_PIX_FMT_JPEG,
 		.width_min = CONFIG_VIDEO_SW_GENERATOR_JPEG_WIDTH,
@@ -186,6 +188,10 @@ static const uint16_t pattern_8bars_yuv_bt709[8][3] = {
 static const uint16_t pattern_8bars_rgb[8][3] = {
 	{0xFF, 0xFF, 0xFF}, {0xFF, 0xFF, 0x00}, {0x00, 0xFF, 0xFF}, {0x00, 0xFF, 0x00},
 	{0xFF, 0x00, 0xFF}, {0xFF, 0x00, 0x00}, {0x00, 0x00, 0xFF}, {0x00, 0x00, 0x00},
+};
+
+static const uint8_t pattern_8bars_grey[8] = {
+	0xFF, 0xE2, 0xB3, 0x96, 0x69, 0x4C, 0x1D, 0x00,
 };
 
 static inline int video_sw_generator_get_color_idx(uint16_t w, uint16_t width, bool hflip)
@@ -334,7 +340,8 @@ static int video_sw_generator_fill_compressed(struct video_buffer *vbuf, bool hf
 
 	/* Check if buffer is large enough */
 	if (vbuf->size < frame_size) {
-		LOG_ERR("Buffer too small (need %u, have %zu)", frame_size, vbuf->size);
+		LOG_ERR("Buffer too small (need %" PRIu32 ", have %" PRIu32 ")", frame_size,
+			vbuf->size);
 		return -ENOMEM;
 	}
 
@@ -345,6 +352,17 @@ static int video_sw_generator_fill_compressed(struct video_buffer *vbuf, bool hf
 	vbuf->line_offset = 0;
 
 	return 0;
+}
+
+static uint16_t video_sw_generator_fill_grey(uint8_t *buffer, uint16_t width, bool hflip)
+{
+	for (size_t w = 0; w < width; w++) {
+		int color_idx = video_sw_generator_get_color_idx(w, width, hflip);
+
+		buffer[w] = pattern_8bars_grey[color_idx];
+	}
+
+	return 1;
 }
 
 static int video_sw_generator_fill(const struct device *const dev, struct video_buffer *vbuf)
@@ -401,6 +419,9 @@ static int video_sw_generator_fill(const struct device *const dev, struct video_
 	case VIDEO_PIX_FMT_SGRBG8:
 		lines = video_sw_generator_fill_bayer8(vbuf->buffer, fmt->width, hflip,
 						       pattern_grbg_idx);
+		break;
+	case VIDEO_PIX_FMT_GREY:
+		lines = video_sw_generator_fill_grey(vbuf->buffer, fmt->width, hflip);
 		break;
 	default:
 		CODE_UNREACHABLE;

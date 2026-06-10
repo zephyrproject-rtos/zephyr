@@ -56,8 +56,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 
 	__ASSERT(conn == default_conn, "Unexpected disconnected callback");
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 }
 
 static void recycled_cb(void)

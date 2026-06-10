@@ -6,8 +6,9 @@
  */
 
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/clock_control/clock_agilex_ll.h>
 #include <zephyr/dt-bindings/clock/intel_socfpga_clock.h>
+
+#include "clock_agilex_ll.h"
 
 static int clk_get_rate(const struct device *dev,
 			clock_control_subsys_t sub_system,

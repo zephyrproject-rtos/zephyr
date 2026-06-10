@@ -9,6 +9,9 @@
 
 #include <stdint.h>
 
+extern const uint32_t kerning_1_2rectspace1123[];
+extern const uint32_t kerning_1_rightclip_1_2rectspace1123[];
+extern const uint32_t kerning_3_2dot0101[];
 extern const uint32_t kerning_3_12rectspace1016[];
 extern const uint32_t kerning_3_2rectspace1016[];
 extern const uint32_t kerning_3_rightclip_1_2rectspace1016[];

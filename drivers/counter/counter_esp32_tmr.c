@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +7,13 @@
 #define DT_DRV_COMPAT espressif_esp32_counter
 
 #include <esp_attr.h>
+#include <esp_rom_sys.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #include <hal/timer_hal.h>
 #include <hal/timer_ll.h>
 #include <hal/timer_types.h>
+#include <hal/timg_ll.h>
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
@@ -18,6 +21,17 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
+
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#define COUNTER_SLEEP_RETENTION_ENABLED 1
+#else
+#define COUNTER_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if COUNTER_SLEEP_RETENTION_ENABLED
+#include <hal/timer_periph.h>
+#include <esp_private/sleep_retention.h>
+#endif
 
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -54,6 +68,43 @@ struct counter_esp32_data {
 	timer_hal_context_t hal_ctx;
 };
 
+#if COUNTER_SLEEP_RETENTION_ENABLED
+static esp_err_t counter_esp32_create_sleep_retention_cb(void *arg)
+{
+	const struct device *dev = arg;
+	const struct counter_esp32_config *cfg = dev->config;
+
+	return sleep_retention_entries_create(
+		soc_timg_gptimer_retention_infos[cfg->group][cfg->index].regdma_entry_array,
+		soc_timg_gptimer_retention_infos[cfg->group][cfg->index].array_size,
+		REGDMA_LINK_PRI_GPTIMER,
+		soc_timg_gptimer_retention_infos[cfg->group][cfg->index].module);
+}
+
+static void counter_esp32_sleep_retention_init(const struct device *dev)
+{
+	const struct counter_esp32_config *cfg = dev->config;
+	const soc_timg_gptimer_retention_desc_t *info =
+		&soc_timg_gptimer_retention_infos[cfg->group][cfg->index];
+
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = counter_esp32_create_sleep_retention_cb,
+				   .arg = (void *)dev}},
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM),
+	};
+
+	esp_err_t err = sleep_retention_module_init(info->module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(info->module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("GPTimer sleep retention init failed (%d) group=%u index=%u", err,
+			(unsigned int)cfg->group, (unsigned int)cfg->index);
+	}
+}
+#endif /* COUNTER_SLEEP_RETENTION_ENABLED */
+
 static int counter_esp32_init(const struct device *dev)
 {
 	const struct counter_esp32_config *cfg = dev->config;
@@ -74,13 +125,17 @@ static int counter_esp32_init(const struct device *dev)
 	data->top_data.auto_reload = false;
 	data->top_data.ticks = cfg->counter_info.max_top_value;
 
-	/* Enable timer clock before any register access */
+	timg_ll_enable_bus_clock(cfg->group, true);
 	timer_ll_enable_clock(cfg->group, cfg->index, true);
+
 	timer_hal_init(&data->hal_ctx, cfg->group, cfg->index);
 	timer_ll_enable_intr(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id),
 			     false);
 	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
 	timer_ll_enable_auto_reload(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	esp_clk_tree_enable_src(GPTIMER_CLK_SRC_DEFAULT, true);
+#endif
 	timer_ll_set_clock_source(cfg->group, data->hal_ctx.timer_id, GPTIMER_CLK_SRC_DEFAULT);
 	timer_ll_set_clock_prescale(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->prescaler);
 	timer_ll_set_count_direction(data->hal_ctx.dev, data->hal_ctx.timer_id, GPTIMER_COUNT_UP);
@@ -98,9 +153,14 @@ static int counter_esp32_init(const struct device *dev)
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
 	}
 
-	return ret;
+#if COUNTER_SLEEP_RETENTION_ENABLED
+	counter_esp32_sleep_retention_init(dev);
+#endif
+
+	return 0;
 }
 
 static int counter_esp32_start(const struct device *dev)

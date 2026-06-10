@@ -14,12 +14,13 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
-#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
@@ -36,10 +37,10 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
-#include "common/bt_shell_private.h"
-#include "host/shell/bt.h"
-#include "host/hci_core.h"
 #include "audio.h"
+#include "common/bt_shell_private.h"
+#include "host/hci_core.h"
+#include "host/shell/bt.h"
 
 static uint8_t received_base[UINT8_MAX];
 static size_t received_base_size;

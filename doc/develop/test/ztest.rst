@@ -237,7 +237,7 @@ To select just one of the test scenarios, run Twister with ``--scenario`` comman
    ./scripts/twister --scenario tests/foo/bar/your.test.scenario.name
 
 In the command line above ``tests/foo/bar`` is the path to your test application and
-``your.test.scenario.name`` references a test scenario defined in :file:`testcase.yaml`
+``your.test.scenario.name`` references a test scenario defined in :file:`tests.yaml`
 file, which is like ``sample.testing.ztest`` in the boilerplate test suite sample.
 
 See :ref:`Twister test project diagram <twister_test_project_diagram>` for more details
@@ -251,7 +251,7 @@ CMakeLists.txt
    :language: CMake
    :linenos:
 
-testcase.yaml
+tests.yaml
 
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/testcase.yaml
    :language: yaml
@@ -360,11 +360,11 @@ efforts into the specific module in question. This will speed up testing since
 only the module will have to be compiled in, and the tested functions will be
 called directly.
 
-To setup unit tests you have to add a CMakeLists.txt, a testcases.yml and a
+To setup unit tests you have to add a CMakeLists.txt, a tests.yaml and a
 prj.conf to the directory containing the unit test source files. The resulting
 binary from this directory is built using -DBOARD=unit_testing. When twister
 is invoked the script zephyr/scripts/pylib/twister/twisterlib/testplan.py
-filters out all testcases.yml in which type: unit is not set. Only unit tests
+filters out all tests.yaml in which type: unit is not set. Only unit tests
 are executed with a firmware build with BOARD=unit_testing.
 
 .. note::
@@ -401,10 +401,10 @@ and are used to decide whether a test failed or passed by verifying whether an
 interaction with an object occurred, and if required, to assert the order of
 that interaction.
 
-testcases.yaml
-==============
+tests.yaml
+==========
 
-You have to set the value for the key "type" to "unit" in the testcase.yaml
+You have to set the value for the key "type" to "unit" in the tests.yaml
 
 .. code-block:: yaml
 
@@ -423,7 +423,7 @@ For unit tests this contains usually only
    CONFIG_ZTEST=y
 
 If your unit tests require additional libraries (e.g. math-lib) you will have to
-add them either via the CMakeLists.txt or in the testcase.yaml:
+add them either via the CMakeLists.txt or in the tests.yaml:
 
 .. code-block:: yaml
 

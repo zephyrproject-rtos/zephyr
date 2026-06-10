@@ -19,7 +19,8 @@ LOG_MODULE_REGISTER(rpi_fw, CONFIG_LOG_DEFAULT_LEVEL);
 #define RPI_FW_RESPONSE_TIMEOUT 100U
 #define RPI_FW_RESPONSE_STATUS  1U
 #define RPI_FW_RESPONSE_TAG     2U
-#define RPI_FW_BUF_OVERHEAD     12U
+#define RPI_FW_BUF_OVERHEAD     (3 * sizeof(uint32_t))
+#define RPI_FW_TAG_HDR_SIZE     (sizeof(struct rpi_fw_tag_header))
 
 struct rpi_fw_tag_header {
 	uint32_t tag;
@@ -78,7 +79,8 @@ static int rpi_fw_transaction(const struct device *dev, struct mbox_msg *msg)
 	return 0;
 }
 
-int rpi_fw_transfer(const struct device *dev, uint32_t tag, void *data, uint32_t data_size)
+int rpi_fw_transfer_list(const struct device *dev, struct rpi_fw_tag_list *tag_list,
+			 uint16_t num_lists)
 {
 	if (!device_is_ready(dev)) {
 		LOG_ERR_DEVICE_NOT_READY(dev);
@@ -87,35 +89,47 @@ int rpi_fw_transfer(const struct device *dev, uint32_t tag, void *data, uint32_t
 
 	const struct rpi_fw_config *fw_config = dev->config;
 	struct rpi_fw_data *fw_data = dev->data;
-	uint32_t hdr_size = sizeof(struct rpi_fw_tag_header);
-	uint32_t buf_size = hdr_size + data_size + RPI_FW_BUF_OVERHEAD;
 	struct rpi_fw_tag_header *hdr;
 	uint32_t *buf = (uint32_t *)fw_data->shm;
+	uint32_t buf_size = RPI_FW_BUF_OVERHEAD;
+	uint8_t *payload;
 	struct mbox_msg msg;
+	uint16_t i;
 	int ret;
 
-	if (data == NULL || data_size == 0) {
-		LOG_ERR("Invalid transfer data");
-		return -EINVAL;
-	}
-
-	if (buf_size & 3U) {
-		LOG_ERR("buffer size is not a multiple of 4");
+	if (tag_list == NULL || num_lists == 0) {
 		return -EINVAL;
 	}
 
 	k_mutex_lock(&fw_data->lock, K_FOREVER);
 
-	hdr = (struct rpi_fw_tag_header *)&buf[2];
-	hdr->tag = tag;
-	hdr->data_size = data_size;
-	hdr->reserved = 0;
+	for (i = 0; i < num_lists; i++) {
+		if (tag_list[i].data == NULL || tag_list[i].size == 0) {
+			ret = -EINVAL;
+			goto release_lock;
+		}
+		buf_size += RPI_FW_TAG_HDR_SIZE + tag_list[i].size;
+	}
 
-	memcpy((uint8_t *)hdr + hdr_size, data, data_size);
+	if (buf_size % 4 != 0) {
+		LOG_ERR("buffer size is not a multiple of 4");
+		ret = -EINVAL;
+		goto release_lock;
+	}
 
 	buf[0] = buf_size;
 	buf[1] = RPI_FW_REQUEST_PROCESS;
-	buf[buf_size / 4U - 1U] = RPI_FW_TAG_END;
+	buf[buf_size / sizeof(uint32_t) - 1U] = RPI_FW_TAG_END;
+
+	payload = (uint8_t *)&buf[2];
+	for (i = 0; i < num_lists; i++) {
+		hdr = (struct rpi_fw_tag_header *)payload;
+		hdr->tag = tag_list[i].tag;
+		hdr->data_size = tag_list[i].size;
+		hdr->reserved = 0;
+		memcpy(payload + RPI_FW_TAG_HDR_SIZE, tag_list[i].data, tag_list[i].size);
+		payload += RPI_FW_TAG_HDR_SIZE + tag_list[i].size;
+	}
 
 	/* All shared memory addresses exchanged via the mailbox must be
 	 * physical bus addresses. The VideoCore has no knowledge of the
@@ -136,11 +150,26 @@ int rpi_fw_transfer(const struct device *dev, uint32_t tag, void *data, uint32_t
 		goto release_lock;
 	}
 
-	memcpy(data, (uint8_t *)&buf[RPI_FW_RESPONSE_TAG] + hdr_size, data_size);
+	payload = (uint8_t *)&buf[2];
+	for (i = 0; i < num_lists; i++) {
+		memcpy(tag_list[i].data, payload + RPI_FW_TAG_HDR_SIZE, tag_list[i].size);
+		payload += RPI_FW_TAG_HDR_SIZE + tag_list[i].size;
+	}
 
 release_lock:
 	k_mutex_unlock(&fw_data->lock);
 	return ret;
+}
+
+int rpi_fw_transfer(const struct device *dev, uint32_t tag, void *data, uint32_t data_size)
+{
+	struct rpi_fw_tag_list tag_list;
+
+	tag_list.tag = tag;
+	tag_list.data = data;
+	tag_list.size = data_size;
+
+	return rpi_fw_transfer_list(dev, &tag_list, 1);
 }
 
 static int rpi_fw_init(const struct device *dev)

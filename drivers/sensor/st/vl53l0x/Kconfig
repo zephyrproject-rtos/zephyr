@@ -9,6 +9,7 @@ menuconfig VL53L0X
 	depends on DT_HAS_ST_VL53L0X_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_VL53L0X),xshut-gpios)
 	select HAS_STLIB
 	help
 	  Enable driver for VL53L0X I2C-based time of flight sensor.

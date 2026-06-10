@@ -1469,8 +1469,10 @@ struct bt_hci_rp_le_rand {
 #define BT_HCI_OP_LE_START_ENCRYPTION           BT_OP(BT_OGF_LE, 0x0019) /* 0x2019 */
 struct bt_hci_cp_le_start_encryption {
 	uint16_t handle;
-	uint64_t rand;
-	uint16_t ediv;
+	/** 64-bit random number for LTK identification. */
+	uint8_t  rand[8];
+	/** 16-bit encrypted diversifier for LTK identification. */
+	uint8_t  ediv[2];
 	uint8_t  ltk[16];
 } __packed;
 
@@ -3611,8 +3613,10 @@ struct bt_hci_evt_le_remote_feat_complete {
 #define BT_HCI_EVT_LE_LTK_REQUEST               0x05
 struct bt_hci_evt_le_ltk_request {
 	uint16_t handle;
-	uint64_t rand;
-	uint16_t ediv;
+	/** 64-bit random number used to identify the LTK. */
+	uint8_t  rand[8];
+	/** 16-bit encrypted diversifier used to identify the LTK. */
+	uint8_t  ediv[2];
 } __packed;
 
 #define BT_HCI_EVT_LE_CONN_PARAM_REQ            0x06
@@ -3843,6 +3847,27 @@ struct bt_hci_evt_le_past_received {
 	uint16_t     interval;
 	uint8_t      clock_accuracy;
 } __packed;
+
+/** Minimum sync delay for CIGs as defined by 7.7.65.25 LE CIS Established event */
+#define BT_HCI_LE_CIG_SYNC_DELAY_MIN           0x0000F2U
+/** Maximum sync delay for CIGs as defined by 7.7.65.25 LE CIS Established event */
+#define BT_HCI_LE_CIG_SYNC_DELAY_MAX           0x7FFFFFU
+/** Minimum sync delay for CISs as defined by 7.7.65.25 LE CIS Established event */
+#define BT_HCI_LE_CIS_SYNC_DELAY_MIN           0x0000F2U
+/** Maximum sync delay for CISs as defined by 7.7.65.25 LE CIS Established event */
+#define BT_HCI_LE_CIS_SYNC_DELAY_MAX           0x7FFFFFU
+/** Minimum transport latency central to peripheral as defined by 7.7.65.25 LE CIS Established event
+ */
+#define BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MIN 0x0000F2U
+/** Maximum transport latency central to peripheral as defined by 7.7.65.25 LE CIS Established event
+ */
+#define BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MAX 0x7FFFFFU
+/** Minimum transport latency peripheral to central as defined by 7.7.65.25 LE CIS Established event
+ */
+#define BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MIN 0x0000F2U
+/** Maximum transport latency peripheral to central as defined by 7.7.65.25 LE CIS Established event
+ */
+#define BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MAX 0x7FFFFFU
 
 #define BT_HCI_EVT_LE_CIS_ESTABLISHED           0x19
 struct bt_hci_evt_le_cis_established {

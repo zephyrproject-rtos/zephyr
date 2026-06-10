@@ -22,6 +22,14 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/__assert.h>
 
+#include <zephyr/logging/log.h>
+#ifdef CONFIG_GPIO_LOG_LEVEL
+#define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
+#else
+#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
+#endif
+LOG_MODULE_REGISTER(stm32_gpioport_mgr);
+
 /*
  * Generic macrobatic utilities used later on
  */
@@ -55,10 +63,21 @@
  * End of the generic macrobatics
  */
 
+/*
+ * Check that the node is active AND has compatible handled by this driver.
+ * It is possible for DT nodes to use a `gpioX` nodelabel despite not being
+ * an in-SoC GPIO controller, in which case we would try to instantiate them
+ * even though this driver does not know how to handle them.
+ */
 #define GPIOPORT_DEVICE_IS_ACTIVE(port)					\
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##port))
+	UTIL_OR(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32_gpio, okay),		\
+		DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32mp2_gpio, okay))
+
 #define GET_GPIOPORT_DEVICE_OR_NULL(port)				\
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio##port))
+	COND_CODE_1(GPIOPORT_DEVICE_IS_ACTIVE(port),			\
+		    (DEVICE_DT_GET(DT_NODELABEL(gpio##port))), (NULL))
 
 /* UTIL_INC() is needed because LAST_LIST_ELEM_INDEX() is zero-based */
 #define LAST_ACTIVE_GPIO_PORT_IDX	\
@@ -290,6 +309,85 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 	return pm_device_driver_init(dev, stm32_gpioport_pm_action);
 }
 
+#if !defined(CONFIG_GPIO_STM32)
+/*
+ * The GPIO API is implemented entirely in the header file
+ * so it can be *called* even when CONFIG_GPIO=n. A build
+ * error would usually occur if one attempted to do that
+ * since you also need a reference to the GPIO device to
+ * use the API, and those devices are not instantiated when
+ * their driver doesn't exist... but in our case, we always
+ * instantiate the GPIO port nodes even when CONFIG_GPIO=n.
+ * We originally set the `api` pointer to NULL in this case
+ * but this is actually quite dangerous, since applications
+ * that tried to use the GPIO API without enabling CONFIG_GPIO
+ * would build fine but crash at runtime when the GPIO API
+ * functions dereference the NULL `api` pointer.
+ *
+ * Provide a dummy implementation of the GPIO API where all
+ * mandatory functions return -ENOSYS after printing a big
+ * error message such that applications don't crash anymore.
+ * Optional functions are not implemented to lower footprint.
+ *
+ * A broader rework would be necessary to allow not instancing
+ * any of the GPIO port devices when CONFIG_GPIO_STM32=n, which
+ * would restore the previous build-time-error behavior; for
+ * now, this shall suffice.
+ */
+static int illegal_gpio_api_usage(void)
+{
+	LOG_ERR("Attempting to use GPIO API without enabling it!");
+	return -ENOSYS;
+}
+
+static int dummy_gpio_pin_configure(const struct device *port, gpio_pin_t pin,
+				    gpio_flags_t flags)
+{
+	ARG_UNUSED(port); ARG_UNUSED(pin); ARG_UNUSED(flags);
+	return illegal_gpio_api_usage();
+}
+
+static int dummy_gpio_port_get_raw(const struct device *port, gpio_port_value_t *value)
+{
+	ARG_UNUSED(port); ARG_UNUSED(value);
+	return illegal_gpio_api_usage();
+}
+
+static int dummy_gpio_port_set_masked_raw(const struct device *port,
+					  gpio_port_pins_t mask, gpio_port_value_t value)
+{
+	ARG_UNUSED(port); ARG_UNUSED(mask); ARG_UNUSED(value);
+	return illegal_gpio_api_usage();
+}
+
+static int dummy_gpio_port_set_bits_raw(const struct device *port, gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port); ARG_UNUSED(pins);
+	return illegal_gpio_api_usage();
+}
+
+static int dummy_gpio_port_clear_bits_raw(const struct device *port, gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port); ARG_UNUSED(pins);
+	return illegal_gpio_api_usage();
+}
+
+static int dummy_gpio_port_toggle_bits(const struct device *port, gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port); ARG_UNUSED(pins);
+	return illegal_gpio_api_usage();
+}
+
+static DEVICE_API(gpio, dummy_gpio_api) = {
+	.pin_configure = dummy_gpio_pin_configure,
+	.port_get_raw = dummy_gpio_port_get_raw,
+	.port_set_masked_raw = dummy_gpio_port_set_masked_raw,
+	.port_set_bits_raw = dummy_gpio_port_set_bits_raw,
+	.port_clear_bits_raw = dummy_gpio_port_clear_bits_raw,
+	.port_toggle_bits = dummy_gpio_port_toggle_bits,
+};
+#endif /* !CONFIG_GPIO_STM32 */
+
 #if defined(CONFIG_GPIO)
 #define GPIO_PORT_INIT_PRIORITY CONFIG_GPIO_INIT_PRIORITY
 #else /* CONFIG_GPIO */
@@ -302,10 +400,9 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 
 #define GPIO_PORT_DEVICE_INIT(__node, __suffix, __base_addr, __port)		\
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-		IF_ENABLED(IS_ENABLED(CONFIG_GPIO_STM32), (			\
 		.common = {							\
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),	\
-		},))								\
+		},								\
 		.base = (void *)__base_addr,					\
 		.port = __port,							\
 		IF_ENABLED(DT_NODE_HAS_PROP(__node, clocks),			\
@@ -326,7 +423,7 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 			 PRE_KERNEL_1,						\
 			 GPIO_PORT_INIT_PRIORITY,				\
 			 COND_CODE_1(IS_ENABLED(CONFIG_GPIO_STM32),		\
-				(&gpio_stm32_driver), (NULL)))
+				(&gpio_stm32_driver), (&dummy_gpio_api)))
 
 #define GPIO_PORT_DEVICE_INIT_STM32(__suffix, __SUFFIX)				\
 	GPIO_PORT_DEVICE_INIT(DT_NODELABEL(gpio##__suffix),			\
@@ -335,7 +432,7 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 			 STM32_PORT##__SUFFIX)
 
 #define GPIO_PORT_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX)			\
-	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)),	\
+	IF_ENABLED(GPIOPORT_DEVICE_IS_ACTIVE(__suffix),				\
 		   (GPIO_PORT_DEVICE_INIT_STM32(__suffix, __SUFFIX)))
 
 #define DEVICE_INIT_IF_OKAY(idx, __suffix)				\

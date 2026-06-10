@@ -16,6 +16,7 @@
 #include <hal/nrf_rramc.h>
 
 #include <zephyr/../../drivers/flash/soc_flash_nrf.h>
+#include <soc_secure.h>
 
 /* Note that it is supported to compile this driver for both secure
  * and non-secure images, but non-secure images cannot call
@@ -97,7 +98,7 @@ BUILD_ASSERT((PAGE_SIZE % (WRITE_LINE_SIZE) == 0),
 #endif
 
 static int write_op(void *context); /* instance of flash_op_handler_t */
-static int write_synchronously(off_t addr, const void *data, size_t len);
+static int write_synchronously(off_t addr, const void *data, uint8_t fill_val, size_t len);
 
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
@@ -151,7 +152,7 @@ static void commit_changes(off_t addr, size_t len)
 }
 #endif
 
-static void rram_write(off_t addr, const void *data, size_t len)
+static void rram_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 {
 #if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
 	nrf_rramc_config_t config = {.mode_write = true, .write_buff_size = WRITE_BUFFER_SIZE};
@@ -168,7 +169,7 @@ static void rram_write(off_t addr, const void *data, size_t len)
 		if (data) {
 			memcpy((void *)addr, data, chunk_len);
 		} else {
-			memset((void *)addr, ERASE_VALUE, chunk_len);
+			memset((void *)addr, fill_val, chunk_len);
 		}
 #ifdef CONFIG_SOC_FLASH_NRF_THROTTLING
 		addr += chunk_len;
@@ -217,7 +218,8 @@ static int write_op(void *context)
 	while (w_ctx->len > 0) {
 		len = (WRITE_BUFFER_MAX_SIZE < w_ctx->len) ? WRITE_BUFFER_MAX_SIZE : w_ctx->len;
 
-		rram_write(w_ctx->flash_addr, (const void *)w_ctx->data_addr, len);
+		rram_write(w_ctx->flash_addr, (const void *)w_ctx->data_addr,
+			   w_ctx->fill_val, len);
 
 		shift_write_context(len, w_ctx);
 
@@ -235,12 +237,13 @@ static int write_op(void *context)
 	return FLASH_OP_DONE;
 }
 
-static int write_synchronously(off_t addr, const void *data, size_t len)
+static int write_synchronously(off_t addr, const void *data, uint8_t fill_val, size_t len)
 {
 	struct flash_context context = {
 		.data_addr = (uint32_t)data,
 		.flash_addr = addr,
 		.len = len,
+		.fill_val = fill_val,
 		.enable_time_limit = 1 /* enable time limit */
 	};
 
@@ -252,13 +255,14 @@ static int write_synchronously(off_t addr, const void *data, size_t len)
 
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 
-static int nrf_write(off_t addr, const void *data, size_t len)
+/* Internal write workhorse. Callers (nrf_rram_write / nrf_rram_fill_impl)
+ * are responsible for validating @p addr and @p len against RRAM_SIZE
+ * and for upholding the WRITE_LINE_SIZE alignment contract before
+ * reaching this helper - mirroring the layering used by nrf_rram_read.
+ */
+static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 {
 	int ret = 0;
-
-	if (!is_within_bounds(addr, len, 0, RRAM_SIZE)) {
-		return -EINVAL;
-	}
 	addr += RRAM_START;
 
 	if (!len) {
@@ -271,16 +275,77 @@ static int nrf_write(off_t addr, const void *data, size_t len)
 
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 	if (nrf_flash_sync_is_required()) {
-		ret = write_synchronously(addr, data, len);
+		ret = write_synchronously(addr, data, fill_val, len);
 	} else
 #endif /* !CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE */
 	{
-		rram_write(addr, data, len);
+		rram_write(addr, data, fill_val, len);
 	}
 
 	SYNC_UNLOCK();
 
 	return ret;
+}
+
+#ifdef CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED
+static inline bool rram_line_holds(const uint8_t *line, uint32_t pat)
+{
+	__ASSERT(((uintptr_t)line & (WRITE_LINE_SIZE - 1U)) == 0,
+		 "line must be write-line aligned");
+	const uint32_t *w = (const uint32_t *)line;
+
+	BUILD_ASSERT(WRITE_LINE_SIZE == 16,
+		     "skip-if-filled fast path assumes WRITE_LINE_SIZE == 16");
+	return (w[0] == pat) && (w[1] == pat) && (w[2] == pat) && (w[3] == pat);
+}
+#endif /* CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED */
+
+/**
+ * @brief Internal helper used by both erase emulation and the api->fill
+ *        callback. Writes @p len bytes of @p val starting at flash @p addr,
+ *        going through the same locking, throttling, RRAMC config and
+ *        radio-sync paths as a regular write.
+ *
+ * When CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED is enabled the helper first
+ * scans the target region in write-line granularity and skips lines that
+ * already hold @p val. Consecutive dirty lines are batched into a single
+ * underlying nrf_write() call. The optimisation works for any @p val,
+ * not only the device ERASE_VALUE.
+ */
+static int nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
+{
+#ifdef CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED
+	const uint32_t pat = (uint32_t)val * 0x01010101U;
+	int ret = 0;
+	off_t cur = addr;
+	const off_t end = addr + (off_t)len;
+
+	while (cur < end) {
+		while (cur < end &&
+			rram_line_holds((const uint8_t *)(cur + RRAM_START), pat)) {
+			cur += WRITE_LINE_SIZE;
+		}
+		if (cur >= end) {
+			break;
+		}
+
+		const off_t dirty_start = cur;
+
+		while (cur < end &&
+			!rram_line_holds((const uint8_t *)(cur + RRAM_START), pat)) {
+			cur += WRITE_LINE_SIZE;
+		}
+
+		ret = nrf_write(dirty_start, NULL, val, (size_t)(cur - dirty_start));
+		if (ret) {
+			return ret;
+		}
+	}
+
+	return ret;
+#else
+	return nrf_write(addr, NULL, val, len);
+#endif /* CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED */
 }
 
 static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_t len)
@@ -292,8 +357,11 @@ static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_
 	}
 	addr += RRAM_START;
 
-	memcpy(data, (void *)addr, len);
+	if (soc_secure_flash_range_is_secure((uintptr_t)addr, len)) {
+		return soc_secure_mem_read(data, (void *)addr, len);
+	}
 
+	memcpy(data, (void *)addr, len);
 	return 0;
 }
 
@@ -309,20 +377,52 @@ static int nrf_rram_write(const struct device *dev, off_t addr, const void *data
 		return -EINVAL;
 	}
 
+	if (!is_within_bounds(addr, len, 0, RRAM_SIZE)) {
+		return -EINVAL;
+	}
 
-	return nrf_write(addr, data, len);
+	return nrf_write(addr, data, 0 /* fill_val unused for data writes */, len);
 }
 
 static int nrf_rram_erase(const struct device *dev, off_t addr, size_t len)
 {
 	ARG_UNUSED(dev);
 
+	if (len == 0) {
+		return 0;
+	}
+
 	if ((addr % PAGE_SIZE) != 0 || (len % PAGE_SIZE) != 0) {
 		return -EINVAL;
 	}
 
-	return nrf_write(addr, NULL, len);
+	if (!is_within_bounds(addr, len, 0, RRAM_SIZE)) {
+		return -EINVAL;
+	}
+
+	return nrf_rram_fill_impl(addr, ERASE_VALUE, len);
 }
+
+#if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
+static int nrf_rram_fill(const struct device *dev, uint8_t val, off_t addr, size_t len)
+{
+	ARG_UNUSED(dev);
+
+	if (len == 0) {
+		return 0;
+	}
+
+	if ((addr % WRITE_LINE_SIZE) != 0 || (len % WRITE_LINE_SIZE) != 0) {
+		return -EINVAL;
+	}
+
+	if (!is_within_bounds(addr, len, 0, RRAM_SIZE)) {
+		return -EINVAL;
+	}
+
+	return nrf_rram_fill_impl(addr, val, len);
+}
+#endif /* CONFIG_FLASH_HAS_DRIVER_FILL */
 
 int nrf_rram_get_size(const struct device *dev, uint64_t *size)
 {
@@ -368,6 +468,9 @@ static DEVICE_API(flash, nrf_rram_api) = {
 	.read = nrf_rram_read,
 	.write = nrf_rram_write,
 	.erase = nrf_rram_erase,
+#if defined(CONFIG_FLASH_HAS_DRIVER_FILL)
+	.fill = nrf_rram_fill,
+#endif
 	.get_size = nrf_rram_get_size,
 	.get_parameters = nrf_rram_get_parameters,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)

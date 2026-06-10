@@ -19,6 +19,8 @@ properties:
 
       -64 to +63: A higher value makes StallGuard2 less sensitive and requires more torque
       to indicate a stall.
+    min: -64
+    max: 63
 
   stallguard-threshold-velocity:
     type: int

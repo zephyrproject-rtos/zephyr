@@ -9,7 +9,7 @@
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_numaker.h>
 #include <zephyr/logging/log.h>
@@ -121,12 +121,12 @@ static int can_numaker_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(config->reset.dev)) {
-		LOG_ERR("reset controller not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->reset.dev);
 		return -ENODEV;
 	}
 
 	if (!device_is_ready(config->clk_dev)) {
-		LOG_ERR("clock controller not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->clk_dev);
 		return -ENODEV;
 	}
 

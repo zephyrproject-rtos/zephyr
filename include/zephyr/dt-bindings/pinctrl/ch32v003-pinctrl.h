@@ -13,7 +13,7 @@
 
 /*
  * Defines the starting bit for the remap field. Note that the I2C1 and USART1 fields are not
- * contigious.
+ * contiguous.
  */
 #define CH32V003_PINMUX_SPI1_RM    0
 #define CH32V003_PINMUX_I2C1_RM    1

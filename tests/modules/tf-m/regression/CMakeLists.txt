@@ -14,6 +14,18 @@ set(TFM_TEST_REG_TEST_PATH  ${ZEPHYR_TF_M_TESTS_MODULE_DIR}/tests_reg/test)
 set(TFM_TEST_LIB_PATH  ${ZEPHYR_TF_M_TESTS_MODULE_DIR}/lib)
 set(TFM_API_NS_PATH ${CMAKE_BINARY_DIR}/tfm/api_ns)
 
+if(CONFIG_TFM_QCBOR_PATH STREQUAL "DOWNLOAD")
+  set(TFM_QCBOR_PATH "${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src")
+else()
+  set(TFM_QCBOR_PATH "${CONFIG_TFM_QCBOR_PATH}")
+endif()
+
+if(CONFIG_TFM_T_COSE_PATH STREQUAL "DOWNLOAD")
+  set(TFM_T_COSE_PATH "${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src")
+else()
+  set(TFM_T_COSE_PATH "${CONFIG_TFM_T_COSE_PATH}")
+endif()
+
 # This is used to pass some extra build parameters to the TF-M build.
 macro(add_tfm_build_params_if_def kconfig)
   if(${kconfig})
@@ -200,70 +212,95 @@ add_inc_and_src_if_def(
     ${TFM_TEST_REG_TEST_PATH}/secure_fw/suites/attestation/ext/qcbor_util
     ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/secure_fw/partitions/initial_attestation
     ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/secure_fw/spm/include/boot
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/inc
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/inc
+    ${TFM_QCBOR_PATH}/inc
+    ${TFM_T_COSE_PATH}/inc
+    ${TFM_T_COSE_PATH}/src
   SRC
+    ${TFM_TEST_REG_TEST_PATH}/secure_fw/suites/attestation/ext/qcbor_util/qcbor_util.c
     ${TFM_TEST_REG_TEST_PATH}/secure_fw/suites/attestation/non_secure/attest_asymmetric_ns_interface_testsuite.c
     ${TFM_TEST_REG_TEST_PATH}/secure_fw/suites/attestation/secure/attest_asymmetric_s_interface_testsuite.c
     ${TFM_TEST_REG_TEST_PATH}/secure_fw/suites/attestation/attest_token_decode_asymmetric.c
     ${TFM_TEST_REG_TEST_PATH}/secure_fw/suites/attestation/attest_token_decode_common.c
     ${TFM_TEST_REG_TEST_PATH}/secure_fw/suites/attestation/attest_token_test.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/ieee754.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/qcbor_decode.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/qcbor_encode.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/qcbor_err_to_str.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/UsefulBuf.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_encrypt_dec.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_encrypt_enc.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_key.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_mac_compute.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_mac_validate.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_parameters.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_qcbor_gap.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_recipient_dec_esdh.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_recipient_dec_keywrap.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_recipient_enc_esdh.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_recipient_enc_keywrap.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_sign1_sign.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_sign1_verify.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_sign_eddsa.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_sign_main.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_sign_restart.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_verify_eddsa.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_verify_main.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_sign_sign.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_sign_verify.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_util.c
+    ${TFM_QCBOR_PATH}/src/ieee754.c
+    ${TFM_QCBOR_PATH}/src/qcbor_decode.c
+    ${TFM_QCBOR_PATH}/src/qcbor_encode.c
+    ${TFM_QCBOR_PATH}/src/qcbor_err_to_str.c
+    ${TFM_QCBOR_PATH}/src/UsefulBuf.c
+    ${TFM_T_COSE_PATH}/src/t_cose_encrypt_dec.c
+    ${TFM_T_COSE_PATH}/src/t_cose_encrypt_enc.c
+    ${TFM_T_COSE_PATH}/src/t_cose_key.c
+    ${TFM_T_COSE_PATH}/src/t_cose_mac_compute.c
+    ${TFM_T_COSE_PATH}/src/t_cose_mac_validate.c
+    ${TFM_T_COSE_PATH}/src/t_cose_parameters.c
+    ${TFM_T_COSE_PATH}/src/t_cose_qcbor_gap.c
+    ${TFM_T_COSE_PATH}/src/t_cose_recipient_dec_esdh.c
+    ${TFM_T_COSE_PATH}/src/t_cose_recipient_dec_keywrap.c
+    ${TFM_T_COSE_PATH}/src/t_cose_recipient_enc_esdh.c
+    ${TFM_T_COSE_PATH}/src/t_cose_recipient_enc_keywrap.c
+    ${TFM_T_COSE_PATH}/src/t_cose_sign1_sign.c
+    ${TFM_T_COSE_PATH}/src/t_cose_sign1_verify.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_sign_eddsa.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_sign_main.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_sign_restart.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_verify_eddsa.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_verify_main.c
+    ${TFM_T_COSE_PATH}/src/t_cose_sign_sign.c
+    ${TFM_T_COSE_PATH}/src/t_cose_sign_verify.c
+    ${TFM_T_COSE_PATH}/src/t_cose_util.c
+    ${TFM_T_COSE_PATH}/crypto_adapters/t_cose_psa_crypto.c
 )
 set_source_files_properties(
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/ieee754.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/qcbor_decode.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/qcbor_encode.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/qcbor_err_to_str.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/qcbor-src/src/UsefulBuf.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_encrypt_dec.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_encrypt_enc.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_key.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_mac_compute.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_mac_validate.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_parameters.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_qcbor_gap.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_recipient_dec_esdh.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_recipient_dec_keywrap.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_recipient_enc_esdh.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_recipient_enc_keywrap.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_sign1_sign.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_sign1_verify.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_sign_eddsa.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_sign_main.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_sign_restart.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_verify_eddsa.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_signature_verify_main.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_sign_sign.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_sign_verify.c
-    ${CMAKE_BINARY_DIR}/tfm/lib/ext/t_cose-src/src/t_cose_util.c
+    ${TFM_QCBOR_PATH}/src/ieee754.c
+    ${TFM_QCBOR_PATH}/src/qcbor_decode.c
+    ${TFM_QCBOR_PATH}/src/qcbor_encode.c
+    ${TFM_QCBOR_PATH}/src/qcbor_err_to_str.c
+    ${TFM_QCBOR_PATH}/src/UsefulBuf.c
+    ${TFM_T_COSE_PATH}/src/t_cose_encrypt_dec.c
+    ${TFM_T_COSE_PATH}/src/t_cose_encrypt_enc.c
+    ${TFM_T_COSE_PATH}/src/t_cose_key.c
+    ${TFM_T_COSE_PATH}/src/t_cose_mac_compute.c
+    ${TFM_T_COSE_PATH}/src/t_cose_mac_validate.c
+    ${TFM_T_COSE_PATH}/src/t_cose_parameters.c
+    ${TFM_T_COSE_PATH}/src/t_cose_qcbor_gap.c
+    ${TFM_T_COSE_PATH}/src/t_cose_recipient_dec_esdh.c
+    ${TFM_T_COSE_PATH}/src/t_cose_recipient_dec_keywrap.c
+    ${TFM_T_COSE_PATH}/src/t_cose_recipient_enc_esdh.c
+    ${TFM_T_COSE_PATH}/src/t_cose_recipient_enc_keywrap.c
+    ${TFM_T_COSE_PATH}/src/t_cose_sign1_sign.c
+    ${TFM_T_COSE_PATH}/src/t_cose_sign1_verify.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_sign_eddsa.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_sign_main.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_sign_restart.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_verify_eddsa.c
+    ${TFM_T_COSE_PATH}/src/t_cose_signature_verify_main.c
+    ${TFM_T_COSE_PATH}/src/t_cose_sign_sign.c
+    ${TFM_T_COSE_PATH}/src/t_cose_sign_verify.c
+    ${TFM_T_COSE_PATH}/src/t_cose_util.c
+    ${TFM_T_COSE_PATH}/crypto_adapters/t_cose_psa_crypto.c
     PROPERTIES GENERATED TRUE
 )
+if(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION)
+  # Match TF-M's embedded configuration by reproducing the t_cose and
+  # QCBOR compile definitions into the app target.
+  # The options are taken from the relevant CMake files in TF-M:
+  # - lib/ext/t_cose/CMakeLists.txt
+  # - lib/ext/qcbor/CMakeLists.txt
+  target_compile_definitions(app PRIVATE
+      T_COSE_USE_PSA_CRYPTO
+      T_COSE_DISABLE_CONTENT_TYPE
+      T_COSE_DISABLE_COSE_SIGN
+      T_COSE_DISABLE_KEYWRAP
+      T_COSE_DISABLE_PS256
+      T_COSE_DISABLE_PS384
+      T_COSE_DISABLE_PS512
+      T_COSE_DISABLE_SHORT_CIRCUIT_SIGN
+      QCBOR_DISABLE_FLOAT_HW_USE
+      QCBOR_DISABLE_PREFERRED_FLOAT
+      USEFULBUF_DISABLE_ALL_FLOAT
+      DOMAIN_NS=1
+  )
+endif()
 def_if_def(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION       TEST_NS_ATTESTATION)
 def_if_def(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION       TEST_S_ATTESTATION)
 

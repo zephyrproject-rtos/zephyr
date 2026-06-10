@@ -402,19 +402,6 @@ static int cst8xx_pm_action(const struct device *dev, enum pm_device_action acti
 
 /* clang-format off */
 #define CST8XX_DEFINE(index)                                                                       \
-	IF_ENABLED(CONFIG_PM_DEVICE, (                                                             \
-		BUILD_ASSERT(DT_INST_PROP(index, scan_th) >= 1 &&                                  \
-				DT_INST_PROP(index, scan_th) <= 255,                               \
-				"scan_th must be >= 1 and <= 255");                                \
-		BUILD_ASSERT(DT_INST_PROP(index, scan_freq) >= 1 &&                                \
-				DT_INST_PROP(index, scan_freq) <= 255,                             \
-				"scan_freq must be >= 1 and <= 255");                              \
-		BUILD_ASSERT(DT_INST_PROP(index, scan_win) <= 255,                                 \
-				"scan_win must be <= 255");                                        \
-		BUILD_ASSERT(DT_INST_PROP(index, scan_i_dac) >= 1 &&                               \
-				DT_INST_PROP(index, scan_i_dac) <= 255,                            \
-				"scan_i_dac must be >= 1 and <= 255");                             \
-	))                                                                                         \
 	static struct cst8xx_data cst8xx_data_##index;                                             \
 	static const struct cst8xx_config cst8xx_config_##index = {                                \
 		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \

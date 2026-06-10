@@ -1318,6 +1318,8 @@ int net_context_create_ipv4_new(struct net_context *context,
 		}
 	}
 
+	net_pkt_set_dont_fragment(pkt, context->options.dont_fragment);
+
 	return net_ipv4_create(pkt, src, dst);
 }
 #endif /* CONFIG_NET_IPV4 */
@@ -1350,6 +1352,8 @@ int net_context_create_ipv6_new(struct net_context *context,
 			net_ipv6_get_dscp(context->options.dscp_ecn)));
 	}
 #endif
+
+	net_pkt_set_dont_fragment(pkt, context->options.dont_fragment);
 
 	return net_ipv6_create(pkt, src, dst);
 }
@@ -2128,6 +2132,20 @@ static int get_context_ipv6_mcast_loop(struct net_context *context,
 #endif
 }
 
+static int get_context_dont_fragment(struct net_context *context,
+				     void *value, uint32_t *len)
+{
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+	return get_bool_option(context->options.dont_fragment, value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 /* If buf is not NULL, then use it. Otherwise read the data to be written
  * to net_pkt from msghdr.
  */
@@ -2196,6 +2214,10 @@ static int context_setup_udp_packet(struct net_context *context,
 	if (ret) {
 		return ret;
 	}
+
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+	net_pkt_set_dont_fragment(pkt, context->options.dont_fragment);
+#endif
 
 	ret = net_udp_create(pkt,
 			     net_sin((struct net_sockaddr *)
@@ -2299,6 +2321,31 @@ static void context_finalize_packet(struct net_context *context,
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
 		net_ipv4_finalize(pkt, net_context_get_proto(context));
 	}
+}
+
+static int context_validate_dont_fragment_packet(struct net_pkt *pkt)
+{
+	uint16_t mtu;
+
+	if (!net_pkt_dont_fragment(pkt)) {
+		return 0;
+	}
+
+	if (net_pkt_family(pkt) == NET_AF_INET) {
+		mtu = net_if_get_mtu(net_pkt_iface(pkt));
+		mtu = MAX(NET_IPV4_MTU, mtu);
+	} else if (net_pkt_family(pkt) == NET_AF_INET6) {
+		mtu = net_if_get_mtu(net_pkt_iface(pkt));
+		mtu = MAX(NET_IPV6_MTU, mtu);
+	} else {
+		return 0;
+	}
+
+	if (net_pkt_get_len(pkt) > mtu) {
+		return -EMSGSIZE;
+	}
+
+	return 0;
 }
 
 static struct net_pkt *context_alloc_pkt(struct net_context *context,
@@ -2781,6 +2828,11 @@ skip_alloc:
 		}
 
 		context_finalize_packet(context, family, pkt);
+
+		ret = context_validate_dont_fragment_packet(pkt);
+		if (ret < 0) {
+			goto fail;
+		}
 
 		ret = net_try_send_data(pkt, timeout);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
@@ -3695,6 +3747,20 @@ static int set_context_ipv6_mcast_loop(struct net_context *context,
 #endif
 }
 
+static int set_context_dont_fragment(struct net_context *context,
+				     const void *value, uint32_t len)
+{
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+	return set_bool_option(&context->options.dont_fragment, value, len);
+#else
+	ARG_UNUSED(context);
+	ARG_UNUSED(value);
+	ARG_UNUSED(len);
+
+	return -ENOTSUP;
+#endif
+}
+
 static int set_context_reuseaddr(struct net_context *context,
 				 const void *value, uint32_t len)
 {
@@ -4045,6 +4111,9 @@ int net_context_set_option(struct net_context *context,
 	case NET_OPT_RECV_HOPLIMIT:
 		ret = set_context_recv_hoplimit(context, value, len);
 		break;
+	case NET_OPT_DONT_FRAGMENT:
+		ret = set_context_dont_fragment(context, value, len);
+		break;
 	}
 
 	k_mutex_unlock(&context->lock);
@@ -4138,6 +4207,9 @@ int net_context_get_option(struct net_context *context,
 		break;
 	case NET_OPT_RECV_HOPLIMIT:
 		ret = get_context_recv_hoplimit(context, value, len);
+		break;
+	case NET_OPT_DONT_FRAGMENT:
+		ret = get_context_dont_fragment(context, value, len);
 		break;
 	}
 

@@ -28,7 +28,7 @@ if WIFI_ESP32
 config HEAP_MEM_POOL_ADD_SIZE_ESP_WIFI
 	int
 	default 51200 if ESP_WIFI_HEAP_SYSTEM
-	default 19456 if ESP_WIFI_HEAP_SPIRAM
+	default 25400 if ESP_WIFI_HEAP_SPIRAM
 	help
 	  Make sure there is a minimal heap available for Wi-Fi driver.
 
@@ -310,6 +310,15 @@ config ESP32_WIFI_MAX_THREAD_PRIORITY
 	help
 	  Maximum priority of thread used for processing driver work queue items.
 
+config ESP32_WIFI_TASK_STACK_SIZE
+	int "Wi-Fi task stack size (floor)"
+	default 3584
+	help
+	  Minimum stack size for the Wi-Fi tasks spawned by the Wi-Fi
+	  library blobs. The actual stack used is the larger of this value
+	  and the stack depth requested by the blob at runtime, so a higher
+	  Kconfig value only raises the floor.
+
 config ESP32_WIFI_SLP_DEFAULT_MIN_ACTIVE_TIME
 	int "Minimum active time"
 	range 8 60
@@ -385,6 +394,78 @@ config ESP32_WIFI_MBEDTLS_CRYPTO
 	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
 	help
 	  Select this option to use MbedTLS crypto APIs which utilize hardware acceleration.
+
+config ESP32_WIFI_ENTERPRISE
+	bool "WPA2/WPA3-Enterprise station support"
+	select ESP32_WIFI_MBEDTLS_CRYPTO
+	select WIFI_CERTIFICATE_LIB
+	select MBEDTLS
+	select MBEDTLS_PEM_PARSE_C
+	select MBEDTLS_SSL_EXTENDED_MASTER_SECRET
+	select MBEDTLS_SSL_KEYING_MATERIAL_EXPORT
+	select MBEDTLS_SSL_SERVER_NAME_INDICATION
+	select MBEDTLS_X509_CRL_PARSE_C
+	select MBEDTLS_X509_CRT_PARSE_C
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
+	help
+	  Select this option to allow the ESP32 Wi-Fi station driver to
+	  connect to WPA2-Enterprise and WPA3-Enterprise networks using the
+	  Espressif EAP supplicant.
+
+config ESP32_WIFI_ENTERPRISE_MBEDTLS_TLS_CLIENT
+	bool "Use MbedTLS TLS client for WPA-Enterprise"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	help
+	  Use the Espressif supplicant MbedTLS TLS backend for EAP TLS
+	  handshakes. This is the backend used by Espressif's enterprise Wi-Fi
+	  examples.
+
+config ESP32_WIFI_GCMP_SUPPORT
+	bool "GCMP cipher support"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	help
+	  Enable GCMP cipher support in the Espressif supplicant. This is
+	  required by WPA3-Enterprise modes.
+
+config ESP32_WIFI_GMAC_SUPPORT
+	bool "GMAC cipher support"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	help
+	  Enable GMAC support in the Espressif supplicant. This is required by
+	  WPA3-Enterprise Suite-B modes.
+
+config ESP32_WIFI_SUITE_B
+	bool "WPA3-Enterprise Suite-B support"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	select ESP32_WIFI_GCMP_SUPPORT
+	select ESP32_WIFI_GMAC_SUPPORT
+	help
+	  Enable WPA3-Enterprise Suite-B support.
+
+config ESP32_WIFI_SUITE_B_192
+	bool "WPA3-Enterprise Suite-B 192-bit support"
+	depends on ESP32_WIFI_ENTERPRISE
+	select ESP32_WIFI_GCMP_SUPPORT
+	select ESP32_WIFI_GMAC_SUPPORT
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+	select MBEDTLS_CIPHERSUITE_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+	select PSA_WANT_ECC_SECP_R1_384
+	help
+	  Enable WPA3-Enterprise 192-bit Suite-B support.
+
+config ESP32_WIFI_BSS_MAX_IDLE_SUPPORT
+	bool "BSS max idle support"
+	depends on ESP32_WIFI_ENTERPRISE
+	default y
+	help
+	  Enable BSS max idle feature capability advertisement in the Espressif
+	  Wi-Fi driver.
 
 config ESP32_WIFI_ENABLE_WPA3_SAE
 	bool "WPA3-Personal"

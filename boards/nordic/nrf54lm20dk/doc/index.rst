@@ -44,7 +44,7 @@ Enter the following command to compile ``hello_world`` for the FLPR core:
 
 .. code-block:: console
 
-   west build -p -b nrf54lm20dk/nrf54lm20b/cpuflpr --sysbuild
+   west build -p -b nrf54lm20dk/nrf54lm20b/cpuflpr samples/hello_world --sysbuild
 
 
 Flashing

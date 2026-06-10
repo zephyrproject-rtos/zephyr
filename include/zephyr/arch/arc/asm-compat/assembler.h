@@ -62,7 +62,7 @@
 
 #else	/* !_ASMLANGUAGE */
 
-#error "asm-compat macroses used not in assembler code!"
+#error "asm-compat macros used not in assembler code!"
 
 #endif	/* _ASMLANGUAGE */
 

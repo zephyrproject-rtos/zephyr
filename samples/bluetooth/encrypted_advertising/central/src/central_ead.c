@@ -301,8 +301,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	if (conn_err) {
 		LOG_DBG("Failed to connect to %s (err %u)", bt_conn_dst_str(conn), conn_err);
 
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 
 		(void)start_scan(true);
 
@@ -323,8 +322,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)

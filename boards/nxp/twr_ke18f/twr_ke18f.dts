@@ -53,6 +53,7 @@
 		zephyr,shell-uart = &lpuart0;
 		zephyr,uart-pipe = &lpuart0;
 		zephyr,canbus = &flexcan0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -377,4 +378,8 @@
 			reg = <0x00076000 DT_SIZE_K(40)>;
 		};
 	};
+};
+
+&crc {
+	status = "okay";
 };

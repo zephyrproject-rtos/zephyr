@@ -54,6 +54,18 @@ void sys_trace_isr_exit_user(void)
 	irq_unlock(key);
 }
 
+void sys_trace_k_thread_sleep_enter_user(k_timeout_t timeout)
+{
+	printk("%s: thread=%p timeout=%lld ticks\n", __func__,
+	       k_sched_current_thread_query(), (long long)timeout.ticks);
+}
+
+void sys_trace_k_thread_sleep_exit_user(k_timeout_t timeout, int32_t ret)
+{
+	printk("%s: thread=%p ret=%d ms\n", __func__,
+	       k_sched_current_thread_query(), ret);
+}
+
 void sys_trace_idle_user(void)
 {
 	printk("%s\n", __func__);

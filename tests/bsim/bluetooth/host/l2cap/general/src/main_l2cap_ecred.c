@@ -329,8 +329,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
 	if (conn_err) {
 		TEST_FAIL("Failed to connect to %s (%u)", bt_conn_dst_str(conn), conn_err);
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 		return;
 	}
 
@@ -349,8 +348,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 	UNSET_FLAG(is_connected);
 }
 

@@ -7,6 +7,7 @@
 #include <zephyr/dt-bindings/display/panel.h>
 
 &sdl_dc {
+	pixel-format = <PANEL_PIXEL_FORMAT_I_4>;
 	width = <320>;
 	height = <240>;
 
@@ -28,6 +29,6 @@
 			  ARGB8888(0, 0, 255, 255)      /* 12: blue */
 			  ARGB8888(255, 0, 255, 255)    /* 13: magenta */
 			  ARGB8888(0, 255, 255, 255)    /* 14: cyan */
-			  ARGB8888(255, 255, 255, 255)  /* 15: white */ >;
+			  ARGB8888(255, 255, 255, 255)  /* 15: white */>;
 	};
 };

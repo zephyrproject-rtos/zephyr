@@ -26,8 +26,12 @@ properties:
       - channel of the timer used for PWM
       - period to set in ns
       - flags : combination of standard flags like PWM_POLARITY_NORMAL
-        or specific flags like STM32_PWM_COMPLEMENTARY. As an example,
-        the following complementary PWMs(CH2&CH2N) are shown below.
+        or specific flags like STM32_PWM_COMPLEMENTARY.
+        The input capture prescaler for period capture can be enabled using
+        STM32_PWM_CAPTURE_PSC_x (x = 2, 4, 8). The measured period is
+        compensated at driver level.
+        As an example, the following complementary PWMs(CH2&CH2N) are shown
+        below.
           <&pwm1 2 100 (PWM_POLARITY_NORMAL)>;
           <&pwm1 2 100 (PWM_POLARITY_NORMAL | STM32_PWM_COMPLEMENTARY)>;
 

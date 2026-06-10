@@ -63,9 +63,8 @@ enum mfd_npm2100_timer_mode {
  * @param dev npm2100 mfd device
  * @param time_ms timer value in ms
  * @param mode timer mode
- * @retval 0 If successful
- * @retval -EINVAL if time value is too large
- * @retval -errno In case of any bus error (see i2c_write_dt())
+ * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
+ * @retval -EINVAL Time value is too large.
  */
 int mfd_npm2100_set_timer(const struct device *dev, uint32_t time_ms,
 			  enum mfd_npm2100_timer_mode mode);
@@ -74,8 +73,7 @@ int mfd_npm2100_set_timer(const struct device *dev, uint32_t time_ms,
  * @brief Start npm2100 timer
  *
  * @param dev npm2100 mfd device
- * @retval 0 If successful
- * @retval -errno In case of any bus error (see i2c_write_dt())
+ * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
  */
 int mfd_npm2100_start_timer(const struct device *dev);
 
@@ -83,8 +81,7 @@ int mfd_npm2100_start_timer(const struct device *dev);
  * @brief npm2100 full power reset
  *
  * @param dev npm2100 mfd device
- * @retval 0 If successful
- * @retval -errno In case of any bus error (see i2c_write_dt())
+ * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
  */
 int mfd_npm2100_reset(const struct device *dev);
 
@@ -98,10 +95,9 @@ int mfd_npm2100_reset(const struct device *dev);
  * @param dev npm2100 mfd device
  * @param time_ms timer value in ms. Set to 0 to disable timer.
  * @param pass_through set to use pass-through hibernate mode.
- * @retval 0 If successful
- * @retval -EINVAL if time value is too large
- * @retval -EBUSY if the timer is already in use.
- * @retval -errno In case of any bus error (see i2c_write_dt())
+ * @return 0 on success, negative errno value on failure (see i2c_write_dt()).
+ * @retval -EINVAL Time value is too large.
+ * @retval -EBUSY The timer is already in use.
  */
 int mfd_npm2100_hibernate(const struct device *dev, uint32_t time_ms, bool pass_through);
 
@@ -110,7 +106,7 @@ int mfd_npm2100_hibernate(const struct device *dev, uint32_t time_ms, bool pass_
  *
  * @param dev npm2100 mfd device
  * @param callback callback
- * @return 0 on success, -errno on failure
+ * @return 0 on success, negative errno value on failure.
  */
 int mfd_npm2100_add_callback(const struct device *dev, struct gpio_callback *callback);
 
@@ -119,7 +115,7 @@ int mfd_npm2100_add_callback(const struct device *dev, struct gpio_callback *cal
  *
  * @param dev npm2100 mfd device
  * @param callback callback
- * @return 0 on success, -errno on failure
+ * @return 0 on success, negative errno value on failure.
  */
 int mfd_npm2100_remove_callback(const struct device *dev, struct gpio_callback *callback);
 

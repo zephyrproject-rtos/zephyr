@@ -28,12 +28,15 @@ config DISPLAY_COLOR_PALETTE_MAX_SIZE
 	help
 	  Maximum size of color palette in display drivers.
 
+source "drivers/display/Kconfig.color_dither"
+
 module = DISPLAY
 module-str = display
 source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
 source "drivers/display/Kconfig.ac057tc1"
+source "drivers/display/Kconfig.charlieplex_led_matrix"
 source "drivers/display/Kconfig.co5300"
 source "drivers/display/Kconfig.dummy"
 source "drivers/display/Kconfig.ed2208_gca"
@@ -65,6 +68,7 @@ source "drivers/display/Kconfig.rm67162"
 source "drivers/display/Kconfig.rm67199"
 source "drivers/display/Kconfig.rm68200"
 source "drivers/display/Kconfig.rm692c9"
+source "drivers/display/Kconfig.rpi_bcm2711_fb"
 source "drivers/display/Kconfig.sdl"
 source "drivers/display/Kconfig.sh1122"
 source "drivers/display/Kconfig.socionext_dpu"

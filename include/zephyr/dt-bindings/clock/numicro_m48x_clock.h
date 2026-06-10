@@ -446,6 +446,9 @@
 #define NUMICRO_MODULE_CLKDIV_Pos_ENC(x) (((x) & 0x1fUL) << 5)
 #define NUMICRO_MODULE_IP_EN_Pos_ENC(x)  (((x) & 0x1fUL) << 0)
 
+#define NUMICRO_MODULE_CLKSEL_VALUE_Msk 0x03
+#define NUMICRO_MODULE_CLKDIV_VALUE_Msk 0x0F
+
 #define NUMICRO_PDMA_MODULE                                                                        \
 	((0UL << 30) | (NUMICRO_MODULE_NoMsk << 28) | (NUMICRO_MODULE_NoMsk << 25) |               \
 	 (NUMICRO_MODULE_NoMsk << 20) | (NUMICRO_MODULE_NoMsk << 18) |                             \

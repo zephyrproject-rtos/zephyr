@@ -7,8 +7,25 @@
 
 if SOC_SERIES_PSE84
 
-config CORTEX_M_SYSTICK
-	default n if INFINEON_LP_TIMER_PDL
+# PSE84 uses SysTick as the primary system timer by default.
+# When PM is enabled, the MCWDT serves as a low-power companion timer
+# via the SYSTEM_TIMER_LPM_COMPANION_HOOKS mechanism, providing
+# timekeeping during deepsleep when the SysTick (and HF clocks) stop.
+# To use the LP timer as the primary system timer instead, set
+# CONFIG_CORTEX_M_SYSTICK=n and CONFIG_INFINEON_LP_TIMER_PDL=y.
+config INFINEON_LP_TIMER_PDL
+	default n
+
+choice SYSTEM_TIMER_LPM_COMPANION
+	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if PM
+endchoice
+
+# During deepsleep, HF clocks stop so SysTick freezes. For DS-RAM the
+# SysTick hardware is fully reset on warm boot. In both cases the systick
+# driver must disable SysTick before idle and restart it on wake so that
+# the companion timer is the sole time reference across the sleep.
+config SYSTEM_TIMER_RESET_BY_LPM
+	default y if PM_S2RAM
 
 choice NULL_POINTER_EXCEPTION_DETECTION
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE

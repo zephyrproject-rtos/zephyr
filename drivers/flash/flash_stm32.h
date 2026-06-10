@@ -61,7 +61,11 @@ struct flash_stm32_priv {
 #if defined(FLASH_NSSR_NSBSY) || defined(FLASH_NSSR_BSY) /* For mcu w. TZ in non-secure mode */
 #define FLASH_SECURITY_NS
 #define FLASH_STM32_SR		NSSR
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#define FLASH_STM32_CCR		NSCCR
+#else /* CONFIG_SOC_SERIES_STM32H5X */
 #define FLASH_STM32_CCR		FLASH_STM32_SR
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
 #elif defined(FLASH_SECSR_SECBSY)	/* For mcu w. TZ  in secured mode */
 #error Flash is not supported in secure mode
 #define FLASH_SECURITY_SEC

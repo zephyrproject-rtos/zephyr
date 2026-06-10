@@ -19,6 +19,8 @@ extern "C" {
 
 /**
  * @file
+ * @brief Header file for the bit array API.
+ * @ingroup bitarray_apis
  *
  * @defgroup bitarray_apis Bit array
  * @ingroup datastructure_apis

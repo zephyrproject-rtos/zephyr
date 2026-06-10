@@ -1,7 +1,7 @@
 sample:
   name: Demonstrate usage of the PM policy latency APIs
 tests:
-  sample.pm.latency:
+  sample.power.latency:
     platform_allow:
       - native_sim
     integration_platforms:

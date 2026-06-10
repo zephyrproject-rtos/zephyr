@@ -723,7 +723,7 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 	/*
 	 * There is no need to check if region_num is overflow the uint8_t,
 	 * because the insert_region make sure there is enough room to store a region,
-	 * otherwise the insert_region will return a negtive error number
+	 * otherwise the insert_region will return a negative error number
 	 */
 	thread->arch.region_num = (uint8_t)region_num;
 
@@ -743,7 +743,7 @@ int arch_mem_domain_max_partitions_get(void)
 	int remaining_regions = get_num_regions() - static_regions_num + 1;
 
 	/*
-	 * Check remianing regions, should more than ARM64_MPU_MAX_DYNAMIC_REGIONS
+	 * Check remaining regions, should more than ARM64_MPU_MAX_DYNAMIC_REGIONS
 	 * which equals CONFIG_MAX_DOMAIN_PARTITIONS + necessary regions (stack, guard)
 	 */
 	if (remaining_regions < ARM64_MPU_MAX_DYNAMIC_REGIONS) {

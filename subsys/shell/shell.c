@@ -1048,7 +1048,7 @@ static bool wildcard_check_report(const struct shell *sh, bool found,
  */
 static int execute(const struct shell *sh)
 {
-	struct shell_static_entry dloc; /* Memory for dynamic commands. */
+	struct shell_static_entry dloc = {0}; /* Memory for dynamic commands. */
 	const char *argv[CONFIG_SHELL_ARGC_MAX + 1] = {0}; /* +1 reserved for NULL */
 	const struct shell_static_entry *parent = selected_cmd_get(sh);
 	const struct shell_static_entry *entry = NULL;
@@ -1684,16 +1684,32 @@ static void transport_evt_handler(enum shell_transport_evt evt_type, void *ctx)
 static void shell_log_process(const struct shell *sh)
 {
 	bool processed = false;
+	bool readline_active = sh->ctx->readline_state == SHELL_READLINE_ACTIVE;
 
 	do {
 		if (!IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
-			z_shell_cmd_line_erase(sh);
+			if (readline_active) {
+				z_cursor_restore(sh);
+				z_clear_eos(sh);
+			} else {
+				z_shell_cmd_line_erase(sh);
+			}
 
 			processed = z_shell_log_backend_process(
 					sh->log_backend);
 		}
 
-		z_shell_print_prompt_and_cmd(sh);
+		if (readline_active) {
+			z_cursor_save(sh);
+			if (sh->ctx->readline_prompt != NULL) {
+				z_shell_fprintf(sh, SHELL_NORMAL, "%s",
+						sh->ctx->readline_prompt);
+			}
+			z_shell_print_cmd(sh);
+			z_shell_op_cursor_position_synchronize(sh);
+		} else {
+			z_shell_print_prompt_and_cmd(sh);
+		}
 
 		/* Arbitrary delay added to ensure that prompt is
 		 * readable and can be used to enter further commands.
@@ -1813,19 +1829,13 @@ static void kill_handler(const struct shell *sh)
 	CODE_UNREACHABLE;
 }
 
-void shell_thread(void *shell_handle, void *arg_log_backend,
-		  void *arg_log_level)
+void shell_thread(void *shell_handle, void *p2, void *p3)
 {
 	struct shell *sh = shell_handle;
 	int err;
 
-	z_flag_handle_log_set(sh, (bool)arg_log_backend);
-	sh->ctx->log_level = POINTER_TO_UINT(arg_log_level);
-
-	err = sh->iface->api->enable(sh->iface, false);
-	if (err != 0) {
-		return;
-	}
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
 	if (IS_ENABLED(CONFIG_SHELL_AUTOSTART)) {
 		/* Enable shell and print prompt. */
@@ -1877,10 +1887,18 @@ int shell_init(const struct shell *sh, const void *transport_config,
 		return err;
 	}
 
+	z_flag_handle_log_set(sh, log_backend);
+	sh->ctx->log_level = init_log_level;
+
+	err = sh->iface->api->enable(sh->iface, false);
+	if (err != 0) {
+		instance_uninit(sh);
+		return err;
+	}
+
 	k_tid_t tid = k_thread_create(sh->thread,
 				  sh->stack, CONFIG_SHELL_STACK_SIZE,
-				  shell_thread, (void *)sh, (void *)log_backend,
-				  UINT_TO_POINTER(init_log_level),
+				  shell_thread, (void *)sh, NULL, NULL,
 				  SHELL_THREAD_PRIORITY, 0, K_NO_WAIT);
 
 	sh->ctx->tid = tid;
@@ -2244,6 +2262,11 @@ bool shell_ready(const struct shell *sh)
 	return state_get(sh) ==	SHELL_STATE_ACTIVE;
 }
 
+void shell_readline_prompt_set(const struct shell *sh, const char *prompt)
+{
+	sh->ctx->readline_prompt = prompt;
+}
+
 int shell_readline(const struct shell *sh, uint8_t *buf, size_t len, k_timeout_t timeout)
 {
 	k_timepoint_t end = sys_timepoint_calc(timeout);
@@ -2266,8 +2289,24 @@ int shell_readline(const struct shell *sh, uint8_t *buf, size_t len, k_timeout_t
 	/* Clear the buffer for user input */
 	cmd_buffer_clear(sh);
 
+	/* Save cursor position so log output can return here, then print
+	 * the readline prompt.  After every log message the position is
+	 * re-saved so it always points to the line right after the last log.
+	 */
+	z_cursor_save(sh);
+	if (sh->ctx->readline_prompt != NULL) {
+		z_shell_fprintf(sh, SHELL_NORMAL, "%s", sh->ctx->readline_prompt);
+	}
+
 	while (true) {
 		state_collect(sh);
+
+		/* Process deferred logs during readline */
+		if (IS_ENABLED(CONFIG_SHELL_LOG_BACKEND) &&
+		    k_event_test(&sh->ctx->signal_event, SHELL_SIGNAL_LOG_MSG)) {
+			k_event_clear(&sh->ctx->signal_event, SHELL_SIGNAL_LOG_MSG);
+			shell_log_process(sh);
+		}
 
 		if (sh->ctx->readline_state == SHELL_READLINE_DONE) {
 			if (buf == NULL || sh->ctx->cmd_buff_len >= len) {
@@ -2302,6 +2341,7 @@ int shell_readline(const struct shell *sh, uint8_t *buf, size_t len, k_timeout_t
 	sh->ctx->cmd_buff_pos = sh->ctx->cmd_tmp_buff_pos;
 	memcpy(sh->ctx->cmd_buff, sh->ctx->temp_buff, sh->ctx->cmd_buff_len);
 
+	sh->ctx->readline_prompt = NULL;
 	sh->ctx->readline_state = SHELL_READLINE_INACTIVE;
 	return ret;
 }

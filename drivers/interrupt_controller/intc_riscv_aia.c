@@ -17,14 +17,19 @@
 #include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/drivers/interrupt_controller/riscv_aia.h>
 #include <zephyr/drivers/interrupt_controller/riscv_aplic.h>
+#ifdef CONFIG_RISCV_APLIC_DIRECT
+#include <zephyr/drivers/interrupt_controller/riscv_aplic_direct.h>
+#endif
+#ifdef CONFIG_RISCV_APLIC_MSI
 #include <zephyr/drivers/interrupt_controller/riscv_imsic.h>
+#endif
 #include <zephyr/irq_multilevel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sw_isr_table.h>
 
 LOG_MODULE_REGISTER(intc_riscv_aia, CONFIG_LOG_DEFAULT_LEVEL);
 
-#define APLIC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(riscv_aplic)
+#define APLIC_NODE             DT_COMPAT_GET_ANY_STATUS_OKAY(riscv_aplic)
 #define APLIC_ISR_TABLE_OFFSET INTC_BASE_ISR_TBL_OFFSET(APLIC_NODE)
 
 IRQ_PARENT_ENTRY_DEFINE(riscv_aia, DEVICE_DT_GET(APLIC_NODE), DT_IRQN(APLIC_NODE),
@@ -49,8 +54,9 @@ void riscv_aia_irq_enable(uint32_t irq)
 		return;
 	}
 
+#ifdef CONFIG_RISCV_IMSIC
 	riscv_imsic_enable_eiid(src);
-
+#endif
 #ifdef CONFIG_RISCV_APLIC_MSI
 	riscv_aplic_msi_route(aplic, src, 0, src);
 #endif
@@ -68,7 +74,10 @@ void riscv_aia_irq_disable(uint32_t irq)
 	}
 
 	riscv_aplic_enable_src(aplic, src, false);
+
+#ifdef CONFIG_RISCV_IMSIC
 	riscv_imsic_disable_eiid(src);
+#endif
 }
 
 int riscv_aia_irq_is_enabled(uint32_t irq)
@@ -80,13 +89,18 @@ int riscv_aia_irq_is_enabled(uint32_t irq)
 		return 0;
 	}
 
+#ifdef CONFIG_RISCV_IMSIC
 	return riscv_imsic_is_enabled(src);
+#else
+	return riscv_aplic_is_enabled(src);
+#endif
 }
 
 void riscv_aia_set_priority(uint32_t irq, uint32_t prio)
 {
 	uint32_t src = riscv_aia_irq_to_src(irq);
 
+#ifdef CONFIG_RISCV_APLIC_MSI
 	/*
 	 * APLIC-MSI mode has no per-source priority registers. Priority in AIA
 	 * is handled via IMSIC EITHRESHOLD or implicit EIID ordering.
@@ -95,6 +109,9 @@ void riscv_aia_set_priority(uint32_t irq, uint32_t prio)
 		LOG_WRN("AIA-MSI: per-source priority not supported (src %u, prio %u ignored)", src,
 			prio);
 	}
+#else
+	riscv_aplic_set_priority(src, prio);
+#endif
 }
 
 void riscv_aia_config_source(uint32_t irq, uint32_t mode)
@@ -109,7 +126,7 @@ void riscv_aia_config_source(uint32_t irq, uint32_t mode)
 	riscv_aplic_config_src(aplic, src, mode);
 }
 
-#if defined(CONFIG_RISCV_APLIC_MSI)
+#ifdef CONFIG_RISCV_APLIC_MSI
 void riscv_aia_route_to_hart(uint32_t irq, uint32_t hart, uint32_t eiid)
 {
 	const struct device *aplic = riscv_aplic_get_dev();

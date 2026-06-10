@@ -147,8 +147,7 @@ struct net_pkt {
 	/** Allow placing the packet into sys_slist_t */
 	sys_snode_t next;
 #endif
-#if defined(CONFIG_NET_IPV4_ROUTING) || defined(CONFIG_NET_IPV6_ROUTING) || \
-	defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
@@ -401,6 +400,9 @@ struct net_pkt {
 	uint8_t ipv4_ll_resolve_addr_set : 1;
 #endif /* CONFIG_NET_IPV4_ROUTE */
 
+	/* Disable local IP fragmentation for this packet. */
+	uint8_t dont_fragment : 1;
+
 	/* @endcond */
 };
 
@@ -446,8 +448,7 @@ static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 
 static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_IPV4_ROUTING) || defined(CONFIG_NET_IPV6_ROUTING) || \
-	defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	return pkt->orig_iface;
 #else
 	return pkt->iface;
@@ -457,8 +458,7 @@ static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 					  struct net_if *iface)
 {
-#if defined(CONFIG_NET_IPV4_ROUTING) || defined(CONFIG_NET_IPV6_ROUTING) || \
-	defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	pkt->orig_iface = iface;
 #else
 	ARG_UNUSED(pkt);
@@ -946,6 +946,16 @@ static inline void net_pkt_set_ipv4_ll_resolve_addr(struct net_pkt *pkt,
 	ARG_UNUSED(addr);
 }
 #endif /* CONFIG_NET_IPV4_ROUTE */
+
+static inline bool net_pkt_dont_fragment(struct net_pkt *pkt)
+{
+	return !!pkt->dont_fragment;
+}
+
+static inline void net_pkt_set_dont_fragment(struct net_pkt *pkt, bool value)
+{
+	pkt->dont_fragment = value;
+}
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
 static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)

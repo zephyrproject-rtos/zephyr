@@ -32,11 +32,6 @@
 	};
 };
 
-&gpio0 {
-	/* Configure device as wakeup source */
-	wakeup-source;
-};
-
 &sramlp {
 	/* Shrink sramlp size to avoid overlap with retained memory region:
 	 * 4KB - 256 = 0xf00

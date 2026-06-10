@@ -1,6 +1,19 @@
 sample:
   name: IPC Forwarder
   description: Sample application demonstrating Zbus IPC forwarder functionality.
+common:
+  tags:
+    - zbus
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - ".* ZBUS Proxy agent IPC Forwarder Sample Application"
+      - ".* Requesting on channel request_channel, listening on channel response_channel"
+      - ".* Published on channel request_channel. Test Value=1"
+      - ".* Received message on channel response_channel. Test Value=2"
+
 tests:
   sample.zbus.proxy_agent_ipc.nrf54h20_cpuapp_cpurad:
     sysbuild: true

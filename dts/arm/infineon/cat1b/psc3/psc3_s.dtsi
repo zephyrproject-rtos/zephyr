@@ -147,10 +147,32 @@
 		};
 
 		hppass_analog0: analog@52b00000 {
+			compatible = "infineon,hppass-analog";
 			reg = <0x52b00000 0x100000>;
+			interrupts = <108 4>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
+			ranges = <0x0 0x52b00000 0x100000>;
+			status = "disabled";
+
+			/*
+			 * Vendor-recommended startup timing.
+			 * Only usage of the startup parameters recommended
+			 * by the vendor guarantees reliable operation.
+			 * Use the Device Configurator tool or refer to the
+			 * Technical Reference Manual for correct values.
+			 * Override in board overlay only if directed by TRM.
+			 */
+			startup-clk-div = <24>;
+			startup-0-count = <200>;
+			startup-0-sar = <1>;
+			startup-0-csg-chan = <1>;
+			startup-1-count = <50>;
+			startup-1-csg-slice = <1>;
+			startup-2-csg-ready = <1>;
+
+			/* Default trigger 0 = FW pulse (used by SAR driver) */
+			trig-in-0-type = <3>;
 
 			adc0: adc@70000 {
 				compatible = "infineon,hppass-sar-adc";
@@ -159,6 +181,89 @@
 				interrupts = <109 4>;
 				status = "disabled";
 				#io-channel-cells = <1>;
+			};
+
+			csg0: csg@b0000 {
+				compatible = "infineon,hppass-csg";
+				reg = <0x000b0000 0x10000>;
+				interrupts = <138 4>;
+				clk-dst = <0x515>;
+				infineon,num-slices = <5>;
+				infineon,slice-reg-spacing = <0x40>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+				status = "disabled";
+
+				comp0: comparator@b0000 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0000 0x40>;
+					status = "disabled";
+				};
+
+				comp1: comparator@b0040 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0040 0x40>;
+					status = "disabled";
+				};
+
+				comp2: comparator@b0080 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0080 0x40>;
+					status = "disabled";
+				};
+
+				comp3: comparator@b00c0 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b00c0 0x40>;
+					status = "disabled";
+				};
+
+				comp4: comparator@b0100 {
+					compatible = "infineon,hppass-csg-comp";
+					reg = <0x000b0100 0x40>;
+					status = "disabled";
+				};
+
+				dac0: dac@b0004 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0004 0x20>;
+					interrupts = <130 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				dac1: dac@b0044 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0044 0x20>;
+					interrupts = <131 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				dac2: dac@b0084 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0084 0x20>;
+					interrupts = <132 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				dac3: dac@b00c4 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b00c4 0x20>;
+					interrupts = <133 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
+
+				dac4: dac@b0104 {
+					compatible = "infineon,hppass-csg-dac";
+					reg = <0x000b0104 0x20>;
+					interrupts = <134 4>;
+					#io-channel-cells = <1>;
+					status = "disabled";
+				};
 			};
 		};
 
@@ -184,7 +289,7 @@
 				reg-names = "m_can", "message_ram";
 				clk-dst = <0x405>;
 				status = "disabled";
-				bosch,mram-cfg = <0x0 15 15 8 8 0 8 8>;
+				bosch,mram-cfg = <0x0 15 15 16 0 0 8 8>;
 				interrupts = <99 4>, <100 4>;
 				interrupt-names = "int0", "int1";
 			};
@@ -195,7 +300,7 @@
 				reg-names = "m_can", "message_ram";
 				clk-dst = <0x406>;
 				status = "disabled";
-				bosch,mram-cfg = <0x800 15 15 8 8 0 8 8>;
+				bosch,mram-cfg = <0x800 15 15 16 0 0 8 8>;
 				interrupts = <101 4>, <102 4>;
 				interrupt-names = "int0", "int1";
 			};

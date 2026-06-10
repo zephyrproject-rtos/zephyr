@@ -282,7 +282,7 @@ static int process_stream(struct config *cfg, struct stream_ctx *stream)
 
 	if (stream->received < stream->expecting) {
 		/* More data still expected for this round. */
-		LOG_DBG("%s QUIC: stream fd=%d expecting %zd more data, missing %zd",
+		LOG_DBG("%s QUIC: stream fd=%d expecting %u more data, missing %d",
 			cfg->proto, stream->fd, stream->expecting,
 			stream->expecting - stream->received);
 		goto out;

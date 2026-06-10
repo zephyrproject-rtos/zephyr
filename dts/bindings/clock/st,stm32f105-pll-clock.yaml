@@ -50,7 +50,8 @@ properties:
     required: true
     description: |
         Configurable prescaler
-        Valid range: 1 - 16
+    min: 1
+    max: 16
 
   otgfspre:
     type: boolean

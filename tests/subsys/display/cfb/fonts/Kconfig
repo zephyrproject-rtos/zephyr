@@ -7,3 +7,6 @@ source "Kconfig.zephyr"
 
 config TEST_MSB_FIRST_FONT
 	bool "Use MSB_FIRST font"
+
+config TEST_VPACKED_FONT
+	bool "Use VPACKED font"

@@ -85,3 +85,8 @@ tests:
       - kit_pse84_eval/pse846gps2dbzc4a/m55
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+  drivers.comparator.gpio_loopback.infineon_ptcomp:
+    extra_args:
+      - FILE_SUFFIX="ptcomp"
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m55

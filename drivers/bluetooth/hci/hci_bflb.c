@@ -67,10 +67,6 @@ LOG_MODULE_REGISTER(bt_hci_bflb, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "Exactly one bflb bt-hci instance required");
 
-struct bt_bflb_data {
-	bt_hci_recv_t recv;
-};
-
 static K_FIFO_DEFINE(rx_fifo);
 
 #if defined(CONFIG_BT_BFLB_BL70X)
@@ -200,7 +196,6 @@ static void controller_rx_cb(uint8_t pkt_type, uint16_t src_id, uint8_t *param, 
 static void rx_thread_func(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct bt_bflb_data *hci = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -208,11 +203,7 @@ static void rx_thread_func(void *p1, void *p2, void *p3)
 	while (true) {
 		struct net_buf *buf = k_fifo_get(&rx_fifo, K_FOREVER);
 
-		if (hci->recv != NULL) {
-			hci->recv(dev, buf);
-		} else {
-			net_buf_unref(buf);
-		}
+		bt_hci_recv(dev, buf);
 	}
 }
 
@@ -239,8 +230,7 @@ static int bt_bflb_send(const struct device *dev, struct net_buf *buf)
 		struct bt_hci_cmd_hdr *chdr;
 
 		if (buf->len < sizeof(*chdr)) {
-			ret = -EINVAL;
-			goto done;
+			return -EINVAL;
 		}
 
 		chdr = (struct bt_hci_cmd_hdr *)buf->data;
@@ -257,8 +247,7 @@ static int bt_bflb_send(const struct device *dev, struct net_buf *buf)
 		uint16_t connhdl_l2cf;
 
 		if (buf->len < sizeof(*acl)) {
-			ret = -EINVAL;
-			goto done;
+			return -EINVAL;
 		}
 
 		acl = (struct bt_hci_acl_hdr *)buf->data;
@@ -274,27 +263,22 @@ static int bt_bflb_send(const struct device *dev, struct net_buf *buf)
 		break;
 	}
 	default:
-		ret = -EINVAL;
-		goto done;
+		return -EINVAL;
 	}
 
 	ret = bt_onchiphci_send(pkt_type, dest_id, &pkt);
 	if (ret != 0) {
 		LOG_ERR("bt_onchiphci_send failed: %d", ret);
-		ret = (ret < 0) ? ret : -EIO;
+		return (ret < 0) ? ret : -EIO;
 	}
 
-done:
 	net_buf_unref(buf);
-	return ret;
+	return 0;
 }
 
-static int bt_bflb_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_bflb_open(const struct device *dev)
 {
-	struct bt_bflb_data *hci = dev->data;
 	uint8_t hci_ret;
-
-	hci->recv = recv;
 
 	bflb_rf_init();
 
@@ -316,10 +300,7 @@ static int bt_bflb_open(const struct device *dev, bt_hci_recv_t recv)
 
 static int bt_bflb_close(const struct device *dev)
 {
-	struct bt_bflb_data *hci = dev->data;
-
 	bflb_controller_deinit();
-	hci->recv = NULL;
 
 	LOG_INF("BLE controller stopped");
 	return 0;
@@ -339,7 +320,8 @@ static DEVICE_API(bt_hci, bt_bflb_drv) = {
 	.close = bt_bflb_close,
 };
 
-static struct bt_bflb_data bt_bflb_data_0 = {0};
+static struct bt_hci_driver_data bt_bflb_data_0 = {0};
+static const struct bt_hci_driver_config bt_bflb_config_0 = BT_DT_HCI_DRIVER_CONFIG_INST_GET(0);
 
-DEVICE_DT_INST_DEFINE(0, bt_bflb_init, NULL, &bt_bflb_data_0, NULL, POST_KERNEL,
+DEVICE_DT_INST_DEFINE(0, bt_bflb_init, NULL, &bt_bflb_data_0, &bt_bflb_config_0, POST_KERNEL,
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &bt_bflb_drv);

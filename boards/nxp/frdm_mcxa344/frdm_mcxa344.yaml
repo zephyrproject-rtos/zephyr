@@ -24,4 +24,5 @@ supported:
   - spi
   - uart
   - watchdog
+  - edac
 vendor: nxp

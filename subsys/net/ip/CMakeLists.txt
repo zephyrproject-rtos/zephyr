@@ -35,6 +35,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_IPV4_AUTO    ipv4_autoconf.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4         icmpv4.c ipv4.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_ACD     ipv4_acd.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_IGMP    igmp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_IPV4_NAT     ipv4_nat.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6         icmpv6.c nbr.c
                                                      ipv6.c ipv6_nbr.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6_MLD     ipv6_mld.c)
@@ -64,7 +65,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET      packet_socket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN         canbus_socket.c)
 
 if(CONFIG_NET_TCP_ISN_RFC6528 OR CONFIG_NET_IPV6_PE OR CONFIG_NET_IPV6_IID_STABLE)
-  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedTLS)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
 endif()
 endif()
 

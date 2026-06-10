@@ -83,9 +83,6 @@ static int i2c_sedi_api_full_io(const struct device *dev, struct i2c_msg *msgs, 
 	int ret = 0;
 	struct i2c_sedi_context *context = dev->data;
 
-	if (!num_msgs) {
-		return 0;
-	}
 	__ASSERT_NO_MSG(msgs);
 
 	k_mutex_lock(context->mutex, K_FOREVER);
@@ -228,9 +225,9 @@ static void i2c_sedi_isr(const struct device *dev)
 	sedi_i2c_isr_handler(context->sedi_device);
 }
 
-#define I2C_SEDI_IRQ_FLAGS_SENSE0(n) 0
-#define I2C_SEDI_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
-#define I2C_SEDI_IRQ_FLAGS(n) _CONCAT(I2C_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+#define I2C_SEDI_IRQ_FLAGS0(n) 0
+#define I2C_SEDI_IRQ_FLAGS1(n) DT_INST_IRQ(n, flags)
+#define I2C_SEDI_IRQ_FLAGS(n) _CONCAT(I2C_SEDI_IRQ_FLAGS, DT_INST_IRQ_HAS_CELL(n, flags))(n)
 
 #define I2C_SEDI_BUS_TIMING_CHECK_1(inst, prop)                                                    \
 	BUILD_ASSERT(DT_INST_PROP_LEN(inst, prop) == 3,                                            \

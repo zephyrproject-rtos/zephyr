@@ -30,9 +30,13 @@
 };
 
 /* 44.084KHz (-0.03% Error) */
-&sai2_b {
+&sai2 {
+	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 		 <&rcc STM32_SRC_IC7 SAI2_SEL(2)>;
+};
+
+&sai2_b {
 	pinctrl-0 = <&sai2_mclk_b_pe14 &sai2_sd_b_pe7
 		     &sai2_fs_b_pe13 &sai2_sck_b_pe12>;
 	pinctrl-names = "default";

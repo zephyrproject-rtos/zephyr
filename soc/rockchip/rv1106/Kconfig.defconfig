@@ -12,17 +12,10 @@ config SOC_RESET_HOOK
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/timer,clock-frequency)
 
-if SERIAL
-
-config UART_NS16550
+configdefault UART_NS16550_DW8250_DW_APB
 	default y
 
-config UART_NS16550_DW8250_DW_APB
+configdefault UART_NS16550_ACCESS_WORD_ONLY
 	default y
-
-config UART_NS16550_ACCESS_WORD_ONLY
-	default y
-
-endif # SERIAL
 
 endif # SOC_RV1106

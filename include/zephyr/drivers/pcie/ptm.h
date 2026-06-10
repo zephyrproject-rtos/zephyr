@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for PCIe Precision Time Measurement (PTM) host API.
+ * @ingroup pcie_host_ptm_interface
+ */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_PTM_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PTM_H_

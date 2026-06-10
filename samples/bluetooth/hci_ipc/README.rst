@@ -18,11 +18,15 @@ Requirements
 Building and Running
 ********************
 
-To use this application, you need a board with a Bluetooth controller
-and IPC support.
-You can then build this application and flash it onto your board in
-the usual way. See :ref:`boards` for board-specific building and
-programming information.
+Build and flash the sample as follows, replacing ``<board>`` with your target
+board (e.g. :zephyr:board:`nrf5340dk` using the ``nrf5340dk/nrf5340/cpunet``
+target):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/hci_ipc
+   :board: <board>
+   :goals: build flash
+   :compact:
 
 To test this sample, you need a separate device/CPU that acts as Bluetooth
 HCI IPC peer.

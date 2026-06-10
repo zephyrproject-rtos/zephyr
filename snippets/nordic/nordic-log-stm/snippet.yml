@@ -1,4 +1,7 @@
 name: nordic-log-stm
+description: |
+  Enables logging to Coresight STM stimulus ports with human-readable output on
+  UART.
 append:
   EXTRA_CONF_FILE: log_stm.conf
 boards:

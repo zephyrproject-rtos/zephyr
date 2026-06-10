@@ -6,6 +6,9 @@
 
  /**
   * @file
+  * @brief Header file for the single-linked list API.
+  * @ingroup single-linked-list_apis
+  *
   * @defgroup single-linked-list_apis Single-linked list
   * @ingroup datastructure_apis
   *

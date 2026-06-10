@@ -1,7 +1,7 @@
 /* bip.h - Bluetooth Basic Imaging Profile handling */
 
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -384,8 +384,12 @@ enum __packed bt_bip_supported_functions {
  * Main structure representing a BIP session
  */
 struct bt_bip {
+	/** @brief Underlying GOEP transport instance */
+	struct bt_goep_transport goep_transport;
+
 	/** @brief Underlying GOEP instance */
 	struct bt_goep goep;
+
 	/** @brief Role in the connection */
 	enum bt_bip_role role;
 

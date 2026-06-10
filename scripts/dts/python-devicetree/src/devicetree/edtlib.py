@@ -495,7 +495,7 @@ class Binding:
 
         ok_prop_keys = {"description", "type", "required",
                         "enum", "const", "default", "deprecated",
-                        "specifier-space", "min", "max"}
+                        "specifier-space", "min", "max", "min-len", "max-len"}
 
         for prop_name, options in raw["properties"].items():
             for key in options:
@@ -593,6 +593,16 @@ class PropertySpec:
     max:
       The maximum value the property may take as given in the binding, or None.
       Only applicable to 'int' and 'array' type properties.
+
+    min_len:
+      The minimum length of the array itself as given in the binding, or None.
+      Corresponds to the binding key 'min-len:'.
+      Only applicable to array type properties.
+
+    max_len:
+      The maximum length of the array itself as given in the binding, or None.
+      Corresponds to the binding key 'max-len:'.
+      Only applicable to array type properties.
     """
 
     def __init__(self, name: str, binding: Binding):
@@ -688,6 +698,16 @@ class PropertySpec:
     def max(self) -> Optional[int]:
         "See the class docstring"
         return self._raw.get("max")
+
+    @property
+    def min_len(self) -> Optional[int]:
+        "See the class docstring"
+        return self._raw.get("min-len")
+
+    @property
+    def max_len(self) -> Optional[int]:
+        "See the class docstring"
+        return self._raw.get("max-len")
 
     def _check_special_properties(self):
         # Add checks for properties which have special meaning
@@ -1795,6 +1815,24 @@ class Node:
                     _err(f"value of property '{name}' on {self.path} in "
                          f"{self.edt.dts_path} ({subval!r}) is greater than the "
                          f"'max' value in {self.binding_path} ({prop_max!r})")
+
+        prop_min_len = prop_spec.min_len
+        prop_max_len = prop_spec.max_len
+        if prop_min_len is not None or prop_max_len is not None:
+            if isinstance(val, (list, bytes)):
+                val_len = len(val)
+                if prop_min_len is not None and val_len < prop_min_len:
+                    _err(f"value of property '{name}' on {self.path} in "
+                         f"{self.edt.dts_path} has length {val_len}, which is less than the "
+                         f"'min-len' value in {self.binding_path} ({prop_min_len!r})")
+                if prop_max_len is not None and val_len > prop_max_len:
+                    _err(f"value of property '{name}' on {self.path} in "
+                         f"{self.edt.dts_path} has length {val_len}, which is greater than the "
+                         f"'max-len' value in {self.binding_path} ({prop_max_len!r})")
+            else:
+                _err(f"property '{name}' on {self.path} in "
+                     f"{self.edt.dts_path} is not an array, but "
+                     "'min-len'/'max-len' constraints are set")
 
         const = prop_spec.const
         if const is not None and val != const:
@@ -3037,6 +3075,8 @@ def _check_prop_by_type(prop_name: str,
     const = options.get("const")
     min_val = options.get("min")
     max_val = options.get("max")
+    min_len = options.get("min-len")
+    max_len = options.get("max-len")
 
     if prop_type is None:
         _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
@@ -3109,6 +3149,36 @@ def _check_prop_by_type(prop_name: str,
                     _err(f"'const: {const}' for '{prop_name}' in "
                          f"'{binding_path}' is greater than 'max: {max_val}'")
 
+    if min_len is not None or max_len is not None:
+        array_types = {"array", "uint8-array", "string-array", "phandles", "phandle-array"}
+        if prop_type not in array_types:
+            _err(f"'min-len:'/'max-len:' in '{binding_path}' for '{prop_name}' "
+                 f"requires an array type, but has type '{prop_type}'")
+
+        if min_len is not None and (not _is_plain_int(min_len) or min_len < 0):
+            _err(f"'min-len:' for '{prop_name}' in '{binding_path}' "
+                 "is not a non-negative integer")
+
+        if max_len is not None and (not _is_plain_int(max_len) or max_len < 0):
+            _err(f"'max-len:' for '{prop_name}' in '{binding_path}' "
+                 "is not a non-negative integer")
+
+        if (min_len is not None and max_len is not None
+                and min_len > max_len):
+            _err(f"'min-len:' ({min_len}) > 'max-len:' ({max_len}) "
+                 f"for '{prop_name}' in '{binding_path}'")
+
+        if const is not None and isinstance(const, list | bytes):
+            const_len = len(const)
+            if min_len is not None and const_len < min_len:
+                _err(f"'const: {const!r}' for '{prop_name}' in "
+                     f"'{binding_path}' has length {const_len}, which is "
+                     f"less than 'min-len: {min_len}'")
+            if max_len is not None and const_len > max_len:
+                _err(f"'const: {const!r}' for '{prop_name}' in "
+                     f"'{binding_path}' has length {const_len}, which is "
+                     f"greater than 'max-len: {max_len}'")
+
     # Check default
 
     if default is None:
@@ -3159,6 +3229,17 @@ def _check_prop_by_type(prop_name: str,
             if max_val is not None and subval > max_val:
                 _err(f"'default: {default}' for '{prop_name}' in "
                      f"'{binding_path}' is greater than 'max: {max_val}'")
+
+    if (min_len is not None or max_len is not None) and isinstance(default, list | bytes):
+        default_len = len(default)
+        if min_len is not None and default_len < min_len:
+            _err(f"'default: {default!r}' for '{prop_name}' in "
+                 f"'{binding_path}' has length {default_len}, which is "
+                 f"less than 'min-len: {min_len}'")
+        if max_len is not None and default_len > max_len:
+            _err(f"'default: {default!r}' for '{prop_name}' in "
+                 f"'{binding_path}' has length {default_len}, which is "
+                 f"greater than 'max-len: {max_len}'")
 
 
 def _translate(addr: int, node: dtlib_Node) -> int:
@@ -3675,7 +3756,7 @@ def _check_dt(dt: DT) -> None:
 
         ranges_prop = node.props.get("ranges")
         if ranges_prop and ranges_prop.type not in (Type.EMPTY, Type.NUMS):
-            _err(f"expected 'ranges = < ... >;' in {node.path} in "
+            _err(f"expected 'ranges = <...>;' in {node.path} in "
                  f"{node.dt.filename}, not '{ranges_prop}' "
                   "(see the devicetree specification)")
 

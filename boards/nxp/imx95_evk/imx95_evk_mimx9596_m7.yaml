@@ -14,15 +14,17 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - uart
-  - i2c
-  - pwm
-  - spi
-  - netif:eth
+  - adc
+  - can
   - counter
   - dma
   - gpio
-  - adc
+  - i2c
+  - netif:eth
+  - pwm
+  - spi
+  - uart
+  - watchdog
 testing:
   binaries:
     - flash.bin

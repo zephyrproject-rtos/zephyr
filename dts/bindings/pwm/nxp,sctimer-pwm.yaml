@@ -39,6 +39,14 @@ properties:
       - 0: kINPUTMUX_SctGpioInAToSct0 (GPIO to SCT input A)
       - 1: kINPUTMUX_SctGpioInBToSct0 (GPIO to SCT input B)
 
+  out-init-state:
+    type: int
+    default: 0
+    description: |
+      Initial output state applied at init Bitmask, one bit per output.
+      8-bit value. Maps to the MCUX SCTimer outInitState field.
+      Default to 0 (all low)
+
   "#pwm-cells":
     const: 3
 

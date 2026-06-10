@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_M031X
+	select ARM
+	select CPU_CORTEX_M0
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select HAS_POWEROFF
+	select INIT_ARCH_HW_AT_BOOT
+
+config SOC_M031XXX
+	select HAS_NUMAKER_HAL

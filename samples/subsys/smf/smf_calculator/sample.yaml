@@ -21,3 +21,8 @@ tests:
       - lvgl
     integration_platforms:
       - native_sim/native/64
+    platform_allow:
+      - native_sim/native/64
+      - disco_l475_iot1
+    extra_args:
+      - platform:disco_l475_iot1:SHIELD=adafruit_2_8_tft_touch_v2

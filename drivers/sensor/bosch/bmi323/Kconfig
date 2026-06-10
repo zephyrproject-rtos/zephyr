@@ -23,9 +23,6 @@ menuconfig BMI323
 	  the bus is initialized, the feature engine is enabled, and INT1 is
 	  initialized.
 
-	  The driver only implements the SPI bus at this time. The driver is
-	  prepared to be expanded with I2C support in the future.
-
 if BMI323
 
 config BMI323_BUS_SPI
@@ -33,5 +30,13 @@ config BMI323_BUS_SPI
 	default y
 	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI323),spi)
 	select SPI
+	select SPI_RTIO if SENSOR_ASYNC_API
+
+config BMI323_BUS_I2C
+	bool "BMI323 driver support for I2C bus"
+	default y
+	depends on $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMI323),i2c)
+	select I2C
+	select I2C_RTIO if SENSOR_ASYNC_API
 
 endif # BMI323

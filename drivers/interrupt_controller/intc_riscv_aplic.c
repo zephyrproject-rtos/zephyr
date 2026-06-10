@@ -9,7 +9,12 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/interrupt_controller/riscv_aplic.h>
+#ifdef CONFIG_RISCV_APLIC_DIRECT
+#include <zephyr/drivers/interrupt_controller/riscv_aplic_direct.h>
+#endif
+#include <zephyr/devicetree/interrupt_controller.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sw_isr_table.h>
 #include <zephyr/sys/util.h>
 
 #include "intc_riscv_aplic_priv.h"
@@ -78,24 +83,9 @@ static int aplic_init(const struct device *dev)
 #ifdef CONFIG_RISCV_APLIC_MSI
 	return aplic_msi_init(dev);
 #else
-	/* Direct delivery mode - just enable the domain */
-	riscv_aplic_domain_enable(dev, true);
-	return 0;
+	return aplic_direct_init(dev);
 #endif
 }
-
-#define APLIC_INIT(inst)                                                                           \
-	static struct aplic_data aplic_data_##inst;                                                \
-	static const struct aplic_cfg aplic_cfg_##inst = {                                         \
-		.base = DT_INST_REG_ADDR(inst),                                                    \
-		.num_sources = DT_INST_PROP(inst, riscv_num_sources),                              \
-		IF_ENABLED(CONFIG_RISCV_APLIC_MSI,                                                 \
-			   (.imsic_addr = DT_REG_ADDR(DT_INST_PHANDLE(inst, msi_parent)),))        \
-	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, aplic_init, NULL, &aplic_data_##inst, &aplic_cfg_##inst,       \
-			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
-
-DT_INST_FOREACH_STATUS_OKAY(APLIC_INIT)
 
 uint32_t riscv_aplic_get_num_sources(const struct device *dev)
 {
@@ -103,3 +93,49 @@ uint32_t riscv_aplic_get_num_sources(const struct device *dev)
 
 	return cfg->num_sources;
 }
+
+#ifdef CONFIG_RISCV_APLIC_DIRECT
+/* With direct delivery mode enabled the APLIC must register an IRQ handler
+ * on initialization
+ */
+#define APLIC_INTC_IRQ_FUNC_DECLARE(inst) static void aplic_irq_config_func_##inst(void)
+#define APLIC_INTC_IRQ_FUNC_DEFINE(inst)                                                           \
+	static void aplic_irq_config_func_##inst(void)                                             \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), 0, aplic_irq_handler, DEVICE_DT_INST_GET(inst),    \
+			    0);                                                                    \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}
+
+#define APLIC_INIT(inst)                                                                           \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, max_prio),                                        \
+		     "max_prio is required for APLIC direct-delivery mode but is not present");    \
+	IRQ_PARENT_ENTRY_DEFINE(aplic##inst, DEVICE_DT_INST_GET(inst), DT_INST_IRQN(inst),         \
+				INTC_INST_ISR_TBL_OFFSET(inst),                                    \
+				DT_INST_INTC_GET_AGGREGATOR_LEVEL(inst));                          \
+	APLIC_INTC_IRQ_FUNC_DECLARE(inst);                                                         \
+	static struct aplic_data aplic_data_##inst;                                                \
+	static const struct aplic_cfg aplic_cfg_##inst = {                                         \
+		.base = DT_INST_REG_ADDR(inst),                                                    \
+		.num_sources = DT_INST_PROP(inst, riscv_num_sources),                              \
+		.max_prio = DT_INST_PROP(inst, riscv_max_priority),                                \
+		.irq_config_func = aplic_irq_config_func_##inst,                                   \
+		.isr_table = &_sw_isr_table[INTC_INST_ISR_TBL_OFFSET(inst)],                       \
+	};                                                                                         \
+	APLIC_INTC_IRQ_FUNC_DEFINE(inst)                                                           \
+	DEVICE_DT_INST_DEFINE(inst, aplic_init, NULL, &aplic_data_##inst, &aplic_cfg_##inst,       \
+			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+#else
+/* APLIC_MSI interrupts are serviced by separate IMSIC driver */
+#define APLIC_INIT(inst)                                                                           \
+	static struct aplic_data aplic_data_##inst;                                                \
+	static const struct aplic_cfg aplic_cfg_##inst = {                                         \
+		.base = DT_INST_REG_ADDR(inst),                                                    \
+		.num_sources = DT_INST_PROP(inst, riscv_num_sources),                              \
+		IF_ENABLED(CONFIG_RISCV_APLIC_MSI,                                                 \
+			(.imsic_addr = DT_REG_ADDR(DT_INST_PHANDLE(inst, msi_parent)),)) };        \
+	DEVICE_DT_INST_DEFINE(inst, aplic_init, NULL, &aplic_data_##inst, &aplic_cfg_##inst,       \
+			      PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY, NULL);
+#endif
+
+DT_INST_FOREACH_STATUS_OKAY(APLIC_INIT)

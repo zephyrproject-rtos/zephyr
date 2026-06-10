@@ -45,16 +45,25 @@ $defs:
       extra_sections: {}
       expect_reboot:
         type: boolean
+      build:
+        type: boolean
       required_applications:
         type: array
         items:
           type: object
           properties:
+            application:
+              type: string
             name:
+              # deprecated: use 'application' instead
+              type: string
+            path:
               type: string
             platform:
               type: string
-          required: [name]
+          anyOf:
+            - required: [application]
+            - required: [name]
           additionalProperties: false
       required_snippets:
         type: array
@@ -128,6 +137,8 @@ $defs:
                   items:
                     type: string
                 application:
+                  type: string
+                path:
                   type: string
               additionalProperties: false
           ctest_args:

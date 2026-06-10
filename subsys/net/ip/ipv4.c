@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/virtual.h>
 #include <zephyr/net/ethernet.h>
+#include <zephyr/net/ipv4_nat.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"
@@ -101,7 +102,8 @@ int net_ipv4_create(struct net_pkt *pkt,
 		net_ipv4_set_ecn(&tos, net_pkt_ip_ecn(pkt));
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4_PMTU) && net_pkt_ipv4_pmtu(pkt)) {
+	if ((IS_ENABLED(CONFIG_NET_IPV4_PMTU) && net_pkt_ipv4_pmtu(pkt)) ||
+	    net_pkt_dont_fragment(pkt)) {
 		flags = NET_IPV4_DF;
 	}
 
@@ -268,7 +270,7 @@ static enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
 
 	net_ipv4_addr_copy_raw(dst_ip.s4_addr, hdr->dst);
 
-	if (IS_ENABLED(CONFIG_NET_IPV4_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_IPV4_FORWARDING)) {
 		found = net_route_ipv4_get_info(NULL, &dst_ip, &route, &nexthop);
 	} else {
 		found = net_route_ipv4_get_info(net_pkt_iface(pkt), &dst_ip,
@@ -280,6 +282,13 @@ static enum net_verdict ipv4_route_packet(struct net_pkt *pkt,
 
 		if (route != NULL) {
 			net_pkt_set_iface(pkt, route->iface);
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV4_FORWARDING) &&
+		    net_pkt_orig_iface(pkt) != net_pkt_iface(pkt)) {
+			net_pkt_set_forwarding(pkt, true);
+		} else {
+			net_pkt_set_forwarding(pkt, false);
 		}
 
 		ret = net_route_ipv4_packet(pkt, nexthop);
@@ -601,5 +610,9 @@ void net_ipv4_init(void)
 
 	if (IS_ENABLED(CONFIG_NET_IPV4_ACD)) {
 		net_ipv4_acd_init();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4_NAT)) {
+		net_ipv4_nat_init();
 	}
 }

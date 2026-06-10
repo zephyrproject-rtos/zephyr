@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Iterable sections helpers.
+ * @ingroup iterable_section_apis
+ */
+
 #ifndef INCLUDE_ZEPHYR_SYS_ITERABLE_SECTIONS_H_
 #define INCLUDE_ZEPHYR_SYS_ITERABLE_SECTIONS_H_
 

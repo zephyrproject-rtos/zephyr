@@ -142,16 +142,18 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 
 #ifdef CONFIG_WIFI_NM
 	if (iface != NULL) {
+		int resolved_iface_index = net_if_get_by_iface(iface);
+
 		/* If iface is valid nm wifi iface */
 		if (!wifi_nm_get_instance_iface(iface)) {
-			LOG_ERR("Interface %d is not a nm wifi iface", iface_index);
+			LOG_ERR("Interface %d is not a nm wifi iface", resolved_iface_index);
 			return NULL;
 		}
 
 		/* If iface nm wifi type match input type */
 		if ((type == IFACE_TYPE_STA && !wifi_nm_iface_is_sta(iface)) ||
 			(type == IFACE_TYPE_SAP && !wifi_nm_iface_is_sap(iface))) {
-			LOG_ERR("Interface %d type does not match %d", iface_index, type);
+			LOG_ERR("Interface %d type does not match %d", resolved_iface_index, type);
 			return NULL;
 		}
 	}
@@ -701,7 +703,7 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 	params->bandwidth = WIFI_FREQ_BANDWIDTH_20MHZ;
 	params->verify_peer_cert = false;
 
-	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
+	while ((opt = sys_getopt_long(argc, argv, "s:p:k:e:x:w:b:c:m:t:a:B:K:S:T:A:V:I:P:g:Rh:i:",
 				  long_options, &opt_index)) != -1) {
 		state = sys_getopt_state_get();
 		switch (opt) {
@@ -1025,14 +1027,18 @@ static int cmd_wifi_connect(const struct shell *sh, size_t argc,
 		return -ENOEXEC;
 	}
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#ifdef CONFIG_WIFI_CERTIFICATE_LIB
 	/* Load the enterprise credentials if needed */
 	if (cnx_params.security == WIFI_SECURITY_TYPE_EAP_TLS ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-		wifi_set_enterprise_credentials(iface, 0);
+		ret = wifi_set_enterprise_credentials(iface, 0);
+		if (ret != 0) {
+			PR_ERROR("Failed to set enterprise credentials (%d)\n", ret);
+			return -ENOEXEC;
+		}
 	}
 #endif
 
@@ -2102,7 +2108,11 @@ static int cmd_wifi_ap_enable(const struct shell *sh, size_t argc,
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
 	    cnx_params.security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-		wifi_set_enterprise_credentials(iface, 1);
+		ret = wifi_set_enterprise_credentials(iface, 1);
+		if (ret != 0) {
+			PR_ERROR("Failed to set enterprise credentials (%d)\n", ret);
+			return -ENOEXEC;
+		}
 	}
 #endif
 

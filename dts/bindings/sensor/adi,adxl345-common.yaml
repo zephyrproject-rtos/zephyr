@@ -37,7 +37,8 @@ properties:
     type: int
     description: |
       Specify the FIFO watermark level in frame count.
-      Valid range: 1 - 31
+    min: 1
+    max: 31
 
   int1-gpios:
     type: phandle-array

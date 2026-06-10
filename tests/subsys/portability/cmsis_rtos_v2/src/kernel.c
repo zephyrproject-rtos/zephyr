@@ -99,5 +99,42 @@ ZTEST(cmsis_kernel, test_delay)
 
 	irq_offload(delay_until, NULL);
 	zassert_equal(status_val, osErrorISR);
+
 }
+
+ZTEST(cmsis_kernel, test_past_delay_until)
+{
+	uint32_t now, after;
+	osStatus_t status;
+
+	now = osKernelGetTickCount();
+	status = osDelayUntil(now - 1U);
+	zassert_equal(status, osErrorParameter);
+
+	after = osKernelGetTickCount();
+	zassert_true(after >= now && after <= (now + 1),
+		"Function should return immediately (within 1 tick)");
+}
+
+
+ZTEST(cmsis_kernel, test_wrap_delay_until)
+{
+	uint32_t delay_ticks = 10U;
+	uint32_t now, after, deadline;
+
+	sys_clock_tick_set(UINT32_MAX - (delay_ticks / 2));
+
+	now = osKernelGetTickCount();
+	deadline = now + delay_ticks;
+
+	zassert_equal(osOK, osDelayUntil(deadline),
+		"osDelayUntil should succeed even when tick count is near wrap-around");
+
+	after = osKernelGetTickCount();
+	zassert_true((int32_t)(after - deadline) >= 0,
+		"after should be at or past deadline");
+	zassert_true((int32_t)(after - deadline) <= 5,
+		"after should be within 5 ticks of deadline");
+}
+
 ZTEST_SUITE(cmsis_kernel, NULL, NULL, NULL, NULL, NULL);

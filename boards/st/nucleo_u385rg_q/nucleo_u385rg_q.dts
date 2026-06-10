@@ -7,8 +7,8 @@
 /dts-v1/;
 #include <st/u3/stm32u385Xg.dtsi>
 #include <st/u3/stm32u385rgtxq-pinctrl.dtsi>
-#include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+/* arduino R3 connector is included by board revision specific overlays */
 
 / {
 	model = "STMicroelectronics STM32U385RG-NUCLEO-Q board";
@@ -170,12 +170,16 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb13 &i2c2_sda_pb14>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 13 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 

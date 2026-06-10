@@ -207,4 +207,10 @@
 		#mbox-cells = <1>;
 		status = "disabled";
 	};
+
+	crc: crc@8a000 {
+		compatible = "nxp,crc";
+		reg = <0x8a000 0x1000>;
+		status = "disabled";
+	};
 };

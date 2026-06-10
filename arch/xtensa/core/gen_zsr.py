@@ -22,6 +22,11 @@ def parse_args():
     )
     parser.add_argument("--mmu", action="store_true", help="Enable scratch registers for MMU usage")
     parser.add_argument(
+        "--load-store-emulation",
+        action="store_true",
+        help="Enable scratch registers for load/store emulation",
+    )
+    parser.add_argument(
         "--syscall-scratch",
         action="store_true",
         help="Enable scratch registers for syscalls if needed",
@@ -37,6 +42,8 @@ args = parse_args()
 NEEDED = ["A0SAVE", "CPU"]
 if args.mmu:
     NEEDED += ["DBLEXC", "DEPC_SAVE", "EXCCAUSE_SAVE"]
+if args.load_store_emulation:
+    NEEDED += ["LSE_SAVE0", "LSE_SAVE1", "LSE_SAVE2"]
 if args.flush_reg:
     NEEDED += ["FLUSH"]
 

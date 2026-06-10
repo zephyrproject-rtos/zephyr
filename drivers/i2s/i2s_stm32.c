@@ -155,6 +155,7 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 	struct i2s_stm32_data *const dev_data = dev->data;
 	/* For words greater than 16-bit the channel length is considered 32-bit */
 	const uint32_t channel_length = i2s_cfg->word_size > 16U ? 32U : 16U;
+	const uint32_t word_size_bytes = channel_length / 8;
 	/*
 	 * comply with the i2s_config driver remark:
 	 * When I2S data format is selected parameter channels is ignored,
@@ -230,16 +231,21 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 		LL_I2S_DisableMasterClock(cfg->i2s);
 	}
 
+	stream->dma_cfg.source_data_size = word_size_bytes;
+	stream->dma_cfg.dest_data_size = word_size_bytes;
+	stream->dma_cfg.source_burst_length = word_size_bytes;
+	stream->dma_cfg.dest_burst_length = word_size_bytes;
+
 	/*
 	 * set I2S Data Format
 	 * 16-bit data extended on 32-bit channel length excluded
 	 */
 	if (i2s_cfg->word_size == 16U) {
-		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_16B);
+		LL_I2S_SetDataFormat(cfg->i2s, STM32_I2S_DATA_FORMAT_16_BIT);
 	} else if (i2s_cfg->word_size == 24U) {
-		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_24B);
+		LL_I2S_SetDataFormat(cfg->i2s, STM32_I2S_DATA_FORMAT_24_BIT);
 	} else if (i2s_cfg->word_size == 32U) {
-		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_32B);
+		LL_I2S_SetDataFormat(cfg->i2s, STM32_I2S_DATA_FORMAT_32_BIT);
 	} else {
 		LOG_ERR("invalid word size");
 		return -EINVAL;
@@ -274,9 +280,9 @@ static int i2s_stm32_configure(const struct device *dev, enum i2s_dir dir,
 
 	/* set I2S clock polarity */
 	if ((i2s_cfg->format & I2S_FMT_CLK_FORMAT_MASK) == I2S_FMT_BIT_CLK_INV) {
-		LL_I2S_SetClockPolarity(cfg->i2s, LL_I2S_POLARITY_HIGH);
+		LL_I2S_SetClockPolarity(cfg->i2s, STM32_I2S_CLOCK_POLARITY_HIGH);
 	} else {
-		LL_I2S_SetClockPolarity(cfg->i2s, LL_I2S_POLARITY_LOW);
+		LL_I2S_SetClockPolarity(cfg->i2s, STM32_I2S_CLOCK_POLARITY_LOW);
 	}
 
 	stream->state = I2S_STATE_READY;
@@ -740,9 +746,13 @@ static int i2s_stm32_initialize(const struct device *dev)
 		return -EIO;
 	}
 
-#if defined(SPI_CFG2_IOSWP)
+#ifdef CONFIG_STM32_HAL2
+	LL_I2S_EnableI2SMode(cfg->i2s);
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
 	if (cfg->ioswp) {
-		LL_SPI_EnableIOSwap(cfg->i2s);
+		LL_I2S_EnableIOSwap(cfg->i2s);
 	}
 #endif
 
@@ -889,6 +899,8 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
 
+	LL_I2S_Disable(cfg->i2s);
+
 	LL_I2S_DisableDMAReq_RX(cfg->i2s);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
 	LL_I2S_DisableIT_OVR(cfg->i2s);
@@ -904,14 +916,16 @@ static void rx_stream_disable(struct stream *stream, const struct device *dev)
 		stream->mem_block = NULL;
 	}
 
-	LL_I2S_Disable(cfg->i2s);
-
 	active_dma_rx_channel[stream->dma_channel] = NULL;
 }
 
 static void tx_stream_disable(struct stream *stream, const struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = dev->config;
+
+	/* Wait for TX queue to drain before disabling */
+	k_busy_wait(100);
+	LL_I2S_Disable(cfg->i2s);
 
 	LL_I2S_DisableDMAReq_TX(cfg->i2s);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_i2s)
@@ -927,10 +941,6 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 		k_mem_slab_free(stream->cfg.mem_slab, stream->mem_block);
 		stream->mem_block = NULL;
 	}
-
-	/* Wait for TX queue to drain before disabling */
-	k_busy_wait(100);
-	LL_I2S_Disable(cfg->i2s);
 
 	active_dma_tx_channel[stream->dma_channel] = NULL;
 }

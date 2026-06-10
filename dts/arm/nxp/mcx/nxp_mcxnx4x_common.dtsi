@@ -1306,6 +1306,12 @@
 		num-locks = <16>;
 		status = "disabled";
 	};
+
+	crc: crc@cb000 {
+		compatible = "nxp,crc";
+		reg = <0xcb000 0x1000>;
+		status = "disabled";
+	};
 };
 
 &systick {

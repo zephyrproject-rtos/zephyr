@@ -54,8 +54,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
-
-	irq_unlock(0);
 }
 
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)

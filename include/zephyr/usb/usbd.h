@@ -131,7 +131,17 @@ struct usbd_vreq_node {
 	int (*to_host)(const struct usbd_context *const ctx,
 		       const struct usb_setup_packet *const setup,
 		       struct net_buf *const buf);
-	/** Vendor request callback for host-to-device direction */
+	/**
+	 * Vendor request callback for host-to-device direction
+	 *
+	 * For requests with Data OUT stage (wLength != 0), the callback will
+	 * be called first with NULL buf before Data OUT stage is received to
+	 * check if data should be received. The callback will be called second
+	 * time, with non-NULL buf, after data is received.
+	 *
+	 * For requests without Data Stage (wLength == 0), the callback is
+	 * called just once with NULL buf.
+	 */
 	int (*to_dev)(const struct usbd_context *const ctx,
 		      const struct usb_setup_packet *const setup,
 		      const struct net_buf *const buf);

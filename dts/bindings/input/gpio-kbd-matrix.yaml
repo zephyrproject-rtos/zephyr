@@ -31,6 +31,7 @@ properties:
       When unselected, this pin will be either driven to inactive state or
       configured to high impedance (input) depending on the col-drive-inactive
       property.
+    max-len: 32
 
   col-drive-inactive:
     type: boolean

@@ -6,8 +6,6 @@ import abc
 import argparse
 import os
 import pathlib
-import pickle
-import platform
 import shutil
 import subprocess
 import sys
@@ -15,11 +13,10 @@ import sys
 from elftools.elf.elffile import ELFFile
 
 from west import manifest
-from west.commands import Verbosity
 from west.util import quote_sh_list
 
-from build_helpers import find_build_dir, is_zephyr_build, \
-    FIND_BUILD_DIR_DESCRIPTION
+from build_helpers import BUILD_HELPERS_LOGGER, find_build_dir, is_zephyr_build, \
+    forward_logging_to_west, FIND_BUILD_DIR_DESCRIPTION
 from runners.core import BuildConfiguration
 from zcmake import CMakeCache
 from zephyr_ext_common import Forceable, ZEPHYR_SCRIPTS
@@ -44,26 +41,6 @@ understand POSIX 12.2 Guideline 10, always use `--`.
 See tool-specific help below for details.'''
 
 SIGN_EPILOG = '''\
-imgtool
--------
-
-To build a signed binary you can load with MCUboot using imgtool,
-run this from your build directory:
-
-   west sign -t imgtool -- --key YOUR_SIGNING_KEY.pem
-
-For this to work, either imgtool must be installed (e.g. using pip3),
-or you must pass the path to imgtool.py using the -p option.
-
-Assuming your binary was properly built for processing and handling by
-imgtool, this creates zephyr.signed.bin and zephyr.signed.hex
-files which are ready for use by your bootloader.
-
-The version number, image header size, alignment, and slot sizes are
-determined from the build directory using .config and the device tree.
-As shown above, extra arguments after a '--' are passed to imgtool
-directly.
-
 rimage
 ------
 
@@ -124,9 +101,9 @@ class Sign(Forceable):
 
         # general options
         group = parser.add_argument_group('tool control options')
-        group.add_argument('-t', '--tool', choices=['imgtool', 'picotool', 'rimage', 'silabs_commander'],
-                           help='''image signing tool name; imgtool, picotool, rimage and silabs_commander
-                           are currently supported (imgtool is deprecated)''')
+        group.add_argument('-t', '--tool', choices=['picotool', 'rimage', 'silabs_commander'],
+                           help='''image signing tool name; picotool, rimage and silabs_commander
+                           are currently supported''')
         group.add_argument('-p', '--tool-path', default=None,
                            help='''path to the tool itself, if needed''')
         group.add_argument('-D', '--tool-data', default=None,
@@ -163,9 +140,12 @@ schema (rimage "target") is not defined in board.cmake.''')
 
     def do_run(self, args, ignored):
         self.args = args        # for check_force
+        # Forward debug output from the build_helpers/zcmake module
+        # loggers so it is visible under "west -v" / "west -vv".
+        forward_logging_to_west(self, [BUILD_HELPERS_LOGGER, 'zcmake'])
 
         # Find the build directory and parse .config and DT.
-        build_dir = find_build_dir(args.build_dir)
+        build_dir = find_build_dir(args.build_dir, config=self.config)
         self.check_force(os.path.isdir(build_dir),
                          'no such build directory {}'.format(build_dir))
         self.check_force(is_zephyr_build(build_dir),
@@ -199,11 +179,7 @@ schema (rimage "target") is not defined in board.cmake.''')
             formats.append('hex')
 
         # Delegate to the signer.
-        if args.tool == 'imgtool':
-            if args.if_tool_available:
-                self.die('imgtool does not support --if-tool-available')
-            signer = ImgtoolSigner()
-        elif args.tool == 'picotool':
+        if args.tool == 'picotool':
             signer = PicotoolSigner()
         elif args.tool == 'rimage':
             signer = RimageSigner()
@@ -252,191 +228,6 @@ def get_tool_path(command, tool_name):
 def get_kernel_bin_name(build_conf):
     return build_conf.get('CONFIG_KERNEL_BIN_NAME', "zephyr")
 
-
-class ImgtoolSigner(Signer):
-
-    def sign(self, command, build_dir, build_conf, formats):
-        if not formats:
-            return
-
-        args = command.args
-        b = pathlib.Path(build_dir)
-
-        command.wrn("west sign using imgtool is deprecated and will be removed in a future release")
-
-        imgtool = self.find_imgtool(command, args)
-        # The vector table offset and application version are set in Kconfig:
-        appver = self.get_cfg(command, build_conf, 'CONFIG_MCUBOOT_IMGTOOL_SIGN_VERSION')
-        vtoff = self.get_cfg(command, build_conf, 'CONFIG_ROM_START_OFFSET')
-        # Flash device write alignment and the partition's slot size
-        # come from devicetree:
-        flash = self.edt_flash_node(command, b, args.quiet)
-        align, addr, size = self.edt_flash_params(command, flash)
-
-        if not build_conf.getboolean('CONFIG_BOOTLOADER_MCUBOOT'):
-            command.wrn("CONFIG_BOOTLOADER_MCUBOOT is not set to y in "
-                        f"{build_conf.path}; this probably won't work")
-
-        kernel = pathlib.Path('zephyr') / get_kernel_bin_name(build_conf)
-
-        if 'bin' in formats:
-            in_bin = b / f'{kernel}.bin'
-            if not in_bin.is_file():
-                command.die(f"no unsigned .bin found at {in_bin}")
-            in_bin = os.fspath(in_bin)
-        else:
-            in_bin = None
-        if 'hex' in formats:
-            in_hex = b / f'{kernel}.hex'
-            if not in_hex.is_file():
-                command.die(f"no unsigned .hex found at {in_hex}")
-            in_hex = os.fspath(in_hex)
-        else:
-            in_hex = None
-
-        if not args.quiet:
-            command.banner('image configuration:')
-            command.inf('partition offset: {0} (0x{0:x})'.format(addr))
-            command.inf('partition size: {0} (0x{0:x})'.format(size))
-            command.inf('rom start offset: {0} (0x{0:x})'.format(vtoff))
-
-        # Base sign command.
-        sign_base = imgtool + ['sign',
-                               '--version', str(appver),
-                               '--align', str(align),
-                               '--header-size', str(vtoff),
-                               '--slot-size', str(size)]
-        sign_base.extend(args.tool_args)
-
-        if not args.quiet:
-            command.banner('signing binaries')
-        if in_bin:
-            out_bin = args.sbin or str(b / 'zephyr' / 'zephyr.signed.bin')
-            sign_bin = sign_base + [in_bin, out_bin]
-            if not args.quiet:
-                command.inf(f'unsigned bin: {in_bin}')
-                command.inf(f'signed bin:   {out_bin}')
-                command.dbg(quote_sh_list(sign_bin))
-            subprocess.check_call(sign_bin, stdout=subprocess.PIPE if args.quiet else None)
-        if in_hex:
-            out_hex = args.shex or str(b / 'zephyr' / 'zephyr.signed.hex')
-            sign_hex = sign_base + [in_hex, out_hex]
-            if not args.quiet:
-                command.inf(f'unsigned hex: {in_hex}')
-                command.inf(f'signed hex:   {out_hex}')
-                command.dbg(quote_sh_list(sign_hex))
-            subprocess.check_call(sign_hex, stdout=subprocess.PIPE if args.quiet else None)
-
-    @staticmethod
-    def find_imgtool(cmd, args):
-        if args.tool_path:
-            imgtool = args.tool_path
-            if not os.path.isfile(imgtool):
-                cmd.die(f'--tool-path {imgtool}: no such file')
-        else:
-            imgtool = shutil.which('imgtool') or shutil.which('imgtool.py')
-            if not imgtool:
-                cmd.die('imgtool not found; either install it',
-                        '(e.g. "pip3 install imgtool") or provide --tool-path')
-
-        if platform.system() == 'Windows' and imgtool.endswith('.py'):
-            # Windows users may not be able to run .py files
-            # as executables in subprocesses, regardless of
-            # what the mode says. Always run imgtool as
-            # 'python path/to/imgtool.py' instead of
-            # 'path/to/imgtool.py' in these cases.
-            # https://github.com/zephyrproject-rtos/zephyr/issues/31876
-            return [sys.executable, imgtool]
-
-        return [imgtool]
-
-    @staticmethod
-    def get_cfg(command, build_conf, item):
-        try:
-            return build_conf[item]
-        except KeyError:
-            command.check_force(
-                False, "build .config is missing a {} value".format(item))
-            return None
-
-    @staticmethod
-    def edt_flash_node(cmd, b, quiet=False):
-        # Get the EDT Node corresponding to the zephyr,flash chosen DT
-        # node; 'b' is the build directory as a pathlib object.
-
-        # Ensure the build directory has a compiled DTS file
-        # where we expect it to be.
-        dts = b / 'zephyr' / 'zephyr.dts'
-        if not quiet:
-            cmd.dbg('DTS file:', dts, level=Verbosity.DBG_MORE)
-        edt_pickle = b / 'zephyr' / 'edt.pickle'
-        if not edt_pickle.is_file():
-            cmd.die("can't load devicetree; expected to find:", edt_pickle)
-
-        # Load the devicetree.
-        with open(edt_pickle, 'rb') as f:
-            edt = pickle.load(f)
-
-        # By convention, the zephyr,flash chosen node contains the
-        # partition information about the zephyr image to sign.
-        flash = edt.chosen_node('zephyr,flash')
-        if not flash:
-            cmd.die('devicetree has no chosen zephyr,flash node;',
-                    "can't infer flash write block or slot0_partition slot sizes")
-
-        return flash
-
-    @staticmethod
-    def edt_flash_params(cmd, flash):
-        # Get the flash device's write alignment and offset from the
-        # slot0_partition and the size from slot1_partition , out of the
-        # build directory's devicetree. slot1_partition size is used,
-        # when available, because in swap-move mode it can be one sector
-        # smaller. When not available, fallback to slot0_partition (single slot dfu).
-
-        # The node must have a "partitions" child node, which in turn
-        # must have child nodes with label slot0_partition and may have a child node
-        # with label slot1_partition. By convention, the slots for consumption by
-        # imgtool are linked into these partitions.
-        if 'partitions' not in flash.children:
-            cmd.die("DT zephyr,flash chosen node has no partitions,",
-                    "can't find partitions for MCUboot slots")
-
-        partitions = flash.children['partitions']
-        slots = {
-            label: node for node in partitions.children.values()
-                        for label in node.labels
-                        if label in set(['slot0_partition', 'slot1_partition'])
-        }
-
-        if 'slot0_partition' not in slots:
-            cmd.die("DT zephyr,flash chosen node has no slot0_partition partition,",
-                    "can't determine its address")
-
-        # Die on missing or zero alignment or slot_size.
-        if "write-block-size" not in flash.props:
-            cmd.die('DT zephyr,flash node has no write-block-size;',
-                    "can't determine imgtool write alignment")
-        align = flash.props['write-block-size'].val
-        if align == 0:
-            cmd.die('expected nonzero flash alignment, but got '
-                    'DT flash device write-block-size {}'.format(align))
-
-        # The partitions node, and its subnode, must provide
-        # the size of slot1_partition or slot0_partition partition via the regs property.
-        slot_key = 'slot1_partition' if 'slot1_partition' in slots else 'slot0_partition'
-        if not slots[slot_key].regs:
-            cmd.die(f'{slot_key} flash partition has no regs property;',
-                    "can't determine size of slot")
-
-        # always use addr of slot0_partition, which is where slots are run
-        addr = slots['slot0_partition'].regs[0].addr
-
-        size = slots[slot_key].regs[0].size
-        if size == 0:
-            cmd.die('expected nonzero slot size for {}'.format(slot_key))
-
-        return (align, addr, size)
 
 class RimageSigner(Signer):
 

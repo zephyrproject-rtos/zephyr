@@ -25,7 +25,7 @@
 #define TEST_DMA_CHANNEL_1 (1)
 #define GUARD_BUFF_SIZE (16)
 #define RX_BUFF_SIZE (48)
-#define DMA_DATA_ALIGNMENT DT_INST_PROP_OR(tst_dma0, dma_buf_addr_alignment, 32)
+#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
 
 #ifdef CONFIG_NOCACHE_MEMORY
 static __aligned(DMA_DATA_ALIGNMENT) char tx_data[RX_BUFF_SIZE] __used

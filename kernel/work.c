@@ -11,7 +11,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <wait_q.h>
 #include <zephyr/spinlock.h>
 #include <errno.h>

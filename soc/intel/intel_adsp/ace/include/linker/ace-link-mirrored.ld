@@ -16,7 +16,6 @@ OUTPUT_ARCH(xtensa)
 #include <zephyr/devicetree.h>
 #include <xtensa/config/core-isa.h>
 #include <zephyr/linker/sections.h>
-#include <adsp-vectors.h>
 #include <adsp_memory.h>
 
 #include <zephyr/linker/linker-defs.h>
@@ -80,41 +79,9 @@ ENTRY(rom_entry);
 #define SMEM_PARTITION_ALIGN(size) MMU_PAGE_ALIGN
 
 MEMORY {
-  vector_base_text :
+  vectors :
 	org = VECBASE_RESET_PADDR_SRAM,
-	len = MEM_VECBASE_LIT_SIZE
-  vector_int2_text :
-	org = INTLEVEL2_VECTOR_PADDR_SRAM,
-	len = MEM_VECT_TEXT_SIZE + MEM_VECT_LIT_SIZE
-  vector_int3_text :
-	org = INTLEVEL3_VECTOR_PADDR_SRAM,
-	len = MEM_VECT_TEXT_SIZE + MEM_VECT_LIT_SIZE
-  vector_int4_text :
-	org = INTLEVEL4_VECTOR_PADDR_SRAM,
-	len = MEM_VECT_TEXT_SIZE + MEM_VECT_LIT_SIZE
-  vector_int7_text :
-	org = INTLEVEL7_VECTOR_PADDR_SRAM,
-	len = MEM_VECT_TEXT_SIZE + MEM_VECT_LIT_SIZE
-  vector_kernel_text :
-	org = KERNEL_VECTOR_PADDR_SRAM,
-	len = MEM_VECT_TEXT_SIZE
-  vector_user_lit :
-	org = USER_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-	len = MEM_VECT_LIT_SIZE
-  vector_user_text :
-	org = USER_VECTOR_PADDR_SRAM,
-	len = MEM_VECT_TEXT_SIZE
-  vector_double_lit :
-	org = DOUBLEEXC_VECTOR_PADDR_SRAM - MEM_VECT_LIT_SIZE,
-	len = MEM_VECT_LIT_SIZE
-  vector_double_text :
-	org = DOUBLEEXC_VECTOR_PADDR_SRAM,
-	len = MEM_VECT_TEXT_SIZE
-#ifdef CONFIG_XTENSA_MMU
-  xtensa_vector_code :
-	org = DOUBLEEXC_VECTOR_PADDR_SRAM + MEM_VECT_TEXT_SIZE,
-	len = RAM_BASE - (DOUBLEEXC_VECTOR_PADDR_SRAM + MEM_VECT_TEXT_SIZE)
-#endif
+	len = VECTOR_TBL_SIZE
   imr :
 	org = IMR_BOOT_LDR_TEXT_ENTRY_BASE,
 	len = 0x100000
@@ -175,61 +142,9 @@ SECTIONS {
     _imr_end = .;
   } >imr
 
-   .WindowVectors.text : {
-    _WindowVectors_text_start = .;
-    KEEP (*(.WindowVectors.text))
-    _WindowVectors_text_end = .;
-  } >vector_base_text
-  .Level2InterruptVector.text : {
-    _Level2InterruptVector_text_start = .;
-    KEEP (*(.Level2InterruptVector.text))
-    _Level2InterruptVector_text_end = .;
-  } >vector_int2_text
-  .Level3InterruptVector.text : {
-    _Level3InterruptVector_text_start = .;
-    KEEP (*(.Level3InterruptVector.text))
-    _Level3InterruptVector_text_end = .;
-  } >vector_int3_text
-  .Level4InterruptVector.text : {
-    _Level4InterruptVector_text_start = .;
-    KEEP (*(.Level4InterruptVector.text))
-    _Level4InterruptVector_text_end = .;
-  } >vector_int4_text
-  .DebugExceptionVector.text : {
-    _DebugExceptionVector_text_start = .;
-    KEEP (*(.DebugExceptionVector.text))
-    _DebugExceptionVector_text_end = .;
-  } >vector_int4_text
-  .NMIExceptionVector.text : {
-    _NMIExceptionVector_text_start = .;
-    KEEP (*(.NMIExceptionVector.text))
-    _NMIExceptionVector_text_end = .;
-  } >vector_int7_text
-  .KernelExceptionVector.text : {
-    _KernelExceptionVector_text_start = .;
-    KEEP (*(.KernelExceptionVector.text))
-    _KernelExceptionVector_text_end = .;
-  } >vector_kernel_text
-  .UserExceptionVector.literal : {
-    _UserExceptionVector_literal_start = .;
-    *(.UserExceptionVector.literal)
-    _UserExceptionVector_literal_end = .;
-  } >vector_user_lit
-  .UserExceptionVector.text : {
-    _UserExceptionVector_text_start = .;
-    KEEP (*(.UserExceptionVector.text))
-    _UserExceptionVector_text_end = .;
-  } >vector_user_text
-  .DoubleExceptionVector.literal : {
-    _DoubleExceptionVector_literal_start = .;
-    *(.DoubleExceptionVector.literal)
-    _DoubleExceptionVector_literal_end = .;
-  } >vector_double_lit
-  .DoubleExceptionVector.text : {
-    _DoubleExceptionVector_text_start = .;
-    KEEP (*(.DoubleExceptionVector.text))
-    _DoubleExceptionVector_text_end = .;
-  } >vector_double_text
+/* Auto-generated vector linkage, to "vectors" memory region */
+#include <xtensa_vectors.ld>
+ >vectors
 
 #ifdef CONFIG_XTENSA_MMU
   .xtensa_vector_code : {
@@ -262,7 +177,7 @@ SECTIONS {
     *libarch__xtensa__core.a:syscall_helper.c.obj(.text.xtensa_syscall_helper*)
 #endif /* CONFIG_XTENSA_SYSCALL_USE_HELPER */
 
-  } > xtensa_vector_code
+  } > vectors
 #endif /* CONFIG_XTENSA_MMU */
 
   .text : HDR_MMU_PAGE_ALIGN

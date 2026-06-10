@@ -6,3 +6,6 @@ common:
     - route
 tests:
   net.route.ipv4: {}
+  net.route.ipv4.forwarding:
+    extra_configs:
+      - CONFIG_NET_IPV4_FORWARDING=y

@@ -9,9 +9,9 @@ config SOC_SERIES_BL808
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
 	select CPU_XUANTIE_E907
+	select OTP
 	select REGULATOR
 	select RISCV
 	select SOC_EARLY_INIT_HOOK
 	select SOC_PREP_HOOK
-	select SYSCON
 	select XIP

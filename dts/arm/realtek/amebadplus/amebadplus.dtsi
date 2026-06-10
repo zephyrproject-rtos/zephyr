@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/amebadplus_clock.h>
 #include <zephyr/dt-bindings/dma/ameba_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	cpus {
@@ -55,6 +56,18 @@
 			reg = <0x20010020 0x00030000>;
 		};
 
+		wifi0: wifi@40000000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40000000 0x40000>;
+			status = "disabled";
+		};
+
+		wifi1: wifi@40040000 {
+			compatible = "realtek,ameba-wifi";
+			reg = <0x40040000 0x40000>;
+			status = "disabled";
+		};
+
 		dma: dma@40110000 {
 			compatible = "realtek,ameba-gdma";
 			reg = <0x40110000 0x3c0>;
@@ -71,6 +84,7 @@
 		spic: flash-controller@40128000 {
 			compatible = "realtek,ameba-flash-controller";
 			reg = <0x40128000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -80,7 +94,16 @@
 				compatible = "soc-nv-flash";
 				erase-block-size = <DT_SIZE_K(4)>;
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
+		};
+
+		trng: trng@41008200 {
+			compatible = "realtek,ameba-trng";
+			reg = <0x41008200 0x100>;
+			clocks = <&rcc AMEBA_TRNG_CLK>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@41008800 {
@@ -122,6 +145,39 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			interrupts = <29 0>;
+			status = "disabled";
+		};
+
+		i2c0: i2c0@41108000 {
+			compatible = "realtek,ameba-i2c";
+			reg = <0x41108000 0x100>;
+			interrupts = <30 0>;
+			clocks = <&rcc AMEBA_I2C0_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			dmas = <&dma 4 22 0>,
+			       <&dma 5 21 0>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		i2c1: i2c1@4110a000 {
+			compatible = "realtek,ameba-i2c";
+			reg = <0x4110a000 0x100>;
+			interrupts = <31 0>;
+			clocks = <&rcc AMEBA_I2C1_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			dmas = <&dma 4 24 0>,
+			       <&dma 5 23 0>;
+			dma-names = "rx", "tx";
+			status = "disabled";
+		};
+
+		bt: bt {
+			compatible = "realtek,ameba-bt-hci";
 			status = "disabled";
 		};
 	};

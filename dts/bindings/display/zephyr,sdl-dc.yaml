@@ -13,3 +13,34 @@ properties:
     type: string
     description: |
       Name of graphical window
+
+  pixel-format:
+    type: int
+    required: true
+    description: |
+      Initial Pixel format of this controller's output data.
+    enum:
+      - 1 # PANEL_PIXEL_FORMAT_RGB_888
+      - 2 # PANEL_PIXEL_FORMAT_MONO01
+      - 4 # PANEL_PIXEL_FORMAT_MONO10
+      - 8 # PANEL_PIXEL_FORMAT_ARGB_8888
+      - 16 # PANEL_PIXEL_FORMAT_RGB_565
+      - 32 # PANEL_PIXEL_FORMAT_RGB_565X
+      - 64 # PANEL_PIXEL_FORMAT_L_8
+      - 128 # PANEL_PIXEL_FORMAT_AL_88
+      - 256 # PANEL_PIXEL_FORMAT_XRGB_8888
+      - 512 # PANEL_PIXEL_FORMAT_BGR_888
+      - 1024 # PANEL_PIXEL_FORMAT_ABGR_8888
+      - 2048 # PANEL_PIXEL_FORMAT_RGBA_8888
+      - 4096 # PANEL_PIXEL_FORMAT_BGRA_8888
+      - 8192 # PANEL_PIXEL_FORMAT_I_4
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/display/panel.h>
+
+    sdl_dc: sdl_dc {
+      /* ... */
+
+      pixel-format = <PANEL_PIXEL_FORMAT_ABGR_8888>;
+    };

@@ -146,16 +146,10 @@ config CSPRNG_ENABLED
 
 
 choice CSPRNG_GENERATOR_CHOICE
-	prompt "Cryptographically secure random generator"
+	prompt "Cryptographically secure random number generator"
 	default PSA_CSPRNG_GENERATOR if ENTROPY_NEEDS_PRNG
 	default HARDWARE_DEVICE_CS_GENERATOR
 	default TEST_CSPRNG_GENERATOR
-	help
-	  Platform dependent cryptographically secure random number support.
-
-	  If the hardware entropy support of the platform has sufficient
-	  performance to support CSRNG then select that. Otherwise, select
-	  CTR-DRBG CSPRNG as that is a FIPS140-2 recommended CSPRNG.
 
 config HARDWARE_DEVICE_CS_GENERATOR
 	bool "Use hardware random driver for CS random numbers"
@@ -164,16 +158,6 @@ config HARDWARE_DEVICE_CS_GENERATOR
 	  Enables a cryptographically secure random number generator that
 	  uses the enabled hardware random number driver to generate
 	  random numbers.
-
-config CTR_DRBG_CSPRNG_GENERATOR
-	bool "Use CTR-DRBG CSPRNG"
-	depends on PSA_CRYPTO
-	select DEPRECATED
-	help
-	  Enables the CTR-DRBG pseudo-random number generator. This CSPRNG
-	  shall use the entropy API for an initialization seed. The CTR-DRBG
-	  is a FIPS140-2 recommended cryptographically secure random number
-	  generator.
 
 config PSA_CSPRNG_GENERATOR
 	bool "Use PSA CSPRNG"
@@ -187,7 +171,6 @@ config PSA_CSPRNG_GENERATOR
 	  cryptographically secure random numbers suitable for
 	  security-sensitive applications.
 
-
 config TEST_CSPRNG_GENERATOR
 	bool "Use insecure CSPRNG for testing purposes"
 	depends on TEST_RANDOM_GENERATOR
@@ -196,13 +179,5 @@ config TEST_CSPRNG_GENERATOR
 	  libraries that use the former to be tested with ZTEST.
 
 endchoice # CSPRNG_GENERATOR_CHOICE
-
-config CS_CTR_DRBG_PERSONALIZATION
-	string "CTR-DRBG Personalization string"
-	default "zephyr ctr-drbg seed"
-	depends on CTR_DRBG_CSPRNG_GENERATOR
-	help
-	  This option is deprecated (no longer needed) and will be
-	  removed in further release.
 
 endmenu

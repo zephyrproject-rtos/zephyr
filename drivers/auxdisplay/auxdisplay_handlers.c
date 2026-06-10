@@ -165,3 +165,11 @@ static inline int z_vrfy_auxdisplay_custom_command(const struct device *dev,
 	return z_impl_auxdisplay_custom_command(dev, data);
 }
 #include <zephyr/syscalls/auxdisplay_custom_command_mrsh.c>
+
+static inline int z_vrfy_auxdisplay_custom_indicator_set(const struct device *dev,
+							 uint8_t index, bool enable)
+{
+	K_OOPS(K_SYSCALL_DRIVER_AUXDISPLAY(dev, custom_indicator_set));
+	return z_impl_auxdisplay_custom_indicator_set(dev, index, enable);
+}
+#include <zephyr/syscalls/auxdisplay_custom_indicator_set_mrsh.c>

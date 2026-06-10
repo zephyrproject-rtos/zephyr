@@ -47,6 +47,9 @@ LOG_MODULE_REGISTER(clock_mchp_sam_d5x_e5x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 /* gclk peripheral channel max, 0 - 47 */
 #define GPH_MAX 47
 
+/* FDPLL gclk peripheral channel max (FDPLL0=1, FDPLL1=2) */
+#define FDPLL_GPH_MAX 2
+
 /* maximum value for mask bit position, 0 - 31 */
 #define MMASK_MAX 31
 
@@ -303,7 +306,7 @@ static int clock_check_subsys(union clock_mchp_subsys subsys)
 
 		case SUBSYS_TYPE_FDPLL:
 			inst_max = CLOCK_MCHP_FDPLL_ID_MAX;
-			gclkperiph_max = CLOCK_MCHP_FDPLL_ID_MAX;
+			gclkperiph_max = FDPLL_GPH_MAX;
 			break;
 
 		case SUBSYS_TYPE_RTC:
@@ -2371,6 +2374,59 @@ void clock_mclkperiph_init(const struct device *dev, uint32_t subsys_val, uint8_
 	}
 }
 
+/**
+ * @brief Ensure clock system starts from known default reset state.
+ *        DFLL enabled, GCLK0 sourced from DFLL, FDPLLs disabled.
+ */
+static int clock_init_reset_state(const struct device *dev)
+{
+	const struct clock_mchp_config *config = dev->config;
+	gclk_registers_t *gclk_regs = config->gclk_regs;
+	int ret;
+	uint32_t reg_val;
+
+	/* Enable DFLL */
+	ret = clock_mchp_on(dev, (clock_control_subsys_t)CLOCK_MCHP_DFLL_ID);
+	if ((ret != 0) && (ret != -EALREADY)) {
+		LOG_ERR("Failed to enable DFLL: %d", ret);
+		return ret;
+	}
+
+	/* Configure GCLK0 source to DFLL */
+	reg_val = gclk_regs->GCLK_GENCTRL[CLOCK_MCHP_GCLKGEN_GEN0];
+	reg_val &= ~(GCLK_GENCTRL_RUNSTDBY_Msk | GCLK_GENCTRL_SRC_Msk | GCLK_GENCTRL_DIV_Msk);
+	reg_val |= GCLK_GENCTRL_SRC(CLOCK_MCHP_GCLK_SRC_DFLL);
+	reg_val |= GCLK_GENCTRL_DIV(1);
+	gclk_regs->GCLK_GENCTRL[CLOCK_MCHP_GCLKGEN_GEN0] = reg_val;
+	if (WAIT_FOR((gclk_regs->GCLK_SYNCBUSY == 0), TIMEOUT_REG_SYNC, NULL) == false) {
+		LOG_ERR("GCLK_SYNCBUSY timeout on writing GCLK_GENCTRL[0]");
+		return -ETIMEDOUT;
+	}
+
+	/* Enable GCLK0 */
+	ret = clock_mchp_on(dev, (clock_control_subsys_t)CLOCK_MCHP_GCLKGEN_ID_GEN0);
+	if ((ret != 0) && (ret != -EALREADY)) {
+		LOG_ERR("Failed to enable GCLK0: %d", ret);
+		return ret;
+	}
+
+	/* Disable FDPLL0 */
+	ret = clock_mchp_off(dev, (clock_control_subsys_t)CLOCK_MCHP_FDPLL_ID_FDPLL0);
+	if (ret != 0) {
+		LOG_ERR("Failed to disable FDPLL0: %d", ret);
+		return ret;
+	}
+
+	/* Disable FDPLL1 */
+	ret = clock_mchp_off(dev, (clock_control_subsys_t)CLOCK_MCHP_FDPLL_ID_FDPLL1);
+	if (ret != 0) {
+		LOG_ERR("Failed to disable FDPLL1: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 #define CLOCK_MCHP_ITERATE_XOSC(child)                                                             \
 	{                                                                                          \
 		struct clock_xosc_init xosc_init = {0};                                            \
@@ -2490,6 +2546,14 @@ void clock_mclkperiph_init(const struct device *dev, uint32_t subsys_val, uint8_
  */
 static int clock_mchp_init(const struct device *dev)
 {
+	int ret;
+
+	ret = clock_init_reset_state(dev);
+	if (ret != 0) {
+		LOG_ERR("Failed to establish default clock state");
+		return ret;
+	}
+
 #if CONFIG_CLOCK_CONTROL_MCHP_ASYNC_ON
 	/* Enable the interrupt connection for the clock control subsystem. */
 	CLOCK_MCHP_IRQ_CONNECT_ENABLE(DT_NODELABEL(clock), 0);
@@ -2502,18 +2566,11 @@ static int clock_mchp_init(const struct device *dev)
 #endif /* CONFIG_CLOCK_CONTROL_MCHP_ASYNC_ON */
 
 #if CONFIG_CLOCK_CONTROL_MCHP_CONFIG_BOOTUP
-	const struct clock_mchp_config *config = dev->config;
 	struct clock_mchp_data *data = dev->data;
 
 	/* iteration-1 */
 	DT_FOREACH_CHILD(DT_NODELABEL(xosc), CLOCK_MCHP_ITERATE_XOSC);
 	CLOCK_MCHP_PROCESS_XOSC32K(DT_NODELABEL(xosc32k));
-
-	config->gclk_regs->GCLK_CTRLA = GCLK_CTRLA_SWRST(1);
-	if (WAIT_FOR((config->gclk_regs->GCLK_SYNCBUSY == 0), TIMEOUT_REG_SYNC, NULL) == false) {
-		LOG_ERR("GCLK_SYNCBUSY timeout on writing GCLK_CTRLA");
-		return -ETIMEDOUT;
-	}
 
 	/* To avoid changing dfll, while gclk0 is driven by it. Else will affect CPU */
 	data->gclk0_src = CLOCK_MCHP_GCLK_SRC_DFLL;

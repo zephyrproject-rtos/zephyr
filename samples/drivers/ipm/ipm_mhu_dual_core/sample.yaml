@@ -2,7 +2,7 @@ sample:
   description: MHU dual core sample application
   name: ipm_mhu_dual_core
 tests:
-  sample.ipm.ipm_mhu_dual_core:
+  sample.drivers.ipm.ipm_mhu_dual_core:
     tags: ipm
     platform_allow:
       - v2m_musca_b1/musca_b1

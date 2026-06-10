@@ -9,6 +9,7 @@ endif()
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_DT_HAS_NORDIC_NRF91_SLM_ENABLED cellular_nordic_nrf91_slm.c)
+zephyr_library_sources_ifdef(CONFIG_DT_HAS_NORDIC_NRF93M1_ENABLED cellular_nordic_nrf93m1.c)
 zephyr_library_sources_ifdef(CONFIG_DT_HAS_QUECTEL_EG25_G_ENABLED cellular_quectel_eg25_g.c)
 zephyr_library_sources_ifdef(CONFIG_DT_HAS_QUECTEL_EG800Q_ENABLED cellular_quectel_eg800q.c)
 zephyr_library_sources_ifdef(CONFIG_DT_HAS_SIMCOM_A76XX_ENABLED cellular_simcom_a76xx.c)

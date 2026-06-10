@@ -188,28 +188,21 @@ static int dsa_netc_switch_setup(const struct dsa_switch_context *dsa_switch_ctx
 	return 0;
 }
 
-static void dsa_netc_port_phylink_change(const struct device *phydev, struct phy_link_state *state,
-					 void *user_data)
+static void dsa_netc_port_phylink_change(const struct device *phy_dev __unused,
+					 struct phy_link_state *state, const struct device *dev)
 {
-	const struct device *dev = (struct device *)user_data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 	const struct dsa_port_config *cfg = dev->config;
 	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	struct dsa_netc_data *prv = PRV_DATA(dsa_switch_ctx);
 	status_t result;
 
 	if (state->is_up) {
-		LOG_INF("DSA user port %d Link up", cfg->port_idx);
 		result = SWT_SetEthPortMII(&prv->swt_handle, cfg->port_idx,
 					   PHY_TO_NETC_SPEED(state->speed),
 					   PHY_TO_NETC_DUPLEX_MODE(state->speed));
 		if (result != kStatus_Success) {
 			LOG_ERR("DSA user port %d failed to set MAC up", cfg->port_idx);
 		}
-		net_eth_carrier_on(iface);
-	} else {
-		LOG_INF("DSA user port %d Link down", cfg->port_idx);
-		net_eth_carrier_off(iface);
 	}
 }
 

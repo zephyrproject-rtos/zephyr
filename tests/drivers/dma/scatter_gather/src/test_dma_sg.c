@@ -22,7 +22,7 @@
 #include <zephyr/ztest.h>
 
 #define XFERS 4
-#define DMA_DATA_ALIGNMENT DT_INST_PROP_OR(tst_dma0, dma_buf_addr_alignment, 32)
+#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
 
 #if CONFIG_NOCACHE_MEMORY
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_SG_XFER_SIZE] __used

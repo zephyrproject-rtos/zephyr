@@ -37,7 +37,7 @@ if MODEM_CELLULAR
 
 config MODEM_CELLULAR_INIT_PRIORITY
 	int "Cellular modem driver initialization priority"
-	default 79
+	default 91
 	range 0 99
 	help
 	  Driver initialization priority for cellular modem drivers.
@@ -67,6 +67,14 @@ config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES
 	int "The size of the buffers used for each user pipe in bytes."
 	default 128
 
+config MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA
+	default 256 if DT_HAS_TELIT_LE910C1TX_ENABLED
+	default 256 if DT_HAS_TELIT_LEX10Q1_ENABLED
+
+config MODEM_CMUX_MSC_FC_THRESHOLD
+	default 64 if DT_HAS_TELIT_LE910C1TX_ENABLED
+	default 0 if DT_HAS_TELIT_LEX10Q1_ENABLED
+
 config MODEM_CELLULAR_NEW_BAUDRATE
 	int "New baudrate to configure modem to, if supported"
 	range 9600 4000000
@@ -82,6 +90,16 @@ config MODEM_CELLULAR_NEW_BAUDRATE_DELAY
 config MODEM_CELLULAR_RESET_POWER_ON_DELAY_MS
 	int "Delay between de-asserting the reset pin and pulsing the power pin"
 	default 500
+
+config MODEM_CELLULAR_SHELL
+	bool "Cellular modem driver shell commands"
+	depends on !MODEM_SHELL
+	select SHELL
+	help
+	  Enable shell commands for the cellular_modem driver, exposing
+	  cellular_modem_pause_periodic_script() /
+	  cellular_modem_resume_periodic_script() at runtime via a
+	  "cellular" shell command.
 
 if DT_HAS_U_BLOX_LARA_R6_ENABLED
 

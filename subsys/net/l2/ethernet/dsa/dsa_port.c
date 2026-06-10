@@ -69,11 +69,28 @@ out:
 	return err;
 }
 
+static void dsa_port_phylink_change(const struct device *phydev, struct phy_link_state *state,
+				    void *user_data)
+{
+	struct net_if *iface = (struct net_if *)user_data;
+	const struct device *dev = net_if_get_device(iface);
+	struct dsa_switch_context *dsa_switch_ctx = dev->data;
+
+	if (dsa_switch_ctx->dapi->port_phylink_change != NULL) {
+		dsa_switch_ctx->dapi->port_phylink_change(phydev, state, dev);
+	}
+
+	if (state->is_up) {
+		net_eth_carrier_on(iface);
+	} else {
+		net_eth_carrier_off(iface);
+	}
+}
+
 static void dsa_port_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	const struct dsa_port_config *cfg = dev->config;
-	struct dsa_switch_context *dsa_switch_ctx = dev->data;
 	char name[INTERFACE_NAME_LEN];
 	uint8_t mac_addr[6] = {0};
 	int ret;
@@ -113,12 +130,7 @@ static void dsa_port_iface_init(struct net_if *iface)
 		return;
 	}
 
-	if (dsa_switch_ctx->dapi->port_phylink_change == NULL) {
-		LOG_ERR("require port_phylink_change callback");
-		return;
-	}
-
-	phy_link_callback_set(cfg->phy_dev, dsa_switch_ctx->dapi->port_phylink_change, (void *)dev);
+	phy_link_callback_set(cfg->phy_dev, dsa_port_phylink_change, (void *)iface);
 }
 
 static const struct device *dsa_port_get_phy(const struct device *dev,

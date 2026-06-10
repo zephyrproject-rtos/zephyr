@@ -107,6 +107,11 @@ set(secondary_mpcconf_hex_file ${APPLICATION_BINARY_DIR}/zephyr/secondary_mpccon
 set(gen_uicr_outputs ${merged_hex_file} ${uicr_hex_file})
 set(gen_uicr_depends)
 
+# Inform sysbuild about the outputs to allow creating proper dependencies
+# Use a standard variable name for the main output file (to be flashed)
+set(BYPRODUCT_KERNEL_HEX_NAME ${merged_hex_file} CACHE FILEPATH "Merged hex file" FORCE)
+set(BYPRODUCT_GEN_UICR_UICR_HEX_NAME ${uicr_hex_file} CACHE FILEPATH "UICR hex file" FORCE)
+
 # Get UICR absolute address from this image's devicetree
 dt_nodelabel(uicr_path NODELABEL "uicr" REQUIRED)
 dt_reg_addr(UICR_ADDRESS PATH ${uicr_path} REQUIRED)
@@ -246,6 +251,8 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF OR CONFIG_GEN_UICR_SECONDARY_GENERATE_PER
     # Set up periphconf arguments for gen_uicr.py
     list(APPEND periphconf_args --out-periphconf-hex ${periphconf_hex_file})
     list(APPEND gen_uicr_outputs ${periphconf_hex_file})
+    set(BYPRODUCT_GEN_UICR_PERIPHCONF_HEX_NAME ${periphconf_hex_file}
+        CACHE FILEPATH "PERIPHCONF hex file" FORCE)
 
     foreach(elf ${periphconf_elfs})
       list(APPEND periphconf_args --in-periphconf-elf ${elf})
@@ -256,6 +263,8 @@ if(CONFIG_GEN_UICR_GENERATE_PERIPHCONF OR CONFIG_GEN_UICR_SECONDARY_GENERATE_PER
     # Set up mpcconf arguments for gen_uicr.py
     list(APPEND mpcconf_args --out-mpcconf-hex ${mpcconf_hex_file})
     list(APPEND gen_uicr_outputs ${mpcconf_hex_file})
+    set(BYPRODUCT_GEN_UICR_MPCCONF_HEX_NAME ${mpcconf_hex_file}
+        CACHE FILEPATH "MPCCONF hex file" FORCE)
 
     foreach(elf ${mpcconf_elfs})
       list(APPEND mpcconf_args --in-mpcconf-elf ${elf})
@@ -340,6 +349,8 @@ if(CONFIG_GEN_UICR_SECONDARY)
   if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF)
     list(APPEND secondary_args --out-secondary-periphconf-hex ${secondary_periphconf_hex_file})
     list(APPEND gen_uicr_outputs ${secondary_periphconf_hex_file})
+    set(BYPRODUCT_GEN_UICR_SECONDARY_PERIPHCONF_HEX_NAME ${secondary_periphconf_hex_file}
+        CACHE FILEPATH "Secondary PERIPHCONF hex file" FORCE)
 
     foreach(elf ${secondary_periphconf_elfs})
       list(APPEND secondary_args --in-secondary-periphconf-elf ${elf})
@@ -349,6 +360,8 @@ if(CONFIG_GEN_UICR_SECONDARY)
   if(CONFIG_GEN_UICR_SECONDARY_GENERATE_MPCCONF)
     list(APPEND secondary_args --out-secondary-mpcconf-hex ${secondary_mpcconf_hex_file})
     list(APPEND gen_uicr_outputs ${secondary_mpcconf_hex_file})
+    set(BYPRODUCT_GEN_UICR_SECONDARY_MPCCONF_HEX_NAME ${secondary_mpcconf_hex_file}
+        CACHE FILEPATH "Secondary MPCCONF hex file" FORCE)
 
     foreach(elf ${secondary_mpcconf_elfs})
       list(APPEND secondary_args --in-secondary-mpcconf-elf ${elf})

@@ -12,6 +12,8 @@
 #include <zephyr/net/mdio.h>
 #include <zephyr/drivers/mdio.h>
 
+#include "phy_oa_tc14_plca.h"
+
 #define LOG_MODULE_NAME phy_mc_t1s
 #define LOG_LEVEL       CONFIG_PHY_LOG_LEVEL
 #include <zephyr/logging/log.h>

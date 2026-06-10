@@ -141,10 +141,10 @@ config WIFI_CERTIFICATE_LIB
 	help
 	  Enable this option to process certificates in enterprise mode.
 
-if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-
 config WIFI_SHELL_RUNTIME_CERTIFICATES
 	bool "Provide Wi-Fi enterprise security certificates at run-time"
+	depends on NET_L2_WIFI_SHELL
+	depends on WIFI_CERTIFICATE_LIB
 	select TLS_CREDENTIALS
 	select TLS_CREDENTIALS_SHELL
 	select BASE64
@@ -162,8 +162,6 @@ config HEAP_MEM_POOL_ADD_SIZE_WIFI_CERT
 	  The size of the memory pool used by the Wi-Fi enterprise security certificates.
 
 endif # WIFI_SHELL_RUNTIME_CERTIFICATES
-
-endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
 config WIFI_STA_AUTO_DHCPV4
 	bool "Automatically start DHCPv4 after STA connects"

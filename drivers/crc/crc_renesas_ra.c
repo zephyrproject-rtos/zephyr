@@ -65,7 +65,7 @@ static int crc_set_config(const struct device *dev, struct crc_ctx *ctx)
 		break;
 	}
 	case CRC16: {
-		if (ctx->polynomial != CRC16_POLY) {
+		if ((ctx->polynomial != CRC16_POLY) && (ctx->polynomial != CRC16_REFLECT_POLY)) {
 			return -EINVAL;
 		}
 

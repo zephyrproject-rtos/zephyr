@@ -81,7 +81,7 @@ static const struct net_route_table_ops route_ipv4_ops = {
 };
 
 struct net_route_entry *net_route_ipv4_lookup(struct net_if *iface,
-					      struct net_in_addr *dst)
+					      const struct net_in_addr *dst)
 {
 	struct net_addr addr = route_ipv4_addr(dst);
 
@@ -101,8 +101,9 @@ struct net_route_entry *net_route_ipv4_add(struct net_if *iface,
 	NET_ASSERT(addr);
 	NET_ASSERT(iface);
 
-	if (net_ipv4_addr_cmp(addr, net_ipv4_unspecified_address())) {
-		NET_DBG("Route cannot be towards unspecified address");
+	if (net_ipv4_addr_cmp(addr, net_ipv4_unspecified_address()) &&
+	    mask_len != 0U) {
+		NET_DBG("Route cannot be towards unspecified address unless prefix length is 0");
 		return NULL;
 	}
 
@@ -153,7 +154,7 @@ int net_route_ipv4_foreach(net_route_cb_t cb, void *user_data)
 }
 
 bool net_route_ipv4_get_info(struct net_if *iface,
-			     struct net_in_addr *dst,
+			     const struct net_in_addr *dst,
 			     struct net_route_entry **route,
 			     struct net_in_addr **nexthop)
 {
@@ -166,7 +167,8 @@ bool net_route_ipv4_get_info(struct net_if *iface,
 			return true;
 		}
 
-		*nexthop = dst;
+		/* The cast is needed to avoid changing lot of code all over the place */
+		*nexthop = (struct net_in_addr *)dst;
 		return true;
 	}
 
@@ -183,13 +185,37 @@ bool net_route_ipv4_get_info(struct net_if *iface,
 	return true;
 }
 
-int net_route_ipv4_packet(struct net_pkt *pkt, struct net_in_addr *nexthop)
+int net_route_ipv4_packet(struct net_pkt *pkt, const struct net_in_addr *nexthop)
 {
-	if (nexthop == NULL) {
+	if (pkt == NULL || nexthop == NULL || net_pkt_iface(pkt) == NULL) {
 		return -EINVAL;
 	}
 
-	net_pkt_set_forwarding(pkt, true);
+	if (net_pkt_forwarding(pkt)) {
+		struct net_ipv4_hdr *hdr = NET_IPV4_HDR(pkt);
+		uint16_t chksum = 0U;
+		int ret;
+
+		if (hdr == NULL) {
+			return -EINVAL;
+		}
+
+		if (hdr->ttl <= 1U) {
+			return -ETIMEDOUT;
+		}
+
+		hdr->ttl--;
+		net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
+
+		hdr->chksum = 0U;
+		ret = net_calc_chksum_ipv4(pkt, &chksum);
+		if (ret < 0) {
+			return ret;
+		}
+
+		hdr->chksum = chksum;
+	}
+
 	net_pkt_set_ipv4_ll_resolve_addr(pkt, nexthop);
 
 	if (net_route_ll_addr_supported(net_pkt_iface(pkt))) {

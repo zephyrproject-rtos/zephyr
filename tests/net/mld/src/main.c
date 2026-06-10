@@ -74,7 +74,8 @@ static struct net_in6_addr peer_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 static struct net_in6_addr mcast_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-static struct net_in6_addr *exp_mcast_group;
+static struct net_in6_addr exp_mcast_group_storage;
+static const struct net_in6_addr *exp_mcast_group;
 static struct net_if *net_iface;
 static bool is_group_joined;
 static bool is_group_left;
@@ -240,13 +241,27 @@ static void test_iface_carrier_off_on(void)
 static void group_joined(struct net_mgmt_event_callback *cb,
 			 uint64_t nm_event, struct net_if *iface)
 {
+	const struct net_in6_addr *group = cb->info;
+
+	ARG_UNUSED(iface);
+
 	if (nm_event != NET_EVENT_IPV6_MCAST_JOIN) {
 		/* Spurious callback. */
 		return;
 	}
 
-	if (exp_mcast_group == NULL ||
-	    net_ipv6_addr_cmp(exp_mcast_group, cb->info)) {
+	if (exp_mcast_group == NULL) {
+		is_group_joined = true;
+
+		k_sem_give(&wait_joined);
+		return;
+	}
+
+	if (group == NULL || cb->info_length != sizeof(*group)) {
+		return;
+	}
+
+	if (net_ipv6_addr_cmp(exp_mcast_group, group)) {
 		is_group_joined = true;
 
 		k_sem_give(&wait_joined);
@@ -256,13 +271,27 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 static void group_left(struct net_mgmt_event_callback *cb,
 		       uint64_t nm_event, struct net_if *iface)
 {
+	const struct net_in6_addr *group = cb->info;
+
+	ARG_UNUSED(iface);
+
 	if (nm_event != NET_EVENT_IPV6_MCAST_LEAVE) {
 		/* Spurious callback. */
 		return;
 	}
 
-	if (exp_mcast_group == NULL ||
-	    net_ipv6_addr_cmp(exp_mcast_group, cb->info)) {
+	if (exp_mcast_group == NULL) {
+		is_group_left = true;
+
+		k_sem_give(&wait_left);
+		return;
+	}
+
+	if (group == NULL || cb->info_length != sizeof(*group)) {
+		return;
+	}
+
+	if (net_ipv6_addr_cmp(exp_mcast_group, group)) {
 		is_group_left = true;
 
 		k_sem_give(&wait_left);
@@ -669,7 +698,8 @@ static void verify_allnodes_on_iface_event(void (*action)(void))
 	k_sem_reset(&wait_joined);
 
 	is_group_joined = false;
-	exp_mcast_group = &addr;
+	exp_mcast_group_storage = addr;
+	exp_mcast_group = &exp_mcast_group_storage;
 	report_handler = &handler;
 
 	action();
@@ -732,7 +762,8 @@ static void verify_solicit_node_on_iface_event(void (*action)(void))
 	k_sem_reset(&wait_joined);
 
 	is_group_joined = false;
-	exp_mcast_group = &addr;
+	exp_mcast_group_storage = addr;
+	exp_mcast_group = &exp_mcast_group_storage;
 	report_handler = &handler;
 
 	action();
