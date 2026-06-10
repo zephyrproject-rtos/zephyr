@@ -1101,6 +1101,64 @@ ZTEST(net_socket_quic, test_083_client_early_data_decision_tracks_encrypted_exte
 		     "Rejected 0-RTT must be recorded for replay fallback");
 }
 
+/* Ticket lifetime used when seeding the server ticket cache in the unit tests
+ * below (matches the production QUIC_SESSION_TICKET_LIFETIME_SEC, kept local as
+ * that define is internal to quic_tls.c).
+ */
+#define QUIC_SESSION_TICKET_LIFETIME_SEC_TEST 86400U
+
+/* A server session ticket must be single-use: once consumed (after the binder
+ * is verified) a replayed ClientHello carrying the same ticket can no longer
+ * resume the connection or replay its 0-RTT data (RFC 8446 8.1).
+ */
+ZTEST(net_socket_quic, test_086_server_ticket_single_use)
+{
+	static const uint8_t ticket[32] = {
+		0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6, 0xa7,
+		0xa8, 0xa9, 0xaa, 0xab, 0xac, 0xad, 0xae, 0xaf,
+		0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5, 0xb6, 0xb7,
+		0xb8, 0xb9, 0xba, 0xbb, 0xbc, 0xbd, 0xbe, 0xbf,
+	};
+	static const uint8_t psk[32] = {
+		0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+		0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10,
+		0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18,
+		0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20,
+	};
+	int ret;
+
+	ret = tls_server_ticket_cache_store(ticket, sizeof(ticket), psk, sizeof(psk),
+					    0x1301, QUIC_SESSION_TICKET_LIFETIME_SEC_TEST,
+					    0x12345678U, 4096U);
+	zassert_ok(ret, "Failed to store server session ticket (%d)", ret);
+
+	zassert_true(tls_server_ticket_cache_lookup(ticket, sizeof(ticket), NULL),
+		     "Stored ticket must be found before use");
+
+	tls_server_ticket_cache_consume(ticket, sizeof(ticket));
+
+	zassert_false(tls_server_ticket_cache_lookup(ticket, sizeof(ticket), NULL),
+		      "Consumed ticket must not be reusable (0-RTT replay protection)");
+}
+
+/* 0-RTT is only accepted when the age the client reports for the ticket is
+ * close to the age the server expects (RFC 8446 8.2).
+ */
+ZTEST(net_socket_quic, test_087_server_ticket_age_freshness)
+{
+	const uint64_t issued_at_ms = 1000U;
+	const uint32_t age_add = 0x40000000U;
+	const uint64_t now_ms = issued_at_ms + 2000U; /* 2s after issue */
+
+	zassert_true(tls_ticket_age_acceptable(issued_at_ms, age_add,
+					       2000U + age_add, now_ms),
+		     "Ticket age matching the expected age must be accepted");
+
+	zassert_false(tls_ticket_age_acceptable(issued_at_ms, age_add,
+						120000U + age_add, now_ms),
+		      "Ticket age far outside the freshness window must be rejected");
+}
+
 ZTEST(net_socket_quic, test_084_rejected_early_data_clears_inflight_tracking)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
