@@ -3,6 +3,8 @@
 
 if SOC_MIMXRT595S_CM33
 
+rsource "../../common/Kconfig.defconfig.nvic"
+
 config FLEXSPI_CONFIG_BLOCK_OFFSET
 	default 0x400
 
@@ -11,11 +13,6 @@ config CODE_DATA_RELOCATION_SRAM
 
 config ROM_START_OFFSET
 	default 0x1200 if NXP_IMXRT_BOOT_HEADER
-
-# The PVT Sensor uses IRQ #75.  For more details, see
-# https://www.nxp.com/design/design-center/software/embedded-software/application-software-packs/application-software-pack-dynamic-voltage-scaling-using-pvt-sensor:APP-SW-PACK-DVS-PVT-SENSOR
-config NUM_IRQS
-	default 76
 
 if MBEDTLS
 #

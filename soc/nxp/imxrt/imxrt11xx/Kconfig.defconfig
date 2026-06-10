@@ -3,8 +3,7 @@
 
 if SOC_SERIES_IMXRT11XX
 
-config NUM_IRQS
-	default 218
+rsource "../../common/Kconfig.defconfig.nvic"
 
 config GPIO
 	default y
