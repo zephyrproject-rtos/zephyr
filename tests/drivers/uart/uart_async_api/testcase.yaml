@@ -3,6 +3,7 @@ common:
     - stamp_c3
     - wio_terminal
     - xiao_esp32c3
+    - nrf5340dk/nrf5340/cpunet
   tags:
     - drivers
     - uart
