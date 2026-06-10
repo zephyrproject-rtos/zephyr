@@ -88,7 +88,7 @@ __weak const struct xtensa_mpu_mem_type_region xtensa_mpu_mem_type_ranges[] = {
 	{
 		.start = 0x00000000,
 		.end = 0xFFFFFFFF,
-		.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE,
+		.memory_type = XTENSA_MPU_DEFAULT_MEMORY_TYPE,
 	},
 };
 

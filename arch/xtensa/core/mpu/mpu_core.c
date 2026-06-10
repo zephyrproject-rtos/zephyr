@@ -81,7 +81,7 @@ static struct k_spinlock xtensa_mpu_lock;
  */
 static uint32_t find_memory_type(const uintptr_t start, const uintptr_t end)
 {
-	uint16_t type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
+	uint16_t type = XTENSA_MPU_DEFAULT_MEMORY_TYPE;
 
 	/* Need to go through the whole list as it is possible that later
 	 * entry in the array overrides previous entries, similar to how
@@ -295,11 +295,11 @@ static bool consolidate_entries(struct xtensa_mpu_entry *entries, uint8_t *first
 		entry_to_be_removed->as.raw = 0;
 		entry_to_be_removed->at.raw = 0;
 
-		/* No access at all for both kernel and user modes. */
-		entry_to_be_removed->at.p.access_rights = XTENSA_MPU_ACCESS_P_NA_U_NA;
+		/* Use default access rights for disabled entries. */
+		entry_to_be_removed->at.p.access_rights = XTENSA_MPU_DEFAULT_ACCESS_RIGHTS;
 
 		/* Use default memory type for disabled entries. */
-		entry_to_be_removed->at.p.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
+		entry_to_be_removed->at.p.memory_type = XTENSA_MPU_DEFAULT_MEMORY_TYPE;
 
 		sort_entries(entries, new_first);
 
@@ -389,8 +389,8 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 			xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
 					     access_rights, memory_type);
 			xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
-					     XTENSA_MPU_ACCESS_P_NA_U_NA,
-					     CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE);
+					     XTENSA_MPU_DEFAULT_ACCESS_RIGHTS,
+					     XTENSA_MPU_DEFAULT_MEMORY_TYPE);
 			first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 2;
 		}
 
@@ -623,11 +623,11 @@ void xtensa_mpu_init(void)
 		/* Segment value must correspond to the index. */
 		ent.at.p.segment = entry;
 
-		/* No access at all for both kernel and user modes. */
-		ent.at.p.access_rights = XTENSA_MPU_ACCESS_P_NA_U_NA;
+		/* Use default access rights for disabled entries. */
+		ent.at.p.access_rights = XTENSA_MPU_DEFAULT_ACCESS_RIGHTS;
 
 		/* Use default memory type for disabled entries. */
-		ent.at.p.memory_type = CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE;
+		ent.at.p.memory_type = XTENSA_MPU_DEFAULT_MEMORY_TYPE;
 
 		xtensa_mpu_map_fg_kernel.entries[entry] = ent;
 	}
