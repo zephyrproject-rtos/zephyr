@@ -84,7 +84,7 @@ static void mcux_stm_timer_isr(const void *arg)
 	sys_clock_announce_locked((int32_t)delta_ticks, key);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -99,10 +99,6 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	if (ticks == K_TICKS_FOREVER) {
 		cycles = cycles_max;
 	} else {
-		if (ticks < 0) {
-			ticks = 0;
-		}
-
 		uint64_t wait_ticks = (uint64_t)last_elapsed + (uint64_t)ticks;
 		uint64_t wait_cycles = wait_ticks * (uint64_t)cycles_per_tick;
 

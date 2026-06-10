@@ -302,7 +302,7 @@ static inline uint32_t z_clock_lptim_getcounter(void)
 	return lp_time;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	/* new LPTIM AutoReload value to set (aligned on Kernel ticks) */
 	uint32_t next_arr = 0;
@@ -388,7 +388,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 	/* passing ticks==1 means "announce the next tick",
-	 * ticks value of zero (or even negative) is legal and
+	 * ticks value of zero is legal and
 	 * treated identically: it simply indicates the kernel would like the
 	 * next tick announcement as soon as possible.
 	 */

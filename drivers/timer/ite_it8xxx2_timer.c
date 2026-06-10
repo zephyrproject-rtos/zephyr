@@ -223,7 +223,7 @@ static void free_run_timer_overflow_isr(const void *unused)
 	 */
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	uint32_t hw_cnt;
 

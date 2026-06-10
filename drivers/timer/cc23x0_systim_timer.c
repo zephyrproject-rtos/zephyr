@@ -52,7 +52,7 @@ static int sys_clock_driver_init(void);
 /*
  * Set system clock timeout.
  */
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 

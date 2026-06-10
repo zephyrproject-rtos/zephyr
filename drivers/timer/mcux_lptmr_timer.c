@@ -66,7 +66,7 @@ static inline uint32_t counter_delta(uint32_t now, uint32_t then)
 	return (now - then) & COUNTER_MAX;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 

@@ -135,7 +135,7 @@ uint64_t sys_clock_cycle_get_64(void)
 	return (((uint64_t)h0) << 32) | l;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	/* Compute desired expiration time */
 	uint64_t now = sys_clock_cycle_get_64();
