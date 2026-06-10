@@ -1207,6 +1207,71 @@ ZTEST(net_socket_quic, test_085_rejected_early_data_disarms_send_path)
 		      "Rejected early data must fall back to application keys");
 }
 
+/* The server must enforce the negotiated 0-RTT early-data limit on the
+ * received STREAM frame length before the bytes are delivered to the stream,
+ * so data beyond max_early_data_size never reaches the application, even
+ * transiently (RFC 9001 4.6.1). handle_stream_frame() calls
+ * quic_track_early_data_bytes() on the received frame length ahead of
+ * quic_stream_receive_data(); this exercises that accounting decision.
+ */
+ZTEST(net_socket_quic, test_088_server_early_data_limit_enforced)
+{
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	int ret;
+
+	ep->is_server = true;
+	ep->crypto.tls.early_data_accepted = true;
+	ep->crypto.tls.max_early_data_size = 16U;
+	ep->crypto.tls.early_data_bytes_received = 0U;
+
+	if (!IS_ENABLED(CONFIG_QUIC_0RTT)) {
+		/* With 0-RTT compiled out, any early-data STREAM byte is a
+		 * protocol violation regardless of the accounting fields.
+		 */
+		ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 1U);
+		zassert_equal(ret, -EPROTO,
+			      "0-RTT disabled must reject early data (%d)", ret);
+		return;
+	}
+
+	/* Data within the limit is accepted and accumulated. */
+	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 10U);
+	zassert_ok(ret, "Early data within the limit must be accepted (%d)", ret);
+	zassert_equal(ep->crypto.tls.early_data_bytes_received, 10U,
+		      "Accepted early data must be counted");
+
+	/* Reaching the limit exactly is still allowed. */
+	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 6U);
+	zassert_ok(ret, "Early data up to the limit must be accepted (%d)", ret);
+	zassert_equal(ep->crypto.tls.early_data_bytes_received, 16U,
+		      "Early data at the limit must be counted");
+
+	/* One byte past the negotiated limit is a protocol violation and must
+	 * not be counted (the connection is torn down instead of delivering).
+	 */
+	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 1U);
+	zassert_equal(ret, -EPROTO,
+		      "Early data over the limit must be rejected (%d)", ret);
+	zassert_equal(ep->crypto.tls.early_data_bytes_received, 16U,
+		      "Over-limit early data must not be counted");
+
+	/* A single frame larger than the whole limit must also be rejected
+	 * before any byte is counted.
+	 */
+	ep->crypto.tls.early_data_bytes_received = 0U;
+	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 17U);
+	zassert_equal(ret, -EPROTO,
+		      "Oversized early-data frame must be rejected (%d)", ret);
+	zassert_equal(ep->crypto.tls.early_data_bytes_received, 0U,
+		      "Rejected oversized frame must not be counted");
+
+	/* Early data before the server accepted 0-RTT is a protocol violation. */
+	ep->crypto.tls.early_data_accepted = false;
+	ret = quic_track_early_data_bytes(ep, QUIC_FRAME_TYPE_STREAM_BASE, 1U);
+	zassert_equal(ret, -EPROTO,
+		      "Early data without acceptance must be rejected (%d)", ret);
+}
+
 ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
