@@ -1587,7 +1587,13 @@ static bool thread_obj_validate(struct k_thread *thread)
 #ifdef CONFIG_LOG
 		k_object_dump_error(ret, thread, ko, K_OBJ_THREAD);
 #endif /* CONFIG_LOG */
-		K_OOPS(K_SYSCALL_VERIFY_MSG(ret, "access denied"));
+		/* ret is a non-zero error code here (the 0 and -EINVAL cases
+		 * are handled above), so this branch must always oops. Passing
+		 * ret as the "verify" expression would treat the failure code as
+		 * success and fall through to CODE_UNREACHABLE; verify ret == 0
+		 * so the oops is actually raised.
+		 */
+		K_OOPS(K_SYSCALL_VERIFY_MSG(ret == 0, "access denied"));
 	}
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 }
