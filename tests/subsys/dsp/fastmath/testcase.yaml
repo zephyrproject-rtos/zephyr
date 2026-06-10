@@ -1,0 +1,10 @@
+# Copyright (c) 2026 James Roy <rruuaanng@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+tests:
+  zdsp.fastmath:
+    filter: CONFIG_FULL_LIBC_SUPPORTED or CONFIG_ARCH_POSIX
+    integration_platforms:
+      - native_sim
+    tags: zdsp
+    min_flash: 128
+    min_ram: 64

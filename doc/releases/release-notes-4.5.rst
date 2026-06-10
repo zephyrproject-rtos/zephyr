@@ -152,6 +152,15 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* DSP
+
+  * :c:func:`zdsp_sin_q15`
+  * :c:func:`zdsp_sin_q31`
+  * :c:func:`zdsp_sin_f32`
+  * :c:func:`zdsp_cos_q15`
+  * :c:func:`zdsp_cos_q31`
+  * :c:func:`zdsp_cos_f32`
+
 * Haptics
 
   * :c:enumerator:`haptics_monitor`
