@@ -21,11 +21,21 @@
 #include <instances/r_dtc.h>
 #endif /* CONFIG_SPI_RENESAS_RA_SCI_B_DTC */
 
+#ifdef CONFIG_SPI_RENESAS_RA_SCI_B_DMAC
+#include <instances/r_dmac.h>
+#endif /* CONFIG_SPI_RENESAS_RA_SCI_B_DMAC */
+
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(renesas_ra_spi_sci_b, CONFIG_SPI_LOG_LEVEL);
 
 #include "spi_context.h"
+
+#ifdef CONFIG_SPI_RENESAS_RA_SCI_B_DTC
+#define TRANSFER_INFO_ALIGNMENT DTC_TRANSFER_INFO_ALIGNMENT
+#else
+#define TRANSFER_INFO_ALIGNMENT
+#endif
 
 struct spi_renesas_ra_sci_b_config {
 	const struct pinctrl_dev_config *pcfg;
@@ -39,21 +49,35 @@ struct spi_renesas_ra_sci_b_data {
 #ifdef CONFIG_SPI_RENESAS_RA_SCI_B_INTERRUPT
 	uint32_t data_len;
 #endif
-#ifdef CONFIG_SPI_RENESAS_RA_SCI_B_DTC
+#if defined(CONFIG_SPI_RENESAS_RA_SCI_B_DTC) || defined(CONFIG_SPI_RENESAS_RA_SCI_B_DMAC)
 	/* RX */
 	struct st_transfer_instance rx_transfer;
-	struct st_dtc_instance_ctrl rx_transfer_ctrl;
-	struct st_transfer_info rx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
+	struct st_transfer_info rx_transfer_info TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg rx_transfer_cfg;
-	struct st_dtc_extended_cfg rx_transfer_cfg_extend;
 
 	/* TX */
 	struct st_transfer_instance tx_transfer;
-	struct st_dtc_instance_ctrl tx_transfer_ctrl;
-	struct st_transfer_info tx_transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
+	struct st_transfer_info tx_transfer_info TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg tx_transfer_cfg;
-	struct st_dtc_extended_cfg tx_transfer_cfg_extend;
-#endif /* CONFIG_SPI_RENESAS_RA_SCI_B_DTC */
+#endif /* CONFIG_SPI_RENESAS_RA_SCI_B_DTC || CONFIG_SPI_RENESAS_RA_SCI_B_DMAC */
+#if defined(CONFIG_SPI_RENESAS_RA_SCI_B_DTC)
+	/* DTC RX */
+	struct st_dtc_instance_ctrl rx_dtc_ctrl;
+	struct st_dtc_extended_cfg rx_dtc_cfg_extend;
+
+	/* DTC TX */
+	struct st_dtc_instance_ctrl tx_dtc_ctrl;
+	struct st_dtc_extended_cfg tx_dtc_cfg_extend;
+#endif
+#if defined(CONFIG_SPI_RENESAS_RA_SCI_B_DMAC)
+	/* DMAC RX */
+	struct st_dmac_instance_ctrl rx_dmac_ctrl;
+	struct st_dmac_extended_cfg rx_dmac_cfg_extend;
+
+	/* DMAC TX */
+	struct st_dmac_instance_ctrl tx_dmac_ctrl;
+	struct st_dmac_extended_cfg tx_dmac_cfg_extend;
+#endif
 	sci_b_spi_instance_ctrl_t fsp_ctrl;
 	spi_cfg_t fsp_cfg;
 	sci_b_spi_extended_cfg_t fsp_ext_cfg;
@@ -65,6 +89,12 @@ extern void sci_b_spi_txi_isr(void);
 extern void sci_b_spi_rxi_isr(void);
 extern void sci_b_spi_tei_isr(void);
 extern void sci_b_spi_eri_isr(void);
+#endif
+
+#ifdef CONFIG_SPI_RENESAS_RA_SCI_B_DMAC
+extern void dmac_int_isr(void);
+extern void sci_b_spi_tx_dmac_callback(sci_b_spi_instance_ctrl_t const *const p_ctrl);
+extern void sci_b_spi_rx_dmac_callback(sci_b_spi_instance_ctrl_t const *const p_ctrl);
 #endif
 
 #define CS_GPIO_LOW_WHEN_ACTIVE  true
@@ -575,27 +605,36 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 #define EVENT_SCI_TXI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TXI))
 #define EVENT_SCI_TEI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _TEI))
 #define EVENT_SCI_ERI(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SCI, channel, _ERI))
+#define EVENT_DMAC_INT(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_DMAC, channel, _INT))
+
+#define SPI_SCI_B_DMAC_IRQ(index, dir)                                                             \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                             \
+		   (DT_IRQ_BY_IDX(DT_INST_DMAS_CTLR_BY_NAME(index, dir),                           \
+				  DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                  \
+				  irq)),                                                           \
+		   (FSP_INVALID_VECTOR))
+
+#define SPI_SCI_B_DMAC_IPL(index, dir)                                                             \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                             \
+		   (DT_IRQ_BY_IDX(DT_INST_DMAS_CTLR_BY_NAME(index, dir),                           \
+				  DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                  \
+				  priority)),                                                      \
+		   (BSP_IRQ_DISABLED))
+
+#define SPI_SCI_B_ASSERT_NO_CONFLICT(index, dir)                                                   \
+	BUILD_ASSERT(!(DT_INST_DMAS_HAS_NAME(index, dir) &&                                        \
+		       DT_INST_PROP_OR(index, dir##_dtc, false)),                                  \
+		      "Cannot use both DMAS and " #dir "-dtc for the same direction")
 
 #ifdef CONFIG_SPI_RENESAS_RA_SCI_B_INTERRUPT
 
 #define SPI_RENESAS_RA_SCI_B_IRQ_CONFIGURE(index)                                                  \
 	do {                                                                                       \
-                                                                                                   \
-		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =                    \
-			EVENT_SCI_RXI(DT_INST_PROP(index, channel));                               \
-		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)] =                    \
-			EVENT_SCI_TXI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq)] =                    \
 			EVENT_SCI_TEI(DT_INST_PROP(index, channel));                               \
 		R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq)] =                    \
 			EVENT_SCI_ERI(DT_INST_PROP(index, channel));                               \
                                                                                                    \
-		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),                       \
-			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),                  \
-			    sci_b_spi_rxi_isr, DEVICE_DT_INST_GET(index), 0);                      \
-		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),                       \
-			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority),                  \
-			    sci_b_spi_txi_isr, DEVICE_DT_INST_GET(index), 0);                      \
 		IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq),                       \
 			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, priority),                  \
 			    sci_b_spi_tei_isr, DEVICE_DT_INST_GET(index), 0);                      \
@@ -603,10 +642,45 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 			    DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, priority),                  \
 			    sci_b_spi_eri_isr, DEVICE_DT_INST_GET(index), 0);                      \
                                                                                                    \
-		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq));                       \
-		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq));                       \
 		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), eri, irq));                       \
 		irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), tei, irq));                       \
+                                                                                                   \
+		/* Enable DMAC interrupt instead of TXI/RXI for DMA transfers */                   \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),                                      \
+		(                                                                                  \
+			R_ICU->IELSR[SPI_SCI_B_DMAC_IRQ(index, rx)] = EVENT_DMAC_INT(              \
+					DT_INST_DMAS_CELL_BY_NAME(index, rx, channel));            \
+			IRQ_CONNECT(SPI_SCI_B_DMAC_IRQ(index, rx),                                 \
+					SPI_SCI_B_DMAC_IPL(index, rx),                             \
+					dmac_int_isr, NULL, 0);                                    \
+			irq_enable(SPI_SCI_B_DMAC_IRQ(index, rx));                                 \
+		),                                                                                 \
+		(                                                                                  \
+			R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)] =            \
+				EVENT_SCI_RXI(DT_INST_PROP(index, channel));                       \
+			IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq),               \
+					DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, priority),      \
+					sci_b_spi_rxi_isr, DEVICE_DT_INST_GET(index), 0);          \
+			irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq));               \
+		))                                                                                 \
+                                                                                                   \
+		COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                                      \
+		(                                                                                  \
+			R_ICU->IELSR[SPI_SCI_B_DMAC_IRQ(index, tx)] = EVENT_DMAC_INT(              \
+					DT_INST_DMAS_CELL_BY_NAME(index, tx, channel));            \
+			IRQ_CONNECT(SPI_SCI_B_DMAC_IRQ(index, tx),                                 \
+					SPI_SCI_B_DMAC_IPL(index, tx),                             \
+					dmac_int_isr, NULL, 0);                                    \
+			irq_enable(SPI_SCI_B_DMAC_IRQ(index, tx));                                 \
+		),                                                                                 \
+		(                                                                                  \
+			R_ICU->IELSR[DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)] =            \
+				EVENT_SCI_TXI(DT_INST_PROP(index, channel));                       \
+			IRQ_CONNECT(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq),               \
+					DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, priority),      \
+					sci_b_spi_txi_isr, DEVICE_DT_INST_GET(index), 0);          \
+			irq_enable(DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq));               \
+		))                                                                                 \
 	} while (0)
 #else
 
@@ -614,18 +688,93 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 
 #endif
 
-#ifndef CONFIG_SPI_RENESAS_RA_SCI_B_DTC
-#define SPI_RENESAS_RA_SCI_B_DTC_CONFIGURE(index)
-#define SPI_RENESAS_RA_SCI_B_DTC_INIT(index)
+#ifndef CONFIG_SPI_RENESAS_RA_SCI_B_DMAC
+#define SPI_RENESAS_RA_SCI_B_DMAC_CFG_EXTEND(index)
+#define SPI_RENESAS_RA_SCI_B_DMAC_CALLBACKS(index)
 #else
-#define SPI_RENESAS_RA_SCI_B_DTC_INIT(index)                                                       \
+#define SPI_RENESAS_RA_SCI_B_DMAC_CFG_EXTEND(index)                                                \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx), (                                             \
+	.tx_dmac_cfg_extend = {                                                                    \
+		.activation_source = EVENT_SCI_TXI(DT_INST_PROP(index, channel)),                  \
+		.channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                           \
+				      (DT_INST_DMAS_CELL_BY_NAME(index, tx, channel)),             \
+				      (0)),                                                        \
+		.irq = SPI_SCI_B_DMAC_IRQ(index, tx),                                              \
+		.ipl = SPI_SCI_B_DMAC_IPL(index, tx),                                              \
+		.offset = 1, .src_buffer_size = 1},                                                \
+	))                                                                                         \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx), (                                             \
+	.rx_dmac_cfg_extend = {                                                                    \
+		.activation_source = EVENT_SCI_RXI(DT_INST_PROP(index, channel)),		   \
+		.channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),                           \
+				      (DT_INST_DMAS_CELL_BY_NAME(index, rx, channel)),             \
+				      (0)),                                                        \
+		.irq = SPI_SCI_B_DMAC_IRQ(index, rx),                                              \
+		.ipl = SPI_SCI_B_DMAC_IPL(index, rx),                                              \
+		.offset = 1, .src_buffer_size = 1},                                                \
+	))
+#define SPI_RENESAS_RA_SCI_B_DMAC_CALLBACKS(index)                                                 \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx), (                                             \
+		static void spi_renesas_ra_sci_b_dmac_tx_cb_##index(dmac_callback_args_t *p_args)  \
+		{                                                                                  \
+			FSP_PARAMETER_NOT_USED(p_args);                                            \
+			sci_b_spi_tx_dmac_callback(&spi_renesas_ra_sci_b_data_##index.fsp_ctrl);   \
+		}                                                                                  \
+	))                                                                                         \
+	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx), (                                             \
+		static void spi_renesas_ra_sci_b_dmac_rx_cb_##index(dmac_callback_args_t *p_args)  \
+		{                                                                                  \
+			FSP_PARAMETER_NOT_USED(p_args);                                            \
+			sci_b_spi_rx_dmac_callback(&spi_renesas_ra_sci_b_data_##index.fsp_ctrl);   \
+		}                                                                                  \
+	))
+#endif /* CONFIG_SPI_RENESAS_RA_SCI_B_DMAC */
+
+#ifndef CONFIG_SPI_RENESAS_RA_SCI_B_DTC
+#define SPI_RENESAS_RA_SCI_B_DTC_CFG_EXTEND(index)
+#else
+#define SPI_RENESAS_RA_SCI_B_DTC_CFG_EXTEND(index)                                                 \
+	IF_ENABLED(DT_INST_PROP_OR(index, rx_dtc, false),                                          \
+		   (.rx_dtc_cfg_extend = {.activation_source =                                     \
+					  DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)},))      \
+	IF_ENABLED(DT_INST_PROP_OR(index, tx_dtc, false),                                          \
+		   (.tx_dtc_cfg_extend = {.activation_source =                                     \
+					   DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)},))
+#endif
+
+#if defined(CONFIG_SPI_RENESAS_RA_SCI_B_DMAC) || defined(CONFIG_SPI_RENESAS_RA_SCI_B_DTC)
+/*
+ * Select a transfer value for a given direction (@p dir: rx or tx).
+ * - If instance has DMAS for @p dir: use @p dmac_val
+ * - Else if instance has DTC property for @p dir: use @p dtc_val
+ * - Else: NULL
+ */
+#define SPI_RENESAS_RA_SCI_B_DMAC_OR_DTC(index, dir, dmac_val, dtc_val)                            \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),                                             \
+		    (dmac_val),                                                                    \
+		    (COND_CODE_1(DT_INST_PROP_OR(index, dir##_dtc, false),                         \
+				 (dtc_val),                                                        \
+				 (NULL))))
+
+#define SPI_RENESAS_RA_SCI_B_TRANSFER_INIT(index)                                                  \
 	do {                                                                                       \
-		spi_renesas_ra_sci_b_data_##index.fsp_cfg.p_transfer_rx =                          \
-			&spi_renesas_ra_sci_b_data_##index.rx_transfer;                            \
-		spi_renesas_ra_sci_b_data_##index.fsp_cfg.p_transfer_tx =                          \
-			&spi_renesas_ra_sci_b_data_##index.tx_transfer;                            \
+		if (DT_INST_PROP_OR(index, rx_dtc, false) || DT_INST_DMAS_HAS_NAME(index, rx)) {   \
+			spi_renesas_ra_sci_b_data_##index.fsp_cfg.p_transfer_rx =                  \
+				&spi_renesas_ra_sci_b_data_##index.rx_transfer;                    \
+		}                                                                                  \
+		if (DT_INST_PROP_OR(index, tx_dtc, false) || DT_INST_DMAS_HAS_NAME(index, tx)) {   \
+			spi_renesas_ra_sci_b_data_##index.fsp_cfg.p_transfer_tx =                  \
+				&spi_renesas_ra_sci_b_data_##index.tx_transfer;                    \
+		}                                                                                  \
+		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx),                                       \
+			(spi_renesas_ra_sci_b_data_##index.rx_dmac_cfg_extend.p_callback =         \
+				spi_renesas_ra_sci_b_dmac_rx_cb_##index;))                         \
+		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx),                                       \
+			(spi_renesas_ra_sci_b_data_##index.tx_dmac_cfg_extend.p_callback =         \
+				spi_renesas_ra_sci_b_dmac_tx_cb_##index;))                         \
 	} while (0)
-#define SPI_RENESAS_RA_SCI_B_DTC_CONFIGURE(index)                                                  \
+
+#define SPI_RENESAS_RA_SCI_B_TRANSFER_CONFIGURE(index)                                             \
 	.rx_transfer_info =                                                                        \
 		{                                                                                  \
 			.transfer_settings_word_b.dest_addr_mode = TRANSFER_ADDR_MODE_INCREMENTED, \
@@ -640,18 +789,21 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 			.num_blocks = 0,                                                           \
 			.length = 0,                                                               \
 	},                                                                                         \
-	.rx_transfer_cfg_extend = {.activation_source =                                            \
-					   DT_IRQ_BY_NAME(DT_INST_PARENT(index), rxi, irq)},       \
 	.rx_transfer_cfg =                                                                         \
 		{                                                                                  \
 			.p_info = &spi_renesas_ra_sci_b_data_##index.rx_transfer_info,             \
-			.p_extend = &spi_renesas_ra_sci_b_data_##index.rx_transfer_cfg_extend,     \
+			.p_extend = SPI_RENESAS_RA_SCI_B_DMAC_OR_DTC(index, rx,                    \
+					(&spi_renesas_ra_sci_b_data_##index.rx_dmac_cfg_extend),   \
+					(&spi_renesas_ra_sci_b_data_##index.rx_dtc_cfg_extend)),   \
 	},                                                                                         \
 	.rx_transfer =                                                                             \
 		{                                                                                  \
-			.p_ctrl = &spi_renesas_ra_sci_b_data_##index.rx_transfer_ctrl,             \
+			.p_ctrl = SPI_RENESAS_RA_SCI_B_DMAC_OR_DTC(index, rx,                      \
+					      (&spi_renesas_ra_sci_b_data_##index.rx_dmac_ctrl),   \
+					      (&spi_renesas_ra_sci_b_data_##index.rx_dtc_ctrl)),   \
 			.p_cfg = &spi_renesas_ra_sci_b_data_##index.rx_transfer_cfg,               \
-			.p_api = &g_transfer_on_dtc,                                               \
+			.p_api = SPI_RENESAS_RA_SCI_B_DMAC_OR_DTC(index, rx,                       \
+					     (&g_transfer_on_dmac), (&g_transfer_on_dtc)),         \
 	},                                                                                         \
 	.tx_transfer_info =                                                                        \
 		{                                                                                  \
@@ -667,20 +819,27 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 			.num_blocks = 0,                                                           \
 			.length = 0,                                                               \
 	},                                                                                         \
-	.tx_transfer_cfg_extend = {.activation_source =                                            \
-					   DT_IRQ_BY_NAME(DT_INST_PARENT(index), txi, irq)},       \
 	.tx_transfer_cfg =                                                                         \
 		{                                                                                  \
 			.p_info = &spi_renesas_ra_sci_b_data_##index.tx_transfer_info,             \
-			.p_extend = &spi_renesas_ra_sci_b_data_##index.tx_transfer_cfg_extend,     \
+			.p_extend = SPI_RENESAS_RA_SCI_B_DMAC_OR_DTC(index, tx,                    \
+					(&spi_renesas_ra_sci_b_data_##index.tx_dmac_cfg_extend),   \
+					(&spi_renesas_ra_sci_b_data_##index.tx_dtc_cfg_extend)),   \
 	},                                                                                         \
 	.tx_transfer = {                                                                           \
-		.p_ctrl = &spi_renesas_ra_sci_b_data_##index.tx_transfer_ctrl,                     \
+		.p_ctrl = SPI_RENESAS_RA_SCI_B_DMAC_OR_DTC(index, tx,                              \
+				      (&spi_renesas_ra_sci_b_data_##index.tx_dmac_ctrl),           \
+				      (&spi_renesas_ra_sci_b_data_##index.tx_dtc_ctrl)),           \
 		.p_cfg = &spi_renesas_ra_sci_b_data_##index.tx_transfer_cfg,                       \
-		.p_api = &g_transfer_on_dtc,                                                       \
-	},
-#endif
-
+		.p_api = SPI_RENESAS_RA_SCI_B_DMAC_OR_DTC(index, tx,                               \
+				     (&g_transfer_on_dmac), (&g_transfer_on_dtc)),                 \
+	},                                                                                         \
+	SPI_RENESAS_RA_SCI_B_DTC_CFG_EXTEND(index)                                                 \
+	SPI_RENESAS_RA_SCI_B_DMAC_CFG_EXTEND(index)
+#else
+#define SPI_RENESAS_RA_SCI_B_TRANSFER_INIT(index)
+#define SPI_RENESAS_RA_SCI_B_TRANSFER_CONFIGURE(index)
+#endif /* CONFIG_SPI_RENESAS_RA_SCI_B_DMAC || CONFIG_SPI_RENESAS_RA_SCI_B_DTC */
 #define RENESAS_RA_SPI_SCI_B_INIT(index)                                                           \
                                                                                                    \
 	PINCTRL_DT_DEFINE(DT_INST_PARENT(index));                                                  \
@@ -705,14 +864,22 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 		.fsp_cfg =                                                                         \
 			{                                                                          \
 				.channel = DT_INST_PROP(index, channel),                           \
-				.rxi_ipl = SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),     \
-									rxi, priority),            \
-				.rxi_irq = SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),     \
-									rxi, irq),                 \
-				.txi_ipl = SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),     \
-									txi, priority),            \
-				.txi_irq = SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),     \
-									txi, irq),                 \
+				.rxi_ipl = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),           \
+					(BSP_IRQ_DISABLED),                                        \
+					(SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),       \
+									rxi, priority))),          \
+				.rxi_irq = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),           \
+					(FSP_INVALID_VECTOR),                                      \
+					(SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),       \
+									rxi, irq))),               \
+				.txi_ipl = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),           \
+					(BSP_IRQ_DISABLED),                                        \
+					(SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),       \
+									txi, priority))),          \
+				.txi_irq = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),           \
+					(FSP_INVALID_VECTOR),                                      \
+					(SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),       \
+									txi, irq))),               \
 				.tei_ipl = SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),     \
 									tei, priority),            \
 				.tei_irq = SPI_RENESAS_RA_SCI_B_IRQ_GET(DT_INST_PARENT(index),     \
@@ -723,11 +890,15 @@ static DEVICE_API(spi, spi_renesas_ra_sci_b_driver_api) = {
 									eri, irq),                 \
 				.p_context = (void *)DEVICE_DT_GET(DT_DRV_INST(index)),            \
 			},                                                                         \
-		SPI_RENESAS_RA_SCI_B_DTC_CONFIGURE(index)};                                        \
+		SPI_RENESAS_RA_SCI_B_TRANSFER_CONFIGURE(index)};                                   \
+                                                                                                   \
+	SPI_RENESAS_RA_SCI_B_DMAC_CALLBACKS(index)                                                 \
                                                                                                    \
 	static int spi_renesas_ra_sci_b_init##index(const struct device *dev)                      \
 	{                                                                                          \
-		SPI_RENESAS_RA_SCI_B_DTC_INIT(index);                                              \
+		SPI_SCI_B_ASSERT_NO_CONFLICT(index, tx);                                           \
+		SPI_SCI_B_ASSERT_NO_CONFLICT(index, rx);                                           \
+		SPI_RENESAS_RA_SCI_B_TRANSFER_INIT(index);                                         \
 		int err = spi_renesas_ra_sci_b_init(dev);                                          \
 		if (err != 0) {                                                                    \
 			return err;                                                                \
