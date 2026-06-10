@@ -689,11 +689,15 @@ USB
   renamed to :dtcompatible:`espressif,esp32-usb-otg-fs`. The internal PHY D+/D- pad numbers are
   now provided through the ``phy-dp-pin`` and ``phy-dm-pin`` properties. Out-of-tree devicetrees
   using the old compatible must update the node compatible and add the two pin properties.
-
 * The USB host controller API struct ``uhc_api`` got renamed to :c:struct:`uhc_driver_api`.
   It now also uses :c:macro:`DEVICE_API`. Out-of-tree USB host controller drivers must rename
   their API struct definitions and switch their API instances to ``DEVICE_API(uhc, ...)``.
   (:github:`108414`)
+* :c:func:`uhc_get_ep_properties` got introduced (:github:`110162`)
+* :c:func:`uhc_xfer_alloc` and :c:func:`uhc_xfer_buf_alloc` have an extra ``timeout`` argument.
+  (:github:`110162`)
+* :c:func:`uhc_xfer_alloc_with_buf` got removed in favor of :c:func:`usbh_xfer_alloc_with_buf`.
+  (:github:`110162`)
 
 Video
 =====
@@ -1073,6 +1077,19 @@ LoRaWAN
 
   These ordering requirements do not apply to the LoRaMac-node backend
   (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE`).
+
+USB
+***
+
+* :c:func:`usbh_xfer_buf_add` got introduced.
+  (:github:`110162`)
+* :c:func:`usbh_xfer_alloc`, :c:func:`usbh_xfer_buf_alloc` now take a ``timeout`` argument,
+  (:github:`110162`) Out of tree classes will need to update.
+* :c:func:`usbh_xfer_buf_alloc` now has an extra ``ep`` argument.
+  Out of tree classes will need to update to the new signature. (:github:`110162`)
+  (:github:`110162`) Out of tree classes will need to update.
+* :c:func:`usbh_xfer_alloc_with_buf` got introduced, replacing :c:func:`uhc_xfer_alloc_with_buf`.
+  (:github:`110162`) Out of tree classes will need to update.
 
 Other subsystems
 ****************
