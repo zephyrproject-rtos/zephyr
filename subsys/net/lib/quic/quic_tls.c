@@ -392,7 +392,7 @@ static int tls_compute_external_psk_binder(const uint8_t *psk, size_t psk_len,
 				   psk, psk_len,
 				   early_secret, hash_len);
 	if (ret != 0) {
-		return ret;
+		goto cleanup;
 	}
 
 	ret = quic_hkdf_expand_label_ex(hash_alg,
@@ -402,7 +402,7 @@ static int tls_compute_external_psk_binder(const uint8_t *psk, size_t psk_len,
 					empty_hash, empty_hash_len,
 					binder_key, hash_len);
 	if (ret != 0) {
-		return ret;
+		goto cleanup;
 	}
 
 	ret = quic_hkdf_expand_label_ex(hash_alg,
@@ -412,7 +412,7 @@ static int tls_compute_external_psk_binder(const uint8_t *psk, size_t psk_len,
 					NULL, 0,
 					finished_key, hash_len);
 	if (ret != 0) {
-		return ret;
+		goto cleanup;
 	}
 
 	status = psa_hash_compute(hash_alg,
@@ -420,21 +420,30 @@ static int tls_compute_external_psk_binder(const uint8_t *psk, size_t psk_len,
 				  transcript_hash, sizeof(transcript_hash),
 				  &transcript_hash_len);
 	if (status != PSA_SUCCESS) {
-		return -EIO;
+		ret = -EIO;
+		goto cleanup;
 	}
 
 	ret = tls_compute_hmac(hash_alg, finished_key, hash_len,
 			       transcript_hash, transcript_hash_len,
 			       binder, binder_len, &computed_len);
 	if (ret != 0) {
-		return ret;
+		goto cleanup;
 	}
 
 	if (computed_len != hash_len) {
-		return -EIO;
+		ret = -EIO;
 	}
 
-	return 0;
+cleanup:
+	/* The intermediate PSK-derived key material must not linger on the
+	 * stack after the binder is computed.
+	 */
+	crypto_zero(early_secret, sizeof(early_secret));
+	crypto_zero(binder_key, sizeof(binder_key));
+	crypto_zero(finished_key, sizeof(finished_key));
+
+	return ret;
 }
 
 static int tls_derive_resumption_psk(struct quic_tls_context *ctx,
@@ -792,14 +801,16 @@ static int tls_emit_client_early_traffic_secret(struct quic_tls_context *ctx)
 	ret = quic_derive_secret(ctx, ctx->ks.early_secret,
 				 TLS13_LABEL_C_E_TRAFFIC,
 				 client_early_traffic_secret);
-	if (ret != 0) {
-		return ret;
+	if (ret == 0) {
+		ret = ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_EARLY,
+				     client_early_traffic_secret,
+				     client_early_traffic_secret,
+				     ctx->ks.hash_len);
 	}
 
-	return ctx->secret_cb(ctx->user_data, QUIC_SECRET_LEVEL_EARLY,
-			      client_early_traffic_secret,
-			      client_early_traffic_secret,
-			      ctx->ks.hash_len);
+	crypto_zero(client_early_traffic_secret, sizeof(client_early_traffic_secret));
+
+	return ret;
 }
 
 /*
@@ -1028,6 +1039,7 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 	size_t matched_ticket_psk_len = 0U;
 	const uint8_t *matched_psk;
 	size_t matched_psk_len;
+	int ret = 0;
 
 	if (ext_len < 4U) {
 		return -EINVAL;
@@ -1049,7 +1061,8 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 
 		identities_pos += 2;
 		if (identities_pos + identity_len + 4U > identities_end) {
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 
 		/* Obfuscated ticket age follows the identity. */
@@ -1079,6 +1092,12 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 			 */
 			offer->matched_entry = entry;
 			offer->obfuscated_ticket_age = sys_get_be32(age);
+
+			/* Drop the transient PSK copy in the lookup scratch entry;
+			 * the persistent copies (matched_ticket_psk and
+			 * offer->matched_entry.psk) are wiped at "out".
+			 */
+			crypto_zero(entry.psk, sizeof(entry.psk));
 		}
 
 		identities_pos += identity_len + 4;
@@ -1086,7 +1105,8 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 	}
 
 	if (identities_pos != identities_end) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	binders_len = ((size_t)data[identities_end] << 8) | data[identities_end + 1];
@@ -1095,14 +1115,16 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 	identity_idx = 0U;
 
 	if (binders_end > pos + ext_len) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	while (binders_pos + 1U <= binders_end) {
 		size_t binder_len = data[binders_pos++];
 
 		if (binders_pos + binder_len > binders_end) {
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 
 		if (identity_idx == matched_identity_idx) {
@@ -1115,26 +1137,30 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 	}
 
 	if (binders_pos != binders_end) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	if (matched_identity_idx == UINT16_MAX) {
-		return 0;
+		goto out;
 	}
 
 	psk_hash_alg = PSA_ALG_SHA_256;
 	psk_hash_len = 32U;
 
 	if (matched_binder_len != psk_hash_len) {
-		return -EBADMSG;
+		ret = -EBADMSG;
+		goto out;
 	}
 
 	if (4U + matched_binder_offset > full_msg_len) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	if (!offered_psk_dhe || selected_psk_cipher_suite == 0U) {
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		goto out;
 	}
 
 	matched_psk = offer->matched_session_ticket ? matched_ticket_psk : ctx->psk;
@@ -1144,12 +1170,14 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 					    psk_hash_alg, psk_hash_len,
 					    full_msg, 4U + matched_binder_offset,
 					    expected_binder, sizeof(expected_binder)) != 0) {
-		return -EIO;
+		ret = -EIO;
+		goto out;
 	}
 
 	if (mbedtls_ct_memcmp(expected_binder, &data[matched_binder_offset],
 			      psk_hash_len) != 0) {
-		return -EBADMSG;
+		ret = -EBADMSG;
+		goto out;
 	}
 
 	offer->verified_binder = true;
@@ -1160,7 +1188,16 @@ static int parse_pre_shared_key_ext(struct quic_tls_context *ctx,
 		ctx->psk_configured = true;
 	}
 
-	return 0;
+out:
+	/* The resumption PSK must not linger on the handshake stack after use.
+	 * matched_ticket_psk holds the working copy; offer->matched_entry.psk is
+	 * the copy propagated to the caller, which only needs the ticket id, age
+	 * and ALPN from that entry, not the PSK.
+	 */
+	crypto_zero(matched_ticket_psk, sizeof(matched_ticket_psk));
+	crypto_zero(offer->matched_entry.psk, sizeof(offer->matched_entry.psk));
+
+	return ret;
 }
 
 static int parse_client_hello(struct quic_tls_context *ctx,
@@ -3160,6 +3197,7 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 	ret = tls_derive_resumption_psk(ctx, ticket_nonce, sizeof(ticket_nonce),
 					ticket_psk, sizeof(ticket_psk));
 	if (ret != 0) {
+		crypto_zero(ticket_psk, sizeof(ticket_psk));
 		return ret;
 	}
 
@@ -3170,6 +3208,10 @@ static int quic_tls_send_new_session_ticket(struct quic_tls_context *ctx)
 					    ticket_age_add,
 					    quic_0rtt_enabled() ?
 					    ctx->max_early_data_size : 0U);
+
+	/* The resumption PSK now lives in the ticket cache; drop the stack copy. */
+	crypto_zero(ticket_psk, sizeof(ticket_psk));
+
 	if (ret != 0) {
 		return ret;
 	}
