@@ -1387,4 +1387,16 @@ int process_long_header(struct quic_endpoint *ep,
 			struct quic_long_header_info *info,
 			size_t datagram_len);
 
+/* Server session-ticket cache helpers (single-use / freshness). */
+struct quic_server_ticket_entry;
+int tls_server_ticket_cache_store(const uint8_t *ticket, size_t ticket_len,
+				  const uint8_t *psk, size_t psk_len,
+				  uint16_t cipher_suite, uint32_t ticket_lifetime,
+				  uint32_t ticket_age_add, uint32_t max_early_data_size);
+bool tls_server_ticket_cache_lookup(const uint8_t *ticket, size_t ticket_len,
+				    struct quic_server_ticket_entry *match);
+void tls_server_ticket_cache_consume(const uint8_t *ticket, size_t ticket_len);
+bool tls_ticket_age_acceptable(uint64_t issued_at_ms, uint32_t ticket_age_add,
+			       uint32_t obfuscated_ticket_age, uint64_t now_ms);
+
 #endif /* CONFIG_NET_TEST */
