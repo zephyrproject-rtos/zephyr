@@ -26,6 +26,8 @@
 	status = "okay";
 
 	dut: uart {
+		tx-dtc;
+		rx-dtc;
 		current-speed = <115200>;
 		status = "okay";
 	};
