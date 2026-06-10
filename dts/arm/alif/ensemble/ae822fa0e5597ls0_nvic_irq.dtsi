@@ -1,0 +1,12 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * NVIC interrupt-routing information for AE822FA0E5597LS0: pulls in the
+ * _nvic_irq layer for each resource layer composed by ae822fa0e5597ls0.dtsi.
+ * A board that uses this SoC includes this for RTSS (NVIC) cores.
+ */
+
+#include <alif/ensemble/common/ensemble_common_nvic_irq.dtsi>
