@@ -23,6 +23,8 @@
 	status = "okay";
 
 	spi {
+		rx-dtc;
+		tx-dtc;
 		status = "okay";
 
 		slow@0 {
