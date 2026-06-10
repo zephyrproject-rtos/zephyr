@@ -1269,6 +1269,8 @@ enum quic_secret_level quic_stream_send_level(const struct quic_endpoint *ep);
 int parse_encrypted_extensions(struct quic_tls_context *ctx,
 			       const uint8_t *msg, size_t msg_len);
 int quic_mark_rejected_early_data(struct quic_endpoint *ep);
+int quic_track_early_data_bytes(struct quic_endpoint *ep, uint8_t frame_type,
+				uint64_t data_len);
 
 bool quic_setup_initial_secrets(struct quic_endpoint *ep,
 				const uint8_t *cid, size_t cid_len,

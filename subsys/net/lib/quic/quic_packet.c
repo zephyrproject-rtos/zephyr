@@ -9,8 +9,8 @@ static int quic_send_max_stream_data(struct quic_endpoint *ep,
 static int quic_send_frame_close(struct quic_endpoint *ep, uint8_t frame_type,
 				 uint64_t error_code, const char *reason);
 
-static int quic_track_early_data_bytes(struct quic_endpoint *ep, uint8_t frame_type,
-				       uint64_t data_len)
+ZTESTABLE_STATIC int quic_track_early_data_bytes(struct quic_endpoint *ep, uint8_t frame_type,
+						 uint64_t data_len)
 {
 	struct quic_tls_context *tls = &ep->crypto.tls;
 
@@ -175,8 +175,6 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	uint64_t stream_id;
 	uint64_t offset = 0;
 	uint64_t data_len;
-	uint64_t fc_bytes_received_before;
-	uint64_t early_data_delta;
 	size_t pos = 1;
 	int ret;
 
@@ -306,21 +304,23 @@ static int handle_stream_frame(struct quic_endpoint *ep,
 	}
 
 	if (level == QUIC_SECRET_LEVEL_EARLY) {
+		int early_ret;
+
 		stream->received_early_data = true;
-	}
 
-	fc_bytes_received_before = stream->fc_bytes_received;
-
-	/* Deliver data to the stream */
-	ret = quic_stream_receive_data(stream, offset, &buf[pos], data_len, is_fin);
-	early_data_delta = stream->fc_bytes_received - fc_bytes_received_before;
-	if (level == QUIC_SECRET_LEVEL_EARLY && early_data_delta > 0U) {
-		int early_ret = quic_track_early_data_bytes(ep, frame_type, early_data_delta);
-
+		/* Enforce the early-data limit before delivering the bytes to
+		 * the stream, so data beyond max_early_data_size never reaches
+		 * the application even transiently (RFC 9001 4.6.1). Count the
+		 * received STREAM frame length as the RFC specifies.
+		 */
+		early_ret = quic_track_early_data_bytes(ep, frame_type, data_len);
 		if (early_ret < 0) {
 			return early_ret;
 		}
 	}
+
+	/* Deliver data to the stream */
+	ret = quic_stream_receive_data(stream, offset, &buf[pos], data_len, is_fin);
 	if (ret < 0) {
 		if (ret == -EAGAIN) {
 			/* Out-of-order data. This is not fatal, consume the frame bytes */
