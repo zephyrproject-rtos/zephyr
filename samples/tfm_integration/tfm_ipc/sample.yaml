@@ -52,8 +52,6 @@ tests:
       - bl5340_dvk/nrf5340/cpuapp/ns
       - frdm_mcxn947/mcxn947/cpu0/ns
       - frdm_mcxa577/mcxa577/ns
-      - rd_rw612_bga/rw612/ns
-      - frdm_rw612/rw612/ns
     extra_configs:
       - CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE="EC-P256"
   sample.tfm_ipc.bl2.ecp384:
