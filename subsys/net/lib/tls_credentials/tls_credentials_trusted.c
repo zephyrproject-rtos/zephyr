@@ -38,7 +38,7 @@ static struct tls_credential credentials[CRED_MAX_SLOTS];
 static psa_storage_uid_t credentials_toc[CRED_MAX_SLOTS];
 
 /* A mutex for protecting access to the credentials array. */
-static struct k_mutex credential_lock;
+static K_MUTEX_DEFINE(credential_lock);
 
 /* Construct PSA PS uid from tag & type */
 static inline psa_storage_uid_t tls_credential_get_uid(uint32_t tag,
