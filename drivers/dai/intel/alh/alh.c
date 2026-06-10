@@ -22,6 +22,8 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 #include "alh.h"
 
+#define ALH_ARRAY_INDEX(dir) ((dir) == DAI_DIR_RX ? DAI_DIR_CAPTURE : DAI_DIR_PLAYBACK)
+
 /* global data shared between all alh instances */
 struct dai_alh_global_shared dai_alh_global;
 
@@ -142,7 +144,8 @@ static const struct dai_properties *dai_alh_get_properties(const struct device *
 {
 	struct dai_intel_alh *dp = (struct dai_intel_alh *)dev->data;
 	struct dai_intel_alh_pdata *alh = dai_get_drvdata(dp);
-	struct dai_properties *prop = &alh->props;
+	int array_index = ALH_ARRAY_INDEX(dir);
+	struct dai_properties *prop = &alh->props[array_index];
 	uint32_t offset = dir == DAI_DIR_PLAYBACK ?
 		ALH_TXDA_OFFSET : ALH_RXDA_OFFSET;
 
