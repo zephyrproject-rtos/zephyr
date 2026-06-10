@@ -21,7 +21,7 @@ static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
 					     gpio_pin_t pin,
 					     gpio_flags_t *flags)
 {
-	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_get_config));
+	K_OOPS(K_SYSCALL_OBJ(port, K_OBJ_DRIVER_GPIO));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(flags, sizeof(gpio_flags_t)));
 
 	return z_impl_gpio_pin_get_config(port, pin, flags);
