@@ -881,3 +881,6 @@ Architectures
 
 * ``xtensa_soc_mpu_ranges[]`` and ``xtensa_soc_mpu_ranges_num`` are removed. If SoC or board
   needs its own memory regions at boot, override :c:var:`xtensa_mpu_ranges` instead.
+
+* ``CONFIG_XTENSA_MPU_DEFAULT_MEM_TYPE`` is removed since memory types are now defined via
+  ``xtensa_mpu_mem_type_ranges[]``.
