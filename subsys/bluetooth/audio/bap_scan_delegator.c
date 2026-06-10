@@ -1005,6 +1005,9 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 		/* Terminate PA sync */
 		err = pa_sync_term_request(conn, &internal_state->state);
 		if (err != 0) {
+			LOG_DBG("PA sync term from %p was rejected with reason %d", (void *)conn,
+				err);
+
 			err = k_mutex_lock(&internal_state->mutex, SCAN_DELEGATOR_BUF_SEM_TIMEOUT);
 			__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
@@ -1014,9 +1017,6 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 
 			err = k_mutex_unlock(&internal_state->mutex);
 			__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
-
-			LOG_DBG("PA sync term from %p was rejected with reason %d", (void *)conn,
-				err);
 
 			return BT_GATT_ERR(BT_ATT_ERR_WRITE_REQ_REJECTED);
 		}
