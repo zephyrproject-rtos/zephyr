@@ -528,7 +528,7 @@ static bool qspi_address_is_valid(const struct device *dev, off_t addr,
 	return (addr >= 0) && ((uint64_t)addr + (uint64_t)size <= flash_size);
 }
 
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 /* Must be called inside qspi_lock_thread(). */
 static int stm32_qspi_set_memory_mapped(const struct device *dev)
 {
@@ -605,7 +605,7 @@ static int flash_stm32_qspi_read(const struct device *dev, off_t addr,
 		return 0;
 	}
 
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 	qspi_lock_thread(dev);
 
 	/* Do reads through memory-mapping instead of indirect */
@@ -781,7 +781,7 @@ static int flash_stm32_qspi_write(const struct device *dev, off_t addr,
 
 	qspi_lock_thread(dev);
 
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 	if (stm32_qspi_is_memory_mapped(dev)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_qspi_abort(dev);
@@ -860,7 +860,7 @@ static int flash_stm32_qspi_erase(const struct device *dev, off_t addr,
 	qspi_set_address_size(dev, &cmd_erase);
 	qspi_lock_thread(dev);
 
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 	if (stm32_qspi_is_memory_mapped(dev)) {
 		/* Abort ongoing transfer to force CS high/BUSY deasserted */
 		ret = stm32_qspi_abort(dev);
@@ -1741,7 +1741,7 @@ static int flash_stm32_qspi_init(const struct device *dev)
 		LOG_DBG("Write Un-protected");
 	}
 
-#ifdef CONFIG_STM32_MEMMAP
+#ifdef CONFIG_FLASH_STM32_NOR_MEMMAP
 	ret = stm32_qspi_set_memory_mapped(dev);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable memory-mapped mode: %d", ret);

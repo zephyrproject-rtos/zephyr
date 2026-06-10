@@ -922,7 +922,7 @@ static int set_up_plls(void)
 		LL_RCC_SetAHBPrescaler(LL_RCC_SYSCLK_DIV_1);
 	}
 
-#if defined(CONFIG_STM32_MEMMAP) && defined(CONFIG_BOOTLOADER_MCUBOOT)
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) && defined(CONFIG_BOOTLOADER_MCUBOOT)
 	/*
 	 * Don't disable PLL during application initialization
 	 * that runs in memmap mode when (Q/O)SPI uses PLL

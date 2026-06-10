@@ -3,7 +3,7 @@
 # Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
 
 # keep first
-if(CONFIG_STM32_MEMMAP)
+if(CONFIG_FLASH_STM32_NOR_MEMMAP)
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H745I-DISCO.stldr")
 else()
