@@ -79,9 +79,19 @@ config SPI_RENESAS_RA_SCI_B_INTERRUPT
 	help
 	  Enable Interrupt support for the SCI B SPI Driver of RA family.
 
+config SPI_RENESAS_RA_SCI_B_DMAC
+	bool "RA MCU SCI B SPI DMAC Support"
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_SPI_SCI_B),dmas)
+	depends on SPI_RENESAS_RA_SCI_B_INTERRUPT
+	select USE_RA_FSP_DMA
+	help
+	  Enable DMAC (Direct Memory Access Controller) support for the
+	  SCI B SPI Driver of RA family.
+
 config SPI_RENESAS_RA_SCI_B_DTC
-	bool
-	default y
+	bool "RA MCU SCI B SPI DTC Support"
+	default ($(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_SPI_SCI_B),rx-dtc,True) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_SPI_SCI_B),tx-dtc,True))
 	depends on SPI_RENESAS_RA_SCI_B_INTERRUPT
 	select USE_RA_FSP_DTC
 	help
