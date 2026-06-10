@@ -409,9 +409,7 @@ static int gpio_gecko_common_init(const struct device *dev)
 static int gpio_gecko_port##idx##_init(const struct device *dev); \
 \
 static const struct gpio_gecko_config gpio_gecko_port##idx##_config = { \
-	.common = { \
-		.port_pin_mask = (gpio_port_pins_t)(-1), \
-	}, \
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx), \
 	.gpio_index = GET_GECKO_GPIO_INDEX(idx), \
 }; \
 \
