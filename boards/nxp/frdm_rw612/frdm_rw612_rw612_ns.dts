@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/rw/nxp_rw6xx_ns.dtsi>
+#include <nxp/nxp_rw6xx_ns.dtsi>
 #include "frdm_rw612_common.dtsi"
 
 /*
