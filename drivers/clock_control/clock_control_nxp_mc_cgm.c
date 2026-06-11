@@ -119,6 +119,9 @@ static const struct mc_cgm_gate_entry mc_cgm_gate_map[] = {
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_I2S_COUNT),
 		MC_CGM_GATE_ENTRY, (,), SAI, Sai),
 #endif
+#if defined(CONFIG_MSPI_NXP_QSPI)
+	{ MCUX_QSPISF_CLK, kCLOCK_Qspi },
+#endif
 };
 
 /*
@@ -164,6 +167,9 @@ static const struct mc_cgm_rate_entry mc_cgm_rate_map[] = {
 #if defined(CONFIG_I2S_MCUX_SAI) && defined(FSL_FEATURE_SOC_I2S_COUNT)
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_I2S_COUNT),
 		MC_CGM_RATE_ENTRY, (,), SAI, Sai),
+#endif
+#if defined(CONFIG_MSPI_NXP_QSPI)
+	{ MCUX_QSPISF_CLK, kCLOCK_QspiSfClk },
 #endif
 };
 
@@ -369,6 +375,11 @@ static int mc_cgm_init(const struct device *dev)
 		CLOCK_SetClkDiv(kCLOCK_DivFlexcan345PeClk, 1U);
 #endif
 #endif /* defined(CONFIG_CAN_MCUX_FLEXCAN) */
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_qspi)
+	CLOCK_SetClkDiv(kCLOCK_DivQspiSfckClk, NXP_PLL_MUX_10_DC_0_DIV);
+	CLOCK_AttachClk(kPLL_PHI1_CLK_to_QSPI_SFCK);
+#endif
 
 	/* Set SystemCoreClock variable. */
 	SystemCoreClockUpdate();
