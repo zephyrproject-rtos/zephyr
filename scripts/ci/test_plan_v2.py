@@ -3477,7 +3477,12 @@ class BoilerplateFilter(SelectionStrategy):
     def _is_boilerplate_only(self, filepath):
         """Return ``True`` if every diff hunk in *filepath* is boilerplate.
 
-        Two-phase check:
+        Binary files (images, compiled objects, archives, …) are never
+        considered boilerplate: git reports them as ``"Binary files … differ"``
+        with no text content lines, so the absence of ``+``/``-`` lines must
+        not be misread as an empty/boilerplate change.
+
+        Two-phase check for text files:
 
         1. ``git diff -w --ignore-blank-lines`` — if this produces no output,
            the entire diff is whitespace / blank-line changes only.
@@ -3494,6 +3499,13 @@ class BoilerplateFilter(SelectionStrategy):
                 filepath,
             )
         except Exception:  # noqa: BLE001
+            return False
+
+        # git signals binary content with a "Binary files … differ" line.
+        # Binary files are not boilerplate; let them fall through to other
+        # strategies (e.g. IgnoreStrategy) for proper handling.
+        if "Binary files" in diff_no_ws:
+            log.debug("[%s] '%s' is a binary file - not boilerplate.", self.name, filepath)
             return False
 
         if not diff_no_ws.strip():
