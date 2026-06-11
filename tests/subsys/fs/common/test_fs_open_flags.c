@@ -125,7 +125,7 @@ static void ZREWIND(struct test_state *ts, int line)
 #define ZMKEMPTY(ts)			\
 do {					\
 	ZUNLINK(ts);			\
-	ZOPEN(ts, FS_O_CREATE, 0);	\
+	ZOPEN(ts, FS_O_CREATE | FS_O_WRITE, 0);	\
 	ZCLOSE(ts);			\
 } while (0)
 
