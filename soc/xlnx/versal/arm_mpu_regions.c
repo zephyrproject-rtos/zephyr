@@ -62,7 +62,7 @@ extern const uint32_t __rom_region_mpu_size_bits;
  * If SRAM_BASE is far from 0 (e.g., > 64MB), it's likely a shared memory
  * design where TCM and DDR are separate regions
  */
-#if (DT_CHOSEN_SRAM_ADDR > 0x4000000)
+#if (DT_CHOSEN_SRAM_ADDR > 0x4000000) && !defined(CONFIG_XIP)
 #warning "SRAM base address is > 64MB - ensure TCM is defined separately in " \
 	 "device tree for vector relocation"
 #endif
