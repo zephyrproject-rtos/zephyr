@@ -33,6 +33,10 @@ struct spi_nand_config {
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 	/* Flash parameters */
 	const struct flash_parameters *parameters;
+#ifdef CONFIG_SPI_NAND_BAD_BLOCK_CACHE
+	/* Bad block table */
+	uint8_t *bad_block_table;
+#endif /* CONFIG_SPI_NAND_BAD_BLOCK_CACHE */
 	/* Size of device in bytes */
 	uint32_t flash_size;
 	/* Size of erase unit in bytes */
@@ -754,8 +758,73 @@ static int spi_nand_mark_bad_block(const struct device *dev, off_t addr)
 		return ret;
 	}
 
+#ifdef CONFIG_SPI_NAND_BAD_BLOCK_CACHE
+	/* Update the bad block table */
+	uint32_t bbt_idx = addr / config->block_size;
+
+	config->bad_block_table[bbt_idx / BITS_PER_BYTE] |= BIT(bbt_idx % BITS_PER_BYTE);
+#endif /* CONFIG_SPI_NAND_BAD_BLOCK_CACHE */
+
 	return 0;
 }
+
+#ifdef CONFIG_SPI_NAND_BAD_BLOCK_CACHE
+static int bad_block_table_is_bad_block(const struct device *dev, off_t addr,
+					enum flash_block_status *status)
+{
+	const struct spi_nand_config *config = dev->config;
+	uint32_t bbt_idx;
+
+	/* Address must be in subregion of device */
+	if (!valid_region(dev, addr, 1)) {
+		return -EINVAL;
+	}
+
+	/* Address must be aligned to erase block */
+	if (addr % config->block_size) {
+		return -EINVAL;
+	}
+
+	bbt_idx = addr / config->block_size;
+	if (config->bad_block_table[bbt_idx / BITS_PER_BYTE] & BIT(bbt_idx % BITS_PER_BYTE)) {
+		*status = FLASH_BLOCK_BAD;
+	} else {
+		*status = FLASH_BLOCK_GOOD;
+	}
+
+	return 0;
+}
+
+static int build_bad_block_table(const struct device *dev)
+{
+	int ret;
+	enum flash_block_status status;
+	const struct spi_nand_config *config = dev->config;
+	const uint32_t bad_block_table_size =
+		DIV_ROUND_UP(config->flash_size / config->block_size, BITS_PER_BYTE);
+
+	/* Init all blocks as good */
+	memset(config->bad_block_table, 0, bad_block_table_size);
+
+	/* Scan all blocks */
+	for (uint32_t addr = 0; addr < config->flash_size; addr += config->block_size) {
+		ret = spi_nand_is_bad_block(dev, addr, &status);
+		if (ret != 0) {
+			return ret;
+		}
+
+		if (status == FLASH_BLOCK_BAD) {
+			uint32_t idx = addr / config->block_size;
+
+			config->bad_block_table[idx / BITS_PER_BYTE] |= BIT(idx % BITS_PER_BYTE);
+		}
+	}
+
+	LOG_HEXDUMP_DBG(config->bad_block_table, bad_block_table_size, "Bad block table");
+
+	return 0;
+}
+#endif /* CONFIG_SPI_NAND_BAD_BLOCK_CACHE */
 
 static int spi_nand_ex_op(const struct device *dev, uint16_t code, const uintptr_t in, void *out)
 {
@@ -768,8 +837,13 @@ static int spi_nand_ex_op(const struct device *dev, uint16_t code, const uintptr
 		ret = spi_nand_reset(dev);
 		break;
 	case FLASH_EX_OP_IS_BAD_BLOCK:
+#ifdef CONFIG_SPI_NAND_BAD_BLOCK_CACHE
+		ret = bad_block_table_is_bad_block(dev, *(const off_t *)in,
+						   (enum flash_block_status *)out);
+#else
 		ret = spi_nand_is_bad_block(dev, *(const off_t *)in,
 					    (enum flash_block_status *)out);
+#endif
 		break;
 	case FLASH_EX_OP_MARK_BAD_BLOCK:
 		ret = spi_nand_mark_bad_block(dev, *(const off_t *)in);
@@ -961,6 +1035,15 @@ static int spi_nand_configure(const struct device *dev)
 	/* Unlock all blocks */
 	ret = spi_nand_set_feature(dev, SPI_NAND_FEATURE_ADDR_BLOCK_PROT,
 				   SPI_NAND_FEATURE_BLOCK_PROT_DISABLE_ALL);
+	if (ret != 0) {
+		goto release;
+	}
+
+#ifdef CONFIG_SPI_NAND_BAD_BLOCK_CACHE
+	/* Build the in-memory bad block table */
+	ret = build_bad_block_table(dev);
+#endif /* CONFIG_SPI_NAND_BAD_BLOCK_CACHE */
+
 release:
 	release_device(dev);
 	return ret;
@@ -1043,12 +1126,21 @@ static DEVICE_API(flash, spi_nand_api) = {
 		     "plane-bytes must be a multiple of erase-block-size");                        \
 	BUILD_ASSERT(DT_INST_PROP(idx, size_bytes) % DT_INST_PROP(idx, plane_bytes) == 0,          \
 		     "size-bytes must be a multiple of plane-bytes");                              \
+                                                                                                   \
 	static const struct flash_parameters spi_nand_##idx##_parameters = {                       \
 		.write_block_size = DT_INST_PROP(idx, write_block_size),                           \
 		.erase_value = 0xff,                                                               \
 	};                                                                                         \
+                                                                                                   \
 	static const uint8_t spi_nand_##idx##_jedec_id[] = DT_INST_PROP(idx, jedec_id);            \
 	BUILD_ASSERT(ARRAY_SIZE(spi_nand_##idx##_jedec_id) <= SPI_NAND_MAX_ID_LEN);                \
+                                                                                                   \
+	IF_ENABLED(CONFIG_SPI_NAND_BAD_BLOCK_CACHE, (                                              \
+	static uint8_t spi_nand_##idx##_bad_block_table[DIV_ROUND_UP(                              \
+		DT_INST_PROP(idx, size_bytes) / DT_INST_PROP(idx, erase_block_size),               \
+		BITS_PER_BYTE)];                                                                   \
+	))                                                                                         \
+                                                                                                   \
 	static const struct spi_nand_config spi_nand_##idx##_config = {                            \
 		.spi = SPI_DT_SPEC_INST_GET(idx, SPI_WORD_SET(8)),                                 \
 		.parameters = &spi_nand_##idx##_parameters,                                        \
@@ -1067,8 +1159,13 @@ static DEVICE_API(flash, spi_nand_api) = {
 		.jedec_id_len = ARRAY_SIZE(spi_nand_##idx##_jedec_id),                             \
 		.has_program_plane_select = DT_INST_PROP(idx, has_program_plane_select),           \
 		.has_read_plane_select = DT_INST_PROP(idx, has_read_plane_select),                 \
+		IF_ENABLED(CONFIG_SPI_NAND_BAD_BLOCK_CACHE, (                                      \
+			.bad_block_table = spi_nand_##idx##_bad_block_table,                       \
+		))                                                                                 \
 		DEFINE_PAGE_LAYOUT(idx)};                                                          \
+                                                                                                   \
 	static struct spi_nand_data spi_nand_##idx##_data;                                         \
+                                                                                                   \
 	PM_DEVICE_DT_INST_DEFINE(idx, spi_nand_pm_control);                                        \
 	DEVICE_DT_INST_DEFINE(idx, &spi_nand_init, PM_DEVICE_DT_INST_GET(idx),                     \
 			      &spi_nand_##idx##_data, &spi_nand_##idx##_config, POST_KERNEL,       \
