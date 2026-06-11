@@ -229,6 +229,8 @@ ARC arch:
     - "area: ARC"
   tests:
     - arch.arc
+    - arch
+    - kernel
 
 ARM Platforms:
   status: maintained
@@ -285,6 +287,8 @@ ARM arch:
     - "area: ARM"
   tests:
     - arch.arm
+    - arch
+    - kernel
 
 ARM64 arch:
   status: maintained
@@ -305,6 +309,8 @@ ARM64 arch:
     - "area: ARM64"
   tests:
     - arch.arm64
+    - arch
+    - kernel
 
 ASPEED Platforms:
   status: odd fixes
@@ -1080,6 +1086,7 @@ Common Architecture Interface:
     - tests/arch/common/acpi/
   tests:
     - arch
+    - kernel
 
 Console:
   status: odd fixes
@@ -3740,6 +3747,8 @@ MIPS arch:
     - boards/qemu/malta/
   labels:
     - "area: MIPS"
+    - arch
+    - kernel
 
 Memory Management:
   status: maintained
@@ -5000,6 +5009,8 @@ RISCV arch:
   tests:
     - arch.riscv
     - arch.riscv64
+    - arch
+    - kernel
 
 RTIO:
   status: maintained
@@ -5036,6 +5047,8 @@ RX arch:
     - "area: RX"
   tests:
     - arch.rx
+    - arch
+    - kernel
 
 Random:
   status: maintained
@@ -5309,6 +5322,9 @@ SPARC arch:
     - boards/qemu/leon3/
   labels:
     - "area: SPARC"
+  tests:
+    - arch
+    - kernel
 
 SPDX Tooling:
   status: maintained
@@ -7265,6 +7281,8 @@ Xtensa arch:
     - "area: Xtensa"
   tests:
     - arch.xtensa
+    - arch
+    - kernel
 
 hawkBit:
   status: maintained
@@ -7410,6 +7428,8 @@ x86 arch:
   tests:
     - arch.interrupt
     - arch.x86
+    - arch
+    - kernel
 
 zbus:
   status: maintained
