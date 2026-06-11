@@ -145,28 +145,24 @@ static int npcx_itim_start_evt_tmr_by_tick(int32_t ticks)
 	 * round up to next tick boundary.
 	 */
 
-	if (ticks == K_TICKS_FOREVER) {
-		cyc_evt_timeout = NPCX_ITIM32_MAX_CNT;
+	uint64_t next_cycs;
+	uint64_t curr = npcx_itim_get_sys_cyc64();
+	uint64_t dcycles;
+
+	if (ticks == 0) {
+		ticks = 1;
+	}
+
+	next_cycs = (last_ticks + last_elapsed + ticks) * SYS_CYCLES_PER_TICK;
+	if (unlikely(next_cycs <= curr)) {
+		cyc_evt_timeout = 1;
 	} else {
-		uint64_t next_cycs;
-		uint64_t curr = npcx_itim_get_sys_cyc64();
-		uint64_t dcycles;
+		uint32_t dticks;
 
-		if (ticks <= 0) {
-			ticks = 1;
-		}
-
-		next_cycs = (last_ticks + last_elapsed + ticks) * SYS_CYCLES_PER_TICK;
-		if (unlikely(next_cycs <= curr)) {
-			cyc_evt_timeout = 1;
-		} else {
-			uint32_t dticks;
-
-			dcycles = next_cycs - curr;
-			dticks = DIV_ROUND_UP(dcycles * EVT_CYCLES_PER_SEC,
-					      sys_clock_hw_cycles_per_sec());
-			cyc_evt_timeout = CLAMP(dticks, 1, NPCX_ITIM32_MAX_CNT);
-		}
+		dcycles = next_cycs - curr;
+		dticks = DIV_ROUND_UP(dcycles * EVT_CYCLES_PER_SEC,
+				      sys_clock_hw_cycles_per_sec());
+		cyc_evt_timeout = CLAMP(dticks, 1, NPCX_ITIM32_MAX_CNT);
 	}
 	LOG_DBG("ticks %x, cyc_evt_timeout %x", ticks, cyc_evt_timeout);
 

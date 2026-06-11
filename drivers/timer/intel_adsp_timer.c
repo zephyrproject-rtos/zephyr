@@ -134,8 +134,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
 #ifdef CONFIG_TICKLESS_KERNEL
-	ticks = ticks == K_TICKS_FOREVER ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 0, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 0, (uint32_t)MAX_TICKS);
 
 	uint64_t curr = count();
 	uint64_t next;

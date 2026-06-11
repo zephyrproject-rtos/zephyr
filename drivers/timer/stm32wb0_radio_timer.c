@@ -109,10 +109,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	if (ticks == K_TICKS_FOREVER) {
-		return;
-	}
-
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		uint32_t current_time, delay;
 		uint32_t key;

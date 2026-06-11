@@ -66,7 +66,6 @@ static void sleeptimer_clock_set_timeout(int32_t ticks, struct sleeptimer_timer_
 		return;
 	}
 
-	ticks = (ticks == K_TICKS_FOREVER) ? timer->max_timeout_ticks : ticks;
 	ticks = CLAMP(ticks, 0, timer->max_timeout_ticks);
 
 	k_spinlock_key_t key = k_spin_lock(&timer->lock);

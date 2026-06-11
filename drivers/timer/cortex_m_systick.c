@@ -404,10 +404,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 	cycle_diff_t unannounced = cycle_count - announced_cycles;
 
-	if (ticks == K_TICKS_FOREVER) {
-		/* Schedule as far out as SysTick can go in one LOAD. */
-		cycles = MAX_CYCLES;
-	} else if (unannounced < 0) {
+	if (unannounced < 0) {
 		/*
 		 * cycle_count has overtaken announced_cycles by more than half
 		 * the cycle_diff_t range. This is reachable when the ISR is
