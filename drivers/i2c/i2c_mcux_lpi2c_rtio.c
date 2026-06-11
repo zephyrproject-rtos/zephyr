@@ -131,8 +131,8 @@ static uint32_t mcux_lpi2c_convert_flags(int msg_flags)
 	return flags;
 }
 
-static bool mcux_lpi2c_msg_start(const struct device *dev, uint8_t flags,
-				 uint8_t *buf, size_t buf_len, uint16_t i2c_addr)
+static int mcux_lpi2c_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf,
+				size_t buf_len, uint16_t i2c_addr)
 {
 	struct mcux_lpi2c_data *data = dev->data;
 	struct i2c_rtio *ctx = data->ctx;
@@ -141,7 +141,7 @@ static bool mcux_lpi2c_msg_start(const struct device *dev, uint8_t flags,
 	status_t status;
 
 	if (I2C_MSG_ADDR_10_BITS & flags) {
-		return i2c_rtio_complete(ctx, -ENOTSUP);
+		return -ENOTSUP;
 	}
 
 	/* Initialize the transfer descriptor */
@@ -171,41 +171,70 @@ static bool mcux_lpi2c_msg_start(const struct device *dev, uint8_t flags,
 	 */
 	if (status != kStatus_Success) {
 		LPI2C_MasterTransferAbort(base, &data->handle);
-		return i2c_rtio_complete(ctx, -EIO);
+		return -EIO;
 	}
 
-	return false;
+	return 0;
 }
 
-static void mcux_lpi2c_complete(const struct device *dev, int status);
-
-static bool mcux_lpi2c_start(const struct device *dev)
+/* Return true when message is started and will complete from an asynchronous
+ * handler, in which case @param status output value is meaningless.
+ * Return false when the operation is synchronous (i.e. it is completed)
+ * and set the operation status in output @param status.
+ */
+static bool mcux_lpi2c_start(const struct device *dev, int *status)
 {
 	struct mcux_lpi2c_data *data = dev->data;
 	struct i2c_rtio *ctx = data->ctx;
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
-
-	int res = 0;
+	int error;
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		return mcux_lpi2c_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags,
-					    sqe->rx.buf, sqe->rx.buf_len, dt_spec->addr);
+		error = mcux_lpi2c_msg_start(dev, I2C_MSG_READ | sqe->iodev_flags, sqe->rx.buf,
+					     sqe->rx.buf_len, dt_spec->addr);
+		break;
 	case RTIO_OP_TINY_TX:
-		return mcux_lpi2c_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-					    (uint8_t *)sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
-					    dt_spec->addr);
+		error = mcux_lpi2c_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+					     (uint8_t *)sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
+					     dt_spec->addr);
+		break;
 	case RTIO_OP_TX:
-		return mcux_lpi2c_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
-					    (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
-					    dt_spec->addr);
+		error = mcux_lpi2c_msg_start(dev, I2C_MSG_WRITE | sqe->iodev_flags,
+					     (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+					     dt_spec->addr);
+		break;
 	case RTIO_OP_I2C_CONFIGURE:
-		res = mcux_lpi2c_do_configure(dev, sqe->i2c_config);
-		return i2c_rtio_complete(data->ctx, res);
+		*status = mcux_lpi2c_do_configure(dev, sqe->i2c_config);
+		return false;
 	default:
-		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-		return i2c_rtio_complete(data->ctx, -EINVAL);
+		LOG_ERR("Invalid op code %d for submission %p", sqe->op, (void *)sqe);
+		*status = -EINVAL;
+		return false;
+	}
+
+	/* When mcux_lpi2c_msg_start() fails, no asynchronous operation is started */
+	if (error != 0) {
+		*status = error;
+		return false;
+	}
+
+	return true;
+}
+
+static void mcux_lpi2c_start_or_complete(const struct device *dev)
+{
+	struct mcux_lpi2c_data *data = dev->data;
+	int status;
+
+	/* Process all synchronous sequences until an async one is started (which will complete
+	 * from an interrupt handler) or the synchronous sequence is the last queued one.
+	 */
+	while (!mcux_lpi2c_start(dev, &status)) {
+		if (!i2c_rtio_complete(data->ctx, status)) {
+			return;
+		}
 	}
 }
 
@@ -238,7 +267,7 @@ static void mcux_lpi2c_complete(const struct device *dev, status_t status)
 
 out:
 	if (i2c_rtio_complete(ctx, ret)) {
-		mcux_lpi2c_start(dev);
+		mcux_lpi2c_start_or_complete(dev);
 	}
 }
 
@@ -248,7 +277,7 @@ static void mcux_lpi2c_submit(const struct device *dev, struct rtio_iodev_sqe *i
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_submit(ctx, iodev_sqe)) {
-		mcux_lpi2c_start(dev);
+		mcux_lpi2c_start_or_complete(dev);
 	}
 }
 
