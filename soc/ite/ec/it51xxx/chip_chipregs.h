@@ -95,8 +95,10 @@ struct gpio_it51xxx_regs {
 	volatile uint8_t reserved_01_c1[193];
 	/* 0xC2: General Control 35 */
 	volatile uint8_t GPIO_GCR35;
-	/* 0xC3-CF: Reserved_c3_cf */
-	volatile uint8_t reserved_c3_cf[13];
+	/* 0xC3-CE: Reserved_c3_ce */
+	volatile uint8_t reserved_c3_ce[12];
+	/* 0xCF: USB GPIO Control Register */
+	volatile uint8_t GPIO_USBGPIOCR;
 	/* 0xD0: General Control 31 */
 	volatile uint8_t GPIO_GCR31;
 	/* 0xD1: General Control 32 */
@@ -200,9 +202,15 @@ struct gpio_it51xxx_regs {
 #define ITE_EC_GPIO_LPCRSTEN              IT51XXX_GPIO_LPCRSTEN
 /* 0xC2: General Control 35 */
 #define IT51XXX_GPIO_USBPDEN              BIT(5)
+
+/* 0xCF: USB GPIO Control Register */
+#define USB_ON_GPIO_PINS_ENABLE_MSK GENMASK(3, 0)
+
 /* 0xF0: General Control 1 */
 #define IT51XXX_GPIO_U2CTRL_SIN1_SOUT1_EN BIT(2)
 #define IT51XXX_GPIO_U1CTRL_SIN0_SOUT0_EN BIT(0)
+/* 0xF7: General Control 8 */
+#define IT51XXX_GPIO_PWRSW2EN1            BIT(4)
 /* 0xE6: General Control 21 */
 #define IT51XXX_GPIO_GPH1VS               BIT(1)
 #define IT51XXX_GPIO_GPH2VS               BIT(0)

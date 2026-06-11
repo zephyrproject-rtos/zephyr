@@ -36,7 +36,7 @@
  * @param selector Selects what is being configured (see SCMI_PINCTRL_SELECTOR_*)
  */
 #define SCMI_PINCTRL_CONFIG_ATTRIBUTES(fid_valid, cfg_num, selector)	\
-	(SCMI_FIELD_MAKE(fid_valid, BIT(1), 10) |			\
+	(SCMI_FIELD_MAKE(fid_valid, BIT(0), 10) |			\
 	 SCMI_FIELD_MAKE(cfg_num, GENMASK(7, 0), 2) |			\
 	 SCMI_FIELD_MAKE(selector, GENMASK(1, 0), 0))
 
@@ -48,6 +48,13 @@
 /** Extract the number of configurations from an attributes word */
 #define SCMI_PINCTRL_ATTRIBUTES_CONFIG_NUM(attributes)\
 	(((attributes) & GENMASK(9, 2)) >> 2)
+
+/**
+ * Extract the fid_valid value (1 if the function ID field is valid, 0 otherwise)
+ * from an attributes word
+ */
+#define SCMI_PINCTRL_ATTRIBUTES_FID_VALID(attributes)\
+	FIELD_GET(BIT(10), attributes)
 
 /** Version of the SCMI pin control protocol supported by this driver */
 #define SCMI_PIN_CONTROL_PROTOCOL_SUPPORTED_VERSION	0x10000

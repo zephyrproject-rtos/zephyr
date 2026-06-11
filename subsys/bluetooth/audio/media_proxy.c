@@ -742,8 +742,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	ARG_UNUSED(reason);
 
 	if (mprx.remote_player.conn == conn) {
-		bt_conn_unref(mprx.remote_player.conn);
-		mprx.remote_player.conn = NULL;
+		bt_conn_drop(&mprx.remote_player.conn);
 	}
 }
 

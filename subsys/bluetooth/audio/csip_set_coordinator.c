@@ -1369,12 +1369,7 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 		svc_inst->set_lock_handle = 0;
 		svc_inst->rank_handle = 0;
 
-		if (svc_inst->conn != NULL) {
-			struct bt_conn *conn = svc_inst->conn;
-
-			bt_conn_unref(conn);
-			svc_inst->conn = NULL;
-		}
+		bt_conn_drop(&svc_inst->conn);
 
 		if (svc_inst->set_info != NULL) {
 			memset(svc_inst->set_info, 0, sizeof(*svc_inst->set_info));
@@ -1382,10 +1377,7 @@ static void csip_set_coordinator_reset(struct bt_csip_set_coordinator_inst *inst
 		}
 	}
 
-	if (inst->conn) {
-		bt_conn_unref(inst->conn);
-		inst->conn = NULL;
-	}
+	bt_conn_drop(&inst->conn);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

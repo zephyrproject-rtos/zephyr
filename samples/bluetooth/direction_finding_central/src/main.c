@@ -205,8 +205,7 @@ static void connected(struct bt_conn *conn, uint8_t conn_err)
 	if (conn_err) {
 		printk("Failed to connect to %s (%u)\n", bt_conn_dst_str(conn), conn_err);
 
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 
 		start_scan();
 		return;
@@ -228,8 +227,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	start_scan();
 }

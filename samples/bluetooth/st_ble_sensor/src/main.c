@@ -165,10 +165,7 @@ static void connected(struct bt_conn *connected, uint8_t err)
 
 static void disconnected(struct bt_conn *disconn, uint8_t reason)
 {
-	if (ble_conn) {
-		bt_conn_unref(ble_conn);
-		ble_conn = NULL;
-	}
+	bt_conn_drop(&ble_conn);
 
 	LOG_INF("Disconnected, reason %u %s", reason, bt_hci_err_to_str(reason));
 }

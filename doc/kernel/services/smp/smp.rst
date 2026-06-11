@@ -93,6 +93,8 @@ instruction) interrupt masking operation.  That, and the fact that the
 IRQ lock is global, means that code expecting to be run in an SMP
 context should be using the spinlock API wherever possible.
 
+.. _smp_cpu_mask:
+
 CPU Mask
 ********
 
@@ -112,14 +114,29 @@ available for convenience.  For obvious reasons, these APIs are
 illegal if called on a runnable thread.  The thread must be blocked or
 suspended, otherwise an ``-EINVAL`` will be returned.
 
-Note that when this feature is enabled, the scheduler algorithm
-involved in doing the per-CPU mask test requires that the list be
-traversed in full.  The kernel does not keep a per-CPU run queue.
-That means that the performance benefits from the
-:kconfig:option:`CONFIG_SCHED_SCALABLE` and :kconfig:option:`CONFIG_SCHED_MULTIQ`
-scheduler backends cannot be realized.  CPU mask processing is
-available only when :kconfig:option:`CONFIG_SCHED_SIMPLE` is the selected
-backend.  This requirement is enforced in the configuration layer.
+CPU mask filtering is supported with all three scheduler backends.
+The performance impact differs by backend:
+
+- :kconfig:option:`CONFIG_SCHED_SIMPLE` — O(N) linear scan of the run
+  queue; every context switch walks the full list looking for the
+  first eligible thread.
+- :kconfig:option:`CONFIG_SCHED_SCALABLE` — O(N) in-order walk of the
+  red/black tree; priority ordering is preserved but the full tree
+  may be traversed when many threads are masked off.
+- :kconfig:option:`CONFIG_SCHED_MULTIQ` — scans priority buckets
+  from highest to lowest and walks the per-bucket list; worst case
+  is O(P·N) where P is the number of occupied priority levels.
+
+For workloads that use :kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY`,
+each CPU maintains its own independent run queue, so the scheduler
+needs only examine that queue with no mask filtering overhead.
+
+Note that :c:func:`k_thread_cpu_mask_clear`,
+:c:func:`k_thread_cpu_mask_enable_all`, and
+:c:func:`k_thread_cpu_mask_disable` are not permitted in
+:kconfig:option:`CONFIG_SCHED_CPU_MASK_PIN_ONLY` mode because they can
+produce a mask that is not exactly one bit, which violates the
+invariant that every thread is pinned to precisely one CPU.
 
 SMP Boot Process
 ****************

@@ -58,7 +58,7 @@ int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
 
 	*config = data->dev_config;
 
-#if CONFIG_I2C_STM32_V2_TIMING
+#if defined(CONFIG_I2C_STM32_V2_TIMING)
 	/* Print the timing parameter of device data */
 	LOG_INF("I2C timing value, report to the DTS :");
 
@@ -229,7 +229,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 	return ret;
 }
 
-#if CONFIG_I2C_STM32_BUS_RECOVERY
+#if defined(CONFIG_I2C_STM32_BUS_RECOVERY)
 static void i2c_stm32_bitbang_set_scl(void *io_context, int state)
 {
 	const struct i2c_stm32_config *config = io_context;
@@ -265,6 +265,11 @@ static int i2c_stm32_recover_bus(const struct device *dev)
 	int error = 0;
 
 	LOG_ERR("attempting to recover bus");
+
+	if ((config->scl.port == NULL) || (config->sda.port == NULL)) {
+		LOG_ERR("SCL and/or SDA GPIO definition(s) missing for I2C bus recovery");
+		return -ENOSYS;
+	}
 
 	if (!gpio_is_ready_dt(&config->scl)) {
 		LOG_ERR("SCL GPIO device not ready");
@@ -325,7 +330,7 @@ static DEVICE_API(i2c, api_funcs) = {
 	.configure = i2c_stm32_runtime_configure,
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
-#if CONFIG_I2C_STM32_BUS_RECOVERY
+#if defined(CONFIG_I2C_STM32_BUS_RECOVERY)
 	.recover_bus = i2c_stm32_recover_bus,
 #endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 #if defined(CONFIG_I2C_TARGET)
@@ -438,7 +443,7 @@ void i2c_stm32_set_smbus_mode(const struct device *dev, enum i2c_stm32_mode mode
 		return;
 	}
 }
-#endif
+#endif /* I2C_CR1_SMBUS || I2C_CR1_SMBDEN || I2C_CR1_SMBHEN */
 
 #ifdef CONFIG_SMBUS_STM32
 void i2c_stm32_smbalert_enable(const struct device *dev)

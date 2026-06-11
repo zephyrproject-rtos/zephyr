@@ -20,6 +20,8 @@ ESP32-P4-Function-EV-Board ships with:
 - MIPI CSI camera connector
 - MIPI DSI display connector
 - microSD card slot
+- 10/100 Mbps Ethernet RJ45 port driven by the on-chip EMAC and an
+  IP101 PHY over RMII
 - Boot and reset buttons
 - Expansion headers exposing UART, I2C, SPI and GPIO
 

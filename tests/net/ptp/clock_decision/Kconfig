@@ -20,4 +20,7 @@ config PTP_PRIORITY1
 config PTP_PRIORITY2
 	default 128
 
+config PTP_PEER_DELAY_MAX_NS
+	default 10000000
+
 source "Kconfig.zephyr"

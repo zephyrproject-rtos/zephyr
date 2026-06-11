@@ -3718,6 +3718,55 @@
 /** @} */
 
 /**
+ * @name RMII_CLK
+ * @{
+ */
+#define RMII_CLK_GPIO0 ESP32_RMII_PINMUX(0, ESP_RMII_CLK)
+/** @} */
+
+/**
+ * @name RMII_CRS_DV
+ * @{
+ */
+#define RMII_CRS_DV_GPIO27 ESP32_RMII_PINMUX(27, ESP_RMII_CRS_DV)
+/** @} */
+
+/**
+ * @name RMII_RXD0
+ * @{
+ */
+#define RMII_RXD0_GPIO25 ESP32_RMII_PINMUX(25, ESP_RMII_RXD0)
+/** @} */
+
+/**
+ * @name RMII_RXD1
+ * @{
+ */
+#define RMII_RXD1_GPIO26 ESP32_RMII_PINMUX(26, ESP_RMII_RXD1)
+/** @} */
+
+/**
+ * @name RMII_TX_EN
+ * @{
+ */
+#define RMII_TX_EN_GPIO21 ESP32_RMII_PINMUX(21, ESP_RMII_TX_EN)
+/** @} */
+
+/**
+ * @name RMII_TXD0
+ * @{
+ */
+#define RMII_TXD0_GPIO19 ESP32_RMII_PINMUX(19, ESP_RMII_TXD0)
+/** @} */
+
+/**
+ * @name RMII_TXD1
+ * @{
+ */
+#define RMII_TXD1_GPIO22 ESP32_RMII_PINMUX(22, ESP_RMII_TXD1)
+/** @} */
+
+/**
  * @name SDHC0_CD
  * @{
  */

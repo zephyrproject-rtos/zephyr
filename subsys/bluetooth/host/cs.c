@@ -858,18 +858,12 @@ void bt_hci_le_cs_subevent_result(struct net_buf *buf)
 		goto abort;
 	}
 
-	if (conn) {
-		bt_conn_unref(conn);
-		conn = NULL;
-	}
+	bt_conn_drop(&conn);
 
 	return;
 
 abort:
-	if (conn) {
-		bt_conn_unref(conn);
-		conn = NULL;
-	}
+	bt_conn_drop(&conn);
 
 	reassembly_buf = get_reassembly_buf(conn_handle, false);
 	if (reassembly_buf) {
@@ -949,18 +943,12 @@ void bt_hci_le_cs_subevent_result_continue(struct net_buf *buf)
 		free_reassembly_buf(&reassembly_buf);
 	}
 
-	if (conn) {
-		bt_conn_unref(conn);
-		conn = NULL;
-	}
+	bt_conn_drop(&conn);
 
 	return;
 
 abort:
-	if (conn) {
-		bt_conn_unref(conn);
-		conn = NULL;
-	}
+	bt_conn_drop(&conn);
 
 	if (reassembly_buf) {
 		free_reassembly_buf(&reassembly_buf);

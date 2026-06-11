@@ -33,6 +33,7 @@ struct timer_obj {
 	struct timespec interval;	/* Reload value */
 	uint32_t reload;			/* Reload value in ms */
 	uint32_t status;
+	clockid_t clock_id;
 };
 
 K_MEM_SLAB_DEFINE_TYPE(posix_timer_slab, struct timer_obj, CONFIG_POSIX_TIMER_MAX);
@@ -131,6 +132,7 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	}
 
 	*timer = (struct timer_obj){0};
+	timer->clock_id = clockid;
 	timer->evp = *evp;
 	evp = &timer->evp;
 
@@ -242,8 +244,7 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue)
 {
 	struct timer_obj *timer = (struct timer_obj *) timerid;
-	uint32_t duration, current;
-
+	uint32_t duration;
 	if ((timer == NULL) || !timespec_is_valid(&value->it_interval) ||
 	    !timespec_is_valid(&value->it_value)) {
 		errno = EINVAL;
@@ -271,15 +272,10 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 	timer->interval.tv_nsec = value->it_interval.tv_nsec;
 
 	/* Calculate timer duration */
-	duration = ts_to_ms(&(value->it_value));
 	if ((flags & TIMER_ABSTIME) != 0) {
-		current = k_timer_remaining_get(&timer->ztimer);
-
-		if (current >= duration) {
-			duration = 0U;
-		} else {
-			duration -= current;
-		}
+		duration = timespec_to_timeoutms(timer->clock_id, &value->it_value);
+	} else {
+		duration = (uint32_t)ts_to_ms(&value->it_value);
 	}
 
 	if (timer->status == ACTIVE) {

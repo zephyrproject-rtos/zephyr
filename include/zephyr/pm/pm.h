@@ -117,8 +117,7 @@ void pm_notifier_register(struct pm_notifier *notifier);
  *
  * @param notifier pm_notifier object to be unregistered.
  *
- * @return 0 if the notifier was successfully removed, a negative value
- * otherwise.
+ * @return 0 on success, negative errno value on failure.
  */
 int pm_notifier_unregister(struct pm_notifier *notifier);
 
@@ -129,7 +128,8 @@ int pm_notifier_unregister(struct pm_notifier *notifier);
  * SoC.
  *
  * @param cpu CPU index.
- * @return next pm_state_info that will be used
+ *
+ * @return Next pm_state_info that will be used.
  */
 const struct pm_state_info *pm_state_next_get(uint8_t cpu);
 

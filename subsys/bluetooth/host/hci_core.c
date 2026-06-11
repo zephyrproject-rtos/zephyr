@@ -1533,7 +1533,6 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	}
 
 	bt_conn_connected(conn);
-	bt_conn_unref(conn);
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) && conn->role == BT_HCI_ROLE_CENTRAL) {
 		int err;
@@ -1544,6 +1543,8 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 			LOG_WRN("Error while updating the scanner (%d)", err);
 		}
 	}
+
+	bt_conn_unref(conn);
 }
 
 #if defined(CONFIG_BT_PER_ADV_SYNC_RSP)
@@ -2473,6 +2474,8 @@ static void le_ltk_request(struct net_buf *buf)
 	struct bt_conn *conn;
 	uint16_t handle;
 	uint8_t ltk[16];
+	uint64_t rand_value;
+	uint16_t ediv;
 
 	handle = sys_le16_to_cpu(evt->handle);
 
@@ -2484,7 +2487,10 @@ static void le_ltk_request(struct net_buf *buf)
 		return;
 	}
 
-	if (bt_smp_request_ltk(conn, evt->rand, evt->ediv, ltk)) {
+	(void)memcpy(&rand_value, evt->rand, sizeof(rand_value));
+	(void)memcpy(&ediv, evt->ediv, sizeof(ediv));
+
+	if (bt_smp_request_ltk(conn, rand_value, ediv, ltk)) {
 		le_ltk_reply(handle, ltk);
 	} else {
 		le_ltk_neg_reply(handle);

@@ -117,7 +117,6 @@ static void i2c_stm32_reset(const struct device *dev)
 #endif
 }
 
-
 static void i2c_stm32_controller_finish(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -436,7 +435,6 @@ static inline void handle_btf(const struct device *dev)
 		}
 	}
 }
-
 
 #if defined(CONFIG_I2C_TARGET)
 static void i2c_stm32_target_event(const struct device *dev)

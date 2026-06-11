@@ -137,6 +137,14 @@ SECTIONS
 
     SECTION_PROLOGUE(rom_start,,)
     {
+#if !defined(CONFIG_XIP) && !defined(CONFIG_ROMSTART_RELOCATION_ROM)
+        /* Start of boot-mapped kernel image. Placed before rom_start contents
+         * so that the vector table page is included in the mapped + pinned range
+         * tracked by z_mem_manage_init(), preventing it from being added to
+         * the free page list.
+         */
+        z_mapped_start = .;
+#endif
 
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...). This typically contains the vector
@@ -156,7 +164,10 @@ SECTIONS
     {
         . = ALIGN(_region_min_align);
         __text_region_start = .;
-#ifndef CONFIG_XIP
+#if !defined(CONFIG_XIP) && defined(CONFIG_ROMSTART_RELOCATION_ROM)
+        /* rom_start is in a separate memory region; the vector table is not
+         * in SRAM, so z_mapped_start can begin at .text.
+         */
         z_mapped_start = .;
 #endif
 

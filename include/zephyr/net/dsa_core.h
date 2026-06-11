@@ -108,8 +108,8 @@ struct dsa_api {
 	int (*port_init)(const struct device *dev);
 
 	/** Port link change */
-	void (*port_phylink_change)(const struct device *dev, struct phy_link_state *state,
-				    void *user_data);
+	void (*port_phylink_change)(const struct device *phy_dev, struct phy_link_state *state,
+				    const struct device *dev);
 
 #if defined(CONFIG_NET_L2_PTP) || defined(__DOXYGEN__)
 	/**

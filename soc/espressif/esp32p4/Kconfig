@@ -68,4 +68,14 @@ endmenu # Cache config
 
 rsource "Kconfig.caps"
 
+config ESP32P4_EMAC
+	bool
+	default y if ETH_ESP32
+	default y if MDIO_ESP32
+	help
+	  Hidden option to enable the ESP32-P4 Ethernet
+	  MAC driver. Both Ethernet and MDIO depend on
+	  this driver. This option allows enabling MDIO
+	  independently of Ethernet.
+
 endif # SOC_SERIES_ESP32P4

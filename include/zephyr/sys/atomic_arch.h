@@ -5,6 +5,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Architecture-specific atomic operation declarations.
+ *
+ * The public documentation for these operations lives in <zephyr/sys/atomic.h>.
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_ATOMIC_ARCH_H_
 #define ZEPHYR_INCLUDE_SYS_ATOMIC_ARCH_H_
 
@@ -12,6 +19,8 @@
 #include <zephyr/sys/atomic_types.h>
 
 /* Included from <atomic.h> */
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Arch specific atomic primitives */
 
@@ -49,5 +58,6 @@ atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
 
 atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
 
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_SYS_ATOMIC_ARCH_H_ */

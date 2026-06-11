@@ -44,6 +44,7 @@ def parseReply(replyIndexPath):
         _logger.exception("Error parsing JSON in %s", replyIndexPath)
         return None
 
+
 def parseCodemodel(replyDir, codemodelFile):
     codemodelPath = os.path.join(replyDir, codemodelFile)
 
@@ -58,7 +59,8 @@ def parseCodemodel(replyDir, codemodelFile):
             if kind != "codemodel":
                 _logger.error(
                     'Error loading CMake API reply: expected "kind":"codemodel" in %s, got %s',
-                    codemodelPath, kind,
+                    codemodelPath,
+                    kind,
                 )
                 return None
             version = js.get("version", {})
@@ -73,7 +75,8 @@ def parseCodemodel(replyDir, codemodelFile):
                     return None
                 _logger.error(
                     "Error loading CMake API reply: expected major version 2 in %s, got %d",
-                    codemodelPath, versionMajor,
+                    codemodelPath,
+                    versionMajor,
                 )
                 return None
 
@@ -100,6 +103,7 @@ def parseCodemodel(replyDir, codemodelFile):
     except json.decoder.JSONDecodeError:
         _logger.exception("Error parsing JSON in %s", codemodelPath)
         return None
+
 
 def parseConfig(cfg_dict, replyDir):
     cfg = cmakefileapi.Config()
@@ -153,6 +157,7 @@ def parseConfig(cfg_dict, replyDir):
 
     return cfg
 
+
 def parseTarget(targetPath):
     try:
         with open(targetPath) as targetFile:
@@ -202,6 +207,7 @@ def parseTarget(targetPath):
         _logger.exception("Error parsing JSON in %s", targetPath)
         return None
 
+
 def parseTargetType(targetType):
     return {
         "EXECUTABLE": cmakefileapi.TargetType.EXECUTABLE,
@@ -211,6 +217,7 @@ def parseTargetType(targetType):
         "OBJECT_LIBRARY": cmakefileapi.TargetType.OBJECT_LIBRARY,
         "UTILITY": cmakefileapi.TargetType.UTILITY,
     }.get(targetType, cmakefileapi.TargetType.UNKNOWN)
+
 
 def parseTargetInstall(target, js):
     install_dict = js.get("install", {})
@@ -225,6 +232,7 @@ def parseTargetInstall(target, js):
         dest.path = destination_dict.get("path", "")
         dest.backtrace = destination_dict.get("backtrace", -1)
         target.install_destinations.append(dest)
+
 
 def parseTargetLink(target, js):
     link_dict = js.get("link", {})
@@ -242,6 +250,7 @@ def parseTargetLink(target, js):
         fragment.role = fragment_dict.get("role", "")
         target.link_commandFragments.append(fragment)
 
+
 def parseTargetArchive(target, js):
     archive_dict = js.get("archive", {})
     if archive_dict == {}:
@@ -255,6 +264,7 @@ def parseTargetArchive(target, js):
         fragment.role = fragment_dict.get("role", "")
         target.archive_commandFragments.append(fragment)
 
+
 def parseTargetDependencies(target, js):
     dependencies_arr = js.get("dependencies", [])
     for dependency_dict in dependencies_arr:
@@ -262,6 +272,7 @@ def parseTargetDependencies(target, js):
         dep.id = dependency_dict.get("id", "")
         dep.backtrace = dependency_dict.get("backtrace", -1)
         target.dependencies.append(dep)
+
 
 def parseTargetSources(target, js):
     sources_arr = js.get("sources", [])
@@ -274,6 +285,7 @@ def parseTargetSources(target, js):
         src.backtrace = source_dict.get("backtrace", -1)
         target.sources.append(src)
 
+
 def parseTargetSourceGroups(target, js):
     sourceGroups_arr = js.get("sourceGroups", [])
     for sourceGroup_dict in sourceGroups_arr:
@@ -281,6 +293,7 @@ def parseTargetSourceGroups(target, js):
         srcgrp.name = sourceGroup_dict.get("name", "")
         srcgrp.sourceIndexes = sourceGroup_dict.get("sourceIndexes", [])
         target.sourceGroups.append(srcgrp)
+
 
 def parseTargetCompileGroups(target, js):
     compileGroups_arr = js.get("compileGroups", [])
@@ -320,6 +333,7 @@ def parseTargetCompileGroups(target, js):
 
         target.compileGroups.append(cmpgrp)
 
+
 def parseTargetBacktraceGraph(target, js):
     backtraceGraph_dict = js.get("backtraceGraph", {})
     if backtraceGraph_dict == {}:
@@ -336,11 +350,13 @@ def parseTargetBacktraceGraph(target, js):
         node.parent = node_dict.get("parent", -1)
         target.backtraceGraph_nodes.append(node)
 
+
 # Create direct pointers for all Configs in Codemodel
 # takes: Codemodel
 def linkCodemodel(cm):
     for cfg in cm.configurations:
         linkConfig(cfg)
+
 
 # Create direct pointers for all contents of Config
 # takes: Config
@@ -351,6 +367,7 @@ def linkConfig(cfg):
         linkConfigProject(cfg, cfgPrj)
     for cfgTarget in cfg.configTargets:
         linkConfigTarget(cfg, cfgTarget)
+
 
 # Create direct pointers for ConfigDir indices
 # takes: Config and ConfigDir
@@ -373,6 +390,7 @@ def linkConfigDir(cfg, cfgDir):
     for targetIndex in cfgDir.targetIndexes:
         cfgDir.targets.append(cfg.configTargets[targetIndex])
 
+
 # Create direct pointers for ConfigProject indices
 # takes: Config and ConfigProject
 def linkConfigProject(cfg, cfgPrj):
@@ -392,6 +410,7 @@ def linkConfigProject(cfg, cfgPrj):
     cfgPrj.targets = []
     for targetIndex in cfgPrj.targetIndexes:
         cfgPrj.targets.append(cfg.configTargets[targetIndex])
+
 
 # Create direct pointers for ConfigTarget indices
 # takes: Config and ConfigTarget
@@ -414,6 +433,7 @@ def linkConfigTarget(cfg, cfgTarget):
     for tcg in cfgTarget.target.compileGroups:
         linkTargetCompileGroup(cfgTarget.target, tcg)
 
+
 # Create direct pointers for TargetSource indices
 # takes: Target and TargetSource
 def linkTargetSource(target, targetSrc):
@@ -427,12 +447,14 @@ def linkTargetSource(target, targetSrc):
     else:
         targetSrc.sourceGroup = target.sourceGroups[targetSrc.sourceGroupIndex]
 
+
 # Create direct pointers for TargetSourceGroup indices
 # takes: Target and TargetSourceGroup
 def linkTargetSourceGroup(target, targetSrcGrp):
     targetSrcGrp.sources = []
     for srcIndex in targetSrcGrp.sourceIndexes:
         targetSrcGrp.sources.append(target.sources[srcIndex])
+
 
 # Create direct pointers for TargetCompileGroup indices
 # takes: Target and TargetCompileGroup

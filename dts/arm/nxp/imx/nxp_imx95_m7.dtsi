@@ -465,6 +465,19 @@
 			status = "disabled";
 		};
 
+		sai3_2: sai@42650000 {
+			compatible = "nxp,mcux-i2s";
+			reg = <0x42650000 DT_SIZE_K(64)>;
+			clocks = <&scmi_clk IMX95_CLK_SAI3>;
+			interrupts = <170 0>;
+			nxp,tx-channel = <1>;
+			dmas = <&edma2 4 60>, <&edma2 5 61>;
+			dma-names = "tx", "rx";
+			nxp,tx-dma-channel = <4>;
+			nxp,rx-dma-channel = <5>;
+			status = "disabled";
+		};
+
 		lpuart7: serial@42690000 {
 			compatible = "nxp,imx-lpuart", "nxp,lpuart";
 			reg = <0x42690000 DT_SIZE_K(64)>;

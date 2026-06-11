@@ -16,7 +16,7 @@
 
 /** @cond INTERNAL_HIDDEN */
 /**
- * @brief Utility macro to build IPSR property entry.
+ * @brief Utility macro to build IPSR property entry (Gen3/4 only).
  * IPSR: Peripheral Function Select Register
  * Each IPSR bank can hold 8 cellules of 4 bits coded function.
  *
@@ -105,6 +105,22 @@
  * @see RCAR_PIN_FLAGS_FUNC_DUMMY
  */
 #define IPSR_DUMMY IPnSR(0x1f, 7, 0x1f, 0xf)
+
+/**
+ * @brief Utility macro to build ALTSEL property entry (Gen5 only).
+ * ALTSELn (n = 0 to 3): Alternative Peripheral Function Select Registers.
+ * Each function is coded on 4 bits hold by ALTSELn registers (1 bit per ALTSELn register).
+ *
+ * @param group The GPIO group (from 0 to 10).
+ * @param pin   The pin (i.e. bit from 0 to 31).
+ * @param func  The alternate function, encoded on 4 bits.
+ *
+ * Function code [ 0 : 3 ]
+ * Empty         [ 4 : 9 ]
+ * GPIO group    [ 10 : 13 ]
+ * Pin           [ 14 : 18 ]
+ */
+#define RCAR_ALTSEL_FUNC(group, pin, func) (((pin) << 14U) | ((group) << 10U) | (func))
 
 #define PIN_VOLTAGE_NONE 0
 #define PIN_VOLTAGE_1P8V 1

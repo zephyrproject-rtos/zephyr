@@ -882,6 +882,10 @@ use_interface_mtu:
 		}
 
 		if (mtu < pkt_len) {
+			if (net_pkt_dont_fragment(pkt)) {
+				return NET_DROP;
+			}
+
 			ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt),
 							   pkt, pkt_len, mtu);
 			if (ret < 0) {

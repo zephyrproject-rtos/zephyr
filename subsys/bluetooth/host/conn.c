@@ -1522,6 +1522,15 @@ void bt_conn_unref(struct bt_conn *conn)
 #endif /* CONFIG_BT_CONN */
 }
 
+void bt_conn_drop(struct bt_conn **orig)
+{
+	struct bt_conn *conn = bt_conn_take(orig);
+
+	if (conn != NULL) {
+		bt_conn_unref(conn);
+	}
+}
+
 uint8_t bt_conn_index(const struct bt_conn *conn)
 {
 	ptrdiff_t index = 0;
@@ -2518,8 +2527,8 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
-	memcpy(&cp->rand, rand, sizeof(cp->rand));
-	memcpy(&cp->ediv, ediv, sizeof(cp->ediv));
+	(void)memcpy(cp->rand, rand, sizeof(cp->rand));
+	(void)memcpy(cp->ediv, ediv, sizeof(cp->ediv));
 
 	memcpy(cp->ltk, ltk, len);
 	if (len < sizeof(cp->ltk)) {

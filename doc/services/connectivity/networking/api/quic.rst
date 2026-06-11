@@ -26,6 +26,9 @@ Key properties relevant to embedded use:
   prevents fast senders from overwhelming constrained receivers.
 * **Loss recovery**: A Probe Timeout (PTO) mechanism retransmits data
   without relying on ICMP or TCP-style ACK clocks.
+* **Path MTU discovery**: Datagram Packetization Layer PMTU Discovery
+  (DPLPMTUD, :rfc:`9000` Section 14.3) probes the path after the handshake
+  and raises the send size only after probes are acknowledged.
 * **Socket Integration**: Uses standard Zephyr socket calls like ``zsock_send``,
   ``zsock_recv``, ``zsock_recvmsg``, ``zsock_sendmsg``, ``zsock_close``
   for data transfer.
@@ -249,6 +252,55 @@ Note that the list items must be constants, and they cannot be variables.
    }
 
 
+.. _quic_dplpmtud:
+
+Path MTU Discovery (DPLPMTUD)
+*****************************
+
+Zephyr's QUIC stack performs **Datagram Packetization Layer Path MTU Discovery**
+(DPLPMTUD) as described in :rfc:`9000` Section 14.3. The goal is to find the
+largest UDP payload size that can traverse the path without IP-layer
+fragmentation, then use that size for application data packets.
+
+Behavior
+--------
+
+After the TLS handshake completes, the stack may send **probe datagrams**
+containing a PING frame plus padding. Probes are sized to exercise larger path
+MTUs and are transmitted with **don't fragment** enabled on the underlying UDP
+socket (see :c:macro:`ZSOCK_IP_DONTFRAG` / :c:macro:`ZSOCK_IPV6_DONTFRAG` in
+:ref:`ip_socket_options`). This is handled internally; applications do not need
+to configure the UDP socket used by QUIC.
+
+The stack tracks three related limits:
+
+* **Peer ``max_udp_payload_size`` transport parameter** - upper bound advertised
+  by the remote endpoint during the handshake.
+* **Local ceiling** - derived from the interface or socket MTU minus IP and UDP
+  header overhead.
+* **Validated send size** - the largest probe size confirmed by an ACK. This is
+  what governs how large outgoing QUIC packets may be.
+
+Send sizing starts at the **1200-byte minimum UDP payload** required by QUIC.
+When the validated size is below the local and peer ceilings, the stack
+performs a binary search for a larger working size. A probe ACK raises the
+validated limit; repeated probe loss narrows the search range. Stream frames
+are sized to fit within the current validated limit, so throughput on high-MTU
+paths improves automatically once probing succeeds.
+
+Interaction with loss recovery
+------------------------------
+
+DPLPMTUD probes are ack-eliciting and participate in the same loss-recovery
+machinery as stream data. On Probe Timeout (PTO), **in-flight stream frames are
+retransmitted first**; a DPLPMTUD probe is sent only when there is no stream
+data to retransmit (the same situation where a bare PING probe would be sent).
+
+There is currently no application-facing API to enable, disable, or tune
+DPLPMTUD. Probing begins automatically after handshake completion whenever a
+larger path MTU may be available.
+
+
 Configure Options
 *****************
 
@@ -364,7 +416,9 @@ breakdown of how these interact.
    * - :kconfig:option:`CONFIG_QUIC_TX_BUFFER_SIZE`
      - 1500
      - Output packet assembly buffer per endpoint.  Must be at least the
-       MTU (minimum 1280 for IPv6 compliance, maximum 1500).
+       network MTU (minimum 1280 for IPv6 compliance, maximum 1500).
+       DPLPMTUD may limit the **validated** UDP payload below this value until
+       a larger path MTU is confirmed; see :ref:`quic_dplpmtud`.
    * - :kconfig:option:`CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE`
      - 4096
      - Shared CRYPTO frame reassembly buffer per endpoint, used during the

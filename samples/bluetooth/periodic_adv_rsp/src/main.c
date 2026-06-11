@@ -114,8 +114,7 @@ void connected_cb(struct bt_conn *conn, uint8_t err)
 	__ASSERT(conn == default_conn, "Unexpected connected callback");
 
 	if (err) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 	}
 }
 
@@ -390,8 +389,7 @@ disconnect:
 disconnected:
 		k_sem_take(&sem_disconnected, K_FOREVER);
 
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 	}
 
 	printk("Maximum numnber of syncs onboarded\n");

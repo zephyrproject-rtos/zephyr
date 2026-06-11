@@ -140,7 +140,7 @@ static int dummy_codec_init(const struct device *dev)
 	return 0;
 }
 
-static const struct audio_codec_api dummy_codec_api = {
+static DEVICE_API(audio_codec, dummy_codec_api) = {
 	.configure = dummy_codec_configure,
 	.set_property = dummy_codec_set_property,
 	.start = dummy_codec_start,

@@ -34,6 +34,23 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #define MAX_NSEC_TO_TIMEINTERVAL (0x00007FFFFFFFFFFFULL)
 #define INGRESS_TS_PHC_DELTA_GUARD_NS (5ULL * NSEC_PER_SEC)
 
+/*
+ * Servo acquisition policy:
+ * - offsets above the step threshold are corrected by setting the clock;
+ * - three consecutive samples within 10 ms mark the frequency servo as locked;
+ * - while locked, offsets above 100 ms are rejected, and two consecutive
+ *   outliers reset the servo. The next sample starts acquisition again.
+ *
+ * Lock is based on samples rather than elapsed time, so acquisition time follows
+ * the configured Sync interval. These thresholds protect the PI controller from
+ * bad timestamps; they are not clock-accuracy guarantees.
+ */
+#define SYNC_SERVO_STEP_THRESHOLD_NS (1LL * NSEC_PER_SEC)
+#define SYNC_SERVO_LOCK_OFFSET_NS (10LL * NSEC_PER_MSEC)
+#define SYNC_SERVO_OUTLIER_NS (100LL * NSEC_PER_MSEC)
+#define SYNC_SERVO_LOCK_SAMPLES 3U
+#define SYNC_SERVO_OUTLIER_SAMPLES 2U
+
 /**
  * @brief PTP Clock structure.
  */
@@ -57,6 +74,9 @@ struct ptp_clock {
 		uint64_t	    t4;
 	} timestamp;			/* latest timestamps in nanoseconds */
 	double pi_drift;
+	uint8_t sync_servo_lock_samples;
+	uint8_t sync_servo_outlier_samples;
+	bool sync_servo_locked;
 };
 
 __maybe_unused static struct ptp_clock ptp_clk = { 0 };
@@ -502,10 +522,6 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 	case PTP_MGMT_TRANSPARENT_CLOCK_PORT_DATA_SET:
 		__fallthrough;
 	case PTP_MGMT_PRIMARY_DOMAIN:
-		__fallthrough;
-	case PTP_MGMT_DELAY_MECHANISM:
-		__fallthrough;
-	case PTP_MGMT_LOG_MIN_PDELAY_REQ_INTERVAL:
 		ptp_port_management_error(port, msg, PTP_MGMT_ERR_NOT_SUPPORTED);
 		break;
 	default:
@@ -541,10 +557,30 @@ static void clock_servo_reset(void)
 	int ret;
 
 	ptp_clk.pi_drift = 0.0;
+	ptp_clk.sync_servo_lock_samples = 0;
+	ptp_clk.sync_servo_outlier_samples = 0;
+	ptp_clk.sync_servo_locked = false;
 
 	ret = ptp_clock_rate_adjust(ptp_clk.phc, 1.0);
 	if (ret < 0) {
 		LOG_WRN("Failed to reset PHC rate to nominal (err %d)", ret);
+	}
+}
+
+static void clock_servo_update_lock(int64_t offset)
+{
+	if (llabs(offset) > SYNC_SERVO_LOCK_OFFSET_NS) {
+		ptp_clk.sync_servo_lock_samples = 0;
+		return;
+	}
+
+	if (ptp_clk.sync_servo_lock_samples < SYNC_SERVO_LOCK_SAMPLES) {
+		ptp_clk.sync_servo_lock_samples++;
+	}
+
+	if (!ptp_clk.sync_servo_locked &&
+	    ptp_clk.sync_servo_lock_samples >= SYNC_SERVO_LOCK_SAMPLES) {
+		ptp_clk.sync_servo_locked = true;
 	}
 }
 
@@ -558,12 +594,41 @@ static uint64_t clock_abs_delta_u64(uint64_t a, uint64_t b)
 	return a >= b ? a - b : b - a;
 }
 
-void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid)
+static void clock_update_neighbor_rate_ratio(struct ptp_port *port, int64_t resp_origin_ns,
+					     int64_t resp_ingress_ns)
+{
+	if (!port->pdelay_prev_rate_sample_valid) {
+		port->neighbor_rate_ratio = 1.0;
+		port->neighbor_rate_ratio_valid = false;
+		port->pdelay_prev_resp_origin_ns = resp_origin_ns;
+		port->pdelay_prev_resp_ingress_ns = resp_ingress_ns;
+		port->pdelay_prev_rate_sample_valid = true;
+		return;
+	}
+
+	int64_t peer_delta = resp_origin_ns - port->pdelay_prev_resp_origin_ns;
+	int64_t local_delta = resp_ingress_ns - port->pdelay_prev_resp_ingress_ns;
+
+	port->pdelay_prev_resp_origin_ns = resp_origin_ns;
+	port->pdelay_prev_resp_ingress_ns = resp_ingress_ns;
+
+	if (peer_delta <= 0 || local_delta <= 0) {
+		port->neighbor_rate_ratio = 1.0;
+		port->neighbor_rate_ratio_valid = false;
+		return;
+	}
+
+	port->neighbor_rate_ratio = (double)peer_delta / (double)local_delta;
+	port->neighbor_rate_ratio_valid = true;
+}
+
+static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
+					 ptp_timeinterval mean_delay, bool ingress_ts_valid)
 {
 	double ppb;
 	int64_t offset;
 	int ret;
-	int64_t delay = ptp_clk.current_ds.mean_delay >> 16;
+	int64_t delay = mean_delay >> 16;
 	struct net_ptp_time current;
 	uint64_t phc_now_ns;
 	uint64_t ingress_phc_delta;
@@ -589,14 +654,15 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_va
 	ptp_clk.timestamp.t1 = egress;
 	ptp_clk.timestamp.t2 = ingress;
 
-	if (!ptp_clk.current_ds.mean_delay) {
+	if (mean_delay == 0) {
 		return;
 	}
 
 	offset = (int64_t)(ptp_clk.timestamp.t2 - ptp_clk.timestamp.t1) - delay;
 
 	/* If diff is too big, ptp_clk needs to be set first. */
-	if ((offset > (int64_t)NSEC_PER_SEC) || (offset < -(int64_t)NSEC_PER_SEC)) {
+	if (offset > SYNC_SERVO_STEP_THRESHOLD_NS ||
+	    offset < -SYNC_SERVO_STEP_THRESHOLD_NS) {
 		int32_t dest_nsec;
 
 		LOG_WRN("Clock offset exceeds 1 second (t1=%" PRIu64 ".%09u t2=%" PRIu64
@@ -642,6 +708,19 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_va
 	LOG_DBG("Offset %lldns", offset);
 	ptp_clk.current_ds.offset_from_tt = clock_ns_to_timeinterval(offset);
 
+	if (ptp_clk.sync_servo_locked && llabs(offset) > SYNC_SERVO_OUTLIER_NS) {
+		ptp_clk.sync_servo_outlier_samples++;
+		LOG_WRN("Rejecting sync outlier after servo lock: offset=%lldns (%u/%u)",
+			offset, (unsigned int)ptp_clk.sync_servo_outlier_samples,
+			SYNC_SERVO_OUTLIER_SAMPLES);
+		if (ptp_clk.sync_servo_outlier_samples >= SYNC_SERVO_OUTLIER_SAMPLES) {
+			clock_servo_reset();
+		}
+		return;
+	}
+
+	ptp_clk.sync_servo_outlier_samples = 0;
+
 	ppb = ptp_servo_pi(-offset);
 	ret = ptp_clock_rate_adjust(ptp_clk.phc, 1.0 + (ppb / 1000000000.0));
 	if (ret < 0) {
@@ -649,7 +728,23 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_va
 			"resetting servo",
 			offset, ppb, ret);
 		clock_servo_reset();
+		return;
 	}
+
+	clock_servo_update_lock(offset);
+}
+
+void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid)
+{
+	clock_synchronize_with_delay(ingress, egress, ptp_clk.current_ds.mean_delay,
+				     ingress_ts_valid);
+}
+
+void ptp_clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
+				      ptp_timeinterval mean_delay, bool ingress_ts_valid)
+{
+	ptp_clk.current_ds.mean_delay = mean_delay;
+	clock_synchronize_with_delay(ingress, egress, mean_delay, ingress_ts_valid);
 }
 
 void ptp_clock_delay(uint64_t egress, uint64_t ingress)
@@ -674,6 +769,40 @@ void ptp_clock_delay(uint64_t egress, uint64_t ingress)
 
 	LOG_DBG("Delay %lldns", delay);
 	ptp_clk.current_ds.mean_delay = clock_ns_to_timeinterval(delay);
+}
+
+int ptp_clock_pdelay(struct ptp_port *port, int64_t t1, int64_t t2, int64_t t3, int64_t t4,
+		     ptp_timeinterval correction_resp, ptp_timeinterval correction_fup)
+{
+	int64_t correction_resp_ns;
+	int64_t correction_fup_ns;
+	int64_t delay_asymmetry_ns;
+	int64_t turnaround;
+	int64_t delay;
+
+	if (port == NULL || t1 <= 0 || t2 <= 0 || t3 <= 0 || t4 <= 0) {
+		return -EINVAL;
+	}
+
+	correction_resp_ns = correction_resp >> 16;
+	correction_fup_ns = correction_fup >> 16;
+	delay_asymmetry_ns = port->port_ds.delay_asymmetry >> 16;
+	turnaround = t3 - t2;
+	delay = ((t4 - t1) - turnaround - correction_resp_ns - correction_fup_ns -
+		 delay_asymmetry_ns) /
+		2LL;
+
+	if (delay < 0 || delay > CONFIG_PTP_PEER_DELAY_MAX_NS) {
+		LOG_WRN("Ignoring unrealistic peer delay sample: %lldns", delay);
+		return -ERANGE;
+	}
+
+	LOG_DBG("Peer delay %lldns", delay);
+	port->port_ds.mean_link_delay = clock_ns_to_timeinterval(delay);
+
+	clock_update_neighbor_rate_ratio(port, t3 + correction_resp_ns + correction_fup_ns, t4);
+
+	return 0;
 }
 
 sys_slist_t *ptp_clock_ports_list(void)

@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include "sdhc_helpers.h"
 
 #include <esp_clk_tree.h>
 #include <hal/sdmmc_ll.h>
@@ -991,10 +992,12 @@ static int sdhc_esp32_set_io(const struct device *dev, struct sdhc_io *ios)
 	uint8_t bus_width;
 	int ret = 0;
 
-	LOG_INF("SDHC I/O: slot: %d, bus width %d, clock %dHz, card power %s, voltage %s",
+	LOG_INF("SDHC I/O: slot: %d, bus width %d, clock %dHz, card power %s, "
+		"timing %s, voltage %s",
 		cfg->slot, ios->bus_width, ios->clock,
 		ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
-		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
+		sdhc_timing_mode_str(ios->timing),
+		sd_voltage_str(ios->signal_voltage));
 
 	if (ios->clock) {
 		/* Check for frequency boundaries supported by host */

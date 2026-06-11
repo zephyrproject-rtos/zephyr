@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @ingroup subsys_cpu_freq_policy
+ * @brief Header file for CPU frequency scaling policy.
+ */
+
 #ifndef ZEPHYR_SUBSYS_CPU_FREQ_POLICY_H_
 #define ZEPHYR_SUBSYS_CPU_FREQ_POLICY_H_
 

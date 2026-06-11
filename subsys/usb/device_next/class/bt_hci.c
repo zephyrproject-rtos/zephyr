@@ -341,14 +341,12 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 
 		if (hci_data->acl_len == 0) {
 			LOG_ERR("Failed to get packet length");
-			net_buf_unref(hci_data->acl_buf);
-			hci_data->acl_buf = NULL;
+			net_buf_drop(&hci_data->acl_buf);
 		}
 	} else {
 		if (net_buf_tailroom(hci_data->acl_buf) < buf->len) {
 			LOG_ERR("Buffer tailroom too small");
-			net_buf_unref(hci_data->acl_buf);
-			hci_data->acl_buf = NULL;
+			net_buf_drop(&hci_data->acl_buf);
 			goto restart_out_transfer;
 		}
 
@@ -438,6 +436,11 @@ static int bt_hci_ctd(struct usbd_class_data *const c_data,
 	if (setup->RequestType.type != USB_REQTYPE_TYPE_CLASS) {
 		errno = -ENOTSUP;
 
+		return 0;
+	}
+
+	if (setup->wLength && (buf == NULL)) {
+		/* Data OUT can be received */
 		return 0;
 	}
 

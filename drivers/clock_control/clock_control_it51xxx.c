@@ -41,12 +41,21 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 #define ECPM_PLLFREQR     0x06
 #define ECPM_PLLFREQ_MASK GENMASK(3, 0)
 
+#define ECPM20_PLL_CALIBRATION_0 0x20
+#define CALIBRATION_ENABLE       BIT(7) | BIT(4) | BIT(2)
+
+#define ECPM40_DCO_REGISTER_0 0x40
+#define CALIBRATION_START     BIT(1) | BIT(0)
+
+/* clang-format off */
 static const uint8_t pll_cfg[] = {
 	[PLL_18400_KHZ] = 0x01,
 	[PLL_32300_KHZ] = 0x03,
 	[PLL_64500_KHZ] = 0x07,
 	[PLL_48000_KHZ] = 0x09,
+	[PLL_96000_KHZ] = 0x08,
 };
+/* clang-format on */
 
 struct clock_control_it51xxx_data {
 	const uint8_t *pll_configuration;
@@ -102,6 +111,9 @@ static int clock_control_it51xxx_get_rate(const struct device *dev,
 		break;
 	case 0x07:
 		*rate = KHZ(64500);
+		break;
+	case 0x08:
+		*rate = KHZ(96000);
 		break;
 	case 0x09:
 		*rate = KHZ(48000);
@@ -182,6 +194,12 @@ static int clock_control_it51xxx_init(const struct device *dev)
 	if (reg_val != data->pll_configuration[config->pll_freq]) {
 		/* configure PLL clock */
 		chip_configure_pll(dev, data->pll_configuration[config->pll_freq]);
+
+		if (IS_ENABLED(CONFIG_IT51XXX_USB_SOF_CALIBRATION)) {
+			sys_write8(CALIBRATION_START, config->ecpm_base + ECPM40_DCO_REGISTER_0);
+			sys_write8(CALIBRATION_ENABLE,
+				   config->ecpm_base + ECPM20_PLL_CALIBRATION_0);
+		}
 	}
 #ifdef CONFIG_ESPI
 	/* Enable eSPI pad after changing PLL sequence */

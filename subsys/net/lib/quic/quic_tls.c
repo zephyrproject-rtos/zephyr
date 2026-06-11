@@ -1068,7 +1068,6 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 	size_t pos = 0;
 	size_t max_len = sizeof(ctx->local_tp);
 	size_t max_payload_size;
-	struct net_if *iface;
 	int val_size;
 	int ret;
 
@@ -1139,26 +1138,15 @@ static int build_default_transport_params(struct quic_tls_context *ctx)
 	}
 	pos += ret;
 
-	/* max_udp_payload_size (0x03)
-	 * We can only handle max size calculated from interface MTU.
-	 */
+	/* max_udp_payload_size (0x03) */
 	ret = quic_put_varint(&buf[pos], max_len - pos, 0x03);
 	if (ret <= 0) {
 		return -ENOBUFS;
 	}
 	pos += ret;
 
-	iface = net_if_select_src_iface((struct net_sockaddr *)&ctx->ep->remote_addr);
-	if (iface == NULL) {
-		max_payload_size = 1280;  /* Default minimum for QUIC */
-	} else {
-		max_payload_size =
-			net_if_get_mtu(iface) -
-			(ctx->ep->remote_addr.ss_family == NET_AF_INET ?
-			 sizeof(struct net_ipv4_hdr) : sizeof(struct net_ipv6_hdr)) -
-			sizeof(struct net_udp_hdr);
-		max_payload_size = MAX(max_payload_size, 1280);  /* Ensure we meet QUIC minimum */
-	}
+	max_payload_size = quic_get_local_max_udp_payload_size(ctx->ep);
+	ctx->ep->dplpmtud.local_max_payload_size = max_payload_size;
 
 	val_size = quic_get_varint_size(max_payload_size);
 	ret = quic_put_varint(&buf[pos], max_len - pos, val_size);
@@ -4017,6 +4005,11 @@ static int quic_send_packet(struct quic_endpoint *ep,
 			    enum quic_secret_level level,
 			    const uint8_t *payload,
 			    size_t payload_len);
+static int quic_send_packet_with_pn(struct quic_endpoint *ep,
+				    enum quic_secret_level level,
+				    const uint8_t *payload,
+				    size_t payload_len,
+				    uint64_t *sent_pn_out);
 
 #if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
 static struct quic_deferred_crypto_payload *
@@ -4145,18 +4138,40 @@ static uint8_t *quic_prepare_crypto_frame(struct quic_endpoint *ep,
 	return &buf[pos];
 }
 
+static int quic_set_socket_dont_fragment(struct quic_endpoint *ep, int value)
+{
+	int level;
+	int optname;
+
+	if (ep->remote_addr.ss_family == NET_AF_INET) {
+		level = NET_IPPROTO_IP;
+		optname = ZSOCK_IP_DONTFRAG;
+	} else {
+		level = NET_IPPROTO_IPV6;
+		optname = ZSOCK_IPV6_DONTFRAG;
+	}
+
+	if (zsock_setsockopt(ep->sock, level, optname, &value, sizeof(value)) < 0) {
+		return -errno;
+	}
+
+	return 0;
+}
+
 /*
- * Send a QUIC packet using scatter-gather I/O
+ * Send a QUIC packet using scatter-gather I/O.
  *
- * Uses zsock_sendmsg() to avoid copying header and payload into
- * a single buffer. The header is built in a small stack buffer,
- * and the encrypted payload uses the endpoint's tx_buffer.
- * Encrypt and send ep->crypto.tx_buffer[0..plaintext_len).
- * Called by both quic_send_packet() and quic_send_packet_sg().
+ * Plaintext is assembled in ep->crypto.tx_buffer by the caller while
+ * holding ep->send_lock. Uses zsock_sendmsg() so the stack copies header
+ * and ciphertext into a net_pkt before this call returns.
  */
-static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
-				       enum quic_secret_level level,
-				       size_t payload_len)
+static int quic_send_packet_from_txbuf_ex(struct quic_endpoint *ep,
+					  enum quic_secret_level level,
+					  size_t payload_len,
+					  size_t target_datagram_len,
+					  bool dont_fragment,
+					  bool dplpmtud_probe,
+					  uint64_t *sent_pn_out)
 {
 	struct quic_crypto_context *crypto_ctx;
 	uint8_t header[MAX_QUIC_HEADER_SIZE];
@@ -4167,10 +4182,14 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 	uint64_t packet_number;
 	size_t pn_len;
 	size_t padding;
+	size_t extra_padding = 0;
 	int ret;
+	int saved_dont_fragment = 0;
 	ssize_t sent;
 	size_t total_len;
 	bool ack_eliciting;
+	bool restore_dont_fragment = false;
+	net_socklen_t optlen = sizeof(saved_dont_fragment);
 
 	/* Encrypted payload goes into endpoint's tx_buffer */
 	uint8_t *ciphertext = ep->crypto.tx_buffer;
@@ -4223,12 +4242,6 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 	padding = calculate_padding_for_level(ep, level, payload_len, pn_len);
 	plaintext_len += padding;
 
-	/* Verify we have space for ciphertext */
-	if (plaintext_len + QUIC_AEAD_TAG_LEN > ciphertext_size) {
-		QUIC_EP_STAT_INC(ep, drop_tx);
-		return -ENOBUFS;
-	}
-
 	/* Build header */
 	ret = build_packet_header(ep, level, packet_number, pn_len,
 				  plaintext_len + QUIC_AEAD_TAG_LEN,
@@ -4238,6 +4251,44 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 		NET_DBG("Failed to build packet header (%d)", ret);
 		QUIC_EP_STAT_INC(ep, drop_tx);
 		return ret;
+	}
+
+	if (target_datagram_len > 0U) {
+		size_t current_total = header_len + plaintext_len + QUIC_AEAD_TAG_LEN;
+
+		if (target_datagram_len < current_total) {
+			return -EMSGSIZE;
+		}
+
+		extra_padding = target_datagram_len - current_total;
+		plaintext_len += extra_padding;
+		padding += extra_padding;
+
+		if (extra_padding > 0U) {
+			ret = build_packet_header(ep, level, packet_number, pn_len,
+						  plaintext_len + QUIC_AEAD_TAG_LEN,
+						  header, sizeof(header),
+						  &header_len, &pn_offset);
+			if (ret != 0) {
+				NET_DBG("Failed to rebuild packet header (%d)", ret);
+				return ret;
+			}
+
+			current_total = header_len + plaintext_len + QUIC_AEAD_TAG_LEN;
+			if (target_datagram_len < current_total) {
+				return -EMSGSIZE;
+			}
+
+			extra_padding = target_datagram_len - current_total;
+			plaintext_len += extra_padding;
+			padding += extra_padding;
+		}
+	}
+
+	/* Verify we have space for ciphertext */
+	if (plaintext_len + QUIC_AEAD_TAG_LEN > ciphertext_size) {
+		QUIC_EP_STAT_INC(ep, drop_tx);
+		return -ENOBUFS;
 	}
 
 	/*
@@ -4326,13 +4377,32 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 		      net_sin6(net_sad(&ep->remote_addr))->sin6_port),
 		ep->sock);
 
+	if (dont_fragment) {
+		if (ep->remote_addr.ss_family == NET_AF_INET) {
+			ret = zsock_getsockopt(ep->sock, NET_IPPROTO_IP, ZSOCK_IP_DONTFRAG,
+					       &saved_dont_fragment, &optlen);
+		} else {
+			ret = zsock_getsockopt(ep->sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_DONTFRAG,
+					       &saved_dont_fragment, &optlen);
+		}
+
+		if (ret < 0) {
+			return -errno;
+		}
+
+		ret = quic_set_socket_dont_fragment(ep, 1);
+		if (ret < 0) {
+			return ret;
+		}
+
+		restore_dont_fragment = true;
+	}
+
 	sent = zsock_sendmsg(ep->sock, &msg, 0);
 	if (sent < 0) {
 		ret = -errno;
 
-		NET_DBG("Failed to send packet (%d)", ret);
-		QUIC_EP_STAT_INC(ep, drop_tx);
-		return ret;
+		goto out_restore;
 	}
 
 	/* XXX: TODO: Handle partial sends properly */
@@ -4343,7 +4413,11 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 
 	quic_endpoint_note_unvalidated_tx(ep, MIN((size_t)sent, total_len));
 
-	quic_recovery_on_packet_sent(ep, level, packet_number, total_len, ack_eliciting);
+	quic_recovery_on_packet_sent(ep, level, packet_number, total_len, ack_eliciting,
+				      dplpmtud_probe, dplpmtud_probe ? total_len : 0U);
+	if (sent_pn_out != NULL) {
+		*sent_pn_out = packet_number;
+	}
 
 	switch (level) {
 	case QUIC_SECRET_LEVEL_INITIAL:
@@ -4362,7 +4436,36 @@ static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
 	NET_DBG("[EP:%p/%d] Sent %zd bytes at level %d, pn=%" PRIu64 ", ack-eliciting=%d",
 		ep, quic_get_by_ep(ep), sent, level, packet_number, ack_eliciting);
 
+	ret = 0;
+
+out_restore:
+	if (restore_dont_fragment) {
+		int restore_ret = quic_set_socket_dont_fragment(ep, saved_dont_fragment);
+
+		if (restore_ret < 0 && ret == 0) {
+			ret = restore_ret;
+		}
+	}
+
+	if (ret < 0) {
+		NET_DBG("Failed to send packet (%d)", ret);
+		QUIC_EP_STAT_INC(ep, drop_tx);
+		return ret;
+	}
+
 	return 0;
+}
+
+static int quic_send_packet_from_txbuf(struct quic_endpoint *ep,
+				       enum quic_secret_level level,
+				       size_t payload_len,
+				       size_t target_datagram_len,
+				       bool dont_fragment,
+				       bool dplpmtud_probe)
+{
+	return quic_send_packet_from_txbuf_ex(ep, level, payload_len,
+					      target_datagram_len, dont_fragment,
+					      dplpmtud_probe, NULL);
 }
 
 static int quic_send_packet(struct quic_endpoint *ep,
@@ -4370,12 +4473,30 @@ static int quic_send_packet(struct quic_endpoint *ep,
 			    const uint8_t *payload,
 			    size_t payload_len)
 {
+	return quic_send_packet_with_pn(ep, level, payload, payload_len, NULL);
+}
+
+static int quic_send_packet_with_pn(struct quic_endpoint *ep,
+				    enum quic_secret_level level,
+				    const uint8_t *payload,
+				    size_t payload_len,
+				    uint64_t *sent_pn_out)
+{
+	int ret;
+
 	if (payload_len > sizeof(ep->crypto.tx_buffer)) {
 		return -ENOBUFS;
 	}
 
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
 	memcpy(ep->crypto.tx_buffer, payload, payload_len);
-	return quic_send_packet_from_txbuf(ep, level, payload_len);
+
+	ret = quic_send_packet_from_txbuf_ex(ep, level, payload_len, 0U, false, false,
+					     sent_pn_out);
+
+	k_mutex_unlock(&ep->send_lock);
+
+	return ret;
 }
 
 /*
@@ -4389,7 +4510,7 @@ static int quic_send_prepared_frame(struct quic_endpoint *ep,
 	size_t total_frame_len = frame_header_len + data_len;
 	int ret;
 
-	ret = quic_send_packet(ep, level, ep->crypto.tx_buffer, total_frame_len);
+	ret = quic_send_packet_from_txbuf(ep, level, total_frame_len, 0U, false, false);
 	if (ret == -EAGAIN) {
 #if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
 		return quic_queue_deferred_crypto_payload(ep, level,
@@ -4415,6 +4536,7 @@ static int quic_tls_send_callback(void *user_data,
 	struct quic_endpoint *ep = user_data;
 	size_t frame_header_len;
 	uint8_t *dest;
+	int ret;
 
 	if (ep == NULL || data == NULL || len == 0) {
 		return -EINVAL;
@@ -4427,9 +4549,12 @@ static int quic_tls_send_callback(void *user_data,
 
 	NET_DBG("TLS send callback: level=%d, len=%zu", level, len);
 
+	k_mutex_lock(&ep->send_lock, K_FOREVER);
+
 	/* Prepare frame header, get destination for TLS data */
 	dest = quic_prepare_crypto_frame(ep, level, len, &frame_header_len);
 	if (dest == NULL) {
+		k_mutex_unlock(&ep->send_lock);
 		return -ENOBUFS;
 	}
 
@@ -4437,7 +4562,11 @@ static int quic_tls_send_callback(void *user_data,
 	memcpy(dest, data, len);
 
 	/* Send */
-	return quic_send_prepared_frame(ep, level, frame_header_len, len);
+	ret = quic_send_prepared_frame(ep, level, frame_header_len, len);
+
+	k_mutex_unlock(&ep->send_lock);
+
+	return ret;
 }
 
 static void quic_tls_set_callbacks(struct quic_tls_context *ctx,

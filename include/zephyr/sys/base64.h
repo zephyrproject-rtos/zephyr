@@ -21,6 +21,13 @@
  *  - Removed mbedtls_ prefixes
  *  - Reworked coding style
  */
+
+/**
+ * @file
+ * @brief Header file for the Base64 encoding/decoding functions.
+ * @ingroup base64
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_BASE64_H_
 #define ZEPHYR_INCLUDE_SYS_BASE64_H_
 

@@ -1832,11 +1832,13 @@ class LicenseAndCopyrightCheck(ComplianceTest):
 
         # Only scan text files for now, in the future we may want to leverage REUSE standard's
         # ability to also associate license/copyright info with binary files.
+        filtered_files = []
         for file in changed_files:
             full_path = GIT_TOP / file
             mime_type = magic.from_file(os.fspath(full_path), mime=True)
-            if not mime_type.startswith("text/"):
-                changed_files.remove(file)
+            if mime_type.startswith("text/"):
+                filtered_files.append(file)
+        changed_files = filtered_files
 
         project = Project.from_directory(GIT_TOP)
         report = ProjectSubsetReport.generate(project, changed_files, multiprocessing=False)
@@ -2132,7 +2134,8 @@ class ImageSize(ComplianceTest):
 
             if size > limit:
                 self.failure(
-                    f"Image file too large: {file} reduce size to less than {limit >> 10}kB"
+                    f"Image file too large: {file} reduce size to less than {limit >> 10}kB.\n"
+                    "See https://docs.zephyrproject.org/latest/contribute/documentation/guidelines.html#recommended-image-formats-based-on-content"
                 )
 
 

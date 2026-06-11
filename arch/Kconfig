@@ -1145,7 +1145,10 @@ config FPU
 
 	  If it is necessary for multiple threads to perform concurrent floating
 	  point operations, the "FPU register sharing" option must be enabled to
-	  preserve the floating point registers across context switches.
+	  preserve the floating point registers across context switches. This is
+	  done automatically if the platform enables an architecture-specific option
+	  enabling the compiler to generate FP instructions for general puprose
+	  integer work.
 
 	  Note that this option cannot be selected for the platforms that do not
 	  include a hardware floating point unit; the floating point support for

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config ENTROPY_SILABS_SIWX91X
-	bool "SiWx91x RNG driver"
+	bool "Silabs SiWx91x RNG driver"
 	default y
 	depends on DT_HAS_SILABS_SIWX91X_RNG_ENABLED
 	select ENTROPY_HAS_DRIVER

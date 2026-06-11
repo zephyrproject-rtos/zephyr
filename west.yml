@@ -157,7 +157,7 @@ manifest:
       groups:
         - hal
     - name: hal_ambiq
-      revision: c03d2f9902cfc3ff0d3f78ead538e9726251f7f9
+      revision: 3d7044ea240fc8dcb7b4c843b76f70cae5db736b
       path: modules/hal/ambiq
       groups:
         - hal
@@ -168,11 +168,11 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 6f8ee38a67b5c4a9f0b6e395d9c363fc920182a0
+      revision: f011e4337fa79e28a3d784003d8a1bcf883eb75b
       groups:
         - hal
     - name: hal_espressif
-      revision: 047d4547aeba0e2280610c6bdfc3058df0c61c80
+      revision: 7dcc5bd72140379403743927e868ae00c9d9028e
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -213,7 +213,7 @@ manifest:
       groups:
         - hal
     - name: hal_nxp
-      revision: 138761d5c6f9b852950f22df41f18047a9fba3a7
+      revision: 0f7ae59e08fc5a0c43561c495488483aa506ab4e
       path: modules/hal/nxp
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: beb44b18cbf3c29c4805dfb3a06f9092d0c1f2ef
+      revision: a00cf493fa200df303f617d609538d33088c2654
       groups:
         - hal
     - name: hal_renesas
@@ -248,7 +248,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 12a1d77c7f8ff4d18b6ed1ace6da07e76aaa789f
+      revision: 21dcc23ca6eafc741b6a267d78e7fc0ca1c0beb9
       path: modules/hal/silabs
       groups:
         - hal
@@ -399,7 +399,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: fc9c70171ae43bfd99c57a7ca6374d7f4fa8e894
+      revision: ee0acbb142d27ea3eb829d8da217dfd41af462be
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

@@ -117,8 +117,7 @@ static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 	bt_shell_print("HF SCO disconnected %p (reason %u)", sco_conn, reason);
 
 	if (hf_sco_conn == sco_conn) {
-		bt_conn_unref(hf_sco_conn);
-		hf_sco_conn = NULL;
+		bt_conn_drop(&hf_sco_conn);
 	} else {
 		bt_shell_warn("Unknown SCO disconnected (%p != %p)", hf_sco_conn, sco_conn);
 	}
@@ -1152,8 +1151,7 @@ static void ag_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 	bt_shell_print("AG SCO disconnected %p (reason %u)", sco_conn, reason);
 
 	if (hfp_ag_sco_conn == sco_conn) {
-		bt_conn_unref(hfp_ag_sco_conn);
-		hfp_ag_sco_conn = NULL;
+		bt_conn_drop(&hfp_ag_sco_conn);
 	} else {
 		bt_shell_warn("Unknown SCO disconnected (%p != %p)", hfp_ag_sco_conn, sco_conn);
 	}

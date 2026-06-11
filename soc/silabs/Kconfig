@@ -4,6 +4,13 @@
 
 rsource "*/Kconfig"
 
+config SILABS_SHELL
+	bool
+	depends on SHELL
+	help
+	  Hidden option that enables the "silabs" shell command namespace.
+	  Selected by any Silicon Labs SoC feature that registers a subcommand.
+
 if SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
 config SOC_GECKO_HAS_RADIO

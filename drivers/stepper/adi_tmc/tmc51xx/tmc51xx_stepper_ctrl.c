@@ -79,7 +79,7 @@ static int read_vactual(const struct device *dev, int32_t *actual_velocity)
 int tmc51xx_stepper_ctrl_set_max_velocity(const struct device *dev, uint32_t velocity)
 {
 	const struct tmc51xx_stepper_ctrl_config *config = dev->config;
-	const uint32_t clock_frequency = tmc51xx_get_clock_frequency(dev);
+	const uint32_t clock_frequency = tmc51xx_get_clock_frequency(config->controller);
 	uint32_t velocity_fclk;
 	int err;
 
@@ -445,7 +445,7 @@ static int tmc51xx_stepper_ctrl_configure_ramp(const struct device *dev,
 {
 	const struct tmc51xx_stepper_ctrl_config *config = dev->config;
 	const struct device *controller = config->controller;
-	const uint32_t clock_frequency = tmc51xx_get_clock_frequency(dev);
+	const uint32_t clock_frequency = tmc51xx_get_clock_frequency(config->controller);
 	uint32_t velocity_fclk =
 		tmc5xxx_calculate_velocity_from_hz_to_fclk(ramp->speed_max, clock_frequency);
 	uint32_t accel_fclk = tmc5xxx_calculate_acceleration_from_hz_to_fclk(ramp->acceleration_max,

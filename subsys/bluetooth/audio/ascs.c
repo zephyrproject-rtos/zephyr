@@ -187,8 +187,7 @@ static void ase_free(struct bt_ascs_ase *ase)
 		bt_bap_iso_unbind_ep(ase->ep.iso, &ase->ep);
 	}
 
-	bt_conn_unref(ase->conn);
-	ase->conn = NULL;
+	bt_conn_drop(&ase->conn);
 
 	(void)k_work_cancel_delayable(&ase->disconnect_work);
 	(void)k_work_cancel_delayable(&ase->state_transition_work);
@@ -2825,8 +2824,6 @@ static bool is_valid_stop_len(struct bt_conn *conn, struct net_buf_simple *buf)
 	const struct bt_ascs_stop_op *op;
 	struct net_buf_simple_state state;
 
-	ARG_UNUSED(conn);
-
 	net_buf_simple_save(buf, &state);
 
 	if (buf->len < sizeof(*op)) {
@@ -2835,8 +2832,7 @@ static bool is_valid_stop_len(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	op = net_buf_simple_pull_mem(buf, sizeof(*op));
-	if (op->num_ases < 1U) {
-		LOG_WRN("Number_of_ASEs parameter value is less than 1");
+	if (!is_valid_num_ases(conn, op->num_ases)) {
 		return false;
 	}
 

@@ -1032,7 +1032,6 @@
 				      133 0 134 0 135 0 136 0 137 0 138 0 139 0 140 0>;
 			dma-channels = <16>;
 			dma-requests = <109>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
@@ -1047,28 +1046,32 @@
 				     <145 0>, <146 0>, <147 0>, <148 0>;
 			dma-channels = <16>;
 			dma-requests = <20>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
 		sai1: sai1@42005800 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
-			#size-cells = <0>;
+			#size-cells = <1>;
 			reg = <0x40015400 0x400>;
+			ranges = <0x0 0x40015400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(0)>;
 			status = "disabled";
 
 			sai1_a: sai1a@4 {
-				reg = <0x4>;
+				reg = <0x4 0x20>;
 				dmas = <&gpdma1 1 63 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 
 			sai1_b: sai1b@24 {
-				reg = <0x24>;
+				reg = <0x24 0x20>;
 				dmas = <&gpdma1 0 64 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 		};

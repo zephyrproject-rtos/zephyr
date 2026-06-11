@@ -173,7 +173,7 @@ static int mdio_esp32_initialize(const struct device *dev)
 
 #if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
 	emac_hal_init(&dev_data->hal);
-	esp32_emac_iomux_init_rmii();
+	esp32_emac_iomux_init_rmii(-1, -1, -1, -1, -1, -1);
 	BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 0 ||
 	  DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
 		DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,

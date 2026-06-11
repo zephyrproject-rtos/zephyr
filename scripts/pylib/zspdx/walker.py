@@ -51,7 +51,7 @@ class WalkerConfig:
     # prefix for Document namespaces; should not end with "/"
     namespacePrefix: str = ""
 
-        # location of build directory
+    # location of build directory
     buildDir: str = ""
 
     # should also analyze for included header files?
@@ -59,6 +59,7 @@ class WalkerConfig:
 
     # should also add an SPDX document for the SDK?
     includeSDK: bool = False
+
 
 # Walker is the main analysis class: it walks through the CMake codemodel,
 # build files, and corresponding source and SDK files, and gathers the
@@ -106,7 +107,10 @@ class Walker:
         purl = None
         # This is designed to match repository with the following url pattern:
         # '<protocol><type>/<namespace>/<package>
-        COMMON_GIT_URL_REGEX=r'((git@|http(s)?:\/\/)(?P<type>[\w\.@]+)(\.\w+)(\/|:))(?P<namespace>[\w,\-,\_\/]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
+        COMMON_GIT_URL_REGEX = (
+            r'((git@|http(s)?:\/\/)(?P<type>[\w\.@]+)(\.\w+)(\/|:))'
+            r'(?P<namespace>[\w,\-,\_\/]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
+        )
 
         match = re.fullmatch(COMMON_GIT_URL_REGEX, url)
         if match:
@@ -188,7 +192,7 @@ class Walker:
         if self.cmakeCache:
             self.compilerPath = self.cmakeCache.get("CMAKE_C_COMPILER", "")
             self.sdkPath = self.cmakeCache.get("ZEPHYR_SDK_INSTALL_DIR", "")
-            self.metaFile =  self.cmakeCache.get("KERNEL_META_PATH", "")
+            self.metaFile = self.cmakeCache.get("KERNEL_META_PATH", "")
 
     # determine path from build dir to CMake file-based API index file, then
     # parse it and return the Codemodel
@@ -275,8 +279,10 @@ class Walker:
         try:
             relativeBaseDir = west_topdir(self.cm.paths_source)
         except WestNotFound:
-            _logger.error("cannot find west_topdir for CMake Codemodel sources path "
-                    f"{self.cm.paths_source}; bailing")
+            _logger.error(
+                "cannot find west_topdir for CMake Codemodel sources path "
+                f"{self.cm.paths_source}; bailing"
+            )
             return False
 
         # set up zephyr sources package
@@ -383,7 +389,6 @@ class Walker:
         self.docModulesExtRefs = Document(cfgModuleExtRef)
         pkgZephyr = None
         if zephyr is not None:
-
             # set up zephyr package
             cfgPackageZephyr = PackageConfig()
             cfgPackageZephyr.name = "zephyr-deps"
@@ -448,12 +453,10 @@ class Walker:
 
             if cfgPackageZephyr:
                 self._add_dependency_of_relationship(
-                    self.docModulesExtRefs,
-                    cfgPackageModuleExtRef,
-                    cfgPackageZephyr)
+                    self.docModulesExtRefs, cfgPackageModuleExtRef, cfgPackageZephyr
+                )
             else:
                 self._add_describe_relationship(self.docModulesExtRefs, cfgPackageModuleExtRef)
-
 
     # set up Documents before beginning
     def setupDocuments(self):
@@ -538,8 +541,10 @@ class Walker:
 
         # don't create build File if artifact path points to nonexistent file
         if not os.path.exists(artifactPath):
-            _logger.debug(f"  - target {cfgTarget.name} lists build artifact {artifactPath} "
-                    "but file not found after build; skipping")
+            _logger.debug(
+                f"  - target {cfgTarget.name} lists build artifact {artifactPath} "
+                "but file not found after build; skipping"
+            )
             return None
 
         # create build File
@@ -547,8 +552,7 @@ class Walker:
         bf.abspath = artifactPath
         bf.relpath = cfgTarget.target.artifacts[0]
         # can use nameOnDisk b/c it is just the filename w/out directory paths
-        bf.spdxID = spdxids.getUniqueFileID(cfgTarget.target.nameOnDisk,
-                                                  self.docBuild.timesSeen)
+        bf.spdxID = spdxids.getUniqueFileID(cfgTarget.target.nameOnDisk, self.docBuild.timesSeen)
         # don't fill hashes / licenses / rlns now, we'll do that after walking
 
         # add File to Package
@@ -584,8 +588,10 @@ class Walker:
 
             # check whether it even exists
             if not (os.path.exists(srcAbspath) and os.path.isfile(srcAbspath)):
-                _logger.debug(f"  - {srcAbspath} does not exist but is referenced in sources for "
-                        f"target {pkg.cfg.name}; skipping")
+                _logger.debug(
+                    f"  - {srcAbspath} does not exist but is referenced in sources for "
+                    f"target {pkg.cfg.name}; skipping"
+                )
                 continue
 
             # add it to pending source files queue
@@ -649,9 +655,11 @@ class Walker:
 
         # currently only doing C includes
         if cg.language != "C":
-            _logger.debug(f"    - {cfgTarget.target.name} has compile group language {cg.language} "
-                    "but currently only searching includes for C files; "
-                    "skipping included files search")
+            _logger.debug(
+                f"    - {cfgTarget.target.name} has compile group language {cg.language} "
+                "but currently only searching includes for C files; "
+                "skipping included files search"
+            )
             return []
 
         srcAbspath = src.path
@@ -742,8 +750,9 @@ class Walker:
             pkgZephyr = self.findZephyrPackage(srcAbspath)
 
             if pkgBuild:
-                _logger.debug(f"  - {srcAbspath}: assigning to build document, "
-                        f"package {pkgBuild.cfg.name}")
+                _logger.debug(
+                    f"  - {srcAbspath}: assigning to build document, package {pkgBuild.cfg.name}"
+                )
                 srcDoc = self.docBuild
                 srcPkg = pkgBuild
             elif self.cfg.includeSDK and is_subpath(srcAbspath, pkgSDK.cfg.relativeBaseDir):
@@ -881,7 +890,7 @@ class Walker:
             return (
                 rlnData.ownerDocument,
                 rlnData.ownerPackageID,
-                rlnData.ownerDocument.relationships
+                rlnData.ownerDocument.relationships,
             )
         else:
             _logger.debug(f"  - unknown relationship type {rlnData.ownerType}; skipping")

@@ -67,6 +67,54 @@ config AUDIO_DMIC_INIT_PRIORITY
 	help
 	  Audio Digital Microphone device driver initialization priority.
 
+menuconfig AUDIO_DMIC_SHELL
+	bool "Audio DMIC shell"
+	depends on SHELL
+	select SHELL_VT100_COMMANDS
+	select BASE64
+	help
+	  Enable shell commands to read audio data, display a live VU meter, and dump captured PCM
+	  as base64 from a digital microphone device.
+
+if AUDIO_DMIC_SHELL
+
+config AUDIO_DMIC_SHELL_BLOCK_COUNT
+	int "Number of capture buffers"
+	default 4
+	range 2 16
+	help
+	  Number of buffers in the capture pool.
+	  At least two are needed so one buffer can be filled while another is processed.
+
+config HEAP_MEM_POOL_ADD_SIZE_AUDIO_DMIC_SHELL
+	int "System heap reserved for the Audio DMIC shell (bytes)"
+	default 8192
+	help
+	  Heap reserved for shell capture buffers.
+	  Raise it for higher sample rates, channel counts, or PCM widths.
+
+config AUDIO_DMIC_SHELL_VU_PEAK_HOLD_MS
+	int "Level meter peak-hold time (ms)"
+	default 1000
+	help
+	  How long the "dmic vu" level meter holds the peak-hold tick ('|') flat after a new peak
+	  before it starts decaying back toward the floor.
+
+config AUDIO_DMIC_SHELL_VU_CLIP_HOLD_MS
+	int "Level meter clip indicator hold time (ms)"
+	default 2000
+	help
+	  How long the "dmic vu" level meter keeps the red clip indicator ('!') lit after the most
+	  recent clipped sample.
+
+config AUDIO_DMIC_SHELL_VU_STACK_SIZE
+	int "Level meter worker thread stack size (bytes)"
+	default 1024
+	help
+	  Stack size for the background worker thread that runs the "dmic vu" level meter.
+
+endif # AUDIO_DMIC_SHELL
+
 module = AUDIO_DMIC
 module-str = audio_dmic
 source "subsys/logging/Kconfig.template.log_config"
@@ -76,6 +124,7 @@ source "drivers/audio/Kconfig.dmic_ambiq_pdm"
 source "drivers/audio/Kconfig.dmic_infineon"
 source "drivers/audio/Kconfig.dmic_mcux"
 source "drivers/audio/Kconfig.dmic_mpxxdtyy"
+source "drivers/audio/Kconfig.dmic_native_sim"
 source "drivers/audio/Kconfig.dmic_nxp_micfil"
 source "drivers/audio/Kconfig.dmic_pdm_nrfx"
 source "drivers/audio/Kconfig.dmic_stm32_dfsdm"

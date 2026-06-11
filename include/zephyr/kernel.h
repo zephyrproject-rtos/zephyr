@@ -1196,6 +1196,10 @@ __syscall void k_reschedule(void);
  * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
  *
+ * @note Not permitted when @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is
+ * enabled.  PIN_ONLY requires every thread to carry exactly one CPU bit;
+ * clearing all bits violates that invariant and will trigger an assertion.
+ *
  * @param thread Thread to operate upon
  * @return Zero on success, otherwise error code
  */
@@ -1209,6 +1213,11 @@ int k_thread_cpu_mask_clear(k_tid_t thread);
  *
  * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
+ *
+ * @note Not permitted when @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is
+ * enabled.  PIN_ONLY requires every thread to carry exactly one CPU bit;
+ * setting all bits violates that invariant and will trigger an assertion.
+ * Use :c:func:`k_thread_cpu_pin` instead.
  *
  * @param thread Thread to operate upon
  * @return Zero on success, otherwise error code
@@ -1236,6 +1245,11 @@ int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
  *
  * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
+ *
+ * @note Not permitted when @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is
+ * enabled.  PIN_ONLY requires exactly one CPU bit to remain set; removing
+ * that bit would leave an empty mask and will trigger an assertion.
+ * Use :c:func:`k_thread_cpu_pin` to move a thread to a different CPU.
  *
  * @param thread Thread to operate upon
  * @param cpu CPU index
@@ -2421,6 +2435,8 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail);
  * This routine adds a list of data items to @a queue in one operation.
  * The data items must be in a singly-linked list implemented using a
  * sys_slist_t object. Upon completion, the original list is empty.
+ * The caller is responsible for ensuring that @a list is not concurrently
+ * accessed by other threads or ISRs.
  *
  * @isr_ok
  *
@@ -2457,8 +2473,6 @@ __syscall void *k_queue_get(struct k_queue *queue, k_timeout_t timeout);
  * This routine removes data item from @a queue. The first word of the
  * data item is reserved for the kernel's use. Removing elements from k_queue
  * rely on sys_slist_find_and_remove which is not a constant time operation.
- *
- * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  *
  * @isr_ok
  *
@@ -7074,6 +7088,16 @@ int k_thread_runtime_stats_enable(k_tid_t thread);
  * @return -EINVAL if invalid thread ID, otherwise 0
  */
 int k_thread_runtime_stats_disable(k_tid_t thread);
+
+/**
+ * @brief Check if runtime statistics gathering is enabled for a thread
+ *
+ * This routine checks whether the specified thread has enabled runtime statistics.
+ *
+ * @param thread ID of thread
+ * @return true if usage statistics are enabled for the given thread, otherwise false
+ */
+bool k_thread_runtime_stats_is_enabled(k_tid_t thread);
 
 /**
  * @brief Enable gathering of system runtime statistics

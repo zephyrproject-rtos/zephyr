@@ -84,6 +84,7 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 					display);
 		break;
 	case PIXEL_FORMAT_RGB_888:
+	case PIXEL_FORMAT_BGR_888:
 		lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB888);
 		lv_display_set_flush_cb(display, lvgl_flush_cb_24bit);
 		lv_display_add_event_cb(display, lvgl_rounder_cb, LV_EVENT_INVALIDATE_AREA,

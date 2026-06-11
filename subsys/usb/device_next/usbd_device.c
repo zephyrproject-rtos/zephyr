@@ -294,8 +294,7 @@ static void usbd_free_preallocated(struct usbd_context *const uds_ctx)
 {
 	/* Release reference to pre-allocated setup buffer */
 	if (uds_ctx->setup_buf != NULL) {
-		net_buf_unref(uds_ctx->setup_buf);
-		uds_ctx->setup_buf = NULL;
+		net_buf_drop(&uds_ctx->setup_buf);
 	}
 }
 

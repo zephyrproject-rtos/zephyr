@@ -1146,10 +1146,7 @@ void bt_bap_stream_detach(struct bt_bap_stream *stream)
 {
 	LOG_DBG("stream %p conn %p ep %p", stream, (void *)stream->conn, (void *)stream->ep);
 
-	if (stream->conn != NULL) {
-		bt_conn_unref(stream->conn);
-		stream->conn = NULL;
-	}
+	bt_conn_drop(&stream->conn);
 	stream->codec_cfg = NULL;
 
 	if (stream->ep != NULL) {

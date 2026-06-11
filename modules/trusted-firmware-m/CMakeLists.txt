@@ -232,10 +232,8 @@ if(CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
-  if(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
-    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
-    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
-    # been manually downloaded by the user before starting the build.
+  if(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND
+     (CONFIG_TFM_QCBOR_PATH STREQUAL "" OR CONFIG_TFM_T_COSE_PATH STREQUAL ""))
     message(FATAL_ERROR "CONFIG_TFM_PARTITION_INITIAL_ATTESTATION is not available "
       "with TF-M due to licensing issues with a dependent library. This "
       "restriction will be removed once licensing issues have been resolved."
@@ -276,22 +274,6 @@ if(CONFIG_BUILD_WITH_TFM)
   if(CONFIG_TFM_STM32_FLASH_LAYOUT_BEGIN_OFFSET)
     list(APPEND TFM_CMAKE_ARGS
       -DSTM32_FLASH_LAYOUT_BEGIN_OFFSET=${CONFIG_TFM_STM32_FLASH_LAYOUT_BEGIN_OFFSET}
-    )
-  endif()
-
-  if(CONFIG_SOC_SERIES_PSE84)
-    include(${ZEPHYR_BASE}/soc/infineon/edge/pse84/pse84_metadata.cmake)
-    list(APPEND TFM_CMAKE_ARGS -DIFX_EPC=epc2)
-
-    # Use local hal_infineon assets instead of fetching from GitHub
-    list(APPEND TFM_CMAKE_ARGS
-      -DIFX_CORE_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/core-lib
-      -DIFX_DEV_SUPPORT_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-dsl-pse8xxgp
-      -DIFX_MTB_SRF_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-srf
-      -DIFX_ABSTRACTION_RTOS_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/abstraction-rtos
-      -DIFX_MTB_IPC_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-ipc
-      -DIFX_DEVICE_DB_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/device-db
-      -DIFX_BSP_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-template-pse8xxgp/files
     )
   endif()
 

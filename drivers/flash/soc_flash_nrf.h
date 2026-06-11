@@ -17,6 +17,9 @@ struct flash_context {
 	uint32_t data_addr;  /* Address of data to write. */
 	uint32_t flash_addr; /* Address of flash to write or erase. */
 	uint32_t len;        /* Size of data to write or erase [B]. */
+	uint8_t  fill_val;   /* Fill value used by erase emulation paths
+			      * when data_addr == 0 (RRAM driver).
+			      */
 #ifndef CONFIG_SOC_FLASH_NRF_RADIO_SYNC_NONE
 	uint8_t  enable_time_limit; /* set execution limited to the execution
 				     * window.

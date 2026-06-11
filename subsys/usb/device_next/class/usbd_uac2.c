@@ -712,6 +712,16 @@ static int set_clock_source_request(struct usbd_class_data *const c_data,
 			uint32_t requested, hz;
 			int err;
 
+			if (buf == NULL) {
+				if (setup->wLength == 4) {
+					/* Data OUT can be received */
+					return 0;
+				}
+
+				errno = -EINVAL;
+				return 0;
+			}
+
 			err = layout3_cur_request(buf, &requested);
 			if (err) {
 				errno = err;

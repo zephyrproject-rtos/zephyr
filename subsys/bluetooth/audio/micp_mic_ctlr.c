@@ -504,12 +504,7 @@ static void micp_mic_ctlr_reset(struct bt_micp_mic_ctlr *mic_ctlr)
 	mic_ctlr->aics_inst_cnt = 0;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
 
-	if (mic_ctlr->conn != NULL) {
-		struct bt_conn *conn = mic_ctlr->conn;
-
-		bt_conn_unref(conn);
-		mic_ctlr->conn = NULL;
-	}
+	bt_conn_drop(&mic_ctlr->conn);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)

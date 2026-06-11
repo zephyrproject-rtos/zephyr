@@ -963,11 +963,459 @@ ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 
 	quic_recovery_init(ep);
 	quic_recovery_begin_shutdown(ep);
-	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, 1, 123, true);
+	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, 1, 123, true,
+				      false, 0);
 
 	zassert_true(ep->recovery.closing, "Recovery must stay in shutdown state");
 	zassert_equal(ep->recovery.bytes_in_flight, 0,
 		      "Shutdown recovery must not track new in-flight bytes");
+}
+
+static void init_test_dplpmtud_endpoint(struct quic_endpoint *ep)
+{
+	reset_test_ep(ep);
+	quic_recovery_init(ep);
+	ep->handshake.completed = true;
+	ep->peer_params.max_udp_payload_size = UINT16_MAX;
+	ep->dplpmtud.validated_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+	ep->dplpmtud.local_max_payload_size = 1452U;
+	ep->dplpmtud.search_low = QUIC_DPLPMTUD_BASE_PLPMTU;
+	ep->dplpmtud.search_high = 1452U;
+	ep->max_tx_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;
+}
+
+ZTEST(net_socket_quic, test_095_dplpmtud_keeps_peer_cap_separate)
+{
+	struct quic_endpoint *ep = &test_ep_a;
+
+	init_test_dplpmtud_endpoint(ep);
+	ep->peer_params.max_udp_payload_size = 1400U;
+
+	quic_dplpmtud_refresh_state(ep);
+
+	zassert_equal(ep->peer_params.max_udp_payload_size, 1400U,
+		      "Peer max UDP payload size must be stored separately");
+	zassert_equal(ep->max_tx_payload_size, QUIC_DPLPMTUD_BASE_PLPMTU,
+		      "TX payload size must stay at the validated base size");
+	zassert_true(ep->dplpmtud.probe_pending,
+		     "A larger payload should schedule probing");
+}
+
+ZTEST(net_socket_quic, test_096_dplpmtud_probe_ack_raises_payload_limit)
+{
+	struct quic_endpoint *ep = &test_ep_a;
+	uint16_t probe_size = 1326U;
+
+	init_test_dplpmtud_endpoint(ep);
+	ep->dplpmtud.probe_in_flight = true;
+	ep->dplpmtud.probe_size = probe_size;
+	ep->dplpmtud.probe_attempts = 1U;
+
+	quic_dplpmtud_on_probe_acked(ep, probe_size);
+
+	zassert_equal(ep->dplpmtud.validated_payload_size, probe_size,
+		      "ACKed probe must raise the validated payload size");
+	zassert_equal(ep->max_tx_payload_size, probe_size,
+		      "TX payload size must follow the validated probe size");
+	zassert_true(ep->dplpmtud.probe_pending,
+		     "A larger ceiling should keep probing enabled");
+}
+
+ZTEST(net_socket_quic, test_097_dplpmtud_probe_loss_retries_then_clamps)
+{
+	struct quic_endpoint *ep = &test_ep_a;
+	uint16_t probe_size = 1400U;
+
+	init_test_dplpmtud_endpoint(ep);
+	ep->dplpmtud.probe_in_flight = true;
+	ep->dplpmtud.probe_size = probe_size;
+	ep->dplpmtud.probe_attempts = 1U;
+
+	quic_dplpmtud_on_probe_lost(ep, probe_size);
+
+	zassert_false(ep->dplpmtud.probe_in_flight,
+		      "Lost probe must leave the in-flight state");
+	zassert_true(ep->dplpmtud.probe_pending,
+		     "Lost probe below retry limit must be retried");
+	zassert_equal(ep->dplpmtud.probe_size, probe_size,
+		      "Retry must keep the same probe size");
+
+	ep->dplpmtud.probe_in_flight = true;
+	ep->dplpmtud.probe_attempts = QUIC_DPLPMTUD_MAX_PROBE_RETRIES;
+
+	quic_dplpmtud_on_probe_lost(ep, probe_size);
+
+	zassert_equal(ep->dplpmtud.search_high, probe_size - 1U,
+		      "Exhausted probe retries must clamp the search upper bound");
+	zassert_equal(ep->dplpmtud.probe_size, 0U,
+		      "A failed probe size must be cleared");
+	zassert_true(ep->dplpmtud.probe_pending,
+		     "A smaller candidate should still be probed");
+}
+
+static void init_test_tx_ack_stream(struct quic_stream *stream,
+				    struct quic_endpoint *ep)
+{
+	memset(stream, 0, sizeof(*stream));
+
+	stream->id = 4;
+	stream->ep = ep;
+	stream->bytes_acked = 0;
+	stream->bytes_sent = 1000;
+	stream->tx_buf.base_offset = 0;
+	stream->tx_buf.len = 1000;
+	stream->acked_ooo_count = 0;
+	k_mutex_init(&stream->tx_lock);
+	k_poll_signal_init(&stream->send.signal);
+}
+
+#define TX_STRESS_APPEND_CHUNK 64U
+#define TX_STRESS_ITERATIONS 1000
+#define TX_STRESS_THREAD_STACK 2048
+
+static uint8_t tx_stress_pattern_byte(uint64_t offset)
+{
+	return (uint8_t)((offset * 131U + 7U) & 0xffU);
+}
+
+static void tx_stress_fill_range(struct quic_stream *stream, uint64_t offset, size_t len)
+{
+	struct quic_stream_tx_buffer *tx = &stream->tx_buf;
+	size_t buf_off = (size_t)(offset - tx->base_offset);
+
+	for (size_t i = 0; i < len; i++) {
+		tx->data[buf_off + i] = tx_stress_pattern_byte(offset + i);
+	}
+}
+
+static bool tx_stress_verify_buffer(struct quic_stream *stream)
+{
+	struct quic_stream_tx_buffer *tx;
+	bool ok = true;
+
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	tx = &stream->tx_buf;
+
+	if (tx->base_offset + tx->len > stream->bytes_sent) {
+		ok = false;
+		goto unlock;
+	}
+
+	if (stream->bytes_acked > stream->bytes_sent) {
+		ok = false;
+		goto unlock;
+	}
+
+	for (size_t i = 0; i < tx->len; i++) {
+		uint64_t offset = tx->base_offset + i;
+
+		if (tx->data[i] != tx_stress_pattern_byte(offset)) {
+			ok = false;
+			goto unlock;
+		}
+	}
+
+unlock:
+	k_mutex_unlock(&stream->tx_lock);
+
+	return ok;
+}
+
+static void tx_stress_ack_range(struct quic_stream *stream, uint32_t seed)
+{
+	uint64_t limit = stream->bytes_sent;
+	uint64_t start;
+	uint64_t end;
+
+	if (limit == 0U) {
+		return;
+	}
+
+	start = ((uint64_t)seed * 17U) % limit;
+	end = MIN(start + 1U + (((uint64_t)seed * 31U) % 200U), limit);
+
+	if (end > start) {
+		quic_stream_advance_tx_acked_for_stream(stream, start, end);
+	}
+}
+
+static atomic_t tx_stress_failed;
+
+static void tx_stress_ack_thread(void *p1, void *p2, void *p3)
+{
+	struct quic_stream *stream = p1;
+	uint32_t seed = (uint32_t)(uintptr_t)p2;
+
+	ARG_UNUSED(p3);
+
+	for (int n = 0; n < TX_STRESS_ITERATIONS; n++) {
+		if (atomic_get(&tx_stress_failed) != 0) {
+			break;
+		}
+
+		tx_stress_ack_range(stream, seed + (uint32_t)n);
+
+		if ((n % 50) == 0 && !tx_stress_verify_buffer(stream)) {
+			atomic_set(&tx_stress_failed, 1);
+			break;
+		}
+
+		k_yield();
+	}
+}
+
+static void tx_stress_append_thread(void *p1, void *p2, void *p3)
+{
+	struct quic_stream *stream = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (int n = 0; n < TX_STRESS_ITERATIONS; n++) {
+		struct quic_stream_tx_buffer *tx;
+
+		if (atomic_get(&tx_stress_failed) != 0) {
+			break;
+		}
+
+		k_mutex_lock(&stream->tx_lock, K_FOREVER);
+		tx = &stream->tx_buf;
+
+		if (tx->base_offset + tx->len + TX_STRESS_APPEND_CHUNK <= stream->bytes_sent &&
+		    tx->len + TX_STRESS_APPEND_CHUNK <= sizeof(tx->data)) {
+			uint64_t tail = tx->base_offset + tx->len;
+
+			for (size_t i = 0; i < TX_STRESS_APPEND_CHUNK; i++) {
+				tx->data[tx->len + i] = tx_stress_pattern_byte(tail + i);
+			}
+			tx->len += TX_STRESS_APPEND_CHUNK;
+		}
+
+		k_mutex_unlock(&stream->tx_lock);
+
+		if ((n % 50) == 0 && !tx_stress_verify_buffer(stream)) {
+			atomic_set(&tx_stress_failed, 1);
+			break;
+		}
+
+		k_yield();
+	}
+}
+
+static void tx_stress_rollback_thread(void *p1, void *p2, void *p3)
+{
+	struct quic_stream *stream = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (int n = 0; n < TX_STRESS_ITERATIONS; n++) {
+		struct quic_stream_tx_buffer *tx;
+		uint64_t this_offset;
+		size_t chunk = 32U;
+
+		if (atomic_get(&tx_stress_failed) != 0) {
+			break;
+		}
+
+		k_mutex_lock(&stream->tx_lock, K_FOREVER);
+		tx = &stream->tx_buf;
+		this_offset = stream->bytes_sent;
+
+		if (tx->base_offset + tx->len + chunk <= stream->remote_max_data &&
+		    tx->len + chunk <= sizeof(tx->data)) {
+			for (size_t i = 0; i < chunk; i++) {
+				tx->data[tx->len + i] =
+					tx_stress_pattern_byte(this_offset + i);
+			}
+			tx->len += chunk;
+		} else {
+			this_offset = UINT64_MAX;
+		}
+
+		k_mutex_unlock(&stream->tx_lock);
+
+		if (this_offset != UINT64_MAX) {
+			k_mutex_lock(&stream->tx_lock, K_FOREVER);
+			tx = &stream->tx_buf;
+
+			if (stream->bytes_sent == this_offset) {
+				size_t buf_off = (size_t)(this_offset - tx->base_offset);
+
+				if (buf_off < tx->len && buf_off + chunk <= tx->len) {
+					if (buf_off + chunk < tx->len) {
+						memmove(&tx->data[buf_off],
+							&tx->data[buf_off + chunk],
+							tx->len - buf_off - chunk);
+					}
+					tx->len -= chunk;
+				}
+			}
+
+			k_mutex_unlock(&stream->tx_lock);
+		}
+
+		if ((n % 50) == 0 && !tx_stress_verify_buffer(stream)) {
+			atomic_set(&tx_stress_failed, 1);
+			break;
+		}
+
+		k_yield();
+	}
+}
+
+static void init_test_tx_stress_stream(struct quic_stream *stream,
+				       struct quic_endpoint *ep,
+				       size_t initial_len,
+				       uint64_t bytes_sent)
+{
+	init_test_tx_ack_stream(stream, ep);
+
+	stream->bytes_sent = bytes_sent;
+	stream->remote_max_data = bytes_sent;
+	stream->tx_buf.len = initial_len;
+
+	k_mutex_lock(&stream->tx_lock, K_FOREVER);
+	tx_stress_fill_range(stream, stream->tx_buf.base_offset, initial_len);
+	k_mutex_unlock(&stream->tx_lock);
+}
+
+ZTEST(net_socket_quic, test_098_tx_ack_ooo_coalesce_and_advance)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+
+	init_test_tx_ack_stream(&stream, ep);
+
+	quic_stream_advance_tx_acked_for_stream(&stream, 100, 200);
+	zassert_equal(stream.acked_ooo_count, 1U, NULL);
+	zassert_equal(stream.bytes_acked, 0U, NULL);
+
+	quic_stream_advance_tx_acked_for_stream(&stream, 200, 300);
+	zassert_equal(stream.acked_ooo_count, 1U,
+		      "Adjacent OOO ACK ranges must coalesce");
+	zassert_equal(stream.acked_ooo[0].offset, 100U, NULL);
+	zassert_equal(stream.acked_ooo[0].len, 200U, NULL);
+
+	quic_stream_advance_tx_acked_for_stream(&stream, 0, 100);
+	zassert_equal(stream.bytes_acked, 300U, NULL);
+	zassert_equal(stream.acked_ooo_count, 0U, NULL);
+	zassert_equal(stream.tx_buf.len, 700U, "ACKed TX data must be released");
+	zassert_equal(stream.tx_buf.base_offset, 300U, NULL);
+}
+
+ZTEST(net_socket_quic, test_099_tx_ack_ooo_queue_full_still_advances)
+{
+	static struct quic_stream stream;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const uint64_t slot_size = 100U;
+	const int slot_count = CONFIG_QUIC_STREAM_OOO_SLOTS;
+
+	init_test_tx_ack_stream(&stream, ep);
+	stream.bytes_sent = (slot_count + 2U) * slot_size;
+	stream.tx_buf.len = stream.bytes_sent;
+
+	for (int i = 0; i < slot_count; i++) {
+		uint64_t start = ((i * 2U) + 1U) * slot_size;
+
+		quic_stream_advance_tx_acked_for_stream(&stream, start, start + slot_size);
+	}
+
+	zassert_equal(stream.acked_ooo_count, (uint8_t)slot_count,
+		      "Expected queue to be full of disjoint OOO ACK ranges");
+
+	quic_stream_advance_tx_acked_for_stream(&stream,
+						((slot_count * 2U) + 1U) * slot_size,
+						((slot_count * 2U) + 2U) * slot_size);
+	zassert_equal(stream.acked_ooo_count, (uint8_t)slot_count,
+		      "Queue-full OOO ACK must not abort processing");
+
+	quic_stream_advance_tx_acked_for_stream(&stream, 0, slot_size);
+	zassert_equal(stream.bytes_acked, slot_size * 2U,
+		      "In-order ACK must still advance contiguous frontier");
+	zassert_equal(stream.acked_ooo_count, (uint8_t)(slot_count - 1),
+		      "Bridged OOO ACK range must be consumed");
+}
+
+ZTEST(net_socket_quic, test_101_tx_lock_concurrent_advance_and_append)
+{
+	static struct quic_stream stream;
+	static struct k_thread ack_thread_data;
+	static struct k_thread append_thread_data;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const uint64_t bytes_sent = CONFIG_QUIC_STREAM_TX_BUFFER_SIZE;
+	k_tid_t ack_tid;
+	k_tid_t append_tid;
+	int ret;
+
+	static K_THREAD_STACK_DEFINE(ack_thread_stack, TX_STRESS_THREAD_STACK);
+	static K_THREAD_STACK_DEFINE(append_thread_stack, TX_STRESS_THREAD_STACK);
+
+	init_test_tx_stress_stream(&stream, ep, bytes_sent / 2U, bytes_sent);
+	atomic_set(&tx_stress_failed, 0);
+
+	ack_tid = k_thread_create(&ack_thread_data, ack_thread_stack,
+				  K_THREAD_STACK_SIZEOF(ack_thread_stack),
+				  tx_stress_ack_thread, &stream, (void *)1, NULL,
+				  K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+	append_tid = k_thread_create(&append_thread_data, append_thread_stack,
+				     K_THREAD_STACK_SIZEOF(append_thread_stack),
+				     tx_stress_append_thread, &stream, NULL, NULL,
+				     K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+
+	k_thread_start(ack_tid);
+	k_thread_start(append_tid);
+
+	ret = k_thread_join(ack_tid, K_MSEC(5000));
+	zassert_equal(ret, 0, "ACK stress thread did not finish (%d)", ret);
+	ret = k_thread_join(append_tid, K_MSEC(5000));
+	zassert_equal(ret, 0, "Append stress thread did not finish (%d)", ret);
+
+	zassert_equal(atomic_get(&tx_stress_failed), 0,
+		      "TX buffer pattern corrupted during concurrent ACK/append");
+	zassert_true(tx_stress_verify_buffer(&stream),
+		     "Final TX buffer state must remain consistent");
+}
+
+ZTEST(net_socket_quic, test_102_tx_lock_send_rollback_under_advance)
+{
+	static struct quic_stream stream;
+	static struct k_thread ack_thread_data;
+	static struct k_thread rollback_thread_data;
+	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
+	const uint64_t bytes_sent = CONFIG_QUIC_STREAM_TX_BUFFER_SIZE;
+	k_tid_t ack_tid;
+	k_tid_t rollback_tid;
+	int ret;
+
+	static K_THREAD_STACK_DEFINE(ack_thread_stack, TX_STRESS_THREAD_STACK);
+	static K_THREAD_STACK_DEFINE(rollback_thread_stack, TX_STRESS_THREAD_STACK);
+
+	init_test_tx_stress_stream(&stream, ep, bytes_sent / 4U, bytes_sent);
+	stream.bytes_sent = bytes_sent / 4U;
+	atomic_set(&tx_stress_failed, 0);
+
+	ack_tid = k_thread_create(&ack_thread_data, ack_thread_stack,
+				  K_THREAD_STACK_SIZEOF(ack_thread_stack),
+				  tx_stress_ack_thread, &stream, (void *)17, NULL,
+				  K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+	rollback_tid = k_thread_create(&rollback_thread_data, rollback_thread_stack,
+				       K_THREAD_STACK_SIZEOF(rollback_thread_stack),
+				       tx_stress_rollback_thread, &stream, NULL, NULL,
+				       K_PRIO_PREEMPT(5), 0, K_NO_WAIT);
+
+	k_thread_start(ack_tid);
+	k_thread_start(rollback_tid);
+
+	ret = k_thread_join(ack_tid, K_MSEC(5000));
+	zassert_equal(ret, 0, "ACK stress thread did not finish (%d)", ret);
+	ret = k_thread_join(rollback_tid, K_MSEC(5000));
+	zassert_equal(ret, 0, "Rollback stress thread did not finish (%d)", ret);
+
+	zassert_equal(atomic_get(&tx_stress_failed), 0,
+		      "TX buffer pattern corrupted during rollback stress");
+	zassert_true(tx_stress_verify_buffer(&stream),
+		     "Final TX buffer state must remain consistent after rollback stress");
 }
 
 static void init_test_crypto_endpoint(struct quic_endpoint *ep,
@@ -1985,6 +2433,41 @@ static int wait_for_pollin(struct config *data, struct zsock_pollfd *pfd)
 	return -ECANCELED;
 }
 
+static int quic_test_send_all(int sock, const uint8_t *buf, size_t len)
+{
+	size_t sent = 0;
+
+	while (sent < len) {
+		ssize_t ret = zsock_send(sock, buf + sent, len - sent, 0);
+
+		if (ret > 0) {
+			sent += ret;
+			continue;
+		}
+
+		if (ret == 0) {
+			return -EIO;
+		}
+
+		if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			struct zsock_pollfd out = {
+				.fd = sock,
+				.events = ZSOCK_POLLOUT,
+			};
+
+			if (zsock_poll(&out, 1, POLL_TIMEOUT_MS) < 0) {
+				return -errno;
+			}
+
+			continue;
+		}
+
+		return -errno;
+	}
+
+	return 0;
+}
+
 static void server_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
@@ -2066,6 +2549,8 @@ static void server_thread(void *p1, void *p2, void *p3)
 	pfd.revents = 0;
 
 	while (true) {
+		bool send_failed = false;
+
 		ret = wait_for_pollin(data, &pfd);
 		if (ret == -ECANCELED) {
 			break;
@@ -2089,14 +2574,45 @@ static void server_thread(void *p1, void *p2, void *p3)
 			break;
 		}
 
-		ret = zsock_send(stream, buf, len, 0);
+		ret = quic_test_send_all(stream, buf, len);
 		if (ret < 0) {
-			data->error = -errno;
+			data->error = ret;
 			LOG_DBG("Stream send failed (%d)", data->error);
+			send_failed = true;
 			break;
 		}
-	}
 
+		if (send_failed) {
+			break;
+		}
+
+		/* socket poll is edge-triggered; drain any data already queued so
+		 * a short read does not leave tail bytes waiting without a new edge.
+		 */
+		while (true) {
+			len = zsock_recv(stream, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT);
+			if (len == 0) {
+				return;
+			}
+
+			if (len < 0) {
+				if (errno != EAGAIN && errno != EWOULDBLOCK) {
+					data->error = -errno;
+					LOG_DBG("Stream recv failed (%d)", data->error);
+					return;
+				}
+
+				break;
+			}
+
+			ret = quic_test_send_all(stream, buf, len);
+			if (ret < 0) {
+				data->error = ret;
+				LOG_DBG("Stream send failed (%d)", data->error);
+				return;
+			}
+		}
+	}
 }
 
 static void quic_server_and_client_with_stats(const char *server, const char *client,
@@ -2766,11 +3282,11 @@ static void server_uni_thread(void *p1, void *p2, void *p3)
 			break;
 		}
 
-		ret = zsock_send(stream_send_sock, buf, len, 0);
+		ret = quic_test_send_all(stream_send_sock, buf, len);
 		if (ret < 0) {
-			data->error = -errno;
+			data->error = ret;
 			LOG_DBG("Stream send failed (%d)", data->error);
-			break;
+			goto out;
 		}
 
 		k_msleep(10);

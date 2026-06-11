@@ -413,14 +413,14 @@ static int eth_dm9051_hw_start(const struct device *dev, struct net_if *iface __
 		return ret;
 	}
 
-	/* Enable RX */
-	ret = eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
+	/* Enable interrupts */
+	ret = eth_dm9051_spi_write_reg(dev, DM9051_IMR, imr);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* Enable interrupts */
-	return eth_dm9051_spi_write_reg(dev, DM9051_IMR, imr);
+	/* Enable RX */
+	return eth_dm9051_spi_write_reg(dev, DM9051_RCR, rcr);
 }
 
 static int eth_dm9051_hw_stop(const struct device *dev, struct net_if *iface __unused)
@@ -515,6 +515,7 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 	ret = eth_dm9051_spi_read_mem(data->dev, DM9051_MRCMD, (void *)&rxhdr,
 				      sizeof(rxhdr));
 	if (ret < 0) {
+		LOG_ERR("%s: Failed to read RX header (err %d)", dev->name, ret);
 		return NULL;
 	}
 
@@ -532,7 +533,10 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 				dev->name, rx_len, ETH_DM9051_MIN_FRAME_SIZE, sizeof(data->rx_buf));
 		}
 
-		(void)eth_dm9051_hw_start(dev, data->iface);
+		ret = eth_dm9051_hw_start(dev, data->iface);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to restart HW after RX error (err %d)", dev->name, ret);
+		}
 		return NULL;
 	}
 
@@ -543,13 +547,17 @@ static struct net_pkt *eth_dm9051_recv_pkt(const struct device *dev)
 					   K_MSEC(CONFIG_ETH_DM9051_TIMEOUT));
 	if (!pkt) {
 		/* Discard received data */
-		(void)eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, NULL, rx_len);
+		ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, NULL, rx_len);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to discard RX data (err %d)", dev->name, ret);
+		}
 		return NULL;
 	}
 
 	/* Read RX data from RX SRAM */
 	ret = eth_dm9051_spi_read_mem(dev, DM9051_MRCMD, data->rx_buf, rx_len);
 	if (ret < 0) {
+		LOG_ERR("%s: Failed to read RX data (err %d)", dev->name, ret);
 		goto out_net_pkt_unref;
 	}
 
@@ -579,6 +587,7 @@ static int eth_dm9051_rx(const struct device *dev)
 		/* Read RX flag */
 		ret = eth_dm9051_spi_read_mem(data->dev, DM9051_MRCMDX, (void *)&flag, 2);
 		if (ret < 0) {
+			LOG_ERR("%s: Failed to read RX flag (err %d)", dev->name, ret);
 			goto out_update_errors_rx;
 		}
 
@@ -622,19 +631,22 @@ out_spi_unlock:
 	return ret;
 }
 
-static void eth_dm9051_update_link_status(const struct device *dev)
+static int eth_dm9051_update_link_status(const struct device *dev)
 {
 	struct eth_dm9051_data *data = dev->data;
 	enum phy_link_speed speed;
 	uint8_t nsr;
 	uint8_t ncr;
+	int ret;
 
-	if (eth_dm9051_spi_read_reg(dev, DM9051_NSR, &nsr) < 0) {
-		return;
+	ret = eth_dm9051_spi_read_reg(dev, DM9051_NSR, &nsr);
+	if (ret < 0) {
+		return ret;
 	}
 
-	if (eth_dm9051_spi_read_reg(dev, DM9051_NCR, &ncr) < 0) {
-		return;
+	ret = eth_dm9051_spi_read_reg(dev, DM9051_NCR, &ncr);
+	if (ret < 0) {
+		return ret;
 	}
 
 	if ((nsr & DM9051_NSR_LINKST) > 0) {
@@ -666,6 +678,8 @@ static void eth_dm9051_update_link_status(const struct device *dev)
 			net_eth_carrier_off(data->iface);
 		}
 	}
+
+	return 0;
 }
 
 static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
@@ -676,6 +690,7 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 	struct eth_dm9051_data *data;
 	struct device *dev;
 	uint8_t isr = 0;
+	int ret;
 
 	dev = p1;
 	data = dev->data;
@@ -683,8 +698,19 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&data->int_event, K_FOREVER);
 
-		(void)eth_dm9051_spi_read_reg(dev, DM9051_ISR, &isr);
-		(void)eth_dm9051_spi_write_reg(dev, DM9051_ISR, isr);
+		ret = eth_dm9051_spi_read_reg(dev, DM9051_ISR, &isr);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to read ISR (err %d)", dev->name, ret);
+			eth_stats_update_errors_rx(data->iface);
+			continue;
+		}
+
+		ret = eth_dm9051_spi_write_reg(dev, DM9051_ISR, isr);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to write ISR (err %d)", dev->name, ret);
+			eth_stats_update_errors_rx(data->iface);
+			continue;
+		}
 
 		if ((isr & DM9051_ISR_PT) > 0) {
 			k_sem_give(&data->tx_done);
@@ -692,12 +718,19 @@ static void eth_dm9051_rx_thread(void *p1, void *p2, void *p3)
 		}
 
 		if ((isr & DM9051_ISR_PR) > 0) {
-			(void)eth_dm9051_rx(dev);
+			ret = eth_dm9051_rx(dev);
+			if (ret < 0) {
+				LOG_ERR("%s: RX failed (err %d)", dev->name, ret);
+			}
 			LOG_DBG("%s: Packet Received", dev->name);
 		}
 
 		if ((isr & DM9051_ISR_LNKCHG) > 0) {
-			eth_dm9051_update_link_status(dev);
+			ret = eth_dm9051_update_link_status(dev);
+			if (ret < 0) {
+				LOG_ERR("%s: Link status update failed (err %d)", dev->name, ret);
+				eth_stats_update_errors_rx(data->iface);
+			}
 			LOG_DBG("%s: Link changed", dev->name);
 		}
 	}

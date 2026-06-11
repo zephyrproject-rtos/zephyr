@@ -418,13 +418,11 @@ unsigned int coap_option_value_to_int(const struct coap_option *option)
 	case 1:
 		return option->value[0];
 	case 2:
-		return (option->value[1] << 0) | (option->value[0] << 8);
+		return sys_get_be16(option->value);
 	case 3:
-		return (option->value[2] << 0) | (option->value[1] << 8) |
-			(option->value[0] << 16);
+		return sys_get_be24(option->value);
 	case 4:
-		return (option->value[3] << 0) | (option->value[2] << 8) |
-			(option->value[1] << 16) | (option->value[0] << 24);
+		return sys_get_be32(option->value);
 	default:
 		return 0;
 	}
