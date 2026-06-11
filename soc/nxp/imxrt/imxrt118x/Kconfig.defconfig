@@ -3,11 +3,10 @@
 
 if SOC_SERIES_IMXRT118X
 
+rsource "../../common/Kconfig.defconfig.nvic"
+
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
-
-config NUM_IRQS
-	default 239
 
 config GPIO
 	default y

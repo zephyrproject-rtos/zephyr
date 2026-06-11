@@ -3,8 +3,7 @@
 
 if SOC_SERIES_MCXE31X
 
-config NUM_IRQS
-	default 240
+rsource "../../../common/Kconfig.defconfig.nvic"
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK

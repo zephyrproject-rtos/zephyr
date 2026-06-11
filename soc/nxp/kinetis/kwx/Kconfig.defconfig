@@ -5,9 +5,7 @@
 
 if SOC_SERIES_KWX
 
-config NUM_IRQS
-	default 65 if SOC_MKW22D5 || SOC_MKW24D5
-	default 32 if SOC_MKW40Z4 || SOC_MKW41Z4
+rsource "../../common/Kconfig.defconfig.nvic"
 
 config SPI
 	default y if SOC_MKW22D5 || SOC_MKW24D5

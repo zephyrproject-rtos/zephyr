@@ -3,6 +3,8 @@
 
 if SOC_FAMILY_MCXN
 
+rsource "../../common/Kconfig.defconfig.nvic"
+
 # Ensure SysTick is not enabled by default if another system timer is selected.
 configdefault CORTEX_M_SYSTICK
 	default n if (MCUX_LPTMR_TIMER || MCUX_OS_TIMER)
@@ -16,9 +18,6 @@ configdefault SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE
 
 config MFD
 	default y if DT_HAS_NXP_LP_FLEXCOMM_ENABLED
-
-config NUM_IRQS
-	default 156
 
 config ROM_START_OFFSET
 	default 0x400 if BOOTLOADER_MCUBOOT

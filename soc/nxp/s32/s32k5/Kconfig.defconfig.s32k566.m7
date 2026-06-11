@@ -5,7 +5,6 @@
 
 if SOC_S32K566_M7
 
-config NUM_IRQS
-	default 239
+rsource "../../common/Kconfig.defconfig.nvic"
 
 endif # SOC_S32K566_M7

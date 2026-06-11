@@ -347,6 +347,18 @@ NXP
   ``zephyr,system-timer`` chosen property, so boards that added the overlay
   described in the Zephyr 4.4 migration guide can remove it.
 
+* :kconfig:option:`CONFIG_NUM_IRQS` for NXP Cortex-M SoCs is now derived from
+  the NVIC devicetree node via ``dt_highest_controller_irq_number()`` instead
+  of a hardcoded per-SoC default. The new value is ``max(NVIC IRQn) + 1`` of
+  the IRQs actually present in the devicetree. This affects ``mcx``, ``imxrt``,
+  ``kinetis``, ``lpc``, ``rw``, ``s32`` (Cortex-M cores) and the i.MX8M
+  Cortex-M cores; boards/applications that need a different value can still
+  override the symbol explicitly in ``Kconfig.defconfig`` or ``prj.conf``.
+  Out-of-tree boards that use ``IRQ_CONNECT(n, ...)`` for a peripheral whose
+  devicetree node is disabled (``status = "disabled"``) will now fail the
+  build with ``gen_isr_tables.py: error: IRQ <n> ... exceeds the maximum``;
+  enable the node or set :kconfig:option:`CONFIG_NUM_IRQS` explicitly.
+
 PWM
 ===
 

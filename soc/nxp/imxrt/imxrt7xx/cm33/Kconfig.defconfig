@@ -1,9 +1,7 @@
 # Copyright 2024-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-config NUM_IRQS
-	default 158 if SOC_MIMXRT798S_CM33_CPU0
-	default 93 if SOC_MIMXRT798S_CM33_CPU1
+rsource "../../../common/Kconfig.defconfig.nvic"
 
 if SOC_MIMXRT798S_CM33_CPU0
 

@@ -6,6 +6,8 @@
 
 if SOC_SERIES_KE1XF
 
+rsource "../../common/Kconfig.defconfig.nvic"
+
 config MCUX_LPTMR_TIMER
 	default y if PM
 
@@ -18,10 +20,6 @@ DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),clock-frequency) if MCUX_LPTMR_TIMER
-
-config NUM_IRQS
-	# must be >= the highest interrupt number used
-	default 91
 
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y

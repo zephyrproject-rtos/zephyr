@@ -6,12 +6,11 @@
 
 if SOC_SERIES_KE1XZ
 
+rsource "../../common/Kconfig.defconfig.nvic"
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default $(dt_node_int_prop_int,/soc/lptmr@40040000,clock-frequency) if MCUX_LPTMR_TIMER
-
-config NUM_IRQS
-	default 32
 
 config CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	default y

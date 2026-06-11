@@ -1,0 +1,17 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# Compute NUM_IRQS automatically from the Arm v6/7/8-M NVIC devicetree
+# node. dt_highest_controller_irq_number() returns the zero-based IRQn;
+# increment it to obtain the table size (= max IRQn + 1).
+#
+# Only rsource this snippet from a Cortex-M Kconfig.defconfig: the
+# "nvic" label is provided by dts/arm/armv{6,7,8,8.1}-m.dtsi, so if
+# the snippet is sourced on a non-Cortex-M target the label resolves
+# to an empty path and the build will fail loudly instead of silently
+# defaulting NUM_IRQS to 0.
+DT_NVIC_PATH := $(dt_nodelabel_path,nvic)
+DT_NVIC_MAX_IRQN := $(dt_highest_controller_irq_number,$(DT_NVIC_PATH),irq)
+
+configdefault NUM_IRQS
+	default $(inc,$(DT_NVIC_MAX_IRQN))
