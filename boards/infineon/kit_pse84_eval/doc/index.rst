@@ -429,7 +429,7 @@ Building
       west build -b kit_pse84_eval/pse846gps2dbzc4a/m55 \
                  -d build_multicore_55 samples/basic/blinky \
                  -- -DCONFIG_PSOC_EDGE_M55_SRF_SUPPORT=y \
-                    -DPSE84_CM33_BUILD_DIR=$(pwd)/build_multicore_33
+                    -DPSE84_CM33_BUILD_DIR=build_multicore_33
 
    If the CM33-NS image was built with the default ``build`` directory, the
    ``-DPSE84_CM33_BUILD_DIR=...`` argument may be omitted.
