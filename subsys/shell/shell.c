@@ -339,6 +339,7 @@ static bool tab_prepare(const struct shell *sh,
 	size_t search_argc;
 	bool select_cmd;
 	bool strip_select_cmd = false;
+	char *cmd_compl;
 	int space;
 	int ret;
 
@@ -351,6 +352,14 @@ static bool tab_prepare(const struct shell *sh,
 			sh->ctx->cmd_buff_pos);
 	sh->ctx->temp_buff[sh->ctx->cmd_buff_pos] = '\0';
 
+	/* Completion always operates on the command currently being typed. With
+	 * "&&" chaining enabled that is the segment following the last operator.
+	 */
+	cmd_compl = sh->ctx->temp_buff;
+#ifdef CONFIG_SHELL_CMD_AND
+	cmd_compl = z_shell_and_last_segment(cmd_compl);
+#endif
+
 	/* If last command is not completed (followed by space) it is treated
 	 * as uncompleted one.
 	 */
@@ -360,19 +369,20 @@ static bool tab_prepare(const struct shell *sh,
 	select_cmd = (IS_ENABLED(CONFIG_SHELL_CMDS_SELECT) ||
 		      (CONFIG_SHELL_CMD_ROOT[0] != 0)) &&
 		     !z_shell_in_select_mode(sh) &&
-		     command_starts_with(sh->ctx->temp_buff, "select");
+		     command_starts_with(cmd_compl, "select");
 
 	*alias_completion = !select_cmd;
 
 	if (*alias_completion &&
-	    alias_expansion_needed(sh->ctx->temp_buff, space)) {
-		ret = z_shell_expand_alias(sh->ctx->temp_buff,
-					   sizeof(sh->ctx->temp_buff));
+	    alias_expansion_needed(cmd_compl, space)) {
+		ret = z_shell_expand_alias(cmd_compl,
+					   sizeof(sh->ctx->temp_buff) -
+						   (cmd_compl - sh->ctx->temp_buff));
 		ARG_UNUSED(ret);
 	}
 
 	/* Create argument list. */
-	(void)z_shell_make_argv(argc, *argv, sh->ctx->temp_buff,
+	(void)z_shell_make_argv(argc, *argv, cmd_compl,
 				CONFIG_SHELL_ARGC_MAX);
 
 	if (*argc > CONFIG_SHELL_ARGC_MAX) {
@@ -1046,7 +1056,7 @@ static bool wildcard_check_report(const struct shell *sh, bool found,
  * Because of that feature, command buffer is processed argument by argument and
  * decision on further processing is based on currently processed command.
  */
-static int execute(const struct shell *sh)
+static int execute_cmd_buff(const struct shell *sh)
 {
 	struct shell_static_entry dloc = {0}; /* Memory for dynamic commands. */
 	const char *argv[CONFIG_SHELL_ARGC_MAX + 1] = {0}; /* +1 reserved for NULL */
@@ -1062,18 +1072,7 @@ static int execute(const struct shell *sh)
 	char *cmd_buf = sh->ctx->cmd_buff;
 	bool has_last_handler = false;
 
-	z_shell_op_cursor_end_move(sh);
-	if (!z_shell_cursor_in_empty_line(sh)) {
-		z_cursor_next_line_move(sh);
-	}
-
 	memset(&sh->ctx->active_cmd, 0, sizeof(sh->ctx->active_cmd));
-
-	if (IS_ENABLED(CONFIG_SHELL_HISTORY)) {
-		z_shell_cmd_trim(sh);
-		history_put(sh, sh->ctx->cmd_buff,
-			    sh->ctx->cmd_buff_len);
-	}
 
 	if (IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
 		z_shell_wildcard_prepare(sh);
@@ -1246,6 +1245,55 @@ static int execute(const struct shell *sh)
 
 	/* Executing the deepest found handler. */
 	return exec_cmd(sh, cmd_lvl, argv, cmd_with_handler_lvl, &help_entry);
+}
+
+static int execute(const struct shell *sh)
+{
+	int ret_val;
+
+	z_shell_op_cursor_end_move(sh);
+	if (!z_shell_cursor_in_empty_line(sh)) {
+		z_cursor_next_line_move(sh);
+	}
+
+	if (IS_ENABLED(CONFIG_SHELL_HISTORY)) {
+		z_shell_cmd_trim(sh);
+		history_put(sh, sh->ctx->cmd_buff, sh->ctx->cmd_buff_len);
+	}
+
+#ifdef CONFIG_SHELL_CMD_AND
+	/* Execute each command in a "cmd1 && cmd2 && ..." chain in turn,
+	 * stopping as soon as one of them fails (returns non-zero). The
+	 * remaining chain is copied out before execution because alias
+	 * expansion and wildcard finalization may rewrite the command buffer.
+	 */
+	while (true) {
+		char next_cmd[CONFIG_SHELL_CMD_BUFF_SIZE];
+		char *next = z_shell_and_split(sh->ctx->cmd_buff);
+		size_t len = 0U;
+
+		if (next != NULL) {
+			len = z_shell_strlen(next);
+			memcpy(next_cmd, next, len + 1);
+		}
+
+		ret_val = execute_cmd_buff(sh);
+
+		if ((next == NULL) || (ret_val != 0)) {
+			break;
+		}
+
+		memcpy(sh->ctx->cmd_buff, next_cmd, len + 1);
+		sh->ctx->cmd_buff_len = len;
+		sh->ctx->cmd_buff_pos = len;
+	}
+
+	return ret_val;
+#else
+	ret_val = execute_cmd_buff(sh);
+
+	return ret_val;
+#endif /* CONFIG_SHELL_CMD_AND */
 }
 
 static void toggle_logs_output(const struct shell *sh)

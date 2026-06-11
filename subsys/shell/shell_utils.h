@@ -39,6 +39,11 @@ static inline uint16_t z_shell_strlen(const char *str)
 char z_shell_make_argv(size_t *argc, const char **argv,
 		       char *cmd, uint8_t max_argc);
 
+#ifdef CONFIG_SHELL_CMD_AND
+char *z_shell_and_split(char *cmd);
+char *z_shell_and_last_segment(char *cmd);
+#endif
+
 /** @brief Removes pattern and following space
  *
  */

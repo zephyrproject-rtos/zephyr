@@ -239,6 +239,77 @@ char z_shell_make_argv(size_t *argc, const char **argv, char *cmd,
 	return quote;
 }
 
+#ifdef CONFIG_SHELL_CMD_AND
+/* Scan a command string for the first unquoted "&&" operator. If one is found,
+ * it is replaced with a string terminator so that the preceding command can be
+ * executed on its own, and a pointer to the start of the remaining chain (the
+ * part following "&&") is returned. Returns NULL when no "&&" is present.
+ */
+char *z_shell_and_split(char *cmd)
+{
+	char quote = 0;
+
+	while (*cmd != '\0') {
+		char c = *cmd;
+
+		if (quote != 0) {
+			if (c == quote) {
+				quote = 0;
+			}
+		} else if (c == '\\') {
+			/* Escaped character - skip whatever follows it. */
+			if (cmd[1] != '\0') {
+				cmd++;
+			}
+		} else if ((c == '\'') || (c == '"')) {
+			quote = c;
+		} else if ((c == '&') && (cmd[1] == '&')) {
+			*cmd = '\0';
+			return cmd + 2;
+		}
+
+		cmd++;
+	}
+
+	return NULL;
+}
+
+/* Return a pointer to the start of the last command in a "cmd1 && cmd2 && ..."
+ * chain, i.e. the text following the last unquoted "&&" operator. When no
+ * operator is present the original string is returned. Used so that tab
+ * completion operates on the command currently being typed after an "&&".
+ */
+char *z_shell_and_last_segment(char *cmd)
+{
+	char quote = 0;
+	char *segment = cmd;
+
+	while (*cmd != '\0') {
+		char c = *cmd;
+
+		if (quote != 0) {
+			if (c == quote) {
+				quote = 0;
+			}
+		} else if (c == '\\') {
+			if (cmd[1] != '\0') {
+				cmd++;
+			}
+		} else if ((c == '\'') || (c == '"')) {
+			quote = c;
+		} else if ((c == '&') && (cmd[1] == '&')) {
+			cmd += 2;
+			segment = cmd;
+			continue;
+		}
+
+		cmd++;
+	}
+
+	return segment;
+}
+#endif /* CONFIG_SHELL_CMD_AND */
+
 void z_shell_pattern_remove(char *buff, uint16_t *buff_len, const char *pattern)
 {
 	char *pattern_addr = strstr(buff, pattern);

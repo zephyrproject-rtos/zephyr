@@ -159,6 +159,16 @@ config SHELL_WILDCARD
 	help
 	  Enables using wildcards: * and ? in the shell.
 
+config SHELL_CMD_AND
+	bool "'&&' conditional command chaining in shell"
+	default y if !SHELL_MINIMAL
+	help
+	  Enables chaining commands on a single line with the '&&' operator,
+	  e.g. "cmd1 && cmd2 && cmd3". Each command is executed only if the
+	  preceding one succeeded (returned 0). Execution of the chain stops
+	  at the first command that fails. Tab completion is supported for
+	  the command following an '&&'.
+
 config SHELL_MSG_CMD_NOT_FOUND
 	bool "': command not found' message in the shell"
 	default y
