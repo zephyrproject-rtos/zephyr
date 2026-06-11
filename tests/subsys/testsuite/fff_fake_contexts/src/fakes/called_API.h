@@ -10,10 +10,9 @@
 #include <zephyr/fff.h>
 #include <zephyr/called_API.h>
 
-#define ZEPHYR_CALLED_API_FFF_FAKES_LIST(FAKE) \
-		FAKE(called_API_open)	\
-		FAKE(called_API_close)	\
-
+#define ZEPHYR_CALLED_API_FFF_FAKES_LIST(FAKE)                                                     \
+	FAKE(called_API_open)                                                                      \
+	FAKE(called_API_close)
 
 #ifdef __cplusplus
 extern "C" {
