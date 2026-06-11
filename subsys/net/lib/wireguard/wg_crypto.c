@@ -1380,6 +1380,17 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		goto out;
 	}
 
+	/* The packet authenticated correctly. Validate the anti-replay counter
+	 * before committing any peer state. A replayed-but-authentic packet
+	 * (e.g. captured and re-injected from a spoofed source address) must
+	 * not be able to mutate the endpoint, liveness timers or keypair state.
+	 */
+	if (!wg_check_replay(keypair, nonce)) {
+		ret = -EINVAL;
+		vpn_stats_update_replay_error(ctx);
+		goto out;
+	}
+
 	if (!peer->first_valid) {
 		net_mgmt_event_notify(NET_EVENT_VPN_CONNECTED, peer->iface);
 		peer->first_valid = true;
@@ -1406,13 +1417,6 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		if (remaining_sec <= (REJECT_AFTER_TIME - REKEY_AFTER_TIME)) {
 			peer->send_handshake = true;
 		}
-	}
-
-	/* Check for packet replay / dupes */
-	if (!wg_check_replay(keypair, nonce)) {
-		ret = -EINVAL;
-		vpn_stats_update_replay_error(ctx);
-		goto out;
 	}
 
 	/* We then need to copy the decrypted data into a net_pkt so that it can
