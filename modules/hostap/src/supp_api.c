@@ -1732,7 +1732,7 @@ int supplicant_11k_neighbor_request(const struct device *dev, struct net_if *ifa
 	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
 	    wpa_s->wpa_state < WPA_COMPLETED)) {
 		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
-		return 0;
+		return -EALREADY;
 	}
 
 	if (params) {
@@ -2030,7 +2030,7 @@ int supplicant_legacy_roam(const struct device *dev __unused, struct net_if *ifa
 	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
 	    wpa_s->wpa_state < WPA_COMPLETED)) {
 		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
-		ret = 0;
+		ret = -EALREADY;
 		goto out;
 	}
 
@@ -2141,7 +2141,7 @@ int supplicant_btm_query(const struct device *dev __unused, struct net_if *iface
 	if (wpa_s->reassociate || (wpa_s->wpa_state >= WPA_AUTHENTICATING &&
 	    wpa_s->wpa_state < WPA_COMPLETED)) {
 		wpa_printf(MSG_INFO, "Reassociation is in progress, skip");
-		ret = 0;
+		ret = -EALREADY;
 		goto out;
 	}
 

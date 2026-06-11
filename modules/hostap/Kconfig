@@ -562,6 +562,16 @@ config WIFI_NM_WPA_SUPPLICANT_ROAMING
 	  STA will try to find an AP with better RSSI. If found, STA will reassociate
 	  to the new AP automatically without losing connection.
 
+config WIFI_NM_WPA_SUPPLICANT_ROAMING_RETRY
+	int "Retry count on every roaming method"
+	depends on WIFI_NM_WPA_SUPPLICANT_ROAMING
+	default 1
+	help
+	  Number of times each of 11K and 11V roaming is attempted.
+	  When reaches this count, fall back to next roaming method.
+	  If both reaches this count, fall back to legacy roaming,
+	  which scans full channel.
+
 config WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING
 	bool "Skip DHCP after roaming to new AP"
 	help
