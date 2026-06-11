@@ -3095,6 +3095,13 @@ class ManifestStrategy(SelectionStrategy):
        ``--tag <name> --integration``.  This lets twister select only tests
        whose ``tags:`` field lists the module (e.g. ``tags: mbedtls``).
 
+    6. Additionally, look up the ``"West project: <name>"`` area in
+       ``MAINTAINERS.yml``.  If the area carries a ``tests:`` list, emit a
+       second :class:`TwisterCall` with ``--test-pattern`` arguments built
+       from those names (same as :class:`MaintainerAreaStrategy`).  This
+       covers tests that are explicitly catalogued for the module but may not
+       carry a ``tags:`` field matching the project name.
+
     This strategy **consumes** all matched manifest files so they do not
     reach :class:`MaintainerAreaStrategy`.
 
@@ -3114,7 +3121,9 @@ class ManifestStrategy(SelectionStrategy):
     def name(self):
         return "ManifestStrategy"
 
-    def __init__(self, zephyr_base, repo=None, commits=None, platform_filter=None):
+    def __init__(
+        self, zephyr_base, repo=None, commits=None, platform_filter=None, maintainers_file=None
+    ):
         """
         Parameters
         ----------
@@ -3125,11 +3134,17 @@ class ManifestStrategy(SelectionStrategy):
         commits:
             The commit range string used on the CLI (e.g. ``"main..HEAD"``).
             The base commit is derived as ``commits.split("..")[0]``.
+        maintainers_file:
+            Path to ``MAINTAINERS.yml``.  When supplied, each changed project
+            name is matched against the ``"West project: <name>"`` area and
+            any ``tests:`` entries there generate additional pattern-based
+            :class:`TwisterCall` objects alongside the tag-based ones.
         """
         self._zephyr_base = Path(zephyr_base)
         self._repo = repo
         self._commits = commits
         self._platform_filter = platform_filter or []
+        self._maintainers_file = maintainers_file
 
     # ------------------------------------------------------------------
     # SelectionStrategy interface
@@ -3173,6 +3188,8 @@ class ManifestStrategy(SelectionStrategy):
             ", ".join(sorted(changed_projects)),
         )
 
+        west_project_tests = self._load_west_project_tests()
+
         calls = []
         for proj_name in sorted(changed_projects):
             extra = []
@@ -3186,11 +3203,56 @@ class ManifestStrategy(SelectionStrategy):
                 )
             )
 
+            test_names = west_project_tests.get(proj_name, [])
+            if test_names:
+                patterns = [_test_pattern(t) for t in test_names]
+                log.info(
+                    "[%s] 'West project: %s' MAINTAINERS tests → patterns: %s",
+                    self.name,
+                    proj_name,
+                    ", ".join(repr(p) for p in patterns),
+                )
+                calls.append(
+                    TwisterCall(
+                        description=f"ManifestStrategy: West project '{proj_name}' "
+                        "(MAINTAINERS tests)",
+                        test_patterns=patterns,
+                        platforms=list(self._platform_filter),
+                    )
+                )
+
         return calls, set(manifest_files)
 
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _load_west_project_tests(self):
+        """Return a dict mapping west project name → ``tests:`` list.
+
+        Reads all ``"West project: <name>"`` areas from ``MAINTAINERS.yml``
+        and returns only those that carry a non-empty ``tests:`` list.  When
+        no maintainers file is configured, an empty dict is returned.
+        """
+        if not self._maintainers_file:
+            return {}
+        try:
+            with open(self._maintainers_file, encoding="utf-8") as fh:
+                data = yaml.load(fh, Loader=SafeLoader)
+        except OSError as exc:
+            log.warning("[%s] Cannot read maintainers file: %s", self.name, exc)
+            return {}
+        if not isinstance(data, dict):
+            return {}
+        prefix = "West project: "
+        result = {}
+        for key, area in data.items():
+            if not key.startswith(prefix):
+                continue
+            tests = area.get("tests", []) if isinstance(area, dict) else []
+            if tests:
+                result[key[len(prefix) :]] = tests
+        return result
 
     def _diff_manifests(self, base_commit, head_commit="HEAD"):
         """Return the set of project names whose revision changed between
@@ -3678,11 +3740,14 @@ def build_strategies(
         ),
         # 6. west.yml / submanifests changes: diff the manifest, find changed
         #    projects and run integration tests tagged with those module names.
+        #    Also emits pattern-based calls from MAINTAINERS "West project:"
+        #    areas that carry a ``tests:`` list.
         ManifestStrategy(
             zephyr_base=base,
             repo=repo,
             commits=commits,
             platform_filter=platform_filter,
+            maintainers_file=maintainers_file,
         ),
         # 7. Driver source changes: find tests via DT overlay compat matching
         #    and board-targeted area-pattern calls via the dts/ dtsi chain.
