@@ -416,9 +416,9 @@ void gcov_coverage_semihost(void)
 		}
 
 		k_heap_free(&gcov_heap, buffer);
+		semihost_close(fd);
 		gcov_list = gcov_list->next;
 		if (gcov_list_first == gcov_list) {
-			semihost_close(fd);
 			goto coverage_dump_end;
 		}
 	}
