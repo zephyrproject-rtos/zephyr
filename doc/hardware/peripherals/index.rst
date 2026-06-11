@@ -46,6 +46,7 @@ Peripherals
    ipm.rst
    led.rst
    mdio.rst
+   memc.rst
    mspi.rst
    mbox.rst
    opamp.rst
