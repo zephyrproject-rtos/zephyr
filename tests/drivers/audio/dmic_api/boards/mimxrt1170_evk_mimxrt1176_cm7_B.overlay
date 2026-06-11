@@ -1,0 +1,31 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmic-dev = &micfil;
+	};
+};
+
+dmic_dev: &micfil {
+	status = "okay";
+
+	channel0: micfil-channel@0 {
+		status = "okay";
+	};
+
+	channel1: micfil-channel@1 {
+		status = "okay";
+	};
+
+	channel2: micfil-channel@2 {
+		status = "okay";
+	};
+
+	channel3: micfil-channel@3 {
+		status = "okay";
+	};
+};
