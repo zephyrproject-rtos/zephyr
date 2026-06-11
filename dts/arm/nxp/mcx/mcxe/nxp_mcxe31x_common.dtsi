@@ -863,16 +863,16 @@
 		status = "disabled";
 	};
 
-	quadspi: qspi@4cc000 {
+	qspi: spi@4cc000 {
 		compatible = "nxp,qspi";
-		reg = <0x4cc000 0x37c>;
+		reg = <0x4cc000 0x37c>,
+		      <0x68000000 DT_SIZE_M(128)>;
 		interrupts = <173 0>;
-		status = "disabled";
-	};
-
-	quadspi_ardb: quadspi_ardb@68000000 {
-		compatible = "nxp,quadspi_ardb";
-		reg = <0x68000000 0x21c>;
+		clocks = <&mc_cgm MCUX_QSPISF_CLK>,
+			 <&mc_cgm MCUX_QSPISF_CLK>;
+		clock-names = "gate", "clksrc";
+		#address-cells = <1>;
+		#size-cells = <0>;
 		status = "disabled";
 	};
 
