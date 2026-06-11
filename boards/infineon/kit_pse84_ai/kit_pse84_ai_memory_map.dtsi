@@ -175,10 +175,10 @@
 				#size-cells = <1>;
 				ranges;
 
-				m55_xip: m55_xip@500000 {
+				m55_xip: m55_xip@580000 {
 					compatible = "zephyr,mapped-partition";
 					label = "m55-xip";
-					reg = <0x500000 DT_SIZE_M(2)>;
+					reg = <0x580000 DT_SIZE_M(2)>;
 				};
 			};
 		};
