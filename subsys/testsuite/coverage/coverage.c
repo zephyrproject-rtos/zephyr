@@ -18,6 +18,13 @@ K_HEAP_DEFINE(gcov_heap, CONFIG_COVERAGE_GCOV_HEAP_SIZE);
 
 static struct gcov_info *gcov_info_head;
 
+#if defined(CONFIG_COVERAGE_SEMIHOST) && defined(CONFIG_REBOOT)
+#define GCOV_FILENAME_KEY 0x23A5B6C4
+static char gcov_filename[512];
+static __noinit uint32_t gcov_filename_key;
+static __noinit uint32_t gcov_filename_idx;
+#endif
+
 /**
  * Is called by gcc-generated constructor code for each object file compiled
  * with -fprofile-arcs.
@@ -373,6 +380,17 @@ void gcov_coverage_semihost(void)
 	size_t written_size;
 	struct gcov_info *gcov_list_first = gcov_info_head;
 	struct gcov_info *gcov_list = gcov_info_head;
+	const char *filename;
+	int fd;
+
+#if defined(CONFIG_REBOOT)
+	if (gcov_filename_key != GCOV_FILENAME_KEY) {
+		gcov_filename_key = GCOV_FILENAME_KEY;
+		gcov_filename_idx = 0;
+	} else {
+		gcov_filename_idx += 1;
+	}
+#endif /* defined(CONFIG_REBOOT) */
 
 #ifdef CONFIG_MULTITHREADING
 	if (!k_is_in_isr()) {
@@ -385,10 +403,17 @@ void gcov_coverage_semihost(void)
 			goto file_dump_end;
 		}
 
-		int fd = semihost_open(gcov_list->filename, SEMIHOST_OPEN_WB);
+#if defined(CONFIG_REBOOT)
+		snprintf(gcov_filename, sizeof(gcov_filename), "%s.%d", gcov_list->filename,
+			 gcov_filename_idx);
+		filename = gcov_filename;
+#else
+		filename = gcov_list->filename;
+#endif /* defined(CONFIG_REBOOT) */
 
+		fd = semihost_open(filename, SEMIHOST_OPEN_WB);
 		if (fd < 0) {
-			printk("Failed to open file: %s\n", gcov_list->filename);
+			printk("Failed to open file: %s\n", filename);
 			goto coverage_dump_end;
 		}
 
