@@ -28,6 +28,9 @@ BUILD_ASSERT((CONFIG_PRIVILEGED_STACK_SIZE > 0) &&
 	     (CONFIG_PRIVILEGED_STACK_SIZE % XCHAL_MPU_ALIGN) == 0);
 #endif
 
+/* End of memory address */
+#define END_OF_MEMORY_ADDR (0xFFFFFFFFU)
+
 /** MPU foreground map for kernel mode. */
 static struct xtensa_mpu_map xtensa_mpu_map_fg_kernel;
 
@@ -365,7 +368,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		 * put the entries at the end of map.
 		 */
 
-		if (end_addr == 0xFFFFFFFFU) {
+		if (end_addr == END_OF_MEMORY_ADDR) {
 			/*
 			 * Region goes to end of memory, so only need to
 			 * program one entry.
@@ -520,7 +523,7 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 	__ASSERT_NO_MSG(exact_s);
 	__ASSERT_NO_MSG(exact_e);
 
-	if (end_addr == 0xFFFFFFFFU) {
+	if (end_addr == END_OF_MEMORY_ADDR) {
 		/*
 		 * If end_addr = 0xFFFFFFFFU, entry_slot_e and idx_e both
 		 * point to the last slot. Because the incoming region goes
@@ -877,7 +880,7 @@ int arch_mem_domain_thread_add(struct k_thread *thread)
 
 		if (stack_end_addr < thread->stack_info.start) {
 			/* Account for wrapping around back to 0. */
-			stack_end_addr = 0xFFFFFFFFU;
+			stack_end_addr = END_OF_MEMORY_ADDR;
 		}
 
 		/* Add stack to new domain's MPU map. */
@@ -937,7 +940,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 	stack_end_addr = thread->stack_info.start + thread->stack_info.size;
 	if (stack_end_addr < thread->stack_info.start) {
 		/* Account for wrapping around back to 0. */
-		stack_end_addr = 0xFFFFFFFFU;
+		stack_end_addr = END_OF_MEMORY_ADDR;
 	}
 
 	/*
@@ -1039,7 +1042,7 @@ void xtensa_user_stack_perms(struct k_thread *thread)
 
 	if (stack_end_addr < thread->stack_info.start) {
 		/* Account for wrapping around back to 0. */
-		stack_end_addr = 0xFFFFFFFFU;
+		stack_end_addr = END_OF_MEMORY_ADDR;
 	}
 
 	(void)memset((void *)thread->stack_info.start,
