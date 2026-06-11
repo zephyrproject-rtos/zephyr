@@ -22,6 +22,10 @@ static char dynamic_cmd_buffer[][MAX_CMD_SYNTAX_LEN] = {
 		"command"
 };
 
+/* Number of times the test_and command handler has been invoked. */
+static int and_test_count;
+static int and_wildcard_test_count;
+
 static void test_shell_execute_cmd(const char *cmd, int result)
 {
 	const struct shell *sh = shell_backend_dummy_get_ptr();
@@ -332,6 +336,83 @@ ZTEST(sh, test_shell_module)
 	test_shell_execute_cmd("not existing command", -ENOEXEC);
 }
 
+/* test '&&' conditional command chaining */
+ZTEST(sh, test_cmd_and)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_CMD_AND)) {
+		ztest_test_skip();
+	}
+
+	/* Whole chain succeeds: every command runs. */
+	and_test_count = 0;
+	test_shell_execute_cmd("test_and && test_and && test_and", 0);
+	zassert_equal(and_test_count, 3, "All commands in the chain should run");
+
+	/* First command fails: the rest of the chain is skipped. */
+	and_test_count = 0;
+	test_shell_execute_cmd("test_and fail && test_and", -EINVAL);
+	zassert_equal(and_test_count, 1, "Chain must stop after a failure");
+
+	/* Failure in the middle stops the remaining commands. */
+	and_test_count = 0;
+	test_shell_execute_cmd("test_and && test_and fail && test_and", -EINVAL);
+	zassert_equal(and_test_count, 2, "Chain must stop at the failing command");
+
+	/* An unknown command also stops the chain. */
+	and_test_count = 0;
+	test_shell_execute_cmd("not_a_command && test_and", -ENOEXEC);
+	zassert_equal(and_test_count, 0, "Nothing runs after a failed lookup");
+
+	/* A quoted "&&" is a literal argument, not an operator. */
+	and_test_count = 0;
+	test_shell_execute_cmd("test_and \"&&\" test_and", 0);
+	zassert_equal(and_test_count, 1, "Quoted && must not split the command");
+}
+
+ZTEST(sh, test_cmd_and_alias_expansion)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_CMD_AND) ||
+	    !IS_ENABLED(CONFIG_SHELL_ALIASES) || !SHELL_ALIASES_FILE) {
+		ztest_test_skip();
+	}
+
+	and_test_count = 0;
+	test_shell_execute_cmd("zzcmd && test_and", 0);
+	zassert_equal(and_test_count, 1,
+		      "Command after alias expansion should still run");
+}
+
+ZTEST(sh, test_cmd_and_wildcard_expansion)
+{
+	if (!IS_ENABLED(CONFIG_SHELL_CMD_AND) ||
+	    !IS_ENABLED(CONFIG_SHELL_WILDCARD)) {
+		ztest_test_skip();
+	}
+
+	and_test_count = 0;
+	and_wildcard_test_count = 0;
+	test_shell_execute_cmd("test_and_wildcard a* && test_and", 0);
+	zassert_equal(and_wildcard_test_count, 1,
+		      "Wildcard command before && should run once");
+	zassert_equal(and_test_count, 1,
+		      "Command after wildcard expansion should still run");
+}
+
+/* test tab completion of the command following an '&&' */
+ZTEST(sh, test_and_tab_completion)
+{
+	const struct shell *sh = shell_backend_dummy_get_ptr();
+
+	if (!IS_ENABLED(CONFIG_SHELL_CMD_AND) ||
+	    !IS_ENABLED(CONFIG_SHELL_TAB_AUTOCOMPLETION)) {
+		ztest_test_skip();
+	}
+
+	test_shell_reset_state(sh);
+	test_shell_push_input(sh, "test_and && test_wild\t");
+	test_shell_wait_for_cmd(sh, "test_and && test_wildcard ");
+}
+
 /* test wildcard and static subcommands */
 ZTEST(sh, test_shell_wildcards_static)
 {
@@ -394,6 +475,27 @@ SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_test_shell_cmdl,
 );
 SHELL_CMD_REGISTER(test_wildcard, &m_sub_test_shell_cmdl, NULL, cmd_wildcard);
 
+static int cmd_and_wildcard(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+
+	and_wildcard_test_count++;
+
+	if ((argc < 2) || (strcmp(argv[1], "alpha") != 0)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_test_and_wildcard,
+	SHELL_CMD(alpha, NULL, NULL, NULL),
+	SHELL_CMD(beta, NULL, NULL, NULL),
+	SHELL_SUBCMD_SET_END
+);
+SHELL_CMD_REGISTER(test_and_wildcard, &m_sub_test_and_wildcard, NULL,
+		   cmd_and_wildcard);
+
 
 static int cmd_dynamic(const struct shell *sh, size_t argc, char **argv)
 {
@@ -433,6 +535,23 @@ static void dynamic_cmd_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(m_sub_test_dynamic, dynamic_cmd_get);
 SHELL_CMD_REGISTER(test_dynamic, &m_sub_test_dynamic, NULL, cmd_dynamic);
+
+/* Counts how many times it has been invoked so command chaining can be
+ * verified. Returns failure when the first argument is "fail".
+ */
+static int cmd_and_test(const struct shell *sh, size_t argc, char **argv)
+{
+	ARG_UNUSED(sh);
+
+	and_test_count++;
+
+	if ((argc > 1) && (strcmp(argv[1], "fail") == 0)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+SHELL_CMD_REGISTER(test_and, NULL, NULL, cmd_and_test);
 
 static void unselect_cmd(void)
 {
