@@ -1004,17 +1004,33 @@ static int bmm350_init(const struct device *dev)
 		FIELD_PREP(BMM350_INT_CTRL_INT_OD_MSK, DT_INST_PROP(inst, push_pull_int)) |        \
 		BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK | BMM350_INT_CTRL_INT_OUTPUT_EN_MSK,
 
+#define BMM350_BUS_IODEV_DEFINE(inst)                                                              \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i3c),                                                     \
+		    (I3C_DT_IODEV_DEFINE(bmm350_bus_##inst, DT_DRV_INST(inst))),                   \
+		    (I2C_DT_IODEV_DEFINE(bmm350_bus_##inst, DT_DRV_INST(inst))))
+
+#define BMM350_BUS_TYPE(inst)                                                                      \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (BMM350_BUS_TYPE_I3C), (BMM350_BUS_TYPE_I2C))
+
+#if DT_HAS_COMPAT_ON_BUS_STATUS_OKAY(bosch_bmm350, i3c)
+#define BMM350_BUS_I3C_ID(inst)                                                                    \
+	COND_CODE_1(DT_INST_ON_BUS(inst, i3c), (.i3c.id = I3C_DEVICE_ID_DT_INST(inst),), ())
+#else
+#define BMM350_BUS_I3C_ID(inst)
+#endif
+
 #define BMM350_DEFINE(inst)                                                                        \
                                                                                                    \
 	RTIO_DEFINE(bmm350_rtio_ctx_##inst, 8, 8);                                                 \
-	I2C_DT_IODEV_DEFINE(bmm350_bus_##inst, DT_DRV_INST(inst));                                 \
+	BMM350_BUS_IODEV_DEFINE(inst);                                                             \
                                                                                                    \
 	static struct bmm350_data bmm350_data_##inst;                                              \
 	static const struct bmm350_config bmm350_config_##inst = {                                 \
 		.bus.rtio = {                                                                      \
 			.ctx = &bmm350_rtio_ctx_##inst,                                            \
 			.iodev = &bmm350_bus_##inst,                                               \
-			.type = BMM350_BUS_TYPE_I2C,                                               \
+			.type = BMM350_BUS_TYPE(inst),                                             \
+			BMM350_BUS_I3C_ID(inst)                                                    \
 		},										   \
 		.bus_io = &bmm350_bus_rtio,                                                        \
 		.default_odr = DT_INST_ENUM_IDX(inst, odr) + BMM350_DATA_RATE_400HZ,               \

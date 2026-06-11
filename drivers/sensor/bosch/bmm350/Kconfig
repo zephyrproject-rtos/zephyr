@@ -5,13 +5,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig BMM350
-	bool "BMM350 I2C Geomagnetic Chip"
+	bool "BMM350 Geomagnetic Chip"
 	default y
 	depends on DT_HAS_BOSCH_BMM350_ENABLED
-	select I2C
-	select I2C_RTIO
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMM350),i2c)
+	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMM350),i2c)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMM350),i3c)
+	select I3C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMM350),i3c)
 	help
-	  Enable driver for BMM350 I2C-based Geomagnetic sensor.
+	  Enable driver for BMM350 I2C/I3C-based Geomagnetic sensor.
 
 if BMM350
 
