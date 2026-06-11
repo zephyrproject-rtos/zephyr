@@ -62,6 +62,7 @@ tests:
   drivers.flash.common.default:
     filter: ((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE)
       and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+      or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")
       or dt_label_with_parent_compat_enabled("storage_partition", "nordic,owned-partitions")))
     platform_exclude:
       - nrf54lm20dk/nrf54lm20a/cpuapp
@@ -103,7 +104,8 @@ tests:
   drivers.flash.common.tfm_ns:
     build_only: true
     filter: (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE
-      and dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions"))
+      and (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+           or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")))
     integration_platforms:
       - nrf9161dk/nrf9161/ns
   drivers.flash.common.mx25r_high_perf:
