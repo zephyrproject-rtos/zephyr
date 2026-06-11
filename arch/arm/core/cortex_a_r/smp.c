@@ -68,7 +68,7 @@ BUILD_ASSERT(offsetof(struct boot_params, svc_sp) == BOOT_PARAM_SVC_SP_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, sys_sp) == BOOT_PARAM_SYS_SP_OFFSET);
 BUILD_ASSERT(offsetof(struct boot_params, voting) == BOOT_PARAM_VOTING_OFFSET);
 
-volatile struct boot_params arm_cpu_boot_params = {
+volatile struct boot_params __aligned(CONFIG_DCACHE_LINE_SIZE) arm_cpu_boot_params = {
 	.mpid = -1,
 	.irq_sp = (char *)(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE),
 	.fiq_sp = (char *)(z_arm_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE),
@@ -148,7 +148,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	/* store mpid last as this is our synchronization point */
 	arm_cpu_boot_params.mpid = cpu_mpid;
 
-	sys_cache_data_invd_range(
+	sys_cache_data_flush_range(
 			(void *)&arm_cpu_boot_params,
 			sizeof(arm_cpu_boot_params));
 
