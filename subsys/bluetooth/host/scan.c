@@ -72,9 +72,13 @@ NET_BUF_SIMPLE_DEFINE(ext_scan_buf, CONFIG_BT_EXT_SCAN_BUF_SIZE);
 #define REASSEMBLY_TIMEOUT K_MSEC(CONFIG_BT_EXT_ADV_REASSEMBLY_TIMEOUT)
 
 #if defined(CONFIG_BT_TESTING)
-__weak void bt_testing_trace_ext_adv_reassembly_timeout(void) {}
+__weak void bt_testing_trace_ext_adv_reassembly_timeout(void)
+{
+}
 
-__weak void bt_testing_trace_ext_adv_reassembly_complete(void) {}
+__weak void bt_testing_trace_ext_adv_reassembly_complete(void)
+{
+}
 #endif /* defined(CONFIG_BT_TESTING) */
 
 struct fragmented_advertiser {
@@ -1257,6 +1261,7 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 	struct bt_le_per_adv_sync_synced_info sync_info;
 	struct bt_le_per_adv_sync *pending_per_adv_sync;
 	struct bt_le_per_adv_sync_cb *listener, *tmp;
+	bt_addr_le_t pending_id_addr;
 	bt_addr_le_t id_addr;
 	bool unexpected_evt;
 	int err;
@@ -1289,10 +1294,20 @@ static void bt_hci_le_per_adv_sync_established_common(struct net_buf *buf)
 		bt_addr_le_copy(&id_addr, bt_lookup_id_addr(BT_ID_DEFAULT, &evt->adv_addr));
 	}
 
+	if (pending_per_adv_sync) {
+		if (bt_addr_le_is_resolved(&pending_per_adv_sync->addr)) {
+			bt_addr_le_copy_resolved(&pending_id_addr, &pending_per_adv_sync->addr);
+		} else {
+			bt_addr_le_copy(
+				&pending_id_addr,
+				bt_lookup_id_addr(BT_ID_DEFAULT, &pending_per_adv_sync->addr));
+		}
+	}
+
 	if (!pending_per_adv_sync ||
 	    (!atomic_test_bit(pending_per_adv_sync->flags, BT_PER_ADV_SYNC_SYNCING_USE_LIST) &&
 	     ((pending_per_adv_sync->sid != evt->sid) ||
-	      !bt_addr_le_eq(&pending_per_adv_sync->addr, &id_addr)))) {
+	      !bt_addr_le_eq(&pending_id_addr, &id_addr)))) {
 		LOG_ERR("Unexpected per adv sync established event");
 		/* Request terminate of pending periodic advertising in controller */
 		per_adv_sync_terminate(sys_le16_to_cpu(evt->handle));
