@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * I2S API test overlay for lp_em_cc2755p10
+ *
+ * GPIO loopback wiring: connect DIO19 (SD0, TX out) -> DIO20 (SD1, RX in)
+ * with a jumper wire on the LaunchPad.
+ *
+ *   DIO17 = SCLK  (BCLK — bit clock)
+ *   DIO18 = WS    (WCLK — word/frame clock)
+ *   DIO19 = SD0   (TX data output)
+ *   DIO20 = SD1   (RX data input)
+ */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s0;
+	};
+};
+
+&pinctrl {
+	i2s0_sclk_default: i2s0_sclk_default {
+		pinmux = <17 DIO17_I2S0_SCLK>;
+		bias-disable;
+		input-enable;
+	};
+
+	i2s0_ws_default: i2s0_ws_default {
+		pinmux = <18 DIO18_I2S0_WS>;
+		bias-disable;
+		input-enable;
+	};
+
+	i2s0_sd0_default: i2s0_sd0_default {
+		pinmux = <19 DIO19_I2S0_SD0>;
+		bias-disable;
+		input-enable;
+	};
+
+	/* SD1 = DIO20: RX data line for GPIO loopback (connect DIO19 → DIO20) */
+	i2s0_sd1_default: i2s0_sd1_default {
+		pinmux = <20 DIO20_I2S0_SD1>;
+		bias-disable;
+		input-enable;
+	};
+};
+
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_sclk_default &i2s0_ws_default
+		     &i2s0_sd0_default &i2s0_sd1_default>;
+	pinctrl-names = "default";
+	pin-dir-sd0 = <0x02>;  /* OUTPUT */
+	pin-dir-sd1 = <0x01>;  /* INPUT */
+
+	/* AFOSC frequency for i2s_api test (FRAME_CLK_FREQ = 8000 Hz, 16-bit stereo).
+	 * 98.304 MHz is optimized for the 48 kHz family (48k, 32k, 24k, 16k, 8k Hz).
+	 * sck_divider = 98304000 / (8000 x 2 x 16) = 384 (exact integer, within [2,1024]).
+	 */
+	afosc-freq = <98304000>;
+};
+
+/* Disable conflicting peripherals */
+&spi0 {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "disabled";
+};
+
+&lgpt3 {
+	status = "disabled";
+};
+
+&pwm9 {
+	status = "disabled";
+};
+
+&pwm10 {
+	status = "disabled";
+};
