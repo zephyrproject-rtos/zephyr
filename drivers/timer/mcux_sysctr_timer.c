@@ -66,21 +66,11 @@ BUILD_ASSERT((CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SE
 		      / (uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /*
- * Limit the maximum programmed compare distance. Two constraints apply:
- *
- *   1) Half of the 56-bit counter span. This prevents ambiguity with the
- *      ">=" comparison when the counter eventually wraps.
- *
- *   2) INT32_MAX * CYC_PER_TICK. The tick delta computed in the ISR
- *      (delta_cycles / CYC_PER_TICK) must fit in uint32_t and, more
- *      importantly, in the int32_t parameter accepted by
- *      sys_clock_announce(). With a 56-bit counter this bound is tighter
- *      than (1) at typical tick rates (e.g. 24 MHz / 10 kHz ticks leaves
- *      ~5e12 cycles, far below 2^55).
- *
- * Use the smaller of the two so both invariants hold.
+ * Limit the maximum programmed compare distance to half the 56-bit counter
+ * span. This keeps the ">=" comparison unambiguous when the counter
+ * eventually wraps.
  */
-#define MAX_CYCLES MIN((uint64_t)INT32_MAX * CYC_PER_TICK, COUNTER_SPAN / 2)
+#define MAX_CYCLES (COUNTER_SPAN / 2)
 
 #define MIN_DELAY_CYCLES  CONFIG_MCUX_SYSCTR_TIMER_MIN_DELAY
 
