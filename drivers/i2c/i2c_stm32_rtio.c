@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 
@@ -147,6 +148,8 @@ static void i2c_stm32_start_or_complete(const struct device *dev)
 	 */
 	while (!i2c_stm32_start(dev, &status)) {
 		if (!i2c_rtio_complete(data->ctx, status)) {
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			(void)pm_device_runtime_put(dev);
 			return;
 		}
 	}
@@ -158,6 +161,9 @@ void i2c_stm32_rtio_complete(const struct device *dev, int status)
 
 	if (i2c_rtio_complete(data->ctx, status)) {
 		i2c_stm32_start_or_complete(dev);
+	} else {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		(void)pm_device_runtime_put(dev);
 	}
 }
 
@@ -231,12 +237,22 @@ int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
 static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct i2c_stm32_data *data = dev->data;
+	int ret;
 
 	/* Always set I2C_MSG_RESTART flag on first message in order to send start condition */
 	iodev_sqe->sqe.iodev_flags |= RTIO_IODEV_I2C_RESTART;
 
 	if (i2c_rtio_submit(data->ctx, iodev_sqe)) {
-		i2c_stm32_start_or_complete(dev);
+		ret = pm_device_runtime_get(dev);
+		if (ret < 0) {
+			/* Flush pending requests since we failed to get the device */
+			do {
+			} while (i2c_rtio_complete(data->ctx, ret));
+		} else {
+			/* Prevent the clocks to be stopped during the i2c transaction */
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			i2c_stm32_start_or_complete(dev);
+		}
 	}
 }
 
