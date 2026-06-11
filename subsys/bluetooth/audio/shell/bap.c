@@ -583,7 +583,7 @@ const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_aud
 #if defined(CONFIG_BT_PACS)
 static const struct bt_audio_codec_cap lc3_codec_cap =
 	BT_AUDIO_CODEC_CAP_LC3(BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
-			       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1, 2), 30, 240,
+			       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U), 30U, 155U,
 			       MAX_CODEC_FRAMES_PER_SDU, DEFAULT_CONTEXT);
 
 #if defined(CONFIG_BT_PAC_SNK)
