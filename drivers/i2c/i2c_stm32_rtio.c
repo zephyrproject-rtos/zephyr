@@ -91,7 +91,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	return ret;
 }
 
-static bool i2c_stm32_start(const struct device *dev)
+static void i2c_stm32_start(const struct device *dev)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *ctx = data->ctx;
@@ -112,20 +112,24 @@ static bool i2c_stm32_start(const struct device *dev)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		return i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf,
-					   sqe->rx.buf_len, dt_spec->addr);
+		i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf, sqe->rx.buf_len,
+				    dt_spec->addr);
+		break;
 	case RTIO_OP_TINY_TX:
-		return i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf,
-					   sqe->tiny_tx.buf_len, dt_spec->addr);
+		i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
+				    dt_spec->addr);
+		break;
 	case RTIO_OP_TX:
-		return i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf,
-					   sqe->tx.buf_len, dt_spec->addr);
+		i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+				    dt_spec->addr);
+		break;
 	case RTIO_OP_I2C_CONFIGURE:
 		res = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
-		return i2c_rtio_complete(data->ctx, res);
+		(void)i2c_rtio_complete(data->ctx, res);
+		break;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-		return i2c_rtio_complete(data->ctx, -EINVAL);
+		(void)i2c_rtio_complete(data->ctx, -EINVAL);
 	}
 }
 
