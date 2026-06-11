@@ -1,0 +1,5 @@
+# Copyright 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_KIT_A2G_TC397XA_3V3_TFT
+	select SOC_TC397XA_CPU0 if BOARD_KIT_A2G_TC397XA_3V3_TFT_TC397XA_CPU0

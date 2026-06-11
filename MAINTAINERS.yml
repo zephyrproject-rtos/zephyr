@@ -3234,6 +3234,36 @@ ITE Platforms:
   labels:
     - "platform: ITE"
 
+Infineon AURIX Platforms:
+  status: maintained
+  maintainers:
+    - go2sh
+    - parthitce
+  files:
+    - soc/infineon/aurix/
+    - soc/qemu/tc3x/
+    - soc/qemu/tc4x/
+    - boards/infineon/kit_a3g_tc4d7_lite/
+    - boards/infineon/kit_a2g_tc375_lite/
+    - boards/infineon/kit_a2g_tc397xa_3v3_tft/
+    - boards/qemu/tricore/
+    - drivers/clock_control/*aurix*
+    - drivers/clock_control/*tc3x*
+    - drivers/clock_control/*tc4x*
+    - drivers/gpio/*tc3x*
+    - drivers/gpio/*tc4x*
+    - drivers/interrupt_controller/*aurix*
+    - drivers/pinctrl/*aurix*
+    - drivers/pinctrl/*tc3x*
+    - drivers/pinctrl/*tc4x*
+    - drivers/serial/*asclin*
+    - drivers/timer/*aurix*
+  labels:
+    - "platform: Infineon AURIX"
+  description: >-
+    Infineon AURIX TriCore SoC family (TC3x, TC4x), boards, devicetree
+    and related drivers.
+
 Infineon Platforms:
   status: maintained
   maintainers:
@@ -5974,6 +6004,21 @@ Trenz Electronic Platforms:
     - "platform: Trenz Electronic"
   description: >-
     Trenz Electronic development boards.
+
+TriCore arch:
+  status: maintained
+  maintainers:
+    - go2sh
+    - parthitce
+  files:
+    - arch/tricore/
+    - dts/bindings/*/infineon,asclin*
+    - dts/bindings/*/infineon,aurix*
+    - dts/bindings/*/infineon,tc*
+    - dts/tricore/
+    - include/zephyr/arch/tricore/
+  labels:
+    - "area: TriCore"
 
 Twister:
   status: maintained

@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/tc4x/tc4d7xp.dtsi>
+
+cpu: &cpu3 {};
+
+stm: &stm3 {};
+
+wdt: &wdtcpu3 {};

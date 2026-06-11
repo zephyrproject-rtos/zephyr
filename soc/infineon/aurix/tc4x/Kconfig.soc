@@ -1,0 +1,50 @@
+# Copyright (c) 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon AURIX 3nd Generation Devices
+
+config SOC_SERIES_TC4X
+	bool
+	select SOC_FAMILY_AURIX
+
+config SOC_SERIES
+	default "tc4x" if SOC_SERIES_TC4X
+
+config SOC_TC4Dx
+	bool
+	select SOC_SERIES_TC4X
+
+config SOC_TC4D7XP
+	bool
+	select SOC_TC4Dx
+
+config SOC_TC4D7XP_CPU0
+	bool
+	select SOC_TC4D7XP
+
+config SOC_TC4D7XP_CPU1
+	bool
+	select SOC_TC4D7XP
+
+config SOC_TC4D7XP_CPU2
+	bool
+	select SOC_TC4D7XP
+
+config SOC_TC4D7XP_CPU3
+	bool
+	select SOC_TC4D7XP
+
+config SOC_TC4D7XP_CPU4
+	bool
+	select SOC_TC4D7XP
+
+config SOC_TC4D7XP_CPU5
+	bool
+	select SOC_TC4D7XP
+
+config SOC_TC4D7XP_CPUCS
+	bool
+	select SOC_TC4D7XP
+
+config SOC
+	default "tc4d7xp" if SOC_TC4D7XP

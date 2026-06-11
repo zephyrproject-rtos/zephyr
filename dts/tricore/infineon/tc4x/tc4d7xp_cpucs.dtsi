@@ -1,0 +1,65 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <infineon/tc4x/tc4d7xp.dtsi>
+
+/ {
+	cpus {
+		cpucs: cpu@f8980000 {
+			compatible = "infineon,tricore", "infineon,tc18";
+			reg = <0xf8980000 0x40000>;
+			clocks = <&fcpucs>;
+			stm = <&stmcs>;
+			wdt = <&wdtsec>;
+		};
+	};
+
+	dmu_csci: flash_controller@f8040080 {
+		compatible = "infineon,tc4x-dmu";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0xf8040080 0x20>;
+
+		flashcs: flash@84000000 {
+			compatible = "infineon,tc4x-nv-flash", "soc-nv-flash";
+			write-block-size = <256>;
+			reg = <0x84000000 DT_SIZE_M(1)>;
+		};
+	};
+
+	dsramcs: memory@10000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x10000000 DT_SIZE_K(240)>;
+		zephyr,memory-region = "DSRAMCS";
+	};
+
+	psramcs: memory@10100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x10100000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "PSRAMCS";
+	};
+
+	soc {
+		wdtsec: wdt@f0000150 {
+			compatible = "infineon,aurix-watchdog";
+			reg = <0xf0000150 0x30>;
+			status = "disabled";
+		};
+
+		stmcs: timer@f8980000 {
+			compatible = "infineon,aurix-stm";
+			reg = <0xf8980000 0x200>;
+			clocks = <&fstm>;
+			interrupts = <0 1>, <IRQ_STMCPUCSSR2 1>;
+		};
+	};
+};
+
+cpu: &cpucs {};
+
+stm: &stmcs {};
+
+wdt: &wdtsec {};

@@ -1,0 +1,9 @@
+# Copyright 2024 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: kit_a3g_tc4d7_lite
+  full_name: KIT A3G TC4D7 LITE
+  vendor: infineon
+  socs:
+    - name: tc4d7xp

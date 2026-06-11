@@ -133,7 +133,7 @@ jobs:
       fail-fast: false
       matrix:
         subset: ${{fromJSON(needs.twister-build-prep.outputs.subset)}}
-    timeout-minutes: ${{ github.event_name == 'schedule' && 1440 || 120 }}
+    timeout-minutes: ${{ github.event_name == 'schedule' && 1440 || 240 }}
     env:
       CCACHE_DIR: /node-cache/ccache-zephyr
       CCACHE_REMOTE_STORAGE: "redis://cache-*.keydb-cache.svc.cluster.local|shards=1,2,3"
@@ -231,6 +231,21 @@ jobs:
           git -c advice.detachedHead=false checkout ${BSIM_VERSION}
           west update
           make everything -s -j 8
+
+      - name: 'WORKAROUND: chmod +x tricore-elf libexec (DO NOT MERGE)'
+        run: |
+          # docker-image#304 fixed missing exec bits on
+          # /opt/toolchains/tricore-elf/libexec/{cc1,cc1plus,lto1,
+          # lto-wrapper,collect2}. #304 is merged but the ci-repo-cache
+          # image consumed by this workflow was built before that merge.
+          # Until docker-ci-repo-cache cuts a new tag and zephyr PR
+          # #107779 lands, fix the perms inline so CI for PR #107516
+          # can complete. Drop this commit once the new image is in use.
+          if [ -d /opt/toolchains/tricore-elf/libexec ]; then
+            chmod -R +x /opt/toolchains/tricore-elf/bin \
+                        /opt/toolchains/tricore-elf/tricore-elf/bin \
+                        /opt/toolchains/tricore-elf/libexec
+          fi
 
       - if: github.event_name == 'push'
         name: Run Tests with Twister (Push)

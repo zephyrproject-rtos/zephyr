@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+config AURIX_STM
+	bool "AURIX System Timer Module (STM) support"
+	depends on SOC_SERIES_TC3X || SOC_SERIES_TC4X
+	default y
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_TIMER_HAS_DISABLE_SUPPORT
+	select SYSTEM_CLOCK_LOCK_FREE_COUNT
+	help
+	  This option enables the system timer driver for Infineon AURIX
+	  System Timer Modules on TC3X and TC4X devices.
