@@ -522,3 +522,12 @@ test_spi_bmp581: bmp581@3f {
 	spi-max-frequency = <12000000>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_spi_adis1647x: adis1647x@40 {
+	compatible = "adi,adis1647x";
+	reg = <0x40>;
+	spi-max-frequency = <0>;
+	model = "adis16477-1";
+	drdy-gpios = <&test_gpio 0 0>;
+	reset-gpios = <&test_gpio 0 0>;
+};
