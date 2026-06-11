@@ -243,6 +243,35 @@ Fixing this violation would require to increase code complexity and lower readab
 }
 -doc_end
 
+-doc_begin="The Z_ARGIFY macro deliberately relies on the constant 0 in the
+'(0) ? 0 : (arg)' construct as a universal compatible-zero so that it yields an
+rvalue of any argument type (integers, floating types, bitfields and opaque
+struct pointers). When 'arg' has pointer type the 0 acts as a null pointer
+constant; this is intentional and is required to keep the cbprintf argument
+packaging type-generic."
+-config=MC3A2.R11.9,reports+={deliberate, "any_area(any_loc(any_exp(macro(^Z_ARGIFY$))))"
+}
+-doc_end
+
+-doc_begin="CONTAINER_OF_VALIDATE probes the type of a field using the
+'((type *)0)->field' construct inside a BUILD_ASSERT. The null pointer constant
+is never dereferenced at run time (the expression is only used by
+__builtin_types_compatible_p / __typeof__ in an unevaluated context), so the use
+of 0 as a null pointer constant is deliberate and safe."
+-config=MC3A2.R11.9,reports+={deliberate, "any_area(any_loc(any_exp(macro(^CONTAINER_OF_VALIDATE$))))"
+}
+-doc_end
+
+-doc_begin="K_MEM_VIRT_RAM_START expands to '((uint8_t *)CONFIG_KERNEL_VM_BASE)',
+i.e. the configured base address of the kernel virtual memory region cast to a
+pointer. On configurations where CONFIG_KERNEL_VM_BASE is 0 the integer constant
+0 is treated as a null pointer constant, but here it denotes an address rather
+than a null pointer; the value is deliberate. K_MEM_VIRT_RAM_END is defined in
+terms of K_MEM_VIRT_RAM_START and is covered as well."
+-config=MC3A2.R11.9,reports+={deliberate, "any_area(any_loc(any_exp(macro(^K_MEM_VIRT_RAM_START$))))"
+}
+-doc_end
+
 #
 # Series 13
 #
