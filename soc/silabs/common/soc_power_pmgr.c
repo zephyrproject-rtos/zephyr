@@ -8,8 +8,15 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/pm.h>
 #include <sl_power_manager.h>
+
+#if defined(HFXO_MANAGER_SLEEPTIMER_SYSRTC_INTEGRATION_ON)
 #include <sl_hfxo_manager.h>
 #include <sli_hfxo_manager.h>
+#endif
+
+#ifdef CONFIG_HAS_SILABS_GECKO
+#include <em_emu.h>
+#endif
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
@@ -48,7 +55,11 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	LOG_DBG("Entry to energy mode %d", energy_mode);
 
 	if (energy_mode == SL_POWER_MANAGER_EM4) {
+#ifdef CONFIG_HAS_SILABS_GECKO
+		EMU_EnterEM4();
+#else
 		sl_power_manager_enter_em4();
+#endif
 	} else if (energy_mode != SL_POWER_MANAGER_EM0) {
 		/* Calling the tracing and hook functions provided in arch_cpu_idle(). */
 #if defined(CONFIG_TRACING)

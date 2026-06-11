@@ -14,7 +14,19 @@ config SILABS_GECKO_RAIL_MULTIPROTOCOL
 	  coexistence and arbitration between multiple wireless protocols (for
 	  example, Bluetooth LE and a proprietary 2.4 GHz stack) on Gecko SoCs.
 
+# Utilities
+
+config SILABS_GECKO_SLIST
+	bool
+
 # Services
+
+config SILABS_GECKO_POWER_MANAGER
+	bool "Power Manager service"
+	select SILABS_GECKO_EMU
+	select SILABS_GECKO_SLIST
+	help
+	  Set if the Power Manager HAL module is used.
 
 config SILABS_GECKO_SLEEPTIMER
 	bool "Sleeptimer service"

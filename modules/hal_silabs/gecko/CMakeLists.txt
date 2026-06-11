@@ -83,6 +83,8 @@ zephyr_include_directories(
   ${DEVICE_DIR}/SiliconLabs/${SILABS_GECKO_DEVICE}/Include
   ${COMMON_DIR}/inc
   ${EMLIB_DIR}/inc
+  ${SERVICE_DIR}/power_manager/config
+  ${SERVICE_DIR}/power_manager/inc
   ${SERVICE_DIR}/sleeptimer/config
   ${SERVICE_DIR}/sleeptimer/inc
   ${SERVICE_DIR}/sleeptimer/src
@@ -105,6 +107,19 @@ if(CONFIG_SILABS_GECKO_SLEEPTIMER)
     SL_CATALOG_SLEEPTIMER_PRESENT
   )
 endif()
+
+# Power Manager
+if(CONFIG_SILABS_GECKO_POWER_MANAGER)
+  zephyr_library_sources(
+    ${SERVICE_DIR}/power_manager/src/sl_power_manager.c
+    ${SERVICE_DIR}/power_manager/src/sl_power_manager_hal_s0_s1.c
+  )
+  zephyr_compile_definitions(
+    SL_CATALOG_POWER_MANAGER_PRESENT
+  )
+endif()
+
+zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_SLIST ${COMMON_DIR}/src/sl_slist.c)
 
 zephyr_library_sources(                                    ${EMLIB_DIR}/src/em_system.c)
 zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_ADC       ${EMLIB_DIR}/src/em_adc.c)
