@@ -365,6 +365,18 @@ static int lan865x_init(const struct device *dev)
 	struct lan865x_data *ctx = dev->data;
 	int ret;
 
+	/* Configures rst gpio - 'rst-gpios' required property set in DT */
+	if (!gpio_is_ready_dt(&cfg->reset)) {
+		LOG_ERR("Reset GPIO device %s is not ready", cfg->reset.port->name);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_INACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure reset GPIO, %d", ret);
+		return ret;
+	}
+
 	__ASSERT(cfg->spi.config.frequency <= LAN865X_SPI_MAX_FREQUENCY,
 		 "SPI frequency exceeds supported maximum\n");
 
@@ -412,17 +424,7 @@ static int lan865x_init(const struct device *dev)
 		K_PRIO_COOP(CONFIG_ETH_LAN865X_IRQ_THREAD_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(ctx->tid_int, "lan865x_interrupt");
 
-	/* Perform HW reset - 'rst-gpios' required property set in DT */
-	if (!gpio_is_ready_dt(&cfg->reset)) {
-		LOG_ERR("Reset GPIO device %s is not ready", cfg->reset.port->name);
-		return -ENODEV;
-	}
-
-	ret = gpio_pin_configure_dt(&cfg->reset, GPIO_OUTPUT_INACTIVE);
-	if (ret < 0) {
-		LOG_ERR("Failed to configure reset GPIO, %d", ret);
-		return ret;
-	}
+	/* Perform HW reset */
 
 	ret = net_eth_mac_load(&cfg->mac_cfg, ctx->mac_address);
 	if (ret == -ENODATA) {
