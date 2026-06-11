@@ -82,6 +82,7 @@ Removed APIs and options
     * ``openthread_api_mutex_unlock()``
     * ``struct openthread_state_changed_cb``
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
+    * ``start_11r_roaming``
 
 * Random
 
