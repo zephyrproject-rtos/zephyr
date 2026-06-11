@@ -79,8 +79,7 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 #define DEFAULT_LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
 #define DEFAULT_CONTEXT                                                                            \
 	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
-	 BT_AUDIO_CONTEXT_TYPE_MEDIA |                                                             \
-	 COND_CODE_1(IS_ENABLED(CONFIG_BT_GMAP), (BT_AUDIO_CONTEXT_TYPE_GAME), (0)))
+	 BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
 const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
 						     const char *preset_arg);
