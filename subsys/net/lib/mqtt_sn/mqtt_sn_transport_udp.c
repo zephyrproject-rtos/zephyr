@@ -210,8 +210,8 @@ static void tp_udp_deinit(struct mqtt_sn_transport *transport)
 	}
 }
 
-static int tp_udp_sendto(struct mqtt_sn_transport *transport, void *buf, size_t sz, const void *dest_addr,
-			 size_t addrlen)
+static int tp_udp_sendto(struct mqtt_sn_transport *transport, void *buf, size_t sz,
+			 const void *dest_addr, size_t addrlen)
 {
 	struct mqtt_sn_transport_udp *udp = UDP_TRANSPORT(transport);
 	int rc;
