@@ -13,9 +13,16 @@ source ${ZEPHYR_BASE}/tests/bsim/compile.source
 if [ "${BOARD_TS}" == "nrf5340bsim_nrf5340_cpuapp" ]; then
     app=tests/bsim/bluetooth/audio exe_name=bs_${BOARD_TS}_${app}_prj_conf \
       sysbuild=1 compile
+    app=tests/bsim/bluetooth/audio conf_overlay='overlay-bt_privacy.conf' \
+      exe_name=bs_${BOARD_TS}_${app}_privacy_prj_conf \
+      sysbuild=1 compile
 else
     app=tests/bsim/bluetooth/audio conf_overlay=overlay-bt_ll_sw_split.conf \
       exe_name=bs_${BOARD_TS}_${app}_prj_conf \
+      sysbuild=1 compile
+    app=tests/bsim/bluetooth/audio \
+      conf_overlay='overlay-bt_ll_sw_split.conf;overlay-bt_privacy.conf' \
+      exe_name=bs_${BOARD_TS}_${app}_privacy_prj_conf \
       sysbuild=1 compile
 fi
 

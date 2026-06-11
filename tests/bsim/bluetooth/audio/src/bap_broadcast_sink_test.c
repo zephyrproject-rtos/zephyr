@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2021-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +50,8 @@ CREATE_FLAG(flag_pa_request);
 CREATE_FLAG(flag_bis_sync_requested);
 CREATE_FLAG(flag_big_sync_mic_failure);
 CREATE_FLAG(flag_sink_started);
+CREATE_FLAG(flag_broadcast_code_received);
+CREATE_FLAG(flag_use_past);
 
 static struct bt_bap_broadcast_sink *g_sink;
 static size_t stream_sync_cnt;
@@ -364,6 +367,13 @@ static void bap_pa_sync_synced_cb(struct bt_le_per_adv_sync *sync,
 		       broadcaster_broadcast_id);
 
 		SET_FLAG(flag_pa_synced);
+	} else if (pa_sync == NULL && TEST_FLAG(flag_use_past)) {
+		/* PA sync received via PAST */
+		printk("PA sync %p synced via PAST\n", sync);
+		pa_sync = sync;
+		SET_FLAG(flag_pa_synced);
+	} else {
+		printk("Unexpected PA sync %p synced\n", sync);
 	}
 }
 
@@ -388,8 +398,6 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 			  bool past_avail, uint16_t pa_interval)
 {
 	ARG_UNUSED(conn);
-	ARG_UNUSED(past_avail);
-	ARG_UNUSED(pa_interval);
 
 	if (recv_state->pa_sync_state == BT_BAP_PA_STATE_SYNCED ||
 	    recv_state->pa_sync_state == BT_BAP_PA_STATE_INFO_REQ) {
@@ -399,6 +407,35 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	}
 
 	req_recv_state = recv_state;
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
+	if (TEST_FLAG(flag_use_past) && past_avail) {
+		struct bt_le_per_adv_sync_transfer_param param = {0};
+		int err;
+
+		param.skip = 0;
+		param.timeout = interval_to_sync_timeout(pa_interval);
+
+		printk("Requesting PA sync via PAST\n");
+		err = bt_le_per_adv_sync_transfer_subscribe(conn, &param);
+		if (err != 0) {
+			FAIL("Could not subscribe to PAST: %d\n", err);
+			return err;
+		}
+
+		err = bt_bap_scan_delegator_set_pa_state(recv_state->src_id,
+							 BT_BAP_PA_STATE_INFO_REQ);
+		if (err != 0) {
+			FAIL("Could not set PA state to INFO_REQ: %d\n", err);
+			return err;
+		}
+
+		SET_FLAG(flag_pa_request);
+		return 0;
+	}
+#else
+	ARG_UNUSED(past_avail);
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 
 	SET_FLAG(flag_pa_request);
 
@@ -451,6 +488,7 @@ static void broadcast_code_cb(struct bt_conn *conn,
 	req_recv_state = recv_state;
 
 	memcpy(recv_state_broadcast_code, broadcast_code, BT_ISO_BROADCAST_CODE_SIZE);
+	SET_FLAG(flag_broadcast_code_received);
 }
 
 static void scanning_state_cb(struct bt_conn *conn, bool is_scanning)
@@ -731,6 +769,7 @@ static int pa_sync_create(void)
 
 	return bt_le_per_adv_sync_create(&create_params, &pa_sync);
 }
+
 static void test_pa_sync_delete(void)
 {
 	int err;
@@ -1263,6 +1302,256 @@ static void broadcast_sink_with_assistant_incorrect_code(void)
 	PASS("Broadcast sink with assistant and incorrect code passed\n");
 }
 
+static void broadcast_sink_with_collocated_assistant(void)
+{
+	struct bt_le_ext_adv *ext_adv;
+	int err;
+
+	err = init();
+	if (err != 0) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	setup_connectable_adv(&ext_adv);
+	WAIT_FOR_FLAG(flag_connected);
+
+	printk("Waiting for PA sync request\n");
+	WAIT_FOR_FLAG(flag_pa_request);
+
+	test_scan_and_pa_sync();
+	test_broadcast_sink_create();
+
+	printk("Broadcast source PA synced, waiting for BASE\n");
+	WAIT_FOR_FLAG(flag_base_received);
+	printk("BASE received\n");
+
+	printk("Waiting for BIG syncable\n");
+	WAIT_FOR_FLAG(flag_syncable);
+
+	printk("Waiting for BIG sync request\n");
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
+	test_broadcast_sync(NULL);
+
+	WAIT_FOR_FLAG(flag_sink_started);
+
+	/* Wait for all to be started */
+	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
+		k_sem_take(&sem_stream_started, K_FOREVER);
+	}
+
+	wait_for_data();
+	backchannel_sync_send_all(); /* let collocated device know we have received data */
+
+	printk("Waiting for BIG sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
+	test_broadcast_stop();
+
+	printk("Waiting for PA sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_pa_request);
+	test_pa_sync_delete();
+	test_broadcast_delete();
+
+	backchannel_sync_send_all(); /* let the collocated device know it can stop */
+
+	PASS("Broadcast sink with collocated assistant passed\n");
+}
+
+static void broadcast_sink_with_collocated_assistant_encrypted(void)
+{
+	struct bt_le_ext_adv *ext_adv;
+	int err;
+
+	err = init();
+	if (err != 0) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	setup_connectable_adv(&ext_adv);
+	WAIT_FOR_FLAG(flag_connected);
+
+	printk("Waiting for PA sync request\n");
+	WAIT_FOR_FLAG(flag_pa_request);
+
+	/* Use receive state address (RPA) instead of scanning.
+	 * Scanning with privacy resolves RPA to identity address, which doesn't
+	 * match the receive state address set by the assistant.
+	 */
+	test_scan_and_pa_sync();
+	test_broadcast_sink_create();
+
+	printk("Broadcast source PA synced, waiting for BASE\n");
+	WAIT_FOR_FLAG(flag_base_received);
+	printk("BASE received\n");
+
+	printk("Waiting for BIG syncable\n");
+	WAIT_FOR_FLAG(flag_syncable);
+
+	printk("Waiting for BIG sync request\n");
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
+
+	printk("Waiting for broadcast code from assistant\n");
+	WAIT_FOR_FLAG(flag_broadcast_code_received);
+
+	/* Use broadcast code received from assistant */
+	test_broadcast_sync(recv_state_broadcast_code);
+
+	WAIT_FOR_FLAG(flag_sink_started);
+
+	/* Wait for all to be started */
+	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
+		k_sem_take(&sem_stream_started, K_FOREVER);
+	}
+
+	wait_for_data();
+	backchannel_sync_send_all(); /* let collocated device know we have received data */
+
+	printk("Waiting for BIG sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
+	test_broadcast_stop();
+
+	printk("Waiting for PA sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_pa_request);
+	test_pa_sync_delete();
+	test_broadcast_delete();
+
+	backchannel_sync_send_all(); /* let the collocated device know it can stop */
+
+	PASS("Broadcast sink with collocated assistant encrypted passed\n");
+}
+
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
+static void broadcast_sink_with_collocated_assistant_past(void)
+{
+	struct bt_le_ext_adv *ext_adv;
+	int err;
+
+	err = init();
+	if (err != 0) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	SET_FLAG(flag_use_past);
+
+	setup_connectable_adv(&ext_adv);
+	WAIT_FOR_FLAG(flag_connected);
+
+	printk("Waiting for PA sync request (PAST)\n");
+	WAIT_FOR_FLAG(flag_pa_request);
+
+	/* PA sync will be received via PAST - wait for it */
+	printk("Waiting for PA sync via PAST\n");
+	WAIT_FOR_FLAG(flag_pa_synced);
+
+	test_broadcast_sink_create();
+
+	printk("Broadcast source PA synced via PAST, waiting for BASE\n");
+	WAIT_FOR_FLAG(flag_base_received);
+	printk("BASE received\n");
+
+	printk("Waiting for BIG syncable\n");
+	WAIT_FOR_FLAG(flag_syncable);
+
+	printk("Waiting for BIG sync request\n");
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
+	test_broadcast_sync(NULL);
+
+	WAIT_FOR_FLAG(flag_sink_started);
+
+	/* Wait for all to be started */
+	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
+		k_sem_take(&sem_stream_started, K_FOREVER);
+	}
+
+	wait_for_data();
+	backchannel_sync_send_all(); /* let collocated device know we have received data */
+
+	printk("Waiting for BIG sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
+	test_broadcast_stop();
+
+	printk("Waiting for PA sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_pa_request);
+	test_pa_sync_delete();
+	test_broadcast_delete();
+
+	backchannel_sync_send_all(); /* let the collocated device know it can stop */
+
+	PASS("Broadcast sink with collocated assistant PAST passed\n");
+}
+
+static void broadcast_sink_with_collocated_assistant_encrypted_past(void)
+{
+	struct bt_le_ext_adv *ext_adv;
+	int err;
+
+	err = init();
+	if (err != 0) {
+		FAIL("Init failed (err %d)\n", err);
+		return;
+	}
+
+	SET_FLAG(flag_use_past);
+
+	setup_connectable_adv(&ext_adv);
+	WAIT_FOR_FLAG(flag_connected);
+
+	printk("Waiting for PA sync request (PAST)\n");
+	WAIT_FOR_FLAG(flag_pa_request);
+
+	/* PA sync will be received via PAST - wait for it */
+	printk("Waiting for PA sync via PAST\n");
+	WAIT_FOR_FLAG(flag_pa_synced);
+
+	test_broadcast_sink_create();
+
+	printk("Broadcast source PA synced via PAST, waiting for BASE\n");
+	WAIT_FOR_FLAG(flag_base_received);
+	printk("BASE received\n");
+
+	printk("Waiting for BIG syncable\n");
+	WAIT_FOR_FLAG(flag_syncable);
+
+	printk("Waiting for BIG sync request\n");
+	WAIT_FOR_FLAG(flag_bis_sync_requested);
+
+	printk("Waiting for broadcast code from assistant\n");
+	WAIT_FOR_FLAG(flag_broadcast_code_received);
+
+	/* Use broadcast code received from assistant */
+	test_broadcast_sync(recv_state_broadcast_code);
+
+	WAIT_FOR_FLAG(flag_sink_started);
+
+	/* Wait for all to be started */
+	printk("Waiting for %zu streams to be started\n", stream_sync_cnt);
+	for (size_t i = 0U; i < stream_sync_cnt; i++) {
+		k_sem_take(&sem_stream_started, K_FOREVER);
+	}
+
+	wait_for_data();
+	backchannel_sync_send_all(); /* let collocated device know we have received data */
+
+	printk("Waiting for BIG sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_bis_sync_requested);
+	test_broadcast_stop();
+
+	printk("Waiting for PA sync terminate request\n");
+	WAIT_FOR_UNSET_FLAG(flag_pa_request);
+	test_pa_sync_delete();
+	test_broadcast_delete();
+
+	backchannel_sync_send_all(); /* let the collocated device know it can stop */
+
+	PASS("Broadcast sink with collocated assistant encrypted PAST passed\n");
+}
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
+
 static const struct bst_test_instance test_broadcast_sink[] = {
 	{
 		.test_id = "broadcast_sink",
@@ -1306,6 +1595,32 @@ static const struct bst_test_instance test_broadcast_sink[] = {
 		.test_tick_f = test_tick,
 		.test_main_f = broadcast_sink_with_assistant_incorrect_code,
 	},
+	{
+		.test_id = "broadcast_sink_with_collocated_assistant",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = broadcast_sink_with_collocated_assistant,
+	},
+	{
+		.test_id = "broadcast_sink_with_collocated_assistant_encrypted",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = broadcast_sink_with_collocated_assistant_encrypted,
+	},
+#if defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER)
+	{
+		.test_id = "broadcast_sink_with_collocated_assistant_past",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = broadcast_sink_with_collocated_assistant_past,
+	},
+	{
+		.test_id = "broadcast_sink_with_collocated_assistant_encrypted_past",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = broadcast_sink_with_collocated_assistant_encrypted_past,
+	},
+#endif /* CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER */
 	BSTEST_END_MARKER,
 };
 
