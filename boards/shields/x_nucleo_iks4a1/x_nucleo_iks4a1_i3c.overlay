@@ -27,7 +27,6 @@
 		int-en-i3c;
 	};
 
-
 	lps22df_5d_x_nucleo_iks4a1: lps22df@000000020800b4900b {
 		compatible = "st,lps22df";
 		reg = <0x00 0x0208 0xb4900b>;
@@ -47,5 +46,4 @@
 		reg = <0x1e 0x00 0x10>;
 		irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A2 GPIO_ACTIVE_HIGH>;
 	};
-
 };
