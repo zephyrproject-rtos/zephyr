@@ -18,7 +18,7 @@ echo "=== 3. Initializing Zephyr Workspace ==="
 west init -l .
 west update
 west zephyr-export
-pip install -r zephyr/scripts/requirements.txt
+pip install -r scripts/requirements.txt
 
 echo "=== 4. Executing Build ==="
 # Building a standard sample application for the native Linux simulator
