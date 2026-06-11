@@ -575,25 +575,6 @@ const struct named_lc3_preset *bap_get_named_preset(bool is_unicast, enum bt_aud
 	return NULL;
 }
 
-#if defined(CONFIG_BT_PACS)
-static const struct bt_audio_codec_cap lc3_codec_cap =
-	BT_AUDIO_CODEC_CAP_LC3(BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
-			       BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U), 30U, 155U,
-			       MAX_CODEC_FRAMES_PER_SDU, DEFAULT_CONTEXT);
-
-#if defined(CONFIG_BT_PAC_SNK)
-static struct bt_pacs_cap cap_sink = {
-	.codec_cap = &lc3_codec_cap,
-};
-#endif /* CONFIG_BT_PAC_SNK */
-
-#if defined(CONFIG_BT_PAC_SRC)
-static struct bt_pacs_cap cap_source = {
-	.codec_cap = &lc3_codec_cap,
-};
-#endif /* CONFIG_BT_PAC_SRC */
-#endif /* CONFIG_BT_PACS */
-
 #if defined(CONFIG_BT_BAP_UNICAST)
 static void set_unicast_stream(struct bt_bap_stream *stream)
 {
@@ -3855,27 +3836,66 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		return SHELL_CMD_HELP_PRINTED;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_PACS)) {
+		static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
+			BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
+			BT_AUDIO_CODEC_CAP_CHAN_COUNT_SUPPORT(1U, 2U), 30U, 155U,
+			MAX_CODEC_FRAMES_PER_SDU, DEFAULT_CONTEXT);
+		const struct bt_pacs_register_param pacs_param = {
+			IF_ENABLED(CONFIG_BT_PAC_SNK, (.snk_pac = true,))
+			IF_ENABLED(CONFIG_BT_PAC_SNK_LOC, (.snk_loc = true,))
+			IF_ENABLED(CONFIG_BT_PAC_SRC, (.src_pac = true,))
+			IF_ENABLED(CONFIG_BT_PAC_SRC_LOC, (.src_loc = true,))
+		};
+		static struct bt_pacs_cap cap_sink = {
+			.codec_cap = &lc3_codec_cap,
+		};
+		static struct bt_pacs_cap cap_source = {
+			.codec_cap = &lc3_codec_cap,
+		};
+
+		err = bt_pacs_register(&pacs_param);
+		__ASSERT(err == 0, "Failed to register PACS: %d", err);
+
+		if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
+			err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
+			__ASSERT(err == 0, "Failed to register sink capabilities: %d", err);
+
+			err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, DEFAULT_CONTEXT);
+			__ASSERT(err == 0, "Failed to set sink supported contexts: %d", err);
+
+			err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK, DEFAULT_CONTEXT);
+			__ASSERT(err == 0, "Failed to set sink available contexts: %d", err);
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, DEFAULT_LOCATION);
+			__ASSERT(err == 0, "Failed to set sink location: %d", err);
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+			err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+			__ASSERT(err == 0, "Failed to register source capabilities: %d", err);
+
+			err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE, DEFAULT_CONTEXT);
+			__ASSERT(err == 0, "Failed to set source supported contexts: %d", err);
+
+			err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE, DEFAULT_CONTEXT);
+			__ASSERT(err == 0, "Failed to set source available contexts: %d", err);
+		}
+
+		if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE, DEFAULT_LOCATION);
+			__ASSERT(err == 0, "Failed to set source location: %d", err);
+		}
+	}
+
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 	unsigned long snk_cnt, src_cnt;
 	struct bt_bap_unicast_server_register_param unicast_server_param = {
 		CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
-		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT
+		CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 	};
-	const struct bt_pacs_register_param pacs_param = {
-#if defined(CONFIG_BT_PAC_SNK)
-		.snk_pac = true,
-#endif /* CONFIG_BT_PAC_SNK */
-#if defined(CONFIG_BT_PAC_SNK_LOC)
-		.snk_loc = true,
-#endif /* CONFIG_BT_PAC_SNK_LOC */
-#if defined(CONFIG_BT_PAC_SRC)
-		.src_pac = true,
-#endif /* CONFIG_BT_PAC_SRC */
-#if defined(CONFIG_BT_PAC_SRC_LOC)
-		.src_loc = true,
-#endif /* CONFIG_BT_PAC_SRC_LOC */
-	};
-
 	if (argc == 3) {
 		snk_cnt = shell_strtoul(argv[1], 0, &err);
 		if (snk_cnt > CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT) {
@@ -3901,51 +3921,12 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 		src_cnt = CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT;
 	}
 
-	err = bt_pacs_register(&pacs_param);
-	__ASSERT(err == 0, "Failed to register PACS: %d", err);
-
 	err = bt_bap_unicast_server_register(&unicast_server_param);
 	__ASSERT(err == 0, "Failed to register Unicast Server: %d", err);
 
 	err = bt_bap_unicast_server_register_cb(&unicast_server_cb);
 	__ASSERT(err == 0, "Failed to register Unicast Server Callbacks: %d", err);
 #endif /* CONFIG_BT_BAP_UNICAST_SERVER */
-
-#if defined(CONFIG_BT_PAC_SNK)
-	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &cap_sink);
-	__ASSERT(err == 0, "Failed to register sink capabilities: %d", err);
-#endif /* CONFIG_BT_PAC_SNK */
-#if defined(CONFIG_BT_PAC_SRC)
-	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
-	__ASSERT(err == 0, "Failed to register source capabilities: %d", err);
-#endif /* CONFIG_BT_PAC_SRC */
-
-	if (IS_ENABLED(CONFIG_BT_PAC_SNK_LOC)) {
-		err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, DEFAULT_LOCATION);
-		__ASSERT(err == 0, "Failed to set sink location: %d", err);
-
-		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, DEFAULT_CONTEXT);
-		__ASSERT(err == 0, "Failed to set sink supported contexts: %d",
-			 err);
-
-		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK, DEFAULT_CONTEXT);
-		__ASSERT(err == 0, "Failed to set sink available contexts: %d",
-			 err);
-	}
-
-	if (IS_ENABLED(CONFIG_BT_PAC_SRC_LOC)) {
-		err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE, DEFAULT_LOCATION);
-		__ASSERT(err == 0, "Failed to set source location: %d", err);
-
-		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE, DEFAULT_CONTEXT);
-		__ASSERT(err == 0, "Failed to set sink supported contexts: %d",
-			 err);
-
-		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE, DEFAULT_CONTEXT);
-		__ASSERT(err == 0,
-			 "Failed to set source available contexts: %d",
-			 err);
-	}
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 	for (i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
