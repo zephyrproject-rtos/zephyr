@@ -3121,13 +3121,14 @@ static void clear_stream_data(struct shell_stream *sh_stream)
 	}
 #endif
 
-	sh_stream->is_rx = sh_stream->is_tx = false;
-
 #if defined(CONFIG_LIBLC3)
 	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		update_usb_streams(sh_stream);
 	}
 #endif /* CONFIG_LIBLC3 */
+
+	/* Shall be done after update_usb_streams */
+	sh_stream->is_rx = sh_stream->is_tx = false;
 }
 
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
