@@ -3933,8 +3933,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE,
 						     CONTEXT);
-		__ASSERT(err == 0, "Failed to set sink supported contexts: %d",
-			 err);
+		__ASSERT(err == 0, "Failed to set source supported contexts: %d", err);
 
 		err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE,
 						     CONTEXT);
