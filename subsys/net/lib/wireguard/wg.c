@@ -788,7 +788,7 @@ static enum net_verdict wg_ctrl_recv(struct net_if *iface, struct net_pkt *pkt)
 	ip_hdr = net_pkt_vpn_ip_hdr(pkt);
 	udp_hdr = net_pkt_vpn_udp_hdr(pkt);
 
-	if (net_pkt_family(pkt) == NET_AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
 		if (len < NET_IPV4UDPH_LEN + sizeof(struct wg_msg_hdr)) {
 			NET_DBG("DROP: Too short Wireguard header");
 			goto drop;
@@ -813,7 +813,7 @@ static enum net_verdict wg_ctrl_recv(struct net_if *iface, struct net_pkt *pkt)
 		net_sin(my_addr)->sin_port = udp_hdr->udp->dst_port;
 		net_sin(my_addr)->sin_family = NET_AF_INET;
 
-	} else if (net_pkt_family(pkt) == NET_AF_INET6) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
 		if (len < NET_IPV6UDPH_LEN + sizeof(struct wg_msg_hdr)) {
 			NET_DBG("DROP: Too short Wireguard header");
 			goto drop;
