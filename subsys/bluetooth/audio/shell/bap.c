@@ -2852,6 +2852,8 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 {
 	bt_shell_print("Stream %p enabled", stream);
 
+	print_codec_cfg(0, stream->codec_cfg);
+
 	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_SERVER)) {
 		struct bt_bap_ep_info ep_info;
 		struct bt_conn_info conn_info;
@@ -2884,6 +2886,13 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 		}
 	}
 }
+
+static void stream_metadata_updated_cb(struct bt_bap_stream *stream)
+{
+	bt_shell_print("Stream %p metadata updated", stream);
+
+	print_codec_cfg(0, stream->codec_cfg);
+}
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 static void stream_started_cb(struct bt_bap_stream *bap_stream)
@@ -2893,6 +2902,8 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 	int ret;
 
 	bt_shell_print("Stream %p started", bap_stream);
+
+	print_codec_cfg(0, bap_stream->codec_cfg);
 
 	ret = bt_bap_ep_get_info(bap_stream->ep, &info);
 	if (ret != 0) {
@@ -3204,6 +3215,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.configured = stream_configured_cb,
 	.released = stream_released_cb,
 	.enabled = stream_enabled_cb,
+	.metadata_updated = stream_metadata_updated_cb,
 #endif /* CONFIG_BT_BAP_UNICAST */
 	.started = stream_started_cb,
 	.stopped = stream_stopped_cb,
