@@ -1325,11 +1325,14 @@ struct can_mcan_config {
 	CAN_MCAN_DT_CONFIG_GET(DT_DRV_INST(inst), _custom, _ops, _cbs)
 
 /**
- * @brief Initializer for a @a can_mcan_data struct
+ * @brief Statically define and initialize a @a can_mcan_data struct
+ * @param _name Name of the can_mcan_data struct
  * @param _custom Pointer to custom driver frontend data structure
  */
-#define CAN_MCAN_DATA_INITIALIZER(_custom)                                                         \
-	{                                                                                          \
+#define CAN_MCAN_DATA_DEFINE(_name, _custom)                                                       \
+	static struct can_mcan_data _name = {                                                      \
+		.lock = Z_MUTEX_INITIALIZER(_name.lock),                                           \
+		.tx_mtx = Z_MUTEX_INITIALIZER(_name.tx_mtx),                                       \
 		.custom = _custom,                                                                 \
 	}
 
