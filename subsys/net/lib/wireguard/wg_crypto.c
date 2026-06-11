@@ -214,12 +214,17 @@ static void wg_kdf3(uint8_t *tau1, uint8_t *tau2, uint8_t *tau3,
 	crypto_zero(output, sizeof(output));
 }
 
-static bool wg_check_replay(struct wg_keypair *keypair, uint64_t seq)
+/* Pure replay-window check, factored out so it can be unit-tested directly
+ * (see tests/net/lib/wireguard). Marked ZTESTABLE_STATIC so it stays static
+ * in normal builds and only gains external linkage for ztest builds.
+ */
+ZTESTABLE_STATIC bool wg_replay_check(uint32_t *replay_bitmap, uint64_t *replay_counter,
+				      uint64_t seq)
 {
 	/* Implementation of packet replay window - as per RFC2401
 	 * Adapted from code in Appendix C at https://tools.ietf.org/html/rfc2401
 	 */
-	size_t replay_window_size = sizeof(keypair->replay_bitmap) * CHAR_BIT; /* 32 bits */
+	size_t replay_window_size = sizeof(*replay_bitmap) * CHAR_BIT; /* 32 bits */
 	bool ret = false;
 	uint32_t diff;
 
@@ -233,32 +238,32 @@ static bool wg_check_replay(struct wg_keypair *keypair, uint64_t seq)
 		return ret;
 	}
 
-	if (seq > keypair->replay_counter) {
+	if (seq > *replay_counter) {
 		/* new larger sequence number */
-		diff = seq - keypair->replay_counter;
+		diff = seq - *replay_counter;
 		if (diff < replay_window_size) {
 			/* In window */
-			keypair->replay_bitmap <<= diff;
+			*replay_bitmap <<= diff;
 
 			/* set bit for this packet */
-			keypair->replay_bitmap |= 1;
+			*replay_bitmap |= 1;
 		} else {
 			/* This packet has a "way larger" */
-			keypair->replay_bitmap = 1;
+			*replay_bitmap = 1;
 		}
-		keypair->replay_counter = seq;
+		*replay_counter = seq;
 
 		/* larger is good */
 		ret = true;
 	} else {
-		diff = keypair->replay_counter - seq;
+		diff = *replay_counter - seq;
 		if (diff < replay_window_size) {
-			if (keypair->replay_bitmap & ((uint32_t)1 << diff)) {
+			if (*replay_bitmap & ((uint32_t)1 << diff)) {
 				/* already seen */
 				;
 			} else {
 				/* mark as seen */
-				keypair->replay_bitmap |= ((uint32_t)1 << diff);
+				*replay_bitmap |= ((uint32_t)1 << diff);
 
 				/* out of order but good */
 				ret = true;
@@ -270,6 +275,11 @@ static bool wg_check_replay(struct wg_keypair *keypair, uint64_t seq)
 	}
 
 	return ret;
+}
+
+static bool wg_check_replay(struct wg_keypair *keypair, uint64_t seq)
+{
+	return wg_replay_check(&keypair->replay_bitmap, &keypair->replay_counter, seq);
 }
 
 static void wg_clamp_private_key(uint8_t *key)
@@ -364,7 +374,7 @@ static bool wg_check_mac2(struct wg_iface_context *ctx,
 /**
  * @brief Destroy keypair with PSA key cleanup
  */
-static void keypair_destroy(struct wg_keypair *keypair)
+ZTESTABLE_STATIC void keypair_destroy(struct wg_keypair *keypair)
 {
 	if (!keypair->is_valid) {
 		return;
@@ -1272,12 +1282,12 @@ static void wg_process_response_message(struct wg_iface_context *ctx,
 	(void)wg_send_keepalive(ctx, peer);
 }
 
-static int wg_process_data_message(struct wg_iface_context *ctx,
-				   struct wg_peer *peer,
-				   struct msg_transport_data *data_hdr,
-				   struct net_pkt *pkt,
-				   size_t ip_udp_hdr_len,
-				   struct net_sockaddr *addr)
+ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
+					     struct wg_peer *peer,
+					     struct msg_transport_data *data_hdr,
+					     struct net_pkt *pkt,
+					     size_t ip_udp_hdr_len,
+					     struct net_sockaddr *addr)
 {
 	struct net_pkt *pkt_decrypted = NULL;
 	uint32_t idx = data_hdr->receiver;

@@ -91,9 +91,9 @@ static int wg_psa_import_x25519_public(psa_key_id_t *key_id,
 	return 0;
 }
 
-static int wg_psa_import_chacha_key(psa_key_id_t *key_id,
-				    const uint8_t *key_data,
-				    psa_key_usage_t usage)
+ZTESTABLE_STATIC int wg_psa_import_chacha_key(psa_key_id_t *key_id,
+					      const uint8_t *key_data,
+					      psa_key_usage_t usage)
 {
 	psa_status_t status;
 	psa_key_attributes_t attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -421,11 +421,11 @@ static int wg_psa_aead_setup(uint64_t nonce, uint8_t nonce_buf[static WG_PSA_NON
 	return 0;
 }
 
-static int wg_psa_aead_encrypt(uint8_t *dst,
-			       const uint8_t *src, size_t src_len,
-			       const uint8_t *ad, size_t ad_len,
-			       uint64_t nonce,
-			       const uint8_t *key)
+ZTESTABLE_STATIC int wg_psa_aead_encrypt(uint8_t *dst,
+					 const uint8_t *src, size_t src_len,
+					 const uint8_t *ad, size_t ad_len,
+					 uint64_t nonce,
+					 const uint8_t *key)
 {
 	psa_key_id_t key_id = PSA_KEY_ID_NULL;
 	uint8_t nonce_buf[WG_PSA_NONCE_SIZE];
