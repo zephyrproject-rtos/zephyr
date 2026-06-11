@@ -14,10 +14,10 @@ extern "C" {
 #endif
 
 /* A container struct for hidden instance data */
-struct called_API_info;
+struct called_api_info;
 
 /**
- * @brief Provide an instance handle to a session of the called_API.
+ * @brief Provide an instance handle to a session of the called_api.
  *
  * This API is defined for the code_under_test() example to call.
  * It represents a routine which provides call-unique data to the caller
@@ -31,10 +31,10 @@ struct called_API_info;
  * @return -EINVAL if invalid parameter(s)
  * @return -E2BIG  if more calls were made than expected.
  */
-int called_API_open(const struct called_API_info **instance_out);
+int called_api_open(const struct called_api_info **instance_out);
 
 /**
- * @brief Return an instance handle to a session of the called_API.
+ * @brief Return an instance handle to a session of the called_api.
  *
  * This API is defined for the code_under_test() example to call.
  * It represents a routine which requires specific data from the caller
@@ -42,13 +42,13 @@ int called_API_open(const struct called_API_info **instance_out);
  * have the code_under_test call multiple functions to illustrate
  * a way to verify a specific calling sequence was made
  *
- * @param instance Session instance handle provided by called_API_open
+ * @param instance Session instance handle provided by called_api_open
  *
  * @return zero(0) upon success, with instance invalidated.
  * @return -EINVAL if invalid parameter(s)
  * @return -E2BIG  if more calls were made than expected.
  */
-int called_API_close(const struct called_API_info *instance);
+int called_api_close(const struct called_api_info *instance);
 
 #ifdef __cplusplus
 }
