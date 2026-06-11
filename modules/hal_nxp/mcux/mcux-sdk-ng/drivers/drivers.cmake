@@ -112,6 +112,7 @@ set_variable_ifdef(CONFIG_GPIO_MCUX_RGPIO       CONFIG_MCUX_COMPONENT_driver.rgp
 set_variable_ifdef(CONFIG_I2S_MCUX_SAI          CONFIG_MCUX_COMPONENT_driver.sai)
 set_variable_ifdef(CONFIG_DAI_NXP_SAI           CONFIG_MCUX_COMPONENT_driver.sai)
 set_variable_ifdef(CONFIG_MEMC_MCUX_FLEXSPI     CONFIG_MCUX_COMPONENT_driver.flexspi)
+set_variable_ifdef(CONFIG_MSPI_NXP_QSPI         CONFIG_MCUX_COMPONENT_driver.qspi)
 set_variable_ifdef(CONFIG_PWM_MCUX              CONFIG_MCUX_COMPONENT_driver.pwm)
 set_variable_ifdef(CONFIG_VIDEO_MCUX_CSI        CONFIG_MCUX_COMPONENT_driver.csi)
 set_variable_ifdef(CONFIG_WDT_MCUX_IMX_WDOG     CONFIG_MCUX_COMPONENT_driver.wdog01)
@@ -425,6 +426,10 @@ if((DEFINED CONFIG_FLASH_MCUX_XSPI_XIP) AND (DEFINED CONFIG_FLASH))
     LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_TEXT)
   zephyr_code_relocate(FILES ${MCUX_SDK_NG_DIR}/drivers/xspi/fsl_xspi.c
     LOCATION ${CONFIG_FLASH_MCUX_XSPI_XIP_MEM}_RODATA)
+endif()
+
+if(CONFIG_MSPI_NXP_QSPI)
+  set_variable_ifdef(CONFIG_SOC_SERIES_MCXE24X CONFIG_MCUX_COMPONENT_driver.qspi_mcxe247)
 endif()
 
 # Load all drivers
