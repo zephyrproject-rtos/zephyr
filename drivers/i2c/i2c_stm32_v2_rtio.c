@@ -258,6 +258,7 @@ int i2c_stm32_target_register(const struct device *dev,
 		LOG_DBG("i2c: target #1 registered");
 	} else {
 		if (config->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
+			(void)pm_device_runtime_put(dev);
 			return -EINVAL;
 		}
 
@@ -307,6 +308,7 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 	/* Return if there is a target remaining */
 	if (data->target_cfg || data->target2_cfg) {
+		(void)pm_device_runtime_put(dev);
 		LOG_DBG("i2c: target#%c still registered", data->target_cfg ? '1' : '2');
 		return 0;
 	}
