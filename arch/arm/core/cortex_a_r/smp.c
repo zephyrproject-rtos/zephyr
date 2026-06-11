@@ -13,6 +13,9 @@
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/toolchain/gcc.h>
 #include <zephyr/platform/hooks.h>
+#ifdef CONFIG_PM_CPU_OPS
+#include <zephyr/drivers/pm_cpu_ops.h>
+#endif
 
 #define INV_MPID	UINT32_MAX
 
@@ -152,9 +155,13 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 			(void *)&arm_cpu_boot_params,
 			sizeof(arm_cpu_boot_params));
 
-	/*! TODO: Support PSCI
-	 *  \todo Support PSCI
-	 */
+#ifdef CONFIG_PM_CPU_OPS
+	if (pm_cpu_on(cpu_mpid, (unsigned long)&__start)) {
+		printk("Failed to boot secondary CPU core %d (MPID:%#x)\n",
+		       cpu_num, cpu_mpid);
+		k_panic();
+	}
+#endif
 
 	/* Wait secondary cores up, see arch_secondary_cpu_init */
 	while (arm_cpu_boot_params.fn) {
