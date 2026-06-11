@@ -28,6 +28,10 @@ extern const uint32_t __rom_region_mpu_size_bits;
  * - 0xFFFC0000 - 0xFFFFFFFF: OCM (256KB, cacheable - overlay)
  */
 
+/* Check if SRAM is located in OCM region */
+#define XLNX_VERSAL_SRAM_IS_OCM \
+	DT_SAME_NODE(DT_CHOSEN(zephyr_sram), DT_NODELABEL(ocm))
+
 /*
  * Calculate MPU region size based on memory size
  * MPU regions must be power-of-2 sized and naturally aligned
@@ -85,7 +89,9 @@ extern const uint32_t __rom_region_mpu_size_bits;
 #elif (DDR_END_ADDRESS <= 0x80000000)    /* 2GB */
 #define MEMORY_REGION_SIZE REGION_2G
 #else
+#if !XLNX_VERSAL_SRAM_IS_OCM
 #warning "DDR size exceeds 2GB - limiting MPU region to 2GB."
+#endif
 #define MEMORY_REGION_SIZE REGION_2G
 #endif
 
@@ -171,7 +177,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 		{.rasr = P_RO_U_NA_Msk |
 			 NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE}),
 
-#if (DT_CHOSEN_SRAM_ADDR > 0x80000)
+#if (DT_CHOSEN_SRAM_ADDR > 0x80000) && !XLNX_VERSAL_SRAM_IS_OCM
 	/* Region 5: Separate DDR region for non-contiguous memory layouts */
 	MPU_REGION_ENTRY(
 		"ddr",
