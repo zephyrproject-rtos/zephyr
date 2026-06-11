@@ -331,12 +331,12 @@ static int sample_rtio_write_read(void)
 	 */
 	wr_rd_cqe = rtio_cqe_consume(&sample_rtio);
 	if (wr_rd_cqe->result) {
-		return wr_rd_cqe->result;
+		ret = wr_rd_cqe->result;
 	}
 
 	/* Release the CQE after having checked its result. */
 	rtio_cqe_release(&sample_rtio, wr_rd_cqe);
-	return 0;
+	return ret;
 }
 
 static void rtio_write_read_done_callback(struct rtio *r, const struct rtio_sqe *sqe,
