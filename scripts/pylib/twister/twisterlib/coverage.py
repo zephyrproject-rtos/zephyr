@@ -141,6 +141,20 @@ class CoverageTool:
             gcov_data = self.__class__.retrieve_gcov_data(filename)
             capture_complete = gcov_data['complete']
             extracted_coverage_info = gcov_data['data']
+
+            # GCDA files are expected to have an exact path derived from the source
+            # file name. If multiple GCDA files were created by the test application
+            # to handle reboots, we must merge the information back into a single file.
+            test_folder = pathlib.Path(filename).parent
+            # Hidden directories need to be included as the generated files can have paths
+            # like /..__module__
+            for subfile in glob.glob(f"{test_folder}/**/*.gcda.*",
+                                     recursive=True,
+                                     include_hidden=True):
+                output_file, _= subfile.rsplit('.', 1)
+                with open(subfile, 'rb') as f:
+                    extracted_coverage_info[output_file].append(f.read(-1))
+
             if capture_complete:
                 gcda_created = self.create_gcda_files(extracted_coverage_info)
                 if gcda_created:
