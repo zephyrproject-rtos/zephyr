@@ -64,7 +64,6 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.send_11k_neighbor_request = supplicant_11k_neighbor_request,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 	.candidate_scan = supplicant_candidate_scan,
-	.start_11r_roaming = supplicant_11r_roaming,
 #endif
 	.set_power_save = supplicant_set_power_save,
 	.set_twt = supplicant_set_twt,

@@ -154,15 +154,6 @@ int supplicant_11k_neighbor_request(const struct device *dev, struct net_if *ifa
  */
 int supplicant_candidate_scan(const struct device *dev, struct net_if *iface,
 			      struct wifi_scan_params *params);
-
-/** Send 11r roaming request
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param iface Network interface to use
- *
- * @return 0 if ok, < 0 if error
- */
-int supplicant_11r_roaming(const struct device *dev, struct net_if *iface);
 #endif
 
 /**
