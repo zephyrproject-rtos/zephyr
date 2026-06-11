@@ -387,6 +387,14 @@ static struct net_dplpmtud_entry *lookup_path_entry(struct net_dplpmtud_path *pa
 	return net_dplpmtud_get_entry(net_sad(&path->dst));
 }
 
+/* Resolve the cache entry for a path. The caller MUST hold @lock across both
+ * this lookup and the subsequent read/update of the returned entry. Otherwise a
+ * concurrent net_dplpmtud_get_or_create_entry() on another thread could evict
+ * and reuse the entry (LRU) in the window between lookup and use, applying the
+ * operation to the wrong destination. The per-operation helpers below take
+ * @lock too, but k_mutex is recursive so the nested acquisition is a no-op
+ * while the wrapper already holds it.
+ */
 static struct net_dplpmtud_entry *get_path_entry(struct net_dplpmtud_path *path,
 						 bool create, bool sync_pmtu)
 {
@@ -408,6 +416,8 @@ int net_dplpmtud_init_path(struct net_dplpmtud_path *path,
 			   const struct net_sockaddr *dst,
 			   uint16_t max_plpmtu)
 {
+	struct net_dplpmtud_entry *entry;
+
 	if (path == NULL || dst == NULL || !family_enabled(dst->sa_family)) {
 		return -EINVAL;
 	}
@@ -421,7 +431,11 @@ int net_dplpmtud_init_path(struct net_dplpmtud_path *path,
 	path->max_plpmtu = normalize_path_max_plpmtu(max_plpmtu);
 	path->in_use = true;
 
-	if (get_path_entry(path, true, true) == NULL) {
+	k_mutex_lock(&lock, K_FOREVER);
+	entry = get_path_entry(path, true, true);
+	k_mutex_unlock(&lock);
+
+	if (entry == NULL) {
 		memset(path, 0, sizeof(*path));
 		return -ENOMEM;
 	}
@@ -442,15 +456,17 @@ void net_dplpmtud_set_path_max_plpmtu(struct net_dplpmtud_path *path,
 int net_dplpmtud_get_path_mtu(struct net_dplpmtud_path *path)
 {
 	struct net_dplpmtud_entry *entry;
-	uint16_t mtu;
+	int mtu;
+
+	k_mutex_lock(&lock, K_FOREVER);
 
 	entry = get_path_entry(path, false, false);
 	if (entry == NULL) {
-		return -ENOENT;
+		mtu = -ENOENT;
+	} else {
+		mtu = MIN(get_path_limit(path, entry), entry->validated_plpmtu);
 	}
 
-	k_mutex_lock(&lock, K_FOREVER);
-	mtu = MIN(get_path_limit(path, entry), entry->validated_plpmtu);
 	k_mutex_unlock(&lock);
 
 	return mtu;
@@ -463,12 +479,13 @@ int net_dplpmtud_get_path_probe_size(struct net_dplpmtud_path *path)
 	uint16_t search_high;
 	int probe_size;
 
+	k_mutex_lock(&lock, K_FOREVER);
+
 	entry = get_path_entry(path, false, false);
 	if (entry == NULL) {
+		k_mutex_unlock(&lock);
 		return -ENOENT;
 	}
-
-	k_mutex_lock(&lock, K_FOREVER);
 
 	path_limit = get_path_limit(path, entry);
 
@@ -497,13 +514,11 @@ bool net_dplpmtud_path_probe_in_flight(struct net_dplpmtud_path *path)
 	struct net_dplpmtud_entry *entry;
 	bool in_flight;
 
-	entry = lookup_path_entry(path, false);
-	if (entry == NULL) {
-		return false;
-	}
-
 	k_mutex_lock(&lock, K_FOREVER);
-	in_flight = entry->probe_in_flight;
+
+	entry = lookup_path_entry(path, false);
+	in_flight = (entry != NULL) ? entry->probe_in_flight : false;
+
 	k_mutex_unlock(&lock);
 
 	return in_flight;
@@ -513,55 +528,70 @@ int net_dplpmtud_on_path_probe_sent(struct net_dplpmtud_path *path,
 				    uint16_t probe_size)
 {
 	struct net_dplpmtud_entry *entry;
+	int ret;
+
+	k_mutex_lock(&lock, K_FOREVER);
 
 	entry = get_path_entry(path, true, true);
 	if (entry == NULL) {
-		return -ENOENT;
+		ret = -ENOENT;
+	} else if (probe_size > get_path_limit(path, entry)) {
+		ret = -EMSGSIZE;
+	} else {
+		ret = net_dplpmtud_start_probe(entry, probe_size);
 	}
 
-	if (probe_size > get_path_limit(path, entry)) {
-		return -EMSGSIZE;
-	}
+	k_mutex_unlock(&lock);
 
-	return net_dplpmtud_start_probe(entry, probe_size);
+	return ret;
 }
 
 int net_dplpmtud_on_path_probe_acked(struct net_dplpmtud_path *path,
 				     uint16_t probe_size)
 {
 	struct net_dplpmtud_entry *entry;
+	int ret;
+
+	k_mutex_lock(&lock, K_FOREVER);
 
 	entry = get_path_entry(path, false, false);
-	if (entry == NULL) {
-		return -ENOENT;
-	}
+	ret = (entry == NULL) ? -ENOENT :
+		net_dplpmtud_probe_acked(entry, probe_size);
 
-	return net_dplpmtud_probe_acked(entry, probe_size);
+	k_mutex_unlock(&lock);
+
+	return ret;
 }
 
 int net_dplpmtud_on_path_probe_lost(struct net_dplpmtud_path *path,
 				    uint16_t probe_size)
 {
 	struct net_dplpmtud_entry *entry;
+	int ret;
+
+	k_mutex_lock(&lock, K_FOREVER);
 
 	entry = get_path_entry(path, false, false);
-	if (entry == NULL) {
-		return -ENOENT;
-	}
+	ret = (entry == NULL) ? -ENOENT :
+		net_dplpmtud_probe_lost(entry, probe_size);
 
-	return net_dplpmtud_probe_lost(entry, probe_size);
+	k_mutex_unlock(&lock);
+
+	return ret;
 }
 
 void net_dplpmtud_note_path_blackhole(struct net_dplpmtud_path *path)
 {
 	struct net_dplpmtud_entry *entry;
 
+	k_mutex_lock(&lock, K_FOREVER);
+
 	entry = get_path_entry(path, false, false);
-	if (entry == NULL) {
-		return;
+	if (entry != NULL) {
+		net_dplpmtud_note_blackhole(entry);
 	}
 
-	net_dplpmtud_note_blackhole(entry);
+	k_mutex_unlock(&lock);
 }
 
 struct net_dplpmtud_entry *net_dplpmtud_get_entry(const struct net_sockaddr *dst)
@@ -827,25 +857,26 @@ void net_dplpmtud_sync_from_pmtu(const struct net_sockaddr *dst, uint16_t pmtu)
 	 */
 	plpmtu = pmtu_to_plpmtu(dst->sa_family, pmtu);
 
+	/* Hold @lock across the lookup/create and the update so the entry
+	 * cannot be evicted and reused for another destination in between.
+	 */
+	k_mutex_lock(&lock, K_FOREVER);
+
 	entry = net_dplpmtud_get_entry(dst);
 	if (entry == NULL) {
 		entry = net_dplpmtud_get_or_create_entry(dst);
-		if (entry == NULL) {
-			return;
+		if (entry != NULL) {
+			net_dplpmtud_init_entry(entry, NET_DPLPMTUD_BASE_PLPMTU, plpmtu);
 		}
-
-		net_dplpmtud_init_entry(entry, NET_DPLPMTUD_BASE_PLPMTU, plpmtu);
-		if (plpmtu < NET_DPLPMTUD_BASE_PLPMTU) {
-			net_dplpmtud_note_blackhole(entry);
-		}
-		return;
+	} else {
+		net_dplpmtud_set_max_plpmtu(entry, plpmtu);
 	}
 
-	net_dplpmtud_set_max_plpmtu(entry, plpmtu);
-
-	if (plpmtu < NET_DPLPMTUD_BASE_PLPMTU) {
+	if (entry != NULL && plpmtu < NET_DPLPMTUD_BASE_PLPMTU) {
 		net_dplpmtud_note_blackhole(entry);
 	}
+
+	k_mutex_unlock(&lock);
 }
 
 int net_dplpmtud_foreach(net_dplpmtud_cb_t cb, void *user_data)
