@@ -21,7 +21,9 @@ pipeline {
     post {
         always {
             echo 'Cleaning up Windows host workspace...'
-            cleanWs()
+            
+            // Disables background deletion and forces immediate wipe
+            cleanWs(disableDeferredWipeout: true, deleteDirs: true)
         }
     }
 }
