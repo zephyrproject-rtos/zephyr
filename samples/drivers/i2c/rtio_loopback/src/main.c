@@ -265,11 +265,34 @@ static int sample_rtio_configure_and_recover(void)
 }
 
 /* This is functionally identical to sample_standard_write_read() but uses RTIO */
-static int sample_rtio_write_read(void)
+static int __sample_rtio_write_read(bool do_pre_configure)
 {
 	struct rtio_sqe *wr_sqe, *rd_sqe;
 	struct rtio_cqe *wr_rd_cqe;
 	int ret;
+
+	if (do_pre_configure) {
+		struct rtio_sqe *sqe;
+
+		/*
+		 * We allocate one submission queue event (SQE) as defined by RTIO_DEFINE()
+		 * and configure it to apply an I2C controller configuration using
+		 * sample_rtio_iodev.
+		 */
+		sqe = rtio_sqe_acquire(&sample_rtio);
+		rtio_sqe_prep_i2c_configure(sqe,
+					    &sample_rtio_iodev,
+					    0,
+					    I2C_CONTROLLER_DEV_CONFIG,
+					    NULL);
+
+		/*
+		 * In this case, we don't actually care which submission is handled first, we chain them
+		 * to ensure they remain ordered, so when we read the CQEs after they have completed,
+		 * we know that the first CQE is the result of the first SQE.
+		 */
+		sqe->flags |= RTIO_SQE_CHAINED;
+	}
 
 	/*
 	 * We allocate one of the 3 submission queue events (SQEs) as defined by
@@ -317,9 +340,20 @@ static int sample_rtio_write_read(void)
 	 * In this case, we wait for the two SQEs to be completed before
 	 * continuing, similar to calling i2c_transfer().
 	 */
-	ret = rtio_submit(&sample_rtio, 2);
+	ret = rtio_submit(&sample_rtio, do_pre_configure ? 3 : 2);
 	if (ret) {
 		return ret;
+	}
+
+	if (do_pre_configure) {
+		struct rtio_cqe *cqe;
+
+		/* This is the result of the i2c configure SQE */
+		cqe = rtio_cqe_consume(&sample_rtio);
+		if (cqe->result) {
+			ret = cqe->result;
+		}
+		rtio_cqe_release(&sample_rtio, cqe);
 	}
 
 	/*
@@ -337,6 +371,16 @@ static int sample_rtio_write_read(void)
 	/* Release the CQE after having checked its result. */
 	rtio_cqe_release(&sample_rtio, wr_rd_cqe);
 	return 0;
+}
+
+static int sample_rtio_write_read(void)
+{
+	return __sample_rtio_write_read(false);
+}
+
+static int sample_rtio_configure_write_read(void)
+{
+	return __sample_rtio_write_read(true);
 }
 
 static void rtio_write_read_done_callback(struct rtio *r, const struct rtio_sqe *sqe,
@@ -502,6 +546,21 @@ int main(void)
 	ret = sample_rtio_write_read();
 	if (ret) {
 		printk("%s %s (%d)\n", "rtio_write_read", "failed", ret);
+		return 0;
+	}
+
+	ret = sample_validate_write_read();
+	if (ret) {
+		printk("%s %s (%d)\n", "rtio_write_read", "corrupted", ret);
+		return 0;
+	}
+
+	sample_reset_buffers();
+
+	printk("%s %s\n", "rtio_configure_write_read", "running");
+	ret = sample_rtio_configure_write_read();
+	if (ret) {
+		printk("%s %s (%d)\n", "rtio_configure_write_read", "failed", ret);
 		return 0;
 	}
 
