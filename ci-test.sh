@@ -21,6 +21,10 @@ west zephyr-export
 pip install -r scripts/requirements.txt
 
 echo "=== 4. Executing Build ==="
+
+# Tell Zephyr to use the container's built-in GCC/G++ compiler
+export ZEPHYR_TOOLCHAIN_VARIANT=host
+
 # Building a standard sample application for the native Linux simulator
 west build -b native_sim samples/basic/blinky
 
