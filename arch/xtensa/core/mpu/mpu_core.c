@@ -103,74 +103,34 @@ static uint32_t find_memory_type(const uintptr_t start, const uintptr_t end)
 }
 
 /**
- * Return the pointer to the entry encompassing @a addr out of an array of MPU entries.
- *
- * Returning the entry where @a addr is greater or equal to the entry's start address,
- * and where @a addr is less than the starting address of the next entry.
+ * Return the pointer to the entry matching exactly @addr out of an array of MPU entries.
  *
  * @param[in]  entries Array of MPU entries.
  * @param[in]  addr Address to be matched to one background entry.
  * @param[in]  first_enabled_idx The index of the first enabled entry.
  *                               Use 0 if not sure.
- * @param[out] exact Set to true if address matches exactly.
- *                   NULL if do not care.
  * @param[out] entry_idx Set to the index of the entry array if entry is found.
- *                       NULL if do not care.
  *
  * @return Pointer to the map entry encompassing @a addr, or NULL if no such entry found.
  */
-static const
-struct xtensa_mpu_entry *check_addr_in_mpu_entries(const struct xtensa_mpu_entry *entries,
-						   uintptr_t addr, uint8_t first_enabled_idx,
-						   bool *exact, uint8_t *entry_idx)
+static struct xtensa_mpu_entry *find_exact_entry(struct xtensa_mpu_entry *entries, uintptr_t addr,
+						 uint8_t first_enabled_idx, uint8_t *entry_idx)
 {
-	const struct xtensa_mpu_entry *ret = NULL;
-	uintptr_t s_addr, e_addr;
-	uint8_t idx;
+	unsigned int idx;
+	uintptr_t entry_addr;
+	struct xtensa_mpu_entry *ret = NULL;
 
-	if (first_enabled_idx >= XTENSA_MPU_NUM_ENTRIES) {
-		goto out_null;
-	}
+	/* Loop through the map to find exact address match. */
+	for (idx = first_enabled_idx; idx < XTENSA_MPU_NUM_ENTRIES; idx++) {
+		entry_addr = xtensa_mpu_entry_start_address_get(&entries[idx]);
 
-	if (addr < xtensa_mpu_entry_start_address_get(&entries[first_enabled_idx])) {
-		/* Before the start address of very first entry. So no match. */
-		goto out_null;
-	}
-
-	/* Loop through the map except the last entry (which is a special case). */
-	for (idx = first_enabled_idx; idx < (XTENSA_MPU_NUM_ENTRIES - 1); idx++) {
-		s_addr = xtensa_mpu_entry_start_address_get(&entries[idx]);
-		e_addr = xtensa_mpu_entry_start_address_get(&entries[idx + 1]);
-
-		if ((addr >= s_addr) && (addr < e_addr)) {
+		if (addr == entry_addr) {
 			ret = &entries[idx];
-			goto out;
-		}
-	}
-
-	idx = XTENSA_MPU_NUM_ENTRIES - 1;
-	s_addr = xtensa_mpu_entry_start_address_get(&entries[idx]);
-	if (addr >= s_addr) {
-		/* Last entry encompasses the start address to end of memory. */
-		ret = &entries[idx];
-	}
-
-out:
-	if (ret != NULL) {
-		if (exact != NULL) {
-			if (addr == s_addr) {
-				*exact = true;
-			} else {
-				*exact = false;
-			}
-		}
-
-		if (entry_idx != NULL) {
 			*entry_idx = idx;
+			break;
 		}
 	}
 
-out_null:
 	return ret;
 }
 
@@ -347,10 +307,9 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 			      uint32_t access_rights, uint8_t *first_idx)
 {
 	int ret;
-	bool exact_s, exact_e;
 	uint8_t idx_s, idx_e, first_enabled_idx;
 	uint32_t memory_type;
-	struct xtensa_mpu_entry *entry_slot_s, *entry_slot_e, prev_entry;
+	struct xtensa_mpu_entry *entry_slot_s, *entry_slot_e = NULL;
 
 	struct xtensa_mpu_entry *entries = map->entries;
 
@@ -368,35 +327,38 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		 * put the entries at the end of map.
 		 */
 
-		if (end_addr == END_OF_MEMORY_ADDR) {
-			/*
-			 * Region goes to end of memory, so only need to
-			 * program one entry.
-			 */
-			entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
+		first_enabled_idx = XTENSA_MPU_NUM_ENTRIES;
 
-			xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
-					     access_rights, memory_type);
-			first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 1;
-		} else {
-			/*
-			 * Populate the last two entries to indicate
-			 * a memory region. Notice that the second entry
-			 * is not enabled as it is merely marking the end of
-			 * a region and is not the starting of another
-			 * enabled MPU region.
-			 */
-			entry_slot_s = &entries[XTENSA_MPU_NUM_ENTRIES - 2];
-			entry_slot_e = &entries[XTENSA_MPU_NUM_ENTRIES - 1];
+		/*
+		 * If end address is the end of memory, we don't need an entry as
+		 * the last entry in map covers through the end of memory.
+		 */
+		if (end_addr != END_OF_MEMORY_ADDR) {
+			first_enabled_idx--;
 
-			xtensa_mpu_entry_set(entry_slot_s, start_addr, true,
-					     access_rights, memory_type);
+			entry_slot_e = &entries[first_enabled_idx];
+
+			/*
+			 * Note that the ending entry is not enabled as it is merely
+			 * marking the end of a region and is not the starting of
+			 * another enabled MPU region.
+			 */
 			xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
 					     XTENSA_MPU_DEFAULT_ACCESS_RIGHTS,
 					     XTENSA_MPU_DEFAULT_MEMORY_TYPE);
-			first_enabled_idx = XTENSA_MPU_NUM_ENTRIES - 2;
 		}
 
+		/* Add the starting entry. */
+		first_enabled_idx--;
+
+		entry_slot_s = &entries[first_enabled_idx];
+
+		xtensa_mpu_entry_set(entry_slot_s, start_addr, true, access_rights, memory_type);
+
+		/*
+		 * Since we started with an empty map, adding a region is simple
+		 * and we can bail at this point.
+		 */
 		goto end;
 	}
 
@@ -408,25 +370,21 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		 * If not, we need to find some free slots to insert new entries.
 		 */
 
-		entry_slot_s = (struct xtensa_mpu_entry *)
-			       check_addr_in_mpu_entries(entries, start_addr, first_enabled_idx,
-							 &exact_s, &idx_s);
-		entry_slot_e = (struct xtensa_mpu_entry *)
-			       check_addr_in_mpu_entries(entries, end_addr, first_enabled_idx,
-							 &exact_e, &idx_e);
+		entry_slot_s = find_exact_entry(entries, start_addr, first_enabled_idx, &idx_s);
 
-		__ASSERT_NO_MSG(entry_slot_s != NULL);
-		__ASSERT_NO_MSG(entry_slot_e != NULL);
-		__ASSERT_NO_MSG(start_addr < end_addr);
-
-		if ((entry_slot_s == NULL) || (entry_slot_e == NULL)) {
-			ret = -EINVAL;
-			goto out;
+		if (end_addr != END_OF_MEMORY_ADDR) {
+			/*
+			 * No need to add an entry for end of memory as it is covered by the last
+			 * entry.
+			 */
+			entry_slot_e = find_exact_entry(entries, end_addr, first_enabled_idx,
+							&idx_e);
 		}
 
 		/* One or both have no exact match. Need to find free slots. */
-		if (!exact_s || !exact_e) {
-			uint8_t needed = (exact_s ? 0 : 1) + (exact_e ? 0 : 1);
+		if ((entry_slot_s == NULL) || (entry_slot_e == NULL)) {
+			uint8_t needed = ((entry_slot_s == NULL) ? 1 : 0) +
+					 ((entry_slot_e == NULL) ? 1 : 0);
 
 			/* Check if there are enough empty slots. */
 			if (first_enabled_idx < needed) {
@@ -435,16 +393,15 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 				/* Try compacting the MPU map to free up some slots. */
 				success = consolidate_entries(entries, &first_enabled_idx);
 				if (success) {
-					/* Map consolidated. So we try to find free slots
-					 * again.
-					 */
+					/* Try to find free slots after map is consolidated. */
 					continue;
 				}
 
-				/* If we still do not have enough slots after compacting
+				/*
+				 * If we still do not have enough slots after compacting
 				 * the MPU map. We bail.
 				 */
-				ret = -ENOMEM;
+				ret = -ENOSPC;
 				goto out;
 			}
 		}
@@ -454,40 +411,25 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 	} while (true);
 
 	/*
-	 * Need to keep track of the attributes of the memory region before
-	 * we start adding entries, as we will need to apply the same
-	 * attributes to the "ending address" entry to preserve the attributes
-	 * of existing map.
-	 */
-	prev_entry = *entry_slot_e;
-
-	/*
-	 * Entry for beginning of new region.
+	 * Entry for ending of the region.
 	 *
-	 * - Use existing entry if start addresses are the same for existing
-	 *   and incoming region. We can simply reuse the entry.
-	 * - Add an entry if incoming region is within existing region.
-	 */
-	if (!exact_s) {
-		/*
-		 * Put a new entry before the first enabled entry.
-		 * We will sort the entries later.
-		 */
-		first_enabled_idx--;
-
-		entry_slot_s = &entries[first_enabled_idx];
-	}
-
-	xtensa_mpu_entry_set(entry_slot_s, start_addr, true, access_rights, memory_type);
-
-	/*
-	 * Entry for ending of region.
+	 * If the end address matches one of the entry (entry_slot_e != NULL), we resue
+	 * this existing entry.
 	 *
-	 * - Add an entry if incoming region is within existing region.
-	 * - If the end address matches exactly to existing entry, there is
-	 *   no need to do anything.
+	 * If there is no exact address match in the map (entry_slot_e == NULL), we need to
+	 * add a new entry in the map.
+	 *
+	 * Note that we need to preserve access rights and memory type of existing MPU map
+	 * which will be done below.
+	 *
+	 * If the ending address is the end of memory, we don't have to worry about it as
+	 * the last entry in the map covers through the end of map. Though we need to make
+	 * sure the last entry is enabled and has the correct attributes, which will also
+	 * be done below.
 	 */
-	if (!exact_e) {
+	if ((end_addr != END_OF_MEMORY_ADDR) && (entry_slot_e == NULL)) {
+		struct xtensa_mpu_entry *prev_entry;
+
 		/*
 		 * Put a new entry before the first enabled entry.
 		 * We will sort the entries later.
@@ -497,51 +439,104 @@ static int mpu_map_region_add(struct xtensa_mpu_map *map,
 		entry_slot_e = &entries[first_enabled_idx];
 
 		/*
-		 * Since we are going to punch a hole in the map,
-		 * we need to preserve the attribute of existing region
-		 * between the end address and next entry.
+		 * Access rights and memory type will be populated later
+		 * as they need to preserve existing attributes. But be safe
+		 * and use default for now.
 		 */
-		*entry_slot_e = prev_entry;
-		xtensa_mpu_entry_start_address_set(entry_slot_e, end_addr);
+		xtensa_mpu_entry_set(entry_slot_e, end_addr, false,
+				     XTENSA_MPU_DEFAULT_ACCESS_RIGHTS,
+				     XTENSA_MPU_DEFAULT_MEMORY_TYPE);
+
+		/* Sort the list with newly added entry and find its position again. */
+		sort_entries(entries, first_enabled_idx);
+		entry_slot_e = find_exact_entry(entries, end_addr, first_enabled_idx, &idx_e);
+
+		if (unlikely(entry_slot_e == NULL)) {
+			ret = -EFAULT;
+			goto out;
+		}
+
+		if (entry_slot_s != NULL) {
+			/* Starting slot has moved too. So find it again. */
+			entry_slot_s = find_exact_entry(entries, start_addr, first_enabled_idx,
+							&idx_s);
+
+			if (unlikely(entry_slot_s == NULL)) {
+				ret = -EFAULT;
+				goto out;
+			}
+		}
+
+		/*
+		 * Preserve access rights and memory type of existing map if there is
+		 * an existing entry before the newly added one. If the new one is
+		 * at the beginning of the map, there is no existing attributes to
+		 * preserve so we use the default attributes set above via
+		 * xtensa_mpu_entry_set().
+		 */
+		if (idx_e != first_enabled_idx) {
+			prev_entry = &entries[idx_e - 1];
+
+			xtensa_mpu_entry_enable_set(entry_slot_e,
+					xtensa_mpu_entry_enable_get(prev_entry));
+			xtensa_mpu_entry_access_rights_set(entry_slot_e,
+					xtensa_mpu_entry_access_rights_get(prev_entry));
+			xtensa_mpu_entry_memory_type_set(entry_slot_e,
+					xtensa_mpu_entry_memory_type_get(prev_entry));
+		}
 	}
 
-	/* Sort the entries in ascending order of starting address */
-	sort_entries(entries, first_enabled_idx);
-
 	/*
-	 * Need to figure out where the start and end entries are as sorting
-	 * may change their positions.
+	 * Entry for beginning of the region.
+	 *
+	 * If the start address matches one of the entry (entry_slot_s != NULL), we resue
+	 * this existing entry.
+	 *
+	 * If there is no exact address match in the map (entry_slot_s == NULL), we need to
+	 * add a new entry in the map.
 	 */
-	entry_slot_s = (struct xtensa_mpu_entry *)
-		       check_addr_in_mpu_entries(entries, start_addr, first_enabled_idx,
-						 &exact_s, &idx_s);
-	entry_slot_e = (struct xtensa_mpu_entry *)
-		       check_addr_in_mpu_entries(entries, end_addr, first_enabled_idx,
-						 &exact_e, &idx_e);
+	if (entry_slot_s == NULL) {
+		/*
+		 * Put a new entry before the first enabled entry.
+		 * We will sort the entries later.
+		 */
+		first_enabled_idx--;
 
-	/* Both must be exact match. */
-	__ASSERT_NO_MSG(exact_s);
-	__ASSERT_NO_MSG(exact_e);
+		entry_slot_s = &entries[first_enabled_idx];
+
+		/* Set the attributes of the new entry */
+		xtensa_mpu_entry_set(entry_slot_s, start_addr, true, access_rights, memory_type);
+
+		/* Sort the list with newly added entry and find its position again. */
+		sort_entries(entries, first_enabled_idx);
+		entry_slot_s = find_exact_entry(entries, start_addr, first_enabled_idx, &idx_s);
+
+		if (unlikely(entry_slot_s == NULL)) {
+			ret = -EFAULT;
+			goto out;
+		}
+	} else {
+		/* Update attributes if there is an existing entry. */
+		xtensa_mpu_entry_set(entry_slot_s, start_addr, true, access_rights, memory_type);
+	}
 
 	if (end_addr == END_OF_MEMORY_ADDR) {
 		/*
-		 * If end_addr = 0xFFFFFFFFU, entry_slot_e and idx_e both
-		 * point to the last slot. Because the incoming region goes
-		 * to the end of memory, we simply cheat by including
-		 * the last entry by incrementing idx_e so the loop to
-		 * update entries will change the attribute of last entry
-		 * in map.
+		 * If end_addr = 0xFFFFFFFFU, the incoming region goes to the end of memory.
+		 * We set idx_e to beyond the entries so the loop below will go through
+		 * all entries after the starting one to the end of map.
 		 */
-		idx_e++;
+		idx_e = XCHAL_MPU_ENTRIES;
 	}
 
 	/*
 	 * Any existing entries between the "newly" popluated start and
-	 * end entries must bear the same attributes. So modify them
-	 * here.
+	 * end entries must bear the same attributes and enabled.
+	 * So modify them here.
 	 */
 	for (int idx = idx_s + 1; idx < idx_e; idx++) {
 		xtensa_mpu_entry_attributes_set(&entries[idx], access_rights, memory_type);
+		xtensa_mpu_entry_enable_set(&entries[idx], true);
 	}
 
 end:
