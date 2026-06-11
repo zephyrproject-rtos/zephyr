@@ -549,9 +549,9 @@ static int i3c_stm32_calc_scll_od_sclh_i2c(const struct device *dev, uint32_t i2
 }
 
 static int i3c_stm32_calc_scll_pp_sclh_i3c(uint32_t i3c_bus_freq, uint32_t i3c_clock,
-					   uint8_t *scll_pp, uint8_t *sclh_i3c)
+					   uint8_t *scll_pp, uint8_t *sclh_i3c, uint32_t min_sclh)
 {
-	*sclh_i3c = DIV_ROUND_UP(STM32_I3C_SCLH_I3C_MIN_NS * i3c_clock, 1000000000ull) - 1;
+	*sclh_i3c = DIV_ROUND_UP(((unsigned long long) min_sclh) * i3c_clock, 1000000000ull) - 1;
 	*scll_pp = DIV_ROUND_UP(i3c_clock, i3c_bus_freq) - *sclh_i3c - 2;
 
 	if (*scll_pp < DIV_ROUND_UP(STM32_I3C_SCLL_PP_MIN_NS * i3c_clock, 1000000000ull) - 1) {
@@ -589,6 +589,7 @@ static int i3c_stm32_config_clk_wave(const struct device *dev)
 	uint8_t scll_pp = 0;
 	uint8_t sclh_i3c = 0;
 	uint32_t clk_wave = 0;
+	uint32_t sclh_i3c_min_ns;
 
 	LOG_DBG("I3C Clock = %u, I2C Bus Freq = %u, I3C Bus Freq = %u", i3c_clock, i2c_bus_freq,
 		i3c_bus_freq);
@@ -599,7 +600,20 @@ static int i3c_stm32_config_clk_wave(const struct device *dev)
 		return ret;
 	}
 
-	ret = i3c_stm32_calc_scll_pp_sclh_i3c(i3c_bus_freq, i3c_clock, &scll_pp, &sclh_i3c);
+	/*
+	 * A single SCLH_I3C field is shared by the Open-Drain and Push-Pull
+	 * high phases. Program it from the strictest requirement: the larger
+	 * of the OD and PP minimum high periods, but never below the hardware
+	 * minimum. The hardware floor is required because i3c_bus_init() only
+	 * raises the OD high period for the first broadcast and then restores
+	 * the configured value, which may be lower than the STM32 minimum.
+	 */
+	sclh_i3c_min_ns = MAX(data->drv_data.ctrl_config.scl_od_min.high_ns,
+			      data->drv_data.ctrl_config.scl_pp_min.high_ns);
+	sclh_i3c_min_ns = MAX(sclh_i3c_min_ns, STM32_I3C_SCLH_I3C_MIN_NS);
+
+	ret = i3c_stm32_calc_scll_pp_sclh_i3c(i3c_bus_freq, i3c_clock, &scll_pp, &sclh_i3c,
+					      sclh_i3c_min_ns);
 	if (ret != 0) {
 		LOG_ERR("Cannot calculate the timing for TimingReg0, err=%d", ret);
 		return ret;
@@ -780,6 +794,8 @@ static int i3c_stm32_configure(const struct device *dev, enum i3c_config_type ty
 		}
 		data->drv_data.ctrl_config.scl.i3c = ctrl_cfg->scl.i3c;
 		data->drv_data.ctrl_config.scl.i2c = ctrl_cfg->scl.i2c;
+		data->drv_data.ctrl_config.scl_od_min = ctrl_cfg->scl_od_min;
+		data->drv_data.ctrl_config.scl_pp_min = ctrl_cfg->scl_pp_min;
 	}
 
 	ret = i3c_stm32_activate(dev);
@@ -2570,6 +2586,8 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 	static struct i3c_stm32_data i3c_stm32_data_##index = {                                    \
 		.drv_data.ctrl_config.scl.i2c = DT_INST_PROP_OR(index, i2c_scl_hz, 0),             \
 		.drv_data.ctrl_config.scl.i3c = DT_INST_PROP_OR(index, i3c_scl_hz, 0),             \
+		.drv_data.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(index, od_thigh_min_ns),   \
+		.drv_data.ctrl_config.scl_pp_min.high_ns = DT_INST_PROP(index, pp_thigh_min_ns),   \
 		STM32_I3C_DMA_CHANNEL(index, rx, RX, PERIPHERAL, MEMORY)                           \
 		STM32_I3C_DMA_CHANNEL(index, tx, TX, MEMORY, PERIPHERAL)                           \
 		STM32_I3C_DMA_CHANNEL(index, tc, TC, MEMORY, PERIPHERAL)                           \
