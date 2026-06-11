@@ -113,10 +113,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	if (ticks == K_TICKS_FOREVER) {
-		/* FIXME we could disable timer here */
-	}
-
 	/*
 	 * When Watchdog is NOT enabled but power management is, system
 	 * starts watchdog before PD_SYS is powered off.
@@ -150,7 +146,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 			ticks = watchdog_expire_ticks - 2;
 		}
 	}
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t)MAX_TICKS);
 
 	schedule_next_interrupt(ticks);

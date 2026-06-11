@@ -94,16 +94,9 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	uint32_t cycles;
-
-	if (ticks == K_TICKS_FOREVER) {
-		cycles = cycles_max;
-	} else {
-		uint64_t wait_ticks = (uint64_t)last_elapsed + (uint64_t)ticks;
-		uint64_t wait_cycles = wait_ticks * (uint64_t)cycles_per_tick;
-
-		cycles = (wait_cycles > cycles_max) ? cycles_max : (uint32_t)wait_cycles;
-	}
+	uint64_t wait_ticks = (uint64_t)last_elapsed + (uint64_t)ticks;
+	uint64_t wait_cycles = wait_ticks * (uint64_t)cycles_per_tick;
+	uint32_t cycles = (wait_cycles > cycles_max) ? cycles_max : (uint32_t)wait_cycles;
 
 	stm_set_compare(last_count + cycles);
 }

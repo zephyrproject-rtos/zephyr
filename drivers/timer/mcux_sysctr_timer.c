@@ -188,22 +188,17 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 	now = counter_read();
 
-	if (ticks == K_TICKS_FOREVER) {
-		next_cycle = last_cycle + MAX_CYCLES;
-	} else {
-		/*
-		 * Compute elapsed ticks from the most recent announce locally
-		 * instead of relying on a cached value from sys_clock_elapsed(),
-		 * which may be stale (or never have been called) by the time we
-		 * arrive here.
-		 */
-		uint64_t elapsed_ticks = (now - last_cycle) / CYC_PER_TICK;
+	/*
+	 * Compute elapsed ticks from the most recent announce locally
+	 * instead of relying on a cached value from sys_clock_elapsed(),
+	 * which may be stale (or never have been called) by the time we
+	 * arrive here.
+	 */
+	uint64_t elapsed_ticks = (now - last_cycle) / CYC_PER_TICK;
 
-		next_cycle = last_cycle +
-			     (elapsed_ticks + (uint64_t)ticks) * CYC_PER_TICK;
-		if ((next_cycle - last_cycle) > MAX_CYCLES) {
-			next_cycle = last_cycle + MAX_CYCLES;
-		}
+	next_cycle = last_cycle + (elapsed_ticks + (uint64_t)ticks) * CYC_PER_TICK;
+	if ((next_cycle - last_cycle) > MAX_CYCLES) {
+		next_cycle = last_cycle + MAX_CYCLES;
 	}
 
 	min = now + MIN_DELAY_CYCLES;

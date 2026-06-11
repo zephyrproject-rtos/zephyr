@@ -187,7 +187,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	ticks = CLAMP(ticks - 1, 0, (int32_t) MAX_TICKS);
 
 	/* Compute number of RTC cycles until the next timeout. */

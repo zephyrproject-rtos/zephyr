@@ -123,7 +123,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 * 0 - announce upcoming tick itself
 	 * 1 - skip upcoming one, but announce the one after it, etc.
 	 */
-	ticks = (ticks == K_TICKS_FOREVER) ? g_max_timeout_ticks : ticks;
 	ticks = CLAMP(ticks - 1, 0, g_max_timeout_ticks);
 
 	k_spinlock_key_t key = k_spin_lock(&g_lock);
