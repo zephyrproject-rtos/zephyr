@@ -11,7 +11,7 @@
 
 DEFINE_FFF_GLOBALS;
 
-static const struct device *i2c_dev = DEVICE_DT_GET(DT_NODELABEL(i2c0));
+static const struct device *bus_dev = DEVICE_DT_GET(DT_BUS(DT_NODELABEL(blocking_emul)));
 I2C_DT_IODEV_DEFINE(blocking_emul_iodev, DT_NODELABEL(blocking_emul));
 
 RTIO_DEFINE(test_rtio_ctx, 4, 4);
@@ -35,9 +35,9 @@ ZTEST_SUITE(rtio_i2c, NULL, NULL, rtio_i2c_before, NULL, NULL);
 
 ZTEST(rtio_i2c, test_emulated_api_uses_fallback_submit)
 {
-	zassert_not_null(i2c_dev->api);
+	zassert_not_null(bus_dev->api);
 	zassert_equal_ptr(i2c_iodev_submit_fallback,
-			  ((const struct i2c_driver_api *)i2c_dev->api)->iodev_submit);
+			  ((const struct i2c_driver_api *)bus_dev->api)->iodev_submit);
 }
 
 ZTEST(rtio_i2c, test_fallback_submit_tx)

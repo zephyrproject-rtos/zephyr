@@ -5,3 +5,16 @@ tests:
   rtio.i2c:
     platform_allow: native_sim
     tags: rtio
+  rtio.i2c.on_i3c:
+    # Same source with the blocking_emul reparented onto a zephyr,i3c-emul
+    # bus via the legacy-I2C-on-I3C bridge, exercising the I2C-RTIO fallback
+    # through the i3c controller's i2c_api.iodev_submit.
+    platform_allow: native_sim
+    tags:
+      - rtio
+      - i3c_emul
+    extra_dtc_overlay_files:
+      - boards/native_sim_on_i3c.overlay
+    extra_configs:
+      - CONFIG_I3C=y
+      - CONFIG_I3C_EMUL=y
