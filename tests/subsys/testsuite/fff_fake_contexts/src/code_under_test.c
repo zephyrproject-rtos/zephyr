@@ -8,7 +8,6 @@
 #include <zephyr/called_API.h>
 #include <zephyr/code_under_test.h>
 
-
 int code_under_test(void)
 {
 	int result = 0;
@@ -25,7 +24,6 @@ int code_under_test(void)
 		if (result != 0) {
 			break;
 		}
-
 	}
 
 	return result;
