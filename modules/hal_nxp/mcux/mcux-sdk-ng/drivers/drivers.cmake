@@ -430,6 +430,7 @@ endif()
 
 if(CONFIG_MSPI_NXP_QSPI)
   set_variable_ifdef(CONFIG_SOC_SERIES_MCXE24X CONFIG_MCUX_COMPONENT_driver.qspi_mcxe247)
+  set_variable_ifdef(CONFIG_SOC_SERIES_MCXE31X CONFIG_MCUX_COMPONENT_driver.qspi_mcxe31b)
 endif()
 
 # Load all drivers
