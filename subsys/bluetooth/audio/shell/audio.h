@@ -78,8 +78,8 @@ unsigned long bap_get_stats_interval(void);
 #define LC3_MAX_NUM_SAMPLES_STEREO (LC3_MAX_NUM_SAMPLES_MONO * 2U)
 #endif /* CONFIG_LIBLC3 */
 
-#define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
-#define CONTEXT                                                                                    \
+#define DEFAULT_LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
+#define DEFAULT_CONTEXT                                                                            \
 	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
 	 BT_AUDIO_CONTEXT_TYPE_MEDIA |                                                             \
 	 COND_CODE_1(IS_ENABLED(CONFIG_BT_GMAP), (BT_AUDIO_CONTEXT_TYPE_GAME), (0)))
