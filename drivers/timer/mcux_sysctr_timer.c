@@ -23,8 +23,9 @@
  * Tickless operation:
  *   - ISR disables compare (clears ISTAT) and masks the interrupt.
  *   - sys_clock_set_timeout() programs a new compare value and re-enables.
- *   - For K_TICKS_FOREVER + idle, the compare interrupt stays disabled
- *     until sys_clock_idle_exit() or the next set_timeout call.
+ *   - Under sloppy idle with no near deadline, the compare interrupt
+ *     stays disabled until sys_clock_idle_exit() or the next set_timeout
+ *     call.
  */
 
 #include <zephyr/init.h>
@@ -169,15 +170,17 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	uint64_t now;
 	uint64_t min;
 
+	ARG_UNUSED(idle);
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	if (idle && (ticks == K_TICKS_FOREVER)) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		/*
-		 * No kernel timeout pending and going to idle — disable the
-		 * compare interrupt entirely.  sys_clock_idle_exit() will
-		 * re-enable if the CPU wakes from an external source.
+		 * No near deadline to schedule: under sloppy idle, disable the
+		 * compare interrupt entirely. sys_clock_idle_exit() will
+		 * re-enable it when the CPU wakes from an external source.
 		 */
 		SYSCTR_EnableCompare(CMP_BASE, TIMER_CMP_FRAME, false);
 		SYSCTR_DisableInterrupts(CMP_BASE, TIMER_CMP_INT_MASK);

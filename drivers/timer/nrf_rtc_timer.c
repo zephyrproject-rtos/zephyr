@@ -676,7 +676,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	if (ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		target_time = last_count + MAX_CYCLES;
 		sys_busy = false;
 	} else {
