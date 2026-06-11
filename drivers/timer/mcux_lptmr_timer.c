@@ -70,8 +70,9 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
-	if (idle && (ticks == K_TICKS_FOREVER)) {
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
 		LPTMR_DisableInterrupts(LPTMR_BASE, kLPTMR_TimerInterruptEnable);
+		return;
 	}
 
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
@@ -81,7 +82,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	k_spinlock_key_t key;
 	uint32_t next, adj, now;
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
 	/* Clamp ticks. We subtract one since we round up to next tick */
 	ticks = CLAMP((ticks - 1), 0, (int32_t)MAX_TICKS);
 

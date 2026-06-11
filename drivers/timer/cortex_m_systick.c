@@ -321,11 +321,11 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 	/* Fast CPUs and a 24 bit counter mean that even idle systems
 	 * need to wake up multiple times per second.  If the kernel
-	 * allows us to miss tick announcements in idle, then shut off
-	 * the counter. (Note: we can assume if idle==true that
-	 * interrupts are already disabled)
+	 * allows us to miss tick announcements while nothing is pending
+	 * (sloppy idle), then shut off the counter.
 	 */
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && idle && ticks == K_TICKS_FOREVER) {
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
+	    ticks == SYS_CLOCK_MAX_WAIT) {
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 		last_load = TIMER_STOPPED;
 		return;

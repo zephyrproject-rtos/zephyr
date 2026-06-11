@@ -205,8 +205,8 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 #else /* !CONFIG_TICKLESS_KERNEL */
 
-	if (ticks == K_TICKS_FOREVER) {
-		/* Disable comparator for K_TICKS_FOREVER. */
+	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
+		/* Disable comparator when the kernel has no pending timeout. */
 		rtc_timeout = rtc_counter;
 		return;
 	}
