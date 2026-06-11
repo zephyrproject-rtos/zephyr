@@ -68,14 +68,6 @@ void z_openrisc_timer_isr(void)
 void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
-	if (ticks == K_TICKS_FOREVER) {
-		if (idle) {
-			return;
-		}
-
-		ticks = INT32_MAX;
-	}
-
 	/*
 	 * Clamp the max period length to a number of cycles that can fit
 	 * in half the range of a cycle_diff_t for native width divisions

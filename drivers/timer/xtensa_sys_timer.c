@@ -112,7 +112,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	set_ccompare(cyc - ccount_comp());
 
 	if (IS_ENABLED(CONFIG_XTENSA_TIMER_LPM_TIMER_HOOK)) {
-		if (idle && ticks != K_TICKS_FOREVER) {
+		if (idle) {
 			uint64_t timeout_us =
 				((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 

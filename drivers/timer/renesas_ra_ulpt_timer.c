@@ -91,8 +91,8 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	/* No timeout change for K_TICKS_FOREVER or INT32_MAX. */
-	if (ticks == K_TICKS_FOREVER || ticks == INT32_MAX) {
+	/* No timeout change when the kernel has no near deadline to schedule. */
+	if (ticks == SYS_CLOCK_MAX_WAIT) {
 		return;
 	}
 

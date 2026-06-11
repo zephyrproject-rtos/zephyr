@@ -115,10 +115,6 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		return;
 	}
 
-	if (idle && ticks == K_TICKS_FOREVER) {
-		return;
-	}
-
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t next_cycle;
 	uint32_t count;
