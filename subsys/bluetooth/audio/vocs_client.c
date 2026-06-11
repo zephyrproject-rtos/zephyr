@@ -304,11 +304,7 @@ static uint8_t vocs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err
 					       struct bt_gatt_read_params *params,
 					       const void *data, uint16_t length)
 {
-	int cb_err = err;
 	struct bt_vocs_client *inst = lookup_vocs_by_handle(conn, params->single.handle);
-	char desc[MIN(BT_L2CAP_RX_MTU, BT_ATT_MAX_ATTRIBUTE_LEN) + 1];
-
-	memset(params, 0, sizeof(*params));
 
 	if (!inst) {
 		LOG_DBG("Instance not found");
@@ -316,29 +312,42 @@ static uint8_t vocs_client_read_output_desc_cb(struct bt_conn *conn, uint8_t err
 	}
 
 	LOG_DBG("Inst %p: err: 0x%02X", inst, err);
-	atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_BUSY);
 
-	if (cb_err) {
-		LOG_DBG("Description read failed: %d", err);
-	} else {
-		if (data) {
-			LOG_HEXDUMP_DBG(data, length, "Output description read");
+	if (err) {
+		atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_BUSY);
 
-			if (length > sizeof(desc) - 1) {
-				LOG_DBG("Description truncated from %u to %zu octets", length,
-					sizeof(desc) - 1);
-			}
-			length = MIN(sizeof(desc) - 1, length);
-
-			/* TODO: Handle long reads */
-			memcpy(desc, data, length);
+		if (inst->cb && inst->cb->description) {
+			inst->cb->description(&inst->vocs, err, NULL);
 		}
-		desc[length] = '\0';
-		LOG_DBG("Output description: %s", desc);
+
+		return BT_GATT_ITER_STOP;
 	}
 
+	if (data) {
+		uint16_t remaining = sizeof(inst->output_desc) - inst->output_offset;
+
+		LOG_HEXDUMP_DBG(data, length, "Output description read");
+
+		if (length > remaining) {
+			LOG_DBG("Description truncated from %u to %u octets",
+				length, remaining);
+			length = remaining;
+		}
+
+		memcpy(&inst->output_desc[inst->output_offset], data, length);
+		inst->output_offset += length;
+
+		/* Continue reading if there may be more data (long read) */
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	/* Read complete (data == NULL) */
+	inst->output_desc[inst->output_offset] = '\0';
+	LOG_DBG("Output description: %s", inst->output_desc);
+	atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_BUSY);
+
 	if (inst->cb && inst->cb->description) {
-		inst->cb->description(&inst->vocs, cb_err, cb_err ? NULL : desc);
+		inst->cb->description(&inst->vocs, 0, inst->output_desc);
 	}
 
 	return BT_GATT_ITER_STOP;
@@ -612,6 +621,7 @@ int bt_vocs_client_description_get(struct bt_vocs_client *inst)
 		return -EBUSY;
 	}
 
+	inst->output_offset = 0U;
 	inst->read_params.func = vocs_client_read_output_desc_cb;
 	inst->read_params.handle_count = 1;
 	inst->read_params.single.handle = inst->desc_handle;
@@ -709,6 +719,8 @@ static void vocs_client_reset(struct bt_vocs_client *inst)
 	inst->location_handle = 0;
 	inst->control_handle = 0;
 	inst->desc_handle = 0;
+	memset(inst->output_desc, 0, sizeof(inst->output_desc));
+	inst->output_offset = 0U;
 
 	if (inst->conn != NULL) {
 		struct bt_conn *conn = inst->conn;
