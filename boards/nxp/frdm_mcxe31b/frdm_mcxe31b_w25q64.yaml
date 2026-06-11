@@ -1,0 +1,27 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: frdm_mcxe31b@w25q64
+name: NXP FRDM-MCXE31B
+type: mcu
+arch: arm
+ram: 288
+flash: 4096
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - can
+  - gpio
+  - ptp_clock
+  - rtc
+  - dma
+  - watchdog
+  - adc
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - netif:eth
+  - mspi
+vendor: nxp

@@ -2,5 +2,11 @@ board:
   name: frdm_mcxe31b
   full_name: FRDM-MCXE31B
   vendor: nxp
+  revision:
+    format: custom
+    default: "default"
+    revisions:
+      - name: "default"
+      - name: "w25q64"
   socs:
     - name: mcxe31b
