@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 
 logger = logging.getLogger('twister')
 
@@ -153,6 +154,7 @@ class CoverageTool:
         return coverage_completed
 
     def generate(self, outdir) -> tuple[bool, dict]:
+        gcov_process_start = time.time()
         coverage_completed = self.capture_data(outdir) if self.coverage_capture else True
         if not coverage_completed or not self.coverage_report:
             return coverage_completed, {}
@@ -190,7 +192,9 @@ class CoverageTool:
                     logger.info(report_log[r])
             else:
                 coverage_completed = False
+        gcov_process_duration = time.time() - gcov_process_start
         logger.debug(f"All coverage data processed: {coverage_completed}")
+        logger.info(f"Coverage data processed in {gcov_process_duration:.2f} seconds")
         return coverage_completed, reports
 
 
