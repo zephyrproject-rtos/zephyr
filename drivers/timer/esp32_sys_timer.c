@@ -126,7 +126,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	set_systimer_alarm(cyc + last_count);
 
 #if defined(CONFIG_PM)
-	if (idle && ticks != K_TICKS_FOREVER) {
+	if (idle) {
 		uint64_t timeout_us =
 			((uint64_t)ticks * USEC_PER_SEC) / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 
