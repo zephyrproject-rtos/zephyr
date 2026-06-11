@@ -11,7 +11,11 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
+
+#ifdef CONFIG_PWM_CAPTURE
 #include <zephyr/irq.h>
+#include <zephyr/sys/util.h>
+#endif
 
 LOG_MODULE_REGISTER(nxp_emios_pwm, CONFIG_PWM_LOG_LEVEL);
 
@@ -24,6 +28,7 @@ LOG_MODULE_REGISTER(nxp_emios_pwm, CONFIG_PWM_LOG_LEVEL);
 #define EMIOS_PWM_MODE_OPWMB			(1U)
 #define EMIOS_PWM_MODE_OPWMCB_TRAIL_EDGE	(2U)
 #define EMIOS_PWM_MODE_OPWMCB_LEAD_EDGE		(3U)
+#define EMIOS_PWM_MODE_SAIC			(4U)
 
 /* Counter bus type enumeration definitions */
 #define EMIOS_BUS_TYPE_A	(0U)
@@ -53,7 +58,9 @@ LOG_MODULE_REGISTER(nxp_emios_pwm, CONFIG_PWM_LOG_LEVEL);
 #define EMIOS_MODE_OPWMCB_TRAIL_EDGE	(0x5CU)
 #define EMIOS_MODE_OPWMCB_LEAD_EDGE	(0x5DU)
 #define EMIOS_MODE_OPWMB		(0x60U)
+#define EMIOS_MODE_SAIC			(0x42U)
 
+#define RISING_FALLING_EDGE_MASK	(0x80000000U)
 
 /* Counter bus unified channel configuration */
 struct pwm_nxp_emios_cnt_bus_uc_cfg {
@@ -62,7 +69,7 @@ struct pwm_nxp_emios_cnt_bus_uc_cfg {
 	uint8_t mode;
 };
 
-/* PWM unified channel configuration */
+/* PWM or input capture unified channel configuration */
 struct pwm_nxp_emios_pwm_uc_cfg {
 	uint8_t channel;
 	uint8_t prescaler;
@@ -86,11 +93,35 @@ struct pwm_nxp_emios_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pincfg;
+
+#ifdef CONFIG_PWM_CAPTURE
+	void (*irq_config_func)(const struct device *dev);
+#endif
+};
+
+struct pwm_nxp_emios_capture_data {
+	pwm_capture_callback_handler_t callback;
+	void *user_data;
+	/*
+	 * capture_value[0]: first active edge timestamp
+	 * capture_value[1]: opposite edge timestamp (pulse end / both-mode intermediate)
+	 */
+	uint32_t capture_value[2];
+	bool capture_period;
+	bool capture_pulse;
+	bool continuous;
+	bool enabled; /* true when capture is active (between enable and disable) */
+	uint8_t state; /* 0=idle, 1=after first active edge, 2=after opposite edge */
+	uint8_t channel;
 };
 
 struct pwm_nxp_emios_channel_data {
 	uint32_t ch_period;
 	uint32_t polarity;
+
+#ifdef CONFIG_PWM_CAPTURE
+	struct pwm_nxp_emios_capture_data capture;
+#endif
 };
 
 struct pwm_nxp_emios_data {
@@ -109,6 +140,42 @@ struct pwm_nxp_emios_cnt_bus_info {
 	uint32_t bus_id;
 	uint32_t bus_field;
 };
+
+#ifdef CONFIG_PWM_CAPTURE
+/*
+ * Compute elapsed ticks between two SAIC capture timestamps.
+ *
+ * SAIC uses the channel's internal 16-bit counter ([0, 0xFFFF]).
+ * Both end and start are held in uint32_t but their values are in
+ * [0, 0xFFFF]. Masking the 32-bit unsigned subtraction to 16 bits
+ * handles wrap-around naturally without a conditional branch:
+ *   e.g. end=5, start=0xFFFE -> (5 - 0xFFFE) & 0xFFFF = 7
+ *
+ * Maximum measurable range: [0, 0xFFFF] ticks
+ *
+ * This implementation correctly handles a single counter wrap-around
+ * (when end < start), but CANNOT reliably measure signals with periods
+ * exceeding the counter modulus (65535 ticks).
+ *
+ * Fundamental limitation - Why software overflow counting is not feasible:
+ *
+ * The eMIOS hardware does NOT generate interrupts on counter overflow.
+ * The S[OVFL] status bit is set when the internal counter wraps from
+ * 0xFFFF to 0x0000, but this flag does NOT trigger an interrupt.
+ *
+ * When multiple channels share a counter bus (external timebase), the
+ * limitation is even more severe: the overflow event would be at the
+ * timebase level with no channel context, making it impossible to attribute
+ * the overflow to a specific capture session.
+ *
+ * Workarounds for signals with period > 0xFFFF is to increase the prescaler
+ * to reduce counter frequency (sacrifices resolution)
+ */
+static inline uint32_t pwm_nxp_emios_elapsed(uint32_t end, uint32_t start)
+{
+	return (end - start) & 0xFFFFU;
+}
+#endif
 
 static void pwm_nxp_emios_get_cnt_bus_info(uint32_t channel, uint32_t bus_type,
 					   struct pwm_nxp_emios_cnt_bus_info *info)
@@ -479,9 +546,9 @@ static int pwm_nxp_emios_get_cycles_per_sec(const struct device *dev,
 	mode = config->pwm_uc_cfg[cfg_idx].mode;
 
 	/* Calculate PWM clock based on mode */
-	if (mode == EMIOS_PWM_MODE_OPWFMB) {
+	if (mode == EMIOS_PWM_MODE_OPWFMB || mode == EMIOS_PWM_MODE_SAIC) {
 		/*
-		 * OPWFMB uses internal counter
+		 * OPWFMB/SAIC uses internal counter
 		 * clock = emios_clk / global_prescaler / pwm_prescaler
 		 */
 		pwm_clk = data->emios_clk / config->global_prescaler;
@@ -508,6 +575,388 @@ static int pwm_nxp_emios_get_cycles_per_sec(const struct device *dev,
 
 	return 0;
 }
+
+#ifdef CONFIG_PWM_CAPTURE
+static int pwm_nxp_emios_configure_capture(const struct device *dev,
+					   uint32_t channel, pwm_flags_t flags,
+					   pwm_capture_callback_handler_t cb,
+					   void *user_data)
+{
+	const struct pwm_nxp_emios_config *config = dev->config;
+	struct pwm_nxp_emios_data *data = dev->data;
+	struct pwm_nxp_emios_capture_data *capture;
+	uint8_t cfg_idx;
+	uint8_t mode;
+	uint32_t reg;
+	bool capture_period = (flags & PWM_CAPTURE_TYPE_PERIOD) != 0U;
+	bool capture_pulse = (flags & PWM_CAPTURE_TYPE_PULSE) != 0U;
+	bool continuous = (flags & PWM_CAPTURE_MODE_CONTINUOUS) != 0U;
+	uint32_t polarity = flags & PWM_POLARITY_MASK;
+
+	if (channel >= EMIOS_CH_UC_UC_COUNT) {
+		LOG_ERR("Invalid channel %u", channel);
+		return -EINVAL;
+	}
+
+	capture = &data->ch_data[channel].capture;
+
+	/* Get configuration array index from hardware channel number */
+	cfg_idx = data->ch_to_cfg_idx[channel];
+	if (cfg_idx == 0xFFU) {
+		LOG_ERR("Channel %u is not configured", channel);
+		return -EINVAL;
+	}
+
+	/* SAIC mode uses internal counter with range [0, 0xFFFF]. */
+	if (config->pwm_uc_cfg[cfg_idx].bus_type != EMIOS_BUS_TYPE_INTERNAL) {
+		LOG_ERR("SAIC mode requires internal counter bus");
+		return -ENOTSUP;
+	}
+
+	mode = config->pwm_uc_cfg[cfg_idx].mode;
+
+	/* Only SAIC mode supports input capture */
+	if (config->pwm_uc_cfg[cfg_idx].mode != EMIOS_PWM_MODE_SAIC) {
+		LOG_ERR("Channel %u is not configured for input capture", channel);
+		return -ENOTSUP;
+	}
+
+	if (capture->enabled) {
+		LOG_ERR("Channel %u capture is busy", channel);
+		return -EBUSY;
+	}
+
+	if (!(flags & PWM_CAPTURE_TYPE_MASK)) {
+		LOG_ERR("Must specify at least one capture type");
+		return -EINVAL;
+	}
+
+	/*
+	 * To change the UC to SAIC mode, first change to GPIO input mode
+	 * and disable interrupt
+	 */
+	reg = config->base->UC[channel].C;
+	reg &= ~(EMIOS_C_MODE_MASK | EMIOS_C_EDPOL_MASK | EMIOS_C_FEN_MASK);
+	reg |= EMIOS_C_EDSEL_MASK;
+	config->base->UC[channel].C = reg;
+
+	/* Clear any pending flags */
+	config->base->UC[channel].S = (EMIOS_S_FLAG_MASK | EMIOS_S_OVR_MASK);
+
+	reg = config->base->UC[channel].C;
+
+	reg &= ~(EMIOS_C_FORCMA_MASK | EMIOS_C_FORCMB_MASK);
+
+	/*
+	 * Always use both-edge triggering. The state machine uses A[31]
+	 * (RISING_FALLING_EDGE_MASK) to identify edge direction at each
+	 * interrupt, so EDSEL must be 1 regardless of capture type.
+	 */
+	reg |= EMIOS_C_EDSEL_MASK;
+
+	/* EDPOL selects the initial output level; edge type is read from A[31] */
+	reg = (reg & ~EMIOS_C_EDPOL_MASK) |
+	      EMIOS_C_EDPOL((polarity == PWM_POLARITY_NORMAL) ? 1U : 0U);
+
+	/* Select counter bus */
+	reg = (reg & ~EMIOS_C_BSL_MASK) | EMIOS_C_BSL(EMIOS_CNT_BUS_INT_BSL);
+
+	/* Set SAIC mode */
+	reg = (reg & ~EMIOS_C_MODE_MASK) | EMIOS_C_MODE(EMIOS_MODE_SAIC);
+
+	/* Use prescaled clock as input filter */
+	reg &= ~EMIOS_C_FCK_MASK;
+
+	/* Disable freeze mode */
+	reg &= ~EMIOS_C_FREN_MASK;
+
+	/* Disable DMA request */
+	reg &= ~EMIOS_C_DMA_MASK;
+
+	config->base->UC[channel].C = reg;
+
+	/* Save capture configuration */
+	capture->callback = cb;
+	capture->user_data = user_data;
+	capture->capture_value[0] = 0U;
+	capture->capture_value[1] = 0U;
+	capture->capture_period = capture_period;
+	capture->capture_pulse = capture_pulse;
+	capture->continuous = continuous;
+	capture->enabled = false;
+	capture->state = 0U;
+	capture->channel = channel;
+
+	LOG_DBG("Configured channel %u for capture: period=%d pulse=%d continuous=%d",
+		channel, capture_period, capture_pulse, continuous);
+
+	return 0;
+}
+
+static int pwm_nxp_emios_enable_capture(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_nxp_emios_config *config = dev->config;
+	struct pwm_nxp_emios_data *data = dev->data;
+	uint8_t cfg_idx;
+
+	if (channel >= EMIOS_CH_UC_UC_COUNT) {
+		LOG_ERR("Invalid channel %u", channel);
+		return -EINVAL;
+	}
+
+	/* Get configuration array index from hardware channel number */
+	cfg_idx = data->ch_to_cfg_idx[channel];
+	if (cfg_idx == 0xFFU) {
+		LOG_ERR("Channel %u is not configured", channel);
+		return -EINVAL;
+	}
+
+	/* Only SAIC mode supports input capture */
+	if (config->pwm_uc_cfg[cfg_idx].mode != EMIOS_PWM_MODE_SAIC) {
+		LOG_ERR("Channel %u is not configured for input capture", channel);
+		return -ENOTSUP;
+	}
+
+	if (data->ch_data[channel].capture.enabled) {
+		LOG_ERR("Channel %u capture is already enabled", channel);
+		return -EBUSY;
+	}
+
+	data->ch_data[channel].capture.enabled = true;
+
+	/* Enable interrupt for capture channel */
+	config->base->UC[channel].C |= EMIOS_C_FEN_MASK;
+
+	/* Enable input capture channel prescaler */
+	config->base->UC[channel].C |= EMIOS_C_UCPREN_MASK;
+
+	return 0;
+}
+
+static int pwm_nxp_emios_disable_capture(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_nxp_emios_config *config = dev->config;
+	struct pwm_nxp_emios_data *data = dev->data;
+	uint8_t cfg_idx;
+
+	if (channel >= EMIOS_CH_UC_UC_COUNT) {
+		LOG_ERR("Invalid channel %u", channel);
+		return -EINVAL;
+	}
+
+	/* Get configuration array index from hardware channel number */
+	cfg_idx = data->ch_to_cfg_idx[channel];
+	if (cfg_idx == 0xFFU) {
+		LOG_ERR("Channel %u is not configured", channel);
+		return -EINVAL;
+	}
+
+	/* Only SAIC mode supports input capture */
+	if (config->pwm_uc_cfg[cfg_idx].mode != EMIOS_PWM_MODE_SAIC) {
+		LOG_ERR("Channel %u is not configured for input capture", channel);
+		return -ENOTSUP;
+	}
+
+	data->ch_data[channel].capture.enabled = false;
+
+	/* Disable interrupt for capture channel */
+	config->base->UC[channel].C &= ~EMIOS_C_FEN_MASK;
+
+	/* Clear any pending flags */
+	config->base->UC[channel].S = (EMIOS_S_FLAG_MASK | EMIOS_S_OVR_MASK);
+
+	/* Disable input capture channel prescaler */
+	config->base->UC[channel].C &= ~EMIOS_C_UCPREN_MASK;
+
+	return 0;
+}
+
+static void pwm_nxp_emios_isr(const struct device *dev)
+{
+	const struct pwm_nxp_emios_config *config = dev->config;
+	struct pwm_nxp_emios_data *data = dev->data;
+	struct pwm_nxp_emios_capture_data *capture;
+	uint32_t gflag;
+	uint32_t channel;
+	uint32_t a_reg;
+	uint32_t cap_val;
+	uint32_t period_cycles;
+	uint32_t pulse_cycles;
+	bool is_active;
+	uint8_t cfg_idx;
+	uint8_t cnt_bus_cfg_idx;
+	int lsb;
+
+	/*
+	 * Read GFLAG register: each bit n is a mirror of UC[n].S[FLAG].
+	 * Use it to efficiently determine which channels need service.
+	 */
+	gflag = config->base->GFLAG & BIT_MASK(EMIOS_CH_UC_UC_COUNT);
+
+	while (gflag != 0U) {
+		lsb = find_lsb_set(gflag);
+		channel = (uint32_t)(lsb - 1);
+		gflag &= ~BIT(channel);
+
+		/*
+		 * Counter bus channel (used by OPWMB/OPWMCB modes): clear
+		 * FLAG and skip. These channels generate periodic interrupts
+		 * at the end of each MCB period; they are not capture events
+		 * and require no further processing here.
+		 */
+		cnt_bus_cfg_idx = data->cnt_bus_ch_to_cfg_idx[channel];
+		if (cnt_bus_cfg_idx != 0xFFU) {
+			config->base->UC[channel].S |= EMIOS_S_FLAG_MASK;
+			continue;
+		}
+
+		/* Input capture channel: must be configured as SAIC */
+		cfg_idx = data->ch_to_cfg_idx[channel];
+		if (cfg_idx == 0xFFU ||
+		    config->pwm_uc_cfg[cfg_idx].mode != EMIOS_PWM_MODE_SAIC) {
+			config->base->UC[channel].S |= EMIOS_S_FLAG_MASK;
+			continue;
+		}
+
+		capture = &data->ch_data[channel].capture;
+
+		if (capture->callback == NULL) {
+			config->base->UC[channel].S |= EMIOS_S_FLAG_MASK;
+			continue;
+		}
+
+		/*
+		 * SAIC mode: the A register holds the counter value latched
+		 * on the triggering edge.
+		 *
+		 * Read A before clearing FLAG to ensure the latched value is
+		 * consumed before the hardware can overwrite it on the next edge.
+		 */
+		a_reg = config->base->UC[channel].A;
+		cap_val = a_reg & EMIOS_A_A_MASK;
+		/*
+		 * Bit 31 of A reflects the active (reference) edge regardless
+		 * of polarity: 1 = active edge occurred (rising when EDPOL=1,
+		 * falling when EDPOL=0).
+		 */
+		is_active = (a_reg & RISING_FALLING_EDGE_MASK) != 0U;
+
+		/* Overrun: a new edge arrived before the previous capture was consumed */
+		if (config->base->UC[channel].S & EMIOS_S_OVR_MASK) {
+			config->base->UC[channel].S |= (EMIOS_S_FLAG_MASK | EMIOS_S_OVR_MASK);
+			capture->state = 0U;
+			if (!capture->continuous) {
+				capture->enabled = false;
+				config->base->UC[channel].C &= ~EMIOS_C_FEN_MASK;
+			}
+			capture->callback(dev, channel, 0U, 0U, -ERANGE, capture->user_data);
+			continue;
+		}
+
+		config->base->UC[channel].S |= EMIOS_S_FLAG_MASK;
+
+		switch (capture->state) {
+		case 0U:
+			/*
+			 * Idle: wait for the first active (reference) edge to
+			 * start the measurement window.
+			 */
+			if (is_active) {
+				capture->capture_value[0] = cap_val;
+				capture->state = 1U;
+			}
+			break;
+
+		case 1U:
+			if (capture->capture_period && !capture->capture_pulse) {
+				/*
+				 * Period-only: measure from one active edge to
+				 * the next active edge.
+				 */
+				if (is_active) {
+					period_cycles = pwm_nxp_emios_elapsed(
+						cap_val,
+						capture->capture_value[0]);
+					if (capture->continuous) {
+						capture->capture_value[0] = cap_val;
+					} else {
+						capture->state = 0U;
+						capture->enabled = false;
+						config->base->UC[channel].C &=
+							~EMIOS_C_FEN_MASK;
+					}
+					capture->callback(dev, channel,
+							  period_cycles, 0U, 0,
+							  capture->user_data);
+				}
+			} else if (!capture->capture_period && capture->capture_pulse) {
+				/*
+				 * Pulse-only: measure from the active edge to
+				 * the opposite edge.
+				 */
+				if (!is_active) {
+					pulse_cycles = pwm_nxp_emios_elapsed(
+						cap_val,
+						capture->capture_value[0]);
+					capture->state = 0U;
+					if (!capture->continuous) {
+						capture->enabled = false;
+						config->base->UC[channel].C &=
+							~EMIOS_C_FEN_MASK;
+					}
+					capture->callback(dev, channel, 0U,
+							  pulse_cycles, 0,
+							  capture->user_data);
+				}
+			} else {
+				/*
+				 * Both period and pulse: record the opposite-edge
+				 * timestamp, then advance to state 2 to wait for
+				 * the period-closing active edge.
+				 */
+				if (!is_active) {
+					capture->capture_value[1] = cap_val;
+					capture->state = 2U;
+				}
+			}
+			break;
+
+		case 2U:
+			/*
+			 * Both period and pulse: the second active edge completes
+			 * the measurement.
+			 *   period = second_active_edge - first_active_edge
+			 *   pulse  = opposite_edge      - first_active_edge
+			 */
+			if (is_active) {
+				period_cycles = pwm_nxp_emios_elapsed(
+					cap_val,
+					capture->capture_value[0]);
+				pulse_cycles = pwm_nxp_emios_elapsed(
+					capture->capture_value[1],
+					capture->capture_value[0]);
+				if (capture->continuous) {
+					capture->capture_value[0] = cap_val;
+					capture->state = 1U;
+				} else {
+					capture->state = 0U;
+					capture->enabled = false;
+					config->base->UC[channel].C &=
+						~EMIOS_C_FEN_MASK;
+				}
+				capture->callback(dev, channel,
+						  period_cycles, pulse_cycles,
+						  0, capture->user_data);
+			}
+			break;
+
+		default:
+			capture->state = 0U;
+			break;
+		}
+	}
+}
+#endif
 
 static int pwm_nxp_emios_init(const struct device *dev)
 {
@@ -641,12 +1090,21 @@ static int pwm_nxp_emios_init(const struct device *dev)
 
 	config->base->MCR |= EMIOS_MCR_GPREN_MASK;
 
+#ifdef CONFIG_PWM_CAPTURE
+	config->irq_config_func(dev);
+#endif /* CONFIG_PWM_CAPTURE */
+
 	return err;
 }
 
 static DEVICE_API(pwm, pwm_nxp_emios_driver_api) = {
 	.set_cycles = pwm_nxp_emios_set_cycles,
 	.get_cycles_per_sec = pwm_nxp_emios_get_cycles_per_sec,
+#ifdef CONFIG_PWM_CAPTURE
+	.configure_capture = pwm_nxp_emios_configure_capture,
+	.enable_capture = pwm_nxp_emios_enable_capture,
+	.disable_capture = pwm_nxp_emios_disable_capture,
+#endif /* CONFIG_PWM_CAPTURE */
 };
 
 
@@ -727,10 +1185,36 @@ static DEVICE_API(pwm, pwm_nxp_emios_driver_api) = {
 		   (.pwm_uc_cfg = NULL,						\
 		    .num_pwm_uc = 0,))
 
+#ifdef CONFIG_PWM_CAPTURE
+#define EMIOS_IRQ_BY_IDX(node_id, prop, idx, cell)				\
+	DT_IRQ_BY_NAME(node_id, DT_STRING_TOKEN_BY_IDX(node_id, prop, idx), cell)
+
+#define EMIOS_IRQ_ENABLE_CODE(node_id, prop, idx)				\
+	irq_enable(EMIOS_IRQ_BY_IDX(node_id, prop, idx, irq));
+
+#define EMIOS_IRQ_CONFIG_CODE(node_id, prop, idx)				\
+	do {									\
+		IRQ_CONNECT(EMIOS_IRQ_BY_IDX(node_id, prop, idx, irq),		\
+			    EMIOS_IRQ_BY_IDX(node_id, prop, idx, priority),	\
+			    pwm_nxp_emios_isr,					\
+			    DEVICE_DT_GET(DT_CHILD(node_id, pwm)), 0);		\
+		EMIOS_IRQ_ENABLE_CODE(node_id, prop, idx);			\
+	} while (false);
+
+#define EMIOS_IRQ_CONFIG_FUNC(id)						\
+	static void pwm_nxp_emios_config_func_##id(const struct device *dev)	\
+	{									\
+		DT_FOREACH_PROP_ELEM(DT_INST_PARENT(id), interrupt_names, EMIOS_IRQ_CONFIG_CODE); \
+	}
+#else
+#define EMIOS_IRQ_CONFIG_FUNC(id)
+#endif /* CONFIG_PWM_CAPTURE */
+
 #define PWM_NXP_EMIOS_DEVICE_INIT(id)						\
 	PINCTRL_DT_INST_DEFINE(id);						\
 	EMIOS_CNT_BUS_ARRAY_DEFINE(id)						\
 	EMIOS_PWM_UC_ARRAY_DEFINE(id)						\
+	EMIOS_IRQ_CONFIG_FUNC(id)						\
 	static const struct pwm_nxp_emios_config pwm_nxp_emios_config_##id = {	\
 		.base = (EMIOS_Type *)DT_REG_ADDR(DT_INST_PARENT(id)),		\
 		.global_prescaler = DT_PROP_OR(DT_INST_PARENT(id), global_prescaler, 1),\
@@ -740,6 +1224,8 @@ static DEVICE_API(pwm, pwm_nxp_emios_driver_api) = {
 		.clock_subsys = (clock_control_subsys_t)			\
 			DT_CLOCKS_CELL(DT_INST_PARENT(id), name),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
+		IF_ENABLED(CONFIG_PWM_CAPTURE,					\
+			   (.irq_config_func = pwm_nxp_emios_config_func_##id,))\
 	};									\
 	static struct pwm_nxp_emios_data pwm_nxp_emios_data_##id;		\
 	DEVICE_DT_INST_DEFINE(id,						\
