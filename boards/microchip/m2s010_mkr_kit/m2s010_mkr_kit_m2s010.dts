@@ -1,0 +1,61 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <microchip/smartfusion2/m2s010.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Microchip M2S010 MKR Kit";
+	compatible = "microchip,m2s010-mkr-kit";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash;
+	};
+
+	aliases {
+		led0 = &led0;
+		spi-0 = &spi0;
+		spi-1 = &spi1;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: user_led_0 {
+			gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+			label = "User LED";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
+
+&cpu0 {
+	/* Must match the CPU clock configured in the SmartFusion2 MSS design. */
+	clock-frequency = <100000000>;
+};
+
+&clkc {
+	/* Must match the clocks configured in the SmartFusion2 MSS design. */
+	clock-frequencies = <100000000 50000000>;
+};
+
+&uart0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
