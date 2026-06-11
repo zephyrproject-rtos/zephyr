@@ -31,6 +31,7 @@ static struct k_thread drv_stack_data;
 
 #define MAX3421E_STATE_BUS_RESET	0
 #define MAX3421E_STATE_BUS_RESUME	1
+#define MAX3421E_STATE_DEV_CONNECTED	2
 
 struct max3421e_data {
 	struct gpio_callback gpio_cb;
@@ -562,7 +563,6 @@ static void max3421e_handle_condet(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
-	enum uhc_event_type type = UHC_EVT_ERROR;
 
 	/*
 	 * JSTATUS:KSTATUS 0:0 - SE0
@@ -571,20 +571,35 @@ static void max3421e_handle_condet(const struct device *dev)
 	 */
 	if (jk == 0) {
 		/* Device disconnected */
-		type = UHC_EVT_DEV_REMOVED;
+		if (atomic_test_and_clear_bit(&priv->state,
+					      MAX3421E_STATE_DEV_CONNECTED)) {
+			uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
+		}
+
+		return;
 	}
 
 	if (jk == MAX3421E_JSTATUS) {
 		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_FS;
+		if (!atomic_test_and_set_bit(&priv->state,
+					     MAX3421E_STATE_DEV_CONNECTED)) {
+			uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
+		}
+
+		return;
 	}
 
 	if (jk == MAX3421E_KSTATUS) {
 		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_LS;
+		if (!atomic_test_and_set_bit(&priv->state,
+					     MAX3421E_STATE_DEV_CONNECTED)) {
+			uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_LS, 0);
+		}
+
+		return;
 	}
 
-	uhc_submit_event(dev, type, 0);
+	uhc_submit_event(dev, UHC_EVT_ERROR, 0);
 }
 
 static void max3421e_bus_event(const struct device *dev)
@@ -1019,13 +1034,44 @@ static int uhc_max3421e_init(const struct device *dev)
 
 	priv->addr = 0;
 
-	/* Sample bus if device is already connected */
-	return max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SAMPLEBUS);
+	return 0;
 }
 
 static int uhc_max3421e_enable(const struct device *dev)
 {
-	/* TODO */
+	struct max3421e_data *priv = uhc_get_private(dev);
+	uint8_t jk;
+	int ret;
+
+	/*
+	 * SAMPLEBUS updates HRSL with the current line state but may not raise
+	 * CONDET for a device that was already attached before host enable.
+	 */
+	ret = max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SAMPLEBUS);
+	if (ret) {
+		LOG_ERR("SAMPLEBUS failed (%d)", ret);
+		return ret;
+	}
+
+	ret = max3421e_read_hirq(dev, MAX3421E_REG_HRSL, &priv->hrsl, 1, true);
+	if (ret) {
+		LOG_ERR("SAMPLEBUS status read failed (%d)", ret);
+		return ret;
+	}
+
+	jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
+	if (jk == MAX3421E_JSTATUS) {
+		if (!atomic_test_and_set_bit(&priv->state,
+					     MAX3421E_STATE_DEV_CONNECTED)) {
+			return uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
+		}
+	} else if (jk == MAX3421E_KSTATUS) {
+		if (!atomic_test_and_set_bit(&priv->state,
+					     MAX3421E_STATE_DEV_CONNECTED)) {
+			return uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_LS, 0);
+		}
+	}
+
 	return 0;
 }
 
