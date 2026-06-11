@@ -1,5 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC eth_dwmac.c)
+# Cores
+# zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_1000_CORE eth_dwc_ether_1000_core.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_QOS_CORE eth_dwc_ether_qos_core.c)
+# zephyr-keep-sorted-stop
+
+# Platform specific drivers
+# zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC_MMU eth_dwmac_mmu.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC_STM32H7X eth_dwmac_stm32h7x.c)
+# zephyr-keep-sorted-stop
