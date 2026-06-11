@@ -621,8 +621,19 @@ Zephyr provides several FFF-based fake drivers which can be used as either stubs
 driver instances are configured via :ref:`devicetree` and :ref:`kconfig`. See the following
 devicetree bindings for more information:
 
+.. zephyr-keep-sorted-start
+
  - :dtcompatible:`zephyr,fake-can`
+ - :dtcompatible:`zephyr,fake-comp`
  - :dtcompatible:`zephyr,fake-eeprom`
+ - :dtcompatible:`zephyr,fake-leds`
+ - :dtcompatible:`zephyr,fake-pwm`
+ - :dtcompatible:`zephyr,fake-regulator`
+ - :dtcompatible:`zephyr,fake-rtc`
+ - :dtcompatible:`zephyr,fake-stepper-ctrl`
+ - :dtcompatible:`zephyr,fake-stepper-driver`
+
+.. zephyr-keep-sorted-stop
 
 Zephyr also has defined extensions to FFF for simplified declarations of fake functions.
 See :ref:`FFF Extensions <fff-extensions>`.
