@@ -299,7 +299,7 @@ void wireguard_peer_foreach(wg_peer_cb_t cb, void *user_data);
 static void wg_start_session(struct wg_peer *peer, bool is_initiator);
 static struct wg_peer *peer_lookup_by_pubkey(struct wg_iface_context *ctx,
 					     const char *public_key);
-static struct wg_peer *peer_lookup_by_id(int id);
+ZTESTABLE_STATIC struct wg_peer *peer_lookup_by_id(int id);
 static struct wg_peer *peer_lookup_by_receiver(struct wg_iface_context *ctx,
 					       uint32_t receiver);
 static struct wg_peer *peer_lookup_by_handshake(struct wg_iface_context *ctx,
@@ -369,13 +369,13 @@ static void wg_process_response_message(struct wg_iface_context *ctx,
 					struct wg_peer *peer,
 					struct msg_handshake_response *response,
 					struct net_sockaddr *addr);
-static int wg_process_data_message(struct wg_iface_context *ctx,
-				   struct wg_peer *peer,
-				   struct msg_transport_data *data_hdr,
-				   struct net_pkt *pkt,
-				   size_t ip_udp_hdr_len,
-				   struct net_sockaddr *addr);
-static void keypair_destroy(struct wg_keypair *keypair);
+ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
+					     struct wg_peer *peer,
+					     struct msg_transport_data *data_hdr,
+					     struct net_pkt *pkt,
+					     size_t ip_udp_hdr_len,
+					     struct net_sockaddr *addr);
+ZTESTABLE_STATIC void keypair_destroy(struct wg_keypair *keypair);
 static void wg_encrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
 			      struct wg_keypair *keypair);
 static int wg_set_interface_private_key(struct wg_iface_context *ctx,
@@ -413,9 +413,9 @@ static int wg_psa_import_x25519_private(psa_key_id_t *key_id,
 					const uint8_t *key_data);
 static int wg_psa_import_x25519_public(psa_key_id_t *key_id,
 				       const uint8_t *key_data);
-static int wg_psa_import_chacha_key(psa_key_id_t *key_id,
-				    const uint8_t *key_data,
-				    psa_key_usage_t usage);
+ZTESTABLE_STATIC int wg_psa_import_chacha_key(psa_key_id_t *key_id,
+					      const uint8_t *key_data,
+					      psa_key_usage_t usage);
 static int wg_psa_export_public_key(uint8_t *public_key, psa_key_id_t key_id);
 static int wg_crypto_init(void);
 #endif /* WG_FUNCTION_PROTOTYPES */
