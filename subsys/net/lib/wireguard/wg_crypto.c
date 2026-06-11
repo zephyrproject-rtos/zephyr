@@ -226,7 +226,7 @@ ZTESTABLE_STATIC bool wg_replay_check(uint32_t *replay_bitmap, uint64_t *replay_
 	 */
 	size_t replay_window_size = sizeof(*replay_bitmap) * CHAR_BIT; /* 32 bits */
 	bool ret = false;
-	uint32_t diff;
+	uint64_t diff;
 
 	/* WireGuard data packet counter starts from 0 but algorithm expects
 	 * packet numbers to start from 1.
