@@ -38,6 +38,10 @@ struct dwmac_dma_desc {
 	uint32_t des1;
 	uint32_t des2;
 	uint32_t des3;
+#ifndef CONFIG_ETH_DWC_ETHER_QOS_CORE
+	/* software-only field for tracking the net_buf associated with this desc */
+	struct net_buf *frag;
+#endif
 };
 
 /* our private instance structure */
@@ -54,10 +58,12 @@ struct dwmac_priv {
 
 	uint8_t mac_addr[6];
 
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
 	uint32_t feature0;
 	uint32_t feature1;
 	uint32_t feature2;
 	uint32_t feature3;
+#endif
 
 	struct dwmac_dma_desc *tx_descs, *rx_descs;
 	struct k_sem free_tx_descs, free_rx_descs;
@@ -67,12 +73,13 @@ struct dwmac_priv {
 #ifdef CONFIG_MMU
 	uintptr_t tx_descs_phys, rx_descs_phys;
 #endif
-
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
 	struct net_buf *tx_frags[NB_TX_DESCS]; /* index shared with tx_descs */
 	struct net_buf *rx_frags[NB_RX_DESCS]; /* index shared with rx_descs */
 
 	struct net_pkt *rx_pkt;
 	unsigned int rx_bytes;
+#endif
 
 	K_KERNEL_STACK_MEMBER(rx_refill_thread_stack, RX_REFILL_STACK_SIZE);
 	struct k_thread rx_refill_thread;
@@ -98,6 +105,8 @@ extern const struct ethernet_api dwmac_api;
 /*
  * MAC Register Definitions
  */
+
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
 
 /* 17.1.1 */
 
@@ -1212,6 +1221,76 @@ extern const struct ethernet_api dwmac_api;
 #define RDES3_LT				GENMASK(18, 16)
 #define RDES3_ES				BIT(15)
 #define RDES3_PL				GENMASK(14, 0)
+
+#elif defined(CONFIG_ETH_DWC_ETHER_1000_CORE)
+
+/* GMAC register map */
+#define DWMAC_MACCR      0x0000
+#define DWMAC_MACFFR     0x0004
+#define DWMAC_MACA0HR    0x0040
+#define DWMAC_MACA0LR    0x0044
+
+#define DWMAC_DMABMR       0x1000
+#define DWMAC_DMATPDR      0x1004
+#define DWMAC_DMARPDR      0x1008
+#define DWMAC_DMARDLAR     0x100C
+#define DWMAC_DMATDLAR     0x1010
+#define DWMAC_DMASR        0x1014
+#define DWMAC_DMAOMR       0x1018
+#define DWMAC_DMAIER       0x101C
+
+/* MAC control bits */
+#define DWMAC_MACCR_RE     BIT(2)
+#define DWMAC_MACCR_TE     BIT(3)
+#define DWMAC_MACCR_DM     BIT(11)
+#define DWMAC_MACCR_FES    BIT(14)
+#define DWMAC_MACCR_PS     BIT(15)
+#define DWMAC_MACCR_CSTF   BIT(25)
+
+/* MAC frame filter bits */
+#define DWMAC_MACFFR_PM    BIT(0)
+#define DWMAC_MACFFR_PAM   BIT(4)
+
+/* DMA status bits */
+#define DWMAC_DMASR_TI     BIT(0)
+#define DWMAC_DMASR_TBUS   BIT(2)
+#define DWMAC_DMASR_RI     BIT(6)
+#define DWMAC_DMASR_RBUS   BIT(7)
+#define DWMAC_DMASR_AIS    BIT(15)
+
+/* DMA operation mode bits */
+#define DWMAC_DMAOMR_SR    BIT(1)
+#define DWMAC_DMAOMR_ST    BIT(13)
+#define DWMAC_DMAOMR_TSF   BIT(21)
+#define DWMAC_DMAOMR_RSF   BIT(25)
+
+/* DMA bus mode bits */
+#define DWMAC_DMABMR_SR    BIT(0)
+
+/* DMA interrupt enable bits */
+#define DWMAC_DMAIER_TIE   BIT(0)
+#define DWMAC_DMAIER_TBUIE BIT(2)
+#define DWMAC_DMAIER_RIE   BIT(6)
+#define DWMAC_DMAIER_RBUIE BIT(7)
+#define DWMAC_DMAIER_AISE  BIT(15)
+#define DWMAC_DMAIER_NISE  BIT(16)
+
+/* DWMAC v3.x MDIO registers (GMAC core) */
+#define MAC_MDIO_ADDRESS 0x0010
+#define MAC_MDIO_DATA    0x0014
+
+#define MAC_MDIO_ADDRESS_PA     GENMASK(15, 11)
+#define MAC_MDIO_ADDRESS_RDA    GENMASK(10, 6)
+#define MAC_MDIO_ADDRESS_CR     GENMASK(5, 2)
+#define MAC_MDIO_ADDRESS_GWRITE BIT(1)
+#define MAC_MDIO_ADDRESS_GBUSY  BIT(0)
+
+#define MAC_MDIO_DATA_RA GENMASK(31, 16)
+#define MAC_MDIO_DATA_GD GENMASK(15, 0)
+
+#define MAC_VERSION 0x0020
+
+#endif /* CONFIG_ETH_DWC_ETHER_1000_CORE */
 
 
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_ */

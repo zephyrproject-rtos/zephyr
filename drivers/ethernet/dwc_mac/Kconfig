@@ -5,24 +5,23 @@
 
 menu "Synopsys DesignWare MAC driver"
 
-config ETH_DWMAC
+config ETH_DWC_ETHER_QOS_CORE
 	bool
 	depends on NET_BUF_FIXED_DATA_SIZE
 	select CACHE_MANAGEMENT if DCACHE
 	help
-	  This is a driver for the Synopsys DesignWare MAC, also referred to
-	  as "DesignWare Cores Ethernet Quality-of-Service". Hardware versions
-	  4.x and 5.x are supported.
+	  This is a driver for the Synopsys DesignWare Ethernet MAC 10/100/1G Quality-of-Service,
+	  also referred to as "dwc_ether_qos".
+	  IP versions v4.x and v5.x are supported.
 
-	  Platform specific glue support is also required. This driver is
-	  currently available on targets using the STM32H7X series as an
-	  alternative to the eth_stm32_hal driver. Support for a generic DT
-	  and MMU based platform is also provided.
-
-	  Not yet implemented:
-	  - PTP support
-	  - VLAN support
-	  - various hardware offloads (when available)
+config ETH_DWC_ETHER_1000_CORE
+	bool
+	depends on NET_BUF_FIXED_DATA_SIZE
+	select CACHE_MANAGEMENT if DCACHE
+	help
+	  This is a driver for the Synopsys DesignWare Ethernet MAC 10/100/1G Universal,
+	  also referred to as "dwc_ether_mac10_100_1000_universal".
+	  IP version v3.x is supported.
 
 config ETH_DWMAC_STM32H7X
 	bool "Synopsys DesignWare MAC driver for STM32 series"
@@ -31,7 +30,7 @@ config ETH_DWMAC_STM32H7X
 		   || SOC_SERIES_STM32H7X \
 		   || SOC_SERIES_STM32H7RSX
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
-	select ETH_DWMAC
+	select ETH_DWC_ETHER_QOS_CORE
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select PINCTRL
 	select HWINFO
@@ -45,13 +44,13 @@ config ETH_DWMAC_MMU
 	bool "Synopsys DesignWare MAC driver for MMU based platforms"
 	depends on MMU
 	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
-	select ETH_DWMAC
+	select ETH_DWC_ETHER_QOS_CORE
 	default y
 	help
 	  This enables the Synopsys DesignWare MAC driver on MMU based
 	  platforms.
 
-if ETH_DWMAC
+if ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
 config DWMAC_NB_TX_DESCS
 	int "Number of entries in the transmit descriptor ring"
@@ -87,6 +86,6 @@ config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
 	  Priority level of the internal thread which is used to refill
 	  the receive buffer pool.
 
-endif # ETH_DWMAC
+endif # ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
 endmenu
