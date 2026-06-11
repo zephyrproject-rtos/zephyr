@@ -1,0 +1,70 @@
+# ADIS1647x, 6-DoF MEMS IMU
+
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ADIS1647X
+	bool "ADIS1647x 6-DoF MEMS IMU"
+	default y
+	depends on DT_HAS_ADI_ADIS1647X_ENABLED
+	select SPI
+	select SPI_RTIO if SENSOR_ASYNC_API
+	select RTIO if SENSOR_ASYNC_API
+	help
+	  Enable driver for ADIS1647x 6-DoF MEMS IMU.
+
+if ADIS1647X
+
+choice ADIS1647X_TRIGGER_MODE
+	prompt "Trigger mode"
+	default ADIS1647X_TRIGGER_NONE
+	help
+	  Specify the type of triggering used by the driver.
+
+config ADIS1647X_TRIGGER_NONE
+	bool "No trigger"
+
+config ADIS1647X_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADIS1647X),drdy-gpios)
+	select ADIS1647X_TRIGGER
+
+config ADIS1647X_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADIS1647X),drdy-gpios)
+	select ADIS1647X_TRIGGER
+
+endchoice
+
+config ADIS1647X_STREAM
+	bool "Stream IMU data via RTIO"
+	depends on SPI_RTIO
+	depends on SENSOR_ASYNC_API
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADIS1647X),drdy-gpios)
+	depends on ADIS1647X_TRIGGER_GLOBAL_THREAD || ADIS1647X_TRIGGER_OWN_THREAD
+	select ADIS1647X_TRIGGER
+	help
+	  Use this configuration option to enable streaming sensor data via RTIO
+	  on the DRDY interrupt. Requires SPI_RTIO, a drdy-gpios pin in
+	  devicetree, and a trigger thread mode selected.
+
+config ADIS1647X_TRIGGER
+	bool
+
+config ADIS1647X_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ADIS1647X_TRIGGER_OWN_THREAD && ADIS1647X_TRIGGER
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ADIS1647X_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ADIS1647X_TRIGGER_OWN_THREAD && ADIS1647X_TRIGGER
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ADIS1647X
