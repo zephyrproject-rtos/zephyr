@@ -2629,8 +2629,6 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 		if ((sh_stream->rx.decoded_cnt % bap_stats_interval) == 0) {
 			bt_shell_print("[%zu]: Performing PLC", sh_stream->rx.decoded_cnt);
 		}
-
-		data->do_plc = false; /* clear flag */
 	} else {
 		iso_data = net_buf_pull_mem(data->buf, octets_per_frame);
 
@@ -2818,6 +2816,7 @@ static void audio_recv(struct bt_bap_stream *stream,
 
 			return;
 		}
+		(void)memset(data, 0, sizeof(*data));
 
 		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
 			data->do_plc = true;
