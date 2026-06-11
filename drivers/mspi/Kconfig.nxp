@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_NXP_QSPI
+	bool "NXP QSPI controller driver"
+	default y
+	depends on DT_HAS_NXP_QSPI_ENABLED
+	select PINCTRL
+	help
+	  Enable MSPI driver for NXP QSPI controllers.
+
+config MSPI_NXP_QSPI_BUSY_TIMEOUT_US
+	int "NXP QSPI busy-wait timeout in microseconds"
+	depends on MSPI_NXP_QSPI
+	default 1000000
+	help
+	  Maximum time in microseconds to wait for the QSPI controller to
+	  complete an IP command or for the TX FIFO to drain.
