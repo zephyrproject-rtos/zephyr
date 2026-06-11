@@ -1323,21 +1323,11 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	 */
 	data_len = net_pkt_get_len(pkt) - sizeof(struct msg_transport_data) - ip_udp_hdr_len;
 
-	/* If the data_len is 16 bytes (padded length), then it is a keepalive message */
-	if (data_len == 16U) {
-		/* keep-alive message */
-		NET_DBG("Keepalive message received from %s",
-			net_sprint_addr(addr->sa_family,
-					(const void *)&net_sin(addr)->sin_addr));
-		vpn_stats_update_keepalive_rx(ctx);
-
-		if (!peer->first_valid) {
-			net_mgmt_event_notify(NET_EVENT_VPN_CONNECTED, peer->iface);
-			peer->first_valid = true;
-		}
-
-		return 0;
-	}
+	/* A 16-byte payload (empty plaintext + Poly1305 tag) is a keepalive
+	 * message. It must still be authenticated and replay-checked below
+	 * before it is acted upon, so it flows through the normal decrypt path
+	 * just like any other transport-data message.
+	 */
 
 	/* Limit the data_len to the max packet size that can be handled by the
 	 * crypto layer.
@@ -1417,6 +1407,20 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		if (remaining_sec <= (REJECT_AFTER_TIME - REKEY_AFTER_TIME)) {
 			peer->send_handshake = true;
 		}
+	}
+
+	/* A 16-byte payload decrypts to an empty plaintext, i.e. this is a
+	 * keepalive message. It has now been authenticated and replay-checked,
+	 * so peer liveness/roaming has been updated above; there is nothing to
+	 * deliver to the network stack.
+	 */
+	if (data_len == 16U) {
+		NET_DBG("Keepalive message received from %s",
+			net_sprint_addr(addr->sa_family,
+					(const void *)&net_sin(addr)->sin_addr));
+		vpn_stats_update_keepalive_rx(ctx);
+		ret = 0;
+		goto out;
 	}
 
 	/* We then need to copy the decrypted data into a net_pkt so that it can
