@@ -217,8 +217,7 @@ static const struct can_mcan_ops mcux_mcan_ops = {
 					    &mcux_mcan_ops,		\
 					    &mcux_mcan_cbs_##n);	\
 									\
-	static struct can_mcan_data can_mcan_data_##n =			\
-		CAN_MCAN_DATA_INITIALIZER(NULL);			\
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##n, NULL);                  \
 									\
 	CAN_DEVICE_DT_INST_DEFINE(n, mcux_mcan_init, NULL,		\
 				  &can_mcan_data_##n,			\

@@ -1389,8 +1389,6 @@ int can_mcan_init(const struct device *dev)
 	__ASSERT_NO_MSG(cbs->num_std <= config->mram_elements[CAN_MCAN_MRAM_CFG_STD_FILTER]);
 	__ASSERT_NO_MSG(cbs->num_ext <= config->mram_elements[CAN_MCAN_MRAM_CFG_EXT_FILTER]);
 
-	k_mutex_init(&data->lock);
-	k_mutex_init(&data->tx_mtx);
 	k_sem_init(&data->tx_sem, cbs->num_tx, cbs->num_tx);
 
 	if (config->common.phy != NULL) {
