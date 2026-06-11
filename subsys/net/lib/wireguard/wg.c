@@ -84,8 +84,8 @@ static const uint8_t zero_key[WG_PUBLIC_KEY_LEN];
 static K_MUTEX_DEFINE(lock);
 
 static struct wg_peer peers[CONFIG_WIREGUARD_MAX_PEER];
-static sys_slist_t peer_list;
-static sys_slist_t active_peers;
+ZTESTABLE_STATIC sys_slist_t peer_list;
+ZTESTABLE_STATIC sys_slist_t active_peers;
 
 static struct wg_context {
 	struct k_work_delayable wg_periodic_timer;
@@ -1756,7 +1756,7 @@ static struct wg_peer *peer_lookup_by_pubkey(struct wg_iface_context *ctx,
 	return NULL;
 }
 
-static struct wg_peer *peer_lookup_by_id(int id)
+ZTESTABLE_STATIC struct wg_peer *peer_lookup_by_id(int id)
 {
 	struct wg_peer *peer, *next;
 
