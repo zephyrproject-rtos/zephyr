@@ -28,6 +28,7 @@ tests:
       - apollo510_evb
       - arduino_giga_r1/stm32h747xx/m7
       - b_u585i_iot02a
+      - frdm_mcxe247
       - stm32h573i_dk
       - stm32h735g_disco
       - stm32l496g_disco
