@@ -454,7 +454,10 @@ struct testfs_bcmd *testfs_bcmd_find(struct fs_dirent *statp,
 		if ((cp->type == statp->type)
 		    && (cp->name != NULL)
 		    && (strcmp(cp->name, statp->name) == 0)
-		    && (cp->size == statp->size)) {
+#ifndef BYPASS_FS_UTIL__SIZE_IN_READDIR_NOT_AVAILABLE
+		    && (cp->size == statp->size)
+#endif
+		) {
 			return cp;
 		}
 
