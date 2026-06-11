@@ -8,6 +8,7 @@ menu "Synopsys DesignWare MAC driver"
 config ETH_DWMAC
 	bool
 	depends on NET_BUF_FIXED_DATA_SIZE
+	select CACHE_MANAGEMENT if DCACHE
 	help
 	  This is a driver for the Synopsys DesignWare MAC, also referred to
 	  as "DesignWare Cores Ethernet Quality-of-Service". Hardware versions
