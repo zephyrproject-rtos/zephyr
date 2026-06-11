@@ -8,6 +8,17 @@ pipeline {
     }
     
     stages {
+        stage('Pre-flight Cleanup') {
+            steps {
+                // Use standard Windows CMD to forcefully delete the zephyr folder quietly
+                bat '''
+                    if exist "zephyr" (
+                        rmdir /s /q "zephyr"
+                    )
+                '''
+            }
+        }
+
         stage('Execute Containerized Tests') {
             steps {
                 echo 'Spawning clean Ubuntu environment and running tests...'
@@ -21,7 +32,7 @@ pipeline {
     post {
         always {
             echo 'Cleaning up Windows host workspace...'
-            
+
             // Disables background deletion and forces immediate wipe
             cleanWs(disableDeferredWipeout: true, deleteDirs: true)
         }
