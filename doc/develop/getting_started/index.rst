@@ -32,11 +32,9 @@ Click the operating system you are using.
 
    .. group-tab:: macOS
 
-      On macOS Mojave or later, select *System Preferences* >
-      *Software Update*. Click *Update Now* if necessary.
-
-      On other versions, see `this Apple support topic
-      <https://support.apple.com/en-us/HT201541>`_.
+      Select :menuselection:`System Settings --> General --> Software Update`
+      andd install any available updates. See `this Apple support topic
+      <https://support.apple.com/en-us/HT201541>`_ for more details.
 
       .. note::
 
@@ -44,8 +42,8 @@ Click the operating system you are using.
 
    .. group-tab:: Windows
 
-      Select *Start* > *Settings* > *Update & Security* > *Windows Update*.
-      Click *Check for updates* and install any that are available.
+      Select :menuselection:`Start --> Settings --> Update & Security --> Windows Update`.
+      Click :guilabel:`Check for updates` and install any that are available.
 
 .. _install-required-tools:
 
