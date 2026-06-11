@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: ISSI IS66/67WV Serial PSRAM on MSPI bus
+
+compatible: "is66wv"
+
+include: [mspi-device.yaml, "jedec,jesd216.yaml"]
