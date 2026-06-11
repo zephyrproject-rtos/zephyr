@@ -131,7 +131,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.gdb_init = gdb_init
         self.load_arg = ['-ex', 'load'] if load else []
         self.target_handle = target_handle
-        self.log_file = log_file if log_file else Path(self.cfg.build_dir, 'openocd.log').as_posix()
+        self.log_file = Path(log_file).as_posix() if log_file else None
         self.rtt_port = rtt_port
         self.rtt_server = rtt_server
 
@@ -318,8 +318,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 self.cfg_cmd.append('-f')
                 self.cfg_cmd.append(i)
 
-        self.logger.info(f'OpenOCD log file: {self.log_file}')
-        self.openocd_cmd += ['--log_output', self.log_file]
+        if self.log_file is not None:
+            self.logger.info(f'OpenOCD log file: {self.log_file}')
+            self.openocd_cmd += ['--log_output', self.log_file]
 
         if command == 'flash':
             self.do_flash(**kwargs)
@@ -492,8 +493,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.require(gdb_cmd[0])
         self.print_gdbserver_message()
 
+        server_proc = self.popen_ignore_int(server_cmd)
+
         if command in ('attach', 'debug'):
-            server_proc = self.popen_ignore_int(server_cmd, stderr=subprocess.DEVNULL)
             try:
                 self.check_call_ignore_sigint(gdb_cmd)
             finally:
@@ -501,7 +503,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                 server_proc.wait()
         elif command == 'rtt':
             self.print_rttserver_message()
-            server_proc = self.popen_ignore_int(server_cmd)
 
             if os_name != 'nt':
                 # Save the terminal settings
