@@ -30,5 +30,7 @@ tests:
     platform_allow:
       - stm32h735g_disco
       - nucleo_h753zi
+      - nucleo_f429zi
+      - nucleo_f767zi
       - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
       - stm32h573i_dk
