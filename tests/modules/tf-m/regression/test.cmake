@@ -4,12 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-cmake_minimum_required(VERSION 3.20.0)
-
-find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-
-project(tfm_regression_test)
-
 set(TFM_TEST_REG_TEST_PATH  ${ZEPHYR_TF_M_TESTS_MODULE_DIR}/tests_reg/test)
 set(TFM_TEST_LIB_PATH  ${ZEPHYR_TF_M_TESTS_MODULE_DIR}/lib)
 set(TFM_API_NS_PATH ${CMAKE_BINARY_DIR}/tfm/api_ns)
