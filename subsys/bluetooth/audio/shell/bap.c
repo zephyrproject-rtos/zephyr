@@ -3076,17 +3076,26 @@ static void update_usb_streams_cb(struct shell_stream *sh_stream, void *user_dat
 static void update_usb_streams(struct shell_stream *sh_stream)
 {
 	if (sh_stream->is_rx) {
+		bool usb_stream_cleared = false;
+
 		if (sh_stream == usb_left_stream) {
 			bt_shell_info("Clearing USB left stream (%p)", usb_left_stream);
+
 			usb_left_stream = NULL;
+			usb_stream_cleared = true;
 		}
 
 		if (sh_stream == usb_right_stream) {
 			bt_shell_info("Clearing USB right stream (%p)", usb_right_stream);
+
 			usb_right_stream = NULL;
+			usb_stream_cleared = true;
 		}
 
-		bap_foreach_stream(update_usb_streams_cb, NULL);
+		if (usb_stream_cleared) {
+			bap_usb_clear_frames_to_usb();
+			bap_foreach_stream(update_usb_streams_cb, NULL);
+		}
 	}
 }
 #endif /* CONFIG_LIBLC3 */
