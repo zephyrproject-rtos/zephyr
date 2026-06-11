@@ -5,6 +5,8 @@
 
 menu "Synopsys DesignWare MAC driver"
 
+DT_CHOSEN_Z_DTCM := zephyr,dtcm
+
 config ETH_DWC_ETHER_QOS_CORE
 	bool
 	depends on NET_BUF_FIXED_DATA_SIZE
@@ -23,8 +25,8 @@ config ETH_DWC_ETHER_1000_CORE
 	  also referred to as "dwc_ether_mac10_100_1000_universal".
 	  IP version v3.x is supported.
 
-config ETH_DWMAC_STM32H7X
-	bool "Synopsys DesignWare MAC driver for STM32 series"
+config ETH_STM32_DWC_ETHER_QOS
+	bool "Driver for DWC Ethernet QoS-based STM32"
 	depends on !ETH_STM32_HAL
 	depends on SOC_SERIES_STM32H5X \
 		   || SOC_SERIES_STM32H7X \
@@ -39,6 +41,25 @@ config ETH_DWMAC_STM32H7X
 	help
 	  This enables the Synopsys DesignWare MAC driver on STM32 H5/H7/H7RS
 	  series SoCs.
+
+config ETH_STM32_DWC_ETHER_1000
+	bool "Driver for DWC Ethernet MAC-based STM32"
+	depends on !ETH_STM32_HAL
+	depends on SOC_SERIES_STM32F7X || \
+		   SOC_SERIES_STM32F4X || \
+		   SOC_SERIES_STM32F2X || \
+		   SOC_SERIES_STM32F1X
+	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
+	select ETH_DWC_ETHER_1000_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT \
+				 && !$(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	select PINCTRL
+	select HWINFO
+	select CRC
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver for STM32 SoCs.
+	  Applicable for STM32F1/F2/F4/F7 series; tested only on F2/F4/F7.
 
 config ETH_DWMAC_MMU
 	bool "Synopsys DesignWare MAC driver for MMU based platforms"

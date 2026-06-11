@@ -27,7 +27,6 @@ tests:
   net.ethernet.build.stm32_dwmac:
     extra_configs:
       - CONFIG_ETH_STM32_HAL=n
-      - CONFIG_ETH_DWMAC_STM32H7X=y
     platform_allow:
       - stm32h735g_disco
       - nucleo_h753zi
