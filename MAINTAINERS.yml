@@ -6092,6 +6092,10 @@ Userspace:
     - ceolin
   files:
     - include/zephyr/internal/syscall_handler.h
+    - include/zephyr/arch/x86/*/syscall.h
+    - include/zephyr/arch/syscall.h
+    - include/zephyr/arch/*/syscall.h
+    - include/zephyr/syscall.h
     - doc/kernel/usermode/kernelobjects.rst
     - include/zephyr/app_memory/
     - include/zephyr/linker/app_smem*.ld
