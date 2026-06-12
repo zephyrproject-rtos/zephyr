@@ -46,7 +46,8 @@ static bool transport_is_pdelay_msg(const void *buf)
 	}
 }
 
-static int transport_socket_open(struct net_if *iface, struct net_sockaddr *addr)
+static int transport_socket_open(struct net_if *iface, net_sa_family_t family,
+				 struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	static const int feature_on = 1;
 	static const uint8_t priority = NET_PRIORITY_CA;
@@ -54,7 +55,7 @@ static int transport_socket_open(struct net_if *iface, struct net_sockaddr *addr
 		ZSOCK_SOF_TIMESTAMPING_TX_HARDWARE | ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE;
 	struct net_ifreq ifreq = {0};
 	int cnt;
-	int socket = zsock_socket(addr->sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	int socket = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 
 	if (net_if_get_by_iface(iface) < 0) {
 		LOG_ERR("Failed to obtain interface index");
@@ -71,7 +72,7 @@ static int transport_socket_open(struct net_if *iface, struct net_sockaddr *addr
 		goto error;
 	}
 
-	if (zsock_bind(socket, addr, sizeof(*addr))) {
+	if (zsock_bind(socket, addr, addrlen)) {
 		LOG_ERR("Failed to bind socket");
 		goto error;
 	}
@@ -179,7 +180,8 @@ static int transport_udp_ipv4_open(struct net_if *iface, uint16_t port)
 		.sin_port = net_htons(port),
 	};
 
-	socket = transport_socket_open(iface, (struct net_sockaddr *)&addr);
+	socket = transport_socket_open(iface, NET_AF_INET, (struct net_sockaddr *)&addr,
+				       sizeof(addr));
 	if (socket < 0) {
 		return -1;
 	}
@@ -216,7 +218,8 @@ static int transport_udp_ipv6_open(struct net_if *iface, uint16_t port)
 					.sin6_addr = NET_IN6ADDR_ANY_INIT,
 					.sin6_port = net_htons(port)};
 
-	socket = transport_socket_open(iface, (struct net_sockaddr *)&addr);
+	socket = transport_socket_open(iface, NET_AF_INET6, (struct net_sockaddr *)&addr,
+				       sizeof(addr));
 	if (socket < 0) {
 		return -1;
 	}
