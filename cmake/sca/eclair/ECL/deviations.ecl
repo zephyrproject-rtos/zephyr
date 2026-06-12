@@ -371,6 +371,16 @@ safe."
 -config=MC3A2.R16.3,reports+={safe, "any_area(end_loc(any_exp(text(^(?s).*/\\* [fF]all ?through\\.? \\*/.*$,0..2))))"}
 -doc_end
 
+-doc_begin="A switch clause that ends with one of the allowed terminal
+statements (break, continue, goto, return, or a call to a no-return function;
+see Rule 16.3) is well-formed even when that terminal is not an explicit break.
+This covers the common return-per-case lookup idiom, where adding a break after
+an unconditional return would only introduce unreachable code."
+-config=MC3A2.R16.1,terminals+={safe, "r16_3_allowed_terminal"}
+-config=MC3A2.R16.1,terminals+={safe, "r16_3_if_else"}
+-config=MC3A2.R16.1,terminals+={safe, "r16_3_if_true"}
+-doc_end
+
 -doc_begin="Switch statements having a controlling expression of enum type deliberately do not have a default case: gcc -Wall enables -Wswitch which warns (and breaks the build as we use -Werror) if one of the enum labels is missing from the switch."
 -config=MC3A2.R16.4,reports+={deliberate,"any_area(kind(context)&&^.* has no `default.*$&&stmt(node(switch_stmt)&&child(cond,skip(__non_syntactic_paren_stmts,ref(enum_underlying_type(any()))))))"}
 -doc_end
