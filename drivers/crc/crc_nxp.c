@@ -85,6 +85,7 @@ static int crc_nxp_prepare_config(const struct device *dev, const struct crc_ctx
 		*use32 = false;
 		break;
 	case CRC16_CCITT:
+	case CRC16_ITU_T:
 		if (ctx->polynomial != CRC16_CCITT_POLY) {
 			return -EINVAL;
 		}
@@ -94,14 +95,6 @@ static int crc_nxp_prepare_config(const struct device *dev, const struct crc_ctx
 		break;
 	case CRC16_ANSI:
 		if (ctx->polynomial != CRC16_REFLECT_POLY) {
-			return -EINVAL;
-		}
-		cfg->seed &= 0xFFFFU;
-		cfg->crcBits = kCrcBits16;
-		*use32 = false;
-		break;
-	case CRC16_ITU_T:
-		if (ctx->polynomial != CRC16_CCITT_POLY) {
 			return -EINVAL;
 		}
 		cfg->seed &= 0xFFFFU;

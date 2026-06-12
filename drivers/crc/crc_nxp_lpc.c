@@ -70,6 +70,7 @@ static int crc_nxp_lpc_prepare_config(const struct crc_ctx *ctx, crc_config_t *c
 		cfg->seed &= 0xFFFFU;
 		break;
 	case CRC16_CCITT:
+	case CRC16_ITU_T:
 		if (ctx->polynomial != CRC16_CCITT_POLY) {
 			return -EINVAL;
 		}
