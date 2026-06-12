@@ -7,3 +7,5 @@ board:
   vendor: amd
   socs:
   - name: zynqmp_apu
+    variants:
+    - name: smp
