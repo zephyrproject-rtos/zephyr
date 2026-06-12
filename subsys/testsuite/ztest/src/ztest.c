@@ -64,7 +64,7 @@ enum ztest_status {
 /**
  * @brief Tracks the current phase that ztest is operating in.
  */
-ZTEST_DMEM enum ztest_phase cur_phase = TEST_PHASE_FRAMEWORK;
+static ZTEST_DMEM enum ztest_phase cur_phase = TEST_PHASE_FRAMEWORK;
 
 static ZTEST_BMEM enum ztest_status test_status = ZTEST_STATUS_OK;
 
@@ -348,6 +348,7 @@ __maybe_unused static void run_test_rules(bool is_before, struct ztest_unit_test
 static void run_test_functions(struct ztest_suite_node *suite, struct ztest_unit_test *test,
 			       void *data)
 {
+	ARG_UNUSED(suite);
 	__ztest_set_test_phase(TEST_PHASE_TEST);
 	test->test(data);
 }
@@ -582,7 +583,8 @@ out:
 #define FAIL_FAST 0
 #endif
 
-K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(ztest_thread_stack,
+			     CONFIG_ZTEST_STACK_SIZE + CONFIG_TEST_EXTRA_STACK_SIZE);
 
 static void test_finalize(void)
 {
@@ -952,6 +954,11 @@ static int z_ztest_run_test_suite_ptr(struct ztest_suite_node *suite, bool shuff
 	 * independent channels.  The argument is kept for ABI compatibility.
 	 */
 	ARG_UNUSED(param);
+
+#ifndef CONFIG_ZTEST_SHUFFLE
+	ARG_UNUSED(shuffle);
+	ARG_UNUSED(suite_iter);
+#endif
 
 	if (FAIL_FAST && test_status != ZTEST_STATUS_OK) {
 		return test_status;

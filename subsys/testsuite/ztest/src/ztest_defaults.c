@@ -66,6 +66,8 @@ bool z_ztest_should_suite_run(const void *state, struct ztest_suite_node *suite)
  */
 bool z_ztest_should_test_run(const char *suite, const char *test)
 {
+	ARG_UNUSED(suite);
+	ARG_UNUSED(test);
 	return true;
 }
 
