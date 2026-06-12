@@ -138,6 +138,19 @@ ZTEST(crc_subsys, test_crc_32_ieee)
 }
 
 /* Define result of CRC computation */
+#define RESULT_CRC32_MPEG2 0x80AE8C93
+
+/**
+ * @brief Test that crc_32_mpeg2 works
+ */
+ZTEST(crc_subsys, test_crc_32_mpeg2)
+{
+	uint8_t data[8] = {0x0A, 0x2B, 0x4C, 0x6D, 0x8E, 0x49, 0x00, 0xC4};
+
+	zassert_equal(crc32_mpeg2(data, sizeof(data)), RESULT_CRC32_MPEG2);
+}
+
+/* Define result of CRC computation */
 #define RESULT_CRC8_CCITT_REMAIN_1 0x57
 
 /**
