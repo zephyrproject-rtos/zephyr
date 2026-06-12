@@ -4675,9 +4675,21 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 uint16_t net_tcp_get_mtu(struct net_sockaddr *dst)
 {
 	struct testing_user_data data = {
-		.remote = *dst,
 		.mtu = 0,
 	};
+	size_t addrlen;
+
+	/* Copy only the family-specific portion of the address. The caller
+	 * may pass a pointer to a net_sockaddr_in / net_sockaddr_in6, which is
+	 * smaller than the generic struct net_sockaddr, so copying the whole
+	 * struct would read past the end of the caller's object.
+	 */
+	addrlen = net_family2size(dst->sa_family);
+	if (addrlen == 0) {
+		return 0;
+	}
+
+	memcpy(&data.remote, dst, addrlen);
 
 	net_tcp_foreach(testing_find_conn, &data);
 
