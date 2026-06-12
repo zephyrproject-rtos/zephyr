@@ -43,7 +43,7 @@ static int fake_led_get_info_delegate(const struct device *dev, uint32_t led,
 {
 	const struct fake_led_config *config = dev->config;
 
-	if (info == NULL || *info == NULL) {
+	if (info == NULL) {
 		return -EINVAL;
 	}
 
