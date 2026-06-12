@@ -396,9 +396,9 @@ PINCTRL_DT_DEFINE(STM32_XSPI_NODE);
 
 static const struct memc_stm32_xspi_psram_config memc_stm32_xspi_cfg = {
 	.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_XSPI_NODE),
-	.pclken = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspix),
+	.pclken = STM32_DT_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspix),
 #if DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE, xspi_ker)
-	.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspi_ker),
+	.pclken_ker = STM32_DT_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE, xspi_ker),
 #endif
 	.memory_size = DT_INST_PROP(0, size) / 8, /* In Bytes */
 	.max_frequency = DT_INST_PROP(0, max_frequency),

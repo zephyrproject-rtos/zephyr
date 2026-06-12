@@ -89,12 +89,12 @@ static int stm32_rcc_usbphyc_disable(const struct stm32_usb_phy *phy)
 	static const struct stm32_rcc_usbphyc_config CONCAT(phy, DT_DEP_ORD(phy_node), _cfg) =	\
 	{											\
 		IF_ENABLED(DT_CLOCKS_HAS_NAME(phy_node, fsel),					\
-			(.fsel = STM32_CLOCK_INFO_BY_NAME(phy_node, fsel),))			\
+			(.fsel = STM32_DT_CLOCK_INFO_BY_NAME(phy_node, fsel),))			\
 		IF_ENABLED(DT_CLOCKS_HAS_NAME(phy_node, mux),					\
-			(.muxcfg = STM32_CLOCK_INFO_BY_NAME(phy_node, mux),			\
+			(.muxcfg = STM32_DT_CLOCK_INFO_BY_NAME(phy_node, mux),			\
 			 .has_muxcfg = true,))							\
 		IF_ENABLED(DT_CLOCKS_HAS_NAME(phy_node, gate),					\
-			(.gatecfg = STM32_CLOCK_INFO_BY_NAME(phy_node, gate),			\
+			(.gatecfg = STM32_DT_CLOCK_INFO_BY_NAME(phy_node, gate),		\
 			 .has_gatecfg = true,))							\
 	};											\
 	const struct stm32_usb_phy USB_STM32_PHY_PSEUDODEV_NAME(usb_node) = {			\
