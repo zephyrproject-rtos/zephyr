@@ -2468,31 +2468,31 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 
 #ifdef CONFIG_I3C_STM32_DMA
 #define STM32_I3C_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)                         \
-	.dma_dev = DEVICE_DT_GET(STM32_DMA_CTLR(index, dir)),                                      \
+	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),                              \
 	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                             \
 	.dma_cfg = {                                                                               \
-		.dma_slot = STM32_DMA_SLOT(index, dir, slot),                                      \
+		.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir, slot),                              \
 		.channel_direction =                                                               \
-				STM32_DMA_CONFIG_DIRECTION(STM32_DMA_CHANNEL_CONFIG(index, dir)),  \
+			STM32_DMA_CONFIG_DIRECTION(STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),  \
 		.channel_priority =                                                                \
-				STM32_DMA_CONFIG_PRIORITY(STM32_DMA_CHANNEL_CONFIG(index, dir)),   \
+			STM32_DMA_CONFIG_PRIORITY(STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),   \
 		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(                        \
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),                             \
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                         \
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),                             \
 		/* single transfers (burst length = data size) */                                  \
 		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(                     \
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),                             \
 		.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(                      \
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),                             \
+			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),                             \
 		.block_count = 1,                                                                  \
 		.dma_callback = i3c_stm32_dma_##dir##_cb,                                          \
 	},                                                                                         \
-	.src_addr_increment =                                                                      \
-		STM32_DMA_CONFIG_##src_dev##_ADDR_INC(STM32_DMA_CHANNEL_CONFIG(index, dir)),       \
-	.dst_addr_increment =                                                                      \
-		STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(STM32_DMA_CHANNEL_CONFIG(index, dir)),      \
-	.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(STM32_DMA_FEATURES(index, dir)),
+	.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(                               \
+		STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),                                     \
+	.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(                              \
+		STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),                                     \
+	.fifo_threshold = STM32_DMA_FEATURES_FIFO_THRESHOLD(STM32_DT_INST_DMA_FEATURES(index, dir)),
 #endif
 
 #ifdef CONFIG_I3C_STM32_DMA

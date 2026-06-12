@@ -2265,27 +2265,27 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),		\
 		.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),			\
 		.dma_cfg = {								\
-			.dma_slot = STM32_DMA_SLOT_BY_IDX(index, 0, slot),		\
+			.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(index, 0, slot),	\
 			.channel_direction = STM32_DMA_CONFIG_DIRECTION(		\
-				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),	\
 			.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(	\
-				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),	\
 			.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
-				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),	\
 			/* single transfers (burst length = data size) */		\
 			.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(	\
-				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),	\
 			.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(	\
-				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),	\
 			.channel_priority = STM32_DMA_CONFIG_PRIORITY(			\
-				STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),	\
 			.dma_callback = dma_callback,					\
 			.block_count = 2,						\
 		},									\
 		.src_addr_increment = STM32_DMA_CONFIG_##src_dev##_ADDR_INC(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 	}
 
 #else /* CONFIG_ADC_STM32_DMA */

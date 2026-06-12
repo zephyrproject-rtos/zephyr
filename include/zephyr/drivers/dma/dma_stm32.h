@@ -35,27 +35,27 @@
 
 /* macro for dma slot (only for dma-v1 or dma-v2 types) */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis)
-#define STM32_DMA_SLOT(id, dir, slot) 0
-#define STM32_DMA_SLOT_BY_IDX(id, idx, slot) 0
+#define STM32_DT_INST_DMA_SLOT(id, dir, slot) 0
+#define STM32_DT_INST_DMA_SLOT_BY_IDX(id, idx, slot) 0
 #else
-#define STM32_DMA_SLOT(id, dir, slot) DT_INST_DMAS_CELL_BY_NAME(id, dir, slot)
-#define STM32_DMA_SLOT_BY_IDX(id, idx, slot) DT_INST_DMAS_CELL_BY_IDX(id, idx, slot)
+#define STM32_DT_INST_DMA_SLOT(id, dir, slot) DT_INST_DMAS_CELL_BY_NAME(id, dir, slot)
+#define STM32_DT_INST_DMA_SLOT_BY_IDX(id, idx, slot) DT_INST_DMAS_CELL_BY_IDX(id, idx, slot)
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2) || \
 	DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis) || \
 	DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dmamux)
-#define STM32_DMA_FEATURES(id, dir) 0
+#define STM32_DT_INST_DMA_FEATURES(id, dir) 0
 #else
-#define STM32_DMA_FEATURES(id, dir)						\
+#define STM32_DT_INST_DMA_FEATURES(id, dir)					\
 		DT_INST_DMAS_CELL_BY_NAME(id, dir, features)
 #endif
 
-#define STM32_DMA_CTLR(id, dir)						\
+#define STM32_DT_INST_DMA_CTLR(id, dir)						\
 		DT_INST_DMAS_CTLR_BY_NAME(id, dir)
-#define STM32_DMA_CHANNEL_CONFIG(id, dir)					\
+#define STM32_DT_INST_DMA_CHANNEL_CONFIG(id, dir)				\
 		DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
-#define STM32_DMA_CHANNEL_CONFIG_BY_IDX(id, idx)				\
+#define STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(id, idx)			\
 		DT_INST_DMAS_CELL_BY_IDX(id, idx, channel_config)
 
 /* macros for channel-config */

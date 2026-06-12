@@ -582,20 +582,20 @@ static void video_stm32_dcmi_irq_config_func(const struct device *dev)
 	.reg = (DMA_TypeDef *)DT_REG_ADDR(						\
 				DT_PHANDLE_BY_IDX(DT_DRV_INST(0), dmas, 0)),		\
 	.cfg = {									\
-		.dma_slot = STM32_DMA_SLOT_BY_IDX(index, 0, slot),			\
+		.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(index, 0, slot),		\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(			\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.dest_data_size = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		/* single transfers (burst length = data size) */			\
 		.source_burst_length = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.dest_burst_length = STM32_DMA_CONFIG_##dest_dev##_DATA_SIZE(		\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
-			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
+			STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),		\
 		.dma_callback = dcmi_dma_callback,					\
 	},										\
 

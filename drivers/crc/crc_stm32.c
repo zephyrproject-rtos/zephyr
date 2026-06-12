@@ -309,7 +309,7 @@ static int crc_stm32_init(const struct device *dev)
 			.dmac = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(inst, 0)),	\
 			.dma_channel = DT_INST_DMAS_CELL_BY_IDX(inst, 0, channel),	\
 			.dma_priority = STM32_DMA_CONFIG_PRIORITY(			\
-				STM32_DMA_CHANNEL_CONFIG_BY_IDX(inst, 0)),		\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, 0)),	\
 		))									\
 	};										\
 											\
