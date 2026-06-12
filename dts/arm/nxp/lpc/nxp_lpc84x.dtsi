@@ -34,10 +34,13 @@
 		ranges;
 
 		iap: flash-controller@40040000 {
+			compatible = "nxp,iap-fmc84x";
 			reg = <0x40040000 0x4000>;
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			clocks = <&syscon LPC84X_CLK_FLASH>;
+			flash-access-time = <2>;
 			status = "disabled";
 
 			flash0: flash@0 {
