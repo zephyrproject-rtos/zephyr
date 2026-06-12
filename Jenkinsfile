@@ -6,6 +6,11 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '10'))
         timestamps()
     }
+
+    triggers {
+        cron('H 0 * * *')
+        pollSCM('H/5 * * * *')
+    }
     
     stages {
         stage('Pre-flight Cleanup') {
