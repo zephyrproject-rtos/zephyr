@@ -373,30 +373,6 @@ static int fusb307_tcpc_dump_std_reg(const struct device *dev)
 	return tcpci_tcpm_dump_std_reg(&cfg->bus);
 }
 
-static int fusb307_tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
-					   uint32_t *status)
-{
-	const struct fusb307_cfg *cfg = dev->config;
-
-	if (reg == TCPC_VENDOR_DEFINED_STATUS) {
-		return tcpci_read_reg8(&cfg->bus, FUSB307_REG_ALERT_VD, (uint8_t *)status);
-	}
-
-	return tcpci_tcpm_get_status_register(&cfg->bus, reg, (uint16_t *)status);
-}
-
-static int fusb307_tcpc_clear_status_register(const struct device *dev, enum tcpc_status_reg reg,
-					     uint32_t mask)
-{
-	const struct fusb307_cfg *cfg = dev->config;
-
-	if (reg == TCPC_VENDOR_DEFINED_STATUS) {
-		return tcpci_write_reg8(&cfg->bus, FUSB307_REG_ALERT_VD, (uint8_t)mask);
-	}
-
-	return tcpci_tcpm_clear_status_register(&cfg->bus, reg, (uint16_t)mask);
-}
-
 static int fusb307_tcpc_mask_status_register(const struct device *dev, enum tcpc_status_reg reg,
 					    uint32_t mask)
 {
@@ -534,8 +510,6 @@ static DEVICE_API(tcpc, fusb307_driver_api) = {
 	.set_cc_polarity = fusb307_tcpc_set_cc_polarity,
 	.transmit_data = fusb307_tcpc_transmit_data,
 	.dump_std_reg = fusb307_tcpc_dump_std_reg,
-	.get_status_register = fusb307_tcpc_get_status_register,
-	.clear_status_register = fusb307_tcpc_clear_status_register,
 	.mask_status_register = fusb307_tcpc_mask_status_register,
 	.set_debug_accessory = fusb307_tcpc_set_debug_accessory,
 	.set_debug_detach = NULL,

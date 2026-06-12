@@ -379,30 +379,6 @@ static int rt1715_tcpc_dump_std_reg(const struct device *dev)
 	return tcpci_tcpm_dump_std_reg(&cfg->bus);
 }
 
-static int rt1715_tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
-					   uint32_t *status)
-{
-	const struct rt1715_cfg *cfg = dev->config;
-
-	if (reg == TCPC_VENDOR_DEFINED_STATUS) {
-		return tcpci_read_reg8(&cfg->bus, RT1715_REG_RT_INT, (uint8_t *)status);
-	}
-
-	return tcpci_tcpm_get_status_register(&cfg->bus, reg, (uint16_t *)status);
-}
-
-static int rt1715_tcpc_clear_status_register(const struct device *dev, enum tcpc_status_reg reg,
-					     uint32_t mask)
-{
-	const struct rt1715_cfg *cfg = dev->config;
-
-	if (reg == TCPC_VENDOR_DEFINED_STATUS) {
-		return tcpci_write_reg8(&cfg->bus, RT1715_REG_RT_INT, (uint8_t)mask);
-	}
-
-	return tcpci_tcpm_clear_status_register(&cfg->bus, reg, (uint16_t)mask);
-}
-
 static int rt1715_tcpc_mask_status_register(const struct device *dev, enum tcpc_status_reg reg,
 					    uint32_t mask)
 {
@@ -499,8 +475,6 @@ static DEVICE_API(tcpc, rt1715_driver_api) = {
 	.set_cc_polarity = rt1715_tcpc_set_cc_polarity,
 	.transmit_data = rt1715_tcpc_transmit_data,
 	.dump_std_reg = rt1715_tcpc_dump_std_reg,
-	.get_status_register = rt1715_tcpc_get_status_register,
-	.clear_status_register = rt1715_tcpc_clear_status_register,
 	.mask_status_register = rt1715_tcpc_mask_status_register,
 	.set_drp_toggle = rt1715_tcpc_set_drp_toggle,
 	.get_chip_info = rt1715_tcpc_get_chip_info,

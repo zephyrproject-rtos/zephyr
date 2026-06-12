@@ -332,18 +332,6 @@ int ps8xxx_tcpc_dump_std_reg(const struct device *dev)
 	return tcpci_tcpm_dump_std_reg(&cfg->bus);
 }
 
-int ps8xxx_tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
-				    uint32_t *status)
-{
-	return -ENOSYS;
-}
-
-int ps8xxx_tcpc_clear_status_register(const struct device *dev, enum tcpc_status_reg reg,
-				      uint32_t mask)
-{
-	return -ENOSYS;
-}
-
 int ps8xxx_tcpc_mask_status_register(const struct device *dev, enum tcpc_status_reg reg,
 				     uint32_t mask)
 {
@@ -465,8 +453,6 @@ static DEVICE_API(tcpc, ps8xxx_driver_api) = {
 	.set_cc_polarity = ps8xxx_tcpc_set_cc_polarity,
 	.transmit_data = ps8xxx_tcpc_transmit_data,
 	.dump_std_reg = ps8xxx_tcpc_dump_std_reg,
-	.get_status_register = ps8xxx_tcpc_get_status_register,
-	.clear_status_register = ps8xxx_tcpc_clear_status_register,
 	.mask_status_register = ps8xxx_tcpc_mask_status_register,
 	.set_debug_accessory = ps8xxx_tcpc_set_debug_accessory,
 	.set_debug_detach = ps8xxx_tcpc_set_debug_detach,
