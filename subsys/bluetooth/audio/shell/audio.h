@@ -65,8 +65,6 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-unsigned long bap_get_stats_interval(void);
-
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
 

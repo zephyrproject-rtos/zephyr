@@ -198,11 +198,6 @@ struct bt_cap_stream *cap_stream_from_shell_stream(struct shell_stream *sh_strea
 	return &sh_stream->stream;
 }
 
-unsigned long bap_get_stats_interval(void)
-{
-	return bap_stats_interval;
-}
-
 void bap_foreach_stream(void (*func)(struct shell_stream *sh_stream, void *data), void *data)
 {
 #if defined(CONFIG_BT_BAP_UNICAST)

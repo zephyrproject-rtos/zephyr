@@ -45,6 +45,7 @@
 
 LOG_MODULE_REGISTER(bap_usb, CONFIG_BT_BAP_STREAM_LOG_LEVEL);
 
+#define USB_LOG_RATE           (30U * MSEC_PER_SEC) /* 30 seconds */
 #define USB_ENQUEUE_COUNT      30U /* 30ms */
 #define USB_FRAME_DURATION_US  1000U
 #define USB_SAMPLE_CNT         ((USB_FRAME_DURATION_US * USB_SAMPLE_RATE) / USEC_PER_SEC)
@@ -133,15 +134,13 @@ static void usb_data_request(const struct device *dev)
 	if (size != 0) {
 		static size_t cnt;
 
-		if ((++cnt % bap_get_stats_interval()) == 0U) {
-			LOG_INF("[%zu]: Sending USB audio", cnt);
-		}
+		cnt++;
+		LOG_INF_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Sending USB audio", cnt);
 	} else {
 		static size_t cnt;
 
-		if ((++cnt % bap_get_stats_interval()) == 0U) {
-			LOG_INF("[%zu]: Sending empty USB audio", cnt);
-		}
+		cnt++;
+		LOG_INF_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Sending empty USB audio", cnt);
 	}
 
 	err = usbd_uac2_send(dev, IN_TERMINAL_ID, pcm_buf, USB_STEREO_FRAME_SIZE);
@@ -192,12 +191,10 @@ static void bap_usb_send_frames_to_usb(void)
 
 		/* Not enough space to store data */
 		if (ring_buf_space_get(&usb_in_ring_buf) < sizeof(stereo_frame)) {
-			if ((fail_cnt % bap_get_stats_interval()) == 0U) {
-				LOG_WRN("[%zu] Could not send more than %zu frames to USB",
-					fail_cnt, i);
-			}
-
 			fail_cnt++;
+			LOG_WRN_RATELIMIT_RATE(USB_LOG_RATE,
+					       "[%zu] Could not send more than %zu frames to USB",
+					       fail_cnt, i);
 
 			break;
 		}
@@ -238,9 +235,8 @@ static void bap_usb_send_frames_to_usb(void)
 		}
 	}
 
-	if ((++cnt % bap_get_stats_interval()) == 0U) {
-		LOG_INF("[%zu]: Sending %u USB audio frame", cnt, frame_cnt);
-	}
+	cnt++;
+	LOG_INF_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Sending %zu USB audio frame", cnt, frame_cnt);
 
 	bap_usb_clear_frames_to_usb();
 }
@@ -263,9 +259,8 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 
 	static size_t cnt;
 
-	if ((++cnt % bap_get_stats_interval()) == 0U) {
-		LOG_INF("[%zu]: Adding USB audio frame", cnt);
-	}
+	cnt++;
+	LOG_INF_RATELIMIT_RATE(USB_LOG_RATE, "[%zu]: Adding USB audio frame", cnt);
 
 	if (frame_size > LC3_MAX_NUM_SAMPLES_MONO * sizeof(int16_t) || frame_size == 0U) {
 		LOG_DBG("Invalid frame of size %zu", frame_size);
@@ -496,9 +491,8 @@ static void usb_data_recv_cb(const struct device *dev, uint8_t terminal, void *b
 	 */
 	bap_foreach_stream(stream_cb, UINT_TO_POINTER(old_write_index));
 
-	if ((++cnt % bap_get_stats_interval()) == 0U) {
-		LOG_DBG("USB Data received (count = %d)", cnt);
-	}
+	cnt++;
+	LOG_DBG_RATELIMIT_RATE(USB_LOG_RATE, "USB Data received (count = %zu)", cnt);
 
 	k_mem_slab_free(&usb_out_buf_pool, buf);
 }
