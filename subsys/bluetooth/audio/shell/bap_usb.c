@@ -282,7 +282,12 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 	if (((is_left || is_right) && decoded_sdu.mono_frames_cnt != 0) ||
 	    (is_mono &&
 	     (decoded_sdu.left_frames_cnt != 0U || decoded_sdu.right_frames_cnt != 0U))) {
-		LOG_DBG("Cannot mix and match mono with left or right");
+		LOG_WRN("Cannot mix and match mono with left or right: %s: %u | %u | %u",
+			is_left    ? "is_left"
+			: is_right ? "is_right"
+				   : "is_mono",
+			decoded_sdu.mono_frames_cnt, decoded_sdu.left_frames_cnt,
+			decoded_sdu.right_frames_cnt);
 
 		return -EINVAL;
 	}
