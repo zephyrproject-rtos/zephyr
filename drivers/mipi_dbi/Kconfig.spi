@@ -20,4 +20,16 @@ config MIPI_DBI_SPI_3WIRE
 	  driver. This requires manually packing each byte with a data/command
 	  bit, and may slow down display data transmission.
 
+config MIPI_DBI_SPI_DATA_CHUNK_SIZE
+	int "Max bytes per SPI data transfer (0 = unlimited)"
+	default 0
+	help
+	  When non-zero, the 4-wire data phase is split into separate SPI
+	  transfers of at most this many bytes each (chip-select cycles between
+	  chunks) instead of one continuous transfer. This is a workaround for
+	  SPI controllers that drop bytes during a single long continuous
+	  transfer (observed on i.MX93 LPSPI driving an SSD1680 e-paper panel:
+	  a single multi-byte transfer truncates the panel RAM write). Leave at
+	  0 (one transfer) for normal controllers; small values are much slower.
+
 endif # MIPI_DBI_SPI

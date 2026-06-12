@@ -186,14 +186,31 @@ mipi_dbi_spi_write_helper_4wire_8bit(const struct device *dev,
 	}
 
 	if (len > 0) {
-		buffer.buf = (void *)data_buf;
-		buffer.len = len;
-
 		/* Set CD pin high for data */
 		gpio_pin_set_dt(&config->cmd_data, 1);
-		ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
-		if (ret < 0) {
-			goto out;
+
+		/* Optionally split the data phase into chunks, with CS cycling
+		 * between them, to work around controllers that drop bytes during
+		 * a single long continuous transfer (see
+		 * CONFIG_MIPI_DBI_SPI_DATA_CHUNK_SIZE). 0 means one transfer.
+		 */
+		size_t max_chunk = len;
+		size_t off = 0;
+
+		if (CONFIG_MIPI_DBI_SPI_DATA_CHUNK_SIZE > 0) {
+			max_chunk = CONFIG_MIPI_DBI_SPI_DATA_CHUNK_SIZE;
+		}
+
+		while (off < len) {
+			size_t chunk = MIN(len - off, max_chunk);
+
+			buffer.buf = (void *)(data_buf + off);
+			buffer.len = chunk;
+			ret = spi_write(config->spi_dev, &dbi_config->config, &buf_set);
+			if (ret < 0) {
+				goto out;
+			}
+			off += chunk;
 		}
 	}
 out:
