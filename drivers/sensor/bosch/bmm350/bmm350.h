@@ -477,7 +477,7 @@ struct bmm350_encoded_data {
 	struct {
 		uint64_t timestamp;
 		uint8_t events : 1;
-		uint8_t channels : 3;
+		uint8_t channels : 4;
 	} header;
 	struct mag_compensate comp;
 	struct bmm350_raw_mag_data payload;
