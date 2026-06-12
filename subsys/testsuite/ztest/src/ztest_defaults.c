@@ -31,7 +31,7 @@ EXPORT_SYMBOL(ztest_relative_filename);
  */
 void z_ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_iter)
 {
-	ztest_run_test_suites(state, shuffle, suite_iter, case_iter);
+	(void)ztest_run_test_suites(state, shuffle, suite_iter, case_iter);
 }
 
 /**
