@@ -120,8 +120,6 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 			LOG_DBG("[%zu]: Performing PLC", stream->reporting_info.lc3_decoded_cnt);
 		}
 #endif /* CONFIG_INFO_REPORTING_INTERVAL > 0 */
-
-		data->do_plc = false; /* clear flag */
 	} else {
 		iso_data = net_buf_pull_mem(data->buf, octets_per_frame);
 
@@ -466,6 +464,7 @@ void lc3_enqueue_for_decoding(struct stream_rx *stream, const struct bt_iso_recv
 		LOG_WRN("Could not allocate LC3 data item");
 		return;
 	}
+	(void)memset(data, 0, sizeof(*data));
 
 	if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
 		data->do_plc = true;
