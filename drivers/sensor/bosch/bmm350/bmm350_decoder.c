@@ -23,9 +23,11 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 	 * fields (e.g. during self-test or saturation).
 	 */
 	int64_t out_data[4];
+	int64_t t_delta;
+	const int64_t scale100 = (int64_t)BMM350_MAG_COMP_COEFF_SCALING * 100;
 	int32_t dut_offset_coef[3], dut_sensit_coef[3], dut_tco[3], dut_tcs[3];
 
-	/* Convert mag lsb to uT and temp lsb to degC */
+	/* Convert mag lsb to uT and temp lsb to centi-degC (0.01 degC) */
 	out_data[0] = ((sign_extend(raw_data->magn_x, BMM350_SIGNED_24_BIT) *
 			BMM350_LSB_TO_UT_XY_COEFF) /
 		       BMM350_LSB_TO_UT_COEFF_DIV);
@@ -35,20 +37,21 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 	out_data[2] = ((sign_extend(raw_data->magn_z, BMM350_SIGNED_24_BIT) *
 			BMM350_LSB_TO_UT_Z_COEFF) /
 		       BMM350_LSB_TO_UT_COEFF_DIV);
-	out_data[3] = ((sign_extend(raw_data->temp, BMM350_SIGNED_24_BIT) *
-			BMM350_LSB_TO_UT_TEMP_COEFF) /
-		       BMM350_LSB_TO_UT_COEFF_DIV);
+	out_data[3] = ((int64_t)sign_extend(raw_data->temp, BMM350_SIGNED_24_BIT) *
+		       BMM350_LSB_TO_UT_TEMP_COEFF * 100) /
+		      BMM350_LSB_TO_UT_COEFF_DIV;
 
+	/* Subtract the 25.49 degC offset (expressed in centi-degC). */
 	if (out_data[3] > 0) {
-		out_data[3] = (out_data[3] - (2549 / 100));
+		out_data[3] = (out_data[3] - 2549);
 	} else if (out_data[3] < 0) {
-		out_data[3] = (out_data[3] + (2549 / 100));
+		out_data[3] = (out_data[3] + 2549);
 	}
 
 	/* Apply compensation to temperature reading */
 	out_data[3] = (((BMM350_MAG_COMP_COEFF_SCALING + comp->dut_sensit_coef.t_sens) *
 			out_data[3]) +
-		       comp->dut_offset_coef.t_offs) /
+		       ((int64_t)comp->dut_offset_coef.t_offs * 100)) /
 		      BMM350_MAG_COMP_COEFF_SCALING;
 
 	/* Store magnetic compensation structure to an array */
@@ -68,18 +71,23 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 	dut_tcs[1] = comp->dut_tcs.tcs_y;
 	dut_tcs[2] = comp->dut_tcs.tcs_z;
 
+	/*
+	 * Temperature delta from the calibration reference, in centi-degC. The
+	 * TCO/TCS stages below fold in the extra factor of 100 via scale100 so the
+	 * temperature correction uses the full 0.01 degC resolution.
+	 */
+	t_delta = out_data[3] - ((int64_t)comp->dut_t0 * 100);
+
 	/* Compensate raw magnetic data */
 	for (size_t indx = 0; indx < 3; indx++) {
 		out_data[indx] = (out_data[indx] *
 				  (BMM350_MAG_COMP_COEFF_SCALING + dut_sensit_coef[indx])) /
 				 BMM350_MAG_COMP_COEFF_SCALING;
 		out_data[indx] = (out_data[indx] + dut_offset_coef[indx]);
-		out_data[indx] = ((out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) +
-				  (dut_tco[indx] * (out_data[3] - comp->dut_t0))) /
-				 BMM350_MAG_COMP_COEFF_SCALING;
-		out_data[indx] = (out_data[indx] * BMM350_MAG_COMP_COEFF_SCALING) /
-				 (BMM350_MAG_COMP_COEFF_SCALING +
-				  (dut_tcs[indx] * (out_data[3] - comp->dut_t0)));
+		out_data[indx] = ((out_data[indx] * scale100) + (dut_tco[indx] * t_delta)) /
+				 scale100;
+		out_data[indx] = (out_data[indx] * scale100) /
+				 (scale100 + (dut_tcs[indx] * t_delta));
 	}
 
 	out->mag[0] = (int32_t)((((out_data[0] * BMM350_MAG_COMP_COEFF_SCALING) -
