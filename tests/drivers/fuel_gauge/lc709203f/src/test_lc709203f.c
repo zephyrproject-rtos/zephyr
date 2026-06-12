@@ -53,7 +53,7 @@ ZTEST_USER_F(lc709203f, test_set_all_props_failed__returns_err)
 		/* Invalid property */
 		FUEL_GAUGE_PROP_MAX,
 	};
-	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)] = {0};
+	union fuel_gauge_prop_val props[ARRAY_SIZE(prop_types)] = {{.avg_current_ua = 0}};
 
 	int ret = fuel_gauge_set_props(fixture->dev, prop_types, props, ARRAY_SIZE(props));
 
@@ -75,9 +75,9 @@ ZTEST_USER_F(lc709203f, test_set_some_props_failed__returns_err)
 
 	union fuel_gauge_prop_val props[] = {
 		/* First invalid property */
-		{0},
+		{.avg_current_ua = 0},
 		/* Second invalid property */
-		{0},
+		{.avg_current_ua = 0},
 		/* Valid property */
 		/* Sets state of charge threshold to generate Alarm signal*/
 		{.state_of_charge_alarm_pct = 10},
