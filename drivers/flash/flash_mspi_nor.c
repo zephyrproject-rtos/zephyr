@@ -30,7 +30,8 @@ LOG_MODULE_REGISTER(flash_mspi_nor, CONFIG_FLASH_LOG_LEVEL);
 			  MSPI_DEVICE_CONFIG_TX_DUMMY | \
 			  MSPI_DEVICE_CONFIG_IO_MODE)
 
-#define NON_XIP_DEV_CFG_MASK (MSPI_DEVICE_CONFIG_ALL & ~XIP_DEV_CFG_MASK)
+#define NON_XIP_DEV_CFG_MASK ((MSPI_DEVICE_CONFIG_ALL & ~XIP_DEV_CFG_MASK) | \
+			      MSPI_DEVICE_CONFIG_IO_MODE)
 
 static void set_up_xfer(const struct device *dev, enum mspi_xfer_direction dir,
 			enum mspi_xfer_mode xfer_mode);
