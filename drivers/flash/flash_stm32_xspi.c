@@ -2535,10 +2535,10 @@ static int flash_stm32_xspi_init(const struct device *dev)
 												\
 	static const struct flash_stm32_xspi_config flash_stm32_xspi_cfg_##inst = {		\
 		/* Properties of the controller */						\
-		.pclken = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspix),		\
+		.pclken = STM32_DT_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspix),		\
 		IF_ENABLED(DT_CLOCKS_HAS_NAME(STM32_XSPI_NODE(inst), xspi_ker),	(		\
 			.has_pclken_ker = true,							\
-			.pclken_ker = STM32_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspi_ker),\
+			.pclken_ker = STM32_DT_CLOCK_INFO_BY_NAME(STM32_XSPI_NODE(inst), xspi_ker),\
 		))										\
 		.pcfg = PINCTRL_DT_DEV_CONFIG_GET(STM32_XSPI_NODE(inst)),			\
 		.irq_config = flash_stm32_xspi_irq_config_func_##inst,				\
