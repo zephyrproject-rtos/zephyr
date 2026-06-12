@@ -22,6 +22,7 @@
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/pipelink.h>
 #include <zephyr/modem/ppp.h>
+#include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/atomic.h>
 
 /**
@@ -69,6 +70,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_CONNECT_CMUX,
 	MODEM_CELLULAR_STATE_OPEN_DLCI1,
 	MODEM_CELLULAR_STATE_OPEN_DLCI2,
+	MODEM_CELLULAR_STATE_RUN_BOARD_INIT_SCRIPT,
 	MODEM_CELLULAR_STATE_WAIT_FOR_APN,
 	MODEM_CELLULAR_STATE_RUN_APN_SCRIPT,
 	MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT,
@@ -159,6 +161,8 @@ struct modem_cellular_data {
 	struct modem_chat_script_chat apn_chats[MODEM_CELLULAR_MAX_APN_CMDS];
 	struct modem_chat_script apn_script;
 	char apn_buf[MODEM_CELLULAR_MAX_APN_CMDS][MODEM_CELLULAR_APN_BUF_SIZE];
+
+	struct modem_chat_script board_init_script;
 
 	/* PPP */
 	struct modem_ppp *ppp;
@@ -448,6 +452,40 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
 			      &MODEM_CELLULAR_INST_NAME(data, inst),                               \
 			      &MODEM_CELLULAR_INST_NAME(config, inst), POST_KERNEL,                \
 			      CONFIG_MODEM_CELLULAR_INIT_PRIORITY, &modem_cellular_api);
+
+/**
+ * @brief Descriptor binding a board-supplied init script to a modem instance.
+ *
+ * Registered with MODEM_CELLULAR_BOARD_INIT_DEFINE.
+ */
+struct modem_cellular_board_init {
+	const struct device *dev;
+	const struct modem_chat_script *script;
+};
+
+/**
+ * @brief Register a board-specific init script for a modem instance.
+ *
+ * The script runs over the AT control channel after CMUX is established and
+ * before APN and network configuration. The driver supplies the completion
+ * callback that advances the connect sequence, so the script's own callback
+ * is unused.
+ *
+ * @param node_id Devicetree node identifier of the modem instance.
+ * @param _script Pointer to a modem_chat_script defined with
+ *                MODEM_CHAT_SCRIPT_DEFINE.
+ */
+#if defined(CONFIG_MODEM_CELLULAR)
+#define MODEM_CELLULAR_BOARD_INIT_DEFINE(node_id, _script)                                         \
+	static const STRUCT_SECTION_ITERABLE(                                                      \
+		modem_cellular_board_init,                                                         \
+		CONCAT(modem_cellular_board_init_, DT_DEP_ORD(node_id))) = {                       \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+		.script = (_script),                                                               \
+	}
+#else
+#define MODEM_CELLULAR_BOARD_INIT_DEFINE(node_id, _script)
+#endif
 
 /** @} */
 
