@@ -105,4 +105,9 @@ config CRC_DRIVER_HAS_CRC32_K_4_2
 	help
 	  CRC driver has CRC32K/4.2 computation
 
+config CRC_DRIVER_HAS_CRC32_MPEG2
+	bool
+	help
+	  CRC driver has CRC32 MPEG-2 computation
+
 endif # CRC_DEVICE
