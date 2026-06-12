@@ -143,6 +143,11 @@ static void bmm350_event_handler(const struct device *dev)
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
 	cb_sqe = rtio_sqe_acquire(cfg->bus.rtio.ctx);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(cfg->bus.rtio.ctx);
+		bmm350_stream_result(dev, -ENOMEM);
+		return;
+	}
 
 	rtio_sqe_prep_callback_no_cqe(cb_sqe, bmm350_stream_event_complete,
 				      iodev_sqe, (void *)dev);
