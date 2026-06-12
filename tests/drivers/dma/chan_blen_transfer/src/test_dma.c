@@ -67,6 +67,12 @@ static int test_task(const struct device *dma, uint32_t chan_id, uint32_t blen)
 	dma_cfg.dma_slot = CONFIG_DMA_MCUX_TEST_SLOT_START;
 #endif
 
+#if defined(CONFIG_SOC_SERIES_CC23X0) || defined(CONFIG_SOC_SERIES_CC27XX)
+	/* This is a SW triggered transfer that needs auto mode */
+	dma_cfg.source_handshake = 1U;
+	dma_cfg.source_chaining_en = 1U;
+#endif /* defined(CONFIG_SOC_SERIES_CC23X0) || defined(CONFIG_SOC_SERIES_CC27XX) */
+
 	TC_PRINT("Preparing DMA Controller: Name=%s, Chan_ID=%u, BURST_LEN=%u\n",
 		 dma->name, chan_id, blen >> 3);
 
