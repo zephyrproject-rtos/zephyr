@@ -31,3 +31,12 @@ config BMM350_STREAM
 	depends on !BMM350_TRIGGER
 
 endif # BMM350
+
+config EMUL_BMM350
+	bool "Emulator for the BMM350 Geomagnetic sensor"
+	default y
+	depends on BMM350
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the BMM350. Doing so allows exercising
+	  the driver against an emulated bus without real hardware.
