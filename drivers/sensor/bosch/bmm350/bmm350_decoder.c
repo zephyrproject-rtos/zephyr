@@ -139,6 +139,9 @@ static uint8_t bmm350_encode_channel(enum sensor_channel chan)
 		encode_bmask |= BIT(1);
 		encode_bmask |= BIT(2);
 		break;
+	case SENSOR_CHAN_DIE_TEMP:
+		encode_bmask |= BIT(3);
+		break;
 	default:
 		break;
 	}
@@ -160,6 +163,7 @@ int bmm350_encode(const struct device *dev,
 
 	if (is_trigger) {
 		edata->header.channels |= bmm350_encode_channel(SENSOR_CHAN_MAGN_XYZ);
+		edata->header.channels |= bmm350_encode_channel(SENSOR_CHAN_DIE_TEMP);
 	} else {
 		const struct sensor_chan_spec *const channels = read_config->channels;
 		size_t num_channels = read_config->count;
@@ -216,6 +220,7 @@ static int bmm350_decoder_get_size_info(struct sensor_chan_spec chan_spec,
 	case SENSOR_CHAN_MAGN_X:
 	case SENSOR_CHAN_MAGN_Y:
 	case SENSOR_CHAN_MAGN_Z:
+	case SENSOR_CHAN_DIE_TEMP:
 		*base_size = sizeof(struct sensor_q31_data);
 		*frame_size = sizeof(struct sensor_q31_sample_data);
 		return 0;
@@ -297,6 +302,33 @@ static int bmm350_decoder_decode(const uint8_t *buffer,
 		out->readings[0].values[0] = (result.mag[0] << 8) / 100;
 		out->readings[0].values[1] = (result.mag[1] << 8) / 100;
 		out->readings[0].values[2] = (result.mag[2] << 8) / 100;
+
+		*fit = 1;
+		return 1;
+	}
+	case SENSOR_CHAN_DIE_TEMP: {
+
+		channel_request = bmm350_encode_channel(chan_spec.chan_type);
+		if ((channel_request & edata->header.channels) != channel_request) {
+			return -ENODATA;
+		}
+
+		struct sensor_q31_data *out = data_out;
+
+		out->header.base_timestamp_ns = edata->header.timestamp;
+		out->header.reading_count = 1;
+
+		struct bmm350_mag_temp_data result;
+
+		bmm350_decoder_compensate_raw_data(&edata->payload,
+						   &edata->comp,
+						   &result);
+
+		/** Temperature is in centi-degC (0.01 degC),
+		 * so we're reserving 8 fractional bits.
+		 */
+		out->shift = (31 - 8);
+		out->readings[0].value = (result.temperature << 8) / 100;
 
 		*fit = 1;
 		return 1;
