@@ -39,6 +39,8 @@
 
 #include "../host/conn_internal.h"
 #include "../host/iso_internal.h"
+#include "../host/addr_internal.h"
+#include "../host/hci_core.h"
 
 #include "audio_internal.h"
 #include "bap_endpoint.h"
@@ -90,6 +92,8 @@ find_recv_state_by_sink_fields_cb(const struct bt_bap_scan_delegator_recv_state 
 	const struct bt_bap_broadcast_sink *sink = user_data;
 	struct bt_le_per_adv_sync_info sync_info;
 	int err;
+	bt_addr_le_t recv_state_addr;
+	bt_addr_le_t sync_id_addr;
 
 	err = bt_le_per_adv_sync_get_info(sink->pa_sync, &sync_info);
 	if (err != 0) {
@@ -98,10 +102,30 @@ find_recv_state_by_sink_fields_cb(const struct bt_bap_scan_delegator_recv_state 
 		return false;
 	}
 
+	/* Resolve the addresses to compare them, as the receive state address may
+	 * be in RPA form while the sync_info address may be in identity address
+	 * form, or vice versa. The lookup_id_addr will return the identity address
+	 * for an RPA, and will return the same RPA address if it's not resolvable,
+	 * so this works for both cases.
+	 */
+	if (bt_addr_le_is_resolved(&sync_info.addr)) {
+		bt_addr_le_copy_resolved(&sync_id_addr, &sync_info.addr);
+	} else {
+		bt_addr_le_copy(&sync_id_addr,
+				bt_lookup_id_addr(BT_ID_DEFAULT, &sync_info.addr));
+	}
+
+	if (bt_addr_le_is_resolved(&recv_state->addr)) {
+		bt_addr_le_copy_resolved(&recv_state_addr, &recv_state->addr);
+	} else {
+		bt_addr_le_copy(&recv_state_addr,
+				bt_lookup_id_addr(BT_ID_DEFAULT, &recv_state->addr));
+	}
+
 	/* BAP 6.5.4 states that the combined Source_Address_Type, Source_Adv_SID, and Broadcast_ID
 	 * fields are what makes a receive state unique.
 	 */
-	return recv_state->addr.type == sync_info.addr.type &&
+	return recv_state_addr.type == sync_id_addr.type &&
 	       recv_state->adv_sid == sync_info.sid &&
 	       recv_state->broadcast_id == sink->broadcast_id;
 };
