@@ -221,6 +221,7 @@ struct scan_delegator_sync_state {
 	struct bt_le_per_adv_sync *pa_sync;
 	struct bt_conn *conn;
 	struct k_work_delayable pa_timer;
+	uint32_t bis_sync_req_bitfield;
 	uint32_t broadcast_id;
 	uint16_t pa_interval;
 	bool active;
