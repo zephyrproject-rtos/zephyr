@@ -8,6 +8,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
+#include <inttypes.h>
+#include <stdlib.h>
+
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/ethernet.h>
 
@@ -590,9 +593,9 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, raw.recv),
 	   GET_STAT(iface, raw.sent),
 	   GET_STAT(iface, raw.drop));
-	PR("Raw bytes recv %llu\tsent\t%llu\n",
-	   GET_STAT(iface, raw.bytes.received),
-	   GET_STAT(iface, raw.bytes.sent));
+	PR("Raw bytes recv %" PRIu64 "\tsent\t%" PRIu64 "\n",
+	   (uint64_t)GET_STAT(iface, raw.bytes.received),
+	   (uint64_t)GET_STAT(iface, raw.bytes.sent));
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
@@ -638,8 +641,10 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, pkt_filter.tx.drop));
 #endif /* CONFIG_NET_STATISTICS_DNS */
 
-	PR("Bytes received %llu\n", GET_STAT(iface, bytes.received));
-	PR("Bytes sent     %llu\n", GET_STAT(iface, bytes.sent));
+	PR("Bytes received %" PRIu64 "\n",
+	   (uint64_t)GET_STAT(iface, bytes.received));
+	PR("Bytes sent     %" PRIu64 "\n",
+	   (uint64_t)GET_STAT(iface, bytes.sent));
 	PR("Processing err %u\n", GET_STAT(iface, processing_error));
 
 	print_tc_tx_stats(sh, iface);
@@ -815,7 +820,12 @@ static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (strcmp(argv[1], "reset") == 0) {
+#if defined(CONFIG_NET_NATIVE)
 		net_stats_reset(NULL);
+#else
+		PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_NATIVE",
+			"statistics reset");
+#endif
 	} else {
 		/* Pass arguments directly - cmd_net_stats_iface expects index in argv[1] */
 		cmd_net_stats_iface(sh, argc, argv);
