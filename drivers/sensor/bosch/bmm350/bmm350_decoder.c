@@ -17,7 +17,12 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 					const struct mag_compensate *comp,
 					struct bmm350_mag_temp_data *out)
 {
-	int32_t out_data[4];
+	/*
+	 * Use 64-bit intermediates: the cross-axis stage scales by
+	 * BMM350_MAG_COMP_COEFF_SCALING twice, which overflows int32 for strong
+	 * fields (e.g. during self-test or saturation).
+	 */
+	int64_t out_data[4];
 	int32_t dut_offset_coef[3], dut_sensit_coef[3], dut_tco[3], dut_tcs[3];
 
 	/* Convert mag lsb to uT and temp lsb to degC */
@@ -77,19 +82,19 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 				  (dut_tcs[indx] * (out_data[3] - comp->dut_t0)));
 	}
 
-	out->mag[0] = ((((out_data[0] * BMM350_MAG_COMP_COEFF_SCALING) -
+	out->mag[0] = (int32_t)((((out_data[0] * BMM350_MAG_COMP_COEFF_SCALING) -
 		    (comp->cross_axis.cross_x_y * out_data[1])) *
 		   BMM350_MAG_COMP_COEFF_SCALING) /
 		  ((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
 		   (comp->cross_axis.cross_y_x * comp->cross_axis.cross_x_y)));
 
-	out->mag[1] = ((((out_data[1] * BMM350_MAG_COMP_COEFF_SCALING) -
+	out->mag[1] = (int32_t)((((out_data[1] * BMM350_MAG_COMP_COEFF_SCALING) -
 		    (comp->cross_axis.cross_y_x * out_data[0])) *
 		   BMM350_MAG_COMP_COEFF_SCALING) /
 		  ((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
 		   (comp->cross_axis.cross_y_x * comp->cross_axis.cross_x_y)));
 
-	out->mag[2] = (out_data[2] +
+	out->mag[2] = (int32_t)(out_data[2] +
 		  (((out_data[0] *
 		     ((comp->cross_axis.cross_y_x * comp->cross_axis.cross_z_y) -
 		      (comp->cross_axis.cross_z_x * BMM350_MAG_COMP_COEFF_SCALING))) -
@@ -99,9 +104,10 @@ void bmm350_decoder_compensate_raw_data(const struct bmm350_raw_mag_data *raw_da
 		  (((BMM350_MAG_COMP_COEFF_SCALING * BMM350_MAG_COMP_COEFF_SCALING) -
 		    comp->cross_axis.cross_y_x * comp->cross_axis.cross_x_y)));
 
-	LOG_DBG("mag data %d %d %d", out_data[0], out_data[1], out_data[2]);
+	LOG_DBG("mag data %d %d %d", (int32_t)out_data[0], (int32_t)out_data[1],
+		(int32_t)out_data[2]);
 
-	out->temperature = out_data[3];
+	out->temperature = (int32_t)out_data[3];
 }
 
 #ifdef CONFIG_SENSOR_ASYNC_API
