@@ -130,7 +130,7 @@ static void bap_broadcast_assistant_scan_cb(const struct bt_le_scan_recv_info *i
 					    uint32_t broadcast_id)
 {
 	bt_shell_print(
-		"[DEVICE]: %s, broadcast_id 0x%06X, interval (ms) %u (0x%04x)), SID 0x%x, RSSI %i",
+		"[DEVICE]: %s, broadcast_id 0x%06X interval (ms) %u (0x%04x)), SID 0x%x, RSSI %i",
 		bt_addr_le_str(info->addr), broadcast_id,
 		BT_GAP_PER_ADV_INTERVAL_TO_MS(info->interval),
 		info->interval, info->sid, info->rssi);
@@ -166,7 +166,7 @@ static void bap_broadcast_assistant_recv_state_cb(
 
 	is_bad_code = state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE;
 	bt_shell_print(
-		"BASS recv state: src_id %u, addr %s, sid %u, broadcast_id 0x%06X, sync_state "
+		"BASS recv state: src_id %u, addr %s, sid %u, broadcast_id 0x%06X sync_state "
 		"%u, encrypt_state %u%s%s",
 		state->src_id, bt_addr_le_str(&state->addr), state->adv_sid, state->broadcast_id,
 		state->pa_sync_state, state->encrypt_state, is_bad_code ? ", bad code" : "",
