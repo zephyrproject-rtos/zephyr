@@ -261,8 +261,18 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c15))
-	CLOCK_AttachClk(kSENSE_BASE_to_LPI2C15);
-	CLOCK_SetClkDiv(kCLOCK_DivLpi2c15Clk, 2U);
+	/*
+	 * LPI2C15 is shared between the two cores, and its functional clock mux
+	 * CLKCTL3->LPI2C15FCLKSEL is a single field with no per-core copy, unlike
+	 * the clock gate below. Both cores therefore pick FRO1: its rate is fixed,
+	 * so neither has to read the Sense base clock selection that only CPU1 can
+	 * program, and both derive the same baud divider. Divide by 6 to keep
+	 * LPI2C_FCLK at the 32 MHz it is limited to at 0.7 V nominal. FRO1 lives in
+	 * VDD2_COM, so move this bus to FRO2 should the Sense domain ever have to
+	 * reach the PMIC with VDD2 off.
+	 */
+	CLOCK_AttachClk(kFRO1_DIV1_to_LPI2C15);
+	CLOCK_SetClkDiv(kCLOCK_DivLpi2c15Clk, 6U);
 	CLOCK_EnableClock(kCLOCK_LPI2c15);
 #endif
 
