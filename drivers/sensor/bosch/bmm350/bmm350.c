@@ -1113,7 +1113,7 @@ static int bmm350_init_chip(const struct device *dev)
 	ret = bmm350_reg_write(dev, BMM350_REG_PAD_CTRL, config->drive_strength);
 	if (ret != 0) {
 		LOG_ERR("%s: failed to set pad drive strength", dev->name);
-		return ret;
+		goto err_poweroff;
 	}
 
 	ret = bmm350_otp_dump_after_boot(dev);
