@@ -30,4 +30,4 @@ west build -b native_sim samples/basic/blinky
 echo "=== 5. Running Native Tests ==="
 # Executes Zephyr's built-in testing framework (Twister)
 # Scoped to only run lightweight 'smoke' tests to prevent Robot Framework dependency errors
-west twister -p native_sim --tag smoke -v
+west twister -p native_sim -T tests/kernel -v
