@@ -330,7 +330,7 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	struct scan_delegator_sync_state *state;
 
 	bt_shell_info(
-		"PA Sync request: past_avail %u, broadcast_id 0x%06X, pa_interval 0x%04x: %p",
+		"PA Sync request: past_avail %u, broadcast_id 0x%06X pa_interval 0x%04x: %p",
 		past_avail, recv_state->broadcast_id, pa_interval, recv_state);
 
 	state = sync_state_get_or_new(recv_state);
