@@ -19,6 +19,9 @@ struct lvgl_disp_data {
 	const struct device *display_dev;
 	struct display_capabilities cap;
 	bool blanking_on;
+#ifdef CONFIG_LV_Z_FLUSH_THREAD
+	struct k_sem flush_complete;
+#endif
 };
 
 struct lvgl_display_flush {
