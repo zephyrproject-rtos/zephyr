@@ -361,6 +361,14 @@ safe."
 # Series 18.
 #
 
+-doc_begin="Iterating over an iterable linker section compares the iterator
+against the section boundary markers (the generated _<type>_list_start and
+_<type>_list_end symbols, as also produced by STRUCT_SECTION_FOREACH). The two
+markers delimit a single contiguous array of objects, so the relational
+comparison is well defined even though the static analyser treats the markers as
+pointers into separate objects."
+-config=MC3A2.R18.3,reports+={safe, "any_area(any_loc(any_exp(text(^.*_list_end.*$))))"}
+-doc_end
 
 -doc_begin="The following macro performs a subtraction between pointers to obtain the mfn, but does not lead to undefined behaviour."
 -config=MC3A2.R18.2,reports+={safe, "any_area(any_loc(any_exp(macro(^page_to_mfn$))))"}
