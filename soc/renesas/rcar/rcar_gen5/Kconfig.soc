@@ -13,8 +13,14 @@ config SOC_R8A78000_R52
 	help
 	  Support for R8A78000 R52 core
 
+config SOC_R8A78000_A720
+	bool
+	select SOC_SERIES_RCAR_GEN5
+	help
+	  Support for R8A78000 A720 core
+
 config SOC_SERIES
 	default "rcar_gen5" if SOC_SERIES_RCAR_GEN5
 
 config SOC
-	default "r8a78000" if SOC_R8A78000_R52
+	default "r8a78000" if SOC_R8A78000_R52 || SOC_R8A78000_A720
