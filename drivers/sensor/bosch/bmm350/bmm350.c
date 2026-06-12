@@ -444,6 +444,11 @@ static int bmm350_channel_get(const struct device *dev, enum sensor_channel chan
 		bmm350_convert(val + 1, drv_data->mag_temp_data.mag[1]);
 		bmm350_convert(val + 2, drv_data->mag_temp_data.mag[2]);
 		break;
+	case SENSOR_CHAN_DIE_TEMP:
+		/* Stored in centi-degC (0.01 degC). */
+		val->val1 = drv_data->mag_temp_data.temperature / 100;
+		val->val2 = (drv_data->mag_temp_data.temperature % 100) * 10000;
+		break;
 	default:
 		return -ENOTSUP;
 	}
