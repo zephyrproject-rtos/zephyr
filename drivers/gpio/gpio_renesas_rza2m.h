@@ -17,13 +17,15 @@
 #define RZA2M_PFS_OFFSET  0x0200
 #define RZA2M_PWPR_OFFSET 0x02FF
 
-#define RZA2M_PDR(dev, port)      (DEVICE_MMIO_GET(dev) + RZA2M_PDR_OFFSET + ((port) * 2))
-#define RZA2M_PODR(dev, port)     (DEVICE_MMIO_GET(dev) + RZA2M_PODR_OFFSET + (port))
-#define RZA2M_PIDR(dev, port)     (DEVICE_MMIO_GET(dev) + RZA2M_PIDR_OFFSET + (port))
-#define RZA2M_PMR(dev, port)      (DEVICE_MMIO_GET(dev) + RZA2M_PMR_OFFSET + (port))
-#define RZA2M_DSCR(dev, port)     (DEVICE_MMIO_GET(dev) + RZA2M_DSCR_OFFSET + ((port) * 2))
-#define RZA2M_PFS(dev, port, pin) (DEVICE_MMIO_GET(dev) + RZA2M_PFS_OFFSET + ((port) * 8) + (pin))
-#define RZA2M_PWPR(dev)           (DEVICE_MMIO_GET(dev) + RZA2M_PWPR_OFFSET)
+#define RZA2M_REGS(dev, offset) (DEVICE_MMIO_NAMED_GET(dev, mmio) + (offset))
+
+#define RZA2M_PDR(dev, port)      (RZA2M_REGS(dev, RZA2M_PDR_OFFSET) + ((port) * 2))
+#define RZA2M_PODR(dev, port)     (RZA2M_REGS(dev, RZA2M_PODR_OFFSET) + (port))
+#define RZA2M_PIDR(dev, port)     (RZA2M_REGS(dev, RZA2M_PIDR_OFFSET) + (port))
+#define RZA2M_PMR(dev, port)      (RZA2M_REGS(dev, RZA2M_PMR_OFFSET) + (port))
+#define RZA2M_DSCR(dev, port)     (RZA2M_REGS(dev, RZA2M_DSCR_OFFSET) + ((port) * 2))
+#define RZA2M_PFS(dev, port, pin) (RZA2M_REGS(dev, RZA2M_PFS_OFFSET) + ((port) * 8) + (pin))
+#define RZA2M_PWPR(dev)           (RZA2M_REGS(dev, RZA2M_PWPR_OFFSET))
 
 #define RZA2M_GICD_ICFGR31               0xE8221C7C
 #define RZA2M_GICD_ICFGR30               0xE8221C78
@@ -101,12 +103,16 @@
 #define UNUSED_MASK 0x00
 
 struct gpio_rza2m_tint_config {
-	DEVICE_MMIO_ROM;
+	struct gpio_driver_config common;
+
+	DEVICE_MMIO_NAMED_ROM(mmio);
 	void (*gpio_int_init)(void);
 };
 
 struct gpio_rza2m_tint_data {
-	DEVICE_MMIO_RAM;
+	struct gpio_driver_data common;
+
+	DEVICE_MMIO_NAMED_RAM(mmio);
 };
 
 typedef struct gpio_rza2m_high_allowed_pin {
