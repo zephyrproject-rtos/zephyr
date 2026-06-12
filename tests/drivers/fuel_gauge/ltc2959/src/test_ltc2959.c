@@ -275,9 +275,9 @@ ZTEST_F(ltc2959, test_set_some_props_failed__returns_err)
 
 	union fuel_gauge_prop_val props[] = {
 		/* First invalid property */
-		{0},
+		{.avg_current_ua = 0},
 		/* Second invalid property */
-		{0},
+		{.avg_current_ua = 0},
 		/* Valid property */
 		{.voltage_uv = 0},
 	};
