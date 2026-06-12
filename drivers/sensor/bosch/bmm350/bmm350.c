@@ -1026,6 +1026,11 @@ static void bmm350_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
 	cb_sqe = rtio_sqe_acquire(bus->rtio.ctx);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(bus->rtio.ctx);
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
+		return;
+	}
 
 	rtio_sqe_prep_callback_no_cqe(cb_sqe, bmm350_one_shot_complete,
 				      iodev_sqe, (void *)dev);
