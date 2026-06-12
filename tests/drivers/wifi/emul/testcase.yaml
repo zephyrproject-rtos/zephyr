@@ -1,0 +1,16 @@
+common:
+  min_ram: 16
+  tags:
+    - drivers
+    - wifi
+    - net
+  depends_on: netif
+tests:
+  drivers.wifi.emul:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
