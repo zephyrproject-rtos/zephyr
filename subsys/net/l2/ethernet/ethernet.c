@@ -300,6 +300,23 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		/* For NET_CONTINUE case, current iface continues to handle the pkt. */
 	}
 
+#if defined(CONFIG_NET_ETHERNET_RECV_REDIRECT)
+	if (ctx->recv_redirect != NULL) {
+		struct net_if *redirect_iface = ctx->recv_redirect(iface, pkt);
+
+		if (redirect_iface == NULL) {
+			NET_DBG("Dropping frame, redirect callback dropped it");
+			goto drop;
+		}
+
+		if (redirect_iface != iface) {
+			iface = redirect_iface;
+			ctx = net_if_l2_data(iface);
+			net_pkt_set_iface(pkt, iface);
+		}
+	}
+#endif
+
 	type = net_ntohs(hdr->type);
 
 	if (IS_ENABLED(CONFIG_NET_VLAN) && type == NET_ETH_PTYPE_VLAN) {
@@ -1054,6 +1071,22 @@ int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
 	return -ENOTSUP;
 #endif
 }
+
+#if defined(CONFIG_NET_ETHERNET_RECV_REDIRECT)
+int net_eth_recv_redirect_set(struct net_if *iface, net_eth_recv_redirect_cb_t cb)
+{
+	struct ethernet_context *ctx;
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return -EINVAL;
+	}
+
+	ctx = net_if_l2_data(iface);
+	ctx->recv_redirect = cb;
+
+	return 0;
+}
+#endif
 
 void ethernet_init(struct net_if *iface)
 {

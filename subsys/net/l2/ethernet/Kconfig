@@ -119,6 +119,14 @@ source "subsys/net/l2/ethernet/gptp/Kconfig"
 source "subsys/net/l2/ethernet/lldp/Kconfig"
 source "subsys/net/l2/ethernet/bridge/Kconfig"
 
+config NET_ETHERNET_RECV_REDIRECT
+	bool
+	help
+	  Allow a consumer (e.g. an emulated Wi-Fi driver) to install a
+	  callback that redirects all frames received on an Ethernet
+	  interface to another Ethernet interface, before any other L2
+	  processing takes place. Selected by drivers that need it.
+
 config NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE
 	bool "Forward unrecognized EtherType frames further into net stack"
 	default y if NET_SOCKETS_PACKET

@@ -601,6 +601,22 @@ struct ethernet_lldp {
 	net_lldp_recv_cb_t cb;
 };
 
+/**
+ * @brief Ethernet RX redirect callback.
+ *
+ * Called for every packet received on an Ethernet interface, before any
+ * other L2 processing.
+ *
+ * @param iface Network interface the packet was received on
+ * @param pkt Received network packet
+ *
+ * @return The Ethernet network interface that should process the packet,
+ *	   @p iface to continue normal processing, or NULL to drop the
+ *	   packet.
+ */
+typedef struct net_if *(*net_eth_recv_redirect_cb_t)(struct net_if *iface,
+						     struct net_pkt *pkt);
+
 /** @cond INTERNAL_HIDDEN */
 
 enum ethernet_flags {
@@ -616,6 +632,11 @@ struct ethernet_context {
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct net_if *bridge;
+#endif
+
+#if defined(CONFIG_NET_ETHERNET_RECV_REDIRECT)
+	/** RX redirect hook, see net_eth_recv_redirect_cb_t */
+	net_eth_recv_redirect_cb_t recv_redirect;
 #endif
 
 	/** Carrier ON/OFF handler worker. This is used to create
@@ -1486,6 +1507,33 @@ static inline void net_eth_set_if_type_wifi(struct net_if *iface)
 
 	ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
 }
+
+/**
+ * @brief Set the RX redirect callback of an Ethernet network interface.
+ *
+ * The callback is invoked for every packet received on @p iface before
+ * any other L2 processing, and decides which Ethernet interface processes
+ * the packet, see net_eth_recv_redirect_cb_t. Pass NULL to remove the
+ * callback.
+ *
+ * @param iface Network interface to redirect received packets from
+ * @param cb Redirect callback, or NULL to disable redirection
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if the interface is not an Ethernet L2 interface.
+ * @retval -ENOTSUP if CONFIG_NET_ETHERNET_RECV_REDIRECT is not enabled.
+ */
+#if defined(CONFIG_NET_ETHERNET_RECV_REDIRECT)
+int net_eth_recv_redirect_set(struct net_if *iface, net_eth_recv_redirect_cb_t cb);
+#else
+static inline int net_eth_recv_redirect_set(struct net_if *iface, net_eth_recv_redirect_cb_t cb)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(cb);
+
+	return -ENOTSUP;
+}
+#endif
 
 /**
  * @}
