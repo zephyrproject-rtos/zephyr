@@ -22,3 +22,4 @@ family:
           - name: r8a78000
             cpuclusters:
               - name: r52
+              - name: a720
