@@ -1,0 +1,41 @@
+# SPDX-FileCopyrightText: 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Emulated Wi-Fi offload device for integration testing.
+
+  The device exposes a standard Wi-Fi management interface whose behavior
+  (scan results, connection results, disconnect events, ...) is controlled
+  at runtime through the API in zephyr/drivers/wifi/wifi_emul.h.
+
+  The data plane is optional. By default the device is self-contained:
+  transmitted frames are delivered to a callback and frames can be injected
+  with wifi_emul_rx_inject(). Alternatively it can bridge to an Ethernet
+  device, either through the "ethernet" phandle below or at runtime with
+  wifi_emul_set_eth_iface().
+
+compatible: "zephyr,wifi-emul"
+
+include: ethernet-controller.yaml
+
+properties:
+  ethernet:
+    type: phandle
+    description: |
+      Ethernet device providing the data plane. When set, frames sent on the
+      Wi-Fi interface are forwarded to this device and the frames it receives
+      are redirected to the Wi-Fi interface. When absent, the device is
+      self-contained unless an Ethernet interface is attached at runtime with
+      wifi_emul_set_eth_iface() (e.g. the native_sim TAP interface, which is
+      not devicetree-instantiated).
+
+      The MAC address of this interface is independent from the Ethernet
+      device and is configured through the standard local-mac-address /
+      zephyr,random-mac-address properties, defaulting to a random address.
+
+examples:
+  - |
+    wlan0: wifi-emul {
+        compatible = "zephyr,wifi-emul";
+        status = "okay";
+    };

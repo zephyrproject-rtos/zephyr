@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+config WIFI_EMUL
+	bool "Emulated Wi-Fi offload driver [EXPERIMENTAL]"
+	default y
+	depends on DT_HAS_ZEPHYR_WIFI_EMUL_ENABLED
+	select NET_L2_ETHERNET
+	select NET_ETHERNET_RECV_REDIRECT
+	select WIFI_USE_NATIVE_NETWORKING
+	select EXPERIMENTAL
+	help
+	  Enable the emulated Wi-Fi offload driver, a test double that mimics
+	  a board that only has Wi-Fi connectivity. Scan results, connection
+	  results and Wi-Fi events are controlled at runtime through the API
+	  in zephyr/drivers/wifi/wifi_emul.h. The data plane is optional: the
+	  driver is self-contained by default and can optionally bridge to an
+	  Ethernet device to carry real packets once "connected".
+
+if WIFI_EMUL
+
+config WIFI_EMUL_AP_COUNT_MAX
+	int "Maximum number of emulated access points"
+	default 8
+	help
+	  Maximum number of virtual access points that can be registered
+	  with the emulated Wi-Fi driver.
+
+config WIFI_EMUL_SCAN_DELAY_MS
+	int "Default scan duration in milliseconds"
+	default 10
+	help
+	  Default time between a scan request and the delivery of the scan
+	  results. Can be changed at runtime with wifi_emul_set_scan_delay().
+
+config WIFI_EMUL_CONNECT_DELAY_MS
+	int "Default connect duration in milliseconds"
+	default 10
+	help
+	  Default time between a connect request and the delivery of the
+	  connect result. Can be changed at runtime with
+	  wifi_emul_set_connect_delay().
+
+endif # WIFI_EMUL
