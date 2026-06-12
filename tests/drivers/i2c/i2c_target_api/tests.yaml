@@ -84,6 +84,9 @@ tests:
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
       - it51xxx_evb/it51526aw
+      - sam_e54_xpro
+      - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
     integration_platforms:
       - max32690evkit/max32690/m4
       - nrf54l15dk/nrf54l15/cpuapp
