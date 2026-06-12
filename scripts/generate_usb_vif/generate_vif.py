@@ -78,7 +78,7 @@ def add_vif_spec_from_source_to_xml(xml_ele, source_xml_ele):
 
 
 def is_simple_datatype(value):
-    if isinstance(value, (str, int, bool)):
+    if isinstance(value, str | int | bool):
         return True
     return False
 
