@@ -33,30 +33,44 @@
 #define STM32_DMA_STREAM_OFFSET 0
 #endif /* ! CONFIG_DMA_STM32_V1 */
 
+/** @cond INTERNAL_HIDDEN */
 /* macro for dma slot (only for dma-v1 or dma-v2 types) */
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis)
-#define STM32_DT_INST_DMA_SLOT(id, dir) 0
-#define STM32_DT_INST_DMA_SLOT_BY_IDX(id, idx) 0
+#define STM32_DT_DMA_SLOT(node_id, dir) 0
+#define STM32_DT_INST_DMA_SLOT(inst, dir) 0
+
+#define STM32_DT_DMA_SLOT_BY_IDX(node_id, idx) 0
+#define STM32_DT_INST_DMA_SLOT_BY_IDX(inst, idx) 0
 #else
-#define STM32_DT_INST_DMA_SLOT(id, dir) DT_INST_DMAS_CELL_BY_NAME(id, dir, slot)
-#define STM32_DT_INST_DMA_SLOT_BY_IDX(id, idx) DT_INST_DMAS_CELL_BY_IDX(id, idx, slot)
+#define STM32_DT_DMA_SLOT(node_id, dir) DT_DMAS_CELL_BY_NAME(node_id, dir, slot)
+#define STM32_DT_INST_DMA_SLOT(inst, dir) STM32_DT_DMA_SLOT(DT_DRV_INST(inst), dir)
+
+#define STM32_DT_DMA_SLOT_BY_IDX(node_id, idx) DT_DMAS_CELL_BY_IDX(node_id, idx, slot)
+#define STM32_DT_INST_DMA_SLOT_BY_IDX(inst, idx) STM32_DT_DMA_SLOT_BY_IDX(DT_DRV_INST(inst), idx)
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2) || \
 	DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dma_v2bis) || \
 	DT_HAS_COMPAT_STATUS_OKAY(st_stm32_dmamux)
-#define STM32_DT_INST_DMA_FEATURES(id, dir) 0
+#define STM32_DT_DMA_FEATURES(node_id, dir) 0
+#define STM32_DT_INST_DMA_FEATURES(inst, dir) 0
 #else
-#define STM32_DT_INST_DMA_FEATURES(id, dir)					\
-		DT_INST_DMAS_CELL_BY_NAME(id, dir, features)
+#define STM32_DT_DMA_FEATURES(node_id, dir) DT_DMAS_CELL_BY_NAME(node_id, dir, features)
+#define STM32_DT_INST_DMA_FEATURES(inst, dir) STM32_DT_DMA_FEATURES(DT_DRV_INST(inst), dir)
 #endif
 
-#define STM32_DT_INST_DMA_CTLR(id, dir)						\
-		DT_INST_DMAS_CTLR_BY_NAME(id, dir)
-#define STM32_DT_INST_DMA_CHANNEL_CONFIG(id, dir)				\
-		DT_INST_DMAS_CELL_BY_NAME(id, dir, channel_config)
-#define STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(id, idx)			\
-		DT_INST_DMAS_CELL_BY_IDX(id, idx, channel_config)
+#define STM32_DT_DMA_CTLR(node_id, dir) DT_DMAS_CTLR_BY_NAME(node_id, dir)
+#define STM32_DT_INST_DMA_CTLR(inst, dir) STM32_DT_DMA_CTLR(DT_DRV_INST(inst), dir)
+
+#define STM32_DT_DMA_CHANNEL_CONFIG(node_id, dir)				\
+		DT_DMAS_CELL_BY_NAME(node_id, dir, channel_config)
+#define STM32_DT_INST_DMA_CHANNEL_CONFIG(inst, dir)				\
+		STM32_DT_DMA_CHANNEL_CONFIG(DT_DRV_INST(inst), dir)
+
+#define STM32_DT_DMA_CHANNEL_CONFIG_BY_IDX(node_id, idx)			\
+		DT_DMAS_CELL_BY_IDX(node_id, idx, channel_config)
+#define STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(inst, idx)			\
+		STM32_DT_DMA_CHANNEL_CONFIG_BY_IDX(DT_DRV_INST(inst), idx)
 
 /* macros for channel-config */
 /* enable circular buffer */
@@ -104,5 +118,6 @@
 #define STM32_DMA_GET_INSTANCE(reg, channel)				\
 		STM32_DMA_GET_CHANNEL_INSTANCE((reg), (channel) - STM32_DMA_STREAM_OFFSET);
 #endif
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_ */
