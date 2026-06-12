@@ -184,6 +184,8 @@ New APIs and options
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
+  * Add :c:func:`net_eth_recv_redirect_set` to redirect packets received on an Ethernet
+    interface to another Ethernet interface.
 
 .. zephyr-keep-sorted-stop
 
@@ -226,6 +228,10 @@ New Drivers
 * Input
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
+
+* Wi-Fi
+
+  * Emulated Wi-Fi offload driver (:dtcompatible:`zephyr,wifi-emul`).
 
 New Samples
 ***********
