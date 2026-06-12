@@ -96,6 +96,9 @@ extern "C" {
 /** CRC32_K_4_2 initial value */
 #define CRC32_K_4_2_INIT_VAL 0xFFFFFFFFU
 
+/** CRC32_MPEG2 initial value */
+#define CRC32_MPEG2_INIT_VAL 0xFFFFFFFFU
+
 /** @endcond */
 
 /**
