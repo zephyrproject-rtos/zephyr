@@ -1084,6 +1084,73 @@ ZTEST(dns_resolve, test_dns_query_ipv4_timeout_fallback_accepts_late_reply)
 	verify_cancelled();
 }
 
+ZTEST(dns_resolve, test_dns_query_ipv4_drops_reply_from_unqueried_server)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int first_server, second_server;
+	int ret;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS);
+
+	first_server = get_active_unicast_server_idx(ctx, 0);
+	second_server = get_active_unicast_server_idx(ctx, 1);
+
+	zassert_true(first_server >= 0, "Need first active DNS server");
+	zassert_true(second_server >= 0, "Need second active DNS server");
+
+	k_sem_reset(&wait_data2);
+
+	timeout_query = false;
+	send_count = 0U;
+	success_send_count = 0U;
+	auto_response = false;
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	k_yield();
+
+	/* In sequential mode only the first server has been queried so far. */
+	zassert_equal(send_count, 1U, "Expected initial query to first server only");
+
+	/* A valid-looking reply that arrives on the socket of a server we have
+	 * not queried for this slot must be ignored. Otherwise any open server
+	 * socket could be used to inject a forged reply that merely matches the
+	 * DNS id and query hash.
+	 */
+	inject_success_dns_response(ctx, second_server, current_dns_id,
+				    NAME4, DNS_QUERY_TYPE_A);
+
+	zassert_not_equal(k_sem_take(&wait_data2, K_MSEC(THREAD_SLEEP)), 0,
+			  "Reply from an unqueried server must be dropped");
+
+	/* The query must still be pending and a reply from the queried server
+	 * is still accepted normally.
+	 */
+	inject_success_dns_response(ctx, first_server, current_dns_id,
+				    NAME4, DNS_QUERY_TYPE_A);
+
+	if (k_sem_take(&wait_data2, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting for queried-server reply");
+	}
+
+	zassert_equal(send_count, 1U, "Dropped reply must not trigger fallback");
+
+	auto_response = true;
+
+	verify_cancelled();
+}
+
 ZTEST(dns_resolve, test_dns_query_ipv4_nodata_fallback)
 {
 	struct expected_status status = {
@@ -2166,6 +2233,77 @@ ZTEST(dns_resolve, test_dns_query_all_servers_all_fail_ipv4)
 		      "Expected one terminal failure callback, got %u",
 		      callback_count);
 
+	query_all_auto_response = true;
+	verify_cancelled();
+}
+
+ZTEST(dns_resolve, test_dns_query_all_servers_drops_reply_from_unqueried_server)
+{
+	struct expected_status status = {
+		.status1 = DNS_EAI_INPROGRESS,
+		.status2 = DNS_EAI_ALLDONE,
+		.caller = __func__,
+	};
+	struct dns_resolve_context *ctx = dns_resolve_get_default();
+	int active, queried_server, unqueried_server, saved_sock;
+	int ret;
+
+	active = get_active_unicast_server_count(ctx);
+	zassert_true(active >= 2, "Need at least two active unicast DNS servers");
+
+	queried_server = get_active_unicast_server_idx(ctx, 0);
+	unqueried_server = get_active_unicast_server_idx(ctx, active - 1);
+	zassert_true(queried_server >= 0 && unqueried_server >= 0 &&
+		     queried_server != unqueried_server,
+		     "Need two distinct active unicast DNS servers");
+
+	/* Take one server out of the eligible set so that the query-all path
+	 * does not send to it, while its dispatcher is still able to receive a
+	 * (forged) datagram on the socket.
+	 */
+	saved_sock = ctx->servers[unqueried_server].sock;
+	ctx->servers[unqueried_server].sock = -1;
+
+	timeout_query = false;
+	send_count = 0;
+	callback_count = 0;
+	query_all_auto_response = false;
+	k_sem_reset(&wait_data2);
+
+	ret = dns_get_addr_info(NAME4,
+				DNS_QUERY_TYPE_A,
+				&current_dns_id,
+				dns_result_multi_server_cb,
+				&status,
+				DNS_TIMEOUT);
+	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	k_yield();
+
+	zassert_equal(send_count, active - 1,
+		      "Query-all should skip the disabled server, got %u sends",
+		      send_count);
+
+	/* A valid-looking reply that arrives on the server we did not query
+	 * must be dropped even in query-all mode.
+	 */
+	inject_success_dns_response(ctx, unqueried_server, current_dns_id,
+				    NAME4, DNS_QUERY_TYPE_A);
+
+	zassert_equal(callback_count, 0,
+		      "Reply from an unqueried server must be dropped, got %u callbacks",
+		      callback_count);
+
+	/* A reply from one of the queried servers is still accepted. */
+	inject_success_dns_response(ctx, queried_server, current_dns_id,
+				    NAME4, DNS_QUERY_TYPE_A);
+	wait_for_callbacks(2);
+
+	zassert_equal(callback_count, 2,
+		      "Queried-server reply should win, got %u callbacks",
+		      callback_count);
+
+	ctx->servers[unqueried_server].sock = saved_sock;
 	query_all_auto_response = true;
 	verify_cancelled();
 }

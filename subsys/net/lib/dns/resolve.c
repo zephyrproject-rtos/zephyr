@@ -40,6 +40,14 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define DNS_SERVER_COUNT CONFIG_DNS_RESOLVER_MAX_SERVERS
 #define SERVER_COUNT     (DNS_SERVER_COUNT + DNS_MAX_MCAST_SERVERS)
 
+/* Internal dns_read()/dispatcher_cb() marker. Returned when a reply matched a
+ * pending query slot but arrived on the socket of a DNS server that was not
+ * used for that query. Such a reply is dropped without notifying the caller
+ * and without counting as a server failure. Value is a positive number so it
+ * cannot collide with the (zero or negative) DNS_EAI_* status codes.
+ */
+#define DNS_REPLY_WRONG_SERVER 1
+
 extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(resolve_svc, dns_dispatcher_svc_handler,
@@ -110,7 +118,8 @@ static int dns_read(struct dns_resolve_context *ctx,
 		    struct net_buf *dns_data, size_t buf_len,
 		    uint16_t *dns_id,
 		    struct net_buf *dns_cname,
-		    uint16_t *query_hash);
+		    uint16_t *query_hash,
+		    int recv_server_idx);
 static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 				 uint16_t dns_id,
 				 uint16_t query_hash);
@@ -522,7 +531,18 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 		goto free_buf;
 	}
 
-	ret = dns_read(ctx, dns_data, len, &dns_id, dns_cname, &query_hash);
+	/* Figure out which configured server delivered this reply so that we
+	 * can both bind the reply to a server we actually queried and handle
+	 * a per-server failure below.
+	 */
+	server = CONTAINER_OF(my_ctx, struct dns_server, dispatcher);
+	server_idx = (int)(server - ctx->servers);
+	if (server_idx < 0 || server_idx >= SERVER_COUNT) {
+		server_idx = -1;
+	}
+
+	ret = dns_read(ctx, dns_data, len, &dns_id, dns_cname, &query_hash,
+		       server_idx);
 	if (ret == 0) {
 		/* The callback is already called in dns_read() if there
 		 * were no errors indicated by a return of zero
@@ -530,8 +550,14 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 		goto free_buf;
 	}
 
-	server = CONTAINER_OF(my_ctx, struct dns_server, dispatcher);
-	server_idx = (int)(server - ctx->servers);
+	if (ret == DNS_REPLY_WRONG_SERVER) {
+		/* The reply matched a pending query but arrived from a server
+		 * we did not query for it. Silently ignore it and keep waiting
+		 * for a reply from a queried server (or for the timeout).
+		 */
+		ret = 0;
+		goto free_buf;
+	}
 
 	if (ret == DNS_EAI_NODATA && server_idx >= 0 &&
 	    (ctx->servers[server_idx].is_mdns ||
@@ -1665,7 +1691,8 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		     uint16_t *dns_id,
 		     int *query_idx,
 		     struct net_buf *dns_cname,
-		     uint16_t *query_hash)
+		     uint16_t *query_hash,
+		     int recv_server_idx)
 {
 	uint32_t ttl; /* RR ttl, so far it is not passed to caller */
 	struct dns_addrinfo info = {0};
@@ -1768,6 +1795,26 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 			ret = DNS_EAI_SYSTEM;
 			goto quit;
 		}
+	}
+
+	/* Only accept a reply that arrived on a DNS server socket that we
+	 * actually used for this query. The resolver sockets are not
+	 * connect()ed, so without this check any open server socket would
+	 * accept a reply that merely matches the 16-bit DNS id and the query
+	 * hash, widening the off-path spoofing window once server fallback
+	 * keeps several sockets open. Skip the check for multicast (mDNS /
+	 * LLMNR) responders, which legitimately receive replies from multiple
+	 * hosts, and when the receiving server is unknown (recv_server_idx < 0,
+	 * e.g. unit tests calling this function directly).
+	 */
+	if (recv_server_idx >= 0 &&
+	    !ctx->servers[recv_server_idx].is_mdns &&
+	    !ctx->servers[recv_server_idx].is_llmnr &&
+	    !dns_server_was_sent(&ctx->queries[*query_idx], recv_server_idx)) {
+		NET_DBG("Dropping DNS reply for query %d from unqueried server %d",
+			*query_idx, recv_server_idx);
+		ret = DNS_REPLY_WRONG_SERVER;
+		goto quit;
 	}
 
 	for (server_idx = 0; server_idx < dns_header_ancount(dns_msg->msg); server_idx++) {
@@ -1888,7 +1935,8 @@ static int dns_read(struct dns_resolve_context *ctx,
 		    struct net_buf *dns_data, size_t buf_len,
 		    uint16_t *dns_id,
 		    struct net_buf *dns_cname,
-		    uint16_t *query_hash)
+		    uint16_t *query_hash,
+		    int recv_server_idx)
 {
 	/* Helper struct to track the dns msg received from the server */
 	struct dns_msg_t dns_msg;
@@ -1902,7 +1950,14 @@ static int dns_read(struct dns_resolve_context *ctx,
 	dns_msg.msg_size = data_len;
 
 	ret = dns_validate_msg(ctx, &dns_msg, dns_id, &query_idx,
-			       dns_cname, query_hash);
+			       dns_cname, query_hash, recv_server_idx);
+
+	if (ret == DNS_REPLY_WRONG_SERVER) {
+		/* Reply arrived on a server socket we did not query for this
+		 * slot. Drop it before forwarding or invoking the callback.
+		 */
+		return ret;
+	}
 
 #if defined(CONFIG_DNS_RESOLVER_PACKET_FORWARDING)
 	if (ctx->pkt_fw_cb != NULL) {
