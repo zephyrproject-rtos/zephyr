@@ -1838,7 +1838,7 @@ class Node:
         prop_min_len = prop_spec.min_len
         prop_max_len = prop_spec.max_len
         if prop_min_len is not None or prop_max_len is not None:
-            if isinstance(val, (list, bytes)):
+            if isinstance(val, list | bytes):
                 val_len = len(val)
                 if prop_min_len is not None and val_len < prop_min_len:
                     _err(f"value of property '{name}' on {self.path} in "
