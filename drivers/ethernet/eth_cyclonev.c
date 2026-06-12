@@ -617,7 +617,7 @@ void eth_cyclonev_isr(const struct device *dev)
 
 			cfg_reg_set = sys_read32(GMACGRP_MAC_CONFIG_ADDR(p->base_addr));
 
-			if (eth_cyclonev_stop(dev) == -1) {
+			if (eth_cyclonev_stop(dev, p->iface) == -1) {
 				LOG_ERR("Couldn't stop device: %s", dev->name);
 				return;
 			}
@@ -625,7 +625,7 @@ void eth_cyclonev_isr(const struct device *dev)
 			set_mac_conf_status(config->emac_index, &cfg_reg_set, p);
 			sys_write32(cfg_reg_set, GMACGRP_MAC_CONFIG_ADDR(p->base_addr));
 
-			eth_cyclonev_start(dev);
+			eth_cyclonev_start(dev, p->iface);
 		}
 	}
 }
