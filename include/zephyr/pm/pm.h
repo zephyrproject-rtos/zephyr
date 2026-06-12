@@ -175,10 +175,9 @@ void pm_system_resume(void);
  * low-power instruction, but the kernel idle path restores the original
  * interrupt state after PM resume housekeeping is complete.
  *
- * @note When system PM keeps interrupts locked across resume (currently selected
- *       via CONFIG_PM_STATE_SET_IRQ_LOCKED), the locked-resume ordering
- *       guarantee covers only interrupts that arch_irq_lock() can mask. A
- *       zero-latency interrupt (IRQ_ZERO_LATENCY) is outside this ordering and
+ * @note When system PM keeps interrupts locked across resume, the locked-resume
+ *       ordering guarantee covers only interrupts that arch_irq_lock() can mask.
+ *       A zero-latency interrupt (IRQ_ZERO_LATENCY) is outside this ordering and
  *       must be PM-wake-safe, or its interrupt source must be masked or disabled
  *       while the system state does not allow the ISR to execute.
  *
