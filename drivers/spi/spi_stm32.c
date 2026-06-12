@@ -2217,7 +2217,7 @@ static int spi_stm32_init(const struct device *dev)
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),		\
 	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),		\
 	.dma_cfg = {								\
-		.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir, slot),		\
+		.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),			\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(		\
 			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),		\
 		.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(	\

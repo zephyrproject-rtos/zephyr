@@ -2595,7 +2595,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),	\
 	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
 	.dma_cfg = {							\
-		.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir, slot),	\
+		.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),		\
 		.channel_direction = STM32_DMA_CONFIG_DIRECTION(	\
 			STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),	\
 		.cyclic =  STM32_DMA_CONFIG_CYCLIC(			\

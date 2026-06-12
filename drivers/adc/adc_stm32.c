@@ -2265,7 +2265,7 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 		.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),		\
 		.channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),			\
 		.dma_cfg = {								\
-			.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(index, 0, slot),	\
+			.dma_slot = STM32_DT_INST_DMA_SLOT_BY_IDX(index, 0),		\
 			.channel_direction = STM32_DMA_CONFIG_DIRECTION(		\
 				STM32_DT_INST_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),	\
 			.source_data_size = STM32_DMA_CONFIG_##src_dev##_DATA_SIZE(	\

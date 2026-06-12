@@ -2471,7 +2471,7 @@ static DEVICE_API(i3c, i3c_stm32_driver_api) = {
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),                              \
 	.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                             \
 	.dma_cfg = {                                                                               \
-		.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir, slot),                              \
+		.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),                                    \
 		.channel_direction =                                                               \
 			STM32_DMA_CONFIG_DIRECTION(STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),  \
 		.channel_priority =                                                                \

@@ -342,7 +342,7 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev __unused, void *user_data 
 #define I2C_DMA_DATA_INIT(index, dir, src, dest)						\
 	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, dir),						\
 		(.dma_##dir##_cfg = {								\
-			.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir, slot),			\
+			.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),				\
 			.channel_direction = STM32_DMA_CONFIG_DIRECTION(			\
 				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),			\
 			.cyclic =  STM32_DMA_CONFIG_CYCLIC(					\
