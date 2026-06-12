@@ -962,7 +962,7 @@ static const struct device *get_dev_from_tx_dma_channel(uint32_t dma_channel)
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
 		.dma_cfg = {							\
 			.block_count = 2,					\
-			.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir, slot),	\
+			.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),		\
 			.channel_direction = src_dev##_TO_##dest_dev,		\
 			.source_data_size = 2,  /* 16bit default */		\
 			.dest_data_size = 2,    /* 16bit default */		\
