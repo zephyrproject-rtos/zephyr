@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2026 Mario Paja
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,8 @@
  ******************************************************************************/
 
 #define WM8904_REG_RESET                    (0x00)
+#define WM8904_REG_MIC_BIAS_CONTROL_0       (0X06)
+#define WM8904_REG_MIC_BIAS_CONTROL_1       (0X07)
 #define WM8904_REG_ANALOG_ADC_0             (0x0A)
 #define WM8904_REG_POWER_MGMT_0             (0x0C)
 #define WM8904_REG_POWER_MGMT_2             (0x0E)

@@ -1,4 +1,5 @@
 # Copyright 2024 NXP
+# Copyright (c) 2026 Mario Paja
 # SPDX-License-Identifier: Apache-2.0
 
 description: WM8904 audio codec
@@ -10,6 +11,7 @@ compatible: "wolfson,wm8904"
 properties:
   reg:
     required: true
+
   clock-source:
     type: string
     default: "MCLK"
@@ -23,6 +25,7 @@ properties:
     enum:
       - "MCLK"
       - "FLL"
+
   fs-ratio:
     type: int
     default: 256
@@ -33,3 +36,8 @@ properties:
       On such platforms, the driver assumes the MCLK frequency to be equal
       to (fs-ratio * <sample rate>), where the sample rate comes from the
       audio codec configuration provided at runtime.
+
+  mic-bias:
+    type: boolean
+    description: |
+     Enables microphone bias voltage for the connected microphone input.
