@@ -261,7 +261,17 @@ void board_early_init_hook(void)
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(lpi2c15))
+	/*
+	 * LPI2C15 (PMIC bus) functional clock source is per-core: the SENSE base
+	 * clock is only brought up on CPU1, so CPU0 must source from an FRO that is
+	 * available in the Compute domain. Selecting kSENSE_BASE_to_LPI2C15 on CPU0
+	 * would yield a 0 Hz functional clock and a divide-by-zero in LPI2C_MasterInit.
+	 */
+#if CONFIG_SOC_MIMXRT798S_CM33_CPU0
+	CLOCK_AttachClk(kFRO1_DIV1_to_LPI2C15);
+#elif CONFIG_SOC_MIMXRT798S_CM33_CPU1
 	CLOCK_AttachClk(kSENSE_BASE_to_LPI2C15);
+#endif
 	CLOCK_SetClkDiv(kCLOCK_DivLpi2c15Clk, 2U);
 	CLOCK_EnableClock(kCLOCK_LPI2c15);
 #endif
