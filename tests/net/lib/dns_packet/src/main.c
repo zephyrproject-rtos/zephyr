@@ -1120,7 +1120,7 @@ static void run_dns_malformed_response(const char *test_case,
 	}
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
-			       NULL, &query_hash);
+			       NULL, &query_hash, -1);
 	zassert_not_equal(ret, DNS_EAI_ALLDONE,
 			  "[%s] DNS message was valid (%d)",
 			  test_case, ret);
@@ -1139,7 +1139,7 @@ static void run_dns_valid_response(const char *test_case,
 	dns_msg.msg_size = len;
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
-			       NULL, &query_hash);
+			       NULL, &query_hash, -1);
 	zassert_equal(ret, DNS_EAI_ALLDONE, "[%s] DNS message failed (%d)",
 		      test_case, ret);
 }
@@ -1187,7 +1187,7 @@ static void run_dns_valid_cname_response(const char *test_case,
 			  DNS_QUERY_TYPE_A);
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
-			       dns_cname, &query_hash);
+			       dns_cname, &query_hash, -1);
 	zassert_equal(ret, expected_ret, "[%s] DNS message failed (%d)",
 		      test_case, ret);
 }
@@ -1242,7 +1242,7 @@ ZTEST(dns_packet, test_dns_id_len)
 	dns_msg.msg_size = sizeof(buf);
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
-			       NULL, &query_hash);
+			       NULL, &query_hash, -1);
 	zassert_equal(ret, DNS_EAI_FAIL,
 		      "DNS message length check failed (%d)", ret);
 }
@@ -1260,7 +1260,7 @@ ZTEST(dns_packet, test_dns_flags_len)
 	dns_msg.msg_size = sizeof(buf);
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
-			       NULL, &query_hash);
+			       NULL, &query_hash, -1);
 	zassert_equal(ret, DNS_EAI_FAIL,
 		      "DNS message length check failed (%d)", ret);
 }
@@ -1436,7 +1436,7 @@ ZTEST(dns_packet, test_dns_recursive_query)
 			  DNS_QUERY_TYPE_A);
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
-			       dns_cname, &query_hash);
+			       dns_cname, &query_hash, -1);
 	zassert_true(ret == DNS_EAI_SYSTEM && errno == ELOOP,
 		     "[%s] DNS message was valid (%d / %d)",
 		     "recursive rsp", ret, errno);
@@ -1517,7 +1517,7 @@ ZTEST(dns_packet, test_dns_invalid_compress_bits)
 			  DNS_QUERY_TYPE_A);
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
-			       dns_cname, &query_hash);
+			       dns_cname, &query_hash, -1);
 	zassert_true(ret == DNS_EAI_SYSTEM && errno == EINVAL,
 		     "[%s] DNS message was valid (%d / %d)",
 		     "invalid compression rsp", ret, errno);
@@ -1598,7 +1598,7 @@ ZTEST(dns_packet, test_dns_invalid_compress_bits_cname)
 			  DNS_QUERY_TYPE_A);
 
 	ret = dns_validate_msg(&dns_ctx, &dns_msg, &dns_id, &query_idx,
-			       dns_cname, &query_hash);
+			       dns_cname, &query_hash, -1);
 	zassert_true(ret == DNS_EAI_SYSTEM && errno == EINVAL,
 		     "[%s] DNS message was valid (%d / %d)",
 		     "invalid compression rsp", ret, errno);

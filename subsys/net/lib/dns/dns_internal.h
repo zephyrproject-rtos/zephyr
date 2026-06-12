@@ -16,5 +16,6 @@ int dns_validate_msg(struct dns_resolve_context *ctx,
 		     uint16_t *dns_id,
 		     int *query_idx,
 		     struct net_buf *dns_cname,
-		     uint16_t *query_hash);
+		     uint16_t *query_hash,
+		     int recv_server_idx);
 #endif
