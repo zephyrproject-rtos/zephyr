@@ -122,11 +122,8 @@ int spi_nrfx_spim_common_deinit(const struct device *dev);
 	IF_ENABLED(										\
 		SPI_NRFX_HAS_RAM_BUF,								\
 		(										\
-			static uint8_t CONCAT(tx_ram_buf, inst)[SPI_NRFX_RAM_BUF_SIZE]		\
-				DMM_MEMORY_SECTION(DT_DRV_INST(inst));				\
-												\
-			static uint8_t CONCAT(rx_ram_buf, inst)[SPI_NRFX_RAM_BUF_SIZE]		\
-				DMM_MEMORY_SECTION(DT_DRV_INST(inst));				\
+			static uint8_t CONCAT(tx_ram_buf, inst)[SPI_NRFX_RAM_BUF_SIZE];		\
+			static uint8_t CONCAT(rx_ram_buf, inst)[SPI_NRFX_RAM_BUF_SIZE];		\
 		)										\
 	)
 
