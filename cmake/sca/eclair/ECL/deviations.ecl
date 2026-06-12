@@ -53,6 +53,17 @@ they are not instances of commented-out code."
 # Series 4.
 #
 
+-doc_begin="Directive 4.6 is advisory and is not adopted by the project. The
+basic numerical types are used throughout the code base where a specific width
+and signedness is not required (for example return codes, counters, line
+numbers and indices), and the rule cannot be satisfied at all for the basic
+floating types (float, double and long double), for which the C standard
+provides no width-and-signedness typedefs. Enforcing it would require
+large-scale, churny changes to public APIs with no safety benefit, so the
+directive is disapplied."
+-config=MC3A2.D4.6,reports+={disapplied,"any()"}
+-doc_end
+
 -doc_begin="Files that are intended to be included more than once do not need to
 conform to the directive."
 -config=MC3A2.D4.10,reports+={safe, "first_area(text(^/\\* This file is intended to be included multiple times\\. \\*/$, begin-4))"}
