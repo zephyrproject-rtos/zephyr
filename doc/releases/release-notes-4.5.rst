@@ -93,6 +93,11 @@ Deprecated APIs and options
   * The :c:struct:`_dmic_ops` struct has been deprecated. DMIC drivers are now expected to use the
     :c:macro:`DEVICE_API` macro to declare their driver API.
 
+* Fuel Gauge
+
+  * Deprecated various fuel gauge property enums and union fields in favor of
+    new versions with explicit unit suffixes.
+
 * LoRa
 
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`

@@ -506,7 +506,7 @@ static bool valid_broadcast_reception_start_param(
 		return false;
 	}
 
-	for (size_t i = 0; i < param->count; i++) {
+	for (size_t i = 0U; i < param->count; i++) {
 		const struct bt_cap_commander_broadcast_reception_start_member_param *start_param =
 			&param->param[i];
 		const union bt_cap_set_member *member = &param->param[i].member;
@@ -780,7 +780,7 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 		LOG_DBG("BASS recv state: conn %p, src_id %u pa_sync_state %u", (void *)conn,
 			state->src_id, state->pa_sync_state);
 
-		for (uint8_t i = 0; i < state->num_subgroups; i++) {
+		for (uint8_t i = 0U; i < state->num_subgroups; i++) {
 			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
 			LOG_DBG("Subgroup[%u].bis_sync: 0x%08X", i, subgroup->bis_sync);
@@ -1157,7 +1157,7 @@ bool bt_cap_commander_valid_broadcast_reception_stop_param(
 		return false;
 	}
 
-	for (size_t i = 0; i < param->count; i++) {
+	for (size_t i = 0U; i < param->count; i++) {
 		const struct bt_cap_commander_broadcast_reception_stop_member_param *stop_param =
 			&param->param[i];
 		const union bt_cap_set_member *member = &param->param[i].member;
@@ -1366,7 +1366,7 @@ static bool valid_distribute_broadcast_code_param(
 		return false;
 	}
 
-	for (size_t i = 0; i < param->count; i++) {
+	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->param[i].member;
 		const struct bt_conn *member_conn =
 			bt_cap_common_get_member_conn(param->type, member);

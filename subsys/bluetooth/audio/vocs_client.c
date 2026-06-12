@@ -39,7 +39,7 @@ static struct bt_vocs_client insts[CONFIG_BT_MAX_CONN * CONFIG_BT_VOCS_CLIENT_MA
 
 static struct bt_vocs_client *lookup_vocs_by_handle(struct bt_conn *conn, uint16_t handle)
 {
-	__ASSERT(handle != 0, "Handle cannot be 0");
+	__ASSERT(handle != 0U, "Handle cannot be 0");
 	__ASSERT(conn, "Conn cannot be NULL");
 
 	for (int i = 0; i < ARRAY_SIZE(insts); i++) {
@@ -278,7 +278,7 @@ static void vocs_client_write_vocs_cp_cb(struct bt_conn *conn, uint8_t err,
 		LOG_DBG("Invalid change counter. Reading volume offset state from server.");
 
 		inst->read_params.func = internal_read_volume_offset_state_cb;
-		inst->read_params.handle_count = 1;
+		inst->read_params.handle_count = 1U;
 		inst->read_params.single.handle = inst->state_handle;
 
 		atomic_set_bit(inst->flags, BT_VOCS_CLIENT_FLAG_CP_RETRIED);
@@ -462,7 +462,7 @@ int bt_vocs_client_state_get(struct bt_vocs_client *inst)
 	}
 
 	inst->read_params.func = vocs_client_read_offset_state_cb;
-	inst->read_params.handle_count = 1;
+	inst->read_params.handle_count = 1U;
 	inst->read_params.single.handle = inst->state_handle;
 	inst->read_params.single.offset = 0U;
 
@@ -533,7 +533,7 @@ int bt_vocs_client_location_get(struct bt_vocs_client *inst)
 	}
 
 	inst->read_params.func = vocs_client_read_location_cb;
-	inst->read_params.handle_count = 1;
+	inst->read_params.handle_count = 1U;
 	inst->read_params.single.handle = inst->location_handle;
 	inst->read_params.single.offset = 0U;
 
@@ -613,7 +613,7 @@ int bt_vocs_client_description_get(struct bt_vocs_client *inst)
 	}
 
 	inst->read_params.func = vocs_client_read_output_desc_cb;
-	inst->read_params.handle_count = 1;
+	inst->read_params.handle_count = 1U;
 	inst->read_params.single.handle = inst->desc_handle;
 	inst->read_params.single.offset = 0U;
 
@@ -702,13 +702,13 @@ static void vocs_client_reset(struct bt_vocs_client *inst)
 	atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_DESC_WRITABLE);
 	atomic_clear_bit(inst->flags, BT_VOCS_CLIENT_FLAG_CP_RETRIED);
 
-	inst->location = 0;
-	inst->start_handle = 0;
-	inst->end_handle = 0;
-	inst->state_handle = 0;
-	inst->location_handle = 0;
-	inst->control_handle = 0;
-	inst->desc_handle = 0;
+	inst->location = 0U;
+	inst->start_handle = 0U;
+	inst->end_handle = 0U;
+	inst->state_handle = 0U;
+	inst->location_handle = 0U;
+	inst->control_handle = 0U;
+	inst->desc_handle = 0U;
 
 	bt_conn_drop(&inst->conn);
 }

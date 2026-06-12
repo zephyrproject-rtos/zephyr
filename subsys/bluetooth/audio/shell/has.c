@@ -98,7 +98,7 @@ static int cmd_features_set(const struct shell *sh, size_t argc, char **argv)
 		.independent_presets = false
 	};
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "binaural") == 0) {
@@ -135,7 +135,7 @@ static int cmd_has_register(const struct shell *sh, size_t argc, char **argv)
 		.independent_presets = false
 	};
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "binaural") == 0) {

@@ -158,6 +158,7 @@ static struct quic_endpoint *reset_test_ep(struct quic_endpoint *ep)
 {
 	memset(ep, 0, sizeof(*ep));
 	ep->sock = -1;
+	quic_recovery_init(ep);
 
 	return ep;
 }
@@ -961,7 +962,6 @@ ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 {
 	struct quic_endpoint *ep = reset_test_ep(&test_ep_a);
 
-	quic_recovery_init(ep);
 	quic_recovery_begin_shutdown(ep);
 	quic_recovery_on_packet_sent(ep, QUIC_SECRET_LEVEL_APPLICATION, 1, 123, true,
 				      false, 0);
@@ -974,7 +974,6 @@ ZTEST(net_socket_quic, test_090_recovery_shutdown_stops_tracking)
 static void init_test_dplpmtud_endpoint(struct quic_endpoint *ep)
 {
 	reset_test_ep(ep);
-	quic_recovery_init(ep);
 	ep->handshake.completed = true;
 	ep->peer_params.max_udp_payload_size = UINT16_MAX;
 	ep->dplpmtud.validated_payload_size = QUIC_DPLPMTUD_BASE_PLPMTU;

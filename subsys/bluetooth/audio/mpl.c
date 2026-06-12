@@ -38,10 +38,10 @@
 
 LOG_MODULE_REGISTER(bt_mpl, CONFIG_BT_MPL_LOG_LEVEL);
 
-#define TRACK_STATUS_INVALID 0x00
-#define TRACK_STATUS_VALID 0x01
+#define TRACK_STATUS_INVALID 0x00U
+#define TRACK_STATUS_VALID 0x01U
 
-#define TRACK_POS_WORK_DELAY_MS 1000
+#define TRACK_POS_WORK_DELAY_MS 1000U
 #define TRACK_POS_WORK_DELAY    K_MSEC(TRACK_POS_WORK_DELAY_MS)
 
 #define PLAYBACK_SPEED_PARAM_DEFAULT MEDIA_PROXY_PLAYBACK_SPEED_UNITY
@@ -57,7 +57,7 @@ static struct mpl_tseg seg_2;
 static struct mpl_tseg seg_3;
 
 static struct mpl_tseg seg_1 = {
-	.name_len = 5,
+	.name_len = 5U,
 	.name	  = "Start",
 	.pos	  = 0,
 	.prev	  = NULL,
@@ -65,7 +65,7 @@ static struct mpl_tseg seg_1 = {
 };
 
 static struct mpl_tseg seg_2 = {
-	.name_len = 6,
+	.name_len = 6U,
 	.name	  = "Middle",
 	.pos	  = 2000,
 	.prev	  = &seg_1,
@@ -73,7 +73,7 @@ static struct mpl_tseg seg_2 = {
 };
 
 static struct mpl_tseg seg_3 = {
-	.name_len = 3,
+	.name_len = 3U,
 	.name	  = "End",
 	.pos	  = 5000,
 	.prev	  = &seg_2,
@@ -258,7 +258,7 @@ static struct mpl_mediaplayer media_player = {
 				    MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
 	.opcodes_supported	  = 0x001fffff, /* All opcodes */
 #ifdef CONFIG_BT_MPL_OBJECTS
-	.search_results_id	  = 0,
+	.search_results_id	  = 0U,
 	.calls = { 0 },
 #endif /* CONFIG_BT_MPL_OBJECTS */
 	.next_track_set           = false
@@ -314,7 +314,7 @@ struct obj_t {
 };
 
 static struct obj_t obj = {
-	.selected_id = 0,
+	.selected_id = 0U,
 	.add_type = MPL_OBJ_NONE,
 	.add_track = NULL,
 	.content = NET_BUF_SIMPLE(CONFIG_BT_MPL_MAX_OBJ_SIZE),
@@ -332,9 +332,8 @@ static int setup_icon_object(void)
 	net_buf_simple_reset(obj.content);
 
 	/* Size may be larger than what fits in 8 bits, use 16-bit for index */
-	for (index = 0, k = 0;
-	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE,
-			 CONFIG_BT_MPL_ICON_BITMAP_SIZE);
+	for (index = 0U, k = 0U;
+	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE, CONFIG_BT_MPL_ICON_BITMAP_SIZE);
 	     index++, k++) {
 		net_buf_simple_add_u8(obj.content, k);
 	}
@@ -350,7 +349,7 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 	net_buf_simple_reset(obj.content);
 
 	if (seg) {
-		uint32_t tot_size = 0;
+		uint32_t tot_size = 0U;
 
 		while (seg->prev) {
 			seg = seg->prev;
@@ -394,10 +393,8 @@ static uint32_t setup_track_object(void)
 	net_buf_simple_reset(obj.content);
 
 	/* Size may be larger than what fits in 8 bits, use 16-bit for index */
-	for (index = 0, k = 0;
-	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE,
-			 CONFIG_BT_MPL_TRACK_MAX_SIZE);
-	     index++, k++) {
+	for (index = 0U, k = 0U;
+	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE, CONFIG_BT_MPL_TRACK_MAX_SIZE); index++, k++) {
 		net_buf_simple_add_u8(obj.content, k);
 	}
 
@@ -2272,7 +2269,7 @@ static void parse_search(const struct mpl_search *search)
 	/* For now, just fake it. */
 
 	if (search_failed) {
-		media_player.search_results_id = 0;
+		media_player.search_results_id = 0U;
 		media_proxy_pl_search_cb(MEDIA_PROXY_SEARCH_FAILURE);
 	} else {
 		/* Use current group as search result for now */

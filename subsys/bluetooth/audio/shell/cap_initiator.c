@@ -200,7 +200,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 
 	cap_initiator_unicast_audio_start_param.type = BT_CAP_SET_TYPE_AD_HOC;
 
-	for (size_t argn = 1; argn < argc; argn++) {
+	for (size_t argn = 1U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "csip") == 0) {
@@ -267,7 +267,7 @@ static int cmd_cap_initiator_unicast_start(const struct shell *sh, size_t argc, 
 
 	cap_initiator_unicast_audio_start_param.stream_params =
 		cap_initiator_audio_start_stream_params;
-	for (size_t i = 0; i < conn_cnt; i++) {
+	for (size_t i = 0U; i < conn_cnt; i++) {
 		struct bt_conn *conn = connected_conns[i];
 		size_t conn_src_cnt = 0U;
 		size_t conn_snk_cnt = 0U;
@@ -835,7 +835,7 @@ static int cap_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		for (size_t j = 0; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
+		for (size_t j = 0U; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
 			struct bt_cap_unicast_group_stream_pair_param *stream_pair_param =
 				&cap_initiator_unicast_group_pair_params[pair_cnt];
 
@@ -879,8 +879,8 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 	struct shell_stream *snk_uni_streams[BAP_UNICAST_AC_MAX_SNK];
 	struct shell_stream *src_uni_streams[BAP_UNICAST_AC_MAX_SRC];
 	size_t conn_avail_cnt;
-	size_t snk_cnt = 0;
-	size_t src_cnt = 0;
+	size_t snk_cnt = 0U;
+	size_t src_cnt = 0U;
 	size_t total_cnt;
 	int err;
 
@@ -903,7 +903,7 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 	}
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
-	for (size_t i = 0; i < param->conn_cnt; i++) {
+	for (size_t i = 0U; i < param->conn_cnt; i++) {
 		/* Verify conn values */
 		if (param->snk_cnt[i] > BAP_UNICAST_AC_MAX_SNK) {
 			shell_error(sh, "Invalid conn_snk_cnt[%zu]: %zu", i, param->snk_cnt[i]);
@@ -925,7 +925,7 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 
 	/* Populate the array of connected connections */
 	bt_conn_foreach(BT_CONN_TYPE_LE, populate_connected_conns, (void *)connected_conns);
-	for (conn_avail_cnt = 0; conn_avail_cnt < ARRAY_SIZE(connected_conns); conn_avail_cnt++) {
+	for (conn_avail_cnt = 0U; conn_avail_cnt < ARRAY_SIZE(connected_conns); conn_avail_cnt++) {
 		if (connected_conns[conn_avail_cnt] == NULL) {
 			break;
 		}
@@ -1369,7 +1369,7 @@ static int cmd_broadcast_update(const struct shell *sh, size_t argc, char *argv[
 	}
 
 	len = hex2bin(argv[1], strlen(argv[1]), meta, sizeof(meta));
-	if (len == 0) {
+	if (len == 0U) {
 		shell_print(sh, "Unable to parse metadata (len was %zu, max len is %d)",
 			    strlen(argv[1]) / 2U + strlen(argv[1]) % 2U,
 			    CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE);

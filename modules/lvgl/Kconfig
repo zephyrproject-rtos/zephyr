@@ -203,7 +203,6 @@ config LV_USE_DRAW_DAVE2D
 config LV_Z_USE_OSAL
 	bool "Use OSAL enabling parallel rendering"
 	depends on DYNAMIC_THREAD
-	select LV_USE_PRIVATE_API
 	help
 	  Use the Zephyr LVGL OSAL to enable parallel rendering
 	  pipelines.

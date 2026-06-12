@@ -29,7 +29,7 @@
 
 LOG_MODULE_REGISTER(bt_csip_crypto, CONFIG_BT_CSIP_SET_MEMBER_CRYPTO_LOG_LEVEL);
 
-#define BT_CSIP_CRYPTO_PADDING_SIZE 13
+#define BT_CSIP_CRYPTO_PADDING_SIZE 13U
 #define BT_CSIP_PADDED_RAND_SIZE    (BT_CSIP_CRYPTO_PADDING_SIZE + BT_CSIP_CRYPTO_PRAND_SIZE)
 #define BT_CSIP_R_MASK              BIT_MASK(24) /* r is 24 bit / 3 octet */
 
@@ -39,8 +39,8 @@ int bt_csip_sih(const uint8_t sirk[BT_CSIP_SIRK_SIZE], uint8_t r[BT_CSIP_CRYPTO_
 	uint8_t res[BT_CSIP_PADDED_RAND_SIZE]; /* need to store 128 bit */
 	int err;
 
-	if ((r[BT_CSIP_CRYPTO_PRAND_SIZE - 1] & BIT(7)) ||
-	   ((r[BT_CSIP_CRYPTO_PRAND_SIZE - 1] & BIT(6)) == 0)) {
+	if ((r[BT_CSIP_CRYPTO_PRAND_SIZE - 1] & BIT(7U)) ||
+	    ((r[BT_CSIP_CRYPTO_PRAND_SIZE - 1] & BIT(6U)) == 0)) {
 		LOG_DBG("Invalid r %s", bt_hex(r, BT_CSIP_CRYPTO_PRAND_SIZE));
 	}
 

@@ -76,6 +76,15 @@ if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
   add_subdirectory(serial-memory)
   add_subdirectory(zephyr-ifx-cycfg)
   add_subdirectory(mtb-dsl-pse8xxgp)
+
+  if(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
+    add_subdirectory(abstraction-rtos)
+    add_subdirectory(mtb-ipc)
+    zephyr_compile_definitions(COMPONENT_MW_MTB_IPC)
+    zephyr_compile_definitions(COMPONENT_MW_MTB_SRF)
+    zephyr_compile_definitions(COMPONENT_NON_SECURE_DEVICE)
+  endif()
+
 endif()
 
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1C)

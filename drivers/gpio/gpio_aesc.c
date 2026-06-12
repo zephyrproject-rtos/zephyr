@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Aesc Silicon
+ * SPDX-FileCopyrightText: 2025 Aesc Silicon
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,10 @@
 LOG_MODULE_REGISTER(aesc_gpio, CONFIG_GPIO_LOG_LEVEL);
 
 struct gpio_aesc_config {
-	DEVICE_MMIO_ROM;
+	struct gpio_driver_config common;
+
+	DEVICE_MMIO_NAMED_ROM(mmio);
+
 	const struct pinctrl_dev_config *pcfg;
 	void (*irq_config)(const struct device *dev);
 };
@@ -48,14 +51,19 @@ struct gpio_aesc_regs {
 } __packed;
 
 struct gpio_aesc_data {
-	DEVICE_MMIO_RAM;
+	struct gpio_driver_data common;
+
+	DEVICE_MMIO_NAMED_RAM(mmio);
+
+	uintptr_t reg_base;
 	sys_slist_t cb;
 	struct k_spinlock lock;
 };
 
-#define DEV_CFG(dev) ((struct gpio_aesc_config *)(dev)->config)
+#define DEV_CFG(dev) ((const struct gpio_aesc_config * const)(dev)->config)
 #define DEV_DATA(dev) ((struct gpio_aesc_data *)(dev)->data)
-#define DEV_GPIO(dev) ((struct gpio_aesc_regs *)DEVICE_MMIO_GET(dev))
+#define DEV_GPIO(dev)							      \
+	((volatile struct gpio_aesc_regs *)DEV_DATA(dev)->reg_base)
 
 static int gpio_aesc_config(const struct device *dev, gpio_pin_t pin,
 			    gpio_flags_t flags)
@@ -216,19 +224,21 @@ static void gpio_aesc_isr(const struct device *dev)
 
 static int gpio_aesc_init(const struct device *dev)
 {
+	DEVICE_MMIO_NAMED_MAP(dev, mmio, K_MEM_CACHE_NONE);
 	const struct gpio_aesc_config *cfg = DEV_CFG(dev);
-	volatile uintptr_t *base_addr = (volatile uintptr_t *)DEV_GPIO(dev);
+	volatile uintptr_t *base_addr =
+		(volatile uintptr_t *)DEVICE_MMIO_NAMED_GET(dev, mmio);
+	struct gpio_aesc_data *data = DEV_DATA(dev);
 	volatile struct gpio_aesc_regs *gpio;
 	int ret;
 
-	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 	LOG_DBG("IP core version: %i.%i.%i.",
 		ip_id_get_major_version(base_addr),
 		ip_id_get_minor_version(base_addr),
 		ip_id_get_patchlevel(base_addr)
 	);
-	DEVICE_MMIO_GET(dev) = ip_id_relocate_driver(base_addr);
-	LOG_DBG("Relocate driver to address 0x%lx.", DEVICE_MMIO_GET(dev));
+	data->reg_base = ip_id_relocate_driver(base_addr);
+	LOG_DBG("Relocate driver to address 0x%lx.", data->reg_base);
 	gpio = DEV_GPIO(dev);
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -271,7 +281,8 @@ static DEVICE_API(gpio, gpio_aesc_driver_api) = {
 		irq_enable(DT_INST_IRQN(no));				      \
 	}								      \
 	static struct gpio_aesc_config gpio_aesc_dev_cfg_##no = {	      \
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(no)),			      \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(no),		      \
+		DEVICE_MMIO_NAMED_ROM_INIT(mmio, DT_DRV_INST(no)),	      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(no),		      \
 		.irq_config = gpio_aesc_irq_config_##no,		      \
 	};								      \

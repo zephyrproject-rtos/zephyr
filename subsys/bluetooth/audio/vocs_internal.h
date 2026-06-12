@@ -21,11 +21,11 @@
 #if defined(CONFIG_BT_VOCS)
 #define BT_VOCS_MAX_DESC_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 #else
-#define BT_VOCS_MAX_DESC_SIZE 1
+#define BT_VOCS_MAX_DESC_SIZE 1U
 #endif /* CONFIG_BT_VOCS */
 
 /* VOCS opcodes */
-#define BT_VOCS_OPCODE_SET_OFFSET                  0x01
+#define BT_VOCS_OPCODE_SET_OFFSET                  0x01U
 
 struct bt_vocs_control {
 	uint8_t opcode;

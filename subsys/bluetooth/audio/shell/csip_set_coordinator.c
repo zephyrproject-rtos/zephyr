@@ -187,7 +187,7 @@ static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set
 {
 	ARG_UNUSED(set_info);
 
-	for (size_t i = 0; i < count; i++) {
+	for (size_t i = 0U; i < count; i++) {
 		bt_shell_print("Ordered access for members[%zu]: %p", i, members[i]);
 	}
 
@@ -346,7 +346,7 @@ static int cmd_csip_set_coordinator_discover_members(const struct shell *sh,
 
 	/* Reset and populate based on current connections */
 	memset(addr_found, 0, sizeof(addr_found));
-	members_found = 0;
+	members_found = 0U;
 	for (size_t i = 0U; i < ARRAY_SIZE(set_members); i++) {
 		const struct bt_csip_set_coordinator_set_member *set_member = set_members[i];
 
@@ -417,7 +417,7 @@ static int cmd_csip_set_coordinator_lock_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(locked_members); i++) {
 		if (set_members[i] != NULL) {
 			locked_members[conn_count] = set_members[i];
 			conn_count++;
@@ -447,7 +447,7 @@ static int cmd_csip_set_coordinator_release_set(const struct shell *sh,
 		return -ENOEXEC;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(locked_members); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(locked_members); i++) {
 		if (set_members[i] != NULL) {
 			locked_members[conn_count] = set_members[i];
 			conn_count++;
@@ -566,7 +566,7 @@ static int cmd_csip_set_coordinator_ordered_access(const struct shell *sh,
 		}
 	}
 
-	for (size_t i = 0; i < (size_t)member_count; i++) {
+	for (size_t i = 0U; i < (size_t)member_count; i++) {
 		members[i] = set_members[i];
 	}
 

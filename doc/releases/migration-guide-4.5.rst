@@ -262,6 +262,15 @@ Flash
   of each plane in the flash device. For devices with a single plane, this should be set to the
   same value as ``size-bytes``.
 
+Fuel Gauge
+==========
+
+* Various fuel gauge property enums and union fields have been deprecated in
+  favor of new versions with explicit unit suffixes. Applications and drivers
+  should migrate to the unit-suffixed names. For example,
+  ``FUEL_GAUGE_CURRENT`` (``val.current``) is replaced by
+  ``FUEL_GAUGE_CURRENT_UA`` (``val.current_ua``).
+
 GPIO
 ====
 
@@ -441,6 +450,14 @@ STM32
   ``dmas``, ``dma-names`` (now validated against ``enum: [tx, rx]``), ``pinctrl-0``,
   ``pinctrl-names``, ``mclk-enable``, ``mclk-divider``, ``synchronous``, and
   ``fifo-threshold``. (:github:`104423`)
+
+* :dtcompatible:`st,hci-stm32wba` and :dtcompatible:`st,stm32wba-ieee802154` nodes
+  (with nodelabels ``bt_hci_wba`` and ``ieee802154`` respectively) are now
+  children of a top-level :dtcompatible:`st,stm32wba-radio` node with nodelabel
+  ``radio``. The ``interrupts`` property is now set on the ``&radio`` node instead
+  of being duplicated on both ``&bt_hci_wba`` and ``&ieee802154`` nodes. Out-of-tree
+  boards which modified the ``interrupts`` property on either node must be updated
+  to set the property on the top-level ``&radio`` node instead. (:github:`110546`)
 
 Syscon
 ======
@@ -633,6 +650,9 @@ Networking
   been removed. TF-PSA-Crypto cannot decrypt their DES-encrypted PKCS#8 private
   keys. Use ``samples/net/wifi/test_certs/rsa2k_no_des`` instead, or set
   :envvar:`WIFI_TEST_CERTS_DIR` to another AES-encrypted certificate directory.
+
+* ``net_if_config_get`` was removed as it was a duplicate of :c:func:`net_if_get_config`.
+  (:github:`110930`)
 
 
 Ethernet

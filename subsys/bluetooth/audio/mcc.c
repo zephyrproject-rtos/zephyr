@@ -140,7 +140,7 @@ static uint8_t mcc_read_icon_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
-	uint64_t id = 0;
+	uint64_t id = 0U;
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 	LOG_DBG("err: 0x%02x, length: %d, data: %p", err, length, data);
@@ -440,7 +440,7 @@ static uint8_t mcc_read_segments_obj_id_cb(struct bt_conn *conn, uint8_t err,
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
-	uint64_t id = 0;
+	uint64_t id = 0U;
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 	if (err != 0) {
@@ -470,7 +470,7 @@ static void mcc_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err, const
 {
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
-	uint64_t id = 0;
+	uint64_t id = 0U;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02x", err);
@@ -509,7 +509,7 @@ static void mcs_write_current_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, write_params);
 	int cb_err = err;
-	uint64_t obj_id = 0;
+	uint64_t obj_id = 0U;
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 	if (err != 0) {
@@ -536,11 +536,11 @@ static void mcc_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err, const vo
 {
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
-	uint64_t id = 0;
+	uint64_t id = 0U;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02x", err);
-	} else if (length == 0) {
+	} else if (length == 0U) {
 		LOG_DBG("Characteristic is empty");
 	} else if (!pid || (length != BT_OTS_OBJ_ID_SIZE)) {
 		LOG_DBG("length: %d, data: %p", length, data);
@@ -577,7 +577,7 @@ static void mcs_write_next_track_obj_id_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, write_params);
 	int cb_err = err;
-	uint64_t obj_id = 0;
+	uint64_t obj_id = 0U;
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 	if (err != 0) {
@@ -604,7 +604,7 @@ static void mcc_parent_group_obj_id_cb(struct bt_conn *conn, uint8_t err, const 
 {
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
-	uint64_t id = 0;
+	uint64_t id = 0U;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02x", err);
@@ -643,7 +643,7 @@ static void mcc_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err, const
 {
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
-	uint64_t id = 0;
+	uint64_t id = 0U;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02x", err);
@@ -682,7 +682,7 @@ static void mcs_write_current_group_obj_id_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, write_params);
 	int cb_err = err;
-	uint64_t obj_id = 0;
+	uint64_t obj_id = 0U;
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 	if (err != 0) {
@@ -710,7 +710,7 @@ static void mcc_playing_order_cb(struct bt_conn *conn, uint8_t err, const void *
 				 uint16_t length)
 {
 	int cb_err = err;
-	uint8_t order = 0;
+	uint8_t order = 0U;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02x", err);
@@ -747,7 +747,7 @@ static void mcs_write_playing_order_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, write_params);
 	int cb_err = err;
-	uint8_t order = 0;
+	uint8_t order = 0U;
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 	if (err != 0) {
@@ -773,7 +773,7 @@ static uint8_t mcc_read_playing_orders_supported_cb(struct bt_conn *conn, uint8_
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
-	uint16_t orders = 0;
+	uint16_t orders = 0U;
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 	if (err != 0) {
@@ -799,7 +799,7 @@ static uint8_t mcc_read_playing_orders_supported_cb(struct bt_conn *conn, uint8_
 static void mcc_media_state_cb(struct bt_conn *conn, uint8_t err, const void *data, uint16_t length)
 {
 	int cb_err = err;
-	uint8_t state = 0;
+	uint8_t state = 0U;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02x", err);
@@ -935,11 +935,11 @@ static void mcc_search_results_obj_id_cb(struct bt_conn *conn, uint8_t err,
 {
 	int cb_err = err;
 	uint8_t *pid = (uint8_t *)data;
-	uint64_t id = 0;
+	uint64_t id = 0U;
 
 	if (err != 0) {
 		LOG_DBG("err: 0x%02x", err);
-	} else if (length == 0) {
+	} else if (length == 0U) {
 		/* OK - this characteristic may be zero length */
 		/* cb_err and id already have correct values */
 		LOG_DBG("Zero-length Search Results Object ID");
@@ -980,7 +980,7 @@ static uint8_t mcc_read_content_control_id_cb(struct bt_conn *conn, uint8_t err,
 {
 	struct mcs_instance_t *mcs_inst = CONTAINER_OF(params, struct mcs_instance_t, read_params);
 	int cb_err = err;
-	uint8_t ccid = 0;
+	uint8_t ccid = 0U;
 
 	atomic_clear_bit(mcs_inst->flags, MCC_FLAG_BUSY);
 
@@ -1038,7 +1038,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 		LOG_DBG("Track Changed notification");
 		LOG_DBG("data: %p, length: %u", data, length);
 
-		if (length != 0) {
+		if (length != 0U) {
 			LOG_DBG("Non-zero length: %u", length);
 			cb_err = BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 		}
@@ -1140,7 +1140,7 @@ static uint8_t mcs_notify_handler(struct bt_conn *conn,
 		/* The search control point is a special case - only */
 		/* writable and notifiable.  Handle directly here. */
 		int cb_err = 0;
-		uint8_t result_code = 0;
+		uint8_t result_code = 0U;
 
 		LOG_DBG("Search Control Point notification");
 		if (length == sizeof(result_code)) {
@@ -2180,7 +2180,7 @@ int bt_mcc_read_player_name(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_player_name_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->player_name_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2219,7 +2219,7 @@ int bt_mcc_read_icon_obj_id(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_icon_obj_id_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->icon_obj_id_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2259,7 +2259,7 @@ int bt_mcc_read_icon_url(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_icon_url_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->icon_url_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2299,7 +2299,7 @@ int bt_mcc_read_track_title(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_track_title_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->track_title_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2339,7 +2339,7 @@ int bt_mcc_read_track_duration(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_track_duration_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->track_duration_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2379,7 +2379,7 @@ int bt_mcc_read_track_position(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_track_position_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->track_position_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2464,7 +2464,7 @@ int bt_mcc_read_playback_speed(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_playback_speed_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->playback_speed_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2549,7 +2549,7 @@ int bt_mcc_read_seeking_speed(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_seeking_speed_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->seeking_speed_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2589,7 +2589,7 @@ int bt_mcc_read_segments_obj_id(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_segments_obj_id_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->segments_obj_id_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2627,7 +2627,7 @@ int bt_mcc_read_current_track_obj_id(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_current_track_obj_id_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->current_track_obj_id_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2712,7 +2712,7 @@ int bt_mcc_read_next_track_obj_id(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_next_track_obj_id_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->next_track_obj_id_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2797,7 +2797,7 @@ int bt_mcc_read_parent_group_obj_id(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_parent_group_obj_id_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->parent_group_obj_id_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2835,7 +2835,7 @@ int bt_mcc_read_current_group_obj_id(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_current_group_obj_id_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->current_group_obj_id_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -2922,7 +2922,7 @@ int bt_mcc_read_playing_order(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_playing_order_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->playing_order_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -3014,7 +3014,7 @@ int bt_mcc_read_playing_orders_supported(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_playing_orders_supported_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->playing_orders_supported_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -3054,7 +3054,7 @@ int bt_mcc_read_media_state(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_media_state_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->media_state_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -3158,7 +3158,7 @@ int bt_mcc_read_opcodes_supported(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_opcodes_supported_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->opcodes_supported_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -3253,7 +3253,7 @@ int bt_mcc_read_search_results_obj_id(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_search_results_obj_id_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->search_results_obj_id_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -3293,7 +3293,7 @@ int bt_mcc_read_content_control_id(struct bt_conn *conn)
 	}
 
 	mcs_inst->read_params.func = mcc_read_content_control_id_cb;
-	mcs_inst->read_params.handle_count = 1;
+	mcs_inst->read_params.handle_count = 1U;
 	mcs_inst->read_params.single.handle = mcs_inst->content_control_id_handle;
 	mcs_inst->read_params.single.offset = 0U;
 
@@ -3459,7 +3459,7 @@ int on_track_segments_content(struct bt_ots_client *otc_inst,
 #if CONFIG_BT_MCC_LOG_LEVEL_DBG
 		struct track_segs_t track_segments;
 
-		track_segments.cnt = 0;
+		track_segments.cnt = 0U;
 		decode_track_segments(&otc_obj_buf, &track_segments);
 		for (int i = 0; i < track_segments.cnt; i++) {
 			LOG_DBG("Track segment %i:", i);

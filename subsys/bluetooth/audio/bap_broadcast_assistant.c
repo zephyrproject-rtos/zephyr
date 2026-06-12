@@ -51,7 +51,7 @@ LOG_MODULE_REGISTER(bt_bap_broadcast_assistant, CONFIG_BT_BAP_BROADCAST_ASSISTAN
 #include "audio_internal.h"
 #include "bap_internal.h"
 
-#define MINIMUM_RECV_STATE_LEN          15
+#define MINIMUM_RECV_STATE_LEN          15U
 
 struct bap_broadcast_assistant_recv_state_info {
 	uint8_t src_id;
@@ -342,7 +342,7 @@ static int parse_recv_state(const void *data, uint16_t length,
 
 static void bap_long_read_reset(struct bap_broadcast_assistant_instance *inst)
 {
-	inst->long_read_handle = 0;
+	inst->long_read_handle = 0U;
 	net_buf_simple_reset(&inst->net_buf);
 	atomic_clear_bit(inst->flags, BAP_BA_FLAG_BUSY);
 }
@@ -822,7 +822,7 @@ static int bt_bap_broadcast_assistant_common_cp(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	if (inst->cp_handle == 0) {
+	if (inst->cp_handle == 0U) {
 		LOG_DBG("Handle not set");
 		return -EINVAL;
 	}
@@ -905,7 +905,7 @@ static struct bt_le_scan_cb scan_cb = {
 static bool broadcast_src_is_duplicate(struct bap_broadcast_assistant_instance *inst,
 				       uint32_t broadcast_id, uint8_t adv_sid, uint8_t addr_type)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(inst->recv_states); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(inst->recv_states); i++) {
 		const struct bap_broadcast_assistant_recv_state_info *state =
 							&inst->recv_states[i];
 
@@ -927,7 +927,7 @@ static int broadcast_assistant_reset(struct bap_broadcast_assistant_instance *in
 	inst->pa_sync = 0U;
 	inst->recv_state_cnt = 0U;
 	inst->cp_handle = 0U;
-	inst->long_read_handle = 0;
+	inst->long_read_handle = 0U;
 	(void)k_work_cancel_delayable(&inst->bap_read_work);
 
 	for (int i = 0U; i < CONFIG_BT_BAP_BROADCAST_ASSISTANT_RECV_STATE_COUNT; i++) {
@@ -1102,7 +1102,7 @@ int bt_bap_broadcast_assistant_scan_start(struct bt_conn *conn, bool start_scan)
 		return -EINVAL;
 	}
 
-	if (inst->cp_handle == 0) {
+	if (inst->cp_handle == 0U) {
 		LOG_DBG("handle not set");
 
 		return -EINVAL;
@@ -1188,7 +1188,7 @@ int bt_bap_broadcast_assistant_scan_stop(struct bt_conn *conn)
 		return -EINVAL;
 	}
 
-	if (inst->cp_handle == 0) {
+	if (inst->cp_handle == 0U) {
 		LOG_DBG("handle not set");
 
 		return -EINVAL;
@@ -1267,7 +1267,7 @@ static bool valid_subgroup_params(uint8_t pa_sync, const struct bt_bap_bass_subg
 		/* BIS sync values of 0 and BT_BAP_BIS_SYNC_NO_PREF are allowed at any time, but any
 		 * other values are only allowed if PA sync state is also set
 		 */
-		if (pa_sync == 0 && (subgroups[i].bis_sync != 0U &&
+		if (pa_sync == 0U && (subgroups[i].bis_sync != 0U &&
 				     subgroups[i].bis_sync != BT_BAP_BIS_SYNC_NO_PREF)) {
 			LOG_DBG("[%u]: Only syncing to BIS is not allowed", i);
 
@@ -1379,7 +1379,7 @@ int bt_bap_broadcast_assistant_add_src(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	if (inst->cp_handle == 0) {
+	if (inst->cp_handle == 0U) {
 		LOG_DBG("handle not set");
 
 		return -EINVAL;
@@ -1506,7 +1506,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	if (inst->cp_handle == 0) {
+	if (inst->cp_handle == 0U) {
 		LOG_DBG("handle not set");
 
 		return -EINVAL;
@@ -1528,7 +1528,7 @@ int bt_bap_broadcast_assistant_mod_src(struct bt_conn *conn,
 	 */
 	known_recv_state = false;
 	past_avail = false;
-	for (size_t i = 0; i < ARRAY_SIZE(inst->recv_states); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(inst->recv_states); i++) {
 		if (inst->recv_states[i].src_id == param->src_id) {
 			known_recv_state = true;
 			past_avail = inst->recv_states[i].past_avail;
@@ -1609,7 +1609,7 @@ int bt_bap_broadcast_assistant_set_broadcast_code(
 		return -EINVAL;
 	}
 
-	if (inst->cp_handle == 0) {
+	if (inst->cp_handle == 0U) {
 		LOG_DBG("handle not set");
 
 		return -EINVAL;
@@ -1649,7 +1649,7 @@ int bt_bap_broadcast_assistant_rem_src(struct bt_conn *conn, uint8_t src_id)
 		return -EINVAL;
 	}
 
-	if (inst->cp_handle == 0) {
+	if (inst->cp_handle == 0U) {
 		LOG_DBG("handle not set");
 
 		return -EINVAL;
@@ -1674,7 +1674,7 @@ static int read_recv_state(struct bap_broadcast_assistant_instance *inst, uint8_
 	int err;
 
 	inst->read_params.func = read_recv_state_cb;
-	inst->read_params.handle_count = 1;
+	inst->read_params.handle_count = 1U;
 	inst->read_params.single.handle = inst->recv_state_handles[idx];
 
 	err = bt_gatt_read(inst->conn, &inst->read_params);

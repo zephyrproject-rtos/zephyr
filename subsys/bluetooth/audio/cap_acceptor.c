@@ -109,7 +109,7 @@ bool bt_cap_acceptor_ccid_exist(const struct bt_conn *conn, uint8_t ccid)
 bool bt_cap_acceptor_ccids_exist(const struct bt_conn *conn, const uint8_t ccids[],
 				 uint8_t ccid_cnt)
 {
-	for (uint8_t i = 0; i < ccid_cnt; i++) {
+	for (uint8_t i = 0U; i < ccid_cnt; i++) {
 		const uint8_t ccid = ccids[i];
 
 		if (!bt_cap_acceptor_ccid_exist(conn, ccid)) {

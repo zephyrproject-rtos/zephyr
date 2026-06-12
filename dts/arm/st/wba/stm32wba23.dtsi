@@ -81,15 +81,9 @@
 		usart1: serial@40013800 {
 			interrupts = <43 0>;
 		};
-	};
 
-	bt_hci_wba: bt_hci_wba {
-		interrupt-parent = <&nvic>;
-		interrupts = <60 0>;
-		interrupt-names = "radio";
-	};
-
-	ieee802154: ieee802154 {
-		interrupts = <60 0>;
+		radio: radio@48020000 {
+			interrupts = <60 0>;
+		};
 	};
 };

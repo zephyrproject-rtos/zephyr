@@ -46,8 +46,8 @@
 
 LOG_MODULE_REGISTER(bt_pacs, CONFIG_BT_PACS_LOG_LEVEL);
 
-#define PAC_NOTIFY_TIMEOUT	K_MSEC(10)
-#define READ_BUF_SEM_TIMEOUT    K_MSEC(50)
+#define PAC_NOTIFY_TIMEOUT   K_MSEC(10U)
+#define READ_BUF_SEM_TIMEOUT K_MSEC(50U)
 
 #if defined(CONFIG_BT_PAC_SRC)
 static sys_slist_t src_pac_list = SYS_SLIST_STATIC_INIT(&src_pac_list);
@@ -152,7 +152,7 @@ static struct pacs_client *client_lookup_conn(const struct bt_conn *conn)
 {
 	__ASSERT_NO_MSG(conn != NULL);
 
-	for (size_t i = 0; i < ARRAY_SIZE(pacs.clients); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(pacs.clients); i++) {
 		if (atomic_test_bit(pacs.clients[i].flags, FLAG_ACTIVE) &&
 		    bt_addr_le_eq(&pacs.clients[i].addr, bt_conn_get_dst(conn))) {
 			return &pacs.clients[i];
@@ -236,7 +236,7 @@ static void get_pac_records(sys_slist_t *list, struct net_buf_simple *buf)
 	net_buf_simple_reset(buf);
 
 	data.rsp = net_buf_simple_add(buf, sizeof(*data.rsp));
-	data.rsp->num_pac = 0;
+	data.rsp->num_pac = 0U;
 	data.buf = buf;
 
 	foreach_cap(list, build_pac_records, &data);
@@ -669,7 +669,7 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 #define PACS_SNK_PAC_CHAR_ATTR_COUNT COND_CODE_1(IS_ENABLED(CONFIG_BT_PAC_SNK_NOTIFIABLE), (3), (2))
 #else
 #define BT_PAC_SNK
-#define PACS_SNK_PAC_CHAR_ATTR_COUNT 0
+#define PACS_SNK_PAC_CHAR_ATTR_COUNT 0U
 #endif /* CONFIG_BT_PAC_SNK */
 
 #if defined(CONFIG_BT_PAC_SNK_LOC)
@@ -684,7 +684,7 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 	COND_CODE_1(IS_ENABLED(CONFIG_BT_PAC_SNK_LOC_NOTIFIABLE), (3), (2))
 #else
 #define BT_PACS_SNK_LOC
-#define PACS_SNK_PAC_LOC_CHAR_ATTR_COUNT 0
+#define PACS_SNK_PAC_LOC_CHAR_ATTR_COUNT 0U
 #endif /* CONFIG_BT_PAC_SNK_LOC*/
 
 #if defined(CONFIG_BT_PAC_SRC)
@@ -709,7 +709,7 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 #define PACS_SRC_PAC_CHAR_ATTR_COUNT COND_CODE_1(IS_ENABLED(CONFIG_BT_PAC_SRC_NOTIFIABLE), (3), (2))
 #else
 #define BT_PAC_SRC
-#define PACS_SRC_PAC_CHAR_ATTR_COUNT 0
+#define PACS_SRC_PAC_CHAR_ATTR_COUNT 0U
 #endif
 
 #if defined(CONFIG_BT_PAC_SRC_LOC)
@@ -724,7 +724,7 @@ static sys_slist_t *pacs_get_pac(enum bt_audio_dir dir)
 	COND_CODE_1(IS_ENABLED(CONFIG_BT_PAC_SRC_LOC_NOTIFIABLE), (3), (2))
 #else
 #define BT_PACS_SRC_LOC
-#define PACS_SRC_PAC_LOC_CHAR_ATTR_COUNT 0
+#define PACS_SRC_PAC_LOC_CHAR_ATTR_COUNT 0U
 #endif
 
 #define BT_PAC_AVAILABLE_CONTEXT                                                                   \
@@ -1412,7 +1412,7 @@ static void add_bonded_addr_to_client_list(const struct bt_bond_info *info, void
 {
 	ARG_UNUSED(data);
 
-	for (uint8_t i = 0; i < ARRAY_SIZE(pacs.clients); i++) {
+	for (uint8_t i = 0U; i < ARRAY_SIZE(pacs.clients); i++) {
 		/* Check if device is registered, it not, add it */
 		if (!atomic_test_bit(pacs.clients[i].flags, FLAG_ACTIVE)) {
 			atomic_set_bit(pacs.clients[i].flags, FLAG_ACTIVE);
@@ -1645,7 +1645,7 @@ int bt_pacs_set_supported_contexts(enum bt_audio_dir dir, enum bt_audio_context 
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE) || *supported_contexts == 0) {
+	if (IS_ENABLED(CONFIG_BT_PACS_SUPPORTED_CONTEXT_NOTIFIABLE) || *supported_contexts == 0U) {
 		return set_supported_contexts(contexts, supported_contexts, available_contexts);
 	}
 

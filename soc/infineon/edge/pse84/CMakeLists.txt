@@ -18,6 +18,14 @@ if(CONFIG_BUILD_WITH_TFM)
     -DIFX_DEVICE_DB_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/device-db
     -DIFX_BSP_LIB_PATH=${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-template-pse8xxgp/files
   )
+
+  if(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
+    set_property(TARGET zephyr_property_target APPEND PROPERTY TFM_CMAKE_OPTIONS
+      -DIFX_MTB_MAILBOX=ON
+      -DIFX_CM55_NS_PRESENT=ON
+    )
+  endif()
+
 endif()
 
 if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
@@ -57,10 +65,14 @@ if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "armclang")
 endif()
 
 # Add sections
-if(CONFIG_CPU_CORTEX_M33)
-  zephyr_linker_sources(SECTIONS shared_mem_sec.ld)
+if(CONFIG_CPU_CORTEX_M55)
+zephyr_linker_sources(SECTIONS shared_mem_m55.ld)
 else()
-  zephyr_linker_sources(SECTIONS shared_mem.ld)
+  if(CONFIG_TRUSTED_EXECUTION_SECURE)
+    zephyr_linker_sources(SECTIONS shared_mem_sec.ld)
+  else()
+    zephyr_linker_sources(SECTIONS shared_mem_m33.ld)
+  endif()
 endif()
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/soc/infineon/edge/pse84/linker_exclude_syslib.ld CACHE INTERNAL "")

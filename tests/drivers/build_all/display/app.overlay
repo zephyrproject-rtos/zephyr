@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	test {
@@ -24,6 +25,13 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_pwm: pwm@deadba11 {
+			compatible = "vnd,pwm";
+			reg = <0xdeadba11 0x1000>;
+			#pwm-cells = <3>;
 			status = "okay";
 		};
 
@@ -457,6 +465,28 @@
 						  ARGB8888(40,  85,  180, 255) /* 0x05 = Blue */
 						  ARGB8888(60,  140, 75,  255) /* 0x06 = Green */>;
 				};
+			};
+
+			test_mipi_dbi_hx8353e: hx8353e@26 {
+				compatible = "himax,hx8353e";
+				reg = <0x26>;
+				mipi-max-frequency = <15000000>;
+				mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
+				width = <132>;
+				height = <128>;
+				rotation = <90>;
+				backlight-gpios = <&test_gpio 0 0>;
+			};
+
+			test_mipi_dbi_hx8353e_pwm: hx8353e@27 {
+				compatible = "himax,hx8353e";
+				reg = <0x27>;
+				mipi-max-frequency = <15000000>;
+				mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
+				width = <132>;
+				height = <128>;
+				rotation = <0>;
+				pwms = <&test_pwm 0 PWM_MSEC(20) 0>;
 			};
 		};
 
