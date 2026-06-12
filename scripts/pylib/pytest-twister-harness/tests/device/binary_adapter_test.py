@@ -194,3 +194,108 @@ def test_if_unit_binary_adapter_get_command_returns_proper_string(tmp_path: Path
     device.generate_command()
     assert isinstance(device.command, list)
     assert device.command == [str(tmp_path / 'testbinary')]
+
+
+@mock.patch('subprocess.Popen')
+def test_set_extra_args_appends_to_command_on_launch(patched_popen, device: NativeSimulatorAdapter) -> None:
+    """``set_extra_args`` should append its args to the auto-generated
+    command at launch time, taking precedence over ``extra_test_args``."""
+    device.device_config.extra_test_args = '--static-arg'
+    device.set_extra_args(['--per-test', '--eeprom=/tmp/eep.bin'])
+    device.launch()
+    binary = str(device.device_config.build_dir / 'zephyr' / 'zephyr.exe')
+    assert device.command == [binary, '--per-test', '--eeprom=/tmp/eep.bin']
+    device.close()
+
+
+@mock.patch('subprocess.Popen')
+def test_set_extra_args_overrides_take_effect_across_launches(
+    patched_popen, device: NativeSimulatorAdapter
+) -> None:
+    """A second ``set_extra_args`` call must replace the first — without
+    this, the cached ``command`` from a previous launch would leak."""
+    device.set_extra_args(['--first'])
+    device.launch()
+    device.close()
+    device.set_extra_args(['--second'])
+    device.launch()
+    binary = str(device.device_config.build_dir / 'zephyr' / 'zephyr.exe')
+    assert device.command == [binary, '--second']
+    device.close()
+
+
+@mock.patch('subprocess.Popen')
+def test_extra_test_args_static_fallback_preserved(
+    patched_popen, device: NativeSimulatorAdapter
+) -> None:
+    """When no per-test override is set, the static ``extra_test_args``
+    CLI value flows through unchanged — backward compat for callers that
+    have never used ``set_extra_args``."""
+    device.device_config.extra_test_args = '--a --b=c'
+    device.launch()
+    binary = str(device.device_config.build_dir / 'zephyr' / 'zephyr.exe')
+    assert device.command == [binary, '--a', '--b=c']
+    device.close()
+
+
+@mock.patch('subprocess.Popen')
+def test_set_extra_args_none_preserves_static(
+    patched_popen, device: NativeSimulatorAdapter
+) -> None:
+    """``set_extra_args(None)`` means 'no override' — the static
+    ``extra_test_args`` flows through unchanged. The ``dut`` fixture
+    relies on this when the user-overridable ``device_extra_args``
+    fixture returns its default of ``None``."""
+    device.device_config.extra_test_args = '--static-arg'
+    device.set_extra_args(None)
+    device.launch()
+    binary = str(device.device_config.build_dir / 'zephyr' / 'zephyr.exe')
+    assert device.command == [binary, '--static-arg']
+    device.close()
+
+
+@mock.patch('subprocess.Popen')
+def test_set_extra_args_empty_list_suppresses_static(
+    patched_popen, device: NativeSimulatorAdapter
+) -> None:
+    """``set_extra_args([])`` is an *explicit* empty override — distinct
+    from ``None``. It launches the binary with no extra args at all,
+    suppressing the static value. Lets a test opt out of CLI-supplied
+    ``--extra-test-args`` for that one launch."""
+    device.device_config.extra_test_args = '--static-arg'
+    device.set_extra_args([])
+    device.launch()
+    binary = str(device.device_config.build_dir / 'zephyr' / 'zephyr.exe')
+    assert device.command == [binary]
+    device.close()
+
+
+@mock.patch('subprocess.Popen')
+def test_set_extra_args_can_be_cleared_back_to_static(
+    patched_popen, device: NativeSimulatorAdapter
+) -> None:
+    """A test that opts into the override must be able to opt back out
+    by passing ``None`` — what makes the dut fixture's 'always call
+    set_extra_args' pattern safe across mixed test suites."""
+    device.device_config.extra_test_args = '--static-arg'
+    device.set_extra_args(['--per-test'])
+    device.launch()
+    device.close()
+    device.set_extra_args(None)  # clear the override
+    device.launch()
+    binary = str(device.device_config.build_dir / 'zephyr' / 'zephyr.exe')
+    assert device.command == [binary, '--static-arg']
+    device.close()
+
+
+@mock.patch('subprocess.Popen')
+def test_externally_set_command_still_honored(
+    patched_popen, device: NativeSimulatorAdapter
+) -> None:
+    """Tests that manipulate ``device.command`` directly (pre-existing
+    pattern used by this very file's fixtures) must still work — only
+    explicit ``set_extra_args`` calls trigger regeneration."""
+    device.command = ['python3', '/path/to/script.py']
+    device.launch()
+    assert device.command == ['python3', '/path/to/script.py']
+    device.close()
