@@ -33,9 +33,33 @@ class DeviceAdapter(abc.ABC):
         self.base_timeout: float = device_config.base_timeout
         self._reader_started: threading.Event = threading.Event()
         self.command: list[str] = []
+        self._extra_args_override: list[str] | None = None
 
         self.connections: list[DeviceConnection] = create_device_connections(device_config)
         self._log_files: list[Path] = [conn.log_path for conn in self.connections]
+
+    def set_extra_args(self, args: list[str] | None) -> None:
+        """Override extra args for the *next* launch.
+
+        A list (including an empty list) takes precedence over the
+        static ``DeviceConfig.extra_test_args`` populated from the
+        ``--extra-test-args`` CLI flag. The empty-list case is
+        meaningful: it launches the binary with no extra args at all,
+        explicitly suppressing the static value.
+
+        Pass ``None`` to clear the override and fall back to
+        ``extra_test_args`` — the default state, preserving existing
+        ``--extra-test-args`` behavior for callers that don't opt in.
+
+        Unlike ``extra_test_args`` (a single space-split string), this
+        list is consumed as-is — individual entries may contain spaces.
+
+        Calling this invalidates any cached command from a previous
+        launch, so a follow-up ``launch()`` will regenerate honoring
+        the new state.
+        """
+        self._extra_args_override = args
+        self.command = []
 
     @property
     def env(self) -> dict[str, str]:
@@ -62,9 +86,17 @@ class DeviceAdapter(abc.ABC):
         """
         self.close()
 
+        # Externally-set ``self.command`` (set directly by the caller,
+        # e.g. test fixtures) is honored as-is. Otherwise generate the
+        # command and append the per-test override (None means "no
+        # override"; an explicit list — even empty — replaces the
+        # static fallback). ``set_extra_args`` clears ``self.command``
+        # so any change in override forces regeneration.
         if not self.command:
             self.generate_command()
-            if self.device_config.extra_test_args:
+            if self._extra_args_override is not None:
+                self.command.extend(self._extra_args_override)
+            elif self.device_config.extra_test_args:
                 self.command.extend(self.device_config.extra_test_args.split())
 
         self.start_reader()

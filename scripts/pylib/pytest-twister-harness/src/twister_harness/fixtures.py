@@ -90,9 +90,39 @@ def unlaunched_duts(
 
 
 @pytest.fixture(scope=determine_scope)
-def dut(unlaunched_dut: DeviceAdapter) -> Generator[DeviceAdapter, None, None]:
+def device_extra_args() -> list[str] | None:
+    """Extra args appended to the device launch command.
+
+    Override in a downstream ``conftest.py`` (or via a same-scope
+    ``@pytest.fixture`` in a test module) to inject runtime spawn args
+    without round-tripping through the static ``--extra-test-args`` CLI
+    flag. The returned list is consumed as-is, so individual entries
+    may contain spaces (unlike ``--extra-test-args`` which is split on
+    whitespace).
+
+    Shares scope with ``dut`` (function-scoped by default, configurable
+    via ``--dut-scope``), so each launched device sees the override
+    appropriate to its scope.
+
+    Return values:
+
+    - ``None`` (the default) — no override; the static
+      ``--extra-test-args`` CLI value is used unchanged.
+    - ``[]`` — explicit empty override; launches the binary with no
+      extra args, suppressing the static value.
+    - ``["--foo", ...]`` — replaces the static value with this list.
+    """
+    return None
+
+
+@pytest.fixture(scope=determine_scope)
+def dut(
+    unlaunched_dut: DeviceAdapter,
+    device_extra_args: list[str] | None,
+) -> Generator[DeviceAdapter, None, None]:
     """Return launched device - with run application."""
     dut = unlaunched_dut
+    dut.set_extra_args(device_extra_args)
     dut.launch()
     yield dut
 
