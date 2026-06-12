@@ -196,7 +196,8 @@ int ocpp_authorize(ocpp_session_handle_t hndl, char *idtag,
 	struct ocpp_wamp_rpc_msg rmsg = {0};
 	ocpp_msg_fp_t fn;
 
-	if (idtag == NULL || status == NULL || !ocpp_session_is_valid(sh)) {
+	if (idtag == NULL || status == NULL || !ocpp_session_is_valid(sh) ||
+	    strlen(idtag) > CISTR20) {
 		return -EINVAL;
 	}
 
