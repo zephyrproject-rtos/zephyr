@@ -133,6 +133,14 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	bool pkt_is_ptp;
 #endif
 
+	/* Report ENETDOWN immediately when the controller is stopped (e.g.
+	 * link is down) instead of letting the caller waste work and then
+	 * fail later at the tx_sem with EAGAIN.
+	 */
+	if (!atomic_get(&data->running)) {
+		return -ENETDOWN;
+	}
+
 	/* Only allow send of the maximum normal packet size */
 	while (fragment != NULL) {
 		frags_count++;
@@ -156,6 +164,18 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 	LOG_DBG("Took driver TX sem %p by thread %s", &data->tx.tx_sem,
 						      k_thread_name_get(k_current_get()));
+
+	/* Re-check the gate now that we hold the sem: .stop may have flipped
+	 * running to 0 between the early-return above and our sem_take, and
+	 * a stale acquire-read of running could still let us through. .stop
+	 * blocks on this sem before touching tx.pkt, so giving the sem back
+	 * here both bails this submission cleanly and lets .stop's bounded
+	 * sem_take return immediately instead of waiting out its timeout.
+	 */
+	if (!atomic_get(&data->running)) {
+		k_sem_give(&data->tx.tx_sem);
+		return -ENETDOWN;
+	}
 
 	net_pkt_ref(pkt);
 	data->tx.pkt = pkt;
@@ -227,14 +247,29 @@ static void tx_dma_done(const struct device *dev)
 	struct nxp_enet_qos_mac_data *data = dev->data;
 	struct nxp_enet_qos_tx_data *tx_data = &data->tx;
 	struct net_pkt *pkt = tx_data->pkt;
-	struct net_buf *fragment = pkt->frags;
+	struct net_buf *fragment;
 
 	if (pkt == NULL) {
-		LOG_WRN("%s TX DMA done on nonexistent packet?", dev->name);
+		/* Two legitimate ways to reach here:
+		 *   - .stop already snapshot-and-nulled tx.pkt under irq_lock
+		 *     and a late TI ISR (e.g. one latched in the NVIC just
+		 *     before .stop's mask write) is now dispatching.
+		 *   - FTQ self-completion latched a TI for the abandoned frame
+		 *     that the NVIC then redelivers after .start re-unmasks.
+		 * Both cases are expected with the current stop sequence, so
+		 * only warn when we are still nominally running.
+		 */
+		if (atomic_get(&data->running)) {
+			LOG_WRN("%s TX DMA done on nonexistent packet?", dev->name);
+		} else {
+			LOG_DBG("%s TX DMA done on nonexistent packet (post-stop race)",
+				dev->name);
+		}
 		goto skip;
-	} else {
-		LOG_DBG("TX DMA completed on packet %p", pkt);
 	}
+
+	fragment = pkt->frags;
+	LOG_DBG("TX DMA completed on packet %p", pkt);
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
 	volatile union nxp_enet_qos_tx_desc *last_desc =
@@ -258,6 +293,11 @@ static void tx_dma_done(const struct device *dev)
 		fragment = fragment->frags;
 	}
 	net_pkt_unref(pkt);
+
+	/* Mark the slot empty so .stop can tell a true in-flight TX from
+	 * one that already completed.
+	 */
+	tx_data->pkt = NULL;
 
 	eth_stats_update_pkts_tx(data->iface);
 
@@ -326,6 +366,15 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 	struct net_buf *buf;
 	size_t pkt_len;
 	size_t processed_len;
+	int ret;
+
+	/* The work item may have been submitted by the IRQ just before .stop
+	 * masked the DMA/MAC interrupts and called k_work_cancel_sync(). Skip
+	 * the descriptor walk in that narrow race window.
+	 */
+	if (!atomic_get(&data->running)) {
+		return;
+	}
 
 	LOG_DBG("RX work start: %p", work);
 
@@ -443,8 +492,9 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			}
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET_QOS */
 
-			if (net_recv_data(data->iface, pkt)) {
-				LOG_WRN("RECV failed on pkt %p", pkt);
+			ret = net_recv_data(data->iface, pkt);
+			if (ret < 0) {
+				LOG_WRN("RECV failed on pkt %p (err=%d)", pkt, ret);
 				/* Error during processing, we continue with new buffer */
 				net_pkt_unref(pkt);
 				eth_stats_update_errors_rx(data->iface);
@@ -678,8 +728,11 @@ static inline void enet_qos_start(enet_qos_t *base)
 	base->DMA_CH[0].DMA_CHX_TX_CTRL |=
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, ST, 0b1);
 
-	/* Enable interrupts */
-	base->DMA_CH[0].DMA_CHX_INT_EN =
+	/* Enable interrupts. Use |= so bits owned by sibling blocks
+	 * (PTP, LPI, PMT, ...) in MAC_INTERRUPT_ENABLE are preserved; this
+	 * mirrors the &= ~(...) mask in eth_nxp_enet_qos_stop().
+	 */
+	base->DMA_CH[0].DMA_CHX_INT_EN |=
 		/* Normal interrupts (includes tx, rx) */
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, NIE, 0b1) |
 		/* Transmit interrupt */
@@ -692,7 +745,7 @@ static inline void enet_qos_start(enet_qos_t *base)
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RBUE, 0b1) |
 		/* Receive stopped */
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RSE, 0b1);
-	base->MAC_INTERRUPT_ENABLE =
+	base->MAC_INTERRUPT_ENABLE |=
 		/* Receive and Transmit IRQs */
 		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, TXSTSIE, 0b1) |
 		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, RXSTSIE, 0b1);
@@ -701,6 +754,332 @@ static inline void enet_qos_start(enet_qos_t *base)
 	base->MAC_CONFIGURATION |=
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
+}
+
+/*
+ * Poll the MTL Tx Queue 0 debug register until the queue is empty and the
+ * read-controller is idle. Bounded so a stuck queue (e.g. transmit clock
+ * gated by a link drop) cannot hang the system. Returns -EBUSY on timeout.
+ *
+ * k_busy_wait() is intentional: empirically the loop exits on the first
+ * iteration in every observed scenario, so common-case latency is ~10 us.
+ * k_usleep(10) would require a tick/timer round-trip whose own overhead
+ * exceeds that. Yielding from inside .stop is also moot because .stop is
+ * itself the system-workqueue work item.
+ */
+static inline int enet_qos_wait_tx_idle(enet_qos_t *base)
+{
+	/* Bounded busy-wait, ~10 ms total at 10 us granularity. */
+	const int max_iter = 1000;
+	uint32_t dbg;
+
+	for (int i = 0; i < max_iter; i++) {
+		dbg = base->MTL_QUEUE[0].MTL_TXQX_DBG;
+		/* Idle when neither TRCSTS reports an active read (==0b01) nor
+		 * TXQSTS reports a non-empty queue.
+		 */
+		if ((ENET_QOS_REG_GET(MTL_QUEUE_MTL_TXQX_DBG, TRCSTS, dbg) != 0x1U) &&
+		    (ENET_QOS_REG_GET(MTL_QUEUE_MTL_TXQX_DBG, TXQSTS, dbg) == 0U)) {
+			return 0;
+		}
+		k_busy_wait(10);
+	}
+
+	return -EBUSY;
+}
+
+/* Same shape as enet_qos_wait_tx_idle(), but for the MTL Rx Queue 0.
+ * Call with SR=1 so the RX DMA can still drain the MTL RX FIFO into
+ * descriptors; once both PRXQ and RXQSTS read zero the queue is empty
+ * and SR can safely be cleared.
+ */
+static inline int enet_qos_wait_rx_idle(enet_qos_t *base)
+{
+	const int max_iter = 1000;
+	uint32_t dbg;
+
+	for (int i = 0; i < max_iter; i++) {
+		dbg = base->MTL_QUEUE[0].MTL_RXQX_DBG;
+		if ((ENET_QOS_REG_GET(MTL_QUEUE_MTL_RXQX_DBG, PRXQ, dbg) == 0U) &&
+		    (ENET_QOS_REG_GET(MTL_QUEUE_MTL_RXQX_DBG, RXQSTS, dbg) == 0U)) {
+			return 0;
+		}
+		k_busy_wait(10);
+	}
+
+	return -EBUSY;
+}
+
+/*
+ * Re-arm the RX descriptor ring so the DMA can use every slot again.
+ *
+ * Called on every .start (including the one issued from init via
+ * enet_qos_rx_desc_init). Does not touch reserved_bufs[] -- those buffers
+ * are reserved once at init and reused for the lifetime of the device so
+ * that .start does not have to take from the RX buf pool and cannot fail.
+ *
+ * Only DMA_CHX_RXDESC_TAIL_PTR is written here. RX_CONTROL2 (ring length)
+ * and RX_CTRL.RBSZ are programmed once in enet_qos_rx_desc_init() and
+ * survive across SR=0->1 transitions. RXDESC_LIST_ADDR is also persistent,
+ * but eth_nxp_enet_qos_start() re-writes it to force the DMA's current-
+ * descriptor pointer back to descriptor 0 in sync with next_desc_idx=0;
+ * see the comment there.
+ */
+static inline void enet_qos_rx_desc_rearm(enet_qos_t *base, struct nxp_enet_qos_rx_data *rx)
+{
+	/* Discard the write-back state from the previous run and hand every
+	 * descriptor back to the DMA, pointing at its reserved buffer.
+	 */
+	memset((void *)rx->descriptors, 0, sizeof(union nxp_enet_qos_rx_desc) * NUM_RX_BUFDESC);
+	for (int i = 0; i < NUM_RX_BUFDESC; i++) {
+		rx->descriptors[i].read.buf1_addr = (uint32_t)rx->reserved_bufs[i]->data;
+		rx->descriptors[i].read.control = rx_desc_refresh_flags;
+	}
+
+	/* Drain any stale RBU latched from the previous run so the next RX
+	 * work invocation does not see a phantom underrun.
+	 */
+	atomic_set(&rx->rbu_flag, 0);
+
+	/* Order the descriptor stores (Normal memory, write buffer) before
+	 * the Device-memory MMIO write that re-arms the DMA tail pointer.
+	 * Without this barrier the DMA could fetch a descriptor before the
+	 * CPU has drained the buf1_addr / control stores to memory.
+	 */
+	__DSB();
+
+	/* DMA restarts from RXDESC_LIST_ADDR (descriptor 0) on SR=0->1, so
+	 * match it in software and re-point the tail past the end so the DMA
+	 * does not suspend immediately.
+	 */
+	rx->next_desc_idx = 0U;
+	base->DMA_CH[0].DMA_CHX_RXDESC_TAIL_PTR = ENET_QOS_REG_PREP(
+		DMA_CH_DMA_CHX_RXDESC_TAIL_PTR, RDTP,
+		ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&rx->descriptors[NUM_RX_BUFDESC]));
+}
+
+/*
+ * Bring the ENET QoS MAC out of stopped state: re-arm the RX descriptor
+ * ring, enable the DMA and MAC TX/RX paths and unmask interrupts.
+ * No-op if already running, so it is safe to invoke on every link-up
+ * notification from the PHY.
+ */
+static int eth_nxp_enet_qos_start(const struct device *dev, struct net_if *iface)
+{
+	const struct nxp_enet_qos_mac_config *config = dev->config;
+	struct nxp_enet_qos_mac_data *data = dev->data;
+	struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
+	enet_qos_t *base = module_cfg->base;
+
+	ARG_UNUSED(iface);
+
+	if (atomic_get(&data->running)) {
+		return 0;
+	}
+
+	/* Re-arm the RX descriptor ring (no allocation: the buffers reserved
+	 * at init are still owned by the driver). The static MAC RX registers
+	 * programmed in enet_qos_rx_desc_init() survive across SR=0->1.
+	 */
+	enet_qos_rx_desc_rearm(base, &data->rx);
+
+	/* Re-program RXDESC_LIST_ADDR so the DMA's current-descriptor
+	 * pointer snaps back to descriptor 0 on SR=0->1, matching
+	 * next_desc_idx=0 in software. Without this, after a stop/start
+	 * cycle the DMA can resume from wherever it was pre-stop while the
+	 * software walk restarts from 0, leading to periodic RX stalls
+	 * (visible as RBU bursts and ping latency spikes) until the two
+	 * cursors meet again. Safe to write here because SR=0 at this point
+	 * (.stop cleared it, and .start has not set it yet).
+	 * Skipped at the init-path call to enet_qos_rx_desc_rearm() because
+	 * enet_qos_rx_desc_init() has just written this register.
+	 */
+	base->DMA_CH[0].DMA_CHX_RXDESC_LIST_ADDR =
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RXDESC_LIST_ADDR, RDESLA,
+			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&data->rx.descriptors[0]));
+
+	enet_qos_start(base);
+
+	/* Restore the TX semaphore. .stop reset it; .start re-establishes
+	 * the "one TX slot available" initial state. No thread is actually
+	 * blocked on the sem because the TX path uses K_NO_WAIT.
+	 */
+	k_sem_reset(&data->tx.tx_sem);
+	k_sem_give(&data->tx.tx_sem);
+
+	atomic_set(&data->running, 1);
+
+	return 0;
+}
+
+/*
+ * Bring the ENET QoS MAC into stopped state.
+ *
+ * Sequence (numbered comments inline below):
+ *   1. Close the submission gate (running = 0) so new TXes are rejected.
+ *   2. Take tx_sem (bounded wait). Serializes against any in-flight
+ *      eth_nxp_enet_qos_tx() that may have observed a stale running=1
+ *      after step 1: either it bails at its post-take recheck (and gives
+ *      the sem back so our take returns immediately), or its frame
+ *      completes naturally (tx_dma_done gives the sem), or we time out
+ *      and step 10 cleans up. Holding the sem afterwards excludes any
+ *      new submitter from racing with the rest of the sequence.
+ *   3. Stop the TX DMA (clear ST). RX DMA stays running so MTL RX can
+ *      drain in step 5.
+ *   4. Disable MAC RX+TX paths in a single RMW on MAC_CONFIGURATION.
+ *   5. Wait, with bounded timeout, for the MTL RX queue to drain into
+ *      descriptors now that no new frames can enter it (RE=0).
+ *   6. Stop the RX DMA (clear SR).
+ *   7. Force-flush any frame still queued in the MTL TX FIFO (FTQ),
+ *      then bounded-wait for MTL TX idle. We rely on FTQ here as the
+ *      single TX-quiesce mechanism rather than the RM-suggested
+ *      "TE=0 -> wait TX idle -> ST=0" pattern, because FTQ also
+ *      recovers from a stuck MAC (no TX clock on link-down) where the
+ *      RM sequence would hang.
+ *   8. Mask only the DMA/MAC interrupt bits .start enables, then DSB.
+ *   9. Cancel pending RX work (with self-deadlock guard for the case
+ *      where .stop is ever called from the RX work thread itself).
+ *  10. Snapshot-and-null data->tx.pkt under irq_lock, then release the
+ *      packet outside the lock. irq_lock is required because step 8
+ *      only stops *new* peripheral IRQ assertions: a TI latched in the
+ *      NVIC just before the mask write, or one produced by step 7's
+ *      FTQ self-completion, can still dispatch tx_dma_done() between
+ *      step 8 and here. Without the snapshot, that ISR and step 10
+ *      would race on tx.pkt and double-unref it.
+ *
+ * No-op if already stopped.
+ *
+ * Latency note: this function may block for up to ~110 ms in the worst
+ * case (100 ms sem wait + 10 ms MTL idle waits). L2 invokes .stop on
+ * the system workqueue, so the system WQ is stalled for that long when
+ * stopping a stuck link.
+ */
+static int eth_nxp_enet_qos_stop(const struct device *dev, struct net_if *iface)
+{
+	const struct nxp_enet_qos_mac_config *config = dev->config;
+	struct nxp_enet_qos_mac_data *data = dev->data;
+	struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
+	enet_qos_t *base = module_cfg->base;
+
+	ARG_UNUSED(iface);
+
+	if (!atomic_get(&data->running)) {
+		return 0;
+	}
+
+	/* Step 1: close the submission gate. */
+	atomic_set(&data->running, 0);
+
+	/* Step 2: serialize against any in-flight submitter. Return value
+	 * is intentionally ignored: on success we hold the sem and have
+	 * exclusive ownership; on timeout we proceed and step 10 cleans up.
+	 * Either way .start will reset+give the sem.
+	 */
+	(void)k_sem_take(&data->tx.tx_sem, K_MSEC(100));
+
+	/* Step 3: stop the TX DMA. */
+	base->DMA_CH[0].DMA_CHX_TX_CTRL &=
+		~ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, ST, 0b1);
+
+	/* Step 4: disable the MAC TX+RX paths in a single RMW.
+	 * MAC_CONFIGURATION lives behind a MAC-clock-domain synchronizer:
+	 * a write is captured into the MAC clock domain, and on some EQOS
+	 * revisions a second back-to-back write can be dropped or coalesced
+	 * until the previous one has finished crossing. Fusing RE and TE
+	 * into one write sidesteps that hazard. (Pure bus ordering between
+	 * Device-memory accesses to the same address is already guaranteed
+	 * by the architecture; this is specifically about the clock-domain
+	 * synchronizer.)
+	 */
+	base->MAC_CONFIGURATION &=
+		~(ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1) |
+		  ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1));
+
+	/* Step 5: wait for the MTL RX queue to drain into descriptors.
+	 * RE=0 (step 4) blocks new frames from entering MTL RX; SR=1 still
+	 * lets the RX DMA consume what is already there. Bounded so a
+	 * misbehaving block cannot hang us.
+	 */
+	if (enet_qos_wait_rx_idle(base) != 0) {
+		LOG_WRN("%s .stop: MTL RX did not drain within ~10 ms", dev->name);
+	}
+
+	/* Step 6: stop the RX DMA. */
+	base->DMA_CH[0].DMA_CHX_RX_CTRL &=
+		~ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, SR, 0b1);
+
+	/* Step 7: force-flush the MTL TX queue. FTQ self-clears. This is
+	 * unconditional rather than fallback-only because it is the cheapest
+	 * way to quiesce a TX path that may be stuck waiting for a TX clock
+	 * that will never come (link down, half-duplex collision storm, ...).
+	 */
+	base->MTL_QUEUE[0].MTL_TXQX_OP_MODE |=
+		ENET_QOS_REG_PREP(MTL_QUEUE_MTL_TXQX_OP_MODE, FTQ, 0b1);
+	if (enet_qos_wait_tx_idle(base) != 0) {
+		LOG_WRN("%s .stop: MTL TX did not drain within ~10 ms after FTQ",
+			dev->name);
+	}
+
+	/* Step 8: mask only the bits enet_qos_start() sets, so unrelated
+	 * bits owned by sibling blocks (PTP, LPI, PMT, ...) are left alone.
+	 */
+	base->DMA_CH[0].DMA_CHX_INT_EN &= ~(
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, NIE, 0b1) |
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, TIE, 0b1) |
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RIE, 0b1) |
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, AIE, 0b1) |
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RBUE, 0b1) |
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_INT_EN, RSE, 0b1));
+	base->MAC_INTERRUPT_ENABLE &= ~(
+		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, TXSTSIE, 0b1) |
+		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, RXSTSIE, 0b1));
+
+	/* Ensure the MMIO writes that masked the interrupts have committed
+	 * before we touch shared state the ISR would otherwise see.
+	 */
+	__DSB();
+
+	/* Step 9: cancel pending RX work. Waiting would self-deadlock if
+	 * .stop were ever called from the RX work thread itself, so fall
+	 * back to a non-blocking cancel in that case (today the only caller
+	 * is L2 on the system workqueue).
+	 */
+	if (k_current_get() != k_work_queue_thread_get(&rx_work_queue)) {
+		struct k_work_sync sync;
+
+		(void)k_work_cancel_sync(&data->rx.rx_work, &sync);
+	} else {
+		(void)k_work_cancel(&data->rx.rx_work);
+	}
+
+	/* Step 10: release the in-flight TX packet, if any. Step 8 only
+	 * stops *new* peripheral IRQ assertions: a TI bit latched in the
+	 * NVIC just before the mask write, or one produced by step 7's FTQ
+	 * self-completion, can still dispatch tx_dma_done() after step 8.
+	 * Snapshot-and-null tx.pkt under irq_lock so the late ISR and this
+	 * cleanup cannot both unref the same packet.
+	 */
+	{
+		struct net_pkt *pkt;
+		unsigned int key = irq_lock();
+
+		pkt = data->tx.pkt;
+		data->tx.pkt = NULL;
+		irq_unlock(key);
+
+		if (pkt != NULL) {
+			struct net_buf *fragment = pkt->frags;
+
+			while (fragment != NULL) {
+				net_pkt_frag_unref(fragment);
+				fragment = fragment->frags;
+			}
+			net_pkt_unref(pkt);
+			eth_stats_update_errors_tx(data->iface);
+		}
+	}
+
+	return 0;
 }
 
 static inline void enet_qos_tx_desc_init(enet_qos_t *base, struct nxp_enet_qos_tx_data *tx)
@@ -723,9 +1102,11 @@ static inline int enet_qos_rx_desc_init(enet_qos_t *base, struct nxp_enet_qos_rx
 {
 	struct net_buf *buf;
 
-	memset((void *)rx->descriptors, 0, sizeof(union nxp_enet_qos_rx_desc) * NUM_RX_BUFDESC);
-
-	/* Here we reserve an RX buffer for each of the DMA descriptors. */
+	/* One-time RX buffer reservation: one net_buf per descriptor, held
+	 * for the lifetime of the device. Subsequent .start cycles reuse
+	 * these via enet_qos_rx_desc_rearm(); the RX work handler keeps the
+	 * pool topped up by swapping consumed buffers for fresh ones.
+	 */
 	for (int i = 0; i < NUM_RX_BUFDESC; i++) {
 		buf = net_pkt_get_reserve_rx_data(CONFIG_NET_BUF_DATA_SIZE, K_NO_WAIT);
 		if (buf == NULL) {
@@ -733,28 +1114,22 @@ static inline int enet_qos_rx_desc_init(enet_qos_t *base, struct nxp_enet_qos_rx
 			return -ENOMEM;
 		}
 		rx->reserved_bufs[i] = buf;
-		rx->descriptors[i].read.buf1_addr = (uint32_t)buf->data;
-		rx->descriptors[i].read.control |= rx_desc_refresh_flags;
 	}
 
-	/* Set next descriptor where data will be received */
-	rx->next_desc_idx = 0U;
-
-	/* Set up RX descriptors on channel 0 */
+	/* One-time MAC RX programming. RXDESC_LIST_ADDR, ring length and
+	 * buffer size are preserved across stop/start cycles.
+	 */
 	base->DMA_CH[0].DMA_CHX_RXDESC_LIST_ADDR =
-		/* Start of tx descriptors buffer */
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RXDESC_LIST_ADDR, RDESLA,
 			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&rx->descriptors[0]));
-	base->DMA_CH[0].DMA_CHX_RXDESC_TAIL_PTR =
-		/* When the DMA reaches the tail pointer, it suspends. Set to last descriptor */
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RXDESC_TAIL_PTR, RDTP,
-			ENET_QOS_ALIGN_ADDR_SHIFT((uint32_t)&rx->descriptors[NUM_RX_BUFDESC]));
 	base->DMA_CH[0].DMA_CHX_RX_CONTROL2 =
 		/* Ring length == Buffer size. Register is this value minus one. */
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CONTROL2, RDRL, NUM_RX_BUFDESC - 1);
 	base->DMA_CH[0].DMA_CHX_RX_CTRL |=
 		/* Set DMA receive buffer size. The low 2 bits are not entered to this field. */
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, RBSZ_13_Y, ENET_QOS_RX_BUFFER_SIZE >> 2);
+
+	enet_qos_rx_desc_rearm(base, rx);
 
 	return 0;
 }
@@ -850,17 +1225,24 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 		return ret;
 	}
 
-	/* Clearly, start the cogs to motion. */
-	enet_qos_start(base);
-
-	/* The tx sem is taken during ethernet send function,
-	 * and given when DMA transmission is finished. Ie, send calls will be blocked
-	 * until the DMA is available again. This is therefore a simple but naive implementation.
+	/* tx_sem is taken during the ethernet send function and given when DMA
+	 * transmission is finished. Send calls are therefore blocked until the
+	 * DMA is available again -- a simple but naive single-outstanding-TX
+	 * implementation. Initialised to 0 because we leave the controller
+	 * stopped at init; .start raises it to 1 once the data path is up.
 	 */
-	k_sem_init(&data->tx.tx_sem, 1, 1);
+	k_sem_init(&data->tx.tx_sem, 0, 1);
 
 	/* Work upon a reception of a packet to a buffer */
 	k_work_init(&data->rx.rx_work, eth_nxp_enet_qos_rx);
+
+	/* Leave the controller stopped at init to match iface_init's
+	 * net_if_carrier_off(): the data path is only enabled when L2 calls
+	 * .start on the link-up edge from the PHY callback. RX buf reservation
+	 * has already happened in enet_qos_rx_desc_init() above so it does not
+	 * depend on link state.
+	 */
+	atomic_set(&data->running, 0);
 
 	/* This driver cannot work without interrupts. */
 	if (config->irq_config_func) {
@@ -940,6 +1322,8 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init = eth_nxp_enet_qos_iface_init,
+	.start = eth_nxp_enet_qos_start,
+	.stop = eth_nxp_enet_qos_stop,
 	.send = eth_nxp_enet_qos_tx,
 	.get_capabilities = eth_nxp_enet_qos_get_capabilities,
 	.get_phy = eth_nxp_enet_qos_get_phy,

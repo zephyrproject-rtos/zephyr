@@ -1,6 +1,6 @@
 /* NXP ENET QOS Header
  *
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,4 +133,6 @@ struct nxp_enet_qos_mac_data {
 	struct net_eth_addr mac_addr;
 	struct nxp_enet_qos_tx_data tx;
 	struct nxp_enet_qos_rx_data rx;
+	/* Tracks whether DMA/MAC TX/RX are currently enabled. */
+	atomic_t running;
 };
