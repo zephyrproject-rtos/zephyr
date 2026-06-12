@@ -141,6 +141,7 @@ int spi_nrfx_spim_common_deinit(const struct device *dev);
 	}
 
 #define SPI_NRFX_COMMON_DEFINE(inst, _data)							\
+	NRF_DT_CHECK_NODE_HAS_REQUIRED_MEMORY_REGIONS(DT_DRV_INST(inst));			\
 	SPI_NRFX_COMMON_IRQ_DEFINE(inst, _data)							\
 	SPI_NRFX_COMMON_RAM_BUF_DEFINE(inst);							\
 	SPI_NRFX_COMMON_CS_GPIOS_DEFINE(inst);							\
