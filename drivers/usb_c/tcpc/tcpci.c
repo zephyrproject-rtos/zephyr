@@ -644,26 +644,34 @@ int tcpci_tcpm_set_cc_polarity(const struct i2c_dt_spec *bus, enum tc_cc_polarit
 		(polarity == TC_POLARITY_CC1) ? 0 : TCPC_REG_TCPC_CTRL_PLUG_ORIENTATION);
 }
 
-int tcpci_tcpm_get_status_register(const struct i2c_dt_spec *bus, enum tcpc_status_reg reg,
-				   uint16_t *status)
+int tcpci_tcpm_get_alert_status(const struct i2c_dt_spec *bus, uint16_t *status)
 {
-	switch (reg) {
-	case TCPC_ALERT_STATUS:
-		return tcpci_read_reg16(bus, TCPC_REG_ALERT, status);
-	case TCPC_CC_STATUS:
-		return tcpci_read_reg8(bus, TCPC_REG_CC_STATUS, (uint8_t *)status);
-	case TCPC_POWER_STATUS:
-		return tcpci_read_reg8(bus, TCPC_REG_POWER_STATUS, (uint8_t *)status);
-	case TCPC_FAULT_STATUS:
-		return tcpci_read_reg8(bus, TCPC_REG_FAULT_STATUS, (uint8_t *)status);
-	case TCPC_EXTENDED_STATUS:
-		return tcpci_read_reg8(bus, TCPC_REG_EXT_STATUS, (uint8_t *)status);
-	case TCPC_EXTENDED_ALERT_STATUS:
-		return tcpci_read_reg8(bus, TCPC_REG_ALERT_EXT, (uint8_t *)status);
-	default:
-		LOG_ERR("Not a TCPCI-specified reg address");
-		return -EINVAL;
-	}
+	return tcpci_read_reg16(bus, TCPC_REG_ALERT, status);
+}
+
+int tcpci_tcpm_get_cc_status(const struct i2c_dt_spec *bus, uint8_t *status)
+{
+	return tcpci_read_reg8(bus, TCPC_REG_CC_STATUS, status);
+}
+
+int tcpci_tcpm_get_power_status(const struct i2c_dt_spec *bus, uint8_t *status)
+{
+	return tcpci_read_reg8(bus, TCPC_REG_POWER_STATUS, status);
+}
+
+int tcpci_tcpm_get_fault_status(const struct i2c_dt_spec *bus, uint8_t *status)
+{
+	return tcpci_read_reg8(bus, TCPC_REG_FAULT_STATUS, status);
+}
+
+int tcpci_tcpm_get_extended_status(const struct i2c_dt_spec *bus, uint8_t *status)
+{
+	return tcpci_read_reg8(bus, TCPC_REG_EXT_STATUS, status);
+}
+
+int tcpci_tcpm_get_extended_alert_status(const struct i2c_dt_spec *bus, uint8_t *status)
+{
+	return tcpci_read_reg8(bus, TCPC_REG_ALERT_EXT, status);
 }
 
 int tcpci_tcpm_clear_status_register(const struct i2c_dt_spec *bus, enum tcpc_status_reg reg,
@@ -727,10 +735,10 @@ int tcpci_tcpm_set_src_ctrl(const struct i2c_dt_spec *bus, bool enable)
 
 int tcpci_tcpm_get_snk_ctrl(const struct i2c_dt_spec *bus, bool *sinking)
 {
-	uint16_t reg;
+	uint8_t reg;
 	int ret;
 
-	ret = tcpci_tcpm_get_status_register(bus, TCPC_REG_POWER_STATUS, &reg);
+	ret = tcpci_tcpm_get_power_status(bus, &reg);
 	if (ret == 0) {
 		*sinking = reg & TCPC_REG_POWER_STATUS_SINKING_VBUS;
 	}
@@ -740,10 +748,10 @@ int tcpci_tcpm_get_snk_ctrl(const struct i2c_dt_spec *bus, bool *sinking)
 
 int tcpci_tcpm_get_src_ctrl(const struct i2c_dt_spec *bus, bool *sourcing)
 {
-	uint16_t reg;
+	uint8_t reg;
 	int ret;
 
-	ret = tcpci_tcpm_get_status_register(bus, TCPC_REG_POWER_STATUS, &reg);
+	ret = tcpci_tcpm_get_power_status(bus, &reg);
 	if (ret == 0) {
 		*sourcing = reg & TCPC_REG_POWER_STATUS_SOURCING_VBUS;
 	}

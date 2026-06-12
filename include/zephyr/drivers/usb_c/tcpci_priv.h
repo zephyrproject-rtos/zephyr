@@ -236,15 +236,58 @@ int tcpci_tcpm_set_cc_polarity(const struct i2c_dt_spec *bus, enum tc_cc_polarit
 int tcpci_tcpm_set_vconn(const struct i2c_dt_spec *bus, bool enable);
 
 /**
- * @brief Function to get the status of a specific TCPCI status register.
+ * @brief Function to get the status of the TCPCI alert register.
  *
  * @param bus I2C bus
- * @param reg Enum representing the status register to be read
  * @param status Pointer to the variable where the status will be stored
  * @return int Status of I2C operation, 0 in case of success
  */
-int tcpci_tcpm_get_status_register(const struct i2c_dt_spec *bus, enum tcpc_status_reg reg,
-				   uint16_t *status);
+int tcpci_tcpm_get_alert_status(const struct i2c_dt_spec *bus, uint16_t *status);
+
+/**
+ * @brief Function to get the status of the TCPCI CC status register.
+ *
+ * @param bus I2C bus
+ * @param status Pointer to the variable where the status will be stored
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_get_cc_status(const struct i2c_dt_spec *bus, uint8_t *status);
+
+/**
+ * @brief Function to get the status of the TCPCI power status register.
+ *
+ * @param bus I2C bus
+ * @param status Pointer to the variable where the status will be stored
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_get_power_status(const struct i2c_dt_spec *bus, uint8_t *status);
+
+/**
+ * @brief Function to get the status of the TCPCI fault status register.
+ *
+ * @param bus I2C bus
+ * @param status Pointer to the variable where the status will be stored
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_get_fault_status(const struct i2c_dt_spec *bus, uint8_t *status);
+
+/**
+ * @brief Function to get the status of the TCPCI extended status register.
+ *
+ * @param bus I2C bus
+ * @param status Pointer to the variable where the status will be stored
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_get_extended_status(const struct i2c_dt_spec *bus, uint8_t *status);
+
+/**
+ * @brief Function to get the status of the TCPCI extended alert status register.
+ *
+ * @param bus I2C bus
+ * @param status Pointer to the variable where the status will be stored
+ * @return int Status of I2C operation, 0 in case of success
+ */
+int tcpci_tcpm_get_extended_alert_status(const struct i2c_dt_spec *bus, uint8_t *status);
 
 /**
  * @brief Function to clear specific bits in a TCPCI status register.
