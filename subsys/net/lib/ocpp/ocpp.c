@@ -771,16 +771,17 @@ int ocpp_init(struct ocpp_cp_info *cpi,
 	val.ival = cpi->num_of_con;
 	ocpp_set_cfg_val(CFG_NO_OF_CONNECTORS, &val);
 
-	ret = ocpp_upstream_init(ctx, csi);
-	if (ret < 0) {
-		LOG_ERR("ocpp upstream init fail %d", ret);
-		goto out;
-	}
-
 	/* free after success of bootnotification to CS */
 	cp = (struct ocpp_cp_info *)k_calloc(1, sizeof(struct ocpp_cp_info));
 	if (cp == NULL) {
 		ret = -ENOMEM;
+		goto out;
+	}
+
+	ret = ocpp_upstream_init(ctx, csi);
+	if (ret < 0) {
+		LOG_ERR("ocpp upstream init fail %d", ret);
+		k_free(cp);
 		goto out;
 	}
 
@@ -796,6 +797,7 @@ int ocpp_init(struct ocpp_cp_info *cpi,
 	return 0;
 
 out:
+	gctx = NULL;
 	k_free(ctx);
 	return ret;
 }
