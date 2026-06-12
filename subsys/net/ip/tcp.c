@@ -4635,7 +4635,7 @@ uint16_t net_tcp_get_supported_mss(const struct tcp *conn)
 
 #if defined(CONFIG_NET_TEST)
 struct testing_user_data {
-	struct net_sockaddr remote;
+	struct net_sockaddr_storage remote;
 	uint16_t mtu;
 };
 
@@ -4643,9 +4643,9 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 {
 	struct testing_user_data *data = user_data;
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && data->remote.sa_family == NET_AF_INET6 &&
+	if (IS_ENABLED(CONFIG_NET_IPV6) && data->remote.ss_family == NET_AF_INET6 &&
 	    net_ipv6_addr_cmp(&conn->dst.sin6.sin6_addr,
-			      &net_sin6(&data->remote)->sin6_addr)) {
+			      &net_sin6(net_sad(&data->remote))->sin6_addr)) {
 		if (data->mtu > 0) {
 			/* Set it only once */
 			return;
@@ -4657,9 +4657,9 @@ static void testing_find_conn(struct tcp *conn, void *user_data)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && data->remote.sa_family == NET_AF_INET &&
+	if (IS_ENABLED(CONFIG_NET_IPV4) && data->remote.ss_family == NET_AF_INET &&
 	    net_ipv4_addr_cmp(&conn->dst.sin.sin_addr,
-			      &net_sin(&data->remote)->sin_addr)) {
+			      &net_sin(net_sad(&data->remote))->sin_addr)) {
 		if (data->mtu > 0) {
 			/* Set it only once */
 			return;
