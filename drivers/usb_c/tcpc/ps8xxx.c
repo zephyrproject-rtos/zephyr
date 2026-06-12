@@ -487,7 +487,7 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 		return;
 	}
 
-	tcpci_tcpm_get_status_register(&cfg->bus, TCPC_ALERT_STATUS, &alert_reg);
+	tcpci_tcpm_get_alert_status(&cfg->bus, &alert_reg);
 
 	while (alert_reg != 0) {
 		enum tcpc_alert alert_type = tcpci_alert_reg_to_enum(alert_reg);
@@ -499,8 +499,7 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 		} else if (alert_type == TCPC_ALERT_FAULT_STATUS) {
 			uint8_t fault;
 
-			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_FAULT_STATUS,
-						       (uint16_t *)&fault);
+			tcpci_tcpm_get_fault_status(&cfg->bus, &fault);
 			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_FAULT_STATUS,
 							 (uint16_t)fault);
 
@@ -508,8 +507,7 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 		} else if (alert_type == TCPC_ALERT_EXTENDED_STATUS) {
 			uint8_t ext_status;
 
-			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_EXTENDED_STATUS,
-						       (uint16_t *)&ext_status);
+			tcpci_tcpm_get_extended_status(&cfg->bus, &ext_status);
 			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_EXTENDED_STATUS,
 							 (uint16_t)ext_status);
 
@@ -518,15 +516,13 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 		} else if (alert_type == TCPC_ALERT_POWER_STATUS) {
 			uint8_t pwr_status;
 
-			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_POWER_STATUS,
-						       (uint16_t *)&pwr_status);
+			tcpci_tcpm_get_power_status(&cfg->bus, &pwr_status);
 
 			LOG_DBG("PS8xxx power status: %02x", pwr_status);
 		} else if (alert_type == TCPC_ALERT_EXTENDED) {
 			uint8_t alert_status;
 
-			tcpci_tcpm_get_status_register(&cfg->bus, TCPC_EXTENDED_ALERT_STATUS,
-						       (uint16_t *)&alert_status);
+			tcpci_tcpm_get_extended_alert_status(&cfg->bus, &alert_status);
 			tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_EXTENDED_ALERT_STATUS,
 							 (uint16_t)alert_status);
 
@@ -546,7 +542,7 @@ void ps8xxx_alert_work_cb(struct k_work *work)
 	}
 
 	tcpci_tcpm_clear_status_register(&cfg->bus, TCPC_ALERT_STATUS, clear_flags);
-	tcpci_tcpm_get_status_register(&cfg->bus, TCPC_ALERT_STATUS, &alert_reg);
+	tcpci_tcpm_get_alert_status(&cfg->bus, &alert_reg);
 
 	if (alert_reg != 0) {
 		k_work_submit(work);
@@ -564,7 +560,7 @@ void ps8xxx_init_work_cb(struct k_work *work)
 	int ret;
 
 	LOG_INF("Initializing PS8xxx chip: %s", data->dev->name);
-	ret = tcpci_tcpm_get_status_register(&cfg->bus, TCPC_POWER_STATUS, (uint16_t *)&power_reg);
+	ret = tcpci_tcpm_get_power_status(&cfg->bus, &power_reg);
 	if (ret != 0 || (power_reg & TCPC_REG_POWER_STATUS_UNINIT)) {
 		data->init_retries++;
 
