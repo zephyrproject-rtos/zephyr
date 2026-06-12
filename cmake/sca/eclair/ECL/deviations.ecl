@@ -64,6 +64,13 @@ directive is disapplied."
 -config=MC3A2.D4.6,reports+={disapplied,"any()"}
 -doc_end
 
+-doc_begin="The variadic helpers va_start() and va_end() are, by the definition
+of <stdarg.h>, always used as a correctly nested pair within a single function;
+the language guarantees the calling sequence. Reports that flag this pairing as
+a resource-operation sequence are therefore deliberate and safe."
+-config=MC3A2.D4.13,reports+={deliberate, "any_area(any_loc(any_exp(macro(^va_(start|end)$))))"}
+-doc_end
+
 -doc_begin="Files that are intended to be included more than once do not need to
 conform to the directive."
 -config=MC3A2.D4.10,reports+={safe, "first_area(text(^/\\* This file is intended to be included multiple times\\. \\*/$, begin-4))"}
