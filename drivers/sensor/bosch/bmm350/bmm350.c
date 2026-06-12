@@ -276,6 +276,9 @@ static int set_powermode(const struct device *dev, enum bmm350_power_modes power
 
 		/* Set PMU command configuration to desired power mode */
 		ret = bmm350_reg_write(dev, BMM350_REG_PMU_CMD, reg_data);
+		if (ret != 0) {
+			return ret;
+		}
 		k_usleep(delay_us);
 	}
 
@@ -1091,6 +1094,10 @@ static int bmm350_init_chip(const struct device *dev)
 
 	/* Set the command in the command register */
 	ret = bmm350_reg_write(dev, BMM350_REG_CMD, soft_reset);
+	if (ret != 0) {
+		LOG_ERR("failed to issue soft reset");
+		goto err_poweroff;
+	}
 	k_usleep(BMM350_SOFT_RESET_DELAY);
 	/* Read chip ID (can only be read in sleep mode)*/
 	if (bmm350_reg_read(dev, BMM350_REG_CHIP_ID, &chip_id[0], sizeof(chip_id)) < 0) {
