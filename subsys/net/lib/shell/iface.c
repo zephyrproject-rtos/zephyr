@@ -31,7 +31,7 @@ LOG_MODULE_DECLARE(net_shell);
 #define UNICAST_MASK GENMASK(7, 1)
 #define LOCAL_BIT BIT(1)
 
-#if defined(CONFIG_NET_L2_ETHERNET) && defined(CONFIG_NET_NATIVE)
+#if defined(CONFIG_NET_L2_ETHERNET)
 struct ethernet_capabilities {
 	enum ethernet_hw_caps capability;
 	const char * const description;
