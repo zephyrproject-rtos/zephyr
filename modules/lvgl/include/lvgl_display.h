@@ -8,6 +8,7 @@
 #ifndef ZEPHYR_MODULES_LVGL_DISPLAY_H_
 #define ZEPHYR_MODULES_LVGL_DISPLAY_H_
 
+#include <zephyr/kernel.h>
 #include <zephyr/drivers/display.h>
 #include <lvgl.h>
 
@@ -18,10 +19,10 @@ extern "C" {
 struct lvgl_disp_data {
 	const struct device *display_dev;
 	struct display_capabilities cap;
-	bool blanking_on;
-#ifdef CONFIG_LV_Z_FLUSH_THREAD
 	struct k_sem flush_complete;
-#endif
+	uint32_t vsync_event_handle;
+	bool vsync_event_registered;
+	bool blanking_on;
 };
 
 struct lvgl_display_flush {
@@ -38,6 +39,7 @@ void lvgl_flush_cb_16bit(lv_display_t *display, const lv_area_t *area, uint8_t *
 void lvgl_flush_cb_24bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
 void lvgl_flush_cb_32bit(lv_display_t *display, const lv_area_t *area, uint8_t *px_map);
 
+void lvgl_wait_cb(lv_display_t *display);
 void lvgl_rounder_cb_mono(lv_event_t *e);
 void lvgl_set_mono_conversion_buffer(uint8_t *buffer, uint32_t buffer_size);
 

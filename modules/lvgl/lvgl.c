@@ -79,9 +79,9 @@ static uint8_t *mono_vtile_buf_p[DT_ZEPHYR_DISPLAYS_COUNT] = {NULL};
 /* prevent unaligned memory accesses. */
 
 #if defined(CONFIG_LV_Z_VDB_CUSTOM_SECTION)
-#define LV_BUF_SECTION	Z_GENERIC_SECTION(.lvgl_buf)
+#define LV_BUF_SECTION Z_GENERIC_SECTION(.lvgl_buf)
 #elif defined(CONFIG_LV_Z_VDB_ZEPHYR_REGION)
-#define LV_BUF_SECTION	Z_GENERIC_SECTION(CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME)
+#define LV_BUF_SECTION Z_GENERIC_SECTION(CONFIG_LV_Z_VDB_ZEPHYR_REGION_NAME)
 #else
 #define LV_BUF_SECTION
 #endif
@@ -308,6 +308,16 @@ lv_result_t lv_mem_test_core(void)
 	return LV_RESULT_OK;
 }
 
+static enum display_event_result display_vsync_event(const struct device *dev, uint32_t evt,
+						     const struct display_event_data *data,
+						     void *user_data)
+{
+	struct lvgl_disp_data *p_disp_data = user_data;
+
+	k_sem_give(&p_disp_data->flush_complete);
+	return DISPLAY_EVENT_RESULT_CONTINUE;
+}
+
 #define ENUMERATE_DISPLAY_DEVS(n) display_dev[n] = DEVICE_DT_GET(DISPLAY_NODE(n));
 
 int lvgl_init(void)
@@ -360,6 +370,29 @@ int lvgl_init(void)
 			LOG_ERR("Display %d not supported.", i);
 			return -ENOTSUP;
 		}
+
+		p_disp_data->vsync_event_registered =
+			display_register_event_cb(display_dev[i], display_vsync_event, p_disp_data,
+						  DISPLAY_EVENT_VSYNC, true,
+						  &p_disp_data->vsync_event_handle) == 0;
+
+#ifdef CONFIG_LV_Z_FLUSH_THREAD
+		/* with a flush thread, we always set a flush wait callback
+		 * to avoid having LVGL spin and take CPU time waiting for the
+		 * flush to be over
+		 */
+		k_sem_init(&p_disp_data->flush_complete, 0, 1);
+		lv_display_set_flush_wait_cb(lv_displays[i], lvgl_wait_cb);
+#else
+		/* without a flush thread, we only need to set a flush wait callback
+		 * if we successfully registered a vsync event
+		 * else we just assume that `display_write` handles it for us
+		 */
+		if (p_disp_data->vsync_event_registered) {
+			k_sem_init(&p_disp_data->flush_complete, 0, 1);
+			lv_display_set_flush_wait_cb(lv_displays[i], lvgl_wait_cb);
+		}
+#endif
 
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
 		lvgl_allocate_rendering_buffers_static(lv_displays[i], i);

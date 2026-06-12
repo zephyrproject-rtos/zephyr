@@ -19,14 +19,18 @@ void lvgl_flush_thread_entry(void *arg1, void *arg2, void *arg3)
 {
 	struct lvgl_display_flush flush;
 	struct lvgl_disp_data *data;
+	bool is_last;
 
 	while (1) {
 		k_msgq_get(&flush_queue, &flush, K_FOREVER);
 		data = (struct lvgl_disp_data *)lv_display_get_user_data(flush.display);
 
-		flush.desc.frame_incomplete = !lv_display_flush_is_last(flush.display);
+		is_last = lv_display_flush_is_last(flush.display);
+		flush.desc.frame_incomplete = !is_last;
 		display_write(data->display_dev, flush.x, flush.y, &flush.desc, flush.buf);
-
+		if (is_last && data->vsync_event_registered) {
+			continue;
+		}
 		k_sem_give(&data->flush_complete);
 	}
 }
@@ -34,13 +38,14 @@ void lvgl_flush_thread_entry(void *arg1, void *arg2, void *arg3)
 K_THREAD_DEFINE(lvgl_flush_thread, CONFIG_LV_Z_FLUSH_THREAD_STACK_SIZE, lvgl_flush_thread_entry,
 		NULL, NULL, NULL, CONFIG_LV_Z_FLUSH_THREAD_PRIORITY, 0, 0);
 
-static void lvgl_wait_cb(lv_display_t *display)
+#endif /* CONFIG_LV_Z_FLUSH_THREAD */
+
+void lvgl_wait_cb(lv_display_t *display)
 {
 	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
+
 	k_sem_take(&data->flush_complete, K_FOREVER);
 }
-
-#endif /* CONFIG_LV_Z_FLUSH_THREAD */
 
 #ifdef CONFIG_LV_Z_USE_ROUNDER_CB
 void lvgl_rounder_cb(lv_event_t *e)
@@ -67,11 +72,6 @@ int set_lvgl_rendering_cb(lv_display_t *display)
 {
 	int err = 0;
 	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
-
-#ifdef CONFIG_LV_Z_FLUSH_THREAD
-	k_sem_init(&data->flush_complete, 0, 1);
-	lv_display_set_flush_wait_cb(display, lvgl_wait_cb);
-#endif
 
 	switch (data->cap.current_pixel_format) {
 	case PIXEL_FORMAT_ARGB_8888:
@@ -138,8 +138,15 @@ void lvgl_flush_display(struct lvgl_display_flush *request)
 	k_yield();
 #else
 	/* Write directly to the display */
-	request->desc.frame_incomplete = !lv_display_flush_is_last(request->display);
+	bool is_last = lv_display_flush_is_last(request->display);
+
+	request->desc.frame_incomplete = !is_last;
 	display_write(data->display_dev, request->x, request->y, &request->desc, request->buf);
+	if (is_last && data->vsync_event_registered) {
+		/* wait for vsync event to unlock lvgl*/
+		k_sem_reset(&data->flush_complete);
+		return;
+	}
 	lv_display_flush_ready(request->display);
 #endif
 }
