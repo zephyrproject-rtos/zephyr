@@ -12,6 +12,7 @@ config CRC_DRIVER_NXP
 	select CRC_DRIVER_HAS_CRC16_REFLECT
 	select CRC_DRIVER_HAS_CRC32_C
 	select CRC_DRIVER_HAS_CRC32_IEEE
+	select CRC_DRIVER_HAS_CRC32_MPEG2
 	help
 	  Enable the driver implementation for NXP microcontrollers
 
@@ -22,5 +23,6 @@ config CRC_DRIVER_NXP_LPC
 	select CRC_DRIVER_HAS_CRC16
 	select CRC_DRIVER_HAS_CRC16_CCITT
 	select CRC_DRIVER_HAS_CRC32_IEEE
+	select CRC_DRIVER_HAS_CRC32_MPEG2
 	help
 	  Enable the LPC CRC driver implementation for NXP microcontrollers
