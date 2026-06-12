@@ -257,5 +257,17 @@
 			compatible = "leds-group-multicolor";
 			leds = <&test_pwm_led0>, <&test_pwm_led1>;
 		};
+
+		native_linux_leds {
+			compatible = "zephyr,native-linux-leds";
+
+			led_0 {
+				path = "dev::a";
+			};
+
+			led_1 {
+				path = "dev::b";
+			};
+		};
 	};
 };
