@@ -61,6 +61,14 @@
 			status = "disabled";
 		};
 
+		wdg: watchdog@40002800 {
+			compatible = "realtek,ameba-watchdog";
+			reg = <0x40002800 0x4>;
+			interrupts = <1 0>;
+			early-int-cnt-ms = <500>;
+			status = "disabled";
+		};
+
 		dma: dma@4002a000 {
 			compatible = "realtek,ameba-gdma";
 			reg = <0x4002a000 0x3c0>;
