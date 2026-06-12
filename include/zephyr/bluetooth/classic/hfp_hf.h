@@ -509,6 +509,35 @@ struct bt_hfp_hf_cb {
 	 *  @param call Current call information.
 	 */
 	void (*query_call)(struct bt_hfp_hf *hf, struct bt_hfp_hf_current_call *call);
+
+	/** @brief Unsolicited command callback
+	 *
+	 * If this callback is provided it will be called whenever an
+	 * unsolicited result that is not handled by the built-in parser is
+	 * received from the AG. The raw, unparsed response is passed through
+	 * in @p buf.
+	 *
+	 * The buffer is positioned at the start of the response (command name,
+	 * with the leading '+' stripped) and spans the remaining received data.
+	 *
+	 * @note @p buf is owned by the HFP HF stack and is only valid for the
+	 *       duration of this callback. Never modify the reference count,
+	 *       free it, or store the pointer for later use.
+	 *
+	 * @param hf HFP HF object.
+	 * @param buf Raw unsolicited response buffer.
+	 */
+	void (*unsolicited)(struct bt_hfp_hf *hf, struct net_buf *buf);
+
+	/** @brief Custom AT command complete callback
+	 *
+	 * If this callback is provided it will be called when a custom AT
+	 * command sent via @ref bt_hfp_hf_send_at finishes.
+	 *
+	 * @param hf HFP HF object.
+	 * @param err Result of the command transaction. 0 means success.
+	 */
+	void (*custom_at_complete)(struct bt_hfp_hf *hf, int err);
 };
 
 /** @brief Register HFP HF profile
@@ -1056,6 +1085,29 @@ int bt_hfp_hf_battery(struct bt_hfp_hf *hf, uint8_t level);
  */
 int bt_hfp_hf_query_list_of_current_calls(struct bt_hfp_hf *hf);
 
+/** @brief Send custom AT command
+ *
+ *  Send a custom AT command to the AG.
+ *  The command shall include the leading `AT`/`AT+` prefix and shall
+ *  not contain `\r` or `\n`.
+ *  Trailing `\r`/`\n` characters are stripped before processing.
+ *
+ *  Built-in HFP commands (e.g. AT+BRSF, AT+CLCC) are rejected when
+ *  @kconfig{CONFIG_BT_HFP_HF_AT_CMD_CHECK} is enabled.
+ *
+ *  Responses are delivered through @ref bt_hfp_hf_cb::unsolicited and
+ *  @ref bt_hfp_hf_cb::custom_at_complete callbacks.
+ *
+ *  @param hf  HFP HF object.
+ *  @param cmd AT command string.
+ *
+ *  @retval 0 on success.
+ *  @retval -ENOTCONN if @p hf is NULL.
+ *  @retval -EINVAL if @p cmd is NULL or malformed.
+ *  @retval -EBUSY if a custom AT command is already pending.
+ *  @retval -ENOMEM if no buffer is available.
+ */
+int bt_hfp_hf_send_at(struct bt_hfp_hf *hf, const char *cmd);
 #ifdef __cplusplus
 }
 #endif
