@@ -3493,13 +3493,20 @@ const struct net_in6_addr *net_if_ipv6_select_src_addr_hint(struct net_if *dst_i
 	}
 
 	if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast_link(dst)) {
-		struct net_if_ipv6_prefix *prefix;
 		uint8_t prefix_len = 128;
 
+#if defined(CONFIG_NET_NATIVE_IPV6)
+		struct net_if_ipv6_prefix *prefix;
+
+		/* On-link prefix bookkeeping is only maintained by the native
+		 * IPv6 stack; offloaded interfaces fall back to a full-length
+		 * match.
+		 */
 		prefix = net_if_ipv6_prefix_get(dst_iface, dst);
 		if (prefix) {
 			prefix_len = prefix->len;
 		}
+#endif /* CONFIG_NET_NATIVE_IPV6 */
 
 		/* If caller has supplied interface, then use that */
 		if (dst_iface) {
