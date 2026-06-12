@@ -298,6 +298,20 @@ terms of K_MEM_VIRT_RAM_START and is covered as well."
 -doc_end
 
 #
+# Series 12.
+#
+
+-doc_begin="Rule 12.1 is advisory and is not adopted by the project. The reports
+are dominated by well-known precedence between the comparison/equality operators
+and the logical && / || operators (e.g. 'a && b == c'), where adding parentheses
+brings no clarity. The genuinely error-prone precedence cases (such as a bitwise
+operator mixed with a comparison, or an assignment used as a condition) are
+already diagnosed by the compiler through -Wparentheses with -Werror, so
+disapplying the rule does not lose coverage of the dangerous cases."
+-config=MC3A2.R12.1,reports+={disapplied,"any()"}
+-doc_end
+
+#
 # Series 13
 #
 
