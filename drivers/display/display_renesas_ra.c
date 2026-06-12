@@ -28,16 +28,23 @@ struct display_ra_config {
 	void (*irq_configure)(void);
 };
 
+struct display_ra_event_entry {
+	display_event_cb_t cb;
+	void *user_data;
+	uint32_t handle;
+};
+
 struct display_ra_data {
 	glcdc_instance_ctrl_t display_ctrl;
 	display_cfg_t display_fsp_cfg;
 	const uint8_t *pend_buf;
 	const uint8_t *front_buf;
+	struct display_ra_event_entry event_cbs[CONFIG_RENESAS_RA_DISPLAY_EVENT_CB_MAX];
+	uint32_t next_handle;
 	uint8_t pixel_size;
 	enum display_pixel_format current_pixel_format;
 	uint8_t *frame_buffer;
 	uint32_t frame_buffer_len;
-	struct k_sem frame_buf_sem;
 };
 
 extern void glcdc_line_detect_isr(void);
@@ -52,13 +59,23 @@ static void renesas_ra_callback_adapter(display_callback_args_t *p_args)
 {
 	const struct device *dev = p_args->p_context;
 	struct display_ra_data *data = dev->data;
+	struct display_event_data event_data = {.timestamp = k_cycle_get_64()};
 
-	if (p_args->event == DISPLAY_EVENT_LINE_DETECTION) {
-		if (data->front_buf != data->pend_buf) {
-			data->front_buf = data->pend_buf;
+	if (p_args->event != DISPLAY_EVENT_LINE_DETECTION) {
+		return;
+	}
+
+	for (size_t i = 0; i < CONFIG_RENESAS_RA_DISPLAY_EVENT_CB_MAX; ++i) {
+		if (data->event_cbs[i].handle == 0) {
+			/* not registererd*/
+			continue;
 		}
 
-		k_sem_give(&data->frame_buf_sem);
+		if (data->event_cbs[i].cb(dev, DISPLAY_EVENT_VSYNC, &event_data,
+					  data->event_cbs[i].user_data) ==
+		    DISPLAY_EVENT_RESULT_HANDLED) {
+			return;
+		}
 	}
 }
 
@@ -68,7 +85,6 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 	struct display_ra_data *data = dev->data;
 	const struct display_ra_config *config = dev->config;
 	const uint8_t *l_pend_buf = NULL;
-	bool vsync_wait = false;
 	fsp_err_t err;
 
 	if (desc->pitch < desc->width) {
@@ -118,8 +134,6 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 #endif /* CONFIG_RENESAS_RA_GLCDC_FB_NUM == 0 */
 	}
 
-	k_sem_reset(&data->frame_buf_sem);
-
 	if (data->front_buf != l_pend_buf) {
 		data->pend_buf = l_pend_buf;
 
@@ -129,8 +143,6 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 			LOG_ERR("GLCDC buffer change failed");
 			return -EIO;
 		}
-
-		vsync_wait = true;
 	}
 
 	if (data->display_ctrl.state != DISPLAY_STATE_DISPLAYING) {
@@ -139,12 +151,6 @@ static int ra_display_write(const struct device *dev, const uint16_t x, const ui
 			LOG_ERR("GLCDC start failed");
 			return -EIO;
 		}
-
-		vsync_wait = true;
-	}
-
-	if (vsync_wait) {
-		k_sem_take(&data->frame_buf_sem, K_FOREVER);
 	}
 
 	return 0;
@@ -350,6 +356,51 @@ static void *ra_display_get_framebuffer(const struct device *dev)
 	return (void *)data->front_buf;
 }
 
+static int ra_register_event_cb(const struct device *dev, display_event_cb_t cb, void *user_data,
+				uint32_t event_mask, bool in_isr, uint32_t *out_reg_handle)
+{
+	struct display_ra_data *data = dev->data;
+
+	if (!cb || !out_reg_handle) {
+		return -EINVAL;
+	}
+
+	/* we only support vsync events in an isr context*/
+	if (!in_isr || (event_mask & DISPLAY_EVENT_VSYNC) == 0) {
+		return -ENOTSUP;
+	}
+
+	for (size_t i = 0; i < CONFIG_RENESAS_RA_DISPLAY_EVENT_CB_MAX; ++i) {
+		if (data->event_cbs[i].handle > 0) {
+			/* slot already active */
+			continue;
+		}
+		const uint32_t handle = ++data->next_handle;
+		data->event_cbs[i] = (struct display_ra_event_entry){
+			.cb = cb,
+			.user_data = user_data,
+			.handle = handle,
+		};
+		*out_reg_handle = handle;
+		return 0;
+	}
+
+	return -ENOMEM;
+}
+
+static int ra_unregister_event_cb(const struct device *dev, uint32_t reg_handle)
+{
+
+	struct display_ra_data *data = dev->data;
+	for (size_t i = 0; i < CONFIG_RENESAS_RA_DISPLAY_EVENT_CB_MAX; ++i) {
+		if (data->event_cbs[i].handle == reg_handle) {
+			data->event_cbs[i].handle = 0;
+			return 0;
+		}
+	}
+	return -EPERM;
+}
+
 static DEVICE_API(display, display_api) = {
 	.blanking_on = ra_display_blanking_on,
 	.blanking_off = ra_display_blanking_off,
@@ -360,6 +411,8 @@ static DEVICE_API(display, display_api) = {
 	.set_brightness = ra_display_set_brightness,
 	.set_contrast = ra_display_set_contrast,
 	.get_framebuffer = ra_display_get_framebuffer,
+	.register_event_cb = ra_register_event_cb,
+	.unregister_event_cb = ra_unregister_event_cb,
 };
 
 static int display_init(const struct device *dev)
@@ -376,7 +429,8 @@ static int display_init(const struct device *dev)
 		}
 	}
 
-	k_sem_init(&data->frame_buf_sem, 0, 1);
+	memset(data->event_cbs, 0, sizeof(data->event_cbs));
+	data->next_handle = 0;
 
 	err = clock_control_on(config->clock_dev,
 			       (clock_control_subsys_t)&config->clock_glcdc_subsys);
