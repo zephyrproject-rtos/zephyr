@@ -123,6 +123,20 @@ definition is compiled-out or optimized-out by the compiler)"
 -config=MC3A2.R8.6,reports+={deliberate, "first_area(^.*has no definition$)"}
 -doc_end
 
+-doc_begin="The enumeration constant CBPRINTF_PACKAGE_ARG_TYPE_MAX is the
+implicit upper bound of the argument-type enumeration, and the following
+constant CBPRINTF_PACKAGE_ARG_TYPE_COUNT is deliberately defined to the same
+value as a readable alias. The shared value is intentional."
+-config=MC3A2.R8.12,reports+={deliberate,"any_area(entity(kind(enum_constant)&&name(CBPRINTF_PACKAGE_ARG_TYPE_MAX)))"}
+-doc_end
+
+-doc_begin="The POSIX headers declare functions with the signatures mandated by
+the POSIX specification, which use the 'restrict' qualifier. Keeping the
+qualifier is required for API conformance, so its use in these headers is
+deliberate."
+-config=MC3A2.R8.14,reports+={deliberate, "any_area(any_loc(file(^.*include/zephyr/posix/.*$)))"}
+-doc_end
+
 #
 # Series 9.
 #
@@ -369,6 +383,14 @@ safe."
 -config=MC3A2.R16.6,switch_clauses+={deliberate, "default(0)"}
 -doc_end
 
+-doc_begin="The switch statements in the fnmatch helpers rangematch() and
+fnmatchx() are controlled by the return value of rangematch()/rangematch_cc(),
+which can only be one of RANGE_ERROR, RANGE_MATCH or RANGE_NOMATCH. All of
+these values have a case label, so a default clause would be unreachable; its
+omission is deliberate."
+-config=MC3A2.R16.4,reports+={deliberate, "any_area(context(ancestor_or_self(name(rangematch||fnmatchx)&&kind(function))))"}
+-doc_end
+
 #
 # Series 17.
 #
@@ -389,6 +411,13 @@ safe."
 #
 # Series 18.
 #
+
+-doc_begin="z_rb_foreach_next() indexes the iterator stack f->stack[], which
+points to a fixed-size iter_stack[Z_MAX_RBTREE_DEPTH] array. The index f->top is
+bounded by the depth of the tree, which never exceeds Z_MAX_RBTREE_DEPTH, so the
+access stays within the array even though the static analyser cannot prove it."
+-config=MC3A2.R18.1,reports+={safe, "any_area(context(ancestor_or_self(name(z_rb_foreach_next)&&kind(function))))"}
+-doc_end
 
 -doc_begin="Iterating over an iterable linker section compares the iterator
 against the section boundary markers (the generated _<type>_list_start and
