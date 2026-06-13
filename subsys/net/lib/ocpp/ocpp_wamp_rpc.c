@@ -10,6 +10,18 @@ LOG_MODULE_REGISTER(ocpp_rpc, CONFIG_OCPP_LOG_LEVEL);
 
 #define	OCPP_WAMP_RPC_TYPE_IDX 1
 
+int ocpp_ws_send(struct ocpp_info *ctx, int sock, const uint8_t *msg,
+		 size_t len, enum websocket_opcode opcode, int32_t timeout)
+{
+	int ret;
+
+	k_mutex_lock(&ctx->ui.ws_txlock, K_FOREVER);
+	ret = websocket_send_msg(sock, msg, len, opcode, true, true, timeout);
+	k_mutex_unlock(&ctx->ui.ws_txlock);
+
+	return ret;
+}
+
 int ocpp_send_to_server(struct ocpp_wamp_rpc_msg *snd, k_timeout_t timeout)
 {
 	int ret;
@@ -51,9 +63,8 @@ int ocpp_send_to_server(struct ocpp_wamp_rpc_msg *snd, k_timeout_t timeout)
 		goto unlock;
 	}
 
-	ret = websocket_send_msg(sock, snd->msg, snd->msg_len,
-				 WEBSOCKET_OPCODE_DATA_TEXT, true,
-				 true, 5000); /* fixme timeout */
+	ret = ocpp_ws_send(ctx, sock, snd->msg, snd->msg_len,
+			   WEBSOCKET_OPCODE_DATA_TEXT, 5000); /* fixme timeout */
 	if (ret < 0) {
 		goto unlock;
 	}
