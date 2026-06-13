@@ -32,13 +32,13 @@ Supported variants
    * - ``b_m2mem_pack1_mb1927_33ba``
      - MB1927-33BA
      - MX25LM51245GXDI00
-     - Octal DTR
+     - Octal STR
      - 512 Mbit
      - 3.3 V
    * - ``b_m2mem_pack1_mb1927_18ba``
      - MB1927-18BA
      - MX25UW25645GXDI00
-     - Octal DTR
+     - Octal STR
      - 256 Mbit
      - 1.8 V
    * - ``b_m2mem_pack1_mb1928_33la``
@@ -53,12 +53,6 @@ Supported variants
      - Quad STR
      - 16 Mbit
      - 3.3 V
-   * - ``b_m2mem_pack1_mb1928_18la``
-     - MB1928-18LA
-     - M95P32-IXMNT/E
-     - Quad STR
-     - 32 Mbit
-     - 1.8 V
 
 Requirements
 ************
@@ -91,12 +85,13 @@ To build one of the other modules, replace the shield name with one of:
 - ``b_m2mem_pack1_mb1927_18ba``
 - ``b_m2mem_pack1_mb1928_33la``
 - ``b_m2mem_pack1_mb1928_33lb``
-- ``b_m2mem_pack1_mb1928_18la``
 
-The serial NOR device can be explored with the
-:zephyr:code-sample:`flash-shell` sample. The common identification EEPROM is
-described in Devicetree and can be accessed by applications through the
-:ref:`EEPROM driver API <eeprom_api>`.
+Regardless of the selected variant, the shield exposes its serial NOR device
+under the stable ``m2mem_flash`` Devicetree label, so an application or sample
+can target it consistently (for example through a ``flash0`` alias). The device
+can be explored with the :zephyr:code-sample:`flash-shell` sample. The common
+identification EEPROM is described in Devicetree and can be accessed by
+applications through the :ref:`EEPROM driver API <eeprom_api>`.
 
 References
 **********
