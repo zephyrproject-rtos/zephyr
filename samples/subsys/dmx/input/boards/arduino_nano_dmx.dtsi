@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Generic overlay for Arduino Nano-format boards.
+ *
+ * Uses the arduino_serial UART (header pins D0/D1) for DMX,
+ * with DE on D5 and RE on D6.
+ */
+
+#include <zephyr/dt-bindings/dmx/dmx.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/arduino-nano-header.h>
+
+&arduino_serial {
+	status = "okay";
+	current-speed = <DMX_BAUD_RATE>;
+
+	dmx0: dmx {
+		compatible = "zephyr,dmx-uart-isr";
+		de-gpios = <&arduino_header ARDUINO_NANO_HEADER_D5 GPIO_ACTIVE_HIGH>;
+		re-gpios = <&arduino_header ARDUINO_NANO_HEADER_D6 GPIO_ACTIVE_LOW>;
+	};
+};

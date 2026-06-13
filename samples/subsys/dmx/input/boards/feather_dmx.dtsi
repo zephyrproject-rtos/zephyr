@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Generic overlay for Feather-format boards.
+ *
+ * Uses the feather_serial UART (header pins TX/RX) for DMX,
+ * with DE on D5 (feather_header index 14) and RE on D6
+ * (feather_header index 15).
+ */
+
+#include <zephyr/dt-bindings/dmx/dmx.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&feather_serial {
+	status = "okay";
+	current-speed = <DMX_BAUD_RATE>;
+
+	dmx0: dmx {
+		compatible = "zephyr,dmx-uart-isr";
+		de-gpios = <&feather_header 14 GPIO_ACTIVE_HIGH>; /* D5 */
+		re-gpios = <&feather_header 15 GPIO_ACTIVE_LOW>; /* D6 */
+	};
+};
