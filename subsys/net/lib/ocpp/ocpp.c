@@ -550,6 +550,10 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		ocpp_change_availability(ctx, ret < 0 ? NULL : &msg, uid);
 		break;
 
+	case PDU_CLEAR_CACHE:
+		ocpp_clear_cache(ctx, uid);
+		break;
+
 	case PDU_METER_VALUES:
 	default:
 		break;

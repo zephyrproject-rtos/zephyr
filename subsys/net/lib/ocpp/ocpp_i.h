@@ -206,6 +206,7 @@ int ocpp_unlock_connector(struct ocpp_info *ctx,
 int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid);
 int ocpp_change_availability(struct ocpp_info *ctx, struct internal_msg *msg,
 			     char *uid);
+int ocpp_clear_cache(struct ocpp_info *ctx, char *uid);
 int ocpp_get_configuration(enum ocpp_key key, struct ocpp_info *ctx, char *uid);
 int ocpp_boot_notification(ocpp_session_handle_t hndl,
 			   struct ocpp_cp_info *cpi);

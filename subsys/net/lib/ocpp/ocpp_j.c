@@ -971,6 +971,7 @@ static ocpp_msg_fp_t ocpp_json_frame[PDU_MSG_END] = {
 	[PDU_STATUS_NOTIFICATION] = (ocpp_msg_fp_t)frame_status_notification_msg,
 	[PDU_RESET]		= (ocpp_msg_fp_t)frame_status_resp_msg,
 	[PDU_CHANGE_AVAILABILITY] = (ocpp_msg_fp_t)frame_status_resp_msg,
+	[PDU_CLEAR_CACHE]	= (ocpp_msg_fp_t)frame_status_resp_msg,
 };
 
 void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn)

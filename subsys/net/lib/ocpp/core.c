@@ -642,6 +642,25 @@ int ocpp_change_availability(struct ocpp_info *ctx, struct internal_msg *msg,
 	return ret;
 }
 
+int ocpp_clear_cache(struct ocpp_info *ctx, char *uid)
+{
+	char *buf = ctx->pdu_buf;
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	/* No local authorization cache is maintained, so accept the request. */
+	fn = ctx->cfn[PDU_CLEAR_CACHE];
+	fn(buf, sizeof(ctx->pdu_buf), "Accepted", uid);
+
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	ret = ocpp_send_to_server(&rmsg, K_SECONDS(OCPP_PDU_TIMEOUT));
+
+	return ret;
+}
+
 int ocpp_meter_values(ocpp_session_handle_t hndl,
 		      enum ocpp_meter_measurand mes,
 		      char *sval)
