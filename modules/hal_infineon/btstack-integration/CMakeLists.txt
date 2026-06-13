@@ -46,6 +46,11 @@ if(CONFIG_CYW4343W_MURATA_1DX)
   set(blob_hcd_file ${hal_blobs_dir}/COMPONENT_4343W/COMPONENT_MURATA-1DX/bt_firmware.hcd)
 endif()
 
+# CYW43438 modules
+if(CONFIG_CYW43438_AW_CU427_P)
+  set(blob_hcd_file ${hal_blobs_dir}/COMPONENT_43438/COMPONENT_AW-CU427-P/bt_firmware.hcd)
+endif()
+
 # CYW43439 modules
 if(CONFIG_CYW43439_MURATA_1YN)
   set(blob_hcd_file ${hal_blobs_dir}/COMPONENT_43439/COMPONENT_MURATA-1YN/bt_firmware.hcd)

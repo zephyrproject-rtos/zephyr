@@ -45,6 +45,12 @@ config AIROC_WIFI_EVENT_TASK_PRIO
 	int "Event Task Priority"
 	default 4
 
+config HEAP_MEM_POOL_ADD_SIZE_AIROC_WIFI
+	def_int 32768
+	help
+	  Reserve heap memory required by the AIROC Wi-Fi driver and
+	  Infineon RTOS abstraction layer.
+
 config AIROC_WLAN_MFG_FIRMWARE
 	bool "WLAN Manufacturing Firmware"
 	help
@@ -178,6 +184,18 @@ config CYW4343W_MURATA_1DX
 
 	  Detailed information about Type 1DX module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1dx
+endchoice
+
+choice CYW43438_MODULE
+	prompt "Select CYW43438 module"
+	depends on CYW43438 && !AIROC_WIFI_CUSTOM
+
+config CYW43438_AW_CU427_P
+	bool "AW-CU427-P"
+	help
+	  AzureWave AW-CU427-P module based on Infineon CYW43438
+	  combo chipset.
+
 endchoice
 
 choice CYW4373_MODULE
