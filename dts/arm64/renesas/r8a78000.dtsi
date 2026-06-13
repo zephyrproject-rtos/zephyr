@@ -207,5 +207,15 @@
 			      <0xc0401800 0x104>, <0xc9b00000 0x104>,
 			      <0xc9b00800 0x104>;
 		};
+
+		hscif0: serial@c0710000 {
+			compatible = "renesas,rcar-hscif";
+			reg = <0xc0710000 0x5c>;
+			current-speed = <1843200>;
+			interrupts = <GIC_SPI 4078 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&scmi_clk R8A78000_CLK_HSCIF0>, /* Mod clk */
+				 <&scmi_clk R8A78000_CLK_SGAD4_PERW_M>; /* Bus clk */
+			status = "disabled";
+		};
 	};
 };
