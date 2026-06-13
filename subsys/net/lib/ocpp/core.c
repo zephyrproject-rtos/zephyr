@@ -579,6 +579,7 @@ int ocpp_unlock_connector(struct ocpp_info *ctx,
 static const char * const req_status_str[] = {
 	[OCPP_REQ_ACCEPTED]	= "Accepted",
 	[OCPP_REQ_REJECTED]	= "Rejected",
+	[OCPP_REQ_SCHEDULED]	= "Scheduled",
 };
 
 int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid)
@@ -598,6 +599,39 @@ int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid)
 	}
 
 	fn = ctx->cfn[PDU_RESET];
+	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
+
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	ret = ocpp_send_to_server(&rmsg, K_SECONDS(OCPP_PDU_TIMEOUT));
+
+	return ret;
+}
+
+int ocpp_change_availability(struct ocpp_info *ctx, struct internal_msg *msg,
+			     char *uid)
+{
+	char *buf = ctx->pdu_buf;
+	enum ocpp_req_status status = OCPP_REQ_REJECTED;
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	union ocpp_keyval *nconn;
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	nconn = ocpp_get_key_val(CFG_NO_OF_CONNECTORS);
+	if (msg != NULL && msg->usr.change_avail.id_con >= 0 &&
+	    msg->usr.change_avail.id_con <= nconn->ival) {
+		msg->usr.change_avail.status = OCPP_REQ_REJECTED;
+		ret = ctx->cb(OCPP_USR_CHANGE_AVAILABILITY, &msg->usr,
+			      ctx->user_data);
+		if (ret == 0 && (msg->usr.change_avail.status == OCPP_REQ_ACCEPTED ||
+				 msg->usr.change_avail.status == OCPP_REQ_SCHEDULED)) {
+			status = msg->usr.change_avail.status;
+		}
+	}
+
+	fn = ctx->cfn[PDU_CHANGE_AVAILABILITY];
 	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
 
 	rmsg.ctx = ctx;

@@ -541,6 +541,15 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		ocpp_reset(ctx, ret < 0 ? NULL : &msg, uid);
 		break;
 
+	case PDU_CHANGE_AVAILABILITY:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_CHANGE_AVAILABILITY;
+
+		ret = fn(ui->recv_buf, &msg.usr.change_avail.id_con,
+			 &msg.usr.change_avail.type);
+		ocpp_change_availability(ctx, ret < 0 ? NULL : &msg, uid);
+		break;
+
 	case PDU_METER_VALUES:
 	default:
 		break;

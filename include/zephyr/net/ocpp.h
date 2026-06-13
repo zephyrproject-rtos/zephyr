@@ -96,6 +96,9 @@ enum ocpp_notify_reason {
 
 	/** Reset the charge point (hard or soft) */
 	OCPP_USR_RESET,
+
+	/** Change availability of a connector (operative/inoperative) */
+	OCPP_USR_CHANGE_AVAILABILITY,
 };
 
 /** @brief OCPP reset type requested by central system */
@@ -108,6 +111,13 @@ enum ocpp_reset_type {
 enum ocpp_req_status {
 	OCPP_REQ_ACCEPTED,	/**< request accepted */
 	OCPP_REQ_REJECTED,	/**< request rejected */
+	OCPP_REQ_SCHEDULED,	/**< ChangeAvailability applied after transaction */
+};
+
+/** @brief OCPP availability type requested in ChangeAvailability */
+enum ocpp_availability_type {
+	OCPP_AVAILABILITY_INOPERATIVE,	/**< connector taken out of service */
+	OCPP_AVAILABILITY_OPERATIVE,	/**< connector put into service */
 };
 
 /** @brief OCPP meter readings to be filled on user callback request from
@@ -174,6 +184,12 @@ union ocpp_io_value {
 		enum ocpp_reset_type type; /**< Input to user, reset type requested */
 		enum ocpp_req_status status; /**< To be filled by user, reply status */
 	} reset; /**< Reset request from CS */
+
+	struct {
+		int id_con;	/**< Input to user, connector id (0 = whole CP) */
+		enum ocpp_availability_type type; /**< Input to user, requested availability */
+		enum ocpp_req_status status; /**< To be filled by user, reply status */
+	} change_avail; /**< ChangeAvailability request from CS */
 };
 
 /** @brief Parameters for ocpp_init information about Charge Point (CP)
