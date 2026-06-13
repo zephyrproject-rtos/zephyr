@@ -1,7 +1,7 @@
 .. _max3421e_shield:
 
-MAX3421E Shield
-###############
+SparkFun MAX3421E Shield
+#########################
 
 Overview
 ********
@@ -9,7 +9,7 @@ Overview
 Support for expansion boards (shields) based on MAX3421E USB Peripheral/Host
 controller.
 
-Sparkfun USB Host Shield
+SparkFun USB Host Shield
 ************************
 
 Pins Assignment of the Shield Connector
