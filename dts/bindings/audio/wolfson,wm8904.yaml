@@ -56,3 +56,12 @@ properties:
       corresponding to an analog gain range of -1.5 dB to +28.3 dB in
       ~0.96 dB steps. Out-of-range values are clamped by the driver.
       The default gain is 5 (00101b), i.e. ~+3.3 dB.
+
+  input-pga-select:
+    type: int
+    default: 2
+    enum: [1, 2, 3]
+    description: |
+      Selects the WM8904 input PGA source channel.
+      Only single-ended input mode is supported.
+      On the 32-pin QFN package, only channels 1 and 2 are supported.

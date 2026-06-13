@@ -27,6 +27,7 @@ struct wm8904_driver_config {
 	int fs_ratio;
 	bool mic_bias;
 	int in_pga_vol;
+	int in_pga_sel;
 };
 
 #define DEV_CFG(dev) ((const struct wm8904_driver_config *const)dev->config)
@@ -237,6 +238,7 @@ static int wm8904_route_input(const struct device *dev, audio_channel_t channel,
 		return -EINVAL;
 	}
 
+	/* Only Single-Ended is supported */
 	uint8_t val = WM8904_REGVAL_INSEL(0, input - 1, input - 1, 0);
 	uint8_t mask = WM8904_REGMASK_INSEL_CMENA
 		| WM8904_REGMASK_INSEL_IP_SEL_P
@@ -304,8 +306,8 @@ static void wm8904_in_pga_config(const struct device *dev)
 {
 	const struct wm8904_driver_config *const dev_cfg = DEV_CFG(dev);
 
-	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_LEFT, 2);
-	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_RIGHT, 2);
+	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_LEFT, dev_cfg->in_pga_sel);
+	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_RIGHT, dev_cfg->in_pga_sel);
 
 	wm8904_in_pga_vol_config(dev, dev_cfg->in_pga_vol);
 	wm8904_in_pga_mute_channel_config(dev, AUDIO_CHANNEL_ALL, false);
@@ -728,7 +730,8 @@ static DEVICE_API(audio_codec, wm8904_driver_api) = {
 			(NULL)),                                                                   \
 		.fs_ratio = DT_INST_PROP_OR(n, fs_ratio, 0),                                       \
 		.mic_bias = DT_INST_PROP_OR(n, mic_bias, 0),                                       \
-		.in_pga_vol = DT_INST_PROP_OR(n, input_pga_volume, 5)};                            \
+		.in_pga_vol = DT_INST_PROP_OR(n, input_pga_volume, 5),                             \
+		.in_pga_sel = DT_INST_PROP_OR(n, input_pga_select, 2)};                            \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &wm8904_device_config_##n, POST_KERNEL,         \
 			      CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);
