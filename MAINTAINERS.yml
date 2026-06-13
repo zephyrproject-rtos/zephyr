@@ -2084,6 +2084,7 @@ Documentation Infrastructure:
     - dnltz
   files:
     - doc/hardware/peripherals/gpio.rst
+    - doc/hardware/peripherals/gpio_fast.rst
     - drivers/gpio/
     - dts/bindings/gpio/
     - include/zephyr/drivers/gpio/

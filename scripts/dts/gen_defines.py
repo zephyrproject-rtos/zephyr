@@ -498,6 +498,9 @@ def write_compatibles(node: edtlib.Node) -> None:
     # about whether edtlib / Zephyr's binding language recognizes
     # them. The compatibles the node provides are what is important.
 
+    if node.matching_compat:
+        out_dt_define(f"{node.z_path_id}_BINDING_COMPAT", str2ident(node.matching_compat))
+
     for i, compat in enumerate(node.compats):
         out_dt_define(f"{node.z_path_id}_COMPAT_MATCHES_{str2ident(compat)}", 1)
 

@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Optional fast GPIO backend override property.
+
+  Include this binding in any driver that uses the fast GPIO API to allow
+  the backend to be overridden from the default (the GPIO controller's
+  DT compatible). For example, setting fast-gpio-backend = "generic"
+  selects the generic (non-cycle-accurate) fallback.
+
+properties:
+  fast-gpio-backend:
+    type: string
+    description: |
+      Override the fast GPIO backend used for this device. When set, the
+      dispatch macros use this value instead of the GPIO controller's DT
+      compatible. The value must match a backend's compat token
+      (e.g. "nordic_nrf_gpio", "generic").

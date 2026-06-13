@@ -278,6 +278,10 @@ New Drivers
 
 * GPIO
 
+  * Added Fast GPIO API extension (:kconfig:option:`CONFIG_GPIO_FAST`) for
+    sub-microsecond GPIO operations. Vendor implementations for ESP32, i.MX RT,
+    nRF, RP2040, SAM0, and STM32. See :ref:`gpio_fast_api`. (:github:`110787`)
+
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
     (:dtcompatible:`diodes,pi4ioe5v6408`).
 
