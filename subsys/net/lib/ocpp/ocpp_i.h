@@ -156,6 +156,7 @@ struct ocpp_info {
 	bool is_cs_connected; /* central system */
 
 	ocpp_user_notify_callback_t cb;
+	struct k_mutex cblock; /* one user callback at a time */
 	void *user_data;
 	enum ocpp_cp_state state;
 	/* only for pdu message from internal thread (ocpp_internal_handler) */
@@ -195,6 +196,8 @@ struct internal_msg {
 void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn);
 int parse_rpc_msg(char *msg, int msglen, char *uid, int uidlen,
 		  int *pdu, bool *is_rsp);
+int ocpp_notify_user(struct ocpp_info *ctx, enum ocpp_notify_reason reason,
+		     union ocpp_io_value *io);
 int ocpp_send_to_server(struct ocpp_wamp_rpc_msg *snd, k_timeout_t timeout);
 int ocpp_ws_send(struct ocpp_info *ctx, const uint8_t *msg, size_t len,
 		 enum websocket_opcode opcode, int32_t timeout);
@@ -203,6 +206,7 @@ int ocpp_receive_from_server(struct ocpp_wamp_rpc_msg *rcv, uint32_t *msg_type,
 
 int ocpp_unlock_connector(struct ocpp_info *ctx,
 			  struct internal_msg *msg, char *uid);
+int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid);
 int ocpp_get_configuration(enum ocpp_key key, struct ocpp_info *ctx, char *uid);
 int ocpp_boot_notification(ocpp_session_handle_t hndl,
 			   struct ocpp_cp_info *cpi);

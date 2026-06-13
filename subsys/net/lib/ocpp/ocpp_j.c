@@ -872,6 +872,37 @@ static int parse_unlock_connectormsg(char *json, int *idcon)
 	return 0;
 }
 
+static int parse_reset_msg(char *json, enum ocpp_reset_type *type)
+{
+	int ret;
+
+	struct json_obj_descr descr[] = {
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_common_payload_field_str, "type",
+					  val1, JSON_TOK_STRING),
+	};
+
+	struct json_common_payload_field_str payload = { 0 };
+
+	ret = json_obj_parse(json, strlen(json), descr, ARRAY_SIZE(descr), &payload);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (payload.val1 == NULL) {
+		return -EINVAL;
+	}
+
+	if (strcmp(payload.val1, "Hard") == 0) {
+		*type = OCPP_RESET_HARD;
+	} else if (strcmp(payload.val1, "Soft") == 0) {
+		*type = OCPP_RESET_SOFT;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static ocpp_msg_fp_t ocpp_json_parser[PDU_MSG_END] = {
 	[PDU_BOOTNOTIFICATION]	= (ocpp_msg_fp_t)parse_bootnotification_msg,
 	[PDU_AUTHORIZE]		= (ocpp_msg_fp_t)parse_authorize_msg,
@@ -884,6 +915,7 @@ static ocpp_msg_fp_t ocpp_json_parser[PDU_MSG_END] = {
 	[PDU_REMOTE_START_TRANSACTION]	= (ocpp_msg_fp_t)parse_remote_start_txn_msg,
 	[PDU_REMOTE_STOP_TRANSACTION]	= (ocpp_msg_fp_t)parse_remote_stop_txn_msg,
 	[PDU_UNLOCK_CONNECTOR]	= (ocpp_msg_fp_t)parse_unlock_connectormsg,
+	[PDU_RESET]		= (ocpp_msg_fp_t)parse_reset_msg,
 };
 
 static ocpp_msg_fp_t ocpp_json_frame[PDU_MSG_END] = {
@@ -899,6 +931,7 @@ static ocpp_msg_fp_t ocpp_json_frame[PDU_MSG_END] = {
 	[PDU_REMOTE_STOP_TRANSACTION]	= (ocpp_msg_fp_t)frame_status_resp_msg,
 	[PDU_UNLOCK_CONNECTOR]	= (ocpp_msg_fp_t)frame_status_resp_msg,
 	[PDU_STATUS_NOTIFICATION] = (ocpp_msg_fp_t)frame_status_notification_msg,
+	[PDU_RESET]		= (ocpp_msg_fp_t)frame_status_resp_msg,
 };
 
 void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn)
