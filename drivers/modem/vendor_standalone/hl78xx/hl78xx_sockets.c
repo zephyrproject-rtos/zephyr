@@ -1451,12 +1451,22 @@ static void found_reset(struct hl78xx_socket_data *socket_data)
 	atomic_clear_bit(&socket_data->parser.flags, PARSER_FLAG_OK_DETECTED);
 }
 
+static void reset_receive_staging_ring(struct hl78xx_socket_data *socket_data)
+{
+	if ((socket_data == NULL) || (socket_data->rx.buf_pool == NULL)) {
+		return;
+	}
+
+	ring_buf_reset(socket_data->rx.buf_pool);
+}
+
 static void reset_receive_transaction_state(struct hl78xx_socket_data *socket_data)
 {
 	if (socket_data == NULL) {
 		return;
 	}
 
+	reset_receive_staging_ring(socket_data);
 	parser_reset(socket_data);
 	found_reset(socket_data);
 	socket_data->rx.collected_buf_len = 0;
@@ -1948,6 +1958,7 @@ static int on_cmd_sockread_common(int socket_id, uint16_t socket_data_length, ui
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 	struct hl78xx_socket_data *socket_data =
 		(struct hl78xx_socket_data *)data->devices.offload->data;
+	uint16_t actual_len = 0U;
 	uint16_t queued_after_read = 0U;
 	int ret = 0;
 
@@ -1965,41 +1976,47 @@ static int on_cmd_sockread_common(int socket_id, uint16_t socket_data_length, ui
 		errno = ECONNABORTED;
 		return -ECONNABORTED;
 	}
-	if ((len <= 0) || socket_data_length <= 0 || socket_data->rx.collected_buf_len == 0U) {
+	if ((len <= 0) || socket_data_length <= 0 ||
+	    socket_data->rx.collected_buf_len == 0U) {
 		LOG_ERR("%d Invalid data length: %d %d %d Aborting!", __LINE__, socket_data_length,
 			(int)len, socket_data->rx.collected_buf_len);
+		reset_receive_transaction_state(socket_data);
 		return -EAGAIN;
 	}
-	if (len < socket_data_length) {
-		LOG_DBG("Incomplete data received! Expected: %d, Received: %d", socket_data_length,
-			len);
-		return -EAGAIN;
+	if (socket_data->rx.collected_buf_len > (size_t)len) {
+		LOG_ERR("%d Captured more data than requested: %u %u", __LINE__, len,
+			socket_data->rx.collected_buf_len);
+		reset_receive_transaction_state(socket_data);
+		return -EIO;
 	}
-	ret = ring_buf_get(socket_data->rx.buf_pool, sock_data->recv_buf, len);
-	if (ret != len) {
-		LOG_ERR("%d Data retrieval mismatch: expected %u, got %d", __LINE__, len, ret);
+	actual_len = (uint16_t)socket_data->rx.collected_buf_len;
+	if (sock_data->recv_buf_len < (size_t)actual_len) {
+		LOG_ERR("Buffer overflow! Received: %u vs. Available: %zu", actual_len,
+			sock_data->recv_buf_len);
+		return -EINVAL;
+	}
+	ret = ring_buf_get(socket_data->rx.buf_pool, sock_data->recv_buf, actual_len);
+	if (ret != actual_len) {
+		LOG_ERR("%d Data retrieval mismatch: expected %u, got %d", __LINE__, actual_len,
+			ret);
+		reset_receive_transaction_state(socket_data);
 		return -EAGAIN;
 	}
 
 	HL78XX_LOG_HEXDUMP_DBG(sock_data->recv_buf, ret, "Received Data:");
 
-	if (sock_data->recv_buf_len < (size_t)len) {
-		LOG_ERR("Buffer overflow! Received: %zu vs. Available: %zu", len,
-			sock_data->recv_buf_len);
-		return -EINVAL;
+	if (actual_len < socket_data_length) {
+		LOG_WRN("Short socket read: requested=%u captured=%u", socket_data_length,
+			actual_len);
 	}
-	if ((size_t)len != (size_t)socket_data_length) {
-		LOG_ERR("Data mismatch! Copied: %zu vs. Received: %d", len, socket_data_length);
-		return -EINVAL;
-	}
-	sock_data->recv_read_len = len;
+	sock_data->recv_read_len = actual_len;
 	/* Remove packet from list */
 	queued_after_read =
 		modem_socket_next_packet_size(&socket_data->control.socket_config, sock);
-	if (queued_after_read >= socket_data_length) {
+	if (queued_after_read >= actual_len) {
 		modem_socket_packet_size_update(&socket_data->control.socket_config, sock,
-						-socket_data_length);
-		queued_after_read -= socket_data_length;
+						-(int)actual_len);
+		queued_after_read -= actual_len;
 	} else if (queued_after_read > 0U) {
 		/* A new +K[UT]CP_DATA URC updated the unread total while this read transaction
 		 * was still completing. Trust that newer modem-reported total instead of
@@ -2007,13 +2024,13 @@ static int on_cmd_sockread_common(int socket_id, uint16_t socket_data_length, ui
 		 */
 		LOG_DBG("Socket queue already updated during read (queued=%u read=%u), skipping "
 			"stale subtraction",
-			queued_after_read, socket_data_length);
+			queued_after_read, actual_len);
 	} else {
 		/* No new data was reported by the modem after this read,
 		 * trust that the modem-reported total is accurate.
 		 */
 		LOG_DBG("No new data reported by modem after read (queued=%u read=%u)",
-			queued_after_read, socket_data_length);
+			queued_after_read, actual_len);
 	}
 
 	if (queued_after_read == 0U) {
@@ -2021,7 +2038,7 @@ static int on_cmd_sockread_common(int socket_id, uint16_t socket_data_length, ui
 		socket_data->control.tcp_state_check_reason = HL78XX_TCP_STATE_CHECK_POST_READ;
 	}
 	socket_data->rx.collected_buf_len = 0;
-	return len;
+	return actual_len;
 }
 
 int modem_handle_data_capture(size_t target_len, struct hl78xx_data *data)
