@@ -14,10 +14,19 @@
 
 	chosen {
 		zephyr,sram = &ram;
+		zephyr,console = &hscif0;
+		zephyr,shell-uart = &hscif0;
 	};
 
 	ram: memory@9e600000 {
 		device_type = "mmio-sram";
 		reg = <0x9e600000 0x20000000>;
 	};
+};
+
+&hscif0 {
+	pinctrl-0 = <&hscif0_data_tx_default
+		     &hscif0_data_rx_default>;
+	pinctrl-names = "default";
+	status = "okay";
 };
