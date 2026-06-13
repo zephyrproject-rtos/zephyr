@@ -47,6 +47,21 @@
 			status = "okay";
 		};
 
+		clkctrl: clock-controller@f0022000 {
+			compatible = "aesc,clock-controller";
+			reg = <0xf0022000 0x1000>;
+			syscon = <&syscon>;
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		syscon: syscon@f0023000 {
+			compatible = "aesc,syscon", "syscon";
+			reg = <0xf0023000 0x1000>;
+			reg-io-width = <4>;
+			status = "okay";
+		};
+
 		flash_controller: flash-controller@f0024000 {
 			compatible = "aesc,spi-flash-controller";
 			reg = <0xf0024000 0x2000>;
