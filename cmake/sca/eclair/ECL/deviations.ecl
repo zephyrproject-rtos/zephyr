@@ -64,6 +64,15 @@ directive is disapplied."
 -config=MC3A2.D4.6,reports+={disapplied,"any()"}
 -doc_end
 
+-doc_begin="Directive 4.8 is advisory and is not adopted by the project. Public
+headers deliberately define the layout of types that are part of the API even
+though a given translation unit that includes the header may only handle
+pointers to them. Hiding such a definition is a per-unit property that cannot be
+satisfied for a shared header without splitting the API, so the directive is
+disapplied."
+-config=MC3A2.D4.8,reports+={disapplied,"any()"}
+-doc_end
+
 -doc_begin="The variadic helpers va_start() and va_end() are, by the definition
 of <stdarg.h>, always used as a correctly nested pair within a single function;
 the language guarantees the calling sequence. Reports that flag this pairing as
