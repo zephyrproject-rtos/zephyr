@@ -18,3 +18,8 @@ tests:
     # Build without bounce buffers, unaligned buffers are rejected.
     extra_configs:
       - CONFIG_USBH_CDC_ACM_BOUNCE=n
+  usb.cdc_acm.no_notif_ep:
+    # Test a non-compliant device without the notification endpoint.
+    extra_configs:
+      - CONFIG_USBD_CDC_ACM_NO_NOTIF_EP=y
+      - CONFIG_USBH_CDC_ACM_ALLOW_NO_NOTIF_EP=y
