@@ -9,4 +9,5 @@ toolchain:
   - cross-compile
 supported:
   - clock-control
+  - serial
 vendor: renesas
