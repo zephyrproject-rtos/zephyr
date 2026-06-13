@@ -280,7 +280,7 @@ static DEVICE_API(gpio, gpio_aesc_driver_api) = {
 			    0);						      \
 		irq_enable(DT_INST_IRQN(no));				      \
 	}								      \
-	static struct gpio_aesc_config gpio_aesc_dev_cfg_##no = {	      \
+	static const struct gpio_aesc_config gpio_aesc_dev_cfg_##no = {	      \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(no),		      \
 		DEVICE_MMIO_NAMED_ROM_INIT(mmio, DT_DRV_INST(no)),	      \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(no),		      \
