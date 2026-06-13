@@ -580,6 +580,8 @@ static const char * const req_status_str[] = {
 	[OCPP_REQ_ACCEPTED]	= "Accepted",
 	[OCPP_REQ_REJECTED]	= "Rejected",
 	[OCPP_REQ_SCHEDULED]	= "Scheduled",
+	[OCPP_REQ_UNKNOWN_VENDOR_ID]	= "UnknownVendorId",
+	[OCPP_REQ_UNKNOWN_MESSAGE_ID]	= "UnknownMessageId",
 };
 
 int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid)
@@ -652,6 +654,36 @@ int ocpp_clear_cache(struct ocpp_info *ctx, char *uid)
 	/* No local authorization cache is maintained, so accept the request. */
 	fn = ctx->cfn[PDU_CLEAR_CACHE];
 	fn(buf, sizeof(ctx->pdu_buf), "Accepted", uid);
+
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	ret = ocpp_send_to_server(&rmsg, K_SECONDS(OCPP_PDU_TIMEOUT));
+
+	return ret;
+}
+
+int ocpp_data_transfer(struct ocpp_info *ctx, struct internal_msg *msg, char *uid)
+{
+	char *buf = ctx->pdu_buf;
+	enum ocpp_req_status status = OCPP_REQ_REJECTED;
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	if (msg != NULL) {
+		msg->usr.data_transfer.status = OCPP_REQ_REJECTED;
+		ret = ctx->cb(OCPP_USR_DATA_TRANSFER, &msg->usr, ctx->user_data);
+		if (ret < 0) {
+			status = OCPP_REQ_UNKNOWN_VENDOR_ID;
+		} else if (msg->usr.data_transfer.status != OCPP_REQ_SCHEDULED &&
+			   msg->usr.data_transfer.status < ARRAY_SIZE(req_status_str)) {
+			status = msg->usr.data_transfer.status;
+		}
+	}
+
+	fn = ctx->cfn[PDU_DATA_TRANSFER];
+	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
 
 	rmsg.ctx = ctx;
 	rmsg.msg = buf;

@@ -114,6 +114,10 @@ static int test_ocpp_user_notify_cb(enum ocpp_notify_reason reason,
 		TC_PRINT("change availability connector %d type %d\n",
 			 io->change_avail.id_con, io->change_avail.type);
 		return 0;
+
+	case OCPP_USR_DATA_TRANSFER:
+		TC_PRINT("data transfer vendor %s\n", io->data_transfer.vendor_id);
+		return 0;
 	}
 
 	return -ENOTSUP;

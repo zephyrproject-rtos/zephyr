@@ -195,6 +195,12 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 			io->change_avail.type == OCPP_AVAILABILITY_OPERATIVE ?
 			"Operative" : "Inoperative");
 		return 0;
+
+	case OCPP_USR_DATA_TRANSFER:
+		LOG_INF("data transfer vendor %s msg %s data %s\n",
+			io->data_transfer.vendor_id, io->data_transfer.msg_id,
+			io->data_transfer.data);
+		return 0;
 	}
 
 	return -ENOTSUP;

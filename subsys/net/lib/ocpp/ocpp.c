@@ -48,6 +48,7 @@ static struct ocpp_msg_table pdu_msg_table[] = {
 	FILL_PDU_TABLE(PDU_UNLOCK_CONNECTOR, "UnlockConnector"),
 	FILL_PDU_TABLE(PDU_RESET, "Reset"),
 	FILL_PDU_TABLE(PDU_STATUS_NOTIFICATION, "StatusNotification"),
+	FILL_PDU_TABLE(PDU_DATA_TRANSFER, "DataTransfer"),
 };
 
 const char *ocpp_get_pdu_literal(enum ocpp_pdu_msg pdu)
@@ -552,6 +553,16 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 
 	case PDU_CLEAR_CACHE:
 		ocpp_clear_cache(ctx, uid);
+		break;
+
+	case PDU_DATA_TRANSFER:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_DATA_TRANSFER;
+
+		ret = fn(ui->recv_buf, msg.usr.data_transfer.vendor_id,
+			 msg.usr.data_transfer.msg_id,
+			 msg.usr.data_transfer.data);
+		ocpp_data_transfer(ctx, ret < 0 ? NULL : &msg, uid);
 		break;
 
 	case PDU_METER_VALUES:

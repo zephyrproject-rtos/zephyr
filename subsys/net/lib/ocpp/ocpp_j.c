@@ -940,6 +940,47 @@ static int parse_change_availability_msg(char *json, int *idcon,
 	return 0;
 }
 
+static int parse_data_transfer_msg(char *json, char *vendor, char *msgid, char *data)
+{
+	int ret;
+
+	struct json_obj_descr descr[] = {
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_datatransfer_msg, "vendorId",
+					  vendor_id, JSON_TOK_STRING),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_datatransfer_msg, "messageId",
+					  message_id, JSON_TOK_STRING),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_datatransfer_msg, "data",
+					  data, JSON_TOK_STRING),
+	};
+
+	struct json_ocpp_datatransfer_msg payload = { 0 };
+
+	ret = json_obj_parse(json, strlen(json), descr, ARRAY_SIZE(descr), &payload);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* vendorId is mandatory, messageId and data are optional */
+	if (payload.vendor_id == NULL) {
+		return -EINVAL;
+	}
+
+	strncpy(vendor, payload.vendor_id, CISTR50 - 1);
+	vendor[CISTR50 - 1] = '\0';
+
+	if (payload.message_id != NULL) {
+		strncpy(msgid, payload.message_id, CISTR50 - 1);
+		msgid[CISTR50 - 1] = '\0';
+	}
+
+	if (payload.data != NULL) {
+		strncpy(data, payload.data, CISTR50 - 1);
+		data[CISTR50 - 1] = '\0';
+	}
+
+	return 0;
+}
+
 static ocpp_msg_fp_t ocpp_json_parser[PDU_MSG_END] = {
 	[PDU_BOOTNOTIFICATION]	= (ocpp_msg_fp_t)parse_bootnotification_msg,
 	[PDU_AUTHORIZE]		= (ocpp_msg_fp_t)parse_authorize_msg,
@@ -954,6 +995,7 @@ static ocpp_msg_fp_t ocpp_json_parser[PDU_MSG_END] = {
 	[PDU_UNLOCK_CONNECTOR]	= (ocpp_msg_fp_t)parse_unlock_connectormsg,
 	[PDU_RESET]		= (ocpp_msg_fp_t)parse_reset_msg,
 	[PDU_CHANGE_AVAILABILITY] = (ocpp_msg_fp_t)parse_change_availability_msg,
+	[PDU_DATA_TRANSFER]	= (ocpp_msg_fp_t)parse_data_transfer_msg,
 };
 
 static ocpp_msg_fp_t ocpp_json_frame[PDU_MSG_END] = {
@@ -972,6 +1014,7 @@ static ocpp_msg_fp_t ocpp_json_frame[PDU_MSG_END] = {
 	[PDU_RESET]		= (ocpp_msg_fp_t)frame_status_resp_msg,
 	[PDU_CHANGE_AVAILABILITY] = (ocpp_msg_fp_t)frame_status_resp_msg,
 	[PDU_CLEAR_CACHE]	= (ocpp_msg_fp_t)frame_status_resp_msg,
+	[PDU_DATA_TRANSFER]	= (ocpp_msg_fp_t)frame_status_resp_msg,
 };
 
 void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn)

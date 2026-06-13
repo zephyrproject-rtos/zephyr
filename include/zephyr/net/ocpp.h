@@ -99,6 +99,9 @@ enum ocpp_notify_reason {
 
 	/** Change availability of a connector (operative/inoperative) */
 	OCPP_USR_CHANGE_AVAILABILITY,
+
+	/** Vendor specific data received from central system (DataTransfer) */
+	OCPP_USR_DATA_TRANSFER,
 };
 
 /** @brief OCPP reset type requested by central system */
@@ -112,6 +115,8 @@ enum ocpp_req_status {
 	OCPP_REQ_ACCEPTED,	/**< request accepted */
 	OCPP_REQ_REJECTED,	/**< request rejected */
 	OCPP_REQ_SCHEDULED,	/**< ChangeAvailability applied after transaction */
+	OCPP_REQ_UNKNOWN_VENDOR_ID,	/**< DataTransfer vendor id not known */
+	OCPP_REQ_UNKNOWN_MESSAGE_ID,	/**< DataTransfer message id not known */
 };
 
 /** @brief OCPP availability type requested in ChangeAvailability */
@@ -190,6 +195,14 @@ union ocpp_io_value {
 		enum ocpp_availability_type type; /**< Input to user, requested availability */
 		enum ocpp_req_status status; /**< To be filled by user, reply status */
 	} change_avail; /**< ChangeAvailability request from CS */
+
+	struct {
+		char vendor_id[CISTR50];  /**< Input to user, vendor id */
+		char msg_id[CISTR50];	  /**< Input to user, message id (optional) */
+		char data[CISTR50];	  /**< Input to user, payload (optional, truncated) */
+		/** To be filled by user, reply status, UnknownVendorId on callback error */
+		enum ocpp_req_status status;
+	} data_transfer; /**< DataTransfer request from CS */
 };
 
 /** @brief Parameters for ocpp_init information about Charge Point (CP)

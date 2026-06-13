@@ -103,6 +103,12 @@ struct json_ocpp_status_notif_msg {
 	char *timestamp;
 };
 
+struct json_ocpp_datatransfer_msg {
+	char *vendor_id;
+	char *message_id;
+	char *data;
+};
+
 struct json_ocpp_getconfig_msg {
 	struct json_ocpp_key_val {
 		char *key;

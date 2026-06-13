@@ -40,6 +40,7 @@ enum ocpp_pdu_msg {
 	PDU_UNLOCK_CONNECTOR,
 	PDU_RESET,
 	PDU_STATUS_NOTIFICATION,
+	PDU_DATA_TRANSFER,
 
 	PDU_MSG_END,
 
@@ -207,6 +208,8 @@ int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid);
 int ocpp_change_availability(struct ocpp_info *ctx, struct internal_msg *msg,
 			     char *uid);
 int ocpp_clear_cache(struct ocpp_info *ctx, char *uid);
+int ocpp_data_transfer(struct ocpp_info *ctx, struct internal_msg *msg,
+		       char *uid);
 int ocpp_get_configuration(enum ocpp_key key, struct ocpp_info *ctx, char *uid);
 int ocpp_boot_notification(ocpp_session_handle_t hndl,
 			   struct ocpp_cp_info *cpi);
