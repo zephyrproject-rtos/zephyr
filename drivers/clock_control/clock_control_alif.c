@@ -18,22 +18,45 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/device_mmio.h>
 #include <zephyr/dt-bindings/clock/alif-clocks-common.h>
 
 LOG_MODULE_REGISTER(alif_clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+
+#define DEV_CFG(dev)  ((const struct alif_clock_control_config *)(dev)->config)
+#define DEV_DATA(dev) ((struct alif_clock_control_data *)(dev)->data)
+
+/**
+ * @brief Alif clock controller data structure
+ */
+struct alif_clock_control_data {
+	DEVICE_MMIO_NAMED_RAM(cgu);
+	DEVICE_MMIO_NAMED_RAM(clkctl_per_mst);
+	DEVICE_MMIO_NAMED_RAM(clkctl_per_slv);
+	DEVICE_MMIO_NAMED_RAM(aon);
+	DEVICE_MMIO_NAMED_RAM(vbat);
+	DEVICE_MMIO_NAMED_RAM(m55he_cfg);
+	/* m55hp_cfg is optional, see m55hp_cfg_phys in the config struct */
+	mm_reg_t m55hp_cfg;
+};
 
 /**
  * @brief Alif clock controller configuration structure
  */
 struct alif_clock_control_config {
-	/* Clock module register base addresses */
-	uintptr_t cgu_base;
-	uintptr_t clkctl_per_mst_base;
-	uintptr_t clkctl_per_slv_base;
-	uintptr_t aon_base;
-	uintptr_t vbat_base;
-	uintptr_t m55he_cfg_base;
-	uintptr_t m55hp_cfg_base;
+	DEVICE_MMIO_NAMED_ROM(cgu);
+	DEVICE_MMIO_NAMED_ROM(clkctl_per_mst);
+	DEVICE_MMIO_NAMED_ROM(clkctl_per_slv);
+	DEVICE_MMIO_NAMED_ROM(aon);
+	DEVICE_MMIO_NAMED_ROM(vbat);
+	DEVICE_MMIO_NAMED_ROM(m55he_cfg);
+	/*
+	 * m55hp_cfg is optional (absent on Balletto family and E1C series SoCs).
+	 * The DEVICE_MMIO_NAMED_* helpers cannot express an optional region, so
+	 * its physical address is stored here (0 if absent) and mapped manually
+	 * with device_map() in the init function.
+	 */
+	uintptr_t m55hp_cfg_phys;
 };
 
 /*
@@ -132,35 +155,36 @@ struct alif_clock_control_config {
  */
 static mem_addr_t alif_get_clk_reg_addr(const struct device *dev, uint32_t clk_id)
 {
-	const struct alif_clock_control_config *config = dev->config;
+	struct alif_clock_control_data *data = DEV_DATA(dev);
 	mem_addr_t base;
 	uint32_t reg_offset = ALIF_CLOCK_CFG_REG(clk_id);
 
 	switch (ALIF_CLOCK_CFG_MODULE(clk_id)) {
 	case ALIF_CGU_MODULE:
-		base = config->cgu_base;
+		base = DEVICE_MMIO_NAMED_GET(dev, cgu);
 		break;
 	case ALIF_CLKCTL_PER_MST_MODULE:
-		base = config->clkctl_per_mst_base;
+		base = DEVICE_MMIO_NAMED_GET(dev, clkctl_per_mst);
 		break;
 	case ALIF_CLKCTL_PER_SLV_MODULE:
-		base = config->clkctl_per_slv_base;
+		base = DEVICE_MMIO_NAMED_GET(dev, clkctl_per_slv);
 		break;
 	case ALIF_AON_MODULE:
-		base = config->aon_base;
+		base = DEVICE_MMIO_NAMED_GET(dev, aon);
 		break;
 	case ALIF_VBAT_MODULE:
-		base = config->vbat_base;
+		base = DEVICE_MMIO_NAMED_GET(dev, vbat);
 		break;
 	case ALIF_M55HE_CFG_MODULE:
-		base = config->m55he_cfg_base;
+		base = DEVICE_MMIO_NAMED_GET(dev, m55he_cfg);
 		break;
 	case ALIF_M55HP_CFG_MODULE:
-		if (config->m55hp_cfg_base == 0) {
+		/* Optional region, mapped manually in init (see m55hp_cfg_phys) */
+		if (data->m55hp_cfg == 0) {
 			__ASSERT(false, "M55HP_CFG module not available on this SoC");
 			return 0;
 		}
-		base = config->m55hp_cfg_base;
+		base = data->m55hp_cfg;
 		break;
 	default:
 		__ASSERT(false, "Invalid clock module: %u", ALIF_CLOCK_CFG_MODULE(clk_id));
@@ -333,22 +357,56 @@ static DEVICE_API(clock_control, alif_clock_control_driver_api) = {
 	.get_status = alif_clock_control_get_status,
 };
 
+/**
+ * @brief Map clock controller MMIO regions into the virtual address space
+ *
+ * Map the clock module register regions using the device MMIO API during
+ * driver initialization. On non-MMU targets this is a no-op that records
+ * the physical address as the linear address.
+ *
+ * @param dev Clock control device
+ * @return 0 on success
+ */
+static int alif_clock_control_init(const struct device *dev)
+{
+	struct alif_clock_control_data *data = DEV_DATA(dev);
+	const struct alif_clock_control_config *config = DEV_CFG(dev);
+
+	DEVICE_MMIO_NAMED_MAP(dev, cgu, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, clkctl_per_mst, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, clkctl_per_slv, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, aon, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, vbat, K_MEM_CACHE_NONE);
+	DEVICE_MMIO_NAMED_MAP(dev, m55he_cfg, K_MEM_CACHE_NONE);
+
+	/* Optional m55hp_cfg: map manually only when present (phys != 0) */
+	if (config->m55hp_cfg_phys != 0) {
+		device_map(&data->m55hp_cfg, config->m55hp_cfg_phys,
+			   DT_REG_SIZE_BY_NAME_OR(DT_NODELABEL(clockctrl), m55hp_cfg, 0),
+			   K_MEM_CACHE_NONE);
+	}
+
+	return 0;
+}
+
 /* Clock controller configuration from device tree */
 static const struct alif_clock_control_config alif_clock_config = {
-	/* Clock module register base addresses */
-	.cgu_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), cgu),
-	.clkctl_per_mst_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), clkctl_per_mst),
-	.clkctl_per_slv_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), clkctl_per_slv),
-	.aon_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), aon),
-	.vbat_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), vbat),
-	.m55he_cfg_base = DT_REG_ADDR_BY_NAME(DT_NODELABEL(clockctrl), m55he_cfg),
-	.m55hp_cfg_base = DT_REG_ADDR_BY_NAME_OR(DT_NODELABEL(clockctrl), m55hp_cfg, 0),
+	DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(cgu, DT_NODELABEL(clockctrl)),
+	DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(clkctl_per_mst, DT_NODELABEL(clockctrl)),
+	DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(clkctl_per_slv, DT_NODELABEL(clockctrl)),
+	DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(aon, DT_NODELABEL(clockctrl)),
+	DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(vbat, DT_NODELABEL(clockctrl)),
+	DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(m55he_cfg, DT_NODELABEL(clockctrl)),
+	/* Optional region: 0 when m55hp_cfg is absent from the DT node */
+	.m55hp_cfg_phys = DT_REG_ADDR_BY_NAME_OR(DT_NODELABEL(clockctrl), m55hp_cfg, 0),
 };
 
+static struct alif_clock_control_data alif_clock_data;
+
 DEVICE_DT_DEFINE(DT_NODELABEL(clockctrl),
+		 alif_clock_control_init,
 		 NULL,
-		 NULL,
-		 NULL,
+		 &alif_clock_data,
 		 &alif_clock_config,
 		 PRE_KERNEL_1,
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
