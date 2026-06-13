@@ -402,6 +402,85 @@ int ocpp_stop_transaction(ocpp_session_handle_t hndl,
 	return ret;
 }
 
+static const char * const cp_status_str[] = {
+	[OCPP_CP_STATUS_AVAILABLE]	= "Available",
+	[OCPP_CP_STATUS_PREPARING]	= "Preparing",
+	[OCPP_CP_STATUS_CHARGING]	= "Charging",
+	[OCPP_CP_STATUS_SUSPENDED_EVSE]	= "SuspendedEVSE",
+	[OCPP_CP_STATUS_SUSPENDED_EV]	= "SuspendedEV",
+	[OCPP_CP_STATUS_FINISHING]	= "Finishing",
+	[OCPP_CP_STATUS_RESERVED]	= "Reserved",
+	[OCPP_CP_STATUS_UNAVAILABLE]	= "Unavailable",
+	[OCPP_CP_STATUS_FAULTED]	= "Faulted",
+};
+
+static const char * const cp_error_str[] = {
+	[OCPP_CP_ERR_NO_ERROR]			= "NoError",
+	[OCPP_CP_ERR_CONNECTOR_LOCK_FAILURE]	= "ConnectorLockFailure",
+	[OCPP_CP_ERR_EV_COMMUNICATION_ERROR]	= "EVCommunicationError",
+	[OCPP_CP_ERR_GROUND_FAILURE]		= "GroundFailure",
+	[OCPP_CP_ERR_HIGH_TEMPERATURE]		= "HighTemperature",
+	[OCPP_CP_ERR_INTERNAL_ERROR]		= "InternalError",
+	[OCPP_CP_ERR_LOCAL_LIST_CONFLICT]	= "LocalListConflict",
+	[OCPP_CP_ERR_OTHER_ERROR]		= "OtherError",
+	[OCPP_CP_ERR_OVER_CURRENT_FAILURE]	= "OverCurrentFailure",
+	[OCPP_CP_ERR_OVER_VOLTAGE]		= "OverVoltage",
+	[OCPP_CP_ERR_POWER_METER_FAILURE]	= "PowerMeterFailure",
+	[OCPP_CP_ERR_POWER_SWITCH_FAILURE]	= "PowerSwitchFailure",
+	[OCPP_CP_ERR_READER_FAILURE]		= "ReaderFailure",
+	[OCPP_CP_ERR_RESET_FAILURE]		= "ResetFailure",
+	[OCPP_CP_ERR_UNDER_VOLTAGE]		= "UnderVoltage",
+	[OCPP_CP_ERR_WEAK_SIGNAL]		= "WeakSignal",
+};
+
+int ocpp_status_notification(ocpp_session_handle_t hndl,
+			     int conn_id,
+			     enum ocpp_cp_status status,
+			     enum ocpp_cp_error_code error,
+			     uint32_t timeout_ms)
+{
+	struct ocpp_session *sh = (struct ocpp_session *)hndl;
+	struct ocpp_info *ctx;
+	struct ocpp_upstream_info *ui;
+	char buf[OCPP_USER_REQ_PDU_BUF];
+	char utc[CISTR25] = {0};
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	if (!ocpp_session_is_valid(sh) || conn_id < 0 ||
+	    status > OCPP_CP_STATUS_FAULTED || error > OCPP_CP_ERR_WEAK_SIGNAL) {
+		return -EINVAL;
+	}
+
+	ctx = sh->ctx;
+	if (ctx->state < CP_STATE_READY) {
+		return -EAGAIN;
+	}
+
+	if (ctx->is_cs_offline) {
+		return -EAGAIN;
+	}
+
+	fn = ctx->cfn[PDU_STATUS_NOTIFICATION];
+	ocpp_get_utc_now(utc);
+	ret = fn(buf, sizeof(buf), sh, conn_id, cp_status_str[status],
+		 cp_error_str[error], utc);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ui = &ctx->ui;
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	rmsg.sndlock = &ui->ws_sndlock;
+	rmsg.rspsig = &ui->ws_rspsig;
+	ret = ocpp_send_to_server(&rmsg, K_MSEC(timeout_ms));
+
+	return ret;
+}
+
 int ocpp_remote_start_transaction(struct ocpp_info *ctx,
 				  struct internal_msg *msg,
 				  char *uid)
