@@ -21,6 +21,8 @@ properties:
       [0]: Red LED
       [1]: IR LED
       The MAX30102 has no Green LED. Array must have exactly 2 elements.
+    min-len: 2
+    max-len: 2
 
   led-slot:
     min: 0
