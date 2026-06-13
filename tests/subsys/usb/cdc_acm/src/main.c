@@ -607,6 +607,11 @@ static void verify_serial_state(const uint32_t ctrl, const uint32_t val)
 
 ZTEST(cdc_acm_test, test_serial_state)
 {
+	if (IS_ENABLED(CONFIG_USBD_CDC_ACM_NO_NOTIF_EP)) {
+		/* Without the notification endpoint there is no SerialState. */
+		ztest_test_skip();
+	}
+
 	/* DCD (RxCarrier) and DSR (TxCarrier) are carried by the SerialState. */
 	verify_serial_state(UART_LINE_CTRL_DCD, 1);
 	verify_serial_state(UART_LINE_CTRL_DSR, 1);
