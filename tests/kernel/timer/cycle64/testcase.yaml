@@ -24,11 +24,14 @@ tests:
       - timer
     filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER and not CONFIG_NRF_GRTC_TIMER
     arch_allow: posix
+  # This is Nordic specific.
   kernel.timer.cycle64.grtc:
     tags:
       - kernel
       - timer
     filter: CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER and CONFIG_NRF_GRTC_TIMER
     arch_exclude: posix
+    vendor_allow:
+      - nordic
     timeout: 8600
     slow: true
