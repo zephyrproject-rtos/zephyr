@@ -110,6 +110,12 @@ static int test_ocpp_user_notify_cb(enum ocpp_notify_reason reason,
 		TC_PRINT("reset type %d\n", io->reset.type);
 		io->reset.status = OCPP_REQ_ACCEPTED;
 		return 0;
+
+	case OCPP_USR_CHANGE_AVAILABILITY:
+		TC_PRINT("change availability connector %d type %d\n",
+			 io->change_avail.id_con, io->change_avail.type);
+		io->change_avail.status = OCPP_REQ_ACCEPTED;
+		return 0;
 	}
 
 	return -ENOTSUP;

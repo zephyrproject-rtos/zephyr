@@ -190,6 +190,14 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 			io->reset.type == OCPP_RESET_HARD ? "Hard" : "Soft");
 		io->reset.status = OCPP_REQ_ACCEPTED;
 		return 0;
+
+	case OCPP_USR_CHANGE_AVAILABILITY:
+		LOG_INF("change availability connector %d to %s\n",
+			io->change_avail.id_con,
+			io->change_avail.type == OCPP_AVAILABILITY_OPERATIVE ?
+			"Operative" : "Inoperative");
+		io->change_avail.status = OCPP_REQ_ACCEPTED;
+		return 0;
 	}
 
 	return -ENOTSUP;
