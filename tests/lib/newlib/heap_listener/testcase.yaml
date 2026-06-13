@@ -1,4 +1,7 @@
 common:
+  toolchain_exclude:
+    - zephyr/gnu
+    - zephyr/llvm
   platform_exclude:
     - intel_adsp/cavs25
     - intel_adsp/cavs25/tgph
