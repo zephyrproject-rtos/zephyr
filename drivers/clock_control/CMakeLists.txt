@@ -79,6 +79,7 @@ endif()
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_ADSP clock_control_adsp.c)
+zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AESC clock_control_aesc.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX5 clock_control_agilex5.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_AGILEX5 clock_control_agilex5_ll.c)
 zephyr_library_sources_ifdef(CONFIG_CLOCK_CONTROL_ALIF clock_control_alif.c)

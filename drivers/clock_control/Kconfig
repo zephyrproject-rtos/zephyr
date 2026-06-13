@@ -27,6 +27,7 @@ module-str = clock control
 source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
+source "drivers/clock_control/Kconfig.aesc"
 source "drivers/clock_control/Kconfig.agilex5"
 source "drivers/clock_control/Kconfig.alif"
 source "drivers/clock_control/Kconfig.ambiq"

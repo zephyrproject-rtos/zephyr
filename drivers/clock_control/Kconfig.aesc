@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Aesc Silicon
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_AESC
+	bool "Aesc Silicon clock controller driver"
+	default y
+	depends on DT_HAS_AESC_CLOCK_CONTROLLER_ENABLED
+	select SYSCON
+	help
+	  Enable the Aesc Silicon clock controller driver.
+	  The reference clock frequency is read from the syscon device
+	  referenced by the node's "syscon" property.

@@ -454,6 +454,11 @@ New Drivers
   * Analog Devices AD4190-8 and AD4195-8 Sigma-Delta ADCs
     (:dtcompatible:`adi,ad4190-8-adc`, :dtcompatible:`adi,ad4195-8-adc`).
 
+* Clock control
+
+  * Aesc Silicon clock controller for the ElemRV platform
+    (:dtcompatible:`aesc,clock-controller`).
+
 * GPIO
 
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
