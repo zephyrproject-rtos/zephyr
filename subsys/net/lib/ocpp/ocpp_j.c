@@ -353,6 +353,47 @@ static int frame_start_txn_msg(char *buf, int len, struct ocpp_session *ses,
 	return 0;
 }
 
+static int frame_status_notification_msg(char *buf, int len,
+					 struct ocpp_session *ses, int conn_id,
+					 char *status, char *error,
+					 char *timestamp)
+{
+	int ret;
+	char tmp_buf[JSON_MSG_BUF_256];
+
+	struct json_ocpp_status_notif_msg msg = {
+		.connector_id = conn_id,
+		.error_code = error,
+		.status = status,
+		.timestamp = timestamp,
+	};
+
+	struct json_obj_descr descr[] = {
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_status_notif_msg, "connectorId",
+					  connector_id, JSON_TOK_NUMBER),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_status_notif_msg, "errorCode",
+					  error_code, JSON_TOK_STRING),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_status_notif_msg, "status",
+					  status, JSON_TOK_STRING),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct json_ocpp_status_notif_msg, "timestamp",
+					  timestamp, JSON_TOK_STRING),
+	};
+
+	ret = json_obj_encode_buf(descr, ARRAY_SIZE(descr), &msg,
+				  tmp_buf, sizeof(tmp_buf));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = frame_rpc_call_req(buf, len, PDU_STATUS_NOTIFICATION,
+				 (uintptr_t)ses, tmp_buf);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
 static int frame_getconfig_msg(char *buf, int len, char *key, char *val,
 			       bool is_rw, char *uid)
 {
@@ -857,6 +898,7 @@ static ocpp_msg_fp_t ocpp_json_frame[PDU_MSG_END] = {
 	[PDU_REMOTE_START_TRANSACTION]	= (ocpp_msg_fp_t)frame_status_resp_msg,
 	[PDU_REMOTE_STOP_TRANSACTION]	= (ocpp_msg_fp_t)frame_status_resp_msg,
 	[PDU_UNLOCK_CONNECTOR]	= (ocpp_msg_fp_t)frame_status_resp_msg,
+	[PDU_STATUS_NOTIFICATION] = (ocpp_msg_fp_t)frame_status_notification_msg,
 };
 
 void ocpp_parser_init(ocpp_msg_fp_t **cfn, ocpp_msg_fp_t **pfn)
