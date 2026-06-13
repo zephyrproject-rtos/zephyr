@@ -468,8 +468,17 @@ def extract_static_strings(elf, database, section_extraction=False):
 
     if section_extraction:
         # Extract strings from ELF sections
-        string_sections = STATIC_STRING_SECTIONS
+        string_sections = list(STATIC_STRING_SECTIONS)
         rawstr_map = {}
+
+        # Relocated rodata sections (e.g. .ccm_rodata_reloc, .smem_rodata_reloc
+        # emitted by gen_relocate_app.py for zephyr_code_relocate(... *_RODATA))
+        # hold static string literals too. Without them, %s args pointing into
+        # relocated rodata are shipped as bare pointers the dictionary decoder
+        # cannot resolve, so they render blank.
+        string_sections += [
+            name for name in elf_sections if "rodata" in name and name not in string_sections
+        ]
 
         # Some architectures may put static strings into additional sections.
         # So need to extract them too.
