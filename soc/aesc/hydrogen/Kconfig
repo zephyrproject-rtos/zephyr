@@ -7,6 +7,7 @@ config SOC_SERIES_HYDROGEN
 	select RISCV_HAS_PLIC
 	select INCLUDE_RESET_VECTOR
 	select PINCTRL
+	select CLOCK_CONTROL
 
 config SOC_PART_NUMBER
 	default "elemrv_h" if SOC_ELEMRV_H
