@@ -36,6 +36,16 @@ config USBH_CDC_ACM_BOUNCE_POOL_SIZE
 	  Size in bytes of the bounce buffer pool per instance, used when a
 	  buffer submitted to the UART asynchronous API is not DMA-able.
 
+config USBH_CDC_ACM_ALLOW_NO_NOTIF_EP
+	bool "Accept devices without a notification endpoint"
+	help
+	  The CDC ACM communication interface is required by the specification
+	  to provide a notification (interrupt IN) endpoint. Enable this option
+	  to also accept non-compliant devices that omit it. Such devices can
+	  transfer data and accept line coding and control line state, but do
+	  not provide the SerialState notification, so DCD and DSR are not
+	  available.
+
 module = USBH_CDC_ACM
 module-str = usbh-cdc-acm
 default-count = 1
