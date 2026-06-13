@@ -1246,9 +1246,15 @@ static int uart_esp32_init(const struct device *dev)
 		uhci_ll_init(data->uhci_dev);
 		uhci_ll_rx_set_eof_mode(data->uhci_dev, UHCI_RX_IDLE_EOF | UHCI_RX_LEN_EOF);
 
-		/* Configure SLIP encoding/decoding */
+		/*
+		 * Clear the escape_conf reset defaults (all bits 1) first, then
+		 * enable the C0 and DB escape pairs together as SLIP requires.
+		 */
+		data->uhci_dev->escape_conf.val = 0;
 		data->uhci_dev->escape_conf.tx_c0_esc_en = config->uhci_slip_tx ? 1 : 0;
+		data->uhci_dev->escape_conf.tx_db_esc_en = config->uhci_slip_tx ? 1 : 0;
 		data->uhci_dev->escape_conf.rx_c0_esc_en = config->uhci_slip_rx ? 1 : 0;
+		data->uhci_dev->escape_conf.rx_db_esc_en = config->uhci_slip_rx ? 1 : 0;
 
 		uhci_ll_attach_uart_port(data->uhci_dev, uart_hal_get_port_num(&data->hal));
 		data->uart_dev = dev;
