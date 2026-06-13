@@ -8,6 +8,8 @@ common:
 
 tests:
   sample.sensor.qdec_sensor:
+    platform_type:
+      - mcu
     filter: dt_alias_exists("qdec0")
     harness_config:
       type: multi_line

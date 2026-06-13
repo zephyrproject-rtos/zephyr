@@ -2,6 +2,8 @@ sample:
   name: Stream FIFO sample
 tests:
   sample.sensor.6dof_fifo_stream:
+    platform_type:
+      - mcu
     harness: console
     tags: sensors
     filter: dt_alias_exists("stream0")
