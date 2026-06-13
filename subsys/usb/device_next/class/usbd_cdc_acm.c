@@ -302,7 +302,8 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 		}
 
-		if (bi->ep == cdc_acm_get_int_in(c_data)) {
+		if (!IS_ENABLED(CONFIG_USBD_CDC_ACM_NO_NOTIF_EP) &&
+		    bi->ep == cdc_acm_get_int_in(c_data)) {
 			k_sem_reset(&data->notif_sem);
 		}
 
@@ -349,7 +350,8 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		}
 	}
 
-	if (bi->ep == cdc_acm_get_int_in(c_data)) {
+	if (!IS_ENABLED(CONFIG_USBD_CDC_ACM_NO_NOTIF_EP) &&
+	    bi->ep == cdc_acm_get_int_in(c_data)) {
 		k_sem_give(&data->notif_sem);
 	}
 
@@ -614,6 +616,11 @@ static __maybe_unused int cdc_acm_send_notification(const struct device *dev,
 	struct net_buf *buf;
 	uint8_t ep;
 	int ret;
+
+	if (IS_ENABLED(CONFIG_USBD_CDC_ACM_NO_NOTIF_EP)) {
+		LOG_INF("Option USBD_CDC_ACM_NO_NOTIF_EP is enabled");
+		return -ENOTSUP;
+	}
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
 		LOG_INF("USB configuration is not enabled");
@@ -1247,7 +1254,8 @@ static struct usbd_cdc_acm_desc cdc_acm_desc_##n = {				\
 		.bDescriptorType = USB_DESC_INTERFACE,				\
 		.bInterfaceNumber = 0,						\
 		.bAlternateSetting = 0,						\
-		.bNumEndpoints = 1,						\
+		.bNumEndpoints = COND_CODE_1(CONFIG_USBD_CDC_ACM_NO_NOTIF_EP,	\
+					     (0), (1)),				\
 		.bInterfaceClass = USB_BCC_CDC_CONTROL,				\
 		.bInterfaceSubClass = ACM_SUBCLASS,				\
 		.bInterfaceProtocol = 0,					\
@@ -1341,7 +1349,8 @@ const static struct usb_desc_header *cdc_acm_fs_desc_##n[] = {			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_cm,			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_acm,			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_union,			\
-	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_int_ep,		\
+	COND_CODE_1(CONFIG_USBD_CDC_ACM_NO_NOTIF_EP, (),			\
+		((struct usb_desc_header *) &cdc_acm_desc_##n.if0_int_ep,))	\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if1,			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_in_ep,			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_out_ep,		\
@@ -1356,7 +1365,8 @@ const static struct usb_desc_header *cdc_acm_hs_desc_##n[] = {			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_cm,			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_acm,			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_union,			\
-	(struct usb_desc_header *) &cdc_acm_desc_##n.if0_hs_int_ep,		\
+	COND_CODE_1(CONFIG_USBD_CDC_ACM_NO_NOTIF_EP, (),			\
+		((struct usb_desc_header *) &cdc_acm_desc_##n.if0_hs_int_ep,))	\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if1,			\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_hs_in_ep,		\
 	(struct usb_desc_header *) &cdc_acm_desc_##n.if1_hs_out_ep,		\
