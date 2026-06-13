@@ -19,6 +19,9 @@ tests:
       - CONFIG_MINIMAL_LIBC_STRING_ERROR_TABLE=n
       - CONFIG_MINIMAL_LIBC_NON_REENTRANT_FUNCTIONS=y
   libraries.libc.strerror.newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     filter: CONFIG_NEWLIB_LIBC_SUPPORTED
     min_ram: 32
     tags: newlib

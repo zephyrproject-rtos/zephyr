@@ -15,6 +15,9 @@ tests:
     extra_configs:
       - CONFIG_PICOLIBC=y
   libraries.libc.common.stdio.newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     tags: newlib
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
