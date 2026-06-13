@@ -140,18 +140,19 @@ static ALWAYS_INLINE void clock_init(void)
 #endif
 }
 
-#ifdef CONFIG_SOC_GECKO_EMU_DCDC
+#ifdef CONFIG_SILABS_GECKO_EMU_DCDC
 static ALWAYS_INLINE void dcdc_init(void)
 {
-#if defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_UNCONFIGURED)
+#if defined(CONFIG_SILABS_GECKO_EMU_DCDC_MODE_UNCONFIGURED)
 	/* Nothing to do, leave DC/DC converter in unconfigured, safe state. */
-#elif defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_ON) || defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_BYPASS)
+#elif defined(CONFIG_SILABS_GECKO_EMU_DCDC_MODE_ON) ||                                             \
+	defined(CONFIG_SILABS_GECKO_EMU_DCDC_MODE_BYPASS)
 	EMU_DCDCInit_TypeDef init_cfg = EMU_DCDCINIT_DEFAULT;
-#if defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_BYPASS)
+#if defined(CONFIG_SILABS_GECKO_EMU_DCDC_MODE_BYPASS)
 	init_cfg.dcdcMode = emuDcdcMode_Bypass;
 #endif
 	EMU_DCDCInit(&init_cfg);
-#elif defined(CONFIG_SOC_GECKO_EMU_DCDC_MODE_OFF)
+#elif defined(CONFIG_SILABS_GECKO_EMU_DCDC_MODE_OFF)
 	EMU_DCDCPowerOff();
 #else
 #error "Unsupported power configuration mode of the on chip DC/DC converter."
@@ -201,7 +202,7 @@ void soc_early_init_hook(void)
 	init_lfxo();
 #endif
 
-#ifdef CONFIG_SOC_GECKO_EMU_DCDC
+#ifdef CONFIG_SILABS_GECKO_EMU_DCDC
 	dcdc_init();
 #endif
 

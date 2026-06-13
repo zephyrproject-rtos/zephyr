@@ -106,6 +106,9 @@ Boards
   to set :kconfig:option:`CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE` to ``"RSA-3072"``.
   Otherwise, make sure to have your own signing keys of the signature type in use.
 
+* All Kconfigs under modules/hal_silabs/gecko were renamed from ``SOC_GECKO_*``
+  to ``SILABS_GECKO_*``. Adapt your board accordingly.
+
 Device Drivers and Devicetree
 *****************************
 

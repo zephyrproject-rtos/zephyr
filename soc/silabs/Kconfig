@@ -41,28 +41,28 @@ endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
 
-config SOC_GECKO_EMU_DCDC
+config SILABS_GECKO_EMU_DCDC
 	bool "SoC DC/DC regulator"
-	select SOC_GECKO_EMU
+	select SILABS_GECKO_EMU
 	help
 	  Enable the on chip DC/DC regulator
 
-choice SOC_GECKO_EMU_DCDC_MODE
+choice SILABS_GECKO_EMU_DCDC_MODE
 	prompt "DC/DC mode"
-	depends on SOC_GECKO_EMU_DCDC
+	depends on SILABS_GECKO_EMU_DCDC
 	help
 	  Select power configuration mode of the on chip DC/DC converter.
 
-	config SOC_GECKO_EMU_DCDC_MODE_UNCONFIGURED
+	config SILABS_GECKO_EMU_DCDC_MODE_UNCONFIGURED
 		bool "Initial / Unconfigured"
 
-	config SOC_GECKO_EMU_DCDC_MODE_ON
+	config SILABS_GECKO_EMU_DCDC_MODE_ON
 		bool "DC/DC On"
 
-	config SOC_GECKO_EMU_DCDC_MODE_OFF
+	config SILABS_GECKO_EMU_DCDC_MODE_OFF
 		bool "DC/DC Off"
 
-	config SOC_GECKO_EMU_DCDC_MODE_BYPASS
+	config SILABS_GECKO_EMU_DCDC_MODE_BYPASS
 		bool "Bypass"
 endchoice
 
