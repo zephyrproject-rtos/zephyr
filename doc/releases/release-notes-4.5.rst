@@ -985,6 +985,8 @@ New Drivers
 
 * ARM architecture
 
+* GPIO
+
   * :dtcompatible:`infineon,edge-npu` (:github:`106826`)
   * :dtcompatible:`nordic,nrf-wicr` (:github:`108141`)
   * :dtcompatible:`nordic,nrf71-uicr` (:github:`106134`)
@@ -1032,6 +1034,7 @@ New Drivers
 
 * Clock control
 
+  * :dtcompatible:`aesc,clock-controller` (:github:`116703`)
   * :dtcompatible:`bflb,bl616cl-clock-controller` (:github:`112738`)
   * :dtcompatible:`bflb,bl808-clock-controller` (:github:`105580`)
   * :dtcompatible:`bflb,mm-clk` (:github:`105580`)
