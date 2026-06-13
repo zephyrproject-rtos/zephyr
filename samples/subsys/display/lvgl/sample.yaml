@@ -81,6 +81,8 @@ tests:
     harness_config:
       fixture: fixture_display_rk043fn02h_ct
   sample.display.lvgl.renesas_ra_glcdc:
+    platform_type:
+      - mcu
     tags:
       - shield
     filter: dt_compat_enabled("renesas,ra-glcdc")
