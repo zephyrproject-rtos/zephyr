@@ -370,6 +370,11 @@ Other notable changes
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
 
+* LED Strip
+
+  * The WS2812 GPIO driver (``worldsemi,ws2812-gpio``) now uses the Fast GPIO
+    API and supports ESP32, i.MX RT, nRF, RP2040, SAM0, and STM32. (:github:`111218`)
+
 * Wi-Fi
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
