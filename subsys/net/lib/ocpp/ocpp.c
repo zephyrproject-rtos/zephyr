@@ -122,6 +122,18 @@ static int ocpp_ws_connect_cb(int ws_sock, struct http_request *req,
 	return 0;
 }
 
+int ocpp_notify_user(struct ocpp_info *ctx, enum ocpp_notify_reason reason,
+		     union ocpp_io_value *io)
+{
+	int ret;
+
+	k_mutex_lock(&ctx->cblock, K_FOREVER);
+	ret = ctx->cb(reason, io, ctx->user_data);
+	k_mutex_unlock(&ctx->cblock);
+
+	return ret;
+}
+
 static int ocpp_connect_to_cs(struct ocpp_info *ctx)
 {
 	int ret;
@@ -308,8 +320,8 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 					bool active;
 
 					io.meter_val.mes = i;
-					ret = ctx->cb(OCPP_USR_GET_METER_VALUE,
-						      &io, ctx->user_data);
+					ret = ocpp_notify_user(ctx, OCPP_USR_GET_METER_VALUE,
+							       &io);
 					if (ret < 0) {
 						continue;
 					}
@@ -351,15 +363,15 @@ static void ocpp_internal_handler(void *p1, void *p2, void *p3)
 			break;
 
 		case PDU_REMOTE_START_TRANSACTION:
-			ctx->cb(OCPP_USR_START_CHARGING, &msg.usr, ctx->user_data);
+			ocpp_notify_user(ctx, OCPP_USR_START_CHARGING, &msg.usr);
 			break;
 
 		case PDU_REMOTE_STOP_TRANSACTION:
-			ctx->cb(OCPP_USR_STOP_CHARGING, &msg.usr, ctx->user_data);
+			ocpp_notify_user(ctx, OCPP_USR_STOP_CHARGING, &msg.usr);
 			break;
 
 		case PDU_UNLOCK_CONNECTOR:
-			ctx->cb(OCPP_USR_UNLOCK_CONNECTOR, &msg.usr, ctx->user_data);
+			ocpp_notify_user(ctx, OCPP_USR_UNLOCK_CONNECTOR, &msg.usr);
 			break;
 
 		default:
@@ -538,6 +550,14 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		}
 
 		ocpp_unlock_connector(ctx, &msg, uid);
+		break;
+
+	case PDU_RESET:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_RESET;
+
+		ret = fn(ui->recv_buf, &msg.usr.reset.type);
+		ocpp_reset(ctx, ret < 0 ? NULL : &msg, uid);
 		break;
 
 	case PDU_METER_VALUES:
@@ -834,6 +854,7 @@ int ocpp_init(struct ocpp_cp_info *cpi,
 
 	gctx = ctx;
 	k_mutex_init(&ctx->ilock);
+	k_mutex_init(&ctx->cblock);
 	sys_slist_init(&ctx->slist);
 	ocpp_parser_init(&ctx->cfn, &ctx->pfn);
 

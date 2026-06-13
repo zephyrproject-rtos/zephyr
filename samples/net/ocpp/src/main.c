@@ -184,6 +184,12 @@ static int user_notify_cb(enum ocpp_notify_reason reason,
 	case OCPP_USR_UNLOCK_CONNECTOR:
 		LOG_INF("unlock connector %d\n", io->unlock_con.id_con);
 		return 0;
+
+	case OCPP_USR_RESET:
+		LOG_INF("reset requested type %s\n",
+			io->reset.type == OCPP_RESET_HARD ? "Hard" : "Soft");
+		io->reset.status = OCPP_REQ_ACCEPTED;
+		return 0;
 	}
 
 	return -ENOTSUP;
