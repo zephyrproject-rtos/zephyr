@@ -10,11 +10,17 @@ tests:
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
   cpp.main.newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     min_ram: 32
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
   cpp.main.newlib_nano:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
     filter: TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_HAS_NEWLIB_LIBC_NANO
     min_ram: 24
     extra_configs:

@@ -1,8 +1,11 @@
 tests:
   # GNU C++ Standard Library (libstdc++)
   cpp.libcxx.glibcxx.newlib:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
+      - xcc
     filter: TOOLCHAIN_HAS_GLIBCXX == 1 and TOOLCHAIN_HAS_NEWLIB == 1
-    toolchain_exclude: xcc
     min_flash: 54
     min_ram: 24
     tags: cpp
@@ -13,8 +16,11 @@ tests:
     integration_platforms:
       - mps2/an385
   cpp.libcxx.glibcxx.newlib_nano:
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
+      - xcc
     filter: TOOLCHAIN_HAS_GLIBCXX == 1 and TOOLCHAIN_HAS_NEWLIB == 1 and CONFIG_HAS_NEWLIB_LIBC_NANO
-    toolchain_exclude: xcc
     min_flash: 54
     tags: cpp
     timeout: 60
@@ -26,7 +32,8 @@ tests:
       - mps2/an385
   cpp.libcxx.glibcxx.picolibc:
     filter: TOOLCHAIN_HAS_GLIBCXX == 1 and TOOLCHAIN_HAS_PICOLIBC == 1
-    toolchain_exclude: xcc
+    toolchain_exclude:
+      - xcc
     tags: cpp
     timeout: 60
     extra_configs:
@@ -38,7 +45,8 @@ tests:
   # LLVM C++ Standard Library (libc++)
   cpp.libcxx.libcxx.picolibc:
     filter: TOOLCHAIN_HAS_LIBCXX == 1 and TOOLCHAIN_HAS_PICOLIBC == 1
-    toolchain_exclude: xcc
+    toolchain_exclude:
+      - xcc
     tags: cpp
     timeout: 60
     extra_configs:
@@ -49,7 +57,8 @@ tests:
       - mps2/an385
   # ARC MWDT C++ Standard Library
   cpp.libcxx.arcmwdtlib:
-    toolchain_allow: arcmwdt
+    toolchain_allow:
+      - arcmwdt
     min_flash: 54
     tags: cpp
     extra_configs:
