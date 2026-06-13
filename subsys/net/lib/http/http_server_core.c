@@ -236,6 +236,7 @@ static int setup_h3_socket(const struct http_service_desc *svc, int af,
 	}
 
 #if defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN)
+#if defined(CONFIG_HTTP_SERVER_VERSION_3)
 		if (zsock_setsockopt(quic_sock, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
 				     h3_alpn_list, sizeof(h3_alpn_list)) < 0) {
 			ret = -errno;
@@ -243,6 +244,7 @@ static int setup_h3_socket(const struct http_service_desc *svc, int af,
 			zsock_close(quic_sock);
 			goto out;
 	}
+#endif /* defined(CONFIG_HTTP_SERVER_VERSION_3) */
 #endif /* defined(CONFIG_HTTP_SERVER_TLS_USE_ALPN) */
 #endif /* defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS) */
 
