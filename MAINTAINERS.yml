@@ -2803,7 +2803,7 @@ Documentation Infrastructure:
   labels:
     - "area: Time Aware GPIO"
   tests:
-    - sample.drivers.misc.timeaware_gpio
+    - sample.drivers.timeaware_gpio
 
 "Drivers: VIRTIO":
   status: maintained
