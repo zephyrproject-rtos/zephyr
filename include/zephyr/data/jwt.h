@@ -7,8 +7,10 @@
 #ifndef ZEPHYR_INCLUDE_DATA_JWT_H_
 #define ZEPHYR_INCLUDE_DATA_JWT_H_
 
-#include <zephyr/types.h>
+#include <zephyr/data/json.h>
+
 #include <stdbool.h>
+#include <psa/crypto.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,13 +65,14 @@ struct jwt_builder {
  * @param buffer The buffer to write the token to.
  * @param buffer_size The size of this buffer.  The token will be NULL
  * terminated, which needs to be allowed for in this size.
+ * @param alg The signing algorithm (corresponds to the header "alg" property)
+ * @param typ The JWT type (corresponds to the header "typ" property")
  *
  * @retval 0 Success.
  * @retval -ENOSPC Buffer is insufficient to initialize.
  */
-int jwt_init_builder(struct jwt_builder *builder,
-		     char *buffer,
-		     size_t buffer_size);
+int jwt_init_builder(struct jwt_builder *builder, char *buffer, size_t buffer_size, const char *alg,
+		     const char *typ);
 
 /**
  * @brief Add JWT payload.
@@ -82,17 +85,15 @@ int jwt_init_builder(struct jwt_builder *builder,
  * See RFC 7519 section 4.1 to get more information about these fields.
  *
  * @param builder A previously initialized builder.
- * @param exp Expiration Time (epoch format).
- * @param iat Issued At (epoch format).
- * @param aud Audience.
+ * @param payload Your payload struct.
+ * @param payload_json The JSON object descriptor.
+ * @param payload_json_len The length of the descriptor.
  *
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int jwt_add_payload(struct jwt_builder *builder,
-		    int32_t exp,
-		    int32_t iat,
-		    const char *aud);
+int jwt_add_payload(struct jwt_builder *builder, const void *payload,
+		    const struct json_obj_descr *payload_json, size_t payload_json_len);
 
 /**
  * @brief Sign the JWT.
@@ -100,15 +101,13 @@ int jwt_add_payload(struct jwt_builder *builder,
  * Sign a previously initialized with payload JWT.
  *
  * @param builder A previously initialized builder with payload.
- * @param der_key Private key to use in DER format.
- * @param der_key_len Size of the private key in bytes.
+ * @param key_id The key ID to use for signing.
+ * @param alg The algorithm to use for signing.
  *
  * @retval 0 Success.
  * @retval <0 Failure.
  */
-int jwt_sign(struct jwt_builder *builder,
-	     const char *der_key,
-	     size_t der_key_len);
+int jwt_sign(struct jwt_builder *builder, psa_key_id_t key_id, psa_algorithm_t alg);
 
 #ifdef __cplusplus
 }
