@@ -236,6 +236,8 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 		union ocpp_io_value io;
 
 		LOG_INF("ocpp start charging connector id %d\n", idcon);
+		ocpp_status_notification(sh, idcon, OCPP_CP_STATUS_CHARGING,
+					 OCPP_CP_ERR_NO_ERROR, timeout_ms);
 		memset(&io, 0xff, sizeof(io));
 
 		/* wait for stop charging event from main or remote CS */
@@ -258,6 +260,8 @@ static void ocpp_cp_entry(void *p1, void *p2, void *p3)
 	}
 
 	LOG_INF("ocpp stop charging connector id %d\n", idcon);
+	ocpp_status_notification(sh, idcon, OCPP_CP_STATUS_AVAILABLE,
+				 OCPP_CP_ERR_NO_ERROR, timeout_ms);
 	k_sleep(K_SECONDS(1));
 	ocpp_session_close(sh);
 	tid[idcon - 1] = NULL;

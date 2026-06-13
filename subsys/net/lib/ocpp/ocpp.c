@@ -47,6 +47,7 @@ static struct ocpp_msg_table pdu_msg_table[] = {
 	FILL_PDU_TABLE(PDU_CHANGE_AVAILABILITY, "ChangeAvailability"),
 	FILL_PDU_TABLE(PDU_UNLOCK_CONNECTOR, "UnlockConnector"),
 	FILL_PDU_TABLE(PDU_RESET, "Reset"),
+	FILL_PDU_TABLE(PDU_STATUS_NOTIFICATION, "StatusNotification"),
 };
 
 const char *ocpp_get_pdu_literal(enum ocpp_pdu_msg pdu)

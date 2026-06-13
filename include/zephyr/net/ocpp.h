@@ -46,6 +46,39 @@ enum ocpp_auth_status {
 	OCPP_AUTH_CONCURRENT_TX /**< Parallel access of same IdTag */
 };
 
+/** @brief OCPP charge point status reported in StatusNotification */
+enum ocpp_cp_status {
+	OCPP_CP_STATUS_AVAILABLE,	/**< connector available */
+	OCPP_CP_STATUS_PREPARING,	/**< preparing to charge */
+	OCPP_CP_STATUS_CHARGING,	/**< charging in progress */
+	OCPP_CP_STATUS_SUSPENDED_EVSE,	/**< charging suspended by EVSE */
+	OCPP_CP_STATUS_SUSPENDED_EV,	/**< charging suspended by EV */
+	OCPP_CP_STATUS_FINISHING,	/**< transaction finishing */
+	OCPP_CP_STATUS_RESERVED,	/**< connector reserved */
+	OCPP_CP_STATUS_UNAVAILABLE,	/**< connector not available */
+	OCPP_CP_STATUS_FAULTED,		/**< fault present */
+};
+
+/** @brief OCPP charge point error code reported in StatusNotification */
+enum ocpp_cp_error_code {
+	OCPP_CP_ERR_NO_ERROR,			/**< no error */
+	OCPP_CP_ERR_CONNECTOR_LOCK_FAILURE,	/**< connector lock failed */
+	OCPP_CP_ERR_EV_COMMUNICATION_ERROR,	/**< communication with EV lost */
+	OCPP_CP_ERR_GROUND_FAILURE,		/**< ground fault detected */
+	OCPP_CP_ERR_HIGH_TEMPERATURE,		/**< over temperature */
+	OCPP_CP_ERR_INTERNAL_ERROR,		/**< internal error */
+	OCPP_CP_ERR_LOCAL_LIST_CONFLICT,	/**< local list version conflict */
+	OCPP_CP_ERR_OTHER_ERROR,		/**< other error */
+	OCPP_CP_ERR_OVER_CURRENT_FAILURE,	/**< over current */
+	OCPP_CP_ERR_OVER_VOLTAGE,		/**< over voltage */
+	OCPP_CP_ERR_POWER_METER_FAILURE,	/**< power meter failure */
+	OCPP_CP_ERR_POWER_SWITCH_FAILURE,	/**< power switch failure */
+	OCPP_CP_ERR_READER_FAILURE,		/**< id reader failure */
+	OCPP_CP_ERR_RESET_FAILURE,		/**< reset failure */
+	OCPP_CP_ERR_UNDER_VOLTAGE,		/**< under voltage */
+	OCPP_CP_ERR_WEAK_SIGNAL,		/**< weak signal */
+};
+
 enum ocpp_notify_reason {
 	/** User must fill the current reading */
 	OCPP_USR_GET_METER_VALUE,
@@ -259,6 +292,23 @@ int ocpp_start_transaction(ocpp_session_handle_t hndl,
 int ocpp_stop_transaction(ocpp_session_handle_t hndl,
 			  int meter_val,
 			  uint32_t timeout_ms);
+
+/**
+ * @brief Notify connector status to CS via StatusNotification
+ *
+ * @param[in] hndl session handle
+ * @param[in] conn_id connector id, 0 refers to the charge point itself
+ * @param[in] status connector status
+ * @param[in] error error code, OCPP_CP_ERR_NO_ERROR if none
+ * @param[in] timeout_ms timeout in msec
+ *
+ * @return 0 on success or a negative error code (errno.h) indicating reason of failure
+ */
+int ocpp_status_notification(ocpp_session_handle_t hndl,
+			     int conn_id,
+			     enum ocpp_cp_status status,
+			     enum ocpp_cp_error_code error,
+			     uint32_t timeout_ms);
 
 #ifdef __cplusplus
 }
