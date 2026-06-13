@@ -5,35 +5,40 @@
 
 #include <freq.h>
 #include <mem.h>
-#include <zephyr/dt-bindings/flash_controller/xspi.h>
 
 #include "b_m2mem_pack1_common.dtsi"
 
 &m2mem_xspi {
 	status = "okay";
 
-	mx25lm51245: xspi-nor-flash@0 {
-		compatible = "st,stm32-xspi-nor";
+	m2mem_flash: mx25lm51245: mspi-nor-flash@0 {
+		compatible = "mxicy,mx25u", "jedec,mspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
-		ospi-max-frequency = <DT_FREQ_M(50)>;
-		spi-bus-width = <XSPI_OCTO_MODE>;
-		data-rate = <XSPI_DTR_TRANSFER>;
-		reset-gpios = <&m2mem_ldo_en M2MEM_CONNECTOR_GPIO_LDO_EN GPIO_ACTIVE_LOW>;
-		reset-gpios-duration = <1>;
-		four-byte-opcodes;
-		jedec-id = [c2 85 3a];
 		status = "okay";
 
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
 
-		m2mem_flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_M(64)>;
-			erase-block-size = <DT_SIZE_K(4)>;
-			write-block-size = <1>;
+		read-command = <0xec13>;
+		write-command = <0x12ed>;
+		command-length = "INSTR_2_BYTE";
+		rx-dummy = <20>;
+		jedec-id = [c2 85 3a];
+
+		reset-gpios = <&m2mem_ldo_en M2MEM_CONNECTOR_GPIO_LDO_EN GPIO_ACTIVE_LOW>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			m2mem_flash0: partition@0 {
+				label = "storage";
+				reg = <0x0 DT_SIZE_M(64)>;
+			};
 		};
 	};
 };

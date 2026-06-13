@@ -17,13 +17,6 @@ shields:
       - mtd
       - led
 
-  - name: b_m2mem_pack1_mb1928_18la
-    full_name: B-M2MEM-PACK1 MB1928-18LA
-    vendor: st
-    supported_features:
-      - mtd
-      - led
-
   - name: b_m2mem_pack1_mb1928_33la
     full_name: B-M2MEM-PACK1 MB1928-33LA
     vendor: st
