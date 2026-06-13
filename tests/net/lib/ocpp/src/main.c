@@ -105,6 +105,10 @@ static int test_ocpp_user_notify_cb(enum ocpp_notify_reason reason,
 	case OCPP_USR_UNLOCK_CONNECTOR:
 		TC_PRINT("unlock connector %d\n", io->unlock_con.id_con);
 		return 0;
+
+	case OCPP_USR_RESET:
+		TC_PRINT("reset type %d\n", io->reset.type);
+		return 0;
 	}
 
 	return -ENOTSUP;

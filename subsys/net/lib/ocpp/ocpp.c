@@ -533,6 +533,14 @@ static int ocpp_process_server_msg(struct ocpp_info *ctx)
 		ocpp_unlock_connector(ctx, &msg, uid);
 		break;
 
+	case PDU_RESET:
+		memset(&msg, 0, OCPP_INTERNAL_MSG_SIZE);
+		msg.msgtype = PDU_RESET;
+
+		ret = fn(ui->recv_buf, &msg.usr.reset.type);
+		ocpp_reset(ctx, ret < 0 ? NULL : &msg, uid);
+		break;
+
 	case PDU_METER_VALUES:
 	default:
 		break;

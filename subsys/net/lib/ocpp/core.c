@@ -576,6 +576,38 @@ int ocpp_unlock_connector(struct ocpp_info *ctx,
 	return ret;
 }
 
+static const char * const req_status_str[] = {
+	[OCPP_REQ_ACCEPTED]	= "Accepted",
+	[OCPP_REQ_REJECTED]	= "Rejected",
+};
+
+int ocpp_reset(struct ocpp_info *ctx, struct internal_msg *msg, char *uid)
+{
+	char *buf = ctx->pdu_buf;
+	enum ocpp_req_status status = OCPP_REQ_REJECTED;
+	struct ocpp_wamp_rpc_msg rmsg = {0};
+	ocpp_msg_fp_t fn;
+	int ret;
+
+	if (msg != NULL) {
+		msg->usr.reset.status = OCPP_REQ_REJECTED;
+		ret = ctx->cb(OCPP_USR_RESET, &msg->usr, ctx->user_data);
+		if (ret == 0 && msg->usr.reset.status == OCPP_REQ_ACCEPTED) {
+			status = OCPP_REQ_ACCEPTED;
+		}
+	}
+
+	fn = ctx->cfn[PDU_RESET];
+	fn(buf, sizeof(ctx->pdu_buf), req_status_str[status], uid);
+
+	rmsg.ctx = ctx;
+	rmsg.msg = buf;
+	rmsg.msg_len = strlen(buf);
+	ret = ocpp_send_to_server(&rmsg, K_SECONDS(OCPP_PDU_TIMEOUT));
+
+	return ret;
+}
+
 int ocpp_meter_values(ocpp_session_handle_t hndl,
 		      enum ocpp_meter_measurand mes,
 		      char *sval)

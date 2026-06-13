@@ -93,6 +93,21 @@ enum ocpp_notify_reason {
 
 	/** Unlock mechanical connector of CP */
 	OCPP_USR_UNLOCK_CONNECTOR,
+
+	/** Reset the charge point (hard or soft) */
+	OCPP_USR_RESET,
+};
+
+/** @brief OCPP reset type requested by central system */
+enum ocpp_reset_type {
+	OCPP_RESET_HARD,	/**< full reboot of the charge point */
+	OCPP_RESET_SOFT,	/**< restart of the application only */
+};
+
+/** @brief Reply status the application sets for a central system request */
+enum ocpp_req_status {
+	OCPP_REQ_ACCEPTED,	/**< request accepted */
+	OCPP_REQ_REJECTED,	/**< request rejected */
 };
 
 /** @brief OCPP meter readings to be filled on user callback request from
@@ -154,6 +169,11 @@ union ocpp_io_value {
 	struct {
 		int id_con;	/**< Input to user, to unlock connector id. */
 	} unlock_con;
+
+	struct {
+		enum ocpp_reset_type type; /**< Input to user, reset type requested */
+		enum ocpp_req_status status; /**< To be filled by user, reply status */
+	} reset; /**< Reset request from CS */
 };
 
 /** @brief Parameters for ocpp_init information about Charge Point (CP)
@@ -201,6 +221,11 @@ typedef void *ocpp_session_handle_t;
  * @brief Asynchronous event notification callback registered by the
  *        application. advised callback should not be hold for longer time
  *        to unblock the ocpp protocol stack/lib.
+ *
+ * For a request whose io carries a status, the callback runs in the
+ * receive thread and the reply to the central system uses the status set
+ * by the user. Such a callback must not call an ocpp API that waits for
+ * the central system, as that reply is read by the same thread.
  *
  * @param[in] reason for callback invoked.
  * @param[in] io referred corresponding to reason.
