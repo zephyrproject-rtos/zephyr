@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Adafruit KB2040 (Pro Micro RP2040)
+ *
+ * UART1: TX = D4 (GP4), RX = D5 (GP5)
+ * DE = D6 (GP6), RE = D7 (GP7)
+ */
+
+#include <zephyr/dt-bindings/dmx/dmx.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2040-pinctrl.h>
+
+&pinctrl {
+	uart1_dmx: uart1_dmx {
+		group1 {
+			pinmux = <UART1_TX_P4>;
+		};
+
+		group2 {
+			pinmux = <UART1_RX_P5>;
+			input-enable;
+		};
+	};
+};
+
+&uart1 {
+	status = "okay";
+	current-speed = <DMX_BAUD_RATE>;
+	pinctrl-0 = <&uart1_dmx>;
+	pinctrl-names = "default";
+
+	dmx0: dmx {
+		compatible = "zephyr,dmx-uart-isr";
+		/* Pro Micro D6 = GP6 */
+		de-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+		/* Pro Micro D7 = GP7 */
+		re-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+	};
+};

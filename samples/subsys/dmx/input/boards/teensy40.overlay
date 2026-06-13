@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * PJRC Teensy 4.0
+ *
+ * LPUART2: TX = pin 14 (AD_B1_02), RX = pin 15 (AD_B1_03)
+ * DE = pin 16 (AD_B1_07), RE = pin 17 (AD_B1_06)
+ */
+
+#include <zephyr/dt-bindings/dmx/dmx.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&lpuart2 {
+	status = "okay";
+	current-speed = <DMX_BAUD_RATE>;
+
+	dmx0: dmx {
+		compatible = "zephyr,dmx-uart-isr";
+		/* Pin 16 = GPIO1_IO23 (AD_B1_07) */
+		de-gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
+		/* Pin 17 = GPIO1_IO22 (AD_B1_06) */
+		re-gpios = <&gpio1 22 GPIO_ACTIVE_LOW>;
+	};
+};
