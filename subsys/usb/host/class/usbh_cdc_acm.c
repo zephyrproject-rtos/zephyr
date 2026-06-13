@@ -353,10 +353,12 @@ static void cdc_acm_cfg_work(struct k_work *const work)
 	(void)cdc_acm_set_line_coding(data, &line_coding);
 	(void)cdc_acm_set_control_line_state(data, line_state);
 
-	/* Start monitoring the serial state notifications. */
-	k_mutex_lock(&data->mutex, K_FOREVER);
-	(void)cdc_acm_notif_submit(data->dev);
-	k_mutex_unlock(&data->mutex);
+	if (data->int_ep != 0) {
+		/* Start monitoring the serial state notifications. */
+		k_mutex_lock(&data->mutex, K_FOREVER);
+		(void)cdc_acm_notif_submit(data->dev);
+		k_mutex_unlock(&data->mutex);
+	}
 }
 
 static void cdc_acm_tx_timeout_work(struct k_work *const work)
@@ -943,9 +945,19 @@ static int cdc_acm_line_ctrl_get(const struct device *dev,
 		*val = data->line_state_dtr;
 		break;
 	case UART_LINE_CTRL_DCD:
+		if (data->int_ep == 0) {
+			/* No notification endpoint, serial state is unavailable. */
+			ret = -ENOTSUP;
+			break;
+		}
 		*val = (data->serial_state & USB_CDC_SERIAL_STATE_RXCARRIER) ? 1 : 0;
 		break;
 	case UART_LINE_CTRL_DSR:
+		if (data->int_ep == 0) {
+			/* No notification endpoint, serial state is unavailable. */
+			ret = -ENOTSUP;
+			break;
+		}
 		*val = (data->serial_state & USB_CDC_SERIAL_STATE_TXCARRIER) ? 1 : 0;
 		break;
 	default:
@@ -1348,8 +1360,17 @@ static int cdc_acm_parse_descriptors(struct cdc_acm_uart_data *const data,
 	}
 
 	if (data->int_ep == 0) {
-		LOG_ERR("Control interface endpoint not found");
-		return -ENODEV;
+		/*
+		 * The communication interface is required to provide a
+		 * notification (interrupt IN) endpoint to be specification
+		 * compliant.
+		 */
+		if (!IS_ENABLED(CONFIG_USBH_CDC_ACM_ALLOW_NO_NOTIF_EP)) {
+			LOG_ERR("Notification endpoint not found");
+			return -ENODEV;
+		}
+
+		LOG_WRN("Notification endpoint not found, accepting non-compliant device");
 	}
 
 	LOG_DBG("Union descriptor bControlInterface %u bSubordinateInterface0 %u",
