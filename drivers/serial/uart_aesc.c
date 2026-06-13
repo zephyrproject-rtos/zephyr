@@ -311,7 +311,7 @@ static DEVICE_API(uart, uart_aesc_driver_api) = {
 	PINCTRL_DT_INST_DEFINE(no);					     \
 	AESC_UART_IRQ_INIT(no)						     \
 	static struct uart_aesc_data uart_aesc_dev_data_##no;		     \
-	static struct uart_aesc_config uart_aesc_dev_cfg_##no = {	     \
+	static const struct uart_aesc_config uart_aesc_dev_cfg_##no = {	     \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(no)),			     \
 		.sys_clk_freq =						     \
 			DT_PROP(DT_INST(no, aesc_uart), clock_frequency),    \
