@@ -5,9 +5,9 @@ rsource "*/Kconfig.defconfig"
 
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
 
-config SOC_GECKO_EMU
+config SILABS_GECKO_EMU
 	default y
-	select SOC_GECKO_CORE
+	select SILABS_GECKO_CORE
 	depends on PM
 
 config CORTEX_M_SYSTICK
