@@ -41,3 +41,18 @@ properties:
     type: boolean
     description: |
      Enables microphone bias voltage for the connected microphone input.
+
+  input-pga-volume:
+    type: int
+    default: 5
+    min: 0
+    max: 31
+    description: |
+      Static analog input PGA gain value, applied to the input PGA.
+      Used to set fixed input gain staging to match the sensitivity
+      of the connected microphone or line-in source.
+
+      Valid range is 0 to 31 (5-bit register, 0x00-0x1F / 00000b-11111b),
+      corresponding to an analog gain range of -1.5 dB to +28.3 dB in
+      ~0.96 dB steps. Out-of-range values are clamped by the driver.
+      The default gain is 5 (00101b), i.e. ~+3.3 dB.
