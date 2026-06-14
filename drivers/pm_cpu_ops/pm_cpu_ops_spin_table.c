@@ -13,8 +13,11 @@ LOG_MODULE_REGISTER(spin_table, CONFIG_PM_CPU_OPS_LOG_LEVEL);
 
 #define NUM_CPUS  ARRAY_SIZE(mpid_table)
 
-#define CPU_IS_SPIN_TABLE(node_id)                                                 \
-	DT_ENUM_HAS_VALUE(node_id, enable_method, spin_table)
+/* Sentinel to detect a "spin-table" enable-method */
+#define Z_ENABLE_METHOD_spin_table 1
+
+#define CPU_IS_SPIN_TABLE(node_id)                                                                 \
+	IS_ENABLED(UTIL_CAT(Z_ENABLE_METHOD_, DT_STRING_TOKEN(node_id, enable_method)))
 
 #define SPIN_TABLE_RELEASE_ADDR(node_id)                                           \
 	COND_CODE_1(CPU_IS_SPIN_TABLE(node_id),                                    \
