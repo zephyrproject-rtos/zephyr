@@ -159,6 +159,14 @@ static int icmpv4_update_record_route(uint8_t *opt_data,
 
 	len++;
 
+	/* The smallest legal pointer value is ptr_offset. A smaller value
+	 * would underflow `skip` (uint8_t) below and over-read the option data
+	 * into the reply.
+	 */
+	if (ptr < ptr_offset) {
+		goto drop;
+	}
+
 	skip = ptr - ptr_offset;
 	if (skip) {
 		/* Do not alter existed routes */
@@ -300,6 +308,14 @@ static int icmpv4_update_time_stamp(uint8_t *opt_data,
 	}
 
 	len++;
+
+	/* The smallest legal pointer value is ptr_offset. A smaller value
+	 * would underflow `skip` (uint8_t) below and over-read the option data
+	 * into the reply.
+	 */
+	if (ptr < ptr_offset) {
+		goto drop;
+	}
 
 	skip = ptr - ptr_offset;
 	if (skip) {
