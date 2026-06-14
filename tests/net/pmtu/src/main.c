@@ -707,7 +707,7 @@ ZTEST(net_pmtu_test_suite, test_pmtu_05_ipv4_tcp)
 	 * will update the PMTU entry.
 	 */
 	ret = create_icmpv4_dest_unreach(target_iface, &s_saddr, &c_saddr, 2048, &pkt);
-	zassert_equal(ret, 0, "Failed to create ICMPv4 Destination Unrechable message");
+	zassert_equal(ret, 0, "Failed to create ICMPv4 Destination Unreachable message");
 
 	ret = net_send_data(pkt);
 	zassert_equal(ret, 0, "Failed to send Destination Unreachable message");

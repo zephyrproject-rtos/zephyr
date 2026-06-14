@@ -54,7 +54,7 @@ comforting to know, even if it is something astronomical like 1G `[msg/s]`.
 ## Input-Limited Log Rate
 
 The ideal scenario is when the output "bandwidth" exceeds the input rate. If
-so configured, we minimize the liklihood that the log processing thread will
+so configured, we minimize the likelihood that the log processing thread will
 stall. We can also be sure that the output will be able to relieve
 backpressure (i.e. the core log buffer usage will tend to zero over time).
 

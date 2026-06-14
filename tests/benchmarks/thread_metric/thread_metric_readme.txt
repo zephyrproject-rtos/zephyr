@@ -96,7 +96,7 @@ have been updated to match Zephyr's.
 
 Zephyr's version does not spawn a reporting thread. Instead it calls
 the reporting function directly. This helps ensure that the test
-operates correctly on QEMU platorms.
+operates correctly on QEMU platforms.
 
 2.4. Directory structure
 
@@ -129,7 +129,7 @@ When the test suite is executed by Twister it takes parameters from testcase.yam
 file, in particular:
 
     * check expected benchmark output presence at least three times to collect
-      measurements from 3 consequtive intervals for each of the benchmark tests.
+      measurements from 3 consecutive intervals for each of the benchmark tests.
 
     * use 300 sec. timeout on each benchmark test from this suite;
       it is expected to be at least twice bigger than normally needed

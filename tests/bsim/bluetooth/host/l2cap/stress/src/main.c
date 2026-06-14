@@ -40,7 +40,7 @@ DEFINE_FLAG_STATIC(flag_l2cap_connected);
  * Peripheral 3: disconnects after receiving first SDU
  * Peripheral 4: disconnects after receiving first PDU in second SDU
  * Peripheral 5: disconnects after receiving third PDU in third SDU
- * Peripheral 6: disconnects atfer receiving tenth PDU in tenth SDU
+ * Peripheral 6: disconnects after receiving tenth PDU in tenth SDU
  */
 static unsigned int device_nbr;
 
@@ -157,7 +157,7 @@ static void disconnect_device_no_wait(struct bt_conn *conn, void *data)
 	int err;
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+	TEST_ASSERT(!err, "Failed to initiate disconnect (err %d)", err);
 
 	UNSET_FLAG(is_connected);
 }
@@ -377,7 +377,7 @@ static void disconnect_device(struct bt_conn *conn, void *data)
 	SET_FLAG(is_connected);
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+	TEST_ASSERT(!err, "Failed to initiate disconnect (err %d)", err);
 
 	LOG_DBG("Waiting for disconnection...");
 	WAIT_FOR_FLAG_UNSET(is_connected);

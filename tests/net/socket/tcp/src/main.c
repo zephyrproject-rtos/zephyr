@@ -321,7 +321,7 @@ ZTEST_USER(net_socket_tcp, test_v6_send_recv)
 	k_sleep(TCP_TEARDOWN_TIMEOUT);
 }
 
-/* Test the stack behavior with a resonable sized block data, be sure to have multiple packets */
+/* Test the stack behavior with a reasonable sized block data, be sure to have multiple packets */
 #define TEST_LARGE_TRANSFER_SIZE 60000
 #define TEST_PRIME 811
 
@@ -591,7 +591,7 @@ ZTEST(net_socket_tcp, test_v4_broken_link)
 
 	net_mgmt(NET_REQUEST_STATS_GET_ALL, NULL, &after, sizeof(after));
 
-	zassert_equal(before.ipv4.sent, after.ipv4.sent, "Data sent afer connection timeout");
+	zassert_equal(before.ipv4.sent, after.ipv4.sent, "Data sent after connection timeout");
 
 	test_close(c_sock);
 	test_close(new_sock);

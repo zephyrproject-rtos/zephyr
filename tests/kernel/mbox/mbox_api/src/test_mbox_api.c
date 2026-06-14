@@ -155,7 +155,7 @@ static void tmbox_put(struct k_mbox *pmbox)
 		mmsg.size = 0;
 		mmsg.tx_data = NULL;
 		mmsg.tx_target_thread = sender_tid;
-		/* timeout because this msg wont be received with a _get*/
+		/* timeout because this msg won't be received with a _get*/
 		k_mbox_put(pmbox, &mmsg, TIMEOUT);
 		break;
 

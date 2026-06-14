@@ -26,7 +26,7 @@
  * would be overwritten.
  *
  * The functions in this file are intended to guard against undefined
- * behavor due to NULL pointer dereferencing. They will assert on any
+ * behavior due to NULL pointer dereferencing. They will assert on any
  * relevant pointers.
  */
 

@@ -71,7 +71,7 @@ ZTEST(basic, test_specification_based__zbus_obs_add_rm_obs)
 	struct sensor_data_msg sd = {.a = 10, .b = 100};
 	static struct zbus_observer_node n1, n2, n3, n4, n5, n6;
 
-	/* Tyring to add same static observer as one dynamic */
+	/* Trying to add same static observer as one dynamic */
 	zassert_equal(-EEXIST, zbus_chan_add_obs_with_node(&chan2, &lis2, &n2, K_MSEC(200)));
 
 	zassert_equal(0, zbus_chan_pub(&chan1, &sd, K_MSEC(500)));

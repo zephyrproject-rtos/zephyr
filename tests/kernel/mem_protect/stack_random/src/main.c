@@ -59,7 +59,7 @@ ZTEST(stack_pointer_randomness, test_stack_pt_randomization)
 	int i, sp_changed;
 	int old_prio = k_thread_priority_get(k_current_get());
 
-	/* Set preemptable priority */
+	/* Set preemptible priority */
 	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(1));
 
 	printk("Test Stack pointer randomization\n");

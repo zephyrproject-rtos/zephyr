@@ -27,7 +27,7 @@ ZTEST(flash_map, test_flash_area_disabled_device)
 {
 	/* The test checks if Flash Map will report partition
 	 * non-existend if it is disabled, but it also assumes that
-	 * disabled parition will have an ID generated.
+	 * disabled partition will have an ID generated.
 	 * Custom partition maps may not be generating entries for
 	 * disabled partitions nor identifiers, which makes the
 	 * test fail with custom partition manager, for no real reason.

@@ -624,8 +624,8 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_regack)
  *
  * 6.9 Client’s Topic Subscribe/Un-subscribe Procedure
  * ...
- * As for the REGISTER procedure, a client may have only one SUBSCRIBE or one UNSUBCRIBE transaction
- * open at a time.
+ * As for the REGISTER procedure, a client may have only one SUBSCRIBE or one
+ * UNSUBSCRIBE transaction open at a time.
  */
 static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_suback)
 {
