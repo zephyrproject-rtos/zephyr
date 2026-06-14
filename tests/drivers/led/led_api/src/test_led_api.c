@@ -77,12 +77,11 @@ ZTEST_USER(led_user, test_led_get_info)
 			return;
 		}
 
-		zassert_equal(ret, 0, "LED %d - led_get_info() error (ret=%d)",
-			      led, ret);
+		zassert_ok(ret, "LED %d - led_get_info() error (ret=%d)", led, ret);
 
-		zassert_true(!strcmp(info->label, test_led_info[led].label),
-			     "LED %d - label: %s instead of %s",
-			     led, info->label, test_led_info[led].label);
+		zassert_str_equal(info->label, test_led_info[led].label,
+				  "LED %d - label: %s instead of %s",
+				  led, info->label, test_led_info[led].label);
 
 		zassert_equal(info->index, test_led_info[led].index,
 			      "LED %d - index: %d instead of %d", led,
@@ -120,7 +119,7 @@ ZTEST_USER(led_user, test_led_on)
 
 	for (led = 0; led < num_leds; led++) {
 		ret = led_on(led_ctrl, led);
-		zassert_equal(ret, 0, "LED %d - failed to turn on", led);
+		zassert_ok(ret, "LED %d - failed to turn on", led);
 	}
 }
 
@@ -131,7 +130,7 @@ ZTEST_USER(led_user, test_led_off)
 
 	for (led = 0; led < num_leds; led++) {
 		ret = led_off(led_ctrl, led);
-		zassert_equal(ret, 0, "LED %d - failed to turn off", led);
+		zassert_ok(ret, "LED %d - failed to turn off", led);
 	}
 }
 
@@ -156,9 +155,9 @@ ZTEST_USER(led_user, test_led_set_color)
 
 		/* Try to set more colors than supported. */
 		ret = led_set_color(led_ctrl, led, num_colors + 1, colors);
-		zassert_not_equal(ret, 0, "LED %d - setting %d"
-				  " colors should fail (%d supported)",
-				  led, num_colors + 1, num_colors);
+		zassert_not_ok(ret, "LED %d - setting %d"
+			       " colors should fail (%d supported)",
+			       led, num_colors + 1, num_colors);
 
 		if (!num_colors) {
 			continue;
@@ -166,9 +165,9 @@ ZTEST_USER(led_user, test_led_set_color)
 
 		/* Try to set less colors than supported. */
 		ret = led_set_color(led_ctrl, led, num_colors - 1, colors);
-		zassert_not_equal(ret, 0, "LED %d - setting %d"
-				  " colors should fail (%d supported)",
-				  led, num_colors - 1, num_colors);
+		zassert_not_ok(ret, "LED %d - setting %d"
+			       " colors should fail (%d supported)",
+			       led, num_colors - 1, num_colors);
 
 		/* Ensure the LED is on to get a visual feedback. */
 		led_set_brightness(led_ctrl, led, BRIGHTNESS_MAX / 2);
@@ -184,7 +183,7 @@ ZTEST_USER(led_user, test_led_set_color)
 
 				ret = led_set_color(led_ctrl, led,
 						    num_colors, colors);
-				zassert_equal(ret, 0,
+				zassert_ok(ret,
 					"LED %d - failed to set color[%d] to %d",
 					led, level);
 			}
@@ -202,16 +201,16 @@ ZTEST_USER(led_user, test_led_set_brightness)
 
 		for (level = 0; level <= BRIGHTNESS_MAX; level++) {
 			ret = led_set_brightness(led_ctrl, led, level);
-			zassert_equal(ret, 0,
-				      "LED %d - failed to set brightness to %d",
-				      led, level);
+			zassert_ok(ret,
+				   "LED %d - failed to set brightness to %d",
+				   led, level);
 		}
 		for (level = BRIGHTNESS_MAX + 1; level <= 255; level++) {
 			ret = led_set_brightness(led_ctrl, led, level);
-			zassert_not_equal(ret, 0,
-					  "LED %d - setting brightness to %d"
-					  " should fail (maximum: %d)",
-					  led, level, BRIGHTNESS_MAX);
+			zassert_not_ok(ret,
+				       "LED %d - setting brightness to %d"
+				       " should fail (maximum: %d)",
+				       led, level, BRIGHTNESS_MAX);
 		}
 	}
 }
