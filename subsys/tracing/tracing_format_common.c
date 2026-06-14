@@ -6,18 +6,20 @@
 
 #include <string.h>
 #include <zephyr/sys/cbprintf.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <tracing_buffer.h>
 #include <tracing_format_common.h>
 
 static int str_put(int c, void *ctx)
 {
 	tracing_ctx_t *str_ctx = (tracing_ctx_t *)ctx;
+	struct ring_buf *rb = str_ctx->rb;
 
 	if (str_ctx->status == 0) {
 		uint8_t *buf;
 		uint32_t claimed_size;
 
-		claimed_size = tracing_buffer_put_claim(&buf, 1);
+		claimed_size = ring_buf_put_ptr(rb, &buf, str_ctx->length);
 		if (claimed_size) {
 			*buf = (uint8_t)c;
 			str_ctx->length++;
@@ -31,25 +33,28 @@ static int str_put(int c, void *ctx)
 
 bool tracing_format_string_put(const char *str, va_list args)
 {
+	struct ring_buf *rb = tracing_buffer_get_ring_buf();
 	tracing_ctx_t str_ctx = {0};
+
+	str_ctx.rb = rb;
 
 	(void)cbvprintf(str_put, (void *)&str_ctx, str, args);
 
 	if (str_ctx.status == 0) {
-		tracing_buffer_put_finish(str_ctx.length);
+		ring_buf_commit(rb, str_ctx.length);
 		return true;
 	}
 
-	tracing_buffer_put_finish(0);
 	return false;
 }
 
 bool tracing_format_raw_data_put(uint8_t *data, uint32_t size)
 {
-	uint32_t space = tracing_buffer_space_get();
+	struct ring_buf *rb = tracing_buffer_get_ring_buf();
+	uint32_t space = ring_buf_space_get(rb);
 
 	if (space >= size) {
-		tracing_buffer_put(data, size);
+		ring_buf_put(rb, data, size);
 		return true;
 	}
 
@@ -58,16 +63,18 @@ bool tracing_format_raw_data_put(uint8_t *data, uint32_t size)
 
 bool tracing_format_data_put(tracing_data_t *tracing_data_array, uint32_t count)
 {
+	struct ring_buf *rb = tracing_buffer_get_ring_buf();
 	uint32_t total_size = 0U;
 
 	for (uint32_t i = 0; i < count; i++) {
 		tracing_data_t *tracing_data =
 				tracing_data_array + i;
 		uint8_t *data = tracing_data->data, *buf;
-		uint32_t length = tracing_data->length, claimed_size;
+		uint32_t claimed_size;
+		uint32_t length = tracing_data->length;
 
 		do {
-			claimed_size = tracing_buffer_put_claim(&buf, length);
+			claimed_size = MIN(ring_buf_put_ptr(rb, &buf, total_size), length);
 			memcpy(buf, data, claimed_size);
 			total_size += claimed_size;
 			length -= claimed_size;
@@ -75,11 +82,10 @@ bool tracing_format_data_put(tracing_data_t *tracing_data_array, uint32_t count)
 		} while (length && claimed_size);
 
 		if (length && claimed_size == 0) {
-			tracing_buffer_put_finish(0);
 			return false;
 		}
 	}
 
-	tracing_buffer_put_finish(total_size);
+	ring_buf_commit(rb, total_size);
 	return true;
 }
