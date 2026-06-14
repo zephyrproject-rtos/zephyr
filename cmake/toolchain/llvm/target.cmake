@@ -105,9 +105,14 @@ elseif("${ARCH}" STREQUAL "xtensa")
 
   # Clang-specific flags for Xtensa
   list(APPEND TOOLCHAIN_C_FLAGS -mcpu=${XTENSA_CLANG_MCPU})
-  # Define __XCC__ so SOF's HiFi detection logic recognizes our LLVM Clang
-  # as an Xtensa compiler with HiFi support (enables HiFi3/4 code paths).
-  list(APPEND TOOLCHAIN_C_FLAGS -D__XCC__)
+  # Define __XCC__ so SOF's HiFi detection logic (format.h, fft.h, fir_config.h
+  # etc.) recognises our LLVM Clang as an Xtensa compiler with HiFi support and
+  # enters the "#if defined __XCC__" branches that read XCHAL_HAVE_HIFIx from
+  # <xtensa/config/core-isa.h>.
+  # Also define __XCC_CLANG__ so the CAVS-family core-isa.h files (tgl, apl,
+  # cnl, icl) can whitelist LLVM without triggering their "#error xcc should
+  # not use this header" guard (see modules/hal/xtensa patch below).
+  list(APPEND TOOLCHAIN_C_FLAGS -D__XCC__ -D__XCC_CLANG__)
   # Use the GCC assembler for all code — the integrated assembler can't
   # encode HiFi pseudo instructions (AE_MOVDA32X2 etc).
   list(APPEND TOOLCHAIN_C_FLAGS -fno-integrated-as)
