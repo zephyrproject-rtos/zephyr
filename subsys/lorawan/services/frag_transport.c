@@ -265,6 +265,11 @@ static void frag_transport_package_callback(uint8_t port, bool data_pending, int
 				break;
 			}
 
+			if (frag_counter == 0U) {
+				LOG_DBG("Invalid fragment index 0");
+				break;
+			}
+
 			if (frag_counter > ctx.nb_frag) {
 				/* Additional fragments have to be cached in RAM for recovery
 				 * algorithm.
