@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/sys/ring_buffer.h>
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_format_common.h>
@@ -13,13 +14,11 @@ void tracing_format_string(const char *str, ...)
 	uint8_t *data;
 	va_list args;
 	bool put_success;
-	uint32_t length, tracing_buffer_size;
+	uint32_t length;
 
 	if (!is_tracing_enabled()) {
 		return;
 	}
-
-	tracing_buffer_size = tracing_buffer_capacity_get();
 
 	va_start(args, str);
 
@@ -27,9 +26,9 @@ void tracing_format_string(const char *str, ...)
 	put_success = tracing_format_string_put(str, args);
 
 	if (put_success) {
-		length = tracing_buffer_get_claim(&data, tracing_buffer_size);
+		length = ring_buf_get_ptr(tracing_buffer_get_ring_buf(), &data);
 		tracing_buffer_handle(data, length);
-		tracing_buffer_get_finish(length);
+		ring_buf_consume(tracing_buffer_get_ring_buf(), length);
 	} else {
 		tracing_packet_drop_handle();
 	}
@@ -53,21 +52,19 @@ void tracing_format_data(tracing_data_t *tracing_data_array, uint32_t count)
 {
 	uint8_t *data;
 	bool put_success;
-	uint32_t length, tracing_buffer_size;
+	uint32_t length;
 
 	if (!is_tracing_enabled()) {
 		return;
 	}
 
-	tracing_buffer_size = tracing_buffer_capacity_get();
-
 	TRACING_LOCK();
 	put_success = tracing_format_data_put(tracing_data_array, count);
 
 	if (put_success) {
-		length = tracing_buffer_get_claim(&data, tracing_buffer_size);
+		length = ring_buf_get_ptr(tracing_buffer_get_ring_buf(), &data);
 		tracing_buffer_handle(data, length);
-		tracing_buffer_get_finish(length);
+		ring_buf_consume(tracing_buffer_get_ring_buf(), length);
 	} else {
 		tracing_packet_drop_handle();
 	}

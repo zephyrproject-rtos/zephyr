@@ -9,6 +9,7 @@
 
 #include <stdarg.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/sys/ring_buffer.h>
 #include <zephyr/tracing/tracing_format.h>
 
 #ifdef __cplusplus
@@ -21,6 +22,7 @@ extern "C" {
 typedef struct {
 	int status;
 	uint32_t length;
+	struct ring_buf rb;
 } tracing_ctx_t;
 
 /**
