@@ -14,84 +14,12 @@
 #include <zephyr/logging/log.h>
 
 #include <em_chip.h>
-#include <em_cmu.h>
 #include <em_emu.h>
 #include <soc.h>
+#include <soc_common.h>
 #include <cmsis_core.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
-
-#ifdef CONFIG_CMU_HFCLK_HFXO
-/**
- * @brief Initialization parameters for the external high frequency oscillator
- */
-static CMU_HFXOInit_TypeDef hfxoInit = CMU_HFXOINIT_DEFAULT;
-#endif
-
-#ifdef CONFIG_CMU_NEED_LFXO
-/**
- * @brief Initialization parameters for the external low frequency oscillator
- */
-static CMU_LFXOInit_TypeDef lfxoInit = CMU_LFXOINIT_DEFAULT;
-
-static void init_lfxo(void)
-{
-	/*
-	 * Configuring LFXO disables it, so we can do that only if it's not
-	 * used as a SYSCLK/HFCLK source.
-	 */
-	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_LFXO) {
-		CMU_LFXOInit(&lfxoInit);
-		CMU_OscillatorEnable(cmuOsc_LFXO, true, true);
-	}
-
-	SystemLFXOClockSet(CONFIG_CMU_LFXO_FREQ);
-}
-
-#endif /* CONFIG_CMU_NEED_LFXO */
-
-/**
- * @brief Initialize the system clock
- */
-static ALWAYS_INLINE void clock_init(void)
-{
-#ifdef CONFIG_CMU_HFCLK_HFXO
-	if (CMU_ClockSelectGet(cmuClock_HF) != cmuSelect_HFXO) {
-		CMU_HFXOInit(&hfxoInit);
-		CMU_OscillatorEnable(cmuOsc_HFXO, true, true);
-		CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFXO);
-	}
-	SystemHFXOClockSet(CONFIG_CMU_HFXO_FREQ);
-	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
-#elif (defined CONFIG_CMU_HFCLK_LFXO)
-	/* LFXO should've been already brought up by init_lfxo() */
-	CMU_ClockSelectSet(cmuClock_HF, cmuSelect_LFXO);
-	CMU_OscillatorEnable(cmuOsc_HFRCO, false, false);
-#elif (defined CONFIG_CMU_HFCLK_HFRCO)
-	/*
-	 * This is the default clock, the controller starts with
-	 */
-
-#ifdef CONFIG_SOC_GECKO_HAS_HFRCO_FREQRANGE
-	if (CONFIG_CMU_HFRCO_FREQ) {
-		/* Setting system HFRCO frequency */
-		CMU_HFRCOBandSet(CONFIG_CMU_HFRCO_FREQ);
-
-		/* Using HFRCO as high frequency clock, HFCLK */
-		CMU_ClockSelectSet(cmuClock_HF, cmuSelect_HFRCO);
-	}
-#endif
-#else
-#error "Unsupported clock source for HFCLK selected"
-#endif
-
-	/* Enable the High Frequency Peripheral Clock */
-	CMU_ClockEnable(cmuClock_HFPER, true);
-
-#if defined(CONFIG_GPIO_GECKO) || defined(CONFIG_LOG_BACKEND_SWO)
-	CMU_ClockEnable(cmuClock_GPIO, true);
-#endif
-}
 
 #ifdef CONFIG_SILABS_GECKO_EMU_DCDC
 static ALWAYS_INLINE void dcdc_init(void)
@@ -147,16 +75,11 @@ void soc_early_init_hook(void)
 	/* handle chip errata */
 	CHIP_Init();
 
-#ifdef CONFIG_CMU_NEED_LFXO
-	init_lfxo();
-#endif
-
 #ifdef CONFIG_SILABS_GECKO_EMU_DCDC
 	dcdc_init();
 #endif
 
-	/* Initialize system clock according to CONFIG_CMU settings */
-	clock_init();
+	silabs_gecko_init_clocks();
 
 #ifdef CONFIG_LOG_BACKEND_SWO
 	/* Configure SWO debug output */
