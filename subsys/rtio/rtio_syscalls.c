@@ -84,6 +84,9 @@ static inline int z_vrfy_rtio_sqe_copy_in_get_handles(struct rtio *r, const stru
 	K_OOPS(K_SYSCALL_OBJ(r, K_OBJ_RTIO));
 
 	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(sqes, sqe_count, sizeof(struct rtio_sqe)));
+	if (handle != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(handle, sizeof(*handle)));
+	}
 	struct rtio_sqe *sqe;
 	uint32_t acquirable = rtio_sqe_acquirable(r);
 
