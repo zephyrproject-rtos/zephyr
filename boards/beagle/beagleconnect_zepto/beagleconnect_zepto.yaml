@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright 2026 BeagleBoard.org Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: beagleconnect_zepto/mspm0l1117
+name: BeagleBoard.org BeagleConnect Zepto
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 16
+flash: 128
+vendor: beagle
+supported:
+  - pinctrl
+  - uart
