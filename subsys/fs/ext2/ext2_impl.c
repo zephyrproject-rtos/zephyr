@@ -262,6 +262,17 @@ int ext2_verify_disk_superblock(struct ext2_disk_superblock *sb)
 		return -EINVAL;
 	}
 
+	/* Block size is computed as 1024 << s_log_block_size and is used to size
+	 * the static block slab. A crafted value would overflow the shift and/or
+	 * exceed the statically configured maximum block size, corrupting the
+	 * allocator. The first term guards the shift against undefined behaviour.
+	 */
+	if (sys_le32_to_cpu(sb->s_log_block_size) > 11U ||
+	    (1024U << sys_le32_to_cpu(sb->s_log_block_size)) > CONFIG_EXT2_MAX_BLOCK_SIZE) {
+		LOG_ERR("Filesystem block size is too large");
+		return -ENOTSUP;
+	}
+
 	/* Check if file system may contain errors. */
 	if (sys_le16_to_cpu(sb->s_state) == EXT2_ERROR_FS) {
 		LOG_WRN("File system may contain errors.");
