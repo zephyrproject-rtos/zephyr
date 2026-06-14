@@ -170,7 +170,7 @@ static void xilinx_axienet_rx_callback(const struct device *dma, void *user_data
 
 	LOG_DBG("Packet with %u bytes received!\n", packet_size);
 
-	/* we need to start a new DMA transfer irregardless of whether the DMA reported an error */
+	/* we need to start a new DMA transfer regardless of whether the DMA reported an error */
 	/* otherwise, the ethernet subsystem would just stop receiving */
 setup_new_transfer:
 	if (setup_dma_rx_transfer(ethdev, ethdev->config, ethdev->data)) {

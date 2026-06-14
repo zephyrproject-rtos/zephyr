@@ -599,7 +599,7 @@ static int run_rx_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	}
 
 unsupport_pattern:
-	/* Unsupport pattern, emit each fragment as a distinct transaction  */
+	/* Unsupported pattern, emit each fragment as a distinct transaction  */
 	LOG_DBG("%s: \"Not a generic pattern ...\" !\n", __func__);
 	for (uint8_t i = 0; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {

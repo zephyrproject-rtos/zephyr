@@ -729,7 +729,7 @@ static int exit_dpd(const struct device *const dev)
 	int rc = 0;
 
 	if (dev_config->has_dpd) {
-		/* When relasing the flash chip from DPD mode, make sure that
+		/* When releasing the flash chip from DPD mode, make sure that
 		 * enough time has passed since the DPD command was issued,
 		 * otherwise the request might get ignored by the chip.
 		 * This minimal interval is the sum of the time the flash
