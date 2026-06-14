@@ -3,22 +3,24 @@ common:
   tags: disk
 tests:
   drivers.disk.usdhc:
+    platform_type:
+      - mcu
     harness_config:
       fixture: fixture_sdhc
     filter: CONFIG_SDHC
-    extra_configs:
-      - platform:mimxrt1060_evk@C/mimxrt1062/qspi:CONFIG_MAIN_STACK_SIZE=2048
     tags: mcux
     integration_platforms:
       - mimxrt1060_evk@C/mimxrt1062/qspi
       - mimxrt1050_evk/mimxrt1052/hyperflash
       - mimxrt1064_evk
   drivers.disk.ram:
-    platform_allow: qemu_x86_64
     extra_configs:
       - CONFIG_NVME=n
+    platform_allow:
+      - qemu_x86_64
   drivers.disk.nvme:
-    platform_allow: qemu_x86_64
+    platform_allow:
+      - qemu_x86_64
   drivers.disk.flash:
     extra_configs:
       - CONFIG_DISK_DRIVER_FLASH=y
