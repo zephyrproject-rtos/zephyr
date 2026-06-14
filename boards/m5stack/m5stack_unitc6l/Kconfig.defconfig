@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_M5STACK_UNITC6L_ESP32C6_HPCORE
+
+# Enabled for the application only. MCUboot cannot build with GPIO enabled, as
+# it would pull in the I2C GPIO expander described on i2c0, which selects I2C.
+# Those drivers use k_sem/k_work and would fail to link under MCUboot.
+config GPIO
+	default y if !MCUBOOT
+
+endif # BOARD_M5STACK_UNITC6L_ESP32C6_HPCORE
