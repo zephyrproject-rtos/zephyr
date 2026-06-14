@@ -623,15 +623,15 @@ devicetree bindings for more information:
 
 .. zephyr-keep-sorted-start
 
- - :dtcompatible:`zephyr,fake-can`
- - :dtcompatible:`zephyr,fake-comp`
- - :dtcompatible:`zephyr,fake-eeprom`
- - :dtcompatible:`zephyr,fake-leds`
- - :dtcompatible:`zephyr,fake-pwm`
- - :dtcompatible:`zephyr,fake-regulator`
- - :dtcompatible:`zephyr,fake-rtc`
- - :dtcompatible:`zephyr,fake-stepper-ctrl`
- - :dtcompatible:`zephyr,fake-stepper-driver`
+* :dtcompatible:`zephyr,fake-can`
+* :dtcompatible:`zephyr,fake-comp`
+* :dtcompatible:`zephyr,fake-eeprom`
+* :dtcompatible:`zephyr,fake-leds`
+* :dtcompatible:`zephyr,fake-pwm`
+* :dtcompatible:`zephyr,fake-regulator`
+* :dtcompatible:`zephyr,fake-rtc`
+* :dtcompatible:`zephyr,fake-stepper-ctrl`
+* :dtcompatible:`zephyr,fake-stepper-driver`
 
 .. zephyr-keep-sorted-stop
 
