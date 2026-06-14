@@ -153,34 +153,43 @@
 
 				rp1_pinctrl: pinctrl@1f000d0000 {
 					compatible = "raspberrypi,rp1-pinctrl";
-					reg = <0x1f 0xd0000 0x128>,
-					      <0x1f 0xf0004 0x70>;
-					reg-names = "gpio", "pads";
+					reg = <0x1f 0xd0000 0x3124>,
+					      <0x1f 0xd4000 0x3124>,
+					      <0x1f 0xd8000 0x3124>,
+					      <0x1f 0xe0000 0x300c>,
+					      <0x1f 0xe4000 0x300c>,
+					      <0x1f 0xe8000 0x300c>,
+					      <0x1f 0xf0004 0x3070>,
+					      <0x1f 0xf4004 0x3018>,
+					      <0x1f 0xf8004 0x3050>;
+					reg-names = "gpio0", "gpio1", "gpio2",
+						    "rio0", "rio1", "rio2",
+						    "pads0", "pads1", "pads2";
 					#address-cells = <1>;
 					#size-cells = <0>;
 					status = "okay";
 
 					gpio0_0: gpio@0 {
 						compatible = "raspberrypi,rp1-gpio";
-						reg = <0x0 0x10000 0x20000>;
+						reg = <0>;
 						#gpio-cells = <2>;
 						gpio-controller;
 						ngpios = <28>;
 						status = "disabled";
 					};
 
-					gpio0_1: gpio@4000 {
+					gpio0_1: gpio@1 {
 						compatible = "raspberrypi,rp1-gpio";
-						reg = <0x4000 0x14000 0x24000>;
+						reg = <1>;
 						#gpio-cells = <2>;
 						gpio-controller;
 						ngpios = <6>;
 						status = "disabled";
 					};
 
-					gpio0_2: gpio@8000 {
+					gpio0_2: gpio@2 {
 						compatible = "raspberrypi,rp1-gpio";
-						reg = <0x8000 0x18000 0x28000>;
+						reg = <2>;
 						#gpio-cells = <2>;
 						gpio-controller;
 						ngpios = <20>;

@@ -188,8 +188,13 @@ static int gpio_rpi_pin_interrupt_configure(const struct device *dev,
 						enum gpio_int_mode mode,
 						enum gpio_int_trig trig)
 {
+	const struct gpio_rpi_config *config = dev->config;
 	const int offset = GPIO_RPI_PINS_PER_PORT * PORT_NO(dev);
 	uint32_t events = 0;
+
+	if (!config->has_irq) {
+		return -ENOTSUP;
+	}
 
 	gpio_set_irq_enabled(pin + offset, ALL_EVENTS, false);
 	if (mode != GPIO_INT_DISABLE) {
@@ -273,7 +278,7 @@ static DEVICE_API(gpio, gpio_rpi_driver_api) = {
 #endif
 };
 
-static void gpio_rpi_isr(const struct device *dev)
+__maybe_unused static void gpio_rpi_isr(const struct device *dev)
 {
 	struct gpio_rpi_data *data = dev->data;
 
@@ -321,24 +326,55 @@ static int gpio_rpi_bank_init(const struct device *dev)
 #define GPIO_RPI_INIT_HIGH_DEV(node_id)
 #endif
 
+#define GPIO_RPI_IRQ_FLAGS(node_id)                                                                \
+	COND_CODE_1(DT_IRQ_HAS_CELL(DT_PARENT(node_id), flags),                                    \
+		    (DT_IRQ(DT_PARENT(node_id), flags)), (0))
+
+/*
+ * GPIO banks keep their register blocks on the parent node. Only bank0 is
+ * supported, so the parent regions are gpio0/sio0/rio0/pads0.
+ */
+#if CONFIG_DT_HAS_RASPBERRYPI_RP1_GPIO_ENABLED
+#define GPIO_RPI_MMIO_NAMES gpio, rio, pads
+#else
+#define GPIO_RPI_MMIO_NAMES gpio, sio, pads
+#endif
+
+#define GPIO_RPI_MMIO_INIT(name, node_id)                                                          \
+	.name = Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(UTIL_CAT(name, 0), DT_PARENT(node_id)),
+
+#define GPIO_RPI_MMIO_MAP(name, dev) DEVICE_MMIO_NAMED_MAP(dev, name, K_MEM_CACHE_NONE);
+
+#define GPIO_RPI_MMIO_MAP_ALL(node_id)                                                             \
+	const struct device *dev __maybe_unused = DEVICE_DT_GET(node_id);                          \
+	FOR_EACH_FIXED_ARG(GPIO_RPI_MMIO_MAP, (), dev, GPIO_RPI_MMIO_NAMES)
+
+#define GPIO_RPI_MMIO_INIT_ALL(node_id)                                                            \
+	FOR_EACH_FIXED_ARG(GPIO_RPI_MMIO_INIT, (), node_id, GPIO_RPI_MMIO_NAMES)
+
 #define GPIO_RPI_COMMON_INIT(node_id)                                                              \
-	IF_ENABLED(IS_GPIO_RPI_LO_NODE(node_id), (                                                 \
-		static void bank_##node_id##_config_func(void)                                     \
-		{                                                                                  \
-			IRQ_CONNECT(DT_IRQN(DT_PARENT(node_id)),                                   \
-				    DT_IRQ(DT_PARENT(node_id), priority),                          \
-				    gpio_rpi_isr, DEVICE_DT_GET(node_id), 0);                      \
-			irq_enable(DT_IRQN(DT_PARENT(node_id)));                                   \
-		}                                                                                  \
-	))                                                                                         \
+	static void gpio_rpi_bank_config_##node_id(void)                                           \
+	{                                                                                          \
+		GPIO_RPI_MMIO_MAP_ALL(node_id)                                                     \
+		IF_ENABLED(IS_GPIO_RPI_LO_NODE(node_id), (                                         \
+			(void)gpio_rpi_hal_irq_setup();                                            \
+			IF_ENABLED(DT_IRQ_HAS_IDX(DT_PARENT(node_id), 0), (                        \
+				IRQ_CONNECT(DT_IRQN(DT_PARENT(node_id)),                           \
+					    DT_IRQ(DT_PARENT(node_id), priority),                  \
+					    gpio_rpi_isr, DEVICE_DT_GET(node_id),                  \
+					    GPIO_RPI_IRQ_FLAGS(node_id));                          \
+				irq_enable(DT_IRQN(DT_PARENT(node_id)));                           \
+			))                                                                         \
+		))                                                                                 \
+	}                                                                                          \
 	static const struct gpio_rpi_config gpio_rpi_##node_id##_config = {                        \
 		.common = {                                                                        \
 			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_NODE(node_id),                 \
 		},                                                                                 \
 		.ngpios = DT_PROP(node_id, ngpios),                                                \
-		IF_ENABLED(IS_GPIO_RPI_LO_NODE(node_id), (                                         \
-			.bank_config_func = bank_##node_id##_config_func,                          \
-		))                                                                                 \
+		.has_irq = DT_IRQ_HAS_IDX(DT_PARENT(node_id), 0),                                  \
+		.bank_config_func = gpio_rpi_bank_config_##node_id,                                \
+		GPIO_RPI_MMIO_INIT_ALL(node_id)                                                    \
 		GPIO_RPI_INIT_HIGH_DEV(node_id)                                                    \
 	};                                                                                         \
 	static struct gpio_rpi_data gpio_rpi_##node_id##_data;                                     \
@@ -346,6 +382,13 @@ static int gpio_rpi_bank_init(const struct device *dev)
 	DEVICE_DT_DEFINE(node_id, gpio_rpi_bank_init, NULL, &gpio_rpi_##node_id##_data,            \
 			 &gpio_rpi_##node_id##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,     \
 			 &gpio_rpi_driver_api);
+
+#define GPIO_RP1_INIT(node_id)                                                                     \
+	BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(raspberrypi_rp1_gpio) == 1,                           \
+		     "raspberrypi,rp1-gpio supports only a single enabled GPIO bank.");            \
+	BUILD_ASSERT(DT_REG_ADDR(node_id) == 0,                                                    \
+		     "Only RP1 GPIO bank 0 may be used as GPIO.");                                 \
+	GPIO_RPI_COMMON_INIT(node_id)
 
 #define GPIO_RPI_PICO_INIT(node_id)                                                                \
 	BUILD_ASSERT(DT_CHILD_NUM(DT_PARENT(node_id)) > 0 &&                                       \
@@ -355,4 +398,5 @@ static int gpio_rpi_bank_init(const struct device *dev)
 		     "raspberrypi,pico-gpio node must have reg=0 child node.");                    \
 	GPIO_RPI_COMMON_INIT(node_id)
 
+DT_FOREACH_STATUS_OKAY(raspberrypi_rp1_gpio, GPIO_RP1_INIT)
 DT_FOREACH_STATUS_OKAY(raspberrypi_pico_gpio_port, GPIO_RPI_PICO_INIT)

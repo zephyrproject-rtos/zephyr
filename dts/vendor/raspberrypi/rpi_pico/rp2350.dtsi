@@ -241,7 +241,10 @@
 
 		gpio0_map: gpio@40028000 {
 			compatible = "raspberrypi,pico-gpio";
-			reg = <0x40028000 DT_SIZE_K(4)>;
+			reg = <0x40028000 DT_SIZE_K(4)>,
+			      <0x40038000 DT_SIZE_K(4)>,
+			      <0xd0000000 DT_SIZE_K(80)>;
+			reg-names = "gpio0", "pads0", "sio0";
 			interrupts = <21 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 
 			gpio-map-mask = <0xffffffe0 0xffffffc0>;
