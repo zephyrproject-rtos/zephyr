@@ -2123,6 +2123,13 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 
 	/* get new IP addr */
 	addr_len = sm_start - addr_start;
+	/* addr_len is derived from delimiter positions in the network-supplied
+	 * response and must not exceed the fixed temp_addr_str buffer.
+	 */
+	if (addr_len >= sizeof(temp_addr_str)) {
+		LOG_ERR("IP addr too long");
+		return true;
+	}
 	strncpy(temp_addr_str, addr_start, addr_len);
 	temp_addr_str[addr_len] = 0;
 	LOG_DBG("IP addr: %s", temp_addr_str);
@@ -2141,6 +2148,10 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		sm_start += 1;
 		/* store new subnet mask */
 		addr_len = delims[3] - sm_start;
+		if (addr_len >= sizeof(temp_addr_str)) {
+			LOG_ERR("Subnet too long");
+			return true;
+		}
 		strncpy(temp_addr_str, sm_start, addr_len);
 		temp_addr_str[addr_len] = 0;
 		ret = net_addr_pton(AF_INET, temp_addr_str, &iface_ctx.subnet);
@@ -2152,6 +2163,10 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 		/* store new gateway */
 		addr_start = delims[3] + 1;
 		addr_len = delims[4] - addr_start;
+		if (addr_len >= sizeof(temp_addr_str)) {
+			LOG_ERR("Gateway too long");
+			return true;
+		}
 		strncpy(temp_addr_str, addr_start, addr_len);
 		temp_addr_str[addr_len] = 0;
 		ret = net_addr_pton(AF_INET, temp_addr_str, &iface_ctx.gateway);
@@ -2164,9 +2179,20 @@ static bool on_cmd_atcmdinfo_ipaddr(struct net_buf **buf, uint16_t len)
 	/* store new dns */
 	addr_start = delims[4] + 1;
 	addr_len = delims[5] - addr_start;
+	if (addr_len >= sizeof(temp_addr_str)) {
+		LOG_ERR("DNS addr too long");
+		return true;
+	}
 	strncpy(temp_addr_str, addr_start, addr_len);
 	temp_addr_str[addr_len] = 0;
 	if (is_ipv4) {
+		/* dns_v4_string is smaller than temp_addr_str, so it needs its
+		 * own bound before the copy below.
+		 */
+		if (addr_len >= sizeof(iface_ctx.dns_v4_string)) {
+			LOG_ERR("IPv4 DNS addr too long");
+			return true;
+		}
 		ret = strncmp(temp_addr_str, iface_ctx.dns_v4_string, addr_len);
 		if (ret != 0) {
 			iface_ctx.dns_ready = false;
