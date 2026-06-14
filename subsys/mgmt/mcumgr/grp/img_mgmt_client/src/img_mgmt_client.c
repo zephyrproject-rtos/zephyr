@@ -129,7 +129,7 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 		if (hash.len != IMG_MGMT_DATA_SHA_LEN || !version.len ||
 		    !zcbor_map_decode_bulk_key_found(list_res_decode, ARRAY_SIZE(list_res_decode),
 						     "slot")) {
-			LOG_ERR("Missing mandatory parametrs");
+			LOG_ERR("Missing mandatory parameters");
 			image_info->status = MGMT_ERR_EINVAL;
 			goto out;
 		}

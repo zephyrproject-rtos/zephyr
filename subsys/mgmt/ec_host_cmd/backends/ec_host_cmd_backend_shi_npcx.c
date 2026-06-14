@@ -853,7 +853,7 @@ static int shi_npcx_enable(const struct device *dev)
 
 	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
 	/*
-	 * Clear the pending bit because switching the pinmux (pinctrl) might casue a faking WUI
+	 * Clear the pending bit because switching the pinmux (pinctrl) might cause a faking WUI
 	 * pending bit set.
 	 */
 	npcx_miwu_irq_get_and_clear_pending(&config->shi_cs_wui);

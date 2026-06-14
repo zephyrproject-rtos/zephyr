@@ -760,7 +760,7 @@ bool ztest_has_current_param(void);
  *
  * Use this macro at the start of your test case, to skip it when
  * config is not enabled.  Useful when your need to skip test if some
- * conifiguration option is not enabled.
+ * configuration option is not enabled.
  *
  * @param config The Kconfig option used to skip the test (if not enabled).
  */

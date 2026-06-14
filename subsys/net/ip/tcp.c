@@ -3039,7 +3039,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 			return NET_DROP;
 		}
 
-		/* Accroding to RFC 793, the ACKnum is acceptable if in scope
+		/* According to RFC 793, the ACKnum is acceptable if in scope
 		 * SND.UNA =< SEG.ACK =< SND.NXT
 		 * Otherwise, drop the packet and send an ACK back.
 		 */
