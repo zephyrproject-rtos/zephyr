@@ -33,6 +33,24 @@
 	clock-frequency = <38400000>;
 };
 
+&clk_hfxo {
+	clock-frequency = <38400000>;
+	status = "okay";
+};
+
+&clk_hf {
+	clocks = <&clk_hfxo>;
+};
+
+&clk_lfrco {
+	status = "okay";
+};
+
+&clk_lfe {
+	clocks = <&clk_lfrco>;
+	status = "okay";
+};
+
 &usart0 {
 	current-speed = <9600>;
 	pinctrl-0 = <&usart0_default>;

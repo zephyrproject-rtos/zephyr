@@ -43,6 +43,15 @@
 	clock-frequency = <DT_FREQ_M(21)>;
 };
 
+&clk_hfrco {
+	clock-frequency = <DT_FREQ_M(21)>;
+	status = "okay";
+};
+
+&clk_hf {
+	clocks = <&clk_hfrco>;
+};
+
 &gpioa {
 	status = "okay";
 
