@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
+#include <zephyr/net/ppp.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -698,6 +699,49 @@ ZTEST(net_ppp_test_suite, test_pfc_ip_frame_receive)
 		      "PFC IP frame did not reach IPv4 processing");
 }
 #endif /* CONFIG_NET_STATISTICS && CONFIG_NET_STATISTICS_IPV4 */
+
+#if defined(CONFIG_NET_L2_PPP_OPTION_PFC) && defined(CONFIG_NET_L2_PPP_OPTION_ACFC)
+ZTEST(net_ppp_test_suite, test_lcp_peer_pfc_acfc_options)
+{
+	/* LCP Configure-Request carrying only the PFC (07 02) and ACFC (08 02)
+	 * options, so the whole request is acceptable and acknowledged:
+	 * FF 03 | C0 21 | code=01 id=01 len=0008 | 07 02 | 08 02
+	 */
+	static const uint8_t req[] = {
+		0xff, 0x03, 0xc0, 0x21, 0x01, 0x01, 0x00, 0x08, 0x07, 0x02, 0x08, 0x02,
+	};
+	uint8_t wire[2 * (sizeof(req) + 2) + 2];
+	struct ppp_context *ctx;
+	size_t wire_len;
+
+	pfc_iface_setup();
+
+	ctx = net_if_l2_data(net_iface);
+
+	/* LCP is opened from a net_mgmt event handler, so wait for the FSM to
+	 * reach a state that processes a Configure-Request. With no peer to
+	 * answer our own request it settles in PPP_REQUEST_SENT.
+	 */
+	zassert_true(WAIT_FOR(ctx->lcp.fsm.state == PPP_REQUEST_SENT,
+			      WAIT_TIME * USEC_PER_MSEC, k_msleep(1)),
+		     "LCP did not reach PPP_REQUEST_SENT");
+
+	ctx->lcp.peer_options.pfc = false;
+	ctx->lcp.peer_options.acfc = false;
+
+	wire_len = hdlc_wrap(wire, req, sizeof(req));
+	ppp_driver_feed_data(wire, wire_len);
+
+	/* Let the net RX thread run the frame through the LCP FSM */
+	(void)WAIT_FOR(ctx->lcp.peer_options.pfc && ctx->lcp.peer_options.acfc,
+		       WAIT_TIME * USEC_PER_MSEC, k_msleep(1));
+
+	zassert_true(ctx->lcp.peer_options.pfc,
+		     "Peer Protocol-Field-Compression request not recorded");
+	zassert_true(ctx->lcp.peer_options.acfc,
+		     "Peer Address-and-Control-Field-Compression request not recorded");
+}
+#endif /* CONFIG_NET_L2_PPP_OPTION_PFC && CONFIG_NET_L2_PPP_OPTION_ACFC */
 
 ZTEST(net_ppp_test_suite, test_net_ppp)
 {
