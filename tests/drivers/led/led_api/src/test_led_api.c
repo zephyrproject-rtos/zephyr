@@ -95,6 +95,7 @@ ZTEST_USER(led_user, test_led_get_info)
 			 led, info->label, info->index, info->num_colors);
 
 		if (!info->num_colors) {
+			TC_PRINT("\n");
 			continue;
 		}
 
@@ -146,7 +147,7 @@ ZTEST_USER(led_user, test_led_set_color)
 
 		if (num_colors > TEST_MAX_COLORS) {
 			TC_PRINT("LED %d - skip set_color test, num_colors: %d"
-				 " (test limit is %d)",
+				 " (test limit is %d)\n",
 				 led, num_colors, TEST_MAX_COLORS);
 			continue;
 		}
