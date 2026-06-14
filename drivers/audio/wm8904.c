@@ -26,7 +26,25 @@ struct wm8904_driver_config {
 	int fs_ratio;
 };
 
+struct wm8904_driver_data {
+	bool eq_enabled;
+};
+
+struct wm8904_eq_band_reg {
+	uint32_t band;
+	uint8_t reg;
+};
+
+static const struct wm8904_eq_band_reg wm8904_eq_band_regs[] = {
+	{WM8904_EQ_BAND_1, WM8904_REG_EQ_B1_GAIN},
+	{WM8904_EQ_BAND_2, WM8904_REG_EQ_B2_GAIN},
+	{WM8904_EQ_BAND_3, WM8904_REG_EQ_B3_GAIN},
+	{WM8904_EQ_BAND_4, WM8904_REG_EQ_B4_GAIN},
+	{WM8904_EQ_BAND_5, WM8904_REG_EQ_B5_GAIN},
+};
+
 #define DEV_CFG(dev) ((const struct wm8904_driver_config *const)dev->config)
+#define DEV_DATA(dev) ((struct wm8904_driver_data *const)dev->data)
 
 static void wm8904_write_reg(const struct device *dev, uint8_t reg, uint16_t val);
 static void wm8904_read_reg(const struct device *dev, uint8_t reg, uint16_t *val);
@@ -554,6 +572,48 @@ static void wm8904_stop_output(const struct device *dev)
 {
 }
 
+static inline uint16_t wm8904_eq_gain_encode(int32_t gain)
+{
+	return (uint16_t)(gain - WM8904_EQ_MIN_GAIN);
+}
+
+static int wm8904_eq_config(const struct device *dev, uint32_t band, int32_t gain)
+{
+	struct wm8904_driver_data *dev_data = DEV_DATA(dev);
+	int ret = -EINVAL;
+
+	if (!dev_data->eq_enabled) {
+
+		/* Enable EQ; all bands default to 0 dB. */
+		wm8904_write_reg(dev, WM8904_REG_EQ_ENA, 0x0001);
+		dev_data->eq_enabled = true;
+
+		LOG_DBG("EQ Enabled");
+	}
+
+	if (!IN_RANGE(gain, WM8904_EQ_MIN_GAIN, WM8904_EQ_MAX_GAIN)) {
+		LOG_ERR("Invalid EQ gain: %d dB (valid range: %d to %d)", (int)gain,
+			WM8904_EQ_MIN_GAIN, WM8904_EQ_MAX_GAIN);
+	} else {
+		for (size_t i = 0U; i < ARRAY_SIZE(wm8904_eq_band_regs); i++) {
+			if (wm8904_eq_band_regs[i].band == band) {
+				uint16_t encoded = wm8904_eq_gain_encode(gain);
+
+				LOG_DBG("EQ band %u (%u Hz) gain: %d dB, hex: 0x%04X",
+					(unsigned int)(i + 1U), band, (int)gain, encoded);
+				wm8904_write_reg(dev, wm8904_eq_band_regs[i].reg, encoded);
+				ret = 0;
+				break;
+			}
+		}
+		if (ret != 0) {
+			LOG_ERR("Invalid EQ band: %u Hz", band);
+		}
+	}
+
+	return ret;
+}
+
 static int wm8904_set_property(const struct device *dev, audio_property_t property,
 			       audio_channel_t channel, audio_property_value_t val)
 {
@@ -569,6 +629,12 @@ static int wm8904_set_property(const struct device *dev, audio_property_t proper
 
 	case AUDIO_PROPERTY_INPUT_MUTE:
 		return wm8904_in_mute_config(dev, channel, val.mute);
+
+	case AUDIO_PROPERTY_EQ_GAIN: {
+		struct audio_codec_eq_cfg *eq = &val.eq;
+
+		return wm8904_eq_config(dev, eq->band, eq->gain);
+	}
 	}
 
 	return -EINVAL;
@@ -682,6 +748,8 @@ static DEVICE_API(audio_codec, wm8904_driver_api) = {
 };
 
 #define WM8904_INIT(n)                                                                             \
+	struct wm8904_driver_data wm8904_device_data_##n = {                                       \
+		.eq_enabled = false};                                                              \
 	static const struct wm8904_driver_config wm8904_device_config_##n = {                      \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		.clock_source = DT_INST_ENUM_IDX(n, clock_source),                                 \
@@ -692,7 +760,7 @@ static DEVICE_API(audio_codec, wm8904_driver_api) = {
 			(NULL)),                                                                   \
 		.fs_ratio = DT_INST_PROP_OR(n, fs_ratio, 0)};                                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &wm8904_device_config_##n, POST_KERNEL,         \
-			      CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);
+	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &wm8904_device_data_##n, &wm8904_device_config_##n,   \
+			      POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(WM8904_INIT)
