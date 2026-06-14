@@ -1,0 +1,9 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RPI_PICO_CPU1
+	bool
+	help
+	  Hidden marker selected by every CPU1-side SoC variant. Used to
+	  gate Kconfig options that are only meaningful in CPU0 images,
+	  such as SOC_RPI_PICO_CPU1_ENABLE.
