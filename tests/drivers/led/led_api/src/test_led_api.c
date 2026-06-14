@@ -61,23 +61,10 @@ LED_CONTROLLER_INFO(DT_ALIAS(led_controller_0));
 
 static ZTEST_BMEM const struct device *const led_ctrl = DEVICE_DT_GET(DT_ALIAS(led_controller_0));
 
-static void test_led_setup(void)
-{
-	zassert_true(device_is_ready(led_ctrl), "LED controller is not ready");
-
-	zassert_not_equal(num_leds, 0, "No LEDs subnodes found in DT for controller");
-
-	k_object_access_grant(led_ctrl, k_current_get());
-}
-
 ZTEST_USER(led_user, test_led_get_info)
 {
 	uint8_t led;
 	int ret;
-
-	if (!led_ctrl || !num_leds) {
-		ztest_test_skip();
-	}
 
 	for (led = 0; led < num_leds; led++) {
 		const struct led_info *info;
@@ -131,10 +118,6 @@ ZTEST_USER(led_user, test_led_on)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds) {
-		ztest_test_skip();
-	}
-
 	for (led = 0; led < num_leds; led++) {
 		ret = led_on(led_ctrl, led);
 		zassert_equal(ret, 0, "LED %d - failed to turn on", led);
@@ -145,10 +128,6 @@ ZTEST_USER(led_user, test_led_off)
 {
 	uint8_t led;
 	int ret;
-
-	if (!led_ctrl || !num_leds) {
-		ztest_test_skip();
-	}
 
 	for (led = 0; led < num_leds; led++) {
 		ret = led_off(led_ctrl, led);
@@ -161,10 +140,6 @@ ZTEST_USER(led_user, test_led_set_color)
 	uint8_t led;
 	uint8_t colors[TEST_MAX_COLORS + 1];
 	int ret;
-
-	if (!led_ctrl || !num_leds) {
-		ztest_test_skip();
-	}
 
 	for (led = 0; led < num_leds; led++) {
 		uint8_t num_colors = test_led_info[led].num_colors;
@@ -222,10 +197,6 @@ ZTEST_USER(led_user, test_led_set_brightness)
 	uint8_t led;
 	int ret;
 
-	if (!led_ctrl || !num_leds) {
-		ztest_test_skip();
-	}
-
 	for (led = 0; led < num_leds; led++) {
 		uint16_t level;
 
@@ -247,7 +218,11 @@ ZTEST_USER(led_user, test_led_set_brightness)
 
 void *led_setup(void)
 {
-	test_led_setup();
+	zassert_true(device_is_ready(led_ctrl), "LED controller is not ready");
+
+	zassert_not_equal(num_leds, 0, "No LEDs subnodes found in DT for controller");
+
+	k_object_access_grant(led_ctrl, k_current_get());
 
 	return NULL;
 }
