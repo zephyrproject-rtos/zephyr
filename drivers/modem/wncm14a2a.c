@@ -936,7 +936,7 @@ static void on_cmd_socknotifyev(struct net_buf **buf, uint16_t len)
 	value[out_len] = 0;
 
 	/* walk value till 1st quote */
-	while (p1 < len && value[p1] != '\"') {
+	while (p1 < (int)out_len && value[p1] != '\"') {
 		p1++;
 	}
 
@@ -947,7 +947,7 @@ static void on_cmd_socknotifyev(struct net_buf **buf, uint16_t len)
 
 	p1++;
 	p2 = p1;
-	while (p2 < len && value[p2] != '\"') {
+	while (p2 < (int)out_len && value[p2] != '\"') {
 		p2++;
 	}
 
