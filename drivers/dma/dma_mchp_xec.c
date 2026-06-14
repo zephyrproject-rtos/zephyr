@@ -659,7 +659,6 @@ static int dmac_xec_pm_action(const struct device *dev,
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		/* sys_clear_bit(regs + XEC_DMA_MAIN_CTRL, XEC_DMA_MAIN_CTRL_EN_POS); */
 		break;
 
 	default:
@@ -714,9 +713,14 @@ static int dma_xec_init(const struct device *dev)
 
 	soc_xec_pcr_sleep_en_clear(devcfg->enc_pcr);
 
-	/* soft reset, self-clearing */
+	/* Soft reset is self-clearing and also clears the block enable.
+	 * Wait for it to complete before re-enabling the controller,
+	 * otherwise the enable write can be lost while the reset is in
+	 * progress.
+	 */
 	sys_write32(BIT(XEC_DMA_MAIN_CTRL_SRST_POS), regs + XEC_DMA_MAIN_CTRL);
-	sys_write32(0u, regs + XEC_DMA_MAIN_PKT); /* I/O delay, write to read-only register */
+	while (sys_test_bit(regs + XEC_DMA_MAIN_CTRL, XEC_DMA_MAIN_CTRL_SRST_POS) != 0) {
+	}
 	sys_write32(BIT(XEC_DMA_MAIN_CTRL_EN_POS), regs + XEC_DMA_MAIN_CTRL);
 
 	devcfg->irq_connect();
