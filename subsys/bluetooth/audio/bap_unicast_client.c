@@ -2494,8 +2494,8 @@ static void unicast_group_set_iso_stream_param(struct bt_bap_unicast_group *grou
 	/* Store the stream Codec QoS in the bap_iso */
 	unicast_client_qos_cfg_to_iso_qos(iso, qos, dir);
 
-	/* Store the group Codec QoS in the group - This assume thats the parameters have been
-	 * verified first
+	/* Store the group Codec QoS in the group - this assumes that the
+	 * parameters have been verified first
 	 */
 	group->cig_param.framing = qos->framing;
 	if (dir == BT_AUDIO_DIR_SOURCE) {

@@ -54,7 +54,7 @@ size_t arch_perf_current_stack_trace(uintptr_t *buf, size_t size)
 	 *  $fp($s0) (next)
 	 *  ....
 	 *
-	 * If function do not call any other function, compiller may not save $ra,
+	 * If function do not call any other function, compiler may not save $ra,
 	 * then stack frame will be:
 	 *  ....
 	 *  [-] <- $fp($s0) (curr)

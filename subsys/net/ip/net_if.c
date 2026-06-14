@@ -5611,7 +5611,7 @@ static void remove_ipv6_ifaddr(struct net_if *iface,
 		k_mutex_lock(&lock, K_FOREVER);
 		if (sys_slist_find_and_remove(&active_dad_timers,
 					      &ifaddr->dad_node)) {
-			/* Addreess with active DAD timer would still have
+			/* Address with active DAD timer would still have
 			 * stale entry in the neighbor cache.
 			 */
 			net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);

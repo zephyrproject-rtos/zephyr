@@ -76,7 +76,7 @@ static bool source_id_cmp(uintptr_t id0, uintptr_t id1)
 
 /** @brief Return link and relative domain id based on absolute domain id.
  *
- * @param[in]  domain_id	Aboslute domain ID.
+ * @param[in]  domain_id	Absolute domain ID.
  * @param[out] rel_domain_id	Domain ID elative to the link domain ID as output.
  *
  * @return Link to which given domain belongs. NULL if link was not found.
