@@ -1426,7 +1426,15 @@ static int http_server_run(struct http_server_ctx *ctx)
 		}
 
 		if (ret == 0) {
-			break; /* timeout -1 should never produce 0, but be safe */
+			/* With an infinite timeout zsock_poll() can still return
+			 * 0 when a wake source fired but no fd reported an event.
+			 * Re-poll instead of breaking: the break path skips
+			 * close_all_sockets(), leaking the sockets and leaving
+			 * the client inactivity timers armed, which the caller's
+			 * re-init then memsets - corrupting the kernel timeout
+			 * list.
+			 */
+			continue;
 		}
 
 		/* Stop event on fds[0] */
