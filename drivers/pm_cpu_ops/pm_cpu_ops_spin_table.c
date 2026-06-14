@@ -13,8 +13,7 @@ LOG_MODULE_REGISTER(spin_table, CONFIG_PM_CPU_OPS_LOG_LEVEL);
 
 #define NUM_CPUS  ARRAY_SIZE(mpid_table)
 
-#define CPU_IS_SPIN_TABLE(node_id)                                                 \
-	DT_ENUM_HAS_VALUE(node_id, enable_method, spin_table)
+#define CPU_IS_SPIN_TABLE(node_id) IS_EQ(DT_STRING_TOKEN(node_id, enable_method), spin_table)
 
 #define SPIN_TABLE_RELEASE_ADDR(node_id)                                           \
 	COND_CODE_1(CPU_IS_SPIN_TABLE(node_id),                                    \
