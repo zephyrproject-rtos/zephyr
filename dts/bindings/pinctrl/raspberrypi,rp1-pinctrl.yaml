@@ -17,6 +17,12 @@ properties:
   reg:
     required: true
 
+  reg-names:
+    required: true
+    description: |
+      Register spaces named "gpio0", "pads0", "gpio1", "pads1", "gpio2",
+      "pads2", "rio0", "rio1", and "rio2".
+
 child-binding:
   description: |
     Pin controller state node.

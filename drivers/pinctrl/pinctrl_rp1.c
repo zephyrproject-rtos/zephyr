@@ -89,8 +89,8 @@ static int pinctrl_rp1_init(const struct device *dev)
 	static struct pinctrl_rp1_data pinctrl_rp1_data_##n;                                       \
                                                                                                    \
 	static const struct pinctrl_rp1_config pinctrl_rp1_cfg_##n = {                             \
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(gpio, DT_DRV_INST(n)),                          \
-		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(pads, DT_DRV_INST(n)),                          \
+		.gpio = Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(gpio0, DT_DRV_INST(n)),                \
+		.pads = Z_DEVICE_MMIO_NAMED_ROM_INITIALIZER(pads0, DT_DRV_INST(n)),                \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &pinctrl_rp1_init, NULL, &pinctrl_rp1_data_##n,                   \
