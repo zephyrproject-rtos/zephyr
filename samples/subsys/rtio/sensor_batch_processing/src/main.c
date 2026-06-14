@@ -31,6 +31,11 @@ int main(void)
 	for (int n = 0; n < N; n++) {
 		struct rtio_sqe *sqe = rtio_sqe_acquire(&ez_io);
 
+		if (sqe == NULL) {
+			LOG_ERR("Failed to acquire a submission queue event");
+			return -ENOMEM;
+		}
+
 		rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
 	}
 
@@ -85,6 +90,11 @@ int main(void)
 		 */
 		for (m = 0; m < M; m++) {
 			struct rtio_sqe *sqe = rtio_sqe_acquire(&ez_io);
+
+			if (sqe == NULL) {
+				LOG_ERR("Failed to acquire a submission queue event");
+				return -ENOMEM;
+			}
 
 			rtio_release_buffer(&ez_io, userdata[m], data_len[m]);
 			rtio_sqe_prep_read_with_pool(sqe, iodev, RTIO_PRIO_HIGH, NULL);
