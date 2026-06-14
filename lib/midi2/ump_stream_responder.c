@@ -44,7 +44,7 @@ static inline bool ep_has_midi2(const struct ump_endpoint_dt_spec *ep)
  */
 static inline struct midi_ump make_endpoint_info(const struct ump_endpoint_dt_spec *ep)
 {
-	struct midi_ump res;
+	struct midi_ump res = {0};
 
 	res.data[0] = (UMP_MT_UMP_STREAM << 28)
 		    | (UMP_STREAM_STATUS_EP_INFO << 16)
@@ -66,7 +66,7 @@ static inline struct midi_ump make_function_block_info(const struct ump_endpoint
 						       size_t block_num)
 {
 	const struct ump_block_dt_spec *block = &ep->blocks[block_num];
-	struct midi_ump res;
+	struct midi_ump res = {0};
 	uint8_t midi1_mode = block->is_31250bps ? 2 : block->is_midi1 ? 1 : 0;
 
 	res.data[0] = (UMP_MT_UMP_STREAM << 28)
