@@ -123,6 +123,13 @@
 			discard-rx-fcs;
 			unicast-hash;
 			full-duplex;
+
+			gem0_mdio: mdio {
+				compatible = "xlnx,gem-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		gem1: ethernet@ff0c0000 {
@@ -150,6 +157,13 @@
 			discard-rx-fcs;
 			unicast-hash;
 			full-duplex;
+
+			gem1_mdio: mdio {
+				compatible = "xlnx,gem-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		gem2: ethernet@ff0d0000 {
@@ -177,6 +191,13 @@
 			discard-rx-fcs;
 			unicast-hash;
 			full-duplex;
+
+			gem2_mdio: mdio {
+				compatible = "xlnx,gem-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		gem3: ethernet@ff0e0000 {
@@ -204,6 +225,13 @@
 			discard-rx-fcs;
 			unicast-hash;
 			full-duplex;
+
+			gem3_mdio: mdio {
+				compatible = "xlnx,gem-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 
 		psgpio: gpio@ff0a0000 {
