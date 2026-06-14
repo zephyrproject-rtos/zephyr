@@ -503,18 +503,18 @@ ZTEST(log_msg, test_mode_size_str_with_2strings)
 	uint32_t exp_len;
 	int mode;
 	static const char *prefix = "prefix";
-	char sufix[] = "sufix";
+	char suffix[] = "suffix";
 
 	Z_LOG_MSG_CREATE3(1, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
-			   NULL, 0, TEST_STR, prefix, sufix);
+			   NULL, 0, TEST_STR, prefix, suffix);
 	zassert_equal(mode, EXP_MODE(FROM_STACK),
 			"Unexpected creation mode");
 	Z_LOG_MSG_CREATE3(0, mode,
 			   1 /* accept one string pointer*/,
 			   domain, source, level,
-			   NULL, 0, TEST_STR, prefix, sufix);
+			   NULL, 0, TEST_STR, prefix, suffix);
 	zassert_equal(mode, EXP_MODE(FROM_STACK),
 			"Unexpected creation mode");
 
@@ -527,7 +527,7 @@ ZTEST(log_msg, test_mode_size_str_with_2strings)
 	 */
 	exp_len = offsetof(struct log_msg, data) +
 			 /* package */sizeof(struct cbprintf_package_hdr_ext) +
-				      2 * sizeof(const char *) + 2 + strlen(sufix);
+				      2 * sizeof(const char *) + 2 + strlen(suffix);
 
 	exp_len = ROUND_UP(exp_len, Z_LOG_MSG_ALIGNMENT) / sizeof(int);
 

@@ -36,7 +36,7 @@ static void start_thread_entry(void *p1, void *p2, void *p3)
 		start = timing_timestamp_get();
 		k_condvar_wait(&condvar, &mutex, K_FOREVER);
 
-		/* 3. Get the final timstamp */
+		/* 3. Get the final timestamp */
 
 		finish = timing_timestamp_get();
 

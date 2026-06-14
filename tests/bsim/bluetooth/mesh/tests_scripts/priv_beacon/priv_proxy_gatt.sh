@@ -11,7 +11,7 @@ source $(dirname "${BASH_SOURCE[0]}")/../../_mesh_test.sh
 #    Private GATT proxy. Test mode for IV update is also enabled on both devices.
 # 1. The RX device (Proxy CLI) establish a GATT connection to the TX device
 #    (Proxy SRV), using Private Network Identity.
-# 2. Both TX and RX device disables the scanner to prevent interferance
+# 2. Both TX and RX device disables the scanner to prevent interference
 #    by the adv bearer.
 # 3. The TX device (Proxy SRV) starts an IV update procedure.
 # 4. Both TX and RX device verifies that the IV index has been updated.

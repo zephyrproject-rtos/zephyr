@@ -72,7 +72,7 @@ static ZTEST(audio_ccid_test_suite, test_bt_ccid_alloc_value_all_allocated)
 
 	zassert_ok(bt_gatt_service_register(&test_svc));
 
-	/* Verify that CCID allocation fails if we have 255 characterstics with it */
+	/* Verify that CCID allocation fails if we have 255 characteristics with it */
 	ret = bt_ccid_alloc_value();
 
 	zassert_ok(bt_gatt_service_unregister(&test_svc));

@@ -101,7 +101,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #define udp_src_port_8bit_y 0xf011 /* compressible */
 #define udp_dst_port_8bit   0xf122
 
-/* uncompressible ports */
+/* incompressible ports */
 #define udp_src_port_16bit 0xff11
 #define udp_dst_port_16bit 0xff22
 

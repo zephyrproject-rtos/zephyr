@@ -892,7 +892,7 @@ static void test_valid_function_without_alarm(const struct device *dev)
 		ticks, ticks_expected > ticks_tol ? ticks_expected - ticks_tol : 0,
 		ticks_expected + ticks_tol, "%s: counter ticks not in tolerance", dev->name);
 
-	/* ticks count is always within ticks_tol for RTC, therefor
+	/* ticks count is always within ticks_tol for RTC, therefore
 	 * check, if ticks are greater than 0.
 	 */
 	zassert_true((ticks > 0), "%s: counter did not count", dev->name);
@@ -907,7 +907,7 @@ static bool ms_period_capable(const struct device *dev)
 	uint32_t freq_khz;
 	uint32_t max_time_ms;
 
-	/* Assume 2 ms counter periode can be set for frequency below 1 kHz*/
+	/* Assume 2 ms counter period can be set for frequency below 1 kHz*/
 	if (counter_get_frequency(dev) < 1000) {
 		return true;
 	}

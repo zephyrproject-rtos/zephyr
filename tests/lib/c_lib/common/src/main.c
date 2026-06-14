@@ -527,8 +527,8 @@ ZTEST(libc_common, test_memchr)
 	static const char str[] = "testfunction";
 
 	/* verify the character inside the count scope */
-	zassert_not_null(memchr(str, 'e', strlen(str)), "memchr serach e");
-	zassert_not_null(memchr(str, '\0', strlen(str)+1), "memchr serach \\0");
+	zassert_not_null(memchr(str, 'e', strlen(str)), "memchr search e");
+	zassert_not_null(memchr(str, '\0', strlen(str)+1), "memchr search \\0");
 
 	/* verify when the count parm is zero */
 	zassert_is_null(memchr(str, 't', 0), "memchr count 0 error");

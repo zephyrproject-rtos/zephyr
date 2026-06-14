@@ -169,7 +169,7 @@ static void *conn_mgr_conn_setup(void)
  * This is not guaranteed to execute in the fastest possible time, nor is it technically guaranteed
  * that Zephyr will finish its operations in less than a millisecond, but for this test suite,
  * event propagation times longer than a millisecond would be a sign of a problem,
- * a few milliseconds of delay are miniscule compared to the time it takes to build the suite,
+ * a few milliseconds of delay are minuscule compared to the time it takes to build the suite,
  * and using k_sleep has the advantage of being completely agnostic to the underlying operation
  * of the events.
  */

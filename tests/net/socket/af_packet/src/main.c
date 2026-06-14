@@ -445,7 +445,7 @@ ZTEST(socket_packet, test_packet_sockets_dgram)
 			  "Data mismatch");
 
 	/* Send specially crafted payload to mimic IPv4 and IPv6 length field,
-	 * to ckeck correct length returned.
+	 * to check correct length returned.
 	 */
 	uint8_t payload_ip_length[64], receive_ip_length[64];
 

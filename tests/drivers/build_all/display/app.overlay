@@ -125,7 +125,7 @@
 				height = <300>;
 				busy-gpios = <&test_gpio 0 0>;
 
-				/* Arbirary settings */
+				/* Arbitrary settings */
 				softstart = [17 17 17];
 
 				full {

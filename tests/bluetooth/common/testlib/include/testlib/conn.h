@@ -21,7 +21,7 @@
  *
  * The reference created by @ref bt_conn_le_create is put in @p connp.
  *
- * @note The connection reference presists if the connection procedure
+ * @note The connection reference persists if the connection procedure
  * fails at a later point. @p connp is a reified reference: if it's not
  * NULL, then it's a valid reference.
  *

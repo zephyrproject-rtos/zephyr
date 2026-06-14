@@ -35,7 +35,7 @@
 #define TEST_AREA	storage_partition
 #endif
 
-/* TEST_AREA is only defined for configurations that realy on
+/* TEST_AREA is only defined for configurations that rely on
  * fixed-partition nodes.
  */
 #ifdef TEST_AREA
@@ -252,7 +252,7 @@ ZTEST(flash_driver, test_flash_fill)
 			break;
 		}
 	}
-	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled with 0xaa");
 }
 
 ZTEST(flash_driver, test_flash_flatten)
@@ -284,7 +284,7 @@ ZTEST(flash_driver, test_flash_flatten)
 			break;
 		}
 	}
-	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled wth 0xaa");
+	zassert_equal(i, EXPECTED_SIZE, "Expected device to be filled with 0xaa");
 }
 
 ZTEST(flash_driver, test_flash_erase)
@@ -462,7 +462,7 @@ ZTEST(flash_driver, test_flash_page_layout)
 		     "page_count = %zu not equal to pages counted with cb = %zu", page_count,
 		     test_cb_data.page_counter);
 
-	/* Test that callback can cancell iteration */
+	/* Test that callback can cancel iteration */
 	test_cb_data.page_counter = 0;
 	test_cb_data.exit_page = page_count >> 1;
 	flash_page_foreach(flash_dev, flash_callback, &test_cb_data);

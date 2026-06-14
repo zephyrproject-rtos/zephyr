@@ -19,7 +19,7 @@
 # - Devices: Central and Peripheral
 # - Characteristic Length: Peripheral exposes a long characteristic (greater than 23 bytes).
 # - Connection: Central connects to Peripheral.
-# - Notification subscription: Central subscribes to notificaitons from the Peripheral.
+# - Notification subscription: Central subscribes to notifications from the Peripheral.
 # - EATT Usage: EATT is enabled, and the maximum possible EATT channels are established to
 #   parallelize notifications as much as possible, increasing traffic towards Central.
 #

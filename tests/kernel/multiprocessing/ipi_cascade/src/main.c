@@ -120,7 +120,7 @@ void thread3_entry(void *p1, void *p2, void *p3)
 	zassert_true(cpu_t3 == cpu_t1, "T3 not executing on T1's original CPU");
 
 	for (;;) {
-		/* Inifite loop to prevent reschedule from T3 ending. */
+		/* Infinite loop to prevent reschedule from T3 ending. */
 	}
 }
 
@@ -141,7 +141,7 @@ void thread4_entry(void *p1, void *p2, void *p3)
 
 	for (;;) {
 		/*
-		 * Inifite loop to prevent reschedule from T4 ending.
+		 * Infinite loop to prevent reschedule from T4 ending.
 		 * Due to the IPI cascades, T4 will get switched out for T1.
 		 */
 	}

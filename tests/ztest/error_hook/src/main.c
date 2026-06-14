@@ -353,7 +353,7 @@ static void trigger_z_oops(void)
 }
 
 /**
- * @brief Test if a z_oops can be catched
+ * @brief Test if a z_oops can be caught
  *
  * @details Valid a z_oops we triggered in thread context works.
  * If the z_oops happened and the program enter our handler,
