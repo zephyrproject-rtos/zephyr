@@ -42,12 +42,55 @@ elseif("${ARCH}" STREQUAL "riscv")
 elseif("${ARCH}" STREQUAL "xtensa")
   # Xtensa uses Clang for compilation with GCC assembler/linker from Zephyr SDK.
   # The target triple encodes the specific Xtensa core variant.
+  #
+  # Two names are involved per SoC:
+  #   * XTENSA_TOOLCHAIN_TARGET - Zephyr SDK toolchain target dir name
+  #                               (matches CONFIG_SOC_TOOLCHAIN_NAME),
+  #                               e.g. "intel_ace30_ptl".
+  #   * XTENSA_CORE_ID          - upstream LLVM Xtensa backend -mcpu name,
+  #                               typically "<vendor>_<id>_adsp",
+  #                               e.g. "intel_ace30_adsp".
+  #
+  # Both can be overridden via environment variables. If unset, they are
+  # derived from CONFIG_SOC_TOOLCHAIN_NAME and a small mapping table for
+  # the SoCs that ship with mismatched SDK/LLVM names.
+
+  set(XTENSA_TOOLCHAIN_TARGET $ENV{XTENSA_TOOLCHAIN_TARGET})
+  if(NOT XTENSA_TOOLCHAIN_TARGET)
+    if(CONFIG_SOC_TOOLCHAIN_NAME)
+      set(XTENSA_TOOLCHAIN_TARGET "${CONFIG_SOC_TOOLCHAIN_NAME}")
+    else()
+      # Fallback for boards that don't set CONFIG_SOC_TOOLCHAIN_NAME yet.
+      set(XTENSA_TOOLCHAIN_TARGET "intel_ace30_ptl")
+    endif()
+  endif()
+
   set(XTENSA_CORE_ID $ENV{XTENSA_CORE_ID})
   if(NOT XTENSA_CORE_ID)
-    # Default to intel_ace30_ptl if not specified
-    set(XTENSA_CORE_ID "intel_ace30_ptl")
+    # Map Zephyr SDK toolchain target -> upstream LLVM Xtensa -mcpu name.
+    # Only entries whose names differ between the SDK and LLVM are listed;
+    # anything not in this table is assumed to be identical in both.
+    set(_xtensa_sdk_to_llvm_cpu
+      # Intel ADSP
+      intel_ace15_mtpm   intel_ace15_adsp
+      intel_ace40        intel_ace40_adsp
+      intel_ace30_ptl    intel_ace30_adsp
+    )
+    list(FIND _xtensa_sdk_to_llvm_cpu "${XTENSA_TOOLCHAIN_TARGET}" _idx)
+    if(_idx GREATER -1)
+      math(EXPR _val_idx "${_idx} + 1")
+      list(GET _xtensa_sdk_to_llvm_cpu ${_val_idx} XTENSA_CORE_ID)
+    else()
+      # SDK target name matches the LLVM -mcpu name (true for most
+      # AMD/MTK/NXP ADSP cores and dc233c / sample_controller*).
+      set(XTENSA_CORE_ID "${XTENSA_TOOLCHAIN_TARGET}")
+    endif()
+    unset(_xtensa_sdk_to_llvm_cpu)
+    unset(_idx)
+    unset(_val_idx)
   endif()
-  set(triple xtensa-${XTENSA_CORE_ID}_zephyr-elf)
+
+  set(triple xtensa-${XTENSA_TOOLCHAIN_TARGET}_zephyr-elf)
   set(XTENSA_CLANG_MCPU ${XTENSA_CORE_ID})
 
   # Use GCC assembler/linker from Zephyr SDK
@@ -55,7 +98,7 @@ elseif("${ARCH}" STREQUAL "xtensa")
   set(BINTOOLS gnu)
 
   # Configure cross-compile prefix for binutils (assembler, linker, objcopy, etc.)
-  set(CROSS_COMPILE_TARGET xtensa-${XTENSA_CORE_ID}_zephyr-elf)
+  set(CROSS_COMPILE_TARGET xtensa-${XTENSA_TOOLCHAIN_TARGET}_zephyr-elf)
   if(DEFINED ZEPHYR_SDK_INSTALL_DIR)
     set(CROSS_COMPILE $ENV{ZEPHYR_SDK_INSTALL_DIR}/gnu/${CROSS_COMPILE_TARGET}/bin/${CROSS_COMPILE_TARGET}-)
   endif()
