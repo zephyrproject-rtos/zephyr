@@ -1,5 +1,7 @@
 tests:
   arch.arm.mpu.write_through:
+    platform_type:
+      - mcu
     tags:
       - arm
       - mpu
