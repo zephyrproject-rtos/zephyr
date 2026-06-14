@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32c6/esp32c6_lpcore_wroom_n4.dtsi>
+#include <espressif/partitions_0x0_default.dtsi>
+
+/ {
+	model = "M5Stack UnitC6L LP Core";
+	compatible = "m5stack,unitc6l";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,sram = &ulp_ram;
+		zephyr,code-partition = &slot0_lpcore_partition;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+};
