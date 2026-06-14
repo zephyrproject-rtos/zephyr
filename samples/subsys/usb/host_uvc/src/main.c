@@ -277,9 +277,6 @@ int main(void)
 	const struct device *uvc_dev = device_get_binding("usbh_uvc_0");
 	struct video_buffer *allocated_vbufs[CONFIG_VIDEO_BUFFER_POOL_NUM_MAX] = {NULL};
 	struct video_format fmt;
-	struct k_poll_signal sig;
-	struct k_poll_event evt[1];
-	k_timeout_t timeout = K_FOREVER;
 	enum video_buf_type type = VIDEO_BUF_TYPE_OUTPUT;
 	uint32_t frame_count = 0;
 	uint8_t allocated_count = 0;
@@ -304,15 +301,6 @@ int main(void)
 
 	LOG_INF("USB host video device %s is ready", uvc_dev->name);
 
-	k_poll_signal_init(&sig);
-	k_poll_event_init(&evt[0], K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig);
-
-	err = video_set_signal(uvc_dev, &sig);
-	if (err != 0) {
-		LOG_WRN("Failed to setup the signal on %s output endpoint", uvc_dev->name);
-		timeout = K_MSEC(10);
-	}
-
 	while (true) {
 		/* Wait for video device connection */
 		wait_for_video_connection(uvc_dev, &fmt, type);
@@ -330,18 +318,10 @@ int main(void)
 
 		/* Main video streaming loop - process frames until disconnect */
 		while (true) {
-			err = k_poll(evt, ARRAY_SIZE(evt), timeout);
-			if (err != 0 && err != -EAGAIN) {
-				LOG_WRN("Poll failed with error %d", err);
-				continue;
-			}
-
 			err = process_video_stream(uvc_dev, &frame_count);
 			if (err == -ENODEV) {
 				break;
 			}
-
-			k_poll_signal_reset(&sig);
 		}
 
 		err = cleanup_video_streaming(uvc_dev, allocated_vbufs, &allocated_count, type);
