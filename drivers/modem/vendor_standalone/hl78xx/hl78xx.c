@@ -2678,7 +2678,7 @@ static int hl78xx_on_airplane_mode_state_leave(struct hl78xx_data *data)
 static int hl78xx_on_init_power_off_state_enter(struct hl78xx_data *data)
 {
 	/**
-	 * Eventhough you have power switch or etc.., start the power off script first
+	 * Even though you have power switch or etc.., start the power off script first
 	 * to gracefully disconnect from the network
 	 *
 	 * IMSI detach before powering down IS recommended by the AT command manual
