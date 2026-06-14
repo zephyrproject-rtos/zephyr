@@ -1608,7 +1608,7 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 					data_size, frame_id, vbuf->bytesused, end_frame);
 			} else {
 				save_picture = false;
-				LOG_DBG("Frame ID mismatch: expected %u, got %u - discarding",
+				LOG_INF("Frame ID mismatch: expected %u, got %u - discarding",
 					host_data->expect_frame_id, frame_id);
 			}
 		}
