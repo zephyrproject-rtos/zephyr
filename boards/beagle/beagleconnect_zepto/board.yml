@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright 2026 BeagleBoard.org Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: beagleconnect_zepto
+  full_name: BeagleConnect Zepto
+  vendor: beagle
+  socs:
+    - name: mspm0l1117
