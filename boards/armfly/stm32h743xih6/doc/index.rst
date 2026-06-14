@@ -97,8 +97,10 @@ The current board definition enables or describes the following hardware blocks:
 - USART1 console
 - GPIO keys
 - Optional board-private FMC latch GPIO controller for the onboard LEDs
-- I2C1 with the GT911 touch controller
+- I2C1 with the GT911 touch controller, MPU6050 motion sensor, BH1750
+  ambient light sensor, BMP180 pressure sensor, and AT24C128 EEPROM
 - SPI3 with SPI NOR flash
+- QUADSPI with QSPI NOR flash
 - SDMMC1 for the MicroSD socket
 - LTDC display controller using external SDRAM
 - PWM-based LCD backlight control
@@ -120,6 +122,7 @@ Default Zephyr peripheral mapping:
 - USART1 TX/RX: PA9 / PA10
 - I2C1 SCL/SDA: PB6 / PB9
 - GT911 INT: PH7
+- QUADSPI CLK/NCS/IO0/IO1/IO2/IO3: PF10 / PG6 / PF8 / PF9 / PF7 / PF6
 - SPI3 SCK/MISO/MOSI: PB3 / PB4 / PB5
 - SPI3 CS: PD13
 - SDMMC1 D0-D3/CK/CMD: PC8 / PC9 / PC10 / PC11 / PC12 / PD2
@@ -147,6 +150,17 @@ touch device through ``zephyr,touch``.
 
 The LVGL pointer pseudo-device is intentionally not part of the base board DTS.
 Applications that use LVGL can provide it in an overlay when needed.
+
+I2C Devices
+===========
+
+The board DTS describes the onboard I2C devices connected to ``I2C1``:
+
+- GT911 touch controller at address ``0x5d``
+- MPU6050 motion sensor at address ``0x68``
+- BH1750 ambient light sensor at address ``0x23``
+- BMP180 pressure sensor at address ``0x77``
+- AT24C128 EEPROM at address ``0x50``
 
 Serial Port
 ===========

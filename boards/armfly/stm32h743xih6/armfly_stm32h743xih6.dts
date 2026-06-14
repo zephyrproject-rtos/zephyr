@@ -131,13 +131,14 @@
 		sw6 = &joy_up;
 		sw7 = &joy_left;
 		backlight-pwm = &lcd_bl_pwm;
+		eeprom-0 = &eeprom0;
 	};
 
 	backlight_pwm: backlight {
 		compatible = "pwm-leds";
 
 		lcd_bl_pwm: bl0 {
-			pwms = <&tim1_pwm 1 PWM_USEC(20000) PWM_POLARITY_NORMAL>;
+			pwms = <&tim1_pwm 1 PWM_USEC(50) PWM_POLARITY_NORMAL>;
 			label = "lcd_backlight_pwm";
 		};
 	};
@@ -225,6 +226,61 @@
 		reg = <0x5d>;
 		irq-gpios = <&gpioh 7 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		alt-addr = <0x14>;
+	};
+
+	mpu6050: mpu6050@68 {
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
+		status = "okay";
+		accel-fs = <2>;
+		gyro-fs = <250>;
+		smplrt-div = <249>;
+	};
+
+	bh1750: bh1750@23 {
+		compatible = "rohm,bh1750";
+		reg = <0x23>;
+		status = "okay";
+		resolution = <1>;
+		mtreg = <69>;
+	};
+
+	bmp180: bmp180@77 {
+		compatible = "bosch,bmp180";
+		reg = <0x77>;
+		status = "okay";
+		osr-press = <3>;
+	};
+
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <DT_SIZE_K(16)>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+		status = "okay";
+	};
+};
+
+&quadspi {
+	pinctrl-names = "default";
+	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk1_ncs_pg6
+		     &quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9
+		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pf6>;
+
+	flash-id = <1>;
+	status = "okay";
+
+	w25q256_qspi: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_M(256)>; /* 256 Mbits */
+		qspi-max-frequency = <100000000>;
+		cs-high-time = <1>;
+		status = "okay";
+		spi-bus-width = <4>;
+		writeoc = "PP_1_1_4";
 	};
 };
 
