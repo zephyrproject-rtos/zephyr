@@ -40,7 +40,7 @@ static int stats_handler(struct http_client_ctx *client, enum http_transaction_s
 
 	if (status == HTTP_SERVER_REQUEST_DATA_FINAL) {
 
-		/* incrase counter per request */
+		/* increase counter per request */
 		prometheus_counter_inc(http_request_counter);
 
 		(void)memset(prom_buffer, 0, sizeof(prom_buffer));

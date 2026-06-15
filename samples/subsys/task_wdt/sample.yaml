@@ -1,5 +1,5 @@
 sample:
-  name: Task Watchdog Subsytem Sample
+  name: Task Watchdog Subsystem Sample
 common:
   harness: console
   tags:

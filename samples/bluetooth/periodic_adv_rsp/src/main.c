@@ -392,7 +392,7 @@ disconnected:
 		bt_conn_drop(&default_conn);
 	}
 
-	printk("Maximum numnber of syncs onboarded\n");
+	printk("Maximum number of syncs onboarded\n");
 
 	while (true) {
 		k_sleep(K_SECONDS(1));

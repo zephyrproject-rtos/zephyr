@@ -197,7 +197,7 @@ static int add_hello(uint16_t addr, const char *name)
 		}
 
 		if (stat->addr == addr) {
-			/* Update name, incase it has changed */
+			/* Update name, in case it has changed */
 			strncpy(stat->name, name, sizeof(stat->name) - 1);
 
 			if (stat->hello_count < 0xffff) {

@@ -105,7 +105,7 @@ int multi_sector_test(const struct device *flash_dev)
 #endif
 	int rc;
 
-	printf("\nPerform test on multiple consequtive sectors");
+	printf("\nPerform test on multiple consecutive sectors");
 
 	/* Write protection needs to be disabled before each write or
 	 * erase, since the flash component turns on write protection
@@ -116,7 +116,7 @@ int multi_sector_test(const struct device *flash_dev)
 
 	/* Full flash erase if SPI_FLASH_TEST_REGION_OFFSET = 0 and
 	 * SPI_FLASH_SECTOR_SIZE = flash size
-	 * Erase 2 sectors for check for erase of consequtive sectors
+	 * Erase 2 sectors for check for erase of consecutive sectors
 	 */
 	rc = flash_erase(flash_dev, SPI_FLASH_TEST_REGION_OFFSET, SPI_FLASH_SECTOR_SIZE * 2);
 	if (rc != 0) {
