@@ -1,0 +1,50 @@
+/**
+ * Copyright 2026 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sdhc-sd = &sdhc_sd;
+		sdhc-emmc = &sdhc_emmc;
+		sdhc-sdio = &sdhc_sdio;
+	};
+
+	sdhc_sd: sdhc_emul_sd {
+		compatible = "zephyr,sdhc-emul";
+		card-type = "sdhc";
+		capacity-blocks = <1024>;
+		max-bus-freq = <50000000>;
+		bus-width = <4>;
+		high-speed;
+		voltage-330;
+		card-inserted;
+		status = "okay";
+	};
+
+	sdhc_emmc: sdhc_emul_emmc {
+		compatible = "zephyr,sdhc-emul";
+		card-type = "emmc";
+		capacity-blocks = <1024>;
+		max-bus-freq = <200000000>;
+		bus-width = <8>;
+		high-speed;
+		voltage-330;
+		card-inserted;
+		status = "okay";
+	};
+
+	sdhc_sdio: sdhc_emul_sdio {
+		compatible = "zephyr,sdhc-emul";
+		card-type = "sdio";
+		capacity-blocks = <1024>;
+		sdio-func-count = <2>;
+		max-bus-freq = <50000000>;
+		bus-width = <4>;
+		high-speed;
+		voltage-330;
+		card-inserted;
+		status = "okay";
+	};
+};
