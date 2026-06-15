@@ -40,25 +40,35 @@ struct ethernet_capabilities {
 #define EC(cap, desc) { .capability = cap, .description = desc }
 
 static struct ethernet_capabilities eth_hw_caps[] = {
+#ifdef CONFIG_NET_CHECKSUM_OFFLOAD
 	EC(ETHERNET_HW_TX_CHKSUM_OFFLOAD, "TX checksum offload"),
 	EC(ETHERNET_HW_RX_CHKSUM_OFFLOAD, "RX checksum offload"),
+#endif
+#ifdef CONFIG_NET_VLAN
 	EC(ETHERNET_HW_VLAN,              "Virtual LAN"),
 	EC(ETHERNET_HW_VLAN_TAG_STRIP,    "VLAN Tag stripping"),
+#endif
 	EC(ETHERNET_LINK_10BASE,          "10 Mbits"),
 	EC(ETHERNET_LINK_100BASE,         "100 Mbits"),
 	EC(ETHERNET_LINK_1000BASE,        "1 Gbits"),
 	EC(ETHERNET_LINK_2500BASE,        "2.5 Gbits"),
 	EC(ETHERNET_LINK_5000BASE,        "5 Gbits"),
+#ifdef CONFIG_PTP_CLOCK
 	EC(ETHERNET_PTP,                  "IEEE 802.1AS gPTP clock"),
+#endif
 	EC(ETHERNET_QAV,                  "IEEE 802.1Qav (credit shaping)"),
 	EC(ETHERNET_QBV,                  "IEEE 802.1Qbv (scheduled traffic)"),
 	EC(ETHERNET_QBU,                  "IEEE 802.1Qbu (frame preemption)"),
 	EC(ETHERNET_TXTIME,               "TXTIME"),
+#ifdef CONFIG_NET_PROMISCUOUS_MODE
 	EC(ETHERNET_PROMISC_MODE,         "Promiscuous mode"),
+#endif
 	EC(ETHERNET_PRIORITY_QUEUES,      "Priority queues"),
 	EC(ETHERNET_HW_FILTERING,         "MAC address filtering"),
+#ifdef CONFIG_NET_DSA
 	EC(ETHERNET_DSA_USER_PORT,        "DSA user port"),
 	EC(ETHERNET_DSA_CONDUIT_PORT,     "DSA conduit port"),
+#endif
 	EC(ETHERNET_TXTIME,               "TXTIME supported"),
 	EC(ETHERNET_TXINJECTION_MODE,     "TX-Injection supported"),
 };
