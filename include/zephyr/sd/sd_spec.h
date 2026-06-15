@@ -78,6 +78,13 @@ enum sd_app_cmd {
 	SD_APP_SEND_SCR = 51,
 };
 
+/** Bit offset of the RCA field in an R6 response. */
+#define SD_R6_RCA_OFFSET 16U
+
+/** Bit offset of the CURRENT_STATE field in an R1 response. */
+#define SD_R1_CURRENT_STATE_OFFSET 9U
+
+
 /**
  * @brief Native SD mode R1 response status flags
  *
@@ -91,7 +98,7 @@ enum sd_r1_status {
 	SD_R1_FX_EVENT = BIT(6),
 	/* Bit 7 reserved */
 	SD_R1_RDY_DATA = BIT(8),
-	SD_R1_CUR_STATE = (0xFU << 9),
+	SD_R1_CUR_STATE = (0xFU << SD_R1_CURRENT_STATE_OFFSET),
 	SD_R1_ERASE_RESET = BIT(13),
 	SD_R1_ECC_DISABLED = BIT(14),
 	SD_R1_ERASE_SKIP = BIT(15),
@@ -128,7 +135,8 @@ enum sd_r1_status {
 	SD_R1ERR_NONE = 0,
 };
 
-#define SD_R1_CURRENT_STATE(x) (((x) & SD_R1_CUR_STATE) >> 9U)
+#define SD_R1_CURRENT_STATE(x) \
+	(((x) & SD_R1_CUR_STATE) >> SD_R1_CURRENT_STATE_OFFSET)
 
 /**
  * @brief SD current state values
