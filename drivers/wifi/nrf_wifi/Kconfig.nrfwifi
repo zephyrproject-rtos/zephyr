@@ -127,7 +127,6 @@ config NRF70_SYSTEM_WITH_RAW_MODES
 
 config NRF70_RAW_DATA_TX
 	bool "RAW TX data path in the driver"
-	select EXPERIMENTAL
 
 config NRF70_RAW_DATA_RX
 	bool "RAW RX sniffer operation in the driver"
