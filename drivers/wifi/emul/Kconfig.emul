@@ -41,4 +41,13 @@ config WIFI_EMUL_CONNECT_DELAY_MS
 	  connect result. Can be changed at runtime with
 	  wifi_emul_set_connect_delay().
 
+config WIFI_EMUL_SHELL
+	bool "Emulated Wi-Fi shell commands"
+	depends on NET_L2_WIFI_SHELL
+	default y
+	help
+	  Enable the "wifi emul" shell commands to control the emulated Wi-Fi
+	  driver at runtime: register virtual access points, tune scan and
+	  connect delays, force connection results and emulate disconnects.
+
 endif # WIFI_EMUL
