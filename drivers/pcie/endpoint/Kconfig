@@ -3,12 +3,6 @@
 # Copyright 2020 Broadcom
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig PCIE_ENDPOINT
-	bool "PCIe Endpoint support"
-	default y if PCIE_ENDPOINT_CONTROLLER_HAS_DRIVER
-	help
-	  This option enables PCIe Endpoint support.
-
 if PCIE_ENDPOINT
 
 module = PCIE_EP

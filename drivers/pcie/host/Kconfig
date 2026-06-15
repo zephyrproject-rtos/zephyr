@@ -3,12 +3,6 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig PCIE_HOST
-	bool "New PCI/PCIe Root Complex support"
-	depends on (X86 || PCIE_HOST_CONTROLLER_HAS_DRIVER)
-	help
-	  This option enables support for new PCI(e) drivers.
-
 if PCIE_HOST
 
 module = PCIE_HOST

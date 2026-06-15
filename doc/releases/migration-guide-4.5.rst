@@ -433,6 +433,15 @@ NXP
   ``zephyr,system-timer`` chosen property, so boards that added the overlay
   described in the Zephyr 4.4 migration guide can remove it.
 
+PCIe
+====
+
+* PCIe host and endpoint support now use separate Kconfig options. Applications and out-of-tree
+  boards that previously enabled PCIe Root Complex support with ``CONFIG_PCIE=y`` must now enable
+  :kconfig:option:`CONFIG_PCIE_HOST`. PCIe endpoint configurations must enable
+  :kconfig:option:`CONFIG_PCIE_ENDPOINT`. The :kconfig:option:`CONFIG_PCIE` symbol is now
+  an umbrella selected when host or endpoint support is enabled.
+
 PWM
 ===
 
