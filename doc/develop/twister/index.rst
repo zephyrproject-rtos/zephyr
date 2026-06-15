@@ -72,6 +72,7 @@ The following pages cover additional Twister topics:
    twister_statuses
    twister_blackbox
 
+.. _twister_board_configuration:
 
 Board Configuration
 *******************
