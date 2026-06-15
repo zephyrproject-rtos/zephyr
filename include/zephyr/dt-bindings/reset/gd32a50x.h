@@ -4,10 +4,30 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Peripheral reset identifiers for GigaDevice GD32A50x
+ * @ingroup reset_controller_gd32a50x
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32A50X_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_GD32A50X_H_
 
 #include "gd32-common.h"
+
+/**
+ * @defgroup reset_controller_gd32a50x GigaDevice GD32A50x reset controller helpers
+ * @brief GigaDevice GD32A50x reset controller helpers
+ * @ingroup reset_controller_gigadevice
+ *
+ * Reset identifiers follow the pattern @c GD32_RESET_\<PERIPHERAL\>, where
+ * @c \<PERIPHERAL\> is the GD32A50x peripheral name from the reference manual (for example, @c
+ * GD32_RESET_USART1 resets USART1 and @c GD32_RESET_GPIOA resets GPIO port A). Pass these
+ * identifiers directly to a @c resets property.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 /**
  * @name Register offsets
@@ -21,7 +41,7 @@
 /** @} */
 
 /**
- * @name Clock enable/disable definitions for peripherals
+ * @name Peripheral reset identifiers
  * @{
  */
 
@@ -69,6 +89,10 @@
 #define GD32_RESET_TRIGSEL    GD32_RESET_CONFIG(APB2RST, 29U)
 #define GD32_RESET_CAN0       GD32_RESET_CONFIG(APB2RST, 30U)
 #define GD32_RESET_CAN1       GD32_RESET_CONFIG(APB2RST, 31U)
+
+/** @} */
+
+/** @endcond */
 
 /** @} */
 
