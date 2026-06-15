@@ -1,0 +1,25 @@
+/*
+ * Copyright 2026 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sdhc-emul = &sdhc0;
+	};
+
+	sdhc0: sdhc_emul_sd {
+		compatible = "zephyr,sdhc-emul";
+		card-type = "sdhc";
+		capacity-blocks = <1024>; /* 512 KB, minimum for SDHC CSD v2.0 */
+		card-inserted;
+		status = "okay";
+
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
