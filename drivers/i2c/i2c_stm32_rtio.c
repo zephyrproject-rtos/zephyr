@@ -311,7 +311,10 @@ static int i2c_stm32_init(const struct device *dev)
 		return ret;
 	}
 
-	(void)pm_device_runtime_enable(dev);
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
 	return 0;
 }
