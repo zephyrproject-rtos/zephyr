@@ -8,7 +8,7 @@ sample:
     interface on top of Zephyr's Bluetooth Raw API, and how to expose it
     over a UART.
 
-    This implementation is based on the Zephyr Asynchoronous UART API.
+    This implementation is based on the Zephyr Asynchronous UART API.
 tests:
   sample.bluetooth.hci_uart_async.nrf5:
     harness: bluetooth
