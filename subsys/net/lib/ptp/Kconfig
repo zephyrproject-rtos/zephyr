@@ -19,6 +19,12 @@ menuconfig PTP
 
 if PTP
 
+config ZVFS_EVENTFD_ADD_SIZE_PTP
+	int "Number of eventfds needed by the PTP stack"
+	default 1
+	help
+	  The PTP stack allocates one zvfs eventfd to wake up its poll loop.
+
 module = PTP
 module-dep = NET_LOG
 module-str = Log level for PTP

@@ -53,6 +53,13 @@ menuconfig HTTP_SERVER
 
 if HTTP_SERVER
 
+config ZVFS_EVENTFD_ADD_SIZE_HTTP_SERVER
+	int "Number of eventfds needed by the HTTP server"
+	default 1
+	help
+	  The HTTP server allocates one permanent zvfs eventfd to wake up its
+	  poll loop.
+
 config HTTP_SERVER_VERSION_1
 	bool "HTTP/1.x support"
 	default y
