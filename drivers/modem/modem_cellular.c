@@ -1118,6 +1118,10 @@ static void modem_cellular_connect_cmux_event_handler(struct modem_cellular_data
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_OPEN_DLCI1);
 		break;
 
+	case MODEM_CELLULAR_EVENT_CMUX_DISCONNECTED:
+		modem_cellular_enter_recovery_state(data);
+		break;
+
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
 		break;
