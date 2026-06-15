@@ -305,19 +305,129 @@
 			     <65 0>, <66 0>;
 		interrupt-names = "emios0-2", "emios0-3", "emios0-4",
 				  "emios0-5", "emios0-6", "emios0-7";
+		clocks = <&mc_cgm MCUX_EMIOS_CLK>;
 		status = "disabled";
+
+		counter_bus {
+			emios0_bus_a: emios0_bus_a {
+				channel = <23>;
+				status = "disabled";
+			};
+
+			emios0_bus_b: emios0_bus_b {
+				channel = <0>;
+				status = "disabled";
+			};
+
+			emios0_bus_c: emios0_bus_c {
+				channel = <8>;
+				status = "disabled";
+			};
+
+			emios0_bus_d: emios0_bus_d {
+				channel = <16>;
+				status = "disabled";
+			};
+
+			emios0_bus_f: emios0_bus_f {
+				channel = <22>;
+				status = "disabled";
+			};
+		};
+
+		pwm {
+			compatible = "nxp,emios-pwm";
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 
 	emios_1: emios@8c000 {
 		compatible = "nxp,emios";
 		reg = <0x8c000 0x338>;
+		interrupts = <69 0>, <70 0>, <71 0>, <72 0>,
+			     <73 0>, <74 0>;
+		interrupt-names = "emios1-2", "emios1-3", "emios1-4",
+				  "emios1-5", "emios1-6", "emios1-7";
+		clocks = <&mc_cgm MCUX_EMIOS_CLK>;
 		status = "disabled";
+
+		counter_bus {
+			emios1_bus_a: emios1_bus_a {
+				channel = <23>;
+				status = "disabled";
+			};
+
+			emios1_bus_b: emios1_bus_b {
+				channel = <0>;
+				status = "disabled";
+			};
+
+			emios1_bus_c: emios1_bus_c {
+				channel = <8>;
+				status = "disabled";
+			};
+
+			emios1_bus_d: emios1_bus_d {
+				channel = <16>;
+				status = "disabled";
+			};
+
+			emios1_bus_f: emios1_bus_f {
+				channel = <22>;
+				status = "disabled";
+			};
+		};
+
+		pwm {
+			compatible = "nxp,emios-pwm";
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 
 	emios_2: emios@90000 {
 		compatible = "nxp,emios";
 		reg = <0x90000 0x338>;
+		interrupts = <77 0>, <78 0>, <79 0>, <80 0>,
+			     <81 0>, <82 0>;
+		interrupt-names = "emios2-2", "emios2-3", "emios2-4",
+				  "emios2-5", "emios2-6", "emios2-7";
+		clocks = <&mc_cgm MCUX_EMIOS_CLK>;
 		status = "disabled";
+
+		counter_bus {
+			emios2_bus_a: emios2_bus_a {
+				channel = <23>;
+				status = "disabled";
+			};
+
+			emios2_bus_b: emios2_bus_b {
+				channel = <0>;
+				status = "disabled";
+			};
+
+			emios2_bus_c: emios2_bus_c {
+				channel = <8>;
+				status = "disabled";
+			};
+
+			emios2_bus_d: emios2_bus_d {
+				channel = <16>;
+				status = "disabled";
+			};
+
+			emios2_bus_f: emios2_bus_f {
+				channel = <22>;
+				status = "disabled";
+			};
+		};
+
+		pwm {
+			compatible = "nxp,emios-pwm";
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 
 	erm0: erm@25c000 {
