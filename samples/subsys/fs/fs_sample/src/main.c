@@ -173,6 +173,16 @@ int main(void)
 			}
 #endif
 		}
+	} else if (IS_ENABLED(CONFIG_FS_SAMPLE_MKFS)) {
+		res = fs_mkfs(FS_FATFS, (uintptr_t)DISK_DRIVE_NAME ":", NULL, 0);
+		if (res == FS_RET_OK) {
+			res = fs_mount(&mp);
+		}
+		if (res == FS_RET_OK) {
+			printk("Disk mounted.\n");
+		} else {
+			printk("Error mounting disk.\n");
+		}
 	} else {
 		printk("Error mounting disk.\n");
 	}
