@@ -2461,3 +2461,408 @@ Under embargo until 2026-08-08
 ----------------
 
 Under embargo until 2026-06-28
+
+:cve:`2026-10593`
+-----------------
+
+Under embargo until 2026-06-23
+
+:cve:`2026-10635`
+-----------------
+
+Under embargo until 2026-06-14
+
+:cve:`2026-10636`
+-----------------
+
+Under embargo until 2026-06-14
+
+:cve:`2026-10637`
+-----------------
+
+Under embargo until 2026-06-14
+
+:cve:`2026-10638`
+-----------------
+
+Under embargo until 2026-06-14
+
+:cve:`2026-10639`
+-----------------
+
+Under embargo until 2026-06-14
+
+:cve:`2026-10640`
+-----------------
+
+Under embargo until 2026-06-14
+
+:cve:`2026-10641`
+-----------------
+
+Under embargo until 2026-06-16
+
+:cve:`2026-10642`
+-----------------
+
+Under embargo until 2026-06-17
+
+:cve:`2026-10643`
+-----------------
+
+Under embargo until 2026-06-19
+
+:cve:`2026-10644`
+-----------------
+
+Under embargo until 2026-06-20
+
+:cve:`2026-10645`
+-----------------
+
+Under embargo until 2026-06-21
+
+:cve:`2026-10646`
+-----------------
+
+Under embargo until 2026-06-22
+
+:cve:`2026-10647`
+-----------------
+
+Under embargo until 2026-06-23
+
+:cve:`2026-10648`
+-----------------
+
+Under embargo until 2026-06-26
+
+:cve:`2026-10651`
+-----------------
+
+Under embargo until 2026-06-26
+
+:cve:`2026-10652`
+-----------------
+
+Under embargo until 2026-06-28
+
+:cve:`2026-10653`
+-----------------
+
+Under embargo until 2026-06-29
+
+:cve:`2026-10654`
+-----------------
+
+Under embargo until 2026-06-29
+
+:cve:`2026-10655`
+-----------------
+
+Under embargo until 2026-06-30
+
+:cve:`2026-10656`
+-----------------
+
+Under embargo until 2026-07-05
+
+:cve:`2026-10657`
+-----------------
+
+Under embargo until 2026-07-05
+
+:cve:`2026-10658`
+-----------------
+
+Under embargo until 2026-07-07
+
+:cve:`2026-10659`
+-----------------
+
+Under embargo until 2026-07-07
+
+:cve:`2026-10660`
+-----------------
+
+Under embargo until 2026-07-11
+
+:cve:`2026-10663`
+-----------------
+
+Under embargo until 2026-07-12
+
+:cve:`2026-10664`
+-----------------
+
+Under embargo until 2026-07-12
+
+:cve:`2026-10665`
+-----------------
+
+Under embargo until 2026-07-12
+
+:cve:`2026-10667`
+-----------------
+
+Under embargo until 2026-07-12
+
+:cve:`2026-10668`
+-----------------
+
+Under embargo until 2026-07-12
+
+:cve:`2026-10669`
+-----------------
+
+Under embargo until 2026-07-14
+
+:cve:`2026-10670`
+-----------------
+
+Under embargo until 2026-07-14
+
+:cve:`2026-10671`
+-----------------
+
+Under embargo until 2026-07-14
+
+:cve:`2026-10672`
+-----------------
+
+Under embargo until 2026-07-14
+
+:cve:`2026-10674`
+-----------------
+
+Under embargo until 2026-07-18
+
+:cve:`2026-10675`
+-----------------
+
+Under embargo until 2026-07-19
+
+:cve:`2026-10677`
+-----------------
+
+Under embargo until 2026-07-19
+
+:cve:`2026-10678`
+-----------------
+
+Under embargo until 2026-07-20
+
+:cve:`2026-10679`
+-----------------
+
+Under embargo until 2026-07-21
+
+:cve:`2026-10680`
+-----------------
+
+Under embargo until 2026-07-21
+
+:cve:`2026-10681`
+-----------------
+
+Under embargo until 2026-07-25
+
+:cve:`2026-10682`
+-----------------
+
+Under embargo until 2026-07-26
+
+:cve:`2026-10683`
+-----------------
+
+Under embargo until 2026-07-26
+
+:cve:`2026-10684`
+-----------------
+
+Under embargo until 2026-07-28
+
+:cve:`2026-10685`
+-----------------
+
+Under embargo until 2026-07-31
+
+:cve:`2026-10686`
+-----------------
+
+Under embargo until 2026-07-31
+
+:cve:`2026-10687`
+-----------------
+
+Under embargo until 2026-08-01
+
+:cve:`2026-10772`
+-----------------
+
+Under embargo until 2026-08-01
+
+:cve:`2026-10773`
+-----------------
+
+Under embargo until 2026-08-01
+
+:cve:`2026-10774`
+-----------------
+
+Under embargo until 2026-08-02
+
+:cve:`2026-10848`
+-----------------
+
+Under embargo until 2026-08-02
+
+:cve:`2026-10849`
+-----------------
+
+Under embargo until 2026-08-03
+
+:cve:`2026-11368`
+-----------------
+
+Under embargo until 2026-08-04
+
+:cve:`2026-11742`
+-----------------
+
+Under embargo until 2026-08-07
+
+:cve:`2026-11743`
+-----------------
+
+Under embargo until 2026-08-07
+
+:cve:`2026-11809`
+-----------------
+
+Under embargo until 2026-08-08
+
+:cve:`2026-11810`
+-----------------
+
+Under embargo until 2026-08-08
+
+:cve:`2026-11811`
+-----------------
+
+Under embargo until 2026-08-08
+
+:cve:`2026-11812`
+-----------------
+
+Under embargo until 2026-08-08
+
+:cve:`2026-11893`
+-----------------
+
+Under embargo until 2026-08-09
+
+:cve:`2026-11894`
+-----------------
+
+Under embargo until 2026-08-09
+
+:cve:`2026-11985`
+-----------------
+
+Under embargo until 2026-08-09
+
+:cve:`2026-12051`
+-----------------
+
+Under embargo until 2026-08-10
+
+:cve:`2026-12052`
+-----------------
+
+Under embargo until 2026-08-10
+
+:cve:`2026-12232`
+-----------------
+
+Under embargo until 2026-08-11
+
+:cve:`2026-12233`
+-----------------
+
+Under embargo until 2026-08-11
+
+:cve:`2026-12234`
+-----------------
+
+Under embargo until 2026-08-11
+
+:cve:`2026-12235`
+-----------------
+
+Under embargo until 2026-08-11
+
+:cve:`2026-12236`
+-----------------
+
+Under embargo until 2026-08-13
+
+:cve:`2026-7007`
+----------------
+
+Under embargo until 2026-07-23
+
+:cve:`2026-8023`
+----------------
+
+Under embargo until 2026-06-26
+
+:cve:`2026-9728`
+----------------
+
+Under embargo until 2026-08-23
+
+:cve:`2026-9771`
+----------------
+
+Under embargo until 2026-08-16
+
+:cve:`2026-12363`
+-----------------
+
+Under embargo until 2026-08-14
+
+:cve:`2026-12364`
+-----------------
+
+Under embargo until 2026-08-14
+
+:cve:`2026-12365`
+-----------------
+
+Under embargo until 2026-08-14
+
+:cve:`2026-12366`
+-----------------
+
+Under embargo until 2026-08-14
+
+:cve:`2026-12519`
+-----------------
+
+Under embargo until 2026-08-16
+
+:cve:`2026-12520`
+-----------------
+
+Under embargo until 2026-08-16
+
+:cve:`2026-12521`
+-----------------
+
+Under embargo until 2026-08-16
+
+:cve:`2026-12522`
+-----------------
+
+Under embargo until 2026-08-16
