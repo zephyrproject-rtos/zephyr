@@ -1,0 +1,19 @@
+sample:
+  name: SDHC Emulator Sample
+
+tests:
+  sample.drivers.sdhc_emul:
+    tags:
+      - sdhc
+      - fatfs
+      - emulator
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Zephyr SDHC emulator OK"

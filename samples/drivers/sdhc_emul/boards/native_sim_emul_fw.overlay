@@ -1,0 +1,37 @@
+/*
+ * Copyright 2026 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Sample overlay using the emul-framework controller + card pattern.
+ */
+
+/ {
+	aliases {
+		sdhc-emul = &sdhc_ctrl;
+	};
+
+	sdhc_ctrl: sdhc-emul-controller {
+		compatible = "zephyr,sdhc-emul-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		sd_card: sd-card@0 {
+			compatible = "zephyr,sdhc-emul-card";
+			reg = <0>;
+			card-type = "sdhc";
+			capacity-blocks = <1024>; /* 512 KB, minimum for SDHC CSD v2.0 */
+			card-inserted;
+			status = "okay";
+		};
+
+		sdmmc {
+			compatible = "zephyr,sdmmc-disk";
+			disk-name = "SD";
+			status = "okay";
+		};
+	};
+};
