@@ -23,4 +23,10 @@ void nxp_mcxw7x_power_init(void);
 #define nxp_mcxw7x_power_init(...) do { } while (0)
 #endif
 
+/* Apply the active-mode DCDC output voltage configured on the SPC device tree
+ * node. Compiled unconditionally (independent of CONFIG_PM); a no-op when no
+ * voltage is configured.
+ */
+void nxp_mcxw7x_dcdc_init(void);
+
 #endif /* _SOC__H_ */
