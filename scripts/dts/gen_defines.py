@@ -113,6 +113,27 @@ def main():
         write_chosen(edt)
         write_global_macros(edt)
 
+    # Output text file with all binding files, if argument is provided
+    if args.deps_out is not None:
+        with open(args.deps_out, "w", encoding="utf-8") as dependency_file:
+            output_binding_paths: set[str] = set()
+
+            for node in edt.nodes:
+                if (
+                    node.matching_compat
+                    and node.binding_path
+                    and node.binding_path not in output_binding_paths
+                ):
+                    print(f'{pathlib.Path(node.binding_path).as_posix()}', file=dependency_file)
+                    output_binding_paths.add(node.binding_path)
+
+                    for path in node.binding.included_binding_paths:
+                        if path in output_binding_paths:
+                            continue
+
+                        print(f'{pathlib.Path(path).as_posix()}', file=dependency_file)
+                        output_binding_paths.add(path)
+
 
 def node_z_path_id(node: edtlib.Node) -> str:
     # Return the node specific bit of the node's path identifier:
@@ -137,6 +158,7 @@ def parse_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--header-out", required=True, help="path to write header to")
+    parser.add_argument("--deps-out", help="path to dependencies file to output")
     parser.add_argument("--edt-pickle", help="path to read pickled edtlib.EDT object from")
 
     return parser.parse_args()
