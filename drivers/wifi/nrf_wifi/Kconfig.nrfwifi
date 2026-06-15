@@ -866,6 +866,7 @@ config NRF_WIFI_MGMT_BUFF_OFFLOAD
 config NRF_WIFI_FEAT_KEEPALIVE
 	bool "Wi-Fi keepalive feature for connection maintenance"
 	depends on NRF70_STA_MODE
+	default y
 	help
 	  Enable the Wi-Fi keepalive feature to keep the connection alive by sending
 	  keepalive packets to the AP. This feature is primarily intended to interoperate with APs
