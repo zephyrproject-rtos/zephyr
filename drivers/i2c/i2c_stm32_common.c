@@ -121,6 +121,9 @@ int i2c_stm32_pm_get(const struct device *dev)
 	if (ret == 0) {
 		/* Prevent the clocks to be stopped during the i2c transaction */
 		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+		}
 	}
 
 	return ret;
@@ -129,5 +132,8 @@ int i2c_stm32_pm_get(const struct device *dev)
 void i2c_stm32_pm_put(const struct device *dev)
 {
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
 	(void)pm_device_runtime_put(dev);
 }
