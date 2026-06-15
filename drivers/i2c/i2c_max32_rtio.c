@@ -269,11 +269,6 @@ static void i2c_max32_isr_controller(const struct device *dev, mxc_i2c_regs_t *i
 	}
 }
 
-/* Return true when message is started and will complete from an asynchronous
- * handler, in which case @param status output value is meaningless.
- * Return false when the operation is synchronous (i.e. it is completed)
- * and set the operation status in output @param status.
- */
 static bool max32_start(const struct device *dev, int *status)
 {
 	struct max32_i2c_data *data = dev->data;
@@ -315,21 +310,6 @@ static bool max32_start(const struct device *dev, int *status)
 	return true;
 }
 
-static void max32_start_or_complete(const struct device *dev)
-{
-	struct max32_i2c_data *data = dev->data;
-	int status;
-
-	/* Process all synchronous sequences until an async one is started (which will complete
-	 * from an asynchronous handler) or the synchronous sequence is the last queued one.
-	 */
-	while (!max32_start(dev, &status)) {
-		if (!i2c_rtio_complete(data->ctx, status)) {
-			return;
-		}
-	}
-}
-
 static void max32_complete(const struct device *dev, int status)
 {
 	struct max32_i2c_data *data = dev->data;
@@ -353,7 +333,7 @@ static void max32_complete(const struct device *dev, int status)
 
 	if (i2c_rtio_complete(ctx, status)) {
 		data->second_msg_flag = 1;
-		max32_start_or_complete(dev);
+		(void)i2c_rtio_run_sync_start_async(dev, ctx, max32_start);
 	} else {
 		data->second_msg_flag = 0;
 	}
@@ -365,7 +345,7 @@ static void max32_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_submit(ctx, iodev_sqe)) {
-		max32_start_or_complete(dev);
+		(void)i2c_rtio_run_sync_start_async(dev, ctx, max32_start);
 	}
 }
 

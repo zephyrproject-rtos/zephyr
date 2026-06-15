@@ -69,11 +69,6 @@ static void i2c_nrfx_twi_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, voi
 	i2c_nrfx_twi_rtio_complete(dev, 0);
 }
 
-/* Return true when message is started and will complete from an asynchronous
- * handler, in which case @param status output value is meaningless.
- * Return false when the operation is synchronous (i.e. it is completed)
- * and set the operation status in output @param status.
- */
 static bool i2c_nrfx_twi_rtio_start(const struct device *dev, int *status)
 {
 	struct i2c_nrfx_twi_rtio_data *const dev_data = dev->data;
@@ -124,21 +119,6 @@ static bool i2c_nrfx_twi_rtio_start(const struct device *dev, int *status)
 	return true;
 }
 
-static void i2c_nrfx_twi_rtio_start_or_complete(const struct device *dev)
-{
-	struct i2c_nrfx_twi_rtio_data *data = dev->data;
-	int status;
-
-	/* Process all synchronous sequences until an async one is started (which will complete
-	 * from an asynchronous handler) or the synchronous sequence is the last queued one.
-	 */
-	while (!i2c_nrfx_twi_rtio_start(dev, &status)) {
-		if (!i2c_rtio_complete(data->ctx, status)) {
-			return;
-		}
-	}
-}
-
 static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status)
 {
 	/** Finalize if there are no more pending xfers */
@@ -146,7 +126,7 @@ static void i2c_nrfx_twi_rtio_complete(const struct device *dev, int status)
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_complete(ctx, status)) {
-		i2c_nrfx_twi_rtio_start_or_complete(dev);
+		(void)i2c_rtio_run_sync_start_async(dev, ctx, i2c_nrfx_twi_rtio_start);
 	} else {
 		nrfx_twi_disable(&data->twi);
 		data->twi_enabled = false;
@@ -196,7 +176,7 @@ static void i2c_nrfx_twi_rtio_submit(const struct device *dev, struct rtio_iodev
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_submit(ctx, iodev_seq)) {
-		i2c_nrfx_twi_rtio_start_or_complete(dev);
+		(void)i2c_rtio_run_sync_start_async(dev, data->ctx, i2c_nrfx_twi_rtio_start);
 	}
 }
 
