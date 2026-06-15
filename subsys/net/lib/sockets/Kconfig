@@ -67,7 +67,7 @@ config HEAP_MEM_POOL_ADD_SIZE_GETADDRINFO
 	# a default configuration on 64-bit platform
 	int
 	default 280
-	depends on DNS_RESOLVER
+	depends on DNS_RESOLVER || NET_IP
 
 config NET_SOCKET_MAX_SEND_WAIT
 	int "Max time in milliseconds waiting for a send command"
