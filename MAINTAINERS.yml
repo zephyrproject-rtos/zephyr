@@ -4933,6 +4933,7 @@ Power management:
     - JordanYates
     - ZhaoxiangJin
     - yongxu-wang15
+    - Holt-Sun
   files:
     - include/zephyr/pm/
     - samples/subsys/pm/
