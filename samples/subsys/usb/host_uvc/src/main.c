@@ -299,6 +299,12 @@ int main(void)
 		return err;
 	}
 
+	err = uhc_sof_enable(uhs_ctx.dev);
+	if (err) {
+		LOG_ERR("Failed to enable SOF traffic");
+		return err;
+	}
+
 	LOG_INF("USB host video device %s is ready", uvc_dev->name);
 
 	while (true) {
