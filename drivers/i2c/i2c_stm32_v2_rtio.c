@@ -100,7 +100,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 		 * If 7-bit mode is enabled, find the correct cfg based on
 		 * the I2C address sent by bus controller.
 		 */
-		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		if ((data->target_cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0) {
 			target_cfg = data->target_cfg;
 		} else {
 			uint8_t target_address;
@@ -249,7 +249,7 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	if (!data->target_cfg) {
 		data->target_cfg = config;
-		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		if ((data->target_cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0) {
 			LL_I2C_SetOwnAddress1(i2c, config->address, LL_I2C_OWNADDRESS1_10BIT);
 			LOG_DBG("i2c: target #1 registered with 10-bit address");
 		} else {
@@ -261,7 +261,7 @@ int i2c_stm32_target_register(const struct device *dev,
 
 		LOG_DBG("i2c: target #1 registered");
 	} else {
-		if (config->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		if ((config->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0) {
 			(void)pm_device_runtime_put(dev);
 			return -EINVAL;
 		}
