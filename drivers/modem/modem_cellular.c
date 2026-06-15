@@ -1022,6 +1022,24 @@ static int modem_cellular_on_run_init_script_state_enter(struct modem_cellular_d
 	return modem_pipe_open_async(data->uart_pipe);
 }
 
+static void modem_cellular_enter_recovery_state(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	/* Release CMUX if it was attached, so the UART pipe can be reattached
+	 * cleanly on the next connect attempt. No-op when CMUX is not attached.
+	 */
+	modem_cmux_release(&data->cmux);
+
+	if (modem_cellular_gpio_is_enabled(&config->reset_gpio) && config->reset_on_recovery) {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RESET_PULSE);
+	} else if (modem_cellular_gpio_is_enabled(&config->power_gpio)) {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_POWER_ON_PULSE);
+	} else {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
+	}
+}
+
 static void modem_cellular_run_init_script_event_handler(struct modem_cellular_data *data,
 							 enum modem_cellular_event evt)
 {
@@ -1063,18 +1081,7 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
-		if (modem_cellular_gpio_is_enabled(&config->reset_gpio) &&
-		    config->reset_on_recovery) {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RESET_PULSE);
-			break;
-		}
-
-		if (modem_cellular_gpio_is_enabled(&config->power_gpio)) {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_POWER_ON_PULSE);
-			break;
-		}
-
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
+		modem_cellular_enter_recovery_state(data);
 		break;
 
 	default:
