@@ -160,6 +160,10 @@ struct uhc_transfer {
 	void *cb;
 	/** Pointer to completion callback private data */
 	void *priv;
+	/** Anchor list node */
+	sys_dnode_t anchor_node;
+	/** Pointer to the anchor the transfer is linked to */
+	void *anchor;
 	/** Transfer result, 0 on success, other values on error */
 	int err;
 };

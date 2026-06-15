@@ -117,9 +117,23 @@ struct usbh_class_api {
 };
 
 /**
+ * @brief USB host transfer anchor
+ *
+ * Keeps track of submitted transfers.
+ */
+struct usbh_xfer_anchor {
+	/** List of anchored transfers */
+	sys_dlist_t list;
+	/** Anchor list mutex */
+	struct k_mutex mutex;
+};
+
+/**
  * @brief USB host class instance data
  */
 struct usbh_class_data {
+	/** Transfers submitted by the class driver */
+	struct usbh_xfer_anchor anchor;
 	/** Name of the USB host class instance */
 	const char *name;
 	/** Pointer to USB device this class is used for */
@@ -228,6 +242,47 @@ int usbh_disable(struct usbh_context *uhs_ctx);
  * @return 0 on success, other values on fail.
  */
 int usbh_shutdown(struct usbh_context *const uhs_ctx);
+
+/**
+ * @brief Initialize an anchor.
+ *
+ * @param[in] anchor Anchor
+ */
+void usbh_xfer_anchor_init(struct usbh_xfer_anchor *const anchor);
+
+/**
+ * @brief Anchor a transfer before it is submitted to the controller.
+ *
+ * The anchor holds a reference to the transfer while it is anchored.
+ *
+ * @note On enqueue error the caller must unanchor the transfer before freeing it.
+ *
+ * @param[in] anchor Anchor
+ * @param[in] xfer UHC transfer
+ *
+ * @return 0 on success, other values on error
+ */
+int usbh_xfer_anchor(struct usbh_xfer_anchor *const anchor,
+		     struct uhc_transfer *const xfer);
+
+/**
+ * @brief Remove transfer from the anchor list.
+ *
+ * Does nothing for a transfer that is not anchored.
+ *
+ * @param[in] xfer UHC transfer
+ *
+ * @return Pointer to the anchor the transfer was removed from
+ * @retval NULL if the transfer was not anchored
+ */
+struct usbh_xfer_anchor *usbh_xfer_unanchor(struct uhc_transfer *const xfer);
+
+/**
+ * @brief Remove all transfers from the anchor list.
+ *
+ * @param[in] anchor Anchor
+ */
+void usbh_xfer_anchor_dequeue_all(struct usbh_xfer_anchor *const anchor);
 
 /**
  * @}

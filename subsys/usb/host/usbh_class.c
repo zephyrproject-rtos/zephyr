@@ -35,6 +35,8 @@ void usbh_class_init_all(void)
 	STRUCT_SECTION_FOREACH(usbh_class_node, c_node) {
 		struct usbh_class_data *const c_data = c_node->c_data;
 
+		usbh_xfer_anchor_init(&c_data->anchor);
+
 		if (c_node->state != USBH_CLASS_STATE_IDLE) {
 			LOG_DBG("Skipping '%s' in state %u",
 				c_data->name, c_node->state);
