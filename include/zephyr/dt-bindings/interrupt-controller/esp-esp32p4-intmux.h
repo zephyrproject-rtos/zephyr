@@ -9,10 +9,32 @@
  * @brief Interrupt source definitions for Espressif ESP32-P4
  *
  * Maps peripheral interrupt sources to CLIC interrupt matrix indices.
+ * @ingroup dt_esp32p4_intmux
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32P4_INTMUX_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32P4_INTMUX_H_
+
+/**
+ * @defgroup dt_esp32p4_intmux Espressif ESP32-P4 interrupt allocator
+ * @brief Devicetree interrupt source numbers for the Espressif ESP32-P4.
+ * @ingroup devicetree-interrupt_controller
+ *
+ * Interrupt source numbers for the Espressif ESP32-P4, mapping peripheral interrupt sources to
+ * CLIC interrupt matrix indices, used with the <tt>espressif,esp32-intc</tt> compatible interrupt
+ * controller. An interrupt is described by three cells: the interrupt source, the priority and a
+ * flags cell. Source numbers follow the pattern @c \<SIGNAL\>_INTR_SOURCE;
+ * @ref IRQ_DEFAULT_PRIORITY selects the default priority.
+ *
+ * @code{.dts}
+ * &uart0 {
+ *         interrupts = <UART0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+ * };
+ * @endcode
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Derived from components/soc/esp32p4/include/soc/interrupts.h */
 #define LP_RTC_INTR_SOURCE                  0   /**< LP RTC interrupt */
@@ -138,5 +160,9 @@
  * Zero will allocate low/medium levels of priority (ESP_INTR_FLAG_LOWMED).
  */
 #define IRQ_DEFAULT_PRIORITY 0
+
+/** @endcond */
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32P4_INTMUX_H_ */

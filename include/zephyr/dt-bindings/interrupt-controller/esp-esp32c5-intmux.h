@@ -7,10 +7,31 @@
 /**
  * @file
  * @brief ESP32-C5 interrupt multiplexer definitions for device tree bindings
+ * @ingroup dt_esp32c5_intmux
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32C5_INTMUX_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32C5_INTMUX_H_
+
+/**
+ * @defgroup dt_esp32c5_intmux Espressif ESP32-C5 interrupt allocator
+ * @brief Devicetree interrupt source numbers for the Espressif ESP32-C5.
+ * @ingroup devicetree-interrupt_controller
+ *
+ * Interrupt source numbers for the Espressif ESP32-C5 interrupt allocator, used with the
+ * <tt>espressif,esp32-intc</tt> compatible interrupt controller. An interrupt is described by three
+ * cells: the interrupt source, the priority and a flags cell. Source numbers follow the pattern
+ * @c \<SIGNAL\>_INTR_SOURCE; @ref IRQ_DEFAULT_PRIORITY selects the default priority.
+ *
+ * @code{.dts}
+ * &uart0 {
+ *         interrupts = <UART0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+ * };
+ * @endcode
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 #define WIFI_MAC_INTR_SOURCE           0  /**< Wi-Fi MAC interrupt, level */
 #define WIFI_MAC_NMI_SOURCE            1  /**< Wi-Fi MAC interrupt, NMI */
@@ -113,5 +134,9 @@
 #define LP_CORE_UART_INTR_SOURCE  2 /**< LP core UART interrupt */
 #define LP_CORE_TIMER_INTR_SOURCE 3 /**< LP core timer interrupt */
 #define LP_CORE_PMU_INTR_SOURCE   5 /**< LP core PMU interrupt */
+
+/** @endcond */
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP32C5_INTMUX_H_ */
