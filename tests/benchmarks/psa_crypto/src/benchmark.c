@@ -45,7 +45,7 @@ do {									\
 
 static psa_status_t make_cipher_key(psa_key_type_t key_type,
 				    psa_algorithm_t alg,
-				    mbedtls_svc_key_id_t *key_id)
+				    psa_key_id_t *key_id)
 {
 	uint8_t tmp_key[32] = { 0x5 };
 	psa_key_attributes_t key_attr = PSA_KEY_ATTRIBUTES_INIT;
@@ -63,7 +63,7 @@ static psa_status_t make_cipher_key(psa_key_type_t key_type,
 
 int main(void)
 {
-	mbedtls_svc_key_id_t key_id = MBEDTLS_SVC_KEY_ID_INIT;
+	psa_key_id_t key_id = PSA_KEY_ID_NULL;
 	psa_status_t status = PSA_SUCCESS;
 	size_t out_len;
 
