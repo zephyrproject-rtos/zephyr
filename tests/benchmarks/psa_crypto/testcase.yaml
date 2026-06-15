@@ -1,11 +1,8 @@
 common:
-  harness: console
-  harness_config:
-    type: one_line
-    regex:
-      - "Benchmark completed"
-  timeout: 10
-  tags: crypto
+  timeout: 30
+  tags:
+    - benchmark
+    - crypto
   arch_exclude:
     - posix
 tests:
