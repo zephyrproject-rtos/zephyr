@@ -51,6 +51,7 @@
 			riscv,isa-base = "rv32e";
 			riscv,isa-extensions = "e", "m", "c", "zicsr";
 			nordic,bus-width = <32>;
+			nordic,vpr-ready-event = <15>;
 
 			cpuppr_vevif_rx: mailbox {
 				compatible = "nordic,nrf-vevif-task-rx";
@@ -900,6 +901,7 @@
 					status = "disabled";
 					#mbox-cells = <1>;
 					nordic,tasks = <16>;
+					nordic,vpr-ready-event = <15>;
 					nordic,tasks-mask = <0xfffffff0>;
 				};
 			};
