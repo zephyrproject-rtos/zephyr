@@ -153,6 +153,8 @@ enum sensor_channel {
 	SENSOR_CHAN_GAS_RES,
 	/** Flow rate in litres per minute */
 	SENSOR_CHAN_FLOW_RATE,
+	/** Flow volume in liters */
+	SENSOR_CHAN_VOLUME,
 
 	/** Voltage, in volts **/
 	SENSOR_CHAN_VOLTAGE,
