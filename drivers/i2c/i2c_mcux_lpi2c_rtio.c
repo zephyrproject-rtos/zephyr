@@ -177,11 +177,6 @@ static int mcux_lpi2c_msg_start(const struct device *dev, uint8_t flags, uint8_t
 	return 0;
 }
 
-/* Return true when message is started and will complete from an asynchronous
- * handler, in which case @param status output value is meaningless.
- * Return false when the operation is synchronous (i.e. it is completed)
- * and set the operation status in output @param status.
- */
 static bool mcux_lpi2c_start(const struct device *dev, int *status)
 {
 	struct mcux_lpi2c_data *data = dev->data;
@@ -223,21 +218,6 @@ static bool mcux_lpi2c_start(const struct device *dev, int *status)
 	return true;
 }
 
-static void mcux_lpi2c_start_or_complete(const struct device *dev)
-{
-	struct mcux_lpi2c_data *data = dev->data;
-	int status;
-
-	/* Process all synchronous sequences until an async one is started (which will complete
-	 * from an interrupt handler) or the synchronous sequence is the last queued one.
-	 */
-	while (!mcux_lpi2c_start(dev, &status)) {
-		if (!i2c_rtio_complete(data->ctx, status)) {
-			return;
-		}
-	}
-}
-
 static void mcux_lpi2c_complete(const struct device *dev, status_t status)
 {
 	const struct mcux_lpi2c_config *config = dev->config;
@@ -267,7 +247,7 @@ static void mcux_lpi2c_complete(const struct device *dev, status_t status)
 
 out:
 	if (i2c_rtio_complete(ctx, ret)) {
-		mcux_lpi2c_start_or_complete(dev);
+		(void)i2c_rtio_run_sync_start_async(dev, ctx, mcux_lpi2c_start);
 	}
 }
 
@@ -277,10 +257,9 @@ static void mcux_lpi2c_submit(const struct device *dev, struct rtio_iodev_sqe *i
 	struct i2c_rtio *const ctx = data->ctx;
 
 	if (i2c_rtio_submit(ctx, iodev_sqe)) {
-		mcux_lpi2c_start_or_complete(dev);
+		(void)i2c_rtio_run_sync_start_async(dev, ctx, mcux_lpi2c_start);
 	}
 }
-
 
 static void mcux_lpi2c_master_transfer_callback(LPI2C_Type *base,
 						lpi2c_master_handle_t *handle,
