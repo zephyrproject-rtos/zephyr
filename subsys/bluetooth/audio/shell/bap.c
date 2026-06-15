@@ -3157,7 +3157,9 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 	bt_shell_print("Stream %p released", stream);
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
-	if (default_unicast_group.bap_group != NULL && !default_unicast_group.is_cap) {
+	if ((IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && default_unicast_group.is_cap &&
+	     default_unicast_group.cap_group != NULL) ||
+	    default_unicast_group.bap_group != NULL) {
 		bool group_can_be_deleted = true;
 
 		for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
@@ -3182,12 +3184,21 @@ static void stream_released_cb(struct bt_bap_stream *stream)
 
 			bt_shell_print("All streams released, deleting group");
 
-			err = bt_bap_unicast_group_delete(default_unicast_group.bap_group);
+			if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && default_unicast_group.is_cap) {
+				err = bt_cap_unicast_group_delete(default_unicast_group.cap_group);
+				if (err == 0) {
+					default_unicast_group.cap_group = NULL;
+					default_unicast_group.is_cap = false;
+				}
+			} else {
+				err = bt_bap_unicast_group_delete(default_unicast_group.bap_group);
+				if (err == 0) {
+					default_unicast_group.bap_group = NULL;
+				}
+			}
 
 			if (err != 0) {
 				bt_shell_error("Failed to delete unicast group: %d", err);
-			} else {
-				default_unicast_group.bap_group = NULL;
 			}
 		}
 	}
