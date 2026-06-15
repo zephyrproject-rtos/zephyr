@@ -48,6 +48,28 @@ struct backend_data_t {
 	/* MBOX WQ */
 	struct k_work mbox_work;
 	struct k_work_q mbox_wq;
+	/* Set to 1 by mbox_init() after k_work_queue_start() completes.
+	 * Checked in mbox_callback() (ISR context) before submitting work.
+	 * Guards against two races:
+	 *   1. Boot-time: mbox IRQ fires before k_work_queue_start() finishes.
+	 *   2. Runtime:   rapid mbox IRQ bursts arrive while mbox_wq thread
+	 *                 is in a transient scheduler state (between run-queue
+	 *                 removal and wait-queue insertion during k_yield), where
+	 *                 the thread's qnode_dlist has .prev=NULL and calling
+	 *                 sys_dlist_remove on it causes ZEPHYR FATAL ERROR 19.
+	 * Both races cause a NULL-dereference in sys_dlist_remove →
+	 * Data Access Violation (MMFAR=0x0).
+	 * Dropping the rare mbox notification during these windows is safe:
+	 * the IPC backend will re-notify on the next TX/RX event.
+	 */
+	atomic_t mbox_wq_ready;
+	/* Counts mbox callbacks that arrived while mbox_work was already
+	 * running (K_WORK_RUNNING set).  Incrementing an atomic from ISR is
+	 * safe.  mbox_callback_process checks this after draining the vring
+	 * and processes any accumulated events in-place, so no notification
+	 * is lost while avoiding the scheduler-transient-state crash path.
+	 */
+	atomic_t mbox_pending;
 
 	/* General */
 	unsigned int role;
@@ -312,12 +334,64 @@ static void mbox_callback_process(struct k_work *item)
 	vq_id = (data->role == ROLE_HOST) ? VIRTQUEUE_ID_HOST : VIRTQUEUE_ID_REMOTE;
 
 	virtqueue_notification(data->vr.vq[vq_id]);
+
+	/* Drain any mbox events that arrived while this work item was
+	 * already running.  mbox_callback() increments mbox_pending instead
+	 * of calling k_work_submit_to_queue (which would race with the
+	 * scheduler's transient state during k_yield and crash).
+	 *
+	 * We loop here rather than re-submitting, so that the mbox_wq thread
+	 * never calls k_work_submit_to_queue on itself while executing.
+	 * Each iteration atomically reads and clears mbox_pending; if it was
+	 * non-zero there may be new vring entries to drain.  The loop exits
+	 * when no further events have been recorded.
+	 *
+	 * Safety cap: virtqueue_notification already drains ALL pending
+	 * descriptors per call (rpmsg_virtio_rx_callback inner while-loop),
+	 * so a single extra iteration is almost always sufficient.  The cap
+	 * of 8 prevents spinning forever if mbox_callback fires continuously
+	 * (e.g. under pathological load).
+	 */
+	for (int i = 0; i < 8; i++) {
+		if (atomic_set(&data->mbox_pending, 0) == 0) {
+			break;
+		}
+		virtqueue_notification(data->vr.vq[vq_id]);
+	}
 }
 
 static void mbox_callback(const struct device *instance, uint32_t channel,
 			  void *user_data, struct mbox_msg *msg_data)
 {
 	struct backend_data_t *data = user_data;
+
+	/* Guard against submitting work before mbox_wq is fully started or
+	 * while its thread is in a scheduler-transient state.  See the
+	 * mbox_wq_ready comment in backend_data_t for the full rationale.
+	 */
+	if (!atomic_get(&data->mbox_wq_ready)) {
+		return;
+	}
+
+	/* Guard against the runtime scheduler race: if mbox_work is already
+	 * running (K_WORK_RUNNING), submitting it again triggers
+	 * notify_queue_locked → z_sched_wake → unpend_thread_no_timeout →
+	 * sys_dlist_remove while the work queue thread may be in a transient
+	 * scheduler window where qnode_dlist.prev is NULL → MMFAR=0x0 crash.
+	 *
+	 * Instead of dropping the notification, increment mbox_pending so
+	 * mbox_callback_process will process accumulated events in-place
+	 * after draining the current vring batch.  No re-submission is done
+	 * from within the running work item.
+	 *
+	 * k_work_busy_get() is safe to call from ISR (it only reads atomic
+	 * flags under a spinlock that masks IRQs, which is a no-op inside an
+	 * ISR on Cortex-M).
+	 */
+	if (k_work_busy_get(&data->mbox_work) & K_WORK_RUNNING) {
+		atomic_inc(&data->mbox_pending);
+		return;
+	}
 
 	k_work_submit_to_queue(&data->mbox_wq, &data->mbox_work);
 }
@@ -343,11 +417,18 @@ static int mbox_init(const struct device *instance)
 	}
 
 	k_work_init(&data->mbox_work, mbox_callback_process);
+	atomic_set(&data->mbox_pending, 0);
 
 	err = mbox_register_callback_dt(&conf->mbox_rx, mbox_callback, data);
 	if (err != 0) {
 		return err;
 	}
+
+	/* Mark the work queue as ready BEFORE enabling the mbox interrupt.
+	 * Once the interrupt is enabled any incoming mbox event will call
+	 * mbox_callback(), which checks this flag before submitting work.
+	 */
+	atomic_set(&data->mbox_wq_ready, 1);
 
 	return mbox_set_enabled_dt(&conf->mbox_rx, 1);
 }
@@ -358,6 +439,10 @@ static int mbox_deinit(const struct device *instance)
 	struct backend_data_t *data = instance->data;
 	k_tid_t wq_thread;
 	int err;
+
+	/* Prevent new mbox_callback submissions before disabling the interrupt. */
+	atomic_set(&data->mbox_wq_ready, 0);
+	atomic_set(&data->mbox_pending, 0);
 
 	err = mbox_set_enabled_dt(&conf->mbox_rx, 0);
 	if (err != 0) {
