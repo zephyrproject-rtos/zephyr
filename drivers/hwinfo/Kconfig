@@ -62,6 +62,7 @@ rsource "Kconfig.sam_rstc"
 rsource "Kconfig.silabs_series2"
 rsource "Kconfig.smartbond"
 rsource "Kconfig.stm32"
+rsource "Kconfig.sunxi"
 # zephyr-keep-sorted-stop
 
 endif
