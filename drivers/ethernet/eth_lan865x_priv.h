@@ -60,20 +60,10 @@ struct lan865x_config {
 };
 
 struct lan865x_data {
-	struct net_if *iface;
-	struct gpio_callback gpio_int_callback;
-	struct k_sem tx_rx_sem;
-	struct k_sem int_sem;
 	struct oa_tc6 *tc6;
 	uint16_t chip_id;
 	uint8_t silicon_rev;
 	uint8_t mac_address[6];
-	bool iface_initialized;
-	bool reset;
-
-	K_KERNEL_STACK_MEMBER(thread_stack, CONFIG_ETH_LAN865X_IRQ_THREAD_STACK_SIZE);
-	struct k_thread thread;
-	k_tid_t tid_int;
 };
 
 int eth_lan865x_mdio_c22_read(const struct device *dev, uint8_t prtad, uint8_t regad,
