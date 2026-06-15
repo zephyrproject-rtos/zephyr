@@ -345,6 +345,46 @@ Under embargo until 2026-06-28
 
 Under embargo until 2026-06-23
 
+:cve:`2026-10634`
+-----------------
+
+Use-after-free in Zephyr native TCP ``net_tcp_foreach()`` due to dropping ``tcp_lock`` during the callback
+
+Zephyr's native TCP stack iterates the global connection list in ``net_tcp_foreach()``
+(``subsys/net/ip/tcp.c``) using the ``SYS_SLIST_FOR_EACH_CONTAINER_SAFE`` macro, which
+caches a pointer to the next list node. Prior to this fix the function released
+``tcp_lock`` while invoking the per-connection callback and re-acquired it afterwards.
+During that window a concurrent ``tcp_conn_release()``, running on the dedicated TCP
+work-queue thread when a connection's reference count drops to zero (e.g. a remote peer
+closing or resetting the connection), can remove and ``k_mem_slab_free()`` the cached
+next connection. When the iterator advances it dereferences the freed (and possibly
+reallocated) slab memory — a use-after-free that can crash the system (denial of
+service) and, if the slot has been reused, cause the callback to operate on an
+attacker-influenced object (potential information disclosure or further fault).
+``net_tcp_foreach()`` is reached in production via the ``net conn`` network shell
+command and via ``net_tcp_close_all_for_iface()`` on interface-down; the freeing side is
+driven by ordinary TCP traffic. The fix moves the connection/context teardown in
+``tcp_conn_release()`` inside the ``tcp_lock`` critical section and keeps ``tcp_lock``
+held across the callback in ``net_tcp_foreach()``. The defect was introduced with the
+modern (TCP2) stack in 2020 and affects releases up to and including v4.4.0.
+
+- `Zephyr project bug tracker GHSA-6c57-xfhw-j26x
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-6c57-xfhw-j26x>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 106992 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/106992>`_
+
+- `PR 107287 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107287>`_
+
+- `PR 107288 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107288>`_
+
+- `PR 107289 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107289>`_
+
 :cve:`2026-10635`
 -----------------
 
