@@ -33,4 +33,18 @@ configdefault SYSTEM_TIMER_RESET_BY_LPM
 
 endif # PM
 
+if SOC_SERIES_MCXAXX6
+
+config CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+config ICACHE_LINE_SIZE
+	default 256
+
+endif # SOC_SERIES_MCXAXX6
+
 endif # SOC_FAMILY_MCXA

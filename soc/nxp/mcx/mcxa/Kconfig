@@ -30,6 +30,8 @@ config SOC_SERIES_MCXAXX6
 	select CPU_HAS_FPU
 	select ARMV8_M_DSP
 	select HAS_MCUX_CACHE
+	select CPU_HAS_ICACHE
+	select HAS_MCUX_SYSCON_LPCAC
 	select HAS_PM
 	select PM_STATE_SET_IRQ_LOCKED
 
