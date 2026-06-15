@@ -164,6 +164,9 @@ int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action);
 int i2c_stm32_suspend(const struct device *dev);
 #endif /* CONFIG_PM_DEVICE */
 
+int i2c_stm32_pm_get(const struct device *dev);
+void i2c_stm32_pm_put(const struct device *dev);
+
 int i2c_stm32_error(const struct device *dev);
 void i2c_stm32_event(const struct device *dev);
 

@@ -10,6 +10,8 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -110,3 +112,22 @@ int i2c_stm32_pm_action(const struct device *dev, enum pm_device_action action)
 	return err;
 }
 #endif
+
+int i2c_stm32_pm_get(const struct device *dev)
+{
+	int ret;
+
+	ret = pm_device_runtime_get(dev);
+	if (ret == 0) {
+		/* Prevent the clocks to be stopped during the i2c transaction */
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+
+	return ret;
+}
+
+void i2c_stm32_pm_put(const struct device *dev)
+{
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	(void)pm_device_runtime_put(dev);
+}
