@@ -69,6 +69,18 @@ static int fota_cook_url(struct fota_ctx *ctx, const char *url)
 		return -EINVAL;
 	}
 
+	ret = fota_get_url_field(url, &parser, UF_SCHEMA, schema, sizeof(schema));
+	if (ret < 0) {
+		return ret;
+	}
+	if (!strcmp(schema, "https") && IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
+		ctx->use_tls = true;
+	} else if (!strcmp(schema, "http")) {
+		ctx->use_tls = false;
+	} else {
+		return -EINVAL;
+	}
+
 	ret = fota_get_url_field(url, &parser, UF_HOST, bufptr, bufsize);
 	if (ret < 0) {
 		return ret;
@@ -99,18 +111,6 @@ static int fota_cook_url(struct fota_ctx *ctx, const char *url)
 		ctx->port = "443";
 	} else {
 		ctx->port = "80";
-	}
-
-	ret = fota_get_url_field(url, &parser, UF_SCHEMA, schema, sizeof(schema));
-	if (ret < 0) {
-		return ret;
-	}
-	if (!strcmp(schema, "https") && IS_ENABLED(CONFIG_NET_SOCKETS_SOCKOPT_TLS)) {
-		ctx->use_tls = true;
-	} else if (!strcmp(schema, "http")) {
-		ctx->use_tls = false;
-	} else {
-		return -EINVAL;
 	}
 
 	return 0;
