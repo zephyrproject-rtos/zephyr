@@ -18,4 +18,11 @@ config FS_SAMPLE_CREATE_SOME_ENTRIES
 	  flash or (Q)SPI connected memories, where it is not possible to
 	  easily add files with use of other device.
 
+config FS_SAMPLE_MKFS
+	bool "Format the disk when mounting fails"
+	depends on FILE_SYSTEM_MKFS
+	help
+	  Format a blank disk and retry the mount. Enable this for the
+	  SDHC emulator, whose storage starts erased.
+
 source "Kconfig.zephyr"

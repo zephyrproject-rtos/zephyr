@@ -125,3 +125,16 @@ tests:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85
+  sample.filesystem.fat_fs.sdhc_emul:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_dtc_overlay_files:
+      - boards/native_sim_sdhc.overlay
+    extra_overlay_confs:
+      - boards/native_sim_sdhc.conf
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Disk mounted"
