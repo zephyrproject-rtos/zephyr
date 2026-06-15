@@ -6926,11 +6926,11 @@ West:
     - modules/mbedtls/
     - tests/crypto/psa/
     - tests/crypto/secp256r1/
-    - tests/benchmarks/mbedtls/
+    - tests/benchmarks/psa_crypto/
   labels:
     - "area: Mbed TLS"
   tests:
-    - benchmark.crypto.mbedtls
+    - benchmark.crypto.psa
     - secure_storage.psa
     - crypto.mbedtls_psa
     - crypto.secp256r1
