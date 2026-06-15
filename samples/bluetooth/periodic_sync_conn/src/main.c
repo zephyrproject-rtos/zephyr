@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Atmosic
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,7 +57,7 @@ static void recv_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_recv_info *info, struct net_buf_simple *buf)
 {
 	int err;
-	struct bt_le_oob oob;
+	bt_addr_le_t local_addr;
 
 	if (default_conn) {
 		/* Only respond with address if not already connected */
@@ -72,19 +73,19 @@ static void recv_cb(struct bt_le_per_adv_sync *sync,
 		rsp_params.response_subevent = info->subevent;
 		rsp_params.response_slot = 0;
 
-		err = bt_le_oob_get_local(BT_ID_DEFAULT, &oob);
+		err = bt_le_generate_and_get_rpa(BT_ID_DEFAULT, &local_addr);
 		if (err) {
-			printk("Failed to get OOB data (err %d)\n", err);
+			printk("Failed to get local addr (err %d)\n", err);
 
 			return;
 		}
 
-		printk("Responding with own addr: %s\n", bt_addr_le_str(&oob.addr));
+		printk("Responding with own addr: %s\n", bt_addr_le_str(&local_addr));
 
 		net_buf_simple_add_u8(&rsp_buf, sizeof(bt_addr_le_t));
 		net_buf_simple_add_u8(&rsp_buf, BT_DATA_LE_BT_DEVICE_ADDRESS);
-		net_buf_simple_add_mem(&rsp_buf, &oob.addr.a, sizeof(oob.addr.a));
-		net_buf_simple_add_u8(&rsp_buf, oob.addr.type);
+		net_buf_simple_add_mem(&rsp_buf, &local_addr.a, sizeof(local_addr.a));
+		net_buf_simple_add_u8(&rsp_buf, local_addr.type);
 
 		err = bt_le_per_adv_set_response_data(sync, &rsp_params, &rsp_buf);
 		if (err) {
