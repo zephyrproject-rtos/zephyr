@@ -42,7 +42,6 @@ struct wifi_rrm_neighbor_report_t {
 };
 
 struct wifi_roaming_params {
-	bool is_11r_used;
 	struct wifi_rrm_neighbor_report_t neighbor_rep;
 };
 
@@ -518,10 +517,6 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 		break;
 	}
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
-	roaming_params.is_11r_used = params->ft_used;
-#endif
-
 	return wifi_mgmt_api->connect(dev, iface, params);
 }
 
@@ -636,13 +631,7 @@ static int wifi_start_roaming(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	if (roaming_params.is_11r_used) {
-		if (wifi_mgmt_api->start_11r_roaming == NULL) {
-			return -ENOTSUP;
-		}
-
-		return wifi_mgmt_api->start_11r_roaming(dev, iface);
-	} else if (wifi_mgmt_api->bss_support_neighbor_rep(dev, iface)) {
+	if (wifi_mgmt_api->bss_support_neighbor_rep(dev, iface)) {
 		memset(&roaming_params.neighbor_rep, 0x0, sizeof(roaming_params.neighbor_rep));
 		if (wifi_mgmt_api->send_11k_neighbor_request == NULL) {
 			return -ENOTSUP;

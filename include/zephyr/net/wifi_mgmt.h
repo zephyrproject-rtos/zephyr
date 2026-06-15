@@ -2286,14 +2286,6 @@ struct wifi_mgmt_ops {
 	int (*candidate_scan)(const struct device *dev,
 			      struct net_if *iface,
 			      struct wifi_scan_params *params);
-	/** Start 11r roaming
-	 *
-	 * @param dev Pointer to the device structure for the driver instance
-	 * @param iface Network interface to use for the roaming operation
-	 *
-	 * @return 0 if ok, < 0 if error
-	 */
-	int (*start_11r_roaming)(const struct device *dev, struct net_if *iface);
 	/** Set BSS max idle period
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
