@@ -1,0 +1,14 @@
+common:
+  tags:
+    - drivers
+    - sdhc
+    - mmc
+    - emul
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  harness: ztest
+  filter: dt_compat_enabled("zephyr,mmc-disk")
+
+tests:
+  sd.mmc.emul.ops: {}

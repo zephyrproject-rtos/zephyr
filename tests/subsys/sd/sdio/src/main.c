@@ -137,4 +137,29 @@ ZTEST(sd_stack, test_card_config)
 	}
 }
 
+/* verify the cmd53 */
+ZTEST(sd_stack, test_cmd53)
+{
+	uint8_t wbuf[512];
+	uint8_t rbuf[512];
+
+	zassert_ok(sdio_set_block_size(&card.func0, 512));
+
+	for (int i = 0; i < 64; i++) {
+		wbuf[i] = (uint8_t)i;
+	}
+	zassert_ok(sdio_write_fifo(&card.func0, 0, wbuf, 64));
+	memset(rbuf, 0, 64);
+	zassert_ok(sdio_read_fifo(&card.func0, 0, rbuf, 64));
+	zassert_mem_equal(wbuf, rbuf, 64);
+
+	for (int i = 0; i < 512; i++) {
+		wbuf[i] = (uint8_t)(i ^ 0xAA);
+	}
+	zassert_ok(sdio_write_blocks_fifo(&card.func0, 0, wbuf, 1));
+	memset(rbuf, 0, 512);
+	zassert_ok(sdio_read_blocks_fifo(&card.func0, 0, rbuf, 1));
+	zassert_mem_equal(wbuf, rbuf, 512);
+}
+
 ZTEST_SUITE(sd_stack, NULL, NULL, NULL, NULL, NULL);

@@ -39,3 +39,10 @@ tests:
       - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
     platform_allow:
       - esp32p4_function_ev_board/esp32p4/hpcore
+  sd.sdmmc.emul:
+    depends_on: []
+    harness: ztest
+    filter: dt_compat_enabled("zephyr,sdmmc-disk")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
