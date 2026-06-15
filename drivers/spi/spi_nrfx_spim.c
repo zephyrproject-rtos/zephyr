@@ -43,7 +43,6 @@ static void transfer_end(const struct device *dev, int ret)
 static void transfer_start(const struct device *dev)
 {
 	struct driver_data *dev_data = dev->data;
-	const struct driver_config *dev_config = dev->config;
 	size_t chunk_len;
 	const uint8_t *tx_buf;
 	size_t tx_buf_len;
@@ -55,12 +54,6 @@ static void transfer_start(const struct device *dev)
 		transfer_end(dev, 0);
 		return;
 	}
-
-	/* A single EasyDMA transfer cannot exceed MAXCNT, so cap the chunk to
-	 * the controller limit. The remainder is picked up by the next call to
-	 * this function from the event handler once the current chunk is done.
-	 */
-	chunk_len = MIN(chunk_len, dev_config->common.max_transfer_len);
 
 	if (spi_context_tx_buf_on(&dev_data->ctx)) {
 		tx_buf = dev_data->ctx.tx_buf;
