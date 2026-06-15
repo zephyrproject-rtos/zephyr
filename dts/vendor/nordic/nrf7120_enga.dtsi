@@ -189,6 +189,10 @@
 			reg = <0x28180000 DT_SIZE_K(512)>;
 		};
 
+		boot_rom_patch: memory@3fb000 {
+			reg = <0x3fb000 DT_SIZE_K(8)>;
+		};
+
 #ifdef USE_NON_SECURE_ADDRESS_MAP
 		global_peripherals: peripheral@40000000 {
 			reg = <0x40000000 0x10000000>;
