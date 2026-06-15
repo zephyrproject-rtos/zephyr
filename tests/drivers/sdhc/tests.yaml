@@ -52,3 +52,21 @@ tests:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85
+  drivers.sdhc.sdhc_api.emul:
+    harness: ztest
+    filter: dt_alias_exists("sdhc0")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_configs:
+      - CONFIG_SDHC_EMUL=y
+  drivers.sdhc.sdhc_api.emmc:
+    harness: ztest
+    filter: dt_alias_exists("sdhc0")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_dtc_overlay_files:
+      - boards/native_sim_emmc.overlay
+    extra_configs:
+      - CONFIG_SDHC_EMUL=y
