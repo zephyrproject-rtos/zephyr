@@ -14,11 +14,37 @@
 #define TASKS_IDX_MAX NRF_VPR_TASKS_TRIGGER_MAX
 #define VEVIF_RETRIGGER_DELAY_USEC 12
 
+#define VPR_READY_CHECK_NEEDED DT_ANY_INST_HAS_PROP_STATUS_OKAY(nordic_vpr_ready_event)
+
 struct mbox_vevif_task_tx_conf {
 	NRF_VPR_Type *vpr;
 	uint32_t tasks_mask;
 	uint8_t tasks;
+	uint8_t ready_event;
 };
+
+#if VPR_READY_CHECK_NEEDED
+struct mbox_vevif_task_tx_data {
+	bool ready;
+};
+
+static bool vpr_ready_check(const struct device *dev)
+{
+	const struct mbox_vevif_task_tx_conf *config = dev->config;
+	struct mbox_vevif_task_tx_data *data = dev->data;
+
+	if (data->ready) {
+		return true;
+	}
+
+	if (nrfy_vpr_event_check(config->vpr, nrf_vpr_triggered_event_get(config->ready_event))) {
+		data->ready = true;
+		return true;
+	}
+
+	return false;
+}
+#endif
 
 static inline bool vevif_task_tx_is_valid(const struct device *dev, uint32_t id)
 {
@@ -39,6 +65,13 @@ static int vevif_task_tx_send(const struct device *dev, uint32_t id, const struc
 		return -EMSGSIZE;
 	}
 
+#if VPR_READY_CHECK_NEEDED
+	/* Trigger task in the remote core only if core is ready to accept it as otherwise the task
+	 * will be lost. PPR core starts with unknown delay and it signals when it is ready.
+	 */
+	while (!vpr_ready_check(dev)) {
+	}
+#endif
 	nrfy_vpr_task_trigger(config->vpr, nrfy_vpr_trigger_task_get(id));
 
 #ifdef CONFIG_SOC_NRF54H20
@@ -74,13 +107,21 @@ static DEVICE_API(mbox, vevif_task_tx_driver_api) = {
 	BUILD_ASSERT(DT_INST_PROP(inst, nordic_tasks) <= VPR_TASKS_TRIGGER_MaxCount,               \
 		     "Number of tasks exceeds maximum");                                           \
                                                                                                    \
+	COND_CODE_0(VPR_READY_CHECK_NEEDED, (),                                                    \
+		(static struct mbox_vevif_task_tx_data data##inst = {                              \
+			.ready = !DT_INST_NODE_HAS_PROP(inst, nordic_vpr_ready_event),             \
+		};))                                                                               \
 	static const struct mbox_vevif_task_tx_conf conf##inst = {                                 \
 		.vpr = (NRF_VPR_Type *)DT_INST_REG_ADDR(inst),                                     \
 		.tasks = DT_INST_PROP(inst, nordic_tasks),                                         \
 		.tasks_mask = DT_INST_PROP(inst, nordic_tasks_mask),                               \
+		.ready_event = DT_INST_PROP_OR(inst, nordic_vpr_ready_event, 0),                   \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &conf##inst, POST_KERNEL,                    \
-			      CONFIG_MBOX_INIT_PRIORITY, &vevif_task_tx_driver_api);
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL,                                                    \
+			      COND_CODE_0(VPR_READY_CHECK_NEEDED, (NULL), (&data##inst)),          \
+			      &conf##inst,                                                         \
+			      POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,                              \
+			      &vevif_task_tx_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(VEVIF_TASK_TX_DEFINE)
