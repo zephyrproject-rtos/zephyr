@@ -922,6 +922,9 @@ static int dhcpv6_parse_option_iaaddr(struct net_pkt *pkt, uint16_t length,
 			break;
 		}
 
+		if (sublen + 4U > length) {
+			return -EBADMSG;
+		}
 		length -= (sublen + 4);
 	}
 
@@ -1015,6 +1018,9 @@ static int dhcpv6_parse_option_ia_na(struct net_pkt *pkt, uint16_t length,
 			break;
 		}
 
+		if (sublen + 4U > length) {
+			return -EBADMSG;
+		}
 		length -= (sublen + 4);
 	}
 
@@ -1098,6 +1104,9 @@ static int dhcpv6_parse_option_iaprefix(struct net_pkt *pkt, uint16_t length,
 			break;
 		}
 
+		if (sublen + 4U > length) {
+			return -EBADMSG;
+		}
 		length -= (sublen + 4);
 	}
 
@@ -1190,6 +1199,9 @@ static int dhcpv6_parse_option_ia_pd(struct net_pkt *pkt, uint16_t length,
 			break;
 		}
 
+		if (sublen + 4U > length) {
+			return -EBADMSG;
+		}
 		length -= (sublen + 4);
 	}
 
