@@ -18,6 +18,7 @@
 
 #define DT_DRV_COMPAT st_stm32_xspi_controller
 
+#include <zephyr/cache.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -67,6 +68,20 @@ struct mspi_stm32_xspi_cmd {
 	 */
 	bool data_none;
 };
+
+static void xspi_lock_thread(const struct device *dev)
+{
+	struct mspi_stm32_data *dev_data = dev->data;
+
+	k_sem_take(&dev_data->thread_sem, K_FOREVER);
+}
+
+static void xspi_unlock_thread(const struct device *dev)
+{
+	struct mspi_stm32_data *dev_data = dev->data;
+
+	k_sem_give(&dev_data->thread_sem);
+}
 
 static uint32_t mspi_stm32_xspi_compute_prescaler(const struct mspi_stm32_conf *dev_cfg,
 						  struct mspi_stm32_data *dev_data,
@@ -903,7 +918,10 @@ static int mspi_stm32_xspi_memmap_on(const struct device *controller)
 	ret = mspi_stm32_xspi_memmap_start(controller);
 	if (ret != 0) {
 		LOG_ERR("Failed to enable memory mapped mode");
+		return ret;
 	}
+
+	LOG_DBG("Memory mapped mode enabled");
 
 	return ret;
 }
@@ -969,17 +987,39 @@ static int read_write_in_memory_map_mode(const struct device *dev,
 		return -EIO;
 	}
 
+	xspi_lock_thread(dev);
 	if (!mspi_stm32_xspi_is_memorymap(dev)) {
 		ret = mspi_stm32_xspi_memmap_on(dev);
 		if (ret != 0) {
 			LOG_ERR("Failed to set memory mapped");
+			xspi_unlock_thread(dev);
 			return ret;
 		}
 	}
+	xspi_unlock_thread(dev);
 
-	uintptr_t mmap_addr = dev_data->memmap_base_addr + packet->address;
+	/* The address of the Memory Mapped area includes the offset hold by the memmap-config */
+	uintptr_t mmap_addr = dev_data->memmap_base_addr +
+		dev_data->memmap_cfg.address_offset +
+		packet->address;
+
+	/* TODO :
+	 * - check this mmap_addr does not exceed the max_mmap_addr = dev_data->memmap_base_addr +
+	 * dev_data->memmap_cfg.address_offset + dev_data->memmap_cfg.size
+	 * - check that the mmap_addr + packet->num_bytes does not exceed the max_mmap_addr
+	 */
 
 	if (packet->dir == MSPI_RX) {
+#ifdef CONFIG_DCACHE
+		/* Invalidating an un-aligned cache line is safe as data cache cannot be more
+		 * recent than flash memory when reading. Compute aligned address to be safe
+		 * against possibles sanity tests in data cache management functions.
+		 */
+		uintptr_t base = ROUND_DOWN(mmap_addr, CONFIG_DCACHE_LINE_SIZE);
+		uintptr_t end = ROUND_UP(mmap_addr + packet->num_bytes, CONFIG_DCACHE_LINE_SIZE);
+
+		sys_cache_data_invd_range((void *)base, end - base);
+#endif
 		LOG_INF("Memory-mapped read from 0x%08lx, len %u", mmap_addr, packet->num_bytes);
 		memcpy(packet->data_buf, (void *)mmap_addr, packet->num_bytes);
 		k_sleep(K_MSEC(1));
@@ -993,7 +1033,9 @@ static int read_write_in_memory_map_mode(const struct device *dev,
 		return 0;
 	}
 
+	xspi_lock_thread(dev);
 	ret = mspi_stm32_xspi_abort_memmap_if_enabled(dev);
+	xspi_unlock_thread(dev);
 	if (ret != 0) {
 		return ret;
 	}
@@ -1101,11 +1143,15 @@ static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xf
 			LOG_DBG(" MSPI_IO_MODE_SINGLE in 3Bytes addressing is not supported in "
 				"memory map mode, switching to indirect mode");
 
+			xspi_lock_thread(dev);
+
 			ret = mspi_stm32_xspi_abort_memmap_if_enabled(dev);
 
+			xspi_unlock_thread(dev);
 			if (ret != 0) {
 				return ret;
 			}
+
 			goto indirect;
 		}
 
@@ -1251,7 +1297,9 @@ static int mspi_stm32_xspi_status_reg(const struct device *controller, const str
 	}
 	LOG_DBG("MSPI poll status reg");
 
+	xspi_lock_thread(controller);
 	ret = mspi_stm32_xspi_abort_memmap_if_enabled(controller);
+	xspi_unlock_thread(controller);
 	if (ret != 0) {
 		goto status_end;
 	}
@@ -1571,6 +1619,7 @@ static int mspi_stm32_xspi_memmap_config(const struct device *controller,
 	(void)pm_device_runtime_get(controller);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	xspi_lock_thread(controller);
 
 	if (!memmap_cfg->enable) {
 		/* Abort memory-mapped mode only if it was enabled. This avoids
@@ -1587,6 +1636,7 @@ static int mspi_stm32_xspi_memmap_config(const struct device *controller,
 		LOG_INF("XIP configured %d", memmap_cfg->enable);
 	}
 
+	xspi_unlock_thread(controller);
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	(void)pm_device_runtime_put(controller);
 	return ret;
@@ -1863,6 +1913,8 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 		dev_data->dev_id = NULL;
 		k_mutex_unlock(&dev_data->lock);
 	}
+
+	k_sem_init(&dev_data->thread_sem, 1, 1);
 
 end:
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
