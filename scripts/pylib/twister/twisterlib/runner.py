@@ -1338,7 +1338,7 @@ class ProjectBuilder(FilterBuilder):
                 # Keep previous statuses and reasons
                 tc_info = tc_keeper.get(testcase_id, {})
                 if not tc_info and self.trace:
-                    # Also happens when Ztest uses macroses, eg. DEFINE_TEST_VARIANT
+                    # Also happens when Ztest uses macros, eg. DEFINE_TEST_VARIANT
                     logger.debug(f"Ztest case '{testcase_id}' discovered for "
                                  f"'{self.instance.testsuite.source_dir_rel}' "
                                  f"with {list(tc_keeper)}")
@@ -2081,9 +2081,9 @@ class TwisterRunner:
 
     def update_counting_before_pipeline(self):
         '''
-        Updating counting before pipeline is necessary because statically filterd
+        Updating counting before pipeline is necessary because statically filtered
         test instance never enter the pipeline. While some pipeline output needs
-        the static filter stats. So need to prepare them before pipline starts.
+        the static filter stats. So need to prepare them before pipeline starts.
         '''
         for instance in self.instances.values():
             if instance.status == TwisterStatus.FILTER and instance.reason != 'runtime filter':

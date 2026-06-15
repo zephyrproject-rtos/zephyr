@@ -2305,7 +2305,7 @@ def test_names():
 /dts-v1/;
 
 / {
-	// A leading \ is accepted but ignored in node/propert names
+	// A leading \ is accepted but ignored in node/property names
 	\aA0,._+*#?- = &_, &{/aA0,._+@-};
 
 	// Names that overlap with operators and integer literals

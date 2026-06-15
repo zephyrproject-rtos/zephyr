@@ -833,7 +833,7 @@ def enum_macros(prop: edtlib.Property, macro: str):
     )
 
     for i, subval in enumerate(val):
-        # make sure the subval is a formated right.
+        # make sure the subval is formatted right.
         if isinstance(subval, str):
             subval = str2ident(subval)
         # DT_N_<node-id>_P_<prop-id>_IDX_<i>_EXISTS

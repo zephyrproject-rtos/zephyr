@@ -429,7 +429,7 @@ class JsonReport:
 
             for case in instance.testcases:
                 # freeform was set when no sub testcases were parsed, however,
-                # if we discover those at runtime, the fallback testcase wont be
+                # if we discover those at runtime, the fallback testcase won't be
                 # needed anymore and can be removed from the output, it does
                 # not have a status and would otherwise be reported as skipped.
                 if (

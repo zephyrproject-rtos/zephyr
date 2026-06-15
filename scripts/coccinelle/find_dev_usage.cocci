@@ -3,7 +3,7 @@
 
 // Uses a python database (a dict) to find where const struct device
 // variable are being used in zephyr functions and, if it's being in place
-// of a void*, it will print an ERROR for loosing the const qualifier.
+// of a void*, it will print an ERROR for losing the const qualifier.
 // If it's being used on an unknown functions from an external module such
 // as a HAL, it will print a WARNING in order to check if the const qualifier
 // is not lost.
@@ -23,7 +23,7 @@ import pickle
 def check_and_report(F, f, D, nb_args, p):
     if f in f_void and int(nb_args) in f_void[f]:
         msg = "ERROR: in {} calling {} param with {}, \
-loosing const qualifier, please wrap".format(F, f, D)
+losing const qualifier, please wrap".format(F, f, D)
         coccilib.report.print_report(p[0], msg)
     elif f not in f_void and f not in f_other and not f.isupper():
         msg = "WARNING: in {} calling {} param with {}, \
