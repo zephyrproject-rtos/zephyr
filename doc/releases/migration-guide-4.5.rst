@@ -617,6 +617,13 @@ Bluetooth HCI
   (most don't) there's also a new :c:func:`bt_hci_recv_err` API that leaves the responsibility
   of unrefing the buffer to the caller in case of error situations.
 
+Bluetooth Services
+==================
+
+* :kconfig:option:`CONFIG_BT_OTS_MAX_OBJ_CNT` has been changed from ``hex`` to ``int`` for a
+  more intuitive type.
+  Simply modify any hex values like ``0x30`` to their decimal values like ``48``.
+
 Networking
 **********
 
