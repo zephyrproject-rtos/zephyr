@@ -84,12 +84,12 @@ static int sdhc_emul_reset(const struct device *dev)
 static int sdhc_emul_request(const struct device *dev, struct sdhc_command *cmd,
 			     struct sdhc_data *data)
 {
-	struct sdhc_emul_data *data = dev->data;
+	struct sdhc_emul_data *emul_data = dev->data;
 	int ret;
 
-	k_mutex_lock(&data->lock, K_FOREVER);
-	ret = sdhc_emul_core_request(&data->card, cmd, data);
-	k_mutex_unlock(&data->lock);
+	k_mutex_lock(&emul_data->lock, K_FOREVER);
+	ret = sdhc_emul_core_request(&emul_data->card, cmd, data);
+	k_mutex_unlock(&emul_data->lock);
 	if (ret < 0) {
 		LOG_ERR("CMD%d failed: %d", cmd->opcode, ret);
 	}
