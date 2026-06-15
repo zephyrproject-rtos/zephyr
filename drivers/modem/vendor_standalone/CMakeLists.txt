@@ -2,6 +2,7 @@
 
 add_subdirectory(simcom)
 add_subdirectory_ifdef(CONFIG_MODEM_HL78XX hl78xx)
+add_subdirectory_ifdef(CONFIG_MODEM_QUECTEL_BC66X quectel)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_MODEM_HL7800 hl7800-legacy/hl7800.c)

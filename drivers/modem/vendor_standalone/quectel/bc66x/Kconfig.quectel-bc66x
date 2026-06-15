@@ -1,0 +1,117 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2026 Giovanni Piccari <giopiccari@outlook.com>
+# SPDX-FileCopyrightText: Copyright 2026 M31 srl <info@m31.com>
+
+config MODEM_QUECTEL_BC66X
+	bool "Quectel BC66 / BC660K NB-IoT modem driver"
+	depends on MODEM
+	depends on MODEM_CHAT
+	depends on MODEM_BACKEND_UART
+	depends on MODEM_PIPE
+
+	# Networking
+	depends on NETWORKING
+	depends on NET_OFFLOAD
+	depends on NET_SOCKETS_OFFLOAD
+
+	depends on GPIO
+
+	help
+	  Driver for the Quectel BC66 / BC660K-GL NB-IoT modem.
+	  Uses modem_chat and modem_backend_uart from the Zephyr
+	  modem subsystem for AT command exchange.
+
+if MODEM_QUECTEL_BC66X
+
+config MODEM_QUECTEL_BC660K
+	bool "Quectel BC660K-GL"
+	default y if DT_HAS_QUECTEL_BC660K_ENABLED
+	help
+	  Enable support for the Quectel BC660K-GL modem.
+
+config MODEM_QUECTEL_BC66
+	bool "Quectel BC66"
+	default y if DT_HAS_QUECTEL_BC66_ENABLED
+	help
+	  Enable support for the Quectel BC66 modem.
+
+config MODEM_QUECTEL_BC66X_CHAT_BUF_SIZE
+	int "AT chat RX buffer size"
+	default 512
+
+config MODEM_QUECTEL_BC66X_UART_RX_BUF_SIZE
+	int "UART RX ring buffer size"
+	default 512
+
+config MODEM_QUECTEL_BC66X_UART_TX_BUF_SIZE
+	int "UART TX buffer size"
+	default 256
+
+config MODEM_QUECTEL_BC66X_WORKQ_STACK_SIZE
+	int "Stack size for the deferred work thread"
+	default 1024
+
+config MODEM_QUECTEL_BC66X_WORKQ_PRIORITY
+	int "Workq priority. Note that also init work is scheduled here"
+	default 80
+
+config MODEM_QUECTEL_BC66X_INIT_PRIORITY
+	int "Quectel BC66x modem driver initialization priority"
+	default 91
+	range 0 99
+	help
+	  This priority must be < MODEM_QUECTEL_BC66X_NET_INIT_PRIORITY
+
+config MODEM_QUECTEL_BC66X_NET_INIT_PRIORITY
+	int "Net device init priority"
+	default 92
+	range 0 99
+	help
+	  This priority must be > MODEM_QUECTEL_BC66X_INIT_PRIORITY
+
+config BC66X_INIT_DELAY
+	int "Driver initialization delay (ms)"
+	default 1200
+
+config BC66X_INIT_RETRIES
+	int "Initialization retries"
+	default 10
+	help
+	  Number of times to retry the modem initialization.
+
+config BC66X_INIT_TIMEOUT
+	int "Driver initialization timeout (seconds)"
+	default 10
+
+config BC66X_WAIT_FOR_HW_DELAY
+	int "Wait for hardware delay (ms)"
+	default 2500
+	help
+	  Delay to allow the modem hardware to power up before communicating.
+
+config MODEM_QUECTEL_BC66X_APN_PROFILES
+	string "List of profiles to search when autodetecting APN"
+	default "tim=893901, 1nce=8988228"
+	help
+	  Set a comma separated list of profiles, each containing of:
+	  <apn>=<ICCID_1> ... <ICCID_n>
+
+config MODEM_QUECTEL_BC66X_DNS_ADDRESS_1
+	string "Primary DNS server address"
+	default "8.8.8.8"
+
+config MODEM_QUECTEL_BC66X_DNS_ADDRESS_2
+	string "Secondary DNS server address"
+	default "1.1.1.1"
+
+config MODEM_QUECTEL_BC66X_DNS_TIMEOUT
+	int "DNS resolution timeout (seconds)"
+	default 15
+
+module = MODEM_QUECTEL_BC66X
+module-str = modem-quectel-bc66x
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MODEM_QUECTEL_BC66X
