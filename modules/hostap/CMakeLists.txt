@@ -740,6 +740,14 @@ if(CONFIG_WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO AND NOT CONFIG_PSA_WANT_ALG_MD5)
   )
 endif()
 
+# EAP-TTLS phase-2 CHAP (RFC 1994) is compiled only when CONFIG_FIPS is off,
+# i.e. when LEGACY_CRYPTO opts out of CONFIG_FIPS. Link chap.c for the symbol.
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO AND (CONFIG_EAP_TTLS OR CONFIG_EAP_SERVER_TTLS))
+  zephyr_library_sources(
+    ${HOSTAP_SRC_BASE}/eap_common/chap.c
+  )
+endif()
+
 zephyr_compile_definitions(WPA_SUPPLICANT_CLEANUP_INTERVAL=${CONFIG_WIFI_NM_WPA_SUPPLICANT_CLEANUP_INTERVAL})
 
 zephyr_compile_definitions_ifdef(CONFIG_WIFI_NM_HOSTAPD_AP
