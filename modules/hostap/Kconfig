@@ -165,13 +165,11 @@ config WIFI_NM_WPA_SUPPLICANT_RRM
 	default y
 endif
 
-config WIFI_NM_WPA_SUPPLICANT_WEP
-	bool "WEP (Legacy crypto) support"
-
 config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
 	bool "Legacy (non-FIPS) crypto for backward compatibility"
 	default y
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	imply WIFI_NM_WPA_SUPPLICANT_WEP
 	select DEPRECATED
 	select NOT_SECURE
 	help
@@ -183,6 +181,10 @@ config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
 	  Also links hostap rc4.c for group-key unwrap. When PSA_WANT_ALG_MD5
 	  is off, CMake links md5-internal.c and md5.c so EAPOL-Key v1
 	  HMAC-MD5 does not depend on PSA.
+
+	  Implies WIFI_NM_WPA_SUPPLICANT_WEP by default (merged legacy option,
+	  kept for prj.conf compatibility). Set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP=n
+	  to strip WEP while keeping WPA/TKIP interop.
 
 	  Enabled by default so WPA/TKIP and other legacy AP interop works
 	  out of the box. This is NOT a TKIP-only switch: it disables CONFIG_FIPS
@@ -199,8 +201,21 @@ config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
 	  need a build with legacy algorithms stripped entirely.
 
 	  Enabled by default for now. The default will change to disabled in a
-	  future Zephyr release. Set this explicitly if you need WPA/TKIP or
-	  other legacy AP interop.
+	  future Zephyr release, which will also disable WEP and TKIP interop
+	  unless LEGACY_CRYPTO is set explicitly.
+
+config WIFI_NM_WPA_SUPPLICANT_WEP
+	bool "WEP support (deprecated)"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	select DEPRECATED
+	select NOT_SECURE
+	help
+	  Deprecated: merged under WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO.
+	  Symbol retained for backward compatibility with existing prj.conf
+	  files that set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP. WEP is enabled by
+	  default via LEGACY_CRYPTO imply; set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP=n
+	  to strip WEP while keeping WPA/TKIP interop. Has no effect unless
+	  LEGACY_CRYPTO is enabled.
 
 choice WIFI_NM_WPA_SUPPLICANT_CRYPTO_BACKEND
 	prompt "WPA supplicant crypto implementation"

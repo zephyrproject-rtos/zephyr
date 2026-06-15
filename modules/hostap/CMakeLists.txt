@@ -324,9 +324,9 @@ zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NO
   CONFIG_CRYPTO_INTERNAL
 )
 
-zephyr_library_compile_definitions_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP
-  CONFIG_WEP
-)
+if(CONFIG_WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO AND CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP)
+  zephyr_library_compile_definitions(CONFIG_WEP)
+endif()
 
 zephyr_library_sources_ifndef(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
   ${HOSTAP_SRC_BASE}/crypto/tls_none.c
