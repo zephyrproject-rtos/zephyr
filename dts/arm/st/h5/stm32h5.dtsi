@@ -32,6 +32,8 @@
 			compatible = "arm,cortex-m33";
 			reg = <0>;
 			cpu-power-states = <&stop>;
+			d-cache-line-size = <16>;
+			i-cache-line-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
