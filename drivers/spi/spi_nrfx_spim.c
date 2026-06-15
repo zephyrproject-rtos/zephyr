@@ -49,7 +49,6 @@ static void transfer_start(const struct device *dev)
 	size_t tx_buf_len;
 	uint8_t *rx_buf;
 	size_t rx_buf_len;
-	int ret;
 
 	chunk_len = spi_context_max_continuous_chunk(&dev_data->ctx);
 	if (chunk_len == 0) {
@@ -79,15 +78,11 @@ static void transfer_start(const struct device *dev)
 		rx_buf_len = 0;
 	}
 
-	ret = spi_nrfx_spim_common_transfer_start(dev,
-						  tx_buf,
-						  tx_buf_len,
-						  rx_buf,
-						  rx_buf_len);
-	if (ret) {
-		transfer_end(dev, ret);
-		return;
-	}
+	spi_nrfx_spim_common_transfer_start(dev,
+					    tx_buf,
+					    tx_buf_len,
+					    rx_buf,
+					    rx_buf_len);
 }
 
 static void spim_wake_handler(const struct device *dev)
@@ -101,14 +96,17 @@ static void spim_wake_handler(const struct device *dev)
 #endif
 }
 
-static void spim_evt_handler(const struct device *dev, nrfx_spim_event_t *evt)
+static void spim_evt_handler(const struct device *dev, int ret)
 {
 	struct driver_data *dev_data = dev->data;
-	uint32_t len = MAX(evt->xfer_desc.tx_length, evt->xfer_desc.rx_length);
 
-	spi_nrfx_spim_common_transfer_end(dev, &evt->xfer_desc);
-	spi_context_update_tx(&dev_data->ctx, 1, len);
-	spi_context_update_rx(&dev_data->ctx, 1, len);
+	if (ret < 0) {
+		transfer_end(dev, ret);
+		return;
+	}
+
+	spi_context_update_tx(&dev_data->ctx, 1, (size_t)ret);
+	spi_context_update_rx(&dev_data->ctx, 1, (size_t)ret);
 	transfer_start(dev);
 }
 

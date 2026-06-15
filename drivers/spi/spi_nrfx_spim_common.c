@@ -87,14 +87,6 @@ void spi_nrfx_spim_common_cs_clear(const struct device *dev, const struct spi_co
 	nrfy_spim_disable(spim_reg);
 }
 
-static void evt_handler(nrfx_spim_event_t const *evt, void *data)
-{
-	const struct device *dev = data;
-	const struct spi_nrfx_common_config *dev_config = dev->config;
-
-	dev_config->evt_handler(dev, (nrfx_spim_event_t *)evt);
-}
-
 static void spi_config_copy(struct spi_config *des, const struct spi_config *src)
 {
 	memcpy(des, src, sizeof(struct spi_config));
@@ -193,313 +185,268 @@ uint32_t resolve_freq(uint32_t frequency)
 	}
 }
 
-#if SPI_NRFX_HAS_RAM_BUF || CONFIG_HAS_NORDIC_DMM
 #if SPI_NRFX_HAS_RAM_BUF
-static int prepare_tx_ram_buf(const struct device *dev,
-			      const uint8_t **tx_buf,
-			      size_t tx_buf_len)
+
+static size_t transfer_buf_chunk_limit(const struct device *dev, size_t chunk_len)
 {
 	struct spi_nrfx_common_data *dev_data = dev->data;
-	const struct spi_nrfx_common_config *dev_config = dev->config;
-	NRF_SPIM_Type *spim_reg = dev_data->spim.p_reg;
+	nrfx_spim_t *spim = &dev_data->spim;
 
-	if (nrf_dma_accessible_check(spim_reg, *tx_buf)) {
-		return 0;
+	if ((dev_data->tx_user_buf != NULL &&
+	     !nrf_dma_accessible_check(&spim->p_reg, dev_data->tx_user_buf)) ||
+	    (dev_data->rx_user_buf != NULL &&
+	     !nrf_dma_accessible_check(&spim->p_reg, dev_data->rx_user_buf))) {
+		return MIN(chunk_len, SPI_NRFX_RAM_BUF_SIZE);
 	}
 
-	if (tx_buf_len > SPI_NRFX_RAM_BUF_SIZE) {
-		return -ENOSPC;
-	}
-
-	memcpy(dev_config->tx_ram_buf, *tx_buf, tx_buf_len);
-	*tx_buf = dev_config->tx_ram_buf;
-	return 0;
+	return chunk_len;
 }
 
-static int prepare_rx_ram_buf(const struct device *dev,
-			      uint8_t **rx_buf,
-			      size_t rx_buf_len)
-{
-	struct spi_nrfx_common_data *dev_data = dev->data;
-	const struct spi_nrfx_common_config *dev_config = dev->config;
-	NRF_SPIM_Type *spim_reg = dev_data->spim.p_reg;
-
-	if (nrf_dma_accessible_check(spim_reg, *rx_buf)) {
-		return 0;
-	}
-
-	if (rx_buf_len > SPI_NRFX_RAM_BUF_SIZE) {
-		return -ENOSPC;
-	}
-
-	*rx_buf = dev_config->rx_ram_buf;
-	return 0;
-}
-
-static void release_rx_ram_buf(const struct device *dev, const uint8_t *rx_buf)
-{
-	struct spi_nrfx_common_data *dev_data = dev->data;
-	const struct spi_nrfx_common_config *dev_config = dev->config;
-
-	if (rx_buf == dev_data->rx_user_buf) {
-		return;
-	}
-
-	if (rx_buf != dev_config->rx_ram_buf) {
-		return;
-	}
-
-	memcpy(dev_data->rx_user_buf, rx_buf, dev_data->rx_user_buf_len);
-}
-
-#else /* SPI_NRFX_HAS_RAM_BUF */
-
-static int prepare_tx_ram_buf(const struct device *dev,
-			      const uint8_t **tx_buf,
-			      size_t tx_buf_len)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(tx_buf);
-	ARG_UNUSED(tx_buf_len);
-	return 0;
-}
-
-static int prepare_rx_ram_buf(const struct device *dev,
-			      uint8_t **rx_buf,
-			      size_t rx_buf_len)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(rx_buf);
-	ARG_UNUSED(rx_buf_len);
-	return 0;
-}
-
-static void release_rx_ram_buf(const struct device *dev, const uint8_t *rx_buf)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(rx_buf);
-}
-#endif /* SPI_NRFX_HAS_RAM_BUF */
-
-#if CONFIG_HAS_NORDIC_DMM
-static int prepare_tx_dmm_buf(const struct device *dev,
-			      const uint8_t **tx_buf,
-			      size_t tx_buf_len)
-{
-	const struct spi_nrfx_common_config *dev_config = dev->config;
-
-	if (*tx_buf == NULL || tx_buf_len == 0) {
-		return 0;
-	}
-
-	return dmm_buffer_out_prepare(dev_config->mem_reg,
-				      (void *)*tx_buf,
-				      tx_buf_len,
-				      (void **)tx_buf);
-}
-
-static int prepare_rx_dmm_buf(const struct device *dev,
-			      uint8_t **rx_buf,
-			      size_t rx_buf_len)
-{
-	const struct spi_nrfx_common_config *dev_config = dev->config;
-
-	if (*rx_buf == NULL || rx_buf_len == 0) {
-		return 0;
-	}
-
-	return dmm_buffer_in_prepare(dev_config->mem_reg,
-				     *rx_buf,
-				     rx_buf_len,
-				     (void **)rx_buf);
-}
-
-static void release_tx_dmm_buf(const struct device *dev, const uint8_t *tx_buf)
-{
-	const struct spi_nrfx_common_config *dev_config = dev->config;
-
-	dmm_buffer_out_release(dev_config->mem_reg, (void *)tx_buf);
-}
-
-static void release_rx_dmm_buf(const struct device *dev, const uint8_t *rx_buf)
-{
-	struct spi_nrfx_common_data *dev_data = dev->data;
-	const struct spi_nrfx_common_config *dev_config = dev->config;
-
-	dmm_buffer_in_release(dev_config->mem_reg,
-			      dev_data->rx_user_buf,
-			      dev_data->rx_user_buf_len,
-			      (void *)rx_buf);
-}
-
-#else /* CONFIG_HAS_NORDIC_DMM */
-
-static int prepare_tx_dmm_buf(const struct device *dev,
-			      const uint8_t **tx_buf,
-			      size_t tx_buf_len)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(tx_buf);
-	ARG_UNUSED(tx_buf_len);
-	return 0;
-}
-
-static int prepare_rx_dmm_buf(const struct device *dev,
-			      uint8_t **rx_buf,
-			      size_t rx_buf_len)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(rx_buf);
-	ARG_UNUSED(rx_buf_len);
-	return 0;
-}
-
-static void release_tx_dmm_buf(const struct device *dev, const uint8_t *tx_buf)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(tx_buf);
-}
-
-static void release_rx_dmm_buf(const struct device *dev, const uint8_t *rx_buf)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(rx_buf);
-}
-#endif /* CONFIG_HAS_NORDIC_DMM */
-
-static int prepare_tx_buf(const struct device *dev,
-			  const uint8_t **tx_buf,
-			  size_t tx_buf_len)
-{
-	struct spi_nrfx_common_data *dev_data = dev->data;
-	int ret;
-
-	dev_data->tx_user_buf = *tx_buf;
-
-	ret = prepare_tx_ram_buf(dev, tx_buf, tx_buf_len);
-	if (ret) {
-		return ret;
-	}
-
-	ret = prepare_tx_dmm_buf(dev, tx_buf, tx_buf_len);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
-}
-
-static int prepare_rx_buf(const struct device *dev,
-			  uint8_t **rx_buf,
-			  size_t rx_buf_len)
-{
-	struct spi_nrfx_common_data *dev_data = dev->data;
-	int ret;
-
-	dev_data->rx_user_buf = *rx_buf;
-	dev_data->rx_user_buf_len = rx_buf_len;
-
-	ret = prepare_rx_ram_buf(dev, rx_buf, rx_buf_len);
-	if (ret) {
-		return ret;
-	}
-
-	ret = prepare_rx_dmm_buf(dev, rx_buf, rx_buf_len);
-	if (ret) {
-		return ret;
-	}
-
-	return 0;
-}
-
-static void release_tx_buf(const struct device *dev, const uint8_t *tx_buf)
-{
-	release_tx_dmm_buf(dev, tx_buf);
-}
-
-static void release_rx_buf(const struct device *dev, const uint8_t *rx_buf)
-{
-	release_rx_ram_buf(dev, rx_buf);
-	release_rx_dmm_buf(dev, rx_buf);
-}
-
-#else /* SPI_NRFX_HAS_RAM_BUF || CONFIG_HAS_NORDIC_DMM */
-
-static int prepare_tx_buf(const struct device *dev,
-			  const uint8_t **tx_buf,
-			  size_t tx_buf_len)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(tx_buf);
-	ARG_UNUSED(tx_buf_len);
-	return 0;
-}
-
-static int prepare_rx_buf(const struct device *dev,
-			  uint8_t **rx_buf,
-			  size_t rx_buf_len)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(rx_buf);
-	ARG_UNUSED(rx_buf_len);
-	return 0;
-}
-
-static void release_tx_buf(const struct device *dev, const uint8_t *tx_buf)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(tx_buf);
-}
-
-static void release_rx_buf(const struct device *dev, const uint8_t *rx_buf)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(rx_buf);
-}
-#endif /* SPI_NRFX_HAS_RAM_BUF || CONFIG_HAS_NORDIC_DMM */
-
-int spi_nrfx_spim_common_transfer_start(const struct device *dev,
-					const uint8_t *tx_buf,
-					size_t tx_buf_len,
-					uint8_t *rx_buf,
-					size_t rx_buf_len)
+static int transfer_buf_prepare(const struct device *dev,
+				size_t chunk_len,
+				const uint8_t **tx_buf,
+				uint8_t **rx_buf)
 {
 	struct spi_nrfx_common_data *dev_data = dev->data;
 	const struct spi_nrfx_common_config *dev_config = dev->config;
 	nrfx_spim_t *spim = &dev_data->spim;
-	struct nrfy_spim_xfer_desc_t xfer;
-	int ret;
+	const uint8_t *tx_user;
+	uint8_t *rx_user;
 
-	if (tx_buf_len > dev_config->max_transfer_len ||
-	    rx_buf_len > dev_config->max_transfer_len) {
-		return -EINVAL;
+	dev_data->rx_ram_buf = NULL;
+
+	if (dev_data->tx_user_buf != NULL) {
+		tx_user = dev_data->tx_user_buf + dev_data->user_buf_pos;
+
+		if (!nrf_dma_accessible_check(&spim->p_reg, tx_user)) {
+			memcpy(dev_config->tx_ram_buf, tx_user, chunk_len);
+			*tx_buf = dev_config->tx_ram_buf;
+		} else {
+			*tx_buf = tx_user;
+		}
+	} else {
+		*tx_buf = NULL;
 	}
 
-	ret = prepare_tx_buf(dev, &tx_buf, tx_buf_len);
-	if (ret) {
-		return ret;
-	}
+	if (dev_data->rx_user_buf != NULL) {
+		rx_user = dev_data->rx_user_buf + dev_data->user_buf_pos;
 
-	ret = prepare_rx_buf(dev, &rx_buf, rx_buf_len);
-	if (ret) {
-		release_tx_buf(dev, tx_buf);
-		return ret;
-	}
-
-	/* Set the accessible and aligned buffers */
-	xfer.p_tx_buffer = (uint8_t *)tx_buf,
-	xfer.tx_length = tx_buf_len,
-	xfer.p_rx_buffer = rx_buf,
-	xfer.rx_length = rx_buf_len,
-
-	ret = nrfx_spim_xfer(spim, &xfer, 0);
-	if (ret) {
-		release_tx_buf(dev, tx_buf);
-		release_rx_buf(dev, rx_buf);
-		return ret;
+		if (!nrf_dma_accessible_check(&spim->p_reg, rx_user)) {
+			dev_data->rx_ram_buf = dev_config->rx_ram_buf;
+			*rx_buf = dev_config->rx_ram_buf;
+		} else {
+			*rx_buf = rx_user;
+		}
+	} else {
+		*rx_buf = NULL;
 	}
 
 	return 0;
+}
+
+static void transfer_buf_complete(const struct device *dev,
+				  const nrfx_spim_xfer_desc_t *xfer)
+{
+	struct spi_nrfx_common_data *dev_data = dev->data;
+
+	if (dev_data->rx_ram_buf != NULL) {
+		memcpy(dev_data->rx_user_buf + dev_data->user_buf_pos,
+		       dev_data->rx_ram_buf,
+		       xfer->rx_length);
+		dev_data->rx_ram_buf = NULL;
+	}
+}
+
+static void transfer_buf_abort(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+#elif SPI_NRFX_HAS_DMM_BUF
+
+static size_t transfer_buf_chunk_limit(const struct device *dev, size_t chunk_len)
+{
+	ARG_UNUSED(dev);
+
+	return MIN(chunk_len, SPI_NRFX_DMM_BUF_SIZE);
+}
+
+static int transfer_buf_prepare(const struct device *dev,
+				size_t chunk_len,
+				const uint8_t **tx_buf,
+				uint8_t **rx_buf)
+{
+	struct spi_nrfx_common_data *dev_data = dev->data;
+	const struct spi_nrfx_common_config *dev_config = dev->config;
+	const uint8_t *tx_user;
+	uint8_t *rx_user;
+	int ret;
+
+	dev_data->tx_dmm_buf = NULL;
+	dev_data->rx_dmm_buf = NULL;
+
+	if (dev_data->tx_user_buf != NULL) {
+		tx_user = dev_data->tx_user_buf + dev_data->user_buf_pos;
+
+		ret = dmm_buffer_out_prepare(dev_config->mem_reg,
+					     (void *)tx_user,
+					     chunk_len,
+					     &dev_data->tx_dmm_buf);
+		if (ret != 0) {
+			return ret;
+		}
+
+		*tx_buf = dev_data->tx_dmm_buf;
+	} else {
+		*tx_buf = NULL;
+	}
+
+	if (dev_data->rx_user_buf != NULL) {
+		rx_user = dev_data->rx_user_buf + dev_data->user_buf_pos;
+
+		ret = dmm_buffer_in_prepare(dev_config->mem_reg,
+					    (void *)rx_user,
+					    chunk_len,
+					    &dev_data->rx_dmm_buf);
+		if (ret != 0) {
+			dmm_buffer_out_release(dev_config->mem_reg, dev_data->tx_dmm_buf);
+			dev_data->tx_dmm_buf = NULL;
+			return ret;
+		}
+
+		*rx_buf = dev_data->rx_dmm_buf;
+	} else {
+		*rx_buf = NULL;
+	}
+
+	return 0;
+}
+
+static void transfer_buf_complete(const struct device *dev,
+				  const nrfx_spim_xfer_desc_t *xfer)
+{
+	struct spi_nrfx_common_data *dev_data = dev->data;
+	const struct spi_nrfx_common_config *dev_config = dev->config;
+
+	if (dev_data->tx_dmm_buf != NULL) {
+		dmm_buffer_out_release(dev_config->mem_reg, dev_data->tx_dmm_buf);
+		dev_data->tx_dmm_buf = NULL;
+	}
+
+	if (dev_data->rx_dmm_buf != NULL) {
+		dmm_buffer_in_release(dev_config->mem_reg,
+				      dev_data->rx_user_buf + dev_data->user_buf_pos,
+				      xfer->rx_length,
+				      dev_data->rx_dmm_buf);
+		dev_data->rx_dmm_buf = NULL;
+	}
+}
+
+static void transfer_buf_abort(const struct device *dev)
+{
+	struct spi_nrfx_common_data *dev_data = dev->data;
+	const struct spi_nrfx_common_config *dev_config = dev->config;
+
+	dmm_buffer_out_release(dev_config->mem_reg, dev_data->tx_dmm_buf);
+	dev_data->tx_dmm_buf = NULL;
+	dev_data->rx_dmm_buf = NULL;
+}
+
+#endif
+
+static void transfer_end(const struct device *dev, int ret)
+{
+	const struct spi_nrfx_common_config *dev_config = dev->config;
+
+	dev_config->evt_handler(dev, ret);
+}
+
+static void transfer_start(const struct device *dev)
+{
+	struct spi_nrfx_common_data *dev_data = dev->data;
+	const struct spi_nrfx_common_config *dev_config = dev->config;
+	size_t chunk_len;
+	const uint8_t *tx_buf;
+	uint8_t *rx_buf;
+	nrfx_spim_xfer_desc_t xfer;
+	nrfx_spim_t *spim = &dev_data->spim;
+	int ret;
+
+	chunk_len = dev_data->user_buf_len - dev_data->user_buf_pos;
+
+	if (chunk_len == 0) {
+		transfer_end(dev, dev_data->user_buf_len);
+		return;
+	}
+
+	/* Limit to EasyDMA MAXCNT */
+	chunk_len = MIN(chunk_len, dev_config->max_transfer_len);
+
+#if SPI_NRFX_HAS_RAM_BUF || SPI_NRFX_HAS_DMM_BUF
+	chunk_len = transfer_buf_chunk_limit(dev, chunk_len);
+
+	ret = transfer_buf_prepare(dev, chunk_len, &tx_buf, &rx_buf);
+	if (ret != 0) {
+		transfer_end(dev, ret);
+		return;
+	}
+#else
+	if (dev_data->tx_user_buf != NULL) {
+		tx_buf = dev_data->tx_user_buf + dev_data->user_buf_pos;
+	} else {
+		tx_buf = NULL;
+	}
+
+	if (dev_data->rx_user_buf != NULL) {
+		rx_buf = dev_data->rx_user_buf + dev_data->user_buf_pos;
+	} else {
+		rx_buf = NULL;
+	}
+#endif
+
+	xfer.p_tx_buffer = tx_buf;
+	xfer.tx_length = tx_buf != NULL ? chunk_len : 0;
+	xfer.p_rx_buffer = rx_buf;
+	xfer.rx_length = rx_buf != NULL ? chunk_len : 0;
+
+	ret = nrfx_spim_xfer(spim, &xfer, 0);
+	if (ret) {
+#if SPI_NRFX_HAS_RAM_BUF || SPI_NRFX_HAS_DMM_BUF
+		transfer_buf_abort(dev);
+#endif
+		transfer_end(dev, ret);
+	}
+}
+
+static void evt_handler(nrfx_spim_event_t const *evt, void *data)
+{
+	const struct device *dev = data;
+	struct spi_nrfx_common_data *dev_data = dev->data;
+	const nrfx_spim_xfer_desc_t *xfer = &evt->xfer_desc;
+
+#if SPI_NRFX_HAS_RAM_BUF || SPI_NRFX_HAS_DMM_BUF
+	transfer_buf_complete(dev, xfer);
+#endif
+
+	dev_data->user_buf_pos += MAX(xfer->tx_length, xfer->rx_length);
+
+	transfer_start(dev);
+}
+
+void spi_nrfx_spim_common_transfer_start(const struct device *dev,
+					 const uint8_t *tx_buf,
+					 size_t tx_buf_len,
+					 uint8_t *rx_buf,
+					 size_t rx_buf_len)
+{
+	struct spi_nrfx_common_data *dev_data = dev->data;
+
+	dev_data->tx_user_buf = tx_buf;
+	dev_data->rx_user_buf = rx_buf;
+	dev_data->user_buf_len = MAX(tx_buf_len, rx_buf_len);
+	dev_data->user_buf_pos = 0;
+
+	transfer_start(dev);
 }
 
 void spi_nrfx_spim_common_transfer_stop(const struct device *dev)
@@ -508,13 +455,6 @@ void spi_nrfx_spim_common_transfer_stop(const struct device *dev)
 	nrfx_spim_t *spim = &dev_data->spim;
 
 	nrfx_spim_abort(spim);
-}
-
-void spi_nrfx_spim_common_transfer_end(const struct device *dev,
-				       const nrfx_spim_xfer_desc_t *xfer)
-{
-	release_tx_buf(dev, (const uint8_t *)xfer->p_tx_buffer);
-	release_rx_buf(dev, (const uint8_t *)xfer->p_rx_buffer);
 }
 
 int spi_nrfx_spim_common_configure(const struct device *dev, const struct spi_config *spi_cfg)
