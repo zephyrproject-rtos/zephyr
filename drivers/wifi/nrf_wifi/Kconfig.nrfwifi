@@ -933,9 +933,8 @@ config NRF_WIFI_DISPLAY_SCAN_ABORT_ON_BSS_LIMIT
 
 if NETWORKING
 config NRF_WIFI_ZERO_COPY_TX
-	bool "Zero copy Transmit path [EXPERIMENTAL]"
+	bool "Zero copy Transmit path"
 	select NET_L2_ETHERNET_RESERVE_HEADER
-	select EXPERIMENTAL
 	# 54L has lower RAM
 	default y if SOC_SERIES_NRF54L
 	help
