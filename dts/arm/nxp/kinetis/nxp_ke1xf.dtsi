@@ -121,7 +121,7 @@
 		};
 
 		sim: sim@40048000 {
-			compatible = "nxp,kinetis-ke1xf-sim";
+			compatible = "nxp,kinetis-ke1xf-sim", "nxp,sim-uuid";
 			reg = <0x40048000 0x1000>;
 		};
 
@@ -257,6 +257,11 @@
 				clock-frequency = <DT_FREQ_K(128)>;
 				#clock-cells = <0>;
 			};
+		};
+
+		rcm: rcm@4007f000 {
+			compatible = "nxp,rcm-hwinfo";
+			reg = <0x4007f000 0x1000>;
 		};
 
 		pcc: pcc@40065000 {
