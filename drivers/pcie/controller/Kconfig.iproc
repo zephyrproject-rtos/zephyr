@@ -7,6 +7,7 @@ menuconfig PCIE_EP_IPROC
 	bool "Broadcom iProc PCIe EP driver"
 	default y
 	depends on DT_HAS_BRCM_IPROC_PCIE_EP_ENABLED
+	select PCIE_ENDPOINT_CONTROLLER_HAS_DRIVER
 	help
 	  This option enables Broadcom iProc PCIe EP driver.
 

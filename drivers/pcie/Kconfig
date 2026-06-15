@@ -5,6 +5,9 @@ ZEPHYR_PCIE_CONTROLLER := zephyr,pcie-controller
 config PCIE_HOST_CONTROLLER_HAS_DRIVER
 	bool
 
+config PCIE_ENDPOINT_CONTROLLER_HAS_DRIVER
+	bool
+
 source "drivers/pcie/host/Kconfig"
 source "drivers/pcie/endpoint/Kconfig"
 source "drivers/pcie/controller/Kconfig"

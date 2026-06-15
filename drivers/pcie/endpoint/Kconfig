@@ -5,6 +5,7 @@
 
 menuconfig PCIE_ENDPOINT
 	bool "PCIe Endpoint support"
+	default y if PCIE_ENDPOINT_CONTROLLER_HAS_DRIVER
 	help
 	  This option enables PCIe Endpoint support.
 
@@ -15,7 +16,5 @@ module-str = PCIE_EP
 source "subsys/logging/Kconfig.template.log_config"
 
 comment "PCIe Endpoint Drivers"
-
-source "drivers/pcie/endpoint/Kconfig.iproc"
 
 endif # PCIE_ENDPOINT
