@@ -2134,7 +2134,7 @@ endfunction()
 
 # 3.1. *_ifdef
 #
-# Functions for conditionally executing CMake functions with oneliners
+# Functions for conditionally executing CMake functions with one-liners
 # e.g.
 #
 # if(CONFIG_FFT)
