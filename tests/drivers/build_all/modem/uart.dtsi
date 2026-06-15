@@ -81,6 +81,14 @@ test_quectel_bg9x: quectel_bg9x {
 	mdm-reset-gpios = <&test_gpio 0 0>;
 };
 
+test_quectel_bc660k: bc660k {
+	compatible = "quectel,bc660k";
+
+	mdm-boot-gpios = <&test_gpio 0 0>;
+	mdm-rst-gpios = <&test_gpio 0 0>;
+	mdm-psm-gpios = <&test_gpio 0 0>;
+};
+
 test_quectel_eg25_g: quectel_eg25_g {
 	compatible = "quectel,eg25-g";
 

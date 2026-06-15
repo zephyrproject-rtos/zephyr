@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2026 Giovanni Piccari <giopiccari@outlook.com>
+# SPDX-FileCopyrightText: Copyright 2026 M31 srl <info@m31.com>
+
+description: Quectel BC660K-GL or BC66 NB-IoT modem
+
+compatible: "quectel,bc66x"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  mdm-boot-gpios:
+    type: phandle-array
+    required: true
+    description: BOOT pin (PWRKEY)
+
+  mdm-rst-gpios:
+    type: phandle-array
+    required: true
+    description: RST pin
+
+  mdm-psm-gpios:
+    type: phandle-array
+    required: true
+    description: PSM pin (PSM_EINT)
