@@ -168,6 +168,40 @@ endif
 config WIFI_NM_WPA_SUPPLICANT_WEP
 	bool "WEP (Legacy crypto) support"
 
+config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
+	bool "Legacy (non-FIPS) crypto for backward compatibility"
+	default y
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	select DEPRECATED
+	select NOT_SECURE
+	help
+	  Drop CONFIG_FIPS from the supplicant build to re-enable the legacy
+	  and broken crypto call sites. CONFIG_FIPS is not real FIPS validation
+	  (MbedTLS is not FIPS validated); it is just a switch to strip these
+	  algorithms from the default build.
+
+	  Also links hostap rc4.c for group-key unwrap. When PSA_WANT_ALG_MD5
+	  is off, CMake links md5-internal.c and md5.c so EAPOL-Key v1
+	  HMAC-MD5 does not depend on PSA.
+
+	  Enabled by default so WPA/TKIP and other legacy AP interop works
+	  out of the box. This is NOT a TKIP-only switch: it disables CONFIG_FIPS
+	  wholesale and brings back the whole legacy crypto surface, including:
+	    - WPA1/TKIP EAPOL-Key descriptor version 1 (HMAC-MD5 4-way MIC and
+	      RC4 group-key unwrap)
+	    - MD5/RC4/DES based paths (e.g. EAP-FAST key export, IKEv2 MD5 PRF,
+	      EAP-PWD MD5)
+
+	  The main reason to enable it is interoperability with legacy
+	  WPA-PSK/TKIP access points still seen in the field and legacy
+	  interop/QuickTrack test cases. TKIP is deprecated and not allowed in
+	  current Wi-Fi Alliance certification programs. Turn this off if you
+	  need a build with legacy algorithms stripped entirely.
+
+	  Enabled by default for now. The default will change to disabled in a
+	  future Zephyr release. Set this explicitly if you need WPA/TKIP or
+	  other legacy AP interop.
+
 choice WIFI_NM_WPA_SUPPLICANT_CRYPTO_BACKEND
 	prompt "WPA supplicant crypto implementation"
 	default WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT
