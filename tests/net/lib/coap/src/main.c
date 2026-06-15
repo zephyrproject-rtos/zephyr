@@ -451,6 +451,8 @@ ZTEST(coap, test_match_path_uri)
 		"devnull",
 		NULL
 	};
+	/* Deliberately not NUL terminated, see below. */
+	const char unterminated[] = { '/', 'f', 'o', 'o', 'b' };
 	const char *uri;
 	int r;
 
@@ -481,6 +483,17 @@ ZTEST(coap, test_match_path_uri)
 	uri = "/devnull*";
 	r = _coap_match_path_uri(resource_path, uri, strlen(uri));
 	zassert_false(r, "Matching %s failed", uri);
+
+	r = _coap_match_path_uri(resource_path, unterminated,
+				 sizeof(unterminated));
+	zassert_false(r, "Matching a non-terminated URI failed");
+
+	/* The same length guard is crossed by a URI that does match: with
+	 * len 8, "foobar3a" runs past the end while "foobar3" still matches.
+	 */
+	uri = "/foobar3a";
+	r = _coap_match_path_uri(resource_path, uri, strlen(uri) - 1);
+	zassert_true(r, "Matching %s truncated to 8 bytes failed", uri);
 }
 
 #define BLOCK_WISE_TRANSFER_SIZE_GET 150
