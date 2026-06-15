@@ -1,0 +1,68 @@
+# Copyright 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Zephyr SDHC emulator.
+
+  Software emulation of an SD host controller that supports SD, SDHC,
+  SDXC, eMMC, and SDIO card personalities.  Intended for native_sim
+  testing and CI pipelines.
+
+compatible: "zephyr,sdhc-emul"
+
+include: [sdhc.yaml]
+
+properties:
+  card-type:
+    type: string
+    default: "sdhc"
+    enum:
+      - "sd"
+      - "sdhc"
+      - "sdxc"
+      - "emmc"
+      - "sdio"
+    description: |
+      Virtual card personality.
+        sd    - SDSC up to 2 GB
+        sdhc  - SDHC 4-32 GB (default)
+        sdxc  - SDXC above 32 GB
+        emmc  - eMMC 5.1, supports CMD6 EXT_CSD, HS200/HS400
+        sdio  - SDIO-only, triggers function enumeration
+
+  capacity-blocks:
+    type: int
+    default: 131072
+    description: |
+      Number of blocks in the virtual storage.
+      Default 131072 blocks = 64 MiB at 512 bytes/block.
+
+  sector-size:
+    type: int
+    default: 512
+    description: |
+      Block (sector) size in bytes.
+
+  inject-error-cmd:
+    type: int
+    default: 255
+    description: |
+      CMD index that returns an error for fault injection.
+      255 disables fault injection.
+
+  card-inserted:
+    type: boolean
+    description: |
+      If present, the virtual card is inserted at boot.
+
+  host-ocr:
+    type: int
+    default: 0x00FF8000
+    description: |
+      Host OCR (Operating Conditions Register) value.
+
+  sdio-func-count:
+    type: int
+    default: 1
+    description: |
+      Number of SDIO functions to emulate (1-7).

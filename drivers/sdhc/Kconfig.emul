@@ -1,0 +1,54 @@
+# Copyright 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_EMUL
+	bool "SDHC emulator driver (standalone)"
+	default n
+	depends on SDHC
+	depends on DT_HAS_ZEPHYR_SDHC_EMUL_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  Standalone software emulator for the SDHC host controller API.
+	  Supports SD, SDHC, SDXC, eMMC, and SDIO card personalities.
+	  Intended for native_sim testing and CI pipelines.
+
+config SDHC_EMUL_CONTROLLER
+	bool "SDHC emulation controller (emul framework)"
+	default n
+	depends on SDHC
+	depends on DT_HAS_ZEPHYR_SDHC_EMUL_CONTROLLER_ENABLED
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  SDHC emulation controller using the Zephyr emul framework.
+	  Hosts emulated card peripheral devices as children on the SD bus.
+
+config SDHC_EMUL_CARD
+	bool "SDHC emulated card peripheral"
+	default n
+	depends on SDHC_EMUL_CONTROLLER
+	depends on DT_HAS_ZEPHYR_SDHC_EMUL_CARD_ENABLED
+	help
+	  Emulated SD/SDHC/SDXC/eMMC/SDIO card peripheral that registers
+	  on the SDHC emulation controller bus.
+
+config SDHC_EMUL_SDIO_NET
+	bool "SDIO network function emulation"
+	default n
+	depends on SDHC_EMUL && NET_L2_ETHERNET
+	help
+	  Expose a virtual Ethernet interface through the SDIO emulator.
+	  Packets written to SDIO function 1 loop back via the Zephyr
+	  net stack.
+
+config SDHC_EMUL_BACKEND_FILE
+	bool "Back SDHC emulator onto a host filesystem file"
+	default n
+	depends on SDHC_EMUL && ARCH_POSIX
+	help
+	  Block reads/writes go to a file on the host OS instead of RAM.
+	  Data persists across test runs.
+
+config SDHC_EMUL_BACKEND_FILE_PATH
+	string "Host file path for the emulator backing store"
+	default "/tmp/zephyr_sdhc_emul.img"
+	depends on SDHC_EMUL_BACKEND_FILE
