@@ -177,16 +177,22 @@ static void i2c_nrfx_twim_rtio_submit(const struct device *dev, struct rtio_iode
 {
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
 	struct i2c_rtio *ctx = config->ctx;
+	int ret;
 
-	if (i2c_rtio_submit(ctx, iodev_seq)) {
-		if (pm_device_runtime_get(dev) < 0) {
-			(void)i2c_rtio_complete(ctx, -EINVAL);
-		} else {
-			if (!i2c_rtio_run_sync_start_async(dev, config->ctx,
-							   i2c_nrfx_twim_rtio_start)) {
-				pm_device_runtime_put(dev);
-			}
+	if (!i2c_rtio_submit(ctx, iodev_seq)) {
+		return;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		/* Flush pending transactions since we failed to get the device */
+		while (i2c_rtio_complete(ctx, ret)) {
 		}
+		return;
+	}
+
+	if (!i2c_rtio_run_sync_start_async(dev, ctx, i2c_nrfx_twim_rtio_start)) {
+		pm_device_runtime_put(dev);
 	}
 }
 
