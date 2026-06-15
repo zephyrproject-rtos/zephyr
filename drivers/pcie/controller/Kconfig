@@ -15,4 +15,5 @@ config PCIE_CONTROLLER
 # zephyr-keep-sorted-start
 source "drivers/pcie/controller/Kconfig.brcmstb"
 source "drivers/pcie/controller/Kconfig.ecam"
+source "drivers/pcie/controller/Kconfig.iproc"
 # zephyr-keep-sorted-stop
