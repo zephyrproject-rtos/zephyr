@@ -77,6 +77,7 @@
 			reg = <0>;
 			/* Do not add &standby here since CONFIG_PM_S2RAM is disabled by default */
 			cpu-power-states = <&stop0 &stop1>;
+			i-cache-line-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
