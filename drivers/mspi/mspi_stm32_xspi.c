@@ -13,6 +13,7 @@
 
 #define DT_DRV_COMPAT st_stm32_xspi_controller
 
+#include <zephyr/cache.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
@@ -30,6 +31,20 @@
 #include "mspi_stm32.h"
 
 LOG_MODULE_REGISTER(mspi_stm32_xspi, CONFIG_MSPI_LOG_LEVEL);
+
+static inline void xspi_lock_thread(const struct device *dev)
+{
+	struct mspi_stm32_data *dev_data = dev->data;
+
+	k_sem_take(&dev_data->sem, K_FOREVER);
+}
+
+static inline void xspi_unlock_thread(const struct device *dev)
+{
+	struct mspi_stm32_data *dev_data = dev->data;
+
+	k_sem_give(&dev_data->sem);
+}
 
 static uint32_t mspi_stm32_xspi_hal_address_size(uint8_t address_length)
 {
@@ -211,6 +226,8 @@ static int mspi_stm32_xspi_memmap_on(const struct device *controller)
 		return -EIO;
 	}
 
+	LOG_INF("Memory mapped mode enabled");
+
 	return 0;
 }
 
@@ -275,6 +292,7 @@ static int read_write_in_memory_map_mode(const struct device *dev,
 		return -EIO;
 	}
 
+	xspi_lock_thread(dev);
 	if (!mspi_stm32_xspi_is_memorymap(dev)) {
 		ret = mspi_stm32_xspi_memmap_on(dev);
 		if (ret != 0) {
@@ -283,8 +301,17 @@ static int read_write_in_memory_map_mode(const struct device *dev,
 		}
 	}
 
+	xspi_unlock_thread(dev);
 	uintptr_t mmap_addr = dev_data->memmap_base_addr + packet->address;
 
+#ifdef CONFIG_DCACHE
+	uint32_t size = packet->num_bytes;
+
+	/* Align addr on DCACHE line, not size */
+	__ASSERT_NO_MSG(IS_ALIGNED(mmap_addr, CONFIG_DCACHE_LINE_SIZE));
+
+	sys_cache_data_invd_range((void *)mmap_addr, size);
+#endif
 	if (packet->dir == MSPI_RX) {
 		LOG_INF("Memory-mapped read from 0x%08lx, len %u", mmap_addr, packet->num_bytes);
 		memcpy(packet->data_buf, (void *)mmap_addr, packet->num_bytes);
@@ -299,11 +326,13 @@ static int read_write_in_memory_map_mode(const struct device *dev,
 		return 0;
 	}
 
+	xspi_lock_thread(dev);
 	ret = mspi_stm32_xspi_abort_memmap_if_enabled(dev);
 	if (ret != 0) {
 		return ret;
 	}
 
+	xspi_unlock_thread(dev);
 	return -EPROTONOSUPPORT;
 }
 
@@ -407,11 +436,13 @@ static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xf
 			LOG_DBG(" MSPI_IO_MODE_SINGLE in 3Bytes addressing is not supported in "
 				"memory map mode, switching to indirect mode");
 
+			xspi_lock_thread(dev);
 			int ret = mspi_stm32_xspi_abort_memmap_if_enabled(dev);
 
 			if (ret != 0) {
 				return ret;
 			}
+			xspi_unlock_thread(dev);
 			goto indirect;
 		}
 
@@ -559,11 +590,13 @@ static int mspi_stm32_xspi_status_reg(const struct device *controller, const str
 	cmd.Address = 0U;
 	LOG_DBG("MSPI poll status reg");
 
+	xspi_lock_thread(controller);
 	ret = mspi_stm32_xspi_abort_memmap_if_enabled(controller);
 	if (ret != 0) {
 		goto status_end;
 	}
 
+	xspi_unlock_thread(controller);
 	if (HAL_XSPI_Command(&dev_data->hmspi.xspi, &cmd, HAL_XSPI_TIMEOUT_DEFAULT_VALUE) !=
 	    HAL_OK) {
 		LOG_ERR("Failed to send XSPI instruction");
@@ -894,6 +927,7 @@ static int mspi_stm32_xspi_xip_config(const struct device *controller,
 	(void)pm_device_runtime_get(controller);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	xspi_lock_thread(controller);
 
 	if (!xip_cfg->enable) {
 		/* This is for aborting */
@@ -907,6 +941,7 @@ static int mspi_stm32_xspi_xip_config(const struct device *controller,
 		LOG_INF("XIP configured %d", xip_cfg->enable);
 	}
 
+	xspi_unlock_thread(controller);
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	(void)pm_device_runtime_put(controller);
 	return ret;
@@ -1158,6 +1193,7 @@ static int mspi_hal_init(const struct mspi_stm32_conf *dev_cfg, struct mspi_stm3
 #if defined(XSPI_DCR1_DLYBYP)
 	dev_data->hmspi.xspi.Init.DelayBlockBypass = HAL_XSPI_DELAY_BLOCK_ON;
 #endif /* XSPI_DCR1_DLYBYP */
+	dev_data->hmspi.xspi.Init.MemoryType = HAL_XSPI_MEMTYPE_MACRONIX;
 
 	if (HAL_XSPI_Init(&dev_data->hmspi.xspi) != HAL_OK) {
 		LOG_ERR("MSPI Init failed");
@@ -1292,6 +1328,8 @@ static int mspi_stm32_xspi_config(const struct mspi_dt_spec *spec)
 	if (config->re_init) {
 		k_mutex_unlock(&dev_data->lock);
 	}
+
+	k_sem_init(&dev_data->sem, 1, 1);
 
 end:
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
