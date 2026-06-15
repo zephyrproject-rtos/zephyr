@@ -135,6 +135,9 @@
 #define WDT_TEST_MAX_WINDOW 200
 #endif
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gswdt) && !defined(CONFIG_NRFS_GSWDT_SERVICE_ENABLED)
+#define WDT_TEST_MAX_WINDOW 6000U
+#endif
 
 #define WDT_TEST_STATE_IDLE        0
 #define WDT_TEST_STATE_CHECK_RESET 1
