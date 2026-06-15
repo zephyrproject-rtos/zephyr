@@ -149,6 +149,10 @@ struct uhc_transfer {
 	void *cb;
 	/** Pointer to completion callback private data */
 	void *priv;
+	/** Higher layer anchor node */
+	sys_dnode_t anchor_node;
+	/** Higher-layer anchor owner */
+	void *anchor;
 	/** Transfer result, 0 on success, other values on error */
 	int err;
 };

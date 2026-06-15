@@ -163,6 +163,12 @@ static void usbh_thread(void *p1, void *p2, void *p3)
 		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
 		cb = event.xfer->cb;
 
+		/*
+		 * Unanchor before the completion callback so a driver may free
+		 * or resubmit the transfer from within its callback.
+		 */
+		usbh_class_xfer_unanchor(event.xfer);
+
 		if (event.xfer->cb) {
 			ret = cb(event.xfer->udev, event.xfer);
 		} else {

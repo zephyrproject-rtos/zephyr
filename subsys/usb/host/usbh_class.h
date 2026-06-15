@@ -58,4 +58,38 @@ void usbh_class_probe_device(struct usb_device *const udev);
  */
 void usbh_class_remove_all(struct usb_device *const udev);
 
+/**
+ * @brief Helper to anchor a transfer before it is submitted to the controller.
+ *
+ * @note On enqueue error the caller must unanchor the transfer before freeing it.
+ *
+ * @param[in] c_data USB host class data
+ * @param[in] xfer UHC transfer
+ */
+void usbh_class_xfer_anchor(struct usbh_class_data *const c_data,
+			    struct uhc_transfer *const xfer);
+
+/**
+ * @brief Remove transfer from the anchor list.
+ *
+ * @param[in] xfer UHC transfer
+ */
+void usbh_class_xfer_unanchor(struct uhc_transfer *const xfer);
+
+/**
+ * @brief Remove all transfers from the anchor list for an endpoint.
+ *
+ * @param[in] c_data USB host class data
+ * @param[in] ep Endpoint
+ */
+void usbh_class_xfer_dequeue_anchored(struct usbh_class_data *const c_data,
+				      const uint8_t ep);
+
+/**
+ * @brief Remove all transfers from the anchor list.
+ *
+ * @param[in] c_data USB host class data
+ */
+void usbh_class_xfer_dequeue_all_anchored(struct usbh_class_data *const c_data);
+
 #endif /* ZEPHYR_INCLUDE_USBH_CLASS_H */

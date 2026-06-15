@@ -21,6 +21,9 @@ void usbh_class_init_all(void)
 	STRUCT_SECTION_FOREACH(usbh_class_node, c_node) {
 		struct usbh_class_data *const c_data = c_node->c_data;
 
+		sys_dlist_init(&c_data->xfer_anchor_list);
+		k_mutex_init(&c_data->mutex);
+
 		if (c_node->state != USBH_CLASS_STATE_IDLE) {
 			LOG_DBG("Skipping '%s' in state %u",
 				c_data->name, c_node->state);
@@ -193,4 +196,75 @@ bool usbh_class_is_matching(const struct usbh_class_filter *const filter_rules,
 
 	/* At the end of the filter table and still no match */
 	return false;
+}
+
+void usbh_class_xfer_anchor(struct usbh_class_data *const c_data,
+			    struct uhc_transfer *const xfer)
+{
+	sys_dnode_init(&xfer->anchor_node);
+	k_mutex_lock(&c_data->mutex, K_FOREVER);
+	xfer->anchor = c_data;
+	sys_dlist_append(&c_data->xfer_anchor_list, &xfer->anchor_node);
+	k_mutex_unlock(&c_data->mutex);
+}
+
+void usbh_class_xfer_unanchor(struct uhc_transfer *const xfer)
+{
+	struct usbh_class_data *const c_data = xfer->anchor;
+
+	if (c_data == NULL) {
+		return;
+	}
+
+	k_mutex_lock(&c_data->mutex, K_FOREVER);
+
+	if (sys_dnode_is_linked(&xfer->anchor_node)) {
+		sys_dlist_remove(&xfer->anchor_node);
+	}
+
+	xfer->anchor = NULL;
+	k_mutex_unlock(&c_data->mutex);
+}
+
+void usbh_class_xfer_dequeue_anchored(struct usbh_class_data *const c_data,
+				      const uint8_t ep)
+{
+	const struct usbh_context *uhs_ctx;
+	struct uhc_transfer *xfer;
+
+	if (c_data->udev == NULL) {
+		LOG_ERR("Class instance is not bound");
+		return;
+	}
+
+	uhs_ctx = c_data->udev->ctx;
+	k_mutex_lock(&c_data->mutex, K_FOREVER);
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&c_data->xfer_anchor_list, xfer, anchor_node) {
+		if (xfer->ep == ep) {
+			(void)uhc_ep_dequeue(uhs_ctx->dev, xfer);
+		}
+	}
+
+	k_mutex_unlock(&c_data->mutex);
+}
+
+void usbh_class_xfer_dequeue_all_anchored(struct usbh_class_data *const c_data)
+{
+	const struct usbh_context *uhs_ctx;
+	struct uhc_transfer *xfer;
+
+	if (c_data->udev == NULL) {
+		LOG_ERR("Class instance is not bound");
+		return;
+	}
+
+	uhs_ctx = c_data->udev->ctx;
+	k_mutex_lock(&c_data->mutex, K_FOREVER);
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&c_data->xfer_anchor_list, xfer, anchor_node) {
+		(void)uhc_ep_dequeue(uhs_ctx->dev, xfer);
+	}
+
+	k_mutex_unlock(&c_data->mutex);
 }
