@@ -93,6 +93,7 @@ struct mspi_stm32_data {
 	const struct mspi_dev_id *dev_id;
 	struct k_mutex lock;
 	struct k_sem sync;
+	struct k_sem sem;
 	struct mspi_dev_cfg dev_cfg;
 	struct mspi_xip_cfg xip_cfg;
 	struct stm32_stream dma_tx;
