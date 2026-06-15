@@ -55,12 +55,14 @@ if HTTP_SERVER
 
 config HTTP_SERVER_VERSION_1
 	bool "HTTP/1.x support"
+	select NET_TCP if NET_NATIVE
 	default y
 	help
 	  Support HTTP 1.x version.
 
 config HTTP_SERVER_VERSION_2
 	bool "HTTP/2 support"
+	select NET_TCP if NET_NATIVE
 	default y
 	help
 	  Support HTTP/2 version.
