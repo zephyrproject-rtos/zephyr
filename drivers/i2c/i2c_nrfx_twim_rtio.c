@@ -43,11 +43,6 @@ static void i2c_nrfx_twim_rtio_sqe_signaled(struct rtio_iodev_sqe *iodev_sqe, vo
 	(void)i2c_nrfx_twim_rtio_complete(dev, 0);
 }
 
-/* Return true when message is started and will complete from an asynchronous
- * handler, in which case @param status output value is meaningless.
- * Return false when the operation is synchronous (i.e. it is completed)
- * and set the operation status in output @param status.
- */
 static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 {
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
@@ -136,33 +131,18 @@ static bool i2c_nrfx_twim_rtio_start(const struct device *dev, int *status)
 	return true;
 }
 
-/* Start RTIO operations until there are no more queued or an async operation is pending */
-static void i2c_nrfx_twim_rtio_start_or_complete(const struct device *dev)
-{
-	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
-	int status;
-
-	/* Process all synchronous sequences until an async one is started (which will complete
-	 * later) or the synchronous sequence is the last queued one.
-	 */
-	while (!i2c_nrfx_twim_rtio_start(dev, &status)) {
-		if (!i2c_rtio_complete(config->ctx, status)) {
-			/* Release bus on completion */
-			pm_device_runtime_put(dev);
-			return;
-		}
-	}
-}
-
 static void i2c_nrfx_twim_rtio_complete(const struct device *dev, int status)
 {
 	/** Finalize if there are no more pending xfers */
 	const struct i2c_nrfx_twim_rtio_config *config = dev->config;
-	struct i2c_rtio *ctx = config->ctx;
+	bool async_started = false;
 
-	if (i2c_rtio_complete(ctx, status)) {
-		i2c_nrfx_twim_rtio_start_or_complete(dev);
-	} else {
+	if (i2c_rtio_complete(config->ctx, status)) {
+		async_started = i2c_rtio_run_sync_start_async(dev, config->ctx,
+							      i2c_nrfx_twim_rtio_start);
+	}
+
+	if (!async_started) {
 		/* Release bus on completion */
 		pm_device_runtime_put(dev);
 	}
@@ -202,7 +182,10 @@ static void i2c_nrfx_twim_rtio_submit(const struct device *dev, struct rtio_iode
 		if (pm_device_runtime_get(dev) < 0) {
 			(void)i2c_rtio_complete(ctx, -EINVAL);
 		} else {
-			i2c_nrfx_twim_rtio_start_or_complete(dev);
+			if (!i2c_rtio_run_sync_start_async(dev, config->ctx,
+							   i2c_nrfx_twim_rtio_start)) {
+				pm_device_runtime_put(dev);
+			}
 		}
 	}
 }
