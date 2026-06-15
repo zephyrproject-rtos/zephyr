@@ -1,0 +1,65 @@
+/*
+ * Copyright 2026 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Test overlay using the emul-framework controller + card pattern.
+ * Each card type gets its own controller to match existing test aliases.
+ */
+
+/ {
+	aliases {
+		sdhc-sd = &sdhc_ctrl_sd;
+		sdhc-emmc = &sdhc_ctrl_emmc;
+		sdhc-sdio = &sdhc_ctrl_sdio;
+	};
+
+	sdhc_ctrl_sd: sdhc-emul-controller-sd {
+		compatible = "zephyr,sdhc-emul-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		sd_card: sd-card@0 {
+			compatible = "zephyr,sdhc-emul-card";
+			reg = <0>;
+			card-type = "sdhc";
+			capacity-blocks = <1024>;
+			card-inserted;
+			status = "okay";
+		};
+	};
+
+	sdhc_ctrl_emmc: sdhc-emul-controller-emmc {
+		compatible = "zephyr,sdhc-emul-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		emmc_card: emmc-card@0 {
+			compatible = "zephyr,sdhc-emul-card";
+			reg = <0>;
+			card-type = "emmc";
+			capacity-blocks = <2048>;
+			card-inserted;
+			status = "okay";
+		};
+	};
+
+	sdhc_ctrl_sdio: sdhc-emul-controller-sdio {
+		compatible = "zephyr,sdhc-emul-controller";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		sdio_card: sdio-card@0 {
+			compatible = "zephyr,sdhc-emul-card";
+			reg = <0>;
+			card-type = "sdio";
+			capacity-blocks = <128>;
+			sdio-func-count = <2>;
+			card-inserted;
+			status = "okay";
+		};
+	};
+};
