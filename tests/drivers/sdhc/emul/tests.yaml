@@ -1,0 +1,23 @@
+common:
+  tags:
+    - drivers
+    - sdhc
+    - emul
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+
+tests:
+  drivers.sdhc.emul:
+    extra_configs:
+      - CONFIG_SDHC_EMUL=y
+
+  drivers.sdhc.emul.framework:
+    tags:
+      - emul
+      - framework
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/native_sim_emul_fw.overlay"
+    extra_configs:
+      - CONFIG_SDHC_EMUL_CONTROLLER=y
+      - CONFIG_SDHC_EMUL_CARD=y

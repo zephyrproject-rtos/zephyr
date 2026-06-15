@@ -1,0 +1,23 @@
+/*
+ * Copyright 2026 Alif Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	aliases {
+		sdhc0 = &sdhc0;
+	};
+
+	sdhc0: sdhc {
+		compatible = "zephyr,sdhc-emul";
+		card-type = "sdhc";
+		capacity-blocks = <1024>;
+		bus-width = <4>;
+		max-bus-freq = <25000000>;
+		voltage-330;
+		card-inserted;
+		status = "okay";
+	};
+};
