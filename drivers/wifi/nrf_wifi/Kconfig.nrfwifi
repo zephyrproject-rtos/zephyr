@@ -131,7 +131,6 @@ config NRF70_RAW_DATA_TX
 
 config NRF70_RAW_DATA_RX
 	bool "RAW RX sniffer operation in the driver"
-	select EXPERIMENTAL
 
 config NRF70_PROMISC_DATA_RX
 	bool "Promiscuous RX sniffer operation in the driver"
