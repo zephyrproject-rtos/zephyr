@@ -347,19 +347,21 @@ int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_
 	struct spi_buf rx_buf[2];
 	struct spi_buf_set tx;
 	struct spi_buf_set rx;
+	static uint8_t dummy_tx[64];
+	static uint8_t dummy_rx[64];
 	int ret;
 
 	hdr = sys_cpu_to_be32(hdr);
 	tx_buf[0].buf = &hdr;
 	tx_buf[0].len = sizeof(hdr);
 
-	tx_buf[1].buf = buf_tx;
+	tx_buf[1].buf = buf_tx ? buf_tx : dummy_tx;
 	tx_buf[1].len = tc6->cps;
 
 	tx.buffers = tx_buf;
 	tx.count = ARRAY_SIZE(tx_buf);
 
-	rx_buf[0].buf = buf_rx;
+	rx_buf[0].buf = buf_rx ? buf_rx : dummy_rx;
 	rx_buf[0].len = tc6->cps;
 
 	rx_buf[1].buf = ftr;
