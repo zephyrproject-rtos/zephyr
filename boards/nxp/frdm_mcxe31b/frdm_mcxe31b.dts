@@ -182,6 +182,50 @@
 	status = "okay";
 };
 
+&emios_0 {
+	global-prescaler = <16>;
+	status = "okay";
+
+	counter-bus {
+		/* Counter Bus A frequency is 10Mhz */
+		emios0_bus_a: emios0-bus-a {
+			channel = <23>;
+			prescaler = <1>;
+			mode = "MCB_UP_COUNTER";
+			status = "okay";
+		};
+	};
+
+	emios0_pwm: pwm {
+		pinctrl-0 = <&pinmux_emios0_pwm>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		pwm2 {
+			channel = <2>;
+			mode = "OPWMB";
+			counter-bus-type = "BUS_A";
+			prescaler = <1>;
+			phase-shift = <0>;
+		};
+
+		/* Default clock for internal counter for PWM channel 3 is 10Mhz */
+		pwm3 {
+			channel = <3>;
+			mode = "OPWFMB";
+			counter-bus-type = "BUS_INTERNAL";
+			prescaler = <1>;
+		};
+
+		pwm4 {
+			channel = <4>;
+			mode = "SAIC";
+			counter-bus-type = "BUS_INTERNAL";
+			prescaler = <1>;
+		};
+	};
+};
+
 &lpspi_0 {
 	pinctrl-0 = <&pinmux_lpspi_0>;
 	pinctrl-names = "default";
