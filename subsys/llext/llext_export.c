@@ -21,7 +21,7 @@ EXPORT_GROUP_SYMBOL(LIBC, memmove);
 EXPORT_GROUP_SYMBOL(LIBC, strtoul);
 EXPORT_GROUP_SYMBOL(LIBC, sprintf);
 
-#if defined(CONFIG_ARM) && !defined(CONFIG_ARM64)
+#if defined(CONFIG_ARM)
 /*
  * On AArch32, compilers may lower memcpy()/memmove()/memset()/zero-init to the
  * ARM EABI run-time helpers instead of the C library functions. These helpers
@@ -55,7 +55,7 @@ EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memset8);
 EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memclr);
 EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memclr4);
 EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memclr8);
-#endif /* CONFIG_ARM && !CONFIG_ARM64 */
+#endif /* CONFIG_ARM */
 
 /* These symbols are used if CCAC is given the flag -Os */
 #ifdef __CCAC__
