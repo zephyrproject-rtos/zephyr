@@ -726,7 +726,6 @@ config NRF_WIFI_RPU_RECOVERY
 	# Relies on power-save mode, so, LPM is needed
 	depends on NRF_WIFI_LOW_POWER
 	default y
-	select EXPERIMENTAL
 	help
 		Enable the RPU recovery mechanism to recover from an RPU (nRF70) hang.
 		This feature performs an interface reset (down and up), which triggers
