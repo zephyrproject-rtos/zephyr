@@ -84,7 +84,8 @@ class EzFlashCliBinaryRunner(ZephyrBinaryRunner):
             # by internal bootloader.
             self.check_call([self.tool] + options + ["image_flash", self.bin_])
         else:
-            load_offset = self.build_conf['CONFIG_FLASH_LOAD_OFFSET']
+            flash_base_address = self.build_conf.edt.chosen_node('zephyr,flash').regs[0].addr
+            load_offset = self.flash_address_from_build_conf(self.build_conf) - flash_base_address
             self.check_call(
                 [self.tool] + options + ["write_flash", f'0x{load_offset:x}', self.bin_]
             )
