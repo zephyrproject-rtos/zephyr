@@ -119,6 +119,15 @@ static K_WORK_DEFINE(rx_work, rx_work_handler);
 #if defined(CONFIG_BT_RECV_WORKQ_BT)
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
+/*
+ * Flag set by rx_queue_put() when rx_work is already K_WORK_RUNNING.
+ * Submitting to bt_workq while the work item is running races with the
+ * work_queue_main k_yield transient window (qnode_dlist.prev=NULL) and
+ * causes a Data Access Violation (MMFAR=0x0, FATAL ERROR 19).
+ * rx_queue_put() sets this flag; rx_work_handler() clears it and retries
+ * the drain to ensure no buffer is left unprocessed.
+ */
+static atomic_t rx_pending;
 #endif /* CONFIG_BT_RECV_WORKQ_BT */
 
 static void init_work(struct k_work *work);
@@ -4477,7 +4486,18 @@ static void rx_queue_put(struct net_buf *buf)
 #if defined(CONFIG_BT_RECV_WORKQ_SYS)
 	const int err = k_work_submit(&rx_work);
 #elif defined(CONFIG_BT_RECV_WORKQ_BT)
-	const int err = k_work_submit_to_queue(&bt_workq, &rx_work);
+	/*
+	 * If rx_work is already running, submitting it races with bt_workq's
+	 * k_yield transient window (qnode_dlist.prev=NULL).  Set the pending
+	 * flag instead; rx_work_handler() will drain it in-place.
+	 */
+	int err = 0;
+
+	if (k_work_busy_get(&rx_work) & K_WORK_RUNNING) {
+		atomic_set(&rx_pending, 1);
+	} else {
+		err = k_work_submit_to_queue(&bt_workq, &rx_work);
+	}
 #endif /* CONFIG_BT_RECV_WORKQ_SYS */
 	if (err < 0) {
 		LOG_ERR("Could not submit rx_work: %d", err);
@@ -4621,8 +4641,6 @@ static void init_work(struct k_work *work)
 static void rx_work_handler(struct k_work *work)
 {
 	uint8_t type;
-	int err;
-
 	struct net_buf *buf;
 
 	LOG_DBG("Getting net_buf from queue");
@@ -4655,22 +4673,79 @@ static void rx_work_handler(struct k_work *work)
 		break;
 	}
 
-	/* Schedule the work handler to be executed again if there are
-	 * additional items in the queue. This allows for other users of the
-	 * work queue to get a chance at running, which wouldn't be possible if
-	 * we used a while() loop with a k_yield() statement.
+	/* For the BT workqueue configuration, drain any remaining HCI buffers
+	 * in-place rather than re-submitting rx_work.
+	 *
+	 * Re-submitting rx_work while it is K_WORK_RUNNING races with the
+	 * work_queue_main k_yield transient window (qnode_dlist.prev=NULL,
+	 * see rx_pending comment above) and causes MMFAR=0x0, FATAL ERROR 19.
+	 * Looping in-place avoids that race entirely.
+	 *
+	 * The outer do-while retries the drain if rx_queue_put() fires in the
+	 * window after the inner loop observes an empty queue but before the
+	 * outer while-condition clears the flag:
+	 *
+	 *   inner loop drains queue to empty
+	 *   [rx_queue_put() fires: enqueues buf, sets rx_pending=1, returns
+	 *    without submitting because K_WORK_RUNNING is still set]
+	 *   outer while: atomic_set(&rx_pending, 0) returns 1 → loop back
+	 *   inner loop picks up the buf
+	 *
+	 * K_WORK_RUNNING remains set throughout, so every concurrent
+	 * rx_queue_put() sets the flag rather than submitting, making the
+	 * do-while retry safe.
+	 *
+	 * For the system workqueue configuration, the original conditional
+	 * resubmit is kept: the scheduler race does not apply there (rx_work
+	 * runs on k_sys_work_q which is not the submit target), and yielding
+	 * between buffers allows other system workqueue users to run.
+	 */
+#if defined(CONFIG_BT_RECV_WORKQ_BT)
+	do {
+		while (true) {
+			buf = net_buf_slist_get(&bt_dev.rx_queue);
+			if (!buf) {
+				break;
+			}
+
+			type = net_buf_pull_u8(buf);
+			switch (type) {
+#if defined(CONFIG_BT_CONN)
+			case BT_HCI_H4_ACL:
+				hci_acl(buf);
+				break;
+#endif /* CONFIG_BT_CONN */
+#if defined(CONFIG_BT_ISO)
+			case BT_HCI_H4_ISO:
+				hci_iso(buf);
+				break;
+#endif /* CONFIG_BT_ISO */
+			case BT_HCI_H4_EVT:
+				hci_event(buf);
+				break;
+			default:
+				LOG_ERR("Unknown buf type %u", type);
+				net_buf_unref(buf);
+				break;
+			}
+		}
+		/* Queue is empty.  Retry if rx_queue_put() set the flag while
+		 * we were draining -- the buffer is already in bt_dev.rx_queue.
+		 */
+	} while (atomic_set(&rx_pending, 0) != 0);
+#else /* CONFIG_BT_RECV_WORKQ_SYS */
+	/* Resubmit if more buffers are queued, so they are processed on the
+	 * next work queue execution.  This allows other system workqueue users
+	 * to interleave between HCI buffer dispatches.
 	 */
 	if (!sys_slist_is_empty(&bt_dev.rx_queue)) {
+		int err = k_work_submit(&rx_work);
 
-#if defined(CONFIG_BT_RECV_WORKQ_SYS)
-		err = k_work_submit(&rx_work);
-#elif defined(CONFIG_BT_RECV_WORKQ_BT)
-		err = k_work_submit_to_queue(&bt_workq, &rx_work);
-#endif
 		if (err < 0) {
 			LOG_ERR("Could not submit rx_work: %d", err);
 		}
 	}
+#endif /* CONFIG_BT_RECV_WORKQ_BT */
 }
 
 #if defined(CONFIG_BT_TESTING)
