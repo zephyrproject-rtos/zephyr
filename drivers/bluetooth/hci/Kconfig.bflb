@@ -123,6 +123,12 @@ config BT_BUF_ACL_TX_COUNT
 	default 10 if BFLB_BL70X_BLE_M0S1T10
 	default 2
 
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+config BT_BUF_EVT_RX_COUNT
+	default 17 if BFLB_BL70X_BLE_M16S1
+	default 11 if BFLB_BL70X_BLE_M0S1T10
+	default 3
+
 endif # BT_BFLB_BL70X
 
 if BT_BFLB_BL60X
@@ -148,6 +154,11 @@ endchoice
 config BT_BUF_ACL_TX_COUNT
 	default 8 if BFLB_BL60X_BLE_M8S1
 	default 2
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+config BT_BUF_EVT_RX_COUNT
+	default 9 if BFLB_BL60X_BLE_M8S1
+	default 3
 
 endif # BT_BFLB_BL60X
 
@@ -269,6 +280,14 @@ config BT_BUF_ACL_TX_COUNT
 	default 4 if BFLB_BL70XL_BLE_M0S2P || BFLB_BL70XL_BLE_M2S1P
 	default 2
 
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+config BT_BUF_EVT_RX_COUNT
+	default 9 if BFLB_BL70XL_BLE_M8S1P
+	default 7 if BFLB_BL70XL_BLE_M0S4P || BFLB_BL70XL_BLE_M4S1P
+	default 6 if BFLB_BL70XL_BLE_M0S1RP
+	default 5 if BFLB_BL70XL_BLE_M0S2P || BFLB_BL70XL_BLE_M2S1P
+	default 3
+
 endif # BT_BFLB_BL70XL
 
 config BT_BFLB_BL61X
@@ -312,6 +331,11 @@ endchoice
 config BT_BUF_ACL_TX_COUNT
 	default 10 if BFLB_BL61X_BLE_1M10S1
 	default 4
+
+# Set to 1 more than BT_BUF_ACL_TX_COUNT
+config BT_BUF_EVT_RX_COUNT
+	default 11 if BFLB_BL61X_BLE_1M10S1
+	default 5
 
 config BFLB_BL61X_BLE_EM_64K
 	bool "Use 64 KB exchange memory (required for BR/EDR)"
