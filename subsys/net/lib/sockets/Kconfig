@@ -96,6 +96,14 @@ config ZVFS_OPEN_ADD_SIZE_SOCKETS_SERVICE
 	  The socket service opens a permanent zvfs_eventfd, which consumes a file
 	  descriptor.
 
+config ZVFS_EVENTFD_ADD_SIZE_SOCKETS_SERVICE
+	int "Number of eventfds needed by the socket service"
+	default 1
+	depends on NET_SOCKETS_SERVICE
+	help
+	  The socket service dispatcher allocates one permanent zvfs_eventfd to
+	  trigger events during polling.
+
 config NET_SOCKETS_SERVICE_THREAD_PRIO
 	int "Priority of the socket service dispatcher thread"
 	default NUM_PREEMPT_PRIORITIES
