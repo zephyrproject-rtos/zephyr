@@ -102,7 +102,7 @@ config SIWX91X_FIRMWARE_UPGRADE_SHELL
 	depends on NET_TCP
 	select SILABS_SHELL
 	select HTTP_CLIENT
-	select DNS_RESOLVER
+	select NET_SOCKETS
 	select REBOOT
 	default y
 	help
