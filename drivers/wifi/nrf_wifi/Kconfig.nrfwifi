@@ -136,7 +136,6 @@ config NRF70_RAW_DATA_RX
 config NRF70_PROMISC_DATA_RX
 	bool "Promiscuous RX sniffer operation in the driver"
 	select WIFI_NM_WPA_SUPPLICANT
-	select EXPERIMENTAL
 	select NET_PROMISCUOUS_MODE
 
 config NRF70_DATA_TX
