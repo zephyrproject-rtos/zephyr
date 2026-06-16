@@ -32,7 +32,7 @@ Usage:
 """
 
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import io
 import json
 import logging
@@ -41,7 +41,7 @@ import re
 import sys
 
 # Requires PyGithub
-from github import Github
+from github import Auth, Github
 
 
 # https://gist.github.com/monkut/e60eea811ef085a6540f
@@ -49,7 +49,7 @@ def valid_date_type(arg_date_str):
     """custom argparse *date* type for user dates values given from the
     command line"""
     try:
-        return datetime.strptime(arg_date_str, "%Y-%m-%d")
+        return datetime.strptime(arg_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
     except ValueError:
         msg = "Given Date ({0}) not valid! Expected format, YYYY-MM-DD!".format(arg_date_str)
         raise argparse.ArgumentTypeError(msg)
@@ -103,7 +103,7 @@ def parse_args():
             return None
 
         if not getattr(args, 'end'):
-            setattr(args, 'end', datetime.now())
+            setattr(args, 'end', datetime.now(timezone.utc))
 
         if args.end < args.start:
             logging.error(
@@ -313,7 +313,7 @@ def main():
         return os.EX_DATAERR
 
     try:
-        gh = Github(args.token)
+        gh = Github(auth=Auth.Token(args.token))
     except Exception:
         logging.error('failed to authenticate with GitHub')
         return os.EX_DATAERR
