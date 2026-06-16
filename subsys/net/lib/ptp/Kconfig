@@ -9,7 +9,8 @@ menuconfig PTP
 	select ZVFS_EVENTFD
 	select NET_SOCKETS
 	select NET_CONTEXT_PRIORITY
-	select NET_L2_PTP
+	select PTP_CLOCK
+	select NET_L2_PTP_TIMESTAMPING
 	depends on NET_L2_ETHERNET
 	depends on !NET_GPTP
 	help

@@ -36,7 +36,7 @@
 #define PHY_TO_NETC_DUPLEX_MODE(x)                                                                 \
 	(PHY_LINK_IS_FULL_DUPLEX(x) ? kNETC_MiiFullDuplex : kNETC_MiiHalfDuplex)
 
-#if defined(CONFIG_NET_L2_PTP) && defined(CONFIG_PTP_CLOCK_NXP_NETC)
+#if defined(CONFIG_NET_L2_PTP_TIMESTAMPING) && defined(CONFIG_PTP_CLOCK_NXP_NETC)
 #define NETC_PTP_TIMESTAMPING_SUPPORT 1
 #endif
 
