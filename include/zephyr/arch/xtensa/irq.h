@@ -182,6 +182,14 @@ extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
 
+#if defined(CONFIG_ARCH_HAS_INTERRUPT_MATRIX)
+/* For SOCs with interrupt matrix, delegate to SOC-specific implementations */
+void z_soc_irq_enable(unsigned int irq, unsigned int source);
+void z_soc_irq_disable(unsigned int irq, unsigned int source);
+
+#define arch_irq_matrix_enable(irq, source)  z_soc_irq_enable(irq, source)
+#define arch_irq_matrix_disable(irq, source) z_soc_irq_disable(irq, source)
+#endif /* CONFIG_ARCH_HAS_INTERRUPT_MATRIX */
 #define arch_irq_enable(irq)	xtensa_irq_enable(irq)
 #define arch_irq_disable(irq)	xtensa_irq_disable(irq)
 
