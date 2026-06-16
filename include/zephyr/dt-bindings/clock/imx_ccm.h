@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022,2024-2025 NXP
+ * Copyright 2017-2022,2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -94,5 +94,14 @@
 #define IMX_CCM_XBAR2_CLK		0x1801UL
 /** XBAR3 peripheral clock identifier */
 #define IMX_CCM_XBAR3_CLK		0x1802UL
+
+/** @brief Media AXI bus clock (i.MX8MP) */
+#define IMX_CCM_MEDIA_AXI_CLK       0x1900UL
+/** @brief Media APB bus clock (i.MX8MP) */
+#define IMX_CCM_MEDIA_APB_CLK       0x1A00UL
+/** @brief Display1 pixel clock root (i.MX8MP) */
+#define IMX_CCM_DISP1_PIX_CLK       0x1B00UL
+/** @brief MIPI D-PHY PLL reference clock (i.MX8MP) */
+#define IMX_CCM_MIPI_PHY1_REF_CLK   0x1C00UL
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_H_ */
