@@ -129,6 +129,11 @@ static bool gptp_handle_critical_msg(struct net_if *iface, struct net_pkt *pkt)
 
 static void gptp_handle_msg(struct net_pkt *pkt)
 {
+	if (GPTP_PACKET_LEN(pkt) < sizeof(struct gptp_hdr)) {
+		NET_DBG("gPTP packet too short (%zu)", GPTP_PACKET_LEN(pkt));
+		return;
+	}
+
 	struct gptp_hdr *hdr = GPTP_HDR(pkt);
 	struct gptp_pdelay_req_state *pdelay_req_state;
 	struct gptp_sync_rcv_state *sync_rcv_state;
