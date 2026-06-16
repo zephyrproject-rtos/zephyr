@@ -120,12 +120,11 @@ static K_WORK_DEFINE(rx_work, rx_work_handler);
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 /*
- * Flag set by rx_queue_put() when rx_work is already K_WORK_RUNNING.
- * Submitting to bt_workq while the work item is running races with the
- * work_queue_main k_yield transient window (qnode_dlist.prev=NULL) and
- * causes a Data Access Violation (MMFAR=0x0, FATAL ERROR 19).
- * rx_queue_put() sets this flag; rx_work_handler() clears it and retries
- * the drain to ensure no buffer is left unprocessed.
+ * Flag set by rx_queue_put() when rx_work is already running on bt_workq.
+ * Calling k_work_submit_to_queue() for a work item that is currently
+ * executing can cause undefined behavior.  rx_queue_put() sets this flag
+ * instead of submitting; the running rx_work_handler() checks it at the
+ * end and retries the drain so no buffer is left unprocessed.
  */
 static atomic_t rx_pending;
 #endif /* CONFIG_BT_RECV_WORKQ_BT */
@@ -4487,9 +4486,10 @@ static void rx_queue_put(struct net_buf *buf)
 	const int err = k_work_submit(&rx_work);
 #elif defined(CONFIG_BT_RECV_WORKQ_BT)
 	/*
-	 * If rx_work is already running, submitting it races with bt_workq's
-	 * k_yield transient window (qnode_dlist.prev=NULL).  Set the pending
-	 * flag instead; rx_work_handler() will drain it in-place.
+	 * If rx_work is already running on bt_workq, calling
+	 * k_work_submit_to_queue() is unsafe.  Set the pending
+	 * flag instead; rx_work_handler() will drain any
+	 * remaining buffers before returning.
 	 */
 	int err = 0;
 
@@ -4676,10 +4676,8 @@ static void rx_work_handler(struct k_work *work)
 	/* For the BT workqueue configuration, drain any remaining HCI buffers
 	 * in-place rather than re-submitting rx_work.
 	 *
-	 * Re-submitting rx_work while it is K_WORK_RUNNING races with the
-	 * work_queue_main k_yield transient window (qnode_dlist.prev=NULL,
-	 * see rx_pending comment above) and causes MMFAR=0x0, FATAL ERROR 19.
-	 * Looping in-place avoids that race entirely.
+	 * Re-submitting rx_work while it is K_WORK_RUNNING is unsafe (see
+	 * rx_pending comment above).  Looping in-place avoids that entirely.
 	 *
 	 * The outer do-while retries the drain if rx_queue_put() fires in the
 	 * window after the inner loop observes an empty queue but before the

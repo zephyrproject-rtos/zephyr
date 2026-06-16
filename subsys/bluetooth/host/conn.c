@@ -501,8 +501,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	 * stack address as the first one, because bt_conn_recv() runs on
 	 * bt_workq and the same stack frame may be reused for the next call
 	 * before the target queue drains the first flusher.  The target queue
-	 * would then dereference an overwritten handler pointer and crash with
-	 * FATAL ERROR 20 (Instruction Access Violation, PC in SRAM).
+	 * would then dereference an overwritten handler pointer and crash.
 	 */
 #if defined(CONFIG_BT_CONN_TX)
 	if (!k_work_is_pending(&conn->tx_complete_work)) {
