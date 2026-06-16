@@ -2170,6 +2170,8 @@ Documentation Infrastructure:
     - "area: IEEE 802.15.4"
   tests:
     - drivers.ieee802154
+    - net.ieee802154
+    - sample.net.openthread
 
 "Drivers: IPM":
   status: odd fixes
@@ -4650,6 +4652,7 @@ Networking:
     - "area: IEEE 802.15.4"
   tests:
     - net.ieee802154
+    - sample.net.openthread
 
 "Networking: OCPP":
   status: maintained
