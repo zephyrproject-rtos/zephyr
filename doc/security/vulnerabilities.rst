@@ -430,7 +430,43 @@ This has been fixed in main for v4.5.0
 :cve:`2026-10636`
 -----------------
 
-Under embargo until 2026-06-14
+Use-after-free in Zephyr IPv4 IGMP send path (``igmp_send``)
+
+In Zephyr's IPv4 IGMP implementation, ``igmp_send()`` in ``subsys/net/ip/igmp.c`` read
+the network interface back out of the packet via ``net_pkt_iface(pkt)`` after the packet
+had been handed to ``net_send_data()``. On the successful-send path the packet's last
+reference may already have been released by the L2 driver or by the network stack's TX
+handling (synchronously in the default ``NET_TC_TX_COUNT=0`` immediate-transmit
+configuration), returning the ``net_pkt`` slab block to its free list. The subsequent
+``net_pkt_iface(pkt)`` dereferences the freed packet, a use-after-free read; with
+``CONFIG_NET_STATISTICS_PER_INTERFACE`` the resulting dangling interface pointer is
+further dereferenced for a statistics-counter write. The IGMP send path is reachable
+without authentication from inbound IPv4 IGMP membership queries addressed to 224.0.0.1
+(``net_ipv4_igmp_input`` -> ``send_igmp_report``/``send_igmp_v3_report`` ->
+``igmp_send``), as well as from local multicast join/leave/rejoin operations. Realistic
+impact is undefined behavior and potential denial of service (sporadic crash or stats
+corruption); a controllable write requires the asynchronous TX path plus a concurrent
+slab reuse. The flaw was introduced with IGMPv2 support and affects releases from v2.6.0
+through v4.4.0. The fix caches the interface pointer before sending. Note the analogous
+IPv6 MLD path (``mld_send`` in ``subsys/net/ip/ipv6_mld.c``) retains the same unfixed
+pattern.
+
+- `Zephyr project bug tracker GHSA-fj6q-975v-65c9
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-fj6q-975v-65c9>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107100 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107100>`_
+
+- `PR 110659 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110659>`_
+
+- `PR 110658 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110658>`_
+
+- `PR 107369 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107369>`_
 
 :cve:`2026-10637`
 -----------------
