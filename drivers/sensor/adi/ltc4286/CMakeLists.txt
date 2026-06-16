@@ -6,3 +6,4 @@ zephyr_library()
 
 zephyr_library_sources(ltc4286.c)
 zephyr_library_sources_ifdef(CONFIG_LTC4286_TRIGGER ltc4286_trigger.c)
+zephyr_library_sources_ifdef(CONFIG_EMUL ltc4286_emul.c)
