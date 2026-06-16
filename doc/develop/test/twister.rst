@@ -421,6 +421,22 @@ extra_configs: <list of extra configurations>
               - platform:qemu_x86:CONFIG_DEBUG=y
 
 
+extra_conf_files: <list of configuration files>
+    Extra Kconfig fragment files to merge into the build, as an alternative to
+    passing ``CONF_FILE=`` through ``extra_args``. Entries from ``common`` and
+    the test scenario are concatenated. Prefer this field over ``extra_args``
+    for configuration files.
+
+extra_overlay_confs: <list of overlay configuration files>
+    Extra Kconfig overlay fragments to merge into the build, as an alternative
+    to passing ``OVERLAY_CONFIG=`` through ``extra_args``. Entries from
+    ``common`` and the test scenario are concatenated.
+
+extra_dtc_overlay_files: <list of devicetree overlay files>
+    Extra devicetree overlay files to apply to the build, as an alternative to
+    passing ``DTC_OVERLAY_FILE=`` through ``extra_args``. Entries from
+    ``common`` and the test scenario are concatenated.
+
 build_only: <True|False> (default False)
     If true, twister will not try to run the test even if the test is runnable
     on the platform.
