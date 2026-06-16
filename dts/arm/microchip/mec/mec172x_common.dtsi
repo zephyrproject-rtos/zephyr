@@ -808,32 +808,32 @@ spip0: spip@40007000 {
 bbled0: bbled@4000b800 {
 	reg = <0x4000b800 0x100>;
 	interrupts = <83 0>;
-	girqs = <17 13>;
-	pcrs = <3 16>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 13)>;
+	pcrs = <MCHP_XEC_SCR_ENCODE(3, 16)>;
 	status = "disabled";
 };
 
 bbled1: bbled@4000b900 {
 	reg = <0x4000b900 0x100>;
 	interrupts = <84 0>;
-	girqs = <17 14>;
-	pcrs = <3 17>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 14)>;
+	pcrs = <MCHP_XEC_SCR_ENCODE(3, 17)>;
 	status = "disabled";
 };
 
 bbled2: bbled@4000ba00 {
 	reg = <0x4000ba00 0x100>;
 	interrupts = <85 0>;
-	girqs = <17 15>;
-	pcrs = <3 18>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 15)>;
+	pcrs = <MCHP_XEC_SCR_ENCODE(3, 18)>;
 	status = "disabled";
 };
 
 bbled3: bbled@4000bb00 {
 	reg = <0x4000bb00 0x100>;
 	interrupts = <86 0>;
-	girqs = <17 16>;
-	pcrs = <3 25>;
+	girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 16)>;
+	pcrs = <MCHP_XEC_SCR_ENCODE(3, 25)>;
 	status = "disabled";
 };
 

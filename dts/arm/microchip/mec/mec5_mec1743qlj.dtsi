@@ -49,6 +49,7 @@
 		bbled3: bbled@4000bb00 {
 			reg = <0x4000bb00 0x100>;
 			interrupts = <86 3>;
+			pcrs = <MCHP_XEC_SCR_ENCODE(3, 25)>;
 			status = "disabled";
 		};
 

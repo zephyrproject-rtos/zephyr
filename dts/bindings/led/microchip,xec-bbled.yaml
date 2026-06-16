@@ -3,9 +3,12 @@
 
 description: Microchip XEC BBLED
 
-include: [base.yaml, pinctrl-device.yaml]
-
 compatible: "microchip,xec-bbled"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,dmec-ecia-girq.yaml
 
 properties:
   reg:
@@ -14,12 +17,7 @@ properties:
   interrupts:
     required: true
 
-  girqs:
-    type: array
-    required: true
-    description: Array of pairs of GIRQ number and bit position
-
   pcrs:
-    type: array
+    type: int
     required: true
     description: BBLED PCR register index and bit position

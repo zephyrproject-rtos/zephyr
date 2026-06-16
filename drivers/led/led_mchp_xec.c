@@ -12,14 +12,12 @@
  */
 
 #include <soc.h>
-#ifndef CONFIG_SOC_SERIES_MEC15XX
-#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
-#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#endif
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/drivers/led.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(led_xec, CONFIG_LED_LOG_LEVEL);
@@ -89,8 +87,7 @@ struct xec_bbled_regs {
 struct xec_bbled_config {
 	struct xec_bbled_regs * const regs;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t pcr_id;
-	uint8_t pcr_pos;
+	uint8_t enc_pcr;
 };
 
 /* delay_on and delay_off are in milliseconds
@@ -207,44 +204,13 @@ static int xec_bbled_off(const struct device *dev, uint32_t led)
 	return 0;
 }
 
-#ifdef CONFIG_SOC_SERIES_MEC15XX
-static inline void xec_bbled_slp_en_clr(const struct device *dev)
-{
-	const struct xec_bbled_config * const cfg = dev->config;
-	enum pcr_id pcr_val = PCR_MAX_ID;
-
-	switch (cfg->pcr_pos) {
-	case MCHP_PCR3_LED0_POS:
-		pcr_val = PCR_LED0;
-		break;
-	case MCHP_PCR3_LED1_POS:
-		pcr_val = PCR_LED1;
-		break;
-	case MCHP_PCR3_LED2_POS:
-		pcr_val = PCR_LED2;
-		break;
-	default:
-		return;
-	}
-
-	mchp_pcr_periph_slp_ctrl(pcr_val, 0);
-}
-#else
-static inline void xec_bbled_slp_en_clr(const struct device *dev)
-{
-	const struct xec_bbled_config * const cfg = dev->config;
-
-	z_mchp_xec_pcr_periph_sleep(cfg->pcr_id, cfg->pcr_pos, 0);
-}
-#endif
-
 static int xec_bbled_init(const struct device *dev)
 {
 	const struct xec_bbled_config * const config = dev->config;
 	struct xec_bbled_regs * const regs = config->regs;
 	int ret;
 
-	xec_bbled_slp_en_clr(dev);
+	soc_xec_pcr_sleep_en_clear(config->enc_pcr);
 
 	/* soft reset, disable BBLED WDT, set clock source to default (32KHz domain) */
 	regs->config |= BIT(XEC_BBLED_CFG_RST_PWM_POS);
@@ -270,8 +236,7 @@ static DEVICE_API(led, xec_bbled_api) = {
 static struct xec_bbled_config xec_bbled_config_##i = {			\
 	.regs = (struct xec_bbled_regs * const)DT_INST_REG_ADDR(i),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),			\
-	.pcr_id = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 0),		\
-	.pcr_pos = (uint8_t)DT_INST_PROP_BY_IDX(i, pcrs, 1),		\
+	.enc_pcr = DT_INST_PROP(0, pcrs),		\
 }
 
 #define XEC_BBLED_DEVICE(i)						\
