@@ -202,6 +202,10 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			break;
 		}
 		case FRAG_TRANSPORT_CMD_FRAG_SESSION_SETUP: {
+			if ((len - rx_pos) < sizeof(struct frag_transport_setup_req)) {
+				LOG_ERR("FragSessionSetupReq too short");
+				return;
+			}
 			const struct frag_transport_setup_req *req =
 				(const void *)(rx_buf + rx_pos);
 			uint8_t frag_session = req->frag_session & 0x3F;
@@ -307,6 +311,10 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 			break;
 		}
 		case FRAG_TRANSPORT_CMD_DATA_FRAGMENT: {
+			if ((len - rx_pos) < sizeof(struct frag_transport_data_header)) {
+				LOG_ERR("DataFragment header too short");
+				return;
+			}
 			const struct frag_transport_data_header *hdr =
 				(const void *)(rx_buf + rx_pos);
 			uint16_t frag_counter = hdr->frag_index_n & 0x3FFF;
@@ -317,6 +325,14 @@ static void frag_transport_package_callback(uint8_t port, uint8_t flags, int16_t
 
 			if (!ctx.is_active || index != ctx.frag_index) {
 				LOG_DBG("DataFragment received for inactive session %u", index);
+				break;
+			}
+
+			/* The decoder reads ctx.frag_size bytes from rx_buf[rx_pos].
+			 * Ensure the downlink payload is at least that long.
+			 */
+			if ((len - rx_pos) < ctx.frag_size) {
+				LOG_ERR("DataFragment payload shorter than frag_size");
 				break;
 			}
 
