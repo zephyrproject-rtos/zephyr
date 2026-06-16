@@ -9,6 +9,25 @@ config USBD_LOOPBACK_CLASS
 	  Primarily used for test and development purposes.
 
 if USBD_LOOPBACK_CLASS
+
+config USBD_LOOPBACK_HS_INT_IN_EP_TPL
+	int "High speed interrupt IN TPL" if USBD_MAX_SPEED_HIGH
+	range 64 3072
+	default 64
+	help
+	  Interrupt IN endpoints TPL in high speed configuration.
+	  Larger values require UDC buffer pool adjustment. TPL in full speed
+	  configuration is always 64.
+
+config USBD_LOOPBACK_HS_INT_OUT_EP_TPL
+	int "High speed interrupt OUT TPL" if USBD_MAX_SPEED_HIGH
+	range 64 3072
+	default 64
+	help
+	  Interrupt OUT endpoints TPL in high speed configuration.
+	  Larger values require UDC buffer pool adjustment. TPL in full speed
+	  configuration is always 64.
+
 module = USBD_LOOPBACK
 module-str = usbd loopback
 default-count = 1
