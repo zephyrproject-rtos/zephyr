@@ -271,7 +271,7 @@ Related configuration options:
   itself is header-only and always available, so this option is not required
   for normal use.
 * :kconfig:option:`CONFIG_RING_BUFFER_LARGE`: Increase the maximum buffer size
-  from 32KB to 2GB.
+  from 32KB to 1GB.
 
 API Reference
 *************
