@@ -35,6 +35,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1
 
+/* The DMA bus master interface is 32-bit on this IP */
+#define DATA_BUS_WIDTH 32
+
+DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
+
 #if defined(CONFIG_SOC_SERIES_STM32H5X)
 
 #if DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
@@ -117,10 +122,11 @@ int dwmac_bus_init(const struct device *dev)
 	return 0;
 }
 
+#define DESCRIPTOR_ALIGNMENT ((DATA_BUS_WIDTH) / (BITS_PER_BYTE))
 #if defined(CONFIG_NOCACHE_MEMORY)
-#define __desc_mem __nocache __aligned(4)
+#define __desc_mem __nocache __aligned(DESCRIPTOR_ALIGNMENT)
 #else
-#define __desc_mem __aligned(4)
+#define __desc_mem __aligned(DESCRIPTOR_ALIGNMENT)
 #endif
 
 /* Descriptor rings in uncached memory */

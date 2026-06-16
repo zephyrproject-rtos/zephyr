@@ -30,6 +30,11 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #define ST_OUI_B1 0x80
 #define ST_OUI_B2 0xE1
 
+/* The DMA bus master interface is 32-bit on this IP */
+#define DATA_BUS_WIDTH 32
+
+DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
+
 BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii) ||
 		     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii),
 	     "Unsupported PHY connection type");
@@ -88,12 +93,13 @@ int dwmac_bus_init(const struct device *dev)
 	return 0;
 }
 
+#define DESCRIPTOR_ALIGNMENT ((DATA_BUS_WIDTH) / (BITS_PER_BYTE))
 #if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm)) && defined(CONFIG_SOC_SERIES_STM32F7X)
-#define __desc_mem __dtcm_noinit_section __aligned(4)
+#define __desc_mem __dtcm_noinit_section __aligned(DESCRIPTOR_ALIGNMENT)
 #elif defined(CONFIG_NOCACHE_MEMORY)
-#define __desc_mem __nocache_noinit __aligned(4)
+#define __desc_mem __nocache_noinit __aligned(DESCRIPTOR_ALIGNMENT)
 #else
-#define __desc_mem __noinit __aligned(4)
+#define __desc_mem __noinit __aligned(DESCRIPTOR_ALIGNMENT)
 #endif
 
 static struct dwmac_dma_desc dwmac_tx_descs[NB_TX_DESCS] __desc_mem;

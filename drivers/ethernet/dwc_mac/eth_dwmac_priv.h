@@ -18,6 +18,54 @@
 #include <zephyr/sys/device_mmio.h>
 
 /*
+ * Common checks
+ */
+
+/*
+ * If a data cache is enabled, cache line size must be configured to a non-zero
+ * value for this driver to work correctly.
+ */
+#if CONFIG_DCACHE
+#if (CONFIG_DCACHE_LINE_SIZE+0 == 0)
+#error "CONFIG_DCACHE_LINE_SIZE must be configured to a non-zero value"
+#endif
+#endif
+
+/*
+ * The DMA imposes certain constraints on the buffers:
+ * 1. The DMA can only perform accesses with the data bus width. Even though buffers can start on
+ *    any address, other data in the first and last words of the buffer may be corrupted. To
+ *    avoid this, we require buffers to be aligned to the data bus width and their size to be a
+ *    multiple of the data bus width.
+ * 2. If a data cache is enabled, buffers must also be aligned to the cache line size and their
+ *    size must be a multiple of the cache line size. This is because for cache management, cache
+ *    lines are invalidated, so if a buffer is not aligned to cache line size, the first and last
+ *    cache line of the buffer may contain other data, which can be corrupted when invalidated.
+ */
+#define DWMAC_ASSERT_BUFFER_ALIGNMENT(bus_width)                                                   \
+	BUILD_ASSERT(                                                                              \
+		((CONFIG_NET_BUF_DATA_SIZE) % MAX(                                                 \
+			((bus_width) / 8),                                                         \
+			COND_CODE_1(CONFIG_DCACHE, (CONFIG_DCACHE_LINE_SIZE), (0))                 \
+		)) == 0, "CONFIG_NET_BUF_DATA_SIZE must be a multiple of the data bus width or "   \
+			 "cache line size"                                                         \
+	);                                                                                         \
+	BUILD_ASSERT(                                                                              \
+		COND_CODE_0(CONFIG_NET_BUF_ALIGNMENT, (sizeof(void *)), (CONFIG_NET_BUF_ALIGNMENT))\
+		>= MAX(                                                                            \
+			((bus_width) / 8),                                                         \
+			COND_CODE_1(CONFIG_DCACHE, (CONFIG_DCACHE_LINE_SIZE), (0))                 \
+		), "CONFIG_NET_BUF_ALIGNMENT must be at least the data bus width or cache line"    \
+		   "size"                                                                          \
+	);                                                                                         \
+	IF_ENABLED(CONFIG_DCACHE, (                                                                \
+		BUILD_ASSERT(                                                                      \
+			(CONFIG_NET_BUF_ALIGNMENT) % (CONFIG_DCACHE_LINE_SIZE) == 0,               \
+			"CONFIG_NET_BUF_ALIGNMENT must be a multiple of the data cache line size"  \
+		)                                                                                  \
+	));
+
+/*
  * Global driver parameters
  */
 

@@ -23,14 +23,17 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth_dwmac_priv.h"
 
+/*
+ * Don't impose any restriction based on data bus width as it is unknown.
+ * Usually, cache line size will be a multiple of the data bus width, so
+ * aligning to cache line size should be sufficient.
+ */
+DWMAC_ASSERT_BUFFER_ALIGNMENT(0);
+
 int dwmac_bus_init(const struct device *dev __unused)
 {
 	return 0;
 }
-
-#if (CONFIG_DCACHE_LINE_SIZE+0 == 0)
-#error "CONFIG_DCACHE_LINE_SIZE must be configured to a non-zero value"
-#endif
 
 static struct dwmac_dma_desc __aligned(CONFIG_DCACHE_LINE_SIZE)
 			dwmac_tx_rx_descriptors[NB_TX_DESCS + NB_RX_DESCS];
