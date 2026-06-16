@@ -1,7 +1,16 @@
-# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+
+config MCHP_PIT_G1_TIMER
+	bool "Microchip Periodic Interval Timer (PIT)"
+	default y
+	depends on DT_HAS_MICROCHIP_PIT_G1_TIMER_ENABLED
+	help
+	  This module implements a kernel device driver for the Microchip
+	  SAMA5D2 series PIT timer and provides the standard "system clock
+	  driver" interfaces.
 
 config MCHP_SAM_PIT64B_TIMER
 	bool "Microchip SAM 64-bit Periodic Interval Timer (PIT64B)"
