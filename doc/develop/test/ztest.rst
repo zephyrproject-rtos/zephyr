@@ -411,6 +411,19 @@ function can be written as follows:
         ztest_verify_all_test_suites_ran();
    }
 
+The signature of :c:func:`ztest_run_all` is
+``ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_iter)``:
+
+* ``state`` - Pointer to the global state passed to each suite's ``predicate``.
+* ``shuffle`` - When ``true``, randomize the order in which suites and tests run
+  (requires :kconfig:option:`CONFIG_ZTEST_SHUFFLE`); ``false`` keeps the default
+  alphanumerical order.
+* ``suite_iter`` - Number of times to repeat each test suite.
+* ``case_iter`` - Number of times to repeat each test case.
+
+In the example above each call runs the matching suites once, in order, without
+shuffling.
+
 
 Quick start - Integration testing
 *********************************
