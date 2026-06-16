@@ -37,15 +37,28 @@ config JSON_DOUBLE_PRECISION
 	  for a double.
 
 config RING_BUFFER
-	bool "Ring buffers"
+	bool "[DEPRECATED] Restore legacy claim/finish and item ring buffer APIs"
+	select DEPRECATED
 	help
-	  Provide highly efficient ring buffer management for arbitrary data.
-	  Some facilities such as kernel pipes are built on top of this.
-	  May be used directly e.g. when the pipe overhead is unnecessary.
+	  This option is deprecated and slated for removal. It switches the ring
+	  buffer to the legacy implementation, restoring several deprecated APIs
+	  that do not exist in the default (slim) ring buffer header:
+
+	  - the zero-copy claim/finish API (ring_buf_put_claim(),
+	    ring_buf_put_finish() and their get counterparts), superseded by the
+	    non-stacking ring_buf_put_ptr() / ring_buf_get_ptr();
+	  - the fixed-size item API (ring_buf_item_init(), ring_buf_item_put(),
+	    ring_buf_item_get(), ring_buf_item_space_get(), RING_BUF_ITEM_DECLARE*
+	    and RING_BUF_ITEM_SIZEOF()), superseded by sys_ringq;
+	  - ring_buf_internal_reset().
+
+	  Because none of these symbols exist in the slim header, out-of-tree code
+	  using them fails to compile with no other hint; enabling this option is
+	  the switch that brings them back. Provided only to keep legacy code
+	  building until it migrates to the replacement APIs.
 
 config RING_BUFFER_LARGE
 	bool "Allow large ring buffer sizes"
-	depends on RING_BUFFER
 	help
 	  Increase maximum buffer size from 32KB to 2GB. When this is enabled,
 	  all struct ring_buf instances become 12 bytes bigger.
