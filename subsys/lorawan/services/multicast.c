@@ -135,6 +135,11 @@ static void multicast_package_callback(uint8_t port, bool data_pending, int16_t 
 			LOG_ERR("McGroupStatusReq not implemented");
 			return;
 		case MULTICAST_CMD_MC_GROUP_SETUP: {
+			/* 1 (id) + 4 (McAddr) + 16 (McKeyE) + 4 (FCountMin) + 4 (FCountMax) */
+			if ((len - rx_pos) < 29U) {
+				LOG_ERR("McGroupSetupReq too short");
+				return;
+			}
 			uint8_t id = rx_buf[rx_pos++] & 0x03;
 			McChannelParams_t channel = {
 				.IsRemotelySetup = true,
