@@ -193,7 +193,7 @@ array is allocated, so large ranges have zero RAM overhead:
 
 .. code-block:: C
 
-   /* {0, 2, 4, 6, 8} — 5 values, step defaults is supplied explicitly */
+   /* {0, 2, 4, 6, 8} — 5 values, step is supplied explicitly */
    ZTEST_DEFINE_PARAM_RANGE(even_vals, int, 0, 10, 2);
 
    /* {1, 2, 3, 4, 5} — step=1 is the common case */
