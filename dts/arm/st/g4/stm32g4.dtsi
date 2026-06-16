@@ -250,6 +250,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x48000000 0x2000>;
+			ranges;
 
 			gpioa: gpio@48000000 {
 				compatible = "st,stm32-gpio";
