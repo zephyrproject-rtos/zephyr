@@ -5323,7 +5323,7 @@ endfunction()
 #                       inside the group itself, see also GROUP argument.
 # LMA <region|group>  : Memory region or group where code / data is loaded (LMA)
 #                       If VMA is different from LMA, the code / data will be loaded
-#                       from LMA into VMA at bootup, this is usually the case for
+#                       from LMA into VMA at boot up, this is usually the case for
 #                       global or static variables that are loaded in rom and copied
 #                       to ram at boot time.
 #                       If <group> is used here it means the section will use the
@@ -5465,7 +5465,7 @@ endmacro()
 # VMA <region|group>  : VMA Memory region where code / data is located runtime (VMA)
 # LMA <region|group>  : Memory region where code / data is loaded (LMA)
 #                       If VMA is different from LMA, the code / data will be loaded
-#                       from LMA into VMA at bootup, this is usually the case for
+#                       from LMA into VMA at boot up, this is usually the case for
 #                       global or static variables that are loaded in rom and copied
 #                       to ram at boot time.
 # GROUP <group>       : Place this section inside the group <group>
