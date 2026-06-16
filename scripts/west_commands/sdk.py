@@ -327,6 +327,13 @@ class Sdk(WestCommand):
 
         return minimal_sdk_asset["browser_download_url"]
 
+    def sha256_sum_sig_url(self, release):
+        assets = release.get("assets", [])
+        sig_asset = next(
+            filter(lambda x: x["name"] == "sha256.sum.minisig", assets), None
+        )
+        return sig_asset["browser_download_url"] if sig_asset else None
+
     def download_and_extract(self, base_dir, dir_name, target_release, req_headers):
         self.inf("Fetching sha256...")
         sha256_url = self.sha256_sum_url(target_release)
@@ -334,7 +341,33 @@ class Sdk(WestCommand):
         if resp.status_code != 200:
             raise Exception(f"Failed to download {sha256_url}: {resp.status_code}")
 
-        sha256 = self.minimal_sdk_sha256(resp.content.decode("UTF-8"), target_release)
+        sha256_content = resp.content.decode("UTF-8")
+
+        sig_url = self.sha256_sum_sig_url(target_release)
+        if sig_url:
+            self.inf("Verifying sha256.sum independent signature...")
+            sig_resp = requests.get(sig_url, headers=req_headers, stream=True)
+            if sig_resp.status_code == 200:
+                with tempfile.NamedTemporaryFile(suffix=".minisig", delete=False) as sig_file:
+                    sig_file_name = sig_file.name
+                    sig_file.write(sig_resp.content)
+                try:
+                    subprocess.run(
+                        ["minisign", "-V", "-x", sig_file_name, "-m", "-"],
+                        input=resp.content, check=True, capture_output=True,
+                    )
+                    self.inf("sha256.sum signature verified.")
+                except (subprocess.CalledProcessError, FileNotFoundError):
+                    self.wrn("Could not verify sha256.sum signature; minisign unavailable or verification failed.")
+                finally:
+                    os.unlink(sig_file_name)
+        else:
+            self.wrn(
+                "No independent signature (sha256.sum.minisig) found for this release. "
+                "Integrity check relies solely on the download server."
+            )
+
+        sha256 = self.minimal_sdk_sha256(sha256_content, target_release)
 
         archive_url = self.minimal_sdk_url(target_release)
         self.inf(f"Downloading {archive_url}...")
