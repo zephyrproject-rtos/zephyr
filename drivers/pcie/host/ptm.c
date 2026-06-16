@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_PCIE_LOG_LEVEL
+#define LOG_LEVEL CONFIG_PCIE_HOST_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(pcie);
 

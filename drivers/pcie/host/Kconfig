@@ -3,14 +3,14 @@
 # Copyright (c) 2019 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig PCIE
+menuconfig PCIE_HOST
 	bool "New PCI/PCIe Root Complex support"
 	help
 	  This option enables support for new PCI(e) drivers.
 
-if PCIE
+if PCIE_HOST
 
-module = PCIE
+module = PCIE_HOST
 module-str = pcie
 source "subsys/logging/Kconfig.template.log_config"
 
@@ -79,4 +79,4 @@ config PCIE_SHELL
 	help
 	  Enable commands for debugging PCI(e) using the built-in shell.
 
-endif # PCIE
+endif # PCIE_HOST
