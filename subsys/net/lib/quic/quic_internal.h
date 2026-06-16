@@ -38,7 +38,9 @@
 #define MAX_CONN_ID_LEN 20
 #define MAX_MY_CONN_ID_LEN 8
 
+#define QUIC_VERSION_NEGOTIATION 0x00000000
 #define QUIC_VERSION_1 0x00000001
+#define QUIC_INITIAL_DCID_MIN_LEN 8
 
 #define QUIC_STREAM_ID_UNASSIGNED UINT64_MAX
 
@@ -131,6 +133,15 @@ struct quic_sent_pkt_info {
 
 	/** True if packet is still in flight (not yet acked/lost) */
 	bool in_flight;
+
+	/** True if loss detection queued this frame for retransmission */
+	bool retransmit_pending;
+
+	/** True if this packet is a DPLPMTUD probe. */
+	bool dplpmtud_probe;
+
+	/** UDP payload size targeted by this DPLPMTUD probe. */
+	uint16_t dplpmtud_probe_size;
 
 	/* Stream frame carried by this packet (for retransmission).
 	 * Only valid when has_stream_frame is true.
@@ -246,14 +257,33 @@ enum quic_tls_error_code {
 };
 
 /* Transport parameter IDs from RFC 9000 Section 18.2 */
-#define QUIC_MAX_IDLE_TIMEOUT                    0x01
-#define QUIC_MAX_UDP_PAYLOAD_SIZE                0x03
-#define QUIC_INITIAL_MAX_DATA                    0x04
-#define QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL  0x05
-#define QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE 0x06
-#define QUIC_INITIAL_MAX_STREAM_DATA_UNI         0x07
-#define QUIC_INITIAL_MAX_STREAMS_BIDI            0x08
-#define QUIC_INITIAL_MAX_STREAMS_UNI             0x09
+#define QUIC_ORIGINAL_DESTINATION_CONNECTION_ID   0x00
+#define QUIC_MAX_IDLE_TIMEOUT                     0x01
+#define QUIC_MAX_UDP_PAYLOAD_SIZE                 0x03
+#define QUIC_INITIAL_MAX_DATA                     0x04
+#define QUIC_INITIAL_MAX_STREAM_DATA_BIDI_LOCAL   0x05
+#define QUIC_INITIAL_MAX_STREAM_DATA_BIDI_REMOTE  0x06
+#define QUIC_INITIAL_MAX_STREAM_DATA_UNI          0x07
+#define QUIC_INITIAL_MAX_STREAMS_BIDI             0x08
+#define QUIC_INITIAL_MAX_STREAMS_UNI              0x09
+#define QUIC_INITIAL_SOURCE_CONNECTION_ID         0x0f
+#define QUIC_RETRY_SOURCE_CONNECTION_ID           0x10
+
+enum quic_address_token_type {
+	QUIC_TOKEN_NONE = 0,
+	QUIC_TOKEN_RETRY = 1,
+	QUIC_TOKEN_NEW = 2,
+};
+
+struct quic_token_validation {
+	enum quic_address_token_type type;
+	uint8_t orig_dcid[MAX_CONN_ID_LEN];
+	uint8_t orig_dcid_len;
+};
+
+/* RFC 8899 DPLPMTUD for QUIC uses 1200-byte UDP payloads as the base size. */
+#define QUIC_DPLPMTUD_BASE_PLPMTU                1200U
+#define QUIC_DPLPMTUD_MAX_PROBE_RETRIES          3U
 
 /** A list of secure tags that TLS context should use. */
 struct sec_tag_list {
@@ -293,7 +323,7 @@ struct quic_tls_context {
 		/** Select which credentials to use with TLS. */
 		struct sec_tag_list sec_tag_list;
 
-		/** 0-terminated list of allowed ciphersuites (mbedTLS format).
+		/** 0-terminated list of allowed ciphersuites (Mbed TLS format).
 		 * TODO: this is not used for anything yet
 		 */
 		int ciphersuites[CONFIG_QUIC_TLS_MAX_CIPHERSUITES + 1];
@@ -329,6 +359,7 @@ struct quic_tls_context {
 	/* Random values */
 	uint8_t client_random[32];
 	uint8_t server_random[32];
+	bool client_hello_prepared;
 
 	/* Certificate request context */
 #define QUIC_CERT_REQ_CONTEXT_LEN 8
@@ -347,8 +378,6 @@ struct quic_tls_context {
 	const uint8_t *my_cert;      /* DER-encoded certificate */
 	size_t my_cert_len;
 
-	const uint8_t *my_key;       /* DER-encoded private key */
-	size_t my_key_len;
 	psa_key_id_t signing_key_id;  /* Imported signing key */
 
 	/* Intermediate certificate chain (sec_tags resolved at handshake time) */
@@ -385,13 +414,13 @@ struct quic_tls_context {
 
 #if defined(CONFIG_MBEDTLS)
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
-	/** mbedTLS structure for CA chain. */
+	/** Mbed TLS structure for CA chain. */
 	mbedtls_x509_crt ca_chain;
 
-	/** mbedTLS structure for own certificate. */
+	/** Mbed TLS structure for own certificate. */
 	mbedtls_x509_crt own_cert;
 
-	/** mbedTLS structure for own private key. */
+	/** Mbed TLS structure for own private key. */
 	mbedtls_pk_context priv_key;
 #endif /* MBEDTLS_X509_CRT_PARSE_C */
 #endif /* CONFIG_MBEDTLS */
@@ -454,6 +483,11 @@ struct quic_crypto_ooo_seg {
 	bool valid;       /* Slot in use */
 };
 
+BUILD_ASSERT(CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE <= UINT16_MAX,
+	     "CRYPTO RX buffer must fit quic_crypto_ooo_seg.len");
+BUILD_ASSERT(CONFIG_QUIC_CRYPTO_RX_BUFFER_SIZE <= UINT32_MAX,
+	     "CRYPTO RX buffer must fit quic_crypto_ooo_seg.offset");
+
 /**
  * Crypto stream state per encryption level
  */
@@ -462,6 +496,33 @@ struct quic_crypto_stream {
 	uint32_t rx_offset;  /* Next byte expected (contiguous data up to here) */
 	uint32_t tls_offset; /* Bytes already passed to TLS processing */
 	size_t rx_buffer_len;
+};
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+struct quic_deferred_crypto_payload {
+	size_t len;
+	bool valid;
+	uint8_t data[CONFIG_QUIC_TX_BUFFER_SIZE];
+};
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
+
+/**
+ * Long header information parsed from an incoming packet, used for initial
+ * processing before we know which endpoint it belongs to.
+ */
+struct quic_long_header_info {
+	uint8_t *packet;
+	enum quic_packet_type ptype;
+	uint32_t version;
+	const uint8_t *dst_conn_id;
+	const uint8_t *src_conn_id;
+	const uint8_t *token;
+	uint8_t dst_conn_id_len;
+	uint8_t src_conn_id_len;
+	size_t token_len;
+	size_t payload_len;
+	size_t total_len;
+	size_t pn_offset;
 };
 
 /**
@@ -523,7 +584,21 @@ struct quic_endpoint {
 
 		/** Out-of-order segment tracking (shared across levels) */
 		struct quic_crypto_ooo_seg ooo[CONFIG_QUIC_CRYPTO_OOO_SLOTS];
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+		/** Deferred CRYPTO frame payloads for Initial and Handshake levels.
+		 * TLS send callbacks currently emit CRYPTO data only at these two
+		 * levels, so two slots preserve ordering without growing every
+		 * endpoint by an unused Application-level buffer.
+		 */
+		struct quic_deferred_crypto_payload pending[2];
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 	} crypto;
+
+#if defined(CONFIG_NET_STATISTICS_QUIC)
+	/** Per-endpoint staging stats used before an accepted connection gets its own context. */
+	struct net_stats_quic stats;
+#endif /* CONFIG_NET_STATISTICS_QUIC */
 
 	/** Largest packet number tracking per encryption level for TX */
 	struct {
@@ -576,6 +651,19 @@ struct quic_endpoint {
 	 */
 	uint8_t peer_orig_dcid_len;
 
+	/** Address-validation token state. */
+	struct {
+		uint8_t initial[CONFIG_QUIC_TOKEN_MAX_LEN];
+		uint8_t client_initial_dcid[MAX_CONN_ID_LEN];
+		uint8_t retry_source_cid[MAX_CONN_ID_LEN];
+		uint16_t initial_len;
+		uint8_t initial_type;
+		uint8_t client_initial_dcid_len;
+		uint8_t retry_source_cid_len;
+		bool retry_seen;
+		bool retry_used;
+	} token;
+
 	/** Pending data buffer for this endpoint.
 	 */
 	struct {
@@ -620,10 +708,19 @@ struct quic_endpoint {
 	/** Connection-level flow control, RX (receiving from peer) */
 	struct {
 		uint64_t max_data;       /* Max data we allow peer to send */
-		uint64_t bytes_received; /* Total bytes received on all streams */
+		uint64_t bytes_received; /* Connection flow-control credit consumed */
 		uint64_t max_data_sent;  /* Last MAX_DATA value we sent */
 		bool need_window_update; /* Flag to send MAX_DATA */
 	} rx_fc;
+
+#if defined(CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT)
+	/** Server anti-amplification state before peer address validation. */
+	struct {
+		uint32_t bytes_received;
+		uint32_t bytes_sent;
+		bool validated;
+	} anti_amplification;
+#endif /* CONFIG_QUIC_SERVER_ANTI_AMPLIFICATION_LIMIT */
 
 	/** Stream-count limits, how many streams we allow the peer to open.
 	 * Mirrored from our own transport parameters and grown in response to
@@ -645,6 +742,7 @@ struct quic_endpoint {
 		uint64_t initial_max_streams_bidi;
 		uint64_t initial_max_streams_uni;
 		uint64_t max_idle_timeout;
+		uint16_t max_udp_payload_size;
 		uint64_t max_streams_bidi;
 		uint64_t max_streams_uni;
 		bool parsed;
@@ -716,12 +814,54 @@ struct quic_endpoint {
 		/** Probe Timeout (RFC 9002 Section 6.2) */
 		struct k_work_delayable pto_work;
 
+		/** Serializes recovery state updates across TX, RX and PTO contexts */
+		struct k_mutex lock;
+
+		/** Deferred release path used when PTO handling needs to drop a ref */
+		struct k_work release_work;
+
 		/** Max. PTO count */
 		uint32_t max_pto_count;
 
 		/** Incremented on each PTO expiry for backoff */
 		uint32_t pto_count;
+
+		/** Suppress further PTO tracking once teardown/close begins */
+		bool closing;
+
+		/** Prevent duplicate deferred release submissions */
+		bool release_pending;
 	} recovery;
+
+	/** Serializes TX packet assembly on crypto.tx_buffer and tx_pn. */
+	struct k_mutex send_lock;
+
+	/** DPLPMTUD path state for this endpoint. */
+	struct {
+		/** Largest UDP payload size confirmed by ACK. */
+		uint16_t validated_payload_size;
+
+		/** Local receive/transmit ceiling derived from socket/interface MTU. */
+		uint16_t local_max_payload_size;
+
+		/** Binary-search lower bound for the next probe. */
+		uint16_t search_low;
+
+		/** Binary-search upper bound for the next probe. */
+		uint16_t search_high;
+
+		/** Current in-flight or pending probe size. */
+		uint16_t probe_size;
+
+		/** Number of probe transmissions attempted at probe_size. */
+		uint8_t probe_attempts;
+
+		/** A probe of probe_size is currently in flight. */
+		bool probe_in_flight;
+
+		/** The endpoint should send a new or repeated probe. */
+		bool probe_pending;
+	} dplpmtud;
 
 	/** Max TX payload size for this endpoint, based on path MTU discovery.
 	 * Initialized to a default value and updated based on peer's
@@ -770,6 +910,11 @@ struct quic_stream_tx_buffer {
 	uint8_t  data[CONFIG_QUIC_STREAM_TX_BUFFER_SIZE];
 	uint64_t base_offset; /* stream offset of data[0] */
 	size_t   len;         /* bytes of unACKed data currently stored */
+};
+
+struct quic_stream_tx_ack_segment {
+	uint64_t offset;
+	uint32_t len;
 };
 
 struct quic_stream_state {
@@ -826,14 +971,21 @@ __net_socket struct quic_stream {
 	/** TX flow control, highest contiguously ACKed stream offset */
 	uint64_t bytes_acked;
 
+	/** ACKed TX ranges waiting for earlier gaps to be ACKed too. */
+	struct quic_stream_tx_ack_segment acked_ooo[CONFIG_QUIC_STREAM_OOO_SLOTS];
+	uint8_t acked_ooo_count;
+
 	/** TX flow control, remote_max_data when STREAM_DATA_BLOCKED was last sent */
 	uint64_t blocked_sent;
 
 	/** RX flow control, max data we allow peer to send on this stream */
 	uint64_t local_max_data;
 
-	/** RX flow control, bytes received on this stream */
-	uint64_t bytes_received;
+	/** RX flow control, stream flow-control credit consumed */
+	uint64_t fc_bytes_received;
+
+	/** RX flow control, highest received stream end offset (offset + len) */
+	uint64_t highest_offset_received;
 
 	/** RX flow control, last MAX_STREAM_DATA value we sent */
 	uint64_t local_max_data_sent;
@@ -868,6 +1020,9 @@ __net_socket struct quic_stream {
 		/** Mutex used by condition variable */
 		struct k_mutex data_available;
 	} cond;
+
+	/** Protects tx_buf, bytes_acked, and acked_ooo state. */
+	struct k_mutex tx_lock;
 
 	/** Receive buffer */
 	struct quic_stream_rx_buffer rx_buf;
@@ -938,6 +1093,11 @@ __net_socket struct quic_context {
 
 #if defined(CONFIG_NET_STATISTICS_QUIC)
 	struct net_stats_quic stats;
+	uint64_t stats_started_at_ms;
+	struct net_sockaddr_storage stats_local_addr;
+	struct net_sockaddr_storage stats_remote_addr;
+	bool stats_is_server;
+	bool stats_metadata_valid;
 #endif /* CONFIG_NET_STATISTICS_QUIC */
 
 	/** Stream id counter */
@@ -955,6 +1115,19 @@ __net_socket struct quic_context {
 	/** Information whether this context is the listening one */
 	bool is_listening : 1;
 };
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+struct quic_closed_context_stats {
+	int id;
+	int error_code;
+	struct net_stats_quic stats;
+	struct net_sockaddr_storage local_addr;
+	struct net_sockaddr_storage remote_addr;
+	uint64_t duration_ms;
+	bool is_server;
+	bool valid;
+};
+#endif /* CONFIG_QUIC_STATS_HISTORY */
 
 /**
  * @typedef quic_context_cb_t
@@ -974,6 +1147,28 @@ typedef void (*quic_context_cb_t)(struct quic_context *ctx,
  * @param user_data Caller specific data.
  */
 void quic_context_foreach(quic_context_cb_t cb, void *user_data);
+
+#if defined(CONFIG_QUIC_STATS_HISTORY)
+/**
+ * @typedef quic_closed_context_stats_cb_t
+ * @brief Callback used while iterating over closed Quic context statistics.
+ *
+ * @param stats A valid pointer on current closed Quic context statistics
+ * @param user_data A valid pointer on some user data or NULL
+ */
+typedef void (*quic_closed_context_stats_cb_t)(const struct quic_closed_context_stats *stats,
+					       void *user_data);
+
+/**
+ * @brief Iterate over stored statistics for closed Quic contexts.
+ *
+ * Entries are returned from newest to oldest.
+ *
+ * @param cb Closed Quic context statistics callback
+ * @param user_data Caller specific data.
+ */
+void quic_closed_context_stats_foreach(quic_closed_context_stats_cb_t cb, void *user_data);
+#endif /* CONFIG_QUIC_STATS_HISTORY */
 
 /**
  * @typedef quic_endpoint_cb_t
@@ -1040,6 +1235,8 @@ void quic_stream_foreach(quic_stream_cb_t cb, void *user_data);
 struct quic_context *quic_get_context(int sock);
 int quic_get_len(const uint8_t *buf, size_t buf_len, uint64_t *len);
 int quic_put_len(uint8_t *buf, size_t buf_len, uint64_t len);
+int quic_put_varint(uint8_t *buf, size_t buf_len, uint64_t val);
+int quic_validate_frame_type(uint8_t frame_type, enum quic_secret_level level);
 
 bool quic_setup_initial_secrets(struct quic_endpoint *ep,
 				const uint8_t *cid, size_t cid_len,
@@ -1083,6 +1280,79 @@ int quic_decrypt_payload(struct quic_pp_cipher *pp, uint64_t packet_number,
 			 uint8_t *plaintext, size_t plaintext_size,
 			 size_t *plaintext_len);
 
+int quic_flush_deferred_crypto(struct quic_endpoint *ep);
 void quic_crypto_context_destroy(struct quic_crypto_context *ctx);
+int quic_build_version_negotiation_packet(uint8_t *out,
+					  size_t out_len,
+					  const uint8_t *peer_scid,
+					  uint8_t peer_scid_len,
+					  const uint8_t *peer_dcid,
+					  uint8_t peer_dcid_len);
+void quic_endpoint_note_unvalidated_rx(struct quic_endpoint *ep, size_t bytes);
+bool quic_endpoint_can_send_unvalidated(const struct quic_endpoint *ep, size_t bytes);
+uint64_t quic_stream_local_rx_limit(const struct quic_endpoint *ep, int stream_type);
+void quic_recovery_init(struct quic_endpoint *ep);
+void quic_recovery_begin_shutdown(struct quic_endpoint *ep);
+void quic_recovery_on_packet_sent(struct quic_endpoint *ep,
+				  enum quic_secret_level level,
+				  uint64_t pkt_num,
+				  size_t sent_bytes,
+				  bool ack_eliciting,
+				  bool dplpmtud_probe,
+				  uint16_t dplpmtud_probe_size);
+void quic_dplpmtud_refresh_state(struct quic_endpoint *ep);
+void quic_dplpmtud_on_probe_acked(struct quic_endpoint *ep, uint16_t probe_size);
+void quic_dplpmtud_on_probe_lost(struct quic_endpoint *ep, uint16_t probe_size);
+/**
+ * Advance the stream TX ACK frontier and compact @a tx_buf.
+ *
+ * Takes @a stream->tx_lock internally. Unit tests may call this directly.
+ * Test setup that touches @a tx_buf, @a bytes_acked, or @a acked_ooo must
+ * call k_mutex_init() on @a tx_lock, and must hold @a tx_lock when mutating
+ * those fields outside this helper and the normal send path.
+ */
+void quic_stream_advance_tx_acked_for_stream(struct quic_stream *stream,
+					     uint64_t acked_start,
+					     uint64_t acked_end);
+int handle_crypto_frame(struct quic_endpoint *ep,
+			 enum quic_secret_level level,
+			 const uint8_t *data,
+			 size_t len,
+			 size_t *consumed);
+int parse_certificate(struct quic_tls_context *ctx,
+		      const uint8_t *data, size_t len);
+int process_handshake_message(struct quic_tls_context *ctx,
+			      uint8_t msg_type,
+			      const uint8_t *msg, size_t msg_len,
+			      const uint8_t *full_msg, size_t full_msg_len);
+int quic_parse_long_header(struct quic_long_header_info *info,
+			   uint8_t *data, size_t data_len);
+int quic_stream_receive_data(struct quic_stream *stream,
+			     uint64_t offset,
+			     const uint8_t *data,
+			     size_t len,
+			     bool is_fin);
+int quic_build_address_token(enum quic_address_token_type type,
+			     const struct net_sockaddr *addr,
+			     const uint8_t *orig_dcid,
+			     uint8_t orig_dcid_len,
+			     uint8_t *out, size_t out_len,
+			     size_t *token_len);
+int quic_validate_address_token(const struct net_sockaddr *addr,
+				const uint8_t *token, size_t token_len,
+				struct quic_token_validation *validation);
+void quic_token_cache_clear(void);
+void quic_token_cache_store(const struct net_sockaddr *remote_addr,
+			    const uint8_t *token, size_t token_len);
+size_t quic_token_cache_take(const struct net_sockaddr *remote_addr,
+			     uint8_t *token, size_t token_size);
+int parse_peer_transport_params(struct quic_endpoint *ep);
+int quic_client_handle_retry(struct quic_endpoint *ep,
+			    const struct quic_long_header_info *info);
+int process_long_header(struct quic_endpoint *ep,
+			struct net_sockaddr *addr,
+			net_socklen_t addrlen,
+			struct quic_long_header_info *info,
+			size_t datagram_len);
 
 #endif /* CONFIG_NET_TEST */

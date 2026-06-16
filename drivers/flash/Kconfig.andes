@@ -5,6 +5,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
+DT_CHOSEN_ZEPHYR_FLASH_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_FLASH))
+
 menuconfig FLASH_ANDES_QSPI
 	bool "Andes FLASH driver"
 	default y
@@ -44,13 +47,15 @@ endif
 config FLASH_ANDES_QSPI_XIP
 	bool "Andes FLASH driver for XIP chip"
 	default y
-	depends on DT_HAS_ANDESTECH_QSPI_NOR_XIP_ENABLED
+	depends on DT_HAS_ANDESTECH_QSPI_NOR_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_EXPLICIT_ERASE
 	select FLASH_HAS_EX_OP
 	depends on XIP
+	depends on $(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_FLASH_PATH),$(DT_COMPAT_ANDESTECH_QSPI_NOR))
 	depends on !SPI_NOR
+	depends on !FLASH_ANDES_QSPI
 	depends on ARCH_HAS_RAMFUNC_SUPPORT
 	depends on !SMP
 	help

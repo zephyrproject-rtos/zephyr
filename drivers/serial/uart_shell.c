@@ -70,6 +70,28 @@ static int cmd_uart_read(const struct shell *sh, size_t argc, char **argv)
 			shell_error(sh, "Failed to read from UART (%d)", ret);
 			return ret;
 		}
+		ret = uart_err_check(dev);
+		if (ret != 0 && ret != -ENOSYS) {
+			if ((ret & UART_ERROR_OVERRUN) != 0) {
+				shell_error(sh, "Overrun error");
+			}
+			if ((ret & UART_ERROR_PARITY) != 0) {
+				shell_error(sh, "Parity error");
+			}
+			if ((ret & UART_ERROR_FRAMING) != 0) {
+				shell_error(sh, "Framing error");
+			}
+			if ((ret & UART_BREAK) != 0) {
+				shell_error(sh, "Break interrupt");
+			}
+			if ((ret & UART_ERROR_COLLISION) != 0) {
+				shell_error(sh, "Collision error");
+			}
+			if ((ret & UART_ERROR_NOISE) != 0) {
+				shell_error(sh, "Noise error");
+			}
+			return ret;
+		}
 	}
 
 	shell_fprintf_normal(sh, "\n");

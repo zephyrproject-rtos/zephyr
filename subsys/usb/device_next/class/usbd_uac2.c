@@ -712,6 +712,16 @@ static int set_clock_source_request(struct usbd_class_data *const c_data,
 			uint32_t requested, hz;
 			int err;
 
+			if (buf == NULL) {
+				if (setup->wLength == 4) {
+					/* Data OUT can be received */
+					return 0;
+				}
+
+				errno = -EINVAL;
+				return 0;
+			}
+
 			err = layout3_cur_request(buf, &requested);
 			if (err) {
 				errno = err;
@@ -808,7 +818,7 @@ static int uac2_request(struct usbd_class_data *const c_data, struct net_buf *bu
 	bi = udc_get_buf_info(buf);
 	if (err) {
 		if (err == -ECONNABORTED) {
-			LOG_WRN("request ep 0x%02x, len %u cancelled",
+			LOG_INF("request ep 0x%02x, len %u cancelled",
 				bi->ep, buf->len);
 		} else {
 			LOG_ERR("request ep 0x%02x, len %u failed",

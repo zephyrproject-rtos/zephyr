@@ -10,10 +10,10 @@
 
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 
 #include <zephyr/toolchain.h>
 #include <ksched.h>
+#include <scheduler.h>
 #include <wait_q.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/init.h>
@@ -77,48 +77,29 @@ static inline int32_t z_vrfy_k_stack_alloc_init(struct k_stack *stack,
 #include <zephyr/syscalls/k_stack_alloc_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-static int stack_cleanup(struct k_stack *stack, void **mem)
+int k_stack_cleanup(struct k_stack *stack)
 {
-	*mem = NULL;
-
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_stack, cleanup, stack);
 
 	CHECKIF(z_waitq_head(&stack->wait_q) != NULL) {
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, -EAGAIN);
+
 		return -EAGAIN;
 	}
 
 	if ((stack->flags & K_STACK_FLAG_ALLOC) != (uint8_t)0) {
-		*mem = stack->base;
+		k_free(stack->base);
 		stack->base = NULL;
 		stack->flags &= ~K_STACK_FLAG_ALLOC;
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, 0);
+
 	return 0;
-}
-
-int k_stack_cleanup(struct k_stack *stack)
-{
-	void *mem;
-	int ret = stack_cleanup(stack, &mem);
-
-	k_free(mem);
-	return ret;
-}
-
-int z_stack_cleanup_sched_locked(struct k_stack *stack)
-{
-	void *mem;
-	int ret = stack_cleanup(stack, &mem);
-
-	k_free_sched_locked(mem);
-	return ret;
 }
 
 int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 {
-	struct k_thread *first_pending_thread;
 	int ret = 0;
 	k_spinlock_key_t key = k_spin_lock(&stack->lock);
 
@@ -129,13 +110,7 @@ int z_impl_k_stack_push(struct k_stack *stack, stack_data_t data)
 		goto out;
 	}
 
-	first_pending_thread = z_unpend_first_thread(&stack->wait_q);
-
-	if (unlikely(first_pending_thread != NULL)) {
-		z_thread_return_value_set_with_data(first_pending_thread,
-						   0, (void *)data);
-
-		z_ready_thread(first_pending_thread);
+	if (z_sched_wake(&stack->wait_q, 0, (void *)data)) {
 		z_reschedule(&stack->lock, key);
 		goto end;
 	} else {

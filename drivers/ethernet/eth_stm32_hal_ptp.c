@@ -16,6 +16,8 @@
 
 #include "eth_stm32_hal_priv.h"
 
+#define DT_DRV_COMPAT st_stm32_ethernet
+
 LOG_MODULE_REGISTER(eth_stm32_hal_ptp, CONFIG_ETHERNET_LOG_LEVEL);
 
 /* Naming of the  ETH PTP Config Status changes depending on the stm32 series */
@@ -48,7 +50,8 @@ void HAL_ETH_TxPtpCallback(uint32_t *buff, ETH_TimeStampTypeDef *timestamp)
 	net_if_add_tx_timestamp(ctx->pkt);
 }
 
-const struct device *eth_stm32_get_ptp_clock(const struct device *dev)
+const struct device *eth_stm32_get_ptp_clock(const struct device *dev,
+					     struct net_if *iface __unused)
 {
 	struct eth_stm32_hal_dev_data *dev_data = dev->data;
 

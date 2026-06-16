@@ -1,0 +1,23 @@
+# PECI over eSPI configuration options
+#
+# Copyright (c) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_PECI
+	bool "Support PECI over eSPI"
+	depends on DT_HAS_INTEL_ESPI_PECI_ENABLED
+	depends on ESPI_OOB_CHANNEL
+	default y
+	help
+	  EC supports Platform Environment Control Interface (PECI) over eSPI
+	  using OOB messages.
+
+if ESPI_PECI
+
+config ESPI_PECI_SHELL
+	bool "Support PECI over eSPI shell"
+	default y
+	help
+	  EC supports PECI over eSPI console command.
+
+endif

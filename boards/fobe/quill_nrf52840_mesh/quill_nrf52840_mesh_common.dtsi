@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include "quill_nrf52840_mesh-pinctrl.dtsi"
 #include "fobe_quill_connector.dtsi"
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	chosen {
@@ -81,7 +82,7 @@
 			vdvs = <0x20>;
 			mdac = <0x00>;
 			gamma = <0x01>;
-			colmod = <0x05>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			lcm = <0x2c>;
 			porch-param = [05 05 00 33 33];
 			cmd2en-param = [5a 69 02 00];

@@ -2,7 +2,7 @@ sample:
   description: Sample application to test memory-mapped flash region
   name: flash_memory_mapped
 tests:
-  sample.board.esp32.flash_memory_mapped:
+  sample.boards.esp32.flash_memory_mapped:
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32c3_devkitc

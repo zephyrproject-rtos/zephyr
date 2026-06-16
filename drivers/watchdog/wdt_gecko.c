@@ -62,6 +62,7 @@ static int wdt_gecko_get_persel_from_timeout(uint32_t timeout)
 	return idx;
 }
 
+#if defined(_WDOG_CTRL_WINSEL_MASK) || defined(_WDOG_CFG_WINSEL_MASK)
 static int wdt_gecko_convert_window(uint32_t window, uint32_t period)
 {
 	int idx = 0;
@@ -85,6 +86,7 @@ static int wdt_gecko_convert_window(uint32_t window, uint32_t period)
 
 	return idx;
 }
+#endif
 
 static bool wdt_gecko_is_enabled(WDOG_TypeDef *wdog)
 {
@@ -122,6 +124,7 @@ static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 	data->wdog_config.debugRun =
 		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
 
+#if defined(_WDOG_IF_MASK)
 	if (data->callback != NULL) {
 		/* Interrupt mode for window */
 		/* Clear possible lingering interrupts */
@@ -132,6 +135,12 @@ static int wdt_gecko_setup(const struct device *dev, uint8_t options)
 		/* Disable timeout interrupt */
 		WDOGn_IntDisable(wdog, WDOG_IEN_TOUT);
 	}
+#else
+	if (data->callback != NULL) {
+		LOG_ERR("Interrupt mode not supported");
+		return -ENOTSUP;
+	}
+#endif
 
 	/* Watchdog is started after initialization */
 	WDOGn_Init(wdog, &data->wdog_config);
@@ -196,6 +205,7 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 	LOG_INF("Installed timeout value: %u", installed_timeout);
 
 	if (cfg->window.min > 0) {
+#if defined(_WDOG_CTRL_WINSEL_MASK) || defined(_WDOG_CFG_WINSEL_MASK)
 		/* Window mode. Use rounded up timeout value to
 		 * calculate minimum window setting.
 		 */
@@ -205,9 +215,15 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 
 		LOG_INF("Installed window value: %u",
 			(installed_timeout / 8) * data->wdog_config.winSel);
+#else
+		LOG_ERR("Window mode not supported");
+		return -ENOTSUP;
+#endif
 	} else {
+#if defined(_WDOG_CTRL_WINSEL_MASK) || defined(_WDOG_CFG_WINSEL_MASK)
 		/* Normal mode */
 		data->wdog_config.winSel = wdogIllegalWindowDisable;
+#endif
 	}
 
 	/* Set mode of watchdog and callback */
@@ -217,15 +233,22 @@ static int wdt_gecko_install_timeout(const struct device *dev,
 			LOG_ERR("Reset mode with callback not supported\n");
 			return -ENOTSUP;
 		}
+#if defined(_WDOG_CTRL_WDOGRSTDIS_MASK) || defined(_WDOG_CFG_WDOGRSTDIS_MASK)
 		data->wdog_config.resetDisable = false;
+#endif
 		LOG_DBG("Configuring reset SoC mode\n");
 		break;
 
 	case WDT_FLAG_RESET_NONE:
+#if defined(_WDOG_CTRL_WDOGRSTDIS_MASK) || defined(_WDOG_CFG_WDOGRSTDIS_MASK)
 		data->wdog_config.resetDisable = true;
 		data->callback = cfg->callback;
 		LOG_DBG("Configuring non-reset mode\n");
 		break;
+#else
+		LOG_ERR("Non-reset mode not supported");
+		return -ENOTSUP;
+#endif
 
 	case WDT_FLAG_RESET_CPU_CORE:
 		LOG_ERR("CPU core only reset not supported");
@@ -261,6 +284,7 @@ static int wdt_gecko_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
+#if defined(_WDOG_IF_MASK)
 static void wdt_gecko_isr(const struct device *dev)
 {
 	const struct wdt_gecko_cfg *config = dev->config;
@@ -276,6 +300,7 @@ static void wdt_gecko_isr(const struct device *dev)
 		data->callback(dev, 0);
 	}
 }
+#endif
 
 static int wdt_gecko_init(const struct device *dev)
 {
@@ -313,31 +338,30 @@ static DEVICE_API(wdt, wdt_gecko_driver_api) = {
 	.feed = wdt_gecko_feed,
 };
 
-#define GECKO_WDT_INIT(index)						\
-									\
-	static void wdt_gecko_cfg_func_##index(void);			\
-									\
-	static const struct wdt_gecko_cfg wdt_gecko_cfg_##index = {	\
-		.base = (WDOG_TypeDef *)				\
-			DT_INST_REG_ADDR(index),\
-		.clock = CLOCK_ID(DT_INST_PROP(index, peripheral_id)),  \
-		.irq_cfg_func = wdt_gecko_cfg_func_##index,		\
-	};								\
-	static struct wdt_gecko_data wdt_gecko_data_##index;		\
-									\
-	DEVICE_DT_INST_DEFINE(index,					\
-				&wdt_gecko_init, NULL,			\
-				&wdt_gecko_data_##index,		\
-				&wdt_gecko_cfg_##index, POST_KERNEL,	\
-				CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-				&wdt_gecko_driver_api);			\
-									\
-	static void wdt_gecko_cfg_func_##index(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(index),	\
-			DT_INST_IRQ(index, priority),\
-			wdt_gecko_isr, DEVICE_DT_INST_GET(index), 0);	\
-		irq_enable(DT_INST_IRQN(index));	\
+#define GECKO_WDT_INIT(index)                                                                      \
+                                                                                                   \
+	static void wdt_gecko_cfg_func_##index(void);                                              \
+                                                                                                   \
+	static const struct wdt_gecko_cfg wdt_gecko_cfg_##index = {                                \
+		.base = (WDOG_TypeDef *)DT_INST_REG_ADDR(index),                                   \
+		.clock = CLOCK_ID(DT_INST_PROP(index, peripheral_id)),                             \
+		.irq_cfg_func = wdt_gecko_cfg_func_##index,                                        \
+	};                                                                                         \
+	static struct wdt_gecko_data wdt_gecko_data_##index;                                       \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(index, &wdt_gecko_init, NULL, &wdt_gecko_data_##index,               \
+			      &wdt_gecko_cfg_##index, POST_KERNEL,                                 \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &wdt_gecko_driver_api);         \
+                                                                                                   \
+	static void wdt_gecko_cfg_func_##index(void)                                               \
+	{                                                                                          \
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(index, 0), (		\
+			IRQ_CONNECT(DT_INST_IRQN(index),		\
+				DT_INST_IRQ(index, priority),		\
+				wdt_gecko_isr,				\
+				DEVICE_DT_INST_GET(index), 0);		\
+			irq_enable(DT_INST_IRQN(index));		\
+		))                                     \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(GECKO_WDT_INIT)

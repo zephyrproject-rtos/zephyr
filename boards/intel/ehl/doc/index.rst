@@ -1,7 +1,4 @@
-.. _intel_ehl_crb:
-
-Elkhart Lake CRB
-################
+.. zephyr:board:: intel_ehl_crb
 
 Overview
 ********
@@ -21,6 +18,7 @@ General information about the board can be found at the `EHL`_ website.
 
 .. include:: ../../../../soc/intel/elkhart_lake/doc/supported_features.txt
 
+.. zephyr:board-supported-hw::
 
 Connections and IOs
 ===================
@@ -29,6 +27,9 @@ Refer to the `EHL`_ website for more information.
 
 Programming and Debugging
 *************************
+
+.. zephyr:board-supported-runners::
+
 Use the following procedures for booting an image on a EHL CRB board.
 
 .. contents::

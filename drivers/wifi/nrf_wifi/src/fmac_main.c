@@ -318,7 +318,9 @@ void nrf_wifi_event_get_reg_zep(void *vif_ctx,
 	fmac_dev_ctx->alpha2_valid = true;
 }
 
-int nrf_wifi_reg_domain(const struct device *dev, struct wifi_reg_domain *reg_domain)
+int nrf_wifi_reg_domain(const struct device *dev,
+			struct net_if *iface __unused,
+			struct wifi_reg_domain *reg_domain)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
 	struct nrf_wifi_ctx_zep *rpu_ctx_zep = NULL;

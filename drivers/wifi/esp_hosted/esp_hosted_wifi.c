@@ -263,12 +263,11 @@ static void esp_hosted_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	esp_hosted_data_t *data = dev->data;
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	struct wifi_nm_instance *nm = wifi_nm_get_instance("nm");
 	size_t itf = esp_hosted_get_iface(dev);
 
 	data->iface[itf] = iface;
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 
 	/* Set mac address. */
 	net_if_set_link_addr(iface, data->mac_addr[itf], 6, NET_LINK_ETHERNET);
@@ -276,14 +275,15 @@ static void esp_hosted_init(struct net_if *iface)
 	/* Configure interface */
 	ethernet_init(iface);
 	net_if_dormant_on(iface);
-	net_if_carrier_on(iface);
 
 	/* Register a managed interface. */
 	wifi_nm_register_mgd_type_iface(
 		nm, itf == ESP_HOSTED_STA_IF ? WIFI_TYPE_STA : WIFI_TYPE_SAP, iface);
 }
 
-static int esp_hosted_connect(const struct device *dev, struct wifi_connect_req_params *params)
+static int esp_hosted_connect(const struct device *dev,
+			      struct net_if *iface,
+			      struct wifi_connect_req_params *params)
 {
 	esp_hosted_data_t *data = dev->data;
 	CtrlMsg ctrl_msg = CtrlMsg_init_zero;
@@ -302,19 +302,18 @@ static int esp_hosted_connect(const struct device *dev, struct wifi_connect_req_
 	/* Legacy connect response is synchronous */
 	if (data->fw_version.major1 < 1) {
 		data->state[ESP_HOSTED_STA_IF] = WIFI_STATE_COMPLETED;
-		net_if_dormant_off(data->iface[ESP_HOSTED_STA_IF]);
-		wifi_mgmt_raise_connect_result_event(data->iface[ESP_HOSTED_STA_IF], 0);
+		net_if_dormant_off(iface);
+		wifi_mgmt_raise_connect_result_event(iface, 0);
 	}
 
 	return 0;
 }
 
-static int esp_hosted_disconnect(const struct device *dev)
+static int esp_hosted_disconnect(const struct device *dev, struct net_if *iface)
 {
 	int ret = 0;
 	esp_hosted_data_t *data = dev->data;
 	CtrlMsg ctrl_msg = CtrlMsg_init_zero;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 
 	if (esp_hosted_ctrl(dev, CtrlMsgId_Req_DisconnectAP, &ctrl_msg, ESP_HOSTED_SYNC_TIMEOUT)) {
 		ret = -EIO;
@@ -325,7 +324,8 @@ static int esp_hosted_disconnect(const struct device *dev)
 	return ret;
 }
 
-static int esp_hosted_ap_enable(const struct device *dev, struct wifi_connect_req_params *params)
+static int esp_hosted_ap_enable(const struct device *dev, struct net_if *iface,
+				struct wifi_connect_req_params *params)
 {
 	int ret = 0;
 	esp_hosted_data_t *data = dev->data;
@@ -359,14 +359,14 @@ static int esp_hosted_ap_enable(const struct device *dev, struct wifi_connect_re
 exit:
 	if (!ret) {
 		data->state[ESP_HOSTED_SAP_IF] = WIFI_STATE_COMPLETED;
-		net_if_dormant_off(data->iface[ESP_HOSTED_SAP_IF]);
+		net_if_dormant_off(iface);
 	}
 
-	wifi_mgmt_raise_ap_enable_result_event(data->iface[ESP_HOSTED_SAP_IF], ret);
+	wifi_mgmt_raise_ap_enable_result_event(iface, ret);
 	return ret;
 }
 
-static int esp_hosted_ap_disable(const struct device *dev)
+static int esp_hosted_ap_disable(const struct device *dev, struct net_if *iface)
 {
 	int ret = 0;
 	esp_hosted_data_t *data = dev->data;
@@ -377,7 +377,7 @@ static int esp_hosted_ap_disable(const struct device *dev)
 	}
 
 	data->state[ESP_HOSTED_SAP_IF] = WIFI_STATE_DISCONNECTED;
-	wifi_mgmt_raise_ap_disable_result_event(data->iface[ESP_HOSTED_SAP_IF], ret);
+	wifi_mgmt_raise_ap_disable_result_event(iface, ret);
 	return ret;
 }
 
@@ -470,7 +470,9 @@ error:
 }
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-static int esp_hosted_stats(const struct device *dev, struct net_stats_wifi *stats)
+static int esp_hosted_stats(const struct device *dev,
+			    struct net_if *iface __unused,
+			    struct net_stats_wifi *stats)
 {
 	esp_hosted_data_t *data = dev->data;
 
@@ -532,11 +534,12 @@ static int esp_hosted_status(const struct device *dev, struct wifi_iface_status 
 	return 0;
 }
 
-static int esp_hosted_scan(const struct device *dev, struct wifi_scan_params *params,
+static int esp_hosted_scan(const struct device *dev,
+			   struct net_if *iface,
+			   struct wifi_scan_params *params,
 			   scan_result_cb_t cb)
 {
 	CtrlMsg ctrl_msg = CtrlMsg_init_zero;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
 
 	if (esp_hosted_ctrl(dev, CtrlMsgId_Req_GetAPScanList, &ctrl_msg, ESP_HOSTED_SCAN_TIMEOUT)) {
 		return -ETIMEDOUT;

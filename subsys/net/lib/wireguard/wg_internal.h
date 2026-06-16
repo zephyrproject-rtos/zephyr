@@ -229,6 +229,62 @@ struct wg_peer {
 	bool first_valid : 1;
 };
 
+static inline bool wg_allowed_ip_match(const struct wg_allowed_ip *allowed_ip,
+				       net_sa_family_t family,
+				       const uint8_t *addr)
+{
+	uint32_t allowed_addr;
+	uint32_t addr_v4;
+	uint32_t mask;
+
+	if (allowed_ip == NULL || addr == NULL || !allowed_ip->is_valid ||
+	    allowed_ip->addr.family != family) {
+		return false;
+	}
+
+	if (family == NET_AF_INET6) {
+		if (allowed_ip->mask_len > 128U) {
+			return false;
+		}
+
+		return net_ipv6_is_prefix(addr,
+					  allowed_ip->addr.in6_addr.s6_addr,
+					  allowed_ip->mask_len);
+	}
+
+	if (family == NET_AF_INET) {
+		if (allowed_ip->mask_len > 32U) {
+			return false;
+		}
+
+		addr_v4 = sys_get_be32(addr);
+		allowed_addr = net_ntohl(allowed_ip->addr.in_addr.s_addr);
+		mask = allowed_ip->mask_len == 0U ?
+			0U : UINT32_MAX << (32U - allowed_ip->mask_len);
+
+		return (addr_v4 & mask) == (allowed_addr & mask);
+	}
+
+	return false;
+}
+
+static inline bool wg_peer_is_allowed_ip(const struct wg_peer *peer,
+					 net_sa_family_t family,
+					 const uint8_t *addr)
+{
+	if (peer == NULL || addr == NULL) {
+		return false;
+	}
+
+	for (int i = 0; i < CONFIG_WIREGUARD_MAX_SRC_IPS; i++) {
+		if (wg_allowed_ip_match(&peer->allowed_ip[i], family, addr)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static inline bool wg_is_under_load(void)
 {
 	/* TODO: Add proper implementation */

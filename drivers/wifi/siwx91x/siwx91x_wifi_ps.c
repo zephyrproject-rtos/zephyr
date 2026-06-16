@@ -5,13 +5,14 @@
  */
 #include <zephyr/sys/util.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/logging/log.h>
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
 #include "siwx91x_wifi_ps.h"
 
 #include "sl_wifi_constants.h"
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 enum {
 	REQUEST_TWT = 0,
@@ -40,10 +41,11 @@ static int siwx91x_get_connected_ap_beacon_interval_ms(void)
 
 int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 {
+	const struct device *wifi_dev = net_if_get_device(sidev->iface);
+	const struct siwx91x_config *cfg = wifi_dev->config;
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_performance_profile_v2_t sl_ps_profile;
 	int beacon_interval;
-	int ret;
 
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) != SL_WIFI_CLIENT_INTERFACE) {
 		LOG_ERR("Wi-Fi not in station mode");
@@ -92,11 +94,12 @@ int siwx91x_apply_power_save(struct siwx91x_dev *sidev)
 	}
 
 out:
-	ret = sl_wifi_set_performance_profile_v2(&sl_ps_profile);
-	return ret ? -EIO : 0;
+	return siwx91x_nwp_apply_power_profile(cfg->nwp_dev, &sl_ps_profile);
 }
 
-int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *params)
+int siwx91x_set_power_save(const struct device *dev,
+			   struct net_if *iface __unused,
+			   struct wifi_ps_params *params)
 {
 	struct siwx91x_dev *sidev = dev->data;
 	int ret;
@@ -153,7 +156,9 @@ int siwx91x_set_power_save(const struct device *dev, struct wifi_ps_params *para
 	return 0;
 }
 
-int siwx91x_get_power_save_config(const struct device *dev, struct wifi_ps_config *config)
+int siwx91x_get_power_save_config(const struct device *dev,
+				 struct net_if *iface __unused,
+				 struct wifi_ps_config *config)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	sl_wifi_performance_profile_v2_t sl_ps_profile;
@@ -232,6 +237,8 @@ static int siwx91x_set_twt_setup(struct wifi_twt_params *params)
 {
 	int twt_req_type = siwx91x_convert_z_sl_twt_req_type(params->setup_cmd);
 	sl_wifi_twt_request_t twt_req = {
+		/* Any Tx outside the TWT Service Period is restricted */
+		.restrict_tx_outside_tsp = 1,
 		.twt_retry_interval = 5,
 		.wake_duration_unit = 0,
 		.wake_int_mantissa = params->setup.twt_mantissa,
@@ -313,7 +320,9 @@ static int siwx91x_set_twt_teardown(struct wifi_twt_params *params)
 	return 0;
 }
 
-int siwx91x_set_twt(const struct device *dev, struct wifi_twt_params *params)
+int siwx91x_set_twt(const struct device *dev,
+		    struct net_if *iface __unused,
+		    struct wifi_twt_params *params)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
 	struct siwx91x_dev *sidev = dev->data;
@@ -410,6 +419,7 @@ sl_status_t siwx91x_on_twt(sl_wifi_event_t twt_event, sl_status_t status_code, v
 	params.negotiation_type = WIFI_TWT_INDIVIDUAL;
 
 	switch (ev) {
+	/* Setup negotiated or established successfully */
 	case SL_WIFI_TWT_UNSOLICITED_SESSION_SUCCESS_EVENT:
 	case SL_WIFI_TWT_RESPONSE_EVENT:
 	case SL_WIFI_RESCHEDULE_TWT_SUCCESS_EVENT:
@@ -417,14 +427,27 @@ sl_status_t siwx91x_on_twt(sl_wifi_event_t twt_event, sl_status_t status_code, v
 		params.resp_status = WIFI_TWT_RESP_RECEIVED;
 		params.setup_cmd = WIFI_TWT_SETUP_CMD_ACCEPT;
 		break;
+	/* Setup failed: peer cannot or will not honor the request */
 	case SL_WIFI_TWT_AP_REJECTED_EVENT:
-	case SL_WIFI_TWT_UNSUPPORTED_RESPONSE_EVENT:
 	case SL_WIFI_TWT_FAIL_MAX_RETRIES_REACHED_EVENT:
 		params.operation = WIFI_TWT_SETUP;
 		params.resp_status = WIFI_TWT_RESP_RECEIVED;
 		params.setup_cmd = WIFI_TWT_SETUP_CMD_REJECT;
 		params.fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
 		break;
+	case SL_WIFI_TWT_UNSUPPORTED_RESPONSE_EVENT:
+		params.operation = WIFI_TWT_SETUP;
+		params.resp_status = WIFI_TWT_RESP_RECEIVED;
+		params.setup_cmd = WIFI_TWT_SETUP_CMD_REJECT;
+		params.fail_reason = WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
+		break;
+	case SL_WIFI_TWT_INACTIVE_NO_AP_SUPPORT_EVENT:
+		params.operation = WIFI_TWT_SETUP;
+		params.resp_status = WIFI_TWT_RESP_RECEIVED;
+		params.setup_cmd = WIFI_TWT_SETUP_CMD_REJECT;
+		params.fail_reason = WIFI_TWT_FAIL_PEER_NOT_TWT_CAPAB;
+		break;
+	/* Setup failed: AP offered different parameters */
 	case SL_WIFI_TWT_OUT_OF_TOLERANCE_EVENT:
 	case SL_WIFI_TWT_RESPONSE_NOT_MATCHED_EVENT:
 	case SL_WIFI_TWT_INFO_FRAME_EXCHANGE_FAILED_EVENT:
@@ -433,11 +456,11 @@ sl_status_t siwx91x_on_twt(sl_wifi_event_t twt_event, sl_status_t status_code, v
 		params.setup_cmd = WIFI_TWT_SETUP_CMD_ALTERNATE;
 		params.fail_reason = WIFI_TWT_FAIL_CMD_EXEC_FAIL;
 		break;
+	/* Active TWT session ended */
 	case SL_WIFI_TWT_TEARDOWN_SUCCESS_EVENT:
 	case SL_WIFI_TWT_AP_TEARDOWN_SUCCESS_EVENT:
 	case SL_WIFI_TWT_INACTIVE_DUE_TO_ROAMING_EVENT:
 	case SL_WIFI_TWT_INACTIVE_DUE_TO_DISCONNECT_EVENT:
-	case SL_WIFI_TWT_INACTIVE_NO_AP_SUPPORT_EVENT:
 		params.operation = WIFI_TWT_TEARDOWN;
 		params.teardown_status = WIFI_TWT_TEARDOWN_SUCCESS;
 		break;

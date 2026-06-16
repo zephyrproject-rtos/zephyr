@@ -17,8 +17,13 @@ config SAMPLE_PDM_CHANNELS
 	help
 	  Count of DMIC channels to capture and process.
 
-config HW_CHANNEL_INDEX
+config TEST_HW_CHANNEL_INDEX
 	int "hardware controller index"
 	default 0
 	help
 	  Specifies the index of the hardware controller.
+
+config TEST_SMALL_BUFFER
+	bool "Use a smaller buffer for testing"
+	help
+	  Use a smaller buffer for testing. This is useful if your device has limited memory.

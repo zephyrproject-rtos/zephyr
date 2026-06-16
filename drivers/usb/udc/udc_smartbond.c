@@ -431,7 +431,7 @@ static void start_tx_packet(struct usb_smartbond_data *data, struct smartbond_ep
 	}
 
 	if (ep != USB_CONTROL_EP_IN && size > config->dma_min_transfer_size &&
-	    (uint32_t)(buf->data) >= CONFIG_SRAM_BASE_ADDRESS && try_allocate_dma(data, ep_state)) {
+	    (uint32_t)(buf->data) >= DT_CHOSEN_SRAM_ADDR && try_allocate_dma(data, ep_state)) {
 		start_tx_dma(&config->dma_cfg, (uintptr_t)buf->data, (uintptr_t)&regs->txd, size);
 	} else {
 		fill_tx_fifo(ep_state);

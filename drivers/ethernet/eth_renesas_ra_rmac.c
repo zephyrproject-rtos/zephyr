@@ -122,7 +122,6 @@ static void phy_link_cb(const struct device *phy_dev, struct phy_link_state *sta
 
 			data->fsp_ctrl.link_establish_status = ETHER_LINK_ESTABLISH_STATUS_DOWN;
 
-			LOG_DBG("Link down");
 			net_eth_carrier_off(data->iface);
 		}
 		return;
@@ -168,8 +167,6 @@ static void phy_link_cb(const struct device *phy_dev, struct phy_link_state *sta
 		LOG_ERR("Link MAC failed, err=%d", fsp_err);
 		return;
 	}
-
-	LOG_DBG("Link up");
 
 	net_eth_carrier_on(data->iface);
 	data->phy_link_up = true;
@@ -239,10 +236,9 @@ static void phy_type_setting(const struct device *dev)
 	}
 }
 
-static enum ethernet_hw_caps eth_renesas_ra_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_renesas_ra_get_capabilities(const struct device *dev __unused,
+							     struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 
@@ -354,7 +350,8 @@ static void eth_renesas_ra_init_iface(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_renesas_ra_get_stats(const struct device *dev)
+static struct net_stats_eth *eth_renesas_ra_get_stats(const struct device *dev,
+						     struct net_if *iface __unused)
 {
 	struct eth_renesas_ra_data *data = dev->data;
 
@@ -363,7 +360,8 @@ static struct net_stats_eth *eth_renesas_ra_get_stats(const struct device *dev)
 
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 
-const struct device *eth_renesas_ra_get_phy(const struct device *dev)
+const struct device *eth_renesas_ra_get_phy(const struct device *dev,
+					    struct net_if *iface __unused)
 {
 	const struct eth_renesas_ra_config *config = dev->config;
 

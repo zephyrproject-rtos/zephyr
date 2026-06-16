@@ -108,6 +108,12 @@ static int skip_fqdn(uint8_t *answer, int buf_sz)
 	return i;
 }
 
+static inline bool handle_private_dns_query_type(uint16_t rr_type)
+{
+	return (IS_ENABLED(CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT) &&
+		dns_query_type_is_private((enum dns_query_type)rr_type));
+}
+
 int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 		      enum dns_rr_type *type)
 {
@@ -160,6 +166,11 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 		DNS_RDLENGTH_LEN;
 	*type = dns_answer_type(dname_len, answer);
 
+	/* Reject records whose declared rdata extends past the packet. */
+	if ((uint32_t)pos + len > dns_msg->msg_size) {
+		return -EINVAL;
+	}
+
 	switch (*type) {
 	case DNS_RR_TYPE_A:
 	case DNS_RR_TYPE_AAAA:
@@ -184,6 +195,11 @@ int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, uint32_t *ttl,
 		return 0;
 
 	default:
+		/* Check if this is a private use RR (65280-65534) */
+		if (handle_private_dns_query_type(*type)) {
+			set_dns_msg_response(dns_msg, DNS_RESPONSE_PRIVATE, pos, len);
+			return 0;
+		}
 		/* malformed dns answer */
 		return -EINVAL;
 	}
@@ -347,7 +363,8 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg)
 	buf = dns_query + qname_size;
 	if (dns_unpack_query_qtype(buf) != DNS_RR_TYPE_A &&
 	    dns_unpack_query_qtype(buf) != DNS_RR_TYPE_AAAA &&
-	    dns_unpack_query_qtype(buf) != DNS_RR_TYPE_PTR) {
+	    dns_unpack_query_qtype(buf) != DNS_RR_TYPE_PTR &&
+	    !handle_private_dns_query_type(dns_unpack_query_qtype(buf))) {
 		return -EINVAL;
 	}
 
@@ -509,7 +526,10 @@ int dns_unpack_name(const uint8_t *msg, int maxlen, const uint8_t *src,
 				len = curr_src - src + 1;
 			}
 
-			end_of_label = curr_src + 1;
+			if (end_of_label == NULL) {
+				/* First pointer entry, set end_of_label */
+				end_of_label = curr_src + 1;
+			}
 
 			/* Strip compress bits from length calculation */
 			pos = ((val & 0x3f) << 8) | (*curr_src & 0xff);
@@ -616,7 +636,8 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		&& query_type != DNS_RR_TYPE_SRV
 		&& query_type != DNS_RR_TYPE_TXT
 		&& query_type != DNS_RR_TYPE_HTTPS
-		&& query_type != DNS_RR_TYPE_ANY) {
+		&& query_type != DNS_RR_TYPE_ANY
+		&& !handle_private_dns_query_type(query_type)) {
 		return -EINVAL;
 	}
 
@@ -633,7 +654,7 @@ int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		*qclass = query_class;
 	}
 
-	dns_msg->query_offset = end_of_label - dns_msg->msg + 2 + 2;
+	dns_msg->query_offset += end_of_label - dns_query + 2 + 2;
 
 	return ret;
 }

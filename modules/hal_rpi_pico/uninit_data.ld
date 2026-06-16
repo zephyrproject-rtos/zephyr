@@ -1,4 +1,2 @@
-.uninitialized_data (NOLOAD): {
-    . = ALIGN(4);
-    *(.uninitialized_data*)
-} > RAM
+. = ALIGN(4);
+*(.uninitialized_data*)

@@ -14,9 +14,6 @@
 	model = "STMicroelectronics STM32WBA25CE1-NUCLEO board";
 	compatible = "st,stm32wba25ce1-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,uart-pipe = &usart1;
 		zephyr,console = &usart1;
@@ -29,7 +26,6 @@
 	leds: leds {
 		compatible = "gpio-leds";
 
-		/* Pin muxing conflict with ADC4 */
 		blue_led_1: led_0 {
 			gpios = <&gpioa 7 GPIO_ACTIVE_LOW>;
 			label = "User LD1";
@@ -146,22 +142,23 @@
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pb2 &i2c3_sda_pa11>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &adc4 {
-	/* Pin muxing conflict with LED1, disabled by default */
-	pinctrl-0 = <&adc4_in2_pa7>;
+	pinctrl-0 = <&adc4_in8_pa1>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
-	status = "disabled";
+	status = "okay";
 };
 
 &die_temp {
-	/* keep disabled if adc4 is disabled */
-	status = "disabled";
+	/* Disable the node if adc4 is disabled */
+	status = "okay";
 };
 
 &timers2 {
@@ -181,32 +178,50 @@ stm32_lp_tick_source: &lptim1 {
 	status = "okay";
 };
 
+&aes {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };
 
+&radio {
+	/* Use HASH IRQn as Radio SW IRQ (HASH peripheral must not be enabled!) */
+	interrupts = <60 0>, <55 14>;
+	interrupt-names = "radio", "radio-sw-low";
+
+	bt_hci_wba: bluetooth {
+		status = "okay";
+	};
+};
+
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
 
 		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(192)>;
 		};
 
 		slot1_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00040000 DT_SIZE_K(192)>;
 		};
 
 		storage_partition: partition@70000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00070000 DT_SIZE_K(64)>;
 		};

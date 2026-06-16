@@ -42,3 +42,14 @@ tests:
       - mimxrt1170_evk@B/mimxrt1176/cm7
     extra_configs:
       - CONFIG_BUILD_ONLY_NO_BLOBS=y
+
+  sample.bluetooth.peripheral_ht.pytest_demo:
+    platform_allow:
+      - nrf52840dk/nrf52840
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - "pytest/test_demo.py"
+      required_devices:
+        # Second device required (the same platform), will be flashed with a different application
+        - application: sample.bluetooth.central_ht

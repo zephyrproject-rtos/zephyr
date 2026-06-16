@@ -34,7 +34,7 @@ struct cap_commander_test_vcp_fixture {
 
 static void cap_commander_test_vcp_fixture_init(struct cap_commander_test_vcp_fixture *fixture)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		test_conn_init(&fixture->conns[i]);
 	}
 }
@@ -58,10 +58,12 @@ static void cap_commander_test_vcp_before(void *f)
 static void cap_commander_test_vcp_after(void *f)
 {
 	struct cap_commander_test_vcp_fixture *fixture = f;
+	int err;
 
-	bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
+	err = bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
+	zassert_true(err == 0 || err == -EINVAL, "Unexpected error: %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 }
@@ -93,7 +95,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume)
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
@@ -125,7 +127,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_double)
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
@@ -206,7 +208,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_inval_missing_cas)
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
@@ -296,7 +298,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_offset)
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
@@ -329,7 +331,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_offset_double)
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
@@ -411,7 +413,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_offset_inval_missin
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
@@ -542,7 +544,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_mute_state)
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
@@ -574,7 +576,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_mute_state_double)
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);
@@ -655,7 +657,7 @@ ZTEST_F(cap_commander_test_vcp, test_commander_change_volume_mute_state_inval_mi
 	err = bt_cap_commander_register_cb(&mock_cap_commander_cb);
 	zassert_equal(0, err, "Unexpected return value %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		struct bt_vcp_vol_ctlr *vol_ctlr; /* We don't care about this */
 
 		err = bt_vcp_vol_ctlr_discover(&fixture->conns[i], &vol_ctlr);

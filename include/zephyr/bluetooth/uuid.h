@@ -5188,6 +5188,24 @@ struct bt_uuid_any {
  */
 #define BT_UUID_GMAP_BGR_FEAT	  BT_UUID_DECLARE_16(BT_UUID_GMAP_BGR_FEAT_VAL)
 
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Mode UUID value
+ */
+#define BT_UUID_HIDS_SCI_MODE_VAL 0x2C39
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Mode
+ */
+#define BT_UUID_HIDS_SCI_MODE BT_UUID_DECLARE_16(BT_UUID_HIDS_SCI_MODE_VAL)
+
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Information UUID value
+ */
+#define BT_UUID_HIDS_SCI_INFO_VAL 0x2C3A
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Information
+ */
+#define BT_UUID_HIDS_SCI_INFO BT_UUID_DECLARE_16(BT_UUID_HIDS_SCI_INFO_VAL)
+
 /*
  * Protocol UUIDs
  */

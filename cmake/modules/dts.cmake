@@ -128,7 +128,6 @@ set(DTS_KCONFIG                 ${KCONFIG_BINARY_DIR}/Kconfig.dts)
 set(VENDOR_PREFIXES             dts/bindings/vendor-prefixes.txt)
 
 function(dts_configuration_files)
-  # Fetch variable from sysbuild which might be forcing a configuration (for variant build images)
   zephyr_get(DTS_SOURCE SYSBUILD LOCAL)
 
   if(NOT DEFINED DTS_SOURCE)

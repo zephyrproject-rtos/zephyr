@@ -48,8 +48,10 @@
 
 #define MAX30101_BYTES_PER_CHANNEL	3
 #define MAX30101_MAX_NUM_CHANNELS	3
-#define MAX30101_MAX_BYTES_PER_SAMPLE	(MAX30101_MAX_NUM_CHANNELS * \
+#define MAX30101_MAX_NUM_SLOTS		4
+#define MAX30101_MAX_BYTES_PER_SAMPLE	(MAX30101_MAX_NUM_SLOTS * \
 					 MAX30101_BYTES_PER_CHANNEL)
+#define MAX30101_MAP_INIT		{{4, 4, 4, 4}, {4, 4, 4, 4}, {4, 4, 4, 4}}
 
 #define MAX30101_SLOT_LED_MASK		0x03
 
@@ -123,18 +125,20 @@ struct max30101_config {
 	uint8_t spo2;
 	uint8_t led_pa[MAX30101_MAX_NUM_CHANNELS];
 	uint8_t mode;
-	uint8_t slot[4];
+	uint8_t slot[MAX30101_MAX_NUM_SLOTS];
 	uint8_t data_shift;
+	/* true when the chip is MAX30102 (no Green LED) */
+	bool is_max30102;
 #if CONFIG_MAX30101_TRIGGER
 	const struct gpio_dt_spec irq_gpio;
 #endif
 };
 
 struct max30101_data {
-	uint32_t raw[MAX30101_MAX_NUM_CHANNELS];
-	uint8_t map[MAX30101_MAX_NUM_CHANNELS][MAX30101_MAX_NUM_CHANNELS];
-	uint8_t num_channels[MAX30101_MAX_NUM_CHANNELS];
-	uint8_t total_channels;
+	uint32_t raw[MAX30101_MAX_NUM_SLOTS];
+	uint8_t map[MAX30101_MAX_NUM_CHANNELS][MAX30101_MAX_NUM_SLOTS];
+	uint8_t num_slots_per_chan[MAX30101_MAX_NUM_CHANNELS];
+	uint8_t total_slots_used;
 #if CONFIG_MAX30101_DIE_TEMPERATURE
 	uint8_t die_temp[2];
 #endif /* CONFIG_MAX30101_DIE_TEMPERATURE */

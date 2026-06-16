@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Cirrus Logic, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: CS40L53 haptic driver on I2C bus
+
+compatible: "cirrus,cs40l53"
+
+include: ["i2c-device.yaml", "cirrus,cs40l5x-base.yaml"]

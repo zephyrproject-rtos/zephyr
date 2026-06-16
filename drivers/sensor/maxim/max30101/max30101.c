@@ -21,10 +21,9 @@ static int max30101_sample_fetch(const struct device *dev,
 	uint32_t fifo_data;
 	int fifo_chan;
 	int num_bytes;
-	int i;
 
 	/* Read all the active channels for one sample */
-	num_bytes = data->total_channels * MAX30101_BYTES_PER_CHANNEL;
+	num_bytes = data->total_slots_used * MAX30101_BYTES_PER_CHANNEL;
 	if (i2c_burst_read_dt(&config->i2c, MAX30101_REG_FIFO_DATA, buffer,
 			      num_bytes)) {
 		LOG_ERR("Could not fetch sample");
@@ -32,7 +31,7 @@ static int max30101_sample_fetch(const struct device *dev,
 	}
 
 	fifo_chan = 0;
-	for (i = 0; i < num_bytes; i += 3) {
+	for (int i = 0; i < num_bytes; i += MAX30101_BYTES_PER_CHANNEL) {
 		/* Each channel is 18-bits */
 		fifo_data = (buffer[i] << 16) | (buffer[i + 1] << 8) |
 			    (buffer[i + 2]);
@@ -65,6 +64,7 @@ static int max30101_channel_get(const struct device *dev,
 				struct sensor_value *val)
 {
 	struct max30101_data *data = dev->data;
+	const struct max30101_config *config = dev->config;
 	enum max30101_led_channel led_chan;
 	int fifo_chan;
 
@@ -78,6 +78,10 @@ static int max30101_channel_get(const struct device *dev,
 		break;
 
 	case SENSOR_CHAN_GREEN:
+		if (config->is_max30102) {
+			LOG_ERR("MAX30102 has no Green LED channel");
+			return -ENOTSUP;
+		}
 		led_chan = MAX30101_LED_CHANNEL_GREEN;
 		break;
 
@@ -97,19 +101,19 @@ static int max30101_channel_get(const struct device *dev,
 	 * channel. If the fifo channel isn't valid, then the led channel
 	 * isn't active.
 	 */
-	fifo_chan = data->num_channels[led_chan];
+	fifo_chan = data->num_slots_per_chan[led_chan];
 	if (!fifo_chan) {
 		LOG_ERR("Inactive sensor channel");
 		return -ENOTSUP;
 	}
 
 	val->val1 = 0;
-	for (fifo_chan = 0; fifo_chan < data->num_channels[led_chan]; fifo_chan++) {
+	for (fifo_chan = 0; fifo_chan < data->num_slots_per_chan[led_chan]; fifo_chan++) {
 		val->val1 += data->raw[data->map[led_chan][fifo_chan]];
 	}
 
 	/* TODO: Scale the raw data to standard units */
-	val->val1 /= data->num_channels[led_chan];
+	val->val1 /= data->num_slots_per_chan[led_chan];
 	val->val2 = 0;
 
 	return 0;
@@ -154,12 +158,16 @@ static int max30101_configure(const struct device *dev)
 				  config->led_pa[1])) {
 		return -EIO;
 	}
-	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_LED3_PA,
-				  config->led_pa[2])) {
-		return -EIO;
-	}
-	if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_LED4_PA, config->led_pa[2])) {
-		return -EIO;
+	/* MAX30102 has no Green LED; skip LED3/LED4 pulse amplitude writes */
+	if (!config->is_max30102) {
+		if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_LED3_PA,
+					  config->led_pa[2])) {
+			return -EIO;
+		}
+		if (i2c_reg_write_byte_dt(&config->i2c, MAX30101_REG_LED4_PA,
+					  config->led_pa[2])) {
+			return -EIO;
+		}
 	}
 
 	if (!config->mode) {
@@ -202,7 +210,7 @@ static int max30101_init(const struct device *dev)
 	uint32_t led_chan;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -234,23 +242,23 @@ static int max30101_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Count the number of active channels and build a map that translates
-	 * the LED channel number (red/ir/green) to the fifo channel number.
+	/* Count the number of active channels and build a map that translates the LED
+	 * channel number (red/ir/green) to the fifo channel number (4 slots available).
 	 */
-	for (int fifo_chan = 0; fifo_chan < MAX30101_MAX_NUM_CHANNELS; fifo_chan++) {
-		led_chan = (config->slot[fifo_chan] & MAX30101_SLOT_LED_MASK) - 1;
-		if (led_chan >= MAX30101_MAX_NUM_CHANNELS) {
+	for (int fifo_chan = 0; fifo_chan < MAX30101_MAX_NUM_SLOTS; fifo_chan++) {
+		if (config->slot[fifo_chan] == MAX30101_SLOT_DISABLED) {
 			continue;
 		}
+		led_chan = (config->slot[fifo_chan] & MAX30101_SLOT_LED_MASK) - 1;
 
-		for (int i = 0; i < MAX30101_MAX_NUM_CHANNELS; i++) {
-			if (data->map[led_chan][i] == MAX30101_MAX_NUM_CHANNELS) {
+		for (int i = 0; i < MAX30101_MAX_NUM_SLOTS; i++) {
+			if (data->map[led_chan][i] == MAX30101_MAX_NUM_SLOTS) {
 				data->map[led_chan][i] = fifo_chan;
-				data->num_channels[led_chan]++;
+				data->num_slots_per_chan[led_chan]++;
 				break;
 			}
 		}
-		data->total_channels++;
+		data->total_slots_used++;
 	}
 
 	return 0;
@@ -262,6 +270,12 @@ static int max30101_init(const struct device *dev)
 	BUILD_ASSERT(DT_INST_PROP_LEN(n, led_slot) == 4,                                           \
 		     "MAX30101 led-slot property must have exactly 4 elements")
 
+#define MAX30102_CHECK(n)                                                                          \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, led_pa) == 2,                                            \
+		     "MAX30102 led-pa property must have exactly 2 elements");                     \
+	BUILD_ASSERT(DT_INST_PROP_LEN(n, led_slot) == 4,                                           \
+		     "MAX30102 led-slot property must have exactly 4 elements")
+
 #define MAX30101_SLOT_CFG(n)                                                                       \
 	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, acq_mode, heart_rate), \
 		(MAX30101_HR_SLOTS), \
@@ -271,9 +285,17 @@ static int max30101_init(const struct device *dev)
 		)) \
 	)
 
-#define MAX30101_INIT(n)                                                                           \
-	MAX30101_CHECK(n);                                                                         \
-	static const struct max30101_config max30101_config_##n = {                                \
+/* Expand the 2-element MAX30102 led-pa into a 3-element array padded with 0
+ * for the missing Green LED, matching the layout expected by max30101_config.
+ */
+#define MAX30102_LED_PA(n)                                                                         \
+	{                                                                                          \
+		DT_INST_PROP_BY_IDX(n, led_pa, 0),                                                \
+		DT_INST_PROP_BY_IDX(n, led_pa, 1),                                                \
+	}
+
+#define MAX3010X_INIT(n, chip, _is_max30102)                                                       \
+	static const struct max30101_config chip##_config_##n = {                                  \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		.fifo = (DT_INST_ENUM_IDX(n, smp_ave) << MAX30101_FIFO_CFG_SMP_AVE_SHIFT) |        \
 			(DT_INST_PROP(n, fifo_rollover_en)                                         \
@@ -283,19 +305,37 @@ static int max30101_init(const struct device *dev)
 		.spo2 = (DT_INST_ENUM_IDX(n, adc_rge) << MAX30101_SPO2_ADC_RGE_SHIFT) |            \
 			(DT_INST_ENUM_IDX(n, smp_sr) << MAX30101_SPO2_SR_SHIFT) |                  \
 			(DT_INST_ENUM_IDX(n, led_pw) << MAX30101_SPO2_PW_SHIFT),                   \
-		.led_pa = DT_INST_PROP(n, led_pa),                                                 \
+		.led_pa = COND_CODE_1(_is_max30102,                                                \
+			(MAX30102_LED_PA(n)), (DT_INST_PROP(n, led_pa))),                          \
 		.slot = MAX30101_SLOT_CFG(n),                                                      \
 		.data_shift = MAX30101_FIFO_DATA_MAX_SHIFT - DT_INST_ENUM_IDX(n, led_pw),          \
+		.is_max30102 = _is_max30102,                                                       \
 		IF_ENABLED(CONFIG_MAX30101_TRIGGER, \
 			(.irq_gpio = GPIO_DT_SPEC_INST_GET_OR(n, irq_gpios, {0}),) \
 		) };              \
-	static struct max30101_data max30101_data_##n = {                                          \
-		.map = {{3, 3, 3}, {3, 3, 3}, {3, 3, 3}},                                          \
-		.num_channels = {0, 0, 0},                                                         \
-		.total_channels = 0,                                                               \
+	static struct max30101_data chip##_data_##n = {                                            \
+		.map = MAX30101_MAP_INIT,                                                          \
+		.num_slots_per_chan = {0, 0, 0},                                                   \
+		.total_slots_used = 0,                                                             \
 	};                                                                                         \
-	SENSOR_DEVICE_DT_INST_DEFINE(n, max30101_init, NULL, &max30101_data_##n,                   \
-				     &max30101_config_##n, POST_KERNEL,                            \
+	SENSOR_DEVICE_DT_INST_DEFINE(n, max30101_init, NULL, &chip##_data_##n,                     \
+				     &chip##_config_##n, POST_KERNEL,                              \
 				     CONFIG_SENSOR_INIT_PRIORITY, &max30101_driver_api);
 
+#define MAX30101_INIT(n)                                                                           \
+	MAX30101_CHECK(n);                                                                         \
+	MAX3010X_INIT(n, max30101, 0)
+
 DT_INST_FOREACH_STATUS_OKAY(MAX30101_INIT)
+
+/* MAX30102: register-compatible with MAX30101, but has only Red + IR LEDs.
+ * Re-use the same driver with DT_DRV_COMPAT switched to maxim_max30102.
+ */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT maxim_max30102
+
+#define MAX30102_INIT(n)                                                                           \
+	MAX30102_CHECK(n);                                                                         \
+	MAX3010X_INIT(n, max30102, 1)
+
+DT_INST_FOREACH_STATUS_OKAY(MAX30102_INIT)

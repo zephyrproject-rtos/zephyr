@@ -393,8 +393,7 @@ void bt_conn_reset_rx_state(struct bt_conn *conn)
 		return;
 	}
 
-	net_buf_unref(conn->rx);
-	conn->rx = NULL;
+	net_buf_drop(&conn->rx);
 }
 
 static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
@@ -477,8 +476,7 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 	}
 
 	/* L2CAP frame complete. */
-	buf = conn->rx;
-	conn->rx = NULL;
+	buf = net_buf_take(&conn->rx);
 
 	LOG_DBG("Successfully parsed %u byte L2CAP packet", buf->len);
 	if (bt_conn_is_br(conn)) {
@@ -1524,6 +1522,15 @@ void bt_conn_unref(struct bt_conn *conn)
 #endif /* CONFIG_BT_CONN */
 }
 
+void bt_conn_drop(struct bt_conn **orig)
+{
+	struct bt_conn *conn = bt_conn_take(orig);
+
+	if (conn != NULL) {
+		bt_conn_unref(conn);
+	}
+}
+
 uint8_t bt_conn_index(const struct bt_conn *conn)
 {
 	ptrdiff_t index = 0;
@@ -1869,17 +1876,32 @@ void bt_conn_connected(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_CLASSIC)
-void bt_conn_role_changed(struct bt_conn *conn, uint8_t status)
+void bt_conn_br_role_changed(struct bt_conn *conn, uint8_t status)
 {
 	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
-		if (callback->role_changed) {
-			callback->role_changed(conn, status);
+		if (callback->br.role_changed) {
+			callback->br.role_changed(conn, status);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->role_changed) {
-			cb->role_changed(conn, status);
+		if (cb->br.role_changed) {
+			cb->br.role_changed(conn, status);
+		}
+	}
+}
+
+void bt_conn_br_packet_type_changed(struct bt_conn *conn, uint8_t status, uint16_t packet_type)
+{
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+		if (callback->br.packet_type_changed != NULL) {
+			callback->br.packet_type_changed(conn, status, packet_type);
+		}
+	}
+
+	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
+		if (cb->br.packet_type_changed != NULL) {
+			cb->br.packet_type_changed(conn, status, packet_type);
 		}
 	}
 }
@@ -2505,8 +2527,8 @@ int bt_conn_le_start_encryption(struct bt_conn *conn, uint8_t rand[8],
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
-	memcpy(&cp->rand, rand, sizeof(cp->rand));
-	memcpy(&cp->ediv, ediv, sizeof(cp->ediv));
+	(void)memcpy(cp->rand, rand, sizeof(cp->rand));
+	(void)memcpy(cp->ediv, ediv, sizeof(cp->ediv));
 
 	memcpy(cp->ltk, ltk, len);
 	if (len < sizeof(cp->ltk)) {
@@ -4655,19 +4677,52 @@ int bt_conn_br_exit_sniff_mode(struct bt_conn *conn)
 	return bt_hci_cmd_send_sync(BT_HCI_OP_EXIT_SNIFF_MODE, buf, NULL);
 }
 
+int bt_conn_br_set_sniff_subrating(struct bt_conn *conn, uint16_t max_latency,
+				   uint16_t min_remote_timeout,
+				   uint16_t min_local_timeout)
+{
+	struct bt_hci_cp_sniff_subrating *cp;
+	struct net_buf *buf;
+
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		return -EINVAL;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	/* Core Spec Vol 2, Part E, 7.2.14 */
+	if (max_latency < 0x0002 || max_latency > 0xFFFE ||
+	    min_remote_timeout > 0xFFFE || min_local_timeout > 0xFFFE) {
+		return -EINVAL;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->max_latency = sys_cpu_to_le16(max_latency);
+	cp->min_remote_timeout = sys_cpu_to_le16(min_remote_timeout);
+	cp->min_local_timeout = sys_cpu_to_le16(min_local_timeout);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_SNIFF_SUBRATING, buf, NULL);
+}
+
 void bt_conn_notify_mode_changed(struct bt_conn *conn, uint8_t mode, uint16_t interval)
 {
-	struct bt_conn_cb *callback;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_cbs, callback, _node) {
-		if (callback->br_mode_changed) {
-			callback->br_mode_changed(conn, mode, interval);
+	BT_CONN_CB_DYNAMIC_FOREACH(callback) {
+		if (callback->br.mode_changed) {
+			callback->br.mode_changed(conn, mode, interval);
 		}
 	}
 
 	STRUCT_SECTION_FOREACH(bt_conn_cb, cb) {
-		if (cb->br_mode_changed) {
-			cb->br_mode_changed(conn, mode, interval);
+		if (cb->br.mode_changed) {
+			cb->br.mode_changed(conn, mode, interval);
 		}
 	}
 }

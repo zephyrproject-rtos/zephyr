@@ -242,7 +242,7 @@ static int pat912x_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("%s is not ready", cfg->i2c.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -251,7 +251,7 @@ static int pat912x_init(const struct device *dev)
 	k_work_init(&data->motion_work, pat912x_motion_work_handler);
 
 	if (!gpio_is_ready_dt(&cfg->motion_gpio)) {
-		LOG_ERR("%s is not ready", cfg->motion_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->motion_gpio.port);
 		return -ENODEV;
 	}
 
@@ -325,10 +325,6 @@ static int pat912x_pm_action(const struct device *dev,
 #endif
 
 #define PAT912X_INIT(n)								\
-	BUILD_ASSERT(IN_RANGE(DT_INST_PROP_OR(n, res_x_cpi, 0), 0, RES_MAX),	\
-		     "invalid res-x-cpi");					\
-	BUILD_ASSERT(IN_RANGE(DT_INST_PROP_OR(n, res_y_cpi, 0), 0, RES_MAX),	\
-		     "invalid res-y-cpi");					\
 	BUILD_ASSERT(DT_INST_PROP(n, sleep1_enable) ||				\
 		     !DT_INST_PROP(n, sleep2_enable),				\
 		     "invalid sleep configuration");				\

@@ -62,6 +62,34 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
+Ethernet
+========
+
+NUCLEO-N657X0-Q features an Ethernet interface connected to an external PHY via RMII.
+
+An area of the on-chip OTP (One-Time Programmable) memory is dedicated to holding
+Ethernet MAC addresses. This area is not programmed during manufacturing and reads
+as all zeroes; it must be programmed in the field using `STM32CubeProgrammer`_.
+
+To use the OTP MAC address ``MAC_ADDR1`` in your application, add the following overlay:
+
+.. code-block:: dts
+
+   &mac {
+       nvmem-cells = <&mac_address0>;
+       nvmem-cell-names = "mac-address";
+   };
+
+.. warning::
+
+  Ethernet will not work with this overlay if the on-chip OTP has not been
+  programmed, because the unprogrammed OTP value (all zeroes) would be read
+  and used as MAC address, but 00:00:00:00:00:00 is not a valid MAC address.
+
+However, to allow running Zephyr net related samples without programming
+irreversibly your device, by default, the STM32 Ethernet driver creates a
+locally administered MAC address from the device unique ID.
+
 USB
 ===
 

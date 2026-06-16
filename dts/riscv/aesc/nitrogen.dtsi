@@ -46,5 +46,17 @@
 			interrupts-extended = <&hlic 7>;
 			status = "okay";
 		};
+
+		/* RISC-V Platform-level interrupt controller */
+		plic: interrupt-controller@f0800000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11 &hlic 9>;
+			reg = <0xf0800000 0x4000000>;
+			riscv,max-priority = <7>;
+			status = "okay";
+		};
 	};
 };

@@ -73,19 +73,4 @@ bool stm32_bdma_is_irq_happened(BDMA_TypeDef *dma, uint32_t id);
 void stm32_bdma_enable_channel(BDMA_TypeDef *dma, uint32_t id);
 int stm32_bdma_disable_channel(BDMA_TypeDef *dma, uint32_t id);
 
-#ifdef CONFIG_DMAMUX_STM32
-/* bdma_stm32_ api functions are exported to the bdmamux_stm32 */
-#define BDMA_STM32_EXPORT_API
-int bdma_stm32_configure(const struct device *dev, uint32_t id,
-				struct dma_config *config);
-int bdma_stm32_reload(const struct device *dev, uint32_t id,
-			uint32_t src, uint32_t dst, size_t size);
-int bdma_stm32_start(const struct device *dev, uint32_t id);
-int bdma_stm32_stop(const struct device *dev, uint32_t id);
-int bdma_stm32_get_status(const struct device *dev, uint32_t id,
-				struct dma_status *stat);
-#else
-#define BDMA_STM32_EXPORT_API static
-#endif /* CONFIG_DMAMUX_STM32 */
-
 #endif /* BDMA_STM32_H_*/

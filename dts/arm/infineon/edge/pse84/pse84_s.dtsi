@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -74,6 +74,7 @@
 			gpio-controller;
 			ngpios = <2>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -93,6 +94,7 @@
 			gpio-controller;
 			ngpios = <1>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -103,6 +105,7 @@
 			gpio-controller;
 			ngpios = <2>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -122,6 +125,7 @@
 			gpio-controller;
 			ngpios = <1>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -132,6 +136,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -142,6 +147,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -152,6 +158,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -162,6 +169,7 @@
 			gpio-controller;
 			ngpios = <4>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -172,6 +180,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -182,6 +191,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -192,6 +202,7 @@
 			gpio-controller;
 			ngpios = <6>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -202,6 +213,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -212,6 +224,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -222,6 +235,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -232,6 +246,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -242,6 +257,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -252,6 +268,7 @@
 			gpio-controller;
 			ngpios = <2>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -262,6 +279,7 @@
 			gpio-controller;
 			ngpios = <2>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -272,6 +290,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -282,6 +301,7 @@
 			gpio-controller;
 			ngpios = <8>;
 			status = "disabled";
+			wakeup-source;
 			#gpio-cells = <2>;
 		};
 
@@ -289,6 +309,7 @@
 			compatible = "infineon,lp-comp";
 			reg = <0x52880000 0x10000>;
 			status = "disabled";
+			wakeup-source;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -308,10 +329,66 @@
 		autanalog: analog@52e00000 {
 			compatible = "infineon,autanalog";
 			reg = <0x52e00000 0x100000>;
-			interrupts = <57 4>;
+			wakeup-source;
+			interrupts = <57 4>, <58 4>;
+			interrupt-names = "autanalog", "autanalog_fifo";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges;
+
+			ctb0: ctb0@0 {
+				compatible = "infineon,autanalog-ctb";
+				reg = <0x0 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			ctb1: ctb1@10000 {
+				compatible = "infineon,autanalog-ctb";
+				reg = <0x10000 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			ptcomp0: ptcomp@e40000 {
+				compatible = "infineon,autanalog-ptcomp";
+				reg = <0xe40000 0xf00>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+
+			dac0: dac0@60000 {
+				compatible = "infineon,autanalog-ctdac";
+				reg = <0x60000 0x1000>;
+				clk-dst = <0x200>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* FW channel (default) */
+				channel@f {
+					reg = <15>;
+					zephyr,resolution = <12>;
+				};
+			};
+
+			dac1: dac1@70000 {
+				compatible = "infineon,autanalog-ctdac";
+				reg = <0x70000 0x1000>;
+				clk-dst = <0x201>;
+				status = "disabled";
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* FW channel (default): direct value writes via Zephyr DAC API */
+				channel@f {
+					reg = <15>;
+					zephyr,resolution = <12>;
+				};
+			};
 
 			adc0: adc0@80000 {
 				compatible = "infineon,autanalog-sar-adc";
@@ -319,6 +396,14 @@
 				reg = <0x80000 0xf20>;
 				status = "disabled";
 				#io-channel-cells = <1>;
+			};
+
+			prb0: prb@e0300 {
+				compatible = "infineon,autanalog-prb";
+				reg = <0xe0300 0x100>;
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
 			};
 		};
 
@@ -342,6 +427,7 @@
 			interrupts = <43 4>;
 			clk-dst = <0x100>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		scb2: scb@529a0000 {
@@ -444,6 +530,7 @@
 			reg = <0x5240c000 0x180>;
 			interrupts = <54 4>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		mcwdt0: mcwdt@5240d000 {
@@ -451,6 +538,7 @@
 			reg = <0x5240d000 0x40>;
 			interrupts = <55 4>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		mcwdt1: mcwdt@5240d040 {
@@ -458,6 +546,7 @@
 			reg = <0x5240d040 0x40>;
 			interrupts = <0 4>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		rtc0: rtc@52420000 {
@@ -466,6 +555,7 @@
 			interrupts = <56 4>;
 			alarms-count = <2>;
 			status = "disabled";
+			wakeup-source;
 		};
 
 		canfd0: canfd@52840000 {
@@ -483,7 +573,7 @@
 				reg-names = "m_can", "message_ram";
 				clk-dst = <0x10b>;
 				status = "disabled";
-				bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+				bosch,mram-cfg = <0x0 15 15 16 0 0 15 15>;
 				interrupts = <106 4>, <107 4>;
 				interrupt-names = "int0", "int1";
 			};
@@ -494,7 +584,7 @@
 				reg-names = "m_can", "message_ram";
 				clk-dst = <0x10c>;
 				status = "disabled";
-				bosch,mram-cfg = <0x1000 15 15 8 8 0 15 15>;
+				bosch,mram-cfg = <0x1000 15 15 16 0 0 15 15>;
 				interrupts = <108 4>, <109 4>;
 				interrupt-names = "int0", "int1";
 			};
@@ -1289,6 +1379,24 @@
 				channel = <5>;
 				status = "disabled";
 			};
+		};
+
+		usbhs: usbhs@54900000 {
+			compatible = "infineon,usbhs", "snps,dwc2";
+			reg = <0x54900000 0x40100>;
+			interrupts = <174 4>, /* usbhs_ctrl_irqn */
+				     <175 4>; /* usbhss_irqn */
+			num-in-eps = <9>;
+			num-out-eps = <9>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x228fe052>;
+			ghwcfg4 = <0xe2103a20>;
+			status = "disabled";
+			mmio-peri-inst = <1>;
+			mmio-peri-group = <3>;
+			mmio-reg-bit-pos = <5>;
+			mmio-peri-hf-src = <1>;
+			mmio-peri-div = <3>;
 		};
 	};
 };

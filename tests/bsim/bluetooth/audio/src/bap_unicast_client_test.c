@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2023 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -29,6 +30,7 @@
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_stream_rx.h"
 #include "bap_stream_tx.h"
@@ -79,6 +81,8 @@ CREATE_FLAG(flag_source_supp_ctx_changed);
 static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_conn *ep_conn;
+
+	ARG_UNUSED(pref);
 
 	printk("Configured stream %p\n", stream);
 
@@ -202,12 +206,16 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 				       enum bt_audio_dir dir,
 				       enum bt_audio_location loc)
 {
+	ARG_UNUSED(conn);
+
 	printk("dir %u loc %X\n", dir, loc);
 }
 
 static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	printk("Supported snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 	printk("cached %d %d\n", cached_supp_snk_ctx, cached_supp_src_ctx);
 
@@ -226,6 +234,8 @@ static void available_contexts_cb(struct bt_conn *conn,
 				  enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	printk("Available snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 	printk("cached %d %d\n", cached_avail_snk_ctx, cached_avail_src_ctx);
 
@@ -356,6 +366,9 @@ static void print_remote_codec_cap(const struct bt_audio_codec_cap *codec_cap,
 
 static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	if (err != 0) {
 		FAIL("Discovery failed: %d\n", err);
 		return;
@@ -368,6 +381,9 @@ static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir d
 
 static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	if (err != 0) {
 		FAIL("Discovery failed: %d\n", err);
 		return;
@@ -381,12 +397,16 @@ static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir
 static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			  const struct bt_audio_codec_cap *codec_cap)
 {
+	ARG_UNUSED(conn);
+
 	print_remote_codec_cap(codec_cap, dir);
 	SET_FLAG(flag_codec_cap_found);
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
 {
+	ARG_UNUSED(conn);
+
 	if (dir == BT_AUDIO_DIR_SINK) {
 		add_remote_sink(ep);
 	} else {
@@ -414,6 +434,10 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(tx);
+	ARG_UNUSED(rx);
+
 	printk("MTU exchanged\n");
 	SET_FLAG(flag_mtu_exchanged);
 }
@@ -472,7 +496,7 @@ static bool parse_ascs_ad_data(struct bt_data *data, void *user_data)
 
 	err = bt_conn_le_create(info->addr, BT_CONN_LE_CREATE_CONN, BT_BAP_CONN_PARAM_RELAXED,
 				&default_conn);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not connect to peer: %d", err);
 		return false;
 	}
@@ -518,7 +542,7 @@ static void init(void)
 	printk("Bluetooth initialized\n");
 	bap_stream_tx_init();
 
-	for (size_t i = 0; i < ARRAY_SIZE(test_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(test_streams); i++) {
 		struct bt_bap_stream *bap_stream =
 			bap_stream_from_audio_test_stream(&test_streams[i]);
 
@@ -566,6 +590,8 @@ static void scan_and_connect(void)
 
 	printk("Scanning successfully started\n");
 	WAIT_FOR_FLAG(flag_connected);
+
+	update_security(default_conn);
 }
 
 static void disconnect_acl(void)
@@ -670,6 +696,8 @@ static int codec_configure_stream(struct bt_bap_stream *stream, struct bt_bap_ep
 
 static void codec_configure_streams(size_t stream_cnt)
 {
+	ARG_UNUSED(stream_cnt);
+
 	for (size_t i = 0U; i < ARRAY_SIZE(pair_params); i++) {
 		if (pair_params[i].rx_param != NULL && g_sources[i] != NULL) {
 			struct bt_bap_stream *stream = pair_params[i].rx_param->stream;
@@ -714,7 +742,7 @@ static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 	} while (err == -EBUSY);
 
 	while (atomic_get(&flag_stream_qos_configured) != stream_cnt) {
-		(void)k_sleep(K_MSEC(1));
+		(void)k_sleep(K_MSEC(1U));
 	}
 
 	err = bt_bap_unicast_group_get_info(unicast_group, &info);
@@ -920,7 +948,7 @@ static void transceive_streams(void)
 
 		/* Keep sending until we reach the minimum expected */
 		while (test_stream->tx_cnt < MIN_SEND_COUNT) {
-			k_sleep(K_MSEC(100));
+			k_sleep(K_MSEC(100U));
 		}
 	}
 
@@ -935,7 +963,7 @@ static void transceive_streams(void)
 
 static void disable_streams(size_t stream_cnt)
 {
-	for (size_t i = 0; i < stream_cnt; i++) {
+	for (size_t i = 0U; i < stream_cnt; i++) {
 		int err;
 
 		UNSET_FLAG(flag_operation_success);
@@ -961,7 +989,7 @@ static void stop_streams(size_t stream_cnt)
 {
 	UNSET_FLAG(flag_stream_disconnected);
 
-	for (size_t i = 0; i < stream_cnt; i++) {
+	for (size_t i = 0U; i < stream_cnt; i++) {
 		struct bt_bap_stream *source_stream;
 		int err;
 
@@ -995,7 +1023,7 @@ static void stop_streams(size_t stream_cnt)
 
 static void release_streams(size_t stream_cnt)
 {
-	for (size_t i = 0; i < stream_cnt; i++) {
+	for (size_t i = 0U; i < stream_cnt; i++) {
 		int err;
 
 		UNSET_FLAG(flag_operation_success);
@@ -1020,8 +1048,8 @@ static void release_streams(size_t stream_cnt)
 static size_t create_unicast_group(struct bt_bap_unicast_group **unicast_group)
 {
 	struct bt_bap_unicast_group_param param;
-	size_t stream_cnt = 0;
-	size_t pair_cnt = 0;
+	size_t stream_cnt = 0U;
+	size_t pair_cnt = 0U;
 	int err;
 
 	memset(stream_params, 0, sizeof(stream_params));

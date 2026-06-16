@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_W6100_EVB_PICO2
+	select SOC_RP2350A_M33 if BOARD_W6100_EVB_PICO2_RP2350A_M33

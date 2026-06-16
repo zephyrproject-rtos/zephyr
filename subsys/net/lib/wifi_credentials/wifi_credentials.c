@@ -206,7 +206,8 @@ int wifi_credentials_set_personal(const char *ssid, size_t ssid_len, enum wifi_s
 		return -EINVAL;
 	}
 
-	if ((type != WIFI_SECURITY_TYPE_NONE && (password_len == 0 || password == NULL)) ||
+	if (((type != WIFI_SECURITY_TYPE_NONE && type != WIFI_SECURITY_TYPE_OWE) &&
+		(password_len == 0 || password == NULL)) ||
 	    (password_len > WIFI_CREDENTIALS_MAX_PASSWORD_LEN)) {
 		LOG_ERR("Cannot %s WiFi credentials, %s", "set",
 			"password not provided or invalid");
@@ -229,6 +230,8 @@ int wifi_credentials_set_personal(const char *ssid, size_t ssid_len, enum wifi_s
 
 	switch (type) {
 	case WIFI_SECURITY_TYPE_NONE:
+		break;
+	case WIFI_SECURITY_TYPE_OWE:
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
@@ -300,6 +303,8 @@ int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
 
 	switch (header->type) {
 	case WIFI_SECURITY_TYPE_NONE:
+		break;
+	case WIFI_SECURITY_TYPE_OWE:
 		break;
 	case WIFI_SECURITY_TYPE_PSK:
 	case WIFI_SECURITY_TYPE_PSK_SHA256:

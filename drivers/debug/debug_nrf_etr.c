@@ -18,6 +18,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/drivers/debug/debug_nrf_etr.h>
 #include <zephyr/drivers/serial/uart_async_rx.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/printk.h>
 #include <dmm.h>
 #include <nrfx_tbm.h>
@@ -248,7 +249,16 @@ static int log_output_func(uint8_t *buf, size_t size, void *ctx)
 			err = k_sem_take(&uart_sem, K_FOREVER);
 			__ASSERT_NO_MSG(err >= 0);
 
-			memcpy(tx_buf, buf, size);
+			if (size == sizeof(frame_buf0)) {
+				/* If full 16 byte frame is used we can optimize copying. */
+				uint64_t *tx_buf64 = (uint64_t *)tx_buf;
+				uint64_t *buf64 = (uint64_t *)buf;
+
+				tx_buf64[0] = buf64[0];
+				tx_buf64[1] = buf64[1];
+			} else {
+				memcpy(tx_buf, buf, size);
+			}
 
 			err = uart_tx(uart_dev, tx_buf, size, SYS_FOREVER_US);
 			__ASSERT_NO_MSG(err >= 0);
@@ -264,7 +274,7 @@ static int log_output_func(uint8_t *buf, size_t size, void *ctx)
 	return size;
 }
 
-static uint8_t log_output_buf[CORESIGHT_TRACE_FRAME_SIZE];
+static uint8_t log_output_buf[CORESIGHT_TRACE_FRAME_SIZE] __aligned(sizeof(uint32_t));
 LOG_OUTPUT_DEFINE(log_output, log_output_func, log_output_buf, sizeof(log_output_buf));
 
 /** @brief Process a log message. */
@@ -590,9 +600,10 @@ static void process_frame(uint8_t *buf, uint32_t pending)
 	DBG("\n");
 }
 
-static void process_messages(void)
+static bool process_messages(void)
 {
 	static union log_frontend_stmesp_demux_packet curr_msg;
+	bool processed = false;
 
 	/* Process any new messages. curr_msg remains the same if panic
 	 * interrupts currently ongoing processing (curr_msg is not NULL then).
@@ -604,7 +615,11 @@ static void process_messages(void)
 			curr_msg = log_frontend_stmesp_demux_claim();
 		}
 		if (curr_msg.generic_packet) {
+			if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_BACKEND_UART)) {
+				(void)pm_device_runtime_get(uart_dev);
+			}
 			message_process(curr_msg);
+			processed = true;
 			log_frontend_stmesp_demux_free(curr_msg);
 			curr_msg.generic_packet = NULL;
 		} else {
@@ -612,6 +627,7 @@ static void process_messages(void)
 		}
 	}
 	new_msg_cnt = 0;
+	return processed;
 }
 
 /** @brief Dump frame over UART (using polling or async API). */
@@ -645,10 +661,11 @@ static bool process(bool dry_run)
 	static const uint32_t *const etr_buf = (uint32_t *)(DT_REG_ADDR(ETR_BUFFER_NODE));
 	static uint32_t sync_cnt = CONFIG_DEBUG_NRF_ETR_SYNC_PERIOD;
 	uint32_t pending;
+	bool processed = false;
 
 	/* Attempt to process any pending message that was found during the dry run. */
 	if (!dry_run && IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
-		process_messages();
+		processed = process_messages();
 	}
 
 	/* If function is called in panic mode then it may interrupt ongoing
@@ -690,13 +707,21 @@ static bool process(bool dry_run)
 				if (new_msg_cnt && dry_run) {
 					return true;
 				}
-				process_messages();
+				processed |= process_messages();
 			}
 		} else {
+			processed = true;
+			if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_BACKEND_UART)) {
+				(void)pm_device_runtime_get(uart_dev);
+			}
 			dump_frame((uint8_t *)frame_buf);
 			frame_buf = (!use_blocking && (frame_buf == frame_buf0)) ?
 						frame_buf1 : frame_buf0;
 		}
+	}
+
+	if (processed && IS_ENABLED(CONFIG_DEBUG_NRF_ETR_BACKEND_UART)) {
+		(void)pm_device_runtime_put(uart_dev);
 	}
 
 	/* Fill the buffer to ensure that all logs are processed on time. */

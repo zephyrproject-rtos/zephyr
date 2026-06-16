@@ -12,3 +12,9 @@ properties:
     required: true
   interrupts:
     required: true
+  snps,clk-csr:
+    type: int
+    description: |
+      Value programmed into the MAC MDIO Address CR field.
+      When present, this fixed value is used directly instead of deriving
+      the MDIO clock range from the MAC clock rate.

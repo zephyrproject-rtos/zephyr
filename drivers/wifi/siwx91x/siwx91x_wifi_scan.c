@@ -11,7 +11,7 @@
 
 #include "sl_rsi_utility.h"
 
-LOG_MODULE_DECLARE(siwx91x_wifi);
+LOG_MODULE_DECLARE(siwx91x_wifi, CONFIG_WIFI_LOG_LEVEL);
 
 #define SIWX91X_DEFAULT_PASSIVE_SCAN_DWELL_TIME 400
 
@@ -123,24 +123,21 @@ siwx91x_configure_scan_dwell_time(sl_wifi_scan_type_t scan_type, uint16_t dwell_
 						 dwell_time_passive);
 		return ret;
 	case SL_WIFI_SCAN_TYPE_ADV_SCAN:
-		__ASSERT(advanced_scan_config, "advanced_scan_config cannot be NULL");
-
-		if (!dwell_time_active) {
-			dwell_time_active = CONFIG_WIFI_SILABS_SIWX91X_ADV_ACTIVE_SCAN_DURATION;
+		if (dwell_time_active || dwell_time_passive) {
+			LOG_DBG("Ignoring per-call dwell times for background scan; "
+				"using CONFIG_WIFI_SILABS_SIWX91X_ADV_*_SCAN_DURATION");
 		}
-		advanced_scan_config->active_channel_time = dwell_time_active;
-
-		if (!dwell_time_passive) {
-			dwell_time_passive = CONFIG_WIFI_SILABS_SIWX91X_ADV_PASSIVE_SCAN_DURATION;
-		}
-		advanced_scan_config->passive_channel_time = dwell_time_passive;
+		dwell_time_active = CONFIG_WIFI_SILABS_SIWX91X_ADV_ACTIVE_SCAN_DURATION;
+		dwell_time_passive = CONFIG_WIFI_SILABS_SIWX91X_ADV_PASSIVE_SCAN_DURATION;
 		return 0;
 	default:
 		return 0;
 	}
 }
 
-int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_config,
+int siwx91x_scan(const struct device *dev,
+		 struct net_if *iface __unused,
+		 struct wifi_scan_params *z_scan_config,
 		 scan_result_cb_t cb)
 {
 	sl_wifi_interface_t interface = sl_wifi_get_default_interface();
@@ -149,7 +146,7 @@ int siwx91x_scan(const struct device *dev, struct wifi_scan_params *z_scan_confi
 		.trigger_level = CONFIG_WIFI_SILABS_SIWX91X_ADV_SCAN_THRESHOLD,
 		.trigger_level_change = CONFIG_WIFI_SILABS_SIWX91X_ADV_RSSI_TOLERANCE_THRESHOLD,
 		.enable_multi_probe = CONFIG_WIFI_SILABS_SIWX91X_ADV_MULTIPROBE,
-		.enable_instant_scan = CONFIG_WIFI_SILABS_SIWX91X_ENABLE_INSTANT_SCAN,
+		.enable_instant_scan = 1,
 	};
 	sl_wifi_roam_configuration_t roam_configuration = {
 #ifdef CONFIG_WIFI_SILABS_SIWX91X_ENABLE_ROAMING

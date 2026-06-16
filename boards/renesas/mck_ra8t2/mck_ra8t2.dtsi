@@ -42,6 +42,10 @@
 			label = "LED6";
 		};
 	};
+
+	aliases {
+		sdhc0 = &sdhc0;
+	};
 };
 
 &xtal {
@@ -109,10 +113,6 @@
 	status = "okay";
 };
 
-&trng {
-	status = "okay";
-};
-
 &ioport5 {
 	status = "okay";
 };
@@ -142,3 +142,50 @@
 	pinctrl-names = "default";
 	maximum-speed = "full-speed";
 };
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+
+	uart9: uart {};
+};
+
+&sci4 {
+	pinctrl-0 = <&sci4_default>;
+	pinctrl-names = "default";
+
+	uart4: uart {};
+};
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+
+	uart1: uart {};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	enable-gpios = <&ioportb 6 GPIO_ACTIVE_HIGH>;
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "disabled";
+	};
+};
+
+&usbfs {
+	pinctrl-0 = <&usbfs_default>;
+	pinctrl-names = "default";
+};
+
+pmod_spi: &spi0 {};
+
+pmod_serial: &uart4 {};

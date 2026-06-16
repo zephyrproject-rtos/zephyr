@@ -231,7 +231,11 @@ int i2c_stm32_target_register(const struct device *dev,
 	}
 
 	/* Mark device as active */
-	(void)pm_device_runtime_get(dev);
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR("i2c: PM runtime failure: %d", ret);
+		return ret;
+	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (pm_device_wakeup_is_capable(dev)) {
@@ -245,7 +249,7 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	if (!data->target_cfg) {
 		data->target_cfg = config;
-		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
 			LL_I2C_SetOwnAddress1(i2c, config->address, LL_I2C_OWNADDRESS1_10BIT);
 			LOG_DBG("i2c: target #1 registered with 10-bit address");
 		} else {
@@ -257,11 +261,13 @@ int i2c_stm32_target_register(const struct device *dev,
 
 		LOG_DBG("i2c: target #1 registered");
 	} else {
-		data->target2_cfg = config;
-
-		if (data->target2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if (config->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
+			(void)pm_device_runtime_put(dev);
 			return -EINVAL;
 		}
+
+		data->target2_cfg = config;
+
 		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
 				      LL_I2C_OWNADDRESS2_NOMASK);
 		LL_I2C_EnableOwnAddress2(i2c);
@@ -306,7 +312,8 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 	/* Return if there is a target remaining */
 	if (data->target_cfg || data->target2_cfg) {
-		LOG_DBG("i2c: target#%c still registered", data->target_cfg?'1':'2');
+		(void)pm_device_runtime_put(dev);
+		LOG_DBG("i2c: target#%c still registered", data->target_cfg ? '1' : '2');
 		return 0;
 	}
 
@@ -369,7 +376,6 @@ void i2c_stm32_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
 	I2C_TypeDef *i2c = cfg->i2c;
 	int ret = 0;
 
@@ -413,10 +419,8 @@ void i2c_stm32_event(const struct device *dev)
 		LL_I2C_DisableReloadMode(i2c);
 		i2c_stm32_controller_mode_end(dev);
 
-		if (i2c_rtio_complete(ctx, ret)) {
-			i2c_stm32_start(dev);
-			return;
-		}
+		i2c_stm32_rtio_complete(dev, ret);
+		return;
 	}
 
 	if (LL_I2C_IsActiveFlag_TC(i2c) ||
@@ -433,9 +437,7 @@ void i2c_stm32_event(const struct device *dev)
 			LL_I2C_GenerateStopCondition(i2c);
 		} else {
 			i2c_stm32_disable_transfer_interrupts(dev);
-			if (i2c_rtio_complete(ctx, ret)) {
-				i2c_stm32_start(dev);
-			}
+			i2c_stm32_rtio_complete(dev, ret);
 		}
 	}
 }
@@ -443,12 +445,11 @@ void i2c_stm32_event(const struct device *dev)
 int i2c_stm32_error(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
 	I2C_TypeDef *i2c = cfg->i2c;
 	int ret = 0;
 
 #if defined(CONFIG_I2C_TARGET)
+	struct i2c_stm32_data *data = dev->data;
 	i2c_target_error_cb_t error_cb = NULL;
 
 	if (data->target_attached && !data->controller_active &&
@@ -475,16 +476,14 @@ int i2c_stm32_error(const struct device *dev)
 
 	if (ret) {
 		i2c_stm32_controller_mode_end(dev);
-		if (i2c_rtio_complete(ctx, ret)) {
-			i2c_stm32_start(dev);
-		}
+		i2c_stm32_rtio_complete(dev, ret);
 	}
 
 	return ret;
 }
 
-int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
-	uint8_t *buf, size_t buf_len, uint16_t i2c_addr)
+void i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
+			 uint16_t i2c_addr)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -550,8 +549,6 @@ out:
 	} else {
 		LL_I2C_EnableIT_TX(i2c);
 	}
-
-	return 0;
 }
 
 int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
@@ -564,13 +561,13 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 	uint32_t presc = 1U;
 	uint32_t timing = 0U;
 
-	/*  Look for an adequate preset timing value */
+	/* Look for an adequate preset timing value */
 	for (uint32_t i = 0; i < cfg->n_timings; i++) {
 		const struct i2c_config_timing *preset = &cfg->timings[i];
 		uint32_t speed = i2c_map_dt_bitrate(preset->i2c_speed);
 
-		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config))
-		   && (preset->periph_clock == clock)) {
+		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config)) &&
+		    (preset->periph_clock == clock)) {
 			/*  Found a matching periph clock and i2c speed */
 			LL_I2C_SetTiming(i2c, preset->timing_setting);
 			return 0;
@@ -593,7 +590,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		break;
 	default:
 		LOG_ERR("i2c: speed above \"fast\" requires manual timing configuration, "
-				"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
+			"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
 		return -EINVAL;
 	}
 
@@ -606,7 +603,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		uint32_t sdadel = i2c_hold_time_min / ns_presc;
 		uint32_t scldel = i2c_setup_time_min / ns_presc;
 
-		if ((sclh - 1) > 255 ||  (scll - 1) > 255) {
+		if ((sclh - 1) > 255 || (scll - 1) > 255) {
 			++presc;
 			continue;
 		}
@@ -617,7 +614,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		}
 
 		timing = STM32_I2C_CONVERT_TIMINGS(presc - 1,
-					scldel - 1, sdadel, sclh - 1, scll - 1);
+						   scldel - 1, sdadel, sclh - 1, scll - 1);
 		break;
 	} while (presc < 16);
 

@@ -71,8 +71,14 @@ struct eth_fake_context {
 	bool promisc_mode;
 };
 
-static struct eth_fake_context eth_fake_data1;
-static struct eth_fake_context eth_fake_data2;
+static struct eth_fake_context eth_fake_data1 = {
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	.mac_address = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x00 },
+};
+static struct eth_fake_context eth_fake_data2 = {
+	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+	.mac_address = { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x01 },
+};
 
 static void eth_fake_iface_init(struct net_if *iface)
 {
@@ -97,12 +103,14 @@ static int eth_fake_send(const struct device *dev,
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev __unused,
+						       struct net_if *iface __unused)
 {
 	return ETHERNET_PROMISC_MODE;
 }
 
 static int eth_fake_set_config(const struct device *dev,
+			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {

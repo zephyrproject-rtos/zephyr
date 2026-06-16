@@ -59,6 +59,7 @@
 		pwm-led0 = &green_pwm_led;
 		watchdog0 = &iwdg;
 		die-temp0 = &die_temp;
+		rtc = &rtc;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
 	};
@@ -104,6 +105,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -112,6 +115,8 @@
 	/* Pin conflict with can1. Enable only with can1 disabled. */
 	pinctrl-0 = <&i2c2_scl_pa11 &i2c2_sda_pa12>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
 	status = "disabled";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -187,26 +192,30 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
 
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(100)>;
 		};
 
 		slot1_partition: partition@25000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00025000 DT_SIZE_K(102)>;
 		};
 
 		storage_partition: partition@3e800 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0003e800 DT_SIZE_K(6)>;
 		};

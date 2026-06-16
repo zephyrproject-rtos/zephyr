@@ -21,7 +21,7 @@
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <36 5>;
+			interrupts = <36 0>;
 			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
@@ -32,7 +32,7 @@
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
-			interrupts = <85 5>;
+			interrupts = <85 0>;
 			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
@@ -43,7 +43,7 @@
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
-			interrupts = <35 5>;
+			interrupts = <35 0>;
 			dmas = <&dma2 3 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
 			       <&dma2 2 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
 			dma-names = "tx", "rx";
@@ -56,7 +56,7 @@
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <36 5>;
+			interrupts = <36 0>;
 			dmas = <&dma1 4 0 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
 			       <&dma1 3 0 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
 			dma-names = "tx", "rx";
@@ -69,7 +69,7 @@
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
-			interrupts = <85 5>;
+			interrupts = <85 0>;
 			dmas = <&dma2 6 7 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
 			       <&dma2 5 7 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
 			dma-names = "tx", "rx";

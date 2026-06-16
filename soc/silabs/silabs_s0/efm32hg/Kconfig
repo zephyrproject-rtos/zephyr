@@ -9,4 +9,5 @@ config SOC_SERIES_EFM32HG
 	select HAS_SILABS_GECKO
 	select SOC_GECKO_CMU
 	select SOC_GECKO_GPIO
+	select SOC_GECKO_WDOG
 	select HAS_PM

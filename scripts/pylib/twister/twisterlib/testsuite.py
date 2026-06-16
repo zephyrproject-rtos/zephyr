@@ -12,9 +12,10 @@ import re
 from enum import Enum
 from pathlib import Path
 
-from twisterlib.constants import canonical_zephyr_base
+from twisterlib.constants import PYTEST_HARNESSES, canonical_zephyr_base
 from twisterlib.error import StatusAttributeError, TwisterException, TwisterRuntimeError
 from twisterlib.statuses import TwisterStatus
+from twisterlib.testsuitedata import HarnessConfig, RequiredApplication
 
 logger = logging.getLogger('twister')
 
@@ -452,6 +453,9 @@ class TestSuite:
 
         self._status = TwisterStatus.NONE
 
+        self.harness_config: HarnessConfig | None = None
+        self.required_applications: list[RequiredApplication] = []
+
         if data:
             self.load(data)
 
@@ -477,6 +481,10 @@ class TestSuite:
             raise Exception(
                 'Harness config error: console harness defined without a configuration.'
             )
+        self.harness_config = HarnessConfig.from_dict(self.harness_config)
+        self.required_applications = [
+            RequiredApplication(**app) for app in self.required_applications
+        ]
 
     def compose_case_name(self, tc_name) -> str:
         return f"{self.id}.{tc_name}" if self.id != tc_name else tc_name
@@ -528,3 +536,27 @@ Tests should reference the category and subsystem with a dot as a separator.
                     """
                     )
         return True
+
+    def resolve_required_applications(self):
+        """Validate and update the list of required applications."""
+        if not self.build:
+            if self.harness not in PYTEST_HARNESSES + ['bsim']:
+                msg = f"{self.name}: `build: false` not supported with {self.harness} harness"
+                logger.error(msg)
+                raise TwisterException(msg)
+            if not self.required_applications:
+                msg = f"{self.name}: `build: false` set but no required applications specified"
+                logger.error(msg)
+                raise TwisterException(msg)
+
+        for req_dev in self.harness_config.required_devices:
+            if not (req_dev.application or req_dev.platform):
+                # if neither application nor platform is specified, use the same application
+                continue
+            req_app = RequiredApplication(
+                application=req_dev.application or self.id,
+                platform=req_dev.platform,
+                path=req_dev.path
+            )
+            if req_app not in self.required_applications:
+                self.required_applications.append(req_app)

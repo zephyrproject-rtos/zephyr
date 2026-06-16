@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_SOC_ARM_REALTEK_RTS5817_DLINK_LDO_REG_H_
+#define ZEPHYR_SOC_ARM_REALTEK_RTS5817_DLINK_LDO_REG_H_
+
+#include <zephyr/sys/util.h>
+
+#define R_LDO_TOP_POW      0x00
+#define R_LDO_TOP_PD       0x04
+#define R_LDO_TOP_TUNE_OCP 0x08
+#define R_LDO_TOP_REF      0x0C
+#define R_LDO_TOP_SR       0x10
+#define R_LDO_TOP_VO       0x14
+#define R_LDO_TOP_OC_SVIO  0x18
+#define R_LDO_TOP_OC_SVA   0x1C
+#define R_LDO_TOP_INT      0x20
+#define R_LDO_TOP_STATUS   0x24
+
+/* Bits of R_LDO_TOP_POW (0x00) */
+#define POW_SVIO_ON         BIT(0)
+#define SVIO_SAVE_POWER     BIT(1)
+#define POW_SVA_ON          BIT(2)
+#define SVA_SAVE_POWER      BIT(3)
+#define POW_LED_OFFSET      4
+#define POW_LED_MASK        GENMASK(5, 4)
+#define POW_PWD_PUFF_OFFSET 6
+#define POW_PWD_PUFF_MASK   BIT(6)
+#define PUFF_ISO_OFFSET     7
+#define PUFF_ISO_MASK       BIT(7)
+#define PUFF_ISO_OUT_OFFSET 8
+#define PUFF_ISO_OUT_MASK   BIT(8)
+
+/* Bits of R_LDO_TOP_PD (0x04) */
+#define SVIO_PD_RES_MASK  BIT(0)
+#define SVIO_VOL_REF_MASK BIT(1)
+#define SVA_PD_RES_MASK   BIT(2)
+#define SVA_VOL_REF_MASK  BIT(3)
+
+/* Bits of R_LDO_TOP_TUNE_OCP (0x08) */
+#define REG_TUNE_OCP_LVL_SVIO_OFFSET 0
+#define REG_TUNE_OCP_LVL_SVIO_MASK   GENMASK(2, 0)
+#define REG_TUNE_OCP_LVL_SVA_OFFSET  3
+#define REG_TUNE_OCP_LVL_SVA_MASK    GENMASK(5, 3)
+#define REG_TUNE_OCP_EN_SVIO_OFFSET  8
+#define REG_TUNE_OCP_EN_SVIO_MASK    BIT(8)
+#define REG_TUNE_OCP_EN_SVA_OFFSET   9
+#define REG_TUNE_OCP_EN_SVA_MASK     BIT(9)
+
+/* Bits of R_LDO_TOP_REF (0x0C) */
+#define REG_TUNE_REF_SVIO_OFFSET 0
+#define REG_TUNE_REF_SVIO_BITS   2
+#define REG_TUNE_REF_SVIO_MASK   GENMASK(1, 0)
+#define REG_TUNE_REF_SVA_OFFSET  2
+#define REG_TUNE_REF_SVA_MASK    GENMASK(3, 2)
+#define REG_TUNE_REF_LED_OFFSET  4
+#define REG_TUNE_REF_LED_MASK    GENMASK(5, 4)
+#define REG_TUNE_REF_CORE_OFFSET 6
+#define REG_TUNE_REF_CORE_MASK   GENMASK(7, 6)
+
+/* Bits of R_LDO_TOP_SR (0x10) */
+#define REG_TUNE_SR_SVIO_OFFSET 0
+#define REG_TUNE_SR_SVIO_MASK   GENMASK(1, 0)
+#define REG_TUNE_SR_SVA_OFFSET  2
+#define REG_TUNE_SR_SVA_MASK    GENMASK(3, 2)
+#define REG_TUNE_SR_CORE_OFFSET 4
+#define REG_TUNE_SR_CORE_MASK   GENMASK(5, 4)
+
+/* Bits of R_LDO_TOP_VO (0x14) */
+#define REG_TUNE_VO_SVIO_OFFSET 0
+#define REG_TUNE_VO_SVIO_MASK   GENMASK(4, 0)
+#define REG_TUNE_VO_SVA_OFFSET  8
+#define REG_TUNE_VO_SVA_MASK    GENMASK(12, 8)
+#define REG_TUNE_VO_LED_OFFSET  16
+#define REG_TUNE_VO_LED_MASK    GENMASK(18, 16)
+#define REG_TUNE_VO_CORE_OFFSET 24
+#define REG_TUNE_VO_CORE_MASK   GENMASK(28, 24)
+
+/* Bits of R_LDO_TOP_OC_SVIO (0x18) */
+#define OC_POW_OFF_EN_SVIO_OFFSET    0
+#define OC_POW_OFF_EN_SVIO_MASK      BIT(0)
+#define OC_DEGLITCH_TIME_SVIO_OFFSET 1
+#define OC_DEGLITCH_TIME_SVIO_MASK   GENMASK(2, 1)
+#define OC_DELAY_TIME_SVIO_OFFSET    3
+#define OC_DELAY_TIME_SVIO_MASK      GENMASK(5, 3)
+#define OC_EN_SVIO_OFFSET            6
+#define OC_EN_SVIO_MASK              BIT(6)
+
+/* Bits of R_LDO_TOP_OC_SVA (0x1C) */
+#define OC_POW_OFF_EN_SVA_OFFSET    0
+#define OC_POW_OFF_EN_SVA_MASK      BIT(0)
+#define OC_DEGLITCH_TIME_SVA_OFFSET 1
+#define OC_DEGLITCH_TIME_SVA_MASK   GENMASK(2, 1)
+#define OC_DELAY_TIME_SVA_OFFSET    3
+#define OC_DELAY_TIME_SVA_MASK      GENMASK(5, 3)
+#define OC_EN_SVA_OFFSET            6
+#define OC_EN_SVA_MASK              BIT(6)
+
+/* Bits of R_LDO_TOP_INT (0x20) */
+#define OC_DETECT_SVA_INT_OFFSET  0
+#define OC_DETECT_SVA_INT_MASK    BIT(0)
+#define OC_DETECT_SVIO_INT_OFFSET 1
+#define OC_DETECT_SVIO_INT_MASK   BIT(1)
+
+/* Bits of R_LDO_TOP_STATUS (0x24) */
+#define OC_POW_SVA_OFFSET  0
+#define OC_POW_SVA_MASK    BIT(0)
+#define OC_POW_SVIO_OFFSET 1
+#define OC_POW_SVIO_MASK   BIT(1)
+
+#endif /* ZEPHYR_SOC_ARM_REALTEK_RTS5817_DLINK_LDO_REG_H_ */

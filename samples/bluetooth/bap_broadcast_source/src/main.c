@@ -61,7 +61,7 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_16_2
 	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
 	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
-#define BROADCAST_SAMPLE_RATE 16000
+#define BROADCAST_SAMPLE_RATE 16000U
 
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
 
@@ -69,7 +69,7 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_24_2
 	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
 	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
-#define BROADCAST_SAMPLE_RATE 24000
+#define BROADCAST_SAMPLE_RATE 24000U
 
 #elif defined(CONFIG_BAP_BROADCAST_48_2_1)
 
@@ -77,18 +77,18 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2
 	BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
 	BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
-#define BROADCAST_SAMPLE_RATE 48000
+#define BROADCAST_SAMPLE_RATE 48000U
 
 #endif
 
 #if defined(CONFIG_BAP_BROADCAST_16_2_1)
-#define MAX_SAMPLE_RATE 16000
+#define MAX_SAMPLE_RATE 16000U
 #elif defined(CONFIG_BAP_BROADCAST_24_2_1)
-#define MAX_SAMPLE_RATE 24000
+#define MAX_SAMPLE_RATE 24000U
 #elif defined(CONFIG_BAP_BROADCAST_48_2_1)
-#define MAX_SAMPLE_RATE 48000
+#define MAX_SAMPLE_RATE 48000U
 #endif
-#define MAX_FRAME_DURATION_US 10000
+#define MAX_FRAME_DURATION_US 10000U
 #define MAX_NUM_SAMPLES       ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
 
 #if defined(CONFIG_LIBLC3)
@@ -102,13 +102,13 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2
 #include <sample_usbd.h>
 
 /* USB Audio Data is downsampled from 48kHz to match broadcast preset when receiving data */
-#define USB_SAMPLE_RATE           48000
+#define USB_SAMPLE_RATE           48000U
 #define USB_DOWNSAMPLE_RATE       BROADCAST_SAMPLE_RATE
-#define USB_FRAME_DURATION_US     1000
+#define USB_FRAME_DURATION_US     1000U
 #define USB_SAMPLE_CNT            ((USB_FRAME_DURATION_US * USB_SAMPLE_RATE) / USEC_PER_SEC)
 #define USB_DOWNSSAMPLE_CNT       ((USB_FRAME_DURATION_US * USB_DOWNSAMPLE_RATE) / USEC_PER_SEC)
-#define USB_BYTES_PER_SAMPLE      2
-#define USB_CHANNELS              2
+#define USB_BYTES_PER_SAMPLE      2U
+#define USB_CHANNELS              2U
 #define USB_MONO_FRAME_SIZE       (USB_SAMPLE_CNT * USB_BYTES_PER_SAMPLE)
 /* The number of samples received may be USB_SAMPLE_CNT -+ 1 */
 #define USB_MAX_MONO_FRAME_SIZE   ((USB_SAMPLE_CNT + 1) * USB_BYTES_PER_SAMPLE)
@@ -116,14 +116,14 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2
 #define USB_MAX_STEREO_FRAME_SIZE (USB_MAX_MONO_FRAME_SIZE * USB_CHANNELS)
 #define USB_ENQUEUE_COUNT         30U /* 30 times 1ms frames => 30ms */
 
-#define RING_BUF_USB_FRAMES  20
+#define RING_BUF_USB_FRAMES  20U
 #define AUDIO_RING_BUF_BYTES (USB_DOWNSSAMPLE_CNT * USB_BYTES_PER_SAMPLE * RING_BUF_USB_FRAMES)
 #else /* !defined(CONFIG_USE_USB_AUDIO_INPUT) */
 
 #include <math.h>
 
 #define AUDIO_VOLUME            (INT16_MAX - 3000) /* codec does clipping above INT16_MAX - 3000 */
-#define AUDIO_TONE_FREQUENCY_HZ 400
+#define AUDIO_TONE_FREQUENCY_HZ 400U
 
 /**
  * Use the math lib to generate a sine-wave using 16 bit samples into a buffer.
@@ -139,7 +139,7 @@ static void fill_audio_buf_sin(int16_t *buf, int length_us, int frequency_hz, in
 	const unsigned int num_samples = (length_us * sample_rate_hz) / USEC_PER_SEC;
 	const float step = 2 * 3.1415f / sine_period_samples;
 
-	for (unsigned int i = 0; i < num_samples; i++) {
+	for (unsigned int i = 0U; i < num_samples; i++) {
 		const float sample = sinf(i * step);
 
 		buf[i] = (int16_t)(AUDIO_VOLUME * sample);
@@ -264,6 +264,10 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 	const struct bt_audio_codec_cfg *codec_cfg = &preset_active.codec_cfg;
 	int ret;
 
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
 	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
 	if (ret > 0) {
 		freq_hz = bt_audio_codec_cfg_freq_to_freq_hz(ret);
@@ -323,11 +327,11 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-#define LC3_ENCODER_STACK_SIZE 4 * 4096
+#define LC3_ENCODER_STACK_SIZE (4U * 4096U)
 #define LC3_ENCODER_PRIORITY   5
 
 K_THREAD_DEFINE(encoder, LC3_ENCODER_STACK_SIZE, init_lc3_thread, NULL, NULL, NULL,
-		LC3_ENCODER_PRIORITY, 0, -1);
+		LC3_ENCODER_PRIORITY, 0U, -1);
 
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
 /* Allocate 3: 1 for USB to receive data to and 2 additional buffers to prevent out of memory
@@ -339,11 +343,19 @@ static bool terminal_enabled;
 static void terminal_update_cb(const struct device *dev, uint8_t terminal, bool enabled,
 			       bool microframes, void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(microframes);
+	ARG_UNUSED(user_data);
+
 	terminal_enabled = enabled;
 }
 
 static void uac2_sof_cb(const struct device *dev, void *user_data)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(user_data);
+
 	/* no-op, but has to be registered */
 }
 
@@ -352,6 +364,10 @@ static void *get_recv_buf_cb(const struct device *dev, uint8_t terminal, uint16_
 {
 	void *buf = NULL;
 	int ret;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
 
 	if (!terminal_enabled) {
 		return NULL;
@@ -376,6 +392,10 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 	static int count;
 	int16_t *pcm;
 
+	ARG_UNUSED(dev);
+	ARG_UNUSED(terminal);
+	ARG_UNUSED(user_data);
+
 	if (!terminal_enabled || buf == NULL || size == 0U) {
 		k_mem_slab_free(&usb_out_buf_pool, buf);
 		return;
@@ -389,7 +409,7 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 
 	ratio = USB_SAMPLE_RATE / USB_DOWNSAMPLE_RATE;
 	nsamples = size / (sizeof(int16_t) * USB_CHANNELS * ratio);
-	for (size_t i = 0, j = 0; i < nsamples; i++, j += USB_CHANNELS * ratio) {
+	for (size_t i = 0U, j = 0U; i < nsamples; i++, j += USB_CHANNELS * ratio) {
 		usb_pcm_data[0][i] = pcm[j];
 		usb_pcm_data[1][i] = pcm[j + 1];
 	}
@@ -401,7 +421,8 @@ static void data_recv_cb(const struct device *dev, uint8_t terminal, void *buf, 
 		if (size_put < nsamples * USB_BYTES_PER_SAMPLE) {
 			printk("Not enough room for samples in %s buffer: %u < %u, total capacity: "
 			       "%u\n",
-			       i == 0 ? "left" : "right", size_put, nsamples * USB_BYTES_PER_SAMPLE,
+			       i == 0U ? "left" : "right", size_put,
+			       nsamples * USB_BYTES_PER_SAMPLE,
 			       ring_buf_capacity_get(&(streams[i].audio_ring_buf)));
 		}
 	}
@@ -475,8 +496,8 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source)
 
 	for (size_t j = 0U; j < ARRAY_SIZE(stream_params); j++) {
 		stream_params[j].stream = &streams[j].stream;
-		stream_params[j].data = j == 0 ? left : right;
-		stream_params[j].data_len = j == 0 ? sizeof(left) : sizeof(right);
+		stream_params[j].data = j == 0U ? left : right;
+		stream_params[j].data_len = j == 0U ? sizeof(left) : sizeof(right);
 		bt_bap_stream_cb_register(stream_params[j].stream, &stream_ops);
 	}
 
@@ -536,7 +557,7 @@ int main(void)
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		printk("Bluetooth init failed (err %d)\n", err);
 		return 0;
 	}
@@ -617,7 +638,7 @@ int main(void)
 
 		/* Set periodic advertising parameters */
 		err = bt_le_per_adv_set_param(adv, BT_BAP_PER_ADV_PARAM_BROADCAST_FAST);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to set periodic advertising parameters (err %d)\n", err);
 			return 0;
 		}
@@ -633,7 +654,7 @@ int main(void)
 		broadcast_id = CONFIG_BROADCAST_ID;
 #else
 		err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-		if (err) {
+		if (err != 0) {
 			printk("Unable to generate broadcast ID: %d\n", err);
 			return err;
 		}
@@ -675,14 +696,14 @@ int main(void)
 
 		/* Start extended advertising */
 		err = bt_le_ext_adv_start(adv, BT_LE_EXT_ADV_START_DEFAULT);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to start extended advertising: %d\n", err);
 			return 0;
 		}
 
 		/* Enable Periodic Advertising */
 		err = bt_le_per_adv_start(adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to enable periodic advertising: %d\n", err);
 			return 0;
 		}
@@ -732,22 +753,22 @@ int main(void)
 		}
 		printk("Broadcast source deleted\n");
 		broadcast_source = NULL;
-		seq_num = 0;
+		seq_num = 0U;
 
 		err = bt_le_per_adv_stop(adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to stop periodic advertising (err %d)\n", err);
 			return 0;
 		}
 
 		err = bt_le_ext_adv_stop(adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to stop extended advertising (err %d)\n", err);
 			return 0;
 		}
 
 		err = bt_le_ext_adv_delete(adv);
-		if (err) {
+		if (err != 0) {
 			printk("Failed to delete extended advertising (err %d)\n", err);
 			return 0;
 		}

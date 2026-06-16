@@ -1180,11 +1180,6 @@ static int uart_stm32_irq_is_pending(const struct device *dev)
 		 LL_USART_IsEnabledIT_TC(usart)));
 }
 
-static int uart_stm32_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void uart_stm32_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
@@ -1404,12 +1399,20 @@ static void uart_stm32_isr(const struct device *dev)
 #if defined(CONFIG_PM) || defined(CONFIG_UART_ASYNC_API)
 	const struct uart_stm32_config *config = dev->config;
 	USART_TypeDef *usart = config->usart;
+
+	/*
+	 * The TC flag is checked several times in this ISR
+	 * but it may change in the background while we're
+	 * handling the IRQ. Read the flag once and perform
+	 * checks against this cached value instead, such that
+	 * the whole ISR sees the same status regardless of
+	 * any hardware event that may happen.
+	 */
+	const bool tx_complete = LL_USART_IsEnabledIT_TC(usart) && LL_USART_IsActiveFlag_TC(usart);
 #endif
 
 #ifdef CONFIG_PM
-	if (LL_USART_IsEnabledIT_TC(usart) &&
-		LL_USART_IsActiveFlag_TC(usart)) {
-
+	if (tx_complete) {
 		if (data->tx_poll_stream_on) {
 			/* A poll stream transmission just completed,
 			 * allow system to suspend
@@ -1486,8 +1489,7 @@ static void uart_stm32_isr(const struct device *dev)
 			async_timer_start(&data->dma_rx.timeout_work,
 								data->dma_rx.timeout);
 		}
-	} else if (LL_USART_IsEnabledIT_TC(usart) && LL_USART_IsActiveFlag_TC(usart)) {
-
+	} else if (tx_complete) {
 		LL_USART_DisableIT_TC(usart);
 		/* Generate TX_DONE event when transmission is done */
 		async_evt_tx_done(data);
@@ -1566,9 +1568,25 @@ static inline void uart_stm32_dma_rx_enable(const struct device *dev)
 {
 	const struct uart_stm32_config *config = dev->config;
 	struct uart_stm32_data *data = dev->data;
+	USART_TypeDef *usart = config->usart;
 
-	LL_USART_EnableDMAReq_RX(config->usart);
+#ifdef CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED
+	/*
+	 * Workaround for STM32H5/U5: USART does not generate DMA requests
+	 * after clearing/setting DMAR. This issue is not documented in the
+	 * errata but behaves similarly to the documented DMAT issue.
+	 * Toggle UE (USART Enable) to reset the USART internal state machine
+	 * before re-enabling DMAR.
+	 */
+	LL_USART_Disable(usart);
+	LL_USART_Enable(usart);
+	/* Wait for USART to be ready after re-enable */
+	while (!LL_USART_IsActiveFlag_TEACK(usart)) {
+		/* busy-wait for transmit enable acknowledge */
+	}
+#endif /* CONFIG_UART_STM32U5_ERRATA_DMAT_AFFECTED */
 
+	LL_USART_EnableDMAReq_RX(usart);
 	data->dma_rx.enabled = true;
 }
 
@@ -2245,7 +2263,6 @@ static DEVICE_API(uart, uart_stm32_driver_api) = {
 	.irq_err_enable = uart_stm32_irq_err_enable,
 	.irq_err_disable = uart_stm32_irq_err_disable,
 	.irq_is_pending = uart_stm32_irq_is_pending,
-	.irq_update = uart_stm32_irq_update,
 	.irq_callback_set = uart_stm32_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #ifdef CONFIG_UART_ASYNC_API
@@ -2633,9 +2650,7 @@ static int uart_stm32_pm_action(const struct device *dev, enum pm_device_action 
 #ifdef CONFIG_PM
 #define STM32_UART_PM_WAKEUP(index)						\
 	.wakeup_source = DT_INST_PROP(index, wakeup_source),			\
-	.wakeup_line = COND_CODE_1(DT_INST_NODE_HAS_PROP(index, wakeup_line),	\
-			(DT_INST_PROP(index, wakeup_line)),			\
-			(STM32_WAKEUP_LINE_NONE)),
+	.wakeup_line = DT_INST_PROP_OR(index, wakeup_line, STM32_WAKEUP_LINE_NONE),
 #else
 #define STM32_UART_PM_WAKEUP(index) /* Not used */
 #endif

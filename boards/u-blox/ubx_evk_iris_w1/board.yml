@@ -10,3 +10,5 @@ board:
       - name: "fidelix"
   socs:
     - name: rw612
+      variants:
+        - name: ethernet

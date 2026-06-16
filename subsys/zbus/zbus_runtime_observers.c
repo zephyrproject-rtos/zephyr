@@ -32,8 +32,8 @@ static inline void _zbus_runtime_observer_node_free(struct zbus_observer_node *n
 
 #elif defined(CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_ALLOC_STATIC)
 
-K_MEM_SLAB_DEFINE_STATIC(_zbus_runtime_observers_slab, sizeof(struct zbus_observer_node),
-			 CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE, 8);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(_zbus_runtime_observers_slab, struct zbus_observer_node,
+			      CONFIG_ZBUS_RUNTIME_OBSERVERS_NODE_POOL_SIZE);
 
 static inline int _zbus_runtime_observer_node_alloc(struct zbus_observer_node **node,
 						    k_timeout_t timeout)

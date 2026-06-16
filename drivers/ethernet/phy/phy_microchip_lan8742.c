@@ -409,9 +409,9 @@ static int phy_lan8742_init(const struct device *dev)
 
 	/* Advertise default speeds */
 	ret = phy_lan8742_cfg_link(dev, cfg->default_speeds, 0);
-	if (ret < 0) {
-		LOG_ERR("Failed to configure link (%d)", ret);
-		return ret;
+	if (ret == -EALREADY) {
+		data->autoneg_in_progress = true;
+		data->autoneg_timeout = sys_timepoint_calc(K_MSEC(CONFIG_PHY_AUTONEG_TIMEOUT_MS));
 	}
 
 	/* Schedule the monitor work, if not already scheduled by phy_lan8742_cfg_link(). */

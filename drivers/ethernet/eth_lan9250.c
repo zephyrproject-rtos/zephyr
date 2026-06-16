@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
@@ -760,10 +761,8 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 			/* Read PHY interrupt source register */
 			lan9250_read_phy_reg(dev, LAN9250_PHY_INTERRUPT_SOURCE, &tmp);
 			if (tmp & LAN9250_PHY_INTERRUPT_SOURCE_LINK_UP) {
-				LOG_DBG("LINK UP");
 				net_eth_carrier_on(context->iface);
 			} else if (tmp & LAN9250_PHY_INTERRUPT_SOURCE_LINK_DOWN) {
-				LOG_DBG("LINK DOWN");
 				net_eth_carrier_off(context->iface);
 			}
 		}
@@ -778,10 +777,9 @@ static void lan9250_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static enum ethernet_hw_caps lan9250_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps lan9250_get_capabilities(const struct device *dev __unused,
+						      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
@@ -810,7 +808,9 @@ static void lan9250_iface_init(struct net_if *iface)
 			K_PRIO_COOP(CONFIG_ETH_LAN9250_RX_THREAD_PRIO), 0, K_NO_WAIT);
 }
 
-static int lan9250_set_config(const struct device *dev, enum ethernet_config_type type,
+static int lan9250_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
+			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
 	struct lan9250_runtime *ctx = dev->data;

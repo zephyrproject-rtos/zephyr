@@ -28,6 +28,7 @@ struct mctp_binding_i3c_target {
 	struct k_sem *tx_lock;
 	struct k_sem *tx_complete;
 	struct mctp_pktbuf *rx_pkt;
+	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_I3C_MAX_PKT_SIZE)] PKTBUF_STORAGE_ALIGN;
 	/** @endcond INTERNAL_HIDDEN */
 };
 
@@ -52,6 +53,7 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 			.start = mctp_i3c_target_start,                                            \
 			.tx = mctp_i3c_target_tx,                                                  \
 			.pkt_size = MCTP_I3C_MAX_PKT_SIZE,                                         \
+			.tx_storage = _name.tx_storage,                                            \
 		},                                                                                 \
 		.i3c = DEVICE_DT_GET(DT_PHANDLE(_node_id, i3c)),                                   \
 		.i3c_target_cfg = {                                                                \

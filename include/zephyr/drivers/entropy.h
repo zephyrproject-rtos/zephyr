@@ -43,7 +43,6 @@ extern "C" {
  */
 
 /**
- * @typedef entropy_get_entropy_t
  * @brief Callback API to get entropy.
  *
  * @note This call has to be thread safe to satisfy requirements
@@ -56,7 +55,6 @@ typedef int (*entropy_get_entropy_t)(const struct device *dev,
 				     uint16_t length);
 
 /**
- * @typedef entropy_get_entropy_isr_t
  * @brief Callback API to get entropy from an ISR.
  *
  * See entropy_get_entropy_isr() for argument description
@@ -77,6 +75,33 @@ __subsystem struct entropy_driver_api {
 };
 
 /** @} */
+
+/**
+ * @brief Return the default entropy device if available.
+ *
+ * Returns in the following order:
+ *
+ * - The device chosen as "zephyr,entropy", if available.
+ * - The architectural entropy device, if enabled.
+ * - NULL.
+ *
+ * @retval Pointer to default entropy device.
+ * @retval NULL if not available.
+ */
+static inline const struct device *entropy_get_default_device(void)
+{
+	const struct device *device = DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_entropy));
+
+#ifdef CONFIG_ARCH_HAS_ENTROPY
+	if (device == NULL) {
+		extern const struct device *const z_arch_entropy_dev;
+
+		device = z_arch_entropy_dev;
+	}
+#endif
+
+	return device;
+}
 
 /**
  * @brief Fills a buffer with entropy. Blocks if required in order to

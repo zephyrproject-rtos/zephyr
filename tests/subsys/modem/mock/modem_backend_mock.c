@@ -23,7 +23,18 @@ static bool modem_backend_mock_update(struct modem_backend_mock *mock, const uin
 		return false;
 	}
 
+	if (mock->transaction->optional &&
+	    size > (mock->transaction->get_size - mock->transaction_match_cnt)) {
+		modem_backend_mock_prime(mock, NULL);
+		return false;
+	}
+
 	for (size_t i = 0; i < size; i++) {
+		if (mock->transaction->optional &&
+		    buf[i] != mock->transaction->get[mock->transaction_match_cnt]) {
+			modem_backend_mock_prime(mock, NULL);
+			return false;
+		}
 		__ASSERT(buf[i] == mock->transaction->get[mock->transaction_match_cnt],
 			 "Unexpected transmit data");
 
@@ -52,6 +63,8 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 		return ret;
 	}
 
+	k_work_submit(&mock->transmit_idle_work);
+
 	if (modem_backend_mock_update(mock, buf, size)) {
 		/* Skip ringbuffer if transaction consumes bytes */
 		ret = size;
@@ -63,7 +76,6 @@ static int modem_backend_mock_transmit(void *data, const uint8_t *buf, size_t si
 		ret = ring_buf_put(&mock->tx_rb, buf, size);
 	}
 
-	k_work_submit(&mock->transmit_idle_work);
 	return ret;
 }
 

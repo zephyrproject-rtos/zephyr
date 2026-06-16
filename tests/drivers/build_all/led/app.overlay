@@ -15,6 +15,14 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		test_fake_leds: fake-leds {
+			compatible = "zephyr,fake-leds";
+
+			fake_led: fake-led {
+				label = "Fake LED";
+			};
+		};
+
 		test_dac: dac@dac0dac0 {
 			compatible = "vnd,dac";
 			reg = <0xdac0dac0 0x1000>;
@@ -199,6 +207,29 @@
 			pca9533@15 {
 				compatible = "nxp,pca9533";
 				reg = <0x15>;
+			};
+
+			lp5860@16 {
+				compatible = "ti,lp5860";
+				reg = <0x16>;
+			};
+
+			pmic@17 {
+				compatible = "nordic,npm10xx";
+				reg = <0x17>;
+
+				leds {
+					compatible = "nordic,npm10xx-led";
+
+					led0 {
+						index = <2>;
+					};
+
+					led1 {
+						index = <0>;
+						led-mode = "charge";
+					};
+				};
 			};
 		};
 

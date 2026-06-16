@@ -6,6 +6,8 @@ properties:
   bosch,mram-cfg:
     type: array
     required: true
+    min-len: 8
+    max-len: 8
     description: |
       Bosch M_CAN message RAM configuration. The cells in the array have the following format:
 
@@ -27,23 +29,8 @@ properties:
 
   bosch,timestamp-counter-prescaler:
     type: int
-    enum:
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
-      - 8
-      - 9
-      - 10
-      - 11
-      - 12
-      - 13
-      - 14
-      - 15
-      - 16
+    min: 1
+    max: 16
     default: 1
     description: |
       Configures the internal timestamp counter time unit in multiples of CAN bit times. Valid range

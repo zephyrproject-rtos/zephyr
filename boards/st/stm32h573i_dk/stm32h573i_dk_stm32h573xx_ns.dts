@@ -37,9 +37,9 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Keep in sync with partitions from flash_layout.h in TF-M
 		 * MCUboot (scratch area)                0000_0000 - 0000_C000 ( 48k)
@@ -57,31 +57,37 @@
 		 */
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(192)>;
 		};
 
 		slot0_partition: partition@38000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00038000 DT_SIZE_K(320)>;
 		};
 
 		slot0_ns_partition: partition@88000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0-nonsecure";
 			reg = <0x00088000 DT_SIZE_K(576)>;
 		};
 
 		slot1_partition: partition@118000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00118000 DT_SIZE_K(320)>;
 		};
 
 		slot1_ns_partition: partition@168000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1-nonsecure";
 			reg = <0x00168000 DT_SIZE_K(576)>;
 		};
 
 		storage_partition: partition@1f8000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x001f8000 DT_SIZE_K(32)>;
 		};

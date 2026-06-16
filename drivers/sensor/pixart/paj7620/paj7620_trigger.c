@@ -117,7 +117,7 @@ int paj7620_trigger_init(const struct device *dev)
 
 	/* Configure GPIO */
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

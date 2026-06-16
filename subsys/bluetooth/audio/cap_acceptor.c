@@ -69,7 +69,7 @@ int bt_cap_acceptor_register(const struct bt_csip_set_member_register_param *par
 	cas.attrs[1].user_data = bt_csip_set_member_svc_decl_get(*svc_inst);
 
 	err = bt_gatt_service_register(&cas);
-	if (err) {
+	if (err != 0) {
 		const int csip_err = bt_csip_set_member_unregister(*svc_inst);
 
 		if (csip_err) {
@@ -109,7 +109,7 @@ bool bt_cap_acceptor_ccid_exist(const struct bt_conn *conn, uint8_t ccid)
 bool bt_cap_acceptor_ccids_exist(const struct bt_conn *conn, const uint8_t ccids[],
 				 uint8_t ccid_cnt)
 {
-	for (uint8_t i = 0; i < ccid_cnt; i++) {
+	for (uint8_t i = 0U; i < ccid_cnt; i++) {
 		const uint8_t ccid = ccids[i];
 
 		if (!bt_cap_acceptor_ccid_exist(conn, ccid)) {

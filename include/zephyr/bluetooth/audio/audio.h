@@ -24,11 +24,12 @@
 #include <stdint.h>
 
 #include <zephyr/autoconf.h>
-#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/iso.h>
@@ -41,7 +42,7 @@ extern "C" {
 #endif
 
 /** Size of the broadcast ID in octets */
-#define BT_AUDIO_BROADCAST_ID_SIZE               3
+#define BT_AUDIO_BROADCAST_ID_SIZE               3U
 /** Maximum broadcast ID value */
 #define BT_AUDIO_BROADCAST_ID_MAX                0xFFFFFFU
 /** Indicates that the server have no preference for the presentation delay */
@@ -52,7 +53,7 @@ extern "C" {
 #define BT_AUDIO_RTN_PREF_NONE                   0xFFU
 
 /** Size of the stream language value, e.g. "eng" */
-#define BT_AUDIO_LANG_SIZE 3
+#define BT_AUDIO_LANG_SIZE 3U
 
 /**
  * @brief Channel count support capability
@@ -90,9 +91,9 @@ struct bt_audio_codec_octets_per_codec_frame {
  * @{
  */
 /** Unicast Server is connectable and is requesting a connection. */
-#define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00
+#define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00U
 /** Unicast Server is connectable but is not requesting a connection. */
-#define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01
+#define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01U
 /** @} */
 
 /**
@@ -919,6 +920,7 @@ int bt_audio_codec_cfg_meta_set_assisted_listening_stream(
  * @retval length The length of the @p broadcast_name (may be 0)
  * @retval -EINVAL Arguments are invalid
  * @retval -ENODATA Data not found
+ * @retval -EBADMSG Data found, but Invalid broadcast name
  */
 int bt_audio_codec_cfg_meta_get_broadcast_name(const struct bt_audio_codec_cfg *codec_cfg,
 					       const uint8_t **broadcast_name);
@@ -927,8 +929,12 @@ int bt_audio_codec_cfg_meta_get_broadcast_name(const struct bt_audio_codec_cfg *
  * @brief Set the broadcast name of a codec configuration metadata.
  *
  * @param codec_cfg          The codec configuration to set data for.
- * @param broadcast_name     The broadcast name to set.
- * @param broadcast_name_len The length of @p broadcast_name.
+ * @param broadcast_name     The broadcast name to set. Shall be between @ref
+ *                           BT_AUDIO_BROADCAST_NAME_CHAR_MIN and @ref
+ *                           BT_AUDIO_BROADCAST_NAME_CHAR_MAX characters.
+ * @param broadcast_name_len The length of @p broadcast_name. Shall be between
+ *                           @ref BT_AUDIO_BROADCAST_NAME_LEN_MIN and
+ *                           @ref BT_AUDIO_BROADCAST_NAME_LEN_MAX.
  *
  * @retval data_len The @p codec_cfg.data_len on success
  * @retval -EINVAL Arguments are invalid
@@ -1529,8 +1535,12 @@ int bt_audio_codec_cap_meta_get_broadcast_name(const struct bt_audio_codec_cap *
  * @brief Set the broadcast name of a codec capability metadata.
  *
  * @param codec_cap          The codec capability to set data for.
- * @param broadcast_name     The broadcast name to set.
- * @param broadcast_name_len The length of @p broadcast_name.
+ * @param broadcast_name     The broadcast name to set. Shall be between @ref
+ *                           BT_AUDIO_BROADCAST_NAME_CHAR_MIN and @ref
+ *                           BT_AUDIO_BROADCAST_NAME_CHAR_MAX characters.
+ * @param broadcast_name_len The length of @p broadcast_name. Shall be between
+ *                           @ref BT_AUDIO_BROADCAST_NAME_LEN_MIN and
+ *                           @ref BT_AUDIO_BROADCAST_NAME_LEN_MAX.
  *
  * @retval data_len The @p codec_cap.data_len on success
  * @retval -EINVAL Arguments are invalid

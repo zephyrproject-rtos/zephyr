@@ -188,7 +188,9 @@ static void uart_isr_callback(const struct device *dev, void *user_data)
 	static size_t curr_offset;
 	static union log_frontend_pkt isr_pkt;
 
-	if (uart_irq_update(dev) && uart_irq_tx_ready(dev)) {
+	uart_irq_update(dev);
+
+	if (uart_irq_tx_ready(dev)) {
 		if (isr_pkt.ro_pkt == NULL) {
 			isr_pkt.ro_pkt = mpsc_pbuf_claim(&buf);
 			__ASSERT_NO_MSG(isr_pkt.ro_pkt != NULL);

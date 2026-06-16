@@ -70,6 +70,14 @@ void z_shell_fprintf_fmt(const struct shell_fprintf *sh_fprintf,
 			 char const *fmt, va_list args);
 
 /**
+ * @brief Function formats cbprintf package and sends formatted data stream to output.
+ *
+ * @param sh_fprintf	fprintf instance.
+ * @param package	Pointer to the cbprintf package.
+ */
+void z_shell_cbpprintf_fmt(const struct shell_fprintf *sh_fprintf, void *package);
+
+/**
  * @brief function flushing data stored in io_buffer.
  *
  * @param sh_fprintf	fprintf instance

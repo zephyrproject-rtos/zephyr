@@ -1135,7 +1135,7 @@ static FLEXCAN_CALLBACK(mcux_flexcan_transfer_callback)
 		 * Unhandled status during Message Buffer processing.
 		 * If result field is 0xFF, it means no message buffer interrupt occurred.
 		 */
-		__fallthrough;
+		break;
 	default:
 		LOG_WRN("Unhandled status 0x%08x (result = 0x%016llx)",
 			status, status_flags);
@@ -1149,7 +1149,7 @@ static void mcux_flexcan_isr(const struct device *dev)
 	CAN_Type *base = get_base(dev);
 
 	FLEXCAN_BusoffErrorHandleIRQ(base, &data->handle);
-	FLEXCAN_MbHandleIRQ(base, &data->handle, 0U, config->number_of_mb);
+	FLEXCAN_MbHandleIRQ(base, &data->handle, 0U, config->number_of_mb - 1U);
 }
 
 static int mcux_flexcan_init(const struct device *dev)
@@ -1163,13 +1163,13 @@ static int mcux_flexcan_init(const struct device *dev)
 
 	if (config->common.phy != NULL) {
 		if (!device_is_ready(config->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->common.phy);
 			return -ENODEV;
 		}
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
-		LOG_ERR("clock device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->clock_dev);
 		return -ENODEV;
 	}
 

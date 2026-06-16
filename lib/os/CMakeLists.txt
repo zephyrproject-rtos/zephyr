@@ -6,6 +6,7 @@ zephyr_syscall_header(
 )
 
 zephyr_sources(
+  boot_banner.c
   cbprintf_packaged.c
   clock.c
   printk.c
@@ -75,3 +76,12 @@ add_subdirectory_ifdef(CONFIG_ZVFS zvfs)
 zephyr_syscall_header_ifdef(CONFIG_ZVFS_FDTABLE
   ${ZEPHYR_BASE}/include/zephyr/sys/fdtable.h
 )
+
+zephyr_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
+
+zephyr_syscall_header_ifdef(
+  CONFIG_ATOMIC_OPERATIONS_C
+  ${ZEPHYR_BASE}/include/zephyr/sys/atomic_c.h
+)
+
+zephyr_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C atomic_c.c)

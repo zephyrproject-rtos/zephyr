@@ -15,8 +15,8 @@
 #include <zephyr/net/wifi_mgmt.h>
 
 #include "osal_api.h"
-int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *params,
-			   scan_result_cb_t cb);
+int nrf_wifi_disp_scan_zep(const struct device *dev, struct net_if *iface,
+			   struct wifi_scan_params *params, scan_result_cb_t cb);
 
 enum nrf_wifi_status nrf_wifi_disp_scan_res_get_zep(struct nrf_wifi_vif_ctx_zep *vif_ctx_zep);
 

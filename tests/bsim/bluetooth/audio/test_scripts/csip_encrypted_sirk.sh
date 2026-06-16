@@ -13,7 +13,7 @@ EXECUTE_TIMEOUT=120
 
 cd ${BSIM_OUT_PATH}/bin
 
-SIMULATION_ID="csip_sirk_encrypted"
+SIMULATION_ID="${BOARD_TS}_csip_sirk_encrypted"
 
 printf "\n\n======== Running test with SIRK encrypted ========\n\n"
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \

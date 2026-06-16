@@ -1,0 +1,26 @@
+identifier: reterminal_e1003/esp32s3/procpu
+name: reTerminal E1003 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - sdhc
+  - display
+  - counter
+  - watchdog
+  - entropy
+  - pwm
+  - dma
+  - adc
+  - input
+  - sensor
+  - rtc
+  - crypto
+  - retained_mem
+  - netif:wifi
+vendor: seeed

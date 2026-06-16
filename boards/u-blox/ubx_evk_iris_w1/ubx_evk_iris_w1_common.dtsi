@@ -32,6 +32,7 @@
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,uart-mcumgr = &flexcomm3;
+		zephyr,crc = &crc;
 	};
 
 	rgb_leds {
@@ -95,6 +96,10 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_hsgpio1>;
 	pinctrl-names = "default";
+};
+
+&crc {
+	status = "okay";
 };
 
 &flexspi {

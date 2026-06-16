@@ -61,6 +61,12 @@ extern "C" {
 #define WIFI_MGMT_SCAN_MAX_BSS_CNT 65535
 
 #define WIFI_MGMT_SKIP_INACTIVITY_POLL IS_ENABLED(CONFIG_WIFI_MGMT_AP_STA_SKIP_INACTIVITY_POLL)
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+#define WIFI_NAN_MAX_SSI_LEN            128
+#define WIFI_NAN_MAX_SERVICE_NAME_LEN   64
+#define WIFI_NAN_RESP_SIZE              64
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 /** @endcond */
 
 /** @brief Wi-Fi management commands */
@@ -113,6 +119,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_CONFIG_PARAM,
 	/** DPP actions */
 	NET_REQUEST_WIFI_CMD_DPP,
+	/** NAN actions */
+	NET_REQUEST_WIFI_CMD_NAN,
 	/** BSS transition management query */
 	NET_REQUEST_WIFI_CMD_BTM_QUERY,
 	/** Flush PMKSA cache entries */
@@ -289,6 +297,14 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONFIG_PARAM);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DPP);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/** Request a Wi-Fi NAN operation */
+#define NET_REQUEST_WIFI_NAN			\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_NAN)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NAN);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 /** Request a Wi-Fi BTM query */
 #define NET_REQUEST_WIFI_BTM_QUERY (NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTM_QUERY)
 
@@ -367,6 +383,12 @@ enum {
 	NET_EVENT_WIFI_CMD_AP_STA_DISCONNECTED_VAL,
 	NET_EVENT_WIFI_CMD_SUPPLICANT_VAL,
 	NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND_VAL,
+	NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT_VAL,
+	NET_EVENT_WIFI_CMD_NAN_REPLIED_VAL,
+	NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED_VAL,
+	NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED_VAL,
+	NET_EVENT_WIFI_CMD_NAN_RECEIVE_VAL,
+
 	NET_EVENT_WIFI_CMD_MAX,
 };
 
@@ -415,6 +437,18 @@ enum net_event_wifi_cmd {
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_SUPPLICANT),
 	/** P2P device found */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND),
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT),
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_REPLIED),
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED),
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED),
+	/** Supplicant specific event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_RECEIVE),
+#endif
 };
 
 /** Event emitted for Wi-Fi scan result */
@@ -521,6 +555,28 @@ struct wifi_p2p_device_info {
 	char model_name[WIFI_P2P_MODEL_NAME_MAX_LEN + 1];
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/** Event emitted when NAN discovery result (subscriber found publisher) */
+#define NET_EVENT_WIFI_NAN_DISCOVERY_RESULT			\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT)
+
+/** Event emitted when NAN publisher received subscribe request */
+#define NET_EVENT_WIFI_NAN_REPLIED				\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_REPLIED)
+
+/** Event emitted when NAN publish is terminated */
+#define NET_EVENT_WIFI_NAN_PUBLISH_TERMINATED			\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED)
+
+/** Event emitted when NAN subscribe is terminated */
+#define NET_EVENT_WIFI_NAN_SUBSCRIBE_TERMINATED			\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED)
+
+/** Event emitted NAN follow-up message is received */
+#define NET_EVENT_WIFI_NAN_RECEIVE				\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_NAN_RECEIVE)
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
 /** @brief Wi-Fi version */
 struct wifi_version {
@@ -787,6 +843,11 @@ struct wifi_connect_req_params {
 	const uint8_t *server_cert_domain_suffix;
 	/** Length of the server_cert_domain_suffix string, maximum 64 bytes */
 	uint8_t server_cert_domain_suffix_len;
+	/** SSID protection in 4-way handshake (needs RSNXE support)
+	 * 0: Disable (default)
+	 * 1: Enable
+	 */
+	uint8_t ssid_protection;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -804,6 +865,9 @@ enum wifi_disconn_reason {
 	/** Disconnected due to inactivity */
 	WIFI_REASON_DISCONN_INACTIVITY,
 };
+
+/** Helper function to get user-friendly disconnect reason name. */
+const char *wifi_disconn_reason_txt(enum wifi_disconn_reason reason);
 
 /** @brief Wi-Fi AP mode result codes. To be overlaid on top of \ref wifi_status
  * in the AP mode enable or disable result event for detailed status.
@@ -1158,6 +1222,66 @@ struct wifi_ap_sta_info {
 	bool twt_capable;
 };
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/** @brief NAN discovery result event structure (subscriber found publisher) */
+struct wifi_nan_discovery_result_event {
+	/** Subscribe ID */
+	uint8_t subscribe_id;
+	/** Peer publish ID */
+	uint8_t publish_id;
+	/** Peer MAC address */
+	uint8_t peer_addr[WIFI_MAC_ADDR_LEN];
+	/** FSD (Further Service Discovery) */
+	bool fsd;
+	/** FSD GAS (Generic Advertisement Service) */
+	bool fsd_gas;
+	/** Service protocol type */
+	uint8_t srv_proto_type;
+	/** Service Specific Info length */
+	size_t ssi_len;
+	/** Service Specific Info data */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+};
+
+/** @brief NAN replied event structure (publisher received subscribe request) */
+struct wifi_nan_replied_event {
+	/** Publish ID */
+	uint8_t publish_id;
+	/** Peer MAC address */
+	uint8_t peer_addr[WIFI_MAC_ADDR_LEN];
+	/** Peer subscribe ID */
+	uint8_t subscribe_id;
+	/** Service protocol type */
+	uint8_t srv_proto_type;
+	/** Service Specific Info length */
+	size_t ssi_len;
+	/** Service Specific Info data */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+};
+
+/** @brief NAN publish/subscribe terminated event structure */
+struct wifi_nan_terminated_event {
+	/** Publish/Subscribe ID */
+	uint8_t id;
+	/** Reason string */
+	char reason[32];
+};
+
+/** @brief NAN receive event - follow-up message details */
+struct wifi_nan_receive_event {
+	/** Publish/Subscribe ID */
+	uint8_t id;
+	/** Peer instance ID */
+	uint8_t peer_instance_id;
+	/** Peer MAC address */
+	uint8_t peer_addr[WIFI_MAC_ADDR_LEN];
+	/** Service Specific Info data */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/** Service Specific Info length */
+	size_t ssi_len;
+};
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
 /** @cond INTERNAL_HIDDEN */
 
 /* for use in max info size calculations */
@@ -1173,6 +1297,13 @@ union wifi_mgmt_events {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 	struct wifi_p2p_device_info p2p_device_info;
 #endif
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	struct wifi_nan_discovery_result_event nan_discovery_result;
+	struct wifi_nan_replied_event nan_replied;
+	struct wifi_nan_terminated_event nan_publish_terminated;
+	struct wifi_nan_terminated_event nan_subscribe_terminated;
+	struct wifi_nan_receive_event nan_receive;
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 };
 
 /** @endcond */
@@ -1441,6 +1572,118 @@ struct wifi_dpp_params {
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
 
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+/** NAN operation */
+enum wifi_nan_operation {
+	WIFI_NAN_OP_PUBLISH,
+	WIFI_NAN_OP_CANCEL_PUBLISH,
+	WIFI_NAN_OP_UPDATE_PUBLISH,
+	WIFI_NAN_OP_SUBSCRIBE,
+	WIFI_NAN_OP_CANCEL_SUBSCRIBE,
+	WIFI_NAN_OP_TRANSMIT,
+};
+
+/** NAN service protocol types */
+enum wifi_nan_service_protocol_type {
+	/** Bonjour */
+	WIFI_NAN_SRV_PROTO_BONJOUR = 1,
+	/** Generic */
+	WIFI_NAN_SRV_PROTO_GENERIC = 2,
+	/** CSA Matter */
+	WIFI_NAN_SRV_PROTO_CSA_MATTER = 3,
+};
+
+/** This structure is used to configure wlan nan publish parameters */
+struct wifi_nan_publish_params {
+	/* Service name for NAN */
+	char service_name[WIFI_NAN_MAX_SERVICE_NAME_LEN];
+	/* NAN service protocol type */
+	enum wifi_nan_service_protocol_type srv_proto_type;
+	/* Time to live (in seconds); 0 = one TX only */
+	uint32_t ttl;
+	/* Default frequency in MHz (defaultPublishChannel) */
+	uint32_t freq;
+	/* Multi-channel frequencies */
+	char freq_list[64];
+	/* Service specific information (binary data) */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Actual length of SSI data */
+	uint8_t ssi_len;
+	/* Unsolicited transmission (true by default) */
+	bool unsolicited;
+	/* Solicited transmission (true by default) */
+	bool solicited;
+	/* Further Service Discovery (true by default) */
+	bool fsd;
+};
+
+/* This structure is used to configure nan update publish parameters */
+struct wifi_nan_update_publish_params {
+	uint8_t publish_id;
+	/* Service specific information (binary data) */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Actual length of SSI data */
+	uint8_t ssi_len;
+};
+
+/** This structure is used to configure wlan nan subscribe parameters */
+struct wifi_nan_subscribe_params {
+	/* Service name for NAN */
+	char service_name[WIFI_NAN_MAX_SERVICE_NAME_LEN];
+	/* NAN service protocol type */
+	enum wifi_nan_service_protocol_type srv_proto_type;
+	/* Subscribe type */
+	bool active;
+	/* Time to live (in seconds); 0 = until first result */
+	unsigned int ttl;
+	/* Selected frequency in MHz */
+	unsigned int freq;
+	/* Service specific information (binary data) */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Actual length of SSI data */
+	uint8_t ssi_len;
+};
+
+/** This structure is used to configure nan transmit parameters */
+struct wifi_nan_transmit_params {
+	/* publish_id or subscribe_id */
+	uint8_t handle;
+	/* peer publish_id or subscribe_id */
+	uint8_t req_instance_id;
+	/* peer MAC address */
+	uint8_t peer_addr[WIFI_MAC_ADDR_LEN];
+	/* Service specific information (binary data) */
+	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
+	/* Actual length of SSI data */
+	uint8_t ssi_len;
+};
+
+/** @brief Wi-Fi NAN parameters */
+struct wifi_nan_params {
+	/** NAN operation */
+	enum wifi_nan_operation op;
+
+	/** Operation-specific parameters */
+	union {
+		/** Publish parameters */
+		struct wifi_nan_publish_params publish;
+		/** Update publish parameters */
+		struct wifi_nan_update_publish_params update_publish;
+		/** Subscribe parameters */
+		struct wifi_nan_subscribe_params subscribe;
+		/** Transmit parameters */
+		struct wifi_nan_transmit_params transmit;
+		/** For cancel operations */
+		uint8_t cancel_id;
+	};
+
+	/* Save the returned ID */
+	char resp[WIFI_NAN_RESP_SIZE];
+};
+
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
+
 #define WIFI_WPS_PIN_MAX_LEN 8
 
 /** Operation for WPS */
@@ -1663,6 +1906,7 @@ struct wifi_mgmt_ops {
 	/** Scan for Wi-Fi networks
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the scan
 	 * @param params Scan parameters
 	 * @param cb Callback to be called for each result
 	 *           cb parameter is the cb that should be called for each
@@ -1672,186 +1916,234 @@ struct wifi_mgmt_ops {
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*scan)(const struct device *dev,
+		    struct net_if *iface,
 		    struct wifi_scan_params *params,
 		    scan_result_cb_t cb);
 	/** Connect to a Wi-Fi network
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the connection
 	 * @param params Connect parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*connect)(const struct device *dev,
+		       struct net_if *iface,
 		       struct wifi_connect_req_params *params);
 	/** Disconnect from a Wi-Fi network
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to disconnect
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*disconnect)(const struct device *dev);
+	int (*disconnect)(const struct device *dev,
+			  struct net_if *iface);
 	/** Enable AP mode
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the AP
 	 * @param params AP mode parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*ap_enable)(const struct device *dev,
+			 struct net_if *iface,
 			 struct wifi_connect_req_params *params);
 	/** Disable AP mode
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
-	 *
+	 * @param iface Network interface to use for the AP
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*ap_disable)(const struct device *dev);
+	int (*ap_disable)(const struct device *dev, struct net_if *iface);
 	/** Disconnect a STA from AP
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the AP
 	 * @param mac MAC address of the STA to disconnect
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*ap_sta_disconnect)(const struct device *dev, const uint8_t *mac);
+	int (*ap_sta_disconnect)(const struct device *dev, struct net_if *iface,
+				 const uint8_t *mac);
 	/** Get interface status
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to get the status
 	 * @param status Interface status
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*iface_status)(const struct device *dev, struct wifi_iface_status *status);
+	int (*iface_status)(const struct device *dev,
+			    struct net_if *iface,
+			    struct wifi_iface_status *status);
 #if defined(CONFIG_NET_STATISTICS_WIFI) || defined(__DOXYGEN__)
 	/** Get Wi-Fi statistics
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to get the statistics
 	 * @param stats Wi-Fi statistics
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*get_stats)(const struct device *dev, struct net_stats_wifi *stats);
+	int (*get_stats)(const struct device *dev,
+			 struct net_if *iface,
+			 struct net_stats_wifi *stats);
 	/** Reset  Wi-Fi statistics
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to reset the statistics
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*reset_stats)(const struct device *dev);
+	int (*reset_stats)(const struct device *dev, struct net_if *iface);
 #endif /* CONFIG_NET_STATISTICS_WIFI */
 	/** Set or get 11K status
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the 11k operation
 	 * @param params 11k parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*cfg_11k)(const struct device *dev, struct wifi_11k_params *params);
+	int (*cfg_11k)(const struct device *dev,
+		       struct net_if *iface,
+		       struct wifi_11k_params *params);
 	/** Send 11k neighbor request
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the 11k operation
 	 * @param params 11k parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*send_11k_neighbor_request)(const struct device *dev, struct wifi_11k_params *params);
+	int (*send_11k_neighbor_request)(const struct device *dev,
+					 struct net_if *iface,
+					 struct wifi_11k_params *params);
 	/** Set power save status
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the power save operation
 	 * @param params Power save parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*set_power_save)(const struct device *dev, struct wifi_ps_params *params);
+	int (*set_power_save)(const struct device *dev,
+			      struct net_if *iface,
+			      struct wifi_ps_params *params);
 	/** Setup or teardown TWT flow
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the TWT operation
 	 * @param params TWT parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*set_twt)(const struct device *dev, struct wifi_twt_params *params);
+	int (*set_twt)(const struct device *dev,
+		       struct net_if *iface,
+		       struct wifi_twt_params *params);
 	/** Setup BTWT flow
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the BTWT operation
 	 * @param params BTWT parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*set_btwt)(const struct device *dev, struct wifi_twt_params *params);
+	int (*set_btwt)(const struct device *dev,
+			struct net_if *iface,
+			struct wifi_twt_params *params);
 	/** Get power save config
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the power save operation
 	 * @param config Power save config
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*get_power_save_config)(const struct device *dev, struct wifi_ps_config *config);
+	int (*get_power_save_config)(const struct device *dev,
+				     struct net_if *iface,
+				     struct wifi_ps_config *config);
 	/** Set or get regulatory domain
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the regulatory domain operation
 	 * @param reg_domain Regulatory domain
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*reg_domain)(const struct device *dev, struct wifi_reg_domain *reg_domain);
+	int (*reg_domain)(const struct device *dev,
+			  struct net_if *iface,
+			  struct wifi_reg_domain *reg_domain);
 	/** Set or get packet filter settings for monitor and promiscuous modes
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the filter operation
 	 * @param packet filter settings
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*filter)(const struct device *dev, struct wifi_filter_info *filter);
+	int (*filter)(const struct device *dev,
+		      struct net_if *iface,
+		      struct wifi_filter_info *filter);
 	/** Set or get mode of operation
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the mode operation
 	 * @param mode settings
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*mode)(const struct device *dev, struct wifi_mode_info *mode);
+	int (*mode)(const struct device *dev, struct net_if *iface, struct wifi_mode_info *mode);
 	/** Set or get current channel of operation
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the channel operation
 	 * @param channel settings
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*channel)(const struct device *dev, struct wifi_channel_info *channel);
+	int (*channel)(const struct device *dev,
+		       struct net_if *iface,
+		       struct wifi_channel_info *channel);
 
 	/** Send BTM query
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the BTM query operation
 	 * @param reason query reason
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*btm_query)(const struct device *dev, uint8_t reason);
+	int (*btm_query)(const struct device *dev, struct net_if *iface, uint8_t reason);
 
 	/** Check if ap support Neighbor Report or not.
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the Neighbor Report operation
 	 *
 	 * @return true if support, false if not support
 	 */
-	bool (*bss_support_neighbor_rep)(const struct device *dev);
+	bool (*bss_support_neighbor_rep)(const struct device *dev, struct net_if *iface);
 
 	/** Judge ap whether support the capability
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the capability operation
 	 * @param capab is the capability to judge
 	 *
 	 * @return 1 if support, 0 if not support
 	 */
-	int (*bss_ext_capab)(const struct device *dev, int capab);
+	int (*bss_ext_capab)(const struct device *dev, struct net_if *iface, int capab);
 
 	/** Send legacy scan
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the legacy scan operation
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*legacy_roam)(const struct device *dev);
+	int (*legacy_roam)(const struct device *dev, struct net_if *iface);
 
 	/** Get Version of WiFi driver and Firmware
 	 *
@@ -1861,131 +2153,184 @@ struct wifi_mgmt_ops {
 	 * or in RAM.
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
+	 * @param iface Network interface to use for the get version operation
 	 * @param params Version parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*get_version)(const struct device *dev, struct wifi_version *params);
+	int (*get_version)(const struct device *dev,
+			   struct net_if *iface,
+			   struct wifi_version *params);
 	/** Get Wi-Fi connection parameters recently used
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
+	 * @param iface Network interface to use for the get connection parameters operation
 	 * @param params the Wi-Fi connection parameters recently used
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*get_conn_params)(const struct device *dev, struct wifi_connect_req_params *params);
+	int (*get_conn_params)(const struct device *dev,
+			       struct net_if *iface,
+			       struct wifi_connect_req_params *params);
 	/** Set RTS threshold value
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the RTS threshold operation
 	 * @param RTS threshold value
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*set_rts_threshold)(const struct device *dev, unsigned int rts_threshold);
+	int (*set_rts_threshold)(const struct device *dev,
+				 struct net_if *iface,
+				 unsigned int rts_threshold);
 	/** Configure AP parameter
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the AP parameter configuration operation
 	 * @param params AP mode parameter configuration parameter info
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*ap_config_params)(const struct device *dev, struct wifi_ap_config_params *params);
+	int (*ap_config_params)(const struct device *dev,
+				struct net_if *iface,
+				struct wifi_ap_config_params *params);
 	/** Configure STA parameter
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the STA parameter configuration operation
 	 * @param params STA mode parameter configuration parameter info
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*config_params)(const struct device *dev, struct wifi_config_params *params);
+	int (*config_params)(const struct device *dev,
+			     struct net_if *iface,
+			     struct wifi_config_params *params);
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	/** Dispatch DPP operations by action enum, with or without arguments in string format
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
+	 * @param iface Network interface to use for the DPP operation
 	 * @param params DPP action enum and parameters in string
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*dpp_dispatch)(const struct device *dev, struct wifi_dpp_params *params);
+	int (*dpp_dispatch)(const struct device *dev,
+			    struct net_if *iface,
+			    struct wifi_dpp_params *params);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
-	/** Flush PMKSA cache entries
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	/** Dispatch NAN operations by action enum, with or without arguments in string format
 	 *
-	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param dev Pointer to the device structure for the driver instance
+	 * @param iface Network interface to use for the NAN operation
+	 * @param params NAN action enum and parameters in string
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*pmksa_flush)(const struct device *dev);
+	int (*nan_cfg)(const struct device *dev,
+		       struct net_if *iface,
+		       struct wifi_nan_params *params);
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+
+	/** Flush PMKSA cache entries
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the PMKSA flush operation
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*pmksa_flush)(const struct device *dev, struct net_if *iface);
 	/** Set Wi-Fi enterprise mode CA/client Cert and key
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the enterprise credentials operation
 	 * @param creds Pointer to the CA/client Cert and key.
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+#ifdef CONFIG_WIFI_CERTIFICATE_LIB
 	int (*enterprise_creds)(const struct device *dev,
-			struct wifi_enterprise_creds_params *creds);
+				struct net_if *iface,
+				struct wifi_enterprise_creds_params *creds);
 #endif
 	/** Get RTS threshold value
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the RTS threshold operation
 	 * @param rts_threshold Pointer to the RTS threshold value.
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*get_rts_threshold)(const struct device *dev, unsigned int *rts_threshold);
+	int (*get_rts_threshold)(const struct device *dev,
+				 struct net_if *iface,
+				 unsigned int *rts_threshold);
 	/** Start a WPS PBC/PIN connection
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
-	 * @param params wps operarion parameters
+	 * @param iface Network interface to use for the WPS operation
+	 * @param params wps operation parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*wps_config)(const struct device *dev, struct wifi_wps_config_params *params);
+	int (*wps_config)(const struct device *dev,
+			  struct net_if *iface,
+			  struct wifi_wps_config_params *params);
 	/** Trigger candidate scan
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
+	 * @param iface Network interface to use for the scan operation
 	 * @param params Scan parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*candidate_scan)(const struct device *dev, struct wifi_scan_params *params);
+	int (*candidate_scan)(const struct device *dev,
+			      struct net_if *iface,
+			      struct wifi_scan_params *params);
 	/** Start 11r roaming
 	 *
 	 * @param dev Pointer to the device structure for the driver instance
+	 * @param iface Network interface to use for the roaming operation
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*start_11r_roaming)(const struct device *dev);
+	int (*start_11r_roaming)(const struct device *dev, struct net_if *iface);
 	/** Set BSS max idle period
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
-	 * @param BSS max idle period value
+	 * @param iface Network interface to use for the BSS max idle period operation
+	 * @param bss_max_idle_period max idle period value
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
 	int (*set_bss_max_idle_period)(const struct device *dev,
-			unsigned short bss_max_idle_period);
+				       struct net_if *iface,
+				       unsigned short bss_max_idle_period);
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
 	/** Configure background scanning
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the background scanning operation
 	 * @param params Background scanning configuration parameters
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*set_bgscan)(const struct device *dev, struct wifi_bgscan_params *params);
+	int (*set_bgscan)(const struct device *dev,
+			  struct net_if *iface,
+			  struct wifi_bgscan_params *params);
 #endif
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 	/** Wi-Fi Direct (P2P) operations for device discovery
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use for the P2P operation
 	 * @param params P2P operation parameters including operation type, discovery settings,
 	 * timeout values and peer information retrieval options
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*p2p_oper)(const struct device *dev, struct wifi_p2p_params *params);
+	int (*p2p_oper)(const struct device *dev,
+			struct net_if *iface,
+			struct wifi_p2p_params *params);
 #endif
 };
 
@@ -2083,7 +2428,7 @@ void wifi_mgmt_raise_disconnect_complete_event(struct net_if *iface, int status)
  *
  * @param iface Network interface
  * @param inbuf Input buffer of neighbor reports
- * @param buf_len Lenghth of input buffer
+ * @param buf_len Length of input buffer
  */
 void wifi_mgmt_raise_neighbor_rep_recv_event(struct net_if *iface,
 					     char *inbuf, size_t buf_len);

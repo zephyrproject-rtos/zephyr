@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -638,7 +638,7 @@ static void dmic_ch5_isr(const struct device *dev)
 	dmic_isr(dev, 5);
 }
 
-static const struct _dmic_ops dmic_ops = {
+static DEVICE_API(dmic, dmic_ops) = {
 	.configure = ifx_dmic_configure,
 	.trigger = ifx_dmic_trigger,
 	.read = ifx_dmic_read,

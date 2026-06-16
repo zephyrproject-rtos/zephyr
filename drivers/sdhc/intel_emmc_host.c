@@ -1277,10 +1277,10 @@ static DEVICE_API(sdhc, emmc_api) = {
 	.get_host_props = emmc_get_host_props,
 };
 
-#define EMMC_HOST_IRQ_FLAGS_SENSE0(n) 0
-#define EMMC_HOST_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
+#define EMMC_HOST_IRQ_FLAGS0(n) 0
+#define EMMC_HOST_IRQ_FLAGS1(n) DT_INST_IRQ(n, flags)
 #define EMMC_HOST_IRQ_FLAGS(n)\
-	_CONCAT(EMMC_HOST_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+	_CONCAT(EMMC_HOST_IRQ_FLAGS, DT_INST_IRQ_HAS_CELL(n, flags))(n)
 
 /* Not PCI(e) */
 #define EMMC_HOST_IRQ_CONFIG_PCIE0(n)                                                              \

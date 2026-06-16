@@ -11,7 +11,7 @@ common:
     - posix
     - sparc
 tests:
-  sample.logger.syst.deferred:
+  sample.logging.syst.deferred:
     toolchain_exclude: xcc
     integration_platforms:
       - mps2/an385
@@ -28,11 +28,11 @@ tests:
     # LOG_MIPI_SYST_ENABLE=y --> CONFIG_MIPI_SYST_LIB --> \
     # --> REQUIRES_FULL_LIBC.
     #
-    # Not all compillers announced in Zephyr support a full C library
+    # Not all compilers announced in Zephyr support a full C library
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y
-  sample.logger.syst.immediate:
+  sample.logging.syst.immediate:
     toolchain_exclude: xcc
     extra_args: EXTRA_CONF_FILE=overlay_immediate.conf
     integration_platforms:
@@ -47,7 +47,7 @@ tests:
     filter: CONFIG_FULL_LIBC_SUPPORTED
     extra_configs:
       - CONFIG_REQUIRES_FULL_LIBC=y
-  sample.logger.syst.catalog.deferred:
+  sample.logging.syst.catalog.deferred:
     toolchain_exclude: xcc
     extra_args: EXTRA_CONF_FILE=overlay_deferred.conf
     integration_platforms:
@@ -62,7 +62,7 @@ tests:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
       - CONFIG_REQUIRES_FULL_LIBC=y
     filter: CONFIG_FULL_LIBC_SUPPORTED
-  sample.logger.syst.catalog.immediate:
+  sample.logging.syst.catalog.immediate:
     toolchain_exclude: xcc
     integration_platforms:
       - qemu_x86
@@ -76,7 +76,7 @@ tests:
       - CONFIG_LOG_MIPI_SYST_USE_CATALOG=y
       - CONFIG_REQUIRES_FULL_LIBC=y
     filter: CONFIG_FULL_LIBC_SUPPORTED
-  sample.logger.syst.deferred_cpp:
+  sample.logging.syst.deferred_cpp:
     toolchain_exclude: xcc
     extra_args: EXTRA_CONF_FILE=overlay_deferred.conf
     integration_platforms:
@@ -91,7 +91,7 @@ tests:
       - CONFIG_CPP=y
       - CONFIG_REQUIRES_FULL_LIBC=y
     filter: CONFIG_FULL_LIBC_SUPPORTED
-  sample.logger.syst.immediate_cpp:
+  sample.logging.syst.immediate_cpp:
     toolchain_exclude: xcc
     integration_platforms:
       - mps2/an385
@@ -105,7 +105,7 @@ tests:
       - CONFIG_CPP=y
       - CONFIG_REQUIRES_FULL_LIBC=y
     filter: CONFIG_FULL_LIBC_SUPPORTED
-  sample.logger.syst.catalog.deferred_cpp:
+  sample.logging.syst.catalog.deferred_cpp:
     toolchain_exclude: xcc
     extra_args: EXTRA_CONF_FILE=overlay_deferred.conf
     integration_platforms:
@@ -121,7 +121,7 @@ tests:
       - CONFIG_CPP=y
       - CONFIG_REQUIRES_FULL_LIBC=y
     filter: CONFIG_FULL_LIBC_SUPPORTED
-  sample.logger.syst.catalog.immediate_cpp:
+  sample.logging.syst.catalog.immediate_cpp:
     toolchain_exclude: xcc
     integration_platforms:
       - qemu_x86

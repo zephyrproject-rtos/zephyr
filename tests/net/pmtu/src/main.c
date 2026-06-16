@@ -179,7 +179,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	if_count++;
 }
 
-static void setup_mgmt_events(void)
+__maybe_unused static void setup_mgmt_events(void)
 {
 	static bool setup_done;
 

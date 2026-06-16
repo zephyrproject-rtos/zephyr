@@ -11,12 +11,12 @@ LOG_MODULE_REGISTER(ptp_transport, CONFIG_PTP_LOG_LEVEL);
 #include <inttypes.h>
 
 #include <zephyr/kernel.h>
-#include <zephyr/drivers/ptp_clock.h>
 
 #include <errno.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/socket.h>
 
+#include "msg.h"
 #include "transport.h"
 
 #define INTERFACE_NAME_LEN (32)
@@ -24,11 +24,30 @@ LOG_MODULE_REGISTER(ptp_transport, CONFIG_PTP_LOG_LEVEL);
 #define PTP_L2_RECVMSG_RETRY_MS MSEC_PER_SEC
 
 static const struct net_in_addr mcast_addr_ipv4 = {{{224, 0, 1, 129}}};
+static const struct net_in_addr pdelay_mcast_addr_ipv4 = {{{224, 0, 0, 107}}};
 static const struct net_in6_addr mcast_addr_ipv6 = {
 	{{0xff, 0x0e, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x81}}};
+static const struct net_in6_addr pdelay_mcast_addr_ipv6 = {
+	{{0xff, 0x02, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x6b}}};
 static const uint8_t mcast_addr_l2[PTP_L2_ADDR_LEN] = {0x01, 0x1B, 0x19, 0x00, 0x00, 0x00};
+static const uint8_t pdelay_mcast_addr_l2[PTP_L2_ADDR_LEN] = {0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E};
 
-static int transport_socket_open(struct net_if *iface, struct net_sockaddr *addr)
+static bool transport_is_pdelay_msg(const void *buf)
+{
+	const struct ptp_msg *msg = buf;
+
+	switch ((enum ptp_msg_type)(msg->header.type_major_sdo_id & 0xF)) {
+	case PTP_MSG_PDELAY_REQ:
+	case PTP_MSG_PDELAY_RESP:
+	case PTP_MSG_PDELAY_RESP_FOLLOW_UP:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static int transport_socket_open(struct net_if *iface, net_sa_family_t family,
+				 struct net_sockaddr *addr, net_socklen_t addrlen)
 {
 	static const int feature_on = 1;
 	static const uint8_t priority = NET_PRIORITY_CA;
@@ -36,7 +55,7 @@ static int transport_socket_open(struct net_if *iface, struct net_sockaddr *addr
 		ZSOCK_SOF_TIMESTAMPING_TX_HARDWARE | ZSOCK_SOF_TIMESTAMPING_RX_HARDWARE;
 	struct net_ifreq ifreq = {0};
 	int cnt;
-	int socket = zsock_socket(addr->sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	int socket = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 
 	if (net_if_get_by_iface(iface) < 0) {
 		LOG_ERR("Failed to obtain interface index");
@@ -53,7 +72,7 @@ static int transport_socket_open(struct net_if *iface, struct net_sockaddr *addr
 		goto error;
 	}
 
-	if (zsock_bind(socket, addr, sizeof(*addr))) {
+	if (zsock_bind(socket, addr, addrlen)) {
 		LOG_ERR("Failed to bind socket");
 		goto error;
 	}
@@ -83,28 +102,66 @@ error:
 	return -1;
 }
 
+static int transport_join_ipv4_group(struct ptp_port *port, int socket,
+				     const struct net_in_addr *addr, const char *name)
+{
+	struct net_ip_mreqn mreqn = {0};
+
+	memcpy(&mreqn.imr_multiaddr, addr, sizeof(struct net_in_addr));
+	mreqn.imr_ifindex = net_if_get_by_iface(port->iface);
+
+	if (zsock_setsockopt(socket, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP, &mreqn,
+			     sizeof(mreqn)) != 0) {
+		LOG_ERR("Failed to join IPv4 %s multicast group", name);
+		return -1;
+	}
+
+	return 0;
+}
+
+static int transport_join_ipv6_group(struct ptp_port *port, int socket,
+				     const struct net_in6_addr *addr, const char *name)
+{
+	struct net_ipv6_mreq mreqn = {0};
+
+	memcpy(&mreqn.ipv6mr_multiaddr, addr, sizeof(struct net_in6_addr));
+	mreqn.ipv6mr_ifindex = net_if_get_by_iface(port->iface);
+
+	if (zsock_setsockopt(socket, NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP, &mreqn,
+			     sizeof(mreqn)) != 0) {
+		LOG_ERR("Failed to join IPv6 %s multicast group", name);
+		return -1;
+	}
+
+	return 0;
+}
+
 static int transport_join_multicast(struct ptp_port *port)
 {
-	if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
-		struct net_ip_mreqn mreqn = {0};
+	if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
+		if (transport_join_ipv4_group(port, port->socket[PTP_SOCKET_GENERAL],
+					      &mcast_addr_ipv4, "default") != 0) {
+			return -1;
+		}
 
-		memcpy(&mreqn.imr_multiaddr, &mcast_addr_ipv4, sizeof(struct net_in_addr));
-		mreqn.imr_ifindex = net_if_get_by_iface(port->iface);
-
-		if (zsock_setsockopt(port->socket[1], NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
-				     &mreqn, sizeof(mreqn))) {
-			LOG_ERR("Failed to join IPv4 multicast group");
+		if (CONFIG_PTP_DELAY_MECHANISM == PTP_DM_P2P &&
+		    (transport_join_ipv4_group(port, port->socket[PTP_SOCKET_EVENT],
+					       &pdelay_mcast_addr_ipv4, "peer-delay") != 0 ||
+		     transport_join_ipv4_group(port, port->socket[PTP_SOCKET_GENERAL],
+					       &pdelay_mcast_addr_ipv4, "peer-delay") != 0)) {
 			return -1;
 		}
 	} else {
-		struct net_ipv6_mreq mreqn = {0};
+		if (transport_join_ipv6_group(port, port->socket[PTP_SOCKET_EVENT],
+					      &mcast_addr_ipv6, "default") != 0) {
+			return -1;
+		}
 
-		memcpy(&mreqn.ipv6mr_multiaddr, &mcast_addr_ipv6, sizeof(struct net_in6_addr));
-		mreqn.ipv6mr_ifindex = net_if_get_by_iface(port->iface);
-
-		if (zsock_setsockopt(port->socket[0], NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP,
-				     &mreqn, sizeof(mreqn))) {
-			LOG_ERR("Failed to join IPv6 multicast group");
+		if (CONFIG_PTP_DELAY_MECHANISM == PTP_DM_P2P &&
+		    (transport_join_ipv6_group(port, port->socket[PTP_SOCKET_EVENT],
+					       &pdelay_mcast_addr_ipv6, "peer-delay") != 0 ||
+		     transport_join_ipv6_group(port, port->socket[PTP_SOCKET_GENERAL],
+					       &pdelay_mcast_addr_ipv6, "peer-delay") != 0)) {
 			return -1;
 		}
 	}
@@ -123,7 +180,8 @@ static int transport_udp_ipv4_open(struct net_if *iface, uint16_t port)
 		.sin_port = net_htons(port),
 	};
 
-	socket = transport_socket_open(iface, (struct net_sockaddr *)&addr);
+	socket = transport_socket_open(iface, NET_AF_INET, (struct net_sockaddr *)&addr,
+				       sizeof(addr));
 	if (socket < 0) {
 		return -1;
 	}
@@ -160,7 +218,8 @@ static int transport_udp_ipv6_open(struct net_if *iface, uint16_t port)
 					.sin6_addr = NET_IN6ADDR_ANY_INIT,
 					.sin6_port = net_htons(port)};
 
-	socket = transport_socket_open(iface, (struct net_sockaddr *)&addr);
+	socket = transport_socket_open(iface, NET_AF_INET6, (struct net_sockaddr *)&addr,
+				       sizeof(addr));
 	if (socket < 0) {
 		return -1;
 	}
@@ -241,21 +300,30 @@ static int transport_send_udp(int socket, int port, void *buf, int length,
 	int cnt;
 
 	if (!addr) {
-		if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
+		if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
 			m_addr.sa_family = NET_AF_INET;
 			net_sin(&m_addr)->sin_port = net_htons(port);
-			net_sin(&m_addr)->sin_addr.s_addr = mcast_addr_ipv4.s_addr;
+			if (transport_is_pdelay_msg(buf)) {
+				net_sin(&m_addr)->sin_addr.s_addr = pdelay_mcast_addr_ipv4.s_addr;
+			} else {
+				net_sin(&m_addr)->sin_addr.s_addr = mcast_addr_ipv4.s_addr;
+			}
 
-		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
+		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPV6_PROTOCOL)) {
 			m_addr.sa_family = NET_AF_INET6;
 			net_sin6(&m_addr)->sin6_port = net_htons(port);
-			memcpy(&net_sin6(&m_addr)->sin6_addr, &mcast_addr_ipv6,
-			       sizeof(struct net_in6_addr));
+			if (transport_is_pdelay_msg(buf)) {
+				memcpy(&net_sin6(&m_addr)->sin6_addr, &pdelay_mcast_addr_ipv6,
+				       sizeof(struct net_in6_addr));
+			} else {
+				memcpy(&net_sin6(&m_addr)->sin6_addr, &mcast_addr_ipv6,
+				       sizeof(struct net_in6_addr));
+			}
 		}
 		addr = &m_addr;
 	}
 
-	addrlen = IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL) ? sizeof(struct net_sockaddr_in)
+	addrlen = IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL) ? sizeof(struct net_sockaddr_in)
 							   : sizeof(struct net_sockaddr_in6);
 	cnt = zsock_sendto(socket, buf, length, 0, addr, addrlen);
 	if (cnt < 1) {
@@ -281,7 +349,11 @@ static int transport_send_l2(struct ptp_port *port, int socket, void *buf, int l
 	addr.sll_protocol = net_htons(NET_ETH_PTYPE_PTP);
 	addr.sll_ifindex = ifindex;
 	addr.sll_halen = PTP_L2_ADDR_LEN;
-	memcpy(addr.sll_addr, mcast_addr_l2, sizeof(mcast_addr_l2));
+	if (transport_is_pdelay_msg(buf)) {
+		memcpy(addr.sll_addr, pdelay_mcast_addr_l2, sizeof(pdelay_mcast_addr_l2));
+	} else {
+		memcpy(addr.sll_addr, mcast_addr_l2, sizeof(mcast_addr_l2));
+	}
 
 	cnt = zsock_sendto(socket, buf, length, 0, (struct net_sockaddr *)&addr, sizeof(addr));
 	if (cnt < 1) {
@@ -310,7 +382,7 @@ int ptp_transport_open(struct ptp_port *port)
 	}
 
 	for (int i = 0; i < PTP_SOCKET_CNT; i++) {
-		socket = IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)
+		socket = IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)
 				 ? transport_udp_ipv4_open(port->iface, socket_ports[i])
 				 : transport_udp_ipv6_open(port->iface, socket_ports[i]);
 
@@ -410,19 +482,38 @@ static void transport_init_recv_msghdr(struct ptp_msg *msg, struct net_msghdr *m
 	};
 }
 
-static bool transport_extract_rx_timestamp(struct ptp_msg *msg, struct net_msghdr *msghdr)
+static int transport_extract_rx_timestamp(struct ptp_msg *msg, struct net_msghdr *msghdr,
+					  bool *rx_ts_found)
 {
+	*rx_ts_found = false;
+
 	for (struct net_cmsghdr *cmsg = NET_CMSG_FIRSTHDR(msghdr); cmsg != NULL;
 	     cmsg = NET_CMSG_NXTHDR(msghdr, cmsg)) {
+		if (cmsg->cmsg_len < NET_CMSG_LEN(0)) {
+			return -EINVAL;
+		}
+
 		if (cmsg->cmsg_level == ZSOCK_SOL_SOCKET &&
 		    cmsg->cmsg_type == ZSOCK_SO_TIMESTAMPING) {
+			if (cmsg->cmsg_len < NET_CMSG_LEN(sizeof(struct net_ptp_time))) {
+				return -EINVAL;
+			}
+
 			memcpy(&msg->timestamp.host, NET_CMSG_DATA(cmsg),
 			       sizeof(struct net_ptp_time));
-			return true;
+			if (msg->timestamp.host.second == UINT64_MAX ||
+			    msg->timestamp.host.nanosecond == UINT32_MAX ||
+			    msg->timestamp.host.nanosecond >= NSEC_PER_SEC) {
+				memset(&msg->timestamp.host, 0, sizeof(msg->timestamp.host));
+				return 0;
+			}
+
+			*rx_ts_found = true;
+			return 0;
 		}
 	}
 
-	return false;
+	return 0;
 }
 
 static void transport_set_host_timestamp_now(struct ptp_msg *msg)
@@ -433,16 +524,9 @@ static void transport_set_host_timestamp_now(struct ptp_msg *msg)
 	msg->timestamp.host.nanosecond = (current % MSEC_PER_SEC) * NSEC_PER_MSEC;
 }
 
-static void transport_finalize_l2_rx_timestamp(struct ptp_port *port, struct ptp_msg *msg,
-					       bool rx_ts_found)
+static void transport_finalize_l2_rx_timestamp(struct ptp_msg *msg, bool rx_ts_found)
 {
-	const struct device *phc = net_eth_get_ptp_clock(port->iface);
-
 	msg->rx_timestamp_valid = rx_ts_found;
-
-	if (!msg->rx_timestamp_valid && phc && ptp_clock_get(phc, &msg->timestamp.host) == 0) {
-		msg->rx_timestamp_valid = true;
-	}
 
 	if (!msg->rx_timestamp_valid) {
 		transport_set_host_timestamp_now(msg);
@@ -452,6 +536,7 @@ static void transport_finalize_l2_rx_timestamp(struct ptp_port *port, struct ptp
 static int transport_recv_l2_msg(struct ptp_port *port, struct ptp_msg *msg)
 {
 	bool recvmsg_ok = false;
+	bool rx_ts_found = false;
 	uint8_t ctrl[NET_CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
 	struct net_msghdr msghdr;
 	struct net_iovec iov;
@@ -501,17 +586,26 @@ static int transport_recv_l2_msg(struct ptp_port *port, struct ptp_msg *msg)
 		}
 	}
 
-	transport_finalize_l2_rx_timestamp(
-		port, msg, recvmsg_ok && transport_extract_rx_timestamp(msg, &msghdr));
+	if (recvmsg_ok) {
+		int ret = transport_extract_rx_timestamp(msg, &msghdr, &rx_ts_found);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	transport_finalize_l2_rx_timestamp(msg, rx_ts_found);
 
 	return cnt;
 }
 
 static int transport_recv_udp_msg(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
 {
+	bool rx_ts_found;
 	uint8_t ctrl[NET_CMSG_SPACE(sizeof(struct net_ptp_time))] = {0};
 	struct net_msghdr msghdr;
 	struct net_iovec iov;
+	int ret;
 	int cnt;
 
 	transport_init_recv_msghdr(msg, &msghdr, &iov, ctrl, sizeof(ctrl));
@@ -522,7 +616,12 @@ static int transport_recv_udp_msg(struct ptp_port *port, struct ptp_msg *msg, en
 		return cnt;
 	}
 
-	msg->rx_timestamp_valid = transport_extract_rx_timestamp(msg, &msghdr);
+	ret = transport_extract_rx_timestamp(msg, &msghdr, &rx_ts_found);
+	if (ret < 0) {
+		return ret;
+	}
+
+	msg->rx_timestamp_valid = rx_ts_found;
 
 	return cnt;
 }
@@ -544,7 +643,7 @@ int ptp_transport_protocol_addr(struct ptp_port *port, uint8_t *addr)
 
 	int length = 0;
 
-	if (IS_ENABLED(CONFIG_PTP_UDP_IPv4_PROTOCOL)) {
+	if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
 		struct net_in_addr *ip =
 			net_if_ipv4_get_global_addr(port->iface, NET_ADDR_PREFERRED);
 
@@ -552,7 +651,7 @@ int ptp_transport_protocol_addr(struct ptp_port *port, uint8_t *addr)
 			length = NET_IPV4_ADDR_SIZE;
 			memcpy(addr, &ip->s_addr, length);
 		}
-	} else if (IS_ENABLED(CONFIG_PTP_UDP_IPv6_PROTOCOL)) {
+	} else if (IS_ENABLED(CONFIG_PTP_UDP_IPV6_PROTOCOL)) {
 		struct net_in6_addr *ip =
 			net_if_ipv6_get_global_addr(NET_ADDR_PREFERRED, &port->iface);
 

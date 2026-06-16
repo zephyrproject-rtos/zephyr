@@ -43,6 +43,13 @@ int main(void)
 	}
 	LOG_DBG("stepper is %p, name is %s", stepper_ctrl, stepper_ctrl->name);
 
+	struct tmc_stallguard_settings sg_settings = {
+		.is_sg_enabled = true,
+		.sg_velocity_check_interval_ms = 100,
+		.sg_threshold_velocity = 200000,
+	};
+	tmc50xx_stepper_ctrl_configure_stallguard(stepper_ctrl, &sg_settings);
+
 	stepper_ctrl_set_event_cb(stepper_ctrl, stepper_callback, NULL);
 	stepper_enable(stepper_driver);
 

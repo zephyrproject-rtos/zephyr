@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,13 +34,7 @@ void ifx_pse84_cm55_startup(void)
 	Cy_SysClk_PeriGroupSlaveInit(CY_MMIO_SMIF0_PERI_NR, CY_MMIO_SMIF0_GROUP_NR,
 				     CY_MMIO_SMIF0_SLAVE_NR, CY_MMIO_SMIF0_CLK_HF_NR);
 
-	Cy_SysClk_PeriGroupSlaveInit(CY_MMIO_SMIF01_PERI_NR, CY_MMIO_SMIF01_GROUP_NR,
-				     CY_MMIO_SMIF01_SLAVE_NR, CY_MMIO_SMIF01_CLK_HF_NR);
-
-	/* Enable SOCMEM */
-	Cy_SysEnableSOCMEM(true);
-
-	/* Configure MPC for NS */
+	/* Configure Memory Protection Controller for Non-Secure */
 	cy_mpc_init();
 
 	/* Reduce deepsleep wakeup time in hardware */
@@ -49,8 +43,10 @@ void ifx_pse84_cm55_startup(void)
 	/* Clear SYSCPU and APPCPU power domain dependency set by boot code */
 	cy_pd_pdcm_clear_dependency(CY_PD_PDCM_APPCPU, CY_PD_PDCM_SYSCPU);
 
+	uint32_t cm55_start_address = DT_REG_ADDR(DT_NODELABEL(m55_xip));
+
 	/* Enable CM55 */
-	Cy_SysEnableCM55(MXCM55, DT_REG_ADDR(DT_NODELABEL(m55_xip)), CM55_BOOT_WAIT_TIME_USEC);
+	Cy_SysEnableCM55(MXCM55, cm55_start_address, CM55_BOOT_WAIT_TIME_USEC);
 
 	/* System Domain Idle Power Mode Configuration */
 	Cy_SysPm_SetDeepSleepMode(CY_SYSPM_MODE_DEEPSLEEP);
@@ -58,7 +54,7 @@ void ifx_pse84_cm55_startup(void)
 	/* SoCMEM Idle Power Mode Configuration */
 	Cy_SysPm_SetSOCMEMDeepSleepMode(CY_SYSPM_MODE_DEEPSLEEP);
 
-	/* Configure PPC for NS*/
+	/* Configure Peripheral Protection Controller for Non-Secure */
 	cy_ppc0_init();
 	cy_ppc1_init();
 

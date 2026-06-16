@@ -182,7 +182,7 @@ int tcn75a_trigger_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!gpio_is_ready_dt(&config->alert_gpios)) {
-		LOG_ERR("alert GPIO device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->alert_gpios.port);
 		return -ENODEV;
 	}
 

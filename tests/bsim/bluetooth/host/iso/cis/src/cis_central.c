@@ -16,84 +16,31 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
 #include <zephyr/toolchain.h>
 
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
 #include "bstests.h"
 #include "common.h"
+#include "iso_tx.h"
 
-#define ENQUEUE_COUNT 2
+#define EXPECTED_TX_CNT 100U
 
 extern enum bst_result_t bst_result;
 static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_iso_chan *default_chan = &iso_chans[0];
+static struct bt_iso_cig_param cig_param;
 static struct bt_iso_cig *cig;
-static uint16_t seq_num;
-static volatile size_t enqueue_cnt;
-static uint32_t latency_ms = 10U; /* 10ms */
-static uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
-NET_BUF_POOL_FIXED_DEFINE(tx_pool, ENQUEUE_COUNT, BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+static const uint32_t latency_ms = 10U;                  /* 10ms */
+static const uint32_t interval_us = 10U * USEC_PER_MSEC; /* 10 ms */
+static uint8_t disconnect_reason;
 
 BUILD_ASSERT(CONFIG_BT_ISO_MAX_CHAN > 1, "CONFIG_BT_ISO_MAX_CHAN shall be at least 2");
 
 DEFINE_FLAG_STATIC(flag_iso_connected);
-
-static void send_data_cb(struct k_work *work)
-{
-	static uint8_t buf_data[CONFIG_BT_ISO_TX_MTU];
-	static size_t len_to_send = 1;
-	static bool data_initialized;
-	struct net_buf *buf;
-	int ret;
-
-	if (!IS_FLAG_SET(flag_iso_connected)) {
-		/* TX has been aborted */
-		return;
-	}
-
-	if (!data_initialized) {
-		for (int i = 0; i < ARRAY_SIZE(buf_data); i++) {
-			buf_data[i] = (uint8_t)i;
-		}
-
-		data_initialized = true;
-	}
-
-	buf = net_buf_alloc(&tx_pool, K_FOREVER);
-	net_buf_reserve(buf, BT_ISO_CHAN_SEND_RESERVE);
-
-	net_buf_add_mem(buf, buf_data, len_to_send);
-
-	ret = bt_iso_chan_send(default_chan, buf, seq_num++);
-	if (ret < 0) {
-		printk("Failed to send ISO data (%d)\n", ret);
-		net_buf_unref(buf);
-
-		/* Reschedule for next interval */
-		k_work_reschedule(k_work_delayable_from_work(work), K_USEC(interval_us));
-
-		return;
-	}
-
-	len_to_send++;
-	if (len_to_send > ARRAY_SIZE(buf_data)) {
-		len_to_send = 1;
-	}
-
-	enqueue_cnt--;
-	if (enqueue_cnt > 0U) {
-		/* If we have more buffers available, we reschedule the workqueue item immediately
-		 * to trigger another encode + TX, but without blocking this call for too long
-		 */
-		k_work_reschedule(k_work_delayable_from_work(work), K_NO_WAIT);
-	}
-}
-K_WORK_DELAYABLE_DEFINE(iso_send_work, send_data_cb);
 
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
@@ -122,22 +69,83 @@ static void iso_connected(struct bt_iso_chan *chan)
 		.pid = BT_ISO_DATA_PATH_HCI,
 		.format = BT_HCI_CODING_FORMAT_TRANSPARENT,
 	};
+	struct bt_iso_info info;
 	int err;
 
 	printk("ISO Channel %p connected\n", chan);
 
-	seq_num = 0U;
-	enqueue_cnt = ENQUEUE_COUNT;
+	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
+	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
+
+	err = bt_iso_chan_get_info(chan, &info);
+	TEST_ASSERT(err == 0, "Failed to get CIS info: %d", err);
+
+	TEST_ASSERT(info.type == BT_ISO_CHAN_TYPE_CENTRAL);
+	TEST_ASSERT(info.can_send || info.can_recv);
+	TEST_ASSERT(IN_RANGE(info.iso_interval, BT_ISO_ISO_INTERVAL_MIN, BT_ISO_ISO_INTERVAL_MAX),
+		    "Invalid ISO interval 0x%04x", info.iso_interval);
+	TEST_ASSERT(IN_RANGE(info.max_subevent, BT_ISO_NSE_MIN, BT_ISO_NSE_MAX),
+		    "Invalid subevent number 0x%02x", info.max_subevent);
+	TEST_ASSERT(IN_RANGE(info.unicast.cig_sync_delay, BT_HCI_LE_CIG_SYNC_DELAY_MIN,
+			     BT_HCI_LE_CIG_SYNC_DELAY_MAX),
+		    "Invalid CIG sync delay 0x%06x", info.unicast.cig_sync_delay);
+	TEST_ASSERT(IN_RANGE(info.unicast.cis_sync_delay, BT_HCI_LE_CIS_SYNC_DELAY_MIN,
+			     BT_HCI_LE_CIS_SYNC_DELAY_MAX),
+		    "Invalid CIS sync delay 0x%06x", info.unicast.cis_sync_delay);
+
+	if (info.can_send) {
+		const struct bt_iso_unicast_tx_info *central = &info.unicast.central;
+
+		TEST_ASSERT((BT_GAP_ISO_INTERVAL_TO_US(info.iso_interval) %
+			     cig_param.c_to_p_interval) == 0U,
+			    "ISO interval %u shall be a multiple of the SDU interval %u",
+			    BT_GAP_ISO_INTERVAL_TO_US(info.iso_interval),
+			    cig_param.c_to_p_interval);
+		TEST_ASSERT(IN_RANGE(central->latency, BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MIN,
+				     BT_HCI_LE_TRANSPORT_LATENCY_C_TO_P_MAX),
+			    "Invalid transport latency 0x%06x", central->latency);
+		TEST_ASSERT((central->flush_timeout % info.iso_interval) == 0U,
+			    "Flush timeout in %u shall be a multiple of the ISO interval %u",
+			    central->flush_timeout, info.iso_interval);
+		TEST_ASSERT(IN_RANGE(central->max_pdu, BT_ISO_CONNECTED_PDU_MIN, BT_ISO_PDU_MAX),
+			    "Invalid max PDU 0x%04x", central->max_pdu);
+		TEST_ASSERT((central->phy == BT_GAP_LE_PHY_1M || central->phy == BT_GAP_LE_PHY_2M ||
+			     central->phy == BT_GAP_LE_PHY_CODED),
+			    "Invalid PHY 0x%02x", central->phy);
+		TEST_ASSERT(IN_RANGE(central->bn, BT_ISO_BN_MIN, BT_ISO_BN_MAX),
+			    "Invalid BN 0x%02x", central->bn);
+	}
+	if (info.can_recv) {
+		const struct bt_iso_unicast_tx_info *peripheral = &info.unicast.peripheral;
+
+		TEST_ASSERT((BT_GAP_ISO_INTERVAL_TO_US(info.iso_interval) %
+			     cig_param.p_to_c_interval) == 0U,
+			    "ISO interval %u shall be a multiple of the SDU interval %u",
+			    BT_GAP_ISO_INTERVAL_TO_US(info.iso_interval),
+			    cig_param.p_to_c_interval);
+		TEST_ASSERT(IN_RANGE(peripheral->latency, BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MIN,
+				     BT_HCI_LE_TRANSPORT_LATENCY_P_TO_C_MAX),
+			    "Invalid transport latency 0x%06x", peripheral->latency);
+		TEST_ASSERT((peripheral->flush_timeout % info.iso_interval) == 0U,
+			    "Flush timeout in %u shall be a multiple of the ISO interval %u",
+			    peripheral->flush_timeout, info.iso_interval);
+		TEST_ASSERT(IN_RANGE(peripheral->max_pdu, BT_ISO_CONNECTED_PDU_MIN, BT_ISO_PDU_MAX),
+			    "Invalid max PDU 0x%04x", peripheral->max_pdu);
+		TEST_ASSERT((peripheral->phy == BT_GAP_LE_PHY_1M ||
+			     peripheral->phy == BT_GAP_LE_PHY_2M ||
+			     peripheral->phy == BT_GAP_LE_PHY_CODED),
+			    "Invalid PHY 0x%02x", peripheral->phy);
+		TEST_ASSERT(IN_RANGE(peripheral->bn, BT_ISO_BN_MIN, BT_ISO_BN_MAX),
+			    "Invalid BN 0x%02x", peripheral->bn);
+	}
 
 	if (chan == default_chan) {
-		/* Start send timer */
-		k_work_schedule(&iso_send_work, K_MSEC(0));
+		/* Register for TX to start sending */
+		err = iso_tx_register(chan);
+		TEST_ASSERT(err == 0, "Failed to register chan for TX: %d", err);
 
 		SET_FLAG(flag_iso_connected);
 	}
-
-	err = bt_iso_setup_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR, &hci_path);
-	TEST_ASSERT(err == 0, "Failed to set ISO data path: %d", err);
 }
 
 static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
@@ -147,35 +155,16 @@ static void iso_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 	printk("ISO Channel %p disconnected (reason 0x%02x)\n", chan, reason);
 
 	if (chan == default_chan) {
-		k_work_cancel_delayable(&iso_send_work);
+		err = iso_tx_unregister(chan);
+		TEST_ASSERT(err == 0, "Failed to unregister chan for TX: %d", err);
+
+		disconnect_reason = reason;
 
 		UNSET_FLAG(flag_iso_connected);
 	}
 
 	err = bt_iso_remove_data_path(chan, BT_HCI_DATAPATH_DIR_HOST_TO_CTLR);
 	TEST_ASSERT(err == 0, "Failed to remove ISO data path: %d", err);
-
-	if (seq_num < 100) {
-		printk("Channel disconnected early, bumping seq_num to 1000 to end test\n");
-		seq_num = 1000;
-	}
-}
-
-static void sdu_sent_cb(struct bt_iso_chan *chan)
-{
-	int err;
-
-	enqueue_cnt++;
-
-	if (!IS_FLAG_SET(flag_iso_connected)) {
-		/* TX has been aborted */
-		return;
-	}
-
-	err = k_work_schedule(&iso_send_work, K_NO_WAIT);
-	if (err < 0) {
-		TEST_FAIL("Failed to schedule TX for chan %p: %d", chan, err);
-	}
 }
 
 static void init(void)
@@ -183,7 +172,7 @@ static void init(void)
 	static struct bt_iso_chan_ops iso_ops = {
 		.connected = iso_connected,
 		.disconnected = iso_disconnected,
-		.sent = sdu_sent_cb,
+		.sent = iso_tx_sent_cb,
 	};
 	static struct bt_iso_chan_io_qos iso_tx = {
 		.sdu = CONFIG_BT_ISO_TX_MTU,
@@ -207,37 +196,37 @@ static void init(void)
 		iso_chans[i].ops = &iso_ops;
 		iso_chans[i].qos = &iso_qos;
 	}
+
+	iso_tx_init();
 }
 
-static void set_cig_defaults(struct bt_iso_cig_param *param)
+static void set_cig_defaults(void)
 {
-	param->cis_channels = &default_chan;
-	param->num_cis = 1U;
-	param->sca = BT_GAP_SCA_UNKNOWN;
-	param->packing = BT_ISO_PACKING_SEQUENTIAL;
-	param->framing = BT_ISO_FRAMING_UNFRAMED;
-	param->c_to_p_latency = latency_ms;   /* ms */
-	param->p_to_c_latency = latency_ms;   /* ms */
-	param->c_to_p_interval = interval_us; /* us */
-	param->p_to_c_interval = interval_us; /* us */
-
+	cig_param.cis_channels = &default_chan;
+	cig_param.num_cis = 1U;
+	cig_param.sca = BT_GAP_SCA_UNKNOWN;
+	cig_param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	cig_param.framing = BT_ISO_FRAMING_UNFRAMED;
+	cig_param.c_to_p_latency = latency_ms;   /* ms */
+	cig_param.p_to_c_latency = latency_ms;   /* ms */
+	cig_param.c_to_p_interval = interval_us; /* us */
+	cig_param.p_to_c_interval = interval_us; /* us */
 }
 
 static void create_cig(size_t iso_channels)
 {
 	struct bt_iso_chan *channels[ARRAY_SIZE(iso_chans)];
-	struct bt_iso_cig_param param;
 	int err;
 
 	for (size_t i = 0U; i < iso_channels; i++) {
 		channels[i] = &iso_chans[i];
 	}
 
-	set_cig_defaults(&param);
-	param.num_cis = iso_channels;
-	param.cis_channels = channels;
+	set_cig_defaults();
+	cig_param.num_cis = iso_channels;
+	cig_param.cis_channels = channels;
 
-	err = bt_iso_cig_create(&param, &cig);
+	err = bt_iso_cig_create(&cig_param, &cig);
 	if (err != 0) {
 		TEST_FAIL("Failed to create CIG (%d)", err);
 
@@ -245,22 +234,22 @@ static void create_cig(size_t iso_channels)
 	}
 }
 
-static int reconfigure_cig_interval(struct bt_iso_cig_param *param)
+static int reconfigure_cig_interval(void)
 {
 	int err;
 
 	/* Test modifying CIG parameter without any CIS */
-	param->num_cis = 0U;
-	param->c_to_p_interval = 7500; /* us */
-	param->p_to_c_interval = param->c_to_p_interval;
-	err = bt_iso_cig_reconfigure(cig, param);
+	cig_param.num_cis = 0U;
+	cig_param.c_to_p_interval = 7500; /* us */
+	cig_param.p_to_c_interval = cig_param.c_to_p_interval;
+	err = bt_iso_cig_reconfigure(cig, &cig_param);
 	if (err != 0) {
 		TEST_FAIL("Failed to reconfigure CIG to new interval (%d)", err);
 
 		return err;
 	}
 
-	err = bt_iso_cig_reconfigure(cig, param);
+	err = bt_iso_cig_reconfigure(cig, &cig_param);
 	if (err != 0) {
 		TEST_FAIL("Failed to reconfigure CIG to same interval (%d)", err);
 
@@ -268,9 +257,9 @@ static int reconfigure_cig_interval(struct bt_iso_cig_param *param)
 	}
 
 	/* Test modifying to different values for both intervals */
-	param->c_to_p_interval = 5000; /* us */
-	param->p_to_c_interval = 2500; /* us */
-	err = bt_iso_cig_reconfigure(cig, param);
+	cig_param.c_to_p_interval = 5000; /* us */
+	cig_param.p_to_c_interval = 2500; /* us */
+	err = bt_iso_cig_reconfigure(cig, &cig_param);
 	if (err != 0) {
 		TEST_FAIL("Failed to reconfigure CIG to new interval (%d)", err);
 
@@ -280,24 +269,24 @@ static int reconfigure_cig_interval(struct bt_iso_cig_param *param)
 	return 0;
 }
 
-static int reconfigure_cig_latency(struct bt_iso_cig_param *param)
+static int reconfigure_cig_latency(void)
 {
 	int err;
 
 	/* Test modifying CIG latency without any CIS */
-	param->num_cis = 0U;
-	param->c_to_p_latency = 20; /* ms */
-	param->p_to_c_latency = param->c_to_p_latency;
-	err = bt_iso_cig_reconfigure(cig, param);
+	cig_param.num_cis = 0U;
+	cig_param.c_to_p_latency = 20; /* ms */
+	cig_param.p_to_c_latency = cig_param.c_to_p_latency;
+	err = bt_iso_cig_reconfigure(cig, &cig_param);
 	if (err != 0) {
 		TEST_FAIL("Failed to reconfigure CIG latency (%d)", err);
 
 		return err;
 	}
 
-	param->c_to_p_latency = 30; /* ms */
-	param->p_to_c_latency = 40; /* ms */
-	err = bt_iso_cig_reconfigure(cig, param);
+	cig_param.c_to_p_latency = 30; /* ms */
+	cig_param.p_to_c_latency = 40; /* ms */
+	err = bt_iso_cig_reconfigure(cig, &cig_param);
 	if (err != 0) {
 		TEST_FAIL("Failed to reconfigure CIG for different latencies (%d)", err);
 
@@ -310,19 +299,18 @@ static int reconfigure_cig_latency(struct bt_iso_cig_param *param)
 static void reconfigure_cig(void)
 {
 	struct bt_iso_chan *channels[2];
-	struct bt_iso_cig_param param;
 	int err;
 
 	for (size_t i = 0U; i < ARRAY_SIZE(channels); i++) {
 		channels[i] = &iso_chans[i];
 	}
 
-	set_cig_defaults(&param);
+	set_cig_defaults();
 
 	/* Test modifying existing CIS */
 	default_chan->qos->tx->rtn++;
 
-	err = bt_iso_cig_reconfigure(cig, &param);
+	err = bt_iso_cig_reconfigure(cig, &cig_param);
 	if (err != 0) {
 		TEST_FAIL("Failed to reconfigure CIS to new RTN (%d)", err);
 
@@ -330,22 +318,22 @@ static void reconfigure_cig(void)
 	}
 
 	/* Test modifying interval parameter */
-	err = reconfigure_cig_interval(&param);
+	err = reconfigure_cig_interval();
 	if (err != 0) {
 		return;
 	}
 
 	/* Test modifying latency parameter */
-	err = reconfigure_cig_latency(&param);
+	err = reconfigure_cig_latency();
 	if (err != 0) {
 		return;
 	}
 
 	/* Add CIS to the CIG and restore all other parameters */
-	set_cig_defaults(&param);
-	param.cis_channels = &channels[1];
+	set_cig_defaults();
+	cig_param.cis_channels = &channels[1];
 
-	err = bt_iso_cig_reconfigure(cig, &param);
+	err = bt_iso_cig_reconfigure(cig, &cig_param);
 	if (err != 0) {
 		TEST_FAIL("Failed to reconfigure CIG with new CIS and original parameters (%d)",
 			  err);
@@ -443,6 +431,7 @@ static void reset_bluetooth(void)
 
 	/* After a disable, all CIGs and BIGs are removed */
 	cig = NULL;
+	disconnect_reason = 0U;
 
 	err = bt_enable(NULL);
 	if (err != 0) {
@@ -452,6 +441,27 @@ static void reset_bluetooth(void)
 	}
 }
 
+static void wait_tx_complete(void)
+{
+	size_t tx_cnt;
+
+	do {
+		tx_cnt = iso_tx_get_sent_cnt(default_chan);
+		k_sleep(K_USEC(interval_us));
+
+		if (!IS_FLAG_SET(flag_iso_connected)) {
+			/* We don't expect all TX to be complete in the test where the peripheral
+			 * actively disconnects
+			 */
+			if (disconnect_reason != BT_HCI_ERR_REMOTE_USER_TERM_CONN) {
+				TEST_FAIL("Did not send expected amount before disconnection");
+			}
+
+			return;
+		}
+	} while (tx_cnt < EXPECTED_TX_CNT);
+}
+
 static void test_main(void)
 {
 	init();
@@ -459,21 +469,14 @@ static void test_main(void)
 	reconfigure_cig();
 	connect_acl();
 	connect_cis();
-
-	while (seq_num < 100U) {
-		k_sleep(K_USEC(interval_us));
-	}
-
-	if (seq_num == 100) {
+	wait_tx_complete();
+	if (IS_FLAG_SET(flag_iso_connected)) {
 		disconnect_cis();
-		disconnect_acl();
-		terminate_cig();
 	}
-
-	/* check that all buffers returned to pool */
-	TEST_ASSERT(atomic_get(&tx_pool.avail_count) == ENQUEUE_COUNT,
-		    "tx_pool has non returned buffers, should be %u but is %u",
-		    ENQUEUE_COUNT, atomic_get(&tx_pool.avail_count));
+	if (IS_FLAG_SET(flag_connected)) {
+		disconnect_acl();
+	}
+	terminate_cig();
 
 	TEST_PASS("Test passed");
 }
@@ -494,13 +497,13 @@ static void test_main_disable(void)
 	create_cig(ARRAY_SIZE(iso_chans));
 	connect_acl();
 	connect_cis();
-
-	while (seq_num < 100U) {
-		k_sleep(K_USEC(interval_us));
+	wait_tx_complete();
+	if (IS_FLAG_SET(flag_iso_connected)) {
+		disconnect_cis();
 	}
-
-	disconnect_cis();
-	disconnect_acl();
+	if (IS_FLAG_SET(flag_connected)) {
+		disconnect_acl();
+	}
 	terminate_cig();
 
 	TEST_PASS("Disable test passed");

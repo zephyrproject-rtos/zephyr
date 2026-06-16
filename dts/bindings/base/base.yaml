@@ -163,6 +163,13 @@ properties:
       For details, see "2.3.5 #address-cells and #size-cells" in Devicetree
       Specification v0.4.
 
+  dma-coherent:
+    type: boolean
+    description: |
+      Indicates that the device is capable of coherent DMA operations.
+
+      For details, see "2.3.10 dma-coherent" in Devicetree Specification v0.4.
+
   dmas:
     type: phandle-array
     description: |

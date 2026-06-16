@@ -16,10 +16,25 @@ extern "C" {
 
 /**
  * @file
+ * @brief Header file for the ring buffer API.
+ * @ingroup ring_buffer_apis
+ *
  * @defgroup ring_buffer_apis Ring Buffer APIs
  * @ingroup datastructure_apis
  *
  * @brief Simple ring buffer implementation.
+ *
+ * @note
+ * The ring buffer APIs do not provide internal locking. A single producer
+ * and a single consumer running in separate execution contexts (for
+ * example two threads, or one thread and one ISR) may use the same ring
+ * buffer concurrently without additional synchronization: the producer
+ * side only updates the put indices and the consumer side only updates
+ * the get indices. Use cases with multiple producers or multiple
+ * consumers must serialize those accesses externally. On SMP systems the
+ * producer and consumer must additionally ensure proper memory ordering
+ * (typically by using a kernel synchronization primitive such as
+ * @ref k_sem to signal data availability).
  *
  * @{
  */
@@ -195,6 +210,7 @@ static inline void ring_buf_init(struct ring_buf *buf,
  * @param size Ring buffer size (in 32-bit words)
  * @param data Ring buffer data area (uint32_t data[size]).
  */
+__deprecated /* use #include <zephyr/sys/ringq.h> instead */
 static inline void ring_buf_item_init(struct ring_buf *buf,
 				      uint32_t size,
 				      uint32_t *data)
@@ -246,6 +262,7 @@ static inline uint32_t ring_buf_space_get(const struct ring_buf *buf)
  *
  * @return Ring buffer free space (in 32-bit words).
  */
+__deprecated /* use #include <zephyr/sys/ringq.h> instead */
 static inline uint32_t ring_buf_item_space_get(const struct ring_buf *buf)
 {
 	return ring_buf_space_get(buf) / 4;
@@ -490,6 +507,7 @@ uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size);
  * @retval 0 Data item was written.
  * @retval -EMSGSIZE Ring buffer has insufficient free space.
  */
+__deprecated /* use #include <zephyr/sys/ringq.h> instead */
 int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
 		      uint32_t *data, uint8_t size32);
 
@@ -517,6 +535,7 @@ int ring_buf_item_put(struct ring_buf *buf, uint16_t type, uint8_t value,
  * @retval -EMSGSIZE Data area @a data is too small; @a size32 now contains
  *         the number of 32-bit words needed.
  */
+__deprecated /* use #include <zephyr/sys/ringq.h> instead */
 int ring_buf_item_get(struct ring_buf *buf, uint16_t *type, uint8_t *value,
 		      uint32_t *data, uint8_t *size32);
 

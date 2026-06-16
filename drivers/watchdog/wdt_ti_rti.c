@@ -71,6 +71,8 @@ struct wdt_ti_rti_config {
 	DEVICE_MMIO_ROM;
 
 	uint64_t freq;
+	bool nmi_supported;
+	bool reset_supported;
 	void (*irq_config_func)(void);
 };
 
@@ -146,8 +148,17 @@ static int wdt_ti_rti_timeout(const struct device *dev, const struct wdt_timeout
 		return -EINVAL;
 	}
 
-	/* Only NMI is supported */
 	if (cfg->flags == WDT_FLAG_RESET_SOC) {
+		/* Reset mode requested */
+		if (!config->reset_supported) {
+			return -ENOTSUP;
+		}
+		regs->WWDRXNCTRL = RTIWWDRX_RESET;
+	} else {
+		/* NMI mode requested */
+		if (!config->nmi_supported) {
+			return -ENOTSUP;
+		}
 		regs->WWDRXNCTRL = RTIWWDRX_NMI;
 	}
 
@@ -171,6 +182,7 @@ static int wdt_ti_rti_feed(const struct device *dev, int channel_id)
 	return 0;
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 static void wdt_ti_rti_isr(const struct device *dev)
 {
 	struct wdt_ti_rti_data *data = DEV_DATA(dev);
@@ -184,6 +196,7 @@ static void wdt_ti_rti_isr(const struct device *dev)
 	regs->WDKEY = WDKEY_SEQ0;
 	regs->WDKEY = WDKEY_SEQ1;
 }
+#endif
 
 static int wdt_ti_rti_init(const struct device *dev)
 {
@@ -197,7 +210,9 @@ static int wdt_ti_rti_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	config->irq_config_func();
+	if (config->nmi_supported) {
+		config->irq_config_func();
+	}
 	return 0;
 }
 
@@ -211,15 +226,19 @@ static DEVICE_API(wdt, wdt_ti_rti_api) = {
 #define WDT_TI_RTI_INIT(i)                                                                         \
 	static void wdt_ti_rti_irq_config_##i(void)                                                \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), wdt_ti_rti_isr,             \
-			    DEVICE_DT_INST_GET(i), 0);                                             \
-		irq_enable(DT_INST_IRQN(i));                                                       \
+		IF_ENABLED(DT_INST_IRQ_HAS_IDX(i, 0), (						   \
+			IRQ_CONNECT(DT_INST_IRQN(i), DT_INST_IRQ(i, priority), wdt_ti_rti_isr,     \
+				DEVICE_DT_INST_GET(i), DT_INST_IRQ(i, flags));                     \
+			irq_enable(DT_INST_IRQN(i));                                               \
+		));										   \
 	};                                                                                         \
 	static struct wdt_ti_rti_data wdt_ti_rti_data_##i = {};                                    \
                                                                                                    \
 	static struct wdt_ti_rti_config wdt_ti_rti_config_##i = {                                  \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(i)),                                              \
 		.freq = DT_INST_PROP(i, clock_frequency),                                          \
+		.nmi_supported = DT_INST_IRQ_HAS_IDX(i, 0),					   \
+		.reset_supported = DT_INST_PROP(i, reset_capable),				   \
 		.irq_config_func = wdt_ti_rti_irq_config_##i,                                      \
 	};                                                                                         \
                                                                                                    \

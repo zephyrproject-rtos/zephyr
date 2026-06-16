@@ -10,7 +10,7 @@ verbosity_level=2
 
 # Test that connection establishment times out when RPA
 # timeout is shorter than the connection establishment timeout
-simulation_id="test_central_connect_fails_with_short_rpa_timeout"
+simulation_id="${BOARD_TS}_test_central_connect_fails_with_short_rpa_timeout"
 
 central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
 

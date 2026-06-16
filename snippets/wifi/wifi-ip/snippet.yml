@@ -1,3 +1,5 @@
 name: wifi-ip
+description: |
+  Enables IPv4 and IPv6 Wi-Fi support.
 append:
   EXTRA_CONF_FILE: wifi-ip.conf

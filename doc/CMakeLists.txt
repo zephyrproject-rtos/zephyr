@@ -18,6 +18,7 @@ set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk 
 set(DT_TURBO_MODE OFF CACHE BOOL "Enable DT turbo mode")
 set(HW_FEATURES_TURBO_MODE OFF CACHE BOOL "Enable HW features turbo mode")
 set(HW_FEATURES_VENDOR_FILTER "" CACHE STRING "Vendor filter for HW features")
+set(NO_EXTERNAL_DEPS OFF CACHE BOOL "Enable serving external CSS/JS libraries locally instead of fetching from the Internet.")
 set(DOC_TAG "development" CACHE STRING "Documentation tag")
 set(DTS_ROOTS "${ZEPHYR_BASE}" CACHE STRING "DT bindings root folders")
 set(DOXYGEN_FORCE_SINGLE_THREAD OFF CACHE BOOL "Enable Doxygen single thread mode")
@@ -193,6 +194,10 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${GEN_DEVICETREE_
 set(SPHINX_TAGS "${DOC_TAG}")
 if(HW_FEATURES_TURBO_MODE)
   list(APPEND SPHINX_TAGS "hw_features_turbo")
+endif()
+
+if(NO_EXTERNAL_DEPS)
+  list(APPEND SPHINX_TAGS "no-external-deps")
 endif()
 
 set(SPHINX_TAGS_ARGS "")

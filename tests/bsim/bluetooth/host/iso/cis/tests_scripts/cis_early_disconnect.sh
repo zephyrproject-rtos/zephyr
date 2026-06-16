@@ -11,7 +11,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # triggers a disconnect after receiving 10 packets.
 # The central checks that all tx_pool buffers have been
 # returned to the pool after the disconnect.
-simulation_id="iso_cis_early_disconnect"
+simulation_id="${BOARD_TS}_iso_cis_early_disconnect"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

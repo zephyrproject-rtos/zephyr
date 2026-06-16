@@ -18,7 +18,7 @@ static int get_random_data(uint8_t *output, size_t output_size, bool allow_non_c
 	int ret = -EINVAL;
 
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
-	static const struct device *const entropy_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_entropy));
+	const struct device *const entropy_dev = entropy_get_default_device();
 
 	if (!device_is_ready(entropy_dev)) {
 		return -ENODEV;

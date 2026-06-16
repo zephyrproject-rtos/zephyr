@@ -30,7 +30,6 @@ extern "C" {
 #endif
 
 /**
- * @typedef ipm_callback_t
  * @brief Callback API for incoming IPM messages
  *
  * These callbacks execute in interrupt context. Therefore, use only

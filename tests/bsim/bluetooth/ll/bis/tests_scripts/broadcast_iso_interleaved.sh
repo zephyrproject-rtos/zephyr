@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic ISO broadcast test: a broadcaster transmits a BIS and a receiver listens
 # to the BIS.
-simulation_id="broadcast_iso_interleaved"
+simulation_id="${BOARD_TS}_broadcast_iso_interleaved"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

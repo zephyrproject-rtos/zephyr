@@ -1,0 +1,26 @@
+identifier: m0sense
+name: Sipeed M0Sense
+type: mcu
+arch: riscv
+ram: 88
+flash: 376
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - pinctrl
+  - uart
+  - dma
+  - i2c
+  - spi
+  - flash
+  - entropy
+  - crypto
+  - counter
+  - usbd
+  - display
+vendor: sipeed

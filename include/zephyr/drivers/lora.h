@@ -16,7 +16,7 @@
  * @brief Interfaces for LoRa transceivers.
  * @defgroup lora_interface LoRa
  * @since 2.2
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup io_interfaces
  * @{
  */
@@ -152,6 +152,13 @@ struct lora_modem_config {
 	/** TX-power in dBm to use for transmission */
 	int8_t tx_power;
 
+	/**
+	 * Override 'public_network' with an explicit sync word.
+	 * Not valid for the legacy loramac-node backend.
+	 * Must be a value other than 0x00.
+	 */
+	uint8_t sync_word;
+
 	/** Set to true for transmission, false for receiving */
 	bool tx;
 
@@ -201,13 +208,12 @@ struct lora_modem_config {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal driver use only, skip these in public documentation.
+ * @def_driverbackendgroup{LoRa,lora_interface}
+ * @ingroup lora_interface
+ * @{
  */
 
 /**
- * @typedef lora_recv_cb()
  * @brief Callback API for receiving data asynchronously
  *
  * @see lora_recv() for argument descriptions.
@@ -216,7 +222,6 @@ typedef void (*lora_recv_cb)(const struct device *dev, uint8_t *data, uint16_t s
 			     int16_t rssi, int8_t snr, void *user_data);
 
 /**
- * @typedef lora_cad_cb()
  * @brief Callback API for channel activity detection asynchronously
  *
  * @param dev               LoRa device
@@ -227,16 +232,14 @@ typedef void (*lora_cad_cb)(const struct device *dev, bool activity_detected,
 			    void *user_data);
 
 /**
- * @typedef lora_api_config()
  * @brief Callback API for configuring the LoRa module
  *
  * @see lora_config() for argument descriptions.
  */
 typedef int (*lora_api_config)(const struct device *dev,
-			       struct lora_modem_config *config);
+			       const struct lora_modem_config *config);
 
 /**
- * @typedef lora_api_airtime()
  * @brief Callback API for querying packet airtime
  *
  * @see lora_airtime() for argument descriptions.
@@ -244,7 +247,6 @@ typedef int (*lora_api_config)(const struct device *dev,
 typedef uint32_t (*lora_api_airtime)(const struct device *dev, uint32_t data_len);
 
 /**
- * @typedef lora_api_send()
  * @brief Callback API for sending data over LoRa
  *
  * @see lora_send() for argument descriptions.
@@ -253,7 +255,6 @@ typedef int (*lora_api_send)(const struct device *dev,
 			     uint8_t *data, uint32_t data_len);
 
 /**
- * @typedef lora_api_send_async()
  * @brief Callback API for sending data asynchronously over LoRa
  *
  * @see lora_send_async() for argument descriptions.
@@ -263,7 +264,6 @@ typedef int (*lora_api_send_async)(const struct device *dev,
 				   struct k_poll_signal *async);
 
 /**
- * @typedef lora_api_recv()
  * @brief Callback API for receiving data over LoRa
  *
  * @see lora_recv() for argument descriptions.
@@ -273,7 +273,6 @@ typedef int (*lora_api_recv)(const struct device *dev, uint8_t *data,
 			     k_timeout_t timeout, int16_t *rssi, int8_t *snr);
 
 /**
- * @typedef lora_api_recv_async()
  * @brief Callback API for receiving data asynchronously over LoRa
  *
  * @param dev Modem to receive data on.
@@ -283,7 +282,6 @@ typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb,
 			     void *user_data);
 
 /**
- * @typedef lora_api_cad()
  * @brief Callback API for channel activity detection
  *
  * @see lora_cad() for argument descriptions.
@@ -291,13 +289,25 @@ typedef int (*lora_api_recv_async)(const struct device *dev, lora_recv_cb cb,
 typedef int (*lora_api_cad)(const struct device *dev, k_timeout_t timeout);
 
 /**
- * @typedef lora_api_cad_async()
  * @brief Callback API for channel activity detection asynchronously
  *
  * @see lora_cad_async() for argument descriptions.
  */
 typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
 				  void *user_data);
+
+/**
+ * @typedef lora_api_recv_duty_cycle()
+ * @brief Callback API for blocking receive with duty cycling
+ *
+ * @see lora_recv_duty_cycle() for argument descriptions.
+ */
+typedef int (*lora_api_recv_duty_cycle)(const struct device *dev,
+					k_timeout_t rx_period,
+					k_timeout_t sleep_period,
+					uint8_t *data, uint8_t size,
+					k_timeout_t timeout,
+					int16_t *rssi, int8_t *snr);
 
 /**
  * @typedef lora_api_recv_duty_cycle_async()
@@ -311,7 +321,6 @@ typedef int (*lora_api_recv_duty_cycle_async)(const struct device *dev,
 					      lora_recv_cb cb, void *user_data);
 
 /**
- * @typedef lora_api_test_cw()
  * @brief Callback API for transmitting a continuous wave
  *
  * @see lora_test_cw() for argument descriptions.
@@ -319,20 +328,35 @@ typedef int (*lora_api_recv_duty_cycle_async)(const struct device *dev,
 typedef int (*lora_api_test_cw)(const struct device *dev, uint32_t frequency,
 				int8_t tx_power, uint16_t duration);
 
+/**
+ * @driver_ops{LoRa}
+ */
 __subsystem struct lora_driver_api {
+	/** @driver_ops_mandatory @copybrief lora_config */
 	lora_api_config config;
+	/** @driver_ops_mandatory @copybrief lora_airtime */
 	lora_api_airtime airtime;
+	/** @driver_ops_mandatory @copybrief lora_send */
 	lora_api_send send;
+	/** @driver_ops_mandatory @copybrief lora_send_async */
 	lora_api_send_async send_async;
+	/** @driver_ops_mandatory @copybrief lora_recv */
 	lora_api_recv recv;
+	/** @driver_ops_mandatory @copybrief lora_recv_async */
 	lora_api_recv_async recv_async;
+	/** @driver_ops_optional @copybrief lora_cad */
 	lora_api_cad cad;
+	/** @driver_ops_optional @copybrief lora_cad_async */
 	lora_api_cad_async cad_async;
+	/** @driver_ops_optional @copybrief lora_recv_duty_cycle_async */
 	lora_api_recv_duty_cycle_async recv_duty_cycle_async;
+	/** @driver_ops_optional @copybrief lora_recv_duty_cycle */
+	lora_api_recv_duty_cycle recv_duty_cycle;
+	/** @driver_ops_optional @copybrief lora_test_cw */
 	lora_api_test_cw test_cw;
 };
 
-/** @endcond */
+/** @} */
 
 /**
  * @brief Configure the LoRa modem
@@ -343,7 +367,7 @@ __subsystem struct lora_driver_api {
  * @return 0 on success, negative on error
  */
 static inline int lora_config(const struct device *dev,
-			      struct lora_modem_config *config)
+			      const struct lora_modem_config *config)
 {
 	return DEVICE_API_GET(lora, dev)->config(dev, config);
 }
@@ -498,6 +522,45 @@ static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
 	}
 
 	return api->cad_async(dev, cb, user_data);
+}
+
+/**
+ * @brief Receive data using duty cycling (wake-on-radio)
+ *
+ * The radio autonomously alternates between sleep and listening for
+ * a LoRa preamble. Blocks until a valid packet is received or the
+ * operation times out, then stops the duty cycle.
+ *
+ * @note This is a blocking call.
+ *
+ * The transmitter must use a preamble longer than
+ * (@p sleep_period + @p rx_period) to guarantee detection.
+ *
+ * @param dev           LoRa device
+ * @param rx_period     Listen window duration
+ * @param sleep_period  Sleep duration between listen windows
+ * @param data          Buffer to hold received data
+ * @param size          Size of the buffer. Max 255.
+ * @param timeout       Duration to wait for a packet
+ * @param rssi          RSSI of received data
+ * @param snr           SNR of received data
+ * @return Length of the data received on success, negative on error
+ */
+static inline int lora_recv_duty_cycle(const struct device *dev,
+				       k_timeout_t rx_period,
+				       k_timeout_t sleep_period,
+				       uint8_t *data, uint8_t size,
+				       k_timeout_t timeout,
+				       int16_t *rssi, int8_t *snr)
+{
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
+
+	if (api->recv_duty_cycle == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->recv_duty_cycle(dev, rx_period, sleep_period,
+				    data, size, timeout, rssi, snr);
 }
 
 /**

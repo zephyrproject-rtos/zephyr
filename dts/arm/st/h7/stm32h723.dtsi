@@ -17,6 +17,8 @@
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <32>;
 				erase-block-size = <DT_SIZE_K(128)>;
 				/* maximum erase time for a 128K sector */
@@ -122,7 +124,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1_2, 8)>;
 			interrupts = <159 0>, <160 0>, <63 0>;
 			interrupt-names = "int0", "int1", "calib";
-			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
+			bosch,mram-cfg = <0x6a0 28 8 6 0 0 3 3>;
 			status = "disabled";
 		};
 

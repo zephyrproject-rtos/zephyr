@@ -3,10 +3,30 @@
 
 if BOARD_UEDX24320028E_WB_A_ESP32S3_PROCPU
 
-configdefault LV_COLOR_16_SWAP
-	default y if LVGL
+config ESP_SPIRAM
+	default y
+
+choice SPIRAM_MODE
+	default SPIRAM_MODE_OCT
+endchoice
 
 if DISPLAY
+
+if LVGL
+
+configdefault LV_COLOR_16_SWAP
+	default y
+
+config LV_Z_VDB_SIZE
+	default 100
+
+config LV_Z_VDB_CUSTOM_SECTION
+	default y
+
+config LV_Z_MEMORY_POOL_CUSTOM_SECTION
+	default y
+
+endif # LVGL
 
 config GPIO_HOGS
 	default y

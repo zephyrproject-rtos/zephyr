@@ -6,6 +6,9 @@
 
  /**
   * @file
+  * @brief Header file for the flagged single-linked list API.
+  * @ingroup flagged-single-linked-list_apis
+  *
   * @defgroup flagged-single-linked-list_apis Flagged Single-linked list
   * @ingroup datastructure_apis
   *

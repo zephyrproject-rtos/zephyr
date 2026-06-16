@@ -5,6 +5,8 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+supported:
+  - crypto
 ram: 448
 flash: 2048
 vendor: st

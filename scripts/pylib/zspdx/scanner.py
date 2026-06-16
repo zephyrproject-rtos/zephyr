@@ -3,15 +3,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import hashlib
+import logging
 import os
 import re
 from dataclasses import dataclass
 
 from reuse.project import Project
-from west import log
 
 from .licenses import LICENSES
 from .util import getHashes
+
+_logger = logging.getLogger(__name__)
 
 
 # ScannerConfig contains settings used to configure how the SPDX
@@ -61,7 +63,7 @@ def getExpressionData(filePath, numLines):
                     giving up. If 0, will scan the entire file.
     Returns: parsed expression if found; None if not found.
     """
-    log.dbg(f"  - getting licenses for {filePath}")
+    _logger.debug("  - getting licenses for %s", filePath)
 
     with open(filePath) as f:
         try:
@@ -186,7 +188,7 @@ def getCopyrightInfo(filePath):
 
     Returns: list of copyright statements if found; empty list if not found
     """
-    log.dbg(f"  - getting copyright info for {filePath}")
+    _logger.debug("  - getting copyright info for %s", filePath)
 
     try:
         project = Project(os.path.dirname(filePath))
@@ -198,8 +200,8 @@ def getCopyrightInfo(filePath):
                 copyrights.extend([notice.original])
 
         return copyrights
-    except Exception as e:
-        log.wrn(f"Error getting copyright info for {filePath}: {e}")
+    except Exception:
+        _logger.warning("Error getting copyright info for %s", filePath, exc_info=True)
         return []
 
 
@@ -213,7 +215,7 @@ def scanDocument(cfg, doc):
         - doc: Document
     """
     for pkg in doc.pkgs.values():
-        log.inf(f"scanning files in package {pkg.cfg.name} in document {doc.cfg.name}")
+        _logger.info("scanning files in package %s in document %s", pkg.cfg.name, doc.cfg.name)
 
         # first, gather File data for this package
         for f in pkg.files.values():
@@ -223,7 +225,7 @@ def scanDocument(cfg, doc):
             # get hashes for file
             hashes = getHashes(f.abspath)
             if not hashes:
-                log.wrn(f"unable to get hashes for file {f.abspath}; skipping")
+                _logger.warning("unable to get hashes for file %s; skipping", f.abspath)
                 continue
             hSHA1, hSHA256, hMD5 = hashes
             f.sha1 = hSHA1

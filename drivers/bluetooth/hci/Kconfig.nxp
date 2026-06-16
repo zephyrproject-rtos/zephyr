@@ -39,6 +39,23 @@ config HCI_NXP_SET_CAL_DATA_ANNEX100
 	  If enabled, the Host will send calibration data annex 100 to the Bluetooth Controller during HCI
 	  init.
 
+config HCI_NXP_CONFIG_IR
+	bool "Bluetooth Controller Independent Reset config"
+	depends on BT_H4_NXP_CTLR
+	depends on BT_HCI_HOST
+	help
+	  If enabled, the Host will send iR configuration vendor command to the Bluetooth Controller
+	  during HCI init.
+
+config HCI_NXP_TRIGGER_IR_ON_BT_INIT
+	bool "IR triggerred on BT Init"
+	depends on BT_H4_NXP_CTLR
+	depends on BT_HCI_HOST
+	depends on HCI_NXP_CONFIG_IR
+	help
+	  If enabled, the Host will send trigger iR vendor command to the Bluetooth Controller
+	  on bt init following a bt disable.
+
 config HCI_NXP_RX_THREAD
 	bool "Process RX buffers in a dedicated thread"
 	help

@@ -4,8 +4,47 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Devicetree pin control helpers for Nuvoton NuMaker M46x
+ * @ingroup pinctrl_numaker_m46x
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_NUMAKER_M46X_PINCTRL_H
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_NUMAKER_M46X_PINCTRL_H
+
+/**
+ * @addtogroup nuvoton_pinctrl Nuvoton pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_numaker_m46x Nuvoton NuMaker M46x pin control helpers
+ * @brief Macros for pin control configuration of Nuvoton NuMaker M46x
+ * @ingroup nuvoton_pinctrl
+ *
+ * The macros follow the following naming convention: @c \<PORT\>\<PIN\>MFP\_\<FUNCTION\>.
+ *
+ * For example, @c PB12MFP_UART0_RXD corresponds to the @c UART0_RXD function routed to port @c B
+ * pin @c 12.
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/numaker-m46x-pinctrl.h>
+ *
+ * &pinctrl {
+ *         uart0_default: uart0_default {
+ *                 group1 {
+ *                         pinmux = <PB12MFP_UART0_RXD>,
+ *                                  <PB13MFP_UART0_TXD>;
+ *                 };
+ *         };
+ * };
+ * @endcode
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Beginning of M460 BSP sys_reg.h pin-mux module copy */
 
@@ -2150,5 +2189,9 @@
 #define NUMAKER_SYS_GPJ_MFP3_PJ13MFP_HSUSB_VBUS_EN (0x0fUL << NUMAKER_SYS_GPJ_MFP3_PJ13MFP_Pos)
 
 /* End of M460 BSP sys.h pin-mux module copy */
+
+/** @endcond */
+
+/** @} */
 
 #endif

@@ -108,7 +108,7 @@ int hmc5883l_init_interrupt(const struct device *dev)
 	const struct hmc5883l_config *config = dev->config;
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

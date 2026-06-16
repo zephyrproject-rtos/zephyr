@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Crypto Hash APIs
+ * @ingroup crypto_hash
  *
  * This file contains the Crypto Abstraction layer APIs.
  */
@@ -20,14 +21,12 @@
  */
 
 
-/**
- * Hash algorithm
- */
+/** Hash algorithms. */
 enum hash_algo {
-	CRYPTO_HASH_ALGO_SHA224 = 1,
-	CRYPTO_HASH_ALGO_SHA256 = 2,
-	CRYPTO_HASH_ALGO_SHA384 = 3,
-	CRYPTO_HASH_ALGO_SHA512 = 4,
+	CRYPTO_HASH_ALGO_SHA224 = 1, /**< SHA-224 algorithm. */
+	CRYPTO_HASH_ALGO_SHA256 = 2, /**< SHA-256 algorithm. */
+	CRYPTO_HASH_ALGO_SHA384 = 3, /**< SHA-384 algorithm. */
+	CRYPTO_HASH_ALGO_SHA512 = 4, /**< SHA-512 algorithm. */
 };
 
 /* Forward declarations */
@@ -35,6 +34,17 @@ struct hash_ctx;
 struct hash_pkt;
 
 
+/**
+ * @brief Perform a hash operation.
+ *
+ * @param ctx Hash session context.
+ * @param pkt Packet containing input and output buffers.
+ * @param finish Finalize the hash operation when true. Continue a multipart
+ * hash operation when false.
+ *
+ * @retval 0 Operation completed successfully.
+ * @retval -errno Negative errno code on failure.
+ */
 typedef int (*hash_op_t)(struct hash_ctx *ctx, struct hash_pkt *pkt,
 			 bool finish);
 
@@ -45,31 +55,42 @@ typedef int (*hash_op_t)(struct hash_ctx *ctx, struct hash_pkt *pkt,
  * in terms of who fills what and when w.r.t begin_session() call.
  */
 struct hash_ctx {
-	/** The device driver instance this crypto context relates to. Will be
-	 * populated by the begin_session() API.
+	/**
+	 * Device driver instance this crypto context relates to.
+	 *
+	 * This is populated by hash_begin_session().
 	 */
 	const struct device *device;
 
-	/** If the driver supports multiple simultaneously crypto sessions, this
-	 * will identify the specific driver state this crypto session relates
-	 * to. Since dynamic memory allocation is not possible, it is
-	 * suggested that at build time drivers allocate space for the
-	 * max simultaneous sessions they intend to support. To be populated
-	 * by the driver on return from begin_session().
+	/**
+	 * Driver-owned session state.
+	 *
+	 * If the driver supports multiple simultaneous crypto sessions, this
+	 * identifies the specific driver state for this crypto session. Since
+	 * dynamic memory allocation is not possible, drivers should allocate
+	 * space at build time for the maximum number of simultaneous sessions
+	 * they support. This is populated by the driver during
+	 * hash_begin_session().
 	 */
 	void *drv_sessn_state;
 
 	/**
-	 * Hash handler set up when the session begins.
+	 * Hash operation handler selected for this session.
+	 *
+	 * This is populated by the driver during hash_begin_session().
 	 */
 	hash_op_t hash_hndlr;
 
 	/**
-	 * If it has started a multipart hash operation.
+	 * Multipart hash operation state.
+	 *
+	 * This is true after a multipart hash operation has started.
 	 */
 	bool started;
 
-	/** How certain fields are to be interpreted for this session.
+	/**
+	 * Flags describing how certain fields are interpreted for this session.
+	 *
 	 * (A bitmask of CAP_* below.)
 	 * To be populated by the app before calling hash_begin_session().
 	 * An app can obtain the capability flags supported by a hw/driver
@@ -87,29 +108,42 @@ struct hash_ctx {
  */
 struct hash_pkt {
 
-	/** Start address of input buffer */
+	/**
+	 * Start address of the input buffer. The buffer is allocated by the
+	 * application and must remain valid for the duration of the operation.
+	 */
 	const uint8_t *in_buf;
 
-	/** Bytes to be operated upon */
+	/** Number of input bytes to process. */
 	size_t  in_len;
 
 	/**
-	 * Start of the output buffer, to be allocated by
-	 * the application. Can be NULL for in-place ops. To be populated
-	 * with contents by the driver on return from op / async callback.
+	 * Start address of the output buffer.
+	 *
+	 * The buffer is allocated by the application and must remain valid for
+	 * the duration of the operation. This can be NULL for in-place
+	 * operations, in which case the driver writes the result to @p in_buf.
 	 */
 	uint8_t *out_buf;
 
 	/**
-	 * Context this packet relates to. This can be useful to get the
-	 * session details, especially for async ops.
+	 * Context this packet relates to.
+	 *
+	 * This can be useful to get the session details, especially for async
+	 * ops. This is populated by hash_compute() or hash_update().
 	 */
 	struct hash_ctx *ctx;
 };
 
-/* Prototype for the application function to be invoked by the crypto driver
- * on completion of an async request. The app may get the session context
- * via the pkt->ctx field.
+/**
+ * @brief Handle completion of an asynchronous hash request.
+ *
+ * The application can get the session context from the completed packet's
+ * @c ctx field.
+ *
+ * @param completed Completed hash packet.
+ * @param status Completion status. A value of 0 indicates success and a
+ * negative errno code indicates failure.
  */
 typedef void (*hash_completion_cb)(struct hash_pkt *completed, int status);
 

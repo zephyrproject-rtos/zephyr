@@ -2,13 +2,13 @@
 # Copyright 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
 # Smoketest for PBP BTP commands with the BT tester
 
-simulation_id="tester_pbp"
+simulation_id="${BOARD_TS}_tester_pbp"
 verbosity_level=2
 EXECUTE_TIMEOUT=100
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 

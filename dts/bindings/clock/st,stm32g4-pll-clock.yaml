@@ -35,17 +35,20 @@ properties:
     required: true
     description: |
         Division factor for PLL input clock
-        Valid range: 1 - 16
+    min: 1
+    max: 16
 
   mul-n:
     type: int
     required: true
     description: |
         Main PLL multiplication factor for VCO
-        Valid range: 8 - 127
+    min: 8
+    max: 127
 
   div-p:
     type: int
     description: |
         Main PLL division factor for ADC
-        Valid range: 2 - 31
+    min: 2
+    max: 31

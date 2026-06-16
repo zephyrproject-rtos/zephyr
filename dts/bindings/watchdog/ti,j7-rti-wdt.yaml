@@ -14,3 +14,16 @@ properties:
   clock-frequency:
     type: int
     required: true
+
+  interrupts:
+    description:
+      Watchdog interrupt line, if present NMI mode is supported.
+
+  reset-capable:
+    type: boolean
+    description:
+      Indicates reset mode is supported by hardware.
+      If set, watchdog timeout will trigger a reset.
+      The SoC can only be configured for either NMI
+      or Reset mode at a time. Support for NMI or Reset is SoC
+      specific.

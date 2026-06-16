@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/types.h>
 
 /*
@@ -28,9 +29,7 @@
  * STM32 GPIO port configuration block and data block structures
  */
 struct gpio_stm32_config {
-#if defined(CONFIG_GPIO_STM32)
 	struct gpio_driver_config common;
-#endif /* CONFIG_GPIO_STM32 */
 
 	/* GPIO port base address */
 	void *base;
@@ -43,9 +42,9 @@ struct gpio_stm32_config {
 };
 
 struct gpio_stm32_data {
-#if defined(CONFIG_GPIO_STM32)
 	struct gpio_driver_data common;
 
+#if defined(CONFIG_GPIO_STM32)
 	/*
 	 * Keeps track of pins which are used as GPIOs
 	 * and need the GPIO port clock to remain enabled.
@@ -104,11 +103,18 @@ const struct device *stm32_gpioport_get(uint32_t port_index);
  *
  * @param port GPIO port device
  * @param pin Pin to configure
+ * @param config Pin configuration
+ * (Format is documented in `soc/st/stm32/common/pinctrl_soc.h`)
+ * @param apply_out_level Should output level from @p config be applied?
+ * NOTE: output level is never applied (regardless of this parameter) if
+ * @p config does not correspond to General-Purpose Output mode.
  *
  * @return 0 on success, negative errno value otherwise
  */
-int stm32_gpioport_configure_pin(
-	const struct device *port, gpio_pin_t pin, uint32_t config, uint32_t func);
+int stm32_gpioport_configure_pin(const struct device *port,
+				 gpio_pin_t pin,
+				 pinctrl_soc_pin_t config,
+				 bool apply_out_level);
 
 /*
  * GPIO port device API

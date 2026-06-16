@@ -48,11 +48,8 @@ extern "C" {
  * @param cfg	Pointer to dsa_port_config.
  */
 #define DSA_PORT_INST_INIT(port, n, cfg)                                                           \
-	NET_DEVICE_INIT_INSTANCE(CONCAT(dsa_, n, port), DEVICE_DT_NAME(port), DT_REG_ADDR(port),   \
-				 dsa_port_initialize, NULL, &dsa_switch_context_##n, cfg,          \
-				 CONFIG_ETH_INIT_PRIORITY, &dsa_eth_api, ETHERNET_L2,              \
-				 NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
-
+	ETH_NET_DEVICE_DT_DEFINE(port, dsa_port_initialize, NULL, &dsa_switch_context_##n, cfg,    \
+				 CONFIG_ETH_INIT_PRIORITY, &dsa_eth_api, NET_ETH_MTU)
 /**
  * @brief Macro for DSA switch instance initialization.
  *
@@ -111,11 +108,8 @@ struct dsa_api {
 	int (*port_init)(const struct device *dev);
 
 	/** Port link change */
-	void (*port_phylink_change)(const struct device *dev, struct phy_link_state *state,
-				    void *user_data);
-
-	/** Port generates random mac address */
-	void (*port_generate_random_mac)(uint8_t *mac_addr);
+	void (*port_phylink_change)(const struct device *phy_dev, struct phy_link_state *state,
+				    const struct device *dev);
 
 #if defined(CONFIG_NET_L2_PTP) || defined(__DOXYGEN__)
 	/**
@@ -149,9 +143,7 @@ struct dsa_api {
  */
 struct dsa_port_config {
 	/** Port mac address */
-	uint8_t mac_addr[6];
-	/** Use random mac address or not */
-	const bool use_random_mac_addr;
+	struct net_eth_mac_config mcfg;
 	/** Port index */
 	const int port_idx;
 	/** PHY device */

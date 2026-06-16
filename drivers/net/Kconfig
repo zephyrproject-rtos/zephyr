@@ -9,10 +9,14 @@ if NET_DRIVERS
 #
 # PPP options
 #
+
+DT_CHOSEN_ZEPHYR_PPP_UART := zephyr,ppp-uart
+
 menuconfig NET_PPP
 	bool "Point-to-point (PPP) UART based driver"
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
+	depends on NET_TEST || $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_PPP_UART))
 	select RING_BUFFER
 	select CRC
 

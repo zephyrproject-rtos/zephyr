@@ -81,8 +81,8 @@ NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_BUF_SIZE,
 		    sizeof(struct bt_attr_data), NULL);
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
-K_MEM_SLAB_DEFINE_STATIC(req_slab, sizeof(struct bt_att_req),
-		  CONFIG_BT_ATT_TX_COUNT, __alignof__(struct bt_att_req));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(req_slab, struct bt_att_req,
+			      CONFIG_BT_ATT_TX_COUNT);
 
 enum {
 	ATT_CONNECTED,
@@ -167,11 +167,10 @@ struct bt_att {
 #endif /* CONFIG_BT_EATT */
 };
 
-K_MEM_SLAB_DEFINE_STATIC(att_slab, sizeof(struct bt_att),
-		  CONFIG_BT_MAX_CONN, __alignof__(struct bt_att));
-K_MEM_SLAB_DEFINE_STATIC(chan_slab, sizeof(struct bt_att_chan),
-		  CONFIG_BT_MAX_CONN * ATT_CHAN_MAX,
-		  __alignof__(struct bt_att_chan));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(att_slab, struct bt_att,
+			      CONFIG_BT_MAX_CONN);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(chan_slab, struct bt_att_chan,
+			      CONFIG_BT_MAX_CONN * ATT_CHAN_MAX);
 static struct bt_att_req cancel;
 
 /** The thread ATT response handlers likely run on.
@@ -618,8 +617,7 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req
 	chan->req = req;
 
 	/* Release since bt_l2cap_send_cb takes ownership of the buffer */
-	buf = req->buf;
-	req->buf = NULL;
+	buf = net_buf_take(&req->buf);
 
 	/* This lock makes sure the value of `bt_att_mtu(chan)` does not
 	 * change.
@@ -3409,6 +3407,18 @@ static void bt_att_released(struct bt_l2cap_chan *ch)
 
 	LOG_DBG("chan %p", chan);
 
+	/* Drop any pending/in-flight ATT TX metadata still referencing this
+	 * channel, so the deferred att_on_sent_cb()/bt_att_sent() work cannot
+	 * dereference the channel after it is freed here. Bluetooth uses a
+	 * cooperative system workqueue, so this runs serialized with
+	 * att_tx_destroy_work_handler() and aligned pointer writes are atomic.
+	 */
+	ARRAY_FOR_EACH(tx_meta_data_storage, i) {
+		if (tx_meta_data_storage[i].att_chan == chan) {
+			tx_meta_data_storage[i].att_chan = NULL;
+		}
+	}
+
 	k_mem_slab_free(&chan_slab, (void *)chan);
 }
 
@@ -4012,10 +4022,7 @@ void bt_att_req_free(struct bt_att_req *req)
 {
 	LOG_DBG("req %p", req);
 
-	if (req->buf) {
-		net_buf_unref(req->buf);
-		req->buf = NULL;
-	}
+	net_buf_drop(&req->buf);
 
 	k_mem_slab_free(&req_slab, (void *)req);
 }

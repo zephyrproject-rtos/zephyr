@@ -140,9 +140,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <8>;
 				erase-block-size = <2048>;
 
@@ -306,7 +309,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 6>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -371,7 +374,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <67 1>;
+			interrupts = <67 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -439,7 +442,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			interrupts = <59 5>;
+			interrupts = <59 0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
@@ -468,7 +471,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			interrupts = <60 5>;
+			interrupts = <60 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
@@ -479,7 +482,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
-			interrupts = <99 5>;
+			interrupts = <99 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
@@ -838,28 +841,31 @@
 			status = "disabled";
 		};
 
-		sai1_a: sai1@40015404 {
+		sai1: sai1@40015400 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015404 0x20>;
+			#size-cells = <1>;
+			reg = <0x40015400 0x400>;
+			ranges = <0x0 0x40015400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 				 <&rcc STM32_SRC_PLLSAI1_P SAI1_SEL(0)>;
-			dmas = <&dma1 1 37 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					    STM32_DMA_16BITS)>;
 			status = "disabled";
-		};
 
-		sai1_b: sai1@40015424 {
-			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015424 0x20>;
-			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLLSAI1_P SAI1_SEL(0)>;
-			dmas = <&dma1 2 38 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					    STM32_DMA_16BITS)>;
-			status = "disabled";
+			sai1_a: sai1a@4 {
+				reg = <0x4 0x20>;
+				dmas = <&dma1 1 37 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai1_b: sai1b@24 {
+				reg = <0x24 0x20>;
+				dmas = <&dma1 2 38 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		crc: crc@40023000 {
@@ -868,6 +874,58 @@
 			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
 			resets = <&rctl STM32_RESET(AHB1, 12)>;
 			status = "disabled";
+		};
+
+		dfsdm: dfsdm@40016000 {
+			compatible = "st,stm32-dfsdm";
+			reg = <0x40016000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 24)>,
+				 <&rcc STM32_SRC_PLLSAI1_P NO_SEL>;
+			clock-names = "pclk", "aclk";
+			resets = <&rctl STM32_RESET(APB2, 24)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			pdm0: filter@0 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <0>;
+				interrupts = <102 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm1: filter@1 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <1>;
+				interrupts = <103 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm2: filter@2 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <2>;
+				interrupts = <104 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm3: filter@3 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <3>;
+				interrupts = <105 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 

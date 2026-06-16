@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,10 +9,15 @@
 #include "mocks/settings.h"
 #include "mocks/settings_expects.h"
 #include "testing_common_defs.h"
+#include <stdint.h>
 
+#include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/fff.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util_macro.h>
 
 #include <host/hci_core.h>
 #include <host/id.h>
@@ -124,4 +129,46 @@ ZTEST(bt_id_delete, test_delete_last_id)
 	zassert_mem_equal(bt_dev.irk[id], zero_irk, sizeof(zero_irk),
 			  "Incorrect IRK value was set");
 #endif
+}
+
+/*
+ * Test deleting an ID after creation
+ *
+ * After creating the initial default (that cannot be deleted), the test will attempt to create and
+ * delete more IDs than CONFIG_BT_ID_MAX to ensure that we clean properly up after a delete
+ */
+static ZTEST(bt_id_delete, test_id_create_after_delete)
+{
+	int default_id;
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_ENABLE);
+
+	if (CONFIG_BT_ID_MAX < 2) {
+		ztest_test_skip();
+	}
+
+	default_id = bt_id_create(BT_STATIC_RANDOM_LE_ADDR_1, NULL);
+	zassert_true(default_id >= 0, "Unexpected error code '%d' was returned", default_id);
+
+	/* Add and delete several IDs to ensure that we do not run out of spaces for IDs */
+	for (int i = 0; i < CONFIG_BT_ID_MAX * 2; i++) {
+		bt_addr_le_t addr = *BT_STATIC_RANDOM_LE_ADDR_2;
+		int id;
+		int err;
+
+		/* Make addresses unique */
+		addr.a.val[3] = i;
+
+		id = bt_id_create(&addr, NULL);
+
+		zassert_true(id >= 0, "[%d]: Unexpected error code '%d' was returned", i, id);
+		zassert_true(bt_dev.id_count == 2U,
+			     "[%d]: Incorrect ID count %d was set (expected (%u))", i,
+			     bt_dev.id_count, 2U);
+		zassert_mem_equal(&bt_dev.id_addr[id], &addr, sizeof(bt_addr_le_t),
+				  "[%d]: Incorrect address was set", i);
+
+		err = bt_id_delete(id);
+		zassert_ok(err, "Unexpected error code '%d' was returned", err);
+	}
 }

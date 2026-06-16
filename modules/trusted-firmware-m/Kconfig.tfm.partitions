@@ -3,8 +3,6 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BUILD_WITH_TFM
-
 config TFM_PARTITION_PROTECTED_STORAGE
 	bool "Secure partition 'Protected Storage'"
 	depends on TFM_PARTITION_PLATFORM # Specifically TFM_SP_PLATFORM_NV_COUNTER service
@@ -89,5 +87,3 @@ config TFM_PARTITION_LOG_LEVEL_ERROR
 config TFM_PARTITION_LOG_LEVEL_SILENCE
 	bool "Off"
 endchoice
-
-endif # BUILD_WITH_TFM

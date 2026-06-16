@@ -6,11 +6,14 @@
 
 /**
  * @file
- * @brief ESP32-C5 GPIO signal map definitions for device tree bindings
+ * @brief ESP32-C5 GPIO signal map definitions
+ * @ingroup pinctrl_esp32c5
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32C5_GPIO_SIGMAP_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32C5_GPIO_SIGMAP_H_
+
+/** @cond INTERNAL_HIDDEN */
 
 #define ESP_NOSIG ESP_SIG_INVAL /**< No signal (invalid) */
 
@@ -306,5 +309,7 @@
 
 #define ESP_SIG_GPIO_OUT  256       /**< GPIO output signal */
 #define ESP_GPIO_MAP_DATE 0x2311280 /**< GPIO map version date */
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32C5_GPIO_SIGMAP_H_ */

@@ -56,6 +56,29 @@
 #define pllsai2r(v) CONCAT(LL_RCC_PLLSAI2R_DIV_, v)
 #define pllsai2divr(v) CONCAT(LL_RCC_PLLSAI2DIVR_DIV_, v)
 
+/* Some SoC lines from STM32L4 series have specific constraint on PLLs configuration */
+#if defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_LINE_STM32L4PLUS)
+#ifndef RCC_PLLP_DIV_2_31_SUPPORT
+#define PLLP_DIV_7_OR_17 1
+#endif
+
+#define BUILD_ASSERT_STML4_PLL_CONSTRAINTS(pll)                                                    \
+	IF_ENABLED(STM32_##pll##_ENABLED, (                                                        \
+		BUILD_ASSERT(STM32_##pll##_M_DIVISOR <= 8,                                         \
+			     "STM32L4x (not L4+) series require "STRINGIFY(pll)" div-m <= 8");     \
+		BUILD_ASSERT(STM32_##pll##_N_MULTIPLIER <= 86,                                     \
+			     "STM32L4x (not L4+) series require "STRINGIFY(pll)" mul-n <= 86");    \
+	))                                                                                         \
+	IF_ENABLED(UTIL_AND(IS_ENABLED(STM32_##pll##_P_ENABLED), IS_ENABLED(PLLP_DIV_7_OR_17)), (  \
+		BUILD_ASSERT((STM32_##pll##_P_DIVISOR == 7) || (STM32_##pll##_P_DIVISOR == 17),    \
+			     "STM32L{47|48}xx require "STRINGIFY(pll)"_P div-p be 7 or 17");       \
+	))
+
+BUILD_ASSERT_STML4_PLL_CONSTRAINTS(PLL)
+BUILD_ASSERT_STML4_PLL_CONSTRAINTS(PLLSAI1)
+BUILD_ASSERT_STML4_PLL_CONSTRAINTS(PLLSAI2)
+#endif /* CONFIG_SOC_SERIES_STM32L4X && !CONFIG_SOC_LINE_STM32L4PLUS */
+
 #ifdef __cplusplus
 extern "C" {
 #endif

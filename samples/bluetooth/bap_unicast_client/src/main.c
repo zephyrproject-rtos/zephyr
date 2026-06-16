@@ -15,6 +15,7 @@
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -33,6 +34,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "stream_tx.h"
@@ -65,22 +67,24 @@ static size_t configured_source_stream_count;
 static struct bt_bap_lc3_preset codec_configuration = BT_BAP_LC3_UNICAST_PRESET_16_2_1(
 	BT_AUDIO_LOCATION_FRONT_LEFT, BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED);
 
-static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_disconnected, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
-static K_SEM_DEFINE(sem_security_updated, 0, 1);
-static K_SEM_DEFINE(sem_sinks_discovered, 0, 1);
-static K_SEM_DEFINE(sem_sources_discovered, 0, 1);
-static K_SEM_DEFINE(sem_stream_configured, 0, 1);
-static K_SEM_DEFINE(sem_stream_qos, 0, ARRAY_SIZE(sinks) + ARRAY_SIZE(sources));
-static K_SEM_DEFINE(sem_stream_enabled, 0, 1);
-static K_SEM_DEFINE(sem_stream_started, 0, 1);
-static K_SEM_DEFINE(sem_stream_connected, 0, 1);
+static K_SEM_DEFINE(sem_connected, 0U, 1U);
+static K_SEM_DEFINE(sem_disconnected, 0U, 1U);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0U, 1U);
+static K_SEM_DEFINE(sem_security_updated, 0U, 1U);
+static K_SEM_DEFINE(sem_sinks_discovered, 0U, 1U);
+static K_SEM_DEFINE(sem_sources_discovered, 0U, 1U);
+static K_SEM_DEFINE(sem_stream_configured, 0U, 1U);
+static K_SEM_DEFINE(sem_stream_qos, 0U, ARRAY_SIZE(sinks) + ARRAY_SIZE(sources));
+static K_SEM_DEFINE(sem_stream_enabled, 0U, 1U);
+static K_SEM_DEFINE(sem_stream_started, 0U, 1U);
+static K_SEM_DEFINE(sem_stream_connected, 0U, 1U);
 
 static void print_hex(const uint8_t *ptr, size_t len)
 {
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
+	while (len != 0U) {
+		printk("%02x", *ptr);
+		ptr++;
+		len--;
 	}
 }
 
@@ -215,6 +219,8 @@ static void start_scan(void)
 
 static void stream_configured(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref)
 {
+	ARG_UNUSED(pref);
+
 	printk("Audio Stream %p configured\n", stream);
 
 	k_sem_give(&sem_stream_configured);
@@ -383,6 +389,9 @@ static void print_remote_codec_cap(const struct bt_audio_codec_cap *codec_cap,
 
 static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
 		return;
@@ -399,6 +408,9 @@ static void discover_sinks_cb(struct bt_conn *conn, int err, enum bt_audio_dir d
 
 static void discover_sources_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(dir);
+
 	if (err != 0 && err != BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
 		printk("Discovery failed: %d\n", err);
 		return;
@@ -419,8 +431,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
 		       err, bt_hci_err_to_str(err));
 
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 
 		start_scan();
 		return;
@@ -443,8 +454,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
 	       reason, bt_hci_err_to_str(reason));
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	k_sem_give(&sem_disconnected);
 }
@@ -452,6 +462,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static void security_changed_cb(struct bt_conn *conn, bt_security_t level,
 				enum bt_security_err err)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(level);
+
 	if (err == 0) {
 		k_sem_give(&sem_security_updated);
 	} else {
@@ -467,6 +480,8 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+
 	printk("MTU exchanged: %u/%u\n", tx, rx);
 	k_sem_give(&sem_mtu_exchanged);
 }
@@ -479,12 +494,16 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 				      enum bt_audio_dir dir,
 				      enum bt_audio_location loc)
 {
+	ARG_UNUSED(conn);
+
 	printk("dir %u loc %X\n", dir, loc);
 }
 
 static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	printk("Supported snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
@@ -492,17 +511,23 @@ static void available_contexts_cb(struct bt_conn *conn,
 				  enum bt_audio_context snk_ctx,
 				  enum bt_audio_context src_ctx)
 {
+	ARG_UNUSED(conn);
+
 	printk("Available snk ctx %u src ctx %u\n", snk_ctx, src_ctx);
 }
 
 static void pac_record_cb(struct bt_conn *conn, enum bt_audio_dir dir,
 			  const struct bt_audio_codec_cap *codec_cap)
 {
+	ARG_UNUSED(conn);
+
 	print_remote_codec_cap(codec_cap, dir);
 }
 
 static void endpoint_cb(struct bt_conn *conn, enum bt_audio_dir dir, struct bt_bap_ep *ep)
 {
+	ARG_UNUSED(conn);
+
 	if (dir == BT_AUDIO_DIR_SOURCE) {
 		add_remote_source(ep);
 	} else if (dir == BT_AUDIO_DIR_SINK) {
@@ -528,7 +553,7 @@ static int init(void)
 		return err;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(streams); i++) {
 		streams[i].ops = &stream_ops;
 	}
 
@@ -638,7 +663,7 @@ static int configure_streams(void)
 {
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(sinks); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(sinks); i++) {
 		struct bt_bap_ep *ep = sinks[i].ep;
 		struct bt_bap_stream *stream = &streams[i];
 
@@ -657,7 +682,7 @@ static int configure_streams(void)
 		configured_sink_stream_count++;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(sources); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(sources); i++) {
 		struct bt_bap_ep *ep = sources[i];
 		struct bt_bap_stream *stream = &streams[i + configured_sink_stream_count];
 
@@ -857,8 +882,8 @@ static void reset_data(void)
 	k_sem_reset(&sem_stream_started);
 	k_sem_reset(&sem_stream_connected);
 
-	configured_sink_stream_count = 0;
-	configured_source_stream_count = 0;
+	configured_sink_stream_count = 0U;
+	configured_source_stream_count = 0U;
 	memset(sinks, 0, sizeof(sinks));
 	memset(sources, 0, sizeof(sources));
 }

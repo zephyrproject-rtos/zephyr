@@ -22,7 +22,7 @@
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Active mode */
 #define POWER_MODE0		0

@@ -19,7 +19,7 @@
  *
  * @defgroup audio_codec_interface Audio Codec Interface
  * @since 1.13
- * @version 0.2.0
+ * @version 0.3.0
  * @ingroup audio_interface
  * @{
  */
@@ -233,30 +233,162 @@ typedef void (*audio_codec_rx_done_callback_t)(const struct device *dev, uint8_t
 					       void *user_data);
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{Audio Codec,audio_codec_interface}
+ * @{
  */
-struct audio_codec_api {
-	int (*configure)(const struct device *dev, struct audio_codec_cfg *cfg);
-	void (*start_output)(const struct device *dev);
-	void (*stop_output)(const struct device *dev);
-	int (*set_property)(const struct device *dev, audio_property_t property,
-			    audio_channel_t channel, audio_property_value_t val);
-	int (*apply_properties)(const struct device *dev);
-	int (*clear_errors)(const struct device *dev);
-	int (*register_error_callback)(const struct device *dev, audio_codec_error_callback_t cb);
-	int (*route_input)(const struct device *dev, audio_channel_t channel, uint32_t input);
-	int (*route_output)(const struct device *dev, audio_channel_t channel, uint32_t output);
-	int (*start)(const struct device *dev, audio_dai_dir_t dir);
-	int (*stop)(const struct device *dev, audio_dai_dir_t dir);
-	int (*write)(const struct device *dev, uint8_t *data, size_t data_size);
-	int (*register_done_callback)(const struct device *dev,
-				      audio_codec_tx_done_callback_t tx_cb, void *tx_cb_user_data,
-				      audio_codec_rx_done_callback_t rx_cb, void *rx_cb_user_data);
-};
+
 /**
- * @endcond
+ * @brief Callback API to configure an audio codec device.
+ * See audio_codec_configure() for argument descriptions.
+ */
+typedef int (*audio_codec_configure_t)(const struct device *dev, struct audio_codec_cfg *cfg);
+
+/**
+ * @brief Callback API to start output audio playback.
+ * See audio_codec_start_output() for argument descriptions.
+ */
+typedef void (*audio_codec_start_output_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to stop output audio playback.
+ * See audio_codec_stop_output() for argument descriptions.
+ */
+typedef void (*audio_codec_stop_output_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to set an audio codec property.
+ * See audio_codec_set_property() for argument descriptions.
+ */
+typedef int (*audio_codec_set_property_t)(const struct device *dev, audio_property_t property,
+					  audio_channel_t channel, audio_property_value_t val);
+
+/**
+ * @brief Callback API to apply cached audio codec properties.
+ * See audio_codec_apply_properties() for argument descriptions.
+ */
+typedef int (*audio_codec_apply_properties_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to clear audio codec errors.
+ * See audio_codec_clear_errors() for argument descriptions.
+ */
+typedef int (*audio_codec_clear_errors_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to register an audio codec error callback.
+ * See audio_codec_register_error_callback() for argument descriptions.
+ */
+typedef int (*audio_codec_register_error_callback_t)(const struct device *dev,
+						     audio_codec_error_callback_t cb);
+
+/**
+ * @brief Callback API to route an audio codec input.
+ * See audio_codec_route_input() for argument descriptions.
+ */
+typedef int (*audio_codec_route_input_t)(const struct device *dev, audio_channel_t channel,
+					 uint32_t input);
+
+/**
+ * @brief Callback API to route an audio codec output.
+ * See audio_codec_route_output() for argument descriptions.
+ */
+typedef int (*audio_codec_route_output_t)(const struct device *dev, audio_channel_t channel,
+					  uint32_t output);
+
+/**
+ * @brief Callback API to start audio codec playback or capture.
+ * See audio_codec_start() for argument descriptions.
+ */
+typedef int (*audio_codec_start_t)(const struct device *dev, audio_dai_dir_t dir);
+
+/**
+ * @brief Callback API to stop audio codec playback or capture.
+ * See audio_codec_stop() for argument descriptions.
+ */
+typedef int (*audio_codec_stop_t)(const struct device *dev, audio_dai_dir_t dir);
+
+/**
+ * @brief Callback API to submit data for audio codec playback.
+ * See audio_codec_write() for argument descriptions.
+ */
+typedef int (*audio_codec_write_t)(const struct device *dev, uint8_t *data, size_t data_size);
+
+/**
+ * @brief Callback API to register audio codec DMA completion callbacks.
+ * See audio_codec_register_done_callback() for argument descriptions.
+ */
+typedef int (*audio_codec_register_done_callback_t)(
+	const struct device *dev, audio_codec_tx_done_callback_t tx_cb, void *tx_cb_user_data,
+	audio_codec_rx_done_callback_t rx_cb, void *rx_cb_user_data);
+
+/**
+ * Legacy struct tag alias for @ref audio_codec_driver_api for audio codec drivers that have not
+ * been updated to use audio_codec_driver_api for their backend struct.
+ *
+ * @deprecated Audio codec drivers should use the DEVICE_API() macro to declare their driver API.
+ */
+#define audio_codec_api audio_codec_driver_api __DEPRECATED_MACRO
+
+/**
+ * @driver_ops{Audio Codec}
+ */
+__subsystem struct audio_codec_driver_api {
+	/**
+	 * @driver_ops_mandatory @copybrief audio_codec_configure
+	 */
+	audio_codec_configure_t configure;
+	/**
+	 * @driver_ops_mandatory @copybrief audio_codec_start_output
+	 */
+	audio_codec_start_output_t start_output;
+	/**
+	 * @driver_ops_mandatory @copybrief audio_codec_stop_output
+	 */
+	audio_codec_stop_output_t stop_output;
+	/**
+	 * @driver_ops_mandatory @copybrief audio_codec_set_property
+	 */
+	audio_codec_set_property_t set_property;
+	/**
+	 * @driver_ops_mandatory @copybrief audio_codec_apply_properties
+	 */
+	audio_codec_apply_properties_t apply_properties;
+	/**
+	 * @driver_ops_optional @copybrief audio_codec_clear_errors
+	 */
+	audio_codec_clear_errors_t clear_errors;
+	/**
+	 * @driver_ops_optional @copybrief audio_codec_register_error_callback
+	 */
+	audio_codec_register_error_callback_t register_error_callback;
+	/**
+	 * @driver_ops_optional @copybrief audio_codec_route_input
+	 */
+	audio_codec_route_input_t route_input;
+	/**
+	 * @driver_ops_optional @copybrief audio_codec_route_output
+	 */
+	audio_codec_route_output_t route_output;
+	/**
+	 * @driver_ops_optional @copybrief audio_codec_start
+	 */
+	audio_codec_start_t start;
+	/**
+	 * @driver_ops_optional @copybrief audio_codec_stop
+	 */
+	audio_codec_stop_t stop;
+	/**
+	 * @driver_ops_optional @copybrief audio_codec_write
+	 */
+	audio_codec_write_t write;
+	/**
+	 * @driver_ops_optional @copybrief audio_codec_register_done_callback
+	 */
+	audio_codec_register_done_callback_t register_done_callback;
+};
+
+/**
+ * @}
  */
 
 /**
@@ -272,7 +404,7 @@ struct audio_codec_api {
  */
 static inline int audio_codec_configure(const struct device *dev, struct audio_codec_cfg *cfg)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	return api->configure(dev, cfg);
 }
@@ -286,7 +418,7 @@ static inline int audio_codec_configure(const struct device *dev, struct audio_c
  */
 static inline void audio_codec_start_output(const struct device *dev)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	api->start_output(dev);
 }
@@ -300,7 +432,7 @@ static inline void audio_codec_start_output(const struct device *dev)
  */
 static inline void audio_codec_stop_output(const struct device *dev)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	api->stop_output(dev);
 }
@@ -320,7 +452,7 @@ static inline void audio_codec_stop_output(const struct device *dev)
 static inline int audio_codec_set_property(const struct device *dev, audio_property_t property,
 					   audio_channel_t channel, audio_property_value_t val)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	return api->set_property(dev, property, channel, val);
 }
@@ -338,7 +470,7 @@ static inline int audio_codec_set_property(const struct device *dev, audio_prope
  */
 static inline int audio_codec_apply_properties(const struct device *dev)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	return api->apply_properties(dev);
 }
@@ -355,7 +487,7 @@ static inline int audio_codec_apply_properties(const struct device *dev)
  */
 static inline int audio_codec_clear_errors(const struct device *dev)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	if (api->clear_errors == NULL) {
 		return -ENOSYS;
@@ -381,7 +513,7 @@ static inline int audio_codec_clear_errors(const struct device *dev)
 static inline int audio_codec_register_error_callback(const struct device *dev,
 						      audio_codec_error_callback_t cb)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	if (api->register_error_callback == NULL) {
 		return -ENOSYS;
@@ -406,7 +538,7 @@ static inline int audio_codec_register_error_callback(const struct device *dev,
 static inline int audio_codec_route_input(const struct device *dev, audio_channel_t channel,
 					  uint32_t input)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	if (api->route_input == NULL) {
 		return -ENOSYS;
@@ -431,7 +563,7 @@ static inline int audio_codec_route_input(const struct device *dev, audio_channe
 static inline int audio_codec_route_output(const struct device *dev, audio_channel_t channel,
 					   uint32_t output)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	if (api->route_output == NULL) {
 		return -ENOSYS;
@@ -452,7 +584,7 @@ static inline int audio_codec_route_output(const struct device *dev, audio_chann
  */
 static inline int audio_codec_start(const struct device *dev, audio_dai_dir_t dir)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	if (api->start == NULL) {
 		return -ENOSYS;
@@ -473,7 +605,7 @@ static inline int audio_codec_start(const struct device *dev, audio_dai_dir_t di
  */
 static inline int audio_codec_stop(const struct device *dev, audio_dai_dir_t dir)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	if (api->stop == NULL) {
 		return -ENOSYS;
@@ -498,7 +630,7 @@ static inline int audio_codec_stop(const struct device *dev, audio_dai_dir_t dir
  */
 static inline int audio_codec_write(const struct device *dev, uint8_t *data, size_t data_size)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	if (api->write == NULL) {
 		return -ENOSYS;
@@ -533,7 +665,7 @@ static inline int audio_codec_register_done_callback(const struct device *dev,
 						     audio_codec_rx_done_callback_t rx_cb,
 						     void *rx_cb_user_data)
 {
-	const struct audio_codec_api *api = (const struct audio_codec_api *)dev->api;
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, dev);
 
 	if (api->register_done_callback == NULL) {
 		return -ENOSYS;

@@ -11,6 +11,15 @@
 K_MEM_SLAB_DEFINE(kmslab, BLK_SIZE, BLK_NUM, BLK_ALIGN);
 static char __aligned(BLK_ALIGN) tslab[BLK_SIZE * BLK_NUM];
 static struct k_mem_slab mslab;
+
+struct typed_mslab_block {
+	uint8_t tag;
+	uint64_t value;
+};
+
+K_MEM_SLAB_DEFINE_TYPE(kmslab_type, struct typed_mslab_block, BLK_NUM);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(kmslab_static_type, struct typed_mslab_block, BLK_NUM);
+
 K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
 K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
 static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
@@ -67,6 +76,19 @@ static void tmslab_alloc_align(void *data)
 	for (int i = 0; i < BLK_NUM; i++) {
 		k_mem_slab_free(pslab, block[i]);
 	}
+}
+
+static void check_typed_slab(struct k_mem_slab *pslab)
+{
+	void *block;
+
+	zassert_equal(pslab->info.block_size, WB_UP(sizeof(struct typed_mslab_block)));
+	zassert_equal(k_mem_slab_num_free_get(pslab), BLK_NUM);
+
+	zassert_true(k_mem_slab_alloc(pslab, &block, K_NO_WAIT) == 0, NULL);
+	zassert_equal((uintptr_t)block % __alignof(struct typed_mslab_block), 0);
+
+	k_mem_slab_free(pslab, block);
 }
 
 static void tmslab_alloc_timeout(void *data)
@@ -216,6 +238,20 @@ ZTEST(mslab_api, test_mslab_kdefine)
 {
 	zassert_equal(k_mem_slab_num_used_get(&kmslab), 0);
 	zassert_equal(k_mem_slab_num_free_get(&kmslab), BLK_NUM);
+}
+
+/**
+ * @brief Verify K_MEM_SLAB_DEFINE_TYPE() and K_MEM_SLAB_DEFINE_STATIC_TYPE().
+ *
+ * @details Define typed memory slabs and check that they allocate all blocks
+ * with the expected block size, block count, and type alignment.
+ *
+ * @ingroup kernel_memory_slab_tests
+ */
+ZTEST(mslab_api, test_mslab_kdefine_type)
+{
+	check_typed_slab(&kmslab_type);
+	check_typed_slab(&kmslab_static_type);
 }
 
 /**

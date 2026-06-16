@@ -90,12 +90,19 @@
 #define WDT_NODE DT_INST(0, gd_gd32_wwdgt)
 #elif DT_HAS_COMPAT_STATUS_OKAY(gd_gd32_fwdgt)
 #define WDT_NODE DT_INST(0, gd_gd32_fwdgt)
+#elif DT_HAS_COMPAT_STATUS_OKAY(realtek_bee_core_wdt)
+#define WDT_NODE DT_INST(0, realtek_bee_core_wdt)
+#define TIMEOUTS 0
+#define WDT_TEST_MAX_WINDOW 5000U
 #elif DT_HAS_COMPAT_STATUS_OKAY(zephyr_counter_watchdog)
 #define WDT_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_counter_watchdog)
 #elif DT_HAS_COMPAT_STATUS_OKAY(silabs_siwx91x_wdt)
 #define WDT_NODE DT_INST(0, silabs_siwx91x_wdt)
 #elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_wwdt)
 #define WDT_NODE DT_INST(0, nuvoton_numaker_wwdt)
+#define TIMEOUTS 1
+#elif DT_HAS_COMPAT_STATUS_OKAY(nuvoton_numaker_wdt)
+#define WDT_NODE DT_INST(0, nuvoton_numaker_wdt)
 #define TIMEOUTS 1
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(raspberrypi_pico_watchdog)

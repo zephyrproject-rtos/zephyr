@@ -16,7 +16,7 @@ Audio Format
 
 The driver requires and provides Audio data with the following parameters:
 
-* 44100 kHz sample rate
+* 44100 Hz sample rate
 * Signed 24 bit PCM
 * Stereo
 * Little endian

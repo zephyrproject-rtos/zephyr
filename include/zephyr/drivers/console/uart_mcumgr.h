@@ -29,7 +29,7 @@ struct uart_mcumgr_rx_buf {
 	int length;
 };
 
-/** @typedef uart_mcumgr_recv_fn
+/**
  * @brief Function that gets called when an mcumgr packet is received.
  *
  * Function that gets called when an mcumgr packet is received.  This function

@@ -13,3 +13,4 @@ flash: 48
 supported:
   - gpio
   - counter
+  - spi

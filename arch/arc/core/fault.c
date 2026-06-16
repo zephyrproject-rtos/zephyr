@@ -17,7 +17,6 @@
 
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/logging/log.h>
 

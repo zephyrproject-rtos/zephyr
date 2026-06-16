@@ -74,8 +74,8 @@ static sys_slist_t tcp_conns = SYS_SLIST_STATIC_INIT(&tcp_conns);
 
 static K_MUTEX_DEFINE(tcp_lock);
 
-K_MEM_SLAB_DEFINE_STATIC(tcp_conns_slab, sizeof(struct tcp),
-				CONFIG_NET_MAX_CONTEXTS, 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(tcp_conns_slab, struct tcp,
+			      CONFIG_NET_MAX_CONTEXTS);
 
 static struct k_work_q tcp_work_q;
 static K_KERNEL_STACK_DEFINE(work_q_stack, CONFIG_NET_TCP_WORKQ_STACK_SIZE);
@@ -891,8 +891,7 @@ static void tcp_conn_release(struct k_work *work)
 
 	if (CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT) {
 		if (conn->queue_recv_data != NULL) {
-			net_buf_unref(conn->queue_recv_data);
-			conn->queue_recv_data = NULL;
+			net_buf_drop(&conn->queue_recv_data);
 		}
 	}
 
@@ -1280,8 +1279,7 @@ static size_t tcp_check_pending_data(struct tcp *conn, struct net_pkt *pkt,
 		} else {
 			/* Check if the queued data is just a section of the incoming data */
 			if (gap_size <= 0) {
-				net_buf_unref(conn->queue_recv_data);
-				conn->queue_recv_data = NULL;
+				net_buf_drop(&conn->queue_recv_data);
 
 				k_work_cancel_delayable(&conn->recv_queue_timer);
 			}
@@ -1937,8 +1935,7 @@ static void tcp_cleanup_recv_queue(struct k_work *work)
 		net_buf_frags_len(conn->queue_recv_data),
 		tcp_get_seq(conn->queue_recv_data));
 
-	net_buf_unref(conn->queue_recv_data);
-	conn->queue_recv_data = NULL;
+	net_buf_drop(&conn->queue_recv_data);
 
 	k_mutex_unlock(&conn->lock);
 }
@@ -2796,8 +2793,7 @@ static void tcp_queue_recv_data(struct tcp *conn, struct net_pkt *pkt,
 				NET_ERR("Incorrect order in out of order sequence for conn %p",
 					conn);
 				/* error in sequence list, drop it */
-				net_buf_unref(conn->queue_recv_data);
-				conn->queue_recv_data = NULL;
+				net_buf_drop(&conn->queue_recv_data);
 			}
 		} else {
 			NET_DBG("[%p] Cannot add new data to queue", conn);

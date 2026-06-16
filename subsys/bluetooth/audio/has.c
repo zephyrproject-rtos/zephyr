@@ -225,7 +225,7 @@ static struct client_context *context_find(const bt_addr_le_t *addr)
 {
 	__ASSERT_NO_MSG(addr != NULL);
 
-	for (size_t i = 0; i < ARRAY_SIZE(contexts); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(contexts); i++) {
 		if (bt_addr_le_eq(&contexts[i].addr, addr)) {
 			return &contexts[i];
 		}
@@ -276,8 +276,7 @@ static void client_free(struct has_client *client)
 		client->context = NULL;
 	}
 
-	bt_conn_unref(client->conn);
-	client->conn = NULL;
+	bt_conn_drop(&client->conn);
 }
 
 static struct has_client *client_alloc(struct bt_conn *conn)
@@ -286,7 +285,7 @@ static struct has_client *client_alloc(struct bt_conn *conn)
 	struct has_client *client = NULL;
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(has_client_list); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
 		if (conn == has_client_list[i].conn) {
 			return &has_client_list[i];
 		}
@@ -334,7 +333,7 @@ static struct has_client *client_alloc(struct bt_conn *conn)
 
 static struct has_client *client_find_by_conn(struct bt_conn *conn)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(has_client_list); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
 		if (conn == has_client_list[i].conn) {
 			return &has_client_list[i];
 		}
@@ -531,13 +530,20 @@ static void bond_deleted_cb(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct client_context *context;
 
+	ARG_UNUSED(id);
+
 	context = context_find(addr);
 	if (context != NULL) {
 		context_free(context);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_settings_delete("has", 0, addr);
+		int err;
+
+		err = bt_settings_delete("has", 0, addr);
+		if (err != 0) {
+			LOG_WRN("Failed to delete settings: %d", err);
+		}
 	}
 }
 
@@ -735,6 +741,8 @@ static void control_point_ntf_complete(struct bt_conn *conn, void *user_data)
 {
 	struct has_client *client = client_find_by_conn(conn);
 
+	ARG_UNUSED(user_data);
+
 	LOG_DBG("conn %p", (void *)conn);
 
 	/* Resubmit if needed */
@@ -747,7 +755,9 @@ static void control_point_ind_complete(struct bt_conn *conn,
 				       struct bt_gatt_indicate_params *params,
 				       uint8_t err)
 {
-	if (err) {
+	ARG_UNUSED(params);
+
+	if (err != 0) {
 		/* TODO: Handle error somehow */
 		LOG_ERR("conn %p err 0x%02x", (void *)conn, err);
 	}
@@ -820,7 +830,7 @@ static int control_point_send_all(struct net_buf_simple *buf)
 		}
 
 		err = control_point_send(client, buf);
-		if (err) {
+		if (err != 0) {
 			result = err;
 			/* continue anyway */
 		}
@@ -910,7 +920,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 	}
 
 	err = bt_settings_decode_key(name, &addr);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Unable to decode address %s", name);
 		return -EINVAL;
 	}
@@ -934,7 +944,7 @@ static int settings_set_cb(const char *name, size_t len_rd, settings_read_cb rea
 
 		context->last_preset_index_known = store.last_preset_index_known;
 	} else {
-		context->last_preset_index_known = 0x00;
+		context->last_preset_index_known = 0x00U;
 	}
 
 	/* Notify all the characteristics values after reboot */
@@ -973,7 +983,7 @@ static void update_last_preset_index_known(struct has_client *client, uint8_t in
 		return;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(has_client_list); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(has_client_list); i++) {
 		client = &has_client_list[i];
 
 		/* For each connected client */
@@ -1138,7 +1148,7 @@ static int preset_list_changed(struct has_client *client)
 	}
 
 	if (is_last) {
-		client->preset_changed_index_next = 0;
+		client->preset_changed_index_next = 0U;
 
 		/* It's the last preset notified, so update the highest index known to the client */
 		update_last_preset_index_known(client, preset->index);
@@ -1294,7 +1304,7 @@ static uint8_t handle_write_preset_name(struct bt_conn *conn, struct net_buf_sim
 		return BT_ATT_ERR_OUT_OF_RANGE;
 	} else if (err == -EPERM) {
 		return BT_HAS_ERR_WRITE_NAME_NOT_ALLOWED;
-	} else if (err) {
+	} else if (err != 0) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -1325,7 +1335,7 @@ static uint8_t preset_select(struct has_preset *preset, bool sync)
 		return BT_HAS_ERR_OPERATION_NOT_POSSIBLE;
 	}
 
-	if (err) {
+	if (err != 0) {
 		return BT_ATT_ERR_UNLIKELY;
 	}
 
@@ -1482,7 +1492,7 @@ static ssize_t write_control_point(struct bt_conn *conn, const struct bt_gatt_at
 	net_buf_simple_init_with_data(&buf, (void *)data, len);
 
 	err = handle_control_point_op(conn, &buf);
-	if (err) {
+	if (err != 0) {
 		LOG_WRN("handle_control_point_op err 0x%02x", err);
 		return BT_GATT_ERR(err);
 	}
@@ -1824,7 +1834,7 @@ int bt_has_register(const struct bt_has_features_param *features)
 	}
 
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT)
-	for (size_t i = 0; i < ARRAY_SIZE(preset_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(preset_pool); i++) {
 		struct has_preset *preset = &preset_pool[i];
 
 		sys_slist_append(&preset_free_list, &preset->node);
@@ -1832,7 +1842,8 @@ int bt_has_register(const struct bt_has_features_param *features)
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT */
 
 #if defined(CONFIG_BT_HAS_PRESET_SUPPORT) || defined(CONFIG_BT_HAS_FEATURES_NOTIFIABLE)
-	bt_conn_auth_info_cb_register(&auth_info_cb);
+	err = bt_conn_auth_info_cb_register(&auth_info_cb);
+	__ASSERT(err == 0, "Failed to register auth info callbacks: %d", err);
 #endif /* CONFIG_BT_HAS_PRESET_SUPPORT || CONFIG_BT_HAS_FEATURES_NOTIFIABLE */
 
 	has.registered = true;

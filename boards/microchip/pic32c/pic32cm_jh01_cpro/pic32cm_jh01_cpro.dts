@@ -26,14 +26,24 @@
 	aliases {
 		led0 = &led0;
 		sw0 = &button0;
+		pwm-led0 = &pwm_led0;
 	};
 
 	leds {
 		compatible = "gpio-leds";
 
 		led0: led_0 {
-			gpios = <&portc 5 GPIO_ACTIVE_HIGH>;
+			gpios = <&portc 5 GPIO_ACTIVE_LOW>;
 			label = "Yellow LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&tcc2 1 PWM_MSEC(20) 0>;
+			status = "okay";
 		};
 	};
 
@@ -172,13 +182,15 @@
 	status = "okay";
 };
 
-&sercom1 {
+&sercom3 {
 	compatible = "microchip,sercom-g1-i2c";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <I2C_BITRATE_FAST>;
-	pinctrl-0 = <&sercom1_i2c_default>;
+	pinctrl-0 = <&sercom3_i2c_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 0x2 0x8>, <&dmac 0x3 0x9>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
 
@@ -191,5 +203,31 @@
 };
 
 &dmac {
+	status = "okay";
+};
+
+&tcc2 {
+	compatible = "microchip,tcc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tcc2_pwm_default>;
+	pinctrl-names = "default";
+	max-bit-width = <24>;
+	prescaler = <256>;
+	status = "okay";
+};
+
+&tc5 {
+	compatible = "microchip,tc-g1-pwm";
+	#pwm-cells = <3>;
+	pinctrl-0 = <&tc5_pwm_default>;
+	pinctrl-names = "default";
+	prescaler = <64>;
+	status = "okay";
+};
+
+&tc0 {
+	compatible = "microchip,tc-g1-counter";
+	max-bit-width = <32>;
+	prescaler = <8>;
 	status = "okay";
 };

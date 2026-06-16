@@ -18,12 +18,12 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 
 #include <zephyr/toolchain.h>
 #include <wait_q.h>
 #include <zephyr/sys/dlist.h>
 #include <ksched.h>
+#include <scheduler.h>
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
@@ -95,16 +95,11 @@ static inline bool handle_poll_events(struct k_sem *sem)
 void z_impl_k_sem_give(struct k_sem *sem)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
-	struct k_thread *thread;
 	bool resched;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_sem, give, sem);
 
-	thread = z_unpend_first_thread(&sem->wait_q);
-
-	if (unlikely(thread != NULL)) {
-		arch_thread_return_value_set(thread, 0);
-		z_ready_thread(thread);
+	if (z_sched_wake(&sem->wait_q, 0, NULL)) {
 		resched = true;
 	} else {
 		sem->count += (sem->count != sem->limit) ? 1U : 0U;
@@ -165,18 +160,11 @@ out:
 
 void z_impl_k_sem_reset(struct k_sem *sem)
 {
-	struct k_thread *thread;
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	bool resched = false;
 
-	while (true) {
-		thread = z_unpend_first_thread(&sem->wait_q);
-		if (thread == NULL) {
-			break;
-		}
+	while (z_sched_wake(&sem->wait_q, -EAGAIN, NULL)) {
 		resched = true;
-		arch_thread_return_value_set(thread, -EAGAIN);
-		z_ready_thread(thread);
 	}
 	sem->count = 0;
 

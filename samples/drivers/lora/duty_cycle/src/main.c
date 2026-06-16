@@ -10,9 +10,10 @@
  * from this sample. Hold button 0 during boot to select the sender
  * role; the default is receiver.
  *
- * Receiver: calls lora_recv_duty_cycle_async() so the radio alternates
- *           between a short RX window and sleep, waking the MCU
- *           only when a packet is received.
+ * Receiver: uses both lora_recv_duty_cycle() (blocking, 4 packets) and
+ *           lora_recv_duty_cycle_async() (callback-based, 10 packets)
+ *           so the radio alternates between a short RX window and
+ *           sleep, waking the MCU only when a packet is received.
  *
  * Sender:   transmits with a long preamble (100 symbols) so the
  *           receiver is guaranteed to catch the preamble during
@@ -108,7 +109,7 @@ static void duty_cycle_recv_cb(const struct device *dev, uint8_t *data,
 	LOG_HEXDUMP_INF(data, size, "payload");
 
 	if (++cnt == 10) {
-		LOG_INF("Stopping duty cycle reception");
+		LOG_INF("Stopping async duty cycle reception");
 		lora_recv_duty_cycle_async(dev, K_NO_WAIT, K_NO_WAIT, NULL, NULL);
 	}
 }
@@ -125,7 +126,10 @@ static int run_receiver(const struct device *lora_dev)
 		.tx_power = 4,
 		.tx = false,
 	};
-	int ret;
+	uint8_t rx_buf[MAX_DATA_LEN] = {0};
+	int16_t rssi;
+	int8_t snr;
+	int ret, len;
 
 	ret = lora_config(lora_dev, &config);
 	if (ret < 0) {
@@ -133,14 +137,33 @@ static int run_receiver(const struct device *lora_dev)
 		return ret;
 	}
 
-	LOG_INF("RX duty cycle started (rx=%d ms, sleep=%d ms)",
-		RX_PERIOD_MS, SLEEP_PERIOD_MS);
 	LOG_INF("RX preamble configured to %u symbols", RX_PREAMBLE_LEN);
 
+	/* Receive 4 packets synchronously with duty cycling */
+	LOG_INF("Synchronous duty cycle reception (rx=%d ms, sleep=%d ms)",
+		RX_PERIOD_MS, SLEEP_PERIOD_MS);
+	for (int i = 0; i < 4; i++) {
+		len = lora_recv_duty_cycle(lora_dev,
+					   K_MSEC(RX_PERIOD_MS),
+					   K_MSEC(SLEEP_PERIOD_MS),
+					   rx_buf, MAX_DATA_LEN,
+					   K_FOREVER, &rssi, &snr);
+		if (len < 0) {
+			LOG_ERR("lora_recv_duty_cycle failed: %d", len);
+			return len;
+		}
+
+		LOG_INF("RX %d bytes, RSSI: %d dBm, SNR: %d dB",
+			len, rssi, snr);
+		LOG_HEXDUMP_INF(rx_buf, len, "payload");
+	}
+
+	/* Switch to asynchronous duty cycle reception */
+	LOG_INF("Asynchronous duty cycle reception");
 	ret = lora_recv_duty_cycle_async(lora_dev,
-				   K_MSEC(RX_PERIOD_MS),
-				   K_MSEC(SLEEP_PERIOD_MS),
-				   duty_cycle_recv_cb, NULL);
+					 K_MSEC(RX_PERIOD_MS),
+					 K_MSEC(SLEEP_PERIOD_MS),
+					 duty_cycle_recv_cb, NULL);
 	if (ret < 0) {
 		LOG_ERR("lora_recv_duty_cycle_async failed: %d", ret);
 		return ret;

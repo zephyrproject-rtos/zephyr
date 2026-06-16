@@ -13,12 +13,14 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/ascs.h>
+#include <zephyr/bluetooth/audio/audio.h>
+#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/crypto.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/bluetooth/audio/audio.h>
-#include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -34,8 +36,8 @@
 LOG_MODULE_REGISTER(bt_bap_broadcast_source, CONFIG_BT_BAP_BROADCAST_SOURCE_LOG_LEVEL);
 
 #include "audio_internal.h"
-#include "bap_iso.h"
 #include "bap_endpoint.h"
+#include "bap_iso.h"
 #include "bap_stream.h"
 
 struct bt_bap_broadcast_subgroup {
@@ -78,7 +80,7 @@ static sys_slist_t bap_broadcast_source_cbs = SYS_SLIST_STATIC_INIT(&bap_broadca
  * For a minimal BASE with 1 subgroup and 1 BIS without and other data the
  * total comes to 16
  */
-#define MINIMUM_BASE_SIZE 16
+#define MINIMUM_BASE_SIZE 16U
 
 static void broadcast_source_set_ep_state(struct bt_bap_ep *ep, uint8_t state)
 {
@@ -265,7 +267,7 @@ static void broadcast_source_ep_init(struct bt_bap_ep *ep)
 
 static struct bt_bap_ep *broadcast_source_new_ep(uint8_t index)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_source_eps[index]); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_eps[index]); i++) {
 		struct bt_bap_ep *ep = &broadcast_source_eps[index][i];
 
 		/* If ep->stream is NULL the endpoint is unallocated */
@@ -280,7 +282,7 @@ static struct bt_bap_ep *broadcast_source_new_ep(uint8_t index)
 
 static struct bt_bap_broadcast_subgroup *broadcast_source_new_subgroup(uint8_t index)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_source_subgroups[index]); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_subgroups[index]); i++) {
 		struct bt_bap_broadcast_subgroup *subgroup = &broadcast_source_subgroups[index][i];
 
 		if (sys_slist_is_empty(&subgroup->streams)) {
@@ -347,8 +349,8 @@ static int
 broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 			      const struct bt_audio_codec_cfg *subgroup_codec_cfg,
 			      const struct bt_bap_broadcast_source_stream_param *stream_param,
-			      struct bt_bap_qos_cfg *qos, struct bt_bap_broadcast_source *source,
-			      uint8_t id)
+			      const struct bt_bap_qos_cfg *qos,
+			      struct bt_bap_broadcast_source *source, uint8_t id)
 {
 	struct bt_bap_iso *iso;
 	struct bt_bap_ep *ep;
@@ -370,7 +372,7 @@ broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 	stream->iso = &iso->chan;
 	ep->id = id;
 
-	bt_bap_qos_cfg_to_iso_qos(iso->chan.qos->tx, qos);
+	(void)memcpy(&ep->qos, qos, sizeof(*qos));
 	(void)memcpy(&ep->codec_cfg, subgroup_codec_cfg, sizeof(*subgroup_codec_cfg));
 
 	/* If there are any BIS specific codec configuration data, update the data to contain both
@@ -387,7 +389,8 @@ broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 	bt_bap_iso_unref(iso);
 
 	bt_bap_stream_attach(NULL, stream, ep);
-	stream->qos = qos;
+	stream->codec_cfg = &ep->codec_cfg;
+	stream->qos = &ep->qos;
 	stream->group = source;
 	ep->broadcast_source = source;
 
@@ -403,7 +406,7 @@ static bool encode_base_subgroup(struct bt_bap_broadcast_subgroup *subgroup,
 	uint8_t stream_count;
 	uint8_t len;
 
-	stream_count = 0;
+	stream_count = 0U;
 	SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
 		stream_count++;
 	}
@@ -484,6 +487,7 @@ static bool encode_base(struct bt_bap_broadcast_source *source, struct net_buf_s
 	struct bt_bap_broadcast_subgroup *subgroup;
 	uint8_t streams_encoded;
 	uint8_t subgroup_count;
+	uint32_t pd;
 
 	/* 13 is the size of the fixed size values following this check */
 	if ((buf->size - buf->len) < MINIMUM_BASE_SIZE) {
@@ -492,18 +496,36 @@ static bool encode_base(struct bt_bap_broadcast_source *source, struct net_buf_s
 
 	subgroup_count = 0U;
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
+		/* All broadcast stream share the same PD, so just take the PD from the first stream
+		 * in the first subgroup
+		 */
+		if (subgroup_count == 0U) {
+			const struct bt_bap_stream *stream =
+				SYS_SLIST_PEEK_HEAD_CONTAINER(&subgroup->streams, stream, _node);
+
+			__ASSERT(stream != NULL && stream->ep != NULL,
+				 "stream or stream->ep was NULL");
+			pd = stream->ep->qos.pd;
+		}
+
 		subgroup_count++;
+	}
+
+	/* The minimum number of subgroups in a broadcast source is 1 */
+	if (subgroup_count == 0U) {
+		LOG_DBG("Invalid number of subgroups for broadcast source");
+		return false;
 	}
 
 	net_buf_simple_add_le16(buf, BT_UUID_BASIC_AUDIO_VAL);
 
-	net_buf_simple_add_le24(buf, source->qos->pd);
+	net_buf_simple_add_le24(buf, pd);
 	net_buf_simple_add_u8(buf, subgroup_count);
 
 	/* Since the `stream_data` is only stored in the broadcast source,
 	 * we need to provide that information when encoding each subgroup
 	 */
-	streams_encoded = 0;
+	streams_encoded = 0U;
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
 		if (!encode_base_subgroup(subgroup, &source->stream_data[streams_encoded],
 					  &streams_encoded, buf)) {
@@ -746,7 +768,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				   struct bt_bap_broadcast_source **out_source)
 {
 	struct bt_bap_broadcast_source *source;
-	struct bt_bap_qos_cfg *qos;
+	const struct bt_bap_qos_cfg *qos;
 	size_t stream_count;
 	uint8_t index;
 	int err;
@@ -765,7 +787,7 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 	}
 
 	source = NULL;
-	for (index = 0; index < ARRAY_SIZE(broadcast_sources); index++) {
+	for (index = 0U; index < ARRAY_SIZE(broadcast_sources); index++) {
 		if (sys_slist_is_empty(&broadcast_sources[index].subgroups)) { /* Find free entry */
 			source = &broadcast_sources[index];
 			break;
@@ -840,7 +862,6 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 
 	/* Finalize state changes and store information */
 	broadcast_source_set_state(source, BT_BAP_EP_STATE_QOS_CONFIGURED);
-	source->qos = qos;
 	source->packing = param->packing;
 #if defined(CONFIG_BT_ISO_TEST_PARAMS)
 	source->irc = param->irc;
@@ -974,7 +995,7 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 {
 	struct bt_bap_broadcast_subgroup *subgroup = NULL;
 	enum bt_bap_ep_state broadcast_state;
-	struct bt_bap_qos_cfg *qos;
+	const struct bt_bap_qos_cfg *qos;
 
 	if (source == NULL) {
 		LOG_DBG("source is NULL");
@@ -1022,15 +1043,11 @@ int bt_bap_broadcast_source_reconfig(struct bt_bap_broadcast_source *source,
 		struct bt_bap_stream *stream;
 
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
-			struct bt_iso_chan_io_qos *iso_qos;
+			struct bt_bap_ep *ep = stream->ep;
 
-			iso_qos = stream->ep->iso->chan.qos->tx;
-			bt_bap_qos_cfg_to_iso_qos(iso_qos, qos);
-			stream->qos = qos;
+			(void)memcpy(&ep->qos, qos, sizeof(*qos));
 		}
 	}
-
-	source->qos = qos;
 
 	return 0;
 }
@@ -1089,6 +1106,7 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 	struct bt_bap_broadcast_subgroup *subgroup;
 	enum bt_bap_ep_state broadcast_state;
 	struct bt_bap_stream *stream;
+	struct bt_bap_qos_cfg *qos;
 	size_t bis_count;
 	int err;
 
@@ -1108,20 +1126,40 @@ int bt_bap_broadcast_source_start(struct bt_bap_broadcast_source *source, struct
 		return -EBADMSG;
 	}
 
-	bis_count = 0;
+	bis_count = 0U;
+	qos = NULL;
 	SYS_SLIST_FOR_EACH_CONTAINER(&source->subgroups, subgroup, _node) {
 		SYS_SLIST_FOR_EACH_CONTAINER(&subgroup->streams, stream, _node) {
-			bis[bis_count++] = bt_bap_stream_iso_chan_get(stream);
+			struct bt_bap_ep *ep = stream->ep;
+			struct bt_iso_chan_io_qos *iso_qos = ep->iso->chan.qos->tx;
+
+			bis[bis_count] = bt_bap_stream_iso_chan_get(stream);
+			bis_count++;
+
+			bt_bap_qos_cfg_to_iso_qos(iso_qos, &ep->qos);
+
+			/* All BIS will share the same QOS values */
+			if (qos == NULL) {
+				qos = &ep->qos;
+			}
 		}
+	}
+
+	if (bis_count == 0U) {
+		/* TODO: This is just an extra check. Ideally this will never happen, but the above
+		 * is not (yet) thread safe so we need to handle this case.
+		 */
+		LOG_DBG("Can not start source with no streams");
+		return -ENOEXEC;
 	}
 
 	/* Create BIG */
 	param.num_bis = bis_count;
 	param.bis_channels = bis;
-	param.framing = source->qos->framing;
+	param.framing = qos->framing;
 	param.packing = source->packing;
-	param.interval = source->qos->interval;
-	param.latency = source->qos->latency;
+	param.interval = qos->interval;
+	param.latency = qos->latency;
 	param.encryption = source->encryption;
 	if (param.encryption) {
 		(void)memcpy(param.bcode, source->broadcast_code, sizeof(param.bcode));
@@ -1171,7 +1209,7 @@ int bt_bap_broadcast_source_stop(struct bt_bap_broadcast_source *source)
 	}
 
 	err = bt_iso_big_terminate(source->big);
-	if (err) {
+	if (err != 0) {
 		LOG_DBG("Failed to terminate BIG (err %d)", err);
 		return err;
 	}

@@ -22,11 +22,13 @@ function(wiseconnect_get_ram_config node_var out_var)
     message(FATAL_ERROR "Unsupported RAM size config: ${size_kb}KB")
   endif()
 endfunction()
+wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
 
 # Keep these values sync with
 # components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
 zephyr_compile_definitions(
   SL_SI91X_ENABLE_LITTLE_ENDIAN
+  SL_SI91X_SI917_RAM_MEM_CONFIG=${RAM_MEM_CONFIG}
   SLI_CODE_CLASSIFICATION_DISABLE
   SLI_SI91X_MCU_COMMON_FLASH_MODE
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_VER2
@@ -34,6 +36,7 @@ zephyr_compile_definitions(
   SLI_SI91X_MCU_ENABLE_FLASH_BASED_EXECUTION
   SLI_SI91X_MCU_ENABLE_IPMU_APIS
   SLI_SI91X_MCU_INTERFACE
+  SLI_SI91X_ENABLE_OS
   SLI_SI917
   SLI_SI917B0
 )
@@ -118,7 +121,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_SILABS_SIWX91X
 )
 
 # FIXME: Replace sli_si91x_clock_manager.c by native Zephyr access to the clocks
-if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_PM)
   zephyr_compile_definitions(
     ULPSS_CLOCK_ROMDRIVER_PRESENT # replace rsi_ulpss_clk.c
     CLOCK_ROMDRIVER_PRESENT # replace rsi_pll.c
@@ -148,13 +151,13 @@ endif()
 
 # FIXME: These services should rely in Zephyr RTC API
 if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_RTC_SILABS_SIWX91X OR
-   CONFIG_SILABS_SISDK_SLEEPTIMER OR CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+   CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_library_sources(
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c
   )
 endif()
 
-zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X
+zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X_UDMA
   UDMA_ROMDRIVER_PRESENT # replace rsi_udma.c and rsi_udma_wrapper.c
 )
 
@@ -232,10 +235,7 @@ endif() # CONFIG_WIFI_SILABS_SIWX91X
 
 
 if(CONFIG_SILABS_SIWX91X_NWP)
-  wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
   zephyr_compile_definitions(
-    SLI_SI91X_ENABLE_OS
-    SL_SI91X_SI917_RAM_MEM_CONFIG=${RAM_MEM_CONFIG}
     SL_WIFI_COMPONENT_INCLUDED # Depite de the name, required for everything
   )
   zephyr_include_directories(
@@ -296,7 +296,7 @@ if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   )
 endif() # CONFIG_SILABS_SISDK_SLEEPTIMER
 
-if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+if(CONFIG_PM)
   zephyr_library_sources(
     ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_ps_ram_func.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/sl_si91x_m4_ps.c
@@ -321,4 +321,4 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     ${ZEPHYR_BASE}/drivers/gpio/gpio_silabs_siwx91x_uulp.c
     LOCATION RAM
   )
-endif() # CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR
+endif() # CONFIG_PM

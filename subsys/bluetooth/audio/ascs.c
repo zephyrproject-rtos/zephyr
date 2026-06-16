@@ -3,7 +3,7 @@
  */
 /*
  * Copyright (c) 2020 Intel Corporation
- * Copyright (c) 2022-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2026 Nordic Semiconductor ASA
  * Copyright (c) 2024 Demant A/S
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -17,11 +17,13 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/att.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
@@ -37,8 +39,8 @@
 
 LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 
-#include "common/bt_str.h"
 #include "common/assert.h"
+#include "common/bt_str.h"
 
 #include "../host/att_internal.h"
 
@@ -48,8 +50,8 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 #include "bap_iso.h"
 #include "bap_stream.h"
 #include "bap_unicast_server.h"
-#include "pacs_internal.h"
 #include "cap_internal.h"
+#include "pacs_internal.h"
 
 #define ASE_BUF_SEM_TIMEOUT K_MSEC(CONFIG_BT_ASCS_ASE_BUF_TIMEOUT)
 
@@ -62,8 +64,6 @@ LOG_MODULE_REGISTER(bt_ascs, CONFIG_BT_ASCS_LOG_LEVEL);
 BUILD_ASSERT(CONFIG_BT_ASCS_MAX_ACTIVE_ASES <= MAX(MAX_ASES_SESSIONS,
 						   CONFIG_BT_ISO_MAX_CHAN),
 	     "Max active ASEs are set to more than actual number of ASEs or ISOs");
-
-#if defined(CONFIG_BT_BAP_UNICAST_SERVER)
 
 #define ASE_ID(_ase) ase->ep.id
 #define ASE_DIR(_id) \
@@ -118,7 +118,7 @@ BUILD_ASSERT(
  */
 BUILD_ASSERT(CONFIG_BT_ATT_PREPARE_COUNT > 0, "CONFIG_BT_ATT_PREPARE_COUNT shall be at least 1");
 
-static const struct bt_bap_unicast_server_cb *unicast_server_cb;
+static const struct bt_ascs_cb *ascs_cb;
 
 static K_SEM_DEFINE(ase_buf_sem, 1, 1);
 NET_BUF_SIMPLE_DEFINE_STATIC(ase_buf, ASE_BUF_SIZE);
@@ -187,8 +187,7 @@ static void ase_free(struct bt_ascs_ase *ase)
 		bt_bap_iso_unbind_ep(ase->ep.iso, &ase->ep);
 	}
 
-	bt_conn_unref(ase->conn);
-	ase->conn = NULL;
+	bt_conn_drop(&ase->conn);
 
 	(void)k_work_cancel_delayable(&ase->disconnect_work);
 	(void)k_work_cancel_delayable(&ase->state_transition_work);
@@ -509,48 +508,14 @@ static void ase_enter_state_releasing(struct bt_ascs_ase *ase)
 	}
 }
 
-static void state_transition_work_handler(struct k_work *work)
+/**
+ * @brief Perform actions **after** a state change
+ *
+ * @param ase The ASE to do the post-state transition for
+ */
+static void execute_post_state_transition(struct bt_ascs_ase *ase, enum bt_bap_ep_state old_state)
 {
-	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
-	struct bt_ascs_ase *ase = CONTAINER_OF(d_work, struct bt_ascs_ase, state_transition_work);
-	const enum bt_bap_ep_state new_state = ase->state_pending;
-	const enum bt_bap_ep_state old_state = ase->ep.state;
-	int err;
-
-	ase->ep.state = new_state;
-
-	/* Notify ASE state */
-	if (ase->conn != NULL) {
-		err = ase_state_notify(ase);
-		if (err == -ENOMEM) {
-			struct bt_conn_info info;
-			uint32_t retry_delay_us;
-
-			/* Revert back to old state */
-			ase->ep.state = old_state;
-
-			err = bt_conn_get_info(ase->conn, &info);
-			__ASSERT_NO_MSG(err == 0);
-
-			retry_delay_us = info.le.interval_us;
-
-			/* Reschedule the state transition */
-			err = k_work_reschedule(d_work, K_USEC(retry_delay_us));
-			if (err >= 0) {
-				LOG_DBG("Out of buffers for ase state notification. "
-					"Will retry in %dus",
-					retry_delay_us);
-				return;
-			}
-		}
-
-		if (err < 0) {
-			LOG_ERR("Failed to notify ASE state (err %d)", err);
-		}
-	}
-
-	LOG_DBG("ase %p ep %p id 0x%02x %s -> %s", ase, &ase->ep, ASE_ID(ase),
-		bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(new_state));
+	const enum bt_bap_ep_state new_state = ase->ep.state;
 
 	if (old_state == new_state) {
 		switch (new_state) {
@@ -603,98 +568,58 @@ static void state_transition_work_handler(struct k_work *work)
 	}
 }
 
+static void state_transition_work_handler(struct k_work *work)
+{
+	struct k_work_delayable *d_work = k_work_delayable_from_work(work);
+	struct bt_ascs_ase *ase = CONTAINER_OF(d_work, struct bt_ascs_ase, state_transition_work);
+	const enum bt_bap_ep_state new_state = ase->state_pending;
+	const enum bt_bap_ep_state old_state = ase->ep.state;
+	int err;
+
+	ase->ep.state = new_state;
+
+	/* Notify ASE state */
+	if (ase->conn != NULL) {
+		err = ase_state_notify(ase);
+		if (err == -ENOMEM) {
+			struct bt_conn_info info;
+			uint32_t retry_delay_us;
+
+			/* Revert back to old state */
+			ase->ep.state = old_state;
+
+			err = bt_conn_get_info(ase->conn, &info);
+			__ASSERT_NO_MSG(err == 0);
+
+			retry_delay_us = info.le.interval_us;
+
+			/* Reschedule the state transition */
+			err = k_work_reschedule(d_work, K_USEC(retry_delay_us));
+			if (err >= 0) {
+				LOG_DBG("Out of buffers for ase state notification. "
+					"Will retry in %dus",
+					retry_delay_us);
+				return;
+			}
+		}
+
+		if (err < 0) {
+			LOG_ERR("Failed to notify ASE state (err %d)", err);
+		}
+	}
+
+	LOG_DBG("ase %p ep %p id 0x%02x %s -> %s", ase, &ase->ep, ASE_ID(ase),
+		bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(new_state));
+
+	execute_post_state_transition(ase, old_state);
+}
+
 int ascs_ep_set_state(struct bt_bap_ep *ep, enum bt_bap_ep_state state)
 {
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
-	const enum bt_bap_ep_state old_state = ep->state;
-	bool valid_state_transition = false;
 	int err;
 
-	switch (state) {
-	case BT_BAP_EP_STATE_IDLE:
-		valid_state_transition = true;
-		break;
-	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_IDLE:
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		case BT_BAP_EP_STATE_RELEASING:
-			valid_state_transition = true;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-			valid_state_transition = true;
-			break;
-		case BT_BAP_EP_STATE_DISABLING:
-			valid_state_transition = ep->dir == BT_AUDIO_DIR_SOURCE;
-			break;
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			/* Source ASE transition Streaming->QoS configured is valid on case of CIS
-			 * link-loss.
-			 */
-			valid_state_transition =
-				ep->dir == BT_AUDIO_DIR_SINK || ase->unexpected_iso_link_loss;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_ENABLING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		case BT_BAP_EP_STATE_ENABLING:
-			valid_state_transition = true;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_STREAMING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = true;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_DISABLING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = ep->dir == BT_AUDIO_DIR_SOURCE;
-			break;
-		default:
-			break;
-		} break;
-	case BT_BAP_EP_STATE_RELEASING:
-		switch (old_state) {
-		case BT_BAP_EP_STATE_CODEC_CONFIGURED:
-		case BT_BAP_EP_STATE_QOS_CONFIGURED:
-		case BT_BAP_EP_STATE_ENABLING:
-		case BT_BAP_EP_STATE_STREAMING:
-			valid_state_transition = true;
-			break;
-		case BT_BAP_EP_STATE_DISABLING:
-			valid_state_transition = ep->dir == BT_AUDIO_DIR_SOURCE;
-			break;
-		default:
-			break;
-		} break;
-	default:
-		__ASSERT_PRINT("Unhandled state %d", state);
-		break;
-	}
-
-	if (!valid_state_transition) {
-		BT_ASSERT_MSG(false, "Invalid state transition: %s -> %s",
-			      bt_bap_ep_state_str(old_state), bt_bap_ep_state_str(state));
-
+	if (!bt_bap_stream_valid_state_transition(ep, state)) {
 		return -EBADMSG;
 	}
 
@@ -832,7 +757,7 @@ static int ascs_iso_accept(const struct bt_iso_accept_info *info, struct bt_iso_
 {
 	LOG_DBG("conn %p", (void *)info->acl);
 
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 		enum bt_bap_ep_state state;
 		struct bt_iso_chan *chan;
@@ -1133,7 +1058,7 @@ static void ascs_cp_rsp_init(uint8_t op)
 
 	rsp = net_buf_simple_add(&cp_rsp_buf, sizeof(*rsp));
 	rsp->op = op;
-	rsp->num_ase = 0;
+	rsp->num_ase = 0U;
 }
 
 /* Add response to an opcode/ASE ID */
@@ -1185,13 +1110,13 @@ static int ase_release(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 		return -EBADMSG;
 	}
 
-	if (unicast_server_cb == NULL || unicast_server_cb->release == NULL) {
+	if (ascs_cb == NULL || ascs_cb->release == NULL) {
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 				       BT_BAP_ASCS_REASON_NONE);
 		return -ENOTSUP;
 	}
 
-	err = unicast_server_cb->release(ase->ep.stream, rsp);
+	err = ascs_cb->release(ase->ep.stream, rsp);
 	if (err != 0) {
 		if (rsp->code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -1213,6 +1138,11 @@ static int ase_release(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 
 int bt_ascs_release_ase(struct bt_bap_ep *ep)
 {
+	if (!bt_ascs_has_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
+
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 	const enum bt_bap_ep_state state = ep->state;
 
@@ -1249,12 +1179,12 @@ static int ase_disable(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 
 	stream = ep->stream;
 
-	if (unicast_server_cb == NULL || unicast_server_cb->disable == NULL) {
+	if (ascs_cb == NULL || ascs_cb->disable == NULL) {
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
 		return -ENOTSUP;
 	}
 
-	err = unicast_server_cb->disable(stream, rsp);
+	err = ascs_cb->disable(stream, rsp);
 	if (err != 0) {
 		if (rsp->code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -1283,6 +1213,11 @@ static int ase_disable(struct bt_ascs_ase *ase, uint8_t reason, struct bt_bap_as
 
 int bt_ascs_disable_ase(struct bt_bap_ep *ep)
 {
+	if (!bt_ascs_has_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
+
 	struct bt_ascs_ase *ase = CONTAINER_OF(ep, struct bt_ascs_ase, ep);
 
 	return ase_disable(ase, BT_HCI_ERR_LOCALHOST_TERM_CONN, BT_BAP_ASCS_RSP_NULL);
@@ -1290,7 +1225,7 @@ int bt_ascs_disable_ase(struct bt_bap_ep *ep)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn != conn) {
@@ -1373,6 +1308,8 @@ static uint8_t ase_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 {
 	struct bt_ascs_ase *ase = user_data;
 
+	ARG_UNUSED(handle);
+
 	if (ASE_ID(ase) == POINTER_TO_UINT(BT_AUDIO_CHRC_USER_DATA(attr))) {
 		ase->attr = attr;
 
@@ -1401,7 +1338,8 @@ static void ase_init(struct bt_ascs_ase *ase, struct bt_conn *conn, uint8_t id)
 	ase->conn = bt_conn_ref(conn);
 
 	/* Lookup ASE characteristic */
-	bt_gatt_foreach_attr_type(0x0001, 0xffff, ASE_UUID(id), NULL, 0, ase_attr_cb, ase);
+	bt_gatt_foreach_attr_type(BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE,
+				  ASE_UUID(id), NULL, 0U, ase_attr_cb, ase);
 
 	__ASSERT(ase->attr, "ASE characteristic not found\n");
 
@@ -1413,9 +1351,9 @@ static struct bt_ascs_ase *ase_new(struct bt_conn *conn, uint8_t id)
 {
 	struct bt_ascs_ase *ase = NULL;
 
-	__ASSERT(id > 0 && id <= ASE_COUNT, "invalid ASE_ID 0x%02x", id);
+	__ASSERT(id > 0U && id <= ASE_COUNT, "invalid ASE_ID 0x%02x", id);
 
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		if (ascs.ase_pool[i].conn == NULL) {
 			ase = &ascs.ase_pool[i];
 			break;
@@ -1435,7 +1373,7 @@ static struct bt_ascs_ase *ase_new(struct bt_conn *conn, uint8_t id)
 
 static struct bt_ascs_ase *ase_find(struct bt_conn *conn, uint8_t id)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn && ASE_ID(ase) == id) {
@@ -1604,15 +1542,14 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 		return err;
 	}
 
-	if (unicast_server_cb == NULL) {
+	if (ascs_cb == NULL) {
 		err = -ENOTSUP;
 		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED, BT_BAP_ASCS_REASON_NONE);
 	} else if (ase->ep.stream != NULL) {
 		stream = ase->ep.stream;
-		if (unicast_server_cb->reconfig != NULL) {
-			err = unicast_server_cb->reconfig(ase->ep.stream, ase->ep.dir,
-							  &ase->ep.codec_cfg, &ase->ep.qos_pref,
-							  &rsp);
+		if (ascs_cb->reconfig != NULL) {
+			err = ascs_cb->reconfig(ase->ep.stream, ase->ep.dir, &ase->ep.codec_cfg,
+						&ase->ep.qos_pref, &rsp);
 		} else {
 			err = -ENOTSUP;
 			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -1634,10 +1571,9 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 		}
 	} else {
 		stream = NULL;
-		if (unicast_server_cb->config != NULL) {
-			err = unicast_server_cb->config(ase->conn, &ase->ep, ase->ep.dir,
-							&ase->ep.codec_cfg, &stream,
-							&ase->ep.qos_pref, &rsp);
+		if (ascs_cb->config != NULL) {
+			err = ascs_cb->config(ase->conn, &ase->ep, ase->ep.dir, &ase->ep.codec_cfg,
+					      &stream, &ase->ep.qos_pref, &rsp);
 		} else {
 			err = -ENOTSUP;
 			rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -1684,6 +1620,7 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 	ascs_cp_rsp_success(ASE_ID(ase));
 
 	bt_bap_stream_attach(ase->conn, stream, &ase->ep);
+	stream->codec_cfg = &ase->ep.codec_cfg;
 
 	ascs_ep_set_state(&ase->ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 
@@ -1692,7 +1629,7 @@ static int ase_config(struct bt_ascs_ase *ase, const struct bt_ascs_config *cfg)
 
 static struct bt_bap_ep *ep_lookup_stream(struct bt_conn *conn, struct bt_bap_stream *stream)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn && ase->ep.stream == stream) {
@@ -1760,6 +1697,7 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 	ep->qos_pref = *qos_pref;
 
 	bt_bap_stream_attach(conn, stream, ep);
+	stream->codec_cfg = &ep->codec_cfg;
 
 	err = ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
 	if (err != 0) {
@@ -1769,6 +1707,138 @@ int bt_ascs_config_ase(struct bt_conn *conn, struct bt_bap_stream *stream,
 	}
 
 	return 0;
+}
+
+int bt_ascs_reconfig_ase(struct bt_bap_ep *ep, const struct bt_audio_codec_cfg *codec_cfg)
+{
+	/* rsp is not used for other purposes than to provide a pointer to the callback */
+	struct bt_bap_ascs_rsp rsp =
+		BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
+	enum bt_bap_ep_state state;
+	int err;
+
+	if (!bt_ascs_has_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
+
+	state = ep->state;
+	switch (state) {
+		/* Valid only if ASE_State field =  0x01 (Codec Configured) */
+	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
+		/* or 0x02 (QoS Configured) */
+	case BT_BAP_EP_STATE_QOS_CONFIGURED:
+		break;
+	default:
+		LOG_DBG("Invalid state: %s", bt_bap_ep_state_str(state));
+		return -EBADMSG;
+	}
+
+	if (ascs_cb != NULL && ascs_cb->reconfig != NULL) {
+		err = ascs_cb->reconfig(ep->stream, ep->dir, codec_cfg, &ep->qos_pref, &rsp);
+	} else {
+		err = -EOPNOTSUPP;
+	}
+
+	if (err != 0) {
+		return err;
+	}
+
+	(void)memcpy(&ep->codec_cfg, codec_cfg, sizeof(*codec_cfg));
+
+	return ascs_ep_set_state(ep, BT_BAP_EP_STATE_CODEC_CONFIGURED);
+}
+
+int bt_ascs_start_ase(struct bt_bap_ep *ep)
+{
+	/* rsp is not used for other purposes than to provide a pointer to the callback */
+	struct bt_bap_ascs_rsp rsp =
+		BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
+	int err;
+
+	if (!bt_ascs_has_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+
+		return -EINVAL;
+	}
+
+	if (ep->dir != BT_AUDIO_DIR_SINK) {
+		LOG_DBG("Invalid operation for ep %p with dir %u", ep, ep->dir);
+
+		return -EINVAL;
+	}
+
+	if (ep->state != BT_BAP_EP_STATE_ENABLING) {
+		LOG_DBG("Invalid state: %s", bt_bap_ep_state_str(ep->state));
+
+		return -EBADMSG;
+	}
+
+	if (ascs_cb != NULL && ascs_cb->start != NULL) {
+		err = ascs_cb->start(ep->stream, &rsp);
+	} else {
+		err = -EOPNOTSUPP;
+	}
+
+	if (err != 0) {
+		return err;
+	}
+
+	/* If ISO is connected to go streaming state,
+	 * else wait for ISO to be connected
+	 */
+	if (ep->iso->chan.state == BT_ISO_STATE_CONNECTED) {
+		return ascs_ep_set_state(ep, BT_BAP_EP_STATE_STREAMING);
+	}
+
+	ep->receiver_ready = true;
+
+	return 0;
+}
+
+int bt_ascs_metadata_ase(struct bt_bap_ep *ep, const uint8_t meta[], size_t meta_len)
+{
+	/* rsp is not used for other purposes than to provide a pointer to the callback */
+	struct bt_bap_ascs_rsp rsp =
+		BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_SUCCESS, BT_BAP_ASCS_REASON_NONE);
+	enum bt_bap_ep_state state;
+	int err;
+
+	if (!bt_ascs_has_ep(ep)) {
+		LOG_DBG("ep %p not in ASCS", ep);
+		return -EINVAL;
+	}
+
+	state = ep->state;
+	switch (state) {
+		/* Valid for an ASE only if ASE_State field = 0x03 (Enabling) */
+	case BT_BAP_EP_STATE_ENABLING:
+		/* or 0x04 (Streaming) */
+	case BT_BAP_EP_STATE_STREAMING:
+		break;
+	default:
+		LOG_DBG("Invalid state: %s", bt_bap_ep_state_str(state));
+		return -EBADMSG;
+	}
+
+	if (meta_len > sizeof(ep->codec_cfg.meta)) {
+		return -ENOMEM;
+	}
+
+	if (ascs_cb != NULL && ascs_cb->metadata != NULL) {
+		err = ascs_cb->metadata(ep->stream, meta, meta_len, &rsp);
+	} else {
+		err = -EOPNOTSUPP;
+	}
+
+	if (err != 0) {
+		return err;
+	}
+
+	(void)memcpy(ep->codec_cfg.meta, meta, meta_len);
+
+	/* Set the state to the same state to trigger the notifications */
+	return ascs_ep_set_state(ep, ep->state);
 }
 
 static uint16_t get_max_ase_rsp_for_conn(struct bt_conn *conn)
@@ -1863,7 +1933,7 @@ static ssize_t ascs_config(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	for (uint8_t i = 0; i < req->num_ases; i++) {
+	for (uint8_t i = 0U; i < req->num_ases; i++) {
 		struct bt_ascs_ase *ase;
 		int err;
 
@@ -1914,7 +1984,7 @@ int bt_ascs_foreach_ep(struct bt_conn *conn, bt_bap_ep_func_t func, void *user_d
 		return -EINVAL;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 
 		if (ase->conn == conn) {
@@ -1975,8 +2045,8 @@ static void ase_qos(struct bt_ascs_ase *ase, uint8_t cig_id, uint8_t cis_id,
 		return;
 	}
 
-	if (unicast_server_cb != NULL && unicast_server_cb->qos != NULL) {
-		const int err = unicast_server_cb->qos(stream, qos, rsp);
+	if (ascs_cb != NULL && ascs_cb->qos != NULL) {
+		const int err = ascs_cb->qos(stream, qos, rsp);
 
 		if (err != 0) {
 			if (rsp->code == BT_BAP_ASCS_RSP_CODE_SUCCESS) {
@@ -2081,7 +2151,7 @@ static ssize_t ascs_qos(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	for (uint8_t i = 0; i < req->num_ases; i++) {
+	for (uint8_t i = 0U; i < req->num_ases; i++) {
 		struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 							     BT_BAP_ASCS_REASON_NONE);
 		struct bt_bap_qos_cfg cqos;
@@ -2201,7 +2271,7 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 		break;
 	}
 	case BT_AUDIO_METADATA_TYPE_PARENTAL_RATING:
-		if (data_len != 1) {
+		if (data_len != 1U) {
 			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
 						       data_type);
 			result->err = -EBADMSG;
@@ -2223,7 +2293,7 @@ static bool ascs_parse_metadata(struct bt_data *data, void *user_data)
 	}
 	/* TODO: Consider rejecting BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE type */
 	case BT_AUDIO_METADATA_TYPE_BROADCAST_IMMEDIATE:
-		if (data_len != 0) {
+		if (data_len != 0U) {
 			*result->rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_INVALID,
 						       data_type);
 			result->err = -EBADMSG;
@@ -2308,8 +2378,8 @@ static void ase_metadata(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 		LOG_DBG("Invalid metadata from client: %d", err);
 
 		/* rsp will be set by ascs_verify_metadata*/
-	} else if (unicast_server_cb != NULL && unicast_server_cb->metadata != NULL) {
-		err = unicast_server_cb->metadata(stream, meta->data, meta->len, &rsp);
+	} else if (ascs_cb != NULL && ascs_cb->metadata != NULL) {
+		err = ascs_cb->metadata(stream, meta->data, meta->len, &rsp);
 	} else {
 		err = -ENOTSUP;
 		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -2365,8 +2435,8 @@ static int ase_enable(struct bt_ascs_ase *ase, struct bt_ascs_metadata *meta)
 		LOG_DBG("Invalid metadata from client: %d", err);
 
 		/* rsp will be set by ascs_verify_metadata*/
-	} else if (unicast_server_cb != NULL && unicast_server_cb->enable != NULL) {
-		err = unicast_server_cb->enable(stream, meta->data, meta->len, &rsp);
+	} else if (ascs_cb != NULL && ascs_cb->enable != NULL) {
+		err = ascs_cb->enable(stream, meta->data, meta->len, &rsp);
 	} else {
 		err = -ENOTSUP;
 		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -2511,8 +2581,8 @@ static void ase_start(struct bt_ascs_ase *ase)
 		return;
 	}
 
-	if (unicast_server_cb != NULL && unicast_server_cb->start != NULL) {
-		err = unicast_server_cb->start(ep->stream, &rsp);
+	if (ascs_cb != NULL && ascs_cb->start != NULL) {
+		err = ascs_cb->start(ep->stream, &rsp);
 	} else {
 		err = -ENOTSUP;
 		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -2660,7 +2730,7 @@ static ssize_t ascs_disable(struct bt_conn *conn, struct net_buf_simple *buf)
 
 	LOG_DBG("num_ases %u", req->num_ases);
 
-	for (uint8_t i = 0; i < req->num_ases; i++) {
+	for (uint8_t i = 0U; i < req->num_ases; i++) {
 		struct bt_bap_ascs_rsp rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
 							     BT_BAP_ASCS_REASON_NONE);
 		struct bt_ascs_ase *ase;
@@ -2712,8 +2782,8 @@ static void ase_stop(struct bt_ascs_ase *ase)
 	}
 
 	stream = ep->stream;
-	if (unicast_server_cb != NULL && unicast_server_cb->stop != NULL) {
-		err = unicast_server_cb->stop(stream, &rsp);
+	if (ascs_cb != NULL && ascs_cb->stop != NULL) {
+		err = ascs_cb->stop(stream, &rsp);
 	} else {
 		err = -ENOTSUP;
 		rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_UNSPECIFIED,
@@ -2763,8 +2833,7 @@ static bool is_valid_stop_len(struct bt_conn *conn, struct net_buf_simple *buf)
 	}
 
 	op = net_buf_simple_pull_mem(buf, sizeof(*op));
-	if (op->num_ases < 1U) {
-		LOG_WRN("Number_of_ASEs parameter value is less than 1");
+	if (!is_valid_num_ases(conn, op->num_ases)) {
 		return false;
 	}
 
@@ -3145,7 +3214,7 @@ static void configure_ase_char(uint8_t snk_cnt, uint8_t src_cnt)
 		size_t new_src_start_idx = src_start_idx - (snk_ases_to_rem *
 							    ASCS_ASE_CHAR_ATTR_COUNT);
 
-		for (size_t i = 0; i < src_cnt * ASCS_ASE_CHAR_ATTR_COUNT; i++) {
+		for (size_t i = 0U; i < src_cnt * ASCS_ASE_CHAR_ATTR_COUNT; i++) {
 			ascs_svc.attrs[new_src_start_idx + i] = ascs_svc.attrs[src_start_idx + i];
 		}
 
@@ -3153,9 +3222,22 @@ static void configure_ase_char(uint8_t snk_cnt, uint8_t src_cnt)
 	}
 }
 
-int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt)
+static struct bt_iso_server iso_server = {
+	.accept = ascs_iso_accept,
+};
+
+static const struct bt_gatt_attr ascs_attrs_backup[] = BT_ASCS_SERVICE_DEFINITION();
+BUILD_ASSERT(sizeof(ascs_attrs_backup) == sizeof(ascs_attrs));
+
+int bt_ascs_register(const struct bt_ascs_register_param *param)
 {
 	int err = 0;
+
+	if (param == NULL) {
+		LOG_DBG("param is NULL");
+
+		return -EINVAL;
+	}
 
 	if (ascs.registered) {
 		LOG_DBG("ASCS already registered");
@@ -3163,32 +3245,52 @@ int bt_ascs_register(uint8_t snk_cnt, uint8_t src_cnt)
 		return -EALREADY;
 	}
 
-	if (snk_cnt > CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT ||
-	    src_cnt > CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT) {
+	if (param->snk_cnt > CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT ||
+	    param->src_cnt > CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT) {
 		LOG_DBG("Provided ASE count above maximum");
 
 		return -EINVAL;
 	}
 
 	/* At least one ASE has been registered */
-	if (snk_cnt == 0 && src_cnt == 0) {
+	if (param->snk_cnt == 0U && param->src_cnt == 0U) {
 		LOG_DBG("Can't register ASCS with zero ASEs");
 
 		return -EINVAL;
 	}
 
-	configure_ase_char(snk_cnt, src_cnt);
-
-	err = bt_gatt_service_register(&ascs_svc);
+	err = bt_iso_server_register(&iso_server);
 	if (err != 0) {
-		LOG_DBG("Failed to register ASCS in gatt DB");
+		__ASSERT(err == -EADDRINUSE || err == -ENOTSUP,
+			 "Unexpected bt_iso_server_register error: %d", err);
+
+		LOG_DBG("Failed to register ISO server %d", err);
 
 		return err;
 	}
 
+	configure_ase_char(param->snk_cnt, param->src_cnt);
+
+	err = bt_gatt_service_register(&ascs_svc);
+	if (err != 0) {
+		__maybe_unused int unregister_err;
+
+		__ASSERT(err == -EINVAL, "Unexpected bt_gatt_service_register error: %d", err);
+
+		LOG_DBG("Failed to register ASCS in gatt DB");
+
+		unregister_err = bt_iso_server_unregister(&iso_server);
+		__ASSERT_NO_MSG(unregister_err == 0);
+
+		(void)memcpy(ascs_attrs, ascs_attrs_backup, sizeof(ascs_attrs_backup));
+
+		return err;
+	}
+
+	ascs_cb = param->cb;
 	ascs.registered = true;
 
-	return err;
+	return 0;
 }
 
 static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t len)
@@ -3196,50 +3298,6 @@ static int control_point_notify(struct bt_conn *conn, const void *data, uint16_t
 	return bt_gatt_notify_uuid(conn, BT_UUID_ASCS_ASE_CP, ascs_svc.attrs, data, len);
 }
 
-static struct bt_iso_server iso_server = {
-	.accept = ascs_iso_accept,
-};
-
-int bt_ascs_init(const struct bt_bap_unicast_server_cb *cb)
-{
-	int err;
-
-	if (!ascs.registered) {
-		return -ENOTSUP;
-	}
-
-	if (unicast_server_cb != NULL) {
-		return -EALREADY;
-	}
-
-	err = bt_iso_server_register(&iso_server);
-	if (err != 0) {
-		LOG_ERR("Failed to register ISO server %d", err);
-		return err;
-	}
-
-	unicast_server_cb = cb;
-
-	return 0;
-}
-
-void bt_ascs_cleanup(void)
-{
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
-		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
-
-		if (ase->conn != NULL) {
-			bt_ascs_release_ase(&ase->ep);
-		}
-	}
-	if (unicast_server_cb != NULL) {
-		bt_iso_server_unregister(&iso_server);
-		unicast_server_cb = NULL;
-	}
-}
-
-static const struct bt_gatt_attr ascs_attrs_backup[] = BT_ASCS_SERVICE_DEFINITION();
-BUILD_ASSERT(sizeof(ascs_attrs_backup) == sizeof(ascs_attrs));
 int bt_ascs_unregister(void)
 {
 	int err;
@@ -3249,28 +3307,61 @@ int bt_ascs_unregister(void)
 		return -EALREADY;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(ascs.ase_pool); i++) {
-		if (ascs.ase_pool[i].ep.state != BT_BAP_EP_STATE_IDLE) {
-			LOG_DBG("[%zu] ase %p not in idle state: %s", i, &ascs.ase_pool[i].ep,
-				bt_bap_ep_state_str(ascs.ase_pool[i].ep.state));
-			return -EBUSY;
-		}
-	}
-
+	/* Unregister the GATT service first to prevent any GATT operations while cleaning up */
 	err = bt_gatt_service_unregister(&ascs_svc);
-	/* If unregistration was successful, make sure to reset ascs_attrs so it can be used for
-	 * new registrations
-	 */
 	if (err != 0) {
-		LOG_DBG("Failed to unregister ASCS");
+		__ASSERT(err == -ENOENT, "Unexpected bt_gatt_service_unregister error: %d", err);
+
+		LOG_DBG("Failed to unregister ASCS: %d", err);
+
 		return err;
 	}
 
+	ARRAY_FOR_EACH_PTR(ascs.ase_pool, ase) {
+		if (ase->conn != NULL) { /* Codec configured or "above" state */
+			enum bt_bap_ep_state old_state;
+			struct k_work_sync sync;
+
+			(void)k_work_cancel_delayable_sync(&ase->state_transition_work, &sync);
+			(void)k_work_cancel_delayable_sync(&ase->disconnect_work, &sync);
+
+			/* Force the releasing state change, and cancel any pending state changes */
+			old_state = ase->ep.state;
+			ase->ep.state = BT_BAP_EP_STATE_RELEASING;
+			execute_post_state_transition(ase, old_state);
+			(void)k_work_cancel_delayable_sync(&ase->state_transition_work, &sync);
+
+			if (ase->state_pending != BT_BAP_EP_STATE_IDLE) {
+				/* Force any disconnect work to complete */
+				(void)k_work_cancel_delayable_sync(&ase->disconnect_work, &sync);
+				ascs_disconnect_stream_work_handler(&ase->disconnect_work.work);
+			}
+
+			if (ase->ep.state != BT_BAP_EP_STATE_IDLE) {
+				/* Force final state change */
+				old_state = ase->ep.state;
+				ase->ep.state = BT_BAP_EP_STATE_IDLE;
+				execute_post_state_transition(ase, BT_BAP_EP_STATE_RELEASING);
+			}
+		}
+
+		__ASSERT(!k_work_delayable_is_pending(&ase->state_transition_work),
+			 "ase %p still has pending state_transition_work", ase);
+		__ASSERT(!k_work_delayable_is_pending(&ase->disconnect_work),
+			 "ase %p still has pending disconnect_work", ase);
+		__ASSERT(ase->ep.state == BT_BAP_EP_STATE_IDLE, "Unexpected ASE state: %d",
+			 ase->ep.state);
+	}
+
+	err = bt_iso_server_unregister(&iso_server);
+	__ASSERT_NO_MSG(err == 0);
+
 	(void)memcpy(ascs_attrs, ascs_attrs_backup, sizeof(ascs_attrs_backup));
 	ascs_svc.attr_count = ARRAY_SIZE(ascs_attrs);
+	ascs_cb = NULL;
 	ascs.registered = false;
 
-	return err;
+	return 0;
 }
 
 struct bt_conn *bt_ascs_ep_get_conn(const struct bt_bap_ep *ep)
@@ -3285,4 +3376,3 @@ struct bt_conn *bt_ascs_ep_get_conn(const struct bt_bap_ep *ep)
 
 	return bt_conn_ref(ase->conn);
 }
-#endif /* BT_BAP_UNICAST_SERVER */

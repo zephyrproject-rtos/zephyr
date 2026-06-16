@@ -64,6 +64,13 @@ int custom_wifi_credentials_load_entry(size_t idx, void *buf, size_t buf_len)
 #define FLAGS4    FLAGS1
 #define CHANNEL4  4
 
+#define SSID5         "test5"
+#define SECURITY5     WIFI_SECURITY_TYPE_OWE
+#define BSSID5        BSSID1
+#define FLAGS5        FLAGS1
+#define CHANNEL5      5
+#define PSK5_UNWANTED "unwanted secret"
+
 static void wifi_credentials_setup(void *unused)
 {
 	RESET_FAKE(wifi_credentials_store_entry);
@@ -79,6 +86,7 @@ static void wifi_credentials_teardown(void *unused)
 	wifi_credentials_delete_by_ssid(SSID2, ARRAY_SIZE(SSID2));
 	wifi_credentials_delete_by_ssid(SSID3, ARRAY_SIZE(SSID3));
 	wifi_credentials_delete_by_ssid(SSID4, ARRAY_SIZE(SSID4));
+	wifi_credentials_delete_by_ssid(SSID5, ARRAY_SIZE(SSID5));
 	wifi_credentials_delete_by_ssid("", 0);
 }
 
@@ -252,6 +260,75 @@ ZTEST(wifi_credentials, test_single_garbled_ssid)
 	zassert_equal(channel, CHANNEL4, "Channel mismatch");
 
 	err = wifi_credentials_delete_by_ssid(SSID4, sizeof(SSID4));
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+}
+
+/** Verify that we can handle OWE connection with and without PSK */
+ZTEST(wifi_credentials, test_add_network_owe)
+{
+	int err;
+
+	/* set network credentials without PSK */
+	err = wifi_credentials_set_personal(SSID5, sizeof(SSID5), SECURITY5, BSSID5, 6, NULL, 0,
+					    FLAGS2, CHANNEL5, 0);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+
+	{
+		enum wifi_security_type security = -1;
+		uint8_t bssid_buf[WIFI_MAC_ADDR_LEN] = "";
+		char psk_buf[WIFI_CREDENTIALS_MAX_PASSWORD_LEN] = "";
+		size_t psk_len = 0;
+		uint32_t flags = 0;
+		uint8_t channel = 0;
+		uint32_t timeout = 0;
+
+		/* retrieve network credentials without PSK */
+		err = wifi_credentials_get_by_ssid_personal(
+			SSID5, sizeof(SSID5), &security, bssid_buf, ARRAY_SIZE(bssid_buf), psk_buf,
+			ARRAY_SIZE(psk_buf), &psk_len, &flags, &channel, &timeout);
+		zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+		zassert_equal(security, WIFI_SECURITY_TYPE_OWE, "Security type mismatch");
+		zassert_mem_equal(psk_buf, (char[WIFI_CREDENTIALS_MAX_PASSWORD_LEN]) {0},
+				  WIFI_CREDENTIALS_MAX_PASSWORD_LEN,
+				  "OWE PSK buffer should be zeroed");
+		zassert_equal(psk_len, 0, "PSK length mismatch");
+		zassert_equal(flags, 0, "Flags mismatch");
+		zassert_equal(channel, CHANNEL5, "Channel mismatch");
+	}
+
+	err = wifi_credentials_delete_by_ssid(SSID5, sizeof(SSID5));
+	zassert_equal(err, EXIT_SUCCESS, "Cleanup between subtests failed, got %d", err);
+
+	/* set network credentials with PSK */
+	err = wifi_credentials_set_personal(SSID5, sizeof(SSID5), SECURITY5, BSSID5, 6,
+					    PSK5_UNWANTED, sizeof(PSK5_UNWANTED), FLAGS2, CHANNEL5,
+					    0);
+	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+
+	{
+		enum wifi_security_type security = -1;
+		uint8_t bssid_buf[WIFI_MAC_ADDR_LEN] = "";
+		char psk_buf[WIFI_CREDENTIALS_MAX_PASSWORD_LEN] = "";
+		size_t psk_len = 0;
+		uint32_t flags = 0;
+		uint8_t channel = 0;
+		uint32_t timeout = 0;
+
+		/* retrieve network credentials with PSK */
+		err = wifi_credentials_get_by_ssid_personal(
+			SSID5, sizeof(SSID5), &security, bssid_buf, ARRAY_SIZE(bssid_buf), psk_buf,
+			ARRAY_SIZE(psk_buf), &psk_len, &flags, &channel, &timeout);
+		zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
+		zassert_equal(security, WIFI_SECURITY_TYPE_OWE, "Security type mismatch");
+		zassert_mem_equal(psk_buf, (char[WIFI_CREDENTIALS_MAX_PASSWORD_LEN]) {0},
+				  WIFI_CREDENTIALS_MAX_PASSWORD_LEN,
+				  "OWE PSK buffer should be zeroed");
+		zassert_equal(psk_len, 0, "PSK length mismatch");
+		zassert_equal(flags, 0, "Flags mismatch");
+		zassert_equal(channel, CHANNEL5, "Channel mismatch");
+	}
+
+	err = wifi_credentials_delete_by_ssid(SSID5, sizeof(SSID5));
 	zassert_equal(err, EXIT_SUCCESS, "Expected EXIT_SUCCESS, got %d", err);
 }
 

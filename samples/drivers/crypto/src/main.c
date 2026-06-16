@@ -43,6 +43,8 @@ LOG_MODULE_REGISTER(main);
 #define CRYPTO_DEV_COMPAT sifli_sf32lb_crypto
 #elif DT_HAS_COMPAT_STATUS_OKAY(bflb_sec_eng_aes)
 #define CRYPTO_DEV_COMPAT bflb_sec_eng_aes
+#elif CONFIG_CRYPTO_MSPM0_AES
+#define CRYPTO_DEV_COMPAT ti_mspm0_aes
 #else
 #error "You need to enable one crypto device"
 #endif

@@ -104,12 +104,12 @@ struct dtls_timing_context {
 	/** Current time, stored during timer set. */
 	uint32_t snapshot;
 
-	/** Intermediate delay value. For details, refer to mbedTLS API
+	/** Intermediate delay value. For details, refer to Mbed TLS API
 	 *  documentation (mbedtls_ssl_set_timer_t).
 	 */
 	uint32_t int_ms;
 
-	/** Final delay value. For details, refer to mbedTLS API documentation
+	/** Final delay value. For details, refer to Mbed TLS API documentation
 	 *  (mbedtls_ssl_set_timer_t).
 	 */
 	uint32_t fin_ms;
@@ -155,7 +155,7 @@ struct tls_session_context {
 	struct k_sem tls_established;
 
 #if defined(CONFIG_MBEDTLS)
-	/* mbedTLS context. */
+	/* Mbed TLS context. */
 	mbedtls_ssl_context ssl;
 #endif /* CONFIG_MBEDTLS */
 
@@ -219,7 +219,7 @@ __net_socket struct tls_context {
 		/** Select which credentials to use with TLS. */
 		struct sec_tag_list sec_tag_list;
 
-		/** 0-terminated list of allowed ciphersuites (mbedTLS format).
+		/** 0-terminated list of allowed ciphersuites (Mbed TLS format).
 		 */
 		int ciphersuites[CONFIG_NET_SOCKETS_TLS_MAX_CIPHERSUITES + 1];
 
@@ -267,22 +267,22 @@ __net_socket struct tls_context {
 	} options;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-	/** mbedTLS cookie context for DTLS */
+	/** Mbed TLS cookie context for DTLS */
 	mbedtls_ssl_cookie_ctx cookie;
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 #if defined(CONFIG_MBEDTLS)
-	/** mbedTLS configuration. */
+	/** Mbed TLS configuration. */
 	mbedtls_ssl_config config;
 
 #if defined(CONFIG_MBEDTLS_X509_CRT_PARSE_C)
-	/** mbedTLS structure for CA chain. */
+	/** Mbed TLS structure for CA chain. */
 	mbedtls_x509_crt ca_chain;
 
-	/** mbedTLS structure for own certificate. */
+	/** Mbed TLS structure for own certificate. */
 	mbedtls_x509_crt own_cert;
 
-	/** mbedTLS structure for own private key. */
+	/** Mbed TLS structure for own private key. */
 	mbedtls_pk_context priv_key;
 #endif /* CONFIG_MBEDTLS_X509_CRT_PARSE_C */
 #endif /* CONFIG_MBEDTLS */
@@ -296,9 +296,8 @@ static K_MUTEX_DEFINE(dtls_helper_buf_lock);
 
 /* A global pool of TLS contexts. */
 static struct tls_context tls_contexts[CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS];
-K_MEM_SLAB_DEFINE_STATIC(tls_session_contexts, sizeof(struct tls_session_context),
-			 CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS,
-			 __alignof__(struct tls_session_context));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(tls_session_contexts, struct tls_session_context,
+			      CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS);
 
 BUILD_ASSERT(CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS >= CONFIG_NET_SOCKETS_TLS_MAX_CONTEXTS,
 	     "CONFIG_NET_SOCKETS_TLS_MAX_SESSION_CONTEXTS cannot be smaller than "
@@ -421,7 +420,7 @@ static void tls_session_cache_settings_clear(void)
 /* A mutex for protecting TLS context allocation. */
 static struct k_mutex context_lock;
 
-/* Arbitrary delay value to wait if mbedTLS reports it cannot proceed for
+/* Arbitrary delay value to wait if Mbed TLS reports it cannot proceed for
  * reasons other than TX/RX block.
  */
 #define TLS_WAIT_MS 100
@@ -445,7 +444,7 @@ bool net_socket_is_tls(void *obj)
 }
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
-/* mbedTLS-defined function for setting timer. */
+/* Mbed TLS-defined function for setting timer. */
 static void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
 {
 	struct dtls_timing_context *ctx = data;
@@ -458,8 +457,8 @@ static void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
 	}
 }
 
-/* mbedTLS-defined function for getting timer status.
- * The return values are specified by mbedTLS. The callback must return:
+/* Mbed TLS-defined function for getting timer status.
+ * The return values are specified by Mbed TLS. The callback must return:
  *   -1 if cancelled (fin_ms == 0),
  *    0 if none of the delays have passed,
  *    1 if only the intermediate delay has passed,
@@ -1103,7 +1102,7 @@ static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	int err;
 	ssize_t received;
 	uint8_t tmp_buf;
@@ -1159,7 +1158,7 @@ static int dtls_client_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	ssize_t received;
 
 	received = zsock_recvfrom(tls_ctx->sock, buf, len,
@@ -1343,7 +1342,7 @@ static int dtls_server_switch_active_session_by_cid(struct tls_context *tls_ctx)
 static int dtls_server_switch_session_on_rx(struct tls_context *tls_ctx)
 {
 	net_socklen_t addrlen = sizeof(struct net_sockaddr);
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	uint8_t tmp_buf;
 	int ret;
 
@@ -1834,7 +1833,7 @@ static int tls_mbedtls_session_init(struct tls_session_context *session_ctx,
 
 	ret = mbedtls_ssl_setup(&session_ctx->ssl, &tls_ctx->config);
 	if (ret != 0) {
-		/* According to mbedTLS API documentation,
+		/* According to Mbed TLS API documentation,
 		 * mbedtls_ssl_setup can fail due to memory allocation failure
 		 */
 		return -ENOMEM;
@@ -1888,7 +1887,7 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 	ret = mbedtls_ssl_config_defaults(&context->config, role, type,
 					  MBEDTLS_SSL_PRESET_DEFAULT);
 	if (ret != 0) {
-		/* According to mbedTLS API documentation,
+		/* According to Mbed TLS API documentation,
 		 * mbedtls_ssl_config_defaults can fail due to memory
 		 * allocation failure
 		 */
@@ -1959,7 +1958,7 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 #endif /* CONFIG_NET_SOCKETS_ENABLE_DTLS */
 
 	/* If verification level was specified explicitly, set it. Otherwise,
-	 * use mbedTLS default values (required for client, none for server)
+	 * use Mbed TLS default values (required for client, none for server)
 	 */
 	if (context->options.verify_level != -1) {
 		mbedtls_ssl_conf_authmode(&context->config,
@@ -2412,7 +2411,7 @@ static int tls_opt_dtls_handshake_timeout_set(struct tls_context *context,
 		return -EINVAL;
 	}
 
-	/* If mbedTLS context not inited, it will
+	/* If Mbed TLS context not inited, it will
 	 * use these values upon init.
 	 */
 	if (is_max) {
@@ -2421,8 +2420,8 @@ static int tls_opt_dtls_handshake_timeout_set(struct tls_context *context,
 		context->options.dtls_handshake_timeout_min = *val;
 	}
 
-	/* If mbedTLS context already inited, we need to
-	 * update mbedTLS config for it to take effect
+	/* If Mbed TLS context already inited, we need to
+	 * update Mbed TLS config for it to take effect
 	 */
 	mbedtls_ssl_conf_handshake_timeout(&context->config,
 			context->options.dtls_handshake_timeout_min,
@@ -2537,6 +2536,10 @@ static int tls_opt_dtls_peer_connection_id_value_get(struct tls_context *context
 	session_ctx = get_latest_session(context);
 	if (session_ctx == NULL) {
 		return -ENOTCONN;
+	}
+
+	if (*optlen < MBEDTLS_SSL_CID_OUT_LEN_MAX) {
+		return -EINVAL;
 	}
 
 	ret = mbedtls_ssl_get_peer_cid(&session_ctx->ssl, &enabled, optval, &optlen_local);
@@ -3384,7 +3387,7 @@ ssize_t ztls_sendmsg_ctx(struct tls_context *ctx, const struct net_msghdr *msg,
 		}
 
 		/*
-		 * Current mbedTLS API (i.e. mbedtls_ssl_write()) allows only to send a single
+		 * Current Mbed TLS API (i.e. mbedtls_ssl_write()) allows only to send a single
 		 * contiguous buffer. This means that gather write using sendmsg() can only be
 		 * handled correctly if there is a single non-empty buffer in msg->msg_iov.
 		 */
@@ -3821,7 +3824,7 @@ ssize_t ztls_recvfrom_ctx(struct tls_context *ctx, void *buf, size_t max_len,
 			  net_socklen_t *addrlen)
 {
 	if (flags & ZSOCK_MSG_PEEK) {
-		/* TODO mbedTLS does not support 'peeking' This could be
+		/* TODO Mbed TLS does not support 'peeking' This could be
 		 * bypassed by having intermediate buffer for peeking
 		 */
 		errno = ENOTSUP;
@@ -3852,7 +3855,7 @@ ssize_t ztls_recvfrom_ctx(struct tls_context *ctx, void *buf, size_t max_len,
 
 static int ztls_poll_prepare_pollin(struct tls_context *ctx)
 {
-	/* If there already is mbedTLS data to read, there is no
+	/* If there already is Mbed TLS data to read, there is no
 	 * need to set the k_poll_event object. Return EALREADY
 	 * so we won't block in the k_poll.
 	 */
@@ -3948,7 +3951,8 @@ static int tls_data_check(struct tls_context *ctx)
 		}
 
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
-		    ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+		    ret == MBEDTLS_ERR_SSL_WANT_WRITE ||
+		    ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
 			return 0;
 		}
 

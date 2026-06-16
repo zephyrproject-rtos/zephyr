@@ -64,25 +64,73 @@
 			#size-cells = <0>;
 			reg = <0x40015400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>;
-			interrupts = <86 5>;
+			interrupts = <86 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
-		ethernet@40028000 {
+		dfsdm: dfsdm@40017400 {
+			compatible = "st,stm32-dfsdm";
+			reg = <0x40017400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 29)>,
+				 <&rcc STM32_SRC_PLLSAI_POST_Q NO_SEL>;
+			clock-names = "pclk", "aclk";
+			resets = <&rctl STM32_RESET(APB2, 29)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			pdm0: filter@0 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <0>;
+				interrupts = <99 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm1: filter@1 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <1>;
+				interrupts = <100 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm2: filter@2 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <2>;
+				interrupts = <101 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm3: filter@3 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <3>;
+				interrupts = <102 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		mac: ethernet@40028000 {
+			compatible = "st,stm32-ethernet";
 			reg = <0x40028000 0x8000>;
-			compatible = "st,stm32-ethernet-controller";
 			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx", "mac-clk-ptp";
 			clocks = <&rcc STM32_CLOCK(AHB1, 25)>,
 				 <&rcc STM32_CLOCK(AHB1, 26)>,
 				 <&rcc STM32_CLOCK(AHB1, 27)>,
 				 <&rcc STM32_CLOCK(AHB1, 28)>;
-
-			mac: ethernet {
-				compatible = "st,stm32-ethernet";
-				interrupts = <61 0>;
-				status = "disabled";
-			};
+			interrupts = <61 0>;
+			status = "disabled";
 
 			mdio: mdio {
 				compatible = "st,stm32-mdio";

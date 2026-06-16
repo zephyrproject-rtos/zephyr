@@ -16,6 +16,8 @@
 /**
  * @brief Interfaces for system control registers.
  * @defgroup syscon_interface System control (SYSCON)
+ * @since 2.7.0
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  */
@@ -44,19 +46,19 @@ typedef int (*syscon_api_get_base)(const struct device *dev, uintptr_t *addr);
  * @brief Read a single register.
  * See syscon_read_reg() for argument description.
  */
-typedef int (*syscon_api_read_reg)(const struct device *dev, uint16_t reg, uint32_t *val);
+typedef int (*syscon_api_read_reg)(const struct device *dev, uint32_t reg, uint32_t *val);
 
 /**
  * @brief Write a single register.
  * See syscon_write_reg() for argument description.
  */
-typedef int (*syscon_api_write_reg)(const struct device *dev, uint16_t reg, uint32_t val);
+typedef int (*syscon_api_write_reg)(const struct device *dev, uint32_t reg, uint32_t val);
 
 /**
  * @brief Atomically update bits in a register.
  * See syscon_update_bits() for argument description.
  */
-typedef int (*syscon_api_update_bits)(const struct device *dev, uint16_t reg,
+typedef int (*syscon_api_update_bits)(const struct device *dev, uint32_t reg,
 				      uint32_t mask, uint32_t val);
 
 /**
@@ -118,9 +120,9 @@ static inline int z_impl_syscon_get_base(const struct device *dev, uintptr_t *ad
  * @retval 0 on success.
  * @retval -ENOSYS If the API or function isn't implemented.
  */
-__syscall int syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *val);
+__syscall int syscon_read_reg(const struct device *dev, uint32_t reg, uint32_t *val);
 
-static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
+static inline int z_impl_syscon_read_reg(const struct device *dev, uint32_t reg, uint32_t *val)
 {
 	const struct syscon_driver_api *api = DEVICE_API_GET(syscon, dev);
 
@@ -144,9 +146,9 @@ static inline int z_impl_syscon_read_reg(const struct device *dev, uint16_t reg,
  * @retval 0 on success.
  * @retval -ENOSYS If the API or function isn't implemented.
  */
-__syscall int syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t val);
+__syscall int syscon_write_reg(const struct device *dev, uint32_t reg, uint32_t val);
 
-static inline int z_impl_syscon_write_reg(const struct device *dev, uint16_t reg, uint32_t val)
+static inline int z_impl_syscon_write_reg(const struct device *dev, uint32_t reg, uint32_t val)
 {
 	const struct syscon_driver_api *api = DEVICE_API_GET(syscon, dev);
 
@@ -179,10 +181,10 @@ static inline int z_impl_syscon_write_reg(const struct device *dev, uint16_t reg
  * @retval 0 on success.
  * @retval -ENOSYS If the API or function isn't implemented.
  */
-__syscall int syscon_update_bits(const struct device *dev, uint16_t reg,
+__syscall int syscon_update_bits(const struct device *dev, uint32_t reg,
 				 uint32_t mask, uint32_t val);
 
-static inline int z_impl_syscon_update_bits(const struct device *dev, uint16_t reg,
+static inline int z_impl_syscon_update_bits(const struct device *dev, uint32_t reg,
 					    uint32_t mask, uint32_t val)
 {
 	const struct syscon_driver_api *api = (const struct syscon_driver_api *)dev->api;

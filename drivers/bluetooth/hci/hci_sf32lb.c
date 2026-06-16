@@ -36,6 +36,17 @@ LOG_MODULE_REGISTER(hci_sf32lb, CONFIG_BT_HCI_DRIVER_LOG_LEVEL);
 #define BT_HCI_EXT_SF32LB52_BT_READY BT_OP(BT_OGF_VS, 0x11)
 
 struct bt_sf32lb_data {
+	/* bt_hci_driver_data must be first */
+	struct bt_hci_driver_data common;
+	struct {
+		uint8_t type;
+		struct net_buf *buf;
+		struct k_fifo fifo;
+	} tx;
+
+	struct k_sem sem;
+	ipc_queue_handle_t ipc_port;
+
 	struct {
 		struct net_buf *buf;
 		struct k_fifo fifo;
@@ -58,19 +69,11 @@ struct bt_sf32lb_data {
 			uint8_t hdr[4];
 		};
 	} rx;
-
-	struct {
-		uint8_t type;
-		struct net_buf *buf;
-		struct k_fifo fifo;
-	} tx;
-
-	struct k_sem sem;
-	bt_hci_recv_t recv;
-	ipc_queue_handle_t ipc_port;
 };
 
 struct bt_sf32lb_config {
+	/* bt_hci_driver_config must be first */
+	struct bt_hci_driver_config common;
 	const struct device *mbox;
 	k_thread_stack_t *rx_thread_stack;
 	size_t rx_thread_stack_size;
@@ -340,8 +343,8 @@ static void rx_thread(void *p1, void *p2, void *p3)
 				if (buf->len == 0 || buf->data == NULL) {
 					break;
 				}
-				if (hci->recv != NULL && hci->rx.ready) {
-					hci->recv(dev, buf);
+				if (hci->rx.ready) {
+					bt_hci_recv(dev, buf);
 					buf = k_fifo_get(&hci->rx.fifo, K_NO_WAIT);
 					continue;
 				}
@@ -542,15 +545,13 @@ static int bt_hci_sf32lb_send(const struct device *dev, struct net_buf *buf)
 	return 0;
 }
 
-static int bt_hci_sf32lb_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_hci_sf32lb_open(const struct device *dev)
 {
-	struct bt_sf32lb_data *hci = dev->data;
 	const struct bt_sf32lb_config *cfg = dev->config;
 	k_tid_t tid;
 	int r;
 
-	LOG_DBG("hci open %p", (void *)recv);
-	hci->recv = recv;
+	LOG_DBG("hci open %p", (void *)dev);
 	r = zbt_config_mailbox(dev);
 	if (r == 0) {
 		tid = k_thread_create(cfg->rx_thread, cfg->rx_thread_stack,
@@ -570,6 +571,7 @@ static const DEVICE_API(bt_hci, hci_sf32lb_driver_api) = {
 	static K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_BT_DRV_RX_STACK_SIZE);         \
 	static struct k_thread rx_thread_##inst;                                                   \
 	static const struct bt_sf32lb_config hci_config_##inst = {                                 \
+		.common = BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst),                                  \
 		.rx_thread_stack = rx_thread_stack_##inst,                                         \
 		.rx_thread_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst),             \
 		.rx_thread = &rx_thread_##inst,                                                    \

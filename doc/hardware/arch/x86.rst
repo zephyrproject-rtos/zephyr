@@ -16,8 +16,8 @@ During very early boot, page tables are loaded so technically the kernel
 is executing in virtual address space. By default, physical and virtual
 memory are identity mapped and thus giving the appearance of execution
 taking place in physical address space. The physical address space is
-marked by kconfig :kconfig:option:`CONFIG_SRAM_BASE_ADDRESS` and
-:kconfig:option:`CONFIG_SRAM_SIZE` while the virtual address space is marked by
+marked by dts :c:macro:`DT_CHOSEN_SRAM_ADDR` and
+:c:macro:`DT_CHOSEN_SRAM_SIZE` while the virtual address space is marked by
 :kconfig:option:`CONFIG_KERNEL_VM_BASE` and :kconfig:option:`CONFIG_KERNEL_VM_SIZE`.
 Note that :kconfig:option:`CONFIG_SRAM_OFFSET` controls where the Zephyr kernel
 is being placed in the memory, and its counterpart
@@ -60,17 +60,17 @@ There are restrictions on where virtual address space can be:
     - Assuming ``CONFIG_SRAM_OFFSET`` and ``CONFIG_KERNEL_VM_OFFSET``
       are both ``0x0``.
 
-    - ``CONFIG_SRAM_BASE_ADDRESS == 0x00000000`` and
+    - ``DT_CHOSEN_SRAM_ADDR == 0x00000000`` and
       ``CONFIG_KERNEL_VM_BASE = 0x40000000`` is valid, while
 
-    - ``CONFIG_SRAM_BASE_ADDRESS == 0x00000000`` and
+    - ``DT_CHOSEN_SRAM_ADDR == 0x00000000`` and
       ``CONFIG_KERNEL_VM_BASE = 0x20000000`` is not.
 
   - If :kconfig:option:`CONFIG_X86_PAE` is disabled (``=n``), each address space
     must reside in their own 4MB region, due to each entry of PD
     (Page Directory) covers 4MB of memory.
 
-  - Both ``CONFIG_SRAM_BASE_ADDRESS`` and ``CONFIG_KERNEL_VM_BASE``
+  - Both ``DT_CHOSEN_SRAM_ADDR`` and ``CONFIG_KERNEL_VM_BASE``
     must also align with the starting addresses of targeted regions.
 
 Specifying Additional Memory Mappings at Build Time

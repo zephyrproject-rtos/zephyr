@@ -24,6 +24,11 @@
 	leds {
 		compatible = "gpio-leds";
 
+		/*
+		 * NOTE: P1_0 (GPIOA 8) and P1_1 (GPIOA 9) default to SWD
+		 * function on RTL87x2G. Configuring these pins via GPIO API
+		 * (e.g. driving the LEDs below) will disable SWD connectivity.
+		 */
 		led5: led5 {
 			gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
 			label = "LED 5";

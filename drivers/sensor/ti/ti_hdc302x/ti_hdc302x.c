@@ -20,6 +20,19 @@
 
 LOG_MODULE_REGISTER(TI_HDC302X, CONFIG_SENSOR_LOG_LEVEL);
 
+/* STATUS register bit definitions */
+#define TI_HDC302X_STATUS_REG_BIT_ALERT         0x8000
+#define TI_HDC302X_STATUS_REG_BIT_HEATER_ON     0x2000
+#define TI_HDC302X_STATUS_REG_BIT_RH_ALERT      0x0800
+#define TI_HDC302X_STATUS_REG_BIT_TEMP_ALERT    0x0400
+#define TI_HDC302X_STATUS_REG_BIT_RH_HIGH_ALERT 0x0200
+#define TI_HDC302X_STATUS_REG_BIT_RH_LOW_ALERT  0x0100
+
+#define TI_HDC302X_STATUS_REG_BIT_TEMP_HIGH_ALERT 0x0080
+#define TI_HDC302X_STATUS_REG_BIT_TEMP_LOW_ALERT  0x0040
+#define TI_HDC302X_STATUS_REG_BIT_RESET_DETECTED  0x0010
+#define TI_HDC302X_STATUS_REG_BIT_CRC_FAILED      0x0001
+
 /* Register commands (2-byte arrays) */
 static const uint8_t REG_MEAS_AUTO_READ[] = {0xE0, 0x00};
 static const uint8_t REG_MEAS_AUTO_EXIT[] = {0x30, 0x93};
@@ -936,7 +949,7 @@ static int ti_hdc302x_init(const struct device *dev)
 	       sizeof(data->selected_mode));
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C bus %s not ready", config->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -ENODEV;
 	}
 
@@ -964,7 +977,7 @@ static int ti_hdc302x_init(const struct device *dev)
 	/* Configure interrupt GPIO if available */
 	if (config->int_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->int_gpio)) {
-			LOG_ERR("GPIO interrupt device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 			return -ENODEV;
 		}
 

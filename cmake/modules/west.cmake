@@ -31,41 +31,43 @@ if(DEFINED WEST_PYTHON)
   endif()
 endif()
 
-execute_process(
-  COMMAND
-  ${PYTHON_EXECUTABLE}
-  -c
-  "import west.version; print(west.version.__version__, end='')"
-  OUTPUT_VARIABLE west_version
-  ERROR_VARIABLE west_version_err
-  RESULT_VARIABLE west_version_output_result
-  )
+if(NOT WEST_VERSION)
+  execute_process(
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    -c
+    "import west.version; print(west.version.__version__, end='')"
+    OUTPUT_VARIABLE WEST_VERSION
+    ERROR_VARIABLE west_version_err
+    RESULT_VARIABLE west_version_output_result
+    )
 
-if(west_version_output_result)
-  if(DEFINED WEST_PYTHON)
-    if(NOT (${west_realpath} STREQUAL ${python_realpath}))
-      set(PYTHON_EXECUTABLE_OUT_OF_SYNC "\nOr verify these installations:\n\
-  The Python version used by west is:  ${WEST_PYTHON}${west_realpath_msg}\n\
-  The Python version used by CMake is: ${PYTHON_EXECUTABLE}${python_realpath_msg}")
+  if(west_version_output_result)
+    if(DEFINED WEST_PYTHON)
+      if(NOT (${west_realpath} STREQUAL ${python_realpath}))
+        set(PYTHON_EXECUTABLE_OUT_OF_SYNC "\nOr verify these installations:\n\
+    The Python version used by west is:  ${WEST_PYTHON}${west_realpath_msg}\n\
+    The Python version used by CMake is: ${PYTHON_EXECUTABLE}${python_realpath_msg}")
+      endif()
+
+      message(FATAL_ERROR "Unable to import west.version from '${PYTHON_EXECUTABLE}':\n${west_version_err}\
+  Please install with:\n\
+      ${PYTHON_EXECUTABLE} -m pip install west\
+  ${PYTHON_EXECUTABLE_OUT_OF_SYNC}")
+    else()
+      # WEST_PYTHON is undefined and we couldn't import west. That's
+      # fine; it's optional.
+      set(WEST WEST-NOTFOUND CACHE INTERNAL "West")
     endif()
-
-    message(FATAL_ERROR "Unable to import west.version from '${PYTHON_EXECUTABLE}':\n${west_version_err}\
-Please install with:\n\
-    ${PYTHON_EXECUTABLE} -m pip install west\
-${PYTHON_EXECUTABLE_OUT_OF_SYNC}")
-  else()
-    # WEST_PYTHON is undefined and we couldn't import west. That's
-    # fine; it's optional.
-    set(WEST WEST-NOTFOUND CACHE INTERNAL "West")
   endif()
-else()
-  # We can import west from PYTHON_EXECUTABLE and have its version.
+endif()
 
+if(WEST_VERSION)
   # Make sure its version matches the minimum required one.
   # Keep this version identical to the one in scripts/requirements-base.txt
   set_ifndef(MIN_WEST_VERSION 0.14.0)
-  if(${west_version} VERSION_LESS ${MIN_WEST_VERSION})
-    message(FATAL_ERROR "The detected west version, ${west_version}, is unsupported.\n\
+  if(${WEST_VERSION} VERSION_LESS ${MIN_WEST_VERSION})
+    message(FATAL_ERROR "The detected west version, ${WEST_VERSION}, is unsupported.\n\
   The minimum supported version is ${MIN_WEST_VERSION}.\n\
   Please upgrade with:\n\
       ${PYTHON_EXECUTABLE} -m pip install --upgrade west\
@@ -78,20 +80,22 @@ else()
 
   # Print information about the west module we're relying on. This
   # will still work even after output is one line.
-  message(STATUS "Found west (found suitable version \"${west_version}\", minimum required is \"${MIN_WEST_VERSION}\")")
+  message(STATUS "Found west (found suitable version \"${WEST_VERSION}\", minimum required is \"${MIN_WEST_VERSION}\")")
 
-  execute_process(
-    COMMAND ${WEST} topdir
-    OUTPUT_VARIABLE WEST_TOPDIR
-    ERROR_QUIET
-    RESULT_VARIABLE west_topdir_result
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    WORKING_DIRECTORY ${ZEPHYR_BASE}
+  if(NOT WEST_TOPDIR)
+    execute_process(
+      COMMAND ${WEST} topdir
+      OUTPUT_VARIABLE WEST_TOPDIR
+      ERROR_QUIET
+      RESULT_VARIABLE west_topdir_result
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      WORKING_DIRECTORY ${ZEPHYR_BASE}
     )
 
-  if(west_topdir_result)
-    # west topdir is undefined.
-    # That's fine; west is optional, so could be custom Zephyr project.
-    set(WEST WEST-NOTFOUND CACHE INTERNAL "West")
+    if(west_topdir_result)
+      # west topdir is undefined.
+      # That's fine; west is optional, so could be custom Zephyr project.
+      set(WEST WEST-NOTFOUND CACHE INTERNAL "West")
+    endif()
   endif()
 endif()

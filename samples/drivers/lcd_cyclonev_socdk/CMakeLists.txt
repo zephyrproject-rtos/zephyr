@@ -1,7 +1,7 @@
 # Copyright (c) 2022 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 # Description
-# CMakeList file to generate example for LCD disply on Cyclone V SoC DevKit
+# CMakeList file to generate example for LCD display on Cyclone V SoC DevKit
 
 cmake_minimum_required(VERSION 3.20.0)
 

@@ -19,6 +19,7 @@
 		led2 = &green_led;
 		sw0 = &sw2;
 		sw1 = &sw3;
+		watchdog0 = &wdt;
 	};
 
 	chosen {
@@ -62,6 +63,20 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+};
+
+&clk_lirc {
+	status = "okay";
+};
+
+&clk_hxt {
+	clock-frequency = <DT_FREQ_M(12)>;
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hxt>;
+	status = "okay";
 };
 
 &flash0 {

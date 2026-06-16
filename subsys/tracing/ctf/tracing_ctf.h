@@ -8,7 +8,6 @@
 #define _TRACE_CTF_H
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/init.h>
 
 #ifdef __cplusplus
@@ -204,6 +203,8 @@ extern "C" {
 	sys_trace_k_timer_stop_fn_expiry_enter(timer)
 #define sys_port_trace_k_timer_stop_fn_expiry_exit(timer)                                          \
 	sys_trace_k_timer_stop_fn_expiry_exit(timer)
+#define sys_port_trace_k_timer_cleanup_enter(timer)
+#define sys_port_trace_k_timer_cleanup_exit(timer, ret)
 
 #define sys_port_trace_k_condvar_init(condvar, ret)    sys_trace_k_condvar_init(condvar, ret)
 #define sys_port_trace_k_condvar_signal_enter(condvar) sys_trace_k_condvar_signal_enter(condvar)

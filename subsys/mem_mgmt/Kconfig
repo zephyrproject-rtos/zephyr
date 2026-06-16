@@ -1,6 +1,8 @@
 # Copyright (c) 2023 Carlo Caione <ccaione@baylibre.com>
 # SPDX-License-Identifier: Apache-2.0
 
+rsource "demand_paging/Kconfig"
+
 config MEM_ATTR
 	bool "Memory Attributes management library"
 	default y if ARM_MPU

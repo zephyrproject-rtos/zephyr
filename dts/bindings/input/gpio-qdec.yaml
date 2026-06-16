@@ -20,6 +20,8 @@ properties:
     required: true
     description: |
       GPIO for the A and B encoder signals.
+    min-len: 2
+    max-len: 2
 
   led-gpios:
     type: phandle-array
@@ -69,6 +71,11 @@ properties:
     description: |
       Timeout for the last detected transition before stopping the sampling
       timer and going back to idle state.
+
+  invert-direction:
+    type: boolean
+    description: |
+      Invert the reported direction.
 
 examples:
   - |

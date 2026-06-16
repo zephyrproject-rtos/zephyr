@@ -12,7 +12,7 @@
 
 #define DT_DRV_COMPAT st_stm32_bsec
 
-LOG_MODULE_REGISTER(otp_bsec_stm32);
+LOG_MODULE_REGISTER(otp_bsec_stm32, CONFIG_OTP_LOG_LEVEL);
 
 #define BSEC_WORD_SIZE	4
 

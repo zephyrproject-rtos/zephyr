@@ -19,7 +19,6 @@
 
 #include <zephyr/toolchain.h> /* compiler specific configurations */
 
-#include <zephyr/kernel_structs.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/kernel.h>
@@ -48,7 +47,11 @@ void _StackCheckHandler(void)
  * The canary value gets initialized in z_cstart().
  */
 #ifdef CONFIG_STACK_CANARIES_TLS
+#ifdef CONFIG_STACK_CANARIES_TLS_PREPEND
+__attribute__((section(".stack_chk.guard"))) Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
+#else
 Z_THREAD_LOCAL volatile uintptr_t __stack_chk_guard;
+#endif
 #elif CONFIG_USERSPACE
 K_APP_DMEM(z_libc_partition) volatile uintptr_t __stack_chk_guard;
 #else

@@ -82,10 +82,11 @@ static bool reliable_packet(uint8_t type)
 				 ((hdr)[2] |= (len) >> 4))
 
 struct h5_data {
+	/* bt_hci_driver_data must be first */
+	struct bt_hci_driver_data common;
+
 	/* Needed for delayed work callbacks */
 	const struct device     *dev;
-
-	bt_hci_recv_t           recv;
 
 	struct net_buf		*rx_buf;
 
@@ -119,6 +120,9 @@ struct h5_data {
 };
 
 struct h5_config {
+	/* bt_hci_driver_config must be first */
+	struct bt_hci_driver_config common;
+
 	const struct device *uart;
 
 	k_thread_stack_t *rx_stack;
@@ -144,10 +148,7 @@ NET_BUF_POOL_DEFINE(h5_pool, SIGNAL_COUNT, SIG_BUF_SIZE, 0, NULL);
 
 static void h5_reset_rx(struct h5_data *h5)
 {
-	if (h5->rx_buf) {
-		net_buf_unref(h5->rx_buf);
-		h5->rx_buf = NULL;
-	}
+	net_buf_drop(&h5->rx_buf);
 
 	h5->rx_state = START;
 }
@@ -400,8 +401,7 @@ static void h5_process_complete_packet(const struct device *dev, uint8_t *hdr)
 
 	process_unack(h5);
 
-	buf = h5->rx_buf;
-	h5->rx_buf = NULL;
+	buf = net_buf_take(&h5->rx_buf);
 
 	switch (H5_HDR_PKT_TYPE(hdr)) {
 	case HCI_3WIRE_ACK_PKT:
@@ -414,7 +414,7 @@ static void h5_process_complete_packet(const struct device *dev, uint8_t *hdr)
 	case HCI_ACLDATA_PKT:
 	case HCI_ISODATA_PKT:
 		hexdump("=> ", buf->data, buf->len);
-		h5->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 		break;
 	}
 }
@@ -434,16 +434,10 @@ static void bt_uart_isr(const struct device *uart, void *user_data)
 	static uint8_t hdr[4];
 	size_t buf_tailroom;
 
-	while (uart_irq_update(uart) &&
-	       uart_irq_is_pending(uart)) {
+	while (true) {
+		uart_irq_update(uart);
 
-		if (!uart_irq_rx_ready(uart)) {
-			if (uart_irq_tx_ready(uart)) {
-				LOG_DBG("transmit ready");
-			} else {
-				LOG_DBG("spurious interrupt");
-			}
-			/* Only the UART RX path is interrupt-enabled */
+		if (uart_irq_rx_ready(uart) <= 0) {
 			break;
 		}
 
@@ -755,7 +749,7 @@ static void h5_init(const struct device *dev)
 	k_work_init_delayable(&h5->retx_work, retx_timeout);
 }
 
-static int h5_open(const struct device *dev, bt_hci_recv_t recv)
+static int h5_open(const struct device *dev)
 {
 	const struct h5_config *cfg = dev->config;
 	struct h5_data *h5 = dev->data;
@@ -766,8 +760,6 @@ static int h5_open(const struct device *dev, bt_hci_recv_t recv)
 	 * delayed work callbacks.
 	 */
 	h5->dev = dev;
-
-	h5->recv = recv;
 
 	uart_irq_rx_disable(cfg->uart);
 	uart_irq_tx_disable(cfg->uart);
@@ -794,6 +786,7 @@ static DEVICE_API(bt_hci, h5_driver_api) = {
 	static K_KERNEL_STACK_DEFINE(tx_thread_stack_##inst, CONFIG_BT_DRV_TX_STACK_SIZE); \
 	static struct k_thread tx_thread_##inst; \
 	static const struct h5_config h5_config_##inst = { \
+		.common = BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst), \
 		.uart = DEVICE_DT_GET(DT_INST_PARENT(inst)), \
 		.rx_stack = rx_thread_stack_##inst, \
 		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst), \

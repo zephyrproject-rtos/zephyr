@@ -11,7 +11,10 @@
 #define BOARDS_POSIX_NRF52_BSIM_SOC_SECURE_H
 
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <nrfx.h>
 #include <hal/nrf_ficr.h>
 
@@ -24,6 +27,19 @@ static inline void soc_secure_read_deviceid(uint32_t deviceid[2])
 static inline int soc_secure_mem_read(void *dst, void *src, size_t len)
 {
 	(void)memcpy(dst, src, len);
+	return 0;
+}
+
+static inline bool soc_secure_flash_range_is_secure(uintptr_t addr, size_t len)
+{
+	(void)addr;
+	(void)len;
+	return false;
+}
+
+static inline int soc_secure_flash_read(void *dst, void *src, size_t len)
+{
+	memcpy(dst, src, len);
 	return 0;
 }
 

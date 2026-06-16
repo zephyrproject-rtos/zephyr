@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Silicon Laboratories Inc.
+ * Copyright (c) 2024-2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include "sl_si91x_driver_gpio.h"
 #include "sl_status.h"
+#include "rsi_retention.h"
 
 #include <errno.h>
 #include <zephyr/sys/util.h>
@@ -37,6 +38,29 @@ struct gpio_siwx91x_uulp_data {
 };
 
 /* Functions */
+static void gpio_siwx91x_uulp_pin_set_wakeup_config(gpio_pin_t pin, enum gpio_int_trig trig)
+{
+	if (trig == GPIO_INT_TRIG_WAKE_LOW) {
+		sl_si91x_gpio_select_uulp_npss_polarity(pin, GPIO_POLARITY_0);
+	} else {
+		sl_si91x_gpio_select_uulp_npss_polarity(pin, GPIO_POLARITY_1);
+	}
+	sl_si91x_gpio_set_uulp_npss_wakeup_interrupt(pin);
+	RSI_PS_SetWkpSources(GPIO_BASED_WAKEUP);
+}
+
+static void gpio_siwx91x_uulp_pin_clear_wakeup_config(gpio_pin_t pin, enum gpio_int_trig trig)
+{
+	sl_si91x_gpio_clear_uulp_npss_wakeup_interrupt(pin);
+	/* TODO: Define MCU_FSM properly in dts
+	 * If none of the GPIO pins are configured as wakeup source,
+	 * then GPIO based wakeup can be cleared to avoid false wakeups.
+	 */
+	if ((MCU_FSM->GPIO_WAKEUP_REGISTER & 0xF) == 0) {
+		RSI_PS_ClrWkpSources(GPIO_BASED_WAKEUP);
+	}
+}
+
 static int gpio_siwx91x_uulp_pin_configure(const struct device *dev, gpio_pin_t pin,
 					   gpio_flags_t flags)
 {
@@ -44,20 +68,23 @@ static int gpio_siwx91x_uulp_pin_configure(const struct device *dev, gpio_pin_t 
 		return -ENOTSUP;
 	}
 
-	/* Enable input */
+	/* Enable receiver if needed */
 	sl_si91x_gpio_select_uulp_npss_receiver(pin, (flags & GPIO_INPUT) ? 1 : 0);
 
-	/* Select GPIO mode */
-	sl_si91x_gpio_set_uulp_npss_pin_mux(pin, 0);
+	if (flags & GPIO_INT_WAKEUP) {
+		sl_si91x_gpio_set_uulp_npss_pin_mux(pin, 2);
+	} else {
+		sl_si91x_gpio_set_uulp_npss_pin_mux(pin, 0);
 
-	if (flags & GPIO_OUTPUT_INIT_HIGH) {
-		sl_si91x_gpio_set_uulp_npss_pin_value(pin, 1);
-	} else if (flags & GPIO_OUTPUT_INIT_LOW) {
-		sl_si91x_gpio_set_uulp_npss_pin_value(pin, 0);
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			sl_si91x_gpio_set_uulp_npss_pin_value(pin, 1);
+		} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+			sl_si91x_gpio_set_uulp_npss_pin_value(pin, 0);
+		}
+
+		/* Enable input/output */
+		sl_si91x_gpio_set_uulp_npss_direction(pin, (flags & GPIO_OUTPUT) ? 0 : 1);
 	}
-
-	/* Enable output */
-	sl_si91x_gpio_set_uulp_npss_direction(pin, (flags & GPIO_OUTPUT) ? 0 : 1);
 
 	return 0;
 }
@@ -131,23 +158,37 @@ static int gpio_siwx91x_uulp_interrupt_configure(const struct device *port, gpio
 
 	if (mode == GPIO_INT_MODE_DISABLED) {
 		sl_si91x_gpio_configure_uulp_interrupt(flags, pin);
-		sl_si91x_gpio_clear_uulp_interrupt(BIT(pin));
-		sl_si91x_gpio_mask_uulp_npss_interrupt(BIT(pin));
+		sl_si91x_gpio_clear_uulp_npss_interrupt(pin);
+		sl_si91x_gpio_mask_set_uulp_npss_interrupt(pin);
+		if (trig & GPIO_INT_WAKEUP) {
+			gpio_siwx91x_uulp_pin_clear_wakeup_config(pin, trig);
+		}
 	} else {
-		if (trig == GPIO_INT_TRIG_LOW) {
-			flags = (mode == GPIO_INT_MODE_EDGE) ? SL_GPIO_INTERRUPT_FALL_EDGE
-							     : SL_GPIO_INTERRUPT_LEVEL_LOW;
-		} else if (trig == GPIO_INT_TRIG_HIGH) {
-			flags = (mode == GPIO_INT_MODE_EDGE) ? SL_GPIO_INTERRUPT_RISE_EDGE
-							     : SL_GPIO_INTERRUPT_LEVEL_HIGH;
-		} else if (trig == GPIO_INT_TRIG_BOTH) {
-			/* SL_GPIO_INTERRUPT_RISE_FALL_EDGE would make more sense, but HAL
-			 * implementation is buggy.
+		if (trig & GPIO_INT_TRIG_LOW) {
+			flags |= (mode == GPIO_INT_MODE_EDGE) ? SL_GPIO_INTERRUPT_FALL_EDGE
+							      : SL_GPIO_INTERRUPT_LEVEL_LOW;
+		}
+		if (trig & GPIO_INT_TRIG_HIGH) {
+			flags |= (mode == GPIO_INT_MODE_EDGE) ? SL_GPIO_INTERRUPT_RISE_EDGE
+							      : SL_GPIO_INTERRUPT_LEVEL_HIGH;
+		}
+		if (trig == GPIO_INT_TRIG_WAKE_BOTH) {
+			/* GPIO_INT_TRIG_WAKE_BOTH is not supported since wakeup config only
+			 * supports level mode
 			 */
-			flags = SL_GPIO_INTERRUPT_RISE_EDGE | SL_GPIO_INTERRUPT_FALL_EDGE;
+			return -ENOTSUP;
+		}
+
+		if (trig & GPIO_INT_WAKEUP && !(mode & GPIO_INT_MODE_LEVEL)) {
+			/* When configured as wakeup source, only level mode is supported */
+			return -ENOTSUP;
 		}
 
 		sl_si91x_gpio_configure_uulp_interrupt(flags, pin);
+
+		if (trig & GPIO_INT_WAKEUP) {
+			gpio_siwx91x_uulp_pin_set_wakeup_config(pin, trig);
+		}
 	}
 	return 0;
 }

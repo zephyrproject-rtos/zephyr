@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: frdm_imxrt1186/mimxrt1186/cm7/extmem
-name: FRDM-iMXRT1186 CM7 (Onboard External Memory)
+name: NXP FRDM-iMXRT1186 (CM7) (HyperFlash, HyperRAM)
 type: mcu
 arch: arm
 toolchain:
@@ -13,6 +13,7 @@ ram: 8192
 flash: 16384
 supported:
   - gpio
+  - hwinfo
   - uart
   - netif:eth
 vendor: nxp

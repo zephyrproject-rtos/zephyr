@@ -679,7 +679,11 @@ use_interface_mtu:
 				LOG_DBG("Cannot fragment IPv4 pkt (%d)", ret);
 
 				if (ret == -EPERM) {
-					/* Try to send the packet if the don't fragment flag is set
+					if (net_pkt_dont_fragment(pkt)) {
+						return NET_DROP;
+					}
+
+					/* For PMTU discovery, preserve the existing DF behavior
 					 * and hope the original large packet can be sent OK.
 					 */
 					goto ignore_frag_error;

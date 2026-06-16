@@ -21,9 +21,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/shell/shell.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "host/shell/bt.h"
@@ -32,6 +32,9 @@ static int cmd_tbs_client_discover(const struct shell *sh, size_t argc,
 				   char *argv[])
 {
 	int result = 0;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	result = bt_tbs_client_discover(default_conn);
 	if (result != 0) {

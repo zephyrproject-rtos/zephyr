@@ -97,17 +97,20 @@ stm32_lp_tick_source: &lptim1 {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa9 &i2c2_sda_pa8>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set 4Kb of storage at the end of the 128Kb of flash */
 		storage_partition: partition@1f000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0001f000 DT_SIZE_K(4)>;
 		};

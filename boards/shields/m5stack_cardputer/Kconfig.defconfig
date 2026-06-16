@@ -8,10 +8,6 @@ config INPUT
 
 if DISPLAY
 
-choice ST7789V_PIXEL_FORMAT
-	default ST7789V_RGB565
-endchoice
-
 if LVGL
 
 choice LV_COLOR_DEPTH

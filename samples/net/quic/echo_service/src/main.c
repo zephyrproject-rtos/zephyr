@@ -42,7 +42,7 @@ struct echo_entry {
 
 K_MUTEX_DEFINE(lock);
 K_FIFO_DEFINE(echo_fifo);
-K_MEM_SLAB_DEFINE_STATIC(echo_slab, sizeof(struct echo_entry), ECHO_QUEUE_SIZE, 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(echo_slab, struct echo_entry, ECHO_QUEUE_SIZE);
 
 static struct pollfd sockfd_conn;
 static struct pollfd sockfd_stream[MAX_SERVICES];
@@ -351,7 +351,7 @@ static int setup_quic_socket(struct sockaddr_in6 *addr)
 	};
 
 	/* Common socket setup for QUIC can be found in samples/net/common/quic.c */
-	sock = setup_quic(NULL, (struct sockaddr *)addr, QUIC_STREAM_SERVER,
+	sock = setup_quic(NULL, (struct sockaddr *)addr, QUIC_STREAM_BIDIRECTIONAL,
 			  sec_tag_list, sizeof(sec_tag_list),
 			  (const char **)alpn_list, sizeof(alpn_list));
 	if (sock < 0) {

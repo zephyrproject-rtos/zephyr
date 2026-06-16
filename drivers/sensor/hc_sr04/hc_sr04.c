@@ -37,7 +37,7 @@ static int hcsr04_configure_gpios(const struct hcsr04_config *cfg)
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->trigger_gpios)) {
-		LOG_ERR("GPIO '%s' not ready", cfg->trigger_gpios.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->trigger_gpios.port);
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&cfg->trigger_gpios, GPIO_OUTPUT_LOW);
@@ -48,7 +48,7 @@ static int hcsr04_configure_gpios(const struct hcsr04_config *cfg)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->echo_gpios)) {
-		LOG_ERR("GPIO '%s' not ready", cfg->echo_gpios.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->echo_gpios.port);
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&cfg->echo_gpios, GPIO_INPUT);

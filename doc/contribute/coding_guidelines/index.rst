@@ -1069,14 +1069,8 @@ Status
        -
 
      * - :ref:`i2c_api`
-       - * ``master / slave`` => TBD
-       - NXP publishes the `I2C Specification`_ and has selected ``controller /
-         target`` as replacement terms, but the timing to publish an announcement
-         or new specification is TBD. Zephyr will update I2C when replacement
-         terminology is confirmed by a public announcement or updated
-         specification.
-
-         See :github:`Zephyr issue 27033 <27033>`.
+       - * ``master / slave`` => ``controller / target``
+       - Refer to `I2C Specification`_ for new terminology.
 
      * - :ref:`i2s_api`
        - * ``master / slave`` => TBD

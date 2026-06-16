@@ -400,6 +400,15 @@ static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr
 				       enum delayed_store_flags flag);
 #endif
 
+bool bt_gatt_is_db_hash_valid(void)
+{
+#if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
+	return atomic_test_bit(gatt_sc.flags, DB_HASH_VALID);
+#else
+	return false;
+#endif
+}
+
 #if defined(CONFIG_BT_GATT_CACHING)
 static bool set_change_aware_no_store(struct gatt_cf_cfg *cfg, bool aware)
 {
@@ -577,6 +586,11 @@ static int db_hash_setup(struct gen_hash_state *state, uint8_t *key)
 	ret = psa_mac_sign_setup(&(state->operation), state->key, PSA_ALG_CMAC);
 	if (ret != PSA_SUCCESS) {
 		LOG_ERR("CMAC operation init failed %d", ret);
+
+		ret = psa_destroy_key(state->key);
+		if (ret != PSA_SUCCESS) {
+			LOG_ERR("key destroy failed %d", ret);
+		}
 		return -EIO;
 	}
 	return 0;
@@ -2332,10 +2346,7 @@ static void cleanup_notify(struct bt_conn *conn)
 {
 	struct net_buf **buf = &nfy_mult[bt_conn_index(conn)];
 
-	if (*buf) {
-		net_buf_unref(*buf);
-		*buf = NULL;
-	}
+	net_buf_drop(buf);
 }
 
 static void gatt_add_nfy_to_buf(struct net_buf *buf,
@@ -2790,6 +2801,26 @@ struct bt_gatt_attr *bt_gatt_find_by_uuid(const struct bt_gatt_attr *attr,
 	return found;
 }
 
+/**
+ * This function is meant to resolve attr to the characteristic value attribute.
+ * If attr is a characteristic declaration, returns the next attribute (the value).
+ * Otherwise returns attr unchanged.
+ */
+static const struct bt_gatt_attr *
+bt_gatt_attr_resolve_value(const struct bt_gatt_attr *attr)
+{
+	/* Due to the following requirement in the Core Spec Version 6.3 | Vol 3, Part G,
+	 * Section 3.3 we can always assume that the next attribute is the Characteristic Value:
+	 * The Characteristic Value declaration shall exist immediately following the
+	 * characteristic declaration.
+	 */
+	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC) == 0) {
+		return bt_gatt_attr_next(attr);
+	}
+
+	return attr;
+}
+
 int bt_gatt_notify_cb(struct bt_conn *conn,
 		      struct bt_gatt_notify_params *params)
 {
@@ -2831,6 +2862,14 @@ int bt_gatt_notify_cb(struct bt_conn *conn,
 		}
 
 		data.handle = bt_gatt_attr_value_handle(data.attr);
+	}
+
+	/* If attribute is a characteristic declaration, resolve to the value
+	 * attribute to ensure the correct permissions are checked
+	 */
+	params->attr = bt_gatt_attr_resolve_value(data.attr);
+	if (params->attr == NULL) {
+		return -EINVAL;
 	}
 
 	if (conn) {
@@ -2902,14 +2941,22 @@ static int gatt_notify_multiple_verify_params(struct bt_conn *conn,
 					     struct bt_gatt_notify_params params[],
 					     uint16_t num_params, size_t *total_len)
 {
+	const struct bt_gatt_attr *attr = NULL;
+
 	for (uint16_t i = 0; i < num_params; i++) {
 		/* Compute the total data length. */
 		*total_len += params[i].len;
 
+		/* If attribute is a characteristic declaration, resolve to the value
+		 * attribute to ensure the correct permissions are checked
+		 */
+		attr = bt_gatt_attr_resolve_value(params[i].attr);
+		if (attr == NULL) {
+			return -EINVAL;
+		}
+
 		/* Confirm that the connection has the correct level of security. */
-		if (bt_gatt_check_perm(conn, params[i].attr,
-				       BT_GATT_PERM_READ_ENCRYPT |
-				       BT_GATT_PERM_READ_AUTHEN)) {
+		if (bt_gatt_check_perm(conn, attr, BT_GATT_PERM_READ_ENCRYPT_MASK)) {
 			LOG_DBG("Link %p is not encrypted", (void *)conn);
 			return -EPERM;
 		}
@@ -3056,6 +3103,14 @@ int bt_gatt_indicate(struct bt_conn *conn,
 		}
 
 		data.handle = bt_gatt_attr_value_handle(data.attr);
+	}
+
+	/* If attribute is a characteristic declaration, resolve to the value
+	 * attribute to ensure the correct permissions are checked
+	 */
+	params->attr = bt_gatt_attr_resolve_value(data.attr);
+	if (params->attr == NULL) {
+		return -EINVAL;
 	}
 
 	if (conn) {
@@ -4124,6 +4179,7 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 					 uint16_t length)
 {
 	const struct bt_att_read_type_rsp *rsp;
+	const struct bt_att_data *data;
 	uint16_t handle = 0U;
 	uint16_t uuid_val;
 
@@ -4140,6 +4196,11 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 
 	rsp = pdu;
 
+	if (rsp->len < sizeof(*data)) {
+		LOG_WRN("Invalid data len %u", rsp->len);
+		goto done;
+	}
+
 	/* Parse characteristics found */
 	for (length--, pdu = rsp->data; length >= rsp->len;
 	     length -= rsp->len, pdu = (const uint8_t *)pdu + rsp->len) {
@@ -4149,7 +4210,6 @@ static uint16_t parse_read_std_char_desc(struct bt_conn *conn, const void *pdu,
 			struct bt_gatt_cep cep;
 			struct bt_gatt_scc scc;
 		} value;
-		const struct bt_att_data *data;
 		struct bt_gatt_attr attr;
 
 		if (length < sizeof(*data)) {
@@ -5258,6 +5318,12 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			return;
 		}
 
+		att_err = att_err_from_int(err);
+
+		if (params->subscribe) {
+			params->subscribe(conn, att_err, params);
+		}
+
 		prev = NULL;
 
 		SYS_SLIST_FOR_EACH_NODE_SAFE(&sub->list, node, tmp) {
@@ -5267,15 +5333,15 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 			}
 			prev = node;
 		}
-	} else if (!params->value) {
-		/* Notify with NULL data to complete unsubscribe */
-		params->notify(conn, params, NULL, 0);
-	}
+	} else {
+		if (params->subscribe) {
+			params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
+		}
 
-	att_err = att_err_from_int(err);
-
-	if (params->subscribe) {
-		params->subscribe(conn, att_err, params);
+		if (!params->value) {
+			/* Notify with NULL data to complete unsubscribe */
+			params->notify(conn, params, NULL, 0);
+		}
 	}
 }
 

@@ -46,7 +46,7 @@ static struct bt_ccp_call_control_server_bearer
  */
 static struct bt_ccp_call_control_server_bearer *get_free_bearer(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(bearers); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(bearers); i++) {
 		int err;
 
 		err = k_mutex_lock(&bearers[i].mutex, K_NO_WAIT);
@@ -164,7 +164,7 @@ int bt_ccp_call_control_server_set_bearer_provider_name(
 	}
 
 	len = strlen(name);
-	if (len > CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH || len == 0) {
+	if (len > CONFIG_BT_CCP_CALL_CONTROL_SERVER_PROVIDER_NAME_MAX_LENGTH || len == 0U) {
 		LOG_DBG("Invalid name length: %zu", len);
 
 		return -EINVAL;

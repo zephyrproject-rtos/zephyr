@@ -79,16 +79,19 @@ ZTEST(cpu_load, test_periodic_report)
 	cpu_load_src_id = log_source_id_get(STRINGIFY(cpu_load));
 	atomic_set(&log_cnt, 0);
 	k_msleep(3 * CONFIG_CPU_LOAD_LOG_PERIODICALLY);
+	log_flush();
 	zassert_within(log_cnt, 3, 1);
 
 	cpu_load_log_control(false);
 	k_msleep(1);
 	atomic_set(&log_cnt, 0);
 	k_msleep(3 * CONFIG_CPU_LOAD_LOG_PERIODICALLY);
+	log_flush();
 	zassert_equal(log_cnt, 0);
 
 	cpu_load_log_control(true);
 	k_msleep(3 * CONFIG_CPU_LOAD_LOG_PERIODICALLY);
+	log_flush();
 	zassert_within(log_cnt, 3, 1);
 
 	cpu_load_log_control(false);
@@ -112,28 +115,39 @@ void high_load_cb(uint8_t percent)
 
 ZTEST(cpu_load, test_callback_load_low)
 {
-	int ret = cpu_load_cb_reg(low_load_cb, 99);
+	int ret;
 
+	cpu_load_log_control(true);
+
+	ret = cpu_load_cb_reg(low_load_cb, 99);
 	zassert_equal(ret, 0);
+
 	k_msleep(CONFIG_CPU_LOAD_LOG_PERIODICALLY * 4);
 	zassert_equal(num_load_callbacks, 0);
+	cpu_load_log_control(false);
 }
 
 ZTEST(cpu_load, test_callback_load_high)
 {
-	int ret = cpu_load_cb_reg(high_load_cb, 99);
+	int ret;
 
+	cpu_load_log_control(true);
+
+	ret = cpu_load_cb_reg(high_load_cb, 99);
 	zassert_equal(ret, 0);
+
 	k_busy_wait(CONFIG_CPU_LOAD_LOG_PERIODICALLY * 4 * 1000);
 	zassert_between_inclusive(last_cpu_load_percent, 99, 100);
 	zassert_between_inclusive(num_load_callbacks, 2, 7);
 
 	/* Reset the callback */
 	ret = cpu_load_cb_reg(NULL, 99);
-	num_load_callbacks = 0;
 	zassert_equal(ret, 0);
+
+	num_load_callbacks = 0;
 	k_busy_wait(CONFIG_CPU_LOAD_LOG_PERIODICALLY * 4 * 1000);
 	zassert_equal(num_load_callbacks, 0);
+	cpu_load_log_control(false);
 }
 
 #endif /* CONFIG_CPU_LOAD_LOG_PERIODICALLY > 0 */

@@ -177,10 +177,7 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 	}
 	memset(frnd->cred, 0, sizeof(frnd->cred));
 
-	if (frnd->last) {
-		net_buf_unref(frnd->last);
-		frnd->last = NULL;
-	}
+	net_buf_drop(&frnd->last);
 
 	purge_buffers(&frnd->queue);
 
@@ -744,10 +741,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		LOG_DBG("Re-sending last PDU");
 		frnd->send_last = 1U;
 	} else {
-		if (frnd->last) {
-			net_buf_unref(frnd->last);
-			frnd->last = NULL;
-		}
+		net_buf_drop(&frnd->last);
 
 		frnd->fsn = msg->fsn;
 
@@ -1169,9 +1163,8 @@ static void buf_send_start(uint16_t duration, int err, void *user_data)
 	frnd->pending_buf = 0U;
 
 	/* Friend Offer doesn't follow the re-sending semantics */
-	if (!frnd->established && frnd->last) {
-		net_buf_unref(frnd->last);
-		frnd->last = NULL;
+	if (!frnd->established) {
+		net_buf_drop(&frnd->last);
 	}
 }
 

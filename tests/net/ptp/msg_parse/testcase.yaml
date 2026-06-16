@@ -1,0 +1,16 @@
+common:
+  tags:
+    - net
+    - ptp
+    - unit
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim/native/64
+  depends_on: netif
+tests:
+  net.ptp.msg_parse: {}
+  net.ptp.msg_parse.custom_peer_delay_max:
+    extra_configs:
+      - CONFIG_PTP_PEER_DELAY_MAX_NS=20000000

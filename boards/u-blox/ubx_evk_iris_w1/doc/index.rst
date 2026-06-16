@@ -124,9 +124,34 @@ The required binary blob
 ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x_sb_wifi_a2.bin`` will be linked
 with the application image directly, forming a single monolithic image.
 
+
+Board variants
+**************
+
+Ethernet
+========
+
+The EVK-IRIS-W1 board includes an Ethernet RJ45 connector that can be used
+with the ethernet board variant. To use Ethernet functionality, build for the
+board target ``ubx_evk_iris_w1//ethernet``.
+
+.. code-block:: bash
+
+   west build -b ubx_evk_iris_w1@fidelix/rw612/ethernet
+   west build -b ubx_evk_iris_w1@macronix/rw612/ethernet
+
+.. note::
+
+   Pin conflicts between the Ethernet PHY and the external oscillator require hardware modifications on the board.
+   Refer to the following documents for the required hardware changes:
+
+   - `EVK-IRIS-W1 User Guide <https://content.u-blox.com/sites/default/files/documents/EVK-IRIS-W1_UserGuide_UBX-23007837.pdf>`_
+   - `IRIS-W10 SIM <https://content.u-blox.com/sites/default/files/documents/IRIS-W10_SIM_UBX-23003263.pdf>`_
+
 Resources
 *********
 
 - `EVK-IRIS-W1 Website <https://www.u-blox.com/en/product/evk-iris-w1>`_
 - `EVK-IRIS-W1 GitHub <https://github.com/u-blox/u-blox-sho-OpenCPU/tree/master/MCUXpresso/IRIS-W1>`_
 - `EVK-IRIS-W1 User Guide <https://content.u-blox.com/sites/default/files/documents/EVK-IRIS-W1_UserGuide_UBX-23007837.pdf>`_
+- `IRIS-W10 SIM <https://content.u-blox.com/sites/default/files/documents/IRIS-W10_SIM_UBX-23003263.pdf>`_

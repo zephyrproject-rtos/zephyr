@@ -57,8 +57,10 @@ else()
   file(WRITE "${_extram_inc}" "")
 endif()
 
-# Get flash size to use in esptool as string
-math(EXPR esptoolpy_flashsize "${CONFIG_FLASH_SIZE} / 0x100000")
+# Get flash size in MB for esptool from the chosen zephyr,flash node
+dt_chosen(dts_flash PROPERTY "zephyr,flash")
+dt_reg_size(flash_size_bytes PATH ${dts_flash})
+math(EXPR esptoolpy_flashsize "${flash_size_bytes} / 0x100000")
 
 # Get UART baudrate from DT
 dt_chosen(dts_shell_uart PROPERTY "zephyr,shell-uart")
@@ -68,7 +70,7 @@ endif()
 
 message("-- Espressif HAL path: ${ESP_IDF_PATH}")
 
-if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE))
+if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
   if(CONFIG_BUILD_OUTPUT_BIN)
     set(ELF2IMAGE_ARG "")
     if(NOT CONFIG_MCUBOOT)
@@ -88,14 +90,15 @@ endif()
 
 set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
 
-set(image_off ${CONFIG_FLASH_LOAD_OFFSET})
+if(CONFIG_ESP_SIMPLE_BOOT AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
+  dt_nodelabel(image_part_path NODELABEL "boot_partition")
+else()
+  dt_chosen(image_part_path PROPERTY "zephyr,code-partition")
+endif()
+dt_reg_addr(image_off PATH ${image_part_path})
 
-# If CONFIG_BUILD_OUTPUT_ADJUST_LMA is defined, adjust the image offset
-# to account for the additional load memory address offset.
-# This is useful for cases where the image needs to be loaded at a specific
-# address in flash, such as when using MCUBoot and flashing secondary images.
 if(DEFINED CONFIG_BUILD_OUTPUT_ADJUST_LMA)
-  math(EXPR image_off "${CONFIG_FLASH_LOAD_OFFSET} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA}")
+  math(EXPR image_off "${image_off} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT HEXADECIMAL)
 endif()
 
 board_runner_args(esp32 "--esp-app-address=${image_off}")
@@ -126,7 +129,7 @@ if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/mcuboot.ld CACHE INTERNAL "")
 elseif(CONFIG_SOC_ESP32_APPCPU OR CONFIG_SOC_ESP32S3_APPCPU)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_appcpu.ld CACHE INTERNAL "")
-elseif(CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE)
+elseif(CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_lpcore.ld CACHE INTERNAL "")
 else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default.ld CACHE INTERNAL "")

@@ -2060,9 +2060,66 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 	const struct i3c_device_id i3c_id = I3C_DEVICE_ID(pid);
 	struct i3c_device_desc *target = i3c_device_find(dev, &i3c_id);
 
-	if (target == NULL) {
+	if (target != NULL) {
+		/* Known device (DT or previously discovered): refresh state. */
+		target->dynamic_addr = dyn_addr;
+		target->bcr = bcr;
+		target->dcr = dcr;
+
+		if (!i3c_is_i3c_device_attached(target)) {
+			/* Defensive: DT device should have been attached via
+			 * i3c_attach_i3c_device() before DAA ran. Handle the
+			 * unexpected case instead of leaving the device absent
+			 * from the list (which would cause ENODEV on first transfer).
+			 */
+			data->dw_i3c_i2c_priv_data[pos].id = pos;
+			target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
+			data->free_pos &= ~BIT(pos);
+
+			sys_slist_append(&data->common.attached_dev.devices.i3c,
+					 &target->node);
+		} else {
+			struct dw_i3c_i2c_dev_data *priv = target->controller_priv;
+
+			if (priv->id != pos) {
+				/* The DW IP picks DAT slots during ENTDAA in arbitration
+				 * order, which is independent of the slot chosen by
+				 * dw_i3c_attach_device(). Any DT-declared target that
+				 * participates in ENTDAA (i.e., no "assigned-address")
+				 * will typically land in a different DAT slot than the
+				 * one bound at attach time.
+				 *
+				 * Re-bind controller_priv to the slot HW actually used
+				 * and return the old slot to the free pool, so that
+				 * subsequent transfers and attach/detach operations see
+				 * a consistent view of hardware.
+				 */
+				LOG_DBG("%s: rebinding PID 0x%012llx from DAT slot %u to %d "
+						"(ENTDAA placed target in different slot)",
+						dev->name, pid, priv->id, pos);
+
+				data->free_pos |= BIT(priv->id);
+				data->dw_i3c_i2c_priv_data[pos].id = pos;
+				target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
+				data->free_pos &= ~BIT(pos);
+			}
+		}
+
+		LOG_DBG("%s: PID 0x%012llx assigned dynamic address 0x%02x",
+			dev->name, pid, dyn_addr);
+	} else {
+		/* Unknown device (not in DT). Allocate a descriptor so the
+		 * driver can track it for address-slot accounting and future
+		 * lookups. Zephyr's public I3C API is DT-gated, so user code
+		 * cannot address this device — but tracking it here prevents
+		 * duplicate allocation on re-DAA (see dw_i3c_device_find()).
+		 */
 		target = i3c_device_desc_alloc();
-		if (target != NULL) {
+		if (target == NULL) {
+			LOG_WRN("%s: PID 0x%012llx DA 0x%02x — descriptor pool "
+				"exhausted, device untracked",
+				dev->name, pid, dyn_addr);
+		} else {
 			*(const struct device **)&target->bus = dev;
 			*(uint64_t *)&target->pid = pid;
 			target->dynamic_addr = dyn_addr;
@@ -2071,23 +2128,14 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 
 			data->dw_i3c_i2c_priv_data[pos].id = pos;
 			target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
+			data->free_pos &= ~BIT(pos);
 
-			sys_slist_append(&data->common.attached_dev.devices.i3c, &target->node);
+			sys_slist_append(&data->common.attached_dev.devices.i3c,
+					 &target->node);
+
+			LOG_INF("%s: PID 0x%012llx not in DT, given DA 0x%02x",
+				dev->name, pid, dyn_addr);
 		}
-
-		LOG_INF("%s: PID 0x%012llx is not in registered device "
-			"list, given DA 0x%02x",
-			dev->name, pid, dyn_addr);
-	} else {
-		target->dynamic_addr = dyn_addr;
-		target->bcr = bcr;
-		target->dcr = dcr;
-
-		data->dw_i3c_i2c_priv_data[pos].id = pos;
-		target->controller_priv = &data->dw_i3c_i2c_priv_data[pos];
-
-		LOG_DBG("%s: PID 0x%012llx assigned dynamic address 0x%02x", dev->name, pid,
-			dyn_addr);
 	}
 	i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, dyn_addr);
 
@@ -2382,8 +2430,85 @@ static struct i3c_device_desc *dw_i3c_device_find(const struct device *dev,
 						  const struct i3c_device_id *id)
 {
 	const struct dw_i3c_config *config = dev->config;
+	struct i3c_device_desc *desc;
 
-	return i3c_dev_list_find(&config->common.dev_list, id);
+	/* First look in the DT-defined static list. */
+	desc = i3c_dev_list_find(&config->common.dev_list, id);
+	if (desc != NULL) {
+		return desc;
+	}
+
+	/* Fall back to the runtime attached-device list — covers targets
+	 * discovered via DAA that are not declared in the Device Tree.
+	 */
+	I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+		if (desc->pid == id->pid) {
+			return desc;
+		}
+	}
+
+	return NULL;
+}
+
+/**
+ * @brief Recover the I3C bus.
+ *
+ * Attempts to bring the DesignWare I3C controller back to an idle/ready state
+ * without destroying the driver's device table. Used by i3c_recover_bus()
+ * and the i3c shell.
+ *
+ * Deliberately does NOT issue RESET_CTRL_SOFT or RESET_CTRL_ALL, since those
+ * clear the Device Address Table (DAT) and Device Characteristic Table (DCT)
+ * which hold per-target state the driver relies on. Only the FIFOs and
+ * response/command/IBI queues are flushed, and the controller is RESUMEd if
+ * halted by a prior error.
+ *
+ * @param dev Pointer to controller device driver instance.
+ *
+ * @retval 0 on success.
+ * @retval -EACCES if controller is not in master mode.
+ */
+static int dw_i3c_recover_bus(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	uint32_t nibis;
+	int ret;
+
+
+	if (!dw_i3c_is_current_controller(dev)) {
+		return -EACCES;
+	}
+
+	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
+	if (ret) {
+		LOG_ERR("%s: recover_bus mutex err (%d)", dev->name, ret);
+		return ret;
+	}
+
+	/* Drain any pending IBIs so the controller is not blocked by
+	 * an unread IBI queue when we try to resume.
+	 */
+	nibis = QUEUE_STATUS_IBI_BUF_BLR(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
+	while (nibis--) {
+		(void)sys_read32(config->regs + IBI_QUEUE_STATUS);
+	}
+
+	/* Flush command / response / data FIFOs and the IBI queue.
+	 * Crucially, SOFT reset is NOT asserted here — DAT/DCT survive.
+	 */
+	sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO |
+		    RESET_CTRL_RESP_QUEUE | RESET_CTRL_CMD_QUEUE |
+		    RESET_CTRL_IBI_QUEUE,
+		    config->regs + RESET_CTRL);
+
+	/* Resume controller from any halt state caused by a prior error. */
+	sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
+		    config->regs + DEVICE_CTRL);
+
+	k_mutex_unlock(&data->mt);
+
+	return 0;
 }
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET
@@ -2669,6 +2794,7 @@ static int dw_i3c_pm_ctrl(const struct device *dev, enum pm_device_action action
 static DEVICE_API(i3c, dw_i3c_api) = {
 #ifdef CONFIG_I3C_CONTROLLER
 	.i2c_api.transfer = dw_i3c_i2c_api_transfer,
+	.i2c_api.recover_bus = dw_i3c_recover_bus,
 #ifdef CONFIG_I2C_RTIO
 	.i2c_api.iodev_submit = i2c_iodev_submit_fallback,
 #endif
@@ -2685,7 +2811,7 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 	.do_ccc = dw_i3c_do_ccc,
 
 	.i3c_device_find = dw_i3c_device_find,
-
+	.recover_bus = dw_i3c_recover_bus,
 	.i3c_xfers = dw_i3c_xfers,
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET

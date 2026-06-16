@@ -1,7 +1,7 @@
 /* goep.h - Bluetooth Generic Object Exchange Profile handling */
 
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,6 +58,44 @@ struct bt_goep_transport_ops {
 	void (*disconnected)(struct bt_goep *goep);
 };
 
+/** @brief GOEP v1.1 structure. */
+struct bt_goep_transport_v1 {
+	/** @brief RFCOMM DLC used for transport */
+	struct bt_rfcomm_dlc dlc;
+
+	/** @brief Back-pointer to parent GOEP object
+	 *
+	 *  This must be initialized to point to the parent @ref bt_goep structure before
+	 *  calling any GOEP transport connect/register APIs. The parent @ref bt_goep must
+	 *  have its @ref bt_goep::v1 field pointing to this structure and @ref bt_goep::v2
+	 *  set to NULL for a valid GOEP v1.1 session.
+	 */
+	struct bt_goep *goep;
+};
+
+/** @brief GOEP v2 structure. */
+struct bt_goep_transport_v2 {
+	/** @brief L2CAP BR/EDR channel used for transport */
+	struct bt_l2cap_br_chan chan;
+
+	/** @brief Back-pointer to parent GOEP object
+	 *
+	 *  This must be initialized to point to the parent @ref bt_goep structure before
+	 *  calling any GOEP transport connect/register APIs. The parent @ref bt_goep must
+	 *  have its @ref bt_goep::v2 field pointing to this structure and @ref bt_goep::v1
+	 *  set to NULL for a valid GOEP v2.0 session.
+	 */
+	struct bt_goep *goep;
+};
+
+/** @brief GOEP transport unified structure. */
+struct bt_goep_transport {
+	/** @brief GOEP v1.1 transport */
+	struct bt_goep_transport_v1 v1;
+	/** @brief GOEP v2 transport */
+	struct bt_goep_transport_v2 v2;
+};
+
 /** @brief Life-span states of GOEP transport.
  *
  *  Used only by internal APIs dealing with setting GOEP to proper transport state depending on
@@ -84,22 +122,31 @@ enum __packed bt_goep_transport_state {
 	BT_GOEP_TRANSPORT_DISCONNECTING,
 };
 
+/** @brief GOEP structure.
+ *
+ * @note Transport version selection and lifetime rules:
+ *       - Exactly one of @ref bt_goep::v1 or @ref bt_goep::v2 shall be set (non-NULL) for an
+ *         active session.
+ *       - The pointed-to @ref bt_goep_transport_v1 / @ref bt_goep_transport_v2 instance must
+ *         remain valid (address stable) for the entire lifetime of the transport connection,
+ *         because the Bluetooth host stack uses CONTAINER_OF() on the embedded RFCOMM/L2CAP
+ *         objects in asynchronous callbacks.
+ *       - The version-specific object must have its @ref bt_goep_transport_v1::goep /
+ *         @ref bt_goep_transport_v2::goep back-pointer initialized to the parent @ref bt_goep
+ *         before calling any of the GOEP transport connect/register APIs.
+ */
 struct bt_goep {
-	/** @internal To be used for transport */
-	union {
-		struct bt_rfcomm_dlc dlc;
-		struct bt_l2cap_br_chan chan;
-	} _transport;
-
-	/** @internal Peer GOEP Version
+	/** @brief To be used for transport v1.
 	 *
-	 *  false - Peer supports GOEP v1.1. The GOEP transport is based on RFCOMM.
-	 *  `dlc` is used as transport.
-	 *
-	 *  true - peer supports GOEP v2.0 or later. The GOEP transport is based on L2CAP.
-	 *  `chan` is used as transport.
+	 * Must be NULL when using transport v2.
 	 */
-	bool _goep_v2;
+	struct bt_goep_transport_v1 *v1;
+
+	/** @brief To be used for transport v2.
+	 *
+	 * Must be NULL when using transport v1.
+	 */
+	struct bt_goep_transport_v2 *v2;
 
 	/** @internal connection handle */
 	struct bt_conn *_acl;
@@ -117,6 +164,56 @@ struct bt_goep {
 	/** @brief OBEX object */
 	struct bt_obex obex;
 };
+
+/** @brief Initialize the GOEP and GOEP v1 (RFCOMM) transport structures.
+ *
+ *  Sets up the mutual back-pointer between a @ref bt_goep instance and its transport instance
+ *  @ref bt_goep_transport_v1, and clears the unused v2 pointer to avoid the goep version mismatch.
+ *
+ *  Equivalent to:
+ *  @code
+ *  (_v1)->goep = (_goep);
+ *  (_goep)->v1 = (_v1);
+ *  (_goep)->v2 = NULL;
+ *  @endcode
+ *
+ *  @param _goep Pointer to the @ref bt_goep structure to initialize.
+ *  @param _v1   Pointer to the @ref bt_goep_transport_v1 structure to associate.
+ */
+#define BT_GOEP_INIT_V1(_goep, _v1) \
+	do { \
+		BUILD_ASSERT(SAME_TYPE(*(_goep), struct bt_goep) && \
+			     SAME_TYPE(*(_v1), struct bt_goep_transport_v1), \
+			     "pointer type mismatch in BT_GOEP_INIT_V1"); \
+		(_v1)->goep = (_goep); \
+		(_goep)->v1 = (_v1); \
+		(_goep)->v2 = NULL; \
+	} while (0)
+
+/** @brief Initialize the GOEP and GOEP v2 (L2CAP) transport structures.
+ *
+ *  Sets up the mutual back-pointer between a @ref bt_goep instance and its transport instance
+ *  @ref bt_goep_transport_v2, and clears the unused v1 pointer to avoid the goep version mismatch.
+ *
+ *  Equivalent to:
+ *  @code
+ *  (_v2)->goep = (_goep);
+ *  (_goep)->v2 = (_v2);
+ *  (_goep)->v1 = NULL;
+ *  @endcode
+ *
+ *  @param _goep Pointer to the @ref bt_goep structure to initialize.
+ *  @param _v2   Pointer to the @ref bt_goep_transport_v2 structure to associate.
+ */
+#define BT_GOEP_INIT_V2(_goep, _v2) \
+	do { \
+		BUILD_ASSERT(SAME_TYPE(*(_goep), struct bt_goep) && \
+			     SAME_TYPE(*(_v2), struct bt_goep_transport_v2), \
+			     "pointer type mismatch in BT_GOEP_INIT_V2"); \
+		(_v2)->goep = (_goep); \
+		(_goep)->v2 = (_v2); \
+		(_goep)->v1 = NULL; \
+	} while (0)
 
 /**
  * @defgroup bt_goep_transport_rfcomm GOEP transport RFCOMM
@@ -144,12 +241,22 @@ struct bt_goep_transport_rfcomm_server {
 	 *  authorization.
 	 *
 	 *  Before returning the callback, @ref bt_goep::transport_ops should be initialized with
-	 *  valid address of type @ref bt_goep_transport_ops object. The field `mtu` of
-	 *  @ref bt_obex::rx could be passed with valid value. Or set it to zero, the mtu will be
-	 *  calculated according to @kconfig{CONFIG_BT_GOEP_RFCOMM_MTU}.
+	 *  valid address of type @ref bt_goep_transport_ops object.
+	 *  The value of the field `mtu` of @ref bt_obex::rx will be ignored. Instead, it will be
+	 *  assigned the value that be calculated based on @kconfig{CONFIG_BT_GOEP_RFCOMM_MTU}.
 	 *
 	 *  @warning It is the responsibility of the caller to zero out the parent of the GOEP
 	 *  object.
+	 *
+	 *  @note The accept callback must initialize the returned GOEP instance as follows:
+	 *        - Set @ref bt_goep::transport_ops to a valid operations table.
+	 *        - The field @ref bt_goep::v1 should be passed with the pointed-to
+	 *          @ref bt_goep_transport_v1 instance must remain valid (address stable) for the
+	 *          entire lifetime of the transport connection. And @ref bt_goep::v2 should be
+	 *          set to NULL.
+	 *        - Initialize the back-pointer in the version-specific object
+	 *          @ref bt_goep_transport_v1::goep to point at the parent @ref bt_goep.
+	 *        The version-specific object must remain valid for the lifetime of the transport.
 	 *
 	 *  @param conn The connection that is requesting authorization.
 	 *  @param server Pointer to the server structure this callback relates to.
@@ -190,13 +297,23 @@ int bt_goep_transport_rfcomm_server_register(struct bt_goep_transport_rfcomm_ser
  *  create transport dedicated GOEP object @ref bt_goep. Then pass to this API the location
  *  (address).
  *  Before calling the API, @ref bt_goep::transport_ops should be initialized with valid address
- *  of type @ref bt_goep_transport_ops object. The field `mtu` of @ref bt_obex::rx could be passed
- *  with valid value. Or set it to zero, the mtu will be calculated according to
- *  @kconfig{CONFIG_BT_GOEP_RFCOMM_MTU}.
- *  The RFCOMM channel is passed as third parameter. It is the RFCOMM channel of RFCOMM server of
- *  peer device.
+ *  of type @ref bt_goep_transport_ops object.
+ *  The RFCOMM channel is passed as third parameter. It is the RFCOMM channel of RFCOMM server
+ *  discovered from the peer device.
+ *
+ *  The value of the field `mtu` of @ref bt_obex::rx will be ignored. Instead, it will be
+ *  assigned the value that be calculated based on @kconfig{CONFIG_BT_GOEP_RFCOMM_MTU}.
  *
  *  @warning It is the responsibility of the caller to zero out the parent of the GOEP object.
+ *
+ *  @note The accept callback must initialize the returned GOEP instance as follows:
+ *        - Set @ref bt_goep::transport_ops to a valid operations table.
+ *        - The field @ref bt_goep::v1 should be passed with the pointed-to
+ *          @ref bt_goep_transport_v1 instance must remain valid (address stable) for the entire
+ *          lifetime of the transport connection. And @ref bt_goep::v2 should be set to NULL.
+ *        - Initialize the back-pointer in the version-specific object
+ *          @ref bt_goep_transport_v1::goep to point at the parent @ref bt_goep.
+ *        The version-specific object must remain valid for the lifetime of the transport.
  *
  *  @param conn Connection object.
  *  @param goep GOEP object.
@@ -246,12 +363,22 @@ struct bt_goep_transport_l2cap_server {
 	 *  authorization.
 	 *
 	 *  Before returning the callback, @ref bt_goep::transport_ops should be initialized with
-	 *  valid address of type @ref bt_goep_transport_ops object. The field `mtu` of
-	 *  @ref bt_obex::rx could be passed with valid value. Or set it to zero, the mtu will be
-	 *  calculated according to @kconfig{CONFIG_BT_GOEP_L2CAP_MTU}.
+	 *  valid address of type @ref bt_goep_transport_ops object.
+	 *  The value of the field `mtu` of @ref bt_obex::rx will be ignored. Instead, it will be
+	 *  assigned the value that be calculated based on @kconfig{CONFIG_BT_GOEP_L2CAP_MTU}.
 	 *
 	 *  @warning It is the responsibility of the caller to zero out the parent of the GOEP
 	 *  object.
+	 *
+	 *  @note The accept callback must initialize the returned GOEP instance as follows:
+	 *        - Set @ref bt_goep::transport_ops to a valid operations table.
+	 *        - The field @ref bt_goep::v2 should be passed with the pointed-to
+	 *          @ref bt_goep_transport_v2 instance must remain valid (address stable) for the
+	 *          entire lifetime of the transport connection. And @ref bt_goep::v1 should be set
+	 *          to NULL.
+	 *        - Initialize the back-pointer in the version-specific object
+	 *          @ref bt_goep_transport_v2::goep to point at the parent @ref bt_goep.
+	 *        The version-specific object must remain valid for the lifetime of the transport.
 	 *
 	 *  @param conn The connection that is requesting authorization.
 	 *  @param server Pointer to the server structure this callback relates to.
@@ -296,13 +423,23 @@ int bt_goep_transport_l2cap_server_register(struct bt_goep_transport_l2cap_serve
  *  create transport dedicated GOEP object @ref bt_goep. Then pass to this API the location
  *  (address).
  *  Before calling the API, @ref bt_goep::transport_ops should be initialized with valid address
- *  of type @ref bt_goep_transport_ops object. The field `mtu` of @ref bt_obex::rx could be passed
- *  with valid value. Or set it to zero, the mtu will be calculated according to
- *  @kconfig{CONFIG_BT_GOEP_L2CAP_MTU}.
- *  The L2CAP PSM is passed as third parameter. It is the RFCOMM channel of RFCOMM server of peer
- *  device.
+ *  of type @ref bt_goep_transport_ops object.
+ *  The L2CAP PSM is passed as third parameter. It is the L2CAP PSM of OBEX SDP record discovered
+ *  from the peer device.
+ *
+ *  The value of the field `mtu` of @ref bt_obex::rx will be ignored. Instead, it will be
+ *  assigned the value that be calculated based on @kconfig{CONFIG_BT_GOEP_L2CAP_MTU}.
  *
  *  @warning It is the responsibility of the caller to zero out the parent of the GOEP object.
+ *
+ *  @note The accept callback must initialize the returned GOEP instance as follows:
+ *        - Set @ref bt_goep::transport_ops to a valid operations table.
+ *        - The field @ref bt_goep::v2 should be passed with the pointed-to
+ *          @ref bt_goep_transport_v2 instance must remain valid (address stable) for the entire
+ *          lifetime of the transport connection. And @ref bt_goep::v1 should be set to NULL.
+ *        - Initialize the back-pointer in the version-specific object
+ *          @ref bt_goep_transport_v2::goep to point at the parent @ref bt_goep.
+ *        The version-specific object must remain valid for the lifetime of the transport.
  *
  *  @param conn Connection object.
  *  @param goep GOEP object.

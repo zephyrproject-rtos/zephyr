@@ -53,6 +53,7 @@
 		led0 = &green_led;
 		led1 = &blue_led;
 		led2 = &red_led;
+		rtc = &rtc;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
@@ -93,6 +94,10 @@
 
 &clk_hsi {
 	hsi-div = <1>;
+	status = "okay";
+};
+
+&clk_lse {
 	status = "okay";
 };
 
@@ -193,6 +198,8 @@
 		 <&rcc STM32_SRC_CKPER I2C1_SEL(1)>;
 	pinctrl-0 = <&i2c1_scl_ph9 &i2c1_sda_pc1>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioh 9 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
 };
@@ -202,6 +209,8 @@ csi_i2c: &i2c2 {
 		 <&rcc STM32_SRC_CKPER I2C2_SEL(1)>;
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 11 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
 };
@@ -211,6 +220,8 @@ csi_i2c: &i2c2 {
 		 <&rcc STM32_SRC_CKPER I2C4_SEL(1)>;
 	pinctrl-0 = <&i2c4_scl_pe13 &i2c4_sda_pe14>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioe 13 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioe 14 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
 };
@@ -257,8 +268,19 @@ zephyr_udc0: &usbotg_hs1 {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
-	nvmem-cells = <&mac_address0>;
-	nvmem-cell-names = "mac-address";
+	/*
+	 * An area of OTP is dedicated to holding Ethernet MAC addresses;
+	 * however, it is not programmed during manufacturing. Reading an
+	 * unprogrammed OTP returns all zeroes, which breaks Ethernet if used
+	 * as MAC address. To allow the use of Ethernet even on virgin boards,
+	 * we do not define the nvmem-cell properties below (commented out)
+	 * so that default MAC address source is not the OTP memory.
+	 *
+	 * Once a MAC address has been programmed in OTP, you can enable
+	 * its use by uncommenting the following properties:
+	 */
+	/* nvmem-cells = <&mac_address0>; */
+	/* nvmem-cell-names = "mac-address"; */
 };
 
 &mdio {
@@ -341,5 +363,11 @@ csi_capture_port: &pipe_main {};
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };

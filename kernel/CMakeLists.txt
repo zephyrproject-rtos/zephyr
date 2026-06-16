@@ -21,15 +21,6 @@ macro(kernel_sources)
     list(APPEND kernel_files ${ARGN})
 endmacro()
 
-if(NOT CONFIG_ERRNO_IN_TLS AND NOT CONFIG_LIBC_ERRNO)
-  zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/sys/errno_private.h)
-endif()
-
-zephyr_syscall_header_ifdef(
-  CONFIG_ATOMIC_OPERATIONS_C
-  ${ZEPHYR_BASE}/include/zephyr/sys/atomic_c.h
-)
-
 zephyr_syscall_header_ifdef(
   CONFIG_MMU
   ${ZEPHYR_BASE}/include/zephyr/kernel/mm.h
@@ -62,10 +53,8 @@ add_compile_options($<TARGET_PROPERTY:compiler,warning_shadow_variables>)
 
 kernel_sources(
   main_weak.c
-  banner.c
   busy_wait.c
   device.c
-  errno.c
   fatal.c
   init.c
   kheap.c
@@ -106,7 +95,9 @@ kernel_sources_ifdef(CONFIG_MULTITHREADING
   condvar.c
   thread.c
   sched.c
+  sleep.c
   pipe.c
+  scheduler.c
   )
 
 if(CONFIG_MULTITHREADING)
@@ -120,9 +111,9 @@ endif() # CONFIG_MULTITHREADING
 
 
 kernel_sources_ifdef(CONFIG_TIMESLICING timeslicing.c)
+kernel_sources_ifdef(CONFIG_SCHED_DEADLINE deadline.c)
 kernel_sources_ifdef(CONFIG_SPIN_VALIDATE spinlock_validate.c)
 kernel_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
-kernel_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
 kernel_sources_ifdef(CONFIG_THREAD_MONITOR thread_monitor.c)
 kernel_sources_ifdef(CONFIG_DEMAND_PAGING_STATS paging/statistics.c)
 
@@ -143,7 +134,6 @@ target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timeout.c timer
 if(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME OR CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
   target_sources(kernel PRIVATE sys_clock_hw_cycles.c)
 endif()
-target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_MMU                   kernel PRIVATE mmu.c)
 target_sources_ifdef(CONFIG_POLL                  kernel PRIVATE poll.c)
 target_sources_ifdef(CONFIG_EVENTS                kernel PRIVATE events.c)
@@ -182,6 +172,7 @@ if(${CONFIG_KERNEL_MEM_POOL})
 
   endif()
 
+  zephyr_linker_include_var(VAR K_HEAP_MEM_POOL_SIZE VALUE ${final_heap_size})
   zephyr_compile_definitions(K_HEAP_MEM_POOL_SIZE=${final_heap_size})
 endif()
 

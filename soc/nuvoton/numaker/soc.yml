@@ -16,3 +16,6 @@ family:
   - name: m335x
     socs:
     - name: m335xxx
+  - name: m031x
+    socs:
+    - name: m031xxx

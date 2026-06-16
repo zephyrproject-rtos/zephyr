@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef LWM2M_PULL_CONTEXT_H
+#define LWM2M_PULL_CONTEXT_H
+
 #include <stdio.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/sys_clock.h>
@@ -26,3 +29,5 @@ struct requesting_object {
  * something else.
  */
 int lwm2m_pull_context_start_transfer(char *uri, struct requesting_object req, k_timeout_t timeout);
+
+#endif /* LWM2M_PULL_CONTEXT_H */

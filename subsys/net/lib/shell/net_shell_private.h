@@ -62,12 +62,12 @@ struct net_shell_user_data {
 };
 
 #if !defined(NET_VLAN_MAX_COUNT)
-#define MAX_IFACE_COUNT NET_IF_MAX_CONFIGS
+#define MAX_IFACE_COUNT 1
 #else
 #if NET_VLAN_MAX_COUNT > 0
 #define MAX_IFACE_COUNT NET_VLAN_MAX_COUNT
 #else
-#define MAX_IFACE_COUNT NET_IF_MAX_CONFIGS
+#define MAX_IFACE_COUNT 1
 #endif /* NET_VLAN_MAX_COUNT > 0 */
 #endif /* !NET_VLAN_MAX_COUNT */
 

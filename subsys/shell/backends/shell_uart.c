@@ -24,6 +24,10 @@ LOG_MODULE_REGISTER(shell_uart);
 #define RX_POLL_PERIOD K_NO_WAIT
 #endif
 
+#ifndef CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_TIMEOUT
+#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_TIMEOUT 0
+#endif
+
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 NET_BUF_POOL_DEFINE(smp_shell_rx_pool, CONFIG_MCUMGR_TRANSPORT_SHELL_RX_BUF_COUNT,
 		    SMP_SHELL_RX_BUF_SIZE, 0, NULL);
@@ -229,7 +233,8 @@ static void irq_init(struct shell_uart_int_driven *sh_uart)
 
 static int rx_enable(const struct device *dev, uint8_t *buf, size_t len)
 {
-	return uart_rx_enable(dev, buf, len, 10000);
+	return uart_rx_enable(dev, buf, len,
+			      CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_TIMEOUT);
 }
 
 static void async_init(struct shell_uart_async *sh_uart)
@@ -446,24 +451,41 @@ static int async_read(struct shell_uart_async *sh_uart,
 	uint8_t *buf;
 	size_t blen;
 	struct uart_async_rx *async_rx = &sh_uart->async_rx;
+	bool buf_available = false;
 
-	blen = uart_async_rx_data_claim(async_rx, &buf, length);
+	*cnt = 0;
+
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 	struct smp_shell_data *const smp = &sh_uart->common.smp;
-	size_t sh_cnt = 0;
 
-	for (size_t i = 0; i < blen; i++) {
-		if (smp_shell_rx_bytes(smp, &buf[i], 1) == 0) {
-			((uint8_t *)data)[sh_cnt++] = buf[i];
+	do {
+		blen = uart_async_rx_data_claim(async_rx, &buf, length - *cnt);
+		if (blen == 0) {
+			break;
 		}
+
+		for (size_t i = 0; i < blen; i++) {
+			if (smp_shell_rx_bytes(smp, &buf[i], 1) == 0) {
+				((uint8_t *)data)[(*cnt)++] = buf[i];
+			}
+		}
+
+		buf_available = uart_async_rx_data_consume(async_rx, blen);
+	} while (*cnt == 0);
+
+	if (*cnt == 0 && uart_async_rx_data_claim(async_rx, &buf, 1) > 0) {
+		uart_async_rx_data_consume(async_rx, 0);
+		sh_uart->common.handler(SHELL_TRANSPORT_EVT_RX_RDY,
+					sh_uart->common.context);
 	}
 #else
-	size_t sh_cnt = blen;
-
-	memcpy(data, buf, blen);
+	blen = uart_async_rx_data_claim(async_rx, &buf, length);
+	if (blen > 0) {
+		memcpy(data, buf, blen);
+	}
+	*cnt = blen;
+	buf_available = uart_async_rx_data_consume(async_rx, blen);
 #endif
-	bool buf_available = uart_async_rx_data_consume(async_rx, sh_cnt);
-	*cnt = sh_cnt;
 
 	if (sh_uart->pending_rx_req && buf_available) {
 		uint8_t *buf = uart_async_rx_buf_req(async_rx);

@@ -40,6 +40,8 @@
 #define GLB_GPIO_FUNC_KEY_SCAN_IN	21
 #define GLB_GPIO_FUNC_KEY_SCAN_DRV	22
 
+#define BFLB_CLK_OUT_SEL_MSK		0x3
+
 void pinctrl_bflb_configure_uart(uint8_t pin, uint8_t func)
 {
 	uint32_t regval;
@@ -66,6 +68,41 @@ void pinctrl_bflb_configure_uart(uint8_t pin, uint8_t func)
 
 	sys_write32(regval, GLB_BASE + GLB_UART_SIG_SEL_0_OFFSET);
 }
+
+#if defined(CONFIG_SOC_SERIES_BL70X)
+
+void pinctrl_bflb_configure_clk_out(pinctrl_soc_pin_t pin)
+{
+	uint8_t sig = BFLB_PINMUX_GET_SIGNAL(pin);
+	uint32_t inst = BFLB_PINMUX_GET_INST(pin);
+	uint32_t tmp;
+
+	tmp = sys_read32(GLB_BASE + GLB_CLK_CFG3_OFFSET);
+	tmp &= ~(BFLB_CLK_OUT_SEL_MSK << (GLB_CHIP_CLK_OUT_0_SEL_POS + inst * 2U));
+	tmp |= sig << (GLB_CHIP_CLK_OUT_0_SEL_POS + inst * 2U);
+	sys_write32(tmp, GLB_BASE + GLB_CLK_CFG3_OFFSET);
+}
+
+#elif defined(CONFIG_SOC_SERIES_BL70XL)
+
+void pinctrl_bflb_configure_clk_out(pinctrl_soc_pin_t pin)
+{
+	uint8_t sig = BFLB_PINMUX_GET_SIGNAL(pin);
+	uint32_t inst = BFLB_PINMUX_GET_INST(pin);
+	uint32_t tmp;
+
+	tmp = sys_read32(GLB_BASE + GLB_CLK_CFG3_OFFSET);
+	if (inst == 0) {
+		tmp |= 5U << GLB_CHIP_CLK_OUT_EN_POS;
+	} else {
+		tmp |= 10U << GLB_CHIP_CLK_OUT_EN_POS;
+	}
+	tmp &= ~(BFLB_CLK_OUT_SEL_MSK << (GLB_CHIP_CLK_OUT_0_SEL_POS + inst * 2U));
+	tmp |= sig << (GLB_CHIP_CLK_OUT_0_SEL_POS + inst * 2U);
+	sys_write32(tmp, GLB_BASE + GLB_CLK_CFG3_OFFSET);
+}
+
+#endif
 
 void pinctrl_bflb_init_pin(pinctrl_soc_pin_t pin)
 {

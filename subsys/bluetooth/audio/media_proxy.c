@@ -18,6 +18,7 @@
 #include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/toolchain.h>
 
 #include "media_proxy_internal.h"
 #include "mcs_internal.h"
@@ -237,7 +238,9 @@ uint8_t media_proxy_sctrl_get_content_ctrl_id(void)
 
 static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Discovery failed (%d)", err);
 	}
 
@@ -252,10 +255,12 @@ static void mcc_discover_mcs_cb(struct bt_conn *conn, int err)
 
 static void mcc_read_player_name_cb(struct bt_conn *conn, int err, const char *name)
 {
+	ARG_UNUSED(conn);
+
 	/* Debug statements for at least a couple of the callbacks, to show flow */
 	LOG_DBG("MCC player name callback");
 
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Player name failed");
 	}
 
@@ -269,9 +274,11 @@ static void mcc_read_player_name_cb(struct bt_conn *conn, int err, const char *n
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
 static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
+	ARG_UNUSED(conn);
+
 	LOG_DBG("Icon Object ID callback");
 
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Icon Object ID read failed (%d)", err);
 	}
 
@@ -286,7 +293,9 @@ static void mcc_read_icon_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 #if defined(CONFIG_BT_MCC_READ_MEDIA_PLAYER_ICON_URL)
 static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Icon URL read failed (%d)", err);
 	}
 
@@ -300,7 +309,9 @@ static void mcc_read_icon_url_cb(struct bt_conn *conn, int err, const char *url)
 
 static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Track change notification failed (%d)", err);
 		return;
 	}
@@ -315,7 +326,9 @@ static void mcc_track_changed_ntf_cb(struct bt_conn *conn, int err)
 #if defined(CONFIG_BT_MCC_READ_TRACK_TITLE)
 static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *title)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Track title read failed (%d)", err);
 	}
 
@@ -330,7 +343,9 @@ static void mcc_read_track_title_cb(struct bt_conn *conn, int err, const char *t
 #if defined(CONFIG_BT_MCC_READ_TRACK_DURATION)
 static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t dur)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Track duration read failed (%d)", err);
 	}
 
@@ -345,7 +360,9 @@ static void mcc_read_track_duration_cb(struct bt_conn *conn, int err, int32_t du
 #if defined(CONFIG_BT_MCC_READ_TRACK_POSITION)
 static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Track position read failed (%d)", err);
 	}
 
@@ -360,7 +377,9 @@ static void mcc_read_track_position_cb(struct bt_conn *conn, int err, int32_t po
 #if defined(CONFIG_BT_MCC_SET_TRACK_POSITION)
 static void mcc_set_track_position_cb(struct bt_conn *conn, int err, int32_t pos)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Track Position set failed (%d)", err);
 	}
 
@@ -375,7 +394,9 @@ static void mcc_set_track_position_cb(struct bt_conn *conn, int err, int32_t pos
 #if defined(CONFIG_BT_MCC_READ_PLAYBACK_SPEED)
 static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Playback speed read failed (%d)", err);
 	}
 
@@ -390,7 +411,9 @@ static void mcc_read_playback_speed_cb(struct bt_conn *conn, int err, int8_t spe
 #if defined(CONFIG_BT_MCC_SET_PLAYBACK_SPEED)
 static void mcc_set_playback_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Playback speed set failed (%d)", err);
 	}
 
@@ -405,7 +428,9 @@ static void mcc_set_playback_speed_cb(struct bt_conn *conn, int err, int8_t spee
 #if defined(CONFIG_BT_MCC_READ_SEEKING_SPEED)
 static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err, int8_t speed)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Seeking speed read failed (%d)", err);
 	}
 
@@ -420,7 +445,9 @@ static void mcc_read_seeking_speed_cb(struct bt_conn *conn, int err, int8_t spee
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
 static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Track Segments Object ID read failed (%d)", err);
 	}
 
@@ -433,7 +460,9 @@ static void mcc_read_segments_obj_id_cb(struct bt_conn *conn, int err, uint64_t 
 
 static void mcc_read_current_track_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Current Track Object ID read failed (%d)", err);
 	}
 
@@ -448,7 +477,9 @@ static void mcc_read_current_track_obj_id_cb(struct bt_conn *conn, int err, uint
 
 static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Next Track Object ID read failed (%d)", err);
 	}
 
@@ -463,7 +494,9 @@ static void mcc_read_next_track_obj_id_cb(struct bt_conn *conn, int err, uint64_
 
 static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Parent Group Object ID read failed (%d)", err);
 	}
 
@@ -476,7 +509,9 @@ static void mcc_read_parent_group_obj_id_cb(struct bt_conn *conn, int err, uint6
 
 static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Current Group Object ID read failed (%d)", err);
 	}
 
@@ -494,7 +529,9 @@ static void mcc_read_current_group_obj_id_cb(struct bt_conn *conn, int err, uint
 #if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER)
 static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Playing order read failed (%d)", err);
 	}
 
@@ -509,7 +546,9 @@ static void mcc_read_playing_order_cb(struct bt_conn *conn, int err, uint8_t ord
 #if defined(CONFIG_BT_MCC_SET_PLAYING_ORDER)
 static void mcc_set_playing_order_cb(struct bt_conn *conn, int err, uint8_t order)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Playing order set failed (%d)", err);
 	}
 
@@ -524,7 +563,9 @@ static void mcc_set_playing_order_cb(struct bt_conn *conn, int err, uint8_t orde
 #if defined(CONFIG_BT_MCC_READ_PLAYING_ORDER_SUPPORTED)
 static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err, uint16_t orders)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Playing orders supported read failed (%d)", err);
 	}
 
@@ -539,7 +580,9 @@ static void mcc_read_playing_orders_supported_cb(struct bt_conn *conn, int err, 
 #if defined(CONFIG_BT_MCC_READ_MEDIA_STATE)
 static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Media State read failed (%d)", err);
 	}
 
@@ -554,7 +597,9 @@ static void mcc_read_media_state_cb(struct bt_conn *conn, int err, uint8_t state
 #if defined(CONFIG_BT_MCC_SET_MEDIA_CONTROL_POINT)
 static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd *cmd)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Command send failed (%d) - opcode: %d, param: %d", err, cmd->opcode,
 			cmd->param);
 	}
@@ -570,7 +615,9 @@ static void mcc_send_cmd_cb(struct bt_conn *conn, int err, const struct mpl_cmd 
 static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
 			   const struct mpl_cmd_ntf *ntf)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Command notification error (%d) - command opcode: %d, result: %d", err,
 			ntf->requested_opcode, ntf->result_code);
 	}
@@ -585,7 +632,9 @@ static void mcc_cmd_ntf_cb(struct bt_conn *conn, int err,
 #if defined(CONFIG_BT_MCC_READ_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
 static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err, uint32_t opcodes)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Opcodes supported read failed (%d)", err);
 	}
 
@@ -600,7 +649,9 @@ static void mcc_read_opcodes_supported_cb(struct bt_conn *conn, int err, uint32_
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL_OBJECTS
 static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct mpl_search *search)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Search send failed (%d)", err);
 	}
 
@@ -613,7 +664,9 @@ static void mcc_send_search_cb(struct bt_conn *conn, int err, const struct mpl_s
 
 static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Search notification error (%d), result code: %d", err, result_code);
 	}
 
@@ -626,7 +679,9 @@ static void mcc_search_ntf_cb(struct bt_conn *conn, int err, uint8_t result_code
 
 static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err, uint64_t id)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Search Results Object ID read failed (%d)", err);
 	}
 
@@ -641,7 +696,9 @@ static void mcc_read_search_results_obj_id_cb(struct bt_conn *conn, int err, uin
 #if defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID)
 static void mcc_read_content_control_id_cb(struct bt_conn *conn, int err, uint8_t ccid)
 {
-	if (err) {
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
 		LOG_ERR("Content Control ID read failed (%d)", err);
 	}
 
@@ -682,9 +739,10 @@ int media_proxy_ctrl_register(struct media_proxy_ctrl_cbs *ctrl_cbs)
 #ifdef CONFIG_MCTL_REMOTE_PLAYER_CONTROL
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	ARG_UNUSED(reason);
+
 	if (mprx.remote_player.conn == conn) {
-		bt_conn_unref(mprx.remote_player.conn);
-		mprx.remote_player.conn = NULL;
+		bt_conn_drop(&mprx.remote_player.conn);
 	}
 }
 
@@ -768,14 +826,14 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn)
 #endif /* defined(CONFIG_BT_MCC_READ_CONTENT_CONTROL_ID) */
 
 	err = bt_mcc_init(&mprx.mcc_cbs);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Failed to initialize MCC");
 		return err;
 	}
 
 	/* Start discovery of remote MCS, subscribe to notifications */
 	err = bt_mcc_discover_mcs(conn, 1);
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Discovery failed");
 		return err;
 	}

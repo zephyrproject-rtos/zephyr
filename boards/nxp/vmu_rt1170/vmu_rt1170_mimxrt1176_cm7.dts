@@ -21,7 +21,7 @@
 		watchdog0 = &wdog1;
 		sdhc0 = &usdhc1;
 		sw0 = &arming_button;
-		pwm-led0 = &buzzer0;
+		buzzer0 = &buzzer0;
 		mcuboot-button0 = &arming_button;
 	};
 
@@ -33,7 +33,7 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan1;
-		zephyr,flash-controller = &mx25um51345g;
+		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &mx25um51345g;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,uart-mcumgr = &lpuart1;
@@ -126,12 +126,9 @@
 		status = "okay";
 	};
 
-	pwm_shell: pwm_shell {
-		compatible = "pwm-leds";
-
-		buzzer0: buzzer0 {
-			pwms = <&qtmr1 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
-		};
+	buzzer0: buzzer0 {
+		compatible = "pwm-buzzer";
+		pwms = <&qtmr1 0 PWM_HZ(50) PWM_POLARITY_NORMAL>;
 	};
 };
 

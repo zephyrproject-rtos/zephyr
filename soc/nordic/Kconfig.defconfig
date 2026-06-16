@@ -33,4 +33,7 @@ config GPIO
 config UART_USE_RUNTIME_CONFIGURE
 	default n
 
+config PINCTRL_KEEP_SLEEP_STATE
+	default y
+
 endif # SOC_FAMILY_NORDIC_NRF

@@ -136,6 +136,8 @@ static void arm_arch_timer_compare_isr(const void *arg)
 
 void sys_clock_set_timeout(int32_t ticks, bool idle)
 {
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
@@ -161,6 +163,8 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 
 uint32_t sys_clock_elapsed(void)
 {
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
+
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
 	}
@@ -191,8 +195,7 @@ void arch_busy_wait(uint32_t usec_to_wait)
 	}
 
 	uint64_t start_cycles = arm_arch_timer_count();
-	uint64_t cycles_to_wait = sys_clock_hw_cycles_per_sec() / USEC_PER_SEC *
-			      (uint64_t)usec_to_wait;
+	uint64_t cycles_to_wait = k_us_to_cyc_ceil64(usec_to_wait);
 
 #ifdef CONFIG_ARM64
 	if (is_wfxt_implemented()) {

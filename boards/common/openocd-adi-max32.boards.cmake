@@ -3,12 +3,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_ARCH STREQUAL "riscv")
-  set(MAX32_TARGET_CFG "${CONFIG_SOC}_riscv.cfg")
-  set(MAX32_INTERFACE_CFG "ftdi/olimex-arm-usb-ocd-h.cfg")
-else()
-  set(MAX32_TARGET_CFG "${CONFIG_SOC}.cfg")
-  set(MAX32_INTERFACE_CFG "cmsis-dap.cfg")
+if(NOT DEFINED MAX32_TARGET_CFG OR NOT DEFINED MAX32_INTERFACE_CFG)
+  if(CONFIG_ARCH STREQUAL "riscv")
+    set(MAX32_TARGET_CFG "${CONFIG_SOC}_riscv.cfg")
+    set(MAX32_INTERFACE_CFG "ftdi/olimex-arm-usb-ocd-h.cfg")
+  else()
+    set(MAX32_TARGET_CFG "${CONFIG_SOC}.cfg")
+    set(MAX32_INTERFACE_CFG "cmsis-dap.cfg")
+  endif()
 endif()
 
 # MAX32666 share the same target configuration file with MAX32665

@@ -56,6 +56,10 @@ else()
   list(APPEND QEMU_FLAGS qemu${QEMU_INSTANCE}.pid)
 endif()
 
+if(CONFIG_VIRTIO_MMIO)
+  list(APPEND QEMU_FLAGS -global virtio-mmio.force-legacy=false)
+endif()
+
 # If running with sysbuild, we need to ensure this variable is populated
 zephyr_get(QEMU_PIPE)
 # Set up chardev for console.
@@ -98,13 +102,22 @@ else()
   list(APPEND QEMU_FLAGS -mon chardev=con,mode=readline)
 endif()
 
-if(CONFIG_QEMU_RAMFB_DISPLAY)
+if(CONFIG_DISPLAY)
   if(CMAKE_HOST_APPLE)
     set(QEMU_DISPLAY_BACKEND cocoa)
   else()
     set(QEMU_DISPLAY_BACKEND sdl)
   endif()
-  list(APPEND QEMU_FLAGS -device ramfb -vga none -display ${QEMU_DISPLAY_BACKEND})
+  if(CONFIG_INPUT_VIRTIO)
+    # An absolute pointing device makes QEMU hide the host cursor over the
+    # guest display, but the guest does not draw one
+    string(APPEND QEMU_DISPLAY_BACKEND ",show-cursor=on")
+  endif()
+  if(CONFIG_QEMU_RAMFB_DISPLAY)
+    list(APPEND QEMU_FLAGS -device ramfb -vga none -display ${QEMU_DISPLAY_BACKEND})
+  else()
+    list(APPEND QEMU_FLAGS -display ${QEMU_DISPLAY_BACKEND})
+  endif()
 else()
   list(APPEND QEMU_FLAGS -nographic)
 endif()
@@ -417,6 +430,39 @@ if(CONFIG_NVME)
   )
 else()
   add_custom_target(qemu_nvme_disk)
+endif()
+
+# If we are using a suitable ethernet driver inside qemu, then these options
+# must be set, otherwise a zephyr instance cannot receive any network packets.
+# The Qemu supported ethernet driver should define CONFIG_ETH_NIC_MODEL
+# string that tells what nic model Qemu should use.
+if(CONFIG_QEMU_TARGET)
+  if((CONFIG_NET_QEMU_ETHERNET OR CONFIG_NET_QEMU_USER) AND NOT CONFIG_ETH_NIC_MODEL)
+    message(FATAL_ERROR "
+      No Qemu ethernet driver configured!
+      Enable Qemu supported ethernet driver like e1000 in the device tree."
+    )
+  elseif(CONFIG_NET_QEMU_ETHERNET)
+    if(CONFIG_ETH_QEMU_EXTRA_ARGS)
+      set(NET_QEMU_ETH_EXTRA_ARGS ",${CONFIG_ETH_QEMU_EXTRA_ARGS}")
+    endif()
+    list(APPEND QEMU_EXTRA_FLAGS
+      -netdev tap,id=n1,script=no,downscript=no,ifname=${CONFIG_ETH_QEMU_IFACE_NAME}${NET_QEMU_ETH_EXTRA_ARGS}
+    )
+  elseif(CONFIG_NET_QEMU_USER)
+    list(APPEND QEMU_EXTRA_FLAGS
+      -netdev user,id=n1,${CONFIG_NET_QEMU_USER_EXTRA_ARGS}
+    )
+  else()
+    list(APPEND QEMU_EXTRA_FLAGS
+      -net none
+    )
+  endif()
+  if(CONFIG_NET_QEMU_ETHERNET OR CONFIG_NET_QEMU_USER)
+    list(APPEND QEMU_EXTRA_FLAGS
+      -device ${CONFIG_ETH_NIC_MODEL},netdev=n1,${CONFIG_NET_QEMU_DEVICE_EXTRA_ARGS}
+    )
+  endif()
 endif()
 
 if(NOT QEMU_PIPE)

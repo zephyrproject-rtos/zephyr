@@ -10,6 +10,7 @@
 
 &flash0 {
 	reg = <0x0 DT_SIZE_M(2)>;
+	ranges = <0x0 0x0 DT_SIZE_M(2)>;
 };
 
 #include <espressif/partitions_0x0_amp_2M.dtsi>

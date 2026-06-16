@@ -12,6 +12,8 @@
 
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
 	test {
@@ -23,6 +25,13 @@
 			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
 			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_pwm: pwm@deadba11 {
+			compatible = "vnd,pwm";
+			reg = <0xdeadba11 0x1000>;
+			#pwm-cells = <3>;
 			status = "okay";
 		};
 
@@ -87,7 +96,7 @@
 				vdvs = <0x20>;
 				mdac = <0x00>;
 				gamma = <0x01>;
-				colmod = <0x55>;
+				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 				lcm = <0x0c>;
 				porch-param = [0c 0c 00 33 33];
 				cmd2en-param = [5a 69 02 00];
@@ -165,6 +174,9 @@
 				mux-ratio = <0>;
 				phase-length = <0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+				grayscale-table = [34 38 3a 40 48 50 58 60 68 70 78 80 96 a0 aa];
+				grayscale-enhancement-lg;
+				external-vsl;
 			};
 
 			test_mipi_dbi_st75256: st75256@a {
@@ -397,6 +409,17 @@
 				width = <600>;
 				height = <448>;
 				busy-gpios = <&test_gpio 0 0>;
+
+				color-palette {
+					compatible = "zephyr,panel-color-palette";
+					colors = <ARGB8888(52, 50, 67, 255)
+						  ARGB8888(172, 172, 171, 255)
+						  ARGB8888(50, 104, 74, 255)
+						  ARGB8888(61, 67, 100, 255)
+						  ARGB8888(139, 65, 70, 255)
+						  ARGB8888(173, 156, 65, 255)
+						  ARGB8888(157, 92, 71, 255)>;
+				};
 			};
 
 			test_mipi_dbi_ili9163c: ili9163c@17 {
@@ -422,6 +445,48 @@
 				bias-ratio = <2>;
 				flip-configuration = <0>;
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			};
+
+			test_mipi_dbi_ed2208_gca: ed2208_gca@25 {
+				compatible = "eink,ed2208-gca";
+				reg = <0x25>;
+				mipi-max-frequency = <4000000>;
+				width = <800>;
+				height = <480>;
+				busy-gpios = <&test_gpio 0 0>;
+
+				color-palette {
+					compatible = "zephyr,panel-color-palette";
+					colors = <ARGB8888(0,   0,   0,   255) /* 0x00 = Black */
+						  ARGB8888(245, 245, 240, 255) /* 0x01 = White */
+						  ARGB8888(230, 200, 40,  255) /* 0x02 = Yellow */
+						  ARGB8888(196, 50,  58,  255) /* 0x03 = Red */
+						  PANEL_COLOR_PALETTE_NULL /* 0x04 = Unused */
+						  ARGB8888(40,  85,  180, 255) /* 0x05 = Blue */
+						  ARGB8888(60,  140, 75,  255) /* 0x06 = Green */>;
+				};
+			};
+
+			test_mipi_dbi_hx8353e: hx8353e@26 {
+				compatible = "himax,hx8353e";
+				reg = <0x26>;
+				mipi-max-frequency = <15000000>;
+				mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
+				width = <132>;
+				height = <128>;
+				rotation = <90>;
+				backlight-gpios = <&test_gpio 0 0>;
+			};
+
+			test_mipi_dbi_hx8353e_pwm: hx8353e@27 {
+				compatible = "himax,hx8353e";
+				reg = <0x27>;
+				mipi-max-frequency = <15000000>;
+				mipi-mode = "MIPI_DBI_MODE_8080_BUS_8_BIT";
+				width = <132>;
+				height = <128>;
+				rotation = <0>;
+				pwms = <&test_pwm 0 PWM_MSEC(20) 0>;
 			};
 		};
 
@@ -598,6 +663,16 @@
 				data-lanes = <4>;
 				pixel-format = <0>;
 			};
+
+			test_rm692c9: rm692c9@9 {
+				status = "okay";
+				compatible = "raydium,rm692c9";
+				reg = <9>;
+				bl-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+				data-lanes = <4>;
+				pixel-format = <0>;
+			};
 		};
 
 		test_spi: spi@33334444 {
@@ -655,6 +730,19 @@
 				num-cascading = <1>;
 				intensity = <0>;
 				scan-limit = <7>;
+			};
+
+			test_it8951: it8951@9 {
+				compatible = "ite,it8951";
+				reg = <0x9>;
+				spi-max-frequency = <10000000>;
+				width = <1872>;
+				height = <1404>;
+				busy-gpios = <&test_gpio 0 0>;
+				reset-gpios = <&test_gpio 0 0>;
+				vcom-mv = <1400>;
+				initial-refresh-waveform = <0>;
+				refresh-waveform = <2>;
 			};
 		};
 

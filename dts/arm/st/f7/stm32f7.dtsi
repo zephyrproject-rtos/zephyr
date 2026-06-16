@@ -146,10 +146,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <1>;
 				/* maximum erase time (ms) for a 256K sector */
 				max-erase-time = <4000>;
@@ -318,7 +320,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 7>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -436,7 +438,7 @@
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
-			interrupts = <35 5>;
+			interrupts = <35 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
@@ -447,7 +449,7 @@
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <36 5>;
+			interrupts = <36 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
@@ -458,7 +460,7 @@
 			#size-cells = <0>;
 			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
-			interrupts = <51 5>;
+			interrupts = <51 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
@@ -469,7 +471,7 @@
 			#size-cells = <0>;
 			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
-			interrupts = <84 5>;
+			interrupts = <84 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
@@ -480,7 +482,7 @@
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
-			interrupts = <85 5>;
+			interrupts = <85 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
@@ -1069,26 +1071,30 @@
 		status = "disabled";
 	};
 
-	sai1_a: sai1@40015804 {
+	sai1: sai1@40015800 {
 		compatible = "st,stm32-sai";
 		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0x40015804 0x20>;
+		#size-cells = <1>;
+		reg = <0x40015800 0x400>;
+		ranges = <0x0 0x40015800 0x400>;
 		clocks = <&rcc STM32_CLOCK(APB2, 22)>;
-		dmas = <&dma2 1 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				   STM32_DMA_16BITS) 0>;
 		status = "disabled";
-	};
 
-	sai1_b: sai1@40015824 {
-		compatible = "st,stm32-sai";
-		#address-cells = <1>;
-		#size-cells = <0>;
-		reg = <0x40015824 0x20>;
-		clocks = <&rcc STM32_CLOCK(APB2, 22)>;
-		dmas = <&dma2 5 0 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-				   STM32_DMA_16BITS) 0>;
-		status = "disabled";
+		sai1_a: sai1a@4 {
+			reg = <0x4 0x20>;
+			dmas = <&dma2 1 0 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		sai1_b: sai1b@24 {
+			reg = <0x24 0x20>;
+			dmas = <&dma2 5 0 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };
 

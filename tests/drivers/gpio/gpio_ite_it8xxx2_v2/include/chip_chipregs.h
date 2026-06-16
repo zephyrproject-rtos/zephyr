@@ -17,4 +17,7 @@
 #define ECREG_u32(x)		(*((volatile unsigned long  *)fake_ecreg((intptr_t)x)))
 
 unsigned int *fake_ecreg(intptr_t r);
-uint8_t ite_intc_get_irq_num(void);
+
+typedef uint8_t ite_irq_t;
+
+ite_irq_t ite_intc_get_irq_num(void);

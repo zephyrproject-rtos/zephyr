@@ -32,6 +32,10 @@ const void *llext_loaded_sect_ptr(struct llext_loader *ldr, struct llext *ext, u
 static inline const char *llext_string(const struct llext_loader *ldr, const struct llext *ext,
 	enum llext_mem mem_idx, unsigned int idx)
 {
+	if (idx >= ext->mem_size[mem_idx]) {
+		return NULL;
+	}
+
 	return (const char *)ext->mem[mem_idx] + idx;
 }
 
@@ -55,6 +59,9 @@ static inline const char *llext_symbol_name(const struct llext_loader *ldr,
 					    const elf_sym_t *sym)
 {
 	if (ELF_ST_TYPE(sym->st_info) == STT_SECTION) {
+		if (sym->st_shndx >= ext->sect_cnt) {
+			return NULL;
+		}
 		return llext_section_name(ldr, ext, ext->sect_hdrs + sym->st_shndx);
 	} else {
 		return llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym->st_name);
@@ -75,6 +82,19 @@ int llext_read_symbol(struct llext_loader *ldr, struct llext *ext, const elf_rel
 		      elf_sym_t *sym);
 
 /** @endcond */
+
+/**
+ * @brief Architecture specific function for initializing the veneer table
+ *
+ * Called once before regions are allocated to allow the architecture to
+ * populate ldr->sects[LLEXT_MEM_VENEER] with the required size for
+ * trampoline stubs needed to extend the reach of out-of-range branches.
+ *
+ * @param[in] ldr  Extension loader data and context
+ * @param[in] ext  Extension being linked
+ * @returns 0 on success or a negative error code
+ */
+int arch_elf_veneer_init(struct llext_loader *ldr, struct llext *ext);
 
 /**
  * @brief Architecture specific function for local binding relocations

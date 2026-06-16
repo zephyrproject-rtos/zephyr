@@ -18,7 +18,7 @@
  * @brief Interfaces for display controllers.
  * @defgroup display_interface Display
  * @since 1.14
- * @version 0.9.0
+ * @version 0.10.0
  * @ingroup io_interfaces
  * @{
  *
@@ -216,10 +216,36 @@ enum display_pixel_format {
 	PIXEL_FORMAT_BGRA_8888 = BIT(12), /**< 32-bit BGRA */
 
 	/**
-	 * This and higher values are display specific.
-	 * Refer to the display header file.
+	 * @brief 4-bit indexed color format with 2 pixels packed per byte.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | IiiiJjjj | KkkkLlll | ...
+	 * @endcode
+	 *
+	 * The high nibble stores the left pixel and the low nibble stores the
+	 * right pixel. Palette semantics are display-specific.
 	 */
-	PIXEL_FORMAT_PRIV_START = (PIXEL_FORMAT_BGRA_8888 << 1),
+	PIXEL_FORMAT_I_4 = BIT(13), /**< Packed 4-bit indexed color */
+
+	/**
+	 * @brief 4-bit greyscale format with 2 pixels packed per byte.
+	 *
+	 * Below shows how data are organized in memory.
+	 *
+	 * @code{.unparsed}
+	 *   Byte 0   | Byte 1   |
+	 *   7......0   7......0
+	 * | GgggHhhh | IiiiJjjj | ...
+	 * @endcode
+	 *
+	 * The high nibble stores the left pixel and the low nibble stores the
+	 * right pixel.
+	 */
+	PIXEL_FORMAT_L_4 = BIT(14), /**< Packed 4-bit Grayscale/Luminance */
 };
 
 /**
@@ -227,8 +253,7 @@ enum display_pixel_format {
  *
  * This macro expands to the number of bits required for a given display
  * format. It can be used to allocate a framebuffer based on a given
- * display format type. This does not work with any private
- * pixel formats.
+ * display format type
  */
 #define DISPLAY_BITS_PER_PIXEL(fmt)						\
 	((((fmt & PIXEL_FORMAT_RGB_888) >> 0) * 24U) +				\
@@ -243,7 +268,10 @@ enum display_pixel_format {
 	(((fmt & PIXEL_FORMAT_BGR_888) >> 9) * 24U) +				\
 	(((fmt & PIXEL_FORMAT_ABGR_8888) >> 10) * 32U) +			\
 	(((fmt & PIXEL_FORMAT_RGBA_8888) >> 11) * 32U) +			\
-	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U))
+	(((fmt & PIXEL_FORMAT_BGRA_8888) >> 12) * 32U) +			\
+	(((fmt & PIXEL_FORMAT_I_4) >> 13) * 4U) +				\
+	(((fmt & PIXEL_FORMAT_L_4) >> 14) * 4U))
+
 /**
  * @brief Display screen information
  */
@@ -282,6 +310,22 @@ enum display_orientation {
 	DISPLAY_ORIENTATION_ROTATED_270, /**< Rotated 270 degrees clockwise */
 };
 
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
+
+/** @brief Structure representing a color palette entry in ARGB8888 format. */
+struct display_palette_color {
+	/** Blue component (0-255) */
+	uint8_t b;
+	/** Green component (0-255) */
+	uint8_t g;
+	/** Red component (0-255) */
+	uint8_t r;
+	/** Alpha component (0-255) */
+	uint8_t a;
+};
+
+#endif /* defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__) */
+
 /** @brief Structure holding display capabilities. */
 struct display_capabilities {
 	/** Display resolution in the X direction */
@@ -296,6 +340,10 @@ struct display_capabilities {
 	enum display_pixel_format current_pixel_format;
 	/** Current display orientation */
 	enum display_orientation current_orientation;
+#if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
+	/** Color palette supported by the display, indexed by pixel value */
+	struct display_palette_color color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
+#endif /* defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__) */
 };
 
 /** @brief Structure to describe display data buffer layout */
@@ -348,7 +396,6 @@ enum display_event_result {
 };
 
 /**
- * @typedef display_event_cb_t.
  *
  * @brief Called either in ISR context (if arg in_isr=true at register time,
  * see @ref display_register_event_cb ) or in thread context (if in_isr=false,
@@ -800,6 +847,8 @@ static inline int display_register_event_cb(const struct device *dev,
 					    uint32_t event_mask, bool in_isr,
 					    uint32_t *out_reg_handle)
 {
+	__ASSERT(cb != NULL, "Registration failed: callback function pointer is NULL");
+
 	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
 	if (api->register_event_cb == NULL) {

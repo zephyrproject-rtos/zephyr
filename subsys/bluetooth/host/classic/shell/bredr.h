@@ -15,6 +15,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-void role_changed(struct bt_conn *conn, uint8_t status);
+void br_role_changed(struct bt_conn *conn, uint8_t status);
+void br_packet_type_changed(struct bt_conn *conn, uint8_t status, uint16_t packet_type);
 
 #endif /* __BREDR_H */

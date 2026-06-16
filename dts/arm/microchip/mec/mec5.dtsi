@@ -267,10 +267,11 @@
 		};
 
 		timer0: timer@40000c00 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c00 0x20>;
 			interrupts = <136 0>;
-			girqs = <23 0>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 0)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(1, 30)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffff>;
@@ -278,10 +279,11 @@
 		};
 
 		timer1: timer@40000c20 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c20 0x20>;
 			interrupts = <137 0>;
-			girqs = <23 1>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 1)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(1, 31)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffff>;
@@ -289,10 +291,11 @@
 		};
 
 		timer2: timer@40000c40 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c40 0x20>;
 			interrupts = <138 0>;
-			girqs = <23 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 2)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 21)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffff>;
@@ -300,10 +303,11 @@
 		};
 
 		timer3: timer@40000c60 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c60 0x20>;
 			interrupts = <139 0>;
-			girqs = <23 3>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 3)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 22)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffff>;
@@ -311,10 +315,11 @@
 		};
 
 		timer4: timer@40000c80 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000c80 0x20>;
 			interrupts = <140 0>;
-			girqs = <23 4>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 4)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 23)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffffffff>;
@@ -322,10 +327,11 @@
 		};
 
 		timer5: timer@40000ca0 {
-			compatible = "microchip,xec-basic-timer";
+			compatible = "microchip,xec-timer";
 			reg = <0x40000ca0 0x20>;
 			interrupts = <141 0>;
-			girqs = <23 5>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 5)>;
+			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 24)>;
 			clock-frequency = <48000000>;
 			prescaler = <0>;
 			max-value = <0xffffffff>;
@@ -394,14 +400,19 @@
 		};
 
 		rtc0: rtc@400f5000 {
+			compatible = "microchip,xec-rtc";
 			reg = <0x400f5000 0x100>;
 			interrupts = <119 3>, <120 3>;
 			interrupt-names = "rtc", "rtc_alarm";
-			girqs = <21 8>, <21 9>;
+			girqs = <MCHP_XEC_ECIA(21, 8, 13, 119)
+				 MCHP_XEC_ECIA(21, 9, 13, 120)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(2, 18)>;
+			ldn = <20>;
 			status = "disabled";
 		};
 
 		bbram: bb-ram@4000a800 {
+			compatible = "microchip,xec-bbram";
 			reg = <0x4000a800 0x80>;
 			reg-names = "memory";
 			status = "disabled";
@@ -537,7 +548,8 @@
 		tach0: tach@40006000 {
 			reg = <0x40006000 0x10>;
 			interrupts = <71 3>;
-			girqs = <17 1>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 1)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 2)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -546,7 +558,8 @@
 		tach1: tach@40006010 {
 			reg = <0x40006010 0x10>;
 			interrupts = <72 3>;
-			girqs = <17 2>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 2)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 11)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -555,7 +568,8 @@
 		tach2: tach@40006020 {
 			reg = <0x40006020 0x10>;
 			interrupts = <73 3>;
-			girqs = <17 3>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 3)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 12)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -564,7 +578,8 @@
 		tach3: tach@40006030 {
 			reg = <0x40006030 0x10>;
 			interrupts = <159 3>;
-			girqs = <17 4>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 4)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 13)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -589,11 +604,14 @@
 		adc0: adc@40007c00 {
 			reg = <0x40007c00 0x90>;
 			interrupts = <78 3>, <79 3>;
-			girqs = <17 8>, <17 9>;
 			interrupt-names = "single", "repeat";
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(17, 8)>,
+				<MCHP_XEC_ECIA_GIRQ_ENC(17, 9)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 3)>;
 			status = "disabled";
 			#io-channel-cells = <1>;
 			clktime = <32>;
+			channels = <16>;
 		};
 
 		peci0: peci@40006400 {
@@ -790,22 +808,22 @@
 				girqs = <19 9>, <19 10>;
 				status = "disabled";
 			};
+		};
 
-			symcr: symcr@40100000 {
-				compatible = "microchip,xec-symcr";
-				reg = <0x40100000 0x1000>;
-				interrupts = <68 1>;
-				pcr = <MCHP_XEC_SCR_ENCODE(3, 26)>;
-				girqs = <MCHP_XEC_ECIA_GIRQ_ENC(16, 3)>;
-				status = "disabled";
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
+		symcr: symcr@40100000 {
+			compatible = "microchip,xec-symcr";
+			reg = <0x40100000 0x1000>;
+			interrupts = <68 1>;
+			pcr = <MCHP_XEC_SCR_ENCODE(3, 26)>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(16, 3)>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
 
-			rom_api: rom_api@1f000 {
-				reg = <0x1f000 0x1000>;
-				status = "disabled";
-			};
+		rom_api: rom_api@1f000 {
+			reg = <0x1f000 0x1000>;
+			status = "disabled";
 		};
 	};
 };

@@ -742,7 +742,27 @@ void bt_hci_role_change(struct net_buf *buf)
 		}
 	}
 
-	bt_conn_role_changed(conn, evt->status);
+	bt_conn_br_role_changed(conn, evt->status);
+
+	bt_conn_unref(conn);
+}
+
+void bt_hci_conn_pkt_type_changed(struct net_buf *buf)
+{
+	struct bt_hci_evt_conn_pkt_type_changed *evt = (void *)buf->data;
+	uint16_t handle = sys_le16_to_cpu(evt->handle);
+	uint16_t packet_type = sys_le16_to_cpu(evt->packet_type);
+	struct bt_conn *conn;
+
+	LOG_DBG("status 0x%02x handle %u packet_type 0x%04x", evt->status, handle, packet_type);
+
+	conn = bt_conn_lookup_handle(handle, BT_CONN_TYPE_BR);
+	if (conn == NULL) {
+		LOG_ERR("Can't find conn for handle %u", handle);
+		return;
+	}
+
+	bt_conn_br_packet_type_changed(conn, evt->status, packet_type);
 
 	bt_conn_unref(conn);
 }
@@ -991,7 +1011,7 @@ int bt_br_init(void)
 
 	rp = (void *)rsp->data;
 	default_link_policy_settings = rp->default_link_policy_settings;
-	net_buf_unref(rsp);
+	net_buf_drop(&rsp);
 
 	bool should_enable = IS_ENABLED(CONFIG_BT_DEFAULT_ROLE_SWITCH_ENABLE);
 	bool is_enabled = (default_link_policy_settings &

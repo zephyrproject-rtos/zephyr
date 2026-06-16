@@ -43,12 +43,23 @@ struct mctp_binding_usb {
 		STATE_WAIT_HDR_LEN,
 		STATE_DATA
 	} rx_state;
+	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_PACKET_SIZE(MCTP_USB_MAX_PACKET_LENGTH))]
+		PKTBUF_STORAGE_ALIGN;
 	/** @endcond INTERNAL_HIDDEN */
 };
 
+/**
+ * @brief MCTP USB class instance configuration
+ *
+ * Holds the USB interface descriptor parameters and the associated MCTP
+ * bus binding for a single MCTP USB class instance.
+ */
 struct mctp_usb_class_inst {
-	uint8_t sublcass;
+	/** MCTP subclass used in the USB interface descriptor */
+	uint8_t subclass;
+	/** MCTP protocol version used in the USB interface descriptor */
 	uint8_t mctp_protocol;
+	/** Pointer to the associated MCTP USB bus binding */
 	struct mctp_binding_usb *mctp_binding;
 };
 
@@ -72,6 +83,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 			.pkt_size = MCTP_PACKET_SIZE(MCTP_USB_MAX_PACKET_LENGTH),		\
 			.pkt_header = 0,							\
 			.pkt_trailer = 0,							\
+			.tx_storage = _name.tx_storage,						\
 			.start = mctp_usb_start,						\
 			.tx = mctp_usb_tx							\
 		},										\
@@ -82,7 +94,7 @@ int mctp_usb_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 	};											\
 												\
 	const STRUCT_SECTION_ITERABLE(mctp_usb_class_inst, mctp_usb_class_inst_##_name) = {	\
-		.sublcass = _subclass,								\
+		.subclass = _subclass,								\
 		.mctp_protocol = _protocol,							\
 		.mctp_binding = &_name,								\
 	};

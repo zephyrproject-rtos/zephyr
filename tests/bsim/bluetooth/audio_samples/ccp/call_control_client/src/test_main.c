@@ -5,6 +5,7 @@
  */
 
 #include <stddef.h>
+#include <zephyr/toolchain.h>
 
 #include "bs_types.h"
 #include "bs_tracing.h"
@@ -35,6 +36,8 @@ static void test_ccp_call_control_client_sample_init(void)
 
 static void test_ccp_call_control_client_sample_tick(bs_time_t HW_device_time)
 {
+	ARG_UNUSED(HW_device_time);
+
 	extern struct bt_ccp_call_control_client *call_control_client;
 
 	/* If discovery was a success then call_control_client is non-NULL - Use as pass criteria */

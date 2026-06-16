@@ -106,3 +106,10 @@ adp5360@9 {
 		charge-term-current-microamp = <5000>;
 	};
 };
+
+sy6974b@a {
+	compatible = "silergy,sy6974b";
+	reg = <0xa>;
+	constant-charge-current-max-microamp = <1500000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+};

@@ -20,6 +20,7 @@
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &user_button;
+		watchdog0 = &wdt0;
 	};
 
 	chosen {
@@ -52,6 +53,10 @@
 			label = "LED1";
 		};
 	};
+};
+
+&wdt0 {
+	status = "okay";
 };
 
 &uart0 {

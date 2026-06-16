@@ -471,7 +471,6 @@ struct mspi_callback_context {
 };
 
 /**
- * @typedef mspi_callback_handler_t
  * @brief Define the application callback handler function signature.
  *
  * @param mspi_cb_ctx Pointer to the MSPI callback context

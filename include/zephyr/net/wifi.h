@@ -117,10 +117,12 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WEP_OPEN,
 	/** WEP security with Shared Key authentication. */
 	WIFI_SECURITY_TYPE_WEP_SHARED,
+	/** Opportunistic Wireless Encryption (OWE) security. */
+	WIFI_SECURITY_TYPE_OWE,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
-	WIFI_SECURITY_TYPE_MAX = __WIFI_SECURITY_TYPE_AFTER_LAST - 1,
+	WIFI_SECURITY_TYPE_MAX = WIFI_SECURITY_TYPE_OWE,
 	WIFI_SECURITY_TYPE_UNKNOWN
 	/** @endcond */
 };
@@ -226,7 +228,7 @@ struct wifi_eap_cipher_config {
 	char *pairwise_cipher;
 	/** Group management cipher string. */
 	char *group_mgmt_cipher;
-	/** Used to confiure TLS features. */
+	/** Used to configure TLS features. */
 	char *tls_flags;
 };
 

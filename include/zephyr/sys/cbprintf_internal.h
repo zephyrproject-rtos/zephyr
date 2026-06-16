@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Internal helpers backing the cbprintf() implementation.
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_CBPRINTF_INTERNAL_H_
 #define ZEPHYR_INCLUDE_SYS_CBPRINTF_INTERNAL_H_
 
@@ -15,6 +20,8 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/arch/cpu.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /*
  * Special alignment cases
@@ -53,6 +60,8 @@
 #ifndef VA_STACK_ALIGN
 #define VA_STACK_ALIGN(type)	MAX(VA_STACK_MIN_ALIGN, __alignof__(type))
 #endif
+
+/** @endcond */
 
 static inline void z_cbprintf_wcpy(int *dst, int *src, size_t len)
 {
@@ -100,6 +109,22 @@ extern "C" {
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	z_cbprintf_cxx_is_pchar(x, (flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO)
 #else
+
+/*
+ * On platforms where wchar_t is 4 bytes (e.g. typedef int), wchar_t *
+ * aliases int * in _Generic, causing any int * argument to be falsely
+ * detected as a string pointer. Skip wchar_t associations in that case.
+ */
+#if __SIZEOF_WCHAR_T__ == 4
+#define Z_CBPRINTF_IS_PCHAR_WCHAR(flags)
+#else
+#define Z_CBPRINTF_IS_PCHAR_WCHAR(flags) \
+	wchar_t * : 1, \
+	const wchar_t * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
+	volatile wchar_t * : 1, \
+	const volatile wchar_t * : 1,
+#endif
+
 /* NOLINTBEGIN(misc-redundant-expression) */
 #define Z_CBPRINTF_IS_PCHAR(x, flags) \
 	_Generic(Z_ARGIFY(x), \
@@ -113,11 +138,7 @@ extern "C" {
 		const unsigned char * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
 		volatile unsigned char * : 1, \
 		const volatile unsigned char * : 1,\
-		/* wchar_t * */ \
-		wchar_t * : 1, \
-		const wchar_t * : ((flags) & CBPRINTF_PACKAGE_CONST_CHAR_RO) ? 0 : 1, \
-		volatile wchar_t * : 1, \
-		const volatile wchar_t * : 1, \
+		Z_CBPRINTF_IS_PCHAR_WCHAR(flags) \
 		default : \
 			0)
 /* NOLINTEND(misc-redundant-expression) */

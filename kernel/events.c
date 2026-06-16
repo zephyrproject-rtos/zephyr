@@ -22,7 +22,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/dlist.h>
@@ -33,6 +32,7 @@
 /* private kernel APIs */
 #include <wait_q.h>
 #include <ksched.h>
+#include <scheduler.h>
 
 #define K_EVENT_WAIT_ANY      0x00   /* Wait for any events */
 #define K_EVENT_WAIT_ALL      0x01   /* Wait for all events */
@@ -156,7 +156,7 @@ static int event_walk_op(struct k_thread *thread, void *data)
 		if (thread->event_options & K_EVENT_OPTION_CLEAR) {
 			event_data->clear_events |= match;
 		}
-		z_abort_thread_timeout(thread);
+		(void)z_try_abort_thread_timeout(thread);
 
 #ifndef CONFIG_WAITQ_SCALABLE
 		/*

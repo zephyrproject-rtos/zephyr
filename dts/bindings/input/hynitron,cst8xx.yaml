@@ -39,8 +39,10 @@ properties:
     type: int
     default: 48
     description:
-      Low-power scan wake-up threshold. Smaller = more sensitive. Range 1–255.
+      Low-power scan wake-up threshold. Smaller = more sensitive.
       The default value is specified in the data sheet.
+    min: 1
+    max: 255
 
   scan-win:
     type: int
@@ -50,21 +52,27 @@ properties:
       The datasheet is mentiones values from 0 to 3 as valid options with 3 as default.
       But you can go higher as it is an 8-bit register and higher values than 3 seem to
       work fine. They improve the sensitivity further at the cost of power consumption.
+    min: 0
+    max: 255
 
   scan-freq:
     type: int
     default: 7
     description:
-      Frequency for low-power scan. Smaller = more sensitive. Range 1–255.
+      Frequency for low-power scan. Smaller = more sensitive.
       The default value is specified in the data sheet.
+    min: 1
+    max: 255
 
   scan-i-dac:
     type: int
     default: 200
     description:
-      Current for low-power scan. Smaller = more sensitive. Range 1–255.
+      Current for low-power scan. Smaller = more sensitive.
       The default value is not specified in the data sheet. Instead, 200 is
       chosen as a reasonable default based on typical usage.
+    min: 1
+    max: 255
 
   auto-sleep-time:
     type: int

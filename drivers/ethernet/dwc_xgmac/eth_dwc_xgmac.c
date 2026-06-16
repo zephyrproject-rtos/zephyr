@@ -1044,13 +1044,11 @@ static void phy_link_state_change_callback(const struct device *phy_dev,
 		eth_dwc_xgmac_update_link_speed(mac_dev, dev_data->link_speed);
 		/* Set up link */
 		net_eth_carrier_on(dev_data->iface);
-		LOG_DBG("%s: Link up", mac_dev->name);
 
 	} else {
 		dev_data->link_speed = LINK_DOWN;
 		/* Announce link down status */
 		net_eth_carrier_off(dev_data->iface);
-		LOG_DBG("%s: Link down", mac_dev->name);
 	}
 }
 
@@ -1189,7 +1187,7 @@ static void eth_dwc_xgmac_iface_init(struct net_if *iface)
  * @param dev Pointer to the ethernet device
  * @retval    0 upon successful completion
  */
-static int eth_dwc_xgmac_start_device(const struct device *dev)
+static int eth_dwc_xgmac_start_device(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1267,7 +1265,7 @@ static int eth_dwc_xgmac_start_device(const struct device *dev)
  * @param dev Pointer to the ethernet device
  * @retval    0 upon successful completion
  */
-static int eth_dwc_xgmac_stop_device(const struct device *dev)
+static int eth_dwc_xgmac_stop_device(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_dwc_xgmac_config *dev_conf = (struct eth_dwc_xgmac_config *)dev->config;
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1394,7 +1392,7 @@ static int eth_dwc_xgmac_send(const struct device *dev, struct net_pkt *pkt)
 	(void)net_pkt_ref(pkt);
 	LOG_DBG("%s: %p packet referenced for tx", dev->name, pkt);
 	tdes3_fd_flg = XGMAC_TDES3_FD;
-	for (struct net_buf *frag = pkt->frags; frag; frag = frag->frags) {
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		ret = k_sem_take(&context.descmeta->free_tx_descs_sem, K_MSEC(1));
 		if (ret != 0) {
 			LOG_DBG("%s: enough free tx descriptors are not available", dev->name);
@@ -1521,7 +1519,9 @@ static inline void disable_filter_for_mac_addr(const struct device *dev, uint8_t
  *          (1) if existing configuration is equals to input configuration
  *         -ENOTSUP for invalid config type
  */
-static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_dwc_xgmac_set_config(const struct device *dev,
+				    struct net_if *iface __unused,
+				    enum ethernet_config_type type,
 				    const struct ethernet_config *config)
 {
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
@@ -1592,9 +1592,9 @@ static int eth_dwc_xgmac_set_config(const struct device *dev, enum ethernet_conf
  * @param dev Pointer to the ethernet device
  * @return Enumeration containing the current XGMAC device's capabilities
  */
-static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device *dev __unused,
+							    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
 	enum ethernet_hw_caps caps = (enum ethernet_hw_caps)0;
 
 	caps = (ETHERNET_LINK_1000BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE);
@@ -1626,7 +1626,8 @@ static enum ethernet_hw_caps eth_dwc_xgmac_get_capabilities(const struct device 
  * @param dev Pointer to the ethernet device
  * @return Pointer to the current XGMAC device's statistics data
  */
-static struct net_stats_eth *eth_dwc_xgmac_stats(const struct device *dev)
+static struct net_stats_eth *eth_dwc_xgmac_stats(const struct device *dev,
+						 struct net_if *iface __unused)
 {
 	struct eth_dwc_xgmac_dev_data *dev_data = (struct eth_dwc_xgmac_dev_data *)dev->data;
 

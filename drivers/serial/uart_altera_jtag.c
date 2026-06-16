@@ -411,18 +411,6 @@ static int uart_altera_jtag_irq_rx_ready(const struct device *dev)
 }
 
 /**
- * @brief Update cached contents of IIR
- *
- * @param dev UART device instance
- *
- * @return Always 1
- */
-static int uart_altera_jtag_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
-/**
  * @brief Check if any IRQ is pending
  *
  * @param dev UART device instance
@@ -505,7 +493,6 @@ static DEVICE_API(uart, uart_altera_jtag_driver_api) = {
 	.irq_rx_disable = uart_altera_jtag_irq_rx_disable,
 	.irq_rx_ready = uart_altera_jtag_irq_rx_ready,
 	.irq_is_pending = uart_altera_jtag_irq_is_pending,
-	.irq_update = uart_altera_jtag_irq_update,
 	.irq_callback_set = uart_altera_jtag_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };

@@ -423,6 +423,8 @@ rsource "Kconfig.logging"
 config BT_SHELL
 	bool "Bluetooth shell"
 	select SHELL
+	select SHELL_GETOPT
+	select GETOPT_LONG
 	select BT_PRIVATE_SHELL
 	select BT_TICKER_NEXT_SLOT_GET if BT_LL_SW_SPLIT
 	help

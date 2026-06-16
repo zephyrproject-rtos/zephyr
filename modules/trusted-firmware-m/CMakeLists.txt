@@ -3,19 +3,30 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# List of all partitions supported by TF-M
-# Name must match name in 'trusted-firmware-m/tools/tfm_manifest_list.yaml'
-set(TFM_VALID_PARTITIONS
-  TFM_PARTITION_NS_AGENT_MAILBOX
-  TFM_PARTITION_PROTECTED_STORAGE
-  TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
-  TFM_PARTITION_CRYPTO
-  TFM_PARTITION_PLATFORM
-  TFM_PARTITION_INITIAL_ATTESTATION
-  TFM_PARTITION_FIRMWARE_UPDATE
-  )
-
 if(CONFIG_BUILD_WITH_TFM)
+
+  macro(kconfig_bool_to_tfm kconfig_option tfm_option)
+    if(${kconfig_option})
+      set(value ON)
+    else()
+      set(value OFF)
+    endif()
+    list(APPEND TFM_CMAKE_ARGS -D${tfm_option}=${value})
+  endmacro()
+
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_PROTECTED_STORAGE
+                             TFM_PARTITION_PROTECTED_STORAGE)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_INTERNAL_TRUSTED_STORAGE
+                             TFM_PARTITION_INTERNAL_TRUSTED_STORAGE)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_CRYPTO
+                             TFM_PARTITION_CRYPTO)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_PLATFORM
+                             TFM_PARTITION_PLATFORM)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION
+                             TFM_PARTITION_INITIAL_ATTESTATION)
+  kconfig_bool_to_tfm(CONFIG_TFM_PARTITION_FIRMWARE_UPDATE
+                             TFM_PARTITION_FIRMWARE_UPDATE)
+
   # PSA API awareness for the Non-Secure application
   target_compile_definitions(app PRIVATE "TFM_PSA_API")
 
@@ -36,30 +47,27 @@ if(CONFIG_BUILD_WITH_TFM)
   else() # CONFIG_TFM_IPC
     list(APPEND TFM_CMAKE_ARGS -DCONFIG_TFM_SPM_BACKEND="IPC")
   endif()
-  if(CONFIG_TFM_REGRESSION_S)
-    list(APPEND TFM_CMAKE_ARGS -DTEST_S=ON)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_S_REG_TEST:BOOL=ON)
-  endif()
-  if(CONFIG_TFM_REGRESSION_NS)
-    list(APPEND TFM_CMAKE_ARGS -DTEST_NS=ON)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_NS_REG_TEST:BOOL=ON)
-  endif()
   if(CONFIG_TFM_BL2)
     list(APPEND TFM_CMAKE_ARGS -DBL2=TRUE)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_S=${CONFIG_TFM_IMAGE_VERSION_S})
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_VERSION_NS=${CONFIG_TFM_IMAGE_VERSION_NS})
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_SIGNATURE_TYPE=${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE})
 
-    # TF-M's config/check_config.cmake requires MCUBOOT_BUILTIN_KEY=OFF for RSA
-    # and MCUBOOT_USE_PSA_CRYPTO for EC-P. The others are dependencies needed
-    # for either the build or the boot to succeed.
-    if(${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^RSA")
+    # Configure which format to include the public key in the image manifest.
+    #
+    # Note: we disable MCUBOOT_BUILTIN_KEY because starting from TF-M v2.3
+    # this would mean that the key is being passed through key ID. Currently
+    # we don't support this in Zephyr because this requires an extra patch
+    # (provided by TF-M) to be applied in MCUboot, but this has not been
+    # accepted on upstream MCUboot (which is the one used in Zephyr).
+    if(${CONFIG_TFM_PUBLIC_KEY_FORMAT_FULL})
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=OFF)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=ON)
-    elseif(${CONFIG_TFM_MCUBOOT_SIGNATURE_TYPE} MATCHES "^EC-P")
-      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_USE_PSA_CRYPTO=ON)
-      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=ON)
+      set(TFM_PUBLIC_KEY_FORMAT full)
+    else()  # CONFIG_TFM_PUBLIC_KEY_FORMAT_HASH
+      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_BUILTIN_KEY=OFF)
       list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_HW_KEY=OFF)
+      set(TFM_PUBLIC_KEY_FORMAT hash)
     endif()
 
     foreach(SUFFIX IN ITEMS "S" "NS")
@@ -97,45 +105,39 @@ if(CONFIG_BUILD_WITH_TFM)
     list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_IMAGE_NUMBER=${CONFIG_TFM_MCUBOOT_IMAGE_NUMBER})
   endif()
 
-  if(CONFIG_TFM_DUMMY_PROVISIONING)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=ON)
-  else()
-    list(APPEND TFM_CMAKE_ARGS -DTFM_DUMMY_PROVISIONING=OFF)
-  endif()
+  kconfig_bool_to_tfm(CONFIG_TFM_DUMMY_PROVISIONING TFM_DUMMY_PROVISIONING)
 
-  if(CONFIG_TFM_EXCEPTION_INFO_DUMP)
-    list(APPEND TFM_CMAKE_ARGS -DTFM_EXCEPTION_INFO_DUMP=ON)
-  else()
-    list(APPEND TFM_CMAKE_ARGS -DTFM_EXCEPTION_INFO_DUMP=OFF)
-  endif()
+  kconfig_bool_to_tfm(CONFIG_TFM_EXCEPTION_INFO_DUMP TFM_EXCEPTION_INFO_DUMP)
+
+  kconfig_bool_to_tfm(CONFIG_TFM_PS_ROLLBACK_PROTECTION PS_ROLLBACK_PROTECTION)
 
   if(CONFIG_TFM_BL2)
     if(CONFIG_TFM_BL2_LOG_LEVEL_DEBUG)
-      set(TFM_BL2_LOG_LEVEL "DEBUG")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_VERBOSE")
     elseif(CONFIG_TFM_BL2_LOG_LEVEL_INFO)
-      set(TFM_BL2_LOG_LEVEL "INFO")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_INFO")
     elseif(CONFIG_TFM_BL2_LOG_LEVEL_WARNING)
-      set(TFM_BL2_LOG_LEVEL "WARNING")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_WARNING")
     elseif(CONFIG_TFM_BL2_LOG_LEVEL_ERROR)
-      set(TFM_BL2_LOG_LEVEL "ERROR")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_ERROR")
     elseif(CONFIG_TFM_BL2_LOG_LEVEL_OFF OR CONFIG_TFM_LOG_LEVEL_SILENCE)
-      set(TFM_BL2_LOG_LEVEL "OFF")
+      set(TFM_BL2_LOG_LEVEL "LOG_LEVEL_NONE")
     endif()
 
     if(DEFINED TFM_BL2_LOG_LEVEL)
       # BL2 uses MCUBOOT_LOG_LEVEL configuration
-      list(APPEND TFM_CMAKE_ARGS -DMCUBOOT_LOG_LEVEL=${TFM_BL2_LOG_LEVEL})
+      list(APPEND TFM_CMAKE_ARGS -DTFM_BL2_LOG_LEVEL=${TFM_BL2_LOG_LEVEL})
     endif()
   endif()
 
   if(CONFIG_TFM_PARTITION_LOG_LEVEL_DEBUG)
-    set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_DEBUG")
+    set(TFM_PARTITION_LOG_LEVEL "LOG_LEVEL_VERBOSE")
   elseif(CONFIG_TFM_PARTITION_LOG_LEVEL_INFO)
-    set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_INFO")
+    set(TFM_PARTITION_LOG_LEVEL "LOG_LEVEL_INFO")
   elseif(CONFIG_TFM_PARTITION_LOG_LEVEL_ERROR)
-    set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_ERROR")
+    set(TFM_PARTITION_LOG_LEVEL "LOG_LEVEL_ERROR")
   elseif(CONFIG_TFM_PARTITION_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
-    set(TFM_PARTITION_LOG_LEVEL "TFM_PARTITION_LOG_LEVEL_SILENCE")
+    set(TFM_PARTITION_LOG_LEVEL "LOG_LEVEL_NONE")
   endif()
 
   if(DEFINED TFM_PARTITION_LOG_LEVEL)
@@ -143,13 +145,13 @@ if(CONFIG_BUILD_WITH_TFM)
   endif()
 
   if(CONFIG_TFM_SPM_LOG_LEVEL_DEBUG)
-    set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_DEBUG")
+    set(TFM_SPM_LOG_LEVEL "LOG_LEVEL_VERBOSE")
   elseif(CONFIG_TFM_SPM_LOG_LEVEL_INFO)
-    set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_INFO")
+    set(TFM_SPM_LOG_LEVEL "LOG_LEVEL_INFO")
   elseif(CONFIG_TFM_SPM_LOG_LEVEL_ERROR)
-    set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_ERROR")
+    set(TFM_SPM_LOG_LEVEL "LOG_LEVEL_ERROR")
   elseif(CONFIG_TFM_SPM_LOG_LEVEL_SILENCE OR CONFIG_TFM_LOG_LEVEL_SILENCE)
-    set(TFM_SPM_LOG_LEVEL "TFM_SPM_LOG_LEVEL_SILENCE")
+    set(TFM_SPM_LOG_LEVEL "LOG_LEVEL_NONE")
   endif()
 
   if(DEFINED TFM_SPM_LOG_LEVEL)
@@ -161,17 +163,6 @@ if(CONFIG_BUILD_WITH_TFM)
   else()
     list(APPEND TFM_CMAKE_ARGS -DSECURE_UART1=0)
   endif()
-
-  # Enable TFM partitions as specified in Kconfig
-  foreach(partition ${TFM_VALID_PARTITIONS})
-    if(CONFIG_${partition})
-      # list(APPEND TFM_ENABLED_PARTITIONS_ARG ${partition})
-      set(val "ON")
-    else()
-      set(val "OFF")
-    endif()
-    list(APPEND TFM_CMAKE_ARGS -D${partition}=${val})
-  endforeach()
 
   set(TFM_BINARY_DIR ${CMAKE_BINARY_DIR}/tfm)
 
@@ -241,10 +232,8 @@ if(CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "Unsupported ZEPHYR_TOOLCHAIN_VARIANT: ${ZEPHYR_TOOLCHAIN_VARIANT}")
   endif()
 
-  if(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND CONFIG_TFM_QCBOR_PATH STREQUAL "")
-    # TODO: Remove this when QCBOR licensing issues w/t_cose have been resolved,
-    # or only allow it when 'QCBOR_PATH' is set to a local path where QCBOR has
-    # been manually downloaded by the user before starting the build.
+  if(CONFIG_TFM_PARTITION_INITIAL_ATTESTATION AND
+     (CONFIG_TFM_QCBOR_PATH STREQUAL "" OR CONFIG_TFM_T_COSE_PATH STREQUAL ""))
     message(FATAL_ERROR "CONFIG_TFM_PARTITION_INITIAL_ATTESTATION is not available "
       "with TF-M due to licensing issues with a dependent library. This "
       "restriction will be removed once licensing issues have been resolved."
@@ -288,10 +277,26 @@ if(CONFIG_BUILD_WITH_TFM)
     )
   endif()
 
-  if(CONFIG_SOC_SERIES_PSE84)
-    include(${ZEPHYR_BASE}/soc/infineon/edge/pse84/pse84_metadata.cmake)
-    list(APPEND TFM_CMAKE_ARGS -DIFX_EPC=epc2)
+  # By default TF-M installs TF-PSA-Crypto include files in the build directory,
+  # but this will duplicate what's already provided by the TF-PSA-Crypto library
+  # itself. Disable this, unless CONFIG_TFM_USE_NS_APP is set because in that
+  # case the NS app is built in a completely different way than what Zephyr does.
+  if(NOT CONFIG_TFM_USE_NS_APP)
+    list(APPEND TFM_CMAKE_ARGS -DTFM_INSTALL_TF_PSA_CRYPTO_HEADERS=OFF)
   endif()
+
+  # Prevent TF-M's CMake build system from signing images.
+  # Zephyr does not follow the official TF-M build pattern [1] and instead it
+  # reimplements some steps including the signature. This is done below through
+  # the "wrapper.py" Python script.
+  # As a consequence we don't want TF-M to sign images.
+  # [1]: https://tf-m.docs.trustedfirmware.org/en/latest/getting_started/index.html#build-an521-regression-sample
+  list(APPEND TFM_CMAKE_ARGS -DPLATFORM_DEFAULT_IMAGE_SIGNING=OFF)
+  list(APPEND TFM_CMAKE_ARGS -DTFM_MERGE_HEX_FILES=OFF)
+  # This is Zephyr's custom addition to TF-M build system. We need TF-M to
+  # keep generating a couple of object files which are required to sign
+  # images.
+  list(APPEND TFM_CMAKE_ARGS -DTFM_CREATE_SIGNING_LAYOUT_OBJECTS=ON)
 
   file(MAKE_DIRECTORY ${TFM_BINARY_DIR})
   add_custom_target(tfm_cmake
@@ -310,7 +315,7 @@ if(CONFIG_BUILD_WITH_TFM)
       -DPython3_EXECUTABLE=${Python3_EXECUTABLE}
       ${TFM_CMAKE_ARGS}
       $<GENEX_EVAL:$<TARGET_PROPERTY:zephyr_property_target,TFM_CMAKE_OPTIONS>>
-      -DMBEDCRYPTO_PATH=$<IF:$<BOOL:$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>>,$<TARGET_PROPERTY:zephyr_property_target,TFM_MBEDCRYPTO_PATH>,${ZEPHYR_MBEDTLS_3_6_MODULE_DIR}>
+      -DTF_PSA_CRYPTO_PATH=${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}
       -DCMSIS_PATH=${ZEPHYR_CMSIS_6_MODULE_DIR}
       ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}
     WORKING_DIRECTORY ${TFM_BINARY_DIR}
@@ -448,12 +453,6 @@ if(CONFIG_BUILD_WITH_TFM)
     set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot")
   endif()
 
-  # Configure which format (full or hash) to include the public key in
-  # the image manifest
-  if(NOT DEFINED TFM_PUBLIC_KEY_FORMAT)
-    set(TFM_PUBLIC_KEY_FORMAT "full")
-  endif()
-
   if(DEFINED TFM_HEX_BASE_ADDRESS_S)
     set(HEX_ADDR_ARGS_S "--hex-addr=${TFM_HEX_BASE_ADDRESS_S}")
   endif()
@@ -559,7 +558,7 @@ if(CONFIG_BUILD_WITH_TFM)
       # it gets used over the system imgtool. Used so that imgtool from upstream
       # mcuboot is preferred over system imgtool
       ${CMAKE_COMMAND} -E env PYTHONPATH=${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts
-      ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper/wrapper.py
+      ${PYTHON_EXECUTABLE} ${TFM_MCUBOOT_DIR}/scripts/wrapper.py
       --layout ${layout_file}
       -k ${CONFIG_TFM_KEY_FILE_${TFM_SIGN_ARG_SUFFIX}}
       --public-key-format ${TFM_PUBLIC_KEY_FORMAT}

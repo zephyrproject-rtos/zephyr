@@ -5,6 +5,7 @@
  */
 #include <stdint.h>
 
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>

@@ -566,7 +566,7 @@ static int mlx90394_init(const struct device *dev)
 	int rc;
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 

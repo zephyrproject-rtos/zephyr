@@ -8,7 +8,7 @@ import os
 import sys
 
 import yaml
-from github import Auth, Github
+from github import Auth, Github, GithubException
 
 
 def load_areas(filename: str):
@@ -24,19 +24,38 @@ def set_or_empty(d, key):
 
 
 def check_github_access(usernames, repo_fullname, token):
-    """Check if each username has at least Triage access to the repo."""
+    """Check if each username has at least Write access to the repo."""
     gh = Github(auth=Auth.Token(token))
-    repo = gh.get_repo(repo_fullname)
-    missing_access = set()
-    for username in usernames:
-        try:
+    missing_access = set(usernames)
+    try:
+        repo = gh.get_repo(repo_fullname)
+        for username in usernames:
             collab = repo.get_collaborator_role_name(username)
             # Roles: admin, maintain, write, triage, read
-            if collab not in ("admin", "maintain", "write", "triage"):
-                missing_access.add(username)
-        except Exception:
-            missing_access.add(username)
+            if collab in ("admin", "maintain", "write", "triage"):
+                missing_access.remove(username)
+    except GithubException as e:
+        print(e)
+
     return missing_access
+
+
+def _esc(msg: str) -> str:
+    return msg.replace('%', '%25').replace('\n', '%0A').replace('\r', '%0D')
+
+
+def annotate(severity, title, file, line, message):
+    """
+    Emit a GitHub Actions workflow command annotation.
+    https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
+    """
+    msg = _esc(message)
+    notice = (
+        f'::{severity} file={file}'
+        + (f',line={line}' if line is not None else '')
+        + f',title={title}::{msg}'
+    )
+    print(notice)
 
 
 def compare_areas(old, new, repo_fullname=None, token=None):
@@ -157,39 +176,33 @@ def compare_areas(old, new, repo_fullname=None, token=None):
     else:
         print("Some added maintainers or collaborators do not have sufficient access.")
 
-        # --- GitHub Actions inline annotation ---
-        # Try to find the line number in the new file for each missing user
-        def find_line_for_user(yaml_file, user_set):
-            """Return a dict of user -> line number in yaml_file for missing users."""
-            user_lines = {}
-            try:
-                with open(yaml_file) as f:
-                    lines = f.readlines()
-                for idx, line in enumerate(lines, 1):
-                    for user in user_set:
-                        if user in line:
-                            user_lines[user] = idx
-                return user_lines
-            except Exception:
-                return {}
-
+        # Find the line number in the new file for each missing user
         all_missing_users = missing_maint | missing_collab
-        user_lines = find_line_for_user(args.new, all_missing_users)
+        user_lines = {}
+        try:
+            with open(args.new) as f:
+                lines = f.readlines()
+            for idx, line in enumerate(lines, 1):
+                for user in all_missing_users:
+                    if user in line and user not in user_lines:
+                        user_lines[user] = idx
+        except OSError:
+            pass
 
-        for user, line in user_lines.items():
-            print(
-                f"::error file={args.new},line={line},title=User lacks access::"
-                f"{user} does not have needed access level to {repo_fullname}"
+        # Use the canonical repo path (MAINTAINERS.yml) so GitHub Actions
+        # can resolve the annotation to the correct file in the PR diff.
+        canonical = os.path.basename(args.old)
+
+        for user in sorted(all_missing_users):
+            line = user_lines.get(user)
+            annotate(
+                "warning",
+                "User lacks access",
+                canonical,
+                line,
+                f"{user} does not have the required access level to {repo_fullname}. "
+                "This is a warning only and does not block merging.",
             )
-
-        # For any missing users not found in the file, print a general error
-        for user in sorted(all_missing_users - set(user_lines)):
-            print(
-                f"::error title=User lacks access::{user} does not have needed "
-                f"access level to {repo_fullname}"
-            )
-
-        sys.exit(1)
 
 
 def main():

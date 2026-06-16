@@ -42,11 +42,11 @@
 
 &enet {
 	status = "okay";
+	pinctrl-0 = <&pinmux_enet>;
+	pinctrl-names = "default";
 };
 
 &enet_mac {
-	pinctrl-0 = <&pinmux_enet>;
-	pinctrl-names = "default";
 	phy-handle = <&phy>;
 	zephyr,random-mac-address;
 	phy-connection-type = "rgmii";

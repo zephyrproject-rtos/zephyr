@@ -839,6 +839,18 @@ Here are kconfig options related to dictionary-based logging:
   - :kconfig:option:`CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_BIN` tells
     the UART backend to output binary data.
 
+- The RTT backend can also be used for dictionary-based logging:
+
+  - :kconfig:option:`CONFIG_LOG_BACKEND_RTT` enables the RTT backend.
+
+  - :kconfig:option:`CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY` enables
+    dictionary-based output for the RTT backend. Use together with
+    :kconfig:option:`CONFIG_USE_SEGGER_RTT`.
+
+  - :kconfig:option:`CONFIG_LOG_BACKEND_RTT_OUTPUT_DICTIONARY_HEX` tells
+    the RTT backend to output hexadecimal characters for dictionary based
+    logging.
+
 
 Usage
 -----
@@ -849,7 +861,10 @@ in the build directory. This database file contains information for the parser
 to correctly parse the log data. Note that this database file only works
 with the same build, and cannot be used for any other builds.
 
-To use the log parser:
+Offline Parsing
+^^^^^^^^^^^^^^^
+
+To parse a previously captured log file:
 
 .. code-block:: console
 
@@ -862,8 +877,54 @@ hexadecimal characters
 (e.g. when ``CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX=y``). This tells
 the parser to convert the hexadecimal characters to binary before parsing.
 
-Please refer to the :zephyr:code-sample:`logging-dictionary` sample to learn more on how to use
-the log parser.
+Live Parsing
+^^^^^^^^^^^^
+
+For real-time decoding of dictionary-based log output, use the live log parser.
+It connects to a running device and continuously decodes binary log data as it
+arrives. Note that the live parser only supports binary dictionary output
+(not hex-encoded). The live parser supports three input modes:
+
+**Serial (UART):**
+
+.. code-block:: console
+
+  ./scripts/logging/dictionary/live_log_parser.py <build dir>/log_dictionary.json serial <port> <baudrate>
+
+For example, to read from ``/dev/ttyACM0`` at 115200 baud:
+
+.. code-block:: console
+
+  ./scripts/logging/dictionary/live_log_parser.py build/zephyr/log_dictionary.json serial /dev/ttyACM0 115200
+
+**JLink RTT:**
+
+.. code-block:: console
+
+  ./scripts/logging/dictionary/live_log_parser.py <build dir>/log_dictionary.json jlink-rtt <device_name>
+
+For example, to read RTT output from an nRF5340:
+
+.. code-block:: console
+
+  ./scripts/logging/dictionary/live_log_parser.py build/zephyr/log_dictionary.json jlink-rtt nrf5340_xxaa_app
+
+The JLink RTT mode requires the ``pylink-square`` Python package
+(``pip install pylink-square``). Optional arguments include ``--channel`` to
+select the RTT channel (default: 0), ``--speed`` to set the connection speed,
+and ``--block-address`` to specify the RTT control block address in hex.
+
+**File / stdin:**
+
+.. code-block:: console
+
+  ./scripts/logging/dictionary/live_log_parser.py <build dir>/log_dictionary.json file <filepath>
+
+When ``<filepath>`` is omitted, the parser reads from stdin, which allows piping
+binary data directly into it.
+
+Please refer to the :zephyr:code-sample:`logging-dictionary` sample for more
+examples on using the log parsers.
 
 
 Recommendations and limitations

@@ -1,7 +1,4 @@
-.. _niosv_g:
-
-INTEL FPGA niosv_g
-####################
+.. zephyr:board:: niosv_g
 
 Overview
 ********
@@ -13,6 +10,19 @@ niosv_g board is based on Intel FPGA Design Store Nios® V/g Hello World Example
 	Nios® V/g Processor Intel® FPGA IP
 	JTAG UART Intel® FPGA IP
 	On-Chip Memory Intel® FPGA IP
+
+Hardware
+********
+
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
 
 Nios® V/g hello world example design system
 ===========================================

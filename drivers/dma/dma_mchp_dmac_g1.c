@@ -35,12 +35,6 @@ LOG_MODULE_REGISTER(dma_mchp_dmac_g1, CONFIG_DMA_LOG_LEVEL);
 #define TIMEOUT_VALUE_US 1000
 #define DELAY_US         2
 
-enum dma_mchp_int_sts {
-	DMA_MCHP_INT_ERROR = -1,
-	DMA_MCHP_INT_SUCCESS = 0,
-	DMA_MCHP_INT_SUSPENDED = 1,
-};
-
 enum dma_mchp_ch_state {
 	DMA_MCHP_CH_IDLE,
 	DMA_MCHP_CH_PENDING,
@@ -90,30 +84,6 @@ struct dma_mchp_dev_data {
 	struct dma_mchp_dmac *dmac_desc_data;
 	struct dma_mchp_channel_config *dma_channel_config;
 };
-
-static int8_t dmac_interrupt_handle_status(dmac_registers_t *dmac_reg, int *channel)
-{
-	/* Read interrupt status */
-	uint16_t pend = dmac_reg->DMAC_INTPEND;
-	int8_t interrupt_status_code;
-
-	/* Get the channel number */
-	*channel = (pend & DMAC_INTPEND_ID_Msk) >> DMAC_INTPEND_ID_Pos;
-
-	/* Acknowledge all interrupts */
-	dmac_reg->DMAC_INTPEND = pend;
-
-	/* Determine the status code */
-	if (pend & DMAC_INTPEND_TERR_Msk) {
-		interrupt_status_code = DMA_MCHP_INT_ERROR;
-	} else if (pend & DMAC_INTPEND_TCMPL_Msk) {
-		interrupt_status_code = DMA_MCHP_INT_SUCCESS;
-	} else {
-		interrupt_status_code = DMA_MCHP_INT_SUCCESS;
-	}
-
-	return interrupt_status_code;
-}
 
 static inline void dmac_controller_reset(dmac_registers_t *dmac_reg)
 {
@@ -341,13 +311,10 @@ static inline void dmac_desc_init(const struct device *dev)
 	DMAC_REG->DMAC_WRBADDR = (uintptr_t)data->descriptors_wb;
 }
 
-static int8_t dmac_desc_block_config(struct dma_block_config *block, void *desc_ptr,
-				     void *pre_desc_ptr, uint32_t src_data_size)
+static int8_t dmac_desc_block_config(struct dma_block_config *block,
+				     dmac_descriptor_registers_t *desc,
+				     dmac_descriptor_registers_t *pre_desc, uint32_t src_data_size)
 {
-	/* Descriptors typecast */
-	dmac_descriptor_registers_t *desc = (dmac_descriptor_registers_t *)desc_ptr;
-	dmac_descriptor_registers_t *pre_desc = (dmac_descriptor_registers_t *)pre_desc_ptr;
-
 	uint16_t btctrl = 0;
 
 	/* Set the DMAC Block Control */
@@ -413,6 +380,7 @@ static int8_t dmac_desc_reload_block(struct dma_mchp_dmac *data, uint32_t channe
 				     uint32_t dst, size_t size)
 {
 	dmac_descriptor_registers_t *desc = &data->descriptors[channel];
+	dmac_descriptor_registers_t *desc_wb = &data->descriptors_wb[channel];
 
 	/* check if already multiple blocks are configured */
 	if (desc->DMAC_DESCADDR != 0) {
@@ -448,6 +416,11 @@ static int8_t dmac_desc_reload_block(struct dma_mchp_dmac *data, uint32_t channe
 	} else {
 		desc->DMAC_DSTADDR = dst;
 	}
+
+	/* Sync the WB Register */
+	desc_wb->DMAC_DSTADDR = desc->DMAC_DSTADDR;
+	desc_wb->DMAC_SRCADDR = desc->DMAC_SRCADDR;
+	desc_wb->DMAC_BTCNT = desc->DMAC_BTCNT;
 
 	return 0;
 }
@@ -536,16 +509,19 @@ static int dma_mchp_setup_channel(const struct device *dev, uint32_t channel,
 	return 0;
 }
 
-/* Build descriptor chain */
 static int dma_mchp_desc_setup(struct dma_mchp_dev_data *dev_data, struct dma_config *config,
-			       void *base_desc)
+			       dmac_descriptor_registers_t *base_desc)
 {
 	struct dma_block_config *block = config->head_block;
-	void *desc = base_desc;
 	int ret;
 
+	if (config->block_count > 1) {
+		LOG_ERR("Multi block transfers not supported");
+		return -ENOTSUP;
+	}
+
 	/* Configure head block */
-	ret = dmac_desc_block_config(block, desc, NULL, config->source_data_size);
+	ret = dmac_desc_block_config(block, base_desc, NULL, config->source_data_size);
 	if (ret < 0) {
 		LOG_ERR("DMA Error: Block 1 configuration failed!");
 	}
@@ -563,23 +539,28 @@ static int dma_mchp_desc_setup(struct dma_mchp_dev_data *dev_data, struct dma_co
  */
 static void dma_mchp_isr(const struct device *dev)
 {
-	/* Retrieve device runtime data */
-	struct dma_mchp_dev_data *const dev_data = ((struct dma_mchp_dev_data *const)(dev)->data);
-	struct dma_mchp_channel_config *channel_config;
-	uint32_t channel;
+	struct dma_mchp_dev_data *const dev_data = dev->data;
+	uint16_t pend = DMAC_REG->DMAC_INTPEND;
+	uint32_t channel = (pend & DMAC_INTPEND_ID_Msk) >> DMAC_INTPEND_ID_Pos;
 
-	/* Handle interrupt and get status */
-	int status = dmac_interrupt_handle_status(DMAC_REG, &channel);
+	/* Acknowledge interrupt */
+	DMAC_REG->DMAC_INTPEND = pend;
 
-	channel_config = &dev_data->dma_channel_config[channel];
+	/* Ignore non TC / ERR interrupts */
+	if ((pend & (DMAC_INTPEND_TERR_Msk | DMAC_INTPEND_TCMPL_Msk)) == 0) {
+		return;
+	}
 
-	if (channel_config->cb != NULL) {
-		if (status == DMA_MCHP_INT_SUCCESS) {
-			channel_config->cb(dev, channel_config->user_data, channel,
-					   DMA_STATUS_COMPLETE);
-		} else {
-			channel_config->cb(dev, channel_config->user_data, channel, -1);
-		}
+	struct dma_mchp_channel_config *cfg = &dev_data->dma_channel_config[channel];
+
+	if (cfg->cb == NULL) {
+		return;
+	}
+
+	if (pend & DMAC_INTPEND_TERR_Msk) {
+		cfg->cb(dev, cfg->user_data, channel, -EIO);
+	} else {
+		cfg->cb(dev, cfg->user_data, channel, DMA_STATUS_COMPLETE);
 	}
 }
 
@@ -602,6 +583,8 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 {
 	struct dma_mchp_dev_data *const dev_data = dev->data;
 	struct dma_mchp_channel_config *channel_config;
+	dmac_descriptor_registers_t *desc;
+	dmac_descriptor_registers_t *desc_wb;
 	int ret;
 
 	ret = dma_mchp_validate(dev, channel, config);
@@ -616,12 +599,18 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 		return ret;
 	}
 
-	void *base_desc = &dev_data->dmac_desc_data->descriptors[channel];
+	desc = &dev_data->dmac_desc_data->descriptors[channel];
 
-	ret = dma_mchp_desc_setup(dev_data, config, base_desc);
+	ret = dma_mchp_desc_setup(dev_data, config, desc);
 	if (ret != 0) {
 		return ret;
 	}
+
+	/* Sync write-back descriptor with base descriptor */
+	desc_wb = &dev_data->dmac_desc_data->descriptors_wb[channel];
+	desc_wb->DMAC_SRCADDR = desc->DMAC_SRCADDR;
+	desc_wb->DMAC_DSTADDR = desc->DMAC_DSTADDR;
+	desc_wb->DMAC_BTCNT = desc->DMAC_BTCNT;
 
 	channel_config = &dev_data->dma_channel_config[channel];
 	channel_config->cb = config->dma_callback;

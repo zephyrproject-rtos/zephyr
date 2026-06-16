@@ -85,7 +85,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44004800 0x400>;
-			interrupts = <127 1>;
+			interrupts = <127 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -97,7 +97,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44004c00 0x400>;
-			interrupts = <128 1>;
+			interrupts = <128 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -109,7 +109,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44005000 0x400>;
-			interrupts = <129 1>;
+			interrupts = <129 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -121,33 +121,63 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44005400 0x400>;
-			interrupts = <130 1>;
+			interrupts = <130 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
 
-		sai1_a: sai1@40015404 {
+		sai1: sai1@40015400 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015404 0x20>;
+			#size-cells = <1>;
+			reg = <0x40015400 0x400>;
+			ranges = <0x0 0x40015400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
-			dmas = <&gpdma1 1 53 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					      STM32_DMA_16BITS)>;
+				 <&rcc STM32_SRC_PLL1_Q SAI1_SEL(0)>;
 			status = "disabled";
+
+			sai1_a: sai1a@4 {
+				reg = <0x4 0x20>;
+				dmas = <&gpdma1 1 53 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai1_b: sai1b@24 {
+				reg = <0x24 0x20>;
+				dmas = <&gpdma1 0 54 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
-		sai1_b: sai1@40015424 {
+		sai2: sai2@40015800 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
-			#size-cells = <0>;
-			reg = <0x40015424 0x20>;
+			#size-cells = <1>;
+			reg = <0x40015800 0x400>;
+			ranges = <0x0 0x40015800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
-				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
-			dmas = <&gpdma1 0 54 (STM32_DMA_MODE_NORMAL | STM32_DMA_PRIORITY_HIGH |
-					      STM32_DMA_16BITS)>;
+				 <&rcc STM32_SRC_PLL1_Q SAI2_SEL(0)>;
 			status = "disabled";
+
+			sai2_a: sai2a@4 {
+				reg = <0x4 0x20>;
+				dmas = <&gpdma1 1 55 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai2_b: sai2b@24 {
+				reg = <0x24 0x20>;
+				dmas = <&gpdma1 0 56 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		uart4: serial@40004c00 {
@@ -260,7 +290,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40014c00 0x400>;
-			interrupts = <82 5>;
+			interrupts = <82 0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 19)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
@@ -273,7 +303,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44002000 0x400>;
-			interrupts = <83 5>;
+			interrupts = <83 0>;
 			clocks = <&rcc STM32_CLOCK(APB3, 5)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
@@ -286,7 +316,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40015000 0x400>;
-			interrupts = <84 5>;
+			interrupts = <84 0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 20)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
@@ -309,8 +339,9 @@
 		adc2: adc@42028100 {
 			compatible = "st,stm32-adc";
 			reg = <0x42028100 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 10)>;
-			clock-names = "adcx";
+			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
+				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
 			interrupts = <69 0>;
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;
@@ -523,15 +554,6 @@
 			};
 		};
 
-		aes: aes@420c0000 {
-			compatible = "st,stm32-aes";
-			reg = <0x420c0000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
-			resets = <&rctl STM32_RESET(AHB2, 16)>;
-			interrupts = <116 0>;
-			status = "disabled";
-		};
-
 		rng: rng@420c0800 {
 			nist-config = <0xf00e00>;
 			health-test-config = <0x6a91>;
@@ -580,4 +602,12 @@
 		i2c = <&i2c4>;
 		status = "disabled";
 	};
+};
+
+&vbat {
+	io-channels = <&adc2 16>;
+};
+
+&vddcore {
+	io-channels = <&adc2 17>;
 };

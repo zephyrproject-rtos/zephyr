@@ -29,7 +29,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009000 0x400>;
-			interrupts = <19 1>;
+			interrupts = <19 0>;
 			interrupt-names = "combined";
 			status = "disabled";
 		};

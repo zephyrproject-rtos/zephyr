@@ -8,7 +8,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # notification, using the split controller (ULL LLL)
 # Both central and peripheral hosts have their controllers in a separate device
 # connected over UART. The controller is the HCI UART async sample.
-simulation_id="basic_conn_split_hci_uart_async"
+simulation_id="${BOARD_TS}_basic_conn_split_hci_uart_async"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

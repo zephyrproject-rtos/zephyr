@@ -116,6 +116,13 @@ enum mdio_opcode {
 #define MDIO_AN_T1_ADV_M		0x0203U
 /** BASE-T1 Auto-negotiation advertisement register [47:32] */
 #define MDIO_AN_T1_ADV_H		0x0204U
+/** BASE-T1 Auto-negotiation link partner ability register [15:0] */
+#define MDIO_AN_T1_LP_ADV_L		0x0205U
+/** BASE-T1 Auto-negotiation link partner ability register [31:16] */
+#define MDIO_AN_T1_LP_ADV_M		0x0206U
+/** BASE-T1 Auto-negotiation link partner ability register [47:32] */
+#define MDIO_AN_T1_LP_ADV_H		0x0207U
+
 /** BASE-T1 PMA/PMD control register */
 #define MDIO_PMA_PMD_BT1_CTRL		0x0834U
 
@@ -162,6 +169,8 @@ enum mdio_opcode {
 #define MDIO_AN_T1_ADV_H_10L_TX_HI_REQ	BIT(12)
 /** 10BASE-T1L High Level Transmit Operating Mode Ability */
 #define MDIO_AN_T1_ADV_H_10L_TX_HI	BIT(13)
+/** 10BASE-T1L Energy Efficient Ethernet (EEE) Ability */
+#define MDIO_AN_T1_ADV_H_10L_EEE	BIT(14)
 
 /* BASE-T1 PMA/PMD control register */
 /** BASE-T1 master/slave configuration */
@@ -173,6 +182,8 @@ enum mdio_opcode {
 #define MDIO_PMA_B10L_CTRL		0x08F6U
 /** 10BASE-T1L PMA status */
 #define MDIO_PMA_B10L_STAT		0x08F7U
+/** 10BASE-T1L test mode control */
+#define MDIO_PMA_B10L_TEST_CTRL		0x08F8U
 /** 10BASE-T1L PMA link status*/
 #define MDIO_PMA_B10L_LINK_STAT		0x8302U
 /** 10BASE-T1L PCS control */
@@ -207,6 +218,16 @@ enum mdio_opcode {
 #define MDIO_PMA_B10L_STAT_2V4_ABLE			BIT(12)
 /** 10BASE-T1L PHY has loopback ability */
 #define MDIO_PMA_B10L_STAT_LB_ABLE			BIT(13)
+
+/* 10BASE-T1L test mode control register */
+/** 10BASE-T1L test mode field */
+#define MDIO_PMA_B10L_TEST_CTRL_TEST_MODE_MASK		GENMASK(15, 13)
+/** select 10BASE-T1L test mode 1 */
+#define MDIO_PMA_B10L_TEST_CTRL_TEST_MODE_1		BIT(13)
+/** select 10BASE-T1L test mode 2 */
+#define MDIO_PMA_B10L_TEST_CTRL_TEST_MODE_2		BIT(14)
+/** select 10BASE-T1L test mode 3 */
+#define MDIO_PMA_B10L_TEST_CTRL_TEST_MODE_3		(BIT(13) | BIT(14))
 
 /* 10BASE-T1L PMA link status*/
 /** 10BASE-T1L Remote Receiver Status OK Latch Low */

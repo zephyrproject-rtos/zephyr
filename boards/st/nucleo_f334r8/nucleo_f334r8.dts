@@ -96,6 +96,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -130,12 +132,13 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set 6Kb of storage at the end of the 64Kb of flash */
 		storage_partition: partition@e800 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0000e800 DT_SIZE_K(6)>;
 		};

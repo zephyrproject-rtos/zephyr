@@ -11,7 +11,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/types.h>

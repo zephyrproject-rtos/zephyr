@@ -13,8 +13,14 @@ zephyr_code_relocate(
 zephyr_code_relocate_ifdef(CONFIG_UART_BFLB LIBRARY drivers__serial LOCATION ITCM NOKEEP)
 zephyr_code_relocate_ifdef(CONFIG_RISCV_MACHINE_TIMER LIBRARY drivers__timer LOCATION ITCM NOKEEP)
 zephyr_code_relocate_ifdef(CONFIG_PINCTRL_BFLB LIBRARY drivers__pinctrl LOCATION ITCM NOKEEP)
-zephyr_code_relocate_ifdef(CONFIG_SYSCON_BFLB_EFUSE LIBRARY drivers__syscon LOCATION ITCM NOKEEP)
+zephyr_code_relocate_ifdef(CONFIG_OTP_BFLB LIBRARY drivers__otp LOCATION ITCM NOKEEP)
 zephyr_code_relocate_ifdef(CONFIG_CLOCK_CONTROL_BOUFFALOLAB_BL61X
   LIBRARY drivers__clock_control LOCATION ITCM NOKEEP)
 zephyr_code_relocate_ifdef(CONFIG_SOC_FLASH_BFLB FILES ${ZEPHYR_BASE}/drivers/flash/flash_bflb.c
   LOCATION ITCM NOKEEP)
+
+if(CONFIG_BT_BFLB_BL61X)
+  zephyr_sources(bflb_rf.c)
+  zephyr_sources(ble/btblecontroller_port_hw.c)
+  zephyr_linker_sources(RWDATA bflb_rwdata.ld)
+endif()

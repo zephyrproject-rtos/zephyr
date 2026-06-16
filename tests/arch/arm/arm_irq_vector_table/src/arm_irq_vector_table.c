@@ -16,7 +16,7 @@
  */
 #define _ISR_OFFSET CONFIG_ISR_OFFSET
 
-#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF)
+#if defined(CONFIG_SOC_FAMILY_NORDIC_NRF) && CONFIG_ISR_OFFSET == 0
 #undef _ISR_OFFSET
 #if defined(CONFIG_BOARD_QEMU_CORTEX_M0)
 /* For the nRF51-based QEMU Cortex-M0 platform, the first set of consecutive
@@ -156,8 +156,7 @@ void nrfx_power_clock_irq_handler(void);
 void timer0_nrf_isr(void);
 #define TIMER_IRQ_HANDLER timer0_nrf_isr
 #define TIMER_IRQ_NUM     TIMER0_IRQn
-#elif defined(CONFIG_SOC_SERIES_NRF54L) || defined(CONFIG_SOC_SERIES_NRF54H) ||                  \
-	defined(CONFIG_SOC_SERIES_NRF71) || defined(CONFIG_SOC_SERIES_NRF92)
+#elif defined(CONFIG_HAS_HW_NRF_GRTC)
 void nrfx_grtc_irq_handler(void);
 #define TIMER_IRQ_HANDLER nrfx_grtc_irq_handler
 #define TIMER_IRQ_NUM     DT_IRQN(DT_NODELABEL(grtc))

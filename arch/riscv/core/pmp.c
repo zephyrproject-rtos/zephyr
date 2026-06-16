@@ -336,23 +336,8 @@ static inline bool set_pmp_mprv_catchall(unsigned int *index_p,
 	 * accessible as if no PMP entries were matched which is otherwise
 	 * the default behavior for m-mode without MPRV.
 	 */
-	bool ok = set_pmp_entry(index_p, PMP_R | PMP_W | PMP_X,
-				0, 0, pmp_addr, pmp_cfg, index_limit);
-
-#ifdef CONFIG_QEMU_TARGET
-	if (ok) {
-		/*
-		 * Workaround: The above produced 0x1fffffff which is correct.
-		 * But there is a QEMU bug that prevents it from interpreting
-		 * this value correctly. Hardcode the special case used by
-		 * QEMU to bypass this bug for now. The QEMU fix is here:
-		 * https://lists.gnu.org/archive/html/qemu-devel/2022-04/msg00961.html
-		 */
-		pmp_addr[*index_p - 1] = -1L;
-	}
-#endif
-
-	return ok;
+	return set_pmp_entry(index_p, PMP_R | PMP_W | PMP_X,
+			     0, 0, pmp_addr, pmp_cfg, index_limit);
 }
 #endif /* CONFIG_PMP_KERNEL_MODE_DYNAMIC */
 
@@ -418,21 +403,6 @@ static void write_pmp_entries(unsigned int start, unsigned int end,
 	}
 
 	print_pmp_entries(start, end, pmp_addr, pmp_cfg, "register write");
-
-#ifdef CONFIG_QEMU_TARGET
-	/*
-	 * A QEMU bug may create bad transient PMP representations causing
-	 * false access faults to be reported. Work around it by setting
-	 * pmp registers to zero from the update start point to the end
-	 * before updating them with new values.
-	 * The QEMU fix is here with more details about this bug:
-	 * https://lists.gnu.org/archive/html/qemu-devel/2022-06/msg02800.html
-	 */
-	static const unsigned long pmp_zero[CONFIG_PMP_SLOTS] = { 0, };
-
-	z_riscv_write_pmp_entries(start, CONFIG_PMP_SLOTS, false,
-				  pmp_zero, pmp_zero);
-#endif
 
 	z_riscv_write_pmp_entries(start, end, clear_trailing_entries,
 				  pmp_addr, pmp_cfg);

@@ -95,6 +95,8 @@
 &eth {
 	status = "okay";
 	phy-handle = <&phy>;
+	pinctrl-0 = <&rmii_default>;
+	pinctrl-names = "default";
 };
 
 &esp32_bt_hci {

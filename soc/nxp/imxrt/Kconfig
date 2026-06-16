@@ -39,7 +39,7 @@ choice BOOT_DEVICE
 	default BOOT_FLEXSPI_NOR
 
 config BOOT_XSPI_NOR
-	bool "XPI serial NOR"
+	bool "XSPI serial NOR"
 	depends on DT_HAS_NXP_XSPI_ENABLED
 
 FLEXSPI_COMPAT := nxp,imx-flexspi
@@ -56,11 +56,11 @@ SEMC_COMPAT := nxp,imx-semc
 
 config BOOT_SEMC_NOR
 	bool "SEMC parallel NOR"
-	depends on $(dt_has_compat, $(SEMC_COMPAT))
+	depends on $(dt_has_compat,$(SEMC_COMPAT))
 
 config BOOT_SEMC_NAND
 	bool "SEMC parallel NAND"
-	depends on $(dt_has_compat, $(SEMC_COMPAT))
+	depends on $(dt_has_compat,$(SEMC_COMPAT))
 
 endchoice # BOOT_DEVICE
 

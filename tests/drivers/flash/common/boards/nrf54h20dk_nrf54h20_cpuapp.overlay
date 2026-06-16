@@ -27,4 +27,5 @@
 &mx25uw63 {
 	status = "okay";
 	supply-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+	t-reset-recovery = <10000>;
 };

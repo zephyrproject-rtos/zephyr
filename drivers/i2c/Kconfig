@@ -30,6 +30,25 @@ config I2C_SHELL_BUFFER_SIZE
 	  maximum size for read/write operations. Note that this is allocated
 	  on the stack.
 
+config I2C_TRANSFER_TIMEOUT_SUPPORTED
+	bool
+	help
+	  Selected by drivers that supports setting an i2c transaction timeout
+	  using the I2C_TRANSFER_TIMEOUT_MS Kconfig option.
+
+config I2C_TRANSFER_TIMEOUT_MS
+	int "Transfer timeout in milliseconds"
+	default 500
+	depends on I2C_TRANSFER_TIMEOUT_SUPPORTED
+	help
+	  Timeout in milliseconds used for each I2C transfer.
+	  In some drivers 0 means that the driver should use the K_FOREVER
+	  value, i.e. it should wait as long as necessary.
+
+	  I2C controllers that program a timeout directly into a register do
+	  not support setting this option to 0 and guard against an infinite
+	  timeout using the BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT() check.
+
 config I2C_STATS
 	bool "I2C device Stats"
 	depends on STATS
@@ -55,7 +74,7 @@ config I2C_DUMP_MESSAGES_ALLOWLIST
 	  Example of devicetree node:
 	  i2c-dump-allowlist {
 	    compatible = "zephyr,i2c-dump-allowlist";
-	    devices = < &display0 >, < &sensor3 >;
+	    devices = <&display0>, <&sensor3>;
 	  };
 
 config I2C_CALLBACK
@@ -131,8 +150,10 @@ endif # I2C_RTIO
 source "drivers/i2c/target/Kconfig"
 # zephyr-keep-sorted-start
 source "drivers/i2c/Kconfig.ambiq"
+source "drivers/i2c/Kconfig.ameba"
 source "drivers/i2c/Kconfig.andes_atciic100"
 source "drivers/i2c/Kconfig.b91"
+source "drivers/i2c/Kconfig.bcm2711"
 source "drivers/i2c/Kconfig.bcm_iproc"
 source "drivers/i2c/Kconfig.bee"
 source "drivers/i2c/Kconfig.bflb"
@@ -237,6 +258,8 @@ config I2C_MCUX_LPI2C
 
 config I2C_MCUX_LPI2C_BUS_RECOVERY
 	bool "Bus recovery support"
+	default y if I2C_BUS_RECOVERY
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPI2C),recover-bus-on-init)
 	depends on I2C_MCUX_LPI2C && PINCTRL
 	select I2C_BITBANG
 	help

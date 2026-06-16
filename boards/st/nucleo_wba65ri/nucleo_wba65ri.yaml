@@ -11,6 +11,7 @@ supported:
   - spi
   - adc
   - rng
+  - crypto
   - usbd
   - arduino_gpio
   - arduino_i2c

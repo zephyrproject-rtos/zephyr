@@ -21,7 +21,13 @@ board_runner_args(probe-rs "--chip=RP235x")
 board_runner_args(jlink "--device=RP2350_M33_0")
 board_runner_args(uf2 "--board-id=RP2350")
 
+board_set_debugger_ifnset(openocd)
+board_set_flasher_ifnset(openocd)
+
+# zephyr-keep-sorted-start
+include(${ZEPHYR_BASE}/boards/common/blackmagicprobe.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/probe-rs.board.cmake)
-include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/uf2.board.cmake)
+# zephyr-keep-sorted-stop

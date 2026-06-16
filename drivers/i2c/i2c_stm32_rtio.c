@@ -16,6 +16,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/util.h>
 
@@ -91,14 +92,16 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	return ret;
 }
 
-bool i2c_stm32_start(const struct device *dev)
+/* Return true when message is started and will complete from an interrupt
+ * handler, otherwise return false and set return status in @param status.
+ */
+static bool i2c_stm32_start(const struct device *dev, int *status)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *ctx = data->ctx;
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 	uint8_t flags = sqe->iodev_flags;
-	int res = 0;
 
 #ifdef CONFIG_I2C_STM32_V2
 	struct rtio_iodev_sqe *iodev_sqe_next = rtio_txn_next(ctx->txn_curr);
@@ -112,20 +115,55 @@ bool i2c_stm32_start(const struct device *dev)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		return i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf,
-					   sqe->rx.buf_len, dt_spec->addr);
+		i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf, sqe->rx.buf_len,
+				    dt_spec->addr);
+		break;
 	case RTIO_OP_TINY_TX:
-		return i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf,
-					   sqe->tiny_tx.buf_len, dt_spec->addr);
+		i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
+				    dt_spec->addr);
+		break;
 	case RTIO_OP_TX:
-		return i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf,
-					   sqe->tx.buf_len, dt_spec->addr);
+		i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+				    dt_spec->addr);
+		break;
 	case RTIO_OP_I2C_CONFIGURE:
-		res = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
-		return i2c_rtio_complete(data->ctx, res);
+		*status = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
+		return false;
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
-		return i2c_rtio_complete(data->ctx, -EINVAL);
+		*status = -EINVAL;
+		return false;
+	}
+
+	return true;
+}
+
+static void i2c_stm32_start_or_complete(const struct device *dev)
+{
+	struct i2c_stm32_data *data = dev->data;
+	int status;
+
+	/* Process all synchronous sequences until an async one is started (which will complete
+	 * from an asynchronous handler) or the synchronous sequence is the last queued one.
+	 */
+	while (!i2c_stm32_start(dev, &status)) {
+		if (!i2c_rtio_complete(data->ctx, status)) {
+			pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			(void)pm_device_runtime_put(dev);
+			return;
+		}
+	}
+}
+
+void i2c_stm32_rtio_complete(const struct device *dev, int status)
+{
+	struct i2c_stm32_data *data = dev->data;
+
+	if (i2c_rtio_complete(data->ctx, status)) {
+		i2c_stm32_start_or_complete(dev);
+	} else {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		(void)pm_device_runtime_put(dev);
 	}
 }
 
@@ -141,7 +179,7 @@ static int i2c_stm32_configure(const struct device *dev,
 #define OPERATION(msg)	((msg)->flags & I2C_MSG_RW_MASK)
 
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
-				   uint8_t num_msgs, uint16_t addr)
+			      uint8_t num_msgs, uint16_t addr)
 {
 	struct i2c_stm32_data *data = dev->data;
 	struct i2c_rtio *const ctx = data->ctx;
@@ -199,13 +237,22 @@ int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
 static void i2c_stm32_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
 {
 	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *const ctx = data->ctx;
+	int ret;
 
 	/* Always set I2C_MSG_RESTART flag on first message in order to send start condition */
 	iodev_sqe->sqe.iodev_flags |= RTIO_IODEV_I2C_RESTART;
 
-	if (i2c_rtio_submit(ctx, iodev_sqe)) {
-		i2c_stm32_start(dev);
+	if (i2c_rtio_submit(data->ctx, iodev_sqe)) {
+		ret = pm_device_runtime_get(dev);
+		if (ret < 0) {
+			/* Flush pending requests since we failed to get the device */
+			do {
+			} while (i2c_rtio_complete(data->ctx, ret));
+		} else {
+			/* Prevent the clocks to be stopped during the i2c transaction */
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			i2c_stm32_start_or_complete(dev);
+		}
 	}
 }
 

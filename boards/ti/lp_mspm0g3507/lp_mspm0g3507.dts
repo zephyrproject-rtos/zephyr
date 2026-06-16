@@ -153,3 +153,9 @@
 	#size-cells = <0>;
 	clocks = <&ckm MSPM0_CLOCK_MCLK>;
 };
+
+&vref0 {
+	status = "okay";
+	pinctrl-0 = <&analog_pa23>;
+	pinctrl-names = "default";
+};

@@ -427,6 +427,13 @@ static int usbd_cdc_ecm_ctd(struct usbd_class_data *const c_data,
 			    const struct usb_setup_packet *const setup,
 			    const struct net_buf *const buf)
 {
+	if (setup->wLength) {
+		LOG_DBG("bmRequestType 0x%02x bRequest 0x%02x wLength %u unsupported",
+			setup->bmRequestType, setup->bRequest, setup->wLength);
+		errno = -ENOTSUP;
+		return 0;
+	}
+
 	if (setup->RequestType.recipient == USB_REQTYPE_RECIPIENT_INTERFACE &&
 	    setup->bRequest == SET_ETHERNET_PACKET_FILTER) {
 		LOG_INF("bRequest 0x%02x (SetPacketFilter) not implemented",
@@ -543,6 +550,7 @@ static int cdc_ecm_send(const struct device *dev, struct net_pkt *const pkt)
 }
 
 static int cdc_ecm_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
 			      const enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
@@ -561,23 +569,22 @@ static int cdc_ecm_set_config(const struct device *dev,
 	}
 }
 
-static enum ethernet_hw_caps cdc_ecm_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps cdc_ecm_get_capabilities(const struct device *dev __unused,
+						      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_PROMISC_MODE;
 }
 
-static int cdc_ecm_iface_start(const struct device *dev)
+static int cdc_ecm_iface_start(const struct device *dev, struct net_if *iface)
 {
 	struct cdc_ecm_eth_data *data = dev->data;
 
-	LOG_DBG("Start interface %p", data->iface);
+	LOG_DBG("Start interface %p", iface);
 
 	atomic_set_bit(&data->state, CDC_ECM_IFACE_UP);
 
 	if (atomic_test_bit(&data->state, CDC_ECM_DATA_IFACE_ENABLED)) {
-		net_if_carrier_on(data->iface);
+		net_if_carrier_on(iface);
 		if (cdc_ecm_send_notification(dev, true)) {
 			LOG_ERR("Failed to send connected notification");
 		}
@@ -586,11 +593,11 @@ static int cdc_ecm_iface_start(const struct device *dev)
 	return 0;
 }
 
-static int cdc_ecm_iface_stop(const struct device *dev)
+static int cdc_ecm_iface_stop(const struct device *dev, struct net_if *iface)
 {
 	struct cdc_ecm_eth_data *data = dev->data;
 
-	LOG_DBG("Stop interface %p", data->iface);
+	LOG_DBG("Stop interface %p", iface);
 
 	atomic_clear_bit(&data->state, CDC_ECM_IFACE_UP);
 

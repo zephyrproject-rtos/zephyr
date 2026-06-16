@@ -39,7 +39,7 @@ the perceived impact of a high-priority thread running.
 For an example of the pressure policy, refer to the :zephyr:code-sample:`cpu_freq_pressure` sample.
 
 This policy attempts to be proactive in evaluating queued tasks and adjusting the clock frequency
-ahead of their execution time, although this policy makes no guarentees on performance or determinism
+ahead of their execution time, although this policy makes no guarantees on performance or determinism
 of threads achieving their deadlines and avoiding starvation.
 
 Note that the :kconfig:option:`CONFIG_CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO` includes :kconfig:option:`CONFIG_TRACING`

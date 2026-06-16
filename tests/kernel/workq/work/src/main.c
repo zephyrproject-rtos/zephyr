@@ -328,10 +328,50 @@ ZTEST(work_1cpu, test_1cpu_simple_queue)
 	zassert_equal(rc, 0);
 }
 
+/* Single CPU check that work submitted while the queue's runner
+ * thread is suspended is queued (not lost or rejected) and runs as
+ * soon as the thread is resumed.
+ */
+ZTEST(work_1cpu, test_1cpu_suspend_resume_queue)
+{
+	int rc;
+	k_tid_t wq_tid = k_work_queue_thread_get(&coophi_queue);
+
+	zassert_not_null(wq_tid);
+
+	/* Reset state and use the non-blocking handler */
+	reset_counters();
+	k_work_init(&common_work, counter_handler);
+	zassert_equal(k_work_busy_get(&common_work), 0);
+
+	/* Suspend the workqueue's runner thread. */
+	k_thread_suspend(wq_tid);
+
+	/* Submission should still succeed and the work should be queued. */
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
+	zassert_equal(rc, 1);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_QUEUED);
+	zassert_equal(k_work_is_pending(&common_work), true);
+
+	/* Sleeping must not let the work run while the runner is suspended. */
+	k_sleep(K_MSEC(DELAY_MS));
+	zassert_equal(coophi_counter(), 0);
+	zassert_equal(k_work_busy_get(&common_work), K_WORK_QUEUED);
+	zassert_equal(k_sem_take(&sync_sem, K_NO_WAIT), -EBUSY);
+
+	/* Resuming the runner should drain the pending work. */
+	k_thread_resume(wq_tid);
+
+	rc = k_sem_take(&sync_sem, DELAY_TIMEOUT);
+	zassert_equal(rc, 0);
+	zassert_equal(coophi_counter(), 1);
+	zassert_equal(k_work_busy_get(&common_work), 0);
+}
+
 /* Basic SMP check submitting with a non-blocking handler. */
 ZTEST(work, test_smp_simple_queue)
 {
-	if (!IS_ENABLED(CONFIG_SMP)) {
+	if (!IS_ENABLED(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS == 1)) {
 		ztest_test_skip();
 		return;
 	}
@@ -731,9 +771,11 @@ ZTEST(work_1cpu, test_1cpu_running_cancel)
 	zassert_equal(coophi_counter(), 0);
 
 	/* Busy wait until timer expires. Thread context is blocked so cancelling
-	 * of work won't be completed.
+	 * of work won't be completed. Add one tick of slack on top of the
+	 * nominal timeout for the +1 round-up inside z_add_timeout() plus
+	 * 1 ms for general measurement jitter.
 	 */
-	k_busy_wait(1000 * (ms_timeout + 1));
+	k_busy_wait(1000 * ms_timeout + k_ticks_to_us_ceil32(1) + 1000);
 
 	zassert_equal(k_timer_status_get(&ctx->timer), 1);
 
@@ -793,9 +835,11 @@ ZTEST(work_1cpu, test_1cpu_running_cancel_sync)
 	zassert_equal(coophi_counter(), 1);
 
 	/* Busy wait until timer expires. Thread context is blocked so cancelling
-	 * of work won't be completed.
+	 * of work won't be completed. Add one tick of slack on top of the
+	 * nominal timeout for the +1 round-up inside z_add_timeout() plus
+	 * 1 ms for general measurement jitter.
 	 */
-	k_busy_wait(1000 * (ms_timeout + 1));
+	k_busy_wait(1000 * ms_timeout + k_ticks_to_us_ceil32(1) + 1000);
 
 	zassert_equal(k_timer_status_get(&ctx->timer), 1);
 
@@ -824,7 +868,7 @@ ZTEST(work, test_smp_running_cancel)
 {
 	int rc;
 
-	if (!IS_ENABLED(CONFIG_SMP)) {
+	if (!IS_ENABLED(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS == 1)) {
 		ztest_test_skip();
 		return;
 	}

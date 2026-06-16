@@ -238,6 +238,15 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
                west init ~/zephyrproject
                cd ~/zephyrproject
+
+            .. tip::
+
+               To reduce disk space usage and avoid downloading unnecessary
+               modules or vendor HALs during setup, configure
+               :ref:`west-manifest-groups` before running ``west update``.
+
+            .. code-block:: bash
+
                west update
 
          .. only:: release
@@ -250,6 +259,15 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
 
                west init ~/zephyrproject --mr v |zephyr-version-ltrim|
                cd ~/zephyrproject
+
+            .. tip::
+
+               To reduce disk space usage and avoid downloading unnecessary
+               modules or vendor HALs during setup, configure
+               :ref:`west-manifest-groups` before running ``west update``.
+
+            .. code-block:: bash
+
                west update
 
       #. Export a :ref:`Zephyr CMake package <cmake_pkg>`. This allows CMake to
@@ -336,12 +354,12 @@ chosen. You'll also install Zephyr's additional Python dependencies in a
             .. code-tab:: bat
 
                cd %HOMEPATH%
-               python -m venv zephyrproject\.venv
+               py -3.12 -m venv zephyrproject\.venv
 
             .. code-tab:: powershell
 
                cd $Env:HOMEPATH
-               python -m venv zephyrproject\.venv
+               py -3.12 -m venv zephyrproject\.venv
 
       #. Activate the virtual environment:
 

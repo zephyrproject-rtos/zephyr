@@ -16,6 +16,7 @@
 		/* gd5f2gq5ue parameters */
 		jedec-id = [c8 52];
 		size-bytes = <DT_SIZE_M(256)>;
+		plane-bytes = <DT_SIZE_M(256)>;
 		erase-block-size = <DT_SIZE_K(128)>;
 		write-block-size = <DT_SIZE_K(2)>;
 		block-erase-duration-max = <5000>;

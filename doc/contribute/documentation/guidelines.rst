@@ -690,7 +690,7 @@ Cross-referencing C documentation
    They are rendered in the HTML output as links to the corresponding Doxygen documentation for the
    item. For example::
 
-      Check out :c:function:`gpio_pin_configure` for more information.
+      Check out :c:func:`gpio_pin_configure` for more information.
 
    Will render as:
 
@@ -736,8 +736,27 @@ Recommended image formats based on content
 * **Screenshots**: WebP or PNG.
 * **Diagrams**: Consider using Graphviz for simple diagrams (see
   `dedicated section <graphviz_diagrams>`_ below. If using an external tool, SVG is preferred.
-* **Photos** (ex. boards): WebP. Use transparency if possible/available.
+* **Photos** (ex. boards): WebP, no larger than 600 px on the largest dimension.
+  Whenever the subject can be isolated from its background (typically the case for board photos),
+  save the image with a transparent background so it blends in with both light and dark
+  documentation themes.
 
+  You can convert an existing image to a properly sized WebP using `cwebp`_ or `ImageMagick`_. For
+  example::
+
+     # Using cwebp (resize width to 600 px, height auto, ~80% quality).
+     # For a portrait image, use "-resize 0 600" to cap the height instead.
+     cwebp -resize 600 0 board_name.png -o board_name.webp
+
+     # Using ImageMagick
+     magick board_name.png -resize 600x600 -quality 80 board_name.webp
+
+  When the source already has a transparent background (e.g. a PNG with an alpha channel), both
+  tools preserve transparency in the resulting WebP. The ``-resize 600 0`` / ``600x600`` arguments
+  only scale the image down, preserving its aspect ratio.
+
+.. _cwebp: https://developers.google.com/speed/webp/download
+.. _ImageMagick: https://imagemagick.org/
 
 .. _graphviz_diagrams:
 
@@ -779,6 +798,75 @@ Graphviz's DOT language.
 .. _Graphviz: https://graphviz.org
 .. _Graphviz documentation: https://graphviz.org/documentation
 
+Mermaid
+=======
+
+`Mermaid`_ is a tool for creating diagrams and visualizations using a simple text-based syntax. It
+is particularly well-suited for creating flowcharts, sequence diagrams, class diagrams, and
+state transition diagrams.
+
+To include a mermaid diagram in a document, use the :rst:dir:`mermaid` directive. For example::
+
+   .. mermaid::
+      :caption: State transition diagram for a GPIO debounce
+      :alt: GPIO debounce state diagram showing transitions between inactive and active states
+            through maybe_active and maybe_inactive intermediate states before each state becomes
+            stable.
+
+      stateDiagram-v2
+
+          State inactive {
+              [*] --> stable_inactive
+              stable_inactive --> maybe_active : edge to active
+              maybe_active --> stable_inactive : edge to inactive
+          }
+
+          State active {
+              [*] --> stable_active
+              stable_active --> maybe_inactive : edge to inactive
+              maybe_inactive --> stable_active : edge to active
+          }
+
+          [*] --> inactive
+
+          maybe_active --> active : After(x ms)
+          maybe_inactive --> inactive : After(x ms)
+
+
+Would render as:
+
+.. mermaid::
+   :caption: State transition diagram for a GPIO debounce
+   :alt: GPIO debounce state diagram showing transitions between inactive and active states
+         through maybe_active and maybe_inactive intermediate states before each state becomes
+         stable.
+
+   stateDiagram-v2
+
+       State inactive {
+           [*] --> stable_inactive
+           stable_inactive --> maybe_active : edge to active
+           maybe_active --> stable_inactive : edge to inactive
+       }
+
+       State active {
+           [*] --> stable_active
+           stable_active --> maybe_inactive : edge to inactive
+           maybe_inactive --> stable_active : edge to active
+       }
+
+       [*] --> inactive
+
+       maybe_active --> active : After(x ms)
+       maybe_inactive --> inactive : After(x ms)
+
+
+For references about supported diagrams, syntax, and samples; please refer to the `Mermaid documentation`_.
+For fast iteration when creating or updating diagrams, you can use the `Mermaid live editor`_.
+
+.. _Mermaid: https://mermaid.js.org/
+.. _Mermaid documentation: https://mermaid.js.org/intro/
+.. _Mermaid live editor: https://mermaid.live/
 
 Custom Sphinx Roles and Directives
 **********************************

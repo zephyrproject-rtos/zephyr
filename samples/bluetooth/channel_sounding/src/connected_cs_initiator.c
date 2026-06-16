@@ -110,8 +110,7 @@ static void connected_cb(struct bt_conn *conn, uint8_t err)
 	__ASSERT(connection == conn, "Unexpected connected callback");
 
 	if (err) {
-		bt_conn_unref(conn);
-		connection = NULL;
+		bt_conn_drop(&connection);
 	}
 
 	static struct bt_gatt_exchange_params mtu_exchange_params = {.func = mtu_exchange_cb};
@@ -128,8 +127,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason 0x%02X)\n", reason);
 
-	bt_conn_unref(conn);
-	connection = NULL;
+	bt_conn_drop(&connection);
 }
 
 static void security_changed_cb(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)

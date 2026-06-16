@@ -35,6 +35,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys_clock.h>
+#include <zephyr/toolchain.h>
 
 #include "audio_internal.h"
 #include "vcp_internal.h"
@@ -75,6 +76,8 @@ static struct bt_vcp_vol_rend vol_rend;
 static void volume_state_cfg_changed(const struct bt_gatt_attr *attr,
 				     uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 
@@ -161,6 +164,8 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	bool notify = false;
 	bool volume_change = false;
 	uint8_t opcode;
+
+	ARG_UNUSED(attr);
 
 	if (offset > 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
@@ -274,7 +279,7 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 	}
 
 	if (volume_change && !vol_rend.flags) {
-		vol_rend.flags = 1;
+		vol_rend.flags = 1U;
 
 		if (IS_ENABLED(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)) {
 			value_changed(&vol_rend, NOTIFY_FLAGS);
@@ -290,6 +295,8 @@ static ssize_t write_vcs_control(struct bt_conn *conn,
 #if defined(CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE)
 static void flags_cfg_changed(const struct bt_gatt_attr *attr, uint16_t value)
 {
+	ARG_UNUSED(attr);
+
 	LOG_DBG("value 0x%04x", value);
 }
 #endif /* CONFIG_BT_VCP_VOL_REND_VOL_FLAGS_NOTIFIABLE */
@@ -512,7 +519,7 @@ int bt_vcp_vol_rend_included_get(struct bt_vcp_included *included)
 
 int bt_vcp_vol_rend_set_step(uint8_t volume_step)
 {
-	if (volume_step > 0) {
+	if (volume_step > 0U) {
 		vol_rend.volume_step = volume_step;
 		return 0;
 	} else {

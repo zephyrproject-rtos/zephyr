@@ -135,5 +135,6 @@ endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6
 
 config USE_INFINEON_ABSTRACTION_RTOS
 	bool "Abstraction RTOS component (Zephyr support)"
+	select EVENTS
 	help
 	  Enable Abstraction RTOS component with Zephyr support

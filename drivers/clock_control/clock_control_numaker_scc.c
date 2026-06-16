@@ -114,6 +114,11 @@ static inline int numaker_pcc_get_max_divider(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 	case SDH0_MODULE:
 		*max_divider = (CLK_CLKDIV0_SDH0DIV_Msk >> CLK_CLKDIV0_SDH0DIV_Pos) + 1;
 		break;
+#elif defined(CONFIG_SOC_SERIES_M335X)
+	case CANFD0_MODULE:
+	case CANFD1_MODULE:
+		*max_divider = (CLK_CLKDIV1_CANFD0DIV_Msk >> CLK_CLKDIV1_CANFD0DIV_Pos) + 1;
+		break;
 #endif
 	default:
 		LOG_ERR("Unsupported clock module index: 0x%" PRIx64, (uint64_t)clk_modidx_real);
@@ -287,6 +292,28 @@ static inline int numaker_pcc_get_source_rate(NUMAKER_PCC_MODIDX_REAL_TYPE clk_m
 			return -ENOTSUP;
 		}
 		break;
+#elif defined(CONFIG_SOC_SERIES_M335X)
+	case CANFD0_MODULE:
+	case CANFD1_MODULE:
+		switch (clksrc_idx) {
+		case (CLK_CLKSEL0_CANFD0SEL_HXT >> CLK_CLKSEL0_CANFD0SEL_Pos):
+			*source_rate = __HXT;
+			break;
+		case (CLK_CLKSEL0_CANFD0SEL_PLL >> CLK_CLKSEL0_CANFD0SEL_Pos):
+			*source_rate = CLK_GetPLLClockFreq();
+			break;
+		case (CLK_CLKSEL0_CANFD0SEL_HCLK >> CLK_CLKSEL0_CANFD0SEL_Pos):
+			*source_rate = CLK_GetHCLKFreq();
+			break;
+		case (CLK_CLKSEL0_CANFD0SEL_HIRC >> CLK_CLKSEL0_CANFD0SEL_Pos):
+			*source_rate = __HIRC;
+			break;
+		default:
+			LOG_ERR("Unsupported clock module/source index: 0x%" PRIx64 "/%d",
+				(uint64_t)clk_modidx_real, clksrc_idx);
+			return -ENOTSUP;
+		}
+		break;
 #endif
 	default:
 		LOG_ERR("Unsupported clock module index: 0x%" PRIx64, (uint64_t)clk_modidx_real);
@@ -303,6 +330,11 @@ static inline int numaker_scc_on(const struct device *dev, clock_control_subsys_
 	struct numaker_scc_subsys *scc_subsys = (struct numaker_scc_subsys *)subsys;
 
 	if (scc_subsys->subsys_id == NUMAKER_SCC_SUBSYS_ID_PCC) {
+		/* Skip void module id */
+		if (scc_subsys->pcc.clk_modidx == UINT32_MAX) {
+			return 0;
+		}
+
 		SYS_UnlockReg();
 #if defined(CONFIG_SOC_SERIES_M55M1X)
 		__ASSERT_NO_MSG(scc_subsys->pcc.clk_modidx < ARRAY_SIZE(numaker_clkmodidx_tab));
@@ -325,6 +357,11 @@ static inline int numaker_scc_off(const struct device *dev, clock_control_subsys
 	struct numaker_scc_subsys *scc_subsys = (struct numaker_scc_subsys *)subsys;
 
 	if (scc_subsys->subsys_id == NUMAKER_SCC_SUBSYS_ID_PCC) {
+		/* Skip void module id */
+		if (scc_subsys->pcc.clk_modidx == UINT32_MAX) {
+			return 0;
+		}
+
 		SYS_UnlockReg();
 #if defined(CONFIG_SOC_SERIES_M55M1X)
 		__ASSERT_NO_MSG(scc_subsys->pcc.clk_modidx < ARRAY_SIZE(numaker_clkmodidx_tab));
@@ -358,12 +395,19 @@ static inline int numaker_scc_get_rate(const struct device *dev, clock_control_s
 
 	if (scc_subsys->subsys_id == NUMAKER_SCC_SUBSYS_ID_PCC) {
 		struct numaker_scc_subsys_pcc *pcc = &scc_subsys->pcc;
-		uint32_t clk_modidx_virt = pcc->clk_modidx;
-		NUMAKER_PCC_MODIDX_REAL_TYPE clk_modidx_real =
-			NUMAKER_PCC_MODIDX_VIRT2REAL(clk_modidx_virt);
+		uint32_t clk_modidx_virt;
+		NUMAKER_PCC_MODIDX_REAL_TYPE clk_modidx_real;
 		uint32_t clksrc_idx;
 		uint32_t source_rate;
 		uint32_t clkdiv_value;
+
+		/* Skip void module id */
+		if (scc_subsys->pcc.clk_modidx == UINT32_MAX) {
+			return 0;
+		}
+
+		clk_modidx_virt = pcc->clk_modidx;
+		clk_modidx_real = NUMAKER_PCC_MODIDX_VIRT2REAL(clk_modidx_virt);
 
 		/* Clock source index and rate */
 		clksrc_idx = CLK_GetModuleClockSource(clk_modidx_real);
@@ -395,13 +439,20 @@ static inline int numaker_scc_set_rate(const struct device *dev, clock_control_s
 		struct numaker_scc_subsys scc_subsys_im = *scc_subsys;
 		struct numaker_scc_subsys_pcc *pcc = &scc_subsys_im.pcc;
 		struct numaker_scc_subsys_pcc_rate *pcc_rate = &scc_subsys_rate->pcc;
-		uint32_t clk_modidx_virt = pcc->clk_modidx;
-		NUMAKER_PCC_MODIDX_REAL_TYPE clk_modidx_real =
-			NUMAKER_PCC_MODIDX_VIRT2REAL(clk_modidx_virt);
+		uint32_t clk_modidx_virt;
+		NUMAKER_PCC_MODIDX_REAL_TYPE clk_modidx_real;
 		uint32_t clksrc_idx;
 		uint32_t source_rate;
 		uint32_t clkdiv_value;
 		uint32_t clkdiv_value_max;
+
+		/* Skip void module id */
+		if (scc_subsys->pcc.clk_modidx == UINT32_MAX) {
+			return 0;
+		}
+
+		clk_modidx_virt = pcc->clk_modidx;
+		clk_modidx_real = NUMAKER_PCC_MODIDX_VIRT2REAL(clk_modidx_virt);
 
 		/* Degenerate to get_rate on clk_mod_rate being zero */
 
@@ -492,6 +543,11 @@ static inline int numaker_scc_configure(const struct device *dev, clock_control_
 	struct numaker_scc_subsys *scc_subsys = (struct numaker_scc_subsys *)subsys;
 
 	if (scc_subsys->subsys_id == NUMAKER_SCC_SUBSYS_ID_PCC) {
+		/* Skip void module id */
+		if (scc_subsys->pcc.clk_modidx == UINT32_MAX) {
+			return 0;
+		}
+
 		SYS_UnlockReg();
 #if defined(CONFIG_SOC_SERIES_M55M1X)
 		__ASSERT_NO_MSG(scc_subsys->pcc.clk_modidx < ARRAY_SIZE(numaker_clkmodidx_tab));

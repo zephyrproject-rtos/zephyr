@@ -9,6 +9,7 @@ tests:
       - nucleo_f302r8
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
     timeout: 600
   drivers.counter.basic_api.nrf_zli:
     tags:
@@ -63,6 +64,15 @@ tests:
     timeout: 600
     extra_configs:
       - CONFIG_COUNTER_MCUX_LPTMR_ALARM=y
+  drivers.counter.basic_api.mcux_wake_timer_alarm:
+    tags:
+      - drivers
+      - counter
+    filter: dt_compat_enabled("nxp,wake-timer")
+    depends_on: counter
+    timeout: 600
+    extra_configs:
+      - CONFIG_COUNTER_MCUX_WAKE_TIMER_ALARM=y
   drivers.counter.basic_api.mchp_tcc1:
     tags:
       - drivers
@@ -109,19 +119,24 @@ tests:
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
+      - pic32cm_jh01_cpro
     timeout: 600
     extra_args:
       - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/microchip/sam_e54_xpro_tc0.overlay"
       - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE=boards/microchip/pic32cx_sg41_cult_tc0.overlay"
+      - FILE_SUFFIX=tc0
   drivers.counter.basic_api.mchp_rtc:
     tags:
       - drivers
       - counter
     depends_on: counter
-    platform_allow: sam_e54_xpro
+    platform_allow:
+      - sam_e54_xpro
+      - pic32cx_sg61_cult
     timeout: 600
     extra_args:
-      DTC_OVERLAY_FILE="boards/microchip/sam_e54_xpro_rtc.overlay"
+      - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/microchip/sam_e54_xpro_rtc.overlay"
+      - platform:pic32cx_sg61_cult/pic32cx1025sg61128:"DTC_OVERLAY_FILE=boards/microchip/pic32cx_sg61_cult_rtc.overlay"
   drivers.counter.basic_api.no_blobs:
     tags:
       - drivers

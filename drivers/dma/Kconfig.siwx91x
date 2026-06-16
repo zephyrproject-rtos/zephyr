@@ -1,14 +1,23 @@
 # Copyright (c) 2024 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config DMA_SILABS_SIWX91X
-	bool "Silabs SiWx91x DMA driver"
+config DMA_SILABS_SIWX91X_UDMA
+	bool "Silabs SiWx91x UDMA driver"
 	default y
 	select SYS_MEM_BLOCKS
-	depends on DT_HAS_SILABS_SIWX91X_DMA_ENABLED
+	depends on DT_HAS_SILABS_UDMA_ENABLED
 	depends on CLOCK_CONTROL
 	help
-	  Enable the High Power(HP)/Ultra Low Power(ULP) DMA driver for the Silabs SiWx91x SoC series.
+	  Enable the High Power(HP) / Ultra Low Power(ULP) UDMA driver for the
+	  Silabs SiWx91x SoC series.
+
+if DMA_SILABS_SIWX91X_UDMA
+
+config DMA_SILABS_SIWX91X_UDMA_DESCR_COUNT
+	int "The maximum UDMA descriptor count"
+	default 30
+
+endif
 
 config DMA_SILABS_SIWX91X_GPDMA
 	bool "Silabs SiWx91x GPDMA driver"
@@ -19,17 +28,9 @@ config DMA_SILABS_SIWX91X_GPDMA
 	help
 	  Enable the GDMA driver for the Silabs SiWx91x SoC series.
 
-if DMA_SILABS_SIWX91X
-
-config DMA_SILABS_SIWX91X_SG_BUFFER_COUNT
-	int "The maximum allowable number of buffers for scatter-gather transfers"
-	default 30
-
-endif
-
 if DMA_SILABS_SIWX91X_GPDMA
 
-config GPDMA_SILABS_SIWX91X_DESCRIPTOR_COUNT
+config DMA_SILABS_SIWX91X_GPDMA_DESCR_COUNT
 	int "The maximum GPDMA descriptor count"
 	default 32
 

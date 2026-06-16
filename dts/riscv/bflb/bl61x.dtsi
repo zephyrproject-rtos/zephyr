@@ -20,6 +20,17 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	tsen: tsen {
+		compatible = "bflb,tsen";
+		io-channels = <&adc0 0>;
+		status = "disabled";
+	};
+
+	bt_hci_bflb: bt-hci {
+		compatible = "bflb,bt-hci";
+		status = "disabled";
+	};
+
 	clocks {
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
@@ -68,15 +79,15 @@
 		clk_aupll: clk-aupll {
 			#clock-cells = <1>;
 			compatible = "bflb,pll";
-			clocks = <&clk_rc32m>;
+			clocks = <&clk_crystal>;
 			top-frequency = <BL61X_AUPLL_TOP_FREQ>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		clk_root: clk-root {
 			#clock-cells = <0>;
 			compatible = "bflb,root-clk";
-			clocks = <&clk_wifipll BL61X_WIFIPLL_ID_DIV1>;
+			clocks = <&clk_aupll BL61X_AUPLL_ID_DIV1>;
 			divider = <1>;
 			status = "okay";
 		};
@@ -111,7 +122,8 @@
 			compatible = "xuantie,e907", "riscv";
 			reg = <0>;
 			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei",
+					       "xtheadba", "xtheadbb", "xtheadbs", "xtheadcmo";
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
@@ -154,7 +166,7 @@
 		};
 
 		gpios: gpio@20000000 {
-			compatible = "bflb,bl61x-gpio";
+			compatible = "bflb,bl61x_808-gpio";
 			reg = <0x20000000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -425,6 +437,15 @@
 			reg = <0x20056000 0x1000>;
 			status = "okay";
 			size = <512>;
+		};
+
+		sdhc0: sdhc@20060000 {
+			compatible = "bflb,sdhc";
+			reg = <0x20060000 0x200>;
+			status = "disabled";
+
+			interrupts = <33 1>;
+			interrupt-parent = <&clic>;
 		};
 
 		sram0: memory@62fc0000 {

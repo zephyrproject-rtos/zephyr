@@ -187,7 +187,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x4000a000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 7>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -231,7 +231,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 8)>;
-			interrupts = <35 5>;
+			interrupts = <35 0>;
 			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -244,7 +244,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <36 5>;
+			interrupts = <36 0>;
 			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -257,7 +257,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
-			interrupts = <51 5>;
+			interrupts = <51 0>;
 			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
@@ -270,7 +270,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
-			interrupts = <84 5>;
+			interrupts = <84 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
@@ -283,7 +283,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>;
-			interrupts = <85 5>;
+			interrupts = <85 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;

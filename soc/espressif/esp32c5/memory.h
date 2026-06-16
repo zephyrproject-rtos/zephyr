@@ -70,11 +70,8 @@
 #define BOOTLOADER_DRAM_SEG_START (BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
 
 /* Flash */
-#ifdef CONFIG_FLASH_SIZE
-#define FLASH_SIZE CONFIG_FLASH_SIZE
-#else
-#define FLASH_SIZE 0x800000
-#endif
+#define FLASH_SIZE         DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
+#define FLASH_BASE_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 
 /* Cached memory - ESP32-C5 uses unified I/D address space
  * From HAL ext_mem_defs.h: SOC_IRAM0_CACHE_ADDRESS_LOW = 0x42000000
@@ -82,12 +79,20 @@
 #define CACHE_ALIGN  CONFIG_MMU_PAGE_SIZE
 #define IROM_SEG_ORG 0x42000000
 #define IROM_SEG_LEN FLASH_SIZE
-#define DROM_SEG_ORG 0x42800000
+/* DROM shares the unified-cache linear address space with IROM. Placing
+ * drom0_0_seg at the same origin lets the linker emit .flash.rodata
+ * immediately after .text, so the MMU allocator's linear free_head
+ * advance (irom_len + drom_len) matches the actual reserved virtual
+ * range. This avoids a gap that PSRAM mapping could overrun.
+ */
+#define DROM_SEG_ORG IROM_SEG_ORG
 #define DROM_SEG_LEN FLASH_SIZE
 
-/* External RAM (PSRAM)
- * From HAL soc.h: SOC_EXTRAM_DATA_LOW = 0x42000000, SOC_EXTRAM_DATA_HIGH = 0x44000000
- * Shares the same bus as IROM/DROM (unified cache).
+/* External RAM (PSRAM) cache window. Derived from the DT ext_ram node so
+ * the linker uses the full virtual range the MMU can map (32 MB on c5),
+ * not the physical chip size. Shares the same bus as IROM/DROM (unified
+ * cache). Physical PSRAM size is enforced by the ext_ram-overflow ASSERT
+ * in default.ld using CONFIG_ESP_SPIRAM_SIZE.
  */
-#define EXTRAM_START 0x42000000
-#define EXTRAM_SIZE  0x2000000
+#define EXTRAM_START DT_REG_ADDR(DT_NODELABEL(ext_ram))
+#define EXTRAM_SIZE  DT_REG_SIZE(DT_NODELABEL(ext_ram))

@@ -1289,6 +1289,93 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
 	k_mutex_unlock(&client->lock);
 }
 
+int coap_client_deregister_observe(struct coap_client *client, struct coap_client_request *req)
+{
+	int ret = 0;
+
+	k_mutex_lock(&client->lock, K_FOREVER);
+
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		struct coap_client_internal_request *internal_req = &client->requests[i];
+		struct coap_packet pkt;
+		uint16_t mid;
+		int err;
+
+		if (!internal_req->request_ongoing || !internal_req->is_observe ||
+		    !requests_match(&internal_req->coap_request, req)) {
+			continue;
+		}
+
+		mid = coap_next_id();
+		memset(internal_req->send_buf, 0, sizeof(internal_req->send_buf));
+
+		err = coap_packet_init(
+			&pkt, internal_req->send_buf, sizeof(internal_req->send_buf), COAP_VERSION,
+			internal_req->coap_request.confirmable ? COAP_TYPE_CON : COAP_TYPE_NON_CON,
+			internal_req->request_tkl, internal_req->request_token, COAP_METHOD_GET,
+			mid);
+
+		if (err == 0) {
+			err = coap_packet_set_path(&pkt, internal_req->coap_request.path);
+		}
+
+		if (err == 0) {
+			err = coap_append_option_int(&pkt, COAP_OPTION_OBSERVE, 1);
+		}
+
+		if (err < 0) {
+			LOG_ERR("Failed to build observe deregister packet: %d", err);
+			report_callback_error(internal_req, err);
+			reset_internal_request(internal_req);
+			ret = err;
+			continue;
+		}
+
+		internal_req->request = pkt;
+		internal_req->last_id = mid;
+		internal_req->is_observe = false;
+
+		if (internal_req->coap_request.confirmable) {
+			struct coap_transmission_parameters params = internal_req->pending.params;
+
+			err = coap_pending_init(&internal_req->pending, &internal_req->request,
+						net_sad(&internal_req->addr), &params);
+			if (err < 0) {
+				LOG_ERR("Failed to init pending for deregister: %d", err);
+				report_callback_error(internal_req, err);
+				reset_internal_request(internal_req);
+				ret = err;
+				continue;
+			}
+
+			coap_pending_cycle(&internal_req->pending);
+		}
+
+		err = send_request(client->fd, internal_req->request.data,
+				   internal_req->request.offset, 0, net_sad(&internal_req->addr),
+				   internal_req->addrlen);
+		if (err < 0) {
+			LOG_ERR("Failed to send observe deregister: %d", err);
+			report_callback_error(internal_req, err);
+			reset_internal_request(internal_req);
+			ret = err;
+			continue;
+		}
+
+		if (!internal_req->coap_request.confirmable) {
+			/* NON: no ACK expected, release immediately */
+			report_callback_error(internal_req, -ECANCELED);
+			reset_internal_request(internal_req);
+		}
+		/* CON: slot stays alive; retransmissions and final response
+		 * handled via the normal response path once the server ACKs
+		 */
+	}
+
+	k_mutex_unlock(&client->lock);
+	return ret;
+}
+
 void coap_client_recv(void *coap_cl, void *a, void *b)
 {
 	int ret;

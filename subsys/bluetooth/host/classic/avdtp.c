@@ -1833,10 +1833,7 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 		}
 	}
 
-	if (session->reasm_buf != NULL) {
-		net_buf_unref(session->reasm_buf);
-		session->reasm_buf = NULL;
-	}
+	net_buf_drop(&session->reasm_buf);
 
 	k_sem_take(&avdtp_sem_lock, K_FOREVER);
 	bt_avdtp_clear_tx(session);
@@ -1882,10 +1879,7 @@ void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg
 
 static int avdtp_rel_and_return(struct bt_avdtp *session)
 {
-	if (session->reasm_buf != NULL) {
-		net_buf_unref(session->reasm_buf);
-		session->reasm_buf = NULL;
-	}
+	net_buf_drop(&session->reasm_buf);
 
 	return 0;
 }
@@ -1931,8 +1925,7 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 
 		if (session->reasm_buf != NULL) {
 			LOG_ERR("get start packet during reassembly");
-			net_buf_unref(session->reasm_buf);
-			session->reasm_buf = NULL;
+			net_buf_drop(&session->reasm_buf);
 		}
 
 		if ((AVDTP_MSG_GET(start_hdr->hdr) != BT_AVDTP_CMD) &&
@@ -2044,10 +2037,7 @@ static int avdtp_rel_and_rej(struct bt_avdtp *session, uint8_t sigid, uint8_t ti
 	struct net_buf *rsp_buf;
 	int err;
 
-	if (session->reasm_buf != NULL) {
-		net_buf_unref(session->reasm_buf);
-		session->reasm_buf = NULL;
-	}
+	net_buf_drop(&session->reasm_buf);
 
 	rsp_buf = avdtp_create_pdu(BT_AVDTP_GEN_REJECT, sigid, tid);
 	if (!rsp_buf) {
@@ -2097,8 +2087,7 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (session->reasm_buf != NULL) {
 			LOG_DBG("get single packet during reassembly");
 
-			net_buf_unref(session->reasm_buf);
-			session->reasm_buf = NULL;
+			net_buf_drop(&session->reasm_buf);
 		}
 
 		if (buf->len < sizeof(*single_hdr)) {
@@ -2475,7 +2464,7 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 					*codec_info_element_len = (length - 2);
 					*codec_info_element =
 						net_buf_pull_mem(buf, (*codec_info_element_len));
-					return 0;
+					break;
 				}
 			}
 			break;
@@ -2484,7 +2473,7 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 			break;
 		}
 	}
-	return -EINVAL;
+	return (*codec_info_element != NULL) ? 0 : -EINVAL;
 }
 
 static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd,

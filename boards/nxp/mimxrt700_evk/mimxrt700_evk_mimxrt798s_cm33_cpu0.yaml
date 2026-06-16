@@ -22,6 +22,7 @@ supported:
   - spi
   - adc
   - usb_device
+  - usbh
   - watchdog
   - hwinfo
   - flash

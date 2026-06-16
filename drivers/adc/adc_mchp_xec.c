@@ -7,20 +7,22 @@
 
 #define DT_DRV_COMPAT microchip_xec_adc
 
-#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(adc_mchp_xec);
-
+#include <errno.h>
+#include <soc.h>
 #include <zephyr/drivers/adc.h>
-#ifdef CONFIG_SOC_SERIES_MEC172X
-#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#endif
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/irq.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
-#include <soc.h>
-#include <errno.h>
-#include <zephyr/irq.h>
+
+#include <zephyr/logging/log.h>
+#define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
+LOG_MODULE_REGISTER(adc_mchp_xec);
+
+#ifndef SHLU32
+#define SHLU32(v, n) ((uint32_t)(v) << (n))
+#endif
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -71,8 +73,7 @@ struct adc_xec_config {
 	uint8_t girq_single_pos;
 	uint8_t girq_repeat;
 	uint8_t girq_repeat_pos;
-	uint8_t pcr_regidx;
-	uint8_t pcr_bitpos;
+	uint8_t enc_pcr;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -224,8 +225,7 @@ static int adc_xec_start_read(const struct device *dev,
 
 	/* Setup ADC resolution */
 	sar_ctrl = regs->sar_control_reg;
-	sar_ctrl &= ~(MCHP_ADC_SAR_CTRL_RES_MASK |
-		      (1 << MCHP_ADC_SAR_CTRL_SHIFTD_POS));
+	sar_ctrl &= ~(MCHP_ADC_SAR_CTRL_RES_MASK | (1 << MCHP_ADC_SAR_CTRL_SHIFTD_POS));
 
 	if (sequence->resolution == 12) {
 		sar_ctrl |= MCHP_ADC_SAR_CTRL_RES_12_BITS;
@@ -306,38 +306,20 @@ static void xec_adc_get_sample(const struct device *dev)
 	regs->status_reg = ch_status;
 }
 
-#ifdef CONFIG_SOC_SERIES_MEC172X
 static inline void adc_xec_girq_clr(uint8_t girq_idx, uint8_t girq_posn)
 {
-	mchp_xec_ecia_girq_src_clr(girq_idx, girq_posn);
+	soc_ecia_girq_status_clear(girq_idx, girq_posn);
 }
 
 static inline void adc_xec_girq_en(uint8_t girq_idx, uint8_t girq_posn)
 {
-	mchp_xec_ecia_girq_src_en(girq_idx, girq_posn);
+	soc_ecia_girq_ctrl(girq_idx, girq_posn, 1u);
 }
 
 static inline void adc_xec_girq_dis(uint8_t girq_idx, uint8_t girq_posn)
 {
-	mchp_xec_ecia_girq_src_dis(girq_idx, girq_posn);
+	soc_ecia_girq_ctrl(girq_idx, girq_posn, 0u);
 }
-#else
-
-static inline void adc_xec_girq_clr(uint8_t girq_idx, uint8_t girq_posn)
-{
-	MCHP_GIRQ_SRC(girq_idx) = BIT(girq_posn);
-}
-
-static inline void adc_xec_girq_en(uint8_t girq_idx, uint8_t girq_posn)
-{
-	MCHP_GIRQ_ENSET(girq_idx) = BIT(girq_posn);
-}
-
-static inline void adc_xec_girq_dis(uint8_t girq_idx, uint8_t girq_posn)
-{
-	MCHP_GIRQ_ENCLR(girq_idx) = MCHP_KBC_IBF_GIRQ;
-}
-#endif
 
 static void adc_xec_single_isr(const struct device *dev)
 {
@@ -353,7 +335,7 @@ static void adc_xec_single_isr(const struct device *dev)
 	regs->control_reg = ctrl;
 
 	/* Also clear GIRQ source status bit */
-	adc_xec_girq_clr(cfg->girq_single, cfg->girq_single_pos);
+	soc_ecia_girq_status_clear(cfg->girq_single, cfg->girq_single_pos);
 
 	xec_adc_get_sample(dev);
 
@@ -420,6 +402,8 @@ static int adc_xec_init(const struct device *dev)
 	struct adc_xec_data * const data = dev->data;
 	int ret;
 
+	soc_xec_pcr_sleep_en_clear(cfg->enc_pcr);
+
 	data->adc_dev = dev;
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -429,6 +413,16 @@ static int adc_xec_init(const struct device *dev)
 	}
 
 	regs->config_reg = XEC_ADC_CFG_CLK_VAL(DT_INST_PROP(0, clktime));
+
+#if defined(CONFIG_SOC_SERIES_MEC175X)
+	/* For MEC175x SAR_CFG register (offset 0x8C), override  reset default values:
+	 * Write 0 for: PAR_DOUT=enabled, ADC_CLK_DIV=0 (DIV16, 3MHz SAR clock).
+	 */
+	{
+		volatile uint32_t *sar_cfg = (volatile uint32_t *)((uintptr_t)regs + 0x8Cu);
+		*sar_cfg = 0u;
+	}
+#endif
 
 	regs->control_reg =  XEC_ADC_CTRL_ACTIVATE
 		| XEC_ADC_CTRL_POWER_SAVER_DIS
@@ -453,14 +447,16 @@ static int adc_xec_init(const struct device *dev)
 
 PINCTRL_DT_INST_DEFINE(0);
 
+#define DEV_CFG_GIRQ(inst, idx)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, idx))
+#define DEV_CFG_GIRQ_POS(inst, idx) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, idx))
+
 static struct adc_xec_config adc_xec_dev_cfg_0 = {
 	.regs = (struct adc_xec_regs *)(DT_INST_REG_ADDR(0)),
-	.girq_single = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 0)),
-	.girq_single_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 1)),
-	.girq_repeat = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 2)),
-	.girq_repeat_pos = (uint8_t)(DT_INST_PROP_BY_IDX(0, girqs, 3)),
-	.pcr_regidx = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 0)),
-	.pcr_bitpos = (uint8_t)(DT_INST_PROP_BY_IDX(0, pcrs, 1)),
+	.girq_single = DEV_CFG_GIRQ(0, 0),
+	.girq_single_pos = DEV_CFG_GIRQ_POS(0, 0),
+	.girq_repeat = DEV_CFG_GIRQ(0, 1),
+	.girq_repeat_pos = DEV_CFG_GIRQ_POS(0, 1),
+	.enc_pcr = DT_INST_PROP(0, pcr_scr),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 

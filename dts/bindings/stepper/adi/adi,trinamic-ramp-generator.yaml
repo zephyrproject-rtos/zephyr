@@ -14,12 +14,16 @@ properties:
       Normally, set VSTOP ≥ VSTART! VSTART may be
       set to a higher value, when motion distance is
       sufficient to allow deceleration to VSTOP.
+    min: 0
+    max: 0x3FFFF
 
   a1:
     type: int
     default: 0
     description: |
       First acceleration between VSTART and V1 in [µsteps/ta²](unsigned)
+    min: 0
+    max: 0xFFFF
 
   v1:
     type: int
@@ -28,6 +32,8 @@ properties:
       First acceleration / deceleration phase threshold velocity in [µsteps/t] (unsigned)
 
       0: Disables A1 and D1 phase, use AMAX, DMAX only
+    min: 0
+    max: 0xFFFFF
 
   amax:
     type: int
@@ -36,6 +42,8 @@ properties:
       Second acceleration between V1 and VMAX in [µsteps/ta²](unsigned)
       This is the acceleration and deceleration value
       for velocity mode.
+    min: 0
+    max: 0xFFFF
 
   vmax:
     type: int
@@ -43,12 +51,16 @@ properties:
     description: |
       Motion ramp target velocity in [µsteps/t] (for positioning ensure VMAX ≥ VSTART) (unsigned)
       This is the target velocity in velocity mode. It can be changed any time during a motion.
+    min: 0
+    max: 0x7FFDFF
 
   dmax:
     type: int
     default: 0
     description: |
       Deceleration between VMAX and V1 in [µsteps/ta²](unsigned)
+    min: 0
+    max: 0xFFFF
 
   d1:
     type: int
@@ -58,6 +70,8 @@ properties:
 
       Attention: Do not set 0 in positioning mode,
       even if V1=0!
+    min: 1
+    max: 0xFFFF
 
   vstop:
     type: int
@@ -69,6 +83,8 @@ properties:
 
       Attention: Do not set 0 in positioning mode,
       minimum 10 recommended!
+    min: 1
+    max: 0x3FFFF
 
   tzerowait:
     type: int
@@ -77,6 +93,8 @@ properties:
       Waiting time after ramping down to zero velocity before next movement or direction
       inversion can start and before motor power down starts. Time range is about 0 to 2
       seconds. This setting avoids excess acceleration e.g. from VSTOP to -VSTART.
+    min: 0
+    max: 0xFDFF
 
   ihold:
     type: int
@@ -86,6 +104,8 @@ properties:
       Standstill current (0=1/32…31=32/32)
       In combination with StealthChop mode, setting IHOLD=0 allows to choose freewheeling or coil
       short circuit for motor stand still
+    min: 0
+    max: 0x1F
 
   irun:
     type: int
@@ -94,6 +114,8 @@ properties:
       Motor run current (0=1/32…31=32/32)
       Hint: Choose sense resistors in a way, that normal
       IRUN is 16 to 31 for best microstep performance.
+    min: 0
+    max: 0x1F
 
   iholddelay:
     type: int
@@ -103,6 +125,8 @@ properties:
       has expired. The smooth transition avoids a motor jerk upon power down.
       0: instant power down
       1..15: Delay per current reduction step in multiple of 2^18 clocks
+    min: 0
+    max: 0x0F
 
   vcoolthrs:
     type: int
@@ -119,6 +143,8 @@ properties:
       VHIGH ≥ |VACT| ≥ VCOOLTHRS:
         - CoolStep and stop on stall are enabled, if configured
         - Voltage PWM mode StealthChop is switched off, if configured
+    min: 0
+    max: 0x7FFFFF
 
   vhigh:
     type: int
@@ -132,6 +158,8 @@ properties:
           (constant off time with slow decay, only).
         - If vhighfs is set, the motor operates in fullstep mode.
         - Voltage PWM mode StealthChop is switched off, if configured
+    min: 0
+    max: 0x7FFFFF
 
   tcoolthrs:
     type: int
@@ -151,6 +179,8 @@ properties:
       TCOOLTHRS ≥ TSTEP
       - Stop on stall is enabled, if configured
       - Stall output signal (DIAG0/1) is enabled, if configured
+    min: 0
+    max: 0xFFFFF
 
   thigh:
     type: int
@@ -171,6 +201,8 @@ properties:
       - If vhighfs is set, the motor operates in fullstep mode,
       and the stall detection becomes switched over to
       DcStep stall detection.
+    min: 0
+    max: 0xFFFFF
 
   tpwmthrs:
     type: int
@@ -180,6 +212,8 @@ properties:
       TSTEP ≥ TPWMTHRS
       - StealthChop PWM mode is enabled, if configured
       - DcStep is disabled
+    min: 0
+    max: 0xFFFFF
 
   tpowerdown:
     type: int
@@ -192,3 +226,5 @@ properties:
       automatic tuning of StealthChop PWM_OFS_AUTO.
       Reset Default = 10
       0…((2^8)-1) * 2^18 tCLK
+    min: 0
+    max: 0xFF

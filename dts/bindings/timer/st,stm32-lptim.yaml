@@ -44,8 +44,10 @@ properties:
     type: int
     description: |
         Gives the LPTIM an exact counting value (s) for timeout expiration.
-        Valid range is [1, 256] and should be consistent with st,prescaler
-        pre-defined setting. If not, an error is raised.
+        Value must be consistent with st,prescaler pre-defined setting otherwise
+        driver fails to initialize for the related device.
+    min: 1
+    max: 256
 
 examples:
   - |

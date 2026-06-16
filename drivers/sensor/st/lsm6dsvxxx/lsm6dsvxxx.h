@@ -205,6 +205,7 @@ struct lsm6dsvxxx_data {
 	uint8_t gyro_freq;
 	uint8_t gyro_fs;
 	uint8_t out_xl;
+	uint8_t out_gy;
 	uint8_t out_tp;
 
 	struct rtio_iodev_sqe *streaming_sqe;
@@ -275,10 +276,12 @@ struct lsm6dsvxxx_rtio_data {
 	struct lsm6dsvxxx_decoder_header header;
 	struct {
 		uint8_t has_accel: 1; /* set if accel channel has data */
+		uint8_t has_gyro: 1;  /* set if gyro channel has data */
 		uint8_t has_temp: 1;  /* set if temp channel has data */
-		uint8_t reserved: 6;
+		uint8_t reserved: 5;
 	}  __attribute__((__packed__));
 	int16_t accel[3];
+	int16_t gyro[3];
 	int16_t temp;
 };
 

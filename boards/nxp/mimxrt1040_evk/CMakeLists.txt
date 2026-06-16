@@ -29,7 +29,14 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
     # SDRAM chip is used on your custom board.
     zephyr_library_sources(dcd/dcd.c)
   else()
-    if(CONFIG_SRAM_BASE_ADDRESS EQUAL 0x80000000)
+    if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+      set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
+    else()
+      dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+      dt_reg_addr(RAM_ADDR PATH "${chosen_sram_path}")
+    endif()
+
+    if(${RAM_ADDR} EQUAL 0x80000000)
       message(WARNING "You are using SDRAM as RAM but no device "
         "configuration data (DCD) is included. This configuration may not boot")
     endif()

@@ -236,6 +236,11 @@ static int lb_control_to_dev(struct usbd_class_data *c_data,
 		return 0;
 	}
 
+	if (setup->wLength && (buf == NULL)) {
+		/* Data OUT can be received */
+		return 0;
+	}
+
 	if (setup->bRequest == LB_VENDOR_REQ_OUT) {
 		LOG_WRN("Host-to-Device, wLength %u | %zu", setup->wLength,
 			MIN(sizeof(lb_buf), buf->len));

@@ -13,6 +13,125 @@ config HAS_MCUX
 
 if	HAS_MCUX
 
+DT_CHOSEN_MCUX_DTCM := zephyr,dtcm
+DT_CHOSEN_MCUX_ITCM := zephyr,itcm
+
+config MCUX_OPTIMIZED_MEMCPY
+	bool "Use NXP optimized memcpy"
+	depends on !MINIMAL_LIBC
+	depends on CPU_CORTEX_M
+	# Doesn't support CM0+ and CM23
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	default y if "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu"
+	help
+	  Use NXP's optimized assembly memcpy
+
+config MCUX_OPTIMIZED_MEMSET
+	bool "Use NXP optimized memset"
+	depends on !MINIMAL_LIBC
+	depends on CPU_CORTEX_M
+	# Doesn't support CM0+ and CM23
+	depends on !ARMV6_M_ARMV8_M_BASELINE
+	default y if "$(TOOLCHAIN_VARIANT_COMPILER)" = "gnu"
+	help
+	  Use NXP's optimized assembly memset
+
+choice MCUX_DATA_QUICK_ACCESS_PLACEMENT
+	prompt "MCUX SDK DataQuickAccess placement"
+	depends on CPU_CORTEX_M
+	default MCUX_DATA_QUICK_ACCESS_SRAM
+	help
+	  Select where the MCUX SDK DataQuickAccess input section is
+	  placed.
+
+config MCUX_DATA_QUICK_ACCESS_SRAM
+	bool "Place DataQuickAccess in zephyr,sram"
+	help
+	  Place DataQuickAccess in the regular Zephyr read-write data
+	  section. This preserves the existing behavior.
+
+config MCUX_DATA_QUICK_ACCESS_DTCM
+	bool "Place DataQuickAccess in zephyr,dtcm"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_MCUX_DTCM))
+	help
+	  Place DataQuickAccess in the DTCM data section selected by
+	  the zephyr,dtcm devicetree chosen node.
+
+config MCUX_DATA_QUICK_ACCESS_CUSTOM
+	bool "Use custom DataQuickAccess placement"
+	help
+	  Do not add the default MCUX SDK linker snippet for
+	  DataQuickAccess. The board or application must provide a
+	  linker snippet that consumes the DataQuickAccess input section.
+	  If this section contains initialized data and is placed in a
+	  non-standard memory region, the board or application must ensure
+	  that the data is copied from ROM to that region before use.
+
+endchoice
+
+choice MCUX_CODE_QUICK_ACCESS_PLACEMENT
+	prompt "MCUX SDK CodeQuickAccess placement"
+	depends on CPU_CORTEX_M
+	default MCUX_CODE_QUICK_ACCESS_RAMFUNC if ARCH_HAS_RAMFUNC_SUPPORT
+	default MCUX_CODE_QUICK_ACCESS_CUSTOM
+	help
+	  Select where the MCUX SDK CodeQuickAccess input section is
+	  placed.
+
+config MCUX_CODE_QUICK_ACCESS_RAMFUNC
+	bool "Place CodeQuickAccess in ramfunc"
+	depends on ARCH_HAS_RAMFUNC_SUPPORT
+	help
+	  Place CodeQuickAccess in the Zephyr ramfunc section. This
+	  preserves the existing behavior when ramfunc support is enabled.
+
+config MCUX_CODE_QUICK_ACCESS_ITCM
+	bool "Place CodeQuickAccess in zephyr,itcm"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_MCUX_ITCM))
+	help
+	  Place CodeQuickAccess in the ITCM section selected by the
+	  zephyr,itcm devicetree chosen node.
+
+config MCUX_CODE_QUICK_ACCESS_CUSTOM
+	bool "Use custom CodeQuickAccess placement"
+	help
+	  Do not add the default MCUX SDK linker snippet for
+	  CodeQuickAccess. The board or application must provide a linker
+	  snippet that consumes the CodeQuickAccess input section if needed.
+	  If this section is placed in a non-standard memory region, the
+	  board or application must ensure that the code is loaded or copied
+	  to that region before execution.
+
+endchoice
+
+choice MCUX_NONCACHEABLE_PLACEMENT
+	prompt "MCUX SDK NonCacheable placement"
+	default MCUX_NONCACHEABLE_NOCACHE if NOCACHE_MEMORY
+	default MCUX_NONCACHEABLE_CUSTOM
+	help
+	  Select where the MCUX SDK NonCacheable and NonCacheable.init
+	  input sections are placed.
+
+config MCUX_NONCACHEABLE_NOCACHE
+	bool "Place NonCacheable sections in Zephyr nocache memory"
+	depends on NOCACHE_MEMORY
+	help
+	  Place NonCacheable and NonCacheable.init input sections in the
+	  Zephyr nocache section. This preserves the existing behavior when
+	  nocache memory support is enabled.
+
+config MCUX_NONCACHEABLE_CUSTOM
+	bool "Use custom NonCacheable placement"
+	help
+	  Do not add the default MCUX SDK linker snippet for NonCacheable
+	  and NonCacheable.init. The board or application must provide a
+	  linker snippet that consumes these input sections if needed.
+	  If NonCacheable.init is placed in a non-standard memory region,
+	  the board or application must ensure that initialized data is
+	  copied from ROM to that region before use.
+
+endchoice
+
 config MCUX_CORE_SUFFIX
 	string
 	help
@@ -50,6 +169,28 @@ config HAS_MCUX_SYSCON_LPCAC
 	help
 	  Set if the SYSCON LPCAC module is present on the SoC.
 
+config HAS_MCUX_SYSINIT_DISABLE_WDOG
+	bool
+	help
+	  Set by SoCs whose MCUX CMSIS SystemInit() honors the DISABLE_WDOG
+	  macro to control the hardware watchdog at boot.
+
+config MCUX_SYSINIT_KEEP_WATCHDOG
+	bool
+	depends on HAS_MCUX_SYSINIT_DISABLE_WDOG
+	default y if WATCHDOG && HAS_WDT_DISABLE_AT_BOOT && !WDT_DISABLE_AT_BOOT
+	help
+	  When set, DISABLE_WDOG=0 is defined for the MCUX HAL so that CMSIS
+	  SystemInit() leaves the hardware watchdog running and the Zephyr
+	  watchdog driver manages it. Otherwise CMSIS disables it at boot,
+	  which is its default behavior.
+
+config HAS_MCUX_MCM_LPCAC
+	bool
+	help
+	  Set if the MCM-controlled LPCAC code cache module is present on the
+	  SoC (LPCAC enable/disable/clear handled through MCM CPCR2).
+
 config HAS_NXP_MONOLITHIC_NBU
 	bool
 	help
@@ -60,6 +201,16 @@ config NXP_FW_LOADER
 	help
 	   The firmware loader is used to load firmwares to embedded transceivers.
 	   It is needed to enable connectivity features.
+
+config NXP_COMPRESSED_WIFI_NB_FW
+	bool "Use compressed Wi-Fi or NB firmware"
+	depends on NXP_MONOLITHIC_WIFI || NXP_MONOLITHIC_NBU
+	help
+	  Enable this option to use a compressed Wi-Fi or Narrowband firmware image.
+	  Using a compressed firmware reduces flash memory consumption.
+	  However, the firmware must be decompressed during initialization
+	  after being downloaded, which increases boot time and
+	  initialization latency.
 
 config NXP_MONOLITHIC_NBU
 	bool "Narrowband Unit (BT/15.4) firmware monolithic build"
@@ -91,6 +242,27 @@ config NXP_SNPS_BLE_CTRL
 	depends on BT
 	help
 	  If enabled, the NXP SNPS BLE Controller will be included.
+
+config NXP_MCXW7X_BLE_CTRL
+	bool "Include MCXW7X NXP BLE Controller"
+	depends on NXP_NBU
+	help
+	  If enabled, MCXW7X NXP BLE Controller will be included.
+
+config NXP_NEUTRON
+	bool "NXP NEUTRON NPU Driver"
+	depends on SOC_SERIES_IMXRT7XX || SOC_FAMILY_MCXN
+	help
+	  Enable the NXP NEUTRON Neural Processing Unit driver.
+
+config TFLM_NXP_NEUTRON
+	bool "TensorFlow Lite Micro NEUTRON integration"
+	depends on TENSORFLOW_LITE_MICRO
+	select NXP_NEUTRON
+	help
+	  Enable TensorFlow Lite Micro integration with NEUTRON NPU.
+	  This allows TFLM models to use the NEUTRON accelerator
+	  for inference operations.
 
 endif # HAS_MCUX
 

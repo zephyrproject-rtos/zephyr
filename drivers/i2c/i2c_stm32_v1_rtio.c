@@ -68,7 +68,6 @@ static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	i2c_stm32_disable_transfer_interrupts(dev);
@@ -83,8 +82,8 @@ static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 #endif
 
 	LL_I2C_Disable(i2c);
-	if ((data->xfer_len == 0U) && i2c_rtio_complete(ctx, status)) {
-		i2c_stm32_start(dev);
+	if (data->xfer_len == 0U) {
+		i2c_stm32_rtio_complete(dev, status);
 	}
 }
 
@@ -363,6 +362,10 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return -EBUSY;
 	}
 
+	if (config->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		return -ENOTSUP;
+	}
+
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
@@ -371,13 +374,16 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return ret;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR("i2c: PM runtime failure: %d", ret);
+		return ret;
+	}
+
 	data->target_cfg = config;
 
 	LL_I2C_Enable(i2c);
 
-	if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
-		return -ENOTSUP;
-	}
 	LL_I2C_SetOwnAddress1(i2c, config->address << 1U, LL_I2C_OWNADDRESS1_7BIT);
 	data->target_attached = true;
 
@@ -409,6 +415,8 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 	LL_I2C_ClearFlag_STOP(i2c);
 	LL_I2C_ClearFlag_ADDR(i2c);
 	LL_I2C_Disable(i2c);
+
+	(void)pm_device_runtime_put(dev);
 
 	data->target_attached = false;
 
@@ -504,8 +512,8 @@ error:
 
 }
 
-int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
-			uint8_t *buf, size_t buf_len, uint16_t i2c_addr)
+void i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
+			 uint16_t i2c_addr)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -535,8 +543,6 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 	} else {
 		LL_I2C_EnableIT_TX(i2c);
 	}
-
-	return 0;
 }
 
 int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)

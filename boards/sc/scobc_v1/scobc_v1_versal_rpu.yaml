@@ -1,4 +1,4 @@
-identifier: scobc_v1
+identifier: scobc_v1/versal_rpu
 name: SC-OBC Module V1 Versal AI Edge RPU
 arch: arm
 toolchain:

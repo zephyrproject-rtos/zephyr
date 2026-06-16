@@ -13,3 +13,10 @@ tests:
   net.dhcpv4_server.no_probe:
     extra_configs:
       - CONFIG_NET_DHCPV4_SERVER_ICMP_PROBE_TIMEOUT=0
+  net.dhcpv4_server.captive_portal_auto:
+    extra_configs:
+      - CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL=y
+  net.dhcpv4_server.captive_portal_override:
+    extra_configs:
+      - CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL=y
+      - CONFIG_NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL_URI="http://prov.example/captive"

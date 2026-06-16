@@ -21,6 +21,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -34,6 +35,14 @@ CREATE_FLAG(flag_tmap_discovered);
 
 void tmap_discovery_complete_cb(enum bt_tmap_role role, struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(role);
+	ARG_UNUSED(conn);
+
+	if (err != 0) {
+		FAIL("Failed to discover TMAS: %d", err);
+		return;
+	}
+
 	printk("TMAS discovery done\n");
 	SET_FLAG(flag_tmap_discovered);
 }
@@ -48,7 +57,7 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 	struct net_buf_simple tmas_svc_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
-	uint16_t peer_tmap_role = 0;
+	uint16_t peer_tmap_role = 0U;
 	int err;
 
 	printk("[AD]: %u data_len %u\n", data->type, data->data_len);

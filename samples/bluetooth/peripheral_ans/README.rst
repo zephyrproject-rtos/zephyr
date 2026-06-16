@@ -19,8 +19,15 @@ Requirements
 Building and Running
 ********************
 
-To start receiving alerts over the connection, refer to
-`GATT Specification Supplement <https://btprodspecificationrefs.blob.core.windows.net/gatt-specification-supplement/GATT_Specification_Supplement.pdf>`_
-section 3.12 for byte array to enable/disable notifications and control the service.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/peripheral_ans
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, use a Bluetooth scanner app (e.g. nRF Connect) to connect to the device.
+Enable notifications on the New Alert and Unread Alert Status characteristics, then write
+to the Alert Notification Control Point to enable the desired alert categories. The sample
+periodically sends Simple Alert and High Priority Alert notifications.

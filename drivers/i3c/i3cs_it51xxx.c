@@ -97,6 +97,9 @@ LOG_MODULE_REGISTER(i3cs_it51xxx);
 #define I3CS_DIRECT_TX_DONE       BIT(1)
 #define I3CS_DIRECT_RX_DONE       BIT(0)
 
+#define I3CS4F_READ_ABORT_CTRL       0x4F
+#define DISABLE_READ_ABORT_MECHANISM BIT(7)
+
 #define I3CS58_TX_FIFO_BYTE_COUNT_LB 0x58
 #define I3CS59_TX_FIFO_BYTE_COUNT_HB 0x59
 #define I3CS5A_RX_FIFO_BYTE_COUNT_LB 0x5A
@@ -175,6 +178,7 @@ struct it51xxx_i3cs_config {
 	mm_reg_t base;
 	uint8_t io_channel;
 	uint8_t vendor_info;
+	bool disable_read_abort;
 
 	struct {
 		mm_reg_t addr;
@@ -475,7 +479,8 @@ static int it51xxx_i3cs_target_ibi_raise(const struct device *dev, struct i3c_ib
 		goto out;
 	}
 
-	if (it51xxx_i3cs_wait_to_complete(dev) != 0) {
+	ret = it51xxx_i3cs_wait_to_complete(dev);
+	if (ret) {
 		LOG_INST_WRN(cfg->log, "failed to issue ibi. maybe the controller is offline");
 		sys_write8(I3CS_EVENT_SELECT(EVT_NORMAL_MODE), cfg->base + I3CS0C_CONTROL_0);
 	}
@@ -627,6 +632,12 @@ static int it51xxx_i3cs_init(const struct device *dev)
 #endif /*CONFIG_I3C_USE_IBI */
 
 	k_mutex_init(&data->lock);
+
+	if (cfg->disable_read_abort) {
+		sys_write8(sys_read8(cfg->base + I3CS4F_READ_ABORT_CTRL) |
+				   DISABLE_READ_ABORT_MECHANISM,
+			   cfg->base + I3CS4F_READ_ABORT_CTRL);
+	}
 
 	/* clear interrupt/errwarn status and enable interrupt */
 	sys_write8(sys_read8(cfg->base + I3CS1C_ERROR_WARNING_REG_0),
@@ -867,6 +878,7 @@ static void it51xxx_i3cs_isr(const struct device *dev)
 		.io_channel = DT_INST_PROP(n, io_channel),                                         \
 		.extern_enable = IT51XXX_I3CS_EXTERN_ENABLE(n),                                    \
 		.vendor_info = DT_INST_PROP_OR(n, vendor_info_fields, 0x0),                        \
+		.disable_read_abort = DT_INST_PROP(n, disable_read_abort),                         \
 		LOG_INSTANCE_PTR_INIT(log, DT_NODE_FULL_NAME_TOKEN(DT_DRV_INST(n)), n)};           \
 	static struct it51xxx_i3cs_data i3c_data_##n = {                                           \
 		.config_target.static_addr = DT_INST_PROP_OR(n, static_address, 0),                \

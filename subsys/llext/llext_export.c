@@ -21,6 +21,42 @@ EXPORT_GROUP_SYMBOL(LIBC, memmove);
 EXPORT_GROUP_SYMBOL(LIBC, strtoul);
 EXPORT_GROUP_SYMBOL(LIBC, sprintf);
 
+#if defined(CONFIG_ARM) && !defined(CONFIG_CPU_AARCH32_CORTEX_R)
+/*
+ * On AArch32, compilers may lower memcpy()/memmove()/memset()/zero-init to the
+ * ARM EABI run-time helpers instead of the C library functions. These helpers
+ * are provided by the compiler run-time (libgcc/compiler-rt); export them so
+ * that extensions which reference them can be linked. The exact set emitted
+ * depends on the compiler (e.g. Clang uses the aligned __aeabi_memset4 /
+ * __aeabi_memclr4 variants where GCC may emit direct memset() calls).
+ */
+extern void __aeabi_memcpy(void);
+extern void __aeabi_memcpy4(void);
+extern void __aeabi_memcpy8(void);
+extern void __aeabi_memmove(void);
+extern void __aeabi_memmove4(void);
+extern void __aeabi_memmove8(void);
+extern void __aeabi_memset(void);
+extern void __aeabi_memset4(void);
+extern void __aeabi_memset8(void);
+extern void __aeabi_memclr(void);
+extern void __aeabi_memclr4(void);
+extern void __aeabi_memclr8(void);
+
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memcpy);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memcpy4);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memcpy8);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memmove);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memmove4);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memmove8);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memset);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memset4);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memset8);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memclr);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memclr4);
+EXPORT_GROUP_SYMBOL(LIBC, __aeabi_memclr8);
+#endif /* CONFIG_ARM && !CONFIG_CPU_AARCH32_CORTEX_R */
+
 /* These symbols are used if CCAC is given the flag -Os */
 #ifdef __CCAC__
 extern void __ac_mc_va(void);

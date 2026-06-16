@@ -136,8 +136,5 @@
 #define CACHE_ALIGN   CONFIG_MMU_PAGE_SIZE
 
 /* Flash memory */
-#ifdef CONFIG_FLASH_SIZE
-#define FLASH_SIZE         CONFIG_FLASH_SIZE
-#else
-#define FLASH_SIZE         0x800000
-#endif
+#define FLASH_SIZE         DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
+#define FLASH_BASE_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_flash))

@@ -210,6 +210,12 @@
 		};
 	};
 
+	crc: crc@95000 {
+		compatible = "nxp,lpc-crc";
+		reg = <0x95000 0x1000>;
+		status = "disabled";
+	};
+
 	ctimer0: ctimer@8000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x8000 0x1000>;
@@ -378,6 +384,9 @@
 		compatible = "nxp,nbu";
 		interrupts = <22 0>;
 		interrupt-names = "nbu_rx_int";
+		max-tx-power-support = <0 2 6>;
+		/* Max TX power can be overridden by the board */
+		max-tx-power-dbm = <6>;
 	};
 
 	mrt0: mrt@d000 {
@@ -415,6 +424,13 @@
 			reg = <3>;
 			status = "disabled";
 		};
+	};
+
+	smem: smem@b8000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xb8000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "smem";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 

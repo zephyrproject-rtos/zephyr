@@ -1032,6 +1032,12 @@ static int insert_pktinfo(struct net_msghdr *msg, int level, int type,
 		return -EINVAL;
 	}
 
+	/* Ensure the full element fits at the selected location, not just a header. */
+	if (cmsg_space > (size_t)((uint8_t *)msg->msg_control + msg->msg_controllen -
+				  (uint8_t *)cmsg)) {
+		return -ENOMEM;
+	}
+
 	cmsg->cmsg_len = NET_CMSG_LEN(pktinfo_len);
 	cmsg->cmsg_level = level;
 	cmsg->cmsg_type = type;
@@ -2022,7 +2028,12 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		switch (optname) {
 		case ZSOCK_TCP_NODELAY:
 			ret = net_tcp_get_option(ctx, TCP_OPT_NODELAY, optval, optlen);
-			return ret;
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
 
 		case ZSOCK_TCP_KEEPIDLE:
 			__fallthrough;
@@ -2110,6 +2121,21 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			break;
 
+		case ZSOCK_IP_DONTFRAG:
+			if (IS_ENABLED(CONFIG_NET_IPV4)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_DONT_FRAGMENT,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case ZSOCK_IP_LOCAL_PORT_RANGE:
 			if (IS_ENABLED(CONFIG_NET_CONTEXT_CLAMP_PORT_RANGE)) {
 				ret = net_context_get_option(ctx,
@@ -2145,6 +2171,21 @@ int zsock_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case ZSOCK_IPV6_MTU:
 			if (IS_ENABLED(CONFIG_NET_IPV6)) {
 				ret = net_context_get_option(ctx, NET_OPT_MTU,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case ZSOCK_IPV6_DONTFRAG:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				ret = net_context_get_option(ctx,
+							     NET_OPT_DONT_FRAGMENT,
 							     optval, optlen);
 				if (ret < 0) {
 					errno  = -ret;
@@ -2653,7 +2694,12 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case ZSOCK_TCP_NODELAY:
 			ret = net_tcp_set_option(ctx,
 						 TCP_OPT_NODELAY, optval, optlen);
-			return ret;
+			if (ret < 0) {
+				errno = -ret;
+				return -1;
+			}
+
+			return 0;
 
 		case ZSOCK_TCP_KEEPIDLE:
 			__fallthrough;
@@ -2755,6 +2801,21 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 
 			return 0;
 
+		case ZSOCK_IP_DONTFRAG:
+			if (IS_ENABLED(CONFIG_NET_IPV4)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_DONT_FRAGMENT,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
 		case ZSOCK_IP_ADD_MEMBERSHIP:
 			if (IS_ENABLED(CONFIG_NET_IPV4)) {
 				return ipv4_multicast_group(ctx, optval,
@@ -2806,6 +2867,21 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 		case ZSOCK_IPV6_MTU:
 			if (IS_ENABLED(CONFIG_NET_IPV6)) {
 				ret = net_context_set_option(ctx, NET_OPT_MTU,
+							     optval, optlen);
+				if (ret < 0) {
+					errno  = -ret;
+					return -1;
+				}
+
+				return 0;
+			}
+
+			break;
+
+		case ZSOCK_IPV6_DONTFRAG:
+			if (IS_ENABLED(CONFIG_NET_IPV6)) {
+				ret = net_context_set_option(ctx,
+							     NET_OPT_DONT_FRAGMENT,
 							     optval, optlen);
 				if (ret < 0) {
 					errno  = -ret;

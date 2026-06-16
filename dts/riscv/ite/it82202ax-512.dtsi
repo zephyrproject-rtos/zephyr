@@ -13,12 +13,16 @@
 			reg = <0x00f01000 0x100>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@80000000 {
 				compatible = "soc-nv-flash";
 				reg = <0x80000000 DT_SIZE_K(512)>;
+				ranges = <0 0x80000000 DT_SIZE_K(512)>;
 				erase-block-size = <4096>;
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 	};

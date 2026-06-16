@@ -228,6 +228,13 @@ config NRF70_SR_COEX_SWCTRL1_OUTPUT
 config NRF70_SR_COEX_BT_GRANT_ACTIVE_LOW
 	int "Configure BT grant active low"
 	default 1
+
+config NRF70_BT_SLOT_TIME
+	int "BT slot allocation time in Wi-Fi scan (ms)"
+	range 0 255
+	default 0
+	help
+	  Time allocated in milliseconds for SR between successive Wi-Fi channel scan.
 endif # NRF70_SR_COEX
 
 config NRF70_WORKQ_STACK_SIZE
@@ -918,6 +925,11 @@ config NRF_WIFI_COEX_DISABLE_PRIORITY_WINDOW_FOR_SCAN
 	help
 	  Enable this configuration to disable priority window for scan
 	  in the case of coexistence with Short Range radio.
+
+config NRF_WIFI_DISPLAY_SCAN_ABORT_ON_BSS_LIMIT
+	bool "Abort scan when display BSS limit is reached"
+	help
+	  Enable this configuration to abort display scan when the BSS limit is reached.
 
 if NETWORKING
 config NRF_WIFI_ZERO_COPY_TX

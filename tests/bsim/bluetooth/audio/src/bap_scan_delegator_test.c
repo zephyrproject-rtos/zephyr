@@ -26,15 +26,13 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
 
 #ifdef CONFIG_BT_BAP_SCAN_DELEGATOR
 extern enum bst_result_t bst_result;
-
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP              5
 
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_pa_terminated);
@@ -161,8 +159,7 @@ static int pa_sync_past(struct bt_conn *conn,
 	} else {
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
-		(void)k_work_reschedule(&state->pa_timer,
-					K_MSEC(param.timeout * 10));
+		(void)k_work_reschedule(&state->pa_timer, K_MSEC(param.timeout * 10U));
 	}
 
 	return err;
@@ -193,8 +190,7 @@ static int pa_sync_no_past(struct sync_state *state,
 		printk("PA sync pending for addr %s\n", bt_addr_le_str(&recv_state->addr));
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
-		(void)k_work_reschedule(&state->pa_timer,
-					K_MSEC(param.timeout * 10));
+		(void)k_work_reschedule(&state->pa_timer, K_MSEC(param.timeout * 10U));
 	}
 
 	return err;
@@ -231,6 +227,8 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 				  const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
 	struct sync_state *state;
+
+	ARG_UNUSED(conn);
 
 	printk("Receive state with ID %u updated\n", recv_state->src_id);
 
@@ -309,6 +307,8 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 {
 	struct sync_state *state;
 
+	ARG_UNUSED(conn);
+
 	printk("PA Sync term request for %p\n", recv_state);
 
 	state = sync_state_get(recv_state);
@@ -325,6 +325,8 @@ static void broadcast_code_cb(struct bt_conn *conn,
 			      const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE])
 {
 	struct sync_state *state;
+
+	ARG_UNUSED(conn);
 
 	printk("Broadcast code received for %p\n", recv_state);
 
@@ -345,6 +347,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 {
 	struct sync_state *state;
 	bool sync_bis;
+
+	ARG_UNUSED(conn);
 
 	printk("BIS sync request received for %p\n", recv_state);
 	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
@@ -376,6 +380,8 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 static int add_source_cb(struct bt_conn *conn,
 	const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
+	ARG_UNUSED(conn);
+
 	printk("Add Source callback: src_id=%u\n", recv_state->src_id);
 	SET_FLAG(flag_broadcast_source_added);
 	return 0;
@@ -384,6 +390,8 @@ static int add_source_cb(struct bt_conn *conn,
 static int modify_source_cb(struct bt_conn *conn,
 	   const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
+	ARG_UNUSED(conn);
+
 	printk("Modify Source callback: src_id=%u\n", recv_state->src_id);
 	SET_FLAG(flag_broadcast_source_modified);
 	return 0;
@@ -391,6 +399,8 @@ static int modify_source_cb(struct bt_conn *conn,
 
 static int remove_source_cb(struct bt_conn *conn, uint8_t src_id)
 {
+	ARG_UNUSED(conn);
+
 	printk("Remove Source callback: src_id=%u\n", src_id);
 
 	if (reject_control_op) {
@@ -453,6 +463,8 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 		       const struct bt_le_per_adv_sync_term_info *info)
 {
 	struct sync_state *state;
+
+	ARG_UNUSED(info);
 
 	printk("PA %p sync terminated\n", sync);
 
@@ -680,7 +692,7 @@ static int remove_source(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_rem_src(state->src_id);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
@@ -702,8 +714,8 @@ static void remove_all_sources(void)
 			printk("[%zu]: Removing source\n", i);
 
 			err = remove_source(state);
-			if (err) {
-				FAIL("[%zu]: Remove source failed (err %d)\n", err);
+			if (err != 0) {
+				FAIL("[%zu]: Remove source failed (err %d)\n", i, err);
 				return;
 			}
 
@@ -770,7 +782,7 @@ static int sync_broadcast(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, state->bis_sync_req);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
@@ -806,7 +818,7 @@ static int common_init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return err;
 	}
@@ -814,7 +826,7 @@ static int common_init(void)
 	printk("Bluetooth initialized\n");
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cb);
-	if (err) {
+	if (err != 0) {
 		FAIL("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -833,7 +845,7 @@ static void test_main_client_sync(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
@@ -871,7 +883,7 @@ static void test_main_server_sync_client_rem(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
@@ -920,7 +932,7 @@ static void test_main_server_sync_server_rem(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}

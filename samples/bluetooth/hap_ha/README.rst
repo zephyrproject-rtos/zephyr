@@ -8,8 +8,6 @@ Overview
 ********
 
 Application demonstrating the LE Audio Hearing Aid sample functionality.
-Starts advertising and awaits connection from a Hearing Aid Unicast Client (HAUC)
-or Hearing Aid Remote Controller (HARC).
 
 Requirements
 ************
@@ -19,4 +17,18 @@ Requirements
 
 Building and Running
 ********************
+
+Build and flash the sample as follows, replacing ``<board>`` with your target
+board (e.g. :zephyr:board:`nrf5340dk`):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/hap_ha
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, the sample starts advertising as ``Hearing Aid sample`` and
+awaits a connection from a Hearing Aid Unicast Client (HAUC) or Hearing Aid
+Remote Controller (HARC).
+
 See :zephyr:code-sample-category:`bluetooth` samples for details.

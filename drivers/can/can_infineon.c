@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -112,7 +112,7 @@ static int can_infineon_init(const struct device *dev)
 
 	/* Ensure the parent controller (MRAM + channel clocks) is ready */
 	if (!device_is_ready(infineon_cfg->ctrl_dev)) {
-		LOG_ERR("CAN FD controller device not ready");
+		LOG_ERR_DEVICE_NOT_READY(infineon_cfg->ctrl_dev);
 		return -ENODEV;
 	}
 
@@ -251,8 +251,7 @@ static const struct can_mcan_ops can_infineon_ops = {
 	static const struct can_mcan_config can_mcan_cfg_##n = CAN_MCAN_DT_CONFIG_INST_GET(        \
 		n, &can_infineon_cfg_##n, &can_infineon_ops, &can_infineon_cbs_##n);               \
                                                                                                    \
-	static struct can_mcan_data can_mcan_data_##n =                                            \
-		CAN_MCAN_DATA_INITIALIZER(&can_infineon_data_##n);                                 \
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##n, &can_infineon_data_##n);                           \
                                                                                                    \
 	CAN_DEVICE_DT_INST_DEFINE(n, can_infineon_init, NULL, &can_mcan_data_##n,                  \
 				  &can_mcan_cfg_##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,        \

@@ -10,6 +10,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/irq.h>
 
@@ -41,6 +42,7 @@ struct lpspi_config {
 	uint32_t sck_pcs_delay;
 	uint32_t transfer_delay;
 	const struct pinctrl_dev_config *pincfg;
+	struct reset_dt_spec reset;
 	uint8_t data_pin_config;
 	bool tristate_output;
 	uint8_t tx_fifo_size;
@@ -117,6 +119,7 @@ int lpspi_wait_tx_fifo_empty(const struct device *dev);
 		.sck_pcs_delay = DT_INST_PROP_OR(n, sck_pcs_delay, 0),                             \
 		.transfer_delay = DT_INST_PROP_OR(n, transfer_delay, 0),                           \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),                                        \
 		.data_pin_config = (uint8_t)DT_INST_ENUM_IDX(n, data_pin_config),                  \
 		.tristate_output = DT_INST_PROP(n, tristate_output),                               \
 		.rx_fifo_size = (uint8_t)DT_INST_PROP(n, rx_fifo_size),                            \

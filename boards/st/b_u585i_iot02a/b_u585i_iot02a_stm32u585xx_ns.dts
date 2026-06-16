@@ -50,9 +50,9 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Following flash partition is compatible with requirements
@@ -61,6 +61,7 @@
 		 * It might require adjustment depending on evolutions on TF-M.
 		 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(384)>;
 			read-only;
@@ -68,18 +69,21 @@
 
 		/* Secure image primary slot */
 		slot0_partition: partition@60000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00060000 DT_SIZE_K(512)>;
 		};
 
 		/* Non-secure image primary slot */
 		slot0_ns_partition: partition@e0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0-nonsecure";
 			reg = <0x000e0000 DT_SIZE_K(1024)>;
 		};
 
 		/* Internal Non Volatile Storage */
 		storage_partition: partition@1e0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x001e0000 DT_SIZE_K(128)>;
 		};

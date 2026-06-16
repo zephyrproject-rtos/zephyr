@@ -20,3 +20,8 @@ ExternalZephyrProject_Add(
 
 sysbuild_add_dependencies(CONFIGURE ${DEFAULT_IMAGE} remote_app)
 sysbuild_add_dependencies(FLASH ${DEFAULT_IMAGE} remote_app)
+
+# Make sure MCUboot is flashed first if it's enabled
+if(SB_CONFIG_BOOTLOADER_MCUBOOT)
+  sysbuild_add_dependencies(FLASH remote_app mcuboot)
+endif()

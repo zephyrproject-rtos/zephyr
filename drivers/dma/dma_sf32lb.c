@@ -96,11 +96,12 @@ static void dma_sf32lb_isr(const struct device *dev, uint8_t channel)
 	isr = sys_read32(config->dmac + DMAC_ISR);
 	if ((isr & DMAC_ISR_TCIF(channel)) != 0U) {
 		status = DMA_STATUS_COMPLETE;
+		atomic_clear_bit(data->status, channel);
 	} else if ((isr & DMAC_ISR_HTIF(channel)) != 0U) {
 		status = DMA_STATUS_HALF_COMPLETE;
-		atomic_clear_bit(data->status, channel);
 	} else if (isr) {
 		status = -EIO;
+		atomic_clear_bit(data->status, channel);
 	} else {
 		status = -EINPROGRESS;
 	}
@@ -413,9 +414,9 @@ static int dma_sf32lb_get_status(const struct device *dev, uint32_t channel,
 		return -EINVAL;
 	}
 
-	stat->busy = atomic_test_bit(data->status, channel);
 	stat->dir = config->channels[channel].direction;
 	stat->pending_length = sys_read32(config->dmac + DMAC_CNDTRX(channel));
+	stat->busy = atomic_test_bit(data->status, channel) && (stat->pending_length != 0U);
 
 	return 0;
 }

@@ -300,7 +300,7 @@ static int tsl2540_init(const struct device *dev)
 	k_sem_init(&data->sem, 1, K_SEM_MAX_LIMIT);
 
 	if (!i2c_is_ready_dt(&cfg->i2c_spec)) {
-		LOG_ERR("I2C dev %s not ready", cfg->i2c_spec.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c_spec.bus);
 		return -ENODEV;
 	}
 

@@ -1,7 +1,7 @@
 sample:
   name: CDC ACM USB
 tests:
-  sample.usb_device_next.cdc-acm:
+  sample.usb.usb_device_next.cdc-acm:
     depends_on: usbd
     tags: usb
     integration_platforms:
@@ -23,7 +23,7 @@ tests:
       type: one_line
       regex:
         - "Wait for DTR"
-  sample.usb_device_next.cdc-acm-workqueue:
+  sample.usb.usb_device_next.cdc-acm-workqueue:
     depends_on: usbd
     tags: usb
     extra_args:

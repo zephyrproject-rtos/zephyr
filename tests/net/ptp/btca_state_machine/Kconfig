@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "../Kconfig.unit"
+
+# See ../Kconfig.unit for why selected PTP Kconfig entries are redeclared here.
+
+config PTP_DISABLED_PRESENT
+	default y
+
+config PTP_FAULTY_PRESENT
+	default y
+
+config PTP_LISTENING_PRESENT
+	default y
+
+config PTP_PRE_TIME_TRANSMITTER_PRESENT
+	default y
+
+config PTP_UNCALIBRATED_PRESENT
+	default y
+
+source "Kconfig.zephyr"

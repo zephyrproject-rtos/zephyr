@@ -15,6 +15,7 @@
 
 &flash0 {
 	reg = <0 DT_SIZE_K(256)>;
+	ranges = <0 0 DT_SIZE_K(256)>;
 	erase-block-size = <DT_SIZE_K(1)>;
 };
 

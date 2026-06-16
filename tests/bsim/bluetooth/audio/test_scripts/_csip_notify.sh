@@ -6,7 +6,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-SIMULATION_ID="csip_notify"
+SIMULATION_ID="${BOARD_TS}_csip_notify"
 VERBOSITY_LEVEL=2
 
 cd ${BSIM_OUT_PATH}/bin

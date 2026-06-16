@@ -41,7 +41,7 @@ int max32664c_init_interrupt(const struct device *dev)
 
 	LOG_DBG("Configure interrupt pin");
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO not ready!");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

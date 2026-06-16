@@ -77,7 +77,16 @@ static DEVICE_API(regulator, regulator_esp32_api) = {
 
 static int regulator_esp32_init(const struct device *dev)
 {
+	const struct regulator_esp32_config *config = dev->config;
+	const struct regulator_common_config *common = &config->common;
+
 	regulator_common_data_init(dev);
+
+	if (common->init_uv > INT32_MIN) {
+		regulator_esp32_set_voltage(dev, common->init_uv, common->init_uv);
+	}
+
+	regulator_esp32_enable(dev);
 
 	return regulator_common_init(dev, true);
 }
@@ -87,7 +96,7 @@ static int regulator_esp32_init(const struct device *dev)
                                                                                                    \
 	static const struct regulator_esp32_config config_##node = {                               \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node),                                   \
-		.ldo_unit = LDO_ID2UNIT(DT_PROP(node, espressif_ldo_channel)),                     \
+		.ldo_unit = LDO_ID2UNIT(DT_REG_ADDR(node)),                                        \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_DEFINE(node, regulator_esp32_init, NULL, &data_##node, &config_##node,           \

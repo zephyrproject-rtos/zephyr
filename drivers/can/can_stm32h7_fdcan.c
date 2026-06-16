@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -273,8 +273,7 @@ static const struct can_mcan_ops can_stm32h7_ops = {
 					    &can_stm32h7_ops,		    \
 					    &can_stm32h7_cbs_##n);	    \
 									    \
-	static struct can_mcan_data can_mcan_data_##n =			    \
-		CAN_MCAN_DATA_INITIALIZER(NULL);			    \
+	CAN_MCAN_DATA_DEFINE(can_mcan_data_##n, NULL);                      \
 									    \
 	CAN_DEVICE_DT_INST_DEFINE(n, can_stm32h7_init, NULL,		    \
 				  &can_mcan_data_##n,			    \

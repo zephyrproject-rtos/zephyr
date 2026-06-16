@@ -730,6 +730,11 @@ static void *test_i2s_speed_rxtx_configure(void)
 {
 	int ret;
 
+	if (!IS_ENABLED(CONFIG_I2S_TEST_USE_I2S_DIR_BOTH)) {
+		ztest_test_skip();
+		return 0;
+	}
+
 	/* Configure I2S Dir Both transfer. */
 	dev_i2s_rxtx = DEVICE_DT_GET_OR_NULL(I2S_DEV_NODE_RX);
 	zassert_not_null(dev_i2s_rxtx, "receive device not found");

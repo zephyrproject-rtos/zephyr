@@ -13,6 +13,8 @@
 
 #define DT_DRV_COMPAT snps_designware_i2c
 
+#define I2C_DW_PINCTRL_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(pinctrl_0)
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
 BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
 #include <zephyr/drivers/pcie/pcie.h>
@@ -21,6 +23,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
 #if defined(CONFIG_RESET)
 #include <zephyr/drivers/reset.h>
 #endif
+#include <zephyr/drivers/clock_control.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +32,7 @@ extern "C" {
 #define I2C_DW_MAGIC_KEY 0x44570140
 
 typedef void (*i2c_isr_cb_t)(const struct device *port);
+typedef int (*i2c_api_check_bus_t)(const struct device *dev);
 
 #define IC_ACTIVITY   (1 << 0)
 #define IC_ENABLE_BIT (1 << 0)
@@ -78,6 +82,47 @@ typedef void (*i2c_isr_cb_t)(const struct device *port);
 #define I2C_HS_HCNT  ((CONFIG_I2C_DW_CLOCK_SPEED * 6) / 8)
 #define I2C_HS_LCNT  ((CONFIG_I2C_DW_CLOCK_SPEED * 7) / 8)
 
+#ifdef CONFIG_I2C_DW_IC_CLK_FREQ_OPTIMIZATION
+
+/* The below SCL macros calculations are valid
+ * if IC_CLK_FREQ_OPTIMIZATION is on
+ * Refer section 2.14.2 of DW spec
+ */
+
+#define I2C_MIN_SCL_LCNT         6
+#define I2C_MIN_SCL_HCNT         5
+#define I2C_SCL_HCNT_OFFSET      3
+
+/* Min SCL High Time is 5 cycles. High Time = HCNT + spike_len + 3 */
+#define I2C_ENSURE_MIN_SCL_HCNT(x, spk_len)    \
+	((((x) + (spk_len) + I2C_SCL_HCNT_OFFSET) < I2C_MIN_SCL_HCNT) ? \
+	(I2C_MIN_SCL_HCNT - ((spk_len) + I2C_SCL_HCNT_OFFSET)) : (x))
+
+/* Min SCL Low Time is 6 cycles */
+#define I2C_ENSURE_MIN_SCL_LCNT(x, spk_len)    \
+	(((x) < I2C_MIN_SCL_LCNT) ? I2C_MIN_SCL_LCNT : (x))
+
+#else /* CONFIG_I2C_DW_IC_CLK_FREQ_OPTIMIZATION */
+
+/* The below SCL macros calculations are valid
+ * if IC_CLK_FREQ_OPTIMIZATION is off
+ * Refer section 2.14.1 of DW spec
+ */
+#define I2C_MIN_SCL_LCNT(spk)  ((spk) + 8)
+#define I2C_MIN_SCL_HCNT(spk)  ((spk) + 6)
+
+/* Min SCL High Time is spike_len + 6 cycles */
+#define I2C_ENSURE_MIN_SCL_HCNT(x, spk_len)	\
+	(((x) < I2C_MIN_SCL_HCNT(spk_len)) ?	\
+	I2C_MIN_SCL_HCNT(spk_len) : (x))
+
+/* Min SCL Low Time is spike_len + 8 cycles */
+#define I2C_ENSURE_MIN_SCL_LCNT(x, spk_len)	\
+	(((x) < I2C_MIN_SCL_LCNT(spk_len)) ?	\
+	I2C_MIN_SCL_LCNT(spk_len) : (x))
+
+#endif /* CONFIG_I2C_DW_IC_CLK_FREQ_OPTIMIZATION */
+
 /*
  * DesignWare speed values don't directly translate from the Zephyr speed
  * selections in include/i2c.h so here we do a little translation
@@ -96,6 +141,11 @@ typedef void (*i2c_isr_cb_t)(const struct device *port);
 
 #define SDA_HOLD_INVALID UINT32_MAX
 
+/* convert sda hold time in nanoseconds to DW I2C clock ticks at build time */
+#define HOLD_TIME_TO_TICKS(i2c_sda_hold_time_ns)                                                \
+	   ((uint32_t)DIV_ROUND_UP((uint64_t)(CONFIG_I2C_DW_CLOCK_SPEED) * (i2c_sda_hold_time_ns), \
+							   1000000000ULL))
+
 struct i2c_dw_rom_config {
 	DEVICE_MMIO_ROM;
 	i2c_isr_cb_t config_func;
@@ -108,11 +158,15 @@ struct i2c_dw_rom_config {
 	uint8_t fs_spk_len;
 	uint8_t hs_spk_len;
 
-#if defined(CONFIG_PINCTRL)
+#if I2C_DW_PINCTRL_ENABLED
 	const struct pinctrl_dev_config *pcfg;
 #endif
 #if defined(CONFIG_RESET)
 	const struct reset_dt_spec reset;
+#endif
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(clocks)
+	const struct device *clk_dev;
+	const clock_control_subsys_t clk_id;
 #endif
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
@@ -158,9 +212,13 @@ struct i2c_dw_dev_config {
 
 	i2c_api_recover_bus_t recover_bus_cb;
 	struct device *recover_bus_dev;
+	i2c_api_check_bus_t check_bus_cb;
+	const struct device *check_bus_dev;
 #if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 	bool need_setup;
 #endif
+	uint32_t i2c_stat_not_ready;
+	uint32_t not_ready_cnt;
 };
 
 #define Z_REG_READ(__sz)  sys_read##__sz
@@ -201,6 +259,9 @@ struct i2c_dw_dev_config {
 void i2c_dw_register_recover_bus_cb(const struct device *dw_i2c_dev,
 				    i2c_api_recover_bus_t recover_bus_cb,
 				    const struct device *wrapper_dev);
+
+void i2c_dw_register_check_bus_cb(const struct device *dw_i2c_dev, i2c_api_check_bus_t check_bus_cb,
+				  const struct device *wrapper_dev);
 
 #ifdef __cplusplus
 }

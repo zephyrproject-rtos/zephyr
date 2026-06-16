@@ -227,7 +227,7 @@ static int max17262_gauge_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

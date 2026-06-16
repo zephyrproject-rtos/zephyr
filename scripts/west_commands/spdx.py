@@ -2,11 +2,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import logging
 import os
 import sys
 import uuid
 
 from west.commands import WestCommand
+
+from build_helpers import forward_logging_to_west
 
 script_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 sys.path.insert(0, os.path.join(script_dir, "pylib/"))
@@ -23,38 +26,43 @@ the CMake file-based API, which the SPDX command relies upon.
 This can be done by calling `west spdx --init` prior to
 calling `west build`."""
 
+
 class ZephyrSpdx(WestCommand):
     def __init__(self):
-        super().__init__(
-                'spdx',
-                '',
-                description=SPDX_DESCRIPTION)
+        super().__init__('spdx', '', description=SPDX_DESCRIPTION)
 
     def do_add_parser(self, parser_adder):
-        parser = parser_adder.add_parser(self.name,
-                description = self.description)
+        parser = parser_adder.add_parser(self.name, description=self.description)
 
         # If you update these options, make sure to keep the docs in
         # doc/guides/west/zephyr-cmds.rst up to date.
-        parser.add_argument('-i', '--init', action="store_true",
-                help="initialize CMake file-based API")
-        parser.add_argument('-d', '--build-dir',
-                help="build directory")
-        parser.add_argument('-n', '--namespace-prefix',
-                help="namespace prefix")
-        parser.add_argument('-s', '--spdx-dir',
-                help="SPDX output directory")
-        parser.add_argument('--spdx-version', choices=[str(v) for v in SUPPORTED_SPDX_VERSIONS],
-                default=str(SPDX_VERSION_2_3),
-                help="SPDX specification version to use (default: 2.3)")
-        parser.add_argument('--analyze-includes', action="store_true",
-                help="also analyze included header files")
-        parser.add_argument('--include-sdk', action="store_true",
-                help="also generate SPDX document for SDK")
+        parser.add_argument(
+            '-i', '--init', action="store_true", help="initialize CMake file-based API"
+        )
+        parser.add_argument('-d', '--build-dir', help="build directory")
+        parser.add_argument('-n', '--namespace-prefix', help="namespace prefix")
+        parser.add_argument('-s', '--spdx-dir', help="SPDX output directory")
+        parser.add_argument(
+            '--spdx-version',
+            choices=[str(v) for v in SUPPORTED_SPDX_VERSIONS],
+            default=str(SPDX_VERSION_2_3),
+            help="SPDX specification version to use (default: 2.3)",
+        )
+        parser.add_argument(
+            '--analyze-includes', action="store_true", help="also analyze included header files"
+        )
+        parser.add_argument(
+            '--include-sdk', action="store_true", help="also generate SPDX document for SDK"
+        )
 
         return parser
 
     def do_run(self, args, unknown_args):
+        # Forward debug output from the zspdx package so module-level
+        # logging is visible under "west -v" / "west -vv".
+        forward_logging_to_west(self, 'zspdx')
+        logging.getLogger('zspdx').propagate = False
+
         self.dbg("running zephyr SPDX generator")
 
         self.dbg("  --init is", args.init)
@@ -81,9 +89,11 @@ class ZephyrSpdx(WestCommand):
         if query_ready:
             self.inf("initialized; run `west build` then run `west spdx`")
         else:
-            self.die("Couldn't create CMake file-based API query directory\n"
-                     "You can manually create an empty file at "
-                     "$BUILDDIR/.cmake/api/v1/query/codemodel-v2")
+            self.die(
+                "Couldn't create CMake file-based API query directory\n"
+                "You can manually create an empty file at "
+                "$BUILDDIR/.cmake/api/v1/query/codemodel-v2"
+            )
 
     def do_run_spdx(self, args):
         if not args.build_dir:

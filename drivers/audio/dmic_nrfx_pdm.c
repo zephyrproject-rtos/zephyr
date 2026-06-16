@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(dmic_nrfx_pdm, CONFIG_AUDIO_DMIC_LOG_LEVEL);
 #define NODE_AUDIO_AUXPLL DT_NODELABEL(audio_auxpll)
 #define NODE_AUDIOPLL     DT_NODELABEL(audiopll)
 
-#if CONFIG_SOC_SERIES_NRF54H
+#if CONFIG_SOC_SERIES_NRF54H || CONFIG_SOC_SERIES_NRF92
 #define DMIC_NRFX_CLOCK_FREQ MHZ(16)
 #define DMIC_NRFX_AUDIO_CLOCK_FREQ DT_PROP_OR(NODE_AUDIOPLL, frequency, 0)
 #elif DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
@@ -215,6 +215,7 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 	struct pcm_stream_cfg *stream = &config->streams[0];
 	uint32_t def_map, alt_map;
 	nrfx_pdm_config_t nrfx_cfg;
+	int8_t gain_limit;
 	int err;
 
 	if (drv_data->active) {
@@ -284,6 +285,14 @@ static int dmic_nrfx_pdm_configure(const struct device *dev,
 		nrfx_cfg.edge = NRF_PDM_EDGE_LEFTRISING;
 		channel->act_chan_map_lo = alt_map;
 	}
+
+	/* Convert requested gain to 0.5 dB steps limited by defined bounds. */
+	gain_limit = CLAMP((2 * stream->gain_db + NRF_PDM_GAIN_DEFAULT),
+			   NRF_PDM_GAIN_MINIMUM,
+			   NRF_PDM_GAIN_MAXIMUM);
+	nrfx_cfg.gain_l = gain_limit;
+	nrfx_cfg.gain_r = gain_limit;
+
 #if NRF_PDM_HAS_SELECTABLE_CLOCK
 	nrfx_cfg.mclksrc = drv_cfg->clk_src == ACLK
 			 ? NRF_PDM_MCLKSRC_ACLK
@@ -491,7 +500,7 @@ static void init_clock_manager(const struct device *dev)
 #endif
 }
 
-static const struct _dmic_ops dmic_ops = {
+static DEVICE_API(dmic, dmic_ops) = {
 	.configure = dmic_nrfx_pdm_configure,
 	.trigger = dmic_nrfx_pdm_trigger,
 	.read = dmic_nrfx_pdm_read,

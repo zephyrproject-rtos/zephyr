@@ -413,13 +413,15 @@ static int eth_tx_offloading_enabled(const struct device *dev,
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_offloading_enabled(const struct device *dev)
+static enum ethernet_hw_caps eth_offloading_enabled(const struct device *dev __unused,
+						    struct net_if *iface __unused)
 {
 	return ETHERNET_HW_TX_CHKSUM_OFFLOAD |
 		ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 }
 
-static enum ethernet_hw_caps eth_offloading_disabled(const struct device *dev)
+static enum ethernet_hw_caps eth_offloading_disabled(const struct device *dev __unused,
+						     struct net_if *iface __unused)
 {
 	return 0;
 }
@@ -536,7 +538,7 @@ static void test_eth_setup(void)
 	net_if_foreach(iface_cb, &ud);
 
 	zassert_equal(ud.eth_if_count, sizeof(eth_interfaces) / sizeof(void *),
-		      "Invalid number of interfaces (%d vs %d)\n",
+		      "Invalid number of interfaces (%d vs %zu)\n",
 		      ud.eth_if_count,
 		      sizeof(eth_interfaces) / sizeof(void *));
 }

@@ -26,20 +26,23 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
 #include "tmap_central.h"
 
 static struct bt_conn *default_conn;
 
-static K_SEM_DEFINE(sem_connected, 0, 1);
-static K_SEM_DEFINE(sem_security_updated, 0, 1);
-static K_SEM_DEFINE(sem_disconnected, 0, 1);
-static K_SEM_DEFINE(sem_mtu_exchanged, 0, 1);
-static K_SEM_DEFINE(sem_discovery_done, 0, 1);
+static K_SEM_DEFINE(sem_connected, 0U, 1U);
+static K_SEM_DEFINE(sem_security_updated, 0U, 1U);
+static K_SEM_DEFINE(sem_disconnected, 0U, 1U);
+static K_SEM_DEFINE(sem_mtu_exchanged, 0U, 1U);
+static K_SEM_DEFINE(sem_discovery_done, 0U, 1U);
 
 static void att_mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
+	ARG_UNUSED(conn);
+
 	printk("MTU exchanged: %u/%u\n", tx, rx);
 	k_sem_give(&sem_mtu_exchanged);
 }
@@ -50,11 +53,13 @@ static struct bt_gatt_cb gatt_callbacks = {
 
 void tmap_discovery_complete(enum bt_tmap_role role, struct bt_conn *conn, int err)
 {
+	ARG_UNUSED(role);
+
 	if (conn != default_conn) {
 		return;
 	}
 
-	if (err) {
+	if (err != 0) {
 		printk("TMAS discovery failed! (err %d)\n", err);
 		return;
 	}
@@ -90,8 +95,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 		printk("Failed to connect to %s %u %s\n", bt_conn_dst_str(conn),
 		       err, bt_hci_err_to_str(err));
 
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 
 		start_scan();
 		return;
@@ -114,8 +118,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	printk("Disconnected: %s, reason 0x%02x %s\n", bt_conn_dst_str(conn),
 	       reason, bt_hci_err_to_str(reason));
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	k_sem_give(&sem_disconnected);
 }
@@ -123,6 +126,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 				enum bt_security_err err)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(level);
+
 	if (err == 0) {
 		printk("Security changed: %u\n", err);
 		k_sem_give(&sem_security_updated);
@@ -143,7 +149,7 @@ static bool check_audio_support_and_connect(struct bt_data *data, void *user_dat
 	struct net_buf_simple tmas_svc_data;
 	const struct bt_uuid *uuid;
 	uint16_t uuid_val;
-	uint16_t peer_tmap_role = 0;
+	uint16_t peer_tmap_role = 0U;
 	int err;
 
 	printk("[AD]: %u data_len %u\n", data->type, data->data_len);

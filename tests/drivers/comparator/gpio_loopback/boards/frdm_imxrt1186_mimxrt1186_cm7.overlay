@@ -1,0 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* CM33 and CM7 share the same ACMP3 wiring on this board; reuse one overlay. */
+#include "frdm_imxrt1186_mimxrt1186_cm33.overlay"

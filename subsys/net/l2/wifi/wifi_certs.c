@@ -7,12 +7,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_wifi_certs, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 
+#include <errno.h>
 #include <zephyr/net/wifi_certs.h>
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 #include <utils/common.h>
 #include <eap_peer/eap_config.h>
 #include <ctrl_iface_zephyr.h>
 #include <wpa_supplicant/config.h>
 #include <supp_main.h>
+#endif
 
 static struct wifi_enterprise_creds_params enterprise_creds_params = { 0 };
 
@@ -76,6 +79,20 @@ static const char server_key_test[] = {
 #endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
+static void clear_cert_data(struct wifi_cert_data *certs, size_t cert_count)
+{
+	for (size_t i = 0; i < cert_count; i++) {
+		if (certs[i].data != NULL && *certs[i].data != NULL) {
+			k_free(*certs[i].data);
+			*certs[i].data = NULL;
+		}
+
+		if (certs[i].len != NULL) {
+			*certs[i].len = 0;
+		}
+	}
+}
+
 static int process_certificates(struct wifi_cert_data *certs, size_t cert_count)
 {
 	for (size_t i = 0; i < cert_count; i++) {
@@ -83,7 +100,16 @@ static int process_certificates(struct wifi_cert_data *certs, size_t cert_count)
 		size_t len = 0;
 		uint8_t *cert_tmp;
 
+		*certs[i].data = NULL;
+		*certs[i].len = 0;
+
 		err = tls_credential_get(certs[i].sec_tag, certs[i].type, NULL, &len);
+		if (err == -ENOENT) {
+			LOG_WRN("Skipping as credential tag %d type %d not installed",
+				certs[i].sec_tag, certs[i].type);
+			continue;
+		}
+
 		if (err != -EFBIG) {
 			LOG_ERR("Failed to get credential tag: %d length, err: %d",
 				certs[i].sec_tag, err);
@@ -111,7 +137,7 @@ static int process_certificates(struct wifi_cert_data *certs, size_t cert_count)
 	return 0;
 }
 
-static void set_enterprise_creds_params(bool is_ap)
+static int set_enterprise_creds_params(bool is_ap)
 {
 	struct wifi_cert_data certs_common[] = {
 		{
@@ -190,30 +216,20 @@ static void set_enterprise_creds_params(bool is_ap)
 		}
 	}
 
-	return;
+	return 0;
 
 cleanup:
-	for (size_t i = 0; i < ARRAY_SIZE(certs_common); i++) {
-		if (certs_common[i].data) {
-			k_free(*certs_common[i].data);
-		}
-	}
+	clear_cert_data(certs_common, ARRAY_SIZE(certs_common));
 
 	if (!is_ap) {
-		for (size_t i = 0; i < ARRAY_SIZE(certs_sta); i++) {
-			if (certs_sta[i].data) {
-				k_free(*certs_sta[i].data);
-			}
-		}
+		clear_cert_data(certs_sta, ARRAY_SIZE(certs_sta));
 	}
 
 	if (is_ap) {
-		for (size_t i = 0; i < ARRAY_SIZE(certs_ap); i++) {
-			if (certs_ap[i].data) {
-				k_free(*certs_ap[i].data);
-			}
-		}
+		clear_cert_data(certs_ap, ARRAY_SIZE(certs_ap));
 	}
+
+	return -EINVAL;
 }
 
 void wifi_clear_enterprise_credentials(void)
@@ -236,13 +252,13 @@ void wifi_clear_enterprise_credentials(void)
 	}
 	memset(&enterprise_creds_params, 0, sizeof(struct wifi_enterprise_creds_params));
 }
-#else
+#elif defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE)
 int config_process_blob(struct wpa_config *config, char *name, uint8_t *data,
 			uint32_t data_len)
 {
 	struct wpa_config_blob *blob;
 
-	if (!data || !data_len) {
+	if (data == NULL || data_len == 0) {
 		return -1;
 	}
 
@@ -280,18 +296,21 @@ int process_certificates(void)
 	struct net_if *iface = net_if_get_wifi_sta();
 
 	ret = net_if_get_name(iface, if_name, sizeof(if_name));
-	if (!ret) {
+	if (ret < 0) {
 		LOG_ERR("Cannot get interface name (%d)", ret);
-		return -1;
+		return -ENODEV;
 	}
 
 	wpa_s = zephyr_get_handle_by_ifname(if_name);
-	if (!wpa_s) {
+	if (wpa_s == NULL) {
 		LOG_ERR("Unable to find the interface: %s, quitting", if_name);
 		return -1;
 	}
 
-	wifi_set_enterprise_credentials(iface, 0);
+	ret = wifi_set_enterprise_credentials(iface, 0);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (config_process_blob(wpa_s->conf, "ca_cert",
 				enterprise_creds_params.ca_cert,
@@ -313,6 +332,9 @@ int process_certificates(void)
 
 	return 0;
 }
+#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
+
+#ifndef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
 
 static void set_enterprise_creds_params(bool is_ap)
 {
@@ -348,14 +370,19 @@ void wifi_clear_enterprise_credentials(void)
 	 * no dynamic memory needs to be freed.
 	 */
 }
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
+#endif /* !CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 
 int wifi_set_enterprise_credentials(struct net_if *iface, bool is_ap)
 {
 #ifdef CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES
 	wifi_clear_enterprise_credentials();
-#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
+	if (set_enterprise_creds_params(is_ap)) {
+		LOG_WRN("Set enterprise credentials failed\n");
+		return -1;
+	}
+#else
 	set_enterprise_creds_params(is_ap);
+#endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 	if (net_mgmt(NET_REQUEST_WIFI_ENTERPRISE_CREDS, iface,
 			&enterprise_creds_params, sizeof(enterprise_creds_params))) {
 		LOG_WRN("Set enterprise credentials failed\n");

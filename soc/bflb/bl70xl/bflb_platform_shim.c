@@ -261,6 +261,11 @@ uint32_t bl_rtc_get_aligned_counter(void)
 	return (uint32_t)bl_rtc_get_counter();
 }
 
+uint64_t bl_timer_now_us64(void)
+{
+	return k_cyc_to_us_floor64(k_cycle_get_64());
+}
+
 /* Busy-wait delay shims, called by the BLE controller blob. */
 void BL702L_Delay_US(uint32_t cnt)
 {

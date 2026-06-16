@@ -190,16 +190,13 @@ static void fcx_mldx5_uart_isr(const struct device *uart_dev, void *user_data)
 	int rc, read_len;
 
 	if (!device_is_ready(uart_dev)) {
-		LOG_DBG("UART device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(uart_dev);
 		return;
 	}
 
-	if (!uart_irq_update(uart_dev)) {
-		LOG_DBG("Unable to process interrupts");
-		return;
-	}
+	uart_irq_update(uart_dev);
 
-	if (!uart_irq_rx_ready(uart_dev)) {
+	if (uart_irq_rx_ready(uart_dev) <= 0) {
 		LOG_DBG("No RX data");
 		return;
 	}

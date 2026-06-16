@@ -524,7 +524,7 @@ int icm45686_stream_init(const struct device *dev)
 
 	if (cfg->int_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-			LOG_ERR("Interrupt GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 			return -ENODEV;
 		}
 
@@ -555,7 +555,7 @@ int icm45686_stream_init(const struct device *dev)
 
 		int_pin_config.int_polarity = INTX_CONFIG2_INTX_POLARITY_HIGH;
 		int_pin_config.int_mode = INTX_CONFIG2_INTX_MODE_PULSE;
-		int_pin_config.int_drive = INTX_CONFIG2_INTX_DRIVE_OD;
+		int_pin_config.int_drive = INTX_CONFIG2_INTX_DRIVE_PP;
 		err = icm456xx_set_pin_config_int(&data->driver, INV_IMU_INT1, &int_pin_config);
 
 		if (err) {

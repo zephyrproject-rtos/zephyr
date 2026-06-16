@@ -21,8 +21,10 @@
 #define I2S_TX_NODE  DT_NODELABEL(i2s_tx)
 #endif
 
+#define RAM_SIZE (DT_CHOSEN_SRAM_ADDR / 1024)
+
 /* Reduce echo delay when running on low ram devices */
-#if CONFIG_SRAM_SIZE <= 48
+#if RAM_SIZE <= 48
 #define ECHO_DELAY 30
 #else
 #define ECHO_DELAY 10
@@ -338,7 +340,7 @@ int main(void)
 
 		while (k_sem_take(&toggle_transfer, K_NO_WAIT) != 0) {
 			void *mem_block;
-			uint32_t block_size;
+			size_t block_size;
 			int ret;
 
 			ret = i2s_read(i2s_dev_rx, &mem_block, &block_size);

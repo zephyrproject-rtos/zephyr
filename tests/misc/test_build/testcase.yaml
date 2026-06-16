@@ -1,6 +1,7 @@
 tests:
   buildsystem.debug.build:
     platform_exclude:
+      - frdm_mcxa577/mcxa577/ns
       - lpcxpresso55s69/lpc55s69/cpu0/ns
       - nrf9160dk/nrf9160/ns
       - nrf5340dk/nrf5340/cpuapp/ns
@@ -10,7 +11,7 @@ tests:
     integration_platforms:
       - native_sim
     filter: CONFIG_CONSOLE_HAS_DRIVER
-  bootloader.mcuboot.build:
+  buildsystem.bootloader.mcuboot.build:
     tags: mcuboot
     build_only: true
     platform_allow:

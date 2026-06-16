@@ -113,4 +113,14 @@
 			input-enable;
 		};
 	};
+
+	pinmux_flexcan0: pinmux_flexcan0 {
+		group0 {
+			pinmux = <CAN0_TXD_P1_18>,
+				 <CAN0_RXD_P1_19>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
 };

@@ -126,7 +126,7 @@ static int coap_server_process(int sock_fd)
 {
 	static uint8_t buf[CONFIG_COAP_SERVER_MESSAGE_SIZE];
 
-	struct net_sockaddr_storage client_addr;
+	struct net_sockaddr_storage client_addr = { 0 };
 	net_socklen_t client_addr_len = sizeof(client_addr);
 	struct coap_service *service = NULL;
 	struct coap_packet request;

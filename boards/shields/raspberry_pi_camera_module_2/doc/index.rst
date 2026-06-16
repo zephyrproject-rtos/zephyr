@@ -11,7 +11,7 @@ The Raspberry Pi camera module 2 provides a Sony IMX219 rolling shutter in a mod
 
 The NoIR variant is the same as the normal variant, except with the infra-red filter removed.
 
-.. figure:: rpi_cam_v2_normal.jpg
+.. figure:: raspberry_pi_camera_module_2.jpg
    :width: 500px
    :align: center
    :alt: Raspberry Pi Camera Module 2

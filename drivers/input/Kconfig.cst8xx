@@ -11,7 +11,7 @@ menuconfig INPUT_CST8XX
 
 if INPUT_CST8XX
 
-config INPUT_CST8XX_PERIOD
+config INPUT_CST8XX_PERIOD_MS
 	int "Sample period"
 	depends on !INPUT_CST8XX_INTERRUPT
 	default 20

@@ -38,6 +38,7 @@
 	rstctl1: reset-controller@40000 {
 		compatible = "nxp,rstctl";
 		reg = <0x40000 0x1000>;
+		offset-base = <6>;
 		#reset-cells = <1>;
 	};
 
@@ -131,6 +132,8 @@
 		status = "disabled";
 		reg = <0x320000 0x1000>, <0x64000 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl1 MCUX_GPIO8_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 13)>;
 		interrupts = <61 0>, <62 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -142,6 +145,8 @@
 		status = "disabled";
 		reg = <0x322000 0x1000>, <0x64080 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl1 MCUX_GPIO9_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 14)>;
 		interrupts = <63 0>, <64 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -153,6 +158,8 @@
 		status = "disabled";
 		reg = <0x324000 0x1000>, <0x64100 0x80>;
 		reg-names = "gpio", "iopctl_pio";
+		clocks = <&clkctl1 MCUX_GPIO10_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 15)>;
 		interrupts = <65 0>, <66 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
@@ -163,6 +170,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x326000 0x1000>;
 		interrupts = <11 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 6)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -202,6 +210,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x327000 0x1000>;
 		interrupts = <12 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 7)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -241,6 +250,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x328000 0x1000>;
 		interrupts = <13 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 8)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -280,6 +290,7 @@
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x329000 0x1000>;
 		interrupts = <14 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 9)>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -353,6 +364,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clocks = <&clkctl4 MCUX_LPI2C15_CLK>;
+		resets = <&rstctl3 NXP_SYSCON_RESET(9, 18)>;
 		status = "disabled";
 	};
 
@@ -367,6 +379,8 @@
 		compatible = "nxp,kinetis-acmp";
 		reg = <0x20b000 0x1000>;
 		interrupts = <18 0>;
+		resets = <&rstctl3 NXP_SYSCON_RESET(9, 8)>;
+		clocks = <&clkctl3 MCUX_ACMP0_CLK>;
 		status = "disabled";
 	};
 
@@ -374,6 +388,7 @@
 		compatible = "nxp,sema42";
 		reg = <0x31b000 0x1000>;
 		clocks = <&clkctl1 MCUX_SEMA42_CLK>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 25)>;
 		#hwlock-cells = <1>;
 		num-locks = <64>;
 		status = "disabled";

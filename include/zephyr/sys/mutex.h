@@ -132,7 +132,6 @@ static inline int sys_mutex_unlock(struct sys_mutex *mutex)
 
 #else
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 
 struct sys_mutex {
 	struct k_mutex kernel_mutex;

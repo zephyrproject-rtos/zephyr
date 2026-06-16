@@ -55,7 +55,7 @@ struct gpio_ite_cfg {
 	/* GPIO/KBS function selection register (bit mapping to pin) */
 	uintptr_t reg_ksfselr;
 	/* GPIO's irq */
-	uint8_t gpio_irq[8];
+	ite_irq_t gpio_irq[8];
 	/* Support input voltage selection */
 	uint8_t has_volt_sel[8];
 	/* Number of pins per group of GPIO */
@@ -387,7 +387,7 @@ static void gpio_ite_isr(const void *arg)
 	const struct device *dev = arg;
 	const struct gpio_ite_cfg *config = dev->config;
 	struct gpio_ite_data *data = dev->data;
-	uint8_t irq = ite_intc_get_irq_num();
+	ite_irq_t irq = ite_intc_get_irq_num();
 	uint8_t num_pins = config->num_pins;
 	uint8_t pin;
 
@@ -412,7 +412,7 @@ static int gpio_ite_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 {
 	const struct gpio_ite_cfg *config = dev->config;
 	uint32_t flags;
-	uint8_t gpio_irq = config->gpio_irq[pin];
+	ite_irq_t gpio_irq = config->gpio_irq[pin];
 	struct gpio_ite_data *data = dev->data;
 
 	if (!gpio_irq) {

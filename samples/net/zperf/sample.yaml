@@ -43,6 +43,12 @@ tests:
       - stm32h573i_dk
     integration_platforms:
       - stm32h573i_dk
+  sample.net.zperf_st.otp_mac_addr:
+    build_only: true
+    platform_allow:
+      - stm32n6570_dk/stm32n657xx/sb
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/stm32n6570_dk_stm32n657xx_sb_otp.overlay"
   sample.net.zperf_no_shell:
     harness: net
     extra_configs:
@@ -99,7 +105,9 @@ tests:
       - mimxrt1170_evk/mimxrt1176/cm7
   sample.net.zperf.802154.subg:
     extra_args: EXTRA_CONF_FILE="overlay-802154-subg.conf"
-    platform_allow: beagleconnect_freedom
+    platform_allow:
+      - beagleconnect_freedom@C5/cc1352p
+      - beagleconnect_freedom@C7/cc1352p7
   sample.net.zperf.nrf7002dk:
     extra_args: SNIPPET=wifi-ipv4
     extra_configs:

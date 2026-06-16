@@ -79,7 +79,7 @@ static int tcn75a_init(const struct device *dev)
 	uint8_t adc_conf[2] = {TCN75A_CONFIG_REG, 0x0};
 
 	if (!i2c_is_ready_dt(&config->i2c_spec)) {
-		LOG_ERR("I2C bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c_spec.bus);
 		return -ENODEV;
 	}
 

@@ -14,7 +14,6 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/irq_offload.h>
 
 /**

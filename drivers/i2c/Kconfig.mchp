@@ -21,7 +21,7 @@ config I2C_MCHP_DMA_DRIVEN
 	bool
 	default y
 	depends on DMA
-	depends on $(dt_compat_all_has_prop,$(DT_COMPAT_MICROCHIP_SERCOM_G1_I2C),dmas)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_SERCOM_G1_I2C),dmas)
 	help
 	  This enables DMA driven transfers for the I2C peripheral.
 	  Requires DMA controller and dmas property in device tree.

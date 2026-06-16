@@ -8,6 +8,7 @@ tests:
       - qemu_x86
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
     tags: bluetooth
     integration_platforms:
       - qemu_cortex_m3

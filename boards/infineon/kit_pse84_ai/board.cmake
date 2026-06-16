@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -28,4 +28,8 @@ include(${ZEPHYR_BASE}/boards/common/probe-rs.board.cmake)
 if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
   set_property(TARGET runners_yaml_props_target
     PROPERTY hex_file ${KERNEL_NAME}.signed.hex)
+endif()
+
+if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_NONSECURE)
+  set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
 endif()

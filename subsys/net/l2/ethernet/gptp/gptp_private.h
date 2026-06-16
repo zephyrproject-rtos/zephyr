@@ -54,15 +54,6 @@ extern struct gptp_clock_data gptp_clock;
 bool gptp_is_slave_port(int port);
 
 /**
- * @brief Convert the network interface to the correct port number.
- *
- * @param iface Network Interface acting as a ptp port.
- *
- * @return Number of the port if found, ENODEV otherwise.
- */
-int gptp_get_port_number(struct net_if *iface);
-
-/**
  * @brief Calculate a logInterval and store in Uscaled ns structure.
  *
  * @param interval Result of calculation.

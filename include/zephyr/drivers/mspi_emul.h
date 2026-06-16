@@ -96,7 +96,7 @@ struct mspi_emul {
 };
 
 /** Definition of the MSPI controller emulator API */
-struct emul_mspi_driver_api {
+__subsystem struct emul_mspi_driver_api {
 	/* The struct mspi_driver_api has to be first in
 	 * struct emul_mspi_driver_api to make pointer casting working
 	 */
@@ -105,6 +105,10 @@ struct emul_mspi_driver_api {
 	mspi_emul_trigger_event      trigger_event;
 	mspi_emul_find_emul          find_emul;
 };
+
+/** @cond INTERNAL_HIDDEN */
+DEVICE_API_EXTENDS(emul_mspi, mspi, mspi_api);
+/** @endcond */
 
 /**
  * Register an emulated device on the controller

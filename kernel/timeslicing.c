@@ -7,6 +7,7 @@
 #include <kswap.h>
 #include <ksched.h>
 #include <ipi.h>
+#include <timeslicing.h>
 
 static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
 static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
@@ -72,17 +73,28 @@ static void slice_timeout(struct _timeout *timeout)
 	}
 }
 
-void z_reset_time_slice(struct k_thread *thread)
+void z_time_slice_reset(struct k_thread *thread)
 {
 	int cpu = _current_cpu->id;
 	int slice_size = z_time_slice_size(thread);
 
-	z_abort_timeout(&slice_timeouts[cpu]);
-	slice_expired[cpu] = false;
+	/* Best-effort cancel: if the slice timeout is already in flight,
+	 * its handler only flips slice_expired[cpu] (which we clear below)
+	 * and possibly raises an IPI -- harmless either way.
+	 */
+	(void)z_try_abort_timeout(&slice_timeouts[cpu]);
 	if (slice_size != 0) {
+		/* When invoked because the slicer just fired (this CPU or
+		 * via IPI from another), we're at a tick edge but past the
+		 * announce window, so subtract 1 to cancel z_add_timeout()'s
+		 * "+1" round-up and land at exactly slice_size ticks.
+		 */
+		int delay = slice_expired[cpu] ? slice_size - 1 : slice_size;
+
 		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
-			      K_TICKS(slice_size - 1));
+			      K_TICKS(delay));
 	}
+	slice_expired[cpu] = false;
 }
 
 static ALWAYS_INLINE bool thread_defines_time_slice_size(struct k_thread *thread)
@@ -108,7 +120,7 @@ void k_sched_time_slice_set(int32_t slice, int prio)
 	 */
 
 	if (!thread_defines_time_slice_size(_current)) {
-		z_reset_time_slice(_current);
+		z_time_slice_reset(_current);
 	}
 
 	k_spin_unlock(&_sched_spinlock, key);
@@ -122,7 +134,7 @@ void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks
 		thread->base.slice_ticks = thread_slice_ticks;
 		thread->base.slice_expired = expired;
 		thread->base.slice_data = data;
-		z_reset_time_slice(thread);
+		z_time_slice_reset(thread);
 	}
 }
 #endif
@@ -135,7 +147,7 @@ void z_time_slice(void)
 
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == curr) {
-		z_reset_time_slice(curr);
+		z_time_slice_reset(curr);
 		k_spin_unlock(&_sched_spinlock, key);
 		return;
 	}
@@ -154,8 +166,25 @@ void z_time_slice(void)
 #endif
 		if (!z_is_thread_prevented_from_running(curr)) {
 			move_current_to_end_of_prio_q();
+			/* If the rotation kept curr at the front (no other
+			 * runnable thread of equal-or-higher priority is
+			 * waiting), no swap will happen and we must rearm
+			 * here. Otherwise the dispatch path will rearm for
+			 * the new thread with slice_expired still set,
+			 * picking up the tick-aligned delay.
+			 */
+#ifdef CONFIG_SMP
+			struct k_thread *next = runq_best();
+
+			if (next == NULL || z_is_idle_thread_object(next)) {
+				z_time_slice_reset(curr);
+			}
+#else
+			if (_kernel.ready_q.cache == curr) {
+				z_time_slice_reset(curr);
+			}
+#endif
 		}
-		z_reset_time_slice(curr);
 	}
 	k_spin_unlock(&_sched_spinlock, key);
 }

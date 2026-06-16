@@ -88,9 +88,6 @@ LOG_MODULE_REGISTER(i2c_npcx, CONFIG_I2C_LOG_LEVEL);
 /* Timeout for SCL held to low by slave device . (SMBus spec. unit:ms). */
 #define I2C_MIN_TIMEOUT 25
 
-/* Default maximum time we allow for an I2C transfer (unit:ms) */
-#define I2C_TRANS_TIMEOUT K_MSEC(100)
-
 /* Valid bit fields in SMBST register */
 #define NPCX_VALID_SMBST_MASK ~(BIT(NPCX_SMBST_XMIT) | BIT(NPCX_SMBST_MASTER))
 
@@ -397,7 +394,7 @@ static int i2c_ctrl_wait_completion(const struct device *dev)
 {
 	struct i2c_ctrl_data *const data = dev->data;
 
-	if (k_sem_take(&data->sync_sem, I2C_TRANS_TIMEOUT) == 0) {
+	if (k_sem_take(&data->sync_sem, I2C_TRANSFER_TIMEOUT) == 0) {
 		return data->trans_err;
 	} else {
 		return -ETIMEDOUT;

@@ -398,7 +398,7 @@ Sensors
         pads:pads-2511020213301@5d {
           compatible = "we,wsen-pads-2511020213301";
           reg = <0x5d>;
-          odr = < 10 >;
+          odr = <10>;
           interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_HIGH>;
         };
       };
@@ -412,8 +412,8 @@ Sensors
       &i2c0 {
         pdus:pdus-25131308XXXXX@78 {
           compatible = "we,wsen-pdus-25131308XXXXX";
-          reg = < 0x78 >;
-          sensor-type = < 4 >;
+          reg = <0x78>;
+          sensor-type = <4>;
         };
       };
 
@@ -426,8 +426,8 @@ Sensors
       &i2c0 {
         tids:tids-2521020222501@3F {
           compatible = "we,wsen-tids-2521020222501";
-          reg = < 0x3F >;
-          odr = < 25 >;
+          reg = <0x3F>;
+          odr = <25>;
           interrupt-gpios = <&gpio1 1 GPIO_ACTIVE_LOW>;
         };
       };
@@ -603,7 +603,7 @@ Bluetooth Audio
 
 * Several services and service client (AICS, ASCS, CSIP, HAS, MCS, PACS, TBS, VCP and VOCS) now
   depend on :kconfig:option:`CONFIG_BT_SMP` and may need to be explicitly enabled.
-  (:github:`84994``)
+  (:github:`84994`)
 
 Bluetooth Classic
 =================

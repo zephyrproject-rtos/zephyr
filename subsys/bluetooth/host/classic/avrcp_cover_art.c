@@ -226,6 +226,11 @@ int bt_avrcp_tg_cover_art_init(uint16_t *psm)
 		return -EINVAL;
 	}
 
+	if (*psm != 0) {
+		LOG_DBG("AVRCP Cover Art already initialized (PSM 0x%04x)", *psm);
+		return 0;
+	}
+
 	tg_cover_art_server.server.l2cap.psm = 0;
 	err = bt_bip_l2cap_register(&tg_cover_art_server);
 	if (err < 0) {
@@ -603,18 +608,18 @@ int bt_avrcp_cover_art_ct_l2cap_connect(struct bt_avrcp_ct *ct,
 		return -ENOTCONN;
 	}
 
-	bt_conn_unref(conn);
-
 	index = bt_conn_index(conn);
 
 	if (index >= ARRAY_SIZE(avrcp_cover_art_ct)) {
 		LOG_ERR("Conn index out of bounds");
+		bt_conn_unref(conn);
 		return -EINVAL;
 	}
 
 	avrcp_cover_art_ct[index].bip.ops = &ct_bip_transport_ops;
 
 	err = bt_bip_l2cap_connect(conn, &avrcp_cover_art_ct[index].bip, psm);
+	bt_conn_unref(conn);
 	if (err != 0) {
 		LOG_ERR("Failed to connect AVRCP Cover Art L2CAP channel (err %d)", err);
 		return err;

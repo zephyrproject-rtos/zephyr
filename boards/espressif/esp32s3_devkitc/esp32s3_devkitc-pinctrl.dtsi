@@ -4,9 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
 #include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
-#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
 
 &pinctrl {
 	uart0_default: uart0_default {
@@ -86,15 +84,16 @@
 		};
 	};
 
+	/* SPI3: GPIO33-37 are octal PSRAM interconnect — do not use */
 	spim3_default: spim3_default {
 		group1 {
-			pinmux = <SPIM3_MISO_GPIO37>,
-				 <SPIM3_SCLK_GPIO36>,
-				 <SPIM3_CSEL_GPIO38>;
+			pinmux = <SPIM3_MISO_GPIO40>,
+				 <SPIM3_SCLK_GPIO21>,
+				 <SPIM3_CSEL_GPIO14>;
 		};
 
 		group2 {
-			pinmux = <SPIM3_MOSI_GPIO39>;
+			pinmux = <SPIM3_MOSI_GPIO41>;
 			output-low;
 		};
 	};

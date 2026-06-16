@@ -1,13 +1,16 @@
 {#
   Override the default searchbox from RTD theme to provide the ability to select a search method
-  (ex. built-in search, Google Custom Search, ...)
+  (ex. built-in search, Google Custom Search, Kapa AI search, ...)
 #}
+{%- set has_google_search = google_searchengine_id is defined %}
+{%- set has_kapa_search = kapa_website_id is defined %}
+{%- set has_search_engine_menu = has_google_search or has_kapa_search %}
 {%- if ('singlehtml' not in builder) %}
 <div class="search-container" role="search">
   <form id="rtd-search-form" class="wy-form" action="{{ pathto('search') }}" method="get">
     <input type="search" name="q" placeholder="{{ _('Search docs') }}"
            aria-label="{{ _('Search docs') }}" />
-    {%- if google_searchengine_id is defined %}
+    {%- if has_search_engine_menu %}
     <span id="search-se-settings-icon" class="fa fa-gear" role="button" tabindex="0"
           title="Search settings" aria-label="Search settings"
           aria-haspopup="menu" aria-controls="search-se-menu" aria-expanded="false"
@@ -19,10 +22,18 @@
             aria-label="Built-in search" onclick="switchSearchEngine('sphinx')">
           Built-in search <span class="fa fa-check"></span>
         </li>
+        {%- if has_google_search %}
         <li id="search-se-menuitem-google" role="menuitemradio" tabindex="-1"
             aria-label="Google search" onclick="switchSearchEngine('google')">
           Google search <span class="fa fa-check"></span>
         </li>
+        {%- endif %}
+        {%- if has_kapa_search %}
+        <li id="search-se-menuitem-kapa" role="menuitemradio" tabindex="-1"
+            aria-label="Kapa AI search" onclick="switchSearchEngine('kapa')">
+          Kapa AI search <span class="fa fa-check"></span>
+        </li>
+        {%- endif %}
       </ul>
     </div>
     {%- endif %}
@@ -30,25 +41,35 @@
     <input type="hidden" name="area" value="default" />
   </form>
 </div>
-{%- if google_searchengine_id is defined %}
+{%- if has_search_engine_menu %}
 <script>
 (function () {
+  var hasGoogleSearch = {% if has_google_search %}true{% else %}false{% endif %};
+  var hasKapaSearch = {% if has_kapa_search %}true{% else %}false{% endif %};
+
   var form = document.getElementById("rtd-search-form");
   var searchMenu = document.getElementById("search-se-menu");
   var isBrowsingLatest = window.location.pathname.startsWith("/latest");
   var preferenceKey = "search-se-" + (isBrowsingLatest ? "latest" : "default");
   var query = new URLSearchParams(window.location.search).get("q");
+  var searchEngines = ["sphinx"];
+  if (hasGoogleSearch) {
+    searchEngines.push("google");
+  }
+  if (hasKapaSearch) {
+    searchEngines.push("kapa");
+  }
 
   if (query !== null) {
     form.q.value = query;
     form.q.focus();
   }
 
-  // Load the saved search preference. Defaults to Google when browsing "/latest" documentation,
-  // built-in Sphinx search otherwise.
+  // Load the saved search preference. On "/latest", default to Google when enabled in this build;
+  // otherwise default to built-in Sphinx search.
   var engine = localStorage.getItem(preferenceKey);
   if (engine === null) {
-    engine = isBrowsingLatest ? "google" : "sphinx";
+    engine = isBrowsingLatest && hasGoogleSearch ? "google" : "sphinx";
   }
   setActiveSearchEngine(engine);
 
@@ -66,23 +87,65 @@
   };
 
   function setActiveSearchEngine(engine) {
-    if(engine === "sphinx") {
-      form.action = "{{ pathto('search') }}";
-      form.q.placeholder = "Search docs (built-in search)";
-    } else {
-      form.action = "{{ pathto('gsearch') }}";
-      form.q.placeholder = "Search docs (powered by Google)";
+    if (searchEngines.indexOf(engine) === -1) {
+      engine = isBrowsingLatest && hasGoogleSearch ? "google" : "sphinx";
     }
 
-    var selectedElement = document.getElementById("search-se-menuitem-" + engine);
-    var otherElement = document.getElementById(
-      "search-se-menuitem-" + (engine === "sphinx" ? "google" : "sphinx")
-    );
+    if (engine === "sphinx") {
+      form.action = "{{ pathto('search') }}";
+      form.q.placeholder = "Search docs (built-in search)";
+    } else if (hasGoogleSearch && engine === "google") {
+      form.action = "{{ pathto('gsearch') }}";
+      form.q.placeholder = "Search docs (powered by Google)";
+    } else if (hasKapaSearch && engine === "kapa") {
+      form.action = "{{ pathto('search') }}";
+      form.q.placeholder = "Search docs (Kapa AI)";
+    }
 
-    selectedElement.classList.add("selected");
-    selectedElement.setAttribute("aria-checked", "true");
-    otherElement.classList.remove("selected");
-    otherElement.setAttribute("aria-checked", "false");
+    searchEngines.forEach(function (searchEngine) {
+      var menuItem = document.getElementById("search-se-menuitem-" + searchEngine);
+      if (!menuItem) {
+        return;
+      }
+      var isSelected = searchEngine === engine;
+      menuItem.classList.toggle("selected", isSelected);
+      menuItem.setAttribute("aria-checked", isSelected ? "true" : "false");
+    });
+  }
+
+  var openKapaSearch;
+  var openKapaSearchWhenReady;
+
+  if (hasKapaSearch) {
+    openKapaSearch = function (q) {
+      if (!window.Kapa || typeof window.Kapa.open !== "function") {
+        return false;
+      }
+      var text = (q != null && q !== "" ? String(q) : "").trim();
+      if (text !== "") {
+        window.Kapa.open({ mode: "search", query: text, submit: true });
+      } else {
+        window.Kapa.open({ mode: "search" });
+      }
+      return true;
+    };
+
+    openKapaSearchWhenReady = function (q, remainingAttempts) {
+      if (openKapaSearch(q) || remainingAttempts <= 0) {
+        return;
+      }
+      window.setTimeout(function () {
+        openKapaSearchWhenReady(q, remainingAttempts - 1);
+      }, 250);
+    };
+
+    form.addEventListener("submit", function (event) {
+      if (localStorage.getItem(preferenceKey) !== "kapa") {
+        return;
+      }
+      event.preventDefault();
+      openKapaSearchWhenReady(form.q.value, 40);
+    });
   }
 
   window.switchSearchEngine = function (engine) {
@@ -91,7 +154,11 @@
     setSearchEngineSettingsMenuVisibility(false);
     form.q.focus();
     if (form.q.value !== "") {
-      form.submit();
+      if (hasKapaSearch && engine === "kapa") {
+        openKapaSearchWhenReady(form.q.value, 40);
+      } else {
+        form.submit();
+      }
     }
   };
 

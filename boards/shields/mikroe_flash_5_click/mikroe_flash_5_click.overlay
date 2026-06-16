@@ -16,6 +16,7 @@
 		/* w25n01gv parameters */
 		jedec-id = [ef aa 21];
 		size-bytes = <DT_SIZE_M(128)>;
+		plane-bytes = <DT_SIZE_M(128)>;
 		erase-block-size = <DT_SIZE_K(128)>;
 		write-block-size = <DT_SIZE_K(2)>;
 		block-erase-duration-max = <10000>;

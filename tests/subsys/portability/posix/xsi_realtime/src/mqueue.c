@@ -272,6 +272,14 @@ ZTEST(xsi_realtime, test_mqueue_notify_errors)
 	zassert_ok(mq_unlink(queue), "Unable to unlink queue");
 }
 
+ZTEST(xsi_realtime, test_mqueue_unlink_enoent)
+{
+	zassert_equal(mq_unlink("/nonexistent_queue"), -1,
+		      "mq_unlink should return -1 for non-existent queue");
+	zassert_equal(errno, ENOENT,
+		      "mq_unlink should set errno to ENOENT for non-existent queue");
+}
+
 ZTEST(xsi_realtime, test_mqueue_open_and_unlink_multiple)
 {
 	const char *q1 = "q1";

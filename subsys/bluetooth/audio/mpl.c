@@ -18,28 +18,30 @@
 #include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
-#include "media_proxy_internal.h"
 #include "mcs_internal.h"
+#include "media_proxy_internal.h"
 #include "mpl_internal.h"
 
 LOG_MODULE_REGISTER(bt_mpl, CONFIG_BT_MPL_LOG_LEVEL);
 
-#define TRACK_STATUS_INVALID 0x00
-#define TRACK_STATUS_VALID 0x01
+#define TRACK_STATUS_INVALID 0x00U
+#define TRACK_STATUS_VALID 0x01U
 
-#define TRACK_POS_WORK_DELAY_MS 1000
+#define TRACK_POS_WORK_DELAY_MS 1000U
 #define TRACK_POS_WORK_DELAY    K_MSEC(TRACK_POS_WORK_DELAY_MS)
 
 #define PLAYBACK_SPEED_PARAM_DEFAULT MEDIA_PROXY_PLAYBACK_SPEED_UNITY
@@ -55,7 +57,7 @@ static struct mpl_tseg seg_2;
 static struct mpl_tseg seg_3;
 
 static struct mpl_tseg seg_1 = {
-	.name_len = 5,
+	.name_len = 5U,
 	.name	  = "Start",
 	.pos	  = 0,
 	.prev	  = NULL,
@@ -63,7 +65,7 @@ static struct mpl_tseg seg_1 = {
 };
 
 static struct mpl_tseg seg_2 = {
-	.name_len = 6,
+	.name_len = 6U,
 	.name	  = "Middle",
 	.pos	  = 2000,
 	.prev	  = &seg_1,
@@ -71,7 +73,7 @@ static struct mpl_tseg seg_2 = {
 };
 
 static struct mpl_tseg seg_3 = {
-	.name_len = 3,
+	.name_len = 3U,
 	.name	  = "End",
 	.pos	  = 5000,
 	.prev	  = &seg_2,
@@ -256,7 +258,7 @@ static struct mpl_mediaplayer media_player = {
 				    MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
 	.opcodes_supported	  = 0x001fffff, /* All opcodes */
 #ifdef CONFIG_BT_MPL_OBJECTS
-	.search_results_id	  = 0,
+	.search_results_id	  = 0U,
 	.calls = { 0 },
 #endif /* CONFIG_BT_MPL_OBJECTS */
 	.next_track_set           = false
@@ -312,7 +314,7 @@ struct obj_t {
 };
 
 static struct obj_t obj = {
-	.selected_id = 0,
+	.selected_id = 0U,
 	.add_type = MPL_OBJ_NONE,
 	.add_track = NULL,
 	.content = NET_BUF_SIMPLE(CONFIG_BT_MPL_MAX_OBJ_SIZE),
@@ -330,9 +332,8 @@ static int setup_icon_object(void)
 	net_buf_simple_reset(obj.content);
 
 	/* Size may be larger than what fits in 8 bits, use 16-bit for index */
-	for (index = 0, k = 0;
-	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE,
-			 CONFIG_BT_MPL_ICON_BITMAP_SIZE);
+	for (index = 0U, k = 0U;
+	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE, CONFIG_BT_MPL_ICON_BITMAP_SIZE);
 	     index++, k++) {
 		net_buf_simple_add_u8(obj.content, k);
 	}
@@ -348,7 +349,7 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 	net_buf_simple_reset(obj.content);
 
 	if (seg) {
-		uint32_t tot_size = 0;
+		uint32_t tot_size = 0U;
 
 		while (seg->prev) {
 			seg = seg->prev;
@@ -381,7 +382,7 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 }
 
 /* Set up content buffer for a track object */
-static uint32_t setup_track_object(struct mpl_track *track)
+static uint32_t setup_track_object(void)
 {
 	uint16_t index;
 	uint8_t k;
@@ -392,10 +393,8 @@ static uint32_t setup_track_object(struct mpl_track *track)
 	net_buf_simple_reset(obj.content);
 
 	/* Size may be larger than what fits in 8 bits, use 16-bit for index */
-	for (index = 0, k = 0;
-	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE,
-			 CONFIG_BT_MPL_TRACK_MAX_SIZE);
-	     index++, k++) {
+	for (index = 0U, k = 0U;
+	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE, CONFIG_BT_MPL_TRACK_MAX_SIZE); index++, k++) {
 		net_buf_simple_add_u8(obj.content, k);
 	}
 
@@ -472,7 +471,7 @@ static uint32_t setup_group_object(struct mpl_group *group)
 }
 
 /* Add the icon object to the OTS */
-static int add_icon_object(struct mpl_mediaplayer *pl)
+static int add_icon_object(void)
 {
 	int ret;
 	struct bt_ots_obj_add_param add_param = {};
@@ -547,7 +546,7 @@ static int add_track_object(struct mpl_track *track)
 	obj.add_track = track;
 	obj.desc = &created_desc;
 
-	obj.desc->size.alloc = obj.desc->size.cur = setup_track_object(track);
+	obj.desc->size.alloc = obj.desc->size.cur = setup_track_object();
 	obj.desc->name = track->title;
 	BT_OTS_OBJ_SET_PROP_READ(obj.desc->props);
 
@@ -691,6 +690,9 @@ static int add_group_and_track_objects(struct mpl_mediaplayer *pl)
 static int on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 			   uint64_t id)
 {
+	ARG_UNUSED(ots);
+	ARG_UNUSED(conn);
+
 	LOG_DBG_OBJ_ID("Object Id deleted: ", id);
 
 	return 0;
@@ -699,6 +701,9 @@ static int on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 			    uint64_t id)
 {
+	ARG_UNUSED(ots);
+	ARG_UNUSED(conn);
+
 	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		/* TODO: Can there be a collision between select and internal */
 		/* activities, like adding new objects? */
@@ -716,16 +721,16 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 		(void)setup_segments_object(media_player.group->track);
 	} else if (id == media_player.group->track->id) {
 		LOG_DBG("Current Track Object ID");
-		(void)setup_track_object(media_player.group->track);
+		(void)setup_track_object();
 	} else if (media_player.next_track_set && id == media_player.next.track->id) {
 		/* Next track, if the next track has been explicitly set */
 		LOG_DBG("Next Track Object ID");
-		(void)setup_track_object(media_player.next.track);
+		(void)setup_track_object();
 	} else if (media_player.group->track->next != NULL &&
 		   id == media_player.group->track->next->id) {
 		/* Next track, if next track has not been explicitly set */
 		LOG_DBG("Next Track Object ID");
-		(void)setup_track_object(media_player.group->track->next);
+		(void)setup_track_object();
 	} else if (id == media_player.group->parent->id) {
 		LOG_DBG("Parent Group Object ID");
 		(void)setup_parent_group_object(media_player.group);
@@ -746,6 +751,9 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 			  const struct bt_ots_obj_add_param *add_param,
 			  struct bt_ots_obj_created_desc *created_desc)
 {
+	ARG_UNUSED(ots);
+	ARG_UNUSED(conn);
+
 	/* Objects are always created locally so we do not need to check for MPL_OBJ_FLAG_BUSY */
 
 	LOG_DBG_OBJ_ID("Object Id created: ", id);
@@ -809,6 +817,9 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 			      uint64_t id, void **data, size_t len,
 			      off_t offset)
 {
+	ARG_UNUSED(ots);
+	ARG_UNUSED(conn);
+
 	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		/* TODO: Can there be a collision between select and internal */
 		/* activities, like adding new objects? */
@@ -2217,6 +2228,8 @@ static uint32_t get_commands_supported(void)
 
 static bool parse_sci(struct bt_data *data, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	LOG_DBG("type: %u len %u", data->type, data->data_len);
 	LOG_HEXDUMP_DBG(data->data, data->data_len, "param:");
 
@@ -2256,7 +2269,7 @@ static void parse_search(const struct mpl_search *search)
 	/* For now, just fake it. */
 
 	if (search_failed) {
-		media_player.search_results_id = 0;
+		media_player.search_results_id = 0U;
 		media_proxy_pl_search_cb(MEDIA_PROXY_SEARCH_FAILURE);
 	} else {
 		/* Use current group as search result for now */
@@ -2292,6 +2305,8 @@ static uint8_t get_content_ctrl_id(void)
 static void pos_work_cb(struct k_work *work)
 {
 	const int32_t pos_diff_cs = TRACK_POS_WORK_DELAY_MS / 10; /* position is in centiseconds*/
+
+	ARG_UNUSED(work);
 
 	if (media_player.state == MEDIA_PROXY_STATE_SEEKING) {
 		/* When seeking, apply the seeking speed factor */
@@ -2365,7 +2380,7 @@ int media_proxy_pl_init(void)
 	net_buf_simple_init(obj.content, 0);
 
 	/* Icon Object */
-	ret = add_icon_object(&media_player);
+	ret = add_icon_object();
 	if (ret < 0) {
 		LOG_ERR("Unable to add icon object, error %d", ret);
 		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);

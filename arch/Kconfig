@@ -107,6 +107,8 @@ config X86
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_DEMAND_PAGING if !X86_64
 	select ARCH_HAS_DEMAND_MAPPING if ARCH_HAS_DEMAND_PAGING
+	select ARCH_SUPPORTS_EVICTION_TRACKING if ARCH_HAS_DEMAND_PAGING && !X86_KPTI
+	select EVICTION_TRACKING if DEMAND_PAGING && !X86_KPTI
 	select NEED_LIBC_MEM_PARTITION if USERSPACE && TIMING_FUNCTIONS \
 					  && !BOARD_HAS_TIMING_FUNCTIONS \
 					  && !SOC_HAS_TIMING_FUNCTIONS
@@ -119,7 +121,7 @@ config X86
 config RISCV
 	bool
 	select ARCH_IS_SET
-	select ATOMIC_OPERATIONS_C if !RISCV_ISA_EXT_A
+	select ATOMIC_OPERATIONS_C if (!RISCV_ISA_EXT_A && !ATOMIC_OPERATIONS_ARCH)
 	select ATOMIC_OPERATIONS_BUILTIN if RISCV_ISA_EXT_A
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
@@ -129,12 +131,15 @@ config RISCV
 	select ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_SUSPEND_TO_RAM
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
 	select SCHED_IPI_SUPPORTED if SMP
 	select ARCH_HAS_DIRECTED_IPIS
 	select BARRIER_OPERATIONS_BUILTIN if RISCV_ISA_BASE_FENCE
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
+	select ARCH_HAS_STACK_CANARIES_TLS
+	select STACK_CANARIES_TLS_PREPEND if STACK_CANARIES_TLS
 	depends on DT_HAS_RISCV_ENABLED
 	help
 	  RISCV architecture
@@ -223,24 +228,37 @@ config 64BIT
 	  soc/**/Kconfig, or boards/**/Kconfig and the user should generally
 	  avoid modifying it.
 
+config SRAM_DEPRECATED_KCONFIG_SET
+	bool
+	default y if SRAM_SIZE != $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
+	default y if SRAM_BASE_ADDRESS != $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
+	default n
+	select DEPRECATED
+	help
+	  Indicates that either `CONFIG_SRAM_SIZE` or `CONFIG_SRAM_BASE_ADDRESS` have been
+	  manually set, these Kconfigs are now deprecated and should be replaced by referencing
+	  the devicetree `zephyr,sram` chosen node instead.
+
 # Workaround for not being able to have commas in macro arguments
 DT_CHOSEN_Z_SRAM := zephyr,sram
 
 config SRAM_SIZE
-	int "SRAM Size in kB"
+	int "SRAM Size in kB [DEPRECATED]"
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 	help
 	  The SRAM size in kB. The default value comes from /chosen/zephyr,sram in
 	  devicetree. The user should generally avoid changing it via menuconfig or
-	  in configuration files.
+	  in configuration files. This option is now deprecated and must be replaced by referencing
+	  the devicetree `zephyr,sram` chosen node instead.
 
 config SRAM_BASE_ADDRESS
-	hex "SRAM Base Address"
+	hex "SRAM Base Address [DEPRECATED]"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))
 	help
 	  The SRAM base address. The default value comes from
 	  /chosen/zephyr,sram in devicetree. The user should generally avoid
-	  changing it via menuconfig or in configuration files.
+	  changing it via menuconfig or in configuration files. This option is now deprecated and
+	  must be replaced by referencing the devicetree `zephyr,sram` chosen node instead.
 
 config XIP
 	bool "Execute in place"
@@ -322,7 +340,6 @@ config HW_STACK_PROTECTION
 config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
-	depends on RUNTIME_ERROR_CHECKS
 	depends on SRAM_REGION_PERMISSIONS
 	select THREAD_STACK_INFO
 	select LINKER_USE_NO_RELAX
@@ -365,6 +382,7 @@ config KOBJECT_TEXT_AREA
 	default 1024 if UBSAN
 	default 512 if COVERAGE_GCOV
 	default 512 if NO_OPTIMIZATIONS
+	default 512 if STACK_CANARIES_ALL
 	default 512 if STACK_CANARIES && RISCV
 	default 256
 	depends on USERSPACE
@@ -837,6 +855,31 @@ config ARCH_HAS_SUSPEND_TO_RAM
 config ARCH_HAS_STACK_CANARIES_TLS
 	bool
 
+config STACK_CANARIES_TLS_PREPEND
+	bool
+	depends on STACK_CANARIES_TLS
+	help
+	  The stack canary (.stack_chk.guard) is placed as the first section
+	  in the TLS block at offset 0, before .tdata/.tbss. Required on
+	  architectures where the compiler accesses the canary via a fixed
+	  offset from the TLS base pointer (e.g. RISC-V).
+
+config STACK_CANARIES_TLS_GUARD_REG
+	string
+	default "tp" if RISCV
+	depends on STACK_CANARIES_TLS_PREPEND
+	help
+	  The register used as the TLS base pointer for stack canary access.
+	  Sets -mstack-protector-guard-reg=<reg>.
+
+config STACK_CANARIES_TLS_GUARD_OFFSET
+	int
+	default 0
+	depends on STACK_CANARIES_TLS_PREPEND
+	help
+	  The byte offset from the TLS base register to the stack canary.
+	  Sets -mstack-protector-guard-offset=<offset>.
+
 config ARCH_SUPPORTS_MEM_MAPPED_STACKS
 	bool
 	help
@@ -1102,7 +1145,10 @@ config FPU
 
 	  If it is necessary for multiple threads to perform concurrent floating
 	  point operations, the "FPU register sharing" option must be enabled to
-	  preserve the floating point registers across context switches.
+	  preserve the floating point registers across context switches. This is
+	  done automatically if the platform enables an architecture-specific option
+	  enabling the compiler to generate FP instructions for general puprose
+	  integer work.
 
 	  Note that this option cannot be selected for the platforms that do not
 	  include a hardware floating point unit; the floating point support for

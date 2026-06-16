@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 #include "ipv6.h"
 #include "nbr.h"
 #include "6lo.h"
-#include "route.h"
+#include "route_ipv6.h"
 #include "net_stats.h"
 #include "pmtu.h"
 
@@ -323,7 +323,7 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct net_in6_addr *addr)
 	}
 
 	/* Remove any routes with nbr as nexthop in first place */
-	net_route_del_by_nexthop(iface, addr);
+	net_route_ipv6_del_by_nexthop(iface, addr);
 
 	nbr_free(nbr);
 
@@ -790,9 +790,9 @@ static struct net_in6_addr *check_route(struct net_if *iface,
 	struct net_route_entry *route;
 	struct net_if_router *router;
 
-	route = net_route_lookup(iface, dst);
+	route = net_route_ipv6_lookup(iface, dst);
 	if (route) {
-		nexthop = net_route_get_nexthop(route);
+		nexthop = net_route_ipv6_get_nexthop(route);
 
 		NET_DBG("Route %p nexthop %s iface %p/%d",
 			route,
@@ -801,7 +801,7 @@ static struct net_in6_addr *check_route(struct net_if *iface,
 			iface, net_if_get_by_iface(iface));
 
 		if (!nexthop) {
-			net_route_del(route);
+			net_route_ipv6_del(route);
 
 			NET_DBG("No route to host %s",
 				net_sprint_ipv6_addr(dst));
@@ -882,6 +882,10 @@ use_interface_mtu:
 		}
 
 		if (mtu < pkt_len) {
+			if (net_pkt_dont_fragment(pkt)) {
+				return NET_DROP;
+			}
+
 			ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt),
 							   pkt, pkt_len, mtu);
 			if (ret < 0) {
@@ -910,11 +914,11 @@ use_interface_mtu:
 	 * not enter this branch.
 	 */
 	if ((net_pkt_lladdr_dst(pkt)->len > 0 &&
-	     ((IS_ENABLED(CONFIG_NET_ROUTING) &&
+	     ((IS_ENABLED(CONFIG_NET_IPV6_FORWARDING) &&
 	      (net_ipv6_is_ll_addr(&dst_ip) ||
 	       net_if_ipv6_addr_onlink(NULL, &dst_ip) ||
 	       net_pkt_forwarding(pkt))) ||
-	      !IS_ENABLED(CONFIG_NET_ROUTING))) ||
+	      !IS_ENABLED(CONFIG_NET_IPV6_FORWARDING))) ||
 	    net_ipv6_is_addr_mcast(&dst_ip) ||
 	    /* Workaround Linux bug, see:
 	     * https://github.com/zephyrproject-rtos/zephyr/issues/3111
@@ -1066,7 +1070,7 @@ try_send:
 }
 
 struct net_nbr *net_ipv6_nbr_lookup(struct net_if *iface,
-				    struct net_in6_addr *addr)
+				    const struct net_in6_addr *addr)
 {
 	struct net_nbr *nbr;
 
@@ -1305,12 +1309,21 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 
 	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
-	if (((length < (sizeof(struct net_ipv6_hdr) +
-			  sizeof(struct net_icmp_hdr) +
-			  sizeof(struct net_icmpv6_ns_hdr))) ||
-	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT)) &&
-	    (net_ipv6_is_addr_mcast(&ns_tgt) &&
-	     icmp_hdr->code != 0U)) {
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_ns_hdr))) {
+		goto drop;
+	}
+
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (net_ipv6_is_addr_mcast(&ns_tgt)) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
 		goto drop;
 	}
 
@@ -1368,7 +1381,7 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 					net_pkt_get_data(pkt, &nd_access);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
 		ifaddr = net_if_ipv6_addr_lookup(&ns_tgt, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(
@@ -1376,7 +1389,7 @@ static enum net_verdict handle_ns_input(struct net_icmp_ctx *ctx,
 	}
 
 	if (!ifaddr) {
-		if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+		if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
 			struct net_in6_addr *nexthop;
 
 			nexthop = check_route(NULL, &ns_tgt, NULL);
@@ -1482,7 +1495,7 @@ nexthop_found:
 	}
 
 	/* Neighbor Unreachability Detection (NUD) */
-	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+	if (IS_ENABLED(CONFIG_NET_IPV6_FORWARDING)) {
 		ifaddr = net_if_ipv6_addr_lookup(&ns_dst, NULL);
 	} else {
 		ifaddr = net_if_ipv6_addr_lookup_by_iface(
@@ -1934,15 +1947,27 @@ static enum net_verdict handle_na_input(struct net_icmp_ctx *ctx,
 	net_ipv6_addr_copy_raw(na_tgt.s6_addr, na_hdr->tgt);
 	net_ipv6_addr_copy_raw(na_dst.s6_addr, ip_hdr->dst);
 
-	if (((length < (sizeof(struct net_ipv6_hdr) +
-			sizeof(struct net_icmp_hdr) +
-			sizeof(struct net_icmpv6_na_hdr) +
-			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	     net_ipv6_is_addr_mcast(&na_tgt) ||
-	     (na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED &&
-	      net_ipv6_is_addr_mcast(&na_dst))) &&
-	    (icmp_hdr->code != 0U)) {
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_na_hdr) +
+		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
+		goto drop;
+	}
+
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (net_ipv6_is_addr_mcast(&na_tgt)) {
+		goto drop;
+	}
+
+	if ((na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED) &&
+	     net_ipv6_is_addr_mcast(&na_dst)) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
 		goto drop;
 	}
 
@@ -2553,20 +2578,20 @@ static inline bool handle_ra_route_info(struct net_pkt *pkt, uint8_t len,
 	}
 
 	if (route_lifetime == 0) {
-		route = net_route_lookup(net_pkt_orig_iface(pkt), &prefix_buf);
+		route = net_route_ipv6_lookup(net_pkt_orig_iface(pkt), &prefix_buf);
 		if (route != NULL) {
-			ret = net_route_del(route);
+			ret = net_route_ipv6_del(route);
 			if (ret < 0) {
 				NET_DBG("Failed to delete route");
 			}
 		}
 	} else {
-		route = net_route_add(net_pkt_orig_iface(pkt),
-				      &prefix_buf,
-				      prefix_len,
-				      ra_src,
-				      route_lifetime,
-				      preference);
+		route = net_route_ipv6_add(net_pkt_orig_iface(pkt),
+					   &prefix_buf,
+					   prefix_len,
+					   ra_src,
+					   route_lifetime,
+					   preference);
 		if (route == NULL) {
 			NET_DBG("Failed to add route");
 		}
@@ -2687,13 +2712,22 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 
 	net_ipv6_addr_copy_raw(ra_src.s6_addr, ip_hdr->src);
 
-	if (((length < (sizeof(struct net_ipv6_hdr) +
-			sizeof(struct net_icmp_hdr) +
-			sizeof(struct net_icmpv6_ra_hdr) +
-			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
-	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	     !net_ipv6_is_ll_addr(&ra_src)) &&
-		icmp_hdr->code != 0U) {
+	if (length < (sizeof(struct net_ipv6_hdr) +
+		      sizeof(struct net_icmp_hdr) +
+		      sizeof(struct net_icmpv6_ra_hdr) +
+		      sizeof(struct net_icmpv6_nd_opt_hdr))) {
+		goto drop;
+	}
+
+	if (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) {
+		goto drop;
+	}
+
+	if (!net_ipv6_is_ll_addr(&ra_src)) {
+		goto drop;
+	}
+
+	if (icmp_hdr->code != 0U) {
 		goto drop;
 	}
 
@@ -2795,7 +2829,7 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 			break;
 #endif
 		case NET_ICMPV6_ND_OPT_ROUTE:
-			if (!IS_ENABLED(CONFIG_NET_ROUTE)) {
+			if (!IS_ENABLED(CONFIG_NET_IPV6_ROUTE)) {
 				NET_DBG("Route option skipped");
 				goto skip;
 			}

@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 3.20.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(ccp_call_control_server_self_tets)
+project(ccp_call_control_server_self_tests)
 
 set(ccp_call_control_server_path ${ZEPHYR_BASE}/samples/bluetooth/ccp_call_control_server)
 

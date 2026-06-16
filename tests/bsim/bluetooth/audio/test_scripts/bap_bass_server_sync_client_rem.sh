@@ -5,7 +5,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-SIMULATION_ID="bass_server_sync_client_rem"
+SIMULATION_ID="${BOARD_TS}_bass_server_sync_client_rem"
 VERBOSITY_LEVEL=2
 
 cd ${BSIM_OUT_PATH}/bin

@@ -295,6 +295,8 @@ struct ptp_msg {
 	} timestamp;
 	/** Reference counter. */
 	atomic_t ref;
+	/** Local monotonic message timestamp from k_uptime_get(), in milliseconds. */
+	int64_t local_uptime_ms;
 	/** True if transport layer provided RX hardware timestamp for this message. */
 	bool rx_timestamp_valid;
 	/** List object. */

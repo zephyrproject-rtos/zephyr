@@ -1,0 +1,7 @@
+tests:
+  test_integration.check_integration_platforms:
+    integration_platforms:
+      - demo_board_2
+      - demo_board_3
+    tags: test_integration
+    build_only: true

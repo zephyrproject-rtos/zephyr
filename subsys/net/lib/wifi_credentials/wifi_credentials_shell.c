@@ -288,6 +288,12 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 		shell_warn(sh, "Passphrase provided without security configuration\n");
 	}
 
+	if (creds.password_len > 0 && creds.header.type == WIFI_SECURITY_TYPE_OWE) {
+		shell_warn(sh, "Passphrase is not required for OWE connection\n");
+		memset(creds.password, 0, sizeof(creds.password));
+		creds.password_len = 0;
+	}
+
 	if (creds.header.ssid_len == 0) {
 		shell_error(sh, "SSID not provided\n");
 		shell_help(sh);
@@ -296,6 +302,7 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	struct net_if *iface = net_if_get_wifi_sta();
+	int ret;
 
 	/* Load the enterprise credentials if needed */
 	if (creds.header.type == WIFI_SECURITY_TYPE_EAP_TLS ||
@@ -303,7 +310,11 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 	    creds.header.type == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 	    creds.header.type == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
 	    creds.header.type == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-		wifi_set_enterprise_credentials(iface, 0);
+		ret = wifi_set_enterprise_credentials(iface, 0);
+		if (ret != 0) {
+			shell_error(sh, "Failed to set enterprise credentials (%d)\n", ret);
+			return -ENOEXEC;
+		}
 	}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
@@ -343,11 +354,16 @@ static int cmd_list_networks(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_auto_connect(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = net_if_get_wifi_sta();
+	int rc;
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	wifi_set_enterprise_credentials(iface, 0);
+	rc = wifi_set_enterprise_credentials(iface, 0);
+	if (rc != 0) {
+		shell_error(sh, "Failed to set enterprise credentials (%d)\n", rc);
+		return -ENOEXEC;
+	}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
-	int rc = net_mgmt(NET_REQUEST_WIFI_CONNECT_STORED, iface, NULL, 0);
+	rc = net_mgmt(NET_REQUEST_WIFI_CONNECT_STORED, iface, NULL, 0);
 
 	if (rc) {
 		shell_error(sh,

@@ -14,6 +14,8 @@
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,openthread-counter = &protimer;
 	};
 };
 
@@ -37,12 +39,22 @@
 	clock-frequency = <DT_FREQ_M(80)>;
 };
 
+&ieee802154 {
+	status = "okay";
+	hfxo = <&hfxo>;
+	sleep-clock = <&lfxo>;
+};
+
 &itm {
 	swo-ref-frequency = <DT_FREQ_M(80)>;
 };
 
 &led0 {
 	gpios = <&gpioa 9 GPIO_ACTIVE_HIGH>;
+};
+
+&protimer {
+	status = "okay";
 };
 
 &timer0_default {

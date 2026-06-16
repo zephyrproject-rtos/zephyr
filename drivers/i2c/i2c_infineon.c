@@ -260,10 +260,6 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	cy_rslt_t rslt = CY_RSLT_SUCCESS;
 	int ret;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	/* Acquire semaphore (block I2C transfer for another thread) */
 	ret = k_sem_take(&data->operation_sem, K_FOREVER);
 	if (ret) {

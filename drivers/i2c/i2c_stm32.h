@@ -25,7 +25,7 @@
 typedef void (*irq_config_func_t)(const struct device *port);
 
 #ifdef CONFIG_I2C_STM32_V2
-/*  Private I2C_MSG_* flags for STM32 I2C */
+/* Private I2C_MSG_* flags for STM32 I2C */
 #define I2C_MSG_STM32_USE_RELOAD_MODE	BIT(7)
 #endif
 
@@ -140,9 +140,9 @@ struct i2c_stm32_data {
 };
 
 #ifdef CONFIG_I2C_RTIO
-bool i2c_stm32_start(const struct device *dev);
-int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
-			uint8_t *buf, size_t buf_len, uint16_t i2c_addr);
+void i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
+			 uint16_t i2c_addr);
+void i2c_stm32_rtio_complete(const struct device *dev, int status);
 #else /* CONFIG_I2C_RTIO */
 int i2c_stm32_transaction(const struct device *dev,
 			  struct i2c_msg msg, uint8_t *next_msg_flags,

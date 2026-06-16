@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="central_connect_timeout"
+simulation_id="${BOARD_TS}_central_connect_timeout"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

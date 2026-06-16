@@ -33,4 +33,5 @@ supported:
   - spi
   - usb_device
   - watchdog
+  - edac
 vendor: nxp

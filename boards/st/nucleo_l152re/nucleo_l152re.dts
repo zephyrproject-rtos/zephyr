@@ -44,6 +44,7 @@
 
 	aliases {
 		led0 = &green_led_0;
+		rtc = &rtc;
 		sw0 = &user_button;
 		eeprom-0 = &eeprom;
 		watchdog0 = &iwdg;
@@ -85,6 +86,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
@@ -144,26 +147,30 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
 
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(224)>;
 		};
 
 		slot1_partition: partition@44000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00044000 DT_SIZE_K(228)>;
 		};
 
 		storage_partition: partition@7d000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0007d000 DT_SIZE_K(12)>;
 		};

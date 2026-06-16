@@ -1,0 +1,37 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/nxp_mcxl255_cm0.dtsi>
+#include "frdm_mcxl255-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "NXP FRDM_MCXL255 board";
+	compatible = "nxp,mcxl255", "nxp,mcx";
+
+	chosen {
+		zephyr,sram = &sram;
+		zephyr,console = &aon_lpuart0;
+		zephyr,shell-uart = &aon_lpuart0;
+	};
+};
+
+&cpu1 {
+	clock-frequency = <DT_FREQ_M(10)>;
+};
+
+&aon_lpuart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_aon_lpuart0>;
+	pinctrl-names = "default";
+};
+
+&systick {
+	status = "okay";
+};

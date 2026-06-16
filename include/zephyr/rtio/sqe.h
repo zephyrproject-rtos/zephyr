@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2022 Intel Corporation
- * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -425,10 +425,12 @@ static inline void rtio_sqe_prep_nop(struct rtio_sqe *sqe,
 	sqe->userdata = userdata;
 }
 
+
 /**
- * @brief Prepare a read op submission
+ * @cond ignore
+ * @brief Common helper for prep read family of functions
  */
-static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
+static inline void _rtio_sqe_prep_read(struct rtio_sqe *sqe,
 				      const struct rtio_iodev *iodev,
 				      int8_t prio,
 				      uint8_t *buf,
@@ -443,6 +445,22 @@ static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
 	sqe->rx.buf = buf;
 	sqe->userdata = userdata;
 }
+/** @endcond */
+
+/**
+ * @brief Prepare a read op submission
+ */
+static inline void rtio_sqe_prep_read(struct rtio_sqe *sqe,
+				      const struct rtio_iodev *iodev,
+				      int8_t prio,
+				      uint8_t *buf,
+				      uint32_t len,
+				      void *userdata)
+{
+	__ASSERT_NO_MSG(len > 0 && buf != NULL);
+
+	_rtio_sqe_prep_read(sqe, iodev, prio, buf, len, userdata);
+}
 
 /**
  * @brief Prepare a read op submission with context's mempool
@@ -453,7 +471,7 @@ static inline void rtio_sqe_prep_read_with_pool(struct rtio_sqe *sqe,
 						const struct rtio_iodev *iodev, int8_t prio,
 						void *userdata)
 {
-	rtio_sqe_prep_read(sqe, iodev, prio, NULL, 0, userdata);
+	_rtio_sqe_prep_read(sqe, iodev, prio, NULL, 0, userdata);
 	sqe->flags = RTIO_SQE_MEMPOOL_BUFFER;
 }
 
@@ -475,6 +493,8 @@ static inline void rtio_sqe_prep_write(struct rtio_sqe *sqe,
 				       uint32_t len,
 				       void *userdata)
 {
+	__ASSERT_NO_MSG(len > 0 && buf != NULL);
+
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_TX;
 	sqe->prio = prio;
@@ -502,6 +522,7 @@ static inline void rtio_sqe_prep_tiny_write(struct rtio_sqe *sqe,
 					    void *userdata)
 {
 	__ASSERT_NO_MSG(tiny_write_len <= sizeof(sqe->tiny_tx.buf));
+	__ASSERT_NO_MSG(tiny_write_len > 0 && tiny_write_data != NULL);
 
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_TINY_TX;
@@ -564,6 +585,8 @@ static inline void rtio_sqe_prep_transceive(struct rtio_sqe *sqe,
 					    uint32_t buf_len,
 					    void *userdata)
 {
+	__ASSERT_NO_MSG(buf_len > 0 && tx_buf != NULL && rx_buf != NULL);
+
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_TXRX;
 	sqe->prio = prio;
@@ -660,6 +683,34 @@ static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 #define rtio_sqe_prep_delay(sqe, timeout, userdata) \
 	BUILD_ASSERT(false, "CONFIG_RTIO_OP_DELAY not enabled")
 #endif
+
+/** @brief Prepare an i2c configure op submission */
+static inline void rtio_sqe_prep_i2c_configure(struct rtio_sqe *sqe,
+					       const struct rtio_iodev *iodev,
+					       int8_t prio,
+					       uint32_t dev_config,
+					       void *userdata)
+{
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_I2C_CONFIGURE;
+	sqe->prio = prio;
+	sqe->iodev = iodev;
+	sqe->i2c_config = dev_config;
+	sqe->userdata = userdata;
+}
+
+/** @brief Prepare an i2c recover op submission */
+static inline void rtio_sqe_prep_i2c_recover(struct rtio_sqe *sqe,
+					     const struct rtio_iodev *iodev,
+					     int8_t prio,
+					     void *userdata)
+{
+	memset(sqe, 0, sizeof(struct rtio_sqe));
+	sqe->op = RTIO_OP_I2C_RECOVER;
+	sqe->prio = prio;
+	sqe->iodev = iodev;
+	sqe->userdata = userdata;
+}
 
 /**
  * @brief Get the next sqe in the transaction

@@ -5,12 +5,12 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/spinlock.h>
 #include <kswap.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/init.h>
 #include <ksched.h>
+#include <scheduler.h>
 
 static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 {
@@ -28,7 +28,6 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
 	k_spinlock_key_t key;
 	unsigned int woken = 0U;
-	struct k_thread *thread;
 	struct z_futex_data *futex_data;
 
 	futex_data = k_futex_find_data(futex);
@@ -39,13 +38,11 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 	key = k_spin_lock(&futex_data->lock);
 
 	do {
-		thread = z_unpend_first_thread(&futex_data->wait_q);
-		if (thread != NULL) {
-			woken++;
-			arch_thread_return_value_set(thread, 0);
-			z_ready_thread(thread);
+		if (!z_sched_wake(&futex_data->wait_q, 0, NULL)) {
+			break;
 		}
-	} while (thread && wake_all);
+		woken++;
+	} while (wake_all);
 
 	if (woken == 0) {
 		k_spin_unlock(&futex_data->lock, key);

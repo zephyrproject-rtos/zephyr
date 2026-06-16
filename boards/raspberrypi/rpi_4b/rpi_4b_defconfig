@@ -1,13 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
+# ARM CPU and VideoCore GPU requires at least 16M of virtual space
+CONFIG_KERNEL_VM_SIZE=0x1000000
+
 # Platform Configuration
 CONFIG_ARM64_VA_BITS_36=y
 CONFIG_ARM64_PA_BITS_36=y
 
-# Zephyr Kernel Configuration
-CONFIG_XIP=n
-CONFIG_FLASH_SIZE=0
-CONFIG_FLASH_BASE_ADDRESS=0x0
+# MMU Options
+CONFIG_MAX_XLAT_TABLES=24
 
 # Serial Drivers
 CONFIG_SERIAL=y

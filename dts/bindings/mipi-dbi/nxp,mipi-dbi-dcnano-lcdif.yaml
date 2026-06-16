@@ -17,7 +17,7 @@ description: |
 
 compatible: "nxp,mipi-dbi-dcnano-lcdif"
 
-include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
+include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml", "reset-device.yaml"]
 
 properties:
   clock-frequency:

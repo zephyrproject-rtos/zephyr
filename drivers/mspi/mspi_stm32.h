@@ -48,16 +48,18 @@ struct mspi_stm32_context {
 };
 
 struct mspi_stm32_conf {
-	bool dma_specified;
+	void *base;
 	size_t pclk_len;
 	irq_config_func_t irq_config;
 	struct mspi_cfg mspicfg;
 	const struct stm32_pclken *pclken;
 	const struct pinctrl_dev_config *pcfg;
+	bool dma_specified;
 };
 
 struct stm32_stream {
 	DMA_TypeDef *reg;
+	uintptr_t phys_addr;
 	const struct device *dev;
 	uint32_t channel;
 	struct dma_config cfg;
@@ -104,5 +106,23 @@ extern const uint32_t mspi_stm32_table_priority[];
 extern const uint32_t mspi_stm32_table_direction[];
 extern const uint32_t mspi_stm32_table_src_size[];
 extern const uint32_t mspi_stm32_table_dest_size[];
+
+#if defined(CONFIG_MSPI_TIMING)
+struct mspi_stm32_timing_cfg {
+	uint8_t turnaround_cycles; /* Turnaround cycles included in device latency.
+				    * Subtracted from dummy cycles to match STM32
+				    * XSPI requirements.
+				    */
+};
+
+enum mspi_stm32_timing_param {
+	MSPI_TURNAROUND_CYCLES_CFG = BIT(0),
+};
+
+#define MSPI_STM32_TIMING_CONFIG(n)                                                                \
+	{                                                                                          \
+		.turnaround_cycles = DT_INST_PROP_BY_IDX(n, st_timing_config, 0),                  \
+	}
+#endif
 
 #endif /* ZEPHYR_DRIVERS_MSPI_MSPI_STM32_H_ */

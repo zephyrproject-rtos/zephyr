@@ -110,6 +110,7 @@ struct cdc_acm_uart_data {
 	 * the TX FIFO during the user callback execution.
 	 */
 	bool zlp_needed;
+	bool echo_mitigated;
 	/* UART API IRQ callback */
 	uart_irq_callback_user_data_t cb;
 	/* UART API user callback data */
@@ -132,7 +133,11 @@ static void cdc_acm_irq_rx_enable(const struct device *dev);
 #if CONFIG_USBD_CDC_ACM_BUF_POOL
 UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
 		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2,
-		    USBD_MAX_BULK_MPS, sizeof(struct udc_buf_info), NULL);
+		    CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE,
+		    sizeof(struct udc_buf_info), NULL);
+
+BUILD_ASSERT((CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE % USBD_MAX_BULK_MPS) == 0,
+	     "USBD_CDC_ACM_BUF_POOL_SIZE is not multiple of bulk endpoint MPS");
 
 static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
 					 const uint8_t ep)
@@ -326,11 +331,22 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 
 		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 
-		if (!ring_buf_is_empty(data->tx_fifo.rb)) {
+		if (!data->echo_mitigated) {
+			/* If mitigation was not yet applied give the host some
+			 * time to disable ECHO.
+			 */
+			cdc_acm_work_schedule(&data->tx_fifo_work,
+					      K_MSEC(CONFIG_USBD_CDC_ACM_TX_DELAY_MS));
+			data->echo_mitigated = true;
+		} else if (!ring_buf_is_empty(data->tx_fifo.rb)) {
 			/* Queue pending TX data on IN endpoint */
 			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+		} else {
+			/* No need to schedule if there is no data left
+			 * to send. Any new data will be scheduled either
+			 * after fifo_fill or poll_out.
+			 */
 		}
-
 	}
 
 	if (bi->ep == cdc_acm_get_int_in(c_data)) {
@@ -364,22 +380,16 @@ static void usbd_cdc_acm_enable(struct usbd_class_data *const c_data)
 		/* Allow cdc_acm_poll_in to receive */
 		cdc_acm_work_submit(&data->rx_fifo_work);
 	}
-
-	if (ring_buf_is_empty(data->tx_fifo.rb)) {
-		if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED)) {
-			/* Raise TX ready interrupt */
-			cdc_acm_work_submit(&data->irq_cb_work);
-		}
-	} else {
-		/* Queue pending TX data on IN endpoint */
-		cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
-	}
+	data->zlp_needed = true;
+	cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
 }
 
 static void usbd_cdc_acm_disable(struct usbd_class_data *const c_data)
 {
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
+
+	data->echo_mitigated = false;
 
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_ENABLED);
 	atomic_clear_bit(&data->state, CDC_ACM_CLASS_SUSPENDED);
@@ -533,12 +543,22 @@ static int usbd_cdc_acm_ctd(struct usbd_class_data *const c_data,
 			return 0;
 		}
 
+		if (buf == NULL) {
+			/* Data OUT can be received */
+			return 0;
+		}
+
 		memcpy(&data->line_coding, buf->data, len);
 		cdc_acm_update_uart_cfg(data);
 		usbd_msg_pub_device(uds_ctx, USBD_MSG_CDC_ACM_LINE_CODING, dev);
 		return 0;
 
 	case SET_CONTROL_LINE_STATE:
+		if (setup->wLength != 0) {
+			errno = -ENOTSUP;
+			return 0;
+		}
+
 		data->line_state = setup->wValue;
 		cdc_acm_update_linestate(data);
 		usbd_msg_pub_device(uds_ctx, USBD_MSG_CDC_ACM_CONTROL_LINE_STATE, dev);
@@ -564,6 +584,7 @@ static int usbd_cdc_acm_init(struct usbd_class_data *const c_data)
 
 	desc->if0_union.bControlInterface = desc->if0.bInterfaceNumber;
 	desc->if0_union.bSubordinateInterface0 = desc->if1.bInterfaceNumber;
+	desc->if0_cm.bDataInterface = desc->if1.bInterfaceNumber;
 
 	if (cfg->if_desc_data != NULL && desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(uds_ctx, cfg->if_desc_data)) {
@@ -634,7 +655,7 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
 	struct net_buf *buf;
-	size_t len;
+	size_t len = 0;
 	int ret;
 
 	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
@@ -651,6 +672,11 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
+	if (ring_buf_is_empty(data->tx_fifo.rb) && !data->zlp_needed) {
+		LOG_DBG("ZLP not needed and no data to send");
+		return;
+	}
+
 	if (atomic_test_and_set_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
 		LOG_DBG("TX transfer already in progress");
 		return;
@@ -663,7 +689,9 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
+	if (data->echo_mitigated) {
+		len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
+	}
 	net_buf_add(buf, len);
 
 	data->zlp_needed = len != 0 && len % cdc_acm_get_bulk_mps(c_data) == 0;
@@ -703,7 +731,7 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	}
 
 	if (ring_buf_space_get(data->rx_fifo.rb) < cdc_acm_get_bulk_mps(c_data)) {
-		LOG_INF("RX buffer to small, throttle");
+		LOG_INF("RX buffer too small, throttle");
 		return;
 	}
 
@@ -872,14 +900,14 @@ static int cdc_acm_irq_is_pending(const struct device *dev)
 	return 0;
 }
 
-static int cdc_acm_irq_update(const struct device *dev)
+static void cdc_acm_irq_update(const struct device *dev)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
 
 	if (!check_wq_ctx(dev)) {
 		LOG_WRN("Invoked by inappropriate context");
 		__ASSERT_NO_MSG(false);
-		return 0;
+		return;
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_RX_ENABLED) &&
@@ -895,8 +923,6 @@ static int cdc_acm_irq_update(const struct device *dev)
 	} else {
 		data->tx_fifo.irq = false;
 	}
-
-	return 1;
 }
 
 /*
@@ -1020,7 +1046,9 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 	 * one byte per USB transfer. The latency increase is negligible while
 	 * the increased throughput and reduced CPU usage is easily observable.
 	 */
-	cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
+	if (data->echo_mitigated) {
+		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
+	}
 }
 
 #ifdef CONFIG_UART_LINE_CTRL

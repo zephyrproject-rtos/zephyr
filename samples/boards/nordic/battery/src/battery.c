@@ -8,7 +8,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#ifdef CONFIG_ADC_NRFX_SAADC
+#include <nrfx_saadc.h>
+#endif
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
@@ -123,10 +125,9 @@ static int divider_setup(void)
 	};
 
 	if (cfg->output_ohm != 0) {
-		accp->input_positive = SAADC_CH_PSELP_PSELP_AnalogInput0
-			+ iocp->channel;
+		accp->input_positive = iocp->channel;
 	} else {
-		accp->input_positive = SAADC_CH_PSELP_PSELP_VDD;
+		accp->input_positive = NRFX_ANALOG_INTERNAL_VDD;
 	}
 
 	asp->resolution = 14;

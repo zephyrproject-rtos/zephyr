@@ -1,0 +1,246 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <bflb/bl702.dtsi>
+#include "m0sense-pinctrl.dtsi"
+
+/ {
+	model = "Sipeed M0Sense";
+	compatible = "sipeed,m0sense";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0_bt;
+		zephyr,entropy = &sec_eng_trng;
+		zephyr,bt-hci = &bt_hci_bflb;
+		zephyr,display = &st7735r_160x80;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_blue: led_blue {
+			gpios = <&gpio0 23 GPIO_ACTIVE_LOW>;
+			label = "Blue LED";
+		};
+
+		led_green: led_green {
+			gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+
+		led_red: led_red {
+			gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		button0: button0 {
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "User button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		pwm_led_blue: pwm_led_blue {
+			pwms = <&pwm0 3 PWM_MSEC(1) PWM_POLARITY_INVERTED>;
+			label = "Blue LED PWM";
+		};
+
+		pwm_led_green: pwm_led_green {
+			pwms = <&pwm0 4 PWM_MSEC(1) PWM_POLARITY_INVERTED>;
+			label = "Green LED PWM";
+		};
+
+		pwm_led_red: pwm_led_red {
+			pwms = <&pwm0 0 PWM_MSEC(1) PWM_POLARITY_INVERTED>;
+			label = "Red LED PWM";
+		};
+	};
+
+	mipi_dbi_st7735r_160x80 {
+		compatible = "zephyr,mipi-dbi-spi";
+		spi-dev = <&spi0>;
+		dc-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		st7735r_160x80: st7735r@0 {
+			compatible = "sitronix,st7735r";
+			mipi-max-frequency = <20000000>;
+			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+			reg = <0>;
+			width = <160>;
+			height = <80>;
+			inversion-on;
+			rgb-is-inverted;
+			x-offset = <1>;
+			y-offset = <26>;
+			pwctr1 = [a2 02 84];
+			pwctr2 = [c5];
+			pwctr3 = [0a 00];
+			pwctr4 = [8a 2a];
+			pwctr5 = [8a ee];
+			invctr = <7>;
+			frmctr1 = [01 2c 2d];
+			frmctr2 = [01 2c 2d];
+			frmctr3 = [01 2c 2d 01 2c 2d];
+			vmctr1 = <14>;
+			gamctrp1 = [02 1c 07 12 37 32 29 2d 29 25 2b 39 00 01 03 10];
+			gamctrn1 = [03 1d 07 06 2e 2c 29 2d 2e 2e 37 3f 00 00 02 10];
+			colmod = <5>;
+			madctl = <112>;
+			caset = [00 01 00 a0];
+			raset = [00 1a 00 69];
+		};
+	};
+
+	aliases {
+		led0 = &led_blue;
+		pwm-led0 = &pwm_led_blue;
+		pwm-led1 = &pwm_led_green;
+		pwm-led2 = &pwm_led_red;
+		red-pwm-led = &pwm_led_red;
+		green-pwm-led = &pwm_led_green;
+		blue-pwm-led = &pwm_led_blue;
+		sw0 = &button0;
+		watchdog0 = &wdt0;
+		accel0 = &qmi8658a;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(144)>;
+};
+
+&flashctrl {
+	flash0: flash@23000000 {
+		compatible = "soc-nv-flash";
+		/* Capacity -Header -UF2 bootloader */
+		reg = <0x23000000 (DT_SIZE_K(512) - 0x2000 - 0x10000)>;
+		ranges = <0x0 0x23000000 (DT_SIZE_K(512) - 0x2000 - 0x10000)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		write-block-size = <256>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x00000000 0x60000>;
+				read-only;
+			};
+
+			storage_partition: partition@60000 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0x00060000 0xe000>;
+			};
+		};
+	};
+};
+
+&gpio0 {
+	status = "okay";
+
+	/* Drive ACTIVE_LOW LED pins LOW at boot so LEDs default to off.
+	 * BL70x pins 23-28 are output-only (PSRAM IO pads), no high-Z.
+	 */
+	led-blue-hog {
+		gpio-hog;
+		gpios = <23 GPIO_ACTIVE_LOW>;
+		output-low;
+	};
+
+	led-green-hog {
+		gpio-hog;
+		gpios = <24 GPIO_ACTIVE_LOW>;
+		output-low;
+	};
+
+	led-red-hog {
+		gpio-hog;
+		gpios = <25 GPIO_ACTIVE_LOW>;
+		output-low;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&pwm0 {
+	status = "okay";
+
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};
+
+&bt_hci_bflb {
+	status = "okay";
+};
+
+&i2c0 {
+	status = "okay";
+
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	qmi8658a: qmi8658a@6a {
+		compatible = "qst,qmi8658a";
+		reg = <0x6a>;
+		accel-fs = <4>;      /* 4 g */
+		gyro-fs = <512>;     /* 512 dps */
+		accel-odr = <896>;   /* ~896 Hz */
+		gyro-odr = <896>;
+		int-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		int-pin = <1>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	cs-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb_default>;
+	pinctrl-names = "default";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>

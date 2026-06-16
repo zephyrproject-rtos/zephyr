@@ -32,7 +32,7 @@
 #define SLEEPTIME 250
 
 #define TRANSFER_LOOPS (4)
-#define DMA_DATA_ALIGNMENT DT_INST_PROP_OR(tst_dma0, dma_buf_addr_alignment, 32)
+#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
 
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t
@@ -420,7 +420,13 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 		return TC_FAIL;
 	}
 
-	if (dma_stop(dma, chan_id)) {
+	int res = dma_stop(dma, chan_id);
+
+	if (res == -ENOSYS) {
+		TC_PRINT("Stop not supported.\n");
+		ztest_test_skip();
+	}
+	if (res) {
 		TC_PRINT("ERROR: transfer stop on stopped channel (%d)\n", chan_id);
 		return TC_FAIL;
 	}

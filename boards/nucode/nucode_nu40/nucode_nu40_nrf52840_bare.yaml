@@ -1,0 +1,24 @@
+identifier: nucode_nu40/nrf52840/bare
+name: NUCODE-NU40-NRF52840-bare
+type: mcu
+arch: arm
+ram: 256
+flash: 468
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - arduino_i2c
+  - arduino_serial
+  - arduino_spi
+  - usbd
+  - ble
+  - i2c
+  - pwm
+  - spi
+  - watchdog
+  - counter
+  - netif:openthread
+  - gpio
+vendor: nucode

@@ -98,7 +98,6 @@ Upon successful execution of these steps, the device will transition into
 bootloader mode and present itself as a USB DFU Mode device. You can program
 the device using the west tool or the STM32CubeProgrammer.
 
-
 Flashing an application to ``blackpill_u585ci``
 -----------------------------------------------
 

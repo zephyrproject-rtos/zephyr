@@ -105,6 +105,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -124,6 +126,8 @@
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pg7 &i2c3_sda_pg8>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiog 7 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiog 8 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -213,11 +217,12 @@ zephyr_udc0: &usbotg_fs {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 			read-only;
@@ -229,21 +234,25 @@ zephyr_udc0: &usbotg_fs {
 		 */
 
 		slot0_partition: partition@20000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(432)>;
 		};
 
 		slot1_partition: partition@8c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x0008c000 DT_SIZE_K(432)>;
 		};
 
 		scratch_partition: partition@f8000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-scratch";
 			reg = <0x000f8000 DT_SIZE_K(24)>;
 		};
 
 		storage_partition: partition@fc000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000fc000 DT_SIZE_K(24)>;
 		};

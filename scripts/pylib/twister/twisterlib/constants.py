@@ -31,3 +31,16 @@ SUPPORTED_SIMS = [
 ]
 SUPPORTED_SIMS_IN_PYTEST = ['native', 'qemu']
 SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'simics', 'custom']
+
+PYTEST_HARNESSES = ['pytest', 'shell', 'power', 'display_capture']
+
+SUPPORTED_HARNESSES = [
+    'console',
+    'ztest',
+    'test',
+    'gtest',
+    'robot',
+    'ctest',
+    'bsim',
+    'script',
+] + PYTEST_HARNESSES

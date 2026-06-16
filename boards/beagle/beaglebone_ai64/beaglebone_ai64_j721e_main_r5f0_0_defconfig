@@ -13,3 +13,9 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 # Enable Console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
+
+# Enable OpenAMP resource table needed for remoteproc booting
+CONFIG_OPENAMP_RSC_TABLE=y
+
+# Set clock to frequency of the external crystal
+CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=19200000

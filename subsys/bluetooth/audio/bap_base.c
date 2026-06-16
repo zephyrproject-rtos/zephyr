@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
@@ -30,14 +31,14 @@ LOG_MODULE_REGISTER(bt_bap_base, CONFIG_BT_BAP_BASE_LOG_LEVEL);
 /* The BASE and the following defines are defined by BAP v1.0.1, section 3.7.2.2 Basic Audio
  * Announcements
  */
-#define BASE_CODEC_ID_SIZE       (1 /* id */ + 2 /* cid */ + 2 /* vid */)
-#define BASE_PD_SIZE             3
-#define BASE_SUBGROUP_COUNT_SIZE 1
-#define BASE_NUM_BIS_SIZE        1
-#define BASE_CC_LEN_SIZE         1
-#define BASE_META_LEN_SIZE       1
-#define BASE_BIS_INDEX_SIZE      1
-#define BASE_BIS_CC_LEN_SIZE     1
+#define BASE_CODEC_ID_SIZE       (1U /* id */ + 2U /* cid */ + 2U /* vid */)
+#define BASE_PD_SIZE             3U
+#define BASE_SUBGROUP_COUNT_SIZE 1U
+#define BASE_NUM_BIS_SIZE        1U
+#define BASE_CC_LEN_SIZE         1U
+#define BASE_META_LEN_SIZE       1U
+#define BASE_BIS_INDEX_SIZE      1U
+#define BASE_BIS_CC_LEN_SIZE     1U
 #define BASE_SUBGROUP_MAX_SIZE   (BT_BASE_MAX_SIZE - BASE_PD_SIZE - BASE_SUBGROUP_COUNT_SIZE)
 #define BASE_SUBGROUP_MIN_SIZE                                                                     \
 	(BASE_NUM_BIS_SIZE + BASE_CODEC_ID_SIZE + BASE_CC_LEN_SIZE + BASE_META_LEN_SIZE +          \
@@ -239,7 +240,7 @@ int bt_bap_base_get_size(const struct bt_bap_base *base)
 {
 	struct net_buf_simple net_buf;
 	uint8_t subgroup_count;
-	size_t size = 0;
+	size_t size = 0U;
 
 	if (base == NULL) {
 		LOG_DBG("base is NULL");

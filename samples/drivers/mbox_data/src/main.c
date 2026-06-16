@@ -10,7 +10,11 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/mbox.h>
 
+#if defined(CONFIG_MULTITHREADING)
 static K_SEM_DEFINE(g_mbox_data_rx_sem, 0, 1);
+#else
+static volatile bool mbox_received_data_flag;
+#endif
 
 static mbox_channel_id_t g_mbox_received_data;
 static mbox_channel_id_t g_mbox_received_channel;
@@ -21,7 +25,11 @@ static void callback(const struct device *dev, mbox_channel_id_t channel_id, voi
 	memcpy(&g_mbox_received_data, data->data, data->size);
 	g_mbox_received_channel = channel_id;
 
+#if defined(CONFIG_MULTITHREADING)
 	k_sem_give(&g_mbox_data_rx_sem);
+#else
+	mbox_received_data_flag = true;
+#endif
 }
 
 int main(void)
@@ -60,7 +68,14 @@ int main(void)
 			return 0;
 		}
 
+#if defined(CONFIG_MULTITHREADING)
 		k_sem_take(&g_mbox_data_rx_sem, K_FOREVER);
+#else
+		while (!mbox_received_data_flag) {
+		}
+
+		mbox_received_data_flag = false;
+#endif
 		message = g_mbox_received_data;
 
 		printk("Client received (on channel %d) value: %d\n", g_mbox_received_channel,

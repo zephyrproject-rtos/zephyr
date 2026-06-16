@@ -275,6 +275,12 @@
 		status = "disabled";
 	};
 
+	crc: crc@120000 {
+		compatible = "nxp,lpc-crc";
+		reg = <0x120000 0x1000>;
+		status = "disabled";
+	};
+
 	flexcomm4: flexcomm@122000 {
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x122000 0x1000>;
@@ -592,7 +598,7 @@
 		clocks = <&clkctl1 MCUX_LPADC1_CLK>;
 	};
 
-	smartdma: dma@27020 {
+	smartdma: dma@27000 {
 		compatible = "nxp,smartdma";
 		reg = <0x27000 0x1000>;
 		program-mem = <0x24100000>;

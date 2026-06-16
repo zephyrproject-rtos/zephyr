@@ -31,6 +31,17 @@ extern "C" {
  * @{
  */
 
+/** Mount options for @ref zms_mount and @ref zms_mount_force. */
+enum zms_mount_flags {
+	/**
+	 * Do not format erased media during mount.
+	 *
+	 * When this flag is set and the backing flash area is erased (no valid ZMS
+	 * header), mount fails instead of creating a new ZMS header.
+	 */
+	ZMS_MOUNT_FLAG_NO_FORMAT = BIT(0),
+};
+
 /** Zephyr Memory Storage file system structure */
 struct zms_fs {
 	/** File system offset in flash */
@@ -49,6 +60,8 @@ struct zms_fs {
 	uint32_t sector_size;
 	/** Number of sectors in the file system */
 	uint32_t sector_count;
+	/** Mount behavior flags from @ref zms_mount_flags */
+	uint32_t mount_flags;
 	/** Current cycle counter of the active sector (pointed to by `ate_wra`) */
 	uint8_t sector_cycle;
 	/** Flag indicating if the file system is initialized */
@@ -62,8 +75,15 @@ struct zms_fs {
 	/** Size of an Allocation Table Entry */
 	size_t ate_size;
 #if CONFIG_ZMS_LOOKUP_CACHE
+#if CONFIG_ZMS_LOOKUP_CACHE_MANUAL
+	/** Lookup table used to cache ATE addresses of written IDs */
+	uint64_t *lookup_cache;
+	/** Size of the lookup cache */
+	size_t lookup_cache_size;
+#else
 	/** Lookup table used to cache ATE addresses of written IDs */
 	uint64_t lookup_cache[CONFIG_ZMS_LOOKUP_CACHE_SIZE];
+#endif
 #endif
 };
 
@@ -90,6 +110,11 @@ typedef uint32_t zms_id_t;
 
 /**
  * @brief Mount a ZMS file system onto the device specified in `fs`.
+ *
+ * @details If the flash area is erased and no valid ZMS header is found,
+ * mount will format the area and create a valid header by default.
+ * Set @ref ZMS_MOUNT_FLAG_NO_FORMAT in `fs->mount_flags` to disable this
+ * auto-format behavior and fail the mount instead.
  *
  * @param fs Pointer to the file system.
  *
@@ -271,6 +296,54 @@ ssize_t zms_active_sector_free_space(struct zms_fs *fs);
  * @retval -EINVAL if `fs` is NULL.
  */
 int zms_sector_use_next(struct zms_fs *fs);
+
+#if CONFIG_ZMS_LOOKUP_CACHE_MANUAL
+/**
+ * @brief Assign a buffer for the lookup cache for a ZMS instance.
+ *
+ * This must be called before zms_mount(). If not called, the cache
+ * will be disabled for this file system instance.
+ *
+ * @param fs Pointer to the file system.
+ * @param buffer Pointer to the buffer to be used for the cache.
+ * @param size The number of entries in the buffer.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if `fs` or `buffer` are NULL, or `size` is 0.
+ * @retval -EBUSY if ZMS is already mounted.
+ */
+int zms_set_lookup_cache(struct zms_fs *fs, uint64_t *buffer, size_t size);
+#endif
+
+/**
+ * @brief Return the maximum sector recycle count across all sectors.
+ *
+ * Iterates all sectors and stores the highest 32-bit cycle counter found in
+ * each sector's empty ATE in @p cycles. This can be used to estimate
+ * write-cycle consumption during testing.
+ *
+ * @param fs Pointer to the file system.
+ * @param cycles Pointer to store the maximum 32-bit cycle count across sectors.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p fs or @p cycles is NULL.
+ * @retval -EACCES if the file system is not mounted.
+ */
+int zms_get_num_cycles(struct zms_fs *fs, uint32_t *cycles);
+
+/**
+ * @brief Return the recycle count for a specific sector.
+ *
+ * @param fs Pointer to the file system.
+ * @param sector Sector index (0-based, must be less than @c fs->sector_count).
+ * @param cycles Pointer to store the 32-bit cycle count.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if @p fs or @p cycles is NULL, or @p sector is out of range.
+ * @retval -EACCES if the file system is not mounted.
+ * @retval -ENOENT if the sector has no valid empty ATE.
+ */
+int zms_get_sector_num_cycles(struct zms_fs *fs, uint32_t sector, uint32_t *cycles);
 
 /**
  * @}

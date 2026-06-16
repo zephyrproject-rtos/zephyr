@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -60,6 +60,20 @@ typedef void (*ifx_autanalog_child_isr_t)(const struct device *dev);
 void ifx_autanalog_set_irq_handler(const struct device *dev, const struct device *child_dev,
 				   enum ifx_autanalog_periph periph,
 				   ifx_autanalog_child_isr_t handler);
+
+/**
+ * @brief Register an ISR handler for the FIFO interrupt line
+ *
+ * The FIFO has a separate interrupt line from the main AutAnalog interrupt.
+ * This function registers an interrupt handler that will be called when the
+ * FIFO interrupt fires (level, overflow, or underflow events).
+ *
+ * @param dev AutAnalog MFD device
+ * @param child_dev Child device registering the handler
+ * @param handler ISR callback function
+ */
+void ifx_autanalog_set_fifo_irq_handler(const struct device *dev, const struct device *child_dev,
+					ifx_autanalog_child_isr_t handler);
 
 /**
  * @brief Start the AutAnalog Autonomous Controller

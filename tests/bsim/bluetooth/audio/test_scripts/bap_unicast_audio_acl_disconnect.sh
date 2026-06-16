@@ -4,11 +4,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SIMULATION_ID="unicast_audio_acl_disconnect"
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+SIMULATION_ID="${BOARD_TS}_unicast_audio_acl_disconnect"
 VERBOSITY_LEVEL=2
 EXECUTE_TIMEOUT=120
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
@@ -16,11 +16,11 @@ printf "\n\n======== Unicast Audio ACL Disconnect test =========\n\n"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=unicast_client_acl_disconnect \
-  -RealEncryption=1 -D=2
+  -RealEncryption=1 -rs=23 -D=2
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=1 -testid=unicast_server_acl_disconnect \
-  -RealEncryption=1 -D=2 -start_offset=2e3
+  -RealEncryption=1 -rs=27 -D=2 -start_offset=2e3
 
 # Simulation time should be larger than the WAIT_TIME in common.h
 Execute ./bs_2G4_phy_v1 -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} \

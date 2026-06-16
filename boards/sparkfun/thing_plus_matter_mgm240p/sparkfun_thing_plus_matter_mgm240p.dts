@@ -23,8 +23,10 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;
 		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
+		zephyr,openthread-counter = &protimer;
 	};
 
 	aliases {
@@ -155,12 +157,13 @@ zephyr_i2c: &i2c0 {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* Reserve 48 kB for the bootloader */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0 0x0000c000>;
 			label = "mcuboot";
 			read-only;
@@ -168,24 +171,28 @@ zephyr_i2c: &i2c0 {
 
 		/* Reserve 464 kB for the application in slot 0 */
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0000c000 0x00074000>;
 			label = "storage";
 		};
 
 		/* Reserve 464 kB for the application in slot 1 */
 		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00080000 0x00074000>;
 			label = "image-0";
 		};
 
 		/* Reserve 32 kB for the scratch partition */
 		scratch_partition: partition@f4000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x000f4000 0x00008000>;
 			label = "image-1";
 		};
 
 		/* Set 528Kb of storage at the end of the 1024Kb of flash */
 		storage_partition: partition@fc000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x000fc000 0x00084000>;
 			label = "image-scratch";
 		};
@@ -293,5 +300,14 @@ zephyr_i2c: &i2c0 {
 };
 
 &bt_hci_silabs {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+	hfxo = <&hfxo>;
+};
+
+&protimer {
 	status = "okay";
 };

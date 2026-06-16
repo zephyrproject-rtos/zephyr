@@ -19,6 +19,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 LOG_MODULE_REGISTER(bttester_tmap, CONFIG_BTTESTER_LOG_LEVEL);
 
@@ -26,6 +27,9 @@ static uint8_t read_supported_commands(const void *cmd, uint16_t cmd_len, void *
 				       uint16_t *rsp_len)
 {
 	struct btp_tmap_read_supported_commands_rp *rp = rsp;
+
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
 
 	*rsp_len = tester_supported_commands(BTP_SERVICE_ID_TMAP, rp->data);
 	*rsp_len += sizeof(*rp);
@@ -37,7 +41,7 @@ static void tmap_discover_cb(enum bt_tmap_role role, struct bt_conn *conn, int e
 {
 	struct btp_tmap_discovery_complete_ev ev;
 
-	if (err) {
+	if (err != 0) {
 		LOG_ERR("Discovery failed (%d)", err);
 	}
 
@@ -57,6 +61,10 @@ static uint8_t tmap_discover(const void *cmd, uint16_t cmd_len, void *rsp, uint1
 	const struct btp_tmap_discover_cmd *cp = cmd;
 	struct bt_conn *conn;
 	int err;
+
+	ARG_UNUSED(cmd_len);
+	ARG_UNUSED(rsp);
+	ARG_UNUSED(rsp_len);
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {

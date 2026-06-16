@@ -4,7 +4,7 @@
 
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/gatt.h>
@@ -21,26 +22,26 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 
-#define BT_TBS_MIN_URI_LEN                         3 /* a:b */
-#define BT_TBS_FREE_CALL_INDEX                     0
+#define BT_TBS_MIN_URI_LEN                         3U /* a:b */
+#define BT_TBS_FREE_CALL_INDEX                     0U
 
 /* Call Control Point Opcodes */
-#define BT_TBS_CALL_OPCODE_ACCEPT                  0x00
-#define BT_TBS_CALL_OPCODE_TERMINATE               0x01
-#define BT_TBS_CALL_OPCODE_HOLD                    0x02
-#define BT_TBS_CALL_OPCODE_RETRIEVE                0x03
-#define BT_TBS_CALL_OPCODE_ORIGINATE               0x04
-#define BT_TBS_CALL_OPCODE_JOIN                    0x05
+#define BT_TBS_CALL_OPCODE_ACCEPT                  0x00U
+#define BT_TBS_CALL_OPCODE_TERMINATE               0x01U
+#define BT_TBS_CALL_OPCODE_HOLD                    0x02U
+#define BT_TBS_CALL_OPCODE_RETRIEVE                0x03U
+#define BT_TBS_CALL_OPCODE_ORIGINATE               0x04U
+#define BT_TBS_CALL_OPCODE_JOIN                    0x05U
 
 /* Local Control Points - Used to do local control operations but still being
  * able to determine if it is a local or remote operation
  */
-#define BT_TBS_LOCAL_OPCODE_ANSWER                 0x80
-#define BT_TBS_LOCAL_OPCODE_HOLD                   0x81
-#define BT_TBS_LOCAL_OPCODE_RETRIEVE               0x82
-#define BT_TBS_LOCAL_OPCODE_TERMINATE              0x83
-#define BT_TBS_LOCAL_OPCODE_INCOMING               0x84
-#define BT_TBS_LOCAL_OPCODE_SERVER_TERMINATE       0x85
+#define BT_TBS_LOCAL_OPCODE_ANSWER                 0x80U
+#define BT_TBS_LOCAL_OPCODE_HOLD                   0x81U
+#define BT_TBS_LOCAL_OPCODE_RETRIEVE               0x82U
+#define BT_TBS_LOCAL_OPCODE_TERMINATE              0x83U
+#define BT_TBS_LOCAL_OPCODE_INCOMING               0x84U
+#define BT_TBS_LOCAL_OPCODE_SERVER_TERMINATE       0x85U
 
 #define FIRST_PRINTABLE_ASCII_CHAR ' ' /* space */
 
@@ -123,26 +124,26 @@ static inline const char *bt_tbs_status_str(uint8_t status)
 	}
 }
 
-static inline const char *bt_tbs_technology_str(uint8_t status)
+static inline const char *bt_bearer_tech_str(enum bt_bearer_tech tech)
 {
-	switch (status) {
-	case BT_TBS_TECHNOLOGY_3G:
+	switch (tech) {
+	case BT_BEARER_TECH_3G:
 		return "3G";
-	case BT_TBS_TECHNOLOGY_4G:
+	case BT_BEARER_TECH_4G:
 		return "4G";
-	case BT_TBS_TECHNOLOGY_LTE:
+	case BT_BEARER_TECH_LTE:
 		return "LTE";
-	case BT_TBS_TECHNOLOGY_WIFI:
+	case BT_BEARER_TECH_WIFI:
 		return "WIFI";
-	case BT_TBS_TECHNOLOGY_5G:
+	case BT_BEARER_TECH_5G:
 		return "5G";
-	case BT_TBS_TECHNOLOGY_GSM:
+	case BT_BEARER_TECH_GSM:
 		return "GSM";
-	case BT_TBS_TECHNOLOGY_CDMA:
+	case BT_BEARER_TECH_CDMA:
 		return "CDMA";
-	case BT_TBS_TECHNOLOGY_2G:
+	case BT_BEARER_TECH_2G:
 		return "2G";
-	case BT_TBS_TECHNOLOGY_WCDMA:
+	case BT_BEARER_TECH_WCDMA:
 		return "WCDMA";
 	default:
 		return "unknown technology";
@@ -195,8 +196,8 @@ static inline bool bt_tbs_valid_uri(const uint8_t *uri, size_t uri_len)
 		return false;
 	}
 
-	for (size_t i = 1; i < uri_len; i++) {
-		if (uri[i] == ':' && uri[i + 1] >= FIRST_PRINTABLE_ASCII_CHAR) {
+	for (size_t i = 1U; i < uri_len - 1U; i++) {
+		if (uri[i] == ':' && uri[i + 1U] >= FIRST_PRINTABLE_ASCII_CHAR) {
 			return true;
 		}
 	}

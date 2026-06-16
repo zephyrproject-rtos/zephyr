@@ -7,7 +7,8 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pcie/pcie.h>
-#include <zephyr/drivers/ethernet/eth_intel_plat.h>
+
+#include "eth_intel_plat.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(intel_eth_plat, CONFIG_ETHERNET_LOG_LEVEL);

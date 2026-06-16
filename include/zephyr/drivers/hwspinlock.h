@@ -35,14 +35,16 @@ extern "C" {
  * @brief HW spinlock controller runtime context
  */
 struct hwspinlock_context {
-	/**
-	 * @internal
-	 * Per HW spinlock lock
-	 * @note HW spinlock protects resources across clusters, but we need to protect the
-	 * access to HW spinlock inside of the same cluster, so a single thread may claim the
-	 * lock at a time.
+	/** @cond INTERNAL_HIDDEN */
+	/*
+	 * Per HW spinlock lock.
+	 *
+	 * HW spinlock protects resources across clusters, but we need to protect the
+	 * access to the HW spinlock inside of the same cluster, so a single thread may
+	 * claim the lock at a time.
 	 */
 	struct k_spinlock lock;
+	/** @endcond */
 };
 
 /**

@@ -40,13 +40,43 @@ config SPI_NXP_LPSPI_CPU
 config SPI_NXP_LPSPI_CPU_RTIO
 	bool "NXP LPSPI RTIO-based driver"
 	default y
-	depends on $(dt_compat_any_not_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas) || !SPI_NXP_LPSPI_DMA
+	depends on !SPI_NXP_LPSPI_DMA
 	depends on SPI_RTIO
 	help
 	  Enable native RTIO-based driver for LPSPI.
 	  This driver optimizes latency by starting/resuming transfers directly
 	  from the ISR context in a non-blocking and asynchronous fashion. However,
 	  it does not include DMA usage.
+
+config SPI_NXP_LPSPI_RTIO_DMA
+	bool "NXP LPSPI RTIO DMA support"
+	default y
+	select DMA
+	depends on SPI_NXP_LPSPI_CPU_RTIO && $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPSPI),dmas)
+	help
+	  Enable DMA-based transfers for RTIO transfers bigger then the DMA threshold.
+
+config SPI_NXP_LPSPI_RTIO_DMA_OVERRIDE_THRESHOLD
+	bool "Override LPSPI RTIO DMA threshold"
+	help
+	  Enable this option to use a custom threshold for deciding when an
+	  RTIO SPI transaction should be handled by DMA.
+
+	  By default, DMA is used when the transaction size is larger than the
+	  LPSPI RX FIFO depth. This option allows the threshold to be tuned for
+	  application-specific performance requirements.
+
+config SPI_NXP_LPSPI_RTIO_DMA_THRESHOLD
+	int "LPSPI RTIO DMA threshold"
+	default 16
+	depends on SPI_NXP_LPSPI_RTIO_DMA_OVERRIDE_THRESHOLD
+	help
+	  Custom threshold, in words, used to select between CPU-driven and
+	  DMA-driven RTIO transfers.
+
+	  RTIO transactions larger than this threshold are handled by DMA.
+	  Transactions with a size less than or equal to this threshold are
+	  handled by the CPU.
 
 config SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES
 	int "Number of CPU cycles to wait on TX fifo empty"

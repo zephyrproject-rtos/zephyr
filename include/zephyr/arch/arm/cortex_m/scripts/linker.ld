@@ -40,8 +40,12 @@
 #define ROM_END_OFFSET 0
 #endif
 
-#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION) && defined(CONFIG_XIP)
+#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
+#if defined(CONFIG_XIP)
 #define ROM_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+#else
+#define ROM_ADDR RAM_ADDR
+#endif
 #define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
 #else
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
@@ -57,8 +61,8 @@
 #endif
 #endif /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) */
 
-#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
-#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#define RAM_ADDR DT_CHOSEN_SRAM_ADDR
+#define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
 _region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
@@ -347,7 +351,7 @@ GROUP_END(ITCM)
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
 GROUP_START(DTCM)
 
-	SECTION_PROLOGUE(_DTCM_BSS_SECTION_NAME, (NOLOAD),SUBALIGN(4))
+	SECTION_PROLOGUE(_DTCM_BSS_SECTION_NAME, (NOLOAD),ALIGN(4))
 	{
 		__dtcm_start = .;
 		__dtcm_bss_start = .;
@@ -356,7 +360,7 @@ GROUP_START(DTCM)
 		__dtcm_bss_end = .;
 	} GROUP_LINK_IN(DTCM)
 
-	SECTION_PROLOGUE(_DTCM_NOINIT_SECTION_NAME, (NOLOAD),SUBALIGN(4))
+	SECTION_PROLOGUE(_DTCM_NOINIT_SECTION_NAME, (NOLOAD),ALIGN(4))
 	{
 		__dtcm_noinit_start = .;
 		*(.dtcm_noinit)
@@ -364,7 +368,7 @@ GROUP_START(DTCM)
 		__dtcm_noinit_end = .;
 	} GROUP_LINK_IN(DTCM)
 
-	SECTION_PROLOGUE(_DTCM_DATA_SECTION_NAME,,SUBALIGN(4))
+	SECTION_PROLOGUE(_DTCM_DATA_SECTION_NAME,,ALIGN(4))
 	{
 		__dtcm_data_start = .;
 		*(.dtcm_data)

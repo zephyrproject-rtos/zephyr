@@ -25,13 +25,22 @@ else()
   set(QEMU_binary_suffix riscv32)
 endif()
 
+if(CONFIG_RISCV_S_MODE)
+  string(APPEND qemu_riscv_cpu ",s=on,u=on,pmp=on,priv_spec=v1.12.0,sv39=on")
+endif()
+
 set(QEMU_CPU_TYPE_${ARCH} "${qemu_riscv_cpu}")
+
+if(CONFIG_INPUT_VIRTIO)
+  set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-device,bus=virtio-mmio-bus.3)
+endif()
 
 set(QEMU_FLAGS_${ARCH}
   -machine virt
   -bios none
   -m 256
   -cpu ${qemu_riscv_cpu}
+  ${QEMU_VIRTIO_INPUT_FLAGS}
   )
 
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

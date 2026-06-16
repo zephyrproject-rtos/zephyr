@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="collision"
+simulation_id="${BOARD_TS}_collision"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

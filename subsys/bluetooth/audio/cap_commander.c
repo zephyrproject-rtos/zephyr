@@ -465,6 +465,8 @@ static void cap_commander_ba_add_src_cb(struct bt_conn *conn, int err)
 		if (proc_param != NULL) {
 			err = broadcast_reception_start_add_src(active_proc, proc_param);
 			if (err != 0) {
+				LOG_DBG("broadcast_reception_start_add_src failed: %d", err);
+
 				bt_cap_common_abort_proc(proc_param->conn, err);
 				cap_commander_proc_complete(active_proc);
 			} else {
@@ -504,7 +506,7 @@ static bool valid_broadcast_reception_start_param(
 		return false;
 	}
 
-	for (size_t i = 0; i < param->count; i++) {
+	for (size_t i = 0U; i < param->count; i++) {
 		const struct bt_cap_commander_broadcast_reception_start_member_param *start_param =
 			&param->param[i];
 		const union bt_cap_set_member *member = &param->param[i].member;
@@ -714,15 +716,6 @@ cap_commander_recv_state_in_active_proc(struct bt_cap_common_proc *active_proc,
 		 * receive state as per BASS)
 		 */
 
-		LOG_ERR("start_param->started_recvd %d", start_param->started_recvd);
-		LOG_ERR("state %p", state);
-		LOG_ERR("state->adv_sid %d", state->adv_sid);
-		LOG_ERR("state->addr.type %d", state->addr.type);
-		LOG_ERR("state->broadcast_id %d", state->broadcast_id);
-		LOG_ERR("start_param->adv_sid %d", start_param->adv_sid);
-		LOG_ERR("start_param->addr.type %d", start_param->addr.type);
-		LOG_ERR("start_param->broadcast_id %d", start_param->broadcast_id);
-
 		return !start_param->started_recvd && state != NULL &&
 		       state->adv_sid == start_param->adv_sid &&
 		       state->addr.type == start_param->addr.type &&
@@ -777,7 +770,6 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 	}
 
 	if (!cap_commander_recv_state_in_active_proc(active_proc, conn, src_id, state)) {
-		LOG_ERR("NOT IN ACTIVE PROC");
 		bt_cap_common_unlock_proc();
 		return;
 	}
@@ -788,7 +780,7 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 		LOG_DBG("BASS recv state: conn %p, src_id %u pa_sync_state %u", (void *)conn,
 			state->src_id, state->pa_sync_state);
 
-		for (uint8_t i = 0; i < state->num_subgroups; i++) {
+		for (uint8_t i = 0U; i < state->num_subgroups; i++) {
 			const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
 			LOG_DBG("Subgroup[%u].bis_sync: 0x%08X", i, subgroup->bis_sync);
@@ -879,6 +871,9 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 			if (proc_param != NULL) {
 				err = broadcast_reception_start_add_src(active_proc, proc_param);
 				if (err != 0) {
+					LOG_DBG("broadcast_reception_start_add_src failed: %d",
+						err);
+
 					bt_cap_common_abort_proc(proc_param->conn, err);
 					cap_commander_proc_complete(active_proc);
 
@@ -907,6 +902,12 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 				}
 
 				if (err != 0) {
+					LOG_DBG("%s failed: %d",
+						subproc_type == BT_CAP_COMMON_SUBPROC_TYPE_STOP_SRC
+							? "broadcast_reception_stop_mod_src"
+							: "broadcast_reception_stop_rem_src",
+						err);
+
 					bt_cap_common_abort_proc(proc_param->conn, err);
 					cap_commander_proc_complete(active_proc);
 
@@ -930,6 +931,8 @@ static void cap_commander_handle_recv_state(struct bt_conn *conn, uint8_t src_id
 
 		err = broadcast_reception_stop_rem_src(active_proc, proc_param);
 		if (err != 0) {
+			LOG_DBG("broadcast_reception_stop_rem_src failed: %d", err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -1016,6 +1019,8 @@ static void cap_commander_ba_rem_src_cb(struct bt_conn *conn, int err)
 			err = broadcast_reception_stop_rem_src(active_proc, proc_param);
 
 			if (err != 0) {
+				LOG_DBG("broadcast_reception_stop_rem_src failed: %d", err);
+
 				bt_cap_common_abort_proc(proc_param->conn, err);
 				cap_commander_proc_complete(active_proc);
 			} else {
@@ -1084,6 +1089,8 @@ static void cap_commander_ba_mod_src_cb(struct bt_conn *conn, int err)
 		if (proc_param != NULL) {
 			err = broadcast_reception_stop_mod_src(active_proc, proc_param);
 			if (err != 0) {
+				LOG_DBG("broadcast_reception_stop_mod_src failed: %d", err);
+
 				bt_cap_common_abort_proc(proc_param->conn, err);
 				cap_commander_proc_complete(active_proc);
 			} else {
@@ -1113,6 +1120,8 @@ static void cap_commander_ba_mod_src_cb(struct bt_conn *conn, int err)
 			 */
 			err = broadcast_reception_stop_rem_src(active_proc, proc_param);
 			if (err != 0) {
+				LOG_DBG("broadcast_reception_stop_rem_src failed: %d", err);
+
 				bt_cap_common_abort_proc(proc_param->conn, err);
 				cap_commander_proc_complete(active_proc);
 			} else {
@@ -1148,7 +1157,7 @@ bool bt_cap_commander_valid_broadcast_reception_stop_param(
 		return false;
 	}
 
-	for (size_t i = 0; i < param->count; i++) {
+	for (size_t i = 0U; i < param->count; i++) {
 		const struct bt_cap_commander_broadcast_reception_stop_member_param *stop_param =
 			&param->param[i];
 		const union bt_cap_set_member *member = &param->param[i].member;
@@ -1322,6 +1331,7 @@ static void cap_commander_ba_set_broadcast_code_cb(struct bt_conn *conn, int err
 		if (err != 0) {
 			LOG_DBG("Failed to perform set broadcast code for conn %p: %d",
 				(void *)proc_param->conn, err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -1356,7 +1366,7 @@ static bool valid_distribute_broadcast_code_param(
 		return false;
 	}
 
-	for (size_t i = 0; i < param->count; i++) {
+	for (size_t i = 0U; i < param->count; i++) {
 		const union bt_cap_set_member *member = &param->param[i].member;
 		const struct bt_conn *member_conn =
 			bt_cap_common_get_member_conn(param->type, member);
@@ -1692,6 +1702,7 @@ static void cap_commander_vcp_vol_set_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int e
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set volume: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p volume updated (%zu/%zu streams done)", (void *)conn,
@@ -1719,6 +1730,7 @@ static void cap_commander_vcp_vol_set_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int e
 		if (err != 0) {
 			LOG_DBG("Failed to set volume for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -1882,6 +1894,7 @@ static void cap_commander_vcp_vol_mute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int 
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set volume: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p volume updated (%zu/%zu streams done)", (void *)conn,
@@ -1913,6 +1926,7 @@ static void cap_commander_vcp_vol_mute_cb(struct bt_vcp_vol_ctlr *vol_ctlr, int 
 		if (err != 0) {
 			LOG_DBG("Failed to set volume for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -2103,6 +2117,7 @@ static void cap_commander_vcp_set_offset_cb(struct bt_vocs *inst, int err)
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set offset: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p offset updated (%zu/%zu streams done)", (void *)conn,
@@ -2131,6 +2146,7 @@ static void cap_commander_vcp_set_offset_cb(struct bt_vocs *inst, int err)
 		if (err != 0) {
 			LOG_DBG("Failed to set offset for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -2342,6 +2358,7 @@ static void cap_commander_micp_mic_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, in
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to change microphone mute: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p mute updated (%zu/%zu streams done)", (void *)conn,
@@ -2373,6 +2390,7 @@ static void cap_commander_micp_mic_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, in
 		if (err != 0) {
 			LOG_DBG("Failed to change mute for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {
@@ -2555,6 +2573,7 @@ static void cap_commander_micp_gain_set_cb(struct bt_aics *inst, int err)
 	active_proc->proc_done_cnt++;
 	if (err != 0) {
 		LOG_DBG("Failed to set gain: %d", err);
+
 		bt_cap_common_abort_proc(conn, err);
 	} else {
 		LOG_DBG("Conn %p gain updated (%zu/%zu streams done)", (void *)conn,
@@ -2581,6 +2600,7 @@ static void cap_commander_micp_gain_set_cb(struct bt_aics *inst, int err)
 		if (err != 0) {
 			LOG_DBG("Failed to set gain for conn %p: %d", (void *)proc_param->conn,
 				err);
+
 			bt_cap_common_abort_proc(proc_param->conn, err);
 			cap_commander_proc_complete(active_proc);
 		} else {

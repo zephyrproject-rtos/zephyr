@@ -1,5 +1,5 @@
 #
-# Copyright 2024-2025 NXP
+# Copyright 2024-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,11 +23,11 @@ supported:
   - i2c
   - i3c
   - mbox
+  - mecc
   - pwm
   - sdhc
   - spi
   - uart
   - dac
-  - kpp
   - i2s
 vendor: nxp

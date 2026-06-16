@@ -10,8 +10,9 @@
 struct device;
 struct wifi_connect_req_params;
 
-int siwx91x_connect(const struct device *dev, struct wifi_connect_req_params *params);
-int siwx91x_disconnect(const struct device *dev);
+int siwx91x_connect(const struct device *dev, struct net_if *iface,
+		    struct wifi_connect_req_params *params);
+int siwx91x_disconnect(const struct device *dev, struct net_if *iface);
 
 unsigned int siwx91x_wifi_module_stats_event_handler(sl_wifi_event_t event, unsigned int status,
 						    void *data, uint32_t data_length, void *arg);

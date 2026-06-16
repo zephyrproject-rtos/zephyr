@@ -75,8 +75,8 @@ struct udc_mcux_event {
 	usb_device_callback_message_struct_t mcux_msg;
 };
 
-K_MEM_SLAB_DEFINE(udc_event_slab, sizeof(struct udc_mcux_event),
-		  CONFIG_UDC_NXP_EVENT_COUNT, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(udc_event_slab, struct udc_mcux_event,
+		       CONFIG_UDC_NXP_EVENT_COUNT);
 
 static void udc_mcux_lock(const struct device *dev)
 {
@@ -737,19 +737,43 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 	}
 
 	if (config->clock_dev && config->clock_rate) {
-		clock_control_set_rate(
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err != 0) {
+			return err;
+		}
+
+		err = clock_control_set_rate(
 			config->clock_dev,
 			config->clock_subsys,
 			config->clock_rate
 		);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	if (config->phy_clock_dev && config->phy_clock_rate) {
-		clock_control_set_rate(
+		if (!device_is_ready(config->phy_clock_dev)) {
+			return -ENODEV;
+		}
+
+		err = clock_control_on(config->phy_clock_dev, config->phy_clock_subsys);
+		if (err != 0) {
+			return err;
+		}
+
+		err = clock_control_set_rate(
 			config->phy_clock_dev,
 			config->phy_clock_subsys,
 			config->phy_clock_rate
 		);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	k_mutex_init(&data->mutex);

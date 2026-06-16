@@ -74,7 +74,7 @@ void __weak relocate_vector_table(void)
 void __weak relocate_vector_table(void)
 {
 #if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) ||                                     \
-	!defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
+	!defined(CONFIG_XIP) && (DT_CHOSEN_SRAM_ADDR != 0)
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 	(void)memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
 #elif defined(CONFIG_SW_VECTOR_RELAY) || defined(CONFIG_SW_VECTOR_RELAY_CLIENT)

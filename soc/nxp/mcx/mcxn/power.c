@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/pm/pm.h>
+#include <zephyr/arch/arch_interface.h>
 #include <zephyr/device.h>
 #include <fsl_cmc.h>
 #include <fsl_spc.h>
@@ -22,15 +23,23 @@ static void pm_enter_hook(void)
 	CMC_EnableDebugOperation(MCXN_CMC_ADDR, false);
 	CMC_ConfigFlashMode(MCXN_CMC_ADDR, true, false);
 	WUU_SetInternalWakeUpModulesConfig(MCXN_WUU_ADDR, WUU_WAKEUP_LPTMR0_IDX,
-					kWUU_InternalModuleInterrupt);
+					   kWUU_InternalModuleInterrupt);
+}
+
+static void enter_low_power(void)
+{
+	unsigned int key;
+
+	key = arch_pm_state_set_prepare();
+	__DSB();
+	__ISB();
+	__WFI();
+	arch_pm_state_set_finish(key);
 }
 
 __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	pm_enter_hook();
-
-	__enable_irq();
-	__set_BASEPRI(0);
 
 	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
@@ -39,14 +48,14 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		CMC_SetClockMode(MCXN_CMC_ADDR, kCMC_GateCoreClock);
 		CMC_SetMAINPowerMode(MCXN_CMC_ADDR, kCMC_ActiveOrSleepMode);
 		CMC_SetWAKEPowerMode(MCXN_CMC_ADDR, kCMC_ActiveOrSleepMode);
-		__WFI();
+		enter_low_power();
 		break;
 
 	case PM_STATE_SUSPEND_TO_IDLE:
 		CMC_SetClockMode(MCXN_CMC_ADDR, kCMC_GateAllSystemClocksEnterLowPowerMode);
 		CMC_SetMAINPowerMode(MCXN_CMC_ADDR, kCMC_DeepSleepMode);
 		CMC_SetWAKEPowerMode(MCXN_CMC_ADDR, kCMC_DeepSleepMode);
-		__WFI();
+		enter_low_power();
 		break;
 
 	case PM_STATE_STANDBY:
@@ -54,7 +63,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		CMC_SetClockMode(MCXN_CMC_ADDR, kCMC_GateAllSystemClocksEnterLowPowerMode);
 		CMC_SetMAINPowerMode(MCXN_CMC_ADDR, kCMC_PowerDownMode);
 		CMC_SetWAKEPowerMode(MCXN_CMC_ADDR, kCMC_PowerDownMode);
-		__WFI();
+		enter_low_power();
 		break;
 
 	default:
@@ -71,8 +80,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 	}
 
-	__enable_irq();
-	__ISB();
+	CMC_SetClockMode(MCXN_CMC_ADDR, kCMC_GateNoneClock);
 
 	SPC_ClearPowerDomainLowPowerRequestFlag(MCXN_SPC_ADDR, kSPC_PowerDomain0);
 	SPC_ClearPowerDomainLowPowerRequestFlag(MCXN_SPC_ADDR, kSPC_PowerDomain1);

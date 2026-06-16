@@ -7,3 +7,14 @@
 
 #include <mem.h>
 #include <ti/mspm0/l/mspm0l13x5.dtsi>
+
+/ {
+	soc {
+		comp0: comp@40008000 {
+			compatible = "ti,mspm0-comparator";
+			reg = <0x40008000 0x2000>;
+			interrupts = <1 0>;
+			status = "disabled";
+		};
+	};
+};

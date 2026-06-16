@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic connection test: a central connects to a peripheral and expects a
 # notification, using the split controller (ULL LLL) in Low Latency Variant
-simulation_id="basic_conn_split_low_lat"
+simulation_id="${BOARD_TS}_basic_conn_split_low_lat"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

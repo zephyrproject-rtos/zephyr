@@ -82,9 +82,13 @@ void test_gpio_pin_interrupt_edge(unsigned int cfg_flags,
 
 	gpio_init_callback(&gpio_cb, callback_edge, BIT(TEST_PIN));
 	ret = gpio_add_callback(port, &gpio_cb);
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
 
 	ret = gpio_pin_interrupt_configure(port, TEST_PIN, int_flags);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		TC_PRINT("Pin interrupt is not supported.\n");
 		ztest_test_skip();
 		return;
@@ -162,9 +166,13 @@ void test_gpio_pin_interrupt_level(unsigned int cfg_flags,
 
 	gpio_init_callback(&gpio_cb, callback_level, BIT(TEST_PIN));
 	ret = gpio_add_callback(port, &gpio_cb);
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
+		ztest_test_skip();
+		return;
+	}
 
 	ret = gpio_pin_interrupt_configure(port, TEST_PIN, int_flags);
-	if (ret == -ENOTSUP) {
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
 		TC_PRINT("Pin interrupt is not supported.\n");
 		ztest_test_skip();
 		return;

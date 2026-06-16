@@ -86,6 +86,14 @@ child-binding:
           0 FULLDRIVE_0- Normal output drive mode
           1 FULLDRIVE_1- Full output drive mode, output strength is twice
           the drive strength of normal drive mode.
+      nxp,drive-current:
+        type: int
+        default: 0
+        description: |
+          Transmitter current drive impedance selection.
+          Sets the ODRIVE field (bits 12-13) in the IOPCTL register.
+          0 = 100 ohm (default), 1 = 66 ohm, 2 = 50 ohm, 3 = 33 ohm.
+          Available for select I/O ports only.
       nxp,invert:
         type: boolean
         description: |

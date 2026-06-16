@@ -11,6 +11,7 @@
 LOG_MODULE_REGISTER(spi_litex_litespi);
 
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/minmax.h>
 #include "spi_litex_common.h"
 
 #define SPI_LITEX_ANY_HAS_IRQ DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)

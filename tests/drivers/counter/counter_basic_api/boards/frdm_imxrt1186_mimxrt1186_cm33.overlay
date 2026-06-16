@@ -1,0 +1,41 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&gpt1 {
+	status = "okay";
+	run-mode = "free-run";
+};
+
+&gpt2 {
+	run-mode = "free-run";
+};
+
+&lpit1 {
+	status = "okay";
+};
+
+&lpit1_channel0 {
+	status = "okay";
+};
+
+&lptmr1 {
+	status = "okay";
+};
+
+&qtmr1 {
+	status = "okay";
+};
+
+&qtmr1_timer0 {
+	status = "okay";
+	primary-source = "kQTMR_ClockDivide_128";
+	mode = "kQTMR_PriSrcRiseEdge";
+};
+
+&tpm1 {
+	compatible = "nxp,tpm-timer";
+	status = "okay";
+};

@@ -11,7 +11,7 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_gatt_sc_indicate_overlay-privacy_conf"
-simulation_id='sc_indicate_privacy'
+simulation_id="${BOARD_TS}_sc_indicate_privacy"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

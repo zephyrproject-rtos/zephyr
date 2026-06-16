@@ -9,7 +9,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/kernel.h>
 #include <zephyr/debug/object_tracing.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/mgmt/mcumgr/mgmt/mgmt.h>
 #include <zephyr/mgmt/mcumgr/smp/smp.h>
 #include <zephyr/mgmt/mcumgr/mgmt/handlers.h>
@@ -387,12 +386,6 @@ static int os_mgmt_mpstat_read(struct smp_streamer *ctxt)
 	bool ok;
 
 	heap_elements = sys_heap_array_get(&heap);
-	ok = zcbor_tstr_put_lit(zse, "tasks") &&
-	     zcbor_map_start_encode(zse, heap_elements);
-
-	if (!ok) {
-		goto end;
-	}
 
 	while (i < heap_elements) {
 		struct sys_memory_stats heap_stats;
@@ -432,10 +425,6 @@ static int os_mgmt_mpstat_read(struct smp_streamer *ctxt)
 		}
 
 		++i;
-	}
-
-	if (ok == true) {
-		ok = zcbor_map_end_encode(zse, heap_elements);
 	}
 
 end:

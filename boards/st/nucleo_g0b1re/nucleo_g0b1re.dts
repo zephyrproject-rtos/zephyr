@@ -139,6 +139,8 @@ zephyr_udc0: &usb {
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -146,6 +148,8 @@ zephyr_udc0: &usb {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pa11 &i2c2_sda_pa12>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -200,28 +204,32 @@ zephyr_udc0: &usb {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 			read-only;
 		};
 
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(200)>;
 		};
 
 		slot1_partition: partition@3e000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x0003e000 DT_SIZE_K(200)>;
 		};
 
 		/* final 64KiB reserved for app storage partition */
 		storage_partition: partition@70000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x00070000 DT_SIZE_K(64)>;
 		};

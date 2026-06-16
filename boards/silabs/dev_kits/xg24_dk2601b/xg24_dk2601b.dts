@@ -20,15 +20,21 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &usart0;
 		zephyr,flash = &flash0;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,openthread-counter = &protimer;
 		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,uart-pipe = &usart0;
 	};
 
 	aliases {
+		dht0 = &si7021;
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
+		light-sensor = &veml6035;
+		magn0 = &si7210;
+		pressure-sensor = &bmp384;
 		pwm-led0 = &red_pwm_led;
 		pwm-led1 = &green_pwm_led;
 		pwm-led2 = &blue_pwm_led;
@@ -228,6 +234,14 @@
 		compatible = "silabs,si7006";
 		reg = <0x40>;
 	};
+
+	bmp384: bmp384@77 {
+		compatible = "bosch,bmp388";
+		reg = <0x77>;
+		odr = "50";
+		osr-press = <4>;
+		osr-temp = <2>;
+	};
 };
 
 &gpio {
@@ -267,12 +281,13 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* Reserve 48 kB for the bootloader */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(48)>;
 			label = "mcuboot";
 			read-only;
@@ -280,18 +295,21 @@
 
 		/* Reserve 728 kB for the application in slot 0 */
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x0000c000 DT_SIZE_K(728)>;
 			label = "image-0";
 		};
 
 		/* Reserve 728 kB for the application in slot 1 */
 		slot1_partition: partition@c2000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x000c2000 DT_SIZE_K(728)>;
 			label = "image-1";
 		};
 
 		/* Set 32 kB of storage at the end of the 1536 kB of flash */
 		storage_partition: partition@178000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00178000 DT_SIZE_K(32)>;
 			label = "storage";
 		};
@@ -319,5 +337,15 @@
 };
 
 &bt_hci_silabs {
+	status = "okay";
+};
+
+&ieee802154 {
+	status = "okay";
+	hfxo = <&hfxo>;
+	sleep-clock = <&lfxo>;
+};
+
+&protimer {
 	status = "okay";
 };

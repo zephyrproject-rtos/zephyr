@@ -488,8 +488,7 @@ static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 		bt_iso_cleanup_acl(chan->iso);
 
 		if (conn_type == BT_ISO_CHAN_TYPE_PERIPHERAL) {
-			bt_conn_unref(chan->iso);
-			chan->iso = NULL;
+			bt_conn_drop(&chan->iso);
 #if defined(CONFIG_BT_ISO_CENTRAL)
 		} else {
 			bool is_chan_connected;
@@ -670,12 +669,26 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		if (ts) {
 			struct bt_hci_iso_sdu_ts_hdr *ts_hdr;
 
+			if (buf->len < sizeof(*ts_hdr)) {
+				LOG_ERR("Unexpected ISO buffer size %u (< %zu)", buf->len,
+					sizeof(*ts_hdr));
+				net_buf_unref(buf);
+				return;
+			}
+
 			ts_hdr = net_buf_pull_mem(buf, sizeof(*ts_hdr));
 			iso_info(buf)->ts = sys_le32_to_cpu(ts_hdr->ts);
 
 			hdr = &ts_hdr->sdu;
 			iso_info(buf)->flags |= BT_ISO_FLAGS_TS;
 		} else {
+			if (buf->len < sizeof(*hdr)) {
+				LOG_ERR("Unexpected ISO buffer size %u (< %zu)", buf->len,
+					sizeof(*hdr));
+				net_buf_unref(buf);
+				return;
+			}
+
 			hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 			/* TODO: Generate a timestamp? */
 			iso_info(buf)->ts = 0x00000000;
@@ -905,12 +918,13 @@ static int validate_send(const struct bt_iso_chan *chan, const struct net_buf *b
 
 	BT_ISO_DATA_DBG("chan %p len %zu", chan, net_buf_frags_len(buf));
 
-	if (chan->state != BT_ISO_STATE_CONNECTED) {
+	iso_conn = chan->iso;
+	if (iso_conn == NULL || iso_conn->state != BT_CONN_CONNECTED ||
+	    chan->state != BT_ISO_STATE_CONNECTED) {
 		LOG_DBG("Channel %p not connected", chan);
 		return -ENOTCONN;
 	}
 
-	iso_conn = chan->iso;
 	if (!iso_conn->iso.info.can_send) {
 		LOG_DBG("Channel %p not able to send", chan);
 		return -EINVAL;
@@ -1160,12 +1174,10 @@ static bool bt_iso_acl_has_cis(const struct bt_conn *acl)
 
 void bt_iso_cleanup_acl(struct bt_conn *iso)
 {
-	struct bt_conn *acl = iso->iso.acl;
+	struct bt_conn *acl = bt_conn_take(&iso->iso.acl);
 	LOG_DBG("%p", iso);
 
 	if (acl != NULL) {
-		iso->iso.acl = NULL;
-
 		/* If we have removed the last ACL reference, trigger the deferred work to finalize
 		 * the ACL disconnection
 		 */
@@ -2001,10 +2013,7 @@ static void cleanup_cig(struct bt_iso_cig *cig)
 	struct bt_iso_chan *cis, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cig->cis_channels, cis, tmp, node) {
-		if (cis->iso != NULL) {
-			bt_conn_unref(cis->iso);
-			cis->iso = NULL;
-		}
+		bt_conn_drop(&cis->iso);
 
 		sys_slist_remove(&cig->cis_channels, NULL, &cis->node);
 	}
@@ -2246,8 +2255,7 @@ static void restore_cig(struct bt_iso_cig *cig, uint8_t existing_num_cis)
 		 * bt_iso_cig_reconfigure was called
 		 */
 		if (cis->iso != NULL && cis->iso->iso.info.unicast.cis_id >= existing_num_cis) {
-			bt_conn_unref(cis->iso);
-			cis->iso = NULL;
+			bt_conn_drop(&cis->iso);
 
 			sys_slist_remove(&cig->cis_channels, NULL, &cis->node);
 			cig->num_cis--;
@@ -2543,10 +2551,7 @@ static void cleanup_big(struct bt_iso_big *big)
 	struct bt_iso_chan *bis, *tmp;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&big->bis_channels, bis, tmp, node) {
-		if (bis->iso != NULL) {
-			bt_conn_unref(bis->iso);
-			bis->iso = NULL;
-		}
+		bt_conn_drop(&bis->iso);
 
 		sys_slist_remove(&big->bis_channels, NULL, &bis->node);
 	}

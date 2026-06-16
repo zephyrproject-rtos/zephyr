@@ -87,6 +87,10 @@ applications.
 
 :c:macro:`DEVICE_API()`
    Wrap a driver API declaration to assign it to its respective linker section.
+   Use of this macro is mandatory for any driver implementing an upstream driver
+   class, as :c:macro:`DEVICE_API_GET` and :c:macro:`DEVICE_API_IS` rely on API
+   instances being placed in their class linker section to validate the device's
+   API class at runtime.
 
 .. _device_struct:
 
@@ -127,8 +131,10 @@ Most drivers will be implementing a device-independent subsystem API.
 Applications can simply program to that generic API, and application
 code is not specific to any particular driver implementation.
 
-If all driver API instances are assigned to their respective API linker section
-use :c:macro:`DEVICE_API_IS()` to verify the API's type.
+Driver API instances must be declared with :c:macro:`DEVICE_API()` so that they
+are assigned to their respective API linker section. This is required for
+:c:macro:`DEVICE_API_GET` and :c:macro:`DEVICE_API_IS` to validate at runtime
+that a device's API belongs to the expected class.
 
 A subsystem API definition typically looks like this:
 
@@ -184,6 +190,56 @@ The driver would then pass ``my_driver_api_funcs`` as the ``api`` argument to
         them. Providing for link-time size optimizations with driver APIs in
         most cases requires that the optional feature be controlled by a
         Kconfig option.
+
+API Class Inheritance
+*********************
+
+A subsystem API can extend another subsystem API, forming a parent-child
+relationship. This allows a device implementing the child API to also be
+recognized as implementing the parent API. For example, an I3C controller
+extends the I2C API, so it can be used wherever an I2C device is expected.
+
+To define a child API, embed the parent API struct as the **first member** of
+the child struct and declare the relationship with :c:macro:`DEVICE_API_EXTENDS`:
+
+.. code-block:: C
+
+  __subsystem struct child_driver_api {
+        struct subsystem_driver_api parent_api;
+        child_do_extra_t do_extra;
+  };
+
+  DEVICE_API_EXTENDS(child, subsystem, parent_api);
+
+A driver implementing the child API populates both the parent and child
+methods:
+
+.. code-block:: C
+
+  static DEVICE_API(child, my_child_api) = {
+        .parent_api = {
+                .do_this = my_child_do_this,
+                .do_that = my_child_do_that,
+        },
+        .do_extra = my_child_do_extra,
+  };
+
+With this in place, :c:macro:`DEVICE_API_IS` returns true for both the child
+and parent classes, and :c:macro:`DEVICE_API_GET` can retrieve the API as
+either type:
+
+.. code-block:: C
+
+  /* Both return true for a child device */
+  DEVICE_API_IS(subsystem, dev);
+  DEVICE_API_IS(child, dev);
+
+  /* Access through parent API */
+  DEVICE_API_GET(subsystem, dev)->do_this(dev, foo, bar);
+
+Multi-level inheritance is supported (e.g. grandchild extends child extends
+parent). Sibling relationships also work correctly: two different child APIs
+extending the same parent are distinguished by :c:macro:`DEVICE_API_IS`.
 
 Device-Specific API Extensions
 ******************************

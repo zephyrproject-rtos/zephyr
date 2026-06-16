@@ -8,7 +8,9 @@
 #include <zephyr/drivers/mfd/npm10xx.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/dt-bindings/gpio/nordic-npm10xx-gpio.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/byteorder.h>
 
 LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 
@@ -29,12 +31,18 @@ LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 /* GPIO registers */
 #define NPM10_GPIO_CONFIG  0xA0U
 #define NPM10_GPIO_USAGE   0xA3U
+#define NPM10_GPIO_CTRL2   0xABU
+#define GPIO_CONFIG_INPUT  BIT(0)
 #define GPIO_CONFIG_OUTPUT BIT(1)
 #define GPIO_CONFIG_OPENDR BIT(2)
 #define GPIO_CONFIG_PULLDN BIT(3)
 #define GPIO_CONFIG_PULLUP BIT(4)
+#define GPIO_CONFIG_DRIVE  BIT(5)
+#define GPIO_CONFIG_DEBNC  BIT(6)
 #define GPIO_USAGE_IRQ     0x01U
 #define GPIO_USAGE_INV     BIT(4)
+#define GPIO_CTRL2_LP_MASK (BIT_MASK(2) << 3)
+#define GPIO_CTRL2_LP_POL  BIT(5)
 
 /* EVENTS registers */
 #define NPM10_EVENTS_SET       0x00U
@@ -82,8 +90,6 @@ LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 #define RESET_LONGPRESS_DEBOUNCE_10S  (2U << 2)
 #define RESET_LONGPRESS_DEBOUNCE_20S  (3U << 2)
 
-#define RESET_LONGPRESS_CFG BIT(4)
-
 /* SHPHLD (0xE8) */
 #define RESET_SHPHLD_DEBOUNCESEL BIT(0)
 
@@ -93,7 +99,7 @@ LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 #define RESET_SHPHLD_DEBOUNCE_500MS (2U << 1)
 #define RESET_SHPHLD_DEBOUNCE_1S    (3U << 1)
 
-#define RESET_SHPHLD_WAKEUP BIT(3)
+#define RESET_SHPHLD_WAKEUP_NOPIN BIT(3)
 
 /* VBUSCONFIG (0xEA) */
 #define RESET_VBUSCONFIG_HIBERNATE        BIT(0)
@@ -110,13 +116,35 @@ LOG_MODULE_REGISTER(mfd_npm10xx, CONFIG_MFD_LOG_LEVEL);
 #define RESET_VBUSSTATUS_HIBERNATE BIT(0)
 #define RESET_VBUSSTATUS_STANDBY   BIT(1)
 
+/* TIMER register offsets */
+#define NPM10_TIMER_TASKS  0xD6U
+#define TIMER_TASKS_START  BIT(0)
+#define TIMER_TASKS_STOP   BIT(1)
+#define NPM10_TIMER_CONFIG 0xD7U
+#define TIMER_CONFIG_WKUP  0x03U
+#define NPM10_TIMER_TARGET 0xD8U
+#define NPM10_TIMER_STATUS 0xDBU
+#define TIMER_STATUS_BUSY  BIT(0)
+
+/* Timer value calculations */
+#define NPM10_TIMER_MAX_VALUE 0xFFFFFFU
+#define NPM10_TIMER_VALUE(ms) ((ms) * 8 / 125 - 1)
+
+struct mfd_npm10xx_gpio_config {
+	uint8_t pin;
+	gpio_flags_t flags;
+};
+
 struct mfd_npm10xx_config {
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec host_int_gpio;
-	struct {
-		uint8_t pin;
-		gpio_flags_t flags;
-	} pmic_int_gpio;
+	struct mfd_npm10xx_gpio_config pmic_int_gpio;
+	struct mfd_npm10xx_gpio_config lp_reset_gpio;
+	uint8_t lp_reset_src;
+	uint8_t lp_reset_debounce;
+	uint8_t pwr_cycle_delay;
+	uint8_t wakeup_debounce;
+	bool wakeup_disable;
 };
 
 struct mfd_npm10xx_data {
@@ -198,17 +226,11 @@ int mfd_npm10xx_hibernate(const struct device *dev, enum mfd_npm10xx_hibernate_m
 			  k_timeout_t time)
 {
 	const struct mfd_npm10xx_config *config = dev->config;
-	int ret;
-
-	if (!K_TIMEOUT_EQ(time, K_FOREVER)) {
-		LOG_ERR("Timed hibernation not supported yet");
-		return -ENOTSUP;
-	}
+	int ret = 0;
 
 	switch (mode) {
 	case NPM10XX_HIBERNATE_VBAT:
-		return i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_TASKS,
-					     RESET_TASKS_HIBERNATEVBAT);
+		break;
 
 	case NPM10XX_HIBERNATE_VBUS_WAIT:
 		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_RESET_VBUSCONFIG,
@@ -231,7 +253,26 @@ int mfd_npm10xx_hibernate(const struct device *dev, enum mfd_npm10xx_hibernate_m
 		return ret;
 	}
 
-	return i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_TASKS, RESET_TASKS_HIBERNATEVBUS);
+	if (!K_TIMEOUT_EQ(time, K_FOREVER)) {
+		ret = mfd_npm10xx_timer_set(dev, time);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_TIMER_CONFIG, TIMER_CONFIG_WKUP);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = mfd_npm10xx_timer_start(dev);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_TASKS,
+				     mode == NPM10XX_HIBERNATE_VBAT ? RESET_TASKS_HIBERNATEVBAT
+								    : RESET_TASKS_HIBERNATEVBUS);
 }
 
 int mfd_npm10xx_standby(const struct device *dev, enum mfd_npm10xx_standby_op operation)
@@ -357,17 +398,213 @@ unlock_n_return:
 	return ret;
 }
 
+int mfd_npm10xx_timer_set(const struct device *dev, k_timeout_t timeout)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+	uint32_t t_value;
+	uint8_t buf[3];
+	bool busy;
+	int ret;
+
+	t_value = NPM10_TIMER_VALUE(k_ticks_to_ms_near32(timeout.ticks));
+	if (t_value > NPM10_TIMER_MAX_VALUE) {
+		LOG_ERR("Timer value out of range [16ms,~72h]");
+		return -EINVAL;
+	}
+
+	ret = mfd_npm10xx_timer_status_get(dev, &busy);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (busy) {
+		LOG_ERR("Timer is busy");
+		return -EBUSY;
+	}
+
+	sys_put_be24(t_value, buf);
+
+	return i2c_burst_write_dt(&config->i2c, NPM10_TIMER_TARGET, buf, sizeof(buf));
+}
+
+int mfd_npm10xx_timer_start(const struct device *dev)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+
+	return i2c_reg_write_byte_dt(&config->i2c, NPM10_TIMER_TASKS, TIMER_TASKS_START);
+}
+
+int mfd_npm10xx_timer_stop(const struct device *dev)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+
+	return i2c_reg_write_byte_dt(&config->i2c, NPM10_TIMER_TASKS, TIMER_TASKS_STOP);
+}
+
+int mfd_npm10xx_timer_status_get(const struct device *dev, bool *busy)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+	uint8_t reg;
+	int ret;
+
+	ret = i2c_reg_read_byte_dt(&config->i2c, NPM10_TIMER_STATUS, &reg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	*busy = !!(reg & TIMER_STATUS_BUSY);
+
+	return 0;
+}
+
+static int mfd_npm10xx_gpio_configure(const struct i2c_dt_spec *i2c, uint8_t pin,
+				      gpio_flags_t flags)
+{
+	uint8_t pin_config;
+
+	if (pin > 2U) {
+		LOG_ERR("Pin index out of range [0,2]");
+		return -EINVAL;
+	}
+
+	pin_config = FIELD_PREP(GPIO_CONFIG_INPUT, !!(flags & GPIO_INPUT)) |
+		     FIELD_PREP(GPIO_CONFIG_OUTPUT, !!(flags & GPIO_OUTPUT)) |
+		     FIELD_PREP(GPIO_CONFIG_OPENDR, !!(flags & GPIO_OPEN_DRAIN)) |
+		     FIELD_PREP(GPIO_CONFIG_PULLUP, !!(flags & GPIO_PULL_UP)) |
+		     FIELD_PREP(GPIO_CONFIG_PULLDN, !!(flags & GPIO_PULL_DOWN)) |
+		     FIELD_PREP(GPIO_CONFIG_DRIVE, !!(flags & NPM10XX_GPIO_DRIVE_HIGH)) |
+		     FIELD_PREP(GPIO_CONFIG_DEBNC, !!(flags & NPM10XX_GPIO_DEBOUNCE_ON));
+
+	return i2c_reg_write_byte_dt(i2c, NPM10_GPIO_CONFIG + pin, pin_config);
+}
+
+static inline int mfd_npm10xx_longpress_cfg(const struct device *dev)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+	int ret;
+	uint8_t reg;
+
+	if (config->lp_reset_src == RESET_LONGPRESS_PINSEL_NONE) {
+		return 0;
+	}
+
+	if (config->lp_reset_src != RESET_LONGPRESS_PINSEL_SHPHLD) {
+		ret = mfd_npm10xx_gpio_configure(&config->i2c, config->lp_reset_gpio.pin,
+						 config->lp_reset_gpio.flags | GPIO_INPUT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		reg = FIELD_PREP(GPIO_CTRL2_LP_MASK, config->lp_reset_gpio.pin + 1U) |
+		      FIELD_PREP(GPIO_CTRL2_LP_POL,
+				 !(config->lp_reset_gpio.flags & GPIO_ACTIVE_LOW));
+
+		ret = i2c_reg_update_byte_dt(&config->i2c, NPM10_GPIO_CTRL2,
+					     GPIO_CTRL2_LP_MASK | GPIO_CTRL2_LP_POL, reg);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	reg = FIELD_PREP(RESET_LONGPRESS_PINSEL_MASK, config->lp_reset_src) |
+	      FIELD_PREP(RESET_LONGPRESS_DEBOUNCE_MASK, config->lp_reset_debounce);
+
+	return i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_LONGPRESS, reg);
+}
+
+static inline int mfd_npm10xx_wakeup_cfg(const struct device *dev)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+	uint8_t reg;
+
+	if (!config->wakeup_disable && (config->wakeup_debounce == UINT8_MAX)) {
+		return 0;
+	}
+
+	reg = FIELD_PREP(RESET_SHPHLD_WAKEUP_NOPIN, config->wakeup_disable);
+
+	if (config->wakeup_debounce < UINT8_MAX) {
+		reg |= FIELD_PREP(RESET_SHPHLD_DEBOUNCE_MASK, config->wakeup_debounce);
+	}
+
+	return i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_SHPHLD, reg);
+}
+
+static inline int mfd_npm10xx_interrupt_cfg(const struct device *dev)
+{
+	const struct mfd_npm10xx_config *config = dev->config;
+	struct mfd_npm10xx_data *data = dev->data;
+	int ret;
+	uint8_t pin_usage;
+	uint8_t disable_all_buf[EVENTS_REG_NUM] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
+
+	if (config->host_int_gpio.port == NULL) {
+		return 0;
+	}
+
+	if (!gpio_is_ready_dt(&config->host_int_gpio)) {
+		LOG_ERR("GPIO port used for interrupt input is not ready");
+		return -ENODEV;
+	}
+
+	/* disable all interrupts to avoid the situation where an interrupt is active
+	 * without a handler
+	 */
+	ret = i2c_burst_write_dt(&config->i2c, NPM10_EVENTS_INTEN_CLR, disable_all_buf,
+				 sizeof(disable_all_buf));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = mfd_npm10xx_gpio_configure(&config->i2c, config->pmic_int_gpio.pin,
+					 config->pmic_int_gpio.flags | GPIO_OUTPUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* interrupt output is active low by default, set "invert" bit otherwise */
+	pin_usage = GPIO_USAGE_IRQ |
+		    FIELD_PREP(GPIO_USAGE_INV, !(config->pmic_int_gpio.flags & GPIO_ACTIVE_LOW));
+
+	ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_GPIO_USAGE + config->pmic_int_gpio.pin,
+				    pin_usage);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = gpio_pin_configure_dt(&config->host_int_gpio, GPIO_INPUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	k_work_init(&data->work, events_handler);
+
+	gpio_init_callback(&data->gpio_cb, pmic_int_handler, BIT(config->host_int_gpio.pin));
+
+	ret = gpio_add_callback(config->host_int_gpio.port, &data->gpio_cb);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return gpio_pin_interrupt_configure_dt(&config->host_int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+}
+
 static int mfd_npm10xx_init(const struct device *dev)
 {
 	const struct mfd_npm10xx_config *config = dev->config;
 	struct mfd_npm10xx_data *data = dev->data;
 	int ret;
-	uint8_t pin_config, pin_usage;
-	uint8_t disable_all_buf[EVENTS_REG_NUM] = {0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0xFFU};
+	uint8_t reg;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
 		LOG_ERR("I2C bus is not ready");
 		return -ENODEV;
+	}
+
+	/* Stop boot monitor in case it's active */
+	ret = mfd_npm10xx_timer_stop(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
 	data->mfd = dev;
@@ -377,69 +614,26 @@ static int mfd_npm10xx_init(const struct device *dev)
 		LOG_ERR("Failed to initialize mutex");
 	}
 
-	if (config->host_int_gpio.port != NULL) {
-		if (!gpio_is_ready_dt(&config->host_int_gpio)) {
-			LOG_ERR("GPIO port used for interrupt input is not ready");
-			return -ENODEV;
-		}
+	ret = mfd_npm10xx_longpress_cfg(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
-		/* disable all interrupts to avoid the situation where an interrupt is active
-		 * without a handler
-		 */
-		ret = i2c_burst_write_dt(&config->i2c, NPM10_EVENTS_INTEN_CLR, disable_all_buf,
-					 sizeof(disable_all_buf));
-		if (ret < 0) {
-			return ret;
-		}
+	ret = mfd_npm10xx_wakeup_cfg(dev);
+	if (ret < 0) {
+		return ret;
+	}
 
-		pin_config = GPIO_CONFIG_OUTPUT |
-			     FIELD_PREP(GPIO_CONFIG_OPENDR,
-					!!(config->pmic_int_gpio.flags & GPIO_OPEN_DRAIN)) |
-			     FIELD_PREP(GPIO_CONFIG_PULLUP,
-					!!(config->pmic_int_gpio.flags & GPIO_PULL_UP)) |
-			     FIELD_PREP(GPIO_CONFIG_PULLDN,
-					!!(config->pmic_int_gpio.flags & GPIO_PULL_DOWN));
+	if (config->pwr_cycle_delay < UINT8_MAX) {
+		reg = FIELD_PREP(RESET_CONFIG_PWRWAIT_MASK, config->pwr_cycle_delay);
 
-		/* interrupt output is active low by default, set "invert" bit otherwise */
-		pin_usage = GPIO_USAGE_IRQ |
-			    FIELD_PREP(GPIO_USAGE_INV,
-				       !(config->pmic_int_gpio.flags & GPIO_ACTIVE_LOW));
-
-		ret = i2c_reg_write_byte_dt(
-			&config->i2c, NPM10_GPIO_CONFIG + config->pmic_int_gpio.pin, pin_config);
-		if (ret < 0) {
-			return ret;
-		}
-
-		ret = i2c_reg_write_byte_dt(
-			&config->i2c, NPM10_GPIO_USAGE + config->pmic_int_gpio.pin, pin_usage);
-		if (ret < 0) {
-			return ret;
-		}
-
-		ret = gpio_pin_configure_dt(&config->host_int_gpio, GPIO_INPUT);
-		if (ret < 0) {
-			return ret;
-		}
-
-		k_work_init(&data->work, events_handler);
-
-		gpio_init_callback(&data->gpio_cb, pmic_int_handler,
-				   BIT(config->host_int_gpio.pin));
-
-		ret = gpio_add_callback(config->host_int_gpio.port, &data->gpio_cb);
-		if (ret < 0) {
-			return ret;
-		}
-
-		ret = gpio_pin_interrupt_configure_dt(&config->host_int_gpio,
-						      GPIO_INT_EDGE_TO_ACTIVE);
+		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_RESET_CONFIG, reg);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	return 0;
+	return mfd_npm10xx_interrupt_cfg(dev);
 }
 
 #define MFD_NPM10XX_DEFINE(n)                                                                      \
@@ -450,12 +644,28 @@ static int mfd_npm10xx_init(const struct device *dev)
 	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, pmic_int_gpio_config),                   \
 				 (DT_INST_PROP_BY_IDX(n, pmic_int_gpio_config, 0)),                \
 				 (0)) < 3,                                                         \
-		     "PMIC output interrupt pin index out of range");                              \
+		     "pmic-int-gpio-config pin index out of range");                               \
+                                                                                                   \
+	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, longpress_reset_gpio_config),            \
+				 (DT_INST_PROP_BY_IDX(n, longpress_reset_gpio_config, 0)),         \
+				 (0)) < 3,                                                         \
+		     "longpress-reset-gpio-config pin index out of range");                        \
+                                                                                                   \
+	BUILD_ASSERT(DT_INST_ENUM_IDX_OR(n, longpress_reset_source, 0) % 2 ==                      \
+			     DT_INST_NODE_HAS_PROP(n, longpress_reset_gpio_config),                \
+		     "longpress-reset-source 'gpio' and 'both' require a "                         \
+		     "longpress-reset-gpio-config to be provided");                                \
                                                                                                    \
 	static const struct mfd_npm10xx_config mfd_config##n = {                                   \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		.host_int_gpio = GPIO_DT_SPEC_INST_GET_OR(n, host_int_gpios, {0}),                 \
 		.pmic_int_gpio = DT_INST_PROP_OR(n, pmic_int_gpio_config, {UINT8_MAX}),            \
+		.lp_reset_gpio = DT_INST_PROP_OR(n, longpress_reset_gpio_config, {UINT8_MAX}),     \
+		.lp_reset_src = DT_INST_ENUM_IDX(n, longpress_reset_source),                       \
+		.lp_reset_debounce = DT_INST_ENUM_IDX(n, longpress_reset_debounce_s),              \
+		.pwr_cycle_delay = DT_INST_ENUM_IDX_OR(n, pwr_cycle_delay_ms, UINT8_MAX),          \
+		.wakeup_debounce = DT_INST_ENUM_IDX_OR(n, shphld_wakeup_debounce_ms, UINT8_MAX),   \
+		.wakeup_disable = DT_INST_PROP(n, shphld_wakeup_disable),                          \
 	};                                                                                         \
                                                                                                    \
 	static struct mfd_npm10xx_data mfd_data##n;                                                \

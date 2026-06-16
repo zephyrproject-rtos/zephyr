@@ -90,6 +90,7 @@
 				reg = <0>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 224 0>;
 			};
 
@@ -98,6 +99,7 @@
 				reg = <1>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 225 0>;
 			};
 
@@ -106,6 +108,7 @@
 				reg = <2>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 226 0>;
 			};
 
@@ -114,6 +117,7 @@
 				reg = <3>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 227 0>;
 			};
 
@@ -122,6 +126,7 @@
 				reg = <4>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 228 0>;
 			};
 
@@ -130,6 +135,7 @@
 				reg = <5>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 229 0>;
 			};
 
@@ -138,6 +144,7 @@
 				reg = <6>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 230 0>;
 			};
 
@@ -146,6 +153,7 @@
 				reg = <7>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 231 0>;
 			};
 
@@ -154,6 +162,7 @@
 				reg = <8>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 232 0>;
 			};
 
@@ -162,30 +171,34 @@
 				reg = <9>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 233 0>;
 			};
 
-			irqsteer_master10: interrupt-controller@10 {
+			irqsteer_master10: interrupt-controller@a {
 				compatible = "nxp,irqsteer-master";
 				reg = <10>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 234 0>;
 			};
 
-			irqsteer_master11: interrupt-controller@11 {
+			irqsteer_master11: interrupt-controller@b {
 				compatible = "nxp,irqsteer-master";
 				reg = <11>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 235 0>;
 			};
 
-			irqsteer_master12: interrupt-controller@12 {
+			irqsteer_master12: interrupt-controller@c {
 				compatible = "nxp,irqsteer-master";
 				reg = <12>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 236 0>;
 			};
 		};

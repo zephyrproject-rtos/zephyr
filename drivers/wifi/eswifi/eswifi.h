@@ -9,7 +9,6 @@
 
 #include <zephyr/kernel.h>
 #include <stdio.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/drivers/gpio.h>
 
 #include <zephyr/net/wifi_mgmt.h>

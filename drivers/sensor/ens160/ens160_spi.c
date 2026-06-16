@@ -149,7 +149,7 @@ int ens160_spi_init(const struct device *dev)
 	struct ens160_data *data = dev->data;
 
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_DBG("SPI bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->spi.bus);
 		return -ENODEV;
 	}
 

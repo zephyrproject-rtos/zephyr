@@ -18,16 +18,17 @@ Requirements
 Building and Running
 ********************
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/classic/handsfree_ag
+   :board: mimxrt1170_evk@B/mimxrt1176/cm7
+   :goals: build flash
+   :compact:
 
-Running
-*******
-
-The application works as a Hands-Free Audio Gateway. After the Bluetooth Host stack is initialized,
-the GAP discovery procedure will be started automatically. The target device is Hands-Free Unit
-(The major of COD is 0x04 (:c:macro:`BT_COD_MAJOR_AUDIO_VIDEO`), the minor of the COD is 0x02
-(:c:macro:`BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HANDS_FREE`)). When the target device is discovered,
-the AG will connect to the device.
+After flashing, the device works as a Hands-Free Audio Gateway. After the Bluetooth Host
+stack is initialized, the GAP discovery procedure will be started automatically. The target
+device is a Hands-Free Unit (the major of COD is 0x04 (:c:macro:`BT_COD_MAJOR_AUDIO_VIDEO`), the
+minor of the COD is 0x02 (:c:macro:`BT_COD_MAJOR_AUDIO_VIDEO_MINOR_HANDS_FREE`)). When the target
+device is discovered, the AG will connect to the device.
 
 After the ACL connection is established, the AG will initiate the Service Discovery Protocol (SDP)
 to discover the Hands-Free Unit's supported features. Once the HFP connection is established, the
@@ -41,7 +42,7 @@ direction of the call is determined by :kconfig:option:`CONFIG_BT_HFP_AG_CALL_OU
 Once a call is initiated, the AG will establish an SCO (Synchronous Connection-Oriented) link for
 audio transmission.
 
-When the SCO connect is established, the application will initialize the codec and pcm interface
+When the SCO connection is established, the application will initialize the codec and pcm interface
 for voice streaming if the codec and pcm configurations are available.
 
 The HFP application requires the following optional configuration options:
@@ -52,6 +53,8 @@ After the call is active, the AG will start a delay-able worker with the 10 seco
 disconnect the ACL connection directly.
 
 This sample has been tested on :zephyr:board:`mimxrt1170_evk@B/mimxrt1176/cm7 <mimxrt1170_evk>`.
+
+See :zephyr:code-sample-category:`bluetooth` samples for details.
 
 
 .. graphviz::

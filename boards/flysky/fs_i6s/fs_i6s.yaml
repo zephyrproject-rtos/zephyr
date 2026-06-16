@@ -1,0 +1,20 @@
+identifier: fs_i6s
+name: FlySky FS-i6S
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - adc
+  - display
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: flysky

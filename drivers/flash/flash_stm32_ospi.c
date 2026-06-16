@@ -67,6 +67,12 @@ LOG_MODULE_REGISTER(flash_stm32_ospi, CONFIG_FLASH_LOG_LEVEL);
 #define STM32_OSPI_SUBSECTOR_4K_ERASE_MAX_TIME  400U
 #define STM32_OSPI_WRITE_REG_MAX_TIME           40U
 
+/*
+ * Flash active hold timeout. Required when using the Octal SPI interface in
+ * pin multiplexing mode on STM32U5xx devices.
+ */
+#define STM32_OCTOSPIM_TIMEOUT 0x34
+
 /* used as default value for DTS writeoc */
 #define SPI_NOR_WRITEOC_NONE 0xFF
 
@@ -1112,7 +1118,12 @@ static int stm32_ospi_set_memorymap(const struct device *dev)
 	}
 
 	/* Enable the memory-mapping */
+#if defined(CONFIG_SOC_SERIES_STM32U5X) && defined(OCTOSPIM)
+	s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_ENABLE;
+	s_MemMappedCfg.TimeOutPeriod = STM32_OCTOSPIM_TIMEOUT;
+#else
 	s_MemMappedCfg.TimeOutActivation = HAL_OSPI_TIMEOUT_COUNTER_DISABLE;
+#endif /* CONFIG_SOC_SERIES_STM32U5X && OCTOSPIM*/
 
 	ret = HAL_OSPI_MemoryMapped(&dev_data->hospi, &s_MemMappedCfg);
 	if (ret != HAL_OK) {
@@ -1698,6 +1709,15 @@ void HAL_OSPI_StatusMatchCallback(OSPI_HandleTypeDef *hospi)
  */
 void HAL_OSPI_TimeOutCallback(OSPI_HandleTypeDef *hospi)
 {
+#ifdef CONFIG_STM32_MEMMAP
+	/*
+	 * When TO occurs, it only comes from MemoryMapped mode read operation
+	 * if the TimeOutActivation was enabled.
+	 * Then no sync semaphore was set when reading with memcpy().
+	 * If TimeOutActivation is not enabled, then no TO callback happens.
+	 * No need to k_sem_give(&dev_data->sync); nothing to do.
+	 */
+#else /* CONFIG_STM32_MEMMAP*/
 	struct flash_stm32_ospi_data *dev_data =
 		CONTAINER_OF(hospi, struct flash_stm32_ospi_data, hospi);
 
@@ -1706,6 +1726,7 @@ void HAL_OSPI_TimeOutCallback(OSPI_HandleTypeDef *hospi)
 	dev_data->cmd_status = -EIO;
 
 	k_sem_give(&dev_data->sync);
+#endif /* CONFIG_STM32_MEMMAP */
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -2580,9 +2601,7 @@ static int flash_stm32_ospi_init(const struct device *dev)
 		(long)(STM32_OSPI_BASE_ADDRESS),
 		dev_cfg->flash_size);
 #else
-	LOG_DBG("NOR octo-flash at 0x%lx (0x%x bytes)",
-		(long)(STM32_OSPI_BASE_ADDRESS),
-		dev_cfg->flash_size);
+	LOG_DBG("Serial flash is in direct mode, not memory-mapped mode");
 #endif /* CONFIG_STM32_MEMMAP */
 
 	return 0;

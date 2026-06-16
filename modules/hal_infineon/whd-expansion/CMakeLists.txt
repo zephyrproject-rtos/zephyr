@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -288,6 +288,18 @@ if(CONFIG_CYW55513IUBG_SM AND NOT CONFIG_AIROC_WIFI_CUSTOM)
   endif()
   # nvram
   set(NVRAM_IMAGE_NAME ${hal_wifi_dir_resources}/nvram/COMPONENT_55500/COMPONENT_CYW55513IUBG/cyw955513wlipa_rev103.txt)
+endif()
+
+# CYW55513_MURATA_2FY_SM clm, nvram
+if(CONFIG_CYW55513_MURATA_2FY_SM AND NOT CONFIG_AIROC_WIFI_CUSTOM)
+  # clm
+  if(CONFIG_AIROC_WLAN_MFG_FIRMWARE)
+    set(CLM_IMAGE_NAME ${hal_blobs_dir}/clm/COMPONENT_55500/COMPONENT_CYW55513IUBG/55500A1-mfgtest.clm_blob)
+  else()
+    set(CLM_IMAGE_NAME ${hal_blobs_dir}/clm/COMPONENT_55500/COMPONENT_CYW55513IUBG/55500A1.clm_blob)
+  endif()
+  # nvram
+  set(NVRAM_IMAGE_NAME ${hal_wifi_dir_resources}/nvram/COMPONENT_55500/COMPONENT_MURATA-2FY/cyw55500-sdio-mur-2FY.txt)
 endif()
 
 # CYW955573M2IPA1_SM

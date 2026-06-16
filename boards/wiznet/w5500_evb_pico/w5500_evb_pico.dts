@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021 Yonatan Schachter
- * Copyright (c) 2023 Ian Wakely
+ * SPDX-FileCopyrightText: Copyright 2021 Yonatan Schachter
+ * SPDX-FileCopyrightText: Copyright 2023 Ian Wakely
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,19 +85,17 @@
 };
 
 &flash0 {
-	/* 16MB of flash minus the 0x100 used for
-	 * the second stage bootloader
-	 */
-	reg = <0x10000000 DT_SIZE_M(16)>;
-	ranges = <0x0 0x10000000 DT_SIZE_M(16)>;
+	reg = <0x10000000 DT_SIZE_M(2)>;
+	ranges = <0x0 0x10000000 DT_SIZE_M(2)>;
 
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
 			read-only;
@@ -105,11 +103,12 @@
 
 		/*
 		 * Usable flash. Starts at 0x100, after the bootloader. The partition
-		 * size is 16MB minus the 0x100 bytes taken by the bootloader.
+		 * size is 2MB minus the 0x100 bytes taken by the bootloader.
 		 */
 		code_partition: partition@100 {
+			compatible = "zephyr,mapped-partition";
 			label = "code-partition";
-			reg = <0x100 (DT_SIZE_M(16) - 0x100)>;
+			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
 			read-only;
 		};
 	};

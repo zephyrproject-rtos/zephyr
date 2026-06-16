@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32P4
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+
+config SOC_ESP32P4
+	bool
+	select SOC_SERIES_ESP32P4
+
+config SOC_ESP32P4_HPCORE
+	bool
+	select SOC_ESP32P4
+	help
+	  This hidden configuration defines that build is targeted for HP CORE.
+
+config SOC_ESP32P4_LPCORE
+	bool
+	select SOC_ESP32P4
+	help
+	  This hidden configuration defines that build is targeted for LP CORE.
+
+config SOC_SERIES
+	default "esp32p4" if SOC_SERIES_ESP32P4
+
+config SOC
+	default "esp32p4" if SOC_ESP32P4

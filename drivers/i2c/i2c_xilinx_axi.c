@@ -557,10 +557,6 @@ static int i2c_xilinx_axi_transfer(const struct device *dev, struct i2c_msg *msg
 		goto out_unlock;
 	}
 
-	if (!num_msgs) {
-		goto out_unlock;
-	}
-
 	/**
 	 * Reinitializing before each transfer shouldn't technically be needed, but
 	 * seems to improve general reliability. The Linux driver also does this.

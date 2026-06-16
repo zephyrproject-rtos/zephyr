@@ -1,0 +1,7 @@
+shield:
+  name: seeed_xiao_cob_led
+  full_name: COB LED Driver Board for XIAO
+  vendor: seeed
+  supported_features:
+    - led
+    - pwm

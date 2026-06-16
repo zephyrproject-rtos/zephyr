@@ -5,6 +5,7 @@
  */
 
 #include <bflb/bl602.dtsi>
+#include <bflb/bl60x_em_8kb.dtsi>
 #include "ai_wb2_12f-pinctrl.dtsi"
 
 / {
@@ -20,6 +21,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &sec_eng_trng;
+		zephyr,bt-hci = &bt_hci_bflb;
 	};
 
 	aliases {
@@ -68,5 +70,13 @@
 };
 
 &gpio0 {
+	status = "okay";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};
+
+&bt_hci_bflb {
 	status = "okay";
 };

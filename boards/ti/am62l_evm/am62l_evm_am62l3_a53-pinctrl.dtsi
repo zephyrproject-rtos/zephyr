@@ -22,4 +22,24 @@
 	adc0_ext_trigger1: adc0-ext-trigger1-default {
 		pinmux = <K3_PINMUX(0x0f0, PIN_INPUT, MUX_MODE_5)>; /* (M22) ADC_EXT_TRIGGER1 */
 	};
+
+	main_gpio0_3_led: main_gpio0_led_default {
+		pinmux = <K3_PINMUX(0x0238, PIN_OUTPUT, MUX_MODE_7)>; /* (D6) MMC1_SDWP */
+	};
+
+	main_i2c0_scl: i2c0_scl_default {
+		pinmux = <K3_PINMUX(0x01cc, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (B7) I2C0_SCL */
+	};
+
+	main_i2c0_sda: i2c0_sda_default {
+		pinmux = <K3_PINMUX(0x01d0, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (A7) I2C0_SDA */
+	};
+
+	main_i2c1_scl: i2c1_scl_default {
+		pinmux = <K3_PINMUX(0x01d4, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (D7) I2C1_SCL */
+	};
+
+	main_i2c1_sda: i2c1_sda_default {
+		pinmux = <K3_PINMUX(0x01d8, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (A6) I2C1_SDA */
+	};
 };

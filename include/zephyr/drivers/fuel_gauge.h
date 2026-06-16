@@ -14,14 +14,14 @@
  * @brief Main header file for fuel gauge driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_
-#define ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FUEL_GAUGE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FUEL_GAUGE_H_
 
 /**
  * @brief Interfaces for fuel gauges.
  * @defgroup fuel_gauge_interface Fuel Gauge
  * @since 3.3
- * @version 0.8.0
+ * @version 0.9.0
  * @ingroup io_interfaces
  * @{
  */
@@ -45,10 +45,14 @@ enum fuel_gauge_prop_type {
 	 * See driver instance header for details on implementation and
 	 * how the average is calculated. Units in uA negative=discharging
 	 */
-	FUEL_GAUGE_AVG_CURRENT = 0,
+	FUEL_GAUGE_AVG_CURRENT_UA = 0,
+	/** @deprecated Use FUEL_GAUGE_AVG_CURRENT_UA instead. */
+	FUEL_GAUGE_AVG_CURRENT __deprecated = FUEL_GAUGE_AVG_CURRENT_UA,
 
 	/** Battery current (uA); negative=discharging */
-	FUEL_GAUGE_CURRENT,
+	FUEL_GAUGE_CURRENT_UA,
+	/** @deprecated Use FUEL_GAUGE_CURRENT_UA instead. */
+	FUEL_GAUGE_CURRENT __deprecated = FUEL_GAUGE_CURRENT_UA,
 	/** Whether the battery underlying the fuel-gauge is cut off from charge */
 	FUEL_GAUGE_CHARGE_CUTOFF,
 	/** Cycle count in 1/100ths (number of charge/discharge cycles) */
@@ -58,49 +62,77 @@ enum fuel_gauge_prop_type {
 	/** General Error/Runtime Flags */
 	FUEL_GAUGE_FLAGS,
 	/** Full Charge Capacity in uAh (might change in some implementations to determine wear) */
-	FUEL_GAUGE_FULL_CHARGE_CAPACITY,
+	FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
+	/** @deprecated Use FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH instead. */
+	FUEL_GAUGE_FULL_CHARGE_CAPACITY __deprecated = FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
 	/** Is the battery physically present */
 	FUEL_GAUGE_PRESENT_STATE,
 	/** Remaining capacity in uAh */
-	FUEL_GAUGE_REMAINING_CAPACITY,
+	FUEL_GAUGE_REMAINING_CAPACITY_UAH,
+	/** @deprecated Use FUEL_GAUGE_REMAINING_CAPACITY_UAH instead. */
+	FUEL_GAUGE_REMAINING_CAPACITY __deprecated = FUEL_GAUGE_REMAINING_CAPACITY_UAH,
 	/** Remaining battery life time in minutes */
-	FUEL_GAUGE_RUNTIME_TO_EMPTY,
+	FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS,
+	/** @deprecated Use FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS instead. */
+	FUEL_GAUGE_RUNTIME_TO_EMPTY __deprecated = FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS,
 	/** Remaining time in minutes until battery reaches full charge */
-	FUEL_GAUGE_RUNTIME_TO_FULL,
-	/** Retrieve word from SBS1.1 ManufactuerAccess */
+	FUEL_GAUGE_RUNTIME_TO_FULL_MINS,
+	/** @deprecated Use FUEL_GAUGE_RUNTIME_TO_FULL_MINS instead. */
+	FUEL_GAUGE_RUNTIME_TO_FULL __deprecated = FUEL_GAUGE_RUNTIME_TO_FULL_MINS,
+	/** Retrieve word from SBS1.1 ManufacturerAccess */
 	FUEL_GAUGE_SBS_MFR_ACCESS,
 	/** Absolute state of charge (percent, 0-100) - expressed as % of design capacity */
-	FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE,
+	FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT,
+	/** @deprecated Use FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT instead. */
+	FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE __deprecated = FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT,
 	/** Relative state of charge (percent, 0-100) - expressed as % of full charge capacity */
-	FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
+	FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT,
+	/** @deprecated Use FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT instead. */
+	FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE __deprecated = FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT,
 	/** Temperature in 0.1 K */
-	FUEL_GAUGE_TEMPERATURE,
+	FUEL_GAUGE_TEMPERATURE_DK,
+	/** @deprecated Use FUEL_GAUGE_TEMPERATURE_DK instead. */
+	FUEL_GAUGE_TEMPERATURE __deprecated = FUEL_GAUGE_TEMPERATURE_DK,
 	/** Battery voltage (uV) */
-	FUEL_GAUGE_VOLTAGE,
+	FUEL_GAUGE_VOLTAGE_UV,
+	/** @deprecated Use FUEL_GAUGE_VOLTAGE_UV instead. */
+	FUEL_GAUGE_VOLTAGE __deprecated = FUEL_GAUGE_VOLTAGE_UV,
 	/** Battery Mode (flags) */
 	FUEL_GAUGE_SBS_MODE,
 	/** Battery desired Max Charging Current (uA) */
-	FUEL_GAUGE_CHARGE_CURRENT,
+	FUEL_GAUGE_CHARGE_CURRENT_UA,
+	/** @deprecated Use FUEL_GAUGE_CHARGE_CURRENT_UA instead. */
+	FUEL_GAUGE_CHARGE_CURRENT __deprecated = FUEL_GAUGE_CHARGE_CURRENT_UA,
 	/** Battery desired Max Charging Voltage (uV) */
-	FUEL_GAUGE_CHARGE_VOLTAGE,
+	FUEL_GAUGE_CHARGE_VOLTAGE_UV,
+	/** @deprecated Use FUEL_GAUGE_CHARGE_VOLTAGE_UV instead. */
+	FUEL_GAUGE_CHARGE_VOLTAGE __deprecated = FUEL_GAUGE_CHARGE_VOLTAGE_UV,
 	/** Alarm, Status and Error codes (flags) */
 	FUEL_GAUGE_STATUS,
 	/** Design Capacity (mAh or 10mWh) */
 	FUEL_GAUGE_DESIGN_CAPACITY,
 	/** Design Voltage (mV) */
-	FUEL_GAUGE_DESIGN_VOLTAGE,
+	FUEL_GAUGE_DESIGN_VOLTAGE_MV,
+	/** @deprecated Use FUEL_GAUGE_DESIGN_VOLTAGE_MV instead. */
+	FUEL_GAUGE_DESIGN_VOLTAGE __deprecated = FUEL_GAUGE_DESIGN_VOLTAGE_MV,
 	/** AtRate (mA or 10 mW) */
 	FUEL_GAUGE_SBS_ATRATE,
 	/** AtRateTimeToFull (minutes) */
-	FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL,
+	FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS,
+	/** @deprecated Use FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS instead. */
+	FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL __deprecated = FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS,
 	/** AtRateTimeToEmpty (minutes) */
-	FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY,
+	FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS,
+	/** @deprecated Use FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS instead. */
+	FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY __deprecated = FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS,
 	/** AtRateOK (boolean) */
 	FUEL_GAUGE_SBS_ATRATE_OK,
 	/** Remaining Capacity Alarm (mAh or 10mWh) */
 	FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
 	/** Remaining Time Alarm (minutes) */
-	FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+	FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS,
+	/** @deprecated Use FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS instead. */
+	FUEL_GAUGE_SBS_REMAINING_TIME_ALARM __deprecated = FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS,
 	/** Manufacturer of pack (1 byte length + 20 bytes data) */
 	FUEL_GAUGE_MANUFACTURER_NAME,
 	/** Name of pack (1 byte length + 20 bytes data) */
@@ -110,25 +142,45 @@ enum fuel_gauge_prop_type {
 	/** Battery current direction (flags)*/
 	FUEL_GAUGE_CURRENT_DIRECTION,
 	/** Remaining state of charge alarm (percent, 0-100) */
-	FUEL_GAUGE_STATE_OF_CHARGE_ALARM,
-	/** Low Cell Voltage Alarm (uV)*/
-	FUEL_GAUGE_LOW_VOLTAGE_ALARM,
-	/** High Cell Voltage Alarm (uV)*/
-	FUEL_GAUGE_HIGH_VOLTAGE_ALARM,
-	/** Low Cell Current Alarm (uA)*/
-	FUEL_GAUGE_LOW_CURRENT_ALARM,
-	/** High Cell Current Alarm (uA)*/
-	FUEL_GAUGE_HIGH_CURRENT_ALARM,
-	/** Low Cell Temperature Alarm (dK)*/
-	FUEL_GAUGE_LOW_TEMPERATURE_ALARM,
-	/** High Cell Temperature Alarm (dK)*/
-	FUEL_GAUGE_HIGH_TEMPERATURE_ALARM,
-	/** Low GPIO Voltage Alarm (uV)*/
-	FUEL_GAUGE_LOW_GPIO_ALARM,
-	/** High GPIO Voltage Alarm (uV)*/
-	FUEL_GAUGE_HIGH_GPIO_ALARM,
-	/** GPIO Voltage (uV)*/
-	FUEL_GAUGE_GPIO_VOLTAGE,
+	FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+	/** @deprecated Use FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT instead. */
+	FUEL_GAUGE_STATE_OF_CHARGE_ALARM __deprecated = FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT,
+	/** Low Cell Voltage Alarm (uV) */
+	FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV,
+	/** @deprecated Use FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV instead. */
+	FUEL_GAUGE_LOW_VOLTAGE_ALARM __deprecated = FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV,
+	/** High Cell Voltage Alarm (uV) */
+	FUEL_GAUGE_HIGH_VOLTAGE_ALARM_UV,
+	/** @deprecated Use FUEL_GAUGE_HIGH_VOLTAGE_ALARM_UV instead. */
+	FUEL_GAUGE_HIGH_VOLTAGE_ALARM __deprecated = FUEL_GAUGE_HIGH_VOLTAGE_ALARM_UV,
+	/** Low Cell Current Alarm (uA) */
+	FUEL_GAUGE_LOW_CURRENT_ALARM_UA,
+	/** @deprecated Use FUEL_GAUGE_LOW_CURRENT_ALARM_UA instead. */
+	FUEL_GAUGE_LOW_CURRENT_ALARM __deprecated = FUEL_GAUGE_LOW_CURRENT_ALARM_UA,
+	/** High Cell Current Alarm (uA) */
+	FUEL_GAUGE_HIGH_CURRENT_ALARM_UA,
+	/** @deprecated Use FUEL_GAUGE_HIGH_CURRENT_ALARM_UA instead. */
+	FUEL_GAUGE_HIGH_CURRENT_ALARM __deprecated = FUEL_GAUGE_HIGH_CURRENT_ALARM_UA,
+	/** Low Cell Temperature Alarm (dK) */
+	FUEL_GAUGE_LOW_TEMPERATURE_ALARM_DK,
+	/** @deprecated Use FUEL_GAUGE_LOW_TEMPERATURE_ALARM_DK instead. */
+	FUEL_GAUGE_LOW_TEMPERATURE_ALARM __deprecated = FUEL_GAUGE_LOW_TEMPERATURE_ALARM_DK,
+	/** High Cell Temperature Alarm (dK) */
+	FUEL_GAUGE_HIGH_TEMPERATURE_ALARM_DK,
+	/** @deprecated Use FUEL_GAUGE_HIGH_TEMPERATURE_ALARM_DK instead. */
+	FUEL_GAUGE_HIGH_TEMPERATURE_ALARM __deprecated = FUEL_GAUGE_HIGH_TEMPERATURE_ALARM_DK,
+	/** Low GPIO Voltage Alarm (uV) */
+	FUEL_GAUGE_LOW_GPIO_ALARM_UV,
+	/** @deprecated Use FUEL_GAUGE_LOW_GPIO_ALARM_UV instead. */
+	FUEL_GAUGE_LOW_GPIO_ALARM __deprecated = FUEL_GAUGE_LOW_GPIO_ALARM_UV,
+	/** High GPIO Voltage Alarm (uV) */
+	FUEL_GAUGE_HIGH_GPIO_ALARM_UV,
+	/** @deprecated Use FUEL_GAUGE_HIGH_GPIO_ALARM_UV instead. */
+	FUEL_GAUGE_HIGH_GPIO_ALARM __deprecated = FUEL_GAUGE_HIGH_GPIO_ALARM_UV,
+	/** GPIO Voltage (uV) */
+	FUEL_GAUGE_GPIO_VOLTAGE_UV,
+	/** @deprecated Use FUEL_GAUGE_GPIO_VOLTAGE_UV instead. */
+	FUEL_GAUGE_GPIO_VOLTAGE __deprecated = FUEL_GAUGE_GPIO_VOLTAGE_UV,
 	/** ADC Mode (flags) */
 	FUEL_GAUGE_ADC_MODE,
 	/** Coulomb Counter Config (flags)*/
@@ -159,84 +211,214 @@ union fuel_gauge_prop_val {
 	/* type property_field; */
 
 	/* Dynamic Battery Info */
-	/** FUEL_GAUGE_AVG_CURRENT */
-	int avg_current;
+	/**
+	 * FUEL_GAUGE_AVG_CURRENT
+	 * @deprecated Use @ref fuel_gauge_prop_val.avg_current_ua instead
+	 */
+	__deprecated int avg_current;
+	/** FUEL_GAUGE_AVG_CURRENT_UA */
+	int32_t avg_current_ua;
 	/** FUEL_GAUGE_CHARGE_CUTOFF */
 	bool cutoff;
-	/** FUEL_GAUGE_CURRENT */
-	int current;
+	/**
+	 * FUEL_GAUGE_CURRENT
+	 * @deprecated Use @ref fuel_gauge_prop_val.current_ua instead
+	 */
+	__deprecated int current;
+	/** FUEL_GAUGE_CURRENT_UA */
+	int32_t current_ua;
 	/** FUEL_GAUGE_CYCLE_COUNT */
 	uint32_t cycle_count;
 	/** FUEL_GAUGE_CONNECT_STATE */
 	uint32_t connect_state;
 	/** FUEL_GAUGE_FLAGS */
 	uint32_t flags;
-	/** FUEL_GAUGE_FULL_CHARGE_CAPACITY */
-	uint32_t full_charge_capacity;
+	/**
+	 * FUEL_GAUGE_FULL_CHARGE_CAPACITY
+	 * @deprecated Use @ref fuel_gauge_prop_val.full_charge_capacity_uah instead
+	 */
+	__deprecated uint32_t full_charge_capacity;
+	/** FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH */
+	uint32_t full_charge_capacity_uah;
 	/** FUEL_GAUGE_PRESENT_STATE */
 	bool present_state;
-	/** FUEL_GAUGE_REMAINING_CAPACITY */
-	uint32_t remaining_capacity;
-	/** FUEL_GAUGE_RUNTIME_TO_EMPTY */
-	uint32_t runtime_to_empty;
-	/** FUEL_GAUGE_RUNTIME_TO_FULL */
-	uint32_t runtime_to_full;
+	/**
+	 * FUEL_GAUGE_REMAINING_CAPACITY
+	 * @deprecated Use @ref fuel_gauge_prop_val.remaining_capacity_uah instead
+	 */
+	__deprecated uint32_t remaining_capacity;
+	/** FUEL_GAUGE_REMAINING_CAPACITY_UAH */
+	uint32_t remaining_capacity_uah;
+	/**
+	 * FUEL_GAUGE_RUNTIME_TO_EMPTY
+	 * @deprecated Use @ref fuel_gauge_prop_val.runtime_to_empty_mins instead
+	 */
+	__deprecated uint32_t runtime_to_empty;
+	/** FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS */
+	uint32_t runtime_to_empty_mins;
+	/**
+	 * FUEL_GAUGE_RUNTIME_TO_FULL
+	 * @deprecated Use @ref fuel_gauge_prop_val.runtime_to_full_mins instead
+	 */
+	__deprecated uint32_t runtime_to_full;
+	/** FUEL_GAUGE_RUNTIME_TO_FULL_MINS */
+	uint32_t runtime_to_full_mins;
 	/** FUEL_GAUGE_SBS_MFR_ACCESS */
 	uint16_t sbs_mfr_access_word;
-	/** FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE */
-	uint8_t absolute_state_of_charge;
-	/** FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE */
-	uint8_t relative_state_of_charge;
-	/** FUEL_GAUGE_TEMPERATURE */
-	uint16_t temperature;
-	/** FUEL_GAUGE_VOLTAGE */
-	int voltage;
+	/**
+	 * FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE
+	 * @deprecated Use @ref fuel_gauge_prop_val.absolute_state_of_charge_pct instead
+	 */
+	__deprecated uint8_t absolute_state_of_charge;
+	/** FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT */
+	uint8_t absolute_state_of_charge_pct;
+	/**
+	 * FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE
+	 * @deprecated Use @ref fuel_gauge_prop_val.relative_state_of_charge_pct instead
+	 */
+	__deprecated uint8_t relative_state_of_charge;
+	/** FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT */
+	uint8_t relative_state_of_charge_pct;
+	/**
+	 * FUEL_GAUGE_TEMPERATURE
+	 * @deprecated Use @ref fuel_gauge_prop_val.temperature_dk instead
+	 */
+	__deprecated uint16_t temperature;
+	/** FUEL_GAUGE_TEMPERATURE_DK */
+	uint16_t temperature_dk;
+	/**
+	 * FUEL_GAUGE_VOLTAGE
+	 * @deprecated Use @ref fuel_gauge_prop_val.voltage_uv instead
+	 */
+	__deprecated int voltage;
+	/** FUEL_GAUGE_VOLTAGE_UV */
+	int32_t voltage_uv;
 	/** FUEL_GAUGE_SBS_MODE */
 	uint16_t sbs_mode;
-	/** FUEL_GAUGE_CHARGE_CURRENT */
-	uint32_t chg_current;
-	/** FUEL_GAUGE_CHARGE_VOLTAGE */
-	uint32_t chg_voltage;
+	/**
+	 * FUEL_GAUGE_CHARGE_CURRENT
+	 * @deprecated Use @ref fuel_gauge_prop_val.chg_current_ua instead
+	 */
+	__deprecated uint32_t chg_current;
+	/** FUEL_GAUGE_CHARGE_CURRENT_UA */
+	uint32_t chg_current_ua;
+	/**
+	 * FUEL_GAUGE_CHARGE_VOLTAGE
+	 * @deprecated Use @ref fuel_gauge_prop_val.chg_voltage_uv instead
+	 */
+	__deprecated uint32_t chg_voltage;
+	/** FUEL_GAUGE_CHARGE_VOLTAGE_UV */
+	uint32_t chg_voltage_uv;
 	/** FUEL_GAUGE_STATUS */
 	uint16_t fg_status;
 	/** FUEL_GAUGE_DESIGN_CAPACITY */
 	uint16_t design_cap;
-	/** FUEL_GAUGE_DESIGN_VOLTAGE */
-	uint16_t design_volt;
+	/**
+	 * FUEL_GAUGE_DESIGN_VOLTAGE
+	 * @deprecated Use @ref fuel_gauge_prop_val.design_volt_mv instead
+	 */
+	__deprecated uint16_t design_volt;
+	/** FUEL_GAUGE_DESIGN_VOLTAGE_MV */
+	uint16_t design_volt_mv;
 	/** FUEL_GAUGE_SBS_ATRATE */
 	int16_t sbs_at_rate;
-	/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL */
-	uint16_t sbs_at_rate_time_to_full;
-	/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY	*/
-	uint16_t sbs_at_rate_time_to_empty;
+	/**
+	 * FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL
+	 * @deprecated Use @ref fuel_gauge_prop_val.sbs_at_rate_time_to_full_mins instead
+	 */
+	__deprecated uint16_t sbs_at_rate_time_to_full;
+	/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS */
+	uint16_t sbs_at_rate_time_to_full_mins;
+	/**
+	 * FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY
+	 * @deprecated Use @ref fuel_gauge_prop_val.sbs_at_rate_time_to_empty_mins instead
+	 */
+	__deprecated uint16_t sbs_at_rate_time_to_empty;
+	/** FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS */
+	uint16_t sbs_at_rate_time_to_empty_mins;
 	/** FUEL_GAUGE_SBS_ATRATE_OK */
 	bool sbs_at_rate_ok;
 	/** FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM */
 	uint16_t sbs_remaining_capacity_alarm;
-	/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM */
-	uint16_t sbs_remaining_time_alarm;
+	/**
+	 * FUEL_GAUGE_SBS_REMAINING_TIME_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.sbs_remaining_time_alarm_mins instead
+	 */
+	__deprecated uint16_t sbs_remaining_time_alarm;
+	/** FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS */
+	uint16_t sbs_remaining_time_alarm_mins;
 	/** FUEL_GAUGE_CURRENT_DIRECTION */
 	uint16_t current_direction;
-	/** FUEL_GAUGE_STATE_OF_CHARGE_ALARM */
-	uint8_t state_of_charge_alarm;
-	/** FUEL_GAUGE_LOW_VOLTAGE_ALARM */
-	uint32_t low_voltage_alarm;
-	/** FUEL_GAUGE_HIGH_VOLTAGE_ALARM */
-	uint32_t high_voltage_alarm;
-	/** FUEL_GAUGE_LOW_CURRENT_ALARM */
-	int32_t low_current_alarm;
-	/** FUEL_GAUGE_HIGH_CURRENT_ALARM */
-	int32_t high_current_alarm;
-	/** FUEL_GAUGE_LOW_TEMPERATURE_ALARM */
-	uint16_t low_temperature_alarm;
-	/** FUEL_GAUGE_HIGH_TEMPERATURE_ALARM */
-	uint16_t high_temperature_alarm;
-	/** FUEL_GAUGE_GPIO_VOLTAGE*/
-	int32_t gpio_voltage;
-	/** FUEL_GAUGE_LOW_GPIO_ALARM */
-	int32_t low_gpio_alarm;
-	/** FUEL_GAUGE_HIGH_GPIO_ALARM */
-	int32_t high_gpio_alarm;
+	/**
+	 * FUEL_GAUGE_STATE_OF_CHARGE_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.state_of_charge_alarm_pct instead
+	 */
+	__deprecated uint8_t state_of_charge_alarm;
+	/** FUEL_GAUGE_STATE_OF_CHARGE_ALARM_PCT */
+	uint8_t state_of_charge_alarm_pct;
+	/**
+	 * FUEL_GAUGE_LOW_VOLTAGE_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.low_voltage_alarm_uv instead
+	 */
+	__deprecated uint32_t low_voltage_alarm;
+	/** FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV */
+	uint32_t low_voltage_alarm_uv;
+	/**
+	 * FUEL_GAUGE_HIGH_VOLTAGE_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.high_voltage_alarm_uv instead
+	 */
+	__deprecated uint32_t high_voltage_alarm;
+	/** FUEL_GAUGE_HIGH_VOLTAGE_ALARM_UV */
+	uint32_t high_voltage_alarm_uv;
+	/**
+	 * FUEL_GAUGE_LOW_CURRENT_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.low_current_alarm_ua instead
+	 */
+	__deprecated int32_t low_current_alarm;
+	/** FUEL_GAUGE_LOW_CURRENT_ALARM_UA */
+	int32_t low_current_alarm_ua;
+	/**
+	 * FUEL_GAUGE_HIGH_CURRENT_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.high_current_alarm_ua instead
+	 */
+	__deprecated int32_t high_current_alarm;
+	/** FUEL_GAUGE_HIGH_CURRENT_ALARM_UA */
+	int32_t high_current_alarm_ua;
+	/**
+	 * FUEL_GAUGE_LOW_TEMPERATURE_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.low_temperature_alarm_dk instead
+	 */
+	__deprecated uint16_t low_temperature_alarm;
+	/** FUEL_GAUGE_LOW_TEMPERATURE_ALARM_DK */
+	uint16_t low_temperature_alarm_dk;
+	/**
+	 * FUEL_GAUGE_HIGH_TEMPERATURE_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.high_temperature_alarm_dk instead
+	 */
+	__deprecated uint16_t high_temperature_alarm;
+	/** FUEL_GAUGE_HIGH_TEMPERATURE_ALARM_DK */
+	uint16_t high_temperature_alarm_dk;
+	/**
+	 * FUEL_GAUGE_GPIO_VOLTAGE
+	 * @deprecated Use @ref fuel_gauge_prop_val.gpio_voltage_uv instead
+	 */
+	__deprecated int32_t gpio_voltage;
+	/** FUEL_GAUGE_GPIO_VOLTAGE_UV*/
+	int32_t gpio_voltage_uv;
+	/**
+	 * FUEL_GAUGE_LOW_GPIO_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.low_gpio_alarm_uv instead
+	 */
+	__deprecated int32_t low_gpio_alarm;
+	/** FUEL_GAUGE_LOW_GPIO_ALARM_UV */
+	int32_t low_gpio_alarm_uv;
+	/**
+	 * FUEL_GAUGE_HIGH_GPIO_ALARM
+	 * @deprecated Use @ref fuel_gauge_prop_val.high_gpio_alarm_uv instead
+	 */
+	__deprecated int32_t high_gpio_alarm;
+	/** FUEL_GAUGE_HIGH_GPIO_ALARM_UV */
+	int32_t high_gpio_alarm_uv;
 	/** FUEL_GAUGE_ADC_MODE */
 	uint8_t adc_mode;
 	/** FUEL_GAUGE_CC_CONFIG */
@@ -270,7 +452,12 @@ struct sbs_gauge_device_chemistry {
 } __packed;
 
 /**
- * @typedef fuel_gauge_get_property_t
+ * @def_driverbackendgroup{Fuel Gauge,fuel_gauge_interface}
+ * @ingroup fuel_gauge_interface
+ * @{
+ */
+
+/**
  * @brief Callback API for getting a fuel_gauge property.
  *
  * See fuel_gauge_get_property() for argument description
@@ -279,7 +466,6 @@ typedef int (*fuel_gauge_get_property_t)(const struct device *dev, fuel_gauge_pr
 					 union fuel_gauge_prop_val *val);
 
 /**
- * @typedef fuel_gauge_set_property_t
  * @brief Callback API for setting a fuel_gauge property.
  *
  * See fuel_gauge_set_property() for argument description
@@ -288,7 +474,6 @@ typedef int (*fuel_gauge_set_property_t)(const struct device *dev, fuel_gauge_pr
 					 union fuel_gauge_prop_val val);
 
 /**
- * @typedef fuel_gauge_get_buffer_property_t
  * @brief Callback API for getting a fuel_gauge buffer property.
  *
  * See fuel_gauge_get_buffer_property() for argument description
@@ -298,7 +483,6 @@ typedef int (*fuel_gauge_get_buffer_property_t)(const struct device *dev,
 						size_t dst_len);
 
 /**
- * @typedef fuel_gauge_battery_cutoff_t
  * @brief Callback API for doing a battery cutoff.
  *
  * See fuel_gauge_battery_cutoff() for argument description
@@ -307,18 +491,27 @@ typedef int (*fuel_gauge_battery_cutoff_t)(const struct device *dev);
 
 /* Caching is entirely on the onus of the client */
 
+/**
+ * @driver_ops{Fuel Gauge}
+ */
 __subsystem struct fuel_gauge_driver_api {
-	/**
+	/*
 	 * Note: Historically this API allowed drivers to implement a custom multi-get/set property
 	 * function, this was added so drivers could potentially optimize batch read with their
 	 * specific chip. However, it was removed because of no existing concrete case upstream.
 	 * If this need is demonstrated, we can add this back in as an API field.
 	 */
+	/** @driver_ops_optional @copybrief fuel_gauge_get_prop */
 	fuel_gauge_get_property_t get_property;
+	/** @driver_ops_optional @copybrief fuel_gauge_set_prop */
 	fuel_gauge_set_property_t set_property;
+	/** @driver_ops_optional @copybrief fuel_gauge_get_buffer_prop */
 	fuel_gauge_get_buffer_property_t get_buffer_property;
+	/** @driver_ops_optional @copybrief fuel_gauge_battery_cutoff */
 	fuel_gauge_battery_cutoff_t battery_cutoff;
 };
+
+/** @} */
 
 /**
  * @brief Fetch a battery fuel-gauge property
@@ -411,7 +604,7 @@ static inline int z_impl_fuel_gauge_set_prop(const struct device *dev, fuel_gaug
  * the fuel gauge device. The vals array is not permuted.
  * @param len number of properties in props array
  *
- * @return return=0 if successful. Otherwise, return array index of failing property.
+ * @return 0 if successful, negative errno code of first failing property.
  */
 __syscall int fuel_gauge_set_props(const struct device *dev, const fuel_gauge_prop_t *props,
 				   const union fuel_gauge_prop_val *vals, size_t len);
@@ -489,4 +682,4 @@ static inline int z_impl_fuel_gauge_battery_cutoff(const struct device *dev)
 
 #include <zephyr/syscalls/fuel_gauge.h>
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_BATTERY_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FUEL_GAUGE_H_ */

@@ -253,6 +253,42 @@ enum sensor_channel {
 };
 
 /**
+ * @brief checks if a given channel is a 3-axis channel
+ *
+ * @param[in] chan The channel to check
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_GYRO_XYZ, or
+ *         @ref SENSOR_CHAN_MAGN_XYZ, or @ref SENSOR_CHAN_POS_DXYZ
+ * @retval false otherwise
+ */
+#define SENSOR_CHANNEL_3_AXIS(chan)                                                                \
+	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_GYRO_XYZ ||                      \
+	 (chan) == SENSOR_CHAN_MAGN_XYZ || (chan) == SENSOR_CHAN_POS_DXYZ)
+
+/**
+ * @brief checks if a given channel is an Accelerometer
+ *
+ * @param[in] chan The channel to check
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_ACCEL_X, or
+ *         @ref SENSOR_CHAN_ACCEL_Y, or @ref SENSOR_CHAN_ACCEL_Z
+ * @retval false otherwise
+ */
+#define SENSOR_CHANNEL_IS_ACCEL(chan)                                          \
+	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_ACCEL_X ||   \
+	 (chan) == SENSOR_CHAN_ACCEL_Y || (chan) == SENSOR_CHAN_ACCEL_Z)
+
+/**
+ * @brief checks if a given channel is a Gyroscope
+ *
+ * @param[in] chan The channel to check
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_GYRO_XYZ, @ref SENSOR_CHAN_GYRO_X, or
+ *         @ref SENSOR_CHAN_GYRO_Y, or @ref SENSOR_CHAN_GYRO_Z
+ * @retval false otherwise
+ */
+#define SENSOR_CHANNEL_IS_GYRO(chan)                                           \
+	((chan) == SENSOR_CHAN_GYRO_XYZ || (chan) == SENSOR_CHAN_GYRO_X ||     \
+	 (chan) == SENSOR_CHAN_GYRO_Y || (chan) == SENSOR_CHAN_GYRO_Z)
+
+/**
  * @brief Sensor trigger types.
  */
 enum sensor_trigger_type {
@@ -413,7 +449,6 @@ enum sensor_attribute {
 };
 
 /**
- * @typedef sensor_trigger_handler_t
  * @brief Callback API upon firing of a trigger
  *
  * @param dev Pointer to the sensor device
@@ -999,42 +1034,6 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
 };
 
 /**
- * @brief checks if a given channel is a 3-axis channel
- *
- * @param[in] chan The channel to check
- * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_GYRO_XYZ, or
- *         @ref SENSOR_CHAN_MAGN_XYZ, or @ref SENSOR_CHAN_POS_DXYZ
- * @retval false otherwise
- */
-#define SENSOR_CHANNEL_3_AXIS(chan)                                                                \
-	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_GYRO_XYZ ||                      \
-	 (chan) == SENSOR_CHAN_MAGN_XYZ || (chan) == SENSOR_CHAN_POS_DXYZ)
-
-/**
- * @brief checks if a given channel is an Accelerometer
- *
- * @param[in] chan The channel to check
- * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_ACCEL_X, or
- *         @ref SENSOR_CHAN_ACCEL_Y, or @ref SENSOR_CHAN_ACCEL_Z
- * @retval false otherwise
- */
-#define SENSOR_CHANNEL_IS_ACCEL(chan)                                          \
-	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_ACCEL_X ||   \
-	 (chan) == SENSOR_CHAN_ACCEL_Y || (chan) == SENSOR_CHAN_ACCEL_Z)
-
-/**
- * @brief checks if a given channel is a Gyroscope
- *
- * @param[in] chan The channel to check
- * @retval true if @p chan is any of @ref SENSOR_CHAN_GYRO_XYZ, @ref SENSOR_CHAN_GYRO_X, or
- *         @ref SENSOR_CHAN_GYRO_Y, or @ref SENSOR_CHAN_GYRO_Z
- * @retval false otherwise
- */
-#define SENSOR_CHANNEL_IS_GYRO(chan)                                           \
-	((chan) == SENSOR_CHAN_GYRO_XYZ || (chan) == SENSOR_CHAN_GYRO_X ||     \
-	 (chan) == SENSOR_CHAN_GYRO_Y || (chan) == SENSOR_CHAN_GYRO_Z)
-
-/**
  * @brief Get the sensor's decoder API
  *
  * @param[in] dev The sensor device
@@ -1200,7 +1199,6 @@ static inline int sensor_read_async_mempool(const struct rtio_iodev *iodev, stru
 }
 
 /**
- * @typedef sensor_processing_callback_t
  * @brief Callback function used with the helper processing function.
  *
  * @see sensor_processing_with_callback

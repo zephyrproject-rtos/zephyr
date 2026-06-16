@@ -65,22 +65,6 @@ enum {
 	BT_HCI_QUIRK_NO_AUTO_DLE = BIT(1),
 };
 
-/** Possible values for the 'bus' member of the bt_hci_driver struct */
-enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
-	BT_HCI_BUS_VIRTUAL       = 0,
-	BT_HCI_BUS_USB           = 1,
-	BT_HCI_BUS_PCCARD        = 2,
-	BT_HCI_BUS_UART          = 3,
-	BT_HCI_BUS_RS232         = 4,
-	BT_HCI_BUS_PCI           = 5,
-	BT_HCI_BUS_SDIO          = 6,
-	BT_HCI_BUS_SPI           = 7,
-	BT_HCI_BUS_I2C           = 8,
-	BT_HCI_BUS_SMD           = 9,
-	BT_HCI_BUS_VIRTIO        = 10,
-	BT_HCI_BUS_IPC           = 11,
-};
-
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
 	UTIL_CAT(BT_HCI_QUIRK_, DT_STRING_UPPER_TOKEN_BY_IDX(node_id, prop, idx))
 #define BT_DT_HCI_QUIRKS_GET(node_id) COND_CODE_1(DT_NODE_HAS_PROP(node_id, bt_hci_quirks), \
@@ -101,6 +85,39 @@ enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
 #define BT_DT_HCI_BUS_INST_GET(inst) BT_DT_HCI_BUS_GET(DT_DRV_INST(inst))
 
 /**
+ * @brief Common Bluetooth HCI driver configuration.
+ *
+ * This structure is common to all Bluetooth HCI drivers and must be the first member
+ * in the object pointed to by the config field in the device
+ * structure.
+ */
+struct bt_hci_driver_config {
+	/** Quirks for this HCI device instance */
+	uint32_t quirks;
+};
+
+/**
+ * @brief Static initializer for @p bt_hci_driver_config struct
+ *
+ * @param node_id Devicetree node identifier
+ */
+#define BT_DT_HCI_DRIVER_CONFIG_GET(node_id)                                                    \
+	{                                                                                       \
+		.quirks = (uint32_t)BT_DT_HCI_QUIRKS_GET(node_id),                                \
+	}
+
+/**
+ * @brief Static initializer for @p bt_hci_driver_config struct from
+ * DT_DRV_COMPAT instance.
+ *
+ * @param inst DT_DRV_COMPAT instance number
+ * @see BT_DT_HCI_DRIVER_CONFIG_GET()
+ */
+
+#define BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst)                                                  \
+	BT_DT_HCI_DRIVER_CONFIG_GET(DT_DRV_INST(inst))
+
+/**
  * @def_driverbackendgroup{Bluetooth HCI,bt_hci_api}
  * @{
  */
@@ -113,10 +130,21 @@ enum __deprecated bt_hci_bus { /* Use macro BT_DT_HCI_BUS_GET() instead */
 typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
 
 /**
+ * @brief Common Bluetooth HCI driver data.
+ *
+ * This structure is common to all Bluetooth HCI drivers and must be the first member
+ * in the driver's data struct.
+ */
+struct bt_hci_driver_data {
+	/** Callback for the driver to deliver data received from the controller to the host. */
+	bt_hci_recv_t recv;
+};
+
+/**
  * @brief Callback API to open the HCI transport.
  * See bt_hci_open() for argument description
  */
-typedef int (*bt_hci_api_open_t)(const struct device *dev, bt_hci_recv_t recv);
+typedef int (*bt_hci_api_open_t)(const struct device *dev);
 
 /**
  * @brief Callback API to close the HCI transport.
@@ -166,6 +194,55 @@ __subsystem struct bt_hci_driver_api {
  */
 
 /**
+ * @brief Deliver an HCI packet from the driver.
+ *
+ * This function is called by the HCI driver to deliver data received from the
+ * controller to the host. The buffer contains the raw HCI packet, including the
+ * packet type prefix encoded in the H:4 format.
+ *
+ * If the function returns 0 (success) the reference to @c buf was moved to the
+ * higher layer (e.g. host stack). On error, the caller (HCI driver) still owns
+ * the reference and is responsible for eventually calling @ref net_buf_unref
+ * on it.
+ *
+ * @param dev  HCI device
+ * @param buf  Buffer containing data received from the controller.
+ *
+ * @return 0 on success or negative POSIX error number on failure.
+ * @retval -ENOTCONN The HCI transport is not open.
+ */
+static inline int bt_hci_recv_err(const struct device *dev, struct net_buf *buf)
+{
+	struct bt_hci_driver_data *data = dev->data;
+
+	if (data->recv == NULL) {
+		net_buf_unref(buf);
+		return -ENOTCONN;
+	}
+
+	return data->recv(dev, buf);
+}
+
+/**
+ * @brief Deliver an HCI packet from the driver.
+ *
+ * This function is the same as @ref bt_hci_recv_err except that it will internally handle
+ * error situations and always consume the buffer reference.
+ *
+ * @param dev  HCI device
+ * @param buf  Buffer containing data received from the controller.
+ */
+static inline void bt_hci_recv(const struct device *dev, struct net_buf *buf)
+{
+	int err;
+
+	err = bt_hci_recv_err(dev, buf);
+	if (err != 0) {
+		net_buf_unref(buf);
+	}
+}
+
+/**
  * @brief Open the HCI transport.
  *
  * Opens the HCI transport for operation. This function must not
@@ -175,13 +252,29 @@ __subsystem struct bt_hci_driver_api {
  * @param dev  HCI device
  * @param recv This is callback through which the HCI driver provides the
  *             host with data from the controller. The callback is expected
- *             to be called from thread context.
+ *             to be called from thread context, and it may be called already
+ *             before bt_hci_open() returns.
  *
  * @return 0 on success or negative POSIX error number on failure.
+ * @retval -EALREADY The HCI transport is already open.
  */
 static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
 {
-	return DEVICE_API_GET(bt_hci, dev)->open(dev, recv);
+	struct bt_hci_driver_data *data = dev->data;
+	int err;
+
+	if (data->recv != NULL) {
+		return -EALREADY;
+	}
+
+	data->recv = recv;
+
+	err = DEVICE_API_GET(bt_hci, dev)->open(dev);
+	if (err != 0) {
+		data->recv = NULL;
+	}
+
+	return err;
 }
 
 /**
@@ -197,12 +290,19 @@ static inline int bt_hci_open(const struct device *dev, bt_hci_recv_t recv)
 static inline int bt_hci_close(const struct device *dev)
 {
 	const struct bt_hci_driver_api *api = DEVICE_API_GET(bt_hci, dev);
+	struct bt_hci_driver_data *data = dev->data;
+	int err = 0;
 
 	if (api->close == NULL) {
 		return -ENOSYS;
 	}
 
-	return api->close(dev);
+	err = api->close(dev);
+	if (err == 0) {
+		data->recv = NULL;
+	}
+
+	return err;
 }
 
 /**

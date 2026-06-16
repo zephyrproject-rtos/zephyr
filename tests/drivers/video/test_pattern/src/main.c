@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -84,6 +84,15 @@ static inline CIELAB xrgb32_to_lab(const uint32_t *color_p)
 	return rgb888_to_lab(r, g, b);
 }
 
+static inline CIELAB bgrx32_to_lab(const uint32_t *color_p)
+{
+	uint8_t b = ((const uint8_t *)color_p)[0];
+	uint8_t g = ((const uint8_t *)color_p)[1];
+	uint8_t r = ((const uint8_t *)color_p)[2];
+
+	return rgb888_to_lab(r, g, b);
+}
+
 static inline CIELAB rgb565_to_lab(const uint16_t *color_p)
 {
 	uint32_t color = sys_le16_to_cpu(*color_p);
@@ -132,21 +141,35 @@ static inline bool is_colorbar_ok(const uint8_t *const buf, const struct video_f
 
 	for (int h = 0; h < fmt->height; h++) {
 		for (i = 0; i < BARS_NUM; i++) {
-			if (fmt->pixelformat == VIDEO_PIX_FMT_XRGB32) {
-				uint32_t *pixel =
-					(uint32_t *)&buf[4 * (h * fmt->width + bw / 2 + i * bw)];
+			switch (fmt->pixelformat) {
+			case VIDEO_PIX_FMT_XRGB32: {
+				uint32_t *pixel
+					= (uint32_t *)&buf[4 * (h * fmt->width + bw / 2 + i * bw)];
 
 				for (int j = -PIXELS_NUM / 2; j <= PIXELS_NUM / 2; j++) {
 					sum_lab(&colorbars[i], xrgb32_to_lab(pixel + j));
 				}
-			} else if (fmt->pixelformat == VIDEO_PIX_FMT_RGB565) {
-				uint16_t *pixel =
-					(uint16_t *)&buf[2 * (h * fmt->width + bw / 2 + i * bw)];
+				break;
+			}
+			case VIDEO_PIX_FMT_BGRX32: {
+				uint32_t *pixel
+					= (uint32_t *)&buf[4 * (h * fmt->width + bw / 2 + i * bw)];
+
+				for (int j = -PIXELS_NUM / 2; j <= PIXELS_NUM / 2; j++) {
+					sum_lab(&colorbars[i], bgrx32_to_lab(pixel + j));
+				}
+				break;
+			}
+			case VIDEO_PIX_FMT_RGB565: {
+				uint16_t *pixel
+					= (uint16_t *)&buf[2 * (h * fmt->width + bw / 2 + i * bw)];
 
 				for (int j = -PIXELS_NUM / 2; j <= PIXELS_NUM / 2; j++) {
 					sum_lab(&colorbars[i], rgb565_to_lab(pixel + j));
 				}
-			} else {
+				break;
+			}
+			default:
 				printk("Format %d is not supported", fmt->pixelformat);
 				return false;
 			}

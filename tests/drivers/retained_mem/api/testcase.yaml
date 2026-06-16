@@ -13,6 +13,7 @@ tests:
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
       - qemu_cortex_m3
+      - gd32f450i_eval
       - nrf5340dk/nrf5340/cpuapp
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpurad

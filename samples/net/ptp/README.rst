@@ -30,7 +30,8 @@ A good way to run this sample is to run this PTP application inside
 :zephyr:board:`native_sim` board as described in
 :ref:`networking_with_native_sim` or with
 embedded device like :zephyr:board:`nucleo_h563zi`, :zephyr:board:`nucleo_h743zi`,
-:zephyr:board:`nucleo_h745zi_q` or :zephyr:board:`nucleo_f767zi`.
+:zephyr:board:`nucleo_h745zi_q`, :zephyr:board:`nucleo_f767zi` or
+:zephyr:board:`frdm_mcxn947`.
 
 Note that PTP is only supported for
 boards that have an Ethernet port and which has support for collecting
@@ -62,6 +63,7 @@ Example of ``net ptp`` output as a grandmaster:
     PTP Instance:
     Clock ID      : 02:00:00:FF:FE:00:00:01
     Clock Type    : ORDINARY
+    Protocol      : UDP/IPv4
     Domain        : 0
     Priorities    : 128 / 128
     Time source   : INTERNAL_OSCILLATOR (0xa0)
@@ -97,6 +99,7 @@ Example of ``net ptp 1`` output as a grandmaster:
     Configuration:
     state                : GRAND_MASTER
     enabled              : yes
+    protocol             : UDP/IPv4
     time transmitter only: no
     announce log itv     : 1
     announce timeout     : 5
@@ -121,6 +124,7 @@ Example of ``net ptp`` output as a time receiver:
       PTP Instance:
       Clock ID      : 02:00:00:FF:FE:00:00:01
       Clock Type    : ORDINARY
+      Protocol      : UDP/IPv4
       Domain        : 0
       Priorities    : 128 / 128
       Time source   : INTERNAL_OSCILLATOR (0xa0)
@@ -157,6 +161,7 @@ Example of ``net ptp 1`` output as a time receiver:
     Configuration:
     state                : TIME_RECEIVER
     enabled              : yes
+    protocol             : UDP/IPv4
     time transmitter only: no
     announce log itv     : 1
     announce timeout     : 5
@@ -212,7 +217,7 @@ Use Linux Host with an Embedded Device
 --------------------------------------
 
 Create a configuration file for ptp4l, for example
-:file:`p2p.cfg`, with contents like this:
+:file:`e2e.cfg`, with contents like this:
 
 .. code-block:: ini
 
@@ -239,7 +244,32 @@ Create a configuration file for ptp4l, for example
     tx_timestamp_timeout   20
     summary_interval       1
 
-and start it like this:
+Start this E2E configuration like this:
+
+.. code-block:: console
+
+    sudo ./ptp4l -i zeth -f /path/to/config/e2e.cfg -m
+
+For a Zephyr build using :kconfig:option:`CONFIG_PTP_DELAY_MECHANISM_P2P`,
+create a separate configuration file such as :file:`p2p.cfg` and use ``P2P``
+on the Linux host as well:
+
+.. code-block:: ini
+
+    [global]
+    delay_mechanism         P2P
+    time_stamping           hardware
+    network_transport       UDPv4
+    domainNumber            0
+    logSyncInterval         -3
+    logMinPdelayReqInterval -3
+    tx_timestamp_timeout    20
+    summary_interval        1
+
+Zephyr currently supports two-step P2P delay measurement. One-step
+``Pdelay_Resp`` packets are rejected and logged.
+
+Start the P2P configuration like this:
 
 .. code-block:: console
 
@@ -308,8 +338,27 @@ Expected startup output includes:
 ``Runs forever`` is expected because ``CONFIG_NET_SAMPLE_RUN_DURATION=0`` in
 the sample configuration.
 
+To automatically attach a terminal to the Zephyr shell UART PTY, start the
+executable with ``-attach_uart`` instead:
+
+.. code-block:: console
+
+    build/zephyr/zephyr.exe -attach_uart
+
+The attach command is selected by
+:kconfig:option:`CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD` and may be any
+shell command with a single ``%s`` placeholder for the PTY path. For example, to
+open ``screen`` in ``gnome-terminal``, set:
+
+.. code-block:: cfg
+
+    CONFIG_UART_NATIVE_PTY_AUTOATTACH_DEFAULT_CMD="gnome-terminal -- screen %s"
+
 Step 5 - Attach to Zephyr shell
 -------------------------------
+
+If the executable was started without ``-attach_uart``, attach manually using
+the ``/dev/pts/<N>`` path printed at startup.
 
 If ``screen`` is installed:
 
@@ -336,3 +385,11 @@ Step 6 - Check PTP state in Zephyr shell
 On ``native_sim``, seeing both host and Zephyr transmit Announce/Sync traffic
 is normal. Depending on BMCA data, Zephyr can remain ``GRAND_MASTER`` even when
 ``best foreign`` is present.
+
+The sample also enables the ``ptp_clock`` shell, which can be useful when
+checking the hardware PTP clock independently from the protocol state machine.
+Use commands such as ``ptp_clock get <device>`` to read the PHC time,
+``ptp_clock set <device> <seconds>`` or ``ptp_clock adj <device> <seconds>`` to
+change it, ``ptp_clock freq <device> <ppb>`` to apply a frequency adjustment,
+and ``ptp_clock selftest <device> <time> <freq> <delay> <adj>`` for a quick
+driver-level sanity check.

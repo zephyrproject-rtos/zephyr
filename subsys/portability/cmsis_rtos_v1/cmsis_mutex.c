@@ -8,8 +8,8 @@
 #include <cmsis_os.h>
 #include <string.h>
 
-K_MEM_SLAB_DEFINE(cmsis_mutex_slab, sizeof(struct k_mutex),
-		CONFIG_CMSIS_MUTEX_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE_TYPE(cmsis_mutex_slab, struct k_mutex,
+		       CONFIG_CMSIS_MUTEX_MAX_COUNT);
 
 /**
  * @brief Create and Initialize a Mutex object.

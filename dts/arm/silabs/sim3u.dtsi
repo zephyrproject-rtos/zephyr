@@ -87,12 +87,15 @@
 		flash: flash-controller@4002e000 {
 			compatible = "silabs,si32-flash-controller";
 			reg = <0x4002e000 0x1000>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <2>;
 			};
 		};

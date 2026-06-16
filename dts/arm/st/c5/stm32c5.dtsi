@@ -153,6 +153,29 @@
 			status = "disabled";
 		};
 
+		mac: ethernet@40028000 {
+			compatible = "st,stm32-ethernet";
+			reg = <0x40028000 0x1400>;
+			clock-names = "mac-clk-int", "stm-eth", "mac-clk-tx", "mac-clk-rx",
+				      "eth1clk-sel", "eth1clkdiv-sel", "eth1refclk-sel";
+			clocks = <&rcc STM32_CLOCK(AHB1, 18)>,
+				 <&rcc STM32_CLOCK(AHB1, 19)>,
+				 <&rcc STM32_CLOCK(AHB1, 20)>,
+				 <&rcc STM32_CLOCK(AHB1, 21)>,
+				 <&rcc STM32_SRC_HSE ETH1CLK_SEL(3)>,
+				 <&rcc STM32_SRC_HSE ETH1CLKDIV_SEL(0)>,
+				 <&rcc STM32_SRC_HSE ETH1REFCLK_SEL(0)>;
+			interrupts = <94 0>;
+			status = "disabled";
+
+			mdio: mdio {
+				compatible = "st,stm32-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		exti: interrupt-controller@44022000 {
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
 			interrupt-controller;
@@ -181,10 +204,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <16>;
 				erase-block-size = <8192>;
 				/* maximum erase time(ms) for a 8K sector */
@@ -240,6 +265,19 @@
 			status = "disabled";
 		};
 
+		i3c1: i3c@40005c00 {
+			compatible = "st,stm32-i3c";
+			reg = <0x40005c00 0x400>;
+			interrupts = <46 0>, <47 0>;
+			interrupt-names = "event", "error";
+			#address-cells = <3>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
+			resets = <&rctl STM32_RESET(APB1L, 23)>;
+			zephyr,pm-device-runtime-auto;
+			status = "disabled";
+		};
+
 		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
@@ -255,7 +293,6 @@
 			interrupts = <23 0>, <24 0>, <25 0>, <26 0>;
 			dma-channels = <4>;
 			dma-requests = <94>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
@@ -267,7 +304,6 @@
 			interrupts = <78 0>, <79 0>, <80 0>, <81 0>;
 			dma-channels = <4>;
 			dma-requests = <94>;
-			dma-offset = <0>;
 			status = "disabled";
 		};
 
@@ -364,6 +400,33 @@
 			clocks = <&rcc STM32_CLOCK(APB3, 21)>;
 			prescaler = <32768>;
 			alarms-count = <2>;
+			alrm-exti-line = <17>;
+			status = "disabled";
+		};
+
+		i2s1: i2s@40013000 {
+			compatible = "st,stm32h7-i2s", "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			interrupts = <48 0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			dmas = <&lpdma1 0 5 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+			       <&lpdma1 1 4 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
+		i2s2: i2s@40003800 {
+			compatible = "st,stm32h7-i2s", "st,stm32-i2s";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			interrupts = <49 0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			dmas = <&lpdma1 0 7 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>,
+			       <&lpdma1 1 6 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
+			dma-names = "tx", "rx";
 			status = "disabled";
 		};
 

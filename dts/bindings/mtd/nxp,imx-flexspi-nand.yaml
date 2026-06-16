@@ -1,0 +1,9 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ONFI-compatible NAND device connected to an NXP FlexSPI controller.
+
+compatible: "nxp,imx-flexspi-nand"
+
+include: ["nxp,imx-flexspi-device.yaml", soc-nv-flash.yaml]

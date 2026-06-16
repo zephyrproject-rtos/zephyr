@@ -282,7 +282,7 @@ static int process_stream(struct config *cfg, struct stream_ctx *stream)
 
 	if (stream->received < stream->expecting) {
 		/* More data still expected for this round. */
-		LOG_DBG("%s QUIC: stream fd=%d expecting %zd more data, missing %zd",
+		LOG_DBG("%s QUIC: stream fd=%d expecting %u more data, missing %d",
 			cfg->proto, stream->fd, stream->expecting,
 			stream->expecting - stream->received);
 		goto out;
@@ -568,7 +568,7 @@ skip_ipv6:
 	}
 
 	ret = setup_quic(net_sad(&remote_addr), net_sad(&local_addr),
-			 QUIC_STREAM_CLIENT,
+			 QUIC_STREAM_BIDIRECTIONAL,
 			 sec_tag_list, sizeof(sec_tag_list),
 			 (const char **)alpn_list, sizeof(alpn_list));
 	if (ret < 0) {

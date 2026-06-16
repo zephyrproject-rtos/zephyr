@@ -527,10 +527,7 @@ static void avrcp_disconnected(struct bt_avctp *session)
 	memset(&ct->ct_notify, 0, sizeof(ct->ct_notify));
 	memset(&tg->tg_notify, 0, sizeof(tg->tg_notify));
 
-	if (avrcp->acl_conn != NULL) {
-		bt_conn_unref(avrcp->acl_conn);
-		avrcp->acl_conn = NULL;
-	}
+	bt_conn_drop(&avrcp->acl_conn);
 }
 
 static struct net_buf *avrcp_create_unit_pdu(struct bt_avrcp *avrcp, uint8_t ctype_or_rsp)
@@ -734,8 +731,7 @@ static int init_fragmentation_context(struct bt_avrcp_ct *ct, uint8_t tid, uint8
 	/* Clean up any existing reassembly buffer */
 	if (ct->reassembly_buf != NULL) {
 		LOG_WRN("Interleaving fragments not allowed (tid=%u, rsp=%u)", tid, rsp);
-		net_buf_unref(ct->reassembly_buf);
-		ct->reassembly_buf = NULL;
+		net_buf_drop(&ct->reassembly_buf);
 	}
 
 	/* Allocate reassembly buffer */
@@ -790,8 +786,7 @@ static void cleanup_fragmentation_context(struct bt_avrcp_ct *ct)
 	}
 
 	if (ct->reassembly_buf != NULL) {
-		net_buf_unref(ct->reassembly_buf);
-		ct->reassembly_buf = NULL;
+		net_buf_drop(&ct->reassembly_buf);
 	}
 }
 
@@ -2975,14 +2970,6 @@ void bt_avrcp_init(void)
 		return;
 	}
 
-#if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
-	err = bt_avrcp_tg_cover_art_init(&bt_avrcp_tg_cover_art_psm);
-	if (err < 0) {
-		LOG_ERR("AVRCP Cover Art initialization failed (err %d)", err);
-		return;
-	}
-#endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
-
 	LOG_DBG("AVRCP Initialized successfully.");
 
 	initialized = true;
@@ -3868,6 +3855,14 @@ int bt_avrcp_tg_register_cb(const struct bt_avrcp_tg_cb *cb)
 	}
 
 	avrcp_tg_cb = cb;
+
+#if defined(CONFIG_BT_AVRCP_TG_COVER_ART)
+	err = bt_avrcp_tg_cover_art_init(&bt_avrcp_tg_cover_art_psm);
+	if (err < 0) {
+		LOG_ERR("AVRCP Cover Art initialization failed (err %d)", err);
+		goto failed;
+	}
+#endif /* CONFIG_BT_AVRCP_TG_COVER_ART */
 
 #if defined(CONFIG_BT_AVRCP_TARGET)
 	/* Register SDP record when TG callback is registered */

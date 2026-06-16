@@ -11,6 +11,7 @@
 #include <bus_protocols/whd_spi.h>
 #include <whd_wifi_api.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log.h>
 
 LOG_MODULE_DECLARE(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
 

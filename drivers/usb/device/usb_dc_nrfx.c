@@ -178,12 +178,8 @@ struct usbd_event {
  * be derived from the theoretical number of backlog events possible depending
  * on the number of endpoints configured.
  */
-#define FIFO_ELEM_SZ            sizeof(struct usbd_event)
-#define FIFO_ELEM_ALIGN         sizeof(unsigned int)
-
-K_MEM_SLAB_DEFINE(fifo_elem_slab, FIFO_ELEM_SZ,
-		  CONFIG_USB_NRFX_EVT_QUEUE_SIZE, FIFO_ELEM_ALIGN);
-
+K_MEM_SLAB_DEFINE_TYPE(fifo_elem_slab, struct usbd_event,
+		       CONFIG_USB_NRFX_EVT_QUEUE_SIZE);
 
 /** Number of IN Endpoints configured (including control) */
 #define CFG_EPIN_CNT (DT_INST_PROP(0, num_in_endpoints) +	\

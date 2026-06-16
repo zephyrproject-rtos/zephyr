@@ -1,5 +1,4 @@
 common:
-  build_only: true
   tags:
     - bluetooth
   platform_allow:
@@ -9,12 +8,22 @@ common:
 
 tests:
   bluetooth.host.adv.extended.advertiser:
+    build_only: true
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_advertiser_conf
     extra_args:
       CONF_FILE=prj_advertiser.conf
   bluetooth.host.adv.extended.scanner:
+    build_only: true
     harness_config:
       bsim_exe_name: tests_bsim_bluetooth_host_adv_extended_prj_scanner_conf
     extra_args:
       CONF_FILE=prj_scanner.conf
+  bluetooth.host.adv.extended.test:
+    harness_config:
+      fixture:
+        - bsim_multi_test
+    build: false
+    required_applications:
+      - application: bluetooth.host.adv.extended.advertiser
+      - application: bluetooth.host.adv.extended.scanner

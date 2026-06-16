@@ -21,12 +21,18 @@ Requirements
 Building and Running
 ********************
 
-Open ST Bluetooth LE Sensor app and click on "CONNECT TO A DEVICE" button to scan Bluetooth LE devices.
-To connect click on the device shown in the Device List.
-After connected, tap LED image on Android to test LED service.
-Push SW0 button on embedded device to test button service.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
 
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/st_ble_sensor
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+Open the `ST Bluetooth LE Sensor Android app`_ and tap "CONNECT TO A DEVICE" to scan for
+Bluetooth LE devices. Tap the device in the list to connect. Once connected, tap the LED
+image in the app to test the LED service, or push the SW0 button on the board to test the
+button notification service.
 
 .. _ST Bluetooth LE Sensor Android app:
     https://play.google.com/store/apps/details?id=com.st.bluems

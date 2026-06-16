@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_INFINEON_HPPASS_CSG
+	bool "Infineon HPPASS CSG (Comparator Slope Generator) MFD driver"
+	default y
+	depends on DT_HAS_INFINEON_HPPASS_CSG_ENABLED
+	depends on MFD_INFINEON_HPPASS
+	help
+	  Enable the Infineon HPPASS CSG MFD driver.  The CSG block contains
+	  five identical slices, each pairing a 10-bit, 30 Msps DAC with a
+	  high-speed comparator.  This MFD owns the combined comparator
+	  interrupt and dispatches it to per-slice comparator child devices,
+	  and applies per-slice CMP_CFG / DAC_CFG configuration from devicetree
+	  at init time.
+
+config MFD_INFINEON_HPPASS_CSG_INIT_PRIORITY
+	int "Infineon HPPASS CSG MFD init priority"
+	default 45
+	depends on MFD_INFINEON_HPPASS_CSG
+	help
+	  Initialization priority for the HPPASS CSG MFD driver.  Must be
+	  higher (later) than CONFIG_MFD_INFINEON_HPPASS_INIT_PRIORITY so the
+	  HPPASS parent is ready when this driver runs, and lower (earlier)
+	  than the per-slice comparator and DAC child driver init priorities
+	  so the slice CMP_CFG / DAC_CFG registers are programmed before any
+	  child attempts to use them.

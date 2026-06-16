@@ -319,10 +319,13 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		status = DMA_STATUS_COMPLETE;
 	} else {
-		LOG_ERR("Transfer Error.");
-		stream->busy = false;
-		dma_stm32_dump_stream_irq(dev, id);
-		dma_stm32_clear_stream_irq(dev, id);
+		/* Let HAL DMA handle flags on its own */
+		if (!stream->hal_override) {
+			LOG_ERR("Transfer Error.");
+			stream->busy = false;
+			dma_stm32_dump_stream_irq(dev, id);
+			dma_stm32_clear_stream_irq(dev, id);
+		}
 		status = -EIO;
 	}
 
@@ -723,21 +726,41 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	const struct dma_stm32_stream *stream = &config->streams[id];
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
 
-	/* Suspend the channel and wait for suspend Flag set */
+	/* Request channel suspension */
 	LL_DMA_SuspendChannel(STM32_DMA_GET_CHANNEL(dma, id));
-	/* It's not enough to wait for the SUSPF bit with LL_DMA_IsActiveFlag_SUSP */
-	do {
-		k_busy_wait(800); /* A delay is needed (800us is valid) */
-	} while (LL_DMA_IsActiveFlag_SUSP(STM32_DMA_GET_CHANNEL(dma, id)) != 1 &&
-			stream->busy == true);
 
-	/* Do not Reset the channel to allow resuming later */
+	/*
+	 * Wait until the channel becomes effectively suspended (SUSPF).
+	 * Also handle the case where the channel was/has become idle:
+	 * the suspension request has no effect on idle channels and
+	 * SUSPF will never be set in such cases.
+	 *
+	 * Note that this function is isr-ok so we MUST NOT rely on
+	 * metadata updated by the ISR (such as stream->busy); only
+	 * the hardware status flags are trustworthy here.
+	 */
+	do {
+		/*
+		 * It's not enough to wait for the SUSPF bit with
+		 * LL_DMA_IsActiveFlag_SUSP - a delay is needed.
+		 */
+		k_busy_wait(800);
+	} while (!LL_DMA_IsActiveFlag_SUSP(STM32_DMA_GET_CHANNEL(dma, id))
+		 && !LL_DMA_IsActiveFlag_IDLE(STM32_DMA_GET_CHANNEL(dma, id)));
+
+	/*
+	 * Don't bother clearing the suspension request if the channel was idle
+	 * (and has thus NOT been suspended) as only dma_resume() and dma_stop()
+	 * are allowed to be called by the DMA API on "suspended" channels, and
+	 * both of these functions will clear the suspension request.
+	 *
+	 * Obviously, also don't reset the channel to allow resuming it later.
+	 */
 	return 0;
 }
 

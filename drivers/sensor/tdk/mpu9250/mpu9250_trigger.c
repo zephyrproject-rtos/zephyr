@@ -126,7 +126,7 @@ int mpu9250_init_interrupt(const struct device *dev)
 
 	/* setup data ready gpio interrupt */
 	if (!gpio_is_ready_dt(&cfg->int_pin)) {
-		LOG_ERR("Interrupt pin is not ready.");
+		LOG_ERR_DEVICE_NOT_READY(cfg->int_pin.port);
 		return -EIO;
 	}
 

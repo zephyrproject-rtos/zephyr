@@ -49,6 +49,12 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #define ADC_SACLKDIV(div)   FIELD_PREP(ADC_SACLKDIV_MASK, div)
 #endif
 
+#if CONFIG_ADC_IT8XXX2_READING_TIMEOUT_MS == 0
+#define IT8XXX2_ADC_READING_TIMEOUT K_FOREVER
+#else
+#define IT8XXX2_ADC_READING_TIMEOUT K_MSEC(CONFIG_ADC_IT8XXX2_READING_TIMEOUT_MS)
+#endif /* CONFIG_ADC_IT8XXX2_READING_TIMEOUT_MS */
+
 /* List of ADC channels. */
 enum chip_adc_channel {
 	CHIP_ADC_CH0 = 0,
@@ -255,7 +261,11 @@ static void adc_enable_measurement(uint32_t ch)
 		/* Enable adc interrupt */
 		irq_enable(DT_INST_IRQN(0));
 		/* Wait for an interrupt to read valid data. */
-		k_sem_take(&data->sem, K_FOREVER);
+		if (k_sem_take(&data->sem, IT8XXX2_ADC_READING_TIMEOUT)) {
+			irq_disable(DT_INST_IRQN(0));
+
+			adc_it8xxx2_get_sample(dev);
+		}
 	}
 }
 

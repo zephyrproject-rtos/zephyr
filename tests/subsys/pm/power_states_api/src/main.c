@@ -38,8 +38,6 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
-
-	irq_unlock(0);
 }
 
 ZTEST(power_states_1cpu, test_power_states)

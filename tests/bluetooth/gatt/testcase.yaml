@@ -13,7 +13,7 @@ tests:
       - bluetooth
       - gatt
   bluetooth.gatt.psa:
-    filter: CONFIG_PSA_CRYPTO_CLIENT
+    filter: CONFIG_PSA_CRYPTO
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="test.overlay"
     platform_allow:
@@ -37,6 +37,22 @@ tests:
       - native_sim/native/64
       - qemu_x86
       - qemu_cortex_m3
+    integration_platforms:
+      - native_sim
+    tags:
+      - bluetooth
+      - gatt
+  bluetooth.gatt.psa_memory_leak:
+    filter: CONFIG_BT_GATT_CACHING and CONFIG_MBEDTLS_PSA_CRYPTO_C
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+      - EXTRA_CONF_FILE="prj_psa_memory_leak.conf"
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - qemu_cortex_m3
+      - nrf52840dk/nrf52840
     integration_platforms:
       - native_sim
     tags:

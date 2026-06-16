@@ -173,7 +173,7 @@ int tsl2540_trigger_init(const struct device *dev)
 
 	/* Get the GPIO device */
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("%s: gpio controller %s not ready", dev->name, config->int_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

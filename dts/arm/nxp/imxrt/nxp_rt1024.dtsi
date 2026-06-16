@@ -61,6 +61,9 @@
 			reg = <0x0 DT_SIZE_M(4)>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
 };
@@ -75,6 +78,8 @@
 		/delete-node/ gpio@4200c000;
 		/* RT1024 has only one flexSPI controller */
 		/delete-node/ spi@402a4000;
+		/* RT1024 do not have flexcan3 */
+		/delete-node/ can@401d8000;
 	};
 };
 

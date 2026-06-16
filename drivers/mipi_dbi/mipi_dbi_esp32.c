@@ -390,6 +390,8 @@ static int mipi_dbi_esp32_init(const struct device *dev)
 		}
 	}
 
+	lcd_ll_enable_bus_clock(LCD_BUS_ID, true);
+	lcd_ll_reset_register(LCD_BUS_ID);
 	lcd_hal_init(hal, LCD_BUS_ID);
 	lcd_ll_enable_clock(hal->dev, true);
 

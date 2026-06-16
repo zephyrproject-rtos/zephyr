@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_STM32_DFSDM
+	bool "STM32 DFSDM DMIC driver"
+	default y
+	depends on DT_HAS_ST_STM32_DFSDM_ENABLED && DT_HAS_ST_STM32_DFSDM_DMIC_ENABLED
+	select USE_STM32_HAL_DFSDM
+	select RESET
+	select PINCTRL
+	help
+	  Enable support for STM32 DMIC driver.
+
+if AUDIO_DMIC_STM32_DFSDM
+
+config DMIC_STM32_DFSDM_QUEUE_SIZE
+	int "DMIC message queue size"
+	default 8
+	help
+	  Number of pending audio buffer messages that can be queued.  Higher
+	  values mean more buffering and audio data, but more RAM footprint.
+	  Lower values mean less memory footprint and latency, but possibly
+	  more overruns.
+
+config DMIC_STM32_DFSDM_MAX_SAMPLES
+	int "Maximum number of samples per DMIC block"
+	default 1024
+	help
+	  This defines the size of the static internal DMA buffer used for continuous
+	  audio transfers. The driver allocates two of these blocks (Ping/Pong) per
+	  active filter. Larger values allow for larger k_mem_slab block sizes but
+	  consume more RAM.
+
+endif #AUDIO_DMIC_STM32_DFSDM

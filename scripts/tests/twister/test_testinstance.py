@@ -71,23 +71,25 @@ def test_check_build_or_run(
             fixtures=fixture,
             filter="",
             sim_name=platform_sim
-        )
+        ),
+        hwm=mock.Mock(duts=[])
     )
-    run = testinstance.check_runnable(env.options)
+    run = testinstance.check_runnable(env.options, env.hwm)
     _, r = expected
     assert run == r
 
-    with mock.patch('os.name', 'nt'):
-        # path to QEMU binary is not in QEMU_BIN_PATH environment variable
-        run = testinstance.check_runnable(env.options)
+    # existing QEMU_BIN_PATH
+    with mock.patch('os.environ', {'QEMU_BIN_PATH': '/tmp'}), \
+         mock.patch('os.path.exists', return_value=True):
+        run = testinstance.check_runnable(env.options, env.hwm)
+        _, r = expected
+        assert run == r
+
+    # non-existing QEMU_BIN_PATH
+    with mock.patch('os.environ', {'QEMU_BIN_PATH': '/invalid'}), \
+         mock.patch('os.path.exists', return_value=False):
+        run = testinstance.check_runnable(env.options, env.hwm)
         assert not run
-
-        # mock path to QEMU binary in QEMU_BIN_PATH environment variable
-        with mock.patch('os.environ', {'QEMU_BIN_PATH': ''}):
-            run = testinstance.check_runnable(env.options)
-            _, r = expected
-            assert run == r
-
 
 TESTDATA_PART_2 = [
     (True, True, True, ["demo_board_2/unit_testing"], "native",
@@ -168,14 +170,17 @@ TESTDATA_PART_3 = [
     (
         '(dt_compat_enabled("st,stm32-flash-controller") or' \
         ' dt_compat_enabled("st,stm32h7-flash-controller")) and' \
-        ' dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")',
+        ' (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") or' \
+        '  dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))',
         ['dts']
     ),
     (
         '((CONFIG_FLASH_HAS_DRIVER_ENABLED and not CONFIG_TRUSTED_EXECUTION_NONSECURE) and' \
-        ' dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")) or' \
+        ' (dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions") or' \
+        '  dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition"))) or' \
         ' (CONFIG_FLASH_HAS_DRIVER_ENABLED and CONFIG_TRUSTED_EXECUTION_NONSECURE and' \
-        ' dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions"))',
+        '  (dt_label_with_parent_compat_enabled("slot1_ns_partition", "fixed-partitions") or' \
+        '   dt_label_compat_enabled("slot1_ns_partition", "zephyr,mapped-partition")))',
         ['dts', 'kconfig']
     ),
     (
@@ -415,39 +420,6 @@ def test_testinstance_get_case_or_create(caplog, testinstance):
     assert 'Could not find a matching testcase for test_a.check_1.3a' in caplog.text
 
 
-TESTDATA_3 = [
-    (None, 'nonexistent harness', False),
-    ('nonexistent fixture', 'console', False),
-    (None, 'console', True),
-    ('dummy fixture', 'console', True),
-]
-
-@pytest.mark.parametrize(
-    'fixture, harness, expected_can_run',
-    TESTDATA_3,
-    ids=['improper harness', 'fixture not in list', 'no fixture specified', 'fixture in list']
-)
-def test_testinstance_testsuite_runnable(
-    all_testsuites_dict,
-    class_testplan,
-    fixture,
-    harness,
-    expected_can_run
-):
-    testsuite_path = 'scripts/tests/twister/test_data/testsuites/samples/test_app/sample_test.app'
-    class_testplan.testsuites = all_testsuites_dict
-    testsuite = class_testplan.testsuites.get(testsuite_path)
-
-    testsuite.harness = harness
-    testsuite.harness_config['fixture'] = fixture
-
-    fixtures = ['dummy fixture']
-
-    can_run = TestInstance.testsuite_runnable(testsuite, fixtures)\
-
-    assert can_run == expected_can_run
-
-
 TESTDATA_4 = [
     (True, mock.ANY, mock.ANY, mock.ANY, None, [], False),
     (False, True, mock.ANY, mock.ANY, 'device', [], True),
@@ -517,7 +489,9 @@ TESTDATA_5 = [
      mock.ANY, 'not runnable', mock.ANY, None, False),
     ('linux', 'qemu', mock.ANY, mock.ANY,
      False, mock.ANY, 'console',
-     mock.ANY, 'not runnable', ['?'], mock.Mock(duts=[mock.Mock(platform='demo_board_2', fixtures=[])]), True),
+     mock.ANY, 'not runnable', ['?'],
+     mock.Mock(duts=[mock.Mock(platform='demo_board_2/unit_testing',
+                               serial='dummy_serial', fixtures=[])]), True),
 ]
 
 @pytest.mark.parametrize(
@@ -555,11 +529,12 @@ def test_testinstance_check_runnable(
             fixtures=fixtures,
             filter=filter,
             sim_name=platform_sim
-        )
+        ),
+        hwm=hardware_map or mock.Mock(duts=[])
     )
     with mock.patch('os.name', os_name), \
          mock.patch('shutil.which', return_value=exec_exists):
-        res = testinstance.check_runnable(env.options, hardware_map)
+        res = testinstance.check_runnable(env.options, env.hwm)
 
     assert res == expected
 

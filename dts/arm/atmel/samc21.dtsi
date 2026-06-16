@@ -65,7 +65,7 @@
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
-			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
+			bosch,mram-cfg = <0x0 28 8 6 0 0 1 1>;
 			divider = <1>;
 		};
 
@@ -80,7 +80,7 @@
 			atmel,assigned-clock-names = "GCLK";
 			status = "disabled";
 
-			bosch,mram-cfg = <0x0 28 8 3 3 0 1 1>;
+			bosch,mram-cfg = <0x0 28 8 6 0 0 1 1>;
 			divider = <1>;
 		};
 

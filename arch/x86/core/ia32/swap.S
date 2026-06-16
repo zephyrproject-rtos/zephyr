@@ -36,7 +36,7 @@
 #if !defined(CONFIG_X86_KPTI) && defined(CONFIG_X86_USERSPACE)
 	GTEXT(z_x86_swap_update_page_tables)
 #endif
-	GDATA(_k_neg_eagain)
+	GDATA(_errno_neg_eagain)
 
 /*
  * Given that arch_swap() is called to effect a cooperative context switch,
@@ -102,7 +102,7 @@ SECTION_FUNC(PINNED_TEXT, arch_swap)
 	 * arch_thread_return_value_set().
 	 */
 
-	pushl   _k_neg_eagain
+	pushl   _errno_neg_eagain
 
 
 	/* save esp into k_thread structure */

@@ -244,6 +244,7 @@
 				 <&iomuxc_gpio_ad_20_gpio_mux3_io19>;
 			drive-strength = "high";
 			slew-rate = "fast";
+			input-enable;
 		};
 	};
 
@@ -256,6 +257,7 @@
 				 <&iomuxc_gpio_emc_b1_39_gpio_mux2_io07>;
 			drive-strength = "high";
 			slew-rate = "fast";
+			input-enable;
 		};
 	};
 
@@ -270,6 +272,7 @@
 				 <&iomuxc_gpio_emc_b2_18_gpio_mux2_io28>;
 			drive-strength = "high";
 			slew-rate = "fast";
+			input-enable;
 		};
 	};
 
@@ -281,6 +284,7 @@
 				 <&iomuxc_lpsr_gpio_lpsr_11_lpspi6_sdo>;
 			drive-strength = "high";
 			slew-rate = "fast";
+			input-enable;
 		};
 	};
 

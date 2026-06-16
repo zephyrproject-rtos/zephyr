@@ -14,7 +14,6 @@
 .gitignore
 .mailmap
 .github/workflows/codecov.yaml
-.github/workflows/issue_count.yml
 .github/workflows/stats_merged_prs.yml
 .github/workflows/assigner.yml
 .github/workflows/daily_test_version.yml
@@ -22,7 +21,6 @@
 .github/workflows/stale_issue.yml
 .github/workflows/stale-workflow-queue-cleanup.yml
 .github/workflows/greet_first_time_contributor.yml
-.github/workflows/issues-report-config.json
 .github/workflows/backport_issue_check.yml
 MAINTAINERS.yml
 CODEOWNERS
@@ -33,7 +31,10 @@ doc/*
 .github/*
 *.rst
 *.jpg
+*.jpeg
 *.png
+*.webp
+*.gif
 *.md
 # if we change this file or associated script, it should not trigger a full
 # twister.
@@ -51,7 +52,6 @@ scripts/checkpatch/*
 scripts/checkpatch.pl
 scripts/ci/pylintrc
 scripts/footprint/*
-scripts/make_bugs_pickle.py
 scripts/ci/set_assignees.py
 scripts/gitlint/zephyr_commit_rules.py
 scripts/west_commands/runners/canopen_program.py

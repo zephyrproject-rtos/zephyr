@@ -39,6 +39,7 @@
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
 			clock-frequency = <DT_FREQ_M(240)>;
 			xtal-freq = <DT_FREQ_M(40)>;
+			d-cache-line-size = <4>;
 		};
 
 		power-states {
@@ -169,12 +170,15 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <4>;
-				/* Flash size is specified in SOC/SIP dtsi */
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* reg and ranges are specified in SOC/SIP dtsi */
 			};
 		};
 

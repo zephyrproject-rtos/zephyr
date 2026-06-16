@@ -46,6 +46,9 @@ LOG_MODULE_REGISTER(flash_bflb, CONFIG_FLASH_LOG_LEVEL);
 #elif defined(CONFIG_SOC_SERIES_BL61X)
 #define BFLB_XIP_BASE BL616_FLASH_XIP_BASE
 #define BFLB_XIP_END  BL616_FLASH_XIP_END
+#elif defined(CONFIG_SOC_SERIES_BL808)
+#define BFLB_XIP_BASE BL808_FLASH_XIP_BASE
+#define BFLB_XIP_END  BL808_FLASH_XIP_END
 #endif
 
 #define BFLB_FLASH_CONTROLLER_BUSY_TIMEOUT_MS	200
@@ -319,11 +322,11 @@ static void flash_bflb_l1c_wrap(bool enable)
 }
 
 
-#elif defined(CONFIG_SOC_SERIES_BL61X)
+#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
 
 static void flash_bflb_l1c_wrap(bool enable)
 {
-	/* Do nothing on Bl61x: no L1C */
+	/* Do nothing on BL61x/BL808: no L1C */
 	ARG_UNUSED(enable);
 }
 

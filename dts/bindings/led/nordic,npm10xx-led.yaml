@@ -1,0 +1,103 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nordic nPM10 Series PMIC's LED driver
+
+description: |
+  Nordic's nPM10 Series PMICs feature an LED driver whose outputs are multiplexed with GPIOs.
+  GPIO number to use for each LED child node is specified by its "index" property, therefore it is
+  required. Using GPIO interface on a GPIO configured as LED will lead to undefined behaviour and
+  must be avoided.
+
+  Every LED can be controlled either by the host SoC or automatically. When an automatic mode is
+  used, the SW is allowed to control only the brightness of this LED (except for the "error" mode).
+
+  HW limitation: the on/off delays passed to the API function `led_blink` are shared between all
+  LED instances, i.e. blinking different LEDs with different delays is not supported.
+
+compatible: nordic,npm10xx-led
+
+properties:
+  pwm-freq-hz:
+    type: int
+    default: 977
+    enum:
+      - 122
+      - 244
+      - 488
+      - 977
+    description: PWM frequency in Hz.
+
+  phase-shift-enable:
+    type: boolean
+    description: |
+      Enable phase shifting to minimize peak load currents. Useful when multiple LEDs are used at
+      once, for example in RGB setting.
+
+  blink-mode:
+    type: string
+    default: forever
+    enum:
+      - single
+      - double
+      - forever
+    description: Perform a single or a double blink, or blink forever on blink tasks.
+
+include: led-controller.yaml
+
+child-binding:
+  properties:
+    index:
+      required: true
+      enum:
+        - 0
+        - 1
+        - 2
+
+    led-mode:
+      type: string
+      default: host
+      enum:
+        - host
+        - charge
+        - error
+        - vbus-good
+      description: |
+        LED operation mode. Available options are as follows:
+          host: LED is controlled through LED device driver APIs, on/off, blink, brightness.
+          charge: LED indicates charging. Brightness control available.
+          error: LED indicates charging errors. No controls available.
+          vbus-good: LED indicates VBUS GOOD status. Brightness control available.
+
+    drive-current-ma:
+      type: int
+      default: 5
+      enum:
+        - 5
+        - 10
+      description: LED drive strength in mA.
+
+examples:
+  - |
+    npm1012: pmic@6a {
+      /* ... */
+
+      leds {
+        compatible = "nordic,npm10xx-led";
+        pwm-freq-hz = <488>;
+
+        charge_indicator: led0 {
+          index = <1>;
+          label = "Charge indication LED on GPIO1";
+          led-mode = "charge";
+        };
+
+        user_led: led1 {
+          index = <0>;
+          label = "Red LED on GPIO0";
+          drive-current-ma = <10>;
+        };
+      };
+
+      /* ... */
+    };

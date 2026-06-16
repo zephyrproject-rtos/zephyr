@@ -1,0 +1,6 @@
+shield:
+  name: nxp_mx9_dsi_oled
+  full_name: NXP MX9-DSI-OLED
+  vendor: nxp
+  supported_features:
+    - display

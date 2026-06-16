@@ -235,7 +235,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return ret;
 }
 
-static enum ethernet_hw_caps eth_vlan_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_vlan_capabilities(const struct device *dev __unused,
+						   struct net_if *iface __unused)
 {
 	return ETHERNET_HW_VLAN;
 }
@@ -300,7 +301,8 @@ static int eth_tx_embed_ll_hdr(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_vlan_embed_ll_hdr_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_vlan_embed_ll_hdr_capabilities(const struct device *dev __unused,
+								struct net_if *iface __unused)
 {
 	return ETHERNET_HW_VLAN;
 }
@@ -907,7 +909,7 @@ static void comm_sendto_recvfrom(int client_sock,
 
 	sent = zsock_sendto(client_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
 			    0, server_addr, server_addrlen);
-	zassert_equal(sent, strlen(TEST_STR_SMALL), "sendto failed (%d vs %d)",
+	zassert_equal(sent, strlen(TEST_STR_SMALL), "sendto failed (%zd vs %zu)",
 		      sent, strlen(TEST_STR_SMALL));
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
@@ -989,7 +991,7 @@ ZTEST(net_vlan, test_zz_vlan_embed_ll_hdr)
 	int ret;
 	int client_sock;
 	struct net_sockaddr_in6 client_addr;
-	struct net_sockaddr_in6 dest_addr;
+	struct net_sockaddr_in6 dest_addr = { 0 };
 	struct net_if_addr *ifaddr;
 	ssize_t sent = 0;
 	struct net_ifreq ifreq = { 0 };
@@ -1040,11 +1042,13 @@ ZTEST(net_vlan, test_zz_vlan_embed_ll_hdr)
 	ret = add_neighbor(iface, &peer_vlan_addr);
 	zassert_true(ret, "Cannot add neighbor");
 
+	dest_addr.sin6_family = NET_AF_INET6;
+	dest_addr.sin6_port = net_htons(SERVER_PORT);
 	net_ipaddr_copy(&dest_addr.sin6_addr, &peer_vlan_addr);
 
 	sent = zsock_sendto(client_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
 			    0, (struct net_sockaddr *)&dest_addr, sizeof(dest_addr));
-	zassert_equal(sent, strlen(TEST_STR_SMALL), "send (%d) failed %d/%s",
+	zassert_equal(sent, strlen(TEST_STR_SMALL), "send (%zd) failed %d/%s",
 		      sent, -errno, strerror(errno));
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {

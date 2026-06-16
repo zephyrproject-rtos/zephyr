@@ -8,6 +8,11 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/led.h>
 
+#ifdef CONFIG_LED_FAKE
+#include <zephyr/drivers/led/led_fake.h>
+DEFINE_FFF_GLOBALS;
+#endif /* CONFIG_LED_FAKE */
+
 #define BRIGHTNESS_MAX	100
 #define TEST_MAX_COLORS	8
 #define COLOR_FULL	0xff

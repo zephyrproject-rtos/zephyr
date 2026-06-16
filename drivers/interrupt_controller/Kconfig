@@ -64,6 +64,7 @@ module-str = intc
 source "subsys/logging/Kconfig.template.log_config"
 
 # zephyr-keep-sorted-start
+source "drivers/interrupt_controller/Kconfig.acp"
 source "drivers/interrupt_controller/Kconfig.cavs"
 source "drivers/interrupt_controller/Kconfig.clic"
 source "drivers/interrupt_controller/Kconfig.dw"

@@ -74,7 +74,7 @@ int tle9104_diagnostics_init(const struct device *dev)
 	const struct tle9104_diagnostics_config *config = dev->config;
 
 	if (!device_is_ready(config->parent)) {
-		LOG_ERR("%s: parent device is not ready", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(config->parent);
 		return -ENODEV;
 	}
 

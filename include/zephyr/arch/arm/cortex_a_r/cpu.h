@@ -21,6 +21,7 @@
 #define MODE_FIQ	0x11
 #define MODE_IRQ	0x12
 #define MODE_SVC	0x13
+#define MODE_MON	0x16 /**< Monitor mode */
 #define MODE_ABT	0x17
 #define MODE_HYP	0x1a
 #define MODE_UND	0x1b
@@ -91,18 +92,30 @@
 #define ICC_SRE_ELx_DIB_BIT	BIT(2)
 #define ICC_SRE_ELx_EN_BIT	BIT(3) /**< ICC SRE Enable */
 
-/* MPIDR mask to extract Aff0, Aff1, and Aff2 */
-#define MPIDR_AFFLVL_MASK (0xffffff)
+/** @brief Monitor ICC System Register Enable Register (ICC_MSRE)
+ * initialisation value.
+ *
+ * AArch32 equivalent of ICC_SRE_EL3; shares the same bitfields. Enables the
+ * GICv3 system register interface and disables FIQ/IRQ bypass.
+ */
+#define ICC_MSRE_INIT		(ICC_SRE_ELx_SRE_BIT | ICC_SRE_ELx_DFB_BIT | \
+				 ICC_SRE_ELx_DIB_BIT | ICC_SRE_ELx_EN_BIT)
+
+/* MPIDR */
+#define MPIDR_AFFLVL_MASK	(0xffU)
 
 #define MPIDR_AFF0_SHIFT	(0)
 #define MPIDR_AFF1_SHIFT	(8)
 #define MPIDR_AFF2_SHIFT	(16)
 
+/** Mask for extracting Aff0, Aff1, and Aff2 fields from MPIDR */
+#define MPIDR_AFF_MASK		GENMASK(23, 0)
+
 #define MPIDR_AFFLVL(mpidr, aff_level) \
 		(((mpidr) >> MPIDR_AFF##aff_level##_SHIFT) & MPIDR_AFFLVL_MASK)
 
 #define GET_MPIDR()		read_sysreg(mpidr)
-#define MPIDR_TO_CORE(mpidr)	MPIDR_AFFLVL(mpidr, 0)
+#define MPIDR_TO_CORE(mpidr)	((mpidr) & MPIDR_AFF_MASK)
 
 /* ICC SGI macros */
 #define SGIR_TGT_MASK		(0xffff)

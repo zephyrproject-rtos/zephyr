@@ -28,4 +28,11 @@ tests:
       - CONFIG_NET_IPV6=y
       - CONFIG_NET_IPV4=y
       - CONFIG_NET_SOCKETS_DNS_TIMEOUT=5
-      - CONFIG_ZTEST_STACK_SIZE=1280
+      - CONFIG_ZTEST_STACK_SIZE=2048
+  net.dns.resolve.private_rr:
+    extra_configs:
+      - CONFIG_DNS_RESOLVER_PRIVATE_RR_SUPPORT=y
+      - CONFIG_DNS_RESOLVER_MAX_PRIVATE_DATA_LEN=128
+  net.dns.resolve.query_all_servers:
+    extra_configs:
+      - CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS=y

@@ -19,15 +19,23 @@ else()
   set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
 endif()
 
+if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+  math(EXPR RAM_SIZE "${CONFIG_SRAM_SIZE} / 1024" OUTPUT_FORMAT HEXADECIMAL)
+else()
+  dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+  dt_reg_size(RAM_SIZE PATH "${chosen_sram_path}")
+  math(EXPR RAM_SIZE "${RAM_SIZE} / 1024 / 1024" OUTPUT_FORMAT HEXADECIMAL)
+endif()
+
 if(CONFIG_XIP)
   # Extra 4MB to emulate flash area
-  math(EXPR QEMU_MEMORY_SIZE_MB "${CONFIG_SRAM_SIZE} / 1024 + 4")
+  math(EXPR QEMU_MEMORY_SIZE_MB "${RAM_SIZE} + 4")
 elseif(CONFIG_BOARD_QEMU_X86_TINY AND CONFIG_DEMAND_PAGING
        AND NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
   # Flash is at 4MB-8MB, so need this to be large enough
   math(EXPR QEMU_MEMORY_SIZE_MB "8")
 else()
-  math(EXPR QEMU_MEMORY_SIZE_MB "${CONFIG_SRAM_SIZE} / 1024")
+  math(EXPR QEMU_MEMORY_SIZE_MB "${RAM_SIZE}")
 endif()
 
 set(QEMU_CPU_FLAGS "")

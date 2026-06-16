@@ -76,10 +76,6 @@ LOG_MODULE_REGISTER(cyw208xx);
 
 #define DT_DRV_COMPAT infineon_cyw208xx_hci
 
-struct cyw208xx_data {
-	bt_hci_recv_t recv;
-};
-
 enum {
 	BT_HCI_VND_OP_DOWNLOAD_MINIDRIVER = 0xFC2E,
 	BT_HCI_VND_OP_WRITE_RAM = 0xFC4C,
@@ -281,12 +277,9 @@ static int cyw208xx_setup(const struct device *dev, const struct bt_hci_setup_pa
 	return 0;
 }
 
-static int cyw208xx_open(const struct device *dev, bt_hci_recv_t recv)
+static int cyw208xx_open(const struct device *dev)
 {
 	int err;
-	struct cyw208xx_data *hci = dev->data;
-
-	hci->recv = recv;
 
 	/* Initialize Bluetooth platform related OS tasks. */
 	err = cybt_platform_task_init((void *)NULL);
@@ -302,15 +295,12 @@ static int cyw208xx_open(const struct device *dev, bt_hci_recv_t recv)
 
 static int cyw208xx_close(const struct device *dev)
 {
-	struct cyw208xx_data *hci = dev->data;
-
 	/* Send SHUTDOWN event, BT task will release resources and tervinate task */
 	cybt_platform_msg_to_bt_task(BT_EVT_TASK_SHUTDOWN, false);
 
 	cybt_bttask_deinit();
 
 	k_sem_reset(&cybt_platform_task_init_sem);
-	hci->recv = NULL;
 
 	return 0;
 }
@@ -432,7 +422,6 @@ wiced_bt_dev_vendor_specific_command(uint16_t opcode, uint8_t param_len, uint8_t
 void wiced_bt_process_hci(hci_packet_type_t pti, uint8_t *data, uint32_t length)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct cyw208xx_data *hci = dev->data;
 	struct net_buf *buf = NULL;
 	size_t buf_tailroom = 0;
 
@@ -477,7 +466,7 @@ void wiced_bt_process_hci(hci_packet_type_t pti, uint8_t *data, uint32_t length)
 	net_buf_add_mem(buf, data, length);
 
 	/* Provide the buffer to the host */
-	hci->recv(dev, buf);
+	bt_hci_recv(dev, buf);
 }
 
 void wiced_bt_process_hci_events(uint8_t *data, uint32_t length)
@@ -547,9 +536,12 @@ cy_en_syspm_status_t cyw208xx_syspm_callback(cy_stc_syspm_callback_params_t *cal
 }
 
 #define CYW208XX_DEVICE_INIT(inst)                                                                 \
-	static struct cyw208xx_data cyw208xx_data_##inst = {};                                     \
-	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst, NULL,          \
-			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static struct bt_hci_driver_data cyw208xx_data_##inst = {};                                \
+	static const struct bt_hci_driver_config cyw208xx_config_##inst =                          \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	DEVICE_DT_INST_DEFINE(inst, cyw208xx_hci_init, NULL, &cyw208xx_data_##inst,                \
+			      &cyw208xx_config_##inst, POST_KERNEL,                                \
+			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 /* Only one instance supported */
 CYW208XX_DEVICE_INIT(0)

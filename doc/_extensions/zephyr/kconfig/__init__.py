@@ -192,7 +192,7 @@ def kconfig_load(app: Sphinx) -> tuple[kconfiglib.Kconfig, kconfiglib.Kconfig, d
             elif build_conf.get("kconfig-ext"):
                 for path in app.config.kconfig_ext_paths:
                     # Assume that the kconfig file exists at this path.
-                    # Technically the cmake variable can be constructed arbitarily
+                    # Technically the cmake variable can be constructed arbitrarily
                     # by "{ext_path}/modules/modules.cmake"
                     kconfig = Path(path) / "modules" / name / "Kconfig"
                     if kconfig.exists():

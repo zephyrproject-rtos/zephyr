@@ -624,8 +624,8 @@ int silabs_ldma_append_block(const struct device *dev, uint32_t channel, struct 
 	static struct dma_silabs_channel                                                           \
 		dma_silabs_channel_##inst[DT_INST_PROP(inst, dma_channels)];                       \
                                                                                                    \
-	SYS_MEM_BLOCKS_DEFINE_STATIC(desc_pool_##inst, sizeof(LDMA_Descriptor_t),                  \
-				     CONFIG_DMA_MAX_DESCRIPTOR, 4);                                \
+	SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(desc_pool_##inst, LDMA_Descriptor_t,                     \
+					  CONFIG_DMA_MAX_DESCRIPTOR);                              \
                                                                                                    \
 	static struct dma_silabs_data dma_silabs_data_##inst = {                                   \
 		.dma_ctx.magic = DMA_MAGIC,                                                        \

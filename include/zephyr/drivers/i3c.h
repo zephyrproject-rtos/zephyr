@@ -524,6 +524,15 @@ struct i3c_config_custom {
 };
 
 /**
+ * @brief I3C callback for asynchronous transfer requests
+ *
+ * @param dev I3C device which is notifying of transfer completion or error
+ * @param result Result code of the transfer request. 0 is success, -errno for failure.
+ * @param data Transfer requester supplied data which is passed along to the callback.
+ */
+typedef void (*i3c_callback_t)(const struct device *dev, int result, void *data);
+
+/**
  * @cond INTERNAL_HIDDEN
  *
  * These are for internal use only, so skip these in
@@ -711,7 +720,47 @@ __subsystem struct i3c_driver_api {
 			 struct i3c_device_desc *target,
 			 struct i3c_msg *msgs,
 			 uint8_t num_msgs);
+#if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
+	/**
+	 * Send async Common Command Code (CCC) with a callback.
+	 *
+	 * Controller only API.
+	 *
+	 * @see i3c_do_ccc_cb()
+	 *
+	 * @param dev Pointer to controller device driver instance.
+	 * @param payload Pointer to the CCC payload.
+	 * @param cb Function pointer for completion callback.
+	 * @param userdata Userdata passed to callback.
+	 *
+	 * @return See i3c_do_ccc_cb()
+	 */
+	int (*do_ccc_cb)(const struct device *dev,
+			 struct i3c_ccc_payload *payload,
+			 i3c_callback_t cb,
+			 void *userdata);
 
+	/**
+	 * Transfer async messages in I3C mode with a callback.
+	 *
+	 * @see i3c_transfer_cb()
+	 *
+	 * @param dev Pointer to controller device driver instance.
+	 * @param target Pointer to target device descriptor.
+	 * @param msg Pointer to I3C messages.
+	 * @param num_msgs Number of messages to transfer.
+	 * @param cb Function pointer for completion callback.
+	 * @param userdata Userdata passed to callback.
+	 *
+	 * @return See i3c_transfer_cb()
+	 */
+	int (*i3c_xfers_cb)(const struct device *dev,
+			    struct i3c_device_desc *target,
+			    struct i3c_msg *msgs,
+			    uint8_t num_msgs,
+			    i3c_callback_t cb,
+			    void *userdata);
+#endif
 	/**
 	 * Find a registered I3C target device.
 	 *
@@ -893,6 +942,8 @@ __subsystem struct i3c_driver_api {
 #endif /* CONFIG_I3C_RTIO */
 };
 
+DEVICE_API_EXTENDS(i3c, i2c, i2c_api);
+
 /**
  * @endcond
  */
@@ -974,7 +1025,7 @@ struct i3c_device_desc {
 	/**
 	 * Device Flags
 	 *
-	 * BIT[0]: This shall be used as an optimization for bus initializtion if the
+	 * BIT[0]: This shall be used as an optimization for bus initialization if the
 	 * device supports SETAASA.
 	 * BIT[1]: This shall be used to indicate if the device is a I3C v1.0 device
 	 */
@@ -1417,10 +1468,10 @@ struct i3c_i2c_device_desc *i3c_dev_list_i2c_addr_find(const struct device *dev,
  *                    if it matches the incoming PID (@p pid).
  * @param[out] addr Address to be assigned to target device.
  *
- * @retval 0 if successful.
- * @retval -ENODEV if no device matches the PID (@p pid) in
+ * @retval 0 on success.
+ * @retval -ENODEV No device matches the PID (@p pid) in
  *                 the device list and @p must_match is true.
- * @retval -EINVAL if the device matching PID (@p pid) already
+ * @retval -EINVAL Device matching PID (@p pid) already
  *                 has an address assigned or invalid function
  *                 arguments.
  */
@@ -1439,10 +1490,10 @@ int i3c_dev_list_daa_addr_helper(struct i3c_addr_slots *addr_slots,
  *             in @p config.
  * @param config Pointer to the configuration parameters.
  *
- * @retval 0 If successful.
- * @retval -EINVAL If invalid configure parameters.
+ * @retval 0 on success.
+ * @retval -EINVAL Invalid configure parameters.
  * @retval -EIO General Input/Output errors.
- * @retval -ENOSYS If not implemented.
+ * @retval -ENOSYS Not implemented.
  */
 static inline int i3c_configure(const struct device *dev,
 				enum i3c_config_type type, void *config)
@@ -1467,9 +1518,9 @@ static inline int i3c_configure(const struct device *dev,
  * @param config Pointer to a @ref i3c_config_controller structure
  *               where the configuration will be stored.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output errors.
- * @retval -ENOSYS If not implemented.
+ * @retval -ENOSYS Not implemented.
  */
 static inline int i3c_configure_controller(const struct device *dev,
 					   struct i3c_config_controller *config)
@@ -1489,9 +1540,9 @@ static inline int i3c_configure_controller(const struct device *dev,
  * @param config Pointer to a @ref i3c_config_target structure
  *                    where the configuration will be stored.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output errors.
- * @retval -ENOSYS If not implemented.
+ * @retval -ENOSYS Not implemented.
  */
 static inline int i3c_configure_target(const struct device *dev,
 				       struct i3c_config_target *config)
@@ -1515,9 +1566,9 @@ static inline int i3c_configure_target(const struct device *dev,
  * Note that if @p type is #I3C_CONFIG_CUSTOM, @p config must contain
  * the ID of the parameter to be retrieved.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output errors.
- * @retval -ENOSYS If not implemented.
+ * @retval -ENOSYS Not implemented.
  */
 static inline int i3c_config_get(const struct device *dev,
 				 enum i3c_config_type type, void *config)
@@ -1542,9 +1593,9 @@ static inline int i3c_config_get(const struct device *dev,
  * @param[out] config Pointer to a @ref i3c_config_controller structure
  *                    where the configuration will be used.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output errors.
- * @retval -ENOSYS If not implemented.
+ * @retval -ENOSYS Not implemented.
  */
 static inline int i3c_config_get_controller(const struct device *dev,
 					    struct i3c_config_controller *config)
@@ -1564,9 +1615,9 @@ static inline int i3c_config_get_controller(const struct device *dev,
  * @param[out] config Pointer to a @ref i3c_config_target structure
  *                    where the configuration will be used.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output errors.
- * @retval -ENOSYS If not implemented.
+ * @retval -ENOSYS Not implemented.
  */
 static inline int i3c_config_get_target(const struct device *dev,
 					struct i3c_config_target *config)
@@ -1580,8 +1631,8 @@ static inline int i3c_config_get_target(const struct device *dev,
  *
  * This routine asks the controller to attempt bus recovery.
  *
- * @retval 0 If successful.
- * @retval -EBUSY If bus recovery fails.
+ * @retval 0 on success.
+ * @retval -EBUSY Bus recovery fails.
  * @retval -EIO General input / output error.
  * @retval -ENOSYS Bus recovery is not supported by the controller driver.
  */
@@ -1611,9 +1662,9 @@ static inline int i3c_recover_bus(const struct device *dev)
  *
  * @param target Pointer to the target device descriptor
  *
- * @retval 0 If successful.
- * @retval -EINVAL If address is not available or if the device
- *     has already been attached before
+ * @retval 0 on success.
+ * @retval -EINVAL Address is not available, or the device
+ *     has already been attached before.
  */
 int i3c_attach_i3c_device(struct i3c_device_desc *target);
 
@@ -1638,8 +1689,8 @@ int i3c_attach_i3c_device(struct i3c_device_desc *target);
  * @param old_dyn_addr The old dynamic address of target device, 0 if
  *            there was no old dynamic address
  *
- * @retval 0 If successful.
- * @retval -EINVAL If address is not available
+ * @retval 0 on success.
+ * @retval -EINVAL Address is not available.
  */
 int i3c_reattach_i3c_device(struct i3c_device_desc *target, uint8_t old_dyn_addr);
 
@@ -1659,10 +1710,33 @@ int i3c_reattach_i3c_device(struct i3c_device_desc *target, uint8_t old_dyn_addr
  *
  * @param target Pointer to the target device descriptor
  *
- * @retval 0 If successful.
- * @retval -EINVAL If device is already detached
+ * @retval 0 on success.
+ * @retval -EINVAL Device is already detached.
  */
 int i3c_detach_i3c_device(struct i3c_device_desc *target);
+
+/**
+ * @brief Check if an I3C device is attached to the bus
+ *
+ * Checks whether @p target is present in the controller's attached device
+ * list.
+ *
+ * @param target Pointer to the target device descriptor
+ *
+ * @retval true  If the device is attached.
+ * @retval false If the device is not attached.
+ */
+static inline bool i3c_is_i3c_device_attached(struct i3c_device_desc *target)
+{
+	struct i3c_device_desc *desc;
+
+	I3C_BUS_FOR_EACH_I3CDEV(target->bus, desc) {
+		if (desc == target) {
+			return true;
+		}
+	}
+	return false;
+}
 
 /**
  * @brief Attach an I2C device
@@ -1678,9 +1752,9 @@ int i3c_detach_i3c_device(struct i3c_device_desc *target);
  *
  * @param target Pointer to the target device descriptor
  *
- * @retval 0 If successful.
- * @retval -EINVAL If address is not available or if the device
- *     has already been attached before
+ * @retval 0 on success.
+ * @retval -EINVAL Address is not available, or the device
+ *     has already been attached before.
  */
 int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target);
 
@@ -1698,10 +1772,33 @@ int i3c_attach_i2c_device(struct i3c_i2c_device_desc *target);
  *
  * @param target Pointer to the target device descriptor
  *
- * @retval 0 If successful.
- * @retval -EINVAL If device is already detached
+ * @retval 0 on success.
+ * @retval -EINVAL Device is already detached.
  */
 int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target);
+
+/**
+ * @brief Check if an I2C device is attached to the bus
+ *
+ * Checks whether @p target is present in the controller's attached device
+ * list.
+ *
+ * @param target Pointer to the target device descriptor
+ *
+ * @retval true  If the device is attached.
+ * @retval false If the device is not attached.
+ */
+static inline bool i3c_is_i2c_device_attached(struct i3c_i2c_device_desc *target)
+{
+	struct i3c_i2c_device_desc *desc;
+
+	I3C_BUS_FOR_EACH_I2CDEV(target->bus, desc) {
+		if (desc == target) {
+			return true;
+		}
+	}
+	return false;
+}
 
 /**
  * @brief Perform Dynamic Address Assignment on the I3C bus.
@@ -1717,10 +1814,10 @@ int i3c_detach_i2c_device(struct i3c_i2c_device_desc *target);
  * @param dev Pointer to the device structure for the controller driver
  *            instance.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
- * @retval -ENODEV If a provisioned ID does not match to any target devices
+ * @retval -ENODEV Provisioned ID does not match to any target devices
  *                 in the registered device list.
  * @retval -ENOSPC No more free addresses can be assigned to target.
  * @retval -ENOSYS Dynamic address assignment is not supported by
@@ -1744,7 +1841,7 @@ static inline int i3c_do_daa(const struct device *dev)
  *            instance.
  * @param payload Pointer to the structure describing the CCC payload.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General Input / output error.
  * @retval -EINVAL Invalid valid set in the payload structure.
@@ -1764,6 +1861,48 @@ static inline int z_impl_i3c_do_ccc(const struct device *dev,
 
 	return api->do_ccc(dev, payload);
 }
+
+#if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
+/**
+ * @brief Send an async CCC to the bus with a callback.
+ *
+ * This routine provides a generic interface to perform a CCC
+ * to another I3C device asynchronously with a callback completion.
+ *
+ * @see i3c_do_ccc()
+ *
+ * @param dev Pointer to the device structure for the controller driver
+ *            instance.
+ * @param payload Pointer to the structure describing the CCC payload.
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @retval 0 If successful.
+ * @retval -EBUSY Bus is busy.
+ * @retval -EIO General Input / output error.
+ * @retval -EINVAL Invalid valid set in the payload structure.
+ * @retval -ENOSYS Not implemented.
+ */
+__syscall int i3c_do_ccc_cb(const struct device *dev,
+			    struct i3c_ccc_payload *payload,
+			    i3c_callback_t cb,
+			    void *userdata);
+
+static inline int z_impl_i3c_do_ccc_cb(const struct device *dev,
+				      struct i3c_ccc_payload *payload,
+				      i3c_callback_t cb,
+				      void *userdata)
+{
+	const struct i3c_driver_api *api =
+		(const struct i3c_driver_api *)dev->api;
+
+	if (api->do_ccc_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->do_ccc_cb(dev, payload, cb, userdata);
+}
+#endif
 
 /**
  * @addtogroup i3c_transfer_api
@@ -1792,7 +1931,7 @@ static inline int z_impl_i3c_do_ccc(const struct device *dev,
  * @param msgs Array of messages to transfer.
  * @param num_msgs Number of messages to transfer.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
@@ -1804,6 +1943,57 @@ static inline int z_impl_i3c_transfer(struct i3c_device_desc *target,
 {
 	return DEVICE_API_GET(i3c, target->bus)->i3c_xfers(target->bus, target, msgs, num_msgs);
 }
+
+#if defined(CONFIG_I3C_CALLBACK) || defined(__DOXYGEN__)
+/**
+ * @brief Perform an async data transfer from the controller to a I3C target device
+ * with a callback.
+ *
+ * This routine provides a generic interface to perform data transfer
+ * to a target device asynchronously.
+ *
+ * The array of message @p msgs must not be `NULL`.  The number of
+ * message @p num_msgs may be zero, in which case no transfer occurs.
+ *
+ * @note Not all scatter/gather transactions can be supported by all
+ * drivers.  As an example, a gather write (multiple consecutive
+ * i3c_msg buffers all configured for #I3C_MSG_WRITE) may be packed
+ * into a single transaction by some drivers, but others may emit each
+ * fragment as a distinct write transaction, which will not produce
+ * the same behavior.  See the documentation of i3c_msg for
+ * limitations on support for multi-message bus transactions.
+ *
+ * @param target I3C target device descriptor.
+ * @param msgs Array of messages to transfer.
+ * @param num_msgs Number of messages to transfer.
+ * @param cb Function pointer for completion callback.
+ * @param userdata Userdata passed to callback.
+ *
+ * @retval 0 If successful.
+ * @retval -EBUSY Bus is busy.
+ * @retval -EIO General input / output error.
+ */
+__syscall int i3c_transfer_cb(struct i3c_device_desc *target,
+			      struct i3c_msg *msgs,
+			      uint8_t num_msgs,
+			      i3c_callback_t cb,
+			      void *userdata);
+
+static inline int z_impl_i3c_transfer_cb(struct i3c_device_desc *target,
+					 struct i3c_msg *msgs,
+					 uint8_t num_msgs,
+					 i3c_callback_t cb,
+					 void *userdata)
+{
+	const struct i3c_driver_api *api = (const struct i3c_driver_api *)target->bus->api;
+
+	if (api->i3c_xfers_cb == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->i3c_xfers_cb(target->bus, target, msgs, num_msgs, cb, userdata);
+}
+#endif
 
 /** @} */
 
@@ -1850,7 +2040,7 @@ struct i3c_device_desc *i3c_device_find(const struct device *dev,
  * @param dev Pointer to controller device driver instance.
  * @param ack True to ack, False to nack
  *
- * @retval 0 if operation is successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 static inline int i3c_ibi_hj_response(const struct device *dev,
@@ -1899,7 +2089,7 @@ static inline int i3c_ibi_crr_response(struct i3c_device_desc *target,
  * @param dev Pointer to controller device driver instance.
  * @param request Pointer to the IBI request struct.
  *
- * @retval 0 if operation is successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 static inline int i3c_ibi_raise(const struct device *dev,
@@ -1923,9 +2113,9 @@ static inline int i3c_ibi_raise(const struct device *dev,
  *
  * @param target I3C target device descriptor.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input / output error.
- * @retval -ENOMEM If these is no more empty entries in
+ * @retval -ENOMEM There are no more empty entries in
  *                 the controller's IBI table (if the controller
  *                 uses such table).
  */
@@ -1948,9 +2138,9 @@ static inline int i3c_ibi_enable(struct i3c_device_desc *target)
  *
  * @param target I3C target device descriptor.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input / output error.
- * @retval -ENODEV If IBI is not previously enabled for @p target.
+ * @retval -ENODEV IBI is not previously enabled for @p target.
  */
 static inline int i3c_ibi_disable(struct i3c_device_desc *target)
 {
@@ -2031,7 +2221,7 @@ static inline int i3c_device_is_controller_capable(struct i3c_device_desc *targe
  * @param buf Memory pool from which the data is transferred.
  * @param num_bytes Number of bytes to write.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
@@ -2058,7 +2248,7 @@ static inline int i3c_write(struct i3c_device_desc *target,
  * @param buf Memory pool that stores the retrieved data.
  * @param num_bytes Number of bytes to read.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
@@ -2089,7 +2279,7 @@ static inline int i3c_read(struct i3c_device_desc *target,
  * @param read_buf Pointer to storage for read data
  * @param num_read Number of bytes to read
  *
- * @retval 0 if successful
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
@@ -2127,7 +2317,7 @@ static inline int i3c_write_read(struct i3c_device_desc *target,
  * @param buf Memory pool that stores the retrieved data.
  * @param num_bytes Number of bytes being read.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
@@ -2157,7 +2347,7 @@ static inline int i3c_burst_read(struct i3c_device_desc *target,
  * @param buf Memory pool from which the data is transferred.
  * @param num_bytes Number of bytes being written.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
@@ -2193,7 +2383,7 @@ static inline int i3c_burst_write(struct i3c_device_desc *target,
  * @param reg_addr Address of the internal register being read.
  * @param value Memory pool that stores the retrieved register value.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
@@ -2218,7 +2408,7 @@ static inline int i3c_reg_read_byte(struct i3c_device_desc *target,
  * @param reg_addr Address of the internal register being written.
  * @param value Value to be written to internal register.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
@@ -2244,7 +2434,7 @@ static inline int i3c_reg_write_byte(struct i3c_device_desc *target,
  * @param mask Bitmask for updating internal register.
  * @param value Value for updating internal register.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
  */
@@ -2303,10 +2493,10 @@ void i3c_dump_msgs(const char *name, const struct i3c_msg *msgs,
  * @param dev Pointer to controller device driver instance.
  * @param i3c_dev_list Pointer to I3C device list.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
- * @retval -ENODEV If a provisioned ID does not match to any target devices
+ * @retval -ENODEV Provisioned ID does not match to any target devices
  *                 in the registered device list.
  * @retval -ENOSPC No more free addresses can be assigned to target.
  * @retval -ENOSYS Dynamic address assignment is not supported by
@@ -2329,7 +2519,7 @@ int i3c_bus_init(const struct device *dev,
  *
  * @param[in,out] target I3C target device descriptor.
  *
- * @retval 0 if successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_device_basic_info_get(struct i3c_device_desc *target);
@@ -2353,7 +2543,7 @@ int i3c_device_basic_info_get(struct i3c_device_desc *target);
  *
  * @param[in,out] target I3C target device descriptor.
  *
- * @retval 0 if successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_device_adv_info_get(struct i3c_device_desc *target);
@@ -2376,7 +2566,7 @@ int i3c_device_adv_info_get(struct i3c_device_desc *target);
  *
  * @param[in,out] target I3C target device descriptor.
  *
- * @retval 0 if successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 static inline int i3c_device_info_get(struct i3c_device_desc *target)
@@ -2422,7 +2612,7 @@ bool i3c_bus_has_sec_controller(const struct device *dev);
  *
  * @param dev Pointer to the controller device driver instance.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_rstdaa_all(const struct device *dev);
@@ -2435,8 +2625,8 @@ int i3c_bus_rstdaa_all(const struct device *dev);
  * @param desc Pointer to the target device descriptor.
  * @param dynamic_addr The dynamic address to assign to the device.
  *
- * @retval 0 If successful.
- * @retval -EADDRNOTAVAIL If the address is not available.
+ * @retval 0 on success.
+ * @retval -EADDRNOTAVAIL Address is not available.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr);
@@ -2449,8 +2639,8 @@ int i3c_bus_setdasa(struct i3c_device_desc *desc, uint8_t dynamic_addr);
  * @param desc Pointer to the target device descriptor.
  * @param dynamic_addr The new dynamic address to assign to the device.
  *
- * @retval 0 If successful.
- * @retval -EADDRNOTAVAIL If the address is not available.
+ * @retval 0 on success.
+ * @retval -EADDRNOTAVAIL Address is not available.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr);
@@ -2462,7 +2652,7 @@ int i3c_bus_setnewda(struct i3c_device_desc *desc, uint8_t dynamic_addr);
  *
  * @param dev Pointer to the controller device driver instance.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_setaasa(const struct device *dev);
@@ -2474,7 +2664,7 @@ int i3c_bus_setaasa(const struct device *dev);
  *
  * @param desc Pointer to the target device descriptor.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_getbcr(struct i3c_device_desc *desc);
@@ -2486,7 +2676,7 @@ int i3c_bus_getbcr(struct i3c_device_desc *desc);
  *
  * @param desc Pointer to the target device descriptor.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_getdcr(struct i3c_device_desc *desc);
@@ -2498,7 +2688,7 @@ int i3c_bus_getdcr(struct i3c_device_desc *desc);
  *
  * @param desc Pointer to the target device descriptor.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_getpid(struct i3c_device_desc *desc);
@@ -2510,7 +2700,7 @@ int i3c_bus_getpid(struct i3c_device_desc *desc);
  *
  * @param desc Pointer to the target device descriptor.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_getmrl(struct i3c_device_desc *desc);
@@ -2522,7 +2712,7 @@ int i3c_bus_getmrl(struct i3c_device_desc *desc);
  *
  * @param desc Pointer to the target device descriptor.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_getmwl(struct i3c_device_desc *desc);
@@ -2536,7 +2726,7 @@ int i3c_bus_getmwl(struct i3c_device_desc *desc);
  * @param mrl Maximum read length to set.
  * @param ibi_len Maximum IBI length to set.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_setmrl(struct i3c_device_desc *desc, uint16_t mrl, uint8_t ibi_len);
@@ -2549,7 +2739,7 @@ int i3c_bus_setmrl(struct i3c_device_desc *desc, uint16_t mrl, uint8_t ibi_len);
  * @param desc Pointer to the target device descriptor.
  * @param mwl Maximum write length to set.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_setmwl(struct i3c_device_desc *desc, uint16_t mwl);
@@ -2564,7 +2754,7 @@ int i3c_bus_setmwl(struct i3c_device_desc *desc, uint16_t mwl);
  * @param ibi_len Maximum IBI length to set.
  * @param has_ibi_size True if to transmit max ibi len
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_setmrl_all(const struct device *dev, uint16_t mrl, uint8_t ibi_len, bool has_ibi_size);
@@ -2577,7 +2767,7 @@ int i3c_bus_setmrl_all(const struct device *dev, uint16_t mrl, uint8_t ibi_len, 
  * @param dev Pointer to the controller device driver instance.
  * @param mwl Maximum write length to set.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_setmwl_all(const struct device *dev, uint16_t mwl);
@@ -2590,7 +2780,7 @@ int i3c_bus_setmwl_all(const struct device *dev, uint16_t mwl);
  *
  * @param desc Pointer to the target device descriptor.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  */
 int i3c_bus_getacccr(struct i3c_device_desc *desc);
@@ -2602,7 +2792,7 @@ int i3c_bus_getacccr(struct i3c_device_desc *desc);
  *
  * @param dev Pointer to controller device driver instance.
  *
- * @retval 0 if successful.
+ * @retval 0 on success.
  * @retval -ENOMEM No memory to build the payload.
  * @retval -EIO General Input/Output error.
  */
@@ -2630,7 +2820,7 @@ uint8_t i3c_odd_parity(uint8_t p);
  * @param requested True if the target requested the Handoff, False if
  * the active controller is passing it to a secondary controller
  *
- * @retval 0 if successful.
+ * @retval 0 on success.
  * @retval -EIO General Input/Output error.
  * @retval -EBUSY Target cannot accept Controller Handoff
  */
@@ -2663,7 +2853,7 @@ void i3c_sec_handoffed(struct k_work *work);
  * This allocates memory from a mem slab for a i3c_device_desc
  *
  * @return Pointer to allocated i3c_device_desc
- * @retval NULL if no mem slabs available
+ * @retval NULL No mem slabs available.
  */
 struct i3c_device_desc *i3c_device_desc_alloc(void);
 

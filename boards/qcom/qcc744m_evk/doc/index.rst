@@ -7,7 +7,7 @@ The QCC744M Evaluation board features the QCC744M module, which contains a QCC74
 PSRAM and an external 8MB Flash chip.
 Qualcomm QCC74x is a tri-radio chipset integrating 1x1 Wi-Fi 6, Bluetooth 5.4,
 and IEEE 802.15.4 (Thread and Zigbee-ready) powered by a 32-bit RISC-V MCU up to 320 MHz, it is
-based on, and mostly equivalent, to the Bouffalolab BL61x Serie of chipsets.
+based on, and mostly equivalent, to the Bouffalolab BL61x Series of chipsets.
 
 Hardware
 ********

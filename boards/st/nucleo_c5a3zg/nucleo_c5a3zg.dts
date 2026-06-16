@@ -15,9 +15,6 @@
 	model = "STMicroelectronics STM32C5A3ZG-NUCLEO board";
 	compatible = "st,stm32c5a3zg-nucleo";
 
-	#address-cells = <1>;
-	#size-cells = <1>;
-
 	chosen {
 		zephyr,canbus = &fdcan1;
 		zephyr,console = &lpuart1;
@@ -31,6 +28,7 @@
 		die-temp0 = &die_temp;
 		led0 = &green_led;
 		sw0 = &user_button;
+		rtc = &rtc;
 		volt-sensor0 = &vref;
 		watchdog0 = &iwdg;
 	};
@@ -145,26 +143,30 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
 		};
 
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(472)>;
 		};
 
 		slot1_partition: partition@82000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x00082000 DT_SIZE_K(480)>;
 		};
 
 		storage_partition: partition@fa000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000fa000 DT_SIZE_K(24)>;
 		};
@@ -174,13 +176,28 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb4>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 10 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
 	status = "okay";
+};
+
+&i3c1 {
+	pinctrl-0 = <&i3c1_scl_pb6 &i3c1_sda_pb7>;
+	pinctrl-names = "default";
+
+	i2c-scl-hz = <400000>;
+	i3c-scl-hz = <6000000>;
+
+	/* Due to pin conflict with i2c1, keep it disabled  */
+	/* status = "okay"; */
 };
 
 &iwdg {
@@ -197,6 +214,31 @@
 	current-speed = <115200>;
 	tx-rx-swap;
 	status = "okay";
+};
+
+&mac {
+	pinctrl-0 = <&eth1_rmii_crs_dv_pd1
+		     &eth1_rmii_ref_clk_pa1
+		     &eth1_rmii_rxd0_pc4
+		     &eth1_rmii_rxd1_pc5
+		     &eth1_rmii_txd0_pg13
+		     &eth1_rmii_txd1_pg12
+		     &eth1_rmii_tx_en_pg11>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth1_mdc_pc1 &eth1_mdio_pe12>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+	};
 };
 
 &rcc {

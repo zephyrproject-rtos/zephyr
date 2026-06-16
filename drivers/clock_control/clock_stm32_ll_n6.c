@@ -40,6 +40,19 @@ static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 }
 
 __unused
+static uint32_t get_msi_frequency(void)
+{
+#if defined(STM32_MSI_ENABLED)
+	if (LL_RCC_MSI_GetFrequency() == LL_RCC_MSI_FREQ_16MHZ) {
+		return MHZ(16);
+	} else {
+		return MHZ(4);
+	}
+#endif
+	return 0;
+}
+
+__unused
 /** @brief returns the pll source frequency of given pll_id */
 static uint32_t get_pllsrc_frequency(int pll_id)
 {
@@ -161,6 +174,7 @@ int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI_DIV) && IS_ENABLED(STM32_HSI_ENABLED)) ||
+	    ((src_clk == STM32_SRC_MSI) && IS_ENABLED(STM32_MSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL1) && IS_ENABLED(STM32_PLL1_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL2) && IS_ENABLED(STM32_PLL2_ENABLED)) ||
 	    ((src_clk == STM32_SRC_PLL3) && IS_ENABLED(STM32_PLL3_ENABLED)) ||
@@ -322,6 +336,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = STM32_LSI_FREQ;
 		break;
 #endif /* STM32_LSI_ENABLED */
+#if defined(STM32_MSI_ENABLED)
+	case STM32_SRC_MSI:
+		*rate = get_msi_frequency();
+		break;
+#endif
 #if defined(STM32_HSE_ENABLED)
 	case STM32_SRC_HSE:
 		*rate = STM32_HSE_FREQ;
@@ -751,7 +770,7 @@ static int set_up_plls(void)
 #if defined(STM32_PLL3_ENABLED)
 	LL_RCC_PLL3_Disable();
 
-	/* Configure PLL source : Can be HSE, HSI, MSIS */
+	/* Configure PLL source : Can be HSE, HSI, MSI */
 	if (IS_ENABLED(STM32_PLL3_SRC_HSE)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL3_SetSource(LL_RCC_PLLSOURCE_HSE);
@@ -798,7 +817,7 @@ static int set_up_plls(void)
 #if defined(STM32_PLL4_ENABLED)
 	LL_RCC_PLL4_Disable();
 
-	/* Configure PLL source : Can be HSE, HSI, MSIS */
+	/* Configure PLL source : Can be HSE, HSI, MSI */
 	if (IS_ENABLED(STM32_PLL4_SRC_HSE)) {
 		/* Main PLL configuration and activation */
 		LL_RCC_PLL4_SetSource(LL_RCC_PLLSOURCE_HSE);
@@ -906,6 +925,25 @@ static void set_up_fixed_clock_sources(void)
 		while (LL_RCC_LSI_IsReady() != 1) {
 		}
 	}
+
+#if defined(STM32_MSI_ENABLED)
+	/* Set up MSI clock */
+	if (IS_ENABLED(STM32_MSI_ENABLED)) {
+		/* Set frequency of MSI */
+		if (STM32_MSI_RANGE == 1) {
+			LL_RCC_MSI_SetFrequency(LL_RCC_MSI_FREQ_16MHZ);
+		} else {
+			LL_RCC_MSI_SetFrequency(LL_RCC_MSI_FREQ_4MHZ);
+		}
+
+		/* enable MSI */
+		LL_RCC_MSI_Enable();
+
+		while (LL_RCC_MSI_IsReady() != 1) {
+			/* Wait for MSI ready */
+		}
+	}
+#endif
 }
 
 int stm32_clock_control_init(const struct device *dev)
@@ -970,6 +1008,11 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_IC2_IC6_IC11);
 		while (LL_RCC_GetSysClkSource() !=
 					LL_RCC_SYS_CLKSOURCE_STATUS_IC2_IC6_IC11) {
+		}
+	} else if (IS_ENABLED(STM32_SYSCLK_SRC_MSI)) {
+		/* Set sysclk source to MSI */
+		LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_MSI);
+		while (LL_RCC_GetSysClkSource() != LL_RCC_SYS_CLKSOURCE_STATUS_MSI) {
 		}
 	} else {
 		return -ENOTSUP;

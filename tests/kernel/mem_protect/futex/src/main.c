@@ -35,7 +35,6 @@ K_THREAD_STACK_ARRAY_DEFINE(multiple_wake_stack,
 
 ZTEST_BMEM int woken;
 ZTEST_BMEM int timeout;
-ZTEST_BMEM int index[TOTAL_THREADS_WAITING];
 ZTEST_BMEM struct k_futex simple_futex;
 ZTEST_BMEM struct k_futex multiple_futex[TOTAL_THREADS_WAITING];
 struct k_futex no_access_futex;
@@ -134,7 +133,7 @@ static void futex_multiple_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int woken_num = *(int *)p1;
-	int idx = *(int *)p2;
+	int idx = POINTER_TO_INT(p2);
 
 	zassert_true(woken_num > 0, "invalid woken number");
 
@@ -148,7 +147,7 @@ static void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int time_val = *(int *)p1;
-	int idx = *(int *)p2;
+	int idx = POINTER_TO_INT(p2);
 
 	zassert_true(time_val == (int)K_TICKS_FOREVER, "invalid timeout parameter");
 
@@ -388,22 +387,19 @@ ZTEST(futex, test_multiple_futex_wait_wake)
 	timeout = K_TICKS_FOREVER;
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		index[i] = i;
 		atomic_set(&multiple_futex[i].val, 1);
-		k_thread_create(&multiple_tid[i], multiple_stack[i],
-				STACK_SIZE, futex_multiple_wait_wake_task,
-				&timeout, &index[i], NULL, PRIO_WAIT,
-				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		k_thread_create(&multiple_tid[i], multiple_stack[i], STACK_SIZE,
+				futex_multiple_wait_wake_task, &timeout, INT_TO_POINTER(i), NULL,
+				PRIO_WAIT, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* giving time for the other threads to execute */
 	k_yield();
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i],
-				STACK_SIZE, futex_multiple_wake_task,
-				&woken, &index[i], NULL, PRIO_WAKE,
-				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i], STACK_SIZE,
+				futex_multiple_wake_task, &woken, INT_TO_POINTER(i), NULL,
+				PRIO_WAKE, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* giving time for the other threads to execute */

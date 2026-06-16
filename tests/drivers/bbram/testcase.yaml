@@ -29,3 +29,7 @@ tests:
     integration_platforms:
       - nucleo_g071rb
       - stm32f746g_disco
+  drivers.bbram.nxp_imx_snvs_gpr:
+    filter: dt_compat_enabled("nxp,imx-snvs-gpr")
+    integration_platforms:
+      - mimxrt1064_evk

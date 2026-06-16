@@ -132,8 +132,8 @@ struct eth_xmc4xxx_tx_frame {
 	uint16_t head_index;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(tx_frame_slab, sizeof(struct eth_xmc4xxx_tx_frame),
-			 CONFIG_ETH_XMC4XXX_TX_FRAME_POOL_SIZE, 4);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(tx_frame_slab, struct eth_xmc4xxx_tx_frame,
+			      CONFIG_ETH_XMC4XXX_TX_FRAME_POOL_SIZE);
 
 static XMC_ETH_MAC_DMA_DESC_t __aligned(4) tx_dma_desc[NUM_TX_DMA_DESCRIPTORS];
 static XMC_ETH_MAC_DMA_DESC_t __aligned(4) rx_dma_desc[NUM_RX_DMA_DESCRIPTORS];
@@ -844,18 +844,17 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	bool is_up = state->is_up;
 
 	if (is_up && !dev_data->link_up) {
-		LOG_INF("Link up");
 		dev_data->link_up = true;
 		net_eth_carrier_on(dev_data->iface);
 		eth_xmc4xxx_set_link(dev_cfg->regs, state);
 	} else if (!is_up && dev_data->link_up) {
-		LOG_INF("Link down");
 		dev_data->link_up = false;
 		net_eth_carrier_off(dev_data->iface);
 	}
 }
 
-static const struct device *eth_xmc4xxx_get_phy(const struct device *dev)
+static const struct device *eth_xmc4xxx_get_phy(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 
@@ -889,7 +888,8 @@ static void eth_xmc4xxx_iface_init(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_xmc4xxx_stats(const struct device *dev)
+static struct net_stats_eth *eth_xmc4xxx_stats(const struct device *dev,
+					       struct net_if *iface __unused)
 {
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 
@@ -903,8 +903,7 @@ static inline void eth_xmc4xxx_free_rx_bufs(const struct device *dev)
 
 	for (int i = 0; i < NUM_RX_DMA_DESCRIPTORS; i++) {
 		if (dev_data->rx_frag_list[i]) {
-			net_buf_unref(dev_data->rx_frag_list[i]);
-			dev_data->rx_frag_list[i] = NULL;
+			net_buf_drop(&dev_data->rx_frag_list[i]);
 		}
 	}
 }
@@ -1107,7 +1106,8 @@ static int eth_xmc4xxx_init(const struct device *dev)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev __unused,
+						     struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 	enum ethernet_hw_caps caps = ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE |
@@ -1128,7 +1128,9 @@ static enum ethernet_hw_caps eth_xmc4xxx_capabilities(const struct device *dev)
 	return caps;
 }
 
-static int eth_xmc4xxx_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_xmc4xxx_set_config(const struct device *dev,
+				  struct net_if *iface __unused,
+				  enum ethernet_config_type type,
 				  const struct ethernet_config *config)
 {
 	struct eth_xmc4xxx_data *dev_data = dev->data;
@@ -1172,7 +1174,8 @@ static void eth_xmc4xxx_irq_config(void)
 }
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev)
+static const struct device *eth_xmc4xxx_get_ptp_clock(const struct device *dev,
+						      struct net_if *iface __unused)
 {
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
 

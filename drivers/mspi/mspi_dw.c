@@ -155,6 +155,9 @@ DEFINE_MM_REG_WR(dmardlr,	0x54)
 DEFINE_MM_REG_WR(xip_incr_inst,		0x100)
 DEFINE_MM_REG_WR(xip_wrap_inst,		0x104)
 DEFINE_MM_REG_WR(xip_ctrl,		0x108)
+#if SUPPORTS_XIP_SER
+DEFINE_MM_REG_WR(xip_ser,		0x10c)
+#endif
 DEFINE_MM_REG_WR(xip_write_incr_inst,	0x140)
 DEFINE_MM_REG_WR(xip_write_wrap_inst,	0x144)
 DEFINE_MM_REG_WR(xip_write_ctrl,	0x148)
@@ -553,9 +556,9 @@ static void fifo_work_handler(struct k_work *work)
 
 static void mspi_dw_isr(const struct device *dev)
 {
-#if defined(CONFIG_MSPI_DMA)
-	struct mspi_dw_data *dev_data = dev->data;
+	struct mspi_dw_data __maybe_unused *dev_data = dev->data;
 
+#if defined(CONFIG_MSPI_DMA)
 	if (dev_data->xfer.xfer_mode == MSPI_DMA) {
 		if (vendor_specific_read_dma_irq(dev)) {
 			set_imr(dev, 0);
@@ -567,7 +570,6 @@ static void mspi_dw_isr(const struct device *dev)
 #endif
 
 #if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
-	struct mspi_dw_data *dev_data = dev->data;
 	int rc;
 
 	dev_data->imr = read_imr(dev);
@@ -1402,16 +1404,24 @@ static int start_next_packet(const struct device *dev)
 	}
 #endif
 
+#if defined(CONFIG_MULTITHREADING)
+	k_timeout_t timeout = K_MSEC(dev_data->xfer.timeout);
+
+	/* For async transfer, start timeout timer BEFORE starting transfer to
+	 * avoid race. On fast buses the ISR can fire and call k_timer_stop()
+	 * before k_timer_start() if SER is written first.
+	 */
+	if (dev_data->xfer.async) {
+		k_timer_start(&dev_data->async_timer, timeout, K_NO_WAIT);
+	}
+#endif
+
 	/* Write SER to start transfer */
 	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
 
 #if defined(CONFIG_MULTITHREADING)
-	k_timeout_t timeout = K_MSEC(dev_data->xfer.timeout);
-
-	/* For async transfer, start the timeout timer and exit. */
+	/* For async transfer, exit after starting the timeout timer. */
 	if (dev_data->xfer.async) {
-		k_timer_start(&dev_data->async_timer, timeout, K_NO_WAIT);
-
 		return 0;
 	}
 
@@ -1491,17 +1501,6 @@ static int _api_transceive(const struct device *dev,
 	int rc;
 
 	if (dev_data->standard_spi) {
-		/* The SPI_CTRLR0 register is intended for enhanced SPI modes,
-		 * however some implementations continue to process the INST_L
-		 * and ADDR_L fields in standard mode. On those platforms the
-		 * controller sends its own instruction/address phase in
-		 * addition to what the driver sends. This results in a
-		 * malformed SPI transaction with extra bytes on the wire.
-		 * Mask these fields to ensure this does not happen.
-		 */
-		dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_INST_L_MASK
-					& ~SPI_CTRLR0_ADDR_L_MASK;
-
 		if (req->tx_dummy) {
 			LOG_ERR("TX dummy cycles unsupported in single line mode");
 			return -EINVAL;
@@ -1515,6 +1514,19 @@ static int _api_transceive(const struct device *dev,
 		LOG_ERR("Unsupported RX (%u) or TX (%u) dummy cycles",
 			req->rx_dummy, req->tx_dummy);
 		return -EINVAL;
+	}
+
+	/* In PIO mode, the SPI_CTRLR0 register is intended for enhanced SPI modes only,
+	 * however some implementations continue to process the INST_L and ADDR_L
+	 * fields in standard mode. On those platforms the controller sends its own
+	 * instruction/address phase in addition to what the driver sends. This results
+	 * in a malformed SPI transaction with extra bytes on the wire. Mask these
+	 * fields to ensure this does not happen.
+	 */
+	if (!(IS_ENABLED(CONFIG_MSPI_DMA) && req->xfer_mode == MSPI_DMA) &&
+	    dev_data->standard_spi) {
+		dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_INST_L_MASK
+				     &  ~SPI_CTRLR0_ADDR_L_MASK;
 	} else {
 		if (!apply_cmd_length(dev_data, req->cmd_length) ||
 		    !apply_addr_length(dev_data, req->addr_length)) {
@@ -1660,6 +1672,10 @@ static int _api_xip_config(const struct device *dev,
 			return rc;
 		}
 
+#if SUPPORTS_XIP_SER
+		write_xip_ser(dev, 0);
+#endif
+
 		dev_data->xip_enabled &= ~BIT(dev_id->dev_idx);
 
 		if (!dev_data->xip_enabled) {
@@ -1721,9 +1737,21 @@ static int _api_xip_config(const struct device *dev,
 		write_xip_incr_inst(dev, params->read_cmd);
 		write_xip_wrap_inst(dev, params->read_cmd);
 		write_xip_ctrl(dev, ctrl.read);
-		write_xip_write_incr_inst(dev, params->write_cmd);
-		write_xip_write_wrap_inst(dev, params->write_cmd);
-		write_xip_write_ctrl(dev, ctrl.write);
+
+		if (cfg->permission == MSPI_XIP_READ_WRITE) {
+#if MEMMAP_WRITE_SUPPORT_INSTANCES != 0
+			write_xip_write_incr_inst(dev, params->write_cmd);
+			write_xip_write_wrap_inst(dev, params->write_cmd);
+			write_xip_write_ctrl(dev, ctrl.write);
+#else
+			LOG_ERR("XIP write access not supported by this controller");
+			rc = pm_device_runtime_put(dev);
+			if (rc < 0) {
+				LOG_ERR("pm_device_runtime_put() failed: %d", rc);
+			}
+			return -ENOTSUP;
+#endif
+		}
 	} else if (dev_data->xip_params_active.read_cmd !=
 		   dev_data->xip_params_stored.read_cmd ||
 		   dev_data->xip_params_active.write_cmd !=
@@ -1744,6 +1772,10 @@ static int _api_xip_config(const struct device *dev,
 	if (rc < 0) {
 		return rc;
 	}
+
+#if SUPPORTS_XIP_SER
+	write_xip_ser(dev, BIT(dev_id->dev_idx));
+#endif
 
 	write_ssienr(dev, SSIENR_SSIC_EN_BIT);
 

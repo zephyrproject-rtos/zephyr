@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Zhaoming Li
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MMIO_LATCH
+	bool "Memory-mapped latch GPIO driver"
+	default y
+	depends on DT_HAS_GPIO_MMIO_LATCH_ENABLED
+	help
+	  Enable support for a generic GPIO controller implemented as a
+	  memory-mapped output latch register.

@@ -25,14 +25,14 @@
 			   <ARDUINO_HEADER_R3_D4 0 &gpiob 5 0>,
 			   <ARDUINO_HEADER_R3_D5 0 &gpiob 4 0>,
 			   <ARDUINO_HEADER_R3_D6 0 &gpiob 10 0>,
-			   <ARDUINO_HEADER_R3_D7 0 &gpioa 8 0>,
-			   <ARDUINO_HEADER_R3_D8 0 &gpioa 9 0>,
+			   <ARDUINO_HEADER_R3_D7 0 &gpiod 2 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpiob 6 0>,
 			   <ARDUINO_HEADER_R3_D9 0 &gpioc 7 0>,
 			   <ARDUINO_HEADER_R3_D10 0 &gpioa 15 0>,
 			   <ARDUINO_HEADER_R3_D11 0 &gpioa 7 0>,
 			   <ARDUINO_HEADER_R3_D12 0 &gpioa 6 0>,
 			   <ARDUINO_HEADER_R3_D13 0 &gpioa 5 0>,
-			   <ARDUINO_HEADER_R3_D14 0 &gpiob 9 0>,
+			   <ARDUINO_HEADER_R3_D14 0 &gpiob 7 0>,
 			   <ARDUINO_HEADER_R3_D15 0 &gpiob 8 0>;
 	};
 };

@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(ssd1322, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/drivers/mipi_dbi.h>
 #include <zephyr/kernel.h>
 
+#define SSD1322_ENABLE_LUT           0x00
 #define SSD1322_SET_COLUMN_ADDR      0x15
 #define SSD1322_ENABLE_RAM_WRITE     0x5C
 #define SSD1322_SET_ROW_ADDR         0x75
@@ -35,20 +36,29 @@ LOG_MODULE_REGISTER(ssd1322, CONFIG_DISPLAY_LOG_LEVEL);
 #define SSD1322_SET_CLOCK_DIV        0xB3
 #define SSD1322_SET_GPIO             0xB5
 #define SSD1322_SET_SECOND_PRECHARGE 0xB6
+#define SSD1322_SET_LUT              0xB8
 #define SSD1322_DEFAULT_GRAYSCALE    0xB9
 #define SSD1322_SET_PRECHARGE        0xBB
 #define SSD1322_SET_VCOMH            0xBE
 #define SSD1322_SET_CONTRAST         0xC1
 #define SSD1322_SET_MUX_RATIO        0xCA
 
-#define SSD1322_SET_ENHANCE         0xD1
-#define SSD1322_SET_ENHANCE_ENABLE  0x82
-#define SSD1322_SET_ENHANCE_DISABLE 0xA2
-#define SSD1322_SET_ENHANCE_END     0x20
+#define SSD1322_SET_ENHANCEB         0xD1
+#define SSD1322_SET_ENHANCEB_ENABLE  0x82
+#define SSD1322_SET_ENHANCEB_DISABLE 0xA2
+#define SSD1322_SET_ENHANCEB_END     0x20
 
-#define SSD1322_COMMAND_LOCK        0xFD
-#define SSD1322_COMMAND_LOCK_UNLOCK 0x12
-#define SSD1322_COMMAND_LOCK_LOCK   0x16
+#define SSD1322_SET_ENHANCEA         0xB4
+#define SSD1322_SET_ENHANCEA_INVSL   0xA2
+#define SSD1322_SET_ENHANCEA_EXTVSL  0xA0
+#define SSD1322_SET_ENHANCEA_ENABLE  0xFD
+#define SSD1322_SET_ENHANCEA_DISABLE 0xB5
+
+#define SSD1322_COMMAND_LOCK         0xFD
+#define SSD1322_COMMAND_LOCK_UNLOCK  0x12
+#define SSD1322_COMMAND_LOCK_LOCK    0x16
+
+#define SSD1322_LUT_COUNT           15
 
 /* 2 pixels per byte */
 #define SSD1322_2PPB 2
@@ -74,6 +84,8 @@ struct ssd1322_config {
 	bool remap_com_dual;
 	bool grayscale_enhancement;
 	bool color_inversion;
+	bool grayscale_enhancement_lg;
+	bool external_vsl;
 	uint8_t segments_per_pixel;
 	uint8_t oscillator_freq;
 	uint8_t precharge_voltage;
@@ -82,6 +94,7 @@ struct ssd1322_config {
 	uint8_t precharge_period;
 	uint8_t *conversion_buf;
 	size_t conversion_buf_size;
+	const uint8_t *grayscale_table;
 };
 
 struct ssd1322_data {
@@ -119,8 +132,8 @@ static int ssd1322_convert_L_8(const struct device *dev, const uint8_t *buf, int
 
 	if (config->segments_per_pixel == SSD1322_2PPP) {
 		for (; i < config->conversion_buf_size && pixel_count > cur_offset + i; i += 1) {
-			config->conversion_buf[i ^ 1] = (buf[cur_offset + i] >> 4) << 4;
-			config->conversion_buf[i ^ 1] |= buf[cur_offset + i] >> 4;
+			config->conversion_buf[i] = buf[cur_offset + i] >> 4
+							| (buf[cur_offset + i] >> 4) << 4;
 		}
 	} else {
 		for (; i / 2 < config->conversion_buf_size && pixel_count > cur_offset + i;
@@ -241,6 +254,8 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 	size_t buf_len;
 	int ret;
 	uint8_t cmd_data[2];
+	uint16_t align_check = config->segments_per_pixel == SSD1322_2PPP ? 1 : 3;
+	uint16_t align_shift = config->segments_per_pixel == SSD1322_2PPP ? 1 : 2;
 
 	if (desc->pitch != desc->width) {
 		LOG_ERR("Pitch is different from width");
@@ -263,17 +278,21 @@ static int ssd1322_write(const struct device *dev, const uint16_t x, const uint1
 		return -EINVAL;
 	}
 
-	if ((x & 1) != 0U) {
+	if ((x & align_check) != 0U) {
 		LOG_ERR("Unsupported origin");
+		return -EINVAL;
+	}
+
+	if ((desc->width & align_check) != 0U) {
+		LOG_ERR("Unsupported width");
 		return -EINVAL;
 	}
 
 	LOG_DBG("x %u, y %u, pitch %u, width %u, height %u, buf_len %u", x, y, desc->pitch,
 		desc->width, desc->height, buf_len);
 
-	cmd_data[0] = config->column_offset + (x >> 2) * config->segments_per_pixel;
-	cmd_data[1] =
-		config->column_offset + ((x + desc->width) >> 2) * config->segments_per_pixel - 1;
+	cmd_data[0] = config->column_offset + (x >> align_shift);
+	cmd_data[1] = config->column_offset + ((x + desc->width) >> align_shift) - 1;
 	ret = ssd1322_write_command(dev, SSD1322_SET_COLUMN_ADDR, cmd_data, 2);
 	if (ret < 0) {
 		return ret;
@@ -389,6 +408,18 @@ static int ssd1322_init_device(const struct device *dev)
 		return ret;
 	}
 
+	if (config->grayscale_table != NULL) {
+		ret = ssd1322_write_command(dev, SSD1322_SET_LUT, config->grayscale_table,
+					    SSD1322_LUT_COUNT);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = ssd1322_write_command(dev, SSD1322_ENABLE_LUT, NULL, 0);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
 	ret = ssd1322_write_command(dev, SSD1322_SET_PRECHARGE, &config->precharge_voltage, 1);
 	if (ret < 0) {
 		return ret;
@@ -410,10 +441,19 @@ static int ssd1322_init_device(const struct device *dev)
 		return ret;
 	}
 
-	data[0] = config->grayscale_enhancement ? SSD1322_SET_ENHANCE_ENABLE
-						: SSD1322_SET_ENHANCE_DISABLE;
-	data[1] = SSD1322_SET_ENHANCE_END;
-	ret = ssd1322_write_command(dev, SSD1322_SET_ENHANCE, data, 2);
+	data[0] = config->grayscale_enhancement ? SSD1322_SET_ENHANCEB_ENABLE
+						: SSD1322_SET_ENHANCEB_DISABLE;
+	data[1] = SSD1322_SET_ENHANCEB_END;
+	ret = ssd1322_write_command(dev, SSD1322_SET_ENHANCEB, data, 2);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data[0] = config->grayscale_enhancement_lg ? SSD1322_SET_ENHANCEA_ENABLE
+						: SSD1322_SET_ENHANCEA_DISABLE;
+	data[1] = config->external_vsl ? SSD1322_SET_ENHANCEA_EXTVSL
+						: SSD1322_SET_ENHANCEA_INVSL;
+	ret = ssd1322_write_command(dev, SSD1322_SET_ENHANCEA, data, 2);
 	if (ret < 0) {
 		return ret;
 	}
@@ -490,11 +530,18 @@ static DEVICE_API(display, ssd1322_driver_api) = {
 			     DT_PROP(node_id, segments_per_pixel),                                 \
 		     SSD1322_2PPB)
 
+#define SSD1322_GRAYSCALE_TABLE(node_id)                                                           \
+	.grayscale_table = COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table),                 \
+	(ssd1322_grayscale_table_##node_id), (NULL))
+
 #define SSD1322_DEFINE(node_id)                                                                    \
 	static uint8_t conversion_buf##node_id[SSD1322_CONV_BUFFER_SIZE(node_id)];                 \
 	static struct ssd1322_data data##node_id = {                                               \
 		.current_pixel_format = SSD1322_CURRENT_PIXEL_FORMAT,                              \
 	};                                                                                         \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, grayscale_table), (                                  \
+	static const uint8_t ssd1322_grayscale_table_##node_id[SSD1322_LUT_COUNT] =                \
+	DT_PROP(node_id, grayscale_table);), ())                                                   \
 	static const struct ssd1322_config config##node_id = {                                     \
 		.height = DT_PROP(node_id, height),                                                \
 		.width = DT_PROP(node_id, width),                                                  \
@@ -516,11 +563,14 @@ static DEVICE_API(display, ssd1322_driver_api) = {
 		.phase_length = DT_PROP(node_id, phase_length),                                    \
 		.precharge_period = DT_PROP(node_id, precharge_period),                            \
 		.color_inversion = DT_PROP(node_id, inversion_on),                                 \
+		.grayscale_enhancement_lg = DT_PROP(node_id, grayscale_enhancement_lg),            \
+		.external_vsl = DT_PROP(node_id, external_vsl),                                    \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
 			node_id, SSD1322_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),              \
 		.conversion_buf = conversion_buf##node_id,                                         \
 		.conversion_buf_size = sizeof(conversion_buf##node_id),                            \
+		SSD1322_GRAYSCALE_TABLE(node_id),                                                \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_DEFINE(node_id, ssd1322_init, NULL, &data##node_id, &config##node_id,            \

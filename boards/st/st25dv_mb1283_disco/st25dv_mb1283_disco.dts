@@ -88,10 +88,12 @@
 			mipi-max-frequency = <DT_FREQ_M(20)>;
 			reg = <0>;
 			pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+			red-blue-swap;
 			rotation = <0>;
 			width = <240>;
 			height = <320>;
 			duplex = <0x800>;
+			v-mirror;
 		};
 	};
 };
@@ -147,6 +149,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 

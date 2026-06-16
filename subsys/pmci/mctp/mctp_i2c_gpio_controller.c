@@ -33,11 +33,16 @@ static void rx_completion(struct rtio *r, const struct rtio_sqe *sqe, int result
 	}
 
 	struct mctp_pktbuf *pkt = mctp_pktbuf_alloc(&b->binding, b->rx_buf_len);
+	if (pkt == NULL) {
+		LOG_ERR("Failed to allocate pktbuf");
+		return;
+	}
 
 	memcpy(pkt->data, b->rx_buf, b->rx_buf_len);
 
 	LOG_DBG("giving pkt to mctp, len %d", b->rx_buf_len);
 	mctp_bus_rx(&b->binding, pkt);
+	mctp_pktbuf_free(pkt);
 
 	/* Walk our pending bits from the current index, and start the next one if needed */
 	struct mctp_i2c_gpio_controller_cb *cb = b->inflight_rx;

@@ -52,6 +52,13 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	 */
 	buf[1] |= (nrf_ficr_er_get(NRF_FICR, 0) & 0xFF) << 16;
 	buf[1] |= (nrf_ficr_ir_get(NRF_FICR, 0) & 0xFF) << 24;
+#elif NRF_FICR_HAS_NFC_TAGHEADER_ARRAY
+	/* DEVICEID is not accessible, use NFCID instead.
+	 * Assume that it is always accessible from the non-secure image.
+	 * Skip TAGHEADER[0] as it always contain Manufacturer ID.
+	 */
+	buf[0] = nrf_ficr_nfc_tagheader_get(NRF_FICR, 1);
+	buf[1] = nrf_ficr_nfc_tagheader_get(NRF_FICR, 2);
 #else
 #error "No suitable source for hwinfo device_id generation"
 #endif
@@ -76,8 +83,9 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 #define REASON_SOFTWARE (NRFX_RESET_REASON_SREQ_MASK | NRFX_RESET_REASON_LOCAL_SREQ_MASK)
 #define REASON_WATCHDOG	\
 	(NRFX_RESET_REASON_DOG_MASK | \
-	 NRFX_RESET_REASON_LOCAL_DOG1_MASK | \
-	 NRFX_RESET_REASON_LOCAL_DOG0_MASK)
+	 COND_CODE_1(NRFX_RESET_REASON_HAS_LOCAL_DOG, (NRFX_RESET_REASON_LOCAL_DOG_MASK), (0)) | \
+	 COND_CODE_1(NRFX_RESET_REASON_HAS_LOCAL_DOG1, (NRFX_RESET_REASON_LOCAL_DOG1_MASK), (0)) | \
+	 COND_CODE_1(NRFX_RESET_REASON_HAS_LOCAL_DOG0, (NRFX_RESET_REASON_LOCAL_DOG0_MASK), (0)))
 
 #else /* NRF_RESETINFO */
 
