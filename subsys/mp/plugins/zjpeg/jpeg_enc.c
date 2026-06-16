@@ -1802,8 +1802,61 @@ int JPEGAddMCU(JPEGE_IMAGE *pJPEG, JPEGENCODE *pEncode, uint8_t *pPixels, int iP
         pJPEG->iError = JPEGE_INVALID_PARAMETER;
         return JPEGE_INVALID_PARAMETER;
     }
+    // libMP local change (not in upstream bitbank JPEGENC; candidate to upstream).
+    // Handle frames whose dimensions are not a multiple of the MCU size. Upstream
+    // always reads a full MCU, over-reading the input buffer for the right/bottom
+    // edge MCUs (the decoder crops the padding, so the over-read is silent but still
+    // out-of-bounds). For an edge MCU we copy its valid pixels into a full-size
+    // scratch and edge-replicate the padding, then encode the scratch. This is
+    // correct for any resolution (including odd) and does no dynamic allocation.
+    uint8_t *pSrc = pPixels;
+    int iSrcPitch = iPitch;
+    uint8_t aEdgeMCU[16 * 16 * 4]; // worst case: 16x16 (4:2:0) MCU * 4 Bpp (ARGB8888)
+    {
+        int mcuw = pEncode->cx, mcuh = pEncode->cy;
+        int bw = pJPEG->iWidth - pEncode->x;  // valid pixels to the right edge
+        int bh = pJPEG->iHeight - pEncode->y; // valid pixels to the bottom edge
+
+        if (bw > mcuw) {
+            bw = mcuw;
+        }
+        if (bh > mcuh) {
+            bh = mcuh;
+        }
+        if (bw < mcuw || bh < mcuh) { // partial (edge) MCU: pad into the scratch
+            int bpp, row, col, spitch;
+
+            switch (pJPEG->ucPixelType) {
+            case JPEGE_PIXEL_GRAYSCALE:
+                bpp = 1;
+                break;
+            case JPEGE_PIXEL_RGB888:
+                bpp = 3;
+                break;
+            case JPEGE_PIXEL_ARGB8888:
+                bpp = 4;
+                break;
+            default: // RGB565, YUV422
+                bpp = 2;
+                break;
+            }
+            spitch = mcuw * bpp;
+            for (row = 0; row < bh; row++) {
+                memcpy(&aEdgeMCU[row * spitch], &pPixels[row * iPitch], (size_t)bw * bpp);
+                for (col = bw; col < mcuw; col++) { // replicate the right edge column
+                    memcpy(&aEdgeMCU[row * spitch + col * bpp],
+                           &aEdgeMCU[row * spitch + (bw - 1) * bpp], bpp);
+                }
+            }
+            for (row = bh; row < mcuh; row++) { // replicate the bottom edge row
+                memcpy(&aEdgeMCU[row * spitch], &aEdgeMCU[(bh - 1) * spitch], spitch);
+            }
+            pSrc = aEdgeMCU;
+            iSrcPitch = spitch;
+        }
+    }
     if (pJPEG->ucPixelType == JPEGE_PIXEL_GRAYSCALE) {
-        JPEGGetMCU(pPixels, iPitch, pJPEG->MCUc);
+        JPEGGetMCU(pSrc, iSrcPitch, pJPEG->MCUc);
         JPEGFDCT(pJPEG->MCUc, pJPEG->MCUs);
         bSparse = JPEGQuantize(pJPEG, pJPEG->MCUs, 0);
         pJPEG->iDCPred0 = JPEGEncodeMCU(0, pJPEG, pJPEG->MCUs, pJPEG->iDCPred0, bSparse);
@@ -1824,7 +1877,7 @@ int JPEGAddMCU(JPEGE_IMAGE *pJPEG, JPEGENCODE *pEncode, uint8_t *pPixels, int iP
         } // grayscale
     } else { // color
         if (pJPEG->ucSubSample == JPEGE_SUBSAMPLE_444) {
-            JPEGGetMCU11(pPixels, pJPEG, iPitch);
+            JPEGGetMCU11(pSrc, pJPEG, iSrcPitch);
             JPEGFDCT(&pJPEG->MCUc[0*DCTSIZE], pJPEG->MCUs);
             // Y
             bSparse = JPEGQuantize(pJPEG, pJPEG->MCUs, 0);
@@ -1838,7 +1891,7 @@ int JPEGAddMCU(JPEGE_IMAGE *pJPEG, JPEGENCODE *pEncode, uint8_t *pPixels, int iP
             bSparse = JPEGQuantize(pJPEG, pJPEG->MCUs, 1);
             pJPEG->iDCPred2 = JPEGEncodeMCU(1, pJPEG, pJPEG->MCUs, pJPEG->iDCPred2, bSparse);
         } else { // must be 420
-            JPEGGetMCU22(pPixels, pJPEG, iPitch);
+            JPEGGetMCU22(pSrc, pJPEG, iSrcPitch);
             JPEGFDCT(&pJPEG->MCUc[0*DCTSIZE], pJPEG->MCUs); // Y0
             bSparse = JPEGQuantize(pJPEG, pJPEG->MCUs, 0);
             pJPEG->iDCPred0 = JPEGEncodeMCU(0, pJPEG, pJPEG->MCUs, pJPEG->iDCPred0, bSparse);
