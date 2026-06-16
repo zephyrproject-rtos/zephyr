@@ -512,8 +512,8 @@ error:
 
 }
 
-void i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
-			 uint16_t i2c_addr)
+int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
+			uint16_t i2c_addr)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
@@ -543,6 +543,8 @@ void i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, 
 	} else {
 		LL_I2C_EnableIT_TX(i2c);
 	}
+
+	return 0;
 }
 
 int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)

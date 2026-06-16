@@ -102,6 +102,7 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 	struct rtio_sqe *sqe = &ctx->txn_curr->sqe;
 	struct i2c_dt_spec *dt_spec = sqe->iodev->data;
 	uint8_t flags = sqe->iodev_flags;
+	int error;
 
 #ifdef CONFIG_I2C_STM32_V2
 	struct rtio_iodev_sqe *iodev_sqe_next = rtio_txn_next(ctx->txn_curr);
@@ -115,16 +116,16 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 
 	switch (sqe->op) {
 	case RTIO_OP_RX:
-		i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf, sqe->rx.buf_len,
-				    dt_spec->addr);
+		error = i2c_stm32_msg_start(dev, I2C_MSG_READ | flags, sqe->rx.buf, sqe->rx.buf_len,
+					    dt_spec->addr);
 		break;
 	case RTIO_OP_TINY_TX:
-		i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
-				    dt_spec->addr);
+		error = i2c_stm32_msg_start(dev, flags, sqe->tiny_tx.buf, sqe->tiny_tx.buf_len,
+					    dt_spec->addr);
 		break;
 	case RTIO_OP_TX:
-		i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
-				    dt_spec->addr);
+		error = i2c_stm32_msg_start(dev, flags, (uint8_t *)sqe->tx.buf, sqe->tx.buf_len,
+					    dt_spec->addr);
 		break;
 	case RTIO_OP_I2C_CONFIGURE:
 		*status = i2c_stm32_runtime_configure(dev, sqe->i2c_config);
@@ -132,6 +133,12 @@ static bool i2c_stm32_start(const struct device *dev, int *status)
 	default:
 		LOG_ERR("Invalid op code %d for submission %p\n", sqe->op, (void *)sqe);
 		*status = -EINVAL;
+		return false;
+	}
+
+	/* Reaching this point, no asynchronous sequence is started only if an error was reported */
+	if (error != 0) {
+		*status = error;
 		return false;
 	}
 
