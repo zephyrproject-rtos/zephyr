@@ -1101,8 +1101,8 @@ static int dtls_tx(void *ctx, const unsigned char *buf, size_t len)
 static int dtls_server_rx(void *ctx, unsigned char *buf, size_t len)
 {
 	struct tls_context *tls_ctx = ctx;
-	net_socklen_t addrlen = sizeof(addr);
 	struct net_sockaddr_storage addr = { 0 };
+	net_socklen_t addrlen = sizeof(addr);
 	int err;
 	ssize_t received;
 	uint8_t tmp_buf;
