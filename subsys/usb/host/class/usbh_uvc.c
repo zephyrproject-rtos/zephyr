@@ -1576,6 +1576,7 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 	header_length = payload_header->bHeaderLength;
 
 	if (buf->len <= UVC_PAYLOAD_HEADER_MIN_SIZE) {
+		LOG_WRN("Only %u bytes, skipping packet", buf->len);
 		goto cleanup;
 	}
 
@@ -1588,6 +1589,8 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 			}
 		} else if (presentation_time != host_data->current_frame_timestamp) {
 			save_picture = false;
+			LOG_WRN("presentation time mismatch, expected %u, got %u - discarding",
+				presentation_time, host_data->current_frame_timestamp);
 		} else {
 			/* Normal frame continuation */
 		}
@@ -1635,6 +1638,7 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 	LOG_DBG("Frame completed: %u bytes (FID: %u)", vbuf->bytesused, frame_id);
 
 	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) {
+		LOG_WRN("Device is not streaming anymore, pausing");
 		goto cleanup;
 	}
 
