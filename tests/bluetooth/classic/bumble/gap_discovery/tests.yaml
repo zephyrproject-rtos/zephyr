@@ -1,0 +1,29 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: ztest
+  sidecar: bumble
+tests:
+  bluetooth.classic.sim.gap.general_discovery:
+    timeout: 300
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address=00:00:01:00:00:02 -test=gap_central::test_01_general_discovery
+          - --peer_bd_address=00:00:01:00:00:01 -test=gap_peripheral::test_01_general_discovery
+
+  bluetooth.classic.sim.gap.limited_discovery:
+    timeout: 300
+    sidecar_config:
+      bumble:
+        addresses:
+          - 00:00:01:00:00:01
+          - 00:00:01:00:00:02
+        devices:
+          - --peer_bd_address=00:00:01:00:00:02 -test=gap_central::test_02_limited_discovery
+          - --peer_bd_address=00:00:01:00:00:01 -test=gap_peripheral::test_02_limited_discovery
