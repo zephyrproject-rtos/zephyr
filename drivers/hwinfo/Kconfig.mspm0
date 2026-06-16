@@ -4,7 +4,7 @@
 config HWINFO_MSPM0
 	bool "TI MSPM0 hwinfo"
 	default y
-	depends on SOC_FAMILY_TI_MSPM0
+	depends on SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable TI MSPM0 hwinfo driver

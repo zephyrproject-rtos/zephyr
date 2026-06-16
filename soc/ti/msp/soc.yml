@@ -1,5 +1,5 @@
 family:
-- name: ti_mspm0
+- name: ti_msp
   series:
   - name: mspm0g
     socs:

@@ -4,7 +4,7 @@
 
 config SOC_SERIES_MSPM0G
 	bool
-	select SOC_FAMILY_TI_MSPM0
+	select SOC_FAMILY_TI_MSP
 	help
 	  Enable support for TI MSPM0G series SoCs
 

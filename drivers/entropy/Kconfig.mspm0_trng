@@ -5,7 +5,7 @@ config ENTROPY_MSPM0_TRNG
 	bool "TI MSPM0 True Random Number Generator (TRNG)"
 	default y
 	depends on DT_HAS_TI_MSPM0_TRNG_ENABLED
-	depends on SOC_FAMILY_TI_MSPM0
+	depends on SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L
 	select ENTROPY_HAS_DRIVER
 	select RING_BUFFER
 	help

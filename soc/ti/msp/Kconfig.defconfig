@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Texas Instruments
 # Copyright (c) 2025 Linumiz
 
-if SOC_FAMILY_TI_MSPM0
+if SOC_FAMILY_TI_MSP
 
 rsource "*/Kconfig.defconfig"
 
@@ -14,10 +14,13 @@ config FLASH_SIZE
 config FLASH_BASE_ADDRESS
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
+# MSPM0 uses mclk DT node for CPU frequency
+if SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L
 DT_MSPM0_MCLK_PATH := $(dt_nodelabel_path,mclk)
 DT_MSPM0_MCLK_CPU_FREQ := $(dt_node_int_prop_int,$(DT_MSPM0_MCLK_PATH),clock-frequency)
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default "$(DT_MSPM0_MCLK_CPU_FREQ)" if "$(dt_nodelabel_enabled,mclk)"
+endif # SOC_SERIES_MSPM0G || SOC_SERIES_MSPM0L
 
-endif # SOC_FAMILY_TI_MSPM0
+endif # SOC_FAMILY_TI_MSP

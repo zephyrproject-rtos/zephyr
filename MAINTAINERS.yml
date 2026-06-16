@@ -5819,7 +5819,7 @@ TI MSPM0 Platforms:
     - ssekar15
     - d-philpot
   files:
-    - soc/ti/mspm0/
+    - soc/ti/msp/
     - boards/ti/lp_mspm0g3507/
     - dts/arm/ti/mspm0/
     - dts/bindings/*/*mspm0*
