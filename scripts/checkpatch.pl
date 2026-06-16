@@ -3813,7 +3813,7 @@ sub process {
 			my $cond_lines = 1 + $#newlines;
 
 			# Make sure we remove the line prefixes as we have
-			# none on the first line, and are going to readd them
+			# none on the first line, and are going to re-add them
 			# where necessary.
 			$s =~ s/\n./\n/gs;
 			while ($s =~ /\n\s+\\\n/) {
@@ -4824,7 +4824,7 @@ sub process {
 ## 		    $line !~ /^.\s*$Type\s+$Ident(?:\s*=[^,{]*)?\s*,\s*$Type\s*$Ident.*/) {
 ##
 ## 			# Remove any bracketed sections to ensure we do not
-## 			# falsly report the parameters of functions.
+## 			# falsely report the parameters of functions.
 ## 			my $ln = $line;
 ## 			while ($ln =~ s/\([^\(\)]*\)//g) {
 ## 			}

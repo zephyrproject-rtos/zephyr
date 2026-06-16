@@ -1235,7 +1235,7 @@ class Kconfig(object):
         self._warn_assign_no_prompt = False
 
         # This stub only exists to make sure _warn_assign_no_prompt gets
-        # reenabled
+        # re-enabled
         try:
             self._load_config(filename, replace)
         except UnicodeDecodeError as e:

@@ -448,7 +448,7 @@ def process_pr(gh, maintainer_file, number):
                 "equal to 15. Adding maintainers of all areas as reviewers instead."
             )
             # FIXME: Here we could also add collaborators of the areas most
-            # affected, i.e. the one with the final assigne.
+            # affected, i.e. the one with the final assignee.
             reviewers = list(_all_maintainers.keys())
 
         if reviewers:

@@ -57,7 +57,7 @@ BUILD_ASSERT(offsetof(struct _isr_table_entry, isr)
 
         The function prepares parser to work.
         Parameters:
-        - intlist_data: The binnary data from intlist section
+        - intlist_data: The binary data from intlist section
         - config: The configuration object
         - log: The logging object, has to have error and debug methods
         """

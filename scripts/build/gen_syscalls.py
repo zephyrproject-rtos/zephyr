@@ -494,7 +494,7 @@ def parse_args():
         "-u",
         "--userspace-only",
         action="store_true",
-        help="Only generate the userpace path of wrappers",
+        help="Only generate the userspace path of wrappers",
     )
     args = parser.parse_args()
 

@@ -2182,7 +2182,7 @@ class TwisterRunner:
         # Remove brackets
         filt = filt.replace("(", "")
         filt = filt.replace(")", "")
-        # Splite by whitespaces
+        # Split by whitespaces
         filt = filt.split()
         for expression in filt:
             if expression.startswith("dt_"):

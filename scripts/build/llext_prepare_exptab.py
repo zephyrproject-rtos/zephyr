@@ -203,7 +203,7 @@ class ZephyrElfExptabPreparator:
         #   4) Write back the updated export table
         #
         # N.B.: reusing part of the code in _prepare_elf_for_slid_linking
-        # might be possible and desireable.
+        # might be possible and desirable.
         #
         # As of writing, this function will never be called as this script
         # is only called if CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID is enabled,
