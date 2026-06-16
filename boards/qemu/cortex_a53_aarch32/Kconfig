@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_CORTEX_A53_AARCH32
+	select SOC_QEMU_CORTEX_A53_AARCH32
+	# The EL3 boot shim puts the GIC in a single security state (GICD_CTLR.DS=1)
+	# and enters Zephyr in Non-secure EL1
+	select GIC_SINGLE_SECURITY_STATE
+	select ARMV8_A_NS
