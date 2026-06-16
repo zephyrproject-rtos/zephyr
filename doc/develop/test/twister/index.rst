@@ -76,6 +76,15 @@ documentation build time):
 .. command-output:: $ZEPHYR_BASE/scripts/twister --help
    :shell:
 
+The following pages cover additional Twister topics:
+
+.. toctree::
+   :maxdepth: 1
+
+   pytest
+   twister_statuses
+   twister_blackbox
+
 
 Board Configuration
 *******************

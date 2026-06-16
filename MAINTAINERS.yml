@@ -6091,9 +6091,8 @@ Twister:
     - scripts/pylib/twister/
     - scripts/tests/twister/
     - scripts/tests/twister_blackbox/
-    - doc/develop/test/twister.rst
     - scripts/pylib/pytest-twister-harness/
-    - doc/develop/test/pytest.rst
+    - doc/develop/test/twister/
     - tests/test_config.yaml
     - scripts/utils/twister_to_list.py
     - tests/robot/common.robot
