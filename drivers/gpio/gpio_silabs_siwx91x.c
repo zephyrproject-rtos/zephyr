@@ -456,27 +456,6 @@ static DEVICE_API(gpio, gpio_siwx91x_api) = {
 #endif
 };
 
-#define GPIO_PORT_INIT(n)                                                                          \
-	struct gpio_siwx91x_pin_config_info                                                        \
-		pin_config_info_##n[__builtin_popcount(GPIO_PORT_PIN_MASK_FROM_DT_NODE(n))];       \
-	static const struct gpio_siwx91x_port_config gpio_siwx91x_port_config##n = {               \
-		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(n),                                      \
-		.parent = DEVICE_DT_GET(DT_PARENT(n)),                                             \
-		.pads = DT_PROP(n, silabs_pads),                                                   \
-		.port = DT_REG_ADDR(n),                                                            \
-		.hal_port = (DT_PROP(DT_PARENT(n), silabs_ulp) ? SL_GPIO_ULP_PORT : 0) +           \
-			    DT_REG_ADDR(n),                                                        \
-		.ulp = DT_PROP(DT_PARENT(n), silabs_ulp),                                          \
-	};                                                                                         \
-	static struct gpio_siwx91x_port_data gpio_siwx91x_port_data##n = {                         \
-		.pin_config_info = pin_config_info_##n,                                            \
-		.total_pin_cnt = __builtin_popcount(GPIO_PORT_PIN_MASK_FROM_DT_NODE(n)),           \
-	};                                                                                         \
-	PM_DEVICE_DT_DEFINE(n, gpio_siwx91x_port_pm_action);                                       \
-	DEVICE_DT_DEFINE(n, gpio_siwx91x_init_port, PM_DEVICE_DT_GET(n),                           \
-			 &gpio_siwx91x_port_data##n, &gpio_siwx91x_port_config##n, PRE_KERNEL_1,   \
-			 CONFIG_GPIO_INIT_PRIORITY, &gpio_siwx91x_api);
-
 #define CONFIGURE_SHARED_INTERRUPT(node_id, prop, idx)                                             \
 	IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, idx, irq), DT_IRQ_BY_IDX(node_id, idx, priority),       \
 		    gpio_siwx91x_isr, DEVICE_DT_GET(node_id), 0);                                  \
@@ -514,7 +493,32 @@ static DEVICE_API(gpio, gpio_siwx91x_common_api) = {};
 	DEVICE_DT_INST_DEFINE(idx, gpio_siwx91x_init_controller_##idx, PM_DEVICE_DT_INST_GET(idx), \
 			      &gpio_siwx91x_data##idx, &gpio_siwx91x_config##idx, PRE_KERNEL_1,    \
 			      CONFIG_GPIO_SILABS_SIWX91X_COMMON_INIT_PRIORITY,                     \
-			      &gpio_siwx91x_common_api);                                           \
-	DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, GPIO_PORT_INIT);
+			      &gpio_siwx91x_common_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_CONTROLLER_INIT)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT silabs_siwx91x_gpio_port
+
+#define GPIO_PORT_INIT(n)                                                                          \
+	struct gpio_siwx91x_pin_config_info                                                        \
+		pin_config_info_##n[__builtin_popcount(GPIO_PORT_PIN_MASK_FROM_DT_INST(n))];       \
+	static const struct gpio_siwx91x_port_config gpio_siwx91x_port_config##n = {               \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
+		.parent = DEVICE_DT_GET(DT_INST_PARENT(n)),                                        \
+		.pads = DT_INST_PROP(n, silabs_pads),                                              \
+		.port = DT_INST_REG_ADDR(n),                                                       \
+		.hal_port = (DT_PROP(DT_INST_PARENT(n), silabs_ulp) ? SL_GPIO_ULP_PORT : 0) +      \
+			    DT_INST_REG_ADDR(n),                                                   \
+		.ulp = DT_PROP(DT_INST_PARENT(n), silabs_ulp),                                     \
+	};                                                                                         \
+	static struct gpio_siwx91x_port_data gpio_siwx91x_port_data##n = {                         \
+		.pin_config_info = pin_config_info_##n,                                            \
+		.total_pin_cnt = __builtin_popcount(GPIO_PORT_PIN_MASK_FROM_DT_INST(n)),           \
+	};                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(n, gpio_siwx91x_port_pm_action);                                  \
+	DEVICE_DT_INST_DEFINE(n, gpio_siwx91x_init_port, PM_DEVICE_DT_INST_GET(n),                 \
+			      &gpio_siwx91x_port_data##n, &gpio_siwx91x_port_config##n,            \
+			      PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_siwx91x_api);
+
+DT_INST_FOREACH_STATUS_OKAY(GPIO_PORT_INIT)
