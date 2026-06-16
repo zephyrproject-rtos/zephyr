@@ -1,4 +1,5 @@
 # Copyright (c) 2019 Carlo Caione <ccaione@baylibre.com>
+# Copyright (c) 2026 Realtek Semiconductor Corp.
 # SPDX-License-Identifier: Apache-2.0
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
@@ -6,9 +7,13 @@ set(QEMU_BINARY_SUFFIX aarch64)
 
 set(QEMU_CPU_TYPE cortex-a53)
 
-if(CONFIG_ARMV8_A_NS)
-  set(QEMU_MACH virt,gic-version=3)
-else()
+if(CONFIG_QEMU_CORTEX_A53_EXECUTION_STATE_AARCH64)
+  if(CONFIG_ARMV8_A_NS)
+    set(QEMU_MACH virt,gic-version=3)
+  else()
+    set(QEMU_MACH virt,secure=on,gic-version=3)
+  endif()
+elseif(CONFIG_QEMU_CORTEX_A53_EXECUTION_STATE_AARCH32)
   set(QEMU_MACH virt,secure=on,gic-version=3)
 endif()
 
@@ -44,6 +49,14 @@ if(CONFIG_XIP)
   # without having to pad the binary file to the FLASH size
   set(QEMU_KERNEL_OPTION
   -bios ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
+  )
+elseif(CONFIG_QEMU_CORTEX_A53_EXECUTION_STATE_AARCH32)
+  dt_chosen(zephyr_sram_path PROPERTY "zephyr,sram")
+  dt_reg_addr(zephyr_load_address PATH "${zephyr_sram_path}")
+
+  set(QEMU_KERNEL_OPTION
+    -bios ${CMAKE_BINARY_DIR}/shim/shim.bin
+    -device loader,file=${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin,addr=${zephyr_load_address}
   )
 endif()
 
