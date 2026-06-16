@@ -2730,7 +2730,49 @@ This has been fixed in main for v4.5.0
 :cve:`2026-10640`
 -----------------
 
-Under embargo until 2026-06-14
+Use-after-free reading ``net_pkt`` ``iface`` after send in IPv6 Neighbor Discovery (``ipv6_nbr.c``)
+
+Zephyr's IPv6 Neighbor Discovery send paths (``net_ipv6_send_na``, ``net_ipv6_send_ns``,
+``net_ipv6_send_rs`` in ``subsys/net/ip/ipv6_nbr.c``) updated the per-interface ICMP-
+sent statistics by calling ``net_pkt_iface(pkt)`` after ``net_send_data(pkt)`` had
+already returned successfully. On the success path the network stack owns and releases
+the packet's reference (the L2/driver send unrefs it, e.g. ``ethernet_send`` ->
+``net_pkt_unref``), so for a freshly allocated packet with refcount 1 the ``net_pkt``
+slab block can be freed before the statistics line runs (synchronously when no TX queue
+thread is configured, or via a concurrent TX thread otherwise).
+
+The subsequent ``net_pkt_iface(pkt)`` reads ``pkt->iface`` from the freed slab block,
+and with ``CONFIG_NET_STATISTICS_PER_INTERFACE`` enabled that loaded pointer is
+dereferenced to increment ``iface->stats.icmp.sent``, a use-after-free (CWE-416). If the
+slab block was reallocated in the meantime the read/increment targets unrelated or
+attacker-influenced memory, yielding corrupted statistics, a fault/crash (denial of
+service), or potential limited memory corruption.
+
+The vulnerable Neighbor Advertisement path is reachable by any unauthenticated on-link
+node simply by sending ICMPv6 Neighbor Solicitations to a Zephyr node with native IPv6
+enabled (``handle_ns_input`` -> ``net_ipv6_send_na``).
+
+Affected from v3.3.0 through v4.4.0; the fix uses the already-available ``iface``
+argument instead of touching the sent packet. Configurations without per-interface
+statistics dereference only a global counter and are not affected by the memory-safety
+aspect.
+
+- `Zephyr project bug tracker GHSA-r74c-mr4m-7g9g
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-r74c-mr4m-7g9g>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107100 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107100>`_
+
+- `PR 110659 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110659>`_
+
+- `PR 110658 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110658>`_
+
+- `PR 107369 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107369>`_
 
 :cve:`2026-10641`
 -----------------
