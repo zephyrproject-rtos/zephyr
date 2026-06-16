@@ -346,6 +346,17 @@ void bt_conn_tx_notify(struct bt_conn *conn, bool wait_for_completion)
 		struct k_work_sync sync;
 		int err;
 
+		/* If tx_complete_work is already running, the in-flight execution
+		 * will process all pending TX callbacks.  Calling
+		 * k_work_submit_to_queue() while the work item is running is
+		 * unsafe, and calling k_work_flush() with a stack-local
+		 * z_work_flusher while a previous call's flusher may still be
+		 * queued can corrupt the handler pointer.  Skip in both cases.
+		 */
+		if (k_work_busy_get(&conn->tx_complete_work) & K_WORK_RUNNING) {
+			return;
+		}
+
 		err = k_work_submit_to_queue(tx_notify_workqueue_get(), &conn->tx_complete_work);
 		__ASSERT(err >= 0, "couldn't submit (err %d)", err);
 
@@ -493,23 +504,8 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	 *
 	 * Always do so from the same context for sanity. In this case that will
 	 * be either a dedicated Bluetooth connection TX workqueue or system workqueue.
-	 *
-	 * Skip the call if tx_complete_work is already pending: an in-flight
-	 * execution is already queued and will process the callbacks.  Calling
-	 * bt_conn_tx_notify() when the work is already pending would call
-	 * k_work_flush() with a second stack-local z_work_flusher at the same
-	 * stack address as the first one, because bt_conn_recv() runs on
-	 * bt_workq and the same stack frame may be reused for the next call
-	 * before the target queue drains the first flusher.  The target queue
-	 * would then dereference an overwritten handler pointer and crash.
 	 */
-#if defined(CONFIG_BT_CONN_TX)
-	if (!k_work_is_pending(&conn->tx_complete_work)) {
-		bt_conn_tx_notify(conn, true);
-	}
-#else
 	bt_conn_tx_notify(conn, true);
-#endif
 
 	LOG_DBG("handle %u len %u flags %02x", conn->handle, buf->len, flags);
 
