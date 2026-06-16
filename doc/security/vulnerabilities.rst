@@ -2636,7 +2636,45 @@ This has been fixed in main for v4.5.0
 :cve:`2026-10638`
 -----------------
 
-Under embargo until 2026-06-14
+Use-after-free in Zephyr ICMPv6 RX path when updating statistics after sending an echo reply or error
+
+``subsys/net/ip/icmpv6.c`` reads the network interface from a ``net_pkt`` after that
+packet has been handed to ``net_try_send_data()``. In ``icmpv6_handle_echo_request()``
+and ``net_icmpv6_send_error()``, the post-send statistics update calls
+``net_pkt_iface(reply)``/``net_pkt_iface(pkt)`` on the just-sent packet. The send path
+(``net_try_send_data`` -> ``net_if_tx``) unreferences and may free the packet back to
+its memory slab before returning — synchronously in the RX thread when no TX queue is
+configured (``CONFIG_NET_TC_TX_COUNT`` == 0), and asynchronously the driver/L2 may
+already have freed it otherwise. ``net_pkt_iface()`` therefore dereferences a freed (and
+possibly reused) ``net_pkt``; with ``CONFIG_NET_STATISTICS_PER_INTERFACE`` the stale
+``iface`` pointer is further dereferenced and written through
+(``iface->stats.icmp.sent++``), turning the use-after-free read into a write through an
+attacker-influenceable pointer. The core stack already documents this hazard in
+``net_core.c`` ("do not use pkt after that call") and caches ``iface`` before sending;
+the ICMPv6 callers did not. An unauthenticated remote attacker triggers the flaw simply
+by sending an ICMPv6 Echo Request (ping) or an IPv6 packet that elicits an ICMPv6 error
+(unknown next header, fragment reassembly timeout, destination unreachable), leading to
+denial of service via crash and potential memory corruption. Affected: Zephyr networking
+with ``CONFIG_NET_NATIVE_IPV6``, roughly v4.2.0 through v4.4.0. The fix caches the
+interface pointer before sending and uses it for all statistics updates; the sibling
+commit 86e21665d46 fixes the identical bug in ICMPv4.
+
+- `Zephyr project bug tracker GHSA-m92g-94xv-wvw2
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m92g-94xv-wvw2>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107100 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107100>`_
+
+- `PR 110659 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110659>`_
+
+- `PR 110658 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110658>`_
+
+- `PR 107369 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107369>`_
 
 :cve:`2026-10639`
 -----------------
