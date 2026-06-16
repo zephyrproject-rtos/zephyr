@@ -45,28 +45,24 @@ on how Twister deals with Ztest application.
 
 The sample contains the following files:
 
-CMakeLists.txt
-
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/CMakeLists.txt
    :language: CMake
+   :caption: CMakeLists.txt
    :linenos:
 
-tests.yaml
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/testcase.yaml
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/tests.yaml
    :language: yaml
+   :caption: tests.yaml
    :linenos:
-
-prj.conf
 
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/prj.conf
    :language: text
+   :caption: prj.conf
    :linenos:
-
-src/main.c
 
 .. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
    :language: c
+   :caption: src/main.c
    :linenos:
 
 A test application may consist of multiple test suites that
@@ -351,25 +347,25 @@ This is achieved via fixtures in the following way:
 
    static void *my_suite_setup(void)
    {
-	/* Allocate the fixture with 256 byte buffer */
-       struct my_suite_fixture *fixture = malloc(sizeof(struct my_suite_fixture) + 255);
+        /* Allocate the fixture with 256 byte buffer */
+        struct my_suite_fixture *fixture = malloc(sizeof(struct my_suite_fixture) + 255);
 
-	zassume_not_null(fixture, NULL);
-	fixture->max_size = 256;
+        zassume_not_null(fixture, NULL);
+        fixture->max_size = 256;
 
-	return fixture;
+        return fixture;
    }
 
    static void my_suite_before(void *f)
    {
-	struct my_suite_fixture *fixture = (struct my_suite_fixture *)f;
-	memset(fixture->buff, 0, fixture->max_size);
-	fixture->size = 0;
+        struct my_suite_fixture *fixture = (struct my_suite_fixture *)f;
+        memset(fixture->buff, 0, fixture->max_size);
+        fixture->size = 0;
    }
 
    static void my_suite_teardown(void *f)
    {
-      free(f);
+        free(f);
    }
 
    ZTEST_SUITE(my_suite, NULL, my_suite_setup, my_suite_before, NULL, my_suite_teardown);
@@ -495,9 +491,8 @@ reset a stateful counter, or open any resource needed by the generator:
         *(uint32_t *)out = sys_rand32_get();
    }
 
-   ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(fuzz_vals, uint32_t,
-                                        MY_FUZZ_ITERATIONS,
-					seed_rng, rand_u32_gen);
+   ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(fuzz_vals, uint32_t, MY_FUZZ_ITERATIONS,
+                                           seed_rng, rand_u32_gen);
 
 When no setup is needed, use the simpler form:
 
@@ -505,7 +500,7 @@ When no setup is needed, use the simpler form:
 
    static void deterministic_gen(size_t idx, void *out)
    {
-	/* Deterministic but computed at runtime (e.g. based on hardware ID). */
+        /* Deterministic but computed at runtime (e.g. based on hardware ID). */
         *(uint32_t *)out = get_device_seed() ^ (uint32_t)idx;
    }
 
@@ -528,9 +523,9 @@ Struct-typed parameters work the same way:
 
    ZTEST_P(my_suite, test_in_unit_square)
    {
-	const struct point *p = ZTEST_GET_PARAM_PTR(struct point);
+        const struct point *p = ZTEST_GET_PARAM_PTR(struct point);
         zassert_true(p->x >= 0 && p->x <= 1 && p->y >= 0 && p->y <= 1,
-		"point (%d, %d) outside unit square", p->x, p->y);
+                    "point (%d, %d) outside unit square", p->x, p->y);
    }
 
 Instantiating a parameterized test
@@ -583,25 +578,25 @@ Test result expectations
 Some tests were made to be broken. In cases where the test is expected to fail or skip due to the
 nature of the code, it's possible to annotate the test as such. For example:
 
-  .. code-block:: C
+.. code-block:: C
 
-    #include <zephyr/ztest.h>
+   #include <zephyr/ztest.h>
 
-    ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
+   ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
 
-    ZTEST_EXPECT_FAIL(my_suite, test_fail);
-    ZTEST(my_suite, test_fail)
-    {
-      /** This will fail the test */
-      zassert_true(false, NULL);
-    }
+   ZTEST_EXPECT_FAIL(my_suite, test_fail);
+   ZTEST(my_suite, test_fail)
+   {
+     /** This will fail the test */
+     zassert_true(false, NULL);
+   }
 
-    ZTEST_EXPECT_SKIP(my_suite, test_skip);
-    ZTEST(my_suite, test_skip)
-    {
-      /** This will skip the test */
-      zassume_true(false, NULL);
-    }
+   ZTEST_EXPECT_SKIP(my_suite, test_skip);
+   ZTEST(my_suite, test_skip)
+   {
+     /** This will skip the test */
+     zassume_true(false, NULL);
+   }
 
 In this example, the above tests should be marked as failed and skipped respectively. Instead,
 Ztest will mark both as passed due to the expectation.
@@ -757,12 +752,12 @@ the timeout is configured to complete after 10 seconds if those conditions are n
 The last argument of each context is the initial sleep time which will be adjusted throughout
 the test to achieve the highest CPU load.
 
-  .. code-block:: C
+.. code-block:: C
 
-             ztress_set_timeout(K_MSEC(10000));
-             ZTRESS_EXECUTE(ZTRESS_TIMER(foo_0, user_data_0, 10000, Z_TIMEOUT_TICKS(20)),
-                            ZTRESS_THREAD(foo_1, user_data_1, 10000, 0, Z_TIMEOUT_TICKS(20)),
-                            ZTRESS_THREAD(foo_2, user_data_2, 10000, 1000, Z_TIMEOUT_TICKS(20)));
+   ztress_set_timeout(K_MSEC(10000));
+   ZTRESS_EXECUTE(ZTRESS_TIMER(foo_0, user_data_0, 10000, Z_TIMEOUT_TICKS(20)),
+                  ZTRESS_THREAD(foo_1, user_data_1, 10000, 0, Z_TIMEOUT_TICKS(20)),
+                  ZTRESS_THREAD(foo_2, user_data_2, 10000, 1000, Z_TIMEOUT_TICKS(20)));
 
 Configuration
 =============
