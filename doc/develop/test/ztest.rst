@@ -498,7 +498,6 @@ reset a stateful counter, or open any resource needed by the generator:
    ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(fuzz_vals, uint32_t,
                                         MY_FUZZ_ITERATIONS,
 					seed_rng, rand_u32_gen);
-   ZTEST_INSTANTIATE_TEST_SUITE_P(fuzz, my_suite, test_my_function, fuzz_vals);
 
 When no setup is needed, use the simpler form:
 
@@ -511,7 +510,6 @@ When no setup is needed, use the simpler form:
    }
 
    ZTEST_DEFINE_PARAM_GENERATOR(hw_vals, uint32_t, 16U, deterministic_gen);
-   ZTEST_INSTANTIATE_TEST_SUITE_P(hw, my_suite, test_my_function, hw_vals);
 
 .. note::
 
