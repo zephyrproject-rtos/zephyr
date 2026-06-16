@@ -875,6 +875,28 @@ expect_reboot: <True|False> (default False)
     When enabled, twister will suppress warnings about unexpected multiple runs
     of a testsuite or testcase.
 
+modules: <list of module names>
+    Build and run this test scenario only when all of the listed
+    :ref:`modules <modules>` are present in the workspace. Scenarios that
+    require a module which is not available are filtered out.
+
+type: <string> (default integration)
+    Test type of the scenario. Set to ``unit`` for unit tests that are built
+    and run on the host without the full Zephyr build system.
+
+testcases: <list of test case names>
+    Explicitly declare the list of test case names that make up this scenario.
+    This is normally detected automatically (for example from the ztest source)
+    and only needs to be set for harnesses that cannot be introspected.
+
+ignore_faults: <True|False> (default False)
+    Do not mark the test scenario as failed if a fault is detected in the
+    output while the test is running.
+
+ignore_qemu_crash: <True|False> (default False)
+    Do not mark the test scenario as failed if QEMU crashes while the test is
+    running.
+
 The set of test scenarios that actually run depends on directives in the test scenario
 filed and options passed in on the command line. If there is any confusion,
 running with ``-v`` or examining the discard report
