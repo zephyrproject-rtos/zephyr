@@ -161,7 +161,8 @@ struct ocpp_info {
 };
 
 struct ocpp_session {
-	struct k_mutex slock; /* session lock */
+	bool is_busy;
+	bool is_closing;
 	char idtag[CISTR20 + 1];
 	bool is_active;
 	uint8_t idcon;
