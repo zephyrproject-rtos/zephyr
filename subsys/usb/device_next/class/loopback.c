@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/usb/usbd.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/drivers/usb/udc.h>
 
@@ -29,34 +30,30 @@ static uint8_t lb_buf[1024];
 #define LB_VENDOR_REQ_OUT		0x5b
 #define LB_VENDOR_REQ_IN		0x5c
 
-#define LB_ISO_EP_MPS			256
-#define LB_ISO_EP_INTERVAL		1
+#define LB_FS_INT_EP_MPS		USB_TPL_TO_MPS(64)
+#define LB_HS_INT_EP_MPS		USB_TPL_TO_MPS(CONFIG_USBD_LOOPBACK_HS_INT_EP_TPL)
 
 #define LB_FUNCTION_ENABLED		0
 #define LB_FUNCTION_BULK_MANUAL		1
 #define LB_FUNCTION_IN_ENGAGED		2
 #define LB_FUNCTION_OUT_ENGAGED		3
+#define LB_FUNCTION_INT_IN_ENGAGED	4
+#define LB_FUNCTION_INT_OUT_ENGAGED	5
 
 /* Make supported vendor request visible for the device stack */
 static const struct usbd_cctx_vendor_req lb_vregs =
 	USBD_VENDOR_REQ(LB_VENDOR_REQ_OUT, LB_VENDOR_REQ_IN);
 
 struct loopback_desc {
-	struct usb_association_descriptor iad;
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_out_ep;
 	struct usb_ep_descriptor if0_in_ep;
 	struct usb_ep_descriptor if0_hs_out_ep;
 	struct usb_ep_descriptor if0_hs_in_ep;
-	struct usb_if_descriptor if1;
-	struct usb_ep_descriptor if1_int_out_ep;
-	struct usb_ep_descriptor if1_int_in_ep;
-	struct usb_if_descriptor if2_0;
-	struct usb_ep_descriptor if2_0_iso_in_ep;
-	struct usb_ep_descriptor if2_0_iso_out_ep;
-	struct usb_if_descriptor if2_1;
-	struct usb_ep_descriptor if2_1_iso_in_ep;
-	struct usb_ep_descriptor if2_1_iso_out_ep;
+	struct usb_ep_descriptor if0_int_out_ep;
+	struct usb_ep_descriptor if0_int_in_ep;
+	struct usb_ep_descriptor if0_hs_int_out_ep;
+	struct usb_ep_descriptor if0_hs_int_in_ep;
 	struct usb_desc_header nil_desc;
 };
 
@@ -93,63 +90,137 @@ static uint8_t lb_get_bulk_in(struct usbd_class_data *const c_data)
 	return desc->if0_in_ep.bEndpointAddress;
 }
 
-static int lb_submit_bulk_out(struct usbd_class_data *const c_data)
+static uint8_t lb_get_int_out(struct usbd_class_data *const c_data)
 {
 	struct lb_data *data = usbd_class_get_private(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	struct loopback_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if0_hs_int_out_ep.bEndpointAddress;
+	}
+
+	return desc->if0_int_out_ep.bEndpointAddress;
+}
+
+static uint8_t lb_get_int_in(struct usbd_class_data *const c_data)
+{
+	struct lb_data *data = usbd_class_get_private(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	struct loopback_desc *desc = data->desc;
+
+	if (usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return desc->if0_hs_int_in_ep.bEndpointAddress;
+	}
+
+	return desc->if0_int_in_ep.bEndpointAddress;
+}
+
+static uint16_t lb_get_int_in_tpl(struct usbd_class_data *const c_data)
+{
+	struct lb_data *data = usbd_class_get_private(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	struct loopback_desc *desc = data->desc;
+	uint16_t mps;
+
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		mps = sys_le16_to_cpu(desc->if0_hs_int_in_ep.wMaxPacketSize);
+	} else {
+		mps = sys_le16_to_cpu(desc->if0_int_in_ep.wMaxPacketSize);
+	}
+
+	return USB_MPS_TO_TPL(mps);
+}
+
+static uint16_t lb_get_int_out_tpl(struct usbd_class_data *const c_data)
+{
+	struct lb_data *data = usbd_class_get_private(c_data);
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
+	struct loopback_desc *desc = data->desc;
+	uint16_t mps;
+
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		mps = sys_le16_to_cpu(desc->if0_hs_int_out_ep.wMaxPacketSize);
+	} else {
+		mps = sys_le16_to_cpu(desc->if0_int_out_ep.wMaxPacketSize);
+	}
+
+	return USB_MPS_TO_TPL(mps);
+}
+
+static int lb_enqueue(struct usbd_class_data *const c_data, const uint8_t ep,
+		      const size_t size)
+{
 	struct net_buf *buf;
 	int err;
 
-	if (!atomic_test_bit(&data->state, LB_FUNCTION_ENABLED)) {
-		return -EPERM;
-	}
-
-	if (atomic_test_and_set_bit(&data->state, LB_FUNCTION_OUT_ENGAGED)) {
-		return -EBUSY;
-	}
-
-	buf = usbd_ep_buf_alloc(c_data, lb_get_bulk_out(c_data), sizeof(lb_buf));
+	buf = usbd_ep_buf_alloc(c_data, ep, size);
 	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
+		LOG_ERR("Failed to allocate buffer for ep 0x%02x", ep);
 		return -ENOMEM;
+	}
+
+	/* IN endpoints are filled from lb_buf. */
+	if (USB_EP_DIR_IS_IN(ep)) {
+		net_buf_add_mem(buf, lb_buf, MIN(size, net_buf_tailroom(buf)));
 	}
 
 	err = usbd_ep_enqueue(c_data, buf);
 	if (err) {
-		LOG_ERR("Failed to enqueue buffer");
+		LOG_ERR("Failed to enqueue buffer for ep 0x%02x (%d)", ep, err);
 		net_buf_unref(buf);
 	}
 
 	return err;
 }
 
-static int lb_submit_bulk_in(struct usbd_class_data *const c_data)
+static int lb_submit(struct usbd_class_data *const c_data, const uint8_t ep,
+		     const size_t size, const int engaged_bit)
 {
 	struct lb_data *data = usbd_class_get_private(c_data);
-	struct net_buf *buf;
 	int err;
 
 	if (!atomic_test_bit(&data->state, LB_FUNCTION_ENABLED)) {
 		return -EPERM;
 	}
 
-	if (atomic_test_and_set_bit(&data->state, LB_FUNCTION_IN_ENGAGED)) {
+	if (atomic_test_and_set_bit(&data->state, engaged_bit)) {
+		LOG_DBG("Endpoint 0x%02x already engaged", ep);
 		return -EBUSY;
 	}
 
-	buf = usbd_ep_buf_alloc(c_data, lb_get_bulk_in(c_data), sizeof(lb_buf));
-	if (buf == NULL) {
-		LOG_ERR("Failed to allocate buffer");
-		return -ENOMEM;
-	}
-
-	net_buf_add_mem(buf, lb_buf, MIN(sizeof(lb_buf), net_buf_tailroom(buf)));
-	err = usbd_ep_enqueue(c_data, buf);
+	err = lb_enqueue(c_data, ep, size);
 	if (err) {
-		LOG_ERR("Failed to enqueue buffer");
-		net_buf_unref(buf);
+		atomic_clear_bit(&data->state, engaged_bit);
 	}
 
 	return err;
+}
+
+static int lb_submit_bulk_out(struct usbd_class_data *const c_data)
+{
+	return lb_submit(c_data, lb_get_bulk_out(c_data),
+			 sizeof(lb_buf), LB_FUNCTION_OUT_ENGAGED);
+}
+
+static int lb_submit_bulk_in(struct usbd_class_data *const c_data)
+{
+	return lb_submit(c_data, lb_get_bulk_in(c_data),
+			 sizeof(lb_buf), LB_FUNCTION_IN_ENGAGED);
+}
+
+static int lb_submit_int_out(struct usbd_class_data *const c_data)
+{
+	return lb_submit(c_data, lb_get_int_out(c_data),
+			 lb_get_int_out_tpl(c_data), LB_FUNCTION_INT_OUT_ENGAGED);
+}
+
+static int lb_submit_int_in(struct usbd_class_data *const c_data)
+{
+	return lb_submit(c_data, lb_get_int_in(c_data),
+			 lb_get_int_in_tpl(c_data), LB_FUNCTION_INT_IN_ENGAGED);
 }
 
 static int lb_request_handler(struct usbd_class_data *const c_data,
@@ -172,12 +243,23 @@ static int lb_request_handler(struct usbd_class_data *const c_data,
 		atomic_clear_bit(&data->state, LB_FUNCTION_IN_ENGAGED);
 	}
 
+	if (bi->ep == lb_get_int_out(c_data)) {
+		atomic_clear_bit(&data->state, LB_FUNCTION_INT_OUT_ENGAGED);
+		if (err == 0) {
+			memcpy(lb_buf, buf->data, MIN(sizeof(lb_buf), buf->len));
+		}
+	}
+
+	if (bi->ep == lb_get_int_in(c_data)) {
+		atomic_clear_bit(&data->state, LB_FUNCTION_INT_IN_ENGAGED);
+	}
+
 	net_buf_unref(buf);
 	if (err == -ECONNABORTED) {
 		LOG_INF("Transfer ep 0x%02x, len %zu cancelled", ep, len);
 	} else if (err != 0) {
-		LOG_ERR("Transfer ep 0x%02x, len %zu failed", ep, len);
-		ret = err;
+		/* Do not propagate any errors. Just keep going */
+		LOG_ERR("Transfer ep 0x%02x, len %zu failed (%d)", ep, len, err);
 	} else {
 		LOG_DBG("Transfer ep 0x%02x, len %zu finished", ep, len);
 	}
@@ -190,6 +272,14 @@ static int lb_request_handler(struct usbd_class_data *const c_data,
 		if (ep == lb_get_bulk_in(c_data)) {
 			lb_submit_bulk_in(c_data);
 		}
+	}
+
+	if (ep == lb_get_int_out(c_data)) {
+		lb_submit_int_out(c_data);
+	}
+
+	if (ep == lb_get_int_in(c_data)) {
+		lb_submit_int_in(c_data);
 	}
 
 	return ret;
@@ -271,11 +361,18 @@ static void lb_enable(struct usbd_class_data *const c_data)
 	struct lb_data *data = usbd_class_get_private(c_data);
 
 	LOG_INF("Enable %s", c_data->name);
-	if (!atomic_test_and_set_bit(&data->state, LB_FUNCTION_ENABLED) &&
-	    !atomic_test_bit(&data->state, LB_FUNCTION_BULK_MANUAL)) {
+	if (atomic_test_and_set_bit(&data->state, LB_FUNCTION_ENABLED)) {
+		/* Already enabled */
+		return;
+	}
+
+	if (!atomic_test_bit(&data->state, LB_FUNCTION_BULK_MANUAL)) {
 		lb_submit_bulk_out(c_data);
 		lb_submit_bulk_in(c_data);
 	}
+
+	lb_submit_int_out(c_data);
+	lb_submit_int_in(c_data);
 }
 
 static void lb_disable(struct usbd_class_data *const c_data)
@@ -306,24 +403,13 @@ struct usbd_class_api lb_api = {
 
 #define DEFINE_LOOPBACK_DESCRIPTOR(x, _)					\
 static struct loopback_desc lb_desc_##x = {					\
-	.iad = {								\
-		.bLength = sizeof(struct usb_association_descriptor),		\
-		.bDescriptorType = USB_DESC_INTERFACE_ASSOC,			\
-		.bFirstInterface = 0,						\
-		.bInterfaceCount = 3,						\
-		.bFunctionClass = USB_BCC_VENDOR,				\
-		.bFunctionSubClass = 0,						\
-		.bFunctionProtocol = 0,						\
-		.iFunction = 0,							\
-	},									\
-										\
 	/* Interface descriptor 0 */						\
 	.if0 = {								\
 		.bLength = sizeof(struct usb_if_descriptor),			\
 		.bDescriptorType = USB_DESC_INTERFACE,				\
 		.bInterfaceNumber = 0,						\
 		.bAlternateSetting = 0,						\
-		.bNumEndpoints = 2,						\
+		.bNumEndpoints = 4,						\
 		.bInterfaceClass = USB_BCC_VENDOR,				\
 		.bInterfaceSubClass = 0,					\
 		.bInterfaceProtocol = 0,					\
@@ -370,97 +456,44 @@ static struct loopback_desc lb_desc_##x = {					\
 		.bInterval = 0x00,						\
 	},									\
 										\
-	/* Interface descriptor 1 */						\
-	.if1 = {								\
-		.bLength = sizeof(struct usb_if_descriptor),			\
-		.bDescriptorType = USB_DESC_INTERFACE,				\
-		.bInterfaceNumber = 1,						\
-		.bAlternateSetting = 0,						\
-		.bNumEndpoints = 2,						\
-		.bInterfaceClass = USB_BCC_VENDOR,				\
-		.bInterfaceSubClass = 0,					\
-		.bInterfaceProtocol = 0,					\
-		.iInterface = 0,						\
-	},									\
-										\
 	/* Interface Interrupt Endpoint OUT */					\
-	.if1_int_out_ep = {							\
+	.if0_int_out_ep = {							\
 		.bLength = sizeof(struct usb_ep_descriptor),			\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x02,					\
 		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
-		.wMaxPacketSize = sys_cpu_to_le16(64),				\
-		.bInterval = 0x01,						\
+		.wMaxPacketSize = sys_cpu_to_le16(LB_FS_INT_EP_MPS),		\
+		.bInterval = USB_FS_INT_EP_INTERVAL(1000),			\
 	},									\
 										\
 	/* Interrupt Interrupt Endpoint IN */					\
-	.if1_int_in_ep = {							\
+	.if0_int_in_ep = {							\
 		.bLength = sizeof(struct usb_ep_descriptor),			\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
 		.bEndpointAddress = 0x82,					\
 		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
-		.wMaxPacketSize = sys_cpu_to_le16(64),				\
-		.bInterval = 0x01,						\
+		.wMaxPacketSize = sys_cpu_to_le16(LB_FS_INT_EP_MPS),		\
+		.bInterval = USB_FS_INT_EP_INTERVAL(1000),			\
 	},									\
 										\
-	.if2_0 = {								\
-		.bLength = sizeof(struct usb_if_descriptor),			\
-		.bDescriptorType = USB_DESC_INTERFACE,				\
-		.bInterfaceNumber = 2,						\
-		.bAlternateSetting = 0,						\
-		.bNumEndpoints = 2,						\
-		.bInterfaceClass = USB_BCC_VENDOR,				\
-		.bInterfaceSubClass = 0,					\
-		.bInterfaceProtocol = 0,					\
-		.iInterface = 0,						\
-	},									\
-										\
-	.if2_0_iso_in_ep = {							\
+	/* Interface Interrupt Endpoint OUT */					\
+	.if0_hs_int_out_ep = {							\
 		.bLength = sizeof(struct usb_ep_descriptor),			\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
-		.bEndpointAddress = 0x83,					\
-		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = sys_cpu_to_le16(0),				\
-		.bInterval = LB_ISO_EP_INTERVAL,				\
+		.bEndpointAddress = 0x02,					\
+		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
+		.wMaxPacketSize = sys_cpu_to_le16(LB_HS_INT_EP_MPS),		\
+		.bInterval = USB_HS_INT_EP_INTERVAL(1000),			\
 	},									\
 										\
-	.if2_0_iso_out_ep = {							\
+	/* Interrupt Interrupt Endpoint IN */					\
+	.if0_hs_int_in_ep = {							\
 		.bLength = sizeof(struct usb_ep_descriptor),			\
 		.bDescriptorType = USB_DESC_ENDPOINT,				\
-		.bEndpointAddress = 0x03,					\
-		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = sys_cpu_to_le16(0),				\
-		.bInterval = LB_ISO_EP_INTERVAL,				\
-	},									\
-										\
-	.if2_1 = {								\
-		.bLength = sizeof(struct usb_if_descriptor),			\
-		.bDescriptorType = USB_DESC_INTERFACE,				\
-		.bInterfaceNumber = 2,						\
-		.bAlternateSetting = 1,						\
-		.bNumEndpoints = 2,						\
-		.bInterfaceClass = USB_BCC_VENDOR,				\
-		.bInterfaceSubClass = 0,					\
-		.bInterfaceProtocol = 0,					\
-		.iInterface = 0,						\
-	},									\
-										\
-	.if2_1_iso_in_ep = {							\
-		.bLength = sizeof(struct usb_ep_descriptor),			\
-		.bDescriptorType = USB_DESC_ENDPOINT,				\
-		.bEndpointAddress = 0x83,					\
-		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = sys_cpu_to_le16(LB_ISO_EP_MPS),		\
-		.bInterval = LB_ISO_EP_INTERVAL,				\
-	},									\
-										\
-	.if2_1_iso_out_ep = {							\
-		.bLength = sizeof(struct usb_ep_descriptor),			\
-		.bDescriptorType = USB_DESC_ENDPOINT,				\
-		.bEndpointAddress = 0x03,					\
-		.bmAttributes = USB_EP_TYPE_ISO,				\
-		.wMaxPacketSize = sys_cpu_to_le16(LB_ISO_EP_MPS),		\
-		.bInterval = LB_ISO_EP_INTERVAL,				\
+		.bEndpointAddress = 0x82,					\
+		.bmAttributes = USB_EP_TYPE_INTERRUPT,				\
+		.wMaxPacketSize = sys_cpu_to_le16(LB_HS_INT_EP_MPS),		\
+		.bInterval = USB_HS_INT_EP_INTERVAL(1000),			\
 	},									\
 										\
 	/* Termination descriptor */						\
@@ -471,36 +504,20 @@ static struct loopback_desc lb_desc_##x = {					\
 };										\
 										\
 const static struct usb_desc_header *lb_fs_desc_##x[] = {			\
-	(struct usb_desc_header *) &lb_desc_##x.iad,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0_in_ep,			\
 	(struct usb_desc_header *) &lb_desc_##x.if0_out_ep,			\
-	(struct usb_desc_header *) &lb_desc_##x.if1,				\
-	(struct usb_desc_header *) &lb_desc_##x.if1_int_in_ep,			\
-	(struct usb_desc_header *) &lb_desc_##x.if1_int_out_ep,			\
-	(struct usb_desc_header *) &lb_desc_##x.if2_0,				\
-	(struct usb_desc_header *) &lb_desc_##x.if2_0_iso_in_ep,		\
-	(struct usb_desc_header *) &lb_desc_##x.if2_0_iso_out_ep,		\
-	(struct usb_desc_header *) &lb_desc_##x.if2_1,				\
-	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_in_ep,		\
-	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_out_ep,		\
+	(struct usb_desc_header *) &lb_desc_##x.if0_int_in_ep,			\
+	(struct usb_desc_header *) &lb_desc_##x.if0_int_out_ep,			\
 	(struct usb_desc_header *) &lb_desc_##x.nil_desc,			\
 };										\
 										\
 const static struct usb_desc_header *lb_hs_desc_##x[] = {			\
-	(struct usb_desc_header *) &lb_desc_##x.iad,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0,				\
 	(struct usb_desc_header *) &lb_desc_##x.if0_hs_in_ep,			\
 	(struct usb_desc_header *) &lb_desc_##x.if0_hs_out_ep,			\
-	(struct usb_desc_header *) &lb_desc_##x.if1,				\
-	(struct usb_desc_header *) &lb_desc_##x.if1_int_in_ep,			\
-	(struct usb_desc_header *) &lb_desc_##x.if1_int_out_ep,			\
-	(struct usb_desc_header *) &lb_desc_##x.if2_0,				\
-	(struct usb_desc_header *) &lb_desc_##x.if2_0_iso_in_ep,		\
-	(struct usb_desc_header *) &lb_desc_##x.if2_0_iso_out_ep,		\
-	(struct usb_desc_header *) &lb_desc_##x.if2_1,				\
-	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_in_ep,		\
-	(struct usb_desc_header *) &lb_desc_##x.if2_1_iso_out_ep,		\
+	(struct usb_desc_header *) &lb_desc_##x.if0_hs_int_in_ep,		\
+	(struct usb_desc_header *) &lb_desc_##x.if0_hs_int_out_ep,		\
 	(struct usb_desc_header *) &lb_desc_##x.nil_desc,			\
 };
 
