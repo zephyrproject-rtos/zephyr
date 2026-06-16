@@ -96,6 +96,8 @@ struct usb_device {
 	struct usb_host_ep ep_out[16];
 	/** Pointers to device IN endpoints */
 	struct usb_host_ep ep_in[16];
+	/** Internal ref count */
+	atomic_t ref;
 };
 
 /**

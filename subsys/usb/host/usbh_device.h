@@ -54,6 +54,10 @@ void usbh_device_connect(struct usbh_context *const ctx, struct usb_device *cons
 /* Disconnect USB device */
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev);
 
+struct usb_device *usbh_device_ref(struct usb_device *udev);
+
+void usbh_device_unref(struct usb_device *udev);
+
 /* Wrappers around to avoid glue UHC calls. */
 static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   const uint8_t ep,
@@ -61,8 +65,18 @@ static inline struct uhc_transfer *usbh_xfer_alloc(struct usb_device *udev,
 						   void *const cb_priv)
 {
 	struct usbh_context *const ctx = udev->ctx;
+	struct uhc_transfer *xfer;
 
-	return uhc_xfer_alloc(ctx->dev, ep, udev, cb, cb_priv);
+	xfer = uhc_xfer_alloc(ctx->dev, ep, udev, cb, cb_priv);
+	if (xfer != NULL) {
+		xfer->udev = usbh_device_ref(udev);
+		if (xfer->udev == NULL) {
+			uhc_xfer_free(ctx->dev, xfer);
+			return NULL;
+		}
+	}
+
+	return xfer;
 }
 
 static inline int usbh_xfer_buf_add(const struct usb_device *udev,
@@ -86,8 +100,16 @@ static inline int usbh_xfer_free(const struct usb_device *udev,
 				 struct uhc_transfer *const xfer)
 {
 	struct usbh_context *const ctx = udev->ctx;
+	struct usb_device *xfer_udev;
+	int err;
 
-	return uhc_xfer_free(ctx->dev, xfer);
+	xfer_udev = xfer->udev;
+	err = uhc_xfer_free(ctx->dev, xfer);
+	if (err == 0) {
+		usbh_device_unref(xfer_udev);
+	}
+
+	return err;
 }
 
 static inline void usbh_xfer_buf_free(const struct usb_device *udev,

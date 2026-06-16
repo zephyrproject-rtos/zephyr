@@ -30,13 +30,14 @@ struct usb_device *usbh_device_alloc(struct usbh_context *const uhs_ctx)
 
 	memset(udev, 0, sizeof(struct usb_device));
 	udev->ctx = uhs_ctx;
+	atomic_set(&udev->ref, 1);
 	sys_dlist_append(&uhs_ctx->udevs, &udev->node);
 	k_mutex_init(&udev->mutex);
 
 	return udev;
 }
 
-void usbh_device_free(struct usb_device *const udev)
+static void usbh_device_free_intl(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
 
@@ -47,6 +48,11 @@ void usbh_device_free(struct usb_device *const udev)
 	}
 
 	k_mem_slab_free(&usb_device_slab, (void *)udev);
+}
+
+void usbh_device_free(struct usb_device *const udev)
+{
+	usbh_device_unref(udev);
 }
 
 struct usb_device *usbh_device_get_any(struct usbh_context *const uhs_ctx)
@@ -602,4 +608,60 @@ error:
 	k_mutex_unlock(&udev->mutex);
 
 	return err;
+}
+
+struct usb_device *usbh_device_ref(struct usb_device *udev)
+{
+	atomic_val_t old;
+
+	__ASSERT_NO_MSG(udev);
+
+	/* Reference counter must be checked to avoid incrementing ref from
+	 * zero, then we should return NULL instead.
+	 * Loop on clear-and-set in case someone has modified the reference
+	 * count since the read, and start over again when that happens.
+	 */
+	do {
+		old = atomic_get(&udev->ref);
+
+		if (!old) {
+			return NULL;
+		}
+	} while (!atomic_cas(&udev->ref, old, old + 1));
+
+	LOG_DBG("addr %u ref %ld -> %ld", udev->addr, old, old + 1);
+
+	return udev;
+}
+
+void usbh_device_unref(struct usb_device *udev)
+{
+	atomic_val_t old;
+	bool deallocated;
+	uint8_t addr;
+
+	__ASSERT(udev, "Invalid device reference");
+
+	/* If we're removing the last reference, the device object will be
+	 * considered freed and possibly re-allocated by the USB Host stack
+	 * as soon as we decrement the counter.
+	 * To prevent inconsistencies when accessing the device's state,
+	 * we store its properties of interest before decrementing the ref-count,
+	 * then unset the local pointer.
+	 */
+	addr = udev->addr;
+	old = atomic_dec(&udev->ref);
+
+	LOG_DBG("addr %u ref %ld -> %ld", addr, old, (old - 1));
+
+	__ASSERT(old > 0, "Device reference counter is 0");
+
+	/* Whether we removed the last reference. */
+	deallocated = (old == 1);
+	if (!deallocated) {
+		return;
+	}
+
+	/* free the udev */
+	usbh_device_free_intl(udev);
 }

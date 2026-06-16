@@ -144,7 +144,6 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	xfer->mps = mps;
 	xfer->interval = interval;
 	xfer->type = type;
-	xfer->udev = udev;
 	xfer->cb = cb;
 	xfer->priv = cb_priv;
 
