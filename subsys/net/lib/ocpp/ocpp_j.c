@@ -796,7 +796,8 @@ static int parse_remote_start_txn_msg(char *json,
 		return -EINVAL;
 	}
 
-	strncpy(idtag, payload.val2, CISTR50);
+	strncpy(idtag, payload.val2, CISTR50 - 1);
+	idtag[CISTR50 - 1] = '\0';
 	*idcon = payload.val1;
 
 	return 0;
