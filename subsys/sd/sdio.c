@@ -196,6 +196,12 @@ static int sdio_io_rw_extended_helper(struct sdio_func *func,
 		}
 	}
 	/* Remaining data must be written using byte I/O */
+	if (func->cis.max_blk_size == 0U) {
+		/* A zero max_blk_size would make MIN(remaining, 0) == 0 and
+		 * the loop below spin forever without making progress.
+		 */
+		return -EIO;
+	}
 	while (remaining > 0) {
 		size = MIN(remaining, func->cis.max_blk_size);
 
