@@ -2300,20 +2300,29 @@ An example of entries in a quarantine yaml:
     - simulations:
         - armfvp
 
-Test Configuration
-******************
+.. _twister_test_config:
 
-A test configuration can be used to customize various aspects of twister
+Twister Configuration File
+**************************
+
+The Twister configuration file (``test_config.yaml``, passed with
+``--test-config``) can be used to customize various aspects of twister
 and the default enabled options and features. This allows tweaking the filtering
 capabilities depending on the environment and makes it possible to adapt and
 improve coverage when targeting different sets of platforms.
 
-The test configuration also adds support for test levels and the ability to
-assign a specific test to one or more levels. Using command line options of
+.. note::
+
+   This file (selected with ``--test-config``) configures a whole Twister run.
+   It is distinct from the per-application test configuration in ``tests.yaml``,
+   which describes individual :ref:`test scenarios <twister_tests_long_version>`.
+
+The Twister configuration file also adds support for test levels and the ability
+to assign a specific test to one or more levels. Using command line options of
 twister it is then possible to select a level and just execute the tests
 included in this level.
 
-Additionally, the test configuration allows defining level
+Additionally, the configuration file allows defining level
 dependencies and additional inclusion of tests into a specific level if
 the test itself does not have this information already.
 
