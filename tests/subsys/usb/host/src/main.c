@@ -169,67 +169,32 @@ ZTEST(usbh_test, test_get_next_desc)
 	zassert_equal(desc->bDescriptorType, USB_DESC_CONFIGURATION);
 	desc = usbh_desc_get_next(desc);
 
-	/* #1 iad */
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_INTERFACE_ASSOC);
-	desc = usbh_desc_get_next(desc);
-
-	/* #2 if0 */
+	/* #1 if0 */
 	zassert_not_null(desc);
 	zassert_equal(desc->bDescriptorType, USB_DESC_INTERFACE);
 	desc = usbh_desc_get_next(desc);
 
-	/* #3 if0_out_ep */
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
-	desc = usbh_desc_get_next(desc);
-
-	/* #4 if0_in_ep */
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
-	desc = usbh_desc_get_next(desc);
-
-	/* #5 if1 */
+	/* #1 if0_1 */
 	zassert_not_null(desc);
 	zassert_equal(desc->bDescriptorType, USB_DESC_INTERFACE);
 	desc = usbh_desc_get_next(desc);
 
-	/* #6 if1_int_out_ep */
+	/* #2 if0_1_out_ep */
 	zassert_not_null(desc);
 	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
 	desc = usbh_desc_get_next(desc);
 
-	/* #7 if1_int_in_ep */
+	/* #3 if0_1_in_ep */
 	zassert_not_null(desc);
 	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
 	desc = usbh_desc_get_next(desc);
 
-	/* #8 if2_0 */
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_INTERFACE);
-	desc = usbh_desc_get_next(desc);
-
-	/* #9 if2_0_iso_in_ep */
+	/* #4 if0_1_int_out_ep */
 	zassert_not_null(desc);
 	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
 	desc = usbh_desc_get_next(desc);
 
-	/* #10 if2_0_iso_out_ep */
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
-	desc = usbh_desc_get_next(desc);
-
-	/* #11 if2_1 */
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_INTERFACE);
-	desc = usbh_desc_get_next(desc);
-
-	/* #12 if2_1_iso_in_ep */
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
-	desc = usbh_desc_get_next(desc);
-
-	/* #13 if2_1_iso_out_ep */
+	/* #5 if0_1_int_in_ep */
 	zassert_not_null(desc);
 	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
 	desc = usbh_desc_get_next(desc);
@@ -240,38 +205,33 @@ ZTEST(usbh_test, test_get_next_desc)
 
 ZTEST(usbh_test, test_get_types)
 {
-	const struct usb_device *udev;
 	const struct usb_desc_header *desc;
+	struct usb_device *udev;
+	int err;
 
 	udev = usbh_device_get_any(uhs_ctx);
 	zassert_not_null(udev);
 
-	/* #2 if0 */
+	/* if0 */
 	desc = usbh_desc_get_iface(udev, 0);
 	zassert_not_null(desc);
 	zassert_equal(desc->bDescriptorType, USB_DESC_INTERFACE);
 	zassert_equal(((struct usb_if_descriptor *)desc)->bInterfaceNumber, 0);
 
-	/* #3 if0_out_ep */
+	err = usbh_device_interface_set(udev, 0, 1, false);
+	zassert_ok(err, "Failed to set interface alternate");
+
+	/* if0_out_ep */
 	desc = usbh_desc_get_endpoint(udev, 0x01);
 	zassert_not_null(desc);
 	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
 	zassert_equal(((struct usb_ep_descriptor *)desc)->bEndpointAddress, 0x01);
 
-	/* #4 if0_in_ep */
+	/* if0_in_ep */
 	desc = usbh_desc_get_endpoint(udev, 0x81);
 	zassert_not_null(desc);
 	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
 	zassert_equal(((struct usb_ep_descriptor *)desc)->bEndpointAddress, 0x81);
-
-	/* #5 if1 */
-	desc = usbh_desc_get_iface(udev, 1);
-	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_INTERFACE);
-	zassert_equal(((struct usb_if_descriptor *)desc)->bInterfaceNumber, 1);
-	zassert_equal(((struct usb_if_descriptor *)desc)->bAlternateSetting, 0);
-	desc = usbh_desc_get_next_alt_setting(desc);
-	zassert_is_null(desc);
 }
 
 ZTEST(usbh_test, test_get_next_function)
@@ -285,10 +245,10 @@ ZTEST(usbh_test, test_get_next_function)
 	desc = udev->cfg_desc;
 	zassert_not_null(desc);
 
-	/* #1 iad */
+	/* #1 Interface descriptor */
 	desc = usbh_desc_get_next_function(desc);
 	zassert_not_null(desc);
-	zassert_equal(desc->bDescriptorType, USB_DESC_INTERFACE_ASSOC);
+	zassert_equal(desc->bDescriptorType, USB_DESC_INTERFACE);
 
 	/* end */
 	desc = usbh_desc_get_next_function(desc);
