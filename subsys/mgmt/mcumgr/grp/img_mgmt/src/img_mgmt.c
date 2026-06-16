@@ -463,7 +463,7 @@ img_mgmt_erase(struct smp_streamer *ctxt)
 
 	/*
 	 * First check if image info is valid.
-	 * This check is done incase the flash area has a corrupted image.
+	 * This check is done in case the flash area has a corrupted image.
 	 */
 	rc = img_mgmt_read_info(slot, &ver, NULL, NULL);
 

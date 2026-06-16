@@ -367,7 +367,7 @@ static int init_ring(struct dma_iproc_pax_data *pd, enum ring_idx idx)
 
 	k_mutex_lock(&pd->dma_lock, K_FOREVER);
 
-	/*  Read cmpl write ptr incase previous dma stopped */
+	/*  Read cmpl write ptr in case previous dma stopped */
 	sys_read32(RM_RING_REG(pd, idx, RING_CMPL_WRITE_PTR));
 
 	/* Inactivate ring */

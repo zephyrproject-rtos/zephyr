@@ -49,7 +49,7 @@ static uint32_t counter_max_val;
 #endif
 /* Indicates we received a call with ticks set to wait forever */
 static bool wait_forever;
-/* Incase of counter overflow, track the remaining ticks left */
+/* In case of counter overflow, track the remaining ticks left */
 static uint32_t counter_remaining_ticks;
 
 static uint64_t mcux_lpc_ostick_get_compensated_timer_value(void)

@@ -1736,7 +1736,7 @@ static uint8_t pair_v2(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *r
 
 	/* TODO: Only supports mode 4 */
 	if ((cp->mode != BTP_GAP_PAIR_V2_MODE_4) && (cp->mode != BTP_GAP_PAIR_V2_MODE_ANY)) {
-		LOG_WRN("Unsupport mode %d", cp->mode);
+		LOG_WRN("Unsupported mode %d", cp->mode);
 		return BTP_STATUS_FAILED;
 	}
 

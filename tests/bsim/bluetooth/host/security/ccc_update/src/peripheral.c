@@ -151,7 +151,7 @@ static bool is_peer_subscribed(struct bt_conn *conn)
 
 /* Test steps */
 
-static void connect_pair_check_subscribtion(struct bt_le_ext_adv *adv)
+static void connect_pair_check_subscription(struct bt_le_ext_adv *adv)
 {
 	start_adv(adv);
 
@@ -160,21 +160,21 @@ static void connect_pair_check_subscribtion(struct bt_le_ext_adv *adv)
 	WAIT_FOR_FLAG(security_updated_flag);
 	UNSET_FLAG(security_updated_flag);
 
-	/* wait for confirmation of subscribtion from good client */
+	/* wait for confirmation of subscription from good client */
 	backchannel_sync_wait(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
 
-	/* check that subscribtion request did not fail */
+	/* check that subscription request did not fail */
 	if (!is_peer_subscribed(default_conn)) {
 		TEST_FAIL("Good client did not subscribed");
 	}
 
 	stop_adv(adv);
 
-	/* confirm to good client that the subscribtion has been well registered */
+	/* confirm to good client that the subscription has been well registered */
 	backchannel_sync_send(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
 }
 
-static void connect_wait_unsubscribtion(struct bt_le_ext_adv *adv)
+static void connect_wait_unsubscription(struct bt_le_ext_adv *adv)
 {
 	UNSET_FLAG(ccc_cfg_changed_flag);
 
@@ -184,26 +184,26 @@ static void connect_wait_unsubscribtion(struct bt_le_ext_adv *adv)
 
 	stop_adv(adv);
 
-	/* check that subscribtion is restored for bad client */
+	/* check that subscription is restored for bad client */
 	if (!is_peer_subscribed(default_conn)) {
-		TEST_FAIL("Subscribtion has not been restored for bad client");
+		TEST_FAIL("Subscription has not been restored for bad client");
 	}
 
-	/* confirm to bad client that the subscribtion had not been restored */
+	/* confirm to bad client that the subscription had not been restored */
 	backchannel_sync_send(BAD_CLIENT_CHAN, BAD_CLIENT_ID);
-	/* wait for confirmation that bad client requested unsubscribtion */
+	/* wait for confirmation that bad client requested unsubscription */
 	backchannel_sync_wait(BAD_CLIENT_CHAN, BAD_CLIENT_ID);
 
-	/* check that unsubscribtion request didn't fail */
+	/* check that unsubscription request didn't fail */
 	if (!IS_FLAG_SET(ccc_cfg_changed_flag)) {
 		TEST_FAIL("Bad client didn't manage to update CCC config");
 	}
 
-	/* confirm to bad client that unsubscribtion request has been well registered */
+	/* confirm to bad client that unsubscription request has been well registered */
 	backchannel_sync_send(BAD_CLIENT_CHAN, BAD_CLIENT_ID);
 }
 
-static void connect_restore_sec_check_subscribtion(struct bt_le_ext_adv *adv)
+static void connect_restore_sec_check_subscription(struct bt_le_ext_adv *adv)
 {
 	start_adv(adv);
 
@@ -215,17 +215,17 @@ static void connect_restore_sec_check_subscribtion(struct bt_le_ext_adv *adv)
 	/* wait for good client end of security update */
 	backchannel_sync_wait(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
 
-	/* check that subscribtion hasn't been restored */
+	/* check that subscription hasn't been restored */
 	if (is_peer_subscribed(default_conn)) {
 		TEST_FAIL("Good client is subscribed");
 	}
 
-	/* confirm to good client that the subscribtion has been well restored */
+	/* confirm to good client that the subscription has been well restored */
 	backchannel_sync_send(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
-	/* wait for confimation of unsubscribtion from good client */
+	/* wait for confimation of unsubscription from good client */
 	backchannel_sync_wait(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
 
-	/* check that unsubscribtion request from good client has been registered */
+	/* check that unsubscription request from good client has been registered */
 	if (is_peer_subscribed(default_conn)) {
 		TEST_FAIL("Good client did not unsubscribe");
 	}
@@ -311,13 +311,13 @@ void run_peripheral(void)
 
 	create_adv(&adv);
 
-	connect_pair_check_subscribtion(adv);
+	connect_pair_check_subscription(adv);
 	WAIT_FOR_FLAG(disconnected_flag);
 
-	connect_wait_unsubscribtion(adv);
+	connect_wait_unsubscription(adv);
 	WAIT_FOR_FLAG(disconnected_flag);
 
-	connect_restore_sec_check_subscribtion(adv);
+	connect_restore_sec_check_subscription(adv);
 	WAIT_FOR_FLAG(disconnected_flag);
 
 	TEST_PASS("Peripheral test passed");

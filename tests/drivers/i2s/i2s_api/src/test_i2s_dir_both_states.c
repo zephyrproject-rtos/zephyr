@@ -107,7 +107,7 @@ ZTEST_USER(i2s_dir_both_states, test_i2s_dir_both_state_stopping_neg)
 	ret = rx_block_read(dev_i2s, 0);
 	zassert_equal(ret, TC_PASS);
 
-	/* This is incase the RX channel is stuck in STOPPING state.
+	/* This is in case the RX channel is stuck in STOPPING state.
 	 * Clear out the state before running the next test.
 	 */
 	ret = i2s_trigger(dev_i2s, I2S_DIR_BOTH, I2S_TRIGGER_DROP);

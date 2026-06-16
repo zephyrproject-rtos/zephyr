@@ -421,7 +421,7 @@ static void *setup(void)
 	/* Constantly make requests to DVFS until one is successful (what also
 	 * means that the service has finished its initialization). This loop
 	 * also verifies that the clock control driver is able to recover after
-	 * an unsuccesful attempt to start a clock (at least one initial request
+	 * an unsuccessful attempt to start a clock (at least one initial request
 	 * is expected to fail here due to DFVS not being initialized yet).
 	 */
 	TC_PRINT("Polling DVFS until it is ready\n");

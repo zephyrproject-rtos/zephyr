@@ -2579,7 +2579,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM disabled   |                           |
+ *    |    Deferred APM disabled   |                           |
  *    |    '<---------'           |                           |
  *    |    So accepted right away |                           |
  *    |    '--------->'           |                           |
@@ -2728,7 +2728,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_right_away)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM disabled   |                           |
+ *    |    Deferred APM disabled   |                           |
  *    |    '<---------'           |                           |
  *    |    So accepted right away |                           |
  *    |    but with error         |                           |
@@ -2838,12 +2838,12 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_reject_right_away)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM            |                           |
+ *    |    Deferred APM            |                           |
  *    |    '<---------'           |                           |
  *    |                           |                           |
  *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *    |                           |                           |
- *    |    Defered accept         |                           |
+ *    |    Deferred accept         |                           |
  *    |    '--------->'           |                           |
  *    |                           |                           |
  *    |                           | LL_CONNECTION_PARAM_RSP   |
@@ -3013,12 +3013,12 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_defered)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM            |                           |
+ *    |    Deferred APM            |                           |
  *    |    '<---------'           |                           |
  *    |                           |                           |
  *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *    |                           |                           |
- *    |    Defered accept         |                           |
+ *    |    Deferred accept         |                           |
  *    |    but with error         |                           |
  *    |    '--------->'           |                           |
  *    |                           |                           |
