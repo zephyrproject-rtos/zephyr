@@ -14,6 +14,12 @@
 		reg = <0x34000000 0x10000>;
 	};
 
+	flash-controller@52150000 {
+		erase-value = <0x00>;
+		infineon,explicit-erase;
+		infineon,cache-invalidate = "icache0";
+	};
+
 	soc {
 		pinctrl: pinctrl@52400000 {
 			compatible = "infineon,pinctrl";
