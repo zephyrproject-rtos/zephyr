@@ -1,7 +1,5 @@
-# Infineon CAT1 Flash configuration options
-
-# Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -30,18 +28,19 @@ config FLASH_INFINEON_RRAM
 	help
 	  Enable the Flash RRAM driver for Infineon Edge family.
 
-config FLASH_INFINEON_PSOC4
-	bool "Infineon FLASH driver"
+config FLASH_INFINEON_PDL
+	bool "Infineon PDL FLASH driver"
 	default y
 	depends on DT_HAS_INFINEON_FLASH_CONTROLLER_ENABLED
 	depends on DT_HAS_FIXED_PARTITIONS_ENABLED || DT_HAS_ZEPHYR_MAPPED_PARTITION_ENABLED
 	depends on !USE_INFINEON_LEGACY_HAL
 	select FLASH_HAS_DRIVER_ENABLED
 	select FLASH_HAS_PAGE_LAYOUT
-	select FLASH_HAS_NO_EXPLICIT_ERASE
+	select FLASH_HAS_EXPLICIT_ERASE if SOC_SERIES_PSC3
+	select FLASH_HAS_NO_EXPLICIT_ERASE if !SOC_SERIES_PSC3
 	select USE_INFINEON_FLASH
 	help
-	  Enable the Flash driver for Infineon PSoC4 family.
+	  Enable the Flash driver for Infineon PDL-based families (PSoC4, PSC3).
 
 config INFINEON_CAT1_QSPI_FLASH
 	bool "Infineon CAT1 QSPI FLASH driver"
@@ -69,3 +68,10 @@ config FLASH_INFINEON_SMIF_HW_INIT
 	  RRAM and the ROM extended boot has not configured SMIF.
 	  When disabled, the driver assumes SMIF is already initialized
 	  (e.g., by the ROM when booting from external flash).
+
+config FLASH_INFINEON_ERASE_VALUE
+	hex "Infineon flash memory erase value"
+	default 0x00 if SOC_SERIES_PSC3
+	default 0xFF
+	help
+	  Erase value for Infineon flash memory.
