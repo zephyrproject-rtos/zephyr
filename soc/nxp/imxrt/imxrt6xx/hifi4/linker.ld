@@ -13,7 +13,7 @@ OUTPUT_ARCH(xtensa)
 #include <zephyr/linker/linker-tool.h>
 #include <zephyr/linker/sections.h>
 
-#define RAMABLE_REGION adsp_data :adsp_data_phdr
+#define RAMABLE_REGION adsp_data
 #define ROMABLE_REGION adsp_data :adsp_data_phdr
 
 MEMORY
@@ -74,7 +74,10 @@ MEMORY
     len = TEXT_SIZE - MEM_VECT_TEXT_SIZE
   adsp_data :
     org = DATA_BASE,
-    len = DATA_SIZE
+    len = DATA_SIZE,
+  adsp_data_nocache :
+    org = DATA_NOCACHE_BASE,
+    len = DATA_NOCACHE_SIZE,
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
     org = IDT_BASE,
@@ -104,6 +107,7 @@ PHDRS
   vector_double_lit_phdr PT_LOAD;
   adsp_text_phdr PT_LOAD;
   adsp_data_phdr PT_LOAD;
+  adsp_data_nocache_phdr PT_LOAD;
 }
 
 PROVIDE(_memmap_reset_vector = XCHAL_RESET_VECTOR0_PADDR_IRAM);
@@ -371,9 +375,73 @@ SECTIONS
 
 #include <zephyr/linker/common-ram.ld>
 
-  .bss (NOLOAD) : ALIGN(8)
+  /*
+   * The i.MX RT685 is wired up in such a way that the main SRAM is mapped to
+   * separate locations (0x0000_0000 - 0x1FFF_FFFF, 0x2000_0000 - 0x3FFF_FFFF),
+   * which the Xtensa cache controller can distinguish in terms of caching
+   * behaviour. The nocache sections are set up to use LMAs from the cached
+   * range and VMAs from the uncached range. Positioning of the sections is set
+   * up to offset space already taken up by already placed sections in respective
+   * regions, so that the contents don't collide as they reside in the same
+   * physical block of memory.
+   *
+   * CACHED  : ---------[ common-ram ]------------------------[ .bss + ... ]---
+   * UNCACHED: ----------------------[ nocache_load + nocache ]----------------
+   *           _nocache_window_start ^    _nocache_window_end ^
+   */
+  _nocache_window_start (DSECT) :
   {
-    . = ALIGN (8);
+    /* Align to cache line */
+    . = ALIGN(64);
+
+    /* Start of the nocache window (absolute from the cached memory region) */
+    _nocache_window_origin_cached = ABSOLUTE(.);
+  } >adsp_data
+
+  /* nocache_load */
+  _NOCACHE_LOAD_SECTION_NAME
+    (ORIGIN(adsp_data_nocache) + (_nocache_window_origin_cached - __rodata_region_start)) :
+  {
+    _nocache_ram_start = .;
+    _nocache_load_ram_start = .;
+
+    *(.nocache_load)
+    *(".nocache_load.*")
+
+    _nocache_load_ram_end = .;
+  } >adsp_data_nocache AT>adsp_data :adsp_data_nocache_phdr
+  _nocache_load_rom_start = LOADADDR(_NOCACHE_LOAD_SECTION_NAME);
+  _nocache_load_ram_size = _nocache_load_ram_end - _nocache_load_ram_start;
+
+  /* nocache (noload) */
+  _NOCACHE_SECTION_NAME
+    (_nocache_load_ram_end)
+    (NOLOAD) :
+  {
+    _nocache_noload_ram_start = .;
+
+    *(.nocache)
+    *(".nocache.*")
+
+    _nocache_noload_ram_end = .;
+    _nocache_ram_end = .;
+
+  } >adsp_data_nocache
+  _nocache_noload_ram_size = _nocache_noload_ram_end - _nocache_noload_ram_start;
+
+  _nocache_window_end (DSECT) :
+  {
+    /* Align to cache line */
+    . = ALIGN (64);
+
+    /* End of the nocache window (absolute from the nocache memory region) */
+    _nocache_window_end_noncached = ABSOLUTE(.);
+  } >adsp_data_nocache
+
+  .bss
+    (ORIGIN(adsp_data) + (_nocache_window_end_noncached - ORIGIN(adsp_data_nocache)))
+    (NOLOAD) :
+  {
     _bss_start = ABSOLUTE(.);
     *(.dynsbss)
     *(.sbss)
