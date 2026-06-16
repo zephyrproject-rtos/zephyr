@@ -5419,6 +5419,7 @@ STM32 Wireless Platforms:
     - asm5878
     - HoZHel
     - mathieuchopstm
+    - vtardy-st
   files:
     - boards/shields/x_nucleo_bnrg2a1/
     - boards/shields/x_nucleo_idb05a1/
@@ -6782,6 +6783,7 @@ West:
     - djiatsaf-st
     - asm5878
     - HoZHel
+    - vtardy-st
   files:
     - modules/Kconfig.stm32
   labels:
