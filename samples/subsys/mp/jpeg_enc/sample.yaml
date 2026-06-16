@@ -1,0 +1,18 @@
+sample:
+  name: MJPEG file encode (round-trip) pipeline
+
+tests:
+  sample.mp.mjpeg.encode:
+    tags:
+      - mp
+      - video
+      - filesystem
+    platform_allow:
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "EOS message from element"
