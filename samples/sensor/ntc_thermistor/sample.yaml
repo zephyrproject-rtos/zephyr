@@ -1,0 +1,12 @@
+sample:
+  name: NTC Thermistor Generic
+  description: Read temperature from an NTC thermistor using the generic driver
+
+tests:
+  sample.sensor.ntc_thermistor:
+    tags: sensors
+    depends_on: adc
+    platform_allow:
+      - esp32_devkitc
+    integration_platforms:
+      - esp32_devkitc

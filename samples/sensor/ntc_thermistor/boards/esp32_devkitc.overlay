@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 Malluri Sai Raghu
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		ntc-thermistor = &ntc0;
+	};
+};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	ntc0: ntc_thermistor@0 {
+		compatible = "ntc-thermistor-generic";
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,oversampling = <0>;
+		pullup-uv = <3300000>;
+		pullup-ohm = <0>;
+		pulldown-ohm = <10000>;
+		connected-positive;
+		zephyr,compensation-table = <(-20) 105384>,
+					    <(-15) 77898>,
+					    <(-10) 58245>,
+					    <(-5) 44026>,
+					    <(0) 33620>,
+					    <(5) 25924>,
+					    <(10) 20174>,
+					    <(15) 15837>,
+					    <(20) 12535>,
+					    <(25) 10000>,
+					    <(30) 8037>,
+					    <(35) 6505>,
+					    <(40) 5301>,
+					    <(45) 4348>,
+					    <(50) 3588>,
+					    <(55) 2978>,
+					    <(60) 2486>,
+					    <(65) 2086>,
+					    <(70) 1759>,
+					    <(75) 1491>,
+					    <(80) 1270>;
+	};
+};
