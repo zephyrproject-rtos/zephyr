@@ -221,7 +221,11 @@ struct lwm2m_time_series_resource {
 
 struct lwm2m_cache_read_entry {
 	struct lwm2m_time_series_resource *cache_data;
+#ifdef CONFIG_RING_BUFFER
 	struct ring_buf_index original_rb_get;
+#else
+	ring_buf_idx_t cached_rb_read_idx;
+#endif
 };
 
 struct lwm2m_cache_read_info {
