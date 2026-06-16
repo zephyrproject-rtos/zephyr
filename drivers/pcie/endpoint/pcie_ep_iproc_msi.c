@@ -4,8 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/pcie/endpoint/pcie_ep.h>
 #include <zephyr/logging/log.h>
+
+#define DT_DRV_COMPAT brcm_iproc_pcie_ep
 
 #include "pcie_ep_iproc.h"
 
@@ -42,7 +45,7 @@ void iproc_pcie_msi_config(const struct device *dev)
 int iproc_pcie_generate_msi(const struct device *dev, const uint32_t msi_num)
 {
 	int ret = 0;
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 	uint64_t addr;
 	uint32_t data;
 
@@ -110,7 +113,7 @@ out:
 	return ret;
 }
 
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 static bool is_pcie_function_mask(const struct device *dev)
 {
 	uint32_t data;
@@ -214,7 +217,7 @@ int iproc_pcie_generate_msix(const struct device *dev, const uint32_t msix_num)
 		return -ENOTSUP;
 	}
 
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 	struct iproc_pcie_ep_ctx *ctx = dev->data;
 	k_spinlock_key_t key;
 

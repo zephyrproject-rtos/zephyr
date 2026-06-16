@@ -58,7 +58,7 @@
 
 #define PAXB_OARR_VALID			BIT(0)
 
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 
 #define SNOOP_VALID_INTR		BIT(3)
 #define SNOOP_ADDR1_EN			BIT(31)
@@ -80,7 +80,6 @@
 #define AXI_FILTER_0_ADDR_END_HIGH		(PMON_LITE_PCIE_BASE + 0xe4)
 
 #endif
-
 #define PCIE_DEV_CTRL_OFFSET		0x4d8
 #define FLR_IN_PROGRESS			BIT(27)
 

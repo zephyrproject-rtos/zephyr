@@ -12,9 +12,9 @@
 #include <zephyr/irq.h>
 LOG_MODULE_REGISTER(iproc_pcie);
 
-#include "pcie_ep_iproc.h"
-
 #define DT_DRV_COMPAT brcm_iproc_pcie_ep
+
+#include "pcie_ep_iproc.h"
 
 static int iproc_pcie_conf_read(const struct device *dev, uint32_t offset,
 				uint32_t *data)
@@ -366,7 +366,7 @@ static void iproc_pcie_reset_config(const struct device *dev)
 #endif
 }
 
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 static void iproc_pcie_msix_pvm_config(const struct device *dev)
 {
 	__unused const struct iproc_pcie_ep_config *cfg = dev->config;
@@ -455,7 +455,7 @@ static int iproc_pcie_ep_init(const struct device *dev)
 #endif
 
 	/* configure interrupts for MSI-X Per-Vector Masking feature */
-#ifdef CONFIG_PCIE_EP_IPROC_V2
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_iproc_pcie_ep_v2)
 	iproc_pcie_msix_pvm_config(dev);
 #endif
 
