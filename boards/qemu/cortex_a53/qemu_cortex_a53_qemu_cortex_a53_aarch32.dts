@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "qemu_cortex_a53.dts"
+
+/ {
+	chosen {
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &pflash;
+		zephyr,sram = &zephyr_ram;
+	};
+};
+
+&{/soc} {
+	/*
+	 * QEMU virt exposes this pflash bank to the Normal world at 0x04000000.
+	 * This AArch32 variant runs in the Normal world, where the inherited
+	 * flash0 node describes a secure-only bank that is not visible, so use
+	 * this bank as zephyr,flash instead.
+	 */
+	pflash: flash-controller@4000000 {
+		compatible = "intel,pflash-cfi01";
+		reg = <0x0 0x04000000 0x0 DT_SIZE_M(64)>;
+		bank-width = <4>;
+		device-width = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			erase-block-size = <0x40000>;
+		};
+	};
+};
+
+&sram0 {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	ranges;
+
+	/* The first 1 MiB contains QEMU's generated DTB. */
+	zephyr_ram: memory@40100000 {
+		compatible = "mmio-sram";
+		reg = <0x0 0x40100000 0x0 DT_SIZE_M(128 - 1)>;
+	};
+};
