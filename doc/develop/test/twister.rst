@@ -482,6 +482,15 @@ arch_allow: <list of arches, such as x86, arm, arc>
 arch_exclude: <list of arches, such as x86, arm, arc>
     Set of architectures that this test scenario should not run on.
 
+toolchain_allow: <list of toolchain variants>
+    Set of toolchain variants that this test scenario should only be run for.
+    The toolchain is the one configured for the run (see
+    :envvar:`ZEPHYR_TOOLCHAIN_VARIANT`). Platforms built with any other
+    toolchain are filtered out.
+
+toolchain_exclude: <list of toolchain variants>
+    Set of toolchain variants that this test scenario should not be run for.
+
 vendor_allow: <list of vendors>
     Set of platform vendors that this test scenario should only be run for.  The
     vendor is defined as part of the board definition. Boards associated with
