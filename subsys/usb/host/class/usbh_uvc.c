@@ -1209,14 +1209,12 @@ static int set_format(struct uvc_host_data *const host_data,
 	}
 
 	/* Update device current format */
-	k_mutex_lock(&host_data->lock, K_FOREVER);
 	host_data->current_format.video_fmt = *fmt;
 	host_data->current_format.frmival_100ns = frmival;
 	host_data->current_format.format_index = format->bFormatIndex;
 	host_data->current_format.frame_index = frame->bFrameIndex;
 	host_data->current_format.format_ptr = format;
 	host_data->current_format.frame_ptr = frame;
-	k_mutex_unlock(&host_data->lock);
 
 	/* Calculate required bandwidth */
 	byte_per_sec = host_data->current_format.video_fmt.size *
@@ -1289,15 +1287,11 @@ static int set_frame_rate(const struct device *dev, uint32_t fps)
 		best_frmival);
 	LOG_INF("Setting frame rate: %u fps -> %u fps", fps, (NSEC_PER_SEC / 100) / best_frmival);
 
-	k_mutex_lock(&host_data->lock, K_FOREVER);
-
 	memset(&host_data->probe, 0, sizeof(host_data->probe));
 	host_data->probe.bmHint = sys_cpu_to_le16(0x0001);
 	host_data->probe.bFormatIndex = host_data->current_format.format_index;
 	host_data->probe.bFrameIndex = host_data->current_format.frame_index;
 	host_data->probe.dwFrameInterval = sys_cpu_to_le32(best_frmival);
-
-	k_mutex_unlock(&host_data->lock);
 
 	ret = vs_request(host_data, UVC_SET_CUR, UVC_VS_PROBE_CONTROL,
 			 &host_data->probe, sizeof(host_data->probe));
@@ -1321,9 +1315,7 @@ static int set_frame_rate(const struct device *dev, uint32_t fps)
 		return ret;
 	}
 
-	k_mutex_lock(&host_data->lock, K_FOREVER);
 	host_data->current_format.frmival_100ns = best_frmival;
-	k_mutex_unlock(&host_data->lock);
 
 	LOG_INF("Frame rate successfully set to %u fps",
 		(NSEC_PER_SEC / 100) / host_data->current_format.frmival_100ns);
@@ -2493,19 +2485,26 @@ static int usbh_uvc_set_fmt(const struct device *dev, struct video_format *const
 	struct uvc_host_data *host_data = (void *)dev->data;
 	int ret;
 
+	k_mutex_lock(&host_data->lock, K_FOREVER);
+	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
+		ret = -ENODEV;
+		goto exit;
+	}
+
 	ret = set_format(host_data, fmt);
 	if (ret != 0) {
 		LOG_ERR("Failed to set UVC format: %d", ret);
-		return ret;
+		goto exit;
 	}
 
 	ret = video_estimate_fmt_size(fmt);
 	if (ret != 0) {
 		LOG_ERR("Failed to estimate format size: %d", ret);
-		return ret;
 	}
 
-	return 0;
+exit:
+	k_mutex_unlock(&host_data->lock);
+	return ret;
 }
 
 /* Get current video format */
@@ -2536,12 +2535,20 @@ static int usbh_uvc_set_frmival(const struct device *dev, struct video_frmival *
 	uint32_t fps;
 	int ret;
 
+	k_mutex_lock(&host_data->lock, K_FOREVER);
 	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
-		return -ENODEV;
+		ret = -ENODEV;
+		goto exit;
+	}
+
+	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
+		ret = -ENODEV;
+		goto exit;
 	}
 
 	if (frmival->numerator == 0 || frmival->denominator == 0) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto exit;
 	}
 
 	fps = frmival->denominator / frmival->numerator;
@@ -2551,6 +2558,8 @@ static int usbh_uvc_set_frmival(const struct device *dev, struct video_frmival *
 		LOG_ERR("Failed to set UVC frame rate: %d", ret);
 	}
 
+exit:
+	k_mutex_unlock(&host_data->lock);
 	return ret;
 }
 
@@ -2586,7 +2595,9 @@ static int usbh_uvc_enum_frmival(const struct device *dev, struct video_frmival_
 	struct uvc_host_data *host_data = dev->data;
 	int ret;
 
+	k_mutex_lock(&host_data->lock, K_FOREVER);
 	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
+		k_mutex_unlock(&host_data->lock);
 		return -ENODEV;
 	}
 
@@ -2595,6 +2606,7 @@ static int usbh_uvc_enum_frmival(const struct device *dev, struct video_frmival_
 		LOG_DBG("Failed to enumerate frame intervals: %d", ret);
 	}
 
+	k_mutex_unlock(&host_data->lock);
 	return ret;
 }
 
@@ -2805,7 +2817,7 @@ static bool control_is_supported(struct uvc_host_data *const host_data,
 }
 
 /* Set control value */
-static int usbh_uvc_set_ctrl(const struct device *dev, uint32_t id)
+static int set_ctrl_impl(const struct device *dev, uint32_t id)
 {
 	struct uvc_host_data *const host_data = dev->data;
 	const struct uvc_control_map *map;
@@ -2814,10 +2826,6 @@ static int usbh_uvc_set_ctrl(const struct device *dev, uint32_t id)
 	uint8_t unit_subtype;
 	uint8_t entity_id;
 	int ret;
-
-	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
-		return -ENODEV;
-	}
 
 	ret = video_get_ctrl(dev, &control);
 	if (ret != 0) {
@@ -2855,6 +2863,23 @@ static int usbh_uvc_set_ctrl(const struct device *dev, uint32_t id)
 	}
 
 	return 0;
+}
+
+static int usbh_uvc_set_ctrl(const struct device *dev, uint32_t id)
+{
+	struct uvc_host_data *host_data = dev->data;
+	int ret;
+
+	k_mutex_lock(&host_data->lock, K_FOREVER);
+	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
+		k_mutex_unlock(&host_data->lock);
+		return -ENODEV;
+	}
+
+	ret = set_ctrl_impl(dev, id);
+
+	k_mutex_unlock(&host_data->lock);
+	return ret;
 }
 
 /* Generic getter for UVC control values */
@@ -2920,7 +2945,7 @@ static int get_control_value(struct uvc_host_data *const host_data, uint32_t cid
 }
 
 /* Get volatile control values */
-static int usbh_uvc_get_volatile_ctrl(const struct device *dev, uint32_t id)
+static int get_volatile_ctrl_impl(const struct device *dev, uint32_t id)
 {
 	struct uvc_host_data *const host_data = dev->data;
 	struct uvc_ctrls *ctrls = &host_data->ctrls;
@@ -2979,8 +3004,25 @@ static int usbh_uvc_get_volatile_ctrl(const struct device *dev, uint32_t id)
 	return 0;
 }
 
+static int usbh_uvc_get_volatile_ctrl(const struct device *dev, uint32_t id)
+{
+	struct uvc_host_data *host_data = dev->data;
+	int ret;
+
+	k_mutex_lock(&host_data->lock, K_FOREVER);
+	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
+		k_mutex_unlock(&host_data->lock);
+		return -ENODEV;
+	}
+
+	ret = get_volatile_ctrl_impl(dev, id);
+
+	k_mutex_unlock(&host_data->lock);
+	return ret;
+}
+
 /* Start/stop streaming */
-static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
+static int set_stream_impl(const struct device *dev, bool enable, enum video_buf_type type)
 {
 	struct uvc_host_data *const host_data = dev->data;
 	struct uvc_stream_iface_info *const stream_info = &host_data->current_stream_iface_info;
@@ -3007,8 +3049,6 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 		interface_num = stream_iface->bInterfaceNumber;
 		atomic_clear_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING);
 
-		k_mutex_lock(&host_data->lock, K_FOREVER);
-
 		/* Cancel all active transfers */
 		if (host_data->video_transfer_count > 0) {
 			LOG_DBG("Stopping streaming, cancelling %u transfers",
@@ -3029,8 +3069,6 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 
 			host_data->video_transfer_count = 0;
 		}
-
-		k_mutex_unlock(&host_data->lock);
 	}
 
 	ret = usbh_device_interface_set(host_data->udev, interface_num, alt, false);
@@ -3042,8 +3080,6 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 	if (enable) {
 		atomic_set_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING);
 
-		k_mutex_lock(&host_data->lock, K_FOREVER);
-
 		vbuf = k_fifo_peek_head(&host_data->fifo_in);
 		if (vbuf != NULL) {
 			vbuf->bytesused = 0;
@@ -3054,15 +3090,12 @@ static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video
 				ret = initiate_transfer(host_data, vbuf);
 				if (ret != 0) {
 					LOG_ERR("Failed to initiate transfer: %d", ret);
-					k_mutex_unlock(&host_data->lock);
 					goto err_stream;
 				}
 
 				host_data->multi_prime_cnt--;
 			}
 		}
-
-		k_mutex_unlock(&host_data->lock);
 	}
 
 	LOG_DBG("UVC streaming %s successfully", enable ? "enabled" : "disabled");
@@ -3081,12 +3114,31 @@ err_stream:
 	return ret;
 }
 
+static int usbh_uvc_set_stream(const struct device *dev, bool enable, enum video_buf_type type)
+{
+	struct uvc_host_data *host_data = dev->data;
+	int ret;
+
+	k_mutex_lock(&host_data->lock, K_FOREVER);
+	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
+		k_mutex_unlock(&host_data->lock);
+		return -ENODEV;
+	}
+
+	ret = set_stream_impl(dev, enable, type);
+
+	k_mutex_unlock(&host_data->lock);
+	return ret;
+}
+
 /* Enqueue video buffer */
 static int usbh_uvc_enqueue(const struct device *dev, struct video_buffer *const vbuf)
 {
 	struct uvc_host_data *const host_data = dev->data;
 
+	k_mutex_lock(&host_data->lock, K_FOREVER);
 	if (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED)) {
+		k_mutex_unlock(&host_data->lock);
 		return -ENODEV;
 	}
 
@@ -3096,6 +3148,7 @@ static int usbh_uvc_enqueue(const struct device *dev, struct video_buffer *const
 
 	k_fifo_put(&host_data->fifo_in, vbuf);
 
+	k_mutex_unlock(&host_data->lock);
 	return 0;
 }
 
