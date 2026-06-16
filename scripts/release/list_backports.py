@@ -32,7 +32,7 @@ Usage:
 """
 
 import argparse
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 import io
 import json
 import logging
@@ -49,7 +49,7 @@ def valid_date_type(arg_date_str):
     """custom argparse *date* type for user dates values given from the
     command line"""
     try:
-        return datetime.strptime(arg_date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        return datetime.strptime(arg_date_str, "%Y-%m-%d").replace(tzinfo=datetime.UTC)
     except ValueError:
         msg = "Given Date ({0}) not valid! Expected format, YYYY-MM-DD!".format(arg_date_str)
         raise argparse.ArgumentTypeError(msg)
@@ -103,7 +103,7 @@ def parse_args():
             return None
 
         if not getattr(args, 'end'):
-            setattr(args, 'end', datetime.now(timezone.utc))
+            setattr(args, 'end', datetime.now(datetime.UTC))
 
         if args.end < args.start:
             logging.error(
