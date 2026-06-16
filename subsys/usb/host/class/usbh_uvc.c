@@ -133,7 +133,7 @@ struct uvc_host_data {
 	struct uvc_ctrls ctrls;
 };
 
-static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer);
+static int stream_iso_req_cb(struct usb_device *const udev, struct uhc_transfer *const xfer);
 
 /* Configure UVC device interfaces */
 static int configure_device(struct usbh_class_data *const c_data)
@@ -1544,11 +1544,23 @@ static int initiate_transfer(struct uvc_host_data *const host_data,
 	if (ret != 0) {
 		LOG_ERR("Enqueue failed: ret=%d", ret);
 		net_buf_unref(buf);
+		host_data->video_transfer[--host_data->video_transfer_count] = NULL;
 		usbh_xfer_free(host_data->udev, xfer);
 		return ret;
 	}
 
 	return 0;
+}
+
+static void clear_video_transfer(struct uvc_host_data *const host_data,
+				 struct uhc_transfer *const xfer)
+{
+	for (uint8_t i = 0; i < host_data->video_transfer_count; i++) {
+		if (host_data->video_transfer[i] == xfer) {
+			host_data->video_transfer[i] = NULL;
+			break;
+		}
+	}
 }
 
 /* Continue existing video transfer */
@@ -1571,6 +1583,8 @@ static int continue_transfer(struct uvc_host_data *const host_data,
 	ret = usbh_xfer_enqueue(host_data->udev, xfer);
 	if (ret != 0) {
 		LOG_ERR("Enqueue failed: ret=%d", ret);
+		clear_video_transfer(host_data, xfer);
+		usbh_xfer_free(host_data->udev, xfer);
 		net_buf_unref(buf);
 		return ret;
 	}
@@ -1579,7 +1593,7 @@ static int continue_transfer(struct uvc_host_data *const host_data,
 }
 
 /* ISO transfer completion callback */
-static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *const xfer)
+static int stream_iso_req_cb(struct usb_device *const udev, struct uhc_transfer *const xfer)
 {
 	struct uvc_host_data *const host_data = (void *)xfer->priv;
 	struct uvc_payload_header *payload_header = NULL;
@@ -1722,8 +1736,12 @@ static int stream_iso_req_cb(struct usb_device *const dev, struct uhc_transfer *
 
 cleanup:
 	net_buf_unref(buf);
-	if ((atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) &&
-	    (vbuf != NULL)) {
+	if ((!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_STREAMING)) ||
+	    (!atomic_test_bit(&host_data->device_flags, UVC_DEVICE_FLAG_CONNECTED))) {
+		LOG_INF("free xfer");
+		clear_video_transfer(host_data, xfer);
+		usbh_xfer_free(udev, xfer);
+	} else if (vbuf != NULL) {
 		continue_transfer(host_data, xfer, vbuf);
 	}
 
