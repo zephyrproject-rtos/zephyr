@@ -168,13 +168,13 @@ ZTEST(bt_mesh_delayable_msg, test_self_sorting)
 	NET_BUF_SIMPLE_DEFINE(buf4, 20);
 
 	memset(tx_data, 1, 20);
-	memcpy(net_buf_simple_add(&buf1, 20), tx_data, 20);
+	net_buf_simple_add_mem(&buf1, tx_data, 20);
 	memset(tx_data, 2, 20);
-	memcpy(net_buf_simple_add(&buf2, 20), tx_data, 20);
+	net_buf_simple_add_mem(&buf2, tx_data, 20);
 	memset(tx_data, 3, 20);
-	memcpy(net_buf_simple_add(&buf3, 20), tx_data, 20);
+	net_buf_simple_add_mem(&buf3, tx_data, 20);
 	memset(tx_data, 4, 20);
-	memcpy(net_buf_simple_add(&buf4, 20), tx_data, 20);
+	net_buf_simple_add_mem(&buf4, tx_data, 20);
 
 	is_fake_random = true;
 	fake_random = 30;
@@ -216,7 +216,7 @@ ZTEST(bt_mesh_delayable_msg, test_ctx_reallocation)
 	NET_BUF_SIMPLE_DEFINE(buf, 20);
 
 	memset(tx_data, 1, 20);
-	memcpy(net_buf_simple_add(&buf, 20), tx_data, 20);
+	net_buf_simple_add_mem(&buf, tx_data, 20);
 
 	accum_mask = true;
 	is_fake_random = true;
@@ -250,12 +250,16 @@ ZTEST(bt_mesh_delayable_msg, test_chunk_reallocation)
 	NET_BUF_SIMPLE_DEFINE(buf2, BT_MESH_TX_SDU_MAX);
 
 	memset(tx_data, 1, BT_MESH_TX_SDU_MAX);
-	memcpy(net_buf_simple_add(&buf1, 20), tx_data, 20);
-	memcpy(net_buf_simple_add(&buf2, BT_MESH_TX_SDU_MAX), tx_data, BT_MESH_TX_SDU_MAX);
+	net_buf_simple_add_mem(&buf2, tx_data, BT_MESH_TX_SDU_MAX);
 
 	accum_mask = true;
+	net_buf_simple_add_mem(&buf1, tx_data, 20);
 	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf1, SRC_ADDR, &send_cb, &buf_id1));
+	net_buf_simple_reset(&buf1);
+	net_buf_simple_add_mem(&buf1, tx_data, 20);
 	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf1, SRC_ADDR, &send_cb, &buf_id2));
+	net_buf_simple_reset(&buf1);
+	net_buf_simple_add_mem(&buf1, tx_data, 20);
 	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf1, SRC_ADDR, &send_cb, &buf_id3));
 	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf2, SRC_ADDR, &send_cb, &buf_id4));
 	zassert_equal(id_mask, 0x0007, "Delayed message chunks reallocation was broken");
@@ -278,9 +282,9 @@ ZTEST(bt_mesh_delayable_msg, test_cb_error_status)
 	NET_BUF_SIMPLE_DEFINE(buf3, 20);
 
 	memset(tx_data, 1, BT_MESH_TX_SDU_MAX);
-	memcpy(net_buf_simple_add(&buf1, 20), tx_data, 20);
-	memcpy(net_buf_simple_add(&buf2, 20), tx_data, 20);
-	memcpy(net_buf_simple_add(&buf3, 20), tx_data, 20);
+	net_buf_simple_add_mem(&buf1, tx_data, 20);
+	net_buf_simple_add_mem(&buf2, tx_data, 20);
+	net_buf_simple_add_mem(&buf3, tx_data, 20);
 
 	cb_err_status = -ENOBUFS;
 	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf1, SRC_ADDR, &send_cb, &buf_id));
@@ -323,7 +327,7 @@ ZTEST(bt_mesh_delayable_msg, test_stop_handler)
 	NET_BUF_SIMPLE_DEFINE(buf, 20);
 
 	memset(tx_data, 1, 20);
-	memcpy(net_buf_simple_add(&buf, 20), tx_data, 20);
+	net_buf_simple_add_mem(&buf, tx_data, 20);
 
 	accum_mask = true;
 	cb_err_status = -ENODEV;
@@ -335,4 +339,48 @@ ZTEST(bt_mesh_delayable_msg, test_stop_handler)
 	zexpect_not_ok(k_sem_take(&delayed_msg_sent, K_SECONDS(1)),
 		       "Delayed message has been sent after stopping.");
 	zassert_equal(id_mask, 0x000F, "Not all scheduled messages were handled after stopping");
+}
+
+/* The test checks that chunk allocation is based on actual data length (buf->len)
+ * and not on buffer capacity (buf->size). Four messages with small payloads in
+ * large-capacity buffers should consume exactly the full chunk pool without error
+ * or eviction.
+ *
+ * With CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE=20,
+ * CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_COUNT=20 and data_len=100:
+ *   DIV_ROUND_UP(100, 20) = 5 chunks per msg, 4 msgs * 5 = 20 chunks (full pool)
+ */
+ZTEST(bt_mesh_delayable_msg, test_chunk_alloc_by_data_len)
+{
+	uint8_t tx_data[100];
+	uint32_t buf_id1 = 0;
+	uint32_t buf_id2 = 1;
+	uint32_t buf_id3 = 2;
+	uint32_t buf_id4 = 3;
+
+	NET_BUF_SIMPLE_DEFINE(buf1, BT_MESH_TX_SDU_MAX);
+	NET_BUF_SIMPLE_DEFINE(buf2, BT_MESH_TX_SDU_MAX);
+	NET_BUF_SIMPLE_DEFINE(buf3, BT_MESH_TX_SDU_MAX);
+	NET_BUF_SIMPLE_DEFINE(buf4, BT_MESH_TX_SDU_MAX);
+
+	memset(tx_data, 1, sizeof(tx_data));
+	net_buf_simple_add_mem(&buf1, tx_data, sizeof(tx_data));
+	net_buf_simple_add_mem(&buf2, tx_data, sizeof(tx_data));
+	net_buf_simple_add_mem(&buf3, tx_data, sizeof(tx_data));
+	net_buf_simple_add_mem(&buf4, tx_data, sizeof(tx_data));
+
+	accum_mask = true;
+	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf1, SRC_ADDR, &send_cb, &buf_id1));
+	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf2, SRC_ADDR, &send_cb, &buf_id2));
+	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf3, SRC_ADDR, &send_cb, &buf_id3));
+	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf4, SRC_ADDR, &send_cb, &buf_id4));
+
+	/* All 4 messages should coexist using the full chunk pool (5 chunks each)
+	 * without any eviction.
+	 */
+	zassert_equal(id_mask, 0,
+		      "Messages were evicted unexpectedly (id_mask: 0x%04x)", id_mask);
+
+	k_sleep(K_MSEC(500));
+	zassert_equal(id_mask, 0x000F, "Not all messages were sent (id_mask: 0x%04x)", id_mask);
 }
