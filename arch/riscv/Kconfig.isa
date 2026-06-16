@@ -301,3 +301,30 @@ config RISCV_ISA_EXT_ZMMUL
 
 	  The Zmmul extension implements the multiplication subset of the M
 	  extension.
+
+config RISCV_ISA_EXT_SMAIA
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),smaia)
+	help
+	  (Smaia) - Smaia extension for AIA
+
+	  The Smaia extension encompasses all added CSRs and all modifications to
+	  interrupt response behavior that the AIA specifies for a hart, over
+	  all privilege levels. Per section 1.6 in the AIA spec the exact set of
+	  CSRs enabled depends on various factors; this extension is used to
+	  infer whether a certain CSR is enabled (e.g. if a hart implements
+	  RV32 and SMAIA the CSRs mieh/miph are enabled).
+
+config RISCV_ISA_EXT_SSAIA
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),ssaia)
+	help
+	  (Ssaia) - Ssaia extension for AIA
+
+	  The Ssaia extension encompasses all added CSRs and all modifications to
+	  interrupt response behavior that the AIA specifies for a hart, over
+	  all privilege levels. However, it excludes machine-level CSRs and behavior
+	  not directly visible to supervisor level. Per section 1.6 in the AIA spec
+	  the exact set of CSRs enabled depends on various factors; this extension
+	  is used to infer whether a certain CSR is enabled (e.g. if a hart
+	  implements RV32 and SSAIA the CSRs sieh/siph are enabled).
