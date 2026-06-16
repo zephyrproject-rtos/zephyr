@@ -1374,7 +1374,7 @@ The harness executes the following steps:
     harness_config:
       fixture: pm_probe
       power_measurements:
-        element_to_trim: 100
+        elements_to_trim: 100
         min_peak_distance: 40
         min_peak_height: 0.008
         peak_padding: 40
@@ -1433,7 +1433,7 @@ signature analysis options. A typical configuration is shown below:
       res_y: 720
       fps: 30
       run_time: 20
-    tests:
+    test:
       timeout: 30
       prompt: "screen starts"
       expect: ["tests.drivers.display.check.shield"]
@@ -2464,12 +2464,12 @@ test scenarios will run.
 
 
 
-Running in Tests in Random Order
-********************************
+Running Tests in Random Order
+*****************************
 Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
 run your tests in random order.  This can be beneficial for identifying
 dependencies between test cases. For native_sim platforms, you can provide
-the seed to the random number generator by providing ``-seed=value`` as an
+the seed to the random number generator by providing ``--seed=value`` as an
 argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
 details.
 
