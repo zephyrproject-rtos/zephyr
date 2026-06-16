@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Intel Corporation
+ * Copyright (c) 2026 Qualcomm Technologies, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,8 @@
 /*
  * Internal heap APIs
  */
+
+#include <zephyr/sys/atomic.h>
 
 /* These validation checks are non-trivially expensive, so enable
  * only when debugging the heap code.  They shouldn't be routine
@@ -74,8 +77,18 @@ typedef uint32_t chunksz_t;
 
 #ifdef CONFIG_SYS_HEAP_CANARIES
 
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+struct k_thread;
+#endif
+
 struct z_heap_chunk_trailer {
 	uint32_t canary;
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+	struct k_thread *thread;
+#endif
+#ifdef CONFIG_SYS_HEAP_CALLER_POINTER
+	void *caller;
+#endif
 } __aligned(CHUNK_UNIT);
 
 #define CHUNK_TRAILER_SIZE (sizeof(struct z_heap_chunk_trailer) / CHUNK_UNIT)
@@ -85,6 +98,36 @@ struct z_heap_chunk_trailer {
 #define CHUNK_TRAILER_SIZE 0
 
 #endif /* CONFIG_SYS_HEAP_CANARIES */
+
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+
+struct z_heap_thread_stat {
+	struct k_thread *thread;
+#if defined(CONFIG_THREAD_NAME)
+	char name[CONFIG_THREAD_MAX_NAME_LEN];
+#endif
+	size_t total_alloc;
+};
+
+/*
+ * Per-heap statistics block.  Lives in a pre-allocated pool (see heap.c)
+ * and is pointed to by z_heap::stats.
+ */
+struct z_heap_stats {
+	atomic_t num_threads;
+	atomic_t isr_alloc_bytes;
+	atomic_t boot_alloc_bytes;
+	atomic_t overflow_alloc_bytes;
+	struct z_heap_thread_stat threads[CONFIG_SYS_HEAP_STATS_MAX_TRACKED_THREADS];
+};
+
+/*
+ * Sentinel stored in the chunk trailer thread field for allocations made
+ * before the Zephyr scheduler has started (k_is_pre_kernel() == true).
+ */
+#define Z_HEAP_BOOT_SENTINEL ((struct k_thread *)(uintptr_t)1U)
+
+#endif /* CONFIG_SYS_HEAP_THREAD_STATS */
 
 struct z_heap_bucket {
 	chunkid_t next;
@@ -101,6 +144,9 @@ struct z_heap {
 #endif
 #ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
 	uint32_t canary_base;
+#endif
+#ifdef CONFIG_SYS_HEAP_THREAD_STATS
+	struct z_heap_stats *stats;
 #endif
 	struct z_heap_bucket buckets[];
 };
