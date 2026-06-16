@@ -866,7 +866,8 @@ modules: <list of module names>
 
 type: <string> (default integration)
     Test type of the scenario. Set to ``unit`` for unit tests that are built
-    and run on the host without the full Zephyr build system.
+    for the :ref:`unit_testing board <unit_testing_board>` and run on the host
+    without the full Zephyr build system.
 
 testcases: <list of test case names>
     Explicitly declare the list of test case names that make up this scenario.
