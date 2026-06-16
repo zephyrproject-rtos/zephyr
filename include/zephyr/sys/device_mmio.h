@@ -34,7 +34,7 @@
  * If we have PCIE enabled, this does mean that non-PCIE drivers may waste
  * a bit of RAM, but systems with PCI express are not RAM constrained.
  */
-#if defined(CONFIG_MMU) || defined(CONFIG_PCIE) || defined(CONFIG_EXTERNAL_ADDRESS_TRANSLATION)
+#if defined(CONFIG_MMU) || defined(CONFIG_PCIE_HOST) || defined(CONFIG_EXTERNAL_ADDRESS_TRANSLATION)
 #define DEVICE_MMIO_IS_IN_RAM
 #endif
 

@@ -7,7 +7,7 @@ menuconfig I2C_DW
 	depends on DT_HAS_SNPS_DESIGNWARE_I2C_ENABLED
 	select PINCTRL if $(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_I2C),pinctrl-0)
 	depends on !$(dt_compat_any_has_prop,$(DT_COMPAT_SNPS_DESIGNWARE_I2C),clocks) || CLOCK_CONTROL
-	select PCIE if $(dt_compat_on_bus,$(DT_COMPAT_SNPS_DESIGNWARE_I2C),pcie)
+	select PCIE_HOST if $(dt_compat_on_bus,$(DT_COMPAT_SNPS_DESIGNWARE_I2C),pcie)
 	select DYNAMIC_INTERRUPTS if $(dt_compat_on_bus,$(DT_COMPAT_SNPS_DESIGNWARE_I2C),pcie)
 	help
 	  Enable the Design Ware I2C driver

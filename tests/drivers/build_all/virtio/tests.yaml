@@ -6,7 +6,7 @@ common:
 tests:
   drivers.virtio.pci.build:
     extra_configs:
-      - CONFIG_PCIE=y
+      - CONFIG_PCIE_HOST=y
     filter: CONFIG_DT_HAS_VIRTIO_PCI_ENABLED
     platform_allow: qemu_x86_64
   drivers.virtio.mmio.build:

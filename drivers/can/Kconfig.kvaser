@@ -7,7 +7,7 @@ config CAN_KVASER_PCI
 	bool "Kvaser PCIcan driver"
 	default y
 	depends on DT_HAS_KVASER_PCICAN_ENABLED
-	select PCIE
+	select PCIE_HOST
 	select CAN_SJA1000
 	help
 	  This enables support for the Kvaser PCIcan.

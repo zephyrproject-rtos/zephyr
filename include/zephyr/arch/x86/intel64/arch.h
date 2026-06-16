@@ -19,7 +19,7 @@
 #include <zephyr/arch/x86/intel64/exception.h>
 #include <zephyr/arch/x86/intel64/thread.h>
 #include <zephyr/arch/x86/thread_stack.h>
-#if defined(CONFIG_PCIE) && !defined(_ASMLANGUAGE)
+#if defined(CONFIG_PCIE_HOST) && !defined(_ASMLANGUAGE)
 #include <zephyr/sys/iterable_sections.h>
 #endif
 
@@ -82,7 +82,7 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 	CODE_UNREACHABLE; /* LCOV_EXCL_LINE */ \
 } while (false)
 
-#ifdef CONFIG_PCIE
+#ifdef CONFIG_PCIE_HOST
 #define X86_RESERVE_IRQ(irq_p, name) \
 	static TYPE_SECTION_ITERABLE(uint8_t, name, irq_alloc, name) = irq_p
 #else
@@ -101,7 +101,7 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 				 (void (*)(const void *))isr_p,		\
 				 isr_param_p, flags_p)
 
-#ifdef CONFIG_PCIE
+#ifdef CONFIG_PCIE_HOST
 
 #define ARCH_PCIE_IRQ_CONNECT(bdf_p, irq_p, priority_p,			\
 			      isr_p, isr_param_p, flags_p)		\
@@ -110,7 +110,7 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 				 (void (*)(const void *))isr_p,		\
 				 isr_param_p, flags_p)
 
-#endif /* CONFIG_PCIE */
+#endif /* CONFIG_PCIE_HOST */
 
 /*
  * Thread object needs to be 16-byte aligned.

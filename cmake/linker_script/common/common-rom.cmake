@@ -170,7 +170,7 @@ if(CONFIG_DNS_SD)
   zephyr_iterable_section(NAME dns_sd_rec KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
-if(CONFIG_PCIE)
+if(CONFIG_PCIE_HOST)
   zephyr_iterable_section(NAME irq_alloc KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
