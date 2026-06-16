@@ -575,6 +575,15 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 		return ret;
 	}
 
+	/* fsize is a 32-bit register value that must fit in ctx->buf before
+	 * the SPI burst read; reject frames that would overflow the static buf.
+	 */
+	if (fsize > CONFIG_ETH_ADIN2111_BUFFER_SIZE) {
+		eth_stats_update_errors_rx(iface);
+		LOG_ERR("Port %u RX fsize %u exceeds buffer", port_idx, fsize);
+		return -EMSGSIZE;
+	}
+
 	/* burst read must be in multiples of 4 */
 	padding_len = ((fsize % 4) == 0) ? 0U : (ROUND_UP(fsize, 4U) - fsize);
 	/* actual available frame length is FSIZE - FRAME HEADER */
