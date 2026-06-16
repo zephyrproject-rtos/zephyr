@@ -17,6 +17,7 @@ on:
       - "Zephyr West Command Tests"
       - "Scripts tests"
       - "Hello World (Multiplatform)"
+      - "CI Test Probe"
     types:
       - completed
 

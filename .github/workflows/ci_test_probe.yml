@@ -1,0 +1,35 @@
+name: CI Test Probe
+
+# TEST HELPER - drop before opening the upstream PR. Exercises the CI Status
+# Label workflow without waiting for the full CI matrix: push a commit whose
+# message contains [ci-fail] to fail this probe, or omit it to pass.
+
+on:
+  pull_request:
+    types:
+      - synchronize
+      - opened
+      - reopened
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    name: CI Test Probe
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Decide outcome from latest commit message
+        run: |
+          msg=$(git log -1 --format=%B)
+          echo "commit message: $msg"
+          if echo "$msg" | grep -q '\[ci-fail\]'; then
+            echo "::error::[ci-fail] marker present, failing probe"
+            exit 1
+          fi
+          echo "no [ci-fail] marker, probe passes"
