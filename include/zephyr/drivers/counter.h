@@ -693,7 +693,9 @@ __syscall uint64_t counter_us_to_ticks_64(const struct device *dev, uint64_t us)
 
 static inline uint64_t z_impl_counter_us_to_ticks_64(const struct device *dev, uint64_t us)
 {
-	return (us * z_counter_get_frequency(dev)) / USEC_PER_SEC;
+	uint64_t freq = z_counter_get_frequency(dev);
+
+	return (us / USEC_PER_SEC) * freq + ((us % USEC_PER_SEC) * freq) / USEC_PER_SEC;
 }
 
 /**
@@ -723,7 +725,9 @@ __syscall uint64_t counter_ticks_to_us_64(const struct device *dev, uint64_t tic
 
 static inline uint64_t z_impl_counter_ticks_to_us_64(const struct device *dev, uint64_t ticks)
 {
-	return (ticks * USEC_PER_SEC) / z_counter_get_frequency(dev);
+	uint64_t freq = z_counter_get_frequency(dev);
+
+	return (ticks / freq) * USEC_PER_SEC + ((ticks % freq) * USEC_PER_SEC) / freq;
 }
 
 /**
@@ -755,7 +759,9 @@ __syscall uint64_t counter_ns_to_ticks_64(const struct device *dev, uint64_t ns)
 
 static inline uint64_t z_impl_counter_ns_to_ticks_64(const struct device *dev, uint64_t ns)
 {
-	return (ns * z_counter_get_frequency(dev)) / NSEC_PER_SEC;
+	uint64_t freq = z_counter_get_frequency(dev);
+
+	return (ns / NSEC_PER_SEC) * freq + ((ns % NSEC_PER_SEC) * freq) / NSEC_PER_SEC;
 }
 
 /**
@@ -785,7 +791,9 @@ __syscall uint64_t counter_ticks_to_ns_64(const struct device *dev, uint64_t tic
 
 static inline uint64_t z_impl_counter_ticks_to_ns_64(const struct device *dev, uint64_t ticks)
 {
-	return (ticks * NSEC_PER_SEC) / z_counter_get_frequency(dev);
+	uint64_t freq = z_counter_get_frequency(dev);
+
+	return (ticks / freq) * NSEC_PER_SEC + ((ticks % freq) * NSEC_PER_SEC) / freq;
 }
 
 /**
