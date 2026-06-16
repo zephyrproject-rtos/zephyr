@@ -260,6 +260,10 @@
 	status = "okay";
 };
 
+&mc_rgm {
+	status = "okay";
+};
+
 &adc_0 {
 	status = "okay";
 };
