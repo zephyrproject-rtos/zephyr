@@ -19,6 +19,9 @@ properties:
     description: |
       GPIO to output RMII Clock.
 
+  phy-connection-type:
+    default: "rmii"
+
   pinctrl-0:
     description: |
       RMII pin configuration, using the RMII_* macros from the SoC
