@@ -854,20 +854,15 @@ config NET_INTERFACE_NAME_LEN
 config NET_PKT_TIMESTAMP
 	bool "Network packet timestamp support"
 	help
-	  Enable network packet timestamp support. This is needed for
-	  example in gPTP which needs to know how long it takes to send
-	  a network packet or for timed radio protocols like IEEE 802.15.4
-	  CSL and TSCH.
+	  Enable network packet timestamp support. This enables the timestamp
+	  information storage in network packet.
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"
 	depends on NET_PKT_TIMESTAMP
 	help
-	  Create a TX timestamp thread that will pass the timestamped network
-	  packets to some other module like gPTP for further processing.
-	  If you just want to timestamp network packets and get information
-	  how long the network packets flow in the system, you can disable
-	  the thread support.
+	  Create a TX timestamp thread that allows timestamped network packets
+	  enqueued and handled by registered callback.
 
 config NET_PKT_TIMESTAMP_STACK_SIZE
 	int "Timestamp thread stack size"
