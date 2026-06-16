@@ -550,6 +550,8 @@ int usbh_device_init(struct usb_device *const udev)
 			LOG_ERR("Failed to signal bus reset");
 			return err;
 		}
+
+		udev->speed = uhc_get_speed(uhs_ctx->dev);
 	}
 
 	/*
@@ -591,7 +593,11 @@ int usbh_device_init(struct usb_device *const udev)
 		goto error;
 	}
 
-	LOG_INF("New device with address %u state %u", udev->addr, udev->state);
+	LOG_INF("New %s-speed device with address %u state %u",
+		udev->speed == USB_SPEED_SPEED_LS ? "low" :
+		udev->speed == USB_SPEED_SPEED_FS ? "full" :
+		udev->speed == USB_SPEED_SPEED_HS ? "high" : "unknown",
+		udev->addr, udev->state);
 
 	err = usbh_device_set_configuration(udev, 1);
 	if (err) {
