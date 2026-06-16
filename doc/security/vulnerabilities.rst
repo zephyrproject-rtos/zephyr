@@ -2510,7 +2510,44 @@ This has been fixed in main for v4.5.0
 :cve:`2026-10635`
 -----------------
 
-Under embargo until 2026-06-14
+Dangling memory-domain pointer (use-after-free) in Xtensa MMU page-table code on memory-domain de-init
+
+On Xtensa targets with ``CONFIG_USERSPACE`` and ``CONFIG_XTENSA_MMU``, the page-table
+code (``arch/xtensa/core/ptables.c``) maintains a global list, ``xtensa_domain_list``,
+of active memory domains using a list node embedded inside the caller-owned ``struct
+k_mem_domain``. When a domain is destroyed via ``k_mem_domain_deinit()`` ->
+``arch_mem_domain_deinit()``, the page tables are torn down and ``domain->arch.ptables``
+is set to ``NULL``, but the domain's node was not removed from ``xtensa_domain_list``.
+The freed/deinitialized domain therefore remained linked into the global list as a
+dangling pointer into caller-owned storage that may then be freed or reused.
+
+Any subsequent ``arch_mem_map()``/``arch_mem_unmap()`` operation (widely invoked by
+kernel memory-mapping and demand-paging code) traverses the stale node and dereferences
+``domain->ptables``: at minimum a NULL pointer dereference causing a fatal MMU exception
+(denial of service), and if the ``k_mem_domain`` storage has been freed or reused, a
+use-after-free in which a stale/controlled ``ptables`` value is dereferenced and written
+through during the page-table walk (``l2_page_table_map`` writes ``l1_table[...]`` and
+``l2_table[...]``, and ``xtensa_mmu_compute_domain_regs`` writes into the domain struct
+and the L1 table), yielding page-table memory corruption that can undermine userspace
+isolation.
+
+The vulnerable path is reachable only from privileged kernel/supervisor code
+(``k_mem_domain_deinit`` is not a syscall), not directly from unprivileged user threads
+or remotely. Affected: Zephyr v4.4.0 (the Xtensa memory-domain de-initialization feature
+was introduced in commit 3032b58f52d and first shipped in v4.4.0); fixed on ``main`` by
+adding ``sys_slist_find_and_remove()`` in ``arch_mem_domain_deinit()``. The Xtensa MPU
+path is unaffected.
+
+- `Zephyr project bug tracker GHSA-39v7-cx8j-gq82
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-39v7-cx8j-gq82>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 106923 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/106923>`_
+
+- `PR 110758 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110758>`_
 
 :cve:`2026-10636`
 -----------------
