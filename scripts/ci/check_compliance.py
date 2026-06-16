@@ -1476,7 +1476,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         # Warning: Needs to work with both --perl-regexp and the 're' module
         regex = r"\b" + self.CONFIG_ + r"[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
 
-        # Skip doc/releases and doc/security/vulnerabilities.rst, which often
+        # Skip doc/releases and doc/security/vulnerabilities, which often
         # reference removed symbols
         grep_stdout = git(
             "grep",
@@ -1489,6 +1489,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             ":!/doc/releases",
             ":!/doc/develop/manifest/external",
             ":!/doc/security/vulnerabilities.rst",
+            ":!/doc/security/vulnerabilities",
             cwd=GIT_TOP,
         )
 
