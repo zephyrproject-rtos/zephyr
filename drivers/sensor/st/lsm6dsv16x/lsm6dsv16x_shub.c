@@ -594,6 +594,10 @@ static int lsm6dsv16x_shub_read_target_reg(const struct device *dev,
 		return -EIO;
 	}
 
+	/* clean the read numop just to avoid issues when reading from FIFO */
+	trgt_cfg.slv_len = 0;
+	lsm6dsv16x_sh_slv_cfg_read(ctx, 0, &trgt_cfg);
+
 	lsm6dsv16x_shub_enable(dev, 0);
 	return 0;
 }
