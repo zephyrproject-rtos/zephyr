@@ -196,6 +196,9 @@ config HTTP_SERVER_CAPTURE_HEADERS
 	help
 	  This setting enables the HTTP server to capture selected headers that have
 	  been registered by the application.
+	  Captured headers are delivered to the dynamic resource callback only in
+	  the first callback for a given request, and are not available in any
+	  subsequent callback.
 
 config HTTP_SERVER_CAPTURE_HEADER_BUFFER_SIZE
 	int "Size of buffer for capturing HTTP headers for application use"
