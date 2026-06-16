@@ -1119,7 +1119,8 @@ EXCLUDE                = @ZEPHYR_BASE@/include/zephyr/portability/cmsis_os.h \
                          @ZEPHYR_BASE@/include/zephyr/arch/x86/ \
                          @ZEPHYR_BASE@/include/zephyr/arch/xtensa/ \
                          @ZEPHYR_BASE@/include/zephyr/toolchain/ \
-                         @ZEPHYR_BASE@/include/zephyr/drivers/wifi/nrf_wifi
+                         @ZEPHYR_BASE@/include/zephyr/drivers/wifi/nrf_wifi \
+                         @ZEPHYR_BASE@/include/zephyr/sys/internal/ring_buffer_claim.h
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

@@ -38,6 +38,7 @@ config JSON_DOUBLE_PRECISION
 
 config RING_BUFFER
 	bool "Ring buffers"
+	select WARN_DEPRECATED
 	help
 	  Provide highly efficient ring buffer management for arbitrary data.
 	  Some facilities such as kernel pipes are built on top of this.
@@ -45,10 +46,18 @@ config RING_BUFFER
 
 config RING_BUFFER_LARGE
 	bool "Allow large ring buffer sizes"
-	depends on RING_BUFFER
 	help
 	  Increase maximum buffer size from 32KB to 2GB. When this is enabled,
 	  all struct ring_buf instances become 12 bytes bigger.
+
+config RING_BUFFER_CLAIM
+	bool "Support claiming buffers in ring buffers"
+	select WARN_DEPRECATED
+	help
+	  Enables the deprecated API for claiming area in ring buffers for direct writes.
+	  This API is slated for removal in favor of the newly added zero-copy API that does not
+	  stack allocations and is more efficient. This Kconfig option is provided to allow legacy
+	  code to continue working until it can be updated to use the new API.
 
 config NOTIFY
 	bool "Asynchronous Notifications"
