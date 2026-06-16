@@ -495,6 +495,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -528,6 +529,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -561,6 +563,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -787,6 +790,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -820,6 +824,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
@@ -868,6 +873,7 @@
 				#size-cells = <0>;
 				clock-frequency = <I2C_BITRATE_STANDARD>;
 				easydma-maxcnt-bits = <16>;
+				clock-tolerance-percent = <6>;
 				status = "disabled";
 			};
 
