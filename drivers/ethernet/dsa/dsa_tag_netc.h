@@ -6,7 +6,7 @@
 #define ZEPHYR_DRIVERS_DSA_TAG_NETC_H_
 
 struct dsa_tag_netc_data {
-#ifdef CONFIG_NET_L2_PTP
+#ifdef CONFIG_NET_L2_PTP_TIMESTAMPING
 	void (*twostep_timestamp_handler)(const struct dsa_switch_context *ctx, uint8_t ts_req_id,
 					  uint64_t ts);
 #endif

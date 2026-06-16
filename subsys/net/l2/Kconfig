@@ -78,11 +78,19 @@ config NET_L2_WIFI_SHELL
 	  exposing a shell module named "wifi".
 
 config NET_L2_PTP
-	bool "PTP L2 support"
+	bool "PTP L2 support [DEPRECATED]"
+	select DEPRECATED
+	select PTP_CLOCK
+	select NET_L2_PTP_TIMESTAMPING
+	help
+	  This Kconfig is deprecated. Use NET_L2_PTP_TIMESTAMPING instead.
+
+config NET_L2_PTP_TIMESTAMPING
+	bool "PTP timestamping support on L2"
 	select NET_PKT_TIMESTAMP
 	select NET_PKT_TIMESTAMP_THREAD
-	select PTP_CLOCK
+	depends on PTP_CLOCK
 	help
-	  Add support for PTP L2 capabilities. Required by gPTP.
+	  Enable PTP timestamping support on L2.
 
 endmenu

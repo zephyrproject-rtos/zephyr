@@ -228,7 +228,7 @@ struct net_pkt {
 	uint8_t eof : 1;	 /* Last packet before EOF */
 	uint8_t ptp_pkt : 1;	 /* For outgoing packet: is this packet
 				  * a L2 PTP packet.
-				  * Used only if defined (CONFIG_NET_L2_PTP)
+				  * Used only if defined (CONFIG_NET_L2_PTP_TIMESTAMPING)
 				  */
 	uint8_t forwarding : 1;	 /* Are we forwarding this pkt
 				  * Used only if defined(CONFIG_NET_IPV6_ROUTE)
