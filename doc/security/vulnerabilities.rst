@@ -2593,7 +2593,45 @@ This has been fixed in main for v4.5.0
 :cve:`2026-10637`
 -----------------
 
-Under embargo until 2026-06-14
+Use-after-free of ``net_pkt`` in IPv6 MLD send path triggerable by a link-local MLD Query
+
+``subsys/net/ip/ipv6_mld.c``:``mld_send()`` read the packet interface via
+``net_pkt_iface(pkt)`` after ``net_send_data(pkt)`` returned successfully. Per the
+network stack's ownership contract (``include/zephyr/net/net_core.h``, and the explicit
+warning in ``subsys/net/ip/net_core.c``:453-460 'do not use pkt after that call'), a
+successful send transfers ownership of the ``net_pkt`` and the L2 driver frees it (e.g.
+``ethernet_send()`` unrefs the packet on success,
+``subsys/net/l2/ethernet/ethernet.c``:790), returning it to its ``k_mem_slab``. The
+subsequent ``net_pkt_iface(pkt)`` is therefore a read of a freed object; the recovered
+interface pointer is then dereferenced and incremented by the per-interface statistics
+path (``net_stats.h`` ``UPDATE_STAT``/``SET_STAT``) when
+``CONFIG_NET_STATISTICS_PER_INTERFACE`` is enabled. If the freed slot is concurrently
+reallocated, ``pkt->iface`` may read back as ``NULL`` (NULL-pointer dereference / crash)
+or as a stale/garbage pointer (stray increment write / memory corruption). The path is
+reachable remotely on the local link without authentication: ``handle_mld_query()``
+(registered for ``NET_ICMPV6_MLD_QUERY``) responds to a valid MLDv2 General Query
+(unspecified multicast address, hop limit 1) by calling ``send_mld_report()`` ->
+``mld_send()``. The result is a remotely triggerable denial of service of the networking
+stack, with a narrow possibility of memory corruption. The fix caches the interface in a
+local before sending and no longer touches the packet after ``net_send_data()``. The
+IPv4/IGMP sibling (``igmp_send``) already used the corrected pattern.
+
+- `Zephyr project bug tracker GHSA-m23w-34pp-4h92
+  <https://github.com/zephyrproject-rtos/zephyr/security/advisories/GHSA-m23w-34pp-4h92>`_
+
+This has been fixed in main for v4.5.0
+
+- `PR 107100 fix for main
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107100>`_
+
+- `PR 110659 fix for v3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110659>`_
+
+- `PR 110658 fix for v4.3
+  <https://github.com/zephyrproject-rtos/zephyr/pull/110658>`_
+
+- `PR 107369 fix for v4.4
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107369>`_
 
 :cve:`2026-10638`
 -----------------
