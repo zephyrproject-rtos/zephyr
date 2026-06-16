@@ -551,6 +551,17 @@ integration_toolchains: <YML list of toolchain variants>
 platform_exclude: <list of platforms>
     Set of platforms that this test scenario should not run on.
 
+platform_type: <list of platform types>
+    Restrict this test scenario to platforms of the given type(s). A platform's
+    type is declared via the ``type:`` key in its board metadata. Supported
+    values are ``mcu``, ``qemu``, ``sim``, ``unit`` and ``native``. Platforms
+    whose type is not in this list are filtered out.
+
+simulation_exclude: <list of simulators>
+    Set of simulators that this test scenario should not run on. Supported
+    values are ``qemu``, ``simics``, ``xt-sim``, ``renode``, ``nsim``,
+    ``mdb-nsim``, ``tsim``, ``armfvp``, ``native`` and ``custom``.
+
 extra_sections: <list of extra binary sections>
     When computing sizes, twister will report errors if it finds
     extra, unexpected sections in the Zephyr binary unless they are named
