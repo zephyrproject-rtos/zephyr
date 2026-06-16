@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_QEMU_CORTEX_A53_AARCH32
+
+config NUM_IRQS
+	default 220
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 62500000
+
+DT_CHOSEN_Z_FLASH := zephyr,flash
+
+config FLASH_SIZE
+	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
+
+endif # SOC_QEMU_CORTEX_A53_AARCH32
