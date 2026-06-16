@@ -9,21 +9,159 @@ LOG_MODULE_REGISTER(modem_simcom_sim7080_pdp, CONFIG_MODEM_LOG_LEVEL);
 
 #include "sim7080.h"
 
-static const struct setup_cmd band_setup_cmds[] = {
-	#if defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_NB1)
-		SETUP_CMD_NOHANDLE("AT+CNMP=38"),
-		SETUP_CMD_NOHANDLE("AT+CMNB=2"),
-		SETUP_CMD_NOHANDLE("AT+CBANDCFG=\"NB-IOT\"," MDM_LTE_BANDS),
-	#endif /* defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_NB1) */
-	#if defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_M1)
-		SETUP_CMD_NOHANDLE("AT+CNMP=38"),
-		SETUP_CMD_NOHANDLE("AT+CMNB=1"),
-		SETUP_CMD_NOHANDLE("AT+CBANDCFG=\"CAT-M\"," MDM_LTE_BANDS),
-	#endif /* defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_M1) */
-	#if defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM)
-		SETUP_CMD_NOHANDLE("AT+CNMP=13"),
-	#endif /* defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM) */
+static const char *const lte_mode_lut[] = {
+	"AT+CMNB=2",
+	"AT+CMNB=1",
+	"AT+CMNB=3",
 };
+
+static const char *const lte_band_lut[] = {
+	"1",  "2",  "3",  "4",  "5",  "8",  "12", "13", "14", "18",
+	"19", "20", "25", "26", "27", "28", "66", "71", "85",
+};
+
+/**
+ * Configure bands for the selected radio access technology.
+ *
+ * @param rat Radio access technology. Only SIM7080_RAT_LTE_NB1 and SIM7080_RAT_LTE_M1 are valid.
+ * @param bands Band bitmap.
+ */
+static int configure_bands(enum sim7080_rat rat, uint32_t bands)
+{
+	const char *band_cmd;
+	uint32_t used_bands = 0;
+
+	if (rat == SIM7080_RAT_LTE_NB1) {
+		band_cmd = "AT+CBANDCFG=\"NB-IOT\"";
+		used_bands = bands & SIM7080_LTE_CHANNEL_MASK_NB1;
+	} else if (rat == SIM7080_RAT_LTE_M1) {
+		band_cmd = "AT+CBANDCFG=\"CAT-M\"";
+		used_bands = bands & SIM7080_LTE_CHANNEL_MASK_M1;
+	} else {
+		return -EINVAL;
+	}
+
+	LOG_DBG("Setting bands: rat=%d, bands=0x%" PRIX32 ", used_bands=0x%" PRIX32, (int)rat,
+		bands, used_bands);
+
+	/* Check if there are any bands activated */
+	if (used_bands == 0) {
+		LOG_ERR("No bands in sanitized channel mask");
+		return -EINVAL;
+	}
+
+	/* Do not get interrupted here */
+	(void)k_sem_take(&mdata.cmd_handler_data.sem_tx_lock, K_FOREVER);
+
+	/* Send the prefix of the band configuration */
+	int ret = modem_cmd_send_data_nolock(&mctx.iface, band_cmd, strlen(band_cmd));
+
+	if (ret != 0) {
+		LOG_ERR("Failed to send band configuration prefix");
+		goto out;
+	}
+
+	/* Send list of bands */
+	for (uint8_t i = 0; i < SIM7080_NUM_LTE_CHANNELS; i++) {
+		if ((used_bands & BIT(i)) == 0) {
+			continue;
+		}
+
+		ret = modem_cmd_send_data_nolock(&mctx.iface, ",", 1);
+		if (ret != 0) {
+			LOG_ERR("Failed to send delimiter");
+			goto out;
+		}
+
+		ret = modem_cmd_send_data_nolock(&mctx.iface, lte_band_lut[i],
+						 strlen(lte_band_lut[i]));
+		if (ret != 0) {
+			LOG_ERR("Failed to send channel");
+			goto out;
+		}
+	}
+
+	k_sem_reset(&mdata.sem_response);
+
+	/* Send the EOL */
+	ret = modem_cmd_send_data_nolock(&mctx.iface, "\r", 1);
+	if (ret != 0) {
+		LOG_ERR("Failed to send eol");
+		goto out;
+	}
+
+out:
+	k_sem_give(&mdata.cmd_handler_data.sem_tx_lock);
+
+	if (ret != 0) {
+		LOG_ERR("Setting LTE bands failed: %d", ret);
+		return ret;
+	}
+
+	return modem_cmd_handler_await(&mdata.cmd_handler_data, &mdata.sem_response,
+				       MDM_CMD_TIMEOUT);
+}
+
+/**
+ * Configure the preferred radio mode and used bands.
+ */
+static int configure_radio(void)
+{
+	const char *mode_cmd;
+
+	if (mdata.radio.rat < SIM7080_RAT_LTE_NB1 || mdata.radio.rat > SIM7080_RAT_GSM) {
+		return -EINVAL;
+	}
+
+	LOG_DBG("rat=%d, bands_nb1=0x%" PRIX32 ", bands_m1=0x%" PRIX32, (int)mdata.radio.rat,
+		mdata.radio.lte_bands_nb1, mdata.radio.lte_bands_m1);
+
+	if (mdata.radio.rat == SIM7080_RAT_GSM) {
+		mode_cmd = "AT+CNMP=13";
+	} else {
+		mode_cmd = "AT+CNMP=38";
+	}
+
+	/* Configure the preferred radio mode */
+	int ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, mode_cmd,
+				 &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Could not configure radio mode");
+		return ret;
+	}
+
+	/* Nothing more to do for GSM */
+	if (mdata.radio.rat == SIM7080_RAT_GSM) {
+		return 0;
+	}
+
+	/* Set the preferred LTE mode */
+	ret = modem_cmd_send(&mctx.iface, &mctx.cmd_handler, NULL, 0, lte_mode_lut[mdata.radio.rat],
+			     &mdata.sem_response, MDM_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Could not configure LTE mode");
+		return ret;
+	}
+
+	/* Configure the LTE bands */
+	if (mdata.radio.rat == SIM7080_RAT_LTE_NB1 || mdata.radio.rat == SIM7080_RAT_LTE_AUTO) {
+		ret = configure_bands(SIM7080_RAT_LTE_NB1, mdata.radio.lte_bands_nb1);
+		if (ret != 0) {
+			LOG_ERR("Failed to configure NB-IoT bands");
+			return ret;
+		}
+	}
+
+	if (mdata.radio.rat == SIM7080_RAT_LTE_M1 || mdata.radio.rat == SIM7080_RAT_LTE_AUTO) {
+		ret = configure_bands(SIM7080_RAT_LTE_M1, mdata.radio.lte_bands_m1);
+		if (ret != 0) {
+			LOG_ERR("Failed to configure CAT-M1 bands");
+			return ret;
+		}
+	}
+
+	return 0;
+}
 
 /*
  * Handler for RSSI query.
@@ -105,20 +243,16 @@ int sim7080_pdp_activate(void)
 {
 	int counter;
 	int ret = 0;
-#if defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM)
-	const char *buf = "AT+CREG?";
-	struct modem_cmd cmds[] = { MODEM_CMD("+CREG: ", on_cmd_cereg, 2U, ",") };
-#else
-	const char *buf = "AT+CEREG?";
-	struct modem_cmd cmds[] = { MODEM_CMD("+CEREG: ", on_cmd_cereg, 2U, ",") };
-#endif /* defined(CONFIG_MODEM_SIMCOM_SIM7080_RAT_GSM) */
+
+	const char *buf = mdata.radio.rat == SIM7080_RAT_GSM ? "AT+CREG?" : "AT+CEREG?";
+	struct modem_cmd cmds[] = {
+		MODEM_CMD(mdata.radio.rat == SIM7080_RAT_GSM ? "+CREG: " : "+CEREG: ", on_cmd_cereg,
+			  2U, ",")};
 
 	/* Set the preferred bands */
-	ret = modem_cmd_handler_setup_cmds(&mctx.iface, &mctx.cmd_handler, band_setup_cmds,
-					   ARRAY_SIZE(band_setup_cmds), &mdata.sem_response,
-					   MDM_REGISTRATION_TIMEOUT);
+	ret = configure_radio();
 	if (ret != 0) {
-		LOG_ERR("Failed to send band setup commands");
+		LOG_ERR("Failed to configure radio");
 		goto error;
 	}
 
@@ -266,4 +400,55 @@ int sim7080_pdp_deactivate(void)
 
 out:
 	return ret;
+}
+
+void mdm_sim7080_get_rat(enum sim7080_rat *rat)
+{
+	if (rat) {
+		*rat = mdata.radio.rat;
+	}
+}
+
+int mdm_sim7080_set_rat(enum sim7080_rat rat)
+{
+	if (rat < SIM7080_RAT_LTE_NB1 || rat > SIM7080_RAT_GSM) {
+		return -EINVAL;
+	}
+
+	mdata.radio.rat = rat;
+
+	return 0;
+}
+
+void mdm_sim7080_get_lte_bands(uint32_t *nb1, uint32_t *m1)
+{
+	if (nb1) {
+		*nb1 = mdata.radio.lte_bands_nb1;
+	}
+	if (m1) {
+		*m1 = mdata.radio.lte_bands_m1;
+	}
+}
+
+int mdm_sim7080_set_lte_bands(uint32_t nb1, uint32_t m1)
+{
+	if (nb1 != 0 && (nb1 & ~SIM7080_LTE_CHANNEL_MASK_NB1) != 0) {
+		LOG_ERR("Illegal NB-IoT band selection");
+		return -EINVAL;
+	}
+
+	if (m1 != 0 && (m1 & ~SIM7080_LTE_CHANNEL_MASK_M1) != 0) {
+		LOG_ERR("Illegal CAT-M1 band selection");
+		return -EINVAL;
+	}
+
+	if (nb1 != 0) {
+		mdata.radio.lte_bands_nb1 = nb1;
+	}
+
+	if (m1 != 0) {
+		mdata.radio.lte_bands_m1 = m1;
+	}
+
+	return 0;
 }

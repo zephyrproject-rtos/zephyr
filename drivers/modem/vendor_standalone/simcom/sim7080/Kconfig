@@ -35,11 +35,19 @@ config MODEM_SIMCOM_SIM7080_INIT_PRIORITY
 	help
 	  simcom sim7080 driver initialization priority.
 
-config MODEM_SIMCOM_SIM7080_LTE_BANDS
-	string "LTE bands the driver can use"
-	default "8,20,28"
+config MODEM_SIMCOM_SIM7080_LTE_BANDS_M1
+	hex "Default LTE bands for CAT-M1"
+	default 0x8820
 	help
-		Comma separated list of usable lte bands.
+		Bitmap of channels the modem can use for CAT-M1.
+		Refer to enum sim7080_lte_chan.
+
+config MODEM_SIMCOM_SIM7080_LTE_BANDS_NB1
+	hex "Default LTE bands for NB-IoT"
+	default 0x8820
+	help
+		Bitmap of channels the modem can use for NB-IoT.
+		Refer to enum sim7080_lte_chan.
 
 config MODEM_SIMCOM_SIM7080_APN
 	string "APN for establishing a network connection"
@@ -83,7 +91,7 @@ config MODEM_SIMCOM_SIM7080_TLS_BUFFER_SIZE
 	default 256
 
 choice MODEM_SIMCOM_SIM7080_RAT
-	bool "Radio Access Technology Mode"
+	bool "Default Radio Access Technology Mode"
 	default MODEM_SIMCOM_SIM7080_RAT_NB1
 
 config MODEM_SIMCOM_SIM7080_RAT_NB1
@@ -95,6 +103,11 @@ config MODEM_SIMCOM_SIM7080_RAT_M1
 	bool "Cat-M1"
 	help
 		Enable Cat-M1 mode.
+
+config MODEM_SIMCOM_SIM7080_RAT_LTE_AUTO
+	bool "Automatic selection of NB-IoT or Cat-M1"
+	help
+		Enable automatic LTE technology selection.
 
 config MODEM_SIMCOM_SIM7080_RAT_GSM
 	bool "GSM"
