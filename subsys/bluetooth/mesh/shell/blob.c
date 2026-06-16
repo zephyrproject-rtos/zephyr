@@ -128,18 +128,20 @@ static uint8_t get_progress(const struct bt_mesh_blob_xfer_info *info)
 {
 	uint8_t total_blocks;
 	uint8_t blocks_not_rxed = 0;
-	uint8_t blocks_not_rxed_size;
-	int i;
 
 	total_blocks = DIV_ROUND_UP(info->size, 1U << info->block_size_log);
 
-	blocks_not_rxed_size = DIV_ROUND_UP(total_blocks, 8);
-
-	for (i = 0; i < blocks_not_rxed_size; i++) {
-		blocks_not_rxed += info->missing_blocks[i % 8] & (1 << (i % 8));
+	if (total_blocks == 0) {
+		return 0;
 	}
 
-	return (total_blocks - blocks_not_rxed) / total_blocks;
+	for (int i = 0; i < total_blocks; i++) {
+		if (info->missing_blocks[i / 8] & (1 << (i % 8))) {
+			blocks_not_rxed++;
+		}
+	}
+
+	return (100U * (total_blocks - blocks_not_rxed)) / total_blocks;
 }
 
 static void xfer_progress(struct bt_mesh_blob_cli *cli,
