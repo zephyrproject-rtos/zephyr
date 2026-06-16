@@ -30,6 +30,13 @@ extern "C" {
 /** Maximum timeout for DNS queries in milliseconds */
 #define SIM7080_DNS_MAX_TIMEOUT_MS 60000
 
+/** Channel Mask for NB-IoT */
+#define SIM7080_LTE_CHANNEL_MASK_NB1 0x7BEFFU
+/** Channel Mask for CAT-M1 */
+#define SIM7080_LTE_CHANNEL_MASK_M1  0x5FFFFU
+/** Number of LTE channels supported by the modem */
+#define SIM7080_NUM_LTE_CHANNELS     19U
+
 /** Sim7080 modem state */
 enum sim7080_state {
 	SIM7080_STATE_INIT = 0, /**< Initial modem state */
@@ -37,6 +44,37 @@ enum sim7080_state {
 	SIM7080_STATE_NETWORKING, /**< Network active */
 	SIM7080_STATE_GNSS, /**< GNSS active */
 	SIM7080_STATE_OFF, /**< Modem off */
+};
+
+/** Modem radio access technology */
+enum sim7080_rat {
+	SIM7080_RAT_LTE_NB1,  /**< NB-IoT only */
+	SIM7080_RAT_LTE_M1,   /**< LTE CAT M1 only */
+	SIM7080_RAT_LTE_AUTO, /**< Modem automatically selects M1 or NB1 */
+	SIM7080_RAT_GSM,      /**< GSM */
+};
+
+/** Supported LTE channels */
+enum sim7080_lte_chan {
+	SIM7080_LTE_CHAN_B1 = BIT(0),   /**< LTE Band 1 */
+	SIM7080_LTE_CHAN_B2 = BIT(1),   /**< LTE Band 2 */
+	SIM7080_LTE_CHAN_B3 = BIT(2),   /**< LTE Band 3 */
+	SIM7080_LTE_CHAN_B4 = BIT(3),   /**< LTE Band 4 */
+	SIM7080_LTE_CHAN_B5 = BIT(4),   /**< LTE Band 5 */
+	SIM7080_LTE_CHAN_B8 = BIT(5),   /**< LTE Band 8 */
+	SIM7080_LTE_CHAN_B12 = BIT(6),  /**< LTE Band 12 */
+	SIM7080_LTE_CHAN_B13 = BIT(7),  /**< LTE Band 13 */
+	SIM7080_LTE_CHAN_B14 = BIT(8),  /**< LTE Band 14 */
+	SIM7080_LTE_CHAN_B18 = BIT(9),  /**< LTE Band 18 */
+	SIM7080_LTE_CHAN_B19 = BIT(10), /**< LTE Band 19 */
+	SIM7080_LTE_CHAN_B20 = BIT(11), /**< LTE Band 20 */
+	SIM7080_LTE_CHAN_B25 = BIT(12), /**< LTE Band 25 */
+	SIM7080_LTE_CHAN_B26 = BIT(13), /**< LTE Band 26 */
+	SIM7080_LTE_CHAN_B27 = BIT(14), /**< LTE Band 27 */
+	SIM7080_LTE_CHAN_B28 = BIT(15), /**< LTE Band 28 */
+	SIM7080_LTE_CHAN_B66 = BIT(16), /**< LTE Band 66 */
+	SIM7080_LTE_CHAN_B71 = BIT(17), /**< LTE Band 71 */
+	SIM7080_LTE_CHAN_B85 = BIT(18), /**< LTE Band 85 */
 };
 
 /** Sim7080 gnss data structure */
@@ -548,6 +586,52 @@ int mdm_sim7080_configure_tls_certs(int fd, const char *root_ca, const char *cli
  */
 int mdm_sim7080_configure_dtls_psktable(int fd, const char *psktable);
 #endif
+
+/**
+ * @brief Get the currently selected radio technology.
+ *
+ * @param rat [out] Gets set to the current technology.
+ */
+void mdm_sim7080_get_rat(enum sim7080_rat *rat);
+
+/**
+ * @brief Set the radio technology.
+ *
+ * @param rat The radio technology.
+ * @retval 0 Success.
+ * @retval -EINVAL The selected technology is not available.
+ *
+ * @note This function needs to be called before mdm_sim7080_start_network().
+ *       If networking is already active, the change will not affect the current session.
+ *		 To apply changes, networking has to be restarted.
+ *		 A power cycle may be needed for the modem to forget the last working configuration.
+ */
+int mdm_sim7080_set_rat(enum sim7080_rat rat);
+
+/**
+ * @brief Get the currently used LTE bands.
+ *
+ * @param nb1 [out] Used NB-IoT bands. May be NULL.
+ * @param m1 [out] Used CAT-M1 bands. May be NULL.
+ */
+void mdm_sim7080_get_lte_bands(uint32_t *nb1, uint32_t *m1);
+
+/**
+ * @brief Set the LTE bands to use.
+ *
+ * @param nb1 NB-IoT bands to use. 0 to not change the bands.
+ * @param m1 CAT-M1 bands to use. 0 to not change the bands.
+ * @retval 0 Success.
+ * @retval -EINVAL The band selection is illegal.
+ *
+ * @note This function needs to be called before mdm_sim7080_start_network().
+ *       If networking is already active, the change will not affect the current session.
+ *		 To apply changes, networking has to be restarted.
+ *		 A power cycle may be needed for the modem to forget the last working configuration.
+ * @note Available NB-IoT and CAT-M1 differ. Refer to SIM7080_LTE_CHANNEL_MASK_NB1
+ *       and SIM7080_LTE_CHANNEL_MASK_M1.
+ */
+int mdm_sim7080_set_lte_bands(uint32_t nb1, uint32_t m1);
 
 #ifdef __cplusplus
 }
