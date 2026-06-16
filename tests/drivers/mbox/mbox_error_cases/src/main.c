@@ -130,6 +130,8 @@ ZTEST(mbox_error_cases, test_02b_mbox_send_on_rx_channel)
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
 	int ret;
 
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
+
 	ret = mbox_send_dt(&rx_channel, NULL);
 	zassert_true(
 		(ret == -ENOSYS),
@@ -216,6 +218,8 @@ ZTEST(mbox_error_cases, test_03a_mbox_register_callback_on_remote_channel)
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
 	int ret;
 
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
+
 	ret = mbox_register_callback_dt(&tx_channel, dummy_callback, NULL);
 	zassert_true(
 		(ret == -ENOSYS),
@@ -291,6 +295,8 @@ ZTEST(mbox_error_cases, test_04a_mbox_mtu_get_on_rx_channel)
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
 	int ret;
 
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
+
 	ret = mbox_mtu_get_dt(&rx_channel);
 	zassert_true(
 		(ret == -ENOSYS),
@@ -347,6 +353,8 @@ ZTEST(mbox_error_cases, test_05a_mbox_set_enabled_on_tx_channel)
 	const struct mbox_dt_spec tx_channel =
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
 	int ret;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
 
 	ret = mbox_set_enabled_dt(&tx_channel, true);
 	zassert_true(
