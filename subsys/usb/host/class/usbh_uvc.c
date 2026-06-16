@@ -782,29 +782,23 @@ static bool ep_has_enough_bandwidth(const struct usb_ep_descriptor *ep_desc,
 				    const uint32_t required_bandwidth,
 				    const uint32_t max_tpl)
 {
-	uint32_t ep_tpl;
+	const uint32_t ep_tpl = USB_MPS_TO_TPL(ep_desc->wMaxPacketSize);
+	/* Calculate bandwidth */
+	const uint8_t interval = BIT(ep_desc->bInterval - 1);
 	/* Endpoint bandwidth in bytes/sec */
 	uint32_t ep_bandwidth;
-	uint16_t ep_mps;
-	uint8_t interval;
-
-	/* Calculate bandwidth */
-	interval = BIT(ep_desc->bInterval - 1);
-	ep_mps = USB_MPS_EP_SIZE(ep_desc->wMaxPacketSize);
 
 	if (device_speed == USB_SPEED_SPEED_HS) {
-		ep_tpl = USB_MPS_TO_TPL(ep_desc->wMaxPacketSize);
 		/* High-speed: interval in microframes (125µs), 8000 microframes per second. */
 		ep_bandwidth = (ep_tpl * 8000) / interval;
 	} else {
-		ep_tpl = ep_mps;
 		/* Full-speed: interval in frames (1ms), 1000 frames */
-		ep_bandwidth = (ep_mps * 1000) / interval;
+		ep_bandwidth = (ep_tpl * 1000) / interval;
 	}
 
-	LOG_DBG("Iface %u Alt %u EP 0x%02x: mps=%u, payload=%u, interval=%u (%s), bw=%u B/s",
+	LOG_DBG("Iface %u Alt %u EP 0x%02x: payload=%u, interval=%u (%s), bw=%u B/s",
 		if_desc->bInterfaceNumber, if_desc->bAlternateSetting, ep_desc->bEndpointAddress,
-		ep_mps, ep_tpl, interval,
+		ep_tpl, interval,
 		(device_speed == USB_SPEED_SPEED_HS) ? "uframes" : "frames", ep_bandwidth);
 
 	if (ep_bandwidth < required_bandwidth) {
@@ -826,34 +820,16 @@ static bool ep_has_enough_bandwidth(const struct usb_ep_descriptor *ep_desc,
 static uint32_t get_endpoint_bandwidth(const struct usb_ep_descriptor *ep_desc,
 				       const enum usb_device_speed device_speed)
 {
-	uint32_t ep_tpl;
-	uint16_t ep_mps;
-	uint8_t interval;
-
-	interval = BIT(ep_desc->bInterval - 1);
-	ep_mps = USB_MPS_EP_SIZE(ep_desc->wMaxPacketSize);
+	const uint32_t ep_tpl = USB_MPS_TO_TPL(ep_desc->wMaxPacketSize);
+	const uint8_t interval = BIT(ep_desc->bInterval - 1);
 
 	if (device_speed == USB_SPEED_SPEED_HS) {
-		ep_tpl = USB_MPS_TO_TPL(ep_desc->wMaxPacketSize);
 		/* High-speed: interval in microframes (125µs), 8000 microframes per second. */
 		return (ep_tpl * 8000) / interval;
 	}
 
 	/* Full-speed: interval in frames (1ms), 1000 frames */
-	return (ep_mps * 1000) / interval;
-}
-
-/* Get endpoint payload size */
-static uint32_t get_endpoint_payload_size(const struct usb_ep_descriptor *ep_desc,
-					  const enum usb_device_speed device_speed)
-{
-	uint16_t ep_mps = USB_MPS_EP_SIZE(ep_desc->wMaxPacketSize);
-
-	if (device_speed == USB_SPEED_SPEED_HS) {
-		return USB_MPS_TO_TPL(ep_desc->wMaxPacketSize);
-	}
-
-	return ep_mps;
+	return (ep_tpl * 1000) / interval;
 }
 
 /* Scan endpoints in an interface for suitable bandwidth */
@@ -962,7 +938,7 @@ static int select_streaming_alternate(struct uvc_host_data *const host_data)
 
 		stream_info.iface = if_desc;
 		stream_info.ep = ep_desc;
-		stream_info.ep_mps_mult = get_endpoint_payload_size(ep_desc, device_speed);
+		stream_info.ep_mps_mult = USB_MPS_TO_TPL(ep_desc->wMaxPacketSize);
 
 		LOG_DBG("Selected optimal EP: iface %u alt %u EP 0x%02x, bw=%u, payload=%u",
 			if_desc->bInterfaceNumber, if_desc->bAlternateSetting,
