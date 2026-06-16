@@ -365,6 +365,17 @@ int virtiofs_read(
 		return valid_ret;
 	}
 
+	/* out_header.len is host-controlled; guard against underflow (smaller
+	 * than the header) and against returning more bytes than the read
+	 * buffer can hold.
+	 */
+	if (req.out_header.len < sizeof(req.out_header) ||
+	    (req.out_header.len - sizeof(req.out_header)) > size) {
+		LOG_ERR("FUSE_READ response length 0x%x invalid for buffer %u",
+			req.out_header.len, size);
+		return -EIO;
+	}
+
 	return req.out_header.len - sizeof(req.out_header);
 }
 
