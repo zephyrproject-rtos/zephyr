@@ -723,7 +723,8 @@ static int mcp251xfd_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct mcp251xfd_config *dev_cfg = dev->config;
 
-	*rate = dev_cfg->osc_freq;
+	/* When the PLL is enabled, SYSCLK is the oscillator frequency times 10 */
+	*rate = dev_cfg->pll_enable ? dev_cfg->osc_freq * 10 : dev_cfg->osc_freq;
 	return 0;
 }
 
