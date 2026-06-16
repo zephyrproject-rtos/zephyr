@@ -5,15 +5,15 @@
  *
  * Minimal AArch64 EL3 boot shim for qemu_cortex_a53_aarch32.
  *
- * QEMU's -bios entry starts the primary CPU at EL3 in AArch64. Zephyr for this
+ * QEMU's -bios entry starts each CPU at EL3 in AArch64. Zephyr for this
  * board is AArch32 and starts at EL1 in Supervisor (SVC) mode, so this shim
  * performs the EL3 -> AArch32-EL1 transition in place of firmware such as TF-A,
  * letting the board boot on its own.
  *
  * What the shim does, and why (per-register detail is at each write below):
- *   - Enters Zephyr in Non-secure EL1
- *   - Parks secondary CPUs
- *   - Installs no EL3 vector table
+ *   - Enters every QEMU-started CPU in Non-secure AArch32 EL1
+ *   - Leaves primary election and secondary startup to Zephyr
+ *   - Installs no EL3 vector table and implements no PSCI service
  *
  * It is assembled standalone with the SDK's aarch64-zephyr-elf toolchain (see the
  * board CMakeLists.txt), so it uses literal register values, not Zephyr headers:
@@ -27,11 +27,6 @@
 _shim_start:
     /* Mask all interrupts/exceptions while we bring the CPU up. */
     msr    DAIFSet, #0xf
-
-    /* Uniprocessor only: park any secondary CPU (Aff2:Aff1:Aff0 != 0). */
-    mrs    x0, mpidr_el1
-    and    x0, x0, #0xffffff
-    cbnz    x0, .Lpark
 
     /* SCTLR_EL3: RES1 bits, MMU and caches off. */
     ldr    w0, =0x30c50830 /* SCTLR_EL3_RES1 */
@@ -66,7 +61,7 @@ _shim_start:
     ldr    w0, =0x1b1
     msr    scr_el3, x0
 
-    /* Return to Zephyr's AArch32 reset vector at EL1. */
+    /* Return every CPU to Zephyr's AArch32 EL1 reset vector. */
     ldr    x0, =0x60000000
     msr    elr_el3, x0
 
@@ -81,7 +76,3 @@ _shim_start:
 
     isb
     eret
-
-.Lpark:
-    wfe
-    b    .Lpark

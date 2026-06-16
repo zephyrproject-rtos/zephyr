@@ -71,6 +71,8 @@ config AARCH32_ARMV8_A
 	select ARM_A_PROFILE_AARCH32
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_ARM
+	select SCHED_IPI_SUPPORTED if SMP
+	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  This option signifies the use of an ARMv8-A processor running in
 	  the AArch32 execution state.
@@ -82,7 +84,8 @@ config AARCH32_ARMV8_A
 	  based on a Memory Management Unit (MMU) and supports the A32 and T32
 	  instruction sets.
 
-	  UP only; SMP is not yet supported.
+	  Supports SMP when the platform releases all participating CPUs into
+	  Zephyr's reset and secondary-core handshake path.
 
 config AARCH32_ARMV8_A_MONITOR_INIT
 	bool "Perform Monitor mode initialization at reset"

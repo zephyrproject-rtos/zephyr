@@ -4,3 +4,5 @@ board:
   vendor: arm
   socs:
   - name: qemu_cortex_a53_aarch32
+    variants:
+    - name: smp
