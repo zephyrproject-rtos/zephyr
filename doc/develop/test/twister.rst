@@ -882,10 +882,10 @@ ignore_qemu_crash: <True|False> (default False)
     running.
 
 The set of test scenarios that actually run depends on directives in the test scenario
-filed and options passed in on the command line. If there is any confusion,
-running with ``-v`` or examining the discard report
-(:file:`twister_discard.csv`) can help show why particular test scenarios were
-skipped.
+file and options passed in on the command line. If there is any confusion,
+running with ``-v`` or examining the :ref:`test plan <twister_output>`
+(:file:`testplan.json`) can help show why particular test scenarios were
+filtered out.
 
 Metrics (such as pass/fail state and binary size) for the last code
 release are stored in ``scripts/release/twister_last_release.csv``.
@@ -2299,6 +2299,81 @@ An example of entries in a quarantine yaml:
 
     - simulations:
         - armfvp
+
+.. _twister_output:
+
+Test Output and Reports
+***********************
+
+By default, Twister writes all of its output to a :file:`twister-out` directory
+created in the current working directory. Use ``-O``/``--outdir`` to choose a
+different location. On each run this directory is cleaned, unless ``--no-clean``
+is given; ``--clobber-output`` controls what cleaning does.
+
+Top-level reports
+=================
+
+The following files are written at the root of the output directory:
+
+:file:`twister.json`
+    The primary machine-readable report. It contains an entry for every selected
+    test suite and test case with its :ref:`status <twister_statuses>`, target
+    platform, execution time, memory footprint, any
+    :ref:`recorded data <twister_console_harness>`, and the environment and
+    options used for the run.
+
+:file:`testplan.json`
+    The resolved test plan: every test instance (test scenario times platform)
+    that Twister considered, including those that were filtered out together
+    with the reason. This is the file to inspect to understand why a given
+    scenario did or did not run. It can be reused with ``--load-tests`` to
+    replay the same selection.
+
+:file:`twister.xml`
+    JUnit XML summary suitable for CI systems.
+
+:file:`twister_report.xml`
+    JUnit XML report including all test cases (not just the summary).
+
+:file:`twister_suite_report.xml`
+    JUnit XML report grouped by test suite.
+
+:file:`twister.log`
+    Human-readable log of the whole run.
+
+:file:`twister_footprint.json`
+    ROM/RAM footprint report. Only generated when ``--footprint-report`` is used.
+
+The report base name (``twister``) can be changed with ``--report-name``, and
+``--report-suffix`` appends a suffix (for example a version or commit ID) to all
+generated file names. Use ``-o``/``--report-dir`` to write the reports to a
+directory other than the output directory, and ``--platform-reports`` to
+additionally emit a per-platform :file:`<platform>.json` and
+:file:`<platform>.xml`. ``--report-summary`` prints a summary of the failures
+from the latest run without rebuilding.
+
+Per-test artifacts
+==================
+
+Each test instance has its own build directory under the output directory,
+named after the platform and the test:
+:file:`twister-out/<platform>/<test path>/<scenario>/`. In addition to the
+normal Zephyr build artifacts (for example :file:`zephyr/zephyr.elf`), it may
+contain:
+
+:file:`build.log`
+    Output of the build for this instance.
+
+:file:`handler.log`
+    Console output captured from the device or emulator while running the test.
+
+:file:`twister_harness.log`
+    Log produced by pytest-based harnesses (for example ``pytest`` and
+    ``shell``).
+
+:file:`recording.csv`
+    Data fields captured by the ``record`` option of the
+    :ref:`console harness <twister_console_harness>`, when configured.
 
 .. _twister_test_config:
 
