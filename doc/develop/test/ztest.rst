@@ -15,6 +15,269 @@ integration testing, or for unit testing specific modules.
    :local:
    :backlinks: top
 
+Quick start - Integration testing
+*********************************
+
+A simple working base is located at :zephyr_file:`samples/subsys/testsuite/integration`.
+To make a test application for the **bar** component of **foo**, you should copy the
+sample folder to ``tests/foo/bar`` and edit files there adjusting for your test
+application's purposes.
+
+To build and execute all applicable test scenarios defined in your test application
+use the :ref:`Twister <twister_script>` tool, for example:
+
+.. code-block:: console
+
+    ./scripts/twister -T tests/foo/bar/
+
+To select just one of the test scenarios, run Twister with ``--scenario`` command:
+
+.. code-block:: console
+
+   ./scripts/twister --scenario tests/foo/bar/your.test.scenario.name
+
+In the command line above ``tests/foo/bar`` is the path to your test application and
+``your.test.scenario.name`` references a test scenario defined in :file:`tests.yaml`
+file, which is like ``sample.testing.ztest`` in the boilerplate test suite sample.
+
+See :ref:`Twister test project diagram <twister_test_project_diagram>` for more details
+on how Twister deals with Ztest application.
+
+The sample contains the following files:
+
+CMakeLists.txt
+
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/CMakeLists.txt
+   :language: CMake
+   :linenos:
+
+tests.yaml
+
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/testcase.yaml
+   :language: yaml
+   :linenos:
+
+prj.conf
+
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/prj.conf
+   :language: text
+   :linenos:
+
+src/main.c
+
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
+   :language: c
+   :linenos:
+
+A test application may consist of multiple test suites that
+either can be testing functionality or APIs. Functions implementing a test case
+should follow the guidelines below:
+
+* Test cases function names should be prefixed with **test_**
+* Test cases should be documented using doxygen
+* Test case function names should be unique within the section or component being
+  tested
+
+For example:
+
+.. code-block:: C
+
+   /**
+    * @brief Test Asserts
+    *
+    * This test case verifies the zassert_true macro.
+    */
+   ZTEST(my_suite, test_assert)
+   {
+           zassert_true(1, "1 was false");
+   }
+
+Listing Tests
+=============
+
+Tests (test applications) in the Zephyr tree consist of many test scenarios that run as
+part of a project and test similar functionality, for example an API or a
+feature. The ``twister`` script can parse the test scenarios, suites and cases in all
+test applications or a subset of them, and can generate reports on a granular
+level, i.e. if test cases have passed or failed or if they were blocked or skipped.
+
+Twister parses the source files looking for test case names, so you
+can list all kernel test cases, for example, by running:
+
+.. code-block:: console
+
+   ./scripts/twister --list-tests -T tests/kernel
+
+Skipping Tests
+==============
+
+Special- or architecture-specific tests cannot run on all
+platforms and architectures, however we still want to count those and
+report them as being skipped.  Because the test inventory and
+the list of tests is extracted from the code, adding
+conditionals inside the test suite is sub-optimal.  Tests that need
+to be skipped for a certain platform or feature need to explicitly
+report a skip using :c:func:`ztest_test_skip` or :c:macro:`Z_TEST_SKIP_IFDEF`. If the test runs,
+it needs to report either a pass or fail.  For example:
+
+.. code-block:: C
+
+   #ifdef CONFIG_TEST1
+   ZTEST(common, test_test1)
+   {
+        zassert_true(1, "true");
+   }
+   #else
+   ZTEST(common, test_test1)
+   {
+        ztest_test_skip();
+   }
+   #endif
+
+   ZTEST(common, test_test2)
+   {
+        Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
+        zassert_equal(1, 0, NULL);
+   }
+
+   ZTEST_SUITE(common, NULL, NULL, NULL, NULL, NULL);
+
+.. _ztest_unit_testing:
+
+Quick start - Unit testing
+**************************
+
+Ztest can be used for unit testing. This means that rather than including the
+entire Zephyr OS for testing a single function, you can focus the testing
+efforts into the specific module in question. This will speed up testing since
+only the module will have to be compiled in, and the tested functions will be
+called directly.
+
+To setup unit tests you have to add a CMakeLists.txt, a tests.yaml and a
+prj.conf to the directory containing the unit test source files. The resulting
+binary from this directory is built using -DBOARD=unit_testing. When twister
+is invoked the script zephyr/scripts/pylib/twister/twisterlib/testplan.py
+filters out all tests.yaml in which type: unit is not set. Only unit tests
+are executed with a firmware build with BOARD=unit_testing.
+
+.. note::
+   Unit tests are run as **native** applications on the host and are therefore
+   subject to similar :ref:`limitations <posix_arch_limitations>` as documented
+   for the :ref:`POSIX architecture<Posix arch>`. Running unit tests is
+   therefore only supported for Linux. To run unit tests on Windows or macOS
+   it is necessary to use containers or Virtual Machines running a Linux guest.
+   Follow the same instructions as for the
+   :ref:`POSIX Arch dependencies<posix_arch_deps>`.
+
+.. _unit_testing_board:
+
+The ``unit_testing`` board
+==========================
+
+Unit tests are built for the special ``unit_testing`` board
+(:zephyr_file:`subsys/testsuite/boards/unit_testing`). It is not a real piece of
+hardware nor a simulated target: it is a pseudo-board with ``arch: unit`` that
+uses the host toolchain to produce a regular native executable. Selecting it
+with ``-DBOARD=unit_testing`` (which Twister does automatically for scenarios
+marked ``type: unit``) builds and links only the source files you add to the
+``testbinary`` target together with the Ztest unit-test harness.
+
+Crucially, **the Zephyr kernel and operating system are not built at all**.
+There is no boot sequence, no scheduler, no devicetree-driven device
+initialization, and no driver model. The functions under test are compiled into
+the test binary and called directly. Any kernel API or other dependency that the
+module under test relies on must be supplied by the test itself, usually as a
+stub or a :ref:`mock <mocking-fff>`.
+
+.. _unit_testing_vs_native_sim:
+
+Difference from ``native_sim`` and other boards
+-----------------------------------------------
+
+It is easy to confuse the ``unit_testing`` board with
+:zephyr:board:`native_sim`, since both run on the host. They are
+fundamentally different:
+
+* :zephyr:board:`native_sim` builds the
+  **complete Zephyr OS** -- kernel, devicetree, Kconfig, drivers and
+  subsystems -- into a host binary that boots and runs exactly like a Zephyr
+  image on real hardware, only compiled for the host instead of a target SoC.
+  Use it to run full applications and integration tests on the host. Tests for
+  these boards do **not** set ``type: unit``.
+
+* ``unit_testing`` builds **none** of that. It links only the code under test
+  plus Ztest, with everything else stubbed or mocked, and calls the tested
+  functions directly. This makes builds and runs fast and keeps the focus on a
+  single module, at the cost of having to provide stubs for every dependency.
+  These tests must set ``type: unit`` (see :ref:`below <tests_yaml_unit>`).
+
+In short, reach for ``native_sim`` to exercise code in the context of a running
+Zephyr system, and for ``unit_testing`` to test an isolated module without
+pulling in the kernel.
+
+CMakeLists.txt
+==============
+
+In order to declare the unit tests present in a source folder, you need to add
+the relevant source files to the ``testbinary`` target from the CMake
+:zephyr_file:`unittest <cmake/modules/unittest.cmake>` component. See a minimal
+example below:
+
+.. code-block:: cmake
+
+   cmake_minimum_required(VERSION 3.20.0)
+
+   project(app)
+   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+   target_sources(testbinary PRIVATE main.c)
+
+Since you won't be including basic kernel data structures that most code
+depends on, you have to provide function stubs in the test. Ztest provides
+some helpers for mocking functions, as demonstrated below.
+
+In a unit test, mock objects can simulate the behavior of complex real objects
+and are used to decide whether a test failed or passed by verifying whether an
+interaction with an object occurred, and if required, to assert the order of
+that interaction.
+
+.. _tests_yaml_unit:
+
+tests.yaml
+==========
+
+You have to set the value for the key "type" to "unit" in the tests.yaml
+
+.. code-block:: yaml
+
+   tests:
+      testscenario.testsuite:
+         tags: your_tag
+         type: unit
+
+prj.conf
+========
+
+For unit tests this contains usually only
+
+.. code-block:: kconfig
+
+   CONFIG_ZTEST=y
+
+If your unit tests require additional libraries (e.g. math-lib) you will have to
+add them either via the CMakeLists.txt or in the tests.yaml:
+
+.. code-block:: yaml
+
+   tests:
+      testscenario.testsuite:
+         tags: your_tag
+         type: unit
+         extra_args:
+            - EXTRA_LDFLAGS="-lm"
+
+Examples of unit tests can be found in the :zephyr_file:`tests/unit/` folder.
+
+
 Creating a test suite
 *********************
 
@@ -424,268 +687,6 @@ The signature of :c:func:`ztest_run_all` is
 In the example above each call runs the matching suites once, in order, without
 shuffling.
 
-
-Quick start - Integration testing
-*********************************
-
-A simple working base is located at :zephyr_file:`samples/subsys/testsuite/integration`.
-To make a test application for the **bar** component of **foo**, you should copy the
-sample folder to ``tests/foo/bar`` and edit files there adjusting for your test
-application's purposes.
-
-To build and execute all applicable test scenarios defined in your test application
-use the :ref:`Twister <twister_script>` tool, for example:
-
-.. code-block:: console
-
-    ./scripts/twister -T tests/foo/bar/
-
-To select just one of the test scenarios, run Twister with ``--scenario`` command:
-
-.. code-block:: console
-
-   ./scripts/twister --scenario tests/foo/bar/your.test.scenario.name
-
-In the command line above ``tests/foo/bar`` is the path to your test application and
-``your.test.scenario.name`` references a test scenario defined in :file:`tests.yaml`
-file, which is like ``sample.testing.ztest`` in the boilerplate test suite sample.
-
-See :ref:`Twister test project diagram <twister_test_project_diagram>` for more details
-on how Twister deals with Ztest application.
-
-The sample contains the following files:
-
-CMakeLists.txt
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/CMakeLists.txt
-   :language: CMake
-   :linenos:
-
-tests.yaml
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/testcase.yaml
-   :language: yaml
-   :linenos:
-
-prj.conf
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/prj.conf
-   :language: text
-   :linenos:
-
-src/main.c
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
-   :language: c
-   :linenos:
-
-A test application may consist of multiple test suites that
-either can be testing functionality or APIs. Functions implementing a test case
-should follow the guidelines below:
-
-* Test cases function names should be prefixed with **test_**
-* Test cases should be documented using doxygen
-* Test case function names should be unique within the section or component being
-  tested
-
-For example:
-
-.. code-block:: C
-
-   /**
-    * @brief Test Asserts
-    *
-    * This test case verifies the zassert_true macro.
-    */
-   ZTEST(my_suite, test_assert)
-   {
-           zassert_true(1, "1 was false");
-   }
-
-Listing Tests
-=============
-
-Tests (test applications) in the Zephyr tree consist of many test scenarios that run as
-part of a project and test similar functionality, for example an API or a
-feature. The ``twister`` script can parse the test scenarios, suites and cases in all
-test applications or a subset of them, and can generate reports on a granular
-level, i.e. if test cases have passed or failed or if they were blocked or skipped.
-
-Twister parses the source files looking for test case names, so you
-can list all kernel test cases, for example, by running:
-
-.. code-block:: console
-
-   ./scripts/twister --list-tests -T tests/kernel
-
-Skipping Tests
-==============
-
-Special- or architecture-specific tests cannot run on all
-platforms and architectures, however we still want to count those and
-report them as being skipped.  Because the test inventory and
-the list of tests is extracted from the code, adding
-conditionals inside the test suite is sub-optimal.  Tests that need
-to be skipped for a certain platform or feature need to explicitly
-report a skip using :c:func:`ztest_test_skip` or :c:macro:`Z_TEST_SKIP_IFDEF`. If the test runs,
-it needs to report either a pass or fail.  For example:
-
-.. code-block:: C
-
-   #ifdef CONFIG_TEST1
-   ZTEST(common, test_test1)
-   {
-        zassert_true(1, "true");
-   }
-   #else
-   ZTEST(common, test_test1)
-   {
-        ztest_test_skip();
-   }
-   #endif
-
-   ZTEST(common, test_test2)
-   {
-        Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
-        zassert_equal(1, 0, NULL);
-   }
-
-   ZTEST_SUITE(common, NULL, NULL, NULL, NULL, NULL);
-
-.. _ztest_unit_testing:
-
-Quick start - Unit testing
-**************************
-
-Ztest can be used for unit testing. This means that rather than including the
-entire Zephyr OS for testing a single function, you can focus the testing
-efforts into the specific module in question. This will speed up testing since
-only the module will have to be compiled in, and the tested functions will be
-called directly.
-
-To setup unit tests you have to add a CMakeLists.txt, a tests.yaml and a
-prj.conf to the directory containing the unit test source files. The resulting
-binary from this directory is built using -DBOARD=unit_testing. When twister
-is invoked the script zephyr/scripts/pylib/twister/twisterlib/testplan.py
-filters out all tests.yaml in which type: unit is not set. Only unit tests
-are executed with a firmware build with BOARD=unit_testing.
-
-.. note::
-   Unit tests are run as **native** applications on the host and are therefore
-   subject to similar :ref:`limitations <posix_arch_limitations>` as documented
-   for the :ref:`POSIX architecture<Posix arch>`. Running unit tests is
-   therefore only supported for Linux. To run unit tests on Windows or macOS
-   it is necessary to use containers or Virtual Machines running a Linux guest.
-   Follow the same instructions as for the
-   :ref:`POSIX Arch dependencies<posix_arch_deps>`.
-
-.. _unit_testing_board:
-
-The ``unit_testing`` board
-==========================
-
-Unit tests are built for the special ``unit_testing`` board
-(:zephyr_file:`subsys/testsuite/boards/unit_testing`). It is not a real piece of
-hardware nor a simulated target: it is a pseudo-board with ``arch: unit`` that
-uses the host toolchain to produce a regular native executable. Selecting it
-with ``-DBOARD=unit_testing`` (which Twister does automatically for scenarios
-marked ``type: unit``) builds and links only the source files you add to the
-``testbinary`` target together with the Ztest unit-test harness.
-
-Crucially, **the Zephyr kernel and operating system are not built at all**.
-There is no boot sequence, no scheduler, no devicetree-driven device
-initialization, and no driver model. The functions under test are compiled into
-the test binary and called directly. Any kernel API or other dependency that the
-module under test relies on must be supplied by the test itself, usually as a
-stub or a :ref:`mock <mocking-fff>`.
-
-.. _unit_testing_vs_native_sim:
-
-Difference from ``native_sim`` and other boards
------------------------------------------------
-
-It is easy to confuse the ``unit_testing`` board with
-:zephyr:board:`native_sim`, since both run on the host. They are
-fundamentally different:
-
-* :zephyr:board:`native_sim` builds the
-  **complete Zephyr OS** -- kernel, devicetree, Kconfig, drivers and
-  subsystems -- into a host binary that boots and runs exactly like a Zephyr
-  image on real hardware, only compiled for the host instead of a target SoC.
-  Use it to run full applications and integration tests on the host. Tests for
-  these boards do **not** set ``type: unit``.
-
-* ``unit_testing`` builds **none** of that. It links only the code under test
-  plus Ztest, with everything else stubbed or mocked, and calls the tested
-  functions directly. This makes builds and runs fast and keeps the focus on a
-  single module, at the cost of having to provide stubs for every dependency.
-  These tests must set ``type: unit`` (see :ref:`below <tests_yaml_unit>`).
-
-In short, reach for ``native_sim`` to exercise code in the context of a running
-Zephyr system, and for ``unit_testing`` to test an isolated module without
-pulling in the kernel.
-
-CMakeLists.txt
-==============
-
-In order to declare the unit tests present in a source folder, you need to add
-the relevant source files to the ``testbinary`` target from the CMake
-:zephyr_file:`unittest <cmake/modules/unittest.cmake>` component. See a minimal
-example below:
-
-.. code-block:: cmake
-
-   cmake_minimum_required(VERSION 3.20.0)
-
-   project(app)
-   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
-   target_sources(testbinary PRIVATE main.c)
-
-Since you won't be including basic kernel data structures that most code
-depends on, you have to provide function stubs in the test. Ztest provides
-some helpers for mocking functions, as demonstrated below.
-
-In a unit test, mock objects can simulate the behavior of complex real objects
-and are used to decide whether a test failed or passed by verifying whether an
-interaction with an object occurred, and if required, to assert the order of
-that interaction.
-
-.. _tests_yaml_unit:
-
-tests.yaml
-==========
-
-You have to set the value for the key "type" to "unit" in the tests.yaml
-
-.. code-block:: yaml
-
-   tests:
-      testscenario.testsuite:
-         tags: your_tag
-         type: unit
-
-prj.conf
-========
-
-For unit tests this contains usually only
-
-.. code-block:: kconfig
-
-   CONFIG_ZTEST=y
-
-If your unit tests require additional libraries (e.g. math-lib) you will have to
-add them either via the CMakeLists.txt or in the tests.yaml:
-
-.. code-block:: yaml
-
-   tests:
-      testscenario.testsuite:
-         tags: your_tag
-         type: unit
-         extra_args:
-            - EXTRA_LDFLAGS="-lm"
-
-Examples of unit tests can be found in the :zephyr_file:`tests/unit/` folder.
 
 Best practices for declaring the test suite
 *******************************************
