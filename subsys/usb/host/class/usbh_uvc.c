@@ -2376,7 +2376,7 @@ static int usbh_uvc_probe(struct usbh_class_data *const c_data, struct usb_devic
 
 	k_mutex_lock(&host_data->lock, K_FOREVER);
 
-	host_data->udev = udev;
+	host_data->udev = usbh_device_ref(udev);
 
 	/* Convert device-level match to interface 0 */
 	if (iface == USBH_CLASS_IFNUM_DEVICE) {
@@ -2480,6 +2480,7 @@ static int usbh_uvc_removed(struct usbh_class_data *const c_data)
 	host_data->format_caps_count = 0;
 	memset(&host_data->probe, 0, sizeof(host_data->probe));
 
+	usbh_device_unref(host_data->udev);
 	host_data->udev = NULL;
 
 	LOG_INF("UVC device removal completed");
