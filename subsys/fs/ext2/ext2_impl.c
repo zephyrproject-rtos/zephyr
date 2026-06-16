@@ -361,6 +361,11 @@ int ext2_init_fs(struct ext2_data *fs)
 	struct ext2_superblock *sb = &fs->sblock;
 	uint32_t fs_blocks = sb->s_blocks_count - sb->s_first_data_block;
 
+	if (fs_blocks > (uint32_t)(fs->block_size * 8U)) {
+		error_behavior(fs, "s_blocks_count exceeds single-group bitmap capacity");
+		return -EINVAL;
+	}
+
 	set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(&fs->bgroup), fs_blocks);
 
 	if (set != sb->s_blocks_count - sb->s_free_blocks_count - sb->s_first_data_block) {
