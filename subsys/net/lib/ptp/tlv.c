@@ -241,6 +241,9 @@ static int tlv_mgmt_post_recv(struct ptp_tlv_mgmt *mgmt_tlv, uint16_t length)
 		port_ds->mean_link_delay = net_ntohll(port_ds->mean_link_delay);
 		break;
 	case PTP_MGMT_TIME:
+		if (length < sizeof(struct ptp_timestamp)) {
+			return -EBADMSG;
+		}
 		ts = *(struct ptp_timestamp *)mgmt_tlv->data;
 
 		ts.seconds_high = net_ntohs(ts.seconds_high);
