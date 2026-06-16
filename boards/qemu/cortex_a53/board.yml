@@ -7,3 +7,4 @@ board:
     variants:
     - name: smp
     - name: xip
+    - name: aarch32
