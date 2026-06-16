@@ -32,41 +32,33 @@ There are a few reasons why twister only builds a test and doesn't run it:
 - You or some higher level automation invoked twister with
   ``--build-only``.
 
-To run the script in the local tree, follow the steps below:
+To run Twister in the local tree, follow the steps below:
 
-.. tabs::
+.. code-block:: console
 
-   .. group-tab:: Linux
+   $ west twister
 
-      .. code-block:: bash
+.. note::
 
-         $ source zephyr-env.sh
-         $ ./scripts/twister
+   The examples in this document invoke Twister as ``west twister``, the
+   :ref:`west <west>` extension command, which works the same on all host
+   operating systems. The following invocations are equivalent:
 
-   .. group-tab:: Windows
+   * ``west twister ...`` (recommended).
+   * ``./scripts/twister ...`` (Linux/macOS) or ``python .\scripts\twister ...``
+     (Windows): invoking the script directly. This requires the Zephyr
+     environment to be set up first (``source zephyr-env.sh`` or
+     ``zephyr-env.cmd``).
 
-      .. code-block:: bat
-
-         zephyr-env.cmd
-         python .\scripts\twister
+   All forms accept the same command line options.
 
 
 If you have a system with a large number of cores and plenty of free storage space,
 you can build and run all possible tests using the following options:
 
-.. tabs::
+.. code-block:: console
 
-   .. group-tab:: Linux
-
-      .. code-block:: bash
-
-         $ ./scripts/twister --all --enable-slow
-
-   .. group-tab:: Windows
-
-      .. code-block:: bat
-
-         python .\scripts\twister --all --enable-slow
+   $ west twister --all --enable-slow
 
 This will build for all available boards and run all applicable tests in
 a simulated (for example QEMU) environment.
@@ -77,20 +69,12 @@ option, test suites will only be built/run on the platforms specified.
 This option also supports different revisions of one same board,
 you can use ``--platform board@revision`` to test on a specific revision.
 
-The list of command line options supported by twister can be viewed using:
+The list of command line options supported by twister can be viewed with
+``west twister --help``. The full set of options is shown below (rendered at
+documentation build time):
 
-.. tabs::
-
-   .. group-tab:: Linux
-
-      .. command-output:: $ZEPHYR_BASE/scripts/twister --help
-         :shell:
-
-   .. group-tab:: Windows
-
-      .. code-block:: bat
-
-         python .\scripts\twister --help
+.. command-output:: $ZEPHYR_BASE/scripts/twister --help
+   :shell:
 
 
 Board Configuration
@@ -1549,7 +1533,7 @@ First, generate **reference fingerprints** for a known-good display output:
 
     # Generate fingerprints
     export DISPLAY_TEST_DIR=<path-to-config-directory>
-    scripts/twister --device-testing --hardware-map map.yml \
+    west twister --device-testing --hardware-map map.yml \
         -T tests/drivers/display/display_check/
 
 Fingerprints are stored in the directory specified in the ``directory`` field of the configuration
@@ -1564,7 +1548,7 @@ mode**:
     # Set the 'operations' field to 'compare' in the configuration file.
 
     export DISPLAY_TEST_DIR=<path-to-fingerprints-parent-directory>
-    scripts/twister --device-testing --hardware-map map.yml \
+    west twister --device-testing --hardware-map map.yml \
         -T tests/drivers/display/display_check/
 
 The harness compares captured video against reference fingerprints using the configured signature
@@ -1818,14 +1802,14 @@ the following new options:
 
       .. code-block:: bash
 
-	      scripts/twister --device-testing --device-serial /dev/ttyACM0 \
+	      west twister --device-testing --device-serial /dev/ttyACM0 \
 	      --device-serial-baud 115200 -p frdm_k64f  -T tests/kernel
 
    .. group-tab:: Windows
 
       .. code-block:: bat
 
-	      python .\scripts\twister --device-testing --device-serial COM1 \
+	      west twister --device-testing --device-serial COM1 \
 	      --device-serial-baud 115200 -p frdm_k64f  -T tests/kernel
 
 The ``--device-serial`` option denotes the serial device the board is connected to.
@@ -1848,7 +1832,7 @@ In this case you can run twister with the following options:
 
       .. code-block:: bash
 
-         scripts/twister --device-testing --device-serial-pty "script.py" \
+         west twister --device-testing --device-serial-pty "script.py" \
          -p intel_adsp/cavs25 -T tests/kernel
 
    .. group-tab:: Windows
@@ -1876,19 +1860,9 @@ hardware map needs to be created with all connected devices and their
 details such as the serial device, baud and their IDs if available.
 Run the following command to produce the hardware map:
 
-.. tabs::
+.. code-block:: console
 
-   .. group-tab:: Linux
-
-      .. code-block:: bash
-
-         ./scripts/twister --generate-hardware-map map.yml
-
-   .. group-tab:: Windows
-
-      .. code-block:: bat
-
-         python .\scripts\twister --generate-hardware-map map.yml
+   $ west twister --generate-hardware-map map.yml
 
 The generated hardware map file (map.yml) will have the list of connected
 devices, for example:
@@ -1989,13 +1963,13 @@ With the hardware map ready, you can run any tests by pointing to the map
 
       .. code-block:: bash
 
-         ./scripts/twister --device-testing --hardware-map map.yml -T samples/hello_world/
+         west twister --device-testing --hardware-map map.yml -T samples/hello_world/
 
    .. group-tab:: Windows
 
       .. code-block:: bat
 
-         python .\scripts\twister --device-testing --hardware-map map.yml -T samples\hello_world
+         west twister --device-testing --hardware-map map.yml -T samples\hello_world
 
 The above command will result in twister building tests for the platforms
 defined in the hardware map and subsequently flashing and running the tests
@@ -2039,7 +2013,7 @@ work. It is equivalent to following west and twister commands.
 
          west flash --remote-host remote_host_ip_addr --key /path/to/key.pem
 
-         twister -p intel_adsp/cavs25 --device-testing --device-serial-pty script.py
+         west twister -p intel_adsp/cavs25 --device-testing --device-serial-pty script.py
          --west-flash="--remote-host=remote_host_ip_addr,--key=/path/to/key.pem"
 
    .. group-tab:: Windows
@@ -2067,14 +2041,14 @@ in a hardware map.
 
       .. code-block:: bash
 
-         twister -p npcx9m6f_evb --device-testing --device-serial /dev/ttyACM0
+         west twister -p npcx9m6f_evb --device-testing --device-serial /dev/ttyACM0
          --flash-command './custom_flash_script.py,--flag,"complex, argument"'
 
    .. group-tab:: Windows
 
       .. note::
 
-         python .\scripts\twister -p npcx9m6f_evb --device-testing
+         west twister -p npcx9m6f_evb --device-testing
          --device-serial COM1
          --flash-command 'custom_flash_script.py,--flag,"complex, argument"'
 
@@ -2453,14 +2427,9 @@ An example platforms plus level configuration:
 To run with above test_config.yaml file, only default_platforms with given test level
 test scenarios will run.
 
-.. tabs::
+.. code-block:: console
 
-   .. group-tab:: Linux
-
-      .. code-block:: bash
-
-         scripts/twister --test-config=<path to>/test_config.yaml
-          -T tests --level="smoke"
+   $ west twister --test-config=<path to>/test_config.yaml -T tests --level="smoke"
 
 
 
@@ -2485,19 +2454,9 @@ At this moment Zephyr integration supports running Robot tests in the
 
 To execute a Robot test suite with twister, run the following command:
 
-.. tabs::
+.. code-block:: console
 
-   .. group-tab:: Linux
-
-      .. code-block:: bash
-
-         $ ./scripts/twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
-
-   .. group-tab:: Windows
-
-      .. code-block:: bat
-
-         python .\scripts\twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
+   $ west twister --platform hifive1 --test samples/subsys/shell/shell_module/sample.shell.shell_module.robot
 
 Writing Robot tests
 ===================
