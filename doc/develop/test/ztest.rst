@@ -568,6 +568,52 @@ are executed with a firmware build with BOARD=unit_testing.
    Follow the same instructions as for the
    :ref:`POSIX Arch dependencies<posix_arch_deps>`.
 
+.. _unit_testing_board:
+
+The ``unit_testing`` board
+==========================
+
+Unit tests are built for the special ``unit_testing`` board
+(:zephyr_file:`subsys/testsuite/boards/unit_testing`). It is not a real piece of
+hardware nor a simulated target: it is a pseudo-board with ``arch: unit`` that
+uses the host toolchain to produce a regular native executable. Selecting it
+with ``-DBOARD=unit_testing`` (which Twister does automatically for scenarios
+marked ``type: unit``) builds and links only the source files you add to the
+``testbinary`` target together with the Ztest unit-test harness.
+
+Crucially, **the Zephyr kernel and operating system are not built at all**.
+There is no boot sequence, no scheduler, no devicetree-driven device
+initialization, and no driver model. The functions under test are compiled into
+the test binary and called directly. Any kernel API or other dependency that the
+module under test relies on must be supplied by the test itself, usually as a
+stub or a :ref:`mock <mocking-fff>`.
+
+.. _unit_testing_vs_native_sim:
+
+Difference from ``native_sim`` and other boards
+-----------------------------------------------
+
+It is easy to confuse the ``unit_testing`` board with
+:zephyr:board:`native_sim`, since both run on the host. They are
+fundamentally different:
+
+* :zephyr:board:`native_sim` builds the
+  **complete Zephyr OS** -- kernel, devicetree, Kconfig, drivers and
+  subsystems -- into a host binary that boots and runs exactly like a Zephyr
+  image on real hardware, only compiled for the host instead of a target SoC.
+  Use it to run full applications and integration tests on the host. Tests for
+  these boards do **not** set ``type: unit``.
+
+* ``unit_testing`` builds **none** of that. It links only the code under test
+  plus Ztest, with everything else stubbed or mocked, and calls the tested
+  functions directly. This makes builds and runs fast and keeps the focus on a
+  single module, at the cost of having to provide stubs for every dependency.
+  These tests must set ``type: unit`` (see :ref:`below <tests_yaml_unit>`).
+
+In short, reach for ``native_sim`` to exercise code in the context of a running
+Zephyr system, and for ``unit_testing`` to test an isolated module without
+pulling in the kernel.
+
 CMakeLists.txt
 ==============
 
@@ -592,6 +638,8 @@ In a unit test, mock objects can simulate the behavior of complex real objects
 and are used to decide whether a test failed or passed by verifying whether an
 interaction with an object occurred, and if required, to assert the order of
 that interaction.
+
+.. _tests_yaml_unit:
 
 tests.yaml
 ==========
