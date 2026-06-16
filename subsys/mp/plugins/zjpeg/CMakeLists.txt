@@ -9,3 +9,8 @@ zephyr_library_sources(
     mp_zjpeg_decoder.c
     jpeg_dec.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_MP_ZJPEG_ENCODER
+    mp_zjpeg_encoder.c
+    jpeg_enc.c
+)
