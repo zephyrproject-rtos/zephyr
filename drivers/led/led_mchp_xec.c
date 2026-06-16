@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(led_xec, CONFIG_LED_LOG_LEVEL);
 /* Same BBLED hardware block in MEC15xx and MEC172x families
  * Config register
  */
+#define XEC_BBLED_CFG_OFS		0
 #define XEC_BBLED_CFG_MSK		0x1ffffu
 #define XEC_BBLED_CFG_MODE_POS		0
 #define XEC_BBLED_CFG_MODE_MSK		0x3u
@@ -41,6 +42,7 @@ LOG_MODULE_REGISTER(led_xec, CONFIG_LED_LOG_LEVEL);
 #define XEC_BBLED_CFG_WDT_RLD_DFLT	0x1400u
 
 /* Limits register */
+#define XEC_BBLED_LIM_OFS		0x04u
 #define XEC_BBLED_LIM_MSK		0xffffu
 #define XEC_BBLED_LIM_MIN_POS		0
 #define XEC_BBLED_LIM_MIN_MSK		0xffu
@@ -48,6 +50,7 @@ LOG_MODULE_REGISTER(led_xec, CONFIG_LED_LOG_LEVEL);
 #define XEC_BBLED_LIM_MAX_MSK		0xff00u
 
 /* Delay register */
+#define XEC_BBLED_DLY_OFS		0x08u
 #define XEC_BBLED_DLY_MSK		0xffffffu
 #define XEC_BBLED_DLY_LO_POS		0
 #define XEC_BBLED_DLY_LO_MSK		0xfffu
@@ -75,17 +78,8 @@ LOG_MODULE_REGISTER(led_xec, CONFIG_LED_LOG_LEVEL);
 #define XEC_BBLED_BLINK_PERIOD_MAX_MS	32000u
 #define XEC_BBLED_BLINK_PERIOD_MIN_MS	8u
 
-struct xec_bbled_regs {
-	volatile uint32_t config;
-	volatile uint32_t limits;
-	volatile uint32_t delay;
-	volatile uint32_t update_step_size;
-	volatile uint32_t update_interval;
-	volatile uint32_t output_delay;
-};
-
 struct xec_bbled_config {
-	struct xec_bbled_regs * const regs;
+	mm_reg_t base;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t enc_pcr;
 };
@@ -141,8 +135,8 @@ static int xec_bbled_blink(const struct device *dev, uint32_t led,
 			    uint32_t delay_on, uint32_t delay_off)
 {
 	const struct xec_bbled_config * const config = dev->config;
-	struct xec_bbled_regs * const regs = config->regs;
-	uint32_t period, prescaler, dcs;
+	mm_reg_t base = config->base;
+	uint32_t period, prescaler, dcs, reg;
 
 	if (led) {
 		return -EINVAL;
@@ -163,15 +157,27 @@ static int xec_bbled_blink(const struct device *dev, uint32_t led,
 	prescaler = calc_blink_32k_prescaler(delay_on, delay_off);
 	dcs = calc_blink_duty_cycle(delay_on, delay_off);
 
-	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK))
+	reg = sys_read32(base + XEC_BBLED_CFG_OFS);
+	reg = (reg & ~(XEC_BBLED_CFG_MODE_MSK))
 		       | XEC_BBLED_CFG_MODE_OFF;
-	regs->delay = (regs->delay & ~(XEC_BBLED_DLY_LO_MSK))
+	sys_write32(reg, base + XEC_BBLED_CFG_OFS);
+
+	reg = sys_read32(base + XEC_BBLED_DLY_OFS);
+	reg = (reg & ~(XEC_BBLED_DLY_LO_MSK))
 		      | (prescaler & XEC_BBLED_DLY_LO_MSK);
-	regs->limits = (regs->limits & ~(XEC_BBLED_LIM_MIN_MSK))
+	sys_write32(reg, base + XEC_BBLED_DLY_OFS);
+
+	reg = sys_read32(base + XEC_BBLED_LIM_OFS);
+	reg = (reg & ~(XEC_BBLED_LIM_MIN_MSK))
 		       | (dcs & XEC_BBLED_LIM_MIN_MSK);
-	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK))
+	sys_write32(reg, base + XEC_BBLED_LIM_OFS);
+
+	reg = sys_read32(base + XEC_BBLED_CFG_OFS);
+	reg = (reg & ~(XEC_BBLED_CFG_MODE_MSK))
 		       | XEC_BBLED_CFG_MODE_PWM;
-	regs->config |= BIT(XEC_BBLED_CFG_EN_UPDATE_POS);
+	sys_write32(reg, base + XEC_BBLED_CFG_OFS);
+
+	sys_set_bits(base + XEC_BBLED_CFG_OFS, BIT(XEC_BBLED_CFG_EN_UPDATE_POS));
 
 	return 0;
 }
@@ -179,42 +185,49 @@ static int xec_bbled_blink(const struct device *dev, uint32_t led,
 static int xec_bbled_on(const struct device *dev, uint32_t led)
 {
 	const struct xec_bbled_config * const config = dev->config;
-	struct xec_bbled_regs * const regs = config->regs;
+	mm_reg_t base = config->base;
+	uint32_t reg;
 
 	if (led) {
 		return -EINVAL;
 	}
 
-	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK))
+	reg = sys_read32(base + XEC_BBLED_CFG_OFS);
+	reg = (reg & ~(XEC_BBLED_CFG_MODE_MSK))
 			| XEC_BBLED_CFG_MODE_ALWAYS_ON;
+	sys_write32(reg, base + XEC_BBLED_CFG_OFS);
 	return 0;
 }
 
 static int xec_bbled_off(const struct device *dev, uint32_t led)
 {
 	const struct xec_bbled_config * const config = dev->config;
-	struct xec_bbled_regs * const regs = config->regs;
+	mm_reg_t base = config->base;
+	uint32_t reg;
 
 	if (led) {
 		return -EINVAL;
 	}
 
-	regs->config = (regs->config & ~(XEC_BBLED_CFG_MODE_MSK))
+	reg = sys_read32(base + XEC_BBLED_CFG_OFS);
+	reg = (reg & ~(XEC_BBLED_CFG_MODE_MSK))
 			| XEC_BBLED_CFG_MODE_OFF;
+	sys_write32(reg, base + XEC_BBLED_CFG_OFS);
 	return 0;
 }
 
 static int xec_bbled_init(const struct device *dev)
 {
 	const struct xec_bbled_config * const config = dev->config;
-	struct xec_bbled_regs * const regs = config->regs;
+	mm_reg_t base = config->base;
+	uint32_t reg;
 	int ret;
 
 	soc_xec_pcr_sleep_en_clear(config->enc_pcr);
 
 	/* soft reset, disable BBLED WDT, set clock source to default (32KHz domain) */
-	regs->config |= BIT(XEC_BBLED_CFG_RST_PWM_POS);
-	regs->config = XEC_BBLED_CFG_MODE_OFF;
+	sys_set_bits(base + XEC_BBLED_CFG_OFS, BIT(XEC_BBLED_CFG_RST_PWM_POS));
+	sys_write32(XEC_BBLED_CFG_MODE_OFF, base + XEC_BBLED_CFG_OFS);
 
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
@@ -234,7 +247,7 @@ static DEVICE_API(led, xec_bbled_api) = {
 
 #define XEC_BBLED_CONFIG(i)						\
 static struct xec_bbled_config xec_bbled_config_##i = {			\
-	.regs = (struct xec_bbled_regs * const)DT_INST_REG_ADDR(i),	\
+	.base = DT_INST_REG_ADDR(i),	\
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(i),			\
 	.enc_pcr = DT_INST_PROP(0, pcrs),		\
 }
