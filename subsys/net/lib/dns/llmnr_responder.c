@@ -245,7 +245,7 @@ static int create_answer(enum dns_rr_type qtype,
 	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE + 1 +
 					  (DNS_QTYPE_LEN + DNS_QCLASS_LEN) * 2 +
 					  DNS_TTL_LEN + DNS_RDLENGTH_LEN +
-					  addr_len + query->len)) {
+					  addr_len)) {
 		return -ENOBUFS;
 	}
 
