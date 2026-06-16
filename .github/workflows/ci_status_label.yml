@@ -1,0 +1,62 @@
+name: CI Status Label
+
+on:
+  workflow_run:
+    workflows:
+      - "Run tests with twister"
+      - "Compliance Checks"
+      - "BabbleSim Tests"
+      - "Coding Guidelines"
+      - "CodeQL"
+      - "Documentation Build"
+      - "Devicetree script tests"
+      - "Scancode"
+      - "Check SHA-pinned GitHub Actions"
+      - "Build with Clang/LLVM"
+      - "Error numbers"
+      - "Zephyr West Command Tests"
+      - "Scripts tests"
+      - "Hello World (Multiplatform)"
+    types:
+      - completed
+
+permissions:
+  contents: read
+  checks: read
+  pull-requests: write # to set/clear the "CI failed" label
+
+jobs:
+  label:
+    name: Label by CI outcome
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Set the CI failed label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          LABEL="CI failed"
+
+          prs=$(gh api "/repos/$REPO/commits/$SHA/pulls" --jq '.[].number')
+          if [ -z "$prs" ]; then
+            echo "No open PR for $SHA, nothing to label."
+            exit 0
+          fi
+
+          failed=$(gh api "/repos/$REPO/commits/$SHA/check-runs" --paginate \
+            -q '.check_runs[]
+                | select(.name != "Prevent Merging")
+                | select(.conclusion == "failure" or .conclusion == "timed_out")
+                | .name' | sort -u | wc -l | tr -d ' ')
+
+          for pr in $prs; do
+            if [ "$failed" -gt 0 ]; then
+              echo "PR #$pr: $failed genuine check failure(s), adding '$LABEL'."
+              gh pr edit "$pr" --repo "$REPO" --add-label "$LABEL"
+            else
+              echo "PR #$pr: no genuine check failures, clearing '$LABEL'."
+              gh pr edit "$pr" --repo "$REPO" --remove-label "$LABEL" || true
+            fi
+          done
