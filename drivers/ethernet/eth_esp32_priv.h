@@ -147,4 +147,44 @@ static inline int esp32_emac_iomux_init_rmii_pinctrl(const struct pinctrl_dev_co
 	return 0;
 }
 
+static inline void esp32_emac_iomux_rmii_clk_output(int gpio_num)
+{
+	const emac_iomux_info_t *pin = emac_rmii_iomux_pins.clko;
+
+	/*
+	 * GPIO0 uses CLK_OUT1 instead of dedicated IOMUX, so skip
+	 * IOMUX setup for it. GPIO16/17 use dedicated IOMUX.
+	 */
+	if (gpio_num == 0) {
+		return;
+	}
+
+	esp32_emac_iomux_output(esp32_emac_iomux_find(pin, gpio_num), 0);
+}
+
+#if DT_NODE_HAS_PROP(DT_INST(0, espressif_esp32_eth), ref_clk_output_gpios)
+static inline int esp32_emac_config_apll_clock(void)
+{
+	uint32_t expt_freq = MHZ(50);
+	uint32_t real_freq = 0;
+	esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expt_freq, &real_freq);
+
+	if (ret == ESP_ERR_INVALID_ARG) {
+		LOG_ERR("Set APLL clock coefficients failed");
+		return -EIO;
+	}
+
+	/* If the difference of real APLL frequency
+	 * is not within 50 ppm, i.e. 2500 Hz,
+	 * the APLL is unavailable
+	 */
+	if (abs((int)real_freq - (int)expt_freq) > 2500) {
+		LOG_ERR("The APLL is working at an unusable frequency");
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif
+
 #endif /* ZEPHYR_DRIVERS_ETHERNET_ETH_ESP32_PRIV_H_ */

@@ -23,9 +23,9 @@
 #include <esp_clk_tree.h>
 #include <esp_private/esp_clk_tree_common.h>
 
-#include "../eth_esp32_priv.h"
-
 LOG_MODULE_REGISTER(mdio_esp32, CONFIG_MDIO_LOG_LEVEL);
+
+#include "../eth_esp32_priv.h"
 
 #define PHY_OPERATION_TIMEOUT_US 1000
 
@@ -94,53 +94,6 @@ static int mdio_esp32_write(const struct device *dev, uint8_t prtad,
 	return mdio_transfer(dev, prtad, regad, true, data, NULL);
 }
 
-#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-static int emac_config_apll_clock(void)
-{
-	uint32_t expt_freq = MHZ(50);
-	uint32_t real_freq = 0;
-	esp_err_t ret = esp_clk_tree_src_set_freq_hz(SOC_MOD_CLK_APLL, expt_freq, &real_freq);
-
-	if (ret == ESP_ERR_INVALID_ARG) {
-		LOG_ERR("Set APLL clock coefficients failed");
-		return -EIO;
-	}
-
-	/* If the difference of real APLL frequency
-	 * is not within 50 ppm, i.e. 2500 Hz,
-	 * the APLL is unavailable
-	 */
-	if (abs((int)real_freq - (int)expt_freq) > 2500) {
-		LOG_ERR("The APLL is working at an unusable frequency");
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static void mdio_esp32_iomux_rmii_clk_output(int gpio_num)
-{
-	const emac_iomux_info_t *pin = emac_rmii_iomux_pins.clko;
-
-	/*
-	 * GPIO 0 uses a different clock output mechanism (CLK_OUT1),
-	 * so skip IOMUX setup for it. GPIO 16/17 use dedicated IOMUX.
-	 */
-	if (gpio_num == 0 || pin == NULL) {
-		return;
-	}
-
-	/* Find the matching entry in the iomux array */
-	while (pin->gpio_num != GPIO_NUM_MAX) {
-		if (pin->gpio_num == gpio_num) {
-			PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], pin->func);
-			return;
-		}
-		pin++;
-	}
-}
-#endif
-
 static int mdio_esp32_initialize(const struct device *dev)
 {
 	const struct mdio_esp32_dev_config *const cfg = dev->config;
@@ -154,29 +107,33 @@ static int mdio_esp32_initialize(const struct device *dev)
 		goto err;
 	}
 
+/* If the ethernet driver is enabled, we don't need to enable the clock again */
+#ifndef CONFIG_ETH_ESP32
 	const struct device *clock_dev =
-		DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(mdio)));
+		DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(0)));
 	clock_control_subsys_t clock_subsys =
-		(clock_control_subsys_t)DT_CLOCKS_CELL(DT_NODELABEL(mdio), offset);
+		(clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(0), offset);
 
 	/* clock is shared, so do not bail out if already enabled */
 	res = clock_control_on(clock_dev, clock_subsys);
 	if (res < 0 && res != -EALREADY) {
 		goto err;
 	}
+#endif
 
 	/* Only the mac registers are required for MDIO */
 	dev_data->hal.mac_regs = &EMAC_MAC;
 
-#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+#if DT_NODE_HAS_PROP(DT_INST_PARENT(0), ref_clk_output_gpios) && !defined(CONFIG_ETH_ESP32)
 	emac_hal_init(&dev_data->hal);
 	esp32_emac_iomux_init_rmii(-1, -1, -1, -1, -1, -1);
-	BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 0 ||
-	  DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
-		DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
-		"Only GPIO0/16/17 are allowed as a GPIO REF_CLK source!");
-	int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
-	mdio_esp32_iomux_rmii_clk_output(ref_clk_gpio);
+	BUILD_ASSERT(DT_GPIO_PIN(DT_INST_PARENT(0), ref_clk_output_gpios) == 0 ||
+			     DT_GPIO_PIN(DT_INST_PARENT(0), ref_clk_output_gpios) == 16 ||
+			     DT_GPIO_PIN(DT_INST_PARENT(0), ref_clk_output_gpios) == 17,
+		     "Only GPIO0/16/17 are allowed as a GPIO REF_CLK source!");
+	int ref_clk_gpio = DT_GPIO_PIN(DT_INST_PARENT(0), ref_clk_output_gpios);
+
+	esp32_emac_iomux_rmii_clk_output(ref_clk_gpio);
 
 	/* Configure REF_CLK output when GPIO0 is used */
 	if (ref_clk_gpio == 0) {
@@ -185,7 +142,7 @@ static int mdio_esp32_initialize(const struct device *dev)
 
 	emac_hal_clock_enable_rmii_output(&dev_data->hal);
 	esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true);
-	res = emac_config_apll_clock();
+	res = esp32_emac_config_apll_clock();
 	if (res != 0) {
 		goto err;
 	}
