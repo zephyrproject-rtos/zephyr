@@ -26,11 +26,13 @@
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
 #include <clk_ctrl_os.h>
+#include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
+
+LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include "eth.h"
 #include "eth_esp32_priv.h"
-
-LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 
 #define MAC_RESET_TIMEOUT_MS 100
 #define ETH_CRC_LENGTH       4
@@ -706,7 +708,27 @@ int eth_esp32_initialize(const struct device *dev)
 		if (res != 0) {
 			goto err;
 		}
-#if !DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+		BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 0 ||
+			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
+			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
+			"Only GPIO0/16/17 are allowed as a GPIO REF_CLK source!");
+		int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
+
+		esp32_emac_iomux_rmii_clk_output(ref_clk_gpio);
+
+		/* Configure REF_CLK output when GPIO0 is used */
+		if (ref_clk_gpio == 0) {
+			REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
+		}
+
+		emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
+		esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true);
+		res = esp32_emac_config_apll_clock();
+		if (res != 0) {
+			goto err;
+		}
+#else
 		eth_esp32_iomux_rmii_clk_input(rmii_clk_gpio);
 		emac_hal_clock_enable_rmii_input(&dev_data->hal);
 #endif
