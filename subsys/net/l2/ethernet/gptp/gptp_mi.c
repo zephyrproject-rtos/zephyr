@@ -1249,11 +1249,24 @@ static bool gptp_mi_qualify_announce(int port, struct net_pkt *announce_msg)
 		return false;
 	}
 
-	for (i = 0; i < len + 1; i++) {
-		if (memcmp(announce->tlv.path_sequence[i],
-			   GPTP_DEFAULT_DS()->clk_id,
-			   GPTP_CLOCK_ID_LEN) == 0) {
+	/* The path_sequence array in the announce TLV has (tlv.len /
+	 * GPTP_CLOCK_ID_LEN) entries. Iterating up to steps_removed+1
+	 * without validating against the TLV length reads past the data.
+	 */
+	{
+		uint16_t tlv_entries = ntohs(announce->tlv.len) / GPTP_CLOCK_ID_LEN;
+		uint16_t max_i = (uint16_t)(len + 1U);
+
+		if (max_i > tlv_entries) {
 			return false;
+		}
+
+		for (i = 0; i < max_i; i++) {
+			if (memcmp(announce->tlv.path_sequence[i],
+				   GPTP_DEFAULT_DS()->clk_id,
+				   GPTP_CLOCK_ID_LEN) == 0) {
+				return false;
+			}
 		}
 	}
 
