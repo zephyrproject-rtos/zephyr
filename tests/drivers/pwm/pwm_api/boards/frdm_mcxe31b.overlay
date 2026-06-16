@@ -1,0 +1,15 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		/*
+		 * Use emios0 PWM channel 3 (OPWFMB, internal counter)
+		 * as the PWM test output.
+		 */
+		pwm-test = &emios0_pwm;
+	};
+};

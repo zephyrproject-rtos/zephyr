@@ -184,3 +184,14 @@ tests:
       - frdm_imxrt1186/mimxrt1186/cm7
     filter: dt_nodelabel_enabled("pwm_test_center") and CONFIG_DT_HAS_NXP_KINETIS_TPM_ENABLED
     depends_on: pwm
+  drivers.pwm.emios:
+    tags:
+      - drivers
+      - pwm
+      - userspace
+    extra_args:
+      - platform:frdm_mcxe31b:DTC_OVERLAY_FILE="boards/frdm_mcxe31b.overlay"
+    platform_allow:
+      - frdm_mcxe31b
+    filter: dt_alias_exists("pwm-test")
+    depends_on: pwm
