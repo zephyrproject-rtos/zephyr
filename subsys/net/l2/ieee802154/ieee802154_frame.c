@@ -740,6 +740,11 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 
 	/* Let's encrypt/auth only in the end, if needed */
 	authtag_len = level_2_authtag_len[level];
+	if (buf->len < (size_t)(ll_hdr_len + authtag_len)) {
+		NET_ERR("Frame too short to encrypt: len %u < ll_hdr %u + authtag %u",
+			buf->len, ll_hdr_len, authtag_len);
+		goto out;
+	}
 	payload_len = buf->len - ll_hdr_len - authtag_len;
 	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, ll_hdr_len,
 				     payload_len, authtag_len, ctx->ext_addr)) {
@@ -994,6 +999,11 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 
 	authtag_len = level_2_authtag_len[level];
 	ll_hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
+	if (net_pkt_get_len(pkt) < (size_t)(ll_hdr_len + authtag_len)) {
+		NET_ERR("Frame too short: len %zu < ll_hdr %u + authtag %u",
+			net_pkt_get_len(pkt), ll_hdr_len, authtag_len);
+		goto out;
+	}
 	payload_len = net_pkt_get_len(pkt) - ll_hdr_len - authtag_len;
 
 	/* TODO: Handle src short address.
