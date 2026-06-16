@@ -149,7 +149,7 @@ void IRAM_ATTR esp_ieee802154_receive_done(uint8_t *frame, esp_ieee802154_frame_
 	msg.info = *frame_info;
 
 	if (k_msgq_put(&ieee802154_esp32_rx_msgq, &msg, K_NO_WAIT) != 0) {
-		mmm
+		LOG_ERR("RX queue full, frame dropped");
 	}
 
 done:
