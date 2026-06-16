@@ -756,6 +756,7 @@ ucrobotics	uCRobotics
 udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
 ultrachip	UltraChip Inc.
+um	Unexpected Maker
 uniwest	United Western Technologies Corp (UniWest)
 up-bridge-the-gap	UP Bridge the Gap
 upisemi	uPI Semiconductor Corp.

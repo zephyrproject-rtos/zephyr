@@ -1,0 +1,11 @@
+# Unexpected Maker FeatherS3 board configuration
+
+# SPDX-FileCopyrightText: Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-FileCopyrightText: Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_UM_FEATHERS3_ESP32S3_PROCPU
+	default 256 if BOARD_UM_FEATHERS3_ESP32S3_APPCPU
