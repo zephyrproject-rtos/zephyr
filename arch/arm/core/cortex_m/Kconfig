@@ -111,11 +111,11 @@ config CPU_CORTEX_M_HAS_SYSTICK
 	help
 	  This option is enabled when the CPU implements the SysTick timer.
 
-config DCACHE_LINE_SIZE
-	default 32
+configdefault DCACHE_LINE_SIZE
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
 
-config ICACHE_LINE_SIZE
-	default 32
+configdefault ICACHE_LINE_SIZE
+	default 32 if !$(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
 
 config CPU_CORTEX_M_HAS_DWT
 	bool
