@@ -52,4 +52,92 @@
 	i2c5_sda_default: i2c5_sda_default {
 		pin = <PIN_SDA5 FUNC_SDA5>;
 	};
+
+	can0_rx_default: can0_rx_default {
+		pin = <PIN_CAN0RX_INTP0 FUNC_CAN0RX_INTP0>;
+	};
+
+	can0_tx_default: can0_tx_default {
+		pin = <PIN_CAN0TX FUNC_CAN0TX>;
+	};
+
+	can1_rx_default: can1_rx_default {
+		pin = <PIN_CAN1RX_INTP1 FUNC_CAN1RX_INTP1>;
+	};
+
+	can1_tx_default: can1_tx_default {
+		pin = <PIN_CAN1TX FUNC_CAN1TX>;
+	};
+
+	can2_rx_default: can2_rx_default {
+		pin = <PIN_CAN2RX_INTP2 FUNC_CAN2RX_INTP2>;
+	};
+
+	can2_tx_default: can2_tx_default {
+		pin = <PIN_CAN2TX FUNC_CAN2TX>;
+	};
+
+	can3_rx_default: can3_rx_default {
+		pin = <PIN_CAN3RX_INTP3 FUNC_CAN3RX_INTP3>;
+	};
+
+	can3_tx_default: can3_tx_default {
+		pin = <PIN_CAN3TX FUNC_CAN3TX>;
+	};
+
+	can4_rx_default: can4_rx_default {
+		pin = <PIN_CAN4RX_INTP4 FUNC_CAN4RX_INTP4>;
+	};
+
+	can4_tx_default: can4_tx_default {
+		pin = <PIN_CAN4TX FUNC_CAN4TX>;
+	};
+
+	can5_rx_default: can5_rx_default {
+		pin = <PIN_CAN5RX_INTP5 FUNC_CAN5RX_INTP5>;
+	};
+
+	can5_tx_default: can5_tx_default {
+		pin = <PIN_CAN5TX FUNC_CAN5TX>;
+	};
+
+	can6_rx_default: can6_rx_default {
+		pin = <PIN_CAN6RX_INTP6 FUNC_CAN6RX_INTP6>;
+	};
+
+	can6_tx_default: can6_tx_default {
+		pin = <PIN_CAN6TX FUNC_CAN6TX>;
+	};
+
+	can12_rx_default: can12_rx_default {
+		pin = <PIN_CAN12RX_INTP12 FUNC_CAN12RX_INTP12_B>;
+	};
+
+	can12_tx_default: can12_tx_default {
+		pin = <PIN_CAN12TX FUNC_CAN12TX_B>;
+	};
+
+	can13_rx_default: can13_rx_default {
+		pin = <PIN_CAN13RX_INTP13 FUNC_CAN13RX_INTP13_B>;
+	};
+
+	can13_tx_default: can13_tx_default {
+		pin = <PIN_CAN13TX FUNC_CAN13TX_B>;
+	};
+
+	can14_rx_default: can14_rx_default {
+		pin = <PIN_CAN14RX_INTP14 FUNC_CAN14RX_INTP14_B>;
+	};
+
+	can14_tx_default: can14_tx_default {
+		pin = <PIN_CAN14TX FUNC_CAN14TX_B>;
+	};
+
+	can15_rx_default: can15_rx_default {
+		pin = <PIN_CAN15RX_INTP15 FUNC_CAN15RX_INTP15_B>;
+	};
+
+	can15_tx_default: can15_tx_default {
+		pin = <PIN_CAN15TX FUNC_CAN15TX_B>;
+	};
 };

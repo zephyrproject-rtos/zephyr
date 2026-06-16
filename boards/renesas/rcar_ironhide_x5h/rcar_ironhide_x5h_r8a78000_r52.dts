@@ -18,6 +18,7 @@
 		zephyr,sram = &sram0;
 		zephyr,console = &hscif1;
 		zephyr,shell-uart = &hscif1;
+		zephyr,canbus = &can0;
 	};
 
 	aliases {
@@ -104,5 +105,90 @@
 		     &i2c5_sda_default>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&can0_global {
+	status = "okay";
+};
+
+&can1_global {
+	status = "okay";
+};
+
+&can0 {
+	pinctrl-0 = <&can0_rx_default
+		     &can0_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can1_rx_default
+		     &can1_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can2 {
+	pinctrl-0 = <&can2_rx_default
+		     &can2_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can3 {
+	pinctrl-0 = <&can3_rx_default
+		     &can3_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can4 {
+	pinctrl-0 = <&can4_rx_default
+		     &can4_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can5 {
+	pinctrl-0 = <&can5_rx_default
+		     &can5_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can6 {
+	pinctrl-0 = <&can6_rx_default
+		     &can6_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can12 {
+	pinctrl-0 = <&can12_rx_default
+		     &can12_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can13 {
+	pinctrl-0 = <&can13_rx_default
+		     &can13_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can14 {
+	pinctrl-0 = <&can14_rx_default
+		     &can14_tx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can15 {
+	pinctrl-0 = <&can15_rx_default
+		     &can15_tx_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
