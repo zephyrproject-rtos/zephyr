@@ -35,6 +35,10 @@ LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 #define MAC_RESET_TIMEOUT_MS 100
 #define ETH_CRC_LENGTH       4
 
+BUILD_ASSERT(DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii) ||
+	     DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii),
+	     "Unsupported PHY interface type. Only RMII and MII are supported.");
+
 /*
  * On SoCs with L2 cache (ESP32-P4), DMA data is accessed by the CPU
  * through the non-cacheable address alias (adding SOC_NON_CACHEABLE_OFFSET)
@@ -694,11 +698,8 @@ int eth_esp32_initialize(const struct device *dev)
 	/* Configure phy for Media-Independent Interface (MII) or
 	 * Reduced Media-Independent Interface (RMII) mode
 	 */
-	const char *phy_connection_type = DT_INST_PROP_OR(0,
-						phy_connection_type,
-						"rmii");
 
-	if (strcmp(phy_connection_type, "rmii") == 0) {
+	if (DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)) {
 		int rmii_clk_gpio = -1;
 
 		res = esp32_emac_iomux_init_rmii_pinctrl(cfg->pcfg, &rmii_clk_gpio);
@@ -709,12 +710,9 @@ int eth_esp32_initialize(const struct device *dev)
 		eth_esp32_iomux_rmii_clk_input(rmii_clk_gpio);
 		emac_hal_clock_enable_rmii_input(&dev_data->hal);
 #endif
-	} else if (strcmp(phy_connection_type, "mii") == 0) {
+	} else { /* phy_connection_type: mii */
 		eth_esp32_iomux_init_mii();
 		emac_hal_clock_enable_mii(&dev_data->hal);
-	} else {
-		res = -EINVAL;
-		goto err;
 	}
 
 	/* Reset mac registers and wait until ready */
