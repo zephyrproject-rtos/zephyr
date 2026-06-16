@@ -40,6 +40,15 @@ config CPU_CORTEX_A32
 	help
 	  This option signifies the use of a Cortex-A32 CPU.
 
+config CPU_CORTEX_A53_AARCH32
+	bool
+	select CPU_AARCH32_CORTEX_A
+	select AARCH32_ARMV8_A
+	select CPU_HAS_ICACHE
+	select CPU_HAS_DCACHE
+	help
+	  This option signifies the use of a Cortex-A53 CPU running in AArch32.
+
 if CPU_AARCH32_CORTEX_A
 
 config ARM_A_PROFILE_AARCH32
@@ -103,6 +112,13 @@ config ARMV7_A_NS
 	depends on ARMV7_A
 	help
 	  Zephyr is running in ARM TrustZone Non-Secure state on an ARMv7-A core.
+
+config ARMV8_A_NS
+	bool "ARMv8-A Normal World (Non-Secure world of TrustZone)"
+	depends on AARCH32_ARMV8_A
+	help
+	  This option signifies that Zephyr is entered in TrustZone
+	  Non-Secure state while running in AArch32 execution state.
 
 config ARMV7_EXCEPTION_STACK_SIZE
 	int "Undefined Instruction and Abort stack size (in bytes)"
