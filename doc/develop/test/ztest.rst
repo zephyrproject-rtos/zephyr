@@ -10,6 +10,11 @@ test structure.
 The framework can be used in two ways, either as a generic framework for
 integration testing, or for unit testing specific modules.
 
+.. contents::
+   :depth: 1
+   :local:
+   :backlinks: top
+
 Creating a test suite
 *********************
 
@@ -461,13 +466,6 @@ src/main.c
    :language: c
    :linenos:
 
-.. contents::
-   :depth: 1
-   :local:
-   :backlinks: top
-
-
-
 A test application may consist of multiple test suites that
 either can be testing functionality or APIs. Functions implementing a test case
 should follow the guidelines below:
@@ -830,7 +828,7 @@ file and line numbers, reducing the binary size of the test.
 Example output for a failed macro from
 ``zassume_equal(buf->ref, 2, "Invalid refcount")``:
 
-.. code-block::none
+.. code-block:: none
 
     START - test_get_single_buffer
         Assumption failed at main.c:62: test_get_single_buffer: Invalid refcount (buf->ref not equal to 2)
