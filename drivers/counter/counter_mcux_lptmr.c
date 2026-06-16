@@ -415,14 +415,14 @@ static void mcux_lptmr_isr(const struct device *dev)
 		callback(dev, 0, current_count, user_data);
 
 		key = k_spin_lock(&data->lock);
-		bool rearmed = data->alarm_active;
-
-		k_spin_unlock(&data->lock, key);
-
-		if (!rearmed) {
+		/* Check re-arm and stop/restore atomically under the lock so a
+		 * concurrent set_alarm() cannot have its config clobbered.
+		 */
+		if (!data->alarm_active) {
 			LPTMR_StopTimer(config->base);
 			LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
 		}
+		k_spin_unlock(&data->lock, key);
 
 		return;
 	}
