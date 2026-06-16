@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault MAIN_STACK_SIZE
+	default 2048
+
+if BOARD_UM_FEATHERS3_ESP32S3_PROCPU
+
+# The GPIO power domain driver needs multithreading, which MCUboot disables on ESP32
+configdefault POWER_DOMAIN
+	default y if !MCUBOOT
+
+# i2c1 (vertical STEMMA QT) is in the ldo2_pwr domain and must init after it
+configdefault POWER_DOMAIN_GPIO_INIT_PRIORITY
+	default 45
+
+endif # BOARD_UM_FEATHERS3_ESP32S3_PROCPU
