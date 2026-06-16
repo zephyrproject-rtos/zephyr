@@ -1,4 +1,4 @@
-# Copyright 2020, 2024 NXP
+# Copyright 2020, 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_MIMXRT685S_CM33
@@ -31,7 +31,9 @@ config SOC_MIMXRT685S_HIFI4
 	select SOC_EARLY_INIT_HOOK
 	select NXP_INPUTMUX
 	select CACHE_MANAGEMENT
+	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 
 if SOC_SERIES_IMXRT6XX
 
@@ -72,6 +74,7 @@ if SOC_MIMXRT685S_HIFI4
 
 DT_ADSP_RESET_MEM := $(dt_nodelabel_path,adsp_reset)
 DT_ADSP_DATA_MEM := $(dt_nodelabel_path,adsp_data)
+DT_ADSP_DATA_NOCACHE_MEM := $(dt_nodelabel_path,adsp_data_nocache)
 DT_ADSP_TEXT_MEM := $(dt_nodelabel_path,adsp_text)
 
 config RT685_ADSP_STACK_SIZE
@@ -96,6 +99,14 @@ config RT685_ADSP_DATA_MEM_ADDR
 config RT685_ADSP_DATA_MEM_SIZE
 	hex
 	default $(dt_node_reg_size_hex,$(DT_ADSP_DATA_MEM))
+
+config RT685_ADSP_DATA_NOCACHE_MEM_ADDR
+	hex
+	default $(dt_node_reg_addr_hex,$(DT_ADSP_DATA_NOCACHE_MEM))
+
+config RT685_ADSP_DATA_NOCACHE_MEM_SIZE
+	hex
+	default $(dt_node_reg_size_hex,$(DT_ADSP_DATA_NOCACHE_MEM))
 
 config RT685_ADSP_TEXT_MEM_ADDR
 	hex
