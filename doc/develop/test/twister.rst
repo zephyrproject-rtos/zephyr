@@ -887,10 +887,6 @@ running with ``-v`` or examining the :ref:`test plan <twister_output>`
 (:file:`testplan.json`) can help show why particular test scenarios were
 filtered out.
 
-Metrics (such as pass/fail state and binary size) for the last code
-release are stored in ``scripts/release/twister_last_release.csv``.
-To update this, pass the ``--all --release`` options.
-
 To load arguments from a file, add ``+`` before the file name, e.g.,
 ``+file_name``. File content must be one or more valid arguments separated by
 line break instead of white spaces.
