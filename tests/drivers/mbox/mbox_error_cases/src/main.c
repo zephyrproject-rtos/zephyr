@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/mbox.h>
 
-int dummy_value;
+int dummy_value[] = {1, 2, 3, 4};
 
 static void dummy_callback(const struct device *dev, mbox_channel_id_t channel_id,
 		     void *user_data, struct mbox_msg *data)
@@ -142,26 +142,28 @@ ZTEST(mbox_error_cases, test_02b_mbox_send_on_rx_channel)
 }
 
 /**
- * @brief mbox_send_dt() with nonzero data field
+ * @brief mbox_send_dt() with too large data
  *
  * Confirm that mbox_send_dt() returns
- * -EMSGSIZE when driver does NOT support DATA transfer.
+ * -EMSGSIZE If the supplied data size is unsupported by the driver.
  *
  */
-ZTEST(mbox_error_cases, test_02c_mbox_send_message_with_data)
+ZTEST(mbox_error_cases, test_02c_mbox_send_message_data_too_large)
 {
 	const struct mbox_dt_spec tx_channel =
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
 	struct mbox_msg data_msg = {0};
 	int ret;
 
-	if (CONFIG_TEST_EXPECTED_MTU_VALUE > 0) {
-		/* Skip this test because data transfer is supported. */
+	ret = mbox_mtu_get_dt(&tx_channel);
+
+	if (ret == 0) {
+		/* Skip this test because driver supports signalling mode only. */
 		ztest_test_skip();
 	}
 
-	data_msg.data = &dummy_value;
-	data_msg.size = 4;
+	data_msg.data = dummy_value;
+	data_msg.size = ret + 1;
 
 	ret = mbox_send_dt(&tx_channel, &data_msg);
 	zassert_true(
