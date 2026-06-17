@@ -692,7 +692,7 @@ static DEVICE_API(gpio, gpio_mchp_api) = {
  */
 static int gpio_mchp_init(const struct device *dev)
 {
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #ifdef CONFIG_INTC_MCHP_EIC_G1

@@ -212,7 +212,7 @@ static DEVICE_API(gpio, kb1200_gpio_api) = {
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq), DT_INST_IRQ_BY_IDX(n, 1, priority),     \
 			    gpio_kb1200_isr, DEVICE_DT_INST_GET(n), 0);                            \
 		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));                                         \
-		return 0;                                                                          \
+		return gpio_common_init(dev);                                                      \
 	};                                                                                         \
 	static const struct gpio_kb1200_config port_##n##_kb1200_config = {                        \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \

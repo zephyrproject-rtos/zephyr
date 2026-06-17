@@ -342,7 +342,7 @@ static int gpio_mspm0_init(const struct device *dev)
 		irq_enable(DT_INST_IRQN(0));
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #ifdef CONFIG_GPIO_GET_CONFIG
@@ -401,6 +401,7 @@ static DEVICE_API(gpio, gpio_mspm0_driver_api) = {
 	static const struct gpio_mspm0_config gpio_mspm0_cfg_##__suffix = {			\
 		.common = { .port_pin_mask =							\
 					GPIO_PORT_PIN_MASK_FROM_NGPIOS(gpio##__suffix##_pins),	\
+				GPIO_HOGS_COND_INIT_GPIO_CTLR(DT_DRV_INST(inst))                \
 			  },									\
 		.base = (GPIO_Regs *)__base_addr,						\
 		.pincm_lut = gpio##__suffix##_pincm_lut,					\

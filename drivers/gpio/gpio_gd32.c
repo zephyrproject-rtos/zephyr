@@ -355,7 +355,7 @@ static int gpio_gd32_init(const struct device *port)
 
 	(void)reset_line_toggle_dt(&config->reset);
 
-	return 0;
+	return gpio_common_init(port);
 }
 
 #define GPIO_GD32_DEFINE(n)						       \

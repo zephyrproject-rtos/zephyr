@@ -245,6 +245,11 @@ static DEVICE_API(gpio, gpio_rx_drv_api_funcs) = {
 #endif
 };
 
+static int gpio_rx_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+
 #define GPIO_RX_PINS_NAME(n, p, i) CONCAT(DT_STRING_TOKEN_BY_IDX(n, p, i), _pins)
 #define GPIO_RX_DO_NOTHING
 #define GPIO_RX_DECL_PINS(n, p, i)                                                                 \
@@ -279,7 +284,7 @@ static DEVICE_API(gpio, gpio_rx_drv_api_funcs) = {
 	GPIO_RX_PORT_IRQ_DECL(node);                                                               \
 	struct gpio_rx_irq_info gpio_rx_irq_info_##suffix[] = {GPIO_RX_PORT_IRQ_ELEM(node)};       \
 	static const struct gpio_rx_config gpio_rx_config_##suffix = {                             \
-		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(8U)},                   \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(node),                                   \
 		.port_num = port_number,                                                           \
 		.pinmux = (uint8_t *)DT_REG_ADDR(DT_PROP(node, pinmux)),                           \
 		.reg =                                                                             \
@@ -294,8 +299,9 @@ static DEVICE_API(gpio, gpio_rx_drv_api_funcs) = {
 			},                                                                         \
 		GPIO_RX_IRQ_STRUCT_INIT(suffix)};                                                  \
 	static struct gpio_rx_data gpio_rx_data_##suffix;                                          \
-	DEVICE_DT_DEFINE(node, NULL, NULL, &gpio_rx_data_##suffix, &gpio_rx_config_##suffix,       \
-			 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_rx_drv_api_funcs)
+	DEVICE_DT_DEFINE(node, gpio_rx_init, NULL, &gpio_rx_data_##suffix,                         \
+			 &gpio_rx_config_##suffix, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,        \
+			 &gpio_rx_drv_api_funcs)
 
 #define GPIO_DEVICE_INIT_RX(suffix)                                                                \
 	GPIO_DEVICE_INIT(DT_NODELABEL(ioport##suffix),                                             \

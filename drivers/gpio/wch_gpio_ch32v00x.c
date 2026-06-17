@@ -257,7 +257,7 @@ static int gpio_ch32v00x_init(const struct device *dev)
 
 	clock_control_on(config->clock_dev, (clock_control_subsys_t *)(uintptr_t)config->clock_id);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_CH32V00X_INIT(idx)                                                                    \

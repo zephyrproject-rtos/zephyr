@@ -253,13 +253,15 @@ static int cy8c95xx_init(const struct device *dev)
 	};
 	rc = write_pin_state(cfg, &drv_data->pin_state);
 out:
+	k_sem_give(drv_data->lock);
 	if (rc != 0) {
 		LOG_ERR("%s init failed: %d", dev->name, rc);
-	} else {
-		LOG_DBG("%s init ok", dev->name);
+		return rc;
 	}
-	k_sem_give(drv_data->lock);
-	return rc;
+
+	LOG_DBG("%s init ok", dev->name);
+
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, api_table) = {
@@ -275,9 +277,7 @@ static struct k_sem cy8c95xx_lock = Z_SEM_INITIALIZER(cy8c95xx_lock, 1, 1);
 
 #define GPIO_PORT_INIT(idx) \
 static const struct cy8c95xx_config cy8c95xx_##idx##_cfg = { \
-	.common = { \
-		.port_pin_mask = 0xFF, \
-	}, \
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx), \
 	.i2c = I2C_DT_SPEC_GET(DT_PARENT(DT_INST(idx, DT_DRV_COMPAT))), \
 	.port_num = DT_INST_REG_ADDR(idx), \
 }; \

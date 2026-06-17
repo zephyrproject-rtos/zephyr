@@ -309,6 +309,11 @@ static DEVICE_API(gpio, gpio_ra_drv_api_funcs) = {
 #endif
 };
 
+static int gpio_ra_port_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+
 #define GPIO_RA_PINS_NAME(n, p, i) CONCAT(DT_STRING_TOKEN_BY_IDX(n, p, i), _pins)
 
 #define GPIO_RA_DECL_PINS(n, p, i)                                                                 \
@@ -338,10 +343,7 @@ static DEVICE_API(gpio, gpio_ra_drv_api_funcs) = {
 	IF_ENABLED(CONFIG_RENESAS_RA_EXTERNAL_INTERRUPT,                                           \
 	(struct gpio_ra_irq_info gpio_ra_irq_info_##suffix[] = {IRQ_INFO_PARAMETER(node)};))	   \
 	static const struct gpio_ra_config gpio_ra_config_##suffix = {                             \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),              \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(node),                                   \
 		.port_num = port_number,                                                           \
 		.port = (R_PORT0_Type *)addr,                                                      \
 		.vbatt_pins = DT_PROP_OR(DT_NODELABEL(ioport##suffix), vbatts_pins, {0xFF}),       \
@@ -350,8 +352,9 @@ static DEVICE_API(gpio, gpio_ra_drv_api_funcs) = {
 		.irq_info_size = DT_PROP_LEN_OR(DT_NODELABEL(ioport##suffix), port_irq_names, 0),  \
 	};                                                                                         \
 	static struct gpio_ra_data gpio_ra_data_##suffix;                                          \
-	DEVICE_DT_DEFINE(node, NULL, NULL, &gpio_ra_data_##suffix, &gpio_ra_config_##suffix,       \
-			 PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, &gpio_ra_drv_api_funcs)
+	DEVICE_DT_DEFINE(node, gpio_ra_port_init, NULL, &gpio_ra_data_##suffix,                    \
+			 &gpio_ra_config_##suffix, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,        \
+			 &gpio_ra_drv_api_funcs)
 
 #define GPIO_DEVICE_INIT_RA(suffix)                                                                \
 	GPIO_DEVICE_INIT(DT_NODELABEL(ioport##suffix),                                             \

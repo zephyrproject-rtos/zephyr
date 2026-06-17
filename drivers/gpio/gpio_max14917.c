@@ -231,8 +231,11 @@ static int gpio_max14917_init(const struct device *dev)
 	data->gpios_fault = 0;
 
 	err = max14917_fault_check(dev);
+	if (err < 0) {
+		return err;
+	}
 
-	return err;
+	return gpio_common_init(dev);
 }
 
 static int gpio_max14917_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
@@ -337,6 +340,7 @@ static DEVICE_API(gpio, gpio_max14917_api) = {
 
 #define GPIO_MAX14917_DEVICE(id)                                                                   \
 	static const struct max14917_config max14917_##id##_cfg = {                                \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(id),                                     \
 		.spi = SPI_DT_SPEC_INST_GET(id, SPI_OP_MODE_MASTER | SPI_WORD_SET(8U)),            \
 		.vddok_gpio = GPIO_DT_SPEC_INST_GET(id, vddok_gpios),                              \
 		.ready_gpio = GPIO_DT_SPEC_INST_GET(id, ready_gpios),                              \

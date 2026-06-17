@@ -380,7 +380,7 @@ static int gpio_adi_max22017_init(const struct device *dev)
 	k_timer_user_data_set(t, parent->data);
 	k_timer_start(t, K_MSEC(25), K_MSEC(25));
 #endif
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_adi_max22017_api) = {

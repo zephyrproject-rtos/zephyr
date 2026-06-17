@@ -485,7 +485,7 @@ static int gpio_rza2m_int_init(const struct device *dev)
 
 static int gpio_rza2m_port_init(const struct device *port_dev)
 {
-	return 0;
+	return gpio_common_init(port_dev);
 }
 
 #define GPIO_RZA2M_IRQ_DECLARE_ISR(irq_idx, node_id)                                               \

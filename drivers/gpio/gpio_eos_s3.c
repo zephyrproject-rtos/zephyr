@@ -419,7 +419,7 @@ static int gpio_eos_s3_init(const struct device *dev)
 
 	irq_enable(DT_INST_IRQN(0));
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 const struct gpio_eos_s3_config gpio_eos_s3_config = {

@@ -284,7 +284,7 @@ static int gpio_rcar_init(const struct device *dev)
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE);
 	config->init_func(dev);
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static int gpio_rcar_manage_callback(const struct device *dev,

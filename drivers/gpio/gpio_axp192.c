@@ -297,7 +297,9 @@ static int gpio_axp192_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return k_mutex_init(&data->mutex);
+	k_mutex_init(&data->mutex);
+
+	return gpio_common_init(dev);
 }
 
 #define GPIO_AXP192_DEFINE(inst)                                                                   \

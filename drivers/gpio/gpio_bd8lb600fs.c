@@ -180,7 +180,7 @@ static int bd8lb600fs_gpio_init(const struct device *dev)
 		return result;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define BD8LB600FS_GPIO_INIT(inst)                                                                 \

@@ -203,7 +203,7 @@ static int gpio_esp32_lp_init(const struct device *dev)
 	 * PERIPH_RCC_ATOMIC() wrapper and call the raw LL function directly.
 	 */
 	_rtcio_ll_enable_io_clock(true);
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_esp32_lp_driver_api) = {

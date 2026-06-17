@@ -861,7 +861,7 @@ static int gpio_emul_init(const struct device *dev)
 		(struct gpio_emul_data *)dev->data;
 
 	sys_slist_init(&drv_data->callbacks);
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #ifdef CONFIG_PM_DEVICE

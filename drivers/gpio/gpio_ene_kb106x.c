@@ -221,7 +221,7 @@ static DEVICE_API(gpio, kb106x_gpio_api) = {
 		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, 1, irq), DT_INST_IRQ_BY_IDX(n, 1, priority),     \
 			    gpio_kb106x_isr, DEVICE_DT_INST_GET(n), 0);                            \
 		irq_enable(DT_INST_IRQ_BY_IDX(n, 1, irq));                                         \
-		return 0;                                                                          \
+		return gpio_common_init(dev);                                                      \
 	};                                                                                         \
 	static const struct gpio_kb106x_config port_##n##_kb106x_config = {                        \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \

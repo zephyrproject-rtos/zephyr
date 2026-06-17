@@ -209,7 +209,7 @@ static int gpio_npm6001_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_NPM6001_DEFINE(n)                                                 \

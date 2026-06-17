@@ -598,7 +598,7 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
 	static int gpio_rts5912_init_##id(const struct device *dev)                                \
 	{                                                                                          \
 		if (!(DT_INST_IRQ_HAS_CELL(id, irq))) {                                            \
-			return 0;                                                                  \
+			return gpio_common_init(dev);                                              \
 		}                                                                                  \
 		                                                                                   \
 		if (IS_ENABLED(CONFIG_PM)) {                                                       \
@@ -611,7 +611,7 @@ static DEVICE_API(gpio, gpio_rts5912_driver_api) = {
                                                                                                    \
 		RTS5912_GPIO_DTNAMIC_IRQ(id)                                                       \
                                                                                                    \
-		return 0;                                                                          \
+		return gpio_common_init(dev);                                                      \
 	}                                                                                          \
                                                                                                    \
 	static struct gpio_rts5912_data gpio_rts5912_data_##id;                                    \

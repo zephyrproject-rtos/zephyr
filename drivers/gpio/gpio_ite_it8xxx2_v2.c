@@ -528,7 +528,7 @@ static int gpio_ite_init(const struct device *dev)
 		gpio_ite_interrupt_worker);
 	k_spin_unlock(&data->lock, key);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_ITE_DEV_CFG_DATA(inst)                                                                \

@@ -687,13 +687,15 @@ static DEVICE_API(gpio, gpio_ite_driver_api) = {
 	.manage_callback = gpio_ite_manage_callback,
 };
 
+static int gpio_ite_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+
 #define GPIO_ITE_DEV_CFG_DATA(inst)                                \
 static struct gpio_ite_data gpio_ite_data_##inst;                  \
 static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
-	.common = {                                                \
-		.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(   \
-		DT_INST_PROP(inst, ngpios))                        \
-	},                                                         \
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),           \
 	.reg_gpdr = DT_INST_REG_ADDR_BY_IDX(inst, 0),              \
 	.reg_gpcr = DT_INST_REG_ADDR_BY_IDX(inst, 1),              \
 	.reg_gpdmr = DT_INST_REG_ADDR_BY_IDX(inst, 2),             \
@@ -710,7 +712,7 @@ static const struct gpio_ite_cfg gpio_ite_cfg_##inst = {           \
 	.gpio_irq[7] = DT_INST_IRQ_BY_IDX(inst, 7, irq),           \
 	};                                                         \
 DEVICE_DT_INST_DEFINE(inst,                                        \
-		NULL,                                              \
+		gpio_ite_init,                                     \
 		NULL,                                              \
 		&gpio_ite_data_##inst,                             \
 		&gpio_ite_cfg_##inst,                              \

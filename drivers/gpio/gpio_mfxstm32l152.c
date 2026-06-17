@@ -678,9 +678,13 @@ static int mfxstm32l152_init(const struct device *dev)
 		}
 
 		ret = write_reg(dev, REG_SYS_IRQ_MODE, int_pin);
+		if (ret != 0) {
+			LOG_ERR("%s init failed: %d", dev->name, ret);
+			return ret;
+		}
 	}
 
-	return ret;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, mfxstm32l152_drv_api) = {
@@ -696,7 +700,7 @@ static DEVICE_API(gpio, mfxstm32l152_drv_api) = {
 
 #define MFXSTM32L152_INIT(inst)                                                                    \
 	static struct mfxstm32l152_drv_cfg mfxstm32l152_##inst##_config = {                        \
-		.common = {.port_pin_mask = 0x0fff},                                               \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.i2c_spec = I2C_DT_SPEC_INST_GET(inst),                                            \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                        \
 	};                                                                                         \

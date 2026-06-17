@@ -361,7 +361,7 @@ static int gpio_rt1718s_port_init(const struct device *dev)
 
 	k_sem_init(&data->lock, 1, 1);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 /* RT1718S GPIO port driver must be initialized after RT1718S chip driver */
@@ -369,7 +369,7 @@ BUILD_ASSERT(CONFIG_GPIO_RT1718S_PORT_INIT_PRIORITY > CONFIG_RT1718S_INIT_PRIORI
 
 #define GPIO_RT1718S_PORT_DEVICE_INSTANCE(inst)                                                    \
 	static const struct gpio_rt1718s_port_config gpio_rt1718s_port_cfg_##inst = {              \
-		.common = {.port_pin_mask = 0x7},                                                  \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.rt1718s_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                \
 	};                                                                                         \
 	static struct gpio_rt1718s_port_data gpio_rt1718s_port_data_##inst;                        \
