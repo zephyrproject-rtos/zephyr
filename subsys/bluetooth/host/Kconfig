@@ -7,6 +7,7 @@
 config BT_LONG_WQ
 	bool "Dedicated workqueue for long-running tasks."
 	default y if BT_GATT_CACHING
+	default y if BT_ECC
 	help
 	  Adds an API for a workqueue dedicated to long-running tasks.
 
@@ -1111,7 +1112,6 @@ config BT_ECC
 	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
 	select PSA_WANT_ECC_SECP_R1_256
 	imply MBEDTLS_PSA_P256M_DRIVER_ENABLED if MBEDTLS_PSA_CRYPTO_C
-	imply BT_LONG_WQ
 	help
 	  If this option is set, internal APIs will be available to perform ECDH operations through
 	  the long work queue (or system work queue). The operations are used e.g. by LE Secure
