@@ -899,6 +899,22 @@ line break instead of white spaces.
 
 Most everyday users will run with no arguments.
 
+Managing tests timeouts
+=======================
+
+There are several parameters which control tests timeouts on various levels:
+
+* ``timeout`` option in each test scenario. See :ref:`here <twister_test_case_timeout>` for more
+  details.
+* ``timeout_multiplier`` option in board configuration. See
+  :ref:`here <twister_board_timeout_multiplier>` for more details.
+* ``--timeout-multiplier`` twister option which can be used to adjust timeouts in exact twister run.
+  It can be useful in case of simulation platform as simulation time may depend on the host
+  speed & load or we may select different simulation method (i.e. cycle accurate but slower
+  one), etc...
+
+Overall test scenario timeout is a multiplication of these three parameters.
+
 .. _twister_dt_filter_expressions:
 
 Devicetree Filtering Expressions
@@ -1119,22 +1135,6 @@ Command line arguments define the initial scope in the following way:
 *"Scope presumption"*: A list of Twister's :ref:`default platforms <twister_default_testing_board>`
 is used as the initial list. If nothing is left after the filtration, the ``platform_allow`` list
 is used as the initial scope.
-
-Managing tests timeouts
-***********************
-
-There are several parameters which control tests timeouts on various levels:
-
-* ``timeout`` option in each test scenario. See :ref:`here <twister_test_case_timeout>` for more
-  details.
-* ``timeout_multiplier`` option in board configuration. See
-  :ref:`here <twister_board_timeout_multiplier>` for more details.
-* ``--timeout-multiplier`` twister option which can be used to adjust timeouts in exact twister run.
-  It can be useful in case of simulation platform as simulation time may depend on the host
-  speed & load or we may select different simulation method (i.e. cycle accurate but slower
-  one), etc...
-
-Overall test scenario timeout is a multiplication of these three parameters.
 
 Running in Integration Mode
 ***************************
