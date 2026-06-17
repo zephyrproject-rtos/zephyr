@@ -491,6 +491,7 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 		   struct net_buf *frag)
 {
 	struct mcxw_context *mcxw_radio = dev->data;
+	int retval = 0;
 	/* tx_data buffer has reserved memory for both macToPdDataMessage_t and actual data frame
 	 * after
 	 */
@@ -515,7 +516,15 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	mcxw_radio->tx_frame.sec_processed = net_pkt_ieee802154_frame_secured(pkt);
 	mcxw_radio->tx_frame.hdr_updated = net_pkt_ieee802154_mac_hdr_rdy(pkt);
 
-	rf_set_channel(mcxw_radio->channel);
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+	if(mode == IEEE802154_TX_MODE_TXTIME || mode == IEEE802154_TX_MODE_TXTIME_CCA) {
+		rf_set_channel(net_pkt_ieee802154_txchannel(pkt));
+	} 
+	else
+#endif
+	{
+		rf_set_channel(mcxw_radio->channel);
+	}
 
 	msg->msgType = gPdDataReq_c;
 	msg->msgData.dataReq.psduLength = mcxw_radio->tx_frame.length;
@@ -633,21 +642,32 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 		mcxw_tx_started(dev, pkt, frag);
 	} else {
 		mcxw_radio->state = tmp_state;
-		return -EIO;
+		retval = -EIO;
 	}
 
-	k_sem_take(&mcxw_radio->tx_wait, K_FOREVER);
+	if(!retval) {
+		k_sem_take(&mcxw_radio->tx_wait, K_FOREVER);
 
-	switch (mcxw_radio->tx_status) {
-	case 0:
-		if (mcxw_radio->rx_ack_frame.length) {
-			return handle_ack(mcxw_radio);
+		switch (mcxw_radio->tx_status) {
+		case 0:
+			if (mcxw_radio->rx_ack_frame.length) {
+				retval =  handle_ack(mcxw_radio);
+			}
+			break;
+
+		default:
+			retval = -(mcxw_radio->tx_status);
+			break;
 		}
-		return 0;
-
-	default:
-		return -(mcxw_radio->tx_status);
 	}
+
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+	if(mode == IEEE802154_TX_MODE_TXTIME || mode == IEEE802154_TX_MODE_TXTIME_CCA) {
+		rf_set_channel(mcxw_radio->channel);
+	}
+#endif
+		return retval; 
+
 }
 
 void mcxw_rx_thread(void *arg1, void *arg2, void *arg3)
@@ -1491,8 +1511,11 @@ static enum ieee802154_hw_caps mcxw_get_capabilities(const struct device *dev)
 	caps = IEEE802154_HW_FCS | IEEE802154_HW_PROMISC | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_ENERGY_SCAN |
 	       IEEE802154_HW_TXTIME | IEEE802154_HW_RXTIME | IEEE802154_HW_SLEEP_TO_TX |
-	       IEEE802154_RX_ON_WHEN_IDLE | IEEE802154_HW_TX_SEC |
-	       IEEE802154_HW_SELECTIVE_TXCHANNEL;
+	       IEEE802154_RX_ON_WHEN_IDLE | IEEE802154_HW_TX_SEC 
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+		   | IEEE802154_HW_SELECTIVE_TXCHANNEL
+#endif		   
+			;
 	return caps;
 }
 
