@@ -250,6 +250,21 @@ ADI Platforms:
   labels:
     - "platform: ADI"
 
+AIFoundry Platforms:
+  status: maintained
+  maintainers:
+    - AFOliveira
+  files:
+    - boards/aifoundry/
+    - drivers/serial/Kconfig.shakti_nekko
+    - drivers/serial/uart_shakti_nekko.c
+    - dts/bindings/memory-controllers/aifoundry,erbium-mram-controller.yaml
+    - dts/bindings/serial/aifoundry,shakti-uart-v1.yaml
+    - dts/riscv/aifoundry/
+    - soc/aifoundry/
+  labels:
+    - "platform: AIFoundry"
+
 ARC arch:
   status: maintained
   maintainers:
