@@ -134,10 +134,12 @@ bool label_is_valid(const char *label, size_t label_size)
 			if ('-' == label[i]) {
 				continue;
 			}
-			// TEMPORARY for _universal._sub._ipp service
+			// Allow '.' and '_' inside service labels to support
+			// _universal._sub._ipp / _universal._sub._ipps subtypes.
 			if ('.' == label[i] || '_' == label[i]) {
 				continue;
 			}
+
 		}
 
 		NET_DBG("label '%s' contains illegal byte 0x%02x", label, label[i]);
@@ -428,7 +430,8 @@ int add_ptr_record(const struct dns_sd_rec *inst, uint32_t ttl,
 
 	/* copy the service name. e.g. "._foo._tcp.local." */
 	for (i = 1; i < ARRAY_SIZE(labels); ++i) {
-		/* Hardcoded for Airprint. Only works for IPP, not IPPS! */
+		/* Hardcoded for Airprint IPP */
+		/* @note: do not replace by strncmp, exact match required */
 		if (i == 1 && strcmp(labels[i], "_universal._sub._ipp") == 0) {
 			/* This is absolutely not safe, since memory size is checked above but does not take into account these longer responses.
 			But in practice, since PTR is the first record, there should be sufficient memory. */
@@ -437,6 +440,14 @@ int add_ptr_record(const struct dns_sd_rec *inst, uint32_t ttl,
 			offset += bytes_written;
 			/* service offset is updated to point to _ipp instead of to _universal._sub._ipp.
 			Reason: the reported service should always be the main type, not the subtype. */
+			svc_offs += 16;
+			*service_offset = svc_offs;
+		/* Hardcoded for Airprint: IPPS */
+		} else if (i == 1 && strcmp(labels[i], "_universal._sub._ipps") == 0) {
+			int bytes_written = sprintf(&buf[offset], "%c%s%c%s%c%s", 10, "_universal", 4, "_sub", 5, "_ipps");
+			offset += bytes_written;
+			/* _universal._sub on the wire = \x0a_universal\x04_sub = 16 bytes;
+			 * service_offset must point to \x05_ipps, not one byte into it. */
 			svc_offs += 16;
 			*service_offset = svc_offs;
 		} else {
@@ -817,6 +828,17 @@ int dns_sd_handle_ptr_query(const struct dns_sd_rec *inst, const struct in_addr 
 		offset += new_ptr_record_size;
 		rsp->ancount++;
 	}
+	if (strcmp(inst->service, "_universal._sub._ipps") == 0) {
+		/* Airprint specific change:
+		 	If the service subtype is reported (PTR), the main service also needs to be reported in an additional PTR record.
+			This can be done by actually copying the first PTR record excluding the first "._universal._sub" prefix.
+			_universal._sub on the wire = \x0a_universal\x04_sub = 16 bytes for both _ipp and _ipps.
+			This memcpy is safe since it does not involve overlapping regions. */
+		uint16_t new_ptr_record_size = offset - sizeof(struct dns_header) - 16;
+		memcpy(&buf[offset], &buf[sizeof(struct dns_header)] + 16, new_ptr_record_size);
+		offset += new_ptr_record_size;
+		rsp->ancount++;
+	}
 
 	/* then add the additional records */
 	r = add_txt_record(inst, DNS_SD_TXT_TTL, instance_offset, buf, offset, buf_size);
@@ -1066,8 +1088,12 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
         query++;
     }
 
-	// Hardcoded code to split this query into its parts
-	if(strcmp(query, "_universal._sub._ipp._tcp.local") == 0) {
+	// Hardcoded code to split this query into its parts.
+	// The generic label splitter cannot handle these because the dots inside
+	// "_universal._sub._ipp" / "_universal._sub._ipps" would be mistaken for
+	// label separators, producing an invalid proto/domain mapping.
+	if(strncmp(query, "_universal._sub._ipp._tcp.local", 31) == 0) {
+		// "_universal._sub._ipp" = 20 chars, then "._tcp" (offset 21, 4 chars), then ".local" (offset 26, 5 chars)
 		qsize = 20;
 		memcpy(label[0], query, qsize);
 		label[0][qsize] = 0;
@@ -1087,6 +1113,28 @@ int dns_sd_query_extract(const uint8_t *query, size_t query_size, struct dns_sd_
 		record->proto = label[1];
 		record->domain = label[2];
 		return 31;
+	}
+	if(strncmp(query, "_universal._sub._ipps._tcp.local", 32) == 0) {
+		// "_universal._sub._ipps" = 21 chars, then "._tcp" (offset 22, 4 chars), then ".local" (offset 27, 5 chars)
+		qsize = 21;
+		memcpy(label[0], query, qsize);
+		label[0][qsize] = 0;
+		size[0] = qsize;
+
+		qsize = 4;
+		memcpy(label[1], &query[22], qsize);
+		label[1][qsize] = 0;
+		size[1] = qsize;
+
+		qsize = 5;
+		memcpy(label[2], &query[27], qsize);
+		label[2][qsize] = 0;
+		size[2] = qsize;
+
+		record->service = label[0];
+		record->proto = label[1];
+		record->domain = label[2];
+		return 32;
 	}
 
 	/* also counts labels */
