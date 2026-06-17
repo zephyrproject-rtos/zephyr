@@ -23,3 +23,26 @@ void soc_xec_pcr_reset_en(uint16_t enc_pcr_scr)
 	sys_write32(XEC_PCR_RST_EN_LOCK_VAL, XEC_PCR_RST_EN_LOCK_BASE);
 	irq_unlock(irq_lock_val);
 }
+
+int soc_xec_pcr_cpu_clk_div_set(uint8_t cpu_clk_div)
+{
+	mm_reg_t pcr_base = XEC_PCR_BASE;
+	uint32_t rval = XEC_CC_PCLK_CR_DIV_SET((uint32_t)cpu_clk_div);
+
+	soc_mmcr_mask_set(pcr_base + XEC_CC_PCLK_CR_OFS, rval, XEC_CC_PCLK_CR_DIV_MSK);
+
+	return 0;
+}
+
+int soc_xec_pcr_cpu_clk_div_get(uint8_t *cpu_clk_div)
+{
+	mm_reg_t pcr_base = XEC_PCR_BASE;
+
+	if (cpu_clk_div == NULL) {
+		return -EINVAL;
+	}
+
+	*cpu_clk_div = (uint8_t)XEC_CC_PCLK_CR_DIV_GET(sys_read32(pcr_base + XEC_CC_PCLK_CR_OFS));
+
+	return 0;
+}

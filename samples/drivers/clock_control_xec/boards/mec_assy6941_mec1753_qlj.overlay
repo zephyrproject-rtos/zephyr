@@ -12,25 +12,27 @@
  * 32KHZ_IN is a clock source and no debug
  * pinctrl-0 = <&clk_32khz_in_gpio165>;
  *
- * 32KHZ_IN is a clock source with debug on GPIO060 and GPIO221
+ * 32KHZ_IN is a clock source with debug
  * pinctrl-0 = <&clk_32khz_in_gpio165 &tst_clk_out_gpio060 &clk_32khz_out_gpio221>;
  *
- * MEC172x implements clock monitor hardware.
+ * MEC175x implements clock monitor hardware.
  */
 &pcr {
 	core-clock-div = <1>;
 	clk32kmon-period-min = <1435>;
 	clk32kmon-period-max = <1495>;
-	clk32kmon-duty-cycle-var-max = <192>;
+	clk32kmon-duty-cycle-var-max = <212>;
 	clk32kmon-valid-min = <4>;
 	xtal-enable-delay-ms = <10>;
 	pll-lock-timeout-ms = <30>;
 
-	/* Select internal Silicon OSC as PLL 32KHz clock source
-	 * Select external XTAL parallel connected as peripheral 32KHz clock source
+	/* Select parallel connected, external XTAL as PLL and peripheral
+	 * 32KHz clock sources.
 	 */
-	pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_SIL_OSC>;
+	pll-32k-src = <MCHP_XEC_PLL_CLK32K_SRC_XTAL>;
 	periph-32k-src = <MCHP_XEC_PERIPH_CLK32K_SRC_XTAL_XTAL>;
+
+	xtal-gain = "2X";
 
 	/* debug only, not using 32KHZ_IN pin */
 	pinctrl-0 = <&tst_clk_out_gpio060 &clk_32khz_out_gpio221>;
