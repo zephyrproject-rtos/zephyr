@@ -46,6 +46,13 @@ tests:
     extra_args:
       - CONF_FILE="prj_ram.conf"
       - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
+  filesystem.fat.memc_ram.api:
+    build_only: true
+    filter: dt_compat_enabled("zephyr,memc-ram-disk") and CONFIG_DISK_DRIVER_MEMC_RAM
+    integration_platforms:
+      - nrf7120dk/nrf7120/cpuapp
+    extra_args:
+      - CONF_FILE="prj_memc_ram.conf"
   filesystem.fat.api.reentrant:
     platform_allow:
       - native_sim
