@@ -39,6 +39,8 @@
 #define SVIO_VOL_REF_MASK BIT(1)
 #define SVA_PD_RES_MASK   BIT(2)
 #define SVA_VOL_REF_MASK  BIT(3)
+#define OTP_PD_RES_MASK   BIT(4)
+#define OTP_VOL_REF_MASK  BIT(5)
 
 /* Bits of R_LDO_TOP_TUNE_OCP (0x08) */
 #define REG_TUNE_OCP_LVL_SVIO_OFFSET 0
