@@ -19,7 +19,7 @@ class Flash(WestCommand):
         super().__init__(
             'flash',
             '',
-            description="Permanently reprogram a board's flash with a new binary.",
+            description="Reprogram a board's flash with a new binary.",
             accepts_unknown_args=True)
         self.runner_key = 'flash-runner'  # in runners.yaml
 
