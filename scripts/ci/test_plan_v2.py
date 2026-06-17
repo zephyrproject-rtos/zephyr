@@ -1821,7 +1821,10 @@ class DriverCompatStrategy(SelectionStrategy):
               first  _ → ,   →  adi,max14906_gpio
               rest   _ → -   →  adi,max14906-gpio
         """
-        first_sep = macro_value.index("_")
+        first_sep = macro_value.find("_")
+        if first_sep == -1:
+            # for compat values like "ns16550" with no vendor/device separation
+            return macro_value
         vendor = macro_value[:first_sep]
         device = macro_value[first_sep + 1 :].replace("_", "-")
         return f"{vendor},{device}"
