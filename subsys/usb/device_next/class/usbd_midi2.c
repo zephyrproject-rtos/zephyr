@@ -268,7 +268,7 @@ struct usbd_midi_data {
 	struct usbd_class_data *class_data;
 	struct k_work rx_work;
 	struct k_work tx_work;
-	uint8_t tx_queue_buf[64];
+	uint8_t tx_queue_buf[CONFIG_USBD_MIDI2_TX_QUEUE_SIZE];
 	struct ring_buf tx_queue;
 	uint8_t altsetting;
 	/* Last interface status reported to the application via
@@ -899,7 +899,7 @@ static int usbd_midi_preinit(const struct device *dev)
 	struct usbd_midi_data *data = dev->data;
 
 	LOG_DBG("Init device %s", dev->name);
-	ring_buf_init(&data->tx_queue, 64, data->tx_queue_buf);
+	ring_buf_init(&data->tx_queue, CONFIG_USBD_MIDI2_TX_QUEUE_SIZE, data->tx_queue_buf);
 	k_work_init(&data->rx_work, usbd_midi_rx_work);
 	k_work_init(&data->tx_work, usbd_midi_tx_work);
 
