@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SR1XX
+	bool
+	select SOC_FAMILY_SYNA_SR
+
+config SOC_SERIES
+	default "sr1xx" if SOC_SERIES_SR1XX
+
+config SOC_SR100
+	bool
+	select SOC_SERIES_SR1XX
+
+config SOC_SR100_M55
+	bool
+	select SOC_SR100
+	help
+	  SYNA SR100 M55
+
+config SOC
+	default "sr100" if SOC_SR100

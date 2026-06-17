@@ -1,0 +1,8 @@
+family:
+- name: astra_sr
+  series:
+  - name: sr1xx
+    socs:
+    - name: sr100
+      cpuclusters:
+      - name: m55
