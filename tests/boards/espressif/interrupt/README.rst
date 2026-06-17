@@ -44,6 +44,26 @@ Supported Boards
 - esp32_devkitc/esp32/procpu
 - esp32s2_devkitc
 - esp32s3_devkitc/esp32s3/procpu
+- esp32c6_devkitc/esp32c6/hpcore
+
+IRQ flags tests (``esp_irq_flags`` suite)
+=========================================
+
+The ``irq_flags.c`` tests verify shared CPU IRQ line IRAM flag handling:
+
+* Two IRAM clients on the same line leave ``non_iram_int_mask`` clear.
+* Mixing IRAM and non-IRAM clients on the same line is rejected at connect time.
+* A non-IRAM client sets the mask bit; disconnect clears it.
+* ``ESP_INTR_FLAG_IRAM`` is rejected when the handler is not in IRAM.
+
+Pre-Phase-2 validation checklist
+==============================
+
+Before migrating ``non_iram_int_mask`` to ``soc/espressif/common/irq.c``:
+
+* Run this test on ESP32-S3 (Xtensa) and ESP32-C6 (RISC-V).
+* With GDMA enabled, confirm CPU IRQ 12 stays out of the mask when all channel ISRs are IRAM.
+* WiFi + flash read/write stress with ``esp_intr_noniram_disable()`` active.
 
 Building and Running
 ********************
