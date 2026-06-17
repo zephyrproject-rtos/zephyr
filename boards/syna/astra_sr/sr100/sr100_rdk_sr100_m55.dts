@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2025 Synaptics, Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
-#include <syna/sr100.dtsi>
-#include <syna/sr100_pinctrl.dtsi>
+#include <syna/astra_sr/sr100_m55.dtsi>
+#include <syna/astra_sr/sr100_pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -19,7 +19,6 @@
 		zephyr,shell-uart = &ns16550_uart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &itcm0;
-		zephyr,code-partition = &itcm0;
 	};
 };
 

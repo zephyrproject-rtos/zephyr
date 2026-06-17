@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Synaptics, Inc.
+ * SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
