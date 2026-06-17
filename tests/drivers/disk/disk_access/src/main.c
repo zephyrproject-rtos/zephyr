@@ -30,6 +30,8 @@
 #define DISK_NAME_PHYS "nvme0n0"
 #elif defined(CONFIG_DISK_DRIVER_VIRTIO_BLK)
 #define DISK_NAME_PHYS "VIRTIOBLK0"
+#elif defined(CONFIG_DISK_DRIVER_MEMC_RAM)
+#define DISK_NAME_PHYS "RAM"
 #elif defined(CONFIG_DISK_DRIVER_RAM)
 /* Since ramdisk is enabled by default on e.g. qemu boards, it needs to be checked last to not
  * override other backends.
