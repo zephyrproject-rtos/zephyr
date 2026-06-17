@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADIS16607-3 6-DoF IMU, +/-2000 deg/s gyroscope, +/-40 g accelerometer
+
+compatible: "adi,adis16607-3"
+
+include: adi,adis16607-common.yaml
