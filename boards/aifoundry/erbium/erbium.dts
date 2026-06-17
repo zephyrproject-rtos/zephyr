@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 AIFoundry
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <aifoundry/erbium.dtsi>
+
+/ {
+	model = "AIFoundry Erbium";
+	compatible = "aifoundry,erbium";
+
+	chosen {
+		zephyr,sram = &mram;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	clock-frequency = <400000000>;
+	current-speed = <115200>;
+};
