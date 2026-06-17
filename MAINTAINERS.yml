@@ -1989,6 +1989,8 @@ Documentation Infrastructure:
     - aaronemassey
     - DBS06
     - teburd
+  collaborators:
+    - devbhavej
   files:
     - drivers/fuel_gauge/
     - dts/bindings/fuel-gauge/
