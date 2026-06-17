@@ -264,6 +264,10 @@
 	status = "okay";
 };
 
+&uid {
+	status = "okay";
+};
+
 &adc_0 {
 	status = "okay";
 };
