@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI Unicomm SPI controller
+
+compatible: "ti,unicomm-spi"
+
+include: [spi-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  tx-fifo-threshold:
+    type: int
+    default: 4
+    description: |
+      TX FIFO interrupt threshold (IFLS.TXIFLSEL field, bits [2:0]).
+      The RIS.TX interrupt fires when the number of entries in the TX FIFO
+      falls to or below this threshold, allowing the driver to refill before
+      the FIFO runs completely empty.
+      Valid encoding (hardware-defined, 16-entry FIFO):
+        0 = >= 12 entries free (fire when <= 4 remain)
+        1 = >= 8  entries free (fire when <= 8 remain, half-empty)
+        2 = >= 4  entries free (fire when <= 12 remain)
+        3 = >= 2  entries free (fire when <= 14 remain)
+        4 = >= 1  entry  free  (fire when <= 15 remain, almost full)
+        5 = FIFO empty (all entries moved to shift register)
+      Default 4 keeps the TX FIFO well-fed with minimal interrupt rate.
+
+  rx-fifo-threshold:
+    type: int
+    default: 0
+    description: |
+      RX FIFO interrupt threshold (IFLS.RXIFLSEL field, bits [6:4]).
+      The RIS.RX interrupt fires when the number of entries in the RX FIFO
+      reaches or exceeds this threshold.
+      Valid encoding (hardware-defined, 16-entry FIFO):
+        0 = >= 1  entry  (fire as soon as any byte is available, not-empty)
+        1 = >= 4  entries
+        2 = >= 8  entries (half-full)
+        3 = >= 12 entries
+        4 = >= 14 entries
+        5 = FIFO full
+      Default 0 (not-empty) gives lowest latency; raise for fewer interrupts.
