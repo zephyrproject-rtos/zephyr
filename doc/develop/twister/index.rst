@@ -126,8 +126,15 @@ identifier:
 
 name:
   The actual name of the board as it appears in marketing material.
+vendor:
+  The board vendor. Used by the ``vendor_allow`` and ``vendor_exclude`` test
+  scenario filters.
+tier:
+  An optional integer indicating the board support tier. Used for reporting and
+  to group platforms by their level of support.
 type:
-  Type of the board or configuration, currently we support 2 types: mcu, qemu
+  Type of the board or configuration. One of ``mcu``, ``qemu``, ``sim``,
+  ``unit`` or ``native``.
 simulation:
   Simulator(s) used to simulate the platform, e.g. qemu.
 
@@ -145,7 +152,7 @@ simulation:
   The ``exec`` attribute is optional. If it is set but the required simulator is not available, the
   tests will be built only.
   If it is not set and the required simulator is not available the tests will fail to run.
-  The simulation name must match one of the element of ``SUPPORTED_EMU_PLATFORMS``.
+  The simulation name must match one of the elements of ``SUPPORTED_EMU_PLATFORMS``.
 arch:
   Architecture of the board
 toolchain:
@@ -157,6 +164,12 @@ ram:
 flash:
   Available FLASH on the board (specified in KB). This is used to match test scenario
   requirements.  If not specified we default to 512KB.
+sysbuild: [True|False] (default False)
+  If true, applications for this platform are built using
+  :ref:`sysbuild <sysbuild>` by default.
+twister: [True|False] (default True)
+  If false, Twister ignores this platform entirely and never builds or runs
+  tests on it.
 supported:
   A list of features this board supports. This can be specified as a single word
   feature or as a variant of a feature class. For example:
@@ -208,11 +221,22 @@ testing:
     This prevents serial port disconnection issues during flashing on some boards (e.g., those
     with USB CDC that reset during flash operations).
 
+  renode:
+    Configuration for the Renode simulator. Supports two keys: ``uart``, the
+    UART peripheral the harness connects to (e.g. ``sysbus.uart0``), and
+    ``resc``, the Renode script (``.resc``) used to set up the simulated machine.
+
 env:
   A list of environment variables. Twister will check if all these environment variables are set,
   and otherwise skip this platform. This allows the user to define a platform which should be
   used, for example, only if some required software or hardware is present, and to signal that
   presence to twister using these environment variables.
+
+variants:
+  A mapping of board variant (qualifier) names to per-variant overrides. Each
+  entry is itself a platform definition and may override any of the keys above
+  for that specific variant, while inheriting the remaining values from the
+  top-level definition.
 
 .. _twister_tests_long_version:
 
