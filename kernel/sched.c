@@ -411,6 +411,28 @@ void z_sched_yield(void)
 /* _sched_spinlock must be held */
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
+	/* A thread can reach this point while still pended on (and linked in)
+	 * another wait queue. unready_thread() below only removes it from the run
+	 * queue (z_is_thread_queued()); with the shared qnode_dlist
+	 * (CONFIG_WAITQ_SIMPLE) the node would then be relinked into the new wait
+	 * queue while the old queue's head/tail are left dangling at it -- later
+	 * corrupting the list (e.g. a NULL deref in sys_dlist_remove()). Remove the
+	 * thread from any wait queue it is already on first.
+	 *
+	 * This is deliberately not gated on CONFIG_SWAP_NONATOMIC. That race is one
+	 * way the state arises (an ISR wakes a cooperatively-pending thread during
+	 * its own non-atomic arch_swap(), so it resumes still pended and then pends
+	 * on another queue), but a non-current thread can also be added to a wait
+	 * queue while still pended on a non-SWAP_NONATOMIC arch -- gating the
+	 * correction regressed kernel.mailbox.api on qemu_rx. In normal operation
+	 * pended_on is NULL here (a thread pends itself via z_pend_curr(_current)),
+	 * so this is a no-op.
+	 */
+	if (thread->base.pended_on != NULL) {
+		unpend_thread_no_timeout(thread);
+		(void)z_try_abort_thread_timeout(thread);
+	}
+
 	unready_thread(thread);
 	z_mark_thread_as_pending(thread);
 
