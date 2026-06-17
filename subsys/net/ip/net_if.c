@@ -247,7 +247,7 @@ static void update_txtime_stats_detail(struct net_pkt *pkt,
 	}
 }
 
-static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
+static void net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_linkaddr ll_dst = { 0 };
 	struct net_context *context;
@@ -256,10 +256,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	/* We collect send statistics for each socket priority if enabled */
 	uint8_t pkt_priority;
-
-	if (!pkt) {
-		return false;
-	}
 
 	create_time = net_pkt_create_time(pkt);
 
@@ -273,7 +269,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 		if (net_linkaddr_set(&ll_dst,
 				     net_pkt_lladdr_dst(pkt)->addr,
 				     net_pkt_lladdr_dst(pkt)->len) < 0) {
-			return false;
+			return;
 		}
 	}
 
@@ -357,8 +353,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	if (ll_dst.len > 0) {
 		net_if_call_link_cb(iface, &ll_dst, status);
 	}
-
-	return true;
 }
 
 void net_process_tx_packet(struct net_pkt *pkt)
