@@ -16,3 +16,4 @@ vendor: beagle
 supported:
   - pinctrl
   - uart
+  - watchdog
