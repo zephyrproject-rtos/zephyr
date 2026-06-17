@@ -118,6 +118,8 @@ class HardwareAdapter(DeviceAdapter):
 
     def _device_launch(self) -> None:
         """Flash and run application on a device and connect with serial port."""
+        if self.device_config.pre_script:
+            self._run_custom_script(self.device_config.pre_script, self.base_timeout)
         if self.device_config.flash_before:
             # For hardware devices with shared USB or software USB, connect after flashing.
             # Retry for up to 10 seconds for USB-CDC based devices to enumerate.
@@ -145,9 +147,6 @@ class HardwareAdapter(DeviceAdapter):
             msg = 'Flash command is empty, please verify if it was generated properly.'
             logger.error(msg)
             raise TwisterHarnessException(msg)
-
-        if self.device_config.pre_script:
-            self._run_custom_script(self.device_config.pre_script, self.base_timeout)
 
         if self.device_config.id:
             logger.debug('Flashing device %s', self.device_config.id)
