@@ -419,7 +419,7 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 		if (!buf_rx) {
 			buf_rx = net_pkt_get_frag(pkt, buf_rx_size, OA_TC6_BUF_ALLOC_TIMEOUT);
 			if (!buf_rx) {
-				LOG_ERR("OA RX: Can't allocate RX buffer fordata!");
+				LOG_ERR("OA RX: Can't allocate RX buffer for data!");
 				return -ENOMEM;
 			}
 		}
