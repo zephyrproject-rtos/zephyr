@@ -252,7 +252,7 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext,
 		if (name == NULL) {
 			LOG_ERR("section %d has out of bounds string table index %d "
 				"for section name",
-				shdr->sh_name, i);
+				i, shdr->sh_name);
 			return -ENOEXEC;
 		}
 
