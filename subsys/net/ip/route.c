@@ -1131,6 +1131,15 @@ int net_route_packet_if(struct net_pkt *pkt, struct net_if *iface)
 
 	net_pkt_set_forwarding(pkt, forwarding);
 
+	if (forwarding) {
+		if (NET_IPV6_HDR(pkt)->hop_limit <= 1U) {
+			return -ETIMEDOUT;
+		}
+
+		NET_IPV6_HDR(pkt)->hop_limit--;
+		net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);
+	}
+
 	net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
 	net_pkt_lladdr_src(pkt)->type = net_pkt_lladdr_if(pkt)->type;
 	net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
