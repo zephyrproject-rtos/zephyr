@@ -613,7 +613,7 @@ uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size);
  *
  * @return Number of bytes written to the output buffer.
  */
-uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size);
+uint32_t ring_buf_peek(const struct ring_buf *buf, uint8_t *data, uint32_t size);
 
 /**
  * @brief Write a data item to a ring buffer.
