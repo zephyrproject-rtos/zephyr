@@ -134,6 +134,64 @@
 				ocp-enable;
 			};
 		};
+
+		ocotp: ocotp@401b0000 {
+			compatible = "realtek,rts5817-ocotp";
+			reg = <0x401b0000 0x800>;
+			otp-size = <0x300>;
+			clocks = <&clks RTS_FP_CLK_PUF>;
+			resets = <&reset SYS_FORCE_RST_PUF>;
+			syscon-ldo = <&dlink_ldo>;
+			status = "disabled";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				config_flag_otp: config_flag@0 {
+					reg = <0x0 0x4>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				rint_otp: rint@f {
+					reg = <0xf 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				dvdds_1v1_otp: dvdds_1v1@12 {
+					reg = <0x12 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				sva_3v0_otp: sva_3v0@13 {
+					reg = <0x13 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				svio_1v8_otp: svio_1v8@14 {
+					reg = <0x14 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				svio_3v0_otp: svio_3v0@15 {
+					reg = <0x15 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				rc_cal_otp: rc_cal@1f {
+					reg = <0x1f 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+			};
+		};
 	};
 };
 
