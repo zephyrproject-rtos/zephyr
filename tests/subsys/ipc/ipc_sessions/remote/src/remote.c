@@ -185,7 +185,7 @@ static void ep_recv(const void *data, size_t len, void *priv)
 		break;
 	}
 	case IPC_TEST_CMD_REBOND: {
-		LOG_INF("Command processing: REBOOT");
+		LOG_INF("Command processing: REBOND");
 
 		struct ipc_test_cmd_rebond *cmd_rebond = (struct ipc_test_cmd_rebond *)cmd;
 
