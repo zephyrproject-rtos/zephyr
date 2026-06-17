@@ -65,7 +65,7 @@ To build an application, use the standard Zephyr command. Here is an example for
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sr100_rdk
+   :board: sr100_rdk/sr100/m55
    :goals: build
 
 Flashing
@@ -83,7 +83,7 @@ Next, run the ``west debugserver`` command.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: sr100_rdk
+   :board: sr100_rdk/sr100/m55
    :goals: debugserver
 
 Now, in a separate terminal, run the flashing script provided by Synaptics:
