@@ -558,9 +558,6 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	ret = 0;
 error:
-	if (ret != 0) {
-		eth_stats_update_errors_tx(iface_dst);
-	}
 	return ret;
 }
 
