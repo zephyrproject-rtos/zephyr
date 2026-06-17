@@ -120,6 +120,14 @@ Deprecated APIs and options
     :c:func:`ring_buf_item_get`, :c:func:`ring_buf_item_space_get`) has been deprecated in favor of
     :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`).
 
+  * The zero-copy claim/finish API (:c:func:`ring_buf_put_claim`, :c:func:`ring_buf_put_finish`,
+    :c:func:`ring_buf_get_claim`, :c:func:`ring_buf_get_finish`) has been deprecated in favor of
+    the new :c:func:`ring_buf_put_ptr` / :c:func:`ring_buf_get_ptr` API. Code still using it must
+    enable :kconfig:option:`CONFIG_RING_BUFFER_CLAIM`.
+
+  * :kconfig:option:`CONFIG_RING_BUFFER` is deprecated: the ring buffer API is now header-only and
+    always available, so the option is no longer required.
+
 New APIs and options
 ====================
 ..
@@ -185,6 +193,14 @@ New APIs and options
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
+
+* Ring buffer
+
+  * :c:func:`ring_buf_put_ptr`
+  * :c:func:`ring_buf_get_ptr`
+  * :c:func:`ring_buf_commit`
+  * :c:func:`ring_buf_consume`
+  * :c:func:`ring_buf_snapshot`
 
 .. zephyr-keep-sorted-stop
 
