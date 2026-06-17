@@ -688,7 +688,7 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
-		memcpy(ptr2, ptr, min(prev_size, bytes));
+		memcpy(ptr2, ptr, MIN(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
 	return ptr2;
@@ -722,7 +722,7 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
-		memcpy(ptr2, ptr, min(prev_size, bytes));
+		memcpy(ptr2, ptr, MIN(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
 	return ptr2;
