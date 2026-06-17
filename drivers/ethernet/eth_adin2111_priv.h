@@ -191,6 +191,10 @@
 
 /* Open Alliance definitions */
 #define ADIN2111_OA_DATA_HDR_VS			22U
+/* Max setting to a max configured RCA 68-bytes chunks */
+#define ADIN2111_OA_RX_BURST_SZ (CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT * (64U + OA_TC6_FTR_SIZE))
+/* Maximum size for TX buffer during read data */
+#define ADIN2111_OA_TX_BURST_SZ (CONFIG_ETH_ADIN2111_OA_MAX_RCA_COUNT * (OA_TC6_HDR_SIZE + 64U))
 
 enum adin2111_chips_id {
 	ADIN2111_MAC = 0,
@@ -213,6 +217,9 @@ struct adin2111_data {
 	/* Port 0: PHY 1, Port 1: PHY 2 */
 	const struct device *port[2];
 	uint16_t ifaces_left_to_init;
+	uint16_t scur;
+	uint8_t *oarxbuf;
+	uint8_t *oatxbuf;
 	struct gpio_callback gpio_int_callback;
 	bool oa;
 	bool oa_prot;
