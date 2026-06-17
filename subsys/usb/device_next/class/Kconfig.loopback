@@ -28,6 +28,32 @@ config USBD_LOOPBACK_HS_INT_OUT_EP_TPL
 	  Larger values require UDC buffer pool adjustment. TPL in full speed
 	  configuration is always 64.
 
+config USBD_LOOPBACK_ENABLE_ISO
+	bool "Isochronous transfer handling"
+	default y
+	depends on UDC_ENABLE_SOF
+	help
+	  Include isochronous endpoint descriptors in the interface, and enable
+	  isochronous transfer handling.
+
+config USBD_LOOPBACK_HS_ISO_IN_EP_TPL
+	int "High speed isochronous IN TPL" if USBD_MAX_SPEED_HIGH && USBD_LOOPBACK_ENABLE_ISO
+	range 256 3072
+	default 256
+	help
+	  Isochronous IN endpoints TPL in high speed configuration.
+	  Larger values require UDC buffer pool adjustment. TPL in full speed
+	  configuration is always 256.
+
+config USBD_LOOPBACK_HS_ISO_OUT_EP_TPL
+	int "High speed isochronous OUT TPL" if USBD_MAX_SPEED_HIGH && USBD_LOOPBACK_ENABLE_ISO
+	range 256 3072
+	default 256
+	help
+	  Isochronous OUT endpoints TPL in high speed configuration.
+	  Larger values require UDC buffer pool adjustment. TPL in full speed
+	  configuration is always 256.
+
 module = USBD_LOOPBACK
 module-str = usbd loopback
 default-count = 1
