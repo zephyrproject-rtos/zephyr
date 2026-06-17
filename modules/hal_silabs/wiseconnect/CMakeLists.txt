@@ -271,6 +271,7 @@ if(CONFIG_SILABS_SIWX91X_NWP)
   )
   zephyr_include_directories(.)
   zephyr_code_relocate(FILES
+    ${SISDK}/platform/common/src/sl_core_cortexm.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/rsi_hal_mcu_m4_ram.c
     LOCATION RAM
   )
