@@ -89,11 +89,18 @@
 	rtc0: rtc@68000 {
 		compatible = "nxp,irtc";
 		reg = <0x68000 0x1000>;
-		interrupts = <26 0>, <27 0>;
+		interrupts = <26 0>;
 		clock-frequency = <32768>;
 		prescaler = <1>;
 		alarms-count = <1>;
 		status = "disabled";
+
+		irtc_wake: wake-timer {
+			compatible = "nxp,irtc-wake-timer";
+			interrupts = <27 0>;
+			osc-div;
+			status = "disabled";
+		};
 	};
 
 	clkctl0: clock-controller@1000 {
