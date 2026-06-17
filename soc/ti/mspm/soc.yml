@@ -36,3 +36,6 @@ family:
     - name: mspm0l1346
     - name: mspm0l2227
     - name: mspm0l2228
+  - name: mspm33c
+    socs:
+    - name: mspm33c321a

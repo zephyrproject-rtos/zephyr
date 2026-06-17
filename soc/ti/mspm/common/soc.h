@@ -8,7 +8,11 @@
 #ifndef _MSPM0_SOC_H
 #define _MSPM0_SOC_H
 
+#ifdef CONFIG_HAS_MSPM0_SDK
 #include <ti/devices/msp/msp.h>
 #include <ti/driverlib/m0p/dl_core.h>
+#endif
+
+#include <cmsis_core_m_defaults.h>
 
 #endif /* _MSPM0_SOC_H */
