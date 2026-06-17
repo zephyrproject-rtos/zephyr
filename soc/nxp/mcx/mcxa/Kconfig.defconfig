@@ -26,6 +26,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config FLASH_FILL_BUFFER_SIZE
 	default 128
 
+config RESET
+	default y if DT_HAS_NXP_MRCC_RESET_ENABLED
+
 if PM
 
 configdefault SYSTEM_TIMER_RESET_BY_LPM
