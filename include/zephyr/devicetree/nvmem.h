@@ -201,11 +201,11 @@ extern "C" {
 #define DT_NVMEM_CELL_BY_NAME(node_id, name) DT_PHANDLE_BY_NAME(node_id, nvmem_cells, name)
 
 /**
- * @brief Test if a DT_DRV_COMPAT instance has an <tt>nvmem-cells</tt> property at a given index.
+ * @brief Test if a @c DT_DRV_COMPAT instance has an <tt>nvmem-cells</tt> property at a given index.
  *
  * Equivalent to DT_NVMEM_CELLS_HAS_IDX(DT_DRV_INST(inst), idx).
  *
- * @param inst DT_DRV_COMPAT instance number that may or may not have an <tt>nvmem-cells</tt>
+ * @param inst @c DT_DRV_COMPAT instance number that may or may not have an <tt>nvmem-cells</tt>
  *             property.
  * @param idx Index of an <tt>nvmem-cells</tt> property phandle-array whose existence to check.
  *
@@ -214,12 +214,12 @@ extern "C" {
 #define DT_INST_NVMEM_CELLS_HAS_IDX(inst, idx) DT_NVMEM_CELLS_HAS_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Test if a @ref DT_DRV_COMPAT instance has an <tt>nvmem-cell-names</tt> property with a
+ * @brief Test if a @c DT_DRV_COMPAT instance has an <tt>nvmem-cell-names</tt> property with a
  * given name.
  *
  * Equivalent to DT_NVMEM_CELLS_HAS_NAME(DT_DRV_INST(inst), name).
  *
- * @param inst DT_DRV_COMPAT instance number that may or may not have an <tt>nvmem-cell-names</tt>
+ * @param inst @c DT_DRV_COMPAT instance number that may or may not have an <tt>nvmem-cell-names</tt>
  *             property.
  * @param name Lowercase-and-underscores <tt>nvmem-cell-names</tt> cell value name to check.
  *
@@ -228,11 +228,11 @@ extern "C" {
 #define DT_INST_NVMEM_CELLS_HAS_NAME(inst, name) DT_NVMEM_CELLS_HAS_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Get the number of elements in a DT_DRV_COMPAT instance's <tt>nvmem-cells</tt> property.
+ * @brief Get the number of elements in a @c DT_DRV_COMPAT instance's <tt>nvmem-cells</tt> property.
  *
  * Equivalent to DT_NUM_NVMEM_CELLS(DT_DRV_INST(inst)).
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  *
  * @return Number of elements in the <tt>nvmem-cells</tt> property.
  */
@@ -242,7 +242,7 @@ extern "C" {
  * @brief Get the node identifier for the controller phandle from an
  *        <tt>nvmem-cells</tt> phandle-array property at an index
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param idx Logical index into <tt>nvmem-cells</tt> property.
  *
  * @return The node identifier for the nvmem cell referenced at index @p idx.
@@ -252,11 +252,11 @@ extern "C" {
 #define DT_INST_NVMEM_CELL_BY_IDX(inst, idx) DT_NVMEM_CELL_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Get the node identifier for a DT_DRV_COMPAT instance's NVMEM cell at index 0.
+ * @brief Get the node identifier for a @c DT_DRV_COMPAT instance's NVMEM cell at index 0.
  *
  * Equivalent to DT_INST_NVMEM_CELL_BY_IDX(inst, 0).
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  *
  * @return A node identifier for the nvmem cell at index 0 in <tt>nvmem-cells</tt>.
  *
@@ -268,7 +268,7 @@ extern "C" {
  * @brief Get the node identifier for the controller phandle from an
  *        <tt>nvmem-cells</tt> phandle-array property by name
  *
- * @param inst DT_DRV_COMPAT instance number.
+ * @param inst @c DT_DRV_COMPAT instance number.
  * @param name Lowercase-and-underscores name of an <tt>nvmem-cells</tt> element
  *             as defined by the node's <tt>nvmem-cell-names</tt> property.
  *

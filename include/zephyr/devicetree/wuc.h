@@ -121,9 +121,9 @@ extern "C" {
 #define DT_INST_WUC(inst) DT_INST_WUC_BY_IDX(inst, 0)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's wakeup controller specifier's cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's wakeup controller specifier's cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into wakeup-ctrls property
  * @param cell lowercase-and-underscores cell name
  * @return the cell value at index @p idx
@@ -133,7 +133,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_WUC_CELL_BY_IDX(inst, 0, cell)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param cell lowercase-and-underscores cell name
  * @return the value of the cell inside the specifier at index 0
  */
@@ -181,9 +181,9 @@ extern "C" {
 #define DT_WUC_ID(node_id) DT_WUC_ID_BY_IDX(node_id, 0)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's Wakeup Controller specifier's <tt>id</tt> cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's Wakeup Controller specifier's <tt>id</tt> cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into <tt>wakeup-ctrls</tt>
  * @return the <tt>id</tt> cell value at index @p idx
  * @see DT_WUC_ID_BY_IDX()
@@ -192,7 +192,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_WUC_ID_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the <tt>id</tt> cell value at index 0
  * @see DT_INST_WUC_ID_BY_IDX()
  */

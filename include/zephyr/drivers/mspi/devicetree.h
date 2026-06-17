@@ -312,7 +312,7 @@ extern "C" {
  * This is equivalent to
  * <tt>MSPI_CE_CONTROL_INIT(DT_DRV_INST(inst), delay)</tt>.
  *
- * Therefore, @p DT_DRV_COMPAT must already be defined before using
+ * Therefore, @c DT_DRV_COMPAT must already be defined before using
  * this macro.
  *
  * @param inst Devicetree node instance number

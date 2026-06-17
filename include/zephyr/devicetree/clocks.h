@@ -253,7 +253,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_CLOCKS_HAS_IDX(DT_DRV_INST(inst), idx)
- * @param inst DT_DRV_COMPAT instance number; may or may not have any <tt>clocks</tt> property
+ * @param inst @c DT_DRV_COMPAT instance number; may or may not have any <tt>clocks</tt> property
  * @param idx index of a <tt>clocks</tt> property phandle-array whose existence to check
  * @return 1 if the index exists, 0 otherwise
  */
@@ -262,7 +262,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_CLOCK_HAS_NAME(DT_DRV_INST(inst), name)
- * @param inst DT_DRV_COMPAT instance number; may or may not have any <tt>clock-names</tt> property.
+ * @param inst @c DT_DRV_COMPAT instance number; may or may not have any <tt>clock-names</tt> property.
  * @param name lowercase-and-underscores <tt>clock-names</tt> cell value name to check
  * @return 1 if the clock name exists, 0 otherwise
  */
@@ -312,9 +312,9 @@ extern "C" {
 	DT_CLOCKS_CTLR_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's clock specifier's cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's clock specifier's cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into <tt>clocks</tt> property
  * @param cell lowercase-and-underscores cell name
  * @return the cell value at index @p idx
@@ -324,8 +324,8 @@ extern "C" {
 	DT_CLOCKS_CELL_BY_IDX(DT_DRV_INST(inst), idx, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's clock specifier's cell value by name
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Get a @c DT_DRV_COMPAT instance's clock specifier's cell value by name
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a <tt>clocks</tt> element
  *             as defined by the node's <tt>clock-names</tt> property
  * @param cell lowercase-and-underscores cell name
@@ -337,7 +337,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_CLOCKS_CELL_BY_IDX(inst, 0, cell)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param cell lowercase-and-underscores cell name
  * @return the value of the cell inside the specifier at index 0
  */
