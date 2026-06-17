@@ -262,7 +262,8 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_CLOCK_HAS_NAME(DT_DRV_INST(inst), name)
- * @param inst @c DT_DRV_COMPAT instance number; may or may not have any <tt>clock-names</tt> property.
+ * @param inst @c DT_DRV_COMPAT instance number; may or may not have any <tt>clock-names</tt>
+ *             property.
  * @param name lowercase-and-underscores <tt>clock-names</tt> cell value name to check
  * @return 1 if the clock name exists, 0 otherwise
  */

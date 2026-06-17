@@ -219,8 +219,8 @@ extern "C" {
  *
  * Equivalent to DT_NVMEM_CELLS_HAS_NAME(DT_DRV_INST(inst), name).
  *
- * @param inst @c DT_DRV_COMPAT instance number that may or may not have an <tt>nvmem-cell-names</tt>
- *             property.
+ * @param inst @c DT_DRV_COMPAT instance number that may or may not have an
+ *             <tt>nvmem-cell-names</tt> property.
  * @param name Lowercase-and-underscores <tt>nvmem-cell-names</tt> cell value name to check.
  *
  * @return 1 if the nvmem cell name exists, 0 otherwise.
