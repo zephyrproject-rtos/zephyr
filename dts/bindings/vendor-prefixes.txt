@@ -39,6 +39,7 @@ advantech	Advantech Corporation
 aeroflexgaisler	Aeroflex Gaisler AB
 aesc	Aesc Silicon
 aesop	AESOP Embedded Forum
+aifoundry	AIFoundry
 aithinker	Ai-Thinker Co., Ltd.
 al	Annapurna Labs
 alcatel	Alcatel
