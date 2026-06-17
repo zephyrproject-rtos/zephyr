@@ -30,7 +30,13 @@ def test_sensor_shell_get(shell: Shell):
     for channel in range(channel_count):
         logger.info(f'channel {channel}')
         shell.wait_for_prompt()
-        lines = shell.exec_command(f'sensor get sensor@0 {channel}')
+        # This loop issues one command per channel, so under parallel/loaded
+        # targets the command echo can be delayed past the short default. Use
+        # the platform's base timeout to avoid spurious "did not find line"
+        # failures on the command echo.
+        lines = shell.exec_command(
+            f'sensor get sensor@0 {channel}', command_timeout=shell.base_timeout
+        )
         assert any([f'channel type={channel}' in line for line in lines]), 'expected response not found'
 
     logger.info('response is valid')

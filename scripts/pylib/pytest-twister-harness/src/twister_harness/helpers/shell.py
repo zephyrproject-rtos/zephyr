@@ -58,6 +58,7 @@ class Shell:
         *,
         get_full_output: bool = False,
         full_output_timeout: float | None = None,
+        command_timeout: float = 1.0,
     ) -> list[str]:
         """
         Send shell command to a device and return response. Passed command
@@ -72,6 +73,11 @@ class Shell:
         :param full_output_timeout: Seconds to spend draining additional lines
             after the prompt. When ``get_full_output`` is True and this is
             omitted, ``timeout`` (or :attr:`base_timeout`) is used.
+        :param command_timeout: Seconds to wait for the device to echo back the
+            sent command. The echo is normally immediate, so the default is
+            short, but it can be increased for slow or heavily loaded targets
+            (e.g. several QEMU instances running in parallel) where the echo may
+            be delayed.
         """
         timeout = timeout or self.base_timeout
         command_ext = f'{command}\n\n'
@@ -83,7 +89,7 @@ class Shell:
         # wait for device command print - it should be done immediately after sending command to device
         lines.extend(
             self._device.readlines_until(
-                regex=regex_command, timeout=1.0, print_output=print_output
+                regex=regex_command, timeout=command_timeout, print_output=print_output
             )
         )
         # wait for device command execution
