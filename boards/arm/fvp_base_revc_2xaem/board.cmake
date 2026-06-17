@@ -153,7 +153,7 @@ if(CONFIG_BUILD_WITH_TFA)
   set(ARMFVP_FLAGS ${ARMFVP_FLAGS}
     -C bp.secureflashloader.fname=${APPLICATION_BINARY_DIR}/tfa${FVP_SECURE_FLASH_FILE}
     -C bp.flashloader0.fname=${APPLICATION_BINARY_DIR}/tfa${FVP_FLASH_FILE}
-    )
+  )
 
 elseif(CONFIG_ARMV8_A_NS)
   foreach(filetype BL1 FIP)
@@ -170,7 +170,7 @@ elseif(CONFIG_ARMV8_A_NS)
     -C bp.secureflashloader.fname=${ARMFVP_BL1_FILE}
     -C bp.flashloader0.fname=${ARMFVP_FIP_FILE}
     --data cluster0.cpu0="${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_BIN_NAME}"@0x88000000
-    )
+  )
 
 elseif(CONFIG_PM_CPU_OPS_FVP)
   # Configure RVBAR_EL3 for bare metal SMP when using FVP PM CPU ops driver
