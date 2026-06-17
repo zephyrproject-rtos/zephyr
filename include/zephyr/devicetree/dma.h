@@ -45,8 +45,7 @@ extern "C" {
  *
  * @param node_id node identifier for a node with a dmas property
  * @param idx logical index into dmas property
- * @return the node identifier for the DMA controller referenced at
- *         index "idx"
+ * @return the node identifier for the DMA controller referenced at index @p idx
  * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_DMAS_CTLR_BY_IDX(node_id, idx) DT_PHANDLE_BY_IDX(node_id, dmas, idx)
@@ -96,8 +95,7 @@ extern "C" {
  *
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into dmas property
- * @return the node identifier for the DMA controller referenced at
- *         index "idx"
+ * @return the node identifier for the DMA controller referenced at index @p idx
  * @see DT_DMAS_CTLR_BY_IDX()
  */
 #define DT_INST_DMAS_CTLR_BY_IDX(inst, idx) \
@@ -160,7 +158,7 @@ extern "C" {
  * @param node_id node identifier for a node with a dmas property
  * @param idx logical index into dmas property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_DMAS_CELL_BY_IDX(node_id, idx, cell) \
@@ -171,7 +169,7 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into dmas property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_DMAS_CELL_BY_IDX()
  */
 #define DT_INST_DMAS_CELL_BY_IDX(inst, idx, cell) \
@@ -253,19 +251,19 @@ extern "C" {
 	DT_DMAS_CELL_BY_NAME(DT_DRV_INST(inst), name, cell)
 
 /**
- * @brief Is index "idx" valid for a dmas property?
+ * @brief Is index @p idx valid for a dmas property?
  * @param node_id node identifier for a node with a dmas property
  * @param idx logical index into dmas property
- * @return 1 if the "dmas" property has index "idx", 0 otherwise
+ * @return 1 if the "dmas" property has index @p idx, 0 otherwise
  */
 #define DT_DMAS_HAS_IDX(node_id, idx) \
 	IS_ENABLED(DT_CAT4(node_id, _P_dmas_IDX_, idx, _EXISTS))
 
 /**
- * @brief Is index "idx" valid for a DT_DRV_COMPAT instance's dmas property?
+ * @brief Is index @p idx valid for a DT_DRV_COMPAT instance's dmas property?
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into dmas property
- * @return 1 if the "dmas" property has a specifier at index "idx", 0 otherwise
+ * @return 1 if the "dmas" property has a specifier at index @p idx, 0 otherwise
  */
 #define DT_INST_DMAS_HAS_IDX(inst, idx) \
 	DT_DMAS_HAS_IDX(DT_DRV_INST(inst), idx)

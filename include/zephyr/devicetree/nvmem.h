@@ -142,7 +142,7 @@ extern "C" {
  * @param node_id Node identifier for a node with an nvmem-cells property.
  * @param idx Index into the nvmem-cells property.
  *
- * @return The node identifier for the NVMEM cell at index idx.
+ * @return The node identifier for the NVMEM cell at index @p idx.
  */
 #define DT_NVMEM_CELL_BY_IDX(node_id, idx) DT_PHANDLE_BY_IDX(node_id, nvmem_cells, idx)
 
@@ -195,7 +195,7 @@ extern "C" {
  * @param name Lowercase-and-underscores name of an nvmem-cells element
  *             as defined by the node's nvmem-cell-names property.
  *
- * @return The node identifier for the NVMEM cell by name.
+ * @return The node identifier for the NVMEM cell by @p name.
  */
 #define DT_NVMEM_CELL_BY_NAME(node_id, name) DT_PHANDLE_BY_NAME(node_id, nvmem_cells, name)
 
@@ -241,8 +241,7 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number.
  * @param idx Logical index into nvmem-cells property.
  *
- * @return The node identifier for the nvmem cell referenced at
- *         index "idx".
+ * @return The node identifier for the nvmem cell referenced at index @p idx.
  *
  * @see DT_NVMEM_CELL_CTLR_BY_IDX()
  */

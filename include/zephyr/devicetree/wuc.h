@@ -45,7 +45,7 @@ extern "C" {
  * @param node_id node identifier
  * @param idx logical index into "wakeup-ctrls"
  * @return the node identifier for the wakeup controller referenced at
- *         index "idx"
+ *         index @p idx
  * @see DT_PHANDLE_BY_IDX()
  */
 #define DT_WUC_BY_IDX(node_id, idx) DT_PHANDLE_BY_IDX(node_id, wakeup_ctrls, idx)
@@ -85,7 +85,7 @@ extern "C" {
  * @param node_id node identifier for a node with a wakeup-ctrls property
  * @param idx logical index into wakeup-ctrls property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_WUC_CELL_BY_IDX(node_id, idx, cell) DT_PHA_BY_IDX(node_id, wakeup_ctrls, idx, cell)
@@ -106,7 +106,7 @@ extern "C" {
  * @param inst instance number
  * @param idx logical index into "wakeup-ctrls"
  * @return the node identifier for the wakeup controller referenced at
- *         index "idx"
+ *         index @p idx
  * @see DT_WUC_BY_IDX()
  */
 #define DT_INST_WUC_BY_IDX(inst, idx) DT_WUC_BY_IDX(DT_DRV_INST(inst), idx)
@@ -126,7 +126,7 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into wakeup-ctrls property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_WUC_CELL_BY_IDX()
  */
 #define DT_INST_WUC_CELL_BY_IDX(inst, idx, cell) DT_WUC_CELL_BY_IDX(DT_DRV_INST(inst), idx, cell)
@@ -167,7 +167,7 @@ extern "C" {
  *
  * @param node_id node identifier
  * @param idx logical index into "wakeup-ctrls"
- * @return the id cell value at index "idx"
+ * @return the id cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_WUC_ID_BY_IDX(node_id, idx) DT_PHA_BY_IDX(node_id, wakeup_ctrls, idx, id)
@@ -185,7 +185,7 @@ extern "C" {
  *        at an index
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into "wakeup-ctrls"
- * @return the id cell value at index "idx"
+ * @return the id cell value at index @p idx
  * @see DT_WUC_ID_BY_IDX()
  */
 #define DT_INST_WUC_ID_BY_IDX(inst, idx) DT_WUC_ID_BY_IDX(DT_DRV_INST(inst), idx)

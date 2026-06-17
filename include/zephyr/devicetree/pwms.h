@@ -46,7 +46,7 @@ extern "C" {
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
  * @return the node identifier for the PWM controller referenced at
- *         index "idx"
+ *         index @p idx
  * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_PWMS_CTLR_BY_IDX(node_id, idx) \
@@ -130,7 +130,7 @@ extern "C" {
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_PWMS_CELL_BY_IDX(node_id, idx, cell) \
@@ -202,7 +202,7 @@ extern "C" {
  *
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
- * @return the channel cell value at index "idx"
+ * @return the channel cell value at index @p idx
  * @see DT_PWMS_CELL_BY_IDX()
  */
 #define DT_PWMS_CHANNEL_BY_IDX(node_id, idx) \
@@ -243,7 +243,7 @@ extern "C" {
  *
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
- * @return the period cell value at index "idx"
+ * @return the period cell value at index @p idx
  * @see DT_PWMS_CELL_BY_IDX()
  */
 #define DT_PWMS_PERIOD_BY_IDX(node_id, idx) \
@@ -285,7 +285,7 @@ extern "C" {
  *
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
- * @return the flags cell value at index "idx", or zero if there is none
+ * @return the flags cell value at index @p idx, or zero if there is none
  * @see DT_PWMS_CELL_BY_IDX()
  */
 #define DT_PWMS_FLAGS_BY_IDX(node_id, idx) \
@@ -326,7 +326,7 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
  * @return the node identifier for the PWM controller referenced at
- *         index "idx"
+ *         index @p idx
  * @see DT_PWMS_CTLR_BY_IDX()
  */
 #define DT_INST_PWMS_CTLR_BY_IDX(inst, idx) \
@@ -359,7 +359,7 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  */
 #define DT_INST_PWMS_CELL_BY_IDX(inst, idx, cell) \
 	DT_PWMS_CELL_BY_IDX(DT_DRV_INST(inst), idx, cell)
@@ -389,7 +389,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, channel)
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
- * @return the channel cell value at index "idx"
+ * @return the channel cell value at index @p idx
  * @see DT_INST_PWMS_CELL_BY_IDX()
  */
 #define DT_INST_PWMS_CHANNEL_BY_IDX(inst, idx) \
@@ -418,7 +418,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, period)
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
- * @return the period cell value at index "idx"
+ * @return the period cell value at index @p idx
  * @see DT_INST_PWMS_CELL_BY_IDX()
  */
 #define DT_INST_PWMS_PERIOD_BY_IDX(inst, idx) \
@@ -447,7 +447,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, flags)
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
- * @return the flags cell value at index "idx", or zero if there is none
+ * @return the flags cell value at index @p idx, or zero if there is none
  * @see DT_INST_PWMS_CELL_BY_IDX()
  */
 #define DT_INST_PWMS_FLAGS_BY_IDX(inst, idx) \

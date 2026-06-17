@@ -130,8 +130,7 @@ extern "C" {
  *
  * @param node_id node identifier
  * @param idx logical index into "clocks"
- * @return the node identifier for the clock controller referenced at
- *         index "idx"
+ * @return the node identifier for the clock controller referenced at index @p idx
  * @see DT_PHANDLE_BY_IDX()
  */
 #define DT_CLOCKS_CTLR_BY_IDX(node_id, idx) \
@@ -168,7 +167,7 @@ extern "C" {
  * @param node_id node identifier
  * @param name lowercase-and-underscores name of a clocks element
  *             as defined by the node's clock-names property
- * @return the node identifier for the clock controller referenced by name
+ * @return the node identifier for the clock controller referenced by @p name
  * @see DT_PHANDLE_BY_NAME()
  */
 #define DT_CLOCKS_CTLR_BY_NAME(node_id, name) \
@@ -202,7 +201,7 @@ extern "C" {
  * @param node_id node identifier for a node with a clocks property
  * @param idx logical index into clocks property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_CLOCKS_CELL_BY_IDX(node_id, idx, cell) \
@@ -285,8 +284,7 @@ extern "C" {
  *
  * @param inst instance number
  * @param idx logical index into "clocks"
- * @return the node identifier for the clock controller referenced at
- *         index "idx"
+ * @return the node identifier for the clock controller referenced at index @p idx
  * @see DT_CLOCKS_CTLR_BY_IDX()
  */
 #define DT_INST_CLOCKS_CTLR_BY_IDX(inst, idx) \
@@ -321,7 +319,7 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into clocks property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_CLOCKS_CELL_BY_IDX()
  */
 #define DT_INST_CLOCKS_CELL_BY_IDX(inst, idx, cell) \

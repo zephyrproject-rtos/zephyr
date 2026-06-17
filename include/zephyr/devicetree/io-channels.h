@@ -44,7 +44,7 @@ extern "C" {
  *
  * @param node_id node identifier for a node with an io-channels property
  * @param idx logical index into io-channels property
- * @return the node identifier for the node referenced at index "idx"
+ * @return the node identifier for the node referenced at index @p idx
  * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_IO_CHANNELS_CTLR_BY_IDX(node_id, idx) \
@@ -94,7 +94,7 @@ extern "C" {
  *
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into io-channels property
- * @return the node identifier for the node referenced at index "idx"
+ * @return the node identifier for the node referenced at index @p idx
  * @see DT_IO_CHANNELS_CTLR_BY_IDX()
  */
 #define DT_INST_IO_CHANNELS_CTLR_BY_IDX(inst, idx) \
@@ -155,7 +155,7 @@ extern "C" {
  *
  * @param node_id node identifier for a node with an io-channels property
  * @param idx logical index into io-channels property
- * @return the input cell in the specifier at index "idx"
+ * @return the input cell in the specifier at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_IO_CHANNELS_INPUT_BY_IDX(node_id, idx) \
@@ -215,7 +215,7 @@ extern "C" {
  *        property at an index
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into io-channels property
- * @return the input cell in the specifier at index "idx"
+ * @return the input cell in the specifier at index @p idx
  * @see DT_IO_CHANNELS_INPUT_BY_IDX()
  */
 #define DT_INST_IO_CHANNELS_INPUT_BY_IDX(inst, idx) \
@@ -274,7 +274,7 @@ extern "C" {
  *
  * @param node_id node identifier for a node with an io-channels property
  * @param idx logical index into io-channels property
- * @return the output cell in the specifier at index "idx"
+ * @return the output cell in the specifier at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_IO_CHANNELS_OUTPUT_BY_IDX(node_id, idx) \
@@ -335,7 +335,7 @@ extern "C" {
  *        property at an index
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into io-channels property
- * @return the output cell in the specifier at index "idx"
+ * @return the output cell in the specifier at index @p idx
  * @see DT_IO_CHANNELS_OUTPUT_BY_IDX()
  */
 #define DT_INST_IO_CHANNELS_OUTPUT_BY_IDX(inst, idx) \

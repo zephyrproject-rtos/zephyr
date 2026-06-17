@@ -93,12 +93,12 @@
 #define DT_MAP_LEN(node_id, prop) DT_PROP_LEN(node_id, prop)
 
 /**
- * @brief Is index @p idx valid for an array type property?
+ * @brief Is index @p entry_idx valid for an array type property?
  *
  * @param node_id The node identifier.
  * @param prop The map property name. i.e. "gpio_map"
  * @param entry_idx index to check
- * @return An expression which evaluates to 1 if @p idx is a valid index
+ * @return An expression which evaluates to 1 if @p entry_idx is a valid index
  *         into the given property, and 0 otherwise.
  */
 #define DT_MAP_HAS_ENTRY_BY_IDX(node_id, prop, entry_idx)                                          \
@@ -112,7 +112,7 @@
  *
  * @param node_id The node identifier.
  * @param prop The map property name. i.e. "gpio_map"
- * @return An expression which evaluates to 1 if @p idx is a valid index
+ * @return An expression which evaluates to 1 if 0 is a valid index
  *         into the given property, and 0 otherwise.
  */
 #define DT_MAP_HAS_ENTRY(node_id, prop) DT_MAP_HAS_ENTRY_BY_IDX(node_id, prop, 0)
@@ -443,7 +443,7 @@
  * @param fn macro to invoke
  * @param sep Separator (e.g. comma or semicolon). Must be in parentheses;
  *            this is required to enable providing a comma as separator.
- * @param ... variable number of arguments to pass to fn
+ * @param ... variable number of arguments to pass to @p fn
  *
  * @see DT_FOREACH_PROP_ELEM_SEP_VARGS
  */

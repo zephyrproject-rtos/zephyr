@@ -51,9 +51,8 @@ extern "C" {
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
- * @param idx logical index into "gpio_pha"
- * @return the node identifier for the gpio controller referenced at
- *         index "idx"
+ * @param idx logical index into @p gpio_pha
+ * @return the node identifier for the gpio controller referenced at index @p idx
  * @see DT_PHANDLE_BY_IDX()
  */
 #define DT_GPIO_CTLR_BY_IDX(node_id, gpio_pha, idx) \
@@ -64,8 +63,7 @@ extern "C" {
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
- * @return a node identifier for the gpio controller at index 0
- *         in "gpio_pha"
+ * @return a node identifier for the gpio controller at index 0 in @p gpio_pha
  * @see DT_GPIO_CTLR_BY_IDX()
  */
 #define DT_GPIO_CTLR(node_id, gpio_pha) \
@@ -108,8 +106,8 @@ extern "C" {
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
- * @param idx logical index into "gpio_pha"
- * @return the pin cell value at index "idx"
+ * @param idx logical index into @p gpio_pha
+ * @return the pin cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_GPIO_PIN_BY_IDX(node_id, gpio_pha, idx) \
@@ -164,8 +162,8 @@ extern "C" {
  * @param node_id node identifier
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
- * @param idx logical index into "gpio_pha"
- * @return the flags cell value at index "idx", or zero if there is none
+ * @param idx logical index into @p gpio_pha
+ * @return the flags cell value at index @p idx, or zero if there is none
  * @see DT_PHA_BY_IDX()
  */
 #define DT_GPIO_FLAGS_BY_IDX(node_id, gpio_pha, idx) \
@@ -263,7 +261,7 @@ extern "C" {
  *
  * @param node_id node identifier
  * @param idx logical index into "gpios"
- * @return the pin cell value at index "idx"
+ * @return the pin cell value at index @p idx
  */
 #define DT_GPIO_HOG_PIN_BY_IDX(node_id, idx) \
 	DT_CAT4(node_id, _GPIO_HOGS_IDX_, idx, _VAL_pin)
@@ -308,7 +306,7 @@ extern "C" {
  *
  * @param node_id node identifier
  * @param idx logical index into "gpios"
- * @return the flags cell value at index "idx", or zero if there is none
+ * @return the flags cell value at index @p idx, or zero if there is none
  */
 #define DT_GPIO_HOG_FLAGS_BY_IDX(node_id, idx) \
 	COND_CODE_1(IS_ENABLED(DT_CAT4(node_id, _GPIO_HOGS_IDX_, idx, _VAL_flags_EXISTS)), \
@@ -320,8 +318,8 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
- * @param idx logical index into "gpio_pha"
- * @return the pin cell value at index "idx"
+ * @param idx logical index into @p gpio_pha property
+ * @return the pin cell value at index @p idx
  * @see DT_GPIO_PIN_BY_IDX()
  */
 #define DT_INST_GPIO_PIN_BY_IDX(inst, gpio_pha, idx) \
@@ -344,8 +342,8 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param gpio_pha lowercase-and-underscores GPIO property with
  *        type "phandle-array"
- * @param idx logical index into "gpio_pha"
- * @return the flags cell value at index "idx", or zero if there is none
+ * @param idx logical index into @p gpio_pha
+ * @return the flags cell value at index @p idx, or zero if there is none
  * @see DT_GPIO_FLAGS_BY_IDX()
  */
 #define DT_INST_GPIO_FLAGS_BY_IDX(inst, gpio_pha, idx) \

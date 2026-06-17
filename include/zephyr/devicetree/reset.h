@@ -45,7 +45,7 @@ extern "C" {
  * @param node_id node identifier
  * @param idx logical index into "resets"
  * @return the node identifier for the reset controller referenced at
- *         index "idx"
+ *         index @p idx
  * @see DT_PHANDLE_BY_IDX()
  */
 #define DT_RESET_CTLR_BY_IDX(node_id, idx) \
@@ -116,7 +116,7 @@ extern "C" {
  * @param node_id node identifier for a node with a resets property
  * @param idx logical index into resets property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_RESET_CELL_BY_IDX(node_id, idx, cell) \
@@ -172,8 +172,7 @@ extern "C" {
  *
  * @param inst instance number
  * @param idx logical index into "resets"
- * @return the node identifier for the reset controller referenced at
- *         index "idx"
+ * @return the node identifier for the reset controller referenced at index @p idx
  * @see DT_RESET_CTLR_BY_IDX()
  */
 #define DT_INST_RESET_CTLR_BY_IDX(inst, idx) \
@@ -209,7 +208,7 @@ extern "C" {
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into resets property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_RESET_CELL_BY_IDX()
  */
 #define DT_INST_RESET_CELL_BY_IDX(inst, idx, cell) \
@@ -264,7 +263,7 @@ extern "C" {
  *
  * @param node_id node identifier
  * @param idx logical index into "resets"
- * @return the id cell value at index "idx"
+ * @return the id cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_RESET_ID_BY_IDX(node_id, idx) \
@@ -284,7 +283,7 @@ extern "C" {
  *        at an index
  * @param inst DT_DRV_COMPAT instance number
  * @param idx logical index into "resets"
- * @return the id cell value at index "idx"
+ * @return the id cell value at index @p idx
  * @see DT_RESET_ID_BY_IDX()
  */
 #define DT_INST_RESET_ID_BY_IDX(inst, idx) \
