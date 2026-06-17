@@ -1183,6 +1183,17 @@ It should look something like this:
      USES_TERMINAL
      )
 
+
+Running Tests in Random Order
+*****************************
+Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
+run your tests in random order.  This can be beneficial for identifying
+dependencies between test cases. For native_sim platforms, you can provide
+the seed to the random number generator by providing ``--seed=value`` as an
+argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
+details.
+
+
 Running Tests on Hardware
 *************************
 
@@ -1915,13 +1926,3 @@ test scenarios will run.
 .. code-block:: console
 
    $ west twister --test-config=<path to>/test_config.yaml -T tests --level="smoke"
-
-
-Running Tests in Random Order
-*****************************
-Enable ZTEST framework's :kconfig:option:`CONFIG_ZTEST_SHUFFLE` config option to
-run your tests in random order.  This can be beneficial for identifying
-dependencies between test cases. For native_sim platforms, you can provide
-the seed to the random number generator by providing ``--seed=value`` as an
-argument to twister. See :ref:`Shuffling Test Sequence <ztest_shuffle>` for more
-details.
