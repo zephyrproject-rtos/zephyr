@@ -50,7 +50,6 @@ static inline bool linker_is_in_rodata(const void *addr)
 	    ((const char *)addr < (const char *)__rodata_region_end)) {
 		return true;
 	}
-#endif
 
 	/* Relocated rodata sections (CCM, SMEM) live outside the default
 	 * __rodata_region.  zephyr_code_relocate(... CCM_RODATA/SMEM_RODATA)
@@ -58,6 +57,12 @@ static inline bool linker_is_in_rodata(const void *addr)
 	 * (gen_relocate_app.py).  The bare __<mem>_rodata_start/end markers
 	 * are zero-sized and never span the strings, so they must NOT be used
 	 * here.  Weak symbols let builds without these sections skip the check.
+	 *
+	 * This is kept under the same arch guard as __rodata_region: on the
+	 * native/POSIX targets the symbols never exist, and the native
+	 * simulator's "objcopy --localize-symbol" link step strips the weak
+	 * binding off the undefined references, turning them into hard
+	 * undefined references that break the final link.
 	 */
 	extern char __weak __ccm_rodata_reloc_start[];
 	extern char __weak __ccm_rodata_reloc_end[];
@@ -76,6 +81,7 @@ static inline bool linker_is_in_rodata(const void *addr)
 	    ((const char *)addr < (const char *)__smem_rodata_reloc_end)) {
 		return true;
 	}
+#endif
 
 	return false;
 }
