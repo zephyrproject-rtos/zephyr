@@ -19,3 +19,9 @@ properties:
 
   clocks:
     required: true
+
+  dmas:
+    description: DMA channels for TX and RX transfers.
+
+  dma-names:
+    description: DMA channel names. Expected values are "tx" and "rx".
