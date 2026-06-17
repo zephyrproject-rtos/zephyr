@@ -1028,6 +1028,21 @@ is enabled.
 Harnesses
 *********
 
+A *harness* is the mechanism Twister uses to run a test and decide whether it
+passed or failed. After a test image is built and started on its target (real
+hardware, an emulator, or the host), the harness drives the interaction with
+the running image -- providing input, capturing output, or handing execution
+over to an external test runner -- and interprets the result to assign a
+:ref:`status <twister_statuses>` to each test case.
+
+A test scenario selects a harness with the ``harness:`` entry in its
+``tests.yaml`` and tunes its behavior through ``harness_config``. When no
+harness is specified, the default ``test`` harness is used. Different harnesses
+serve different needs: some parse the device's console output against expected
+patterns, while others delegate execution to an external framework such as
+pytest, Robot Framework, or ctest. The pages linked below describe each
+supported harness and its ``harness_config`` options.
+
 Harnesses ``ztest``, ``gtest`` and ``console`` are based on parsing of the
 output and matching certain phrases. ``ztest`` and ``gtest`` harnesses look
 for pass/fail/etc. frames defined in those frameworks.
