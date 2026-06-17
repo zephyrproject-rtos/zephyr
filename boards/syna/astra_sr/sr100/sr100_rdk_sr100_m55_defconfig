@@ -1,7 +1,7 @@
 # defconfig - Synaptics SR100 Astra Machina Micro (RDK) Board configuration
 
 #
-# Copyright (c) 2025 Synaptics Inc.
+# SPDX-FileCopyrightText: Copyright (c) 2025 Synaptics Incorporated
 #
 # SPDX-License-Identifier: Apache-2.0
 #
