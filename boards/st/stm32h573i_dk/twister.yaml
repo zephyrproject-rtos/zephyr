@@ -22,6 +22,7 @@ supported:
   - octospi
   - pwm
   - rtc
+  - sdhc
   - spi
   - uart
   - usb_device
