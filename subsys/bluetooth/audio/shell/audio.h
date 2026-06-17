@@ -171,6 +171,10 @@ void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location ch
 size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream);
 void bap_broadcast_sink_foreach_stream(void (*func)(struct shell_stream *sh_stream, void *data),
 				       void *data);
+int bap_broadcast_sink_pa_sync_req(struct bt_conn *conn, uint32_t broadcast_id, uint8_t sid,
+				   bool past_avail, uint16_t pa_interval);
+int bap_broadcast_sink_bis_sync_req(uint32_t bis_sync_req_bitfield,
+				    const uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE]);
 
 void bap_stream_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 			struct net_buf *buf);
@@ -194,9 +198,13 @@ struct broadcast_source {
 struct broadcast_sink {
 	struct bt_bap_broadcast_sink *bap_sink;
 	struct bt_le_per_adv_sync *pa_sync;
-	uint8_t received_base[UINT8_MAX];
+	uint8_t broadcast_code[BT_ISO_BROADCAST_CODE_SIZE];
+	uint32_t bis_sync_req_bitfield;
+	uint8_t received_base[BT_BASE_MAX_SIZE];
 	uint8_t base_size;
 	bool syncable;
+	bool encrypted;
+	bool received_broadcast_code;
 };
 
 struct unicast_group {
