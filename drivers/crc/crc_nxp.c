@@ -7,6 +7,7 @@
 
 #include <zephyr/drivers/crc.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_crc, CONFIG_CRC_LOG_LEVEL);
@@ -20,6 +21,7 @@ struct crc_nxp_config {
 	CRC_Type *base;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	struct reset_dt_spec reset;
 };
 
 struct crc_nxp_data {
@@ -240,6 +242,18 @@ static int crc_nxp_init(const struct device *dev)
 		}
 	}
 
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			return -ENODEV;
+		}
+
+		int ret = reset_line_deassert_dt(&config->reset);
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	k_sem_init(&data->lock, 1, 1);
 	return 0;
 }
@@ -253,6 +267,7 @@ static int crc_nxp_init(const struct device *dev)
 		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                   \
 			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)),                 \
 			((clock_control_subsys_t)0U)),                                             \
+		.reset = RESET_DT_SPEC_INST_GET_OR(inst, {0}),                                     \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, crc_nxp_init, NULL, &crc_nxp_data_##inst,                      \
 			      &crc_nxp_config_##inst, POST_KERNEL,                                 \

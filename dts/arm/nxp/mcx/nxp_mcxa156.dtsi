@@ -634,6 +634,8 @@
 		crc: crc@4008a000 {
 			compatible = "nxp,crc";
 			reg = <0x4008a000 0x1000>;
+			clocks = <&syscon MCUX_CRC_CLK>;
+			resets = <&reset NXP_SYSCON_RESET(0, 12)>;
 			status = "disabled";
 		};
 	};
