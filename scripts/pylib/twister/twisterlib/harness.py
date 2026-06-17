@@ -54,8 +54,8 @@ class Harness:
         self._status = TwisterStatus.NONE
         self.reason = None
         self.type = None
-        self.regex = []
-        self.matches = OrderedDict()
+        self.regex: list[re.Pattern] = []
+        self.matches: OrderedDict[re.Pattern, str] = OrderedDict()
         self.ordered = True
         self.id = None
         self.fail_on_fault = True
@@ -146,7 +146,7 @@ class Harness:
                     record[k] = { 'ERROR': { 'msg': str(parse_error), 'doc': record[k] } }
         return record
 
-    def parse_record(self, line) -> int:
+    def parse_record(self, line: str) -> int:
         match_cnt = 0
         for record_pattern in self.record_patterns:
             match = record_pattern.search(line)
@@ -168,7 +168,7 @@ class Harness:
                     self.recording.append(rec)
         return match_cnt
 
-    def process_test(self, line):
+    def process_test(self, line: str):
 
         self.parse_record(line)
 
@@ -203,7 +203,7 @@ class Robot(Harness):
 
     is_robot_test = True
 
-    def configure(self, instance):
+    def configure(self, instance: TestInstance):
         super().configure(instance)
         self.instance = instance
 
@@ -285,7 +285,7 @@ class Console(Harness):
             return self.instance.testcases[0].name
         return super().get_testcase_name()
 
-    def configure(self, instance):
+    def configure(self, instance: TestInstance):
         super().configure(instance)
         if self.regex is None or len(self.regex) == 0:
             self.status = TwisterStatus.FAIL
@@ -313,7 +313,7 @@ class Console(Harness):
             raise ConfigurationError(self.instance.name, tc.reason)
         #
 
-    def handle(self, line):
+    def handle(self, line: str) -> None:
         if self.type == "one_line":
             if self.pattern.search(line):
                 logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED:"
@@ -321,8 +321,10 @@ class Console(Harness):
                 self.next_pattern += 1
                 self.status = TwisterStatus.PASS
         elif self.type == "multi_line" and self.ordered:
-            if (self.next_pattern < len(self.patterns) and
-                self.patterns[self.next_pattern].search(line)):
+            if (
+                self.next_pattern < len(self.patterns) and
+                self.patterns[self.next_pattern].search(line)
+            ):
                 logger.debug(f"HARNESS:{self.__class__.__name__}:EXPECTED("
                              f"{self.next_pattern + 1}/{self.patterns_expected}):"
                              f"'{self.patterns[self.next_pattern].pattern}'")
@@ -345,11 +347,6 @@ class Console(Harness):
         if self.fail_on_fault and self.FAULT in line:
             self.fault = True
 
-        if self.GCOV_START in line:
-            self.capture_coverage = True
-        elif self.GCOV_END in line:
-            self.capture_coverage = False
-
         self.process_test(line)
         # Reset the resulting test state to FAIL when not all of the patterns were
         # found in the output, but just ztest's 'PROJECT EXECUTION SUCCESSFUL'.
@@ -358,17 +355,21 @@ class Console(Harness):
         # test image was executed.
         # TODO: Introduce explicit match policy type to reject
         # unexpected console output, allow missing patterns, deny duplicates.
-        if self.status == TwisterStatus.PASS and \
-           self.ordered and \
-           self.next_pattern < self.patterns_expected:
+        if (
+            self.status == TwisterStatus.PASS and
+            self.ordered and
+            self.next_pattern < self.patterns_expected
+        ):
             logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
                          f" {self.next_pattern} of {self.patterns_expected}"
                          f" expected ordered patterns.")
             self.status = TwisterStatus.FAIL
             self.reason = "patterns did not match (ordered)"
-        if self.status == TwisterStatus.PASS and \
-           not self.ordered and \
-           len(self.matches) < self.patterns_expected:
+        if (
+            self.status == TwisterStatus.PASS and
+            not self.ordered and
+            len(self.matches) < self.patterns_expected
+        ):
             logger.error(f"HARNESS:{self.__class__.__name__}: failed with"
                          f" {len(self.matches)} of {self.patterns_expected}"
                          f" expected unordered patterns.")
@@ -378,8 +379,18 @@ class Console(Harness):
         tc = self.instance.get_case_or_create(self.get_testcase_name())
         if self.status == TwisterStatus.PASS:
             tc.status = TwisterStatus.PASS
-        else:
+        elif self.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+            tc.status = self.status
+            tc.reason = self.reason or "Unknown Console harness failure"
+        else:  # handle status None
+            # most likely not all the patterns were matched
             tc.status = TwisterStatus.FAIL
+            unmatched_patterns = set(self.regex) - set(self.matches.keys())
+            if unmatched_patterns:
+                logger.error("Patterns left unmatched: %s", unmatched_patterns)
+                tc.reason = "Patterns left unmatched"
+            else:
+                tc.reason = "Unknown Console harness failure"
 
 
 class Script(Harness):
