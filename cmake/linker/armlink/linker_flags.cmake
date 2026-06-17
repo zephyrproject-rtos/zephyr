@@ -5,6 +5,10 @@
 
 set_property(TARGET linker PROPERTY undefined --undefined=)
 
+if(CONFIG_CPP AND NOT CONFIG_EXTERNAL_MODULE_LIBCPP)
+	set_property(TARGET linker PROPERTY cpp_base --stdlib=libc++)
+endif()
+
 # `armlink` does not accept -O* flags so drop flags to avoid build error.
 set_property(TARGET linker PROPERTY no_optimization "")
 set_property(TARGET linker PROPERTY optimization_debug "")
