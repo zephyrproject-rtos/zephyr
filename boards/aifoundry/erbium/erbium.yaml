@@ -1,0 +1,14 @@
+identifier: erbium
+name: Erbium
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 16384
+testing:
+  timeout_multiplier: 10
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: aifoundry
