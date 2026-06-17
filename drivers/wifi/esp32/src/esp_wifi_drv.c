@@ -1525,6 +1525,13 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		return -EIO;
 	}
 
+	/* Start Wi-Fi early to enable coexistence for WiFi/BT operation. */
+	ret = esp_wifi_start();
+	if (ret != ESP_OK) {
+		LOG_ERR("Unable to start the Wi-Fi: %d", ret);
+		return -EIO;
+	}
+
 	if (IS_ENABLED(CONFIG_WIFI_STA_AUTO_DHCPV4)) {
 		net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
 		net_mgmt_add_event_callback(&esp32_dhcp_cb);
