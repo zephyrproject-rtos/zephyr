@@ -65,31 +65,31 @@ extern "C" {
 /**
  * @brief Test if a mapped partition with a given label property exists.
  * @param label lowercase-and-underscores label property value.
- * @return 1 if the device has a "zephyr,mapped-partition" compatible, 0 otherwise.
+ * @return 1 if the device has a <tt>zephyr,mapped-partition</tt> compatible, 0 otherwise.
  */
 #define DT_HAS_MAPPED_PARTITION_LABEL(label)						\
 	IS_ENABLED(DT_CAT3(DT_COMPAT_zephyr_mapped_partition_LABEL_, label, _EXISTS))
 
 /**
- * @brief Test if zephyr,mapped-partition compatible node exists.
+ * @brief Test if <tt>zephyr,mapped-partition</tt> compatible node exists.
  *
  * @param node_id DTS node to test.
- * @return 1 if node exists and has a zephyr,mapped-partition compatible, 0 otherwise.
+ * @return 1 if node exists and has a <tt>zephyr,mapped-partition</tt> compatible, 0 otherwise.
  */
 #define DT_MAPPED_PARTITION_EXISTS(node_id) DT_NODE_HAS_COMPAT(node_id, zephyr_mapped_partition)
 
 /**
  * @brief Get a numeric identifier for a mapped partition.
- * @param node_id node identifier for a zephyr,mapped-partition node.
+ * @param node_id node identifier for a <tt>zephyr,mapped-partition</tt> node.
  * @return the partition's ID, a unique zero-based index number.
  */
 #define DT_MAPPED_PARTITION_ID(node_id) DT_CAT(node_id, _PARTITION_ID)
 
 /**
  * @brief Get the node identifier of the NVM memory for a partition.
- * @param node_id node identifier for a zephyr,mapped-partition node.
- * @return the node identifier of the internal memory that contains the zephyr,mapped-partition
- *         node, or @ref DT_INVALID_NODE if it doesn't exist.
+ * @param node_id node identifier for a <tt>zephyr,mapped-partition</tt> node.
+ * @return the node identifier of the internal memory that contains the
+ *         <tt>zephyr,mapped-partition</tt> node, or @ref DT_INVALID_NODE if it doesn't exist.
  */
 #define DT_MEM_FROM_MAPPED_PARTITION(node_id)						\
 	COND_CODE_1(DT_NODE_HAS_COMPAT(DT_CAT(node_id, _NVM_DEVICE), soc_nv_flash),	\
@@ -98,9 +98,9 @@ extern "C" {
 
 /**
  * @brief Get the node identifier of the NVM controller for a partition.
- * @param node_id node identifier for a zephyr,mapped-partition node.
+ * @param node_id node identifier for a <tt>zephyr,mapped-partition</tt> node.
  * @return the node identifier of the memory technology device that contains the
- *         zephyr,mapped-partition node.
+ *         <tt>zephyr,mapped-partition</tt> node.
  */
 #define DT_MTD_FROM_MAPPED_PARTITION(node_id) DT_PARENT(DT_MEM_FROM_MAPPED_PARTITION(node_id))
 
@@ -135,7 +135,7 @@ extern "C" {
  * This macro can only be used with partitions of internal memory addressable by the CPU.
  * Otherwise, it may produce a compile-time error, such as: `'__REG_IDX_0_VAL_ADDRESS' undeclared`.
  *
- * @param node_id node identifier for a zephyr,mapped-partition node
+ * @param node_id node identifier for a <tt>zephyr,mapped-partition</tt> node
  * @return the partition's unit address.
  */
 #define DT_MAPPED_PARTITION_ADDR(node_id) DT_REG_ADDR(node_id)
@@ -171,7 +171,7 @@ extern "C" {
  * This macro can only be used with partitions of internal memory addressable by the CPU.
  * Otherwise, it may produce a compile-time error, such as: `'__REG_IDX_0_VAL_ADDRESS' undeclared`.
  *
- * @param node_id node identifier for a zephyr,mapped-partition node
+ * @param node_id node identifier for a <tt>zephyr,mapped-partition</tt> node
  * @return the partition's offset from the memory device.
  */
 #define DT_MAPPED_PARTITION_OFFSET(node_id)						\

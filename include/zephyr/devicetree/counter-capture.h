@@ -25,7 +25,7 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the counter controller from a
- *        counter-captures property at an index
+ *        <tt>counter-captures</tt> property at an index
  *
  * Example devicetree fragment:
  *
@@ -58,7 +58,7 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the counter controller from a
- *        counter-captures property by name
+ *        <tt>counter-captures</tt> property by name
  *
  * Example devicetree fragment:
  *
@@ -122,7 +122,7 @@ extern "C" {
  *                                <&counter2 3 COUNTER_CAPTURE_BOTH_EDGES>;
  *     };
  *
- * Bindings fragment for the "vnd,counter-capture" compatible:
+ * Bindings fragment for the <tt>"vnd,counter-capture"</tt> compatible:
  *
  *     counter-capture-cells:
  *       - channel
@@ -169,7 +169,7 @@ extern "C" {
  *             counter-capture-names = "alpha", "beta";
  *     };
  *
- * Bindings fragment for the "vnd,counter-capture" compatible:
+ * Bindings fragment for the <tt>"vnd,counter-capture"</tt> compatible:
  *
  *     counter-capture-cells:
  *       - channel
@@ -210,10 +210,10 @@ extern "C" {
 	DT_COUNTER_CAPTURES_CELL_BY_IDX(node_id, counter_capture_pha, 0, cell)
 
 /**
- * @brief Get a counter capture specifier's channel cell value at an index
+ * @brief Get a counter capture specifier's <tt>channel</tt> cell value at an index
  *
  * This macro only works for counter capture specifiers with cells named
- * "channel". Refer to the node's binding to check if necessary.
+ * <tt>channel</tt>. Refer to the node's binding to check if necessary.
  *
  * This is equivalent to:
  *
@@ -223,17 +223,17 @@ extern "C" {
  * @param counter_capture_pha lowercase-and-underscores counter capture
  *        property with type "phandle-array"
  * @param idx logical index into @p counter_capture_pha
- * @return the channel cell value at index @p idx
+ * @return the <tt>channel</tt> cell value at index @p idx
  * @see DT_COUNTER_CAPTURES_CELL_BY_IDX()
  */
 #define DT_COUNTER_CAPTURES_CHANNEL_BY_IDX(node_id, counter_capture_pha, idx) \
 	DT_COUNTER_CAPTURES_CELL_BY_IDX(node_id, counter_capture_pha, idx, channel)
 
 /**
- * @brief Get a counter capture specifier's channel cell value by name
+ * @brief Get a counter capture specifier's <tt>channel</tt> cell value by name
  *
  * This macro only works for counter capture specifiers with cells named
- * "channel". Refer to the node's binding to check if necessary.
+ * <tt>channel</tt>. Refer to the node's binding to check if necessary.
  *
  * This is equivalent to:
  *
@@ -244,7 +244,7 @@ extern "C" {
  *        property with type "phandle-array"
  * @param name lowercase-and-underscores name of a <tt>counter-captures</tt> element
  *             as defined by the node's <tt>counter-capture-names</tt> property
- * @return the channel cell value in the specifier at the named element
+ * @return the <tt>channel</tt> cell value in the specifier at the named element
  * @see DT_COUNTER_CAPTURES_CELL_BY_NAME()
  */
 #define DT_COUNTER_CAPTURES_CHANNEL_BY_NAME(node_id, counter_capture_pha, name) \
@@ -255,17 +255,17 @@ extern "C" {
  * @param node_id node identifier
  * @param counter_capture_pha lowercase-and-underscores counter capture
  *        property with type "phandle-array"
- * @return the channel cell value at index 0
+ * @return the <tt>channel</tt> cell value at index 0
  * @see DT_COUNTER_CAPTURES_CHANNEL_BY_IDX()
  */
 #define DT_COUNTER_CAPTURES_CHANNEL(node_id, counter_capture_pha) \
 	DT_COUNTER_CAPTURES_CHANNEL_BY_IDX(node_id, counter_capture_pha, 0)
 
 /**
- * @brief Get a counter capture specifier's flags cell value at an index
+ * @brief Get a counter capture specifier's <tt>flags</tt> cell value at an index
  *
- * This macro expects counter capture specifiers with cells named "flags".
- * If there is no "flags" cell in the specifier, zero is returned.
+ * This macro expects counter capture specifiers with cells named <tt>flags</tt>.
+ * If there is no <tt>flags</tt> cell in the specifier, zero is returned.
  * Refer to the node's binding to check specifier cell names if necessary.
  *
  * This is equivalent to:
@@ -276,31 +276,31 @@ extern "C" {
  * @param counter_capture_pha lowercase-and-underscores counter capture
  *        property with type "phandle-array"
  * @param idx logical index into @p counter_capture_pha
- * @return the flags cell value at index @p idx, or zero if there is none
+ * @return the <tt>flags</tt> cell value at index @p idx, or zero if there is none
  * @see DT_COUNTER_CAPTURES_CELL_BY_IDX()
  */
 #define DT_COUNTER_CAPTURES_FLAGS_BY_IDX(node_id, counter_capture_pha, idx) \
 	DT_PHA_BY_IDX_OR(node_id, counter_capture_pha, idx, flags, 0)
 
 /**
- * @brief Get a counter capture specifier's flags cell value by name
+ * @brief Get a counter capture specifier's <tt>flags</tt> cell value by name
  *
- * This macro expects counter capture specifiers with cells named "flags".
- * If there is no "flags" cell in the specifier, zero is returned.
+ * This macro expects counter capture specifiers with cells named <tt>flags</tt>.
+ * If there is no <tt>flags</tt> cell in the specifier, zero is returned.
  * Refer to the node's binding to check specifier cell names if necessary.
  *
  * This is equivalent to:
  *
  *     DT_COUNTER_CAPTURES_CELL_BY_NAME(node_id, counter_capture_pha, name, flags)
  *
- * if there is a flags cell, but expands to zero if there is none.
+ * if there is a <tt>flags</tt> cell, but expands to zero if there is none.
  *
  * @param node_id node identifier
  * @param counter_capture_pha lowercase-and-underscores counter capture
  *        property with type "phandle-array"
  * @param name lowercase-and-underscores name of a <tt>counter-captures</tt> element
  *             as defined by the node's <tt>counter-capture-names</tt> property
- * @return the flags cell value in the specifier at the named element,
+ * @return the <tt>flags</tt> cell value in the specifier at the named element,
  *         or zero if there is none
  * @see DT_COUNTER_CAPTURES_CELL_BY_NAME()
  */
@@ -313,7 +313,7 @@ extern "C" {
  * @param node_id node identifier
  * @param counter_capture_pha lowercase-and-underscores counter capture
  *        property with type "phandle-array"
- * @return the flags cell value at index 0, or zero if there is none
+ * @return the <tt>flags</tt> cell value at index 0, or zero if there is none
  * @see DT_COUNTER_CAPTURES_FLAGS_BY_IDX()
  */
 #define DT_COUNTER_CAPTURES_FLAGS(node_id, counter_capture_pha) \
@@ -392,7 +392,7 @@ extern "C" {
  * DT_INST_COUNTER_CAPTURES_CELL_BY_IDX(inst, counter_capture_pha, idx, channel)
  * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into <tt>counter-captures</tt> property
- * @return the channel cell value at index @p idx
+ * @return the <tt>channel</tt> cell value at index @p idx
  * @see DT_INST_COUNTER_CAPTURES_CELL_BY_IDX()
  */
 #define DT_INST_COUNTER_CAPTURES_CHANNEL_BY_IDX(inst, counter_capture_pha, idx) \
@@ -404,7 +404,7 @@ extern "C" {
  * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a <tt>counter-captures</tt> element
  *             as defined by the node's <tt>counter-capture-names</tt> property
- * @return the channel cell value in the specifier at the named element
+ * @return the <tt>channel</tt> cell value in the specifier at the named element
  * @see DT_INST_COUNTER_CAPTURES_CELL_BY_NAME()
  */
 #define DT_INST_COUNTER_CAPTURES_CHANNEL_BY_NAME(inst, counter_capture_pha, name) \
@@ -413,7 +413,7 @@ extern "C" {
 /**
  * @brief Equivalent to DT_INST_COUNTER_CAPTURES_CHANNEL_BY_IDX(inst, counter_capture_pha, 0)
  * @param inst @c DT_DRV_COMPAT instance number
- * @return the channel cell value at index 0
+ * @return the <tt>channel</tt> cell value at index 0
  * @see DT_INST_COUNTER_CAPTURES_CHANNEL_BY_IDX()
  */
 #define DT_INST_COUNTER_CAPTURES_CHANNEL(inst, counter_capture_pha) \
@@ -423,7 +423,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_COUNTER_CAPTURES_CELL_BY_IDX(inst, counter_capture_pha, idx, flags)
  * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into <tt>counter-captures</tt> property
- * @return the flags cell value at index @p idx, or zero if there is none
+ * @return the <tt>flags</tt> cell value at index @p idx, or zero if there is none
  * @see DT_INST_COUNTER_CAPTURES_CELL_BY_IDX()
  */
 #define DT_INST_COUNTER_CAPTURES_FLAGS_BY_IDX(inst, counter_capture_pha, idx) \
@@ -435,7 +435,7 @@ extern "C" {
  * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a <tt>counter-captures</tt> element
  *             as defined by the node's <tt>counter-capture-names</tt> property
- * @return the flags cell value in the specifier at the named element,
+ * @return the <tt>flags</tt> cell value in the specifier at the named element,
  *         or zero if there is none
  * @see DT_INST_COUNTER_CAPTURES_CELL_BY_NAME()
  */
@@ -445,7 +445,7 @@ extern "C" {
 /**
  * @brief Equivalent to DT_INST_COUNTER_CAPTURES_FLAGS_BY_IDX(inst, counter_capture_pha, 0)
  * @param inst @c DT_DRV_COMPAT instance number
- * @return the flags cell value at index 0, or zero if there is none
+ * @return the <tt>flags</tt> cell value at index 0, or zero if there is none
  * @see DT_INST_COUNTER_CAPTURES_FLAGS_BY_IDX()
  */
 #define DT_INST_COUNTER_CAPTURES_FLAGS(inst, counter_capture_pha) \
