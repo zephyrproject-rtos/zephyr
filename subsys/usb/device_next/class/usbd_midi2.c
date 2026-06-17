@@ -26,8 +26,6 @@ LOG_MODULE_REGISTER(usbd_midi2, CONFIG_USBD_MIDI2_LOG_LEVEL);
 UDC_BUF_POOL_DEFINE(usbd_midi_buf_pool, DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) * 2, 512U,
 		    sizeof(struct udc_buf_info), NULL);
 
-#define MIDI_QUEUE_SIZE 64
-
 /* midi20 A.1 MS Class-Specific Interface Descriptor Types */
 #define CS_GR_TRM_BLOCK	0x26
 /* midi20 A.1 MS Class-Specific Interface Descriptor Subtypes */
@@ -272,7 +270,7 @@ struct usbd_midi_data {
 	struct usbd_class_data *class_data;
 	struct k_work rx_work;
 	struct k_work tx_work;
-	uint8_t tx_queue_buf[MIDI_QUEUE_SIZE];
+	uint8_t tx_queue_buf[CONFIG_USBD_MIDI2_TX_QUEUE_SIZE];
 	struct ring_buf tx_queue;
 	uint8_t altsetting;
 	/* Last interface status reported to the application via
@@ -907,7 +905,7 @@ static int usbd_midi_preinit(const struct device *dev)
 	struct usbd_midi_data *data = dev->data;
 
 	LOG_DBG("Init device %s", dev->name);
-	ring_buf_init(&data->tx_queue, MIDI_QUEUE_SIZE, data->tx_queue_buf);
+	ring_buf_init(&data->tx_queue, CONFIG_USBD_MIDI2_TX_QUEUE_SIZE, data->tx_queue_buf);
 	k_work_init(&data->rx_work, usbd_midi_rx_work);
 	k_work_init(&data->tx_work, usbd_midi_tx_work);
 
