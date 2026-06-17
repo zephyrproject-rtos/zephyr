@@ -838,7 +838,7 @@ exclude = [
     "./doc/_scripts/gen_devicetree_rest.py",
     "./doc/_scripts/redirects.py",
     "./doc/conf.py",
-    "./doc/develop/test/twister/sample_blackbox_test.py",
+    "./doc/develop/twister/sample_blackbox_test.py",
     "./modules/mbedtls/create_psa_files.py",
     "./samples/boards/nordic/coresight_stm/pytest/test_stm.py",
     "./samples/modules/tflite-micro/magic_wand/train/data_augmentation.py",
