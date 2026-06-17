@@ -48,75 +48,32 @@ if(NOT SGDISK)
     "'dnf install gdisk') and re-run cmake.")
 endif()
 
-# Get west topdir for calculating module paths
-# This allows us to find modules even if module.yml is missing
-execute_process(
-  COMMAND west topdir
-  OUTPUT_VARIABLE west_topdir
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  RESULT_VARIABLE west_result
-)
+# Resolve the dependency module locations from the Zephyr module system.
+# These ZEPHYR_<MODULE>_MODULE_DIR variables are populated for every module
+# in the build, regardless of whether the workspace is maintained with west
+# or the modules are provided via ZEPHYR_MODULES/EXTRA_ZEPHYR_MODULES.  TF-M
+# and its crypto/CMSIS dependencies are passed as explicit paths below so the
+# TF-M build never falls back to fetching them from the network.
+foreach(dep
+    TRUSTED_FIRMWARE_M TRUSTED_FIRMWARE_A TF_PSA_CRYPTO CMSIS_6)
+  if(NOT DEFINED ZEPHYR_${dep}_MODULE_DIR)
+    string(TOLOWER "${dep}" dep_lower)
+    message(FATAL_ERROR
+      "Corstone-1000 requires the ${dep_lower} module, but "
+      "ZEPHYR_${dep}_MODULE_DIR is not set.  Ensure the module is part of "
+      "your manifest (west) or provided via ZEPHYR_MODULES / "
+      "EXTRA_ZEPHYR_MODULES.")
+  endif()
+endforeach()
 
-if(NOT west_result EQUAL 0)
-  # Fallback: assume standard west workspace layout
-  get_filename_component(west_topdir "${ZEPHYR_BASE}/.." ABSOLUTE)
-endif()
-
-# Get module paths
-# Try module variables first, fall back to west workspace layout
-if(DEFINED ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR AND EXISTS "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}")
-  set(tfm_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR})
-else()
-  set(tfm_source_dir ${west_topdir}/modules/tee/tf-m/trusted-firmware-m)
-endif()
-
-if(DEFINED ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR AND EXISTS "${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}")
-  set(tfa_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR})
-else()
-  set(tfa_source_dir ${west_topdir}/modules/tee/tf-a/trusted-firmware-a)
-endif()
-
-# mbedtls module path (used as MBEDCRYPTO_PATH for TF-M)
-# TF-M requires mbedtls-3.6 because mbedtls 4.x split the crypto code into a
-# separate tf-psa-crypto module that TF-M does not support yet.
-# See west.yml: "Required for TF-M build until we bump it to v2.3"
-if(DEFINED ZEPHYR_MBEDTLS_3_6_MODULE_DIR AND EXISTS "${ZEPHYR_MBEDTLS_3_6_MODULE_DIR}")
-  set(mbedtls_module_dir ${ZEPHYR_MBEDTLS_3_6_MODULE_DIR})
-else()
-  set(mbedtls_module_dir ${west_topdir}/modules/crypto/mbedtls-3.6)
-endif()
-
-# CMSIS_6 module path
-if(DEFINED ZEPHYR_CMSIS_6_MODULE_DIR AND EXISTS "${ZEPHYR_CMSIS_6_MODULE_DIR}")
-  set(cmsis_6_module_dir ${ZEPHYR_CMSIS_6_MODULE_DIR})
-else()
-  set(cmsis_6_module_dir ${west_topdir}/modules/hal/cmsis_6)
-endif()
-
-# Verify the source directories exist
-if(NOT EXISTS "${tfm_source_dir}")
-  message(FATAL_ERROR "TF-M source directory not found: ${tfm_source_dir}\n"
-    "Run 'west update' to fetch the module.")
-endif()
-
-if(NOT EXISTS "${tfa_source_dir}")
-  message(FATAL_ERROR "TF-A source directory not found: ${tfa_source_dir}\n"
-    "Run 'west update' to fetch the module.")
-endif()
-
-if(NOT EXISTS "${mbedtls_module_dir}")
-  message(FATAL_ERROR "mbedtls module directory not found: ${mbedtls_module_dir}\n"
-    "Run 'west update' to fetch the module.")
-endif()
-
-if(NOT EXISTS "${cmsis_6_module_dir}")
-  message(FATAL_ERROR "CMSIS_6 module directory not found: ${cmsis_6_module_dir}\n"
-    "Run 'west update' to fetch the module.")
-endif()
+set(tfm_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR})
+set(tfa_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR})
+set(tf_psa_crypto_dir ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR})
+set(cmsis_6_module_dir ${ZEPHYR_CMSIS_6_MODULE_DIR})
 
 message(STATUS "Corstone-1000: TF-M source: ${tfm_source_dir}")
 message(STATUS "Corstone-1000: TF-A source: ${tfa_source_dir}")
-message(STATUS "Corstone-1000: mbedtls: ${mbedtls_module_dir}")
+message(STATUS "Corstone-1000: TF-PSA-Crypto: ${tf_psa_crypto_dir}")
 message(STATUS "Corstone-1000: CMSIS_6: ${cmsis_6_module_dir}")
 
 # Output directories
@@ -157,9 +114,10 @@ else()
 endif()
 
 # TF-M CMake arguments
-# Note: We must provide MBEDCRYPTO_PATH and CMSIS_PATH because TF-M's CMakeLists.txt
-# processes bl2/ before lib/ext/mbedcrypto/, so the default "DOWNLOAD" value doesn't
-# work on initial configure. Providing paths from Zephyr modules avoids the fetch.
+# Provide TF_PSA_CRYPTO_PATH and CMSIS_PATH from the in-tree Zephyr modules.
+# These default to "DOWNLOAD" in TF-M, which would clone the dependencies from
+# the network; pointing them at the modules already present in the workspace
+# keeps the build self-contained (Zephyr does not allow build-time fetches).
 # Map Kconfig log level to the three different TF-M log level systems:
 # - TF-M BL1: LOG_LEVEL_{NONE,ERROR,WARNING,INFO,DEBUG}
 # - MCUboot:  {OFF,ERROR,WARNING,INFO,DEBUG}
@@ -198,7 +156,7 @@ set(tfm_cmake_args
   -DBL1=ON
   -DBL2=ON
   -DMCUBOOT_PATH=${ZEPHYR_MCUBOOT_MODULE_DIR}
-  -DMBEDCRYPTO_PATH=${mbedtls_module_dir}
+  -DTF_PSA_CRYPTO_PATH=${tf_psa_crypto_dir}
   -DCMSIS_PATH=${cmsis_6_module_dir}
   -DTFM_BL1_LOG_LEVEL=${tfm_log_level_str}
   -DMCUBOOT_LOG_LEVEL=${mcuboot_log_level_str}
@@ -228,6 +186,7 @@ set(tfm_toolchain_wrapper ${CMAKE_CURRENT_BINARY_DIR}/toolchain_corstone1000.cma
 file(WRITE ${tfm_toolchain_wrapper}
   "include(${tfm_toolchain_file})\n"
   "string(APPEND CMAKE_C_FLAGS \" -Wno-int-conversion -Wno-implicit-function-declaration -Wno-incompatible-pointer-types\")\n"
+  "string(APPEND CMAKE_C_FLAGS \" -isystem ${tf_psa_crypto_dir}/drivers/builtin/include\")\n"
 )
 list(REMOVE_ITEM tfm_cmake_args "-DTFM_TOOLCHAIN_FILE=${tfm_toolchain_file}")
 list(APPEND tfm_cmake_args "-DTFM_TOOLCHAIN_FILE=${tfm_toolchain_wrapper}")
