@@ -24,6 +24,6 @@ config HL78XX_EVT_MONITOR_APP_INIT_PRIORITY
 module=HL78XX_EVT_MONITOR
 module-dep=LOG
 module-str= Event notification monitor library
-source "${ZEPHYR_BASE}/subsys/logging/Kconfig.template.log_config"
+source "subsys/logging/Kconfig.template.log_config"
 
 endif # HL78XX_EVT_MONITOR
