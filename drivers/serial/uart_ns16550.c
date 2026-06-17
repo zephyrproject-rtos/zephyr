@@ -49,7 +49,6 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define UART_NS16550_DMAS_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(dmas)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
-BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #include <zephyr/drivers/pcie/pcie.h>
 #endif
 
@@ -1953,8 +1952,6 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 	{                                                                     \
 		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,              \
 			     "Only runtime IRQ configuration is supported");  \
-		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),           \
-			     "NS16550 PCIe requires dynamic interrupts");     \
 		const struct uart_ns16550_dev_config *dev_cfg = dev->config;  \
 		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);        \
 		if (irq == PCIE_CONF_INTR_IRQ_NONE) {                         \
