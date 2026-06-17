@@ -103,7 +103,7 @@ uint32_t ring_buf_get(struct ring_buf *buf, uint8_t *data, uint32_t size)
 	return total_size;
 }
 
-uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size)
+uint32_t ring_buf_peek(const struct ring_buf *buf, uint8_t *data, uint32_t size)
 {
 	uint8_t *src;
 	uint32_t partial_size;
@@ -111,7 +111,7 @@ uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size)
 	int err;
 
 	do {
-		partial_size = ring_buf_get_claim(buf, &src, size);
+		partial_size = ring_buf_get_claim((struct ring_buf *)buf, &src, size);
 		if (partial_size == 0) {
 			break;
 		}
@@ -123,7 +123,7 @@ uint32_t ring_buf_peek(struct ring_buf *buf, uint8_t *data, uint32_t size)
 	} while (size != 0);
 
 	/* effectively unclaim total_size bytes */
-	err = ring_buf_get_finish(buf, 0);
+	err = ring_buf_get_finish((struct ring_buf *)buf, 0);
 	__ASSERT_NO_MSG(err == 0);
 	ARG_UNUSED(err);
 

@@ -12,7 +12,6 @@ source "subsys/logging/Kconfig.template.log_config"
 config MULTITHREADING
 	bool "Multi-threading" if ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y
-	select RING_BUFFER
 	help
 	  If disabled, only the main thread is available, so a main() function
 	  must be provided. Interrupts are available. Kernel objects will most
