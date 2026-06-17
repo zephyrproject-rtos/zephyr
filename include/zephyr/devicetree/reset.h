@@ -204,9 +204,9 @@ extern "C" {
 	DT_RESET_CTLR_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's reset specifier's cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's reset specifier's cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into resets property
  * @param cell lowercase-and-underscores cell name
  * @return the cell value at index "idx"
@@ -216,8 +216,8 @@ extern "C" {
 	DT_RESET_CELL_BY_IDX(DT_DRV_INST(inst), idx, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's reset specifier's cell value by name
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Get a @c DT_DRV_COMPAT instance's reset specifier's cell value by name
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a resets element
  *             as defined by the node's reset-names property
  * @param cell lowercase-and-underscores cell name
@@ -229,7 +229,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_RESET_CELL_BY_IDX(inst, 0, cell)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param cell lowercase-and-underscores cell name
  * @return the value of the cell inside the specifier at index 0
  */
@@ -280,9 +280,9 @@ extern "C" {
 	DT_RESET_ID_BY_IDX(node_id, 0)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's Reset Controller specifier's id cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's Reset Controller specifier's id cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into "resets"
  * @return the id cell value at index "idx"
  * @see DT_RESET_ID_BY_IDX()
@@ -292,7 +292,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_RESET_ID_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the id cell value at index 0
  * @see DT_INST_RESET_ID_BY_IDX()
  */

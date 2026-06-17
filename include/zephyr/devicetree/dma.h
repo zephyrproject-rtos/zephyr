@@ -92,9 +92,9 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the DMA controller from a
- *        DT_DRV_COMPAT instance's dmas property at an index
+ *        @c DT_DRV_COMPAT instance's dmas property at an index
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into dmas property
  * @return the node identifier for the DMA controller referenced at
  *         index "idx"
@@ -105,8 +105,8 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the DMA controller from a
- *        DT_DRV_COMPAT instance's dmas property by name
- * @param inst DT_DRV_COMPAT instance number
+ *        @c DT_DRV_COMPAT instance's dmas property by name
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a dmas element
  *             as defined by the node's dma-names property
  * @return the node identifier for the DMA controller in the named element
@@ -117,7 +117,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_DMAS_CTLR_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the node identifier for the DMA controller at index 0
  *         in the instance's "dmas" property
  * @see DT_DMAS_CTLR_BY_IDX()
@@ -167,8 +167,8 @@ extern "C" {
 	DT_PHA_BY_IDX(node_id, dmas, idx, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's DMA specifier's cell value at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Get a @c DT_DRV_COMPAT instance's DMA specifier's cell value at an index
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into dmas property
  * @param cell lowercase-and-underscores cell name
  * @return the cell value at index "idx"
@@ -241,8 +241,8 @@ extern "C" {
 	DT_PHA_BY_NAME_OR(node_id, dmas, name, cell, default_value)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's DMA specifier's cell value by name
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Get a @c DT_DRV_COMPAT instance's DMA specifier's cell value by name
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a dmas element
  *             as defined by the node's dma-names property
  * @param cell lowercase-and-underscores cell name
@@ -262,8 +262,8 @@ extern "C" {
 	IS_ENABLED(DT_CAT4(node_id, _P_dmas_IDX_, idx, _EXISTS))
 
 /**
- * @brief Is index "idx" valid for a DT_DRV_COMPAT instance's dmas property?
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Is index "idx" valid for a @c DT_DRV_COMPAT instance's dmas property?
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into dmas property
  * @return 1 if the "dmas" property has a specifier at index "idx", 0 otherwise
  */
@@ -281,8 +281,8 @@ extern "C" {
 	DT_PROP_HAS_NAME(node_id, dmas, name)
 
 /**
- * @brief Does a DT_DRV_COMPAT instance's dmas property have a named element?
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Does a @c DT_DRV_COMPAT instance's dmas property have a named element?
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a dmas element
  *             as defined by the node's dma-names property
  * @return 1 if the dmas property has the named element, 0 otherwise

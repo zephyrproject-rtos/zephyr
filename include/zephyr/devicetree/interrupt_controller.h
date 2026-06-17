@@ -38,7 +38,7 @@ extern "C" {
 #define DT_INTC_GET_AGGREGATOR_LEVEL(node_id) UTIL_INC(DT_IRQ_LEVEL(node_id))
 
 /**
- * @brief Get the aggregator level of a `DT_DRV_COMPAT` interrupt controller
+ * @brief Get the aggregator level of a @c DT_DRV_COMPAT interrupt controller
  *
  * @note Aggregator level is equivalent to IRQ_LEVEL + 1 (a 2nd level aggregator has Zephyr level 1
  * IRQ encoding)

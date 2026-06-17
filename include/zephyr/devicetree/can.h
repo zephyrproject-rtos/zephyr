@@ -121,8 +121,8 @@ extern "C" {
 		    MIN(DT_PROP_OR(DT_CHILD(node_id, can_transceiver), max_bitrate, max), max))
 
 /**
- * @brief Get the minimum transceiver bitrate for a DT_DRV_COMPAT CAN controller
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Get the minimum transceiver bitrate for a @c DT_DRV_COMPAT CAN controller
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param min minimum bitrate supported by the CAN controller
  * @return the minimum bitrate supported by the CAN controller/transceiver combination
  * @see DT_CAN_TRANSCEIVER_MIN_BITRATE()
@@ -131,8 +131,8 @@ extern "C" {
 	DT_CAN_TRANSCEIVER_MIN_BITRATE(DT_DRV_INST(inst), min)
 
 /**
- * @brief Get the maximum transceiver bitrate for a DT_DRV_COMPAT CAN controller
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Get the maximum transceiver bitrate for a @c DT_DRV_COMPAT CAN controller
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param max maximum bitrate supported by the CAN controller
  * @return the maximum bitrate supported by the CAN controller/transceiver combination
  * @see DT_CAN_TRANSCEIVER_MAX_BITRATE()
