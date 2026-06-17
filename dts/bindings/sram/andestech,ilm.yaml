@@ -1,0 +1,20 @@
+# Copyright (c) 2026, Andes Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Andes Instruction Local Memory dedicated address spaces that is independent
+  of the memory subsystem. Accesses to ILM bypass the cache and memory
+  subsystems to achieve minimal latency.
+
+  ILM supports instruction fetches and load/store data accesses. When
+  the ILM address range overlaps with system bus (AHB/AXI) address
+  spaces, these accesses are serviced by ILM with higher priority than
+  the corresponding system bus accesses.
+
+compatible: "andestech,ilm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
