@@ -33,10 +33,10 @@
  *     DT_PINCTRL_BY_IDX(DT_NODELABEL(n), 0, 1) // DT_NODELABEL(bar)
  *     DT_PINCTRL_BY_IDX(DT_NODELABEL(n), 1, 0) // DT_NODELABEL(baz)
  *
- * @param node_id node with a pinctrl-'pc_idx' property
+ * @param node_id node with a <tt>pinctrl-'pc_idx'</tt> property
  * @param pc_idx index of the pinctrl property itself
  * @param idx index into the value of the pinctrl property
- * @return node identifier for the phandle at index 'idx' in 'pinctrl-'pc_idx''
+ * @return node identifier for the phandle at index @p idx in <tt>pinctrl-'pc_idx'</tt>
  */
 #define DT_PINCTRL_BY_IDX(node_id, pc_idx, idx) \
 	DT_CAT6(node_id, _P_pinctrl_, pc_idx, _IDX_, idx, _PH)
@@ -307,7 +307,7 @@
  * @param inst instance number
  * @param pc_idx index of the pinctrl property itself
  * @param idx index into the value of the pinctrl property
- * @return node identifier for the phandle at index 'idx' in 'pinctrl-'pc_idx''
+ * @return node identifier for the phandle at index @p idx in <tt>pinctrl-'pc_idx'</tt>
  */
 #define DT_INST_PINCTRL_BY_IDX(inst, pc_idx, idx) \
 	DT_PINCTRL_BY_IDX(DT_DRV_INST(inst), pc_idx, idx)
