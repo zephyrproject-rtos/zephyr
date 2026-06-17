@@ -65,17 +65,17 @@ static void on_midi_packet(const struct device *dev, const struct midi_ump ump)
 	}
 }
 
-static void on_device_ready(const struct device *dev, const bool ready)
+static void on_status_changed(const struct device *dev, const enum usbd_midi_status status)
 {
-	/* Light up the LED (if any) when USB-MIDI2.0 is enabled */
+	/* Light up the LED (if any) when the USB-MIDI interface is enabled */
 	if (led.port) {
-		gpio_pin_set_dt(&led, ready);
+		gpio_pin_set_dt(&led, status != USBD_MIDI_STATUS_DISABLED);
 	}
 }
 
 static const struct usbd_midi_ops ops = {
 	.rx_packet_cb = on_midi_packet,
-	.ready_cb = on_device_ready,
+	.status_changed_cb = on_status_changed,
 };
 
 int main(void)
