@@ -32,7 +32,7 @@
 &i2s0 {
 	status = "okay";
 
-	interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-		     <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+	interrupts = <ESP_CPU_IRQ_L1_LVL_17 I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
+		     <ESP_CPU_IRQ_L1_LVL_17 I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 	interrupt-names = "rx", "tx";
 };
