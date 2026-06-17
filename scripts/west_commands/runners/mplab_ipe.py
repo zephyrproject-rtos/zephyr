@@ -76,7 +76,6 @@ class MPLABIPEBinaryRunner(ZephyrBinaryRunner):
 
         cmd = [
             exe,
-            f"-TP{self.tool}",  # probe type
             f"-P{self.part}",  # part number of the SoC
             f"-F{hex_file}",
             "-M",  # Program all memories
@@ -86,6 +85,8 @@ class MPLABIPEBinaryRunner(ZephyrBinaryRunner):
 
         if self.dev_id:
             cmd.append(f"-TS{self.dev_id}")  # Select programmer by serial number
+        elif self.tool is not None:
+            cmd.append(f"-TP{self.tool}")  # Select programmer by name of the tool
 
         if self.erase:
             cmd.append("-E")

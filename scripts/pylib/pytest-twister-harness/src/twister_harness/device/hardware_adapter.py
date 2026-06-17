@@ -106,7 +106,7 @@ class HardwareAdapter(DeviceAdapter):
             elif runner == "openocd" and self.device_config.product == "LPC-LINK2 CMSIS-DAP":
                 extra_args.append("--cmd-pre-init")
                 extra_args.append(f'adapter serial {board_id}')
-            elif runner == 'jlink' or (
+            elif runner in ('jlink', 'mplab_ipe') or (
                 runner == 'stm32cubeprogrammer' and self.device_config.product != "BOOT-SERIAL"
             ):
                 base_args.append('--dev-id')
