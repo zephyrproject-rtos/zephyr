@@ -185,6 +185,37 @@ bool net_route_ipv4_get_info(struct net_if *iface,
 	return true;
 }
 
+int net_route_ipv4_decrement_ttl(struct net_pkt *pkt)
+{
+	struct net_ipv4_hdr *hdr;
+	uint16_t chksum = 0U;
+	int ret;
+
+	NET_ASSERT(pkt);
+
+	hdr = NET_IPV4_HDR(pkt);
+	if (hdr == NULL) {
+		return -EINVAL;
+	}
+
+	if (hdr->ttl <= 1U) {
+		return -ETIMEDOUT;
+	}
+
+	hdr->ttl--;
+	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
+
+	hdr->chksum = 0U;
+	ret = net_calc_chksum_ipv4(pkt, &chksum);
+	if (ret < 0) {
+		return ret;
+	}
+
+	hdr->chksum = chksum;
+
+	return 0;
+}
+
 int net_route_ipv4_packet(struct net_pkt *pkt, const struct net_in_addr *nexthop)
 {
 	if (pkt == NULL || nexthop == NULL || net_pkt_iface(pkt) == NULL) {
@@ -192,28 +223,11 @@ int net_route_ipv4_packet(struct net_pkt *pkt, const struct net_in_addr *nexthop
 	}
 
 	if (net_pkt_forwarding(pkt)) {
-		struct net_ipv4_hdr *hdr = NET_IPV4_HDR(pkt);
-		uint16_t chksum = 0U;
-		int ret;
+		int ret = net_route_ipv4_decrement_ttl(pkt);
 
-		if (hdr == NULL) {
-			return -EINVAL;
-		}
-
-		if (hdr->ttl <= 1U) {
-			return -ETIMEDOUT;
-		}
-
-		hdr->ttl--;
-		net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
-
-		hdr->chksum = 0U;
-		ret = net_calc_chksum_ipv4(pkt, &chksum);
 		if (ret < 0) {
 			return ret;
 		}
-
-		hdr->chksum = chksum;
 	}
 
 	net_pkt_set_ipv4_ll_resolve_addr(pkt, nexthop);
