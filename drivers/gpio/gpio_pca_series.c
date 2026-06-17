@@ -1444,8 +1444,8 @@ static int gpio_pca_series_pin_interrupt_configure_standard(
 		}
 	}
 
-	int_mask = int_fall | int_rise;
-	input_latch = ~int_mask;
+	input_latch = int_fall | int_rise;
+	int_mask = ~input_latch;
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	/** read from cache even if this register is not present on device */
