@@ -1059,14 +1059,10 @@ The following is an example yaml file with a few harness_config options.
           tags: sensors
           depends_on: i2c
 
-Ctest
-=====
+.. toctree::
+   :maxdepth: 1
 
-ctest_args: <list of arguments> (default empty)
-    Specify a list of additional arguments to pass to ``ctest`` e.g.:
-    ``ctest_args: [‘--repeat until-pass:5’]``. Note that
-    ``--ctest-args`` can be passed multiple times to pass several arguments
-    to the ctest.
+   harness/ctest
 
 
 Gtest
