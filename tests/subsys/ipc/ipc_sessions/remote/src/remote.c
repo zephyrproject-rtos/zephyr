@@ -70,8 +70,7 @@ static int reboot_by_wdt(void)
 		.window.max = 10,
 	};
 	static const uint8_t wdt_options[] = {
-		WDT_OPT_PAUSE_HALTED_BY_DBG | WDT_OPT_PAUSE_IN_SLEEP,
-		WDT_OPT_PAUSE_IN_SLEEP,
+		WDT_OPT_PAUSE_HALTED_BY_DBG,
 		0
 	};
 
