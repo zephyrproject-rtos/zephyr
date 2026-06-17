@@ -208,6 +208,13 @@ static int llext_map_sections(struct llext_loader *ldr, struct llext *ext)
 
 		name = llext_string(ldr, ext, LLEXT_MEM_SHSTRTAB, shdr->sh_name);
 
+		if (name == NULL) {
+			LOG_ERR("section %d has out of bounds string table index %d "
+				"for section name",
+				i, shdr->sh_name);
+			return -ENOEXEC;
+		}
+
 		/* Identify the section type by its flags */
 		enum llext_mem mem_idx;
 
@@ -404,6 +411,12 @@ static int llext_count_export_syms(struct llext_loader *ldr, struct llext *ext)
 
 		name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
 
+		if (name == NULL) {
+			LOG_ERR("Out of bounds string table index for symbol name %d in symbol %d",
+				sym.st_name, i);
+			return -ENOEXEC;
+		}
+
 		if ((stt == STT_FUNC || stt == STT_OBJECT) && stb == STB_GLOBAL) {
 			LOG_DBG("function symbol %d, name %s, type tag %d, bind %d, sect %d",
 				i, name, stt, stb, sect);
@@ -503,6 +516,13 @@ static int llext_copy_symbols(struct llext_loader *ldr, struct llext *ext,
 			}
 
 			const char *name = llext_string(ldr, ext, LLEXT_MEM_STRTAB, sym.st_name);
+
+			if (name == NULL) {
+				LOG_ERR("Symbol %d has out of bounds string table index %d for "
+					"symbol name",
+					i, sym.st_name);
+				return -ENOEXEC;
+			}
 
 			__ASSERT(j <= sym_tab->sym_cnt, "Miscalculated symbol number %u\n", j);
 
