@@ -10,7 +10,6 @@ config MODEM_HL78XX
 	select MODEM_PIPE
 	select MODEM_PIPELINK
 	select MODEM_BACKEND_UART
-	select RING_BUFFER
 	select MODEM_SOCKET
 	select NET_OFFLOAD
 	select MODEM_CONTEXT
