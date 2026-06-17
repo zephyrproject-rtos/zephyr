@@ -730,7 +730,8 @@ int z_cbvprintf_impl(cbprintf_cb out, void *ctx, const char *format,
  * @return the number of characters generated, or a negative error value
  * returned from invoking @p out.
  */
-#ifdef CONFIG_PICOLIBC
+ // FIXME: libc.a from Zephyr SDK needs built with clang if clang used to build zephyr 
+#if defined(CONFIG_PICOLIBC) && !defined(__clang__)
 int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap);
 #else
 static inline
@@ -739,6 +740,7 @@ int cbvprintf(cbprintf_cb out, void *ctx, const char *format, va_list ap)
 	return z_cbvprintf_impl(out, ctx, format, ap, 0);
 }
 #endif
+
 
 /** @brief varargs-aware *printf-like output through a callback with tagged arguments.
  *

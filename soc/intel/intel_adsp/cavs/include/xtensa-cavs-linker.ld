@@ -357,4 +357,9 @@ SECTIONS {
 #include <zephyr/linker/intlist.ld>
 #endif
 #include <zephyr/linker/llext-sections.ld>
+
+  /* Discard stack-executability notes emitted by Clang/GCC; Xtensa
+   * bare-metal targets have no use for them and the older CAVS ld.bfd
+   * emits a noisy "orphan section" warning otherwise. */
+  /DISCARD/ : { *(.note.GNU-stack) }
 }

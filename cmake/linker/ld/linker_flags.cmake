@@ -11,6 +11,8 @@ check_set_linker_property(TARGET linker PROPERTY baremetal
                           -nostdlib
                           -static
                           -znoexecstack
+                          ${LINKERFLAGPREFIX},--no-warn-rwx-segments
+                          ${LINKERFLAGPREFIX},--no-warn-execstack
                           ${LINKERFLAGPREFIX},-X
                           ${LINKERFLAGPREFIX},-N
 )
