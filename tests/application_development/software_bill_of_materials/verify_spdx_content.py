@@ -61,6 +61,12 @@ def find_doc_ref_id(doc, namespace):
     )
 
 
+def file_sha1(path):
+    """Calculate the SHA1 hash of a file."""
+    with open(path, "rb") as f:
+        return hashlib.sha1(f.read(), usedforsecurity=False).hexdigest()
+
+
 class TestCommonValidation:
     """Tests for common SPDX document validation."""
 
@@ -385,6 +391,46 @@ class TestCrossReferences:
                 assert ref.checksum.algorithm == ChecksumAlgorithm.SHA1, (
                     f"build.spdx: external ref '{ref.document_ref_id}' checksum is not SHA1"
                 )
+
+    def test_external_ref_checksums_match_final_documents(
+        self, app_doc, zephyr_doc, build_doc, modules_doc, spdx_dir
+    ):
+        """Test that external ref checksums match the final SPDX files on disk."""
+        docs = {
+            "app.spdx": app_doc,
+            "zephyr.spdx": zephyr_doc,
+            "build.spdx": build_doc,
+            "modules-deps.spdx": modules_doc,
+        }
+        paths_by_namespace = {
+            doc.creation_info.document_namespace: os.path.join(spdx_dir, filename)
+            for filename, doc in docs.items()
+        }
+
+        errors = []
+        for source_filename, doc in docs.items():
+            for ref in doc.creation_info.external_document_refs:
+                if ref.checksum is None:
+                    continue
+
+                target_path = paths_by_namespace.get(ref.document_uri)
+                if target_path is None:
+                    errors.append(
+                        f"{source_filename}: external ref '{ref.document_ref_id}' points "
+                        f"to unknown namespace '{ref.document_uri}'"
+                    )
+                    continue
+
+                expected_sha1 = file_sha1(target_path)
+                if ref.checksum.value != expected_sha1:
+                    errors.append(
+                        f"{source_filename}: external ref '{ref.document_ref_id}' checksum "
+                        f"is '{ref.checksum.value}', expected final file SHA1 '{expected_sha1}'"
+                    )
+
+        assert not errors, (
+            f"{len(errors)} external document ref checksum mismatch(es):\n" + "\n".join(errors)
+        )
 
     def test_cross_doc_ref_targets_exist(self, app_doc, zephyr_doc, build_doc):
         """Test that cross-document reference targets actually exist in referenced docs.
