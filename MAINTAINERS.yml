@@ -6092,7 +6092,7 @@ Twister:
     - scripts/tests/twister/
     - scripts/tests/twister_blackbox/
     - scripts/pylib/pytest-twister-harness/
-    - doc/develop/test/twister/
+    - doc/develop/twister/
     - tests/test_config.yaml
     - scripts/utils/twister_to_list.py
     - tests/robot/common.robot
