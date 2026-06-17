@@ -72,4 +72,28 @@ ZTEST(cond, test_cond_init_existing_initialized_condattr)
 	zassert_ok(pthread_condattr_destroy(&att));
 }
 
+/**
+ * @brief Test pthread_cond_broadcast call with a statically initialized pthread_cond_t,
+ *        i.e. PTHREAD_COND_INITIALIZER assigned.
+ */
+ZTEST(cond, test_cond_broadcast_static_init_pthread_cond_t)
+{
+	pthread_cond_t cond = PTHREAD_COND_INITIALIZER; /* is considered statically initialized */
+
+	zassert_ok(pthread_cond_broadcast(&cond));
+	zassert_ok(pthread_cond_destroy(&cond));
+}
+
+/**
+ * @brief Test pthread_cond_signal call with a statically initialized pthread_cond_t,
+ *        i.e. PTHREAD_COND_INITIALIZER assigned.
+ */
+ZTEST(cond, test_cond_signal_static_init_pthread_cond_t)
+{
+	pthread_cond_t cond = PTHREAD_COND_INITIALIZER; /* is considered statically initialized */
+
+	zassert_ok(pthread_cond_signal(&cond));
+	zassert_ok(pthread_cond_destroy(&cond));
+}
+
 ZTEST_SUITE(cond, NULL, NULL, NULL, NULL, NULL);
