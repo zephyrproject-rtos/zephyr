@@ -194,6 +194,18 @@ ZTEST(usbh_test, test_get_next_desc)
 	zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
 	desc = usbh_desc_get_next(desc);
 
+	if (IS_ENABLED(CONFIG_USBD_LOOPBACK_ENABLE_ISO)) {
+		/* #6 if0_0_iso_in_ep */
+		zassert_not_null(desc);
+		zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
+		desc = usbh_desc_get_next(desc);
+
+		/* #7 if2_0_iso_out_ep */
+		zassert_not_null(desc);
+		zassert_equal(desc->bDescriptorType, USB_DESC_ENDPOINT);
+		desc = usbh_desc_get_next(desc);
+	}
+
 	/* #14 nil_desc */
 	zassert_is_null(desc);
 }
