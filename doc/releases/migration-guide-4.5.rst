@@ -1235,6 +1235,95 @@ LoRaWAN
   These ordering requirements do not apply to the LoRaMac-node backend
   (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_LORAMAC_NODE`).
 
+Libraries
+*********
+
+Ring Buffer
+===========
+
+The ring buffer API has been reworked to reduce the :c:struct:`ring_buf` size and to make the
+bookkeeping path more efficient. To accommodate these changes, the zero-copy claim/finish API
+(``ring_buf_put_claim()`` / ``ring_buf_put_finish()`` and their ``get`` counterparts) has been
+replaced by the non-stacking :c:func:`ring_buf_put_ptr` and :c:func:`ring_buf_get_ptr`.
+
+The legacy claim/finish API is still available, but only when
+:kconfig:option:`CONFIG_RING_BUFFER` is enabled. New code should use the ``_ptr`` API
+directly.
+
+Enabling :kconfig:option:`CONFIG_RING_BUFFER` selects the legacy ring buffer header, which
+also brings back the other deprecated symbols that are absent from the default header: the entire
+item API (:c:func:`ring_buf_item_init`, :c:func:`ring_buf_item_put`, :c:func:`ring_buf_item_get`,
+:c:func:`ring_buf_item_space_get`, ``RING_BUF_ITEM_DECLARE*`` and ``RING_BUF_ITEM_SIZEOF``) and
+``ring_buf_internal_reset()``. Out-of-tree code that still uses any of these fails to compile with
+no other hint; enabling this option is the switch that restores them while the code is migrated to
+:c:struct:`sys_ringq` and the ``_ptr`` API.
+
+Advanced use cases such as **speculative-write-then-cancel** and **backfilling** (modifying a
+previously written header before committing) now rely on the trailing ``offset`` parameter of
+:c:func:`ring_buf_put_ptr` and :c:func:`ring_buf_get_ptr`. The offset is the number of bytes past
+the current write (or read) index that the caller has already tentatively reserved, wrapping
+handled internally. You lay out successive regions by passing an increasing offset, leaving the
+real ring buffer unmodified, and only advance it with :c:func:`ring_buf_commit` (or
+:c:func:`ring_buf_consume`).
+If any step fails you simply return without committing, which is the equivalent of the old
+``ring_buf_put_finish(rb, 0)`` cancellation.
+
+For example, the following claim/finish code:
+
+.. code-block:: c
+
+   int write_pkg(struct ring_buf *rb, const uint8_t *payload, size_t payload_size)
+   {
+           struct hdr *h;
+           uint8_t *ptr;
+           uint32_t claim_size;
+
+           claim_size = ring_buf_put_claim(rb, (uint8_t **)&h, sizeof(*h));
+           if (claim_size < sizeof(*h)) {
+                   ring_buf_put_finish(rb, 0);
+                   return -ENOMEM;
+           }
+
+           claim_size = ring_buf_put_claim(rb, &ptr, payload_size);
+           if (claim_size == 0) {
+                   ring_buf_put_finish(rb, 0);
+                   return -ENOMEM;
+           }
+           h->len = claim_size;
+           /* ... write payload through ptr ... */
+           ring_buf_put_finish(rb, sizeof(*h) + h->len);
+           return h->len;
+   }
+
+would roughly translate to:
+
+.. code-block:: c
+
+   int write_pkg(struct ring_buf *rb, const uint8_t *payload, size_t payload_size)
+   {
+           struct hdr *h;
+           uint8_t *ptr;
+           uint32_t claim_size;
+
+           /* Reserve the header region without committing it. */
+           if (ring_buf_put_ptr(rb, (uint8_t **)&h, 0) < sizeof(*h)) {
+                   return -ENOMEM;
+           }
+
+           /* Expose the region right after the header via a trailing offset. */
+           claim_size = ring_buf_put_ptr(rb, &ptr, sizeof(*h));
+           if (claim_size == 0) {
+                   /* Nothing was committed to rb, so the write is cancelled. */
+                   return -ENOMEM;
+           }
+           h->len = MIN(claim_size, payload_size);
+           /* ... write payload through ptr ... */
+
+           /* Publish header and payload atomically to the real buffer. */
+           ring_buf_commit(rb, sizeof(*h) + h->len);
+           return h->len;
+   }
+
 Other subsystems
 ****************
 
