@@ -5,7 +5,6 @@ config INPUT_STM32_TSC_KEYS
 	bool "STM32 TSC touch library"
 	default y
 	depends on DT_HAS_ST_STM32_TSC_ENABLED
-	select RING_BUFFER
 	help
 	  Enable support for STM32 TSC touch library.
 

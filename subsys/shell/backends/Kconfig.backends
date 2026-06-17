@@ -18,7 +18,6 @@ config SHELL_BACKEND_SERIAL
 	bool "Serial backend"
 	default "$(dt_chosen_enabled,$(DT_CHOSEN_Z_SHELL_UART))"
 	select SERIAL
-	select RING_BUFFER
 	help
 	  Enable serial backend.
 
