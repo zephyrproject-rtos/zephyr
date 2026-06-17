@@ -70,17 +70,15 @@ This option also supports different revisions of one same board,
 you can use ``--platform board@revision`` to test on a specific revision.
 
 The list of command line options supported by twister can be viewed with
-``west twister --help``. The full set of options is shown below (rendered at
-documentation build time):
-
-.. command-output:: $ZEPHYR_BASE/scripts/twister --help
-   :shell:
+``west twister --help``. See :ref:`twister_commandline_options` for the full
+set of options.
 
 The following pages cover additional Twister topics:
 
 .. toctree::
    :maxdepth: 1
 
+   commandline
    pytest
    twister_statuses
    twister_blackbox
