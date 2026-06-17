@@ -13,7 +13,6 @@
 #include <zephyr/cache.h>
 #include "intel_emmc_host.h"
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
-BUILD_ASSERT(IS_ENABLED(CONFIG_PCIE), "DT need CONFIG_PCIE");
 #include <zephyr/drivers/pcie/pcie.h>
 #endif
 
@@ -1298,8 +1297,6 @@ static DEVICE_API(sdhc, emmc_api) = {
 	{                                                                                          \
 		BUILD_ASSERT(DT_INST_IRQN(n) == PCIE_IRQ_DETECT,                                   \
 			     "Only runtime IRQ configuration is supported");                       \
-		BUILD_ASSERT(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),                                \
-			     "eMMC PCI device needs CONFIG_DYNAMIC_INTERRUPTS");                   \
 		const struct emmc_config *const dev_cfg = port->config;                            \
 		unsigned int irq = pcie_alloc_irq(dev_cfg->pcie->bdf);                             \
                                                                                                    \
