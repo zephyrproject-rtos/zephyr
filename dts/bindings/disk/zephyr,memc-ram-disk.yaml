@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RAM disk backed by an external memory device accessed through the MEMC
+  subsystem API (memc_read / memc_write).
+
+compatible: "zephyr,memc-ram-disk"
+
+include:
+  - name: zephyr,ram-disk.yaml
+    property-allowlist:
+      - disk-name
+      - sector-size
+      - sector-count
+
+properties:
+  memc:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the MEMC device that manages the backing memory.
+      The referenced device must implement the MEMC driver API.
