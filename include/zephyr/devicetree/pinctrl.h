@@ -42,17 +42,17 @@
 	DT_CAT6(node_id, _P_pinctrl_, pc_idx, _IDX_, idx, _PH)
 
 /**
- * @brief Get a node identifier from a pinctrl-0 property
+ * @brief Get a node identifier from a <tt>pinctrl-0</tt> property
  *
  * This is equivalent to:
  *
  *     DT_PINCTRL_BY_IDX(node_id, 0, idx)
  *
- * It is provided for convenience since pinctrl-0 is commonly used.
+ * It is provided for convenience since <tt>pinctrl-0</tt> is commonly used.
  *
- * @param node_id node with a pinctrl-0 property
- * @param idx index into the pinctrl-0 property
- * @return node identifier for the phandle at index idx in the pinctrl-0
+ * @param node_id node with a <tt>pinctrl-0</tt> property
+ * @param idx index into the <tt>pinctrl-0</tt> property
+ * @return node identifier for the phandle at index idx in the <tt>pinctrl-0</tt>
  *         property of that node
  */
 #define DT_PINCTRL_0(node_id, idx) DT_PINCTRL_BY_IDX(node_id, 0, idx)
@@ -112,7 +112,7 @@
  * quotes" from it.
  *
  * DT_PINCTRL_IDX_TO_NAME_TOKEN() can only be used if the node has a
- * pinctrl-'pc_idx' property and a pinctrl-names property element for
+ * <tt>pinctrl-'pc_idx'</tt> property and a <tt>pinctrl-names</tt> property element for
  * that index. It is an error to use it in other circumstances.
  *
  * Example devicetree fragment:
@@ -216,7 +216,7 @@
 /**
  * @brief Get the number of pinctrl properties in a node
  *
- * This expands to 0 if there are no pinctrl-i properties.
+ * This expands to 0 if there are no <tt>pinctrl-'i'</tt> properties.
  * Otherwise, it expands to the number of such properties.
  *
  * Example devicetree fragment:
@@ -242,7 +242,7 @@
 /**
  * @brief Test if a node has a pinctrl property with an index
  *
- * This expands to 1 if the pinctrl-'idx' property exists.
+ * This expands to 1 if the <tt>pinctrl-'idx'</tt> property exists.
  * Otherwise, it expands to 0.
  *
  * Example devicetree fragment:
@@ -313,18 +313,18 @@
 	DT_PINCTRL_BY_IDX(DT_DRV_INST(inst), pc_idx, idx)
 
 /**
- * @brief Get a node identifier from a pinctrl-0 property for a
+ * @brief Get a node identifier from a <tt>pinctrl-0</tt> property for a
  *        DT_DRV_COMPAT instance
  *
  * This is equivalent to:
  *
  *     DT_PINCTRL_BY_IDX(DT_DRV_INST(inst), 0, idx)
  *
- * It is provided for convenience since pinctrl-0 is commonly used.
+ * It is provided for convenience since <tt>pinctrl-0</tt> is commonly used.
  *
  * @param inst instance number
- * @param idx index into the pinctrl-0 property
- * @return node identifier for the phandle at index idx in the pinctrl-0
+ * @param idx index into the <tt>pinctrl-0</tt> property
+ * @return node identifier for the phandle at index idx in the <tt>pinctrl-0</tt>
  *         property of that instance
  */
 #define DT_INST_PINCTRL_0(inst, idx) \

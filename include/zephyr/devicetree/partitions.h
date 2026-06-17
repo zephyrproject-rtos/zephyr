@@ -40,19 +40,20 @@ extern "C" {
 /**
  * @brief Test if a partition with a given label property exists
  * @param label lowercase-and-underscores label property value
- * @return 1 if the device has a "zephyr,mapped-partition" or "fixed-subpartitions" compatible,
- *         or parent has a "fixed-partitions" compatible, 0 otherwise.
+ * @return 1 if the device has a <tt><zephyr,mapped-partition</tt> or <tt>fixed-subpartitions</tt>
+ *         compatible, or parent has a <tt>fixed-partitions</tt> compatible, 0 otherwise.
  */
 #define DT_HAS_PARTITION_LABEL(label)								\
 	UTIL_OR(DT_HAS_MAPPED_PARTITION_LABEL(label), DT_HAS_FIXED_PARTITION_LABEL(label))
 
 /**
- * @brief Test if zephyr,mapped-partition, fixed-partitions or fixed-subpartitions compatible
- *        node exists
+ * @brief Test if <tt>zephyr,mapped-partition</tt>, <tt>fixed-subpartitions</tt> or
+ *        <tt>fixed-subpartitions</tt> compatible node exists
  *
  * @param node_id DTS node to test
- * @return 1 if node exists and has a "zephyr,mapped-partition" or "fixed-subpartitions"
- *         compatible, or if parent has a "fixed-partitions" compatible, 0 otherwise.
+ * @return 1 if node exists and has a <tt>zephyr,mapped-partition</tt> or
+ *         <tt>fixed-subpartitions</tt> compatible, or if parent has a <tt>fixed-partitions</tt>
+ *         compatible, 0 otherwise.
  */
 #define DT_PARTITION_EXISTS(node_id)				\
 	UTIL_OR(DT_MAPPED_PARTITION_EXISTS(node_id),		\
