@@ -1,0 +1,13 @@
+# ADI APARD32690 board
+
+# Copyright (c) 2026 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_APARD32690_ENABLE_QSPI_FLASHING
+	bool "Set up QSPI flash bank within OpenOCD"
+	default y if CODE_DATA_RELOCATION
+	help
+	  When using code relocation to place code into external flash accessed
+	  with the SPIXF peripheral, ensure OpenOCD will initialize the bank
+	  so the code relocated there can be flashed along with the rest of the
+	  code located on internal flash.
