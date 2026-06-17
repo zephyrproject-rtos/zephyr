@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Embeint Inc
+ * Copyright (c) 2026 Jakub Rzeszutko <jakub.rzeszutko@verkada.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,7 +90,6 @@ struct lbm_sx126x_config {
 	struct spi_dt_spec spi;
 	struct gpio_dt_spec reset;
 	struct gpio_dt_spec busy;
-	struct gpio_dt_spec dio1;
 	struct gpio_dt_spec ant_enable;
 	struct gpio_dt_spec tx_enable;
 	struct gpio_dt_spec rx_enable;
@@ -147,7 +147,7 @@ static int sx126x_ensure_device_ready(const struct device *dev, k_timeout_t time
 	if (data->asleep) {
 		LOG_DBG("SLEEP -> ACTIVE");
 		/* Re-enable the DIO1 interrupt */
-		gpio_pin_interrupt_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+		gpio_pin_interrupt_configure_dt(&config->lbm_common.dio1, GPIO_INT_EDGE_TO_ACTIVE);
 		/* DO NOT USE sx126x_get_status as this will result in recursion */
 		ret = spi_write_dt(&config->spi, &tx_buf_set);
 		if (ret) {
@@ -194,7 +194,7 @@ sx126x_hal_status_t sx126x_hal_write(const void *context, const uint8_t *command
 	if (command[0] == SX126X_SET_SLEEP) {
 		LOG_DBG("ACTIVE -> SLEEP");
 		/* Disable the DIO1 interrupt to save power */
-		(void)gpio_pin_interrupt_configure_dt(&config->dio1, GPIO_INT_DISABLE);
+		(void)gpio_pin_interrupt_configure_dt(&config->lbm_common.dio1, GPIO_INT_DISABLE);
 		dev_data->asleep = true;
 		/* Wait for sleep to take effect */
 		k_sleep(K_MSEC(1));
@@ -455,15 +455,15 @@ int lbm_driver_add_dio1_gpio_callback(const struct device *dev,
 		return -EINVAL;
 	}
 
-	gpio_init_callback(callback, handler, BIT(config->dio1.pin));
+	gpio_init_callback(callback, handler, BIT(config->lbm_common.dio1.pin));
 
-	ret = gpio_add_callback(config->dio1.port, callback);
+	ret = gpio_add_callback(config->lbm_common.dio1.port, callback);
 	if (ret < 0) {
 		LOG_ERR("Failed to add GPIO callback: %d", ret);
 		return ret;
 	}
 
-	gpio_pin_interrupt_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->lbm_common.dio1, GPIO_INT_EDGE_TO_ACTIVE);
 
 	LOG_DBG("Added user GPIO callback");
 	return 0;
@@ -483,7 +483,7 @@ int lbm_driver_remove_dio1_gpio_callback(const struct device *dev,
 		return -EINVAL;
 	}
 
-	ret = gpio_remove_callback(config->dio1.port, callback);
+	ret = gpio_remove_callback(config->lbm_common.dio1.port, callback);
 	if (ret < 0) {
 		LOG_ERR("Failed to remove GPIO callback: %d", ret);
 		return ret;
@@ -521,12 +521,13 @@ int lbm_driver_radio_init(const struct device *dev)
 	}
 
 	/* Configure and enable interrupts */
-	gpio_init_callback(&data->dio1_callback, sx126x_dio1_callback, BIT(config->dio1.pin));
-	if (gpio_add_callback(config->dio1.port, &data->dio1_callback) < 0) {
+	gpio_init_callback(&data->dio1_callback, sx126x_dio1_callback,
+			   BIT(config->lbm_common.dio1.pin));
+	if (gpio_add_callback(config->lbm_common.dio1.port, &data->dio1_callback) < 0) {
 		LOG_ERR("Could not set GPIO callback for DIO1 interrupt.");
 		return -EIO;
 	}
-	gpio_pin_interrupt_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&config->lbm_common.dio1, GPIO_INT_EDGE_TO_ACTIVE);
 
 	LOG_INF("Radio initialized");
 	return 0;
@@ -546,7 +547,7 @@ static int sx126x_init(const struct device *dev)
 	/* Setup GPIOs */
 	if (gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE) ||
 	    gpio_pin_configure_dt(&config->busy, GPIO_INPUT) ||
-	    gpio_pin_configure_dt(&config->dio1, GPIO_INPUT)) {
+	    gpio_pin_configure_dt(&config->lbm_common.dio1, GPIO_INPUT)) {
 		LOG_ERR("GPIO configuration failed.");
 		return -EIO;
 	}
@@ -575,11 +576,11 @@ static int sx126x_init(const struct device *dev)
 	static const struct lbm_sx126x_config config_##node_id = {                                 \
 		.lbm_common.ralf = RALF_SX126X_INSTANTIATE(DEVICE_DT_GET(node_id)),                \
 		.lbm_common.force_ldro = DT_PROP(node_id, force_ldro),                             \
+		.lbm_common.dio1 = GPIO_DT_SPEC_GET(node_id, dio1_gpios),                          \
 		.spi = SPI_DT_SPEC_GET(                                                            \
 			node_id, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB),         \
 		.reset = GPIO_DT_SPEC_GET(node_id, reset_gpios),                                   \
 		.busy = GPIO_DT_SPEC_GET(node_id, busy_gpios),                                     \
-		.dio1 = GPIO_DT_SPEC_GET(node_id, dio1_gpios),                                     \
 		.ant_enable = GPIO_DT_SPEC_GET_OR(node_id, antenna_enable_gpios, {0}),             \
 		.tx_enable = GPIO_DT_SPEC_GET_OR(node_id, tx_enable_gpios, {0}),                   \
 		.rx_enable = GPIO_DT_SPEC_GET_OR(node_id, rx_enable_gpios, {0}),                   \
