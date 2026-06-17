@@ -44,7 +44,7 @@ uint32_t serial_vnd_out_data_size_get(const struct device *dev);
  * @brief Read data written to virtual serial port.
  *
  * Consumes the data, such that future calls to serial_vnd_read_out_data() will
- * not include this data. Requires CONFIG_RING_BUFFER.
+ * not include this data.
  *
  * @warning
  * Use cases involving multiple reads of the data must prevent
@@ -64,7 +64,7 @@ uint32_t serial_vnd_read_out_data(const struct device *dev, unsigned char *data,
  * @brief Peek at data written to virtual serial port.
  *
  * Reads the data without consuming it. Future calls to serial_vnd_peek_out_data() or
- * serial_vnd_read_out_data() will return this data again.  Requires CONFIG_RING_BUFFER.
+ * serial_vnd_read_out_data() will return this data again.
  *
  * @warning
  * Use cases involving multiple reads of the data must prevent
