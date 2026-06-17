@@ -600,7 +600,22 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 
 	k_mutex_unlock(&dev_data->access_mutex);
 
-	memcpy(cmd->response, sdio_cmd.ui32Resp, sizeof(cmd->response));
+	if (sdio_cmd.ui32RespType & MMC_RSP_136) {
+		/* Ambiq HAL packs R2 CID/CSD in descending word order into
+		 * ui32Resp[0..3] (ui32Resp[0] is bits 127:96). Zephyr's SD
+		 * subsystem expects response[3] to hold the highest 32 bits,
+		 * so reverse the order before returning.
+		 */
+		cmd->response[3] = sdio_cmd.ui32Resp[0];
+		cmd->response[2] = sdio_cmd.ui32Resp[1];
+		cmd->response[1] = sdio_cmd.ui32Resp[2];
+		cmd->response[0] = sdio_cmd.ui32Resp[3];
+	} else {
+		cmd->response[0] = sdio_cmd.ui32Resp[0];
+		cmd->response[1] = 0;
+		cmd->response[2] = 0;
+		cmd->response[3] = 0;
+	}
 
 	LOG_DBG("Resp0 = 0x%x, Resp1 = 0x%x, Resp2 = 0x%x, Resp3 = 0x%x", cmd->response[0],
 		cmd->response[1], cmd->response[2], cmd->response[3]);
