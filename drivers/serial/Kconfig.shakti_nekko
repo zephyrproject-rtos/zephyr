@@ -1,0 +1,11 @@
+# Copyright (c) 2025 AIFoundry
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_SHAKTI_NEKKO
+	bool "Nekko Shakti UART (original Erbium revision)"
+	default y
+	depends on DT_HAS_AIFOUNDRY_SHAKTI_UART_V1_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable polling support for the original Erbium integration of the
+	  Shakti UART. Registers use 32-bit accesses at eight-byte intervals.
