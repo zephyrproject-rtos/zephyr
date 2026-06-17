@@ -36,3 +36,9 @@
 	pinctrl-0 = <&uart_default>;
 	pinctrl-names = "default";
 };
+
+&cmp0 {
+	status = "disabled";
+	pinctrl-0 = <&cmp_default>;
+	pinctrl-names = "default";
+};

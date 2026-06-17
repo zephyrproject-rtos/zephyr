@@ -58,6 +58,14 @@
 				port = "port-a";
 			};
 		};
+
+		cmp0: cmp@40001054 {
+			compatible = "wch,ch5xx-comparator";
+			reg = <0x40001054 4>;
+			interrupt-parent = <&pfic>;
+			interrupts = <29>;
+			status = "disabled";
+		};
 	};
 };
 

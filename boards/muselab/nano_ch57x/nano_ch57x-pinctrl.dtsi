@@ -19,4 +19,11 @@
 			bias-pull-up;
 		};
 	};
+
+	cmp_default: cmp_default {
+		group {
+			pinmux = <CMP_P_PA3_0 CMP_N_PA2_0>;
+			input-disable;
+		};
+	};
 };
