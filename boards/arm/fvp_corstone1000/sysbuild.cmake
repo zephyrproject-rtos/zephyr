@@ -417,14 +417,10 @@ endif()
 # =============================================================================
 # Sign TF-A BL2 with MCUboot-compatible format for TF-M verification
 # =============================================================================
-# TF-M Corstone1000 uses MCUBOOT_BUILTIN_KEY mode with EC-P256 signatures.
-# Key mapping with BUILTIN_KEY (ecdsa.h bootutil_ecdsa_init increments key_id):
-#   image_index -> key_id (in image_validate.c: key_id = image_index)
-#   bootutil_ecdsa_init: key_id++ (to avoid PSA_KEY_ID_NULL=0)
-#   So for Image 1: key_id = 1 + 1 = 2
-#   PSA looks for key_id=2 -> desc_table[1] (key_id=idx+1=2)
-#   desc_table[1] -> OTP KIND_1 (image_idx = key_id - 1 = 1)
-# Therefore Image 1 (TF-A BL2) uses KIND_1 key (root-EC-P256_1.pem).
+# TF-M Corstone1000 uses MCUboot's default key model (MCUBOOT_BUILTIN_KEY=OFF,
+# EC-P256): each image carries a public-key-hash TLV, and BL2 verifies it against
+# the ROTPK it was built with. Sign the TF-A BL2 (image 1) with the same root key
+# TF-M's BL2 embeds, root-EC-P256_1.pem.
 #
 # Parameters from TF-M Corstone1000 config:
 # - Header size: 0x1000 (4KB)
@@ -434,9 +430,9 @@ endif()
 
 set(imgtool ${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts/imgtool.py)
 # The signing key ships as a static asset in the TF-M tree (bl2/ext/mcuboot/);
-# it is the pre-shared root EC key matched against the OTP KIND_1 slot when
-# verifying image 1 (TF-A BL2).  TF-M does not fetch any external mcuboot
-# submodule.
+# it is the root EC key whose public half TF-M's BL2 embeds as its ROTPK, so
+# BL2 verifies image 1 (TF-A BL2) against it.  TF-M does not fetch any external
+# mcuboot submodule.
 set(signing_key ${tfm_source_dir}/bl2/ext/mcuboot/root-EC-P256_1.pem)
 
 # TF-A BL2 slot size from flash_layout.h: SE_BL2_IMAGE_MAX_SIZE = 0x100000
@@ -463,6 +459,9 @@ add_custom_command(
     --slot-size ${tfa_slot_size}
     --load-addr ${tfa_load_addr}
     --boot-record NSPE
+    # Default key model: embed the public-key hash TLV; BL2 verifies it against
+    # the ROTPK it was built with (root-EC-P256_1.pem). No builtin key-id.
+    --public-key-format hash
     ${tfa_output_dir}/bl2.bin
     ${CORSTONE1000_FIRMWARE_DIR}/bl2_signed.bin
   DEPENDS tfa_host
