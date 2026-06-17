@@ -71,6 +71,12 @@ tests:
       - sam_e54_xpro
       - pic32cm_jh01_cpro
       - lp_em_cc35x1/cc3551e
+      - lp_em_cc2340r5
+      - lp_em_cc2340r53
+      - lp_em_cc2340r5moda
+      - lp_em_cc2755p10
+      - lp_em_cc2745r10_q1/cc2755r10
+      - lp_em_cc2745r10_q1/cc2745r10_q1
     extra_args:
       - platform:sam_e54_xpro/atsame54p20a:"DTC_OVERLAY_FILE=boards/sam_e54_xpro_ref.overlay"
       - platform:pic32cx_sg41_cult/pic32cx1025sg41128:"DTC_OVERLAY_FILE=boards/pic32cx_sg41_cult_ref.overlay"

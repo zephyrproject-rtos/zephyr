@@ -1,0 +1,55 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+ * Copyright (c) Texas Instruments 2026.
+ */
+
+#include <zephyr/dt-bindings/adc/adc.h>
+#include <zephyr/dt-bindings/pinctrl/cc23x0-pinctrl.h>
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&adc0 0>, <&adc0 1>;
+	};
+};
+
+&pinctrl {
+	/* ADC0 - Channel 0 using DIO7 (ADC0_AREFM) */
+	adc0_ch0: adc0_ch0 {
+		pinmux = <7 DIO7_ADC0_AREFM>;
+		bias-disable;
+		input-enable;
+	};
+
+	adc0_ch1: adc0_ch1 {
+		pinmux = <6 DIO6_ADC1_AREFP>;
+		bias-disable;
+		input-enable;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	pinctrl-0 = <&adc0_ch0>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <8>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <0>;
+		zephyr,resolution = <8>;
+	};
+};
