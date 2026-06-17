@@ -24,8 +24,8 @@ extern "C" {
  */
 
 /**
- * @brief Get display node identifier by logical index from "displays" property of node with
- * compatible "zephyr,displays"
+ * @brief Get display node identifier by logical index from <tt>displays</tt> property of node with
+ * compatible <tt>"zephyr,displays"</tt>
  *
  * Example devicetree fragment:
  *
@@ -53,7 +53,7 @@ extern "C" {
  *     DT_ZEPHYR_DISPLAY(1) // node identifier for display node node-3
  * @endcode
  *
- * @param idx logical index of display node's phandle in "displays" property
+ * @param idx logical index of display node's phandle in <tt>displays</tt> property
  *
  * @return display node identifier, @ref DT_INVALID_NODE otherwise
  */
@@ -63,8 +63,9 @@ extern "C" {
 /**
  * @brief Get number of zephyr displays
  *
- * @return number of displays designated by "displays" property of "zephyr,displays" compatible
- * node, if it exists, otherwise 1 if "zephyr,display" chosen property exists, 0 otherwise
+ * @return number of displays designated by <tt>displays</tt> property of <tt>"zephyr,displays"</tt>
+ * compatible node, if it exists, otherwise 1 if <tt>"zephyr,display"</tt> chosen property exists,
+ * 0 otherwise
  */
 #define DT_ZEPHYR_DISPLAYS_COUNT                                                                   \
 	COND_CODE_1(DT_HAS_COMPAT_STATUS_OKAY(zephyr_displays),                                    \
