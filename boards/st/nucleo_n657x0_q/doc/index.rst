@@ -174,6 +174,17 @@ Serial Port
 NUCLEO-N657X0-Q board has 10 U(S)ARTs. The Zephyr console output is assigned to
 USART1. Default settings are 115200 8N1.
 
+STM32 OEMuROT integration
+=========================
+
+STM32CubeN6 provides an external secure bootloader called STM32 OEMuROT
+that takes advantage of the secure features of the STM32N657X0
+microcontroller. Refer to the `OEMuRoT for STM32N6 wiki article`_ for details
+on this bootloader.
+
+Integration of this bootloader in the Zephyr build environment is available
+in the external `STM32 OEMxROT module`_.
+
 Programming and Debugging
 *************************
 
@@ -330,3 +341,9 @@ To do so, it is advised to use Twister's hardware map feature with the following
 
 .. _STM32CubeProgrammer:
    https://www.st.com/en/development-tools/stm32cubeprog.html
+
+.. _OEMuRoT for STM32N6 wiki article:
+   https://wiki.st.com/stm32mcu/wiki/Security:OEMuRoT_for_STM32N6
+
+.. _STM32 OEMxROT module:
+   https://github.com/stm32-hotspot/zephyr-stm32-oemxrot
