@@ -381,6 +381,7 @@
 	pinctrl-names = "default";
 	cd-gpios = <&gpioh 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	disk-name = "SD";
+	bus-width = <4>;
 	status = "okay";
 };
 
