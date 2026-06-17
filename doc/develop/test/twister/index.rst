@@ -295,15 +295,22 @@ explained in this document.
         tests:
           bluetooth.gatt:
             build_only: true
-            platform_allow: qemu_cortex_m3 qemu_x86
-            tags: bluetooth
+            platform_allow:
+              - qemu_cortex_m3
+              - qemu_x86
+            tags:
+              - bluetooth
           bluetooth.gatt.br:
             build_only: true
-            extra_args: CONF_FILE="prj_br.conf"
+            extra_args:
+              -CONF_FILE="prj_br.conf"
             filter: not CONFIG_DEBUG
-            platform_exclude: up_squared
-            platform_allow: qemu_cortex_m3 qemu_x86
-            tags: bluetooth
+            platform_exclude:
+              -up_squared
+            platform_allow:
+              - qemu_cortex_m3 qemu_x86
+            tags:
+              bluetooth
 
 
 A sample with tests will have the same structure with additional information
@@ -317,13 +324,15 @@ related to the sample and what is being demonstrated:
         tests:
           sample.basic.hello_world:
             build_only: true
-            tags: tests
+            tags:
+              - tests
             min_ram: 16
           sample.basic.hello_world.singlethread:
             build_only: true
             extra_args: CONF_FILE=prj_single.conf
             filter: not CONFIG_BT
-            tags: tests
+            tags:
+              - tests
             min_ram: 16
 
 A Test Scenario entry in the ``tests:`` YAML dictionary has its Test Scenario
