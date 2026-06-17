@@ -845,7 +845,7 @@ struct can_device_state {
 /**
  * @brief Like CAN_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
  *
- * @param inst Instance number. This is replaced by <tt>DT_DRV_COMPAT(inst)</tt>
+ * @param inst Instance number. This is replaced by <tt>DT_DRV_INST(inst)</tt>
  *             in the call to CAN_DEVICE_DT_DEFINE().
  * @param ...  Other parameters as expected by CAN_DEVICE_DT_DEFINE().
  */
