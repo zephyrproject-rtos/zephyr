@@ -52,17 +52,6 @@ To run Twister in the local tree, follow the steps below:
 
    All forms accept the same command line options.
 
-
-If you have a system with a large number of cores and plenty of free storage space,
-you can build and run all possible tests using the following options:
-
-.. code-block:: console
-
-   $ west twister --all --enable-slow
-
-This will build for all available boards and run all applicable tests in
-a simulated (for example QEMU) environment.
-
 If you want to run tests on one or more specific platforms, you can use
 the ``--platform`` option, it is a platform filter for testing, with this
 option, test suites will only be built/run on the platforms specified.
