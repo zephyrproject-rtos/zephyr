@@ -892,7 +892,7 @@ static bool is_fmt_spec(char c)
 	return (c >= 64) && (c <= 122);
 }
 
-/* Function checks if nth argument is a pointer (%p). Returns true is yes. Returns
+/* Function checks if nth argument is a pointer (%p). Returns true if yes. Returns
  * false if not or if string does not have nth argument.
  */
 bool is_ptr(const char *fmt, int n)
