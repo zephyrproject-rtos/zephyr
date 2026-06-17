@@ -572,9 +572,24 @@ static void ifx_cat1_uart_irq_err_disable(const struct device *dev)
 static int ifx_cat1_uart_irq_is_pending(const struct device *dev)
 {
 	const struct ifx_cat1_uart_config *const config = dev->config;
-	uint32_t intcause = Cy_SCB_GetInterruptCause(config->reg_addr);
+	int rx_pending = 0;
+	int tx_pending = 0;
 
-	return (int)(intcause & (CY_SCB_TX_INTR | CY_SCB_RX_INTR));
+	/*
+	 * Report pending state from live hardware state, not the latched
+	 * cause register which the ISR clears before the callback runs.
+	 * Gate on the interrupt mask: rx_ready() reflects raw FIFO occupancy,
+	 * so an ungated check would spin the ISR loop when RX is disabled.
+	 */
+	if ((Cy_SCB_GetRxInterruptMask(config->reg_addr) & CY_SCB_UART_RX_NOT_EMPTY) != 0u) {
+		rx_pending = ifx_cat1_uart_irq_rx_ready(dev);
+	}
+
+	if ((Cy_SCB_GetTxInterruptMask(config->reg_addr) & CY_SCB_UART_TX_EMPTY) != 0u) {
+		tx_pending = ifx_cat1_uart_irq_tx_ready(dev);
+	}
+
+	return ((rx_pending != 0) || (tx_pending != 0)) ? 1 : 0;
 }
 
 /* Start processing interrupts in ISR.
@@ -586,12 +601,6 @@ static void ifx_cat1_uart_irq_update(const struct device *dev)
 {
 	const struct ifx_cat1_uart_config *const config = dev->config;
 
-	/*
-	 * Read interrupt cause and RX FIFO count have a side effect
-	 * to clear stale interrupt flags, so that FIFO is flushed
-	 * properly and the current hardware state is reflected.
-	 * This is required for proper UART operation.
-	 */
 	(void) (ifx_cat1_uart_irq_is_pending(dev));
 	(void) (Cy_SCB_UART_GetNumInRxFifo(config->reg_addr));
 }
