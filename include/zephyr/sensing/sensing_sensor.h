@@ -385,7 +385,7 @@ extern const struct rtio_iodev_api __sensing_iodev_api;
  * compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSING_SENSORS_DT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to SENSING_SENSORS_DT_DEFINE().
  * @param ... other parameters as expected by SENSING_SENSORS_DT_DEFINE().
  */
 #define SENSING_SENSORS_DT_INST_DEFINE(inst, ...)	\

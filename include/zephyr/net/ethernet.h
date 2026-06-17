@@ -1186,7 +1186,7 @@ static inline bool net_eth_is_vlan_interface(struct net_if *iface)
  * compatible
  *
  * @param inst instance number.  This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to ETH_NET_DEVICE_DT_DEFINE.
+ * <tt>DT_DRV_INST(inst)</tt> in the call to ETH_NET_DEVICE_DT_DEFINE.
  *
  * @param ... other parameters as expected by ETH_NET_DEVICE_DT_DEFINE.
  */
