@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,12 @@
 			reg = <0x40268000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
+		};
+
+		uid: uid@1b000040 {
+			compatible = "nxp,otp-uid";
+			reg = <0x1b000040 0x8>;
 			status = "disabled";
 		};
 	};
