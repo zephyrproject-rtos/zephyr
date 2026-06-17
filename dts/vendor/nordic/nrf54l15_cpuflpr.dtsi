@@ -7,15 +7,15 @@
 #include <nordic/nrf54l15.dtsi>
 #include <riscv/nordic/nrf54l_05_10_15_cpuflpr.dtsi>
 
-/* 188 + 68 = 256KB */
+/* 159 + 96 + 1 = 256KB */
 / {
 	soc {
-		cpuflpr_sram: memory@20028000 {
+		cpuflpr_sram: memory@20027c00 {
 			compatible = "mmio-sram";
-			reg = <0x20028000 DT_SIZE_K(96)>;
+			reg = <0x20027c00 DT_SIZE_K(96)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x2002f000 DT_SIZE_K(96)>;
+			ranges = <0x0 0x20027c00 DT_SIZE_K(96)>;
 		};
 	};
 };
