@@ -1,0 +1,29 @@
+# Copyright (c) 2026 AIFoundry
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_ERBIUM
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_nodelabel_int_prop,mtimer,clock-frequency)
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+
+config NUM_IRQS
+	default 44
+
+# Single-hart timer: arch_proc_id() must return 0 for correct mtimecmp access
+config RISCV_HART_MASK
+	default 0
+
+# Erbium requires mtvec/stvec to be 4KB aligned.
+config RISCV_TRAP_HANDLER_ALIGNMENT
+	default 4096
+
+endif

@@ -1,0 +1,19 @@
+# Copyright (c) 2026 AIFoundry
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_ERBIUM
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	select RISCV_ISA_RV64I
+	select RISCV_ISA_EXT_M
+	select RISCV_ISA_EXT_F
+	select RISCV_ISA_EXT_C
+	select RISCV_ISA_EXT_ZICSR
+	select RISCV_ISA_EXT_ZIFENCEI
+	select INCLUDE_RESET_VECTOR
+	select 64BIT
+	select CPU_HAS_DCACHE
+	select CPU_HAS_ICACHE
+	select ARCH_HAS_CUSTOM_CPU_IDLE
+	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE

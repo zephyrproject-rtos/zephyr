@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2026 AIFoundry
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	#address-cells = <2>;
+	#size-cells = <2>;
+	compatible = "aifoundry,erbium";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "riscv";
+			device_type = "cpu";
+			reg = <0>;
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "f", "c", "zicsr", "zifencei";
+			status = "okay";
+
+			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
+				#address-cells = <0>;
+				#interrupt-cells = <1>;
+				interrupt-controller;
+			};
+		};
+	};
+
+	soc {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		compatible = "simple-bus";
+		ranges;
+
+		mram: memory@40000200 {
+			compatible = "mmio-sram";
+			/* 16 MiB MRAM, skip the first 512 bytes. */
+			reg = <0x0 0x40000200 0x0 0xfffe00>;
+		};
+
+		plic: interrupt-controller@a0000000 {
+			compatible = "sifive,plic-1.0.0";
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			reg = <0x0 0xa0000000 0x0 0x04000000>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <32>;
+		};
+
+		mtimer: timer@80f40200 {
+			compatible = "riscv,machine-timer";
+			clock-frequency = <2000000>;
+			interrupts-extended = <&hlic 7>;
+			reg = <0x0 0x80f40200 0x0 0x8
+			       0x0 0x80f40208 0x0 0x8>;
+			reg-names = "mtime", "mtimecmp";
+		};
+	};
+};
