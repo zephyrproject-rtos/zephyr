@@ -255,11 +255,28 @@ ExternalProject_Add(
 
 # Post-build: Create bl1.bin from TF-M outputs
 # bl1.bin = bl1_1.bin + bl1_provisioning_bundle.bin
-# Offset must match BL1_1_CODE_SIZE from region_defs.h (0xE800 = 59392)
+# The provisioning bundle lives at PROVISIONING_DATA_START, i.e. right after
+# BL1_1's code region (BL1_1_CODE_START is 0).  Derive the offset from
+# BL1_1_CODE_SIZE in region_defs.h rather than hardcoding it, so it stays
+# correct if TF-M changes the BL1_1 layout (it shrank from 0xE800 to 0xE748
+# between TF-M v2.2 and v2.3).
+set(c1000_region_defs
+  ${tfm_source_dir}/platform/ext/target/arm/corstone1000/partition/region_defs.h)
+file(STRINGS ${c1000_region_defs} c1000_bl1_1_code_size_line
+     REGEX "^[ \t]*#define[ \t]+BL1_1_CODE_SIZE[ \t]")
+string(REGEX MATCH "0x[0-9A-Fa-f]+" c1000_bl1_1_code_size "${c1000_bl1_1_code_size_line}")
+if(NOT c1000_bl1_1_code_size)
+  message(FATAL_ERROR
+    "Corstone-1000: could not parse BL1_1_CODE_SIZE from ${c1000_region_defs}")
+endif()
+math(EXPR c1000_prov_bundle_offset "${c1000_bl1_1_code_size}")
+message(STATUS "Corstone-1000: provisioning bundle offset in bl1.bin: "
+  "${c1000_prov_bundle_offset} (BL1_1_CODE_SIZE=${c1000_bl1_1_code_size})")
+
 add_custom_command(
   OUTPUT ${CORSTONE1000_FIRMWARE_DIR}/bl1.bin
   COMMAND ${CMAKE_COMMAND} -E copy ${tfm_binary_dir}/bin/bl1_1.bin ${CORSTONE1000_FIRMWARE_DIR}/bl1.bin
-  COMMAND dd conv=notrunc bs=1 if=${tfm_binary_dir}/bin/bl1_provisioning_bundle.bin of=${CORSTONE1000_FIRMWARE_DIR}/bl1.bin seek=59392 2>/dev/null
+  COMMAND dd conv=notrunc bs=1 if=${tfm_binary_dir}/bin/bl1_provisioning_bundle.bin of=${CORSTONE1000_FIRMWARE_DIR}/bl1.bin seek=${c1000_prov_bundle_offset} 2>/dev/null
   DEPENDS tfm_secure_enclave
   COMMENT "Creating Secure Enclave ROM image (bl1.bin)"
 )
