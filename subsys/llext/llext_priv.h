@@ -54,6 +54,10 @@ int do_llext_load(struct llext_loader *ldr, struct llext *ext,
 static inline const char *llext_string(struct llext_loader *ldr, struct llext *ext,
 				       enum llext_mem mem_idx, unsigned int idx)
 {
+	if (idx >= ext->mem_size[mem_idx]) {
+		return NULL;
+	}
+
 	return (char *)ext->mem[mem_idx] + idx;
 }
 
