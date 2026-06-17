@@ -1063,13 +1063,8 @@ The following is an example yaml file with a few harness_config options.
    :maxdepth: 1
 
    harness/ctest
+   harness/gtest
 
-
-Gtest
-=====
-
-Use ``gtest`` harness if you've already got tests written in the gTest
-framework and do not wish to update them to zTest.
 
 Pytest
 ======
