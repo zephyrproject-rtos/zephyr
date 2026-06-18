@@ -2143,6 +2143,78 @@
 				drive-push-pull;
 				input-enable;
 			};
+
+			/omit-if-no-ref/ p4_0_smif1_data0: p4_0_smif1_data0 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF1_PORT0, 0, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p4_1_smif1_data1: p4_1_smif1_data1 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF1_PORT0, 1, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p4_2_smif1_data2: p4_2_smif1_data2 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF1_PORT0, 2, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p4_3_smif1_data3: p4_3_smif1_data3 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF1_PORT0, 3, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p4_4_smif1_data4: p4_4_smif1_data4 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF1_PORT0, 4, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p4_5_smif1_data5: p4_5_smif1_data5 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF1_PORT0, 5, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p4_6_smif1_data6: p4_6_smif1_data6 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF1_PORT0, 6, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p4_7_smif1_data7: p4_7_smif1_data7 {
+				pinmux = <DT_CAT1_PINMUX(IFX_SMIF1_PORT0, 7, HSIOM_SEL_ACT_15)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p21_7_smif1_select0: p21_7_smif1_select0 {
+				pinmux = <DT_CAT1_PINMUX(21, 7, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p0_0_smif1_select1: p0_0_smif1_select1 {
+				pinmux = <DT_CAT1_PINMUX(0, 0, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p0_1_smif1_select2: p0_1_smif1_select2 {
+				pinmux = <DT_CAT1_PINMUX(0, 1, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+				input-enable;
+			};
+
+			/omit-if-no-ref/ p12_3_smif1_select3: p12_3_smif1_select3 {
+				pinmux = <DT_CAT1_PINMUX(12, 3, HSIOM_SEL_ACT_0)>;
+				drive-push-pull;
+				input-enable;
+			};
 		};
 	};
 };

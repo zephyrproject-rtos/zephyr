@@ -1381,6 +1381,24 @@
 			};
 		};
 
+		smif0: smif@54460000 {
+			compatible = "infineon,smif-memslot";
+			reg = <0x54460000 0x20000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+		};
+
+		smif1: smif@544a0000 {
+			compatible = "infineon,smif-memslot";
+			reg = <0x544a0000 0x20000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+		};
+
 		usbhs: usbhs@54900000 {
 			compatible = "infineon,usbhs", "snps,dwc2";
 			reg = <0x54900000 0x40100>;
