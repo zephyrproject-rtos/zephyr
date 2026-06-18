@@ -19,6 +19,10 @@
  * @defgroup cellular_interface Cellular
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup cellular_interface_ext Device-specific Cellular API extensions
+ * @{
+ * @}
  */
 
 #include <zephyr/types.h>
