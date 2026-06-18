@@ -23,10 +23,34 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&sleep &deepsleep &dsr>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				exit-latency-us = <1>;
+				min-residency-us = <1>;
+			};
+
+			deepsleep: deepsleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				exit-latency-us = <120>;
+				min-residency-us = <500>;
+			};
+
+			dsr: deepsleepretention {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				exit-latency-us = <240>;
+				min-residency-us = <1000>;
 			};
 		};
 	};
