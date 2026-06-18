@@ -20,6 +20,7 @@ config TF_PSA_CRYPTO_USER_CONFIG
 
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NIST curves optimization"
+	default y
 	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
 
 comment "Supported ciphers and cipher modes"
