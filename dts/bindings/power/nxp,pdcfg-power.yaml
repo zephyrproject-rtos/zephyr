@@ -15,3 +15,11 @@ properties:
       power to various blocks while the CPU is in deep sleep mode. These values
       are programmed to the sleep configuration registers before entering deep
       sleep mode.
+
+  deep-sleep-retention-config:
+    type: array
+    description: |
+      An array of values written to the SLEEPCFG and PDSLEEPCFG registers that
+      controls the power to various blocks while the CPU is in deep sleep retention
+      mode. These values are programmed to the sleep configuration registers before
+      entering deep sleep retention mode.

@@ -5,6 +5,7 @@
  */
 
 #include "nxp_rt7xx_common.dtsi"
+#include <zephyr/dt-bindings/power/nxp_imxrt7xx_pdcfg.h>
 
 / {
 	cpus {
@@ -16,10 +17,35 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&sleep &deepsleep>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			sleep: sleep {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+				exit-latency-us = <1>;
+				min-residency-us = <1>;
+			};
+
+			deepsleep: deepsleep {
+				compatible = "nxp,pdcfg-power", "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				exit-latency-us = <120>;
+				min-residency-us = <500>;
+				deep-sleep-config = <
+					0x0
+					0x0
+					0x0
+					RT7XX_PDCFG_SRAM_VDD1_SENSE
+					0x0
+					0x0
+					0x0>;
 			};
 		};
 	};
