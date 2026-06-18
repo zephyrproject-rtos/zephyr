@@ -1064,3 +1064,49 @@ class TestOrchestratorRun:
         orch.run(["some/file.c"], output_file=out)
         data = json.loads(Path(out).read_text())
         assert len(data["testsuites"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# ManifestStrategy - HAL → vendor mapping
+# ---------------------------------------------------------------------------
+
+
+class TestManifestStrategyHalVendors:
+    """The HAL→vendor mapping should drive a vendor-restricted integration run."""
+
+    def _strategy(self, changed_projects):
+        strategy = tp.ManifestStrategy(
+            zephyr_base="/fake/zephyr",
+            repo=mock.Mock(),
+            commits="base..HEAD",
+        )
+        # Bypass the git/west diff machinery: pretend these projects changed.
+        strategy._diff_manifests = mock.Mock(return_value=set(changed_projects))
+        return strategy
+
+    def test_hal_emits_vendor_integration_call(self):
+        strategy = self._strategy({"hal_nordic"})
+        calls, handled = strategy.analyze(["west.yml"])
+
+        assert handled == {"west.yml"}
+        vendor_calls = [c for c in calls if "--vendor" in c.extra_args]
+        assert len(vendor_calls) == 1
+        call = vendor_calls[0]
+        assert call.testsuite_roots == [tp.ManifestStrategy._INTEGRATION_TEST_ROOT]
+        assert call.extra_args == ["--vendor", "nordic"]
+
+    def test_hal_with_multiple_vendors(self):
+        strategy = self._strategy({"hal_xtensa"})
+        calls, _ = strategy.analyze(["west.yml"])
+
+        vendor_calls = [c for c in calls if "--vendor" in c.extra_args]
+        assert len(vendor_calls) == 1
+        assert vendor_calls[0].extra_args == ["--vendor", "intel", "--vendor", "cdns"]
+
+    def test_non_hal_project_emits_no_vendor_call(self):
+        strategy = self._strategy({"mbedtls"})
+        calls, _ = strategy.analyze(["west.yml"])
+
+        assert all("--vendor" not in c.extra_args for c in calls)
+        # The tag-based module call is still produced.
+        assert any(c.extra_args[:2] == ["-t", "mbedtls"] for c in calls)

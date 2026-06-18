@@ -3109,6 +3109,13 @@ class ManifestStrategy(SelectionStrategy):
        covers tests that are explicitly catalogued for the module but may not
        carry a ``tags:`` field matching the project name.
 
+    7. When the changed project is a *HAL* listed in :attr:`_HAL_VENDORS`,
+       emit one more :class:`TwisterCall` that runs ``tests/integration/kernel``
+       restricted to the HAL's vendor(s) via twister ``--vendor``.  A HAL
+       revision bump affects the whole silicon family, so the generic
+       integration-kernel suite is built on every board of that vendor to
+       confirm it still builds and boots.
+
     This strategy **consumes** all matched manifest files so they do not
     reach :class:`MaintainerAreaStrategy`.
 
@@ -3123,6 +3130,52 @@ class ManifestStrategy(SelectionStrategy):
     # Manifest files that trigger this strategy
     _MANIFEST_FILES: frozenset = frozenset({"west.yml"})
     _SUBMANIFEST_PREFIX: str = "submanifests/"
+
+    # Generic test root used to verify that a vendor's boards still build/boot.
+    _INTEGRATION_TEST_ROOT: str = "tests/integration/kernel"
+
+    # Mapping of west *HAL* project names to the twister ``--vendor`` value(s)
+    # whose boards depend on that HAL.  When a HAL module revision is bumped in
+    # the manifest, the affected silicon is best exercised by building the
+    # generic integration-kernel suite on *every* board of the corresponding
+    # vendor(s) - the ``--tag``/``--test-pattern`` calls below only cover tests
+    # that explicitly opt in, which misses most boards.
+    #
+    # Vendor strings are the ``vendor:`` values used in ``boards/**/board.yml``
+    # (i.e. the ``dts/bindings/vendor-prefixes.txt`` prefixes).  A HAL may serve
+    # more than one vendor (e.g. ``hal_xtensa`` powers both Intel and Cadence
+    # parts); list all of them.  HALs with no clearly-associated board vendor
+    # are intentionally omitted and fall back to the tag/pattern calls.
+    _HAL_VENDORS: dict = {
+        "hal_adi": ["adi"],
+        "hal_ambiq": ["ambiq"],
+        "hal_atmel": ["atmel"],
+        "hal_bouffalolab": ["bflb"],
+        "hal_espressif": ["espressif"],
+        "hal_ethos_u": ["arm"],
+        "hal_gigadevice": ["gd"],
+        "hal_infineon": ["infineon", "cypress"],
+        "hal_intel": ["intel"],
+        "hal_microchip": ["microchip"],
+        "hal_nordic": ["nordic"],
+        "hal_nuvoton": ["nuvoton"],
+        "hal_nxp": ["nxp"],
+        "hal_openisa": ["openisa"],
+        "hal_quicklogic": ["quicklogic"],
+        "hal_realtek": ["realtek"],
+        "hal_renesas": ["renesas"],
+        "hal_rpi_pico": ["raspberrypi"],
+        "hal_sifli": ["sifli"],
+        "hal_silabs": ["silabs"],
+        "hal_st": ["st"],
+        "hal_stm32": ["st"],
+        "hal_tdk": ["tdk"],
+        "hal_telink": ["telink"],
+        "hal_ti": ["ti"],
+        "hal_wch": ["wch"],
+        "hal_wurthelektronik": ["we"],
+        "hal_xtensa": ["intel", "cdns"],
+    }
 
     @property
     def name(self):
@@ -3209,6 +3262,30 @@ class ManifestStrategy(SelectionStrategy):
                     integration=True,
                 )
             )
+
+            # When a HAL module changes, build the generic integration-kernel
+            # suite on every board of the vendor(s) that depend on that HAL.
+            vendors = self._HAL_VENDORS.get(proj_name)
+            if vendors:
+                vendor_args = []
+                for v in vendors:
+                    vendor_args += ["--vendor", v]
+                log.info(
+                    "[%s] HAL '%s' → %s on vendor(s): %s",
+                    self.name,
+                    proj_name,
+                    self._INTEGRATION_TEST_ROOT,
+                    ", ".join(vendors),
+                )
+                calls.append(
+                    TwisterCall(
+                        description=f"ManifestStrategy: HAL '{proj_name}' "
+                        f"(vendor: {', '.join(vendors)})",
+                        testsuite_roots=[self._INTEGRATION_TEST_ROOT],
+                        platforms=list(self._platform_filter),
+                        extra_args=vendor_args,
+                    )
+                )
 
             test_names = west_project_tests.get(proj_name, [])
             if test_names:
