@@ -140,7 +140,7 @@ void sys_clock_idle_exit(void)
 
 void sys_clock_disable(void)
 {
-	const struct wuc_dt_spec wuc = WUC_DT_SPEC_INST_GET_OR(0, {0});
+	const struct wuc_dt_spec wuc = WUC_DT_SPEC_GET_OR(LPTMR_NODE, {0});
 
 	if (wuc.dev != NULL) {
 		(void)wuc_disable_wakeup_source_dt(&wuc);
@@ -199,7 +199,7 @@ static void mcux_lptmr_timer_isr(const void *arg)
 static int sys_clock_driver_init(void)
 {
 	lptmr_config_t config;
-	const struct wuc_dt_spec wuc = WUC_DT_SPEC_INST_GET_OR(0, {0});
+	const struct wuc_dt_spec wuc = WUC_DT_SPEC_GET_OR(LPTMR_NODE, {0});
 
 	if ((wuc.dev != NULL) && (wuc_enable_wakeup_source_dt(&wuc) != 0)) {
 		return -EIO;
