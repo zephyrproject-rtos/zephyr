@@ -64,6 +64,12 @@ Libraries / Subsystems
   * Added a PSA Protected Storage backend, enabled with
     :kconfig:option:`CONFIG_FIDO2_STORAGE_PSA_PROTECTED_STORAGE`.
 
+* LoRa
+
+  * The native SX126x driver supports Channel Activity Detection
+    (:c:func:`lora_cad`, :c:func:`lora_cad_async`), including Listen Before
+    Talk on send and a CAD gate on receive.
+
 * LoRaWAN
 
   * The native backend now supports the AS923 region
