@@ -422,10 +422,12 @@ static int eth_mac_init(const struct device *dev)
 	eth->DMAIER =
 		(ETH_DMA_IT_NIS | ETH_DMA_IT_R | ETH_DMA_IT_T | ETH_DMA_IT_AIS | ETH_DMA_IT_RBU);
 
+#if defined(CONFIG_SOC_CH32V307)
 	if (strcmp(config->connection_type, "internal") == 0) {
 		eth->MACCR |= ETH_MACCR_PR;
 		eth->DMAIER |= ETH_DMA_IT_PHYLINK;
 	}
+#endif
 
 	init_tx_dma_desc(eth);
 	init_rx_dma_desc(eth);
@@ -441,8 +443,10 @@ static int eth_wch_start(const struct device *dev, struct net_if *iface __unused
 
 	LOG_DBG("Starting ETH HAL driver");
 
-	/* DMA engine on WCH seems to handle disconnects differently to the
-	   equivalent ST peripheral. ETH_DMA reset on start seems to fix the issue */
+	/*
+	 * DMA engine on WCH seems to handle disconnects differently to the
+	 * equivalent ST peripheral. ETH_DMA reset on start seems to fix the issue
+	 */
 	eth_mac_init(dev);
 	set_mac_addr(config->regs, data->mac_addr, iface);
 	setup_mac_filter(config->regs);
@@ -660,7 +664,12 @@ static int eth_wch_init(const struct device *dev)
 			;
 		}
 
+#if defined(CONFIG_SOC_CH32V317)
+		/* CH32V317 Internal PHY is internally on an RMII interface */
+		AFIO->PCFR1 |= AFIO_PCFR1_MII_RMII_SEL;
+#else
 		EXTEN->EXTEN_CTR |= EXTEN_ETH_10M_EN;
+#endif
 	} else if (strcmp(config->connection_type, "rmii") == 0) {
 		AFIO->PCFR1 |= AFIO_PCFR1_MII_RMII_SEL;
 	} else if (strcmp(config->connection_type, "rgmii") == 0) {
