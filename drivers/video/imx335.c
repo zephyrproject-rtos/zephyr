@@ -341,26 +341,12 @@ static const struct video_reg16 imx335_test_pattern_disable[] = {
 
 static const struct video_format_cap imx335_fmts[] = {
 	/* all-pixel scan mode */
-	[IMX335_RES_2592x1944] = {
-		.pixelformat = VIDEO_PIX_FMT_SRGGB10P,
-		.width_min = IMX335_NATIVE_WIDTH,
-		.width_max = IMX335_NATIVE_WIDTH,
-		.height_min = IMX335_NATIVE_HEIGHT,
-		.height_max = IMX335_NATIVE_HEIGHT,
-		.width_step = 0,
-		.height_step = 0,
-	},
+	[IMX335_RES_2592x1944] = VIDEO_FORMAT_CAP_DISCRETE(
+		VIDEO_PIX_FMT_SRGGB10P, IMX335_NATIVE_WIDTH, IMX335_NATIVE_HEIGHT),
 	/* 2x2 binning mode */
-	[IMX335_RES_1296x972] = {
-		.pixelformat = VIDEO_PIX_FMT_SRGGB10P,
-		.width_min = IMX335_BIN_2X2_WIDTH,
-		.width_max = IMX335_BIN_2X2_WIDTH,
-		.height_min = IMX335_BIN_2X2_HEIGHT,
-		.height_max = IMX335_BIN_2X2_HEIGHT,
-		.width_step = 0,
-		.height_step = 0,
-	},
-	{0}
+	[IMX335_RES_1296x972] = VIDEO_FORMAT_CAP_DISCRETE(
+		VIDEO_PIX_FMT_SRGGB10P, IMX335_BIN_2X2_WIDTH, IMX335_BIN_2X2_HEIGHT),
+	{0},
 };
 
 static const uint32_t imx335_framerates[] = {

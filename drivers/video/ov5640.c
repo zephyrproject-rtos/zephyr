@@ -626,29 +626,22 @@ static const struct ov5640_mode_config dvp_modes[] = {
 		.def_frmrate = OV5640_30_FPS,
 	}};
 
-#define OV5640_VIDEO_FORMAT_CAP(width, height, format)                                             \
-	{.pixelformat = (format),                                                                  \
-	 .width_min = (width),                                                                     \
-	 .width_max = (width),                                                                     \
-	 .height_min = (height),                                                                   \
-	 .height_max = (height),                                                                   \
-	 .width_step = 0,                                                                          \
-	 .height_step = 0}
-
 static const struct video_format_cap csi2_fmts[] = {
-	OV5640_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_RGB565),
-	OV5640_VIDEO_FORMAT_CAP(1280, 720, VIDEO_PIX_FMT_YUYV),
-	OV5640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_RGB565),
-	OV5640_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_YUYV),
-	OV5640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),
-	OV5640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_RGB565),
-	{0}};
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 1280, 720),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_YUYV,   1280, 720),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 640, 480),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_YUYV,   640, 480),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 320, 240),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 160, 120),
+	{0},
+};
 
 static const struct video_format_cap dvp_fmts[] = {
-	OV5640_VIDEO_FORMAT_CAP(160, 120, VIDEO_PIX_FMT_RGB565),
-	OV5640_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_RGB565),
-	OV5640_VIDEO_FORMAT_CAP(480, 272, VIDEO_PIX_FMT_RGB565),
-	{0}};
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 160, 120),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 320, 240),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, 480, 272),
+	{0},
+};
 
 static inline bool ov5640_is_dvp(const struct device *dev)
 {

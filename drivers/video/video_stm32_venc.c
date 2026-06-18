@@ -773,15 +773,11 @@ ISR_DIRECT_DECLARE(stm32_venc_isr)
 	return 0;
 }
 
-#define VENC_FORMAT_CAP(pixfmt)                \
-	{                                      \
-		.pixelformat = pixfmt,         \
-		.width_min = 48,               \
-		.width_max = 1920,             \
-		.height_min = 48,              \
-		.height_max = 1088,            \
-		.width_step = 16,              \
-		.height_step = 16,             \
+#define VENC_FORMAT_CAP(pixfmt)                                                                    \
+	{                                                                                          \
+		.pixelformat = (pixfmt),                                                           \
+		.width_min  = 48, .width_max  = 1920, .width_step  = 16,                           \
+		.height_min = 48, .height_max = 1088, .height_step = 16,                           \
 	}
 
 static const struct video_format_cap in_fmts[] = {

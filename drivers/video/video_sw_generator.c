@@ -71,47 +71,29 @@ struct video_sw_generator_data {
 	uint32_t frame_rate;
 };
 
-#define VIDEO_SW_GENERATOR_FORMAT_CAP(pixfmt)                                                      \
+#define VIDEO_SW_GENERATOR_FORMAT_CAP(pixfmt, width_step)                                          \
 	{                                                                                          \
-		.pixelformat = pixfmt,                                                             \
-		.width_min = 64,                                                                   \
-		.width_max = 1920,                                                                 \
-		.height_min = 64,                                                                  \
-		.height_max = 1080,                                                                \
-		.width_step = 1,                                                                   \
-		.height_step = 1,                                                                  \
+		.pixelformat = (pixfmt),                                                           \
+		.width_min  = 64, .width_max  = 1920, .width_step = (width_step),                  \
+		.height_min = 64, .height_max = 1080, .height_step = 1,                            \
 	}
 
 static const struct video_format_cap fmts[] = {
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB24),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_BGR24),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_YUYV),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB565),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_XRGB32),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_BGRX32),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SRGGB8),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGRBG8),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SBGGR8),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGBRG8),
-	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_GREY),
-	{
-		.pixelformat = VIDEO_PIX_FMT_JPEG,
-		.width_min = CONFIG_VIDEO_SW_GENERATOR_JPEG_WIDTH,
-		.width_max = CONFIG_VIDEO_SW_GENERATOR_JPEG_WIDTH,
-		.height_min = CONFIG_VIDEO_SW_GENERATOR_JPEG_HEIGHT,
-		.height_max = CONFIG_VIDEO_SW_GENERATOR_JPEG_HEIGHT,
-		.width_step = 1,
-		.height_step = 1,
-	},
-	{
-		.pixelformat = VIDEO_PIX_FMT_PNG,
-		.width_min = CONFIG_VIDEO_SW_GENERATOR_PNG_WIDTH,
-		.width_max = CONFIG_VIDEO_SW_GENERATOR_PNG_WIDTH,
-		.height_min = CONFIG_VIDEO_SW_GENERATOR_PNG_HEIGHT,
-		.height_max = CONFIG_VIDEO_SW_GENERATOR_PNG_HEIGHT,
-		.width_step = 1,
-		.height_step = 1,
-	},
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB24, 1),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_BGR24, 1),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_YUYV, 2),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_RGB565, 1),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_XRGB32, 1),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_BGRX32, 1),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SRGGB8, 1),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGRBG8, 1),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SBGGR8, 1),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_SGBRG8, 1),
+	VIDEO_SW_GENERATOR_FORMAT_CAP(VIDEO_PIX_FMT_GREY, 1),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_JPEG, CONFIG_VIDEO_SW_GENERATOR_JPEG_WIDTH,
+				  CONFIG_VIDEO_SW_GENERATOR_JPEG_HEIGHT),
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_PNG, CONFIG_VIDEO_SW_GENERATOR_PNG_WIDTH,
+				  CONFIG_VIDEO_SW_GENERATOR_PNG_HEIGHT),
 	{0},
 };
 

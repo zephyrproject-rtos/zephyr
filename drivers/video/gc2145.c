@@ -776,19 +776,12 @@ struct gc2145_data {
 	uint8_t ratio;
 };
 
-#define GC2145_VIDEO_FORMAT_CAP_HL(width_l, width_h, height_l, height_h, format, step_w, step_h) \
-	{										\
-		.pixelformat = (format),						\
-		.width_min = (width_l), .width_max = (width_h),				\
-		.height_min = (height_l), .height_max = (height_h),			\
-		.width_step = (step_w), .height_step = (step_h),			\
+#define GC2145_VIDEO_FORMAT_CAP(format)                                                            \
+	{										           \
+		.pixelformat = (format),						           \
+		.width_min  = 160, .width_max  = RESOLUTION_UXGA_W, .width_step = 1,               \
+		.height_min = 120, .height_max = RESOLUTION_UXGA_H, .height_step = 1,              \
 	}
-
-#define GC2145_VIDEO_FORMAT_CAP(width, height, format)	\
-	GC2145_VIDEO_FORMAT_CAP_HL((width), (width), (height), (height), (format), 0, 0)
-
-#define RESOLUTION_QVGA_W	320
-#define RESOLUTION_QVGA_H	240
 
 #define RESOLUTION_VGA_W	640
 #define RESOLUTION_VGA_H	480
@@ -796,25 +789,12 @@ struct gc2145_data {
 #define RESOLUTION_UXGA_W	1600
 #define RESOLUTION_UXGA_H	1200
 
-#define RESOLUTION_MAX_W	RESOLUTION_UXGA_W
-#define RESOLUTION_MAX_H	RESOLUTION_UXGA_H
-
 /* Min not defined - smallest seen implementation is for QQVGA */
-#define RESOLUTION_MIN_W	160
-#define RESOLUTION_MIN_H	120
+#define RESOLUTION_MIN_H
 
 static const struct video_format_cap fmts[] = {
-	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_RGB565),
-	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_RGB565),
-	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_RGB565),
-	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_QVGA_W, RESOLUTION_QVGA_H, VIDEO_PIX_FMT_YUYV),
-	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_VGA_W, RESOLUTION_VGA_H, VIDEO_PIX_FMT_YUYV),
-	GC2145_VIDEO_FORMAT_CAP(RESOLUTION_UXGA_W, RESOLUTION_UXGA_H, VIDEO_PIX_FMT_YUYV),
-	/* Add catchall resolution  */
-	GC2145_VIDEO_FORMAT_CAP_HL(RESOLUTION_MIN_W, RESOLUTION_MAX_W, RESOLUTION_MIN_H,
-				   RESOLUTION_MAX_H, VIDEO_PIX_FMT_RGB565, 1, 1),
-	GC2145_VIDEO_FORMAT_CAP_HL(RESOLUTION_MIN_W, RESOLUTION_MAX_W, RESOLUTION_MIN_H,
-				   RESOLUTION_MAX_H, VIDEO_PIX_FMT_YUYV, 1, 1),
+	GC2145_VIDEO_FORMAT_CAP_HL(VIDEO_PIX_FMT_RGB565),
+	GC2145_VIDEO_FORMAT_CAP_HL(VIDEO_PIX_FMT_YUYV),
 	{0},
 };
 

@@ -203,16 +203,8 @@ static int nxp_video_sdma_flush(const struct device *dev, bool cancel)
 
 /* SDMA only supports 320x240 RGB565 */
 static const struct video_format_cap fmts[] = {
-	{
-		.pixelformat = VIDEO_PIX_FMT_RGB565,
-		.width_min = SDMA_VBUF_WIDTH,
-		.width_max = SDMA_VBUF_WIDTH,
-		.height_min = SDMA_VBUF_HEIGHT,
-		.height_max = SDMA_VBUF_HEIGHT,
-		.width_step = 0,
-		.height_step = 0,
-	},
-	{ 0 },
+	VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_RGB565, SDMA_VBUF_WIDTH, SDMA_VBUF_HEIGHT),
+	{0},
 };
 
 static int nxp_video_sdma_set_format(const struct device *dev, struct video_format *fmt)

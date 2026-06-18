@@ -521,20 +521,11 @@ static const struct ov5642_mode_config dvp_modes[] = {
 	},
 };
 
-#define OV5642_VIDEO_FORMAT_CAP(width, height, format)				\
-	{.pixelformat = (format),						\
-	.width_min = (width),							\
-	.width_max = (width),							\
-	.height_min = (height),							\
-	.height_max = (height),							\
-	.width_step = 0,							\
-	.height_step = 0}
-
 static const struct video_format_cap dvp_fmts[] = {
-	[OV5642_RES_320x240] = OV5642_VIDEO_FORMAT_CAP(320, 240, VIDEO_PIX_FMT_GREY),
-	[OV5642_RES_640x480] = OV5642_VIDEO_FORMAT_CAP(640, 480, VIDEO_PIX_FMT_GREY),
-	[OV5642_RES_1024x768] = OV5642_VIDEO_FORMAT_CAP(1024, 768, VIDEO_PIX_FMT_GREY),
-	[OV5642_RES_1280x960] = OV5642_VIDEO_FORMAT_CAP(1280, 960, VIDEO_PIX_FMT_GREY),
+	[OV5642_RES_320x240]  = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY, 320, 240),
+	[OV5642_RES_640x480]  = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY, 640, 480),
+	[OV5642_RES_1024x768] = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY, 1024, 768),
+	[OV5642_RES_1280x960] = VIDEO_FORMAT_CAP_DISCRETE(VIDEO_PIX_FMT_GREY, 1280, 960),
 	{0}};
 
 static int ov5642_set_fmt(const struct device *dev, struct video_format *fmt)
