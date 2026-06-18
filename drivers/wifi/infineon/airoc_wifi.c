@@ -501,6 +501,8 @@ static void airoc_event_task(void)
 		case WLC_E_DEAUTH_IND:
 		case WLC_E_DISASSOC_IND:
 			net_if_dormant_on(airoc_wifi_iface);
+			whd_wifi_leave(airoc_sta_if);
+			airoc_wifi_data.is_sta_connected = false;
 			break;
 
 		default:
@@ -605,6 +607,8 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 		goto error;
 	}
 
+	whd_wifi_leave(airoc_sta_if);
+
 	usr_result.SSID.length = params->ssid_length;
 	memcpy(usr_result.SSID.value, params->ssid, params->ssid_length);
 	usr_result.security = convert_zephyr_security_to_whd(params->security);
@@ -642,6 +646,8 @@ static int airoc_mgmt_connect(const struct device *dev, struct wifi_connect_req_
 	if (whd_wifi_join(airoc_sta_if, &usr_result.SSID, usr_result.security, params->psk,
 			  params->psk_length) != WHD_SUCCESS) {
 		LOG_ERR("Failed to connect with network");
+
+		whd_wifi_leave(airoc_sta_if);
 
 		ret = -EAGAIN;
 		goto error;
