@@ -98,11 +98,24 @@ find_recv_state_by_sink_fields_cb(const struct bt_bap_scan_delegator_recv_state 
 		return false;
 	}
 
-	/* BAP 6.5.4 states that the combined Source_Address_Type, Source_Adv_SID, and Broadcast_ID
-	 * fields are what makes a receive state unique.
+	/*
+	 * BASS 3.1.1.4
+	 *
+	 * If the server attempts to synchronize with the PA, the server may determine the
+	 * Advertiser_Address to be used in the Periodic Advertising Synchronization Establishment
+	 * procedure by:
+	 *
+	 * - Comparing the Adv_SID written by the client to the Adv_SID subfield of the ADI field of
+	 * ADV_EXT_IND PDUs transmitted by the Broadcast Source.
+	 * - Comparing the Broadcast_ID written by the client to the Broadcast_ID in the AdvData
+	 * field of AUX_ADV_IND PDUs transmitted by the Broadcast Source.
+	 *
+	 * Since the address and type may be omitted when synchronizing to the PA, we cannot use
+	 * neither the address or type when looking up a receive state based on a PA sync, as the
+	 * address and type from the PA may not match. The only values that we can be sure about
+	 * are the SID and Broadcast ID.
 	 */
-	return recv_state->addr.type == sync_info.addr.type &&
-	       recv_state->adv_sid == sync_info.sid &&
+	return recv_state->adv_sid == sync_info.sid &&
 	       recv_state->broadcast_id == sink->broadcast_id;
 };
 
