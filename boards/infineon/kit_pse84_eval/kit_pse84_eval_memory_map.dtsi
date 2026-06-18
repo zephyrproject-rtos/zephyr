@@ -70,123 +70,126 @@
 			reg = <0x26100000 DT_SIZE_K(256)>;
 		};
 	};
+};
 
-	/* Default Flash memory(16MB) assignment
-	 * - 1 MB  reserved for Storage
-	 * - 1 KB  header for CM33 Secure
-	 * - 2304 KB allocated to CM33 Secure XIP
-	 * - 1791 KB allocated to CM33 Non-Secure XIP
-	 * - 2 MB  allocated to CM55 XIP
-	 *
-	 * Each code-partition uses zephyr,mapped-partition under the flash
-	 * alias whose base address matches the executing core's view.
+/* Default Flash memory(16MB) assignment
+ * - 1 MB  reserved for Storage
+ * - 1 KB  header for CM33 Secure
+ * - 2304 KB allocated to CM33 Secure XIP
+ * - 1791 KB allocated to CM33 Non-Secure XIP
+ * - 2 MB  allocated to CM55 XIP
+ *
+ * Each code-partition uses zephyr,mapped-partition under the flash
+ * alias whose base address matches the executing core's view.
+ *
+ * Extends the SoC-level smif0 node (SMIF0). Its reg base resolves to
+ * the secure (0x54460000) or non-secure (0x44460000) alias depending
+ * on which SoC dtsi the build pulls in.
+ */
+&smif0 {
+	status = "okay";
+
+	infineon,chip-select = <1>;
+
+	pinctrl-0 = <&p1_0_smif0_data0 &p1_1_smif0_data1
+		     &p1_2_smif0_data2 &p1_3_smif0_data3
+		     &p1_4_smif0_data4 &p1_5_smif0_data5
+		     &p1_6_smif0_data6 &p1_7_smif0_data7
+		     &p2_0_smif0_select1>;
+	pinctrl-names = "default";
+
+	/* CBUS non-secure view of external flash.
+	 * Used as zephyr,flash for NS builds.
+	 * The base address is 0x08000000.
 	 */
-	flash_controller: flash_controller@44460000 {
-		compatible = "infineon,qspi-flash";
-		reg = <0x44460000 0x20000>;
+	flash0: flash0@8000000 {
+		compatible = "soc-nv-flash", "infineon,s25fs128s";
+		reg = <0x08000000 DT_SIZE_M(16)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
+		ranges = <0x0 0x08000000 DT_SIZE_M(16)>;
+		write-block-size = <256>;
+		erase-block-size = <65536>;
 
-		pinctrl-0 = <&p1_0_smif0_data0 &p1_1_smif0_data1
-			     &p1_2_smif0_data2 &p1_3_smif0_data3
-			     &p2_0_smif0_select1>;
-		pinctrl-names = "default";
-		status = "okay";
-
-		/* CBUS non-secure view of external flash.
-		 * Used as zephyr,flash for NS builds.
-		 * The base address is 0x08000000.
-		 */
-		flash0: flash0@8000000 {
-			compatible = "soc-nv-flash", "infineon,s25fs128s";
-			reg = <0x08000000 DT_SIZE_M(16)>;
+		partitions {
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x08000000 DT_SIZE_M(16)>;
-			write-block-size = <256>;
-			erase-block-size = <65536>;
+			ranges;
 
-			partitions {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				ranges;
+			storage_partition: storage@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0 DT_SIZE_M(1)>;
+			};
 
-				storage_partition: storage@0 {
-					compatible = "zephyr,mapped-partition";
-					label = "storage";
-					reg = <0 DT_SIZE_M(1)>;
-				};
-
-				m33_xip: m33_xip@340400 {
-					compatible = "zephyr,mapped-partition";
-					label = "m33-xip";
-					reg = <0x340400 0x1bfc00>;
-				};
+			m33_xip: m33_xip@340400 {
+				compatible = "zephyr,mapped-partition";
+				label = "m33-xip";
+				reg = <0x340400 0x1bfc00>;
 			};
 		};
+	};
 
-		/* CBUS secure view of the same external flash.
-		 * Used as zephyr,flash for S builds.
-		 * The base address is 0x18000000.
-		 * This is the same physical device as flash0, accessed
-		 * through the secure CBUS alias for instruction-cached
-		 * execution in secure mode.
-		 */
-		flash0_s: flash0_s@18000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x18000000 DT_SIZE_M(16)>;
+	/* CBUS secure view of the same external flash.
+	 * Used as zephyr,flash for S builds.
+	 * The base address is 0x18000000.
+	 * This is the same physical device as flash0, accessed
+	 * through the secure CBUS alias for instruction-cached
+	 * execution in secure mode.
+	 */
+	flash0_s: flash0_s@18000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x18000000 DT_SIZE_M(16)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
+		write-block-size = <256>;
+		erase-block-size = <65536>;
+
+		partitions {
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
-			write-block-size = <256>;
-			erase-block-size = <65536>;
+			ranges;
 
-			partitions {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				ranges;
+			m33s_header: m33s_header@100000 {
+				compatible = "zephyr,mapped-partition";
+				label = "m33s-header";
+				reg = <0x100000 0x400>;
+			};
 
-				m33s_header: m33s_header@100000 {
-					compatible = "zephyr,mapped-partition";
-					label = "m33s-header";
-					reg = <0x100000 0x400>;
-				};
-
-				m33s_xip: m33s_xip@100400 {
-					compatible = "zephyr,mapped-partition";
-					label = "m33s-xip";
-					reg = <0x100400 DT_SIZE_K(2304)>;
-				};
+			m33s_xip: m33s_xip@100400 {
+				compatible = "zephyr,mapped-partition";
+				label = "m33s-xip";
+				reg = <0x100400 DT_SIZE_K(2304)>;
 			};
 		};
+	};
 
-		/* SAHB view of the same external flash.
-		 * Used as zephyr,flash for CM55 builds.
-		 * The base address is 0x60000000.
-		 * This is the same physical device as flash0, accessed
-		 * through the SAHB alias as cm55 does not have
-		 * instruction-cached execution for external flash.
-		 */
-		flash0_sahb: flash0_sahb@60000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x60000000 DT_SIZE_M(16)>;
+	/* SAHB view of the same external flash.
+	 * Used as zephyr,flash for CM55 builds.
+	 * The base address is 0x60000000.
+	 * This is the same physical device as flash0, accessed
+	 * through the SAHB alias as cm55 does not have
+	 * instruction-cached execution for external flash.
+	 */
+	flash0_sahb: flash0_sahb@60000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x60000000 DT_SIZE_M(16)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
+		write-block-size = <256>;
+		erase-block-size = <65536>;
+
+		partitions {
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
-			write-block-size = <256>;
-			erase-block-size = <65536>;
+			ranges;
 
-			partitions {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				ranges;
-
-				m55_xip: m55_xip@580000 {
-					compatible = "zephyr,mapped-partition";
-					label = "m55-xip";
-					reg = <0x580000 DT_SIZE_M(2)>;
-				};
+			m55_xip: m55_xip@580000 {
+				compatible = "zephyr,mapped-partition";
+				label = "m55-xip";
+				reg = <0x580000 DT_SIZE_M(2)>;
 			};
 		};
 	};

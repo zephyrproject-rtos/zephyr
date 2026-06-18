@@ -29,6 +29,7 @@
 		 * soc/infineon/edge/pse84/security_config/pse84_boot.c
 		 */
 		zephyr,flash = &flash0_sahb;
+		zephyr,flash-controller = &smif0;
 		zephyr,code-partition = &m55_xip;
 		zephyr,sram = &m55_data;
 		zephyr,console = &uart2;

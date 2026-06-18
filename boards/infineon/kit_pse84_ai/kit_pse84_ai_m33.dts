@@ -25,6 +25,7 @@
 
 	chosen {
 		zephyr,flash = &flash0_s;
+		zephyr,flash-controller = &smif0;
 		zephyr,sram = &m33s_data;
 		zephyr,code-partition = &m33s_xip;
 		zephyr,console = &uart2;
