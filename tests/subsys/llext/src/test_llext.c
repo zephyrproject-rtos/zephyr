@@ -465,7 +465,7 @@ ZTEST(llext, test_inter_ext)
 	const void *dependency_buf = export_dependency_ext;
 	const void *dependent_buf = export_dependent_ext;
 	struct llext_buf_loader buf_loader_dependency =
-		LLEXT_BUF_LOADER(dependency_buf, sizeof(hello_world_ext));
+		LLEXT_BUF_LOADER(dependency_buf, sizeof(export_dependency_ext));
 	struct llext_buf_loader buf_loader_dependent =
 		LLEXT_BUF_LOADER(dependent_buf, sizeof(export_dependent_ext));
 	struct llext_loader *loader_dependency = &buf_loader_dependency.loader;
@@ -490,7 +490,8 @@ ZTEST(llext, test_inter_ext)
 }
 #endif
 
-#if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA)
+#if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA) &&                        \
+	!defined(CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM)
 static LLEXT_CONST uint8_t pre_located_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "pre_located.inc"
 };
@@ -568,6 +569,7 @@ ZTEST(llext, test_find_section)
 	llext_unload(&ext);
 }
 
+#ifndef CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM
 /* For Harvard architectures, the detached section must be placed in instruction memory. */
 #ifdef CONFIG_HARVARD
 static LLEXT_CONST uint8_t test_detached_ext[] Z_GENERIC_SECTION(.text) ELF_ALIGN = {
@@ -628,7 +630,8 @@ ZTEST(llext, test_detached)
 
 	llext_unload(&detached_llext);
 }
-#endif
+#endif /* !CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM */
+#endif /* CONFIG_LLEXT_STORAGE_WRITABLE */
 
 #if defined(CONFIG_FILE_SYSTEM)
 #define LLEXT_FILE "hello_world.llext"
