@@ -125,7 +125,8 @@ int eth_adin2111_unlock(const struct device *dev)
 	return k_mutex_unlock(&ctx->lock);
 }
 
-static int eth_adin2111_oa_spi_xfer(const struct device *dev, uint8_t *buf_rx, uint8_t *buf_tx, int len)
+static int eth_adin2111_oa_spi_xfer(const struct device *dev, uint8_t *buf_rx, uint8_t *buf_tx,
+				    int len)
 {
 	const struct adin2111_config *cfg = dev->config;
 
@@ -1594,8 +1595,9 @@ static const struct ethernet_api adin2111_port_api = {
 				     &adin2111_port_api, NET_ETH_MTU);
 
 #define ADIN2111_SPI_OPERATION ((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
-#define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)                                        \
-	ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);                   \
+#define ADIN2111_MAC_INITIALIZE                                                                    \
+	(inst, dev_id, ifaces, name)                                                               \
+		ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);           \
 	COND_CODE_1(DT_INST_PROP(inst, spi_oa),							\
 	(											\
 		ADIN2111_DEF_BUF(name##_oa_rx_buf_##inst, ADIN2111_OA_RX_BURST_SZ);					\
@@ -1617,16 +1619,17 @@ static const struct ethernet_api adin2111_port_api = {
 		.oa_prot = DT_INST_PROP(inst, spi_oa_protection),                                  \
 		.oarxbuf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
 					 (name##_oa_rx_buf_##inst), (NULL)),                                         \
-		.oatxbuf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
+			 .oatxbuf = COND_CODE_1(DT_INST_PROP(inst, spi_oa),				\
 					 (name##_oa_tx_buf_##inst), (NULL)),    \
 	};                                                                                         \
 	/* adin */                                                                                 \
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), adin2111_init, NULL, &name##_data_##inst,              \
 			 &name##_config_##inst, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY, NULL);
 
-#define ADIN2111_MAC_INIT(inst)	ADIN2111_MAC_INITIALIZE(inst, ADIN2111_MAC, 2, adin2111)	\
-	/* ports */										\
-	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 0, 1, adin2111)				\
+#define ADIN2111_MAC_INIT(inst)                                                                    \
+	ADIN2111_MAC_INITIALIZE(inst, ADIN2111_MAC, 2, adin2111)                                   \
+	/* ports */                                                                                \
+	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 0, 1, adin2111)                                   \
 	ADIN2111_PORT_DEVICE_INIT_INSTANCE(inst, 1, 2, adin2111)
 
 #undef DT_DRV_COMPAT
