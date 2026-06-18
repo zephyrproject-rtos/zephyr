@@ -12,6 +12,9 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/spinlock.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_DECLARE(pm, CONFIG_PM_LOG_LEVEL);
+
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
 
 #define DT_SUB_LOCK_INIT(node_id)					\
@@ -51,15 +54,21 @@ static struct k_spinlock lock;
 void pm_policy_state_all_lock_get(void)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
-	(void)atomic_inc(&global_lock_cnt);
+	atomic_val_t cnt = atomic_inc(&global_lock_cnt) + 1;
+
+	LOG_DBG("all states lock get -> %ld", (long)cnt);
 #endif
 }
 
 void pm_policy_state_all_lock_put(void)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(zephyr_power_state)
+	atomic_val_t cnt;
+
 	__ASSERT(global_lock_cnt > 0, "Unbalanced state lock get/put");
-	(void)atomic_dec(&global_lock_cnt);
+	cnt = atomic_dec(&global_lock_cnt) - 1;
+
+	LOG_DBG("all states lock put -> %ld", (long)cnt);
 #endif
 }
 
@@ -69,13 +78,19 @@ void pm_policy_state_lock_get(enum pm_state state, uint8_t substate_id)
 	for (size_t i = 0; i < ARRAY_SIZE(substates); i++) {
 		if (substates[i].state == state &&
 		   (substates[i].substate_id == substate_id || substate_id == PM_ALL_SUBSTATES)) {
+			atomic_val_t cnt;
 			k_spinlock_key_t key = k_spin_lock(&lock);
 
 			if (lock_cnt[i] == 0) {
 				unlock_mask &= ~BIT(i);
 			}
 			lock_cnt[i]++;
+			cnt = lock_cnt[i];
 			k_spin_unlock(&lock, key);
+
+			LOG_DBG("state %s substate %u lock get -> %ld",
+				pm_state_to_str(substates[i].state),
+				(unsigned int)substates[i].substate_id, (long)cnt);
 		}
 	}
 #endif
@@ -95,14 +110,20 @@ void pm_policy_state_lock_put(enum pm_state state, uint8_t substate_id)
 	for (size_t i = 0; i < ARRAY_SIZE(substates); i++) {
 		if (substates[i].state == state &&
 		   (substates[i].substate_id == substate_id || substate_id == PM_ALL_SUBSTATES)) {
+			atomic_val_t cnt;
 			k_spinlock_key_t key = k_spin_lock(&lock);
 
 			__ASSERT(lock_cnt[i] > 0, "Unbalanced state lock get/put");
 			lock_cnt[i]--;
+			cnt = lock_cnt[i];
 			if (lock_cnt[i] == 0) {
 				unlock_mask |= BIT(i);
 			}
 			k_spin_unlock(&lock, key);
+
+			LOG_DBG("state %s substate %u lock put -> %ld",
+				pm_state_to_str(substates[i].state),
+				(unsigned int)substates[i].substate_id, (long)cnt);
 		}
 	}
 #endif
