@@ -658,6 +658,21 @@ using the ``--device`` option:
 
 For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
 
+.. _runner_rtkprog:
+
+Realtek Alternate Flash Programmer (rtkprog)
+********************************************
+
+``rtkprog`` is an open source implementation of the protocol needed to flash Realtek Bee family SoCs via UART.
+
+.. code-block:: console
+
+   west flash --runner rtkprog
+
+.. _rtkprog Source Code: https://github.com/a-labs-io/rtkprog
+.. _rtkprog Python package: https://pypi.org/p/rtkprog
+
+
 .. _runner_mpcli:
 
 Realtek Bee Flash Programmer (MPCli) Host Tools
