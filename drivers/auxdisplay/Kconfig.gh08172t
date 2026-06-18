@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Renato Mauro
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_GH08172T
+	bool "STMicroelectronics GH08172T LCD driver"
+	default y
+	depends on DT_HAS_ST_GH08172T_ENABLED
+	select RTC
+	select GPIO
+	select CLOCK_CONTROL
+	help
+	  Enable driver for STMicroelectronics GH08172T LCD.

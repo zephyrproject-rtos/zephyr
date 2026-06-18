@@ -7,6 +7,7 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_USERSPACE auxdisplay_handlers.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_AUXDISPLAY_GH08172T auxdisplay_gh08172t.c)
 zephyr_library_sources_ifdef(CONFIG_AUXDISPLAY_GPIO_7SEG auxdisplay_gpio_7seg.c)
 zephyr_library_sources_ifdef(CONFIG_AUXDISPLAY_HD44780 auxdisplay_hd44780.c)
 zephyr_library_sources_ifdef(CONFIG_AUXDISPLAY_ITRON auxdisplay_itron.c)
