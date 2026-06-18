@@ -6,3 +6,4 @@ family:
     - name: sr100
       cpuclusters:
       - name: m55
+      - name: m4

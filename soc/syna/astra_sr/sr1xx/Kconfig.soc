@@ -18,5 +18,18 @@ config SOC_SR100_M55
 	help
 	  SYNA SR100 M55
 
+config SR100_RELEASE_M4_RESET
+	bool "Take M4 out of reset"
+	default n
+	depends on SOC_SR100_M55
+	help
+	  Take M4 out of reset
+
+config SOC_SR100_M4
+	bool
+	select SOC_SR100
+	help
+	  SYNA SR100 M4
+
 config SOC
 	default "sr100" if SOC_SR100
