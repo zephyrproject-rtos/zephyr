@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -18,4 +18,5 @@ CONFIG_TFM_BL2=y
 CONFIG_BUILD_WITH_TFM=y
 
 # Update the flash base address of ns image
-CONFIG_FLASH_BASE_ADDRESS=0x80C0000
+CONFIG_FLASH_BASE_ADDRESS=0x08000000
+CONFIG_FLASH_LOAD_OFFSET=0xC0000
