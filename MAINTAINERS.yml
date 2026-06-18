@@ -2955,6 +2955,7 @@ Documentation Infrastructure:
     - kludentwo
     - krish2718
     - MaochenWang1
+    - maass-hamburg
   files:
     - drivers/wifi/
     - dts/bindings/wifi/
