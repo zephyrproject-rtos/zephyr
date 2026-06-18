@@ -179,7 +179,7 @@ ZTEST_USER(led_user, test_led_set_color)
 				colors[col] = level;
 
 				ret = led_set_color(led_ctrl, led, num_colors, colors);
-				zassert_ok(ret, "LED %d - failed to set color[%d] to %d", led,
+				zassert_ok(ret, "LED %d - failed to set color[%d] to %d", led, col,
 					   level);
 			}
 		}
