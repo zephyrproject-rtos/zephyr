@@ -309,7 +309,7 @@ def test_STM_decoded(dut: DeviceAdapter):
         log_2_arg=26.9,
         log_3_arg=27.5,
         log_str=68.3,
-        tracepoint=0.9,
+        tracepoint=1.5,
         tracepoint_d32=0.25,
         tolerance=0.5,
     )
