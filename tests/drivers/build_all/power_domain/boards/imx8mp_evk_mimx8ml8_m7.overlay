@@ -1,0 +1,53 @@
+/*
+ * Copyright (C) 2026, Savoir-faire Linux
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	media_blk_ctrl: media-blk-ctrl@32ec0000 {
+		compatible = "nxp,imx8mp-media-blk-ctrl";
+		reg = <0x32ec0000 0x10000>, <0x32700000 0x10000>;
+		reg-names = "ctrl", "noc";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		nxp,lcdif-rd-hurry = <7>;
+
+		/* mipi-dsi1: rst/clk bits 0+1; MIPI DSI1 PHY reset bit 17 */
+		mipi_dsi1_pd: power-domain@0 {
+			compatible = "nxp,imx8mp-media-blk-ctrl-domain";
+			reg = <0>;
+			#power-domain-cells = <0>;
+			nxp,rst-mask = <0x00000003>;
+			nxp,clk-mask = <0x00000003>;
+			nxp,mipi-phy-rst-mask = <0x00020000>;
+		};
+
+		/* lcdif1: rst/clk bits 4+5+23 */
+		lcdif1_pd: power-domain@2 {
+			compatible = "nxp,imx8mp-media-blk-ctrl-domain";
+			reg = <2>;
+			#power-domain-cells = <0>;
+			nxp,rst-mask = <0x00800030>;
+			nxp,clk-mask = <0x00800030>;
+		};
+
+		/* lcdif2: rst/clk bits 11+12+24 */
+		lcdif2_pd: power-domain@5 {
+			compatible = "nxp,imx8mp-media-blk-ctrl-domain";
+			reg = <5>;
+			#power-domain-cells = <0>;
+			nxp,rst-mask = <0x01001800>;
+			nxp,clk-mask = <0x01001800>;
+		};
+
+		/* mipi-dsi2: rst/clk bit 22; DSI2 PHY reset bit 29 */
+		mipi_dsi2_pd: power-domain@8 {
+			compatible = "nxp,imx8mp-media-blk-ctrl-domain";
+			reg = <8>;
+			#power-domain-cells = <0>;
+			nxp,rst-mask = <0x00400000>;
+			nxp,clk-mask = <0x00400000>;
+			nxp,mipi-phy-rst-mask = <0x20000000>;
+		};
+	};
+};

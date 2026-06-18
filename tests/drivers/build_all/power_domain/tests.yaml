@@ -4,6 +4,7 @@ common:
     - drivers
     - power_domain
   platform_allow:
+    - imx8mp_evk/mimx8ml8/m7
     - native_sim
     - native_sim/native/64
 tests:
