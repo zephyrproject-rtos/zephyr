@@ -78,6 +78,7 @@ while the ``*_hex`` version returns a hexadecimal value starting with ``0x``.
    $(dt_nodelabel_reg_size_hex,<node label>[,<index>,<unit>])
    $(dt_nodelabel_reg_size_int,<node label>[,<index>,<unit>])
    $(dt_path_enabled,<node path>)
+   $(dt_partition_mtd,<node path>)
 
 
 Integer functions
