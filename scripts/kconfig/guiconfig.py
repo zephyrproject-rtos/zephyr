@@ -15,7 +15,7 @@ Overview
 
 A Tkinter-based menuconfig implementation, based around a treeview control and
 a help display. The interface should feel familiar to people used to qconf
-('make xconfig'). Compatible with both Python 2 and Python 3.
+('make xconfig').
 
 The display can be toggled between showing the full tree and showing just a
 single menu (like menuconfig.py). Only single-menu mode distinguishes between
@@ -61,23 +61,11 @@ $srctree is supported through Kconfiglib.
 import errno
 import os
 import re
-import sys
 
-_PY2 = sys.version_info[0] < 3
-
-if _PY2:
-    # Python 2
-    from Tkinter import *
-    import ttk
-    import tkFont as font
-    import tkFileDialog as filedialog
-    import tkMessageBox as messagebox
-else:
-    # Python 3
-    from tkinter import *
-    import tkinter.ttk as ttk
-    import tkinter.font as font
-    from tkinter import filedialog, messagebox
+from tkinter import *
+import tkinter.ttk as ttk
+import tkinter.font as font
+from tkinter import filedialog, messagebox
 
 from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
                        BOOL, TRISTATE, STRING, INT, HEX, \
@@ -444,8 +432,7 @@ def _init_misc_ui():
     _dark_mode = _detect_system_dark_mode()
 
     _root.title(_kconf.mainmenu_text)
-    # iconphoto() isn't available in Python 2's Tkinter
-    _root.tk.call("wm", "iconphoto", _root._w, "-default", _icon_img)
+    _root.iconphoto(True, _icon_img)
     # Reducing the width of the window to 1 pixel makes it move around, at
     # least on GNOME. Prevent weird stuff like that.
     _root.minsize(128, 128)
@@ -620,9 +607,7 @@ def _create_kconfig_tree_and_desc(parent):
             desc["state"] = "disabled"
             return
 
-        # Text.replace() is not available in Python 2's Tkinter
-        desc.delete("1.0", "end")
-        desc.insert("end", _info_str(_id_to_node[sel[0]]))
+        desc.replace("1.0", "end", _info_str(_id_to_node[sel[0]]))
 
         desc["state"] = "disabled"
 
@@ -1234,11 +1219,6 @@ def _change_node(node, parent):
     if sc.type in (INT, HEX, STRING):
         s = _set_val_dialog(node, parent)
 
-        # Tkinter can return 'unicode' strings on Python 2, which Kconfiglib
-        # can't deal with. UTF-8-encode the string to work around it.
-        if _PY2 and isinstance(s, unicode):
-            s = s.encode("utf-8", "ignore")
-
         if s is not None:
             _set_val(sc, s)
 
@@ -1290,9 +1270,10 @@ def _set_val_dialog(node, parent):
     # Pops up a dialog for setting the value of the string/int/hex
     # symbol at node 'node'. 'parent' is the parent window.
 
+    _entry_res = None
+
     def ok(_=None):
-        # No 'nonlocal' in Python 2
-        global _entry_res
+        nonlocal _entry_res
 
         s = entry.get()
         if sym.type == HEX and not s.startswith(("0x", "0X")):
@@ -1303,7 +1284,7 @@ def _set_val_dialog(node, parent):
             dialog.destroy()
 
     def cancel(_=None):
-        global _entry_res
+        nonlocal _entry_res
         _entry_res = None
         dialog.destroy()
 
