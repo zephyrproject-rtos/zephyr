@@ -482,12 +482,16 @@ class TwisterExecutor:
             if ret != 0:
                 log.warning("twister exited with code %d for call: %s", ret, call.description)
 
-            if not os.path.exists(partial_path):
-                log.warning("twister did not produce %s", partial_path)
+            if not os.path.exists(partial_path) or os.path.getsize(partial_path) == 0:
+                log.warning("twister did not produce output at %s", partial_path)
                 return []
 
-            with open(partial_path, encoding="utf-8") as fh:
-                data = json.load(fh)
+            try:
+                with open(partial_path, encoding="utf-8") as fh:
+                    data = json.load(fh)
+            except json.JSONDecodeError as err:
+                log.warning("twister produced invalid JSON at %s: %s", partial_path, err)
+                return []
             return data.get("testsuites", [])
         finally:
             if os.path.exists(partial_path):
