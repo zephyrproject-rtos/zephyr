@@ -108,7 +108,6 @@ static int stm32_hash_begin_session(const struct device *dev, struct hash_ctx *c
 	}
 
 	session = &stm32_hash_sessions[ctx_idx];
-	memset(&session->config, 0, sizeof(session->config));
 	memset(session->digest, 0, sizeof(session->digest));
 	session->in_use = true;
 	session->algo = algo;
