@@ -1469,9 +1469,49 @@ int supplicant_connect(const struct device *dev __unused, struct net_if *iface,
 	return supplicant_connect_impl(dev, iface, params);
 }
 
-int supplicant_disconnect(const struct device *dev __unused, struct net_if *iface)
+static int supplicant_disconnect_impl(const struct device *dev __unused, struct net_if *iface)
 {
 	return wpas_disconnect_network(iface, WPAS_MODE_INFRA);
+}
+
+/* Typed operation context for deferring disconnect onto the command workqueue. */
+struct supplicant_disconnect_cmd {
+	struct supplicant_cmd cmd;
+	const struct device *dev;
+	struct net_if *iface;
+	int result;
+};
+
+static void supplicant_disconnect_work(struct k_work *work)
+{
+	struct supplicant_disconnect_cmd *c =
+		CONTAINER_OF(work, struct supplicant_disconnect_cmd, cmd.work);
+
+	c->result = supplicant_disconnect_impl(c->dev, c->iface);
+}
+
+int supplicant_disconnect(const struct device *dev __unused, struct net_if *iface)
+{
+	/* Cheap pre-check in the caller's context (get_wpa_s_handle is a shallow
+	 * name lookup, already called without the supplicant mutex), so a request
+	 * for an unknown interface fails immediately without a workqueue round
+	 * trip.
+	 */
+	if (!get_wpa_s_handle(iface)) {
+		return -1;
+	}
+
+	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_OFFLOAD_OPS)) {
+		struct supplicant_disconnect_cmd c = {
+			.dev = dev,
+			.iface = iface,
+		};
+
+		supplicant_run_on_cmd_wq(&c.cmd, supplicant_disconnect_work);
+		return c.result;
+	}
+
+	return supplicant_disconnect_impl(dev, iface);
 }
 
 enum wifi_mfp_options get_mfp(enum mfp_options supp_mfp_option)
