@@ -33,12 +33,6 @@ Supported Features
 
 .. zephyr:board-supported-hw::
 
-System Requirements
-*******************
-
-.. include:: ../../../espressif/common/system-requirements.rst
-   :start-after: espressif-system-requirements
-
 Programming and Debugging
 *************************
 
