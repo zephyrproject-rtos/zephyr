@@ -895,15 +895,12 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 	const uint32_t size = buf_len / dfs;
 	bool use_dma = false;
 
-	const struct spi_buf current_tx = {.buf = NULL, .len = size};
-	const struct spi_buf current_rx = {.buf = NULL, .len = size};
-
 #if defined(CONFIG_SPI_STM32_DMA)
 	use_dma = (data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL);
 #endif /* CONFIG_SPI_STM32_DMA */
 
-	data->ctx.current_tx = &current_tx;
-	data->ctx.current_rx = &current_rx;
+	data->ctx.current_tx = NULL;
+	data->ctx.current_rx = NULL;
 
 	data->ctx.tx_buf = tx_buf;
 	data->ctx.rx_buf = rx_buf;
