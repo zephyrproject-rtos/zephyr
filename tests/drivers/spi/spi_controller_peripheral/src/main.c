@@ -30,6 +30,7 @@ static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
 static const struct spi_config spis_config = {
 	.operation = SPIS_OP,
 	.slave = DT_PROP_OR(DT_PATH(zephyr_user), peripheral_cs, 0),
+	.frequency = DT_PROP(DT_NODELABEL(dut_spi_dt), spi_max_frequency),
 };
 
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
