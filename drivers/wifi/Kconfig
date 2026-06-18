@@ -48,6 +48,7 @@ source "drivers/wifi/nrf_wifi/Kconfig.nrfwifi"
 source "drivers/wifi/nxp/Kconfig.nxp"
 source "drivers/wifi/simplelink/Kconfig.simplelink"
 source "drivers/wifi/siwx91x/Kconfig.siwx91x"
+source "drivers/wifi/st67w611m1/Kconfig.st67w611m1"
 source "drivers/wifi/winc1500/Kconfig.winc1500"
 # zephyr-keep-sorted-stop
 

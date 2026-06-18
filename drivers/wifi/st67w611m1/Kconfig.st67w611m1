@@ -1,0 +1,74 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+DT_STM32_SPI_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_SPI),dmas)
+
+menuconfig WIFI_ST67W611M1
+	bool "ST67W611M1 Wi-Fi driver"
+	default y
+	depends on DT_HAS_ST_ST67W611M1_ENABLED
+	select EVENTS
+	select MODEM
+	select MODEM_CONTEXT
+	select MODEM_CMD_HANDLER
+	select GPIO
+	select SPI
+	select SPI_STM32_DMA if SOC_FAMILY_STM32 && $(DT_STM32_SPI_HAS_DMA)
+	select NET_L2_ETHERNET # Wifi driver is defined as an Ethernet interface
+	select NET_L2_WIFI_MGMT
+	select WIFI_USE_NATIVE_NETWORKING # Set net_wifi_mgmt_offload as an ethernet_api
+
+if WIFI_ST67W611M1
+
+config ST67W611M1_SCAN_RESULT_MAX_NUMBER
+	int "Max number of scan results"
+	default 12
+
+config ST67W611M1_WORKQ_THREAD_PRIORITY
+	int "Priority of the work queue thread"
+	default 7
+
+config ST67W611M1_WORKQ_STACK_SIZE
+	int "Stack size of the driver work queue"
+	default 1024
+
+config ST67W611M1_RX_THREAD_PRIORITY
+	int "Priority of the RX thread"
+	default 7
+
+config ST67W611M1_RX_THREAD_STACK_SIZE
+	int "Stack size of the RX thread"
+	default 1024
+
+config ST67W611M1_SPI_PROCESSOR_THREAD_PRIORITY
+	int "Priority of the thread processing the SPI TX and RX transfers"
+	default 8
+
+config ST67W611M1_SPI_PROCESSOR_THREAD_STACK_SIZE
+	int "Stack size of the SPI TX RX transfer thread"
+	default 1024
+
+config ST67W611M1_TX_AT_CMD_NET_BUF_POOL_COUNT
+	int "Number of buffers in the AT command net buf pool"
+	default 12
+
+config ST67W611M1_TX_AT_CMD_NET_BUF_POOL_SIZE
+	int "Size of buffers in the AT command net buf pool"
+	default 256
+
+config ST67W611M1_TX_AT_CMD_NET_PKT_SLAB_COUNT
+	int "Number of AT command net_pkt that can be allocated at the same time"
+	default 10
+
+config ST67W611M1_RX_AT_CMD_RING_BUF_SIZE
+	int "Size of the RX AT command ring buffer"
+	default 768
+
+config ST67W611M1_SPI_PKT_MEM_SLAB_COUNT
+	int "Max number of SPI pkts"
+	default 12
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+endif # WIFI_ST67W611M1

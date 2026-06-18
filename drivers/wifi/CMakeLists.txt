@@ -30,5 +30,6 @@ add_subdirectory_ifdef(CONFIG_WIFI_NRF70 nrf_wifi)
 add_subdirectory_ifdef(CONFIG_WIFI_NXP nxp)
 add_subdirectory_ifdef(CONFIG_WIFI_SILABS_SIWX91X siwx91x)
 add_subdirectory_ifdef(CONFIG_WIFI_SIMPLELINK simplelink)
+add_subdirectory_ifdef(CONFIG_WIFI_ST67W611M1 st67w611m1)
 add_subdirectory_ifdef(CONFIG_WIFI_WINC1500 winc1500)
 # zephyr-keep-sorted-stop
