@@ -15,6 +15,7 @@ ram: 128
 flash: 64
 vendor: arm
 sysbuild: true
+twister: false
 testing:
   # Skip test execution until FVP SMP TLB coherency bug is resolved.
   # Using a non-existent tag effectively makes this build-only.
