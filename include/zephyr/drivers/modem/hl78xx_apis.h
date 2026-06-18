@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file hl78xx_apis.h
+ * @brief Header file for extended cellular API of HL78xx modems
+ * @ingroup hl78xx_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
 #define ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_
 
@@ -18,7 +25,9 @@ extern "C" {
 #endif
 
 /**
- * @defgroup hl78xx_constants HL78xx Constants and Macros
+ * @defgroup hl78xx_interface HL78xx
+ * @brief Sierra Wireless HL78xx cellular modems
+ * @ingroup cellular_interface_ext
  * @{
  */
 
@@ -73,8 +82,6 @@ extern "C" {
 #define MDM_MAX_HOSTNAME_LEN     128
 /** Maximum length of serial number string */
 #define MDM_SERIAL_NUMBER_LENGTH 32
-
-/** @} */
 
 /**
  * @brief Define an Event monitor to receive notifications in the system workqueue thread.
@@ -1292,5 +1299,7 @@ int hl78xx_gnss_assist_data_delete(const struct device *dev);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_HL78XX_APIS_H_ */
