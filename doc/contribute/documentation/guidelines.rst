@@ -1424,6 +1424,9 @@ Boards
       config option ``zephyr_hw_features_vendor_filter`` to the list of vendors to generate features for.
       If the option is empty, hardware features are generated for all boards from all vendors.
 
+      The config option ``zephyr_hw_features_twister_extra_flags`` can be used to provide additional flags to the
+      twister command.
+
 .. rst:directive:: .. zephyr:board-supported-runners::
 
    This directive is used to show the supported runners for the board documented in the current
