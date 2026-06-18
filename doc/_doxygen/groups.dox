@@ -291,6 +291,7 @@
 
 @brief Connectivity
 @defgroup connectivity Connectivity
+@ingroup os_services
 @{
 @}
 
