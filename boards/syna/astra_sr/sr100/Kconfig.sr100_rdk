@@ -4,4 +4,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_SR100_RDK
+	select SOC_SR100_M4 if BOARD_SR100_RDK_SR100_M4
 	select SOC_SR100_M55 if BOARD_SR100_RDK_SR100_M55
