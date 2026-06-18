@@ -5855,7 +5855,7 @@ TI MSPM0 Platforms:
     - d-philpot
   files:
     - soc/ti/mspm0/
-    - boards/ti/lp_mspm0g3507/
+    - boards/ti/*mspm0*/
     - dts/arm/ti/mspm0/
     - dts/bindings/*/*mspm0*
     - drivers/*/*_mspm0*
