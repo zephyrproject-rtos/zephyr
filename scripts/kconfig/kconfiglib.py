@@ -1130,7 +1130,7 @@ class Kconfig(object):
                 if expr_value(cond):
                     try:
                         with self._open_config(filename.str_value) as f:
-                            return f.name
+                            return f.name.replace('\\', '/')
                     except EnvironmentError:
                         continue
 
@@ -2131,6 +2131,10 @@ class Kconfig(object):
         else:
             # Absolute path
             rel_filename = filename
+
+        # Normalize path separators to '/' for cross-platform consistency
+        # (on Windows, paths may use '\' which would break comparisons)
+        rel_filename = rel_filename.replace('\\', '/')
 
         self.kconfig_filenames.append(rel_filename)
 
