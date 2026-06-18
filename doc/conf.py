@@ -365,6 +365,7 @@ external_content_keep = [
 zephyr_breathe_insert_related_samples = True
 zephyr_generate_hw_features = not tags.has("hw_features_turbo")  # pylint: disable=undefined-variable  # noqa: F821
 zephyr_hw_features_vendor_filter = []
+zephyr_hw_features_twister_extra_flags = []
 
 # -- Options for sphinx.ext.graphviz --------------------------------------
 
