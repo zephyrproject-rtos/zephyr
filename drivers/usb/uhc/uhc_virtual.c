@@ -47,6 +47,7 @@ struct uhc_vrt_data {
 	struct k_work work;
 	struct k_fifo fifo;
 	struct uhc_transfer *last_xfer;
+	struct uvb_packet *last_pkt;
 	struct uhc_vrt_frame frame;
 	struct k_timer sof_timer;
 	k_timeout_t sof_period;
@@ -87,6 +88,19 @@ static void vrt_event_submit(const struct device *dev,
 	k_work_submit(&priv->work);
 }
 
+static int vrt_advert_pkt(struct uhc_vrt_data *const priv,
+			  struct uvb_packet *const pkt)
+{
+	/*
+	 * The device may get disconnected and there would not be any reply.
+	 * Track the packet of the last transaction and clean it up in
+	 * vrt_xfer_drop_active() to prevent a packet leak on device disconnect.
+	 */
+	priv->last_pkt = pkt;
+
+	return uvb_advert_pkt(priv->host_node, pkt);
+}
+
 static int vrt_xfer_control(const struct device *dev,
 			    struct uhc_transfer *const xfer)
 {
@@ -108,7 +122,7 @@ static int vrt_xfer_control(const struct device *dev,
 
 		priv->req = UVB_REQUEST_SETUP;
 
-		return uvb_advert_pkt(priv->host_node, uvb_pkt);
+		return vrt_advert_pkt(priv, uvb_pkt);
 	}
 
 	if (buf != NULL && xfer->stage == UHC_CONTROL_STAGE_DATA) {
@@ -131,7 +145,7 @@ static int vrt_xfer_control(const struct device *dev,
 
 		priv->req = UVB_REQUEST_DATA;
 
-		return uvb_advert_pkt(priv->host_node, uvb_pkt);
+		return vrt_advert_pkt(priv, uvb_pkt);
 	}
 
 	if (xfer->stage == UHC_CONTROL_STAGE_STATUS) {
@@ -154,7 +168,7 @@ static int vrt_xfer_control(const struct device *dev,
 
 		priv->req = UVB_REQUEST_DATA;
 
-		return uvb_advert_pkt(priv->host_node, uvb_pkt);
+		return vrt_advert_pkt(priv, uvb_pkt);
 	}
 
 	return -EINVAL;
@@ -184,7 +198,7 @@ static int vrt_xfer_bulk(const struct device *dev,
 		return -ENOMEM;
 	}
 
-	return uvb_advert_pkt(priv->host_node, uvb_pkt);
+	return vrt_advert_pkt(priv, uvb_pkt);
 }
 
 static inline uint8_t get_xfer_ep_idx(const uint8_t ep)
@@ -352,6 +366,11 @@ static void vrt_xfer_drop_active(const struct device *dev, int err)
 {
 	struct uhc_vrt_data *priv = uhc_get_private(dev);
 
+	if (priv->last_pkt != NULL) {
+		uvb_free_pkt(priv->last_pkt);
+		priv->last_pkt = NULL;
+	}
+
 	if (priv->last_xfer) {
 		uhc_xfer_return(dev, priv->last_xfer, err);
 		priv->last_xfer = NULL;
@@ -365,6 +384,14 @@ static int vrt_handle_reply(const struct device *dev,
 	struct uhc_vrt_frame *const frame = &priv->frame;
 	struct uhc_transfer *const xfer = priv->last_xfer;
 	int ret = 0;
+
+	if (priv->last_pkt == NULL) {
+		LOG_DBG("Ignore reply for a dropped transfer");
+		return 0;
+	}
+
+	/* Clear the reference to avoid double free in vrt_xfer_drop_active() */
+	priv->last_pkt = NULL;
 
 	if (xfer == NULL) {
 		LOG_ERR("No transfers to handle");
