@@ -21,6 +21,42 @@ granted access to view the issues that they have reported.
 .. _security advisory: https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability#privately-reporting-a-security-vulnerability
 .. _security advisories page: https://github.com/zephyrproject-rtos/zephyr/security/advisories
 
+Vulnerability Reporting Guidelines
+==================================
+
+Security research and vulnerability reporting are valued contributions to the
+Zephyr project. To keep this process safe and productive for everyone, all
+reports and related activities must comply with the Zephyr project
+`Code of Conduct`_.
+
+The guidelines below describe what is expected when researching and reporting
+security vulnerabilities in Zephyr.
+
+.. _Code of Conduct: https://github.com/zephyrproject-rtos/zephyr/blob/main/CODE_OF_CONDUCT.md
+
+Reporting expectations
+----------------------
+
+To help the security response team triage and resolve issues efficiently, a
+report should:
+
+- Describe the affected component, version, board or platform, and
+  configuration needed to reproduce the issue.
+
+- Include clear, step-by-step reproduction instructions and a minimal
+  proof-of-concept where possible.
+
+- Explain the security impact (for example, loss of confidentiality,
+  integrity, or availability) and any known mitigations.
+
+- Avoid including destructive payloads or components that could cause harm to
+  users or systems if the report were inadvertently disclosed.
+
+Reporters are expected to make a good-faith effort to give the project a
+reasonable opportunity to investigate and remediate the issue before any public
+disclosure, consistent with the embargo and disclosure process described in the
+following sections.
+
 Security Issue Management
 =========================
 
